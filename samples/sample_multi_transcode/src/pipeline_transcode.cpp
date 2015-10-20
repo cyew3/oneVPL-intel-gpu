@@ -563,7 +563,7 @@ mfxStatus CTranscodingPipeline::VPPOneFrame(ExtendedSurface *pSurfaceIn, Extende
 
     // make sure picture structure has the initial value
     // surfaces are reused and VPP may change this parameter in certain configurations
-    pmfxSurface->Info.PicStruct = m_mfxEncParams.mfx.FrameInfo.PicStruct;
+    pmfxSurface->Info.PicStruct = m_mfxVppParams.vpp.Out.PicStruct ? m_mfxVppParams.vpp.Out.PicStruct : (m_bEncodeEnable ? m_mfxEncParams : m_mfxDecParams).mfx.FrameInfo.PicStruct;
 
     pExtSurface->pSurface = pmfxSurface;
     mfxStatus sts = MFX_ERR_NONE;
@@ -694,6 +694,7 @@ mfxStatus CTranscodingPipeline::Decode()
     ExtendedSurface DecExtSurface    = {0};
     ExtendedSurface VppExtSurface    = {0};
     ExtendedSurface PreEncExtSurface = {0};
+    bool shouldReadNextFrame=true;
 
     SafetySurfaceBuffer   *pNextBuffer = m_pBuffer;
     bool bEndOfFile = false;
@@ -704,51 +705,68 @@ mfxStatus CTranscodingPipeline::Decode()
         pNextBuffer = m_pBuffer;
 
         msdk_tick nBeginTime = msdk_time_get_tick(); // microseconds.
-        if (m_MaxFramesForTranscode != m_nProcessedFramesNum)
+        if(shouldReadNextFrame)
         {
-            if (!bEndOfFile)
+            if (m_MaxFramesForTranscode != m_nProcessedFramesNum)
             {
-                sts = DecodeOneFrame(&DecExtSurface);
-                if (MFX_ERR_MORE_DATA == sts)
+                if (!bEndOfFile)
+                {
+                    sts = DecodeOneFrame(&DecExtSurface);
+                    if (MFX_ERR_MORE_DATA == sts)
+                    {
+                        sts = DecodeLastFrame(&DecExtSurface);
+                        bEndOfFile = true;
+                    }
+                }
+                else
                 {
                     sts = DecodeLastFrame(&DecExtSurface);
-                    bEndOfFile = true;
                 }
+
+                if (sts == MFX_ERR_NONE)
+                {
+                    m_nProcessedFramesNum++;
+                }
+                if (sts == MFX_ERR_MORE_DATA && (m_pmfxVPP.get() || m_pmfxPreENC.get()))
+                {
+                    DecExtSurface.pSurface = NULL;  // to get buffered VPP or ENC frames
+                    sts = MFX_ERR_NONE;
+                }
+                MSDK_BREAK_ON_ERROR(sts);
+            }
+            else if ( m_pmfxVPP.get() || m_pmfxPreENC.get())
+            {
+                DecExtSurface.pSurface = NULL;  // to get buffered VPP or ENC frames
+                bEndOfFile = true;
+                sts = MFX_ERR_NONE;
             }
             else
             {
-                sts = DecodeLastFrame(&DecExtSurface);
+                break;
             }
-
-            if (sts == MFX_ERR_NONE)
-            {
-                m_nProcessedFramesNum++;
-            }
-            if (sts == MFX_ERR_MORE_DATA && (m_pmfxVPP.get() || m_pmfxPreENC.get()))
-            {
-                DecExtSurface.pSurface = NULL;  // to get buffered VPP or ENC frames
-                sts = MFX_ERR_NONE;
-            }
-            MSDK_BREAK_ON_ERROR(sts);
-        }
-        else if ( m_pmfxVPP.get() || m_pmfxPreENC.get())
-        {
-           DecExtSurface.pSurface = NULL;  // to get buffered VPP or ENC frames
-           bEndOfFile = true;
-           sts = MFX_ERR_NONE;
-        }
-        else
-        {
-            break;
         }
 
         if (m_pmfxVPP.get())
+        {
             sts = VPPOneFrame(&DecExtSurface, &VppExtSurface);
+        }
         else // no VPP - just copy pointers
         {
             VppExtSurface.pSurface = DecExtSurface.pSurface;
             VppExtSurface.Syncp = DecExtSurface.Syncp;
         }
+
+        //--- Sometimes VPP may return 2 surfaces on output, for the first one it'll return status MFX_ERR_MORE_SURFACE - we have to call VPPOneFrame again in this case
+        if(MFX_ERR_MORE_SURFACE == sts)
+        {
+            shouldReadNextFrame=false;
+            sts=MFX_ERR_NONE;
+        }
+        else
+        {
+            shouldReadNextFrame=true;
+        }
+
 
         if (sts == MFX_ERR_MORE_DATA || !VppExtSurface.pSurface)
         {
