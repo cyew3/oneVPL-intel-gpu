@@ -1019,7 +1019,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
 #endif
         if (m_bCmCopy == true && pDst->Info.FourCC != MFX_FOURCC_YV12 && CM_SUPPORTED_COPY_SIZE(roi))
         {
-            sts = pCmCopy->CopyVideoToVideoMemoryAPI(pDst->Data.MemId, pSrc->Data.Y, roi);
+            sts = pCmCopy->CopyVideoToVideoMemoryAPI(pDst->Data.MemId, pSrc->Data.MemId, roi);
             MFX_CHECK_STS(sts);
         }
         else
