@@ -24,6 +24,85 @@
 
 using namespace MfxHwMJpegEncode;
 
+
+
+
+MfxFrameAllocResponse::MfxFrameAllocResponse()
+    :mfxFrameAllocResponse() , m_core(0)
+{
+}
+
+MfxFrameAllocResponse::~MfxFrameAllocResponse()
+{
+    Free();
+}
+
+void MfxFrameAllocResponse::Free()
+{
+    if (m_core)
+    {
+        if (MFX_HW_D3D11 == m_core->GetVAType() && m_responseQueue.size())
+        {
+            for (size_t i = 0; i < m_responseQueue.size(); i++)
+                m_core->FreeFrames(&m_responseQueue[i]);
+        }
+        else
+        {
+            if (mids)
+            {
+                m_core->FreeFrames(this);
+            }
+        }
+        m_core = NULL;
+    }
+
+}
+
+mfxStatus MfxFrameAllocResponse::Alloc(
+    VideoCORE *            core,
+    mfxFrameAllocRequest & req,
+    bool isCopyRequired = true)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    if (m_core || core == NULL)
+    {
+        sts = MFX_ERR_MEMORY_ALLOC;
+    }
+    MFX_CHECK_STS(sts);
+
+    m_core = core;
+
+    if (MFX_HW_D3D11 == core->GetVAType())
+    {
+        mfxFrameAllocRequest tmp = req;
+        tmp.NumFrameMin = tmp.NumFrameSuggested = 1;
+
+        m_responseQueue.resize(req.NumFrameMin);
+        m_mids.resize(req.NumFrameMin);
+
+        for (int i = 0; i < req.NumFrameMin; i++)
+        {
+            sts = core->AllocFrames(&tmp, &m_responseQueue[i], isCopyRequired);
+            MFX_CHECK_STS(sts);
+            m_mids[i] = m_responseQueue[i].mids[0];
+        }
+
+        mids = &m_mids[0];
+        NumFrameActual = req.NumFrameMin;
+    }
+    else
+    {
+        sts = core->AllocFrames(&req, this, isCopyRequired);
+        MFX_CHECK_STS(sts);
+    }
+
+    if (NumFrameActual < req.NumFrameMin)
+        return MFX_ERR_MEMORY_ALLOC;
+
+    return MFX_ERR_NONE;
+}
+
 MFXVideoENCODEMJPEG_HW::MFXVideoENCODEMJPEG_HW(VideoCORE *core, mfxStatus *sts)
 {
     m_pCore        = core;
@@ -552,30 +631,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     request.Info.Width  = IPP_MAX(request.Info.Width,  m_vParam.mfx.FrameInfo.Width);
     request.Info.Height = IPP_MAX(request.Info.Height, m_vParam.mfx.FrameInfo.Height * doubleBytesPerPx / 2);
 
-    if (MFX_HW_D3D11  == m_pCore->GetVAType())
-    {
-        mfxFrameAllocRequest tmp = request;
-        mfxFrameAllocResponse tmp_response;
-        tmp.NumFrameMin = tmp.NumFrameSuggested = 1;
-        m_mids.resize(request.NumFrameMin);
+    sts = m_bitstream.Alloc(m_pCore, request);
 
-        for (int i = 0; i < request.NumFrameMin; i++)
-        {
-            sts = m_pCore->AllocFrames(&tmp, &tmp_response);
-            MFX_CHECK_STS(sts);
-            m_mids[i] = tmp_response.mids[0];
-        }
-
-        m_bitstream.mids = &m_mids[0];
-        m_bitstream.NumFrameActual = request.NumFrameMin;
-    }
-    else
-    {
-        sts = m_pCore->AllocFrames(&request, &m_bitstream);
-        MFX_CHECK_STS(sts);
-    }
-
-    //sts = m_pCore->AllocFrames(&request, &m_bitstream);
     MFX_CHECK(
         sts == MFX_ERR_NONE &&
         m_bitstream.NumFrameActual >= request.NumFrameMin,
@@ -690,6 +747,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Close(void)
 {
     mfxStatus sts = m_TaskManager.Close();
     MFX_CHECK_STS(sts);
+    
+    m_bitstream.Free();
 
     return MFX_ERR_NONE;
 }

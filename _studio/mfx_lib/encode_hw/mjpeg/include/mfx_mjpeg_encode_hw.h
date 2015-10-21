@@ -22,6 +22,30 @@
 
 using namespace MfxHwMJpegEncode;
 
+class MfxFrameAllocResponse : public mfxFrameAllocResponse
+{
+public:
+    MfxFrameAllocResponse();
+
+    ~MfxFrameAllocResponse();
+
+    mfxStatus Alloc(
+        VideoCORE * core,
+        mfxFrameAllocRequest & req,
+        bool  isCopyRequired);
+
+    void Free();
+
+
+private:
+    MfxFrameAllocResponse(MfxFrameAllocResponse const &);
+    MfxFrameAllocResponse & operator =(MfxFrameAllocResponse const &);
+
+    VideoCORE * m_core;
+    std::vector<mfxFrameAllocResponse> m_responseQueue;
+    std::vector<mfxMemId> m_mids;
+};
+
 class MFXVideoENCODEMJPEG_HW : public VideoENCODE {
 public:
     static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
@@ -104,7 +128,7 @@ protected:
     bool                m_isOpaqIn;
 
     mfxFrameAllocResponse m_raw;        // raw surface, for input raw is in system memory case
-    mfxFrameAllocResponse m_bitstream;  // bitstream surface
+    MfxFrameAllocResponse m_bitstream;  // bitstream surface
     mfxU32                m_counter;    // task number (StatusReportFeedbackNumber)
 
     TaskManager           m_TaskManager;
