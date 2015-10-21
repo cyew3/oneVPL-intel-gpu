@@ -30,20 +30,20 @@ Installation
 1. Rename real Media SDK library:
 cd /opt/intel/mediasdk/8086/<deviceid>/
 rm libmfxhw64.so
-mv libmfxhw64-p.so.1.10 libmfxhw64-p-REAL.so.1.10
+mv libmfxhw64-p.so.1.17 libmfxhw64-p-REAL.so.1.17
 
 2. Add Media SDK Tracer library to the search path:
-export LD_LIBRARY_PATH=$INSTALLDIR/mediasdk-tracer-1.10.0:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$INSTALLDIR/mediasdk-tracer-1.17.0:$LD_LIBRARY_PATH
 
 3. Create symbolic link to the tracer with the name of Media SDK library:
-cd $INSTALLDIR/mediasdk-tracer-1.10.0/lib
+cd $INSTALLDIR/mediasdk-tracer-1.17.0/lib
 ln -s libmfx-tracer.so libmfxhw64.so
 
 4. Generate config file for the tracer:
 $INSTALLDIR/bin/mfx-tracer-config --default
 $INSTALLDIR/bin/mfx-tracer-config core.type file
 $INSTALLDIR/bin/mfx-tracer-config core.log ~/mfxtracer.log
-$INSTALLDIR/bin/mfx-tracer-config core.lib /opt/intel/mediasdk/8086/<deviceid>/libmfxhw64-p-REAL.so.1.10
+$INSTALLDIR/bin/mfx-tracer-config core.lib /opt/intel/mediasdk/8086/<deviceid>/libmfxhw64-p-REAL.so.1.17
 
 Following this procedure you will set Tracer to dump log to the file called '~/mfxtracer.log'. You may
 adjust your configuration with 'mfx-tracer-config' tool.
