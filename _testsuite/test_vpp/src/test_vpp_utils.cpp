@@ -259,6 +259,10 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
     vm_string_printf(VM_STRING("Pointers and MemID settings  \t%s\n"), sptr2Str( pParams->sptr ));
     vm_string_printf(VM_STRING("Default allocator            \t%s\n"), pParams->bDefAlloc ? VM_STRING("ON"): VM_STRING("OFF"));
     vm_string_printf(VM_STRING("Number of asynchronious tasks\t%d\n"), pParams->asyncNum);
+    if ( pParams->bInitEx )
+    {
+    vm_string_printf(VM_STRING("GPU Copy mode                \t%d\n"), pParams->GPUCopyValue);
+    }
     vm_string_printf(VM_STRING("Time stamps checking         \t%s\n"), pParams->ptsCheck ? VM_STRING("ON"): VM_STRING("OFF"));
 
     // info abour ROI testing
@@ -445,7 +449,18 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
     WipeFrameProcessor(pProcessor);
 
     //MFX session
-    sts = pProcessor->mfxSession.Init(impl, &version);
+    if ( ! pInParams->bInitEx )
+        sts = pProcessor->mfxSession.Init(impl, &version);
+    else
+    {
+        mfxInitParam initParams;
+        initParams.ExternalThreads = 0;
+        initParams.GPUCopy         = pInParams->GPUCopyValue;
+        initParams.Implementation  = impl;
+        initParams.Version         = version;
+        initParams.NumExtParam     = 0;
+        sts = pProcessor->mfxSession.InitEx(initParams);
+    }
     CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to Init mfx session\n"));  WipeFrameProcessor(pProcessor);});
 
     // Plug-in

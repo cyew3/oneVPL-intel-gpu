@@ -33,6 +33,7 @@ void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("   [-crc CrcFile]      - calculate CRC32 and write it to specified file\n\n"));
     vm_string_printf(VM_STRING("   [-plugin_guid GUID] - use VPP plug-in with specified GUID\n\n"));
     vm_string_printf(VM_STRING("   [-extapi]           - use RunFrameVPPAsyncEx instead of RunFrameVPPAsync. Need for PTIR.\n\n"));
+    vm_string_printf(VM_STRING("   [-gpu_copu]          - Specify GPU copy mode. This option triggers using of InitEX instead of Init.\n\n"));
 
     vm_string_printf(VM_STRING("   [-sw   width]     - width  of src video (def: 352)\n"));
     vm_string_printf(VM_STRING("   [-sh   height]    - height of src video (def: 288)\n"));
@@ -349,6 +350,9 @@ void vppDefaultInitParams( sInputParams* pParams )
     // Use RunFrameVPPAsyncEx
     pParams->use_extapi  = false;
 
+    pParams->bInitEx      = false;
+    pParams->GPUCopyValue = MFX_GPUCOPY_DEFAULT;
+
     pParams->frameInfo[VPP_IN].CropX = 0;
     pParams->frameInfo[VPP_IN].CropY = 0;
     pParams->frameInfo[VPP_IN].CropW = NOT_INIT_VALUE;
@@ -396,7 +400,14 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, std::vector<sI
     {
         CHECK_POINTER(strInput[i], MFX_ERR_NULL_PTR);
         {      
-            if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-link")) )
+            if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-gpu_copy")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                pParams[linkIndex]->bInitEx = true;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams[linkIndex]->GPUCopyValue);
+            }
+            else if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-link")) )
             {
                 linkIndex++;
                 sInputParams *newParams = new sInputParams;

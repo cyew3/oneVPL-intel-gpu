@@ -30,6 +30,7 @@ void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("   [-crc CrcFile]      - calculate CRC32 and write it to specified file\n\n"));
     vm_string_printf(VM_STRING("   [-plugin_guid GUID] - use VPP plug-in with specified GUID\n\n"));
     vm_string_printf(VM_STRING("   [-extapi]           - use RunFrameVPPAsyncEx instead of RunFrameVPPAsync. Need for PTIR.\n\n"));
+    vm_string_printf(VM_STRING("   [-gpu_copy]         - Specify GPU copy mode. This option triggers using of InitEX instead of Init.\n\n"));
 
     vm_string_printf(VM_STRING("   [-sw   width]     - width  of src video (def: 352)\n"));
     vm_string_printf(VM_STRING("   [-sh   height]    - height of src video (def: 288)\n"));
@@ -633,7 +634,14 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
     {
         CHECK_POINTER(strInput[i], MFX_ERR_NULL_PTR);
         {      
-            if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-sw")) ) 
+            if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-gpu_copy")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                pParams->bInitEx = true;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->GPUCopyValue);
+            }
+            else if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-sw")) )
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;

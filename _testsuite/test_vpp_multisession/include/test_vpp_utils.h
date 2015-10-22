@@ -139,6 +139,9 @@ struct sInputParams
     mfxU16   asyncNum;
     mfxU32   vaType;
 
+    bool     bInitEx;
+    mfxU16   GPUCopyValue;
+
     mfxU16   rotate;
 
     bool     bPartialAccel;

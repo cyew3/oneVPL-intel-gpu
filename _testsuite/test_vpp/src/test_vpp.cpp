@@ -140,6 +140,9 @@ void vppDefaultInitParams( sInputParams* pParams, sFiltersParam* pDefaultFilters
     // Do not call MFXVideoVPP_Reset
     pParams->resetFrmNums.clear();
 
+    pParams->bInitEx      = false;
+    pParams->GPUCopyValue = MFX_GPUCOPY_DEFAULT;
+
     return;
 
 } // void vppDefaultInitParams( sInputParams* pParams )

@@ -163,6 +163,9 @@ struct sInputParams
     bool     bScaling;
     mfxU16   scalingMode;
 
+    bool     bInitEx;
+    mfxU16   GPUCopyValue;
+
     bool     bPartialAccel;
 
     bool     bPerf;
