@@ -92,9 +92,9 @@ mfxStatus D3D11CameraProcessor::Init(CameraParams *CameraParams)
         // Output is in system memory. Need to allocate temporary video surf
         mfxFrameAllocRequest request;
         request.Info        = m_params.vpp.Out;
-        request.Info.CropX  = request.Info.CropY = 0;
-        request.Info.Width  = request.Info.CropW;
-        request.Info.Height = (request.Info.CropH/2)*2;
+        //request.Info.CropX  = request.Info.CropY = 0;
+        //request.Info.Width  = request.Info.Width;
+        //request.Info.Height = request.Info.Height;
         request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_INTERNAL_FRAME;
         request.NumFrameMin = request.NumFrameSuggested = m_AsyncDepth; // Fixme
         sts = m_OutSurfacePool->AllocateSurfaces(m_core, request);

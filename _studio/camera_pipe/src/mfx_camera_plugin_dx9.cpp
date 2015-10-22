@@ -1360,7 +1360,7 @@ mfxStatus D3D9CameraProcessor::Init(CameraParams *CameraParams)
         for(int i = 0; i < m_AsyncDepth; i++)
         {
             m_outputSurf[i].surf = m_ddi->SurfaceCreate(
-                m_params.vpp.Out.CropW, (m_params.vpp.Out.CropH/2)*2,
+                m_params.vpp.Out.Width, m_params.vpp.Out.Height,
                 (CameraParams->par.vpp.Out.FourCC == MFX_FOURCC_RGB4) ? D3DFMT_A8R8G8B8 : D3DFMT_A16B16G16R16,
                 MFX_MEMTYPE_FROM_VPPOUT);
             MFX_CHECK_NULL_PTR1(m_outputSurf[i].surf);
