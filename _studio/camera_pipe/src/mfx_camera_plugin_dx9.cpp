@@ -1512,7 +1512,7 @@ mfxStatus D3D9CameraProcessor::CompleteRoutine(AsyncParams * pParam)
         vm_time_sleep(10);
     }
 
-
+    sts = MFX_ERR_NONE;
     if ( m_systemMemOut )
     {
         IppiSize roi = {pParam->surf_out->Info.CropW, pParam->surf_out->Info.CropH};
