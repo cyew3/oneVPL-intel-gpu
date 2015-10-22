@@ -37,6 +37,18 @@ public:
         }
     }
 
+    virtual  mfxStatus InitEx(mfxInitParam par, const tstring &libraryPath)
+    {
+        m_externalImpl = par.Implementation;
+        if (!libraryPath.empty())
+        {
+            return myMFXInitEx(libraryPath.c_str(), par, &m_session);
+        } else
+        {
+            return MFXInitEx(par, &m_session);
+        }
+    }
+
     virtual mfxStatus QueryIMPLExternal(mfxIMPL *impl) 
     { 
         MFX_CHECK_POINTER(impl);

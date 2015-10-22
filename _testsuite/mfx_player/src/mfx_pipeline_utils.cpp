@@ -1054,6 +1054,67 @@ mfxStatus myMFXInit(const vm_char *pMFXLibraryPath, mfxIMPL impl, mfxVersion *pV
 #endif
 }
 
+mfxStatus myMFXInitEx(const vm_char *pMFXLibraryPath, mfxInitParam par, mfxSession *session)
+{
+//#if 1
+#if (MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 1)
+    mfxStatus mfxRes = MFX_ERR_NONE;
+    MFX_DISP_HANDLE *pHandle = new MFX_DISP_HANDLE(par.Version);
+    if (!pHandle) return MFX_ERR_MEMORY_ALLOC;
+
+    msdk_disp_char path[MAX_PATH];
+#if defined(_WIN32) || defined(_WIN64)
+    #ifdef UNICODE
+        swprintf(path, L"%s", pMFXLibraryPath);
+    #else
+        swprintf(path, L"%S", pMFXLibraryPath);
+    #endif
+#else
+    vm_string_sprintf(path, "%s", pMFXLibraryPath);
+#endif
+
+    // implementation method masked from the input parameter
+    const mfxIMPL implMethod = par.Implementation & (MFX_IMPL_VIA_ANY - 1);
+    // implementation interface masked from the input parameter
+    const mfxIMPL implInterface = par.Implementation & -MFX_IMPL_VIA_ANY;
+    mfxU32 curImplIdx, maxImplIdx;
+
+    curImplIdx = myimplTypesRange[implMethod].minIndex;
+    maxImplIdx = myimplTypesRange[implMethod].maxIndex;
+
+    do
+    {
+        if (MFX_ERR_NONE == mfxRes)
+        {
+            mfxInitParam par;
+
+            memset(&par, 0, sizeof(mfxInitParam));
+            // try to load the selected DLL using default DLL search mechanism
+            mfxRes = pHandle->LoadSelectedDLL(path,
+                                     myimplTypes[curImplIdx].implType,
+                                     myimplTypes[curImplIdx].impl,
+                                     implInterface,
+                                     par);
+            // unload the failed DLL
+            if ((MFX_ERR_NONE != mfxRes) &&
+                (MFX_WRN_PARTIAL_ACCELERATION != mfxRes))
+            {
+                pHandle->UnLoadSelectedDLL();
+            }
+        }
+    }
+    while ((MFX_ERR_NONE > mfxRes) && (++curImplIdx <= maxImplIdx));
+
+    if (MFX_ERR_NONE == mfxRes)
+    {
+        *((MFX_DISP_HANDLE **) session) = pHandle;
+    }
+    return mfxRes;
+#else
+    return MFXInit(impl, pVer, session);
+#endif
+}
+
 void MessageFromCode(mfxU32 nCode, vm_char *pString, mfxU32 pStringLen)
 {
 #if defined(_WIN32) || defined(_WIN64)

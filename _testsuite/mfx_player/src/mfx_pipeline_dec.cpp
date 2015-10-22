@@ -523,10 +523,7 @@ mfxStatus MFXDecPipeline::BuildPipeline()
     MFX_CHECK_STS_SET_ERR(CreateCore(), PE_INIT_CORE);
     TIME_PRINT(VM_STRING("CreateCore"));
 
-
-	
-	
-	MFX_CHECK_STS(BuildMFXPart());
+    MFX_CHECK_STS(BuildMFXPart());
 
     MFX_CHECK_STS_SET_ERR(WriteParFile(), PE_PAR_FILE);
 
@@ -878,7 +875,24 @@ mfxStatus MFXDecPipeline::CreateCore()
                 , (int)(nDriverVersion & 0xFFFF ));
         }
 #endif
-        MFX_CHECK_STS(m_components[eDEC].m_pSession->Init(m_components[eDEC].m_libType, m_components[eDEC].m_pLibVersion, m_inParams.pMFXLibraryPath));
+        if ( m_inParams.bInitEx )
+        {
+            mfxInitParam params;
+            params.ExternalThreads = 0;
+            params.GPUCopy         = m_inParams.nGpuCopyMode;
+            params.Implementation  = m_components[eDEC].m_libType;
+            params.NumExtParam     = 0;
+            params.Version.Major   = MFX_VERSION_MAJOR;
+            params.Version.Minor   = MFX_VERSION_MINOR;
+            if ( m_components[eDEC].m_pLibVersion )
+                params.Version     = *(m_components[eDEC].m_pLibVersion);
+            MFX_CHECK_STS(m_components[eDEC].m_pSession->InitEx(params, m_inParams.pMFXLibraryPath));
+        }
+        else
+        {
+            MFX_CHECK_STS(m_components[eDEC].m_pSession->Init(m_components[eDEC].m_libType, m_components[eDEC].m_pLibVersion, m_inParams.pMFXLibraryPath));
+        }
+
         m_components[eDEC].m_mfxLibPath = lib.GetPath();
     }
 
@@ -4579,6 +4593,15 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 MFX_PARSE_INT(nTimeout, argv[1]);
 
                 SetTimeout((int)PIPELINE_TIMEOUT_GENERIC, nTimeout);
+
+                argv++;
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-gpu_copy"), VM_STRING("Use specified GPU Copy mode. This option triggers using InitEx instead of Init"), OPT_INT_32))
+            {
+                MFX_CHECK(1 + argv != argvEnd);
+                m_inParams.bInitEx = true;
+
+                MFX_PARSE_INT(m_inParams.nGpuCopyMode, argv[1]);
 
                 argv++;
             }

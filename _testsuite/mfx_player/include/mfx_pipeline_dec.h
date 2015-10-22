@@ -214,6 +214,11 @@ struct sCommandlineParams
   bool           useEncOrderParFile;
   vm_char        encOrderParFile[MAX_FILE_PATH];
 
+  // true means using InitEx, false - Init
+  bool          bInitEx;
+
+  mfxU16        nGpuCopyMode;
+
 #ifdef PAVP_BUILD
   // protected
   mfxU16 Protected; //Protected in mfxVideoParam
@@ -291,6 +296,9 @@ struct sCommandlineParams
       uVppScalingMode = MFX_SCALING_MODE_DEFAULT;
 
       nTestId = NOT_ASSIGNED_VALUE;
+
+      bInitEx = false;
+      nGpuCopyMode = MFX_GPUCOPY_DEFAULT;
   }
 };
 

@@ -129,6 +129,7 @@ mfxStatus        CheckStatusMultiSkip(mfxStatus status_to_check, ... );
 
 // Load specific MFX library
 mfxStatus       myMFXInit(const vm_char *pMFXLibraryPath, mfxIMPL impl, mfxVersion *pVer, mfxSession *session);
+mfxStatus       myMFXInitEx(const vm_char *pMFXLibraryPath, mfxInitParam par, mfxSession *session);
 
 //bitstreams utils
 class BSUtil
