@@ -67,8 +67,8 @@ public:
     int RunTest(unsigned int id);
     static const unsigned int n_cases;
 
-    template<class mfxTPlugin, class FakeT>
-    void call_func(mfxPluginType plgType, mfxTPlugin* pPlugin, FakeT fakePlg, std::vector<mfxU32> calls);
+    template<class FakeT>
+    void call_func(FakeT fakePlg, std::vector<mfxU32> calls);
 
 };
 
@@ -85,12 +85,14 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
-template<class mfxTPlugin, class FakeT>
-void TestSuite::call_func(mfxPluginType plgType, mfxTPlugin* pPlugin, FakeT fakePlg, std::vector<mfxU32> calls)
-{
-    sts = MFXVideoUSER_Register(m_session, plgType, (mfxPlugin*)&pPlugin);
 
-    //common
+ // The function below:
+ // 1. calls common for all plugins methods from FakeT class
+ // 2. fills calls vector with appropriate values
+
+template<class FakeT>
+void TestSuite::call_func(FakeT fakePlg, std::vector<mfxU32> calls)
+{
     fakePlg.Init(video_par);
     calls.push_back(APIfuncs::Init);
 
@@ -142,13 +144,17 @@ int TestSuite::RunTest(unsigned int id)
         if (tc.mode|ENCODE)
         {
             std::vector<mfxU32> calls_enc;
-            MFXEncoderPlugin* pPlugin_enc = nullptr;
             FakeEncoder plg_enc;
+            sts = MFXVideoUSER_Register(m_session, MFX_PLUGINTYPE_VIDEO_ENCODE, (mfxPlugin*)&plg_enc);
 
-            TestSuite::call_func(MFX_PLUGINTYPE_VIDEO_ENCODE, pPlugin_enc, plg_enc, calls_enc);
+            call_func(plg_enc, calls_enc);
 
+            // calling specific for encoder functions
             plg_enc.EncodeFrameSubmit(ctrl_par, surface_par, bs_par, taskPtr);
             calls_enc.push_back(APIfuncs::EncodeFrameSubmit);
+
+            // calls_enc - real calls
+            // plg_enc.m_calls - expected calls
 
             if (!check_calls(calls_enc, plg_enc.m_calls))
             {
@@ -158,11 +164,12 @@ int TestSuite::RunTest(unsigned int id)
        if (tc.mode|DECODE)
        {
            std::vector<mfxU32> calls_dec;
-           MFXDecoderPlugin* pPlugin_dec = nullptr;
            FakeDecoder plg_dec;
+           sts = MFXVideoUSER_Register(m_session, MFX_PLUGINTYPE_VIDEO_DECODE, (mfxPlugin*)&plg_dec);
 
-           TestSuite::call_func(MFX_PLUGINTYPE_VIDEO_DECODE, pPlugin_dec, plg_dec, calls_dec);
+           call_func(plg_dec, calls_dec);
 
+           // calling specific for decoder functions
            plg_dec.DecodeHeader(bs_par, video_par);
            calls_dec.push_back(APIfuncs::DecodeHeader);
 
@@ -181,11 +188,12 @@ int TestSuite::RunTest(unsigned int id)
        if (tc.mode|VPP)
        {
            std::vector<mfxU32> calls_vpp;
-           MFXVPPPlugin* pPlugin_vpp = nullptr;
            FakeVPP plg_vpp;
+           sts = MFXVideoUSER_Register(m_session, MFX_PLUGINTYPE_VIDEO_VPP, (mfxPlugin*)&plg_vpp);
 
-           TestSuite::call_func(MFX_PLUGINTYPE_VIDEO_VPP, pPlugin_vpp, plg_vpp, calls_vpp);
+           call_func(plg_vpp, calls_vpp);
 
+           // calling specific for vpp functions
            plg_vpp.VPPFrameSubmit(surface_par, surface_par, aux_par, taskPtr);
            calls_vpp.push_back(APIfuncs::VPPFrameSubmit);
 
