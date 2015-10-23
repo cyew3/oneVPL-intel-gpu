@@ -820,7 +820,12 @@ mfxStatus VideoDECODEMJPEG::QueryIOSurfInternal(VideoCORE *core, mfxVideoParam *
     request->Info.Width = UMC::align_value<mfxU16>(request->Info.Width, 0x10);
     request->Info.Height = UMC::align_value<mfxU16>(request->Info.Height,
         (request->Info.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 0x10 : 0x20);
-
+#if defined(UMC_VA_LINUX)
+    // large pictures are not supported on Linux so far
+    if ((request->Info.Width > 8192) || (request->Info.Height > 8192)) {
+        return MFX_ERR_UNSUPPORTED;
+    }
+#endif
     if (MFX_PLATFORM_SOFTWARE == platform)
     {
         request->Type |= MFX_MEMTYPE_SYSTEM_MEMORY;
