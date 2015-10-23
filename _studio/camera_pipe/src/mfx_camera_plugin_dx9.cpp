@@ -1348,7 +1348,7 @@ mfxStatus D3D9CameraProcessor::Init(CameraParams *CameraParams)
     m_inputSurf.resize(m_AsyncDepth);
     for(int i = 0; i < m_AsyncDepth; i++)
     {
-        m_inputSurf[i].surf = m_ddi->SurfaceCreate(m_params.vpp.In.CropW, (m_params.vpp.In.CropH/2)*2, (D3DFORMAT)BayerToFourCC(CameraParams->Caps.BayerPatternType), MFX_MEMTYPE_FROM_VPPIN);
+        m_inputSurf[i].surf = m_ddi->SurfaceCreate(m_params.vpp.In.Width, m_params.vpp.In.Height, (D3DFORMAT)BayerToFourCC(CameraParams->Caps.BayerPatternType), MFX_MEMTYPE_FROM_VPPIN);
         MFX_CHECK_NULL_PTR1(m_inputSurf[i].surf);
     }
 
