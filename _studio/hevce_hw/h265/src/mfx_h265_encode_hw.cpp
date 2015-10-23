@@ -515,6 +515,11 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     Task* task = 0;
     mfxExtCodingOption2*   extOpt2Init = &m_vpar.m_ext.CO2;
 
+    if (m_ddi.get() == 0)
+        return MFX_ERR_NOT_INITIALIZED;
+    if (bs == NULL)
+        return MFX_ERR_NULL_PTR;
+
     if (surface)
     {
         MFX_CHECK((surface->Data.Y == 0) == (surface->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
