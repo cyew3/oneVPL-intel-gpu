@@ -1152,8 +1152,6 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
         {
             // Only one plane is used for Bayer and vertial pitch calulation is not correct for it.
             verticalPitch = 0;
-            roi.width  = pSrc->Info.CropW;
-            roi.height = pSrc->Info.CropH;
         }
 
         if (m_bCmCopy == true && CM_ALIGNED(pSrc->Data.Pitch) && (pDst->Info.FourCC == MFX_FOURCC_NV12 || pDst->Info.FourCC == MFX_FOURCC_P010) && CM_ALIGNED(pSrc->Data.Y) && CM_ALIGNED(pSrc->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pSrc->Info.Height && verticalPitch <= 16384)

@@ -525,6 +525,9 @@ public:
         m_activeThreadCount = 0;
     };
     ~CMCameraProcessor() {};
+
+    static mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out);
+
     virtual mfxStatus Init(mfxVideoParam * /*par*/) { return MFX_ERR_NONE; };
     virtual mfxStatus Init(CameraParams *FrameParams)
     {

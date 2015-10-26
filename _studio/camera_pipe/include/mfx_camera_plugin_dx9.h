@@ -762,6 +762,13 @@ public:
             free(m_executeSurf);
     };
 
+    static mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out)
+    {
+        UNREFERENCED_PARAMETER(in);
+        UNREFERENCED_PARAMETER(out);
+        return MFX_ERR_NONE;
+    }
+
     virtual mfxStatus Init(CameraParams *CameraParams);
 
     virtual mfxStatus Init(mfxVideoParam *par)
@@ -840,6 +847,8 @@ private:
     MfxHwVideoProcessing::mfxDrvSurface             *m_executeSurf;
     std::auto_ptr<DXVAHDVideoProcessor>              m_ddi;
     mfxU32                                           m_counter;
+    mfxU16                                           m_width;
+    mfxU16                                           m_height;
 
     template <class T, bool isSingle>
     class s_ptr

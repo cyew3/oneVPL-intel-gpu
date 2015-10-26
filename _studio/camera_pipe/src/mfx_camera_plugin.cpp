@@ -640,26 +640,36 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
                 }
             }
 
-        //let it be here for now, Query should return unsupported in this case, later need to do query from MDF parameters
-        //which can provide actual supported surface size.
-        //ToDo: we need to carry about width/height in case of system memory passthrough without copy,
-        //please think about it, so actual formula should be calculated from width and height, and magic number below doesn't look like applicable
-        if ( in->vpp.In.CropW * in->vpp.In.CropH > 0x16E3600 )
-        {
-            m_nTilesHor = (m_mfxVideoParam.vpp.In.CropH > 5000 ) ? 4 : 2;
-            m_nTilesVer = (m_mfxVideoParam.vpp.In.CropW > 8000 ) ? 2 : 1;
-            if ( in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
-            {
-                // In case of tiling, only system memory is supported as output
-                // Must be documented
-                return MFX_ERR_UNSUPPORTED;
-            }
-        }
+
         CAMERA_DEBUG_LOG("Query end sts =  %d  mfxSts = %d \n", sts, mfxSts);
 
         if (mfxSts < MFX_ERR_NONE)
             return mfxSts;
         else if (sts < MFX_ERR_NONE)
+            return sts;
+
+        m_core = m_session->m_pCORE.get();
+        m_platform = m_core->GetHWType();
+        if ( MFX_HW_HSW == m_platform || MFX_HW_HSW_ULT == m_platform || MFX_HW_BDW == m_platform || MFX_HW_CHV == m_platform)
+        {
+            sts = CMCameraProcessor::Query(in, out);
+        }
+#if defined (_WIN32) || defined (_WIN64)
+        else if (MFX_HW_SCL== m_platform && MFX_HW_D3D11 == m_core->GetVAType())
+        {
+            sts = D3D11CameraProcessor::Query(in, out);
+        }
+        else if (MFX_HW_SCL== m_platform && MFX_HW_D3D9 == m_core->GetVAType())
+        {
+            sts = D3D9CameraProcessor::Query(in, out);
+        }
+#endif
+        else
+        {
+            sts = CPUCameraProcessor::Query(in, out);
+        }
+
+        if (sts < MFX_ERR_NONE)
             return sts;
 
         return mfxSts;
@@ -1127,12 +1137,6 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     {
         m_nTilesHor = (m_mfxVideoParam.vpp.In.CropH > 5000 ) ? 4 : 2;
         m_nTilesVer = (m_mfxVideoParam.vpp.In.CropW > 8000 ) ? 2 : 1;
-        if ( m_mfxVideoParam.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY )
-        {
-            // In case of tiling, only system memory is supported as output
-            // Must be documented
-            return MFX_ERR_UNSUPPORTED;
-        }
     }
     else
     {

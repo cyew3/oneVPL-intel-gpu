@@ -129,13 +129,15 @@ public:
     };
 
     ~D3D11CameraProcessor() {
-        m_InSurfacePool->Free(m_core);
-        m_OutSurfacePool->Free(m_core);
-        if (m_executeParams )
-            delete [] m_executeParams;
-        if (m_executeSurf)
-            delete [] m_executeSurf;
+        Close();
     };
+
+    static mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out)
+    {
+        UNREFERENCED_PARAMETER(in);
+        UNREFERENCED_PARAMETER(out);
+        return MFX_ERR_NONE;
+    }
 
     virtual mfxStatus Init(CameraParams *CameraParams);
 
@@ -155,7 +157,13 @@ public:
     {
         m_InSurfacePool->Free(m_core);
         m_OutSurfacePool->Free(m_core);
+        if (m_executeParams )
+            delete [] m_executeParams;
+        if (m_executeSurf)
+            delete [] m_executeSurf;
 
+        m_executeParams = 0;
+        m_executeSurf   = 0;
         return MFX_ERR_NONE;
     }
 
@@ -228,12 +236,12 @@ private:
     mfxU32                                           m_counter;
     D3D11FrameAllocResponse                          *m_InSurfacePool;
     D3D11FrameAllocResponse                          *m_OutSurfacePool;
-    mfxFrameAllocResponse                            m_InternalSurfes;
-    mfxFrameAllocResponse                            m_OutputSurfs;
     bool                                             m_systemMemOut;
     bool                                             m_paddedInput;
     CameraParams                                     m_CameraParams;
     UMC::Mutex                                       m_guard;
     UMC::Mutex                                       m_guard_exec;
     mfxU16                                           m_AsyncDepth;
+    mfxU16                                           m_width;
+    mfxU16                                           m_height;
 };

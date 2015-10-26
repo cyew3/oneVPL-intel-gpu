@@ -107,6 +107,38 @@ void Write(CmBuffer * buffer, void * buf, CmEvent * e = 0)
 
 };
 
+mfxStatus CMCameraProcessor::Query(mfxVideoParam *in, mfxVideoParam *out)
+{
+    if (in)
+    {
+        //ToDo: we need to carry about width/height in case of system memory passthrough without copy,
+        //please think about it, so actual formula should be calculated from width and height, and magic number below doesn't look like applicable
+        if ( in->vpp.In.CropW * in->vpp.In.CropH > 0x16E3600 )
+        {
+            if ( in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+            {
+                // In case of tiling, only system memory is supported as output
+                // Must be documented
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+
+        for (int i = 0; i < in->NumExtParam; i++)
+        {
+            if (in->ExtParam[i])
+            {
+                if (MFX_EXTBUF_CAM_LENS_GEOM_DIST_CORRECTION == in->ExtParam[i]->BufferId ||
+                    MFX_EXTBUF_CAM_3DLUT                     == in->ExtParam[i]->BufferId)
+                {
+                    return MFX_ERR_UNSUPPORTED;
+                }
+            }
+        }
+    }
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus CMCameraProcessor::AsyncRoutine(AsyncParams *pParam)
 {
     mfxStatus sts;

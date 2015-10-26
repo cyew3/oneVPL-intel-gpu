@@ -1947,6 +1947,8 @@ mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
 
     mfxStatus    sts      = MFX_ERR_NONE;
     HRESULT      hRes     = S_OK;
+    mfxFrameInfo pOutInfo = pParams->targetSurface.frameInfo;
+    RECT         pRect    = {};
 
     if ( ! m_CameraSet )
     {
@@ -2002,6 +2004,11 @@ mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
         }
     }
 
+    pRect.top = pRect.left = 0;
+    pRect.bottom = pOutInfo.Height;
+    pRect.right  = pOutInfo.Width;
+    SetOutputTargetRect(TRUE, &pRect);
+
     mfxHDL inputSurface;
     inputSurface = pParams->pRefSurfaces[0].hdl.first;
     MFX_CHECK_NULL_PTR1(inputSurface);
@@ -2020,6 +2027,9 @@ mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
         videoProcessorStream->OutputIndex = PtrToUlong(pParams->targetSurface.hdl.second);
         videoProcessorStream->InputFrameOrField = 0;
         SetStreamFrameFormat(0, D3D11PictureStructureMapping(pParams->pRefSurfaces[0].frameInfo.PicStruct));
+
+        SetStreamSourceRect(0, TRUE, &pRect);
+        SetStreamDestRect(0, TRUE, &pRect);
 
         D3D11_VIDEO_PROCESSOR_COLOR_SPACE inColorSpace;
         inColorSpace.Usage = 0;

@@ -70,8 +70,21 @@ mfxStatus D3D11CameraProcessor::Init(CameraParams *CameraParams)
         m_paddedInput = true;
     }
 
+    if (m_params.vpp.In.CropW != m_params.vpp.Out.CropW || 
+        m_params.vpp.In.CropH != m_params.vpp.Out.CropH)
+    {
+        // Resize is not supported
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
+    m_width  = m_params.vpp.In.CropW;
+    m_height = (m_params.vpp.In.CropH/2)*2;  // WA for driver bug: crash in case of odd height
+
     mfxFrameAllocRequest request;
     request.Info        = m_params.vpp.In;
+    request.Info.CropX  = request.Info.CropY = 0;
+    request.Info.Width  = m_width;
+    request.Info.Height = m_height;
 
     // Initial frameinfo contains just R16 that should be updated to the
     // internal FourCC representing
@@ -89,6 +102,9 @@ mfxStatus D3D11CameraProcessor::Init(CameraParams *CameraParams)
         // Output is in system memory. Need to allocate temporary video surf
         mfxFrameAllocRequest request;
         request.Info        = m_params.vpp.Out;
+        request.Info.CropX  = request.Info.CropY = 0;
+        request.Info.Width  = m_width;
+        request.Info.Height = m_height;
         request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_INTERNAL_FRAME;
         request.NumFrameMin = request.NumFrameSuggested = m_AsyncDepth; // Fixme
         sts = m_OutSurfacePool->AllocateSurfaces(m_core, request);
@@ -118,7 +134,7 @@ mfxStatus D3D11CameraProcessor::AsyncRoutine(AsyncParams *pParam)
 
     m_executeParams[surfInIndex].bCameraPipeEnabled  = true;
 
-    mfxU8 shift = (16 - pParam->FrameSizeExtra.BitDepth);
+    mfxU8 shift = (mfxU8)(16 - pParam->FrameSizeExtra.BitDepth);
     shift = shift > 16 ? 0 : shift;
 
     if ( pParam->Caps.bBlackLevelCorrection )
@@ -254,8 +270,8 @@ mfxStatus D3D11CameraProcessor::CompleteRoutine(AsyncParams * pParam)
             // For ARGB16 out need to do R<->B swapping.
             OutSurf.Info.FourCC = MFX_FOURCC_ABGR16;
         }
-        OutSurf.Info.Width  = OutSurf.Info.CropW;
-        OutSurf.Info.Height = OutSurf.Info.CropH;
+        OutSurf.Info.Width  = m_width;
+        OutSurf.Info.Height = m_height;
         // [1] Copy from system mem to the internal video frame
         sts = m_core->DoFastCopyWrapper(pParam->surf_out,
                                         MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
@@ -332,6 +348,8 @@ mfxStatus D3D11CameraProcessor::PreWorkOutSurface(mfxFrameSurface1 *surf, mfxU32
     params->targetSurface.bExternal = bExternal;
     params->targetSurface.hdl       = static_cast<mfxHDLPair>(hdl);
     params->targetSurface.frameInfo = surf->Info;
+    params->targetSurface.frameInfo.Width  = m_width;
+    params->targetSurface.frameInfo.Height = m_height;
 
     return sts;
 }
@@ -358,8 +376,10 @@ mfxStatus D3D11CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 
     mfxFrameSurface1 InSurf = {0};
     mfxFrameSurface1 appInputSurface = *surf;
 
-    InSurf.Data.MemId = memIdIn;
-    InSurf.Info       = appInputSurface.Info;
+    InSurf.Data.MemId  = memIdIn;
+    InSurf.Info        = appInputSurface.Info;
+    InSurf.Info.Width  = m_width;
+    InSurf.Info.Height = m_height;
     InSurf.Info.FourCC =  BayerToFourCC(m_CameraParams.Caps.BayerPatternType);
 
     if ( m_paddedInput && appInputSurface.Info.CropX == 0 && appInputSurface.Info.CropY == 0 )
@@ -390,6 +410,8 @@ mfxStatus D3D11CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 
     DrvSurf->hdl       = static_cast<mfxHDLPair>(hdl);
     DrvSurf->bExternal = false;
     DrvSurf->frameInfo = InSurf.Info;
+    DrvSurf->frameInfo.Width  = m_width;
+    DrvSurf->frameInfo.Height = m_height;
     DrvSurf->memId     = memIdIn;
 
     return sts;
