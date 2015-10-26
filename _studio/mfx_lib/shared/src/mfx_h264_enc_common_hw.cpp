@@ -1217,7 +1217,7 @@ mfxStatus MfxHwH264Encode::QueryMbProcRate(VideoCORE* core, mfxVideoParam const 
     sts = ddi->QueryMbPerSec(par, tempMbPerSec);
     
     MFX_CHECK_STS(sts);
-    mbPerSec[par.mfx.TargetUsage - 1] = tempMbPerSec[0];
+    mbPerSec[(par.mfx.TargetUsage?par.mfx.TargetUsage:4) - 1] = tempMbPerSec[0];
 
     return pEncodeCaps->SetHWCaps<mfxU32>(guid, mbPerSec, 16);
 }

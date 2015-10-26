@@ -532,11 +532,10 @@ mfxStatus ImplementationAvc::Query(
     {
         mfxU32 mbPerSec[16] = {0, };
         mfxU32 inputTiling = 0;
-
         // let use dedault values if input resolution is 0x0, 1920x1088 - should cover almost all cases
         mfxU32 Width  = in->mfx.FrameInfo.Width == 0 ? 1920: in->mfx.FrameInfo.Width;
         mfxU32 Height = in->mfx.FrameInfo.Height == 0 ? 1088: in->mfx.FrameInfo.Height;
-        mfxU32 TU = in->mfx.TargetUsage == 0 ? 4: in->mfx.TargetUsage;
+        out->mfx.TargetUsage = in->mfx.TargetUsage == 0 ? 4: in->mfx.TargetUsage;
         mfxExtEncoderCapability * extCaps = GetExtBuffer(*out);
         if (extCaps == 0)
             return MFX_ERR_UNDEFINED_BEHAVIOR; // can't return MB processing rate since mfxExtEncoderCapability isn't attached to "out"
@@ -545,14 +544,14 @@ mfxStatus ImplementationAvc::Query(
         // query MB processing rate from driver
         if(IsOn(in->mfx.LowPower))
         {
-            sts = QueryMbProcRate(core, *in, mbPerSec, MSDK_Private_Guid_Encode_AVC_LowPower_Query, isWiDi != 0, Width, Height);
+            sts = QueryMbProcRate(core, *out, mbPerSec, MSDK_Private_Guid_Encode_AVC_LowPower_Query, isWiDi != 0, Width, Height);
             if (sts != MFX_ERR_NONE){
                 return MFX_ERR_UNSUPPORTED;
             }
         }
         else
         {
-            sts = QueryMbProcRate(core, *in, mbPerSec, MSDK_Private_Guid_Encode_AVC_Query, isWiDi != 0, Width, Height);
+            sts = QueryMbProcRate(core, *out, mbPerSec, MSDK_Private_Guid_Encode_AVC_Query, isWiDi != 0, Width, Height);
         }
         
         if (sts != MFX_ERR_NONE)
@@ -564,7 +563,7 @@ mfxStatus ImplementationAvc::Query(
             return MFX_WRN_PARTIAL_ACCELERATION; // any other HW problem
         }
 
-        extCaps->MBPerSec = mbPerSec[TU-1];
+        extCaps->MBPerSec = mbPerSec[out->mfx.TargetUsage-1];
 
         if (extCaps->MBPerSec == 0)
         {
