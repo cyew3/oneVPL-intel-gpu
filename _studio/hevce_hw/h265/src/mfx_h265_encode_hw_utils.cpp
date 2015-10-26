@@ -475,14 +475,6 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
                 memcpy_s(pSPSPPS->PPSBuffer, len, buf, len);
                 pSPSPPS->PPSBufSize = (mfxU16)len;
             }
-            else
-            {
-                return MFX_ERR_NULL_PTR;
-            }
-        }
-        else
-        {
-            return MFX_ERR_NULL_PTR;
         }
     }
     mfxExtCodingOptionVPS * pVPS= (mfxExtCodingOptionVPS *)GetExtendedBuffer(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_CODING_OPTION_VPS);
@@ -2517,7 +2509,7 @@ void ConfigureTask(
 
 }
 
-#if DEBUG_REC_FRAMES_INFO
+#if DEBUG_REC_FRAMES_INFO 
 
 void WriteFrameData(
     vm_file *            file,
