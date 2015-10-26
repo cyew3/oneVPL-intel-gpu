@@ -157,7 +157,7 @@ public:
         }
         else
         {
-            MSDK_TRACE_INFO(MSDK_STRING("Plugin was loaded from GUID"));
+            MSDK_TRACE_INFO(MSDK_STRING("Plugin was loaded from GUID")<< MSDK_STRING(": { ") << strStream.str().c_str() << MSDK_STRING(" } (") << msdkGetPluginName(m_uid) << MSDK_STRING(")"));
             m_session = session;
         }
     }
