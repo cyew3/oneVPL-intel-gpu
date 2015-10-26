@@ -503,6 +503,8 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
 mfxStatus Plugin::GetVideoParam(mfxVideoParam *par)
 {
     mfxStatus sts = MFX_ERR_NONE;
+    if (m_ddi.get() == 0)
+        return MFX_ERR_NOT_INITIALIZED;
     MFX_CHECK_NULL_PTR1(par);
 
     sts = m_vpar.FillPar(*par);
