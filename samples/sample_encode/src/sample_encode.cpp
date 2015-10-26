@@ -83,6 +83,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("                              (optional for Media SDK in-box plugins, required for user-encoder ones)\n"));
     msdk_printf(MSDK_STRING("   [-path path] - path to plugin (valid only in pair with -p option)\n"));
     msdk_printf(MSDK_STRING("   [-async]                 - depth of asynchronous pipeline. default value is 4. must be between 1 and 20.\n"));
+    msdk_printf(MSDK_STRING("   [-no_gpu_copy]           - disable GPU Copy functionality\n"));
     msdk_printf(MSDK_STRING("   [-cqp]                   - constant quantization parameter (CQP BRC) bitrate control method\n"));
     msdk_printf(MSDK_STRING("                              (by default constant bitrate control method is used), should be used along with -qpi, -qpp, -qpb.\n"));
     msdk_printf(MSDK_STRING("   [-qpi]                   - constant quantizer for I frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
@@ -280,6 +281,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("Async Depth is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-no_gpu_copy")))
+        {
+            pParams->gpuCopy = MFX_GPUCOPY_OFF;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-cqp")))
         {

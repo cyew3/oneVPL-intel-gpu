@@ -95,6 +95,7 @@ struct sInputParams
     msdk_char strPluginDLLPath[MSDK_MAX_FILENAME_LEN]; // plugin dll path and name
 
     mfxU16 nAsyncDepth; // depth of asynchronous pipeline, this number can be tuned to achieve better performance
+    mfxU16 gpuCopy; // GPU Copy mode (three-state option)
 
     mfxU16 nRateControlMethod;
     mfxU16 nLADepth; // depth of the look ahead bitrate control  algorithm
