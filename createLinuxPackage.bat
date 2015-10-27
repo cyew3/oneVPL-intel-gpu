@@ -35,21 +35,20 @@ xcopy /S samples\*.so %1\samples\ /EXCLUDE:exclusions.txt
 xcopy /S samples\*.txt %1\samples\ /EXCLUDE:exclusions.txt
 
 
-xcopy %2\sample_decode_drm %1\samples\_bin\x64\*
-xcopy %2\sample_decode_x11 %1\samples\_bin\x64\*
-xcopy %2\sample_decvpp_drm %1\samples\_bin\x64\*
-xcopy %2\sample_decvpp_x11 %1\samples\_bin\x64\*
-xcopy %2\sample_encode_drm %1\samples\_bin\x64\*
-xcopy %2\sample_encode_x11 %1\samples\_bin\x64\*
-xcopy %2\sample_h265_gaa_drm %1\samples\_bin\x64\*
-xcopy %2\sample_h265_gaa_x11 %1\samples\_bin\x64\*
-xcopy %2\sample_multi_transcode_drm %1\samples\_bin\x64\*
-xcopy %2\sample_multi_transcode_x11 %1\samples\_bin\x64\*
-xcopy %2\sample_vpp_drm %1\samples\_bin\x64\*
-xcopy %2\sample_vpp_x11 %1\samples\_bin\x64\*
+xcopy %2\sample_decode %1\samples\_bin\x64\*
+xcopy %2\sample_encode %1\samples\_bin\x64\*
+xcopy %2\sample_h265_gaa %1\samples\_bin\x64\*
+xcopy %2\sample_multi_transcode %1\samples\_bin\x64\*
+xcopy %2\sample_vpp %1\samples\_bin\x64\*
 xcopy %2\ocl_rotate.cl %1\samples\_bin\x64\*
 xcopy %2\libsample_plugin_opencl.so %1\samples\_bin\x64\*
 xcopy %2\libsample_rotate_plugin.so %1\samples\_bin\x64\*
 
 xcopy /S %3\*.pdf %1\samples\
 move "%1\samples\Media Samples Guide.pdf" "%1\Media_Samples_Guide.pdf"
+xcopy %3\..\..\redist.txt %1\
+copy /Y "%3\..\..\..\..\release\EULAs\Master EULA for Intel Sw Development Products September 2015.pdf" "%1\Samples EULA.pdf"
+xcopy %3\..\..\third_party_programs.txt %1\
+xcopy %3\..\..\site_license_materials.txt %1\
+
+xcopy /S content\* %1\samples\_bin\content\

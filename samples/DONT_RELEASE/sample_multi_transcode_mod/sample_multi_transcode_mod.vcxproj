@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\sample_common\sample_common.vcxproj">
+    <ProjectReference Include="..\..\sample_common\sample_common.vcxproj">
       <Project>{db71b91d-16d8-4339-9621-d81798e46e8f}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
@@ -41,18 +41,18 @@
     <ClCompile Include="..\..\sample_multi_transcode\src\sample_multi_transcode.cpp" />
     <ClCompile Include="..\..\sample_multi_transcode\src\transcode_utils.cpp" />
     <ClCompile Include="..\..\sample_multi_transcode\src\vpp_ext_buffers_storage.cpp" />
-    <ClCompile Include="..\src\modified_transcoding_pipeline.cpp" />
+    <ClCompile Include="src\modified_transcoding_pipeline.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\sample_multi_transcode\include\pipeline_transcode.h" />
     <ClInclude Include="..\..\sample_multi_transcode\include\sample_multi_transcode.h" />
     <ClInclude Include="..\..\sample_multi_transcode\include\transcode_utils.h" />
     <ClInclude Include="..\..\sample_multi_transcode\include\vpp_ext_buffers_storage.h" />
-    <ClInclude Include="..\include\extension_macros.h" />
-    <ClInclude Include="..\include\modified_transcoding_pipeline.h" />
+    <ClInclude Include="include\extension_macros.h" />
+    <ClInclude Include="include\modified_transcoding_pipeline.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{680AAC8E-DB3B-431F-B72A-7AB8E4A29040}</ProjectGuid>
+    <ProjectGuid>{93B77D4D-74E7-4D5D-9C1D-46A20F33E0F8}</ProjectGuid>
     <RootNamespace>video_enc_con</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -139,7 +139,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(ProjectDir)\..\..\sample_multi_transcode\include;$(INTELMEDIASDKROOT)\include;$(ProjectDir)\..\..\sample_common\include;$(ProjectDir)\..\..\sample_plugins\rotate_cpu\include;$(ProjectDir)\..\..\sample_plugins\vpp_plugin\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(ProjectDir)\..\..\sample_multi_transcode\include;$(INTELMEDIASDKROOT)\include;$(ProjectDir)\..\..\sample_common\include;$(ProjectDir)\..\..\sample_plugins\rotate_cpu\include;$(ProjectDir)\..\..\sample_plugins\vpp_plugin\include;$(INTELMEDIASDKROOT)\igfx_s3dcontrol\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_ITERATOR_DEBUG_LEVEL=0;MOD_ENC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -165,7 +165,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_WithDebugAPI|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(ProjectDir)\..\..\sample_multi_transcode\include;$(INTELMEDIASDKROOT)\include;$(ProjectDir)\..\..\sample_common\include;$(ProjectDir)\..\..\sample_plugins\rotate_cpu\include;$(ProjectDir)\..\..\sample_plugins\vpp_plugin\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(ProjectDir)\..\..\sample_multi_transcode\include;$(INTELMEDIASDKROOT)\include;$(ProjectDir)\..\..\sample_common\include;$(ProjectDir)\..\..\sample_plugins\rotate_cpu\include;$(ProjectDir)\..\..\sample_plugins\vpp_plugin\include;$(INTELMEDIASDKROOT)\igfx_s3dcontrol\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;MOD_ENC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -194,7 +194,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(ProjectDir)\..\..\sample_multi_transcode\include;$(INTELMEDIASDKROOT)\include;$(ProjectDir)\..\..\sample_common\include;$(ProjectDir)\..\..\sample_plugins\rotate_cpu\include;$(ProjectDir)\..\..\sample_plugins\vpp_plugin\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(ProjectDir)\..\..\sample_multi_transcode\include;$(INTELMEDIASDKROOT)\include;$(ProjectDir)\..\..\sample_common\include;$(ProjectDir)\..\..\sample_plugins\rotate_cpu\include;$(ProjectDir)\..\..\sample_plugins\vpp_plugin\include;$(INTELMEDIASDKROOT)\igfx_s3dcontrol\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_CONSOLE;_ITERATOR_DEBUG_LEVEL=0;MOD_ENC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -223,7 +223,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(ProjectDir)\..\..\sample_multi_transcode\include;$(INTELMEDIASDKROOT)\include;$(ProjectDir)\..\..\sample_common\include;$(ProjectDir)\..\..\sample_plugins\rotate_cpu\include;$(ProjectDir)\..\..\sample_plugins\vpp_plugin\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(ProjectDir)\..\..\sample_multi_transcode\include;$(INTELMEDIASDKROOT)\include;$(ProjectDir)\..\..\sample_common\include;$(ProjectDir)\..\..\sample_plugins\rotate_cpu\include;$(ProjectDir)\..\..\sample_plugins\vpp_plugin\include;$(INTELMEDIASDKROOT)\igfx_s3dcontrol\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_CONSOLE;MOD_ENC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -248,7 +248,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(ProjectDir)\..\..\sample_multi_transcode\include;$(INTELMEDIASDKROOT)\include;$(ProjectDir)\..\..\sample_common\include;$(ProjectDir)\..\..\sample_plugins\rotate_cpu\include;$(ProjectDir)\..\..\sample_plugins\vpp_plugin\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(ProjectDir)\..\..\sample_multi_transcode\include;$(INTELMEDIASDKROOT)\include;$(ProjectDir)\..\..\sample_common\include;$(ProjectDir)\..\..\sample_plugins\rotate_cpu\include;$(ProjectDir)\..\..\sample_plugins\vpp_plugin\include;$(INTELMEDIASDKROOT)\igfx_s3dcontrol\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;SAVE_RECON;MOD_ENC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -280,7 +280,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(ProjectDir)\..\..\sample_multi_transcode\include;$(INTELMEDIASDKROOT)\include;$(ProjectDir)\..\..\sample_common\include;$(ProjectDir)\..\..\sample_plugins\rotate_cpu\include;$(ProjectDir)\..\..\sample_plugins\vpp_plugin\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(ProjectDir)\..\..\sample_multi_transcode\include;$(INTELMEDIASDKROOT)\include;$(ProjectDir)\..\..\sample_common\include;$(ProjectDir)\..\..\sample_plugins\rotate_cpu\include;$(ProjectDir)\..\..\sample_plugins\vpp_plugin\include;$(INTELMEDIASDKROOT)\igfx_s3dcontrol\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_CONSOLE;SAVE_RECON;MOD_ENC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>

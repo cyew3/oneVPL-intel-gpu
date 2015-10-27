@@ -804,7 +804,7 @@ mfxStatus CTranscodingPipeline::Decode()
         }
         MSDK_BREAK_ON_ERROR(sts);
 
-        // if session is not join and it is not parent - syncronize
+        // if session is not joined and it is not parent - synchronize
         if (!m_bIsJoinSession && m_pParentPipeline)
         {
             sts = m_pmfxSession->SyncOperation(PreEncExtSurface.Syncp, MSDK_WAIT_INTERVAL);
@@ -1590,7 +1590,6 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
     m_mfxEncParams.mfx.CodecId                 = pInParams->EncodeId;
     m_mfxEncParams.mfx.TargetUsage             = pInParams->nTargetUsage; // trade-off between quality and speed
     m_mfxEncParams.AsyncDepth                  = m_AsyncDepth;
-    m_mfxEncParams.mfx.TargetKbps              = (mfxU16)(pInParams->nBitRate); // in Kbps
 
     if (m_pParentPipeline && m_pParentPipeline->m_pmfxPreENC.get())
     {
@@ -2211,9 +2210,14 @@ mfxStatus CTranscodingPipeline::AllocFrames()
             SumAllocRequest(DecOut, m_Request);
             bAddFrames = false;
         }
-        if (m_bDecodeEnable)
+
+        if (m_bDecodeEnable )
         {
-            sts = CorrectAsyncDepth(DecOut, m_AsyncDepth);
+            if(0 == m_nVPPCompEnable || !m_bUseOpaqueMemory)
+            {
+                //--- We should not multiply surface number in case of composition with opaque. Separate pool will be allocated for that case
+                sts = CorrectAsyncDepth(DecOut, m_AsyncDepth);
+            }
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
             // AllocId just opaque handle which allow separate decoder requests in case of VPP Composition with external allocator
@@ -2230,6 +2234,12 @@ mfxStatus CTranscodingPipeline::AllocFrames()
             sts = CorrectPreEncAuxPool((VPPOut.NumFrameSuggested ? VPPOut.NumFrameSuggested : DecOut.NumFrameSuggested) + m_AsyncDepth);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
             sts = AllocPreEncAuxPool();
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        }
+        else if((m_nVPPCompEnable==VppComp || m_nVPPCompEnable==VppCompOnly) && m_bUseOpaqueMemory)
+        {
+            //--- N->1 case, allocating empty pool for opaque only
+            sts = AllocFrames(&DecOut, true);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
         else
@@ -2336,7 +2346,8 @@ void CTranscodingPipeline::CorrectNumberOfAllocatedFrames(mfxFrameAllocRequest  
 
 mfxStatus CTranscodingPipeline::InitOpaqueAllocBuffers()
 {
-    if (m_pmfxDEC.get())
+    if (m_pmfxDEC.get() ||
+        (m_bUseOpaqueMemory && (m_nVPPCompEnable==VppComp || m_nVPPCompEnable==VppCompOnly) && m_pSurfaceDecPool.size()))
     {
         m_DecOpaqueAlloc.Out.Surfaces = &m_pSurfaceDecPool[0]; // vestor is stored linearly in memory
         m_DecOpaqueAlloc.Out.NumSurface = (mfxU16)m_pSurfaceDecPool.size();
@@ -2356,9 +2367,13 @@ mfxStatus CTranscodingPipeline::InitOpaqueAllocBuffers()
 
         // decode will be connected with either VPP or Plugin
         if (m_bIsVpp)
+        {
             m_VppOpaqueAlloc.In = m_DecOpaqueAlloc.Out;
+        }
         else if (m_bIsPlugin)
+        {
             m_PluginOpaqueAlloc.In = m_DecOpaqueAlloc.Out;
+        }
         else
             return MFX_ERR_UNSUPPORTED;
 
@@ -2573,7 +2588,8 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     // opaque memory feature is available starting with API 1.3 and
     // can be used within 1 intra session or joined inter sessions only
     if (m_Version.Major >= 1 && m_Version.Minor >= 3 &&
-        (pParams->eMode == Native || pParams->bIsJoin) ) {
+        (pParams->eMode == Native || pParams->bIsJoin) )
+    {
         m_bUseOpaqueMemory = true;
     }
 
