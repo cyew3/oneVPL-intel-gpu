@@ -507,6 +507,18 @@ mfxStatus Plugin::GetVideoParam(mfxVideoParam *par)
         return MFX_ERR_NOT_INITIALIZED;
     MFX_CHECK_NULL_PTR1(par);
 
+    for (mfxU16 i = 0; i < par->NumExtParam; i++)
+    {
+        // check that SPS/PPS buffers
+        if (par->ExtParam[i] && par->ExtParam[i]->BufferId == MFX_EXTBUFF_CODING_OPTION_SPSPPS)
+        {
+            if (((mfxExtCodingOptionSPSPPS*)par->ExtParam[i])->SPSBuffer == NULL)
+                return MFX_ERR_NULL_PTR;
+            if (((mfxExtCodingOptionSPSPPS*)par->ExtParam[i])->PPSBuffer == NULL)
+                return MFX_ERR_NULL_PTR;
+        }
+    }
+
     sts = m_vpar.FillPar(*par);
     return sts;
 }
