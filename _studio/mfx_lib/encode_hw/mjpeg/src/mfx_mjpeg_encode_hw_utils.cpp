@@ -430,7 +430,7 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par, mfxEncodeCtrl const * c
                 m_dht_list[0].TableID    = 0;
                 for(mfxU16 i = 0; i < 16; i++)
                     m_dht_list[0].BITS[i] = DefaultLuminanceDCBits[i];
-                for(mfxU16 i = 0; i < 162; i++)
+                for(mfxU16 i = 0; i < 12; i++)
                     m_dht_list[0].HUFFVAL[i] = DefaultLuminanceDCValues[i];
             }
 
@@ -453,7 +453,7 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par, mfxEncodeCtrl const * c
                 m_dht_list[0].TableID    = 0;
                 for(mfxU16 i = 0; i < 16; i++)
                     m_dht_list[0].BITS[i] = DefaultLuminanceDCBits[i];
-                for(mfxU16 i = 0; i < 162; i++)
+                for(mfxU16 i = 0; i < 12; i++)
                     m_dht_list[0].HUFFVAL[i] = DefaultLuminanceDCValues[i];
             }
 
@@ -462,7 +462,7 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par, mfxEncodeCtrl const * c
                 m_dht_list[1].TableID    = 1;
                 for(mfxU16 i = 0; i < 16; i++)
                     m_dht_list[1].BITS[i] = DefaultChrominanceDCBits[i];
-                for(mfxU16 i = 0; i < 162; i++)
+                for(mfxU16 i = 0; i < 12; i++)
                     m_dht_list[1].HUFFVAL[i] = DefaultChrominanceDCValues[i];
             }
 
@@ -623,7 +623,7 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par, mfxEncodeCtrl const * c
             if(j < 2)
             {
                 MFX_INTERNAL_CPY(m_dht_list[0].huffman_table[j].num_ac_codes, pExtHuffman->ACTables[j].Bits, 16 * sizeof(mfxU8));
-                MFX_INTERNAL_CPY(m_dht_list[0].huffman_table[j].ac_values, pExtHuffman->ACTables[j].Values, 12 * sizeof(mfxU8));
+                MFX_INTERNAL_CPY(m_dht_list[0].huffman_table[j].ac_values, pExtHuffman->ACTables[j].Values, 162 * sizeof(mfxU8));
             }
             else
                 return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -644,7 +644,7 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par, mfxEncodeCtrl const * c
 
             for(mfxU16 i = 0; i < 16; i++)
                 m_dht_list[0].huffman_table[0].num_dc_codes[i] = DefaultLuminanceDCBits[i];
-            for(mfxU16 i = 0; i < 162; i++)
+            for(mfxU16 i = 0; i < 12; i++)
                 m_dht_list[0].huffman_table[0].dc_values[i] = DefaultLuminanceDCValues[i];
             for(mfxU16 i = 0; i < 16; i++)
                 m_dht_list[0].huffman_table[0].num_ac_codes[i] = DefaultLuminanceACBits[i];
@@ -667,7 +667,7 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par, mfxEncodeCtrl const * c
 
             for(mfxU16 i = 0; i < 16; i++)
                 m_dht_list[0].huffman_table[0].num_dc_codes[i] = DefaultLuminanceDCBits[i];
-            for(mfxU16 i = 0; i < 162; i++)
+            for(mfxU16 i = 0; i < 12; i++)
                 m_dht_list[0].huffman_table[0].dc_values[i] = DefaultLuminanceDCValues[i];
             for(mfxU16 i = 0; i < 16; i++)
                 m_dht_list[0].huffman_table[0].num_ac_codes[i] = DefaultLuminanceACBits[i];
@@ -675,7 +675,7 @@ mfxStatus ExecuteBuffers::Init(mfxVideoParam const *par, mfxEncodeCtrl const * c
                 m_dht_list[0].huffman_table[0].ac_values[i] = DefaultLuminanceACValues[i];
             for(mfxU16 i = 0; i < 16; i++)
                 m_dht_list[0].huffman_table[1].num_dc_codes[i] = DefaultChrominanceDCBits[i];
-            for(mfxU16 i = 0; i < 162; i++)
+            for(mfxU16 i = 0; i < 12; i++)
                 m_dht_list[0].huffman_table[1].dc_values[i] = DefaultChrominanceDCValues[i];
             for(mfxU16 i = 0; i < 16; i++)
                 m_dht_list[0].huffman_table[1].num_ac_codes[i] = DefaultChrominanceACBits[i];
