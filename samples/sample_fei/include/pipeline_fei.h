@@ -10,10 +10,11 @@
 //
 //*/
 
-#ifndef __PIPELINE_ENCODE_H__
-#define __PIPELINE_ENCODE_H__
+#ifndef __PIPELINE_FEI_H__
+#define __PIPELINE_FEI_H__
 
 #include "sample_defs.h"
+#include "sample_fei_defs.h"
 #include "hw_device.h"
 
 #include <mfxfei.h>
@@ -33,6 +34,8 @@
 #include <memory>
 #include <algorithm>
 
+#define MFX_FRAMETYPE_IPB (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P | MFX_FRAMETYPE_B)
+#define MFX_FRAMETYPE_PB  (                  MFX_FRAMETYPE_P | MFX_FRAMETYPE_B)
 
 enum {
     MVC_DISABLED          = 0x0,
@@ -52,6 +55,7 @@ enum MemType {
 struct sInputParams
 {
     mfxU16 nTargetUsage;
+    mfxU32 DecodeId; // type of input coded video
     mfxU32 CodecId;
     mfxU32 ColorFormat;
     mfxU16 nPicStruct;
@@ -95,11 +99,13 @@ struct sInputParams
     std::vector<msdk_char*> srcFileBuff;
     std::vector<msdk_char*> dstFileBuff;
 
+    bool bDECODE;
     bool bENCODE;
     bool bENCPAK;
     bool bOnlyENC;
     bool bOnlyPAK;
     bool bPREENC;
+    bool EncodedOrder;
     bool bMBSize;
     bool bPassHeaders;
     bool Enable8x8Stat;
@@ -119,39 +125,10 @@ struct sInputParams
     msdk_char* mbQpFile;
 };
 
-typedef struct{
-    mfxU16      NumExtParam;
-    mfxExtBuffer **ExtParam;
-} setElem;
-
-typedef struct{
-    setElem in;
-    setElem out;
-} IObuffs;
-
-typedef struct
+struct ExtendedSurface
 {
-    bool vacant;
-    IObuffs I_bufs;
-    IObuffs PB_bufs;
-} bufSet;
-
-bufSet* getFreeBufSet(std::list<bufSet*> bufs);
-
-//for PreEnc reordering
-struct iTask{
-    mfxENCInput in;
-    mfxENCOutput out;
-    mfxPAKInput inPAK;
-    mfxPAKOutput outPAK;
-    mfxU16 frameType;
-    mfxU32 frameDisplayOrder;
-    mfxSyncPoint EncSyncP;
-    mfxI32 encoded;
-    bufSet* bufs;
-    bufSet* preenc_bufs;
-    iTask* prevTask;
-    iTask* nextTask;
+    mfxFrameSurface1 *pSurface;
+    mfxSyncPoint      Syncp;
 };
 
 struct sTask
@@ -210,30 +187,46 @@ protected:
     std::pair<CSmplBitstreamWriter *,
               CSmplBitstreamWriter *> m_FileWriters;
     CSmplYUVReader m_FileReader;
+    CSmplBitstreamReader m_BSReader;
     CEncTaskPool m_TaskPool;
     mfxU16 m_nAsyncDepth; // depth of asynchronous pipeline, this number can be tuned to achieve better performance
     mfxU16 m_refDist;
+    mfxU16 m_decodePoolSize;
     mfxU16 m_gopSize;
     mfxU32 numOfFields;
     mfxI32 numMB;
 
     MFXVideoSession m_mfxSession;
     MFXVideoSession m_preenc_mfxSession;
+    MFXVideoSession m_decode_mfxSession;
+    MFXVideoSession* m_pVPP_mfxSession;
+    MFXVideoDECODE* m_pmfxDECODE;
+    MFXVideoVPP* m_pmfxVPP;
     MFXVideoENCODE* m_pmfxENCODE;
     MFXVideoENC* m_pmfxPREENC;
     MFXVideoENC* m_pmfxENC;
     MFXVideoPAK* m_pmfxPAK;
 
     mfxVideoParam m_mfxEncParams;
+    mfxVideoParam m_mfxDecParams;
+    mfxVideoParam m_mfxVppParams;
     sInputParams  m_encpakParams;
+
+    mfxBitstream m_mfxBS;  // contains encoded input data
 
     MFXFrameAllocator* m_pMFXAllocator;
     mfxAllocatorParams* m_pmfxAllocatorParams;
     MemType m_memType;
     bool m_bExternalAlloc; // use memory allocator as external for Media SDK
 
+    mfxSyncPoint   m_LastDecSyncPoint;
+
+    mfxFrameSurface1* m_pDecSurfaces; // frames array for decoder input
+    mfxFrameSurface1* m_pVppSurfaces; // frames array for vpp input
     mfxFrameSurface1* m_pEncSurfaces; // frames array for encoder input (vpp output)
     mfxFrameSurface1* m_pReconSurfaces; // frames array for reconstructed surfaces [FEI]
+    mfxFrameAllocResponse m_DecResponse;  // memory allocation response for decoder
+    mfxFrameAllocResponse m_VppResponse;  // memory allocation response for VPP input
     mfxFrameAllocResponse m_EncResponse;  // memory allocation response for encoder
     mfxFrameAllocResponse m_ReconResponse;  // memory allocation response for encoder for reconstructed surfaces [FEI]
 
@@ -241,10 +234,14 @@ protected:
     mfxExtCodingOption2 m_CodingOption2;
     mfxExtFeiParam  m_encpakInit;
 
+    // for disabling VPP algorithms
+    mfxExtVPPDoNotUse m_VppDoNotUse;
+
     // external parameters for each component are stored in a vector
     std::vector<mfxExtBuffer*> m_EncExtParams;
+    std::vector<mfxExtBuffer*> m_VppExtParams;
 
-    std::list<iTask*> inputTasks; //used in PreENC
+    std::list<iTask*> inputTasks; //used in PreENC, ENC, PAK
 
     std::list<bufSet*> preencBufs, encodeBufs;
 
@@ -253,6 +250,8 @@ protected:
     CHWDevice *m_hwdev;
 
     virtual mfxStatus InitMfxEncParams(sInputParams *pParams);
+    virtual mfxStatus InitMfxDecodeParams(sInputParams *pParams);
+    virtual mfxStatus InitMfxVppParams(sInputParams *pParams);
 
     virtual mfxStatus InitFileWriters(sInputParams *pParams);
     virtual void FreeFileWriters();
@@ -270,29 +269,61 @@ protected:
     virtual mfxStatus AllocateSufficientBuffer(mfxBitstream* pBS);
 
     virtual mfxStatus GetFreeTask(sTask **ppTask);
-    virtual mfxU16 GetFrameType(mfxU32 pos);
+    virtual PairU8 GetFrameType(mfxU32 pos);
+    BiFrameLocation GetBiFrameLocation(mfxU32 frameOrder);
 
     virtual mfxStatus SynchronizeFirstTask();
 
-    iTask* findFrameToEncode();
+    virtual mfxStatus DecodeOneFrame(ExtendedSurface *pOutSurf);
+    virtual mfxStatus DecodeLastFrame(ExtendedSurface *pOutSurf);
+
+    virtual mfxStatus VPPOneFrame(mfxFrameSurface1 *pSurfaceIn, ExtendedSurface *pExtSurface);
+
+    iTask* findFrameToEncode(bool buffered_frames);
+    iTask* configureTask(iTask* eTask, iTask* last_task, bool is_buffered);
+    void removeOneTask(iTask* last_task);
+    void clearTasks();
+    std::list<iTask*>::iterator ReorderFrame(std::list<iTask*>& unencoded_queue);
+    mfxU32 CountFutureRefs(mfxU32 frameOrder);
     mfxStatus initPreEncFrameParams(iTask* eTask);
     mfxStatus initEncFrameParams(iTask* eTask);
-    mfxStatus initEncodeFrameParams(mfxFrameSurface1* encodeSurface, sTask* pCurrentTask);
+    mfxStatus initEncodeFrameParams(mfxFrameSurface1* encodeSurface, sTask* pCurrentTask, int frameType);
+    void readPAKdata(iTask* eTask);
+    void dropENCPAKoutput(iTask* eTask);
+    void dropPREENCoutput(iTask* eTask);
+    mfxStatus passPreEncMVPred2Enc(iTask* eTask);
+
+    mfxFrameSurface1 ** getCurrentL0SurfacesPreEnc(iTask* eTask);
+    mfxFrameSurface1 ** getCurrentL1SurfacesPreEnc(iTask* eTask);
+    mfxFrameSurface1 ** getCurrentL0SurfacesEnc(iTask* eTask);
+    mfxFrameSurface1 ** getCurrentL1SurfacesEnc(iTask* eTask);
+    mfxFrameSurface1 ** getCurrentL0SurfacesPak(iTask* eTask);
+    mfxFrameSurface1 ** getCurrentL1SurfacesPak(iTask* eTask);
+    iTask* getTaskByFrameOrder(mfxU32 frame_order);
 
     mfxEncodeCtrl* ctr;
 
     bool disableMVoutPreENC;
     bool disableMBStatPreENC;
 
+    mfxU16 maxQueueLength;
     mfxU16 m_refFrameCounter;
+    mfxU16 frameNumMax;
+    mfxU8 ffid, sfid;
 
-    mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* tmpForReading;
+    mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* tmpForReading, *tmpMBpreenc;
+    mfxExtFeiEncMV::mfxExtFeiEncMVMB*       tmpMBenc;
     mfxI16 *tmpForMedian;
 };
+
+void dropENCODEoutput(mfxBitstream& bs);
+
+bufSet* getFreeBufSet(std::list<bufSet*> bufs);
+
+PairU8 ExtendFrameType(mfxU32 type);
+mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 counter, bool & ref);
 
 void repackPreenc2Enc(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf);
 mfxI16 get16Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1);
 
-mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 counter, bool & ref);
-
-#endif // __PIPELINE_ENCODE_H__
+#endif // __PIPELINE_FEI_H__

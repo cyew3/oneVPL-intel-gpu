@@ -6,7 +6,7 @@
 //        Copyright (c) 2005-2015 Intel Corporation. All Rights Reserved.
 //
 
-#include <memory>
+//#include <memory>
 #include "pipeline_fei.h"
 
 mfxStatus CheckOptions(sInputParams* pParams);
@@ -24,6 +24,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Only AVC is supported for FEI encoding.\n"));
     msdk_printf(MSDK_STRING("Options: \n"));
+    msdk_printf(MSDK_STRING("   [-i::h264|mpeg2|vc1] - set input encoded file and decoder type\n"));
     msdk_printf(MSDK_STRING("   [-nv12] - input is in NV12 color format, if not specified YUV420 is expected\n"));
     msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom field first, if not specified progressive is expected\n"));
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
@@ -44,8 +45,9 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-encpak] - use extended FEI interface ENC only and PAK only (separate calls)\n"));
     msdk_printf(MSDK_STRING("   [-enc] - use extended FEI interface ENC (only)\n"));
     msdk_printf(MSDK_STRING("   [-pak] - use extended FEI interface PAK (only)\n"));
-    msdk_printf(MSDK_STRING("   [-profile decimal] - set AVC profile (ENCODE only)\n"));
-    msdk_printf(MSDK_STRING("   [-level decimal] - set AVC level (ENCODE only)\n"));
+    msdk_printf(MSDK_STRING("   [-profile decimal] - set AVC profile\n"));
+    msdk_printf(MSDK_STRING("   [-level decimal] - set AVC level\n"));
+    msdk_printf(MSDK_STRING("   [-EncodedOrder] - use internal logic for reordering, reading from files will be in encoded order (default is display; ENCODE only)\n"));
     msdk_printf(MSDK_STRING("   [-mbctrl file] - use the input to set MB control for FEI (only ENC+PAK)\n"));
     msdk_printf(MSDK_STRING("   [-mbsize] - with this options size control fields will be used from MB control structure (only ENC+PAK)\n"));
     msdk_printf(MSDK_STRING("   [-mvin file] - use this input to set MV predictor for FEI. PREENC and ENC (ENCODE) expect different structures\n"));
@@ -78,6 +80,8 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-n_mvpredictors num] - number of MV predictors, up to 4 is supported (default is 1) (ENC)\n"));
     msdk_printf(MSDK_STRING("   [-colocated_mb_distortion] - provides the distortion between the current and the co-located MB. It has performance impact(ENC)\n"));
     msdk_printf(MSDK_STRING("                                do not use it, unless it is necessary\n"));
+    msdk_printf(MSDK_STRING("   [-dstw width] - destination picture width, invokes VPP resizing\n"));
+    msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
 
     // user module options
     msdk_printf(MSDK_STRING("\n"));
@@ -124,7 +128,28 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         MSDK_CHECK_POINTER(strInput[i], MFX_ERR_NULL_PTR);
 
         // process multi-character options
-        if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-encode")))
+        if (0 == msdk_strncmp(MSDK_STRING("-i::"), strInput[i], msdk_strlen(MSDK_STRING("-i::"))))
+        {
+            pParams->bDECODE = true;
+
+            mfxStatus sts = StrFormatToCodecFormatFourCC(strInput[i] + 4, pParams->DecodeId);
+            if (sts != MFX_ERR_NONE)
+            {
+                return MFX_ERR_UNSUPPORTED;
+            }
+            i++;
+            msdk_opt_read(strInput[i], pParams->strSrcFile);
+            switch (pParams->DecodeId)
+            {
+            case MFX_CODEC_MPEG2:
+            case MFX_CODEC_AVC:
+            case MFX_CODEC_VC1:
+                break;
+            default:
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-encode")))
         {
             pParams->bENCODE = true;
         }
@@ -153,6 +178,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             i++;
             pParams->CodecLevel = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-EncodedOrder")))
+        {
+            pParams->EncodedOrder = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mvin")))
         {
@@ -344,6 +373,22 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             i++;
             pParams->NumMVPredictors = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dstw")))
+        {
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nDstWidth))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Destination picture Width is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dsth")))
+        {
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nDstHeight))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Destination picture Height is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
         else // 1-character options
         {
@@ -661,15 +706,18 @@ int main(int argc, char *argv[])
     mfxStatus sts = MFX_ERR_NONE; // return value check
 
     Params.CodecId = MFX_CODEC_AVC;    //only AVC is supported
+    Params.DecodeId = 0; //default (invalid) value
     Params.nNumFrames = 0; //unlimited
     Params.refDist = 1; //only I frames
     Params.gopSize = 1; //only I frames
     Params.numRef  = 1; //one ref by default
+    Params.bDECODE   = false; //default value
     Params.bENCODE   = false; //default value
     Params.bENCPAK   = false; //default value
     Params.bOnlyENC  = false; //default value
     Params.bOnlyPAK  = false; //default value
     Params.bPREENC   = false; //default value
+    Params.EncodedOrder   = false;
     Params.Enable8x8Stat  = false;
     Params.FTEnable       = false;
     Params.AdaptiveSearch = false;
@@ -766,11 +814,6 @@ mfxStatus CheckOptions(sInputParams* pParams)
 
     if (!pParams->bENCODE && pParams->memType == SYSTEM_MEMORY) {
         fprintf(stderr, "Only ENCODE supports SW memory\n");
-        sts = MFX_ERR_UNSUPPORTED;
-    }
-
-    if (!pParams->bENCODE && (pParams->CodecProfile || pParams->CodecLevel)) {
-        fprintf(stderr, "Codec profile and level are supported only by ENCODE\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
 
