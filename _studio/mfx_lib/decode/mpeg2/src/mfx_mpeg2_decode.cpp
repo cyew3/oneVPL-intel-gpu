@@ -1495,7 +1495,7 @@ mfxStatus VideoDECODEMPEG2::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
     eMFXHWType type = core->GetHWType();
     if (!in)
     { // configurability mode
-        memset(out, 0, sizeof(out));
+        memset(out, 0, sizeof(*out));
         out->mfx.CodecId = MFX_CODEC_MPEG2;
         out->mfx.FrameInfo.FourCC = 1;
         out->mfx.FrameInfo.Width = 1;
