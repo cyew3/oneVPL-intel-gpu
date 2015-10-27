@@ -206,7 +206,7 @@ int TestSuite::RunTest(unsigned int id)
     {
         mfxU32 fr = mfxU32(m_par.mfx.FrameInfo.FrameRateExtN / m_par.mfx.FrameInfo.FrameRateExtD);
         // buffer = 0.5 sec
-        m_par.mfx.BufferSizeInKB = mfxU16(m_par.mfx.MaxKbps / fr * mfxU16(fr / 2));
+        m_par.mfx.BufferSizeInKB = mfxU16((m_par.mfx.MaxKbps / 8) / 2);
         m_par.mfx.InitialDelayInKB = mfxU16(m_par.mfx.BufferSizeInKB / 2);
     }
 
