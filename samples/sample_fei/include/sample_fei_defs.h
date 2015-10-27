@@ -29,25 +29,27 @@
 #define NumActiveRefBL1   1
 #define NumActiveRefBL1_i 2
 
+#define MSDK_ZERO_ARRAY(VAR, NUM) {memset(VAR, 0, sizeof(*VAR)*NUM);}
+
 enum
 {
     RPLM_ST_PICNUM_SUB = 0,
     RPLM_ST_PICNUM_ADD = 1,
-    RPLM_LT_PICNUM = 2,
-    RPLM_END = 3,
+    RPLM_LT_PICNUM     = 2,
+    RPLM_END           = 3,
     RPLM_INTERVIEW_SUB = 4,
     RPLM_INTERVIEW_ADD = 5,
 };
 
 enum
 {
-    MMCO_END = 0,
-    MMCO_ST_TO_UNUSED = 1,
-    MMCO_LT_TO_UNUSED = 2,
-    MMCO_ST_TO_LT = 3,
+    MMCO_END            = 0,
+    MMCO_ST_TO_UNUSED   = 1,
+    MMCO_LT_TO_UNUSED   = 2,
+    MMCO_ST_TO_LT       = 3,
     MMCO_SET_MAX_LT_IDX = 4,
-    MMCO_ALL_TO_UNUSED = 5,
-    MMCO_CURR_TO_LT = 6,
+    MMCO_ALL_TO_UNUSED  = 5,
+    MMCO_CURR_TO_LT     = 6,
 };
 
 // for ext buffers management
@@ -372,7 +374,7 @@ struct iTask
     mfxENCOutput out;
     mfxPAKInput  inPAK;
     mfxPAKOutput outPAK;
-    mfxU32 frameDisplayOrder;
+    //mfxU32 frameDisplayOrder;
     BiFrameLocation m_loc;
     mfxSyncPoint EncSyncP;
     mfxI32 encoded;
@@ -384,25 +386,25 @@ struct iTask
 
     //..............................reflist control............................................
     ArrayDpbFrame   m_dpb[2];
-    ArrayDpbFrame         m_dpbPostEncoding; // dpb after encoding a frame (or 2 fields)
-    ArrayU8x33 m_list0[2];
-    ArrayU8x33 m_list1[2];
-    PairU8     m_type;
-    mfxU8      m_fid[2];               // progressive fid=[0,0]; tff fid=[0,1]; bff fid=[1,0]
-    mfxU8   m_fieldPicFlag;
-    PairI32 m_poc;
+    ArrayDpbFrame   m_dpbPostEncoding; // dpb after encoding a frame (or 2 fields)
+    ArrayU8x33      m_list0[2];
+    ArrayU8x33      m_list1[2];
+    PairU8          m_type;
+    mfxU8           m_fid[2];          // progressive fid=[0,0]; tff fid=[0,1]; bff fid=[1,0]
+    mfxU8           m_fieldPicFlag;
+    PairI32         m_poc;
 
     mfxU32  m_frameOrderIdrInDisplayOrder; // most recent idr frame in display order
     mfxU32  m_frameOrderIdr;    // most recent idr frame in encoding order
     mfxU32  m_frameOrderI;      // most recent i frame in encoding order
-    mfxU32  m_frameOrder; // == mfxU32 frameDisplayOrder;
+    mfxU32  m_frameOrder;
 
     ArrayRefListMod m_refPicList0Mod[2];
     ArrayRefListMod m_refPicList1Mod[2];
     mfxU32  m_initSizeList0[2];
     mfxU32  m_initSizeList1[2];
 
-    DecRefPicMarkingInfo       m_decRefPicMrk[2];    // dec_ref_pic_marking() for current frame
+    DecRefPicMarkingInfo m_decRefPicMrk[2];    // dec_ref_pic_marking() for current frame
 
     mfxU32  m_viewIdx;
 
