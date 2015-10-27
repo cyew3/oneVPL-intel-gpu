@@ -3140,53 +3140,36 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 
-    if (par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE  && par.mfx.FrameInfo.PicStruct != 0)
+    if (par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
     {
-        if (par.mfx.CodecLevel != 0)
+        if (par.mfx.CodecLevel != 0 && par.mfx.CodecLevel < MFX_LEVEL_AVC_21)
         {
-            if (par.mfx.CodecLevel < MFX_LEVEL_AVC_21)
-            {
-                if (extBits->SPSBuffer) // level came from sps header, override picstruct
-                    par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-                else // level came from videoparam, override level
-                    par.mfx.CodecLevel = MFX_LEVEL_AVC_21;
-                changed = true;
-            }
-            else if (par.mfx.CodecLevel > MFX_LEVEL_AVC_41)
-            {
-                if (GetMinLevelForResolutionAndFramerate(par) <= MFX_LEVEL_AVC_41)
-                {
-                    // it's possible to encode stream with level lower than 4.2
-                    // correct encoding parameters to satisfy H264 spec (table A-4, frame_mbs_only_flag)
-                    changed = true;
-                    par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-                }
-                else
-                {
-                    // it's impossible to encode stream with level lower than 4.2
-                    // allow H264 spec violation ((table A-4, frame_mbs_only_flag)) and return warning
-                    warning = true;
-                }
-            }
+            if (extBits->SPSBuffer) // level came from sps header, override picstruct
+                par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+            else // level came from videoparam, override level
+                par.mfx.CodecLevel = MFX_LEVEL_AVC_21;
+            changed = true;
         }
-        else
+
+        mfxU16 levelToCheck = par.mfx.CodecLevel;
+
+        if (levelToCheck == 0)
+            levelToCheck = GetMinLevelForAllParameters(par);
+
+        if (levelToCheck > MFX_LEVEL_AVC_41)
         {
-            //check correct param for default codeclevel
-            mfxU16  minlevel = GetMinLevelForAllParameters(par);
-            if(minlevel > MFX_LEVEL_AVC_41)
+            if (GetMinLevelForResolutionAndFramerate(par) <= MFX_LEVEL_AVC_41)
             {
-                if (minlevel == MFX_LEVEL_AVC_52)
-                {
-                    warning = true;
-                }
-                else
-                {
-                    if(par.mfx.CodecLevel != MFX_LEVEL_AVC_52)
-                    {
-                        changed = true;
-                        par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-                    }
-                }
+                // it's possible to encode stream with level lower than 4.2
+                // correct encoding parameters to satisfy H264 spec (table A-4, frame_mbs_only_flag)
+                changed = true;
+                par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+            }
+            else
+            {
+                // it's impossible to encode stream with level lower than 4.2
+                // allow H264 spec violation ((table A-4, frame_mbs_only_flag)) and return warning
+                warning = true;
             }
         }
     }
