@@ -1412,8 +1412,7 @@ mfxStatus CTranscodingPipeline::YUY2toBS(mfxFrameSurface1* pSurface,mfxBitstream
 
     for (mfxU16 i = 0; i < info.CropH; i++)
     {
-
-		MSDK_MEMCPY(pBS->Data+pBS->DataLength, data.Y + (info.CropY * data.Pitch + info.CropX/2*4)+ i * data.Pitch, info.CropW*2);
+        MSDK_MEMCPY(pBS->Data+pBS->DataLength, data.Y + (info.CropY * data.Pitch + info.CropX/2*4)+ i * data.Pitch, info.CropW*2);
         pBS->DataLength += info.CropW*2;
     }
 

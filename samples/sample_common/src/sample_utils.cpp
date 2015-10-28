@@ -533,51 +533,34 @@ mfxStatus CSmplBitstreamReader::ReadNextFrame(mfxBitstream *pBS)
 }
 
 
-bool CJPEGFrameReader::SOImarkerIsFound(mfxBitstream *pBS)
+mfxU32 CJPEGFrameReader::FindMarker(mfxBitstream *pBS,mfxU32 startOffset,CJPEGFrameReader::JPEGMarker marker)
 {
-    mfxU8 SOI_marker[] = { 0xFF, 0xD8 };
-    for (mfxU32 i = pBS->DataOffset; i + sizeof(SOI_marker) <= pBS->DataOffset + pBS->DataLength; i++)
+    for (mfxU32 i = startOffset; i + sizeof(mfxU16) <= pBS->DataLength; i++)
     {
-        if ( !memcmp(pBS->Data + i, SOI_marker, sizeof(SOI_marker)) )
+        if ( *(mfxU16*)(pBS->Data + i)==(mfxU16)marker)
         {
-            return true;
+            return i;
         }
     }
-    return false;
-}
-
-bool CJPEGFrameReader::EOImarkerIsFound(mfxBitstream *pBS)
-{
-    mfxU8 EOI_marker[] = { 0xFF, 0xD9 };
-    for (mfxU32 i = pBS->DataOffset; i + sizeof(EOI_marker) <= pBS->DataOffset + pBS->DataLength; i++)
-    {
-        if ( !memcmp(pBS->Data + i, EOI_marker, sizeof(EOI_marker)) )
-        {
-            return true;
-        }
-    }
-    return false;
+    return 0xFFFFFFFF;
 }
 
 mfxStatus CJPEGFrameReader::ReadNextFrame(mfxBitstream *pBS)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    bool isSOIMarkerFound = false, isEOIMarkerFound = false;
+    mfxU32 offsetSOI=0xFFFFFFFF;
 
     pBS->DataFlag = MFX_BITSTREAM_COMPLETE_FRAME;
 
-    isSOIMarkerFound = SOImarkerIsFound(pBS);
-    while (!isSOIMarkerFound && sts == MFX_ERR_NONE)
+    while ((offsetSOI = FindMarker(pBS,pBS->DataOffset,CJPEGFrameReader::SOI))==0xFFFFFFFF && sts == MFX_ERR_NONE)
     {
         sts = CSmplBitstreamReader::ReadNextFrame(pBS);
-        isSOIMarkerFound = SOImarkerIsFound(pBS);
     }
 
-    isEOIMarkerFound = EOImarkerIsFound(pBS);
-    while (!isEOIMarkerFound && sts == MFX_ERR_NONE)
+    //--- Finding EOI of frame, to make sure that it is complete
+    while (FindMarker(pBS,offsetSOI,CJPEGFrameReader::EOI)==0xFFFFFFFF && sts == MFX_ERR_NONE)
     {
         sts = CSmplBitstreamReader::ReadNextFrame(pBS);
-        isEOIMarkerFound = EOImarkerIsFound(pBS);
     }
 
     return sts;

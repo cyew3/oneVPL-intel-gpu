@@ -184,11 +184,15 @@ private:
 //provides output bistream with at least 1 frame, reports about error
 class CJPEGFrameReader : public CSmplBitstreamReader
 {
+    enum JPEGMarker
+    {
+        SOI=0xD8FF,
+        EOI=0xD9FF
+    };
 public:
     virtual mfxStatus ReadNextFrame(mfxBitstream *pBS);
 protected:
-    bool SOImarkerIsFound(mfxBitstream *pBS);
-    bool EOImarkerIsFound(mfxBitstream *pBS);
+    mfxU32 FindMarker(mfxBitstream *pBS,mfxU32 startOffset,JPEGMarker marker);
 };
 
 //appends output bistream with exactly 1 frame, reports about error
