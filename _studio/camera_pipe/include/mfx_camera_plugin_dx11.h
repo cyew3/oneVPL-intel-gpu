@@ -43,12 +43,13 @@ public:
             return MFX_ERR_MEMORY_ALLOC;
 
         req.NumFrameSuggested = req.NumFrameMin;
-        mfxFrameAllocResponse response;
+
+        m_responseQueue.resize(1);
         m_mids.resize(req.NumFrameMin, 0);
         m_locked.resize(req.NumFrameMin, 0);
-        core->AllocFrames(&req, &response, true);
+        core->AllocFrames(&req, &m_responseQueue[0], true);
         for (int i = 0; i < req.NumFrameMin; i++)
-            m_mids[i] = response.mids[i];
+            m_mids[i] = m_responseQueue[0].mids[i];
 
         NumFrameActual = req.NumFrameMin;
         mids = &m_mids[0];
@@ -90,6 +91,8 @@ public:
             {
                 for (size_t i = 0; i < m_responseQueue.size(); i++)
                     core->FreeFrames(&m_responseQueue[i]);
+
+                m_responseQueue.resize(0);
             }
             else
             {
@@ -160,6 +163,10 @@ public:
 
         m_executeParams = 0;
         m_executeSurf   = 0;
+        if (m_ddi.get())
+            m_ddi->DestroyDevice();
+
+        m_ddi.release();
         return MFX_ERR_NONE;
     }
 
