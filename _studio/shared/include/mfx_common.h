@@ -263,7 +263,11 @@
 
 #else // LINUX_TARGET_PLATFORM
 
-#if defined(LINUX_TARGET_PLATFORM_BSW)
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN)
+
+#include "mfx_common_linux_bxtmin.h"
+
+#elif defined(LINUX_TARGET_PLATFORM_BSW)
 
 #include "mfx_common_linux_bsw.h"
 
