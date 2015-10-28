@@ -672,7 +672,7 @@ public:
             SAFE_DELETE_ARRAY(it->second);
         }
     };
-
+    mfxStatus DestroyDevice(void);
     mfxStatus CreateDevice(VideoCORE *core, mfxVideoParam *par, bool temporary);
     mfxStatus QueryCapabilities( MfxHwVideoProcessing::mfxVppCaps &caps );
     mfxStatus Execute(MfxHwVideoProcessing::mfxExecuteParams *executeParams);
@@ -746,6 +746,7 @@ public:
     D3D9CameraProcessor()
     {
         m_ddi.reset(0);
+        m_pCmCopy.reset(0);
         m_executeParams = 0;
         m_executeSurf   = 0;
         m_counter       = 0;
@@ -754,12 +755,6 @@ public:
 
     ~D3D9CameraProcessor() {
         Close();
-         m_inputSurf.clear();
-         m_outputSurf.clear();
-         if (m_executeParams )
-            free(m_executeParams);
-         if (m_executeSurf)
-            free(m_executeSurf);
     };
 
     static mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out)
@@ -784,7 +779,36 @@ public:
         if(m_pCmCopy.get()){
             m_pCmCopy.get()->Release();
         }
- 
+
+        m_pCmCopy.reset(0);
+
+        if (m_ddi.get())
+            m_ddi.get()->DestroyDevice();
+
+        m_ddi.release();
+
+        for (int i = 0; i < m_inputSurf.size(); i++)
+        {
+            m_inputSurf[i].Release();
+        }
+
+        m_inputSurf.resize(0);
+
+        for (int i = 0; i < m_outputSurf.size(); i++)
+        {
+            m_outputSurf[i].Release();
+        }
+
+        m_outputSurf.resize(0);
+
+        m_inputSurf.clear();
+        m_outputSurf.clear();
+        if (m_executeParams )
+            free(m_executeParams);
+        m_executeParams = 0;
+        if (m_executeSurf)
+            free(m_executeSurf);
+        m_executeSurf = 0;
         return MFX_ERR_NONE;
     }
 
@@ -885,6 +909,7 @@ private:
         IDirect3DSurface9 *surf;
         bool               locked;
         s_InternalSurf() {locked=false;};
+        void Release(void) { surf->Release(); };
     };
     s_ptr<CmCopyWrapper, true>    m_pCmCopy;
     IDirect3DDeviceManager9      *m_pD3Dmanager;

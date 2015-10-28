@@ -586,6 +586,30 @@ mfxStatus DXVAHDVideoProcessor::CreateDevice(VideoCORE *core, mfxVideoParam *par
     return MFX_ERR_NONE;
 }
 
+mfxStatus DXVAHDVideoProcessor::DestroyDevice(void)
+{
+
+    m_cachedReadyTaskIndex.clear();
+
+    std::map<void *, DXVAHD_STREAM_DATA *>::iterator itVPS;
+    for (itVPS = m_Streams.begin() ; itVPS != m_Streams.end(); itVPS++)
+    {
+        SAFE_DELETE(itVPS->second);
+    }
+
+    if ( m_pDXVAVideoProcessor )
+        m_pDXVAVideoProcessor->Release();
+
+    m_pDXVAVideoProcessor = 0;
+
+    if ( m_pDXVADevice )
+        m_pDXVADevice->Release();
+
+    m_pDXVADevice = 0;
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus DXVAHDVideoProcessor::QueryTaskStatus(mfxU32 idx)
 {
     UMC::AutomaticUMCMutex guard(m_mutex);
@@ -1312,36 +1336,40 @@ mfxStatus D3D9CameraProcessor::Init(CameraParams *CameraParams)
     m_params       = m_CameraParams.par;
     if ( ! m_ddi.get() )
     {
-    m_ddi.reset( new DXVAHDVideoProcessor() );
-    if (0 == m_ddi.get())
-    {
-        return MFX_WRN_PARTIAL_ACCELERATION;
-    }
-    sts = m_ddi->CreateDevice( m_core, &m_params, false);
-    MFX_CHECK_STS( sts );
-
-    MfxHwVideoProcessing::mfxVppCaps caps;
-    sts = m_ddi->QueryCapabilities( caps );
-    MFX_CHECK_STS( sts );
-
-        m_pCmCopy.reset(new CmCopyWrapper);
-        m_pD3Dmanager = 0;
-        m_core->GetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL *)&m_pD3Dmanager);
-        if ( m_pD3Dmanager )
+        m_ddi.reset( new DXVAHDVideoProcessor() );
+        if (0 == m_ddi.get())
         {
-            if (!m_pCmCopy.get()->GetCmDevice<IDirect3DDeviceManager9>(m_pD3Dmanager))
+            return MFX_WRN_PARTIAL_ACCELERATION;
+        }
+
+        sts = m_ddi->CreateDevice( m_core, &m_params, false);
+        MFX_CHECK_STS( sts );
+
+        MfxHwVideoProcessing::mfxVppCaps caps;
+        sts = m_ddi->QueryCapabilities( caps );
+        MFX_CHECK_STS( sts );
+
+        if (0 == m_pCmCopy.get())
+        {
+            m_pCmCopy.reset(new CmCopyWrapper);
+            m_pD3Dmanager = 0;
+            m_core->GetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL *)&m_pD3Dmanager);
+            if ( m_pD3Dmanager )
             {
-                m_pCmCopy.get()->Release();
-                m_pCmCopy.reset();
-                return MFX_WRN_PARTIAL_ACCELERATION;
-            }
-            else
-            {
-                sts = m_pCmCopy.get()->Initialize();
-                MFX_CHECK_STS(sts);
-                if(m_params.vpp.Out.FourCC == MFX_FOURCC_ARGB16)
-                    sts = m_pCmCopy.get()->InitializeSwapKernels(m_core->GetHWType());
-                MFX_CHECK_STS(sts);
+                if (!m_pCmCopy.get()->GetCmDevice<IDirect3DDeviceManager9>(m_pD3Dmanager))
+                {
+                    m_pCmCopy.get()->Release();
+                    m_pCmCopy.reset();
+                    return MFX_WRN_PARTIAL_ACCELERATION;
+                }
+                else
+                {
+                    sts = m_pCmCopy.get()->Initialize();
+                    MFX_CHECK_STS(sts);
+                    if(m_params.vpp.Out.FourCC == MFX_FOURCC_ARGB16)
+                        sts = m_pCmCopy.get()->InitializeSwapKernels(m_core->GetHWType());
+                    MFX_CHECK_STS(sts);
+                }
             }
         }
     }
