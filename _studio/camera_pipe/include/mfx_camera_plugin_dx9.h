@@ -769,17 +769,13 @@ public:
         return MFX_ERR_NONE;
     }
 
+    virtual mfxStatus Reset(mfxVideoParam *par, CameraParams * FrameParams);
+
     virtual mfxStatus Init(CameraParams *CameraParams);
 
     virtual mfxStatus Init(mfxVideoParam *par)
     {
         par;
-        return MFX_ERR_NONE;
-    }
-
-    virtual mfxStatus Reset(mfxVideoParam *par, CameraParams * FrameParams)
-    {
-        par; FrameParams;
         return MFX_ERR_NONE;
     }
 

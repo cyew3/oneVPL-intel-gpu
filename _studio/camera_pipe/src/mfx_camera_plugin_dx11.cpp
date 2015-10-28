@@ -114,6 +114,54 @@ mfxStatus D3D11CameraProcessor::Init(CameraParams *CameraParams)
     return sts;
 }
 
+mfxStatus D3D11CameraProcessor::Reset(mfxVideoParam *par, CameraParams * FrameParams)
+{
+    MFX_CHECK_NULL_PTR1(FrameParams);
+    UNREFERENCED_PARAMETER(par);
+
+    mfxStatus sts = MFX_ERR_NONE;
+    if ( ! m_core )
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    if ( MFX_HW_D3D11 != m_core->GetVAType() )
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    m_CameraParams = *FrameParams;
+    m_params       = FrameParams->par;
+
+    if ( FrameParams->Caps.bNoPadding )
+    {
+        // Padding was done by app. DDI doesn't support such mode, so need
+        // just ignore padded borders.
+        m_paddedInput = true;
+    }
+
+    if (m_params.vpp.In.CropW != m_params.vpp.Out.CropW ||
+        m_params.vpp.In.CropH != m_params.vpp.Out.CropH)
+    {
+        // Resize is not supported
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
+    mfxU16 width  = m_params.vpp.In.CropW;
+    mfxU16 height = (m_params.vpp.In.CropH/2)*2;  // WA for driver bug: crash in case of odd height
+
+    if ( width > m_width || height > m_height )
+    {
+        // Resolution up is not supported
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
+    m_width  = width;
+    m_height = height;
+
+    return sts;
+}
+
 mfxStatus D3D11CameraProcessor::AsyncRoutine(AsyncParams *pParam)
 {
     mfxStatus sts;
