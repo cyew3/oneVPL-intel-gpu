@@ -289,7 +289,7 @@ mfxStatus CpuFrc::PtsFrc::DoCpuFRC_AndUpdatePTS(
     }
 
     // made decision regarding frame rate conversion
-    if ((input->Data.TimeStamp != -1) && !m_bUpFrameRate && inputTimeStamp < m_expectedTimeStamp)
+    if ((input->Data.TimeStamp != (mfxU64)-1) && !m_bUpFrameRate && inputTimeStamp < m_expectedTimeStamp)
     {
         m_bDownFrameRate = true;
 
@@ -300,7 +300,7 @@ mfxStatus CpuFrc::PtsFrc::DoCpuFRC_AndUpdatePTS(
         // request new one input surface
         return MFX_ERR_MORE_DATA;
     }
-    else if ((input->Data.TimeStamp != -1) && !m_bDownFrameRate && (input->Data.TimeStamp > m_expectedTimeStamp || m_timeStampDifference))
+    else if ((input->Data.TimeStamp != (mfxU64)-1) && !m_bDownFrameRate && (input->Data.TimeStamp > m_expectedTimeStamp || m_timeStampDifference))
     {
         m_bUpFrameRate = true;
 
@@ -1780,7 +1780,7 @@ mfxStatus VideoVPPHW::VppFrameCheck(
             pEntryPoint[0].pParam = (void *) pTask;
             pEntryPoint[0].requiredNumThreads = 1;
             pEntryPoint[0].pState = (void *) this;
-            pEntryPoint[0].pRoutineName = "VPP Query";
+            pEntryPoint[0].pRoutineName = (char *)"VPP Query";
 
             numEntryPoints = 1;
         }
@@ -1795,14 +1795,14 @@ mfxStatus VideoVPPHW::VppFrameCheck(
             pEntryPoint[1].pParam = (void *) pTask;
             pEntryPoint[1].requiredNumThreads = 1;
             pEntryPoint[1].pState = (void *) this;
-            pEntryPoint[1].pRoutineName = "VPP Query";
+            pEntryPoint[1].pRoutineName = (char *)"VPP Query";
 
             // configure entry point
             pEntryPoint[0].pRoutine = VideoVPPHW::AsyncTaskSubmission;
             pEntryPoint[0].pParam = (void *) pTask;
             pEntryPoint[0].requiredNumThreads = 1;
             pEntryPoint[0].pState = (void *) this;
-            pEntryPoint[0].pRoutineName = "VPP Submit";
+            pEntryPoint[0].pRoutineName = (char *)"VPP Submit";
 
             numEntryPoints = 2;
         }
@@ -1813,7 +1813,7 @@ mfxStatus VideoVPPHW::VppFrameCheck(
             pEntryPoint[0].pParam = (void *) pTask;
             pEntryPoint[0].requiredNumThreads = 1;
             pEntryPoint[0].pState = (void *) this;
-            pEntryPoint[0].pRoutineName = "VPP Submit";
+            pEntryPoint[0].pRoutineName = (char *)"VPP Submit";
 
             numEntryPoints = 1;
         }
@@ -1910,7 +1910,7 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
                 //    MFX_CHECK_STS(sts);
                 //}
 
-                mfxFrameSurface1 inputVidSurf = {0};
+                mfxFrameSurface1 inputVidSurf = {};
                 inputVidSurf.Info = surfQueue[i].pSurf->Info;
                 inputVidSurf.Data.MemId = m_internalVidSurf[VPP_IN].mids[ resIdx ];
 
@@ -2232,7 +2232,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     }
 
     if ((m_executeParams.iFieldProcessingMode != 0) && /* If Mode is enabled*/
-        ((imfxFPMode - 1) != FRAME2FRAME)) /* And we don't do copy frame to frame lets call our FieldCopy*/
+        ((imfxFPMode - 1) != (mfxU32)FRAME2FRAME)) /* And we don't do copy frame to frame lets call our FieldCopy*/
     /* And remember our previous line imfxFPMode++;*/
     {
         sts = PreWorkOutSurface(pTask->output);

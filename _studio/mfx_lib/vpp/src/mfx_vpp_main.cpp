@@ -245,7 +245,7 @@ mfxStatus VideoVPPMain::VppFrameCheck(mfxFrameSurface1 *in,
     {
         if( (MFX_ERR_NONE == mfxSts) ||
             (MFX_ERR_MORE_DATA == mfxSts) ||
-            (MFX_ERR_MORE_DATA_RUN_TASK == mfxSts) ||
+            ((mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == mfxSts) ||
             (MFX_ERR_MORE_SURFACE == mfxSts) )
         {
             out->Data.FrameOrder = pOutputNative->Data.FrameOrder;

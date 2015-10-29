@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2015 Intel Corporation. All Rights Reserved.
 //
 //
 //          Common Video Pre\Post Processing
@@ -296,6 +296,7 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
         }
     }
 
+#if !defined(MFX_ENABLE_HW_ONLY_VPP)
     if(m_pHWVPP.get() == 0) // MARKER: SW only
     {
         /* step [2]: creation of filters */
@@ -313,7 +314,7 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
         sts = CreateInternalSystemFramesPool( par );
         MFX_CHECK_STS( sts );
     }
-
+#endif
     /* save init params to prevent core crash */
     m_errPrtctState.In  = par->vpp.In;
     m_errPrtctState.Out = par->vpp.Out;
@@ -357,7 +358,11 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
         }
         else if( 0 == m_pHWVPP.get() )
         {
+#if defined (MFX_ENABLE_HW_ONLY_VPP)
+            return MFX_ERR_UNSUPPORTED;
+#else
             return MFX_WRN_PARTIAL_ACCELERATION;
+#endif
         }
         else if( MFX_ERR_NONE != sts_wrn )
         {
@@ -366,10 +371,15 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
     }
     else
     {
+
+#if defined (MFX_ENABLE_HW_ONLY_VPP)
+        return MFX_ERR_UNSUPPORTED;
+#else
         if( MFX_ERR_NONE != sts_wrn )
         {
             return sts_wrn;
         }
+#endif
     }
 
     bool bCorrectionEnable = false;
@@ -660,7 +670,7 @@ mfxStatus VideoVPPSW::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out,
 
         return (MFX_ERR_NONE == internalSts) ? sts : internalSts;
     }
-
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
     /* *************************************** */
     /* scan filters to find Ready Output       */
     /* if the out found VPP IGNORES input frame*/
@@ -719,7 +729,9 @@ mfxStatus VideoVPPSW::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out,
     }
 
     return (MFX_ERR_NONE == stsReadinessPipeline) ? stsPicStruct : stsReadinessPipeline;
-
+#else
+    return sts;
+#endif // !MFX_ENABLE_HW_ONLY_VPP
 } // mfxStatus VideoVPPSW::VppFrameCheck(...)
 
 
@@ -808,7 +820,10 @@ mfxStatus VideoVPPSW::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mfxFrameA
 
         mfxSts = CheckIOPattern_AndSetIOMemTypes(par->IOPattern, &(request[VPP_IN].Type), &(request[VPP_OUT].Type), bSWLib);
         MFX_CHECK_STS(mfxSts);
-
+#if defined (MFX_ENABLE_HW_ONLY_VPP)
+        return (bSWLib)? MFX_ERR_UNSUPPORTED : MFX_ERR_NONE;
+    }
+#else
         return (bSWLib)? MFX_WRN_PARTIAL_ACCELERATION : MFX_ERR_NONE;
     }
     else
@@ -828,9 +843,9 @@ mfxStatus VideoVPPSW::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mfxFrameA
 
         mfxSts = CheckIOPattern_AndSetIOMemTypes(par->IOPattern, &(request[VPP_IN].Type), &(request[VPP_OUT].Type));
         MFX_CHECK_STS( mfxSts );
-
-        return MFX_ERR_NONE;
     }
+#endif
+    return MFX_ERR_NONE;
 
 } // mfxStatus VideoVPPSW::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request, const mfxU32 adapterNum)
 
@@ -1820,3 +1835,4 @@ mfxStatus VideoVPPSW::CheckPlatformLimitations(
 
 #endif // MFX_ENABLE_VPP
 /* EOF */
+

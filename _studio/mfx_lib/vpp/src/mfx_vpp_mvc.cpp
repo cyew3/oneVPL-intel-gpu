@@ -53,10 +53,10 @@ mfxStatus ImplementationMvc::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mf
 
 
 ImplementationMvc::ImplementationMvc(VideoCORE *core)
-: m_core( core )
-, m_bInit( false )
-, m_iteratorVPP( )
+: m_bInit( false )
 , m_bMultiViewMode(false)
+, m_core( core )
+, m_iteratorVPP( )
 {
 
 } // ImplementationMvc::ImplementationMvc(VideoCORE *core)

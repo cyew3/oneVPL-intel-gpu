@@ -334,6 +334,7 @@ mfxStatus VideoVPPSW::SetCrop(mfxFrameSurface1 *in, mfxFrameSurface1 *out)
 
 mfxStatus VideoVPPSW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
 {
+#if !defined(MFX_ENABLE_HW_ONLY_VPP)    
     mfxFrameInfo inFrameInfo;
     mfxFrameInfo outFrameInfo;
     mfxU32       filterIndex;
@@ -540,7 +541,7 @@ mfxStatus VideoVPPSW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
 
         }// CASE
     }//end of creation files
-
+#endif
     return MFX_ERR_NONE;
 
 } // mfxStatus VideoVPPSW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2015 Intel Corporation. All Rights Reserved.
 //
 //
 //          FrameRateConversion Video Pre\Post Processing
@@ -44,6 +44,8 @@ mfxStatus MFXVideoVPPFrameRateConversion::Query( mfxExtBuffer* pHint )
     }    
 
 } // mfxStatus MFXVideoVPPFrameRateConversion::Query( mfxExtBuffer* pHint )
+
+#if !defined(MFX_ENABLE_HW_ONLY_VPP) // SW ONLY
 
 MFXVideoVPPFrameRateConversion::MFXVideoVPPFrameRateConversion(VideoCORE *core, mfxStatus* sts) : FilterVPP()
 {
@@ -901,5 +903,6 @@ mfxStatus MFXVideoVPPFrameRateConversion::ResetAdvancedState( AdvancedFRCState* 
 
 } // mfxStatus MFXVideoVPPFrameRateConversion::ResetAdvancedState( AdvancedFRCState* pState )
 
+#endif // MFX_ENABLE_HW_ONLY_VPP
 #endif // MFX_ENABLE_VPP
 /* EOF */

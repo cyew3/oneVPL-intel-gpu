@@ -1,3 +1,5 @@
+#
+#
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 # =============================================================================
@@ -11,12 +13,6 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../encode/h265/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h264_preenc )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../fei/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h265/include )
-
-set( ENABLE_HEVC FALSE )
-
-if ( (CMAKE_C_COMPILER MATCHES icc) OR ENABLE_HEVC_ON_GCC )
-  set(ENABLE_HEVC TRUE)
-endif()
 
 list( APPEND umc_dirs
   common
@@ -434,8 +430,9 @@ endforeach()
 
 # H265FEI
 
-set (H265FEI_PRODUCT_NAME "Intel(R) Media Server Studio 2015")
-set (hw_H265FEI_ENCODER_DESCRIPTION "HEVC GPU Assist APIs Plug-in")
+if( ENABLE_HEVC_FEI )
+  set (H265FEI_PRODUCT_NAME "Intel(R) Media Server Studio 2015")
+  set (hw_H265FEI_ENCODER_DESCRIPTION "HEVC GPU Assist APIs Plug-in")
 
   if( NOT DEFINED ENV{MFX_H265FEI_VERSION} )
     set( h265fei_version 0.0.000.0000 )
@@ -456,68 +453,69 @@ set (hw_H265FEI_ENCODER_DESCRIPTION "HEVC GPU Assist APIs Plug-in")
     set(h265fei_version_defs "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${h265fei_version}\"\\\"")
   endif( )
 
-set( sources "" )
-set( sources.plus "" )
-set( defs "" )
+  set( sources "" )
+  set( sources.plus "" )
+  set( defs "" )
 
-list( APPEND sources ${plugin_common_sources} )
+  list( APPEND sources ${plugin_common_sources} )
 
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h265_encode/src )
-  file( GLOB_RECURSE srcs "${dir}/*_isa.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
+  foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h265_encode/src )
+    file( GLOB_RECURSE srcs "${dir}/*_isa.cpp" )
+    list( APPEND sources ${srcs})
+  endforeach()
 
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
-  list( APPEND sources
-    ${prefix}/libmfxsw_enc.cpp
-  )
-endforeach()
+  foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
+    list( APPEND sources
+      ${prefix}/libmfxsw_enc.cpp
+    )
+  endforeach()
 
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../plugin/src )
-  list( APPEND sources
-    ${prefix}/mfx_h265fei_plugin.cpp
-  )
-endforeach()
+  foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../plugin/src )
+    list( APPEND sources
+      ${prefix}/mfx_h265fei_plugin.cpp
+    )
+  endforeach()
 
 # list separately instead of just including h265_fei lib because different
 # define needed for plugin
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h265/src )
-  list( APPEND sources
-    ${prefix}/mfx_h265_enc_cm_fei.cpp
-    ${prefix}/mfx_h265_enc_cm_plugin.cpp
-    ${prefix}/mfx_h265_enc_cm_utils.cpp
-  )
-endforeach()
-
-list( REMOVE_ITEM sources
-${CMAKE_CURRENT_SOURCE_DIR}/../../shared/src/mfx_umc_alloc_wrapper.cpp )
-
-foreach( variant hw )
-  if( __ARCH MATCHES intel64 )
-    set( plugin_name mfx_h265fei_${variant}64 )
-  else()
-    set( plugin_name mfx_h265fei_${variant}32 )
-  endif()
-  if( __CONFIG MATCHES debug )
-    set( plugin_name ${plugin_name}_d )
-  endif()
-
-set (description_name ${${variant}_H265FEI_ENCODER_DESCRIPTION})
-
-  set( LIBS "" )
-  list( APPEND LIBS
-    umc_io_merged_${variant}
-    umc_core_merged
-    ${ITT_LIBS}
-    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-    pthread
-    dl
+  foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h265/src )
+    list( APPEND sources
+      ${prefix}/mfx_h265_enc_cm_fei.cpp
+      ${prefix}/mfx_h265_enc_cm_plugin.cpp
+      ${prefix}/mfx_h265_enc_cm_utils.cpp
     )
+  endforeach()
 
-  set( defs "-DAS_H265FEI_PLUGIN -DAS_HEVCE_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${H265FEI_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${h265fei_version_defs}")
-  make_library( ${plugin_name} ${variant} shared)
+  list( REMOVE_ITEM sources
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/src/mfx_umc_alloc_wrapper.cpp )
 
-endforeach()
+  foreach( variant hw )
+    if( __ARCH MATCHES intel64 )
+      set( plugin_name mfx_h265fei_${variant}64 )
+    else()
+      set( plugin_name mfx_h265fei_${variant}32 )
+    endif()
+    if( __CONFIG MATCHES debug )
+      set( plugin_name ${plugin_name}_d )
+    endif()
+
+    set (description_name ${${variant}_H265FEI_ENCODER_DESCRIPTION})
+
+    set( LIBS "" )
+    list( APPEND LIBS
+      umc_io_merged_${variant}
+      umc_core_merged
+      ${ITT_LIBS}
+      ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+      pthread
+      dl
+      )
+
+    set( defs "-DAS_H265FEI_PLUGIN -DAS_HEVCE_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${H265FEI_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${h265fei_version_defs}")
+    make_library( ${plugin_name} ${variant} shared)
+
+  endforeach()
+endif()
 
 set( defs "" )
 

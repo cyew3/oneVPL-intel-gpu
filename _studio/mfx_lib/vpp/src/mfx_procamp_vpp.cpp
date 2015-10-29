@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010-2015 Intel Corporation. All Rights Reserved.
 //
 //
 //          PROCessing AMPlified algorithms of Video Pre\Post Processing
@@ -158,6 +158,8 @@ mfxStatus MFXVideoVPPProcAmp::Query( mfxExtBuffer* pHint )
     return sts;
 
 } // static mfxStatus MFXVideoVPPProcAmp::Query( mfxExtBuffer* pHint )
+
+#if !defined(MFX_ENABLE_HW_ONLY_VPP)
 
 MFXVideoVPPProcAmp::MFXVideoVPPProcAmp(VideoCORE *core, mfxStatus* sts) : FilterVPP()
 {
@@ -713,5 +715,6 @@ mfxStatus ProcampFiltering_YV12_8u(
 
 } // mfxStatus ProcampFiltering_YV12_8u(...)
 
+#endif // MFX_ENABLE_HW_ONLY_VPP
 #endif // MFX_ENABLE_VPP
 /* EOF */

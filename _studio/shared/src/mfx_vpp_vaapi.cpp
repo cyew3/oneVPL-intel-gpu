@@ -513,7 +513,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
              * Bottom field at this moment. Third iteration again TFF... and etc.
              * if APP set "-spic 2" which is means MFX_PICSTRUCT_FIELD_BFF all is vice versa.
              *  */
-            if ((pParams->bFMDEnable == true) && (pParams->refCount > 1) || bForceADI)
+            if (((pParams->bFMDEnable == true) && (pParams->refCount > 1)) || bForceADI)
             {
                 if (0 == (m_refCountForADI%2) )
                 {

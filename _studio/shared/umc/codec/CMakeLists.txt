@@ -38,7 +38,7 @@ list( APPEND dirs
 
 list( APPEND dirs_impl
   color_space_converter
-  h265_dec
+#  h265_dec
   mpeg2_dec
   h264_dec
   vc1_dec
@@ -115,16 +115,19 @@ make_library( umc_h264_enc sw static )
 
 # =============================================================================
 
-set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN -DAS_H264LA_PLUGIN" )
-set( sources "" )
-#foreach( dir h265 )
+if( NOT MFX_LIB_ONLY )
+
+  set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN -DAS_H264LA_PLUGIN" )
+  set( sources "" )
   file( GLOB_RECURSE srcs "h265_dec/*.c" "h265_dec/*.cpp" )
   list( APPEND sources ${srcs}) 
-#endforeach()
+  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/h265_dec/include )
 
-foreach( variant sw hw )
-  make_library( umc_h265 ${variant} static )
-endforeach( )
+  foreach( variant sw hw )
+    make_library( umc_h265 ${variant} static )
+  endforeach( )
+
+endif()
 
 set( defs "" )
 

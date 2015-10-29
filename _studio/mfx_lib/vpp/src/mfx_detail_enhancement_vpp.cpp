@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010 - 2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010 - 2015 Intel Corporation. All Rights Reserved.
 //
 //
 //          Detail Enhancement algorithm of Video Pre\Post Processing
@@ -102,6 +102,8 @@ mfxStatus MFXVideoVPPDetailEnhancement::Query( mfxExtBuffer* pHint )
     return sts;
 
 } // mfxStatus MFXVideoVPPDetailEnhancement::Query( mfxExtBuffer* pHint )
+
+#if !defined(MFX_ENABLE_HW_ONLY_VPP) // SW ONLY
 
 MFXVideoVPPDetailEnhancement::MFXVideoVPPDetailEnhancement(VideoCORE *core, mfxStatus* sts) : FilterVPP()
 {
@@ -728,5 +730,6 @@ int Calc3x3Laplacian(int    x,
 
 } // int Calc3x3Laplacian(...)
 
+#endif // MFX_ENABLE_HW_ONLY_VPP
 #endif // MFX_ENABLE_VPP
 /* EOF */

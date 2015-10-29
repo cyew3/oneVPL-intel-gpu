@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2015 Intel Corporation. All Rights Reserved.
 //
 //
 //          DeNoise Video Pre\Post Processing
@@ -141,6 +141,8 @@ mfxStatus MFXVideoVPPDenoise::Query( mfxExtBuffer* pHint )
     return sts;
 
 } // static mfxStatus MFXVideoVPPDenoise::Query( mfxExtBuffer* pHint )
+
+#if !defined(MFX_ENABLE_HW_ONLY_VPP) // SW is disabled
 
 MFXVideoVPPDenoise::MFXVideoVPPDenoise(VideoCORE *core, mfxStatus* sts ) : FilterVPP()
 {
@@ -1843,6 +1845,7 @@ mfxStatus MFXVideoVPPDenoise::ownGaussNoiseEstimation_8u_C1R_v2(IppiSize size, m
 
 /* ************************************************************************ */
 
+#endif // MFX_ENABLE_HW_ONLY_VPP
 #endif // MFX_ENABLE_VPP
 
 /* EOF */

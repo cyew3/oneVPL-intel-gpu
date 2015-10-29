@@ -82,7 +82,7 @@ else( )
     add_definitions( -DMFX_PRODUCT_VERSION=\"${version}\" )
   endif( )
 
-  set(no_warnings "-Wno-unknown-pragmas -Wno-unused")
+  set(no_warnings "-Wno-deprecated-declarations -Wno-unknown-pragmas -Wno-unused")
   
   set(CMAKE_C_FLAGS "-pipe -fPIC")
   set(CMAKE_CXX_FLAGS "-pipe -fPIC")

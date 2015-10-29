@@ -12,8 +12,8 @@ Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 #define _MFX_COMMON_LINUX_BXTMIN_H_
 
 // Disable HEVC plugins
-//#undef AS_HEVCE_PLUGIN
-//#undef AS_HEVCD_PLUGIN
+#undef AS_HEVCE_PLUGIN
+#undef AS_HEVCD_PLUGIN
 
 // h264
 #define MFX_ENABLE_H264_VIDEO_DECODE
@@ -25,7 +25,7 @@ Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 
 //#define MFX_ENABLE_H264_VIDEO_ENCODE
 #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
-    #define MFX_ENABLE_H265_VIDEO_ENCODE
+//    #define MFX_ENABLE_H265_VIDEO_ENCODE
 #endif
 //#define MFX_ENABLE_MVC_VIDEO_ENCODE
 //#define MFX_ENABLE_H264_VIDEO_PAK
@@ -71,21 +71,22 @@ Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 #endif
 
 // vpp
+#define MFX_ENABLE_VPP
+#define MFX_ENABLE_HW_ONLY_VPP
 //#define MFX_ENABLE_DENOISE_VIDEO_VPP
 //#define MFX_ENABLE_IMAGE_STABILIZATION_VPP
-#define MFX_ENABLE_VPP
 
 //#define MFX_ENABLE_H264_VIDEO_ENCODE_HW
 //#define MFX_ENABLE_H264_VIDEO_ENC_HW
 
 //#define MFX_ENABLE_MVC_VIDEO_ENCODE_HW
 #if defined(AS_H264LA_PLUGIN)
-#define MFX_ENABLE_LA_H264_VIDEO_HW
+//#define MFX_ENABLE_LA_H264_VIDEO_HW
 #endif
 
 // H265 FEI plugin
 #if defined(AS_H265FEI_PLUGIN)
-#define MFX_ENABLE_H265FEI_HW
+//#define MFX_ENABLE_H265FEI_HW
 #endif
 
 // user plugin for decoder, encoder, and vpp
@@ -130,7 +131,7 @@ Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 
     // vpp
     #undef MFX_ENABLE_DENOISE_VIDEO_VPP
-    #undef MFX_ENABLE_VPP
+    //#undef MFX_ENABLE_VPP
 
     // vc1
     #undef MFX_ENABLE_VC1_VIDEO_DECODE
@@ -187,35 +188,35 @@ Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
     #undef MFX_ENABLE_H264_VIDEO_FEI_PREENC
 #endif // #if defined(AS_HEVCD_PLUGIN)
 #if defined(AS_CAMERA_PLUGIN)
-    #define MFX_ENABLE_VPP
+//    #define MFX_ENABLE_VPP
 #endif
 #if defined(AS_HEVCD_PLUGIN)
-    #define MFX_ENABLE_H265_VIDEO_DECODE
+//    #define MFX_ENABLE_H265_VIDEO_DECODE
 #endif
 #if defined(AS_HEVCE_PLUGIN)
-    #define MFX_ENABLE_H265_VIDEO_ENCODE
+//    #define MFX_ENABLE_H265_VIDEO_ENCODE
     //#define MFX_ENABLE_H265_PAQ
     #if !defined(__APPLE__)
-        #define MFX_ENABLE_CM
+//        #define MFX_ENABLE_CM
     #endif
 #endif
 
 #if defined(AS_VP8DHW_PLUGIN)
-    #define MFX_ENABLE_VP8_VIDEO_DECODE
-    #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
+//    #define MFX_ENABLE_VP8_VIDEO_DECODE
+//    #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
 #endif
 
 #if defined(AS_VP8D_PLUGIN)
-#define MFX_ENABLE_VP8_VIDEO_DECODE
+//#define MFX_ENABLE_VP8_VIDEO_DECODE
 #ifdef MFX_VA
-#define MFX_ENABLE_VP8_VIDEO_DECODE_HW
+//#define MFX_ENABLE_VP8_VIDEO_DECODE_HW
 #endif
 #endif
 
 #if defined(AS_VP9D_PLUGIN)
 //#define MFX_ENABLE_VP9_VIDEO_DECODE
 #ifdef MFX_VA
-#define MFX_ENABLE_VP9_VIDEO_DECODE_HW
+//#define MFX_ENABLE_VP9_VIDEO_DECODE_HW
 #endif
 #endif
 

@@ -48,8 +48,8 @@ mfxStatus ImplementationSvc::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mf
 
 
 ImplementationSvc::ImplementationSvc(VideoCORE *core)
-: m_core( core )
-, m_bInit( false )
+: m_bInit( false )
+, m_core( core )
 , m_inputSurface(0)
 {
 
@@ -280,7 +280,10 @@ mfxStatus ImplementationSvc::VppFrameCheck(
     mfxSts = m_VPP[ did ]->VppFrameCheck( in, out, aux, pEntryPoint, numEntryPoints );
 
     // advanced processing (delay or multi outputs)
-    if( (MFX_ERR_MORE_DATA == mfxSts || MFX_ERR_MORE_SURFACE == mfxSts || MFX_ERR_MORE_DATA_RUN_TASK == mfxSts) && (m_recievedDidList.size() == m_declaredDidList.size()) )
+    if( (MFX_ERR_MORE_DATA == mfxSts || 
+         MFX_ERR_MORE_SURFACE == mfxSts ||
+         (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK == mfxSts) &&
+         (m_recievedDidList.size() == m_declaredDidList.size()) )
     {
         m_recievedDidList.clear();
         m_inputSurface = NULL;
