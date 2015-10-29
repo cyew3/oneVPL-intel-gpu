@@ -313,11 +313,18 @@ mfxStatus D3D11CameraProcessor::CompleteRoutine(AsyncParams * pParam)
         mfxFrameSurface1 OutSurf = {0};
         OutSurf.Data.MemId = m_OutSurfacePool->mids[pParam->surfOutIndex];
         OutSurf.Info       = pParam->surf_out->Info;
-        if ( MFX_FOURCC_ARGB16 == OutSurf.Info.FourCC )
+        if ( MFX_FOURCC_ARGB16 == OutSurf.Info.FourCC && ! pParam->Caps.b3DLUT)
         {
             // For ARGB16 out need to do R<->B swapping.
+            // 3D LUT does swapping as well.
             OutSurf.Info.FourCC = MFX_FOURCC_ABGR16;
         }
+        else if ( MFX_FOURCC_RGB4 == OutSurf.Info.FourCC && pParam->Caps.b3DLUT)
+        {
+            // 3D LUT does R<->B swapping. Need to get R and B back.
+            OutSurf.Info.FourCC = MFX_FOURCC_BGR4;
+        }
+
         OutSurf.Info.Width  = m_width;
         OutSurf.Info.Height = m_height;
         // [1] Copy from system mem to the internal video frame

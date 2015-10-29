@@ -583,6 +583,22 @@ mfxStatus DXVAHDVideoProcessor::CreateDevice(VideoCORE *core, mfxVideoParam *par
     {
         return MFX_ERR_DEVICE_FAILED;
     }
+
+    {
+        // Allocate memory for 3DLUT tables
+        m_camera3DLUT17 = (LUT17 *)malloc(sizeof(LUT17));
+        MFX_CHECK_NULL_PTR1(m_camera3DLUT17);
+        memset(m_camera3DLUT17, 0, sizeof(LUT17));
+
+        m_camera3DLUT33 = (LUT33 *)malloc(sizeof(LUT33));
+        MFX_CHECK_NULL_PTR1(m_camera3DLUT33);
+        memset(m_camera3DLUT33, 0, sizeof(LUT33));
+
+        m_camera3DLUT65 = (LUT65 *)malloc(sizeof(LUT65));
+        MFX_CHECK_NULL_PTR1(m_camera3DLUT65);
+        memset(m_camera3DLUT65, 0, sizeof(LUT65));
+    }
+
     return MFX_ERR_NONE;
 }
 
@@ -903,6 +919,86 @@ HRESULT DXVAHDVideoProcessor::SetCameraPipeVignetteCorrection(CameraVignetteCorr
     return hr;
 }
 
+HRESULT DXVAHDVideoProcessor::SetCameraPipe3DLUTCorrection(Camera3DLUTParams *params)
+{
+    HRESULT hr = S_OK;
+    TCameraPipeMode_2_6 camMode;
+    TLUTParams lutParams = {0};
+    lutParams.bActive = 1;
+
+    switch(params->LUTSize)
+    {
+    case(LUT33_SEG*LUT33_SEG*LUT33_SEG):
+        memset(m_camera3DLUT33, 0, sizeof(m_camera3DLUT33));
+        lutParams.LUTSize = LUT33_SEG;
+        for(int i = 0; i < LUT33_SEG; i++)
+        {
+            for(int j = 0; j < LUT33_SEG; j++)
+            {
+                for(int z = 0; z < LUT33_SEG; z++)
+                {
+                    (*m_camera3DLUT33)[i][j][z].B = params->lut[(LUT33_SEG*LUT33_SEG*i+LUT33_SEG*j+z)].R;
+                    (*m_camera3DLUT33)[i][j][z].G = params->lut[(LUT33_SEG*LUT33_SEG*i+LUT33_SEG*j+z)].G;
+                    (*m_camera3DLUT33)[i][j][z].R = params->lut[(LUT33_SEG*LUT33_SEG*i+LUT33_SEG*j+z)].B;
+                }
+            }
+        }
+        lutParams.p33 = m_camera3DLUT33;
+        break;
+
+    case(LUT65_SEG*LUT65_SEG*LUT65_SEG):
+        memset(m_camera3DLUT65, 0, sizeof(m_camera3DLUT65));
+        lutParams.LUTSize = LUT65_SEG;
+        for(int i = 0; i < LUT65_SEG; i++)
+        {
+            for(int j = 0; j < LUT65_SEG; j++)
+            {
+                for(int z = 0; z < LUT65_SEG; z++)
+                {
+                    (*m_camera3DLUT65)[i][j][z].B = params->lut[(LUT65_SEG*LUT65_SEG*i+LUT65_SEG*j+z)].R;
+                    (*m_camera3DLUT65)[i][j][z].G = params->lut[(LUT65_SEG*LUT65_SEG*i+LUT65_SEG*j+z)].G;
+                    (*m_camera3DLUT65)[i][j][z].R = params->lut[(LUT65_SEG*LUT65_SEG*i+LUT65_SEG*j+z)].B;
+                }
+            }
+        }
+        lutParams.p65 = m_camera3DLUT65;
+        break;
+
+    case(LUT17_SEG*LUT17_SEG*LUT17_SEG):
+    default:
+
+        memset(m_camera3DLUT17, 0, sizeof(m_camera3DLUT17));
+        lutParams.LUTSize = LUT17_SEG;
+        for(int i = 0; i < LUT17_SEG; i++)
+        {
+            for(int j = 0; j < LUT17_SEG; j++)
+            {
+                for(int z = 0; z < LUT17_SEG; z++)
+                {
+                    (*m_camera3DLUT17)[i][j][z].B = params->lut[(LUT17_SEG*LUT17_SEG*i+LUT17_SEG*j+z)].R;
+                    (*m_camera3DLUT17)[i][j][z].G = params->lut[(LUT17_SEG*LUT17_SEG*i+LUT17_SEG*j+z)].G;
+                    (*m_camera3DLUT17)[i][j][z].R = params->lut[(LUT17_SEG*LUT17_SEG*i+LUT17_SEG*j+z)].B;
+                }
+            }
+        }
+        lutParams.p17 = m_camera3DLUT17;
+    break;
+    }
+
+    camMode.Function = VPE_FN_CP_3DLUT;
+    camMode.pLUT = &lutParams;
+
+    DXVAHD_BLT_STATE_PRIVATE_DATA dxvahdPData;
+    memset((PVOID)&dxvahdPData, 0, sizeof(dxvahdPData));
+    dxvahdPData.Guid = DXVAHD_VPE_EXEC_GUID;
+    dxvahdPData.DataSize = sizeof(camMode);
+    dxvahdPData.pData = &camMode;
+
+    hr = GetSetOutputExtension(DXVAHD_BLT_STATE_PRIVATE, sizeof(dxvahdPData), &dxvahdPData, TRUE, FALSE);
+
+    return hr;
+}
+
 HRESULT DXVAHDVideoProcessor::SetCameraPipeBlackLevelCorrection(CameraBlackLevelParams *params)
 {
     HRESULT hr = S_OK;
@@ -1163,7 +1259,13 @@ mfxStatus DXVAHDVideoProcessor::Execute(MfxHwVideoProcessing::mfxExecuteParams *
     {
         hr = SetCameraPipeVignetteCorrection(&executeParams->CameraVignetteCorrection);
         CHECK_HRES(hr);
-    } 
+    }
+
+    if ( executeParams->bCamera3DLUT )
+    {
+        hr = SetCameraPipe3DLUTCorrection(&executeParams->Camera3DLUT);
+        CHECK_HRES(hr);
+    }
 
     DXVAHD_STREAM_STATE_D3DFORMAT_DATA d3dFormatData;
     d3dFormatData.Format = (D3DFORMAT)executeParams->pRefSurfaces[0].frameInfo.FourCC;
@@ -1566,6 +1668,13 @@ mfxStatus D3D9CameraProcessor::AsyncRoutine(AsyncParams *pParam)
         }
     }
 
+    if ( pParam->Caps.b3DLUT)
+    {
+        m_executeParams[surfInIndex].bCamera3DLUT = true;
+        m_executeParams[surfInIndex].Camera3DLUT.LUTSize = pParam->LUTParams.size;
+        m_executeParams[surfInIndex].Camera3DLUT.lut     = (LUT_ENTRY *)pParam->LUTParams.lut;
+    }
+
     if ( pParam->Caps.bVignetteCorrection )
     {
         MFX_CHECK_NULL_PTR1(pParam->VignetteParams.pCorrectionMap);
@@ -1626,10 +1735,18 @@ mfxStatus D3D9CameraProcessor::CompleteRoutine(AsyncParams * pParam)
     if ( m_systemMemOut )
     {
         IppiSize roi = {m_width, m_height};
-        mfxI64 verticalPitch = 0;
-        if (  pParam->surf_out->Info.FourCC == MFX_FOURCC_ARGB16 )
+        mfxI64 verticalPitch = m_height;
+
+        if (  pParam->surf_out->Info.FourCC == MFX_FOURCC_ARGB16 && ! pParam->Caps.b3DLUT)
         {
+            // For ARGB16 out need to do R<->B swapping.
+            // 3D LUT does swapping as well.
             sts = m_pCmCopy.get()->CopySwapVideoToSystemMemory(IPP_MIN(IPP_MIN(pParam->surf_out->Data.R,pParam->surf_out->Data.G),pParam->surf_out->Data.B), pParam->surf_out->Data.Pitch, (mfxU32)m_height,m_outputSurf[outIndex].surf, 0, roi, MFX_FOURCC_ABGR16);
+        }
+        else if ( MFX_FOURCC_RGB4 == pParam->surf_out->Info.FourCC && pParam->Caps.b3DLUT )
+        {
+            // 3D LUT does R<->B swapping. Need to get R and B back.
+            sts = m_pCmCopy.get()->CopySwapVideoToSystemMemory(IPP_MIN(IPP_MIN(pParam->surf_out->Data.R,pParam->surf_out->Data.G),pParam->surf_out->Data.B), pParam->surf_out->Data.Pitch, (mfxU32)m_height,m_outputSurf[outIndex].surf, 0, roi, MFX_FOURCC_BGR4);
         }
         else
         {

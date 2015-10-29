@@ -587,6 +587,18 @@ class DXVAHDVideoProcessor
         FLOAT     d[RGB_CHANNEL_MATRIX];                              /**< @brief [in/out] Value for parameter d  */
     };
 
+    typedef struct _TLUTParams
+    {
+        UINT  bActive;
+        UINT  LUTSize;
+        union
+        {
+            MfxHwVideoProcessing::LUT17 *p17;
+            MfxHwVideoProcessing::LUT33 *p33;
+            MfxHwVideoProcessing::LUT65 *p65;
+        };
+    } TLUTParams;
+
     struct TCameraPipeCaps
     {
         union
@@ -603,7 +615,9 @@ class DXVAHDVideoProcessor
                 UINT    bVignetteCorrection : 1;
                 UINT    bRgbToYuvCSC : 1;
                 UINT    bYuvToRgbCSC : 1;
-                UINT    Reserved : 21;
+                UINT    b3DLUT       : 1; // GEN10
+                UINT    bPipeOrder   : 1; // GEN10
+                UINT    Reserved : 19;
             };
             struct
             {
@@ -632,6 +646,7 @@ class DXVAHDVideoProcessor
             TTotalColorControl                    *pTotalColorControl;  /**< @brief [in/out] CP IE Total Color Control Structure */
             TGamutCompress                        *pGamutCompress;        /**< @brief [in/out] CP IE Gamut Compress Structure */
             TLensGeometryDistortionCorrection   *pLensCorrection;      /**< @brief [in/out] CP Lens Geometric Distortion Correction Structure */
+            TLUTParams                          *pLUT;
         };
     };
 
@@ -651,7 +666,9 @@ class DXVAHDVideoProcessor
         VPE_FN_IE_GAMUT_COMPRESS = 0x010A,   /**< @brief Gamut Compress Function.                        */
         VPE_FN_IE_TOTAL_COLOR_CONTROL = 0x010B,   /**< @brief Total Color Control Function.                    */
         VPE_FN_YUV_TO_RGB_CSC = 0x010C,   /**< @brief YUV To RGB CSC Function.                        */
-        VPE_FN_CP_LENS_GEOMETRY_DISTORTION_CORRECTION = 0x010D    /**< @brief Lens Geometry Distortion Correction Function. */
+        VPE_FN_CP_LENS_GEOMETRY_DISTORTION_CORRECTION = 0x010D,    /**< @brief Lens Geometry Distortion Correction Function. */
+        VPE_FN_CP_3DLUT                               = 0x010E,
+        VPE_FN_CP_PIPE_ORDER                          = 0x010F
     };
 
 public:
@@ -660,6 +677,9 @@ public:
         m_cameraFGC.pSegment = new TForwardGammaSeg[64];
         m_bIsSet = false;
         m_cachedReadyTaskIndex.clear();
+        m_camera3DLUT17        = 0;
+        m_camera3DLUT33        = 0;
+        m_camera3DLUT65        = 0;
     };
 
     ~DXVAHDVideoProcessor()    
@@ -671,6 +691,15 @@ public:
         {
             SAFE_DELETE_ARRAY(it->second);
         }
+
+        if (m_camera3DLUT17)
+            free(m_camera3DLUT17);
+
+        if(m_camera3DLUT33)
+            free(m_camera3DLUT33);
+
+        if(m_camera3DLUT65)
+            free(m_camera3DLUT65);
     };
     mfxStatus DestroyDevice(void);
     mfxStatus CreateDevice(VideoCORE *core, mfxVideoParam *par, bool temporary);
@@ -711,6 +740,7 @@ private:
     HRESULT   SetCameraPipeLensCorrection(CameraLensCorrectionParams *params);
     HRESULT   SetCameraPipeBlackLevelCorrection(CameraBlackLevelParams *params);
     HRESULT   SetCameraPipeVignetteCorrection(CameraVignetteCorrectionParams *params);
+    HRESULT   SetCameraPipe3DLUTCorrection(Camera3DLUTParams *params);
     HRESULT   SetCameraPipeHotPixel(CameraHotPixelRemovalParams *params);
     HRESULT   SetCameraPipeEnable(TCameraPipeEnable bActive, BOOL bCheckOnSet/*=FALSE*/);
     HRESULT   GetSetOutputExtension(DXVAHD_BLT_STATE state, UINT uiDataSize, void *pData, BOOL bSet, BOOL bCheckOnSet);
@@ -738,6 +768,10 @@ private:
     std::map<void *, DXVAHD_STREAM_DATA *> m_Streams;
     UMC::Mutex              m_mutex;
     std::set<mfxU32>        m_cachedReadyTaskIndex;
+
+    LUT17                  *m_camera3DLUT17;
+    LUT33                  *m_camera3DLUT33;
+    LUT65                  *m_camera3DLUT65;
 };
 
 class D3D9CameraProcessor: public CameraProcessor
