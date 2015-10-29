@@ -33,6 +33,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-b bitRate] - encoded bit rate (KBits per second), valid for H.264, H.265, MPEG2 and MVC encoders \n"));
     msdk_printf(MSDK_STRING("   [-u speed|quality|balanced] - target usage, valid for H.264, H.265, MPEG2 and MVC encoders\n"));
     msdk_printf(MSDK_STRING("   [-n number] - number of frames to process\n"));
+    msdk_printf(MSDK_STRING("   [-loop] - run processing in the infinite loop mode\n"));
     msdk_printf(MSDK_STRING("   [-r distance] - Distance between I- or P- key frames (1 means no B-frames) (0 - by default(I frames))\n"));
     msdk_printf(MSDK_STRING("   [-g size] - GOP size (1(default) means I-frames only)\n"));
     msdk_printf(MSDK_STRING("   [-l numSlices] - number of slices \n"));
@@ -390,6 +391,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-loop")))
+        {
+            pParams->bLoop = true;
+        }
         else // 1-character options
         {
             switch (strInput[i][1])
@@ -716,6 +721,7 @@ int main(int argc, char *argv[])
     Params.refDist = 1; //only I frames
     Params.gopSize = 1; //only I frames
     Params.numRef  = 1; //one ref by default
+    Params.bLoop     = false; //default value
     Params.bDECODE   = false; //default value
     Params.bENCODE   = false; //default value
     Params.bENCPAK   = false; //default value
@@ -777,6 +783,10 @@ int main(int argc, char *argv[])
 
     msdk_printf(MSDK_STRING("Processing started\n"));
 
+    msdk_tick startTime;
+    msdk_tick frequency = msdk_time_get_frequency();
+    startTime = msdk_time_get_tick();
+
     for (;;)
     {
         sts = pPipeline->Run();
@@ -799,7 +809,7 @@ int main(int argc, char *argv[])
     }
 
     pPipeline->Close();
-    msdk_printf(MSDK_STRING("\nProcessing finished\n"));
+    msdk_printf(MSDK_STRING("\nProcessing finished after %.2f sec \n"), MSDK_GET_TIME(msdk_time_get_tick(), startTime, frequency));
 
     return 0;
 }

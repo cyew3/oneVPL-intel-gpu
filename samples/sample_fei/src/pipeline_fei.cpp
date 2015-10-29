@@ -1021,6 +1021,42 @@ mfxStatus CEncodingPipeline::InitFileWriters(sInputParams *pParams)
     return sts;
 }
 
+mfxStatus CEncodingPipeline::ResetIOFiles(sInputParams pParams)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    sts = m_FileWriters.first->Init(pParams.dstFileBuff[0]);
+
+    if (pParams.bDECODE)
+    {
+        sts = m_BSReader.Init(pParams.strSrcFile);
+    }
+    else
+    {
+        sts = m_FileReader.Init(pParams.strSrcFile,
+            pParams.ColorFormat,
+            0,
+            pParams.srcFileBuff);
+    }
+
+    if (mbstatout)
+        fseek(mbstatout, 0, SEEK_SET);
+    if (mvout)
+        fseek(mvout, 0, SEEK_SET);
+    if (mvENCPAKout)
+        fseek(mvENCPAKout, 0, SEEK_SET);
+    if (mbcodeout)
+        fseek(mbcodeout, 0, SEEK_SET);
+    if (pMvPred)
+        fseek(pMvPred, 0, SEEK_SET);
+    if (pEncMBs)
+        fseek(pEncMBs, 0, SEEK_SET);
+    if (pPerMbQP)
+        fseek(pPerMbQP, 0, SEEK_SET);
+
+    return sts;
+}
+
 mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 {
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
@@ -1173,7 +1209,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 void CEncodingPipeline::Close()
 {
     if (m_FileWriters.first)
-        msdk_printf(MSDK_STRING("Frame number: %u\r"), m_FileWriters.first->m_nProcessedFramesNum);
+        msdk_printf(MSDK_STRING("Frame number: %u\r"), m_encpakParams.bLoop ? m_frameCount : m_FileWriters.first->m_nProcessedFramesNum);
 
     MSDK_SAFE_DELETE(m_pmfxDECODE);
     MSDK_SAFE_DELETE(m_pmfxVPP);
@@ -2295,6 +2331,15 @@ mfxStatus CEncodingPipeline::Run()
             }
 
             sts = m_FileReader.LoadNextFrame(pSurf);
+            if (sts == MFX_ERR_MORE_DATA && m_encpakParams.bLoop)
+            {
+                // infinite loop mode, need to proceed from the beginning
+                sts = ResetIOFiles(m_encpakParams);
+                MSDK_BREAK_ON_ERROR(sts);
+                if (create_task)
+                    delete(eTask);
+                continue;
+            }
             MSDK_BREAK_ON_ERROR(sts);
 
             // ... after we're done call Unlock
@@ -2322,6 +2367,16 @@ mfxStatus CEncodingPipeline::Run()
 
             if (sts == MFX_ERR_MORE_DATA)
             {
+                if (m_encpakParams.bLoop)
+                {
+                    // infinite loop mode, need to proceed from the beginning
+                    sts = ResetIOFiles(m_encpakParams);
+                    MSDK_BREAK_ON_ERROR(sts);
+                    if (create_task)
+                        delete(eTask);
+                    bEndOfFile = false;
+                    continue;
+                }
                 DecExtSurface.pSurface = NULL;
                 sts = MFX_ERR_NONE;
                 break;

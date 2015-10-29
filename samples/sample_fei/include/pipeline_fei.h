@@ -94,6 +94,8 @@ struct sInputParams
     MemType memType;
     bool bUseHWLib; // true if application wants to use HW MSDK library
 
+    bool bLoop;
+
     msdk_char strSrcFile[MSDK_MAX_FILENAME_LEN];
 
     std::vector<msdk_char*> srcFileBuff;
@@ -257,6 +259,7 @@ protected:
     virtual mfxStatus InitMfxVppParams(sInputParams *pParams);
 
     virtual mfxStatus InitFileWriters(sInputParams *pParams);
+    virtual mfxStatus ResetIOFiles(sInputParams pParams);
     virtual void FreeFileWriters();
     virtual mfxStatus InitFileWriter(CSmplBitstreamWriter **ppWriter, const msdk_char *filename);
 
