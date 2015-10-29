@@ -675,6 +675,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
+    if (pParams->EncodedOrder && pParams->bENCODE && pParams->nNumFrames == 0){
+        msdk_printf(MSDK_STRING("\nWARNING: without number of frames setting (-n) last frame of FEI ENCODE in Encoded Order\n"));
+        msdk_printf(MSDK_STRING("could mismatch with last frame in FEI ENCODE with Display Order!\n"));
+    }
+
     if (pParams->bENCODE){
         if (!pParams->CodecProfile)
             pParams->CodecProfile = 100; // MFX_PROFILE_AVC_HIGH
