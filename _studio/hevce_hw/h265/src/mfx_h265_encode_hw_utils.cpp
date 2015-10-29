@@ -19,6 +19,50 @@
 namespace MfxHwH265Encode
 {
 
+ExtBuffers::ExtBuffers()
+{
+    Zero(extParamAll);
+    CleanUp();
+    size_t count = 0;
+    extParamAll[count++] = &extOpaq.Header;
+    extParamAll[count++] = &extOptHevc.Header;
+    extParamAll[count++] = &extDumpFiles.Header;
+    extParamAll[count++] = &extTiles.Header;
+    extParamAll[count++] = &extRegion.Header;
+    extParamAll[count++] = &extHevcParam.Header;
+    extParamAll[count++] = &extOpt.Header;
+    extParamAll[count++] = &extOpt2.Header;
+    extParamAll[count++] = &extSpsPps.Header;
+    extParamAll[count++] = &extVps.Header;
+    extParamAll[count++] = &extRoi.Header;
+}
+
+void ExtBuffers::CleanUp()
+{
+    extOpaq.Header.BufferId = MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION;
+    extOpaq.Header.BufferSz = sizeof(mfxExtOpaqueSurfaceAlloc);
+    extOptHevc.Header.BufferId = MFX_EXTBUFF_HEVCENC;
+    extOptHevc.Header.BufferSz = sizeof(mfxExtCodingOptionHEVC);
+    extDumpFiles.Header.BufferId = MFX_EXTBUFF_DUMP;
+    extDumpFiles.Header.BufferSz = sizeof(mfxExtDumpFiles);
+    extTiles.Header.BufferId = MFX_EXTBUFF_HEVC_TILES;
+    extTiles.Header.BufferSz = sizeof(mfxExtHEVCTiles);
+    extRegion.Header.BufferId = MFX_EXTBUFF_HEVC_REGION;
+    extRegion.Header.BufferSz = sizeof(mfxExtHEVCRegion);
+    extHevcParam.Header.BufferId = MFX_EXTBUFF_HEVC_PARAM;
+    extHevcParam.Header.BufferSz = sizeof(mfxExtHEVCParam);
+    extOpt.Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
+    extOpt.Header.BufferSz = sizeof(mfxExtCodingOption);
+    extOpt2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
+    extOpt2.Header.BufferSz = sizeof(mfxExtCodingOption2);
+    extSpsPps.Header.BufferId = MFX_EXTBUFF_CODING_OPTION_SPSPPS;
+    extSpsPps.Header.BufferSz = sizeof(mfxExtCodingOptionSPSPPS);
+    extVps.Header.BufferId = MFX_EXTBUFF_CODING_OPTION_VPS;
+    extVps.Header.BufferSz = sizeof(mfxExtCodingOptionVPS);
+    extRoi.Header.BufferId = MFX_EXTBUFF_ENCODER_ROI;
+    extRoi.Header.BufferSz = sizeof(mfxExtEncoderROI);
+}
+
 template<class T, class A> void Insert(A& _to, mfxU32 _where, T const & _what)
 {
     memmove(&_to[_where + 1], &_to[_where], sizeof(_to)-(_where + 1) * sizeof(_to[0]));
@@ -2509,7 +2553,7 @@ void ConfigureTask(
 
 }
 
-#if DEBUG_REC_FRAMES_INFO 
+#if DEBUG_REC_FRAMES_INFO
 
 void WriteFrameData(
     vm_file *            file,

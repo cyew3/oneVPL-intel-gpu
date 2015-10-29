@@ -35,6 +35,23 @@
 namespace MfxHwH265Encode
 {
 
+struct ExtBuffers {
+    ExtBuffers();
+    void CleanUp();
+    mfxExtOpaqueSurfaceAlloc extOpaq;
+    mfxExtCodingOptionHEVC   extOptHevc;
+    mfxExtDumpFiles          extDumpFiles;
+    mfxExtHEVCTiles          extTiles;
+    mfxExtHEVCRegion         extRegion;
+    mfxExtHEVCParam          extHevcParam;
+    mfxExtCodingOption       extOpt;
+    mfxExtCodingOption2      extOpt2;
+    mfxExtCodingOptionSPSPPS extSpsPps;
+    mfxExtCodingOptionVPS    extVps;
+    mfxExtEncoderROI         extRoi;
+    mfxExtBuffer            *extParamAll[11];
+};
+
 template<class T> inline bool Equal(T const & l, T const & r) { return memcmp(&l, &r, sizeof(T)) == 0; }
 template<class T> inline void Fill(T & obj, int val)          { memset(&obj, val, sizeof(obj)); }
 template<class T> inline void Zero(T & obj)                   { memset(&obj, 0, sizeof(obj)); }

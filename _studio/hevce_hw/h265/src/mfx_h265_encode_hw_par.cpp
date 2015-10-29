@@ -700,6 +700,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         maxBuf = GetMaxCpbInKBByLevel(par);
         maxDPB = (mfxU16)GetMaxDpbSizeByLevel(par);
     }
+    if ((!par.mfx.FrameInfo.Width) ||
+        (!par.mfx.FrameInfo.Height))
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
     if (bInit)
     {
         unsupported     += CheckMin(par.mfx.FrameInfo.Width,  Align(par.mfx.FrameInfo.Width, par.LCUSize));
@@ -799,6 +804,15 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     unsupported += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV420, 0);
     unsupported += CheckOption(par.mfx.FrameInfo.FourCC, (mfxU32)MFX_FOURCC_NV12, 0);
+
+    if (par.mfx.FrameInfo.FrameRateExtN && par.mfx.FrameInfo.FrameRateExtD) // FR <= 300
+    {
+        if (par.mfx.FrameInfo.FrameRateExtN > (mfxU32)300 * par.mfx.FrameInfo.FrameRateExtD)
+        {
+            par.mfx.FrameInfo.FrameRateExtN = par.mfx.FrameInfo.FrameRateExtD = 0;
+            unsupported++;
+        }
+    }
 
     if ((par.mfx.FrameInfo.FrameRateExtN == 0) !=
         (par.mfx.FrameInfo.FrameRateExtD == 0))
