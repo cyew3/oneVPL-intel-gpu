@@ -311,6 +311,12 @@ protected:
     mfxFrameSurface1 ** GetCurrentL1SurfacesPak(iTask* eTask);
     iTask* GetTaskByFrameOrder(mfxU32 frame_order);
 
+    mfxStatus InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask);
+    iTask* GetRefTask(iTask *eTask, unsigned int idx, int* refIdx, int* L0L1);
+    mfxStatus ProcessMultiPreenc(iTask* eTask, unsigned& num_of_refs);
+    mfxStatus PassPreEncMVPred2EncEx(iTask* eTask, int numMVP);
+    unsigned GetBufSetDistortion(IObuffs* buf);
+
     mfxEncodeCtrl* m_ctr;
 
     bool m_disableMVoutPreENC;
@@ -337,6 +343,8 @@ PairU8 ExtendFrameType(mfxU32 type);
 mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 counter, bool & ref);
 
 mfxStatus repackPreenc2Enc(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf);
+const char* getPicType(mfxU8 type);
+mfxStatus repackPreenc2EncEx(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf, int mvpseq, int refIdx, int L0L1);
 mfxI16 get16Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1);
 
 #endif // __PIPELINE_FEI_H__

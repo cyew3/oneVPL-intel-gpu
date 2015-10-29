@@ -19,7 +19,8 @@ void UpdateDpbFrames(
     {
         DpbFrame & ref = task.m_dpb[field][i];
 
-        if (ref.m_longTermIdxPlus1 > 0)
+        // No long ref for now, may remove this long term ref part
+        if (ref.m_longTermIdxPlus1 > 1)
         {
             if (ps == MFX_PICSTRUCT_PROGRESSIVE)
             {

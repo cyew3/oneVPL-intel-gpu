@@ -28,6 +28,7 @@
 #define NumActiveRefBL0   4
 #define NumActiveRefBL1   1
 #define NumActiveRefBL1_i 2
+#define MaxFeiEncMVPNum 4
 
 #define MSDK_ZERO_ARRAY(VAR, NUM) {memset(VAR, 0, sizeof(*VAR)*NUM);}
 
@@ -367,6 +368,13 @@ struct DecRefPicMarkingInfo
     ArrayU32x64 value;      // operation-dependent data, max 2 per operation
 };
 
+struct PreEncMVPInfo
+{
+    bufSet* preenc_output_bufs;
+    int L0L1;
+    int refIdx;
+};
+
 //for PreEnc; Enc; Pak reordering
 struct iTask
 {
@@ -380,6 +388,7 @@ struct iTask
     mfxI32 encoded;
     bufSet* bufs;
     bufSet* preenc_bufs;
+    PreEncMVPInfo preenc_mvp_info[MaxFeiEncMVPNum];
 
     mfxU16 PicStruct;
     mfxU16 BRefType;
