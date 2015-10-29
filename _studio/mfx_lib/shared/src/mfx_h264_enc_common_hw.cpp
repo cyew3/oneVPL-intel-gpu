@@ -6128,7 +6128,7 @@ void MfxVideoParam::SyncCalculableToVideoParam()
         mfx.RateControlMethod == MFX_RATECONTROL_VCM ||
         mfx.RateControlMethod == MFX_RATECONTROL_AVBR||
         mfx.RateControlMethod == MFX_RATECONTROL_QVBR ||
-        bRateControlLA(mfx.RateControlMethod))
+        (bRateControlLA(mfx.RateControlMethod) && (mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ)))
     {
         mfx.TargetKbps = mfxU16((calcParam.targetKbps + mfx.BRCParamMultiplier - 1) / mfx.BRCParamMultiplier);
 
