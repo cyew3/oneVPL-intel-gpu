@@ -135,6 +135,7 @@ public:
     virtual mfxStatus DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out)
         {bs; surface_work; surface_out;return MFX_ERR_NONE;};
 
+    virtual mfxStatus ConstructFrameImpl(mfxBitstream *in, mfxBitstream *out, mfxFrameSurface1 *surface_work);
     virtual mfxStatus ConstructFrame(mfxBitstream *in, mfxBitstream *out, mfxFrameSurface1 *surface_work);
 
     virtual mfxStatus GetDecodeStat(mfxDecodeStat *stat);

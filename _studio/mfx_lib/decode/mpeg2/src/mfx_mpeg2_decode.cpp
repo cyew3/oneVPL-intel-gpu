@@ -3904,6 +3904,25 @@ mfxStatus CutUserData(mfxBitstream *in, mfxBitstream *out, const mfxU8 *tail)
 mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, mfxFrameSurface1 *surface_work)
 {
     mfxStatus sts = MFX_ERR_NONE;
+    do
+    {
+        sts = ConstructFrameImpl(in, out, surface_work);
+
+        if (sts == MFX_ERR_NOT_ENOUGH_BUFFER)
+        {
+            out->DataLength = 0;
+            out->DataOffset = 0;
+            memset(m_last_bytes, 0, NUM_REST_BYTES);
+            ResetFcState(m_fcState);
+        }
+    } while (MFX_ERR_NOT_ENOUGH_BUFFER == sts);
+
+    return sts;
+}
+
+mfxStatus VideoDECODEMPEG2::ConstructFrameImpl(mfxBitstream *in, mfxBitstream *out, mfxFrameSurface1 *surface_work)
+{
+    mfxStatus sts = MFX_ERR_NONE;
 
     MFX_CHECK_NULL_PTR2(in, out);
 
@@ -3993,7 +4012,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
                         default:
                             MoveBitstreamData(*in, (mfxU32)(curr - head) + 4);
                             memset(m_last_bytes, 0, NUM_REST_BYTES);
-                            return MFX_ERR_MORE_DATA;
+                            continue;
                     }
 
                 }
@@ -4004,6 +4023,17 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
                 {
                     Height = (CropH + 31) & ~(31);
                 }
+            }
+
+            mfxVideoParam vpCopy = m_vPar;
+            vpCopy.mfx.FrameInfo.Width = Width;
+            vpCopy.mfx.FrameInfo.Height = Height;
+
+            if (!IsHWSupported(m_pCore, &vpCopy))
+            {
+                MoveBitstreamData(*in, (mfxU32)(curr - head) + 4);
+                memset(m_last_bytes, 0, NUM_REST_BYTES);
+                continue;
             }
 
             if (m_InitW <  Width || m_InitH < Height || surface_work->Info.Width <  Width || surface_work->Info.Height < Height)
