@@ -137,8 +137,25 @@ public:
 
     static mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out)
     {
-        UNREFERENCED_PARAMETER(in);
-        UNREFERENCED_PARAMETER(out);
+        if (in)
+        {
+            for (int i = 0; i < in->NumExtParam; i++)
+            {
+                if (in->ExtParam[i])
+                {
+                    if (MFX_EXTBUF_CAM_VIGNETTE_CORRECTION == in->ExtParam[i]->BufferId && in->vpp.In.CropW > 8*1024)
+                    {
+                        if (out)
+                        {
+                            out->vpp.In.CropW = 0;
+                            out->vpp.In.Width = 0;
+                        }
+                        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+                    }
+                }
+            }
+        }
+
         return MFX_ERR_NONE;
     }
 
