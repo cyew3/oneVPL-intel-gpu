@@ -339,15 +339,15 @@ typedef struct _VAEncMiscParameterVP8SegmentMapParams
 
 #include <va/va_enc.h>
 
-// change in va_enc_h264.h
-typedef struct _VAEncQpBufferH264 {
-    /*
-     * \brief This structure holds luma Qp per 16x16 macroblock. Buffer size shall be
-     * sufficient to fit the slice or frame to be encoded depending on if it is a slice level
-     * or frame level encoding.
-     */
-    unsigned char qp_y;
-} VAEncQpBufferH264;
+//// change in va_enc_h264.h
+//typedef struct _VAEncQpBufferH264 {
+//    /*
+//     * \brief This structure holds luma Qp per 16x16 macroblock. Buffer size shall be
+//     * sufficient to fit the slice or frame to be encoded depending on if it is a slice level
+//     * or frame level encoding.
+//     */
+//    unsigned char qp_y;
+//} VAEncQpBufferH264;
 
 #define VA_CONFIG_ATTRIB_FEI_INTERFACE_REV_INTEL  011
 
@@ -385,21 +385,21 @@ typedef struct _VAEncQpBufferH264 {
 
 /**@}*/
 
-/** \brief Attribute value for VAConfigAttribStatisticsIntel */
-typedef union _VAConfigAttribValStatisticsIntel {
-    struct {
-        /** \brief Max number of past reference frames that are supported. */
-        unsigned int    max_num_past_references   : 4;
-        /** \brief Max number of future reference frames that are supported. */
-        unsigned int    max_num_future_references : 4;
-        /** \brief Number of output surfaces that are supported */
-        unsigned int    num_outputs               : 3;
-        /** \brief Interlaced content is supported */
-        unsigned int    interlaced                : 1;
-        unsigned int    reserved                  : 20;
-    } bits;
-    unsigned int value;
-} VAConfigAttribValStatisticsIntel;
+///** \brief Attribute value for VAConfigAttribStatisticsIntel */
+//typedef union _VAConfigAttribValStatisticsIntel {
+//    struct {
+//        /** \brief Max number of past reference frames that are supported. */
+//        unsigned int    max_num_past_references   : 4;
+//        /** \brief Max number of future reference frames that are supported. */
+//        unsigned int    max_num_future_references : 4;
+//        /** \brief Number of output surfaces that are supported */
+//        unsigned int    num_outputs               : 3;
+//        /** \brief Interlaced content is supported */
+//        unsigned int    interlaced                : 1;
+//        unsigned int    reserved                  : 20;
+//    } bits;
+//    unsigned int value;
+//} VAConfigAttribValStatisticsIntel;
 
 /** \brief VAEncFEIMVBufferTypeIntel and VAStatsMotionVectorBufferTypeIntel. Motion vector buffer layout
  * Motion vector output is per 4x4 block. For each 4x4 block there is a pair of past and future
@@ -422,15 +422,15 @@ typedef union _VAConfigAttribValStatisticsIntel {
  *
  **/
 
-/** \brief Motion vector data structure. */
-typedef struct _VAMotionVectorIntel {
-    /** \mv0[0]: horizontal motion vector for past reference */
-    /** \mv0[1]: vertical motion vector for past reference */
-    /** \mv1[0]: horizontal motion vector for future reference */
-    /** \mv1[1]: vertical motion vector for future reference */
-    short  mv0[2];  /* past reference */
-    short  mv1[2];  /* future reference */
-} VAMotionVectorIntel;
+///** \brief Motion vector data structure. */
+//typedef struct _VAMotionVectorIntel {
+//    /** \mv0[0]: horizontal motion vector for past reference */
+//    /** \mv0[1]: vertical motion vector for past reference */
+//    /** \mv1[0]: horizontal motion vector for future reference */
+//    /** \mv1[1]: vertical motion vector for future reference */
+//    short  mv0[2];  /* past reference */
+//    short  mv1[2];  /* future reference */
+//} VAMotionVectorIntel;
 
 
 //va_intel_fei.h

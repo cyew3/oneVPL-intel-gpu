@@ -19,7 +19,7 @@
 #include <limits.h>
 
 #if defined (MFX_VA_LINUX)
-#include <va/va_enc_h264.h>
+#include <va/va.h>
 #endif
 
 #include "ippi.h"
