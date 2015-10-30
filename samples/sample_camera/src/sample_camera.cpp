@@ -370,6 +370,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             msdk_opt_read(strInput[++i], pParams->frameInfo[VPP_IN].nWidth);
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-3dlut")))
+        {
+            pParams->b3DLUT = true;
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-h")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-height")))
         {
             msdk_opt_read(strInput[++i], pParams->frameInfo[VPP_IN].nHeight);

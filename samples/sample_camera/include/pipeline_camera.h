@@ -71,6 +71,9 @@ public:
     mfxStatus PrepareInputSurfaces();
 
 protected:
+    mfxCam3DLutEntry*       m_3dlut_17;
+    mfxCam3DLutEntry*       m_3dlut_33;
+    mfxCam3DLutEntry*       m_3dlut_65;
     CBmpWriter*             m_pBmpWriter;
     CRawVideoReader*        m_pRawFileReader;
     CRawVideoWriter*        m_pARGB16FileWriter;
@@ -93,6 +96,7 @@ protected:
     mfxExtCamBlackLevelCorrection m_BlackLevelCorrection;
     mfxExtCamWhiteBalance         m_WhiteBalance;
     mfxExtCamColorCorrection3x3   m_CCM;
+    mfxExtCam3DLut                m_3DLUT;
     mfxExtCamLensGeomDistCorrection m_Lens;
     mfxExtCamPipeControl     m_PipeControl;
     mfxExtCamPadding         m_Padding;

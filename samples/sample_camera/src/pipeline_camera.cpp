@@ -166,6 +166,81 @@ mfxStatus CCameraPipeline::InitMfxParams(sInputParams *pParams)
         }
     }
 
+    mfxU32 table_size = 17; // 17,33,65 otherwise error
+    if (pParams->b3DLUT)
+    {
+
+        mfxU16 R_INC     = 0;
+        mfxU16 G_INC     = 0;
+        mfxU16 B_INC     = 0;
+        mfxU16 TABLE_INC = 0;
+        mfxU16 SEG       = 0;
+
+        mfxCam3DLutEntry *table_3dlut = NULL;
+
+        if (table_size == 17 )
+        {
+            table_3dlut = m_3dlut_17;
+            memset(m_3dlut_17, 0, sizeof(mfxCam3DLutEntry)*MFX_CAM_3DLUT17_SIZE);
+            m_3DLUT.Size = MFX_CAM_3DLUT17_SIZE;
+
+            TABLE_INC = 4096;
+            SEG = 17;
+        }
+        else if (table_size == 33 )
+        {
+            table_3dlut = m_3dlut_33;
+            memset(m_3dlut_33, 0, sizeof(mfxCam3DLutEntry)*MFX_CAM_3DLUT33_SIZE);
+            m_3DLUT.Size = MFX_CAM_3DLUT33_SIZE;
+
+            TABLE_INC = 4096>>1;
+            SEG = 33;
+        }
+        else if (table_size == 65 )
+        {
+            table_3dlut = m_3dlut_65;
+            memset(m_3dlut_65, 0, sizeof(mfxCam3DLutEntry)*MFX_CAM_3DLUT65_SIZE);
+            m_3DLUT.Size = MFX_CAM_3DLUT65_SIZE;
+
+            TABLE_INC = 4096>>2;
+            SEG = 65;
+        }
+
+        for(int i = 0; i < SEG; i++)
+        {
+            for(int j = 0; j < SEG; j++)
+            {
+                for(int k = 0; k < SEG; k++)
+                {
+                    table_3dlut[SEG*SEG*i+SEG*j+k].R = R_INC;
+                    table_3dlut[SEG*SEG*i+SEG*j+k].G = G_INC;
+                    table_3dlut[SEG*SEG*i+SEG*j+k].B = B_INC;
+
+                    if ( k == SEG-2 )
+                        B_INC += TABLE_INC-1;
+                    else if ( k < (SEG-2) )
+                        B_INC += TABLE_INC;
+                }
+
+                B_INC = 0;
+                if ( j == SEG-2 )
+                       G_INC += TABLE_INC-1;
+                else
+                       G_INC += TABLE_INC;
+
+            }
+
+            B_INC = G_INC = 0;
+            if ( i == SEG-2 )
+                   R_INC += TABLE_INC-1;
+            else
+                R_INC += TABLE_INC;
+
+        }
+        m_3DLUT.Table = table_3dlut;
+        m_ExtBuffers.push_back((mfxExtBuffer *)&m_3DLUT);
+    }
+
     if (pParams->bVignette)
     {
         sts = AllocAndInitVignetteCorrection(pParams);
@@ -717,6 +792,10 @@ CCameraPipeline::CCameraPipeline()
     m_alphaValue = -1;
     m_resetCnt = 0;
 
+    m_3dlut_17 = (mfxCam3DLutEntry*) malloc (sizeof(mfxCam3DLutEntry)*MFX_CAM_3DLUT17_SIZE);
+    m_3dlut_33 = (mfxCam3DLutEntry*) malloc (sizeof(mfxCam3DLutEntry)*MFX_CAM_3DLUT33_SIZE);
+    m_3dlut_65 = (mfxCam3DLutEntry*) malloc (sizeof(mfxCam3DLutEntry)*MFX_CAM_3DLUT65_SIZE);
+
 #if D3D_SURFACES_SUPPORT
 //    m_pS3DControl = NULL;
 #endif
@@ -747,6 +826,10 @@ CCameraPipeline::CCameraPipeline()
     MSDK_ZERO_MEMORY(m_HP);
     m_HP.Header.BufferId = MFX_EXTBUF_CAM_HOT_PIXEL_REMOVAL;
     m_HP.Header.BufferSz = sizeof(m_HP);
+
+    MSDK_ZERO_MEMORY(m_3DLUT);
+    m_3DLUT.Header.BufferId = MFX_EXTBUF_CAM_3DLUT;
+    m_3DLUT.Header.BufferSz = sizeof(m_3DLUT);
 
     MSDK_ZERO_MEMORY(m_WhiteBalance);
     m_WhiteBalance.Header.BufferId = MFX_EXTBUF_CAM_WHITE_BALANCE;

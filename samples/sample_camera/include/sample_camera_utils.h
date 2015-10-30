@@ -284,6 +284,8 @@ struct sInputParams
 
     bool bDoPadding;
 
+    bool b3DLUT;
+
     sInputParams()
     {
         MSDK_ZERO_MEMORY(*this);
@@ -309,6 +311,7 @@ struct sInputParams
         bBayerDenoise = false;
         bVignette     = false;
         bLens         = false;
+        b3DLUT        = false;
 
         alphaValue = -1;
         resetInterval = 7;
