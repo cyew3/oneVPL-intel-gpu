@@ -1229,6 +1229,7 @@ Frame *H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, 
         m_free.front()->m_timeStamp = surface->Data.TimeStamp;
         m_inputQueue.splice(m_inputQueue.end(), m_free, m_free.begin());
         inputFrame = m_inputQueue.back();
+        inputFrame->AddRef();
 
         if (ctrl && ctrl->Payload && ctrl->NumPayload > 0) {
             inputFrame->m_userSeiMessages = ctrl->Payload;
@@ -1273,27 +1274,48 @@ Frame *H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, 
         }
     }
 
-    std::list<Frame*> & inputQueue = m_la.get() ? m_lookaheadQueue : m_inputQueue;
-    if (m_reorderedQueue.empty()) {
+    FrameList & inputQueue = m_la.get() ? m_lookaheadQueue : m_inputQueue;
+    // reorder as many frames as possible
+    while (!inputQueue.empty()) {
+        size_t reorderedSize = m_reorderedQueue.size();
+
         if (m_videoParam.encodedOrder) {
             if (!inputQueue.empty())
                 m_reorderedQueue.splice(m_reorderedQueue.end(), inputQueue, inputQueue.begin());
         } else {
             ReorderFrames(inputQueue, m_reorderedQueue, m_videoParam, surface == NULL);
         }
+
+        if (reorderedSize == m_reorderedQueue.size())
+            break; // nothing new, exit
+
+        // configure newly reordered frames
+        FrameIter i = m_reorderedQueue.begin();
+        std::advance(i, reorderedSize);
+        for (; i != m_reorderedQueue.end(); ++i) {
+            ConfigureEncodeFrame(*i);
+            m_lastEncOrder = (*i)->m_encOrder;
+        }
     }
 
-    while (!m_reorderedQueue.empty() && (Ipp32s)(m_encodeQueue.size() + m_outputQueue.size()) < m_videoParam.m_framesInParallel) {
-        ConfigureEncodeFrame(m_reorderedQueue.front());
-        m_lastEncOrder = m_reorderedQueue.front()->m_encOrder;
+    while (!m_reorderedQueue.empty()
+        && ((Ipp32s)m_reorderedQueue.size() >= m_videoParam.RateControlDepth - 1 || surface == NULL)
+        && (Ipp32s)(m_encodeQueue.size() + m_outputQueue.size()) < m_videoParam.m_framesInParallel) {
+
+        // assign resources for encoding
+        m_reorderedQueue.front()->m_recon = m_reconFrameDataPool.Allocate();
+        m_reorderedQueue.front()->m_feiRecon = m_feiReconDataPool.Allocate();
+        m_reorderedQueue.front()->m_feiOrigin = m_feiInputDataPool.Allocate();
+        m_reorderedQueue.front()->m_feiCuData = m_feiCuDataPool.Allocate();
+        m_reorderedQueue.front()->cu_data = (H265CUData *)m_reorderedQueue.front()->m_feiCuData->m_sysmem;
 
         m_dpb.splice(m_dpb.end(), m_reorderedQueue, m_reorderedQueue.begin());
         m_encodeQueue.push_back(m_dpb.back());
 
         if (m_brc && m_videoParam.AnalyzeCmplx > 0) {
             Ipp32s laDepth = m_videoParam.RateControlDepth - 1;
-            for (std::list<Frame *>::reverse_iterator i = ++m_encodeQueue.rbegin(); i != m_encodeQueue.rend() && laDepth > 0; ++i, --laDepth)
-                (*i)->m_futureFrames.push_back(m_encodeQueue.back());
+            for (FrameIter i = m_reorderedQueue.begin(); i != m_reorderedQueue.end() && laDepth > 0; ++i, --laDepth)
+                m_encodeQueue.back()->m_futureFrames.push_back(*i);
         }
     }
 

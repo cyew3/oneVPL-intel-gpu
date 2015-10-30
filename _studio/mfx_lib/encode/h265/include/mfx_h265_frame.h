@@ -228,12 +228,12 @@ namespace H265Enc {
 
 
     struct H265CUData;
-    class Frame
+    class Frame : public RefCounter
     {
     public:
-        FrameData* m_origin;
-        FrameData* m_recon;
-        FrameData* m_lowres; // used by lookahead
+        FrameData *m_origin;
+        FrameData *m_recon;
+        FrameData *m_lowres; // used by lookahead
 
         H265CUData *cu_data;
 

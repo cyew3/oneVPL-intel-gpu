@@ -1467,16 +1467,9 @@ void H265Encoder::ConfigureEncodeFrame(Frame* frame)
         (currFrame->m_isIdrPic ? MFX_FRAMETYPE_IDR : 0) |
         (currFrame->m_isRef ? MFX_FRAMETYPE_REF : 0);
 
-    // assign resource for reconstruct
-    currFrame->m_recon = m_reconFrameDataPool.Allocate();
-    currFrame->m_feiRecon = m_feiReconDataPool.Allocate();
-    currFrame->m_feiOrigin = m_feiInputDataPool.Allocate();
-    currFrame->m_feiCuData = m_feiCuDataPool.Allocate();
-    currFrame->cu_data = (H265CUData *)currFrame->m_feiCuData->m_sysmem;
-
     // take ownership over reference frames
     for (Ipp32s i = 0; i < currFrame->m_dpbSize; i++)
-        currFrame->m_dpb[i]->m_recon->AddRef();
+        currFrame->m_dpb[i]->AddRef();
 
     UpdateDpb(currFrame);
 }
@@ -1491,7 +1484,7 @@ void H265Encoder::UpdateDpb(Frame *currTask)
     if (currFrame->m_isIdrPic) {
         // IDR frame removes all reference frames from dpb and becomes the only reference
         for (FrameIter i = m_actualDpb.begin(); i != m_actualDpb.end(); ++i)
-            (*i)->m_recon->Release();
+            (*i)->Release();
         m_actualDpb.clear();
     }
     else if ((Ipp32s)m_actualDpb.size() == m_videoParam.MaxDecPicBuffering) {
@@ -1541,13 +1534,13 @@ void H265Encoder::UpdateDpb(Frame *currTask)
         }
 
         VM_ASSERT(toRemove != m_actualDpb.end());
-        (*toRemove)->m_recon->Release();
+        (*toRemove)->Release();
         m_actualDpb.erase(toRemove);
     }
 
     VM_ASSERT((Ipp32s)m_actualDpb.size() < m_videoParam.MaxDecPicBuffering);
     m_actualDpb.push_back(currTask);
-    currFrame->m_recon->AddRef();
+    currFrame->AddRef();
 }
 
 
@@ -1555,7 +1548,8 @@ void H265Encoder::CleanGlobalDpb()
 {
     for (FrameIter i = m_dpb.begin(); i != m_dpb.end();) {
         FrameIter curI = i++;
-        if ((*curI)->m_recon->m_refCounter == 0) {
+        if ((*curI)->m_refCounter == 0) {
+            SafeRelease((*curI)->m_recon);
             SafeRelease((*curI)->m_feiRecon);
             SafeRelease((*curI)->m_feiCuData);
             m_free.splice(m_free.end(), m_dpb, curI);
@@ -1567,12 +1561,9 @@ void H265Encoder::OnEncodingQueried(Frame* encoded)
 {
     Dump(&m_videoParam, encoded, m_dpb);
 
-    // release encoded frame
-    encoded->m_recon->Release();
-
     // release reference frames
     for (Ipp32s i = 0; i < encoded->m_dpbSize; i++)
-        encoded->m_dpb[i]->m_recon->Release();
+        encoded->m_dpb[i]->Release();
 
     // release source frame
     SafeRelease(encoded->m_origin);
@@ -1592,6 +1583,9 @@ void H265Encoder::OnEncodingQueried(Frame* encoded)
     if (m_la.get())
         for (Ipp32s idx = 0; idx < 2; idx++)
             SafeRelease(encoded->m_stats[idx]);
+
+    // release encoded frame
+    encoded->Release();
 
     m_outputQueue.remove(encoded);
     CleanGlobalDpb();
