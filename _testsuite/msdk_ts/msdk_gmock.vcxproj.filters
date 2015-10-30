@@ -256,6 +256,9 @@
     <ClCompile Include="src\gmock\test_suites\avce_constraint_vbr.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_level_profile.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\ts_fei.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -269,6 +272,9 @@
       <Filter>Source Files\test_suites\FEI</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\fei_encode_encode_frame_async.cpp">
+      <Filter>Source Files\test_suites\FEI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\fei_encode_qp.cpp">
       <Filter>Source Files\test_suites\FEI</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\fei_encode_qp.cpp">

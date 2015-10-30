@@ -225,7 +225,7 @@ public:
         , m_IdrCnt(0)
     {
         set_trace_level(BS_H264_TRACE_LEVEL_REF_LIST);
-        
+
         for (auto& ctrl : tc.mfx)
         {
             if (ctrl.field == &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct)
@@ -248,7 +248,7 @@ public:
 
     mfxU32 GetFrameOrder(mfxI32 POC)
     {
-        return (m_IdrCnt - 1) * m_par.mfx.GopPicSize + POC / 2; // should work for both progressive and interlace 
+        return (m_IdrCnt - 1) * m_par.mfx.GopPicSize + POC / 2; // should work for both progressive and interlace
     }
 };
 
@@ -262,7 +262,7 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     while (checked++ < nFrames)
     {
         UnitType& hdr = ParseOrDie();
-        
+
         for (UnitType::nalu_param* nalu = hdr.NALU; nalu < hdr.NALU + hdr.NumUnits; nalu ++)
         {
             if(nalu->nal_unit_type != 1 && nalu->nal_unit_type != 5)
@@ -407,7 +407,7 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
-    {/*0*/ 
+    {/*0*/
         SET_RPL_EXPLICITLY, 6, 1,
         MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 0, /*GopRefDist*/ 1, /*NumRefFrame*/ 4, /*TU*/ 0),
         {
@@ -416,7 +416,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             { 10, {NRAL0(2), RPL0(0, 2, FRM), RPL0(1, 4, FRM)}}
         }
     },
-    {/*1*/ 
+    {/*1*/
         SET_RPL_EXPLICITLY, 10, 2,
         MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 0, /*GopRefDist*/ 4, /*NumRefFrame*/ 4, /*TU*/ 0),
         {
@@ -424,7 +424,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             { 10, {NRAL0(1), RPL0(0, 2, FRM), NRAL1(1), RPL1(0, 8, FRM)}},
         }
     },
-    {/*2*/ 
+    {/*2*/
         SET_RPL_EXPLICITLY, 4, 1,
         MFX_PARS(/*PicStruct*/ TFF, /*GopPicSize*/ 0, /*GopRefDist*/ 1, /*NumRefFrame*/ 4, /*TU*/ 0),
         {
@@ -434,7 +434,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {7,  {NRAL0(2), RPL0(0, 2, BF), RPL0(1, 2, TF)}}
         }
     },
-    {/*3*/ 
+    {/*3*/
         SET_RPL_EXPLICITLY, 10, 2,
         MFX_PARS(/*PicStruct*/ BFF, /*GopPicSize*/ 0, /*GopRefDist*/ 4, /*NumRefFrame*/ 4, /*TU*/ 0),
         {
@@ -442,15 +442,15 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {11, {NRAL0(1), RPL0(0, 4, TF), NRAL1(2), RPL1(0, 6, BF), RPL1(1, 8, TF)}},
         }
     },
-    {/*4*/ 
+    {/*4*/
         CALCULATE_RPL_IN_TEST | REORDER_FOm2, 40, 1,
         MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 20, /*GopRefDist*/ 1, /*NumRefFrame*/ 9, /*TU*/ 1),
     },
-    {/*5*/ 
+    {/*5*/
         CALCULATE_RPL_IN_TEST | REORDER_FOm2, 40, 1,
         MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 20, /*GopRefDist*/ 1, /*NumRefFrame*/ 4, /*TU*/ 4),
     },
-    {/*6*/ 
+    {/*6*/
         CALCULATE_RPL_IN_TEST | REORDER_FOm2, 40, 1,
         MFX_PARS(/*PicStruct*/ PROGR, /*GopPicSize*/ 20, /*GopRefDist*/ 1, /*NumRefFrame*/ 2, /*TU*/ 7),
     },
@@ -521,14 +521,15 @@ int TestSuite::RunTest(unsigned int id)
 
     m_par.AsyncDepth   = 1;
     m_par.mfx.NumSlice = 1;
+    m_pPar->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
 
     for (auto& ctrl : tc.mfx)
         if (ctrl.field)
             tsStruct::set(m_pPar, *ctrl.field, ctrl.value);
-    
+
     ((mfxExtCodingOption2&)m_par).BRefType = tc.BRef;
 
-    SFiller sf(tc, *m_pCtrl, *m_pPar); 
+    SFiller sf(tc, *m_pCtrl, *m_pPar);
     BitstreamChecker c(tc, *m_pPar);
     m_filler = &sf;
     m_bs_processor = &c;

@@ -227,6 +227,7 @@
     <ClCompile Include="src\gmock\test_suites\avce_skipframes_tektronix.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_start_new_sequence.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_constraint_vbr.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_level_profile.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_query.cpp" />

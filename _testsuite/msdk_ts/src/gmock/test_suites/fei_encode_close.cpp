@@ -47,7 +47,7 @@ int TestSuite::RunTest(unsigned int id)
 
     SetFrameAllocator(m_session, m_pVAHandle);
     /*!!! FEI work in Sync mode only!
-     * this limitation should be removed from future*/
+    // set handle
     m_par.AsyncDepth = 1;
 
     Init(m_session, m_pPar);

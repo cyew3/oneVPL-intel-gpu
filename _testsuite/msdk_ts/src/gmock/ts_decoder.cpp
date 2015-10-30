@@ -444,7 +444,7 @@ mfxStatus tsVideoDecoder::Load()
     return g_tsStatus.get();
 }
 
-mfxStatus tsVideoDecoder::UnLoad()
+mfxStatus tsVideoDecoder::UnLoad() 
 {
     if(MFX_ERR_NONE == tsSession::UnLoad(m_session, m_uid))
     {
