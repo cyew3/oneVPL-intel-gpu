@@ -35,22 +35,6 @@
 namespace MfxHwH265Encode
 {
 
-struct ExtBuffers {
-    ExtBuffers();
-    void CleanUp();
-    mfxExtOpaqueSurfaceAlloc extOpaq;
-    mfxExtCodingOptionHEVC   extOptHevc;
-    mfxExtDumpFiles          extDumpFiles;
-    mfxExtHEVCTiles          extTiles;
-    mfxExtHEVCRegion         extRegion;
-    mfxExtHEVCParam          extHevcParam;
-    mfxExtCodingOption       extOpt;
-    mfxExtCodingOption2      extOpt2;
-    mfxExtCodingOptionSPSPPS extSpsPps;
-    mfxExtCodingOptionVPS    extVps;
-    mfxExtEncoderROI         extRoi;
-    mfxExtBuffer            *extParamAll[11];
-};
 
 template<class T> inline bool Equal(T const & l, T const & r) { return memcmp(&l, &r, sizeof(T)) == 0; }
 template<class T> inline void Fill(T & obj, int val)          { memset(&obj, val, sizeof(obj)); }
@@ -283,6 +267,22 @@ struct remove_const<const T>
 
 namespace ExtBuffer
 {
+    #define ExtBuffersArray \
+     MFX_EXTBUFF_HEVC_PARAM, \
+     MFX_EXTBUFF_HEVC_TILES, \
+     MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, \
+     MFX_EXTBUFF_DPB, \
+     MFX_EXTBUFF_AVC_REFLISTS, \
+     MFX_EXTBUFF_CODING_OPTION,\
+     MFX_EXTBUFF_CODING_OPTION2, \
+     MFX_EXTBUFF_CODING_OPTION3, \
+     MFX_EXTBUFF_DDI, \
+     MFX_EXTBUFF_CODING_OPTION_SPSPPS, \
+     MFX_EXTBUFF_AVC_REFLIST_CTRL, \
+     MFX_EXTBUFF_AVC_TEMPORAL_LAYERS, \
+     MFX_EXTBUFF_DUMP, \
+     MFX_EXTBUFF_ENCODER_RESET_OPTION\
+
     template<class T> struct ExtBufferMap {};
 
     #define EXTBUF(TYPE, ID) template<> struct ExtBufferMap <TYPE> { enum { Id = ID}; }
@@ -365,6 +365,49 @@ namespace ExtBuffer
     }
 
     bool Construct(mfxVideoParam const & par, mfxExtHEVCParam& buf);
+
+    mfxStatus CheckBuffers(mfxVideoParam const & par, const mfxU32 allowed[], mfxU32 notDetected[], mfxU32 size);
+
+    inline mfxStatus CheckBuffers(mfxVideoParam const & par)
+    {
+        // checked if all buffers are supported, not repeated
+
+        const mfxU32 allowed[] = { ExtBuffersArray };
+        mfxU32 notDetected[] = { ExtBuffersArray };
+        mfxU32 size = sizeof(allowed) / sizeof(mfxU32);
+        if (par.NumExtParam)
+            return CheckBuffers(par, allowed, notDetected, size);
+        else
+            return MFX_ERR_NONE;
+
+    }
+    inline mfxStatus CheckBuffers(mfxVideoParam const & par1, mfxVideoParam const & par2)
+    {
+        // checked if all buffers are supported, not repeated, identical set for both parfiles
+        const mfxU32 allowed[] = { ExtBuffersArray };
+        mfxU32 notDetected1[] = { ExtBuffersArray };
+        mfxU32 notDetected2[] = { ExtBuffersArray };
+        mfxU32 size = sizeof(allowed) / sizeof(mfxU32);
+
+        if (par1.NumExtParam && par2.NumExtParam)
+        {
+            MFX_CHECK_STS(CheckBuffers(par1, allowed, notDetected1, size));
+            MFX_CHECK_STS(CheckBuffers(par2, allowed, notDetected2, size));
+        }
+        else
+        {
+            if (par1.NumExtParam == par2.NumExtParam)
+                return MFX_ERR_NONE;
+            else
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+
+        if (memcmp(notDetected1, notDetected2, size) != 0)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        return MFX_ERR_NONE;
+    }
+
+    #undef ExtBuffersArray
 };
 
 class TemporalLayers
@@ -638,7 +681,7 @@ IntraRefreshState GetIntraRefreshState(
     mfxEncodeCtrl const * ctrl,
     mfxU16                intraStripeWidthInMBs);
 
-#if DEBUG_REC_FRAMES_INFO 
+#if DEBUG_REC_FRAMES_INFO
     inline vm_file * OpenFile(vm_char const * name, vm_char const * mode)
     {
         return name[0] ? vm_file_fopen(name, mode) : 0;

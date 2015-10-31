@@ -14,33 +14,6 @@
 namespace MfxHwH265Encode
 {
 
-mfxStatus CheckExtBuffers(mfxExtBuffer **extParam, mfxU16 numExtParam)
-{
-    if (extParam == NULL)
-        return MFX_ERR_NONE;
-
-    const ExtBuffers supported;
-    const mfxU16 numSupported = sizeof(supported.extParamAll) / sizeof(supported.extParamAll[0]);
-    mfxU16 found[numSupported] = {};
-    for (mfxU16 i = 0; i < numExtParam; i++)
-    {
-        if (extParam[i] == NULL)
-            return MFX_ERR_NULL_PTR;
-        mfxU16 idx = 0;
-        for (; idx < numSupported; idx++)
-            if (supported.extParamAll[idx]->BufferId == extParam[i]->BufferId)
-                break;
-        if (idx >= numSupported)
-            return MFX_ERR_UNSUPPORTED;
-        if (extParam[i]->BufferSz != supported.extParamAll[idx]->BufferSz)
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-        if (found[idx])
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-        found[idx] = 1;
-    }
-
-    return MFX_ERR_NONE;
-}
 
 mfxStatus CheckVideoParam(MfxVideoParam & par, ENCODE_CAPS_HEVC const & caps, bool bInit = false);
 void      SetDefaults    (MfxVideoParam & par, ENCODE_CAPS_HEVC const & hwCaps);
@@ -145,6 +118,9 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     m_ddi.reset( CreatePlatformH265Encoder(&m_core) );
     MFX_CHECK(m_ddi.get(), MFX_ERR_DEVICE_FAILED);
 
+    sts = ExtBuffer::CheckBuffers(*par);
+    MFX_CHECK_STS(sts);
+
     m_vpar = *par;
 
     sts = m_ddi->CreateAuxilliaryDevice(
@@ -156,10 +132,6 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
 
     sts = m_ddi->QueryEncodeCaps(m_caps);
     MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_DEVICE_FAILED);
-
-    if (CheckExtBuffers(par->ExtParam, par->NumExtParam) != MFX_ERR_NONE)
-        return MFX_ERR_UNSUPPORTED;
-
 
     mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(*par);
 
@@ -259,6 +231,9 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request,
     MfxVideoParam tmp = *par;
     ENCODE_CAPS_HEVC caps = {};
 
+    sts = ExtBuffer::CheckBuffers(*par);
+    MFX_CHECK_STS(sts);
+
     switch (par->IOPattern & MFX_IOPATTERN_IN_MASK)
     {
     case MFX_IOPATTERN_IN_SYSTEM_MEMORY:
@@ -340,6 +315,9 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         MfxVideoParam tmp = *in;
         ENCODE_CAPS_HEVC caps = {};
 
+        sts = ExtBuffer::CheckBuffers(*in);
+        MFX_CHECK_STS(sts);
+
         if (m_ddi.get())
         {
             sts = m_ddi->QueryEncodeCaps(caps);
@@ -398,6 +376,9 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
 {
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(par);
+
+    sts = ExtBuffer::CheckBuffers(*par);
+    MFX_CHECK_STS(sts);
 
     MfxVideoParam parNew = *par;
 
