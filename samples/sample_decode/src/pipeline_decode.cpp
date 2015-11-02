@@ -81,6 +81,9 @@ CDecodingPipeline::CDecodingPipeline()
     m_nTimeout = 0;
     m_nMaxFps = 0;
 
+    m_vppOutWidth  = 0;
+    m_vppOutHeight = 0;
+
     m_vLatency.reserve(1000); // reserve some space to reduce dynamic reallocation impact on pipeline execution
 
     MSDK_ZERO_MEMORY(m_VppDoNotUse);
@@ -155,6 +158,11 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     if (pParams->fourcc)
         m_fourcc = pParams->fourcc;
 
+    if (pParams->Width)
+        m_vppOutWidth = pParams->Width;
+    if (pParams->Height)
+        m_vppOutHeight = pParams->Height;
+
     // JPEG and Capture decoders can provide output in nv12 and rgb4 formats
     if ((pParams->videoType == MFX_CODEC_JPEG) ||
         ((pParams->videoType == MFX_CODEC_CAPTURE)) )
@@ -163,7 +171,7 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     }
     else
     {
-        m_bVppIsUsed = (m_fourcc != MFX_FOURCC_NV12);
+        m_bVppIsUsed = (m_fourcc != MFX_FOURCC_NV12) || pParams->Width || pParams->Height;
     }
 
     if (pParams->eDeinterlace)
@@ -479,8 +487,17 @@ mfxStatus CDecodingPipeline::CreateRenderingWindow(sInputParams *pParams, bool t
     windowParams.lpWindowName = pParams->bWallNoTitle ? NULL : MSDK_STRING("sample_decode");
     windowParams.nx           = pParams->nWallW;
     windowParams.ny           = pParams->nWallH;
-    windowParams.nWidth       = m_mfxVideoParams.mfx.FrameInfo.Width;
-    windowParams.nHeight      = m_mfxVideoParams.mfx.FrameInfo.Height;
+    if (m_bVppIsUsed)
+    {
+        windowParams.nWidth       = m_mfxVppVideoParams.vpp.Out.Width;
+        windowParams.nHeight      = m_mfxVppVideoParams.vpp.Out.Height;
+    }
+    else
+    {
+        windowParams.nWidth       = m_mfxVideoParams.mfx.FrameInfo.Width;
+        windowParams.nHeight      = m_mfxVideoParams.mfx.FrameInfo.Height;
+    }
+
     windowParams.ncell        = pParams->nWallCell;
     windowParams.nAdapter     = pParams->nWallMonitor;
 
@@ -515,10 +532,10 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
     {
         m_mfxVideoParams.mfx.CodecId = MFX_CODEC_CAPTURE;
         m_mfxVideoParams.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-        m_mfxVideoParams.mfx.FrameInfo.Width = MSDK_ALIGN32(pParams->width);
-        m_mfxVideoParams.mfx.FrameInfo.Height = MSDK_ALIGN32(pParams->height);
-        m_mfxVideoParams.mfx.FrameInfo.CropW = pParams->width;
-        m_mfxVideoParams.mfx.FrameInfo.CropH = pParams->height;
+        m_mfxVideoParams.mfx.FrameInfo.Width = MSDK_ALIGN32(pParams->scrWidth);
+        m_mfxVideoParams.mfx.FrameInfo.Height = MSDK_ALIGN32(pParams->scrHeight);
+        m_mfxVideoParams.mfx.FrameInfo.CropW = pParams->scrWidth;
+        m_mfxVideoParams.mfx.FrameInfo.CropH = pParams->scrHeight;
         m_mfxVideoParams.mfx.FrameInfo.FourCC = m_bVppIsUsed ? MFX_FOURCC_NV12 : pParams->fourcc;
         if (!m_mfxVideoParams.mfx.FrameInfo.FourCC)
             m_mfxVideoParams.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
@@ -717,6 +734,12 @@ mfxStatus CDecodingPipeline::InitVppParams()
 
     m_mfxVppVideoParams.vpp.Out.FourCC  = m_fourcc;
 
+    if (m_vppOutWidth && m_vppOutHeight)
+    {
+        m_mfxVppVideoParams.vpp.Out.Width = m_mfxVppVideoParams.vpp.Out.CropW = m_vppOutWidth;
+        m_mfxVppVideoParams.vpp.Out.Height = m_mfxVppVideoParams.vpp.Out.CropH = m_vppOutHeight;
+    }
+
     m_mfxVppVideoParams.AsyncDepth = m_mfxVideoParams.AsyncDepth;
 
     AllocAndInitVppFilters();
@@ -896,7 +919,7 @@ mfxStatus CDecodingPipeline::AllocFrames()
         VppRequest[1].NumFrameSuggested = VppRequest[1].NumFrameMin = nVppSurfNum;
         MSDK_MEMCPY_VAR(VppRequest[1].Info, &(m_mfxVppVideoParams.vpp.Out), sizeof(mfxFrameInfo));
 
-        sts = m_pGeneralAllocator->Alloc(m_pGeneralAllocator->pthis, &(VppRequest[1]), &m_mfxVppResponse);
+        sts = m_pGeneralAllocator->Alloc(m_pGeneralAllocator->pthis, &VppRequest[1], &m_mfxVppResponse);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         // prepare mfxFrameSurface1 array for decoder

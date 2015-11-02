@@ -49,6 +49,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-d3d]                    - work with d3d9 surfaces\n"));
     msdk_printf(MSDK_STRING("   [-d3d11]                  - work with d3d11 surfaces\n"));
     msdk_printf(MSDK_STRING("   [-r]                      - render decoded data in a separate window \n"));
+    msdk_printf(MSDK_STRING("   [-w]                      - output width\n"));
+    msdk_printf(MSDK_STRING("   [-h]                      - output height\n"));
     msdk_printf(MSDK_STRING("   [-wall w h n m t tmo]     - same as -r, and positioned rendering window in a particular cell on specific monitor \n"));
     msdk_printf(MSDK_STRING("       w                     - number of columns of video windows on selected monitor\n"));
     msdk_printf(MSDK_STRING("       h                     - number of rows of video windows on selected monitor\n"));
@@ -57,8 +59,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("       t(0/1)                - enable/disable window's title\n"));
     msdk_printf(MSDK_STRING("       tmo                   - timeout for -wall option\n"));
     msdk_printf(MSDK_STRING("Screen capture parameters:\n"));
-    msdk_printf(MSDK_STRING("   [-w]                      - screen resolution width\n"));
-    msdk_printf(MSDK_STRING("   [-h]                      - screen resolution height\n"));
+    msdk_printf(MSDK_STRING("   [-scr:w]                  - screen resolution width\n"));
+    msdk_printf(MSDK_STRING("   [-scr:h]                  - screen resolution height\n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Output format parameters:\n"));
     msdk_printf(MSDK_STRING("   [-i420]                   - by default\n"));
@@ -385,6 +387,32 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-scr:w")))
+        {
+            if (i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -scr:w key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->scrWidth))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("screen width rate is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-scr:h")))
+        {
+            if (i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -scr:h key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->scrHeight))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("screen height is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-w")))
         {
             if (i + 1 >= nArgNum)
@@ -392,9 +420,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -w key"));
                 return MFX_ERR_UNSUPPORTED;
             }
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->width))
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->Width))
             {
-                PrintHelp(strInput[0], MSDK_STRING("rendering frame rate is invalid"));
+                PrintHelp(strInput[0], MSDK_STRING("width is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
         }
@@ -405,12 +433,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -h key"));
                 return MFX_ERR_UNSUPPORTED;
             }
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->height))
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->Height))
             {
-                PrintHelp(strInput[0], MSDK_STRING("rendering frame rate is invalid"));
+                PrintHelp(strInput[0], MSDK_STRING("height is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
-        } else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-n")))
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-n")))
         {
             if(i + 1 >= nArgNum)
             {
@@ -516,13 +545,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
     if (MFX_CODEC_CAPTURE == pParams->videoType)
     {
-        if (!pParams->width || !pParams->height)
+        if (!pParams->scrWidth || !pParams->scrHeight)
         {
             msdk_printf(MSDK_STRING("error: for screen capture, width and height must be specified manually (-w and -h)"));
             return MFX_ERR_UNSUPPORTED;
         }
     }
-    else if (pParams->width || pParams->height)
+    else if (pParams->scrWidth || pParams->scrHeight)
     {
         msdk_printf(MSDK_STRING("error: width and height parameters are supported only by screen capture decoder"));
         return MFX_ERR_UNSUPPORTED;

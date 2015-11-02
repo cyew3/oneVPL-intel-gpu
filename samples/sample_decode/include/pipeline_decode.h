@@ -78,8 +78,12 @@ struct sInputParams
     mfxI32  SchedulingType;
     mfxI32  Priority;
 
-    mfxU16  width;
-    mfxU16  height;
+    mfxU16  scrWidth;
+    mfxU16  scrHeight;
+
+    mfxU16  Width;
+    mfxU16  Height;
+
     mfxU32  fourcc;
     mfxU32  nFrames;
     mfxU16  eDeinterlace;
@@ -227,6 +231,9 @@ protected: // variables
     bool                    m_bIsCompleteFrame;
     mfxU32                  m_fourcc; // color format of vpp out, i420 by default
     bool                    m_bPrintLatency;
+
+    mfxU16                  m_vppOutWidth;
+    mfxU16                  m_vppOutHeight;
 
     mfxU32                  m_nTimeout; // enables timeout for video playback, measured in seconds
     mfxU32                  m_nMaxFps; // limit of fps, if isn't specified equal 0.
