@@ -13,7 +13,7 @@ Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
 
 #ifdef LIBVA_SUPPORT
 
-//#define DISABLE_VAAPI_BUFFER_EXPORT
+#define DISABLE_VAAPI_BUFFER_EXPORT
 
 #include <va/va.h>
 #if defined(LIBVA_DRM_SUPPORT)
