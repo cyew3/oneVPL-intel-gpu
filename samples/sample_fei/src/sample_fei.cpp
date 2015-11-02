@@ -33,7 +33,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-b bitRate] - encoded bit rate (KBits per second), valid for H.264, H.265, MPEG2 and MVC encoders \n"));
     msdk_printf(MSDK_STRING("   [-u speed|quality|balanced] - target usage, valid for H.264, H.265, MPEG2 and MVC encoders\n"));
     msdk_printf(MSDK_STRING("   [-n number] - number of frames to process\n"));
-    msdk_printf(MSDK_STRING("   [-loop] - run processing in the infinite loop mode\n"));
+    msdk_printf(MSDK_STRING("   [-timeout seconds] - set time to run processing in seconds\n"));
     msdk_printf(MSDK_STRING("   [-r distance] - Distance between I- or P- key frames (1 means no B-frames) (0 - by default(I frames))\n"));
     msdk_printf(MSDK_STRING("   [-g size] - GOP size (1(default) means I-frames only)\n"));
     msdk_printf(MSDK_STRING("   [-l numSlices] - number of slices \n"));
@@ -391,9 +391,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-loop")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-timeout")))
         {
-            pParams->bLoop = true;
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nTimeout))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Timeout is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
         }
         else // 1-character options
         {
@@ -718,10 +722,10 @@ int main(int argc, char *argv[])
     Params.CodecId = MFX_CODEC_AVC;    //only AVC is supported
     Params.DecodeId = 0; //default (invalid) value
     Params.nNumFrames = 0; //unlimited
+    Params.nTimeout = 0; //unlimited
     Params.refDist = 1; //only I frames
     Params.gopSize = 1; //only I frames
     Params.numRef  = 1; //one ref by default
-    Params.bLoop     = false; //default value
     Params.bDECODE   = false; //default value
     Params.bENCODE   = false; //default value
     Params.bENCPAK   = false; //default value

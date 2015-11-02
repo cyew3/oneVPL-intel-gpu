@@ -64,6 +64,7 @@ struct sInputParams
     mfxF64 dFrameRate;
     mfxU16 nBitRate;
     mfxU32 nNumFrames;
+    mfxU32 nTimeout;
     mfxU16 refDist; //number of frames to next I,P
     mfxU16 gopSize; //number of frames to next I
     mfxU8  QP;
@@ -93,8 +94,6 @@ struct sInputParams
 
     MemType memType;
     bool bUseHWLib; // true if application wants to use HW MSDK library
-
-    bool bLoop;
 
     msdk_char strSrcFile[MSDK_MAX_FILENAME_LEN];
 

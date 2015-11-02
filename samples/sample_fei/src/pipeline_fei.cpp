@@ -1209,7 +1209,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 void CEncodingPipeline::Close()
 {
     if (m_FileWriters.first)
-        msdk_printf(MSDK_STRING("Frame number: %u\r"), m_encpakParams.bLoop ? m_frameCount : m_FileWriters.first->m_nProcessedFramesNum);
+        msdk_printf(MSDK_STRING("Frame number: %u\r"), m_frameCount);
 
     MSDK_SAFE_DELETE(m_pmfxDECODE);
     MSDK_SAFE_DELETE(m_pmfxVPP);
@@ -2282,10 +2282,12 @@ mfxStatus CEncodingPipeline::Run()
     m_sfid = m_isField - m_ffid;
 
     iTask* eTask = NULL;
+    time_t start = time(0);
 
     while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts)
     {
-        if (m_encpakParams.nNumFrames && m_frameCount >= m_encpakParams.nNumFrames)
+        if ((m_encpakParams.nNumFrames && m_frameCount >= m_encpakParams.nNumFrames)
+            || (m_encpakParams.nTimeout && (time(0) - start >= m_encpakParams.nTimeout)))
         {
             break;
         }
@@ -2331,7 +2333,7 @@ mfxStatus CEncodingPipeline::Run()
             }
 
             sts = m_FileReader.LoadNextFrame(pSurf);
-            if (sts == MFX_ERR_MORE_DATA && m_encpakParams.bLoop)
+            if (sts == MFX_ERR_MORE_DATA && m_encpakParams.nTimeout)
             {
                 // infinite loop mode, need to proceed from the beginning
                 sts = ResetIOFiles(m_encpakParams);
@@ -2367,7 +2369,7 @@ mfxStatus CEncodingPipeline::Run()
 
             if (sts == MFX_ERR_MORE_DATA)
             {
-                if (m_encpakParams.bLoop)
+                if (m_encpakParams.nTimeout)
                 {
                     // infinite loop mode, need to proceed from the beginning
                     sts = ResetIOFiles(m_encpakParams);
