@@ -714,6 +714,9 @@ public:
                                                        mfxU32 type);
 
 private:
+    // Do not allow copying of the object
+    DXVAHDVideoProcessor(const DXVAHDVideoProcessor& from) {};
+    DXVAHDVideoProcessor& operator=(const DXVAHDVideoProcessor&) {return *this; };
 
     mfxStatus CreateInternalDevice();
     mfxStatus EnumerateCaps();
