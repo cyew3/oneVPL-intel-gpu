@@ -302,10 +302,10 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
         dirtyRects.resize(task.m_numDirtyRect);
         for (i = 0; i < task.m_numDirtyRect; i ++)
         {
-            dirtyRects[i].Left   = (mfxU16)task.m_dirtyRect[i].Left;
-            dirtyRects[i].Top    = (mfxU16)task.m_dirtyRect[i].Top;
-            dirtyRects[i].Right  = (mfxU16)task.m_dirtyRect[i].Right;
-            dirtyRects[i].Bottom = (mfxU16)task.m_dirtyRect[i].Bottom;
+            dirtyRects[i].Left   = (mfxU16)((task.m_roi[i].Left)>>4);
+            dirtyRects[i].Top    = (mfxU16)((task.m_roi[i].Top)>>4);
+            dirtyRects[i].Right  = (mfxU16)((task.m_roi[i].Right)>>4);
+            dirtyRects[i].Bottom = (mfxU16)((task.m_roi[i].Bottom)>>4);
         }
         pps.NumDirtyRects = (mfxU8)task.m_numDirtyRect;
         pps.pDirtyRect = &(dirtyRects[0]);
