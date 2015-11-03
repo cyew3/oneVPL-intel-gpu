@@ -32,7 +32,7 @@
 
 // Max samples number for composition filter
 #if defined(_WIN32) || defined(_WIN64)
-    #define MAX_NUM_OF_VPP_COMPOSITE_STREAMS (17)
+    #define MAX_NUM_OF_VPP_COMPOSITE_STREAMS (8)
 #else
     #define MAX_NUM_OF_VPP_COMPOSITE_STREAMS (64)
 #endif

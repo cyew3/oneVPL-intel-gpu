@@ -1059,14 +1059,6 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
                         {
                             inputFramesCount[filterIndex] = extComp->NumInputStream;
                         }
-
-                        for(mfxU32 j = 0; j < extComp->NumInputStream; j++)
-                        {
-                            if (pParam->vpp.Out.Width  < (extComp->InputStream[j].DstX + extComp->InputStream[j].DstW))
-                                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-                            if (pParam->vpp.Out.Height < (extComp->InputStream[j].DstY + extComp->InputStream[j].DstH))
-                                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-                        }
                     }
                 } /*for (mfxU32 i = 0; i < pParam->NumExtParam; i++)*/
 
