@@ -640,11 +640,14 @@ mfxStatus CEncodingPipeline::AllocFrames()
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
-    m_maxQueueLength = m_refDist * 2 + m_mfxEncParams.AsyncDepth;
+    // m_maxQueueLength = m_refDist * 2 + m_mfxEncParams.AsyncDepth;
     /* temporary solution for a while for PREENC + ENC cases
     * (It required to calculate accurate formula for all usage cases)
     * this is not optimal from memory usage consumption */
-    m_maxQueueLength += m_mfxEncParams.mfx.NumRefFrame + 1;
+    // m_maxQueueLength += m_mfxEncParams.mfx.NumRefFrame + 1;
+
+    // May not be optimal
+    m_maxQueueLength = m_refDist * m_mfxEncParams.mfx.NumRefFrame + m_mfxEncParams.AsyncDepth;
 
     // The number of surfaces shared by vpp output and encode input.
     // When surfaces are shared 1 surface at first component output contains output frame that goes to next component input
@@ -3255,7 +3258,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, int numMVP)
     mfxExtFeiEncMVPredictors* mvp = NULL;
     bufSet* set                   = NULL;
 
-    fprintf(stderr, "About to PassPreEncMVPred2EncEx, numMVP is %d, task(%p) frame order is %d\n", numMVP, eTask, eTask->m_frameOrder);
+    //fprintf(stderr, "About to PassPreEncMVPred2EncEx, numMVP is %d, task(%p) frame order is %d\n", numMVP, eTask, eTask->m_frameOrder);
     //assert(numMVP > 0);
     for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++) {
         for (int i = 0; i < numMVP; i++) {
@@ -4806,11 +4809,11 @@ iTask* CEncodingPipeline::GetRefTask(iTask *eTask, unsigned int idx, int* refIdx
 {
     mfxU32 task_processed = 0, size = eTask->m_list0[0].Size();
     iTask* ref_task = NULL;
-    fprintf(stderr, "\t List0 size is %d, idx is %d, frame referred in L0: ", eTask->m_list0[0].Size(), idx);
+    // fprintf(stderr, "\t List0 size is %d, idx is %d, frame referred in L0: ", eTask->m_list0[0].Size(), idx);
     for (mfxU8 const * instance = eTask->m_list0[0].Begin() + idx; task_processed < size && instance != eTask->m_list0[0].End(); instance++)
     {
         ref_task = GetTaskByFrameOrder(eTask->m_dpb[0][*instance & 127].m_frameOrder);
-        fprintf(stderr, "%d ", ref_task->m_frameOrder);
+        // fprintf(stderr, "%d ", ref_task->m_frameOrder);
         if (ref_task == NULL) {
             return NULL;
         } else {
@@ -4819,15 +4822,20 @@ iTask* CEncodingPipeline::GetRefTask(iTask *eTask, unsigned int idx, int* refIdx
                 *refIdx = idx;
                 *L0L1 = 0;
             } else if (ExtractFrameType(*eTask) & MFX_FRAMETYPE_B) {
-                if (instance + 1 == eTask->m_list0[0].End()) {
-                    // FIXME:
-                    // The last one in L0 is backward ref since we have only 1 backward ref
-                    // may not right for interlaced case
+                // For Bref case, L0 may have more than 1 backward frames
+                if (std::find(eTask->m_list1[0].Begin(), eTask->m_list1[0].End(), *instance) != eTask->m_list1[0].End()) {
+                    // Backward ref
                     *refIdx = 0;
                     *L0L1 = 1;
                 } else {
-                    *refIdx = idx;
-                    *L0L1 = 0;
+                    // Forward ref valid before backward ref in L0
+                    int back_ref_pos = std::distance(eTask->m_list0[0].Begin(), std::find(eTask->m_list0[0].Begin(), eTask->m_list0[0].End(), *eTask->m_list1[0].Begin()));
+                    if (back_ref_pos < idx) {
+                        return NULL;
+                    } else {
+                        *refIdx = idx;
+                        *L0L1 = 0;
+                    }
                 }
             }
             return ref_task;
@@ -4965,3 +4973,4 @@ const char* getPicType(mfxU8 type)
             return "?";
     }
 }
+
