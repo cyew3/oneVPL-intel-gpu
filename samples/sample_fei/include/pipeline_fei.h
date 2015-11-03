@@ -118,6 +118,7 @@ struct sInputParams
     bool DistortionType;
     bool ColocatedMbDistortion;
     bool bRepackPreencMV;
+    bool bFieldProcessingMode;
     msdk_char* mvinFile;
     msdk_char* mbctrinFile;
     msdk_char* mvoutFile;
@@ -157,12 +158,15 @@ public:
     virtual mfxStatus Init(MFXVideoSession* pmfxSession, CSmplBitstreamWriter* pWriter, mfxU32 nPoolSize, mfxU32 nBufferSize, CSmplBitstreamWriter *pOtherWriter = NULL);
     virtual mfxStatus GetFreeTask(sTask **ppTask);
     virtual mfxStatus SynchronizeFirstTask();
+    virtual mfxStatus SetFieldToStore(mfxU32 fieldId);
+    virtual mfxStatus DropENCODEoutput(mfxBitstream& bs, mfxU32 fieldId);
     virtual void Close();
 
 protected:
     sTask* m_pTasks;
     mfxU32 m_nPoolSize;
     mfxU32 m_nTaskBufferStart;
+    mfxU32 m_nFieldId;
 
     MFXVideoSession* m_pmfxSession;
 
@@ -334,8 +338,6 @@ protected:
     mfxExtFeiEncMV::mfxExtFeiEncMVMB*       m_tmpMBenc;
     mfxI16 *m_tmpForMedian;
 };
-
-mfxStatus dropENCODEoutput(mfxBitstream& bs);
 
 bufSet* getFreeBufSet(std::list<bufSet*> bufs);
 

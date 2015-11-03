@@ -83,6 +83,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("                                do not use it, unless it is necessary\n"));
     msdk_printf(MSDK_STRING("   [-dstw width] - destination picture width, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
+    msdk_printf(MSDK_STRING("   [-single_field_processing] - FEI Field mode processing\n"));
 
     // user module options
     msdk_printf(MSDK_STRING("\n"));
@@ -398,6 +399,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("Timeout is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-single_field_processing")))
+        {
+            pParams->bFieldProcessingMode = true;
         }
         else // 1-character options
         {
@@ -769,6 +774,7 @@ int main(int argc, char *argv[])
     Params.CodecProfile    = 0;
     Params.CodecLevel      = 0;
     Params.Trellis         = 0;    // MFX_TRELLIS_UNKNOWN
+    Params.bFieldProcessingMode = false;
 
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
@@ -833,6 +839,13 @@ mfxStatus CheckOptions(sInputParams* pParams)
 
     if (!pParams->bENCODE && pParams->memType == SYSTEM_MEMORY) {
         fprintf(stderr, "Only ENCODE supports SW memory\n");
+        sts = MFX_ERR_UNSUPPORTED;
+    }
+
+    if (pParams->bENCODE && (pParams->bFieldProcessingMode) &&
+        !( (pParams->nPicStruct == MFX_PICSTRUCT_FIELD_BFF) || (pParams->nPicStruct == MFX_PICSTRUCT_FIELD_TFF)))
+    {
+        fprintf(stderr, "ENCODE Field Processing mode works for TFF or BFF\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
 
