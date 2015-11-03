@@ -140,7 +140,8 @@ mfxStatus CamSysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->U16 = ptr->V16 + 1;
         ptr->Y16 = ptr->V16 + 2;
         ptr->A = (mfxU8*)(ptr->V16 + 3);
-        ptr->Pitch = 8 * Width2;
+        ptr->PitchHigh = (mfxU16)((8 * (mfxU32)Width2) / (1 << 16));
+        ptr->PitchLow  = (mfxU16)((8 * (mfxU32)Width2) % (1 << 16));
         break;
    case MFX_FOURCC_R16:
         ptr->Y16 = (mfxU16 *)ptr->B;
