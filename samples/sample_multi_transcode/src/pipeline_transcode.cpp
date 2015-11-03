@@ -1121,11 +1121,26 @@ mfxStatus CTranscodingPipeline::Transcode()
                 sts = DecodeOneFrame(&DecExtSurface);
                 if (MFX_ERR_MORE_DATA == sts)
                 {
-                    sts = DecodeLastFrame(&DecExtSurface);
-                    bEndOfFile = true;
+                    if (!bLastCycle)
+                    {
+                        bInsertIDR = true;
+
+                        static_cast<FileBitstreamProcessor_WithReset*>(m_pBSProcessor)->ResetInput();
+                        static_cast<FileBitstreamProcessor_WithReset*>(m_pBSProcessor)->ResetOutput();
+                        bNeedDecodedFrames = true;
+
+                        bEndOfFile = false;
+                        sts = MFX_ERR_NONE;
+                        continue;
+                    }
+                    else
+                    {
+                        bEndOfFile = true;
+                    }
                 }
             }
-            else
+
+            if (bEndOfFile)
             {
                 sts = DecodeLastFrame(&DecExtSurface);
             }
@@ -1228,23 +1243,7 @@ mfxStatus CTranscodingPipeline::Transcode()
 
             if (NULL == VppExtSurface.pSurface) // there are no more buffered frames in encoder
             {
-                if (bLastCycle)
-                    break;
-
-                while(m_BSPool.size())
-                {
-                    sts = PutBS();
-                    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-                }
-                if (m_mfxEncParams.mfx.CodecId != MFX_CODEC_HEVC)
-                    bInsertIDR = true;
-
-                static_cast<FileBitstreamProcessor_WithReset*>(m_pBSProcessor)->ResetInput();
-                static_cast<FileBitstreamProcessor_WithReset*>(m_pBSProcessor)->ResetOutput();
-                m_nProcessedFramesNum = 0;
-                bNeedDecodedFrames = true;
-
-                bEndOfFile = 0;
+                break;
             }
             sts = MFX_ERR_NONE;
             continue;
