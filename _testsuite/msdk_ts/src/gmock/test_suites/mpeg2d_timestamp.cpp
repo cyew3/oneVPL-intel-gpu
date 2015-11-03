@@ -6,7 +6,7 @@
 
 #define EXT_BUF_PAR(eb) tsExtBufTypeToId<eb>::id, sizeof(eb)
 
-namespace mpeg2d_thomson_timestamp
+namespace mpeg2d_timestamp
 {
 
 class TestSuite : tsVideoDecoder
@@ -306,6 +306,6 @@ int TestSuite::RunTest(unsigned int id)
     return 0;
 }
 
-TS_REG_TEST_SUITE_CLASS(mpeg2d_thomson_timestamp);
+TS_REG_TEST_SUITE_CLASS(mpeg2d_timestamp);
 
 }

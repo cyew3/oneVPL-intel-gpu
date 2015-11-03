@@ -255,7 +255,7 @@
     <ClCompile Include="src\gmock\test_suites\mjpegd_tables.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2d_aspect_ratio_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2d_picturetype.cpp" />
-    <ClCompile Include="src\gmock\test_suites\mpeg2d_thomson_timestamp.cpp" />
+    <ClCompile Include="src\gmock\test_suites\mpeg2d_timestamp.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2e_headers_order.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2e_mbqp.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2d_timecode.cpp" />
