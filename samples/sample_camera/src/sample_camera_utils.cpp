@@ -623,7 +623,8 @@ mfxStatus CRawVideoWriter::WriteFrame(mfxFrameData* pData, const msdk_char *file
         h = pInfo->Height;
     }
 
-    pitch = pData->Pitch >> 1;
+    pitch = ( pData->PitchLow + ((mfxU32)pData->PitchHigh << 16))>>1;
+
     ptr = pData->V16 + pInfo->CropX * 4 + pInfo->CropY * pitch;
 #ifdef SHIFT_OUT_TO_LSB
     int shift = 16 - pInfo->BitDepthLuma;
