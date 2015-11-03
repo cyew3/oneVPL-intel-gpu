@@ -31,6 +31,12 @@ File Name: mfx_camera_plugin.h
 #define MAX_CAMERA_SUPPORTED_WIDTH  16280
 #define MAX_CAMERA_SUPPORTED_HEIGHT 15952
 
+enum CameraFallback{
+    FALLBACK_NONE = 0,
+    FALLBACK_CPU  = 1,
+    FALLBACK_CM   = 2,
+};
+
 #if defined( AS_VPP_PLUGIN )
 class MFXCamera_Plugin : public MFXVPPPlugin
 {
@@ -168,6 +174,7 @@ protected:
     CameraPipe3x3ColorConversionParams m_CCMParams;
     CameraPipeLensCorrectionParams     m_LensParams;
     CameraParams                       m_PipeParams;
+    CameraFallback                     m_fallback;
 
     mfxU32                       m_InputBitDepth;
     mfxU16                       m_nTilesVer;                       

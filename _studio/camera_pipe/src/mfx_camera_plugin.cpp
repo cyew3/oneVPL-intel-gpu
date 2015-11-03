@@ -640,7 +640,6 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
                 }
             }
 
-
         CAMERA_DEBUG_LOG("Query end sts =  %d  mfxSts = %d \n", sts, mfxSts);
 
         if (mfxSts < MFX_ERR_NONE)
@@ -650,7 +649,19 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
         m_core = m_session->m_pCORE.get();
         m_platform = m_core->GetHWType();
-        if ( MFX_HW_HSW == m_platform || MFX_HW_HSW_ULT == m_platform || MFX_HW_BDW == m_platform || MFX_HW_CHV == m_platform)
+
+#if defined (_WIN32) || defined (_WIN64)
+        if (MFX_HW_SCL== m_platform)
+        {
+            if (in->vpp.In.CropW > 8160 && MFX_FOURCC_ARGB16 == in->vpp.Out.FourCC)
+            {
+                // Some issues observed on >8K resolutions with argb16 out on SKL. Fallback to CM at the moment;
+                m_fallback = FALLBACK_CM;
+            }
+        }
+#endif
+
+        if (FALLBACK_CM == m_fallback || MFX_HW_HSW == m_platform || MFX_HW_HSW_ULT == m_platform || MFX_HW_BDW == m_platform || MFX_HW_CHV == m_platform)
         {
             sts = CMCameraProcessor::Query(in, out);
         }
@@ -1095,7 +1106,7 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     m_core = m_session->m_pCORE.get();
 
     m_platform = m_core->GetHWType();
-
+    m_fallback = FALLBACK_NONE;
     mfxSts = Query(&m_mfxVideoParam, &m_mfxVideoParam);
     if(mfxSts == MFX_ERR_UNSUPPORTED)
     {
@@ -1230,7 +1241,7 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     m_PipeParams.VignetteParams = m_VignetteParams;
     m_PipeParams.par         = *par;
 
-    if ( MFX_HW_HSW == m_platform || MFX_HW_HSW_ULT == m_platform || MFX_HW_BDW == m_platform || MFX_HW_CHV == m_platform)
+    if (FALLBACK_CM == m_fallback || MFX_HW_HSW == m_platform || MFX_HW_HSW_ULT == m_platform || MFX_HW_BDW == m_platform || MFX_HW_CHV == m_platform)
     {
         m_CameraProcessor = new CMCameraProcessor();
     }
