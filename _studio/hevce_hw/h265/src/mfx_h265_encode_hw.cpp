@@ -330,30 +330,8 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         }
 
         // matching ExtBuffers
-        mfxExtBuffer *p_tmp_buff = NULL;
-        for (mfxU16 iter = 0; iter < 2; iter++, std::swap(in, out))
-        {
-            if (in->ExtParam)
-            {
-                for (mfxU16 i = 0; i < in->NumExtParam; i++)
-                {
-                    p_tmp_buff = NULL;
-                    if (in->ExtParam[i]->BufferId != MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION)
-                    {
-                        if (out->ExtParam)
-                        {
-                            for (mfxU16 j = 0; j < in->NumExtParam; i++)
-                            {
-                                if (out->ExtParam[j]->BufferId == in->ExtParam[i]->BufferId)
-                                    p_tmp_buff = out->ExtParam[j];
-                            }
-                        }
-                        if (!p_tmp_buff)
-                            return MFX_ERR_UNSUPPORTED;
-                    }
-                }
-            }
-        }
+        sts = ExtBuffer::CheckBuffers(*in, *out);
+        MFX_CHECK_STS(sts);
 
         mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(*in);
         if (pSPSPPS && pSPSPPS->SPSBuffer)
