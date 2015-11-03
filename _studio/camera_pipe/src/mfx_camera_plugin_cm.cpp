@@ -418,7 +418,7 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
     CmEvent  *e = NULL;
     SurfaceIndex *pInputSurfaceIndex;
     //bool  firstTile = false;
-
+    mfxU32 out_pitch = pParam->surf_out->Data.PitchLow + ((mfxU32)pParam->surf_out->Data.PitchHigh << 16); 
 #ifdef CAMP_PIPE_ITT
     __itt_task_begin(CamPipeAccel, __itt_null, __itt_null, task21);
 #endif
@@ -428,7 +428,11 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
     {
         // Calculate offsets for tiles
         int in_shift  =  (tileIDVert-1) * pParam->FrameSizeExtra.frameWidth * 2 + pParam->FrameSizeExtra.tileOffsets[tileIDHor].TileOffset * pParam->surf_in->Data.Pitch;
-        int out_shift =  (tileIDVert-1) * pParam->FrameSizeExtra.frameWidth * 4 + pParam->FrameSizeExtra.tileOffsets[tileIDHor].TileOffset * pParam->surf_out->Data.Pitch;
+        int out_shift;
+        if (pParam->surf_out->Info.FourCC == MFX_FOURCC_RGB4) 
+            out_shift = (tileIDVert-1) * pParam->FrameSizeExtra.frameWidth * 4 + pParam->FrameSizeExtra.tileOffsets[tileIDHor].TileOffset * out_pitch;
+        else
+            out_shift = (tileIDVert-1) * pParam->FrameSizeExtra.frameWidth * 8 + pParam->FrameSizeExtra.tileOffsets[tileIDHor].TileOffset * out_pitch;
 
         if ( tileIDHor > 0 && pParam->Caps.bNoPadding)
         {
@@ -791,20 +795,20 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
             m_cmCtx->DestroyEventWithoutWait(e);
             if (pParam->Caps.bOutToARGB16)
             {
-                if (1 == pParam->FrameSizeExtra.tileNumHor && pParam->surf_out->Info.CropW*8 == pParam->surf_out->Data.Pitch)
+                if (1 == pParam->FrameSizeExtra.tileNumHor && pParam->surf_out->Info.CropW*8 == out_pitch)
                     e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B);
                 else
-                    e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B  + out_shift, pParam->surf_out->Data.Pitch);
+                    e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B  + out_shift,out_pitch);
             }
             else
             {
-                if (1 == pParam->FrameSizeExtra.tileNumHor && pParam->surf_out->Info.CropW*4 == pParam->surf_out->Data.Pitch)
+                if (1 == pParam->FrameSizeExtra.tileNumHor && pParam->surf_out->Info.CropW*4 == out_pitch)
                 {
                     e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B);
                 }
                 else
                 {
-                    e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B + out_shift, pParam->surf_out->Data.Pitch);
+                    e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B + out_shift, out_pitch);
                 }
             }
         }
@@ -1740,7 +1744,7 @@ void CmContext::CopyMemToCmSurf(CmSurface2D *cmSurf, void *mem) //, gpucopy/cpuc
         throw CmRuntimeError();
 }
 
-CmEvent *CmContext::EnqueueCopyCPUToGPU(CmSurface2D *cmSurf, void *mem, mfxU16 stride)
+CmEvent *CmContext::EnqueueCopyCPUToGPU(CmSurface2D *cmSurf, void *mem, mfxU32 stride)
 {
     int result = CM_SUCCESS;
     CmEvent* event_transfer = NULL;
@@ -1756,7 +1760,7 @@ CmEvent *CmContext::EnqueueCopyCPUToGPU(CmSurface2D *cmSurf, void *mem, mfxU16 s
     return event_transfer;
 }
 
-CmEvent *CmContext::EnqueueCopyGPUToCPU(CmSurface2D *cmSurf, void *mem, mfxU16 stride)
+CmEvent *CmContext::EnqueueCopyGPUToCPU(CmSurface2D *cmSurf, void *mem, mfxU32 stride)
 {
     int result = CM_SUCCESS;
     CmEvent* event_transfer = NULL;
