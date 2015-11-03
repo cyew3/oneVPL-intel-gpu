@@ -424,11 +424,12 @@ enum {
     MFX_EXTBUFF_FEI_CODING_OPTION  = MFX_MAKEFOURCC('F','C','D','O')
 };
 
-/* shoud be attached to mfxVideoParam during initialization to indicate FEI function */
+/* should be attached to mfxVideoParam during initialization to indicate FEI function */
 typedef struct {
     mfxExtBuffer    Header; 
     mfxFeiFunction  Func;
-    mfxU32 reserved[29];
+    mfxU16  SingleFieldProcessing;
+    mfxU16 reserved[57];
 } mfxExtFeiParam;
 
 
