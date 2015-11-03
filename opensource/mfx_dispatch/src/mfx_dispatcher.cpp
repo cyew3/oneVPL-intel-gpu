@@ -302,7 +302,7 @@ mfxStatus MFX_DISP_HANDLE::LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImpl
 
 mfxStatus MFX_DISP_HANDLE::UnLoadSelectedDLL(void)
 {
-    mfxStatus mfxRes = MFX_ERR_NOT_INITIALIZED;
+    mfxStatus mfxRes = MFX_ERR_NONE;
 
     //unregistered plugins if any
     pluginFactory.Close();
