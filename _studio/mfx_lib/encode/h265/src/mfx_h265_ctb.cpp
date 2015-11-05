@@ -2369,6 +2369,18 @@ bool H265CU<PixType>::TuMaxSplitInterHasNonZeroCoeff(Ipp32u absPartIdx, Ipp8u tr
 }
 
 
+inline Ipp32s MvCost(Ipp16s mvd)
+{
+#if defined(_WIN32) || defined(_WIN64)
+    unsigned long index;
+#else
+    unsigned int index;
+#endif
+    unsigned char dst = _BitScanReverse(&index, abs(mvd));
+    return (mvd == 0) ? 1 : 2 * index + 3;
+}
+
+
 template <typename PixType>
 bool H265CU<PixType>::tryIntraICRA(Ipp32s absPartIdx, Ipp32s depth)
 {
@@ -2387,12 +2399,12 @@ bool H265CU<PixType>::tryIntraICRA(Ipp32s absPartIdx, Ipp32s depth)
         if(!dataBestInter[partAddr].flags.mergeFlag && !dataBestInter[partAddr].flags.skippedFlag)
         {
             if(dataBestInter[partAddr].interDir & INTER_DIR_PRED_L0) {
-                mvdCost += m_logMvCostTable[dataBestInter[partAddr].mvd[0].mvx];
-                mvdCost += m_logMvCostTable[dataBestInter[partAddr].mvd[0].mvy];
+                mvdCost += MvCost(dataBestInter[partAddr].mvd[0].mvx);
+                mvdCost += MvCost(dataBestInter[partAddr].mvd[0].mvy);
             }
             if(dataBestInter[partAddr].interDir & INTER_DIR_PRED_L1) {
-                mvdCost += m_logMvCostTable[dataBestInter[partAddr].mvd[1].mvx];
-                mvdCost += m_logMvCostTable[dataBestInter[partAddr].mvd[1].mvy];
+                mvdCost += MvCost(dataBestInter[partAddr].mvd[1].mvx);
+                mvdCost += MvCost(dataBestInter[partAddr].mvd[1].mvy);
             }
 
             if(abs(dataBestInter[partAddr].mvd[0].mvx)>mvdMax)
@@ -3087,24 +3099,33 @@ Ipp32s H265CU<PixType>::MvCost1RefLog(H265MV mv, const MvPredInfo<2> *predInfo) 
     return MvCost1RefLog(mv.mvx, mv.mvy, predInfo);
 }
 
-
 template <typename PixType>
 Ipp32s H265CU<PixType>::MvCost1RefLog(Ipp16s mvx, Ipp16s mvy, const MvPredInfo<2> *predInfo) const
 {
-    Ipp32s costMin = INT_MAX;
-    Ipp32s mpvIdx = INT_MAX;
-    for (Ipp32s i = 0; i < predInfo->numCand; i++) {
-        Ipp32s cost = m_logMvCostTable[Ipp16s(mvx - predInfo->mvCand[i].mvx)] +
-                      m_logMvCostTable[Ipp16s(mvy - predInfo->mvCand[i].mvy)];
-        if (costMin > cost) {
-            costMin = cost;
-            mpvIdx = i;
-        }
+    assert(predInfo->numCand >= 1);
+    Ipp32s cost = MvCost(Ipp16s(mvx - predInfo->mvCand[0].mvx)) + MvCost(Ipp16s(mvy - predInfo->mvCand[0].mvy));
+    if (predInfo->numCand > 1) {
+        Ipp32s cost2 = MvCost(Ipp16s(mvx - predInfo->mvCand[1].mvx)) + MvCost(Ipp16s(mvy - predInfo->mvCand[1].mvy));
+        if (cost > cost2)
+            cost = cost2;
     }
 
-    return
-        (Ipp32s)(m_logMvCostTable[Ipp16s(mvx - predInfo->mvCand[mpvIdx].mvx)] * m_rdLambdaSqrt + 0.5) +
-        (Ipp32s)(m_logMvCostTable[Ipp16s(mvy - predInfo->mvCand[mpvIdx].mvy)] * m_rdLambdaSqrt + 0.5);
+    return Ipp32s(cost * m_rdLambdaSqrt + 0.5);
+
+    //Ipp32s costMin = INT_MAX;
+    //Ipp32s mpvIdx = INT_MAX;
+    //for (Ipp32s i = 0; i < predInfo->numCand; i++) {
+    //    Ipp32s cost = m_logMvCostTable[Ipp16s(mvx - predInfo->mvCand[i].mvx)] +
+    //                  m_logMvCostTable[Ipp16s(mvy - predInfo->mvCand[i].mvy)];
+    //    if (costMin > cost) {
+    //        costMin = cost;
+    //        mpvIdx = i;
+    //    }
+    //}
+
+    //return
+    //    (Ipp32s)(m_logMvCostTable[Ipp16s(mvx - predInfo->mvCand[mpvIdx].mvx)] * m_rdLambdaSqrt + 0.5) +
+    //    (Ipp32s)(m_logMvCostTable[Ipp16s(mvy - predInfo->mvCand[mpvIdx].mvy)] * m_rdLambdaSqrt + 0.5);
 }
 
 #ifdef MEMOIZE_SUBPEL
@@ -5797,7 +5818,7 @@ Ipp16s H265CU<PixType>::MeIntSeed(const H265MEInfo *meInfo, const MvPredInfo<2> 
     // Helps ME quality, memoization & reduced dyn range helps speed.
     H265MV mvSeed;
 
-    Ipp32s mvCostMax = (Ipp32s)(m_logMvCostTable[meStepMax] * m_rdLambdaSqrt + 0.5);
+    Ipp32s mvCostMax = (Ipp32s)(MvCost(meStepMax) * m_rdLambdaSqrt + 0.5);
     mvCostMax*=2;
 
     if(MemBestMV(size, m_currFrame->m_mapListRefUnique[list][refIdx], &mvSeed)) {
@@ -5906,7 +5927,7 @@ Ipp16s H265CU<PixType>::MeIntSeed(const H265MEInfo *meInfo, const MvPredInfo<2> 
     // Range by seed
     if (mvCostMax>mvCostBest && costBest-mvCostBest+mvCostMax < costOrig) {
         meStepMax/=2;
-        mvCostMax = (Ipp32s)(m_logMvCostTable[meStepMax] * m_rdLambdaSqrt + 0.5);
+        mvCostMax = (Ipp32s)(MvCost(meStepMax) * m_rdLambdaSqrt + 0.5);
         mvCostMax*=2;
     }
     // Range by cost
@@ -5915,7 +5936,7 @@ Ipp16s H265CU<PixType>::MeIntSeed(const H265MEInfo *meInfo, const MvPredInfo<2> 
         Ipp32s stepMax=meStepMax;
         while(stepCost>(costBest-mvCostBest) && stepCost>mvCostBest && stepMax>4) {
             stepMax/=2;
-            stepCost = (Ipp32s)(m_logMvCostTable[stepMax] * m_rdLambdaSqrt + 0.5);
+            stepCost = (Ipp32s)(MvCost(stepMax) * m_rdLambdaSqrt + 0.5);
             stepCost*=2;
         }
         meStepMax = stepMax;
@@ -7522,12 +7543,7 @@ void H265CU<PixType>::MeSubPel(const H265MEInfo *meInfo, const MvPredInfo<2> *pr
 
 static Ipp32s GetFlBits(Ipp32s val, Ipp32s maxVal)
 {
-    if (maxVal < 2)
-        return 0;
-    else if (val == maxVal - 1)
-        return val;
-    else
-        return val + 1;
+    return val + (val != maxVal - 1);
 }
 
 void GetPredIdxBits(Ipp32s partMode, Ipp32s isP, int partIdx, Ipp32s lastPredIdx, Ipp32s predIdxBits[3])

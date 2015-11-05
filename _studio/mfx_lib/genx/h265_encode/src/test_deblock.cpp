@@ -22,8 +22,8 @@
 extern "C" void Deblock(SurfaceIndex SURF_SRC, SurfaceIndex SURF_FRAME_CU_DATA, SurfaceIndex SURF_PARAM);
 #endif //CMRT_EMU
 
-const mfxI32 Width  = 1920;
-const mfxI32 Height = 1080;
+const mfxI32 Width  = WIDTH;
+const mfxI32 Height = HEIGHT;
 
 struct VideoParam
 {
@@ -390,11 +390,23 @@ namespace {
         CHECK_CM_ERR(res);
         res = kernel->SetKernelArg(6, sizeof(SurfaceIndex), idxParam);
         CHECK_CM_ERR(res);
+
+        // set start mb
+        Ipp32u start_mbX = 0, start_mbY = 0;
+        res = kernel->SetKernelArg(7, sizeof(start_mbX), &start_mbX);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(8, sizeof(start_mbY), &start_mbY);
+        CHECK_CM_ERR(res);
         //-------------------------------------------------------
 
         // for YUV420 we process 16x16 block (4x 8x8_Luma and 1x 16x16_Chroma)
-        mfxU32 tsWidth  = (dblkPar.Width + 12 + 15) / 16;
+        mfxU32 tsWidthFull  = (dblkPar.Width + 12 + 15) / 16;
+        mfxU32 tsWidth = tsWidthFull;
         mfxU32 tsHeight = (dblkPar.Height + 12 + 15) / 16;
+
+        if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH) {
+            tsWidth = tsWidthFull / 2;
+        }
         res = kernel->SetThreadCount(tsWidth * tsHeight);
         CHECK_CM_ERR(res);
 
@@ -419,6 +431,58 @@ namespace {
         CmEvent * e = 0;
         res = queue->Enqueue(task, e, threadSpace);
         CHECK_CM_ERR(res);
+
+        if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH) {
+            start_mbX = tsWidth;
+
+            tsWidth = tsWidthFull - tsWidth;
+            res = kernel->SetThreadCount(tsWidth * tsHeight);
+            CHECK_CM_ERR(res);
+
+            //-------------------------------------------------------
+            res = kernel->SetKernelArg(0, sizeof(SurfaceIndex), idxInputLuma);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(1, sizeof(SurfaceIndex), idxInputChroma);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(2, sizeof(Ipp32u), &paddingLu);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(3, sizeof(Ipp32u), &paddingCh);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(4, sizeof(SurfaceIndex), idxDst);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(5, sizeof(SurfaceIndex), idxFrameCuData);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(6, sizeof(SurfaceIndex), idxParam);
+            CHECK_CM_ERR(res);
+
+            res = kernel->SetKernelArg(7, sizeof(start_mbX), &start_mbX);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(8, sizeof(start_mbY), &start_mbY);
+            CHECK_CM_ERR(res);
+            //-------------------------------------------------------
+
+            res = device->DestroyThreadSpace(threadSpace);
+            CHECK_CM_ERR(res);
+
+            // the rest of frame TS
+            res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace);
+            CHECK_CM_ERR(res);
+
+            res = threadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+            CHECK_CM_ERR(res);
+
+            res = task->Reset();
+            CHECK_CM_ERR(res);
+
+            res = task->AddKernel(kernel);
+            CHECK_CM_ERR(res);
+
+            res = device->CreateQueue(queue);
+            CHECK_CM_ERR(res);
+
+            res = queue->Enqueue(task, e, threadSpace);
+            CHECK_CM_ERR(res);
+        }
 
         res = e->WaitForTaskFinished();
         CHECK_CM_ERR(res);

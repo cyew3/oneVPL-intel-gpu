@@ -28,18 +28,18 @@ extern "C" void MeP16_4MV(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_R
     SurfaceIndex SURF_DIST16x8, SurfaceIndex SURF_DIST8x16, SurfaceIndex SURF_DIST8x8,
     /*SurfaceIndex SURF_DIST8x4, SurfaceIndex SURF_DIST4x8, */SurfaceIndex SURF_MV16x16,
     SurfaceIndex SURF_MV16x8, SurfaceIndex SURF_MV8x16, SurfaceIndex SURF_MV8x8/*,
-    SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8*/, int rectParts);
+    SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8*/, int rectParts, mfxU32 start_mbX, mfxU32 start_mbY);
 extern "C" void Me16AndRefine32x32(
     SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF, SurfaceIndex DATA32x32,
-    SurfaceIndex DATA16x16, SurfaceIndex DATA8x8, SurfaceIndex SRC, SurfaceIndex REF);
+    SurfaceIndex DATA16x16, SurfaceIndex DATA8x8, SurfaceIndex SRC, SurfaceIndex REF, mfxU32 start_mbX, mfxU32 start_mbY);
 extern "C" void Me16RectPartsAndRefine32x32(
     SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF, SurfaceIndex DATA32x32,
-    SurfaceIndex DATA16x16, SurfaceIndex DATA8x8, SurfaceIndex SRC, SurfaceIndex REF);
+    SurfaceIndex DATA16x16, SurfaceIndex DATA8x8, SurfaceIndex SRC, SurfaceIndex REF, mfxU32 start_mbX, mfxU32 start_mbY);
 extern "C" void MeP16_4MV(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIndex SURF_DIST16x16,
            SurfaceIndex SURF_DIST16x8, SurfaceIndex SURF_DIST8x16, SurfaceIndex SURF_DIST8x8,
            /*SurfaceIndex SURF_DIST8x4, SurfaceIndex SURF_DIST4x8, */SurfaceIndex SURF_MV16x16,
            SurfaceIndex SURF_MV16x8, SurfaceIndex SURF_MV8x16, SurfaceIndex SURF_MV8x8/*,
-           SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8*/, int rectParts);
+           SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8*/, int rectParts, mfxU32 start_mbX, mfxU32 start_mbY);
 #endif //CMRT_EMU
 
 namespace {
@@ -311,6 +311,13 @@ namespace {
         res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxRef);
         CHECK_CM_ERR(res);
 
+        // set start mb
+        Ipp32u start_mbX = 0, start_mbY = 0;
+        res = kernel->SetKernelArg(argIdx++, sizeof(start_mbX), &start_mbX);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(argIdx++, sizeof(start_mbY), &start_mbY);
+        CHECK_CM_ERR(res);
+
         // MV16x16 also serves as MV predictor
         for (int y = 0; y < DIVUP(ctrl.height, 16); y++)
             for (int x = 0; x < DIVUP(ctrl.width, 16); x++)
@@ -321,8 +328,13 @@ namespace {
             for (int x = 0; x < DIVUP(ctrl.width, 32); x++)
                 *((mfxI16Pair *)((char *)data32x32Sys + y * data32x32Pitch + x * 16 * sizeof(Ipp32u))) = *(mv32x32Data + y * DIVUP(ctrl.width, 32) + x);
 
-        mfxU32 tsWidth  = DIVUP(ctrl.width, 16);
+        mfxU32 tsWidthFull  = DIVUP(ctrl.width, 16);
+        mfxU32 tsWidth = tsWidthFull;
         mfxU32 tsHeight = DIVUP(ctrl.height, 16);
+
+        if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH) {
+            tsWidth = (tsWidthFull >> 1) & ~1;  // must be even for 32x32 blocks 
+        }
         res = kernel->SetThreadCount(tsWidth * tsHeight);
         CHECK_CM_ERR(res);
 
@@ -340,6 +352,7 @@ namespace {
         res = task->AddKernel(kernel);
         CHECK_CM_ERR(res);
 
+
         CmQueue *queue = 0;
         res = device->CreateQueue(queue);
         CHECK_CM_ERR(res);
@@ -347,6 +360,63 @@ namespace {
         CmEvent * e = 0;
         res = queue->Enqueue(task, e, threadSpace);
         CHECK_CM_ERR(res);
+
+        if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH) {
+            start_mbX = tsWidth;
+
+            tsWidth = tsWidthFull - tsWidth;
+            res = kernel->SetThreadCount(tsWidth * tsHeight);
+            CHECK_CM_ERR(res);
+
+            argIdx = 0;
+            res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxCtrl);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), genxRefs);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxData32x32);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxData16x16);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxData8x8);
+            CHECK_CM_ERR(res);
+            if (rectParts) {
+                res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxData16x8);
+                CHECK_CM_ERR(res);
+                res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxData8x16);
+                CHECK_CM_ERR(res);
+            }
+            res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxSrc);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxRef);
+            CHECK_CM_ERR(res);
+
+            res = kernel->SetKernelArg(argIdx++, sizeof(start_mbX), &start_mbX);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(start_mbY), &start_mbY);
+            CHECK_CM_ERR(res);
+
+            res = device->DestroyThreadSpace(threadSpace);
+            CHECK_CM_ERR(res);
+
+            // the rest of frame TS
+            res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace);
+            CHECK_CM_ERR(res);
+
+            res = threadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+            CHECK_CM_ERR(res);
+
+            res = task->Reset();
+            CHECK_CM_ERR(res);
+
+            res = task->AddKernel(kernel);
+            CHECK_CM_ERR(res);
+
+            res = device->CreateQueue(queue);
+            CHECK_CM_ERR(res);
+
+            res = queue->Enqueue(task, e, threadSpace);
+            CHECK_CM_ERR(res);
+        }
 
         res = e->WaitForTaskFinished();
         CHECK_CM_ERR(res);
@@ -698,13 +768,24 @@ namespace {
         CHECK_CM_ERR(res);
         res = kernel->SetKernelArg(argIdx++, sizeof(rectParts), &rectParts);
         CHECK_CM_ERR(res);
+        // set start mb
+        Ipp32u start_mbX = 0, start_mbY = 0;
+        res = kernel->SetKernelArg(argIdx++, sizeof(start_mbX), &start_mbX);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(argIdx++, sizeof(start_mbY), &start_mbY);
+        CHECK_CM_ERR(res);
 
         // MV16x16 also serves as MV predictor
         for (int y = 0; y < DIVUP(ctrl.height, 16); y++)
             memcpy((char *)mv16x16Sys + y * mv16x16Pitch, mvPredData + y * DIVUP(ctrl.width, 16), sizeof(mfxI16Pair) * DIVUP(ctrl.width, 16));
 
-        mfxU32 tsWidth  = DIVUP(ctrl.width, 16);
+        mfxU32 tsWidthFull  = DIVUP(ctrl.width, 16);
+        mfxU32 tsWidth = tsWidthFull;
         mfxU32 tsHeight = DIVUP(ctrl.height, 16);
+
+        if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH) {
+            tsWidth = (tsWidthFull >> 1) & ~1;  // must be even for 32x32 blocks 
+        }
         res = kernel->SetThreadCount(tsWidth * tsHeight);
         CHECK_CM_ERR(res);
 
@@ -729,6 +810,65 @@ namespace {
         CmEvent * e = 0;
         res = queue->Enqueue(task, e, threadSpace);
         CHECK_CM_ERR(res);
+
+        if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH) {
+            start_mbX = tsWidth;
+
+            tsWidth = tsWidthFull - tsWidth;
+            res = kernel->SetThreadCount(tsWidth * tsHeight);
+            CHECK_CM_ERR(res);
+
+            argIdx = 0;
+            res = kernel->SetKernelArg(argIdx++, sizeof(*idxCtrl), idxCtrl);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(*genxRefs), genxRefs);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(*idxDist16x16), idxDist16x16);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(*idxDist16x8), idxDist16x8);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(*idxDist8x16), idxDist8x16);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(*idxDist8x8), idxDist8x8);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(*idxMv16x16), idxMv16x16);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(*idxMv16x8), idxMv16x8);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(*idxMv8x16), idxMv8x16);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(*idxMv8x8), idxMv8x8);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(rectParts), &rectParts);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(start_mbX), &start_mbX);
+            CHECK_CM_ERR(res);
+            res = kernel->SetKernelArg(argIdx++, sizeof(start_mbY), &start_mbY);
+            CHECK_CM_ERR(res);
+
+            res = device->DestroyThreadSpace(threadSpace);
+            CHECK_CM_ERR(res);
+
+            // the rest of frame TS
+            res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace);
+            CHECK_CM_ERR(res);
+
+            res = threadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+            CHECK_CM_ERR(res);
+
+            res = task->Reset();
+            CHECK_CM_ERR(res);
+
+            res = task->AddKernel(kernel);
+            CHECK_CM_ERR(res);
+
+            CmQueue *queue = 0;
+            res = device->CreateQueue(queue);
+            CHECK_CM_ERR(res);
+
+            res = queue->Enqueue(task, e, threadSpace);
+            CHECK_CM_ERR(res);
+        }
 
         res = e->WaitForTaskFinished();
         CHECK_CM_ERR(res);

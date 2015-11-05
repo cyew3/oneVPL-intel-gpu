@@ -70,9 +70,9 @@ struct VideoParam // size = (352+128)B = (88+32) DW
     Ipp32s SAOChromaFlag;          // +85 DW
     Ipp32s enableBandOffset;       // +86 DW
     //Ipp8u reserved[4];             // +87 DW
-    Ipp32s offsetChroma;             // +87 DW
+    Ipp32s offsetChroma;           // +87 DW
     // tile/slice restriction (avail LeftAbove)
-    Ipp8u availLeftAbove[128];     // +88 DW
+    Ipp8u availLeftAbove[196];     // +88 DW
 };
 
 struct AddrNode
@@ -348,11 +348,22 @@ int RunGpuStatAndEstimate(const Ipp8u* frameOrigin, const Ipp8u* frameRecon, con
     res = kernel->SetKernelArg(3, sizeof(*idx_frame_sao_offset), idx_frame_sao_offset);
     CHECK_CM_ERR(res);
 
+    // set start mb
+    Ipp32u start_mbX = 0, start_mbY = 0;
+    res = kernel->SetKernelArg(4, sizeof(start_mbX), &start_mbX);
+    CHECK_CM_ERR(res);
+    res = kernel->SetKernelArg(5, sizeof(start_mbY), &start_mbY);
+    CHECK_CM_ERR(res);
+
     mfxU32 MaxCUSize = m_par->MaxCUSize;
 
     // for YUV420 we process (MaxCuSize x MaxCuSize) block
-    mfxU32 tsWidth   = m_par->PicWidthInCtbs;
+    mfxU32 tsWidthFull   = m_par->PicWidthInCtbs;
+    mfxU32 tsWidth = tsWidthFull;
     mfxU32 tsHeight  = m_par->PicHeightInCtbs;
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH) {
+        tsWidth = tsWidth / 2;
+    }
     res = kernel->SetThreadCount(tsWidth * tsHeight);
     CHECK_CM_ERR(res);
 
@@ -377,6 +388,50 @@ int RunGpuStatAndEstimate(const Ipp8u* frameOrigin, const Ipp8u* frameRecon, con
     CmEvent * e = 0;
     res = queue->Enqueue(task, e, threadSpace);
     CHECK_CM_ERR(res);
+
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH) {
+        start_mbX = tsWidth;
+
+        tsWidth = tsWidthFull - tsWidth;
+        res = kernel->SetThreadCount(tsWidth * tsHeight);
+        CHECK_CM_ERR(res);
+
+        res = kernel->SetKernelArg(0, sizeof(*idxInput), idxInput);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(1, sizeof(*idxRecon), idxRecon);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(2, sizeof(*idxParam), idxParam);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(3, sizeof(*idx_frame_sao_offset), idx_frame_sao_offset);
+        CHECK_CM_ERR(res);
+
+        res = kernel->SetKernelArg(4, sizeof(start_mbX), &start_mbX);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(5, sizeof(start_mbY), &start_mbY);
+        CHECK_CM_ERR(res);
+
+        res = device->DestroyThreadSpace(threadSpace);
+        CHECK_CM_ERR(res);
+
+        // the rest of frame TS
+        res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace);
+        CHECK_CM_ERR(res);
+
+        res = threadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+        CHECK_CM_ERR(res);
+
+        res = task->Reset();
+        CHECK_CM_ERR(res);
+
+        res = task->AddKernel(kernel);
+        CHECK_CM_ERR(res);
+
+        res = device->CreateQueue(queue);
+        CHECK_CM_ERR(res);
+
+        res = queue->Enqueue(task, e, threadSpace);
+        CHECK_CM_ERR(res);
+    }
 
     res = e->WaitForTaskFinished();
     CHECK_CM_ERR(res);
@@ -553,15 +608,25 @@ int RunGpuStat(const Ipp8u* frameOrigin, const Ipp8u* frameRecon, const VideoPar
     res = kernel->SetKernelArg(3, sizeof(*idx_stats), idx_stats);
     CHECK_CM_ERR(res);
 
+    // set start mb
+    Ipp32u start_mbX = 0, start_mbY = 0;
+    res = kernel->SetKernelArg(4, sizeof(start_mbX), &start_mbX);
+    CHECK_CM_ERR(res);
+    res = kernel->SetKernelArg(5, sizeof(start_mbY), &start_mbY);
+    CHECK_CM_ERR(res);
+
     mfxU32 MaxCUSize = m_par->MaxCUSize;
 
     // for YUV420 we process (MaxCuSize x MaxCuSize) block
     int numCtb = m_par->PicHeightInCtbs * m_par->PicWidthInCtbs;
     Ipp32s blockW = GPU_STAT_BLOCK_WIDTH;
     Ipp32s blockH = GPU_STAT_BLOCK_HEIGHT;
-    mfxU32 tsWidth   = m_par->PicWidthInCtbs * (m_par->MaxCUSize / blockW);
+    mfxU32 tsWidthFull   = m_par->PicWidthInCtbs * (m_par->MaxCUSize / blockW);
+    mfxU32 tsWidth = tsWidthFull;
     mfxU32 tsHeight  = m_par->PicHeightInCtbs * (m_par->MaxCUSize / blockH);
-    mfxU32 numThreads = tsWidth * tsHeight;
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH) {
+        tsWidth = tsWidth / 2;
+    }
     res = kernel->SetThreadCount(tsWidth * tsHeight);
     CHECK_CM_ERR(res);
 
@@ -586,6 +651,50 @@ int RunGpuStat(const Ipp8u* frameOrigin, const Ipp8u* frameRecon, const VideoPar
     CmEvent * e = 0;
     res = queue->Enqueue(task, e, threadSpace);
     CHECK_CM_ERR(res);
+
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH) {
+        start_mbX = tsWidth;
+
+        tsWidth = tsWidthFull - tsWidth;
+        res = kernel->SetThreadCount(tsWidth * tsHeight);
+        CHECK_CM_ERR(res);
+
+        res = kernel->SetKernelArg(0, sizeof(*idxInput), idxInput);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(1, sizeof(*idxRecon), idxRecon);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(2, sizeof(*idxParam), idxParam);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(3, sizeof(*idx_stats), idx_stats);
+        CHECK_CM_ERR(res);
+
+        res = kernel->SetKernelArg(4, sizeof(start_mbX), &start_mbX);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(5, sizeof(start_mbY), &start_mbY);
+        CHECK_CM_ERR(res);
+
+        res = device->DestroyThreadSpace(threadSpace);
+        CHECK_CM_ERR(res);
+
+        // the rest of frame TS
+        res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace);
+        CHECK_CM_ERR(res);
+
+        res = threadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+        CHECK_CM_ERR(res);
+
+        res = task->Reset();
+        CHECK_CM_ERR(res);
+
+        res = task->AddKernel(kernel);
+        CHECK_CM_ERR(res);
+
+        res = device->CreateQueue(queue);
+        CHECK_CM_ERR(res);
+
+        res = queue->Enqueue(task, e, threadSpace);
+        CHECK_CM_ERR(res);
+    }
 
     res = e->WaitForTaskFinished();
     CHECK_CM_ERR(res);
@@ -729,14 +838,24 @@ int RunGpuStatChroma(const Ipp8u* frameOrigin, const Ipp8u* frameRecon, const Vi
     res = kernel->SetKernelArg(3, sizeof(*idx_stats), idx_stats);
     CHECK_CM_ERR(res);
 
+    // set start mb
+    Ipp32u start_mbX = 0, start_mbY = 0;
+    res = kernel->SetKernelArg(4, sizeof(start_mbX), &start_mbX);
+    CHECK_CM_ERR(res);
+    res = kernel->SetKernelArg(5, sizeof(start_mbY), &start_mbY);
+    CHECK_CM_ERR(res);
+
     mfxU32 MaxCUSize = m_par->MaxCUSize;
 
     // for YUV420 we process (MaxCuSize x MaxCuSize) block
     Ipp32s blockW = GPU_STAT_CHROMA_BLOCK_WIDTH;
     Ipp32s blockH = GPU_STAT_CHROMA_BLOCK_HEIGHT;
-    mfxU32 tsWidth   = m_par->PicWidthInCtbs *  ((m_par->MaxCUSize >> 1) / blockW);
+    mfxU32 tsWidthFull   = m_par->PicWidthInCtbs *  ((m_par->MaxCUSize >> 1) / blockW);
+    mfxU32 tsWidth = tsWidthFull;
     mfxU32 tsHeight  = m_par->PicHeightInCtbs * ((m_par->MaxCUSize >> 1) / blockH);
-    mfxU32 numThreads = tsWidth * tsHeight;
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH) {
+        tsWidth = tsWidth / 2;
+    }
     res = kernel->SetThreadCount(tsWidth * tsHeight);
     CHECK_CM_ERR(res);
 
@@ -761,6 +880,50 @@ int RunGpuStatChroma(const Ipp8u* frameOrigin, const Ipp8u* frameRecon, const Vi
     CmEvent * e = 0;
     res = queue->Enqueue(task, e, threadSpace);
     CHECK_CM_ERR(res);
+
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH) {
+        start_mbX = tsWidth;
+
+        tsWidth = tsWidthFull - tsWidth;
+        res = kernel->SetThreadCount(tsWidth * tsHeight);
+        CHECK_CM_ERR(res);
+
+        res = kernel->SetKernelArg(0, sizeof(*idxInput), idxInput);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(1, sizeof(*idxRecon), idxRecon);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(2, sizeof(*idxParam), idxParam);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(3, sizeof(*idx_stats), idx_stats);
+        CHECK_CM_ERR(res);
+
+        res = kernel->SetKernelArg(4, sizeof(start_mbX), &start_mbX);
+        CHECK_CM_ERR(res);
+        res = kernel->SetKernelArg(5, sizeof(start_mbY), &start_mbY);
+        CHECK_CM_ERR(res);
+
+        res = device->DestroyThreadSpace(threadSpace);
+        CHECK_CM_ERR(res);
+
+        // the rest of frame TS
+        res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace);
+        CHECK_CM_ERR(res);
+
+        res = threadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+        CHECK_CM_ERR(res);
+
+        res = task->Reset();
+        CHECK_CM_ERR(res);
+
+        res = task->AddKernel(kernel);
+        CHECK_CM_ERR(res);
+
+        res = device->CreateQueue(queue);
+        CHECK_CM_ERR(res);
+
+        res = queue->Enqueue(task, e, threadSpace);
+        CHECK_CM_ERR(res);
+    }
 
     res = e->WaitForTaskFinished();
     CHECK_CM_ERR(res);
@@ -3606,8 +3769,8 @@ void SimulateTiles(Ipp8u* availLeftAboveMask, Ipp32s numCtbX, Ipp32s numCtbY, Ip
 
 int main()
 {
-    Ipp32s width = 1920;
-    Ipp32s height = 1080;
+    Ipp32s width = WIDTH;
+    Ipp32s height = HEIGHT;
     VideoParam videoParam;
     SetVideoParam(videoParam, width, height);
     Ipp32s numCtbs = videoParam.PicHeightInCtbs * videoParam.PicWidthInCtbs;
@@ -3645,8 +3808,10 @@ int main()
     SimulateRecon(input.data(), width, recon.data(), width, width, height, 10);
 
     // this params hard coded in genx kernel SaoEstimate()
-    Ipp32s maxWidth  = 3840;
-    Ipp32s maxHeight = 2160;
+    //Ipp32s maxWidth  = 3840;
+    //Ipp32s maxHeight = 2160;
+    Ipp32s maxWidth  = 8192;
+    Ipp32s maxHeight = 4320;
     Ipp32s maxCuSize = 64;
     Ipp32s maxNumCtbX = (maxWidth  + (maxCuSize - 1)) / maxCuSize;
     Ipp32s maxNumCtbY = (maxHeight + (maxCuSize - 1)) / maxCuSize;

@@ -531,8 +531,8 @@ namespace H265Enc {
         m_feiOrigin = NULL;
         m_feiRecon = NULL;
 
-        m_userSeiMessages = NULL;
-        m_numUserSeiMessages = 0;
+        m_userSeiMessages.resize(0);
+        m_userSeiMessagesData.resize(0);
 
         m_ttEncComplete.InitEncComplete(0);
         m_ttInitNewFrame.InitNewFrame(this, (mfxFrameSurface1 *)NULL, 0);

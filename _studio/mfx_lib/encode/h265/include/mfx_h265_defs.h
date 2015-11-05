@@ -722,8 +722,8 @@ namespace MfxEnumShortAliases {
         const Ipp32s MIN_TARGET_USAGE = 4;
         const Ipp32s MAX_TARGET_USAGE = 7;
         const Ipp32s MAX_GOP_REF_DIST = 8;
-        const Ipp32s MAX_WIDTH        = 3840;
-        const Ipp32s MAX_HEIGHT       = 2160;
+        const Ipp32s MAX_WIDTH        = 8192;
+        const Ipp32s MAX_HEIGHT       = 4320;
         const Ipp32s SUP_ENABLE_CM[]  = { OFF, ON };
 #else
         const Ipp32s MIN_TARGET_USAGE = 1;

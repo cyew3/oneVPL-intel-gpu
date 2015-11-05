@@ -746,17 +746,17 @@ Ipp32s H265FrameEncoder::WriteBitstreamHeaderSet(mfxBitstream *mfxBS, Ipp32s bs_
         overheadBytes += m_bs[bs_main_id].WriteNAL(mfxBS, !m_frame->m_isIdrPic, &nal);
     }
 
-    if (m_frame->m_userSeiMessages) {
+    if (m_frame->m_userSeiMessages.size()) {
         assert(m_bs[bs_main_id].m_base.m_bitOffset == 0);
-        for (Ipp32u i = 0; i < m_frame->m_numUserSeiMessages; i++) {
+        for (size_t i = 0; i < m_frame->m_userSeiMessages.size(); i++) {
             H265BsReal bs;
-            bs.m_base.m_pbsRBSPBase = bs.m_base.m_pbsBase = m_frame->m_userSeiMessages[i]->Data;
-            bs.m_base.m_maxBsSize = m_frame->m_userSeiMessages[i]->BufSize;
-            bs.m_base.m_pbs = bs.m_base.m_pbsRBSPBase + m_frame->m_userSeiMessages[i]->NumBit / 8;
-            bs.m_base.m_bitOffset = m_frame->m_userSeiMessages[i]->NumBit & 7;
+            bs.m_base.m_pbsRBSPBase = bs.m_base.m_pbsBase = m_frame->m_userSeiMessages[i].Data;
+            bs.m_base.m_maxBsSize = m_frame->m_userSeiMessages[i].BufSize;
+            bs.m_base.m_pbs = bs.m_base.m_pbsRBSPBase + m_frame->m_userSeiMessages[i].NumBit / 8;
+            bs.m_base.m_bitOffset = m_frame->m_userSeiMessages[i].NumBit & 7;
             nal.nal_unit_type = NAL_UT_PREFIX_SEI;
-            nal.seiPayloadType = m_frame->m_userSeiMessages[i]->Type;
-            nal.seiPayloadSize = (m_frame->m_userSeiMessages[i]->NumBit + 7) / 8;
+            nal.seiPayloadType = m_frame->m_userSeiMessages[i].Type;
+            nal.seiPayloadSize = (m_frame->m_userSeiMessages[i].NumBit + 7) / 8;
             overheadBytes += bs.WriteNAL(mfxBS, !m_frame->m_isIdrPic, &nal);
         }
     }

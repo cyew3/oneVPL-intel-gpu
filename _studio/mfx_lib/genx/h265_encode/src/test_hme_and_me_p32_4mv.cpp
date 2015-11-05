@@ -341,13 +341,13 @@ namespace {
         CHECK_CM_ERR(res);
         res = kernel->SetKernelArg(7, sizeof(SurfaceIndex), idxData16x16);
         CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(8, sizeof(SurfaceIndex), idxData32x16);
-        CHECK_CM_ERR(res);
-        res = kernel->SetKernelArg(9, sizeof(SurfaceIndex), idxData16x32);
-        CHECK_CM_ERR(res);
-        int rectParts = 0;
-        res = kernel->SetKernelArg(10, sizeof(rectParts), &rectParts);
-        CHECK_CM_ERR(res);
+        //res = kernel->SetKernelArg(8, sizeof(SurfaceIndex), idxData32x16);
+        //CHECK_CM_ERR(res);
+        //res = kernel->SetKernelArg(9, sizeof(SurfaceIndex), idxData16x32);
+        //CHECK_CM_ERR(res);
+        //int rectParts = 0;
+        //res = kernel->SetKernelArg(10, sizeof(rectParts), &rectParts);
+        //CHECK_CM_ERR(res);
 
         mfxU32 tsWidth  = DIVUP(width16x, 16);    // 16x blocks
         mfxU32 tsHeight = DIVUP(height16x, 16);

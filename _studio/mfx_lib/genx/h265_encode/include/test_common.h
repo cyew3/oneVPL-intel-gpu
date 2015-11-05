@@ -55,9 +55,16 @@ typedef struct {
 
 enum { PASSED, FAILED };
 
+//#define TEST_8K
+#ifdef TEST_8K
+const mfxI32 WIDTH  = 8192;
+const mfxI32 HEIGHT = 4096;
+const mfxI8 YUV_NAME[] = "C:/yuv/8K/rally_8192x4096_30.yuv";
+#else
 const mfxI32 WIDTH  = 1920;
 const mfxI32 HEIGHT = 1088;
 const mfxI8 YUV_NAME[] = "C:/yuv/1080p/BasketballDrive_1920x1080p_500_50.yuv";
+#endif
 //const mfxI32 WIDTH  = 416;
 //const mfxI32 HEIGHT = 240;
 //const mfxI8 YUV_NAME[] = "C:/yuv/JCTVC-G1200/240p/RaceHorses_416x240p_300_30.yuv";

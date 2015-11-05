@@ -500,7 +500,7 @@ void ReadPQData(
 
 extern "C" _GENX_MAIN_
 void Deblock(SurfaceIndex SRC_LU, SurfaceIndex SRC_CH, uint paddingLu, uint paddingCh,
-             SurfaceIndex DST, SurfaceIndex CU_DATA, SurfaceIndex PARAM)
+             SurfaceIndex DST, SurfaceIndex CU_DATA, SurfaceIndex PARAM, uint start_mbX, uint start_mbY)
 {
     DeblockParam param;
     vector<uint1,64> part0, part1, part2, part3, part4;
@@ -537,8 +537,8 @@ void Deblock(SurfaceIndex SRC_LU, SurfaceIndex SRC_CH, uint paddingLu, uint padd
 
     //central point of first cross
     vector<int2,2> globXY;
-    globXY[0] = get_thread_origin_x() * 16;
-    globXY[1] = get_thread_origin_y() * 16;
+    globXY[0] = (get_thread_origin_x() + start_mbX) * 16;
+    globXY[1] = (get_thread_origin_y() + start_mbY) * 16;
     globXY -= 12;
 
     // Calc Deblock Strengths for block 16x16 via 4x 8x8

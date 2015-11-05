@@ -33,10 +33,10 @@ typedef matrix<uchar, 3, 32> UniIn;
 template <int rectParts> inline _GENX_ void Impl(
     SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF, SurfaceIndex DATA32x32,
     SurfaceIndex DATA16x16, SurfaceIndex DATA8x8, SurfaceIndex DATA16x8,
-    SurfaceIndex DATA8x16, SurfaceIndex SRC, SurfaceIndex REF)
+    SurfaceIndex DATA8x16, SurfaceIndex SRC, SurfaceIndex REF, uint start_mbX, uint start_mbY)
 {
-    uint mbX = get_thread_origin_x();
-    uint mbY = get_thread_origin_y();
+    uint mbX = get_thread_origin_x() + start_mbX;
+    uint mbY = get_thread_origin_y() + start_mbY;
     uint x = mbX * 16;
     uint y = mbY * 16;
 
@@ -51,9 +51,6 @@ template <int rectParts> inline _GENX_ void Impl(
     uint1 maxNumSu = control[67];
     uint2 width = control.format<uint2>()[34];
     uint2 height = control.format<uint2>()[35];
-
-    uint2 picWidthInMB = width >> 4;
-    uint mbIndex = picWidthInMB * mbY + mbX;
 
     // read MB record data
     UniIn uniIn = 0;
@@ -235,16 +232,16 @@ template <int rectParts> inline _GENX_ void Impl(
 extern "C" _GENX_MAIN_
 void Me16AndRefine32x32(
     SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF, SurfaceIndex DATA32x32,
-    SurfaceIndex DATA16x16, SurfaceIndex DATA8x8, SurfaceIndex SRC, SurfaceIndex REF)
+    SurfaceIndex DATA16x16, SurfaceIndex DATA8x8, SurfaceIndex SRC, SurfaceIndex REF, uint start_mbX, uint start_mbY)
 {
-    Impl<0>(CONTROL, SRC_AND_REF, DATA32x32, DATA16x16, DATA8x8, DATA8x8, DATA8x8, SRC, REF);
+    Impl<0>(CONTROL, SRC_AND_REF, DATA32x32, DATA16x16, DATA8x8, DATA8x8, DATA8x8, SRC, REF, start_mbX, start_mbY);
 }
 
 extern "C" _GENX_MAIN_
 void Me16RectPartsAndRefine32x32(
     SurfaceIndex CONTROL, SurfaceIndex SRC_AND_REF, SurfaceIndex DATA32x32, SurfaceIndex DATA16x16,
-    SurfaceIndex DATA8x8, SurfaceIndex DATA16x8, SurfaceIndex DATA8x16, SurfaceIndex SRC, SurfaceIndex REF)
+    SurfaceIndex DATA8x8, SurfaceIndex DATA16x8, SurfaceIndex DATA8x16, SurfaceIndex SRC, SurfaceIndex REF, uint start_mbX, uint start_mbY)
 {
-    Impl<1>(CONTROL, SRC_AND_REF,DATA32x32, DATA16x16, DATA8x8, DATA16x8, DATA8x16, SRC, REF);
+    Impl<1>(CONTROL, SRC_AND_REF,DATA32x32, DATA16x16, DATA8x8, DATA16x8, DATA8x16, SRC, REF, start_mbX, start_mbY);
 }
 

@@ -355,9 +355,6 @@ namespace {
 
         intParam.numRoi = roi.NumROI;
 
-        if (optHevc.EnableCm == ON)
-            intParam.numRoi = 0;
-
         if (intParam.numRoi > 0) {
             Ipp32s maxAbsDeltaQp = -1;
             if (mfx.RateControlMethod == CBR)
@@ -1232,8 +1229,20 @@ Frame *H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, 
         inputFrame->AddRef();
 
         if (ctrl && ctrl->Payload && ctrl->NumPayload > 0) {
-            inputFrame->m_userSeiMessages = ctrl->Payload;
-            inputFrame->m_numUserSeiMessages = ctrl->NumPayload;
+            inputFrame->m_userSeiMessages.resize(ctrl->NumPayload);
+            size_t totalSize = 0;
+            for (Ipp32s i = 0; i < ctrl->NumPayload; i++) {
+                inputFrame->m_userSeiMessages[i] = *ctrl->Payload[i];
+                inputFrame->m_userSeiMessages[i].BufSize = (inputFrame->m_userSeiMessages[i].NumBit + 7) / 8;
+                totalSize += inputFrame->m_userSeiMessages[i].BufSize;
+            }
+            inputFrame->m_userSeiMessagesData.resize(totalSize);
+            Ipp8u *buf = inputFrame->m_userSeiMessagesData.data();
+            for (Ipp32s i = 0; i < ctrl->NumPayload; i++) {
+                small_memcpy(buf, inputFrame->m_userSeiMessages[i].Data, inputFrame->m_userSeiMessages[i].BufSize);
+                inputFrame->m_userSeiMessages[i].Data = buf;
+                buf += inputFrame->m_userSeiMessages[i].BufSize;
+            }
         }
 
         if (m_videoParam.encodedOrder) {
@@ -2437,10 +2446,10 @@ void SetPostProcParam(PostProcParam & postprocParam, const H265Enc::H265VideoPar
     postprocParam.enableBandOffset = (videoParam.saoOpt == SAO_OPT_ALL_MODES) ? 1 : 0;
 
     // set slice/tile segmentation to prevent invalid sao merge mode
-    const Ipp32s maxWidth  = 3840;
-    const Ipp32s maxHeight = 2160;
-    const Ipp32s numCtbX   = maxWidth / MAX_CU_SIZE;
-    const Ipp32s numCtbY   = maxHeight / MAX_CU_SIZE;
+    const Ipp32s maxWidth  = 8192;
+    const Ipp32s maxHeight = 4320;
+    const Ipp32s numCtbX   = (maxWidth + (MAX_CU_SIZE - 1)) / MAX_CU_SIZE;
+    const Ipp32s numCtbY   = (maxHeight + (MAX_CU_SIZE - 1)) / MAX_CU_SIZE;
 
     memset(postprocParam.availLeftAbove, 1, numCtbX + numCtbY);
 

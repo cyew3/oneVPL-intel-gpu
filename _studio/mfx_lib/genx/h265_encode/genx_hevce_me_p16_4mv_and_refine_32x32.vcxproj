@@ -179,8 +179,11 @@
     </ClCompile>
     <ClCompile Include="src\genx_hevce_me_p16_4mv_and_refine_32x32_bdw_isa.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\genx_hevce_me_p16_4mv_and_refine_32x32_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_me_p16_4mv_and_refine_32x32_hsw_isa.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\genx_hevce_me_p16_4mv_bdw_isa.cpp" />
     <ClCompile Include="src\genx_hevce_me_p16_4mv_hsw_isa.cpp" />
     <ClCompile Include="src\test_me_p16_4mv_and_refine_32x32.cpp" />
@@ -188,8 +191,11 @@
   <ItemGroup>
     <ClInclude Include="include\genx_hevce_me_p16_4mv_and_refine_32x32_bdw_isa.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">true</ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="include\genx_hevce_me_p16_4mv_and_refine_32x32_hsw_isa.h" />
+    <ClInclude Include="include\genx_hevce_me_p16_4mv_and_refine_32x32_hsw_isa.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">false</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="include\genx_hevce_me_p16_4mv_bdw_isa.h" />
     <ClInclude Include="include\genx_hevce_me_p16_4mv_hsw_isa.h" />
     <ClInclude Include="include\test_common.h" />

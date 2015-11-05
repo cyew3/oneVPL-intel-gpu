@@ -331,8 +331,8 @@ namespace H265Enc {
         FeiBufferUp  *m_feiSaoModes;
         void *m_feiSyncPoint;
 
-        mfxPayload **m_userSeiMessages;
-        Ipp32u       m_numUserSeiMessages;
+        std::vector<mfxPayload> m_userSeiMessages;
+        std::vector<mfxU8>      m_userSeiMessagesData;
 
         Frame()
         {

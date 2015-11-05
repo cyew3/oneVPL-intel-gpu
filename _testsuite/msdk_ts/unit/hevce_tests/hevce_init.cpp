@@ -202,10 +202,10 @@ TEST_F(InitTest, OpaqueMemory) {
         input.extOpaqueSurfaceAlloc.In.Type = type;
         EXPECT_CALL(core, MapOpaqueSurface(_,_,_)).WillOnce(Return(MFX_ERR_NONE));
         EXPECT_CALL(core, UnmapOpaqueSurface(_,_,_)).WillOnce(Return(MFX_ERR_NONE));
-        if (type != MFX_MEMTYPE_SYSTEM_MEMORY) {
-            EXPECT_CALL(core, GetCoreParam(_)).WillOnce(Invoke(&GetCoreParamImplDx9));
-            EXPECT_CALL(core, CreateAccelerationDevice(_,_)).WillOnce(Invoke(&CreateAccelerationDeviceImpl));
-        }
+        //if (type != MFX_MEMTYPE_SYSTEM_MEMORY) { // GetCoreParam & CreateAccelerationDevice never called by SW encoder
+        //    EXPECT_CALL(core, GetCoreParam(_)).WillOnce(Invoke(&GetCoreParamImplDx9));
+        //    EXPECT_CALL(core, CreateAccelerationDevice(_,_)).WillOnce(Invoke(&CreateAccelerationDeviceImpl));
+        //}
         EXPECT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
         EXPECT_EQ(MFX_ERR_NONE, encoder.Close());
     }
@@ -714,7 +714,8 @@ TEST_F(InitTest, Default_DeltaQpMode) {
         input.videoParam.mfx.GopRefDist = 8;
         input.extCodingOptionHevc.BPyramid = ON;
         input.extEncoderROI.NumROI = 1;
-        input.extEncoderROI.ROI[0].Left = input.extEncoderROI.ROI[0].Right = input.extEncoderROI.ROI[0].Top = input.extEncoderROI.ROI[0].Bottom = 1;
+        input.extEncoderROI.ROI[0].Left = input.extEncoderROI.ROI[0].Top = 0;
+        input.extEncoderROI.ROI[0].Right = input.extEncoderROI.ROI[0].Bottom = 64;
         input.extEncoderROI.ROI[0].Priority = 1;
         ASSERT_EQ(MFX_ERR_NONE, encoder.Init(&input.videoParam));
         ASSERT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));

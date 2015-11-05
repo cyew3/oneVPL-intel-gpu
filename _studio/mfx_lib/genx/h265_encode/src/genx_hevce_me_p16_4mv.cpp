@@ -34,10 +34,10 @@ void MeP16_4MV(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, Surface
            SurfaceIndex SURF_DIST16x8, SurfaceIndex SURF_DIST8x16, SurfaceIndex SURF_DIST8x8,
            /*SurfaceIndex SURF_DIST8x4, SurfaceIndex SURF_DIST4x8, */SurfaceIndex SURF_MV16x16,
            SurfaceIndex SURF_MV16x8, SurfaceIndex SURF_MV8x16, SurfaceIndex SURF_MV8x8/*,
-           SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8*/, int rectParts)
+           SurfaceIndex SURF_MV8x4, SurfaceIndex SURF_MV4x8*/, int rectParts, int start_mbX, int start_mbY)
 {
-    uint mbX = get_thread_origin_x();
-    uint mbY = get_thread_origin_y();
+    uint mbX = get_thread_origin_x() + start_mbX;
+    uint mbY = get_thread_origin_y() + start_mbY;
     uint x = mbX * 16;
     uint y = mbY * 16;
 

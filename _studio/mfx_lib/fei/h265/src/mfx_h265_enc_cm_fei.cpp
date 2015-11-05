@@ -196,7 +196,7 @@ static mfxStatus GetSurfaceDimensions(CmDevice *device, mfxFEIH265Param *param, 
     GetDimensionsCmSurface2DUp<mfxI32>(device, width32 / 32, height32 / 32, CM_SURFACE_FORMAT_P8, &extAlloc->IntraMode[3]);
 
     /* inter MV and distortion */
-    for (k = MFX_FEI_H265_BLK_64x64; k <=  MFX_FEI_H265_BLK_16x32; k++) // 1 MV and 9 SADs per block
+    for (k = MFX_FEI_H265_BLK_64x64; k <=  MFX_FEI_H265_BLK_32x32/*MFX_FEI_H265_BLK_16x32*/; k++) // 1 MV and 9 SADs per block
         GetDimensionsCmSurface2DUp<mfxU32>(device, cmMvW[k] * 16, cmMvH[k], CM_SURFACE_FORMAT_P8, &extAlloc->InterData[k]);
     for (k = MFX_FEI_H265_BLK_16x16; k <= MFX_FEI_H265_BLK_8x8; k++) // 1 MV and 1 SAD per block
         GetDimensionsCmSurface2DUp<mfxU32>(device, cmMvW[k] * 2,  cmMvH[k], CM_SURFACE_FORMAT_P8, &extAlloc->InterData[k]);
@@ -341,6 +341,7 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     numIntraModes          = param->NumIntraModes;
     fourcc                 = param->FourCC;
     targetUsage            = param->TargetUsage;
+    enableChromaSao        = param->EnableChromaSao;
 
     /* basic parameter checking */
     if (param->Height == 0 || param->Width == 0 || param->NumRefFrames > MFX_FEI_H265_MAX_NUM_REF_FRAMES || param->NumIntraModes != 1) {
@@ -398,18 +399,10 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
 
     device->CreateQueue(queue);
 
-/*
-    size_t sz = 4;
-    int val;
-    device->GetCaps(CAP_BUFFER_COUNT, sz, &val);
-    device->GetCaps(CAP_SURFACE2D_COUNT, sz, &val);
-*/
 
     GPU_PLATFORM hwType;
     size_t size = sizeof(mfxU32);
     device->GetCaps(CAP_GPU_PLATFORM, size, &hwType);
-//    eMFXHWType hwType = core->GetHWType();
-
     switch (hwType)
     {
 #if defined (CMRT_EMU)
@@ -458,23 +451,22 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
         width16x / 16, height16x / 16, CM_NONE_DEPENDENCY);
     kernelMe.AddKernel(device, programRefine64x64, "RefineMeP64x64",
         width4x / 16, height4x / 16, CM_NONE_DEPENDENCY, true);
-    kernelMe.AddKernel(device, programMe16Refine32x32, "Me16AndRefine32x32",
-        width / 16, height / 16, CM_NONE_DEPENDENCY, false);
 
-    kernelInterpolateFrame.AddKernel(device, programInterpolateFrame, "InterpolateFrameWithBorder",
-        interpBlocksW, interpBlocksH, CM_NONE_DEPENDENCY);
+    if (width / 16 > CM_MAX_THREADSPACE_WIDTH) {  // split into 2 parts
+        mfxU32 width0 = ((width / 16) >> 1) & ~1;  // must be even for 32x32 blocks
+        kernelMe.AddKernel(device, programMe16Refine32x32, "Me16AndRefine32x32",
+            width0, height / 16, CM_NONE_DEPENDENCY, false);
+        kernelMe.AddKernel(device, programMe16Refine32x32, "Me16AndRefine32x32",
+            (width / 16) - width0, height / 16, CM_NONE_DEPENDENCY, false);
+    } else {
+        kernelMe.AddKernel(device, programMe16Refine32x32, "Me16AndRefine32x32",
+            width / 16, height / 16, CM_NONE_DEPENDENCY, false);
+    }
 
-    kernelMeIntra.AddKernel(device, programMeIntra, "IntraAvc",
-        width / 16, height / 16, CM_NONE_DEPENDENCY);
-
-    kernelRefine32x32sad.AddKernel(device, programRefine32x32sad, "RefineMeP32x32Sad",
-        width2x / 16, height2x / 16, CM_NONE_DEPENDENCY);
-
-    kernelRefine32x16.AddKernel(device, programRefine32x16, "RefineMeP32x16",
-        width2x / 16, height2x / 8, CM_NONE_DEPENDENCY);
-
-    kernelRefine16x32.AddKernel(device, programRefine16x32, "RefineMeP16x32",
-        width2x / 8, height2x / 16, CM_NONE_DEPENDENCY);
+    //kernelInterpolateFrame.AddKernel(device, programInterpolateFrame, "InterpolateFrameWithBorder",
+    //    interpBlocksW, interpBlocksH, CM_NONE_DEPENDENCY);
+    //kernelRefine32x32sad.AddKernel(device, programRefine32x32sad, "RefineMeP32x32Sad",
+    //    width2x / 16, height2x / 16, CM_NONE_DEPENDENCY);
 
     const char *prepareSrcName = fourcc == MFX_FOURCC_NV12 ? "PrepareSrcNv12" :
                                  fourcc == MFX_FOURCC_NV16 ? "PrepareSrcNv16" :
@@ -487,28 +479,63 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
         kernelPrepareRef.AddKernel(device, programPrepareSrc, "PrepareRefNv12",
             width16x / 4, height16x, CM_NONE_DEPENDENCY);
 
-    kernelDeblock.AddKernel(device, programDeblock, "Deblock",
-        (width + 12 + 15) / 16, (height + 12 + 15) / 16, CM_NONE_DEPENDENCY);
+    mfxU32 dblTsWidth = (width + 12 + 15) / 16;
+    if (dblTsWidth > CM_MAX_THREADSPACE_WIDTH) {  // split into 2 parts
+        mfxU32 dblTsWidth0 = dblTsWidth / 2;
+        kernelDeblock.AddKernel(device, programDeblock, "Deblock",
+            dblTsWidth0, (height + 12 + 15) / 16, CM_NONE_DEPENDENCY);
+        kernelDeblock.AddKernel(device, programDeblock, "Deblock",
+            dblTsWidth - dblTsWidth0, (height + 12 + 15) / 16, CM_NONE_DEPENDENCY);
 
-    kernelFullPostProc.AddKernel(device, programDeblock, "Deblock",
-        (width + 12 + 15) / 16, (height + 12 + 15) / 16, CM_NONE_DEPENDENCY);
-    kernelFullPostProc.AddKernel(device, programSao, "SaoStat",
-        (width + 63) / 64 * 4, (height + 63) / 64 * 4, CM_NONE_DEPENDENCY, true);
-    if (param->EnableChromaSao) {
-        kernelFullPostProc.AddKernel(device, programSao, "SaoStatChroma",
-            ((width>>1) + 31) / 32 * 4, ((height>>1) + 31) / 32 * 2, CM_NONE_DEPENDENCY, false);
+        kernelFullPostProc.AddKernel(device, programDeblock, "Deblock",
+            dblTsWidth0, (height + 12 + 15) / 16, CM_NONE_DEPENDENCY);
+        kernelFullPostProc.AddKernel(device, programDeblock, "Deblock",
+            dblTsWidth - dblTsWidth0, (height + 12 + 15) / 16, CM_NONE_DEPENDENCY);
+
+        mfxU32 saoTsWidth = (width + 63) / 64 * 4;
+        mfxU32 saoTsWidth0 = saoTsWidth / 2;
+        kernelFullPostProc.AddKernel(device, programSao, "SaoStat",
+            saoTsWidth0, (height + 63) / 64 * 4, CM_NONE_DEPENDENCY, true);
+        kernelFullPostProc.AddKernel(device, programSao, "SaoStat",
+            saoTsWidth - saoTsWidth0, (height + 63) / 64 * 4, CM_NONE_DEPENDENCY, true);
+
+        if (param->EnableChromaSao) {
+            mfxU32 saoChromaTsWidth = ((width>>1) + 31) / 32 * 4;
+            mfxU32 saoChromaTsWidth0 = saoChromaTsWidth / 2;
+            kernelFullPostProc.AddKernel(device, programSao, "SaoStatChroma",
+                saoChromaTsWidth0, ((height>>1) + 31) / 32 * 2, CM_NONE_DEPENDENCY, false);
+            kernelFullPostProc.AddKernel(device, programSao, "SaoStatChroma",
+                saoChromaTsWidth - saoChromaTsWidth0, ((height>>1) + 31) / 32 * 2, CM_NONE_DEPENDENCY, false);
+        }
+
+    } else {
+        kernelDeblock.AddKernel(device, programDeblock, "Deblock",
+            dblTsWidth, (height + 12 + 15) / 16, CM_NONE_DEPENDENCY);
+        kernelFullPostProc.AddKernel(device, programDeblock, "Deblock",
+            dblTsWidth, (height + 12 + 15) / 16, CM_NONE_DEPENDENCY);
+        kernelFullPostProc.AddKernel(device, programSao, "SaoStat",
+            (width + 63) / 64 * 4, (height + 63) / 64 * 4, CM_NONE_DEPENDENCY, true);
+        if (param->EnableChromaSao) {
+            kernelFullPostProc.AddKernel(device, programSao, "SaoStatChroma",
+                ((width>>1) + 31) / 32 * 4, ((height>>1) + 31) / 32 * 2, CM_NONE_DEPENDENCY, false);
+        }
     }
+
     kernelFullPostProc.AddKernel(device, programSao, "SaoEstimate",
         (width + 63) / 64, (height + 63) / 64, CM_WAVEFRONT, true);
     kernelFullPostProc.AddKernel(device, programSao, "SaoApply",
         (width + 63) / 64, (height + 63) / 64, CM_NONE_DEPENDENCY, true);
 
     /* set up VME */
-    curbe       = CreateBuffer(device, sizeof(H265EncCURBEData));
-    meControl = CreateBuffer(device, sizeof(MeControl));
+    meControl[0] = CreateBuffer(device, sizeof(MeControl));
+    meControl[1] = CreateBuffer(device, sizeof(MeControl));
+    meControl[2] = CreateBuffer(device, sizeof(MeControl));
+    meControl[3] = CreateBuffer(device, sizeof(MeControl));
+    meControlIdx = 0;
+
+    curbe = CreateBuffer(device, sizeof(H265EncCURBEData));
     H265EncCURBEData curbeData = {};
     SetCurbeData(curbeData, MFX_FRAMETYPE_P, 26, width, height);
-
     curbeData.PictureHeightMinusOne = height / 16 - 1;
     curbeData.SliceHeightMinusOne   = height / 16 - 1;
     curbeData.PictureWidth          = width  / 16;
@@ -539,7 +566,9 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     mfxU32 bufsizeChroma = numThreads * (16+16+32+32) * sizeof(Ipp16s);
     saoStat = CreateBuffer(device, bufsize + (bufsizeChroma << 1));
 
-    postprocParam = CreateBuffer(device, sizeof(PostProcParam));
+    postprocParam[0] = CreateBuffer(device, sizeof(PostProcParam));
+    postprocParam[1] = CreateBuffer(device, sizeof(PostProcParam));
+    postprocParamIdx = 0;
 
     return MFX_ERR_NONE;
 }
@@ -551,21 +580,22 @@ void H265CmCtx::FreeCmResources()
 
     device->DestroySurface(deblocked);
     device->DestroySurface(saoStat);
-    device->DestroySurface(postprocParam);
+    device->DestroySurface(postprocParam[0]);
+    device->DestroySurface(postprocParam[1]);
     device->DestroySurface(curbe);
-    device->DestroySurface(meControl);
+    device->DestroySurface(meControl[0]);
+    device->DestroySurface(meControl[1]);
+    device->DestroySurface(meControl[2]);
+    device->DestroySurface(meControl[3]);
 
     if (lastEventSaved != NULL && lastEventSaved != CM_NO_EVENT)
         queue->DestroyEvent(lastEventSaved);
  
     kernelPrepareSrc.Destroy();
     kernelPrepareRef.Destroy();
-    kernelMeIntra.Destroy();
     kernelGradient.Destroy();
     kernelRefine64x64.Destroy();
     kernelRefine32x32sad.Destroy();
-    kernelRefine32x16.Destroy();
-    kernelRefine16x32.Destroy();
     kernelInterpolateFrame.Destroy();
     kernelMe.Destroy();
     kernelDeblock.Destroy();
@@ -816,14 +846,14 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
         kernelGradient.Enqueue(queue, lastEvent);
     }
 
-    if ((feiIn->FEIOp & MFX_FEI_H265_OP_INTRA_DIST) && (feiIn->FrameType == MFX_FRAMETYPE_P || feiIn->FrameType == MFX_FRAMETYPE_B)) {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "IntraDist");
-        mfxFEIH265InputSurface *surfIn = &((mfxFEIH265Surface *)feiIn->meArgs.surfSrc)->sIn;
-        SurfaceIndex *refsIntra = CreateVmeSurfaceG75(device, surfIn->bufOrigNv12, 0, 0, 0, 0);
-        SetKernelArg(kernelMeIntra.kernel, curbe, *refsIntra, surfIn->bufOrigNv12, GET_OUTSURF(feiOut->SurfIntraDist));
-        kernelMeIntra.Enqueue(queue, lastEvent);
-        device->DestroyVmeSurfaceG7_5(refsIntra);
-    }
+    //if ((feiIn->FEIOp & MFX_FEI_H265_OP_INTRA_DIST) && (feiIn->FrameType == MFX_FRAMETYPE_P || feiIn->FrameType == MFX_FRAMETYPE_B)) {
+    //    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "IntraDist");
+    //    mfxFEIH265InputSurface *surfIn = &((mfxFEIH265Surface *)feiIn->meArgs.surfSrc)->sIn;
+    //    SurfaceIndex *refsIntra = CreateVmeSurfaceG75(device, surfIn->bufOrigNv12, 0, 0, 0, 0);
+    //    SetKernelArg(kernelMeIntra.kernel, curbe, *refsIntra, surfIn->bufOrigNv12, GET_OUTSURF(feiOut->SurfIntraDist));
+    //    kernelMeIntra.Enqueue(queue, lastEvent);
+    //    device->DestroyVmeSurfaceG7_5(refsIntra);
+    //}
 
     if (feiIn->FEIOp & (MFX_FEI_H265_OP_INTER_ME)) {
         data[MFX_FEI_H265_BLK_64x64] = GET_OUTSURF(feiOut->SurfInterData[MFX_FEI_H265_BLK_64x64]);
@@ -846,15 +876,23 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
 
         MeControl control = {};
         SetupMeControl(control, width, height, feiIn->meArgs.lambda);
-        meControl->WriteSurface((mfxU8 *)&control, NULL);
+        CmBuffer *curMeControl = meControl[meControlIdx];
+        meControlIdx = (meControlIdx + 1) & 3;
+        curMeControl->WriteSurface((mfxU8 *)&control, NULL);
 
-        SetKernelArg(kernelMe.m_kernel[0], meControl, *refs16x, *refs8x, *refs4x, *refs2x,
-            data[MFX_FEI_H265_BLK_64x64], data[MFX_FEI_H265_BLK_32x32], data[MFX_FEI_H265_BLK_16x16],
-            data[MFX_FEI_H265_BLK_32x16], data[MFX_FEI_H265_BLK_16x32], rectParts);
+        SetKernelArg(kernelMe.m_kernel[0], curMeControl, *refs16x, *refs8x, *refs4x, *refs2x,
+            data[MFX_FEI_H265_BLK_64x64], data[MFX_FEI_H265_BLK_32x32], data[MFX_FEI_H265_BLK_16x16]);
         SetKernelArg(kernelMe.m_kernel[1], data[MFX_FEI_H265_BLK_64x64], surfIn->bufOrigNv12, surfRef->bufOrigNv12);
-        SetKernelArg(kernelMe.m_kernel[2], meControl, *refs, data[MFX_FEI_H265_BLK_32x32], data[MFX_FEI_H265_BLK_16x16],
-            data[MFX_FEI_H265_BLK_8x8], surfIn->bufOrigNv12, surfRef->bufOrigNv12);
-
+        if (width / 16 > CM_MAX_THREADSPACE_WIDTH) {  // split into 2 parts
+            SetKernelArg(kernelMe.m_kernel[2], curMeControl, *refs, data[MFX_FEI_H265_BLK_32x32], data[MFX_FEI_H265_BLK_16x16],
+                data[MFX_FEI_H265_BLK_8x8], surfIn->bufOrigNv12, surfRef->bufOrigNv12, 0, 0);
+            mfxU32 startMbX = ((width / 16) >> 1) & ~1;  // must be even for 32x32 blocks
+            SetKernelArg(kernelMe.m_kernel[3], curMeControl, *refs, data[MFX_FEI_H265_BLK_32x32], data[MFX_FEI_H265_BLK_16x16],
+                data[MFX_FEI_H265_BLK_8x8], surfIn->bufOrigNv12, surfRef->bufOrigNv12, startMbX, 0);
+        } else {
+            SetKernelArg(kernelMe.m_kernel[2], curMeControl, *refs, data[MFX_FEI_H265_BLK_32x32], data[MFX_FEI_H265_BLK_16x16],
+                data[MFX_FEI_H265_BLK_8x8], surfIn->bufOrigNv12, surfRef->bufOrigNv12, 0, 0);
+        }
         kernelMe.Enqueue(queue, lastEvent);
 
         device->DestroyVmeSurfaceG7_5(refs);
@@ -874,29 +912,62 @@ void * H265CmCtx::RunVme(mfxFEIH265Input *feiIn, mfxExtFEIH265Output *feiOut)
         CmSurface2D *recon = ((mfxFEIH265Surface *)feiIn->postprocArgs.reconSurfVid)->sRec.bufOrigNv12; // postproc supports only NV12 for now
         CmBufferUP *cuData = ((mfxFEIH265Surface *)feiIn->postprocArgs.cuData)->sBuf.bufOut;
         CmBufferUP *saoModes = ((mfxFEIH265Surface *)feiIn->postprocArgs.saoModes)->sBuf.bufOut;
-        postprocParam->WriteSurface((const Ipp8u*)feiIn->postprocArgs.param, NULL);
+        CmBuffer *curPostprocParam = postprocParam[postprocParamIdx];
+        postprocParamIdx = (postprocParamIdx + 1) & 1;
+        curPostprocParam->WriteSurface((const Ipp8u*)feiIn->postprocArgs.param, NULL);
 
         int doSao = feiIn->FEIOp & (MFX_FEI_H265_OP_POSTPROC);
 
         if (doSao) {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Deblock+Sao");
+            mfxU32 dblTsWidth = (width + 12 + 15) / 16;
 
-            // could be (1) Deblock + SaoStat + SaoEst + SaoApply or (2) Deblock + SaoStat + SaoStatChroma + SaoEst + SaoApply
-            int kernelIdx = 0;
-            SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], recUpLu, recUpCh, padding, paddingChroma, doSao ? deblocked : recon, cuData, postprocParam);
-            SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], origin, deblocked, postprocParam, saoStat);
-            //if (videoParam.SaoChroma) 
-            if (kernelFullPostProc.m_numKernels == 5){
-                SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], origin, deblocked, postprocParam, saoStat);
-            }
-            SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], postprocParam, saoStat, saoModes);
-            SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], deblocked, recon, postprocParam, saoModes);
+            if (dblTsWidth > CM_MAX_THREADSPACE_WIDTH) {  // split into 2 parts
+                int kernelIdx = 0;
+                SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], recUpLu, recUpCh, padding, paddingChroma, doSao ? deblocked : recon, cuData, curPostprocParam, 0, 0); // Deblocking1
+                mfxU32 startMbX = dblTsWidth / 2;
+                SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], recUpLu, recUpCh, padding, paddingChroma, doSao ? deblocked : recon, cuData, curPostprocParam, startMbX, 0); // Deblocking2
+
+                mfxU32 saoTsWidth = (width + 63) / 64 * 4;
+                SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], origin, deblocked, curPostprocParam, saoStat, 0, 0); // SaoStat1
+                startMbX =  saoTsWidth / 2;
+                SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], origin, deblocked, curPostprocParam, saoStat, startMbX, 0); // SaoStat2
+
+                if (enableChromaSao) {
+                    mfxU32 saoChromaTsWidth = ((width>>1) + 31) / 32 * 4;
+                    SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], origin, deblocked, curPostprocParam, saoStat, 0, 0); // SaoStatChroma1
+                    startMbX = saoChromaTsWidth / 2;
+                    SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], origin, deblocked, curPostprocParam, saoStat, startMbX, 0); // // SaoStatChroma2
+                }
+
+                SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], curPostprocParam, saoStat, saoModes); // SaoEst
+                SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], deblocked, recon, curPostprocParam, saoModes);// SaoApply
             
-            kernelFullPostProc.Enqueue(queue, lastEvent);
+                kernelFullPostProc.Enqueue(queue, lastEvent);
+            } else {
+                // could be (1) Deblock + SaoStat + SaoEst + SaoApply or (2) Deblock + SaoStat + SaoStatChroma + SaoEst + SaoApply
+                int kernelIdx = 0;
+                SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], recUpLu, recUpCh, padding, paddingChroma, doSao ? deblocked : recon, cuData, curPostprocParam, 0, 0); // Deblocking
+                SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], origin, deblocked, curPostprocParam, saoStat, 0, 0); // SaoStat
+                if (enableChromaSao)
+                    SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], origin, deblocked, curPostprocParam, saoStat, 0, 0); // SaoStatChroma
+                SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], curPostprocParam, saoStat, saoModes); // SaoEst
+                SetKernelArg(kernelFullPostProc.m_kernel[kernelIdx++], deblocked, recon, curPostprocParam, saoModes); // SaoApply
+                kernelFullPostProc.Enqueue(queue, lastEvent);
+            }
+
         } else {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Deblock");
-            SetKernelArg(kernelDeblock.kernel, recUpLu, recUpCh, padding, paddingChroma, doSao ? deblocked : recon, cuData, postprocParam);
-            kernelDeblock.Enqueue(queue, lastEvent);
+            mfxU32 dblTsWidth = (width + 12 + 15) / 16;
+            if (dblTsWidth > CM_MAX_THREADSPACE_WIDTH) {  // split into 2 parts
+                SetKernelArg(kernelDeblock.m_kernel[0], recUpLu, recUpCh, padding, paddingChroma, doSao ? deblocked : recon, cuData, curPostprocParam, 0, 0); // Deblocking1
+                mfxU32 startMbX = dblTsWidth / 2;
+                SetKernelArg(kernelDeblock.m_kernel[1], recUpLu, recUpCh, padding, paddingChroma, doSao ? deblocked : recon, cuData, curPostprocParam, startMbX, 0); // Deblocking2
+                kernelDeblock.Enqueue(queue, lastEvent);
+            } else {
+                SetKernelArg(kernelDeblock.kernel, recUpLu, recUpCh, padding, paddingChroma, doSao ? deblocked : recon, cuData, curPostprocParam, 0, 0); // Deblocking
+                kernelDeblock.Enqueue(queue, lastEvent);
+            }
         }
 
     }

@@ -1194,13 +1194,13 @@ inline _GENX_ void SaoApplyImpl_Chroma(SurfaceIndex SRC, SurfaceIndex DST, MiniV
 
     }
 }
-extern "C" _GENX_MAIN_ void SaoStat(SurfaceIndex SRC, SurfaceIndex RECON, SurfaceIndex PARAM, SurfaceIndex STATS)
+extern "C" _GENX_MAIN_ void SaoStat(SurfaceIndex SRC, SurfaceIndex RECON, SurfaceIndex PARAM, SurfaceIndex STATS, uint start_mbX, uint start_mbY)
 {
     MiniVideoParam par;
     ReadParam(PARAM, par);  
        
-    int2 ox = get_thread_origin_x();
-    int2 oy = get_thread_origin_y();
+    int2 ox = get_thread_origin_x() + start_mbX;
+    int2 oy = get_thread_origin_y() + start_mbY;
     int4 offset = 0;
     int4 enableBandOffset = par.enableBandOffset & 0x01;
 
@@ -1351,7 +1351,7 @@ extern "C" _GENX_MAIN_ void SaoStat(SurfaceIndex SRC, SurfaceIndex RECON, Surfac
 }
 
 
-extern "C" _GENX_MAIN_ void SaoStatChroma(SurfaceIndex SRC, SurfaceIndex RECON, SurfaceIndex PARAM, SurfaceIndex STATS)
+extern "C" _GENX_MAIN_ void SaoStatChroma(SurfaceIndex SRC, SurfaceIndex RECON, SurfaceIndex PARAM, SurfaceIndex STATS, uint start_mbX, uint start_mbY)
 {
     MiniVideoParam par;
     ReadParam(PARAM, par);
@@ -1360,8 +1360,8 @@ extern "C" _GENX_MAIN_ void SaoStatChroma(SurfaceIndex SRC, SurfaceIndex RECON, 
 
     enum { W=2*W_STAT_CHROMA, H=H_STAT_CHROMA };
        
-    int2 ox = get_thread_origin_x();
-    int2 oy = get_thread_origin_y();
+    int2 ox = get_thread_origin_x() + start_mbX;
+    int2 oy = get_thread_origin_y() + start_mbY;
     int4 block = oy * par.PicWidthInCtbs * (64 / W) + ox;
     ox *= W;
     oy *= H;
@@ -1516,12 +1516,12 @@ extern "C" _GENX_MAIN_ void SaoEstimate(SurfaceIndex PARAM, SurfaceIndex STATS, 
     int2 aboveAvail;// = oy > 0;
     if (1)
     {
-        vector<uint1,64> partX, partY;
+        vector<uint1,16> partX, partY;
         int2 addr16 = ((88*4 + ox) >> 4) << 4;
         int2 offset = ox & 15;
         read(PARAM, addr16, partX);
         leftAvail = partX[offset];
-        const int2 maxNumCtbX = 3840 / 64;
+        const int2 maxNumCtbX = 8192 / 64;
         addr16 = ((88*4 + maxNumCtbX + oy) >> 4) << 4;
         offset = (88*4 + maxNumCtbX + oy) & 15;
         read(PARAM, addr16, partY);

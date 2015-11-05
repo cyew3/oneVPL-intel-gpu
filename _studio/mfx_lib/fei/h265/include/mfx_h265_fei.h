@@ -381,7 +381,7 @@ struct PostProcParam
     // kernel SaoStatChroma writes stats starting from this offset
     Ipp32s offsetChroma;           // +87 DW
     // tile/slice restriction (avail LeftAbove)
-    Ipp8u availLeftAbove[128];     // +88 DW
+    Ipp8u availLeftAbove[196];     // +88 DW
 };
 
 

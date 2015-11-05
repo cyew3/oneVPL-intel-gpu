@@ -64,22 +64,23 @@ private:
     mfxU32      saveSyncPoint;
 
     CmBuffer * curbe;
-    CmBuffer * meControl;
+    CmBuffer * meControl[4];
+    mfxU32     meControlIdx;
 
     CmSurface2D * deblocked;
     CmBuffer    * saoStat;
-    CmBuffer    * postprocParam;
+
+    CmBuffer    * postprocParam[2];
+    mfxU32        postprocParamIdx;
 
     /* Cm kernels to load  */
     H265Enc::Kernel kernelPrepareSrc;
     H265Enc::Kernel kernelPrepareRef;
-    H265Enc::Kernel kernelMeIntra;
+//    H265Enc::Kernel kernelMeIntra;
     H265Enc::Kernel kernelGradient;
     H265Enc::Kernel kernelMe;
     H265Enc::Kernel kernelRefine64x64;
     H265Enc::Kernel kernelRefine32x32sad;
-    H265Enc::Kernel kernelRefine32x16;
-    H265Enc::Kernel kernelRefine16x32;
     H265Enc::Kernel kernelInterpolateFrame;
     H265Enc::Kernel kernelDeblock;
     H265Enc::Kernel kernelFullPostProc;
@@ -100,6 +101,7 @@ private:
     mfxU32 numIntraModes;
     mfxU32 fourcc;
     mfxU32 targetUsage;
+    mfxU32 enableChromaSao;
     mfxU32 rectParts;
 
     /* derived from initialization parameters */
@@ -155,15 +157,18 @@ public:
 
         curbe(),
         meControl(),
+        meControlIdx(0),
+        deblocked(),
+        saoStat(),
+        postprocParam(),
+        postprocParamIdx(0),
 
         kernelPrepareSrc(),
         kernelPrepareRef(),
-        kernelMeIntra(),
+//        kernelMeIntra(),
         kernelGradient(),
         kernelRefine64x64(),
         kernelRefine32x32sad(),
-        kernelRefine32x16(),
-        kernelRefine16x32(),
         kernelInterpolateFrame(),
         kernelMe(),
         kernelDeblock(),
@@ -175,6 +180,7 @@ public:
         numIntraModes(),
         fourcc(), 
         targetUsage(),
+        enableChromaSao(),
 
         width32(),
         height32(),

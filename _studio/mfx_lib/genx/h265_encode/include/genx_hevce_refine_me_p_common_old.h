@@ -49,7 +49,7 @@ void SumSad<32>(matrix_ref<ushort, 9, 16> partSad, vector_ref<uint, 9> sad)
 {
     matrix<ushort, 9, 8> t1 = SELECT_N_COLS(partSad, 0, 8) + SELECT_N_COLS(partSad, 8, 8);
     matrix<ushort, 9, 4> t2 = SELECT_N_COLS(t1, 0, 4) + SELECT_N_COLS(t1, 4, 4);
-    matrix<ushort, 9, 2> t3 = SELECT_N_COLS(t2, 0, 2) + SELECT_N_COLS(t2, 2, 2);
+    matrix<uint, 9, 2> t3 = SELECT_N_COLS(t2, 0, 2) + SELECT_N_COLS(t2, 2, 2);
     sad = SELECT_N_COLS(t3, 0, 1) + SELECT_N_COLS(t3, 1, 1);
 }
 
