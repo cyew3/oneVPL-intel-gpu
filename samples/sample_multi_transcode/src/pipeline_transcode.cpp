@@ -452,18 +452,7 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
     {
         if (MFX_WRN_DEVICE_BUSY == sts)
         {
-            // Wait 1ms will be probably enough to device release
-            if (m_LastDecSyncPoint) {
-                mfxStatus stsSync = m_pmfxSession->SyncOperation(m_LastDecSyncPoint, TIME_TO_SLEEP);
-                if (MFX_ERR_NONE == stsSync) {
-                    // retire completed sync point (otherwise we may start active polling)
-                    m_LastDecSyncPoint = NULL;
-                } else if (stsSync < 0) {
-                    sts = stsSync;
-                }
-            } else {
-                MSDK_SLEEP(TIME_TO_SLEEP);
-            }
+            WaitForDeviceToBecomeFree(*m_pmfxSession,m_LastDecSyncPoint,sts);
         }
         else if (MFX_ERR_MORE_DATA == sts)
         {
@@ -517,12 +506,7 @@ mfxStatus CTranscodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
     {
         if (MFX_WRN_DEVICE_BUSY == sts)
         {
-            // Wait 1ms will be probably enough to device release
-            mfxStatus stsSync = m_pmfxSession->SyncOperation(m_LastDecSyncPoint, 1);
-            if(stsSync < 0)
-            {
-                sts = stsSync;
-            }
+            WaitForDeviceToBecomeFree(*m_pmfxSession,m_LastDecSyncPoint,sts);
         }
 
         // find new working surface

@@ -1955,3 +1955,24 @@ mfxStatus CH264FrameReader::PrepareNextFrame(mfxBitstream *in, mfxBitstream **ou
 
     return sts;
 }
+
+
+// 1 ms provides better result in range [0..5] ms
+#define DEVICE_WAIT_TIME 1
+
+// THis function either performs synchronization using provided syncpoint, or just waits for predefined time if syncpoint is already 0 (this usually happens if syncpoint was already processed)
+void WaitForDeviceToBecomeFree(MFXVideoSession& session, mfxSyncPoint& syncPoint,mfxStatus& currentStatus)
+{
+    // Wait 1ms will be probably enough to device release
+    if (syncPoint) {
+        mfxStatus stsSync = session.SyncOperation(syncPoint, DEVICE_WAIT_TIME);
+        if (MFX_ERR_NONE == stsSync) {
+            // retire completed sync point (otherwise we may start active polling)
+            syncPoint = NULL;
+        } else if (stsSync < 0) {
+            currentStatus = stsSync;
+        }
+    } else {
+        MSDK_SLEEP(DEVICE_WAIT_TIME);
+    }
+}

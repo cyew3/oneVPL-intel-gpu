@@ -21,6 +21,7 @@ Copyright(c) 2005-2015 Intel Corporation. All Rights Reserved.
 
 #include "mfxstructures.h"
 #include "mfxvideo.h"
+#include "mfxvideo++.h"
 #include "mfxjpeg.h"
 #include "mfxplugin.h"
 
@@ -673,5 +674,7 @@ template<typename T>
 mfxStatus StrFormatToCodecFormatFourCC(msdk_char* strInput, mfxU32 &codecFormat);
 
 mfxI32 getMonitorType(msdk_char* str);
+
+void WaitForDeviceToBecomeFree(MFXVideoSession& session, mfxSyncPoint& syncPoint,mfxStatus& currentStatus);
 
 #endif //__SAMPLE_UTILS_H__

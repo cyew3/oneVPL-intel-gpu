@@ -4797,12 +4797,7 @@ mfxStatus CEncodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
     {
         if (MFX_WRN_DEVICE_BUSY == sts)
         {
-            // Wait 1ms will be probably enough to device release
-            mfxStatus stsSync = m_decode_mfxSession.SyncOperation(m_LastDecSyncPoint, 1);
-            if (stsSync < 0)
-            {
-                sts = stsSync;
-            }
+            WaitForDeviceToBecomeFree(m_decode_mfxSession,m_LastDecSyncPoint,sts);
         }
         else if (MFX_ERR_MORE_DATA == sts)
         {
@@ -4849,12 +4844,7 @@ mfxStatus CEncodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
     {
         if (MFX_WRN_DEVICE_BUSY == sts)
         {
-            // Wait 1ms will be probably enough to device release
-            mfxStatus stsSync = m_decode_mfxSession.SyncOperation(m_LastDecSyncPoint, 1);
-            if (stsSync < 0)
-            {
-                sts = stsSync;
-            }
+            WaitForDeviceToBecomeFree(m_decode_mfxSession,m_LastDecSyncPoint,sts);
         }
         // find free surface for decoder input
         mfxU16 nDecSurfIdx = GetFreeSurface(m_pDecSurfaces, m_DecResponse.NumFrameActual);
