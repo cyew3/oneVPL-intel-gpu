@@ -1097,7 +1097,7 @@ mfxStatus CTranscodingPipeline::Transcode()
     PreEncAuxBuffer encAuxCtrl;
 
     MSDK_ZERO_MEMORY(encAuxCtrl);
-    encAuxCtrl.encCtrl.FrameType = MFX_FRAMETYPE_I;
+    encAuxCtrl.encCtrl.FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
 
     time_t start = time(0);
     while (MFX_ERR_NONE == sts )
@@ -1202,7 +1202,7 @@ mfxStatus CTranscodingPipeline::Transcode()
         if (bInsertIDR)
         {
             if (VppExtSurface.pCtrl)
-                VppExtSurface.pCtrl->encCtrl.FrameType = MFX_FRAMETYPE_I;
+                VppExtSurface.pCtrl->encCtrl.FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
             else
                 VppExtSurface.pCtrl = &encAuxCtrl;
             bInsertIDR = false;
