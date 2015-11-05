@@ -507,6 +507,25 @@ namespace
         return GetMaxNumRefFrame(par.mfx.CodecLevel, par.mfx.FrameInfo.Width, par.mfx.FrameInfo.Height);
     }
 
+    mfxU16 GetMinNumRefFrameForPyramid(mfxU16 GopRefDist)
+    {
+        mfxU16 refIP = (GopRefDist > 1 ? 2 : 1);
+        mfxU16 refB  = GopRefDist ? (GopRefDist - 1) / 2 : 0;
+
+        for (mfxU16 x = refB; x > 2;)
+        {
+            x     = (x - 1) / 2;
+            refB -= x;
+        }
+
+        return refIP + refB;
+    }
+
+    mfxU16 GetMinNumRefFrameForPyramid(mfxVideoParam const & par)
+    {
+        return GetMinNumRefFrameForPyramid(par.mfx.GopRefDist);
+    }
+
     mfxU32 GetMaxBitrate(mfxVideoParam const & par)
     {
         mfxU32 brFactor = IsAvcHighProfile(par.mfx.CodecProfile) ? 1500 : 1200;
@@ -3544,7 +3563,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.FrameInfo.Height != 0)
     {
         const mfxU16 nfxMaxByLevel    = GetMaxNumRefFrame(par);
-        const mfxU16 nfxMinForPyramid = (par.mfx.GopRefDist - 1) / 2 + 1;
+        const mfxU16 nfxMinForPyramid = GetMinNumRefFrameForPyramid(par);
 
         if (nfxMinForPyramid > nfxMaxByLevel)
         {
@@ -4682,7 +4701,7 @@ void MfxHwH264Encode::SetDefaults(
         mfxU16 const nrfDefault         = IPP_MAX(nrfMin, GetDefaultNumRefFrames(par.mfx.TargetUsage));
         mfxU16 const nrfMaxByCaps       = IPP_MIN(IPP_MAX(1, hwCaps.MaxNum_Reference), 8) * 2;
         mfxU16 const nrfMaxByLevel      = GetMaxNumRefFrame(par);
-        mfxU16 const nrfMinForPyramid   = nrfMin + (par.mfx.GopRefDist - 1) / 2;
+        mfxU16 const nrfMinForPyramid   = GetMinNumRefFrameForPyramid(par);
         mfxU16 const nrfMinForTemporal  = mfxU16(nrfMin + par.calcParam.numTemporalLayer - 1);
         mfxU16 const nrfMinForInterlace = 2; // HSW and IVB don't support 1 reference frame for interlace
 

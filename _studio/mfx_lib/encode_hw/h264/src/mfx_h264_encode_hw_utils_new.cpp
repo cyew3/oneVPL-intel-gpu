@@ -1387,10 +1387,7 @@ namespace
                         DpbFrame * toRemove = std::min_element(currDpb.Begin(), currDpb.End(), OrderByFrameNumWrap);
                         DpbFrame * toRemoveDefault = toRemove;
 
-                        if (   toRemove != currDpb.End()
-                            && task.m_fieldPicFlag
-                            && extOpt2.BRefType == MFX_B_REF_PYRAMID
-                            && toRemove == std::min_element(currDpb.Begin(), currDpb.End(), OrderByNearestPrev(task.m_frameOrder)))
+                        if (toRemove != currDpb.End() && extOpt2.BRefType == MFX_B_REF_PYRAMID)
                         {
                             toRemove = std::min_element(currDpb.Begin(), currDpb.End(), OrderByDisplayOrder);
                         }
