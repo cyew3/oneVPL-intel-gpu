@@ -151,7 +151,7 @@ mfxStatus tsVideoEncoder::Init(mfxSession session, mfxVideoParam *par)
             EXPECT_EQ(g_tsConfig.lowpower, par->mfx.LowPower)
                 << "ERROR: external configuration of LowPower doesn't equal to real value\n";
         }
-        EXPECT_EQ(0, memcmp(&orig_par, m_pPar, sizeof(mfxVideoParam)))
+        EXPECT_EQ(0, memcmp(&(orig_par.mfx.FrameInfo), &(m_pPar->mfx.FrameInfo), sizeof(mfxFrameInfo)))
             << "ERROR: Input parameters must not be changed in Init()";
     }
 
