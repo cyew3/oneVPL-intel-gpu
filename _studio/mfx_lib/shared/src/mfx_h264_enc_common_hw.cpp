@@ -1983,6 +1983,11 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
         par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
     }
+    if (bRateControlLA(par.mfx.RateControlMethod) && IsOn(extOpt->CAVLC))
+    {
+        extOpt->CAVLC = MFX_CODINGOPTION_OFF;
+        changed = true;    
+    }
     if (extOpt2->MaxSliceSize)
     {
         if (par.mfx.GopRefDist > 1)
