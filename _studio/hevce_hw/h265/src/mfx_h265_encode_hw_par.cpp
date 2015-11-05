@@ -224,7 +224,8 @@ mfxStatus CorrectLevel(MfxVideoParam& par, bool bCheckOnly)
         {
             if (   par.BufferSizeInKB * 8000 > CpbBrNalFactor * MaxCPB
                 || LumaSr > MaxLumaSr
-                || par.MaxKbps * 1000 > CpbBrNalFactor * MaxBR)
+                || par.MaxKbps * 1000 > CpbBrNalFactor * MaxBR
+                || par.TargetKbps * 1000 > CpbBrNalFactor * MaxBR)
             {
                 if (tidx >= MaxTidx(lidx))
                 {
@@ -779,7 +780,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         if (par.mfx.Accuracy)
             changed += CheckRange(par.mfx.Accuracy, AVBR_ACCURACY_MIN, AVBR_ACCURACY_MAX);
         if (par.mfx.Convergence)
-            changed += CheckRange(par.mfx.Convergence, AVBR_CONVERGENCE_MIN, AVBR_CONVERGENCE_MAX);   
+            changed += CheckRange(par.mfx.Convergence, AVBR_CONVERGENCE_MIN, AVBR_CONVERGENCE_MAX);
     }
 
 
@@ -838,10 +839,10 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
         && par.MaxKbps != par.TargetKbps
         && par.MaxKbps!= 0
-        && par.TargetKbps!= 0) 
+        && par.TargetKbps!= 0)
     {
         par.MaxKbps = par.TargetKbps;
-        changed ++;    
+        changed ++;
     }
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
@@ -894,7 +895,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if (par.mfx.GopRefDist > 1 && par.mfx.NumRefFrame == 1)
     {
         par.mfx.NumRefFrame = 2;
-        changed ++;    
+        changed ++;
     }
 
     if (par.m_ext.CO3.PRefType == MFX_P_REF_PYRAMID &&  par.mfx.GopRefDist > 1)
@@ -962,8 +963,8 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if (sts >= MFX_ERR_NONE && par.mfx.CodecLevel > 0)
     {
         if (sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM) changed +=1;
-        sts = CorrectLevel(par, true);
- 
+        sts = CorrectLevel(par, false);
+
     }
 
     if (sts == MFX_ERR_NONE && changed)
@@ -1097,7 +1098,7 @@ void SetDefaults(
         if (!par.mfx.Accuracy)
             par.mfx.Accuracy =  AVBR_ACCURACY_MAX;
         if (!par.mfx.Convergence)
-            par.mfx.Convergence =  AVBR_CONVERGENCE_MAX;   
+            par.mfx.Convergence =  AVBR_CONVERGENCE_MAX;
     }
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ && !par.mfx.ICQQuality)
