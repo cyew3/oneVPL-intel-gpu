@@ -838,9 +838,11 @@ namespace
         return (8000 * kbyte) >> (4 + scale);
     }
 
-    mfxU32 GetUncompressedSizeInKb(mfxVideoParam const & par)
+    mfxU32 GetMaxCodedFrameSizeInKB(mfxVideoParam const & par)
     {
         mfxU64 mvcMultiplier = 1;
+        const mfxU32 maxMBBytes = 3200 / 8;
+
         if (IsMvcProfile(par.mfx.CodecProfile))
         {
             mfxExtMVCSeqDesc * extMvc = GetExtBuffer(par);
@@ -849,7 +851,7 @@ namespace
                 mvcMultiplier = extMvc->NumView ? extMvc->NumView : 1;
         }
 
-        return mfxU32(IPP_MIN(UINT_MAX, par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * mvcMultiplier * 3u / 2000u));
+        return mfxU32(IPP_MIN(UINT_MAX, (par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * mvcMultiplier / (16u * 16u) * maxMBBytes + 999u) / 1000u));
     }
 
 
@@ -2958,7 +2960,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
         if (par.calcParam.bufferSizeInKB != 0 && bRateControlLA(par.mfx.RateControlMethod) &&(par.mfx.RateControlMethod != MFX_RATECONTROL_LA_HRD))
         {
-            mfxU32 uncompressedSizeInKb = GetUncompressedSizeInKb(par);
+            mfxU32 uncompressedSizeInKb = GetMaxCodedFrameSizeInKB(par);
             if (par.calcParam.bufferSizeInKB < uncompressedSizeInKb)
             {
                 changed = true;
@@ -2970,7 +2972,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         {
             if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
             {
-                mfxU32 uncompressedSizeInKb = GetUncompressedSizeInKb(par);
+                mfxU32 uncompressedSizeInKb = GetMaxCodedFrameSizeInKB(par);
                 if (par.calcParam.bufferSizeInKB < uncompressedSizeInKb)
                 {
                     changed = true;
@@ -3950,7 +3952,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamMvcQueryLike(MfxVideoParam & par)
     {
         if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
         {
-            mfxU32 uncompressedSizeInKb = GetUncompressedSizeInKb(par);
+            mfxU32 uncompressedSizeInKb = GetMaxCodedFrameSizeInKB(par);
             if (par.calcParam.bufferSizeInKB < uncompressedSizeInKb)
             {
                 changed = true;
@@ -4833,7 +4835,7 @@ void MfxHwH264Encode::SetDefaults(
                     par.calcParam.maxKbps * DEFAULT_CPB_IN_SECONDS); // limit by common sense
 
                 par.calcParam.bufferSizeInKB = !IsHRDBasedBRCMethod(par.mfx.RateControlMethod)
-                        ? GetUncompressedSizeInKb(par)
+                        ? GetMaxCodedFrameSizeInKB(par)
                         : bufferSizeInBits / 8000;
             }
         }
@@ -4845,7 +4847,7 @@ void MfxHwH264Encode::SetDefaults(
                 par.calcParam.mvcPerViewPar.maxKbps * DEFAULT_CPB_IN_SECONDS); // limit by common sense
 
             par.calcParam.mvcPerViewPar.bufferSizeInKB = !IsHRDBasedBRCMethod(par.mfx.RateControlMethod)
-                    ? GetUncompressedSizeInKb(par)
+                    ? GetMaxCodedFrameSizeInKB(par)
                     : bufferSizeInBits / 8000;
         }
 
