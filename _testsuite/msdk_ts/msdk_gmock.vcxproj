@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -276,6 +276,7 @@
     <ClCompile Include="src\gmock\test_suites\screen_capture_query.cpp" />
     <ClCompile Include="src\gmock\test_suites\screen_capture_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\test_suites\threading_mfxinitex.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vpp10_fourcc.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_2014r2_unsupport.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_roi.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_decode_frame_async.cpp" />
