@@ -62,7 +62,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 {
     {/*00*/
      "Issue: VCSD100022649. Test checks that payloads are returned in order of top/bottom fields",
-     MFX_ERR_NONE, "forBehaviorTest/customer_issues/harmonic/avc_1080i_CC.264", 692}
+     MFX_ERR_NONE, "forBehaviorTest/customer_issues/avc_1080i_CC.264", 692}
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
