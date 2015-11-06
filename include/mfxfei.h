@@ -373,8 +373,8 @@ typedef struct {
 
         mfxU16    SliceQPDelta;
         mfxU16    DisableDeblockingFilterIdc;
-        mfxU16    SliceAlphaC0OffsetDiv2;
-        mfxU16    SliceBetaOffsetDiv2;
+        mfxI16    SliceAlphaC0OffsetDiv2;
+        mfxI16    SliceBetaOffsetDiv2;
         //mfxU32  reserved[];
 
         struct {
