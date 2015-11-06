@@ -33,6 +33,7 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
+#include <ctime>
 
 #define MFX_FRAMETYPE_IPB (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P | MFX_FRAMETYPE_B)
 #define MFX_FRAMETYPE_PB  (                  MFX_FRAMETYPE_P | MFX_FRAMETYPE_B)
@@ -88,6 +89,9 @@ struct sInputParams
     mfxU16 CodecProfile;
     mfxU16 CodecLevel;
     mfxU16 Trellis;
+    mfxI16 DisableDeblockingIdc;
+    mfxI16 SliceAlphaC0OffsetDiv2;
+    mfxI16 SliceBetaOffsetDiv2;
 
     mfxU16 nDstWidth;  // destination picture width, specified if resizing required
     mfxU16 nDstHeight; // destination picture height, specified if resizing required
@@ -237,7 +241,9 @@ protected:
 
     // for look ahead BRC configuration
     mfxExtCodingOption2 m_CodingOption2;
+
     mfxExtFeiParam  m_encpakInit;
+    mfxExtFeiSliceHeader m_encodeSliceHeader[2]; // 0 - top, 1 - bottom fields
 
     // for disabling VPP algorithms
     mfxExtVPPDoNotUse m_VppDoNotUse;
@@ -291,10 +297,10 @@ protected:
     iTask* CreateAndInitTask();
     iTask* FindFrameToEncode(bool buffered_frames);
     iTask* ConfigureTask(iTask* eTask, bool is_buffered);
-    void UpdateTaskQueue(iTask* eTask);
-    void CopyState(iTask* eTask);
-    void RemoveOneTask();
-    void ClearTasks();
+    mfxStatus UpdateTaskQueue(iTask* eTask);
+    mfxStatus CopyState(iTask* eTask);
+    mfxStatus RemoveOneTask();
+    mfxStatus ClearTasks();
     mfxU32 CountUnencodedFrames();
 
     std::list<iTask*>::iterator ReorderFrame(std::list<iTask*>& unencoded_queue);

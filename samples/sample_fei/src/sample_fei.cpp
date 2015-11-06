@@ -28,6 +28,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-nv12] - input is in NV12 color format, if not specified YUV420 is expected\n"));
     msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom field first, if not specified progressive is expected\n"));
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
+    msdk_printf(MSDK_STRING("   [-nobref] - do not use B-pyramid (by default the decision is made by library)\n"));
     msdk_printf(MSDK_STRING("   [-idr_interval size] - idr interval, default 0 means every I is an IDR, 1 means every other I frame is an IDR etc\n"));
     msdk_printf(MSDK_STRING("   [-f frameRate] - video frame rate (frames per second)\n"));
     msdk_printf(MSDK_STRING("   [-b bitRate] - encoded bit rate (KBits per second), valid for H.264, H.265, MPEG2 and MVC encoders \n"));
@@ -81,6 +82,9 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-n_mvpredictors num] - number of MV predictors, up to 4 is supported (default is 1) (ENC)\n"));
     msdk_printf(MSDK_STRING("   [-colocated_mb_distortion] - provides the distortion between the current and the co-located MB. It has performance impact(ENC)\n"));
     msdk_printf(MSDK_STRING("                                do not use it, unless it is necessary\n"));
+    msdk_printf(MSDK_STRING("   [-dblk_idc value] - value of DisableDeblockingIdc (default is 0), in range [0,2]\n"));
+    msdk_printf(MSDK_STRING("   [-dblk_alpha value] - value of SliceAlphaC0OffsetDiv2 (default is 0), in range [-6,6]\n"));
+    msdk_printf(MSDK_STRING("   [-dblk_betta value] - value of SliceBetaOffsetDiv2 (default is 0), in range [-6,6]\n"));
     msdk_printf(MSDK_STRING("   [-dstw width] - destination picture width, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-single_field_processing] - FEI Field mode processing\n"));
@@ -239,6 +243,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->bRefType = MFX_B_REF_PYRAMID;
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-nobref")))
+        {
+            pParams->bRefType = MFX_B_REF_OFF;
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-idr_interval")))
         {
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nIdrInterval))
@@ -375,6 +383,21 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             i++;
             pParams->NumMVPredictors = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dblk_idc")))
+        {
+            i++;
+            pParams->DisableDeblockingIdc = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dblk_alpha")))
+        {
+            i++;
+            pParams->SliceAlphaC0OffsetDiv2 = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dblk_betta")))
+        {
+            i++;
+            pParams->SliceBetaOffsetDiv2 = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dstw")))
         {
@@ -689,6 +712,30 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
+    if (pParams->DisableDeblockingIdc > 2){
+        if (bAlrShownHelp)
+            msdk_printf(MSDK_STRING("\nUnsupported DisableDeblockingIdc value!\n"));
+        else
+            PrintHelp(strInput[0], MSDK_STRING("Unsupported DisableDeblockingIdc value!"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (pParams->SliceAlphaC0OffsetDiv2 > 6 || pParams->SliceAlphaC0OffsetDiv2 < -6){
+        if (bAlrShownHelp)
+            msdk_printf(MSDK_STRING("\nUnsupported SliceAlphaC0OffsetDiv2 value!\n"));
+        else
+            PrintHelp(strInput[0], MSDK_STRING("Unsupported SliceAlphaC0OffsetDiv2 value!"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (pParams->SliceBetaOffsetDiv2 > 6 || pParams->SliceBetaOffsetDiv2 < -6){
+        if (bAlrShownHelp)
+            msdk_printf(MSDK_STRING("\nUnsupported SliceBetaOffsetDiv2 value!\n"));
+        else
+            PrintHelp(strInput[0], MSDK_STRING("Unsupported SliceBetaOffsetDiv2 value!"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
     if (pParams->EncodedOrder && pParams->bENCODE && pParams->nNumFrames == 0){
         msdk_printf(MSDK_STRING("\nWARNING: without number of frames setting (-n) last frame of FEI ENCODE in Encoded Order\n"));
         msdk_printf(MSDK_STRING("could mismatch with last frame in FEI ENCODE with Display Order!\n"));
@@ -757,7 +804,7 @@ int main(int argc, char *argv[])
     Params.bMBSize = false;
     Params.memType = D3D9_MEMORY; //only HW memory is supported (ENCODE supports SW memory)
     Params.bUseHWLib = true;
-    Params.bRefType = MFX_B_REF_OFF; //default set to off
+    Params.bRefType  = MFX_B_REF_UNKNOWN; //let MSDK library to decide wheather to use B-pyramid or not
     Params.QP              = 26; //default qp value
     Params.SearchWindow    = 5;  //48x40 (48 SUs)
     Params.RefWidth        = 32;
@@ -775,6 +822,9 @@ int main(int argc, char *argv[])
     Params.CodecLevel      = 0;
     Params.Trellis         = 0;    // MFX_TRELLIS_UNKNOWN
     Params.bFieldProcessingMode = false;
+    Params.DisableDeblockingIdc   = 0;
+    Params.SliceAlphaC0OffsetDiv2 = 0;
+    Params.SliceBetaOffsetDiv2    = 0;
 
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
