@@ -623,6 +623,14 @@ mfxStatus DXVAHDVideoProcessor::DestroyDevice(void)
 
     m_pDXVADevice = 0;
 
+    if (m_camera3DLUT17) free(m_camera3DLUT17);
+    if (m_camera3DLUT65) free(m_camera3DLUT65);
+    if (m_camera3DLUT33) free(m_camera3DLUT33);
+
+    m_camera3DLUT17 = 0;
+    m_camera3DLUT65 = 0;
+    m_camera3DLUT33 = 0;
+
     return MFX_ERR_NONE;
 }
 
