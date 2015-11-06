@@ -27,6 +27,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-i::h264|mpeg2|vc1] - set input encoded file and decoder type\n"));
     msdk_printf(MSDK_STRING("   [-nv12] - input is in NV12 color format, if not specified YUV420 is expected\n"));
     msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom field first, if not specified progressive is expected\n"));
+    msdk_printf(MSDK_STRING("   [-single_field_processing] - single-field coding mode, one call for each field, tff/bff option required\n"));
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
     msdk_printf(MSDK_STRING("   [-nobref] - do not use B-pyramid (by default the decision is made by library)\n"));
     msdk_printf(MSDK_STRING("   [-idr_interval size] - idr interval, default 0 means every I is an IDR, 1 means every other I frame is an IDR etc\n"));
@@ -87,7 +88,6 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-dblk_betta value] - value of SliceBetaOffsetDiv2 (default is 0), in range [-6,6]\n"));
     msdk_printf(MSDK_STRING("   [-dstw width] - destination picture width, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
-    msdk_printf(MSDK_STRING("   [-single_field_processing] - FEI Field mode processing\n"));
 
     // user module options
     msdk_printf(MSDK_STRING("\n"));
@@ -238,6 +238,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bff")))
         {
             pParams->nPicStruct = MFX_PICSTRUCT_FIELD_BFF;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-single_field_processing")))
+        {
+            pParams->bFieldProcessingMode = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bref")))
         {
@@ -422,10 +426,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("Timeout is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
-        }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-single_field_processing")))
-        {
-            pParams->bFieldProcessingMode = true;
         }
         else // 1-character options
         {
@@ -801,6 +801,7 @@ int main(int argc, char *argv[])
     Params.mbcodeoutFile = NULL;
     Params.mbQpFile      = NULL;
     Params.bRepackPreencMV = false;
+    Params.bFieldProcessingMode = false;
     Params.bMBSize = false;
     Params.memType = D3D9_MEMORY; //only HW memory is supported (ENCODE supports SW memory)
     Params.bUseHWLib = true;
@@ -821,7 +822,6 @@ int main(int argc, char *argv[])
     Params.CodecProfile    = 0;
     Params.CodecLevel      = 0;
     Params.Trellis         = 0;    // MFX_TRELLIS_UNKNOWN
-    Params.bFieldProcessingMode = false;
     Params.DisableDeblockingIdc   = 0;
     Params.SliceAlphaC0OffsetDiv2 = 0;
     Params.SliceBetaOffsetDiv2    = 0;
@@ -877,7 +877,7 @@ int main(int argc, char *argv[])
 mfxStatus CheckOptions(sInputParams* pParams)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    if(pParams->bENCODE && pParams->dstFileBuff.size() == 0){
+    if(pParams->bENCODE && pParams->dstFileBuff.size() == 0) {
         fprintf(stderr,"Output bitstream file should be specified for ENC+PAK (-o)\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
@@ -892,8 +892,13 @@ mfxStatus CheckOptions(sInputParams* pParams)
         sts = MFX_ERR_UNSUPPORTED;
     }
 
+    if (!pParams->bENCODE && (pParams->bFieldProcessingMode)) {
+        fprintf(stderr, "Only ENCODE supports Single Field coding\n");
+        sts = MFX_ERR_UNSUPPORTED;
+    }
+
     if (pParams->bENCODE && (pParams->bFieldProcessingMode) &&
-        !( (pParams->nPicStruct == MFX_PICSTRUCT_FIELD_BFF) || (pParams->nPicStruct == MFX_PICSTRUCT_FIELD_TFF)))
+        !((pParams->nPicStruct == MFX_PICSTRUCT_FIELD_BFF) || (pParams->nPicStruct == MFX_PICSTRUCT_FIELD_TFF)))
     {
         fprintf(stderr, "ENCODE Field Processing mode works for TFF or BFF\n");
         sts = MFX_ERR_UNSUPPORTED;

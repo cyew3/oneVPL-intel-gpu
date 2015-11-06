@@ -50,8 +50,8 @@ enum MemType {
     D3D11_MEMORY  = 0x02,
 };
 
-//#define PREENC_ALLOC 1
-//#define PAK_ALLOC    2
+//#define INPUT_ALLOC 1
+//#define RECON_ALLOC 2
 
 struct sInputParams
 {
@@ -243,7 +243,7 @@ protected:
     mfxExtCodingOption2 m_CodingOption2;
 
     mfxExtFeiParam  m_encpakInit;
-    mfxExtFeiSliceHeader m_encodeSliceHeader[2]; // 0 - top, 1 - bottom fields
+    mfxExtFeiSliceHeader m_encodeSliceHeader[2]; // 0 - first, 1 - second fields
 
     // for disabling VPP algorithms
     mfxExtVPPDoNotUse m_VppDoNotUse;
@@ -289,6 +289,11 @@ protected:
 
     virtual mfxStatus SynchronizeFirstTask();
 
+    virtual mfxStatus PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, bool is_buffered, bool &cont);
+    virtual mfxStatus EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
+    virtual mfxStatus EncodeOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
+    virtual mfxStatus SyncOneEncodeFrame(sTask* pCurrentTask, iTask* eTask, mfxU32 fieldProcessingCounter);
+
     virtual mfxStatus DecodeOneFrame(ExtendedSurface *pOutSurf);
     virtual mfxStatus DecodeLastFrame(ExtendedSurface *pOutSurf);
 
@@ -301,6 +306,7 @@ protected:
     mfxStatus CopyState(iTask* eTask);
     mfxStatus RemoveOneTask();
     mfxStatus ClearTasks();
+    mfxStatus ProcessLastB();
     mfxU32 CountUnencodedFrames();
 
     std::list<iTask*>::iterator ReorderFrame(std::list<iTask*>& unencoded_queue);
@@ -322,6 +328,7 @@ protected:
     iTask* GetTaskByFrameOrder(mfxU32 frame_order);
 
     mfxStatus InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask);
+    mfxStatus UpdatePreEncFrameParamsEx(iTask* eTask, iTask* refTask);
     iTask* GetRefTask(iTask *eTask, unsigned int idx, int* refIdx, int* L0L1);
     mfxStatus ProcessMultiPreenc(iTask* eTask, unsigned& num_of_refs);
     mfxStatus PassPreEncMVPred2EncEx(iTask* eTask, int numMVP);
@@ -329,6 +336,7 @@ protected:
 
     mfxEncodeCtrl* m_ctr;
 
+    bool m_twoEncoders;
     bool m_disableMVoutPreENC;
     bool m_disableMBStatPreENC;
 

@@ -382,7 +382,6 @@ struct iTask
     mfxENCOutput out;
     mfxPAKInput  inPAK;
     mfxPAKOutput outPAK;
-    //mfxU32 frameDisplayOrder;
     BiFrameLocation m_loc;
     mfxSyncPoint EncSyncP;
     mfxI32 encoded;
