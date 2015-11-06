@@ -539,8 +539,12 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam *par)
         
         if (!IsHWSupported(m_pCore, par))
         {
+#ifdef MFX_ENABLE_HW_ONLY_MPEG2_DECODER
+            return MFX_ERR_UNSUPPORTED;
+#else
             m_isSWImpl = true;
             type = MFX_HW_UNKNOWN;
+#endif
         }
 
         if(m_isSWImpl)
@@ -1698,7 +1702,15 @@ mfxStatus VideoDECODEMPEG2::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
        // Mpeg2CheckConfigurableCommon(*out);
 
          if (!IsHWSupported(core, in))
+         {
+#ifdef MFX_ENABLE_HW_ONLY_MPEG2_DECODER
+             out->mfx.FrameInfo.Width  = 0;
+             out->mfx.FrameInfo.Height = 0;
+             return MFX_ERR_UNSUPPORTED;
+#else
              return MFX_WRN_PARTIAL_ACCELERATION;
+#endif
+         }
 
     }
 
@@ -1800,7 +1812,11 @@ mfxStatus VideoDECODEMPEG2::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfx
     {
         if (false == IsHWSupported(core, par))
         {
+#ifdef MFX_ENABLE_HW_ONLY_MPEG2_DECODER
+            return MFX_ERR_UNSUPPORTED;
+#else
             return MFX_WRN_PARTIAL_ACCELERATION;
+#endif
         }
 
         if ((par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) && 
@@ -4024,7 +4040,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrameImpl(mfxBitstream *in, mfxBitstream *o
                     Height = (CropH + 31) & ~(31);
                 }
             }
-
+#ifdef MFX_ENABLE_HW_ONLY_MPEG2_DECODER
             mfxVideoParam vpCopy = m_vPar;
             vpCopy.mfx.FrameInfo.Width = Width;
             vpCopy.mfx.FrameInfo.Height = Height;
@@ -4035,7 +4051,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrameImpl(mfxBitstream *in, mfxBitstream *o
                 memset(m_last_bytes, 0, NUM_REST_BYTES);
                 continue;
             }
-
+#endif
             if (m_InitW <  Width || m_InitH < Height || surface_work->Info.Width <  Width || surface_work->Info.Height < Height)
             {
                 m_resizing = true;
