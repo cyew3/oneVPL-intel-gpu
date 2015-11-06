@@ -141,6 +141,8 @@ MFXDecPipeline::MFXDecPipeline(IMFXPipelineFactory *pFactory)
     , m_extExtCamGammaCorrection(new mfxExtCamGammaCorrection())
     , m_extExtColorCorrection3x3(new mfxExtCamColorCorrection3x3())
     , m_bVPPUpdateInput(false)
+    , m_YUV_Width(0)
+    , m_YUV_Height(0)
 {
 
     m_bStat                 = true;
@@ -2175,6 +2177,8 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
     yuvDecParam.NumExtParam = m_inParams.NumExtParam;
     yuvDecParam.ExtParam = m_inParams.ExtParam;
     yuvDecParam.mfx.FrameInfo = m_inParams.FrameInfo;
+    yuvDecParam.mfx.FrameInfo.Width = m_YUV_Width;
+    yuvDecParam.mfx.FrameInfo.Height = m_YUV_Height;
     //TODO: prety uslees to have to very interconnected structures
     yuvDecParam.mfx.FrameInfo.FourCC = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
     yuvDecParam.mfx.FrameInfo.ChromaFormat = m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat;
@@ -3713,6 +3717,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
     {
         MFX_CHECK(1 + argv != argvEnd);
         MFX_PARSE_INT(m_inParams.FrameInfo.Width, argv[1]);
+        m_YUV_Width = m_inParams.FrameInfo.Width;
         argv++;
         m_inParams.bYuvReaderMode = true;
     }
@@ -3720,6 +3725,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
     {
         MFX_CHECK(1 + argv != argvEnd);
         MFX_PARSE_INT(m_inParams.FrameInfo.Height, argv[1]);
+        m_YUV_Height = m_inParams.FrameInfo.Height;
         argv++;
         m_inParams.bYuvReaderMode = true;
     }

@@ -352,6 +352,10 @@ public:
     tstring GetAppName() { return VM_STRING("mfx_player");}
 
 protected:
+    //Resolution of original input YUV
+    mfxU32                   m_YUV_Width;
+    mfxU32                   m_YUV_Height;
+
     //Pipeline parameters
     sCommandlineParams       m_inParams;
     enum
