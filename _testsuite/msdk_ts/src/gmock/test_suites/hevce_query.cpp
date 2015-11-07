@@ -65,6 +65,13 @@ int TestSuite::RunTest(unsigned int id)
 
     if (0 == memcmp(m_uid->Data, HEVCE_HW.Data, sizeof(HEVCE_HW.Data)))
     {
+        if (g_tsHWtype < MFX_HW_SKL) // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
+        {
+            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+            g_tsLog << "WARNING: Unsupported HW Platform!\n";
+            Query();
+            return 0;
+        }
         //HEVCE_HW need aligned width and height for 32
         m_par.mfx.FrameInfo.Width = ((m_par.mfx.FrameInfo.Width + 32 - 1) & ~(32 - 1));
         m_par.mfx.FrameInfo.Height = ((m_par.mfx.FrameInfo.Height + 32 - 1) & ~(32 - 1));

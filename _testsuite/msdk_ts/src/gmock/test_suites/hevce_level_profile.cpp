@@ -754,6 +754,13 @@ int TestSuite::RunTest(unsigned int id)
         }
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(mfxU8)* 16))
         {
+            if (g_tsHWtype < MFX_HW_SKL) // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
+            {
+                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+                g_tsLog << "WARNING: Unsupported HW Platform!\n";
+                Query();
+                return 0;
+            }
             if (tc.sts == MFX_ERR_INVALID_VIDEO_PARAM)
             {
                 if (tc.type == SLICE)
