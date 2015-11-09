@@ -2896,6 +2896,14 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                 m_frame_in_use[m_frame_curr] = false;
                 m_implUmc.UnLockTask(m_task_num);
 
+
+#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+                umcRes = m_implUmc.pack_w.m_va->EndFrame();
+                if (umcRes != UMC::UMC_OK)
+                    return MFX_ERR_LOCK_MEMORY;
+#endif
+
+                m_implUmc.RestoreDecoderState();
                 return MFX_ERR_MORE_DATA;
             }
             else
