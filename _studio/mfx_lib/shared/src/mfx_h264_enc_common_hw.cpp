@@ -4850,7 +4850,7 @@ void MfxHwH264Encode::SetDefaults(
         {
             if ((bRateControlLA(par.mfx.RateControlMethod) && (par.mfx.RateControlMethod != MFX_RATECONTROL_LA_HRD)) || par.mfx.RateControlMethod == MFX_RATECONTROL_VME)
             {
-                par.calcParam.bufferSizeInKB = (par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height * 3 / 2 / 1000);
+                par.calcParam.bufferSizeInKB = GetMaxCodedFrameSizeInKB(par);
             }
             else
             {
