@@ -63,3 +63,22 @@ public:
 
     mfxStatus Load() { m_loaded = (0 == tsSession::Load(m_session, m_uid, 1)); return g_tsStatus.get(); }
 };
+
+class tsAutoFlush : tsAutoFlushFiller
+{
+public:
+    tsAutoFlush(tsVideoEncoder& enc, mfxU32 n_frames)
+        : tsAutoFlushFiller(n_frames)
+        , m_enc(enc)
+    {
+        m_enc.m_filler = this;
+    }
+
+    ~tsAutoFlush()
+    {
+        m_enc.m_filler = 0;
+    }
+
+private:
+    tsVideoEncoder& m_enc;
+};

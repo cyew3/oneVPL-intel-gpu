@@ -300,6 +300,7 @@ int TestSuite::RunTest(unsigned int id)
 
     if (tc.sts == MFX_ERR_NONE)
     {
+        tsAutoFlush af(*this, 3);
         EncodeFrames(3);
     }
 
@@ -328,6 +329,8 @@ int TestSuite::RunTest(unsigned int id)
             }
             bs.Init(*((mfxExtChromaLocInfo*)buffs[0]), cod2.DisableVUI);
             Reset(m_session, m_pPar);
+
+            tsAutoFlush af(*this, 3);
             EncodeFrames(3);
         }
     }

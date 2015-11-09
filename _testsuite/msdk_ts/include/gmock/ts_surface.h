@@ -204,5 +204,26 @@ public:
     mfxStatus ProcessSurface(mfxFrameSurface1& s);
 };
 
+class tsAutoFlushFiller : public tsSurfaceProcessor
+{
+public:
+    tsAutoFlushFiller(mfxU32 n_frames = 0xFFFFFFFF) : tsSurfaceProcessor(n_frames) {};
+    ~tsAutoFlushFiller() {};
+
+    mfxFrameSurface1* ProcessSurface(mfxFrameSurface1* ps, mfxFrameAllocator* pfa)
+    {
+        if (m_eos)
+            return 0;
+
+        if (m_cur++ >= m_max)
+        {
+            m_eos = true;
+            return 0;
+        }
+
+        return ps;
+    }
+};
+
 mfxF64 PSNR(tsFrame& ref, tsFrame& src, mfxU32 id);
 mfxF64 SSIM(tsFrame& ref, tsFrame& src, mfxU32 id);
