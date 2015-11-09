@@ -282,6 +282,7 @@ protected:
     virtual void DeleteFrames();
 
     virtual mfxStatus AllocateSufficientBuffer(mfxBitstream* pBS);
+    virtual mfxStatus UpdateVideoParams();
 
     virtual mfxStatus GetFreeTask(sTask **ppTask);
     virtual PairU8 GetFrameType(mfxU32 pos);

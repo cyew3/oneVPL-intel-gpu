@@ -404,7 +404,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     }
 
     // configure the depth of the look ahead BRC if specified in command line
-    if (pInParams->bRefType || pInParams->Trellis)
+    //if (pInParams->bRefType || pInParams->Trellis)
     {
         m_CodingOption2.BRefType = pInParams->bRefType;
         m_CodingOption2.Trellis  = pInParams->Trellis;
@@ -1537,6 +1537,36 @@ mfxStatus CEncodingPipeline::AllocateSufficientBuffer(mfxBitstream* pBS)
     return MFX_ERR_NONE;
 }
 
+
+mfxStatus CEncodingPipeline::UpdateVideoParams()
+{
+    MSDK_CHECK_POINTER(m_pmfxENCODE, MFX_ERR_NOT_INITIALIZED); // temporary
+
+    mfxStatus sts = MFX_ERR_NOT_FOUND;
+    if (m_pmfxENCODE)
+    {
+        sts = m_pmfxENCODE->GetVideoParam(&m_mfxEncParams);
+        return sts;
+    }
+    else if (m_pmfxPREENC)
+    {
+        //sts = m_pmfxPREENC->GetVideoParam(&m_mfxEncParams);
+        return sts;
+    }
+    else if (m_pmfxENC)
+    {
+        //sts = m_pmfxENC->GetVideoParam(&m_mfxEncParams);
+        return sts;
+    }
+    else if (m_pmfxPAK)
+    {
+        //sts = m_pmfxPAK->GetVideoParam(&m_mfxEncParams);
+        return sts;
+    }
+
+    return sts;
+}
+
 mfxStatus CEncodingPipeline::GetFreeTask(sTask **ppTask)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -1556,10 +1586,10 @@ mfxStatus CEncodingPipeline::GetFreeTask(sTask **ppTask)
 
 PairU8 CEncodingPipeline::GetFrameType(mfxU32 frameOrder)
 {
-    mfxU32 gopOptFlag = m_encpakParams.GopOptFlag;
-    mfxU32 gopPicSize = m_encpakParams.gopSize;
-    mfxU32 gopRefDist = m_encpakParams.refDist;
-    mfxU32 idrPicDist = gopPicSize * (m_encpakParams.nIdrInterval + 1);
+    mfxU32 gopOptFlag = m_mfxEncParams.mfx.GopOptFlag; // m_encpakParams.GopOptFlag;
+    mfxU32 gopPicSize = m_mfxEncParams.mfx.GopPicSize; // m_encpakParams.gopSize;
+    mfxU32 gopRefDist = m_mfxEncParams.mfx.GopRefDist; // m_encpakParams.refDist;
+    mfxU32 idrPicDist = gopPicSize * (m_mfxEncParams.mfx.IdrInterval + 1);
 
     if (gopPicSize == 0xffff) //infinite GOP
         idrPicDist = gopPicSize = 0xffffffff;
@@ -1603,9 +1633,9 @@ PairU8 ExtendFrameType(mfxU32 type)
 BiFrameLocation CEncodingPipeline::GetBiFrameLocation(mfxU32 frameOrder)
 {
 
-    mfxU32 gopPicSize = m_encpakParams.gopSize;
-    mfxU32 gopRefDist = m_encpakParams.refDist;
-    mfxU32 biPyramid  = m_encpakParams.bRefType;
+    mfxU32 gopPicSize = m_mfxEncParams.mfx.GopPicSize; // m_encpakParams.gopSize;
+    mfxU32 gopRefDist = m_mfxEncParams.mfx.GopRefDist; // m_encpakParams.refDist;
+    mfxU32 biPyramid  = m_CodingOption2.BRefType;      // m_encpakParams.bRefType;
 
     BiFrameLocation loc;
 
@@ -2381,7 +2411,6 @@ mfxStatus CEncodingPipeline::Run()
     //mfxU32 fieldProcessingCounter = 0;
 
     // main loop, preprocessing and encoding
-    sts = MFX_ERR_NONE;
     m_twoEncoders = m_encpakParams.bPREENC && (m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC || m_encpakParams.bENCODE);
     bool create_task = (m_encpakParams.bPREENC)  || (m_encpakParams.bENCPAK)  ||
                        (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK) ||
@@ -2398,6 +2427,12 @@ mfxStatus CEncodingPipeline::Run()
     iTask* eTask = NULL;
     time_t start = time(0);
     bool insertIDR = false;
+
+    if (m_encpakParams.bENCODE){
+        sts = UpdateVideoParams(); // update settings according to those that exposed by MSDK library
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
+    sts = MFX_ERR_NONE;
 
     while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts)
     {
@@ -3194,11 +3229,11 @@ iTask* CEncodingPipeline::FindFrameToEncode(bool buffered_frames)
 
     std::list<iTask*>::iterator top = ReorderFrame(unencoded_queue), begin = unencoded_queue.begin(), end = unencoded_queue.end();
 
-    bool flush = unencoded_queue.size() < m_encpakParams.refDist && buffered_frames;
+    bool flush = unencoded_queue.size() < m_mfxEncParams.mfx.GopRefDist && buffered_frames;
 
     if (flush && top == end && begin != end)
     {
-        if (!!(m_encpakParams.GopOptFlag & MFX_GOP_STRICT))
+        if (!!(m_mfxEncParams.mfx.GopOptFlag & MFX_GOP_STRICT))
         {
             top = begin; // TODO: reorder remaining B frames for B-pyramid when enabled
         }
@@ -3271,7 +3306,7 @@ iTask* CEncodingPipeline::CreateAndInitTask()
     MSDK_CHECK_POINTER(eTask, NULL);
     eTask->m_fieldPicFlag = m_isField;
     eTask->PicStruct = m_mfxEncParams.mfx.FrameInfo.PicStruct;
-    eTask->BRefType  = m_encpakParams.bRefType;
+    eTask->BRefType  = m_CodingOption2.BRefType; // m_encpakParams.bRefType;
     eTask->m_fid[0]  = m_ffid;
     eTask->m_fid[1]  = m_sfid;
 

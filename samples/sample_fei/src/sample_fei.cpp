@@ -85,7 +85,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("                                do not use it, unless it is necessary\n"));
     msdk_printf(MSDK_STRING("   [-dblk_idc value] - value of DisableDeblockingIdc (default is 0), in range [0,2]\n"));
     msdk_printf(MSDK_STRING("   [-dblk_alpha value] - value of SliceAlphaC0OffsetDiv2 (default is 0), in range [-6,6]\n"));
-    msdk_printf(MSDK_STRING("   [-dblk_betta value] - value of SliceBetaOffsetDiv2 (default is 0), in range [-6,6]\n"));
+    msdk_printf(MSDK_STRING("   [-dblk_beta value] - value of SliceBetaOffsetDiv2 (default is 0), in range [-6,6]\n"));
     msdk_printf(MSDK_STRING("   [-dstw width] - destination picture width, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
 
@@ -398,7 +398,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             i++;
             pParams->SliceAlphaC0OffsetDiv2 = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dblk_betta")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dblk_beta")))
         {
             i++;
             pParams->SliceBetaOffsetDiv2 = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
@@ -892,7 +892,7 @@ mfxStatus CheckOptions(sInputParams* pParams)
         sts = MFX_ERR_UNSUPPORTED;
     }
 
-    if (!pParams->bENCODE && (pParams->bFieldProcessingMode)) {
+    if ((!pParams->bENCODE || pParams->bPREENC) && (pParams->bFieldProcessingMode)) {
         fprintf(stderr, "Only ENCODE supports Single Field coding\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
