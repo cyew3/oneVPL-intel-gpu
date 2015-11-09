@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2007-2014 Intel Corporation.  All rights reserved.
+Copyright (C) 2007-2015 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -114,8 +114,9 @@ typedef struct mfxCoreInterface {
     mfxStatus (MFX_CDECL *GetOpaqueSurface)(mfxHDL pthis, mfxFrameSurface1 *surf, mfxFrameSurface1 **op_surf);
 
     mfxStatus (MFX_CDECL *CreateAccelerationDevice)(mfxHDL pthis, mfxHandleType type, mfxHDL *handle);
+    mfxStatus (MFX_CDECL *GetFrameHandle) (mfxHDL pthis, mfxFrameData *fd, mfxHDL *handle);
 
-    mfxHDL reserved4[3];
+    mfxHDL reserved4[2];
 } mfxCoreInterface;
 
 /* video codec plugin extension*/
