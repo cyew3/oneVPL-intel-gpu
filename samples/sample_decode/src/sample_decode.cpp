@@ -45,12 +45,20 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-path path]              - path to plugin (valid only in pair with -p option)\n"));
     msdk_printf(MSDK_STRING("                               (optional for Media SDK in-box plugins, required for user-decoder ones)\n"));
     msdk_printf(MSDK_STRING("   [-f]                      - rendering framerate\n"));
+    msdk_printf(MSDK_STRING("   [-w]                      - output width\n"));
+    msdk_printf(MSDK_STRING("   [-h]                      - output height\n"));
+    msdk_printf(MSDK_STRING("   [-di bob/adi]             - enable deinterlacing BOB/ADI\n"));
+    msdk_printf(MSDK_STRING("\n"));
+    msdk_printf(MSDK_STRING("Output format parameters:\n"));
+    msdk_printf(MSDK_STRING("   [-i420]                   - by default\n"));
+    msdk_printf(MSDK_STRING("   [-rgb4]\n"));
+    msdk_printf(MSDK_STRING("   [-p010]\n"));
+    msdk_printf(MSDK_STRING("   [-a2rgb10]\n"));
+    msdk_printf(MSDK_STRING("\n"));
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d]                    - work with d3d9 surfaces\n"));
     msdk_printf(MSDK_STRING("   [-d3d11]                  - work with d3d11 surfaces\n"));
     msdk_printf(MSDK_STRING("   [-r]                      - render decoded data in a separate window \n"));
-    msdk_printf(MSDK_STRING("   [-w]                      - output width\n"));
-    msdk_printf(MSDK_STRING("   [-h]                      - output height\n"));
     msdk_printf(MSDK_STRING("   [-wall w h n m t tmo]     - same as -r, and positioned rendering window in a particular cell on specific monitor \n"));
     msdk_printf(MSDK_STRING("       w                     - number of columns of video windows on selected monitor\n"));
     msdk_printf(MSDK_STRING("       h                     - number of rows of video windows on selected monitor\n"));
@@ -61,13 +69,6 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("Screen capture parameters:\n"));
     msdk_printf(MSDK_STRING("   [-scr:w]                  - screen resolution width\n"));
     msdk_printf(MSDK_STRING("   [-scr:h]                  - screen resolution height\n"));
-    msdk_printf(MSDK_STRING("\n"));
-    msdk_printf(MSDK_STRING("Output format parameters:\n"));
-    msdk_printf(MSDK_STRING("   [-i420]                   - by default\n"));
-    msdk_printf(MSDK_STRING("   [-rgb4]\n"));
-    msdk_printf(MSDK_STRING("   [-p010]\n"));
-    msdk_printf(MSDK_STRING("   [-a2rgb10]\n"));
-    msdk_printf(MSDK_STRING("   [-di bob/adi]                 - enable deinterlacing BOB/ADI\n"));
     msdk_printf(MSDK_STRING("\n"));
 
 #endif
