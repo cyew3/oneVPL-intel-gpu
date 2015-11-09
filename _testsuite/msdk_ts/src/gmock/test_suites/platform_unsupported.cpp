@@ -111,11 +111,19 @@ public:
     int RunTest(unsigned int id);
     static const unsigned int n_cases;
 
+    enum
+    {
+        INIT      = 1,
+        RT_CTRL   = 1 << 2,
+        RT_BS     = 1 << 3
+    };
+
     struct f_pair
     {
         const  tsStruct::Field* f;
         mfxU64 v;
         bool   isInvalid; //if true then check that this field was zero-ed by Query function
+        mfxU8  stage;
     };
 
 private:
@@ -127,7 +135,10 @@ private:
         ENCODE        = 1 << 4,
         DECODE_QUERY1 = 1 << 5,
         VPP_QUERY1    = 1 << 6,
-        ENCODE_QUERY1 = 1 << 7
+        ENCODE_QUERY1 = 1 << 7,
+        DECODE_RT     = 1 << 8,
+        VPP_RT        = 1 << 9,
+        ENCODE_RT     = 1 << 10
     };
 
     typedef enum
@@ -149,6 +160,8 @@ private:
         union {
             shortSts  QuerySts;
             mfxStatus query_sts;
+            shortSts  RuntimeSts;
+            mfxStatus rt_Sts;
         };
         union {
             shortSts  InitSts;
@@ -162,6 +175,8 @@ private:
 
     template <typename T>
     int RunTestQueryMode1(const tc_struct& tc);
+
+    int RunTestEncodeRuntime(const tc_struct& tc);
 
     static const tc_struct test_case[];
 };
@@ -316,6 +331,13 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*79*/ ENCODE, MFX_CODEC_AVC,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtEncoderROI.NumROI, 1} },
     {/*80*/ ENCODE, MFX_CODEC_AVC,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtDirtyRect.NumRect, 1} },
     {/*81*/ ENCODE, MFX_CODEC_AVC,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtMoveRect.NumRect,  1} },
+
+    //runtime tests
+    {/*82*/ ENCODE_RT, MFX_CODEC_AVC, W_INCOMP, NONE, {&tsStruct::mfxExtEncoderROI.NumROI, 5, false, RT_CTRL} },
+    {/*83*/ ENCODE_RT, MFX_CODEC_AVC, W_INCOMP, NONE, {&tsStruct::mfxExtDirtyRect.NumRect, 5, false, RT_CTRL} },
+    {/*84*/ ENCODE_RT, MFX_CODEC_AVC, W_INCOMP, NONE, {&tsStruct::mfxExtMoveRect.NumRect,  5, false, RT_CTRL} },
+    {/*85*/ ENCODE_RT, MFX_CODEC_AVC, NONE, NONE, {&tsStruct::mfxExtAVCEncodedFrameInfo.QP,  1, false, RT_CTRL} },
+    {/*86*/ ENCODE_RT, MFX_CODEC_AVC, NONE, NONE, {&tsStruct::mfxExtAVCEncodedFrameInfo.MAD, 1, false, RT_CTRL} },
 };
 #endif //
 
@@ -395,7 +417,6 @@ void CheckParams(tsExtBufType<TB>& par, const TestSuite::f_pair pairs[], const s
         }
     }
 }
-
 
 template <typename T>
 int TestSuite::RunTestQueryInitComponent(const tc_struct& tc)
@@ -504,6 +525,52 @@ int TestSuite::RunTestQueryMode1(const tc_struct& tc)
     return 0;
 }
 
+int TestSuite::RunTestEncodeRuntime(const tc_struct& tc)
+{
+    tsVideoEncoder encoder(tc.codec, true);
+
+    for(size_t i(0); i < MAX_NPARS; ++i)
+    {
+        if(tc.set_par[i].f)
+        {
+            if(tc.set_par[i].stage & INIT)
+                SetParams(encoder.m_par, &(tc.set_par[i]), 1);
+            if(tc.set_par[i].stage & RT_CTRL)
+                SetParams(encoder.m_ctrl, &(tc.set_par[i]), 1);
+            if(tc.set_par[i].stage & RT_BS)
+                SetParams(encoder.m_bitstream, &(tc.set_par[i]), 1);
+        }
+    }
+
+    if(tc.rt_Sts == MFX_ERR_MORE_DATA)
+    {
+        g_tsStatus.expect(tc.rt_Sts);
+        encoder.EncodeFrameAsync();
+    }
+    else
+    {
+        for(mfxU32 i(0); i < 100; ++i)
+        {
+            for(size_t i(0); i < MAX_NPARS; ++i)
+            {
+                if(tc.set_par[i].f)
+                {
+                    if(tc.set_par[i].stage & RT_CTRL)
+                        SetParams(encoder.m_ctrl, &(tc.set_par[i]), 1);
+                    if(tc.set_par[i].stage & RT_BS)
+                        SetParams(encoder.m_bitstream, &(tc.set_par[i]), 1);
+                }
+            }
+            if(MFX_ERR_MORE_DATA != encoder.EncodeFrameAsync())
+                break;
+        }
+        g_tsStatus.expect(tc.rt_Sts);
+        g_tsStatus.check();
+    }
+
+    return 0;
+}
+
 int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
@@ -532,6 +599,9 @@ int TestSuite::RunTest(unsigned int id)
 
     if(VPP_QUERY1 & tc.component)
         RunTestQueryMode1<tsVideoVPP>(tc);
+
+    if(ENCODE_RT & tc.component)
+        RunTestEncodeRuntime(tc);
 
     TS_END;
     return 0;
