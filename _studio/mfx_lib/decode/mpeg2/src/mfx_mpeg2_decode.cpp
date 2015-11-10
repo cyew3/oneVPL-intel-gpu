@@ -1956,6 +1956,22 @@ mfxStatus VideoDECODEMPEG2::SetSkipMode(mfxSkipMode mode)
     return ret;
 }
 
+mfxStatus VideoDECODEMPEG2::SetSurfacePicStruct(mfxFrameSurface1 *surface, int task_num)
+{
+    MFX_CHECK_NULL_PTR1(surface);
+
+    if (task_num < 0 || task_num >= 2*DPB)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    const UMC::sPictureHeader& ph = m_implUmc.GetPictureHeader(task_num);
+    const UMC::sSequenceHeader& sh = m_implUmc.GetSequenceHeader();
+
+    surface->Info.PicStruct = GetMfxPicStruct(sh.progressive_sequence, ph.progressive_frame,
+                                              ph.top_field_first, ph.repeat_first_field, ph.picture_structure,
+                                              m_vPar.mfx.ExtendedPicStruct);
+    return MFX_ERR_NONE;
+}
+
 mfxStatus VideoDECODEMPEG2::UpdateCurrVideoParams(mfxFrameSurface1 *surface_work, int task_num)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -2698,7 +2714,9 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
 
                             (*surface_disp)->Data.TimeStamp = GetMfxTimeStamp(m_implUmc.GetCurrDecodedTime(display_index));
                             (*surface_disp)->Data.DataFlag = (mfxU16)((m_implUmc.isOriginalTimeStamp(display_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
-                            
+
+                            SetSurfacePicStruct(*surface_disp, display_index);
+
                             if (false == m_isDecodedOrder)
                             {
                                 (*surface_disp)->Data.FrameOrder = display_frame_count;
@@ -3003,15 +3021,8 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
             {
                 (*surface_disp)->Data.TimeStamp = GetMfxTimeStamp(m_implUmc.GetCurrDecodedTime(display_index));
                 (*surface_disp)->Data.DataFlag = (mfxU16)((m_implUmc.isOriginalTimeStamp(display_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
-                //Ipp32s frameType = m_implUmc.GetFrameType(display_index); frameType;
 
-                // update surface with correct header information
-                const UMC::sPictureHeader& ph = m_implUmc.GetPictureHeader(display_index);
-                const UMC::sSequenceHeader& sh = m_implUmc.GetSequenceHeader();
-
-                (*surface_disp)->Info.PicStruct = GetMfxPicStruct(sh.progressive_sequence, ph.progressive_frame, 
-                                                                  ph.top_field_first, ph.repeat_first_field, ph.picture_structure,
-                                                                  m_vPar.mfx.ExtendedPicStruct);
+                SetSurfacePicStruct(*surface_disp, display_index);
 
                 if (false == m_isDecodedOrder)
                 {
@@ -3095,6 +3106,8 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
 
                     (*surface_disp)->Data.TimeStamp = GetMfxTimeStamp(m_implUmc.GetCurrDecodedTime(display_index));
                     (*surface_disp)->Data.DataFlag = (mfxU16)((m_implUmc.isOriginalTimeStamp(display_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
+
+                    SetSurfacePicStruct(*surface_disp, display_index);
 
                     memset(&m_task_param[m_task_num],0,sizeof(MParam));
                     m_implUmc.LockTask(m_task_num);

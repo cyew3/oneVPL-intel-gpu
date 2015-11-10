@@ -293,7 +293,7 @@ protected:
 
     void ResetFcState(FcState& state) { state.picStart = state.picHeader = 0; }
     mfxStatus UpdateCurrVideoParams(mfxFrameSurface1 *surface_work, int task_num);
-
+    mfxStatus SetSurfacePicStruct(mfxFrameSurface1 *surface, int task_num);
 };
 
 #pragma warning(default: 4324)
