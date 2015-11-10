@@ -116,7 +116,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     MFX_CHECK_NULL_PTR1(par);
 
     m_ddi.reset( CreatePlatformH265Encoder(&m_core) );
-    MFX_CHECK(m_ddi.get(), MFX_ERR_DEVICE_FAILED);
+    MFX_CHECK(m_ddi.get(), MFX_ERR_UNSUPPORTED);
 
     sts = ExtBuffer::CheckBuffers(*par);
     MFX_CHECK_STS(sts);
@@ -315,7 +315,8 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         MfxVideoParam tmp = *in;
         ENCODE_CAPS_HEVC caps = {};
 
-        sts = ExtBuffer::CheckBuffers(*in);
+        // matching ExtBuffers
+        sts = ExtBuffer::CheckBuffers(*in, *out);
         MFX_CHECK_STS(sts);
 
         if (m_ddi.get())
@@ -328,11 +329,6 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             sts = QueryHwCaps(&m_core, GetGUID(tmp), caps);
             MFX_CHECK_STS(sts);
         }
-
-        // matching ExtBuffers
-        sts = ExtBuffer::CheckBuffers(*in, *out);
-        MFX_CHECK_STS(sts);
-
         mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(*in);
         if (pSPSPPS && pSPSPPS->SPSBuffer)
         {

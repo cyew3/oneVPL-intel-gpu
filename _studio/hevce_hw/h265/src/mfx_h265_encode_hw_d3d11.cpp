@@ -82,7 +82,7 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
                 break;
             }
         }
-        MFX_CHECK(isFound, MFX_ERR_DEVICE_FAILED);
+        MFX_CHECK(isFound, MFX_ERR_UNSUPPORTED);
     }
 
     // [2] Query the supported encode functions
