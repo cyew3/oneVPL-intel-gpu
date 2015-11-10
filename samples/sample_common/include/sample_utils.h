@@ -657,8 +657,8 @@ template<size_t S>
     #if defined(_WIN32) || defined(_WIN64)
         return (0 == _tcscpy_s(value, string))? MFX_ERR_NONE: MFX_ERR_UNKNOWN;
     #else
-        if (strlen(string) < S) {
-            strncpy(value, string, S);
+        if (strlen(string) < S-1) {
+            strncpy(value, string, S-1);
             return MFX_ERR_NONE;
         }
         return MFX_ERR_UNKNOWN;
