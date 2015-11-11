@@ -1205,7 +1205,7 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9FrameInfo const & 
         picParam->segment_pred_probs[i] = info.segmentation.predProbs[i];
 
     picParam->profile = info.profile;
-    picParam->bit_depth = info.bit_depth;
+    picParam->bit_depth = info.bit_depth - 8;
 
     // sliceParam
     pCompBuf = NULL;
