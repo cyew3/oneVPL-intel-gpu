@@ -451,5 +451,8 @@
     <ClCompile Include="src\gmock\test_suites\platform_unsupported.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_douse.cpp">
+      <Filter>Source Files\test_suites\vpp</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
