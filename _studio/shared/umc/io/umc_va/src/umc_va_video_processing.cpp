@@ -40,7 +40,7 @@ Status VideoProcessingVA::Init(mfxVideoParam * , mfxExtDecVideoProcessing * )
 
 Status VideoProcessingVA::Init(mfxVideoParam * vpParams, mfxExtDecVideoProcessing * videoProcessing)
 {
-    MFX_VAProcPipelineParameterBuffer *pipelineBuf = &m_pipelineParams;
+    VAProcPipelineParameterBuffer *pipelineBuf = &m_pipelineParams;
 
     pipelineBuf->surface = 0;  // should filled in packer
 
@@ -48,7 +48,7 @@ Status VideoProcessingVA::Init(mfxVideoParam * vpParams, mfxExtDecVideoProcessin
     m_surf_region.y = videoProcessing->In.CropY;
     m_surf_region.width = videoProcessing->In.CropW;
     m_surf_region.height = videoProcessing->In.CropH;
-    
+
     pipelineBuf->surface_region = &m_surf_region;
 
     pipelineBuf->surface_color_standard = VAProcColorStandardBT601;
@@ -81,7 +81,7 @@ Status VideoProcessingVA::Init(mfxVideoParam * vpParams, mfxExtDecVideoProcessin
     pipelineBuf->rotation_state = VA_ROTATION_NONE;
     pipelineBuf->blend_state = 0;
     pipelineBuf->mirror_state = 0;
-    
+
     output_surface_array[0] = 0;
 
     pipelineBuf->additional_outputs = output_surface_array;

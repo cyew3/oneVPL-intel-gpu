@@ -2092,12 +2092,12 @@ void PackerVA::PackProcessingInfo(H264DecoderFrameInfo * sliceInfo)
         throw h264_exception(UMC_ERR_FAILED);
 
     UMCVACompBuffer *pipelineVABuf;
-    MFX_VAProcPipelineParameterBuffer* pipelineBuf = (MFX_VAProcPipelineParameterBuffer*)m_va->GetCompBuffer(VAProcPipelineParameterBufferType, &pipelineVABuf, sizeof(MFX_VAProcPipelineParameterBuffer));
+    VAProcPipelineParameterBuffer* pipelineBuf = (VAProcPipelineParameterBuffer*)m_va->GetCompBuffer(VAProcPipelineParameterBufferType, &pipelineVABuf, sizeof(VAProcPipelineParameterBuffer));
     if (!pipelineBuf)
         throw h264_exception(UMC_ERR_FAILED);
-    pipelineVABuf->SetDataSize(sizeof(MFX_VAProcPipelineParameterBuffer));
+    pipelineVABuf->SetDataSize(sizeof(VAProcPipelineParameterBuffer));
 
-    MFX_INTERNAL_CPY(pipelineBuf, &vpVA->m_pipelineParams, sizeof(MFX_VAProcPipelineParameterBuffer));
+    MFX_INTERNAL_CPY(pipelineBuf, &vpVA->m_pipelineParams, sizeof(VAProcPipelineParameterBuffer));
 
     pipelineBuf->surface = m_va->GetSurfaceID(sliceInfo->m_pFrame->m_index); // should filled in packer
     pipelineBuf->additional_outputs = (VASurfaceID*)vpVA->GetCurrentOutputSurface();

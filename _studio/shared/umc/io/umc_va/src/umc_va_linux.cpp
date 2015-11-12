@@ -451,7 +451,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
             va_attributes[1].type = VAConfigAttribDecSliceMode;
             va_attributes[1].value = VA_DEC_SLICE_MODE_NORMAL;
 
-            va_attributes[2].type = (VAConfigAttribType)MFX_VAConfigAttribDecProcessing;
+            va_attributes[2].type = (VAConfigAttribType)VAConfigAttribDecProcessing;
 
             va_res = vaGetConfigAttributes(m_dpy, va_profile, va_entrypoint, va_attributes, 3);
             umcRes = va_to_umc_res(va_res);
