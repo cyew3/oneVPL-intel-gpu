@@ -371,7 +371,6 @@ struct DecRefPicMarkingInfo
 struct PreEncMVPInfo
 {
     bufSet* preenc_output_bufs;
-    int L0L1;
     int refIdx;
 };
 
