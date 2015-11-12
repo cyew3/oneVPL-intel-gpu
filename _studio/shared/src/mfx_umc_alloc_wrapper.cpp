@@ -226,6 +226,13 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
             frameData->Init(&m_info, (UMC::FrameMemID)i, this);
         }
     }
+    else
+    {
+        // make sure AddSurface() call would not result in UMC::FrameData reallocation
+        // as it will result in UB in IncreaseReference&DecreaseReference as m_frameData would be in unspecified state
+        m_frameData.reserve(response->NumFrameActual);
+        m_extSurfaces.reserve(response->NumFrameActual);
+    }
 
     mfxCore->SetWrapper(this);
 
@@ -715,7 +722,8 @@ mfxI32 mfx_UMC_FrameAllocator::AddSurface(mfxFrameSurface1 *surface)
     if (m_IsUseExternalFrames && m_isSWDecode)
     {
         FrameInfo  frameInfo;
-        m_frameData.push_back(frameInfo);
+        m_frameData.push_back(frameInfo); // potentially risky line, as UMC::FrameData deep copy ask this allocator to 
+                                          // to increase/decrease frame references
 
         memset(&(m_frameData[index].first), 0, sizeof(m_frameData[index].first));
         m_frameData[index].first.Data.MemId = surface->Data.MemId;
