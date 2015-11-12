@@ -361,6 +361,7 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
             UNGET_BITS_32(video->bs)
             return (UMC_ERR_NOT_ENOUGH_DATA);
         }
+        video->bs_sequence_header_start = video->bs_curr_ptr;
         m_FirstHeaderAfterSequenceHeaderParsed = false;
         GET_BITS32(video->bs, code)
         frame_rate_code = code  & ((1 << 4) - 1);
@@ -411,7 +412,7 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
         }
 
         // calculate size of sequence header
-        shMask.memSize = (Ipp16u) (video->bs_curr_ptr - video->bs_start_ptr);
+        shMask.memSize = (Ipp16u) (video->bs_sequence_header_start - video->bs_start_ptr);
 
         // init signal info structure members by default values
         m_signalInfo.VideoFormat = 5;
@@ -435,7 +436,7 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
                     newtype = MPEG2_VIDEO;
 
                     DecodeHeader(EXTENSION_START_CODE, video, task_num);
-                    shMask.memSize += (Ipp16u) (video->bs_curr_ptr - (video->bs_start_ptr + shMask.memSize));
+                    shMask.memSize += (Ipp16u) (video->bs_curr_ptr - (video->bs_sequence_header_start + shMask.memSize));
                 }
             }
         }
@@ -468,7 +469,7 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
 
             if (SEQUENCE_DISPLAY_EXTENSION_ID == ext_name)
             {
-                shMask.memSize += (Ipp16u) (video->bs_curr_ptr - (video->bs_start_ptr + shMask.memSize));
+                shMask.memSize += (Ipp16u) (video->bs_curr_ptr - (video->bs_sequence_header_start + shMask.memSize));
             }
         }
     }
@@ -566,7 +567,7 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
 #endif
         memset(shMask.memMask, 0, shMask.memSize);
 
-        memcpy_s(shMask.memMask, shMask.memSize, video->bs_start_ptr, shMask.memSize);
+        memcpy_s(shMask.memMask, shMask.memSize, video->bs_sequence_header_start, shMask.memSize);
     }
 
     if(m_ClipInfo.stream_type == MPEG1_VIDEO) {

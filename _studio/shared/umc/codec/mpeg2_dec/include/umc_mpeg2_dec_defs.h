@@ -300,6 +300,7 @@ DECLALIGN(8)
     Ipp32s       bs_bit_offset;
     Ipp8u*       bs_start_ptr;
     Ipp8u*       bs_end_ptr;
+    Ipp8u*       bs_sequence_header_start;
 
     Ipp32s Y_comp_pitch;
     Ipp32s U_comp_pitch;

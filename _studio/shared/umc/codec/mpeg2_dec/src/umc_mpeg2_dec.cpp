@@ -1931,7 +1931,12 @@ Status MPEG2VideoDecoderBase::GetInfo(BaseCodecParams* info)
 
 Status MPEG2VideoDecoderBase::GetSequenceHeaderMemoryMask(Ipp8u *buffer, Ipp16u &size)
 {
-    memcpy_s(buffer, shMask.memSize, shMask.memMask, shMask.memSize);
+    if (NULL == buffer)
+        return UMC_ERR_NULL_PTR;
+    if (size < shMask.memSize)
+        return UMC_ERR_NOT_ENOUGH_BUFFER;
+
+    memcpy_s(buffer, size, shMask.memMask, shMask.memSize);
     size = shMask.memSize;
 
     return UMC_OK;

@@ -15,6 +15,7 @@ File Name: mfx_mpeg2_decode.cpp
 
 static const mfxI32 MFX_MPEG2_DECODE_ALIGNMENT = 16;
 
+#include "mfx_common_decode_int.h"
 #include "mfx_mpeg2_decode.h"
 #include "mfx_mpeg2_dec_common.h"
 #include "mfx_enc_common.h"
@@ -1832,8 +1833,11 @@ mfxStatus VideoDECODEMPEG2::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfx
 
 mfxStatus VideoDECODEMPEG2::GetVideoParam(mfxVideoParam *par)
 {
+    if(!m_isInitialized)
+        return MFX_ERR_NOT_INITIALIZED;
+
     MFX_CHECK_NULL_PTR1(par);
-    //*par = m_vPar;
+
     par->IOPattern = m_vPar.IOPattern;
     par->mfx       = m_vPar.mfx;
     par->Protected = m_vPar.Protected;
@@ -1856,14 +1860,12 @@ mfxStatus VideoDECODEMPEG2::GetVideoParam(mfxVideoParam *par)
     mfxExtCodingOptionSPSPPS *spspps = (mfxExtCodingOptionSPSPPS *) GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS);
 
     if (NULL != spspps)
-    {
-        if (NULL == spspps->SPSBuffer || 0 == spspps->SPSBufSize)
+        if (NULL != spspps->SPSBuffer)
         {
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+            UMC::Status sts = m_implUmc.GetSequenceHeaderMemoryMask(spspps->SPSBuffer, spspps->SPSBufSize);
+            if (UMC::UMC_OK != sts)
+                return ConvertUMCStatusToMfx(sts);
         }
-
-        m_implUmc.GetSequenceHeaderMemoryMask(spspps->SPSBuffer, spspps->SPSBufSize);
-    }
     // get signal info buffer
     mfxExtVideoSignalInfo *signal_info = (mfxExtVideoSignalInfo *) GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
 
@@ -1873,9 +1875,6 @@ mfxStatus VideoDECODEMPEG2::GetVideoParam(mfxVideoParam *par)
     }
     memcpy_s(par->reserved,sizeof(m_vPar.reserved),m_vPar.reserved,sizeof(m_vPar.reserved));
     par->reserved2 = m_vPar.reserved2;
-
-    if(!m_isInitialized)
-        return MFX_ERR_NOT_INITIALIZED;
 
     return MFX_ERR_NONE;
 }
