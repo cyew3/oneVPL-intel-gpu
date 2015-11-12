@@ -122,6 +122,7 @@ struct sInputParams
     bool DistortionType;
     bool ColocatedMbDistortion;
     bool bRepackPreencMV;
+    bool bNPredSpecified;
     bool bFieldProcessingMode;
     msdk_char* mvinFile;
     msdk_char* mbctrinFile;

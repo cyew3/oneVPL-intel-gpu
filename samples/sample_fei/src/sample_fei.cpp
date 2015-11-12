@@ -386,6 +386,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-n_mvpredictors")))
         {
             i++;
+            pParams->bNPredSpecified = true;
             pParams->NumMVPredictors = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dblk_idc")))
@@ -784,12 +785,13 @@ int main(int argc, char *argv[])
     Params.bOnlyENC  = false; //default value
     Params.bOnlyPAK  = false; //default value
     Params.bPREENC   = false; //default value
-    Params.EncodedOrder   = false;
-    Params.Enable8x8Stat  = false;
-    Params.FTEnable       = false;
-    Params.AdaptiveSearch = false;
-    Params.DistortionType = false;
-    Params.bPassHeaders   = false;
+    Params.bNPredSpecified = false;
+    Params.EncodedOrder    = false;
+    Params.Enable8x8Stat   = false;
+    Params.FTEnable        = false;
+    Params.AdaptiveSearch  = false;
+    Params.DistortionType  = false;
+    Params.bPassHeaders    = false;
     Params.RepartitionCheckEnable = false;
     Params.MultiPredL0 = false;
     Params.MultiPredL1 = false;

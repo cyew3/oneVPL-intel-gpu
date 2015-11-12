@@ -2018,7 +2018,8 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                 feiEncCtrl[fieldId].RepartitionCheckEnable = m_encpakParams.RepartitionCheckEnable;
                 feiEncCtrl[fieldId].AdaptiveSearch         = m_encpakParams.AdaptiveSearch;
                 feiEncCtrl[fieldId].MVPredictor            = MVPredictors;
-                feiEncCtrl[fieldId].NumMVPredictors        = m_encpakParams.NumMVPredictors; //always 4 predictors
+                feiEncCtrl[fieldId].NumMVPredictors        = m_encpakParams.bNPredSpecified ?
+                    m_encpakParams.NumMVPredictors : m_mfxEncParams.mfx.NumRefFrame;
                 feiEncCtrl[fieldId].PerMBQp                = MBQP;
                 feiEncCtrl[fieldId].PerMBInput             = MBCtrl;
                 feiEncCtrl[fieldId].MBSizeCtrl             = m_encpakParams.bMBSize;
@@ -3959,9 +3960,6 @@ mfxStatus CEncodingPipeline::InitEncodeFrameParams(mfxFrameSurface1* encodeSurfa
             }
 
             feiEncCtrl->MVPredictor = (!(frameType & MFX_FRAMETYPE_I) && (m_encpakParams.mvinFile != NULL || m_encpakParams.bPREENC)) ? 1 : 0;
-
-            // Set to reference frame number
-            feiEncCtrl->NumMVPredictors = m_mfxEncParams.mfx.NumRefFrame;
             break;
         } // switch (freeSet->PB_bufs.in.ExtParam[i]->BufferId)
     } // for (int i = 0; i<freeSet->PB_bufs.in.NumExtParam; i++)
