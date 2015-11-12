@@ -310,7 +310,7 @@ public:
         {
             if (m_dpb.size() == m_pVideo->mfx.NumRefFrame)
             {
-                if (fields && m_isBPyramid)
+                if (m_isBPyramid)
                     m_dpb.erase(std::max_element(m_dpb.begin(), m_dpb.end(), GreaterOrder()));
                 else 
                     m_dpb.erase(m_dpb.begin());
