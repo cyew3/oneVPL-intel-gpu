@@ -69,7 +69,12 @@ class Verifier : public tsBitstreamProcessor, public tsParserH264AU
     mfxU16 m_aspectratioH;
 public:
     Verifier() : m_aspectratioW(0),m_aspectratioH(0) {}
-    mfxStatus Init(mfxU16 ar_w, mfxU16 ar_h) {m_aspectratioW = ar_w; m_aspectratioH = ar_h;}
+    mfxStatus Init(mfxU16 ar_w, mfxU16 ar_h)
+    {
+        m_aspectratioW = ar_w;
+        m_aspectratioH = ar_h;
+        return MFX_ERR_NONE;
+    }
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     {
         SetBuffer(bs);
@@ -113,7 +118,12 @@ private:
     mfxU32 m_dynamic_width, m_dynamic_height;
 public:
     ResChange() : m_dynamic_width(0),m_dynamic_height(0) {}
-    mfxStatus Init(mfxU16 res_w, mfxU16 res_h) {m_dynamic_width = res_w; m_dynamic_height = res_h;}
+    mfxStatus Init(mfxU16 res_w, mfxU16 res_h)
+    {
+        m_dynamic_width = res_w;
+        m_dynamic_height = res_h;
+        return MFX_ERR_NONE;
+    }
     mfxStatus ProcessSurface(mfxFrameSurface1& s)
     {
         if(m_dynamic_width == 0 && m_dynamic_height == 0)
@@ -133,6 +143,10 @@ public:
         return MFX_ERR_NONE;
     }
 };
+
+#if !defined(MSDK_ALIGN16)
+#define MSDK_ALIGN16(value) (((value + 15) >> 4) << 4)
+#endif
 
 int TestSuite::RunTest(unsigned int id)
 {

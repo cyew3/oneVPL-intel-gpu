@@ -421,13 +421,13 @@
     <ClCompile Include="src\gmock\test_suites\mpeg2d_aspect_ratio_change.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\avce_max_bins_pcm.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\avce_inter_mbs.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\avce_advanced_ref_lists.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_aspectratio_reset.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\fei_encode_advanced_ref_lists.cpp">
@@ -435,6 +435,21 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vpp10_fourcc.cpp">
       <Filter>Source Files\test_suites\vpp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\fei_encode_default_ref_lists.cpp">
+      <Filter>Source Files\test_suites\FEI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mpeg2e_level_profile.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_max_bins_pcm.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mpeg2e_aspectratio_reset.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\platform_unsupported.cpp">
+      <Filter>Source Files\test_suites</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

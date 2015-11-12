@@ -228,6 +228,7 @@
     <ClCompile Include="src\gmock\test_suites\avce_start_new_sequence.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_constraint_vbr.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_level_profile.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_aspectratio_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_query.cpp" />
@@ -236,6 +237,7 @@
     <ClCompile Include="src\gmock\test_suites\camera_run_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_unsupport.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_close.cpp" />
+    <ClCompile Include="src\gmock\test_suites\fei_encode_default_ref_lists.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_advanced_ref_lists.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_encode_frame_async.cpp" />
@@ -258,8 +260,11 @@
     <ClCompile Include="src\gmock\test_suites\mpeg2d_timestamp.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2e_headers_order.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2e_mbqp.cpp" />
+    <ClCompile Include="src\gmock\test_suites\mpeg2e_level_profile.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2d_timecode.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2e_skipframes.cpp" />
+    <ClCompile Include="src\gmock\test_suites\mpeg2e_aspectratio_reset.cpp" />
+    <ClCompile Include="src\gmock\test_suites\platform_unsupported.cpp" />
     <ClCompile Include="src\gmock\test_suites\preenc_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_close.cpp" />
