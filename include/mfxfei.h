@@ -58,10 +58,12 @@ typedef struct {
     mfxU16    SearchWindow;
     mfxU16    DisableMVOutput;
     mfxU16    DisableStatisticsOutput;
+    mfxU16    reserved1[2];
+    mfxFrameSurface1 *RefFrame[2];
     mfxU16    PictureType; /* Input picture type*/
     mfxU16    RefPictureType[2]; /* reference picture type, 0 -L0, 1 - L1*/
     mfxU16    Enable8x8Stat;
-    mfxU16    reserved[38];
+    mfxU16    reserved[28];
 } mfxExtFeiPreEncCtrl;
 
 typedef struct {
