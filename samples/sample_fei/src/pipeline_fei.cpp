@@ -5119,6 +5119,9 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
     MSDK_CHECK_POINTER(eTask->preenc_bufs, MFX_ERR_NULL_PTR);
     // fprintf(stderr, "\tInitialize preenc buf %p for task %p\n", eTask->preenc_bufs, eTask);
 
+    mfxFrameSurface1** refSurf0 = NULL;
+    mfxFrameSurface1** refSurf1 = NULL;
+
     switch (ExtractFrameType(*eTask) & MFX_FRAMETYPE_IPB) {
         case MFX_FRAMETYPE_I:
             // TODO:
@@ -5140,24 +5143,24 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
         case MFX_FRAMETYPE_P:
         case MFX_FRAMETYPE_B:
             {
-                mfxFrameSurface1** refSurf1 = new mfxFrameSurface1*[1];
-                MSDK_CHECK_POINTER(refSurf1, MFX_ERR_NULL_PTR);
-                refSurf1[0] = refTask[0]->in.InSurface;
+                refSurf0 = new mfxFrameSurface1*[1];
+                MSDK_CHECK_POINTER(refSurf0, MFX_ERR_NULL_PTR);
+                refSurf0[0] = refTask[0]->in.InSurface;
                 MSDK_SAFE_DELETE_ARRAY(eTask->in.L0Surface);
                 MSDK_SAFE_DELETE_ARRAY(eTask->in.L1Surface);
 
                 eTask->in.NumFrameL0 = 1;
                 eTask->in.NumFrameL1 = 0;
-                eTask->in.L0Surface = refSurf1;
+                eTask->in.L0Surface = refSurf0;
                 eTask->in.L1Surface = NULL;
                 if (refTask[1] != NULL)
                 {
-                    mfxFrameSurface1** refSurf2 = new mfxFrameSurface1*[1];
-                    MSDK_CHECK_POINTER(refSurf2, MFX_ERR_NULL_PTR);
-                    refSurf2[0] = refTask[1]->in.InSurface;
+                    refSurf1 = new mfxFrameSurface1*[1];
+                    MSDK_CHECK_POINTER(refSurf1, MFX_ERR_NULL_PTR);
+                    refSurf1[0] = refTask[1]->in.InSurface;
 
                     eTask->in.NumFrameL1 = 1;
-                    eTask->in.L1Surface = refSurf2;
+                    eTask->in.L1Surface = refSurf1;
                     // fprintf(stderr, "-----------This should be a B frame, set L0/L1 Surface to %p/%p\n", refSurf1[0], refSurf2[0]);
                 }
                 //in data
@@ -5173,7 +5176,7 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
             break;
     }
 
-    int fieldId = 0;
+    mfxU32 fieldId = 0;
     for (int i = 0; i < eTask->in.NumExtParam; i++)
     {
         switch (eTask->in.ExtParam[i]->BufferId)
@@ -5181,6 +5184,7 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
             case MFX_EXTBUFF_FEI_PREENC_CTRL:
                 preENCCtr = (mfxExtFeiPreEncCtrl*)(eTask->in.ExtParam[i]);
                 preENCCtr->DisableMVOutput = (ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) ? 1 : m_disableMVoutPreENC;
+                preENCCtr->RefFrame[0] = preENCCtr->RefFrame[1] = NULL;
 
                 // TODO:
                 // For bottom field of I, still need to do a preenc
@@ -5193,6 +5197,9 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
                     preENCCtr->RefPictureType[0] = (mfxU16)(m_numOfFields == 1 ? MFX_PICTYPE_FRAME :
                             ref_fid[fieldId][0] == 0 ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD);
 
+                    preENCCtr->RefFrame[0] = *refSurf0;
+
+
                     //fprintf(stderr, "\t*%s field will refer to %s field in ref frame %d in L0\n",
                     //        fieldId==0?"Top":"Bottom",
                     //        preENCCtr->RefPictureType[0] == MFX_PICTYPE_BOTTOMFIELD ? "Bottom" : "Top",
@@ -5202,6 +5209,8 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
                     {
                         preENCCtr->RefPictureType[1] = (mfxU16)(m_numOfFields == 1 ? MFX_PICTYPE_FRAME :
                                 ref_fid[fieldId][1] == 0 ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD);
+
+                        preENCCtr->RefFrame[1] = *refSurf1;
 
                         //fprintf(stderr, "\t*%s field will refer to %s field in ref frame %d in L1\n",
                         //        fieldId==0?"Top":"Bottom",
