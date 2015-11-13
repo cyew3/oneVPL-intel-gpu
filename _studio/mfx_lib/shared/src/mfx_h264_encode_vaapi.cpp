@@ -1306,7 +1306,15 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     FillConstPartOfPps(par, m_pps);
 
     if (m_caps.HeaderInsertion == 0)
+    {
         m_headerPacker.Init(par, m_caps);
+
+        if (m_headerPacker.isSvcPrefixUsed())
+        {
+            m_packedSvcPrefixHeaderBufferId.resize(maxNumSlices, VA_INVALID_ID);
+            m_packedSvcPrefixBufferId.resize(maxNumSlices, VA_INVALID_ID);
+        }
+    }
 
     mfxExtCodingOption3 const *extOpt3 = GetExtBuffer(par);
 
@@ -1580,7 +1588,7 @@ mfxStatus VAAPIEncoder::Execute(
         m_numSkipFrames += (mfxU8)task.m_ctrl.SkipFrame;
     }
 
-    configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT + m_slice.size()*2);
+    configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT + m_slice.size() * 2 + m_packedSvcPrefixBufferId.size() * 2);
 
     // update params
     {
@@ -1590,6 +1598,11 @@ mfxStatus VAAPIEncoder::Execute(
             MFX_DESTROY_VABUFFER(m_sliceBufferId[i], m_vaDisplay);
             MFX_DESTROY_VABUFFER(m_packeSliceHeaderBufferId[i], m_vaDisplay);
             MFX_DESTROY_VABUFFER(m_packedSliceBufferId[i], m_vaDisplay);
+        }
+
+        for(size_t i=0; i<m_packedSvcPrefixBufferId.size(); i++){
+            MFX_DESTROY_VABUFFER(m_packedSvcPrefixHeaderBufferId[i], m_vaDisplay);
+            MFX_DESTROY_VABUFFER(m_packedSvcPrefixBufferId[i], m_vaDisplay);
         }
 
         UpdatePPS(task, fieldId, m_pps, m_reconQueue);
@@ -1604,9 +1617,15 @@ mfxStatus VAAPIEncoder::Execute(
             m_sliceBufferId.resize(m_slice.size());
             m_packeSliceHeaderBufferId.resize(m_slice.size());
             m_packedSliceBufferId.resize(m_slice.size());
+
+            if (m_headerPacker.isSvcPrefixUsed())
+            {
+                m_packedSvcPrefixHeaderBufferId.resize(m_slice.size());
+                m_packedSvcPrefixBufferId.resize(m_slice.size());
+            }
         }
 
-        configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT + m_slice.size()*2);
+        configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT + m_slice.size() * 2 + m_packedSvcPrefixBufferId.size() * 2);
     }
     /* for debug only */
     //fprintf(stderr, "----> Encoding frame = %u, type = %u\n", debug_frame_bum++, ConvertMfxFrameType2SliceType( task.m_type[fieldId]) -5 );
@@ -2076,15 +2095,43 @@ mfxStatus VAAPIEncoder::Execute(
         {
             if ((m_core->GetHWType() >= MFX_HW_HSW) && (m_core->GetHWType() != MFX_HW_VLV))
             {
+                mfxU32 prefix_bytes = (task.m_AUStartsFromSlice[fieldId] + 8) * m_headerPacker.isSvcPrefixUsed();
+
                 //Slice headers only
                 std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSlices = m_headerPacker.PackSlices(task, fieldId);
                 for (size_t i = 0; i < packedSlices.size(); i++)
                 {
                     ENCODE_PACKEDHEADER_DATA const & packedSlice = packedSlices[i];
 
+                    if (prefix_bytes)
+                    {
+                        packed_header_param_buffer.type = VAEncPackedHeaderRawData;
+                        packed_header_param_buffer.has_emulation_bytes = 1;
+                        packed_header_param_buffer.bit_length = (prefix_bytes * 8);
+
+                        vaSts = vaCreateBuffer(m_vaDisplay,
+                                m_vaContextEncode,
+                                VAEncPackedHeaderParameterBufferType,
+                                sizeof(packed_header_param_buffer),
+                                1,
+                                &packed_header_param_buffer,
+                                &m_packedSvcPrefixHeaderBufferId[i]);
+                        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+                        vaSts = vaCreateBuffer(m_vaDisplay,
+                                            m_vaContextEncode,
+                                            VAEncPackedHeaderDataBufferType,
+                                             prefix_bytes, 1, packedSlice.pData,
+                                            &m_packedSvcPrefixBufferId[i]);
+                        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+                        configBuffers[buffersCount++] = m_packedSvcPrefixHeaderBufferId[i];
+                        configBuffers[buffersCount++] = m_packedSvcPrefixBufferId[i];
+                    }
+
                     packed_header_param_buffer.type = VAEncPackedHeaderH264_Slice;
                     packed_header_param_buffer.has_emulation_bytes = 0;
-                    packed_header_param_buffer.bit_length = packedSlice.DataLength; // DataLength is already in bits !
+                    packed_header_param_buffer.bit_length = packedSlice.DataLength - (prefix_bytes * 8); // DataLength is already in bits !
 
                     //MFX_DESTROY_VABUFFER(m_packeSliceHeaderBufferId[i], m_vaDisplay);
                     vaSts = vaCreateBuffer(m_vaDisplay,
@@ -2100,7 +2147,7 @@ mfxStatus VAAPIEncoder::Execute(
                     vaSts = vaCreateBuffer(m_vaDisplay,
                                         m_vaContextEncode,
                                         VAEncPackedHeaderDataBufferType,
-                                        (packedSlice.DataLength + 7) / 8, 1, packedSlice.pData,
+                                        (packedSlice.DataLength + 7) / 8 - prefix_bytes, 1, packedSlice.pData + prefix_bytes,
                                         &m_packedSliceBufferId[i]);
                     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
@@ -2670,6 +2717,11 @@ mfxStatus VAAPIEncoder::Destroy()
         MFX_DESTROY_VABUFFER(m_sliceBufferId[i], m_vaDisplay);
         MFX_DESTROY_VABUFFER(m_packeSliceHeaderBufferId[i], m_vaDisplay);
         MFX_DESTROY_VABUFFER(m_packedSliceBufferId[i], m_vaDisplay);
+    }
+    for( mfxU32 i = 0; i < m_packedSvcPrefixBufferId.size(); i++ )
+    {
+        MFX_DESTROY_VABUFFER(m_packedSvcPrefixHeaderBufferId[i], m_vaDisplay);
+        MFX_DESTROY_VABUFFER(m_packedSvcPrefixBufferId[i], m_vaDisplay);
     }
     MFX_DESTROY_VABUFFER(m_packedAudHeaderBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_packedAudBufferId, m_vaDisplay);

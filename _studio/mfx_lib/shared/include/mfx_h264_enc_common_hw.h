@@ -1407,7 +1407,8 @@ namespace MfxHwH264Encode
 
         std::vector<ENCODE_PACKEDHEADER_DATA> const & GetSlices() const { return m_packedSlices; }
 
-        bool isMVC() const { return m_isMVC; };
+        bool isMVC() const { return m_isMVC; }
+        bool isSvcPrefixUsed() const { return m_needPrefixNalUnit; }
 
         void ResizeSlices(mfxU32 num);
 
