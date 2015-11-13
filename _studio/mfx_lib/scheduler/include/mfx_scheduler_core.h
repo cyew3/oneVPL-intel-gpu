@@ -241,6 +241,8 @@ protected:
 
     // Assign CPU mask for every thread
     void SetThreadsAffinityMask(void);
+    // Assign socket affinity for every thread
+    void SetThreadsAffinityToSockets(void);
     // Wake up all internal threads, except the pointed one
     void WakeUpThreads(const mfxU32 curThreadNum = (mfxU32) MFX_INVALID_THREAD_ID,
                        const eWakeUpReason reason = MFX_SCHEDULER_NEW_TASK);

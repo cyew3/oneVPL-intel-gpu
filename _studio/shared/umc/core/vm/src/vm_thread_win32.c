@@ -295,7 +295,7 @@ void vm_set_current_thread_priority(vm_thread_priority priority)
     SetThreadPriority(GetCurrentThread(), (int)priority);
 }
 
-void vm_set_thread_affinity_mask(vm_thread *thread, unsigned int mask)
+void vm_set_thread_affinity_mask(vm_thread *thread, Ipp64u mask)
 {
 #if !defined(WIN_TRESHOLD_MOBILE)
     SetThreadAffinityMask(thread->handle, mask);

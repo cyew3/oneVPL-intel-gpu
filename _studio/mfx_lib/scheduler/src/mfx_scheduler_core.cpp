@@ -295,6 +295,51 @@ void mfxSchedulerCore::SetThreadsAffinityMask(void)
 
 } // void mfxSchedulerCore::SetThreadsAffinityMask(void)
 
+void mfxSchedulerCore::SetThreadsAffinityToSockets(void)
+{
+// The code below works correctly on Linux, but doesn't affect performance,
+// because Linux scheduler ensures socket affinity by itself
+#if (defined(WIN32) || defined(WIN64)) && !defined(MFX_VA)
+    mfxU64 cpuMasks[16], mask;
+    mfxU32 numNodeCpus[16], numNodes;
+
+    numNodes = vm_sys_info_get_numa_nodes_num();
+
+    if (numNodes <= 1) return;
+    if (numNodes > 16) numNodes = 16;
+
+    mfxU32 i, n;
+
+    for (i = 0; i < numNodes; i++) {
+        cpuMasks[i] = vm_sys_info_get_cpu_mask_of_numa_node(i);
+        numNodeCpus[i] = 0;
+        for (n = 0; n < 64; n++) {
+            if (cpuMasks[i] & (1LL << n))
+                numNodeCpus[i]++;
+        }
+    }
+
+    mfxU32 curNode = 0, curThread = 0;
+    for (i = 0; i < m_param.numberOfThreads; i += 1)
+    {
+        mask = cpuMasks[curNode];
+        if (++curThread >= numNodeCpus[curNode]) {
+            if (++curNode >= numNodes) curNode = 0;
+            curThread = 0;
+        }
+#if defined(MFX_EXTERNAL_THREADING)
+        if (m_ppThreadCtx[i])
+        {
+            vm_set_thread_affinity_mask(&(m_ppThreadCtx[i]->threadHandle), mask);
+        }
+#else
+        vm_set_thread_affinity_mask(&(m_pThreadCtx[i].threadHandle), mask);
+#endif
+    }
+#endif
+    return;
+} // void mfxSchedulerCore::SetThreadsAffinityMask(void)
+
 void mfxSchedulerCore::WakeUpThreads(const mfxU32 curThreadNum,
                                      const eWakeUpReason reason)
 {

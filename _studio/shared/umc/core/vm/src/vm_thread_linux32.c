@@ -270,9 +270,12 @@ void vm_set_current_thread_priority(vm_thread_priority priority)
     priority = priority;
 }
 
-void vm_set_thread_affinity_mask(vm_thread *thread, unsigned int mask)
+void vm_set_thread_affinity_mask(vm_thread *thread, Ipp64u mask)
 {
 #ifdef __APPLE__
+// Apple code is inconsistent with new linux code, but seems to be unused now
+// if you need to use this function on Apple, please fix and test
+
     int cpu = -1;
 
     /* check error(s) */
@@ -308,9 +311,18 @@ void vm_set_thread_affinity_mask(vm_thread *thread, unsigned int mask)
     if (NULL == thread)
         return;
 
+    if (!mask)
+        return;
+
     CPU_ZERO(&cpuset);
-    do { mask >>= 1; ++cpu; } while(mask);
-    CPU_SET(cpu, &cpuset);
+    while(mask) {
+        cpu ++;
+        if (mask & 1) {
+            CPU_SET(cpu, &cpuset);
+        }
+        mask >>= 1;
+    }
+
     pthread_setaffinity_np(thread->handle, sizeof(cpu_set_t), &cpuset);
 #endif
 }

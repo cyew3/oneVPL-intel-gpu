@@ -82,6 +82,8 @@ typedef enum
 
 /* Functions to obtain processor's specific information */
 Ipp32u vm_sys_info_get_cpu_num(void);
+Ipp32u vm_sys_info_get_numa_nodes_num(void);
+Ipp64u vm_sys_info_get_cpu_mask_of_numa_node(Ipp32u node);
 void vm_sys_info_get_cpu_name(vm_char *cpu_name);
 void vm_sys_info_get_date(vm_char *m_date, DateFormat df);
 void vm_sys_info_get_time(vm_char *m_time, TimeFormat tf);

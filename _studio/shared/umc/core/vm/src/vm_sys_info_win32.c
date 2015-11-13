@@ -267,6 +267,33 @@ Ipp32u vm_sys_info_get_cpu_num(void)
 
 } /* Ipp32u vm_sys_info_get_cpu_num(void) */
 
+Ipp32u vm_sys_info_get_numa_nodes_num(void)
+{
+#if !defined(_WIN32_WCE) && !defined(WIN_TRESHOLD_MOBILE)
+	ULONG HighestNodeNumber;
+
+    BOOL ret = GetNumaHighestNodeNumber(&HighestNodeNumber);
+
+    if (!ret) return 1;
+
+    return HighestNodeNumber + 1;
+#else
+	return 1;
+#endif
+} /* Ipp32u vm_sys_info_get_numa_nodes_num(void) */
+
+Ipp64u vm_sys_info_get_cpu_mask_of_numa_node(Ipp32u node)
+{
+#if !defined(_WIN32_WCE) && !defined(WIN_TRESHOLD_MOBILE)
+    ULONGLONG mask = 0;
+    GetNumaNodeProcessorMask((UCHAR)node, &mask);
+    return (Ipp64u)mask;
+#else
+	node;
+	return 1;
+#endif
+}
+
 Ipp32u vm_sys_info_get_mem_size(void)
 {
     MEMORYSTATUSEX m_memstat;

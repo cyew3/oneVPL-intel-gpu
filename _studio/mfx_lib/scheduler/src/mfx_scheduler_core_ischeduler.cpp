@@ -260,6 +260,7 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
         //        SetThreadsAffinityMask();
         //#endif // !defined(MFX_VA)
         //
+        SetThreadsAffinityToSockets();
     }
     else
     {
