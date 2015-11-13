@@ -370,7 +370,8 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
         else
         {
             // external allocator
-            bool useEncodeBindFlag = (request->Type & MFX_MEMTYPE_INTERNAL_FRAME)&&(request->Type & MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET) && GetHWType()==MFX_HW_SCL;
+            eMFXHWType platform = GetHWType();
+            bool useEncodeBindFlag = (request->Type & MFX_MEMTYPE_INTERNAL_FRAME)&&(request->Type & MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET) && platform>=MFX_HW_SCL;
             //Temporal solution for SKL only to allocate frames with encoder bind flag using internal allocator
             if (m_bSetExtFrameAlloc && ! IsBayerFormat(temp_request.Info.FourCC) && !useEncodeBindFlag)
             {

@@ -115,6 +115,9 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     mfxStatus sts = MFX_ERR_NONE, qsts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(par);
 
+    if(par->mfx.CodecId != MFX_CODEC_HEVC)
+        return MFX_ERR_UNSUPPORTED;
+
     m_ddi.reset( CreatePlatformH265Encoder(&m_core) );
     MFX_CHECK(m_ddi.get(), MFX_ERR_UNSUPPORTED);
 
@@ -228,6 +231,9 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request,
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR2(par, request);
 
+    if(par->mfx.CodecId != MFX_CODEC_HEVC)
+        return MFX_ERR_UNSUPPORTED;
+
     MfxVideoParam tmp = *par;
     ENCODE_CAPS_HEVC caps = {};
 
@@ -271,15 +277,21 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(out);
 
+    if(in->mfx.CodecId != MFX_CODEC_HEVC)
+    {
+        out->mfx.CodecId = 0;
+        return MFX_ERR_UNSUPPORTED;
+    }
+
     if (!in)
     {
         Zero(out->mfx);
 
         out->IOPattern             = 1;
-        out->Protected             = 1;
+        //out->Protected             = 1;
         out->AsyncDepth            = 1;
-        out->mfx.CodecId           = 1;
-        out->mfx.LowPower          = 1;
+        //out->mfx.CodecId           = 1;
+        //out->mfx.LowPower          = 1;
         out->mfx.CodecLevel        = 1;
         out->mfx.CodecProfile      = 1;
         out->mfx.TargetUsage       = 1;
@@ -296,7 +308,7 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         out->mfx.NumRefFrame       = 1;
         out->mfx.EncodedOrder      = 1;
 
-        out->mfx.FrameInfo.FourCC        = 1;
+        //out->mfx.FrameInfo.FourCC        = 1;
         out->mfx.FrameInfo.Width         = 1;
         out->mfx.FrameInfo.Height        = 1;
         out->mfx.FrameInfo.CropX         = 1;
@@ -308,7 +320,7 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         out->mfx.FrameInfo.AspectRatioW  = 1;
         out->mfx.FrameInfo.AspectRatioH  = 1;
         out->mfx.FrameInfo.ChromaFormat  = 1;
-        out->mfx.FrameInfo.PicStruct     = 1;
+        //out->mfx.FrameInfo.PicStruct     = 1;
     }
     else
     {
