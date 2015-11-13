@@ -417,7 +417,8 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_encpakInit.Header.BufferId = MFX_EXTBUFF_FEI_PARAM;
         m_encpakInit.Header.BufferSz = sizeof (mfxExtFeiParam);
         m_encpakInit.Func = MFX_FEI_FUNCTION_ENCPAK;
-        m_encpakInit.SingleFieldProcessing = (mfxU16)pInParams->bFieldProcessingMode;
+        if (pInParams->bFieldProcessingMode)
+            m_encpakInit.SingleFieldProcessing = MFX_CODINGOPTION_ON;
         m_EncExtParams.push_back((mfxExtBuffer *)&m_encpakInit);
 
         //Create extended buffer to init deblocking parameters
@@ -4814,7 +4815,8 @@ mfxStatus CEncodingPipeline::EncodeOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
             sts = SyncOneEncodeFrame(pCurrentTask, eTask, fieldProcessingCounter);
             MSDK_BREAK_ON_ERROR(sts);
 
-            if (m_encpakInit.SingleFieldProcessing && fieldProcessingCounter == 1)
+            if ((MFX_CODINGOPTION_ON == m_encpakInit.SingleFieldProcessing) &&
+                    (1 == fieldProcessingCounter))
                 continue;
             break;
         }
@@ -4831,7 +4833,8 @@ mfxStatus CEncodingPipeline::EncodeOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
                 sts = SyncOneEncodeFrame(pCurrentTask, eTask, fieldProcessingCounter);
                 MSDK_BREAK_ON_ERROR(sts);
 
-                if (m_encpakInit.SingleFieldProcessing && fieldProcessingCounter == 1)
+                if ((MFX_CODINGOPTION_ON == m_encpakInit.SingleFieldProcessing) &&
+                        (1 == fieldProcessingCounter))
                     continue;
             }
             break;
@@ -4848,7 +4851,7 @@ mfxStatus CEncodingPipeline::SyncOneEncodeFrame(sTask* pCurrentTask, iTask* eTas
     mfxStatus sts = m_mfxSession.SyncOperation(pCurrentTask->EncSyncP, MSDK_WAIT_INTERVAL);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    if (m_encpakInit.SingleFieldProcessing)
+    if (MFX_CODINGOPTION_ON == m_encpakInit.SingleFieldProcessing)
     {
         sts = m_TaskPool.SetFieldToStore(fieldProcessingCounter);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
