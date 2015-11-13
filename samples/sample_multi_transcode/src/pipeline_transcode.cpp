@@ -462,7 +462,7 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
         else if (MFX_ERR_MORE_SURFACE == sts)
         {
             // find new working surface
-            for (i = 0; i < MSDK_DEC_WAIT_INTERVAL; i += 5)
+            for (i = 0; i < MSDK_SURFACE_WAIT_INTERVAL; i += TIME_TO_SLEEP)
             {
                 pmfxSurface = GetFreeSurface(true);
                 if (pmfxSurface)
@@ -475,7 +475,7 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
                 }
             }
 
-            MSDK_CHECK_POINTER(pmfxSurface, MFX_ERR_MEMORY_ALLOC); // return an error if a free surface wasn't found
+            MSDK_CHECK_POINTER_SAFE(pmfxSurface, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free surfaces in decoder pool (during long period)\n"))); // return an error if a free surface wasn't found
         }
 
         sts = m_pmfxDEC->DecodeFrameAsync(m_pmfxBS, pmfxSurface, &pExtSurface->pSurface, &pExtSurface->Syncp);
@@ -510,7 +510,7 @@ mfxStatus CTranscodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
         }
 
         // find new working surface
-        for (i = 0; i < MSDK_DEC_WAIT_INTERVAL; i += 5)
+        for (i = 0; i < MSDK_SURFACE_WAIT_INTERVAL; i += TIME_TO_SLEEP)
         {
             pmfxSurface = GetFreeSurface(true);
             if (pmfxSurface)
@@ -523,7 +523,7 @@ mfxStatus CTranscodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
             }
         }
 
-        MSDK_CHECK_POINTER(pmfxSurface, MFX_ERR_MEMORY_ALLOC); // return an error if a free surface wasn't found
+        MSDK_CHECK_POINTER_SAFE(pmfxSurface, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free surfaces in decoder pool (during long period)\n"))); // return an error if a free surface wasn't found
 
         sts = m_pmfxDEC->DecodeFrameAsync(NULL, pmfxSurface, &pExtSurface->pSurface, &pExtSurface->Syncp);
     }
@@ -535,7 +535,7 @@ mfxStatus CTranscodingPipeline::VPPOneFrame(ExtendedSurface *pSurfaceIn, Extende
     MSDK_CHECK_POINTER(pExtSurface,  MFX_ERR_NULL_PTR);
     mfxFrameSurface1 *pmfxSurface = NULL;
     // find/wait for a free working surface
-    for (mfxU32 i = 0; i < MSDK_WAIT_INTERVAL; i += TIME_TO_SLEEP)
+    for (mfxU32 i = 0; i < MSDK_SURFACE_WAIT_INTERVAL; i += TIME_TO_SLEEP)
     {
         pmfxSurface= GetFreeSurface(false);
 
@@ -549,7 +549,7 @@ mfxStatus CTranscodingPipeline::VPPOneFrame(ExtendedSurface *pSurfaceIn, Extende
         }
     }
 
-    MSDK_CHECK_POINTER(pmfxSurface,  MFX_ERR_MEMORY_ALLOC);
+    MSDK_CHECK_POINTER_SAFE(pmfxSurface, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free surfaces for VPP in encoder pool (during long period)\n"))); // return an error if a free surface wasn't found
 
     // make sure picture structure has the initial value
     // surfaces are reused and VPP may change this parameter in certain configurations
@@ -865,7 +865,7 @@ mfxStatus CTranscodingPipeline::Encode()
              // if session is not join and it is not parent - synchronize
             if (!m_bIsJoinSession && m_pParentPipeline)
             {
-                // if it is not already synchronize
+                // if it is not already synchronized
                 if (DecExtSurface.Syncp)
                 {
                     sts = m_pParentPipeline->m_pmfxSession->SyncOperation(DecExtSurface.Syncp, MSDK_WAIT_INTERVAL);
@@ -2262,6 +2262,7 @@ mfxStatus CTranscodingPipeline::CalculateNumberOfReqFrames(mfxFrameAllocRequest 
 
         if (!CheckAsyncDepth(DecRequest, m_mfxDecParams.AsyncDepth))
                 return MFX_ERR_MEMORY_ALLOC;
+
         SumAllocRequest(*pSumRequest, DecRequest);
     }
     if (m_pmfxVPP.get())
@@ -3041,6 +3042,7 @@ mfxStatus SafetySurfaceBuffer::ReleaseSurface(mfxFrameSurface1* pSurf)
 FileBitstreamProcessor::FileBitstreamProcessor()
 {
     MSDK_ZERO_MEMORY(m_Bitstream);
+    m_Bitstream.TimeStamp=(mfxU64)-1;
 } // FileBitstreamProcessor::FileBitstreamProcessor()
 
 FileBitstreamProcessor::~FileBitstreamProcessor()
