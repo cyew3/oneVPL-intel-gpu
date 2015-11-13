@@ -1490,15 +1490,17 @@ namespace MPEG2EncoderHW
 
         Ipp64f fr = CalculateUMCFramerate(m_VideoParamsEx.mfxVideoParams.mfx.FrameInfo.FrameRateExtN,
             m_VideoParamsEx.mfxVideoParams.mfx.FrameInfo.FrameRateExtD);
-
-        CorrectProfileLevelMpeg2(m_VideoParamsEx.mfxVideoParams.mfx.CodecProfile, 
+       
+        if (CorrectProfileLevelMpeg2(m_VideoParamsEx.mfxVideoParams.mfx.CodecProfile, 
             m_VideoParamsEx.mfxVideoParams.mfx.CodecLevel, 
             m_VideoParamsEx.mfxVideoParams.mfx.FrameInfo.Width,
             m_VideoParamsEx.mfxVideoParams.mfx.FrameInfo.Height,
             fr, 
             m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod == MFX_RATECONTROL_CQP
             ? 0
-            : (mfxU32)(m_VideoParamsEx.mfxVideoParams.mfx.TargetKbps * m_VideoParamsEx.mfxVideoParams.mfx.BRCParamMultiplier * BRC_BITS_IN_KBIT));
+            : (mfxU32)(m_VideoParamsEx.mfxVideoParams.mfx.TargetKbps * m_VideoParamsEx.mfxVideoParams.mfx.BRCParamMultiplier * BRC_BITS_IN_KBIT),
+            m_VideoParamsEx.mfxVideoParams.mfx.GopRefDist))
+          bCorrected = true;;
 
         ApplyTargetUsage(&m_VideoParamsEx);
 

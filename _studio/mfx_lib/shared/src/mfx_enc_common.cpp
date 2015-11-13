@@ -747,8 +747,11 @@ mfxU8 GetAspectRatioCode (mfxU32 dispAspectRatioW, mfxU32 dispAspectRatioH)
      return 1;
 }
 
-void CorrectProfileLevelMpeg2(mfxU16 &profile, mfxU16 & level, mfxU32 w, mfxU32 h, mfxF64 frame_rate, mfxU32 bitrate)
+bool CorrectProfileLevelMpeg2(mfxU16 &profile, mfxU16 & level, mfxU32 w, mfxU32 h, mfxF64 frame_rate, mfxU32 bitrate, mfxU32 GopRefDist)
 {
+    mfxU16 oldLevel   = level;
+    mfxU16 oldProfile = profile;
+
     if (MFX_LEVEL_MPEG2_HIGH !=  level && MFX_LEVEL_MPEG2_HIGH1440 !=  level && MFX_LEVEL_MPEG2_MAIN !=  level &&  MFX_LEVEL_MPEG2_LOW !=  level)
         level = MFX_LEVEL_MPEG2_MAIN;
 
@@ -769,7 +772,7 @@ void CorrectProfileLevelMpeg2(mfxU16 &profile, mfxU16 & level, mfxU32 w, mfxU32 
         level = MFX_LEVEL_MPEG2_MAIN;
     }
 
-    if (MFX_PROFILE_MPEG2_SIMPLE == profile && (MFX_LEVEL_MPEG2_MAIN != level && MFX_LEVEL_MPEG2_LOW != level))
+    if (MFX_PROFILE_MPEG2_SIMPLE == profile && ((MFX_LEVEL_MPEG2_MAIN != level && MFX_LEVEL_MPEG2_LOW != level) || (GopRefDist >1)))
     {
         profile = MFX_PROFILE_MPEG2_MAIN;
     }
@@ -778,6 +781,8 @@ void CorrectProfileLevelMpeg2(mfxU16 &profile, mfxU16 & level, mfxU32 w, mfxU32 
     {
         profile = MFX_PROFILE_MPEG2_MAIN;
     } 
+    return (((oldLevel!=0) && (oldLevel!=level)) || ((oldProfile!=0) && (oldProfile!=profile))); 
+
 }
 mfxStatus InputSurfaces::Reset(mfxVideoParam *par, mfxU16 NumFrameMin)
 {

@@ -942,18 +942,10 @@ mfxStatus MFXVideoENCODEMPEG2::ResetImpl(mfxVideoParam *par_input)
     m_BufferSizeInKB = par->mfx.BufferSizeInKB * IPP_MAX(1, par->mfx.BRCParamMultiplier); //(par->mfx.BufferSizeInKB!=0)? par->mfx.BufferSizeInKB:GetBufferSizeInKB (par->mfx.TargetKbps, fr);
 
     {
-        mfxU16 profile = par->mfx.CodecProfile;
-        mfxU16 level   = par->mfx.CodecLevel;
-        CorrectProfileLevelMpeg2(profile, level, par->mfx.FrameInfo.Width,par->mfx.FrameInfo.Height,fr, m_bConstantQuant ? 0 : (mfxU32)(par->mfx.TargetKbps * BRC_BITS_IN_KBIT));
-        if (profile != par->mfx.CodecProfile && par->mfx.CodecProfile != MFX_PROFILE_UNKNOWN)
-        {
-            // warning is needed
-        }
-        if (level != par->mfx.CodecLevel && par->mfx.CodecLevel != MFX_LEVEL_UNKNOWN)
-        {
-            // warning is needed
-        }
-        switch (profile)
+        if (CorrectProfileLevelMpeg2(par->mfx.CodecProfile, par->mfx.CodecLevel, par->mfx.FrameInfo.Width,par->mfx.FrameInfo.Height,fr, m_bConstantQuant ? 0 : (mfxU32)(par->mfx.TargetKbps * BRC_BITS_IN_KBIT), par->mfx.GopRefDist))
+            warning = true;
+
+        switch (par->mfx.CodecProfile)
         {
         case MFX_PROFILE_MPEG2_SIMPLE:
             params.profile = SP;
@@ -968,7 +960,7 @@ mfxStatus MFXVideoENCODEMPEG2::ResetImpl(mfxVideoParam *par_input)
             params.profile = MP;
             break;
         }
-        switch (level)
+        switch (par->mfx.CodecLevel)
         {
         case MFX_LEVEL_MPEG2_LOW:
             params.level = LL;

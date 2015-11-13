@@ -148,7 +148,7 @@ inline bool isIntra(mfxU8 FrameType)
     return (FrameType & MFX_FRAMETYPE_I);
 }
 mfxStatus CopyFrame(mfxFrameData *pIn, mfxFrameData *pOut, mfxFrameInfo *pInfoIn, mfxFrameInfo *pInfoOut=0);
-void CorrectProfileLevelMpeg2(mfxU16 &profile, mfxU16 & level, mfxU32 w, mfxU32 h, mfxF64 frame_rate, mfxU32 bitrate);
+bool CorrectProfileLevelMpeg2(mfxU16 &profile, mfxU16 & level, mfxU32 w, mfxU32 h, mfxF64 frame_rate, mfxU32 bitrate, mfxU32 GopRefDist);
 
 
 inline mfxI64 CalcDTSForRefFrameMpeg2(mfxI64 PTS, mfxI32 lastRefDist, mfxU32 maxRefDist, mfxF64 frameRate)
