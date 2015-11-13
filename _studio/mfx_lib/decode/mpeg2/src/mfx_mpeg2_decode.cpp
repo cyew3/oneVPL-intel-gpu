@@ -1955,19 +1955,58 @@ mfxStatus VideoDECODEMPEG2::SetSkipMode(mfxSkipMode mode)
     return ret;
 }
 
-mfxStatus VideoDECODEMPEG2::SetSurfacePicStruct(mfxFrameSurface1 *surface, int task_num)
+mfxStatus VideoDECODEMPEG2::SetOutputSurfaceParams(mfxFrameSurface1 *surface, int display_index)
 {
     MFX_CHECK_NULL_PTR1(surface);
 
-    if (task_num < 0 || task_num >= 2*DPB)
+    surface->Data.TimeStamp = GetMfxTimeStamp(m_implUmc.GetCurrDecodedTime(display_index));
+    surface->Data.DataFlag = (mfxU16)((m_implUmc.isOriginalTimeStamp(display_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
+    SetSurfacePicStruct(surface, display_index);
+    UpdateOutputSurfaceCrops(surface, display_index);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEMPEG2::SetSurfacePicStruct(mfxFrameSurface1 *surface, int display_index)
+{
+    MFX_CHECK_NULL_PTR1(surface);
+
+    if (display_index < 0 || display_index >= 2*DPB)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-    const UMC::sPictureHeader& ph = m_implUmc.GetPictureHeader(task_num);
+    const UMC::sPictureHeader& ph = m_implUmc.GetPictureHeader(display_index);
     const UMC::sSequenceHeader& sh = m_implUmc.GetSequenceHeader();
 
     surface->Info.PicStruct = GetMfxPicStruct(sh.progressive_sequence, ph.progressive_frame,
                                               ph.top_field_first, ph.repeat_first_field, ph.picture_structure,
                                               m_vPar.mfx.ExtendedPicStruct);
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEMPEG2::UpdateWorkSurfaceCrops(int task_num)
+{
+    mfxFrameSurface1 *pSurface = m_FrameAllocator->GetSurfaceByIndex(mid[task_num]);
+    MFX_CHECK_NULL_PTR1(pSurface);
+    pSurface->Info.CropW = m_vPar.mfx.FrameInfo.CropW;
+    pSurface->Info.CropH = m_vPar.mfx.FrameInfo.CropH;
+    pSurface->Info.CropX = m_vPar.mfx.FrameInfo.CropX;
+    pSurface->Info.CropY = m_vPar.mfx.FrameInfo.CropY;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEMPEG2::UpdateOutputSurfaceCrops(mfxFrameSurface1 *outputSurface, int display_index)
+{
+    if (!m_isSWBuf && !m_isOpaqueMemory)
+        return MFX_ERR_NONE;
+
+    mfxFrameSurface1 *internalSurface = m_FrameAllocator->GetSurfaceByIndex(mid[display_index]);
+    MFX_CHECK_NULL_PTR1(internalSurface);
+    outputSurface->Info.CropW = internalSurface->Info.CropW;
+    outputSurface->Info.CropH = internalSurface->Info.CropH;
+    outputSurface->Info.CropX = internalSurface->Info.CropX;
+    outputSurface->Info.CropY = internalSurface->Info.CropY;
+
     return MFX_ERR_NONE;
 }
 
@@ -1993,11 +2032,6 @@ mfxStatus VideoDECODEMPEG2::UpdateCurrVideoParams(mfxFrameSurface1 *surface_work
     {
         sts = MFX_WRN_VIDEO_PARAM_CHANGED;
     }
-
-    pSurface->Info.CropW = m_vPar.mfx.FrameInfo.CropW;
-    pSurface->Info.CropH = m_vPar.mfx.FrameInfo.CropH;
-    pSurface->Info.CropX = m_vPar.mfx.FrameInfo.CropX;
-    pSurface->Info.CropY = m_vPar.mfx.FrameInfo.CropY;
 
 
     pSurface->Info.AspectRatioH = (mfxU16)m_implUmc.GetAspectRatioH();
@@ -2711,10 +2745,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                                 (*surface_disp)->Data.FrameOrder = 0xffffffff;
                             }
 
-                            (*surface_disp)->Data.TimeStamp = GetMfxTimeStamp(m_implUmc.GetCurrDecodedTime(display_index));
-                            (*surface_disp)->Data.DataFlag = (mfxU16)((m_implUmc.isOriginalTimeStamp(display_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
-
-                            SetSurfacePicStruct(*surface_disp, display_index);
+                            SetOutputSurfaceParams(*surface_disp, display_index);
 
                             if (false == m_isDecodedOrder)
                             {
@@ -2863,6 +2894,9 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                 m_implUmc.pack_w.va_index = mid[curr_index];
 #endif
             }
+
+            sts = UpdateWorkSurfaceCrops(curr_index);
+            MFX_CHECK_STS(sts);
 
             umcRes = m_implUmc.ProcessRestFrame(m_task_num);
             if (UMC::UMC_OK != umcRes)
@@ -3018,10 +3052,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
 
             if (0 <= display_index)
             {
-                (*surface_disp)->Data.TimeStamp = GetMfxTimeStamp(m_implUmc.GetCurrDecodedTime(display_index));
-                (*surface_disp)->Data.DataFlag = (mfxU16)((m_implUmc.isOriginalTimeStamp(display_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
-
-                SetSurfacePicStruct(*surface_disp, display_index);
+                SetOutputSurfaceParams(*surface_disp, display_index);
 
                 if (false == m_isDecodedOrder)
                 {
@@ -3103,10 +3134,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                     pEntryPoint->pState = (void*)this;
                     pEntryPoint->pRoutineName = (char *)"DecodeMPEG2";
 
-                    (*surface_disp)->Data.TimeStamp = GetMfxTimeStamp(m_implUmc.GetCurrDecodedTime(display_index));
-                    (*surface_disp)->Data.DataFlag = (mfxU16)((m_implUmc.isOriginalTimeStamp(display_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
-
-                    SetSurfacePicStruct(*surface_disp, display_index);
+                    SetOutputSurfaceParams(*surface_disp, display_index);
 
                     memset(&m_task_param[m_task_num],0,sizeof(MParam));
                     m_implUmc.LockTask(m_task_num);
