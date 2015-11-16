@@ -109,7 +109,8 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_MaxFramesForTranscode(0xFFFFFFFF),
     m_pBSProcessor(NULL),
     m_nReqFrameTime(0),
-    m_LastDecSyncPoint(0)
+    m_LastDecSyncPoint(0),
+    m_NumFramesForReset(0)
 {
     MSDK_ZERO_MEMORY(m_mfxDecParams);
     MSDK_ZERO_MEMORY(m_mfxVppParams);
@@ -677,6 +678,7 @@ void CTranscodingPipeline::NoMoreFramesSignal(ExtendedSurface &DecExtSurface)
         }
     }
 }
+
 mfxStatus CTranscodingPipeline::Decode()
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -688,11 +690,15 @@ mfxStatus CTranscodingPipeline::Decode()
 
     SafetySurfaceBuffer   *pNextBuffer = m_pBuffer;
     bool bEndOfFile = false;
-
+    bool bLastCycle = false;
+    bool bNextFrameIDR = false;
     time_t start = time(0);
     while (MFX_ERR_NONE == sts)
     {
         pNextBuffer = m_pBuffer;
+
+        if (time(0) - start >= m_nTimeout)
+            bLastCycle = true;
 
         msdk_tick nBeginTime = msdk_time_get_tick(); // microseconds.
         if(shouldReadNextFrame)
@@ -705,7 +711,7 @@ mfxStatus CTranscodingPipeline::Decode()
                     if (MFX_ERR_MORE_DATA == sts)
                     {
                         sts = DecodeLastFrame(&DecExtSurface);
-                        bEndOfFile = true;
+                        bEndOfFile = bLastCycle ? true : false;
                     }
                 }
                 else
@@ -721,6 +727,16 @@ mfxStatus CTranscodingPipeline::Decode()
                 {
                     DecExtSurface.pSurface = NULL;  // to get buffered VPP or ENC frames
                     sts = MFX_ERR_NONE;
+                }
+                if (!bLastCycle && (DecExtSurface.pSurface == NULL) )
+                {
+                    static_cast<FileBitstreamProcessor_WithReset*>(m_pBSProcessor)->ResetInput();
+                    bNextFrameIDR = true;
+
+                    if (!GetNumFramesForReset())
+                        SetNumFramesForReset(m_nProcessedFramesNum);
+                    sts = MFX_ERR_NONE;
+                    continue;
                 }
                 MSDK_BREAK_ON_ERROR(sts);
             }
@@ -792,6 +808,10 @@ mfxStatus CTranscodingPipeline::Decode()
                 continue; // go get next frame from Decode
             }
         }
+        if (!bLastCycle)
+        {
+            sts = MFX_ERR_NONE;
+        }
         MSDK_BREAK_ON_ERROR(sts);
 
         // if session is not joined and it is not parent - synchronize
@@ -820,10 +840,10 @@ mfxStatus CTranscodingPipeline::Decode()
         {
             msdk_printf(MSDK_STRING("."));
         }
-        if ((m_nTimeout) && (time(0) - start >= m_nTimeout))
-        {
+
+
+        if (bEndOfFile)
             break;
-        }
 
         msdk_tick nFrameTime = msdk_time_get_tick() - nBeginTime;
         if (nFrameTime < m_nReqFrameTime)
@@ -849,9 +869,15 @@ mfxStatus CTranscodingPipeline::Encode()
     ExtendedSurface VppExtSurface = {};
     ExtendedBS      *pBS = NULL;
     bool isQuit = false;
+    bool bResetOutputNext = false;
+    bool bInsertIDR = false;
+
     SafetySurfaceBuffer   *curBuffer = m_pBuffer;
 
-    time_t start = time(0);
+    PreEncAuxBuffer encAuxCtrl;
+    MSDK_ZERO_MEMORY(encAuxCtrl);
+    encAuxCtrl.encCtrl.FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
+
     bool shouldReadNextFrame=true;
     while (MFX_ERR_NONE == sts ||  MFX_ERR_MORE_DATA == sts)
     {
@@ -873,8 +899,16 @@ mfxStatus CTranscodingPipeline::Encode()
                 }
             }
 
+            mfxU32 NumFramesForReset = m_pParentPipeline ? m_pParentPipeline->GetNumFramesForReset() : 0;
+            if (NumFramesForReset && !((m_nProcessedFramesNum + 1) % NumFramesForReset) )
+            {
+                bInsertIDR = true;
+            }
+
             if (NULL == DecExtSurface.pSurface)
+            {
                 isQuit = true;
+            }
         }
 
         if (m_pmfxVPP.get())
@@ -935,6 +969,16 @@ mfxStatus CTranscodingPipeline::Encode()
             return MFX_ERR_NOT_FOUND;
 
         m_BSPool.push_back(pBS);
+
+        mfxU32 NumFramesForReset = m_pParentPipeline ? m_pParentPipeline->GetNumFramesForReset() : 0;
+        if (NumFramesForReset && !(m_nProcessedFramesNum % NumFramesForReset))
+        {
+            static_cast<FileBitstreamProcessor_WithReset*>(m_pBSProcessor)->ResetOutput();
+            bResetOutputNext = false;
+        }
+
+        SetSurfaceAuxIDR(VppExtSurface, &encAuxCtrl, bInsertIDR);
+        bInsertIDR = false;
 
         if (m_nVPPCompEnable != VppCompOnly)
         {
@@ -1031,10 +1075,6 @@ mfxStatus CTranscodingPipeline::Encode()
             }
         } // if (m_nVPPCompEnable != VppCompOnly)
 
-        if ((m_nTimeout) && (time(0) - start >= m_nTimeout))
-        {
-            break;
-        }
         /* Exit condition */
         if (m_nProcessedFramesNum == m_MaxFramesForTranscode)
         {
@@ -1066,6 +1106,27 @@ mfxStatus CTranscodingPipeline::Encode()
     return sts;
 
 } // mfxStatus CTranscodingPipeline::Encode()
+
+void CTranscodingPipeline::SetSurfaceAuxIDR(ExtendedSurface& extSurface, PreEncAuxBuffer* encAuxCtrl, bool bInsertIDR)
+{
+    if (bInsertIDR)
+    {
+        if (extSurface.pCtrl)
+            extSurface.pCtrl->encCtrl.FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
+        else
+            extSurface.pCtrl = encAuxCtrl;
+    }
+    else
+    {
+        if (extSurface.pCtrl)
+        {
+            if (extSurface.pCtrl != encAuxCtrl)
+                extSurface.pCtrl->encCtrl.FrameType = 0;
+            else
+                extSurface.pCtrl = NULL;
+        }
+    }
+}
 
 mfxStatus CTranscodingPipeline::Transcode()
 {
@@ -1183,24 +1244,8 @@ mfxStatus CTranscodingPipeline::Transcode()
         m_BSPool.push_back(pBS);
 
         // encode frame only if it wasn't encoded enough
-        if (bInsertIDR)
-        {
-            if (VppExtSurface.pCtrl)
-                VppExtSurface.pCtrl->encCtrl.FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
-            else
-                VppExtSurface.pCtrl = &encAuxCtrl;
-            bInsertIDR = false;
-        }
-        else
-        {
-            if (VppExtSurface.pCtrl)
-            {
-                if (VppExtSurface.pCtrl != &encAuxCtrl)
-                    VppExtSurface.pCtrl->encCtrl.FrameType = 0;
-                else
-                    VppExtSurface.pCtrl = NULL;
-            }
-        }
+        SetSurfaceAuxIDR(VppExtSurface, &encAuxCtrl, bInsertIDR);
+        bInsertIDR = false;
 
         if(bNeedDecodedFrames)
         {
@@ -2829,6 +2874,18 @@ void CTranscodingPipeline::UnPreEncAuxBuffer(PreEncAuxBuffer* pBuff)
 {
     if (!pBuff) return;
     msdk_atomic_dec16(&pBuff->Locked);
+}
+
+mfxU32 CTranscodingPipeline::GetNumFramesForReset()
+{
+    AutomaticMutex guard(m_mReset);
+    return m_NumFramesForReset;
+}
+
+void CTranscodingPipeline::SetNumFramesForReset(mfxU32 nFrames)
+{
+    AutomaticMutex guard(m_mReset);
+    m_NumFramesForReset = nFrames;
 }
 
 void CTranscodingPipeline::Close()

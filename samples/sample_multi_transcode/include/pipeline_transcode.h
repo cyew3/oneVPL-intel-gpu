@@ -408,6 +408,7 @@ namespace TranscodingSample
 
         mfxFrameSurface1* GetFreeSurface(bool isDec);
         PreEncAuxBuffer*  GetFreePreEncAuxBuffer();
+        void SetSurfaceAuxIDR(ExtendedSurface& extSurface, PreEncAuxBuffer* encAuxCtrl, bool bInsertIDR);
 
         // parameters configuration functions
         mfxStatus InitDecMfxParams(sInputParams *pInParams);
@@ -437,6 +438,8 @@ namespace TranscodingSample
         void LockPreEncAuxBuffer(PreEncAuxBuffer* pBuff);
         void UnPreEncAuxBuffer  (PreEncAuxBuffer* pBuff);
 
+        mfxU32 GetNumFramesForReset();
+        void   SetNumFramesForReset(mfxU32 nFrames);
 
         mfxBitstream        *m_pmfxBS;  // contains encoded input data
 
@@ -541,6 +544,9 @@ namespace TranscodingSample
 
         mfxFrameAllocRequest   m_Request;
         bool                   m_bIsInit;
+
+        mfxU32          m_NumFramesForReset;
+        MSDKMutex       m_mReset;
 
         std::auto_ptr<ExtendedBSStore>        m_pBSStore;
 
