@@ -217,8 +217,8 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
               mfxRes != MFX_WRN_PARTIAL_ACCELERATION)
               bIsHWENCSupport = true;
         }
-        // unsupported reserved to codecid != requested codecid
-        if (MFX_ERR_UNSUPPORTED == mfxRes)
+        // if plugin is not supported, or wrong parameters passed we should not look into library
+        else
 #endif
         switch (out->mfx.CodecId)
         {
@@ -340,8 +340,8 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
               mfxRes != MFX_WRN_PARTIAL_ACCELERATION)
               bIsHWENCSupport = true;
         }
-        // unsupported reserved to codecid != requested codecid
-        if (MFX_ERR_UNSUPPORTED == mfxRes)
+        // if plugin is not supported, or wrong parameters passed we should not look into library
+        else
 #endif
         switch (par->mfx.CodecId)
         {
