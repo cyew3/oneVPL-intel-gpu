@@ -138,10 +138,16 @@ cl_int OpenCLFilterBase::InitPlatform()
     // Find the platform handle for the installed Gen driver
     const size_t max_string_size = 1024;
     char platform[max_string_size];
+    cl_device_id device_ids[2] = {0};
     for (unsigned int platform_index = 0; platform_index < num_platforms; platform_index++)
     {
         error = clGetPlatformInfo(platforms[platform_index], CL_PLATFORM_NAME, max_string_size, platform, NULL);
         if(error) return error;
+
+        // Choose only GPU devices
+        if (clGetDeviceIDs(platforms[platform_index], CL_DEVICE_TYPE_GPU,
+            sizeof(device_ids)/sizeof(device_ids[0]), device_ids, 0) != CL_SUCCESS)
+            continue;
 
         if(strstr(platform, "Intel")) // Use only Intel platfroms
         {
