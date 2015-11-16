@@ -831,6 +831,7 @@ void CmContext::Setup(
         m_program = ReadProgram(m_device, genx_bdw_simple_me, SizeOf(genx_bdw_simple_me));
         break;
     case MFX_HW_SCL:
+    case MFX_HW_BXT:
         m_program = ReadProgram(m_device, genx_skl_simple_me, SizeOf(genx_skl_simple_me));
         m_programHist = ReadProgram(m_device, genx_skl_histogram, SizeOf(genx_skl_histogram));
         break;
