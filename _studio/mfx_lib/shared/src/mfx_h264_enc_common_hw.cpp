@@ -4537,7 +4537,8 @@ void MfxHwH264Encode::SetDefaults(
             par.mfx.GopRefDist >= 4 &&
             IsPowerOf2(par.mfx.GopRefDist) &&
             par.mfx.GopPicSize % par.mfx.GopRefDist == 0 &&
-            !bRateControlLA(par.mfx.RateControlMethod))
+            !bRateControlLA(par.mfx.RateControlMethod) &&
+            (!par.mfx.NumRefFrame || par.mfx.NumRefFrame >= GetMinNumRefFrameForPyramid(par)))
         {
             extOpt2->BRefType = mfxU16(par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? MFX_B_REF_PYRAMID : MFX_B_REF_OFF);
         }
