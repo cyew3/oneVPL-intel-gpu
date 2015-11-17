@@ -1707,7 +1707,7 @@ mfxStatus CEncodingPipeline::InitInterfaces()
         mfxExtFeiPreEncMV*           mvs       = NULL;
         mfxExtFeiPreEncMBStat*       mbdata    = NULL;
 
-        int num_buffers = m_maxQueueLength + (m_encpakParams.bDECODE ? this->m_decodePoolSize : 0) + (m_pmfxVPP ? 2 : 0);
+        int num_buffers = m_maxQueueLength + (m_encpakParams.bDECODE ? this->m_decodePoolSize : 0) + (m_pmfxVPP ? 2 : 0) + 4;
 
         for (int k = 0; k < num_buffers; k++)
         {
@@ -2019,7 +2019,9 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                 feiEncCtrl[fieldId].RepartitionCheckEnable = m_encpakParams.RepartitionCheckEnable;
                 feiEncCtrl[fieldId].AdaptiveSearch         = m_encpakParams.AdaptiveSearch;
                 feiEncCtrl[fieldId].MVPredictor            = MVPredictors;
-                feiEncCtrl[fieldId].NumMVPredictors        = m_encpakParams.NumMVPredictors; //always 4 predictors
+                m_numOfRefs[fieldId] =
+                feiEncCtrl[fieldId].NumMVPredictors = m_encpakParams.bNPredSpecified ?
+                    m_encpakParams.NumMVPredictors : m_mfxEncParams.mfx.NumRefFrame;
                 feiEncCtrl[fieldId].PerMBQp                = MBQP;
                 feiEncCtrl[fieldId].PerMBInput             = MBCtrl;
                 feiEncCtrl[fieldId].MBSizeCtrl             = m_encpakParams.bMBSize;
@@ -4105,9 +4107,14 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU32 num_of_refs
 
     for (unsigned i = 0; i < preenc_ref_counts; i++)
     {
-        int preenc_ref_idx[2][2] = {0}; //[fieldId][L0L1]
-        int ref_fid[2][2]        = {0};
-        iTask* refTask[2][2]     = {0};
+        int preenc_ref_idx[2][2]; //[fieldId][L0L1]
+        int ref_fid[2][2];
+        iTask* refTask[2][2];
+        for (int j = 0; j < 2; j++){
+            MSDK_ZERO_ARRAY(preenc_ref_idx[j], 2);
+            MSDK_ZERO_ARRAY(ref_fid[j],        2);
+            MSDK_ZERO_ARRAY(refTask[j],        2);
+        }
 
         // Will do one time PreEnc for I
         if ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) != 0 && i > 0) {
@@ -5008,9 +5015,11 @@ int CEncodingPipeline::GetRefTaskEx(iTask *eTask, unsigned int idx, int refIdx[2
     MSDK_CHECK_POINTER(outRefTask, 0);
 
     int has_ref = 0;
-    MSDK_ZERO_ARRAY(refIdx,     4);
-    MSDK_ZERO_ARRAY(outRefTask, 4);
-    MSDK_ZERO_ARRAY(ref_fid,    4);
+    for (int i = 0; i < 2; i++){
+        MSDK_ZERO_ARRAY(refIdx[i],     2);
+        MSDK_ZERO_ARRAY(outRefTask[i], 2);
+        MSDK_ZERO_ARRAY(ref_fid[i],    2);
+    }
 
     for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
     {
