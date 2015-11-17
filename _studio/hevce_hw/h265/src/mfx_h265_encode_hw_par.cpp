@@ -683,6 +683,130 @@ mfxU16 minRefForPyramid(mfxU16 GopRefDist)
  const mfxU16 AVBR_CONVERGENCE_MIN = 1;
  const mfxU16 AVBR_CONVERGENCE_MAX = 65535;
 
+template <class T>
+void InheritOption(T optInit, T & optReset)
+{
+    if (optReset == 0)
+        optReset = optInit;
+}
+
+void InheritDefaultValues(
+    MfxVideoParam const & parInit,
+    MfxVideoParam &       parReset)
+{
+    InheritOption(parInit.AsyncDepth,             parReset.AsyncDepth);
+    InheritOption(parInit.mfx.BRCParamMultiplier, parReset.mfx.BRCParamMultiplier);
+    InheritOption(parInit.mfx.CodecId,            parReset.mfx.CodecId);
+    InheritOption(parInit.mfx.CodecProfile,       parReset.mfx.CodecProfile);
+    InheritOption(parInit.mfx.CodecLevel,         parReset.mfx.CodecLevel);
+    InheritOption(parInit.mfx.NumThread,          parReset.mfx.NumThread);
+    InheritOption(parInit.mfx.TargetUsage,        parReset.mfx.TargetUsage);
+    InheritOption(parInit.mfx.GopPicSize,         parReset.mfx.GopPicSize);
+    InheritOption(parInit.mfx.GopRefDist,         parReset.mfx.GopRefDist);
+    InheritOption(parInit.mfx.GopOptFlag,         parReset.mfx.GopOptFlag);
+    InheritOption(parInit.mfx.IdrInterval,        parReset.mfx.IdrInterval);
+    InheritOption(parInit.mfx.RateControlMethod,  parReset.mfx.RateControlMethod);
+    InheritOption(parInit.mfx.BufferSizeInKB,     parReset.mfx.BufferSizeInKB);
+    InheritOption(parInit.mfx.NumSlice,           parReset.mfx.NumSlice);
+    InheritOption(parInit.mfx.NumRefFrame,        parReset.mfx.NumRefFrame);
+
+    if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_CBR && parReset.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
+    {
+
+        InheritOption(parInit.mfx.InitialDelayInKB, parReset.mfx.InitialDelayInKB);
+        InheritOption(parInit.mfx.TargetKbps,       parReset.mfx.TargetKbps);
+        printf("parInit.mfx.RateControlMethod CBR1 : %d, %d\n", parInit.mfx.MaxKbps, parReset.mfx.MaxKbps);
+    }
+
+    if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_VBR && parReset.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
+    {
+        InheritOption(parInit.mfx.InitialDelayInKB, parReset.mfx.InitialDelayInKB);
+        InheritOption(parInit.mfx.TargetKbps,       parReset.mfx.TargetKbps);
+        InheritOption(parInit.mfx.MaxKbps,          parReset.mfx.MaxKbps);
+    }
+
+    if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_CQP && parReset.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    {
+        InheritOption(parInit.mfx.QPI, parReset.mfx.QPI);
+        InheritOption(parInit.mfx.QPP, parReset.mfx.QPP);
+        InheritOption(parInit.mfx.QPB, parReset.mfx.QPB);
+    }
+
+    if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_AVBR && parReset.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+    {
+        InheritOption(parInit.mfx.Accuracy,    parReset.mfx.Accuracy);
+        InheritOption(parInit.mfx.Convergence, parReset.mfx.Convergence);
+    }
+
+    if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_ICQ && parReset.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
+    {
+        InheritOption(parInit.mfx.ICQQuality, parReset.mfx.ICQQuality);
+    }
+
+    if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_VCM && parReset.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
+    {
+        InheritOption(parInit.mfx.TargetKbps,       parReset.mfx.TargetKbps);
+        InheritOption(parInit.mfx.MaxKbps,          parReset.mfx.MaxKbps);
+    }
+
+
+    InheritOption(parInit.mfx.FrameInfo.FourCC,         parReset.mfx.FrameInfo.FourCC);
+    InheritOption(parInit.mfx.FrameInfo.FourCC,         parReset.mfx.FrameInfo.FourCC);
+    InheritOption(parInit.mfx.FrameInfo.Width,          parReset.mfx.FrameInfo.Width);
+    InheritOption(parInit.mfx.FrameInfo.Height,         parReset.mfx.FrameInfo.Height);
+    InheritOption(parInit.mfx.FrameInfo.CropX,          parReset.mfx.FrameInfo.CropX);
+    InheritOption(parInit.mfx.FrameInfo.CropY,          parReset.mfx.FrameInfo.CropY);
+    InheritOption(parInit.mfx.FrameInfo.CropW,          parReset.mfx.FrameInfo.CropW);
+    InheritOption(parInit.mfx.FrameInfo.CropH,          parReset.mfx.FrameInfo.CropH);
+    InheritOption(parInit.mfx.FrameInfo.FrameRateExtN,  parReset.mfx.FrameInfo.FrameRateExtN);
+    InheritOption(parInit.mfx.FrameInfo.FrameRateExtD,  parReset.mfx.FrameInfo.FrameRateExtD);
+    InheritOption(parInit.mfx.FrameInfo.AspectRatioW,   parReset.mfx.FrameInfo.AspectRatioW);
+    InheritOption(parInit.mfx.FrameInfo.AspectRatioH,   parReset.mfx.FrameInfo.AspectRatioH);
+
+    mfxExtHEVCParam const * extHEVCInit  = &parInit.m_ext.HEVCParam;
+    mfxExtHEVCParam *       extHEVCReset = &parReset.m_ext.HEVCParam;
+
+    InheritOption(extHEVCInit->GeneralConstraintFlags,  extHEVCReset->GeneralConstraintFlags);
+    InheritOption(extHEVCInit->PicHeightInLumaSamples,  extHEVCReset->PicHeightInLumaSamples);
+    InheritOption(extHEVCInit->PicWidthInLumaSamples,   extHEVCReset->PicWidthInLumaSamples);
+
+    mfxExtHEVCTiles const * extHEVCTilInit  = &parInit.m_ext.HEVCTiles;
+    mfxExtHEVCTiles *       extHEVCTilReset = &parReset.m_ext.HEVCTiles;
+
+    InheritOption(extHEVCTilInit->NumTileColumns,  extHEVCTilReset->NumTileColumns);
+    InheritOption(extHEVCTilInit->NumTileRows,     extHEVCTilReset->NumTileRows);
+
+    mfxExtCodingOption2 const * extOpt2Init  = &parInit.m_ext.CO2;
+    mfxExtCodingOption2 *       extOpt2Reset = &parReset.m_ext.CO2;
+
+    InheritOption(extOpt2Init->IntRefType,      extOpt2Reset->IntRefType);
+    InheritOption(extOpt2Init->IntRefCycleSize, extOpt2Reset->IntRefCycleSize);
+    InheritOption(extOpt2Init->IntRefQPDelta,   extOpt2Reset->IntRefQPDelta);
+    InheritOption(extOpt2Init->MBBRC,      extOpt2Reset->MBBRC);
+    InheritOption(extOpt2Init->BRefType,   extOpt2Reset->BRefType);
+    InheritOption(extOpt2Init->NumMbPerSlice,   extOpt2Reset->NumMbPerSlice);
+    InheritOption(extOpt2Init->DisableDeblockingIdc,  extOpt2Reset->DisableDeblockingIdc);
+
+    mfxExtCodingOption3 const * extOpt3Init  = &parInit.m_ext.CO3;
+    mfxExtCodingOption3 *       extOpt3Reset = &parReset.m_ext.CO3;
+
+    InheritOption(extOpt3Init->IntRefCycleDist, extOpt3Reset->IntRefCycleDist);
+    InheritOption(extOpt3Init->PRefType, extOpt3Reset->PRefType);
+
+    if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_QVBR && parReset.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
+    {
+        InheritOption(parInit.mfx.InitialDelayInKB, parReset.mfx.InitialDelayInKB);
+        InheritOption(parInit.mfx.TargetKbps,       parReset.mfx.TargetKbps);
+        InheritOption(parInit.mfx.MaxKbps,          parReset.mfx.MaxKbps);
+        InheritOption(extOpt3Init->QVBRQuality,     extOpt3Reset->QVBRQuality);
+    }
+
+
+    // not inherited:
+    // InheritOption(parInit.mfx.FrameInfo.PicStruct,      parReset.mfx.FrameInfo.PicStruct);
+    // InheritOption(parInit.IOPattern,                    parReset.IOPattern);
+    // InheritOption(parInit.mfx.FrameInfo.ChromaFormat,   parReset.mfx.FrameInfo.ChromaFormat);
+}
 
 mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, bool bInit = false)
 {

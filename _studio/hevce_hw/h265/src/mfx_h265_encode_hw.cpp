@@ -17,6 +17,7 @@ namespace MfxHwH265Encode
 
 mfxStatus CheckVideoParam(MfxVideoParam & par, ENCODE_CAPS_HEVC const & caps, bool bInit = false);
 void      SetDefaults    (MfxVideoParam & par, ENCODE_CAPS_HEVC const & hwCaps);
+void      InheritDefaultValues(MfxVideoParam const & parInit, MfxVideoParam &  parReset);
 
 Plugin::Plugin(bool CreateByDispatcher)
     : m_createdByDispatcher(CreateByDispatcher)
@@ -374,6 +375,8 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
     sts = LoadSPSPPS(parNew, pSPSPPS);
     MFX_CHECK_STS(sts);
 
+    InheritDefaultValues(m_vpar, parNew);
+
     sts = CheckVideoParam(parNew, m_caps);
     MFX_CHECK(sts >= MFX_ERR_NONE, sts);
 
@@ -437,28 +440,11 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
 
     bool brcReset =
         m_vpar.TargetKbps != parNew.TargetKbps ||
-        m_vpar.MaxKbps    != m_vpar.MaxKbps;
+        m_vpar.MaxKbps    != parNew.MaxKbps;
 
     if (brcReset &&
         m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-
-
-    m_vpar = (mfxVideoParam)parNew;
-
-    SetDefaults(m_vpar, m_caps);
-
-    if (!pSPSPPS || pSPSPPS->SPSBufSize)
-        m_vpar.SyncMfxToHeadersParam();
-    else
-    {
-        m_vpar.m_vps = parNew.m_vps;
-        m_vpar.m_sps = parNew.m_sps;
-        m_vpar.m_pps = parNew.m_pps;
-    }
-
-    sts = CheckHeaders(m_vpar, m_caps);
-    MFX_CHECK_STS(sts);
 
     // waiting for submitted in driver tasks
     if (isIdrRequired || (pResetOpt && IsOn(pResetOpt->StartNewSequence)))
@@ -518,6 +504,9 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
         }
 #endif
     }
+
+    m_vpar = parNew;
+
     m_hrd.Reset(m_vpar.m_sps);
     m_ddi->Reset(m_vpar);
 

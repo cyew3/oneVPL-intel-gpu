@@ -343,9 +343,9 @@ mfxStatus CopyRawSurfaceToVideoMemory(
 
 namespace ExtBuffer
 {
-    bool Construct(mfxVideoParam const & par, mfxExtHEVCParam& buf)
+    bool Construct(mfxVideoParam const & par, mfxExtHEVCParam& buf, mfxExtBuffer* pBuffers[], mfxU32 numbuffers)
     {
-        if (!Construct<mfxVideoParam, mfxExtHEVCParam>(par, buf))
+        if (!Construct<mfxVideoParam, mfxExtHEVCParam>(par, buf, pBuffers, numbuffers))
         {
             buf.PicWidthInLumaSamples  = Align(par.mfx.FrameInfo.CropW > 0 ? par.mfx.FrameInfo.CropW : par.mfx.FrameInfo.Width, CODED_PIC_ALIGN_W);
             buf.PicHeightInLumaSamples = Align(par.mfx.FrameInfo.CropH > 0 ? par.mfx.FrameInfo.CropH: par.mfx.FrameInfo.Height, CODED_PIC_ALIGN_H);
@@ -399,22 +399,13 @@ MfxVideoParam::MfxVideoParam()
 
 MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
 {
-    Construct(par);
+     Construct(par);
 
-    //Copy(m_vps, par.m_vps);
-    //Copy(m_sps, par.m_sps);
-    //Copy(m_pps, par.m_pps);
+     Copy(m_vps, par.m_vps);
+     Copy(m_sps, par.m_sps);
+     Copy(m_pps, par.m_pps);
 
-    BufferSizeInKB   = par.BufferSizeInKB;
-    InitialDelayInKB = par.InitialDelayInKB;
-    TargetKbps       = par.TargetKbps;
-    MaxKbps          = par.MaxKbps;
-    NumRefLX[0]      = par.NumRefLX[0];
-    NumRefLX[1]      = par.NumRefLX[1];
-    LTRInterval      = par.LTRInterval;
-    LCUSize          = par.LCUSize;
-    InsertHRDInfo    = par.InsertHRDInfo;
-    RawRef           = par.RawRef;
+     CopyCalcParams(par);
 }
 
 MfxVideoParam::MfxVideoParam(mfxVideoParam const & par)
@@ -430,24 +421,63 @@ MfxVideoParam::MfxVideoParam(mfxVideoParam const & par)
 {
     Zero(*(mfxVideoParam*)this);
     Zero(NumRefLX);
-
     Construct(par);
     SyncVideoToCalculableParam();
 }
 
+void MfxVideoParam::CopyCalcParams(MfxVideoParam const & par)
+{
+    BufferSizeInKB   = par.BufferSizeInKB;
+    InitialDelayInKB = par.InitialDelayInKB;
+    TargetKbps       = par.TargetKbps;
+    MaxKbps          = par.MaxKbps;
+    NumRefLX[0]      = par.NumRefLX[0];
+    NumRefLX[1]      = par.NumRefLX[1];
+    LTRInterval      = par.LTRInterval;
+    LCUSize          = par.LCUSize;
+    InsertHRDInfo    = par.InsertHRDInfo;
+    RawRef           = par.RawRef;
+}
+
+MfxVideoParam& MfxVideoParam::operator=(MfxVideoParam const & par)
+{
+    Construct(par);
+    CopyCalcParams(par);
+    
+    Copy(m_vps, par.m_vps);
+    Copy(m_sps, par.m_sps);
+    Copy(m_pps, par.m_pps);
+
+    return *this;
+}
+
+MfxVideoParam& MfxVideoParam::operator=(mfxVideoParam const & par)
+{
+    Construct(par);
+    SyncVideoToCalculableParam();
+    return *this;
+}
+
+
 void MfxVideoParam::Construct(mfxVideoParam const & par)
 {
     mfxVideoParam & base = *this;
-    base = par;
 
-    ExtBuffer::Construct(par, m_ext.HEVCParam);
-    ExtBuffer::Construct(par, m_ext.HEVCTiles);
-    ExtBuffer::Construct(par, m_ext.Opaque);
-    ExtBuffer::Construct(par, m_ext.CO2);
-    ExtBuffer::Construct(par, m_ext.CO3);
-    ExtBuffer::Construct(par, m_ext.DDI);
-    ExtBuffer::Construct(par, m_ext.AVCTL);
-    ExtBuffer::Construct(par, m_ext.DumpFiles);
+    base.mfx = par.mfx;
+    base.AsyncDepth = par.AsyncDepth;
+    base.IOPattern = par.IOPattern;
+    base.NumExtParam = 0;
+    base.ExtParam = m_ext.m_extParam;
+
+    ExtBuffer::Construct(par, m_ext.HEVCParam, m_ext.m_extParam, base.NumExtParam);
+    ExtBuffer::Construct(par, m_ext.HEVCTiles, m_ext.m_extParam, base.NumExtParam);
+    ExtBuffer::Construct(par, m_ext.Opaque, m_ext.m_extParam, base.NumExtParam);
+    ExtBuffer::Construct(par, m_ext.CO2, m_ext.m_extParam, base.NumExtParam);
+    ExtBuffer::Construct(par, m_ext.CO3, m_ext.m_extParam, base.NumExtParam);
+    ExtBuffer::Construct(par, m_ext.DDI, m_ext.m_extParam, base.NumExtParam);
+    ExtBuffer::Construct(par, m_ext.AVCTL, m_ext.m_extParam, base.NumExtParam);
+    ExtBuffer::Construct(par, m_ext.DumpFiles, m_ext.m_extParam, base.NumExtParam);
+
 }
 
 mfxStatus MfxVideoParam::FillPar(mfxVideoParam& par, bool query)
@@ -1658,12 +1688,7 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask, Sli
     }
 }
 
-MfxVideoParam& MfxVideoParam::operator=(mfxVideoParam const & par)
-{
-    Construct(par);
-    SyncVideoToCalculableParam();
-    return *this;
-}
+
 
 void HRD::Setup(SPS const & sps, mfxU32 InitialDelayInKB)
 {

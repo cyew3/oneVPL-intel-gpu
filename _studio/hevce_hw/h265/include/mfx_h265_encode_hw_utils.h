@@ -335,10 +335,17 @@ namespace ExtBuffer
         header.BufferId = ExtBufferMap<T>::Id;
         header.BufferSz = sizeof(T);
     }
+    
+    template<class T> inline void Add(T& buf, mfxExtBuffer* pBuffers[], mfxU32 numbuffers)
+    {
+        pBuffers[numbuffers++] = ((mfxExtBuffer*)&buf);
+    }
 
-    template<class P, class T> bool Construct(P const & par, T& buf)
+
+    template<class P, class T> bool Construct(P const & par, T& buf, mfxExtBuffer* pBuffers[], mfxU32 numbuffers)
     {
         T  * p = Get(par);
+        Add(buf,pBuffers,numbuffers);
 
         if (p)
         {
@@ -491,6 +498,7 @@ public:
         mfxExtCodingOptionDDI       DDI;
         mfxExtAvcTemporalLayers     AVCTL;
         mfxExtDumpFiles             DumpFiles;
+        mfxExtBuffer *              m_extParam[9];
     } m_ext;
 
     mfxU32 BufferSizeInKB;
@@ -508,6 +516,7 @@ public:
     MfxVideoParam(mfxVideoParam const & par);
 
     MfxVideoParam & operator = (mfxVideoParam const &);
+    MfxVideoParam & operator = (MfxVideoParam const &);
 
     void SyncVideoToCalculableParam();
     void SyncCalculableToVideoParam();
@@ -526,6 +535,7 @@ public:
 
 private:
     void Construct(mfxVideoParam const & par);
+    void CopyCalcParams(MfxVideoParam const & par);
 };
 
 class HRD
