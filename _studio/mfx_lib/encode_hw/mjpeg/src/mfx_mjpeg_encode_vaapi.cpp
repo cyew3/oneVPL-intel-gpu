@@ -511,9 +511,9 @@ mfxStatus VAAPIEncoder::DestroyBuffers() {
     MFX_DESTROY_VABUFFER(m_htBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_scanBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_ppsBufferId, m_vaDisplay);
-    for (mfxU8 index = 0; index < m_appBufferIds.size(); index++)
+    for (int index = 0; index < m_appBufferIds.size(); index++)
     {
-        MFX_DESTROY_VABUFFER(m_appBufferIds[0], m_vaDisplay);
+        MFX_DESTROY_VABUFFER(m_appBufferIds[index], m_vaDisplay);
     }
     m_appBufferIds.clear();
     return MFX_ERR_NONE;
