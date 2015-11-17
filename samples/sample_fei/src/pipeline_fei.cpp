@@ -1065,6 +1065,7 @@ CEncodingPipeline::CEncodingPipeline()
     m_refFrameCounter     = 0;
     m_LastDecSyncPoint    = 0;
 
+    MSDK_ZERO_ARRAY(m_numOfRefs, 2);
     MSDK_ZERO_MEMORY(m_mfxBS);
 
     m_FileWriters.first = m_FileWriters.second = NULL;
@@ -2636,8 +2637,7 @@ mfxStatus CEncodingPipeline::Run()
                 eTask = ConfigureTask(eTask, true);
                 if (eTask == NULL) continue; //not found frame to encode
 
-                unsigned actual_num_of_refs = 0;
-                sts = ProcessMultiPreenc(eTask, actual_num_of_refs);
+                sts = ProcessMultiPreenc(eTask, m_numOfRefs);
                 MSDK_BREAK_ON_ERROR(sts);
 
                 eTask->encoded = 1;
@@ -2653,7 +2653,7 @@ mfxStatus CEncodingPipeline::Run()
 
                     if (!(ExtractFrameType(*eTask) & MFX_FRAMETYPE_I)){
                         //repack MV predictors
-                        sts = PassPreEncMVPred2EncEx(eTask, actual_num_of_refs > MaxFeiEncMVPNum ? MaxFeiEncMVPNum : actual_num_of_refs);
+                        sts = PassPreEncMVPred2EncEx(eTask, m_numOfRefs);
                         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
                     }
                 }
@@ -3061,16 +3061,16 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2Enc(iTask* eTask){
     return MFX_ERR_NONE;
 }
 
-mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, int numMVP)
+mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU32 numMVP[2])
 {
     mfxExtFeiPreEncMV*        mvs = NULL;
     mfxExtFeiEncMVPredictors* mvp = NULL;
     bufSet*                   set = NULL;
 
-    //fprintf(stderr, "About to PassPreEncMVPred2EncEx, numMVP is %d, task(%p) frame order is %d\n", numMVP, eTask, eTask->m_frameOrder);
+    //fprintf(stderr, "About to PassPreEncMVPred2EncEx, numMVP is %d, %d, task(%p) frame order is %d\n", numMVP[0], numMVP[1], eTask, eTask->m_frameOrder);
     for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
     {
-        for (int i = 0; i < numMVP; i++)
+        for (int i = 0; i < numMVP[fieldId]; i++)
         {
             for (int j = 0; j < eTask->preenc_mvp_info[i].preenc_output_bufs->PB_bufs.out.NumExtParam; j++)
             {
@@ -3095,7 +3095,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, int numMVP)
                     break;
                 }
             } // for (int j = 0; j < eTask->preenc_mvp_info[i].preenc_output_bufs->PB_bufs.out.NumExtParam; j++)
-        } // for (int i = 0; i < numMVP; i++)
+        } // for (int i = 0; i < numMVP[fieldId]; i++)
     } // for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
 
     // Dump MVP output to file
@@ -3104,7 +3104,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, int numMVP)
     //    DumpEncodeMVP(&set->PB_bufs.in, eTask->m_frameOrder, 1);
     //}
 
-    for (int i = 0; i < numMVP; i++) {
+    for (int i = 0; i < std::max(numMVP[0], numMVP[1]); i++) {
         eTask->preenc_mvp_info[i].preenc_output_bufs->vacant = true;
         eTask->preenc_mvp_info[i].preenc_output_bufs         = NULL;
     }
@@ -3145,6 +3145,7 @@ mfxStatus repackPreenc2EncEx(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVout
 
     for (mfxU32 i = 0; i<NumMB; i++)
     {
+        // Here will set RefL0 to 0 if don't have enough Refs
         EncMVPredMB[i].RefIdx[refIdx].RefL0 = refIdx;
 
         // Only 1 backward ref, so always 0 here
@@ -3916,6 +3917,7 @@ mfxStatus CEncodingPipeline::InitEncodeFrameParams(mfxFrameSurface1* encodeSurfa
     mfxExtFeiEncFrameCtrl*    feiEncCtrl = NULL;
 
 
+    int fieldId = 0;
     for (int i = 0; i < freeSet->PB_bufs.in.NumExtParam; i++)
     {
         switch (freeSet->PB_bufs.in.ExtParam[i]->BufferId){
@@ -3975,8 +3977,9 @@ mfxStatus CEncodingPipeline::InitEncodeFrameParams(mfxFrameSurface1* encodeSurfa
 
             feiEncCtrl->MVPredictor = (!(frameType & MFX_FRAMETYPE_I) && (m_encpakParams.mvinFile != NULL || m_encpakParams.bPREENC)) ? 1 : 0;
 
-            // Set to reference frame number
-            feiEncCtrl->NumMVPredictors = m_mfxEncParams.mfx.NumRefFrame;
+            // Need to set the number to actual ref number for each field
+            feiEncCtrl->NumMVPredictors = m_numOfRefs[fieldId];
+            fieldId++;
             break;
         } // switch (freeSet->PB_bufs.in.ExtParam[i]->BufferId)
     } // for (int i = 0; i<freeSet->PB_bufs.in.NumExtParam; i++)
@@ -4077,19 +4080,27 @@ mfxStatus CEncodingPipeline::DropENCPAKoutput(iTask* eTask)
     return MFX_ERR_NONE;
 }
 
-mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, unsigned& num_of_refs)
+mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU32 num_of_refs[2])
 {
     mfxStatus sts = MFX_ERR_NONE;
     int has_ref = 0;
-    num_of_refs = 0;
+    MSDK_ZERO_ARRAY(num_of_refs, 2);
     fprintf(stderr, "\nframe: %d  type: %s(%s)\n", eTask->m_frameOrder,
             getPicType(eTask->m_type[m_ffid]), getPicType(eTask->m_type[m_sfid]));
 
     unsigned preenc_ref_counts = m_mfxEncParams.mfx.NumRefFrame;
+    // TODO:
+    // We had such limitation for now, will remove it later
+    // limit the max ref number for progressive case to 3
+    if (preenc_ref_counts >=4 && m_numOfFields == 1) {
+        preenc_ref_counts = 3;
+    }
+
     if ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_B) != 0) {
         // For B frames, will have one backward, so the total ref
         preenc_ref_counts--;
     }
+
 
     for (unsigned i = 0; i < preenc_ref_counts; i++)
     {
@@ -4099,7 +4110,7 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, unsigned& num_of_r
 
         // Will do one time PreEnc for I
         if ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) != 0 && i > 0) {
-            num_of_refs = 0;
+            MSDK_ZERO_ARRAY(num_of_refs, 2);
             break;
         }
 
@@ -4114,6 +4125,7 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, unsigned& num_of_r
         {
             if (refTask[fieldId][0])
             {
+                num_of_refs[fieldId]++;
                 fprintf(stderr, "\tfield %d: %2d(%d) <-- %2d(%d) ", fieldId, refTask[fieldId][0]->m_frameOrder, ref_fid[fieldId][0], eTask->m_frameOrder, fieldId);
                 if (refTask[fieldId][1]) {
                     fprintf(stderr, "  --> %2d(%d) ", refTask[fieldId][1]->m_frameOrder, ref_fid[fieldId][1]);
@@ -4124,7 +4136,6 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, unsigned& num_of_r
             fprintf(stderr, "\n");
         }
 
-        num_of_refs++;
 
         fprintf(stderr, "\treftask is L0(%p, %p), L1(%p, %p)\n", refTask[0][0], refTask[0][1], refTask[1][0], refTask[1][1]);
         // Only do twice when ref field is not in the same frame, for example: 2nd/4th P ref or I frame
@@ -4140,8 +4151,7 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, unsigned& num_of_r
                 continue;
             }
 
-            bool init_buffers = (i == 0 && fieldId == 0);// no need to update buffers in next call
-            sts = InitPreEncFrameParamsEx(eTask, refTask[fieldId], ref_fid, init_buffers);
+            sts = InitPreEncFrameParamsEx(eTask, refTask[fieldId], ref_fid);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
             // Doing PreEnc
@@ -4231,7 +4241,7 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, unsigned& num_of_r
         // Dump PreEnc output data
         //if ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) == 0 ) {
         if ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_B) != 0 ) {
-            DumpPreEncMVP(&eTask->preenc_mvp_info[i].preenc_output_bufs->PB_bufs.out, eTask->m_frameOrder, 0, i);
+            //DumpPreEncMVP(&eTask->preenc_mvp_info[i].preenc_output_bufs->PB_bufs.out, eTask->m_frameOrder, 0, i);
             //DumpPreEncMVP(&eTask->preenc_mvp_info[i].preenc_output_bufs->PB_bufs.out, eTask->m_frameOrder, 1, i);
         }
 #endif
@@ -4626,8 +4636,7 @@ mfxStatus CEncodingPipeline::PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
         return sts;
     }
 
-    unsigned actual_num_of_refs = 0;
-    sts = ProcessMultiPreenc(eTask, actual_num_of_refs);
+    sts = ProcessMultiPreenc(eTask, m_numOfRefs);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     //drop output data to output file
@@ -4640,7 +4649,8 @@ mfxStatus CEncodingPipeline::PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
 
         if (!(ExtractFrameType(*eTask) & MFX_FRAMETYPE_I)){
             //repack MV predictors
-            sts = PassPreEncMVPred2EncEx(eTask, actual_num_of_refs > MaxFeiEncMVPNum ? MaxFeiEncMVPNum : actual_num_of_refs);
+            // sts = PassPreEncMVPred2EncEx(eTask, m_numOfRefs > MaxFeiEncMVPNum ? MaxFeiEncMVPNum : m_numOfRefs);
+            sts = PassPreEncMVPred2EncEx(eTask, m_numOfRefs);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
     }
@@ -5097,7 +5107,7 @@ iTask* CEncodingPipeline::GetRefTask(iTask *eTask, unsigned int idx, int* refIdx
     return NULL;
 } */
 
-mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask[2], int ref_fid[2][2], bool init_buffers)
+mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask[2], int ref_fid[2][2])
 {
     MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
 
@@ -5105,8 +5115,7 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
     mfxExtFeiEncQP*              pMbQP      = NULL;
     mfxExtFeiPreEncCtrl*         preENCCtr  = NULL;
 
-    if (init_buffers)
-        eTask->preenc_bufs = getFreeBufSet(m_preencBufs);
+    eTask->preenc_bufs = getFreeBufSet(m_preencBufs);
     MSDK_CHECK_POINTER(eTask->preenc_bufs, MFX_ERR_NULL_PTR);
     // fprintf(stderr, "\tInitialize preenc buf %p for task %p\n", eTask->preenc_bufs, eTask);
 
@@ -5205,7 +5214,7 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
                 break;
 
             case MFX_EXTBUFF_FEI_PREENC_MV_PRED:
-                if (pMvPred && init_buffers)
+                if (pMvPred)
                 {
                     if (!(ExtractFrameType(*eTask) & MFX_FRAMETYPE_I))
                     {
@@ -5219,7 +5228,7 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
                 break;
 
             case MFX_EXTBUFF_FEI_PREENC_QP:
-                if (pPerMbQP && init_buffers)
+                if (pPerMbQP)
                 {
                     pMbQP = (mfxExtFeiEncQP*)(eTask->in.ExtParam[i]);
                     fread(pMbQP->QP, sizeof(pMbQP->QP[0])*pMbQP->NumQPAlloc, 1, pPerMbQP);

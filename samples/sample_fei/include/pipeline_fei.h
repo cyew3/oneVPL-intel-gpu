@@ -331,13 +331,13 @@ protected:
     mfxFrameSurface1 ** GetCurrentL1SurfacesPak(iTask* eTask);
     iTask* GetTaskByFrameOrder(mfxU32 frame_order);
 
-    mfxStatus InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask[2], int ref_fid[2][2], bool init_buffers);
+    mfxStatus InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask[2], int ref_fid[2][2]);
     //mfxStatus UpdatePreEncFrameParamsEx(iTask* eTask, iTask* refTask, int fieldId, int ref_fid);
     //iTask* GetRefTask(iTask *eTask, unsigned int idx, int* refIdx, int* L0L1, int fid, int* ref_fid);
     int GetRefTaskEx(iTask *eTask, unsigned int idx, int refIdx[2][2], int ref_fid[2][2], iTask *outRefTask[2][2]);
 
-    mfxStatus ProcessMultiPreenc(iTask* eTask, unsigned& num_of_refs);
-    mfxStatus PassPreEncMVPred2EncEx(iTask* eTask, int numMVP);
+    mfxStatus ProcessMultiPreenc(iTask* eTask, mfxU32 num_of_refs[2]);
+    mfxStatus PassPreEncMVPred2EncEx(iTask* eTask, mfxU32 numMVP[2]);
     unsigned GetBufSetDistortion(IObuffs* buf);
 
     //mfxStatus DumpPreEncMVP(setElem *outbuf, int frame_seq, int fieldId, int idx);
@@ -360,6 +360,7 @@ protected:
     mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* m_tmpForReading, *m_tmpMBpreenc;
     mfxExtFeiEncMV::mfxExtFeiEncMVMB*       m_tmpMBenc;
     mfxI16 *m_tmpForMedian;
+    mfxU32 m_numOfRefs[2];
 };
 
 bufSet* getFreeBufSet(std::list<bufSet*> bufs);
