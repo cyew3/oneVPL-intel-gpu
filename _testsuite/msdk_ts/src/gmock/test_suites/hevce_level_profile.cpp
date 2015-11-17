@@ -565,7 +565,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
        },
     },
     // wrong kbps
-    {/*47*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_41, BR, NONE, {
+    {/*47*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_4, BR, NONE, {
         { MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN },
         { MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_4 },
 
@@ -623,7 +623,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
        },
     },
     // wrong kbps
-    {/*55*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_41, BR, NONE, {
+    {/*55*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_4, BR, NONE, {
         { MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN },
         { MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_4 },
 
@@ -906,7 +906,6 @@ int TestSuite::RunTest(unsigned int id)
     PreparePar(tc);
 
     //load plugin
-    *m_uid = MFX_PLUGINID_HEVCE_HW;
     Load();
 
     g_tsStatus.expect(tc.sts);
@@ -978,7 +977,9 @@ int TestSuite::RunTest(unsigned int id)
     if (!skip)
     {
         Query();
-        if ((tc.exp_level != m_pParOut->mfx.CodecLevel) && (!skip_check_level))
+        if ((tc.exp_level != m_pParOut->mfx.CodecLevel) &&
+            (tc.exp_level != (m_pParOut->mfx.CodecLevel & 255)) &&
+            (!skip_check_level))
         {
             g_tsLog << "Return invalid CodecLevel: " << m_pParOut->mfx.CodecLevel << ", expected: " << tc.exp_level << "!\n";
             g_tsStatus.m_failed = true;
