@@ -126,7 +126,7 @@ public:
     virtual mfxStatus GetFrameParam(mfxFrameParam *par);
     virtual mfxStatus GetSliceParam(mfxSliceParam *par);
 
-    mfxStatus GetStatusReport(mfxFrameSurface1 *displaySurface);
+    mfxStatus GetStatusReport(mfxFrameSurface1 *displaySurface, UMC::FrameMemID surface_id);
     mfxStatus GetStatusReportByIndex(mfxFrameSurface1 *displaySurface, mfxU32 currIdx);
     static mfxStatus CheckProtectionSettings(mfxVideoParam *input, mfxVideoParam *output, VideoCORE *core);
     mfxFrameSurface1 *GetOriginalSurface(mfxFrameSurface1 *pSurface);

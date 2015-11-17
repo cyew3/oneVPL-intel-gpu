@@ -2316,7 +2316,7 @@ mfxStatus VideoDECODEMPEG2::CompleteTasks(void *pState, void *pParam, mfxStatus 
                 //parameters->surface_out->Data.Corrupted = 0;
 
                 // request status report structures and wait until frame is not ready
-                mfxStatus sts = lpOwner->GetStatusReport(parameters->surface_out);
+                mfxStatus sts = lpOwner->GetStatusReport(parameters->surface_out, parameters->mid[display_index]);
 
                 if (MFX_ERR_NONE != sts)
                 {
@@ -3744,12 +3744,10 @@ mfxStatus VideoDECODEMPEG2::GetOutputSurface(mfxFrameSurface1 **surface_out, mfx
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface)
+mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface, UMC::FrameMemID surface_id)
 {
-    displaySurface;
-
+    displaySurface;surface_id;
 #ifdef MFX_VA_WIN
-
     UMC::Status sts = UMC::UMC_OK;
 
     DXVA_Status_VC1 currentTaskStatus = {};
@@ -3849,11 +3847,9 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface)
     UMC::Status sts = UMC::UMC_OK;
     VAStatus        surfErr = VA_STATUS_SUCCESS;
 
-    int index = m_implUmc.pack_w.va_index;
-
 #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
 
-    sts = va->SyncTask(index, &surfErr);
+    sts = va->SyncTask(surface_id, &surfErr);
 #ifdef _status_report_debug
 
         char cStr[256];
@@ -3866,7 +3862,7 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface)
 #else
     VASurfaceStatus surfSts = VASurfaceSkipped;
 
-    sts = va->QueryTaskStatus(index, &surfSts, &surfErr);
+    sts = va->QueryTaskStatus(surface_id, &surfSts, &surfErr);
     if (sts != UMC::UMC_OK)
         return MFX_ERR_DEVICE_FAILED;
 
