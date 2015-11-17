@@ -177,6 +177,8 @@ mfxStatus D3D11Encoder::Reset(
     mfxU32 oldTargetBitrate = m_sps.TargetBitRate;
     mfxU32 oldMaxBitrate    = m_sps.MaxBitRate;
     mfxU32 oldFrameRate    = m_sps.FramesPer100Sec;
+    mfxU32 oldMaxFS = m_sps.UserMaxFrameSize;
+
     mfxExtCodingOption2 const * extCO2 = GetExtBuffer(par);
 
     if (extCO2)
@@ -189,7 +191,8 @@ mfxStatus D3D11Encoder::Reset(
     m_sps.bResetBRC =
         m_sps.TargetBitRate != oldTargetBitrate ||
         m_sps.MaxBitRate    != oldMaxBitrate ||
-        m_sps.FramesPer100Sec != oldFrameRate;
+        m_sps.FramesPer100Sec != oldFrameRate ||
+        m_sps.UserMaxFrameSize != oldMaxFS;
 
     mfxU16 maxNumSlices = GetMaxNumSlices(par);
     m_slice.resize(maxNumSlices);

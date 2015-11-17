@@ -1188,9 +1188,10 @@ mfxStatus D3D9Encoder::Reset(
     mfxU32 oldTargetBitrate = m_sps.TargetBitRate;
     mfxU32 oldMaxBitrate    = m_sps.MaxBitRate;
     mfxU32 oldFrameRate    = m_sps.FramesPer100Sec;
+    mfxU32 oldMaxFS = m_sps.UserMaxFrameSize;
+
     if (extCO2)
         m_skipMode = extCO2->SkipFrame;
-
 
     Zero(m_sps);
     Zero(m_vui);
@@ -1203,7 +1204,8 @@ mfxStatus D3D9Encoder::Reset(
     m_sps.bResetBRC =
         m_sps.TargetBitRate != oldTargetBitrate ||
         m_sps.MaxBitRate    != oldMaxBitrate ||
-        m_sps.FramesPer100Sec != oldFrameRate;
+        m_sps.FramesPer100Sec != oldFrameRate ||
+        m_sps.UserMaxFrameSize != oldMaxFS;
 
     mfxU16 maxNumSlices = GetMaxNumSlices(par);
     m_slice.resize(maxNumSlices);

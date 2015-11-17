@@ -1351,7 +1351,10 @@ mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par)
     VAEncMiscParameterRateControl oldBrcPar = m_vaBrcPar;
     VAEncMiscParameterFrameRate oldFrameRate = m_vaFrameRate;
     FillBrcStructures(par, m_vaBrcPar, m_vaFrameRate);
-    bool isBrcResetRequired = !Equal(m_vaBrcPar, oldBrcPar) || !Equal(m_vaFrameRate, oldFrameRate);
+    bool isBrcResetRequired =
+           !Equal(m_vaBrcPar, oldBrcPar)
+        || !Equal(m_vaFrameRate, oldFrameRate)
+        || m_userMaxFrameSize != extOpt2->MaxFrameSize;
 
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRateControl(par, m_mbbrc, 0, 0, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId, isBrcResetRequired), MFX_ERR_DEVICE_FAILED);
