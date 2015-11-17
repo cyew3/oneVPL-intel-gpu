@@ -627,6 +627,10 @@ eMFXPlatform MFX_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par)
     case MFX_HW_HSW:
     case MFX_HW_BDW:
     case MFX_HW_SCL:
+    case MFX_HW_CHV:
+    case MFX_HW_KBL:
+    case MFX_HW_CNL:
+    case MFX_HW_BXT:
         if (isMVCProfile(par->mfx.CodecProfile))
         {
             mfxExtMVCSeqDesc * points = (mfxExtMVCSeqDesc*)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);

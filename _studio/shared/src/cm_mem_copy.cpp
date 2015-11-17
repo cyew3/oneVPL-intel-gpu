@@ -703,6 +703,7 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
 #endif
         case MFX_HW_SCL:
         case MFX_HW_BXT:
+        case MFX_HW_KBL:
             {
             cmSts = m_pCmDevice->LoadProgram((void*)skl_copy_kernel_genx,sizeof(skl_copy_kernel_genx),m_pCmProgram,"nojitter");
             break;

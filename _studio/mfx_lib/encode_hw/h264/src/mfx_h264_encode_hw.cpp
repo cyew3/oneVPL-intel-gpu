@@ -930,8 +930,8 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         m_emulatorForSyncPart.GetStageGreediness(AsyncRoutineEmulator::STG_WAIT_ENCODE) +
         bParallelEncPak);
     request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
-    //For MMCD encoder bind flag is required, panic mode using reconstruct frame copy for refframe skipping proper way, where no warranty that compressed frame will be processed propar way.
-    if(!bPanicModeSupport && !IsOn(par->mfx.LowPower))
+    //For MMCD encoder bind flag is required, panic mode using reconstruct frame copy for refframe skipping, where no warranty that compressed frame will be processed proper way.
+    if(!bPanicModeSupport)
         request.Type |= MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET;
     sts = m_rec.Alloc(m_core, request,bPanicModeSupport);
     MFX_CHECK_STS(sts);

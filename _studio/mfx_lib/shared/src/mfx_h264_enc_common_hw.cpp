@@ -1145,9 +1145,10 @@ mfxU8 MfxHwH264Encode::GetCabacInitIdc(mfxU32 targetUsage)
 
 bool MfxHwH264Encode::IsLookAheadSupported(
     MfxVideoParam const & /*video*/,
-    eMFXHWType            platform)
+    eMFXHWType            /*platform*/)
 {
-    return ((platform >= MFX_HW_HSW) && (platform != MFX_HW_VLV));
+    //probably need to ad specific for some IOT target linux platforms where it is not required
+    return true;
 }
 
 // determine and return mode of Query operation (valid modes are 1, 2, 3, 4 - see MSDK spec for details)

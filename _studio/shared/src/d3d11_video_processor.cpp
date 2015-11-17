@@ -2816,30 +2816,10 @@ mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)
         caps.iNumBackwardSamples = 1; // from the spec 1.8
     }
 
-    // [Max Resolution] - WA now
-    switch(m_core->GetHWType())
-    {
-        case MFX_HW_CNL:
-        case MFX_HW_BXT:
-        case MFX_HW_SCL:
-        case MFX_HW_CHV:
-        case MFX_HW_BDW:
-        case MFX_HW_HSW:
-        case MFX_HW_HSW_ULT:
-        case MFX_HW_VLV:
-        {
-            caps.uMaxWidth = 16352;
-            caps.uMaxHeight = 16352;
-            break;
-        }
-        case MFX_HW_IVB:
-        default:
-        {
-            caps.uMaxWidth = 4096;
-            caps.uMaxHeight = 4096;
-            break;
-        }
-    }
+    // [Max Resolution]
+    caps.uMaxWidth = 16352;
+    caps.uMaxHeight = 16352;
+    
 
     if( TRUE == m_vpreCaps.bFieldWeavingControl )
     {

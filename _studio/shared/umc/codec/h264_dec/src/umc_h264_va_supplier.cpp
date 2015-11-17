@@ -116,7 +116,7 @@ Status VATaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
 
     Ipp32u nal_unit_type = nalUnit->GetExData()->values[0];
     if (nal_unit_type == NAL_UT_SPS && m_firstVideoParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE &&
-        isMVCProfile(m_firstVideoParams.mfx.CodecProfile) && m_va && (m_va->m_HWPlatform >= VA_HW_HSW))
+        isMVCProfile(m_firstVideoParams.mfx.CodecProfile) && m_va)
     {
         H264SeqParamSet * currSPS = m_Headers.m_SeqParams.GetCurrentHeader();
         if (currSPS && !currSPS->frame_mbs_only_flag)
