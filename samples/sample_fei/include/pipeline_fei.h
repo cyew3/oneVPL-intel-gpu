@@ -294,6 +294,7 @@ protected:
     virtual mfxStatus PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, bool is_buffered, bool &cont);
     virtual mfxStatus EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
     virtual mfxStatus EncodeOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
+    virtual mfxStatus ProcessMultiPreenc(iTask* eTask, mfxU32 num_of_refs[2]);
     virtual mfxStatus SyncOneEncodeFrame(sTask* pCurrentTask, iTask* eTask, mfxU32 fieldProcessingCounter);
 
     virtual mfxStatus DecodeOneFrame(ExtendedSurface *pOutSurf);
@@ -315,29 +316,22 @@ protected:
 
     std::list<iTask*>::iterator ReorderFrame(std::list<iTask*>& unencoded_queue);
     mfxU32 CountFutureRefs(mfxU32 frameOrder);
-    //mfxStatus InitPreEncFrameParams(iTask* eTask);
+
+    mfxStatus InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask[2], int ref_fid[2][2]);
     mfxStatus InitEncFrameParams(iTask* eTask);
     mfxStatus InitEncodeFrameParams(mfxFrameSurface1* encodeSurface, sTask* pCurrentTask, int frameType);
     mfxStatus ReadPAKdata(iTask* eTask);
     mfxStatus DropENCPAKoutput(iTask* eTask);
     mfxStatus DropPREENCoutput(iTask* eTask);
-    mfxStatus PassPreEncMVPred2Enc(iTask* eTask);
+    mfxStatus PassPreEncMVPred2EncEx(iTask* eTask, mfxU32 numMVP[2]);
 
-    //mfxFrameSurface1 ** GetCurrentL0SurfacesPreEnc(iTask* eTask, bool fair_reconstruct);
-    //mfxFrameSurface1 ** GetCurrentL1SurfacesPreEnc(iTask* eTask, bool fair_reconstruct);
     mfxFrameSurface1 ** GetCurrentL0SurfacesEnc(iTask* eTask, bool fair_reconstruct);
     mfxFrameSurface1 ** GetCurrentL1SurfacesEnc(iTask* eTask, bool fair_reconstruct);
     mfxFrameSurface1 ** GetCurrentL0SurfacesPak(iTask* eTask);
     mfxFrameSurface1 ** GetCurrentL1SurfacesPak(iTask* eTask);
+
     iTask* GetTaskByFrameOrder(mfxU32 frame_order);
-
-    mfxStatus InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask[2], int ref_fid[2][2]);
-    //mfxStatus UpdatePreEncFrameParamsEx(iTask* eTask, iTask* refTask, int fieldId, int ref_fid);
-    //iTask* GetRefTask(iTask *eTask, unsigned int idx, int* refIdx, int* L0L1, int fid, int* ref_fid);
     int GetRefTaskEx(iTask *eTask, unsigned int idx, int refIdx[2][2], int ref_fid[2][2], iTask *outRefTask[2][2]);
-
-    mfxStatus ProcessMultiPreenc(iTask* eTask, mfxU32 num_of_refs[2]);
-    mfxStatus PassPreEncMVPred2EncEx(iTask* eTask, mfxU32 numMVP[2]);
     unsigned GetBufSetDistortion(IObuffs* buf);
 
     //mfxStatus DumpPreEncMVP(setElem *outbuf, int frame_seq, int fieldId, int idx);
@@ -360,6 +354,7 @@ protected:
     mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* m_tmpForReading, *m_tmpMBpreenc;
     mfxExtFeiEncMV::mfxExtFeiEncMVMB*       m_tmpMBenc;
     mfxI16 *m_tmpForMedian;
+
     mfxU32 m_numOfRefs[2];
 };
 
