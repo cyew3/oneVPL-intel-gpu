@@ -1877,9 +1877,17 @@ mfxStatus CTranscodingPipeline::InitPreEncMfxParams(sInputParams *pInParams)
     m_ExtLAControl.LookAheadDepth = pInParams->nLADepth? pInParams->nLADepth : 40;
     m_ExtLAControl.NumOutStream = 0;
     m_ExtLAControl.BPyramid = (mfxU16)(pInParams->bEnableBPyramid ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
-    if (m_ExtLAControl.BPyramid)
+
+    m_mfxPreEncParams.mfx.GopPicSize = pInParams->GopPicSize ? pInParams->GopPicSize : 1500;
+
+    if (pInParams->GopRefDist)
     {
-        m_mfxPreEncParams.mfx.GopPicSize = 1500;
+        m_mfxPreEncParams.mfx.GopRefDist = pInParams->GopRefDist;
+    }
+
+    if (pInParams->nTargetUsage)
+    {
+        m_mfxPreEncParams.mfx.TargetUsage = pInParams->nTargetUsage;
     }
 
     m_PreEncExtParams.push_back((mfxExtBuffer *)&m_ExtLAControl);
