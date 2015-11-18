@@ -82,6 +82,8 @@ void TranscodingSample::PrintHelp(const msdk_char *strAppName, const msdk_char *
     msdk_printf(MSDK_STRING("Usage: %s [options] [--] pipeline-description\n"), strAppName);
     msdk_printf(MSDK_STRING("   or: %s [options] -par ParFile\n"), strAppName);
     msdk_printf(MSDK_STRING("\n"));
+    msdk_printf(MSDK_STRING("  -stat <N>\n"));
+    msdk_printf(MSDK_STRING("                Output statistic every N transcoding cycles\n"));
     msdk_printf(MSDK_STRING("Options:\n"));
     //                     ("  ............xx
     msdk_printf(MSDK_STRING("  -?            Print this help and exit\n"));
@@ -353,6 +355,19 @@ mfxStatus CmdProcessor::ParseCmdLine(int argc, msdk_char *argv[])
             // just skip separator "--" which delimits cmd options and pipeline settings
             break;
         }
+        else if (0 == msdk_strcmp(argv[0], MSDK_STRING("-stat")))
+        {
+            --argc;
+            ++argv;
+            if (!argv[0]) {
+                msdk_printf(MSDK_STRING("error: no argument given for 'stat' option\n"));
+            }
+            if (MFX_ERR_NONE != msdk_opt_read(argv[0], statisticsWindowSize))
+            {
+                msdk_printf(MSDK_STRING("error: stat \"%s\" is invalid"), argv[0]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
         else
         {
             break;
@@ -509,6 +524,8 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
     TranscodingSample::sInputParams InputParams;
     if (m_nTimeout)
         InputParams.nTimeout = m_nTimeout;
+
+    InputParams.statisticsWindowSize = statisticsWindowSize;
 
     if (0 == msdk_strcmp(argv[0], MSDK_STRING("set")))
     {

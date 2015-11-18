@@ -16,6 +16,7 @@ Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 #include "mfxstructures.h"
 #include "vm/time_defs.h"
 #include "vm/strings_defs.h"
+#include "math.h"
 
 #pragma warning(disable:4100)
 
@@ -58,7 +59,19 @@ public:
     inline void StopTimeMeasurement()
     {
 #ifdef TIME_STATS
-        totalTime+=GetDeltaTime();
+        mfxF64 delta=GetDeltaTime();
+        totalTime+=delta;
+        totalTimeSquares+=delta*delta;
+
+        if(delta<minTime)
+        {
+            minTime=delta;
+        }
+
+        if(delta>maxTime)
+        {
+            maxTime=delta;
+        }
         numMeasurements++;
 #endif
     }
@@ -68,8 +81,7 @@ public:
 #ifdef TIME_STATS
         if(start)
         {
-            totalTime+=GetDeltaTime();
-            numMeasurements++;
+            StopTimeMeasurement();
         }
 #endif
     }
@@ -86,7 +98,7 @@ public:
     inline void PrintStatistics(const msdk_char* prefix)
     {
 #ifdef TIME_STATS
-        msdk_printf(L"    %s Total: %lf Avg %lf (%lld takes)",prefix,totalTime,GetAvgTime(),numMeasurements);
+        msdk_printf(L"%s Total:%.3lf(%lld smpls),Avg %.3lf,StdDev:%.3lf,Min:%.3lf,Max:%.3lf\n",prefix,totalTime*1000,numMeasurements,GetAvgTime()*1000,GetTimeStdDev()*1000,minTime*1000,maxTime*1000);
 #endif
     }
 
@@ -108,10 +120,41 @@ public:
 #endif
     }
 
+    inline mfxF64 GetTimeStdDev()
+    {
+#ifdef TIME_STATS
+        mfxF64 avg = GetAvgTime();
+        return sqrt(totalTimeSquares/numMeasurements-avg*avg);
+#else
+        return 0;
+#endif
+    }
+
+inline mfxF64 GetMinTime()
+    {
+#ifdef TIME_STATS
+        return minTime;
+#else
+        return 0;
+#endif
+    }
+
+inline mfxF64 GetMaxTime()
+    {
+#ifdef TIME_STATS
+        return maxTime;
+#else
+        return 0;
+#endif
+    }
+
     inline void ResetStatistics()
     {
 #ifdef TIME_STATS
         totalTime=0;
+        totalTimeSquares=0;
+        minTime=1E100;
+        maxTime=-1;
         numMeasurements=0;
 #endif
     }
@@ -121,6 +164,9 @@ protected:
 #ifdef TIME_STATS
     msdk_tick start;
     mfxF64 totalTime;
+    mfxF64 totalTimeSquares;
+    mfxF64 minTime;
+    mfxF64 maxTime;
     mfxU64 numMeasurements;
 #endif
 };

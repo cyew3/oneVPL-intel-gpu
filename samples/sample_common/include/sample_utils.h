@@ -654,6 +654,7 @@ template<typename T>
 template<size_t S>
     mfxStatus msdk_opt_read(const msdk_char* string, msdk_char (&value)[S])
     {
+        value[0]=0;
     #if defined(_WIN32) || defined(_WIN64)
         return (0 == _tcscpy_s(value, string))? MFX_ERR_NONE: MFX_ERR_UNKNOWN;
     #else

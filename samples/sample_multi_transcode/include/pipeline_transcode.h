@@ -49,6 +49,9 @@
 
 #include "vpp_ext_buffers_storage.h"
 
+#define TIME_STATS 1 // Enable statistics processing
+#include "time_statistics.h"
+
 #if defined(_WIN32) || defined(_WIN64)
 #include "decode_render.h"
 #endif
@@ -155,6 +158,8 @@ namespace TranscodingSample
 
         mfxU32 nTimeout; // how long transcoding works in seconds
         mfxU32 nFPS; // limit transcoding to the number of frames per second
+
+        mfxU32 statisticsWindowSize;
 
         bool bLABRC; // use look ahead bitrate control algorithm
         mfxU16 nLADepth; // depth of the look ahead bitrate control  algorithm
@@ -558,6 +563,11 @@ namespace TranscodingSample
 
         msdk_tick m_nReqFrameTime; // time required to transcode one frame
 
+        int       statisticsWindowSize; // Sliding window size for Statistics
+        mfxU32    m_nOutputFramesNum;
+
+        CTimeStatistics inputStatistics;
+        CTimeStatistics outputStatistics;
     private:
         DISALLOW_COPY_AND_ASSIGN(CTranscodingPipeline);
 

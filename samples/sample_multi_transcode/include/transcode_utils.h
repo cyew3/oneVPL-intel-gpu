@@ -114,7 +114,8 @@ namespace TranscodingSample
         std::map<mfxU32, sPluginParams>              m_encoderPlugins;
         FILE                                         *m_PerfFILE;
         msdk_char                                    *m_parName;
-        mfxU32                                        m_nTimeout;
+        mfxU32                                       statisticsWindowSize;
+        mfxU32                                       m_nTimeout;
     private:
         DISALLOW_COPY_AND_ASSIGN(CmdProcessor);
 

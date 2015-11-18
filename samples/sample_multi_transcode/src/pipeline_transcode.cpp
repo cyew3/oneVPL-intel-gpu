@@ -96,6 +96,7 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_bOwnMVCSeqDescMemory(true),
     m_AsyncDepth(0),
     m_nProcessedFramesNum(0),
+    m_nOutputFramesNum(0),
     m_bIsJoinSession(false),
     m_bDecodeEnable(true),
     m_bEncodeEnable(true),
@@ -449,6 +450,13 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
     pExtSurface->pSurface = NULL;
     mfxU32 i = 0;
 
+    //--- Time measurements
+    if (statisticsWindowSize)
+    {
+        inputStatistics.StopTimeMeasurementWithCheck();
+        inputStatistics.StartTimeMeasurement();
+    }
+
     while (MFX_ERR_MORE_DATA == sts || MFX_ERR_MORE_SURFACE == sts || MFX_ERR_NONE < sts)
     {
         if (MFX_WRN_DEVICE_BUSY == sts)
@@ -481,7 +489,7 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
 
         sts = m_pmfxDEC->DecodeFrameAsync(m_pmfxBS, pmfxSurface, &pExtSurface->pSurface, &pExtSurface->Syncp);
 
-        if (!sts)
+        if (sts==MFX_ERR_NONE)
         {
             m_LastDecSyncPoint = pExtSurface->Syncp;
         }
@@ -501,6 +509,13 @@ mfxStatus CTranscodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
     mfxFrameSurface1    *pmfxSurface = NULL;
     mfxStatus sts = MFX_ERR_MORE_SURFACE;
     mfxU32 i = 0;
+
+    //--- Time measurements
+    if (statisticsWindowSize)
+    {
+        inputStatistics.StopTimeMeasurementWithCheck();
+        inputStatistics.StartTimeMeasurement();
+    }
 
     // retrieve the buffered decoded frames
     while (MFX_ERR_MORE_SURFACE == sts || MFX_WRN_DEVICE_BUSY == sts)
@@ -525,7 +540,6 @@ mfxStatus CTranscodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
         }
 
         MSDK_CHECK_POINTER_SAFE(pmfxSurface, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free surfaces in decoder pool (during long period)\n"))); // return an error if a free surface wasn't found
-
         sts = m_pmfxDEC->DecodeFrameAsync(NULL, pmfxSurface, &pExtSurface->pSurface, &pExtSurface->Syncp);
     }
     return sts;
@@ -700,6 +714,7 @@ mfxStatus CTranscodingPipeline::Decode()
             bLastCycle = true;
 
         msdk_tick nBeginTime = msdk_time_get_tick(); // microseconds.
+
         if(shouldReadNextFrame)
         {
             if (m_MaxFramesForTranscode != m_nProcessedFramesNum)
@@ -721,6 +736,12 @@ mfxStatus CTranscodingPipeline::Decode()
                 if (sts == MFX_ERR_NONE)
                 {
                     m_nProcessedFramesNum++;
+                    if (statisticsWindowSize && m_nProcessedFramesNum && 0 == m_nProcessedFramesNum % statisticsWindowSize)
+                    {
+                        inputStatistics.PrintStatistics(MSDK_STRING("(I):"));
+                        inputStatistics.ResetStatistics();
+                        fflush(stdout);
+                    }
                 }
                 if (sts == MFX_ERR_MORE_DATA && (m_pmfxVPP.get() || m_pmfxPreENC.get()))
                 {
@@ -834,7 +855,7 @@ mfxStatus CTranscodingPipeline::Decode()
             }
         }
 
-        if (0 == (m_nProcessedFramesNum - 1) % 100)
+        if (!statisticsWindowSize && 0 == (m_nProcessedFramesNum - 1) % 100)
         {
             msdk_printf(MSDK_STRING("."));
         }
@@ -1019,6 +1040,12 @@ mfxStatus CTranscodingPipeline::Encode()
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         m_nProcessedFramesNum++;
+        if (statisticsWindowSize && m_nOutputFramesNum && 0 == m_nOutputFramesNum % statisticsWindowSize)
+        {
+            outputStatistics.PrintStatistics(MSDK_STRING("(O):"));
+            outputStatistics.ResetStatistics();
+            fflush(stdout);
+        }
 
         m_BSPool.back()->Syncp = VppExtSurface.Syncp;
         m_BSPool.back()->pCtrl =  VppExtSurface.pCtrl;
@@ -1281,8 +1308,18 @@ mfxStatus CTranscodingPipeline::Transcode()
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         m_nProcessedFramesNum++;
-
-        if (0 == (m_nProcessedFramesNum - 1) % 100)
+        if(statisticsWindowSize)
+        {
+            if (m_nOutputFramesNum && 0 == m_nOutputFramesNum % statisticsWindowSize)
+            {
+                inputStatistics.PrintStatistics(MSDK_STRING("(I): "));
+                outputStatistics.PrintStatistics(MSDK_STRING("(O): "));
+                inputStatistics.ResetStatistics();
+                outputStatistics.ResetStatistics();
+                fflush(stdout);
+            }
+        }
+        else if (0 == (m_nProcessedFramesNum - 1) % 100)
         {
             msdk_printf(MSDK_STRING("."));
         }
@@ -1329,6 +1366,15 @@ mfxStatus CTranscodingPipeline::PutBS()
         sts = m_pmfxSession->SyncOperation(pBitstreamEx->Syncp, MSDK_WAIT_INTERVAL);
     }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    m_nOutputFramesNum++;
+
+    //--- Time measurements
+    if (statisticsWindowSize)
+    {
+        outputStatistics.StopTimeMeasurementWithCheck();
+        outputStatistics.StartTimeMeasurement();
+    }
 
     sts = m_pBSProcessor->ProcessOutputBitstream(&pBitstreamEx->Bitstream);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -2484,6 +2530,8 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     m_AsyncDepth = (0 == pParams->nAsyncDepth)? 1: pParams->nAsyncDepth;
     m_FrameNumberPreference = pParams->FrameNumberPreference;
     m_numEncoders = 0;
+
+    statisticsWindowSize = pParams->statisticsWindowSize;
 
     if (m_bEncodeEnable)
     {
