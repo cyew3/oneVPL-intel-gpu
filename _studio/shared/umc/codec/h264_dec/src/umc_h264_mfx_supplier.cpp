@@ -798,22 +798,20 @@ UMC::Status PosibleMVC::DecodeHeader(UMC::MediaData * data, mfxBitstream *bs, mf
     {
         m_supplier->GetNalUnitSplitter()->MoveToStartCode(data); // move data pointer to start code
 
+        Ipp32s startCode = m_supplier->GetNalUnitSplitter()->CheckNalUnitType(data);
+        if (startCode == UMC::NAL_UT_SPS ||
+            !m_isSPSFound && !m_isSVC_SEIFound)
+        {
+            bs->DataOffset = (mfxU32)((mfxU8*)data->GetDataPointer() - (mfxU8*)data->GetBufferPointer());
+            bs->DataLength = (mfxU32)data->GetDataSize();
+        }
+
         umcRes = ProcessNalUnit(data);
         if (umcRes == UMC::UMC_ERR_UNSUPPORTED)
             umcRes = UMC::UMC_OK;
 
         if (umcRes != UMC::UMC_OK)
             break;
-
-        {
-            Ipp32s startCode = m_supplier->GetNalUnitSplitter()->CheckNalUnitType(data);
-            if (startCode == UMC::NAL_UT_SPS ||
-                !m_isSPSFound && !m_isSVC_SEIFound)
-            {
-                bs->DataOffset = (mfxU32)((mfxU8*)data->GetDataPointer() - (mfxU8*)data->GetBufferPointer());
-                bs->DataLength = (mfxU32)data->GetDataSize();
-            }
-        }
 
         if (IsEnough())
             return UMC::UMC_OK;
