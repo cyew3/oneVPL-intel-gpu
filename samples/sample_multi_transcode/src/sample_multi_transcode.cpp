@@ -446,6 +446,14 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
             bUseExternalAllocator = true;
         }
 
+        // All sessions have to know about timeout
+        if (m_InputParamsArray[i].nTimeout && (m_InputParamsArray[i].eMode == Sink))
+        {
+            msdk_printf(MSDK_STRING("Timeout %d seconds has been set to all sessions\n"), m_InputParamsArray[i].nTimeout);
+            for (mfxU32 j = 0; j < m_InputParamsArray.size(); j++)
+                m_InputParamsArray[j].nTimeout = m_InputParamsArray[i].nTimeout;
+        }
+
         if (Source == m_InputParamsArray[i].eMode)
         {
             if (m_InputParamsArray[i].nAsyncDepth < minAsyncDepth)

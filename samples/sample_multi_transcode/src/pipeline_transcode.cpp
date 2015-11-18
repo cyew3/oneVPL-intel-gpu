@@ -691,7 +691,6 @@ mfxStatus CTranscodingPipeline::Decode()
     SafetySurfaceBuffer   *pNextBuffer = m_pBuffer;
     bool bEndOfFile = false;
     bool bLastCycle = false;
-    bool bNextFrameIDR = false;
     time_t start = time(0);
     while (MFX_ERR_NONE == sts)
     {
@@ -731,7 +730,6 @@ mfxStatus CTranscodingPipeline::Decode()
                 if (!bLastCycle && (DecExtSurface.pSurface == NULL) )
                 {
                     static_cast<FileBitstreamProcessor_WithReset*>(m_pBSProcessor)->ResetInput();
-                    bNextFrameIDR = true;
 
                     if (!GetNumFramesForReset())
                         SetNumFramesForReset(m_nProcessedFramesNum);
@@ -841,9 +839,10 @@ mfxStatus CTranscodingPipeline::Decode()
             msdk_printf(MSDK_STRING("."));
         }
 
-
-        if (bEndOfFile)
+        if (bEndOfFile && m_nTimeout)
+        {
             break;
+        }
 
         msdk_tick nFrameTime = msdk_time_get_tick() - nBeginTime;
         if (nFrameTime < m_nReqFrameTime)
@@ -869,9 +868,8 @@ mfxStatus CTranscodingPipeline::Encode()
     ExtendedSurface VppExtSurface = {};
     ExtendedBS      *pBS = NULL;
     bool isQuit = false;
-    bool bResetOutputNext = false;
     bool bInsertIDR = false;
-
+    int nFramesAlreadyPut = 0;
     SafetySurfaceBuffer   *curBuffer = m_pBuffer;
 
     PreEncAuxBuffer encAuxCtrl;
@@ -900,7 +898,7 @@ mfxStatus CTranscodingPipeline::Encode()
             }
 
             mfxU32 NumFramesForReset = m_pParentPipeline ? m_pParentPipeline->GetNumFramesForReset() : 0;
-            if (NumFramesForReset && !((m_nProcessedFramesNum + 1) % NumFramesForReset) )
+            if (NumFramesForReset && !(nFramesAlreadyPut % NumFramesForReset) )
             {
                 bInsertIDR = true;
             }
@@ -974,7 +972,6 @@ mfxStatus CTranscodingPipeline::Encode()
         if (NumFramesForReset && !(m_nProcessedFramesNum % NumFramesForReset))
         {
             static_cast<FileBitstreamProcessor_WithReset*>(m_pBSProcessor)->ResetOutput();
-            bResetOutputNext = false;
         }
 
         SetSurfaceAuxIDR(VppExtSurface, &encAuxCtrl, bInsertIDR);
@@ -985,6 +982,8 @@ mfxStatus CTranscodingPipeline::Encode()
             if(m_mfxEncParams.mfx.CodecId != MFX_FOURCC_DUMP)
             {
                 sts = EncodeOneFrame(&VppExtSurface, &m_BSPool.back()->Bitstream);
+                if (!sts)
+                    nFramesAlreadyPut++;
             }
             else
             {
