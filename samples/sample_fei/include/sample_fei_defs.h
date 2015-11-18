@@ -31,6 +31,7 @@
 #define MaxFeiEncMVPNum    4
 
 #define MSDK_ZERO_ARRAY(VAR, NUM) {memset(VAR, 0, sizeof(*VAR)*NUM);}
+#define SAFE_RELEASE_EXT_BUFSET(SET) {if (SET){ SET->vacant = true; SET = NULL;}}
 
 enum
 {

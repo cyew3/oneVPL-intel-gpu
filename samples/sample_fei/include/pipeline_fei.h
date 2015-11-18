@@ -294,7 +294,7 @@ protected:
     virtual mfxStatus PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, bool is_buffered, bool &cont);
     virtual mfxStatus EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
     virtual mfxStatus EncodeOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
-    virtual mfxStatus ProcessMultiPreenc(iTask* eTask, mfxU32 num_of_refs[2]);
+    virtual mfxStatus ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs[2]);
     virtual mfxStatus SyncOneEncodeFrame(sTask* pCurrentTask, iTask* eTask, mfxU32 fieldProcessingCounter);
 
     virtual mfxStatus DecodeOneFrame(ExtendedSurface *pOutSurf);
@@ -323,7 +323,7 @@ protected:
     mfxStatus ReadPAKdata(iTask* eTask);
     mfxStatus DropENCPAKoutput(iTask* eTask);
     mfxStatus DropPREENCoutput(iTask* eTask);
-    mfxStatus PassPreEncMVPred2EncEx(iTask* eTask, mfxU32 numMVP[2]);
+    mfxStatus PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[2]);
 
     mfxFrameSurface1 ** GetCurrentL0SurfacesEnc(iTask* eTask, bool fair_reconstruct);
     mfxFrameSurface1 ** GetCurrentL1SurfacesEnc(iTask* eTask, bool fair_reconstruct);
@@ -355,10 +355,11 @@ protected:
     mfxExtFeiEncMV::mfxExtFeiEncMVMB*       m_tmpMBenc;
     mfxI16 *m_tmpForMedian;
 
-    mfxU32 m_numOfRefs[2];
+    mfxU16 m_numOfRefs[2];
 };
 
 bufSet* getFreeBufSet(std::list<bufSet*> bufs);
+mfxExtBuffer * getBufById(setElem* bufSet, mfxU32 id, mfxU32 fieldId);
 
 PairU8 ExtendFrameType(mfxU32 type);
 mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 counter, bool & ref);
