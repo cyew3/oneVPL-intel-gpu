@@ -1847,6 +1847,12 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaSyncSurface");
         vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
+        // following code is workaround:
+        // because of driver bug it could happen that decoding error will not be returned after decoder sync
+        // and will be returned at subsequent encoder sync instead
+        // just ignore VA_STATUS_ERROR_DECODING_ERROR in encoder
+        if (vaSts == VA_STATUS_ERROR_DECODING_ERROR)
+            vaSts = VA_STATUS_SUCCESS;
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
     surfSts = VASurfaceReady;

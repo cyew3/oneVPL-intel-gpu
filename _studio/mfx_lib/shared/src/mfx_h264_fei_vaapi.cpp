@@ -623,6 +623,12 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
     VASurfaceStatus surfSts = VASurfaceSkipped;
 
     vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
+    // following code is workaround:
+    // because of driver bug it could happen that decoding error will not be returned after decoder sync
+    // and will be returned at subsequent encoder sync instead
+    // just ignore VA_STATUS_ERROR_DECODING_ERROR in encoder
+    if (vaSts == VA_STATUS_ERROR_DECODING_ERROR)
+        vaSts = VA_STATUS_SUCCESS;
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     vaSts = vaQuerySurfaceStatus(m_vaDisplay, waitSurface, &surfSts);
@@ -1744,6 +1750,12 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
     VASurfaceStatus surfSts = VASurfaceSkipped;
 
     vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
+    // following code is workaround:
+    // because of driver bug it could happen that decoding error will not be returned after decoder sync
+    // and will be returned at subsequent encoder sync instead
+    // just ignore VA_STATUS_ERROR_DECODING_ERROR in encoder
+    if (vaSts == VA_STATUS_ERROR_DECODING_ERROR)
+        vaSts = VA_STATUS_SUCCESS;
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     vaSts = vaQuerySurfaceStatus(m_vaDisplay, waitSurface, &surfSts);
@@ -2857,6 +2869,12 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
     VASurfaceStatus surfSts = VASurfaceSkipped;
 
     vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
+    // following code is workaround:
+    // because of driver bug it could happen that decoding error will not be returned after decoder sync
+    // and will be returned at subsequent encoder sync instead
+    // just ignore VA_STATUS_ERROR_DECODING_ERROR in encoder
+    if (vaSts == VA_STATUS_ERROR_DECODING_ERROR)
+        vaSts = VA_STATUS_SUCCESS;
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     vaSts = vaQuerySurfaceStatus(m_vaDisplay, waitSurface, &surfSts);
