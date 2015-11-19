@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG2 encoder
@@ -222,7 +222,7 @@ namespace MPEG2EncoderHW
             num_input_copy,
             num_ref_copy);
         fclose(f);
-#endif 
+#endif
 
         if (m_pController)
         {
@@ -348,7 +348,7 @@ namespace MPEG2EncoderHW
 
 #ifdef MPEG2_ENCODE_HW_PERF
         vm_time_start(0,&common_time);
-#endif 
+#endif
 
 
         if (input_surface)
@@ -381,10 +381,10 @@ namespace MPEG2EncoderHW
 #ifdef MPEG2_ENCODE_HW_PERF
             vm_time_start(0,&prepare_input_frames_time);
 #endif
-            sts = m_pFrameStore->NextFrame(  surface,
+            sts = m_pFrameStore->NextFrame( surface,
                 pInternalParams->FrameOrder,
-                (pInternalParams->FrameType & (MFX_FRAMETYPE_I|MFX_FRAMETYPE_P))? 1:0,
-                (pInternalParams->FrameType & MFX_FRAMETYPE_I)? 1:0,
+                pInternalParams->FrameType,
+                pInternalParams->InternalFlags,
                 &EncFrames, &PakFrames);
 #ifdef MPEG2_ENCODE_HW_PERF
             vm_time_stop(0,&prepare_input_frames_time);
@@ -428,10 +428,10 @@ namespace MPEG2EncoderHW
 #ifdef MPEG2_ENCODE_HW_PERF
                 vm_time_start(0,&prepare_input_frames_time);
 #endif
-                sts = m_pFrameStore->NextFrame(  surface,
+                sts = m_pFrameStore->NextFrame( surface,
                     pInternalParams->FrameOrder,
-                    (pInternalParams->FrameType & (MFX_FRAMETYPE_I|MFX_FRAMETYPE_P))? 1:0,
-                    (pInternalParams->FrameType & MFX_FRAMETYPE_I)? 1:0,
+                    pInternalParams->FrameType,
+                    pInternalParams->InternalFlags,
                     &EncFrames, &PakFrames);
 #ifdef MPEG2_ENCODE_HW_PERF
                 vm_time_stop(0,&prepare_input_frames_time);

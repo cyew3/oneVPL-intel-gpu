@@ -292,28 +292,29 @@ namespace MPEG2EncoderHW
     return (mfxU16)(frame_rate*(double)(w*h*3/2)*8.0/1000.0/coeff);
     }*/
     mfxStatus FillMFXFrameParams(mfxFrameParamMPEG2*     pFrameParams,
-                                mfxU8 frameType, 
-                                mfxVideoParamEx_MPEG2 *pExParams, 
-                                mfxU16 inputPictStruct, 
-                                bool bBackwOnly)
+                                mfxU8 frameType,
+                                mfxVideoParamEx_MPEG2 *pExParams,
+                                mfxU16 inputPictStruct,
+                                bool bBackwOnly,
+                                bool bFwdOnly)
     {
-        mfxU16                  seqPicStruct = pExParams->mfxVideoParams.mfx.FrameInfo.PicStruct & 0x0F; 
+        mfxU16                  seqPicStruct = pExParams->mfxVideoParams.mfx.FrameInfo.PicStruct & 0x0F;
         bool                    bField = false;
 
-        pFrameParams->FrameType    = frameType;  
+        pFrameParams->FrameType    = frameType;
 
         mfxU16 curPicStruct = 0;
         switch (seqPicStruct)
         {
-        case MFX_PICSTRUCT_PROGRESSIVE: 
+        case MFX_PICSTRUCT_PROGRESSIVE:
             curPicStruct = mfxU16(MFX_PICSTRUCT_PROGRESSIVE | (inputPictStruct &0xF0)); break;
         case MFX_PICSTRUCT_FIELD_TFF:
             curPicStruct = mfxU16(MFX_PICSTRUCT_FIELD_TFF | (inputPictStruct & (~MFX_PICSTRUCT_FIELD_BFF) & 0x0F)); break;
         case MFX_PICSTRUCT_FIELD_BFF:
             curPicStruct = mfxU16(MFX_PICSTRUCT_FIELD_BFF | (inputPictStruct & (~MFX_PICSTRUCT_FIELD_TFF) & 0x0F)); break;
-        case MFX_PICSTRUCT_UNKNOWN:    
+        case MFX_PICSTRUCT_UNKNOWN:
         default:
-            curPicStruct = mfxU16((inputPictStruct == MFX_PICSTRUCT_UNKNOWN) ? MFX_PICSTRUCT_PROGRESSIVE : inputPictStruct); break;    
+            curPicStruct = mfxU16((inputPictStruct == MFX_PICSTRUCT_UNKNOWN) ? MFX_PICSTRUCT_PROGRESSIVE : inputPictStruct); break;
         }
 
         pFrameParams->CodecFlags  = 0;
@@ -418,16 +419,16 @@ namespace MPEG2EncoderHW
             pFrameParams->RefPicFlag        = 1;
             pFrameParams->BackwardPredFlag  = 0;
             pFrameParams->IntraPicFlag      = 0;
-            pFrameParams->ForwardPredFlag   = 1; 
+            pFrameParams->ForwardPredFlag   = 1;
             pFrameParams->NumRefFrame       = 1;
         }
         else if (pFrameParams->FrameType & MFX_FRAMETYPE_B)
         {
             pFrameParams->RefPicFlag       = 0;
-            pFrameParams->BackwardPredFlag = 1;
-            pFrameParams->ForwardPredFlag  = (bBackwOnly)? 0 : 1;
+            pFrameParams->BackwardPredFlag = (bFwdOnly)   ? 0 : 1;
+            pFrameParams->ForwardPredFlag  = (bBackwOnly) ? 0 : 1;
             pFrameParams->IntraPicFlag     = 0;
-            pFrameParams->NumRefFrame      = (bBackwOnly)? 1 : 2;
+            pFrameParams->NumRefFrame      = (bBackwOnly || bFwdOnly) ? 1 : 2;
         }
         else
         {
@@ -1179,10 +1180,10 @@ namespace MPEG2EncoderHW
         mfxStatus  sts = MFX_ERR_NONE;
         if (pGOP !=0)
         {
-            pGOP->CloseGop();
+            pGOP->CloseGop(false);
             for (;;)
             {
-                sFrameEx  fr = {0};
+                sFrameEx  fr = {};
                 if (!pGOP->GetFrameExForDecoding(&fr,0,0,0))
                 {
                     break;
@@ -1196,7 +1197,7 @@ namespace MPEG2EncoderHW
         {
             for (;;)
             {
-                sFrameEx  fr = {0};
+                sFrameEx  fr = {};
                 if (!pWaitingList->GetFrameEx(&fr))
                 {
                     break;
@@ -1659,26 +1660,28 @@ namespace MPEG2EncoderHW
         // Fill GOP structure using waiting list
         for(;;)
         {
-            sFrameEx         CurFrame = {0};
+            sFrameEx         CurFrame = {};
 
             if (!m_pWaitingList->GetFrameEx(&CurFrame, in == NULL))
             {
                 break;
             }
             if (!m_pGOP->AddFrame(&CurFrame))
-            { 
+            {
                 break;
             }
             m_pWaitingList->MoveOnNextFrame();
         }
+
         if (!in)
         {
-            m_pGOP->CloseGop();
+            bool strictGop = 0 != (m_VideoParamsEx.mfxVideoParams.mfx.GopOptFlag & MFX_GOP_STRICT);
+            m_pGOP->CloseGop(strictGop);
         }
 
-        sFrameEx  CurFrame = {0};
+        sFrameEx  CurFrame = {};
 
-        // Extract next frame from GOP structure 
+        // Extract next frame from GOP structure
         if (!m_pGOP->GetFrameExForDecoding(&CurFrame,m_pWaitingList->isNextReferenceIntra(), m_pWaitingList->isNextBFrame(),m_pWaitingList->isLastFrame()))
         {
             return MFX_ERR_MORE_DATA;
@@ -1690,15 +1693,19 @@ namespace MPEG2EncoderHW
         if (CurFrame.m_bAddEOS)
         {
             CurFrame.m_sEncodeInternalParams.InternalFlags |= MFX_IFLAG_ADD_EOS;
-        } 
+        }
         if (CurFrame.m_bOnlyBwdPrediction && isBPredictedFrame(frameType))
         {
             CurFrame.m_sEncodeInternalParams.InternalFlags |= MFX_IFLAG_BWD_ONLY;
         }
+        if (CurFrame.m_bOnlyFwdPrediction && isBPredictedFrame(frameType))
+        {
+            CurFrame.m_sEncodeInternalParams.InternalFlags |= MFX_IFLAG_FWD_ONLY;
+        }
         // Check frame order parameters
         if (isPredictedFrame(frameType))
         {
-            sFrameEx refFrame = {0};
+            sFrameEx refFrame = {};
             if (m_pGOP->GetFrameExReference(&refFrame))
             {
 
@@ -1709,23 +1716,31 @@ namespace MPEG2EncoderHW
         {
             if (CurFrame.m_bOnlyBwdPrediction)
             {
-                sFrameEx refFrame = {0};
+                sFrameEx refFrame = {};
                 if (m_pGOP->GetFrameExReference(&refFrame,true))
                 {
                     MFX_CHECK((CurFrame.m_FrameOrder < refFrame.m_FrameOrder) && ((Ipp32s)refFrame.m_FrameOrder - (Ipp32s)CurFrame.m_FrameOrder < m_VideoParamsEx.mfxVideoParams.mfx.GopRefDist) ,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-                }      
+                }
+            }
+            else if (CurFrame.m_bOnlyFwdPrediction)
+            {
+                sFrameEx refFrame = {};
+                if (m_pGOP->GetFrameExReference(&refFrame,false))
+                {
+                    MFX_CHECK((CurFrame.m_FrameOrder > refFrame.m_FrameOrder) && ((Ipp32s)CurFrame.m_FrameOrder - (Ipp32s)refFrame.m_FrameOrder < m_VideoParamsEx.mfxVideoParams.mfx.GopRefDist) ,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+                }
             }
             else
             {
-                sFrameEx refFrameF = {0};
-                sFrameEx refFrameB = {0};
+                sFrameEx refFrameF = {};
+                sFrameEx refFrameB = {};
                 if (m_pGOP->GetFrameExReference(&refFrameF,false) && m_pGOP->GetFrameExReference(&refFrameB,true))
                 {
                     MFX_CHECK((CurFrame.m_FrameOrder < refFrameB.m_FrameOrder) && (CurFrame.m_FrameOrder > refFrameF.m_FrameOrder) ,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-                }      
-            }  
+                }
+            }
         }
-        *out = CurFrame.m_pFrame; 
+        *out = CurFrame.m_pFrame;
         *pOutInternalParams = CurFrame.m_sEncodeInternalParams;
 
         m_pGOP->ReleaseCurrentFrame();
@@ -1738,22 +1753,22 @@ namespace MPEG2EncoderHW
         // Fill GOP structure using waiting list
         for(;;)
         {
-            sFrameEx         CurFrame = {0};
+            sFrameEx         CurFrame = {};
 
             if (!m_pWaitingList->GetFrameEx(&CurFrame, false))
             {
                 break;
             }
             if (!m_pGOP->AddFrame(&CurFrame))
-            { 
+            {
                 break;
             }
             m_pWaitingList->MoveOnNextFrame();
         }
 
-        sFrameEx  CurFrame = {0};
+        sFrameEx  CurFrame = {};
 
-        // Extract next frame from GOP structure 
+        // Extract next frame from GOP structure
         if (!m_pGOP->GetFrameExForDecoding(&CurFrame,m_pWaitingList->isNextReferenceIntra(), m_pWaitingList->isNextBFrame(),m_pWaitingList->isLastFrame()))
         {
             return MFX_ERR_MORE_DATA;
@@ -1765,14 +1780,17 @@ namespace MPEG2EncoderHW
         if (CurFrame.m_bAddEOS)
         {
             CurFrame.m_sEncodeInternalParams.InternalFlags |= MFX_IFLAG_ADD_EOS;
-        } 
+        }
         if (CurFrame.m_bOnlyBwdPrediction && isBPredictedFrame(frameType))
         {
             CurFrame.m_sEncodeInternalParams.InternalFlags |= MFX_IFLAG_BWD_ONLY;
         }
+        if (CurFrame.m_bOnlyFwdPrediction && isBPredictedFrame(frameType))
+        {
+            CurFrame.m_sEncodeInternalParams.InternalFlags |= MFX_IFLAG_FWD_ONLY;
+        }
 
-
-        *out = CurFrame.m_pFrame; 
+        *out = CurFrame.m_pFrame;
         *pOutInternalParams = CurFrame.m_sEncodeInternalParams;
 
         m_pGOP->ReleaseCurrentFrame();
@@ -1861,7 +1879,7 @@ namespace MPEG2EncoderHW
 
             if (m_InputFrameOrder < m_pWaitingList->GetDelay())
             {          
-                return (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK; 
+                return (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
             }
             else
             {
@@ -2102,10 +2120,10 @@ namespace MPEG2EncoderHW
             if (GOPLengthBits < minGOPLengthBits)
             {
                 return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-            }  
+            }
 
         }
-        return sts;      
+        return sts;
     }
     void MPEG2BRC_HW::Close ()
     {
@@ -2541,19 +2559,21 @@ namespace MPEG2EncoderHW
         }
         return MFX_ERR_NONE;    
     }
-    mfxStatus FrameStore::NextFrame(mfxFrameSurface1 *pInputFrame, mfxU32 nFrame, bool bReference, bool bIntra, FramesSet *pFrames)
+    mfxStatus FrameStore::NextFrame(mfxFrameSurface1 *pInputFrame, mfxU32 nFrame, mfxU16 frameType, mfxU32 intFlags, FramesSet *pFrames)
     {
         mfxStatus sts           = MFX_ERR_NONE;
         bool      bHWInput      = (m_InputType & MFX_MEMTYPE_DXVA2_DECODER_TARGET)? true: false ;
-        mfxU16    localFrameType= m_bHWFrames?
-            (mfxU16)(MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE):
-        (mfxU16)(MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY|MFX_MEMTYPE_FROM_ENCODE);
+        mfxU16    localFrameType = m_bHWFrames
+            ? (mfxU16)(MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE)
+            : (mfxU16)(MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY|MFX_MEMTYPE_FROM_ENCODE);
+        bool bReference = !!(frameType & (MFX_FRAMETYPE_I|MFX_FRAMETYPE_P)); 
+        bool bIntra = !!(frameType & MFX_FRAMETYPE_I);
 
         m_nFrame = nFrame;
 
         if (bIntra)
         {
-            m_nLastRefBeforeIntra = m_nLastRef;         
+            m_nLastRefBeforeIntra = m_nLastRef;
         }
         if (bReference)
         {
@@ -2600,7 +2620,7 @@ namespace MPEG2EncoderHW
             m_pRefFrame[0] = m_pRefFrame[1];
             m_pRefFrame[1] = pFrames->m_pRecFrame;
             sts = m_pCore->IncreaseReference(&m_pRefFrame[1]->Data);
-            MFX_CHECK_STS(sts); 
+            MFX_CHECK_STS(sts);
 
             if (m_bRawFrame)
             {
@@ -2612,12 +2632,14 @@ namespace MPEG2EncoderHW
                 m_pRawFrame[0] = m_pRawFrame[1];
                 m_pRawFrame[1] = pFrames->m_pInputFrame;
                 sts = m_pCore->IncreaseReference(&m_pRawFrame[1]->Data);
-                MFX_CHECK_STS(sts);             
+                MFX_CHECK_STS(sts);
             }
         }
         // Set Reference frames
+
         pFrames->m_pRefFrame[0] = m_pRefFrame[0];
         pFrames->m_pRefFrame[1] = m_pRefFrame[1];
+
         pFrames->m_pRawFrame[0] = m_pRawFrame[0];
         pFrames->m_pRawFrame[1] = m_pRawFrame[1];
 
@@ -2627,8 +2649,19 @@ namespace MPEG2EncoderHW
         pFrames->m_nRefFrame[0] = m_nRefFrame [0];
         pFrames->m_nRefFrame[1] = m_nRefFrame [1];
 
+        if ((0 != (frameType & MFX_FRAMETYPE_B)) && (0 != (intFlags & MFX_IFLAG_BWD_ONLY)))
+        {
+            pFrames->m_pRefFrame[0] = 0;
+            pFrames->m_nRefFrame[0] = 0;
+        }
+        if ((0 != (frameType & MFX_FRAMETYPE_B)) && (0 != (intFlags & MFX_IFLAG_FWD_ONLY)))
+        {
+            pFrames->m_pRefFrame[1] = 0;
+            pFrames->m_nRefFrame[1] = 0;
+        }
+
         sts = pFrames->LockRefFrames(m_pCore);
-        MFX_CHECK_STS(sts); 
+        MFX_CHECK_STS(sts);
 
         return sts;  
     }
@@ -2805,7 +2838,7 @@ namespace MPEG2EncoderHW
         mfxStatus  sts = MFX_ERR_NONE;
         mfxFrameParamMPEG2*     pFrameParams = &m_pFrameCUC->FrameParam->MPEG2;
 
-        sts = FillMFXFrameParams(pFrameParams,frameType,pExParams,surface_pict_struct,bBackwOnly);
+        sts = FillMFXFrameParams(pFrameParams,frameType,pExParams,surface_pict_struct,bBackwOnly, false);
         MFX_CHECK_STS(sts);
 
         if (pFrameParams->RefPicFlag) 
@@ -2888,7 +2921,7 @@ namespace MPEG2EncoderHW
             pSliceParam->SliceType = MFX_SLICECHOP_NONE;
             pSliceParam->QScaleCode = 0;
 
-            num += pSliceParam->NumMb;     
+            num += pSliceParam->NumMb;
             MFX_CHECK((mfxU32)num <= numMBs,MFX_ERR_UNDEFINED_BEHAVIOR);
 
             for (mfxU32 j=0; j<pSliceParam->NumMb; j++)
@@ -2917,13 +2950,13 @@ namespace MPEG2EncoderHW
 
         if (m_pFrameCUC->FrameParam->MPEG2.IntraPicFlag)
         {
-            return MFX_ERR_UNSUPPORTED;    
+            return MFX_ERR_UNSUPPORTED;
         }
 
         for (mfxU32 i = 0; i < numSlices;i++)
         {
             mfxSliceParamMPEG2 *pSliceParam = &pSlice[i].MPEG2;
-            num += pSliceParam->NumMb;     
+            num += pSliceParam->NumMb;
             MFX_CHECK((mfxU32)num <= numMBs,MFX_ERR_UNDEFINED_BEHAVIOR);
 
             for (mfxU32 j=0; j<pSliceParam->NumMb; j++)
@@ -3014,28 +3047,28 @@ namespace MPEG2EncoderHW
         {
             m_pFrameStoreEnc = new FrameStore(m_pCore);
             sts = m_pFrameStoreEnc->Init(bRawFrame,InputFrameType,bHWEnc,nTasks,pFrameInfo);
-            MFX_CHECK_STS (sts);        
+            MFX_CHECK_STS (sts);
         }
         if (bHWEnc != bHWPak)
         {
             if (m_pFrameStorePak)
             {
                 sts = m_pFrameStorePak->Reset(false,InputFrameType,bHWPak,nTasks,pFrameInfo);
-                MFX_CHECK_STS (sts);        
+                MFX_CHECK_STS (sts);
             }
             else
             {
                 m_pFrameStorePak = new FrameStore(m_pCore);
                 sts = m_pFrameStorePak->Init(false,InputFrameType,bHWPak,nTasks,pFrameInfo);
-                MFX_CHECK_STS (sts);        
-            }        
+                MFX_CHECK_STS (sts);
+            }
         }
         return sts;
     }
     mfxStatus FrameStoreHybrid::NextFrame(mfxFrameSurface1 *pInputFrame, 
-        mfxU32 nFrame, 
-        bool bReference, 
-        bool bIntra, 
+        mfxU32 nFrame,
+        mfxU16 frameType,
+        mfxU32 intFlags,
         FramesSet *pEncFrames,
         FramesSet *pPakFrames)
     {
@@ -3043,12 +3076,12 @@ namespace MPEG2EncoderHW
         if (!m_pFrameStoreEnc)
             return MFX_ERR_NOT_INITIALIZED;
 
-        sts = m_pFrameStoreEnc->NextFrame(pInputFrame,nFrame,bReference,bIntra,pEncFrames);
+        sts = m_pFrameStoreEnc->NextFrame(pInputFrame,nFrame,frameType,intFlags,pEncFrames);
         MFX_CHECK_STS (sts);
 
         if (m_pFrameStorePak)
         {
-            sts = m_pFrameStorePak->NextFrame(pInputFrame,nFrame,bReference,bIntra,pPakFrames);
+            sts = m_pFrameStorePak->NextFrame(pInputFrame,nFrame,frameType,intFlags,pPakFrames);
             MFX_CHECK_STS (sts);
         }
         else

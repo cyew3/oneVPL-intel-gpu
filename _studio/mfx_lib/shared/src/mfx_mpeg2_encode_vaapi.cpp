@@ -92,6 +92,23 @@ namespace
         return *pSurface;
     }
 
+    VASurfaceID ConvertSurfaceIdMFX2VAAPIwNULL(VideoCORE* core, mfxMemId id)
+    {
+        mfxStatus sts;
+        VASurfaceID *pSurface = NULL;
+        MFX_CHECK_WITH_ASSERT(core, VA_INVALID_SURFACE);
+        if (id != 0)
+        {
+            sts = core->GetFrameHDL(id, (mfxHDL *)&pSurface);
+            MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == sts, VA_INVALID_SURFACE);
+        }
+        else
+        {
+            return VA_INVALID_SURFACE;
+        }
+        return *pSurface;
+    }
+
     unsigned short CalculateAspectRatio(int width, int height)
     {
         unsigned short ret = 1;
@@ -250,22 +267,15 @@ namespace
         pps.picture_type = ConvertCodingTypeMFX2VAAPI(winPps.picture_coding_type);
         pps.temporal_reference = winPps.temporal_reference;
         pps.vbv_delay = winPps.vbv_delay;
-//         m_CurrFrameMemID        = curr;
-//         m_bExternalCurrFrame    = bExternal;
-//         m_RecFrameMemID         = rec;
-//         m_RefFrameMemID[0]      = ref_0;
-//         m_RefFrameMemID[1]      = ref_1;
 
         pps.reconstructed_picture = ConvertSurfaceIdMFX2VAAPI(core, pExecuteBuffers->m_RecFrameMemID);
-        // pps.forward_reference_picture = ConvertSurfaceIdMFX2VAAPI(core, pExecuteBuffers->m_RefFrameMemID[0]);
-        // pps.backward_reference_picture = ConvertSurfaceIdMFX2VAAPI(core, pExecuteBuffers->m_RefFrameMemID[1]);
 
         pps.coded_buf = VA_INVALID_ID;        
 
-        pps.f_code[0][0] = CODEC_MPEG2_ENC_FCODE_X(winSps.FrameWidth);
-        pps.f_code[0][1] = CODEC_MPEG2_ENC_FCODE_Y(pps.f_code[0][0]);
-        pps.f_code[1][0] = CODEC_MPEG2_ENC_FCODE_X(winSps.FrameWidth);
-        pps.f_code[1][1] = CODEC_MPEG2_ENC_FCODE_Y(pps.f_code[1][0]);
+        pps.f_code[0][0] = winPps.f_code00;
+        pps.f_code[0][1] = winPps.f_code01;
+        pps.f_code[1][0] = winPps.f_code10;
+        pps.f_code[1][1] = winPps.f_code11;
 
 //        pps.user_data_length = 0;
 
@@ -291,31 +301,19 @@ namespace
 
         if (pps.picture_type == VAEncPictureTypeIntra)
         {
-            pps.f_code[0][0] = 0xf;
-            pps.f_code[0][1] = 0xf;
-            pps.f_code[1][0] = 0xf;
-            pps.f_code[1][1] = 0xf;
             pps.forward_reference_picture = VA_INVALID_SURFACE;
             pps.backward_reference_picture = VA_INVALID_SURFACE;
-        } 
-        else if (pps.picture_type == VAEncPictureTypePredictive) 
+        }
+        else if (pps.picture_type == VAEncPictureTypePredictive)
         {
-            pps.f_code[0][0] = CODEC_MPEG2_ENC_FCODE_X(winSps.FrameWidth);
-            pps.f_code[0][1] = CODEC_MPEG2_ENC_FCODE_Y(pps.f_code[0][0]);
-            pps.f_code[1][0] = 0xf;
-            pps.f_code[1][1] = 0xf;
             pps.forward_reference_picture = ConvertSurfaceIdMFX2VAAPI(core, pExecuteBuffers->m_RefFrameMemID[0]);
             pps.backward_reference_picture = VA_INVALID_SURFACE;
-        } 
-        else if (pps.picture_type == VAEncPictureTypeBidirectional) 
+        }
+        else if (pps.picture_type == VAEncPictureTypeBidirectional)
         {
-            pps.f_code[0][0] = CODEC_MPEG2_ENC_FCODE_X(winSps.FrameWidth);
-            pps.f_code[0][1] = CODEC_MPEG2_ENC_FCODE_Y(pps.f_code[0][0]);
-            pps.f_code[1][0] = CODEC_MPEG2_ENC_FCODE_X(winSps.FrameWidth);
-            pps.f_code[1][1] = CODEC_MPEG2_ENC_FCODE_Y(pps.f_code[1][0]);
-            pps.forward_reference_picture = ConvertSurfaceIdMFX2VAAPI(core, pExecuteBuffers->m_RefFrameMemID[0]);
-            pps.backward_reference_picture = ConvertSurfaceIdMFX2VAAPI(core, pExecuteBuffers->m_RefFrameMemID[1]);
-        } else 
+            pps.forward_reference_picture = ConvertSurfaceIdMFX2VAAPIwNULL(core, pExecuteBuffers->m_RefFrameMemID[0]);
+            pps.backward_reference_picture = ConvertSurfaceIdMFX2VAAPIwNULL(core, pExecuteBuffers->m_RefFrameMemID[1]);
+        } else
         {
             assert(0);
         }
@@ -1069,8 +1067,8 @@ mfxStatus VAAPIEncoder::FillSlices(ExecuteBuffers* pExecuteBuffers)
         sliceParam->macroblock_address = i;
         sliceParam->num_macroblocks      = ddiSlice.NumMbsForSlice;
         sliceParam->is_intra_slice       = ddiSlice.IntraSlice;
-        sliceParam->quantiser_scale_code = ddiSlice.quantiser_scale_code; 
-        //sliceParam->quantiser_scale_code = 4; /*ctx->qp*/ // TODO: where find QP value ?
+        // prevent GPU hang due to different scale_code in different slices
+        sliceParam->quantiser_scale_code = pExecuteBuffers->m_pSlice[0].quantiser_scale_code; 
         MFX_DESTROY_VABUFFER(m_sliceParamBufferId[i], m_vaDisplay);
     }
     
@@ -1218,7 +1216,6 @@ mfxStatus VAAPIEncoder::FillMBQPBuffer(
     mfxU8*          mbqp,
     mfxU32          numMB)
 {
-    typedef VAEncQpBufferH264  VAEncQpBufferMPEG2;
     VAStatus vaSts;
 
     int i, width_in_mbs, height_in_mbs;
@@ -1236,17 +1233,17 @@ mfxStatus VAAPIEncoder::FillMBQPBuffer(
     }
 
     //width(64byte alignment) height(8byte alignment)
-    mfxU32 bufW = ((width_in_mbs + 63) & ~63);
+    mfxU32 bufW = ((width_in_mbs*4 + 63) & ~63);
     mfxU32 bufH = ((height_in_mbs + 7) & ~7);
 
     if (   mbqp && numMB >= width_in_mbs * height_in_mbs
-        && m_mbqpDataBuffer.size() >= (bufW * bufH))
+        && m_mbqpDataBuffer.size()*4 >= (bufW* bufH))
     {
 
         Zero(m_mbqpDataBuffer);
         for (mfxU32 mbRow = 0; mbRow < height_in_mbs; mbRow ++)
             for (mfxU32 mbCol = 0; mbCol < width_in_mbs; mbCol ++)
-                m_mbqpDataBuffer[mbRow * bufW + mbCol].qp_y = mbqp[mbRow * width_in_mbs + mbCol];
+                m_mbqpDataBuffer[mbRow * (bufW/4) + mbCol].qp_y = mbqp[mbRow * width_in_mbs + mbCol];
     }
 
 
@@ -1255,8 +1252,8 @@ mfxStatus VAAPIEncoder::FillMBQPBuffer(
     vaSts = vaCreateBuffer(m_vaDisplay,
         m_vaContextEncode,
         (VABufferType)VAEncQpBufferType,
-        sizeof (VAEncQpBufferMPEG2),
-        m_mbqpDataBuffer.size(),
+        bufW,
+        bufH,//m_mbqpDataBuffer.size(),
         &m_mbqpDataBuffer[0],
         &m_mbqpBufferId);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 //
 //
 //          HW MPEG2  encoder
@@ -134,11 +134,12 @@ namespace MPEG2EncoderHW
     mfxStatus UnlockFrames   (MFXGOP* pGOP, MFXWaitingList* pWaitingList, VideoCORE* pcore);
 
     mfxStatus FillMFXFrameParams(mfxFrameParamMPEG2*     pFrameParams,
-                              mfxU8 frameType, 
-                              mfxVideoParamEx_MPEG2 *pExParams, 
-                              mfxU16 surface_pict_struct, 
-                              bool bBackwOnly);
-  
+                              mfxU8 frameType,
+                              mfxVideoParamEx_MPEG2 *pExParams,
+                              mfxU16 surface_pict_struct,
+                              bool bBackwOnly,
+                              bool bFwdOnly);
+
 
     class ControllerBase
     {
@@ -423,7 +424,7 @@ namespace MPEG2EncoderHW
 
         mfxStatus Init(bool bRawFrame, mfxU16 InputFrameType, bool bHWFrames, mfxU32 mTasks, mfxFrameInfo* pFrameInfo,bool bProtected = false);
 
-        mfxStatus NextFrame(mfxFrameSurface1 *pInputFrame, mfxU32 nFrame, bool bReference, bool bIntra, FramesSet *pFrames);
+        mfxStatus NextFrame(mfxFrameSurface1 *pInputFrame, mfxU32 nFrame, mfxU16 frameType, mfxU32 intFlags, FramesSet *pFrames);
 
         mfxStatus Close();
 
@@ -465,22 +466,22 @@ namespace MPEG2EncoderHW
             return Init(bHWEnc,bHWPak,bRawFrame,InputFrameType, mTasks, pFrameInfo);
         }
 
-        mfxStatus Init(bool bHWEnc, 
-            bool bHWPak, 
-            bool bRawFrame, 
-            mfxU16 InputFrameType, 
-            mfxU32 mTasks, 
+        mfxStatus Init(bool bHWEnc,
+            bool bHWPak,
+            bool bRawFrame,
+            mfxU16 InputFrameType,
+            mfxU32 mTasks,
             mfxFrameInfo* pFrameInfo);
 
-        mfxStatus NextFrame(mfxFrameSurface1 *pInputFrame, 
-            mfxU32 nFrame, 
-            bool bReference, 
-            bool bIntra, 
+        mfxStatus NextFrame(mfxFrameSurface1 *pInputFrame,
+            mfxU32 nFrame,
+            mfxU16 frameType,
+            mfxU32 intFlags,
             FramesSet *pEncFrames,
             FramesSet *pPakFrames);
         mfxStatus Close();
         mfxFrameAllocResponse* GetFrameAllocResponse(bool bHW);
- 
+
     };
     class EncodeFrameTask
     {
@@ -531,26 +532,26 @@ namespace MPEG2EncoderHW
             mfxStatus sts = MFX_ERR_NONE;
             sts = m_Frames.ReleaseFrames(m_pCore);
             Reset();
-            return sts;        
+            return sts;
         }
 
         inline 
         void SetFrames(FramesSet *pFrames,
                        mfxEncodeInternalParams* pEncodeInternalParams)
         {
-            m_Frames = *pFrames;            
+            m_Frames = *pFrames;
             memcpy_s(&m_sEncodeInternalParams, sizeof(mfxEncodeInternalParams), pEncodeInternalParams, sizeof(mfxEncodeInternalParams));
         }
-        inline 
-        mfxStatus FillFrameParams (mfxU8 frameType, mfxVideoParamEx_MPEG2 *pExParams, mfxU16 surface_pict_struct, bool bBackwOnly, bool bAddSH, bool bAddEOS)
+        inline
+            mfxStatus FillFrameParams (mfxU8 frameType, mfxVideoParamEx_MPEG2 *pExParams, mfxU16 surface_pict_struct, bool bBackwOnly, bool bFwdOnly, bool bAddSH, bool bAddEOS)
         {
             mfxStatus sts = MFX_ERR_NONE;
-            sts = FillMFXFrameParams(&m_FrameParams,frameType,pExParams,surface_pict_struct,bBackwOnly);
+            sts = FillMFXFrameParams(&m_FrameParams, frameType, pExParams, surface_pict_struct, bBackwOnly, bFwdOnly);
             MFX_CHECK_STS(sts);
             m_FrameParams.TemporalReference = (mfxU16)(m_Frames.m_nFrame - m_Frames.m_nLastRefBeforeIntra - 1);
-            m_FrameParams.ExtraFlags = (mfxU16)(( bAddSH ? MFX_IFLAG_ADD_HEADER:0)| (bAddEOS ? MFX_IFLAG_ADD_EOS:0)); // those values are not declared 
+            m_FrameParams.ExtraFlags = (mfxU16)(( bAddSH ? MFX_IFLAG_ADD_HEADER:0)| (bAddEOS ? MFX_IFLAG_ADD_EOS:0)); // those values are not declared
             return sts;
-        }    
+        }
     };
 
     class EncodeFrameTaskHybrid

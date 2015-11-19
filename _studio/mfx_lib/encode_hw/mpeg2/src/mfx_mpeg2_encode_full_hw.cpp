@@ -390,10 +390,10 @@ mfxStatus FullEncode::SubmitFrame(sExtTask2 *pExtTask)
     MFX_CHECK_STS(sts);
     // bInputFrame = false;
 
-    sts = m_pFrameStore->NextFrame(  surface,
+    sts = m_pFrameStore->NextFrame( surface,
                                     pInternalParams->FrameOrder,
-                                    (pInternalParams->FrameType & (MFX_FRAMETYPE_I|MFX_FRAMETYPE_P))? 1:0,
-                                    (pInternalParams->FrameType & MFX_FRAMETYPE_I)? 1:0,
+                                    pInternalParams->FrameType,
+                                    pInternalParams->InternalFlags,
                                     &Frames);
 
     MFX_CHECK_STS(sts);
@@ -403,19 +403,20 @@ mfxStatus FullEncode::SubmitFrame(sExtTask2 *pExtTask)
 
     bs->FrameType = pInternalParams->FrameType;
     bs->TimeStamp = pIntTask->m_Frames.m_pInputFrame->Data.TimeStamp;
-    bs->DecodeTimeStamp = (pInternalParams->FrameType & MFX_FRAMETYPE_B)? 
-      CalcDTSForNonRefFrameMpeg2(bs->TimeStamp):
-      CalcDTSForRefFrameMpeg2(bs->TimeStamp,
-          Frames.m_nFrame - Frames.m_nRefFrame[0],
-          pParams->mfxVideoParams.mfx.GopRefDist,
-          CalculateUMCFramerate(pParams->mfxVideoParams.mfx.FrameInfo.FrameRateExtN, pParams->mfxVideoParams.mfx.FrameInfo.FrameRateExtD));
-   
+    bs->DecodeTimeStamp = (pInternalParams->FrameType & MFX_FRAMETYPE_B)
+        ? CalcDTSForNonRefFrameMpeg2(bs->TimeStamp)
+        : CalcDTSForRefFrameMpeg2(bs->TimeStamp,
+        Frames.m_nFrame - Frames.m_nRefFrame[0],
+        pParams->mfxVideoParams.mfx.GopRefDist,
+        CalculateUMCFramerate(pParams->mfxVideoParams.mfx.FrameInfo.FrameRateExtN, pParams->mfxVideoParams.mfx.FrameInfo.FrameRateExtD));
+
     sts = pIntTask->FillFrameParams((mfxU8)pInternalParams->FrameType,
                                         m_pController->getVideoParamsEx(),
                                         surface->Info.PicStruct,
                                         (pInternalParams->InternalFlags & MFX_IFLAG_BWD_ONLY) ? 1:0,
-                                        ((pInternalParams->InternalFlags & MFX_IFLAG_ADD_HEADER) ? 1:0),
-                                        (pInternalParams->InternalFlags & MFX_IFLAG_ADD_EOS) ? 1:0); 
+                                        (pInternalParams->InternalFlags & MFX_IFLAG_FWD_ONLY) ? 1:0,
+                                        (pInternalParams->InternalFlags & MFX_IFLAG_ADD_HEADER) ? 1:0,
+                                        (pInternalParams->InternalFlags & MFX_IFLAG_ADD_EOS) ? 1:0);
     MFX_CHECK_STS(sts);
 
     sts = m_pCore->DecreaseReference(&surface->Data);

@@ -445,7 +445,8 @@ typedef enum
 
     MFX_IFLAG_ADD_HEADER = 1,  // MPEG2: add SeqHeader before this frame
     MFX_IFLAG_ADD_EOS = 2,     // MPEG2: add EOS after this frame
-    MFX_IFLAG_BWD_ONLY = 4     // MPEG2: only backward prediction for this frame
+    MFX_IFLAG_BWD_ONLY = 4,    // MPEG2: only backward prediction for this frame
+    MFX_IFLAG_FWD_ONLY = 8     // MPEG2: only forward prediction for this frame
 
 } MFX_ENCODE_INTERNAL_FLAGS;
 

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG2 encoder
@@ -706,10 +706,10 @@ static mfxStatus  UnlockFrames (MFXGOP* pGOP, MFXWaitingList* pWaitingList, Vide
  mfxStatus  sts = MFX_ERR_NONE;
  if (pGOP !=0)
   {
-    pGOP->CloseGop();
+    pGOP->CloseGop(false);
     for (;;)
     {
-        sFrameEx  fr = {0};
+        sFrameEx  fr = {};
         if (!pGOP->GetFrameExForDecoding(&fr,0,0,0))
         {
             break;
@@ -723,7 +723,7 @@ static mfxStatus  UnlockFrames (MFXGOP* pGOP, MFXWaitingList* pWaitingList, Vide
   {
     for (;;)
     {
-        sFrameEx  fr = {0};
+        sFrameEx  fr = {};
         if (!pWaitingList->GetFrameEx(&fr))
         {
             break;
@@ -1621,7 +1621,7 @@ mfxStatus MFXVideoENCODEMPEG2::ReorderFrame(mfxEncodeInternalParams *pInInternal
   // Fill GOP structure using waiting list
   for(;;)
   {
-    sFrameEx         CurFrame = {0};
+    sFrameEx         CurFrame = {};
 
     if (!m_pWaitingList->GetFrameEx(&CurFrame, in == NULL))
     {
@@ -1635,10 +1635,10 @@ mfxStatus MFXVideoENCODEMPEG2::ReorderFrame(mfxEncodeInternalParams *pInInternal
   }
   if (!in)
   {
-     m_pGOP->CloseGop();
+     m_pGOP->CloseGop(0 != (m_GopOptFlag & MFX_GOP_STRICT));
   }
 
-  sFrameEx  CurFrame = {0};
+  sFrameEx  CurFrame = {};
 
   // Extract next frame from GOP structure
   if (!m_pGOP->GetFrameExForDecoding(&CurFrame,m_pWaitingList->isNextReferenceIntra(), m_pWaitingList->isNextBFrame(),m_pWaitingList->isLastFrame()))

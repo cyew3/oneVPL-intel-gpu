@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010-2015 Intel Corporation. All Rights Reserved.
 //
 //
 //     GOP reorder buffer and waiting list implementation
@@ -266,7 +266,7 @@
         clExtTasks2(const clExtTasks2 &);
         clExtTasks2 & operator = (const clExtTasks2 &);
     };
-    
+
     struct sFrameEx
     {
         mfxFrameSurface1*       m_pFrame;
@@ -276,6 +276,7 @@
         bool                    m_bAddHeader;
         bool                    m_bAddEOS;
         bool                    m_bOnlyBwdPrediction;
+        bool                    m_bOnlyFwdPrediction;
     };
 
     inline void GetFrameTypeMpeg2 (mfxI32 FrameOrder, mfxI32 GOPSize, mfxI32 IPDist, bool bClosedGOP, mfxU16* FrameType)
@@ -436,12 +437,12 @@
             {
                 if (!m_nGOPs)
                 {
-                    pFrameEx->m_bAddHeader = true; 
+                    pFrameEx->m_bAddHeader = true;
                 }
                 m_nGOPs ++;
                 if (m_nGOPsInSeq!=0 && m_nGOPs >= m_nGOPsInSeq)
                 {
-                    m_nGOPs = 0;                                   
+                    m_nGOPs = 0;
                 }
             }
             if (m_pFrames[0].m_pFrame == 0)
@@ -520,13 +521,26 @@
                 if (m_bAddEOS && ((bNextRefIntra && m_nGOPs == 0) || bLast) &&
                     ((m_bEncodedOrder && !bNextB ) || (!m_bEncodedOrder && m_iCurr == 2 + m_numBuffB - 1)))
                 {
-                    pFrame->m_bAddEOS = true;                        
+                    pFrame->m_bAddEOS = true;
                 }
 
                 return true;
             }
-            return false;        
-        }  
+            if (m_iCurr < m_numBuffB + 2 && !m_pFrames[m_iCurr].m_pFrame && bLast)  // check if all next fwd_only && no refs for this one
+            {
+                m_iCurr++;
+                *pFrame = m_pFrames[m_iCurr];
+                if (m_bAddEOS
+                 && ((m_bEncodedOrder && !bNextB) || (!m_bEncodedOrder && m_iCurr == 2 + m_numBuffB - 1)))
+                {
+                    pFrame->m_bAddEOS = true;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
 
         inline  virtual void ReleaseCurrentFrame()
         {
@@ -544,35 +558,46 @@
                 NewGOP();
             }
         }
-        inline  virtual void CloseGop()
+
+        // with strictGop make B w/only forward reference. without - change type to P
+        inline  virtual void CloseGop(bool strictGop)
         {
             if (m_pFrames[1].m_pFrame == 0 && m_numBuffB>0)
             {
                 mfxU16       pictureType = 0;
-                sFrameEx *  pFrame = &m_pFrames[2 + m_numBuffB-1];
 
-                m_pFrames[1]= *pFrame;
-
-                pictureType = (mfxU16)(MFX_FRAMETYPE_P  | MFX_FRAMETYPE_REF);
-                
-                memset (pFrame, 0, sizeof (sFrameEx));
-
-                m_numBuffB --;
-
-                m_pFrames[1].m_FrameType = pictureType;
-                m_pFrames[1].m_sEncodeInternalParams.FrameType = pictureType;
-                if (m_bAddEOS)
+                if (!strictGop)
                 {
-                    if (m_numBuffB == 0)
+                    sFrameEx *  pFrame = &m_pFrames[2 + m_numBuffB-1];
+                    m_pFrames[1]= *pFrame;
+                    pictureType = (mfxU16)(MFX_FRAMETYPE_P  | MFX_FRAMETYPE_REF);
+
+                    memset (pFrame, 0, sizeof (sFrameEx));
+
+                    m_numBuffB --;
+
+                    m_pFrames[1].m_FrameType = pictureType;
+                    m_pFrames[1].m_sEncodeInternalParams.FrameType = pictureType;
+                    m_pFrames[1].m_bOnlyFwdPrediction = true;
+
+                    if (m_bAddEOS && (m_numBuffB == 0))
                     {
-                        m_pFrames[1].m_bAddEOS = true;                    
+                        m_pFrames[1].m_bAddEOS = true;
                     }
-                    else
+                }
+                else
+                {
+                    for (int i = 0; i < m_numBuffB; i++)
                     {
-                        m_pFrames[2+m_numBuffB-1].m_bAddEOS = true;
+                        m_pFrames[2 + i].m_bOnlyFwdPrediction = true;
                     }
                 }
             }
+            if (m_bAddEOS && (!strictGop || (m_numBuffB != 0)))
+            {
+                m_pFrames[2 + m_numBuffB - 1].m_bAddEOS = true;
+            }
+
         }
         inline bool GetFrameExReference(sFrameEx* pFrame, bool bBackward = false)
         {
@@ -582,7 +607,7 @@
                 *pFrame = m_pFrames[n];
                 return true;
             }
-            return false;        
+            return false;
         }  
    
         void Close()
