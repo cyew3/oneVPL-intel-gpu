@@ -588,7 +588,7 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
 
     // now compute and set params
 
-    frame_buffer.field_buffer_index[task_num] = 0;
+    //frame_buffer.field_buffer_index[task_num] = 0;
 
     sequenceHeader.mb_width[task_num] = (m_ClipInfo.clip_info.width + 15) >> 4;
     sequenceHeader.mb_height[task_num]= (m_ClipInfo.clip_info.height + 15) >> 4;
@@ -974,6 +974,7 @@ Status MPEG2VideoDecoderBase::DecodePicture()
 
 Status MPEG2VideoDecoderBase::SaveDecoderState()
 {
+    frameBuffer_backup_previous = frameBuffer_backup;
     frameBuffer_backup = frame_buffer;
     b_curr_number_backup = sequenceHeader.b_curr_number;
     first_i_occure_backup = sequenceHeader.first_i_occure;
@@ -984,9 +985,19 @@ Status MPEG2VideoDecoderBase::SaveDecoderState()
 Status MPEG2VideoDecoderBase::RestoreDecoderState()
 {
     frame_buffer = frameBuffer_backup;
+    frameBuffer_backup = frameBuffer_backup_previous;
     sequenceHeader.b_curr_number = b_curr_number_backup;
     sequenceHeader.first_i_occure = first_i_occure_backup;
     sequenceHeader.frame_count = frame_count_backup;
+    return UMC_OK;
+}
+
+Status MPEG2VideoDecoderBase::RestoreDecoderStateAndRemoveLastField()
+{
+    RestoreDecoderState();
+    std::copy(frameBuffer_backup.frame_p_c_n, frameBuffer_backup.frame_p_c_n + 2*DPB_SIZE, frame_buffer.frame_p_c_n);
+    frame_buffer.latest_next = frameBuffer_backup.latest_next;
+    frame_buffer.latest_prev = frameBuffer_backup.latest_prev;
     return UMC_OK;
 }
 
@@ -1043,20 +1054,7 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
     }
 
     if (PictureHeader[task_num].d_picture) 
-    {
         sequenceHeader.first_i_occure = 1; // no refs in this case
-    } 
-    else if (frame_buffer.field_buffer_index[task_num] != 0) 
-    {
-        // second field must be the same, except IP
-        if (m_picture_coding_type_save != PictureHeader[task_num].picture_coding_type &&
-            m_picture_coding_type_save != MPEG2_I_PICTURE && PictureHeader[task_num].picture_coding_type != MPEG2_P_PICTURE)
-        {
-            frame_buffer.field_buffer_index[task_num] = 0;
-        }
-    }
-
-    m_picture_coding_type_save = PictureHeader[task_num].picture_coding_type;
 
     if(m_dPlaybackRate < 0 && m_dPlaybackRate > -4 && PictureHeader[task_num].picture_coding_type == MPEG2_I_PICTURE)
         Reset();
@@ -1193,6 +1191,17 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
             m_IsFrameSkipped = true;
             return UMC_OK;
         }
+
+        // second field must be the same, except IP
+        if (frame_buffer.field_buffer_index[task_num] != 0)
+            if (m_picture_coding_type_save != PictureHeader[task_num].picture_coding_type &&
+                m_picture_coding_type_save != MPEG2_I_PICTURE && PictureHeader[task_num].picture_coding_type != MPEG2_P_PICTURE)
+            {
+                frame_buffer.field_buffer_index[task_num] = 0;
+                m_IsFrameSkipped = true;
+                return UMC_ERR_INVALID_STREAM;
+            }
+        m_picture_coding_type_save = PictureHeader[task_num].picture_coding_type;
     }
 
     if (PictureHeader[task_num].picture_structure == FRAME_PICTURE

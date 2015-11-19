@@ -382,10 +382,8 @@ public:
         Status DoDecodeSlices(Ipp32s threadID, int task_num);
         Status SaveDecoderState();
         Status RestoreDecoderState();
-        sFrameBuffer frameBuffer_backup;
-        Ipp32s b_curr_number_backup;
-        Ipp32s first_i_occure_backup;
-        Ipp32s frame_count_backup;
+        Status RestoreDecoderStateAndRemoveLastField();
+
     protected:
 
         Status          UpdateFrameBuffer(int task_num);
@@ -496,6 +494,11 @@ public:
         mp2_VLCTable              vlcMotionVector;
 
         sFrameBuffer              frame_buffer;
+        sFrameBuffer              frameBuffer_backup_previous;
+        sFrameBuffer              frameBuffer_backup;
+        Ipp32s                    b_curr_number_backup;
+        Ipp32s                    first_i_occure_backup;
+        Ipp32s                    frame_count_backup;
 
         IppVideoContext**         Video[2*DPB_SIZE];
 

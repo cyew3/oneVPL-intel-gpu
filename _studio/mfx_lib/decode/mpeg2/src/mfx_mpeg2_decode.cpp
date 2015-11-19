@@ -2703,6 +2703,24 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
             m_implUmc.SaveDecoderState();
             umcRes = m_implUmc.GetPictureHeader(&m_in[m_task_num], m_task_num, m_prev_task_num);
 
+            IsField = !m_implUmc.IsFramePictureStructure(m_task_num);
+            if (m_task_num >= DPB && !IsField)
+            {
+                m_frame[m_frame_curr].DataLength = 0;
+                m_frame[m_frame_curr].DataOffset = 0;
+                m_frame_in_use[m_frame_curr] = false;
+
+                if (dec_field_count % 2 != 0)
+                    dec_field_count += 1;
+
+                m_implUmc.RestoreDecoderStateAndRemoveLastField();
+                Ipp32s previous_field = m_task_num - DPB;
+                m_FrameAllocator->DecreaseReference(mid[previous_field]);
+                m_implUmc.UnLockTask(previous_field);
+
+                return MFX_ERR_MORE_DATA;
+            }
+
             if (UMC::UMC_OK != umcRes)
             {
                 if (false == m_reset_done)
@@ -2818,22 +2836,6 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                 return MFX_ERR_UNKNOWN;
             }
 
-            IsField = !m_implUmc.IsFramePictureStructure(m_task_num);
-
-            if (m_task_num >= DPB && !IsField)
-            {
-                m_frame[m_frame_curr].DataLength = 0;
-                m_frame[m_frame_curr].DataOffset = 0;
-                m_frame_in_use[m_frame_curr] = false;
-
-                if (dec_field_count % 2 != 0)
-                    dec_field_count += 1;
-
-                m_implUmc.RestoreDecoderState();
-
-                return MFX_ERR_MORE_DATA;
-            }
-
             if ((false == m_isDecodedOrder && maxNumFrameBuffered <= (Ipp32u)(m_implUmc.GetRetBufferLen())) ||
                  true == m_isDecodedOrder)
             {
@@ -2945,16 +2947,13 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                 m_frame[m_frame_curr].DataLength = 0;
                 m_frame[m_frame_curr].DataOffset = 0;
                 m_frame_in_use[m_frame_curr] = false;
+                m_implUmc.RestoreDecoderState();
                 m_implUmc.UnLockTask(m_task_num);
-
-
 #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
                 umcRes = m_implUmc.pack_w.m_va->EndFrame();
                 if (umcRes != UMC::UMC_OK)
                     return MFX_ERR_LOCK_MEMORY;
 #endif
-
-                m_implUmc.RestoreDecoderState();
                 return MFX_ERR_MORE_DATA;
             }
             else
@@ -2967,13 +2966,13 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                     m_frame[m_frame_curr].DataLength = 0;
                     m_frame[m_frame_curr].DataOffset = 0;
                     m_frame_in_use[m_frame_curr] = false;
+                    m_implUmc.RestoreDecoderState();
                     m_implUmc.UnLockTask(m_task_num);
 #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
                     umcRes = m_implUmc.pack_w.m_va->EndFrame();
                     if (umcRes != UMC::UMC_OK)
                         return MFX_ERR_LOCK_MEMORY;
 #endif
-                    m_implUmc.RestoreDecoderState();
                     return MFX_ERR_MORE_DATA;
                 }
 
