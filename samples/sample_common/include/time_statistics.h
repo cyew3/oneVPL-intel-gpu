@@ -98,7 +98,7 @@ public:
     inline void PrintStatistics(const msdk_char* prefix)
     {
 #ifdef TIME_STATS
-        msdk_printf(L"%s Total:%.3lf(%lld smpls),Avg %.3lf,StdDev:%.3lf,Min:%.3lf,Max:%.3lf\n",prefix,totalTime*1000,numMeasurements,GetAvgTime()*1000,GetTimeStdDev()*1000,minTime*1000,maxTime*1000);
+        msdk_printf(MSDK_STRING("%s Total:%.3lf(%lld smpls),Avg %.3lf,StdDev:%.3lf,Min:%.3lf,Max:%.3lf\n"),prefix,totalTime*1000,numMeasurements,GetAvgTime()*1000,GetTimeStdDev()*1000,minTime*1000,maxTime*1000);
 #endif
     }
 
