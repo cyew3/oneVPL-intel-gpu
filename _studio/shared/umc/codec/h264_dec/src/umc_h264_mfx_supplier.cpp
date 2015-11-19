@@ -797,14 +797,19 @@ UMC::Status PosibleMVC::DecodeHeader(UMC::MediaData * data, mfxBitstream *bs, mf
 
     m_lastSlice = 0;
 
+    bool sub_sps = false;
     UMC::Status umcRes = UMC::UMC_ERR_NOT_ENOUGH_DATA;
     for ( ; data->GetDataSize() > 3; )
     {
         m_supplier->GetNalUnitSplitter()->MoveToStartCode(data); // move data pointer to start code
 
-        Ipp32s startCode = m_supplier->GetNalUnitSplitter()->CheckNalUnitType(data);
-        if (startCode == UMC::NAL_UT_SPS ||
-            !m_isSPSFound && !m_isSVC_SEIFound)
+        Ipp32s const startCode = m_supplier->GetNalUnitSplitter()->CheckNalUnitType(data);
+        if (!sub_sps && startCode == UMC::NAL_UT_SUBSET_SPS)
+            sub_sps = true;
+
+        if (!sub_sps &&
+            (startCode == UMC::NAL_UT_SPS ||
+            !m_isSPSFound && !m_isSVC_SEIFound))
         {
             bs->DataOffset = (mfxU32)((mfxU8*)data->GetDataPointer() - (mfxU8*)data->GetBufferPointer());
             bs->DataLength = (mfxU32)data->GetDataSize();
