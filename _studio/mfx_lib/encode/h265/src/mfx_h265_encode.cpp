@@ -48,10 +48,21 @@
 using namespace H265Enc;
 using namespace H265Enc::MfxEnumShortAliases;
 
-#define TT_TRACE 1
+#define TT_TRACE 0
+#define VT_TRACE 0
+
+#define TASK_LOG_ENABLE  0
+#define TASK_LOG_NUM 1000000
+
+#if VT_TRACE
+extern "C"
+{
+#include <ittnotify.h>
+}
+#endif
 
 namespace {
-#if TT_TRACE
+#if TT_TRACE || VT_TRACE || TASK_LOG_ENABLE
     const char *TT_NAMES[] = {
         "NEWF",
         "PAD",
@@ -94,6 +105,87 @@ namespace {
         "112", "113", "114", "115", "116", "117", "118", "119", "120", "121", "122", "123", "124", "125", "126", "127"
     };
 #endif //TT_TRACE
+
+#if TASK_LOG_ENABLE
+typedef struct {
+    Ipp16s action;
+    Ipp16s poc;                     // for all tasks, useful in debug
+    Ipp16s col;             // for encode, postproc, lookahead
+    Ipp16s row;
+    Ipp16s num_pend;
+    LONGLONG start;
+    LONGLONG end;
+    LONGLONG threadId;
+}TaskLog;
+
+static TaskLog *taskLog;
+static Ipp32u taskLogIdx;
+
+static void TaskLogInit()
+{
+    taskLogIdx = 0;
+    if (taskLog == NULL)
+    taskLog = new TaskLog[TASK_LOG_NUM];
+}
+
+static void TaskLogClose()
+{
+    if (taskLog)
+    delete[] taskLog;
+}
+
+static Ipp32u TaskLogStart(ThreadingTask *task, int num_pend)
+{
+    LARGE_INTEGER t;
+    Ipp32u idx = vm_interlocked_inc32(&taskLogIdx);
+    if (idx > TASK_LOG_NUM) return idx;
+    idx--;
+    taskLog[idx].action = task->action;
+    taskLog[idx].poc = task->poc;
+    taskLog[idx].col = task->col;
+    taskLog[idx].row = task->row;
+    taskLog[idx].num_pend = num_pend;
+    taskLog[idx].threadId = GetCurrentThreadId();
+
+    QueryPerformanceCounter(&t);
+    taskLog[idx].start = t.QuadPart;
+    return idx;
+}
+
+static void TaskLogStop(Ipp32u idx)
+{
+    LARGE_INTEGER t;
+    if (idx >= TASK_LOG_NUM) return;
+    QueryPerformanceCounter(&t);
+    taskLog[idx].end = t.QuadPart;
+}
+
+static void TaskLogDump()
+{
+    FILE *fp = fopen("tasklog-bin.txt","wb");
+    LARGE_INTEGER t1;
+    QueryPerformanceFrequency(&t1);
+    LONGLONG freq = t1.QuadPart;
+    fwrite(&freq, sizeof(LONGLONG), 1, fp);
+    fwrite(taskLog, sizeof(TaskLog), taskLogIdx, fp);
+    fclose(fp);
+    fp = fopen("tasklog.txt","wt");
+    LONGLONG start = taskLog[0].start;
+    for (Ipp32u ii = 0; ii < taskLogIdx; ii++) {
+        if (taskLog[ii].action == TT_INIT_NEW_FRAME) taskLog[ii].row = taskLog[ii].col = 0;
+        fprintf(fp, "%5d %.3f-%.3f: %s %d %d %d [%d]\n",
+            (Ipp32s)taskLog[ii].threadId,
+            (Ipp64f)(taskLog[ii].start - start) * 1000.0 / freq,
+            (Ipp64f)(taskLog[ii].end - start) * 1000.0 / freq,
+            TT_NAMES[taskLog[ii].action],
+            taskLog[ii].poc,
+            taskLog[ii].row,
+            taskLog[ii].col,
+            taskLog[ii].num_pend);
+    }
+    fclose(fp);
+}
+#endif // TASK_LOG_ENABLE
 
     const Ipp32s MYRAND_MAX = 0xffff;
     Ipp32s myrand()
@@ -597,13 +689,15 @@ H265Encoder::H265Encoder(MFXCoreInterface1 &core)
     , m_brc(NULL)
     , m_fei(NULL)
 {
-    m_videoParam.m_logMvCostTable = NULL;
     ippStaticInit();
     vm_cond_set_invalid(&m_condVar);
     vm_mutex_set_invalid(&m_critSect);
     vm_cond_set_invalid(&m_feiCondVar);
     vm_mutex_set_invalid(&m_feiCritSect);
     Zero(m_stat);
+#if TASK_LOG_ENABLE
+    taskLog = NULL;
+#endif
 }
 
 
@@ -627,9 +721,6 @@ H265Encoder::~H265Encoder()
     // note: m_encodeQueue() & m_outputQueue() only "refer on tasks", not have real ptr. so we don't need to release ones
 
     delete m_brc;
-
-    if (m_videoParam.m_logMvCostTable)
-        H265_Free(m_videoParam.m_logMvCostTable);
 
     if (!m_frameEncoder.empty()) {
         for (size_t encIdx = 0; encIdx < m_frameEncoder.size(); encIdx++) {
@@ -668,6 +759,10 @@ H265Encoder::~H265Encoder()
         H265_Free(m_memBuf);
         m_memBuf = NULL;
     }
+#if TASK_LOG_ENABLE
+    TaskLogDump();
+    TaskLogClose();
+#endif
 }
 
 namespace {
@@ -983,24 +1078,16 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
     m_frameCountBufferedSync = 0;
 
     m_ithreadPool.resize(m_videoParam.num_thread_structs, 0);
+
+#if TASK_LOG_ENABLE
+    TaskLogInit();
+#endif
     return MFX_ERR_NONE;
 }
 
 mfxStatus H265Encoder::InitInternal()
 {
     Ipp32u memSize = 0;
-
-    memSize += (1 << 16);
-    m_videoParam.m_logMvCostTable = (Ipp8u *)H265_Malloc(memSize);
-    MFX_CHECK_STS_ALLOC(m_videoParam.m_logMvCostTable);
-
-    // init lookup table for 2*log2(x)+2
-    m_videoParam.m_logMvCostTable[(1 << 15)] = 1;
-    m_videoParam.m_logMvCostTable[0] = 32;
-    Ipp64f log2reciproc = 2 / log(2.0);
-    for (Ipp32s i = 1; i < (1 << 15); i++) {
-        m_videoParam.m_logMvCostTable[(1 << 15) + i] = m_videoParam.m_logMvCostTable[(1 << 15) - i] = (Ipp8u)(log(i + 1.0) * log2reciproc + 2);
-    }
 
     m_profileIndex = 0;
     m_frameOrder = 0;
@@ -1875,6 +1962,9 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
     mfxStatus sts = MFX_ERR_NONE;
 
     Ipp32s stage = vm_interlocked_cas32(&inputParam->m_doStage, 1, 0);
+#if VT_TRACE
+    static mfxTraceStaticHandle _trace_static_handle[64][13];
+#endif
     if (0 == stage) {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "PrepareToEncode");
         th->m_newFrame = th->AcceptFrame(inputParam->surface, inputParam->ctrl, inputParam->bs);
@@ -1892,6 +1982,23 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
         while (numPendingTasks--)
             vm_cond_signal(&th->m_condVar);
     }
+
+#if VT_TRACE
+    if (0 == stage && _trace_static_handle[0][0].itt1.ptr == NULL)
+    {
+        for (int p = 0; p < 64; p++) {
+            for (int a = 0; a < 13; a++) {
+                char ttname[256] = "";
+                strcat(ttname, TT_NAMES[a]);
+                strcat(ttname, " ");
+                strcat(ttname, NUMBERS[p & 0x3f]);
+                wchar_t wstr[256];
+                std::mbstowcs(wstr, ttname, strlen(ttname)+1);
+                _trace_static_handle[p][a].itt1.ptr = __itt_string_handle_create(wstr);
+            }
+        }
+    }
+#endif
 
     // global thread count control
     Ipp32u newThreadCount = vm_interlocked_inc32(&inputParam->m_threadCount);
@@ -1955,7 +2062,9 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
             task = *t;
             th->m_pendingTasks.erase(t);
         }
-
+#if TASK_LOG_ENABLE
+        int num_pend = th->m_pendingTasks.size();
+#endif
         vm_interlocked_inc32(&th->m_threadingTaskRunning);
 
         taskNext = NULL;
@@ -1966,6 +2075,13 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
 
         Ipp32s distBest;
 
+#if VT_TRACE
+        MFXTraceTask *tracetask = new MFXTraceTask(&_trace_static_handle[task->poc & 0x3f][task->action],
+            __FILE__, __LINE__, __FUNCTION__, MFX_TRACE_CATEGORY, MFX_TRACE_LEVEL_API, "", false);
+#endif
+#if TASK_LOG_ENABLE
+        Ipp32u idx = TaskLogStart(task, num_pend);
+#endif
 #if TT_TRACE
         char ttname[256] = "";
         strcat(ttname, TT_NAMES[task->action]);
@@ -2027,11 +2143,16 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
             vm_cond_broadcast(&th->m_condVar);
             throw;
         }
-
+#if TASK_LOG_ENABLE
+        TaskLogStop(idx);
+#endif
 #if TT_TRACE
         MFX_AUTO_TRACE_STOP();
 #endif // TT_TRACE
 
+#if VT_TRACE
+        if (tracetask) delete tracetask;
+#endif
         task->finished = 1;
 
         distBest = -1;
@@ -2554,7 +2675,7 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
 
     mfxFEIH265Input in = {};
     mfxExtFEIH265Output out = {};
-	PostProcParam postprocParam;
+    PostProcParam postprocParam;
 
     in.FrameType = task.frame->m_picCodeType;
     in.FEIOp = task.feiOp;
@@ -2617,7 +2738,7 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
 
     //if (task.feiOp == MFX_FEI_H265_OP_INTER_ME) {
     //    H265FEI_SyncOperation(m_fei, syncpoint, 2000);
-    //    
+    //
     //    DumpGpuMeData(task, m_videoParam);
     //}
 

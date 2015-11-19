@@ -153,6 +153,7 @@ typedef struct
 #else //MFX_VA
 class CmSurface2D;
 class CmSurface2DUP;
+class CmBuffer;
 class CmBufferUP;
 #endif MFX_VA
 
@@ -289,6 +290,11 @@ typedef struct
     CmSurface2D   *bufDown4x;
     CmSurface2D   *bufDown8x;
     CmSurface2D   *bufDown16x;
+    CmBuffer      *meControl;
+    CmBuffer      *postprocParam;
+    double         lambda;
+    bool           meControlInited;
+
 } mfxFEIH265InputSurface;
 
 typedef struct

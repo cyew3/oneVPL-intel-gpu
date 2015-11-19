@@ -337,7 +337,6 @@ public:
     Ipp32s HorMin;
     Ipp32s VerMax;
     Ipp32s VerMin;
-    const Ipp8u *m_logMvCostTable;
     costStat *m_costStat;
 
     SaoEstimator m_saoEst;
@@ -857,7 +856,7 @@ public:
     Ipp32s MvCost1RefLog(Ipp16s mvx, Ipp16s mvy, const MvPredInfo<2> *predInfo) const;
 
     void InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTemp, Ipp32s cuAddr,
-                H265BsFake *_bsf, H265Slice *cslice, ThreadingTaskSpecifier stage, const Ipp8u *logMvCostTable,
+                H265BsFake *_bsf, H265Slice *cslice, ThreadingTaskSpecifier stage,
                 costStat* _costStat, const Frame* frame, CoeffsType *m_coeffWork);
 
 #if defined(AMT_ICRA_OPT)

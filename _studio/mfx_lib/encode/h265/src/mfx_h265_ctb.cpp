@@ -1125,7 +1125,6 @@ void H265CU<PixType>::InitCu(
                     H265BsFake *_bsf,
                     H265Slice *_cslice, 
                     ThreadingTaskSpecifier stage, 
-                    const Ipp8u *logMvCostTable,
                     costStat* _costStat,
                     const Frame* frame,
                     CoeffsType *m_coeffWork) 
@@ -1138,7 +1137,6 @@ void H265CU<PixType>::InitCu(
     m_costStat = _costStat;
 
     m_bsf = _bsf;
-    m_logMvCostTable = logMvCostTable + (1 << 15);
     m_data = _data;
     m_dataStored = _dataTemp;
     m_ctbAddr = cuAddr;
@@ -3111,21 +3109,6 @@ Ipp32s H265CU<PixType>::MvCost1RefLog(Ipp16s mvx, Ipp16s mvy, const MvPredInfo<2
     }
 
     return Ipp32s(cost * m_rdLambdaSqrt + 0.5);
-
-    //Ipp32s costMin = INT_MAX;
-    //Ipp32s mpvIdx = INT_MAX;
-    //for (Ipp32s i = 0; i < predInfo->numCand; i++) {
-    //    Ipp32s cost = m_logMvCostTable[Ipp16s(mvx - predInfo->mvCand[i].mvx)] +
-    //                  m_logMvCostTable[Ipp16s(mvy - predInfo->mvCand[i].mvy)];
-    //    if (costMin > cost) {
-    //        costMin = cost;
-    //        mpvIdx = i;
-    //    }
-    //}
-
-    //return
-    //    (Ipp32s)(m_logMvCostTable[Ipp16s(mvx - predInfo->mvCand[mpvIdx].mvx)] * m_rdLambdaSqrt + 0.5) +
-    //    (Ipp32s)(m_logMvCostTable[Ipp16s(mvy - predInfo->mvCand[mpvIdx].mvy)] * m_rdLambdaSqrt + 0.5);
 }
 
 #ifdef MEMOIZE_SUBPEL

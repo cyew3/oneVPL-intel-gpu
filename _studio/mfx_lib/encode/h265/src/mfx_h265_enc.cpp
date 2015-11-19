@@ -1897,7 +1897,6 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
                 data_temp + ithread * data_temp_size, ctb_addr,
                 &m_bsf[bsf_id], &(m_frame->m_slices[0]) + curr_slice_id,
                 action,
-                m_videoParam.m_logMvCostTable,
                 m_costStat,
                 m_frame,
                 m_coeffWork + (ctb_addr << (m_videoParam.Log2MaxCUSize << 1)) * 6 / (2 + m_videoParam.chromaShift));

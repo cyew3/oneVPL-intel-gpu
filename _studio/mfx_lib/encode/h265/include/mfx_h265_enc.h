@@ -232,8 +232,6 @@ namespace H265Enc {
         Segment *m_slices;//start/end adress
         Ipp16u *m_slice_ids;
 
-        Ipp8u* m_logMvCostTable;
-
         // how many frame encoders will be used
         Ipp32s m_framesInParallel; // 0, 1 - default. means no frame threading
         Ipp32s m_meSearchRangeY;   // = Func1 ( m_framesInParallel )

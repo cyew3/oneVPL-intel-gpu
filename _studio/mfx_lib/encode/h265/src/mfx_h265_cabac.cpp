@@ -685,8 +685,24 @@ static const char SCAN32X32[1024][2] =
     {27,28},{26,29},{25,30},{24,31},{25,31},{26,30},{27,29},{28,28},{29,27},{30,26},{31,25},{31,26},{30,27},{29,28},{28,29},{27,30},{26,31},{27,31},{28,30},{29,29},{30,28},{31,27},{31,28},{30,29},{29,30},{28,31},{29,31},{30,30},{31,29},{31,30},{30,31},{31,31},
 };
 
+static Ipp32s log2(Ipp32u v)
+{
+    assert(v > 0);
+#if defined(_WIN32) || defined(_WIN64)
+    unsigned long index;
+#else
+    unsigned int index;
+#endif
+    unsigned char dst = _BitScanReverse(&index, v);
+    return index;
+}
 
-static Ipp32s FastParametricCoeffCostEstimator(CoeffsType *x, Ipp32u n, const Ipp8u* costTable, Ipp32s num_sig, Ipp32s qp, bool isIntra)
+static Ipp32s log2_by2(Ipp32u v)
+{
+    return log2(v*v);
+}
+
+static Ipp32s FastParametricCoeffCostEstimator(CoeffsType *x, Ipp32u n, Ipp32s num_sig, Ipp32s qp, bool isIntra)
 {
     Ipp32s b, d, z;
     Ipp32s c=0, zero_run=0;
@@ -710,6 +726,7 @@ static Ipp32s FastParametricCoeffCostEstimator(CoeffsType *x, Ipp32u n, const Ip
     else if(qp<37)      ctx0 = 2;
     else                ctx0 = 3;
 
+   
     for (i=0; i<N; i++) 
     {
         /* # bits required for vlc coding gen lap dist */ 
@@ -722,7 +739,7 @@ static Ipp32s FastParametricCoeffCostEstimator(CoeffsType *x, Ipp32u n, const Ip
         else 
         {
             //z = 2*log2+1
-            if(zero_run) z = costTable[zero_run]-1;
+            if(zero_run) z = log2_by2(zero_run+1)+1;
             else z = 1;
             zero_run=0;
             iscancoeff[levels] = d;
@@ -733,7 +750,7 @@ static Ipp32s FastParametricCoeffCostEstimator(CoeffsType *x, Ipp32u n, const Ip
         if(levels>=num_sig) break;
     }
     // log2+1
-    if(i<N) c +=  ((costTable[N-i]-2)>>1)+1;
+    if(i<N) c += log2(N-i+1)+1;
     if(levels)
     for(i=levels;i>0;i--)
     {
@@ -769,7 +786,7 @@ void H265CU<PixType>::CodeCoeffNxN(H265Bs *bs, H265CU<PixType>* pCU, CoeffsType*
 #ifdef AMT_COEFF_COST_EST
     if(!bs->isReal() && m_par->FastCoeffCost && !m_isRdoq) {
         // A radical approach, est coeff cost & match efficiency. (suboptimal only for higher TUs)
-        Ipp32s est_bits=FastParametricCoeffCostEstimator(coeffs, width, m_logMvCostTable, num_sig, pCU->m_data[abs_part_idx].qp, pCU->m_data[abs_part_idx].predMode == MODE_INTRA);
+        Ipp32s est_bits=FastParametricCoeffCostEstimator(coeffs, width, num_sig, pCU->m_data[abs_part_idx].qp, pCU->m_data[abs_part_idx].predMode == MODE_INTRA);
         bs->m_base.m_bitOffset += est_bits;
         return;
     }

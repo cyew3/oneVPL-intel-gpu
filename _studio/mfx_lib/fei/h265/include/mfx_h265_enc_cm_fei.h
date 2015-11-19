@@ -64,14 +64,8 @@ private:
     mfxU32      saveSyncPoint;
 
     CmBuffer * curbe;
-    CmBuffer * meControl[4];
-    mfxU32     meControlIdx;
-
     CmSurface2D * deblocked;
     CmBuffer    * saoStat;
-
-    CmBuffer    * postprocParam[2];
-    mfxU32        postprocParamIdx;
 
     /* Cm kernels to load  */
     H265Enc::Kernel kernelPrepareSrc;
@@ -156,16 +150,12 @@ public:
         saveSyncPoint(),
 
         curbe(),
-        meControl(),
-        meControlIdx(0),
         deblocked(),
         saoStat(),
-        postprocParam(),
-        postprocParamIdx(0),
 
         kernelPrepareSrc(),
         kernelPrepareRef(),
-//        kernelMeIntra(),
+        //kernelMeIntra(),
         kernelGradient(),
         kernelRefine64x64(),
         kernelRefine32x32sad(),
