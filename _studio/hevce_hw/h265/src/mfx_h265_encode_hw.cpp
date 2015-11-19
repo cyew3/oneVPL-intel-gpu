@@ -385,7 +385,7 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
     parNew.SyncCalculableToVideoParam();
 
     if (!pSPSPPS || !pSPSPPS->SPSBuffer)
-        parNew.SyncMfxToHeadersParam();
+        parNew.SyncMfxToHeadersParam(m_vpar.mfx.NumSlice);
 
     sts = CheckHeaders(parNew, m_caps);
     MFX_CHECK_STS(sts);

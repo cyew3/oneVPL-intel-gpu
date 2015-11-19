@@ -448,6 +448,10 @@ MfxVideoParam& MfxVideoParam::operator=(MfxVideoParam const & par)
     Copy(m_sps, par.m_sps);
     Copy(m_pps, par.m_pps);
 
+    m_slice.resize(par.m_slice.size());
+
+    Copy(m_slice, par.m_slice);
+
     return *this;
 }
 
@@ -506,7 +510,7 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
     ExtBuffer::Set(par, m_ext.DumpFiles);
 
 
-    mfxExtCodingOptionSPSPPS * pSPSPPS = (mfxExtCodingOptionSPSPPS *)GetExtendedBuffer(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS);
+    mfxExtCodingOptionSPSPPS * pSPSPPS = ExtBuffer::Get(par);
     if (pSPSPPS && !query)
     {
         HeaderPacker packer;
@@ -533,7 +537,7 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
             }
         }
     }
-    mfxExtCodingOptionVPS * pVPS= (mfxExtCodingOptionVPS *)GetExtendedBuffer(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_CODING_OPTION_VPS);
+    mfxExtCodingOptionVPS * pVPS= ExtBuffer::Get(par);
     if (pVPS && pVPS->VPSBuffer && !query)
     {
 
@@ -1028,7 +1032,7 @@ void MfxVideoParam::SyncHeadersToMfxParam()
     }
 }
 
-void MfxVideoParam::SyncMfxToHeadersParam()
+void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
 {
     PTL& general = m_vps.general;
     SubLayerOrdering& slo = m_vps.sub_layer[NumTL() - 1];
@@ -1205,7 +1209,8 @@ void MfxVideoParam::SyncMfxToHeadersParam()
         for (mfxU8 i = 0; i < sets.size(); i ++)
             OptimizeSTRPS(sets, (mfxU8)sets.size(), sets[i], i);
 
-        ReduceSTRPS(sets, mfx.NumSlice);
+
+        ReduceSTRPS(sets, numSlicesForSTRPSOpt ? numSlicesForSTRPSOpt : mfx.NumSlice);
 
         for (it = sets.begin(); it != sets.end(); it ++)
             m_sps.strps[m_sps.num_short_term_ref_pic_sets++] = *it;

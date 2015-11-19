@@ -281,7 +281,8 @@ namespace ExtBuffer
      MFX_EXTBUFF_AVC_REFLIST_CTRL, \
      MFX_EXTBUFF_AVC_TEMPORAL_LAYERS, \
      MFX_EXTBUFF_DUMP, \
-     MFX_EXTBUFF_ENCODER_RESET_OPTION\
+     MFX_EXTBUFF_ENCODER_RESET_OPTION,\
+     MFX_EXTBUFF_CODING_OPTION_VPS
 
     template<class T> struct ExtBufferMap {};
 
@@ -299,6 +300,7 @@ namespace ExtBuffer
         EXTBUF(mfxExtAvcTemporalLayers,     MFX_EXTBUFF_AVC_TEMPORAL_LAYERS);
         EXTBUF(mfxExtDumpFiles,             MFX_EXTBUFF_DUMP);
         EXTBUF(mfxExtEncoderResetOption,    MFX_EXTBUFF_ENCODER_RESET_OPTION);
+        EXTBUF(mfxExtCodingOptionVPS,       MFX_EXTBUFF_CODING_OPTION_VPS);
     #undef EXTBUF
 
     class Proxy
@@ -520,7 +522,7 @@ public:
 
     void SyncVideoToCalculableParam();
     void SyncCalculableToVideoParam();
-    void SyncMfxToHeadersParam();
+    void SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt = 0);
     void SyncHeadersToMfxParam();
 
     mfxStatus FillPar(mfxVideoParam& par, bool query = false);
