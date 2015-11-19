@@ -46,8 +46,8 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-preenc] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-encode] - use extended FEI interface ENC+PAK (FEI ENCODE) (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-encpak] - use extended FEI interface ENC only and PAK only (separate calls)\n"));
-    msdk_printf(MSDK_STRING("   [-enc] - use extended FEI interface ENC (only)\n"));
-    msdk_printf(MSDK_STRING("   [-pak] - use extended FEI interface PAK (only)\n"));
+    //msdk_printf(MSDK_STRING("   [-enc] - use extended FEI interface ENC (only)\n"));
+    //msdk_printf(MSDK_STRING("   [-pak] - use extended FEI interface PAK (only)\n"));
     msdk_printf(MSDK_STRING("   [-profile decimal] - set AVC profile\n"));
     msdk_printf(MSDK_STRING("   [-level decimal] - set AVC level\n"));
     msdk_printf(MSDK_STRING("   [-EncodedOrder] - use internal logic for reordering, reading from files will be in encoded order (default is display; ENCODE only)\n"));
@@ -144,7 +144,15 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
             i++;
-            msdk_opt_read(strInput[i], pParams->strSrcFile);
+            //msdk_opt_read(strInput[i], pParams->strSrcFile);
+            GET_OPTION_POINTER(strArgument);
+            if (msdk_strlen(strArgument) < sizeof(pParams->strSrcFile)){
+                msdk_strcopy(pParams->strSrcFile, strArgument);
+            }
+            else{
+                PrintHelp(strInput[0], MSDK_STRING("Too long input filename (limit is 1023 characters)!"));
+                return MFX_ERR_UNSUPPORTED;
+            }
             switch (pParams->DecodeId)
             {
             case MFX_CODEC_MPEG2:
@@ -163,14 +171,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->bENCPAK = true;
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-enc")))
+        /*else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-enc")))
         {
             pParams->bOnlyENC = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-pak")))
         {
             pParams->bOnlyPAK = true;
-        }
+        }*/
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-preenc")))
         {
             pParams->bPREENC = true;
@@ -501,11 +509,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     }
 
     if (!( (pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
-          (!pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
+          //(!pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
           (!pParams->bPREENC && !pParams->bOnlyENC &&  pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
           (!pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  &&  pParams->bENCODE) ||
           (!pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCPAK  && !pParams->bENCODE) ||
-           (pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
+           //(pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
            (pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  &&  pParams->bENCODE) ||
            (pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCPAK  && !pParams->bENCODE) )
     ){
@@ -514,11 +522,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
             msdk_printf(MSDK_STRING("Supported pipelines are:\n"));
             msdk_printf(MSDK_STRING("PREENC\n"));
-            msdk_printf(MSDK_STRING("ENC\n"));
+            //msdk_printf(MSDK_STRING("ENC\n"));
             msdk_printf(MSDK_STRING("PAK\n"));
             msdk_printf(MSDK_STRING("ENCODE\n"));
             msdk_printf(MSDK_STRING("ENC + PAK (ENCPAK)\n"));
-            msdk_printf(MSDK_STRING("PREENC + ENC\n"));
+            //msdk_printf(MSDK_STRING("PREENC + ENC\n"));
             msdk_printf(MSDK_STRING("PREENC + ENCODE\n"));
             msdk_printf(MSDK_STRING("PREENC + ENC + PAK (PREENC + ENCPAK)\n"));
         } else

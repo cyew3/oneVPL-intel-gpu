@@ -2555,6 +2555,10 @@ mfxStatus CEncodingPipeline::Run()
                     sts = MFX_ERR_NONE; // ignore warnings if output is available
                     break;
                 }
+                else
+                {
+                    MSDK_BREAK_ON_ERROR(sts);
+                }
             }
 
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -3576,6 +3580,8 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
 
 mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
 {
+    MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
+
     mfxExtFeiEncMVPredictors* pMvPredBuf       = NULL;
     mfxExtFeiEncMBCtrl*       pMbEncCtrl       = NULL;
     mfxExtFeiEncQP*           pMbQP            = NULL;
@@ -3865,6 +3871,9 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
 
 mfxStatus CEncodingPipeline::InitEncodeFrameParams(mfxFrameSurface1* encodeSurface, sTask* pCurrentTask, int frameType)
 {
+    MSDK_CHECK_POINTER(encodeSurface, MFX_ERR_NULL_PTR);
+    MSDK_CHECK_POINTER(pCurrentTask,  MFX_ERR_NULL_PTR);
+
     bufSet * freeSet = getFreeBufSet(m_encodeBufs);
     MSDK_CHECK_POINTER(freeSet, MFX_ERR_NULL_PTR);
     pCurrentTask->bufs.push_back(std::pair<bufSet*, mfxFrameSurface1*>(freeSet, encodeSurface));
