@@ -90,6 +90,9 @@ protected:
     explicit Plugin(bool CreateByDispatcher);
     virtual ~Plugin();
 
+    mfxStatus InitImpl(mfxVideoParam *par);
+    void      FreeResources();
+    void      WaitingForAsyncTasks(bool bResetTasks);
     bool m_createdByDispatcher;
     MFXPluginAdapter<MFXEncoderPlugin> m_adapter;
 
@@ -112,6 +115,7 @@ protected:
     mfxU32                          m_lastIDR;
     mfxU32                          m_baseLayerOrder;
     mfxU32                          m_numBuffered;
+    bool                            m_bInit;
 };
 
 } //MfxHwH265Encode

@@ -22,11 +22,13 @@ void      InheritDefaultValues(MfxVideoParam const & parInit, MfxVideoParam &  p
 Plugin::Plugin(bool CreateByDispatcher)
     : m_createdByDispatcher(CreateByDispatcher)
     , m_adapter(this)
+    , m_bInit(false)
 {
 }
 
 Plugin::~Plugin()
 {
+    Close();
 }
 
 mfxStatus Plugin::PluginInit(mfxCoreInterface *core)
@@ -110,14 +112,9 @@ mfxStatus LoadSPSPPS(MfxVideoParam& par, mfxExtCodingOptionSPSPPS* pSPSPPS)
     }
     return sts;
 }
-
-mfxStatus Plugin::Init(mfxVideoParam *par)
+mfxStatus Plugin::InitImpl(mfxVideoParam *par)
 {
     mfxStatus sts = MFX_ERR_NONE, qsts = MFX_ERR_NONE;
-    MFX_CHECK_NULL_PTR1(par);
-
-    if(par->mfx.CodecId != MFX_CODEC_HEVC)
-        return MFX_ERR_UNSUPPORTED;
 
     m_ddi.reset( CreatePlatformH265Encoder(&m_core) );
     MFX_CHECK(m_ddi.get(), MFX_ERR_UNSUPPORTED);
@@ -222,9 +219,26 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     {
         vm_file_fclose(file);
     }
-
 #endif
+
+    m_bInit = true;
     return qsts;
+}
+
+mfxStatus Plugin::Init(mfxVideoParam *par)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    MFX_CHECK_NULL_PTR1(par);
+
+    MFX_CHECK(par->mfx.CodecId == MFX_CODEC_HEVC, MFX_ERR_UNSUPPORTED);
+    MFX_CHECK(!m_bInit, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    sts = InitImpl(par);
+
+    if (!m_bInit)
+        FreeResources();
+
+    return sts;
 }
 
 mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request, mfxFrameAllocRequest * /*out*/)
@@ -232,8 +246,8 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request,
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR2(par, request);
 
-    if(par->mfx.CodecId != MFX_CODEC_HEVC)
-        return MFX_ERR_UNSUPPORTED;
+    MFX_CHECK(par->mfx.CodecId == MFX_CODEC_HEVC, MFX_ERR_UNSUPPORTED);
+
 
     MfxVideoParam tmp = *par;
     ENCODE_CAPS_HEVC caps = {};
@@ -277,12 +291,6 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 {
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(out);
-
-    if(in->mfx.CodecId != MFX_CODEC_HEVC)
-    {
-        out->mfx.CodecId = 0;
-        return MFX_ERR_UNSUPPORTED;
-    }
 
     if (!in)
     {
@@ -328,6 +336,8 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         MfxVideoParam tmp = *in;
         ENCODE_CAPS_HEVC caps = {};
 
+        MFX_CHECK(in->mfx.CodecId == MFX_CODEC_HEVC, MFX_ERR_UNSUPPORTED);
+
         // matching ExtBuffers
         sts = ExtBuffer::CheckBuffers(*in, *out);
         MFX_CHECK_STS(sts);
@@ -358,11 +368,76 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
     return sts;
 }
+void   Plugin::WaitingForAsyncTasks(bool bResetTasks)
+{
+    // need to wait untial all async tasks will be ready.
+    if (!bResetTasks)
+    {
+        for (;;)
+        {
+            //waiting for all task are submitted into driver
+            if (m_task.GetSubmittedTask())
+            {
+                vm_time_sleep(0);
+                continue;
+            }
+            break;
+        }
+        return;
+    }
 
-mfxStatus Plugin::Reset(mfxVideoParam *par)
+    for (;;)
+    {
+        //waiting for async tasks are finished
+        if (m_task.GetSubmittedTask() || m_task.GetTaskForQuery())
+        {
+            vm_time_sleep(0);
+            continue;
+        }
+        break;
+    }
+
+    // drop other tasks (not submitted into async part)
+    for (;;)
+    {
+        Task* pTask = m_task.Reorder(m_vpar, m_lastTask.m_dpb[0], true);
+        if (!pTask)
+            break;
+    }
+    // free reordered tasks
+    for (;;)
+    {
+        Task* task = m_task.GetSubmittedTask();
+        if (!task)
+            break;
+
+        m_task.SubmitForQuery(task);
+        task->m_stage = STAGE_READY;
+        if (task->m_surf)
+            FreeTask(*task);
+        m_task.Ready(task);
+    }
+
+
+    m_task.Reset();
+
+    m_frameOrder = 0;
+    m_raw.Unlock();
+    m_rec.Unlock();
+    m_bs.Unlock();
+
+    Fill(m_lastTask, 0xFF);
+    m_numBuffered = 0;
+
+
+}
+
+mfxStatus  Plugin::Reset(mfxVideoParam *par)
 {
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR1(par);
+
+    MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
 
     sts = ExtBuffer::CheckBuffers(*par);
     MFX_CHECK_STS(sts);
@@ -447,55 +522,10 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
     // waiting for submitted in driver tasks
+    WaitingForAsyncTasks(isIdrRequired || (pResetOpt && IsOn(pResetOpt->StartNewSequence)));
+
     if (isIdrRequired || (pResetOpt && IsOn(pResetOpt->StartNewSequence)))
     {
-        for (;;)
-        {
-            Task* task = m_task.GetTaskForQuery();
-            if (!task)
-                break;
-            mfxStatus mfxSts = m_ddi->QueryStatus(*task);
-            if (mfxSts == MFX_WRN_DEVICE_BUSY)
-            {
-                vm_time_sleep(0);
-                continue;
-            }
-            task->m_stage = STAGE_READY;
-            FreeTask(*task);
-            m_task.Ready(task);
-        }
-        // reorder other tasks
-        for (;;)
-        {
-            Task* pTask = m_task.Reorder(m_vpar, m_lastTask.m_dpb[0], true);
-            if (!pTask)
-                break;
-        }
-        // free reordered tasks
-        for (;;)
-        {
-            Task* task = m_task.GetSubmittedTask();
-            if (!task)
-                break;
-
-           m_task.SubmitForQuery(task);
-           task->m_stage = STAGE_READY;
-           if (task->m_surf)
-                FreeTask(*task);
-           m_task.Ready(task);
-        }
-
-
-        m_task.Reset();
-
-        m_frameOrder = 0;
-        m_raw.Unlock();
-        m_rec.Unlock();
-        m_bs.Unlock();
-
-        Fill(m_lastTask, 0xFF);
-        m_numBuffered = 0;
-
 #if DEBUG_REC_FRAMES_INFO
         mfxExtDumpFiles * extDump = &m_vpar.m_ext.DumpFiles;
         if (vm_file * file = OpenFile(extDump->ReconFilename, _T("wb")))
@@ -516,8 +546,8 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
 mfxStatus Plugin::GetVideoParam(mfxVideoParam *par)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    if (m_ddi.get() == 0)
-        return MFX_ERR_NOT_INITIALIZED;
+
+    MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK_NULL_PTR1(par);
 
     for (mfxU16 i = 0; i < par->NumExtParam; i++)
@@ -542,10 +572,8 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     Task* task = 0;
     mfxExtCodingOption2*   extOpt2Init = &m_vpar.m_ext.CO2;
 
-    if (m_ddi.get() == 0)
-        return MFX_ERR_NOT_INITIALIZED;
-    if (bs == NULL)
-        return MFX_ERR_NULL_PTR;
+    MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
+    MFX_CHECK_NULL_PTR1(bs);
 
     if (surface)
     {
@@ -691,7 +719,9 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
     Task* inputTask = (Task*) thread_task;
     mfxStatus sts = MFX_ERR_NONE;
 
-    MFX_CHECK_NULL_PTR1(inputTask);
+    MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
+    MFX_CHECK_NULL_PTR1(inputTask);       
+
 
    if (inputTask == taskForExecute && taskForExecute->m_surf)
    {
@@ -893,8 +923,7 @@ mfxStatus Plugin::FreeTask(Task &task)
 
     return MFX_ERR_NONE;
 }
-
-mfxStatus Plugin::Close()
+void Plugin::FreeResources()
 {
     mfxExtOpaqueSurfaceAlloc& opaq = m_vpar.m_ext.Opaque;
 
@@ -902,10 +931,7 @@ mfxStatus Plugin::Close()
     m_raw.Free();
     m_bs.Free();
 
-    if (!m_ddi.get())
-        return MFX_ERR_NOT_INITIALIZED;
-
-    delete m_ddi.release();
+    m_ddi.reset();
 
     m_frameOrder = 0;
     Zero(m_lastTask);
@@ -916,7 +942,16 @@ mfxStatus Plugin::Close()
         m_core.UnmapOpaqueSurface(opaq.In.NumSurface, opaq.In.Type, opaq.In.Surfaces);
         Zero(opaq);
     }
+}
 
+mfxStatus Plugin::Close()
+{
+    MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
+
+    WaitingForAsyncTasks(true);
+    FreeResources();
+
+    m_bInit = false;
     return MFX_ERR_NONE;
 }
 
