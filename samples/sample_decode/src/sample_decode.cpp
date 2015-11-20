@@ -309,7 +309,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -di key"));
                 return MFX_ERR_UNSUPPORTED;
             }
-            msdk_char diMode[4];
+            msdk_char diMode[4] = {};
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], diMode))
             {
                 PrintHelp(strInput[0], MSDK_STRING("deinterlace value is not set"));
