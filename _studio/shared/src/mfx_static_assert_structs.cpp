@@ -166,7 +166,7 @@ File Name: mfx_static_assert_structs.cpp
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPAKInput                ,184)
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxPAKOutput               ,32)
     #elif defined(_WIN32) || defined(LINUX32)
-        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiPreEncCtrl        ,128 )
+        MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiPreEncCtrl        ,120 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiPreEncMVPredictors,68 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiEncQP             ,68 )
         MSDK_STATIC_ASSERT_STRUCT_SIZE(mfxExtFeiPreEncMV          ,68 )
