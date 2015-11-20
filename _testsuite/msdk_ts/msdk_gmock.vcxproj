@@ -209,6 +209,7 @@
     <ClInclude Include="include\test_sample_allocator.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\gmock\test_suites\avcd_corruption.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_decorder.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_field_payload.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_picturetype.cpp" />

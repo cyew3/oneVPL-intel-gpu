@@ -21,6 +21,9 @@
     <Filter Include="Source Files\test_suites\avce">
       <UniqueIdentifier>{7863bc07-44d7-4401-a394-b73f6f31774f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\test_suites\avcd">
+      <UniqueIdentifier>{b8e90e5b-5cae-432e-954f-5505d49c767b}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source Files\test_suites\ptir">
       <UniqueIdentifier>{30437599-beba-461b-a777-176e72b1508b}</UniqueIdentifier>
     </Filter>
@@ -250,9 +253,6 @@
     <ClCompile Include="src\gmock\test_suites\mpeg2d_timestamp.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\avcd_decorder.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\avce_constraint_vbr.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
@@ -334,9 +334,18 @@
     <ClCompile Include="src\gmock\test_suites\hevce_gaa_reset.cpp">
       <Filter>Source Files\test_suites\hevce_gaa</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\avcd_picturetype.cpp">
-      <Filter>Source Files\test_suites</Filter>
+    <ClCompile Include="src\gmock\test_suites\avcd_corruption.cpp">
+      <Filter>Source Files\test_suites\avcd</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avcd_decorder.cpp">
+      <Filter>Source Files\test_suites\avcd</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avcd_picturetype.cpp">
+      <Filter>Source Files\test_suites\avcd</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avcd_field_payload.cpp">
+      <Filter>Source Files\test_suites\avcd</Filter>
+    </ClCompile>    
     <ClCompile Include="src\gmock\test_suites\mpeg2d_timecode.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
@@ -414,9 +423,6 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vpp_uyvy.cpp">
       <Filter>Source Files\test_suites\vpp</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\avcd_field_payload.cpp">
-      <Filter>Source Files\test_suites</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\mpeg2d_aspect_ratio_change.cpp">
       <Filter>Source Files\test_suites</Filter>
