@@ -767,8 +767,8 @@ void InheritDefaultValues(
     mfxExtHEVCParam *       extHEVCReset = &parReset.m_ext.HEVCParam;
 
     InheritOption(extHEVCInit->GeneralConstraintFlags,  extHEVCReset->GeneralConstraintFlags);
-    InheritOption(extHEVCInit->PicHeightInLumaSamples,  extHEVCReset->PicHeightInLumaSamples);
-    InheritOption(extHEVCInit->PicWidthInLumaSamples,   extHEVCReset->PicWidthInLumaSamples);
+    //InheritOption(extHEVCInit->PicHeightInLumaSamples,  extHEVCReset->PicHeightInLumaSamples);
+    //InheritOption(extHEVCInit->PicWidthInLumaSamples,   extHEVCReset->PicWidthInLumaSamples);
 
     mfxExtHEVCTiles const * extHEVCTilInit  = &parInit.m_ext.HEVCTiles;
     mfxExtHEVCTiles *       extHEVCTilReset = &parReset.m_ext.HEVCTiles;

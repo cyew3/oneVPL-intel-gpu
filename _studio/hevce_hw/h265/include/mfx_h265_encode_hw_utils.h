@@ -338,13 +338,13 @@ namespace ExtBuffer
         header.BufferSz = sizeof(T);
     }
     
-    template<class T> inline void Add(T& buf, mfxExtBuffer* pBuffers[], mfxU32 numbuffers)
+    template<class T> inline void Add(T& buf, mfxExtBuffer* pBuffers[], mfxU16 &numbuffers)
     {
         pBuffers[numbuffers++] = ((mfxExtBuffer*)&buf);
     }
 
 
-    template<class P, class T> bool Construct(P const & par, T& buf, mfxExtBuffer* pBuffers[], mfxU32 numbuffers)
+    template<class P, class T> bool Construct(P const & par, T& buf, mfxExtBuffer* pBuffers[], mfxU16 &numbuffers)
     {
         T  * p = Get(par);
         Add(buf,pBuffers,numbuffers);

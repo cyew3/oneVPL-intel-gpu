@@ -343,7 +343,7 @@ mfxStatus CopyRawSurfaceToVideoMemory(
 
 namespace ExtBuffer
 {
-    bool Construct(mfxVideoParam const & par, mfxExtHEVCParam& buf, mfxExtBuffer* pBuffers[], mfxU32 numbuffers)
+    bool Construct(mfxVideoParam const & par, mfxExtHEVCParam& buf, mfxExtBuffer* pBuffers[], mfxU16 & numbuffers)
     {
         if (!Construct<mfxVideoParam, mfxExtHEVCParam>(par, buf, pBuffers, numbuffers))
         {
@@ -450,7 +450,8 @@ MfxVideoParam& MfxVideoParam::operator=(MfxVideoParam const & par)
 
     m_slice.resize(par.m_slice.size());
 
-    Copy(m_slice, par.m_slice);
+    for (size_t i = 0; i< m_slice.size(); i++)
+        m_slice[i] = par.m_slice[i];
 
     return *this;
 }
