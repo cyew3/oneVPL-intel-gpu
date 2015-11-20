@@ -907,7 +907,7 @@ mfxStatus CTranscodingPipeline::Encode()
             while (MFX_ERR_MORE_SURFACE == curBuffer->GetSurface(DecExtSurface) && !isQuit)
                 MSDK_SLEEP(TIME_TO_SLEEP);
 
-             // if session is not join and it is not parent - synchronize
+            // if session is not joined and it is not parent - synchronize
             if (!m_bIsJoinSession && m_pParentPipeline)
             {
                 // if it is not already synchronized
@@ -963,7 +963,9 @@ mfxStatus CTranscodingPipeline::Encode()
             else
             {
                 curBuffer->ReleaseSurface(DecExtSurface.pSurface);
-                if (curBuffer->m_pNext != NULL)
+
+                //--- We should switch to another buffer ONLY in case of Composition
+                if (curBuffer->m_pNext != NULL && m_nVPPCompEnable > 0)
                 {
                     curBuffer = curBuffer->m_pNext;
                     continue;
@@ -1012,7 +1014,7 @@ mfxStatus CTranscodingPipeline::Encode()
             }
         }
 
-        if(shouldReadNextFrame) // Release current decoded surface only if're going to read next one during next iteration
+        if(shouldReadNextFrame) // Release current decoded surface only if we're going to read next one during next iteration
         {
             m_pBuffer->ReleaseSurface(DecExtSurface.pSurface);
         }
@@ -3119,6 +3121,9 @@ mfxStatus SafetySurfaceBuffer::GetSurface(ExtendedSurface &Surf)
     // no ready surfaces
     if (0 == m_SList.size())
     {
+        Surf.pSurface=NULL;
+        Surf.pCtrl=NULL;
+        Surf.Syncp=0;
         return MFX_ERR_MORE_SURFACE;
     }
 
