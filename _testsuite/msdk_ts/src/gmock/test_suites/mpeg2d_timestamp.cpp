@@ -44,15 +44,16 @@ private:
 const TestSuite::tc_struct TestSuite::test_case[] = 
 {
     // READ_BY_FRAME: read whole frame and only one at a time. Do not not overwrite data until DataLength = 0
+    // ALWAYS_READ: read frames for all statuses from DecodeFrameAsync
+    // COMPLETE_FRAME: set complete frame flag. Can be used inly with READ_BY_FRAME
 
-    // ALWAYS_READ: read frames for all statuses from DecodeFrameAsync except ERR_MORE_SURFACE
-    {/*00*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ},
-    {/*00*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ|TestSuite::COMPLETE_FRAME},
-    {/*00*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ|TestSuite::COMPLETE_FRAME|TestSuite::READ_BY_FRAME},
+    {/*00*/ MFX_ERR_NONE},
+    {/*01*/ MFX_ERR_NONE, TestSuite::READ_BY_FRAME},
+    {/*02*/ MFX_ERR_NONE, TestSuite::READ_BY_FRAME|TestSuite::COMPLETE_FRAME},
+    {/*03*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ},
+    {/*04*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ|TestSuite::READ_BY_FRAME},
+    {/*05*/ MFX_ERR_NONE, TestSuite::ALWAYS_READ|TestSuite::READ_BY_FRAME|TestSuite::COMPLETE_FRAME},
 
-    // common pipeline
-    {/*00*/ MFX_ERR_NONE, TestSuite::COMPLETE_FRAME},
-    {/*00*/ MFX_ERR_NONE, TestSuite::COMPLETE_FRAME|TestSuite::READ_BY_FRAME},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -74,7 +75,7 @@ public:
         : tsParserMPEG2(BS_MPEG2_INIT_MODE_MB)
         , tsReader(fname)
         , offset(0)
-        , m_buf_size(1024*1024)
+        , m_buf_size(200000) // should be more than size of biggest frame
         , m_first_pic_header(false)
         , m_eos(false)
         , m_read_by_frame(read_by_frame)
@@ -158,7 +159,6 @@ public:
 
             m_eos = bs.DataLength != bs.MaxLength;
         }
-        bs.TimeStamp = in_pts++;
         if (m_complete_frame)
         {
             bs.DataFlag = MFX_BITSTREAM_COMPLETE_FRAME;
@@ -227,80 +227,75 @@ int TestSuite::RunTest(unsigned int id)
     }
     m_par_set = false;
 
-    if (tc.mode & ALWAYS_READ)
+    m_par.AsyncDepth = 1;
+    Init();
+
+    mfxU32 decoded = 0;
+    mfxU32 submitted = 0;
+    mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
+    mfxStatus res = MFX_ERR_NONE;
+
+    async = TS_MIN(nframes, async - 1);
+
+    SetPar4_DecodeFrameAsync();
+
+    m_pBitstream->TimeStamp = 1;
+    while(decoded < nframes)
     {
-        m_par.AsyncDepth = 1;
-        Init();
+        res = DecodeFrameAsync(m_session, m_pBitstream, m_pSurf = GetSurface(), &m_pSurfOut, m_pSyncPoint);
 
-        mfxU32 decoded = 0;
-        mfxU32 submitted = 0;
-        mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
-        mfxStatus res = MFX_ERR_NONE;
-
-        async = TS_MIN(nframes, async - 1);
-
-        SetPar4_DecodeFrameAsync();
-
-        while(decoded < nframes)
+        if(g_tsStatus.get() == 0)
         {
-            res = DecodeFrameAsync(m_session, m_pBitstream, m_pSurf = GetSurface(), &m_pSurfOut, m_pSyncPoint);
-
-            if(g_tsStatus.get() == 0)
+            m_surf_out.insert( std::make_pair(*m_pSyncPoint, m_pSurfOut) );
+            if(m_pSurfOut)
             {
-                m_surf_out.insert( std::make_pair(*m_pSyncPoint, m_pSurfOut) );
-                if(m_pSurfOut)
-                {
-                    m_pSurfOut->Data.Locked ++;
-                }
-            }
-
-            // read next frame on each iteration
-            if (res != MFX_ERR_MORE_SURFACE && m_pBitstream)
-            {
-                reader.ProcessBitstream(*m_pBitstream, 1);
-            }
-
-            if(MFX_ERR_MORE_SURFACE == res || MFX_ERR_MORE_DATA == res || res > 0)
-            {
-                if (reader.m_eos && MFX_ERR_MORE_DATA == res)
-                {
-                    for (mfxU16 i = 0; i < m_par.AsyncDepth + 1; i++)
-                    {
-                        res = DecodeFrameAsync(m_session, 0, m_pSurf = GetSurface(), &m_pSurfOut, m_pSyncPoint);
-                        if (MFX_ERR_NONE == res)
-                        {
-                            submitted++;
-                            m_surf_out.insert( std::make_pair(*m_pSyncPoint, m_pSurfOut) );
-                            if(m_pSurfOut)
-                            {
-                                m_pSurfOut->Data.Locked ++;
-                            }
-                        }
-                    }
-                    while(m_surf_out.size()) SyncOperation();
-                    decoded += submitted;
-                    break;
-                }
-                continue;
-            }
-
-            if(res < 0) g_tsStatus.check();
-
-            if(++submitted >= async)
-            {
-                while(m_surf_out.size()) SyncOperation();
-                decoded += submitted;
-                submitted = 0;
-                async = TS_MIN(async, (nframes - decoded));
+                m_pSurfOut->Data.Locked ++;
             }
         }
+        if (m_pBitstream && (res == MFX_ERR_MORE_SURFACE || res == MFX_ERR_NONE))
+            m_pBitstream->TimeStamp++;
+        bool EndOfStream = false;
+        // read next frame on each iteration
+        if (m_pBitstream)
+            if ((tc.mode & ALWAYS_READ) || res == MFX_ERR_MORE_DATA)
+                EndOfStream = MFX_ERR_MORE_DATA == reader.ProcessBitstream(*m_pBitstream, 1);
 
-        g_tsLog << decoded << " FRAMES DECODED\nframes";
+        if(MFX_ERR_MORE_SURFACE == res || MFX_ERR_MORE_DATA == res || res > 0)
+        {
+            if (EndOfStream && MFX_ERR_MORE_DATA == res)
+            {
+                for (mfxU16 i = 0; i < m_par.AsyncDepth + 1; i++)
+                {
+                    res = DecodeFrameAsync(m_session, 0, m_pSurf = GetSurface(), &m_pSurfOut, m_pSyncPoint);
+                    if (MFX_ERR_NONE == res)
+                    {
+                        submitted++;
+                        m_surf_out.insert( std::make_pair(*m_pSyncPoint, m_pSurfOut) );
+                        if(m_pSurfOut)
+                        {
+                            m_pSurfOut->Data.Locked ++;
+                        }
+                    }
+                }
+                while(m_surf_out.size()) SyncOperation();
+                decoded += submitted;
+                break;
+            }
+            continue;
+        }
+
+        if(res < 0) g_tsStatus.check();
+
+        if(++submitted >= async)
+        {
+            while(m_surf_out.size()) SyncOperation();
+            decoded += submitted;
+            submitted = 0;
+            async = TS_MIN(async, (nframes - decoded));
+        }
     }
-    else
-    {
-        DecodeFrames(nframes);
-    }
+
+    g_tsLog << decoded << " FRAMES DECODED\nframes";
 
     TS_END;
     return 0;
