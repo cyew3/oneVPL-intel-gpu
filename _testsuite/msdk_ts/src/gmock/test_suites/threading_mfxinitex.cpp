@@ -7,6 +7,7 @@
 #endif
 
 #include <vector>
+#include <thread>
 
 #include "ts_encoder.h"
 #include "ts_parser.h"
@@ -98,7 +99,12 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*11*/ MFX_ERR_NONE, EXT_BUF, {
         {THREAD_PAR, &tsStruct::mfxExtThreadsParam.NumThread, 2},
         {THREAD_PAR, &tsStruct::mfxExtThreadsParam.SchedulingType, TS_SCHED_OTHER},
-        {THREAD_PAR, &tsStruct::mfxExtThreadsParam.Priority, 1}
+        {THREAD_PAR, &tsStruct::mfxExtThreadsParam.Priority, 0}
+    }},
+    {/*12*/ MFX_ERR_UNSUPPORTED, EXT_BUF, {
+        { THREAD_PAR, &tsStruct::mfxExtThreadsParam.NumThread, 2 },
+        { THREAD_PAR, &tsStruct::mfxExtThreadsParam.SchedulingType, TS_SCHED_OTHER },
+        { THREAD_PAR, &tsStruct::mfxExtThreadsParam.Priority, 1 }
     }},
 };
 
@@ -182,6 +188,11 @@ int TestSuite::RunTest(unsigned int id)
 
         SETPARS(&tp, THREAD_PAR);
 
+        if (tp.NumThread == 0)
+        {
+            tp.NumThread = std::thread::hardware_concurrency();
+        }
+
         if (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS)
             expect = MFX_ERR_UNSUPPORTED;
 #if (defined(LINUX32) || defined(LINUX64))
@@ -190,6 +201,10 @@ int TestSuite::RunTest(unsigned int id)
             expect = MFX_ERR_UNSUPPORTED;
         }
 #endif
+    }
+    else // case 0 - no extParam
+    {
+        tp.NumThread = std::thread::hardware_concurrency();
     }
 
     g_tsStatus.expect(expect);
