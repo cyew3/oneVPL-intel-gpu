@@ -320,8 +320,8 @@ mfxStatus mfxDefaultAllocatorD3D11::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxF
 
     D3D11_MAPPED_SUBRESOURCE LockedRect = {0};
     D3D11_MAP MapType = D3D11_MAP_READ;
-    UINT MapFlags = D3D11_MAP_FLAG_DO_NOT_WAIT;
-
+    UINT MapFlags = 0;// D3D11_MAP_FLAG_DO_NOT_WAIT; //!!!!!!WA synchronization issue on Win10, requires to return back after fix, can affect performance negatively
+    
     // need to copy surface into staging surface then map
     ID3D11Texture2D *pStagingSurface = pSelf->m_StagingSrfPool;
 
