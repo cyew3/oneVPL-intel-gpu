@@ -259,7 +259,9 @@ void Mpeg2CheckConfigurableCommon(mfxVideoParam &par)
         par.mfx.CodecProfile != MFX_PROFILE_MPEG2_MAIN &&
       /*par.mfx.CodecProfile != MFX_PROFILE_MPEG2_SNR &&
         par.mfx.CodecProfile != MFX_PROFILE_MPEG2_SPATIAL &&*/
+#if !defined(MFX_VA_LINUX)
         par.mfx.CodecProfile != MFX_PROFILE_MPEG2_HIGH &&
+#endif
         par.mfx.CodecProfile != MFX_PROFILE_MPEG1)
         par.mfx.CodecProfile = MFX_PROFILE_UNKNOWN;
 

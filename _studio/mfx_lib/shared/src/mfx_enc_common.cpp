@@ -755,9 +755,15 @@ bool CorrectProfileLevelMpeg2(mfxU16 &profile, mfxU16 & level, mfxU32 w, mfxU32 
     if (MFX_LEVEL_MPEG2_HIGH !=  level && MFX_LEVEL_MPEG2_HIGH1440 !=  level && MFX_LEVEL_MPEG2_MAIN !=  level &&  MFX_LEVEL_MPEG2_LOW !=  level)
         level = MFX_LEVEL_MPEG2_MAIN;
 
-    if (MFX_PROFILE_MPEG2_SIMPLE != profile && MFX_PROFILE_MPEG2_MAIN != profile && MFX_PROFILE_MPEG2_HIGH != profile)
+    if (MFX_PROFILE_MPEG2_SIMPLE != profile
+        && MFX_PROFILE_MPEG2_MAIN != profile
+#if !defined(MFX_VA_LINUX)
+        && MFX_PROFILE_MPEG2_HIGH != profile
+#endif
+        )
+    {
         profile = MFX_PROFILE_MPEG2_MAIN;
-
+    }
     
     if (w > 1440 || h > 1152 || frame_rate*w*h > 47001600.0 || bitrate > 60000000)
     {

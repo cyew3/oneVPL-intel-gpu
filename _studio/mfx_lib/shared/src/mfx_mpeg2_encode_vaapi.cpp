@@ -65,7 +65,7 @@ namespace
         {
             case MFX_PROFILE_MPEG2_SIMPLE: return VAProfileMPEG2Simple;
             case MFX_PROFILE_MPEG2_MAIN:   return VAProfileMPEG2Main;
-            case MFX_PROFILE_MPEG2_HIGH:   assert(!"Unsupported profile type");  return VAProfileMPEG2Main;
+            case MFX_PROFILE_MPEG2_HIGH:   /*assert(!"Unsupported profile type"); */ return VAProfileMPEG2Main;
             default: assert(!"Unsupported profile type"); return VAProfileNone;
         }
 

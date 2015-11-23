@@ -106,10 +106,17 @@ private:
     std::vector<byte> m_level;
 };
 
+const mfxStatus HIGH_PROFILE_EXP_RESULT =
+#if defined(LINUX32) || defined(LINUX64)
+    MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+#else
+    MFX_ERR_NONE;
+#endif
+
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
      //Test#0, 1080i59.94/HP,MP/HL/3Bs/32/5M
-    {/* 0*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 1920},
+    {/* 0*/ HIGH_PROFILE_EXP_RESULT, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 1920 },
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 1080},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_MPEG2_HIGH},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecLevel,   MFX_LEVEL_MPEG2_HIGH},
@@ -118,7 +125,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 30000},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1001},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct,        MFX_PICSTRUCT_FIELD_BFF}}},
-    {/* 1*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 1920},
+    {/* 1*/ HIGH_PROFILE_EXP_RESULT, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 1920},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 1080},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_MPEG2_HIGH},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecLevel,   MFX_LEVEL_MPEG2_HIGH},
@@ -146,7 +153,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1001},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct,        MFX_PICSTRUCT_FIELD_TFF}}},
     //Test#1, 1080i50/HP,MP/HL/3Bs/32/5M
-    {/* 4*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 1920},
+    {/* 4*/ HIGH_PROFILE_EXP_RESULT, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 1920},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 1080},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_MPEG2_HIGH},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecLevel,   MFX_LEVEL_MPEG2_HIGH},
@@ -155,7 +162,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 25},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct,        MFX_PICSTRUCT_FIELD_BFF}}},
-    {/* 5*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 1920},
+    {/* 5*/ HIGH_PROFILE_EXP_RESULT, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 1920},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 1088},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_MPEG2_HIGH},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecLevel,   MFX_LEVEL_MPEG2_HIGH},
@@ -183,7 +190,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct,        MFX_PICSTRUCT_FIELD_TFF}}},
     //Test#2, 720p59.94/HP,MP/H-14/3Bs/32/4M
-    {/* 8*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 1280},
+    {/* 8*/ HIGH_PROFILE_EXP_RESULT, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 1280},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 720},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_MPEG2_HIGH},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecLevel,   MFX_LEVEL_MPEG2_HIGH1440},
@@ -201,7 +208,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 60000},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1001}}},
     //Test#3, 720p50/High,Main/H-14/3Bs/32/4M
-    {/*10*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 1280},
+    {/*10*/ HIGH_PROFILE_EXP_RESULT, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 1280},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 720},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_MPEG2_HIGH},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecLevel,   MFX_LEVEL_MPEG2_HIGH1440},
@@ -218,7 +225,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 50},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1}}},
     //Test#4, 480i59.94/HP,MP/ML/3Bs/32/1.5M
-    {/*12*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 720},
+    {/*12*/ HIGH_PROFILE_EXP_RESULT, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 720},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_MPEG2_HIGH},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecLevel,   MFX_LEVEL_MPEG2_MAIN},
@@ -236,7 +243,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 30000},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1001},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct,        MFX_PICSTRUCT_FIELD_TFF}}},
-    {/*14*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 720},
+    {/*14*/ HIGH_PROFILE_EXP_RESULT, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 720},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_MPEG2_HIGH},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecLevel,   MFX_LEVEL_MPEG2_MAIN},
@@ -255,7 +262,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1001},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct,        MFX_PICSTRUCT_FIELD_BFF}}},
     //Test#5, 576i50/HP,MP/ML/3Bs/32/1.5M
-    {/*16*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 720},
+    {/*16*/ HIGH_PROFILE_EXP_RESULT, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 720},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 576},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_MPEG2_HIGH},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecLevel,   MFX_LEVEL_MPEG2_MAIN},
@@ -273,7 +280,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 25},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct,        MFX_PICSTRUCT_FIELD_TFF}}},
-    {/*18*/ MFX_ERR_NONE, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 720},
+    {/*18*/ HIGH_PROFILE_EXP_RESULT, {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 720},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 576},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_MPEG2_HIGH},
                            {MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecLevel,   MFX_LEVEL_MPEG2_MAIN},
