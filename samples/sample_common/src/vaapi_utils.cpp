@@ -69,6 +69,7 @@ VA_Proxy::VA_Proxy()
     , SIMPLE_LOADER_FUNCTION(vaSyncSurface)
     , SIMPLE_LOADER_FUNCTION(vaDeriveImage)
     , SIMPLE_LOADER_FUNCTION(vaDestroyImage)
+    , SIMPLE_LOADER_FUNCTION(vaGetLibFunc)
 #ifndef DISABLE_VAAPI_BUFFER_EXPORT
     , SIMPLE_LOADER_FUNCTION(vaAcquireBufferHandle)
     , SIMPLE_LOADER_FUNCTION(vaReleaseBufferHandle)
@@ -277,5 +278,112 @@ CLibVA* CreateLibVA(int type)
     return libva;
 }
 #endif // #if defined(LIBVA_DRM_SUPPORT) || defined(LIBVA_X11_SUPPORT)
+
+#if defined(LIBVA_X11_SUPPORT)
+
+struct AcquireCtx
+{
+    int fd;
+    VAImage image;
+};
+
+VAStatus CLibVA::AcquireVASurface(
+    void** pctx,
+    VADisplay dpy1,
+    VASurfaceID srf1,
+    VADisplay dpy2,
+    VASurfaceID* srf2)
+{
+    if (!pctx || !srf2) return VA_STATUS_ERROR_OPERATION_FAILED;
+
+    if (dpy1 == dpy2) {
+        *srf2 = srf1;
+        return VA_STATUS_SUCCESS;
+    }
+
+    AcquireCtx* ctx;
+    unsigned long handle=0;
+    VAStatus va_res;
+    VASurfaceAttrib attribs[2];
+    VASurfaceAttribExternalBuffers extsrf;
+    uint32_t memtype = VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME;
+
+    MSDK_ZERO_MEMORY(attribs);
+    MSDK_ZERO_MEMORY(extsrf);
+    extsrf.num_buffers = 1;
+    extsrf.buffers = &handle;
+
+    attribs[0].type = (VASurfaceAttribType)VASurfaceAttribMemoryType;
+    attribs[0].flags = VA_SURFACE_ATTRIB_SETTABLE;
+    attribs[0].value.type = VAGenericValueTypeInteger;
+    attribs[0].value.value.i = memtype;
+
+    attribs[1].type = (VASurfaceAttribType)VASurfaceAttribExternalBufferDescriptor;
+    attribs[1].flags = VA_SURFACE_ATTRIB_SETTABLE;
+    attribs[1].value.type = VAGenericValueTypePointer;
+    attribs[1].value.value.p = &extsrf;
+
+    ctx = (AcquireCtx*)calloc(1, sizeof(AcquireCtx));
+    if (!ctx) return VA_STATUS_ERROR_OPERATION_FAILED;
+
+    va_res = m_libva.vaDeriveImage(dpy1, srf1, &ctx->image);
+    if (VA_STATUS_SUCCESS != va_res) {
+        free(ctx);
+        return va_res;
+    }
+
+    va_res = m_fnVaGetSurfaceHandle(dpy1, &srf1, &ctx->fd);
+    if (VA_STATUS_SUCCESS != va_res) {
+        m_libva.vaDestroyImage(dpy1, ctx->image.image_id);
+        free(ctx);
+        return va_res;
+    }
+
+    extsrf.width = ctx->image.width;
+    extsrf.height = ctx->image.height;
+    extsrf.num_planes = ctx->image.num_planes;
+    extsrf.pixel_format = ctx->image.format.fourcc;
+    for (int i=0; i < 3; ++i) {
+        extsrf.pitches[i] = ctx->image.pitches[i];
+        extsrf.offsets[i] = ctx->image.offsets[i];
+    }
+    extsrf.data_size = ctx->image.data_size;
+    extsrf.flags = memtype;
+    extsrf.buffers[0] = ctx->fd;
+
+    va_res = m_libva.vaCreateSurfaces(dpy2,
+        VA_RT_FORMAT_YUV420,
+        extsrf.width, extsrf.height,
+        srf2, 1, attribs, 2);
+    if (VA_STATUS_SUCCESS != va_res) {
+        m_libva.vaDestroyImage(dpy1, ctx->image.image_id);
+        free(ctx);
+        return va_res;
+    }
+
+    *pctx = ctx;
+
+    return VA_STATUS_SUCCESS;
+}
+
+void CLibVA::ReleaseVASurface(
+    void* actx,
+    VADisplay dpy1,
+    VASurfaceID /*srf1*/,
+    VADisplay dpy2,
+    VASurfaceID srf2)
+{
+    if (dpy1 != dpy2) {
+        AcquireCtx* ctx = (AcquireCtx*)actx;
+        if (ctx) {
+            m_libva.vaDestroySurfaces(dpy2, &srf2, 1);
+            close(ctx->fd);
+            m_libva.vaDestroyImage(dpy1, ctx->image.image_id);
+            free(ctx);
+        }
+    }
+}
+
+#endif //LIBVA_X11_SUPPORT
 
 #endif // #ifdef LIBVA_SUPPORT

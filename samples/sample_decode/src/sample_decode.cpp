@@ -80,9 +80,11 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 #endif
 #if defined(LIBVA_WAYLAND_SUPPORT)
     msdk_printf(MSDK_STRING("   [-rwld]                   - render decoded data in a Wayland window \n"));
+    msdk_printf(MSDK_STRING("   [-perf]                   - turn on asynchronous flipping for Wayland rendering \n"));
 #endif
 #if defined(LIBVA_DRM_SUPPORT)
     msdk_printf(MSDK_STRING("   [-rdrm]                   - render decoded data in a thru DRM frame buffer\n"));
+    msdk_printf(MSDK_STRING("   [-window x y w h]\n"));
 #endif
     msdk_printf(MSDK_STRING("   [-low_latency]            - configures decoder for low latency mode (supported only for H.264 and JPEG codec)\n"));
     msdk_printf(MSDK_STRING("   [-calc_latency]           - calculates latency during decoding and prints log (supported only for H.264 and JPEG codec)\n"));
@@ -213,6 +215,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->mode = MODE_RENDERING;
             pParams->libvaBackend = MFX_LIBVA_WAYLAND;
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-perf")))
+        {
+            pParams->bPerfMode = true;
+        }
         else if (0 == msdk_strncmp(strInput[i], MSDK_STRING("-rdrm"), 5))
         {
             pParams->memType = D3D9_MEMORY;
@@ -231,6 +237,25 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             } else {
                 pParams->monitorType = MFX_MONITOR_AUTO; // that's case of "-rdrm" pure option
             }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-window")))
+        {
+            if(i +4 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -window key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            msdk_opt_read(strInput[++i], pParams->nRenderWinX);
+            msdk_opt_read(strInput[++i], pParams->nRenderWinY);
+            msdk_opt_read(strInput[++i], pParams->Width);
+            msdk_opt_read(strInput[++i], pParams->Height);
+
+            if (0 == pParams->Width)
+                pParams->Width = 320;
+            if (0 == pParams->Height)
+                pParams->Height = 240;
+
+            pParams->bRenderWin = true;
         }
 #endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-low_latency")))

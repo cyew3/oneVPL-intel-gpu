@@ -16,6 +16,8 @@ Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
 #define DISABLE_VAAPI_BUFFER_EXPORT
 
 #include <va/va.h>
+#include <va/va_drmcommon.h>
+
 #if defined(LIBVA_DRM_SUPPORT)
 #include <xf86drm.h>
 #include <xf86drmMode.h>
@@ -70,6 +72,7 @@ namespace MfxLoader
         typedef VAStatus (*vaSyncSurface_type)(VADisplay, VASurfaceID);
         typedef VAStatus (*vaDeriveImage_type)(VADisplay, VASurfaceID, VAImage *);
         typedef VAStatus (*vaDestroyImage_type)(VADisplay, VAImageID);
+        typedef VAStatus (*vaGetLibFunc_type)(VADisplay, const char *func);
 #ifndef DISABLE_VAAPI_BUFFER_EXPORT
         typedef VAStatus (*vaAcquireBufferHandle_type)(VADisplay, VABufferID, VABufferInfo *);
         typedef VAStatus (*vaReleaseBufferHandle_type)(VADisplay, VABufferID);
@@ -89,6 +92,7 @@ namespace MfxLoader
         const vaSyncSurface_type     vaSyncSurface;
         const vaDeriveImage_type     vaDeriveImage;
         const vaDestroyImage_type    vaDestroyImage;
+        const vaGetLibFunc_type      vaGetLibFunc;
 #ifndef DISABLE_VAAPI_BUFFER_EXPORT
         const vaAcquireBufferHandle_type vaAcquireBufferHandle;
         const vaReleaseBufferHandle_type vaReleaseBufferHandle;
@@ -277,14 +281,36 @@ namespace MfxLoader
 #endif
 } // namespace MfxLoader
 
+
+typedef VAStatus (*vaExtGetSurfaceHandle)(
+    VADisplay dpy,
+    VASurfaceID *surface,
+    int *prime_fd);
+
+#define VPG_EXT_GET_SURFACE_HANDLE "vpgExtGetSurfaceHandle"
+
+
 class CLibVA
 {
 public:
     virtual ~CLibVA(void) {};
 
-    inline int getBackendType() { return m_type; }
-    VADisplay GetVADisplay(void) { return m_va_dpy; }
+    VAStatus AcquireVASurface(
+        void** pctx,
+        VADisplay dpy1,
+        VASurfaceID srf1,
+        VADisplay dpy2,
+        VASurfaceID* srf2);
+    void ReleaseVASurface(
+        void* actx,
+        VADisplay dpy1,
+        VASurfaceID /*srf1*/,
+        VADisplay dpy2,
+        VASurfaceID srf2);
 
+    inline int getBackendType() { return m_type; }
+    VADisplay GetVADisplay(bool render = false)
+     { return (render && m_va_dpy_render)? m_va_dpy_render: m_va_dpy; }
     const MfxLoader::VA_Proxy m_libva;
 
 protected:
@@ -294,11 +320,20 @@ protected:
     {}
     int m_type;
     VADisplay m_va_dpy;
+    VADisplay m_va_dpy_render;
+
+    vaExtGetSurfaceHandle m_fnVaGetSurfaceHandle;
+
 private:
     DISALLOW_COPY_AND_ASSIGN(CLibVA);
 };
 
+#define IHD_DRV_VIDEO_DRIVER "iHD_drv_video.so"
+
 CLibVA* CreateLibVA(int type = MFX_LIBVA_DRM);
+
+VAStatus AcquireVASurface(void** ctx, VADisplay dpy1, VASurfaceID srf1, VADisplay dpy2, VASurfaceID* srf2);
+void ReleaseVASurface(void* actx, VADisplay dpy1, VASurfaceID srf1, VADisplay dpy2, VASurfaceID srf2);
 
 mfxStatus va_to_mfx_status(VAStatus va_res);
 

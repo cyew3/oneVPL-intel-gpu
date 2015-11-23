@@ -79,6 +79,12 @@ public:
 protected:
     mfxHDL m_window;
     X11LibVA m_X11LibVA;
+private:
+    bool   m_bRenderWin;
+    mfxU32 m_nRenderWinX;
+    mfxU32 m_nRenderWinY;
+    mfxU32 m_nRenderWinW;
+    mfxU32 m_nRenderWinH;
 };
 
 #endif
@@ -86,6 +92,8 @@ protected:
 #if defined(LIBVA_WAYLAND_SUPPORT)
 
 class Wayland;
+
+#define HANDLE_WAYLAND_DRIVER   (MFX_HANDLE_VA_DISPLAY << 4)
 
 class CVAAPIDeviceWayland : public CHWDevice
 {
@@ -100,14 +108,15 @@ public:
     virtual mfxStatus SetHandle(mfxHandleType type, mfxHDL hdl) { return MFX_ERR_UNSUPPORTED; }
     virtual mfxStatus GetHandle(mfxHandleType type, mfxHDL *pHdl)
     {
-        if((MFX_HANDLE_VA_DISPLAY == type) && (NULL != pHdl))
-        {
+        if((MFX_HANDLE_VA_DISPLAY == type) && (NULL != pHdl)) {
             *pHdl = m_DRMLibVA.GetVADisplay();
+            return MFX_ERR_NONE;
+        } else if((HANDLE_WAYLAND_DRIVER  == type) && (NULL != m_Wayland)) {
+            *pHdl = m_Wayland;
             return MFX_ERR_NONE;
     }
     return MFX_ERR_UNSUPPORTED;
     }
-    virtual void SetRenderWinPosSize(mfxU32 x, mfxU32 y, mfxU32 w, mfxU32 h);
     virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc);
     virtual void UpdateTitle(double fps) { }
 
@@ -115,6 +124,11 @@ protected:
     DRMLibVA m_DRMLibVA;
     MfxLoader::VA_WaylandClientProxy  m_WaylandClient;
     Wayland *m_Wayland;
+private:
+    mfxU32 m_nRenderWinX;
+    mfxU32 m_nRenderWinY;
+    mfxU32 m_nRenderWinW;
+    mfxU32 m_nRenderWinH;
 };
 
 #endif

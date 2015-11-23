@@ -36,7 +36,11 @@ class Wayland {
         virtual bool InitDisplay();
         virtual bool CreateSurface();
         virtual void FreeSurface();
+        virtual void SetRenderWinPos(int x, int y);
         virtual void RenderBuffer(struct wl_buffer *buffer
+            , int32_t width
+            , int32_t height);
+        virtual void RenderBufferWinPosSize(struct wl_buffer *buffer
             , int x
             , int y
             , int32_t width
@@ -98,12 +102,10 @@ class Wayland {
         {
             wl_display_flush(m_display);
         }
-        virtual int DisplayRoundtrip()
-        {
-            return wl_display_roundtrip(m_display);
-        }
+        virtual int DisplayRoundtrip();
         void DestroyCallback();
         virtual void Sync();
+        virtual void SetPerfMode(bool perf_mode);
     private:
         struct wl_display *m_display;
         struct wl_registry *m_registry;
@@ -116,13 +118,15 @@ class Wayland {
         struct wl_shell_surface *m_shell_surface;
         struct wl_callback *m_callback;
         struct wl_event_queue *m_event_queue;
-        int m_pending_frame;
+        volatile int m_pending_frame;
         struct ShmPool *m_shm_pool;
         int m_display_fd;
         int m_fd;
         struct pollfd m_poll;
         drm_intel_bufmgr *m_bufmgr;
         char *m_device_name;
+        int m_x, m_y;
+        bool m_perf_mode;
 };
 
 extern "C" Wayland* WaylandCreate();

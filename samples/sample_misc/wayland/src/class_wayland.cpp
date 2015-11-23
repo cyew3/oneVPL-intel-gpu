@@ -52,6 +52,8 @@ Wayland::Wayland()
     , m_bufmgr(NULL)
     , m_device_name(NULL)
     , m_pending_frame(0)
+    , m_x(0), m_y(0)
+    , m_perf_mode(false)
 {
 }
 
@@ -84,6 +86,11 @@ bool Wayland::InitDisplay()
     return true;
 }
 
+int Wayland::DisplayRoundtrip()
+{
+    return wl_display_roundtrip(m_display);
+}
+
 bool Wayland::CreateSurface()
 {
     static const struct wl_shell_surface_listener
@@ -95,7 +102,6 @@ bool Wayland::CreateSurface()
     m_surface = wl_compositor_create_surface(m_compositor);
     if (NULL == m_surface)
         return false;
-    wl_proxy_set_queue((struct wl_proxy *) m_surface, m_event_queue);
 
     m_shell_surface = wl_shell_get_shell_surface(m_shell
         , m_surface);
@@ -104,7 +110,6 @@ bool Wayland::CreateSurface()
         wl_surface_destroy(m_surface);
         return false;
     }
-    wl_proxy_set_queue((struct wl_proxy *) m_shell_surface, m_event_queue);
 
     wl_shell_surface_add_listener(m_shell_surface
         , &shell_surface_listener
@@ -127,7 +132,7 @@ void Wayland::FreeSurface()
 void Wayland::Sync()
 {
     int ret;
-    while(m_pending_frame)
+    while(NULL != m_callback)
     {
         while(wl_display_prepare_read_queue(m_display, m_event_queue) < 0)
             wl_display_dispatch_queue_pending(m_display, m_event_queue);
@@ -143,7 +148,38 @@ void Wayland::Sync()
     }
 }
 
+void Wayland::SetPerfMode(bool perf_mode)
+{
+    m_perf_mode = perf_mode;
+}
+
+void Wayland::SetRenderWinPos(int x, int y)
+{
+    m_x = x; m_y = y;
+}
+
 void Wayland::RenderBuffer(struct wl_buffer *buffer
+     , int32_t width
+     , int32_t height)
+{
+    wl_surface_attach(m_surface, buffer, 0, 0);
+    wl_surface_damage(m_surface, m_x, m_y, width, height);
+
+    wl_proxy_set_queue((struct wl_proxy *) buffer, m_event_queue);
+
+    wl_buffer_add_listener(buffer, &buffer_listener, NULL);
+    m_pending_frame=1;
+    if (m_perf_mode)
+        m_callback = wl_display_sync(m_display);
+    else
+    m_callback = wl_surface_frame(m_surface);
+    wl_callback_add_listener(m_callback, &frame_listener, this);
+    wl_proxy_set_queue((struct wl_proxy *) m_callback, m_event_queue);
+    wl_surface_commit(m_surface);
+    wl_display_dispatch_queue(m_display, m_event_queue);
+}
+
+void Wayland::RenderBufferWinPosSize(struct wl_buffer *buffer
     , int x
     , int y
     , int32_t width
@@ -156,8 +192,12 @@ void Wayland::RenderBuffer(struct wl_buffer *buffer
 
     wl_buffer_add_listener(buffer, &buffer_listener, NULL);
     m_pending_frame=1;
+    if (m_perf_mode)
+        m_callback = wl_display_sync(m_display);
+    else
     m_callback = wl_surface_frame(m_surface);
     wl_callback_add_listener(m_callback, &frame_listener, this);
+    wl_proxy_set_queue((struct wl_proxy *) m_callback, m_event_queue);
     wl_surface_commit(m_surface);
     wl_display_dispatch_queue(m_display, m_event_queue);
 }

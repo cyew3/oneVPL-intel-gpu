@@ -88,6 +88,11 @@ struct sInputParams
     mfxU32  nFrames;
     mfxU16  eDeinterlace;
 
+    bool    bPerfMode;
+    bool    bRenderWin;
+    mfxU32  nRenderWinX;
+    mfxU32  nRenderWinY;
+
     mfxI32  monitorType;
 #if defined(LIBVA_SUPPORT)
     mfxI32  libvaBackend;
@@ -254,10 +259,17 @@ protected: // variables
     CDecodeD3DRender         m_d3dRender;
 #endif
 
+    bool                    m_bRenderWin;
+    mfxU32                  m_nRenderWinX;
+    mfxU32                  m_nRenderWinY;
+    mfxU32                  m_nRenderWinW;
+    mfxU32                  m_nRenderWinH;
+
     mfxU32                  m_export_mode;
     mfxI32                  m_monitorType;
 #if defined(LIBVA_SUPPORT)
     mfxI32                  m_libvaBackend;
+    bool                    m_bPerfMode;
 #endif // defined(MFX_LIBVA_SUPPORT)
 
 private:

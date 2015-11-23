@@ -52,13 +52,13 @@ mfxStatus CVAAPIDeviceX11::Init(mfxHDL hWindow, mfxU16 nViews, mfxU32 nAdapterNu
             *window = x11lib.XCreateSimpleWindow(
                 display,
                 RootWindow(display, screen_number),
-                0,
-                0,
+                m_bRenderWin ? m_nRenderWinX : 0,
+                m_bRenderWin ? m_nRenderWinY : 0,
                 100,
                 100,
                 0,
                 0,
-                WhitePixel(display, screen_number));
+                BlackPixel(display, screen_number));
 
             if (!(*window)) mfx_res = MFX_ERR_UNKNOWN;
             else
@@ -127,15 +127,24 @@ mfxStatus CVAAPIDeviceX11::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllo
     }
     if (MFX_ERR_NONE == mfx_res)
     {
+        VADisplay dpy = m_X11LibVA.GetVADisplay();
+        VADisplay rnddpy = m_X11LibVA.GetVADisplay(true);
+        VASurfaceID rndsrf;
+        void* ctx;
+
         surface = *memId->m_surface;
+
+        va_res = m_X11LibVA.AcquireVASurface(&ctx, dpy, surface, rnddpy, &rndsrf);
+        mfx_res = va_to_mfx_status(va_res);
+        if (MFX_ERR_NONE != mfx_res) return mfx_res;
 
         MfxLoader::XLib_Proxy & x11lib = m_X11LibVA.GetX11();
         x11lib.XResizeWindow(display, *window, pSurface->Info.CropW, pSurface->Info.CropH);
 
+
         MfxLoader::VA_X11Proxy & vax11lib = m_X11LibVA.GetVAX11();
-        vax11lib.vaPutSurface(
-            m_X11LibVA.GetVADisplay(),
-            surface,
+        va_res = vax11lib.vaPutSurface(rnddpy,
+            rndsrf,
             *window,
             pSurface->Info.CropX,
             pSurface->Info.CropY,
@@ -151,6 +160,9 @@ mfxStatus CVAAPIDeviceX11::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllo
 
         mfx_res = va_to_mfx_status(va_res);
         x11lib.XSync(display, False);
+
+        m_X11LibVA.ReleaseVASurface(ctx, dpy, surface, rnddpy, rndsrf);
+
     }
     return mfx_res;
 }
@@ -235,13 +247,9 @@ mfxStatus CVAAPIDeviceWayland::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrame
             return mfx_res;
     }
 
-    m_Wayland->RenderBuffer(m_wl_buffer, 0, 0, pSurface->Info.CropW, pSurface->Info.CropH);
-    return mfx_res;
-}
+    m_Wayland->RenderBuffer(m_wl_buffer, pSurface->Info.CropW, pSurface->Info.CropH);
 
-void CVAAPIDeviceWayland::SetRenderWinPosSize(mfxU32 x, mfxU32 y, mfxU32 w, mfxU32 h)
-{
-    /* NOT IMPLEMENTED */
+    return mfx_res;
 }
 
 void CVAAPIDeviceWayland::Close(void)
