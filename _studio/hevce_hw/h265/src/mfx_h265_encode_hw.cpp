@@ -703,7 +703,7 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     task->m_stage |= FRAME_REORDERED;
     m_task.Submit(task);
 
-    if ((m_numBuffered + 1) < m_vpar.AsyncDepth )
+    if ((surface!=0) && ((m_numBuffered + 1) < m_vpar.AsyncDepth) )
     {
         m_numBuffered ++;
         sts = MFX_ERR_MORE_DATA_SUBMIT_TASK;
