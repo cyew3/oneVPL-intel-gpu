@@ -361,7 +361,8 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
             UNGET_BITS_32(video->bs)
             return (UMC_ERR_NOT_ENOUGH_DATA);
         }
-        video->bs_sequence_header_start = video->bs_curr_ptr;
+        const int start_code_size = 4;
+        video->bs_sequence_header_start = video->bs_curr_ptr - start_code_size;
         m_FirstHeaderAfterSequenceHeaderParsed = false;
         GET_BITS32(video->bs, code)
         frame_rate_code = code  & ((1 << 4) - 1);
