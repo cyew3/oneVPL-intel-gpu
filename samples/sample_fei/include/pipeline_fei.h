@@ -36,6 +36,7 @@
 #include <ctime>
 
 #define MFX_FRAMETYPE_IPB (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P | MFX_FRAMETYPE_B)
+#define MFX_FRAMETYPE_IP  (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P                  )
 #define MFX_FRAMETYPE_PB  (                  MFX_FRAMETYPE_P | MFX_FRAMETYPE_B)
 
 enum {
@@ -204,7 +205,7 @@ protected:
     mfxU16 m_decodePoolSize;
     mfxU16 m_gopSize;
     mfxU32 m_numOfFields;
-    mfxI32 m_numMB;
+    mfxU32 m_numMB;
 
     MFXVideoSession m_mfxSession;
     MFXVideoSession m_preenc_mfxSession;
@@ -310,6 +311,7 @@ protected:
     mfxStatus UpdateTaskQueue(iTask* eTask);
     mfxStatus CopyState(iTask* eTask);
     mfxStatus RemoveOneTask();
+    mfxStatus ReleasePreencMVPinfo(iTask* eTask);
     mfxStatus ClearTasks();
     mfxStatus ProcessLastB();
     mfxU32 CountUnencodedFrames();
@@ -317,7 +319,7 @@ protected:
     std::list<iTask*>::iterator ReorderFrame(std::list<iTask*>& unencoded_queue);
     mfxU32 CountFutureRefs(mfxU32 frameOrder);
 
-    mfxStatus InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask[2], int ref_fid[2][2]);
+    mfxStatus InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask[2][2], int ref_fid[2][2]);
     mfxStatus InitEncFrameParams(iTask* eTask);
     mfxStatus InitEncodeFrameParams(mfxFrameSurface1* encodeSurface, sTask* pCurrentTask, int frameType);
     mfxStatus ReadPAKdata(iTask* eTask);
@@ -331,7 +333,10 @@ protected:
     mfxFrameSurface1 ** GetCurrentL1SurfacesPak(iTask* eTask);
 
     iTask* GetTaskByFrameOrder(mfxU32 frame_order);
-    int GetRefTaskEx(iTask *eTask, unsigned int idx, int refIdx[2][2], int ref_fid[2][2], iTask *outRefTask[2][2]);
+    mfxStatus GetRefTaskEx(iTask *eTask, mfxU32 l0_idx, mfxU32 l1_idx, int refIdx[2][2], int ref_fid[2][2], iTask *outRefTask[2][2]);
+    mfxStatus GetBestSetByDistortion(std::list<PreEncMVPInfo>& preenc_mvp_info,
+        mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB ** bestDistortionPredMBext[MaxFeiEncMVPNum], mfxU32 * refIdx[MaxFeiEncMVPNum],
+        mfxU32 nPred_actual, mfxU32 fieldId, mfxU32 MB_idx);
     unsigned GetBufSetDistortion(IObuffs* buf);
 
     //mfxStatus DumpPreEncMVP(setElem *outbuf, int frame_seq, int fieldId, int idx);
@@ -365,8 +370,16 @@ PairU8 ExtendFrameType(mfxU32 type);
 mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 counter, bool & ref);
 
 mfxStatus repackPreenc2Enc(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf);
-mfxStatus repackPreenc2EncEx(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf, int refIdx);
+//mfxStatus repackPreenc2EncEx(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf, int refIdx);
+mfxStatus repackPreenc2EncExOneMB(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB[2], mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 refIdx[2], mfxU32 predIdx, mfxI16 *tmpBuf);
 mfxI16 get16Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1);
+
+bool compareL0Distortion(std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> frst,
+    std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> scnd);
+
+bool compareL1Distortion(std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> frst,
+    std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> scnd);
+
 const char* getPicType(mfxU8 type);
 
 #endif // __PIPELINE_FEI_H__

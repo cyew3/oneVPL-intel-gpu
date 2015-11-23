@@ -3157,7 +3157,7 @@ iTask* CEncodingPipeline::CreateAndInitTask()
     eTask->encoded      = 0;
     eTask->bufs         = NULL;
     eTask->preenc_bufs  = NULL;
-    MSDK_ZERO_ARRAY(eTask->preenc_mvp_info, MaxFeiEncMVPNum);
+    //MSDK_ZERO_ARRAY(eTask->preenc_mvp_info, MaxFeiEncMVPNum);
 
     if (ExtractFrameType(*eTask) & MFX_FRAMETYPE_B)
     {
@@ -3248,8 +3248,24 @@ mfxStatus CEncodingPipeline::CopyState(iTask* eTask)
     return MFX_ERR_NONE;
 }
 
+mfxStatus CEncodingPipeline::ReleasePreencMVPinfo(iTask* eTask)
+{
+    MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
+    mfxStatus sts = MFX_ERR_NONE;
+
+    for (std::list<PreEncMVPInfo>::iterator it = eTask->preenc_mvp_info.begin(); it != eTask->preenc_mvp_info.end(); ++it)
+    {
+        SAFE_RELEASE_EXT_BUFSET((*it).preenc_output_bufs);
+    }
+
+    eTask->preenc_mvp_info.clear();
+
+    return sts;
+}
+
 mfxStatus CEncodingPipeline::RemoveOneTask()
 {
+    mfxStatus sts = MFX_ERR_NONE;
     ArrayDpbFrame & dpb = m_last_task->m_dpbPostEncoding;
     std::list<mfxU32> FramesInDPB;
 
@@ -3259,14 +3275,15 @@ mfxStatus CEncodingPipeline::RemoveOneTask()
 
     for (std::list<iTask*>::iterator it = m_inputTasks.begin(); it != m_inputTasks.end(); ++it)
     {
-        if ((*it) && std::find(FramesInDPB.begin(), FramesInDPB.end(), (*it)->m_frameOrder) == FramesInDPB.end() && (*it)->encoded == 1) // delete task
+        if (std::find(FramesInDPB.begin(), FramesInDPB.end(), (*it)->m_frameOrder) == FramesInDPB.end() && (*it)->encoded == 1) // delete task
         {
+            MSDK_CHECK_POINTER(*it, MFX_ERR_NULL_PTR);
+
             SAFE_RELEASE_EXT_BUFSET((*it)->bufs);
             SAFE_RELEASE_EXT_BUFSET((*it)->preenc_bufs);
 
-            for (int i = 0; i < MaxFeiEncMVPNum; i++) {
-                SAFE_RELEASE_EXT_BUFSET((*it)->preenc_mvp_info[i].preenc_output_bufs);
-            }
+            sts = ReleasePreencMVPinfo(*it);
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
             MSDK_SAFE_DELETE_ARRAY((*it)->in.L0Surface);
             MSDK_SAFE_DELETE_ARRAY((*it)->in.L1Surface);
@@ -3285,43 +3302,43 @@ mfxStatus CEncodingPipeline::RemoveOneTask()
 
             delete (*it);
             m_inputTasks.erase(it);
-            return MFX_ERR_NONE;
+            return sts;
         }
     }
 
-    return MFX_ERR_NONE;
+    return sts;
 }
 
 mfxStatus CEncodingPipeline::ClearTasks()
 {
+    mfxStatus sts = MFX_ERR_NONE;
+
     for (std::list<iTask*>::iterator it = m_inputTasks.begin(); it != m_inputTasks.end(); ++it)
     {
-        if (*it)
-        {
-            SAFE_RELEASE_EXT_BUFSET((*it)->bufs);
-            SAFE_RELEASE_EXT_BUFSET((*it)->preenc_bufs);
+        MSDK_CHECK_POINTER(*it, MFX_ERR_NULL_PTR);
 
-            for (int i = 0; i < MaxFeiEncMVPNum; i++) {
-                SAFE_RELEASE_EXT_BUFSET((*it)->preenc_mvp_info[i].preenc_output_bufs);
-            }
+        SAFE_RELEASE_EXT_BUFSET((*it)->bufs);
+        SAFE_RELEASE_EXT_BUFSET((*it)->preenc_bufs);
 
-            MSDK_SAFE_DELETE_ARRAY((*it)->in.L0Surface);
-            MSDK_SAFE_DELETE_ARRAY((*it)->in.L1Surface);
-            MSDK_SAFE_DELETE_ARRAY((*it)->inPAK.L0Surface);
-            MSDK_SAFE_DELETE_ARRAY((*it)->inPAK.L1Surface);
+        sts = ReleasePreencMVPinfo(*it);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-            if ((*it)->in.InSurface)
-                (*it)->in.InSurface->Data.Locked      = 0;
-            if ((*it)->outPAK.OutSurface)
-                (*it)->outPAK.OutSurface->Data.Locked = 0;
+        MSDK_SAFE_DELETE_ARRAY((*it)->in.L0Surface);
+        MSDK_SAFE_DELETE_ARRAY((*it)->in.L1Surface);
+        MSDK_SAFE_DELETE_ARRAY((*it)->inPAK.L0Surface);
+        MSDK_SAFE_DELETE_ARRAY((*it)->inPAK.L1Surface);
 
-            delete (*it);
-        }
+        if ((*it)->in.InSurface)
+            (*it)->in.InSurface->Data.Locked      = 0;
+        if ((*it)->outPAK.OutSurface)
+            (*it)->outPAK.OutSurface->Data.Locked = 0;
+
+        delete (*it);
     }
 
     m_inputTasks.clear();
 
-    return MFX_ERR_NONE;
+    return sts;
 }
 
 mfxU32 CEncodingPipeline::CountUnencodedFrames()
@@ -3436,7 +3453,7 @@ mfxFrameSurface1 ** CEncodingPipeline::GetCurrentL1SurfacesPak(iTask* eTask)
 
 /* initialization functions */
 
-mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask[2], int ref_fid[2][2])
+mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask[2][2], int ref_fid[2][2])
 {
     MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
 
@@ -3444,116 +3461,93 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
     mfxExtFeiEncQP*              pMbQP      = NULL;
     mfxExtFeiPreEncCtrl*         preENCCtr  = NULL;
 
-    mfxFrameSurface1** refSurf0 = NULL;
-    mfxFrameSurface1** refSurf1 = NULL;
+    mfxFrameSurface1* refSurf0[2] = { NULL, NULL }; // L0 ref surfaces
+    mfxFrameSurface1* refSurf1[2] = { NULL, NULL }; // L1 ref surfaces
 
     eTask->preenc_bufs = getFreeBufSet(m_preencBufs);
     MSDK_CHECK_POINTER(eTask->preenc_bufs, MFX_ERR_NULL_PTR);
     // fprintf(stderr, "\tInitialize preenc buf %p for task %p\n", eTask->preenc_bufs, eTask);
 
-    switch (ExtractFrameType(*eTask) & MFX_FRAMETYPE_IPB) {
-    case MFX_FRAMETYPE_I:
-        // TODO:
-        // To add process for tff, bottom field should be a P field
-        // If IDR, will refer to top field only
-        // If non-IDR, will refer to top field, bottom field of previous ref
-        eTask->in.NumFrameL0 = 0;
-        eTask->in.NumFrameL1 = 0;
-        eTask->in.L0Surface = eTask->in.L1Surface = NULL;
-        //in data
-        eTask->in.NumExtParam = eTask->preenc_bufs->I_bufs.in.NumExtParam;
-        eTask->in.ExtParam    = eTask->preenc_bufs->I_bufs.in.ExtParam;
-        //out data
-        //exclude MV output from output buffers
-        eTask->out.NumExtParam = eTask->preenc_bufs->I_bufs.out.NumExtParam;
-        eTask->out.ExtParam    = eTask->preenc_bufs->I_bufs.out.ExtParam;
-        break;
+    for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
+    {
+        switch (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_IPB) {
+        case MFX_FRAMETYPE_I:
+            eTask->in.NumFrameL0 = 0;
+            eTask->in.NumFrameL1 = 0;
 
-    case MFX_FRAMETYPE_P:
-    case MFX_FRAMETYPE_B:
-        MSDK_CHECK_POINTER(refTask[0], MFX_ERR_NULL_PTR);
+            //in data
+            eTask->in.NumExtParam = eTask->preenc_bufs->I_bufs.in.NumExtParam;
+            eTask->in.ExtParam    = eTask->preenc_bufs->I_bufs.in.ExtParam;
+            //out data
+            //exclude MV output from output buffers
+            eTask->out.NumExtParam = eTask->preenc_bufs->I_bufs.out.NumExtParam;
+            eTask->out.ExtParam    = eTask->preenc_bufs->I_bufs.out.ExtParam;
+            break;
 
-        refSurf0 = new mfxFrameSurface1*[1];
-        MSDK_CHECK_POINTER(refSurf0, MFX_ERR_NULL_PTR);
-        refSurf0[0] = refTask[0]->in.InSurface;
-        MSDK_SAFE_DELETE_ARRAY(eTask->in.L0Surface);
-        MSDK_SAFE_DELETE_ARRAY(eTask->in.L1Surface);
+        case MFX_FRAMETYPE_P:
+            MSDK_CHECK_POINTER(refTask[fieldId][0], MFX_ERR_NULL_PTR);
+            refSurf0[fieldId] = refTask[fieldId][0]->in.InSurface;
 
-        eTask->in.NumFrameL0 = 1;
-        eTask->in.NumFrameL1 = 0;
-        eTask->in.L0Surface = refSurf0;
-        eTask->in.L1Surface = NULL;
-        if (refTask[1] != NULL)
-        {
-            refSurf1 = new mfxFrameSurface1*[1];
-            MSDK_CHECK_POINTER(refSurf1, MFX_ERR_NULL_PTR);
-            refSurf1[0] = refTask[1]->in.InSurface;
+            eTask->in.NumFrameL0 = 1; // tmporary need
+            eTask->in.NumFrameL1 = 0; // for library
 
-            eTask->in.NumFrameL1 = 1;
-            eTask->in.L1Surface = refSurf1;
-            // fprintf(stderr, "-----------This should be a B frame, set L0/L1 Surface to %p/%p\n", refSurf1[0], refSurf2[0]);
+            //in data
+            eTask->in.NumExtParam = eTask->preenc_bufs->PB_bufs.in.NumExtParam;
+            eTask->in.ExtParam    = eTask->preenc_bufs->PB_bufs.in.ExtParam;
+            //out data
+            eTask->out.NumExtParam = eTask->preenc_bufs->PB_bufs.out.NumExtParam;
+            eTask->out.ExtParam    = eTask->preenc_bufs->PB_bufs.out.ExtParam;
+            break;
+
+        case MFX_FRAMETYPE_B:
+            MSDK_CHECK_POINTER(refTask[fieldId][0], MFX_ERR_NULL_PTR);
+            MSDK_CHECK_POINTER(refTask[fieldId][1], MFX_ERR_NULL_PTR);
+            refSurf0[fieldId] = refTask[fieldId][0]->in.InSurface;
+            refSurf1[fieldId] = refTask[fieldId][1]->in.InSurface;
+
+            eTask->in.NumFrameL0 = 1; // tmporary need
+            eTask->in.NumFrameL1 = 0; // for library
+
+            //in data
+            eTask->in.NumExtParam = eTask->preenc_bufs->PB_bufs.in.NumExtParam;
+            eTask->in.ExtParam    = eTask->preenc_bufs->PB_bufs.in.ExtParam;
+            //out data
+            eTask->out.NumExtParam = eTask->preenc_bufs->PB_bufs.out.NumExtParam;
+            eTask->out.ExtParam    = eTask->preenc_bufs->PB_bufs.out.ExtParam;
+            break;
+
+        default:
+            break;
         }
-        //in data
-        eTask->in.NumExtParam = eTask->preenc_bufs->PB_bufs.in.NumExtParam;
-        eTask->in.ExtParam    = eTask->preenc_bufs->PB_bufs.in.ExtParam;
-        //out data
-        eTask->out.NumExtParam = eTask->preenc_bufs->PB_bufs.out.NumExtParam;
-        eTask->out.ExtParam    = eTask->preenc_bufs->PB_bufs.out.ExtParam;
-        break;
-
-    default:
-        break;
     }
 
-    mfxU32 fieldId = 0;
+    mfxU32 fieldId = 0, fieldId_pred = 0;
+    mfxU8 type;
     for (int i = 0; i < eTask->in.NumExtParam; i++)
     {
         switch (eTask->in.ExtParam[i]->BufferId)
         {
         case MFX_EXTBUFF_FEI_PREENC_CTRL:
+            type = ExtractFrameType(*eTask, fieldId); // IP pair is supported
             preENCCtr = (mfxExtFeiPreEncCtrl*)(eTask->in.ExtParam[i]);
-            preENCCtr->DisableMVOutput = (ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) ? 1 : m_disableMVoutPreENC;
-            preENCCtr->RefFrame[0] = preENCCtr->RefFrame[1] = NULL;
+            preENCCtr->DisableMVOutput = (type & MFX_FRAMETYPE_I) ? 1 : m_disableMVoutPreENC;
 
-            // TODO:
-            // For bottom field of I, still need to do a preenc
-            //if (fieldId == 1) {
-            //    preENCCtr->DisableMVOutput = m_disableMVoutPreENC;
-            //}
+            preENCCtr->RefPictureType[0] = (mfxU16)(m_numOfFields == 1 ? MFX_PICTYPE_FRAME :
+                ref_fid[fieldId][0] == 0 ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD);
 
-            if (!(ExtractFrameType(*eTask) & MFX_FRAMETYPE_I))
-            {
-                preENCCtr->RefPictureType[0] = (mfxU16)(m_numOfFields == 1 ? MFX_PICTYPE_FRAME :
-                    ref_fid[fieldId][0] == 0 ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD);
+            preENCCtr->RefPictureType[1] = (mfxU16)(m_numOfFields == 1 ? MFX_PICTYPE_FRAME :
+                ref_fid[fieldId][1] == 0 ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD);
 
-                preENCCtr->RefFrame[0] = *refSurf0;
+            preENCCtr->RefFrame[0] = refSurf0[fieldId];
+            preENCCtr->RefFrame[1] = refSurf1[fieldId];
 
-                //fprintf(stderr, "\t*%s field will refer to %s field in ref frame %d in L0\n",
-                //        fieldId==0?"Top":"Bottom",
-                //        preENCCtr->RefPictureType[0] == MFX_PICTYPE_BOTTOMFIELD ? "Bottom" : "Top",
-                //        refTask[0]->m_frameOrder);
-
-                if (ExtractFrameType(*eTask) & MFX_FRAMETYPE_B)
-                {
-                    preENCCtr->RefPictureType[1] = (mfxU16)(m_numOfFields == 1 ? MFX_PICTYPE_FRAME :
-                        ref_fid[fieldId][1] == 0 ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD);
-
-                    preENCCtr->RefFrame[1] = *refSurf1;
-
-                    //fprintf(stderr, "\t*%s field will refer to %s field in ref frame %d in L1\n",
-                    //        fieldId==0?"Top":"Bottom",
-                    //        preENCCtr->RefPictureType[1] == MFX_PICTYPE_BOTTOMFIELD ? "Bottom" : "Top",
-                    //        refTask[1]->m_frameOrder);
-                }
-            }
             fieldId++;
-
             break;
 
         case MFX_EXTBUFF_FEI_PREENC_MV_PRED:
             if (pMvPred)
             {
-                if (!(ExtractFrameType(*eTask) & MFX_FRAMETYPE_I))
+                if (!(ExtractFrameType(*eTask, fieldId_pred) & MFX_FRAMETYPE_I)) // IP pair is supported
                 {
                     pMvPredBuf = (mfxExtFeiPreEncMVPredictors*)(eTask->in.ExtParam[i]);
                     fread(pMvPredBuf->MB, sizeof(pMvPredBuf->MB[0])*pMvPredBuf->NumMBAlloc, 1, pMvPred);
@@ -3561,6 +3555,7 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
                 else{
                     fseek(pMvPred, sizeof(mfxExtFeiPreEncMVPredictors::mfxExtFeiPreEncMVPredictorsMB)*m_numMB, SEEK_CUR);
                 }
+                fieldId_pred++;
             }
             break;
 
@@ -4022,7 +4017,7 @@ mfxStatus CEncodingPipeline::DropENCPAKoutput(iTask* eTask)
                     fwrite(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, mvENCPAKout);
                 }
                 else {
-                    for (int k = 0; k < m_numMB; k++)
+                    for (mfxU32 k = 0; k < m_numMB; k++)
                     {
                         fwrite(m_tmpMBenc, sizeof(*m_tmpMBenc), 1, mvENCPAKout);
                     }
@@ -4083,7 +4078,7 @@ mfxStatus CEncodingPipeline::DropPREENCoutput(iTask* eTask)
     if (mvout && (ExtractFrameType(*eTask) & MFX_FRAMETYPE_I)){
         for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
         {
-            for (int k = 0; k < m_numMB; k++){
+            for (mfxU32 k = 0; k < m_numMB; k++){
                 fwrite(m_tmpMBpreenc, sizeof(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB), 1, mvout);
             }
         }
@@ -4094,9 +4089,10 @@ mfxStatus CEncodingPipeline::DropPREENCoutput(iTask* eTask)
 
 mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[2])
 {
-    mfxExtFeiPreEncMV*        mvs = NULL;
-    mfxExtFeiEncMVPredictors* mvp = NULL;
-    bufSet*                   set = NULL;
+    //mfxExtFeiPreEncMV*        mvs    = NULL;
+    mfxExtFeiEncMVPredictors* mvp    = NULL;
+    //mfxExtFeiPreEncMBStat*    mbdata = NULL;
+    bufSet*                   set    = NULL;
 
     /*
     //fprintf(stderr, "About to PassPreEncMVPred2EncEx, numMVP is %d, %d, task(%p) frame order is %d\n", numMVP[0], numMVP[1], eTask, eTask->m_frameOrder);
@@ -4130,25 +4126,55 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[
         } // for (int i = 0; i < numMVP[fieldId]; i++)
     } // for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
 */
+    mfxStatus sts = MFX_ERR_NONE;
 
     for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
     {
-        for (int i = 0; i < numMVP[fieldId]; i++)
+        mfxU32 nPred = numMVP[fieldId], nPred_actual = IPP_MIN(nPred, MaxFeiEncMVPNum);
+        if (nPred == 0)
+            continue; // I-field
+
+        if (set == NULL) {
+            set = getFreeBufSet(m_encodeBufs);
+            MSDK_CHECK_POINTER(set, MFX_ERR_NULL_PTR);
+        }
+
+        mvp = (mfxExtFeiEncMVPredictors*)getBufById(&set->PB_bufs.in, MFX_EXTBUFF_FEI_ENC_MV_PRED, fieldId);
+        MSDK_CHECK_POINTER(mvp, MFX_ERR_NULL_PTR);
+
+        mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB ** bestDistortionPredMB[MaxFeiEncMVPNum];
+        MSDK_ZERO_ARRAY(bestDistortionPredMB, MaxFeiEncMVPNum);
+        
+        mfxU32 *refIdx[MaxFeiEncMVPNum];
+        MSDK_ZERO_ARRAY(refIdx, MaxFeiEncMVPNum);
+
+        for (mfxU32 j = 0; j < nPred_actual; j++)
         {
-            mvs = (mfxExtFeiPreEncMV*)getBufById(&eTask->preenc_mvp_info[i].preenc_output_bufs->PB_bufs.out, MFX_EXTBUFF_FEI_PREENC_MV, fieldId);
-            MSDK_CHECK_POINTER(mvs, MFX_ERR_NULL_PTR);
+            bestDistortionPredMB[j] = new mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *[2]; // L0/L1 best 16 MV by distortion
+            MSDK_CHECK_POINTER(bestDistortionPredMB[j], MFX_ERR_NULL_PTR);
+            MSDK_ZERO_ARRAY(bestDistortionPredMB[j], 2);
 
-            if (set == NULL) {
-                set = getFreeBufSet(m_encodeBufs);
-                MSDK_CHECK_POINTER(set, MFX_ERR_NULL_PTR);
+            refIdx[j] = new mfxU32[2];
+            MSDK_CHECK_POINTER(refIdx[j], MFX_ERR_NULL_PTR);
+            MSDK_ZERO_ARRAY(refIdx[j], 2);
+        }
+
+        for (mfxU32 i = 0; i < m_numMB; i++)
+        {
+            sts = GetBestSetByDistortion(eTask->preenc_mvp_info, bestDistortionPredMB, refIdx, nPred_actual, fieldId, i);
+
+            for (mfxU32 j = 0; j < nPred_actual; j++)
+            {
+                sts = repackPreenc2EncExOneMB(bestDistortionPredMB[j], &mvp->MB[i], refIdx[j], j, m_tmpForMedian);
             }
+        }
 
-            mvp = (mfxExtFeiEncMVPredictors*)getBufById(&set->PB_bufs.in, MFX_EXTBUFF_FEI_ENC_MV_PRED, fieldId);
-            MSDK_CHECK_POINTER(mvp, MFX_ERR_NULL_PTR);
+        for (mfxU32 j = 0; j < nPred_actual; j++)
+        {
+            MSDK_SAFE_DELETE_ARRAY(bestDistortionPredMB[j]);
+            MSDK_SAFE_DELETE_ARRAY(refIdx[j]);
+        }
 
-            int refIdx = eTask->preenc_mvp_info[i].refIdx;
-            repackPreenc2EncEx(mvs->MB, mvp->MB, mvs->NumMBAlloc, m_tmpForMedian, refIdx);
-        } // for (int i = 0; i < numMVP[fieldId]; i++)
     } // for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
 
     // Dump MVP output to file
@@ -4157,15 +4183,14 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[
     //    DumpEncodeMVP(&set->PB_bufs.in, eTask->m_frameOrder, 1);
     //}
 
-    for (mfxU32 i = 0; i < MaxFeiEncMVPNum; i++) {
-        SAFE_RELEASE_EXT_BUFSET(eTask->preenc_mvp_info[i].preenc_output_bufs);
-    }
+    sts = ReleasePreencMVPinfo(eTask);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     if (set){
         set->vacant = true;
     }
 
-    return MFX_ERR_NONE;
+    return sts;
 }
 
 /* repackPreenc2Enc passes only one predictor (median of provided preenc MVs) because we dont have distortions to choose 4 best possible */
@@ -4191,7 +4216,29 @@ mfxStatus repackPreenc2Enc(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB
     return MFX_ERR_NONE;
 }
 
-mfxStatus repackPreenc2EncEx(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf, int refIdx)
+mfxStatus repackPreenc2EncExOneMB(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB[2], mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 refIdx[2], mfxU32 predIdx, mfxI16 *tmpBuf)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    if (0 == predIdx) {
+        MSDK_ZERO_MEMORY(*EncMVPredMB);
+    }
+
+    EncMVPredMB->RefIdx[predIdx].RefL0 = refIdx[0];
+    EncMVPredMB->RefIdx[predIdx].RefL1 = refIdx[1];
+
+    EncMVPredMB->MV[predIdx][0].x = get16Median(preencMVoutMB[0], tmpBuf, 0, 0);
+    EncMVPredMB->MV[predIdx][0].y = get16Median(preencMVoutMB[0], tmpBuf, 1, 0);
+
+    // if no L1 this predictor would contain four (0,0) vectors
+    EncMVPredMB->MV[predIdx][1].x = get16Median(preencMVoutMB[1], tmpBuf, 0, 1);
+    EncMVPredMB->MV[predIdx][1].y = get16Median(preencMVoutMB[1], tmpBuf, 1, 1);
+
+    return sts;
+}
+
+/*
+mfxStatus repackPreenc2EncEx(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf, mfxU32 refIdx)
 {
     if (0 == refIdx) {
         MSDK_ZERO_ARRAY(EncMVPredMB, NumMB);
@@ -4216,7 +4263,7 @@ mfxStatus repackPreenc2EncEx(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVout
     }
 
     return MFX_ERR_NONE;
-}
+} */
 
 mfxI16 get16Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1){
 
@@ -4261,7 +4308,7 @@ mfxExtBuffer * getBufById(setElem* bufSet, mfxU32 id, mfxU32 fieldId)
     {
         if (bufSet->ExtParam[i]->BufferId == id)
         {
-            return bufSet->ExtParam[i + fieldId];
+            return (bufSet->ExtParam[i + fieldId]->BufferId == id) ? bufSet->ExtParam[i + fieldId] : NULL;
         }
     }
 
@@ -4500,180 +4547,237 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
     MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
 
     mfxStatus sts = MFX_ERR_NONE;
-    int has_ref = 0;
+    //int has_ref = 0;
     MSDK_ZERO_ARRAY(num_of_refs, 2);
-    fprintf(stderr, "\nframe: %d  type: %s(%s)\n", eTask->m_frameOrder,
-        getPicType(eTask->m_type[m_ffid]), getPicType(eTask->m_type[m_sfid]));
 
-    unsigned preenc_ref_counts = m_mfxEncParams.mfx.NumRefFrame;
+    //fprintf(stderr, "\nframe: %d  type: %s(%s)\n", eTask->m_frameOrder,
+    //    getPicType(eTask->m_type[m_ffid]), getPicType(eTask->m_type[m_sfid]));
 
-    // TODO:
-    // We had such limitation for now, will remove it later
-    // limit the max ref number for progressive case to 3
-    if (preenc_ref_counts >= 4 /* && m_numOfFields == 1*/) {
-        preenc_ref_counts = 3;
-    }
+    /*
+    mfxU32 preenc_ref_counts = m_mfxEncParams.mfx.NumRefFrame;
 
-    if ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_B) != 0) {
-        // For B frames, will have one backward, so the total ref
-        preenc_ref_counts--;
-    }
-
-    for (unsigned i = 0; i < preenc_ref_counts; i++)
+    if (!(ExtractFrameType(*eTask) & MFX_FRAMETYPE_IDR))
     {
-        int preenc_ref_idx[2][2]; //[fieldId][L0L1]
-        int ref_fid[2][2];
-        iTask* refTask[2][2];
-        for (int j = 0; j < 2; j++){
-            MSDK_ZERO_ARRAY(preenc_ref_idx[j], 2);
-            MSDK_ZERO_ARRAY(ref_fid[j],        2);
-            MSDK_ZERO_ARRAY(refTask[j],        2);
+        // TODO:
+        // We had such limitation for now, will remove it later
+        // limit the max ref number for progressive case to 3
+        if (preenc_ref_counts >= 4 && m_numOfFields == 1) {
+            preenc_ref_counts = 3;
         }
 
-        // Will do one time PreEnc for I
-        if ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) != 0 && i > 0) {
-            MSDK_ZERO_ARRAY(num_of_refs, 2);
-            break;
+        if ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_B) != 0 && preenc_ref_counts > 1) {
+            // For B frames, will have one backward, so the total ref
+            preenc_ref_counts--;
         }
+    }
+    else{
+        preenc_ref_counts = 1;
+    } */
 
-        has_ref = GetRefTaskEx(eTask, i, preenc_ref_idx, ref_fid, refTask);
+    // max possible candidates to L0 / L1
+    mfxU32 total_l0 = (ExtractFrameType(*eTask, 1) & MFX_FRAMETYPE_P) ? ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_IDR) ? 1 : NumActiveRefP) : ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) ? 1 : NumActiveRefBL0);
+    mfxU32 total_l1 = (ExtractFrameType(*eTask) & MFX_FRAMETYPE_B) ? (eTask->m_fieldPicFlag ? NumActiveRefBL1_i : NumActiveRefBL1) : 1; // just one iteration here for non-B
 
-        if (0 == has_ref && (ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) == 0) {
-            break;
-        }
+    total_l0 = IPP_MIN(total_l0, m_mfxEncParams.mfx.NumRefFrame); // adjust to
+    total_l1 = IPP_MIN(total_l1, m_mfxEncParams.mfx.NumRefFrame); // user input
 
-        fprintf(stderr, "Ref idx %d:\n", preenc_ref_idx[0][0] | preenc_ref_idx[1][0]);
-        for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
+    int preenc_ref_idx[2][2]; // indexes means [fieldId][L0L1]
+    int ref_fid[2][2];
+    iTask* refTask[2][2];
+
+    for (mfxU32 l0_idx = 0; l0_idx < total_l0; l0_idx++)
+    {
+        for (mfxU32 l1_idx = 0; l1_idx < total_l1; l1_idx++)
         {
-            if (refTask[fieldId][0])
-            {
-                num_of_refs[fieldId]++;
-                fprintf(stderr, "\tfield %d: %2d(%d) <-- %2d(%d) ", fieldId, refTask[fieldId][0]->m_frameOrder, ref_fid[fieldId][0], eTask->m_frameOrder, fieldId);
-                if (refTask[fieldId][1]) {
-                    fprintf(stderr, "  --> %2d(%d) ", refTask[fieldId][1]->m_frameOrder, ref_fid[fieldId][1]);
-                }
+            for (mfxU32 j = 0; j < 2; j++){
+                MSDK_ZERO_ARRAY(preenc_ref_idx[j], 2);
+                MSDK_ZERO_ARRAY(ref_fid[j],        2);
+                MSDK_ZERO_ARRAY(refTask[j],        2);
             }
-            else {
-                fprintf(stderr, "\tfield %d: refer to nothing!", fieldId);
-            }
-            fprintf(stderr, "\n");
-        }
 
-        fprintf(stderr, "\treftask is L0(%p, %p), L1(%p, %p)\n", refTask[0][0], refTask[0][1], refTask[1][0], refTask[1][1]);
+            /*
+            // Will do one time PreEnc for I
+            if ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) != 0 && i > 0) {
+                MSDK_ZERO_ARRAY(num_of_refs, 2);
+                break;
+            }*/
 
-        // Only do twice when ref field is not in the same frame, for example: 2nd/4th P ref or I frame
-        mfxU32 total_preenc_times = (refTask[0][0] == refTask[1][0]) ? 1 : m_numOfFields;
-        //fprintf(stderr, "\nAbout to do preEnc, total times %d\n", total_preenc_times);
+            sts = GetRefTaskEx(eTask, l0_idx, l1_idx, preenc_ref_idx, ref_fid, refTask);
 
-        for (mfxU32 fieldId = 0; fieldId < total_preenc_times; fieldId++)
-        {
-            if (!refTask[fieldId][0] && (ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) == 0) {
-                //if (!refTask[fieldId][0]) {
-                //    fprintf(stderr, "\tField %d refer to nothing, continue\n", fieldId);
+            if (ExtractFrameType(*eTask) & MFX_FRAMETYPE_I)
+                MSDK_IGNORE_MFX_STS(sts, MFX_WRN_OUT_OF_RANGE);
+
+            if (sts == MFX_WRN_OUT_OF_RANGE){ // some of the indexes exceeds DPB
+                sts = MFX_ERR_NONE;
                 continue;
             }
+            MSDK_BREAK_ON_ERROR(sts);
 
-            sts = InitPreEncFrameParamsEx(eTask, refTask[fieldId], ref_fid);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            /*
+            if (0 == has_ref && (ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) == 0) {
+                sts = MFX_ERR_INVALID_VIDEO_PARAM;
+                break;
+            } */
 
-            // Doing PreEnc
-            for (;;)
+            /*
+            fprintf(stderr, "Ref idx %d:\n", preenc_ref_idx[0][0] | preenc_ref_idx[1][0]);
+            for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
             {
-                sts = m_pmfxPREENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
-                MSDK_BREAK_ON_ERROR(sts);
-                /*PRE-ENC is running in separate session */
-                sts = m_preenc_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
-                MSDK_BREAK_ON_ERROR(sts);
-                fprintf(stderr, "preenc synced : %d\n", sts);
-
-
-                if (MFX_ERR_NONE < sts && !eTask->EncSyncP) // repeat the call if warning and no output
+                if (refTask[fieldId][0])
                 {
-                    if (MFX_WRN_DEVICE_BUSY == sts){
-                    //    MSDK_SLEEP(1); // wait if device is busy
-                        WaitForDeviceToBecomeFree(m_preenc_mfxSession, eTask->EncSyncP, sts);
+                    num_of_refs[fieldId]++;
+                    fprintf(stderr, "\tfield %d: %2d(%d) <-- %2d(%d) ", fieldId, refTask[fieldId][0]->m_frameOrder, ref_fid[fieldId][0], eTask->m_frameOrder, fieldId);
+                    if (refTask[fieldId][1]) {
+                        fprintf(stderr, "  --> %2d(%d) ", refTask[fieldId][1]->m_frameOrder, ref_fid[fieldId][1]);
                     }
                 }
-                else if (MFX_ERR_NONE < sts && eTask->EncSyncP) {
-                    sts = MFX_ERR_NONE; // ignore warnings if output is available
-                    break;
-                }
-                else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts) {
-                    //                sts = AllocateSufficientBuffer(&pCurrentTask->mfxBS);
-                    //                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-                }
                 else {
-                    // get next surface and new task for 2nd bitstream in ViewOutput mode
-                    MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_BITSTREAM);
-                    break;
+                    fprintf(stderr, "\tfield %d: refer to nothing!", fieldId);
+                }
+                fprintf(stderr, "\n");
+            }
+
+            fprintf(stderr, "\treftask is L0(%p, %p), L1(%p, %p)\n", refTask[0][0], refTask[0][1], refTask[1][0], refTask[1][1]);
+            */
+            for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
+            {
+                if (refTask[fieldId][0] || refTask[fieldId][1])
+                {
+                    num_of_refs[fieldId]++;
                 }
             }
 
-            // Store PreEnc output
-            if ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) == 0)
-            {
-                if (i < MaxFeiEncMVPNum)
+            // Only do twice when ref field is not in the same frame, for example: 2nd/4th P ref or I frame
+            //mfxU32 total_preenc_times = (refTask[0][0] == refTask[1][0]) ? 1 : m_numOfFields;
+            //fprintf(stderr, "\nAbout to do preEnc, total times %d\n", total_preenc_times);
+
+            //for (mfxU32 fieldId = 0; fieldId < total_preenc_times; fieldId++)
+            //{
+                /*if (!refTask[fieldId][0] && (ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) == 0) {
+                    //if (!refTask[fieldId][0]) {
+                    //    fprintf(stderr, "\tField %d refer to nothing, continue\n", fieldId);
+                    continue;
+                }*/
+
+                sts = InitPreEncFrameParamsEx(eTask, refTask/*[fieldId]*/, ref_fid);
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+                // Doing PreEnc
+                for (;;)
                 {
-                    if (fieldId == 0 || NULL == refTask[0][0])
+                    sts = m_pmfxPREENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
+                    MSDK_BREAK_ON_ERROR(sts);
+                    /*PRE-ENC is running in separate session */
+                    sts = m_preenc_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
+                    MSDK_BREAK_ON_ERROR(sts);
+                    fprintf(stderr, "preenc synced : %d\n", sts);
+
+
+                    if (MFX_ERR_NONE < sts && !eTask->EncSyncP) // repeat the call if warning and no output
                     {
-                        // Store the 1st field or the only field(eg: interlace of 1st P frame case)
-                        eTask->preenc_mvp_info[i].preenc_output_bufs = eTask->preenc_bufs;
-                        eTask->preenc_mvp_info[i].refIdx = preenc_ref_idx[fieldId][0];
-                        fprintf(stderr, "\tsave preenc output to preenc_mvp_info[%d] %p\n", i, eTask->preenc_mvp_info[i].preenc_output_bufs);
-                        if (NULL == refTask[0][0]) {
-                            // Clear the top field output since it's invalid
-                            ResetExtBufferPayload(MFX_EXTBUFF_FEI_PREENC_MV, 0, &eTask->preenc_mvp_info[i].preenc_output_bufs->PB_bufs.out);
+                        if (MFX_WRN_DEVICE_BUSY == sts)
+                        {
+                            WaitForDeviceToBecomeFree(m_preenc_mfxSession, eTask->EncSyncP, sts);
+                        }
+                    }
+                    else if (MFX_ERR_NONE < sts && eTask->EncSyncP) {
+                        sts = MFX_ERR_NONE; // ignore warnings if output is available
+                        break;
+                    }
+                    else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts) {
+                        //                sts = AllocateSufficientBuffer(&pCurrentTask->mfxBS);
+                        //                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                    }
+                    else {
+                        // get next surface and new task for 2nd bitstream in ViewOutput mode
+                        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_BITSTREAM);
+                        break;
+                    }
+                }
+
+                // Store PreEnc output
+                PreEncMVPInfo result;
+                result.preenc_output_bufs = eTask->preenc_bufs;
+
+                for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
+                {
+                    memcpy(result.refIdx[fieldId], preenc_ref_idx[fieldId], 2 * sizeof(mfxU32));
+                }
+                eTask->preenc_mvp_info.push_back(result);
+
+                    /*eTask->preenc_mvp_info[total_calls].preenc_output_bufs = eTask->preenc_bufs;
+                    for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
+                    {
+                        memcpy(eTask->preenc_mvp_info[total_calls].refIdx[fieldId], preenc_ref_idx[fieldId], 2 * sizeof(mfxU32));
+                    }*/
+
+                //total_calls++;
+
+                /*if ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) == 0)
+                {
+                    if (i < MaxFeiEncMVPNum)
+                    {
+                        if (fieldId == 0 || NULL == refTask[0][0])
+                        {
+                            // Store the 1st field or the only field(eg: interlace of 1st P frame case)
+                            eTask->preenc_mvp_info[i].preenc_output_bufs = eTask->preenc_bufs;
+                            eTask->preenc_mvp_info[i].refIdx = preenc_ref_idx[fieldId][0];
+                            fprintf(stderr, "\tsave preenc output to preenc_mvp_info[%d] %p\n", i, eTask->preenc_mvp_info[i].preenc_output_bufs);
+                            if (NULL == refTask[0][0]) {
+                                // Clear the top field output since it's invalid
+                                ResetExtBufferPayload(MFX_EXTBUFF_FEI_PREENC_MV, 0, &eTask->preenc_mvp_info[i].preenc_output_bufs->PB_bufs.out);
+                            }
+                        }
+                        else {
+                            // Whenever comes to here, it means the ref fields are in different frames.
+                            // MVP for the 1st field is stored in the "if" above, since we are processing it in "frame"
+                            // So now we need to copy the MVP of 2nd field to the same "frame" in above "if"
+                            // Only switch the pointer for performance purpose
+        
+                            fprintf(stderr, "\tAbout to copy MVP data to preenc_mvp_info[%d] %p\n", i, eTask->preenc_mvp_info[i].preenc_output_bufs);
+                            // fprintf(stderr, "-----(%d, %d), %d==%d\n", !fieldId, ref_fid[1], fieldId, ref_fid[0]);
+                            SwitchExtBufPayload(MFX_EXTBUFF_FEI_PREENC_MV, &eTask->preenc_mvp_info[i].preenc_output_bufs->PB_bufs.out, fieldId,
+                                &eTask->preenc_bufs->PB_bufs.out, fieldId);
+                            eTask->preenc_bufs->vacant = true;
                         }
                     }
                     else {
-                        // Whenever comes to here, it means the ref fields are in different frames.
-                        // MVP for the 1st field is stored in the "if" above, since we are processing it in "frame"
-                        // So now we need to copy the MVP of 2nd field to the same "frame" in above "if"
-                        // Only switch the pointer for performance purpose
-
-                        fprintf(stderr, "\tAbout to copy MVP data to preenc_mvp_info[%d] %p\n", i, eTask->preenc_mvp_info[i].preenc_output_bufs);
-                        // fprintf(stderr, "-----(%d, %d), %d==%d\n", !fieldId, ref_fid[1], fieldId, ref_fid[0]);
-                        SwitchExtBufPayload(MFX_EXTBUFF_FEI_PREENC_MV, &eTask->preenc_mvp_info[i].preenc_output_bufs->PB_bufs.out, fieldId,
-                            &eTask->preenc_bufs->PB_bufs.out, fieldId);
-                        eTask->preenc_bufs->vacant = true;
-                    }
-                }
-                else {
-#if 0
-                    // TODO::
-                    // Since there are at most 4 mvp for encode
-                    // Select the best 4 if we have more
-                    unsigned worst_distortion = 0;
-                    unsigned worst_distortion_idx = 0;
-                    unsigned current_distortion = GetBufSetDistortion(&eTask->preenc_bufs->PB_bufs);
-                    for (int j = 0; j < 4; j++) {
-                        unsigned tmp_distortion = GetBufSetDistortion(&eTask->preenc_mvp_info[j].preenc_output_bufs->PB_bufs);
-                        if (tmp_distortion > worst_distortion) {
-                            worst_distortion = tmp_distortion;
-                            worst_distortion_idx = j;
+                #if 0
+                        // TODO::
+                        // Since there are at most 4 mvp for encode
+                        // Select the best 4 if we have more
+                        unsigned worst_distortion = 0;
+                        unsigned worst_distortion_idx = 0;
+                        unsigned current_distortion = GetBufSetDistortion(&eTask->preenc_bufs->PB_bufs);
+                        for (int j = 0; j < 4; j++) {
+                            unsigned tmp_distortion = GetBufSetDistortion(&eTask->preenc_mvp_info[j].preenc_output_bufs->PB_bufs);
+                            if (tmp_distortion > worst_distortion) {
+                                worst_distortion = tmp_distortion;
+                                worst_distortion_idx = j;
+                            }
                         }
+        
+                        if (current_distortion < worst_distortion) {
+                            fprintf(stderr, "*replace original idx %d with new MVP, recycle replaced preenc bufset %p\n",
+                                worst_distortion_idx, eTask->preenc_mvp_info[worst_distortion_idx].preenc_output_bufs);
+                            eTask->preenc_mvp_info[worst_distortion_idx].preenc_output_bufs->vacant = true;
+                            eTask->preenc_mvp_info[worst_distortion_idx].preenc_output_bufs = eTask->preenc_bufs;
+                            eTask->preenc_mvp_info[worst_distortion_idx].refIdx = preenc_ref_idx;
+                            eTask->preenc_mvp_info[worst_distortion_idx].L0L1 = L0L1;
+                        }
+                #endif
                     }
-
-                    if (current_distortion < worst_distortion) {
-                        fprintf(stderr, "*replace original idx %d with new MVP, recycle replaced preenc bufset %p\n",
-                            worst_distortion_idx, eTask->preenc_mvp_info[worst_distortion_idx].preenc_output_bufs);
-                        eTask->preenc_mvp_info[worst_distortion_idx].preenc_output_bufs->vacant = true;
-                        eTask->preenc_mvp_info[worst_distortion_idx].preenc_output_bufs = eTask->preenc_bufs;
-                        eTask->preenc_mvp_info[worst_distortion_idx].refIdx = preenc_ref_idx;
-                        eTask->preenc_mvp_info[worst_distortion_idx].L0L1 = L0L1;
-                    }
-#endif
-                }
+                } */
+            //}
+        #if 0
+            // Dump PreEnc output data
+            //if ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) == 0 ) {
+            if ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_B) != 0) {
+                //DumpPreEncMVP(&eTask->preenc_mvp_info[i].preenc_output_bufs->PB_bufs.out, eTask->m_frameOrder, 0, i);
+                //DumpPreEncMVP(&eTask->preenc_mvp_info[i].preenc_output_bufs->PB_bufs.out, eTask->m_frameOrder, 1, i);
             }
+        #endif
         }
-#if 0
-        // Dump PreEnc output data
-        //if ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) == 0 ) {
-        if ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_B) != 0) {
-            //DumpPreEncMVP(&eTask->preenc_mvp_info[i].preenc_output_bufs->PB_bufs.out, eTask->m_frameOrder, 0, i);
-            //DumpPreEncMVP(&eTask->preenc_mvp_info[i].preenc_output_bufs->PB_bufs.out, eTask->m_frameOrder, 1, i);
-        }
-#endif
     }
 
     return sts;
@@ -4681,12 +4785,12 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
 
 /* PREENC functions */
 
-int CEncodingPipeline::GetRefTaskEx(iTask *eTask, unsigned int idx, int refIdx[2][2], int ref_fid[2][2], iTask *outRefTask[2][2])
+mfxStatus CEncodingPipeline::GetRefTaskEx(iTask *eTask, mfxU32 l0_idx, mfxU32 l1_idx, int refIdx[2][2], int ref_fid[2][2], iTask *outRefTask[2][2])
 {
-    MSDK_CHECK_POINTER(eTask,      0);
-    MSDK_CHECK_POINTER(outRefTask, 0);
+    MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
 
-    int has_ref = 0;
+    mfxStatus sts = MFX_ERR_NONE;
+    //int has_ref = 0;
 
     for (int i = 0; i < 2; i++){
         MSDK_ZERO_ARRAY(refIdx[i],     2);
@@ -4696,9 +4800,11 @@ int CEncodingPipeline::GetRefTaskEx(iTask *eTask, unsigned int idx, int refIdx[2
 
     for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
     {
-        mfxU32 l0_ref_count = 0;
-        //mfxU32 L1_ref_count  = eTask->m_list1[fieldId].Size();
+        mfxU8 type = ExtractFrameType(*eTask, fieldId);
+        mfxU32 l0_ref_count = 0, l1_ref_count = 0;
         l0_ref_count = eTask->m_list0[fieldId].Size();
+        //l1_ref_count = eTask->m_list1[fieldId].Size();
+
         if (eTask->m_list1[fieldId].Size())
         {
             if (std::find(eTask->m_list0[fieldId].Begin(), eTask->m_list0[fieldId].End(), *eTask->m_list1[fieldId].Begin()) == eTask->m_list0[fieldId].End())
@@ -4711,39 +4817,53 @@ int CEncodingPipeline::GetRefTaskEx(iTask *eTask, unsigned int idx, int refIdx[2
                 l0_ref_count = static_cast<mfxU32>(std::distance(eTask->m_list0[fieldId].Begin(),
                     std::find(eTask->m_list0[fieldId].Begin(), eTask->m_list0[fieldId].End(), *eTask->m_list1[fieldId].Begin())));
             }
+
+            l1_ref_count = eTask->m_list1[fieldId].Size() - l0_ref_count;
         }
 
 
         //fprintf(stderr, "In GetRefTaskEx, l0_ref_count for field %d is %d\n", fieldId, l0_ref_count);
         //for (mfxU8 const * instance = eTask->m_list0[fieldId].Begin() + idx; idx < l0_ref_count && instance != eTask->m_list0[fieldId].End(); instance++) {
-        if (idx < l0_ref_count)
+        if (l0_idx < l0_ref_count && eTask->m_list0[fieldId].Size())
         {
-            mfxU8 const * instance = eTask->m_list0[fieldId].Begin() + idx;
-            iTask *L0_ref_task = GetTaskByFrameOrder(eTask->m_dpb[fieldId][*instance & 127].m_frameOrder);
-            MSDK_CHECK_POINTER(L0_ref_task, NULL);
+            mfxU8 const * l0_instance = eTask->m_list0[fieldId].Begin() + l0_idx;
+            iTask *L0_ref_task = GetTaskByFrameOrder(eTask->m_dpb[fieldId][*l0_instance & 127].m_frameOrder);
+            MSDK_CHECK_POINTER(L0_ref_task, MFX_ERR_NULL_PTR);
 
-            if (ExtractFrameType(*eTask) & MFX_FRAMETYPE_P || ExtractFrameType(*eTask) & MFX_FRAMETYPE_I)
+            refIdx[fieldId][0]     = l0_idx;
+            outRefTask[fieldId][0] = L0_ref_task;
+            ref_fid[fieldId][0]    = (*l0_instance > 127) ? 1 : 0; // for bff ? 0 : 1; (but now preenc supports only tff)
+        } else {
+            if (eTask->m_list0[fieldId].Size())
+                return MFX_WRN_OUT_OF_RANGE;
+        }
+
+        if (l1_idx < l1_ref_count && eTask->m_list1[fieldId].Size())
+        {
+            if (type & MFX_FRAMETYPE_IP)
             {
-                refIdx[fieldId][0] = idx;
-                refIdx[fieldId][1] = 0; // No backward ref for P
-                outRefTask[fieldId][0] = L0_ref_task;
-                outRefTask[fieldId][1] = NULL;
+                //refIdx[fieldId][1] = 0;        // already zero
+                //outRefTask[fieldId][1] = NULL; // No backward ref for P
             }
             else
             {
-                mfxU8 const *backward_instance = eTask->m_list1[fieldId].Begin();
-                refIdx[fieldId][0] = idx;
-                refIdx[fieldId][1] = 0; // We have only one ref frame in L1
-                outRefTask[fieldId][0] = L0_ref_task;
-                outRefTask[fieldId][1] = GetTaskByFrameOrder(eTask->m_dpb[fieldId][*backward_instance & 127].m_frameOrder);
-                ref_fid[fieldId][1] = (*backward_instance > 127) ? 1 : 0;
+                mfxU8 const *l1_instance = eTask->m_list1[fieldId].Begin();
+                iTask *L1_ref_task = GetTaskByFrameOrder(eTask->m_dpb[fieldId][*l1_instance & 127].m_frameOrder);
+                MSDK_CHECK_POINTER(L1_ref_task, MFX_ERR_NULL_PTR);
+
+                refIdx[fieldId][1]     = l1_idx;
+                outRefTask[fieldId][1] = L1_ref_task;
+                ref_fid[fieldId][1]    = (*l1_instance > 127) ? 1 : 0; // for bff ? 0 : 1; (but now preenc supports only tff)
             }
-            ref_fid[fieldId][0] = (*instance > 127) ? 1 : 0;
-            has_ref = 1;
+            //has_ref = 1;
+            sts = MFX_ERR_NONE;
+        } else {
+            if (eTask->m_list1[fieldId].Size())
+                return MFX_WRN_OUT_OF_RANGE;
         }
     }
 
-    return has_ref;
+    return sts;
 }
 
 unsigned CEncodingPipeline::GetBufSetDistortion(IObuffs* buf)
@@ -4776,6 +4896,67 @@ unsigned CEncodingPipeline::GetBufSetDistortion(IObuffs* buf)
         }
     }
     return total_distortion;
+}
+
+mfxStatus CEncodingPipeline::GetBestSetByDistortion(std::list<PreEncMVPInfo>& preenc_mvp_info,
+    mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB ** bestDistortionPredMBext[MaxFeiEncMVPNum], mfxU32 * refIdx[MaxFeiEncMVPNum],
+    mfxU32 nPred_actual, mfxU32 fieldId, mfxU32 MB_idx)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    for (mfxU32 i = 0; i < nPred_actual; i++)
+    {
+        MSDK_CHECK_POINTER(bestDistortionPredMBext[i], MFX_ERR_NOT_INITIALIZED);
+        MSDK_CHECK_POINTER(refIdx[i],                  MFX_ERR_NOT_INITIALIZED);
+    }
+
+    std::list<std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> > curMBSet;
+
+    mfxExtFeiPreEncMV*     mvs    = NULL;
+    mfxExtFeiPreEncMBStat* mbdata = NULL;
+
+    for (std::list<PreEncMVPInfo>::iterator it = preenc_mvp_info.begin(); it != preenc_mvp_info.end(); ++it)
+    {
+        mvs = (mfxExtFeiPreEncMV*)getBufById(&(*it).preenc_output_bufs->PB_bufs.out, MFX_EXTBUFF_FEI_PREENC_MV, fieldId);
+        MSDK_CHECK_POINTER(mvs, MFX_ERR_NULL_PTR);
+
+        mbdata = (mfxExtFeiPreEncMBStat*)getBufById(&(*it).preenc_output_bufs->PB_bufs.out, MFX_EXTBUFF_FEI_PREENC_MB, fieldId);
+        MSDK_CHECK_POINTER(mbdata, MFX_ERR_NULL_PTR);
+
+        curMBSet.push_back(std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*>
+            (std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>(&mvs->MB[MB_idx], &mbdata->MB[MB_idx]), (*it).refIdx[fieldId]));
+    }
+
+    curMBSet.sort(compareL0Distortion); // find and copy MaxFeiEncMVPNum best L0
+    mfxU32 i = 0;
+    for (std::list<std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> >::iterator it = curMBSet.begin();
+        it != curMBSet.end() && i<MaxFeiEncMVPNum; ++it)
+    {
+        bestDistortionPredMBext[i][0]  = (*it).first.first;
+        refIdx[i++][0] = (*it).second[0];
+    }
+
+    curMBSet.sort(compareL1Distortion); // find and copy MaxFeiEncMVPNum best L1
+    i = 0;
+    for (std::list<std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> >::iterator it = curMBSet.begin();
+        it != curMBSet.end() && i<MaxFeiEncMVPNum; ++it)
+    {
+        bestDistortionPredMBext[i][1]  = (*it).first.first;
+        refIdx[i++][1] = (*it).second[1];
+    }
+
+    return sts;
+}
+
+bool compareL0Distortion(std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> frst,
+    std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> scnd)
+{
+    return frst.first.second->Inter[0].BestDistortion < scnd.first.second->Inter[0].BestDistortion;
+}
+
+bool compareL1Distortion(std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> frst,
+    std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> scnd)
+{
+    return frst.first.second->Inter[1].BestDistortion < scnd.first.second->Inter[1].BestDistortion;
 }
 
 mfxStatus CEncodingPipeline::SwitchExtBufPayload(mfxU32 bufID, setElem *first_buf, int idx1, setElem *sec_buf, int idx2)

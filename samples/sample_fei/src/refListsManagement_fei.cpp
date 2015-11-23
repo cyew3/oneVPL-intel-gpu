@@ -99,7 +99,7 @@ void InitRefPicList(
 
     ArrayU8x33    & list0 = task.m_list0[field];
     ArrayU8x33    & list1 = task.m_list1[field];
-    ArrayDpbFrame & dpb = task.m_dpb[field];
+    ArrayDpbFrame & dpb   = task.m_dpb[field];
 
     // build lists of reference frame
     if (task.m_type[field] & MFX_FRAMETYPE_IDR)

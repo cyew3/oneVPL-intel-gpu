@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <memory>
 #include <cstring>
+#include <list>
 
 #define IPP_MAX( a, b ) ( ((a) > (b)) ? (a) : (b) )
 #define IPP_MIN( a, b ) ( ((a) < (b)) ? (a) : (b) )
@@ -372,7 +373,7 @@ struct DecRefPicMarkingInfo
 struct PreEncMVPInfo
 {
     bufSet* preenc_output_bufs;
-    int refIdx;
+    mfxU32 refIdx[2][2]; // [fieldId][L0L1]
 };
 
 //for PreEnc; Enc; Pak reordering
@@ -387,7 +388,7 @@ struct iTask
     mfxI32 encoded;
     bufSet* bufs;
     bufSet* preenc_bufs;
-    PreEncMVPInfo preenc_mvp_info[MaxFeiEncMVPNum];
+    std::list<PreEncMVPInfo> preenc_mvp_info;
 
     mfxU16 PicStruct;
     mfxU16 BRefType;
@@ -448,6 +449,16 @@ inline mfxI32 GetPoc(iTask& task, mfxU32 parity)
 inline mfxU8 ExtractFrameType(iTask& task)
 {
     return task.m_type[GetFirstField(task)];
+}
+
+inline mfxU8 ExtractFrameType(iTask& task, mfxU32 fieldId)
+{
+    if (!fieldId){
+        return task.m_type[GetFirstField(task)];
+    }
+    else{
+        return task.m_type[!GetFirstField(task)];
+    }
 }
 
 inline mfxU16 createType(iTask& task)
