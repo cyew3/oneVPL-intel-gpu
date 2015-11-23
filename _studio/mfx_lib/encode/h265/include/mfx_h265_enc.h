@@ -155,8 +155,11 @@ namespace H265Enc {
 
         // derived
         Ipp32s PGopPicSize;
+        Ipp32u sourceWidth;
+        Ipp32u sourceHeight;
         Ipp32u Width;
         Ipp32u Height;
+        Ipp32s picStruct;
         Ipp32u CropLeft;
         Ipp32u CropTop;
         Ipp32u CropRight;
@@ -213,6 +216,8 @@ namespace H265Enc {
         // set
         Ipp8u vuiParametersPresentFlag;
         Ipp8u writeAud;
+        Ipp8u writePicTiming;
+        Ipp8u writeBufPeriod;
 
         Segment *m_tiles;//start/end adress
         Ipp16u *m_tile_ids;

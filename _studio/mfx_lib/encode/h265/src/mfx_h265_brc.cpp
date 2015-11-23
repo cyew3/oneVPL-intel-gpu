@@ -171,8 +171,8 @@ mfxStatus H265BRC::SetParams(const mfxVideoParam *params, H265VideoParam &video)
 
     mParams.maxBitrate = params->mfx.MaxKbps * brcParamMultiplier * 1000;
 
-    mParams.frameRateExtN = params->mfx.FrameInfo.FrameRateExtN;
-    mParams.frameRateExtD = params->mfx.FrameInfo.FrameRateExtD;
+    mParams.frameRateExtN = video.FrameRateExtN;
+    mParams.frameRateExtD = video.FrameRateExtD;
     if (!mParams.frameRateExtN || !mParams.frameRateExtD)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
@@ -404,7 +404,7 @@ mfxStatus H265BRC::Reset(mfxVideoParam *params, H265VideoParam &video, Ipp32s en
     Ipp32s targetBitrate_new_r = (targetBitrate_new >> (6 + MFX_H265_BITRATE_SCALE)) << (6 + MFX_H265_BITRATE_SCALE);
 
     // framerate change not allowed in case of HRD
-    if (mParams.frameRateExtN * params->mfx.FrameInfo.FrameRateExtD != mParams.frameRateExtD * params->mfx.FrameInfo.FrameRateExtN)
+    if (mParams.frameRateExtN * video.FrameRateExtD != mParams.frameRateExtD * video.FrameRateExtN)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     bufSize = mHRD.bufSize;

@@ -606,7 +606,7 @@ namespace {
         errUnsupported = !CheckMax(fi.Width, CodecLimits::MAX_WIDTH);
         errUnsupported = !CheckMax(fi.Height, CodecLimits::MAX_HEIGHT);
 
-        errInvalidParam = !CheckEq(fi.PicStruct, (Ipp32u)MFX_PICSTRUCT_PROGRESSIVE);
+        errInvalidParam = !CheckSet(fi.PicStruct, CodecLimits::SUP_PIC_STRUCT);
         errInvalidParam = !CheckSet(mfx.RateControlMethod, CodecLimits::SUP_RC_METHOD);
         errInvalidParam = !CheckSet(fi.FourCC, CodecLimits::SUP_FOURCC);
         errInvalidParam = !CheckMax(mfx.NumSlice, CodecLimits::MAX_NUM_SLICE);
@@ -1056,6 +1056,8 @@ namespace {
             }
             if (optHevc->BPyramid == OFF || mfx.GopRefDist == 1) // no CALQ, no PAQ if Bpyramid disabled
                 wrnIncompatible = !CheckMaxSat(optHevc->DeltaQpMode, 1);
+            if (fi.PicStruct == TFF || fi.PicStruct == BFF) // no CAL/CAQ/PAQ if interlace
+                wrnIncompatible = !CheckMaxSat(optHevc->DeltaQpMode, 1);
         }
 
 
@@ -1360,6 +1362,9 @@ namespace {
                 optHevc.DeltaQpMode = 1; // off
             if (roi.NumROI)
                 optHevc.DeltaQpMode = 1; // off
+            // AYA: is supported for INTERLACE MODE???
+            //if (fi.PicStruct != PROGR)
+            //    optHevc.DeltaQpMode = 1; // off
         }
 
         if (optHevc.Enable10bit == 0)

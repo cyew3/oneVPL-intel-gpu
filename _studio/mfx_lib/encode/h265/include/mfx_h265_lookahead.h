@@ -35,7 +35,7 @@ namespace H265Enc {
 
         Ipp32s GetDelay();
         mfxStatus PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u region_row, Ipp32u region_col);
-        int SetFrame(Frame* in);
+        int SetFrame(Frame* in, Ipp32s filedNum);
         void AverageComplexity(Frame *in);
         void ResetState();
 
@@ -79,8 +79,8 @@ namespace H265Enc {
         void Build_ttGraph(Ipp32s poc);
 
     public:
-        Frame* m_frame;
-        Frame* m_lastAcceptedFrame;
+        Frame* m_frame[2];
+        Frame* m_lastAcceptedFrame[2];
         std::vector<ThreadingTask> m_threadingTasks;
         ObjectPool<ThreadingTask> m_ttHubPool;       // storage for threading tasks of type TT_HUB
     };

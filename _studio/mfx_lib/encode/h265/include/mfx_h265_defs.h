@@ -633,10 +633,10 @@ struct ThreadingTask
         finished = 0;
     }
 
-    void InitEncComplete(Ipp32s poc_) {
+    void InitEncComplete(Frame *frame_, Ipp32s poc_) {
         action = TT_ENC_COMPLETE;
         poc = poc_;
-        ptr0 = NULL;
+        frame = frame_;
         ptr1 = NULL;
         numUpstreamDependencies = 0;
         numDownstreamDependencies = 0;
@@ -714,6 +714,8 @@ namespace MfxEnumShortAliases {
            CONSTR_INTRA=MFX_HEVC_CONSTR_REXT_INTRA, CONSTR_1PIC=MFX_HEVC_CONSTR_REXT_ONE_PICTURE_ONLY, CONSTR_LOWER_RATE=MFX_HEVC_CONSTR_REXT_LOWER_BIT_RATE };
 
     enum { MAIN_422_10=MAX_12BIT|MAX_10BIT|MAX_422|CONSTR_LOWER_RATE };
+
+    enum { PROGR=MFX_PICSTRUCT_PROGRESSIVE, TFF=MFX_PICSTRUCT_FIELD_TFF, BFF=MFX_PICSTRUCT_FIELD_BFF };
 };
 
     namespace CodecLimits {
@@ -745,6 +747,7 @@ namespace MfxEnumShortAliases {
         const Ipp32s SUP_RC_METHOD[]        = { CBR, VBR, AVBR, LA_EXT, CQP};
         const Ipp32s SUP_FOURCC[]           = { NV12, NV16, P010, P210 };
         const Ipp32s SUP_CHROMA_FORMAT[]    = { YUV420, YUV422 };
+        const Ipp32s SUP_PIC_STRUCT[]       = { PROGR, TFF, BFF };
         const Ipp32s SUP_INTRA_ANG_MODE_I[] = { 1, 2, 3, 99 };
         const Ipp32s SUP_INTRA_ANG_MODE[]   = { 1, 2, 3, 99, 100 };
         const Ipp32s SUP_PATTERN_INT_PEL[]  = { 1, 100};

@@ -2022,77 +2022,21 @@ void WriteMV(Frame *inFrame)
 }
 
 
-int Lookahead::SetFrame(Frame* in)
+int Lookahead::SetFrame(Frame* in, Ipp32s fieldNum)
 {
-    m_frame = in;
+    m_frame[fieldNum] = in;
 
-    if (m_frame == NULL && m_inputQueue.empty()) {
+    if (m_frame[fieldNum] == NULL && m_inputQueue.empty()) {
         return 0;
     }
 
-    {
-        Build_ttGraph(m_frame ? m_frame->m_frameOrder : 0);
-        //m_enc.m_pendingTasks.push_back(&m_threadingTaskStore[0]);
-        //m_task->m_numFinishedThreadingTasks = 0;
-        //m_task->m_numThreadingTasks = m_threadingTaskStore.size();//m_videoParam.PicWidthInCtbs * m_videoParam.PicHeightInCtbs * 2;
-        return 1;
+    if (fieldNum == 0) {
+        Build_ttGraph(m_frame[fieldNum] ? m_frame[fieldNum]->m_frameOrder : 0);
     }
+
+     return 1;
 }
-//void Lookahead::DoLookaheadAnalysis(Frame* in)
-//{
-//    if (in && (m_videoParam.LowresFactor || m_videoParam.SceneCut)) {
-//        if (in->m_bitDepthLuma == 8)
-//            Scale<Ipp8u>(in->m_origin, in->m_lowres, 0, &m_workBuf[0]);
-//        else
-//            Scale<Ipp16u>(in->m_origin, in->m_lowres, 0, &m_workBuf[0]);
-//
-//        if (m_videoParam.DeltaQpMode > 0 || m_videoParam.AnalyzeCmplx) {
-//            FrameData* frame = in->m_lowres;
-//            Ipp32s blkSize = SIZE_BLK_LA;
-//            Ipp32s heightInBlks = (frame->height + blkSize - 1) / blkSize;
-//            for (Ipp32s row = 0; row < heightInBlks; row++) {
-//                PadOneReconRow(frame, row, blkSize, heightInBlks, m_videoParam);
-//            }
-//        }
-//    }
-//
-//    if (in && in->m_frameOrder > 0 && 
-//        (m_videoParam.AnalyzeCmplx || m_videoParam.DeltaQpMode)) {
-//        Frame* curr = in;
-//        FrameIter it = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(in->m_frameOrder-1));
-//        Frame* prev = (*it);
-//        bool useLowres = m_videoParam.LowresFactor;
-//        FrameData* frame = useLowres ? curr->m_lowres : curr->m_origin;
-//        Statistics* stat = curr->m_stats[ useLowres ? 1 : 0 ];
-//        FrameData* framePrev = useLowres ? prev->m_lowres : prev->m_origin;
-//        DoInterAnalysis(frame, NULL, framePrev, &stat->m_interSad[0], &stat->m_interSatd[0], &stat->m_mv[0], 0, 0, 0, curr->m_bitDepthLuma);
-//        //WritePSAD(frame);
-//        //WriteMV(frame);
-//
-//        if (m_videoParam.DeltaQpMode && useLowres) { // need refine for original resolution
-//           /* if (in->m_frameOrder == 36) {
-//                printf("\n stop \n");fflush(stderr);
-//            }*/
-//
-//            FrameData* frame = curr->m_origin;
-//            Statistics* originStat = curr->m_stats[0];
-//            Statistics* lowresStat = curr->m_stats[1];
-//            FrameData* framePrev = prev->m_origin;
-//            DoInterAnalysis(frame, lowresStat, framePrev, &originStat->m_interSad[0], &originStat->m_interSatd[0], &originStat->m_mv[0], 1, 0, m_videoParam.LowresFactor, curr->m_bitDepthLuma);
-//        }
-//    }
-//
-//    if (m_videoParam.SceneCut) {
-//        AnalyzeSceneCut_AndUpdateState(in);
-//    }
-//    if (m_videoParam.DeltaQpMode) {
-//        AnalyzeContent(in);
-//    }
-//    if (m_videoParam.AnalyzeCmplx) {
-//        AnalyzeComplexity(in);
-//    }
-//    
-//} // 
+
 
 void H265Encoder::OnLookaheadCompletion()
 {
@@ -2193,6 +2137,13 @@ void Lookahead::AnalyzeSceneCut_AndUpdateState(Frame* in)
                 frame->m_picCodeType = MFX_FRAMETYPE_I;
                 frame->m_poc = 0;
 
+                // special case: scenecut detected in second Field
+                if (frame->m_secondFieldFlag) {
+                    FrameIter tmp = curr;
+                    Frame* firstField = *(--tmp);
+                    firstField->m_picCodeType = MFX_FRAMETYPE_P;
+                }
+
                 if (m_videoParam.PGopPicSize > 1) {
                     //const Ipp8u PGOP_LAYERS[PGOP_PIC_SIZE] = { 0, 2, 1, 2 };
                     frame->m_RPSIndex = 0;
@@ -2264,7 +2215,7 @@ void Lookahead::ResetState()
     }
     m_cmplxPrevFrame = NULL;
     m_dqpPrevFrame = NULL;
-    m_lastAcceptedFrame = NULL;
+    m_lastAcceptedFrame[0] = m_lastAcceptedFrame[1] = NULL;
 }
 
 void Lookahead::AverageComplexity(Frame *in)
@@ -2585,7 +2536,7 @@ Lookahead::Lookahead(H265Encoder & enc)
     m_cmplxPrevFrame = NULL;
     m_dqpPrevFrame = NULL;
     // to prevent multiple PREENC_START per frame
-    m_lastAcceptedFrame = NULL;
+    m_lastAcceptedFrame[0] = m_lastAcceptedFrame[1] = NULL;
 
     // buffer for IPP downscale
     if (m_videoParam.LowresFactor || m_scdConfig.scaleFactor) {
@@ -2924,30 +2875,36 @@ Ipp32s rowsInRegion = useLowres ? m_lowresRowsInRegion : m_originRowsInRegion;
 mfxStatus Lookahead::PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u region_row, Ipp32u region_col)
 {
     action;
-    Frame* in = m_frame;
+    Frame* in[2] = {m_frame[0], m_frame[1]};
+    Ipp32s fieldCount = (m_videoParam.picStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
 
     switch (action) {
     case TT_PREENC_START:
         {
             // do this stage only once per frame
-            if ((m_lastAcceptedFrame && in) && (m_lastAcceptedFrame->m_frameOrder == in->m_frameOrder)) {
+            if ((m_lastAcceptedFrame[0] && in[0]) && (m_lastAcceptedFrame[0]->m_frameOrder == in[0]->m_frameOrder)) {
                 break;
             }
 
-            if (in && (m_videoParam.LowresFactor || m_videoParam.SceneCut)) {
-                if (in->m_bitDepthLuma == 8)
-                    Scale<Ipp8u>(in->m_origin, in->m_lowres, 0);
-                else
-                    Scale<Ipp16u>(in->m_origin, in->m_lowres, 0);
+            for (Ipp32s fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
+                //if (m_videoParam.picStruct == MFX_PICSTRUCT_PROGRESSIVE) 
+                {
+                    if (in[fieldNum] && (m_videoParam.LowresFactor || m_videoParam.SceneCut)) {
+                        if (in[fieldNum]->m_bitDepthLuma == 8)
+                            Scale<Ipp8u>(in[fieldNum]->m_origin, in[fieldNum]->m_lowres, 0);
+                        else
+                            Scale<Ipp16u>(in[fieldNum]->m_origin, in[fieldNum]->m_lowres, 0);
 
-                if (m_videoParam.DeltaQpMode > 0 || m_videoParam.AnalyzeCmplx)
-                    PadRectLuma(*in->m_lowres, m_videoParam.fourcc, 0, 0, in->m_lowres->width, in->m_lowres->height);
-            }
-            if (m_videoParam.SceneCut) {
-                AnalyzeSceneCut_AndUpdateState(in);
-            }
+                        if (m_videoParam.DeltaQpMode > 0 || m_videoParam.AnalyzeCmplx)
+                            PadRectLuma(*in[fieldNum]->m_lowres, m_videoParam.fourcc, 0, 0, in[fieldNum]->m_lowres->width, in[fieldNum]->m_lowres->height);
+                    }
+                    if (m_videoParam.SceneCut) {
+                        AnalyzeSceneCut_AndUpdateState(in[fieldNum]);
+                    }
+                }
 
-            m_lastAcceptedFrame = in;
+                m_lastAcceptedFrame[fieldNum] = in[fieldNum];
+            }
 
             break;
         }
@@ -2955,70 +2912,77 @@ mfxStatus Lookahead::PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u 
 
     case TT_PREENC_ROUTINE:
         {
-            if (in && in->m_frameOrder > 0 && 
+            if (in[0] && in[0]->m_frameOrder > 0 && 
                 (m_videoParam.AnalyzeCmplx || (m_videoParam.DeltaQpMode&(AMT_DQP_PAQ|AMT_DQP_CAL)) )) 
             {
-                Frame* curr = in;
-                FrameIter it = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(in->m_frameOrder-1));
-                if (it != m_inputQueue.end()) {
-                    Frame* prev = (*it);
-                    bool useLowres = m_videoParam.LowresFactor;
-                    FrameData* frame = useLowres ? curr->m_lowres : curr->m_origin;
-                    Statistics* stat = curr->m_stats[ useLowres ? 1 : 0 ];
-                    FrameData* framePrev = useLowres ? prev->m_lowres : prev->m_origin;
+                //---
+                for (Ipp32s fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
+                    Frame* curr = in[fieldNum];
+                    FrameIter it = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(curr->m_frameOrder-1));
+                    if (it != m_inputQueue.end()) {
+                        Frame* prev = (*it);
+                        bool useLowres = m_videoParam.LowresFactor;
+                        FrameData* frame = useLowres ? curr->m_lowres : curr->m_origin;
+                        Statistics* stat = curr->m_stats[ useLowres ? 1 : 0 ];
+                        FrameData* framePrev = useLowres ? prev->m_lowres : prev->m_origin;
 
-                    Ipp32s rowsInRegion = useLowres ? m_lowresRowsInRegion : m_originRowsInRegion;
-                    Ipp32s numActiveRows = GetNumActiveRows(region_row, rowsInRegion, frame->height);
-
-                    for (Ipp32s i=0; i<numActiveRows; i++) {
-                        DoInterAnalysis_OneRow(frame, NULL, framePrev, &stat->m_interSad[0], &stat->m_interSatd[0], &stat->m_mv[0], 0, 0, m_videoParam.LowresFactor, curr->m_bitDepthLuma, region_row * rowsInRegion + i);
-                    }
-
-                    if ((m_videoParam.DeltaQpMode&(AMT_DQP_PAQ|AMT_DQP_CAL)) && useLowres) { // need refine for _Original_ resolution
-                        FrameData* frame = curr->m_origin;
-                        Statistics* originStat = curr->m_stats[0];
-                        Statistics* lowresStat = curr->m_stats[1];
-                        FrameData* framePrev = prev->m_origin;
-
-                        Ipp32s rowsInRegion = m_originRowsInRegion;
+                        Ipp32s rowsInRegion = useLowres ? m_lowresRowsInRegion : m_originRowsInRegion;
                         Ipp32s numActiveRows = GetNumActiveRows(region_row, rowsInRegion, frame->height);
 
                         for (Ipp32s i=0; i<numActiveRows; i++) {
-                            DoInterAnalysis_OneRow(frame, lowresStat, framePrev, &originStat->m_interSad[0], NULL, &originStat->m_mv[0], 1, 0, m_videoParam.LowresFactor, curr->m_bitDepthLuma, region_row * rowsInRegion + i);//fixed-NG
+                            DoInterAnalysis_OneRow(frame, NULL, framePrev, &stat->m_interSad[0], &stat->m_interSatd[0], &stat->m_mv[0], 0, 0, m_videoParam.LowresFactor, curr->m_bitDepthLuma, region_row * rowsInRegion + i);
+                        }
+
+                        if ((m_videoParam.DeltaQpMode&(AMT_DQP_PAQ|AMT_DQP_CAL)) && useLowres) { // need refine for _Original_ resolution
+                            FrameData* frame = curr->m_origin;
+                            Statistics* originStat = curr->m_stats[0];
+                            Statistics* lowresStat = curr->m_stats[1];
+                            FrameData* framePrev = prev->m_origin;
+
+                            Ipp32s rowsInRegion = m_originRowsInRegion;
+                            Ipp32s numActiveRows = GetNumActiveRows(region_row, rowsInRegion, frame->height);
+
+                            for (Ipp32s i=0; i<numActiveRows; i++) {
+                                DoInterAnalysis_OneRow(frame, lowresStat, framePrev, &originStat->m_interSad[0], NULL, &originStat->m_mv[0], 1, 0, m_videoParam.LowresFactor, curr->m_bitDepthLuma, region_row * rowsInRegion + i);//fixed-NG
+                            }
                         }
                     }
-                }
 
 #ifdef AMT_DQP_FIX
-                if (m_videoParam.DeltaQpMode&AMT_DQP_PAQ) {
-                    Ipp32s centralPos = (m_slideWindowPaq.size()-1) >> 1;
-                    Ipp32s frameOrderCentral = m_slideWindowPaq[centralPos];
-                    bool doAnalysis = (frameOrderCentral >= 0);
+                    if (m_videoParam.DeltaQpMode&AMT_DQP_PAQ) {
+                        Ipp32s centralPos = (m_slideWindowPaq.size()-1) >> 1;
+                        Ipp32s frameOrderCentral = m_slideWindowPaq[centralPos];
+                        bool doAnalysis = (frameOrderCentral >= 0);
 
-                    if (doAnalysis) {
-                        FrameIter curr = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(frameOrderCentral));
-                        Ipp32u frameType = (*curr)->m_picCodeType;
-                        bool isRef = (frameType == MFX_FRAMETYPE_P || frameType == MFX_FRAMETYPE_I);
-                        if (isRef) {
-                            DoPersistanceAnalysis_OneRow(*curr, region_row);
+                        if (doAnalysis) {
+                            FrameIter curr = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(frameOrderCentral));
+                            Ipp32u frameType = (*curr)->m_picCodeType;
+                            bool isRef = (frameType == MFX_FRAMETYPE_P || frameType == MFX_FRAMETYPE_I);
+                            if (isRef) {
+                                DoPersistanceAnalysis_OneRow(*curr, region_row);
+                            }
                         }
                     }
-                }
 #endif
+                } // foreach fieldNum
+                //---
             }
 
             // INTRA:  optional ORIGINAL / LOWRES 
             if (in && m_videoParam.AnalyzeCmplx) {
                 Ipp8u useLowres = m_videoParam.LowresFactor;
-                FrameData* frame = useLowres ? in->m_lowres : in->m_origin;
-                Statistics* stat = in->m_stats[useLowres ? 1 : 0];
-                Ipp32s rowsInRegion = useLowres ? m_lowresRowsInRegion : m_originRowsInRegion;
-                Ipp32s numActiveRows = GetNumActiveRows(region_row, rowsInRegion, frame->height);
 
-                if (in->m_bitDepthLuma == 8) {
-                    for (Ipp32s i=0; i<numActiveRows; i++) DoIntraAnalysis_OneRow<Ipp8u>(frame, &stat->m_intraSatd[0], region_row * rowsInRegion + i);
-                } else { 
-                    for (Ipp32s i=0; i<numActiveRows; i++) DoIntraAnalysis_OneRow<Ipp16u>(frame, &stat->m_intraSatd[0], region_row * rowsInRegion + i);
+                for (Ipp32s fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
+                    FrameData* frame = useLowres ? in[fieldNum]->m_lowres : in[fieldNum]->m_origin;
+                    Statistics* stat = in[fieldNum]->m_stats[useLowres ? 1 : 0];
+                    Ipp32s rowsInRegion = useLowres ? m_lowresRowsInRegion : m_originRowsInRegion;
+                    Ipp32s numActiveRows = GetNumActiveRows(region_row, rowsInRegion, frame->height);
+
+                    if (in[fieldNum]->m_bitDepthLuma == 8) {
+                        for (Ipp32s i=0; i<numActiveRows; i++) DoIntraAnalysis_OneRow<Ipp8u>(frame, &stat->m_intraSatd[0], region_row * rowsInRegion + i);
+                    } else { 
+                        for (Ipp32s i=0; i<numActiveRows; i++) DoIntraAnalysis_OneRow<Ipp16u>(frame, &stat->m_intraSatd[0], region_row * rowsInRegion + i);
+                    }
                 }
             }
 
@@ -3026,13 +2990,16 @@ mfxStatus Lookahead::PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u 
             // RsCs: only ORIGINAL
             if (in && m_videoParam.DeltaQpMode) {
                 Ipp32s rowsInRegion = m_originRowsInRegion;
-                Ipp32s numActiveRows = GetNumActiveRows(region_row, rowsInRegion, in->m_origin->height);
+                Ipp32s numActiveRows = GetNumActiveRows(region_row, rowsInRegion, in[0]->m_origin->height);
 
                 //printf(" row %d %d %d \n", region_row, (region_row * rowsInRegion), (region_row * rowsInRegion) + numActiveRows);
-                for(Ipp32s i=0;i<numActiveRows;i++) {
-                    (in->m_bitDepthLuma == 8)
-                        ? CalcRsCs_OneRow<Ipp8u>(in->m_origin, in->m_stats[0], m_videoParam, region_row * rowsInRegion + i)
-                        : CalcRsCs_OneRow<Ipp16u>(in->m_origin, in->m_stats[0], m_videoParam, region_row * rowsInRegion + i);
+                for (Ipp32s fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
+                    Frame* curr = in[fieldNum];
+                    for(Ipp32s i=0;i<numActiveRows;i++) {
+                        (curr->m_bitDepthLuma == 8)
+                            ? CalcRsCs_OneRow<Ipp8u>(curr->m_origin, curr->m_stats[0], m_videoParam, region_row * rowsInRegion + i)
+                            : CalcRsCs_OneRow<Ipp16u>(curr->m_origin, curr->m_stats[0], m_videoParam, region_row * rowsInRegion + i);
+                    }
                 }
             }
             break;
@@ -3043,10 +3010,14 @@ mfxStatus Lookahead::PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u 
     case TT_PREENC_END:
         {
             if (m_videoParam.AnalyzeCmplx) {
-                AnalyzeComplexity(in);
+                for (Ipp32s fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
+                    AnalyzeComplexity(in[fieldNum]);
+                }
             }
             if (m_videoParam.DeltaQpMode) {
-                AnalyzeContent(in);
+                for (Ipp32s fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
+                    AnalyzeContent(in[fieldNum]);
+                }
             }
             break;
         }

@@ -148,9 +148,9 @@ namespace H265Enc {
         std::list<Frame *> m_dpb;             // _global_ pool of frames: encoded reference frames + being encoded frames
         std::list<Frame *> m_actualDpb;       // reference frames for next frame to encode
 
-        Frame *m_newFrame;
-        Frame *m_laFrame;
-        Frame *m_targetFrame;
+        Frame *m_newFrame[2];
+        Frame *m_laFrame[2];
+        Frame *m_targetFrame[2];
 
         ObjectPool<FrameData>     m_inputFrameDataPool;     // storage for full-sized original pixel data
         ObjectPool<FrameData>     m_reconFrameDataPool;     // storage for full-sized reconstructed/reference pixel data
@@ -208,7 +208,7 @@ namespace H265Enc {
         void SetSlice(H265Slice *slice, Ipp32u curr_slice, Frame* currentFrame);
 
         // ------ _global_ stages of Input Frame Control
-        Frame *AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, mfxBitstream *mfxBS);
+        Frame *AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, mfxBitstream *mfxBS, Ipp32s fieldNum);
 
         // new (incoming) frame
         void InitNewFrame(Frame *out, mfxFrameSurface1 *in);
@@ -235,7 +235,7 @@ namespace H265Enc {
 
         void PrepareToEncode(H265EncodeTaskInputParams *inputParam); // build dependency graph for all parallel frames
         void EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam); // build dependency graph for one frames
-        mfxStatus SyncOnFrameCompletion(H265EncodeTaskInputParams *inputParam);
+        mfxStatus SyncOnFrameCompletion(H265EncodeTaskInputParams *inputParam, Frame *frame);
 
         void OnLookaheadStarting(); // no threas safety. some preparation work in single thread mode!
         void OnLookaheadCompletion(); // no threas safety. some post work in single thread mode!

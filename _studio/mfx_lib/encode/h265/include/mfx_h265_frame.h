@@ -243,6 +243,9 @@ namespace H265Enc {
         Ipp8u  m_bdChromaFlag;
         Ipp8u  m_chromaFormatIdc;
 
+        Ipp32s m_picStruct;
+        Ipp32s m_secondFieldFlag;
+        Ipp32s m_bottomFieldFlag;
         mfxU64 m_timeStamp;
         Ipp32u m_picCodeType;
         Ipp32s m_RPSIndex;

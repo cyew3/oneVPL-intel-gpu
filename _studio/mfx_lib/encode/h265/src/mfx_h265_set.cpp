@@ -15,6 +15,7 @@
 #include "mfx_h265_encode.h"
 
 using namespace H265Enc;
+using namespace MfxEnumShortAliases;
 
 #define H265Bs_PutBit(bs,code) (bs)->PutBit(code)
 #define H265Bs_PutBits(bs,code,len) (bs)->PutBits(code,len)
@@ -716,13 +717,15 @@ Ipp32s H265FrameEncoder::WriteBitstreamHeaderSet(mfxBitstream *mfxBS, Ipp32s bs_
         nal.nal_unit_type = NAL_PPS;
         overheadBytes += m_bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
 
-        if (m_topEnc.m_sps.nal_hrd_parameters_present_flag) {
+        if (m_videoParam.writePicTiming || m_videoParam.writeBufPeriod) {
             PutActiveParameterSets(&m_bs[bs_main_id], m_topEnc.m_seiAps);
             nal.nal_unit_type = NAL_UT_PREFIX_SEI;
             nal.seiPayloadType = SEI_ACTIVE_PARAMETER_SETS;
             nal.seiPayloadSize = Ipp32u(m_bs[bs_main_id].m_base.m_pbs - m_bs[bs_main_id].m_base.m_pbsRBSPBase);
             overheadBytes += m_bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
+        }
 
+        if (m_videoParam.writeBufPeriod) {
             BufferingPeriod bufferingPeriod = {};
             bufferingPeriod.bp_seq_parameter_set_id = m_topEnc.m_sps.sps_seq_parameter_set_id;
             bufferingPeriod.nal_initial_cpb_removal_delay  = m_topEnc.m_hrd.GetInitCpbRemovalDelay();
@@ -735,8 +738,9 @@ Ipp32s H265FrameEncoder::WriteBitstreamHeaderSet(mfxBitstream *mfxBS, Ipp32s bs_
         }
     }
 
-    if (m_topEnc.m_sps.nal_hrd_parameters_present_flag) {
+    if (m_videoParam.writePicTiming) {
         PicTiming picTiming = {};
+        picTiming.pic_struct = (m_videoParam.picStruct == PROGR ? 0 : m_frame->m_bottomFieldFlag ? 2 : 1);
         picTiming.au_cpb_removal_delay_minus1 = m_topEnc.m_hrd.GetAuCpbRemovalDelayMinus1(*m_frame);
         picTiming.pic_dpb_output_delay = m_topEnc.m_sps.sps_num_reorder_pics[0] + m_frame->m_frameOrder - m_frame->m_encOrder;
         PutPicTiming(&m_bs[bs_main_id], picTiming, m_topEnc.m_sps);

@@ -278,19 +278,30 @@ namespace H265Enc {
             InputBitDepthChroma = 10;
         }
 
+        Ipp32s inPitch = in->Data.Pitch;
+        Ipp8u *inDataY = in->Data.Y;
+        Ipp8u *inDataUV = in->Data.UV;
+        if (m_picStruct != PROGR) {
+            inPitch *= 2;
+            if (m_bottomFieldFlag) {
+                inDataY += in->Data.Pitch;
+                inDataUV += in->Data.Pitch;
+            }
+        }
+
         switch ((m_bdLumaFlag << 1) | (InputBitDepthLuma > 8)) {
         case 0:
-            ippiCopy_8u_C1R(in->Data.Y, in->Data.Pitch, out->y, out->pitch_luma_bytes, roi);
+            ippiCopy_8u_C1R(inDataY, inPitch, out->y, out->pitch_luma_bytes, roi);
             break;
         case 1:
-            ippiConvert_16u8u_C1R((Ipp16u*)in->Data.Y, in->Data.Pitch, out->y, out->pitch_luma_bytes, roi);
+            ippiConvert_16u8u_C1R((Ipp16u*)inDataY, inPitch, out->y, out->pitch_luma_bytes, roi);
             break;
         case 2:
-            ippiConvert_8u16u_C1R(in->Data.Y, in->Data.Pitch, (Ipp16u*)out->y, out->pitch_luma_bytes, roi);
+            ippiConvert_8u16u_C1R(inDataY, inPitch, (Ipp16u*)out->y, out->pitch_luma_bytes, roi);
             ippiLShiftC_16u_C1IR(m_bitDepthLuma - 8, (Ipp16u*)out->y, out->pitch_luma_bytes, roi);
             break;
         case 3:
-            ippiCopy_16u_C1R((Ipp16u*)in->Data.Y, in->Data.Pitch, (Ipp16u*)out->y, out->pitch_luma_bytes, roi);
+            ippiCopy_16u_C1R((Ipp16u*)inDataY, inPitch, (Ipp16u*)out->y, out->pitch_luma_bytes, roi);
             break;
         default:
             VM_ASSERT(0);
@@ -301,17 +312,17 @@ namespace H265Enc {
 
         switch ((m_bdChromaFlag << 1) | (InputBitDepthChroma > 8)) {
         case 0:
-            ippiCopy_8u_C1R(in->Data.UV, in->Data.Pitch, out->uv, out->pitch_chroma_bytes, roi);
+            ippiCopy_8u_C1R(inDataUV, inPitch, out->uv, out->pitch_chroma_bytes, roi);
             break;
         case 1:
-            ippiConvert_16u8u_C1R((Ipp16u*)in->Data.UV, in->Data.Pitch, out->uv, out->pitch_chroma_bytes, roi);
+            ippiConvert_16u8u_C1R((Ipp16u*)inDataUV, inPitch, out->uv, out->pitch_chroma_bytes, roi);
             break;
         case 2:
-            ippiConvert_8u16u_C1R(in->Data.UV, in->Data.Pitch, (Ipp16u*)out->uv, out->pitch_chroma_bytes, roi);
+            ippiConvert_8u16u_C1R(inDataUV, inPitch, (Ipp16u*)out->uv, out->pitch_chroma_bytes, roi);
             ippiLShiftC_16u_C1IR(m_bitDepthChroma - 8, (Ipp16u*)out->uv, out->pitch_chroma_bytes, roi);
             break;
         case 3:
-            ippiCopy_16u_C1R((Ipp16u*)in->Data.UV, in->Data.Pitch, (Ipp16u*)out->uv, out->pitch_chroma_bytes, roi);
+            ippiCopy_16u_C1R((Ipp16u*)inDataUV, inPitch, (Ipp16u*)out->uv, out->pitch_chroma_bytes, roi);
             break;
         default:
             VM_ASSERT(0);
@@ -486,7 +497,10 @@ namespace H265Enc {
 
         m_wasLookAheadProcessed = 0;
         m_lookaheadRefCounter = 0;
-
+ 
+        m_picStruct = PROGR;
+        m_secondFieldFlag = 0;
+        m_bottomFieldFlag = 0;
         m_pyramidLayer = 0;
         m_miniGopCount = 0;
         m_biFramesInMiniGop = 0;
@@ -534,7 +548,7 @@ namespace H265Enc {
         m_userSeiMessages.resize(0);
         m_userSeiMessagesData.resize(0);
 
-        m_ttEncComplete.InitEncComplete(0);
+        m_ttEncComplete.InitEncComplete(this, 0);
         m_ttInitNewFrame.InitNewFrame(this, (mfxFrameSurface1 *)NULL, 0);
         m_ttPadRecon.InitPadRecon(this, 0);
 

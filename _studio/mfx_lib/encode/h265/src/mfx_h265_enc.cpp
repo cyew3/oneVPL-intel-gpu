@@ -28,6 +28,7 @@
 #include "mfx_h265_brc.h"
 
 using namespace H265Enc;
+using namespace MfxEnumShortAliases;
 
 namespace H265Enc {
 
@@ -207,6 +208,8 @@ void H265Encoder::SetVPS()
     m_vps.vps_max_num_reorder_pics[0] = 0;
     if (m_videoParam.GopRefDist > 1)
         m_vps.vps_max_num_reorder_pics[0] = MAX(1, m_videoParam.BiPyramidLayers - 1);
+    if (m_videoParam.picStruct != PROGR)
+        m_vps.vps_max_num_reorder_pics[0] *= 2;
 
     m_vps.vps_max_latency_increase[0] = 0;
     m_vps.vps_num_layer_sets = 1;
@@ -316,8 +319,8 @@ void H265Encoder::SetSPS()
         m_sps.video_signal_type_present_flag = 0;
         m_sps.chroma_loc_info_present_flag = 0;
         m_sps.neutral_chroma_indication_flag = 0;
-        m_sps.field_seq_flag = 0;
-        m_sps.frame_field_info_present_flag = 0;
+        m_sps.field_seq_flag = (pars.picStruct != PROGR);
+        m_sps.frame_field_info_present_flag = (pars.picStruct != PROGR);
         m_sps.default_display_window_flag = 0;
         m_sps.vui_timing_info_present_flag = 1;
         if (m_sps.vui_timing_info_present_flag) {
@@ -1098,19 +1101,37 @@ void H265Encoder::ConfigureInputFrame(Frame* frame, bool bEncOrder) const
 
     if (!bEncOrder) {
         Ipp32s idrDist = m_videoParam.GopPicSize * m_videoParam.IdrInterval;
-        if (frame->m_frameOrder == 0 || idrDist > 0 && (frame->m_frameOrder - frame->m_frameOrderOfLastIdr) % idrDist == 0) {
-            frame->m_isIdrPic = true;
-            frame->m_picCodeType = MFX_FRAMETYPE_I;
-            frame->m_poc = 0;
-        }
-        else if (m_videoParam.GopPicSize > 0 && (frame->m_frameOrder - frame->m_frameOrderOfLastIntra) % m_videoParam.GopPicSize == 0) {
-            frame->m_picCodeType = MFX_FRAMETYPE_I;
-        }
-        else if ((frame->m_frameOrder - frame->m_frameOrderOfLastAnchor) % m_videoParam.GopRefDist == 0) {
-            frame->m_picCodeType = MFX_FRAMETYPE_P;
-        }
-        else {
-            frame->m_picCodeType = MFX_FRAMETYPE_B;
+        if (m_videoParam.picStruct == PROGR) {
+            if (frame->m_frameOrder == 0 || idrDist > 0 && (frame->m_frameOrder - frame->m_frameOrderOfLastIdr) % idrDist == 0) {
+                frame->m_isIdrPic = true;
+                frame->m_picCodeType = MFX_FRAMETYPE_I;
+                frame->m_poc = 0;
+            } else if (m_videoParam.GopPicSize > 0 && (frame->m_frameOrder - frame->m_frameOrderOfLastIntra) % m_videoParam.GopPicSize == 0) {
+                frame->m_picCodeType = MFX_FRAMETYPE_I;
+            } else if ((frame->m_frameOrder - frame->m_frameOrderOfLastAnchor) % m_videoParam.GopRefDist == 0) {
+                frame->m_picCodeType = MFX_FRAMETYPE_P;
+            } else {
+                frame->m_picCodeType = MFX_FRAMETYPE_B;
+            }
+        } else {
+            if (frame->m_frameOrder/2 == 0 || idrDist > 0 && (frame->m_frameOrder/2 - frame->m_frameOrderOfLastIdr/2) % idrDist == 0) {
+                if (frame->m_frameOrder & 1) {
+                    frame->m_picCodeType = MFX_FRAMETYPE_P;
+                } else {
+                    frame->m_isIdrPic = true;
+                    frame->m_picCodeType = MFX_FRAMETYPE_I;
+                    frame->m_poc = 0;
+                }
+            } else if (m_videoParam.GopPicSize > 0 && (frame->m_frameOrder/2 - frame->m_frameOrderOfLastIntra/2) % m_videoParam.GopPicSize == 0) {
+                if (frame->m_frameOrder & 1)
+                    frame->m_picCodeType = MFX_FRAMETYPE_P;
+                else
+                    frame->m_picCodeType = MFX_FRAMETYPE_I;
+            } else if ((frame->m_frameOrder/2 - frame->m_frameOrderOfLastAnchor/2) % m_videoParam.GopRefDist == 0) {
+                frame->m_picCodeType = MFX_FRAMETYPE_P;
+            } else {
+                frame->m_picCodeType = MFX_FRAMETYPE_B;
+            }
         }
     }
     else {
@@ -1228,33 +1249,43 @@ namespace {
                 }
             }
 
-            // cut ref lists for non-ref frames
-            if (!currFrame.m_isRef && list.m_refFramesCount > 1) {
-                Ipp32s layer0 = refs[0]->m_pyramidLayer;
-                for (Ipp32s i = 1; i < list.m_refFramesCount; i++) {
-                    if (refs[i]->m_pyramidLayer >= layer0) {
-                        list.m_refFramesCount = i;
-                        break;
+            if (par.picStruct == PROGR) {
+                // cut ref lists for non-ref frames
+                if (!currFrame.m_isRef && list.m_refFramesCount > 1) {
+                    Ipp32s layer0 = refs[0]->m_pyramidLayer;
+                    for (Ipp32s i = 1; i < list.m_refFramesCount; i++) {
+                        if (refs[i]->m_pyramidLayer >= layer0) {
+                            list.m_refFramesCount = i;
+                            break;
+                        }
                     }
                 }
-            }
 
 #ifdef AMT_REF_SCALABLE
-            if (par.BiPyramidLayers == 4) {
-                // list is already sorted by m_pyramidLayer (ascending)
-                Ipp32s refLayerLimit = par.refLayerLimit[currFrame.m_pyramidLayer];
-                for (Ipp32s i = 1; i < list.m_refFramesCount; i++) {
-                    if (refs[i]->m_pyramidLayer > refLayerLimit) {
-                        list.m_refFramesCount = i;
-                        break;
+                if (par.BiPyramidLayers == 4) {
+                    // list is already sorted by m_pyramidLayer (ascending)
+                    Ipp32s refLayerLimit = par.refLayerLimit[currFrame.m_pyramidLayer];
+                    for (Ipp32s i = 1; i < list.m_refFramesCount; i++) {
+                        if (refs[i]->m_pyramidLayer > refLayerLimit) {
+                            list.m_refFramesCount = i;
+                            break;
+                        }
                     }
                 }
-            }
 #endif // AMT_REF_SCALABLE
+            }
         }
     }
 }
 
+Ipp32s CountUniqueRefs(const RefPicList refLists[2]) {
+    Ipp32s numUniqRefs = refLists[0].m_refFramesCount;
+    for (Ipp32s r = 0; r < refLists[1].m_refFramesCount; r++)
+        if (std::find(refLists[0].m_refFrames, refLists[0].m_refFrames + refLists[0].m_refFramesCount, refLists[1].m_refFrames[r])
+            == refLists[0].m_refFrames + refLists[0].m_refFramesCount)
+            numUniqRefs++;
+    return numUniqRefs;
+}
 
 void H265Encoder::CreateRefPicList(Frame *in, H265ShortTermRefPicSet *rps)
 {
@@ -1316,7 +1347,7 @@ void H265Encoder::CreateRefPicList(Frame *in, H265ShortTermRefPicSet *rps)
                     if(refCount<=m_videoParam.MaxRefIdxB[0]) refWindow = j;
                 }
             }
-            currFrame->m_refPicList[0].m_refFramesCount = IPP_MAX(refWindow+1, m_videoParam.MaxRefIdxB[0]);
+            currFrame->m_refPicList[0].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, IPP_MAX(refWindow+1, m_videoParam.MaxRefIdxB[0]));
             currFrame->m_refPicList[1].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[1]);
         } else
 #endif
@@ -1324,6 +1355,15 @@ void H265Encoder::CreateRefPicList(Frame *in, H265ShortTermRefPicSet *rps)
         currFrame->m_refPicList[0].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[0]);
         currFrame->m_refPicList[1].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[1]);
         }
+    }
+
+    const Ipp32s MAX_UNIQ_REFS = 4;
+    Ipp32s numUniqRefs = CountUniqueRefs(currFrame->m_refPicList);
+    while (numUniqRefs > MAX_UNIQ_REFS) {
+        (currFrame->m_refPicList[0].m_refFramesCount > currFrame->m_refPicList[1].m_refFramesCount)
+            ? currFrame->m_refPicList[0].m_refFramesCount--
+            : currFrame->m_refPicList[1].m_refFramesCount--;
+        numUniqRefs = CountUniqueRefs(currFrame->m_refPicList);
     }
 
     // create RPS syntax
