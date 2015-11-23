@@ -711,10 +711,11 @@ mfxStatus VideoDECODEH265::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
 
     mfxI32 dpbSize = 0;
 
+    Ipp32u level_idc = par->mfx.CodecLevel;
     if (hevcParam)
-        dpbSize = CalculateDPBSize(par->mfx.CodecLevel, hevcParam->PicWidthInLumaSamples, hevcParam->PicHeightInLumaSamples);
+        dpbSize = CalculateDPBSize(level_idc, hevcParam->PicWidthInLumaSamples, hevcParam->PicHeightInLumaSamples, 0);
     else
-        dpbSize = CalculateDPBSize(par->mfx.CodecLevel, par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height) + 1; //1 extra for avoid aligned size issue
+        dpbSize = CalculateDPBSize(level_idc, par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height, 0) + 1; //1 extra for avoid aligned size issue
 
     if (par->mfx.MaxDecFrameBuffering && par->mfx.MaxDecFrameBuffering < dpbSize)
         dpbSize = par->mfx.MaxDecFrameBuffering;

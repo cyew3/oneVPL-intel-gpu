@@ -1051,7 +1051,8 @@ UMC::Status TaskSupplier_H265::xDecodeSPS(H265Bitstream &bs)
 
     Ipp8u newDPBsize = (Ipp8u)CalculateDPBSize(sps.getPTL()->GetGeneralPTL()->level_idc,
                                 sps.pic_width_in_luma_samples,
-                                sps.pic_height_in_luma_samples);
+                                sps.pic_height_in_luma_samples,
+                                sps.sps_max_dec_pic_buffering[HighestTid]);
 
     for (Ipp32u i = 0; i <= HighestTid; i++)
     {
@@ -1069,7 +1070,8 @@ UMC::Status TaskSupplier_H265::xDecodeSPS(H265Bitstream &bs)
             level_idc = levelIndexArray[i];
             newDPBsize = (Ipp8u)CalculateDPBSize(level_idc,
                                     sps.pic_width_in_luma_samples,
-                                    sps.pic_height_in_luma_samples);
+                                    sps.pic_height_in_luma_samples,
+                                    sps.sps_max_dec_pic_buffering[HighestTid]);
 
             if (newDPBsize >= sps.sps_max_dec_pic_buffering[HighestTid])
                 break;
@@ -2594,26 +2596,40 @@ Ipp32u GetLevelIDCIndex(Ipp32u level_idc)
 }
 
 // Calculate maximum DPB size based on level and resolution
-Ipp32s __CDECL CalculateDPBSize(Ipp32u level_idc, Ipp32s width, Ipp32s height)
+Ipp32s __CDECL CalculateDPBSize(Ipp32u &level_idc, Ipp32s width, Ipp32s height, Ipp32u num_ref_frames)
 {
     // can increase level_idc to hold num_ref_frames
     Ipp32u lumaPsArray[] = { 36864, 122880, 245760, 552960, 983040, 2228224, 2228224, 8912896, 8912896, 8912896, 35651584, 35651584, 35651584 };
-    Ipp32u index = GetLevelIDCIndex(level_idc);
-
-    Ipp32u MaxLumaPs = lumaPsArray[index];
-    Ipp32u maxDpbPicBuf = 6;
-
-    Ipp32u PicSizeInSamplesY = width * height;
     Ipp32u MaxDpbSize = 16;
 
-    if (PicSizeInSamplesY  <=  (MaxLumaPs  >>  2 ))
-        MaxDpbSize = IPP_MIN(4 * maxDpbPicBuf, 16);
-    else if (PicSizeInSamplesY  <=  (MaxLumaPs  >>  1 ))
-        MaxDpbSize = IPP_MIN(2 * maxDpbPicBuf, 16);
-    else if (PicSizeInSamplesY  <=  ((3 * MaxLumaPs)  >>  2 ))
-        MaxDpbSize = IPP_MIN((4 * maxDpbPicBuf) / 3, 16);
-    else
-        MaxDpbSize = maxDpbPicBuf;
+    for (;;)
+    {
+        Ipp32u index = GetLevelIDCIndex(level_idc);
+
+        Ipp32u MaxLumaPs = lumaPsArray[index];
+        Ipp32u maxDpbPicBuf = 6;
+
+        Ipp32u PicSizeInSamplesY = width * height;
+
+        if (PicSizeInSamplesY  <=  (MaxLumaPs  >>  2 ))
+            MaxDpbSize = IPP_MIN(4 * maxDpbPicBuf, 16);
+        else if (PicSizeInSamplesY  <=  (MaxLumaPs  >>  1 ))
+            MaxDpbSize = IPP_MIN(2 * maxDpbPicBuf, 16);
+        else if (PicSizeInSamplesY  <=  ((3 * MaxLumaPs)  >>  2 ))
+            MaxDpbSize = IPP_MIN((4 * maxDpbPicBuf) / 3, 16);
+        else
+            MaxDpbSize = maxDpbPicBuf;
+
+        if (num_ref_frames <= MaxDpbSize)
+            break;
+
+        
+        if (index >= sizeof(levelIndexArray)/sizeof(levelIndexArray[0]) - 1)
+            break;
+
+        level_idc = levelIndexArray[index + 1];
+
+    }
 
     return MaxDpbSize;
 }

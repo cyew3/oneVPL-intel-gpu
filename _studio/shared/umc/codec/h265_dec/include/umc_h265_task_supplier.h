@@ -463,7 +463,7 @@ private:
 };
 
 // Calculate maximum DPB size based on level and resolution
-extern Ipp32s __CDECL CalculateDPBSize(Ipp32u level_idc, Ipp32s width, Ipp32s height);
+extern Ipp32s __CDECL CalculateDPBSize(Ipp32u &level_idc, Ipp32s width, Ipp32s height, Ipp32u num_ref_frames);
 
 } // namespace UMC_HEVC_DECODER
 

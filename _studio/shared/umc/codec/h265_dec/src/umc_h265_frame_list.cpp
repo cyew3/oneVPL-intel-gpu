@@ -247,11 +247,20 @@ void H265DBPList::calculateInfoForDisplay(Ipp32u &countDisplayable, Ipp32u &coun
     countDPBFullness = 0;
     maxUID = 0;
 
+    int resetCounter = -1;
+
     while (pCurr)
     {
         if (pCurr->isDisplayable() && !pCurr->wasOutputted())
         {
             countDisplayable++;
+            if (resetCounter == -1)
+                resetCounter = pCurr->RefPicListResetCount();
+            else
+            {
+                if (resetCounter != pCurr->RefPicListResetCount()) // DPB contain new IDR and frames from prev sequence
+                    countDisplayable += 16;
+            }
         }
 
         if (((pCurr->isShortTermRef() || pCurr->isLongTermRef()) && pCurr->IsFullFrame()) || (pCurr->isDisplayable() && !pCurr->wasOutputted()))
