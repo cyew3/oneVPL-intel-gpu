@@ -1351,10 +1351,8 @@ mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE *core, mfxBitstream* bs, mfxV
 
         if (false == find_seq_ext)
         {
-            // MPEG1 reporting is disabled so that HW impl won't fallback to SW and skip mpeg1
-            // SW implementation will continue to work
-            //par->mfx.CodecProfile = MFX_PROFILE_MPEG1;
-            //par->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+            par->mfx.CodecProfile = MFX_PROFILE_MPEG1;
+            par->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
         }
 
         if (MFX_PICSTRUCT_PROGRESSIVE != par->mfx.FrameInfo.PicStruct)
@@ -1705,8 +1703,6 @@ mfxStatus VideoDECODEMPEG2::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
          if (!IsHWSupported(core, in))
          {
 #ifdef MFX_ENABLE_HW_ONLY_MPEG2_DECODER
-             out->mfx.FrameInfo.Width  = 0;
-             out->mfx.FrameInfo.Height = 0;
              return MFX_ERR_UNSUPPORTED;
 #else
              return MFX_WRN_PARTIAL_ACCELERATION;
