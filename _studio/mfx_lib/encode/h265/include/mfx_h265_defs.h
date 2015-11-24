@@ -765,6 +765,7 @@ namespace MfxEnumShortAliases {
     template<> struct Type2Id<mfxExtHEVCParam>          { enum { id = MFX_EXTBUFF_HEVC_PARAM }; };
     template<> struct Type2Id<mfxExtCodingOption>       { enum { id = MFX_EXTBUFF_CODING_OPTION }; };
     template<> struct Type2Id<mfxExtCodingOption2>      { enum { id = MFX_EXTBUFF_CODING_OPTION2 }; };
+    template<> struct Type2Id<mfxExtCodingOption3>      { enum { id = MFX_EXTBUFF_CODING_OPTION3 }; };
     template<> struct Type2Id<mfxExtCodingOptionSPSPPS> { enum { id = MFX_EXTBUFF_CODING_OPTION_SPSPPS }; };
     template<> struct Type2Id<mfxExtCodingOptionVPS>    { enum { id = MFX_EXTBUFF_CODING_OPTION_VPS }; };
     template<> struct Type2Id<mfxExtLAFrameStatistics>  { enum { id = MFX_EXTBUFF_LOOKAHEAD_STAT}; };

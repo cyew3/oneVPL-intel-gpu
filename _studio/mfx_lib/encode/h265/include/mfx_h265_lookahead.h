@@ -23,6 +23,10 @@ namespace H265Enc {
     struct H265VideoParam;
 
     struct StatItem {
+        StatItem()
+            : met (0)
+            , frameOrder(-1)
+        {}
         Ipp64s met;
         Ipp32s frameOrder;
     };
@@ -33,10 +37,8 @@ namespace H265Enc {
         Lookahead(H265Encoder & enc);
         ~Lookahead();
 
-        Ipp32s GetDelay();
-        mfxStatus PerformThreadingTask(ThreadingTaskSpecifier action, Ipp32u region_row, Ipp32u region_col);
-        int SetFrame(Frame* in, Ipp32s filedNum);
-        void AverageComplexity(Frame *in);
+        int ConfigureLookaheadFrame(Frame* in, Ipp32s filedNum);
+        mfxStatus Execute(ThreadingTask& task);
         void ResetState();
 
     private:
@@ -56,34 +58,35 @@ namespace H265Enc {
             Ipp32s scaleFactor; // analysis will be done on (origW >> scaleFactor, origH >> scaleFactor) resolution
         } m_scdConfig;
 
+        void DetectSceneCut(FrameIter begin, FrameIter end, /*FrameIter input*/ Frame* in, Ipp32s updateGop, Ipp32s updateState);
+        
+        void Build_ttGraph(std::vector<ThreadingTask> & tt, Ipp32s poc);        
+
         // frame granularity based on regions, where region consist of rows && row consist of blk_8x8 (Luma)
         Ipp32s m_regionCount;
         Ipp32s m_lowresRowsInRegion;
         Ipp32s m_originRowsInRegion;
-
-        void AnalyzeSceneCut_AndUpdateState(Frame* in);
-        void AnalyzeContent(Frame* in);
-        void AnalyzeComplexity(Frame* in);
-
-        void DoPersistanceAnalysis(Frame* in);
-        void DoPersistanceAnalysis_OneRow(Frame* in, Ipp32s ctb_row);
-        void DetermineQpMap_IFrame(Frame* in);
-        void DetermineQpMap_PFrame(Frame* in, Frame* past);
-
-        Frame* m_cmplxPrevFrame;
+        
         std::vector<StatItem> m_slideWindowStat; // store metrics for SceneCut
-        Frame* m_dqpPrevFrame;
-        std::vector<Ipp32s> m_slideWindowPaq; // special win for Paq/Calq simplification. window size = 2*M+1, M = GopRefDist (numB + 1)
-        std::vector<Ipp32s> m_slideWindowComplexity; // special win for Paq/Calq simplification. window size = 2*M+1, M = GopRefDist (numB + 1)
-
-        void Build_ttGraph(Ipp32s poc);
-
-    public:
-        Frame* m_frame[2];
+        Ipp32s m_bufferingPaq; // paq need buffering = refDist + M (scenecut buffering)
         Frame* m_lastAcceptedFrame[2];
-        std::vector<ThreadingTask> m_threadingTasks;
         ObjectPool<ThreadingTask> m_ttHubPool;       // storage for threading tasks of type TT_HUB
     };
+
+    Frame* GetNextAnchor(FrameIter curr, FrameIter end);
+    Frame* GetPrevAnchor(FrameIter begin, FrameIter end, const Frame* curr);
+
+    void GetLookaheadGranularity(const H265VideoParam& videoParam, Ipp32s & regionCount, Ipp32s & lowRowsInRegion, Ipp32s & originRowsInRegion, Ipp32s & numTasks);
+
+    void AverageComplexity(Frame *in, H265VideoParam& videoParam);
+    void AverageRsCs(Frame *in);
+    void BackPropagateAvgTsc(FrameIter prevRef, FrameIter currRef);
+
+    Ipp32s BuildQpMap(FrameIter begin, FrameIter end, Ipp32s frameOrderCentral, H265VideoParam& videoParam, Ipp32s doUpdateState);
+    void DetermineQpMap_PFrame(FrameIter begin, FrameIter curr, FrameIter end, H265VideoParam & videoParam);
+    void DetermineQpMap_IFrame(FrameIter curr, FrameIter end, H265VideoParam& videoParam);
+
+    void DoPDistInterAnalysis_OneRow(Frame* curr, Frame* prevP, Frame* nextP, Ipp32s region_row, Ipp32s lowresRowsInRegion, Ipp32s originRowsInRegion, Ipp8u LowresFactor);
 
 } // namespace
 

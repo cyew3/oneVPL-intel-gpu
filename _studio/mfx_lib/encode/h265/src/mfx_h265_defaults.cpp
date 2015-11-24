@@ -46,7 +46,7 @@ using namespace H265Enc::MfxEnumShortAliases;
     tab_##mode##_IntraNumCand2_5[x],\
     tab_##mode##_IntraNumCand2_6[x],\
     tab_##mode##_WPP[x],\
-    tab_##mode##_GPB[x],\
+    tab_##mode##_reserved[x],\
     tab_##mode##_PartModes[x],\
     tab_##mode##_CmIntraThreshold[x],\
     tab_##mode##_TUSplitIntra[x],\
@@ -99,7 +99,7 @@ using namespace H265Enc::MfxEnumShortAliases;
     tab_##mode##_IntraMinDepthSC[x],\
     tab_##mode##_InterMinDepthSTC[x],\
     tab_##mode##_MotionPartitionDepth[x],\
-    tab_##mode##_SceneCut[x],\
+    tab_##mode##_reserved[x],\
     tab_##mode##_AnalyzeCmplx[x],\
     tab_##mode##_RateControlDepth[x],\
     tab_##mode##_LowresFactor[x],\
@@ -360,15 +360,8 @@ using namespace H265Enc::MfxEnumShortAliases;
     TU_OPT_ALL (FramesInParallel,               0,   0,   0,   0,   0,   0,   0);
     //GOP structure, reference options
 
-    TU_OPT_GACC(GPB,                           ON,  ON,  ON,  ON,  ON,  ON,  ON);
     TU_OPT_ALL (BPyramid,                      ON,  ON,  ON,  ON,  ON,  ON,  ON);
-
     TU_OPT_ALL (AdaptiveRefs,                  ON,  ON,  ON,  ON,  ON,  ON,  ON);
-#ifdef AMT_REF_SCALABLE
-    TU_OPT_SW  (GPB,                           ON,  ON,  ON,  ON,  ON,  ON,  ON);
-#else
-    TU_OPT_SW  (GPB,                           ON,  ON,  ON,  ON,  ON,  ON,  OFF);
-#endif
 
     TU_OPT_SW  (NumRefFrameB,                   0,   0,   3,   3,   2,   2,   2);
     TU_OPT_GACC(NumRefFrameB,                   0,   0,   3,   3,   2,   2,   2);
@@ -377,7 +370,6 @@ using namespace H265Enc::MfxEnumShortAliases;
     TU_OPT_ALL (MotionPartitionDepth,           6,   6,   3,   1,   1,   1,   1);
 
     TU_OPT_ALL (AnalyzeCmplx,                   0,   0,   0,   0,   0,   0,   0);
-    TU_OPT_ALL (SceneCut,                       0,   0,   0,   0,   0,   0,   0);
     TU_OPT_ALL (RateControlDepth,               0,   0,   0,   0,   0,   0,   0);
     TU_OPT_ALL (LowresFactor,                   3,   3,   3,   3,   3,   3,   3);
 

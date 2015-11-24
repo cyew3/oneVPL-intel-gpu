@@ -14,11 +14,12 @@ ParamSet::ParamSet()
     extHevcRegion         = MakeExtBuffer<mfxExtHEVCRegion>();
     extCodingOption       = MakeExtBuffer<mfxExtCodingOption>();
     extCodingOption2      = MakeExtBuffer<mfxExtCodingOption2>();
+    extCodingOption3      = MakeExtBuffer<mfxExtCodingOption3>();
     extEncoderROI         = MakeExtBuffer<mfxExtEncoderROI>();
     Zero(videoParam);
     assert(sizeof(extBuffers) / sizeof(extBuffers[0]) >= 9+1); // plus one for unknown extbuffer test
     videoParam.ExtParam = extBuffers;
-    videoParam.NumExtParam = 9;
+    videoParam.NumExtParam = 10;
     videoParam.ExtParam[0] = &extOpaqueSurfaceAlloc.Header;
     videoParam.ExtParam[1] = &extCodingOptionHevc.Header;
     videoParam.ExtParam[2] = &extDumpFiles.Header;
@@ -27,7 +28,8 @@ ParamSet::ParamSet()
     videoParam.ExtParam[5] = &extHevcRegion.Header;
     videoParam.ExtParam[6] = &extCodingOption.Header;
     videoParam.ExtParam[7] = &extCodingOption2.Header;
-    videoParam.ExtParam[8] = &extEncoderROI.Header;
+    videoParam.ExtParam[8] = &extCodingOption3.Header;
+    videoParam.ExtParam[9] = &extEncoderROI.Header;
 }
 
 void ApiTestCommon::CopyParamSet(ParamSet &dst, const ParamSet &src) {
@@ -36,8 +38,10 @@ void ApiTestCommon::CopyParamSet(ParamSet &dst, const ParamSet &src) {
     dst.extDumpFiles = src.extDumpFiles;
     dst.extHevcTiles = src.extHevcTiles;
     dst.extHevcRegion = src.extHevcRegion;
+    dst.extHevcParam = src.extHevcParam;
     dst.extCodingOption = src.extCodingOption;
     dst.extCodingOption2 = src.extCodingOption2;
+    dst.extCodingOption3 = src.extCodingOption3;
     dst.extEncoderROI = src.extEncoderROI;
     dst.videoParam.mfx = src.videoParam.mfx;
     dst.videoParam.AsyncDepth = src.videoParam.AsyncDepth;
@@ -129,7 +133,6 @@ void ApiTestCommon::InitParamSetValid(ParamSet &paramset) {
     paramset.extCodingOptionHevc.IntraNumCand2_5 = 2;
     paramset.extCodingOptionHevc.IntraNumCand2_6 = 2;
     paramset.extCodingOptionHevc.WPP = MFX_CODINGOPTION_ON;
-    paramset.extCodingOptionHevc.GPB = MFX_CODINGOPTION_ON;
     paramset.extCodingOptionHevc.PartModes = 3;
     paramset.extCodingOptionHevc.CmIntraThreshold = 576;
     paramset.extCodingOptionHevc.TUSplitIntra = 1;
@@ -187,6 +190,7 @@ void ApiTestCommon::InitParamSetValid(ParamSet &paramset) {
     paramset.extCodingOption.AUDelimiter = MFX_CODINGOPTION_ON;
     paramset.extCodingOption2.DisableVUI = MFX_CODINGOPTION_ON;
     paramset.extCodingOption2.AdaptiveI = MFX_CODINGOPTION_ON;
+    paramset.extCodingOption3.GPB = MFX_CODINGOPTION_ON;
     paramset.extEncoderROI.NumROI = 1;
     paramset.extEncoderROI.ROI[0].Left = paramset.extEncoderROI.ROI[0].Right = paramset.extEncoderROI.ROI[0].Top = paramset.extEncoderROI.ROI[0].Bottom = 0;
     paramset.extEncoderROI.ROI[0].Priority = 1;
@@ -238,7 +242,6 @@ void ApiTestCommon::InitParamSetCorrectable(ParamSet &input, ParamSet &expectedO
     SETUP(extCodingOptionHevc.IntraNumCand2_5, 100, 0);
     SETUP(extCodingOptionHevc.IntraNumCand2_6, 100, 0);
     SETUP(extCodingOptionHevc.WPP, 100, 0);
-    SETUP(extCodingOptionHevc.GPB, 100, 0);
     SETUP(extCodingOptionHevc.PartModes, 100, 0);
     SETUP(extCodingOptionHevc.TUSplitIntra, 100, 0);
     SETUP(extCodingOptionHevc.CUSplit, 100, 0);
@@ -291,6 +294,7 @@ void ApiTestCommon::InitParamSetCorrectable(ParamSet &input, ParamSet &expectedO
     SETUP(extCodingOption.AUDelimiter, 100, 0);
     SETUP(extCodingOption2.DisableVUI, 100, 0);
     SETUP(extCodingOption2.AdaptiveI, 100, 0);
+    SETUP(extCodingOption3.GPB, 100, 0);
     input.extEncoderROI.NumROI = expectedOutput.extEncoderROI.NumROI = 1;
     SETUP(extEncoderROI.ROI[0].Left, 1, 0);
     SETUP(extEncoderROI.ROI[0].Right, 3, 0);
@@ -306,7 +310,6 @@ void ApiTestCommon::InitParamSetUnsupported(ParamSet &input, ParamSet &expectedO
 #define SETUP(FIELD, INVAL) input.FIELD = (INVAL); expectedOutput.FIELD = 0
     SETUP(videoParam.Protected, 1);
     SETUP(videoParam.mfx.CodecId, 0xffffffff);
-    SETUP(videoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF);
     SETUP(videoParam.mfx.RateControlMethod, MFX_RATECONTROL_RESERVED1);
     SETUP(videoParam.mfx.NumSlice, 1000);
     SETUP(videoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_BGR4);
@@ -428,7 +431,6 @@ template <> void ApiTestCommon::ExpectEqual<mfxExtCodingOptionHEVC>(const mfxExt
     EXPECT(IntraNumCand2_5);
     EXPECT(IntraNumCand2_6);
     EXPECT(WPP);
-    EXPECT(GPB);
     EXPECT(PartModes);
     EXPECT(CmIntraThreshold);
     EXPECT(TUSplitIntra);
@@ -478,6 +480,13 @@ template <> void ApiTestCommon::ExpectEqual<mfxExtCodingOptionHEVC>(const mfxExt
     EXPECT(LowresFactor);
     EXPECT(DeblockBorders);
     EXPECT_EQ(0, MemCompare(expected, actual)); // double check by full memcmp
+}
+template <> void ApiTestCommon::ExpectEqual<mfxExtHEVCParam>(const mfxExtHEVCParam &expected, const mfxExtHEVCParam &actual) {
+    EXPECT(Header.BufferId);
+    EXPECT(Header.BufferSz);
+    EXPECT(PicWidthInLumaSamples);
+    EXPECT(PicHeightInLumaSamples);
+    EXPECT(GeneralConstraintFlags);
 }
 template <> void ApiTestCommon::ExpectEqual<mfxExtCodingOption>(const mfxExtCodingOption &expected, const mfxExtCodingOption &actual) {
     EXPECT(Header.BufferId);
@@ -541,6 +550,41 @@ template <> void ApiTestCommon::ExpectEqual<mfxExtCodingOption2>(const mfxExtCod
     EXPECT(UseRawRef);
     EXPECT_EQ(0, MemCompare(expected, actual));
 }
+template <> void ApiTestCommon::ExpectEqual<mfxExtCodingOption3>(const mfxExtCodingOption3 &expected, const mfxExtCodingOption3 &actual) {
+    EXPECT(Header.BufferId);
+    EXPECT(Header.BufferSz);
+    EXPECT(NumSliceI);
+    EXPECT(NumSliceP);
+    EXPECT(NumSliceB);
+    EXPECT(WinBRCMaxAvgKbps);
+    EXPECT(WinBRCSize);
+    EXPECT(QVBRQuality);
+    EXPECT(EnableMBQP);
+    EXPECT(IntRefCycleDist);
+    EXPECT(DirectBiasAdjustment);
+    EXPECT(GlobalMotionBiasAdjustment);
+    EXPECT(MVCostScalingFactor);
+    EXPECT(MBDisableSkipMap);
+    EXPECT(WeightedPred);
+    EXPECT(WeightedBiPred);
+    EXPECT(AspectRatioInfoPresent);
+    EXPECT(OverscanInfoPresent);
+    EXPECT(OverscanAppropriate);
+    EXPECT(TimingInfoPresent);
+    EXPECT(BitstreamRestriction);
+    EXPECT(LowDelayHrd);
+    EXPECT(MotionVectorsOverPicBoundaries);
+    EXPECT(Log2MaxMvLengthHorizontal);
+    EXPECT(Log2MaxMvLengthVertical);
+    EXPECT(ScenarioInfo);
+    EXPECT(ContentInfo);
+    EXPECT(PRefType);
+    EXPECT(FadeDetection);
+    EXPECT(DeblockingAlphaTcOffset);
+    EXPECT(DeblockingBetaOffset);
+    EXPECT(GPB);
+    EXPECT_EQ(0, MemCompare(expected, actual));
+}
 template <> void ApiTestCommon::ExpectEqual<mfxExtEncoderROI>(const mfxExtEncoderROI &expected, const mfxExtEncoderROI &actual) {
     EXPECT(Header.BufferId);
     EXPECT(Header.BufferSz);
@@ -561,14 +605,15 @@ template <> void ApiTestCommon::ExpectEqual<ParamSet>(const ParamSet &expected, 
     EXPECT_EQ(expected.videoParam.Protected, actual.videoParam.Protected);
     EXPECT_EQ(expected.videoParam.IOPattern, actual.videoParam.IOPattern);
     ExpectEqual(expected.videoParam.mfx, actual.videoParam.mfx);
-    ExpectEqual(expected.extHevcRegion, actual.extHevcRegion);
-    ExpectEqual(expected.extHevcTiles, actual.extHevcTiles);
-    ExpectEqual(expected.extCodingOptionHevc, actual.extCodingOptionHevc);
     ExpectEqual(expected.extOpaqueSurfaceAlloc, actual.extOpaqueSurfaceAlloc);
+    ExpectEqual(expected.extCodingOptionHevc, actual.extCodingOptionHevc);
     ExpectEqual(expected.extDumpFiles, actual.extDumpFiles);
+    ExpectEqual(expected.extHevcTiles, actual.extHevcTiles);
+    ExpectEqual(expected.extHevcParam, actual.extHevcParam);
+    ExpectEqual(expected.extHevcRegion, actual.extHevcRegion);
     ExpectEqual(expected.extCodingOption, actual.extCodingOption);
     ExpectEqual(expected.extCodingOption2, actual.extCodingOption2);
-    ExpectEqual(expected.extCodingOption2, actual.extCodingOption2);
+    ExpectEqual(expected.extCodingOption3, actual.extCodingOption3);
     ExpectEqual(expected.extEncoderROI, actual.extEncoderROI);
 }
 

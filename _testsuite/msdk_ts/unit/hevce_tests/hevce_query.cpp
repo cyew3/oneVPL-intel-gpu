@@ -126,6 +126,7 @@ TEST_F(QueryTest, Mode1_Main) {
     FillExtBufferFF(output.extHevcParam);
     FillExtBufferFF(output.extCodingOption);
     FillExtBufferFF(output.extCodingOption2);
+    FillExtBufferFF(output.extCodingOption3);
     FillExtBufferFF(output.extEncoderROI);
 
     // save original ExtOpaqueSurfaceAlloc
@@ -189,6 +190,8 @@ TEST_F(QueryTest, Mode1_Main) {
     CheckExtBufHeader(output.extHevcParam);
     CheckExtBufHeader(output.extCodingOption);
     CheckExtBufHeader(output.extCodingOption2);
+    CheckExtBufHeader(output.extCodingOption3);
+    CheckExtBufHeader(output.extEncoderROI);
     
     // check if ExtCodingOptionHevc fields are set correctly
     EXPECT_EQ(1, output.extCodingOptionHevc.Log2MaxCUSize);
@@ -216,7 +219,6 @@ TEST_F(QueryTest, Mode1_Main) {
     EXPECT_EQ(1, output.extCodingOptionHevc.IntraNumCand2_5);
     EXPECT_EQ(1, output.extCodingOptionHevc.IntraNumCand2_6);
     EXPECT_EQ(1, output.extCodingOptionHevc.WPP);
-    EXPECT_EQ(1, output.extCodingOptionHevc.GPB);
     EXPECT_EQ(1, output.extCodingOptionHevc.PartModes);
     EXPECT_EQ(0, output.extCodingOptionHevc.CmIntraThreshold);
     EXPECT_EQ(1, output.extCodingOptionHevc.TUSplitIntra);
@@ -353,6 +355,38 @@ TEST_F(QueryTest, Mode1_Main) {
     EXPECT_EQ(0, output.extCodingOption2.BufferingPeriodSEI);
     EXPECT_EQ(0, output.extCodingOption2.EnableMAD);
     EXPECT_EQ(0, output.extCodingOption2.UseRawRef);
+
+    // check if ExtCodingOption3 fields are set correctly
+    EXPECT_EQ(0, output.extCodingOption3.NumSliceI);
+    EXPECT_EQ(0, output.extCodingOption3.NumSliceP);
+    EXPECT_EQ(0, output.extCodingOption3.NumSliceB);
+    EXPECT_EQ(0, output.extCodingOption3.WinBRCMaxAvgKbps);
+    EXPECT_EQ(0, output.extCodingOption3.WinBRCSize);
+    EXPECT_EQ(0, output.extCodingOption3.QVBRQuality);
+    EXPECT_EQ(0, output.extCodingOption3.EnableMBQP);
+    EXPECT_EQ(0, output.extCodingOption3.IntRefCycleDist);
+    EXPECT_EQ(0, output.extCodingOption3.DirectBiasAdjustment);
+    EXPECT_EQ(0, output.extCodingOption3.GlobalMotionBiasAdjustment);
+    EXPECT_EQ(0, output.extCodingOption3.MVCostScalingFactor);
+    EXPECT_EQ(0, output.extCodingOption3.MBDisableSkipMap);
+    EXPECT_EQ(0, output.extCodingOption3.WeightedPred);
+    EXPECT_EQ(0, output.extCodingOption3.WeightedBiPred);
+    EXPECT_EQ(0, output.extCodingOption3.AspectRatioInfoPresent);
+    EXPECT_EQ(0, output.extCodingOption3.OverscanInfoPresent);
+    EXPECT_EQ(0, output.extCodingOption3.OverscanAppropriate);
+    EXPECT_EQ(0, output.extCodingOption3.TimingInfoPresent);
+    EXPECT_EQ(0, output.extCodingOption3.BitstreamRestriction);
+    EXPECT_EQ(0, output.extCodingOption3.LowDelayHrd);
+    EXPECT_EQ(0, output.extCodingOption3.MotionVectorsOverPicBoundaries);
+    EXPECT_EQ(0, output.extCodingOption3.Log2MaxMvLengthHorizontal);
+    EXPECT_EQ(0, output.extCodingOption3.Log2MaxMvLengthVertical);
+    EXPECT_EQ(0, output.extCodingOption3.ScenarioInfo);
+    EXPECT_EQ(0, output.extCodingOption3.ContentInfo);
+    EXPECT_EQ(0, output.extCodingOption3.PRefType);
+    EXPECT_EQ(0, output.extCodingOption3.FadeDetection);
+    EXPECT_EQ(0, output.extCodingOption3.DeblockingAlphaTcOffset);
+    EXPECT_EQ(0, output.extCodingOption3.DeblockingBetaOffset);
+    EXPECT_EQ(1, output.extCodingOption3.GPB);
 
     EXPECT_EQ(1, output.extEncoderROI.NumROI);
     for (Ipp32s i = 0; i < 256; i++) {
@@ -557,6 +591,12 @@ TEST_F(QueryTest, Mode2_Single) {
         const Ipp16u unsupported[] = {1, 17, 1080, 1089, 4319, 4336, 0xfff0};
         TestOneFieldErr(input.videoParam.mfx.FrameInfo.Height, output.videoParam.mfx.FrameInfo.Height, 0, MFX_ERR_UNSUPPORTED, unsupported);
     }
+    { SCOPED_TRACE("Test PicStruct");
+        const Ipp16u supported[] = {PROGR, TFF, BFF};
+        TestOneFieldOk(input.videoParam.mfx.FrameInfo.PicStruct, output.videoParam.mfx.FrameInfo.PicStruct, supported);
+        const Ipp16u unsupported[] = {PROGR|TFF, PROGR|BFF, TFF|BFF, PROGR|TFF|BFF};
+        TestOneFieldErr(input.videoParam.mfx.FrameInfo.PicStruct, output.videoParam.mfx.FrameInfo.PicStruct, 0, MFX_ERR_UNSUPPORTED, unsupported);
+    }
     { SCOPED_TRACE("Test IOPattern");
         enum {SYS=MFX_IOPATTERN_IN_SYSTEM_MEMORY, VID=MFX_IOPATTERN_IN_VIDEO_MEMORY, OPQ=MFX_IOPATTERN_IN_OPAQUE_MEMORY};
         const Ipp16u supported[] = {SYS, VID, OPQ};
@@ -670,7 +710,6 @@ TEST_F(QueryTest, Mode2_Single) {
         TestOneFieldOk(input.extCodingOptionHevc.RDOQuant, output.extCodingOptionHevc.RDOQuant, supported);
         TestOneFieldOk(input.extCodingOptionHevc.SAO, output.extCodingOptionHevc.SAO, supported);
         TestOneFieldOk(input.extCodingOptionHevc.WPP, output.extCodingOptionHevc.WPP, supported);
-        TestOneFieldOk(input.extCodingOptionHevc.GPB, output.extCodingOptionHevc.GPB, supported);
         TestOneFieldOk(input.extCodingOptionHevc.BPyramid, output.extCodingOptionHevc.BPyramid, supported);
         TestOneFieldOk(input.extCodingOptionHevc.FastPUDecision, output.extCodingOptionHevc.FastPUDecision, supported);
         TestOneFieldOk(input.extCodingOptionHevc.TMVP, output.extCodingOptionHevc.TMVP, supported);
@@ -697,7 +736,6 @@ TEST_F(QueryTest, Mode2_Single) {
         TestOneFieldErr(input.extCodingOptionHevc.RDOQuant, output.extCodingOptionHevc.RDOQuant, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
         TestOneFieldErr(input.extCodingOptionHevc.SAO, output.extCodingOptionHevc.SAO, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
         TestOneFieldErr(input.extCodingOptionHevc.WPP, output.extCodingOptionHevc.WPP, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
-        TestOneFieldErr(input.extCodingOptionHevc.GPB, output.extCodingOptionHevc.GPB, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
         TestOneFieldErr(input.extCodingOptionHevc.BPyramid, output.extCodingOptionHevc.BPyramid, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
         TestOneFieldErr(input.extCodingOptionHevc.FastPUDecision, output.extCodingOptionHevc.FastPUDecision, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
         TestOneFieldErr(input.extCodingOptionHevc.TMVP, output.extCodingOptionHevc.TMVP, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
@@ -942,6 +980,20 @@ TEST_F(QueryTest, Mode2_Single) {
         TestOneFieldOk(input.extCodingOption2.AdaptiveI, output.extCodingOption2.AdaptiveI, supported);
         const Ipp16u unsupported[] = {1, 2, MFX_CODINGOPTION_ON|MFX_CODINGOPTION_OFF, 0xff, 0xffff};
         TestOneFieldErr(input.extCodingOption2.AdaptiveI, output.extCodingOption2.AdaptiveI, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
+    }
+
+    // test ExtCodingOption3 field by field
+    input.extCodingOption3 = MakeExtBuffer<mfxExtCodingOption3>();
+    input.videoParam.NumExtParam = 1;
+    input.videoParam.ExtParam[0] = &input.extCodingOption3.Header;
+    output.videoParam.NumExtParam = 1;
+    output.videoParam.ExtParam[0] = &output.extCodingOption3.Header;
+
+    { SCOPED_TRACE("Test GPB");
+        const Ipp16u supported[] = {MFX_CODINGOPTION_ON, MFX_CODINGOPTION_OFF};
+        TestOneFieldOk(input.extCodingOption3.GPB, output.extCodingOption3.GPB, supported);
+        const Ipp16u unsupported[] = {1, 2, MFX_CODINGOPTION_ON|MFX_CODINGOPTION_OFF, 0xff, 0xffff};
+        TestOneFieldErr(input.extCodingOption3.GPB, output.extCodingOption3.GPB, 0, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, unsupported);
     }
 
     // test ExtDumpFiles

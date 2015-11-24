@@ -16,6 +16,7 @@
 #include "vm_file.h"
 #include "mfx_h265_frame.h"
 #include "mfx_h265_enc.h"
+#include "mfx_h265_lookahead.h"
 
 #ifndef MFX_VA
 #define H265FEI_AllocateSurfaceUp(...) (MFX_ERR_NONE)
@@ -264,6 +265,13 @@ namespace H265Enc {
 
         Ipp8u *ptr = (Ipp8u*)mem;
         m_threadingTasks = align_pointer<ThreadingTask *> (ptr, ALIGN_VALUE);
+
+        // if lookahead
+        Ipp32s numTasks, regionCount, lowresRowsInRegion, originRowsInRegion;
+        GetLookaheadGranularity(*par, regionCount, lowresRowsInRegion, originRowsInRegion, numTasks);
+
+        m_ttLookahead.resize( numTasks );
+        //Build_ttGraph(0);
     }
 
     void Frame::CopyFrameData(const mfxFrameSurface1 *in)

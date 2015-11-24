@@ -428,7 +428,6 @@ namespace {
             ext->IntraNumCand2_5 = 1;
             ext->IntraNumCand2_6 = 1;
             ext->WPP = 1;
-            ext->GPB = 1;
             ext->PartModes = 1;
             ext->CmIntraThreshold = 0;
             ext->TUSplitIntra = 1;
@@ -552,6 +551,40 @@ namespace {
             ext->UseRawRef = 0;
         }
 
+        if (mfxExtCodingOption3 *ext = GetExtBuffer(*out)) {
+            InitExtBuffer0(*ext);
+            ext->NumSliceI = 0;
+            ext->NumSliceP = 0;
+            ext->NumSliceB = 0;
+            ext->WinBRCMaxAvgKbps = 0;
+            ext->WinBRCSize = 0;
+            ext->QVBRQuality = 0;
+            ext->EnableMBQP = 0;
+            ext->IntRefCycleDist = 0;
+            ext->DirectBiasAdjustment = 0;
+            ext->GlobalMotionBiasAdjustment = 0;
+            ext->MVCostScalingFactor = 0;
+            ext->MBDisableSkipMap = 0;
+            ext->WeightedPred = 0;
+            ext->WeightedBiPred = 0;
+            ext->AspectRatioInfoPresent = 0;
+            ext->OverscanInfoPresent = 0;
+            ext->OverscanAppropriate = 0;
+            ext->TimingInfoPresent = 0;
+            ext->BitstreamRestriction = 0;
+            ext->LowDelayHrd = 0;
+            ext->MotionVectorsOverPicBoundaries = 0;
+            ext->Log2MaxMvLengthHorizontal = 0;
+            ext->Log2MaxMvLengthVertical = 0;
+            ext->ScenarioInfo = 0;
+            ext->ContentInfo = 0;
+            ext->PRefType = 0;
+            ext->FadeDetection = 0;
+            ext->DeblockingAlphaTcOffset = 0;
+            ext->DeblockingBetaOffset = 0;
+            ext->GPB = 1;
+        }
+
         if (mfxExtEncoderROI *ext = GetExtBuffer(*out)) {
             InitExtBuffer0(*ext);
             ext->NumROI = 1;
@@ -588,6 +621,7 @@ namespace {
         mfxExtHEVCParam *hevcParam = GetExtBuffer(par);
         mfxExtCodingOption *opt = GetExtBuffer(par);
         mfxExtCodingOption2 *opt2 = GetExtBuffer(par);
+        mfxExtCodingOption3 *opt3 = GetExtBuffer(par);
         mfxExtDumpFiles *dumpFiles = GetExtBuffer(par);
         mfxExtEncoderROI *roi = GetExtBuffer(par);
 
@@ -731,7 +765,6 @@ namespace {
             wrnIncompatible = !CheckTriState(optHevc->RDOQuant);
             wrnIncompatible = !CheckTriState(optHevc->SAO);
             wrnIncompatible = !CheckTriState(optHevc->WPP);
-            wrnIncompatible = !CheckTriState(optHevc->GPB);
             wrnIncompatible = !CheckTriState(optHevc->BPyramid);
             wrnIncompatible = !CheckTriState(optHevc->FastPUDecision);
             wrnIncompatible = !CheckTriState(optHevc->TMVP);
@@ -768,6 +801,10 @@ namespace {
         if (opt2) {
             wrnIncompatible = !CheckTriState(opt2->AdaptiveI);
             wrnIncompatible = !CheckTriState(opt2->DisableVUI);
+        }
+
+        if (opt3) {
+            wrnIncompatible = !CheckTriState(opt3->GPB);
         }
 
         // check combinations
@@ -1094,6 +1131,7 @@ namespace {
         mfxExtHEVCParam &hevcParam = GetExtBuffer(par);
         mfxExtCodingOption &opt = GetExtBuffer(par);
         mfxExtCodingOption2 &opt2 = GetExtBuffer(par);
+        mfxExtCodingOption3 &opt3 = GetExtBuffer(par);
         mfxExtHEVCRegion &region = GetExtBuffer(par);
         mfxExtEncoderROI &roi = GetExtBuffer(par);
 
@@ -1242,6 +1280,10 @@ namespace {
                 opt2.AdaptiveI = OFF;
         }
 
+        if (opt3.GPB == 0) {
+            opt3.GPB = ON;
+        }
+
         if (optHevc.Log2MaxCUSize == 0) {
             optHevc.Log2MaxCUSize = defaultOptHevc.Log2MaxCUSize;
             if (optHevc.Log2MaxCUSize == 6 && ((hevcParam.PicHeightInLumaSamples + 63) >> 6) < mfx.NumSlice)
@@ -1303,8 +1345,6 @@ namespace {
             optHevc.SplitThresholdStrengthTUIntra = defaultOptHevc.SplitThresholdStrengthTUIntra;
         if (optHevc.SplitThresholdStrengthCUInter == 0)
             optHevc.SplitThresholdStrengthCUInter = defaultOptHevc.SplitThresholdStrengthCUInter;
-        if (optHevc.GPB == 0)
-            optHevc.GPB = defaultOptHevc.GPB;
         if (optHevc.PartModes == 0)
             optHevc.PartModes = defaultOptHevc.PartModes;
         if (optHevc.CmIntraThreshold == 0)
@@ -1773,6 +1813,7 @@ ExtBuffers::ExtBuffers()
     extParamAll[count++] = &extHevcParam.Header;
     extParamAll[count++] = &extOpt.Header;
     extParamAll[count++] = &extOpt2.Header;
+    extParamAll[count++] = &extOpt3.Header;
     extParamAll[count++] = &extSpsPps.Header;
     extParamAll[count++] = &extVps.Header;
     extParamAll[count++] = &extRoi.Header;
@@ -1789,6 +1830,7 @@ void ExtBuffers::CleanUp()
     InitExtBuffer(extHevcParam);
     InitExtBuffer(extOpt);
     InitExtBuffer(extOpt2);
+    InitExtBuffer(extOpt3);
     InitExtBuffer(extSpsPps);
     InitExtBuffer(extVps);
     InitExtBuffer(extRoi);

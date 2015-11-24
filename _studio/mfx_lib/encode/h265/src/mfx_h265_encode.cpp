@@ -211,6 +211,7 @@ static void TaskLogDump()
         mfxExtDumpFiles &dumpFiles = GetExtBuffer(mfxParam);
         const mfxExtCodingOption &opt = GetExtBuffer(mfxParam);
         const mfxExtCodingOption2 &opt2 = GetExtBuffer(mfxParam);
+        const mfxExtCodingOption3 &opt3 = GetExtBuffer(mfxParam);
         const mfxExtEncoderROI &roi = GetExtBuffer(mfxParam);
 
         const Ipp32u maxCUSize = 1 << optHevc.Log2MaxCUSize;
@@ -258,7 +259,7 @@ static void TaskLogDump()
 
         const Ipp32s numRefFrame = MIN(4, mfx.NumRefFrame);
         intParam.longGop = (optHevc.BPyramid == ON && intParam.GopRefDist == 16 && numRefFrame == 5);
-        intParam.GeneralizedPB = (optHevc.GPB == ON);
+        intParam.GeneralizedPB = (opt3.GPB == ON);
         intParam.AdaptiveRefs = (optHevc.AdaptiveRefs == ON);
         intParam.NumRefFrameB  = optHevc.NumRefFrameB;
         if (intParam.NumRefFrameB < 2)
@@ -1510,7 +1511,12 @@ Frame *H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, 
         if (m_la.get()) {
             if (m_videoParam.AnalyzeCmplx)
                 for (std::list<Frame *>::iterator i = m_inputQueue.begin(); i != m_inputQueue.end(); ++i)
-                    m_la->AverageComplexity(*i);
+                    AverageComplexity(*i, m_videoParam);
+#if 0
+            if (m_videoParam.DeltaQpMode & (AMT_DQP_PAQ | AMT_DQP_CAL)) {
+                while (m_la.get()->BuildQpMap_AndTriggerState(NULL));
+            }
+#endif
             m_lookaheadQueue.splice(m_lookaheadQueue.end(), m_inputQueue);
             m_la->ResetState();
         }
@@ -2053,17 +2059,18 @@ void H265Encoder::PrepareToEncode(H265EncodeTaskInputParams *inputParam)
         AddTaskDependency(&m_newFrame[1]->m_ttInitNewFrame, &m_newFrame[0]->m_ttInitNewFrame); 
     }
 
-    if (m_laFrame[0] && !m_la->m_threadingTasks.back().finished) {
+    if (m_laFrame[0] && !m_laFrame[0]->m_ttLookahead.back().finished) {
         //assert(m_videoParam.picStruct == PROGR && "unsupported in field mode");
-        if (m_la->SetFrame(m_laFrame[0], 0) == 1) {
-            AddTaskDependency(&m_ttComplete, &m_la->m_threadingTasks.back()); // COMPLETE <- TT_PREENC_END
+        if (m_la->ConfigureLookaheadFrame(m_laFrame[0], 0) == 1) {
+            AddTaskDependency(&m_ttComplete, &m_laFrame[0]->m_ttLookahead.back()); // COMPLETE <- TT_PREENC_END
             if (m_laFrame[0] && !m_laFrame[0]->m_ttInitNewFrame.finished)
-                AddTaskDependency(&m_la->m_threadingTasks.front(), &m_la->m_frame[0]->m_ttInitNewFrame); // TT_PREENC_START <- INIT_NEW_FRAME
+                AddTaskDependency(&m_laFrame[0]->m_ttLookahead.front(), &m_laFrame[0]->m_ttInitNewFrame); // TT_PREENC_START <- INIT_NEW_FRAME
         }
         if (m_videoParam.picStruct != PROGR) {
-            m_la->SetFrame(m_laFrame[1], 1);
+            m_la->ConfigureLookaheadFrame(m_laFrame[1], 1);
             if (m_laFrame[1] && !m_laFrame[1]->m_ttInitNewFrame.finished)
-                AddTaskDependency(&m_la->m_threadingTasks.front(), &m_la->m_frame[1]->m_ttInitNewFrame); // TT_PREENC_START <- INIT_NEW_FRAME
+                //AddTaskDependency(&m_la->m_ttLookahead.front(), &m_laFrame[1]->m_ttInitNewFrame); // TT_PREENC_START <- INIT_NEW_FRAME
+                AddTaskDependency(&m_laFrame[0]->m_ttLookahead.front(), &m_laFrame[1]->m_ttInitNewFrame); // TT_PREENC_START <- INIT_NEW_FRAME
         }
     }
 
@@ -2107,8 +2114,8 @@ void H265Encoder::PrepareToEncode(H265EncodeTaskInputParams *inputParam)
                 m_pendingTasks.push_front(&tframe->m_ttEncComplete); // targetFrame.ENC_COMPLETE's dependencies are already resolved
         }
 
-        if (m_laFrame[0] && !m_la->m_threadingTasks.front().finished && m_la->m_threadingTasks.front().numUpstreamDependencies == 0)
-            m_pendingTasks.push_back(&m_la->m_threadingTasks.front()); // LA_START is independent
+        if (m_laFrame[0] && !m_laFrame[0]->m_ttLookahead.front().finished && m_laFrame[0]->m_ttLookahead.front().numUpstreamDependencies == 0)
+            m_pendingTasks.push_back(&m_laFrame[0]->m_ttLookahead.front()); // LA_START is independent
 
         if (m_ttComplete.numUpstreamDependencies == 0)
             m_pendingTasks.push_front(&m_ttComplete); // COMPLETE's dependencies are already resolved
@@ -2144,7 +2151,8 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
             th->m_newFrame[1] = th->AcceptFrame(inputParam->surface, inputParam->ctrl, inputParam->bs, 1);
         if (th->m_la.get()) {
             th->m_laFrame[0] = FindFrameForLookaheadProcessing(th->m_inputQueue);
-            th->m_la->m_threadingTasks.back().finished = 0;
+            if (th->m_laFrame[0])
+                th->m_laFrame[0]->m_ttLookahead.back().finished = 0;
             if (th->m_videoParam.picStruct != PROGR) {
                 if (th->m_laFrame[0])
                     th->m_laFrame[0]->setWasLAProcessed();
@@ -2283,7 +2291,7 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
             case TT_PREENC_START:
             case TT_PREENC_ROUTINE:
             case TT_PREENC_END:
-                task->la->PerformThreadingTask(task->action, task->row, task->col);
+                task->la->Execute(*task);
                 break;
             case TT_HUB:
                 break;
@@ -2497,8 +2505,9 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
             out->m_stats[1]->ResetAvgMetrics();
         }
         if (m_videoParam.DeltaQpMode || m_videoParam.LowresFactor == 0) {
-            out->m_stats[0] = m_statsPool.Allocate();
-            out->m_stats[0]->ResetAvgMetrics();
+            Statistics* stats = out->m_stats[0] = m_statsPool.Allocate();
+            stats->ResetAvgMetrics();
+            std::fill(stats->qp_mask.begin(), stats->qp_mask.end(), 0);
         }
     }
 

@@ -305,6 +305,8 @@ namespace H265Enc {
         ThreadingTask  m_ttWaitGpuIntra;
         ThreadingTask  m_ttWaitGpuMe[4];
         ThreadingTask  m_ttWaitGpuPostProc;
+        //ThreadingTask *m_ttLookahead;
+        std::vector<ThreadingTask> m_ttLookahead;
 
         Ipp32u m_numThreadingTasks;
         volatile Ipp32u m_numFinishedThreadingTasks;

@@ -198,6 +198,7 @@ void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
     SERIALIZE_INT(WeightedPred);
     SERIALIZE_INT(WeightedBiPred);
     SERIALIZE_INT(FadeDetection);
+    SERIALIZE_INT(GPB);
 }
 
 void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
@@ -274,7 +275,6 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(IntraNumCand2_5);
     SERIALIZE_INT(IntraNumCand2_6);
     SERIALIZE_INT(WPP);
-    SERIALIZE_INT(GPB);
     SERIALIZE_INT(PartModes);
     SERIALIZE_INT(CmIntraThreshold);
     SERIALIZE_INT(TUSplitIntra);
