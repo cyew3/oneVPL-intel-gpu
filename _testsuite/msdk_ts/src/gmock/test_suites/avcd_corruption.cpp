@@ -274,6 +274,9 @@ public:
 
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     {
+        if(MFX_WRN_VIDEO_PARAM_CHANGED == g_tsStatus.get() && bs.DataLength)
+            return MFX_ERR_NONE;
+
         mfxStatus sts = H264BsPerFrameReader::ProcessBitstream(bs, nFrames);
         if(MFX_ERR_NONE == sts)
         {
@@ -290,12 +293,13 @@ public:
     const tsExtBufType<mfxVideoParam>& init_par;
     const mfxU64 startTimeStamp;
     const mfxU64 stepTimeStamp;
+    const mfxSession m_session;
     mfxU32 count;
     std::list <mfxU8> expected_flag;
     mfxU16 frame;
 
-    Verifier(const mfxU8* flags, const mfxU16 N, const tsExtBufType<mfxVideoParam>& par, mfxU64 start = 0, mfxU64 step = 0)
-        : expected_flag(flags, flags + N), init_par(par), frame(0),
+    Verifier(const mfxU8* flags, const mfxU16 N, const tsExtBufType<mfxVideoParam>& par, mfxU64 start = 0, mfxU64 step = 0, const mfxSession _session = 0)
+        : expected_flag(flags, flags + N), init_par(par), frame(0), m_session(_session),
             startTimeStamp(start), stepTimeStamp(step), count(0){}
     ~Verifier() {}
 
@@ -314,12 +318,15 @@ public:
             const mfxU64 ExpTS = startTimeStamp + stepTimeStamp*(count++);
             EXPECT_EQ(ExpTS,    TimeStamp) << "ERROR: Frame#" << frame << " reported TimeStamp value = " << TimeStamp  << " is not equal to expected = " << ExpTS << "\n";
         }
-#define CHECK_FIELD(field)                                    \
-do {                                                          \
-    if(s.Info.field && init_par.mfx.FrameInfo.field){         \
-        EXPECT_EQ(init_par.mfx.FrameInfo.field, s.Info.field);\
-    }                                                         \
+
+#define CHECK_FIELD_EXP_ACT(EXPECTED, ACTUAL, FIELD) \
+do {                                                 \
+    if(ACTUAL.FIELD && EXPECTED.FIELD){              \
+        EXPECT_EQ(EXPECTED.FIELD, ACTUAL.FIELD);     \
+    }                                                \
 } while (0,0)
+
+#define CHECK_FIELD(FIELD)    CHECK_FIELD_EXP_ACT(init_par.mfx.FrameInfo, s.Info, FIELD)
         CHECK_FIELD(BitDepthLuma  );
         CHECK_FIELD(BitDepthChroma);
         CHECK_FIELD(Shift         );
@@ -337,6 +344,58 @@ do {                                                          \
         CHECK_FIELD(PicStruct     );
         CHECK_FIELD(ChromaFormat  );
 #undef CHECK_FIELD
+
+        if(m_session)
+        {
+            mfxVideoParam GetVideoParamPar = {};
+
+            TRACE_FUNC2(MFXVideoDECODE_GetVideoParam, m_session, &GetVideoParamPar);
+            g_tsStatus.expect(MFX_ERR_NONE);
+            g_tsStatus.check( MFXVideoDECODE_GetVideoParam(m_session, &GetVideoParamPar) );
+
+#define CHECK_FIELD(FIELD)    CHECK_FIELD_EXP_ACT(GetVideoParamPar.mfx.FrameInfo, s.Info, FIELD)
+            CHECK_FIELD(BitDepthLuma  );
+            CHECK_FIELD(BitDepthChroma);
+            CHECK_FIELD(Shift         );
+            CHECK_FIELD(FourCC        );
+            CHECK_FIELD(Width         );
+            CHECK_FIELD(Height        );
+            CHECK_FIELD(CropX         );
+            CHECK_FIELD(CropY         );
+            CHECK_FIELD(CropW         );
+            CHECK_FIELD(CropH         );
+            CHECK_FIELD(FrameRateExtN );
+            CHECK_FIELD(FrameRateExtD );
+            CHECK_FIELD(AspectRatioW  );
+            CHECK_FIELD(AspectRatioH  );
+            CHECK_FIELD(PicStruct     );
+            CHECK_FIELD(ChromaFormat  );
+#undef CHECK_FIELD
+#undef CHECK_FIELD_EXP_ACT
+
+            tsExtBufType<mfxVideoParam> par;
+            mfxExtCodingOptionSPSPPS&   spspps = par;
+
+            mfxU8 spsBuf[512] = {0};
+            mfxU8 ppsBuf[512] = {0};
+            spspps.SPSBuffer = spsBuf;
+            spspps.PPSBuffer = ppsBuf;
+            spspps.SPSBufSize = sizeof(spsBuf);
+            spspps.PPSBufSize = sizeof(ppsBuf);
+
+            TRACE_FUNC2(MFXVideoDECODE_GetVideoParam, m_session, &par);
+            g_tsStatus.expect(MFX_ERR_NONE);
+            g_tsStatus.check( MFXVideoDECODE_GetVideoParam(m_session, &par) );
+
+            mfxDecodeStat stat = {};
+
+            TRACE_FUNC2(MFXVideoDECODE_GetDecodeStat, m_session, &stat);
+            g_tsStatus.expect(MFX_ERR_NONE);
+            g_tsStatus.check( MFXVideoDECODE_GetDecodeStat(m_session, &stat) );
+
+            EXPECT_EQ(count, stat.NumFrame);
+        }
+
         frame++;
         return MFX_ERR_NONE;
     }
@@ -419,6 +478,7 @@ int TestSuite::RunTestDecodeFrameAsync_new(const tc_struct& tc)
 
     mfxU32 ts_start = 20;
     mfxU32 ts_step  = 33;
+    mfxU32 count = 0;
     for(size_t i(0); i < NSTREAMS; ++i)
     {
         if(sname[i] && 0 != strlen( sname[i] ) )
@@ -435,7 +495,8 @@ int TestSuite::RunTestDecodeFrameAsync_new(const tc_struct& tc)
                 SetPar4_DecodeFrameAsync();
             }
 
-            Verifier v(tc.streams[i].flags, tc.streams[i].n, m_par, ts_start, ts_step);
+            Verifier v(tc.streams[i].flags, tc.streams[i].n, m_par, 20, ts_step, m_session);
+            v.count = count;
             m_surf_processor = &v;
 
             reader.count = 0;
@@ -447,6 +508,7 @@ int TestSuite::RunTestDecodeFrameAsync_new(const tc_struct& tc)
             m_surf_processor = 0;
 
             ts_start = ts_start + ts_step * reader.count;
+            count = v.count;
         }
         else
         {
