@@ -403,6 +403,9 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
 
     if (m_bVppIsUsed)
     {
+        if (m_diMode)
+            m_mfxVppVideoParams.vpp.Out.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+
         sts = m_pmfxVPP->Init(&m_mfxVppVideoParams);
         if (MFX_WRN_PARTIAL_ACCELERATION == sts) {
             msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
@@ -1632,6 +1635,9 @@ mfxStatus CDecodingPipeline::RunDecoding()
                     if ((pOutSurface->Info.PicStruct == 0) && (m_pCurrentFreeVppSurface->frame.Info.PicStruct == 0)) {
                         m_pCurrentFreeVppSurface->frame.Info.PicStruct = pOutSurface->Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
                     }
+
+                    if (m_diMode && m_pCurrentFreeVppSurface)
+                        m_pCurrentFreeVppSurface->frame.Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
                     sts = m_pmfxVPP->RunFrameVPPAsync(pOutSurface, &(m_pCurrentFreeVppSurface->frame), NULL, &(m_pCurrentFreeOutputSurface->syncp));
 
