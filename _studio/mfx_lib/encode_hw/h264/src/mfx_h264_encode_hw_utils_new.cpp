@@ -497,8 +497,6 @@ namespace
         mfxU8 * begin = refPicList.Begin();
         mfxU8 * end   = refPicList.End();
 
-        mfxU32 numRefInReordList = 0;
-
         for (mfxU32 i = 0; i < 32 && reordRefList[i].FrameOrder != 0xffffffff; i++)
         {
             mfxU8 * ref = FindByExtFrameTag(
@@ -510,16 +508,10 @@ namespace
 
             if (ref != end)
                 std::rotate(begin++, ref, ref + 1);
-
-            numRefInReordList ++;
         }
 
-        if (numRefInReordList > numActiveRef)
-            numRefInReordList = numActiveRef;
-
-        refPicList.Resize((mfxU32)(end - refPicList.Begin()));
-        if (numRefInReordList > 0 && refPicList.Size() > numRefInReordList)
-            refPicList.Resize(numRefInReordList);
+        if (numActiveRef > 0 && refPicList.Size() > numActiveRef)
+            refPicList.Resize(numActiveRef);
     }
 #endif
 
