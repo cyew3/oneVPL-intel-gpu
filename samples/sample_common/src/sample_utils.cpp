@@ -937,7 +937,7 @@ mfxU16 GetFreeSurface(mfxFrameSurface1* pSurfacesPool, mfxU16 nPoolSize)
     mfxU16 idx = MSDK_INVALID_SURF_IDX;
 
     //wait if there's no free surface
-    for (mfxU32 i = 0; i < MSDK_WAIT_INTERVAL; i += SleepInterval)
+    for (mfxU32 i = 0; i < MSDK_SURFACE_WAIT_INTERVAL; i += SleepInterval)
     {
         idx = GetFreeSurfaceIndex(pSurfacesPool, nPoolSize);
 
@@ -949,6 +949,11 @@ mfxU16 GetFreeSurface(mfxFrameSurface1* pSurfacesPool, mfxU16 nPoolSize)
         {
             MSDK_SLEEP(SleepInterval);
         }
+    }
+
+    if(idx==MSDK_INVALID_SURF_IDX)
+    {
+        msdk_printf(MSDK_STRING("ERROR: No free surfaces in pool (during long period)\n"));
     }
 
     return idx;

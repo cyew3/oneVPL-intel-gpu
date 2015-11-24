@@ -1024,7 +1024,7 @@ mfxStatus GetFreeSurface(mfxFrameSurface1* pSurfacesPool, mfxU16 nPoolSize, mfxF
   MSDK_CHECK_POINTER(ppSurface,     MFX_ERR_NULL_PTR);
 
   mfxU32 timeToSleep = 10; // milliseconds
-  mfxU32 numSleeps = MSDK_VPP_WAIT_INTERVAL / timeToSleep + 1; // at least 1
+  mfxU32 numSleeps = MSDK_SURFACE_WAIT_INTERVAL / timeToSleep + 1; // at least 1
 
   mfxU32 i = 0;
 
