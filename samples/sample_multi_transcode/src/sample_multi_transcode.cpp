@@ -463,7 +463,7 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
             // topology definition
             if (!IsSinkPresence)
             {
-                PrintHelp(NULL, MSDK_STRING("Error in par file. Decode source session must be declared BEFORE encode sinks \n"));
+                PrintError(MSDK_STRING("Error in par file. Decode source session must be declared BEFORE encode sinks \n"));
                 return MFX_ERR_UNSUPPORTED;
             }
             IsSourcePresence = true;
@@ -479,12 +479,12 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
             {
                 if (m_InputParamsArray[i].bIsJoin && !IsHeterSessionJoin)
                 {
-                    PrintHelp(NULL, MSDK_STRING("Error in par file. All heterogeneous sessions must be joined \n"));
+                    PrintError(MSDK_STRING("Error in par file. All heterogeneous sessions must be joined \n"));
                     return MFX_ERR_UNSUPPORTED;
                 }
                 if (!m_InputParamsArray[i].bIsJoin && IsHeterSessionJoin)
                 {
-                    PrintHelp(NULL, MSDK_STRING("Error in par file. All heterogeneous sessions must be NOT joined \n"));
+                    PrintError(MSDK_STRING("Error in par file. All heterogeneous sessions must be NOT joined \n"));
                     return MFX_ERR_UNSUPPORTED;
                 }
             }
@@ -496,11 +496,6 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
         else if (Sink == m_InputParamsArray[i].eMode)
         {
             minAsyncDepth = m_InputParamsArray[i].nAsyncDepth;
-//             if (IsSinkPresence)
-//             {
-//                 PrintHelp(NULL, MSDK_STRING("Error in par file. Only one source can be used"));
-//                 return MFX_ERR_UNSUPPORTED;
-//             }
             IsSinkPresence = true;
 
             if (IsFirstInTopology)
@@ -514,12 +509,12 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
             {
                 if (m_InputParamsArray[i].bIsJoin && !IsHeterSessionJoin)
                 {
-                    PrintHelp(NULL, MSDK_STRING("Error in par file. All heterogeneous sessions must be joined \n"));
+                    PrintError(MSDK_STRING("Error in par file. All heterogeneous sessions must be joined \n"));
                     return MFX_ERR_UNSUPPORTED;
                 }
                 if (!m_InputParamsArray[i].bIsJoin && IsHeterSessionJoin)
                 {
-                    PrintHelp(NULL, MSDK_STRING("Error in par file. All heterogeneous sessions must be NOT joined \n"));
+                    PrintError(MSDK_STRING("Error in par file. All heterogeneous sessions must be NOT joined \n"));
                     return MFX_ERR_UNSUPPORTED;
                 }
             }
@@ -571,7 +566,7 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
 
     if (IsSinkPresence && !IsSourcePresence)
     {
-        PrintHelp(NULL, MSDK_STRING("Error: Sink must be defined"));
+        PrintError(MSDK_STRING("Error: Sink must be defined"));
         return MFX_ERR_UNSUPPORTED;
     }
     return MFX_ERR_NONE;

@@ -20,7 +20,7 @@ Copyright(c) 2010-2015 Intel Corporation. All Rights Reserved.
 { \
     if (val) \
     { \
-        PrintHelp(NULL, MSDK_STRING("Input argument number %d \"%s\" require more parameters"), argIdx, argName); \
+        PrintError(MSDK_STRING("Input argument number %d \"%s\" require more parameters"), argIdx, argName); \
         return MFX_ERR_UNSUPPORTED;\
     } \
 }
@@ -116,7 +116,7 @@ mfxStatus CVPPExtBuffersStorage::ParseCmdLine(msdk_char *argv[],mfxU32 argc,mfxU
         index++;
         if (MFX_ERR_NONE != msdk_opt_read(argv[index], params->DenoiseLevel) || !(params->DenoiseLevel>=0 && params->DenoiseLevel<=100))
         {
-            PrintHelp(NULL, MSDK_STRING("-denoise \"%s\" is invalid"), argv[index]);
+            PrintError(NULL, MSDK_STRING("-denoise \"%s\" is invalid"), argv[index]);
             return MFX_ERR_UNSUPPORTED;
         }
         skipped+=2;
@@ -128,7 +128,7 @@ mfxStatus CVPPExtBuffersStorage::ParseCmdLine(msdk_char *argv[],mfxU32 argc,mfxU
         index++;
         if (MFX_ERR_NONE != msdk_opt_read(argv[index], params->DetailLevel) || !(params->DetailLevel>=0 && params->DetailLevel<=100))
         {
-            PrintHelp(NULL, MSDK_STRING("-detail \"%s\" is invalid"), argv[index]);
+            PrintError(NULL, MSDK_STRING("-detail \"%s\" is invalid"), argv[index]);
             return MFX_ERR_UNSUPPORTED;
         }
         skipped+=2;
@@ -228,7 +228,7 @@ mfxStatus CVPPExtBuffersStorage::ParseCmdLine(msdk_char *argv[],mfxU32 argc,mfxU
             params->fieldProcessingMode = FC_FR2FR;
         else
         {
-            PrintHelp(NULL, MSDK_STRING("-field_proccessing \"%s\" is invalid"), argv[index]);
+            PrintError(NULL, MSDK_STRING("-field_proccessing \"%s\" is invalid"), argv[index]);
             return MFX_ERR_UNSUPPORTED;
         }
         return MFX_ERR_NONE;

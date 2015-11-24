@@ -48,7 +48,8 @@ namespace TranscodingSample
     msdk_tick GetTick();
     mfxF64 GetTime(msdk_tick start);
 
-    void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage, ...);
+    void PrintHelp();
+    void PrintError(const msdk_char *strErrorMessage, ...);
     void PrintInfo(mfxU32 session_number, sInputParams* pParams, mfxVersion *pVer);
 
     bool PrintDllInfo(msdk_char *buf, mfxU32 buf_size, sInputParams* pParams);
