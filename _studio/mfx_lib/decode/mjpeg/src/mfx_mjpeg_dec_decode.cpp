@@ -1776,7 +1776,9 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
     // NV12 is supported on Linux HW at the moment
     if (par->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 &&
         par->mfx.FrameInfo.FourCC != MFX_FOURCC_RGB4)
-        return true;
+/* on Linux in case of multiscan turn off HW support until because some functionality is missed so far */
+        if (par->mfx.InterleavedDec == MFX_SCANTYPE_NONINTERLEAVED)
+            return true;
 #endif
 
     if (par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_RGB &&
