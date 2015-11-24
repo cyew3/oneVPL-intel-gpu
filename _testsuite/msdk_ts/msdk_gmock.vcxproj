@@ -244,6 +244,7 @@
     <ClCompile Include="src\gmock\test_suites\fei_encode_encode_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_qp.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevc10d_shift.cpp" />
+    <ClCompile Include="src\gmock\test_suites\hevce_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_gaa_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_gaa_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_gaa_processframeasync.cpp" />
