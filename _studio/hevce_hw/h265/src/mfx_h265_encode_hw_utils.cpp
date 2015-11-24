@@ -471,6 +471,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     base.mfx = par.mfx;
     base.AsyncDepth = par.AsyncDepth;
     base.IOPattern = par.IOPattern;
+    base.Protected = par.Protected;
     base.NumExtParam = 0;
     base.ExtParam = m_ext.m_extParam;
 
