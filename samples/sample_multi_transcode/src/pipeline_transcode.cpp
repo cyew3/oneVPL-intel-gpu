@@ -257,6 +257,10 @@ mfxStatus CTranscodingPipeline::DecodePreInit(sInputParams *pParams)
         {
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
+
+        // Querying parameters    
+        sts = m_pmfxDEC->Query(&m_mfxDecParams, &m_mfxDecParams);
+        MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, msdk_printf(MSDK_STRING("Decoder parameters query failed.\n")));
     }
     else
     {
@@ -328,6 +332,10 @@ mfxStatus CTranscodingPipeline::VPPPreInit(sInputParams *pParams)
         if (!m_bIsPlugin && m_bIsVpp) // only VPP was requested
         {
             m_pmfxVPP.reset(new MFXVideoMultiVPP(*m_pmfxSession.get()));
+
+            // Querying parameters    
+            sts = m_pmfxVPP->Query(&m_mfxVppParams, &m_mfxVppParams);
+            MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, msdk_printf(MSDK_STRING("VPP parameters query failed.\n")));
         }
     }
 
@@ -382,6 +390,10 @@ mfxStatus CTranscodingPipeline::EncodePreInit(sInputParams *pParams)
 
             sts = InitEncMfxParams(pParams);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+            // Querying parameters    
+            sts = m_pmfxENC->Query(&m_mfxEncParams, &m_mfxEncParams);
+            MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, msdk_printf(MSDK_STRING("Encoder parameters query failed.\n")));
         }
         else
         {

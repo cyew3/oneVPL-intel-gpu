@@ -81,8 +81,12 @@ private:
             return MSDK_STRING("Intel (R) Media SDK HW plugin for HEVC DECODE");
         else if(AreGuidsEqual(guid, MFX_PLUGINID_HEVCE_SW))
             return MSDK_STRING("Intel (R) Media SDK plugin for HEVC ENCODE");
+        else if(AreGuidsEqual(guid, MFX_PLUGINID_HEVCE_HW))
+            return MSDK_STRING("Intel (R) Media SDK HW plugin for HEVC ENCODE");
         else if(AreGuidsEqual(guid, MFX_PLUGINID_H264LA_HW))
             return MSDK_STRING("Intel (R) Media SDK plugin for LA ENC");
+        else if(AreGuidsEqual(guid, MFX_PLUGINID_ITELECINE_HW))
+            return MSDK_STRING("Intel (R) Media SDK PTIR plugin (HW)");
         else
             return MSDK_STRING("Unknown plugin");
     }
