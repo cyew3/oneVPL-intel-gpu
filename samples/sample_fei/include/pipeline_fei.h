@@ -293,17 +293,15 @@ protected:
     virtual mfxStatus SynchronizeFirstTask();
 
     virtual mfxStatus PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, bool is_buffered, bool &cont);
+    virtual mfxStatus ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs[2]);
     virtual mfxStatus EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
     virtual mfxStatus EncodeOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
-    virtual mfxStatus ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs[2]);
     virtual mfxStatus SyncOneEncodeFrame(sTask* pCurrentTask, iTask* eTask, mfxU32 fieldProcessingCounter);
 
     virtual mfxStatus DecodeOneFrame(ExtendedSurface *pOutSurf);
     virtual mfxStatus DecodeLastFrame(ExtendedSurface *pOutSurf);
 
     virtual mfxStatus VPPOneFrame(mfxFrameSurface1 *pSurfaceIn, ExtendedSurface *pExtSurface);
-    mfxStatus SwitchExtBufPayload(mfxU32 bufID, setElem *first_buf, int idx1, setElem *sec_buf, int idx2);
-    mfxStatus ResetExtBufferPayload(mfxU32 bufID, int fieldId, setElem *buf);
 
     iTask* CreateAndInitTask();
     iTask* FindFrameToEncode(bool buffered_frames);
@@ -337,10 +335,7 @@ protected:
     mfxStatus GetBestSetByDistortion(std::list<PreEncMVPInfo>& preenc_mvp_info,
         mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB ** bestDistortionPredMBext[MaxFeiEncMVPNum], mfxU32 * refIdx[MaxFeiEncMVPNum],
         mfxU32 nPred_actual, mfxU32 fieldId, mfxU32 MB_idx);
-    unsigned GetBufSetDistortion(IObuffs* buf);
 
-    //mfxStatus DumpPreEncMVP(setElem *outbuf, int frame_seq, int fieldId, int idx);
-    //mfxStatus DumpEncodeMVP(setElem *inbuf, int frame_seq, int fieldId);
     void ShowDpbInfo(iTask *task, int frame_order);
     mfxEncodeCtrl* m_ctr;
 
@@ -370,7 +365,6 @@ PairU8 ExtendFrameType(mfxU32 type);
 mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 counter, bool & ref);
 
 mfxStatus repackPreenc2Enc(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf);
-//mfxStatus repackPreenc2EncEx(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf, int refIdx);
 mfxStatus repackPreenc2EncExOneMB(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB[2], mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 refIdx[2], mfxU32 predIdx, mfxI16 *tmpBuf);
 mfxI16 get16Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1);
 
