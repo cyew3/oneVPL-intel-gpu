@@ -85,6 +85,7 @@ CDecodingPipeline::CDecodingPipeline()
     m_nTimeout = 0;
     m_nMaxFps = 0;
 
+    m_diMode = 0;
     m_bRenderWin = false;
     m_vppOutWidth  = 0;
     m_vppOutHeight = 0;
@@ -830,14 +831,16 @@ mfxStatus CDecodingPipeline::CreateHWDevice()
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 #if defined(LIBVA_WAYLAND_SUPPORT)
-    mfxHDL hdl = NULL;
-    mfxHandleType hdlw_t = (mfxHandleType)HANDLE_WAYLAND_DRIVER;
-    Wayland *wld;
-    sts = m_hwdev->GetHandle(hdlw_t, &hdl);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-    wld = (Wayland*)hdl;
-    wld->SetRenderWinPos(m_nRenderWinX, m_nRenderWinY);
-    wld->SetPerfMode(m_bPerfMode);
+    if (m_eWorkMode == MODE_RENDERING) {
+        mfxHDL hdl = NULL;
+        mfxHandleType hdlw_t = (mfxHandleType)HANDLE_WAYLAND_DRIVER;
+        Wayland *wld;
+        sts = m_hwdev->GetHandle(hdlw_t, &hdl);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        wld = (Wayland*)hdl;
+        wld->SetRenderWinPos(m_nRenderWinX, m_nRenderWinY);
+        wld->SetPerfMode(m_bPerfMode);
+    }
 #endif //LIBVA_WAYLAND_SUPPORT
 
 #endif
