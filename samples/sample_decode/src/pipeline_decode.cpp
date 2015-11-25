@@ -323,7 +323,7 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
             m_pUserModule.reset(new MFXVideoUSER(m_mfxSession));
             if (pParams->videoType == CODEC_VP8 || pParams->videoType == MFX_CODEC_HEVC)
             {
-                m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1, pParams->pluginParams.strPluginPath, (mfxU32)strlen(pParams->pluginParams.strPluginPath)));
+                m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1, pParams->pluginParams.strPluginPath, (mfxU32)strlen(pParams->pluginParams.strPluginPath) + 1));
             }
             if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
         }
