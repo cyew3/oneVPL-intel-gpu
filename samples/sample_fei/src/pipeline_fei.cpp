@@ -2316,10 +2316,8 @@ mfxStatus CEncodingPipeline::InitInterfaces()
             }
 
             if (feiSPS->Pack){
-                for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
-                    tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)feiSPS;
-                    tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)feiSPS;
-                }
+                tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)feiSPS;
+                tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)feiSPS;
             }
             if (feiPPS[0].Pack){
                 for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
@@ -2656,8 +2654,8 @@ mfxStatus CEncodingPipeline::Run()
                 sts = CopyState(eTask);
                 MSDK_BREAK_ON_ERROR(sts);
 
-                sts = DropPREENCoutput(eTask);
-                MSDK_BREAK_ON_ERROR(sts);
+                //sts = DropPREENCoutput(eTask);
+                //MSDK_BREAK_ON_ERROR(sts);
 
                 if (m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC)
                 {
@@ -3485,10 +3483,14 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
             break;
 
         case MFX_FRAMETYPE_P:
+
+            if (eTask->m_fieldPicFlag && (ExtractFrameType(*eTask) & MFX_FRAMETYPE_I)) // temporary solution
+                break;
+
             MSDK_CHECK_POINTER(refTask[fieldId][0], MFX_ERR_NULL_PTR);
             refSurf0[fieldId] = refTask[fieldId][0]->in.InSurface;
 
-            eTask->in.NumFrameL0 = 1; // tmporary need
+            eTask->in.NumFrameL0 = 1; // temporary need
             eTask->in.NumFrameL1 = 0; // for library
 
             //in data
@@ -3506,7 +3508,7 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
             refSurf1[fieldId] = refTask[fieldId][1]->in.InSurface;
 
             eTask->in.NumFrameL0 = 1; // tmporary need
-            eTask->in.NumFrameL1 = 0; // for library
+            eTask->in.NumFrameL1 = 1; // for library
 
             //in data
             eTask->in.NumExtParam = eTask->preenc_bufs->PB_bufs.in.NumExtParam;
@@ -3528,7 +3530,7 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
         switch (eTask->in.ExtParam[i]->BufferId)
         {
         case MFX_EXTBUFF_FEI_PREENC_CTRL:
-            type = ExtractFrameType(*eTask, fieldId); // IP pair is supported
+            type = ExtractFrameType(*eTask/*, fieldId*/); // IP pair is supported
             preENCCtr = (mfxExtFeiPreEncCtrl*)(eTask->in.ExtParam[i]);
             preENCCtr->DisableMVOutput = (type & MFX_FRAMETYPE_I) ? 1 : m_disableMVoutPreENC;
 
@@ -3547,7 +3549,7 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
         case MFX_EXTBUFF_FEI_PREENC_MV_PRED:
             if (pMvPred)
             {
-                if (!(ExtractFrameType(*eTask, fieldId_pred) & MFX_FRAMETYPE_I)) // IP pair is supported
+                if (!(ExtractFrameType(*eTask/*, fieldId_pred*/) & MFX_FRAMETYPE_I)) // IP pair is supported
                 {
                     pMvPredBuf = (mfxExtFeiPreEncMVPredictors*)(eTask->in.ExtParam[i]);
                     fread(pMvPredBuf->MB, sizeof(pMvPredBuf->MB[0])*pMvPredBuf->NumMBAlloc, 1, pMvPred);
@@ -4144,7 +4146,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[
 
         mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB ** bestDistortionPredMB[MaxFeiEncMVPNum];
         MSDK_ZERO_ARRAY(bestDistortionPredMB, MaxFeiEncMVPNum);
-        
+
         mfxU32 *refIdx[MaxFeiEncMVPNum];
         MSDK_ZERO_ARRAY(refIdx, MaxFeiEncMVPNum);
 
@@ -4519,8 +4521,8 @@ mfxStatus CEncodingPipeline::PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     //drop output data to output file
-    sts = DropPREENCoutput(eTask);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    //sts = DropPREENCoutput(eTask);
+    //MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // Pass MVP to encode,encpak
     if (m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC) {
@@ -4705,6 +4707,10 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
                 }
                 eTask->preenc_mvp_info.push_back(result);
 
+                //drop output data to output file
+                sts = DropPREENCoutput(eTask);
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
                     /*eTask->preenc_mvp_info[total_calls].preenc_output_bufs = eTask->preenc_bufs;
                     for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
                     {
@@ -4733,7 +4739,7 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
                             // MVP for the 1st field is stored in the "if" above, since we are processing it in "frame"
                             // So now we need to copy the MVP of 2nd field to the same "frame" in above "if"
                             // Only switch the pointer for performance purpose
-        
+
                             fprintf(stderr, "\tAbout to copy MVP data to preenc_mvp_info[%d] %p\n", i, eTask->preenc_mvp_info[i].preenc_output_bufs);
                             // fprintf(stderr, "-----(%d, %d), %d==%d\n", !fieldId, ref_fid[1], fieldId, ref_fid[0]);
                             SwitchExtBufPayload(MFX_EXTBUFF_FEI_PREENC_MV, &eTask->preenc_mvp_info[i].preenc_output_bufs->PB_bufs.out, fieldId,
@@ -4756,7 +4762,7 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
                                 worst_distortion_idx = j;
                             }
                         }
-        
+
                         if (current_distortion < worst_distortion) {
                             fprintf(stderr, "*replace original idx %d with new MVP, recycle replaced preenc bufset %p\n",
                                 worst_distortion_idx, eTask->preenc_mvp_info[worst_distortion_idx].preenc_output_bufs);
