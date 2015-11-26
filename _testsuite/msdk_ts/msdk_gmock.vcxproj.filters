@@ -496,6 +496,9 @@
     <ClCompile Include="src\gmock\test_suites\vp8d_init.cpp">
       <Filter>Source Files\test_suites\vp8e</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\fei_encode_disable_deblocking.cpp">
+      <Filter>Source Files\test_suites\FEI</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\fei_encode_mbqp.cpp">
       <Filter>Source Files\test_suites\FEI</Filter>
     </ClCompile>

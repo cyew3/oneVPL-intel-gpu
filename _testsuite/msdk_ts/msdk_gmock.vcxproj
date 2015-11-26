@@ -243,6 +243,7 @@
     <ClCompile Include="src\gmock\test_suites\fei_encode_default_ref_lists.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_advanced_ref_lists.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_close.cpp" />
+    <ClCompile Include="src\gmock\test_suites\fei_encode_disable_deblocking.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_encode_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_mbqp.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevc10d_shift.cpp" />
