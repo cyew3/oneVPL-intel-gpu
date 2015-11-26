@@ -33,6 +33,17 @@
 
 #define MSDK_ZERO_ARRAY(VAR, NUM) {memset(VAR, 0, sizeof(*VAR)*NUM);}
 #define SAFE_RELEASE_EXT_BUFSET(SET) {if (SET){ SET->vacant = true; SET = NULL;}}
+#define SAFE_FCLOSE(FPTR, ERR){ if (FPTR && fclose(FPTR)) { return ERR; }}
+#define SAFE_FREAD(PTR, SZ, COUNT, FPTR, ERR) { if (FPTR && (fread(PTR, SZ, COUNT, FPTR) != COUNT)){ return ERR; }}
+#define SAFE_FWRITE(PTR, SZ, COUNT, FPTR, ERR) { if (FPTR && (fwrite(PTR, SZ, COUNT, FPTR) != COUNT)){ return ERR; }}
+#define SAFE_FSEEK(FPTR, OFFSET, ORIGIN, ERR) { if (FPTR && fseek(FPTR, OFFSET, ORIGIN)){ return ERR; }}
+
+enum
+{
+    FEI_SLICETYPE_I = 2,
+    FEI_SLICETYPE_P = 0,
+    FEI_SLICETYPE_B = 1,
+};
 
 enum
 {

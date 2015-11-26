@@ -3,10 +3,9 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2015 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2005-2016 Intel Corporation. All Rights Reserved.
 //
 
-//#include <memory>
 #include "pipeline_fei.h"
 
 mfxStatus CheckOptions(sInputParams* pParams);
@@ -47,7 +46,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-encode] - use extended FEI interface ENC+PAK (FEI ENCODE) (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-encpak] - use extended FEI interface ENC only and PAK only (separate calls)\n"));
     //msdk_printf(MSDK_STRING("   [-enc] - use extended FEI interface ENC (only)\n"));
-    //msdk_printf(MSDK_STRING("   [-pak] - use extended FEI interface PAK (only)\n"));
+    msdk_printf(MSDK_STRING("   [-pak] - use extended FEI interface PAK (only)\n"));
     msdk_printf(MSDK_STRING("   [-profile decimal] - set AVC profile\n"));
     msdk_printf(MSDK_STRING("   [-level decimal] - set AVC level\n"));
     msdk_printf(MSDK_STRING("   [-EncodedOrder] - use internal logic for reordering, reading from files will be in encoded order (default is display; ENCODE only)\n"));
@@ -86,8 +85,13 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-dblk_idc value] - value of DisableDeblockingIdc (default is 0), in range [0,2]\n"));
     msdk_printf(MSDK_STRING("   [-dblk_alpha value] - value of SliceAlphaC0OffsetDiv2 (default is 0), in range [-6,6]\n"));
     msdk_printf(MSDK_STRING("   [-dblk_beta value] - value of SliceBetaOffsetDiv2 (default is 0), in range [-6,6]\n"));
+    msdk_printf(MSDK_STRING("   [-chroma_qpi_offset first_offset] - first offset used for chroma qp in range [-12, 12] (used in PPS, pass_headers should be set)\n"));
+    msdk_printf(MSDK_STRING("   [-s_chroma_qpi_offset second_offset] - second offset used for chroma qp in range [-12, 12] (used in PPS, pass_headers should be set)\n"));
+    msdk_printf(MSDK_STRING("   [-constrained_intra_pred_flag] - use constrained intra prediction (default is off, used in PPS, pass_headers should be set)\n"));
+    msdk_printf(MSDK_STRING("   [-transform_8x8_mode_flag] - enables 8x8 transform, by default only 4x4 is used (used in PPS, pass_headers should be set)\n"));
     msdk_printf(MSDK_STRING("   [-dstw width] - destination picture width, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
+    msdk_printf(MSDK_STRING("   [-perf] - switch on performance mode (no file operations, simplified predictors repacking)\n"));
 
     // user module options
     msdk_printf(MSDK_STRING("\n"));
@@ -118,7 +122,8 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     msdk_char* strArgument = MSDK_STRING("");
     msdk_char* stopCharacter;
 
-    bool bRefWSizeSpecified = false, bAlrShownHelp = false;
+    bool bRefWSizeSpecified = false, bAlrShownHelp = false, bHeaderValSpecified = false,
+         bIDRintSet = false;
 
     if (1 == nArgNum)
     {
@@ -144,15 +149,8 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
             i++;
-            //msdk_opt_read(strInput[i], pParams->strSrcFile);
-            GET_OPTION_POINTER(strArgument);
-            if (msdk_strlen(strArgument) < sizeof(pParams->strSrcFile)){
-                msdk_strcopy(pParams->strSrcFile, strArgument);
-            }
-            else{
-                PrintHelp(strInput[0], MSDK_STRING("Too long input filename (limit is 1023 characters)!"));
-                return MFX_ERR_UNSUPPORTED;
-            }
+            msdk_opt_read(strInput[i], pParams->strSrcFile);
+
             switch (pParams->DecodeId)
             {
             case MFX_CODEC_MPEG2:
@@ -174,11 +172,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         /*else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-enc")))
         {
             pParams->bOnlyENC = true;
-        }
+        }*/
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-pak")))
         {
             pParams->bOnlyPAK = true;
-        }*/
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-preenc")))
         {
             pParams->bPREENC = true;
@@ -261,6 +259,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-idr_interval")))
         {
+            bIDRintSet = true;
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nIdrInterval))
             {
                 PrintHelp(strInput[0], MSDK_STRING("IdrInterval is invalid"));
@@ -412,6 +411,28 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             i++;
             pParams->SliceBetaOffsetDiv2 = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-chroma_qpi_offset")))
+        {
+            i++;
+            pParams->ChromaQPIndexOffset = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+            bHeaderValSpecified = true;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-s_chroma_qpi_offset")))
+        {
+            i++;
+            pParams->SecondChromaQPIndexOffset = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+            bHeaderValSpecified = true;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-constrained_intra_pred_flag")))
+        {
+            pParams->ConstrainedIntraPredFlag = true;
+            bHeaderValSpecified = true;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-transform_8x8_mode_flag")))
+        {
+            pParams->Transform8x8ModeFlag = true;
+            bHeaderValSpecified = true;
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dstw")))
         {
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nDstWidth))
@@ -435,6 +456,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("Timeout is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-perf")))
+        {
+            pParams->bPerfMode = true;
         }
         else // 1-character options
         {
@@ -745,9 +770,58 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
+    if (pParams->bENCPAK /*&& (pParams->nPicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF))*/ && !pParams->bPassHeaders){
+        msdk_printf(MSDK_STRING("\nWARNING: ENCPAK uses SliceHeader to store references; -pass_headers flag forced.\n"));
+
+        pParams->bPassHeaders = true;
+    }
+
+    if (pParams->bPassHeaders && (pParams->ChromaQPIndexOffset > 12 || pParams->ChromaQPIndexOffset < -12)){
+        if (bAlrShownHelp)
+            msdk_printf(MSDK_STRING("\nUnsupported ChromaQPIndexOffset value!\n"));
+        else
+            PrintHelp(strInput[0], MSDK_STRING("Unsupported ChromaQPIndexOffset value!"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (pParams->bPassHeaders && (pParams->SecondChromaQPIndexOffset > 12 || pParams->SecondChromaQPIndexOffset < -12)){
+        if (bAlrShownHelp)
+            msdk_printf(MSDK_STRING("\nUnsupported SecondChromaQPIndexOffset value!\n"));
+        else
+            PrintHelp(strInput[0], MSDK_STRING("Unsupported SecondChromaQPIndexOffset value!"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (bHeaderValSpecified && !pParams->bPassHeaders){
+        msdk_printf(MSDK_STRING("\nWARNING: Specified SPS/PPS/Slice header parameters would be ignored!\n"));
+        msdk_printf(MSDK_STRING("           Please use them together with -pass_headers option\n"));
+    }
+
+    if (pParams->bENCPAK && !pParams->bPassHeaders && (pParams->nIdrInterval || pParams->bRefType != MFX_B_REF_OFF)){
+        if (bIDRintSet || pParams->bRefType == MFX_B_REF_PYRAMID){
+            msdk_printf(MSDK_STRING("\nWARNING: Specified B-pyramid/IDR-interval control(s) for ENC+PAK would be ignored!\n"));
+            msdk_printf(MSDK_STRING("           Please use them together with -pass_headers option\n"));
+        }
+
+        pParams->bRefType = MFX_B_REF_OFF;
+        pParams->nIdrInterval = 0;
+    }
+
     if (pParams->EncodedOrder && pParams->bENCODE && pParams->nNumFrames == 0){
         msdk_printf(MSDK_STRING("\nWARNING: without number of frames setting (-n) last frame of FEI ENCODE in Encoded Order\n"));
-        msdk_printf(MSDK_STRING("could mismatch with last frame in FEI ENCODE with Display Order!\n"));
+        msdk_printf(MSDK_STRING("           could be non-bitexact with last frame in FEI ENCODE with Display Order!\n"));
+    }
+
+    if (pParams->bPerfMode && (pParams->mvinFile || pParams->mvoutFile || pParams->mbctrinFile || pParams->mbstatoutFile || pParams->mbcodeoutFile || pParams->mbQpFile))
+    {
+        msdk_printf(MSDK_STRING("\nWARNING: All file operations would be ignored in performance mode!\n"));
+
+        pParams->mvinFile      = NULL;
+        pParams->mvoutFile     = NULL;
+        pParams->mbctrinFile   = NULL;
+        pParams->mbstatoutFile = NULL;
+        pParams->mbcodeoutFile = NULL;
+        pParams->mbQpFile      = NULL;
     }
 
     if (pParams->bENCODE){
@@ -766,6 +840,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     if (0 == pParams->numRef)
         pParams->numRef = 1;
 
+    if ((pParams->nPicStruct == MFX_PICSTRUCT_FIELD_TFF || pParams->nPicStruct == MFX_PICSTRUCT_FIELD_BFF) && pParams->numRef == 1){
+        msdk_printf(MSDK_STRING("\nWARNING: minimal number of references on interlaced content is 2!\n"));
+        msdk_printf(MSDK_STRING("           Current number of references extended.\n"));
+
+        pParams->numRef = 2;
+    }
+
     return MFX_ERR_NONE;
 }
 
@@ -780,19 +861,21 @@ int main(int argc, char *argv[])
 
     mfxStatus sts = MFX_ERR_NONE; // return value check
 
-    Params.CodecId = MFX_CODEC_AVC;    //only AVC is supported
+    Params.CodecId  = MFX_CODEC_AVC; //only AVC is supported
     Params.DecodeId = 0; //default (invalid) value
     Params.nNumFrames = 0; //unlimited
-    Params.nTimeout = 0; //unlimited
+    Params.nTimeout   = 0; //unlimited
     Params.refDist = 1; //only I frames
     Params.gopSize = 1; //only I frames
     Params.numRef  = 1; //one ref by default
-    Params.bDECODE   = false; //default value
-    Params.bENCODE   = false; //default value
-    Params.bENCPAK   = false; //default value
-    Params.bOnlyENC  = false; //default value
-    Params.bOnlyPAK  = false; //default value
-    Params.bPREENC   = false; //default value
+    Params.nIdrInterval = 0xffff; //infinite
+    Params.bDECODE   = false;
+    Params.bENCODE   = false;
+    Params.bENCPAK   = false;
+    Params.bOnlyENC  = false;
+    Params.bOnlyPAK  = false;
+    Params.bPREENC   = false;
+    Params.bPerfMode = false;
     Params.bNPredSpecified = false;
     Params.EncodedOrder    = false;
     Params.Enable8x8Stat   = false;
@@ -803,7 +886,9 @@ int main(int argc, char *argv[])
     Params.RepartitionCheckEnable = false;
     Params.MultiPredL0 = false;
     Params.MultiPredL1 = false;
-    Params.ColocatedMbDistortion = false;
+    Params.ColocatedMbDistortion    = false;
+    Params.ConstrainedIntraPredFlag = false;
+    Params.Transform8x8ModeFlag     = false;
     Params.mvinFile      = NULL;
     Params.mvoutFile     = NULL;
     Params.mbctrinFile   = NULL;
@@ -814,7 +899,6 @@ int main(int argc, char *argv[])
     Params.bFieldProcessingMode = false;
     Params.bMBSize = false;
     Params.memType = D3D9_MEMORY; //only HW memory is supported (ENCODE supports SW memory)
-    Params.bUseHWLib = true;
     Params.bRefType  = MFX_B_REF_UNKNOWN; //let MSDK library to decide wheather to use B-pyramid or not
     Params.QP              = 26; //default qp value
     Params.SearchWindow    = 5;  //48x40 (48 SUs)
@@ -835,6 +919,8 @@ int main(int argc, char *argv[])
     Params.DisableDeblockingIdc   = 0;
     Params.SliceAlphaC0OffsetDiv2 = 0;
     Params.SliceBetaOffsetDiv2    = 0;
+    Params.ChromaQPIndexOffset       = 0;
+    Params.SecondChromaQPIndexOffset = 0;
 
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
@@ -899,11 +985,6 @@ mfxStatus CheckOptions(sInputParams* pParams)
 
     if (!pParams->bENCODE && pParams->memType == SYSTEM_MEMORY) {
         fprintf(stderr, "Only ENCODE supports SW memory\n");
-        sts = MFX_ERR_UNSUPPORTED;
-    }
-
-    if ((!pParams->bENCODE || pParams->bPREENC) && (pParams->bFieldProcessingMode)) {
-        fprintf(stderr, "Only ENCODE supports Single Field coding\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
 

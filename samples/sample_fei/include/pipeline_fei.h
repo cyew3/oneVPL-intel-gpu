@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2005-2015 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2005-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //*/
@@ -93,12 +93,14 @@ struct sInputParams
     mfxI16 DisableDeblockingIdc;
     mfxI16 SliceAlphaC0OffsetDiv2;
     mfxI16 SliceBetaOffsetDiv2;
+    mfxI16 ChromaQPIndexOffset;
+    mfxI16 SecondChromaQPIndexOffset;
 
     mfxU16 nDstWidth;  // destination picture width, specified if resizing required
     mfxU16 nDstHeight; // destination picture height, specified if resizing required
 
     MemType memType;
-    bool bUseHWLib; // true if application wants to use HW MSDK library
+    //bool bUseHWLib; // true if application wants to use HW MSDK library
 
     msdk_char strSrcFile[MSDK_MAX_FILENAME_LEN];
 
@@ -122,9 +124,12 @@ struct sInputParams
     bool MultiPredL1;
     bool DistortionType;
     bool ColocatedMbDistortion;
+    bool ConstrainedIntraPredFlag;
+    bool Transform8x8ModeFlag;
     bool bRepackPreencMV;
     bool bNPredSpecified;
     bool bFieldProcessingMode;
+    bool bPerfMode;
     msdk_char* mvinFile;
     msdk_char* mbctrinFile;
     msdk_char* mvoutFile;
@@ -205,7 +210,9 @@ protected:
     mfxU16 m_decodePoolSize;
     mfxU16 m_gopSize;
     mfxU32 m_numOfFields;
-    mfxU32 m_numMB;
+    mfxU16 m_heightMB;
+    mfxU16 m_widthMB;
+    mfxU16 m_numMB;
 
     MFXVideoSession m_mfxSession;
     MFXVideoSession m_preenc_mfxSession;
@@ -217,6 +224,7 @@ protected:
     MFXVideoENC*     m_pmfxPREENC;
     MFXVideoENC*     m_pmfxENC;
     MFXVideoPAK*     m_pmfxPAK;
+    mfxEncodeCtrl*   m_ctr;
 
     mfxVideoParam m_mfxEncParams;
     mfxVideoParam m_mfxDecParams;
@@ -225,7 +233,7 @@ protected:
 
     mfxBitstream m_mfxBS;  // contains encoded input data
 
-    MFXFrameAllocator* m_pMFXAllocator;
+    MFXFrameAllocator*  m_pMFXAllocator;
     mfxAllocatorParams* m_pmfxAllocatorParams;
     MemType m_memType;
     bool m_bExternalAlloc; // use memory allocator as external for Media SDK
@@ -254,7 +262,7 @@ protected:
     std::vector<mfxExtBuffer*> m_EncExtParams;
     std::vector<mfxExtBuffer*> m_VppExtParams;
 
-    std::list<iTask*> m_inputTasks; //used in PreENC, ENC, PAK
+    std::list<iTask*> m_inputTasks; //used in PreENC, ENC, PAK, ENCODE (in EncodedOrder)
     iTask* m_last_task;
 
     std::list<bufSet*> m_preencBufs, m_encodeBufs;
@@ -283,6 +291,8 @@ protected:
     virtual mfxStatus AllocFrames();
     virtual void DeleteFrames();
 
+    virtual mfxStatus ReleaseResources();
+
     virtual mfxStatus AllocateSufficientBuffer(mfxBitstream* pBS);
     virtual mfxStatus UpdateVideoParams();
 
@@ -292,6 +302,9 @@ protected:
 
     virtual mfxStatus SynchronizeFirstTask();
 
+    virtual mfxStatus GetOneFrame(mfxFrameSurface1* & pSurf);
+
+    virtual mfxStatus PreProcessOneFrame(mfxFrameSurface1* & pSurf);
     virtual mfxStatus PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, bool is_buffered, bool &cont);
     virtual mfxStatus ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs[2]);
     virtual mfxStatus EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
@@ -319,16 +332,22 @@ protected:
 
     mfxStatus InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask[2][2], int ref_fid[2][2]);
     mfxStatus InitEncFrameParams(iTask* eTask);
-    mfxStatus InitEncodeFrameParams(mfxFrameSurface1* encodeSurface, sTask* pCurrentTask, int frameType);
+    mfxStatus InitEncodeFrameParams(mfxFrameSurface1* encodeSurface, sTask* pCurrentTask, PairU8 frameType, bool is_buffered);
     mfxStatus ReadPAKdata(iTask* eTask);
     mfxStatus DropENCPAKoutput(iTask* eTask);
     mfxStatus DropPREENCoutput(iTask* eTask);
     mfxStatus PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[2]);
+    mfxStatus PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 numMVP[2]);
 
-    mfxFrameSurface1 ** GetCurrentL0SurfacesEnc(iTask* eTask, bool fair_reconstruct);
-    mfxFrameSurface1 ** GetCurrentL1SurfacesEnc(iTask* eTask, bool fair_reconstruct);
-    mfxFrameSurface1 ** GetCurrentL0SurfacesPak(iTask* eTask);
-    mfxFrameSurface1 ** GetCurrentL1SurfacesPak(iTask* eTask);
+    /* ENC(PAK) reflists */
+    mfxStatus GetFullBackwardSet(iTask* eTask, mfxFrameSurface1** & l0, mfxU16 &n_backward, std::list<int> & l0_idx_field1, std::list<int> & l0_idx_field2, bool is_enc);
+    mfxStatus GetFullForwardSet(iTask* eTask, mfxFrameSurface1** & l1, mfxU16 &n_forward, std::list<int> & l1_idx_field1, std::list<int> & l1_idx_field2, bool is_enc);
+    mfxFrameSurface1 ** GetCurrentL0SurfacesEnc(iTask* eTask, mfxU32 fieldId, bool fair_reconstruct);
+    mfxFrameSurface1 ** GetCurrentL1SurfacesEnc(iTask* eTask, mfxU32 fieldId, bool fair_reconstruct);
+    mfxFrameSurface1 ** GetCurrentL0SurfacesPak(iTask* eTask, mfxU32 fieldId);
+    mfxFrameSurface1 ** GetCurrentL1SurfacesPak(iTask* eTask, mfxU32 fieldId);
+    mfxU32 GetNBackward(iTask* eTask, mfxU32 fieldId);
+    mfxU32 GetNForward(iTask* eTask, mfxU32 fieldId);
 
     iTask* GetTaskByFrameOrder(mfxU32 frame_order);
     mfxStatus GetRefTaskEx(iTask *eTask, mfxU32 l0_idx, mfxU32 l1_idx, int refIdx[2][2], int ref_fid[2][2], iTask *outRefTask[2][2]);
@@ -337,8 +356,9 @@ protected:
         mfxU32 nPred_actual, mfxU32 fieldId, mfxU32 MB_idx);
 
     void ShowDpbInfo(iTask *task, int frame_order);
-    mfxEncodeCtrl* m_ctr;
 
+    bool m_bEndOfFile;
+    bool m_insertIDR;
     bool m_twoEncoders;
     bool m_disableMVoutPreENC;
     bool m_disableMBStatPreENC;

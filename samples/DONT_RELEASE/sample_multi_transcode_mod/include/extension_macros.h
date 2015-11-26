@@ -14,6 +14,8 @@ Copyright(c) 2005-2015 Intel Corporation. All Rights Reserved.
 #pragma warning( disable : 4702)
 
 #define MOD_SMT_CREATE_PIPELINE return new CModifiedTranscodingPipeline;
-#define MOD_SMT_PRINT_HELP      msdk_printf(MSDK_STRING("  -noHME        Disable HME (H264 encode only)\n"));
-#define MOD_SMT_PARSE_INPUT     else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-noHME"))){InputParams.reserved[0] = 1;}
+#define MOD_SMT_PRINT_HELP      msdk_printf(MSDK_STRING("  -noHME        Disable HME (H264 encode only)\n"));\
+                                msdk_printf(MSDK_STRING("  -numRef num   Number of reference frames\n"));
+#define MOD_SMT_PARSE_INPUT     else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-noHME"))){InputParams.reserved[0] = 1;}\
+                                else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-numRef"))){msdk_opt_read(argv[++i], InputParams.reserved[1]); }
 

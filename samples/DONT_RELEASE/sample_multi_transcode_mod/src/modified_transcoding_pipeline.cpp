@@ -35,6 +35,11 @@ mfxStatus CModifiedTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams
         m_EncExtParams.push_back((mfxExtBuffer*)&m_ExtFeiCodingOption);
     }
 
+    if (!!pInParams->reserved[1])
+    {
+        m_mfxEncParams.mfx.NumRefFrame = pInParams->reserved[1];
+    }
+
     mfxStatus sts = CTranscodingPipeline::InitEncMfxParams(pInParams);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, sts);
 

@@ -63,7 +63,7 @@ void ProcessFields(
     // 8.2.4.2.5 "Initialisation process for reference picture lists in fields"
 
     mfxU8 const * sameParity = picListFrm.Begin();
-    mfxU8 const * oppParity = picListFrm.Begin();
+    mfxU8 const * oppParity  = picListFrm.Begin();
 
     picListFld.Resize(0);
 
