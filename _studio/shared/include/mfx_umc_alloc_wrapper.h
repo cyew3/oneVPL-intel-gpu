@@ -120,7 +120,12 @@ public:
     mfxFrameSurface1 * GetInternalSurface(UMC::FrameMemID index);
     mfxFrameSurface1 * GetSurfaceByIndex(UMC::FrameMemID index);
 
-    mfxMemId  ConvertMemId(UMC::FrameMemID index) {return m_frameData[index].first.Data.MemId;};
+    mfxMemId ConvertMemId(UMC::FrameMemID index)
+    {
+        if (index < 0 || index >= m_frameData.size())
+            return NULL;
+        return m_frameData[index].first.Data.MemId;
+    };
 
 protected:
     struct  surf_descr

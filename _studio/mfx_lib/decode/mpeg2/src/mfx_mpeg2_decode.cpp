@@ -1351,8 +1351,9 @@ mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE *core, mfxBitstream* bs, mfxV
 
         if (false == find_seq_ext)
         {
-            par->mfx.CodecProfile = MFX_PROFILE_MPEG1;
-            par->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+        //  Skip MPEG1 bitstream
+        //  par->mfx.CodecProfile = MFX_PROFILE_MPEG1;
+        //  par->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
         }
 
         if (MFX_PICSTRUCT_PROGRESSIVE != par->mfx.FrameInfo.PicStruct)
@@ -2724,7 +2725,10 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                     m_frame[m_frame_curr].DataLength = 0;
                     m_frame[m_frame_curr].DataOffset = 0;
                     m_frame_in_use[m_frame_curr] = false;
-
+                    {
+                        UMC::AutomaticUMCMutex guard(m_guard);
+                        m_implUmc.RestoreDecoderState();
+                    }
                     IsSkipped = m_implUmc.IsFrameSkipped();
 
                     if (IsSkipped && !(dec_field_count & 1))
@@ -2950,6 +2954,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                 if (umcRes != UMC::UMC_OK)
                     return MFX_ERR_LOCK_MEMORY;
 #endif
+                dec_field_count -= IsField?1:2;
                 return MFX_ERR_MORE_DATA;
             }
             else
@@ -2969,6 +2974,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                     if (umcRes != UMC::UMC_OK)
                         return MFX_ERR_LOCK_MEMORY;
 #endif
+                    dec_field_count -= IsField?1:2;
                     return MFX_ERR_MORE_DATA;
                 }
 

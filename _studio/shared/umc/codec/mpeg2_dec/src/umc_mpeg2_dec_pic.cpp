@@ -985,7 +985,9 @@ Status MPEG2VideoDecoderBase::SaveDecoderState()
 
 Status MPEG2VideoDecoderBase::RestoreDecoderState()
 {
+    sFrameBuffer tmp = frame_buffer;
     frame_buffer = frameBuffer_backup;
+    std::copy(tmp.task_locked, tmp.task_locked+20, frame_buffer.task_locked);
     frameBuffer_backup = frameBuffer_backup_previous;
     sequenceHeader.b_curr_number = b_curr_number_backup;
     sequenceHeader.first_i_occure = first_i_occure_backup;
