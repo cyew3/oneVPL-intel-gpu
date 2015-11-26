@@ -797,19 +797,19 @@ UMC::Status PosibleMVC::DecodeHeader(UMC::MediaData * data, mfxBitstream *bs, mf
 
     m_lastSlice = 0;
 
-    bool sub_sps = false;
+    struct sps_heap_obj
+    {
+        H264SeqParamSet* obj;
+        sps_heap_obj() : obj(0) {}
+        ~sps_heap_obj() { if (obj) obj->DecrementReference(); }
+        void set(H264SeqParamSet* sps) { obj = sps; obj->IncrementReference(); }
+    } first_sps;
+
     UMC::Status umcRes = UMC::UMC_ERR_NOT_ENOUGH_DATA;
     for ( ; data->GetDataSize() > 3; )
     {
         m_supplier->GetNalUnitSplitter()->MoveToStartCode(data); // move data pointer to start code
-
-        Ipp32s const startCode = m_supplier->GetNalUnitSplitter()->CheckNalUnitType(data);
-        if (!sub_sps && startCode == UMC::NAL_UT_SUBSET_SPS)
-            sub_sps = true;
-
-        if (!sub_sps &&
-            (startCode == UMC::NAL_UT_SPS ||
-            !m_isSPSFound && !m_isSVC_SEIFound))
+        if (!m_isSPSFound && !m_isSVC_SEIFound) // move point to first start code
         {
             bs->DataOffset = (mfxU32)((mfxU8*)data->GetDataPointer() - (mfxU8*)data->GetBufferPointer());
             bs->DataLength = (mfxU32)data->GetDataSize();
@@ -822,8 +822,11 @@ UMC::Status PosibleMVC::DecodeHeader(UMC::MediaData * data, mfxBitstream *bs, mf
         if (umcRes != UMC::UMC_OK)
             break;
 
+        if (!first_sps.obj && m_isSPSFound)
+            first_sps.set(m_supplier->GetHeaders()->m_SeqParams.GetCurrentHeader());
+
         if (IsEnough())
-            return UMC::UMC_OK;
+            break;
     }
 
     if (umcRes == UMC::UMC_ERR_SYNC) // move pointer
@@ -853,7 +856,13 @@ UMC::Status PosibleMVC::DecodeHeader(UMC::MediaData * data, mfxBitstream *bs, mf
     }
 
     if (IsEnough())
+    {
+        H264SeqParamSet* last_sps = m_supplier->GetHeaders()->m_SeqParams.GetCurrentHeader();
+        if (first_sps.obj != last_sps)
+            m_supplier->GetHeaders()->m_SeqParams.AddHeader(first_sps.obj);
+
         return UMC::UMC_OK;
+    }
 
     return UMC::UMC_ERR_NOT_ENOUGH_DATA;
 }
