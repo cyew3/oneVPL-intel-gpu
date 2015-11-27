@@ -122,7 +122,7 @@ public:
 
     mfxMemId ConvertMemId(UMC::FrameMemID index)
     {
-        if (index < 0 || index >= m_frameData.size())
+        if (index < 0 || (size_t)index >= m_frameData.size())
             return NULL;
         return m_frameData[index].first.Data.MemId;
     };
