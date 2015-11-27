@@ -6,6 +6,7 @@
 #include <string>
 #include "test_sample_allocator.h"
 #include "mfx_plugin_loader.h"
+#include "vm_time.h"
 
 
 
@@ -132,12 +133,20 @@ msdk_ts_BLOCK(t_GetFreeSurf){
     FrameSurfPool& pool = var_old<FrameSurfPool>("surf_pool");
     mfxFrameSurface1*& pSurf = var_def<mfxFrameSurface1*>("p_free_surf", NULL);
     
-    for(FrameSurfPool::iterator it = pool.begin(); it != pool.end(); it++){
-        if(!it->Data.Locked){
-            pSurf = &(*it);
-            m_var[key("free_surf")] = pSurf;
-            return msdk_ts::resOK;
+    mfxU32 timeout = 100;
+    mfxU32 step = 5;
+
+    while(timeout)
+    {
+        for(FrameSurfPool::iterator it = pool.begin(); it != pool.end(); it++){
+            if(!it->Data.Locked){
+                pSurf = &(*it);
+                m_var[key("free_surf")] = pSurf;
+                return msdk_ts::resOK;
+            }
         }
+        timeout -= step;
+        vm_time_sleep(step);
     }
     CHECK(0, "All surfaces are locked");
     return msdk_ts::resFAIL;
