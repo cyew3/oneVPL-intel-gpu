@@ -645,11 +645,13 @@ int main(int argc, char *argv[])
     mfxStatus sts;
     Launcher transcode;
     sts = transcode.Init(argc, argv);
+    fflush(stdout);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
 
     transcode.Run();
 
     sts = transcode.ProcessResult();
+    fflush(stdout);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
 
     return 0;
