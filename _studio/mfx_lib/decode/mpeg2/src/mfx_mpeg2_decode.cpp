@@ -1191,7 +1191,9 @@ mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE *core, mfxBitstream* bs, mfxV
             if (0x10 == code)
             {
                 // sequence extension section
-                
+                if (find_seq_ext)
+                    break;
+
                 pShEnd = ptr;
 
                 if (end <= ptr + 9)
@@ -1284,8 +1286,9 @@ mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE *core, mfxBitstream* bs, mfxV
                 if(true == find_seq_header && true == find_seq_ext)
                     break;
             }
-
         }
+        else if (IsMpeg2StartCodeEx(ptr) && find_seq_header)
+            break;
     }
     if (find_seq_header)
     {
@@ -4064,7 +4067,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrameImpl(mfxBitstream *in, mfxBitstream *o
                     }
 
                     mfxU8 profile_and_level = (code >> 20) & 0xff;
-//                    mfxU8 profile = (profile_and_level >> 4) & 0x7;
+//                  mfxU8 profile = (profile_and_level >> 4) & 0x7;
                     mfxU8 level = profile_and_level & 0xf;
 
                     switch(level)
@@ -4080,6 +4083,14 @@ mfxStatus VideoDECODEMPEG2::ConstructFrameImpl(mfxBitstream *in, mfxBitstream *o
                             continue;
                     }
 
+                    mfxU8 chroma = (code >> 17) & 3;
+                    const int chroma_yuv420 = 1;
+                    if (chroma != chroma_yuv420)
+                    {
+                        MoveBitstreamData(*in, (mfxU32)(curr - head) + 4);
+                        memset(m_last_bytes, 0, NUM_REST_BYTES);
+                        continue;
+                    }
                 }
             }
             else
@@ -4094,7 +4105,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrameImpl(mfxBitstream *in, mfxBitstream *o
             vpCopy.mfx.FrameInfo.Width = Width;
             vpCopy.mfx.FrameInfo.Height = Height;
 
-            if (!IsHWSupported(m_pCore, &vpCopy))
+            if (!IsHWSupported(m_pCore, &vpCopy) || Width == 0 || Height == 0)
             {
                 MoveBitstreamData(*in, (mfxU32)(curr - head) + 4);
                 memset(m_last_bytes, 0, NUM_REST_BYTES);

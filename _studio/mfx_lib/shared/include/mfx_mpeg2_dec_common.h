@@ -72,6 +72,7 @@ void Mpeg2SetConfigurableCommon(mfxVideoParam &par);
 void Mpeg2CheckConfigurableCommon(mfxVideoParam &par);
 mfxU8* GetPlane(const mfxFrameSurface& fs, mfxU32 data, mfxU32 plane);
 mfxU16 GetPitch(const mfxFrameSurface& fs, mfxU32 data, mfxU32 plane);
+inline bool IsMpeg2StartCodeEx(const mfxU8* p);
 
 inline
 mfxU8 Mpeg2GetMfxChromaFormat(mfxU32 chromaFormatIdc)
