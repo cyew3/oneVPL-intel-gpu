@@ -225,7 +225,8 @@ public:
         fGetVideoParam        = 1 << 3,
         fDecodeHeader         = 1 << 4,
         fGetPayload           = 1 << 5,
-        fGetDecodeStat        = 1 << 6
+        fGetDecodeStat        = 1 << 6,
+        noFlagCheck           = 1 << 7
     };
     enum
     {
@@ -300,10 +301,12 @@ public:
     mfxU32 count;
     std::list <mfxU8> expected_flag;
     mfxU16 frame;
+    bool  noFlagCheck;
+    mfxU32 expectSpsSize;
 
     Verifier(const mfxU8* flags, const mfxU16 N, const tsExtBufType<mfxVideoParam>& par, mfxU64 start = 0, mfxU64 step = 0, const mfxSession _session = 0)
         : expected_flag(flags, flags + N), init_par(par), frame(0), m_session(_session),
-            startTimeStamp(start), stepTimeStamp(step), count(0){}
+            startTimeStamp(start), stepTimeStamp(step), count(0), noFlagCheck(false), expectSpsSize(0){}
     ~Verifier() {}
 
     mfxStatus ProcessSurface(mfxFrameSurface1& s)
@@ -315,7 +318,10 @@ public:
             return MFX_ERR_NONE;
         const mfxU16 Expected = expected_flag.front();
         expected_flag.pop_front();
-        EXPECT_EQ(Expected, Corrupted) << "ERROR: Frame#" << frame << " reported Corrupted value = " << Corrupted  << " is not equal to expected = " << Expected << "\n";
+        if(!noFlagCheck)
+        {
+            EXPECT_EQ(Expected, Corrupted) << "ERROR: Frame#" << frame << " reported Corrupted value = " << Corrupted  << " is not equal to expected = " << Expected << "\n";
+        }
         if(startTimeStamp && stepTimeStamp)
         {
             const mfxU64 ExpTS = startTimeStamp + stepTimeStamp*(count++);
@@ -390,6 +396,27 @@ do {                                                 \
             g_tsStatus.expect(MFX_ERR_NONE);
             g_tsStatus.check( MFXVideoDECODE_GetVideoParam(m_session, &par) );
 
+            if(expectSpsSize)
+            {
+                EXPECT_EQ(expectSpsSize, spspps.SPSBufSize) << "ERROR: Returned by GetVideoParam SPS buffer size is wrong\n";
+            }
+
+            spspps.PPSBuffer  = 0;
+            spspps.PPSBufSize = 0;
+            TRACE_FUNC2(MFXVideoDECODE_GetVideoParam, m_session, &par);
+            g_tsStatus.expect(MFX_ERR_NONE);
+            g_tsStatus.check( MFXVideoDECODE_GetVideoParam(m_session, &par) );
+
+            mfxU8 spsBufSmall[80] = {0};
+            spspps.SPSBuffer = spsBufSmall;
+            spspps.SPSBufSize = sizeof(spsBufSmall);
+            spspps.PPSBufSize = 0;
+            spspps.PPSBuffer  = 0;
+
+            TRACE_FUNC2(MFXVideoDECODE_GetVideoParam, m_session, &par);
+            g_tsStatus.expect(MFX_ERR_NOT_ENOUGH_BUFFER);
+            g_tsStatus.check( MFXVideoDECODE_GetVideoParam(m_session, &par) );
+
             mfxDecodeStat stat = {};
 
             TRACE_FUNC2(MFXVideoDECODE_GetDecodeStat, m_session, &stat);
@@ -420,7 +447,24 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*00*/ fDecodeFrameAsync, MFX_ERR_NONE, {6, "forBehaviorTest/corrupted/iceage_720x576_6_IPP_1I_cr.mp2", {MAJOR,REF_FRAME,REF_FRAME,0,0,0},},},
     {/*01*/ fDecodeFrameAsync, MFX_ERR_NONE, {6, "forBehaviorTest/corrupted/iceage_720x576_6_IPP_2I_cr.mp2", {0,0,0,MAJOR,REF_FRAME,REF_FRAME},},},
 
-    {/*08*/ fDecodeFrameAsync_new, MFX_ERR_NONE, { {6, "forBehaviorTest/corrupted/iceage_720x576_6_IPP_1I_cr.mp2" , {MAJOR,REF_FRAME,REF_FRAME,0,0,0},},
+    //CQ from customer: VCSD100023973
+    {/*02*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_001.m2v", {0},},},
+    {/*03*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_002.m2v", {0},},},
+    {/*04*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_003.m2v", {0},},},
+    {/*05*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_004.m2v", {0},},},
+    {/*06*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_005.m2v", {0},},},
+    {/*07*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_006.m2v", {0},},},
+    {/*08*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_007.m2v", {0},},},
+    {/*09*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_008.m2v", {0},},},
+    {/*10*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_009.m2v", {0},},},
+    {/*11*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_010.m2v", {0},},},
+    {/*12*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_011.m2v", {0},},},
+    {/*13*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_012.m2v", {0},},},
+    {/*14*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_013.m2v", {0},},},
+    {/*15*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_014.m2v", {0},},},
+    {/*16*/ fDecodeFrameAsync|noFlagCheck, MFX_ERR_NONE, {100, "forBehaviorTest/corrupted/cq23973/gvp_segfault_015.m2v", {0},},},
+
+    {/*17*/ fDecodeFrameAsync_new, MFX_ERR_NONE, { {6, "forBehaviorTest/corrupted/iceage_720x576_6_IPP_1I_cr.mp2" , {MAJOR,REF_FRAME,REF_FRAME,0,0,0},},
                                                  {5, 0, {0}, 1},
                                                  {6, "forBehaviorTest/corrupted/iceage_720x576_6_IPP_1I_cr.mp2"  , {MAJOR,REF_FRAME,REF_FRAME,0,0,0},},
                                                  {8, 0, {0}, 1},
@@ -435,14 +479,18 @@ int TestSuite::RunTestDecodeFrameAsync(const tc_struct& tc)
 {
     const char* sname = g_tsStreamPool.Get(tc.streams[0].name);
     g_tsStreamPool.Reg();
-    tsBitstreamReader reader(sname, 100000);
+    tsBitstreamReader reader(sname, 1920*1080*3);
     m_bs_processor = &reader;
 
     Init();
 
     SetPar4_DecodeFrameAsync();
 
-    Verifier v(tc.streams[0].flags, tc.streams[0].n, m_par);
+    Verifier v(tc.streams[0].flags, tc.streams[0].n, m_par, 0, 0, m_session);
+    if(tc.function & noFlagCheck)
+        v.noFlagCheck = true;
+    if( strstr(sname, "gvp_segfault") )
+        v.expectSpsSize = 86;
 
     m_surf_processor = &v;
 
