@@ -89,15 +89,11 @@ typedef struct _MParam
     mfx_UMC_FrameAllocator *m_FrameAllocator;
     mfxVideoParam m_vPar;
     Ipp32s *mid;
-    UMC::Mutex *m_pGuard;
     mfxBitstream *m_frame;
     bool *m_frame_in_use;
 
     bool m_isSoftwareBuffer;
     bool m_isCorrupted;
-
-    VideoCORE *pCore;
-
 } MParam;
 
 
@@ -112,8 +108,9 @@ public:
     static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
     static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
     static mfxStatus DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par);
-    static mfxStatus TaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
-    static mfxStatus CompleteTasks(void *pState, void *pParam, mfxStatus res);
+
+    mfxStatus TaskRoutine(void *pParam);
+    mfxStatus CompleteTasks(void *pParam);
 
     VideoDECODEMPEG2(VideoCORE *core, mfxStatus *sts);
     virtual ~VideoDECODEMPEG2();
