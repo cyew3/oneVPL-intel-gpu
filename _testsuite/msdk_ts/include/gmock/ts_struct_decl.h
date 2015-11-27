@@ -397,6 +397,7 @@ STRUCT(mfxExtAvcTemporalLayers,
 STRUCT(mfxExtEncoderCapability,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU32, MBPerSec)
+    FIELD_T(mfxU16, InputMemoryTiling)
 )
 
 STRUCT(mfxExtEncoderResetOption,
@@ -782,6 +783,11 @@ STRUCT(mfxExtMVCSeqDesc,
     FIELD_T(mfxU32                , NumOPAlloc    )
   //FIELD_S(mfxMVCOperationPoint* , OP            )
     FIELD_T(mfxU16                , NumRefsTotal  )
+)
+
+STRUCT(mfxExtMBDisableSkipMap,
+    FIELD_S(mfxExtBuffer, Header )
+    FIELD_T(mfxU32      , MapSize)
 )
 
 //STRUCT(mfxExtCodingOptionVPS,

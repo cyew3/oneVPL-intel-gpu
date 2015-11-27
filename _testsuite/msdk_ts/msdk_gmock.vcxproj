@@ -224,6 +224,7 @@
     <ClCompile Include="src\gmock\test_suites\avce_max_bins_pcm.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_max_slice_size.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_mbqp.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_mb_disable_skip_map.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_skipframes.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_skipframes_tektronix.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_start_new_sequence.cpp" />
@@ -238,11 +239,12 @@
     <ClCompile Include="src\gmock\test_suites\camera_run_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_unsupport.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_close.cpp" />
+    <ClCompile Include="src\gmock\test_suites\feature_unsupported.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_default_ref_lists.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_advanced_ref_lists.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_encode_frame_async.cpp" />
-    <ClCompile Include="src\gmock\test_suites\fei_encode_qp.cpp" />
+    <ClCompile Include="src\gmock\test_suites\fei_encode_mbqp.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevc10d_shift.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_gaa_close.cpp" />

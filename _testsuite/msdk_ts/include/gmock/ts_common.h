@@ -75,7 +75,8 @@ extern tsConfig     g_tsConfig;
 #define INC_PADDING() g_tsLog.inc_offset();
 #define DEC_PADDING() g_tsLog.dec_offset();
 #define TRACE_FUNCN(n, name, p1, p2, p3, p4, p5, p6, p7)\
-    g_tsLog << "-------------------------------------------------------------------------------\n";\
+    g_tsLog << "---------------------------------START-----------------------------------------\n";\
+    g_tsLog << "CALL: " << #name << "\n";\
     INC_PADDING();\
     if(g_tsTrace){\
         if((n) > 0) g_tsLog << g_tsLog.m_off << #p1 " = " << p1 << "\n";\

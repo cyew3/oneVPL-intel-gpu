@@ -48,7 +48,8 @@ private:
 
     struct tc_struct
     {
-        mfxStatus sts;
+        mfxStatus sts_query;
+        mfxStatus sts_init;
         mfxU32 mode;
         struct f_pair
         {
@@ -82,98 +83,93 @@ private:
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
-    {/*00*/ MFX_ERR_NONE, 0, {
+    {/*00*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FRAME},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
     },
-    {/*01*/ MFX_ERR_NONE, 0, {
+    {/*01*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_TOPFIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_TOPFIELD}}
     },
-    {/*02*/ MFX_ERR_NONE, 0, {
+    {/*02*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_TOPFIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
     },
-    {/*03*/ MFX_ERR_NONE, 0, {
+    {/*03*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_TOPFIELD}}
     },
-    {/*04*/ MFX_ERR_NONE, 0, {
+    {/*04*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_TOPFIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_TOPFIELD},
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*05*/ MFX_ERR_NONE, 0, {
+    {/*05*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_TOPFIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_TOPFIELD},
         {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*06*/ MFX_ERR_NONE, 0, {
+    {/*06*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FRAME}}
     },
-    {/*07*/ MFX_ERR_NONE, 0, {   // Mode=Frame, InField=BFF
+    {/*07*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {   // Mode=Frame, InField=BFF
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FRAME},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD}}
     },
-    {/*08*/ MFX_ERR_NONE, 0, {   // Mode is set, but OutField is set to UNKNOWN
+    {/*08*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {   // Mode is set, but OutField is set to UNKNOWN
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FRAME},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_UNKNOWN}}
     },
-    {/*09*/ MFX_ERR_UNSUPPORTED, 0, {   // feature is not supported
+    {/*09*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {   // feature is not supported
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_SWAP_FIELDS}}
     },
-    {/*10*/ MFX_ERR_NONE, DO_USE, {
+    {/*10*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, DO_USE, {
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_TOPFIELD}}
     },
-    {/*11*/ MFX_ERR_NONE, DO_USE, {
+    {/*11*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, DO_USE, {
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_TOPFIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
     },
-    {/*12*/ MFX_ERR_NONE, DO_USE, {
+    {/*12*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, DO_USE, {
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_TOPFIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_TOPFIELD}}
     },
-    {/*13*/ MFX_ERR_NONE, DO_USE, {
+    {/*13*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, DO_USE, {
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
     },
-    {/*14*/ MFX_ERR_NONE, DO_USE, {
+    {/*14*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, DO_USE, {
         {EXT_VPP_DENOISE, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
         {EXT_VPP_DENOISE, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
         {EXT_VPP_DENOISE, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
     },
-    {/*15*/ MFX_ERR_NONE, DO_USE, {
+    {/*15*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, DO_USE, {
         {EXT_VPP_DETAIL, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
         {EXT_VPP_DETAIL, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
         {EXT_VPP_DETAIL, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
     },
-    {/*16*/ MFX_ERR_NONE, DO_USE, {
+    {/*16*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, DO_USE, {
         {EXT_VPP_FRC, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
         {EXT_VPP_FRC, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
         {EXT_VPP_FRC, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
     },
-    {/*17*/ MFX_ERR_NONE, DO_USE, {
+    {/*17*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, DO_USE, {
         {EXT_VPP_IS, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
         {EXT_VPP_IS, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
         {EXT_VPP_IS, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
     },
-    {/*18*/ MFX_ERR_NONE, DO_USE, {
-        {EXT_VPP_PD, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
-        {EXT_VPP_PD, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
-        {EXT_VPP_PD, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
-    },
-    {/*19*/ MFX_ERR_NONE, DO_USE, {
+    {/*18*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, DO_USE, {
         {EXT_VPP_PROCAMP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
         {EXT_VPP_PROCAMP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
         {EXT_VPP_PROCAMP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
@@ -246,16 +242,28 @@ int TestSuite::RunTest(unsigned int id)
 
     AllocSurfaces();
 
-    g_tsStatus.expect(tc.sts);
+    tsExtBufType<mfxVideoParam> par_out;
+    par_out=m_par;
+    g_tsStatus.expect(tc.sts_query);
 
     if (tc.set_par[0].ext_type == EXT_VPP_IS)
-        g_tsStatus.expect(MFX_WRN_FILTER_SKIPPED);
+        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
     if (tc.set_par[0].ext_type == EXT_VPP_PD && g_tsOSFamily != MFX_OS_FAMILY_WINDOWS)
-        g_tsStatus.expect(MFX_WRN_FILTER_SKIPPED);
+        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
 
-    mfxStatus sts = Init(m_session, m_pPar);
+    Query(m_session, m_pPar, &par_out);
 
-    if (tc.mode == DO_USE)
+    g_tsStatus.expect(tc.sts_init);
+
+    if (tc.set_par[0].ext_type == EXT_VPP_IS)
+        g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
+    if (tc.set_par[0].ext_type == EXT_VPP_PD && g_tsOSFamily != MFX_OS_FAMILY_WINDOWS)
+        g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
+
+    Init(m_session, m_pPar);
+    g_tsStatus.expect(MFX_ERR_NONE);
+
+    if (tc.mode == DO_USE && MFX_ERR_NONE == tc.sts_init)
     {
         mfxVideoParam par2 = {0};
         mfxExtVPPDoUse vpp_du2;
@@ -277,16 +285,17 @@ int TestSuite::RunTest(unsigned int id)
         par2.ExtParam = new mfxExtBuffer*[1];
         par2.ExtParam[0] = (mfxExtBuffer*)&vpp_du2;
 
-        MFXVideoVPP_GetVideoParam(m_session, &par2);
+        GetVideoParam(m_session, &par2);
+        g_tsStatus.expect(MFX_ERR_NONE);
 
         if (vpp_du2.NumAlg != vpp_du.NumAlg)
         {
-            g_tsStatus.check(MFX_ERR_ABORTED);
             g_tsLog << "ERROR: Number of algorithms in specified DoUse buffer is not equal to number of algorithms in buffer returned by GetVideoParam() \n";
+            g_tsStatus.check(MFX_ERR_ABORTED);
         }
         for (mfxU32 i = 0; i< vpp_du.NumAlg; i++)
         {
-            sts = MFX_ERR_ABORTED;
+            mfxStatus sts = MFX_ERR_ABORTED;
             for (mfxU32 j = 0; j< vpp_du2.NumAlg; j++)
             {
                 if (vpp_du.AlgList[i]==vpp_du2.AlgList[j])
@@ -296,6 +305,15 @@ int TestSuite::RunTest(unsigned int id)
                 g_tsLog << "ERROR: List of algorithms in specified DoUse buffer is not equal to list of algorithms in buffer returned by GetVideoParam() \n";
             g_tsStatus.check(sts);
         }
+
+        delete[] vpp_du.AlgList;
+        vpp_du.AlgList = 0;
+        delete[] m_par.ExtParam;
+        m_par.ExtParam = 0;
+        delete[] vpp_du2.AlgList;
+        vpp_du2.AlgList = 0;
+        delete[] par2.ExtParam;
+        par2.ExtParam = 0;
     }
 
     /*if ((sts != tc.sts) && (sts = MFX_WRN_FILTER_SKIPPED))
@@ -306,8 +324,7 @@ int TestSuite::RunTest(unsigned int id)
 
     ///////////////////////////////////////////////////////////////////////////
     //g_tsStatus.expect(tc.sts);
-
-    if ( sts == MFX_ERR_NONE )
+    if ( MFX_ERR_NONE == tc.sts_init )
         ProcessFrames(10);
 
     TS_END;

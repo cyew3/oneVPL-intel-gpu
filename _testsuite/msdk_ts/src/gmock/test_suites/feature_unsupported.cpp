@@ -223,6 +223,32 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/**/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtEncoderROI.NumROI, 1} },
     {/**/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtDirtyRect.NumRect, 1} },
     {/**/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtMoveRect.NumRect,  1} },
+
+    {/**/ ENCODE, MFX_CODEC_AVC,     E_UNSPRT, E_INVLID, {&tsStruct::mfxExtEncoderCapability.MBPerSec, 1},},
+    {/**/ ENCODE, MFX_CODEC_AVC,     E_UNSPRT, E_INVLID, {&tsStruct::mfxExtEncoderCapability.InputMemoryTiling, 1},},
+    {/**/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtEncoderCapability.MBPerSec, 1},},
+    {/**/ ENCODE, MFX_CODEC_MPEG2,   E_UNSPRT, E_INVLID, {&tsStruct::mfxExtEncoderCapability.InputMemoryTiling, 1},},
+
+    {/**/ VPP,           0,          E_UNSPRT, E_INVLID, { {&tsStruct::mfxExtVPPVideoSignalInfo.In.TransferMatrix, MFX_TRANSFERMATRIX_BT709}, \
+                                                           {&tsStruct::mfxExtVPPVideoSignalInfo.Out.TransferMatrix, MFX_TRANSFERMATRIX_BT709}, \
+                                                           {&tsStruct::mfxExtVPPVideoSignalInfo.In.NominalRange, MFX_NOMINALRANGE_0_255}, \
+                                                           {&tsStruct::mfxExtVPPVideoSignalInfo.Out.NominalRange, MFX_NOMINALRANGE_0_255}, \
+                                                         }, },
+    {/**/ VPP,           0,          E_UNSPRT, E_INVLID, { {&tsStruct::mfxExtVPPVideoSignalInfo.In.TransferMatrix, MFX_TRANSFERMATRIX_BT601}, \
+                                                           {&tsStruct::mfxExtVPPVideoSignalInfo.Out.TransferMatrix, MFX_TRANSFERMATRIX_BT601}, \
+                                                           {&tsStruct::mfxExtVPPVideoSignalInfo.In.NominalRange, MFX_NOMINALRANGE_16_235}, \
+                                                           {&tsStruct::mfxExtVPPVideoSignalInfo.Out.NominalRange, MFX_NOMINALRANGE_16_235}, \
+                                                         }, },
+    {/**/ VPP,           0,          E_UNSPRT, E_INVLID, { {&tsStruct::mfxExtVPPVideoSignalInfo.In.TransferMatrix, MFX_TRANSFERMATRIX_BT601}, \
+                                                           {&tsStruct::mfxExtVPPVideoSignalInfo.Out.TransferMatrix, MFX_TRANSFERMATRIX_BT709}, \
+                                                           {&tsStruct::mfxExtVPPVideoSignalInfo.In.NominalRange, MFX_NOMINALRANGE_0_255}, \
+                                                           {&tsStruct::mfxExtVPPVideoSignalInfo.Out.NominalRange, MFX_NOMINALRANGE_16_235}, \
+                                                         }, },
+    {/**/ VPP,           0,          E_UNSPRT, E_INVLID, { {&tsStruct::mfxExtVPPVideoSignalInfo.In.TransferMatrix, MFX_TRANSFERMATRIX_BT709}, \
+                                                           {&tsStruct::mfxExtVPPVideoSignalInfo.Out.TransferMatrix, MFX_TRANSFERMATRIX_BT601}, \
+                                                           {&tsStruct::mfxExtVPPVideoSignalInfo.In.NominalRange, MFX_NOMINALRANGE_16_235}, \
+                                                           {&tsStruct::mfxExtVPPVideoSignalInfo.Out.NominalRange, MFX_NOMINALRANGE_0_255}, \
+                                                         }, },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
