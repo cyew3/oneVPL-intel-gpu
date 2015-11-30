@@ -181,6 +181,7 @@ typedef struct _DpbFrame
 {
     mfxI32   m_poc;
     mfxU32   m_fo;  // FrameOrder
+    mfxU32   m_bpo; // Bpyramid order
     mfxU8    m_tid;
     bool     m_ltr; // is "long-term"
     bool     m_ldb; // is "low-delay B"

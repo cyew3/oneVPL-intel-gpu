@@ -145,6 +145,11 @@ mfxStatus CheckProfile(mfxVideoParam& par)
 
     return sts;
 }
+mfxU16 minRefForPyramid(mfxU16 GopRefDist)
+{
+    assert(GopRefDist > 0);
+    return (GopRefDist - 1) / 2 + 2;
+}
 
 mfxU32 GetMaxDpbSizeByLevel(MfxVideoParam const & par)
 {
@@ -214,7 +219,7 @@ mfxStatus CorrectLevel(MfxVideoParam& par, bool bCheckOnly)
             || par.m_ext.HEVCTiles.NumTileColumns > MaxTileCols
             || par.m_ext.HEVCTiles.NumTileRows > MaxTileRows
             || (mfxU32)par.mfx.NumSlice > MaxSSPP
-            || (par.isBPyramid() && MaxDpbSize < mfxU32((par.mfx.GopRefDist - 1) / 2 + 1)))
+            || (par.isBPyramid() && MaxDpbSize < minRefForPyramid(par.mfx.GopRefDist)))
         {
             lidx ++;
             continue;
@@ -672,11 +677,7 @@ bool CheckTU(mfxU8 support, mfxU16& tu)
     return changed;
 }
 
-mfxU16 minRefForPyramid(mfxU16 GopRefDist)
-{
-    assert(GopRefDist > 0);
-    return (GopRefDist - 1) / 2 + 3;
-}
+
  const mfxU16 AVBR_ACCURACY_MIN = 1;
  const mfxU16 AVBR_ACCURACY_MAX = 65535;
 
@@ -832,13 +833,13 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     }
     if (bInit)
     {
-        unsupported     += CheckMin(par.mfx.FrameInfo.Width,  Align(par.mfx.FrameInfo.Width, par.LCUSize));
-        unsupported     += CheckMin(par.mfx.FrameInfo.Height, Align(par.mfx.FrameInfo.Height, par.LCUSize));
+        unsupported     += CheckMin(par.mfx.FrameInfo.Width,  Align(par.mfx.FrameInfo.Width, HW_SURF_ALIGN_W));
+        unsupported     += CheckMin(par.mfx.FrameInfo.Height, Align(par.mfx.FrameInfo.Height,HW_SURF_ALIGN_H));
     }
     else
     {
-        changed     += CheckMin(par.mfx.FrameInfo.Width, Align(par.mfx.FrameInfo.Width, par.LCUSize));
-        changed     += CheckMin(par.mfx.FrameInfo.Height, Align(par.mfx.FrameInfo.Height, par.LCUSize));
+        changed     += CheckMin(par.mfx.FrameInfo.Width, Align(par.mfx.FrameInfo.Width,  HW_SURF_ALIGN_W));
+        changed     += CheckMin(par.mfx.FrameInfo.Height, Align(par.mfx.FrameInfo.Height,HW_SURF_ALIGN_H));
     }
 
     unsupported += CheckMax(par.mfx.FrameInfo.Width, caps.MaxPicWidth);

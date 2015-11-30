@@ -550,18 +550,6 @@ mfxStatus Plugin::GetVideoParam(mfxVideoParam *par)
     MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK_NULL_PTR1(par);
 
-    for (mfxU16 i = 0; i < par->NumExtParam; i++)
-    {
-        // check that SPS/PPS buffers
-        if (par->ExtParam[i] && par->ExtParam[i]->BufferId == MFX_EXTBUFF_CODING_OPTION_SPSPPS)
-        {
-            if (((mfxExtCodingOptionSPSPPS*)par->ExtParam[i])->SPSBuffer == NULL)
-                return MFX_ERR_NULL_PTR;
-            if (((mfxExtCodingOptionSPSPPS*)par->ExtParam[i])->PPSBuffer == NULL)
-                return MFX_ERR_NULL_PTR;
-        }
-    }
-
     sts = m_vpar.FillPar(*par);
     return sts;
 }
@@ -638,6 +626,7 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
 
         task->m_poc = m_frameOrder - m_lastIDR;
         task->m_fo = task->m_surf->Data.FrameOrder == MFX_FRAMEORDER_UNKNOWN ? m_frameOrder : task->m_surf->Data.FrameOrder;
+        task->m_bpo = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
 
         m_core.IncreaseReference(&surface->Data);
 

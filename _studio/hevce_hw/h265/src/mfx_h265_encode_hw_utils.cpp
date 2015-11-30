@@ -38,6 +38,54 @@ mfxU32 CountL1(DpbArray const & dpb, mfxI32 poc)
         c += dpb[i].m_poc > poc;
     return c;
 }
+mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 counter, bool & ref)
+{
+    assert(displayOrder >= begin);
+    assert(displayOrder <  end);
+
+    ref = (end - begin > 1);
+
+    mfxU32 pivot = (begin + end) / 2;
+    if (displayOrder == pivot)
+        return counter;
+    else if (displayOrder < pivot)
+        return GetEncodingOrder(displayOrder, begin, pivot, counter + 1, ref);
+    else
+        return GetEncodingOrder(displayOrder, pivot + 1, end, counter + 1 + pivot - begin, ref);
+}
+
+mfxU32 GetBiFrameLocation(mfxU32 i, mfxU32 num, bool &ref) 
+{
+    ref = false;
+    return GetEncodingOrder(i, 0, num, 0, ref);
+}
+
+template <class T> mfxU32 BPyrReorder(std::vector<T> brefs)
+{   
+    mfxU32 num = (mfxU32)brefs.size();
+    if (brefs[0]->m_bpo == (mfxU32)MFX_FRAMEORDER_UNKNOWN)
+    {
+        bool bRef = false;
+
+        for(mfxU32 i = 0; i < (mfxU32)brefs.size(); i++)
+        {
+            brefs[i]->m_bpo = GetBiFrameLocation(i,num, bRef);
+            if (bRef) 
+                brefs[i]->m_frameType |= MFX_FRAMETYPE_REF;        
+        }
+    }
+    mfxU32 minBPO =(mfxU32)MFX_FRAMEORDER_UNKNOWN;
+    mfxU32 ind = 0;
+    for(mfxU32 i = 0; i < (mfxU32)brefs.size(); i++)
+    {
+        if (brefs[i]->m_bpo < minBPO)
+        {
+            ind = i;
+            minBPO = brefs[i]->m_bpo;        
+        }
+    }
+    return ind;
+}
 
 template<class T> T Reorder(
     MfxVideoParam const & par,
@@ -54,22 +102,23 @@ template<class T> T Reorder(
     {
         if (CountL1(dpb, top->m_poc))
         {
-            if (top->m_frameType & MFX_FRAMETYPE_REF)
+            if (par.isBPyramid())
+               brefs.push_back(top);
+            else if (top->m_frameType & MFX_FRAMETYPE_REF)
             {
-                if (par.isBPyramid())
-                    brefs.push_back(top);
-                else if (b0 == end || (top->m_poc - b0->m_poc < 2))
+                if (b0 == end || (top->m_poc - b0->m_poc < 2))
                     return top;
             }
             else if (b0 == end)
                 b0 = top;
         }
-
         top ++;
     }
 
     if (!brefs.empty())
-        return brefs[brefs.size() / 2];
+    {
+         return brefs[BPyrReorder(brefs)];
+    }
 
     if (b0 != end)
         return b0;
@@ -668,6 +717,8 @@ struct FakeTask
     mfxI32 m_poc;
     mfxU16 m_frameType;
     mfxU8  m_tid;
+    mfxU32 m_bpo;
+
 };
 
 struct STRPSFreq : STRPS
@@ -946,7 +997,6 @@ void MfxVideoParam::SyncHeadersToMfxParam()
         mfx.CodecLevel |= MFX_TIER_HEVC_HIGH;
 
     mfx.NumRefFrame = m_sps.sub_layer[0].max_dec_pic_buffering_minus1;
-    mfx.GopRefDist  = m_sps.sub_layer[0].max_num_reorder_pics + 1;
 
     mfx.FrameInfo.ChromaFormat = m_sps.chroma_format_idc;
 
@@ -1034,6 +1084,17 @@ void MfxVideoParam::SyncHeadersToMfxParam()
     }
 }
 
+mfxU8 GetNumReorderFrames(mfxU32 BFrameRate, bool BPyramid){
+    mfxU8 n = !!BFrameRate;
+    if(BPyramid && n--){
+        while(BFrameRate){
+            BFrameRate >>= 1;
+            n ++;
+        }
+    }
+    return n;
+}
+
 void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
 {
     PTL& general = m_vps.general;
@@ -1065,7 +1126,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     general.level_idc                   = (mfxU8)(mfx.CodecLevel & 0xFF) * 3;
 
     slo.max_dec_pic_buffering_minus1    = mfx.NumRefFrame;
-    slo.max_num_reorder_pics            = mfx.GopRefDist - 1;
+    slo.max_num_reorder_pics            = GetNumReorderFrames(mfx.GopRefDist - 1, isBPyramid());
     slo.max_latency_increase_plus1      = 0;
 
     Zero(m_sps);
@@ -1115,7 +1176,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
 
         for (mfxU32 i = 0; (moreLTR || sets.size() != 64); i ++)
         {
-            FakeTask new_frame = {i, GetFrameType(*this, i), 0};
+            FakeTask new_frame = {i, GetFrameType(*this, i), 0, (mfxU32)MFX_FRAMEORDER_UNKNOWN};
 
             frames.push_back(new_frame);
 
@@ -1947,8 +2008,6 @@ mfxU8 GetFrameType(
             (idrPicDist && (frameOrder + 1) % idrPicDist == 0))
             return (MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF); // switch last B frame to P frame
 
-    if (video.isBPyramid() && (frameOrder % gopPicSize % gopRefDist - 1) % 2 == 1)
-        return (MFX_FRAMETYPE_B | MFX_FRAMETYPE_REF);
 
     return (MFX_FRAMETYPE_B);
 }
