@@ -315,9 +315,10 @@ public:
         EXPECT_EQ(Expected, Corrupted) << "ERROR: Frame#" << frame << " reported Corrupted value = " << Corrupted  << " is not equal to expected = " << Expected << "\n";
         if(startTimeStamp && stepTimeStamp)
         {
-            const mfxU64 ExpTS = startTimeStamp + stepTimeStamp*(count++);
+            const mfxU64 ExpTS = startTimeStamp + stepTimeStamp*count;
             EXPECT_EQ(ExpTS,    TimeStamp) << "ERROR: Frame#" << frame << " reported TimeStamp value = " << TimeStamp  << " is not equal to expected = " << ExpTS << "\n";
         }
+        count++;
 
 #define CHECK_FIELD_EXP_ACT(EXPECTED, ACTUAL, FIELD) \
 do {                                                 \

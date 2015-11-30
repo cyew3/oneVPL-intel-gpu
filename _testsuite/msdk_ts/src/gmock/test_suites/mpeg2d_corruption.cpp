@@ -324,9 +324,10 @@ public:
         }
         if(startTimeStamp && stepTimeStamp)
         {
-            const mfxU64 ExpTS = startTimeStamp + stepTimeStamp*(count++);
+            const mfxU64 ExpTS = startTimeStamp + stepTimeStamp*count;
             EXPECT_EQ(ExpTS,    TimeStamp) << "ERROR: Frame#" << frame << " reported TimeStamp value = " << TimeStamp  << " is not equal to expected = " << ExpTS << "\n";
         }
+        count++;
 
 #define CHECK_FIELD_EXP_ACT(EXPECTED, ACTUAL, FIELD) \
 do {                                                 \
@@ -407,9 +408,9 @@ do {                                                 \
             g_tsStatus.expect(MFX_ERR_NONE);
             g_tsStatus.check( MFXVideoDECODE_GetVideoParam(m_session, &par) );
 
-            mfxU8 spsBufSmall[80] = {0};
+            mfxU8 spsBufSmall[100] = {0};
             spspps.SPSBuffer = spsBufSmall;
-            spspps.SPSBufSize = sizeof(spsBufSmall);
+            spspps.SPSBufSize = expectSpsSize ? (expectSpsSize - 1) : (spspps.SPSBufSize - 1);
             spspps.PPSBufSize = 0;
             spspps.PPSBuffer  = 0;
 
@@ -423,7 +424,7 @@ do {                                                 \
             g_tsStatus.expect(MFX_ERR_NONE);
             g_tsStatus.check( MFXVideoDECODE_GetDecodeStat(m_session, &stat) );
 
-            EXPECT_EQ(count, stat.NumFrame);
+            EXPECT_EQ(count, stat.NumFrame) << "ERROR: Returned stat.NumFrame by GetDecodeStat is wrong\n";
         }
 
         frame++;

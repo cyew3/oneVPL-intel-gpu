@@ -13,10 +13,7 @@ tsReader::tsReader(const char* fname)
 #pragma warning(disable:4996)
     m_file = fopen(fname, "rb");
 #pragma warning(default:4996)
-    if (!m_file)
-    {
-        g_tsLog << "ERROR: cannot open file `" << fname << "'\n";
-    }
+    EXPECT_NE((void*) 0, m_file) << "ERROR: cannot open file `" << fname << "'\n";
 }
 
 tsReader::~tsReader()
