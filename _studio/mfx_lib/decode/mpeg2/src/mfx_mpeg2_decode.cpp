@@ -33,16 +33,50 @@ static const mfxI32 MFX_MPEG2_DECODE_ALIGNMENT = 16;
 
 #undef ELK_WORKAROUND
 
-/*
-#define _status_report_debug
-#define _threading_deb
+//#define _status_report_debug
+//#define _threading_deb
 
-#if defined(_threading_deb) && defined(MFX_VA_LINUX)
-#define fopen_s(PF,FN,MD) ((*(PF))=fopen((FN),(MD)))==NULL
-#define OutputDebugStringA(STR) {fputs((STR),stderr); fflush(stderr);}
-#define GetCurrentThreadId (mfxU32)pthread_self
+#if !defined(_WIN32) && !defined(_WIN64)
+#if defined(_threading_deb)
+    #define fopen_s(PF,FN,MD) ((*(PF))=fopen((FN),(MD)))==NULL
+    #define GetCurrentThreadId (mfxU32)pthread_self
 #endif
-*/
+#if defined(_status_report_debug)
+    #define OutputDebugStringA(STR) {fputs((STR),stderr); fflush(stderr);}
+#endif
+#endif
+
+#if defined(_threading_deb)
+#define THREAD_DEBUG_PRINTF(...) \
+{ \
+    FILE *file = NULL; \
+    fopen_s(&file, "mpeg2_thr_dbg.txt", "ab+"); \
+    if (file) { \
+        fprintf(file, __VA_ARGS__); \
+        fclose(file); \
+    } \
+}
+
+#define THREAD_DEBUG_PRINTF__HOLDING_MUTEX(_guard, ...) \
+{ \
+    UMC::AutomaticUMCMutex guard(_guard); \
+    THREAD_DEBUG_PRINTF(__VA_ARGS__) \
+}
+#else
+#define THREAD_DEBUG_PRINTF(...)
+#define THREAD_DEBUG_PRINTF__HOLDING_MUTEX(_guard, ...)
+#endif
+
+#ifdef _status_report_debug
+#define STATUS_REPORT_DEBUG_PRINTF(...) \
+{ \
+    char cStr[256]; \
+    sprintf(cStr, __VA_ARGS__); \
+    OutputDebugStringA(cStr); \
+}
+#else
+#define STATUS_REPORT_DEBUG_PRINTF(...)
+#endif
 
 enum
 {
@@ -2085,17 +2119,9 @@ mfxStatus VideoDECODEMPEG2::TaskRoutine(void *pParam)
 
     UMC::AutomaticUMCMutex guard(m_guard);
 
-#ifdef _threading_deb
-    {
-        FILE *pFile = NULL;
-        fopen_s(&pFile, "mpeg2_thr_dbg.txt", "ab+");
-
-        fprintf(pFile, "(THREAD %x) task %x number, task num %d, curr thr idx %d, compl thr %d\n",
-                GetCurrentThreadId(), pParam, parameters->task_num, parameters->m_curr_thread_idx, parameters->m_thread_completed);
-
-        fclose(pFile);
-    }
-#endif
+    THREAD_DEBUG_PRINTF(
+        "(THREAD %x) task %x number, task num %d, curr thr idx %d, compl thr %d\n",
+        GetCurrentThreadId(), pParam, parameters->task_num, parameters->m_curr_thread_idx, parameters->m_thread_completed)
 
     if (0 < parameters->last_frame_count && 0 == parameters->m_thread_completed)
     {
@@ -2116,16 +2142,7 @@ mfxStatus VideoDECODEMPEG2::TaskRoutine(void *pParam)
 
         parameters->m_thread_completed = parameters->NumThreads + 1;
 
-#ifdef _threading_deb
-        {
-            FILE *pFile = NULL;
-            fopen_s(&pFile, "mpeg2_thr_dbg.txt", "ab+");
-
-            fprintf(pFile, "(THREAD %x): 0 < parameters->last_frame_count && 0 == parameters->m_thread_completed\n", GetCurrentThreadId());
-
-            fclose(pFile);
-        }
-#endif
+        THREAD_DEBUG_PRINTF("(THREAD %x): 0 < parameters->last_frame_count && 0 == parameters->m_thread_completed\n", GetCurrentThreadId())
 
         return MFX_TASK_DONE;
     }
@@ -2134,35 +2151,17 @@ mfxStatus VideoDECODEMPEG2::TaskRoutine(void *pParam)
 
     if (parameters->m_curr_thread_idx > parameters->NumThreads || parameters->m_thread_completed >= parameters->NumThreads)
     {
-
-#ifdef _threading_deb
-        {
-            FILE *pFile = NULL;
-            fopen_s(&pFile, "mpeg2_thr_dbg.txt", "ab+");
-
-            /*fprintf(pFile, "(THREAD %x): (parameters->m_curr_thread_idx || parameters->m_thread_completed) > parameters->NumThreads: %d || %d > %d\n",
-                GetCurrentThreadId(), parameters->m_curr_thread_idx, parameters->m_thread_completed, parameters->NumThreads);*/
-            fprintf(pFile, "(THREAD %x): was waiting but done\n", GetCurrentThreadId());
-
-            fclose(pFile);
-        }
-#endif
+        /*THREAD_DEBUG_PRINTF(
+            "(THREAD %x): (parameters->m_curr_thread_idx || parameters->m_thread_completed) > parameters->NumThreads: %d || %d > %d\n",
+            GetCurrentThreadId(), parameters->m_curr_thread_idx, parameters->m_thread_completed, parameters->NumThreads)*/
+        THREAD_DEBUG_PRINTF("(THREAD %x): was waiting but done\n", GetCurrentThreadId())
 
         return MFX_TASK_DONE;
     }
 
     th_idx = parameters->m_curr_thread_idx - 1;
 
-#ifdef _threading_deb
-    {
-        FILE *pFile = NULL;
-        fopen_s(&pFile, "mpeg2_thr_dbg.txt", "ab+");
-
-        fprintf(pFile, "(THREAD %x): start decoding\n", GetCurrentThreadId());
-
-        fclose(pFile);
-    }
-#endif
+    THREAD_DEBUG_PRINTF("(THREAD %x): start decoding\n", GetCurrentThreadId())
 
     // down mutex
     guard.Unlock();
@@ -2173,16 +2172,7 @@ mfxStatus VideoDECODEMPEG2::TaskRoutine(void *pParam)
     // up mutex
     guard.Lock();
 
-#ifdef _threading_deb
-    {
-        FILE *pFile = NULL;
-        fopen_s(&pFile, "mpeg2_thr_dbg.txt", "ab+");
-
-        fprintf(pFile, "(THREAD %x): finish decoding\n", GetCurrentThreadId());
-
-        fclose(pFile);
-    }
-#endif
+    THREAD_DEBUG_PRINTF("(THREAD %x): finish decoding\n", GetCurrentThreadId())
 
     parameters->m_thread_completed++;
 
@@ -2198,16 +2188,7 @@ mfxStatus VideoDECODEMPEG2::TaskRoutine(void *pParam)
 
         m_implUmc.UnLockTask(parameters->task_num);
 
-#ifdef _threading_deb
-        {
-            FILE *pFile = NULL;
-            fopen_s(&pFile, "mpeg2_thr_dbg.txt", "ab+");
-
-            fprintf(pFile, "(THREAD %x): UMC::UMC_OK != res && UMC::UMC_ERR_NOT_ENOUGH_DATA != res && UMC::UMC_ERR_SYNC != res\n", GetCurrentThreadId());
-
-            fclose(pFile);
-        }
-#endif
+        THREAD_DEBUG_PRINTF("(THREAD %x): UMC::UMC_OK != res && UMC::UMC_ERR_NOT_ENOUGH_DATA != res && UMC::UMC_ERR_SYNC != res\n", GetCurrentThreadId())
 
         return MFX_TASK_DONE;
         */
@@ -2224,15 +2205,7 @@ mfxStatus VideoDECODEMPEG2::TaskRoutine(void *pParam)
 
         if (0 <= display_index)
         {
-
-#ifdef _threading_deb
-            FILE *pFile = NULL;
-            fopen_s(&pFile, "mpeg2_thr_dbg.txt", "ab+");
-
-            fprintf(pFile, "(THREAD %x): dump frame\n", GetCurrentThreadId());
-
-            fclose(pFile);
-#endif
+            THREAD_DEBUG_PRINTF("(THREAD %x): dump frame\n", GetCurrentThreadId())
 
             mfxStatus sts = parameters->m_FrameAllocator->PrepareToOutput(parameters->surface_out,
                                                                           parameters->mid[display_index],
@@ -2248,29 +2221,11 @@ mfxStatus VideoDECODEMPEG2::TaskRoutine(void *pParam)
     }
     else
     {
-
-#ifdef _threading_deb
-        {
-            FILE *pFile = NULL;
-            fopen_s(&pFile, "mpeg2_thr_dbg.txt", "ab+");
-
-            fprintf(pFile, "(THREAD %x): i'm working status\n", GetCurrentThreadId());
-
-            fclose(pFile);
-        }
-#endif
-
+        THREAD_DEBUG_PRINTF("(THREAD %x): i'm working status\n", GetCurrentThreadId())
         return MFX_TASK_WORKING;
     }
 
-#ifdef _threading_deb
-    {
-        FILE *pFile = NULL;
-        fopen_s(&pFile, "mpeg2_thr_dbg.txt", "ab+");
-        fprintf(pFile, "(THREAD %x): exit routine\n\n", GetCurrentThreadId());
-        fclose(pFile);
-    }
-#endif
+    THREAD_DEBUG_PRINTF("(THREAD %x): exit routine\n\n", GetCurrentThreadId())
 
     return MFX_TASK_DONE;
 }
@@ -2288,15 +2243,9 @@ mfxStatus VideoDECODEMPEG2::CompleteTasks(void *pParam)
     MParam *parameters = (MParam *)pParam;
     UMC::AutomaticUMCMutex guard(m_guard);
 
-#ifdef _threading_deb
-    FILE *pFile = NULL;
-    fopen_s(&pFile, "mpeg2_thr_dbg.txt", "ab+");
-
-    fprintf(pFile, "(THREAD %x) CompleteTasks: task %x number, task num %d, curr thr idx %d, compl thr %d\n",
-    GetCurrentThreadId(), pParam, parameters->task_num, parameters->m_curr_thread_idx, parameters->m_thread_completed);
-
-    fclose(pFile);
-#endif
+    THREAD_DEBUG_PRINTF(
+        "(THREAD %x) CompleteTasks: task %x number, task num %d, curr thr idx %d, compl thr %d\n",
+        GetCurrentThreadId(), pParam, parameters->task_num, parameters->m_curr_thread_idx, parameters->m_thread_completed)
 
     Ipp32s display_index = parameters->display_index;
 
@@ -2305,23 +2254,11 @@ mfxStatus VideoDECODEMPEG2::CompleteTasks(void *pParam)
         SetSurfacePictureType(parameters->surface_out, display_index, &m_implUmc);
         SetSurfaceTimeCode(parameters->surface_out, display_index, &m_implUmc);
 
-#ifdef _threading_deb
-        FILE *pFile = NULL;
-        fopen_s(&pFile, "mpeg2_thr_dbg.txt", "ab+");
-
-        fprintf(pFile, "(THREAD %x) Dumping\n", GetCurrentThreadId());
-
-        fclose(pFile);
-#endif
+        THREAD_DEBUG_PRINTF("(THREAD %x) Dumping\n", GetCurrentThreadId())
 
         if (false == parameters->IsSWImpl)
         {
-
-        #ifdef _status_report_debug
-            char cStr[256];
-            sprintf(cStr, "thread task idx %d, display address %x\n", parameters->task_num, parameters->surface_out); 
-            OutputDebugStringA(cStr);
-        #endif
+            STATUS_REPORT_DEBUG_PRINTF("thread task idx %d, display address %x\n", parameters->task_num, parameters->surface_out)
 
             if (IsStatusReportEnable(m_pCore))
             {
@@ -2469,11 +2406,7 @@ mfxStatus VideoDECODEMPEG2::CompleteTasks(void *pParam)
     {
         parameters->m_frame_in_use[parameters->m_frame_curr] = false;
 
-        #ifdef _status_report_debug
-            char cStr[256];
-            sprintf(cStr, "m_frame_curr %d is %d\n", parameters->m_frame_curr, parameters->m_frame_in_use[parameters->m_frame_curr]); 
-            OutputDebugStringA(cStr);
-        #endif
+        STATUS_REPORT_DEBUG_PRINTF("m_frame_curr %d is %d\n", parameters->m_frame_curr, parameters->m_frame_in_use[parameters->m_frame_curr])
     }
 
     return MFX_TASK_DONE;
@@ -3007,13 +2940,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                 m_task_num += DPB;
             }
 
-#ifdef _status_report_debug
-            {
-                char cStr[256];
-                sprintf(cStr, "use task idx %d\n", m_task_num); 
-                OutputDebugStringA(cStr);
-            }
-#endif
+            STATUS_REPORT_DEBUG_PRINTF("use task idx %d\n", m_task_num)
            
             if (0 <= display_index)
             {
@@ -3033,13 +2960,8 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                 m_task_param[m_task_num].m_isDecodedOrder = m_isDecodedOrder;
                 m_task_param[m_task_num].m_frame_curr = m_frame_curr;
 
-#ifdef _status_report_debug
-    {
-        char cStr[256];
-        sprintf(cStr, "frame curr %d\n", m_frame_curr); 
-        OutputDebugStringA(cStr);
-    }
-#endif
+                STATUS_REPORT_DEBUG_PRINTF("frame curr %d\n", m_frame_curr)
+
                 m_task_param[m_task_num].curr_index = curr_index;
                 m_task_param[m_task_num].prev_index = prev_index;
                 m_task_param[m_task_num].next_index = next_index;
@@ -3492,17 +3414,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
 
             memcpy_s(&(m_task_param[m_task_num].m_vPar.mfx.FrameInfo),sizeof(mfxFrameInfo),&m_vPar.mfx.FrameInfo,sizeof(mfxFrameInfo));
 
-#ifdef _threading_deb
-            {
-                UMC::AutomaticUMCMutex guard(m_guard);
-                FILE *pFile = NULL;
-                fopen_s(&pFile, "mpeg2_thr_dbg.txt", "ab+");
-
-                fprintf(pFile, "task_num %d was added\n", m_task_param[m_task_num].task_num);
-
-                fclose(pFile);
-            }
-#endif
+            THREAD_DEBUG_PRINTF__HOLDING_MUTEX(m_guard, "task_num %d was added\n", m_task_param[m_task_num].task_num)
 
             pEntryPoint->pParam = (void *)(&(m_task_param[m_task_num]));
 
@@ -3641,13 +3553,7 @@ mfxStatus VideoDECODEMPEG2::GetStatusReportByIndex(mfxFrameSurface1 *displaySurf
     
     std::list<DXVA_Status_VC1>::iterator iterator;
 
-#ifdef _status_report_debug
-
-        char cStr[256];
-        sprintf(cStr, "Queried task index %d \n", currIdx); 
-        OutputDebugStringA(cStr);
-
-#endif
+    STATUS_REPORT_DEBUG_PRINTF("Queried task index %d \n", currIdx)
 
     // check if status is already cached
     if (0 != m_pStatusList.size())
@@ -3760,13 +3666,7 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface, UM
 
     DXVA_Status_VC1 currentTaskStatus = {};
 
-#ifdef _status_report_debug
-    {
-        char cStr[256];
-        sprintf(cStr, "status report count %d\n", m_pStatusList.size()); 
-        OutputDebugStringA(cStr);
-    }
-#endif
+    STATUS_REPORT_DEBUG_PRINTF("status report count %d\n", m_pStatusList.size())
 
     // check if status is already cached
     if (0 != m_pStatusList.size())
@@ -3795,13 +3695,7 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface, UM
 
             m_pStatusList.push_front(m_pStatusReport[i]);
 
-#ifdef _status_report_debug
-
-        char cStr[256];
-        sprintf(cStr, "Got status report %d\n", m_pStatusReport[i].wDecodedPictureIndex); 
-        OutputDebugStringA(cStr);
-
-#endif
+            STATUS_REPORT_DEBUG_PRINTF("Got status report %d\n", m_pStatusReport[i].wDecodedPictureIndex)
         }
 
         // clear temp buffer
@@ -3818,14 +3712,7 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface, UM
         m_pStatusList.pop_front();
     }
 
-#ifdef _status_report_debug
-
-        char cStr[256];
-        sprintf(cStr, "wDecodedPictureIndex %d is ready\n", currentTaskStatus.wDecodedPictureIndex); 
-        OutputDebugStringA(cStr);
-
-#endif
-
+    STATUS_REPORT_DEBUG_PRINTF("wDecodedPictureIndex %d is ready\n", currentTaskStatus.wDecodedPictureIndex)
 
     switch (currentTaskStatus.bStatus)
     {
@@ -3858,12 +3745,8 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface, UM
 #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
 
     sts = va->SyncTask(surface_id, &surfErr);
-#ifdef _status_report_debug
 
-        char cStr[256];
-        sprintf(cStr, "index %d with surfErr: %d (sts:%d)\n", index, surfErr, sts); 
-        OutputDebugStringA(cStr);
-#endif
+    STATUS_REPORT_DEBUG_PRINTF("index %d with surfErr: %d (sts:%d)\n", index, surfErr, sts)
 
     if (sts != UMC::UMC_OK)
         return MFX_ERR_DEVICE_FAILED;
