@@ -2115,6 +2115,20 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.FrameInfo.Height = 0;
     }
 
+    // driver doesn't support resolution 16xH
+    if (par.mfx.FrameInfo.Width == 16)
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.Width = 0;
+    }
+
+    // driver doesn't support resolution Wx16
+    if (par.mfx.FrameInfo.Height == 16)
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.Height = 0;
+    }
+
     if (par.mfx.FrameInfo.Width > 0)
     {
         if (par.mfx.FrameInfo.CropX > par.mfx.FrameInfo.Width)
