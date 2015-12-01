@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_mpeg2_decode.cpp
 
@@ -548,7 +548,7 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam *par)
        return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    Ipp32u size = par->mfx.FrameInfo.Width * par->mfx.FrameInfo.Height;
+    Ipp32u size = Ipp32u (par->mfx.FrameInfo.Width * par->mfx.FrameInfo.Height *3L/2);
     Ipp32u MaxLength = 1024 * 500;
 
     if (size > MaxLength)
