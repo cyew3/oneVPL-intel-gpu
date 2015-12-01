@@ -341,6 +341,7 @@ void MKVReader::ReadValue(mfxU32 size, DataType type, void *value){
             memcpy((mfxU8*)value, (mfxU8 *)buffer, size);
             break;
     }
+    free(buffer);
     return;
 }
 
@@ -506,7 +507,7 @@ mfxStatus MKVReader::ReadTrack(void){
 
     while(vm_file_ftell(m_fSource) < track_size){
         tag = GetTag();
-              
+
         if ( TagHasSize(tag) ){
             size = GetSize();
 
@@ -515,7 +516,7 @@ mfxStatus MKVReader::ReadTrack(void){
                 codec        = 0;
                 track_number = 0;
                 if( codec_private ) {
-                    delete codec_private;
+                    delete[] codec_private;
                     codec_private = 0;
                 }
             }
@@ -571,11 +572,15 @@ mfxStatus MKVReader::ReadTrack(void){
             if ( codec > 1 && codec_private){
                 SaveCodecPrivate(codec_private, size);
                 codec = 0;
-                delete codec_private;
+                delete[] codec_private;
                 codec_private = 0;
             }
         } // if ( TagHasSize(tag) )
     } // while
+
+    if ( codec_private ){
+        delete[] codec_private;
+    }
 
     // Jump to the end of tracks part
     vm_file_fseek(m_fSource, track_size, VM_FILE_SEEK_SET);
