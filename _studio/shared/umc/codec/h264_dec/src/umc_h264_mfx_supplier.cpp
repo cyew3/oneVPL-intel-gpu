@@ -857,8 +857,10 @@ UMC::Status PosibleMVC::DecodeHeader(UMC::MediaData * data, mfxBitstream *bs, mf
 
     if (IsEnough())
     {
+        VM_ASSERT(first_sps.obj && "Current SPS should be valid when [m_isSPSFound]");
+
         H264SeqParamSet* last_sps = m_supplier->GetHeaders()->m_SeqParams.GetCurrentHeader();
-        if (first_sps.obj != last_sps)
+        if (first_sps.obj && first_sps.obj != last_sps)
             m_supplier->GetHeaders()->m_SeqParams.AddHeader(first_sps.obj);
 
         return UMC::UMC_OK;
