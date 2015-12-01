@@ -183,6 +183,25 @@ int TestSuite::RunTest(unsigned int id)
     TS_START;
     const tc_struct& tc = test_case[id];
 
+    mfxStatus sts_query = tc.sts_query,
+              sts_init  = tc.sts_init;
+
+    if (tc.set_par[0].ext_type == EXT_VPP_IS)
+    {
+        sts_query = MFX_ERR_UNSUPPORTED;
+        sts_init  = MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+    if (tc.set_par[0].ext_type == EXT_VPP_PD && g_tsOSFamily != MFX_OS_FAMILY_WINDOWS)
+    {
+        sts_query = MFX_ERR_UNSUPPORTED;
+        sts_init  = MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+    if (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS)
+    {
+        sts_query = MFX_ERR_UNSUPPORTED;
+        sts_init  = MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
     MFXInit();
 
     m_par.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
@@ -244,26 +263,16 @@ int TestSuite::RunTest(unsigned int id)
 
     tsExtBufType<mfxVideoParam> par_out;
     par_out=m_par;
-    g_tsStatus.expect(tc.sts_query);
 
-    if (tc.set_par[0].ext_type == EXT_VPP_IS)
-        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
-    if (tc.set_par[0].ext_type == EXT_VPP_PD && g_tsOSFamily != MFX_OS_FAMILY_WINDOWS)
-        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
-
+    g_tsStatus.expect(sts_query);
     Query(m_session, m_pPar, &par_out);
 
-    g_tsStatus.expect(tc.sts_init);
-
-    if (tc.set_par[0].ext_type == EXT_VPP_IS)
-        g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
-    if (tc.set_par[0].ext_type == EXT_VPP_PD && g_tsOSFamily != MFX_OS_FAMILY_WINDOWS)
-        g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
-
+    g_tsStatus.expect(sts_init);
     Init(m_session, m_pPar);
+
     g_tsStatus.expect(MFX_ERR_NONE);
 
-    if (tc.mode == DO_USE && MFX_ERR_NONE == tc.sts_init)
+    if (tc.mode == DO_USE && MFX_ERR_NONE == sts_init)
     {
         mfxVideoParam par2 = {0};
         mfxExtVPPDoUse vpp_du2;
@@ -316,15 +325,7 @@ int TestSuite::RunTest(unsigned int id)
         par2.ExtParam = 0;
     }
 
-    /*if ((sts != tc.sts) && (sts = MFX_WRN_FILTER_SKIPPED))
-    {
-        g_tsLog << "ERROR: Init() returned MFX_WRN_FILTER_SKIPPED\n";
-        g_tsStatus.check(MFX_ERR_ABORTED);
-    }*/
-
-    ///////////////////////////////////////////////////////////////////////////
-    //g_tsStatus.expect(tc.sts);
-    if ( MFX_ERR_NONE == tc.sts_init )
+    if ( MFX_ERR_NONE == sts_init )
         ProcessFrames(10);
 
     TS_END;
