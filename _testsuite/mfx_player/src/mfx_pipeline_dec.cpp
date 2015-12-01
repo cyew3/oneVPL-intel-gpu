@@ -1345,7 +1345,15 @@ mfxStatus MFXDecPipeline::DecodeHeader()
         MFX_CHECK_STS_SKIP(sts = m_pYUVSource->DecodeHeader(&m_inBSFrame, &m_components[eDEC].m_params)
             , MFX_ERR_MORE_DATA);
 
-        if (MFX_ERR_NONE <= sts)
+        if (MFX_ERR_MORE_DATA == sts)
+        {
+            if (m_inBSFrame.MaxLength == m_inBSFrame.DataLength)
+            {
+                mfxU32 new_length = m_inBSFrame.MaxLength + m_inBSFrame.MaxLength / 2; //grow by 50%
+                MFX_CHECK_STS(MFXBistreamBuffer::ExtendBs(new_length, &m_inBSFrame));
+            }
+        }
+        else if (MFX_ERR_NONE <= sts)
         {
             //TODO: create dedicated decoder class
             //in case of SVC codec profile specified we will continue decode header to get info
