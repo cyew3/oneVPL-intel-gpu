@@ -1203,6 +1203,9 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
     }
     else if( MFX_EXTBUFF_VPP_FIELD_PROCESSING == filterName )
     {
+#if defined(_WIN32) || defined(_WIN64)
+        sts = MFX_ERR_UNSUPPORTED;
+#else
         if ((NULL != core) && (MFX_PLATFORM_SOFTWARE == core->GetPlatformType()))
         {
             sts = MFX_ERR_UNSUPPORTED;
@@ -1211,6 +1214,7 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
         {
             sts = MFX_ERR_NONE;
         }
+#endif
     }
     else if ( MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO == filterName)
     {
