@@ -259,7 +259,8 @@ mfxStatus MFXScreenCapture_Plugin::Init(mfxVideoParam *par)
         if(MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
         {
             mfxRes = MFX_ERR_NONE;
-            fallback = true;
+            if(MFX_IMPL_HARDWARE == MFX_IMPL_BASETYPE(param.Impl))
+                fallback = true;
         }
         if(MFX_ERR_UNSUPPORTED == mfxRes)
             return MFX_ERR_INVALID_VIDEO_PARAM;

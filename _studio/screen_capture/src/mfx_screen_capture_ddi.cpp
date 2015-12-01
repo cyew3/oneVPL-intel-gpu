@@ -148,7 +148,7 @@ Capturer* CreatePlatformCapturer(mfxCoreInterface* core)
             }
             else
             {
-                return new SW_D3D9_Capturer(core);
+                return new SW_D3D11_Capturer(core);
             }
         }
     }
