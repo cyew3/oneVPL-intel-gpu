@@ -454,6 +454,8 @@ void CDecodingPipeline::Close()
     if (m_FileReader.get())
         m_FileReader->Close();
 
+    MSDK_SAFE_DELETE_ARRAY(m_VppDoNotUse.AlgList);
+
     // allocator if used as external for MediaSDK must be deleted after decoder
     DeleteAllocator();
 
