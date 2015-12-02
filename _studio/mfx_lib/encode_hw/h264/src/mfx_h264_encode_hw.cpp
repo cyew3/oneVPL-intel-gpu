@@ -2697,7 +2697,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                                    mfxStatus sts = CorrectSliceInfoForsed(*task, m_video.calcParam.widthLa, m_video.calcParam.heightLa);
                                    if (sts != MFX_ERR_NONE)
                                         return Error(sts);
-                                   if (old_slice_size == task->m_SliceInfo.size())
+                                   if (old_slice_size == task->m_SliceInfo.size() && task->m_repack <4)
                                        task->m_repack = 4;
                                }
                            }
