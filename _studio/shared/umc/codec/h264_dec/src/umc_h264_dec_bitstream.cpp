@@ -1781,7 +1781,8 @@ Status H264HeadersBitstream::GetSliceHeaderPart3(
             }
         }    // ref idx override
 
-        if (hdr->num_ref_idx_l1_active > (Ipp32s)MAX_NUM_REF_FRAMES || hdr->num_ref_idx_l0_active > (Ipp32s)MAX_NUM_REF_FRAMES)
+        if (hdr->num_ref_idx_l0_active < 0 || hdr->num_ref_idx_l0_active > (Ipp32s)MAX_NUM_REF_FRAMES ||
+            hdr->num_ref_idx_l1_active < 0 || hdr->num_ref_idx_l1_active > (Ipp32s)MAX_NUM_REF_FRAMES)
             return UMC_ERR_INVALID_STREAM;
 
         if (hdr->slice_type != INTRASLICE && hdr->slice_type != S_INTRASLICE)
