@@ -186,8 +186,10 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     }
     else
     {
-        m_bVppIsUsed = (m_fourcc != MFX_FOURCC_NV12) || pParams->Width || pParams->Height;
+        m_bVppIsUsed = (m_fourcc != MFX_FOURCC_NV12);
     }
+
+    m_bVppIsUsed |= pParams->Width && pParams->Height;
 
     if (pParams->eDeinterlace)
     {
