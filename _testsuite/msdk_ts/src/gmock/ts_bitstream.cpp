@@ -112,7 +112,7 @@ tsBitstreamReader::~tsBitstreamReader()
 
 mfxStatus tsBitstreamReader::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 {
-    if(m_eos)
+    if(m_eos && bs.DataLength < 4)
     {
         return MFX_ERR_MORE_DATA;
     }
