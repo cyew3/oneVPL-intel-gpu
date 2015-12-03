@@ -18,6 +18,7 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
     , m_bs_processor(0)
     , m_frames_buffered(0)
     , m_uid(0)
+    , m_field_processed(0)
 {
     m_par.mfx.CodecId = CodecId;
     if (g_tsConfig.lowpower != MFX_CODINGOPTION_UNKNOWN)
@@ -66,6 +67,7 @@ tsVideoEncoder::tsVideoEncoder(mfxFeiFunction func, mfxU32 CodecId, bool useDefa
     , m_bs_processor(0)
     , m_frames_buffered(0)
     , m_uid(0)
+    , m_field_processed(0)
 {
     m_par.mfx.CodecId = CodecId;
     if (g_tsConfig.lowpower != MFX_CODINGOPTION_UNKNOWN)
@@ -283,10 +285,14 @@ mfxStatus tsVideoEncoder::EncodeFrameAsync()
         {
             AllocBitstream();TS_CHECK_MFX;
         }
-        m_pSurf = GetSurface();TS_CHECK_MFX;
-        if(m_filler)
-        {
-            m_pSurf = m_filler->ProcessSurface(m_pSurf, m_pFrameAllocator);
+        if (m_field_processed == 0) {
+            //if SingleFieldProcessing is enabled, then don't get new surface if the second field to be processed.
+            //if SingleFieldProcessing is not enabled, m_field_processed == 0 always.
+            m_pSurf = GetSurface();TS_CHECK_MFX;
+            if(m_filler)
+            {
+                m_pSurf = m_filler->ProcessSurface(m_pSurf, m_pFrameAllocator);
+            }
         }
     }
     mfxStatus mfxRes = EncodeFrameAsync(m_session, m_pSurf ? m_pCtrl : 0, m_pSurf, m_pBitstream, m_pSyncPoint);
@@ -380,6 +386,11 @@ mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n, bool check)
     mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
     mfxSyncPoint sp;
 
+    bool bSingleFldProc = false;
+    mfxExtFeiParam* fei_ext= (mfxExtFeiParam*)m_par.GetExtBuffer(MFX_EXTBUFF_FEI_PARAM);
+    if (fei_ext)
+        bSingleFldProc = (fei_ext->SingleFieldProcessing == MFX_CODINGOPTION_ON);
+
     async = TS_MIN(n, async - 1);
 
     while(encoded < n)
@@ -401,9 +412,30 @@ mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n, bool check)
         g_tsStatus.check();TS_CHECK_MFX;
         sp = m_syncpoint;
 
+        //For FEI, AsyncDepth = 1, so everytime one frame is submitted for encoded, it will
+        //be synced immediately afterwards.
         if(++submitted >= async)
         {
+            if(bSingleFldProc)
+            {
+                //m_field_processed would be use as indicator in ProcessBitstream(),
+                //so increase it in advance here.
+                m_field_processed = (m_field_processed + 1) % 2;
+            }
             SyncOperation();TS_CHECK_MFX;
+
+            //If SingleFieldProcessing is enabled, and the first field is processed, continue
+            if(bSingleFldProc)
+            {
+                //m_field_processed = (m_field_processed + 1) % 2;
+                if (m_field_processed)
+                {
+                    //for the second field, no new surface submitted.
+                    submitted--;
+                    continue;
+                }
+            }
+
             encoded += submitted;
             submitted = 0;
             async = TS_MIN(async, (n - encoded));

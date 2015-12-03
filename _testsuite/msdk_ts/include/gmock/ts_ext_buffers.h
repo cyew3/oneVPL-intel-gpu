@@ -78,12 +78,16 @@ public:
              m_buf.push_back(0);
         } else
         {
-            m_buf.push_back( (mfxExtBuffer*)new mfxU8[size] );
-            mfxExtBuffer& eb = *m_buf.back();
+            EBIterator it = std::find_if(m_buf.begin(), m_buf.end(), tsCmpExtBufById(id));
+            if(it == m_buf.end())
+            {
+                m_buf.push_back( (mfxExtBuffer*)new mfxU8[size] );
+                mfxExtBuffer& eb = *m_buf.back();
 
-            memset(&eb, 0, size);
-            eb.BufferId = id;
-            eb.BufferSz = size;
+                memset(&eb, 0, size);
+                eb.BufferId = id;
+                eb.BufferSz = size;
+            }
         }
 
         RefreshBuffers();

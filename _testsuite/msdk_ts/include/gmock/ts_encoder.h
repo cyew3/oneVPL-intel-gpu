@@ -25,6 +25,7 @@ public:
     tsBitstreamProcessor*       m_bs_processor;
     mfxU32                      m_frames_buffered;
     mfxPluginUID*               m_uid;
+    mfxU16                      m_field_processed;
 
     tsVideoEncoder(mfxU32 CodecId = 0, bool useDefaults = true);
     tsVideoEncoder(mfxFeiFunction func, mfxU32 CodecId = 0, bool useDefaults = true);
