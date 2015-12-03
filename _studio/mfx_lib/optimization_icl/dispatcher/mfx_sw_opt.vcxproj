@@ -22,6 +22,9 @@
     <ClCompile Include="src\mfx_dispatcher.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\h264\h264_avx2.vcxproj">
+      <Project>{cbf99702-1060-46e1-95c5-3864856df06c}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\h264\h264_px.vcxproj">
       <Project>{3b7a183a-c728-494f-a56e-6a993150d277}</Project>
     </ProjectReference>

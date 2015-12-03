@@ -15,6 +15,7 @@
 #include "mfxvideo.h"
 #include "ippvc.h"
 #include <cstddef>
+#include <assert.h>
 
 #include "mfx_common.h"
 
@@ -100,6 +101,7 @@ namespace MFX_PP
 
         // H264 functions
         virtual void FilterDeblockingChromaEdge(Ipp8u* pSrcDst, Ipp32s  srcdstStep, Ipp8u*  pAlpha, Ipp8u*  pBeta, Ipp8u*  pThresholds, Ipp8u*  pBS, Ipp32s  bit_depth, Ipp32u  chroma_format_idc, Ipp32u  isDeblHor);
+        virtual void H264_FASTCALL InterpolateChromaBlock_16u(const IppVCInterpolateBlock_16u *interpolateInfo);
 
         // VPP functions
         virtual IppStatus cc_P010_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo, mfxFrameData* outData, mfxFrameInfo* outInfo, mfxFrameData* yv12Data);
@@ -120,6 +122,19 @@ namespace MFX_PP
     public:
 
         // H264 functions
+        virtual void H264_FASTCALL InterpolateChromaBlock_16u(const IppVCInterpolateBlock_16u *interpolateInfo);
+
+        virtual void ReconstructChromaInter4x4(Ipp32s **ppSrcDstCoeff, Ipp16u *pSrcDstUVPlane, Ipp32u srcdstUVStep, Ipp32u cbpU, Ipp32u cbpV, Ipp32u chromaQPU, Ipp32u chromaQPV,
+                                                        const Ipp16s *pQuantTableU, const Ipp16s *pQuantTableV, Ipp16s levelScaleDCU, Ipp16s levelScaleDCV,
+                                                        Ipp8u  bypass_flag, Ipp32u bit_depth, Ipp32u chroma_format);
+
+        virtual void ReconstructChromaInter4x4(Ipp16s **ppSrcDstCoeff, Ipp8u *pSrcDstUVPlane, Ipp32u srcdstUVStep, Ipp32u cbpU, Ipp32u cbpV, Ipp32u chromaQPU, Ipp32u chromaQPV,
+                                                        const Ipp16s *pQuantTableU, const Ipp16s *pQuantTableV, Ipp16s levelScaleDCU, Ipp16s levelScaleDCV,
+                                                        Ipp8u  bypass_flag, Ipp32u bit_depth, Ipp32u chroma_format);
+
+        virtual void FilterDeblockingLumaEdge(Ipp16u* pSrcDst, Ipp32s  srcdstStep, Ipp8u*  pAlpha, Ipp8u*  pBeta, Ipp8u*  pThresholds, Ipp8u*  pBS, Ipp32s  bit_depth, Ipp32u  isDeblHor);
+        virtual void FilterDeblockingChromaEdge(Ipp8u* pSrcDst,  Ipp32s  srcdstStep, Ipp8u*  pAlpha, Ipp8u*  pBeta, Ipp8u*  pThresholds, Ipp8u*  pBS, Ipp32s  bit_depth, Ipp32u  chroma_format_idc, Ipp32u  isDeblHor);
+        virtual void FilterDeblockingChromaEdge(Ipp16u* pSrcDst, Ipp32s  srcdstStep, Ipp8u*  pAlpha, Ipp8u*  pBeta, Ipp8u*  pThresholds, Ipp8u*  pBS, Ipp32s  bit_depth, Ipp32u  chroma_format_idc, Ipp32u  isDeblHor);
 
         // VPP functions
         virtual IppStatus cc_P010_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo, mfxFrameData* outData, mfxFrameInfo* outInfo, mfxFrameData* yv12Data);

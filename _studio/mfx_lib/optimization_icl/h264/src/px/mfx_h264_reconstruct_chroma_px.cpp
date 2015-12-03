@@ -58,7 +58,7 @@ inline Plane ClampTblLookup_16U(mfxI32 val, mfxI32 val1, mfxU32 bitDepth)
 }
 
 template<typename Plane, typename Coeffs, int chroma_format_idc>
-void ippiReconstructChromaInter4x4MB_H264_16s8u_C2R(Coeffs **ppSrcDstCoeff,
+static void ippiReconstructChromaInter4x4MB_H264_16s8u_C2R(Coeffs **ppSrcDstCoeff,
                                                                    Plane *pSrcDstUVPlane,
                                                                    Ipp32u srcdstUVStep_,
                                                                    Ipp32u cbpU, Ipp32u cbpV,

@@ -13,6 +13,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vpp_sse", "..\vpp\vpp_sse.v
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vpp_avx2", "..\vpp\vpp_avx2.vcxproj", "{F15606AE-33F6-4C45-8199-EB9E5CF71A93}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "h264_avx2", "..\h264\h264_avx2.vcxproj", "{CBF99702-1060-46E1-95C5-3864856DF06C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug_Intel|Win32 = Debug_Intel|Win32
@@ -69,6 +71,14 @@ Global
 		{F15606AE-33F6-4C45-8199-EB9E5CF71A93}.Release_Intel|Win32.Build.0 = Release|Win32
 		{F15606AE-33F6-4C45-8199-EB9E5CF71A93}.Release_Intel|x64.ActiveCfg = Release|x64
 		{F15606AE-33F6-4C45-8199-EB9E5CF71A93}.Release_Intel|x64.Build.0 = Release|x64
+		{CBF99702-1060-46E1-95C5-3864856DF06C}.Debug_Intel|Win32.ActiveCfg = Debug|Win32
+		{CBF99702-1060-46E1-95C5-3864856DF06C}.Debug_Intel|Win32.Build.0 = Debug|Win32
+		{CBF99702-1060-46E1-95C5-3864856DF06C}.Debug_Intel|x64.ActiveCfg = Debug|x64
+		{CBF99702-1060-46E1-95C5-3864856DF06C}.Debug_Intel|x64.Build.0 = Debug|x64
+		{CBF99702-1060-46E1-95C5-3864856DF06C}.Release_Intel|Win32.ActiveCfg = Release|Win32
+		{CBF99702-1060-46E1-95C5-3864856DF06C}.Release_Intel|Win32.Build.0 = Release|Win32
+		{CBF99702-1060-46E1-95C5-3864856DF06C}.Release_Intel|x64.ActiveCfg = Release|x64
+		{CBF99702-1060-46E1-95C5-3864856DF06C}.Release_Intel|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

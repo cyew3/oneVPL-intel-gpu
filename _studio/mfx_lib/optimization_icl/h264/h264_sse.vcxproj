@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\sse\mfx_h264_deblocking_sse.cpp" />
+    <ClCompile Include="src\sse\mfx_h264_interpolate_chroma_sse.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E12AB7FB-4BB5-49AE-89BE-E41F3BF8A000}</ProjectGuid>
