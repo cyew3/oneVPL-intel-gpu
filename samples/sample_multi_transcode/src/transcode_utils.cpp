@@ -1230,6 +1230,12 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
         return MFX_ERR_UNSUPPORTED;
     }
 
+    if(InputParams.dEncoderFrameRate && InputParams.bEnableExtLA)
+    {
+        PrintError(MSDK_STRING("-la_ext and -fe options cannot be used together\n"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
     if (InputParams.nQuality && InputParams.EncodeId && (MFX_CODEC_JPEG != InputParams.EncodeId))
     {
         PrintError(MSDK_STRING("-q option is supported only for JPEG encoder\n"));
