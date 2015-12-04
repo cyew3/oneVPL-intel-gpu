@@ -20,6 +20,8 @@
 #include "umc_h264_bitstream_inlines.h"
 #include "umc_h264_dec_ippwrap.h"
 
+#include <limits.h>
+
 #define SCLFLAT16     0
 #define SCLDEFAULT    1
 #define SCLREDEFINED  2
@@ -424,6 +426,10 @@ Status H264HeadersBitstream::GetSequenceParamSet(H264SeqParamSet *sps)
 
     // picture height in MBs (bitstream contains value - 1)
     sps->frame_height_in_mbs = GetVLCElement(false) + 1;
+
+    if (!(sps->frame_width_in_mbs * 16 < USHRT_MAX) ||
+        !(sps->frame_height_in_mbs * 16 < USHRT_MAX))
+        return UMC_ERR_INVALID_STREAM;
 
     sps->frame_mbs_only_flag = Get1Bit();
     sps->frame_height_in_mbs  = (2-sps->frame_mbs_only_flag)*sps->frame_height_in_mbs;
