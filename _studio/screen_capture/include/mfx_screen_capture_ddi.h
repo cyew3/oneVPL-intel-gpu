@@ -19,7 +19,7 @@ File Name: mfx_screen_capture_ddi.h
 #include "mfxstructures.h"
 #include "mfxplugin.h"
 
-#include "ippi.h"
+#include "ipp.h"
 
 #define ENABLE_WORKAROUND_FOR_DRIVER_RESIZE_ISSUE
 #define ENABLE_RUNTIME_SW_FALLBACK

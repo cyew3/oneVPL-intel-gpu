@@ -44,6 +44,16 @@ do {                                                \
     }                                               \
 } while (0,0)
 
+#define MFXSC_CHECK_IPP_RESULT_AND_PTR(result, ptr) \
+do {                                                \
+    if(ippStsNoErr != result || 0 == ptr)           \
+    {                                               \
+        assert(ippStsNoErr == result);              \
+        Close();                                    \
+        return MFX_ERR_DEVICE_FAILED;               \
+    }                                               \
+} while (0,0)
+
 namespace MfxCapture
 {
 
@@ -270,15 +280,8 @@ mfxStatus CmDirtyRectFilter::Init(const mfxVideoParam* par, bool isSysMem, bool 
         result = pTaskCtx->pKernel->SetKernelArg(2, sizeof(SurfaceIndex), surfIndex);
         MFXSC_CHECK_CM_RESULT_AND_PTR(result, pTaskCtx->roiMap.cmSurf);
 
-        pTaskCtx->roiMap.roiMAP = new(std::nothrow) mfxU8*[pTaskCtx->roiMap.height];
-        MFXSC_CHECK_CM_RESULT_AND_PTR(CM_SUCCESS, pTaskCtx->roiMap.roiMAP);
-        memset(pTaskCtx->roiMap.roiMAP,0,pTaskCtx->roiMap.height);
-        for(mfxU32 i = 0; i < pTaskCtx->roiMap.height; ++i)
-        {
-            pTaskCtx->roiMap.roiMAP[i] = new(std::nothrow) mfxU8[pTaskCtx->roiMap.width];
-            MFXSC_CHECK_CM_RESULT_AND_PTR(CM_SUCCESS, pTaskCtx->roiMap.roiMAP[i]);
-            memset(pTaskCtx->roiMap.roiMAP[i],0,pTaskCtx->roiMap.width);
-        }
+        pTaskCtx->roiMap.roiMAP = ippsMalloc_8u(ALIGN16(pTaskCtx->roiMap.width) * ALIGN16(pTaskCtx->roiMap.height));
+        MFXSC_CHECK_IPP_RESULT_AND_PTR(ippStsNoErr, pTaskCtx->roiMap.roiMAP);
     }
 
     return MFX_ERR_NONE;
@@ -301,43 +304,40 @@ mfxStatus CmDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1&
     if(!mfxRect)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-    mfxU8** roiMAP = task->roiMap.roiMAP;
-    if(!roiMAP)
+    Ipp8u* roiMap = task->roiMap.roiMAP;
+    if(!roiMap)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-    memset(task->roiMap.physBuffer,0,task->roiMap.physBufferSz);
-    for(mfxU32 i = 0; i < task->roiMap.height; ++i)
-    {
-        memset(task->roiMap.roiMAP[i],0,task->roiMap.width);
-    }
+    const IppiSize roiMapSize = {task->roiMap.width, task->roiMap.height};
+    const IppiSize roiMapRealSize = {ALIGN16(task->roiMap.width), ALIGN16(task->roiMap.height)};
 
-    int result = 0;
+    IppStatus resultIPP = ippiSet_8u_C1R(0, roiMap, roiMapRealSize.width, roiMapRealSize);
+    MFXSC_CHECK_IPP_RESULT_AND_PTR(resultIPP, 1);
+
+    memset(task->roiMap.physBuffer, 0, task->roiMap.physBufferSz);
+
+    int resultCM = 0;
 
     task->pTask->Reset();
 
-    result = task->pTask->AddKernel(task->pKernel);
-    if(CM_SUCCESS != result)
-        return MFX_ERR_DEVICE_FAILED;
+    resultCM = task->pTask->AddKernel(task->pKernel);
+    MFXSC_CHECK_CM_RESULT_AND_PTR(resultCM, 1);
 
     SurfaceIndex * pSurfIn  = GetCMSurfaceIndex(&in);
-    if(!pSurfIn)
-        return MFX_ERR_DEVICE_FAILED;
+    MFXSC_CHECK_CM_RESULT_AND_PTR(CM_SUCCESS, pSurfIn);
+
     SurfaceIndex * pSurfOut = GetCMSurfaceIndex(&out);
-    if(!pSurfOut)
-        return MFX_ERR_DEVICE_FAILED;
+    MFXSC_CHECK_CM_RESULT_AND_PTR(CM_SUCCESS, pSurfOut);
 
-    result = task->pKernel->SetKernelArg(3, sizeof(SurfaceIndex), pSurfIn);
-    if(CM_SUCCESS != result)
-        return MFX_ERR_DEVICE_FAILED;
+    resultCM = task->pKernel->SetKernelArg(3, sizeof(SurfaceIndex), pSurfIn);
+    MFXSC_CHECK_CM_RESULT_AND_PTR(resultCM, 1);
 
-    result = task->pKernel->SetKernelArg(4, sizeof(SurfaceIndex), pSurfOut);
-    if(CM_SUCCESS != result)
-        return MFX_ERR_DEVICE_FAILED;
+    resultCM = task->pKernel->SetKernelArg(4, sizeof(SurfaceIndex), pSurfOut);
+    MFXSC_CHECK_CM_RESULT_AND_PTR(resultCM, 1);
 
     CmEvent* pEvent = 0;
-    result = task->pQueue->Enqueue(task->pTask, pEvent, task->pThreadSpace);
-    if(CM_SUCCESS != result)
-        return MFX_ERR_DEVICE_FAILED;
+    resultCM = task->pQueue->Enqueue(task->pTask, pEvent, task->pThreadSpace);
+    MFXSC_CHECK_CM_RESULT_AND_PTR(resultCM, 1);
 
     CM_STATUS status;
     pEvent->GetStatus(status);
@@ -353,142 +353,113 @@ mfxStatus CmDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1&
     tmpRect.Header.BufferId = MFX_EXTBUFF_DIRTY_RECTANGLES;
     tmpRect.Header.BufferSz = sizeof(tmpRect);
 
-    mfxU64 totalRects = 0;
+    Ipp64f res = 0.0f;
+    mfxU64 totalRectsN = 0;
     const mfxU8* roiBuffer = task->roiMap.physBuffer;
     const mfxU32 rowSize = task->roiMap.physBufferPitch;
-    for(mfxU32 i = 0; i < task->roiMap.height; ++i)
+
+    for(Ipp32s i = 0; i < roiMapSize.height; ++i)
     {
-        for(mfxU32 j = 0; j < task->roiMap.width; ++j)
+        for(Ipp32s j = 0; j < roiMapSize.width; ++j)
         {
-            roiMAP[i][j] = *(roiBuffer + 4 * (i * rowSize) + 4 * j);
-            if( roiMAP[i][j] )
-            {
-                ++totalRects;
-            }
+            roiMap[i * roiMapRealSize.width + j] = *(roiBuffer + 4 * (i * rowSize) + 4 * j);
         }
     }
-    mfxU8 macroMap[16][16];
-    mfxU32 densityMap[16][16];
-    memset(&macroMap,0,sizeof(macroMap));
-    memset(&densityMap,0,sizeof(densityMap));
-    mfxU32 curMaxDensity = 0;
-    const mfxU32 bigBlockW = ALIGN16( m_width / W_BLOCKS );
-    const mfxU32 bigBlockH = ALIGN16( m_height / H_BLOCKS );
-    const mfxU32 cmBlocksInBigW = bigBlockW / 16;
-    const mfxU32 cmBlocksInBigH = bigBlockH / 16;
-    const mfxU32 maxDensity = cmBlocksInBigH * cmBlocksInBigW;
-    //constexpr mfxU32 maxRects = sizeof(tmpRect.Rect) / sizeof(tmpRect.Rect[0]);
-    const mfxU32 maxRects = 256;
+
+    resultIPP = ippiSum_8u_C1R(roiMap, roiMapRealSize.width, roiMapRealSize, &res);
+    MFXSC_CHECK_IPP_RESULT_AND_PTR(resultIPP, 1);
+
+    totalRectsN = (int) (res + 0.5);
+
+    Ipp8u  macroMap[W_BLOCKS * W_BLOCKS];
+    Ipp16u densityMap[W_BLOCKS * H_BLOCKS];
+    const IppiSize roiBlock16x16 = {W_BLOCKS, H_BLOCKS};
+
+    resultIPP = ippiSet_8u_C1R(0, macroMap, roiBlock16x16.width, roiBlock16x16);
+    MFXSC_CHECK_IPP_RESULT_AND_PTR(resultIPP, 1);
+    resultIPP = ippiSet_16u_C1R(0, densityMap, roiBlock16x16.width << 1, roiBlock16x16);
+    MFXSC_CHECK_IPP_RESULT_AND_PTR(resultIPP, 1);
+
+    const mfxU32 maxRectsN = 256;
+    const IppiSize roiBigBlock = {roiMapRealSize.width / W_BLOCKS, roiMapRealSize.height / H_BLOCKS};
+
     mfxU32 macroMapN = 0;
-    while(totalRects > maxRects)
+
+    if(totalRectsN > maxRectsN)
     {
-        if(macroMapN >= 255)
-            break;
-        curMaxDensity = 0;
-        memset(&densityMap,0,sizeof(densityMap));
+        int    idxX, idxY;
+        Ipp16u maxDensity;
+
         //calc density
+        for(mfxU32 i = 0; i < H_BLOCKS; ++i)
         {
-            for(mfxU32 i = 0; i < 16; ++i)
+            for(mfxU32 j = 0; j < W_BLOCKS; ++j)
             {
-                for(mfxU32 j = 0; j < 16; ++j)
-                {
-                    for(mfxU32 iii = 0; iii < IPP_MIN(cmBlocksInBigH, (mfxU32) IPP_MAX(0, mfxI32 (task->roiMap.height - cmBlocksInBigH*i) )  ); ++iii)
-                    {
-                        for(mfxU32 jjj = 0; jjj < IPP_MIN(cmBlocksInBigW, (mfxU32) IPP_MAX(0, mfxI32 (task->roiMap.width - cmBlocksInBigW*j) )  ); ++jjj)
-                        {
-                            if(roiMAP[i*cmBlocksInBigH + iii][j*cmBlocksInBigW + jjj])
-                            {
-                                densityMap[i][j] += 1;
-                                if(densityMap[i][j] > curMaxDensity)
-                                    curMaxDensity = densityMap[i][j];
-                            }
-                        }
-                    }
-                }
+                resultIPP = ippiSum_8u_C1R(roiMap + i * roiBigBlock.height * roiMapRealSize.width + j * roiBigBlock.width, roiMapRealSize.width, roiBigBlock, &res);
+                MFXSC_CHECK_IPP_RESULT_AND_PTR(resultIPP, 1);
+                densityMap[i * roiBlock16x16.width + j] = (Ipp16u) (res + 0.5);
             }
         }
 
         //group cm blocks into big blocks by density
+        do
         {
-            for(mfxU32 i = 0; i < 16; ++i)
-            {
-                for(mfxU32 j = 0; j < 16; ++j)
-                {
-                    if((densityMap[i][j] + 3) > curMaxDensity || (densityMap[i][j] + 5) > maxDensity)
-                    {
-                        macroMap[i][j] = 1;
-                        for(mfxU32 iii = 0; iii < IPP_MIN(cmBlocksInBigH, (mfxU32) IPP_MAX(0, mfxI32 (task->roiMap.height - cmBlocksInBigH*i) )  ); ++iii)
-                        {
-                            for(mfxU32 jjj = 0; jjj < IPP_MIN(cmBlocksInBigW, (mfxU32) IPP_MAX(0, mfxI32 (task->roiMap.width - cmBlocksInBigW*j) )  ); ++jjj)
-                            {
-                                roiMAP[i*cmBlocksInBigH + iii][j*cmBlocksInBigW + jjj] = 0;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+            resultIPP = ippiMax_16u_C1R(densityMap, roiBlock16x16.width << 1, roiBlock16x16, &maxDensity);
+            MFXSC_CHECK_IPP_RESULT_AND_PTR(resultIPP, 1);
 
-        //calculate new block quantity
-        {
-            macroMapN = 0;
-            totalRects = 0;
-            for(mfxU32 i = 0; i < task->roiMap.height; ++i)
+            for (int i = 0; i < maxRectsN; ++i)
             {
-                for(mfxU32 j = 0; j < task->roiMap.width; ++j)
-                {
-                    if( roiMAP[i][j] )
-                    {
-                        ++totalRects;
-                    }
-                }
-            }
-            for(mfxU32 i = 0; i < 16; ++i)
-            {
-                for(mfxU32 j = 0; j < 16; ++j)
-                {
-                    if(macroMap[i][j])
-                    {
-                        ++macroMapN;
-                        ++totalRects;
-                    }
-                }
-            }
-        }
-    };
+                if (densityMap[i] + 3 < maxDensity) continue;
 
-#if 1
-    for(mfxU32 i = 0; i < H_BLOCKS; ++i)
+                idxY = i >> 4;
+                idxX = i - (idxY << 4);
+
+                resultIPP = ippiSet_8u_C1R(0, roiMap + idxY * roiBigBlock.height * roiMapRealSize.width + idxX * roiBigBlock.width, roiMapRealSize.width, roiBigBlock);
+                MFXSC_CHECK_IPP_RESULT_AND_PTR(resultIPP, 1);
+
+                totalRectsN -= (densityMap[idxY * roiBlock16x16.width + idxX] - 1); // instead of all macroblocks we save only one big rectangle
+                macroMap  [idxY * roiBlock16x16.width + idxX] = 1;
+                densityMap[idxY * roiBlock16x16.width + idxX] = 1;
+
+                macroMapN++;
+            }
+        } while (totalRectsN > maxRectsN);
+    }
+
+    if (macroMapN > 0)
     {
-        for(mfxU32 j = 0; j < W_BLOCKS; ++j)
+        for(mfxU32 i = 0; i < H_BLOCKS; ++i)
         {
-            if(256 <= tmpRect.NumRect)
-                break;
-            if( macroMap[i][j] )
+            for(mfxU32 j = 0; j < W_BLOCKS; ++j)
             {
-                assert(tmpRect.NumRect <= 255);
-                //roi
-                tmpRect.Rect[tmpRect.NumRect].Top = i * bigBlockH;
-                tmpRect.Rect[tmpRect.NumRect].Bottom = IPP_MIN(tmpRect.Rect[tmpRect.NumRect].Top + bigBlockH, m_height);
-                tmpRect.Rect[tmpRect.NumRect].Left = j * bigBlockW;
-                tmpRect.Rect[tmpRect.NumRect].Right = IPP_MIN(tmpRect.Rect[tmpRect.NumRect].Left + bigBlockW, m_width);
+                if( macroMap[i * roiBlock16x16.width + j] )
+                {
+                    assert(tmpRect.NumRect <= maxRectsN);
+                    if(maxRectsN <= tmpRect.NumRect) continue;
 
-                ++tmpRect.NumRect;
+                    //roi
+                    tmpRect.Rect[tmpRect.NumRect].Top = i * roiBigBlock.height * H_BLOCKS;
+                    tmpRect.Rect[tmpRect.NumRect].Bottom = IPP_MIN(tmpRect.Rect[tmpRect.NumRect].Top + roiBigBlock.height * H_BLOCKS, m_height);
+                    tmpRect.Rect[tmpRect.NumRect].Left = j * roiBigBlock.width * W_BLOCKS;
+                    tmpRect.Rect[tmpRect.NumRect].Right = IPP_MIN(tmpRect.Rect[tmpRect.NumRect].Left + roiBigBlock.width * W_BLOCKS, m_width);
+
+                    ++tmpRect.NumRect;
+                }
             }
         }
     }
 
-    if(macroMapN < 255)
+    if(totalRectsN - macroMapN > 0)
     {
         for(mfxU32 i = 0; i < task->roiMap.height; ++i)
         {
             for(mfxU32 j = 0; j < task->roiMap.width; ++j)
             {
-                if( roiMAP[i][j] )
+                if( roiMap[i * roiMapRealSize.width + j] )
                 {
-                    assert(tmpRect.NumRect <= 255);
-                    if(256 == tmpRect.NumRect)
-                        break;
+                    assert(tmpRect.NumRect <= maxRectsN);
+                    if(maxRectsN <= tmpRect.NumRect) continue;
+
                     //roi
                     tmpRect.Rect[tmpRect.NumRect].Top = i * 16;
                     tmpRect.Rect[tmpRect.NumRect].Bottom = IPP_MIN(tmpRect.Rect[tmpRect.NumRect].Top + 16, m_height);
@@ -500,9 +471,6 @@ mfxStatus CmDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1&
             }
         }
     }
-
-
-#endif
 
     if(mfxRect)
         *mfxRect = tmpRect;
@@ -745,16 +713,7 @@ mfxStatus CmDirtyRectFilter::Close()
             }
             if(task->roiMap.roiMAP)
             {
-                for(mfxU32 i = 0; i < task->roiMap.height; ++i)
-                {
-                    if(task->roiMap.roiMAP[i])
-                    {
-                        delete[] task->roiMap.roiMAP[i];
-                        task->roiMap.roiMAP[i] = 0;
-                    }
-                }
-                delete[] task->roiMap.roiMAP;
-                task->roiMap.roiMAP = 0;
+                ippiFree(task->roiMap.roiMAP);
             }
 
             if(task->roiMap.physBuffer)

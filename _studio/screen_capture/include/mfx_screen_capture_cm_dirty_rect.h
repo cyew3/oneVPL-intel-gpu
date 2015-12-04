@@ -42,7 +42,7 @@ struct TaskContext
         mfxU32         physBufferPitch;
         mfxU32         width;
         mfxU32         height;
-        mfxU8**        roiMAP;
+        Ipp8u*         roiMAP;
     } roiMap;
 };
 
