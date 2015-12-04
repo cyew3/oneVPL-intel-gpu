@@ -183,6 +183,8 @@ mfxStatus VideoVppJpegD3D9::Close()
 
     m_taskId = 1;
 
+    delete m_ddi;
+
     if(m_isD3DToSys)
     {
         m_surfaces.clear();
