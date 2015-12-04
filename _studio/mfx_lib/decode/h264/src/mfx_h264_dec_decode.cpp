@@ -275,12 +275,16 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
 
     if (MFX_PLATFORM_SOFTWARE == m_platform)
     {
+#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+        return MFX_ERR_UNSUPPORTED;
+#else
         m_pH264VideoDecoder.reset(new UMC::MFXTaskSupplier());
         
         /*if (m_vPar.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422 || m_vPar.mfx.FrameInfo.BitDepthLuma > 8 || m_vPar.mfx.FrameInfo.BitDepthChroma > 8)
             m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_NV12());
         else*/
             m_FrameAllocator.reset(new mfx_UMC_FrameAllocator());
+#endif
     }
     else
     {
