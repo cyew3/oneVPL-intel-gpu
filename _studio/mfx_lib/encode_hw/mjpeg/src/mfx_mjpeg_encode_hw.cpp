@@ -113,6 +113,7 @@ MFXVideoENCODEMJPEG_HW::MFXVideoENCODEMJPEG_HW(VideoCORE *core, mfxStatus *sts)
 
     memset(&m_vFirstParam, 0, sizeof(mfxVideoParam));
     memset(&m_vParam, 0, sizeof(mfxVideoParam));
+    memset(&m_raw, 0, sizeof(m_raw));
 
     *sts = (core ? MFX_ERR_NONE : MFX_ERR_NULL_PTR);
 }
@@ -749,6 +750,12 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Close(void)
     MFX_CHECK_STS(sts);
     
     m_bitstream.Free();
+
+    if (m_raw.NumFrameActual != 0)
+    {
+        m_pCore->FreeFrames(&m_raw);
+        memset(&m_raw, 0, sizeof(m_raw));
+    }
 
     return MFX_ERR_NONE;
 }
