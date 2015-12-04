@@ -178,30 +178,6 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     if (pParams->Height)
         m_vppOutHeight = pParams->Height;
 
-    // JPEG and Capture decoders can provide output in nv12 and rgb4 formats
-    if ((pParams->videoType == MFX_CODEC_JPEG) ||
-        ((pParams->videoType == MFX_CODEC_CAPTURE)) )
-    {
-        m_bVppIsUsed = (m_fourcc != MFX_FOURCC_NV12) && (m_fourcc != MFX_FOURCC_RGB4);
-    }
-    else
-    {
-        m_bVppIsUsed = (m_fourcc != MFX_FOURCC_NV12);
-    }
-
-    m_bVppIsUsed |= pParams->Width && pParams->Height;
-
-    if (pParams->eDeinterlace)
-    {
-        m_bVppIsUsed = true;
-    }
-
-    m_memType = pParams->memType;
-    if (m_bVppIsUsed)
-        m_bDecOutSysmem = pParams->bUseHWLib ? false : true;
-    else
-        m_bDecOutSysmem = pParams->memType == SYSTEM_MEMORY;
-
     m_nMaxFps = pParams->nMaxFPS;
     m_nFrames = pParams->nFrames ? pParams->nFrames : MFX_INFINITE;
 
@@ -317,11 +293,6 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     m_pmfxDEC = new MFXVideoDECODE(m_mfxSession);
     MSDK_CHECK_POINTER(m_pmfxDEC, MFX_ERR_MEMORY_ALLOC);
 
-    if (m_bVppIsUsed)
-    {
-        m_pmfxVPP = new MFXVideoVPP(m_mfxSession);
-        if (!m_pmfxVPP) return MFX_ERR_MEMORY_ALLOC;
-    }
     // set video type in parameters
     m_mfxVideoParams.mfx.CodecId = pParams->videoType;
 
@@ -372,6 +343,40 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     // Populate parameters. Involves DecodeHeader call
     sts = InitMfxParams(pParams);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    // JPEG and Capture decoders can provide output in nv12 and rgb4 formats
+    if ((pParams->videoType == MFX_CODEC_JPEG) ||
+        ((pParams->videoType == MFX_CODEC_CAPTURE)) )
+    {
+        m_bVppIsUsed = (m_fourcc != m_mfxVideoParams.mfx.FrameInfo.FourCC) && (m_fourcc != MFX_FOURCC_RGB4);
+    }
+    else
+    {
+        m_bVppIsUsed = (m_fourcc != m_mfxVideoParams.mfx.FrameInfo.FourCC);
+    }
+
+    if ( (m_mfxVideoParams.mfx.FrameInfo.CropW != pParams->Width) ||
+        (m_mfxVideoParams.mfx.FrameInfo.CropH != pParams->Height) )
+    {
+        m_bVppIsUsed |= pParams->Width && pParams->Height;
+    }
+
+    if (pParams->eDeinterlace)
+    {
+        m_bVppIsUsed = true;
+    }
+
+    m_memType = pParams->memType;
+    if (m_bVppIsUsed)
+        m_bDecOutSysmem = pParams->bUseHWLib ? false : true;
+    else
+        m_bDecOutSysmem = pParams->memType == SYSTEM_MEMORY;
+
+    if (m_bVppIsUsed)
+    {
+        m_pmfxVPP = new MFXVideoVPP(m_mfxSession);
+        if (!m_pmfxVPP) return MFX_ERR_MEMORY_ALLOC;
+    }
 
     m_eWorkMode = pParams->mode;
     if (m_eWorkMode == MODE_FILE_DUMP) {
@@ -1736,8 +1741,18 @@ void CDecodingPipeline::PrintInfo()
     }
 
     mfxFrameInfo Info = m_mfxVideoParams.mfx.FrameInfo;
-    msdk_printf(MSDK_STRING("Resolution\t%dx%d\n"), Info.Width, Info.Height);
-    msdk_printf(MSDK_STRING("Crop X,Y,W,H\t%d,%d,%d,%d\n"), Info.CropX, Info.CropY, Info.CropW, Info.CropH);
+    msdk_printf(MSDK_STRING("Input:\n"));
+    msdk_printf(MSDK_STRING("  Resolution\t%dx%d\n"), Info.Width, Info.Height);
+    msdk_printf(MSDK_STRING("  Crop X,Y,W,H\t%d,%d,%d,%d\n"), Info.CropX, Info.CropY, Info.CropW, Info.CropH);
+    msdk_printf(MSDK_STRING("Output:\n"));
+    if (m_vppOutHeight && m_vppOutWidth)
+    {
+        msdk_printf(MSDK_STRING("  Resolution\t%dx%d\n"), m_vppOutWidth, m_vppOutHeight);
+    }
+    else
+    {
+        msdk_printf(MSDK_STRING("  Resolution\t%dx%d\n"), Info.Width, Info.Height);
+    }
 
     mfxF64 dFrameRate = CalculateFrameRate(Info.FrameRateExtN, Info.FrameRateExtD);
     msdk_printf(MSDK_STRING("Frame rate\t%.2f\n"), dFrameRate);
