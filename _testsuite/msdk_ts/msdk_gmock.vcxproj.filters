@@ -511,6 +511,9 @@
     <ClCompile Include="src\gmock\test_suites\fei_encode_mbqp.cpp">
       <Filter>Source Files\test_suites\FEI</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevce_init.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevce_get_video_param.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
