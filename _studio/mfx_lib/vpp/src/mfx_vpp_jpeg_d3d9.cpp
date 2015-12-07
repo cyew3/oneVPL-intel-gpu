@@ -183,7 +183,12 @@ mfxStatus VideoVppJpegD3D9::Close()
 
     m_taskId = 1;
 
-    delete m_ddi;
+#if !defined (MFX_VA_WIN)
+    if (m_ddi) {
+        delete m_ddi;
+        m_ddi = NULL;
+    }
+#endif
 
     if(m_isD3DToSys)
     {
