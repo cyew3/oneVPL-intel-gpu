@@ -36,8 +36,8 @@ private:
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
-    {/* 0*/ MFX_ERR_NULL_PTR, {&tsStruct::mfxExtCodingOptionSPSPPS.SPSBuffer, 0}  },
-    {/* 1*/ MFX_ERR_NULL_PTR, {&tsStruct::mfxExtCodingOptionSPSPPS.PPSBuffer, 0}  },
+    {/* 0*/ MFX_ERR_NONE, { &tsStruct::mfxExtCodingOptionSPSPPS.SPSBuffer, 0 } },
+    {/* 1*/ MFX_ERR_NONE, { &tsStruct::mfxExtCodingOptionSPSPPS.PPSBuffer, 0 } },
     {/* 2*/ MFX_ERR_NOT_ENOUGH_BUFFER, {&tsStruct::mfxExtCodingOptionSPSPPS.SPSBufSize, 5}  },
     {/* 3*/ MFX_ERR_NOT_ENOUGH_BUFFER, {&tsStruct::mfxExtCodingOptionSPSPPS.PPSBufSize, 5}  },
     {/* 4*/ MFX_ERR_NONE, {}, {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 704} },
@@ -65,15 +65,23 @@ public:
             if(au.nalu[i]->nal_unit_type == PPS_NUT) pps = au.nalu[i];
         }
 
-        g_tsLog << "SPS expected: " << hexstr(bs.Data + bs.DataOffset + sps->StartOffset, sps->NumBytesInNalUnit) << "\n";
-        g_tsLog << "SPS actual  : " << hexstr(m_sp.SPSBuffer, m_sp.SPSBufSize) << "\n";
-        g_tsLog << "PPS expected: " << hexstr(bs.Data + bs.DataOffset + pps->StartOffset, pps->NumBytesInNalUnit) << "\n";
-        g_tsLog << "PPS actual  : " << hexstr(m_sp.PPSBuffer, m_sp.PPSBufSize) << "\n";
+        if (m_sp.SPSBuffer)
+        {
+            g_tsLog << "SPS expected: " << hexstr(bs.Data + bs.DataOffset + sps->StartOffset, sps->NumBytesInNalUnit) << "\n";
+            g_tsLog << "SPS actual  : " << hexstr(m_sp.SPSBuffer, m_sp.SPSBufSize) << "\n";
 
-        EXPECT_EQ(sps->NumBytesInNalUnit, m_sp.SPSBufSize);
-        EXPECT_EQ(pps->NumBytesInNalUnit, m_sp.PPSBufSize);
-        EXPECT_EQ(0, memcmp(m_sp.SPSBuffer, bs.Data + bs.DataOffset + sps->StartOffset, TS_MIN(sps->NumBytesInNalUnit, m_sp.SPSBufSize)));
-        EXPECT_EQ(0, memcmp(m_sp.PPSBuffer, bs.Data + bs.DataOffset + pps->StartOffset, TS_MIN(pps->NumBytesInNalUnit, m_sp.PPSBufSize)));
+            EXPECT_EQ(sps->NumBytesInNalUnit, m_sp.SPSBufSize);
+            EXPECT_EQ(0, memcmp(m_sp.SPSBuffer, bs.Data + bs.DataOffset + sps->StartOffset, TS_MIN(sps->NumBytesInNalUnit, m_sp.SPSBufSize)));
+
+            if (m_sp.PPSBuffer)
+            {
+                g_tsLog << "PPS expected: " << hexstr(bs.Data + bs.DataOffset + pps->StartOffset, pps->NumBytesInNalUnit) << "\n";
+                g_tsLog << "PPS actual  : " << hexstr(m_sp.PPSBuffer, m_sp.PPSBufSize) << "\n";
+
+                EXPECT_EQ(pps->NumBytesInNalUnit, m_sp.PPSBufSize);
+                EXPECT_EQ(0, memcmp(m_sp.PPSBuffer, bs.Data + bs.DataOffset + pps->StartOffset, TS_MIN(pps->NumBytesInNalUnit, m_sp.PPSBufSize)));
+            }
+        }
 
         bs.DataLength = 0;
 
@@ -93,6 +101,7 @@ int TestSuite::RunTest(unsigned int id)
 
     auto& tc = test_case[id];
 
+
     if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
     {
         if (g_tsHWtype < MFX_HW_SKL) // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
@@ -106,6 +115,7 @@ int TestSuite::RunTest(unsigned int id)
         m_par.mfx.FrameInfo.Width = ((m_par.mfx.FrameInfo.Width + 32 - 1) & ~(32 - 1));
         m_par.mfx.FrameInfo.Height = ((m_par.mfx.FrameInfo.Height + 32 - 1) & ~(32 - 1));
     }
+
     Init();
 
     mfxExtCodingOptionSPSPPS& sp = m_par;
