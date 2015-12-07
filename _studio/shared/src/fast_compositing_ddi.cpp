@@ -1042,10 +1042,8 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
         mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
         pInputSample->SrcRect.top    = inInfo->CropY;
         pInputSample->SrcRect.left   = inInfo->CropX;
-        pInputSample->SrcRect.bottom = inInfo->CropH;
-        pInputSample->SrcRect.right  = inInfo->CropW;
-        pInputSample->SrcRect.bottom += inInfo->CropY;
-        pInputSample->SrcRect.right  += inInfo->CropX;
+        pInputSample->SrcRect.bottom = inInfo->CropY + inInfo->CropH;
+        pInputSample->SrcRect.right  = inInfo->CropX + inInfo->CropW;
 
         // destination cropping
         if (pExecuteParams->bComposite)
@@ -1053,25 +1051,26 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
             // for sub-streams use DstRect info from ext buffer set by app
             MFX_CHECK(refIdx < (int) pExecuteParams->dstRects.size(), MFX_ERR_UNKNOWN);
             const DstRect& rec = pExecuteParams->dstRects[refIdx];
-            pInputSample->DstRect.top = rec.DstY;
-            pInputSample->DstRect.left = rec.DstX;
+            pInputSample->DstRect.top    = rec.DstY;
+            pInputSample->DstRect.left   = rec.DstX;
             pInputSample->DstRect.bottom = rec.DstY + rec.DstH;
             pInputSample->DstRect.right  = rec.DstX + rec.DstW;
 
-            pInputSample->Alpha     = (rec.GlobalAlphaEnable) ? rec.GlobalAlpha / 255.0f : 1.0f;
-            pInputSample->bLumaKey  = rec.LumaKeyEnable;
-            pInputSample->iLumaLow  = rec.LumaKeyMin;
-            pInputSample->iLumaHigh = rec.LumaKeyMax;
+            pInputSample->Alpha          = (rec.GlobalAlphaEnable) ? rec.GlobalAlpha / 255.0f : 1.0f;
+            pInputSample->bLumaKey       = rec.LumaKeyEnable;
+            pInputSample->iLumaLow       = rec.LumaKeyMin;
+            pInputSample->iLumaHigh      = rec.LumaKeyMax;
         }
         else
         {
             mfxFrameInfo *outInfo = &(pExecuteParams->targetSurface.frameInfo);
-            pInputSample->DstRect.top = outInfo->CropY;
-            pInputSample->DstRect.left = outInfo->CropX;
-            pInputSample->DstRect.bottom = outInfo->CropH;
-            pInputSample->DstRect.right  = outInfo->CropW;
-            pInputSample->DstRect.bottom += outInfo->CropY;
-            pInputSample->DstRect.right += outInfo->CropX;
+            pInputSample->DstRect.top    = outInfo->CropY;
+            pInputSample->DstRect.left   = outInfo->CropX;
+            pInputSample->DstRect.bottom = outInfo->CropY + outInfo->CropH;
+            pInputSample->DstRect.right  = outInfo->CropX + outInfo->CropW;
+
+            pInputSample->Alpha          = 1.0f;
+            pInputSample->bLumaKey       = false;
         }
     }
 
