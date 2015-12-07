@@ -213,6 +213,7 @@
     <ClCompile Include="src\gmock\test_suites\avcd_decorder.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_field_payload.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_picturetype.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avcd_res_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_advanced_ref_lists.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_b_pyramid.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_chromaloc.cpp" />
@@ -262,6 +263,7 @@
     <ClCompile Include="src\gmock\test_suites\hevce_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_spspps_get.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_query.cpp" />
+    <ClCompile Include="src\gmock\test_suites\jpegd_res_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\lookahead_1N.cpp" />
     <ClCompile Include="src\gmock\test_suites\mjpegd_corruption.cpp" />
     <ClCompile Include="src\gmock\test_suites\mjpegd_init.cpp" />
@@ -270,6 +272,7 @@
     <ClCompile Include="src\gmock\test_suites\mpeg2d_aspect_ratio_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2d_corruption.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2d_picturetype.cpp" />
+    <ClCompile Include="src\gmock\test_suites\mpeg2d_res_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2d_timestamp.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2e_headers_order.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2e_mbqp.cpp" />
@@ -294,6 +297,7 @@
     <ClCompile Include="src\gmock\test_suites\screen_capture_query.cpp" />
     <ClCompile Include="src\gmock\test_suites\screen_capture_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\test_suites\threading_mfxinitex.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vc1d_res_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp10_fourcc.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_2014r2_unsupport.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_roi.cpp" />

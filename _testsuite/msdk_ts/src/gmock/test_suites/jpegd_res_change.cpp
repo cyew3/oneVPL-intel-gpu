@@ -1,7 +1,7 @@
 #include "ts_decoder.h"
 #include "ts_struct.h"
 
-#define TEST_NAME hevcd_res_change
+#define TEST_NAME jpegd_res_change
 
 namespace TEST_NAME
 {
@@ -27,7 +27,7 @@ do {                                                \
 class TestSuite : tsVideoDecoder
 {
 public:
-    TestSuite() : tsVideoDecoder(MFX_CODEC_HEVC){}
+    TestSuite() : tsVideoDecoder(MFX_CODEC_JPEG){}
     ~TestSuite() { }
     int RunTest(unsigned int id);
     static const unsigned int n_cases;
@@ -47,16 +47,16 @@ private:
 
 const TestSuite::tc_struct TestSuite::test_case[][max_num_ctrl] = 
 {
-    {/* 0*/ {"foster_720x576_dpb6.h265"},       {"news_352x288_dpb6.h265"},         {}},
-    {/* 1*/ {"news_352x288_dpb6.h265"},         {"foster_720x576_dpb6.h265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}, {}},
-    {/* 2*/ {"foster_720x576_dpb6.h265", 5},    {"news_352x288_dpb6.h265", 5},      {}},
-    {/* 3*/ {"foster_720x576_dpb6.h265"},       {"news_352x288_dpb6.h265"},         {"matrix_1920x1088_dpb6.h265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
-    {/* 4*/ {"matrix_1920x1088_dpb6.h265"},     {"foster_720x576_dpb6.h265"},       {"news_352x288_dpb6.h265"}},
-    {/* 5*/ {"matrix_1920x1088_dpb6.h265", 5},  {"foster_720x576_dpb6.h265", 5},    {"news_352x288_dpb6.h265", 5}},
-    {/* 6*/ {"matrix_1920x1088_dpb6.h265"},     {"news_352x288_dpb6.h265"},         {"foster_720x576_dpb6.h265"}},
-    {/* 7*/ {"matrix_1920x1088_dpb6.h265", 5},  {"news_352x288_dpb6.h265", 5},      {"foster_720x576_dpb6.h265", 5}},
-    {/* 8*/ {"matrix_1920x1088_dpb6.h265", 5},  {"foster_720x576_dpb6.h265", 5},    {"matrix_1920x1088_dpb6.h265", 5}},
-
+    {/* 0*/ {"bbc_640x480_10.mjpeg"},    {"bbc_352x288_10.mjpeg"}, {} },
+    {/* 1*/ {"bbc_352x288_10.mjpeg"},    {"bbc_640x480_10.mjpeg", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 2*/ {"bbc_352x288_10.mjpeg"},    {"bbc_640x480_10.mjpeg", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 3*/ {"bbc_640x480_10.mjpeg", 5}, {"bbc_352x288_10.mjpeg", 5}, {} },
+    {/* 4*/ {"bbc_640x480_10.mjpeg"},    {"bbc_352x288_10.mjpeg"},    {"bbc_704x576_10.mjpeg", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM} },
+    {/* 5*/ {"bbc_704x576_10.mjpeg"},    {"bbc_640x480_10.mjpeg"},    {"bbc_352x288_10.mjpeg"} },
+    {/* 6*/ {"bbc_704x576_10.mjpeg", 5}, {"bbc_640x480_10.mjpeg", 5}, {"bbc_352x288_10.mjpeg", 5} },
+    {/* 7*/ {"bbc_704x576_10.mjpeg"},    {"bbc_352x288_10.mjpeg"},    {"bbc_640x480_10.mjpeg"} },
+    {/* 8*/ {"bbc_704x576_10.mjpeg", 5}, {"bbc_352x288_10.mjpeg", 5}, {"bbc_640x480_10.mjpeg", 5} },
+    {/* 9*/ {"bbc_704x576_10.mjpeg", 5}, {"bbc_640x480_10.mjpeg", 5}, {"bbc_704x576_10.mjpeg", 5} },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct[max_num_ctrl]);
@@ -141,13 +141,6 @@ private:
         par.mfx.CodecId = CodecId;
         par.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
         par.AsyncDepth = 1;
-
-        mfxPluginUID*  uid = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_DECODE, CodecId);
-        if(uid)
-        {
-            sts = MFXVideoUSER_Load(m_ses, uid, 1);
-            EXPECT_EQ_THROW(MFX_ERR_NONE, sts, "ERROR: Failed to Load plugin into a verification instance of a decoder\n");
-        }
 
         sts = MFXVideoDECODE_DecodeHeader(m_ses, &bs, &par);
         EXPECT_EQ_THROW(MFX_ERR_NONE, sts, "ERROR: Failed to DecodeHeader in a verification instance of a decoder\n");
