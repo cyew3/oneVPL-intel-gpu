@@ -396,8 +396,8 @@ namespace ExtBuffer
     {
         if (!Construct<mfxVideoParam, mfxExtHEVCParam>(par, buf, pBuffers, numbuffers))
         {
-            buf.PicWidthInLumaSamples  = Align(par.mfx.FrameInfo.CropW > 0 ? par.mfx.FrameInfo.CropW : par.mfx.FrameInfo.Width, CODED_PIC_ALIGN_W);
-            buf.PicHeightInLumaSamples = Align(par.mfx.FrameInfo.CropH > 0 ? par.mfx.FrameInfo.CropH: par.mfx.FrameInfo.Height, CODED_PIC_ALIGN_H);
+            buf.PicWidthInLumaSamples  = Align(par.mfx.FrameInfo.CropW > 0 ? (mfxU16)(par.mfx.FrameInfo.CropW + par.mfx.FrameInfo.CropX) : par.mfx.FrameInfo.Width, CODED_PIC_ALIGN_W);
+            buf.PicHeightInLumaSamples = Align(par.mfx.FrameInfo.CropH > 0 ? (mfxU16)(par.mfx.FrameInfo.CropH + par.mfx.FrameInfo.CropY)  : par.mfx.FrameInfo.Height, CODED_PIC_ALIGN_H);
 
             return false;
         }
@@ -1003,8 +1003,8 @@ void MfxVideoParam::SyncHeadersToMfxParam()
     m_ext.HEVCParam.PicWidthInLumaSamples  = (mfxU16)m_sps.pic_width_in_luma_samples;
     m_ext.HEVCParam.PicHeightInLumaSamples = (mfxU16)m_sps.pic_height_in_luma_samples;
 
-    fi.Width = Align(m_ext.HEVCParam.PicWidthInLumaSamples, LCUSize);
-    fi.Height = Align(m_ext.HEVCParam.PicHeightInLumaSamples, LCUSize);
+    fi.Width = Align(m_ext.HEVCParam.PicWidthInLumaSamples, HW_SURF_ALIGN_W);
+    fi.Height = Align(m_ext.HEVCParam.PicHeightInLumaSamples, HW_SURF_ALIGN_H);
 
     fi.CropX = 0;
     fi.CropY = 0;
@@ -2564,6 +2564,7 @@ void ConfigureTask(
         task.m_qpY = (mfxU8)task.m_ctrl.QP;
 
     task.m_lastIPoc = prevTask.m_lastIPoc;
+    task.m_eo = task.m_eo + 1;
 
     InitDPB(task, prevTask, pExtListCtrl);
 
@@ -2624,6 +2625,19 @@ void ConfigureTask(
     task.m_statusReportNumber = prevTask.m_statusReportNumber + 1;
     task.m_statusReportNumber = (task.m_statusReportNumber == 0) ? 1 : task.m_statusReportNumber;
 
+}
+mfxI64 CalcDTSFromPTS(
+    mfxFrameInfo const & info,
+    mfxU16               dpbOutputDelay,
+    mfxU64               timeStamp)
+{
+    if (timeStamp != MFX_TIMESTAMP_UNKNOWN)
+    {
+        mfxF64 tcDuration90KHz = (mfxF64)info.FrameRateExtD / (info.FrameRateExtN ) * 90000; // calculate tick duration
+        return mfxI64(timeStamp - tcDuration90KHz * dpbOutputDelay); // calculate DTS from PTS
+    }
+
+    return MFX_TIMESTAMP_UNKNOWN;
 }
 
 #if DEBUG_REC_FRAMES_INFO

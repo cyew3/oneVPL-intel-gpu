@@ -716,7 +716,6 @@ void InheritDefaultValues(
 
         InheritOption(parInit.mfx.InitialDelayInKB, parReset.mfx.InitialDelayInKB);
         InheritOption(parInit.mfx.TargetKbps,       parReset.mfx.TargetKbps);
-        printf("parInit.mfx.RateControlMethod CBR1 : %d, %d\n", parInit.mfx.MaxKbps, parReset.mfx.MaxKbps);
     }
 
     if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_VBR && parReset.mfx.RateControlMethod == MFX_RATECONTROL_VBR)

@@ -753,6 +753,8 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
             mfxFrameData codedFrame = {};
             mfxU32 bytesAvailable = bs->MaxLength - bs->DataOffset - bs->DataLength;
             mfxU32 bytes2copy     = taskForQuery->m_bsDataLength;
+            mfxI32 dpbOutputDelay = taskForQuery->m_fo +  GetNumReorderFrames(m_vpar.mfx.GopRefDist-1,m_vpar.isBPyramid()) - taskForQuery->m_eo;
+
             MFX_CHECK(bytesAvailable >= bytes2copy, MFX_ERR_NOT_ENOUGH_BUFFER);
 
             sts = fa.Lock(fa.pthis, taskForQuery->m_midBs, &codedFrame);
@@ -768,7 +770,8 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
             m_hrd.RemoveAccessUnit(bytes2copy, !!(taskForQuery->m_frameType & MFX_FRAMETYPE_IDR));
 
             bs->TimeStamp       = taskForQuery->m_surf->Data.TimeStamp;
-            //bs->DecodeTimeStamp = MFX_TIMESTAMP_UNKNOWN;
+            
+            bs->DecodeTimeStamp = CalcDTSFromPTS(this->m_vpar.mfx.FrameInfo, (mfxU16)dpbOutputDelay, bs->TimeStamp);;
             bs->PicStruct       = MFX_PICSTRUCT_PROGRESSIVE;
             bs->FrameType       = taskForQuery->m_frameType;
         }

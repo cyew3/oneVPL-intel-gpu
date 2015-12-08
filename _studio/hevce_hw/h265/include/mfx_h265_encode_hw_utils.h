@@ -181,6 +181,7 @@ typedef struct _DpbFrame
 {
     mfxI32   m_poc;
     mfxU32   m_fo;  // FrameOrder
+    mfxU32   m_eo;  // Encoded order
     mfxU32   m_bpo; // Bpyramid order
     mfxU8    m_tid;
     bool     m_ltr; // is "long-term"
@@ -665,6 +666,11 @@ void ConfigureTask(
     Task const &          prevTask,
     MfxVideoParam const & video);
 
+mfxI64 CalcDTSFromPTS(
+    mfxFrameInfo const & info,
+    mfxU16               dpbOutputDelay,
+    mfxU64               timeStamp);
+
 mfxU32 FindFreeResourceIndex(
     MfxFrameAllocResponse const & pool,
     mfxU32                        startingFrom = 0);
@@ -693,6 +699,10 @@ IntraRefreshState GetIntraRefreshState(
     mfxU32                frameOrderInGopDispOrder,
     mfxEncodeCtrl const * ctrl,
     mfxU16                intraStripeWidthInMBs);
+
+mfxU8 GetNumReorderFrames(
+    mfxU32 BFrameRate, 
+    bool BPyramid);
 
 #if DEBUG_REC_FRAMES_INFO
     inline vm_file * OpenFile(vm_char const * name, vm_char const * mode)
