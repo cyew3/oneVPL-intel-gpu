@@ -28,12 +28,17 @@ xcopy /S samples\*.def %1\samples\ /EXCLUDE:exclusions.txt
 xcopy /S samples\*.h %1\samples\ /EXCLUDE:exclusions.txt
 xcopy /S samples\*.hpp %1\samples\ /EXCLUDE:exclusions.txt
 xcopy /S samples\*.map %1\samples\ /EXCLUDE:exclusions.txt
-xcopy /S samples\*.pdf %1\samples\ /EXCLUDE:exclusions.txt
 xcopy /S samples\*.pl %1\samples\ /EXCLUDE:exclusions.txt
-xcopy /S samples\*.project %1\samples\ /EXCLUDE:exclusions.txt
-xcopy /S samples\*.so %1\samples\ /EXCLUDE:exclusions.txt
+rem xcopy /S samples\*.project %1\samples\ /EXCLUDE:exclusions.txt
 xcopy /S samples\*.txt %1\samples\ /EXCLUDE:exclusions.txt
 
+
+FOR /f %%f IN (dir %1\samples /s /b /a-D) DO (
+    dos2unix %%f
+)
+
+xcopy /S samples\*.pdf %1\samples\ /EXCLUDE:exclusions.txt
+xcopy /S samples\*.so %1\samples\ /EXCLUDE:exclusions.txt
 
 xcopy %2\sample_decode %1\samples\_bin\x64\*
 xcopy %2\sample_encode %1\samples\_bin\x64\*
