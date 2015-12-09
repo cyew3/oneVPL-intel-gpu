@@ -264,7 +264,7 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request,
         request->Type = MFX_MEMTYPE_D3D_EXT;
         break;
     case MFX_IOPATTERN_IN_OPAQUE_MEMORY:
-        request->Type = MFX_MEMTYPE_D3D_EXT|MFX_MEMTYPE_OPAQUE_FRAME;
+        request->Type = MFX_MEMTYPE_D3D_INT|MFX_MEMTYPE_OPAQUE_FRAME;
         break;
     default: return MFX_ERR_INVALID_VIDEO_PARAM;
     }
