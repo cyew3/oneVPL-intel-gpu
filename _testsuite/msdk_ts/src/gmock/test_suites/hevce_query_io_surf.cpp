@@ -191,15 +191,21 @@ namespace hevce_query_io_surf
 
                 EXPECT_EQ(type, m_request.Type)
                     << "ERROR: Wrong Type";
-                if (nFrameMin)
+
+                // invalid test case for GACC SW and GACC
+                if (0 != memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_SW.Data,   sizeof(MFX_PLUGINID_HEVCE_SW.Data)) &&
+                    0 != memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_GACC.Data, sizeof(MFX_PLUGINID_HEVCE_GACC.Data)))
                 {
-                    EXPECT_EQ(nFrameMin, m_request.NumFrameMin)
-                        << "ERROR: Wrong NumFrameMin";
-                }
-                if (nFrameSuggested)
-                {
-                    EXPECT_EQ(nFrameSuggested, m_request.NumFrameSuggested)
-                        << "ERROR: Wrong NumFrameSuggested";
+                    if (nFrameMin)
+                    {
+                        EXPECT_EQ(nFrameMin, m_request.NumFrameMin)
+                            << "ERROR: Wrong NumFrameMin";
+                    }
+                    if (nFrameSuggested)
+                    {
+                        EXPECT_EQ(nFrameSuggested, m_request.NumFrameSuggested)
+                            << "ERROR: Wrong NumFrameSuggested";
+                    }
                 }
             }
 
