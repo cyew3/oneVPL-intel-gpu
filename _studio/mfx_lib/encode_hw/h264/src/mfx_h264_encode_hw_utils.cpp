@@ -5956,6 +5956,38 @@ mfxU8 * MfxHwH264Encode::PatchBitstream(
     return dbegin;
 }
 
+mfxU8 * MfxHwH264Encode::InsertSVCNAL(
+    DdiTask const &       task,
+    mfxU32                fieldId,
+    mfxU8 *               sbegin, // contents of source buffer may be modified
+    mfxU8 *               send,
+    mfxU8 *               dbegin,
+    mfxU8 *               dend)
+{
+
+    bool copy = (sbegin != dbegin);
+
+    for (NaluIterator nalu(sbegin, send); nalu != NaluIterator(); ++nalu)
+    {
+        if (nalu->type == 1 || nalu->type == 5)
+        {
+
+            dbegin = PackPrefixNalUnitSvc(dbegin, dend, true, task, fieldId);
+            dbegin = copy
+                    ? CheckedMFX_INTERNAL_CPY(dbegin, dend, nalu->begin, nalu->end)
+                    : nalu->end;
+        }
+        else
+        {
+            dbegin = copy
+                ? CheckedMFX_INTERNAL_CPY(dbegin, dend, nalu->begin, nalu->end)
+                : nalu->end;
+        }
+    }
+
+    return dbegin;
+}
+
 namespace
 {
     mfxI32 CalcDistScaleFactor(

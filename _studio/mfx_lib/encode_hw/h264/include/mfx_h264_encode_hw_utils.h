@@ -3081,7 +3081,14 @@ namespace MfxHwH264Encode
         mfxU8 *               send,
         mfxU8 *               dbegin,
         mfxU8 *               dend);
-
+    mfxU8 * InsertSVCNAL(
+        DdiTask const &       task,
+        mfxU32                fieldId,
+        mfxU8 *               sbegin, // contents of source buffer may be modified
+        mfxU8 *               send,
+        mfxU8 *               dbegin,
+        mfxU8 *               dend);
+    
     mfxU8 * AddEmulationPreventionAndCopy(
         mfxU8 *               sbegin,
         mfxU8 *               send,
