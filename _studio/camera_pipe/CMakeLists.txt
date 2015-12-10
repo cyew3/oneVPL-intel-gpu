@@ -8,7 +8,7 @@ set (CAMERA_DESCRIPTION "Intel(R) Media Server Studio 2015 - RAW Accelerator Plu
   if( NOT DEFINED ENV{MFX_CAMERA_VERSION} )
     set( camera_version 0.0.000.0000 )
   else( )
-    set( camera_version $ENV{MFX_PTIR_VERSION} )
+    set( camera_version $ENV{MFX_CAMERA_VERSION} )
   endif( )
 
   if( Linux OR Darwin )
@@ -137,6 +137,6 @@ endforeach()
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
   )
 
-set( defs "-DMFX_VA -DAS_CAMERA_PLUGIN -DAS_VPP_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${CAMERA_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${CAMERA_DESCRIPTION}\"\\\" ${camera_version_defs}" )
+set( defs "-DAS_CAMERA_PLUGIN -DAS_VPP_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${CAMERA_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${CAMERA_DESCRIPTION}\"\\\" ${camera_version_defs}" )
 
-make_library( mfx_camera_hw64 none shared )
+make_library( mfx_camera_hw64 hw shared )

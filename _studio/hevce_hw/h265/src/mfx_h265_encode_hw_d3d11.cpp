@@ -6,6 +6,8 @@
 //          Copyright(c) 2014 Intel Corporation. All Rights Reserved.
 //
 
+#if defined(_WIN32) || defined(_WIN64)
+
 #include "mfx_h265_encode_hw_d3d9.h"
 #include "mfx_h265_encode_hw_d3d11.h"
 
@@ -546,3 +548,5 @@ mfxStatus D3D11Encoder::Destroy()
 }
 
 }; // namespace MfxHwH265Encode
+
+#endif // #if defined(_WIN32) || defined(_WIN64)

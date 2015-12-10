@@ -7,6 +7,8 @@
 //
 #pragma once
 
+#if defined(_WIN32) || defined(_WIN64)
+
 #include "auxiliary_device.h"
 #include "mfx_h265_encode_hw_ddi.h"
 #include "mfx_h265_encode_hw_ddi_trace.h"
@@ -154,3 +156,5 @@ private:
 };
 
 }; // namespace MfxHwH265Encode
+
+#endif // #if defined(_WIN32) || defined(_WIN64)

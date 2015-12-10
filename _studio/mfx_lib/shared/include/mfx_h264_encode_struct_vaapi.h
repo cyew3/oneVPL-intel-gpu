@@ -67,6 +67,7 @@ typedef struct
 // Decode Extension Functions for DXVA11 Encode
 #define ENCODE_QUERY_ACCEL_CAPS_ID 0x110
 #define ENCODE_ENCRYPTION_SET_ID 0x111
+#define ENCODE_QUERY_MAX_MB_PER_SEC_ID 0x112
 
 enum D3D11_DDI_VIDEO_ENCODER_BUFFER_TYPE
 {
@@ -87,10 +88,21 @@ enum D3D11_DDI_VIDEO_ENCODER_BUFFER_TYPE
     D3D11_DDI_VIDEO_ENCODER_BUFFER_PAYLOADOUTPUT    = 15,
     D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA = 16,
     D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA  = 17,
-
+    D3D11_DDI_VIDEO_ENCODER_BUFFER_HUFFTBLDATA      = 22,
+    D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA         = 23,
     D3D11_DDI_VIDEO_ENCODER_BUFFER_COEFFPROB        = 30,
     D3D11_DDI_VIDEO_ENCODER_BUFFER_DISTORTIONDATA   = 31
 };
+
+typedef struct tagENCODE_QUERY_PROCESSING_RATE_INPUT
+{
+    UCHAR       Profile;
+    UCHAR       Level;
+    UCHAR       TargetUsage;
+    UCHAR       GopRefDist;
+    USHORT      GopPicSize;
+} ENCODE_QUERY_PROCESSING_RATE_INPUT;
+
 
 typedef struct tagENCODE_FORMAT_COUNT
 {
@@ -812,7 +824,12 @@ typedef struct tagENCODE_ENC_CTRL_CAPS
 ////////////////////////////////////////////////////////////////////////////////
 // this structure is used to define the sequence level parameters
 ///////////////////////////////////////////////////////////////////////////////
-
+typedef enum tagENCODE_ARGB_COLOR
+{
+    eColorSpace_P709 = 0,
+    eColorSpace_P601 = 1,
+    eColorSpace_P2020 = 2
+}ENCODE_ARGB_COLOR;
 
 typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_H264
 {
@@ -936,6 +953,53 @@ typedef struct _ENCODE_PICENTRY {
         UCHAR  bPicEntry;
     };
 } ENCODE_PICENTRY;  /* 1 byte */
+
+typedef struct tagENCODE_RECT
+{
+    USHORT Top;                // [0..(FrameHeight+ M-1)/M -1]
+    USHORT Bottom;             // [0..(FrameHeight+ M-1)/M -1]
+    USHORT Left;               // [0..(FrameWidth+15)/16-1]
+    USHORT Right;              // [0..(FrameWidth+15)/16-1]
+} ENCODE_RECT;
+
+typedef struct tagENCODE_ROI
+{
+    ENCODE_RECT Roi;
+    CHAR   PriorityLevelOrDQp; // [-3..3] or [-51..51]
+} ENCODE_ROI;
+
+typedef enum tagENCODE_SCENARIO
+{
+	eScenario_Unknown = 0,
+	eScenario_DisplayRemoting = 1,
+	eScenario_VideoConference = 2,
+	eScenario_Archive = 3,
+	eScenario_LiveStreaming = 4
+} ENCODE_SCENARIO;
+
+typedef enum tagENCODE_CONTENT
+{
+	eContent_Unknown = 0,
+	eContent_FullScreenVideo = 1,
+	eContent_NonVideoScreen = 2
+} ENCODE_CONTENT;
+
+
+
+typedef struct tagMOVE_RECT
+{
+    USHORT SourcePointX;
+    USHORT SourcePointY;
+    ENCODE_RECT DestRect;
+} MOVE_RECT;
+
+typedef enum tagENCODE_INPUT_TYPE
+{
+    eType_DRM_NONE = 0,
+    eType_DRM_SECURE = 1,
+    eType_DRM_UNKNOWN
+}ENCODE_INPUT_TYPE;
+
 
 typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
 {
