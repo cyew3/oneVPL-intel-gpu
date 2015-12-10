@@ -1256,13 +1256,22 @@ namespace MfxHwH264Encode
 
         static bool Next(SliceDividerState & state);
     };
+    struct SliceDividerVDEnc : SliceDivider
+    {
+        SliceDividerVDEnc(
+            mfxU32 numSlice,
+            mfxU32 widthInMbs,
+            mfxU32 heightInMbs);
 
+        static bool Next(SliceDividerState & state);
+    };
     SliceDivider MakeSliceDivider(
         mfxU32  sliceHwCaps,
         mfxU32  sliceSizeInMbs,
         mfxU32  numSlice,
         mfxU32  widthInMbs,
-        mfxU32  heightInMbs);
+        mfxU32  heightInMbs,
+        bool isLowPower = false);
 
 
     class AspectRatioConverter

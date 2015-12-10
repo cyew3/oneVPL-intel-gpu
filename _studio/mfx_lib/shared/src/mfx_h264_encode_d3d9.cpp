@@ -455,7 +455,8 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
         task.m_numMbPerSlice,
         pps.NumSlice,
         sps.FrameWidth  / 16,
-        sps.FrameHeight / 16 / numPics);
+        sps.FrameHeight / 16 / numPics,
+        hwCaps.SliceLevelRateCtrl);
 
     if (divider.GetNumSlice() != slice.size())
     {

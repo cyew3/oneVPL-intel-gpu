@@ -5840,13 +5840,67 @@ bool SliceDividerLync::Next(SliceDividerState & state)
     }
 }
 
+SliceDividerVDEnc::SliceDividerVDEnc(
+    mfxU32 numSlice,
+    mfxU32 widthInMbs,
+    mfxU32 heightInMbs)
+{
+    m_pfNext              = &SliceDividerVDEnc::Next;
+    m_numSlice            = IPP_MAX(1, IPP_MIN(heightInMbs, numSlice));
+    m_numMbInRow          = widthInMbs;
+    m_numMbRow            = heightInMbs;
+    m_currSliceFirstMbRow = 0;
+    m_leftMbRow           = heightInMbs;
+
+    mfxU32 H  = heightInMbs;      // frame height
+    mfxU32 n  = m_numSlice;       // num slices
+    mfxU32 sh = (H + n - 1) / n;  // slice height
+
+    // check if frame is divisible to requested number of slices
+    // so that size of last slice is no bigger than other slices
+    while (sh * (n - 1) >= H)
+    {
+        n++;
+        sh = (H + n - 1) / n;
+    }
+
+    m_currSliceNumMbRow   = sh;
+    m_numSlice            = n;
+    m_leftSlice           = n;
+}
+
+bool SliceDividerVDEnc::Next(SliceDividerState & state)
+{
+    state.m_leftMbRow -= state.m_currSliceNumMbRow;
+    state.m_leftSlice -= 1;
+
+    if (state.m_leftSlice == 0)
+    {
+        assert(state.m_leftMbRow == 0);
+        return false;
+    }
+    else
+    {
+        state.m_currSliceFirstMbRow = 0;//state.m_currSliceNumMbRow;
+        if (state.m_currSliceNumMbRow > state.m_leftMbRow)
+            state.m_currSliceNumMbRow = state.m_leftMbRow;
+        assert(state.m_currSliceNumMbRow != 0);
+        return true;
+    }
+}
+
 SliceDivider MfxHwH264Encode::MakeSliceDivider(
     mfxU32  sliceHwCaps,
     mfxU32  sliceSizeInMbs,
     mfxU32  numSlice,
     mfxU32  widthInMbs,
-    mfxU32  heightInMbs)
+    mfxU32  heightInMbs,
+    bool isLowPower)
 {
+    if(isLowPower){
+        return SliceDividerVDEnc(numSlice, widthInMbs, heightInMbs);
+    }
+
     if(sliceHwCaps > 0 && sliceSizeInMbs > 0)
         return SliceDividerLync(sliceSizeInMbs, widthInMbs, heightInMbs);
 
@@ -7761,7 +7815,8 @@ mfxU32 HeaderPacker::WriteSlice(
         m_numMbPerSlice,
         (mfxU32)m_packedSlices.size(),
         sps.picWidthInMbsMinus1 + 1,
-        picHeightInMBs);
+        picHeightInMBs,
+        m_hwCaps.SliceLevelRateCtrl);
 
     mfxU32 firstMbInSlice = 0;
     for (mfxU32 i = 0; i <= sliceId; i++, divider.Next())

@@ -2224,8 +2224,8 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
                 } // if ( (pInputSurface->Data.ExtParam[jj]->BufferId == MFX_EXTBUFF_VPP_FIELD_PROCESSING) &&
             } // for ( mfxU32 jj = 0; jj < pInputSurface->Data.NumExtParam; jj++ )
 
-            // "-1" to get valid Sergey Osipov's kernel values is done internally
-            // aya, al : !!! Sergey Osipov's kernel uses "0"  as a "valid" data, but HW_VPP doesn't
+            // "-1" to get valid kernel values is done internally
+            // !!! kernel uses "0"  as a "valid" data, but HW_VPP doesn't
             // to prevent issue we increment here and decrement before kernel call
             imfxFPMode++;
         } // if ((pInputSurface->Data.NumExtParam == 0) || (pInputSurface->Data.ExtParam == NULL))
