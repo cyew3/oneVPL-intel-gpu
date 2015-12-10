@@ -299,6 +299,7 @@
     <ClCompile Include="src\gmock\test_suites\threading_mfxinitex.cpp" />
     <ClCompile Include="src\gmock\test_suites\vc1d_res_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp10_fourcc.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vpp10bit.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_2014r2_unsupport.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_roi.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_decode_frame_async.cpp" />

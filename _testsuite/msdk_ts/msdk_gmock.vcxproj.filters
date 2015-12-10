@@ -271,9 +271,6 @@
     <ClCompile Include="src\gmock\test_suites\fei_encode_encode_frame_async.cpp">
       <Filter>Source Files\test_suites\FEI</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\fei_encode_qp.cpp">
-      <Filter>Source Files\test_suites\FEI</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\fei_encode_field_coding.cpp">
       <Filter>Source Files\test_suites\FEI</Filter>
     </ClCompile>
@@ -531,6 +528,9 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevce_get_video_param.cpp">
       <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp10bit.cpp">
+      <Filter>Source Files\test_suites\vpp</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
