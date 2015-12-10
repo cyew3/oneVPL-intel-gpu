@@ -285,8 +285,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                                    }
     },
     //PicStruct
-    {/*47*/ MFX_ERR_UNSUPPORTED, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
-    {/*48*/ MFX_ERR_UNSUPPORTED, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*47*/ MFX_ERR_NONE, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*48*/ MFX_ERR_NONE, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
     {/*49*/ MFX_ERR_UNSUPPORTED, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 255 } },
     {/*50*/ MFX_ERR_UNSUPPORTED, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 0x11111111 } },
     //Crops
@@ -418,7 +418,7 @@ int TestSuite::RunTest(unsigned int id)
         {
             g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
         }
-        if ((tc.type == PIC_STRUCT) && (tc.sts == MFX_ERR_UNSUPPORTED))
+        if ((tc.type == PIC_STRUCT)/* && (tc.sts == MFX_ERR_UNSUPPORTED)*/)
         {
             g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
         }
