@@ -281,15 +281,19 @@ TEST_F(InitTest, GetVideoParam_SpsPps) {
     output.extBuffers[0] = &extSpsPps.Header;
     output.videoParam.NumExtParam = 1;
 
-    { SCOPED_TRACE("Test extSpsPps.SPSBuffer==nullptr");
+    { SCOPED_TRACE("Test extSpsPps.SPSBuffer==nullptr && small buffer is OK");
         extSpsPps.SPSBuffer = nullptr;
-        EXPECT_EQ(MFX_ERR_NULL_PTR, encoder.GetVideoParam(&output.videoParam));
+        extSpsPps.SPSBufSize = 4;
+        EXPECT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
         extSpsPps.SPSBuffer = sps;
+        extSpsPps.SPSBufSize = sizeof(sps);
     }
-    { SCOPED_TRACE("Test extSpsPps.PPSBuffer==nullptr");
+    { SCOPED_TRACE("Test extSpsPps.PPSBuffer==nullptr && small buffer is OK");
         extSpsPps.PPSBuffer = nullptr;
-        EXPECT_EQ(MFX_ERR_NULL_PTR, encoder.GetVideoParam(&output.videoParam));
+        extSpsPps.PPSBufSize = 4;
+        EXPECT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
         extSpsPps.PPSBuffer = pps;
+        extSpsPps.PPSBufSize = sizeof(pps);
     }
     { SCOPED_TRACE("Test small extSpsPps.SPSBufSize");
         extSpsPps.SPSBufSize = 4;
@@ -302,11 +306,41 @@ TEST_F(InitTest, GetVideoParam_SpsPps) {
         extSpsPps.PPSBufSize = sizeof(pps);
     }
 
+    // get both SPS and PPS
     EXPECT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
     ASSERT_EQ((Ipp8u*)sps, extSpsPps.SPSBuffer); // check that app's pointer is not changed by GetVideoParam
     ASSERT_EQ((Ipp8u*)pps, extSpsPps.PPSBuffer); // check that app's pointer is not changed by GetVideoParam
-    ASSERT_GE(sizeof(sps), extSpsPps.SPSBufSize); // check that app's buffer size is not changed by GetVideoParam
-    ASSERT_GE(sizeof(pps), extSpsPps.PPSBufSize); // check that app's buffer size is not changed by GetVideoParam
+    ASSERT_GE(sizeof(sps), extSpsPps.SPSBufSize); // check that app's buffer size is not greater than original
+    ASSERT_GE(sizeof(pps), extSpsPps.PPSBufSize); // check that app's buffer size is not greater than original
+
+    // test SPS only
+    mfxExtCodingOptionSPSPPS extSpsOnly = MakeExtBuffer<mfxExtCodingOptionSPSPPS>();
+    Ipp8u spsOnly[1024], ppsOnly[1024];
+    extSpsOnly.SPSBuffer = spsOnly;
+    extSpsOnly.PPSBuffer = nullptr;
+    extSpsOnly.SPSBufSize = sizeof(spsOnly);
+    extSpsOnly.PPSBufSize = sizeof(ppsOnly);
+    output.extBuffers[0] = &extSpsOnly.Header;
+    EXPECT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
+    ASSERT_EQ((Ipp8u*)spsOnly, extSpsOnly.SPSBuffer);  // check that app's pointer is not changed by GetVideoParam
+    ASSERT_EQ(nullptr, extSpsOnly.PPSBuffer);          // check that app's pointer is not changed by GetVideoParam
+    ASSERT_GE(sizeof(spsOnly), extSpsOnly.SPSBufSize); // check that app's buffer size is not greater than original
+    ASSERT_EQ(sizeof(ppsOnly), extSpsOnly.PPSBufSize); // check that app's buffer size is not changed (since PPSBuffer=NULL)
+    EXPECT_TRUE(std::equal(extSpsOnly.SPSBuffer, extSpsOnly.SPSBuffer + extSpsOnly.SPSBufSize, extSpsPps.SPSBuffer)); // check that sps is the same as in SpsPps case
+
+    // test PPS only
+    mfxExtCodingOptionSPSPPS extPpsOnly = MakeExtBuffer<mfxExtCodingOptionSPSPPS>();
+    extPpsOnly.SPSBuffer = nullptr;
+    extPpsOnly.PPSBuffer = ppsOnly;
+    extPpsOnly.SPSBufSize = sizeof(spsOnly);
+    extPpsOnly.PPSBufSize = sizeof(ppsOnly);
+    output.extBuffers[0] = &extPpsOnly.Header;
+    EXPECT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
+    ASSERT_EQ(nullptr, extPpsOnly.SPSBuffer);           // check that app's pointer is not changed by GetVideoParam
+    ASSERT_EQ((Ipp8u*)ppsOnly, extPpsOnly.PPSBuffer);   // check that app's pointer is not changed by GetVideoParam
+    ASSERT_EQ(sizeof(spsOnly), extPpsOnly.SPSBufSize);  // check that app's buffer size is not changed (since SPSBuffer=NULL)
+    ASSERT_GE(sizeof(ppsOnly), extPpsOnly.PPSBufSize);  // check that app's buffer size is not greater than original
+    EXPECT_TRUE(std::equal(extPpsOnly.PPSBuffer, extPpsOnly.PPSBuffer + extPpsOnly.PPSBufSize, extPpsOnly.PPSBuffer)); // check that pps is the same as in SpsPps case
 
     Ipp8u bsData[8192];
     mfxBitstream bs = {};

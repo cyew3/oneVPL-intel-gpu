@@ -46,21 +46,7 @@ namespace H265Enc {
         H265VideoParam &m_videoParam;
         H265Encoder &m_enc;// scenecut has right to modificate a GopStructure
 
-        enum {
-            ALG_PIX_DIFF = 0,
-            ALG_HIST_DIFF
-        };
-
-        struct ScdConfig {
-            Ipp32s M; // window size = 2*M+1
-            Ipp32s N; // if (peak1 / peak2 > N) => SC Detected!
-            Ipp32s algorithm; // ALG_PIX_DIFF, ALG_HIST_DIFF
-            Ipp32s scaleFactor; // analysis will be done on (origW >> scaleFactor, origH >> scaleFactor) resolution
-        } m_scdConfig;
-
         void DetectSceneCut(FrameIter begin, FrameIter end, /*FrameIter input*/ Frame* in, Ipp32s updateGop, Ipp32s updateState);
-        
-        void Build_ttGraph(std::vector<ThreadingTask> & tt, Ipp32s poc);        
 
         // frame granularity based on regions, where region consist of rows && row consist of blk_8x8 (Luma)
         Ipp32s m_regionCount;

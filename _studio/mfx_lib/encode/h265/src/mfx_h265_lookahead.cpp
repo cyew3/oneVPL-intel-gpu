@@ -1879,7 +1879,29 @@ int Lookahead::ConfigureLookaheadFrame(Frame* in, Ipp32s fieldNum)
     }
 
     if (fieldNum == 0 && in) {
-        Build_ttGraph(in->m_ttLookahead, in->m_frameOrder);
+        std::vector<ThreadingTask> &tt = in->m_ttLookahead;
+        Ipp32s poc = in->m_frameOrder;
+
+        size_t startIdx = 0;
+        tt[startIdx].Init(TT_PREENC_START, 0, 0, poc, 0, 0);
+        tt[startIdx].la = this;
+
+        size_t endIdx   = tt.size() - 1;
+        tt[endIdx].Init(TT_PREENC_END, 0, 0, poc, 0, 0);
+        tt[endIdx].la = this;
+
+
+        for (size_t idx = 1; idx < endIdx; idx++) {
+            Ipp32s row = (Ipp32s)idx - 1;
+            tt[idx].Init(TT_PREENC_ROUTINE, row, 0, poc, 0, 0);
+            tt[idx].la = this;
+
+            // dependency LA_ROUTINE <- LA_START
+            AddTaskDependency(&tt[idx], &tt[startIdx], &m_ttHubPool);
+
+            // dependency LA_END     <- LA_ROUTINE
+            AddTaskDependency(&tt[endIdx], &tt[idx], &m_ttHubPool);
+        }
     }
 
      return 1;
@@ -1912,6 +1934,22 @@ bool MetricIsGreater(const StatItem &l, const StatItem &r) { return (l.met > r.m
 
 void Lookahead::DetectSceneCut(FrameIter begin, FrameIter end, /*FrameIter input*/ Frame* in, Ipp32s updateGop, Ipp32s updateState)
 {
+    enum {
+        ALG_PIX_DIFF = 0,
+        ALG_HIST_DIFF
+    };
+
+    struct ScdConfig {
+        Ipp32s M; // window size = 2*M+1
+        Ipp32s N; // if (peak1 / peak2 > N) => SC Detected!
+        Ipp32s algorithm; // ALG_PIX_DIFF, ALG_HIST_DIFF
+        Ipp32s scaleFactor; // analysis will be done on (origW >> scaleFactor, origH >> scaleFactor) resolution
+    } m_scdConfig;
+
+    m_scdConfig.M = 10;
+    m_scdConfig.N = 3;
+    m_scdConfig.algorithm = ALG_HIST_DIFF;
+
     // accept new frame
     if (in) {
         bool isLowres = true; // always on lowres
@@ -2259,32 +2297,6 @@ Ipp32s H265Enc::BuildQpMap(FrameIter begin, FrameIter end, Ipp32s frameOrderCent
 //}
 
 
-void Lookahead::Build_ttGraph(std::vector<ThreadingTask> & tt, Ipp32s poc)
-{
-    size_t startIdx = 0;
-
-    tt[startIdx].Init(TT_PREENC_START, 0, 0, poc, 0, 0);
-    tt[startIdx].la = this;
-
-    size_t endIdx   = tt.size() - 1;
-    tt[endIdx].Init(TT_PREENC_END, 0, 0, poc, 0, 0);
-    tt[endIdx].la = this;
-    
-
-    for (size_t idx = 1; idx < endIdx; idx++) {
-        Ipp32s row = (Ipp32s)idx - 1;
-        tt[idx].Init(TT_PREENC_ROUTINE, row, 0, poc, 0, 0);
-        tt[idx].la = this;
-
-        // dependency LA_ROUTINE <- LA_START
-        AddTaskDependency(&tt[idx], &tt[startIdx], &m_ttHubPool);
-
-        // dependency LA_END     <- LA_ROUTINE
-        AddTaskDependency(&tt[endIdx], &tt[idx], &m_ttHubPool);
-    }
-}
-
-
 void H265Enc::GetLookaheadGranularity(const H265VideoParam& videoParam, Ipp32s & regionCount, Ipp32s & lowRowsInRegion, Ipp32s & originRowsInRegion, Ipp32s & numTasks)
 {
     Ipp32s lowresHeightInBlk = ((videoParam.Height >> videoParam.LowresFactor) + (SIZE_BLK_LA-1)) >> 3;
@@ -2314,17 +2326,14 @@ Lookahead::Lookahead(H265Encoder & enc)
 {
     // configuration of lookahead algorithm family
     // SceneCut
-    m_scdConfig.M = 0;
-    m_scdConfig.N = 0;
-    m_scdConfig.algorithm = ALG_HIST_DIFF;
-    m_scdConfig.scaleFactor = 0;
+    Ipp32s bufferingSceneCut = 0;
     if (m_videoParam.SceneCut > 0) {
-        m_scdConfig.M = 10;
-        m_scdConfig.N = 3;
-        m_scdConfig.algorithm = ALG_HIST_DIFF;
-        m_scdConfig.scaleFactor = m_videoParam.LowresFactor ? m_videoParam.LowresFactor : 1;
+        bufferingSceneCut = 10;
+        Ipp32s N = 3;
+        //m_scdConfig.algorithm = ALG_HIST_DIFF;
+        //m_scdConfig.scaleFactor = m_videoParam.LowresFactor ? m_videoParam.LowresFactor : 1;
         
-        Ipp32s windowSize = 2*m_scdConfig.M + 1;
+        Ipp32s windowSize = 2*/*m_scdConfig.*/bufferingSceneCut + 1;
         m_slideWindowStat.resize( windowSize, StatItem());
     }
 
@@ -2335,7 +2344,7 @@ Lookahead::Lookahead(H265Encoder & enc)
         if (m_videoParam.DeltaQpMode&(AMT_DQP_CAL|AMT_DQP_PAQ))
             M = m_videoParam.GopRefDist;
         if (m_videoParam.SceneCut) {
-            M = IPP_MAX(M, m_videoParam.GopRefDist + m_scdConfig.M);
+            M = IPP_MAX(M, m_videoParam.GopRefDist + bufferingSceneCut);
         }
         //Ipp32s windowSize = 2*M + 1;
        // m_slideWindowPaq.resize( windowSize, -1 );
@@ -2344,7 +2353,7 @@ Lookahead::Lookahead(H265Encoder & enc)
         // reset lowres (tmp solution)
         //m_videoParam.LowresFactor = 0;
         if (m_videoParam.SceneCut) {
-            m_scdConfig.scaleFactor = 1;
+            //m_scdConfig.scaleFactor = 1;
         }
     }
 

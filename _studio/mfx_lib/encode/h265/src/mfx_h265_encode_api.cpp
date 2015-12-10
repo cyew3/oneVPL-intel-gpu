@@ -1093,8 +1093,8 @@ namespace {
             }
             if (optHevc->BPyramid == OFF || mfx.GopRefDist == 1) // no CALQ, no PAQ if Bpyramid disabled
                 wrnIncompatible = !CheckMaxSat(optHevc->DeltaQpMode, 1);
-            if (fi.PicStruct == TFF || fi.PicStruct == BFF) // no CAL/CAQ/PAQ if interlace
-                wrnIncompatible = !CheckMaxSat(optHevc->DeltaQpMode, 1);
+            //if (fi.PicStruct == TFF || fi.PicStruct == BFF) // no CAL/CAQ/PAQ if interlace
+            //    wrnIncompatible = !CheckMaxSat(optHevc->DeltaQpMode, 1);
         }
 
 
@@ -1634,7 +1634,7 @@ mfxStatus MFXVideoENCODEH265::QueryIOSurf(MFXCoreInterface1 *core, mfxVideoParam
 
     request->NumFrameMin = buffering;
     request->NumFrameSuggested = buffering;
-    request->Info = tmp.mfx.FrameInfo;
+    request->Info = par->mfx.FrameInfo;
 
     if (par->IOPattern & VIDMEM)
         request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET;
@@ -1665,13 +1665,9 @@ mfxStatus MFXVideoENCODEH265::GetVideoParam(mfxVideoParam *par)
 
     if (mfxExtCodingOptionSPSPPS *spspps = GetExtBuffer(*par)) {
         // check that SPS/PPS buffers have enough space
-        if (spspps->SPSBuffer == NULL)
-            return MFX_ERR_NULL_PTR;
-        if (spspps->PPSBuffer == NULL)
-            return MFX_ERR_NULL_PTR;
-        if (spspps->SPSBufSize < m_extBuffers.extSpsPps.SPSBufSize)
+        if (spspps->SPSBuffer && spspps->SPSBufSize < m_extBuffers.extSpsPps.SPSBufSize)
             return MFX_ERR_NOT_ENOUGH_BUFFER;
-        if (spspps->PPSBufSize < m_extBuffers.extSpsPps.PPSBufSize)
+        if (spspps->PPSBuffer && spspps->PPSBufSize < m_extBuffers.extSpsPps.PPSBufSize)
             return MFX_ERR_NOT_ENOUGH_BUFFER;
     }
 

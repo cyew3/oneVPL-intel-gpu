@@ -124,11 +124,9 @@ TEST_F(QueryIoSurfTest, Request) {
     input.extCodingOptionHevc.FramesInParallel = 3;
     ASSERT_EQ(MFX_ERR_NONE, MFXVideoENCODEH265::QueryIOSurf(nullptr, &input.videoParam, &request));
     EXPECT_EQ(mfxU16(MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY), request.Type);
-    EXPECT_EQ(input.videoParam.mfx.FrameInfo.Width, request.Info.Width);
-    EXPECT_EQ(input.videoParam.mfx.FrameInfo.Height, request.Info.Height);
-    EXPECT_EQ(input.videoParam.mfx.FrameInfo.FourCC, request.Info.FourCC);
     EXPECT_EQ(8+(3-1)+(3-1), request.NumFrameMin);
     EXPECT_LE(request.NumFrameMin, request.NumFrameSuggested);
+    EXPECT_EQ(0, memcmp(&input.videoParam.mfx.FrameInfo, &request.Info, sizeof(mfxFrameInfo)));
 
     input.videoParam.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
     input.videoParam.AsyncDepth = 1;
@@ -136,11 +134,9 @@ TEST_F(QueryIoSurfTest, Request) {
     input.extCodingOptionHevc.FramesInParallel = 1;
     ASSERT_EQ(MFX_ERR_NONE, MFXVideoENCODEH265::QueryIOSurf(nullptr, &input.videoParam, &request));
     EXPECT_EQ(mfxU16(MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET), request.Type);
-    EXPECT_EQ(input.videoParam.mfx.FrameInfo.Width, request.Info.Width);
-    EXPECT_EQ(input.videoParam.mfx.FrameInfo.Height, request.Info.Height);
-    EXPECT_EQ(input.videoParam.mfx.FrameInfo.FourCC, request.Info.FourCC);
     EXPECT_EQ(1+(1-1)+(1-1), request.NumFrameMin);
     EXPECT_LE(request.NumFrameMin, request.NumFrameSuggested);
+    EXPECT_EQ(0, memcmp(&input.videoParam.mfx.FrameInfo, &request.Info, sizeof(mfxFrameInfo)));
 
     input.videoParam.IOPattern = MFX_IOPATTERN_IN_OPAQUE_MEMORY;
     input.videoParam.AsyncDepth = 1;
@@ -148,9 +144,7 @@ TEST_F(QueryIoSurfTest, Request) {
     input.extCodingOptionHevc.FramesInParallel = 10;
     ASSERT_EQ(MFX_ERR_NONE, MFXVideoENCODEH265::QueryIOSurf(nullptr, &input.videoParam, &request));
     EXPECT_EQ(mfxU16(MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_OPAQUE_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY), request.Type);
-    EXPECT_EQ(input.videoParam.mfx.FrameInfo.Width, request.Info.Width);
-    EXPECT_EQ(input.videoParam.mfx.FrameInfo.Height, request.Info.Height);
-    EXPECT_EQ(input.videoParam.mfx.FrameInfo.FourCC, request.Info.FourCC);
     EXPECT_EQ(6+(10-1)+(1-1), request.NumFrameMin);
     EXPECT_LE(request.NumFrameMin, request.NumFrameSuggested);
+    EXPECT_EQ(0, memcmp(&input.videoParam.mfx.FrameInfo, &request.Info, sizeof(mfxFrameInfo)));
 }
