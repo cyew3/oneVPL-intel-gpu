@@ -335,6 +335,12 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
     {
         MfxVideoParam tmp = *in;
         ENCODE_CAPS_HEVC caps = {};
+        mfxExtEncoderCapability * enc_cap = ExtBuffer::Get(*in);
+
+        if (enc_cap!=0)
+        {
+            return MFX_ERR_UNSUPPORTED;        
+        }
 
         MFX_CHECK(in->mfx.CodecId == MFX_CODEC_HEVC, MFX_ERR_UNSUPPORTED);
 
@@ -558,7 +564,6 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
 {
     mfxStatus sts = MFX_ERR_NONE;
     Task* task = 0;
-    mfxExtCodingOption2*   extOpt2Init = &m_vpar.m_ext.CO2;
 
     MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK_NULL_PTR1(bs);
@@ -669,23 +674,8 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
 
     task->m_bs = bs;
 
-    ConfigureTask(*task, m_lastTask, m_vpar);
+    ConfigureTask(*task, m_lastTask, m_vpar, m_baseLayerOrder);
     m_lastTask = *task;
-
-    if (task->m_tid == 0 && extOpt2Init->IntRefType)
-    {
-       if (task->m_frameType & MFX_FRAMETYPE_I)
-            m_baseLayerOrder = 0;
-
-        mfxU32 refreshDimension = extOpt2Init->IntRefType == HORIZ_REFRESH ? CeilDiv(m_vpar.m_ext.HEVCParam.PicHeightInLumaSamples, m_vpar.LCUSize) : CeilDiv(m_vpar.m_ext.HEVCParam.PicWidthInLumaSamples, m_vpar.LCUSize);
-        mfxU16 intraStripeWidthInMBs = (mfxU16)((refreshDimension + extOpt2Init->IntRefCycleSize - 1) / extOpt2Init->IntRefCycleSize);
-
-        task->m_IRState = GetIntraRefreshState(
-            m_vpar,
-            m_baseLayerOrder ++,
-            &(task->m_ctrl),
-            intraStripeWidthInMBs);
-    }
 
     *thread_task = task;
 

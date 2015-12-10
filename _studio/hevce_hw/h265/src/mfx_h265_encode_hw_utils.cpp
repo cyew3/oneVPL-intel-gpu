@@ -527,12 +527,13 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     ExtBuffer::Construct(par, m_ext.HEVCParam, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.HEVCTiles, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.Opaque, m_ext.m_extParam, base.NumExtParam);
+    ExtBuffer::Construct(par, m_ext.CO,  m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.CO2, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.CO3, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.DDI, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.AVCTL, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.DumpFiles, m_ext.m_extParam, base.NumExtParam);
-
+    ExtBuffer::Construct(par, m_ext.VSI, m_ext.m_extParam, base.NumExtParam);
 }
 
 mfxStatus MfxVideoParam::FillPar(mfxVideoParam& par, bool query)
@@ -554,11 +555,13 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
     ExtBuffer::Set(par, m_ext.HEVCParam);
     ExtBuffer::Set(par, m_ext.HEVCTiles);
     ExtBuffer::Set(par, m_ext.Opaque);
+    ExtBuffer::Set(par, m_ext.CO);
     ExtBuffer::Set(par, m_ext.CO2);
     ExtBuffer::Set(par, m_ext.CO3);
     ExtBuffer::Set(par, m_ext.DDI);
     ExtBuffer::Set(par, m_ext.AVCTL);
     ExtBuffer::Set(par, m_ext.DumpFiles);
+    ExtBuffer::Set(par, m_ext.VSI);
 
 
     mfxExtCodingOptionSPSPPS * pSPSPPS = ExtBuffer::Get(par);
@@ -610,6 +613,25 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
     return sts;
 }
 
+bool MfxVideoParam::CheckExtBufferParam()
+{
+    mfxU32 bUnsupported = 0;
+
+    bUnsupported += ExtBuffer::CheckBufferParams(m_ext.HEVCParam, true);
+    bUnsupported += ExtBuffer::CheckBufferParams(m_ext.HEVCTiles, true);
+    bUnsupported += ExtBuffer::CheckBufferParams(m_ext.Opaque, true);
+    bUnsupported += ExtBuffer::CheckBufferParams(m_ext.CO, true);
+    bUnsupported += ExtBuffer::CheckBufferParams(m_ext.CO2, true);
+    bUnsupported += ExtBuffer::CheckBufferParams(m_ext.CO3, true);
+    bUnsupported += ExtBuffer::CheckBufferParams(m_ext.DDI, true);
+    bUnsupported += ExtBuffer::CheckBufferParams(m_ext.AVCTL, true);
+    bUnsupported += ExtBuffer::CheckBufferParams(m_ext.DumpFiles, true);
+    bUnsupported += ExtBuffer::CheckBufferParams(m_ext.VSI, true);
+
+
+    return !!bUnsupported;
+}
+
 void MfxVideoParam::SyncVideoToCalculableParam()
 {
     mfxU32 multiplier = Max<mfxU32>(mfx.BRCParamMultiplier, 1);
@@ -630,7 +652,7 @@ void MfxVideoParam::SyncVideoToCalculableParam()
         MaxKbps          = 0;
     }
 
-    InsertHRDInfo = false;
+    InsertHRDInfo = IsOn(m_ext.CO.VuiNalHrdParameters) || IsOn(m_ext.CO.PicTimingSEI);
     RawRef        = false;
 
     m_slice.resize(0);
@@ -1313,6 +1335,18 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
                                           || m_sps.conf_win_top_offset
                                           || m_sps.conf_win_bottom_offset;
     }
+    {
+        m_sps.vui.video_format                    = mfxU8(m_ext.VSI.VideoFormat);
+        m_sps.vui.video_full_range_flag           = m_ext.VSI.VideoFullRange;
+        m_sps.vui.colour_description_present_flag = m_ext.VSI.ColourDescriptionPresent;
+        m_sps.vui.colour_primaries                = mfxU8(m_ext.VSI.ColourPrimaries);
+        m_sps.vui.transfer_characteristics        = mfxU8(m_ext.VSI.TransferCharacteristics);
+        m_sps.vui.matrix_coeffs                    = mfxU8(m_ext.VSI.MatrixCoefficients);
+        m_sps.vui.video_signal_type_present_flag   =
+                    m_ext.VSI.VideoFormat                    != 5 ||
+                    m_ext.VSI.VideoFullRange                 != 0 ||
+                    m_ext.VSI.ColourDescriptionPresent       != 0;
+    }
 
     m_sps.vui.timing_info_present_flag = !!m_vps.timing_info_present_flag;
     if (m_sps.vui.timing_info_present_flag)
@@ -1321,7 +1355,8 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
         m_sps.vui.time_scale        = m_vps.time_scale;
     }
 
-    //m_sps.vui.frame_field_info_present_flag = 1;
+    if (InsertHRDInfo)
+        m_sps.vui.frame_field_info_present_flag = 1;
 
     if (InsertHRDInfo && mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {
@@ -2513,7 +2548,8 @@ IntraRefreshState GetIntraRefreshState(
 void ConfigureTask(
     Task &                task,
     Task const &          prevTask,
-    MfxVideoParam const & par)
+    MfxVideoParam const & par,
+    mfxU32 &baseLayerOrder)
 {
     assert(task.m_bs != 0);
     const bool isI    = !!(task.m_frameType & MFX_FRAMETYPE_I);
@@ -2524,6 +2560,29 @@ void ConfigureTask(
     mfxExtDPB*              pDPBReport = ExtBuffer::Get(*task.m_bs);
     mfxExtAVCRefLists*      pExtLists = ExtBuffer::Get(task.m_ctrl);
     mfxExtAVCRefListCtrl*   pExtListCtrl = ExtBuffer::Get(task.m_ctrl);
+
+    mfxU16 IntRefType = par.m_ext.CO2.IntRefType;
+
+    if (task.m_tid == 0 && IntRefType)
+    {
+       if (isI)
+            baseLayerOrder = 0;
+
+        mfxU32 refreshDimension = IntRefType == HORIZ_REFRESH ? CeilDiv(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.LCUSize) : CeilDiv(par.m_ext.HEVCParam.PicWidthInLumaSamples, par.LCUSize);
+        mfxU16 intraStripeWidthInMBs = (mfxU16)((refreshDimension + par.m_ext.CO2.IntRefCycleSize - 1) / par.m_ext.CO2.IntRefCycleSize);
+
+        task.m_IRState = GetIntraRefreshState(
+            par,
+            baseLayerOrder ++,
+            &(task.m_ctrl),
+            intraStripeWidthInMBs);
+    }
+
+     mfxU32 needRecoveryPointSei = (par.m_ext.CO.RecoveryPointSEI == MFX_CODINGOPTION_ON &&
+        ((IntRefType && task.m_IRState.firstFrameInCycle && task.m_IRState.IntraLocation == 0) ||
+        (IntRefType == 0 && isI)));
+
+    mfxU32 needCpbRemovalDelay = isIDR || needRecoveryPointSei;
 
     if (par.isTL())
     {
@@ -2585,7 +2644,7 @@ void ConfigureTask(
     else
         task.m_insertHeaders = 0;
 
-    if (isIDR && par.m_sps.vui.hrd_parameters_present_flag)
+    if (needCpbRemovalDelay && par.m_sps.vui.hrd_parameters_present_flag )
         task.m_insertHeaders |= INSERT_BPSEI;
 
     if (   par.m_sps.vui.frame_field_info_present_flag

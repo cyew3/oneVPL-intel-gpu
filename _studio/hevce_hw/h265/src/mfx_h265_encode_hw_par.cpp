@@ -776,6 +776,13 @@ void InheritDefaultValues(
     InheritOption(extHEVCTilInit->NumTileColumns,  extHEVCTilReset->NumTileColumns);
     InheritOption(extHEVCTilInit->NumTileRows,     extHEVCTilReset->NumTileRows);
 
+    mfxExtCodingOption const * extOptInit  = &parInit.m_ext.CO;
+    mfxExtCodingOption *       extOptReset = &parReset.m_ext.CO;
+
+    InheritOption(extOptInit->VuiNalHrdParameters,extOptReset->VuiNalHrdParameters);
+    InheritOption(extOptInit->PicTimingSEI,extOptReset->PicTimingSEI);
+    
+
     mfxExtCodingOption2 const * extOpt2Init  = &parInit.m_ext.CO2;
     mfxExtCodingOption2 *       extOpt2Reset = &parReset.m_ext.CO2;
 
@@ -802,6 +809,16 @@ void InheritDefaultValues(
     }
 
 
+    mfxExtVideoSignalInfo const*  extOptVSIInit  = &parInit.m_ext.VSI;
+    mfxExtVideoSignalInfo*  extOptVSIReset = &parReset.m_ext.VSI;
+
+    InheritOption(extOptVSIInit->VideoFormat,extOptVSIReset->VideoFormat );
+    InheritOption(extOptVSIInit->ColourPrimaries,extOptVSIReset->ColourPrimaries );
+    InheritOption(extOptVSIInit->TransferCharacteristics,extOptVSIReset->TransferCharacteristics );
+    InheritOption(extOptVSIInit->MatrixCoefficients,extOptVSIReset->MatrixCoefficients );
+    InheritOption(extOptVSIInit->VideoFullRange,extOptVSIReset->VideoFullRange );
+    InheritOption(extOptVSIInit->ColourDescriptionPresent,extOptVSIReset->ColourDescriptionPresent );
+
     // not inherited:
     // InheritOption(parInit.mfx.FrameInfo.PicStruct,      parReset.mfx.FrameInfo.PicStruct);
     // InheritOption(parInit.IOPattern,                    parReset.IOPattern);
@@ -817,6 +834,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     mfxU32 maxBR   = 0xFFFFFFFF;
     mfxU32 maxBuf  = 0xFFFFFFFF;
     mfxU16 maxDPB  = 16;
+    changed +=  par.CheckExtBufferParam();
 
     if (par.mfx.CodecLevel)
     {
@@ -913,6 +931,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if (caps.MBBRCSupport == 0 || par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
         changed += CheckOption(par.m_ext.CO2.MBBRC, (mfxU32)MFX_CODINGOPTION_OFF, 0);
 
+    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+        changed += CheckOption(par.m_ext.CO2.MBBRC, (mfxU32)MFX_CODINGOPTION_ON, 0);
+
     changed += CheckOption(par.mfx.FrameInfo.PicStruct, (mfxU16)MFX_PICSTRUCT_PROGRESSIVE, 0);
 
     if (par.m_ext.HEVCParam.PicWidthInLumaSamples > 0)
@@ -996,6 +1017,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
             changed += CheckRange(par.BufferSizeInKB, avgFS * 2 + 1, maxBuf);
         }
     }
+    changed += CheckTriStateOption(par.m_ext.CO.VuiNalHrdParameters);
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+       changed += CheckOption(par.m_ext.CO.VuiNalHrdParameters, (mfxU32)MFX_CODINGOPTION_OFF, 0);
+
+    changed += CheckTriStateOption(par.m_ext.CO.PicTimingSEI);
 
     if (par.m_ext.CO2.NumMbPerSlice != 0)
     {
@@ -1060,7 +1086,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         // refresh cycle length shouldn't be greater or equal to GOP size
         par.m_ext.CO2.IntRefType = 0;
         par.m_ext.CO2.IntRefCycleSize = 0;
-        changed = true;
+        changed +=1;
     }
 
     if (par.m_ext.CO3.IntRefCycleDist != 0 &&
@@ -1070,7 +1096,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         // refresh period length shouldn't be greater or equal to GOP size
         par.m_ext.CO2.IntRefType = 0;
         par.m_ext.CO3.IntRefCycleDist = 0;
-        changed = true;
+        changed +=1;
     }
 
     if (par.m_ext.CO3.IntRefCycleDist != 0 &&
@@ -1079,8 +1105,16 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     {
         // refresh period shouldn't be greater than refresh cycle size
         par.m_ext.CO3.IntRefCycleDist = 0;
-        changed = true;
+        changed +=1;
     }
+
+    if (!CheckRangeDflt(par.m_ext.VSI.VideoFormat,             0,   8, 5)) changed +=1;
+    if (!CheckRangeDflt(par.m_ext.VSI.ColourPrimaries,         0, 255, 2)) changed +=1;
+    if (!CheckRangeDflt(par.m_ext.VSI.TransferCharacteristics, 0, 255, 2)) changed +=1;
+    if (!CheckRangeDflt(par.m_ext.VSI.MatrixCoefficients,      0, 255, 2)) changed +=1;
+    if (!CheckOption(par.m_ext.VSI.VideoFullRange, 0))                     changed +=1;
+    if (!CheckOption(par.m_ext.VSI.ColourDescriptionPresent, 0))           changed +=1;
+
 
     sts = CheckProfile(par);
 

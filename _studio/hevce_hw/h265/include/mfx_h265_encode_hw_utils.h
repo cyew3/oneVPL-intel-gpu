@@ -284,7 +284,9 @@ namespace ExtBuffer
      MFX_EXTBUFF_AVC_TEMPORAL_LAYERS, \
      MFX_EXTBUFF_DUMP, \
      MFX_EXTBUFF_ENCODER_RESET_OPTION,\
-     MFX_EXTBUFF_CODING_OPTION_VPS
+     MFX_EXTBUFF_CODING_OPTION_VPS,\
+     MFX_EXTBUFF_VIDEO_SIGNAL_INFO
+    ;
 
     template<class T> struct ExtBufferMap {};
 
@@ -294,6 +296,7 @@ namespace ExtBuffer
         EXTBUF(mfxExtOpaqueSurfaceAlloc,    MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
         EXTBUF(mfxExtDPB,                   MFX_EXTBUFF_DPB);
         EXTBUF(mfxExtAVCRefLists,           MFX_EXTBUFF_AVC_REFLISTS);
+        EXTBUF(mfxExtCodingOption,          MFX_EXTBUFF_CODING_OPTION);
         EXTBUF(mfxExtCodingOption2,         MFX_EXTBUFF_CODING_OPTION2);
         EXTBUF(mfxExtCodingOption3,         MFX_EXTBUFF_CODING_OPTION3);
         EXTBUF(mfxExtCodingOptionDDI,       MFX_EXTBUFF_DDI);
@@ -303,8 +306,80 @@ namespace ExtBuffer
         EXTBUF(mfxExtDumpFiles,             MFX_EXTBUFF_DUMP);
         EXTBUF(mfxExtEncoderResetOption,    MFX_EXTBUFF_ENCODER_RESET_OPTION);
         EXTBUF(mfxExtCodingOptionVPS,       MFX_EXTBUFF_CODING_OPTION_VPS);
+        EXTBUF(mfxExtVideoSignalInfo,       MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
+        EXTBUF(mfxExtEncoderCapability,     MFX_EXTBUFF_ENCODER_CAPABILITY );
     #undef EXTBUF
 
+    #define _CopyPar(dst, src, PAR) dst.PAR = src.PAR;
+    #define _CopyPar1(PAR) _CopyPar(buf_dst, buf_src, PAR);
+    #define  _NO_CHECK()  buf_dst = buf_src;
+
+    template <class T> void CopySupportedParams(T& buf_dst, T& buf_src)
+    {
+        _NO_CHECK();
+    }
+
+    inline void   CopySupportedParams(mfxExtHEVCParam& buf_dst, mfxExtHEVCParam& buf_src)
+    {
+        _CopyPar1(PicWidthInLumaSamples);
+        _CopyPar1(PicHeightInLumaSamples);
+    }
+    inline void  CopySupportedParams(mfxExtHEVCTiles& buf_dst, mfxExtHEVCTiles& buf_src)
+    {
+        _CopyPar1(NumTileRows);
+        _CopyPar1(NumTileColumns);
+    } 
+
+    inline void CopySupportedParams (mfxExtCodingOption& buf_dst, mfxExtCodingOption& buf_src)
+    {
+        _CopyPar1(PicTimingSEI);
+        _CopyPar1(VuiNalHrdParameters);
+    }
+    inline void  CopySupportedParams(mfxExtCodingOption2& buf_dst, mfxExtCodingOption2& buf_src)
+    {
+        _CopyPar1(IntRefType);
+        _CopyPar1(IntRefCycleSize);
+        _CopyPar1(IntRefQPDelta);
+
+        _CopyPar1(MBBRC);
+        _CopyPar1(BRefType);
+        _CopyPar1(NumMbPerSlice);
+        _CopyPar1(DisableDeblockingIdc);      
+    }
+
+    inline void  CopySupportedParams(mfxExtCodingOption3& buf_dst, mfxExtCodingOption3& buf_src)
+    {
+        _CopyPar1(PRefType);
+        _CopyPar1(IntRefCycleDist);
+    }
+
+    inline void  CopySupportedParams(mfxExtCodingOptionDDI& buf_dst, mfxExtCodingOptionDDI& buf_src)
+    {
+        _CopyPar1(NumActiveRefBL0);
+        _CopyPar1(NumActiveRefBL1);
+    }
+    inline void  CopySupportedParams(mfxExtEncoderCapability& buf_dst, mfxExtEncoderCapability& buf_src)
+    {
+        _CopyPar1(MBPerSec);
+    }
+    #undef _CopyPar
+    #undef _CopyPar1
+    #undef _NO_CHECK
+
+    template<class T> bool CheckBufferParams(T& buf, bool bFix)
+    {
+        bool bUnsuppoted = false;
+        T buf_ref;
+        Init(buf_ref);
+        CopySupportedParams(buf_ref, buf);
+        bUnsuppoted = (memcmp(&buf_ref, &buf, sizeof(T))!=0);
+        if (bUnsuppoted && bFix)
+        {
+            buf = buf_ref;
+        }
+        return bUnsuppoted;    
+    }
+    
     class Proxy
     {
     private:
@@ -497,12 +572,14 @@ public:
         mfxExtHEVCParam             HEVCParam;
         mfxExtHEVCTiles             HEVCTiles;
         mfxExtOpaqueSurfaceAlloc    Opaque;
+        mfxExtCodingOption          CO;
         mfxExtCodingOption2         CO2;
         mfxExtCodingOption3         CO3;
         mfxExtCodingOptionDDI       DDI;
         mfxExtAvcTemporalLayers     AVCTL;
         mfxExtDumpFiles             DumpFiles;
-        mfxExtBuffer *              m_extParam[9];
+        mfxExtVideoSignalInfo       VSI;
+        mfxExtBuffer *              m_extParam[10];
     } m_ext;
 
     mfxU32 BufferSizeInKB;
@@ -532,6 +609,7 @@ public:
     void GetSliceHeader(Task const & task, Task const & prevTask, Slice & s) const;
 
     mfxStatus GetExtBuffers(mfxVideoParam& par, bool query = false);
+    bool CheckExtBufferParam();
 
     bool isBPyramid() const { return m_ext.CO2.BRefType == MFX_B_REF_PYRAMID; }
     bool isLowDelay() const { return ((m_ext.CO3.PRefType == MFX_P_REF_PYRAMID) && !isTL()); }
@@ -664,8 +742,8 @@ bool isLTR(
 void ConfigureTask(
     Task &                task,
     Task const &          prevTask,
-    MfxVideoParam const & video);
-
+    MfxVideoParam const & video,
+    mfxU32 &baseLayerOrder);
 mfxI64 CalcDTSFromPTS(
     mfxFrameInfo const & info,
     mfxU16               dpbOutputDelay,
