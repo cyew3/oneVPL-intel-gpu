@@ -366,6 +366,14 @@ namespace ExtBuffer
     #undef _CopyPar1
     #undef _NO_CHECK
 
+    template<class T> void Init(T& buf)
+    {
+        Zero(buf);
+        mfxExtBuffer& header = *((mfxExtBuffer*)&buf);
+        header.BufferId = ExtBufferMap<T>::Id;
+        header.BufferSz = sizeof(T);
+    }
+
     template<class T> bool CheckBufferParams(T& buf, bool bFix)
     {
         bool bUnsuppoted = false;
@@ -407,14 +415,6 @@ namespace ExtBuffer
         return Proxy(par.ExtParam, par.NumExtParam);
     }
 
-    template<class T> void Init(T& buf)
-    {
-        Zero(buf);
-        mfxExtBuffer& header = *((mfxExtBuffer*)&buf);
-        header.BufferId = ExtBufferMap<T>::Id;
-        header.BufferSz = sizeof(T);
-    }
-    
     template<class T> inline void Add(T& buf, mfxExtBuffer* pBuffers[], mfxU16 &numbuffers)
     {
         pBuffers[numbuffers++] = ((mfxExtBuffer*)&buf);
