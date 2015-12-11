@@ -211,8 +211,8 @@ namespace hevce_init
         {/*08*/ MFX_ERR_NONE, _2_CALL_CLOSE, NONE, {} },
         {/*09*/ MFX_ERR_NONE, _2_CALL_CLOSE, NONE, {} },
         //PicStruct
-        {/*10*/ MFX_ERR_INVALID_VIDEO_PARAM, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
-        {/*11*/ MFX_ERR_INVALID_VIDEO_PARAM, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+        {/*10*/ MFX_ERR_NONE, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+        {/*11*/ MFX_ERR_NONE, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
         {/*12*/ MFX_ERR_INVALID_VIDEO_PARAM, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 255 } },
         {/*13*/ MFX_ERR_INVALID_VIDEO_PARAM, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 0x11111111 } },
         //Resolution
@@ -405,7 +405,7 @@ namespace hevce_init
             {
                 sts = MFX_ERR_UNSUPPORTED;
             }
-            if ((tc.type == PIC_STRUCT) && (tc.sts != MFX_ERR_NONE))
+            if (tc.type == PIC_STRUCT)
             {
                 sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
             }
