@@ -297,6 +297,8 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             msdk_printf(MSDK_STRING("Session %d was joined with other sessions\n"), i);
         else
             msdk_printf(MSDK_STRING("Session %d was NOT joined with other sessions\n"), i);
+
+        m_pSessionArray[i]->pPipeline->SetPipelineID(i);
     }
 
     msdk_printf(MSDK_STRING("\n"));

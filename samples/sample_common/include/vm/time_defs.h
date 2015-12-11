@@ -47,5 +47,6 @@ typedef mfxI64 msdk_tick;
 
 msdk_tick msdk_time_get_tick(void);
 msdk_tick msdk_time_get_frequency(void);
+mfxU64 rdtsc(void);
 
 #endif // #ifndef __TIME_DEFS_H__

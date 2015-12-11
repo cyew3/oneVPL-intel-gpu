@@ -65,6 +65,7 @@
 #endif
 
 #define MFX_FOURCC_DUMP MFX_MAKEFOURCC('D','U','M','P')
+#define MAX_PREF_LEN    256
 
 namespace TranscodingSample
 {
@@ -230,6 +231,34 @@ namespace TranscodingSample
         PreEncAuxBuffer* pCtrl;
     };
 
+    class CIOStat : public CTimeStatistics
+    {
+        public:
+            CIOStat() : CTimeStatistics()
+            {
+                MSDK_ZERO_MEMORY(bufDir);
+            }
+
+            CIOStat(const msdk_char *dir) : CTimeStatistics()
+            {
+                msdk_strcopy(bufDir, dir);
+            }
+
+            inline void SetDirection(const msdk_char *dir)
+            {
+                if (dir)
+                    msdk_strcopy(bufDir, dir);
+            }
+
+            inline void PrintStatistics(mfxU32 numPipelineid)
+            {
+                msdk_printf(MSDK_STRING("stat[%llu]: %s=%d;Total=%.3lf;Samples=%lld;StdDev=%.3lf;Min=%.3lf;Max=%.3lf;Avg=%.3lf\n"),rdtsc(),bufDir,numPipelineid,totalTime*1000,GetTimeStdDev()*1000,minTime*1000,maxTime*1000,numMeasurements,GetAvgTime()*1000);
+            }
+        protected:
+            msdk_char bufDir[MAX_PREF_LEN];
+    };
+
+
     class ExtendedBSStore
     {
     public:
@@ -373,6 +402,8 @@ namespace TranscodingSample
 
         mfxStatus QueryMFXVersion(mfxVersion *version)
         { MSDK_CHECK_POINTER(m_pmfxSession.get(), MFX_ERR_NULL_PTR); return m_pmfxSession->QueryVersion(version); };
+        inline mfxU32 GetPipelineID(){return m_nID;}
+        inline void SetPipelineID(mfxU32 id){m_nID = id;}
 
     protected:
         virtual mfxStatus CheckRequiredAPIVersion(mfxVersion& version, sInputParams *pParams);
@@ -530,6 +561,7 @@ namespace TranscodingSample
         std::vector<mfxExtBuffer*> m_PluginExtParams;
         std::vector<mfxExtBuffer*> m_PreEncExtParams;
 
+        mfxU32         m_nID;
         mfxU16         m_AsyncDepth;
         mfxU32         m_nProcessedFramesNum;
 
@@ -566,8 +598,8 @@ namespace TranscodingSample
         int       statisticsWindowSize; // Sliding window size for Statistics
         mfxU32    m_nOutputFramesNum;
 
-        CTimeStatistics inputStatistics;
-        CTimeStatistics outputStatistics;
+        CIOStat inputStatistics;
+        CIOStat outputStatistics;
     private:
         DISALLOW_COPY_AND_ASSIGN(CTranscodingPipeline);
 

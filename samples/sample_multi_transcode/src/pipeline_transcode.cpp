@@ -1,4 +1,4 @@
-/*********************************************************************************
+/********************************************************************************
 
 INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
@@ -94,6 +94,7 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_bIsPlugin(false),
     m_nTimeout(0),
     m_bOwnMVCSeqDescMemory(true),
+    m_nID(0),
     m_AsyncDepth(0),
     m_nProcessedFramesNum(0),
     m_nOutputFramesNum(0),
@@ -162,6 +163,9 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_CodingOption3.Header.BufferSz = sizeof(m_CodingOption3);
 
     m_VppCompParams.InputStream = NULL;
+
+    inputStatistics.SetDirection((const msdk_char *)"Input");
+    outputStatistics.SetDirection((const msdk_char *)"Output");
 } //CTranscodingPipeline::CTranscodingPipeline()
 
 CTranscodingPipeline::~CTranscodingPipeline()
@@ -746,7 +750,7 @@ mfxStatus CTranscodingPipeline::Decode()
                     m_nProcessedFramesNum++;
                     if (statisticsWindowSize && m_nProcessedFramesNum && 0 == m_nProcessedFramesNum % statisticsWindowSize)
                     {
-                        inputStatistics.PrintStatistics(MSDK_STRING("(I):"));
+                        inputStatistics.PrintStatistics(GetPipelineID());
                         inputStatistics.ResetStatistics();
                         fflush(stdout);
                     }
@@ -1052,7 +1056,7 @@ mfxStatus CTranscodingPipeline::Encode()
         m_nProcessedFramesNum++;
         if (statisticsWindowSize && m_nOutputFramesNum && 0 == m_nOutputFramesNum % statisticsWindowSize)
         {
-            outputStatistics.PrintStatistics(MSDK_STRING("(O):"));
+            inputStatistics.PrintStatistics(GetPipelineID());
             outputStatistics.ResetStatistics();
             fflush(stdout);
         }
@@ -1322,8 +1326,8 @@ mfxStatus CTranscodingPipeline::Transcode()
         {
             if (m_nOutputFramesNum && 0 == m_nOutputFramesNum % statisticsWindowSize)
             {
-                inputStatistics.PrintStatistics(MSDK_STRING("(I): "));
-                outputStatistics.PrintStatistics(MSDK_STRING("(O): "));
+                inputStatistics.PrintStatistics(GetPipelineID());
+                outputStatistics.PrintStatistics(GetPipelineID());
                 inputStatistics.ResetStatistics();
                 outputStatistics.ResetStatistics();
                 fflush(stdout);
