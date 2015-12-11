@@ -2589,6 +2589,8 @@ mfxStatus MFXDecPipeline::CreateAllocator()
         request->NumFrameSuggested = nSurfaces;
 
         memcpy(&request->Info, &m_components[eREN].m_params.mfx.FrameInfo, sizeof(mfxFrameInfo));
+        request->Info.CropH = m_components[eDEC].m_params.mfx.FrameInfo.CropH;
+        request->Info.CropW = m_components[eDEC].m_params.mfx.FrameInfo.CropW;
 
         //request type for opaq memory should be used from decoder queryiosurface return value
         if (m_components[eDEC].m_bufType != MFX_BUF_OPAQ &&
@@ -2648,6 +2650,8 @@ mfxStatus MFXDecPipeline::CreateAllocator()
         request->NumFrameSuggested = nSurfaces;
 
         memcpy(&request->Info, &m_components[eVPP].m_params.vpp.In, sizeof(mfxFrameInfo));
+        request->Info.CropH = m_components[eDEC].m_params.mfx.FrameInfo.CropH;
+        request->Info.CropW = m_components[eDEC].m_params.mfx.FrameInfo.CropW;
 
         //request type for opaq memory should be used from decoder qoeryiosurface return value
         if (m_components[eDEC].m_bufType != MFX_BUF_OPAQ &&
