@@ -1165,7 +1165,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_sps.conformance_window_flag           = 0;
     m_sps.bit_depth_luma_minus8             = Max(0, (mfxI32)mfx.FrameInfo.BitDepthLuma - 8);
     m_sps.bit_depth_chroma_minus8           = Max(0, (mfxI32)mfx.FrameInfo.BitDepthChroma - 8);
-    m_sps.log2_max_pic_order_cnt_lsb_minus4 = (mfxU8)Clip3(0, 12, (mfxI32)CeilLog2(slo.max_num_reorder_pics + slo.max_dec_pic_buffering_minus1 + 1) - 3);
+    m_sps.log2_max_pic_order_cnt_lsb_minus4 = (mfxU8)Clip3(0, 12, (mfxI32)CeilLog2(mfx.GopRefDist + slo.max_dec_pic_buffering_minus1) - 1);
 
     m_sps.log2_min_luma_coding_block_size_minus3   = 0; // SKL
     m_sps.log2_diff_max_min_luma_coding_block_size = CeilLog2(LCUSize) - 3 - m_sps.log2_min_luma_coding_block_size_minus3;
@@ -2623,7 +2623,7 @@ void ConfigureTask(
         task.m_qpY = (mfxU8)task.m_ctrl.QP;
 
     task.m_lastIPoc = prevTask.m_lastIPoc;
-    task.m_eo = task.m_eo + 1;
+    task.m_eo = prevTask.m_eo + 1;
 
     InitDPB(task, prevTask, pExtListCtrl);
 
