@@ -1575,6 +1575,12 @@ mfxStatus CDecodingPipeline::RunDecoding()
             pOutSurface = NULL;
             do {
                 sts = m_pmfxDEC->DecodeFrameAsync(pBitstream, &(m_pCurrentFreeSurface->frame), &pOutSurface, &(m_pCurrentFreeOutputSurface->syncp));
+                if (pBitstream && MFX_ERR_MORE_DATA == sts && pBitstream->MaxLength == pBitstream->DataLength)
+                {
+                    mfxStatus status = ExtendMfxBitstream(pBitstream, pBitstream->MaxLength * 2);
+                    MSDK_CHECK_RESULT(status, MFX_ERR_NONE, status);
+                }
+
                 if (MFX_WRN_DEVICE_BUSY == sts) {
                     if (m_bIsCompleteFrame) {
                         //in low latency mode device busy leads to increasing of latency
