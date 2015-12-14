@@ -7582,7 +7582,7 @@ void HeaderPacker::Init(
     PrepareSpsPpsHeaders(par, m_sps, m_subset, m_pps);
 
     // prepare data for slice level
-    m_needPrefixNalUnit       = (IsSvcProfile(par.mfx.CodecProfile) || (par.calcParam.numTemporalLayer > 0)) && (par.mfx.LowPower != MFX_CODINGOPTION_ON && par.mfx.NumSlice != 1);//VDEnc limitation for temporal scalability we need to patch bitstream with SVC NAL after encoding
+    m_needPrefixNalUnit       = (IsSvcProfile(par.mfx.CodecProfile) || (par.calcParam.numTemporalLayer > 0)) && (par.mfx.LowPower != MFX_CODINGOPTION_ON || par.mfx.NumSlice == 1);//VDEnc limitation for temporal scalability we need to patch bitstream with SVC NAL after encoding
     m_cabacInitIdc            = extDdi->CabacInitIdcPlus1 - 1;
     m_directSpatialMvPredFlag = extDdi->DirectSpatialMvPredFlag;
     for (mfxU32 i = 0; i < numDep; i++)
