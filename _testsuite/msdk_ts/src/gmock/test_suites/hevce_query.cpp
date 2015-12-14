@@ -290,8 +290,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*49*/ MFX_ERR_UNSUPPORTED, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 255 } },
     {/*50*/ MFX_ERR_UNSUPPORTED, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 0x11111111 } },
     //Crops
-    {/*51*/ MFX_ERR_UNSUPPORTED, CROP, XY, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 10 } },
-    {/*52*/ MFX_ERR_UNSUPPORTED, CROP, XY, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 10 } },
+    {/*51*/ MFX_ERR_UNSUPPORTED, CROP, XY, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 20 } },
+    {/*52*/ MFX_ERR_UNSUPPORTED, CROP, XY, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 20 } },
     {/*53*/ MFX_ERR_UNSUPPORTED, CROP, W, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 736 + 10 } },
     {/*54*/ MFX_ERR_UNSUPPORTED, CROP, H, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480 + 10 } },
     {/*55*/ MFX_ERR_UNSUPPORTED, CROP, WH, { { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 736 + 10 },
@@ -430,12 +430,22 @@ int TestSuite::RunTest(unsigned int id)
         {
             g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
         }
+        if (tc.type == EXT_BUFF)
+        {
+            if ((tc.sub_type == MFX_EXTBUFF_AVC_REFLIST_CTRL) ||
+                (tc.sub_type == MFX_EXTBUFF_ENCODER_RESET_OPTION) ||
+                (tc.sub_type == MFX_EXTBUFF_VIDEO_SIGNAL_INFO))
+                g_tsStatus.expect(MFX_ERR_NONE);
+            else if (tc.sub_type == NONE)
+                g_tsStatus.expect(MFX_ERR_NULL_PTR);
+
+        }
         if (tc.type == CROP)
         {
             if (tc.sts == MFX_ERR_UNSUPPORTED)
             {
                 g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-                if ((tc.sub_type == WH) || (tc.sub_type == W) || (tc.sub_type == H))
+                if ((tc.sub_type == XY) || (tc.sub_type == WH) || (tc.sub_type == W) || (tc.sub_type == H))
                 {
                     g_tsStatus.expect(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
                 }

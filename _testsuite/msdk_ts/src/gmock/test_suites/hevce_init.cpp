@@ -233,8 +233,8 @@ namespace hevce_init
         {/*18*/ MFX_ERR_UNSUPPORTED, RESOLUTION, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 16384 + 16 } },
         {/*19*/ MFX_ERR_UNSUPPORTED, RESOLUTION, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 16384 + 16 } },
         //Crops
-        {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, XY, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 10 } },
-        {/*21*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, XY, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 10 } },
+        {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, XY, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 20 } },
+        {/*21*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, XY, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 20 } },
         {/*22*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, W, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 736 + 10 } },
         {/*23*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, H, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480 + 10 } },
         {/*24*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, WH,
@@ -420,15 +420,18 @@ namespace hevce_init
                 else
                     sts = MFX_ERR_UNSUPPORTED;
             }
-            if ((tc.type == EXT_BUFF) && (tc.sts != MFX_ERR_NONE))
+
+            if (tc.type == EXT_BUFF)
             {
                 if ((tc.sub_type == MFX_EXTBUFF_AVC_REFLIST_CTRL) ||
-                    (tc.sub_type == MFX_EXTBUFF_ENCODER_RESET_OPTION))
+                    (tc.sub_type == MFX_EXTBUFF_ENCODER_RESET_OPTION) ||
+                    (tc.sub_type == MFX_EXTBUFF_VIDEO_SIGNAL_INFO))
                     sts = MFX_ERR_NONE;
                 else if (tc.sub_type == NONE)
                     sts = MFX_ERR_NULL_PTR;
                 else
-                    sts = MFX_ERR_UNSUPPORTED;
+                    if (tc.sts != MFX_ERR_NONE)
+                        sts = MFX_ERR_UNSUPPORTED;
             }
 
             if (tc.type == RATE_CONTROL)
@@ -444,7 +447,7 @@ namespace hevce_init
                 if (tc.sts < MFX_ERR_NONE)
                 {
                     sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-                    if ((tc.sub_type == WH) || (tc.sub_type == W) || (tc.sub_type == H))
+                    if ((tc.sub_type == XY) || (tc.sub_type == WH) || (tc.sub_type == W) || (tc.sub_type == H))
                     {
                         sts = MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
                     }
