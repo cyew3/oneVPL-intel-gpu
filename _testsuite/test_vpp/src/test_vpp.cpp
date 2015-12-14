@@ -49,7 +49,7 @@ void PutPerformanceToFile(sInputParams& Params, mfxF64 FPS)
     vm_char filters[11];
     vm_char *_tptr = filters;
 
-    if (Params.frameInfo[0].PicStruct != Params.frameInfo[1].PicStruct)
+    if (Params.frameInfoIn[0].PicStruct != Params.frameInfoOut[0].PicStruct)
     {
         vm_string_sprintf(_tptr, VM_STRING("DI "));
         _tptr += 3;
@@ -71,10 +71,10 @@ void PutPerformanceToFile(sInputParams& Params, mfxF64 FPS)
 
 
     vm_file_fprintf(fPRF, VM_STRING("%s, %dx%d, %dx%d, %s, %s, %f\r\n"), srcFileName_ascii,
-        Params.frameInfo[0].nWidth, 
-        Params.frameInfo[0].nHeight, 
-        Params.frameInfo[1].nWidth, 
-        Params.frameInfo[1].nHeight, 
+        Params.frameInfoIn[0].nWidth,
+        Params.frameInfoIn[0].nHeight,
+        Params.frameInfoOut[0].nWidth,
+        Params.frameInfoOut[0].nHeight,
         iopattern_ascii,
         filters,
         FPS);
@@ -85,8 +85,8 @@ void PutPerformanceToFile(sInputParams& Params, mfxF64 FPS)
 static
 void vppDefaultInitParams( sInputParams* pParams, sFiltersParam* pDefaultFiltersParam )
 {
-    pParams->frameInfo[VPP_IN]  = *pDefaultFiltersParam->pOwnFrameInfo;
-    pParams->frameInfo[VPP_OUT] = *pDefaultFiltersParam->pOwnFrameInfo;
+    pParams->frameInfoIn.clear();  pParams->frameInfoIn.push_back ( *pDefaultFiltersParam->pOwnFrameInfo );
+    pParams->frameInfoOut.clear(); pParams->frameInfoOut.push_back( *pDefaultFiltersParam->pOwnFrameInfo );
 
     pParams->IOPattern    = MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     pParams->ImpLib       = MFX_IMPL_AUTO;
@@ -101,6 +101,7 @@ void vppDefaultInitParams( sInputParams* pParams, sFiltersParam* pDefaultFilters
     pParams->rotate.clear(); pParams->rotate.push_back(0);
     pParams->bScaling     = false;
     pParams->scalingMode  = MFX_SCALING_MODE_DEFAULT;
+    pParams->numFrames    = 0;
 
     // Optional video processing features
     pParams->deinterlaceParam.clear(); pParams->deinterlaceParam.push_back( *pDefaultFiltersParam->pDIParam            );
@@ -371,7 +372,7 @@ int main(int argc, vm_char *argv[])
     //reset pointers to the all internal resources
     ZERO_MEMORY(Resources);
     //ZERO_MEMORY(mfxParamsVideo);
-    ZERO_MEMORY(Params);
+    //ZERO_MEMORY(Params);
     ZERO_MEMORY(allocator);
     //ZERO_MEMORY(frameProcessor);
     ZERO_MEMORY(realFrameInfo[VPP_IN]  );
@@ -403,17 +404,17 @@ int main(int argc, vm_char *argv[])
 
     // to prevent incorrect read/write of image in case of CropW/H != width/height 
     // application save real image size
-    vppSafeRealInfo( &(Params.frameInfo[VPP_IN]),  &realFrameInfo[VPP_IN]);
-    vppSafeRealInfo( &(Params.frameInfo[VPP_OUT]), &realFrameInfo[VPP_OUT]);
+    vppSafeRealInfo( &(Params.frameInfoIn[0]),  &realFrameInfo[VPP_IN]);
+    vppSafeRealInfo( &(Params.frameInfoOut[0]), &realFrameInfo[VPP_OUT]);
     if( VPP_FILTER_DISABLED != Params.svcParam[0].mode )
     {
-        SaveRealInfoForSvcOut(Params.svcParam[0].descr, Resources.realSvcOutFrameInfo, Params.frameInfo[VPP_OUT].FourCC);
+        SaveRealInfoForSvcOut(Params.svcParam[0].descr, Resources.realSvcOutFrameInfo, Params.frameInfoOut[0].FourCC);
     }
 
     // to check time stamp settings 
     if (Params.ptsFR)
     {
-        Params.frameInfo[VPP_IN].dFrameRate = Params.ptsFR;
+        Params.frameInfoIn[0].dFrameRate = Params.ptsFR;
     }
 
     if (!CheckInputParams(argv, &Params))
@@ -614,6 +615,10 @@ int main(int argc, vm_char *argv[])
             sts = Resources.pProcessor->pmfxVPP->Reset(Resources.pVppParams);
             CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to Reset VPP component\n")); WipeResources(&Resources);});
 
+            vppSafeRealInfo( &(Params.frameInfoIn[paramID]),  &realFrameInfo[VPP_IN]);
+            vppSafeRealInfo( &(Params.frameInfoOut[paramID]), &realFrameInfo[VPP_OUT]);
+            UpdateSurfacePool(mfxParamsVideo.vpp.Out, allocator.response[VPP_OUT].NumFrameActual, allocator.pSurfaces[VPP_OUT]);
+            UpdateSurfacePool(mfxParamsVideo.vpp.In,  allocator.response[VPP_IN].NumFrameActual,  allocator.pSurfaces[VPP_IN]);
             vm_string_printf(VM_STRING("VPP reseted at frame number %d\n"), numGetFrames);
         }
 

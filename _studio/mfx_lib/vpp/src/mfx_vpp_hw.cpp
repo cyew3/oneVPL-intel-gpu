@@ -2456,7 +2456,7 @@ mfxStatus VideoVPPHW::ValidateParams(mfxVideoParam *par, mfxVppCaps *caps)
             if (extFP->Mode != MFX_VPP_COPY_FRAME && extFP->Mode != MFX_VPP_COPY_FIELD)
             {
                 // Unsupported mode
-                return MFX_ERR_UNSUPPORTED;
+                return MFX_ERR_INVALID_VIDEO_PARAM;
             }
 
             if (extFP->Mode == MFX_VPP_COPY_FIELD)
@@ -2464,7 +2464,7 @@ mfxStatus VideoVPPHW::ValidateParams(mfxVideoParam *par, mfxVppCaps *caps)
                 if(extFP->InField != MFX_PICSTRUCT_FIELD_TFF && extFP->InField != MFX_PICSTRUCT_FIELD_BFF)
                 {
                     // Copy field needs specific type of interlace
-                    return MFX_ERR_UNSUPPORTED;
+                    return MFX_ERR_INVALID_VIDEO_PARAM;
                 }
             }
             break;
@@ -2481,6 +2481,32 @@ mfxStatus VideoVPPHW::ValidateParams(mfxVideoParam *par, mfxVppCaps *caps)
                 return MFX_ERR_UNSUPPORTED;
             }
 
+            break;
+        } //case MFX_EXTBUFF_VPP_DEINTERLACING
+        case MFX_EXTBUFF_VPP_DOUSE:
+        {
+            mfxExtVPPDoUse*   extDoUse  = (mfxExtVPPDoUse*)data;
+            MFX_CHECK_NULL_PTR1(extDoUse);
+            for( mfxU32 algIdx = 0; algIdx < extDoUse->NumAlg; algIdx++ )
+            {
+                if( !CheckDoUseCompatibility( extDoUse->AlgList[algIdx] ) )
+                {
+                    sts = MFX_ERR_UNSUPPORTED;
+                    continue; // stop working with ExtParam[i]
+                }
+
+                if(MFX_EXTBUFF_VPP_COMPOSITE == extDoUse->AlgList[algIdx])
+                {
+                    sts = MFX_ERR_INVALID_VIDEO_PARAM;
+                    continue; // stop working with ExtParam[i]
+                }
+
+                if(MFX_EXTBUFF_VPP_FIELD_PROCESSING == extDoUse->AlgList[algIdx])
+                {
+                    sts = MFX_ERR_INVALID_VIDEO_PARAM;
+                    continue; // stop working with ExtParam[i]
+                }
+            }
             break;
         } //case MFX_EXTBUFF_VPP_DEINTERLACING
         } // switch
@@ -2615,7 +2641,7 @@ mfxStatus ConfigureExecuteParams(
                 }
                 else if (MFX_DEINTERLACING_ADVANCED_NOREF == executeParams.iDeinterlacingAlgorithm)
                 {
-                    executeParams.iDeinterlacingAlgorithm = MFX_DEINTERLACING_ADVANCED;
+                    executeParams.iDeinterlacingAlgorithm = MFX_DEINTERLACING_ADVANCED_NOREF;
                     config.m_bRefFrameEnable = false;
                     config.m_extConfig.customRateData.fwdRefCount = 0;
                     config.m_extConfig.customRateData.bkwdRefCount = 0; /* ref frame */
@@ -2666,7 +2692,7 @@ mfxStatus ConfigureExecuteParams(
                 else if (MFX_DEINTERLACING_ADVANCED_NOREF == executeParams.iDeinterlacingAlgorithm)
                 {
                     // use ADI with spatial info, no reference frame (speed)
-                    executeParams.iDeinterlacingAlgorithm = MFX_DEINTERLACING_ADVANCED;
+                    executeParams.iDeinterlacingAlgorithm = MFX_DEINTERLACING_ADVANCED_NOREF;
                     config.m_bRefFrameEnable = false;
                     config.m_surfCount[VPP_IN]  = IPP_MAX(1, config.m_surfCount[VPP_IN]);
                     config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);

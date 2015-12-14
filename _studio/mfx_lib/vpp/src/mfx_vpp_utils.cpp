@@ -47,7 +47,6 @@ const mfxU32 g_TABLE_DO_USE [] =
     MFX_EXTBUFF_VPP_COMPOSITE,
     MFX_EXTBUFF_VPP_ROTATION,
     MFX_EXTBUFF_VPP_SCALING,
-    MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION,
     MFX_EXTBUFF_VPP_VARIANCE_REPORT,
     MFX_EXTBUFF_VPP_DEINTERLACING,
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
@@ -1212,8 +1211,7 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
     }
 
     /* [VarianceRep] FILTER */
-    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_VARIANCE_REPORT ) ||
-        IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION ) )
+    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_VARIANCE_REPORT ) )
     {
         newList[index] = MFX_EXTBUFF_VPP_VARIANCE_REPORT;
         index++;
@@ -1632,7 +1630,7 @@ mfxStatus GetPipelineList(
             /* We have processed MFX_EXTBUFF_VPP_DEINTERLACING already*/
             if( !IsFilterFound(  &configList[0], configCount, MFX_EXTBUFF_VPP_DEINTERLACING ) )
             {
-                pipelineList.push_back( (MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION == configList[fIdx]) ? MFX_EXTBUFF_VPP_VARIANCE_REPORT : configList[fIdx]);
+                pipelineList.push_back(configList[fIdx]);
             } /*if( !IsFilterFound */
         } /* if( IsFilterFound( g_TABLE_CONFIG */
     } /*for(fIdx = 0; fIdx < fCount; fIdx++)*/

@@ -218,7 +218,7 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
 
     vm_string_printf(VM_STRING("\n"));
     vm_string_printf(VM_STRING("Video Enhancement Algorithms\n"));
-    vm_string_printf(VM_STRING("Deinterlace\t%s\n"), (pParams->frameInfo[VPP_IN].PicStruct != pParams->frameInfo[VPP_OUT].PicStruct) ? VM_STRING("ON"): VM_STRING("OFF"));
+    vm_string_printf(VM_STRING("Deinterlace\t%s\n"), (pParams->frameInfoIn[0].PicStruct != pParams->frameInfoOut[0].PicStruct) ? VM_STRING("ON"): VM_STRING("OFF"));
     vm_string_printf(VM_STRING("Denoise\t\t%s\n"),     (VPP_FILTER_DISABLED != pParams->denoiseParam[0].mode) ? VM_STRING("ON"): VM_STRING("OFF"));
 
     vm_string_printf(VM_STRING("SceneDetection\t%s\n"),    (VPP_FILTER_DISABLED != pParams->vaParam[0].mode)      ? VM_STRING("ON"): VM_STRING("OFF"));
@@ -346,54 +346,54 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams, mfxU32 
     CHECK_POINTER(pParams,    MFX_ERR_NULL_PTR);
     CHECK_POINTER(pInParams,  MFX_ERR_NULL_PTR);
 
-    if (pInParams->frameInfo[VPP_IN].nWidth == 0 || pInParams->frameInfo[VPP_IN].nHeight == 0 ){
+    if (pInParams->frameInfoIn[paramID].nWidth == 0 || pInParams->frameInfoIn[paramID].nHeight == 0 ){
         return MFX_ERR_UNSUPPORTED;
     }
-    if (pInParams->frameInfo[VPP_OUT].nWidth == 0 || pInParams->frameInfo[VPP_OUT].nHeight == 0 ){
+    if (pInParams->frameInfoOut[paramID].nWidth == 0 || pInParams->frameInfoOut[paramID].nHeight == 0 ){
         return MFX_ERR_UNSUPPORTED;
     }
 
     memset(pParams, 0, sizeof(mfxVideoParam));                                   
 
     /* input data */  
-    pParams->vpp.In.Shift           = pInParams->frameInfo[VPP_IN].Shift;
-    pParams->vpp.In.FourCC          = pInParams->frameInfo[VPP_IN].FourCC;
+    pParams->vpp.In.Shift           = pInParams->frameInfoIn[paramID].Shift;
+    pParams->vpp.In.FourCC          = pInParams->frameInfoIn[paramID].FourCC;
     pParams->vpp.In.ChromaFormat    = MFX_CHROMAFORMAT_YUV420;  
 
-    pParams->vpp.In.CropX = pInParams->frameInfo[VPP_IN].CropX;
-    pParams->vpp.In.CropY = pInParams->frameInfo[VPP_IN].CropY; 
-    pParams->vpp.In.CropW = pInParams->frameInfo[VPP_IN].CropW;
-    pParams->vpp.In.CropH = pInParams->frameInfo[VPP_IN].CropH;
+    pParams->vpp.In.CropX = pInParams->frameInfoIn[paramID].CropX;
+    pParams->vpp.In.CropY = pInParams->frameInfoIn[paramID].CropY;
+    pParams->vpp.In.CropW = pInParams->frameInfoIn[paramID].CropW;
+    pParams->vpp.In.CropH = pInParams->frameInfoIn[paramID].CropH;
 
     // width must be a multiple of 16 
     // height must be a multiple of 16 in case of frame picture and 
     // a multiple of 32 in case of field picture  
-    pParams->vpp.In.Width = ALIGN16(pInParams->frameInfo[VPP_IN].nWidth);
-    pParams->vpp.In.Height= (MFX_PICSTRUCT_PROGRESSIVE == pInParams->frameInfo[VPP_IN].PicStruct)?
-        ALIGN16(pInParams->frameInfo[VPP_IN].nHeight) : ALIGN32(pInParams->frameInfo[VPP_IN].nHeight);
+    pParams->vpp.In.Width = ALIGN16(pInParams->frameInfoIn[paramID].nWidth);
+    pParams->vpp.In.Height= (MFX_PICSTRUCT_PROGRESSIVE == pInParams->frameInfoIn[paramID].PicStruct)?
+        ALIGN16(pInParams->frameInfoIn[paramID].nHeight) : ALIGN32(pInParams->frameInfoIn[paramID].nHeight);
 
-    pParams->vpp.In.PicStruct = pInParams->frameInfo[VPP_IN].PicStruct;  
+    pParams->vpp.In.PicStruct = pInParams->frameInfoIn[paramID].PicStruct;
 
-    ConvertFrameRate(pInParams->frameInfo[VPP_IN].dFrameRate, 
+    ConvertFrameRate(pInParams->frameInfoIn[paramID].dFrameRate,
         &pParams->vpp.In.FrameRateExtN, 
         &pParams->vpp.In.FrameRateExtD);
 
     /* output data */
-    pParams->vpp.Out.Shift           = pInParams->frameInfo[VPP_OUT].Shift;
-    pParams->vpp.Out.FourCC          = pInParams->frameInfo[VPP_OUT].FourCC;      
+    pParams->vpp.Out.Shift           = pInParams->frameInfoOut[paramID].Shift;
+    pParams->vpp.Out.FourCC          = pInParams->frameInfoOut[paramID].FourCC;
     pParams->vpp.Out.ChromaFormat    = MFX_CHROMAFORMAT_YUV420;             
 
-    pParams->vpp.Out.CropX = pInParams->frameInfo[VPP_OUT].CropX;
-    pParams->vpp.Out.CropY = pInParams->frameInfo[VPP_OUT].CropY; 
-    pParams->vpp.Out.CropW = pInParams->frameInfo[VPP_OUT].CropW;
-    pParams->vpp.Out.CropH = pInParams->frameInfo[VPP_OUT].CropH;
+    pParams->vpp.Out.CropX = pInParams->frameInfoOut[paramID].CropX;
+    pParams->vpp.Out.CropY = pInParams->frameInfoOut[paramID].CropY;
+    pParams->vpp.Out.CropW = pInParams->frameInfoOut[paramID].CropW;
+    pParams->vpp.Out.CropH = pInParams->frameInfoOut[paramID].CropH;
 
     // width must be a multiple of 16 
     // height must be a multiple of 16 in case of frame picture and 
     // a multiple of 32 in case of field picture  
-    pParams->vpp.Out.Width = ALIGN16(pInParams->frameInfo[VPP_OUT].nWidth); 
-    pParams->vpp.Out.Height= (MFX_PICSTRUCT_PROGRESSIVE == pInParams->frameInfo[VPP_OUT].PicStruct)?
-        ALIGN16(pInParams->frameInfo[VPP_OUT].nHeight) : ALIGN32(pInParams->frameInfo[VPP_OUT].nHeight);
+    pParams->vpp.Out.Width = ALIGN16(pInParams->frameInfoOut[paramID].nWidth);
+    pParams->vpp.Out.Height= (MFX_PICSTRUCT_PROGRESSIVE == pInParams->frameInfoOut[paramID].PicStruct)?
+        ALIGN16(pInParams->frameInfoOut[paramID].nHeight) : ALIGN32(pInParams->frameInfoOut[paramID].nHeight);
     if(pInParams->need_plugin)
     {
         mfxPluginUID mfxGuid;
@@ -405,9 +405,9 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams, mfxU32 
         }
     }
 
-    pParams->vpp.Out.PicStruct = pInParams->frameInfo[VPP_OUT].PicStruct;
+    pParams->vpp.Out.PicStruct = pInParams->frameInfoOut[paramID].PicStruct;
 
-    ConvertFrameRate(pInParams->frameInfo[VPP_OUT].dFrameRate, 
+    ConvertFrameRate(pInParams->frameInfoOut[paramID].dFrameRate,
         &pParams->vpp.Out.FrameRateExtN, 
         &pParams->vpp.Out.FrameRateExtD);
 
@@ -2037,6 +2037,18 @@ mfxStatus  GeneralWriter::PutNextFrame(
 
 /* ******************************************************************* */
 
+mfxStatus UpdateSurfacePool(mfxFrameInfo SurfacesInfo, mfxU16 nPoolSize, mfxFrameSurface1* pSurface)
+{
+    CHECK_POINTER(pSurface,     MFX_ERR_NULL_PTR);
+    if (pSurface)
+    {
+        for (mfxU16 i = 0; i < nPoolSize; i++)
+        {
+            pSurface[i].Info = SurfacesInfo;
+        }
+    }
+    return MFX_ERR_NONE;
+}
 mfxStatus GetFreeSurface(mfxFrameSurface1* pSurfacesPool, mfxU16 nPoolSize, mfxFrameSurface1** ppSurface)
 {
     CHECK_POINTER(pSurfacesPool, MFX_ERR_NULL_PTR); 

@@ -327,6 +327,7 @@ mfxStatus VideoVPPSW::Init(mfxVideoParam *par)
     else
         m_errPrtctState.isCompositionModeEnabled = false;
 
+    m_InitState = m_errPrtctState; // Save params on init
     /* to reset status */
     sts = MFX_ERR_NONE;
 
@@ -893,12 +894,10 @@ mfxStatus VideoVPPSW::GetVideoParam(mfxVideoParam *par)
                 {
                     case MFX_EXTBUFF_VPP_CSC:
                     case MFX_EXTBUFF_VPP_RESIZE:
-                    case MFX_EXTBUFF_VPP_DI:
-                    case MFX_EXTBUFF_VPP_DI_30i60p:
                     case MFX_EXTBUFF_VPP_ITC:
                     case MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
                     case MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10:
-                    case MFX_EXTBUFF_VPP_DEINTERLACING:
+
                     case MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
                     {
                         continue;
@@ -910,9 +909,11 @@ mfxStatus VideoVPPSW::GetVideoParam(mfxVideoParam *par)
                     case MFX_EXTBUFF_VPP_DETAIL:
                     case MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION:
                     case MFX_EXTBUFF_VPP_IMAGE_STABILIZATION:
-                    case MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION:
                     case MFX_EXTBUFF_VPP_COMPOSITE:
                     case MFX_EXTBUFF_VPP_FIELD_PROCESSING:
+                    case MFX_EXTBUFF_VPP_DEINTERLACING:
+                    case MFX_EXTBUFF_VPP_DI:
+                    case MFX_EXTBUFF_VPP_DI_30i60p:
                     {
                         if(numUsedFilters + 1 > pVPPHint->NumAlg)
                             return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -1065,14 +1066,20 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
             }
         }
 
-        /* [IOPattern] section */
-        out->IOPattern = in->IOPattern;
-
-        mfxU32 temp = out->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY);
-
-        if (temp==0 || temp==(MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY))
+        /* [IOPattern] section
+         * Reuse check function from QueryIOsurf
+         * Zero value just skipped.
+         */
+        mfxU16 inPattern;
+        mfxU16 outPattern;
+        if (0 == in->IOPattern || MFX_ERR_NONE == CheckIOPattern_AndSetIOMemTypes(in->IOPattern, &inPattern, &outPattern, true))
         {
-            out->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+            out->IOPattern = in->IOPattern;
+        }
+        else
+        {
+            mfxSts = MFX_ERR_UNSUPPORTED;
+            out->IOPattern = 0;
         }
 
         /* [ExtParam] section */
@@ -1289,7 +1296,7 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
 
                                 if(MFX_EXTBUFF_VPP_FIELD_PROCESSING == extDoUseIn->AlgList[algIdx])
                                 {
-                                    mfxSts = MFX_ERR_INVALID_VIDEO_PARAM;
+                                    mfxSts = MFX_ERR_UNSUPPORTED;
                                     continue; // stop working with ExtParam[i]
                                 }
                                 extDoUseOut->AlgList[algIdx] = extDoUseIn->AlgList[algIdx];
@@ -1298,7 +1305,10 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
                         }
                         //--------------------------------------
                     }
-
+                    else if( MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION == in->ExtParam[i]->BufferId )
+                    {
+                        // No specific checks for Opaque ext buffer at the moment.
+                    }
                     else
                     {
                         out->ExtParam[i]->BufferId = 0;
@@ -1483,6 +1493,13 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
             mfxStatus sts = hwVPP.Init(out, true);
             hwVPP.Close();
 
+            // Statuses returned by Init differ in several cases from Query
+            if (MFX_ERR_INVALID_VIDEO_PARAM == sts ||
+                MFX_ERR_UNSUPPORTED == sts)
+            {
+                sts = MFX_ERR_UNSUPPORTED;
+                return sts;
+            }
             if (MFX_ERR_NONE != sts && IS_PROTECTION_ANY(out->Protected))
             {
                 out->Protected = 0;
@@ -1522,13 +1539,13 @@ mfxStatus VideoVPPSW::Reset(mfxVideoParam *par)
 
     //-----------------------------------------------------
     // specific check for Reset()
-    if( m_errPrtctState.In.PicStruct != par->vpp.In.PicStruct || m_errPrtctState.Out.PicStruct != par->vpp.Out.PicStruct)
+    if( m_InitState.In.PicStruct != par->vpp.In.PicStruct || m_InitState.Out.PicStruct != par->vpp.Out.PicStruct)
     {
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     }
 
     /* IOPattern check */
-    if( m_errPrtctState.IOPattern != par->IOPattern )
+    if( m_InitState.IOPattern != par->IOPattern )
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -1538,14 +1555,14 @@ mfxStatus VideoVPPSW::Reset(mfxVideoParam *par)
     MFX_CHECK_STS(sts);
 
     /* AsyncDepth */
-    if( m_errPrtctState.AsyncDepth < par->AsyncDepth )
+    if( m_InitState.AsyncDepth < par->AsyncDepth )
     {
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     }
 
     /* in general, in/out resolution should be <= m_initParam.resolution */
-    if( (par->vpp.In.Width  > m_errPrtctState.In.Width)  || (par->vpp.In.Height  > m_errPrtctState.In.Height) ||
-        (par->vpp.Out.Width > m_errPrtctState.Out.Width) || (par->vpp.Out.Height > m_errPrtctState.Out.Height) )
+    if( (par->vpp.In.Width  > m_InitState.In.Width)  || (par->vpp.In.Height  > m_InitState.In.Height) ||
+        (par->vpp.Out.Width > m_InitState.Out.Width) || (par->vpp.Out.Height > m_InitState.Out.Height) )
     {
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     }
@@ -1615,7 +1632,6 @@ mfxStatus VideoVPPSW::Reset(mfxVideoParam *par)
         bool bCorrectionEnable = false;
         sts = CheckPlatformLimitations(m_core, *par, bCorrectionEnable);
 
-        return sts;
     }
     else
     {
@@ -1710,9 +1726,20 @@ mfxStatus VideoVPPSW::Reset(mfxVideoParam *par)
         {
             sts = MFX_ERR_INVALID_VIDEO_PARAM;
         }
+        VPP_RESET;
     }
 
-    VPP_RESET;
+    /* save init params to prevent core crash */
+    m_errPrtctState.In  = par->vpp.In;
+    m_errPrtctState.Out = par->vpp.Out;
+    m_errPrtctState.IOPattern  = par->IOPattern;
+    m_errPrtctState.AsyncDepth = par->AsyncDepth;
+
+    mfxStatus compSts = GetCompositionEnabledStatus(par);
+    if (compSts == MFX_ERR_NONE)
+        m_errPrtctState.isCompositionModeEnabled = true;
+    else
+        m_errPrtctState.isCompositionModeEnabled = false;
 
     return sts;
 

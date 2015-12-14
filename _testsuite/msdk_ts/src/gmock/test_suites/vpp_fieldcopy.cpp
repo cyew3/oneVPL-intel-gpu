@@ -14,9 +14,8 @@ public:
     {
         m_surf_in_processor = this;
 
-        memset(&m_vpp_fp, 0, sizeof(mfxExtVPPFieldProcessing));
-        m_vpp_fp.Header.BufferId = MFX_EXTBUFF_VPP_FIELD_PROCESSING;
-        m_vpp_fp.Header.BufferSz = sizeof(mfxExtVPPFieldProcessing);
+        m_par.AddExtBuffer(MFX_EXTBUFF_VPP_FIELD_PROCESSING, sizeof(mfxExtVPPFieldProcessing));
+        m_vpp_fp = (mfxExtVPPFieldProcessing*)m_par.GetExtBuffer(MFX_EXTBUFF_VPP_FIELD_PROCESSING);
     }
     ~TestSuite() {}
     int RunTest(unsigned int id);
@@ -26,24 +25,13 @@ private:
     bool attach2frame;
 
     tsNoiseFiller m_noise;
-    mfxExtVPPFieldProcessing m_vpp_fp;
-    mfxExtVPPDoUse vpp_du;
-
-    enum
-    {
-        DO_USE = 1,
-    };
+    mfxExtVPPFieldProcessing* m_vpp_fp;
+    mfxExtVPPDoUse* vpp_du;
 
     enum
     {
         MFX_PAR = 1,
         EXT_VPP,
-        EXT_VPP_DENOISE,
-        EXT_VPP_DETAIL,
-        EXT_VPP_FRC,
-        EXT_VPP_IS,
-        EXT_VPP_PD,
-        EXT_VPP_PROCAMP
     };
 
     struct tc_struct
@@ -129,50 +117,30 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*09*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {   // feature is not supported
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_SWAP_FIELDS}}
     },
-    {/*10*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, DO_USE, {
-        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
-        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
-        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_TOPFIELD}}
-    },
-    {/*11*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, DO_USE, {
-        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
-        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_TOPFIELD},
-        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
-    },
-    {/*12*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, DO_USE, {
-        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
-        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_TOPFIELD},
-        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_TOPFIELD}}
-    },
-    {/*13*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, DO_USE, {
+    {/*10*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_EXTBUFF_VPP_DENOISE, {
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
         {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
     },
-    {/*14*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, DO_USE, {
-        {EXT_VPP_DENOISE, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
-        {EXT_VPP_DENOISE, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
-        {EXT_VPP_DENOISE, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
+    {/*11*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_EXTBUFF_VPP_DETAIL, {
+        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
+        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
+        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
     },
-    {/*15*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, DO_USE, {
-        {EXT_VPP_DETAIL, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
-        {EXT_VPP_DETAIL, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
-        {EXT_VPP_DETAIL, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
+    {/*12*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION, {
+        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
+        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
+        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
     },
-    {/*16*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, DO_USE, {
-        {EXT_VPP_FRC, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
-        {EXT_VPP_FRC, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
-        {EXT_VPP_FRC, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
+    {/*13*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_EXTBUFF_VPP_IMAGE_STABILIZATION, {
+        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
+        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
+        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
     },
-    {/*17*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, DO_USE, {
-        {EXT_VPP_IS, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
-        {EXT_VPP_IS, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
-        {EXT_VPP_IS, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
-    },
-    {/*18*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, DO_USE, {
-        {EXT_VPP_PROCAMP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
-        {EXT_VPP_PROCAMP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
-        {EXT_VPP_PROCAMP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
+    {/*14*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_EXTBUFF_VPP_PROCAMP, {
+        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FIELD},
+        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
+        {EXT_VPP, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
     },
 };
 
@@ -186,12 +154,12 @@ int TestSuite::RunTest(unsigned int id)
     mfxStatus sts_query = tc.sts_query,
               sts_init  = tc.sts_init;
 
-    if (tc.set_par[0].ext_type == EXT_VPP_IS)
+    if (tc.set_par[0].ext_type == MFX_EXTBUFF_VPP_IMAGE_STABILIZATION)
     {
         sts_query = MFX_ERR_UNSUPPORTED;
         sts_init  = MFX_ERR_INVALID_VIDEO_PARAM;
     }
-    if (tc.set_par[0].ext_type == EXT_VPP_PD && g_tsOSFamily != MFX_OS_FAMILY_WINDOWS)
+    if (tc.set_par[0].ext_type == MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION && g_tsOSFamily != MFX_OS_FAMILY_WINDOWS)
     {
         sts_query = MFX_ERR_UNSUPPORTED;
         sts_init  = MFX_ERR_INVALID_VIDEO_PARAM;
@@ -208,50 +176,20 @@ int TestSuite::RunTest(unsigned int id)
     m_par.AsyncDepth = 1;
 
     SETPARS(m_pPar, MFX_PAR);
-    SETPARS(&m_vpp_fp, EXT_VPP);
+    SETPARS(m_vpp_fp, EXT_VPP);
 
-    if (tc.mode == DO_USE)
+    if (tc.mode != 0)
     {
-        vpp_du.Header.BufferId = MFX_EXTBUFF_VPP_DOUSE;
-        vpp_du.Header.BufferSz = sizeof(mfxExtVPPDoUse);
+        m_par.AddExtBuffer(MFX_EXTBUFF_VPP_DOUSE, sizeof(mfxExtVPPDoUse));
+        vpp_du = (mfxExtVPPDoUse*)m_par.GetExtBuffer(MFX_EXTBUFF_VPP_DOUSE);
+        vpp_du->NumAlg = 1;
+        vpp_du->AlgList = new mfxU32[1];
 
-        if (tc.set_par[0].ext_type == EXT_VPP)
-        {
-            vpp_du.NumAlg = 1;
-            vpp_du.AlgList = new mfxU32[1];
-        }
-        else
-        {
-            vpp_du.NumAlg = 2;
-            vpp_du.AlgList = new mfxU32[2];
-        }
+        memset(vpp_du->AlgList, 0, sizeof(mfxU32)*vpp_du->NumAlg);
 
-        SETPARS(&m_vpp_fp, EXT_VPP);
-        vpp_du.AlgList[0] = MFX_EXTBUFF_VPP_FIELD_PROCESSING;
-
-        if (tc.set_par[0].ext_type == EXT_VPP_DENOISE)
-            vpp_du.AlgList[1] = MFX_EXTBUFF_VPP_DENOISE;
-        else if (tc.set_par[0].ext_type == EXT_VPP_DETAIL)
-            vpp_du.AlgList[1] = MFX_EXTBUFF_VPP_DETAIL;
-        else if (tc.set_par[0].ext_type == EXT_VPP_FRC)
-            vpp_du.AlgList[1] = MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION;
-        else if (tc.set_par[0].ext_type == EXT_VPP_IS)
-            vpp_du.AlgList[1] = MFX_EXTBUFF_VPP_IMAGE_STABILIZATION;
-        else if (tc.set_par[0].ext_type == EXT_VPP_PD)
-            vpp_du.AlgList[1] = MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION;
-        else if (tc.set_par[0].ext_type == EXT_VPP_PROCAMP)
-            vpp_du.AlgList[1] = MFX_EXTBUFF_VPP_PROCAMP;
+        vpp_du->AlgList[0] = tc.mode;
 
         attach2frame = true;
-
-        m_par.ExtParam = new mfxExtBuffer*[1];
-        m_par.ExtParam[0] = (mfxExtBuffer*)&vpp_du;
-        m_par.NumExtParam = 1;
-    } else
-    {
-        m_par.ExtParam = new mfxExtBuffer*[1];
-        m_par.ExtParam[0] = (mfxExtBuffer*)&m_vpp_fp;
-        m_par.NumExtParam = 1;
     }
 
     CreateAllocators();
@@ -272,42 +210,32 @@ int TestSuite::RunTest(unsigned int id)
 
     g_tsStatus.expect(MFX_ERR_NONE);
 
-    if (tc.mode == DO_USE && MFX_ERR_NONE == sts_init)
+    if (tc.mode != 0 && MFX_ERR_NONE == sts_init)
     {
-        mfxVideoParam par2 = {0};
-        mfxExtVPPDoUse vpp_du2;
-        vpp_du2.Header.BufferId = MFX_EXTBUFF_VPP_DOUSE;
-        vpp_du2.Header.BufferSz = sizeof(mfxExtVPPDoUse);
+        tsExtBufType<mfxVideoParam> par2;
+        mfxExtVPPDoUse* vpp_du2;
 
-       if (tc.set_par[0].ext_type == EXT_VPP)
-       {
-           vpp_du2.NumAlg = 1;
-           vpp_du2.AlgList = new mfxU32[1];
-       }
-       else
-       {
-           vpp_du2.NumAlg = 2;
-           vpp_du2.AlgList = new mfxU32[2];
-       }
+        par2.AddExtBuffer(MFX_EXTBUFF_VPP_DOUSE, sizeof(mfxExtVPPDoUse));
+        vpp_du2 = (mfxExtVPPDoUse*)m_par.GetExtBuffer(MFX_EXTBUFF_VPP_DOUSE);
+        vpp_du2->NumAlg = 1;
+        vpp_du2->AlgList = new mfxU32[1];
 
-        par2.NumExtParam = 1;
-        par2.ExtParam = new mfxExtBuffer*[1];
-        par2.ExtParam[0] = (mfxExtBuffer*)&vpp_du2;
+        memset(vpp_du2->AlgList, 0, sizeof(mfxU32)*vpp_du2->NumAlg);
 
         GetVideoParam(m_session, &par2);
         g_tsStatus.expect(MFX_ERR_NONE);
 
-        if (vpp_du2.NumAlg != vpp_du.NumAlg)
+        if (vpp_du2->NumAlg != vpp_du->NumAlg)
         {
             g_tsLog << "ERROR: Number of algorithms in specified DoUse buffer is not equal to number of algorithms in buffer returned by GetVideoParam() \n";
             g_tsStatus.check(MFX_ERR_ABORTED);
         }
-        for (mfxU32 i = 0; i< vpp_du.NumAlg; i++)
+        for (mfxU32 i = 0; i< vpp_du->NumAlg; i++)
         {
             mfxStatus sts = MFX_ERR_ABORTED;
-            for (mfxU32 j = 0; j< vpp_du2.NumAlg; j++)
+            for (mfxU32 j = 0; j< vpp_du2->NumAlg; j++)
             {
-                if (vpp_du.AlgList[i]==vpp_du2.AlgList[j])
+                if (vpp_du->AlgList[i]==vpp_du2->AlgList[j])
                     sts = MFX_ERR_NONE;
             }
             if (sts == MFX_ERR_ABORTED)
@@ -315,12 +243,12 @@ int TestSuite::RunTest(unsigned int id)
             g_tsStatus.check(sts);
         }
 
-        delete[] vpp_du.AlgList;
-        vpp_du.AlgList = 0;
+        delete[] vpp_du->AlgList;
+        vpp_du->AlgList = 0;
         delete[] m_par.ExtParam;
         m_par.ExtParam = 0;
-        delete[] vpp_du2.AlgList;
-        vpp_du2.AlgList = 0;
+        delete[] vpp_du2->AlgList;
+        vpp_du2->AlgList = 0;
         delete[] par2.ExtParam;
         par2.ExtParam = 0;
     }

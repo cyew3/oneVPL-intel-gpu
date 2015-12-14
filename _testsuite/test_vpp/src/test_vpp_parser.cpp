@@ -303,6 +303,10 @@ mfxStatus vppParseResetPar(vm_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, sI
     CHECK_POINTER(pParams,  MFX_ERR_NULL_PTR);
     CHECK_POINTER(strInput, MFX_ERR_NULL_PTR);
 
+    sOwnFrameInfo info = pParams->frameInfoIn.back();
+    pParams->frameInfoIn.push_back(info);
+    info = pParams->frameInfoOut.back();
+    pParams->frameInfoOut.push_back(info);
 
     pParams->deinterlaceParam.push_back( *pDefaultFiltersParam->pDIParam            );
     pParams->denoiseParam.push_back(     *pDefaultFiltersParam->pDenoiseParam       );
@@ -331,7 +335,31 @@ mfxStatus vppParseResetPar(vm_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, sI
             //-----------------------------------------------------------------------------------
             //                   Video Enhancement Algorithms
             //-----------------------------------------------------------------------------------
-            if (0 == vm_string_strcmp(strInput[i], VM_STRING("-denoise")))
+            if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-sw")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoIn.back().nWidth);
+            }
+            else if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-dw")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoOut.back().nWidth);
+            }
+            else if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-sh")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoIn.back().nHeight);
+            }
+            else if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-dh")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoOut.back().nHeight);
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-denoise")))
             {
                 pParams->denoiseParam[paramID].mode = VPP_FILTER_ENABLED_DEFAULT;
 
@@ -618,15 +646,15 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
         return MFX_ERR_MORE_DATA;
     }
 
-    pParams->frameInfo[VPP_IN].CropX = 0;
-    pParams->frameInfo[VPP_IN].CropY = 0;
-    pParams->frameInfo[VPP_IN].CropW = NOT_INIT_VALUE;
-    pParams->frameInfo[VPP_IN].CropH = NOT_INIT_VALUE;
+    pParams->frameInfoIn.back().CropX = 0;
+    pParams->frameInfoIn.back().CropY = 0;
+    pParams->frameInfoIn.back().CropW = NOT_INIT_VALUE;
+    pParams->frameInfoIn.back().CropH = NOT_INIT_VALUE;
     // zeroize destination crops
-    pParams->frameInfo[VPP_OUT].CropX = 0;
-    pParams->frameInfo[VPP_OUT].CropY = 0;
-    pParams->frameInfo[VPP_OUT].CropW = NOT_INIT_VALUE;
-    pParams->frameInfo[VPP_OUT].CropH = NOT_INIT_VALUE;
+    pParams->frameInfoOut.back().CropX = 0;
+    pParams->frameInfoOut.back().CropY = 0;
+    pParams->frameInfoOut.back().CropW = NOT_INIT_VALUE;
+    pParams->frameInfoOut.back().CropH = NOT_INIT_VALUE;
 
     bool isD3D11Required = false;
 
@@ -645,99 +673,99 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfo[VPP_IN].nWidth);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoIn[0].nWidth);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-sh")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfo[VPP_IN].nHeight);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoIn[0].nHeight);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-scrX")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfo[VPP_IN].CropX);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoIn[0].CropX);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-scrY")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfo[VPP_IN].CropY);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoIn[0].CropY);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-scrW")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfo[VPP_IN].CropW);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoIn[0].CropW);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-scrH")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfo[VPP_IN].CropH);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoIn[0].CropH);
             } 
             else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-spic")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfo[VPP_IN].PicStruct);
-                pParams->frameInfo[VPP_IN].PicStruct = GetPicStruct(pParams->frameInfo[VPP_IN].PicStruct);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoIn[0].PicStruct);
+                pParams->frameInfoIn[0].PicStruct = GetPicStruct(pParams->frameInfoIn[0].PicStruct);
             }
             else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-sf")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->frameInfo[VPP_IN].dFrameRate);          
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->frameInfoIn[0].dFrameRate);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-dw")) ) 
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfo[VPP_OUT].nWidth);         
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoOut[0].nWidth);
             } 
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-dh")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfo[VPP_OUT].nHeight);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoOut[0].nHeight);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-dcrX")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfo[VPP_OUT].CropX);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoOut[0].CropX);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-dcrY")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfo[VPP_OUT].CropY);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoOut[0].CropY);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-dcrW")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfo[VPP_OUT].CropW);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoOut[0].CropW);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-dcrH")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfo[VPP_OUT].CropH);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoOut[0].CropH);
             }
             else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-dpic")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfo[VPP_OUT].PicStruct);
-                pParams->frameInfo[VPP_OUT].PicStruct = GetPicStruct(pParams->frameInfo[VPP_OUT].PicStruct);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoOut[0].PicStruct);
+                pParams->frameInfoOut[0].PicStruct = GetPicStruct(pParams->frameInfoOut[0].PicStruct);
             }
             else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-df")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->frameInfo[VPP_OUT].dFrameRate);          
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->frameInfoOut[0].dFrameRate);
             }          
             //-----------------------------------------------------------------------------------
             //                   Video Enhancement Algorithms
@@ -760,14 +788,14 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             // aya: altenative and simple way to enable deinterlace
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-deinterlace")))
             {
-                pParams->frameInfo[VPP_OUT].PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-                pParams->frameInfo[VPP_IN].PicStruct  = MFX_PICSTRUCT_FIELD_TFF;
+                pParams->frameInfoOut[0].PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+                pParams->frameInfoIn[0].PicStruct  = MFX_PICSTRUCT_FIELD_TFF;
 
                 if( i+1 < nArgNum )
                 {                
                     if(0 == vm_string_strcmp(strInput[i+1], VM_STRING("bff")))
                     {
-                        pParams->frameInfo[VPP_OUT].PicStruct = MFX_PICSTRUCT_FIELD_BFF;
+                        pParams->frameInfoOut[0].PicStruct = MFX_PICSTRUCT_FIELD_BFF;
                         i++;
                     }
                 }
@@ -1069,17 +1097,17 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                pParams->frameInfo[VPP_IN].FourCC = Str2FourCC( strInput[i] );
+                pParams->frameInfoIn[0].FourCC = Str2FourCC( strInput[i] );
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-dcc")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                pParams->frameInfo[VPP_OUT].FourCC = Str2FourCC( strInput[i] );
+                pParams->frameInfoOut[0].FourCC = Str2FourCC( strInput[i] );
                 pParams->isOutYV12 = false;
-                if(MFX_FOURCC_YV12 == pParams->frameInfo[VPP_OUT].FourCC)
+                if(MFX_FOURCC_YV12 == pParams->frameInfoOut[0].FourCC)
                 {
-                    pParams->frameInfo[VPP_OUT].FourCC = MFX_FOURCC_NV12;
+                    pParams->frameInfoOut[0].FourCC = MFX_FOURCC_NV12;
                     pParams->isOutYV12 = true;
                 }
             }
@@ -1087,13 +1115,13 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfo[VPP_OUT].Shift);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoOut[0].Shift);
             }
             else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-sbitshift")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfo[VPP_IN].Shift);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoIn[0].Shift);
             }
             else if( 0 == vm_string_strcmp(strInput[i], VM_STRING("-iopattern")) )
             {
@@ -1216,25 +1244,34 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
     {
     pParams->ImpLib = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D9;
     }*/
-
-    if (NOT_INIT_VALUE == pParams->frameInfo[VPP_IN].CropW)
+    std::vector<sOwnFrameInfo>::iterator it = pParams->frameInfoIn.begin();
+    while(it != pParams->frameInfoIn.end())
     {
-        pParams->frameInfo[VPP_IN].CropW = pParams->frameInfo[VPP_IN].nWidth;
+        if (NOT_INIT_VALUE == it->CropW)
+    {
+            it->CropW = it->nWidth;
     }
 
-    if (NOT_INIT_VALUE == pParams->frameInfo[VPP_IN].CropH)
+        if (NOT_INIT_VALUE == it->CropH)
     {
-        pParams->frameInfo[VPP_IN].CropH = pParams->frameInfo[VPP_IN].nHeight;
+            it->CropH = it->nHeight;
+        }
+        it++;
     }
 
-    if (NOT_INIT_VALUE == pParams->frameInfo[VPP_OUT].CropW)
+    it = pParams->frameInfoOut.begin();
+    while(it != pParams->frameInfoOut.end())
     {
-        pParams->frameInfo[VPP_OUT].CropW = pParams->frameInfo[VPP_OUT].nWidth;
+        if (NOT_INIT_VALUE == it->CropW)
+    {
+            it->CropW = it->nWidth;
     }
 
-    if (NOT_INIT_VALUE == pParams->frameInfo[VPP_OUT].CropH)
+        if (NOT_INIT_VALUE == it->CropH)
     {
-        pParams->frameInfo[VPP_OUT].CropH = pParams->frameInfo[VPP_OUT].nHeight;
+            it->CropH = it->nHeight;
+        }
+        it++;
     }
 
     if (0 == vm_string_strlen(pParams->strSrcFile)) 

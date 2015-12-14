@@ -481,7 +481,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             }
             else
             {
-                if (pParams->bEOS)
+                if (pParams->bEOS && MFX_DEINTERLACING_ADVANCED == pParams->iDeinterlacingAlgorithm)
                 {
                     // WA for the last frame
                     // otherwise it's not processed properly
@@ -540,6 +540,13 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 
             m_filterBufs[m_numFilterBufs++] = m_deintFilterID;
         }
+    }
+
+    if (VA_INVALID_ID != m_procampFilterID && pParams->bEnableProcAmp)
+    {
+        /* Buffer was created earlier and it's time to refresh its value */
+        MFX_CHECK_STS(RemoveBufferFromPipe(m_procampFilterID));
+        m_procampFilterID = VA_INVALID_ID;
     }
 
     if (VA_INVALID_ID == m_procampFilterID)
@@ -608,7 +615,21 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
             m_filterBufs[m_numFilterBufs++] = m_procampFilterID;
+
+            /* Clear enable flag. Since appropriate buffer has been created,
+             * it will be used in consequent Execute calls.
+             * If application will Reset or call Init/Close with setting procamp
+             * with new value, this flag will be raised again thus new buffer with
+             * new value will be created. */
+            pParams->bEnableProcAmp = false;
         }
+    }
+
+    if (VA_INVALID_ID != m_denoiseFilterID && (pParams->denoiseFactor || true == pParams->bDenoiseAutoAdjust))
+    {
+        /* Buffer was created earlier and it's time to refresh its value */
+        MFX_CHECK_STS(RemoveBufferFromPipe(m_denoiseFilterID));
+        m_denoiseFilterID = VA_INVALID_ID;
     }
 
     if (VA_INVALID_ID == m_denoiseFilterID)
@@ -634,7 +655,16 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
             m_filterBufs[m_numFilterBufs++] = m_denoiseFilterID;
+            pParams->denoiseFactor = 0;
+            pParams->bDenoiseAutoAdjust = false;
         }
+    }
+
+    if (VA_INVALID_ID != m_detailFilterID && (pParams->detailFactor || true == pParams->bDetailAutoAdjust))
+    {
+        /* Buffer was created earlier and it's time to refresh its value */
+        MFX_CHECK_STS(RemoveBufferFromPipe(m_detailFilterID));
+        m_detailFilterID = VA_INVALID_ID;
     }
 
     if (VA_INVALID_ID == m_detailFilterID)
@@ -660,6 +690,8 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
             m_filterBufs[m_numFilterBufs++] = m_detailFilterID;
+            pParams->detailFactor = 0;
+            pParams->bDetailAutoAdjust = false;
         }
     }
 
@@ -970,6 +1002,21 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIVideoProcessing::Execute(FASTCOMP_BLT_PARAMS *pVideoCompositingBlt)
+
+mfxStatus VAAPIVideoProcessing::RemoveBufferFromPipe(VABufferID id)
+{
+    VAStatus vaSts;
+    if (id != VA_INVALID_ID)
+    {
+        vaSts = vaDestroyBuffer(m_vaDisplay, id);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        std::remove(m_filterBufs, m_filterBufs + m_numFilterBufs, id);
+        m_filterBufs[m_numFilterBufs] = VA_INVALID_ID;
+        m_numFilterBufs--;
+    }
+
+    return MFX_ERR_NONE;
+}
 
 mfxStatus VAAPIVideoProcessing::Execute_FakeOutput(mfxExecuteParams *pParams)
 {

@@ -170,8 +170,12 @@ protected:
   VideoCORE*  m_core;
   mfxVPPStat  m_stat;
 
-  // protection state
+  // protection state. Keeps Init/Reset params that allows checking that RunFrame params
+  // do not violate Init/Reset params
   sErrPrtctState m_errPrtctState;
+
+  // State that keeps Init params. They are changed on Init only
+  sErrPrtctState m_InitState;
 
   // internal VPP parameters
   FilterVPP::InternalParam m_internalParam;

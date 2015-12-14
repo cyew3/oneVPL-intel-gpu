@@ -125,7 +125,8 @@ typedef struct _filtersParam
 struct sInputParams
 {
     /* smart filters defined by mismatch btw src & dst */
-    sOwnFrameInfo frameInfo[2];// [0] - in, [1] - out
+    std::vector<sOwnFrameInfo            > frameInfoIn;// [0] - in, [1] - out
+    std::vector<sOwnFrameInfo            > frameInfoOut;// [0] - in, [1] - out
 
     /* Video Enhancement Algorithms */
     std::vector<sDIParam                 > deinterlaceParam;
@@ -480,6 +481,7 @@ mfxStatus InitResources(
 
 void WipeResources(sAppResources* pResources);
 
+mfxStatus UpdateSurfacePool(mfxFrameInfo SurfacesInfo, mfxU16 nPoolSize, mfxFrameSurface1* pSurface);
 mfxStatus GetFreeSurface(
     mfxFrameSurface1* pSurfacesPool, 
     mfxU16 nPoolSize, 
