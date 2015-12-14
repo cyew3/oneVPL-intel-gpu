@@ -991,8 +991,14 @@ mfxStatus _mfxSession_1_10::InitEx(mfxInitParam& par)
     {
         return MFX_ERR_UNSUPPORTED;
     }
-    // By default CM Copy enabled on HW cores, so only need to handle explicit OFF value
-    if (MFX_GPUCOPY_OFF == par.GPUCopy)
+
+    // Linux: By default CM Copy disabled on HW cores so only need to handle explicit ON value
+    // Windows: By default CM Copy enabled on HW cores, so only need to handle explicit OFF value
+    const bool disableGpuCopy = (m_pCORE->GetVAType() == MFX_HW_VAAPI)
+        ? (MFX_GPUCOPY_ON != par.GPUCopy)
+        : (MFX_GPUCOPY_OFF == par.GPUCopy);
+
+    if (disableGpuCopy)
     {
         CMEnabledCoreInterface* pCmCore = QueryCoreInterface<CMEnabledCoreInterface>(m_pCORE.get());
         if (pCmCore)
