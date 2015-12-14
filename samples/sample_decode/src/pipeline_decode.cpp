@@ -55,6 +55,7 @@ CDecodingPipeline::CDecodingPipeline()
 
     MSDK_ZERO_MEMORY(m_mfxVideoParams);
     MSDK_ZERO_MEMORY(m_mfxVppVideoParams);
+    MSDK_ZERO_MEMORY(m_initPar);
 
     m_pGeneralAllocator = NULL;
     m_pmfxAllocatorParams = NULL;
@@ -187,19 +188,17 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
-    mfxInitParam initPar;
     mfxExtThreadsParam threadsPar;
     mfxExtBuffer* extBufs[1];
     mfxVersion version;     // real API version with which library is initialized
 
-    MSDK_ZERO_MEMORY(initPar);
     MSDK_ZERO_MEMORY(threadsPar);
 
     // we set version to 1.0 and later we will query actual version of the library which will got leaded
-    initPar.Version.Major = 1;
-    initPar.Version.Minor = 0;
+    m_initPar.Version.Major = 1;
+    m_initPar.Version.Minor = 0;
 
-    initPar.GPUCopy = pParams->gpuCopy;
+    m_initPar.GPUCopy = pParams->gpuCopy;
 
     init_ext_buffer(threadsPar);
 
@@ -224,35 +223,38 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     }
     if (needInitExtPar) {
         extBufs[0] = (mfxExtBuffer*)&threadsPar;
-        initPar.ExtParam = extBufs;
-        initPar.NumExtParam = 1;
+        m_initPar.ExtParam = extBufs;
+        m_initPar.NumExtParam = 1;
     }
 
     // Init session
     if (pParams->bUseHWLib) {
         // try searching on all display adapters
-        initPar.Implementation = MFX_IMPL_HARDWARE_ANY;
+        m_initPar.Implementation = MFX_IMPL_HARDWARE_ANY;
 
         // if d3d11 surfaces are used ask the library to run acceleration through D3D11
         // feature may be unsupported due to OS or MSDK API version
         if (D3D11_MEMORY == pParams->memType)
-            initPar.Implementation |= MFX_IMPL_VIA_D3D11;
+            m_initPar.Implementation |= MFX_IMPL_VIA_D3D11;
 
-        sts = m_mfxSession.InitEx(initPar);
+        sts = m_mfxSession.InitEx(m_initPar);
 
         // MSDK API version may not support multiple adapters - then try initialize on the default
         if (MFX_ERR_NONE != sts) {
-            initPar.Implementation = (initPar.Implementation & !MFX_IMPL_HARDWARE_ANY) | MFX_IMPL_HARDWARE;
-            sts = m_mfxSession.InitEx(initPar);
+            m_initPar.Implementation = (m_initPar.Implementation & !MFX_IMPL_HARDWARE_ANY) | MFX_IMPL_HARDWARE;
+            sts = m_mfxSession.InitEx(m_initPar);
         }
     } else {
-        initPar.Implementation = MFX_IMPL_SOFTWARE;
-        sts = m_mfxSession.InitEx(initPar);
+        m_initPar.Implementation = MFX_IMPL_SOFTWARE;
+        sts = m_mfxSession.InitEx(m_initPar);
     }
 
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     sts = MFXQueryVersion(m_mfxSession , &version); // get real API version of the loaded library
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    sts = MFXQueryIMPL(m_mfxSession, &m_initPar.Implementation); // refresh library implementation
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     if (pParams->bIsMVC && !CheckVersion(&version, MSDK_FEATURE_MVC)) {
@@ -592,6 +594,16 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
 
         // parse bit stream and fill mfx params
         sts = m_pmfxDEC->DecodeHeader(&m_mfxBS, &m_mfxVideoParams);
+
+        if (!sts &&
+            !(m_initPar.Implementation&MFX_IMPL_SOFTWARE) &&
+            (m_mfxVideoParams.mfx.FrameInfo.BitDepthLuma == 10) &&
+            (m_mfxVideoParams.mfx.CodecId == MFX_CODEC_HEVC) )
+        {
+            sts = MFX_ERR_UNSUPPORTED;
+            msdk_printf(MSDK_STRING("Error: Pair 'HW lib + SW HEVC 10bit decoder' isn't supported. Use -sw option.\n"));
+        }
+
         if (m_pPlugin.get() && pParams->videoType == CODEC_VP8 && !sts) {
             // force set format to nv12 as the vp8 plugin uses yv12
             m_mfxVideoParams.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;

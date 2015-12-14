@@ -219,6 +219,8 @@ protected: // variables
     mfxFrameAllocResponse   m_mfxResponse; // memory allocation response for decoder
     mfxFrameAllocResponse   m_mfxVppResponse;   // memory allocation response for vpp
 
+    mfxInitParam            m_initPar; // parameter for session init
+
     msdkFrameSurface*       m_pCurrentFreeSurface; // surface detached from free surfaces array
     msdkFrameSurface*       m_pCurrentFreeVppSurface; // VPP surface detached from free VPP surfaces array
     msdkOutputSurface*      m_pCurrentFreeOutputSurface; // surface detached from free output surfaces array
