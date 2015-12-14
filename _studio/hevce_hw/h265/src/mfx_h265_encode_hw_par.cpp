@@ -1108,12 +1108,12 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         changed +=1;
     }
 
-    if (!CheckRangeDflt(par.m_ext.VSI.VideoFormat,             0,   8, 5)) changed +=1;
-    if (!CheckRangeDflt(par.m_ext.VSI.ColourPrimaries,         0, 255, 2)) changed +=1;
-    if (!CheckRangeDflt(par.m_ext.VSI.TransferCharacteristics, 0, 255, 2)) changed +=1;
-    if (!CheckRangeDflt(par.m_ext.VSI.MatrixCoefficients,      0, 255, 2)) changed +=1;
-    if (!CheckOption(par.m_ext.VSI.VideoFullRange, 0))                     changed +=1;
-    if (!CheckOption(par.m_ext.VSI.ColourDescriptionPresent, 0))           changed +=1;
+    if (CheckRangeDflt(par.m_ext.VSI.VideoFormat,             0,   8, 5)) changed +=1;
+    if (CheckRangeDflt(par.m_ext.VSI.ColourPrimaries,         0, 255, 2)) changed +=1;
+    if (CheckRangeDflt(par.m_ext.VSI.TransferCharacteristics, 0, 255, 2)) changed +=1;
+    if (CheckRangeDflt(par.m_ext.VSI.MatrixCoefficients,      0, 255, 2)) changed +=1;
+    if (CheckOption(par.m_ext.VSI.VideoFullRange, 0))                     changed +=1;
+    if (CheckOption(par.m_ext.VSI.ColourDescriptionPresent, 0))           changed +=1;
 
 
     sts = CheckProfile(par);
