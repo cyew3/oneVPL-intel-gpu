@@ -2268,7 +2268,7 @@ void CmContext::CreateTask_GoodPixelCheck(SurfaceIndex inSurfIndex,
     mfxI32 shift_amount = (bitDepth - 8);
     kernel_good_pixel_check->SetThreadCount(widthIn16 * heightIn16);
 
-    int height = (int)m_video.TileHeight;
+    int height = doShiftSwap ? (int)m_video.TileHeightPadded : (int)m_video.TileHeight;
 
     SetKernelArg(kernel_good_pixel_check,
                  inSurfIndex,
