@@ -411,15 +411,16 @@ mfxStatus CmDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1&
             {
                 if (densityMap[i] + 3 < maxDensity) continue;
 
-                idxY = i >> 4;
-                idxX = i - (idxY << 4);
+                //get idxX and idxY, where i = idxY * 16 + idxX
+                idxX = i % 16;
+                idxY = i / 16;
 
                 resultIPP = ippiSet_8u_C1R(0, roiMap + idxY * roiBigBlock.height * roiMapRealSize.width + idxX * roiBigBlock.width, roiMapRealSize.width, roiBigBlock);
                 MFXSC_CHECK_IPP_RESULT_AND_PTR(resultIPP, 1);
 
-                totalRectsN -= (densityMap[idxY * roiBlock16x16.width + idxX] - 1); // instead of all macroblocks we save only one big rectangle
-                macroMap  [idxY * roiBlock16x16.width + idxX] = 1;
-                densityMap[idxY * roiBlock16x16.width + idxX] = 1;
+                totalRectsN -= (densityMap[i] - 1); // instead of all macroblocks we save only one big rectangle
+                macroMap  [i] = 1;
+                densityMap[i] = 1;
 
                 macroMapN++;
             }
