@@ -3173,7 +3173,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     if (m_isWiDi && task.m_resetBRC)
         m_resetBRC = true;
 
-    if ((m_video.mfx.LowPower != MFX_CODINGOPTION_ON) &&
+    if (!((m_video.mfx.LowPower == MFX_CODINGOPTION_ON && m_video.calcParam.numTemporalLayer > 0 && m_video.mfx.NumSlice != 1)) &&
         m_currentPlatform != MFX_HW_SOFIA && // SoFIA HW always writes slice headers. MSDK should patch them if required
         m_caps.HeaderInsertion == 0 &&
         (m_currentPlatform != MFX_HW_IVB || m_core->GetVAType() != MFX_HW_VAAPI)
