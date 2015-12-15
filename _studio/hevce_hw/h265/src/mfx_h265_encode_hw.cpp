@@ -277,10 +277,7 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request,
 
     request->Info = tmp.mfx.FrameInfo;
 
-    if (tmp.mfx.EncodedOrder)
-        request->NumFrameMin = 1;
-    else
-        request->NumFrameMin = MaxRaw(tmp);
+    request->NumFrameMin = MaxRaw(tmp);
 
     request->NumFrameSuggested = request->NumFrameMin;
 
@@ -617,6 +614,9 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
         if (m_vpar.mfx.EncodedOrder)
         {
             task->m_frameType = task->m_ctrl.FrameType;
+            MFX_CHECK(surface->Data.FrameOrder != MFX_FRAMEORDER_UNKNOWN, MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(task->m_frameType != MFX_FRAMETYPE_UNKNOWN, MFX_ERR_UNDEFINED_BEHAVIOR);
+            m_frameOrder = surface->Data.FrameOrder;
         }
         else
         {
@@ -638,8 +638,9 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
         m_frameOrder ++;
         task->m_stage |= FRAME_ACCEPTED;
     }
+    if (!m_vpar.mfx.EncodedOrder)
+        task = m_task.Reorder(m_vpar, m_lastTask.m_dpb[1], !surface);
 
-    task = m_task.Reorder(m_vpar, m_lastTask.m_dpb[1], !surface);
     if (!task)
     {
         if (m_numBuffered && !surface)

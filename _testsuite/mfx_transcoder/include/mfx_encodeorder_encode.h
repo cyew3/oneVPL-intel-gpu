@@ -47,6 +47,7 @@ public:
             switch (pInit->mfx.CodecId)
             {
             case MFX_CODEC_AVC:
+            case MFX_CODEC_HEVC:
                 MFX_CHECK_POINTER((m_reorderer.reset(new MFXH264FrameReorderer(getVParams)), m_reorderer.get()));
                 break;
             case MFX_CODEC_MPEG2:
