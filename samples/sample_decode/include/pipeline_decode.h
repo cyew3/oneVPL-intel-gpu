@@ -203,6 +203,7 @@ protected: // variables
     mfxBitstream            m_mfxBS; // contains encoded data
 
     MFXVideoSession         m_mfxSession;
+    mfxIMPL                 m_impl;
     MFXVideoDECODE*         m_pmfxDEC;
     MFXVideoVPP*            m_pmfxVPP;
     mfxVideoParam           m_mfxVideoParams;
@@ -218,8 +219,6 @@ protected: // variables
     bool                    m_bDecOutSysmem; // use system memory between Decoder and VPP, if false - video memory
     mfxFrameAllocResponse   m_mfxResponse; // memory allocation response for decoder
     mfxFrameAllocResponse   m_mfxVppResponse;   // memory allocation response for vpp
-
-    mfxInitParam            m_initPar; // parameter for session init
 
     msdkFrameSurface*       m_pCurrentFreeSurface; // surface detached from free surfaces array
     msdkFrameSurface*       m_pCurrentFreeVppSurface; // VPP surface detached from free VPP surfaces array
