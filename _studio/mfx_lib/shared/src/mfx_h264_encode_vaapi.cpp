@@ -1070,13 +1070,17 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         else
             m_caps.MaxPicHeight = 1088;
 #endif
+        const eMFXHWType hwtype = m_core->GetHWType();
         if (attrs[8].value != VA_ATTRIB_NOT_SUPPORTED)
         {
             m_caps.SliceStructure = attrs[8].value;
+            // below is workaround for SKL platform
+            // driver may return SliceStructure = 0, while SKL supports arbitrary slice size in MBs
+            if (hwtype == MFX_HW_SCL && m_caps.SliceStructure == 0)
+                m_caps.SliceStructure = 4;
         }
         else
         {
-            const eMFXHWType hwtype = m_core->GetHWType();
             m_caps.SliceStructure = (hwtype != MFX_HW_VLV && hwtype >= MFX_HW_HSW) ? 4 : 1; // 1 - SliceDividerSnb; 2 - SliceDividerHsw;
         }                                                                                   // 3 - SliceDividerBluRay; 4 - arbitrary slice size in MBs; the other - SliceDividerOneSlice
 
