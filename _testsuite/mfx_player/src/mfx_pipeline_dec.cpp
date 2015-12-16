@@ -2397,10 +2397,12 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
         if (NULL == va_dpy)
         {
             ComponentParams &cparams = m_components[eDEC].m_bufType == MFX_BUF_HW ? m_components[eDEC] : m_components[eREN];
-	        m_pHWDevice.reset(CreateVAAPIDevice(MFX_LIBVA_DRM));
-
-            MFX_CHECK_STS(m_pHWDevice->Init(0, NULL, !m_inParams.bFullscreen, 0, 1, NULL));
-            MFX_CHECK_STS(m_pHWDevice->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL *)&va_dpy));
+	    m_pHWDevice.reset(CreateVAAPIDevice(MFX_LIBVA_DRM));
+            if (m_pHWDevice.get())
+            {
+                MFX_CHECK_STS(m_pHWDevice->Init(0, NULL, !m_inParams.bFullscreen, 0, 1, NULL));
+                MFX_CHECK_STS(m_pHWDevice->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL *)&va_dpy));
+            }
         }
         // Set VA display to MediaSDK session(s)
         if (va_dpy)
