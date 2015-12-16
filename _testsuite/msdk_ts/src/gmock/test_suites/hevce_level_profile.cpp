@@ -914,15 +914,7 @@ int TestSuite::RunTest(unsigned int id)
 
     if (m_loaded)
     {
-        if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_GACC.Data, sizeof(mfxU8)*16))
-        {
-            if (m_par.mfx.FrameInfo.Width > 3840 || m_par.mfx.FrameInfo.Height > 2160)
-            {
-                g_tsStatus.expect(MFX_ERR_NONE);    // for destructor (close/unload/etc.)
-                skip = true;
-                g_tsLog << "Case skipped. GACC doesn't support width > 3840 and height > 2160 \n";
-            }
-        } else  if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(mfxU8)* 16))
+        if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(mfxU8)* 16))
         {
             if (g_tsHWtype < MFX_HW_SKL) // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
             {
