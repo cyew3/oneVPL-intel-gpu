@@ -80,8 +80,9 @@ namespace hevce_hrd_violation
                 m_par.mfx.FrameInfo.Width = ((m_par.mfx.FrameInfo.Width + 32 - 1) & ~(32 - 1));
                 m_par.mfx.FrameInfo.Height = ((m_par.mfx.FrameInfo.Height + 32 - 1) & ~(32 - 1));
 
-                // HEVCE_HW heve to support NalHrdConformance
-                g_tsStatus.expect(MFX_ERR_NONE);
+                // HEVCE_HW heve don't support NalHrdConformance
+                if (tc.sts != MFX_ERR_NONE)
+                    g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
             }
 
             //init mfxExtCodingOption
