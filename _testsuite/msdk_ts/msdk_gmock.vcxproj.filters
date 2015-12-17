@@ -535,5 +535,8 @@
     <ClCompile Include="src\gmock\test_suites\vpp10bit.cpp">
       <Filter>Source Files\test_suites\vpp</Filter>
     </ClCompile>
+        <ClCompile Include="src\gmock\test_suites\avce_lookahead_dynres.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

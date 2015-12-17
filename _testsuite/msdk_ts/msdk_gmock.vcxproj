@@ -222,6 +222,7 @@
     <ClCompile Include="src\gmock\test_suites\avce_cqp_hrd.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_default_ref_lists.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_inter_mbs.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_lookahead_dynres.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_max_bins_pcm.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_max_slice_size.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_mbqp.cpp" />
