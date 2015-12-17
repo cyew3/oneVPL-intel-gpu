@@ -164,17 +164,8 @@ int TestSuite::RunTest(unsigned int id)
     const char* stream1 = g_tsStreamPool.Get(tc.stream[1] == "" ? tc.stream[0] : tc.stream[1]);
     g_tsStreamPool.Reg();
 
-    tsBitstreamReader* reader0 = 0;
-    tsBitstreamReader* reader1 = 0;
-
-    if (tc.stream[0] != "")
-    {
-        reader0 = new tsBitstreamReader(stream0, 100000);
-    }
-    if (tc.stream[1] != "")
-    {
-        reader1 = new tsBitstreamReader(stream1, 100000);
-    }
+    tsBitstreamReader reader0(stream0, 100000);
+    tsBitstreamReader reader1(stream1, 100000);
 
     MFXInit();
     m_session = tsSession::m_session;
@@ -189,7 +180,7 @@ int TestSuite::RunTest(unsigned int id)
 
     if(tc.stream[0] != "")
     {
-        m_bs_processor = reader0;
+        m_bs_processor = &reader0;
     } else
     {
         m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
@@ -205,9 +196,9 @@ int TestSuite::RunTest(unsigned int id)
         DecodeFrames(3);
     }
 
+    m_bs_processor = &reader1;
     if(tc.stream[1] != "")
     {
-        m_bs_processor = reader1;
         m_bitstream.DataLength = 0;
         DecodeHeader();
     }
@@ -223,15 +214,6 @@ int TestSuite::RunTest(unsigned int id)
     if(tc.stream[0] != "" || tc.stream[1] != "")
     {
         DecodeFrames(3);
-    }
-
-    if (tc.stream[0] != "")
-    {
-        delete reader0;
-    }
-    if (tc.stream[1] != "")
-    {
-        delete reader1;
     }
 
     TS_END;

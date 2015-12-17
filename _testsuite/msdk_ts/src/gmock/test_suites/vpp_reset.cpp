@@ -137,6 +137,52 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FRAME},
         }
     },
+    {/*04*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Height, 496},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Width, 736},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Height, 496},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Width, 736},
+        },
+        {}
+    },
+    {/*05*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Height, 496},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Width, 736},
+        },
+        {}
+    },
+    {/*06*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Height, 496},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Width, 736},
+        },
+        {}
+    },
+    {/*07*/ MFX_ERR_NONE,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Height, 464},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Width, 704},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Height, 464},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Width, 704},
+        },
+        {}
+    },
+    {/*08*/ MFX_ERR_NONE,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Height, 464},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Width, 704},
+        },
+        {}
+    },
+    {/*09*/ MFX_ERR_NONE,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Height, 464},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Width, 704},
+        },
+        {}
+    },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -170,7 +216,7 @@ void SetParams(tsExtBufType<mfxVideoParam>& par, const TestSuite::f_pair pairs[]
 
             if(pairs[i].f->name.find("mfxVideoParam") != std::string::npos)
             {
-                ptr = *&par;
+                ptr = &par;
             }
             else
             {

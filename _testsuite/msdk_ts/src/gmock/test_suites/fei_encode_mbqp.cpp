@@ -9,6 +9,8 @@
 namespace fei_encode_mbqp
 {
 
+typedef std::vector<mfxExtBuffer*> InBuf;
+
 class TestSuite : public tsVideoEncoder, public tsSurfaceProcessor
 {
 public:
@@ -35,6 +37,46 @@ public:
     ~TestSuite()
     {
         delete m_reader;
+
+        //to free buffers
+        int numFields = 1;
+        if ((m_par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF) ||
+            (m_par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF)) {
+            numFields = 2;
+        }
+        for (std::vector<InBuf>::iterator it = m_InBufs.begin(); it != m_InBufs.end(); ++it)
+        {
+            for (std::vector<mfxExtBuffer*>::iterator it_buf = (*it).begin(); it_buf != (*it).end();)
+            {
+                switch ((*it_buf)->BufferId) {
+                case MFX_EXTBUFF_FEI_ENC_CTRL:
+                    {
+                        mfxExtFeiEncFrameCtrl* feiEncCtrl = (mfxExtFeiEncFrameCtrl*)(*it_buf);
+                        delete[] feiEncCtrl;
+                        feiEncCtrl = NULL;
+                        it_buf += numFields;
+                    }
+                    break;
+                case MFX_EXTBUFF_FEI_PREENC_QP:
+                    {
+                        mfxExtFeiEncQP* feiEncMbQp = (mfxExtFeiEncQP*)(*it_buf);
+                        for (int fieldId = 0; fieldId < numFields; fieldId++) {
+                            delete[] feiEncMbQp[fieldId].QP;
+                        }
+                        delete[] feiEncMbQp;
+                        feiEncMbQp = NULL;
+                        it_buf += numFields;
+                    }
+                    break;
+                default:
+                    g_tsLog << "ERROR: not supported ext buffer\n";
+                    g_tsStatus.check(MFX_ERR_ABORTED);
+                    break;
+                }
+            }
+            (*it).clear();
+        }
+        m_InBufs.clear();
     }
     int RunTest(unsigned int id);
     static const unsigned int n_cases;
@@ -42,6 +84,22 @@ public:
     mfxStatus ProcessSurface(mfxFrameSurface1& s)
     {
         mfxStatus sts = m_reader->ProcessSurface(s);
+
+        //calculate numMB
+        mfxU32 widthMB  = ((m_par.mfx.FrameInfo.Width  + 15) & ~15);
+        mfxU32 heightMB = ((m_par.mfx.FrameInfo.Height + 15) & ~15);
+        mfxU32 numMB = heightMB * widthMB / 256;
+        mfxU32 numField = 1;
+        if ((m_par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF) ||
+            (m_par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF)) {
+            numField = 2;
+            numMB = widthMB / 16 * (((heightMB / 16) + 1) / 2);
+        }
+
+        InBuf in_buffs;
+        mfxExtFeiEncFrameCtrl *feiEncCtrl = NULL;
+        mfxExtFeiEncQP *feiEncMbQp = NULL;
+        mfxU32 fieldId = 0;
 
         if (!m_bPerMbQP) {
             //1st stage, set per-frame qp only
@@ -52,17 +110,85 @@ public:
             } else {
                 m_qp[m_fo] = m_pCtrl->QP;
             }
+
+            //assign ExtFeiEncFrameCtrl
+            for (fieldId = 0; fieldId < numField; fieldId++) {
+                if (fieldId == 0) {
+                    feiEncCtrl = new mfxExtFeiEncFrameCtrl[numField];
+                    memset(feiEncCtrl, 0, numField * sizeof(mfxExtFeiEncFrameCtrl));
+                }
+                feiEncCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
+                feiEncCtrl[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncFrameCtrl);
+                feiEncCtrl[fieldId].SearchPath = 2;
+                feiEncCtrl[fieldId].LenSP = 57;
+                feiEncCtrl[fieldId].SubMBPartMask = 0;
+                feiEncCtrl[fieldId].MultiPredL0 = 0;
+                feiEncCtrl[fieldId].MultiPredL1 = 0;
+                feiEncCtrl[fieldId].SubPelMode = 3;
+                feiEncCtrl[fieldId].InterSAD = 2;
+                feiEncCtrl[fieldId].IntraSAD = 2;
+                feiEncCtrl[fieldId].DistortionType = 0;
+                feiEncCtrl[fieldId].RepartitionCheckEnable = 0;
+                feiEncCtrl[fieldId].AdaptiveSearch = 0;
+                feiEncCtrl[fieldId].MVPredictor = 0;
+                feiEncCtrl[fieldId].NumMVPredictors = 1;
+                feiEncCtrl[fieldId].PerMBQp = 0; //non-zero value
+                feiEncCtrl[fieldId].PerMBInput = 0;
+                feiEncCtrl[fieldId].MBSizeCtrl = 0;
+                feiEncCtrl[fieldId].RefHeight = 32;
+                feiEncCtrl[fieldId].RefWidth = 32;
+                feiEncCtrl[fieldId].SearchWindow = 0;
+
+                // put the buffer in in_buffs
+                in_buffs.push_back((mfxExtBuffer *)&feiEncCtrl[fieldId]);
+            }
+
+            //save in_buffs into m_InBufs
+            m_InBufs.push_back(in_buffs);
         } else {
             //2nd stage, enable per-mb qp, set same value as the frame qp
             m_pCtrl->QP = m_qp[m_fo];
-            mfxU32 i = 0;
-            for (i = 0; i < m_pCtrl->NumExtParam; i++) {
-                if (m_pCtrl->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PREENC_QP) {
-                    mfxExtFeiEncQP *mbQP = (mfxExtFeiEncQP *)m_pCtrl->ExtParam[i];
-                    memset(mbQP->QP, m_qp[m_fo], mbQP->NumQPAlloc);
+            in_buffs = m_InBufs[m_fo];
+
+            //assert(in_buffs.size() == numField);
+            std::vector<mfxExtBuffer*>::iterator it;
+            for (it = in_buffs.begin(); it != in_buffs.end(); ++it) {
+                if ((*it)->BufferId == MFX_EXTBUFF_FEI_ENC_CTRL) {
+                    mfxExtFeiEncFrameCtrl *feiEncCtrl = (mfxExtFeiEncFrameCtrl *)(*it);
+                    //if mbqp to be tested, enable per-mb qp in mfxExtFeiEncFrameCtrl
+                    feiEncCtrl->PerMBQp = 1;
                 }
             }
+            //assert(it == in_buffs.end());
+
+            for (fieldId = 0; fieldId < numField; fieldId++) {
+                //assign ExtFeiEncQP
+                if (fieldId == 0) {
+                    feiEncMbQp = new mfxExtFeiEncQP[numField];
+                    memset(feiEncMbQp, 0, numField * sizeof(mfxExtFeiEncQP));
+                }
+                feiEncMbQp[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_QP;
+                feiEncMbQp[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncQP);
+                feiEncMbQp[fieldId].NumQPAlloc = numMB;
+                feiEncMbQp[fieldId].QP = new mfxU8[numMB];
+
+                memset(feiEncMbQp[fieldId].QP, m_qp[m_fo], feiEncMbQp[fieldId].NumQPAlloc*sizeof(feiEncMbQp[fieldId].QP[0]));
+
+                //put the buffer in in_buffs
+                in_buffs.push_back((mfxExtBuffer*)&feiEncMbQp[fieldId]);
+            }
+
+            //assert(in_buffs.size() == 2 * numField);
+
+            //save the updated in_buffs into m_InBufs
+            m_InBufs[m_fo] = in_buffs;
         }
+
+        //m_pCtrl->ExtParam = &in_buffs[0];
+        m_pCtrl->ExtParam = &(m_InBufs[m_fo])[0];
+        m_pCtrl->NumExtParam = (mfxU16)in_buffs.size();
+        printf("m_pCtrl->NumExtParam = %d\n", m_pCtrl->NumExtParam);
+        printf("m_pCtrl->ExtParam = %d\n", m_pCtrl->ExtParam);
 
         m_fo++;
         return sts;
@@ -100,6 +226,7 @@ private:
     mfxU32 m_fo;
     bool m_bPerMbQP;
     mfxU32 mode;
+    std::vector<InBuf> m_InBufs;
 };
 
 
@@ -211,6 +338,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
+const int frameNumber = 30;
+
 int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
@@ -222,64 +351,10 @@ int TestSuite::RunTest(unsigned int id)
     m_pPar->AsyncDepth = 1; //limitation for FEI (from sample_fei)
     m_pPar->mfx.RateControlMethod = MFX_RATECONTROL_CQP; //For now FEI work with CQP only
 
-    //calculate numMB
-    mfxU32 widthMB  = ((m_par.mfx.FrameInfo.Width  + 15) & ~15);
-    mfxU32 heightMB = ((m_par.mfx.FrameInfo.Height + 15) & ~15);
-    mfxU32 numMB = heightMB * widthMB / 256;
-    mfxU32 numField = 1;
-    if ((m_par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF) ||
-        (m_par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF)) {
-        numField = 2;
-        numMB = widthMB / 16 * (((heightMB / 16) + 1) / 2);
-    }
-
     //set parameters for mfxEncodeCtrl
     SETPARS(m_pCtrl, MFX_FRM_CTRL);
 
-    // Attach input structures for mfxEncodeCtrl
-    std::vector<mfxExtBuffer*> in_buffs;
-
-    mfxExtFeiEncFrameCtrl *feiEncCtrl = NULL;
-    mfxU32 fieldId = 0;
-    //assign ExtFeiEncFrameCtrl
-    for (fieldId = 0; fieldId < numField; fieldId++) {
-        if (fieldId == 0) {
-            feiEncCtrl = new mfxExtFeiEncFrameCtrl[numField];
-            memset(feiEncCtrl, 0, numField * sizeof(mfxExtFeiEncFrameCtrl));
-        }
-        feiEncCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
-        feiEncCtrl[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncFrameCtrl);
-        feiEncCtrl[fieldId].SearchPath = 2;
-        feiEncCtrl[fieldId].LenSP = 57;
-        feiEncCtrl[fieldId].SubMBPartMask = 0;
-        feiEncCtrl[fieldId].MultiPredL0 = 0;
-        feiEncCtrl[fieldId].MultiPredL1 = 0;
-        feiEncCtrl[fieldId].SubPelMode = 3;
-        feiEncCtrl[fieldId].InterSAD = 2;
-        feiEncCtrl[fieldId].IntraSAD = 2;
-        feiEncCtrl[fieldId].DistortionType = 0;
-        feiEncCtrl[fieldId].RepartitionCheckEnable = 0;
-        feiEncCtrl[fieldId].AdaptiveSearch = 0;
-        feiEncCtrl[fieldId].MVPredictor = 0;
-        feiEncCtrl[fieldId].NumMVPredictors = 1;
-        feiEncCtrl[fieldId].PerMBQp = 0; //non-zero value
-        feiEncCtrl[fieldId].PerMBInput = 0;
-        feiEncCtrl[fieldId].MBSizeCtrl = 0;
-        feiEncCtrl[fieldId].RefHeight = 32;
-        feiEncCtrl[fieldId].RefWidth = 32;
-        feiEncCtrl[fieldId].SearchWindow = 5;
-
-        // set up parameters for mfxExtFeiEncFrameCtrl
-        SETPARS(&feiEncCtrl[fieldId], EXT_FRM_CTRL);
-
-        // put the buffer in in_buffs
-        in_buffs.push_back((mfxExtBuffer *)&feiEncCtrl[fieldId]);
-    }
-
-    m_pCtrl->ExtParam = &in_buffs[0];
-    m_pCtrl->NumExtParam = (mfxU16)in_buffs.size();
-
-    mfxU32 nf = 30;
+    mfxU32 nf = frameNumber;
     ///////////////////////////////////////////////////////////////////////////
     g_tsStatus.expect(tc.sts);
 
@@ -304,30 +379,6 @@ int TestSuite::RunTest(unsigned int id)
     m_bPerMbQP = true; //indicate the 2nd stage, per-mb qp is enabled
 
 // 2. encode with PerMBQp setting
-    //enable per-mb qp in mfxExtFeiEncFrameCtrl
-    for (fieldId = 0; fieldId < numField; fieldId++) {
-        feiEncCtrl[fieldId].PerMBQp = 1;
-    }
-
-    //assign ExtFeiEncQP
-    mfxExtFeiEncQP *feiEncMbQp = NULL;
-    for (fieldId = 0; fieldId < numField; fieldId++) {
-        if (fieldId == 0) {
-            feiEncMbQp = new mfxExtFeiEncQP[numField];
-            memset(feiEncMbQp, 0, numField * sizeof(mfxExtFeiEncQP));
-        }
-        feiEncMbQp[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_QP;
-        feiEncMbQp[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncQP);
-        feiEncMbQp[fieldId].NumQPAlloc = numMB;
-        feiEncMbQp[fieldId].QP = new mfxU8[numMB];
-
-        //put the buffer in in_buffs
-        in_buffs.push_back((mfxExtBuffer*)&feiEncMbQp[fieldId]);
-    }
-
-    m_pCtrl->ExtParam = &in_buffs[0];
-    m_pCtrl->NumExtParam = (mfxU16)in_buffs.size();
-
     tsBitstreamCRC32 bs_cmp_crc;
     m_bs_processor = &bs_cmp_crc;
 
