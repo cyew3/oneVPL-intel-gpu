@@ -1048,17 +1048,6 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
     feiBufferUpAllocInfo.size = (numCtbs << m_videoParam.Log2NumPartInCU) * sizeof(H265CUData);
     m_feiCuDataPool.Init(feiBufferUpAllocInfo, 0);
 
-    if (m_videoParam.inputVideoMem && m_videoParam.enableCmFlag) {
-        m_cmcopy.reset(new CmCopy());
-        if ((sts = m_cmcopy->Init(device, deviceType)) != MFX_ERR_NONE)
-            return sts;
-        sts = m_cmcopy->SetParam(frameDataAllocInfo.width, frameDataAllocInfo.height, m_videoParam.fourcc,
-                                 frameDataAllocInfo.pitchInBytesLu, frameDataAllocInfo.pitchInBytesCh,
-                                 frameDataAllocInfo.paddingLu, frameDataAllocInfo.paddingChW);
-        if (sts != MFX_ERR_NONE)
-            return sts;
-    }
-
     m_reconFrameDataPool.Init(frameDataAllocInfo, 0);
     m_inputFrameDataPool.Init(frameDataAllocInfo, 0);
 
@@ -2436,25 +2425,16 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
     out->m_origin = m_inputFrameDataPool.Allocate();
 
     if (m_videoParam.inputVideoMem) { // copy from d3d to internal frame in system memory
-        if (m_videoParam.enableCmFlag) {
-            mfxHDLPair videoMemoryHandlePlaceHolder = {};
-            mfxHDL &videoMemHandle = videoMemoryHandlePlaceHolder.first;
-            if ((st = fa.GetHDL(fa.pthis, in.Data.MemId, &videoMemHandle)) != MFX_ERR_NONE)
-                Throw(std::runtime_error("GetHDL failed"));
-            if ((st = m_cmcopy->Copy(videoMemHandle, out->m_origin->y, out->m_origin->uv)) != MFX_ERR_NONE)
-                Throw(std::runtime_error("CmCopy::Copy failed"));
-        } else {
-            if ((st = fa.Lock(fa.pthis,in.Data.MemId, &in.Data)) != MFX_ERR_NONE)
-                Throw(std::runtime_error("LockExternalFrame failed"));
-            Ipp32s bpp = (m_videoParam.fourcc == P010 || m_videoParam.fourcc == P210) ? 2 : 1;
-            Ipp32s width = out->m_origin->width * bpp;
-            Ipp32s height = out->m_origin->height;
-            IppiSize roi = { width, height };
-            ippiCopyManaged_8u_C1R(in.Data.Y, in.Data.Pitch, out->m_origin->y, out->m_origin->pitch_luma_bytes, roi, 2);
-            roi.height >>= m_videoParam.chromaShiftH;
-            ippiCopyManaged_8u_C1R(in.Data.Y + height * in.Data.Pitch, in.Data.Pitch, out->m_origin->uv, out->m_origin->pitch_chroma_bytes, roi, 2);
-            fa.Unlock(fa.pthis, in.Data.MemId, &in.Data);
-        }
+        if ((st = fa.Lock(fa.pthis,in.Data.MemId, &in.Data)) != MFX_ERR_NONE)
+            Throw(std::runtime_error("LockExternalFrame failed"));
+        Ipp32s bpp = (m_videoParam.fourcc == P010 || m_videoParam.fourcc == P210) ? 2 : 1;
+        Ipp32s width = out->m_origin->width * bpp;
+        Ipp32s height = out->m_origin->height;
+        IppiSize roi = { width, height };
+        ippiCopyManaged_8u_C1R(in.Data.Y, in.Data.Pitch, out->m_origin->y, out->m_origin->pitch_luma_bytes, roi, 2);
+        roi.height >>= m_videoParam.chromaShiftH;
+        ippiCopyManaged_8u_C1R(in.Data.UV, in.Data.Pitch, out->m_origin->uv, out->m_origin->pitch_chroma_bytes, roi, 2);
+        fa.Unlock(fa.pthis, in.Data.MemId, &in.Data);
     } else {
         bool locked = false;
         if (in.Data.Y == 0) {

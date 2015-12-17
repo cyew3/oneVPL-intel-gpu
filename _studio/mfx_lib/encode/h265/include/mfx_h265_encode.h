@@ -87,7 +87,6 @@ namespace H265Enc {
         MFXCoreInterface1 &m_core;
         H265Enc::H265VideoParam m_videoParam;
         Hrd m_hrd;
-        std::auto_ptr<CmCopy> m_cmcopy;
 
         mfxEncodeStat m_stat;
         MfxMutex m_statMutex;
