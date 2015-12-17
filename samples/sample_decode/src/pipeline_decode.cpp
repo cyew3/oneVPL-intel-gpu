@@ -348,28 +348,6 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     sts = InitMfxParams(pParams);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    // JPEG and Capture decoders can provide output in nv12 and rgb4 formats
-    if ((pParams->videoType == MFX_CODEC_JPEG) ||
-        ((pParams->videoType == MFX_CODEC_CAPTURE)) )
-    {
-        m_bVppIsUsed = (m_fourcc != m_mfxVideoParams.mfx.FrameInfo.FourCC) && (m_fourcc != MFX_FOURCC_RGB4);
-    }
-    else
-    {
-        m_bVppIsUsed = (m_fourcc != m_mfxVideoParams.mfx.FrameInfo.FourCC);
-    }
-
-    if ( (m_mfxVideoParams.mfx.FrameInfo.CropW != pParams->Width) ||
-        (m_mfxVideoParams.mfx.FrameInfo.CropH != pParams->Height) )
-    {
-        m_bVppIsUsed |= pParams->Width && pParams->Height;
-    }
-
-    if (pParams->eDeinterlace)
-    {
-        m_bVppIsUsed = true;
-    }
-
     m_memType = pParams->memType;
     if (m_bVppIsUsed)
         m_bDecOutSysmem = pParams->bUseHWLib ? false : true;
@@ -436,6 +414,33 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     }
 
     return sts;
+}
+
+bool CDecodingPipeline::IsVppRequired(sInputParams *pParams)
+{
+    bool bVppIsUsed = false;
+    // JPEG and Capture decoders can provide output in nv12 and rgb4 formats
+    if ((pParams->videoType == MFX_CODEC_JPEG) ||
+        ((pParams->videoType == MFX_CODEC_CAPTURE)) )
+    {
+        bVppIsUsed = (m_fourcc != MFX_FOURCC_NV12) && (m_fourcc != MFX_FOURCC_RGB4);
+    }
+    else
+    {
+        bVppIsUsed = (m_fourcc != m_mfxVideoParams.mfx.FrameInfo.FourCC);
+    }
+
+    if ( (m_mfxVideoParams.mfx.FrameInfo.CropW != pParams->Width) ||
+        (m_mfxVideoParams.mfx.FrameInfo.CropH != pParams->Height) )
+    {
+        bVppIsUsed |= pParams->Width && pParams->Height;
+    }
+
+    if (pParams->eDeinterlace)
+    {
+        bVppIsUsed = true;
+    }
+    return bVppIsUsed;
 }
 
 void CDecodingPipeline::Close()
@@ -576,7 +581,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
         m_mfxVideoParams.mfx.FrameInfo.Height = MSDK_ALIGN32(pParams->scrHeight);
         m_mfxVideoParams.mfx.FrameInfo.CropW = pParams->scrWidth;
         m_mfxVideoParams.mfx.FrameInfo.CropH = pParams->scrHeight;
-        m_mfxVideoParams.mfx.FrameInfo.FourCC = m_bVppIsUsed ? MFX_FOURCC_NV12 : pParams->fourcc;
+        m_mfxVideoParams.mfx.FrameInfo.FourCC = (m_fourcc == MFX_FOURCC_RGB4) ? MFX_FOURCC_RGB4 : MFX_FOURCC_NV12;
         if (!m_mfxVideoParams.mfx.FrameInfo.FourCC)
             m_mfxVideoParams.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
         if (!m_mfxVideoParams.mfx.FrameInfo.ChromaFormat)
@@ -586,6 +591,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
             else if (MFX_FOURCC_RGB4 == m_mfxVideoParams.mfx.FrameInfo.FourCC)
                 m_mfxVideoParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
         }
+        m_bVppIsUsed = IsVppRequired(pParams);
     }
 
     for (; MFX_CODEC_CAPTURE != pParams->videoType;)
@@ -596,13 +602,19 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
 
         // parse bit stream and fill mfx params
         sts = m_pmfxDEC->DecodeHeader(&m_mfxBS, &m_mfxVideoParams);
+        if (!sts)
+        {
+            m_bVppIsUsed = IsVppRequired(pParams);
+        }
+
         if (!sts &&
             !(m_impl & MFX_IMPL_SOFTWARE) &&
             (m_mfxVideoParams.mfx.FrameInfo.BitDepthLuma == 10) &&
-            (m_mfxVideoParams.mfx.CodecId == MFX_CODEC_HEVC) )
+            (m_mfxVideoParams.mfx.CodecId == MFX_CODEC_HEVC) &&
+            m_bVppIsUsed )
         {
             sts = MFX_ERR_UNSUPPORTED;
-            msdk_printf(MSDK_STRING("Error: Pair 'HW lib + SW HEVC 10bit decoder' isn't supported. Use -sw option.\n"));
+            msdk_printf(MSDK_STRING("Error: Combination of (SW HEVC plugin in 10bit mode + HW lib VPP) isn't supported. Use -sw option.\n"));
         }
         if (m_pPlugin.get() && pParams->videoType == CODEC_VP8 && !sts) {
             // force set format to nv12 as the vp8 plugin uses yv12

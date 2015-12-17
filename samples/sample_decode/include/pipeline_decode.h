@@ -175,6 +175,7 @@ protected: // functions
 
     virtual mfxStatus InitVppParams();
     virtual mfxStatus AllocAndInitVppFilters();
+    virtual bool IsVppRequired(sInputParams *pParams);
 
     virtual mfxStatus CreateAllocator();
     virtual mfxStatus CreateHWDevice();
