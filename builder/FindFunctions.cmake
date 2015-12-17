@@ -27,6 +27,8 @@
 
 set( CMAKE_LIB_DIR ${CMAKE_BINARY_DIR}/__lib )
 set( CMAKE_BIN_DIR ${CMAKE_BINARY_DIR}/__bin )
+set_property( GLOBAL PROPERTY PROP_PLUGINS_CFG "" )
+set_property( GLOBAL PROPERTY PROP_PLUGINS_EVAL_CFG "" )
 
 function( collect_arch )
   if(__ARCH MATCHES ia32)
@@ -104,6 +106,49 @@ function( get_folder folder )
   set( folder ${CMAKE_PROJECT_NAME} )
   set (${ARGV0} ${folder} PARENT_SCOPE)
 endfunction( )
+
+function( gen_plugins_cfg plugin_id guid plugin_name type codecID )
+  file(STRINGS $ENV{MFX_HOME}/mdp_msdk-api/include/mfxvideo.h MFX_VERSION_MAJOR REGEX "#define MFX_VERSION_MAJOR")
+  file(STRINGS $ENV{MFX_HOME}/mdp_msdk-api/include/mfxvideo.h MFX_VERSION_MINOR REGEX "#define MFX_VERSION_MINOR")
+  string(REPLACE "#define MFX_VERSION_MAJOR " "" MFX_VERSION_MAJOR ${MFX_VERSION_MAJOR})
+  string(REPLACE "#define MFX_VERSION_MINOR " "" MFX_VERSION_MINOR ${MFX_VERSION_MINOR})
+  math(EXPR api_version "${MFX_VERSION_MAJOR}*256 + ${MFX_VERSION_MINOR}")
+  set(PLUGINS_PATH "/opt/intel/mediasdk/plugins/")
+
+  if((NOT DEFINED ARGV5) OR (ARGV5 STREQUAL "eval"))
+    get_property( PLUGINS_EVAL_CFG GLOBAL PROPERTY PROP_PLUGINS_EVAL_CFG )
+    set(PLUGINS_EVAL_CFG "${PLUGINS_EVAL_CFG}[${plugin_id}_${guid}]\n")
+    set(PLUGINS_EVAL_CFG "${PLUGINS_EVAL_CFG}GUID = ${guid}\n")
+    set(PLUGINS_EVAL_CFG "${PLUGINS_EVAL_CFG}PluginVersion = 1\n")
+    set(PLUGINS_EVAL_CFG "${PLUGINS_EVAL_CFG}APIVersion = ${api_version}\n")
+    set(PLUGINS_EVAL_CFG "${PLUGINS_EVAL_CFG}Path = ${PLUGINS_PATH}lib${plugin_name}.so\n") 
+    set(PLUGINS_EVAL_CFG "${PLUGINS_EVAL_CFG}Type = ${type}\n") 
+    set(PLUGINS_EVAL_CFG "${PLUGINS_EVAL_CFG}CodecID = ${codecID}\n")
+    set(PLUGINS_EVAL_CFG "${PLUGINS_EVAL_CFG}Default = 0\n")
+    set_property( GLOBAL PROPERTY PROP_PLUGINS_EVAL_CFG ${PLUGINS_EVAL_CFG} )
+  endif()
+
+  if((NOT DEFINED ARGV5) OR (ARGV5 STREQUAL "not_eval"))
+    get_property( PLUGINS_CFG GLOBAL PROPERTY PROP_PLUGINS_CFG )
+    set(PLUGINS_CFG "${PLUGINS_CFG}[${plugin_id}_${guid}]\n")
+    set(PLUGINS_CFG "${PLUGINS_CFG}GUID = ${guid}\n")
+    set(PLUGINS_CFG "${PLUGINS_CFG}PluginVersion = 1\n")
+    set(PLUGINS_CFG "${PLUGINS_CFG}APIVersion = ${api_version}\n")
+    set(PLUGINS_CFG "${PLUGINS_CFG}Path = ${PLUGINS_PATH}lib${plugin_name}.so\n") 
+    set(PLUGINS_CFG "${PLUGINS_CFG}Type = ${type}\n") 
+    set(PLUGINS_CFG "${PLUGINS_CFG}CodecID = ${codecID}\n")
+    set(PLUGINS_CFG "${PLUGINS_CFG}Default = 0\n")
+    set_property( GLOBAL PROPERTY PROP_PLUGINS_CFG ${PLUGINS_CFG} )
+  endif()
+
+endfunction( )
+
+function( create_plugins_cfg directory )
+  get_property( PLUGINS_CFG GLOBAL PROPERTY PROP_PLUGINS_CFG )
+  get_property( PLUGINS_EVAL_CFG GLOBAL PROPERTY PROP_PLUGINS_EVAL_CFG )
+  file(WRITE ${directory}/plugins.cfg ${PLUGINS_CFG})
+  file(WRITE ${directory}/plugins_eval.cfg ${PLUGINS_EVAL_CFG})
+endfunction()
 
 #
 # Usage:

@@ -1,5 +1,7 @@
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
+set(HEVC_Encoder_HW_GUID "6fadc791a0c2eb479ab6dcd5ea9da347")
+
 # Plugin version info
 
 set (HEVCE_HW_PRODUCT_NAME "Intel(R) Media Server Studio 2015 - HEVC Decode and Encode")
@@ -108,4 +110,5 @@ endforeach()
 
 set( defs "-DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVCE_HW_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${HEVCE_HW_DESCRIPTION}\"\\\" ${HEVCE_HW_version_defs}" )
 
+gen_plugins_cfg("HEVC_Encoder_HW" ${HEVC_Encoder_HW_GUID} "mfx_hevce_hw64" "02" "HEVC")
 make_library( mfx_hevce_hw64 hw shared )

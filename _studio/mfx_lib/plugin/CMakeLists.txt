@@ -2,6 +2,14 @@
 #
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
+set(HEVC_DECODER_HW_GUID "33a61c0b4c27454ca8d85dde757c6f8e")
+set(HEVC_DECODER_SW_GUID "15dd936825ad475ea34e35f3f54217a6")
+set(HEVC_ENCODER_GACC_GUID "e5400a06c74d41f5b12d430bbaa23d0b")
+set(HEVC_ENCODER_SW_GUID "2fca99749fdb49aeb121a5b63ef568f7")
+set(H264LA_ENCODER_GUID "588f1185d47b42968dea377bb5d0dcb4")
+set(H265FEI_ENCODER_GUID "87e0e80207375240852515cf4a5edde6")
+set(VP8_DECODER_HW_GUID "f622394d8d87452f878c51f2fc9b4131")
+set(VP8_DECODER_SW_GUID "bca276ec7a854a598c30e0dc5748f1f6")
 # =============================================================================
 
 mfx_include_dirs( )
@@ -165,7 +173,6 @@ set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE
 
 # HEVC
 
-#foreach( variant sw hw )
 foreach( variant sw hw)
   if( __ARCH MATCHES intel64 )
     set( plugin_name mfx_hevcd_${variant}64 )
@@ -204,10 +211,19 @@ foreach( variant sw hw)
   endif()
   
   set( defs "-DAS_HEVCD_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs} ${hw_defs}" )  
-
+  if(${variant} MATCHES hw)
+    gen_plugins_cfg("HEVC_Decoder_HW" ${HEVC_DECODER_HW_GUID} ${plugin_name} "01" "HEVC" "not_eval")
+  else()
+    gen_plugins_cfg("HEVC_Decoder_SW" ${HEVC_DECODER_SW_GUID} ${plugin_name} "01" "HEVC" "not_eval")
+  endif()
   make_library( ${plugin_name} ${variant} shared)
 
   set( defs "-DAS_HEVCD_PLUGIN -DHEVCD_EVALUATION -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
+  if(${variant} MATCHES hw)
+    gen_plugins_cfg("HEVC_Decoder_HW" ${HEVC_DECODER_HW_GUID} ${eval_plugin_name} "01" "HEVC" "eval")
+  else()
+    gen_plugins_cfg("HEVC_Decoder_SW" ${HEVC_DECODER_SW_GUID} ${eval_plugin_name} "01" "HEVC" "eval")
+  endif()
   make_library( ${eval_plugin_name} ${variant} shared)
 
 endforeach()
@@ -260,8 +276,8 @@ foreach( variant sw hw )
       set( plugin_name mfx_hevce_gacc32 )
       set( eval_plugin_name mfx_eval_hevce_gacc32 )
     else()
-    set( plugin_name mfx_hevce_${variant}32 )
-    set( eval_plugin_name mfx_eval_hevce_${variant}32 )
+      set( plugin_name mfx_hevce_${variant}32 )
+      set( eval_plugin_name mfx_eval_hevce_${variant}32 )
     endif()
   endif()
   if( __CONFIG MATCHES debug )
@@ -288,6 +304,11 @@ foreach( variant sw hw )
     )
 
   set( defs "-DAS_HEVCE_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
+  if(${variant} MATCHES hw)
+    gen_plugins_cfg("HEVC_Encoder_GACC" ${HEVC_ENCODER_GACC_GUID} ${plugin_name} "02" "HEVC" "not_eval")
+  else()
+    gen_plugins_cfg("HEVC_Encoder_SW" ${HEVC_ENCODER_SW_GUID} ${plugin_name} "02" "HEVC" "not_eval")
+  endif()
   make_library( ${plugin_name} ${variant} shared)
  
   set( LIBS "" )
@@ -307,6 +328,11 @@ foreach( variant sw hw )
     )
 
   set( defs "-DAS_HEVCE_PLUGIN -DHEVCE_EVALUATION -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
+  if(${variant} MATCHES hw)
+    gen_plugins_cfg("HEVC_Encoder_GACC" ${HEVC_ENCODER_GACC_GUID} ${eval_plugin_name} "02" "HEVC" "eval")
+  else()
+    gen_plugins_cfg("HEVC_Encoder_SW" ${HEVC_ENCODER_SW_GUID} ${eval_plugin_name} "02" "HEVC" "eval")
+  endif()
   make_library( ${eval_plugin_name} ${variant} shared)
 
 endforeach()
@@ -431,6 +457,8 @@ foreach( variant hw )
     )
   
   set( defs "-DAS_H264LA_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${H264LA_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${h264la_version_defs}" )
+  
+  gen_plugins_cfg("H264la_Encoder" ${H264LA_ENCODER_GUID} ${plugin_name} "04" "AVC")
   make_library( ${plugin_name} ${variant} shared)
 
 #  set( defs "-DAS_H264LA_PLUGIN -DH264LA_EVALUATION -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
@@ -522,6 +550,7 @@ if( ENABLE_HEVC_FEI )
       )
 
     set( defs "-DAS_H265FEI_PLUGIN -DAS_HEVCE_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${H265FEI_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${h265fei_version_defs}")
+    gen_plugins_cfg("H265FEI_Encoder" ${H265FEI_ENCODER_GUID} ${plugin_name} "04" "HEVC")
     make_library( ${plugin_name} ${variant} shared)
 
   endforeach()
@@ -617,6 +646,8 @@ foreach( variant sw hw )
 
     set( defs "-DAS_VP8D_PLUGIN -DUMC_ENABLE_VP8_VIDEO_DECODER -DMFX_VA -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP8_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp8_version_defs}")
 
+    gen_plugins_cfg("VP8_Decoder_HW" ${VP8_DECODER_HW_GUID} ${plugin_name} "01" "VP8")
+
   else()
 
     foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../decode/vp8/src )
@@ -628,6 +659,8 @@ foreach( variant sw hw )
     endforeach()
 
     set( defs "-DAS_VP8D_PLUGIN -DUMC_ENABLE_VP8_VIDEO_DECODER -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP8_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp8_version_defs}")
+
+    gen_plugins_cfg("VP8_Decoder_SW" ${VP8_DECODER_SW_GUID} ${plugin_name} "01" "VP8")
 
   endif()
 
