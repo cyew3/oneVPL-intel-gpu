@@ -426,8 +426,8 @@ mfxStatus tsVideoDecoder::DecodeFrames(mfxU32 n, bool check)
 
     g_tsLog << decoded << " FRAMES DECODED\n";
 
-    if (check && (decoded != n))
-        return MFX_ERR_UNKNOWN;
+    if (check)
+        EXPECT_EQ(decoded, n) << "ERROR: Expected frames" << n << "; decoded " << decoded;
 
     return g_tsStatus.get();
 }
