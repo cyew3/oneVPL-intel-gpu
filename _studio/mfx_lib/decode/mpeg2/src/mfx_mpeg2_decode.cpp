@@ -3096,6 +3096,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
 
                     m_implUmc.PostProcessUserData(display_index);
 
+                    display_frame_count++;
                     return sts;
                 }
                 else
