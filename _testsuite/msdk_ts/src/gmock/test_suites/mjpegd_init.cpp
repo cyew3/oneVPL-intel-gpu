@@ -16,7 +16,7 @@ public:
 
 private:
     static const mfxU32 max_num_ctrl     = 3;
-    
+
     struct tc_struct
     {
         mfxStatus sts;
@@ -86,7 +86,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/* 0*/ MFX_ERR_NONE, SESSION_VALID, PAR_NO_ZERO, OSA_TYPE_D3D, OSA_NUM_VALID, 1,
         {MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, 32}, //system
     },
-    {/* 1*/ MFX_ERR_INVALID_HANDLE, SESSION_INVALID, PAR_NO_ZERO, OSA_TYPE_D3D, OSA_NUM_VALID, 1, 
+    {/* 1*/ MFX_ERR_INVALID_HANDLE, SESSION_INVALID, PAR_NO_ZERO, OSA_TYPE_D3D, OSA_NUM_VALID, 1,
         {
             {MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, 32}
         }
@@ -142,7 +142,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, 64}
         }
     },
-   
+
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -150,16 +150,12 @@ const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(Test
 int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
-    const char* sname = g_tsStreamPool.Get("forBehaviorTest/mjpeg/000");
-    g_tsStreamPool.Reg();
-    tsBitstreamReader reader(sname, 1024);
-    m_bs_processor = &reader;
     m_par_set = true;
 
     const tc_struct& tc = test_case[id];
     mfxStatus expected = tc.sts;
     apply_par(tc, MFXVPAR);
-    
+
 
     if(tc.ses_mode == SESSION_VALID)
     {
@@ -176,7 +172,7 @@ int TestSuite::RunTest(unsigned int id)
 
 
         }
-         
+
         m_pPar->mfx.FrameInfo.Width = 320;
         m_pPar->mfx.FrameInfo.Height = 240;
         m_pPar->mfx.FrameInfo.CropW = 320;
@@ -189,20 +185,21 @@ int TestSuite::RunTest(unsigned int id)
 
         if(m_default)
         {
-            if(!m_session)
+
+            if (!m_session)
             {
                 MFXInit();
             }
-            if(!m_loaded)
+            if (!m_loaded)
             {
                 Load();
             }
             if (
                     (
-                        !m_pFrameAllocator 
+                        !m_pFrameAllocator
                         && (
                                (m_request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
-                               || (m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)              
+                               || (m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
                                || m_use_memid
                             )
                     )
@@ -211,14 +208,18 @@ int TestSuite::RunTest(unsigned int id)
             {
                 if(!GetAllocator())
                 {
-                    UseDefaultAllocator(
-                           (m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) 
-                        || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
-                    );
+                    if (m_pVAHandle)
+                        SetAllocator(m_pVAHandle, true);
+                    else
+                        UseDefaultAllocator(
+                               (m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+                         || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
+                        );
                 }
                 m_pFrameAllocator = GetAllocator();
                 SetFrameAllocator();
             }
+
             if(!m_par_set && (m_bs_processor || m_pBitstream && m_pBitstream->DataLength))
             {
                 DecodeHeader();
@@ -229,7 +230,7 @@ int TestSuite::RunTest(unsigned int id)
                 AllocOpaque(m_request, m_par);
             }
         }
- 
+
          if (tc.osa_num_mode == OSA_NUM_LESS)
             ((mfxExtOpaqueSurfaceAlloc*)m_pPar)->Out.NumSurface = (m_request.NumFrameMin - 1);
          if (tc.osa_num_mode == OSA_NUM_BIGGER)
@@ -245,14 +246,14 @@ int TestSuite::RunTest(unsigned int id)
        m_pPar = 0;
     }
 
-    
+
     g_tsStatus.expect(MFX_ERR_NONE);
     for (mfxU32 i = 1; i < tc.num_call; i++)
          Init(m_session, m_pPar);
     g_tsStatus.expect(expected);
     Init(m_session, m_pPar);
 
-    
+
 
     TS_END;
     return 0;
