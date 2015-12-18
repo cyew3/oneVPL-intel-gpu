@@ -425,8 +425,7 @@ do {                                                 \
             g_tsStatus.expect(MFX_ERR_NONE);
             g_tsStatus.check( MFXVideoDECODE_GetDecodeStat(m_session, &stat) );
 
-            //EXPECT_EQ(count, stat.NumFrame) << "ERROR: Returned stat.NumFrame by GetDecodeStat is wrong\n";
-            EXPECT_NEAR(count, stat.NumFrame, 1) << "ERROR: Returned stat.NumFrame by GetDecodeStat is wrong (difference is more than 1)\n";
+            EXPECT_EQ(count, stat.NumFrame) << "ERROR: Returned stat.NumFrame by GetDecodeStat is wrong\n";
         }
 
         frame++;
