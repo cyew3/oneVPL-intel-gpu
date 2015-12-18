@@ -33,9 +33,7 @@ rem xcopy /S samples\*.project %1\samples\ /EXCLUDE:exclusions.txt
 xcopy /S samples\*.txt %1\samples\ /EXCLUDE:exclusions.txt
 
 
-FOR /f %%f IN (dir %1\samples /s /b /a-D) DO (
-    dos2unix %%f
-)
+FOR /f %%f IN ('dir "%1\" /s /b /a-D') DO (dos2unix "%%f")
 
 xcopy /S samples\*.pdf %1\samples\ /EXCLUDE:exclusions.txt
 xcopy /S samples\*.so %1\samples\ /EXCLUDE:exclusions.txt
@@ -57,3 +55,6 @@ xcopy %3\..\..\third_party_programs.txt %1\
 xcopy %3\..\..\site_license_materials.txt %1\
 
 xcopy /S content\* %1\samples\_bin\content\
+
+
+echo !!!!!!!! DO NOT FORGET TO COPY OPENCL SAMPLES !!!!!!!!

@@ -236,6 +236,7 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
 
         // if d3d11 surfaces are used ask the library to run acceleration through D3D11
         // feature may be unsupported due to OS or MSDK API version
+
         if (D3D11_MEMORY == pParams->memType)
             initPar.Implementation |= MFX_IMPL_VIA_D3D11;
 
@@ -397,11 +398,12 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
             m_mfxVppVideoParams.vpp.Out.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
         sts = m_pmfxVPP->Init(&m_mfxVppVideoParams);
-        if (MFX_WRN_PARTIAL_ACCELERATION == sts) {
+        if (MFX_WRN_PARTIAL_ACCELERATION == sts) 
+        {
             msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
             MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
         }
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
     sts = m_pmfxDEC->GetVideoParam(&m_mfxVideoParams);
@@ -806,6 +808,7 @@ mfxStatus CDecodingPipeline::InitVppParams()
 
     m_mfxVppVideoParams.AsyncDepth = m_mfxVideoParams.AsyncDepth;
 
+    m_VppExtParams.clear();
     AllocAndInitVppFilters();
     m_VppExtParams.push_back((mfxExtBuffer*)&m_VppDoNotUse);
     if (m_diMode)
@@ -1170,6 +1173,8 @@ void CDecodingPipeline::DeleteFrames()
     m_pCurrentFreeSurface = NULL;
     MSDK_SAFE_FREE(m_pCurrentFreeOutputSurface);
 
+    m_pCurrentFreeVppSurface = NULL;
+
     // delete frames
     if (m_pGeneralAllocator)
     {
@@ -1279,6 +1284,14 @@ mfxStatus CDecodingPipeline::ResetDecoder(sInputParams *pParams)
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_INITIALIZED);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+    // close VPP
+    if(m_pmfxVPP)
+    {
+        sts = m_pmfxVPP->Close();
+        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_INITIALIZED);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
+
     // free allocated frames
     DeleteFrames();
 
@@ -1298,6 +1311,17 @@ mfxStatus CDecodingPipeline::ResetDecoder(sInputParams *pParams)
         MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
     }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    if(m_pmfxVPP)
+    {
+        sts = m_pmfxVPP->Init(&m_mfxVppVideoParams);
+        if (MFX_WRN_PARTIAL_ACCELERATION == sts) 
+        {
+            msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
+            MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
+        }
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
 
     return MFX_ERR_NONE;
 }
