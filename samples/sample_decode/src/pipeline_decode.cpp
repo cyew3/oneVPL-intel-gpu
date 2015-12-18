@@ -179,6 +179,9 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     if (pParams->Height)
         m_vppOutHeight = pParams->Height;
 
+
+    m_memType = pParams->memType;
+
     m_nMaxFps = pParams->nMaxFPS;
     m_nFrames = pParams->nFrames ? pParams->nFrames : MFX_INFINITE;
 
@@ -349,7 +352,6 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     sts = InitMfxParams(pParams);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    m_memType = pParams->memType;
     if (m_bVppIsUsed)
         m_bDecOutSysmem = pParams->bUseHWLib ? false : true;
     else
@@ -398,7 +400,7 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
             m_mfxVppVideoParams.vpp.Out.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
         sts = m_pmfxVPP->Init(&m_mfxVppVideoParams);
-        if (MFX_WRN_PARTIAL_ACCELERATION == sts) 
+        if (MFX_WRN_PARTIAL_ACCELERATION == sts)
         {
             msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
             MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
@@ -754,7 +756,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
     if (!m_bVppIsUsed)
         m_mfxVideoParams.IOPattern = (mfxU16)(m_memType != SYSTEM_MEMORY ? MFX_IOPATTERN_OUT_VIDEO_MEMORY : MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
     else
-        m_mfxVideoParams.IOPattern = (mfxU16)(m_bDecOutSysmem ? MFX_IOPATTERN_OUT_SYSTEM_MEMORY : MFX_IOPATTERN_OUT_VIDEO_MEMORY);
+        m_mfxVideoParams.IOPattern = (mfxU16)(pParams->bUseHWLib ? MFX_IOPATTERN_OUT_VIDEO_MEMORY : MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
     m_mfxVideoParams.AsyncDepth = pParams->nAsyncDepth;
 
@@ -1315,7 +1317,7 @@ mfxStatus CDecodingPipeline::ResetDecoder(sInputParams *pParams)
     if(m_pmfxVPP)
     {
         sts = m_pmfxVPP->Init(&m_mfxVppVideoParams);
-        if (MFX_WRN_PARTIAL_ACCELERATION == sts) 
+        if (MFX_WRN_PARTIAL_ACCELERATION == sts)
         {
             msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
             MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
