@@ -71,7 +71,7 @@ mfxU16 MaxRec(MfxVideoParam const & par)
 
 mfxU16 MaxRaw(MfxVideoParam const & par)
 {
-    return par.AsyncDepth + par.mfx.GopRefDist + par.RawRef * par.mfx.NumRefFrame;
+    return par.AsyncDepth + par.mfx.GopRefDist + par.RawRef * par.mfx.NumRefFrame - 1;
 }
 
 mfxU16 MaxBs(MfxVideoParam const & par)
@@ -81,7 +81,7 @@ mfxU16 MaxBs(MfxVideoParam const & par)
 
 mfxU16 MaxTask(MfxVideoParam const & par)
 {
-    return par.AsyncDepth + par.mfx.GopRefDist - 1;
+    return par.AsyncDepth + par.mfx.GopRefDist;
 }
 
 mfxStatus LoadSPSPPS(MfxVideoParam& par, mfxExtCodingOptionSPSPPS* pSPSPPS)
@@ -681,15 +681,15 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     *thread_task = task;
 
     task->m_stage |= FRAME_REORDERED;
-    m_task.Submit(task);
 
-    if ((surface!=0) && ((m_numBuffered + 1) < m_vpar.AsyncDepth) )
+    if ((surface!=0) && (m_numBuffered < (mfxU32)((m_vpar.AsyncDepth > 1) ? 1 : 0) ))
     {
         m_numBuffered ++;
         sts = MFX_ERR_MORE_DATA_SUBMIT_TASK;
         task->m_bs = 0;
     }
 
+    m_task.Submit(task);
     return sts;
 }
 
@@ -734,6 +734,8 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
 
 
         sts = m_ddi->QueryStatus(*taskForQuery);
+        if (sts == MFX_WRN_DEVICE_BUSY)
+            return MFX_TASK_BUSY;
 
         MFX_CHECK_STS(sts);
 
