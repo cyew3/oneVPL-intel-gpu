@@ -114,7 +114,7 @@ public:
     inline mfxF64 GetAvgTime()
     {
 #ifdef TIME_STATS
-        return totalTime/numMeasurements;
+        return numMeasurements ? totalTime/numMeasurements : 0;
 #else
         return 0;
 #endif
@@ -124,7 +124,7 @@ public:
     {
 #ifdef TIME_STATS
         mfxF64 avg = GetAvgTime();
-        return sqrt(totalTimeSquares/numMeasurements-avg*avg);
+        return numMeasurements ? sqrt(totalTimeSquares/numMeasurements-avg*avg) : 0;
 #else
         return 0;
 #endif
