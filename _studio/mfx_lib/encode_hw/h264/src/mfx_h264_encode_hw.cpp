@@ -1139,7 +1139,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         (m_currentPlatform < MFX_HW_HSW || m_currentPlatform == MFX_HW_VLV); // HRD WA for high bitrates isn't required for HSW and beyond
 
     // required for slice header patching
-    if ((extOpt2->MaxSliceSize||m_caps.HeaderInsertion == 1 || m_currentPlatform == MFX_HW_IVB && m_core->GetVAType() == MFX_HW_VAAPI || m_currentPlatform == MFX_HW_SOFIA) && m_video.Protected == 0 || (m_video.mfx.LowPower == MFX_CODINGOPTION_ON && m_video.calcParam.numTemporalLayer > 0 && m_video.mfx.NumSlice != 1))
+    if ((extOpt2->MaxSliceSize||m_caps.HeaderInsertion == 1 || m_currentPlatform == MFX_HW_IVB && m_core->GetVAType() == MFX_HW_VAAPI || m_currentPlatform == MFX_HW_SOFIA) && m_video.Protected == 0 || (m_video.mfx.LowPower == MFX_CODINGOPTION_ON && m_video.calcParam.numTemporalLayer > 0))
         m_tmpBsBuf.resize(m_maxBsSize);
 
     const size_t MAX_SEI_SIZE    = 10 * 1024;
@@ -3166,14 +3166,14 @@ mfxStatus ImplementationAvc::UpdateBitstream(
         m_currentPlatform != MFX_HW_SOFIA &&
         (IsSlicePatchNeeded(task, fid) || (m_video.mfx.NumRefFrame & 1));
 
-    bool doPatch = (m_video.mfx.LowPower == MFX_CODINGOPTION_ON && m_video.calcParam.numTemporalLayer > 0 && m_video.mfx.NumSlice != 1) ||
+    bool doPatch = (m_video.mfx.LowPower == MFX_CODINGOPTION_ON && m_video.calcParam.numTemporalLayer > 0) ||
         needIntermediateBitstreamBuffer ||
         IsInplacePatchNeeded(m_video, task, fid);
 
     if (m_isWiDi && task.m_resetBRC)
         m_resetBRC = true;
 
-    if (!((m_video.mfx.LowPower == MFX_CODINGOPTION_ON && m_video.calcParam.numTemporalLayer > 0 && m_video.mfx.NumSlice != 1)) &&
+    if (!((m_video.mfx.LowPower == MFX_CODINGOPTION_ON && m_video.calcParam.numTemporalLayer > 0 )) &&
         m_currentPlatform != MFX_HW_SOFIA && // SoFIA HW always writes slice headers. MSDK should patch them if required
         m_caps.HeaderInsertion == 0 &&
         (m_currentPlatform != MFX_HW_IVB || m_core->GetVAType() != MFX_HW_VAAPI)
