@@ -314,7 +314,7 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         out->mfx.NumRefFrame       = 1;
         out->mfx.EncodedOrder      = 1;
 
-        //out->mfx.FrameInfo.FourCC        = 1;
+        out->mfx.FrameInfo.FourCC        = 1;
         out->mfx.FrameInfo.Width         = 1;
         out->mfx.FrameInfo.Height        = 1;
         out->mfx.FrameInfo.CropX         = 1;

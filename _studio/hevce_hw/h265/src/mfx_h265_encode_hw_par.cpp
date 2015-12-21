@@ -125,6 +125,8 @@ mfxStatus CheckProfile(mfxVideoParam& par)
         break;
 
     case MFX_PROFILE_HEVC_MAIN10:
+        if (par.mfx.FrameInfo.BitDepthLuma != 10)
+            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
         break;
 
     case MFX_PROFILE_HEVC_MAINSP:
@@ -133,9 +135,10 @@ mfxStatus CheckProfile(mfxVideoParam& par)
             par.mfx.GopPicSize = 1;
             sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
+        break;
 
     case MFX_PROFILE_HEVC_MAIN:
-        if (par.mfx.FrameInfo.BitDepthLuma > 8)
+        if (par.mfx.FrameInfo.BitDepthLuma != 8)
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
         break;
 
@@ -866,10 +869,16 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     incompatible += CheckMax(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.mfx.FrameInfo.Height);
     changed      += CheckMin(par.m_ext.HEVCParam.PicWidthInLumaSamples, Align(par.m_ext.HEVCParam.PicWidthInLumaSamples, CODED_PIC_ALIGN_W));
     changed      += CheckMin(par.m_ext.HEVCParam.PicHeightInLumaSamples, Align(par.m_ext.HEVCParam.PicHeightInLumaSamples, CODED_PIC_ALIGN_H));
-
-    unsupported += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 8, 0);
-    unsupported += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 8, 0);
-
+    if(par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN || par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP)
+    {
+        unsupported += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 8, 0);
+        unsupported += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 8, 0);
+    }
+    if(par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10)
+    {
+        unsupported += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 10, 0);
+        unsupported += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 10, 0);
+    }
     if (   caps.TileSupport == 0
         && (par.m_ext.HEVCTiles.NumTileColumns > 1 || par.m_ext.HEVCTiles.NumTileRows > 1))
     {
@@ -949,7 +958,10 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     }
 
     unsupported += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV420, 0);
-    unsupported += CheckOption(par.mfx.FrameInfo.FourCC, (mfxU32)MFX_FOURCC_NV12, 0);
+    if(par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN || par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP)
+        unsupported += CheckOption(par.mfx.FrameInfo.FourCC, (mfxU32)MFX_FOURCC_NV12, 0);
+    if(par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10)
+        unsupported += CheckOption(par.mfx.FrameInfo.FourCC, (mfxU32)MFX_FOURCC_P010, 0);
 
     if (par.mfx.FrameInfo.FrameRateExtN && par.mfx.FrameInfo.FrameRateExtD) // FR <= 300
     {

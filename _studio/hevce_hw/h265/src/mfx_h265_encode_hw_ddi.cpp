@@ -24,13 +24,13 @@ GUID GetGUID(MfxVideoParam const & par)
 {
     if (par.mfx.LowPower == MFX_CODINGOPTION_ON)
     {
-        //if (par.mfx.FrameInfo.BitDepthLuma > 8)
-        //    return DXVA2_Intel_LowpowerEncode_HEVC_Main10;
+        if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10)
+            return DXVA2_Intel_LowpowerEncode_HEVC_Main10;
         return DXVA2_Intel_LowpowerEncode_HEVC_Main;
     }
     //
-    //if (par.mfx.FrameInfo.BitDepthLuma > 8)
-    //        return DXVA2_Intel_Encode_HEVC_Main10;
+    if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10)
+        return DXVA2_Intel_Encode_HEVC_Main10;
 
     return DXVA2_Intel_Encode_HEVC_Main;
 }
