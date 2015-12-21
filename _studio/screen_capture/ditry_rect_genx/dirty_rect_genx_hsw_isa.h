@@ -9,5 +9,5 @@
 
 #ifndef __dirty_rect_genx_hsw__
 #define __dirty_rect_genx_hsw__
-extern const unsigned char dirty_rect_genx_hsw[20537];
+extern const unsigned char dirty_rect_genx_hsw[20658];
 #endif

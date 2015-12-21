@@ -9,5 +9,5 @@
 
 #ifndef __dirty_rect_genx_bdw__
 #define __dirty_rect_genx_bdw__
-extern const unsigned char dirty_rect_genx_bdw[19761];
+extern const unsigned char dirty_rect_genx_bdw[19882];
 #endif

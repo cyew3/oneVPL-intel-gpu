@@ -23,7 +23,7 @@ void _GENX_MAIN_ cmkDirtyRectNV12(short frame_width, short frame_height, Surface
     if(y >= frame_height)
         return;
 
-    matrix<uchar, 4, 4> dirty;
+    matrix<uchar, 4, 4> dirty = 0;
     //Y, NV12
     {
         matrix<uchar, PLANE_HEIGHT, PLANE_WIDTH> in_block_y, out_block_y;
@@ -35,7 +35,7 @@ void _GENX_MAIN_ cmkDirtyRectNV12(short frame_width, short frame_height, Surface
         uint sum = cm_sum<uint>(out_block_y);
         if(sum)
         {
-            dirty = 1;
+            dirty[0][0] = 1;
             write(roi_map, get_thread_origin_x() * 4, get_thread_origin_y() * 4, dirty);
             //printf("cm_sum = %d\n", sum);
             //printf("block = %d x %d\n", x_block, y_block);
@@ -57,7 +57,7 @@ void _GENX_MAIN_ cmkDirtyRectNV12(short frame_width, short frame_height, Surface
         uint sum = cm_sum<uint>(out_block_uv);
         if(sum)
         {
-            dirty = 1;
+            dirty[0][0] = 1;
             write(roi_map, get_thread_origin_x() * 4, get_thread_origin_y() * 4, dirty);
             //printf("cm_sum = %d\n", sum);
             //printf("block = %d x %d\n", x_block, y_block);
@@ -78,14 +78,14 @@ void _GENX_MAIN_ cmkDirtyRectRGB4(short frame_width, short frame_height, Surface
     if(y >= frame_height)
         return;
 
-    matrix<uchar, 4, 4> dirty;
+    matrix<uchar, 4, 4> dirty = 0;
 
     //ARGB, RGB4
     {
         uint sum = 0;
         matrix<uchar, PLANE_HEIGHT, 4 * PLANE_WIDTH> in_block,
                                                      out_block;
-        //Currently media block read only supports objects that fit into a single dataport transaction: 
+        //Currently media block read only supports objects that fit into a single dataport transaction:
         //   width <= 32 bytes (64 bytes for linear/Xtile surfaces on BDW+), size <= 256 bytes.
         //Workaround with several reads
 #if 0
@@ -129,7 +129,7 @@ void _GENX_MAIN_ cmkDirtyRectRGB4(short frame_width, short frame_height, Surface
 
         if(sum)
         {
-            dirty = 1;
+            dirty[0][0] = 1;
             write(roi_map, get_thread_origin_x() * 4, get_thread_origin_y() * 4, dirty);
             //printf("cm_sum = %d\n", sum);
             //printf("block = %d x %d\n", x_block, y_block);

@@ -9,5 +9,5 @@
 
 #ifndef __dirty_rect_genx_skl__
 #define __dirty_rect_genx_skl__
-extern const unsigned char dirty_rect_genx_skl[20657];
+extern const unsigned char dirty_rect_genx_skl[20754];
 #endif

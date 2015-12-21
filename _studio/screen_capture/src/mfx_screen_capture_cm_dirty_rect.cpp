@@ -265,7 +265,7 @@ mfxStatus CmDirtyRectFilter::Init(const mfxVideoParam* par, bool isSysMem, bool 
 
         pTaskCtx->roiMap.physBuffer = (mfxU8*) CM_ALIGNED_MALLOC(physSize, 0x1000);
         MFXSC_CHECK_CM_RESULT_AND_PTR(result, pTaskCtx->roiMap.physBuffer);
-        memset(pTaskCtx->roiMap.physBuffer,0,physSize);
+
         pTaskCtx->roiMap.physBufferSz = physSize;
         pTaskCtx->roiMap.physBufferPitch = pitch;
 
@@ -310,11 +310,13 @@ mfxStatus CmDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1&
 
     const IppiSize roiMapSize = {task->roiMap.width, task->roiMap.height};
     const IppiSize roiMapRealSize = {ALIGN16(task->roiMap.width), ALIGN16(task->roiMap.height)};
+    const IppiSize physBufferSize = {task->roiMap.physBufferPitch, task->roiMap.physBufferSz / task->roiMap.physBufferPitch};
 
     IppStatus resultIPP = ippiSet_8u_C1R(0, roiMap, roiMapRealSize.width, roiMapRealSize);
     MFXSC_CHECK_IPP_RESULT_AND_PTR(resultIPP, 1);
 
-    memset(task->roiMap.physBuffer, 0, task->roiMap.physBufferSz);
+    resultIPP = ippiSet_8u_C1R(0, task->roiMap.physBuffer, physBufferSize.width, physBufferSize);
+    MFXSC_CHECK_IPP_RESULT_AND_PTR(resultIPP, 1);
 
     int resultCM = 0;
 
@@ -358,20 +360,15 @@ mfxStatus CmDirtyRectFilter::RunFrameVPP(mfxFrameSurface1& in, mfxFrameSurface1&
     const mfxU8* roiBuffer = task->roiMap.physBuffer;
     const mfxU32 rowSize = task->roiMap.physBufferPitch;
 
-    for(Ipp32s i = 0; i < roiMapSize.height; ++i)
-    {
-        for(Ipp32s j = 0; j < roiMapSize.width; ++j)
-        {
-            roiMap[i * roiMapRealSize.width + j] = *(roiBuffer + 4 * (i * rowSize) + 4 * j);
-        }
-    }
+    resultIPP = ippiConvert_32s8u_C1R((const Ipp32s*)roiBuffer, rowSize * 4, roiMap, roiMapRealSize.width, roiMapSize);
+    MFXSC_CHECK_IPP_RESULT_AND_PTR(resultIPP, 1);
 
     resultIPP = ippiSum_8u_C1R(roiMap, roiMapRealSize.width, roiMapRealSize, &res);
     MFXSC_CHECK_IPP_RESULT_AND_PTR(resultIPP, 1);
 
     totalRectsN = (int) (res + 0.5);
 
-    Ipp8u  macroMap[W_BLOCKS * W_BLOCKS];
+    Ipp8u  macroMap[W_BLOCKS * H_BLOCKS];
     Ipp16u densityMap[W_BLOCKS * H_BLOCKS];
     const IppiSize roiBlock16x16 = {W_BLOCKS, H_BLOCKS};
 
