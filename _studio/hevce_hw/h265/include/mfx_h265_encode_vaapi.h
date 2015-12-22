@@ -147,7 +147,9 @@ mfxStatus SetFrameRate(
         VABufferID m_spsBufferId;
         VABufferID m_hrdBufferId;
         VABufferID m_rateParamBufferId;
+        VABufferID m_BRCParallelParamBufferId; //VAEncMiscParameterParallelRateControl
         VABufferID m_frameRateId;
+        VABufferID m_privateParamsId;
         VABufferID m_ppsBufferId;
         std::vector<VABufferID> m_sliceBufferId;
 

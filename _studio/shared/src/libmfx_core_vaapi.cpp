@@ -1537,23 +1537,6 @@ bool IsHwMvcEncSupported()
     return false;
 }
 
-bool IsSupported__VAEncMiscParameterPrivate(void)
-{
-#if defined(VAAPI_DRIVER_VPG)
-    return true;
-#else
-    return false;
-#endif
-}
-
-bool IsSupported__VAHDCPEncryptionParameterBuffer(void)
-{
-#if defined(ANDROID) && defined(VAAPI_DRIVER_VPG)
-    return true;
-#else
-    return false;
-#endif
-}
 
 #endif
 /* EOF */

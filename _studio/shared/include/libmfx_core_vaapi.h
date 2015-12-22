@@ -154,8 +154,24 @@ class PointerProxy
         void* mp;
 };
 
-bool IsSupported__VAEncMiscParameterPrivate(void);
-bool IsSupported__VAHDCPEncryptionParameterBuffer(void);
+inline bool IsSupported__VAEncMiscParameterPrivate(void)
+{
+#if defined(VAAPI_DRIVER_VPG)
+    return true;
+#else
+    return false;
+#endif
+}
+
+inline bool IsSupported__VAHDCPEncryptionParameterBuffer(void)
+{
+#if defined(ANDROID) && defined(VAAPI_DRIVER_VPG)
+    return true;
+#else
+    return false;
+#endif
+}
+
 
 #endif // __LIBMFX_CORE__VAAPI_H__
 #endif // MFX_VA_LINUX
