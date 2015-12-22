@@ -92,7 +92,7 @@ protected:
 
     mfxStatus InitImpl(mfxVideoParam *par);
     void      FreeResources();
-    void      WaitingForAsyncTasks(bool bResetTasks);
+    mfxStatus      WaitingForAsyncTasks(bool bResetTasks);
     bool m_createdByDispatcher;
     MFXPluginAdapter<MFXEncoderPlugin> m_adapter;
 

@@ -371,33 +371,29 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
     return sts;
 }
-void   Plugin::WaitingForAsyncTasks(bool bResetTasks)
+mfxStatus   Plugin::WaitingForAsyncTasks(bool bResetTasks)
 {
-    // need to wait untial all async tasks will be ready.
+    mfxStatus sts = MFX_ERR_NONE;
+    
+    // sheduler must wait untial all async tasks will be ready.
+    MFX_CHECK(m_task.GetSubmittedTask() == NULL, MFX_ERR_UNDEFINED_BEHAVIOR);
+    
     if (!bResetTasks)
-    {
-        for (;;)
-        {
-            //waiting for all task are submitted into driver
-            if (m_task.GetSubmittedTask())
-            {
-                vm_time_sleep(0);
-                continue;
-            }
-            break;
-        }
-        return;
-    }
+       return sts;
 
     for (;;)
     {
         //waiting for async tasks are finished
-        if (m_task.GetSubmittedTask() || m_task.GetTaskForQuery())
-        {
-            vm_time_sleep(0);
-            continue;
-        }
-        break;
+        Task* task = m_task.GetTaskForQuery();
+        if (!task)
+            break;
+       
+        m_task.SubmitForQuery(task);
+        task->m_stage = STAGE_READY;
+        if (task->m_surf)
+            FreeTask(*task);
+        m_task.Ready(task);
+ 
     }
 
     // drop other tasks (not submitted into async part)
@@ -431,6 +427,7 @@ void   Plugin::WaitingForAsyncTasks(bool bResetTasks)
 
     Fill(m_lastTask, 0xFF);
     m_numBuffered = 0;
+    return sts;
 
 
 }
@@ -525,7 +522,7 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
     // waiting for submitted in driver tasks
-    WaitingForAsyncTasks(isIdrRequired || (pResetOpt && IsOn(pResetOpt->StartNewSequence)));
+    MFX_CHECK_STS(WaitingForAsyncTasks(isIdrRequired || (pResetOpt && IsOn(pResetOpt->StartNewSequence))));
 
     if (isIdrRequired || (pResetOpt && IsOn(pResetOpt->StartNewSequence)))
     {
@@ -933,7 +930,7 @@ mfxStatus Plugin::Close()
 {
     MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
 
-    WaitingForAsyncTasks(true);
+    MFX_CHECK_STS(WaitingForAsyncTasks(true));
     FreeResources();
 
     m_bInit = false;
