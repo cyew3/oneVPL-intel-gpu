@@ -298,7 +298,8 @@ void vm_set_current_thread_priority(vm_thread_priority priority)
 void vm_set_thread_affinity_mask(vm_thread *thread, Ipp64u mask)
 {
 #if !defined(WIN_TRESHOLD_MOBILE)
-    SetThreadAffinityMask(thread->handle, mask);
+    // 32 is maximum number of processors supported for WIN32 - ignore high 32 bits of mask
+    SetThreadAffinityMask(thread->handle, (DWORD_PTR)mask);
 #else
     mask = 0;
     thread = NULL;
