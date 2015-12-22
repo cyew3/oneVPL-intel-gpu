@@ -2115,7 +2115,7 @@ mfxStatus CTranscodingPipeline::InitPluginMfxParams(sInputParams *pInParams)
 
     mfxU16 parentPattern = m_bIsVpp ? m_mfxVppParams.IOPattern : m_mfxDecParams.IOPattern;
     mfxU16 InPatternFromParent = (mfxU16)((MFX_IOPATTERN_OUT_VIDEO_MEMORY && parentPattern) ?
-MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
+        MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
 
     // set memory pattern
     if (m_bUseOpaqueMemory)
@@ -2360,11 +2360,11 @@ mfxStatus CTranscodingPipeline::CalculateNumberOfReqFrames(mfxFrameAllocRequest 
     memset(&pDecOut,0,sizeof(pDecOut));
     memset(&pVPPOut,0,sizeof(pVPPOut));
 
+    mfxFrameAllocRequest DecRequest;
+    MSDK_ZERO_MEMORY(DecRequest);
+
     if (m_pmfxDEC.get())
     {
-        mfxFrameAllocRequest DecRequest;
-
-        MSDK_ZERO_MEMORY(DecRequest);
         sts = m_pmfxDEC.get()->QueryIOSurf(&m_mfxDecParams, &DecRequest);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -2432,6 +2432,12 @@ mfxStatus CTranscodingPipeline::CalculateNumberOfReqFrames(mfxFrameAllocRequest 
         if (!CheckAsyncDepth(EncRequest, m_mfxEncParams.AsyncDepth))
             return MFX_ERR_MEMORY_ALLOC;
         SumAllocRequest(*pSumRequest, EncRequest);
+    }
+
+    if(!pSumRequest->Type && m_pmfxDEC.get())
+    {
+        //--- If noone has set type to VPP request type yet, set it now basing on decoder request type
+        pSumRequest->Type = MFX_MEMTYPE_BASE(DecRequest.Type) | MFX_MEMTYPE_FROM_VPPOUT;
     }
 
     return MFX_ERR_NONE;
