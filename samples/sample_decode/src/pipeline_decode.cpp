@@ -81,7 +81,7 @@ CDecodingPipeline::CDecodingPipeline()
     m_bIsVideoWall = false;
     m_bIsCompleteFrame = false;
     m_bPrintLatency = false;
-    m_fourcc = MFX_FOURCC_NV12;
+    m_fourcc = 0;
 
     m_nTimeout = 0;
     m_nMaxFps = 0;
@@ -427,11 +427,11 @@ bool CDecodingPipeline::IsVppRequired(sInputParams *pParams)
     if ((pParams->videoType == MFX_CODEC_JPEG) ||
         ((pParams->videoType == MFX_CODEC_CAPTURE)) )
     {
-        bVppIsUsed = (m_fourcc != MFX_FOURCC_NV12) && (m_fourcc != MFX_FOURCC_RGB4);
+        bVppIsUsed = m_fourcc && (m_fourcc != MFX_FOURCC_NV12) && (m_fourcc != MFX_FOURCC_RGB4);
     }
     else
     {
-        bVppIsUsed = (m_fourcc != m_mfxVideoParams.mfx.FrameInfo.FourCC);
+        bVppIsUsed = m_fourcc && (m_fourcc != m_mfxVideoParams.mfx.FrameInfo.FourCC);
     }
 
     if ( (m_mfxVideoParams.mfx.FrameInfo.CropW != pParams->Width) ||
@@ -586,8 +586,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
         m_mfxVideoParams.mfx.FrameInfo.CropW = pParams->scrWidth;
         m_mfxVideoParams.mfx.FrameInfo.CropH = pParams->scrHeight;
         m_mfxVideoParams.mfx.FrameInfo.FourCC = (m_fourcc == MFX_FOURCC_RGB4) ? MFX_FOURCC_RGB4 : MFX_FOURCC_NV12;
-        if (!m_mfxVideoParams.mfx.FrameInfo.FourCC)
-            m_mfxVideoParams.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+
         if (!m_mfxVideoParams.mfx.FrameInfo.ChromaFormat)
         {
             if (MFX_FOURCC_NV12 == m_mfxVideoParams.mfx.FrameInfo.FourCC)
@@ -612,9 +611,10 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
         }
 
         if (!sts &&
-            !(m_impl & MFX_IMPL_SOFTWARE) &&
-            (m_mfxVideoParams.mfx.FrameInfo.BitDepthLuma == 10) &&
+            !(m_impl & MFX_IMPL_SOFTWARE) &&                        // hw lib
+            (m_mfxVideoParams.mfx.FrameInfo.BitDepthLuma == 10) &&  // hevc 10 bit
             (m_mfxVideoParams.mfx.CodecId == MFX_CODEC_HEVC) &&
+            AreGuidsEqual(pParams->pluginParams.pluginGuid, MFX_PLUGINID_HEVCD_SW) && // sw hevc decoder
             m_bVppIsUsed )
         {
             sts = MFX_ERR_UNSUPPORTED;
@@ -796,7 +796,10 @@ mfxStatus CDecodingPipeline::InitVppParams()
     MSDK_MEMCPY_VAR(m_mfxVppVideoParams.vpp.In, &m_mfxVideoParams.mfx.FrameInfo, sizeof(mfxFrameInfo));
     MSDK_MEMCPY_VAR(m_mfxVppVideoParams.vpp.Out, &m_mfxVppVideoParams.vpp.In, sizeof(mfxFrameInfo));
 
-    m_mfxVppVideoParams.vpp.Out.FourCC  = m_fourcc;
+    if (m_fourcc)
+    {
+        m_mfxVppVideoParams.vpp.Out.FourCC  = m_fourcc;
+    }
 
     if (m_vppOutWidth && m_vppOutHeight)
     {
