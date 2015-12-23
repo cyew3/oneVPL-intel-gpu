@@ -579,7 +579,7 @@ mfxStatus OpenCLFilterRotator180::SetAllocator(mfxFrameAllocator * pAlloc)
 
 mfxStatus OpenCLFilterRotator180::Process(DataChunk * /*chunk*/)
 {
-    cl_int error = m_pOpenCLFilter->ProcessSurface(m_pIn->Info.Width, m_pIn->Info.Height, m_pIn->Data.MemId, m_pOut->Data.MemId);
+    cl_int error = m_pOpenCLFilter->ProcessSurface(m_pIn->Info.CropW, m_pIn->Info.CropH, m_pIn->Data.MemId, m_pOut->Data.MemId);
 
     return (error)? MFX_ERR_DEVICE_FAILED: MFX_ERR_NONE;
 }
