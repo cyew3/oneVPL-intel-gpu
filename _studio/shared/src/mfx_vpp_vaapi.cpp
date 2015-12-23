@@ -760,7 +760,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         mfxDrvSurface* pRefSurf;
         pRefSurf = &(pParams->pRefSurfaces[refIdx]);
 
-        if (bForceADI || ( (pParams->refCount > 1) && (0 != pParams->iDeinterlacingAlgorithm )))
+        if (pParams->bFieldWeaving || bForceADI || ( (pParams->refCount > 1) && (0 != pParams->iDeinterlacingAlgorithm )))
         {
             m_refCountForADI++;
             m_pipelineParam[refIdx].num_backward_references = 1;
@@ -894,6 +894,20 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             case MFX_PICSTRUCT_FIELD_BFF:
                 m_pipelineParam[refIdx].filter_flags = VA_BOTTOM_FIELD;
                 break;
+        }
+
+        if (pParams->bFieldWeaving)
+        {
+            // Field weaving needs flags that are different from usual pipeline
+            switch (pRefSurf->frameInfo.PicStruct)
+            {
+                case MFX_PICSTRUCT_FIELD_TFF:
+                    m_pipelineParam[refIdx].filter_flags = 4;
+                    break;
+                case MFX_PICSTRUCT_FIELD_BFF:
+                    m_pipelineParam[refIdx].filter_flags = 8;
+                    break;
+            }
         }
 
         m_pipelineParam[refIdx].filters  = m_filterBufs;
@@ -1674,7 +1688,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
             vaSts = vaEndPicture(m_vaDisplay, m_vaContextVPP);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-        }        
+        }
     } /* for( refIdx = 1; refIdx <= (pParams->fwdRefCount); refIdx++ )*/
     MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "A|VPP|COMP|PACKET_END|", "%d|%d", m_vaContextVPP, 0);
 
