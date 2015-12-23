@@ -1287,7 +1287,7 @@ namespace UMC
         UMCVACompBuffer* CompBuf;
         Ipp32s i;
         Ipp32s bitplane_size = 0;
-
+        Ipp32s real_bitplane_size = 0;
         VC1Bitplane* lut_bitplane[3];
         VC1Bitplane* check_bitplane = NULL;
 
@@ -1324,20 +1324,21 @@ namespace UMC
         {
 
             bitplane_size = ((pContext->m_seqLayerHeader.heightMB+1)/2)*pContext->m_seqLayerHeader.widthMB;
+            real_bitplane_size = pContext->m_seqLayerHeader.heightMB * pContext->m_seqLayerHeader.widthMB;
             if (pContext->m_picLayerHeader->FCM == VC1_FieldInterlace)
                 bitplane_size /= 2;
 
             Ipp8u* ptr = (Ipp8u*)m_va->GetCompBuffer(VABitPlaneBufferType, &CompBuf, bitplane_size);
             if (!ptr)
                 throw vc1_exception(mem_allocation_er);
-
+            memset(ptr, 0, bitplane_size);
             for (i = 0; i < 3; i++)
             {
                 if (!lut_bitplane[i]->m_databits)
                     lut_bitplane[i] = check_bitplane;
             }
 
-            for (i = 0; i < bitplane_size*2;)
+            for (i = 0; i < real_bitplane_size - (real_bitplane_size & 0x1);)
             {
                 *ptr = (lut_bitplane[0]->m_databits[i] << 4) + (lut_bitplane[1]->m_databits[i] << 5) +
                     (lut_bitplane[2]->m_databits[i] << 6) + lut_bitplane[0]->m_databits[i+1] +
@@ -1347,7 +1348,7 @@ namespace UMC
             }
 
             // last macroblock case
-            if (bitplane_size&1)
+            if (real_bitplane_size & 0x1)
                 *ptr = (lut_bitplane[0]->m_databits[i] << 4) + (lut_bitplane[1]->m_databits[i] << 5) +
                 (lut_bitplane[2]->m_databits[i] << 6);
 
