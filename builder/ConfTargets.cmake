@@ -29,6 +29,12 @@ if(__TARGET_PLATFORM)
     add_definitions( -DLINUX_TARGET_PLATFORM -DLINUX_TARGET_PLATFORM_${__TARGET_PLATFORM} )
 endif( )
 #
+set( T_ARCH "sse4.2" )
+if( __TARGET_PLATFORM STREQUAL "BDW" )
+    set( T_ARCH "avx2" )
+endif()
+message( STATUS "Target Architecture to compile: ${T_ARCH}" )
+#
 if( __TARGET_PLATFORM STREQUAL "BXTMIN" )
     set(MFX_LIB_ONLY TRUE)
     message( STATUS "!!! BXTMIN target MFX_LIB_ONLY !!!" )
@@ -49,5 +55,15 @@ else()
     endif()
 endif()
 
+# SW HEVC decoder & encoder require SSE4.2
+  if (CMAKE_C_COMPILER MATCHES icc)
+    append("-xSSE4.2 -static-intel" CMAKE_C_FLAGS)
+  else()
+    append("-m${T_ARCH}" CMAKE_C_FLAGS)
+  endif()
 
-
+  if (CMAKE_CXX_COMPILER MATCHES icpc)
+    append("-xSSE4.2 -static-intel" CMAKE_CXX_FLAGS)
+  else()
+    append("-m${T_ARCH}" CMAKE_CXX_FLAGS)
+  endif()

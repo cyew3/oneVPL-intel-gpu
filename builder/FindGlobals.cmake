@@ -102,20 +102,7 @@ else( )
 #    append("--sysroot=${CMAKE_FIND_ROOT_PATH} " CMAKE_CXX_FLAGS)
     append("--sysroot=${CMAKE_FIND_ROOT_PATH} " LINK_FLAGS)
   endif (DEFINED CMAKE_FIND_ROOT_PATH)
-
-  # SW HEVC decoder & encoder require SSE4.2
-  if (CMAKE_C_COMPILER MATCHES icc)
-    append("-xSSE4.2 -static-intel" CMAKE_C_FLAGS)
-  else()
-    append("-msse4.2" CMAKE_C_FLAGS)
-  endif()
-
-  if (CMAKE_CXX_COMPILER MATCHES icpc)
-    append("-xSSE4.2 -static-intel" CMAKE_CXX_FLAGS)
-  else()
-    append("-msse4.2" CMAKE_CXX_FLAGS)
-  endif()
-
+  
   if(__ARCH MATCHES ia32)
     append("-m32 -g" CMAKE_C_FLAGS)
     append("-m32 -g" CMAKE_CXX_FLAGS)
