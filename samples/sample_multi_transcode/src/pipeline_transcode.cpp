@@ -2011,7 +2011,9 @@ mfxStatus CTranscodingPipeline::AddLaStreams(mfxU16 width, mfxU16 height)
     if (pInParams->nDstWidth)
     {
         m_mfxVppParams.vpp.Out.CropW = pInParams->nDstWidth;
-        m_mfxVppParams.vpp.Out.Width     = MSDK_ALIGN16(pInParams->nDstWidth);
+        // WA for HEVCe HW. It requires 32 bit alignment so far.
+        // With others codecs MSDK_ALIGN16 macro can be used.
+        m_mfxVppParams.vpp.Out.Width     = MSDK_ALIGN32(pInParams->nDstWidth);
     }
 
     // Framerate conversion
