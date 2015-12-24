@@ -21,7 +21,9 @@ list( APPEND LIBS
     shared_utils
     sample_common
     mfx
-    umc_core_merged
+    umc
+    vm
+    vm_plus
     ippdc_l ippvc_l ippcc_l ippi_l ipps_l ippcore_l
     dl
     pthread

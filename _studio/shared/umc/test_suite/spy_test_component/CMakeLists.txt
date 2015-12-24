@@ -33,9 +33,16 @@ if( PKG_XERCES_FOUND )
 
   list( APPEND LIBS
     umc_codecs_merged
-    umc_codecs_merged_sw
-    umc_io_merged_sw
-    umc_core_merged
+    color_space_converter_sw
+    mpeg2_dec_sw
+    h264_dec_sw
+    vc1_dec_elk
+    jpeg_dec_sw
+    media_buffers
+    umc_io
+    umc
+    vm
+    vm_plus
     ippvc_l ippcc_l ippi_l ipps_l ippcore_l ippdc_l
     pthread
     dl

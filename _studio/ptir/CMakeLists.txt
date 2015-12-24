@@ -106,7 +106,9 @@ endforeach()
   list( APPEND LIBS
     pa
     pacm
-    umc_core_merged
+    umc
+    vm
+    vm_plus
     pthread
     dl
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l

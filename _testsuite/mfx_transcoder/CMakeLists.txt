@@ -28,7 +28,9 @@ make_library( mfx_trans_pipeline_lucas universal static )
 set( defs "" )
 set( sources "" )
 set( sources.plus "" )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_transcoder.cpp)
+list( APPEND sources
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_transcoder.cpp
+)
 
 set( LIBS "" )
 list( APPEND LIBS
@@ -38,8 +40,11 @@ list( APPEND LIBS
     shared_utils
 #        sample_common
     umc_splmux_merged
-    umc_io_merged_sw
-    umc_core_merged
+    media_buffers
+    umc_io
+    umc
+    vm
+    vm_plus
     ${ITT_LIBS}
     dispatch_trace
     sample_spl_mux_dispatcher
@@ -57,8 +62,11 @@ list( APPEND LIBS
     shared_utils_lucas
 #        sample_common_${variant}
     umc_splmux_merged
-    umc_io_merged_sw
-    umc_core_merged
+    media_buffers
+    umc_io
+    umc
+    vm
+    vm_plus
     ${ITT_LIBS}
     dispatch_trace
     sample_spl_mux_dispatcher

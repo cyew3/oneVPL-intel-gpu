@@ -39,8 +39,11 @@ list( APPEND LIBS
 #    vpp_plugin
     shared_utils_lucas
     umc_splmux_merged
-    umc_io_merged_sw
-    umc_core_merged
+    media_buffers
+    umc_io
+    umc
+    vm
+    vm_plus
     ${ITT_LIBS}
     dispatch_trace
     sample_spl_mux_dispatcher
@@ -56,8 +59,11 @@ list( APPEND LIBS
 #    vpp_plugin
     shared_utils
     umc_splmux_merged
-    umc_io_merged_sw
-    umc_core_merged
+    media_buffers
+    umc_io
+    umc
+    vm
+    vm_plus
     ${ITT_LIBS}
     dispatch_trace
     sample_spl_mux_dispatcher

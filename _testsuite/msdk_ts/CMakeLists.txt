@@ -89,7 +89,9 @@ add_definitions( -DUSE_SAMPLE_ALLOCATOR=1 )
 set( LIBS "" )
 list( APPEND LIBS
   dispatch_trace
-  umc_core_merged
+  umc
+  vm
+  vm_plus
   bs_parser
   dl
   ippvc_l ippcc_l ippi_l ipps_l ippcore_l
@@ -165,7 +167,9 @@ list(APPEND sources
 set( LIBS "" )
 list( APPEND LIBS
   dispatch_trace
-  umc_core_merged
+  umc
+  vm
+  vm_plus
   bs_parser
   dl
   pthread

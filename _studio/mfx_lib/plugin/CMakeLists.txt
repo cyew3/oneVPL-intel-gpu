@@ -185,21 +185,32 @@ foreach( variant sw hw)
     set( plugin_name ${plugin_name}_d )
     set( eval_plugin_name ${eval_plugin_name}_d )
   endif()
+  if(${variant} MATCHES hw)
+    list( APPEND sources
+        ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux.cpp
+        ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_video_processing.cpp
+        ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux_protected.cpp
+        ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_dxva2_protected.cpp
+      )
+  endif()
 
   set (description_name ${${variant}_HEVC_DECODER_DESCRIPTION})
 
   set( LIBS "" )
   list( APPEND LIBS
     umc_h265_${variant}
-    umc_csc_sw
+    color_space_converter_sw
     hevc_pp_dispatcher
     hevc_pp_atom
     hevc_pp_avx2
     hevc_pp_px
     hevc_pp_sse4
     hevc_pp_ssse3
-    umc_io_merged_${variant}
-    umc_core_merged 
+    media_buffers
+    umc_io
+    umc
+    vm
+    vm_plus
     ${ITT_LIBS}
     ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
@@ -208,6 +219,9 @@ foreach( variant sw hw)
   
   if(${variant} MATCHES hw)
     set( hw_defs "-DMFX_VA -DVA_HEVC_DECODER")
+    list( APPEND LIBS
+      umc_va_elk
+    )
   endif()
   
   set( defs "-DAS_HEVCD_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs} ${hw_defs}" )  
@@ -295,13 +309,22 @@ foreach( variant sw hw )
     hevc_pp_px
     hevc_pp_sse4
     hevc_pp_ssse3
-    umc_io_merged_${variant}
-    umc_core_merged
+    media_buffers
+    umc_io
+    umc
+    vm
+    vm_plus
     ${ITT_LIBS}
     ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
     dl
     )
+
+  if(${variant} MATCHES hw)
+    list( APPEND LIBS
+      umc_va_elk
+    )
+  endif()
 
   set( defs "-DAS_HEVCE_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
   if(${variant} MATCHES hw)
@@ -319,13 +342,21 @@ foreach( variant sw hw )
     hevc_pp_px
     hevc_pp_sse4
     hevc_pp_ssse3
-    umc_io_merged_${variant}
-    umc_core_merged 
+    media_buffers
+    umc_io
+    umc
+    vm
+    vm_plus
     ${ITT_LIBS}
     ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
     dl
     )
+  if(${variant} MATCHES hw)
+    list( APPEND LIBS
+      umc_va_elk
+    )
+  endif()
 
   set( defs "-DAS_HEVCE_PLUGIN -DHEVCE_EVALUATION -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
   if(${variant} MATCHES hw)
@@ -442,14 +473,30 @@ foreach( variant hw )
 
   set (description_name ${${variant}_H264LA_ENCODER_DESCRIPTION})
 
+  list( APPEND sources
+    ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux.cpp
+    ${CMAKE_SOURCE_DIR}/shared/umc/codec/brc/src/umc_video_brc.cpp
+    ${CMAKE_SOURCE_DIR}/shared/umc/codec/brc/src/umc_h264_brc.cpp
+    ${CMAKE_SOURCE_DIR}/shared/umc/codec/brc/src/umc_brc.cpp
+    ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_video_processing.cpp
+    ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux_protected.cpp
+    ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_dxva2_protected.cpp
+    ${CMAKE_SOURCE_DIR}/shared/umc/codec/brc/src/umc_mpeg2_brc.cpp
+    ${CMAKE_SOURCE_DIR}/shared/umc/codec/brc/src/umc_svc_brc.cpp
+  )
+
   set( LIBS "" )
   list( APPEND LIBS
     h264_la
-    umc_brc_sw
-    umc_csc_sw
-    umc_h264_enc_sw
-    umc_io_merged_${variant}
-    umc_core_merged 
+    brc
+    color_space_converter_sw
+    h264_enc_sw
+    media_buffers
+    umc_io
+    umc_va_elk
+    umc
+    vm
+    vm_plus
     ${ITT_LIBS}
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
@@ -541,13 +588,21 @@ if( ENABLE_HEVC_FEI )
 
     set( LIBS "" )
     list( APPEND LIBS
-      umc_io_merged_${variant}
-      umc_core_merged
+      media_buffers
+      umc_io
+      umc
+      vm
+      vm_plus
       ${ITT_LIBS}
       ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
       pthread
       dl
       )
+    if(${variant} MATCHES hw)
+      list( APPEND LIBS
+        umc_va_elk
+      )
+    endif()
 
     set( defs "-DAS_H265FEI_PLUGIN -DAS_HEVCE_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${H265FEI_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${h265fei_version_defs}")
     gen_plugins_cfg("H265FEI_Encoder" ${H265FEI_ENCODER_GUID} ${plugin_name} "04" "HEVC")
@@ -626,7 +681,16 @@ foreach( variant sw hw )
 
   if(${variant} MATCHES hw)
 
-    list( APPEND LIBS va )
+    list( APPEND sources
+      ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_video_processing.cpp
+      ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux_protected.cpp
+      ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_dxva2_protected.cpp
+    )
+
+    list( APPEND LIBS
+      va
+      umc_va_elk
+    )
 
     foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../decode/vp8/src )
     list( APPEND sources
@@ -664,11 +728,15 @@ foreach( variant sw hw )
 
   endif()
 
+  
   list( APPEND LIBS
     vpx
-    umc_csc_sw
-    umc_io_merged_${variant}
-    umc_core_merged
+    color_space_converter_sw
+    media_buffers
+    umc_io
+    umc
+    vm
+    vm_plus
     ${ITT_LIBS}
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread

@@ -11,7 +11,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 set( LIBS "" )
 list( APPEND LIBS
     shared_utils
-    umc_core_merged
+    umc
+    vm
+    vm_plus
     sample_common
     mfx
     ipps_l ippcore_l

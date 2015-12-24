@@ -9,5 +9,6 @@ if( VTUNE_FOUND )
   list( APPEND sources ${srcs})
 
   make_library( mfx_trace none static )
+  make_library( mfx_trace hw static )
   
 endif()

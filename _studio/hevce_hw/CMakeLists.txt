@@ -102,8 +102,12 @@ endforeach()
 
   set( LIBS "" )
   list( APPEND LIBS
-    umc_io_merged_hw
-    umc_core_merged
+    media_buffers
+    umc_io
+    umc_va_elk
+    umc
+    vm
+    vm_plus
     ${ITT_LIBS}
     pthread
     dl
