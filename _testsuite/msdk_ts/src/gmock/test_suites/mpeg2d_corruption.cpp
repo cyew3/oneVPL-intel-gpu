@@ -31,6 +31,7 @@ public:
         m_frames_found = 0;
         m_bytes_sent   = 0;
         m_frame_num    = 0;
+        m_frames_before_cur_gop = 0;
     };
     ~MPEG2BsPerFrameReader()
     {
@@ -54,6 +55,7 @@ public:
     mfxU32  m_frame_num;
     mfxU32  m_frames_found;
     mfxU32  m_bytes_sent;
+    mfxU32  m_frames_before_cur_gop;
 
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     {
@@ -105,18 +107,24 @@ public:
 
                     offset = tsParserMPEG2::get_offset();
 
+                    if(hdr->start_code == 0x000001B8) //GOP
+                    {
+                        if(m_frames_found)
+                            m_frames_before_cur_gop = m_frames_found;
+                    }
                     if(hdr->start_code == 0x00000100) // picture header
                     {
-                        if(!m_first_pic_header)
-                        {
-                            prev_offset = offset;
-                            m_first_pic_header = true;
-                            continue;
-                        }
+                        //if(!m_first_pic_header)
+                        //{
+                        //    prev_offset = offset;
+                        //    m_first_pic_header = true;
+                        //    continue;
+                        //}
                         if(!pic_hdr_found)
                         {
                             pic_hdr_found = true;
-                            ++m_frame_num;
+
+                            m_frame_num = m_frames_found;
                         }
                         else
                         {
@@ -510,8 +518,8 @@ int TestSuite::RunTestDecodeFrameAsync_new(const tc_struct& tc)
                                     ( (tc.streams[4].name && strlen(tc.streams[4].name)) ? g_tsStreamPool.Get(tc.streams[4].name) : 0 ), };
     g_tsStreamPool.Reg();
 
-    mfxU32 ts_start = 0; //20;
-    mfxU32 ts_step  = 0; //33;
+    mfxU32 ts_start = 20;
+    mfxU32 ts_step  = 33;
     mfxU32 count = 0;
     for(size_t i(0); i < NSTREAMS; ++i)
     {
@@ -529,7 +537,7 @@ int TestSuite::RunTestDecodeFrameAsync_new(const tc_struct& tc)
                 SetPar4_DecodeFrameAsync();
             }
 
-            Verifier v(tc.streams[i].flags, tc.streams[i].n, m_par, 0, ts_step, m_session);
+            Verifier v(tc.streams[i].flags, tc.streams[i].n, m_par, 20, ts_step, m_session);
             v.count = count;
             m_surf_processor = &v;
 
