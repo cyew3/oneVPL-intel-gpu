@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?> 
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" InitialTargets="Win8SdkCheck;PerlPresenseCheck">
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
@@ -9,7 +9,7 @@
     <PerlDir>$([MSBuild]::GetRegistryValueFromView('HKEY_LOCAL_MACHINE\SOFTWARE\Perl', null, null, RegistryView.Registry64))</PerlDir>
   </PropertyGroup>
   <ItemGroup>
-    <PerlLibs Include="$(PerlDir)\lib\CORE\perl5??.lib"/>
+    <PerlLibs Include="$(PerlDir)\lib\CORE\libperl5??.a;$(PerlDir)\lib\CORE\perl5??.lib"/>
   </ItemGroup>
   <PropertyGroup>
     <PerlLib>@(PerlLibs)</PerlLib>
@@ -26,8 +26,8 @@
        Condition ="!Exists('$(WindowsSdk8Path)')" />
   </Target>
   <Target Name="PerlPresenseCheck">
-    <Error Text=" Unable to find installed Perl that is relevant to target bitness (Win32||x64) by registry lookup. 
-           Please install bitness corresponding Perl or choose another platform type. 
+    <Error Text=" Unable to find installed Perl that is relevant to target bitness (Win32||x64) by registry lookup.
+           Please install bitness corresponding Perl or choose another platform type.
            For more info please goto http://wiki.ith.intel.com/display/MediaSDK/Debugging+behavior+tests"
        Condition ="!Exists('$(PerlDir)')" />
   </Target>
