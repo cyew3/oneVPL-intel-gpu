@@ -2752,7 +2752,7 @@ mfxStatus MFXVideoENCODEMPEG2::PutPicture(mfxPayload **pPayloads, mfxU32 numPayl
                 t = BITPOS(m_codec.threadSpec[i])>>3;
                 size += t;
                 if (size < m_codec.output_buffer_size)            {
-                    memcpy_s(p, m_codec.output_buffer_size, m_codec.threadSpec[i].bBuf.start_pointer, t);
+                    memcpy_s(p, m_codec.output_buffer_size - size +t, m_codec.threadSpec[i].bBuf.start_pointer, t);
                     p += t;
                 }
                 timer1.Stop(0);
