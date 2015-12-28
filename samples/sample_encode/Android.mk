@@ -20,7 +20,11 @@ LOCAL_CFLAGS += \
     $(MFX_CFLAGS_STL)
 
 LOCAL_STATIC_LIBRARIES += libsample_common libmfx
-LOCAL_SHARED_LIBRARIES := libstlport-mfx libgabi++-mfx libdl libva libva-android
+LOCAL_SHARED_LIBRARIES := libdl libva libva-android
+
+ifeq ($(LOCAL_CXX_STL),)
+   LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
+endif
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := sample_encode
