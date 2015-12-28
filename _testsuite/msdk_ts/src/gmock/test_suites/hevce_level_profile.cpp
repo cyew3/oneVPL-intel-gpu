@@ -140,28 +140,28 @@ private:
                             {
                                 m_par.mfx.FrameInfo.Width = (((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8)) + 32 - 1) & ~(32 - 1)) + 32;
                                 m_par.mfx.FrameInfo.Height = ((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f);
-                                m_par.mfx.FrameInfo.FrameRateExtN = MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height);
+                                m_par.mfx.FrameInfo.FrameRateExtN = TS_MIN( (MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height)), 299);
                                 m_par.mfx.FrameInfo.FrameRateExtD = 1;
                             }
                             else if (tc.sub_type == BIG_H)
                             {
                                 m_par.mfx.FrameInfo.Height = (((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8)) + 32 - 1) & ~(32 - 1)) + 32;
                                 m_par.mfx.FrameInfo.Width = ((MaxLumaPs / m_par.mfx.FrameInfo.Height) & ~0x1f);
-                                m_par.mfx.FrameInfo.FrameRateExtN = MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height);
+                                m_par.mfx.FrameInfo.FrameRateExtN = TS_MIN( (MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height)), 299);
                                 m_par.mfx.FrameInfo.FrameRateExtD = 1;
                             }
                             else if (tc.sub_type == BIG_WH)
                             {
-                                m_par.mfx.FrameInfo.Width = TS_MIN( (((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f), 8192 );
-                                m_par.mfx.FrameInfo.Height = TS_MIN( (((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f), 4096 );
-                                m_par.mfx.FrameInfo.FrameRateExtN = MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height);
+                                m_par.mfx.FrameInfo.Width = (((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f);
+                                m_par.mfx.FrameInfo.Height = (((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f);
+                                m_par.mfx.FrameInfo.FrameRateExtN = TS_MIN( (MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height)), 299);
                                 m_par.mfx.FrameInfo.FrameRateExtD = 1;
                             }
                             else if (tc.sub_type == NOT_ALLIGNED)
                             {
-                                m_par.mfx.FrameInfo.Width = TS_MIN((((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f), 8192) - 15;
-                                m_par.mfx.FrameInfo.Height = TS_MIN(((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f), 4096);
-                                m_par.mfx.FrameInfo.FrameRateExtN = MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height);
+                                m_par.mfx.FrameInfo.Width = TS_MIN((((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f), 4096) - 15;
+                                m_par.mfx.FrameInfo.Height = TS_MIN(((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f), 2176);
+                                m_par.mfx.FrameInfo.FrameRateExtN = TS_MIN( (MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height)), 299);
                                 m_par.mfx.FrameInfo.FrameRateExtD = 1;
                             }
                             break;
@@ -170,16 +170,16 @@ private:
         {
                             if (tc.sts != MFX_ERR_NONE)
                             {
-                                m_par.mfx.FrameInfo.Width = TS_MIN( (((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f), 8192 );
-                                m_par.mfx.FrameInfo.Height = TS_MIN( ((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f), 4096 );
-                                m_par.mfx.FrameInfo.FrameRateExtN = MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height) + 10;
+                                m_par.mfx.FrameInfo.Width = TS_MIN( (((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f), 4096 );
+                                m_par.mfx.FrameInfo.Height = TS_MIN( ((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f), 2176 );
+                                m_par.mfx.FrameInfo.FrameRateExtN = TS_MIN( (MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height)), 289 ) + 10;
                                 m_par.mfx.FrameInfo.FrameRateExtD = 1;
                             }
                             else
                             {
-                                m_par.mfx.FrameInfo.Width = TS_MIN((((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f), 8192);
-                                m_par.mfx.FrameInfo.Height = TS_MIN(((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f), 4096);
-                                m_par.mfx.FrameInfo.FrameRateExtN = MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height);
+                                m_par.mfx.FrameInfo.Width = TS_MIN((((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f), 4096);
+                                m_par.mfx.FrameInfo.Height = TS_MIN(((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f), 2176);
+                                m_par.mfx.FrameInfo.FrameRateExtN = TS_MIN( (MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height)), 299);
                                 m_par.mfx.FrameInfo.FrameRateExtD = 1;
                             }
                             break;
@@ -188,17 +188,17 @@ private:
         {
                        if (tc.sts != MFX_ERR_NONE)
                        {
-                           m_par.mfx.FrameInfo.Width = TS_MIN((((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f), 8192);
-                           m_par.mfx.FrameInfo.Height = TS_MIN(((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f), 4096);
-                           m_par.mfx.FrameInfo.FrameRateExtN = MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height);
+                           m_par.mfx.FrameInfo.Width = TS_MIN((((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f), 4096);
+                           m_par.mfx.FrameInfo.Height = TS_MIN(((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f), 2176);
+                           m_par.mfx.FrameInfo.FrameRateExtN = TS_MIN( (MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height)), 299);
                            m_par.mfx.FrameInfo.FrameRateExtD = 1;
                            m_par.mfx.NumSlice = MaxSSPP + 1;
                        }
                        else
                        {
-                           m_par.mfx.FrameInfo.Width = TS_MIN((((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f), 8192);
-                           m_par.mfx.FrameInfo.Height = TS_MIN(((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f), 4096);
-                           m_par.mfx.FrameInfo.FrameRateExtN = MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height);
+                           m_par.mfx.FrameInfo.Width = TS_MIN((((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f), 4096);
+                           m_par.mfx.FrameInfo.Height = TS_MIN(((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f), 2176);
+                           m_par.mfx.FrameInfo.FrameRateExtN = TS_MIN( (MaxLumaSr / (m_par.mfx.FrameInfo.Width * m_par.mfx.FrameInfo.Height)), 299);
                            m_par.mfx.FrameInfo.FrameRateExtD = 1;
                            m_par.mfx.NumSlice = TS_MIN( TS_MIN( MaxSSPP, 68 ), (m_par.mfx.FrameInfo.Height / 64) );
                        }
@@ -206,8 +206,8 @@ private:
         }
         case  BR:
         {
-                    m_par.mfx.FrameInfo.Width = TS_MIN((((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f), 8192);
-                    m_par.mfx.FrameInfo.Height = TS_MIN(((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f), 4096);
+                    m_par.mfx.FrameInfo.Width = TS_MIN((((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f), 4096);
+                    m_par.mfx.FrameInfo.Height = TS_MIN(((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f), 2176);
                     m_par.mfx.TargetKbps = (mfxU16)(MaxBR * 1.1) + 10;
                     m_par.mfx.RateControlMethod = 0;
                     break;
@@ -933,11 +933,11 @@ int TestSuite::RunTest(unsigned int id)
             }
             if (g_tsStatus.m_expected != MFX_ERR_UNSUPPORTED)
             {
-                if ((m_par.mfx.FrameInfo.Width > 8192) || (m_par.mfx.FrameInfo.Height > 4096))
+                if ((m_par.mfx.FrameInfo.Width > 4096) || (m_par.mfx.FrameInfo.Height > 2176))
                 {
                     g_tsStatus.expect(MFX_ERR_NONE);
                     skip = true;
-                    g_tsLog << "Case skipped. HEVCE HW doesn't support width > 8192 and height > 4096 \n";
+                    g_tsLog << "Case skipped. HEVCE HW doesn't support width > 4096 and height > 2176 \n";
                 }
 
             }
