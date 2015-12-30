@@ -66,22 +66,22 @@ mfxStatus Plugin::GetPluginParam(mfxPluginParam *par)
 
 mfxU16 MaxRec(MfxVideoParam const & par)
 {
-    return par.AsyncDepth + par.mfx.NumRefFrame;
+    return par.AsyncDepth + par.mfx.NumRefFrame + ((par.AsyncDepth > 1)? 1: 0);
 }
 
 mfxU16 MaxRaw(MfxVideoParam const & par)
 {
-    return par.AsyncDepth + par.mfx.GopRefDist + par.RawRef * par.mfx.NumRefFrame - 1;
+    return par.AsyncDepth + par.mfx.GopRefDist -1  + par.RawRef * par.mfx.NumRefFrame + ((par.AsyncDepth > 1)? 1: 0);
 }
 
 mfxU16 MaxBs(MfxVideoParam const & par)
 {
-    return par.AsyncDepth;
+    return par.AsyncDepth + ((par.AsyncDepth > 1)? 1: 0); // added buffered task between submit into ddi and query
 }
 
 mfxU16 MaxTask(MfxVideoParam const & par)
 {
-    return par.AsyncDepth + par.mfx.GopRefDist;
+    return par.AsyncDepth + par.mfx.GopRefDist - 1 + ((par.AsyncDepth > 1)? 1: 0); 
 }
 
 mfxStatus LoadSPSPPS(MfxVideoParam& par, mfxExtCodingOptionSPSPPS* pSPSPPS)
@@ -562,6 +562,9 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK_NULL_PTR1(bs);
 
+    MFX_CHECK((mfxU8)FindFreeResourceIndex(m_bs)  != IDX_INVALID, MFX_WRN_DEVICE_BUSY);
+    MFX_CHECK((mfxU8)FindFreeResourceIndex(m_rec) != IDX_INVALID, MFX_WRN_DEVICE_BUSY);
+
     if (surface)
     {
         MFX_CHECK((surface->Data.Y == 0) == (surface->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -661,8 +664,8 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     task->m_idxRaw = (mfxU8)FindFreeResourceIndex(m_raw);
     task->m_idxRec = (mfxU8)FindFreeResourceIndex(m_rec);
     task->m_idxBs  = (mfxU8)FindFreeResourceIndex(m_bs);
-    MFX_CHECK(task->m_idxBs  != IDX_INVALID, MFX_WRN_DEVICE_BUSY);
-    MFX_CHECK(task->m_idxRec != IDX_INVALID, MFX_WRN_DEVICE_BUSY);
+    MFX_CHECK(task->m_idxBs  != IDX_INVALID, MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(task->m_idxRec != IDX_INVALID, MFX_ERR_UNDEFINED_BEHAVIOR);
 
 
     task->m_midRaw = AcquireResource(m_raw, task->m_idxRaw);
