@@ -19,14 +19,14 @@
 #include <cm/genx_vme.h>
 #include "../include/genx_hevce_me_common.h"
 
-#if !defined(target_gen7_5) && !defined(target_gen8) && !defined(CMRT_EMU)
-#error One of macro should be defined: target_gen7_5, target_gen8
+#if !defined(target_gen7_5) && !defined(target_gen8) && !defined(target_gen9) && !defined(CMRT_EMU)
+#error One of macro should be defined: target_gen7_5, target_gen8, target_gen8_5
 #endif
 
-#ifdef target_gen8
-typedef matrix<uchar, 4, 32> UniIn;
-#else
+#ifdef target_gen7_5
 typedef matrix<uchar, 3, 32> UniIn;
+#else
+typedef matrix<uchar, 4, 32> UniIn;
 #endif
 
 
@@ -54,10 +54,10 @@ void ImeOneTier4MV(vector_ref<int2, 2> mvPred, SurfaceIndex SURF_SRC_AND_REF, ma
     uniIn.row(1)[31] = 0x1;
 
     vector<int2,2>  ref0       = uniIn.row(0).format<int2>().select<2, 1> (0);
-#ifdef target_gen8
-    vector<uint2,16> costCenter = uniIn.row(3).format<uint2>().select<16, 1> (0);
-#else
+#ifdef target_gen7_5
     vector<uint2,4> costCenter = uniIn.row(1).format<uint2>().select<4, 1> (8);
+#else
+    vector<uint2,16> costCenter = uniIn.row(3).format<uint2>().select<16, 1> (0);
 #endif
     run_vme_ime(uniIn, imeIn,
         VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
@@ -107,10 +107,10 @@ void ImeOneTier4MV64(vector_ref<int2, 2> mvPred, SurfaceIndex SURF_SRC_AND_REF, 
     uniIn.row(1)[31] = 0x1;
 
     vector<int2,2>  ref0       = uniIn.row(0).format<int2>().select<2, 1> (0);
-#ifdef target_gen8
-    vector<uint2,16> costCenter = uniIn.row(3).format<uint2>().select<16, 1> (0);
-#else
+#ifdef target_gen7_5
     vector<uint2,4> costCenter = uniIn.row(1).format<uint2>().select<4, 1> (8);
+#else
+    vector<uint2,16> costCenter = uniIn.row(3).format<uint2>().select<16, 1> (0);
 #endif
     run_vme_ime(uniIn, imeIn,
         VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,
@@ -226,10 +226,10 @@ void Ime3Tiers4Mv(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_REF_256x256,
     uniIn.row(1)[31] = 0x1;
 
     vector<int2,2>  ref0       = uniIn.row(0).format<int2>().select<2, 1> (0);
-#ifdef target_gen8
-    vector<uint2,16> costCenter = uniIn.row(3).format<uint2>().select<16, 1> (0);
-#else
+#ifdef target_gen7_5
     vector<uint2,4> costCenter = uniIn.row(1).format<uint2>().select<4, 1> (8);
+#else
+    vector<uint2,16> costCenter = uniIn.row(3).format<uint2>().select<16, 1> (0);
 #endif
     run_vme_ime(uniIn, imeIn,
         VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,

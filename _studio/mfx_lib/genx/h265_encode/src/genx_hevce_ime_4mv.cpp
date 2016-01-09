@@ -19,8 +19,8 @@
 #include <cm/genx_vme.h>
 #include "../include/genx_hevce_me_common.h"
 
-#if !defined(target_gen7_5) && !defined(target_gen8) && !defined(CMRT_EMU)
-#error One of macro should be defined: target_gen7_5, target_gen8
+#if !defined(target_gen7_5) && !defined(target_gen8) && !defined(target_gen9) && !defined(CMRT_EMU)
+#error One of macro should be defined: target_gen7_5, target_gen8, target_gen9
 #endif
 
 extern "C" _GENX_MAIN_
@@ -40,10 +40,10 @@ void Ime_4mv(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIn
     uint2 height = control.format<uint2>()[31];
 
     // read MB record data
-#ifdef target_gen8
-    matrix<uchar, 4, 32> uniIn = 0;
-#else
+#ifdef target_gen7_5
     matrix<uchar, 3, 32> uniIn = 0;
+#else
+    matrix<uchar, 4, 32> uniIn = 0;
 #endif
 
     matrix<uchar, 9, 32> imeOut;
@@ -94,10 +94,10 @@ void Ime_4mv(SurfaceIndex SURF_CONTROL, SurfaceIndex SURF_SRC_AND_REF, SurfaceIn
     uniIn.row(1)[31] = 0x1;
 
     vector<int2,2>  ref0       = uniIn.row(0).format<int2>().select<2, 1> (0);
-#ifdef target_gen8
-    vector<uint2,16> costCenter = uniIn.row(3).format<uint2>().select<16, 1> (0);
-#else
+#ifdef target_gen7_5
     vector<uint2,4> costCenter = uniIn.row(1).format<uint2>().select<4, 1> (8);
+#else
+    vector<uint2,16> costCenter = uniIn.row(3).format<uint2>().select<16, 1> (0);
 #endif
     run_vme_ime(uniIn, imeIn,
         VME_STREAM_OUT, VME_SEARCH_SINGLE_REF_SINGLE_REC_SINGLE_START,

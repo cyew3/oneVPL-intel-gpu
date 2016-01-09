@@ -17,37 +17,47 @@
 #include <utility>
 
 #include "mfx_h265_defs.h"
-#include "genx_hevce_prepare_src_bdw_isa.h"
 #include "genx_hevce_prepare_src_hsw_isa.h"
-#include "genx_hevce_hme_and_me_p32_4mv_bdw_isa.h"
+#include "genx_hevce_prepare_src_bdw_isa.h"
+#include "genx_hevce_prepare_src_skl_isa.h"
 #include "genx_hevce_hme_and_me_p32_4mv_hsw_isa.h"
-#include "genx_hevce_interpolate_frame_bdw_isa.h"
-#include "genx_hevce_interpolate_frame_hsw_isa.h"
-#include "genx_hevce_intra_avc_bdw_isa.h"
+#include "genx_hevce_hme_and_me_p32_4mv_bdw_isa.h"
+#include "genx_hevce_hme_and_me_p32_4mv_skl_isa.h"
 #include "genx_hevce_intra_avc_hsw_isa.h"
-#include "genx_hevce_me_p16_4mv_and_refine_32x32_bdw_isa.h"
+#include "genx_hevce_intra_avc_bdw_isa.h"
+#include "genx_hevce_intra_avc_skl_isa.h"
+#include "genx_hevce_interpolate_frame_hsw_isa.h"
+#include "genx_hevce_interpolate_frame_bdw_isa.h"
+#include "genx_hevce_interpolate_frame_skl_isa.h"
 #include "genx_hevce_me_p16_4mv_and_refine_32x32_hsw_isa.h"
-#include "genx_hevce_refine_me_p_64x64_bdw_isa.h"
+#include "genx_hevce_me_p16_4mv_and_refine_32x32_bdw_isa.h"
+#include "genx_hevce_me_p16_4mv_and_refine_32x32_skl_isa.h"
 #include "genx_hevce_refine_me_p_64x64_hsw_isa.h"
-#include "genx_hevce_refine_me_p_16x32_bdw_isa.h"
+#include "genx_hevce_refine_me_p_64x64_bdw_isa.h"
+#include "genx_hevce_refine_me_p_64x64_skl_isa.h"
 #include "genx_hevce_refine_me_p_16x32_hsw_isa.h"
-#include "genx_hevce_refine_me_p_32x16_bdw_isa.h"
+#include "genx_hevce_refine_me_p_16x32_bdw_isa.h"
+#include "genx_hevce_refine_me_p_16x32_skl_isa.h"
 #include "genx_hevce_refine_me_p_32x16_hsw_isa.h"
-#include "genx_hevce_refine_me_p_32x32_sad_bdw_isa.h"
+#include "genx_hevce_refine_me_p_32x16_bdw_isa.h"
+#include "genx_hevce_refine_me_p_32x16_skl_isa.h"
 #include "genx_hevce_refine_me_p_32x32_sad_hsw_isa.h"
-#include "genx_hevce_analyze_gradient_32x32_best_bdw_isa.h"
+#include "genx_hevce_refine_me_p_32x32_sad_bdw_isa.h"
+#include "genx_hevce_refine_me_p_32x32_sad_skl_isa.h"
 #include "genx_hevce_analyze_gradient_32x32_best_hsw_isa.h"
-#include "genx_hevce_deblock_bdw_isa.h"
+#include "genx_hevce_analyze_gradient_32x32_best_bdw_isa.h"
+#include "genx_hevce_analyze_gradient_32x32_best_skl_isa.h"
 #include "genx_hevce_deblock_hsw_isa.h"
-#include "genx_hevce_sao_bdw_isa.h"
+#include "genx_hevce_deblock_bdw_isa.h"
+#include "genx_hevce_deblock_skl_isa.h"
 #include "genx_hevce_sao_hsw_isa.h"
-#include "genx_hevce_sao_apply_bdw_isa.h"
-#include "genx_hevce_sao_apply_hsw_isa.h"
+#include "genx_hevce_sao_bdw_isa.h"
+#include "genx_hevce_sao_skl_isa.h"
 
 #include "mfx_h265_enc_cm_fei.h"
 #include "mfx_h265_enc_cm_utils.h"
 
-#undef MFX_TRACE_ENABLE
+#undef MFX_TRACE_ENABLE 
 
 namespace H265Enc {
 
@@ -444,6 +454,20 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
         programRefine32x32sad   = ReadProgram(device, genx_hevce_refine_me_p_32x32_sad_bdw, sizeof(genx_hevce_refine_me_p_32x32_sad_bdw));
         programDeblock          = ReadProgram(device, genx_hevce_deblock_bdw, sizeof(genx_hevce_deblock_bdw));
         programSao              = ReadProgram(device, genx_hevce_sao_bdw, sizeof(genx_hevce_sao_bdw));
+        break;
+    case PLATFORM_INTEL_SKL:
+        programGradient         = ReadProgram(device, genx_hevce_analyze_gradient_32x32_best_skl, sizeof(genx_hevce_analyze_gradient_32x32_best_skl));
+        programPrepareSrc       = ReadProgram(device, genx_hevce_prepare_src_skl, sizeof(genx_hevce_prepare_src_skl));
+        programHmeMe32          = ReadProgram(device, genx_hevce_hme_and_me_p32_4mv_skl, sizeof(genx_hevce_hme_and_me_p32_4mv_skl));
+        programInterpolateFrame = ReadProgram(device, genx_hevce_interpolate_frame_skl, sizeof(genx_hevce_interpolate_frame_skl));
+        programMeIntra          = ReadProgram(device, genx_hevce_intra_avc_skl, sizeof(genx_hevce_intra_avc_skl));
+        programMe16Refine32x32  = ReadProgram(device, genx_hevce_me_p16_4mv_and_refine_32x32_skl, sizeof(genx_hevce_me_p16_4mv_and_refine_32x32_skl));
+        programRefine64x64      = ReadProgram(device, genx_hevce_refine_me_p_64x64_skl, sizeof(genx_hevce_refine_me_p_64x64_skl));
+        programRefine16x32      = ReadProgram(device, genx_hevce_refine_me_p_16x32_skl, sizeof(genx_hevce_refine_me_p_16x32_skl));
+        programRefine32x16      = ReadProgram(device, genx_hevce_refine_me_p_32x16_skl, sizeof(genx_hevce_refine_me_p_32x16_skl));
+        programRefine32x32sad   = ReadProgram(device, genx_hevce_refine_me_p_32x32_sad_skl, sizeof(genx_hevce_refine_me_p_32x32_sad_skl));
+        programDeblock          = ReadProgram(device, genx_hevce_deblock_skl, sizeof(genx_hevce_deblock_skl));
+        programSao              = ReadProgram(device, genx_hevce_sao_skl, sizeof(genx_hevce_sao_skl));
         break;
     default:
         return MFX_ERR_UNSUPPORTED;

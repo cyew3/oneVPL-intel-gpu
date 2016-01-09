@@ -15,6 +15,9 @@ if not ERRORLEVEL 0 goto :BUILD_FAILED
 call build_kernel %KERNEL% bdw %OPTIONS%
 if not ERRORLEVEL 0 goto :BUILD_FAILED
 
+call build_kernel %KERNEL% skl %OPTIONS%
+if not ERRORLEVEL 0 goto :BUILD_FAILED
+
 echo ================= OK ================= 
 goto :EOF
 

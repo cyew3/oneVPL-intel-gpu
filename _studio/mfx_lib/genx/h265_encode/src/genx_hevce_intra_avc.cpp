@@ -19,16 +19,16 @@
 #include <cm/genx_vme.h>
 #include "../include/genx_hevce_me_common.h"
 
-#if !defined(target_gen7_5) && !defined(target_gen8) && !defined(CMRT_EMU)
-#error One of macro should be defined: target_gen7_5, target_gen8
+#if !defined(target_gen7_5) && !defined(target_gen8) && !defined(target_gen9) && !defined(CMRT_EMU)
+#error One of macro should be defined: target_gen7_5, target_gen8, target_gen9
 #endif
 
-#ifdef target_gen8
-typedef matrix<uchar, 4, 32> UniIn;
-typedef matrix_ref<uchar, 4, 32> UniInRef;
-#else
+#ifdef target_gen7_5
 typedef matrix<uchar, 3, 32> UniIn;
 typedef matrix_ref<uchar, 3, 32> UniInRef;
+#else
+typedef matrix<uchar, 4, 32> UniIn;
+typedef matrix_ref<uchar, 4, 32> UniInRef;
 #endif
 
 
