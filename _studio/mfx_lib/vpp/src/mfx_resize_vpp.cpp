@@ -31,7 +31,7 @@ IppStatus rs_NV12_v2( mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxU8* pWorkB
 
 IppStatus rs_P010( mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxU8* pWorkBuf, mfxU16 picStruct );
 
-IppStatus owniResizeGetBufSize_UpEstimation( IppiSize srcSize, IppiSize dstSize, int *pBufferSize );
+mfxStatus owniResizeGetBufSize_UpEstimation( IppiSize srcSize, IppiSize dstSize, int *pBufferSize );
 
 // aya: msdk 3.0 requirements: rgb32 as output
 IppStatus rs_RGB32( mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxU8* pWorkBuf, mfxU16 picStruct );
@@ -278,6 +278,7 @@ mfxStatus MFXVideoVPPResize::GetBufferSize( mfxU32* pBufferSize )
 {
   IppiRect  srcRect, dstRect;
   IppStatus ippSts = ippStsNoErr;
+  mfxStatus mfxSts = MFX_ERR_NONE;
 
   VPP_CHECK_NOT_INITIALIZED;
 
@@ -332,8 +333,8 @@ mfxStatus MFXVideoVPPResize::GetBufferSize( mfxU32* pBufferSize )
   // correction: super_sampling method can require more work buffer memory in case of cropping
   mfxI32 bufSize_UpEstimation = 0;
 
-  ippSts = owniResizeGetBufSize_UpEstimation( srcSize, dstSize, &bufSize_UpEstimation );
-  VPP_CHECK_IPP_STS( ippSts );
+  mfxSts = owniResizeGetBufSize_UpEstimation( srcSize, dstSize, &bufSize_UpEstimation );
+  MFX_CHECK_STS( mfxSts );
 
   bufSize = IPP_MAX(bufSize, bufSize_UpEstimation);
 
@@ -1041,7 +1042,7 @@ IppStatus rs_RGB32( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf
 } // IppStatus rs_RGB32( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf, mfxU16 picStruct )
 
 /*  */
-IppStatus owniResizeGetBufSize_UpEstimation( IppiSize srcSize, IppiSize dstSize, int *pBufferSize )
+mfxStatus owniResizeGetBufSize_UpEstimation( IppiSize srcSize, IppiSize dstSize, int *pBufferSize )
 {
     Ipp64u maxWidth, maxHeight, bufSize;
 
@@ -1056,12 +1057,12 @@ IppStatus owniResizeGetBufSize_UpEstimation( IppiSize srcSize, IppiSize dstSize,
     if(bufSize > INT_MAX)
     {
         *pBufferSize = 0;
-        return ippStsSizeErr;
+        return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
     *pBufferSize = (int)bufSize;
 
-    return ippStsNoErr;
+    return MFX_ERR_INVALID_VIDEO_PARAM;
 }
 
 #endif // MFX_ENABLE_VPP
