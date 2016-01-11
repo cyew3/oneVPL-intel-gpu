@@ -303,7 +303,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <UseProcessorExtensions>SSSE3</UseProcessorExtensions>
+      <UseProcessorExtensions>SSE3</UseProcessorExtensions>
       <AssemblerOutput>AssemblyCode</AssemblerOutput>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
