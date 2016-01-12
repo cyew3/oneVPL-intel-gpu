@@ -402,6 +402,8 @@ mfxStatus   Plugin::WaitingForAsyncTasks(bool bResetTasks)
         Task* pTask = m_task.Reorder(m_vpar, m_lastTask.m_dpb[0], true);
         if (!pTask)
             break;
+        pTask->m_stage = FRAME_REORDERED;
+        m_task.Submit(pTask);
     }
     // free reordered tasks
     for (;;)
