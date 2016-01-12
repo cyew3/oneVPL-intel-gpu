@@ -1090,7 +1090,7 @@ void HeaderPacker::PackVUI(BitstreamWriter& bs, VUI const & vui)
         bs.PutBit(vui.hrd_parameters_present_flag);
 
         if (vui.hrd_parameters_present_flag)
-            PackHRD(bs, vui.hrd, 1, 1);
+            PackHRD(bs, vui.hrd, 1, 0);
     }
 
     bs.PutBit(vui.bitstream_restriction_flag);
