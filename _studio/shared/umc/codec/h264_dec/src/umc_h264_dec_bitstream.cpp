@@ -1563,9 +1563,17 @@ Status H264HeadersBitstream::GetSliceHeaderPart2(H264SliceHeader *hdr,
         }
     }
 
-    // correct frst_mb_in_slice in order to handle MBAFF
-    if (hdr->MbaffFrameFlag && hdr->first_mb_in_slice)
-        hdr->first_mb_in_slice <<= 1;
+    if (hdr->MbaffFrameFlag)
+    {
+        Ipp32u const first_mb_in_slice
+            = hdr->first_mb_in_slice;
+
+        if (first_mb_in_slice * 2 > INT_MAX)
+            return UMC_ERR_INVALID_STREAM;
+
+        // correct frst_mb_in_slice in order to handle MBAFF
+        hdr->first_mb_in_slice *= 2;
+    }
 
     if (hdr->IdrPicFlag)
     {
