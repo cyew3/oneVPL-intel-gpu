@@ -57,8 +57,13 @@ public:
 
         T * header = m_pObjHeap->AllocateObject<T>();
         *header = *hdr;
+
+        //ref. counter may not be 0 here since it can be copied from given [hdr] object
+        header->ResetRefCounter();
         header->IncrementReference();
+
         m_Header[id] = header;
+
         return header;
     }
 
