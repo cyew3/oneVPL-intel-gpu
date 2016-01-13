@@ -337,7 +337,7 @@ mfxU16 AddTileSlices(
     }
 
     */
-    mfxF64 k = (mfxF64)nLCU / (mfxF64) nSlice;
+    mfxF64 k = (par.m_ext.CO2.NumMbPerSlice != 0) ? (mfxF64)nLcuPerSlice : (mfxF64)nLCU / (mfxF64) nSlice;
 
     mfxU32 i = nSlicePrev;
     for ( ; i < par.m_slice.size(); i ++)
