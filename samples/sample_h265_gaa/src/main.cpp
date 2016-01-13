@@ -298,7 +298,7 @@ int main(int argc, char **argv)
         pi.PicOrderSrc = fi.PicOrder;
 
         mfxStatus sts = hFEI->ProcessFrameAsync(&pi, &feiH265Out[feiOutIdx], &feiH265Syncp_Intra);
-        MSDK_CHECK_RESULT_SAFE(sts,MFX_ERR_NONE,sts,msdk_printf(MSDK_STRING("Error in ProcessFrameAsync(Intra)")));
+        MSDK_CHECK_RESULT_SAFE(sts,MFX_ERR_NONE,sts, {hFEI->Close();delete hFEI;msdk_printf(MSDK_STRING("Error in ProcessFrameAsync(Intra)"));} );
 
         /* inter ME and half-pel interpolation */
         pi.FEIOp = (MFX_FEI_H265_OP_INTER_ME | MFX_FEI_H265_OP_INTERPOLATE);
@@ -315,12 +315,12 @@ int main(int argc, char **argv)
             pi.PicOrderRef = fi.RefPicOrder[i];
 
             sts = hFEI->ProcessFrameAsync(&pi, &feiH265Out[feiOutIdx], &feiH265Syncp_Inter[i]);
-            MSDK_CHECK_RESULT_SAFE(sts,MFX_ERR_NONE,sts,msdk_printf(MSDK_STRING("Error in ProcessFrameAsync(Inter%d)"),i));
+            MSDK_CHECK_RESULT_SAFE(sts,MFX_ERR_NONE,sts,{hFEI->Close();delete hFEI;msdk_printf(MSDK_STRING("Error in ProcessFrameAsync(Inter%d)"),i);} );
         }
 
         /* wait for intra async processing to finish */
         sts = hFEI->SyncOperation(feiH265Syncp_Intra);
-        MSDK_CHECK_RESULT_SAFE(sts,MFX_ERR_NONE,sts,msdk_printf(MSDK_STRING("Error in ProcessFrameAsync(Intra)")));
+        MSDK_CHECK_RESULT_SAFE(sts,MFX_ERR_NONE,sts,{hFEI->Close();delete hFEI;msdk_printf(MSDK_STRING("Error in ProcessFrameAsync(Intra)"));} );
 
         if (sp.WriteFiles) {
             /* write intra prediction modes */
