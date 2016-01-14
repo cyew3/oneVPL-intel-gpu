@@ -254,44 +254,44 @@
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'" />
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mfxplugin32_hevce_hw_d</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">mfxplugin32_hevce_hw_d</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'">mfxplugin32_hevce_hw_emu</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|Win32'">mfxplugin32_hevce_hw_d</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mfxplugin64_hevce_hw_d</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">mfxplugin64_hevce_hw_d</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">mfxplugin64_hevce_hw_emu</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|x64'">mfxplugin64_hevce_hw_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">mfxplugin32_hevce_gacc_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'">mfxplugin32_hevce_gacc_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'">mfxplugin32_hevce_gacc_emu</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|Win32'">mfxplugin32_hevce_gacc_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mfxplugin64_hevce_gacc_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">mfxplugin64_hevce_gacc_d</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">mfxplugin64_hevce_gacc_emu</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|x64'">mfxplugin64_hevce_gacc_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\e5400a06c74d41f5b12d430bbaa23d0b\</OutDir>
     <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>mfxplugin64_hevce_hw</TargetName>
+    <TargetName>mfxplugin64_hevce_gacc</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\e5400a06c74d41f5b12d430bbaa23d0b\</OutDir>
     <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>mfxplugin64_hevce_hw</TargetName>
+    <TargetName>mfxplugin64_hevce_gacc</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\evaluation\e5400a06c74d41f5b12d430bbaa23d0b\</OutDir>
     <IntDir>$(OutDir)..\..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>mfxplugin64_hevce_hw</TargetName>
+    <TargetName>mfxplugin64_hevce_gacc</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\e5400a06c74d41f5b12d430bbaa23d0b\</OutDir>
     <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>mfxplugin32_hevce_hw</TargetName>
+    <TargetName>mfxplugin32_hevce_gacc</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\e5400a06c74d41f5b12d430bbaa23d0b\</OutDir>
     <IntDir>$(OutDir)..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>mfxplugin32_hevce_hw</TargetName>
+    <TargetName>mfxplugin32_hevce_gacc</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\evaluation\e5400a06c74d41f5b12d430bbaa23d0b\</OutDir>
     <IntDir>$(OutDir)..\..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <TargetName>mfxplugin32_hevce_hw</TargetName>
+    <TargetName>mfxplugin32_hevce_gacc</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\e5400a06c74d41f5b12d430bbaa23d0b\</OutDir>
