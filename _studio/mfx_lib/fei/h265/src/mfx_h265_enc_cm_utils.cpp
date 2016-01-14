@@ -571,7 +571,7 @@ void SetupMeControl(MeControl &ctrl, int width, int height, double lambda)
         0x00,0x00,0x00,0x00,0x00,0x00,//51
     };
 
-    memcpy(ctrl.longSp, Diamond, MIN(sizeof(Diamond), sizeof(ctrl.longSp)));
+    small_memcpy(ctrl.longSp, Diamond, MIN(sizeof(Diamond), sizeof(ctrl.longSp)));
     ctrl.longSpLenSp = 16;
     ctrl.longSpMaxNumSu = 57;
 
@@ -579,7 +579,7 @@ void SetupMeControl(MeControl &ctrl, int width, int height, double lambda)
         0x0F, 0xF0, 0x01, 0x00
     };
 
-    memcpy(ctrl.shortSp, ShortPath, MIN(sizeof(ShortPath), sizeof(ctrl.shortSp)));
+    small_memcpy(ctrl.shortSp, ShortPath, MIN(sizeof(ShortPath), sizeof(ctrl.shortSp)));
     ctrl.shortSpLenSp = 4;
     ctrl.shortSpMaxNumSu = 9;
 

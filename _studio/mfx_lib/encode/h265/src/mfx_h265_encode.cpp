@@ -2639,9 +2639,9 @@ void FillDeblockParam(DeblockParam & deblockParam, const H265Enc::H265VideoParam
     deblockParam.MaxCUSize = videoParam.MaxCUSize;
     deblockParam.chromaFormatIdc = videoParam.chromaFormatIdc;
 
-    memcpy(deblockParam.list0, list0, sizeof(deblockParam.list0));
-    memcpy(deblockParam.list1, list1, sizeof(deblockParam.list1));
-    memcpy(deblockParam.scan2z, h265_scan_r2z4, sizeof(deblockParam.scan2z));
+    small_memcpy(deblockParam.list0, list0, sizeof(deblockParam.list0));
+    small_memcpy(deblockParam.list1, list1, sizeof(deblockParam.list1));
+    small_memcpy(deblockParam.scan2z, h265_scan_r2z4, sizeof(deblockParam.scan2z));
 
     for (int i = 0; i < 54; i++)
         deblockParam.tabTc[i] = tcTable[i];
@@ -2722,9 +2722,9 @@ void SetPostProcParam(PostProcParam & postprocParam, const H265Enc::H265VideoPar
     postprocParam.MaxCUSize = videoParam.MaxCUSize;
     postprocParam.chromaFormatIdc = videoParam.chromaFormatIdc;
 
-    memcpy(postprocParam.list0, list0, sizeof(postprocParam.list0));
-    memcpy(postprocParam.list1, list1, sizeof(postprocParam.list1));
-    memcpy(postprocParam.scan2z, h265_scan_r2z4, sizeof(postprocParam.scan2z));
+    small_memcpy(postprocParam.list0, list0, sizeof(postprocParam.list0));
+    small_memcpy(postprocParam.list1, list1, sizeof(postprocParam.list1));
+    small_memcpy(postprocParam.scan2z, h265_scan_r2z4, sizeof(postprocParam.scan2z));
 
     for (int i = 0; i < 54; i++)
         postprocParam.tabTc[i] = tcTable[i];
@@ -2792,46 +2792,46 @@ mfxI16Pair GetMv(FeiOutData **data, Ipp32s size, Ipp32s x, Ipp32s y)
     return *(mfxI16Pair *)(p + y * pitch + x * recordSize);
 }
 
-void DumpGpuMeData(const ThreadingTask &task, H265VideoParam &par) {
-    Ipp32s poc = task.frame->m_frameOrder;
-    Ipp32s refpoc = task.frame->m_refPicList[task.listIdx].m_refFrames[task.refIdx]->m_frameOrder;
-    Ipp32s uniqRefIdx = task.frame->m_mapListRefUnique[task.listIdx][task.refIdx];
-
-    FeiOutData **data = task.frame->m_feiInterData[uniqRefIdx];
-
-    Ipp32s width = par.Width;
-    Ipp32s height = par.Height;
-    Ipp32s widthInCtb = (par.Width + 63) / 64;
-    Ipp32s heightInCtb = (par.Height + 63) / 64;
-
-    char fnameMv[256] = {};
-    char fnameDist[256] = {};
-    sprintf(fnameMv, "frame%02d_ref%02d_mv.txt", poc, refpoc);
-    //sprintf(fnameDist, "frame%02d_ref%02d_dist.txt", poc, refpoc);
-
-    FILE *fileMv = fopen(fnameMv, "w");
-    FILE *fileDist = fopen(fnameDist, "w");
-
-    for (Ipp32s ctby = 0; ctby < heightInCtb; ctby++) {
-        for (Ipp32s ctbx = 0; ctbx < widthInCtb; ctbx++) {
-            fprintf(fileMv, "CTB addr=%d, col=%d, row=%d\n", ctbx + widthInCtb * ctby, ctbx, ctby);
-            for (Ipp32s size = 3; size >= 0; size--) {
-                Ipp32s blockSize = 1 << (3 + size);
-                Ipp32s ctbSizeInBlocks = 1 << (3 - size);
-                fprintf(fileMv, "  %dx%d\n", blockSize, blockSize);
-                for (Ipp32s y = 0; y < ctbSizeInBlocks; y++) {
-                    fprintf(fileMv, "     ");
-                    for (Ipp32s x = 0; x < ctbSizeInBlocks; x++)
-                        fprintf(fileMv, " (%6.2f, %6.2f)", GetMv(data, size, x, y).x/4.0, GetMv(data, size, x, y).y/4.0);
-                    fprintf(fileMv, "\n");
-                }
-            }
-        }
-    }
-
-    fclose(fileMv);
-    //fclose(fileDist);
-}
+//void DumpGpuMeData(const ThreadingTask &task, H265VideoParam &par) {
+//    Ipp32s poc = task.frame->m_frameOrder;
+//    Ipp32s refpoc = task.frame->m_refPicList[task.listIdx].m_refFrames[task.refIdx]->m_frameOrder;
+//    Ipp32s uniqRefIdx = task.frame->m_mapListRefUnique[task.listIdx][task.refIdx];
+//
+//    FeiOutData **data = task.frame->m_feiInterData[uniqRefIdx];
+//
+//    Ipp32s width = par.Width;
+//    Ipp32s height = par.Height;
+//    Ipp32s widthInCtb = (par.Width + 63) / 64;
+//    Ipp32s heightInCtb = (par.Height + 63) / 64;
+//
+//    char fnameMv[256] = {};
+//    char fnameDist[256] = {};
+//    sprintf(fnameMv, "frame%02d_ref%02d_mv.txt", poc, refpoc);
+//    //sprintf(fnameDist, "frame%02d_ref%02d_dist.txt", poc, refpoc);
+//
+//    FILE *fileMv = fopen(fnameMv, "w");
+//    FILE *fileDist = fopen(fnameDist, "w");
+//
+//    for (Ipp32s ctby = 0; ctby < heightInCtb; ctby++) {
+//        for (Ipp32s ctbx = 0; ctbx < widthInCtb; ctbx++) {
+//            fprintf(fileMv, "CTB addr=%d, col=%d, row=%d\n", ctbx + widthInCtb * ctby, ctbx, ctby);
+//            for (Ipp32s size = 3; size >= 0; size--) {
+//                Ipp32s blockSize = 1 << (3 + size);
+//                Ipp32s ctbSizeInBlocks = 1 << (3 - size);
+//                fprintf(fileMv, "  %dx%d\n", blockSize, blockSize);
+//                for (Ipp32s y = 0; y < ctbSizeInBlocks; y++) {
+//                    fprintf(fileMv, "     ");
+//                    for (Ipp32s x = 0; x < ctbSizeInBlocks; x++)
+//                        fprintf(fileMv, " (%6.2f, %6.2f)", GetMv(data, size, x, y).x/4.0, GetMv(data, size, x, y).y/4.0);
+//                    fprintf(fileMv, "\n");
+//                }
+//            }
+//        }
+//    }
+//
+//    fclose(fileMv);
+//    //fclose(fileDist);
+//}
 
 void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
 {

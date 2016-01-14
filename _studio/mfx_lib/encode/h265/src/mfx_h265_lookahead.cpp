@@ -2324,6 +2324,8 @@ Lookahead::Lookahead(H265Encoder & enc)
     , m_videoParam(enc.m_videoParam)
     , m_enc(enc)
 {
+    m_bufferingPaq = 0;
+
     // configuration of lookahead algorithm family
     // SceneCut
     Ipp32s bufferingSceneCut = 0;
