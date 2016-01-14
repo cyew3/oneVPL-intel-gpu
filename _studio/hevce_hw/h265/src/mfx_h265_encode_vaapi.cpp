@@ -101,7 +101,6 @@ mfxStatus SetRateControl(
     VAStatus vaSts;
     VAEncMiscParameterBuffer *misc_param;
     VAEncMiscParameterRateControl *rate_param;
-    VAEncMiscParameterParallelRateControl* parallel_brc_param;
 
     if ( rateParamBuf_id != VA_INVALID_ID)
     {
@@ -132,7 +131,12 @@ mfxStatus SetRateControl(
             rate_param->target_percentage = (unsigned int)(100.0 * (mfxF64)par.TargetKbps / (mfxF64)par.MaxKbps);
         rate_param->window_size     = par.mfx.Convergence * 100;
         rate_param->rc_flags.bits.reset = isBrcResetRequired;
+
+#ifdef PARALLEL_BRC_support
         rate_param->rc_flags.bits.enable_parallel_brc =  (par.AsyncDepth > 1) && (par.mfx.GopRefDist > 1) && (par.mfx.GopRefDist <= 8) && par.isBPyramid();
+#else
+        rate_param->rc_flags.bits.enable_parallel_brc = 0;
+#endif
     }
 
     rate_param->initial_qp = par.m_pps.init_qp_minus26 + 26;
@@ -780,7 +784,10 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
 
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRateControl(par, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId), MFX_ERR_DEVICE_FAILED);
+
+#ifdef PARALLEL_BRC_support
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetBRCParallel(par, m_vaDisplay, m_vaContextEncode, m_BRCParallelParamBufferId), MFX_ERR_DEVICE_FAILED);
+#endif
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetPrivateParams(par, m_vaDisplay, m_vaContextEncode, m_privateParamsId), MFX_ERR_DEVICE_FAILED);
 
@@ -803,8 +810,10 @@ mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par)
 
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRateControl(par, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId, isBrcResetRequired), MFX_ERR_DEVICE_FAILED);
-    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetBRCParallel(par, m_vaDisplay, m_vaContextEncode, m_BRCParallelParamBufferId), MFX_ERR_DEVICE_FAILED);
 
+#ifdef PARALLEL_BRC_support   
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetBRCParallel(par, m_vaDisplay, m_vaContextEncode, m_BRCParallelParamBufferId), MFX_ERR_DEVICE_FAILED);
+#endif
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetPrivateParams(par, m_vaDisplay, m_vaContextEncode, m_privateParamsId), MFX_ERR_DEVICE_FAILED);
 
@@ -1183,8 +1192,10 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
 
     configBuffers[buffersCount++] = m_hrdBufferId;
     configBuffers[buffersCount++] = m_rateParamBufferId;
+
+#ifdef PARALLEL_BRC_support
     configBuffers[buffersCount++] = m_BRCParallelParamBufferId;
-    
+#endif    
     configBuffers[buffersCount++] = m_frameRateId;
     configBuffers[buffersCount++] = m_privateParamsId;
 
@@ -1361,7 +1372,10 @@ mfxStatus VAAPIEncoder::Destroy()
     MFX_DESTROY_VABUFFER(m_spsBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_hrdBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_rateParamBufferId, m_vaDisplay);
+
+#ifdef PARALLEL_BRC_support 
     MFX_DESTROY_VABUFFER(m_BRCParallelParamBufferId, m_vaDisplay);
+#endif
 
     MFX_DESTROY_VABUFFER(m_frameRateId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_privateParamsId, m_vaDisplay);
