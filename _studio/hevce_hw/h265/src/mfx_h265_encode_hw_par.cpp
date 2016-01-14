@@ -125,7 +125,7 @@ mfxStatus CheckProfile(mfxVideoParam& par)
         break;
 
     case MFX_PROFILE_HEVC_MAIN10:
-        if (par.mfx.FrameInfo.BitDepthLuma != 10)
+        if (par.mfx.FrameInfo.BitDepthLuma != 10 && par.mfx.FrameInfo.BitDepthLuma !=0)
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
         break;
 
@@ -138,7 +138,7 @@ mfxStatus CheckProfile(mfxVideoParam& par)
         break;
 
     case MFX_PROFILE_HEVC_MAIN:
-        if (par.mfx.FrameInfo.BitDepthLuma != 8)
+        if (par.mfx.FrameInfo.BitDepthLuma != 8 && par.mfx.FrameInfo.BitDepthLuma !=0)
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
         break;
 
