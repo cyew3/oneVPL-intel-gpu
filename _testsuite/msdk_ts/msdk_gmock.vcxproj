@@ -318,6 +318,7 @@
     <ClCompile Include="src\gmock\test_suites\vpp_deinterlacing.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_douse.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_getvppstat.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vpp_getvideoparam.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_rotate.cpp" />
     <ClCompile Include="src\gmock\test_suites\plugin_load_unload.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_init.cpp" />
