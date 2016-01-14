@@ -65,5 +65,5 @@ list( APPEND sources
   ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_vc1_enc_common.cpp
 )
 
-make_library( vc1_shared none shared )
+make_library( vc1_shared none static )
 set( defs "" )

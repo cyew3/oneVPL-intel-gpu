@@ -275,7 +275,6 @@ foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h265/src )
 endforeach()
 
 
-
 foreach( variant sw hw )
   if( __ARCH MATCHES intel64 )
     if( variant MATCHES hw )
@@ -300,7 +299,25 @@ foreach( variant sw hw )
   endif()
 
   set (description_name ${${variant}_HEVC_ENCODER_DESCRIPTION})  
-
+  
+  # ===============================================
+  if( variant MATCHES sw )
+    list( REMOVE_ITEM sources
+        ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux.cpp
+        ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_video_processing.cpp
+        ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux_protected.cpp
+        ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_dxva2_protected.cpp
+      )
+  else()
+    list( APPEND sources
+         ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux.cpp
+         ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_video_processing.cpp
+         ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux_protected.cpp
+         ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_dxva2_protected.cpp
+      )
+  endif()  
+  # ===============================================
+ 
   set( LIBS "" )
   list( APPEND LIBS
     hevc_pp_dispatcher
@@ -583,6 +600,24 @@ if( ENABLE_HEVC_FEI )
     if( __CONFIG MATCHES debug )
       set( plugin_name ${plugin_name}_d )
     endif()
+  
+    # ===============================================
+    if( variant MATCHES sw )
+      list( REMOVE_ITEM sources
+          ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux.cpp
+          ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_video_processing.cpp
+          ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux_protected.cpp
+          ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_dxva2_protected.cpp
+        )
+    else()
+      list( APPEND sources
+           ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux.cpp
+           ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_video_processing.cpp
+           ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux_protected.cpp
+           ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_dxva2_protected.cpp
+        )
+    endif()  
+    # ===============================================
 
     set (description_name ${${variant}_H265FEI_ENCODER_DESCRIPTION})
 
