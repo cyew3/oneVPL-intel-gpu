@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2013-2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2013-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -339,14 +339,14 @@ typedef struct {
     mfxU16    SPSId;
     mfxU16    PPSId;
 
-    mfxU16    FrameNum; 
+    mfxU16    FrameNum;
 
     mfxU16    PicInitQP;
     mfxU16    NumRefIdxL0Active;
     mfxU16    NumRefIdxL1Active;
 
-    mfxU16    ChromaQPIndexOffset;
-    mfxU16    SecondChromaQPIndexOffset;
+    mfxI16    ChromaQPIndexOffset;
+    mfxI16    SecondChromaQPIndexOffset;
 
     mfxU16    IDRPicFlag;
     mfxU16    ReferencePicFlag;
@@ -373,7 +373,7 @@ typedef struct {
 
         mfxU16    CabacInitIdc;
 
-        mfxU16    SliceQPDelta;
+        mfxI16    SliceQPDelta;
         mfxU16    DisableDeblockingFilterIdc;
         mfxI16    SliceAlphaC0OffsetDiv2;
         mfxI16    SliceBetaOffsetDiv2;
