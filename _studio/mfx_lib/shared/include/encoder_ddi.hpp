@@ -546,7 +546,9 @@ typedef struct tagENCODE_CAPS
             UINT    HMEOffsetSupport        : 1;
             UINT    DirtyRectSupport        : 1;
             UINT    MoveRectSupport         : 1;
-            UINT                            : 22;
+            UINT    FrameSizeTolerance      : 1;
+            UINT    HWCounterAutoIncrement  : 1;
+            UINT                            : 20;
         };
         UINT      CodingLimits2;
     };
@@ -820,6 +822,31 @@ typedef enum tagENCODE_ARGB_COLOR
     eColorSpace_P2020 = 2
 }ENCODE_ARGB_COLOR;
 
+typedef enum tagENCODE_FRAME_SIZE_TOLERANCE
+{
+    eFrameSizeTolerance_Normal = 0,//default
+    eFrameSizeTolerance_Low = 1,//Sliding Window
+    eFrameSizeTolerance_ExtremelyLow = 2//low delay
+}ENCODE_FRAME_SIZE_TOLERANCE;
+
+typedef enum tagENCODE_SCENARIO
+{
+    eScenario_Unknown = 0,
+    eScenario_DisplayRemoting = 1,
+    eScenario_VideoConference = 2,
+    eScenario_Archive = 3,
+    eScenario_LiveStreaming = 4,
+    eScenario_VideoCapture = 5,
+    eScenario_VideoSurveillance = 6
+} ENCODE_SCENARIO;
+
+typedef enum tagENCODE_CONTENT
+{
+    eContent_Unknown = 0,
+    eContent_FullScreenVideo = 1,
+    eContent_NonVideoScreen = 2
+} ENCODE_CONTENT;
+
 typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_H264
 {
     USHORT  FrameWidth;
@@ -879,17 +906,21 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_H264
             UINT    Reserved0                       : 2;
             UINT    MBBRC                           : 4;
             UINT    Trellis                         : 4;
-            UINT    Reserved1                       :12;
+            UINT    bTemporalScalability            : 1;//for VDEnc SVC NAL unit insertion will be done after encoding, this flag is to signal driver that it need count SVC NAL unit bits in BRC.
+            UINT    Reserved1                       :11;
         };
 
         UINT sFlags;
     };
 
     UINT    UserMaxFrameSize;
-    USHORT  AVBRAccuracy;
-    USHORT  AVBRConvergence;
+    USHORT  Reserved3;//AVBRAccuracy;
+    USHORT  Reserved4;//AVBRConvergence;
     USHORT  ICQQualityFactor;
     ENCODE_ARGB_COLOR ARGBInputColor;
+    ENCODE_SCENARIO ScenarioInfo;
+    ENCODE_CONTENT  ContentInfo;
+    ENCODE_FRAME_SIZE_TOLERANCE FrameSizeTolerance;
 
 } ENCODE_SET_SEQUENCE_PARAMETERS_H264;
 
@@ -960,21 +991,6 @@ typedef struct tagENCODE_ROI
     CHAR   PriorityLevelOrDQp; // [-3..3] or [-51..51]
 } ENCODE_ROI;
 
-typedef enum tagENCODE_SCENARIO
-{
-	eScenario_Unknown = 0,
-	eScenario_DisplayRemoting = 1,
-	eScenario_VideoConference = 2,
-	eScenario_Archive = 3,
-	eScenario_LiveStreaming = 4
-} ENCODE_SCENARIO;
-
-typedef enum tagENCODE_CONTENT
-{
-	eContent_Unknown = 0,
-	eContent_FullScreenVideo = 1,
-	eContent_NonVideoScreen = 2
-} ENCODE_CONTENT;
 
 
 
@@ -1029,7 +1045,9 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
             UINT        bDisableSubMBPartition                   : 1;
             UINT        bEmulationByteInsertion                  : 1;
             UINT        bEnableRollingIntraRefresh               : 2;
-            UINT        bReserved                                : 21;
+            UINT        bSliceLevelReport                        : 1;
+            UINT        bDisableSubpixel                         : 1;
+            UINT        bReserved                                : 19;
 
         };
         BOOL    UserFlags;
@@ -1052,7 +1070,8 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
     USHORT          pic_scaling_list_present_flag       : 1;
     USHORT          RefPicFlag                          : 1;
     USHORT          BRCPrecision                        : 2;
-    USHORT          MBZ2                                : 4;
+    USHORT          DisplayFormatSwizzle                : 1;
+    USHORT          MBZ2                                : 3;
     USHORT          IntraInsertionLocation;
     USHORT          IntraInsertionSize;
     CHAR            QpDeltaForInsertedIntra;
@@ -1071,13 +1090,11 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
     UCHAR           BRCMaxQp;
     UCHAR           BRCMinQp;
 
-	// HME Offset
+    // HME Offset
     UCHAR           bEnableHMEOffset;
     SHORT           HMEOffset[16][2][2];
 
     // Hints
-    ENCODE_SCENARIO  ScenarioInfo;
-    ENCODE_CONTENT   ContentInfo;
     UCHAR            NumDirtyRects;
     ENCODE_RECT     *pDirtyRect;
     UCHAR            NumMoveRects;

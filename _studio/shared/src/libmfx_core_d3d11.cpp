@@ -96,7 +96,7 @@ mfxStatus D3D11VideoCORE::GetIntelDataPrivateReport(const GUID guid, mfxVideoPar
     {
         video_desc.SampleWidth = 640;
     }
-
+     
     if (!video_desc.SampleHeight)
     {
         video_desc.SampleHeight = 480;

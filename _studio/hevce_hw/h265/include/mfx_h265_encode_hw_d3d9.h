@@ -68,7 +68,7 @@ void FillSliceBuffer(
 class CachedFeedback
 {
 public:
-    typedef ENCODE_QUERY_STATUS_PARAMS_DDI0937 Feedback;
+    typedef ENCODE_QUERY_STATUS_PARAMS Feedback;
     typedef std::vector<Feedback> FeedbackStorage;
 
     void Reset(mfxU32 cacheSize);
@@ -151,7 +151,7 @@ private:
     std::vector<ENCODE_COMP_BUFFER_INFO>        m_compBufInfo;
     std::vector<D3DDDIFORMAT>                   m_uncompBufInfo;
     std::vector<ENCODE_COMPBUFFERDESC>          m_cbd;
-    std::vector<ENCODE_QUERY_STATUS_PARAMS_DDI0937> m_feedbackUpdate;
+    std::vector<ENCODE_QUERY_STATUS_PARAMS> m_feedbackUpdate;
     CachedFeedback                              m_feedbackCached;
 };
 

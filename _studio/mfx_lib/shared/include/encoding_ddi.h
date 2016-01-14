@@ -150,6 +150,12 @@ typedef enum tagENCODE_QUERY_STATUS_PARAM_TYPE
 } ENCODE_QUERY_STATUS_PARAM_TYPE;
 #endif // NEW_STATUS_REPORTING_DDI_0915
 
+typedef struct tagENCODE_AES128_CIPHER_COUNTER
+{
+    UINT64 IV;
+    UINT64 Counter;
+} ENCODE_AES128_CIPHER_COUNTER;
+
 // new encode query status interface (starting from DDI 0.915)
 typedef struct tagENCODE_QUERY_STATUS_PARAMS
 {
@@ -169,16 +175,39 @@ typedef struct tagENCODE_QUERY_STATUS_PARAMS
     {
         struct
         {
-              UINT PanicMode : 1;
-              UINT           : 31;
+              UINT PanicMode            : 1;
+              UINT SliceSizeOverflow    : 1;
+              UINT NumSliceNonCompliant : 1;
+              UINT LongTermReference    : 1;
+              UINT                      : 28;
         };
         UINT QueryStatusFlags;
     };
     UINT    MAD;
-    UINT    reserved2[2];
+    USHORT    NumberSlices;
+
+    USHORT    PSNRx100[3];
+    USHORT    NextFrameWidthMinus1;
+    USHORT    NextFrameHeightMinus1;
+
+    ENCODE_AES128_CIPHER_COUNTER aes_counter;
+
+    UINT    Reserved1;
+    UINT    Reserved2;
+    UINT    Reserved3;
+    UINT    Reserved4;
+
 #endif // NEW_STATUS_REPORTING_DDI_0915
 
 } ENCODE_QUERY_STATUS_PARAMS, *PENCODE_QUERY_STATUS_PARAMS;
+
+// new encode query status interface for slice level report (starting from DDI 0.935)
+typedef struct tagENCODE_QUERY_STATUS_SLICE_PARAMS
+{
+    ENCODE_QUERY_STATUS_PARAMS FrameLevelStatus;
+    UINT reserved[4];
+    USHORT *SliceSizes;
+} ENCODE_QUERY_STATUS_SLICE_PARAMS, *PENCODE_QUERY_STATUS_SLICE_PARAMS;
 
 // from "Intel DXVA Encoding DDI for Vista rev 0.77"
 enum

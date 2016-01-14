@@ -91,7 +91,7 @@ private:
     std::vector<ENCODE_COMPBUFFERDESC>          m_cbd;
     std::vector<mfxHDLPair>                     m_reconQueue;
     std::vector<mfxHDLPair>                     m_bsQueue;
-    std::vector<ENCODE_QUERY_STATUS_PARAMS_DDI0937>     m_feedbackUpdate;
+    std::vector<ENCODE_QUERY_STATUS_PARAMS>     m_feedbackUpdate;
     CachedFeedback                              m_feedbackCached;
 };
 

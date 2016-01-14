@@ -97,8 +97,9 @@ void MfxHwH264Encode::FillSpsBuffer(
     sps.MBBRC                                   = IsOn(extOpt2->MBBRC) ? 1 : IsOff(extOpt2->MBBRC) ? 2 : 0;
 
     sps.UserMaxFrameSize                        = extOpt2->MaxFrameSize;
-    sps.AVBRAccuracy                            = par.mfx.Accuracy;
-    sps.AVBRConvergence                         = par.mfx.Convergence * 100;
+    //Removed AVBR support for this
+    //sps.AVBRAccuracy                            = par.mfx.Accuracy;
+    //sps.AVBRConvergence                         = par.mfx.Convergence * 100;
 
     // currenly hw knows nothing about MVC
     // so we need to correct brc parameters
@@ -2022,8 +2023,8 @@ namespace
         DUMP_STRUCT_MEMBER_NO_OFFSET(sps, Reserved1);
         DUMP_STRUCT_MEMBER_OFFSET(sps, sFlags);
         DUMP_STRUCT_MEMBER_OFFSET(sps, UserMaxFrameSize);
-        DUMP_STRUCT_MEMBER_OFFSET(sps, AVBRAccuracy);
-        DUMP_STRUCT_MEMBER_OFFSET(sps, AVBRConvergence);
+//        DUMP_STRUCT_MEMBER_OFFSET(sps, AVBRAccuracy);
+//        DUMP_STRUCT_MEMBER_OFFSET(sps, AVBRConvergence);
         printf("\n");
     }
     void Dump(ENCODE_SET_SEQUENCE_PARAMETERS_SVC const & sps)
