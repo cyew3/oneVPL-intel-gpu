@@ -5840,6 +5840,41 @@ bool SliceDividerLync::Next(SliceDividerState & state)
     }
 }
 
+SliceDividerVDEncLync::SliceDividerVDEncLync(
+    mfxU32 sliceSizeInMbs,
+    mfxU32 widthInMbs,
+    mfxU32 heightInMbs)
+{
+    m_pfNext              = &SliceDividerLync::Next;
+    m_numMbInRow          = 1;
+    m_numMbRow            = heightInMbs*widthInMbs;
+    m_currSliceFirstMbRow = 0;
+    m_leftMbRow           = m_numMbRow;
+    m_numSlice            = (m_numMbRow + sliceSizeInMbs - 1) / sliceSizeInMbs;
+    m_currSliceNumMbRow   = sliceSizeInMbs;
+    m_leftSlice           = m_numSlice;
+}
+
+bool SliceDividerVDEncLync::Next(SliceDividerState & state)
+{
+    state.m_leftMbRow -= state.m_currSliceNumMbRow;
+    state.m_leftSlice -= 1;
+
+    if (state.m_leftSlice == 0)
+    {
+        assert(state.m_leftMbRow == 0);
+        return false;
+    }
+    else
+    {
+        state.m_currSliceFirstMbRow = 0; //state.m_currSliceNumMbRow;
+        if (state.m_currSliceNumMbRow > state.m_leftMbRow)
+            state.m_currSliceNumMbRow = state.m_leftMbRow;
+        assert(state.m_currSliceNumMbRow != 0);
+        return true;
+    }
+}
+
 SliceDividerVDEnc::SliceDividerVDEnc(
     mfxU32 numSlice,
     mfxU32 widthInMbs,
@@ -5898,6 +5933,8 @@ SliceDivider MfxHwH264Encode::MakeSliceDivider(
     bool isLowPower)
 {
     if(isLowPower){
+        if(sliceHwCaps > 0 && sliceSizeInMbs > 0)
+            return SliceDividerVDEncLync(sliceSizeInMbs, widthInMbs, heightInMbs);
         return SliceDividerVDEnc(numSlice, widthInMbs, heightInMbs);
     }
 
