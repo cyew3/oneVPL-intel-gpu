@@ -71,7 +71,7 @@ BEGIN
             VALUE "FileDescription", "Intel(R) Screen Capture Plug-in"
             VALUE "FileVersion", "5.14.4.17"
             VALUE "InternalName", "mfxplugin_screen_capture"
-            VALUE "LegalCopyright", "Copyright© 2015 Intel Corporation"
+            VALUE "LegalCopyright", "Copyright© 2015-2016 Intel Corporation"
             VALUE "LegalTrademarks", "Intel Corporation"
             VALUE "OriginalFilename", "mfxplugin_screen_capture"
             VALUE "ProductName", "Intel(R) Screen Capture"
