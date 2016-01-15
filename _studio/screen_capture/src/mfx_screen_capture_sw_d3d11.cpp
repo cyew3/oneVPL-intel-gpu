@@ -22,25 +22,27 @@ bool HasWDDMDriver()
 {
     typedef HRESULT (WINAPI *LPDIRECT3DCREATE9EX)( UINT, void **);
 
-    TCHAR path[MAX_PATH] = {};
+    wchar_t path[MAX_PATH + 1] = {};
     size_t len = GetSystemDirectory(path, MAX_PATH);
     if(0 == len)
         return false;
-    TCHAR* backslash = L"\\";
-    TCHAR* libName = L"d3d9.dll";
+    const wchar_t backslash[] = L"\\";
+    const size_t backslash_len = sizeof(backslash)/sizeof(backslash[0]);
+    const wchar_t libName[] = L"d3d9.dll";
+    const size_t libName_len = sizeof(libName)/sizeof(libName[0]);
 
-    if(len >= _tcslen(backslash))
+    if(len >= wcsnlen_s(backslash, backslash_len))
     {
-        const TCHAR* tail = path + len - _tcslen(backslash);
-        if((0 != _tcscmp(tail, backslash)) && (len + _tcslen(backslash) < MAX_PATH))
+        const wchar_t* tail = path + len - wcsnlen_s(backslash, backslash_len);
+        if((0 != wcscmp(tail, backslash)) && (len + wcsnlen_s(backslash, backslash_len) < MAX_PATH))
         {
-            _tcscat_s(path, backslash);
-            len += _tcslen(backslash);
+            wcscat_s(path, backslash);
+            len += wcsnlen_s(backslash, backslash_len);
         }
     }
 
-    if((len + _tcslen(libName)) < MAX_PATH)
-        _tcscat_s(path, libName);
+    if((len + wcsnlen_s(libName, libName_len)) < MAX_PATH)
+        wcscat_s(path, libName);
     else
         return false;
 
