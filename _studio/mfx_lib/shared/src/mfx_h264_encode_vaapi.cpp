@@ -2564,6 +2564,13 @@ mfxStatus VAAPIEncoder::QueryStatus(
 
                 task.m_bsDataLength[fieldId] = codedBufferSegment->size;
 
+                task.m_qpY[fieldId] = (codedBufferSegment->status & VA_CODED_BUF_STATUS_PICTURE_AVE_QP_MASK);
+
+                if (codedBufferSegment->status & VA_CODED_BUF_STATUS_BAD_BITSTREAM)
+                    sts = MFX_ERR_GPU_HANG;
+                else if (!codedBufferSegment->size || !codedBufferSegment->buf)
+                    sts = MFX_ERR_DEVICE_FAILED;
+
                 if (m_videoParam.Protected && IsSupported__VAHDCPEncryptionParameterBuffer() && codedBufferSegment->next)
                 {
                     VACodedBufferSegment *nextSegment = (VACodedBufferSegment*)codedBufferSegment->next;

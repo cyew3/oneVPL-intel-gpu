@@ -31,6 +31,7 @@ public:
     mfxStatus m_expected;
     bool      m_failed;
     bool      m_throw_exceptions;
+    mfxU16    m_disable;
 
     tsStatus();
     ~tsStatus();
@@ -39,6 +40,9 @@ public:
     bool check();
     inline void      expect (mfxStatus expected) { m_expected = expected; }
     inline mfxStatus get    ()                   { return m_status; }
+    inline void      disable_next_check()        { m_disable = 1; }
+    inline void      disable()                   { m_disable = 2; }
+    inline void      enable()                    { m_disable = 0; }
 };
 
 extern mfxIMPL      g_tsImpl;

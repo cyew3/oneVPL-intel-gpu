@@ -233,6 +233,7 @@ tsStatus::tsStatus()
         , m_expected(MFX_ERR_NONE)
         , m_failed(false)
         , m_throw_exceptions(true)
+        , m_disable(0)
 {
 }
 
@@ -242,6 +243,14 @@ tsStatus::~tsStatus()
 
 bool tsStatus::check()
 {
+    if (m_disable)
+    {
+        g_tsLog << "CHECK STATUS(disabled): " << m_status << "\n";
+        if (m_disable == 1)
+            m_disable = 0;
+        return m_failed = false;
+    }
+
     g_tsLog << "CHECK STATUS(expected " << m_expected << "): " << m_status << " -- ";
     if(m_status != m_expected)
     {
