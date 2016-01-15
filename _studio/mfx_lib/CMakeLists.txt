@@ -78,16 +78,6 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
   )
 endforeach()
 
-list( APPEND sources
-  ${CMAKE_CURRENT_SOURCE_DIR}/cmrt_cross_platform/src/cmrt_cross_platform.cpp
-  #====================
-  ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/io/umc_va/src/umc_va_linux.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/io/umc_va/src/umc_va_linux_protected.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/enc/mpeg2/src/mfx_mpeg2_enc.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/enc/mpeg2/src/mfx_mpeg2_enc_me.cpp
-  #====================
-)
-
 set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfx.map" )
     
@@ -123,7 +113,7 @@ foreach( variant sw hw )
     vm_plus
     media_buffers
     umc_io
-    umc_va_elk
+    umc_va_elk_hw
     brc
     bsd
     cmrt_cross_platform_hw
@@ -131,33 +121,26 @@ foreach( variant sw hw )
     dec
     encode
     encode_hw
+    enc
     enc_hw
     h264_la
     genx_h264_encode_embeded
-    h264_dispatcher # ??????? Change name
+    h264_dispatcher
     h264_px
-    h264_sse3 # ??????? Change name
+    h264_sse3
     pak
     mfx_common
     mfx_common_${variant} 
     vc1_shared
     vpp_${variant}
-    # ============================================
     h264_preenc
     h264_enc
     h264_pak
-    # ============================================
     ${ITT_LIBS}
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
     dl
   )
-
-  if(${variant} MATCHES hw)
-    list( APPEND sources
-      ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/io/umc_va/src/umc_va_video_processing.cpp
-      )
-  endif()
 
   make_library( ${mfxlibname} ${variant} shared)
   make_library( mfx${variant}_static ${variant} static)
@@ -194,11 +177,6 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
 endforeach()
 list( APPEND sources
   ${CMAKE_CURRENT_SOURCE_DIR}/cmrt_cross_platform/src/cmrt_cross_platform.cpp
-  # ==========================================
-  ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/io/umc_va/src/umc_va_linux.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/io/umc_va/src/umc_va_linux_protected.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/io/umc_va/src/umc_va_video_processing.cpp
-  # ==========================================
 )
 
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR} )
@@ -227,9 +205,9 @@ endforeach()
 
 
 if( __ARCH MATCHES intel64 )
-  set( mfxrtlibname mfxrt${variant}64 ) # ???????????????????? variant is empty
+  set( mfxrtlibname mfxrt64 )
 else()
-  set( mfxrtlibname mfxrt${variant}32 ) # ???????????????????? variant is empty
+  set( mfxrtlibname mfxrt32 )
 endif()
 if( __CONFIG MATCHES debug )
   set( mfxrtlibname ${mfxrtlibname}_d )
@@ -239,7 +217,7 @@ set( LIBS "" )
 list( APPEND LIBS
   media_buffers
   umc_io
-  umc_va_elk
+  umc_va_elk_hw
   umc
   vm
   vm_plus
@@ -318,7 +296,7 @@ foreach( variant sw )
     umc_acodecs_merged
     umc_codecs_merged
     media_buffers
-    umc_va_elk
+    umc_va_elk_hw
     umc_io
     umc
     vm

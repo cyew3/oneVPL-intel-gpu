@@ -185,14 +185,6 @@ foreach( variant sw hw)
     set( plugin_name ${plugin_name}_d )
     set( eval_plugin_name ${eval_plugin_name}_d )
   endif()
-  if(${variant} MATCHES hw)
-    list( APPEND sources
-        ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux.cpp
-        ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_video_processing.cpp
-        ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux_protected.cpp
-        ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_dxva2_protected.cpp
-      )
-  endif()
 
   set (description_name ${${variant}_HEVC_DECODER_DESCRIPTION})
 
@@ -220,7 +212,7 @@ foreach( variant sw hw)
   if(${variant} MATCHES hw)
     set( hw_defs "-DMFX_VA -DVA_HEVC_DECODER")
     list( APPEND LIBS
-      umc_va_elk
+      umc_va_elk_hw
     )
   endif()
   
@@ -299,25 +291,6 @@ foreach( variant sw hw )
   endif()
 
   set (description_name ${${variant}_HEVC_ENCODER_DESCRIPTION})  
-  
-  # ===============================================
-  if( variant MATCHES sw )
-    list( REMOVE_ITEM sources
-        ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux.cpp
-        ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_video_processing.cpp
-        ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux_protected.cpp
-        ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_dxva2_protected.cpp
-      )
-  else()
-    list( APPEND sources
-         ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux.cpp
-         ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_video_processing.cpp
-         ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux_protected.cpp
-         ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_dxva2_protected.cpp
-      )
-  endif()  
-  # ===============================================
- 
   set( LIBS "" )
   list( APPEND LIBS
     hevc_pp_dispatcher
@@ -339,7 +312,7 @@ foreach( variant sw hw )
 
   if(${variant} MATCHES hw)
     list( APPEND LIBS
-      umc_va_elk
+      umc_va_elk_hw
     )
   endif()
 
@@ -371,7 +344,7 @@ foreach( variant sw hw )
     )
   if(${variant} MATCHES hw)
     list( APPEND LIBS
-      umc_va_elk
+      umc_va_elk_hw
     )
   endif()
 
@@ -491,13 +464,9 @@ foreach( variant hw )
   set (description_name ${${variant}_H264LA_ENCODER_DESCRIPTION})
 
   list( APPEND sources
-    ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux.cpp
     ${CMAKE_SOURCE_DIR}/shared/umc/codec/brc/src/umc_video_brc.cpp
     ${CMAKE_SOURCE_DIR}/shared/umc/codec/brc/src/umc_h264_brc.cpp
     ${CMAKE_SOURCE_DIR}/shared/umc/codec/brc/src/umc_brc.cpp
-    ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_video_processing.cpp
-    ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux_protected.cpp
-    ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_dxva2_protected.cpp
     ${CMAKE_SOURCE_DIR}/shared/umc/codec/brc/src/umc_mpeg2_brc.cpp
     ${CMAKE_SOURCE_DIR}/shared/umc/codec/brc/src/umc_svc_brc.cpp
   )
@@ -510,7 +479,7 @@ foreach( variant hw )
     h264_enc_sw
     media_buffers
     umc_io
-    umc_va_elk
+    umc_va_elk_hw
     umc
     vm
     vm_plus
@@ -600,25 +569,6 @@ if( ENABLE_HEVC_FEI )
     if( __CONFIG MATCHES debug )
       set( plugin_name ${plugin_name}_d )
     endif()
-  
-    # ===============================================
-    if( variant MATCHES sw )
-      list( REMOVE_ITEM sources
-          ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux.cpp
-          ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_video_processing.cpp
-          ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux_protected.cpp
-          ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_dxva2_protected.cpp
-        )
-    else()
-      list( APPEND sources
-           ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux.cpp
-           ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_video_processing.cpp
-           ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux_protected.cpp
-           ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_dxva2_protected.cpp
-        )
-    endif()  
-    # ===============================================
-
     set (description_name ${${variant}_H265FEI_ENCODER_DESCRIPTION})
 
     set( LIBS "" )
@@ -635,7 +585,7 @@ if( ENABLE_HEVC_FEI )
       )
     if(${variant} MATCHES hw)
       list( APPEND LIBS
-        umc_va_elk
+        umc_va_elk_hw
       )
     endif()
 
@@ -716,15 +666,9 @@ foreach( variant sw hw )
 
   if(${variant} MATCHES hw)
 
-    list( APPEND sources
-      ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_video_processing.cpp
-      ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_linux_protected.cpp
-      ${CMAKE_SOURCE_DIR}/shared/umc/io/umc_va/src/umc_va_dxva2_protected.cpp
-    )
-
     list( APPEND LIBS
       va
-      umc_va_elk
+      umc_va_elk_hw
     )
 
     foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../decode/vp8/src )

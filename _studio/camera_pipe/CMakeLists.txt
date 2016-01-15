@@ -120,20 +120,6 @@ list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_procamp_
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_detail_enhancement_vpp.cpp )
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_video_analysis_vpp.cpp )
 
-# ===============================================
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/codec/scene_analyzer/src/umc_scene_analyzer_base.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/codec/scene_analyzer/src/umc_scene_analyzer.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/codec/scene_analyzer/src/umc_scene_analyzer_p_func.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/codec/scene_analyzer/src/umc_scene_analyzer_p_func_mb.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/codec/scene_analyzer/src/umc_scene_analyzer_mb_func.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/codec/scene_analyzer/src/umc_scene_analyzer_frame.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/codec/scene_analyzer/src/umc_scene_analyzer_p.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/io/umc_va/src/umc_va_linux.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/io/umc_va/src/umc_va_video_processing.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/io/umc_va/src/umc_va_linux_protected.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/io/umc_va/src/umc_va_dxva2_protected.cpp )
-# ===============================================
-
 foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/src )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
   list( APPEND sources ${srcs})
@@ -143,9 +129,10 @@ endforeach()
   list( APPEND LIBS
     umc_codecs_merged
     color_space_converter_sw
+    scene_analyzer
     media_buffers
     umc_io
-    umc_va_elk
+    umc_va_elk_hw
     umc
     vm
     vm_plus

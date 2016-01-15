@@ -85,12 +85,6 @@ foreach( variant hw )
   )
   endforeach()
 
-  list( APPEND sources
-    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/io/umc_va/src/umc_va_video_processing.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/io/umc_va/src/umc_va_linux_protected.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/io/umc_va/src/umc_va_dxva2_protected.cpp
-  )
-  
   set( defs "-DAS_VP8E_PLUGIN -DMFX_VA -DMFX_ENABLE_VP8_VIDEO_ENCODE_HW -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP8_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp8_version_defs}")
 
   list( APPEND LIBS
@@ -101,7 +95,7 @@ foreach( variant hw )
     vm_plus
     media_buffers
     umc_io
-    umc_va_elk
+    umc_va_elk_hw
     ${ITT_LIBS}
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread

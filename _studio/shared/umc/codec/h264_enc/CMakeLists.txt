@@ -11,5 +11,5 @@ include_directories (${CMAKE_SOURCE_DIR}/shared/umc/codec/h264_enc/include)
 set( sources "" )
 file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )
 list( APPEND sources ${srcs}) 
-make_library( h264_enc sw static ) #???????????????????
+make_library( h264_enc sw static )
 #make_library( h264_enc none static )

@@ -104,7 +104,7 @@ endforeach()
   list( APPEND LIBS
     media_buffers
     umc_io
-    umc_va_elk
+    umc_va_elk_hw
     umc
     vm
     vm_plus

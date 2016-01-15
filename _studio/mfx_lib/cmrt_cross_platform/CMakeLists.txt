@@ -8,7 +8,5 @@ set( sources "" )
 set( sources.plus "" )
 file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )
 list( APPEND sources ${srcs})
-#make_library( cmrt_cross_platform sw static )
 make_library( cmrt_cross_platform hw static )
-#make_library( cmrt_cross_platform none static )
 
