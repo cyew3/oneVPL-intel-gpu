@@ -995,6 +995,10 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
 
                 info = pParam->vpp.In;
                 mfxF64 inFrameRate  = CalculateUMCFramerate(info.FrameRateExtN, info.FrameRateExtD);
+                if (fabs(inFrameRate-0) < 0.01)
+                {
+                    return MFX_ERR_INVALID_VIDEO_PARAM;
+                }
 
                 info = pParam->vpp.Out;
                 mfxF64 outFrameRate = CalculateUMCFramerate(info.FrameRateExtN, info.FrameRateExtD);
