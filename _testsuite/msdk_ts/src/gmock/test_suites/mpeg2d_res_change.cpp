@@ -49,14 +49,13 @@ const TestSuite::tc_struct TestSuite::test_case[][max_num_ctrl] =
 {
     {/* 0*/ {"bbc_640x480_10.m2v"},    {"bbc_352x288_10.m2v"}, {} },
     {/* 1*/ {"bbc_352x288_10.m2v"},    {"bbc_640x480_10.m2v", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
-    {/* 2*/ {"bbc_352x288_10.m2v"},    {"bbc_640x480_10.m2v", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
-    {/* 3*/ {"bbc_640x480_10.m2v", 5}, {"bbc_352x288_10.m2v", 5}, {} },
-    {/* 4*/ {"bbc_640x480_10.m2v"},    {"bbc_352x288_10.m2v"},    {"bbc_704x576_10.m2v", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM} },
-    {/* 5*/ {"bbc_704x576_10.m2v"},    {"bbc_640x480_10.m2v"},    {"bbc_352x288_10.m2v"} },
-    {/* 6*/ {"bbc_704x576_10.m2v", 5}, {"bbc_640x480_10.m2v", 5}, {"bbc_352x288_10.m2v", 5} },
-    {/* 7*/ {"bbc_704x576_10.m2v"},    {"bbc_352x288_10.m2v"},    {"bbc_640x480_10.m2v"} },
-    {/* 8*/ {"bbc_704x576_10.m2v", 5}, {"bbc_352x288_10.m2v", 5}, {"bbc_640x480_10.m2v", 5} },
-    {/* 9*/ {"bbc_704x576_10.m2v", 5}, {"bbc_640x480_10.m2v", 5}, {"bbc_704x576_10.m2v", 5} },
+    {/* 2*/ {"bbc_640x480_10.m2v", 5}, {"bbc_352x288_10.m2v", 5}, {} },
+    {/* 3*/ {"bbc_640x480_10.m2v"},    {"bbc_352x288_10.m2v"},    {"bbc_704x576_10.m2v", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM} },
+    {/* 4*/ {"bbc_704x576_10.m2v"},    {"bbc_640x480_10.m2v"},    {"bbc_352x288_10.m2v"} },
+    {/* 5*/ {"bbc_704x576_10.m2v", 5}, {"bbc_640x480_10.m2v", 5}, {"bbc_352x288_10.m2v", 5} },
+    {/* 6*/ {"bbc_704x576_10.m2v"},    {"bbc_352x288_10.m2v"},    {"bbc_640x480_10.m2v"} },
+    {/* 7*/ {"bbc_704x576_10.m2v", 5}, {"bbc_352x288_10.m2v", 5}, {"bbc_640x480_10.m2v", 5} },
+    {/* 8*/ {"bbc_704x576_10.m2v", 5}, {"bbc_640x480_10.m2v", 5}, {"bbc_704x576_10.m2v", 5} },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct[max_num_ctrl]);
