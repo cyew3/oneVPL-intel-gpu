@@ -670,6 +670,7 @@ TEST_F(InitTest, Default_FramesInParallel) {
     Ipp32u configs[][4] = {{2,0,0,0}, {0,2,1,0}, {0,1,2,0}, {0,0,0,1}};
     input.videoParam.mfx.FrameInfo.Width = 512;
     input.videoParam.mfx.FrameInfo.Height = 128;
+    input.videoParam.mfx.FrameInfo.PicStruct = PROGR;
     for (auto p: configs) {
         input.videoParam.mfx.NumSlice = p[0];
         input.extHevcTiles.NumTileRows = p[1];
@@ -679,6 +680,20 @@ TEST_F(InitTest, Default_FramesInParallel) {
         ASSERT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
         EXPECT_EQ(MFX_ERR_NONE, encoder.Close());
         EXPECT_EQ(1, output.extCodingOptionHevc.FramesInParallel);
+    }
+    input.videoParam.mfx.FrameInfo.PicStruct = TFF;
+    for (auto p: configs) {
+        input.videoParam.mfx.NumSlice = p[0];
+        input.extHevcTiles.NumTileRows = p[1];
+        input.extHevcTiles.NumTileColumns = p[2];
+        input.videoParam.AsyncDepth = p[3];
+        encoder.Init(&input.videoParam);
+        ASSERT_EQ(MFX_ERR_NONE, encoder.GetVideoParam(&output.videoParam));
+        EXPECT_EQ(MFX_ERR_NONE, encoder.Close());
+        EXPECT_EQ(1, output.videoParam.mfx.NumSlice);
+        EXPECT_EQ(1, output.extHevcTiles.NumTileRows);
+        EXPECT_EQ(1, output.extHevcTiles.NumTileColumns);
+        EXPECT_LE(2, output.extCodingOptionHevc.FramesInParallel);
     }
 }
 

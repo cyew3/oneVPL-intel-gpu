@@ -943,6 +943,9 @@ namespace {
         if (mfx.NumSlice > 1 && tiles && (tiles->NumTileColumns > 1 || tiles->NumTileRows > 1)) // multi-slice or multi-tile
             mfx.NumSlice = 1, wrnIncompatible = true;
 
+        if (mfx.NumSlice > 1 && (fi.PicStruct == TFF || fi.PicStruct == BFF)) // multi-slice is unsupported for interlace
+            mfx.NumSlice = 1, wrnIncompatible = true;
+
         if (picHeight && mfx.NumSlice) // NumSlice < CTB lines for min possible CTBSize
             wrnIncompatible = !CheckMaxSat(mfx.NumSlice, (picHeight + 63) >> 6);
 
@@ -951,6 +954,9 @@ namespace {
 
         if (mfx.NumSlice && mfx.CodecLevel) // NumSlice <= MaxNumSlice[level]
             wrnIncompatible = !CheckMinLevel(mfx.CodecLevel, GetMinLevelForNumSlice(mfx.NumSlice));
+
+        if (tiles && (tiles->NumTileColumns > 1 || tiles->NumTileRows > 1) && (fi.PicStruct == TFF || fi.PicStruct == BFF)) // multi-tile is unsupported for interlace
+            tiles->NumTileColumns = tiles->NumTileRows = 1, wrnIncompatible = true;
 
         if (picWidth && tiles && tiles->NumTileColumns > 1) // ColumnWidthInLumaSamples[i] < 256
             wrnIncompatible = !CheckMaxSat(tiles->NumTileColumns, MAX(1, picWidth / CodecLimits::MIN_TILE_WIDTH));
@@ -1047,6 +1053,9 @@ namespace {
 
         if (optHevc && optHevc->WPP == ON && tiles && (tiles->NumTileRows > 1 || tiles->NumTileColumns > 1)) // either wavefront or multi-tile
             optHevc->WPP = OFF, wrnIncompatible = true;
+
+        if (optHevc && optHevc->FramesInParallel == 1 && (fi.PicStruct == TFF || fi.PicStruct == BFF)) // framesInParallel must be at least 2 for Interlace
+            optHevc->FramesInParallel = 2, wrnIncompatible = true;
 
         if (mfx.NumSlice > 1 && optHevc && optHevc->FramesInParallel > 1) // either multi-slice or frame-threading
             optHevc->FramesInParallel = 1, wrnIncompatible = true;
@@ -1189,7 +1198,7 @@ namespace {
 
         if (optHevc.FramesInParallel == 0) {
             if (par.AsyncDepth == 1 || mfx.NumSlice > 1 || numTile > 1)
-                optHevc.FramesInParallel = 1;
+                optHevc.FramesInParallel = (fi.PicStruct == TFF || fi.PicStruct == BFF) ? 2 : 1; // at least 2 for Interlace
             else if (optHevc.EnableCm == ON)
                 optHevc.FramesInParallel = 7; // need 7 frames for the best CPU/GPU parallelism
             else {

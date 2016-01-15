@@ -1969,6 +1969,60 @@ TEST_F(QueryTest, Conflicts_multi_slice_and_multi_tile_at_once) {
     }
 }
 
+TEST_F(QueryTest, Conflicts_multi_slice_and_interlace_at_once) {
+    Ipp32s picstructs[] = {TFF,BFF};
+    for (auto ps: picstructs) {
+        input.videoParam.mfx.NumSlice = 1;
+        input.videoParam.mfx.FrameInfo.PicStruct = ps;
+        EXPECT_EQ(MFX_ERR_NONE, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
+        EXPECT_EQ(1, input.videoParam.mfx.NumSlice);
+        EXPECT_EQ(ps, input.videoParam.mfx.FrameInfo.PicStruct);
+        EXPECT_EQ(1, output.videoParam.mfx.NumSlice);
+        EXPECT_EQ(ps, output.videoParam.mfx.FrameInfo.PicStruct);
+        input.videoParam.mfx.NumSlice = 2;
+        input.videoParam.mfx.FrameInfo.PicStruct = ps;
+        EXPECT_EQ(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
+        EXPECT_EQ(2, input.videoParam.mfx.NumSlice);
+        EXPECT_EQ(ps, input.videoParam.mfx.FrameInfo.PicStruct);
+        EXPECT_EQ(1, output.videoParam.mfx.NumSlice);
+        EXPECT_EQ(ps, output.videoParam.mfx.FrameInfo.PicStruct);
+    }
+}
+
+TEST_F(QueryTest, Conflicts_multi_tile_and_interlace_at_once) {
+    Ipp32s picstructs[] = {TFF,BFF};
+    Ipp32s tilecfg[][2] = {{1,1},{1,2},{2,1},{2,2}};
+    for (auto ps: picstructs) {
+        for (auto ntiles: tilecfg) {
+            input.extHevcTiles.NumTileRows = ntiles[0];
+            input.extHevcTiles.NumTileColumns = ntiles[1];
+            input.videoParam.mfx.FrameInfo.PicStruct = ps;
+            mfxStatus expectedSts = (ntiles[0] * ntiles[1] == 1) ? MFX_ERR_NONE : MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            EXPECT_EQ(expectedSts, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
+            EXPECT_EQ(ntiles[0], input.extHevcTiles.NumTileRows);
+            EXPECT_EQ(ntiles[1], input.extHevcTiles.NumTileColumns);
+            EXPECT_EQ(ps, input.videoParam.mfx.FrameInfo.PicStruct);
+            EXPECT_EQ(1, output.extHevcTiles.NumTileRows);
+            EXPECT_EQ(1, output.extHevcTiles.NumTileColumns);
+            EXPECT_EQ(ps, output.videoParam.mfx.FrameInfo.PicStruct);
+        }
+    }
+}
+
+TEST_F(QueryTest, Conflicts_framesInParallel_and_interlace) {
+    Ipp32s picstructs[] = {TFF,BFF};
+    Ipp32s tilecfg[][2] = {{1,1},{1,2},{2,1},{2,2}};
+    for (auto ps: picstructs) {
+        input.extCodingOptionHevc.FramesInParallel = 1;
+        input.videoParam.mfx.FrameInfo.PicStruct = ps;
+        EXPECT_EQ(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
+        EXPECT_EQ(1, input.extCodingOptionHevc.FramesInParallel);
+        EXPECT_EQ(ps, input.videoParam.mfx.FrameInfo.PicStruct);
+        EXPECT_EQ(2, output.extCodingOptionHevc.FramesInParallel);
+        EXPECT_EQ(ps, output.videoParam.mfx.FrameInfo.PicStruct);
+    }
+}
+
 TEST_F(QueryTest, Conflicts_NumSlice_gt_MAX_number_of_CTB_rows) {
     Ipp32u ok[][3] = { {2160, 184, 3}, {176, 0, 3}, {2160, 248, 4}, {240, 240, 4}, {2160, 488, 8}, {480, 480, 8}, {720, 712, 12}, {720, 0, 12},
                        {1072, 0, 17}, {1088, 1088, 17}, {1088, 1080, 17}, {2176, 2168, 34}, {2160, 2152, 34}, {4320, 4312, 68} };
@@ -3150,3 +3204,4 @@ TEST_F(QueryTest, Conflicts_BPyramid_and_DeltaQpMode) {
         }
     }
 }
+
