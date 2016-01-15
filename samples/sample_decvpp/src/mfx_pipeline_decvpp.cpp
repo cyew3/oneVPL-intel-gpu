@@ -166,12 +166,12 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
         *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
         */
         // Load user plug-in, should go after CreateAllocator function (when all callbacks were initialized)
-        if (pParams->pluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && strlen(pParams->pluginParams.strPluginPath))
+        if (pParams->pluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && msdk_strnlen(pParams->pluginParams.strPluginPath,sizeof(pParams->pluginParams.strPluginPath)))
         {
             m_pUserModule.reset(new MFXVideoUSER(m_mfxSession));
             if (pParams->videoType == CODEC_VP8 || pParams->videoType == MFX_CODEC_HEVC)
             {
-                m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1, pParams->pluginParams.strPluginPath, (mfxU32)strlen(pParams->pluginParams.strPluginPath)));
+                m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1, pParams->pluginParams.strPluginPath, (mfxU32)msdk_strnlen(pParams->pluginParams.strPluginPath,sizeof(pParams->pluginParams.strPluginPath))));
             }
             if (m_pPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
         }

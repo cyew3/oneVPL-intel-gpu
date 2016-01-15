@@ -125,7 +125,7 @@ static void ParseCmdLine(int argc, char **argv, SampleParams *sp)
 #if defined(_WIN32) || defined(_WIN64)
             /* verify string lengths before copying */
             size_t len;
-            len = strnlen_s(argv[i+1], MSDK_MAX_FILENAME_LEN);
+            len = msdk_strnlen(argv[i+1], MSDK_MAX_FILENAME_LEN);
             if (len > 0 && len < MSDK_MAX_FILENAME_LEN)
             {
                 strncpy_s(sp->PluginPath, MSDK_MAX_FILENAME_LEN, argv[i+1], len);

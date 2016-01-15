@@ -219,10 +219,10 @@ mfxStatus CTranscodingPipeline::DecodePreInit(sInputParams *pParams)
             *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
             *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
             */
-            if (pParams->decoderPluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && strlen(pParams->decoderPluginParams.strPluginPath))
+            if (pParams->decoderPluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && msdk_strnlen(pParams->decoderPluginParams.strPluginPath,sizeof(pParams->decoderPluginParams.strPluginPath)))
             {
                 m_pUserDecoderModule.reset(new MFXVideoUSER(*m_pmfxSession.get()));
-                m_pUserDecoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, *m_pmfxSession.get(), pParams->decoderPluginParams.pluginGuid, 1, pParams->decoderPluginParams.strPluginPath, (mfxU32)strlen(pParams->decoderPluginParams.strPluginPath)));
+                m_pUserDecoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, *m_pmfxSession.get(), pParams->decoderPluginParams.pluginGuid, 1, pParams->decoderPluginParams.strPluginPath, (mfxU32)msdk_strnlen(pParams->decoderPluginParams.strPluginPath,sizeof(pParams->decoderPluginParams.strPluginPath))));
                 if (m_pUserDecoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
             }
             else
@@ -356,10 +356,10 @@ mfxStatus CTranscodingPipeline::EncodePreInit(sInputParams *pParams)
                 *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
                 *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
                 */
-                if (pParams->encoderPluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && strlen(pParams->encoderPluginParams.strPluginPath))
+                if (pParams->encoderPluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && msdk_strnlen(pParams->encoderPluginParams.strPluginPath,sizeof(pParams->encoderPluginParams.strPluginPath)))
                 {
                     m_pUserEncoderModule.reset(new MFXVideoUSER(*m_pmfxSession.get()));
-                    m_pUserEncoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, *m_pmfxSession.get(), pParams->encoderPluginParams.pluginGuid, 1, pParams->encoderPluginParams.strPluginPath, (mfxU32)strlen(pParams->encoderPluginParams.strPluginPath)));
+                    m_pUserEncoderPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, *m_pmfxSession.get(), pParams->encoderPluginParams.pluginGuid, 1, pParams->encoderPluginParams.strPluginPath, (mfxU32)msdk_strnlen(pParams->encoderPluginParams.strPluginPath,sizeof(pParams->encoderPluginParams.strPluginPath))));
                     if (m_pUserEncoderPlugin.get() == NULL) sts = MFX_ERR_UNSUPPORTED;
                 }
                 else

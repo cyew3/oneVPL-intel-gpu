@@ -90,7 +90,7 @@ mfxStatus CResourcesPool::CreatePlugins(mfxPluginUID pluginGUID, mfxChar* plugin
     for (int i = 0; i < size; i++)
     {
         MFXPlugin* pPlugin = pluginPath ?
-            LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_resources[i].Session, pluginGUID, 1, pluginPath, (mfxU32)strlen(pluginPath)):
+            LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_resources[i].Session, pluginGUID, 1, pluginPath, (mfxU32)msdk_strnlen(pluginPath,1024)):
             LoadPlugin(MFX_PLUGINTYPE_VIDEO_ENCODE, m_resources[i].Session, pluginGUID, 1);
 
         if (pPlugin == NULL)
@@ -375,7 +375,7 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
         *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
         *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
         */
-        if (pParams->pluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && strlen(pParams->pluginParams.strPluginPath))
+        if (pParams->pluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && msdk_strnlen(pParams->pluginParams.strPluginPath,sizeof(pParams->pluginParams.strPluginPath)))
         {
             m_pUserModule.reset(new MFXVideoUSER(m_resources[0].Session));
             sts = m_resources.CreatePlugins(pParams->pluginParams.pluginGuid,pParams->pluginParams.strPluginPath);
