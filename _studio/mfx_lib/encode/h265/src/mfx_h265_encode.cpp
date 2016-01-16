@@ -2398,10 +2398,11 @@ mfxStatus H265Encoder::TaskCompleteProc(void *pState, void *pParam, mfxStatus ta
 
     if (bs) {
         for (Ipp32s f = 0; f < (th->m_videoParam.picStruct == PROGR ? 1 : 2); f++) {
-            Frame* coded = inputParam->m_targetFrame[f];
-            H265FrameEncoder* frameEnc = th->m_frameEncoder[coded->m_encIdx];
-            th->OnEncodingQueried(coded); // remove coded frame from encodeQueue (outputQueue) and clean (release) dpb.
-            frameEnc->SetFree(true);
+            if (Frame* coded = inputParam->m_targetFrame[f]) {
+                H265FrameEncoder* frameEnc = th->m_frameEncoder[coded->m_encIdx];
+                th->OnEncodingQueried(coded); // remove coded frame from encodeQueue (outputQueue) and clean (release) dpb.
+                frameEnc->SetFree(true);
+            }
         }
     }
     for (Ipp32s f = 0; f < (th->m_videoParam.picStruct == PROGR ? 1 : 2); f++) {
