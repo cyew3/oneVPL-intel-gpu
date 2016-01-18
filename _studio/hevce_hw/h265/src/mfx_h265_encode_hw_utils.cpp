@@ -1358,7 +1358,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     if (InsertHRDInfo)
         m_sps.vui.frame_field_info_present_flag = 1;
 
-    if (InsertHRDInfo && mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    if (InsertHRDInfo && (mfx.RateControlMethod == MFX_RATECONTROL_CBR || mfx.RateControlMethod == MFX_RATECONTROL_VBR))
     {
         HRDInfo& hrd = m_sps.vui.hrd;
         HRDInfo::SubLayer& sl0 = hrd.sl[0];
