@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -31,6 +31,7 @@ File Name: config.cpp
 #include <algorithm>
 #include <ctype.h>
 #include <sstream>
+#include <string.h>
 
 #include "config.h"
 
@@ -41,7 +42,7 @@ const char* get_path_reg()
         char* path = new char[128];
         DWORD size = sizeof(char)*128;
         DWORD sts = RegGetValue(HKEY_LOCAL_MACHINE, (LPCTSTR)("Software\\Intel\\MediaSDK\\Dispatch\\tracer"), (LPCTSTR)("_conf"), RRF_RT_REG_SZ, (LPDWORD)0, (PVOID)path, (LPDWORD)&size);
-        int len = strlen(path);
+        int len = strnlen_s(path, 128);
 
         if (sts == ERROR_SUCCESS)
         {
@@ -55,7 +56,7 @@ const char* get_path_reg()
         else
         {
             GetCurrentDirectory(128, path);
-            len = strlen(path);
+            len = strnlen_s(path, 128);
             for (int i = 0; i < len; i++)
             {
                     if (path[i] == '\\')

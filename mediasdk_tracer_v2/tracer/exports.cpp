@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -32,6 +32,7 @@ File Name: exports.cpp
 
 #include <mfx_dxva2_device.h>
 #include <tchar.h>
+#include <string.h>
 
 #include <Shlwapi.h>
 #pragma comment(lib, "Shlwapi.lib")
@@ -46,6 +47,8 @@ File Name: exports.cpp
 #define FUNCTION(name) name
 #endif
 extern int main(int argc,  char **, bool bUsePrefix);
+
+static const size_t MAX_FIXED_KEY_LENGTH = 32;
 
 SDK_ANALYZER_EXPORT(void) msdk_analyzer_dll()
 {
@@ -68,7 +71,7 @@ LPFN_ISWOW64PROCESS fnIsWow64Process;
 struct KeyData
 {
     bool   bCreateNew;
-    TCHAR  valueName[32];
+    TCHAR  valueName[MAX_FIXED_KEY_LENGTH];
     DWORD  dwType;
     DWORD  value;
     TCHAR* pStr;//not conforming C99 standard limitation, union can't be used for static initialization
@@ -79,11 +82,11 @@ void SetValues(HKEY key, KeyData *values, int nValues)
     for (int nKey = 0; nKey < nValues; nKey++)
     {
         BYTE *pValue = (BYTE *)&values[nKey].value;
-        int nSize = 0;
+        DWORD nSize = 0;
         if (values[nKey].dwType == REG_SZ)
         {
             pValue = (BYTE *)values[nKey].pStr;
-            nSize = sizeof(TCHAR)*(DWORD)(1+strlen(values[nKey].pStr));
+            nSize = sizeof(TCHAR)*(DWORD)(1+strnlen_s(values[nKey].pStr, MAX_PATH));
         }
         else if (values[nKey].dwType == REG_DWORD)
         {
@@ -149,7 +152,7 @@ DWORD Reg(HKEY key, TCHAR* dll_name, TCHAR* analyzer_key, TCHAR* install_dir, TC
         }
 
 
-   int length = strlen(install_dir) + strlen(dll_name);
+   size_t length = strnlen_s(install_dir, MAX_FIXED_KEY_LENGTH) + strnlen_s(dll_name, MAX_FIXED_KEY_LENGTH);
    TCHAR *sdk_analyzer_path = new TCHAR[length + 3];
    strcpy_s(sdk_analyzer_path, (length + 3), install_dir);
    strcat_s(sdk_analyzer_path, (length + 3), dll_name);
@@ -164,14 +167,14 @@ DWORD Reg(HKEY key, TCHAR* dll_name, TCHAR* analyzer_key, TCHAR* install_dir, TC
    SetValues(key2, keysToAdd, sizeof(keysToAdd)/sizeof(keysToAdd[0]));
 
    DWORD start = 0;
-   length = strlen(conf_path);
+   length = strnlen_s(conf_path, MAX_PATH);
    TCHAR *sdk_config_path = new TCHAR[length + 2];
    strcpy_s(sdk_config_path, (length + 2), conf_path);
 
    RegSetValueEx(key2, _T("DeviceId"),0,REG_DWORD,(BYTE*)&deviceID,sizeof(deviceID));
    RegSetValueEx(key2, _T("VendorId"),0,REG_DWORD,(BYTE*)&vendorID,sizeof(vendorID));
    RegSetValueEx(key2, _T("_start"),0,REG_DWORD,(BYTE*)&start,sizeof(DWORD));
-   RegSetValueEx(key2, _T("_conf"),0,REG_SZ,(BYTE*)sdk_config_path,(sizeof(TCHAR)*(DWORD)(1+strlen(sdk_config_path))));
+   RegSetValueEx(key2, _T("_conf"),0,REG_SZ,(BYTE*)sdk_config_path,(sizeof(TCHAR)*(DWORD)(1+strnlen_s(sdk_config_path, length + 2))));
 
    RegCloseKey(key2);
 
@@ -190,17 +193,17 @@ SDK_ANALYZER_EXPORT(UINT) FUNCTION(install)(TCHAR *installDir,
     FUNCTION(uninstall)();
 
 
-    TCHAR msdk_analyzers_key[32] = _T("tracer");
+    TCHAR msdk_analyzers_key[MAX_FIXED_KEY_LENGTH] = _T("tracer");
 #ifdef _DEBUG
-        TCHAR msdk_analyzers_dll[32] = _T("\\mfx-tracer_64_d.dll");
+    TCHAR msdk_analyzers_dll[MAX_FIXED_KEY_LENGTH] = _T("\\mfx-tracer_64_d.dll");
 #else
-        TCHAR msdk_analyzers_dll[32] = _T("\\mfx-tracer_64.dll");
+    TCHAR msdk_analyzers_dll[MAX_FIXED_KEY_LENGTH] = _T("\\mfx-tracer_64.dll");
 #endif
 
 #ifdef _DEBUG
-        TCHAR msdk_analyzers_dll_32[32] = _T("\\mfx-tracer_32_d.dll");
+    TCHAR msdk_analyzers_dll_32[MAX_FIXED_KEY_LENGTH] = _T("\\mfx-tracer_32_d.dll");
 #else
-        TCHAR msdk_analyzers_dll_32[32] = _T("\\mfx-tracer_32.dll");
+    TCHAR msdk_analyzers_dll_32[MAX_FIXED_KEY_LENGTH] = _T("\\mfx-tracer_32.dll");
 #endif
 
    TCHAR *current_msdk_analyzer;

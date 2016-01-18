@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -74,9 +74,9 @@ public:
             vsprintf_s(message_formated, sizeof(message_formated)/sizeof(message_formated[0]), msg, argptr);
 
             //todo: eliminate this
-            if (message_formated[strlen(message_formated)-1] == '\n')
+            if (message_formated[strnlen_s(message_formated, 1024)-1] == '\n')
             {
-                message_formated[strlen(message_formated)-1] = 0;
+                message_formated[strnlen_s(message_formated, 1024)-1] = 0;
             }
             Log::WriteLog(message_formated);
         }
