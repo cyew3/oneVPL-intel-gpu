@@ -28,6 +28,30 @@ File Name: mfx_screen_capture_dirty_rect.h
 namespace MfxCapture
 {
 
+enum
+{
+    TMP_MFXSC_DIRTY_RECT_DEFAULT     = 0,
+    TMP_MFXSC_DIRTY_RECT_EXT_16x16   = 1,
+    TMP_MFXSC_DIRTY_RECT_EXT_32x32   = 2,
+    TMP_MFXSC_DIRTY_RECT_EXT_64x64   = 3,
+    TMP_MFXSC_DIRTY_RECT_EXT_128x128 = 4,
+    TMP_MFXSC_DIRTY_RECT_EXT_256x256 = 5
+};
+
+struct intRect
+{
+    mfxU32  Left;
+    mfxU32  Top;
+    mfxU32  Right;
+    mfxU32  Bottom;
+};
+
+struct intDirtyRect
+{
+    mfxU16      NumRect;
+    intRect*    Rects;
+};
+
 struct TaskContext
 {
     mfxU8 busy;
@@ -43,21 +67,12 @@ struct TaskContext
         mfxU32         width;
         mfxU32         height;
         Ipp8u*         roiMAP;
+        Ipp16s*                         distUpper;
+        Ipp16s*                         distLower;
+        Ipp16s*                         distLeft;
+        Ipp16s*                         distRight;
+        std::vector <intRect>           dirtyRects;
     } roiMap;
-};
-
-struct intRect
-{
-    mfxU32  Left;
-    mfxU32  Top;
-    mfxU32  Right;
-    mfxU32  Bottom;
-};
-
-struct intDirtyRect
-{
-    mfxU16      NumRect;
-    intRect*    Rects;
 };
 
 class CmDirtyRectFilter : public DirtyRectFilter
@@ -94,6 +109,7 @@ protected:
     bool   m_bSysMem;
     bool   m_bOpaqMem;
     std::vector<TaskContext*> m_vpTasks;
+    mfxU32 m_mode;
 
     //functions
     void          FreeSurfs();
@@ -103,6 +119,9 @@ protected:
     CmSurface2D*  GetCMSurface(const mfxFrameSurface1* mfxSurf);
     SurfaceIndex* GetCMSurfaceIndex(const mfxFrameSurface1* mfxSurf);
     mfxStatus     CMCopySysToGpu(CmSurface2D* cmDst, mfxFrameSurface1* mfxSrc);
+
+    mfxStatus BuildRectangles(Ipp8u* roiMap, IppiSize roi, const mfxU32 maxRectsN, std::vector <intRect>& dstRects);
+    mfxStatus BuildRectanglesExt(Ipp8u* roiMap, Ipp16s* du, Ipp16s* dd, Ipp16s* dl, Ipp16s* dr, IppiSize roi, std::vector <intRect>& dstRects);
 
 private:
     //prohobit copy constructor
