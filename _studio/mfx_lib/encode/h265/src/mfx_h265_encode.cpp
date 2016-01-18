@@ -1399,10 +1399,10 @@ void ReorderFields(FrameList &input, FrameList &reordered, const H265VideoParam 
             reordered.splice(reordered.end(), input, anchor1); // first field goes first
             reordered.splice(reordered.end(), input, anchor2); // second field
         } else {
-            reordered.splice(reordered.end(), input, anchor1); // first field goes first
-            reordered.splice(reordered.end(), input, anchor2); // second field
-            //reordered.splice(reordered.end(), input, anchor2); // second field goes first
-            //reordered.splice(reordered.end(), input, anchor1); // first field
+            //reordered.splice(reordered.end(), input, anchor1); // first field goes first
+            //reordered.splice(reordered.end(), input, anchor2); // second field
+            reordered.splice(reordered.end(), input, anchor2); // second field goes first
+            reordered.splice(reordered.end(), input, anchor1); // first field
         }
     }
 
