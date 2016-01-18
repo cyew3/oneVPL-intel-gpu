@@ -2503,8 +2503,12 @@ mfxStatus VideoVPPHW::ValidateParams(mfxVideoParam *par, mfxVppCaps *caps)
 
                 if(MFX_EXTBUFF_VPP_FIELD_PROCESSING == extDoUse->AlgList[algIdx])
                 {
-                    sts = MFX_ERR_INVALID_VIDEO_PARAM;
-                    continue; // stop working with ExtParam[i]
+                    /* NOTE:
+                    * It's legal to use DOUSE for field processing,
+                    * but application must attach appropriate ext buffer to mfxFrameData for each input surface
+                    */
+                    //sts = MFX_ERR_INVALID_VIDEO_PARAM;
+                    //continue; // stop working with ExtParam[i]
                 }
             }
             break;

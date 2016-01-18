@@ -1296,8 +1296,12 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
 
                                 if(MFX_EXTBUFF_VPP_FIELD_PROCESSING == extDoUseIn->AlgList[algIdx])
                                 {
-                                    mfxSts = MFX_ERR_UNSUPPORTED;
-                                    continue; // stop working with ExtParam[i]
+                                    /* NOTE:
+                                     * It's legal to use DOUSE for field processing,
+                                     * but application must attach appropriate ext buffer to mfxFrameData for each input surface
+                                     */
+                                    //mfxSts = MFX_ERR_UNSUPPORTED;
+                                    //continue;
                                 }
                                 extDoUseOut->AlgList[algIdx] = extDoUseIn->AlgList[algIdx];
                             }
