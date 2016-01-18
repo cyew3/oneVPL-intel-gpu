@@ -784,7 +784,7 @@ void InheritDefaultValues(
 
     InheritOption(extOptInit->VuiNalHrdParameters,extOptReset->VuiNalHrdParameters);
     InheritOption(extOptInit->PicTimingSEI,extOptReset->PicTimingSEI);
-    
+
 
     mfxExtCodingOption2 const * extOpt2Init  = &parInit.m_ext.CO2;
     mfxExtCodingOption2 *       extOpt2Reset = &parReset.m_ext.CO2;
@@ -860,6 +860,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     {
         changed     += CheckMin(par.mfx.FrameInfo.Width, Align(par.mfx.FrameInfo.Width,  HW_SURF_ALIGN_W));
         changed     += CheckMin(par.mfx.FrameInfo.Height, Align(par.mfx.FrameInfo.Height,HW_SURF_ALIGN_H));
+    }
+
+    if (!par.mfx.CodecProfile)
+    {
+        par.mfx.CodecProfile = (par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010) ? (mfxU16)MFX_PROFILE_HEVC_MAIN10 : (mfxU16)MFX_PROFILE_HEVC_MAIN;
     }
 
     unsupported += CheckMax(par.mfx.FrameInfo.Width, caps.MaxPicWidth);
