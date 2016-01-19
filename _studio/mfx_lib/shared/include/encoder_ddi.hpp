@@ -996,9 +996,12 @@ typedef struct tagENCODE_ROI
 
 typedef struct tagMOVE_RECT
 {
-    USHORT SourcePointX;
-    USHORT SourcePointY;
-    ENCODE_RECT DestRect;
+    UINT SourcePointX;
+    UINT SourcePointY;
+    UINT DestTop;
+    UINT DestBot;
+    UINT DestLeft;
+    UINT DestRight;
 } MOVE_RECT;
 
 typedef enum tagENCODE_INPUT_TYPE

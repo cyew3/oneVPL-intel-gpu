@@ -1000,6 +1000,12 @@ typedef enum tagENCODE_INPUT_TYPE
     eType_DRM_UNKNOWN
 }ENCODE_INPUT_TYPE;
 
+typedef enum tagENCODE_FRAME_SIZE_TOLERANCE
+{
+    eFrameSizeTolerance_Normal = 0,//default
+    eFrameSizeTolerance_Low = 1,//Sliding Window
+    eFrameSizeTolerance_ExtremelyLow = 2//low delay
+}ENCODE_FRAME_SIZE_TOLERANCE;
 
 typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
 {

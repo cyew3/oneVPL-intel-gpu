@@ -323,10 +323,10 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
         movingRects.resize(task.m_numMovingRect);
         for (i = 0; i < task.m_numMovingRect; i ++)
         {
-            movingRects[i].DestRect.Left   = (mfxU16)task.m_movingRect[i].DestLeft;
-            movingRects[i].DestRect.Top    = (mfxU16)task.m_movingRect[i].DestTop;
-            movingRects[i].DestRect.Right  = (mfxU16)task.m_movingRect[i].DestRight;
-            movingRects[i].DestRect.Bottom = (mfxU16)task.m_movingRect[i].DestBottom;
+            movingRects[i].DestLeft   = (mfxU16)task.m_movingRect[i].DestLeft;
+            movingRects[i].DestTop    = (mfxU16)task.m_movingRect[i].DestTop;
+            movingRects[i].DestRight  = (mfxU16)task.m_movingRect[i].DestRight;
+            movingRects[i].DestBot    = (mfxU16)task.m_movingRect[i].DestBottom;
             movingRects[i].SourcePointX    = (mfxU16)task.m_movingRect[i].SourceLeft;
             movingRects[i].SourcePointY    = (mfxU16)task.m_movingRect[i].SourceTop;
         }

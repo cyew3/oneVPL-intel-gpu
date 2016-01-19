@@ -127,8 +127,8 @@ void FillSpsBuffer(
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
     {
         sps.TargetBitRate   = par.TargetKbps;
-        sps.AVBRAccuracy = par.mfx.Accuracy;
-        sps.AVBRConvergence = par.mfx.Convergence;
+//        sps.AVBRAccuracy = par.mfx.Accuracy;
+//        sps.AVBRConvergence = par.mfx.Convergence;
     }
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
     {
@@ -152,8 +152,8 @@ void FillSpsBuffer(
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
     {
-        sps.AVBRAccuracy    = par.mfx.Accuracy;
-        sps.AVBRConvergence = par.mfx.Convergence;
+//        sps.AVBRAccuracy    = par.mfx.Accuracy;
+//        sps.AVBRConvergence = par.mfx.Convergence;
     }
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)

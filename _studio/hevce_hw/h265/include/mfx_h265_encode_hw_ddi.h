@@ -97,8 +97,9 @@ typedef struct tagENCODE_CAPS_HEVC
 
     union {
         struct {
-            UINT    SliceLevelReportSupport              : 1; 
-            UINT                                         : 31; // For future expansion
+            UINT    SliceLevelReportSupport         : 1; 
+            UINT    NumOfTileColumnsMinus1          : 4;
+            UINT                                    : 27; // For future expansion
         };
         UINT    CodingLimits2;
     };
@@ -140,16 +141,16 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
             UINT    MBBRC               : 4;
             UINT    ParallelBRC         : 1;
             UINT    SliceSizeControl    : 1;
-            UINT    EncodeFormat        : 2;
-            UINT    EncodeBitDepth      : 2;
+            UINT    SourceFormat        : 2;
+            UINT    SourceBitDepth      : 2;
             UINT    ReservedBits        : 13;
         }/*fields*/;
         UINT    EncodeFlags;
     }/*EncodeFlags*/;
 
     UINT    UserMaxFrameSize;
-    USHORT  AVBRAccuracy;
-    USHORT  AVBRConvergence;
+    USHORT  Reserved1;//AVBRAccuracy;
+    USHORT  Reserved2;//AVBRConvergence;
     UCHAR   ICQQualityFactor;  // [1..51]
 
     UINT    NumOfBInGop[3];
@@ -188,6 +189,7 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
     ENCODE_ARGB_COLOR           InputColorSpace;
     ENCODE_SCENARIO             ScenarioInfo;
     ENCODE_CONTENT              ContentInfo;
+    ENCODE_FRAME_SIZE_TOLERANCE frame_size_tolerance;
 } ENCODE_SET_SEQUENCE_PARAMETERS_HEVC;
 
 typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
@@ -322,9 +324,12 @@ typedef struct tagENCODE_SET_SLICE_HEADER_HEVC
     CHAR    delta_chroma_weight[2][15][2];
     UCHAR   MaxNumMergeCand;
     USHORT  slice_id;
+    USHORT  BitLenghtSliceHeaderStartingPortion;
+    UINT    SliceHeaderByteOffset;
     UINT    SliceQpDeltaBitOffset;
     UINT    PredWeightTableBitOffset;
     UINT    PredWeightTableBitLength;
+    UINT    SliceSAOFlagBitOffset;
 } ENCODE_SET_SLICE_HEADER_HEVC;
 
 typedef struct tagENCODE_SET_QMATRIX_HEVC
