@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG2 encoder
@@ -1084,7 +1084,7 @@ namespace MPEG2EncoderHW
 
     mfxStatus ControllerBase::QueryIOSurf(VideoCORE * core, mfxVideoParam *par, mfxFrameAllocRequest *request)
     {
-        mfxVideoParamEx_MPEG2 videoParamEx;
+        mfxVideoParamEx_MPEG2 videoParamEx = {};
 
         MFX_CHECK_NULL_PTR1(par);
         MFX_CHECK_NULL_PTR1(request);

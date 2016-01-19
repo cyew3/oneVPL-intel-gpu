@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //         MPEG-2encoder
@@ -141,6 +141,8 @@ mfxStatus MFXVideoRcMpeg2::Query(mfxVideoParam *in, mfxVideoParam *out)
 
     if (out->mfx.TargetKbps) {
       mfxF64 mFramerate = CalculateUMCFramerate(out->mfx.FrameInfo.FrameRateExtD, out->mfx.FrameInfo.FrameRateExtN);
+      if (mFramerate == 0)
+          mFramerate = 30;
 
       if (out->mfx.BufferSizeInKB && out->mfx.BufferSizeInKB < (mfxU16)(out->mfx.TargetKbps * 8 / mFramerate) << 2)
         out->mfx.BufferSizeInKB = (mfxU16)(out->mfx.TargetKbps * 8 / mFramerate) << 2;
@@ -514,6 +516,11 @@ void MFXVideoRcMpeg2::UpdateQuantHRD(mfxI32 bEncoded, mfxI32 sts)
   mfxI32 quant;
   mfxF64 qs;
   mfxI32 wantedBits = (sts == MPEG2_BRC_ERR_BIG_FRAME ? mHRD.maxFrameSize : mHRD.minFrameSize);
+  
+  if (wantedBits == 0) // KW-inspired safety check
+  {
+      wantedBits = 1;
+  }
 
   quant = quantiser_scale_value;
 

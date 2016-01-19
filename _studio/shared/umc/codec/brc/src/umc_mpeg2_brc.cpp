@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //                     MPEG-2 bitrate control
@@ -996,6 +996,10 @@ BRCStatus MPEG2BRC::UpdateQuantHRD(Ipp32s bits_encoded, BRCStatus sts)
   Ipp32s indx = (mFrameType == B_PICTURE ? 2 : (mFrameType == P_PICTURE ? 1 : 0));
   Ipp64f qs;
   Ipp32s wantedBits = (sts == BRC_ERR_BIG_FRAME ? mHRD.maxFrameSize : mHRD.minFrameSize);
+  if (wantedBits == 0) // KW-inspired safety check
+  {
+      wantedBits = 1;
+  }
 
   quant = qscale[indx];
   quant_prev = quant;

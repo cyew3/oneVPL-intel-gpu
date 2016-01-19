@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 
 **********************************************************************************/
 
@@ -99,12 +99,6 @@ mfxStatus mfxSchedulerCore::StopWakeUpThread(void)
 
 } // mfxStatus mfxSchedulerCore::StopWakeUpThread(void)
 
-#if defined(_WIN32) || defined(_WIN64)
-#define my_snprintf _snprintf
-#else
-#define my_snprintf snprintf
-#endif
-
 Ipp32u mfxSchedulerCore::scheduler_thread_proc(void *pParam)
 {
     MFX_SCHEDULER_THREAD_CONTEXT *pContext = (MFX_SCHEDULER_THREAD_CONTEXT *) pParam;
@@ -112,8 +106,12 @@ Ipp32u mfxSchedulerCore::scheduler_thread_proc(void *pParam)
     const Ipp32u threadNum = pContext->threadNum;
 
     {
-        char thread_name[30] = {0};
-        my_snprintf(thread_name, sizeof(thread_name)-1, "ThreadName=MSDK#%d", pContext->threadNum);
+        char thread_name[30] = {};
+#if defined(_WIN32) || defined(_WIN64)
+        _snprintf_s(thread_name, sizeof(thread_name) - 1, _TRUNCATE, "ThreadName=MSDK#%d", pContext->threadNum);
+#else
+        snprintf(thread_name, sizeof(thread_name)-1, "ThreadName=MSDK#%d", pContext->threadNum);
+#endif
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, thread_name);
     }
 
@@ -216,8 +214,7 @@ Ipp32u mfxSchedulerCore::scheduler_wakeup_thread_proc(void *pParam)
     mfxSchedulerCore * const pSchedulerCore = (mfxSchedulerCore *) pParam;
 
     {
-        char thread_name[30] = {0};
-        my_snprintf(thread_name, sizeof(thread_name)-1, "ThreadName=MSDKHWL#%d", 0);
+        const char thread_name[30] = "ThreadName=MSDKHWL#0";
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, thread_name);
     }
 
