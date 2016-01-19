@@ -1518,6 +1518,18 @@ void H265Encoder::ConfigureEncodeFrame(Frame* frame)
 void H265Encoder::UpdateDpb(Frame *currTask)
 {
     Frame *currFrame = currTask;
+
+    // first of all remove frames not appeared in current frame RPS
+    for (FrameIter i = m_actualDpb.begin(); i != m_actualDpb.end();) {
+        bool found = std::find(currFrame->m_dpb, currFrame->m_dpb + currFrame->m_dpbSize, *i)
+            != currFrame->m_dpb + currFrame->m_dpbSize;
+        FrameIter toRemove = i++;
+        if (!found) {
+            (*toRemove)->Release();
+            m_actualDpb.erase(toRemove);
+        }
+    }
+
     if (!currFrame->m_isRef)
         return; // non-ref frame doesn't change dpb
 
@@ -1550,7 +1562,7 @@ void H265Encoder::UpdateDpb(Frame *currTask)
             }
             if (toRemove == m_actualDpb.end()) {
                 // if nothing found
-                // search for oldest any oldest ref in current minigop
+                // search for any oldest ref in current minigop
                 for (FrameIter i = m_actualDpb.begin(); i != m_actualDpb.end(); ++i)
                     if ((*i)->m_miniGopCount == currMiniGop)
                         if (toRemove == m_actualDpb.end() || (*toRemove)->m_poc > (*i)->m_poc)
