@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2014 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -247,7 +247,7 @@ namespace MFX
 mfxStatus SelectImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterface, mfxU32 *pVendorID, mfxU32 *pDeviceID)
 {
     mfx_disp_adapters* adapters = NULL;
-    int adapters_num = mfx_init_adapters(&adapters);
+    unsigned int adapters_num = mfx_init_adapters(&adapters);
     if (pVendorID && pDeviceID && adapterNum < adapters_num)
     {
         *pVendorID = adapters[adapterNum].vendor_id;
@@ -383,7 +383,7 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(char *pPath, size_t pathSize,
 
 mfxIMPL MFXLibraryIterator::GetImplementationType()
 {
-    if (m_selected_adapter < 0 || m_selected_adapter >= m_adapters_num)
+    if (m_selected_adapter < 0 || static_cast<unsigned int>(m_selected_adapter) >= m_adapters_num)
         return MFX_ERR_UNSUPPORTED;
 
     return MFX_IMPL_VIA_VAAPI;

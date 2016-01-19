@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -79,9 +79,11 @@ std::string GetIOPattern (mfxU32 io);
 #define ToHexFormatString( x ) (dynamic_cast< std::ostringstream & >( ( std::ostringstream() << std::hex << pVoidToHexString((void*)x) ) ).str() )
 
 
-//#define DEFINE_GET_TYPE(type) \
-//    template<> \
-//    inline const char* get_type<type>(){ return #type; };
+/*
+#define DEFINE_GET_TYPE(type) \
+    template<> \
+    inline const char* get_type<type>(){ return #type; };
+*/
 
 #define DEFINE_GET_TYPE(type) \
     template<> \

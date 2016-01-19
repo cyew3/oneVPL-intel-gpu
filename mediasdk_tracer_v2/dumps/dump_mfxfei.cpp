@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 //
 */
 #include "dump.h"
@@ -50,7 +50,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPreEn
     if (_struct.MB)
     {
         str += structName + ".MB[]={\n";
-        for (int i = 0; i < _struct.NumMBAlloc; i++)
+        for (unsigned int i = 0; i < _struct.NumMBAlloc; i++)
         {
             str += "{ L0: {" + ToString(_struct.MB[i].MV[0].x) + "," + ToString(_struct.MB[i].MV[0].y) 
                 + "}, L1: {" + ToString(_struct.MB[i].MV[1].x) + "," + ToString(_struct.MB[i].MV[1].y)
@@ -73,10 +73,10 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPreEn
     if (_struct.MB)
     {
         str += structName + ".MB[]={\n";
-        for (int i = 0; i < _struct.NumMBAlloc; i++)
+        for (unsigned int i = 0; i < _struct.NumMBAlloc; i++)
         {
              str += "{\n";
-             for (int j = 0; j < GET_ARRAY_SIZE(_struct.MB[i].MV); j++)
+             for (unsigned int j = 0; j < GET_ARRAY_SIZE(_struct.MB[i].MV); j++)
              {
                 str += "{ L0: {" + ToString(_struct.MB[i].MV[j][0].x) + "," + ToString(_struct.MB[i].MV[j][0].y)
                     + "}, L1: {" + ToString(_struct.MB[i].MV[j][1].x) + "," + ToString(_struct.MB[i].MV[j][1].y)
@@ -99,7 +99,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPreEn
     DUMP_FIELD(NumMBAlloc);
     if (_struct.MB)
     {
-        for (int i = 0; i < _struct.NumMBAlloc; i++)
+        for (unsigned int i = 0; i < _struct.NumMBAlloc; i++)
         {
            std::string prefix = structName + ".MB[" + ToString(i) + "]";
            str += prefix + ".Inter[0].BestDistortion=" + ToString(_struct.MB[i].Inter[0].BestDistortion) + "\n";
@@ -169,7 +169,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMV
     if (_struct.MB)
     {
         str +=  structName + ".MB[]={\n";
-        for (int i = 0; i < _struct.NumMBAlloc; i++)
+        for (unsigned int i = 0; i < _struct.NumMBAlloc; i++)
         {
             str += dump("", _struct.MB[i]) + ",\n";
         }
@@ -182,7 +182,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMV
 {
     std::string str;
 
-    for (int i = 0; i < GET_ARRAY_SIZE(_struct.RefIdx); i++)
+    for (unsigned int i = 0; i < GET_ARRAY_SIZE(_struct.RefIdx); i++)
     {
         str += structName + ".RefIdx[" + ToString(i) + "].RefL0=" + ToString(_struct.RefIdx[i].RefL0) + "\n";
         str += structName + ".RefIdx[" + ToString(i) + "].RefL1=" + ToString(_struct.RefIdx[i].RefL1) + "\n";
@@ -193,7 +193,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMV
     // mfxI16Pair MV[4][2]; /* first index is predictor number, second is 0 for L0 and 1 for L1 */
     
     str += structName + ".MV[]={\n";
-    for (int i = 0; i < GET_ARRAY_SIZE(_struct.MV); i++)
+    for (unsigned int i = 0; i < GET_ARRAY_SIZE(_struct.MV); i++)
     {
         str += "{ L0: {" + ToString(_struct.MV[i][0].x) + "," + ToString(_struct.MV[i][0].y)
             + "}, L1: {" + ToString(_struct.MV[i][1].x) + "," + ToString(_struct.MV[i][1].y)
@@ -227,7 +227,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMB
     if (_struct.MB)
     {
         str += structName + ".MB[]={\n";
-        for (int i = 0; i < _struct.NumMBAlloc; i++)
+        for (unsigned int i = 0; i < _struct.NumMBAlloc; i++)
         {
             str += dump("", _struct.MB[i]) + ",\n";
         }
@@ -265,10 +265,10 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMV
     if (_struct.MB)
     {
         str += structName + ".MB[]={\n";
-        for (int i = 0; i < _struct.NumMBAlloc; i++)
+        for (unsigned int i = 0; i < _struct.NumMBAlloc; i++)
         {
             str += "{\n";
-            for (int j = 0; j < GET_ARRAY_SIZE(_struct.MB[i].MV); j++)
+            for (unsigned int j = 0; j < GET_ARRAY_SIZE(_struct.MB[i].MV); j++)
             {
                  str += "{ L0: {" + ToString(_struct.MB[i].MV[j][0].x) + "," + ToString(_struct.MB[i].MV[j][0].y)
                      + "}, L1: {" + ToString(_struct.MB[i].MV[j][1].x) + "," + ToString(_struct.MB[i].MV[j][1].y)
@@ -292,7 +292,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMB
     if (_struct.MB)
     {
         str += structName + ".MB[]={\n";
-        for (int i = 0; i < _struct.NumMBAlloc; i++)
+        for (unsigned int i = 0; i < _struct.NumMBAlloc; i++)
         {
             str += dump("", _struct.MB[i]) + ",\n";
         }
@@ -366,9 +366,9 @@ std::string DumpContext::dump(const std::string structName, const mfxFeiPakMBCtr
         str += structName + ".InterMB.SubMbPredModes=" + ToString(_struct.InterMB.SubMbPredModes) + "\n";
         str += structName + ".InterMB.Reserved40=" + ToString(_struct.InterMB.Reserved40) + "\n";
         //dword 8, 9
-        for (int i = 0; i < GET_ARRAY_SIZE(_struct.InterMB.RefIdx); i++)
+        for (unsigned int i = 0; i < GET_ARRAY_SIZE(_struct.InterMB.RefIdx); i++)
         {
-            for (int j = 0; j < GET_ARRAY_SIZE(_struct.InterMB.RefIdx[0]); j++)
+            for (unsigned int j = 0; j < GET_ARRAY_SIZE(_struct.InterMB.RefIdx[0]); j++)
             {
                 str += structName + ".InterMB.RefIdx[" + ToString(i) + "][" + ToString(j) + "]=" + ToString(_struct.InterMB.RefIdx[i][j]) + "\n";
             }
@@ -395,7 +395,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPakMB
     if (_struct.MB)
     {
         str += structName + ".MB[]={\n";
-        for (int i = 0; i < _struct.NumMBAlloc; i++)
+        for (unsigned int i = 0; i < _struct.NumMBAlloc; i++)
         {
             str += dump("", _struct.MB[i]) + ",\n";
         }
@@ -581,13 +581,13 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiSlice
     DUMP_FIELD(SliceAlphaC0OffsetDiv2);
     DUMP_FIELD(SliceBetaOffsetDiv2);
 
-    for (int i = 0; i < GET_ARRAY_SIZE(_struct.RefL0); i++)
+    for (unsigned int i = 0; i < GET_ARRAY_SIZE(_struct.RefL0); i++)
     {
         str += structName + ".RefL0[" + ToString(i) + "].PictureType=" + ToString(_struct.RefL0[i].PictureType) + "\n";
         str += structName + ".RefL0[" + ToString(i) + "].Index=" + ToString(_struct.RefL0[i].Index) + "\n";
     }
 
-    for (int i = 0; i < GET_ARRAY_SIZE(_struct.RefL1); i++)
+    for (unsigned int i = 0; i < GET_ARRAY_SIZE(_struct.RefL1); i++)
     {
         str += structName + ".RefL1[" + ToString(i) + "].PictureType=" + ToString(_struct.RefL1[i].PictureType) + "\n";
         str += structName + ".RefL1[" + ToString(i) + "].Index=" + ToString(_struct.RefL1[i].Index) + "\n";

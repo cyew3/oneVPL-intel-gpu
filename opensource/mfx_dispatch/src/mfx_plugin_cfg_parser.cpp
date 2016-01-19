@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2013-2014 Intel Corporation.  All rights reserved.
+Copyright (C) 2013-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -242,7 +242,7 @@ bool PluginConfigParser::ParseSingleParameter(const char * name, char * value, P
 
         dst.CodecId = MFX_MAKEFOURCC(' ',' ',' ',' ');
         char *codecID = reinterpret_cast<char*>(&dst.CodecId);
-        for (int i = 0; i < strlen(value); i++)
+        for (size_t i = 0; i < strlen(value); i++)
             codecID[i] = value[i];
 
         parsedFields |= PARSED_CODEC_ID;

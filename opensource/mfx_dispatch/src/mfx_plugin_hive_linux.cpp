@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2013-2014 Intel Corporation.  All rights reserved.
+Copyright (C) 2013-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -217,7 +217,7 @@ static int plugin_name_filter(const struct dirent * name)
 {
     if (pluginDirNameLen != strlen(name->d_name))
         return 0;
-    for (int i = 0; i < pluginDirNameLen; i++)
+    for (unsigned int i = 0; i < pluginDirNameLen; i++)
     {
         if (!isxdigit(name->d_name[i]))
             return 0;

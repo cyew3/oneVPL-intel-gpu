@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -30,21 +30,16 @@ File Name: dump.cpp
 
 #include "dump.h"
 
-
 std::string pVoidToHexString(void* x)
 {
     std::ostringstream result;
-    std::ostringstream tmp;
-    tmp << std::hex <<std::uppercase << ((mfxU64)x);
-    for (int i = 0; i < (16 - tmp.str().length()); i++)
-        result << "0";
-    result << tmp.str();
+    result << std::setw(16) << std::setfill('0') << std::hex <<std::uppercase << ((mfxU64)x);
     return result.str();
 }
 
 struct IdTable
 {
-    mfxU32 id;
+    mfxI32 id;
     const char* str;
 };
 
@@ -240,7 +235,7 @@ const char* DumpContext::get_bufferid_str(mfxU32 bufferid)
 {
     for (size_t i = 0; i < GET_ARRAY_SIZE(g_BufferIdTable); ++i)
     {
-        if (g_BufferIdTable[i].id == bufferid)
+        if (g_BufferIdTable[i].id == static_cast<int>(bufferid))
         {
             return g_BufferIdTable[i].str;
         }
@@ -253,7 +248,7 @@ std::string GetmfxIMPL(mfxIMPL impl) {
     std::basic_stringstream<char> stream;
     std::string name = "UNKNOWN";
         
-    for (int i = 0; i < (sizeof(tbl_impl) / sizeof(tbl_impl[0])); i++)
+    for (unsigned int i = 0; i < (sizeof(tbl_impl) / sizeof(tbl_impl[0])); i++)
         if (tbl_impl[i].id == (impl & (MFX_IMPL_VIA_ANY - 1)))
             name = tbl_impl[i].str;
     stream << name;
@@ -264,7 +259,7 @@ std::string GetmfxIMPL(mfxIMPL impl) {
     {
         stream << "|";
         name = "UNKNOWN";
-        for (int i = 0; i < (sizeof(tbl_impl) / sizeof(tbl_impl[0])); i++)
+        for (unsigned int i = 0; i < (sizeof(tbl_impl) / sizeof(tbl_impl[0])); i++)
             if (tbl_impl[i].id == via_flag)
                 name = tbl_impl[i].str;
         stream << name;
@@ -277,9 +272,9 @@ std::string GetFourCC(mfxU32 fourcc) {
     std::basic_stringstream<char> stream;
     std::string name = "UNKNOWN";
     int j = 0;
-    for (int i = 0; i < (sizeof(tbl_fourcc) / sizeof(tbl_fourcc[0])); i++)
+    for (unsigned int i = 0; i < (sizeof(tbl_fourcc) / sizeof(tbl_fourcc[0])); i++)
     {
-        if (tbl_fourcc[i].id == fourcc)
+        if (tbl_fourcc[i].id == static_cast<int>(fourcc))
         {
             name = "";
             while (tbl_fourcc[i].str[j + 11] != '\0')
@@ -299,7 +294,7 @@ std::string GetStatusString(mfxStatus sts) {
     
     std::basic_stringstream<char> stream;
     std::string name = "UNKNOWN_STATUS";
-    for (int i = 0; i < (sizeof(tbl_sts) / sizeof(tbl_sts[0])); i++)
+    for (unsigned int i = 0; i < (sizeof(tbl_sts) / sizeof(tbl_sts[0])); i++)
     {
         if (tbl_sts[i].id == sts)
         {
@@ -316,9 +311,9 @@ std::string GetCodecIdString(mfxU32 id) {
     
     std::basic_stringstream<char> stream;
     std::string name = "UNKNOWN";
-    for (int i = 0; i < (sizeof(tbl_codecid) / sizeof(tbl_codecid[0])); i++)
+    for (unsigned int i = 0; i < (sizeof(tbl_codecid) / sizeof(tbl_codecid[0])); i++)
     {
-        if (tbl_codecid[i].id == id)
+        if (tbl_codecid[i].id == static_cast<int>(id))
         {
             name = tbl_codecid[i].str;
             break;
@@ -333,9 +328,9 @@ std::string GetIOPattern(mfxU32 io) {
 
     std::basic_stringstream<char> stream;
     std::string name = "UNKNOWN";
-    for (int i = 0; i < (sizeof(tbl_iopattern) / sizeof(tbl_iopattern[0])); i++)
+    for (unsigned int i = 0; i < (sizeof(tbl_iopattern) / sizeof(tbl_iopattern[0])); i++)
     {
-        if (tbl_iopattern[i].id == io)
+        if (tbl_iopattern[i].id == static_cast<int>(io))
         {
             name = tbl_iopattern[i].str;
             break;
