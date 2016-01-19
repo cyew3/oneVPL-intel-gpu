@@ -870,10 +870,6 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         changed     += CheckMin(par.mfx.FrameInfo.Height, Align(par.mfx.FrameInfo.Height,HW_SURF_ALIGN_H));
     }
 
-    if (!par.mfx.CodecProfile)
-    {
-        par.mfx.CodecProfile = (par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010) ? (mfxU16)MFX_PROFILE_HEVC_MAIN10 : (mfxU16)MFX_PROFILE_HEVC_MAIN;
-    }
 
     unsupported += CheckMax(par.mfx.FrameInfo.Width, caps.MaxPicWidth);
     unsupported += CheckMax(par.mfx.FrameInfo.Height, caps.MaxPicHeight);
@@ -971,10 +967,15 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     }
 
     unsupported += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV420, 0);
-    if(par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN || par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP)
+    if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN || par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP)
         unsupported += CheckOption(par.mfx.FrameInfo.FourCC, (mfxU32)MFX_FOURCC_NV12, 0);
-    if(par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10)
+    else if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10)
         unsupported += CheckOption(par.mfx.FrameInfo.FourCC, (mfxU32)MFX_FOURCC_P010, 0);
+    else if (par.mfx.FrameInfo.FourCC && par.mfx.FrameInfo.FourCC != (mfxU32)MFX_FOURCC_NV12 && par.mfx.FrameInfo.FourCC != (mfxU32)MFX_FOURCC_P010) 
+    {
+        unsupported ++;
+        par.mfx.FrameInfo.FourCC = 0;
+    }
 
     if (par.mfx.FrameInfo.FrameRateExtN && par.mfx.FrameInfo.FrameRateExtD) // FR <= 300
     {
@@ -1178,6 +1179,11 @@ void SetDefaults(
         maxBR  = GetMaxKbpsByLevel(par);
         maxBuf = GetMaxCpbInKBByLevel(par);
         maxDPB = (mfxU16)GetMaxDpbSizeByLevel(par);
+    }
+
+    if (!par.mfx.CodecProfile)
+    {
+        par.mfx.CodecProfile = (par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010) ? (mfxU16)MFX_PROFILE_HEVC_MAIN10 : (mfxU16)MFX_PROFILE_HEVC_MAIN;
     }
 
     if (!par.AsyncDepth)
