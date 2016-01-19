@@ -32,30 +32,31 @@ File Name: mfxvideo++int.h
 #ifndef GUID_TYPE_DEFINED
 
 #include <string.h>
-// TODO: temporary workaround for linux (aya: see below)
+
 typedef struct {
     unsigned long  Data1;
     unsigned short Data2;
     unsigned short Data3;
-    unsigned char  Data4[ 8 ];
+    unsigned char  Data4[8];
 } GUID;
 
 static int operator==(const GUID & guidOne, const GUID & guidOther)
 {
-    return !memcmp(&guidOne, &guidOne, sizeof(GUID));
+    return !memcmp(&guidOne, &guidOther, sizeof(GUID));
 }
+
 #define GUID_TYPE_DEFINED
 #endif
 
 
 // GUIDs from DDI spec 0.73
-static const GUID DXVA2_Intel_Encode_AVC = 
+static const GUID DXVA2_Intel_Encode_AVC =
 { 0x97688186, 0x56a8, 0x4094, { 0xb5, 0x43, 0xfc, 0x9d, 0xaa, 0xa4, 0x9f, 0x4b } };
-static const GUID DXVA2_Intel_Encode_VP8 = 
+static const GUID DXVA2_Intel_Encode_VP8 =
 { 0x2364d06a, 0xf67f, 0x4186, { 0xae, 0xd0, 0x62, 0xb9, 0x9e, 0x17, 0x84, 0xf1 } };
-static const GUID DXVA2_Intel_Encode_MPEG2 = 
+static const GUID DXVA2_Intel_Encode_MPEG2 =
 { 0xc346e8a3, 0xcbed, 0x4d27, { 0x87, 0xcc, 0xa7, 0xe, 0xb4, 0xdc, 0x8c, 0x27 } };
-static const GUID DXVA2_Intel_Encode_SVC = 
+static const GUID DXVA2_Intel_Encode_SVC =
 { 0xd41289c2, 0xecf3, 0x4ede, { 0x9a, 0x04, 0x3b, 0xbf, 0x90, 0x68, 0xa6, 0x29 } };
 
 static const GUID sDXVA2_Intel_IVB_ModeJPEG_VLD_NoFGT =
@@ -162,7 +163,7 @@ enum eMFXHWType
     MFX_HW_CHV       = 0x800000,
 
     MFX_HW_SCL       = 0x900000,
-    
+
     MFX_HW_BXT       = 0x1000000,
 
     MFX_HW_KBL       = 0x1100000,
@@ -208,13 +209,13 @@ public:
     virtual mfxStatus  CheckHandle() = 0;
 
     virtual mfxStatus  GetFrameHDL(mfxMemId mid, mfxHDL *handle, bool ExtendedSearch = true) = 0;
-        
-    virtual mfxStatus  AllocFrames(mfxFrameAllocRequest *request, 
+
+    virtual mfxStatus  AllocFrames(mfxFrameAllocRequest *request,
                                    mfxFrameAllocResponse *response, bool isNeedCopy = true) = 0;
 
-    virtual mfxStatus  AllocFrames(mfxFrameAllocRequest *request, 
-                                   mfxFrameAllocResponse *response, 
-                                   mfxFrameSurface1 **pOpaqueSurface, 
+    virtual mfxStatus  AllocFrames(mfxFrameAllocRequest *request,
+                                   mfxFrameAllocResponse *response,
+                                   mfxFrameSurface1 **pOpaqueSurface,
                                    mfxU32 NumOpaqueSurface) = 0;
 
     virtual mfxStatus  LockFrame(mfxMemId mid, mfxFrameData *ptr) = 0;
@@ -345,7 +346,7 @@ public:
         return MFX_ERR_NONE;
     }
     virtual
-    mfxStatus RunFrameVmeENC(mfxFrameCUC * /*cuc*/)     
+    mfxStatus RunFrameVmeENC(mfxFrameCUC * /*cuc*/)
     {
         return MFX_ERR_UNSUPPORTED;
     };

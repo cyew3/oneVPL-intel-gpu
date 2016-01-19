@@ -54,7 +54,6 @@
 
 #define STATIC_ASSERT(ASSERTION, MESSAGE) char MESSAGE[(ASSERTION) ? 1 : -1]; MESSAGE
 
-#if defined(MFX_VA_WIN)
 // this guid is used to identify that device creation is performed during Query or QueryIOSurf call
 static const GUID MSDK_Private_Guid_Encode_AVC_Query =
 { 0x32560c63, 0xe3dc, 0x43c9, { 0xa8, 0x16, 0xda, 0x73, 0x36, 0x45, 0x89, 0xe9 } };
@@ -64,13 +63,6 @@ static const GUID MSDK_Private_Guid_Encode_MVC_Dependent_View =
 // this guid is used to identify that device creation is performed during for low power encoder
 static const GUID MSDK_Private_Guid_Encode_AVC_LowPower_Query =
 { 0x6815aa23, 0xc93e, 0x4a71, { 0xae, 0x66, 0xb, 0x60, 0x5d, 0x3b, 0xc4, 0xd7 } };
-
-#else
-// no special guids for linux
-static const GUID MSDK_Private_Guid_Encode_AVC_Query          = DXVA2_Intel_Encode_AVC;
-static const GUID MSDK_Private_Guid_Encode_MVC_Dependent_View = DXVA2_Intel_Encode_AVC;
-static const GUID MSDK_Private_Guid_Encode_AVC_LowPower_Query = DXVA2_Intel_Encode_AVC;
-#endif
 
 namespace MfxHwH264Encode
 {

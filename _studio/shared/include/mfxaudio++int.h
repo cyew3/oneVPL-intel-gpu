@@ -24,18 +24,19 @@ File Name: mfxaudio++int.h
 #ifndef GUID_TYPE_DEFINED
 
 #include <string.h>
-// TODO: temporary workaround for linux (aya: see below)
+
 typedef struct {
     unsigned long  Data1;
     unsigned short Data2;
     unsigned short Data3;
-    unsigned char  Data4[ 8 ];
+    unsigned char  Data4[8];
 } GUID;
 
 static int operator==(const GUID & guidOne, const GUID & guidOther)
 {
-    return !memcmp(&guidOne, &guidOne, sizeof(GUID));
+    return !memcmp(&guidOne, &guidOther, sizeof(GUID));
 }
+
 #define GUID_TYPE_DEFINED
 #endif
 
@@ -75,7 +76,7 @@ enum eMFXAudioPlatform
 
 // Forward declaration of used classes
 struct MFX_ENTRY_POINT;
- 
+
 // AudioCORE
 class AudioCORE {
 public:
@@ -95,14 +96,14 @@ public:
     virtual mfxStatus  UnlockBuffer(mfxMemId mid) = 0;
     virtual mfxStatus  FreeBuffer(mfxMemId mid) = 0;
 
-    
-        
-    virtual mfxStatus  AllocFrames(mfxFrameAllocRequest *request, 
+
+
+    virtual mfxStatus  AllocFrames(mfxFrameAllocRequest *request,
                                    mfxFrameAllocResponse *response) = 0;
 
-    virtual mfxStatus  AllocFrames(mfxFrameAllocRequest *request, 
-                                   mfxFrameAllocResponse *response, 
-                                   mfxFrameSurface1 **pOpaqueSurface, 
+    virtual mfxStatus  AllocFrames(mfxFrameAllocRequest *request,
+                                   mfxFrameAllocResponse *response,
+                                   mfxFrameSurface1 **pOpaqueSurface,
                                    mfxU32 NumOpaqueSurface) = 0;
 
     virtual mfxStatus  LockFrame(mfxMemId mid, mfxFrameData *ptr) = 0;
@@ -126,7 +127,7 @@ public:
     virtual mfxStatus DecreasePureReference(mfxU16 &) = 0;
     virtual void* QueryCoreInterface(const MFX_GUID &guid) = 0;
     virtual mfxSession GetSession() = 0;
-};     
+};
 
 
 class AudioENCODE
@@ -135,7 +136,7 @@ public:
     // Destructor
     virtual
     ~AudioENCODE(void) {}
-   
+
     virtual
     mfxStatus Init(mfxAudioParam *par) = 0;
     virtual
@@ -154,7 +155,7 @@ public:
 
     virtual mfxStatus EncodeFrameCheck(mfxAudioFrame *aFrame, mfxBitstream *buffer_out,
         MFX_ENTRY_POINT *pEntryPoint)  = 0;
-  
+
 };
 
 class AudioDECODE
