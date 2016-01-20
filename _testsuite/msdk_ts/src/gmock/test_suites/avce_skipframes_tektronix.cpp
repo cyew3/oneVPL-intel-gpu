@@ -1127,13 +1127,15 @@ int TestSuite::RunTest(unsigned int id)
         if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_CBR &&
             abs(target - bitrate) > target * threshold)
         {
-            g_tsLog << "ERROR: Real bitrate=" << bitrate << " is differ from required=" << target << "\n";
+            g_tsLog << "Real bitrate=" << bitrate << " is differ from required=" << target << "\n";
+            g_tsLog << "ERROR: Real bitrate is differ from required\n";
             err++;
         }
         if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_VBR &&
             bitrate > (m_par.mfx.MaxKbps * 1000))
         {
-            g_tsLog << "ERROR: Real bitrate=" << bitrate << " is bigger than MaxKbps=" << m_par.mfx.MaxKbps << "\n";
+            g_tsLog << "Real bitrate=" << bitrate << " is bigger than MaxKbps=" << m_par.mfx.MaxKbps << "\n";
+            g_tsLog << "ERROR: Real bitrate is bigger than MaxKbps\n";
             err++;
         }
     }
