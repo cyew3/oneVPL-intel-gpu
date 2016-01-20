@@ -80,14 +80,14 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)..\..\build\win_$(PlatformName)\bin\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)..\..\build\win_$(PlatformName)\bin\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)..\..\..\build\win_$(PlatformName)\bin\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)..\..\..\build\win_$(PlatformName)\bin\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)..\..\build\win_$(PlatformName)\bin\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)..\..\build\win_$(PlatformName)\bin\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)..\..\..\build\win_$(PlatformName)\bin\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)..\..\..\build\win_$(PlatformName)\bin\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
@@ -105,7 +105,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\..\_studio\shared\umc\core\vm\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm_plus\include;$(SolutionDir)..\..\_studio\shared\umc\io\umc_io\include;$(SolutionDir)..\..\_studio\shared\include;$(SolutionDir)..\..\include;$(SolutionDir)../../samples/sample_protected/include;$(MEDIASDK_ROOT)/pavp/include;$(MEDIASDK_ROOT)/pavp/samples/pavp_sample_common;$(MEDIASDK_ROOT)/pavp/samples/pavp_video/pavp_video_lib;$(MEDIASDK_ROOT)/pavp/samples/win8ui_video/win8ui_video_lib;$(SolutionDir)..\mfx_pavp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm_plus\include;$(SolutionDir)..\..\_studio\shared\umc\io\umc_io\include;$(SolutionDir)..\..\_studio\shared\include;$(SolutionDir)..\..\include;$(SolutionDir)pcdp\samples/sample_protected/include;..\..\pavp/include;..\..\pavp/samples/pavp_sample_common;..\..\pavp/samples/pavp_video/pavp_video_lib;..\..\pavp/samples/win8ui_video/win8ui_video_lib;$(SolutionDir)..\mfx_pavp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
     </ClCompile>
@@ -126,7 +126,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\..\_studio\shared\umc\core\vm\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm_plus\include;$(SolutionDir)..\..\_studio\shared\umc\io\umc_io\include;$(SolutionDir)..\..\_studio\shared\include;$(SolutionDir)..\..\include;$(SolutionDir)../../samples/sample_protected/include;$(MEDIASDK_ROOT)/pavp/include;$(MEDIASDK_ROOT)/pavp/samples/pavp_sample_common;$(MEDIASDK_ROOT)/pavp/samples/pavp_video/pavp_video_lib;$(MEDIASDK_ROOT)/pavp/samples/win8ui_video/win8ui_video_lib;$(SolutionDir)..\mfx_pavp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm_plus\include;$(SolutionDir)..\..\_studio\shared\umc\io\umc_io\include;$(SolutionDir)..\..\_studio\shared\include;$(SolutionDir)..\..\include;$(SolutionDir)pcdp\samples/sample_protected/include;..\..\pavp/include;..\..\pavp/samples/pavp_sample_common;..\..\pavp/samples/pavp_video/pavp_video_lib;..\..\pavp/samples/win8ui_video/win8ui_video_lib;$(SolutionDir)..\mfx_pavp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
     </ClCompile>
@@ -146,6 +146,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm_plus\include;$(SolutionDir)..\..\_studio\shared\umc\io\umc_io\include;$(SolutionDir)..\..\_studio\shared\include;$(SolutionDir)..\..\include;$(SolutionDir)pcdp\samples/sample_protected/include;..\..\pavp/include;..\..\pavp/samples/pavp_sample_common;..\..\pavp/samples/pavp_video/pavp_video_lib;..\..\pavp/samples/win8ui_video/win8ui_video_lib;$(SolutionDir)..\mfx_pavp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -166,6 +167,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm\include;$(SolutionDir)..\..\_studio\shared\umc\core\vm_plus\include;$(SolutionDir)..\..\_studio\shared\umc\io\umc_io\include;$(SolutionDir)..\..\_studio\shared\include;$(SolutionDir)..\..\include;$(SolutionDir)pcdp\samples/sample_protected/include;..\..\pavp/include;..\..\pavp/samples/pavp_sample_common;..\..\pavp/samples/pavp_video/pavp_video_lib;..\..\pavp/samples/win8ui_video/win8ui_video_lib;$(SolutionDir)..\mfx_pavp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -184,6 +186,38 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="mfx_pavp.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\pavp\core\pavp_dx11\pavp_dx11.vcxproj">
+      <Project>{8924c96d-830f-4070-b510-b166e7cbd817}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\pavp\core\pavp_dx9auxiliary\pavp_dx9auxiliary.vcxproj">
+      <Project>{89417ea7-02a7-4d78-a9f8-9693b6b98eca}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\pavp\core\pavp_dx9\pavp_dx9.vcxproj">
+      <Project>{787664f3-e866-45eb-80c7-a1cae034524e}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\pavp\core\sigma\sigma.vcxproj">
+      <Project>{6b4a61e5-55ba-4659-ad8b-27fb539de541}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\pavp\samples\pavp_sample_common\pavp_sample_common.vcxproj">
+      <Project>{3c135e9a-436a-480d-845b-864d390a0089}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\pavp\samples\pavp_video\pavp_video_lib\pavp_video_lib.vcxproj">
+      <Project>{30485d94-d43d-4fcf-a07c-387dfec26474}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\pavp\samples\win8ui_video\win8ui_video_lib\win8ui_video_lib.vcxproj">
+      <Project>{ede394f7-8487-4f16-b533-84140c45ea40}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\pavp\thirdparty\epid_1_0\epid_1_0.vcxproj">
+      <Project>{52ddeb98-b9ec-4f6b-8625-2fb783bf818e}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\pavp\thirdparty\ippcp_6_1\ippcp_6_1.vcxproj">
+      <Project>{c6110c74-dcca-453a-a62b-e37ec90acc10}</Project>
+    </ProjectReference>
+    <ProjectReference Include="pcdp\samples\sample_protected\sample_protected.vcxproj">
+      <Project>{83064669-d1b6-426c-b2d8-4b76681c089b}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

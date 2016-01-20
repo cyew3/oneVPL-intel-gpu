@@ -1,9 +1,8 @@
-﻿
+﻿                                                                                                                                          |
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_pavp", "mfx_pavp.vcxproj", "{C5F7A679-A980-4059-B6A1-C8C0D0F169FB}"
 	ProjectSection(ProjectDependencies) = postProject
-		{DB71B91D-16D8-4339-9621-D81798E46E8F} = {DB71B91D-16D8-4339-9621-D81798E46E8F}
 		{83064669-D1B6-426C-B2D8-4B76681C089B} = {83064669-D1B6-426C-B2D8-4B76681C089B}
 		{8924C96D-830F-4070-B510-B166E7CBD817} = {8924C96D-830F-4070-B510-B166E7CBD817}
 		{C6110C74-DCCA-453A-A62B-E37EC90ACC10} = {C6110C74-DCCA-453A-A62B-E37EC90ACC10}
@@ -34,9 +33,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "epid_1_0", "..\..\pavp\thir
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ippcp_6_1", "..\..\pavp\thirdparty\ippcp_6_1\ippcp_6_1.vcxproj", "{C6110C74-DCCA-453A-A62B-E37EC90ACC10}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "..\..\samples\sample_common\sample_common.vcxproj", "{DB71B91D-16D8-4339-9621-D81798E46E8F}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_protected", "..\..\samples\sample_protected\sample_protected.vcxproj", "{83064669-D1B6-426C-B2D8-4B76681C089B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_protected", "pcdp\samples\sample_protected\sample_protected.vcxproj", "{83064669-D1B6-426C-B2D8-4B76681C089B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -168,18 +165,6 @@ Global
 		{C6110C74-DCCA-453A-A62B-E37EC90ACC10}.Release|Win32.Build.0 = Release|Win32
 		{C6110C74-DCCA-453A-A62B-E37EC90ACC10}.Release|x64.ActiveCfg = Release|x64
 		{C6110C74-DCCA-453A-A62B-E37EC90ACC10}.Release|x64.Build.0 = Release|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|Win32.ActiveCfg = Debug|Win32
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|Win32.Build.0 = Debug|Win32
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|x64.ActiveCfg = Debug|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Debug|x64.Build.0 = Debug|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release IPPCP|Win32.ActiveCfg = Release|Win32
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release IPPCP|Win32.Build.0 = Release|Win32
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release IPPCP|x64.ActiveCfg = Release|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release IPPCP|x64.Build.0 = Release|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|Win32.ActiveCfg = Release|Win32
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|Win32.Build.0 = Release|Win32
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|x64.ActiveCfg = Release|x64
-		{DB71B91D-16D8-4339-9621-D81798E46E8F}.Release|x64.Build.0 = Release|x64
 		{83064669-D1B6-426C-B2D8-4B76681C089B}.Debug|Win32.ActiveCfg = Debug|Win32
 		{83064669-D1B6-426C-B2D8-4B76681C089B}.Debug|Win32.Build.0 = Debug|Win32
 		{83064669-D1B6-426C-B2D8-4B76681C089B}.Debug|x64.ActiveCfg = Debug|x64

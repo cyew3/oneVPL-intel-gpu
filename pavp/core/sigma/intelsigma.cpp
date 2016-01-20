@@ -184,6 +184,16 @@ PavpEpidStatus CSIGMASession::Open(
         else
             m_actualAPIVersion = sGetCapsOut.Caps.PAVPVersion;
 
+        if (m_actualAPIVersion > SIGMA_API_VERSION(3, 0))
+        {
+            PAVPSDK_DEBUG_MSG(1, (pavpsdk_T("Forcing API version change from %d "), 
+                m_actualAPIVersion));
+            m_actualAPIVersion = SIGMA_API_VERSION(3, 0);
+            PAVPSDK_DEBUG_MSG(1, (pavpsdk_T("to %d.\n"), 
+                m_actualAPIVersion));
+        }
+
+
         sGetHwEccPubKeyIn.Header.ApiVersion     = certAPIVersion;
         sGetHwEccPubKeyIn.Header.BufferLength   = 0;
         sGetHwEccPubKeyIn.Header.CommandId      = CMD_GET_HW_ECC_PUBKEY;
