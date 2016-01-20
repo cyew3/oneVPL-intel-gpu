@@ -57,9 +57,14 @@ VAProfile ConvertProfileTypeMFX2VAAPI(mfxU32 type)
 {
     switch (type)
     {
-        case MFX_PROFILE_AVC_BASELINE: return VAProfileH264Baseline;
-        case MFX_PROFILE_AVC_MAIN:     return VAProfileH264Main;
-        case MFX_PROFILE_AVC_HIGH:     return VAProfileH264High;
+        case MFX_PROFILE_AVC_CONSTRAINED_BASELINE:
+            return VAProfileH264ConstrainedBaseline;
+        case MFX_PROFILE_AVC_BASELINE:
+            return VAProfileH264Baseline;
+        case MFX_PROFILE_AVC_MAIN:
+            return VAProfileH264Main;
+        case MFX_PROFILE_AVC_HIGH:
+            return VAProfileH264High;
         default:
             //assert(!"Unsupported profile type");
             return VAProfileH264High; //VAProfileNone;
