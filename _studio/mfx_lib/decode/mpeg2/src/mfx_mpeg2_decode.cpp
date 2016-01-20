@@ -466,7 +466,6 @@ VideoDECODEMPEG2::VideoDECODEMPEG2(VideoCORE* core, mfxStatus *sts)
     m_InitH = 0;
     m_InitPicStruct = 0;
     m_extendedPicStruct = 0;
-    m_aspect_ratio_information = 0;
 
 #ifdef UMC_VA_DXVA
     memset(m_pStatusReport, 0, sizeof(DXVA_Status_VC1) * MPEG2_STATUS_REPORT_NUM);
@@ -1996,7 +1995,7 @@ mfxStatus VideoDECODEMPEG2::SetOutputSurfaceParams(mfxFrameSurface1 *surface, in
     surface->Data.TimeStamp = GetMfxTimeStamp(m_implUmc.GetCurrDecodedTime(display_index));
     surface->Data.DataFlag = (mfxU16)((m_implUmc.isOriginalTimeStamp(display_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
     SetSurfacePicStruct(surface, display_index);
-    UpdateOutputSurfaceCrops(surface, display_index);
+    UpdateOutputSurfaceParamsFromWorkSurface(surface, display_index);
 
     return MFX_ERR_NONE;
 }
@@ -2017,7 +2016,7 @@ mfxStatus VideoDECODEMPEG2::SetSurfacePicStruct(mfxFrameSurface1 *surface, int d
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoDECODEMPEG2::UpdateWorkSurfaceCrops(int task_num)
+mfxStatus VideoDECODEMPEG2::UpdateWorkSurfaceParams(int task_num)
 {
     mfxFrameSurface1 *pSurface = m_FrameAllocator->GetSurfaceByIndex(mid[task_num]);
     MFX_CHECK_NULL_PTR1(pSurface);
@@ -2025,11 +2024,13 @@ mfxStatus VideoDECODEMPEG2::UpdateWorkSurfaceCrops(int task_num)
     pSurface->Info.CropH = m_vPar.mfx.FrameInfo.CropH;
     pSurface->Info.CropX = m_vPar.mfx.FrameInfo.CropX;
     pSurface->Info.CropY = m_vPar.mfx.FrameInfo.CropY;
+    pSurface->Info.AspectRatioH = m_vPar.mfx.FrameInfo.AspectRatioH;
+    pSurface->Info.AspectRatioW = m_vPar.mfx.FrameInfo.AspectRatioW;
 
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoDECODEMPEG2::UpdateOutputSurfaceCrops(mfxFrameSurface1 *outputSurface, int display_index)
+mfxStatus VideoDECODEMPEG2::UpdateOutputSurfaceParamsFromWorkSurface(mfxFrameSurface1 *outputSurface, int display_index)
 {
     if (!m_isSWBuf && !m_isOpaqueMemory)
         return MFX_ERR_NONE;
@@ -2040,6 +2041,8 @@ mfxStatus VideoDECODEMPEG2::UpdateOutputSurfaceCrops(mfxFrameSurface1 *outputSur
     outputSurface->Info.CropH = internalSurface->Info.CropH;
     outputSurface->Info.CropX = internalSurface->Info.CropX;
     outputSurface->Info.CropY = internalSurface->Info.CropY;
+    outputSurface->Info.AspectRatioH = internalSurface->Info.AspectRatioH;
+    outputSurface->Info.AspectRatioW = internalSurface->Info.AspectRatioW;
 
     return MFX_ERR_NONE;
 }
@@ -2062,14 +2065,14 @@ mfxStatus VideoDECODEMPEG2::UpdateCurrVideoParams(mfxFrameSurface1 *surface_work
     const UMC::sSequenceHeader& sh = m_implUmc.GetSequenceHeader();
     const UMC::sPictureHeader& ph = m_implUmc.GetPictureHeader(task_num);
 
+    if (m_vPar.mfx.FrameInfo.AspectRatioH != 0 || m_vPar.mfx.FrameInfo.AspectRatioW != 0)
+        if(sh.aspect_ratio_w != m_vPar.mfx.FrameInfo.AspectRatioW || sh.aspect_ratio_h != m_vPar.mfx.FrameInfo.AspectRatioH)
+            sts = MFX_WRN_VIDEO_PARAM_CHANGED;
+
     if (m_isFrameRateFromInit == false && ((Ipp32u)sh.frame_rate_extension_d != m_vPar.mfx.FrameInfo.FrameRateExtD || (Ipp32u)sh.frame_rate_extension_n != m_vPar.mfx.FrameInfo.FrameRateExtN))
     {
         sts = MFX_WRN_VIDEO_PARAM_CHANGED;
     }
-
-
-    pSurface->Info.AspectRatioH = (mfxU16)m_implUmc.GetAspectRatioH();
-    pSurface->Info.AspectRatioW = (mfxU16)m_implUmc.GetAspectRatioW();
 
     UpdateMfxVideoParam(m_vPar, sh, ph);
     UpdateMfxFrameParam(m_fPar, sh, ph);
@@ -2765,6 +2768,8 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
             umcRes = m_implUmc.GetInfo(&m_vdPar);
 
             sts = UpdateCurrVideoParams(surface_work, m_task_num);
+            if (sts != MFX_ERR_NONE && sts != MFX_WRN_VIDEO_PARAM_CHANGED)
+                return sts;
 
             if (surface_work->Info.CropW > surface_work->Info.Width || surface_work->Info.CropH > surface_work->Info.Height)
             {
@@ -2832,8 +2837,8 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
 #endif
             }
 
-            sts = UpdateWorkSurfaceCrops(curr_index);
-            MFX_CHECK_STS(sts);
+            mfxStatus s = UpdateWorkSurfaceParams(curr_index);
+            MFX_CHECK_STS(s);
 
             umcRes = m_implUmc.ProcessRestFrame(m_task_num);
             if (UMC::UMC_OK != umcRes)
@@ -3895,7 +3900,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrameImpl(mfxBitstream *in, mfxBitstream *o
         }
         if (eSEQ == curr[3] && false == m_found_SH)
         {
-            if(tail < curr + 7) 
+            if(tail < curr + 6) 
             {
                 return MFX_ERR_MORE_DATA;
             }
@@ -3904,14 +3909,6 @@ mfxStatus VideoDECODEMPEG2::ConstructFrameImpl(mfxBitstream *in, mfxBitstream *o
             mfxU16 CropH = ((curr[5] & 0xf) << 8) + curr[6];
             mfxU16 Width = (CropW + 15) & ~0x0f;
             mfxU16 Height = (CropH + 15) & ~0x0f;
-            mfxU8  aspect_ratio_information = curr[7] >> 4;
-
-            if (m_aspect_ratio_information != aspect_ratio_information)
-            {
-                m_aspect_ratio_information = aspect_ratio_information;
-                if (!m_first_SH)
-                    return MFX_WRN_VIDEO_PARAM_CHANGED;
-            }
 
             const mfxU8* ptr = FindStartCodeEx(curr + 4, tail);
 
@@ -4002,13 +3999,11 @@ mfxStatus VideoDECODEMPEG2::ConstructFrameImpl(mfxBitstream *in, mfxBitstream *o
             }
 
             if (false == m_first_SH)
-            {
                 if (m_InitW >  Width || m_InitH > Height)
                 {
                     m_resizing = true;  
                     return MFX_WRN_VIDEO_PARAM_CHANGED;
                 }
-            }
 
             m_first_SH = false;
 
