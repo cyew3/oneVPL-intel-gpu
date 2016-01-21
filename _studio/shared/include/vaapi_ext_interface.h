@@ -4,7 +4,7 @@
  This software is supplied under the terms of a license agreement or nondisclosure
  agreement with Intel Corporation and may not be copied or disclosed except in
  accordance with the terms of that agreement
- Copyright(c) 2012-2014 Intel Corporation. All Rights Reserved.
+ Copyright(c) 2012-2016 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -21,8 +21,8 @@
 #define EXTERNAL_ENCRYPTED_SURFACE_FLAG   (1<<16)
 #define VA_CODED_BUF_STATUS_PRIVATE_DATA_HDCP (1<<8)
 #define VA_HDCP_ENABLED (1<<12)
-#define VA_CODED_BUF_STATUS_BAD_BITSTREAM 0x2000
-#define VA_CODED_BUF_STATUS_TEAR_DOWN 0x4000
+#define VA_CODED_BUF_STATUS_BAD_BITSTREAM 0x8000
+#define VA_CODED_BUF_STATUS_HW_TEAR_DOWN 0x4000
 
 // Private per frame encoder controls, once set they will persist for all future frames
 // until it is updated again.

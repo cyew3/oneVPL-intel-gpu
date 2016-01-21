@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          H264 encoder VAAPI
@@ -2568,7 +2568,7 @@ mfxStatus VAAPIEncoder::QueryStatus(
                 {
                     VACodedBufferSegment *nextSegment = (VACodedBufferSegment*)codedBufferSegment->next;
 
-                    bool bIsTearDown = ((VA_CODED_BUF_STATUS_BAD_BITSTREAM & codedBufferSegment->status) || (VA_CODED_BUF_STATUS_TEAR_DOWN & nextSegment->status));
+                    bool bIsTearDown = ((VA_CODED_BUF_STATUS_BAD_BITSTREAM & codedBufferSegment->status) || (VA_CODED_BUF_STATUS_HW_TEAR_DOWN & nextSegment->status));
 
                     if (bIsTearDown)
                     {
