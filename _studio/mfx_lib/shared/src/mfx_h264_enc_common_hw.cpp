@@ -2433,6 +2433,31 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 
+    if (IsOff(extOpt3->OverscanInfoPresent))
+    {
+        if (IsOn(extOpt3->OverscanAppropriate))
+        {
+            changed = true;
+            extOpt3->OverscanAppropriate = MFX_CODINGOPTION_OFF;
+        }
+    }
+    if (IsOff(extOpt3->BitstreamRestriction))
+    {
+        if (IsOn(extOpt3->MotionVectorsOverPicBoundaries))
+        {
+            changed = true;
+            extOpt3->MotionVectorsOverPicBoundaries = MFX_CODINGOPTION_OFF;
+        }
+    }
+    if (IsOff(extOpt3->TimingInfoPresent))
+    {
+        if (IsOn(extOpt2->FixedFrameRate))
+        {
+            changed = true;
+            extOpt2->FixedFrameRate = MFX_CODINGOPTION_OFF;
+        }
+    }
+
     if ((par.mfx.FrameInfo.FrameRateExtN == 0) !=
         (par.mfx.FrameInfo.FrameRateExtD == 0))
     {
@@ -2815,6 +2840,14 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         extOpt->VuiVclHrdParameters = MFX_CODINGOPTION_OFF;
     }
 
+    if(IsOff(extOpt->VuiNalHrdParameters) && 
+       IsOff(extOpt->VuiVclHrdParameters) &&
+       IsOn(extOpt3->LowDelayHrd))
+    {
+        changed = true;
+        extOpt3->LowDelayHrd = MFX_CODINGOPTION_OFF;
+    }
+
     if (!IsOn(extOpt2->DisableVUI) &&
         IsOff(extOpt->VuiNalHrdParameters) &&
         IsOff(extOpt->VuiVclHrdParameters) &&
@@ -2826,8 +2859,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
         if (IsOn(extOpt2->FixedFrameRate))
             extOpt3->LowDelayHrd = MFX_CODINGOPTION_OFF;
-        else
-            extOpt3->LowDelayHrd = MFX_CODINGOPTION_ON;
     }
 
     if (extDdi->WeightedBiPredIdc == 1 || extDdi->WeightedBiPredIdc > 2)
@@ -5156,7 +5187,7 @@ void MfxHwH264Encode::SetDefaults(
             extSps->vui.sarHeight                    = arConv.GetSarHeight();
 
             extSps->vui.flags.overscanInfoPresent = !IsOff(extOpt3->OverscanInfoPresent);
-            extSps->vui.flags.overscanAppropriate = 0;
+            extSps->vui.flags.overscanAppropriate = !IsOff(extOpt3->OverscanAppropriate);;
 
             extSps->vui.videoFormat                    = mfxU8(extVsi->VideoFormat);
             extSps->vui.flags.videoFullRange           = extVsi->VideoFullRange;
@@ -5235,7 +5266,7 @@ void MfxHwH264Encode::SetDefaults(
             extSps->vui.flags.picStructPresent                              = IsOn(extOpt->PicTimingSEI);
 
             extSps->vui.flags.bitstreamRestriction           = !IsOff(extOpt3->BitstreamRestriction);
-            extSps->vui.flags.motionVectorsOverPicBoundaries = 1;
+            extSps->vui.flags.motionVectorsOverPicBoundaries = !IsOff(extOpt3->MotionVectorsOverPicBoundaries);
             extSps->vui.maxBytesPerPicDenom                  = 2;
             extSps->vui.maxBitsPerMbDenom                    = 1;
             extSps->vui.log2MaxMvLengthHorizontal            = mfxU8(CeilLog2(4 * MAX_H_MV - 1));
