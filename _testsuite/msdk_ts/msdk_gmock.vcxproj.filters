@@ -196,6 +196,9 @@
     <ClCompile Include="src\gmock\test_suites\avce_roi.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_vui_flag.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevcd_reset.cpp">
       <Filter>Source Files\test_suites\hevcd</Filter>
     </ClCompile>

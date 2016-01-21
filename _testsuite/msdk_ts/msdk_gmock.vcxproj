@@ -234,6 +234,7 @@
     <ClCompile Include="src\gmock\test_suites\avce_constraint_vbr.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_level_profile.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_aspectratio_reset.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_vui_flag.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\camera_query.cpp" />
