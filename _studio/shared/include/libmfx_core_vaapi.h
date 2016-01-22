@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_core_vaapi.h
 
@@ -78,6 +78,7 @@ public:
 
     virtual ~VAAPIVideoCORE();
 
+    virtual mfxStatus     GetHandle(mfxHandleType type, mfxHDL *handle);
     virtual mfxStatus     SetHandle(mfxHandleType type, mfxHDL handle);
 
     virtual mfxStatus     AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, bool isNeedCopy = true);
@@ -126,8 +127,8 @@ protected:
     void                   ReleaseHandle();
     s_ptr<UMC::LinuxVideoAccelerator, true> m_pVA;
     VADisplay                            m_Display;
-    VAConfigID                           m_ConfigId;
-    VAContextID                          m_Context;
+    mfxHDL                               m_VAConfigHandle;
+    mfxHDL                               m_VAContextHandle;
     bool                                 m_KeepVAState;
 
     const mfxU32                         m_adapterNum; // Ordinal number of adapter to work

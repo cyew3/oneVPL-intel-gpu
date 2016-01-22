@@ -3,7 +3,7 @@
  *     This software is supplied under the terms of a license agreement or
  *     nondisclosure agreement with Intel Corporation and may not be copied
  *     or disclosed except in accordance with the terms of that agreement.
- *          Copyright(c) 2006-2015 Intel Corporation. All Rights Reserved.
+ *          Copyright(c) 2006-2016 Intel Corporation. All Rights Reserved.
  *
  */
 
@@ -22,6 +22,7 @@
 #include "mfx_trace.h"
 #include "umc_frame_allocator.h"
 #include "mfxstructures.h"
+#include "huc_based_drm_common.h"
 
 #define UMC_VA_NUM_OF_COMP_BUFFERS 8
 
@@ -267,8 +268,8 @@ LinuxVideoAccelerator::LinuxVideoAccelerator(void)
     , m_sDecodeTraceEnd("")
 {
     m_dpy        = NULL;
-    m_context    = -1;
-    m_config_id  = -1;
+    m_pContext   = NULL;
+    m_pConfigId  = NULL;
     m_pKeepVAState = NULL;
     m_FrameState = lvaBeforeBegin;
 
@@ -298,10 +299,11 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
 {
     Status         umcRes = UMC_OK;
     VAStatus       va_res = VA_STATUS_SUCCESS;
-    VAConfigAttrib va_attributes[3];
+    VAConfigAttrib va_attributes[4];
 
     LinuxVideoAcceleratorParams* pParams = DynamicCast<LinuxVideoAcceleratorParams>(pInfo);
     Ipp32s width = 0, height = 0;
+    bool needRecreateContext = false;
 
     // checking errors in input parameters
     if ((UMC_OK == umcRes) && (NULL == pParams))
@@ -463,7 +465,9 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
 
             va_attributes[2].type = (VAConfigAttribType)VAConfigAttribDecProcessing;
 
-            va_res = vaGetConfigAttributes(m_dpy, va_profile, va_entrypoint, va_attributes, 3);
+            va_attributes[3].type = VAConfigAttribEncryption;
+
+            va_res = vaGetConfigAttributes(m_dpy, va_profile, va_entrypoint, va_attributes, 4);
             umcRes = va_to_umc_res(va_res);
         }
 
@@ -486,19 +490,43 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
                 va_attributes[1].value = VA_DEC_SLICE_MODE_NORMAL;
         }
 
-        Ipp32s attribsNumber = pParams->m_needVideoProcessingVA ? 3 : 2;
+        Ipp32s attribsNumber = 2;
 
-        if (UMC_OK == umcRes && pParams->m_needVideoProcessingVA && va_attributes[2].value == VA_DEC_PROCESSING_NONE)
-            umcRes = UMC_ERR_FAILED;
+        if (UMC_OK == umcRes && pParams->m_needVideoProcessingVA)
+        {
+            if (va_attributes[2].value == VA_DEC_PROCESSING_NONE)
+                umcRes = UMC_ERR_FAILED;
+            else
+                attribsNumber++;
+        }
+
+        if (UMC_OK == umcRes && m_protectedVA && IS_PROTECTION_WIDEVINE(m_protectedVA->GetProtected()))
+        {
+            va_attributes[attribsNumber].type = VAConfigAttribEncryption;
+            if (m_protectedVA->GetProtected() == MFX_PROTECTION_WIDEVINE_CLASSIC)
+            {
+                if (va_attributes[3].value & VA_ENCRYPTION_TYPE_WIDEVINE_CLASSIC)
+                    va_attributes[attribsNumber].value = VA_ENCRYPTION_TYPE_WIDEVINE_CLASSIC;
+            }
+            else if (m_protectedVA->GetProtected() == MFX_PROTECTION_WIDEVINE_GOOGLE_DASH)
+            {
+                if (va_attributes[3].value & VA_ENCRYPTION_TYPE_GOOGLE_DASH)
+                    va_attributes[attribsNumber].value = VA_ENCRYPTION_TYPE_GOOGLE_DASH;
+            }
+            else
+                umcRes = UMC_ERR_FAILED;
+
+            attribsNumber++;
+        }
 
         if (UMC_OK == umcRes)
         {
-            if (-1 != (int)*pParams->m_pConfigId)
-                m_config_id = *pParams->m_pConfigId;
-            else
+            m_pConfigId = pParams->m_pConfigId;
+            if (*m_pConfigId == VA_INVALID_ID)
             {
-                va_res = vaCreateConfig(m_dpy, va_profile, va_entrypoint, va_attributes, attribsNumber, &m_config_id);
+                va_res = vaCreateConfig(m_dpy, va_profile, va_entrypoint, va_attributes, attribsNumber, m_pConfigId);
                 umcRes = va_to_umc_res(va_res);
+                needRecreateContext = true;
             }
         }
 
@@ -509,21 +537,20 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
     // creating context
     if (UMC_OK == umcRes)
     {
-        if ((int)*pParams->m_pContext != -1 && (int)*pParams->m_pConfigId != -1)
-            m_context = *pParams->m_pContext;
-        else
+        m_pContext = pParams->m_pContext;
+        if ((*m_pContext != VA_INVALID_ID) && needRecreateContext)
+        {
+            vaDestroyContext(m_dpy, *m_pContext);
+            *m_pContext = VA_INVALID_ID;
+        }
+        if (*m_pContext == VA_INVALID_ID)
         {
             if (needAllocatedSurfaces)
-                va_res = vaCreateContext(m_dpy, m_config_id, width, height, VA_PROGRESSIVE, (VASurfaceID*)pParams->m_surf, m_NumOfFrameBuffers, &m_context);
+                va_res = vaCreateContext(m_dpy, *m_pConfigId, width, height, VA_PROGRESSIVE, (VASurfaceID*)pParams->m_surf, m_NumOfFrameBuffers, m_pContext);
             else
-                va_res = vaCreateContext(m_dpy, m_config_id, width, height, VA_PROGRESSIVE, NULL, 0, &m_context);
+                va_res = vaCreateContext(m_dpy, *m_pConfigId, width, height, VA_PROGRESSIVE, NULL, 0, m_pContext);
 
             umcRes = va_to_umc_res(va_res);
-            if (UMC_OK == umcRes)
-            {
-                *pParams->m_pConfigId = m_config_id;
-                *pParams->m_pContext = m_context;
-            }
         }
     }
 
@@ -551,15 +578,15 @@ Status LinuxVideoAccelerator::Close(void)
     }
     if (NULL != m_dpy)
     {
-        if ((-1 != (int)m_context) && !(m_pKeepVAState && *m_pKeepVAState))
+        if ((m_pContext && (*m_pContext != VA_INVALID_ID)) && !(m_pKeepVAState && *m_pKeepVAState))
         {
-            vaDestroyContext(m_dpy, m_context);
-            m_context = -1;
+            vaDestroyContext(m_dpy, *m_pContext);
+            *m_pContext = VA_INVALID_ID;
         }
-        if ((-1 != (int)m_config_id) && !(m_pKeepVAState && *m_pKeepVAState))
+        if ((m_pConfigId && (*m_pConfigId != VA_INVALID_ID)) && !(m_pKeepVAState && *m_pKeepVAState))
         {
-            vaDestroyConfig(m_dpy,m_config_id);
-            m_config_id  = -1;
+            vaDestroyConfig(m_dpy, *m_pConfigId);
+            *m_pConfigId = VA_INVALID_ID;
         }
 
         m_dpy = NULL;
@@ -600,8 +627,8 @@ Status LinuxVideoAccelerator::BeginFrame(Ipp32s FrameBufIndex)
         {
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaBeginPicture");
-                MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, m_sDecodeTraceStart, "%d|%d", m_context, 0);
-                va_res = vaBeginPicture(m_dpy, m_context, *surface);
+                MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, m_sDecodeTraceStart, "%d|%d", *m_pContext, 0);
+                va_res = vaBeginPicture(m_dpy, *m_pContext, *surface);
             }
             umcRes = va_to_umc_res(va_res);
             if (UMC_OK == umcRes) m_FrameState = lvaBeforeEnd;
@@ -754,7 +781,7 @@ VACompBuffer* LinuxVideoAccelerator::GetCompBufferHW(Ipp32s type, Ipp32s size, I
         }
         buffer_size = va_size * va_num_elements;
 
-        va_res = vaCreateBuffer(m_dpy, m_context, va_type, va_size, va_num_elements, NULL, &id);
+        va_res = vaCreateBuffer(m_dpy, *m_pContext, va_type, va_size, va_num_elements, NULL, &id);
     }
     if (VA_STATUS_SUCCESS == va_res)
     {
@@ -809,7 +836,7 @@ LinuxVideoAccelerator::Execute()
 
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaRenderPicture");
-                va_sts = vaRenderPicture(m_dpy, m_context, &id, 1); // TODO: send all at once?
+                va_sts = vaRenderPicture(m_dpy, *m_pContext, &id, 1); // TODO: send all at once?
                 if (VA_STATUS_SUCCESS == va_res) va_res = va_sts;
             }
 
@@ -869,8 +896,8 @@ Status LinuxVideoAccelerator::EndFrame(void*)
     {
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
-            va_sts = vaEndPicture(m_dpy, m_context);
-            MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, m_sDecodeTraceEnd, "%d|%d", m_context, 0);
+            va_sts = vaEndPicture(m_dpy, *m_pContext);
+            MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, m_sDecodeTraceEnd, "%d|%d", *m_pContext, 0);
         }
         if (VA_STATUS_SUCCESS != va_sts) va_res = va_sts;
         m_FrameState = lvaBeforeBegin;

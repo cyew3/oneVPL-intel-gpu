@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -135,23 +135,6 @@ void H265Slice::SetSliceNumber(Ipp32s iSliceNumber)
     m_iNumber = iSliceNumber;
 
 } // void H265Slice::SetSliceNumber(Ipp32s iSliceNumber)
-
-// Returns true if slice is sublayer non-reference
-inline bool IsSubLayerNonReference(Ipp32s nal_unit_type)
-{
-    switch (nal_unit_type)
-    {
-    case NAL_UT_CODED_SLICE_RADL_N:
-    case NAL_UT_CODED_SLICE_RASL_N:
-    case NAL_UT_CODED_SLICE_STSA_N:
-    case NAL_UT_CODED_SLICE_TSA_N:
-    case NAL_UT_CODED_SLICE_TRAIL_N:
-    //also need to add RSV_VCL_N10, RSV_VCL_N12, or RSV_VCL_N14,
-        return true;
-    }
-
-    return false;
-}
 
 // Decoder slice header and calculate POC
 bool H265Slice::DecodeSliceHeader(PocDecoding * pocDecoding)

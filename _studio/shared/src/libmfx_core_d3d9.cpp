@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
 
 File Name: libmf_core_hw.cpp
 
@@ -728,7 +728,7 @@ mfxStatus D3D9VideoCORE::CreateVideoAccelerator(mfxVideoParam * param, int NumOf
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (IS_PROTECTION_ANY(param->Protected))
+    if (IS_PROTECTION_ANY(param->Protected) && !IS_PROTECTION_WIDEVINE(param->Protected))
     {
         DXVA2_DecodeExtensionData DecodeExtension;
         DecodeExtension.Function = DXVA2_DECODE_GET_DRIVER_HANDLE;

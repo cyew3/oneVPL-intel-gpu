@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2013-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -18,11 +18,16 @@
 
 #ifdef UMC_VA
 #include "umc_h265_task_supplier.h"
+#include "huc_based_drm_common.h"
 #endif
 
 #ifdef UMC_VA_DXVA
 #include "umc_va_base.h"
 #include "umc_va_dxva2_protected.h"
+#endif
+
+#ifdef UMC_VA_LINUX
+#include "umc_va_linux_protected.h"
 #endif
 
 using namespace UMC;
@@ -44,12 +49,17 @@ Packer * Packer::CreatePacker(UMC::VideoAccelerator * va)
     Packer * packer = 0;
 
 #ifdef UMC_VA_DXVA
-    if (va->IsIntelCustomGUID())
+    if (va->GetProtectedVA() && IS_PROTECTION_WIDEVINE(va->GetProtectedVA()->GetProtected()))
+        packer = new PackerDXVA2_Widevine(va);
+    else if (va->IsIntelCustomGUID())
         packer = new PackerDXVA2(va);
     else
         packer = new MSPackerDXVA2(va);
 #elif defined(UMC_VA_LINUX)
-    packer = new PackerVA(va);
+    if (va->GetProtectedVA() && IS_PROTECTION_WIDEVINE(va->GetProtectedVA()->GetProtected()))
+        packer = new PackerVA_Widevine(va);
+    else
+        packer = new PackerVA(va);
 #endif
 
     return packer;
@@ -1083,6 +1093,304 @@ bool MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool is
     return true;
 }
 
+
+PackerDXVA2_Widevine::PackerDXVA2_Widevine(VideoAccelerator * va)
+    : PackerDXVA2(va)
+{
+}
+
+void PackerDXVA2_Widevine::PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplier)
+{
+    H265DecoderFrameInfo * sliceInfo = frame->m_pSlicesInfo;
+    int sliceCount = sliceInfo->GetSliceCount();
+
+    if (!sliceCount)
+        return;
+
+    H265Slice *pSlice = sliceInfo->GetSlice(0);
+    //const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
+    H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
+
+    //Ipp32s first_slice = 0;
+
+    //for (;;)
+    //{
+        //bool notchopping = true;
+        PackPicParams(pCurrentFrame, sliceInfo, supplier);
+    //    if (pSeqParamSet->scaling_list_enabled_flag)
+    //    {
+    //        PackQmatrix(pSlice);
+    //    }
+
+    //    Ipp32u sliceNum = 0;
+    //    for (Ipp32s n = first_slice; n < sliceCount; n++)
+    //    {
+    //        notchopping = PackSliceParams(sliceInfo->GetSlice(n), sliceNum, n == sliceCount - 1);
+    //        if (!notchopping)
+    //        {
+    //            //dependent slices should be with first independent slice
+    //            for (Ipp32s i = n; i >= first_slice; i--)
+    //            {
+    //                if (!sliceInfo->GetSlice(i)->GetSliceHeader()->dependent_slice_segment_flag)
+    //                    break;
+
+    //                UMCVACompBuffer *headVABffr = 0;
+
+    //                m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &headVABffr);
+    //                size_t headerSize = m_va->IsLongSliceControl() ? sizeof(DXVA_Intel_Slice_HEVC_Long) : sizeof(DXVA_Slice_HEVC_Short);
+    //                headVABffr->SetDataSize(headVABffr->GetDataSize() - headerSize); //remove one slice
+
+    //                n--;
+    //            }
+
+    //            if (n <= first_slice) // avoid splitting of slice
+    //            {
+    //                m_va->Execute(); //for free picParam and Quant buffers
+    //                return;
+    //            }
+
+    //            first_slice = n;
+    //            break;
+    //        }
+
+    //        sliceNum++;
+    //    }
+
+        Status s = m_va->Execute();
+        if(s != UMC_OK)
+            throw h265_exception(s);
+
+    //    if (!notchopping)
+    //        continue;
+
+    //    break;
+    //}
+
+    if (m_va && m_va->GetProtectedVA())
+    {
+        mfxBitstream * bs = m_va->GetProtectedVA()->GetBitstream();
+
+        if (bs && bs->EncryptedData)
+        {
+            Ipp32s count = sliceInfo->GetSliceCount();
+            m_va->GetProtectedVA()->MoveBSCurrentEncrypt(count);
+        }
+    }
+}
+
+void PackerDXVA2_Widevine::PackPicParams(const H265DecoderFrame *pCurrentFrame,
+                        H265DecoderFrameInfo * pSliceInfo,
+                        TaskSupplier_H265 *supplier)
+{
+    UMCVACompBuffer *compBuf;
+    DXVA_Intel_PicParams_HEVC *pPicParam = (DXVA_Intel_PicParams_HEVC*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf);
+    compBuf->SetDataSize(sizeof(DXVA_Intel_PicParams_HEVC));
+
+    memset(pPicParam, 0, sizeof(DXVA_Intel_PicParams_HEVC));
+
+    H265Slice *pSlice = pSliceInfo->GetSlice(0);
+    H265SliceHeader * sliceHeader = pSlice->GetSliceHeader();
+    const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
+    //const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
+
+    ////
+    ////
+    //pPicParam->PicWidthInMinCbsY   = (USHORT)LengthInMinCb(pSeqParamSet->pic_width_in_luma_samples, pSeqParamSet->log2_min_luma_coding_block_size);
+    //pPicParam->PicHeightInMinCbsY  = (USHORT)LengthInMinCb(pSeqParamSet->pic_height_in_luma_samples, pSeqParamSet->log2_min_luma_coding_block_size);
+
+    ////
+    ////
+    //pPicParam->PicFlags.fields.chroma_format_idc                            = pSeqParamSet->chroma_format_idc;
+    //pPicParam->PicFlags.fields.separate_colour_plane_flag                   = pSeqParamSet->separate_colour_plane_flag;
+    //pPicParam->PicFlags.fields.bit_depth_luma_minus8                        = (UCHAR)(pSeqParamSet->bit_depth_luma - 8);
+    //pPicParam->PicFlags.fields.bit_depth_chroma_minus8                      = (UCHAR)(pSeqParamSet->bit_depth_chroma - 8);
+    //pPicParam->PicFlags.fields.log2_max_pic_order_cnt_lsb_minus4            = (UCHAR)(pSeqParamSet->log2_max_pic_order_cnt_lsb - 4);
+    //pPicParam->PicFlags.fields.NoPicReorderingFlag                          = pSeqParamSet->sps_max_num_reorder_pics == 0 ? 1 : 0;
+    //pPicParam->PicFlags.fields.NoBiPredFlag                                 = 0;
+
+    //
+    //
+    pPicParam->CurrPic.Index7bits   = pCurrentFrame->m_index;    // ?
+    pPicParam->CurrPicOrderCntVal   = sliceHeader->slice_pic_order_cnt_lsb;
+
+    int count = 0;
+    int cntRefPicSetStCurrBefore = 0,
+        cntRefPicSetStCurrAfter  = 0,
+        cntRefPicSetLtCurr = 0;
+    H265DBPList *dpb = supplier->GetDPBList();
+    ReferencePictureSet *rps = pSlice->getRPS();
+    for(H265DecoderFrame* frame = dpb->head() ; frame && count < sizeof(pPicParam->RefFrameList)/sizeof(pPicParam->RefFrameList[0]) ; frame = frame->future())
+    {
+        if(frame != pCurrentFrame)
+        {
+            int refType = frame->isShortTermRef() ? SHORT_TERM_REFERENCE : (frame->isLongTermRef() ? LONG_TERM_REFERENCE : NO_REFERENCE);
+
+            if(refType != NO_REFERENCE)
+            {
+                pPicParam->PicOrderCntValList[count] = frame->m_PicOrderCnt;
+
+                pPicParam->RefFrameList[count].Index7bits = frame->m_index;
+                pPicParam->RefFrameList[count].long_term_ref_flag = (refType == LONG_TERM_REFERENCE);
+
+                m_refFrameListCache[count].bPicEntry = pPicParam->RefFrameList[count].bPicEntry;    // save to use in slice param packer
+                count++;
+            }
+        }
+    }
+
+    Ipp32u index;
+    int pocList[3*8];
+    int numRefPicSetStCurrBefore = 0,
+        numRefPicSetStCurrAfter  = 0,
+        numRefPicSetLtCurr       = 0;
+    for(index = 0; index < rps->getNumberOfNegativePictures(); index++)
+            pocList[numRefPicSetStCurrBefore++] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(index);
+    for(; index < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures(); index++)
+            pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter++] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(index);
+    for(; index < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures() + rps->getNumberOfLongtermPictures(); index++)
+    {
+        Ipp32s poc = rps->getPOC(index);
+        H265DecoderFrame *pFrm = supplier->GetDPBList()->findLongTermRefPic(pCurrentFrame, poc, pSeqParamSet->log2_max_pic_order_cnt_lsb, !rps->getCheckLTMSBPresent(index));
+
+        if (pFrm)
+        {
+            pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr++] = pFrm->PicOrderCnt();
+        }
+        else
+        {
+            pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr++] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(index);
+        }
+    }
+
+    for(int n=0 ; n < numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr ; n++)
+    {
+        if (!rps->getUsed(n))
+            continue;
+
+        for(int k=0;k < count;k++)
+        {
+            if(pocList[n] == pPicParam->PicOrderCntValList[k])
+            {
+                if(n < numRefPicSetStCurrBefore)
+                    pPicParam->RefPicSetStCurrBefore[cntRefPicSetStCurrBefore++] = (UCHAR)k;
+                else if(n < numRefPicSetStCurrBefore + numRefPicSetStCurrAfter)
+                    pPicParam->RefPicSetStCurrAfter[cntRefPicSetStCurrAfter++] = (UCHAR)k;
+                else if(n < numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr)
+                    pPicParam->RefPicSetLtCurr[cntRefPicSetLtCurr++] = (UCHAR)k;
+            }
+        }
+    }
+
+    m_refFrameListCacheSize = count;
+    for(int n=count;n < sizeof(pPicParam->RefFrameList)/sizeof(pPicParam->RefFrameList[0]);n++)
+    {
+        pPicParam->RefFrameList[n].bPicEntry = (UCHAR)0xff;
+        pPicParam->PicOrderCntValList[n] = -1;
+    }
+
+    for(int i=0;i < 8;i++)
+    {
+        if(i >= cntRefPicSetStCurrBefore)
+            pPicParam->RefPicSetStCurrBefore[i] = 0xff;
+        if(i >= cntRefPicSetStCurrAfter)
+            pPicParam->RefPicSetStCurrAfter[i] = 0xff;
+        if(i >= cntRefPicSetLtCurr)
+            pPicParam->RefPicSetLtCurr[i] = 0xff;
+    }
+
+    ////
+    ////
+    //pPicParam->sps_max_dec_pic_buffering_minus1             = (UCHAR)(pSeqParamSet->sps_max_dec_pic_buffering[sliceHeader->nuh_temporal_id] - 1);
+    //pPicParam->log2_min_luma_coding_block_size_minus3       = (UCHAR)(pSeqParamSet->log2_min_luma_coding_block_size- 3);
+    //pPicParam->log2_diff_max_min_transform_block_size       = (UCHAR)(pSeqParamSet->log2_max_transform_block_size - pSeqParamSet->log2_min_transform_block_size);
+    //pPicParam->log2_min_transform_block_size_minus2         = (UCHAR)(pSeqParamSet->log2_min_transform_block_size - 2);
+    //pPicParam->log2_diff_max_min_luma_coding_block_size     = (UCHAR)(pSeqParamSet->log2_max_luma_coding_block_size - pSeqParamSet->log2_min_luma_coding_block_size);
+    //pPicParam->max_transform_hierarchy_depth_intra          = (UCHAR)pSeqParamSet->max_transform_hierarchy_depth_intra;
+    //pPicParam->max_transform_hierarchy_depth_inter          = (UCHAR)pSeqParamSet->max_transform_hierarchy_depth_inter;
+    //pPicParam->num_short_term_ref_pic_sets                  = (UCHAR)pSeqParamSet->getRPSList()->getNumberOfReferencePictureSets();
+    //pPicParam->num_long_term_ref_pics_sps                   = (UCHAR)pSeqParamSet->num_long_term_ref_pics_sps;
+    //pPicParam->num_ref_idx_l0_default_active_minus1         = (UCHAR)(pPicParamSet->num_ref_idx_l0_default_active - 1);
+    //pPicParam->num_ref_idx_l1_default_active_minus1         = (UCHAR)(pPicParamSet->num_ref_idx_l1_default_active - 1);
+    //pPicParam->init_qp_minus26                              = (CHAR)pPicParamSet->init_qp - 26;
+
+    //pPicParam->wNumBitsForShortTermRPSInSlice               = (USHORT)sliceHeader->wNumBitsForShortTermRPSInSlice;
+    //pPicParam->ucNumDeltaPocsOfRefRpsIdx                    = (UCHAR)pPicParam->wNumBitsForShortTermRPSInSlice;
+
+    //// dwCodingParamToolFlags
+    ////
+    //pPicParam->fields.scaling_list_enabled_flag                      = pSeqParamSet->scaling_list_enabled_flag;
+    //pPicParam->fields.amp_enabled_flag                               = pSeqParamSet->amp_enabled_flag;
+    //pPicParam->fields.sample_adaptive_offset_enabled_flag            = pSeqParamSet->sample_adaptive_offset_enabled_flag;
+    //pPicParam->fields.pcm_enabled_flag                               = pSeqParamSet->pcm_enabled_flag;
+    //pPicParam->fields.pcm_sample_bit_depth_luma_minus1               = (UCHAR)(pSeqParamSet->pcm_sample_bit_depth_luma - 1);
+    //pPicParam->fields.pcm_sample_bit_depth_chroma_minus1             = (UCHAR)(pSeqParamSet->pcm_sample_bit_depth_chroma - 1);
+    //pPicParam->fields.log2_min_pcm_luma_coding_block_size_minus3     = (UCHAR)(pSeqParamSet->log2_min_pcm_luma_coding_block_size - 3);
+    //pPicParam->fields.log2_diff_max_min_pcm_luma_coding_block_size   = (UCHAR)(pSeqParamSet->log2_max_pcm_luma_coding_block_size - pSeqParamSet->log2_min_pcm_luma_coding_block_size);
+    //pPicParam->fields.pcm_loop_filter_disabled_flag                  = pSeqParamSet->pcm_loop_filter_disabled_flag;
+    //pPicParam->fields.long_term_ref_pics_present_flag                = pSeqParamSet->long_term_ref_pics_present_flag;
+    //pPicParam->fields.sps_temporal_mvp_enabled_flag                  = pSeqParamSet->sps_temporal_mvp_enabled_flag;
+    //pPicParam->fields.strong_intra_smoothing_enabled_flag            = pSeqParamSet->sps_strong_intra_smoothing_enabled_flag;
+    //pPicParam->fields.dependent_slice_segments_enabled_flag          = pPicParamSet->dependent_slice_segments_enabled_flag;
+    //pPicParam->fields.output_flag_present_flag                       = pPicParamSet->output_flag_present_flag;
+    //pPicParam->fields.num_extra_slice_header_bits                    = (UCHAR)pPicParamSet->num_extra_slice_header_bits;
+    //pPicParam->fields.sign_data_hiding_flag                          = pPicParamSet->sign_data_hiding_enabled_flag;
+    //pPicParam->fields.cabac_init_present_flag                        = pPicParamSet->cabac_init_present_flag;
+
+    //// PicShortFormatFlags
+    ////
+    //pPicParam->PicShortFormatFlags.fields.constrained_intra_pred_flag                   = pPicParamSet->constrained_intra_pred_flag;
+    //pPicParam->PicShortFormatFlags.fields.transform_skip_enabled_flag                   = pPicParamSet->transform_skip_enabled_flag;
+    //pPicParam->PicShortFormatFlags.fields.cu_qp_delta_enabled_flag                      = pPicParamSet->cu_qp_delta_enabled_flag;
+    //pPicParam->PicShortFormatFlags.fields.pps_slice_chroma_qp_offsets_present_flag      = pPicParamSet->pps_slice_chroma_qp_offsets_present_flag;
+    //pPicParam->PicShortFormatFlags.fields.weighted_pred_flag                            = pPicParamSet->weighted_pred_flag;
+    //pPicParam->PicShortFormatFlags.fields.weighted_bipred_flag                          = pPicParamSet->weighted_bipred_flag;
+    //pPicParam->PicShortFormatFlags.fields.transquant_bypass_enabled_flag                = pPicParamSet->transquant_bypass_enabled_flag;
+    //pPicParam->PicShortFormatFlags.fields.tiles_enabled_flag                            = pPicParamSet->tiles_enabled_flag;
+    //pPicParam->PicShortFormatFlags.fields.entropy_coding_sync_enabled_flag              = pPicParamSet->entropy_coding_sync_enabled_flag;
+    //pPicParam->PicShortFormatFlags.fields.uniform_spacing_flag                          = pPicParamSet->uniform_spacing_flag;
+    //pPicParam->PicShortFormatFlags.fields.loop_filter_across_tiles_enabled_flag         = pPicParamSet->loop_filter_across_tiles_enabled_flag;
+    //pPicParam->PicShortFormatFlags.fields.pps_loop_filter_across_slices_enabled_flag    = pPicParamSet->pps_loop_filter_across_slices_enabled_flag;
+    //pPicParam->PicShortFormatFlags.fields.deblocking_filter_override_enabled_flag       = pPicParamSet->deblocking_filter_override_enabled_flag;
+    //pPicParam->PicShortFormatFlags.fields.pps_deblocking_filter_disabled_flag           = pPicParamSet->pps_deblocking_filter_disabled_flag;
+    //pPicParam->PicShortFormatFlags.fields.lists_modification_present_flag               = pPicParamSet->lists_modification_present_flag;
+    //pPicParam->PicShortFormatFlags.fields.slice_segment_header_extension_present_flag   = pPicParamSet->slice_segment_header_extension_present_flag;
+    //pPicParam->PicShortFormatFlags.fields.IrapPicFlag                                   = (sliceHeader->nal_unit_type >= NAL_UT_CODED_SLICE_BLA_W_LP && sliceHeader->nal_unit_type <= NAL_UT_CODED_SLICE_CRA) ? 1 : 0;
+    //pPicParam->PicShortFormatFlags.fields.IdrPicFlag                                    = sliceHeader->IdrPicFlag;
+    //pPicParam->PicShortFormatFlags.fields.IntraPicFlag                                  = pSliceInfo->IsIntraAU() ? 1 : 0;
+
+    //pPicParam->pps_cb_qp_offset                                     = (CHAR)pPicParamSet->pps_cb_qp_offset;
+    //pPicParam->pps_cr_qp_offset                                     = (CHAR)pPicParamSet->pps_cr_qp_offset;
+    //if(pPicParam->PicShortFormatFlags.fields.tiles_enabled_flag)
+    //{
+    //    pPicParam->num_tile_columns_minus1                          = (UCHAR)pPicParamSet->num_tile_columns - 1;
+    //    pPicParam->num_tile_rows_minus1                             = (UCHAR)pPicParamSet->num_tile_rows - 1;
+
+    //    pPicParam->num_tile_columns_minus1 = IPP_MIN(sizeof(pPicParam->column_width_minus1)/sizeof(pPicParam->column_width_minus1[0]) - 1, pPicParam->num_tile_columns_minus1);
+    //    pPicParam->num_tile_rows_minus1 = IPP_MIN(sizeof(pPicParam->row_height_minus1)/sizeof(pPicParam->row_height_minus1[0]) - 1, pPicParam->num_tile_rows_minus1);
+
+    //    for (Ipp32u i = 0; i <= pPicParam->num_tile_columns_minus1; i++)
+    //        pPicParam->column_width_minus1[i] = (Ipp16u)(pPicParamSet->column_width[i] - 1);
+
+    //    for (Ipp32u i = 0; i <= pPicParam->num_tile_rows_minus1; i++)
+    //        pPicParam->row_height_minus1[i] = (Ipp16u)(pPicParamSet->row_height[i] - 1);
+    //}
+
+    //pPicParam->diff_cu_qp_delta_depth                               = (UCHAR)(pPicParamSet->diff_cu_qp_delta_depth);
+    //pPicParam->pps_beta_offset_div2                                 = (CHAR)(pPicParamSet->pps_beta_offset >> 1);
+    //pPicParam->pps_tc_offset_div2                                   = (CHAR)(pPicParamSet->pps_tc_offset >> 1);
+    //pPicParam->log2_parallel_merge_level_minus2                     = (UCHAR)pPicParamSet->log2_parallel_merge_level - 2;
+    //pPicParam->CurrPicOrderCntVal                                   = sliceHeader->slice_pic_order_cnt_lsb;
+
+
+    ////
+    ////
+    //pPicParam->RefFieldPicFlag                              = 0;
+    //pPicParam->RefBottomFieldFlag                           = 0;
+
+    pPicParam->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
+    pPicParam->TotalNumEntryPointOffsets = pSlice->m_WidevineStatusReportNumber;
+}
+
 #endif // UMC_VA_DXVA
 
 #if defined(UMC_VA_LINUX)
@@ -1570,6 +1878,257 @@ void PackerVA::BeginFrame()
 
 void PackerVA::EndFrame()
 {
+}
+
+/****************************************************************************************************/
+// PAVP Widevine HuC-based implementation
+/****************************************************************************************************/
+
+PackerVA_Widevine::PackerVA_Widevine(VideoAccelerator * va)
+    : PackerVA(va)
+{
+}
+
+void PackerVA_Widevine::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier)
+{
+    H265Slice * pSlice = pSliceInfo->GetSlice(0);
+    const H265SliceHeader* sliceHeader = pSlice->GetSliceHeader();
+    const H265SeqParamSet* pSeqParamSet = pSlice->GetSeqParam();
+    const H265PicParamSet* pPicParamSet = pSlice->GetPicParam();
+
+    UMCVACompBuffer *picParamBuf;
+    VAPictureParameterBufferHEVC* picParam = (VAPictureParameterBufferHEVC*)m_va->GetCompBuffer(VAPictureParameterBufferType, &picParamBuf, sizeof(VAPictureParameterBufferHEVC));
+    if (!picParam)
+        throw h265_exception(UMC_ERR_FAILED);
+
+    picParamBuf->SetDataSize(sizeof(VAPictureParameterBufferHEVC));
+    memset(picParam, 0, sizeof(VAPictureParameterBufferHEVC));
+
+    picParam->CurrPic.picture_id = m_va->GetSurfaceID(pCurrentFrame->m_index);
+    picParam->CurrPic.pic_order_cnt = pCurrentFrame->m_PicOrderCnt;
+    picParam->CurrPic.flags = 0;
+
+    int count = 0;
+    H265DBPList *dpb = supplier->GetDPBList();
+    for(H265DecoderFrame* frame = dpb->head() ; frame && count < sizeof(picParam->ReferenceFrames)/sizeof(picParam->ReferenceFrames[0]) ; frame = frame->future())
+    {
+        if (frame == pCurrentFrame)
+            continue;
+
+        int refType = frame->isShortTermRef() ? SHORT_TERM_REFERENCE : (frame->isLongTermRef() ? LONG_TERM_REFERENCE : NO_REFERENCE);
+
+        if (refType != NO_REFERENCE)
+        {
+            picParam->ReferenceFrames[count].pic_order_cnt = frame->m_PicOrderCnt;
+            picParam->ReferenceFrames[count].picture_id = m_va->GetSurfaceID(frame->m_index);;
+            picParam->ReferenceFrames[count].flags = refType == LONG_TERM_REFERENCE ? VA_PICTURE_HEVC_LONG_TERM_REFERENCE : 0;
+            count++;
+        }
+    }
+
+    for (Ipp32u n = count;n < sizeof(picParam->ReferenceFrames)/sizeof(picParam->ReferenceFrames[0]); n++)
+    {
+        picParam->ReferenceFrames[n].picture_id = VA_INVALID_SURFACE;
+        picParam->ReferenceFrames[n].flags = VA_PICTURE_HEVC_INVALID;
+    }
+
+    ReferencePictureSet *rps = pSlice->getRPS();
+    Ipp32s index, pocList[3*8];
+    Ipp32s numRefPicSetStCurrBefore = 0,
+        numRefPicSetStCurrAfter  = 0,
+        numRefPicSetLtCurr       = 0;
+    for(index = 0; index < rps->getNumberOfNegativePictures(); index++)
+            pocList[numRefPicSetStCurrBefore++] = picParam->CurrPic.pic_order_cnt + rps->getDeltaPOC(index);
+
+    for(; index < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures(); index++)
+            pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter++] = picParam->CurrPic.pic_order_cnt + rps->getDeltaPOC(index);
+
+    for(; index < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures() + rps->getNumberOfLongtermPictures(); index++)
+    {
+        Ipp32s poc = rps->getPOC(index);
+        H265DecoderFrame *pFrm = supplier->GetDPBList()->findLongTermRefPic(pCurrentFrame, poc, pSeqParamSet->log2_max_pic_order_cnt_lsb, !rps->getCheckLTMSBPresent(index));
+
+        if (pFrm)
+        {
+            pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr++] = pFrm->PicOrderCnt();
+        }
+        else
+        {
+            pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr++] = picParam->CurrPic.pic_order_cnt + rps->getDeltaPOC(index);
+        }
+    }
+
+    Ipp32s i = 0;
+    VAPictureHEVC sortedReferenceFrames[15];
+    memset(sortedReferenceFrames, 0, sizeof(sortedReferenceFrames));
+
+    for(Ipp32s n=0 ; n < numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr ; n++)
+    {
+        if (!rps->getUsed(n))
+            continue;
+
+        for(Ipp32s k=0;k < count;k++)
+        {
+            if(pocList[n] == picParam->ReferenceFrames[k].pic_order_cnt)
+            {
+                if(n < numRefPicSetStCurrBefore)
+                {
+                    picParam->ReferenceFrames[k].flags |= VA_PICTURE_HEVC_RPS_ST_CURR_BEFORE;
+                    sortedReferenceFrames[i++] = picParam->ReferenceFrames[k];
+                }
+                else if(n < numRefPicSetStCurrBefore + numRefPicSetStCurrAfter)
+                {
+                    picParam->ReferenceFrames[k].flags |= VA_PICTURE_HEVC_RPS_ST_CURR_AFTER;
+                    sortedReferenceFrames[i++] = picParam->ReferenceFrames[k];
+                }
+                else if(n < numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr)
+                {
+                    picParam->ReferenceFrames[k].flags |= VA_PICTURE_HEVC_RPS_LT_CURR;
+                    sortedReferenceFrames[i++] = picParam->ReferenceFrames[k];
+                }
+            }
+        }
+    }
+
+    for (Ipp32u n = count;n < sizeof(sortedReferenceFrames)/sizeof(sortedReferenceFrames[0]); n++)
+    {
+        sortedReferenceFrames[n].picture_id = VA_INVALID_SURFACE;
+        sortedReferenceFrames[n].flags = VA_PICTURE_HEVC_INVALID;
+    }
+
+    MFX_INTERNAL_CPY(picParam->ReferenceFrames, sortedReferenceFrames, sizeof(sortedReferenceFrames));
+
+    //picParam->pic_width_in_luma_samples = (uint16_t)pSeqParamSet->pic_width_in_luma_samples;
+    //picParam->pic_height_in_luma_samples = (uint16_t)pSeqParamSet->pic_height_in_luma_samples;
+
+    //picParam->pic_fields.bits.chroma_format_idc = pSeqParamSet->chroma_format_idc;
+    //picParam->pic_fields.bits.separate_colour_plane_flag = pSeqParamSet->separate_colour_plane_flag;
+
+    //picParam->pic_fields.bits.pcm_enabled_flag = pSeqParamSet->pcm_enabled_flag;
+    //picParam->pic_fields.bits.scaling_list_enabled_flag = pSeqParamSet->scaling_list_enabled_flag;
+    //picParam->pic_fields.bits.transform_skip_enabled_flag = pPicParamSet->transform_skip_enabled_flag;
+    //picParam->pic_fields.bits.amp_enabled_flag = pSeqParamSet->amp_enabled_flag;
+    //picParam->pic_fields.bits.strong_intra_smoothing_enabled_flag = pSeqParamSet->sps_strong_intra_smoothing_enabled_flag;
+
+    //picParam->pic_fields.bits.sign_data_hiding_enabled_flag = pPicParamSet->sign_data_hiding_enabled_flag;
+    //picParam->pic_fields.bits.constrained_intra_pred_flag = pPicParamSet->constrained_intra_pred_flag;
+    //picParam->pic_fields.bits.cu_qp_delta_enabled_flag = pPicParamSet->cu_qp_delta_enabled_flag;
+    //picParam->pic_fields.bits.weighted_pred_flag = pPicParamSet->weighted_pred_flag;
+    //picParam->pic_fields.bits.weighted_bipred_flag = pPicParamSet->weighted_bipred_flag;
+
+    //picParam->pic_fields.bits.transquant_bypass_enabled_flag = pPicParamSet->transquant_bypass_enabled_flag;
+    //picParam->pic_fields.bits.tiles_enabled_flag = pPicParamSet->tiles_enabled_flag;
+    //picParam->pic_fields.bits.entropy_coding_sync_enabled_flag = pPicParamSet->entropy_coding_sync_enabled_flag;
+    //picParam->pic_fields.bits.pps_loop_filter_across_slices_enabled_flag = pPicParamSet->pps_loop_filter_across_slices_enabled_flag;
+    //picParam->pic_fields.bits.loop_filter_across_tiles_enabled_flag = pPicParamSet->loop_filter_across_tiles_enabled_flag;
+
+    //picParam->pic_fields.bits.pcm_loop_filter_disabled_flag = pSeqParamSet->pcm_loop_filter_disabled_flag;
+    //picParam->pic_fields.bits.NoPicReorderingFlag = pSeqParamSet->sps_max_num_reorder_pics == 0 ? 1 : 0;
+    //picParam->pic_fields.bits.NoBiPredFlag = 0;
+
+    //picParam->sps_max_dec_pic_buffering_minus1 = (uint8_t)(pSeqParamSet->sps_max_dec_pic_buffering[pSlice->GetSliceHeader()->nuh_temporal_id] - 1);
+    //picParam->bit_depth_luma_minus8 = (uint8_t)(pSeqParamSet->bit_depth_luma - 8);
+    //picParam->bit_depth_chroma_minus8 = (uint8_t)(pSeqParamSet->bit_depth_chroma - 8);
+    //picParam->pcm_sample_bit_depth_luma_minus1 = (uint8_t)(pSeqParamSet->pcm_sample_bit_depth_luma - 1);
+    //picParam->pcm_sample_bit_depth_chroma_minus1 = (uint8_t)(pSeqParamSet->pcm_sample_bit_depth_chroma - 1);
+    //picParam->log2_min_luma_coding_block_size_minus3 = (uint8_t)(pSeqParamSet->log2_min_luma_coding_block_size- 3);
+    //picParam->log2_diff_max_min_luma_coding_block_size = (uint8_t)(pSeqParamSet->log2_max_luma_coding_block_size - pSeqParamSet->log2_min_luma_coding_block_size);
+    //picParam->log2_min_transform_block_size_minus2 = (uint8_t)(pSeqParamSet->log2_min_transform_block_size - 2);
+    //picParam->log2_diff_max_min_transform_block_size = (uint8_t)(pSeqParamSet->log2_max_transform_block_size - pSeqParamSet->log2_min_transform_block_size);
+    //picParam->log2_min_pcm_luma_coding_block_size_minus3 = (uint8_t)(pSeqParamSet->log2_min_pcm_luma_coding_block_size - 3);
+    ////picParam->log2_diff_max_min_pcm_luma_coding_block_size = (uint8_t)(pSeqParamSet->log2_max_pcm_luma_coding_block_size - pSeqParamSet->log2_min_pcm_luma_coding_block_size);
+    //picParam->max_transform_hierarchy_depth_intra = (uint8_t)pSeqParamSet->max_transform_hierarchy_depth_intra;
+    //picParam->max_transform_hierarchy_depth_inter = (uint8_t)pSeqParamSet->max_transform_hierarchy_depth_inter;
+    //picParam->init_qp_minus26 = pPicParamSet->init_qp - 26;
+    //picParam->diff_cu_qp_delta_depth = (uint8_t)pPicParamSet->diff_cu_qp_delta_depth;
+    //picParam->pps_cb_qp_offset = (uint8_t)pPicParamSet->pps_cb_qp_offset;
+    //picParam->pps_cr_qp_offset = (uint8_t)pPicParamSet->pps_cr_qp_offset;
+    //picParam->log2_parallel_merge_level_minus2 = (uint8_t)(pPicParamSet->log2_parallel_merge_level - 2);
+
+    //if (pPicParamSet->tiles_enabled_flag)
+    //{
+    //    picParam->num_tile_columns_minus1 = (uint8_t)(pPicParamSet->num_tile_columns - 1);
+    //    picParam->num_tile_rows_minus1 = (uint8_t)(pPicParamSet->num_tile_rows - 1);
+
+    //    picParam->num_tile_columns_minus1 = IPP_MIN(sizeof(picParam->column_width_minus1)/sizeof(picParam->column_width_minus1[0]) - 1, picParam->num_tile_columns_minus1);
+    //    picParam->num_tile_rows_minus1 = IPP_MIN(sizeof(picParam->row_height_minus1)/sizeof(picParam->row_height_minus1[0]) - 1, picParam->num_tile_rows_minus1);
+
+    //    for (Ipp32u i = 0; i <= picParam->num_tile_columns_minus1; i++)
+    //        picParam->column_width_minus1[i] = (Ipp16u)(pPicParamSet->column_width[i] - 1);
+
+    //    for (Ipp32u i = 0; i <= picParam->num_tile_rows_minus1; i++)
+    //        picParam->row_height_minus1[i] = (Ipp16u)(pPicParamSet->row_height[i] - 1);
+    //}
+
+    //picParam->slice_parsing_fields.bits.lists_modification_present_flag = pPicParamSet->lists_modification_present_flag;
+    //picParam->slice_parsing_fields.bits.long_term_ref_pics_present_flag = pSeqParamSet->long_term_ref_pics_present_flag;
+    //picParam->slice_parsing_fields.bits.sps_temporal_mvp_enabled_flag = pSeqParamSet->sps_temporal_mvp_enabled_flag;
+    //picParam->slice_parsing_fields.bits.cabac_init_present_flag = pPicParamSet->cabac_init_present_flag;
+    //picParam->slice_parsing_fields.bits.output_flag_present_flag = pPicParamSet->output_flag_present_flag;
+    //picParam->slice_parsing_fields.bits.dependent_slice_segments_enabled_flag = pPicParamSet->dependent_slice_segments_enabled_flag;
+    //picParam->slice_parsing_fields.bits.pps_slice_chroma_qp_offsets_present_flag = pPicParamSet->pps_slice_chroma_qp_offsets_present_flag;
+    //picParam->slice_parsing_fields.bits.sample_adaptive_offset_enabled_flag = pSeqParamSet->sample_adaptive_offset_enabled_flag;
+    //picParam->slice_parsing_fields.bits.deblocking_filter_override_enabled_flag = pPicParamSet->deblocking_filter_override_enabled_flag;
+    //picParam->slice_parsing_fields.bits.pps_disable_deblocking_filter_flag = pPicParamSet->pps_deblocking_filter_disabled_flag;
+    //picParam->slice_parsing_fields.bits.slice_segment_header_extension_present_flag = pPicParamSet->slice_segment_header_extension_present_flag;
+
+    //picParam->slice_parsing_fields.bits.RapPicFlag = (sliceHeader->nal_unit_type >= NAL_UT_CODED_SLICE_BLA_W_LP && sliceHeader->nal_unit_type <= NAL_UT_CODED_SLICE_CRA) ? 1 : 0;
+    //picParam->slice_parsing_fields.bits.IdrPicFlag = sliceHeader->IdrPicFlag;
+    //picParam->slice_parsing_fields.bits.IntraPicFlag = pSliceInfo->IsIntraAU() ? 1 : 0;
+
+    //picParam->log2_max_pic_order_cnt_lsb_minus4 = (uint8_t)(pSeqParamSet->log2_max_pic_order_cnt_lsb - 4);
+    //picParam->num_short_term_ref_pic_sets = (uint8_t)pSeqParamSet->getRPSList()->getNumberOfReferencePictureSets();
+    //picParam->num_long_term_ref_pic_sps = (uint8_t)pSeqParamSet->num_long_term_ref_pics_sps;
+    //picParam->num_ref_idx_l0_default_active_minus1 = (uint8_t)(pPicParamSet->num_ref_idx_l0_default_active - 1);
+    //picParam->num_ref_idx_l1_default_active_minus1 = (uint8_t)(pPicParamSet->num_ref_idx_l1_default_active - 1);
+    //picParam->pps_beta_offset_div2 = (int8_t)(pPicParamSet->pps_beta_offset >> 1);
+    //picParam->pps_tc_offset_div2 = (int8_t)(pPicParamSet->pps_tc_offset >> 1);
+    //picParam->num_extra_slice_header_bits = (uint8_t)pPicParamSet->num_extra_slice_header_bits;
+
+    //picParam->st_rps_bits = pSlice->GetSliceHeader()->wNumBitsForShortTermRPSInSlice;
+
+    UMCVACompBuffer *pParamBuf;
+    unsigned int* pSliceID = (unsigned int*)m_va->GetCompBuffer(VAStatusParameterBufferType, &pParamBuf, sizeof(unsigned int));
+    if (!pSliceID)
+        throw h265_exception(UMC_ERR_FAILED);
+
+    *pSliceID = pSlice->m_WidevineStatusReportNumber;
+
+    pParamBuf->SetDataSize(sizeof(unsigned int));
+}
+
+void PackerVA_Widevine::PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplier)
+{
+    H265DecoderFrameInfo * sliceInfo = frame->m_pSlicesInfo;
+    int sliceCount = sliceInfo->GetSliceCount();
+
+    if (!sliceCount)
+        return;
+
+    H265Slice *pSlice = sliceInfo->GetSlice(0);
+    //const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
+    H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
+
+    PackPicParams(pCurrentFrame, sliceInfo, supplier);
+
+    //if (pSeqParamSet->scaling_list_enabled_flag)
+    //{
+    //    PackQmatrix(pSlice);
+    //}
+
+    //CreateSliceParamBuffer(sliceInfo);
+    //CreateSliceDataBuffer(sliceInfo);
+
+    //Ipp32u sliceNum = 0;
+    //for (Ipp32s n = 0; n < sliceCount; n++)
+    //{
+    //    PackSliceParams(sliceInfo->GetSlice(n), sliceNum, n == sliceCount - 1);
+    //    sliceNum++;
+    //}
+
+    Status s = m_va->Execute();
+    if(s != UMC_OK)
+        throw h265_exception(s);
 }
 
 #endif // #if defined(UMC_VA_LINUX)

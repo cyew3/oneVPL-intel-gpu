@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -93,7 +93,8 @@ mfxU64 GetMfxTimeStamp(mfxF64 ts)
 #endif
 
 #define IS_PROTECTION_PAVP_ANY(val) (MFX_PROTECTION_PAVP == (val) || MFX_PROTECTION_GPUCP_PAVP == (val))
-#define IS_PROTECTION_ANY(val) (IS_PROTECTION_PAVP_ANY(val) || MFX_PROTECTION_GPUCP_AES128_CTR == (val))
+#define IS_PROTECTION_WIDEVINE(val) (MFX_PROTECTION_WIDEVINE_CLASSIC == (val) || MFX_PROTECTION_WIDEVINE_GOOGLE_DASH == (val))
+#define IS_PROTECTION_ANY(val) (IS_PROTECTION_PAVP_ANY(val) || MFX_PROTECTION_GPUCP_AES128_CTR == (val) || IS_PROTECTION_WIDEVINE(val))
 #define IS_PROTECTION_GPUCP_ANY(val) (MFX_PROTECTION_GPUCP_PAVP == (val) || MFX_PROTECTION_GPUCP_AES128_CTR == (val))
 
 //#undef  SUCCEEDED

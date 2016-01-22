@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -646,12 +646,17 @@ eMFXPlatform MFX_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par)
             else
                 name = sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_Baseline;
         }
+        else if (IS_PROTECTION_WIDEVINE(par->Protected))
+            name = DXVA_Intel_Decode_Elementary_Stream_AVC;
         else
             name = sDXVA2_ModeH264_VLD_NoFGT;
 
         break;
     default:
-        name = sDXVA2_ModeH264_VLD_NoFGT;
+        if (IS_PROTECTION_WIDEVINE(par->Protected))
+            name = DXVA_Intel_Decode_Elementary_Stream_AVC;
+        else
+            name = sDXVA2_ModeH264_VLD_NoFGT;
         break;
     }
 

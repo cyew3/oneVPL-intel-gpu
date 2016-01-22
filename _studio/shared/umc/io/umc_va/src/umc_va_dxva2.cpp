@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2006-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2006-2016 Intel Corporation. All Rights Reserved.
 */
 
 #ifdef _DEBUG
@@ -403,11 +403,15 @@ static const GuidProfile guidProfiles[] =
     { VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO | VA_LONG_SLICE_MODE,        sDXVA2_ModeH264_VLD_NoFGT },
     { VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO_PROG | VA_LONG_SLICE_MODE,   sDXVA2_ModeH264_VLD_NoFGT },
 
+    { VA_H264 | VA_VLD | VA_PROFILE_WIDEVINE,   DXVA_Intel_Decode_Elementary_Stream_AVC },
+
     { VA_H265 | VA_VLD, DXVA_ModeHEVC_VLD_Main }, // MS
     { VA_H265 | VA_VLD | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_MainProfile },
 
     { VA_H265 | VA_VLD | VA_PROFILE_10, DXVA_ModeHEVC_VLD_Main10  }, // MS
     { VA_H265 | VA_VLD | VA_PROFILE_10 | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_Main10Profile },
+
+    { VA_H265 | VA_VLD | VA_PROFILE_WIDEVINE,   DXVA_Intel_Decode_Elementary_Stream_HEVC },
 
 };
 

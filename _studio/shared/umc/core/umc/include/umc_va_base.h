@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2006 - 2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2006 - 2016 Intel Corporation. All Rights Reserved.
 */
 
 #ifndef __UMC_VA_BASE_H__
@@ -151,6 +151,7 @@ enum VideoAccelerationProfile
     VA_PROFILE_MVC_STEREO_PROG  = 0x7000,
     VA_PROFILE_INTEL            = 0x8000,
     VA_PROFILE_10               = 0x9000,
+    VA_PROFILE_WIDEVINE         = 0xa000,
 
     // configurations
     VA_CONFIGURATION    = 0x00ff0000,

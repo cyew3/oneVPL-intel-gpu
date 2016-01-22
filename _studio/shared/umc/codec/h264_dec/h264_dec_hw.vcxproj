@@ -287,6 +287,8 @@
     <ClCompile Include="src\umc_h264_va_packer.cpp" />
     <ClCompile Include="src\umc_h264_va_supplier.cpp" />
     <ClCompile Include="src\umc_h264_vda_supplier.cpp" />
+    <ClCompile Include="src\umc_h264_widevine_decrypter.cpp" />
+    <ClCompile Include="src\umc_h264_widevine_supplier.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\umc_h264_au_splitter.h" />
@@ -331,6 +333,8 @@
     <ClInclude Include="include\umc_h264_va_packer.h" />
     <ClInclude Include="include\umc_h264_va_supplier.h" />
     <ClInclude Include="include\umc_h264_vda_supplier.h" />
+    <ClInclude Include="include\umc_h264_widevine_decrypter.h" />
+    <ClInclude Include="include\umc_h264_widevine_supplier.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_core.h
 
@@ -271,11 +271,11 @@ protected:
     mfxHDL                     m_hdl;
 
     mfxHDL                     m_DXVA2DecodeHandle;
-    
+
     mfxHDL                     m_D3DDecodeHandle;
     mfxHDL                     m_D3DEncodeHandle;
     mfxHDL                     m_D3DVPPHandle;
-    
+
     bool m_bSetExtBufAlloc;
     bool m_bSetExtFrameAlloc;
 
@@ -288,9 +288,9 @@ protected:
     UMC::Mutex m_guard;
 
     bool        m_bIsOpaqMode;
-    
+
     mfxU32      m_CoreId;
-    
+
     mfx_UMC_FrameAllocator *m_pWrp;
 
     EncodeHWCaps  m_encode_caps;

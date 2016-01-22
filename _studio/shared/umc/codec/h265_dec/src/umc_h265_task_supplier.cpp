@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -171,6 +171,7 @@ UMC::Status DecReferencePictureMarking_H265::UpdateRefPicMarking(ViewItem_H265 &
 }
 
 // Check if bitstream resolution has changed
+static
 bool IsNeedSPSInvalidate(const H265SeqParamSet *old_sps, const H265SeqParamSet *new_sps)
 {
     if (!old_sps || !new_sps)
@@ -562,7 +563,7 @@ void ViewItem_H265::SetDPBSize(H265SeqParamSet *pSps, Ipp32u & level_idc)
     // calculate the new DPB size value
 
     // FIXME: should have correct temporal layer
-    
+
     dpbSize = pSps->sps_max_dec_pic_buffering[pSps->sps_max_sub_layers-1];
 
     if (level_idc)
@@ -814,7 +815,7 @@ void TaskSupplier_H265::Reset()
         m_sei_messages->Reset();
 
     MVC_Extension::Reset();
-    
+
     DecReferencePictureMarking_H265::Reset();
 
     if (m_pLastSlice)
@@ -1113,12 +1114,12 @@ UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
     H265SeqParamSet *sps = m_Headers.m_SeqParams.GetHeader(pps.pps_seq_parameter_set_id);
     if (!sps)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-    
+
     // additional PPS members checks:
     Ipp32s QpBdOffsetY = 6 * (sps->bit_depth_luma - 8);
     if (pps.init_qp < -QpBdOffsetY || pps.init_qp > 25 + 26)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-    
+
     if (pps.cross_component_prediction_enabled_flag && sps->ChromaArrayType != CHROMA_FORMAT_444)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
@@ -1443,7 +1444,7 @@ void TaskSupplier_H265::PostProcessDisplayFrame(H265DecoderFrame *pFrame)
 H265DecoderFrame *TaskSupplier_H265::GetFrameToDisplayInternal(bool force)
 {
     ViewItem_H265 &view = *GetView();
-    
+
     if (m_decodedOrder)
     {
         return view.pDPB->findOldestDisplayable(view.dpbSize);
@@ -1453,7 +1454,7 @@ H265DecoderFrame *TaskSupplier_H265::GetFrameToDisplayInternal(bool force)
     for (;;)
     {
     // show oldest frame
-    
+
     Ipp32u countDisplayable;
     Ipp32s maxUID;
     Ipp32u countDPBFullness;
@@ -1595,7 +1596,7 @@ UMC::Status TaskSupplier_H265::AddSource(UMC::MediaData * pSource)
 
             if (GetFrameToDisplayInternal(true))
                 return UMC::UMC_ERR_NEED_FORCE_OUTPUT;
-                
+
             PreventDPBFullness();
             return UMC::UMC_WRN_INFO_NOT_READY;
         }
@@ -1706,7 +1707,7 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource)
 
                         MemoryPiece memCopy;
                         memCopy.SetData(nalUnit);
-                        
+
                         pSlice->m_source.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
 
                         notifier0<MemoryPiece> memory_leak_preventing(&pSlice->m_source, &MemoryPiece::Release);

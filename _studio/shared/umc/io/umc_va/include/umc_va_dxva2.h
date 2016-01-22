@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2006-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2006-2016 Intel Corporation. All Rights Reserved.
 */
 
 #pragma once
@@ -38,6 +38,14 @@ DEFINE_GUID_(sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT,    0x604f8e68,0x4951,0x4
 DEFINE_GUID_(sDXVA2_Intel_IVB_ModeJPEG_VLD_NoFGT,    0x91cd2d6e,0x897b,0x4fa1,0xb0,0xd7,0x51,0xdc,0x88,0x01,0x0e,0x0a);
 DEFINE_GUID_(sDXVA_Intel_ModeVP8_VLD, 0x442b942a, 0xb4d9, 0x4940, 0xbc, 0x45, 0xa8, 0x82, 0xe5, 0xf9, 0x19, 0xf3);
 DEFINE_GUID_(sDXVA_Intel_ModeVP9_VLD, 0x76988a52, 0xdf13, 0x419a, 0x8e, 0x64, 0xff, 0xcf, 0x4a, 0x33, 0x6c, 0xf5);
+
+// Intel defined GUID for AVC Elementary Stream Decoding
+// {C528916C-C0AF-4645-8CB2-372B6D4ADC2A}
+DEFINE_GUID(DXVA_Intel_Decode_Elementary_Stream_AVC, 0xc528916c, 0xc0af, 0x4645, 0x8c, 0xb2, 0x37, 0x2b, 0x6d, 0x4a, 0xdc, 0x2a);
+
+// Intel defined GUID for HEVC Elementary Stream Decoding
+// {07CFAFFB-5A2E-4B99-B62A-E4CA53B6D5AA}
+DEFINE_GUID(DXVA_Intel_Decode_Elementary_Stream_HEVC, 0x7cfaffb, 0x5a2e, 0x4b99, 0xb6, 0x2a, 0xe4, 0xca, 0x53, 0xb6, 0xd5, 0xaa);
 
 DEFINE_GUID_(sDXVA_Intel_ModeH264_VLD_MVC, 0xe296bf50, 0x8808, 0x4ff8, 0x92, 0xd4, 0xf1, 0xee, 0x79, 0x9f, 0xc3, 0x3c);
 

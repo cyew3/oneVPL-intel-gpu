@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -13,6 +13,8 @@
 
 #ifndef __UMC_H264_TASK_SUPPLIER_H
 #define __UMC_H264_TASK_SUPPLIER_H
+
+#include "umc_va_base.h"
 
 #include <vector>
 #include <list>
@@ -29,6 +31,10 @@
 #include "umc_frame_allocator.h"
 
 #include "umc_h264_au_splitter.h"
+
+#if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
+#include "umc_h264_widevine_decrypter.h"
+#endif
 
 namespace UMC
 {
@@ -148,7 +154,7 @@ public:
     POCDecoder();
 
     virtual ~POCDecoder();
-    void DecodePictureOrderCount(const H264Slice *slice, Ipp32s frame_num);
+    virtual void DecodePictureOrderCount(const H264Slice *slice, Ipp32s frame_num);
 
     Ipp32s DetectFrameNumGap(const H264Slice *slice, bool ignore_gaps_allowed_flag = false);
 
@@ -498,6 +504,10 @@ public:
 
     virtual Status AddSource(MediaData * pSource);
 
+#if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
+    virtual Status AddSource(DecryptParametersWrapper* pDecryptParams) {pDecryptParams; return MFX_ERR_UNSUPPORTED;}
+#endif
+
     Status ProcessNalUnit(MediaDataEx *nalUnit);
 
     void SetMemoryAllocator(MemoryAllocator *pMemoryAllocator)
@@ -580,7 +590,7 @@ protected:
 
     virtual void AddFakeReferenceFrame(H264Slice * pSlice);
 
-    Status AddOneFrame(MediaData * pSource);
+    virtual Status AddOneFrame(MediaData * pSource);
 
     virtual Status AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, ColorFormat color_format);
 

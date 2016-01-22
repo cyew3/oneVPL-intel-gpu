@@ -326,8 +326,8 @@ VAAPIVideoCORE::VAAPIVideoCORE(
     const mfxSession session) :
             CommonCORE(numThreadsAvailable, session)
           , m_Display(0)
-          , m_ConfigId(-1)
-          , m_Context(-1)
+          , m_VAConfigHandle((mfxHDL)VA_INVALID_ID)
+          , m_VAContextHandle((mfxHDL)VA_INVALID_ID)
           , m_KeepVAState(false)
           , m_adapterNum(adapterNum)
           , m_bUseExtAllocForHWFrames(false)
@@ -358,34 +358,74 @@ VAAPIVideoCORE::~VAAPIVideoCORE()
 
 void VAAPIVideoCORE::Close()
 {
-    m_ConfigId = -1;
-    m_Context = -1;
     m_KeepVAState = false;
-
     m_pVA.reset();
 } // void VAAPIVideoCORE::Close()
 
+
+mfxStatus
+VAAPIVideoCORE::GetHandle(
+    mfxHandleType type,
+    mfxHDL *handle)
+{
+    MFX_CHECK_NULL_PTR1(handle);
+    UMC::AutomaticUMCMutex guard(m_guard);
+
+    if (MFX_HANDLE_VA_CONTEXT_ID == type )
+    {
+        if (m_VAContextHandle != (mfxHDL)VA_INVALID_ID)
+        {
+            *handle = m_VAContextHandle;
+            return MFX_ERR_NONE;
+        }
+        // not exist handle yet
+        else
+            return MFX_ERR_NOT_FOUND;
+    }
+    else
+        return CommonCORE::GetHandle(type, handle);
+
+} // mfxStatus VAAPIVideoCORE::GetHandle(mfxHandleType type, mfxHDL *handle)
 
 mfxStatus
 VAAPIVideoCORE::SetHandle(
     mfxHandleType type,
     mfxHDL hdl)
 {
+    MFX_CHECK_NULL_PTR1(hdl);
     UMC::AutomaticUMCMutex guard(m_guard);
     try
     {
-        mfxStatus sts = CommonCORE::SetHandle(type, hdl);
+        switch ((mfxU32)type)
+        {
+        case MFX_HANDLE_VA_CONFIG_ID:
+            // if device manager already set
+            if (m_VAConfigHandle != (mfxHDL)VA_INVALID_ID)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            // set external handle
+            m_VAConfigHandle = hdl;
+            m_KeepVAState = true;
+            break;
+        case MFX_HANDLE_VA_CONTEXT_ID:
+            // if device manager already set
+            if (m_VAContextHandle != (mfxHDL)VA_INVALID_ID)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            // set external handle
+            m_VAContextHandle = hdl;
+            m_KeepVAState = true;
+            break;
+        default:
+            mfxStatus sts = CommonCORE::SetHandle(type, hdl);
+            MFX_CHECK_STS(sts);
+            m_Display = (VADisplay)m_hdl;
 
-        MFX_CHECK_STS(sts);
-        m_Display = (VADisplay)m_hdl;
-
-        /* As we know right VA handle (pointer),
-         * we can get real authenticated fd of VAAPI library(display),
-         * and can call ioctl() to kernel mode driver,
-         * to get device ID and find out platform type
-         */
-        m_HWType = getPlatformType(m_Display);
-
+            /* As we know right VA handle (pointer),
+            * we can get real authenticated fd of VAAPI library(display),
+            * and can call ioctl() to kernel mode driver,
+            * to get device ID and find out platform type
+            */
+            m_HWType = getPlatformType(m_Display);
+        }
         return MFX_ERR_NONE;
     }
     catch (MFX_CORE_CATCH_TYPE)
@@ -649,11 +689,7 @@ VAAPIVideoCORE::CreateVA(
     if(GetExtBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK))
         m_KeepVAState = true;
     else
-    {
-        m_ConfigId = -1;
-        m_Context = -1;
         m_KeepVAState = false;
-    }
 
     m_pVA.reset(new LinuxVideoAccelerator); //aya must be fixed late???
 
@@ -776,8 +812,8 @@ VAAPIVideoCORE::CreateVideoAccelerator(
 
     // Init Accelerator
     params.m_Display = m_Display;
-    params.m_pConfigId = &m_ConfigId;
-    params.m_pContext = &m_Context;
+    params.m_pConfigId = (VAConfigID*)&m_VAConfigHandle;
+    params.m_pContext = (VAContextID*)&m_VAContextHandle;
     params.m_pKeepVAState = &m_KeepVAState;
     params.m_pVideoStreamInfo = &VideoInfo;
     params.m_iNumberSurfaces = NumOfRenderTarget;

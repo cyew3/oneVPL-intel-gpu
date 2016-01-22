@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -437,7 +437,14 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
         }
         else
         {
-            if (MFX_ERR_NONE != core->IsGuidSupported(DXVA_Intel_ModeHEVC_VLD_MainProfile, par) &&
+            if (IS_PROTECTION_WIDEVINE(par->Protected))
+            {
+                if (MFX_ERR_NONE != core->IsGuidSupported(DXVA_Intel_Decode_Elementary_Stream_HEVC, par))
+                {
+                    return MFX_PLATFORM_SOFTWARE;
+                }
+            }
+            else if (MFX_ERR_NONE != core->IsGuidSupported(DXVA_Intel_ModeHEVC_VLD_MainProfile, par) &&
                 MFX_ERR_NONE != core->IsGuidSupported(DXVA_ModeHEVC_VLD_Main, par))
             {
                 return MFX_PLATFORM_SOFTWARE;
@@ -1220,7 +1227,7 @@ bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType t
 
     if (in->Protected)
     {
-        if (type == MFX_HW_UNKNOWN || !IS_PROTECTION_PAVP_ANY(in->Protected))
+        if (type == MFX_HW_UNKNOWN || !IS_PROTECTION_ANY(in->Protected))
             return false;
     }
 

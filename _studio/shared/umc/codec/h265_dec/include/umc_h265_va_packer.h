@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2013-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -108,6 +108,18 @@ public:
     virtual bool PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice);
 };
 
+class PackerDXVA2_Widevine: public PackerDXVA2
+{
+public:
+    PackerDXVA2_Widevine(UMC::VideoAccelerator * va);
+
+    virtual void PackPicParams(const H265DecoderFrame *pCurrentFrame,
+                        H265DecoderFrameInfo * pSliceInfo,
+                        TaskSupplier_H265 * supplier);
+
+    virtual void PackAU(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 * supplier);
+};
+
 #endif // UMC_VA_DXVA
 
 
@@ -138,6 +150,18 @@ private:
     void CreateSliceDataBuffer(H265DecoderFrameInfo * sliceInfo);
     void CreateSliceParamBuffer(H265DecoderFrameInfo * sliceInfo);
 
+};
+
+class PackerVA_Widevine: public PackerVA
+{
+public:
+    PackerVA_Widevine(UMC::VideoAccelerator * va);
+
+    virtual void PackPicParams(const H265DecoderFrame *pCurrentFrame,
+                        H265DecoderFrameInfo * pSliceInfo,
+                        TaskSupplier_H265 * supplier);
+
+    virtual void PackAU(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 * supplier);
 };
 
 #endif // UMC_VA_LINUX

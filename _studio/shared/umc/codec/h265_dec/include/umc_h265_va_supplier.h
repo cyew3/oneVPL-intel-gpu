@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -59,13 +59,13 @@ protected:
 
     virtual H265DecoderFrame *GetFrameToDisplayInternal(bool force);
 
+    Ipp32u m_bufferedFrameNumber;
+
 private:
     VATaskSupplier & operator = (VATaskSupplier &)
     {
         return *this;
     }
-
-    Ipp32u                            m_bufferedFrameNumber;
 };
 
 } // namespace UMC_HEVC_DECODER

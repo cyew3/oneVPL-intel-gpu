@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
 
 File Name: libmf_core_hw.cpp
 
@@ -17,6 +17,7 @@ File Name: libmf_core_hw.cpp
 #include "umc_va_dxva2.h"
 #include "mfx_common_decode_int.h"
 #include "mfx_enc_common.h"
+#include "mfxpcp.h"
 
 using namespace UMC;
 
@@ -77,7 +78,7 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
 {
     mfxU32 profile = UMC::VA_VLD;
 
-    // video accelerator is needed for decoders only 
+    // video accelerator is needed for decoders only
     switch (param->mfx.CodecId)
     {
     case MFX_CODEC_VC1:
@@ -106,6 +107,12 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
         {
             profile |= (profile_idc == MFX_PROFILE_AVC_SCALABLE_HIGH) ? VA_PROFILE_SVC_HIGH : VA_PROFILE_SVC_BASELINE;
         }
+
+        if (IS_PROTECTION_WIDEVINE(param->Protected))
+        {
+            profile |= VA_PROFILE_WIDEVINE;
+        }
+
         }
         break;
     case MFX_CODEC_JPEG:
@@ -124,7 +131,10 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
         {
             profile |= VA_PROFILE_10;
         }
-
+        if (IS_PROTECTION_WIDEVINE(param->Protected))
+        {
+            profile |= VA_PROFILE_WIDEVINE;
+        }
         break;
 
     default:
@@ -139,5 +149,5 @@ bool IsHwMvcEncSupported()
     return true;
 }
 
-#endif 
+#endif
 /* EOF */

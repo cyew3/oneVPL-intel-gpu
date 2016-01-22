@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -27,6 +27,7 @@
 #if defined(MFX_VA)
 #include "umc_va_base.h"
 #include "umc_h264_va_supplier.h"
+#include "umc_h264_widevine_supplier.h"
 #include "umc_va_dxva2_protected.h"
 #include "umc_va_linux_protected.h"
 #include "umc_va_video_processing.h"
@@ -291,7 +292,10 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
         m_useDelayedDisplay = ENABLE_DELAYED_DISPLAY_MODE != 0 && IsNeedToUseHWBuffering(m_core->GetHWType()) && (asyncDepth != 1);
 
 #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
-        m_pH264VideoDecoder.reset(new UMC::VATaskSupplier()); // HW
+        if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
+            m_pH264VideoDecoder.reset(new UMC::WidevineTaskSupplier()); // HW, Widevine version
+        else
+            m_pH264VideoDecoder.reset(new UMC::VATaskSupplier()); // HW
         m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D());
 #elif defined(MFX_VA_OSX)
         m_pH264VideoDecoder.reset(new UMC::VDATaskSupplier()); // HW, OS X VDA version
@@ -1229,7 +1233,10 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
     MFX_CHECK_NULL_PTR2(surface_work, surface_out);
 
-    mfxStatus sts = bs ? CheckBitstream(bs) : MFX_ERR_NONE;
+    mfxStatus sts = MFX_ERR_NONE;
+    if (!IS_PROTECTION_WIDEVINE(m_vPar.Protected))
+        sts = bs ? CheckBitstream(bs) : MFX_ERR_NONE;
+
     if (sts != MFX_ERR_NONE)
         return sts;
 
@@ -1266,7 +1273,7 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
     sts = MFX_ERR_UNDEFINED_BEHAVIOR;
 
 #if defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)
-    if (m_vPar.Protected && bs)
+    if (IS_PROTECTION_ANY(m_vPar.Protected) && !IS_PROTECTION_WIDEVINE(m_vPar.Protected) && bs)
     {
         if (!m_va->GetProtectedVA() || !(bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME))
             return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -1302,7 +1309,26 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             }
             else
             {
-                umcRes = m_pH264VideoDecoder->AddSource(bs ? &src : 0);
+#if defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)
+                if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
+                {
+                    mfxExtDecryptedParam * widevineDecryptParams = (mfxExtDecryptedParam *)GetExtendedBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_DECRYPTED_PARAM);
+                    if (widevineDecryptParams)
+                    {
+                        DecryptParametersWrapper AvcParams;
+                        if (widevineDecryptParams->Data && (widevineDecryptParams->DataLength == sizeof (DECRYPT_QUERY_STATUS_PARAMS_AVC)))
+                        {
+                            AvcParams = *((DECRYPT_QUERY_STATUS_PARAMS_AVC*)widevineDecryptParams->Data);
+                            AvcParams.SetTime(GetUmcTimeStamp(bs->TimeStamp));
+                            umcRes = m_pH264VideoDecoder->AddSource(&AvcParams);
+                        }
+                    }
+                    else
+                        return MFX_ERR_UNDEFINED_BEHAVIOR;
+                }
+                else
+#endif
+                    umcRes = m_pH264VideoDecoder->AddSource(bs ? &src : 0);
             }
 
             umcAddSourceRes = umcFrameRes = umcRes;
@@ -1330,7 +1356,10 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
             if (umcRes == UMC::UMC_ERR_INVALID_STREAM)
             {
-                umcAddSourceRes = umcFrameRes = umcRes = UMC::UMC_OK;
+                if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
+                    sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+                else
+                    umcAddSourceRes = umcFrameRes = umcRes = UMC::UMC_OK;
             }
 
             if (umcRes == UMC::UMC_NTF_NEW_RESOLUTION)
@@ -1357,7 +1386,16 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
                 sts = MFX_ERR_MORE_DATA;
             }
 
-            src.Save(bs);
+#if defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)
+            if (umcRes == UMC::UMC_ERR_DEVICE_FAILED)
+            {
+                sts = MFX_ERR_DEVICE_FAILED;
+            }
+#endif
+            if (!IS_PROTECTION_WIDEVINE(m_vPar.Protected) || umcRes != UMC::UMC_NTF_NEW_RESOLUTION)
+            {
+                src.Save(bs);
+            }
 
             if (sts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
                 return sts;

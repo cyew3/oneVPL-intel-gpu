@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -101,7 +101,7 @@ protected:
     virtual DXVA_PicEntry_H264 GetFrameIndex(const H264DecoderFrame * frame);
 
     void PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264DecoderFrame * frame);
-    void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice, DXVA_PicParams_H264* pPicParams_H264);
+    virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice, DXVA_PicParams_H264* pPicParams_H264);
     Ipp32s PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chopping, Ipp32s numSlicesOfPrevField, DXVA_Slice_H264_Long* pDXVA_Slice_H264);
 
     void SendPAVPStructure(Ipp32s numSlicesOfPrevField, H264Slice *pSlice);
@@ -118,6 +118,17 @@ protected:
     Ipp32u  m_statusReportFeedbackCounter;
 
     DXVA_PicParams_H264* m_picParams;
+};
+
+class PackerDXVA2_Widevine: public PackerDXVA2
+{
+public:
+    PackerDXVA2_Widevine(VideoAccelerator * va, TaskSupplier * supplier);
+    virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice);
+
+private:
+    virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice, DXVA_PicParams_H264* pPicParams_H264);
+    virtual void PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s firstSlice, Ipp32s count);
 };
 
 #endif // UMC_VA_DXVA
@@ -148,7 +159,7 @@ public:
     virtual void BeginFrame();
     virtual void EndFrame();
 
-private:
+protected:
     void FillFrame(VAPictureH264 * pic, const H264DecoderFrame *pFrame,
         Ipp32s field, Ipp32s reference, Ipp32s defaultIndex);
 
@@ -178,6 +189,16 @@ public:
 
 protected:
     void PackPavpParams(void);
+};
+
+class PackerVA_Widevine: public PackerVA
+{
+public:
+    PackerVA_Widevine(VideoAccelerator * va, TaskSupplier * supplier);
+
+private:
+    virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice);
+    virtual void PackAU(const H264DecoderFrame *pCurrentFrame, Ipp32s isTop);
 };
 
 #endif // UMC_VA_LINUX

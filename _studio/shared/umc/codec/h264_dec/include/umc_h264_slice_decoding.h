@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -362,6 +362,8 @@ public:  // DEBUG !!!! should remove dependence
     bool m_bPermanentTurnOffDeblocking;                         // (bool) "disable deblocking" flag
     bool m_bError;                                              // (bool) there is an error in decoding
     bool m_isInitialized;
+
+    Ipp16u m_WidevineStatusReportNumber;
 
     Ipp32s m_MVsDistortion;
 

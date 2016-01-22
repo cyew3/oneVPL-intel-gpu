@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
 
 File Name: mfxvideo++int.h
 
@@ -103,6 +103,12 @@ static const GUID DXVA_ModeHEVC_VLD_Main =
 
 static const GUID DXVA_ModeHEVC_VLD_Main10 =
 { 0x107af0e0, 0xef1a, 0x4d19, { 0xab, 0xa8, 0x67, 0xa1, 0x63, 0x07, 0x3d, 0x13 } };
+
+static const GUID DXVA_Intel_Decode_Elementary_Stream_AVC =
+{ 0xc528916c, 0xc0af, 0x4645, { 0x8c, 0xb2, 0x37, 0x2b, 0x6d, 0x4a, 0xdc, 0x2a } };
+
+static const GUID DXVA_Intel_Decode_Elementary_Stream_HEVC =
+{ 0x7cfaffb, 0x5a2e, 0x4b99, { 0xb6, 0x2a, 0xe4, 0xca, 0x53, 0xb6, 0xd5, 0xaa } };
 
 #endif
 

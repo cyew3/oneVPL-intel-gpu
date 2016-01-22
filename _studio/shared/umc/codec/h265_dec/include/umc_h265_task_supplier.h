@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -28,6 +28,12 @@
 #include "umc_frame_allocator.h"
 
 #include "umc_h265_au_splitter.h"
+
+#include "umc_va_base.h"
+
+#if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
+#include "umc_h265_widevine_decrypter.h"
+#endif
 
 namespace UMC_HEVC_DECODER
 {
@@ -285,6 +291,11 @@ public:
     // Add a new bitstream data buffer to decoding
     virtual UMC::Status AddSource(UMC::MediaData * pSource);
 
+#if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
+    // Add a new Widevine buffer to decoding
+    virtual UMC::Status AddSource(DecryptParametersWrapper* pDecryptParams) {pDecryptParams; return MFX_ERR_UNSUPPORTED;}
+#endif
+
     // Chose appropriate processing action for specified NAL unit
     UMC::Status ProcessNalUnit(UMC::MediaDataEx *nalUnit);
 
@@ -386,7 +397,7 @@ protected:
     virtual void AddFakeReferenceFrame(H265Slice * pSlice);
 
     // Find NAL units in new bitstream buffer and process them
-    UMC::Status AddOneFrame(UMC::MediaData * pSource);
+    virtual UMC::Status AddOneFrame(UMC::MediaData * pSource);
 
     // Allocate frame internals
     virtual UMC::Status AllocateFrameData(H265DecoderFrame * pFrame, IppiSize dimensions, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet);
