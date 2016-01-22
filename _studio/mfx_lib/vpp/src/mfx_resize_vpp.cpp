@@ -1062,7 +1062,7 @@ mfxStatus owniResizeGetBufSize_UpEstimation( IppiSize srcSize, IppiSize dstSize,
 
     *pBufferSize = (int)bufSize;
 
-    return MFX_ERR_INVALID_VIDEO_PARAM;
+    return MFX_ERR_NONE;
 }
 
 #endif // MFX_ENABLE_VPP
