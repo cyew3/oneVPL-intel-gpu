@@ -3019,7 +3019,9 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
         for_each(sfr.begin(), sfr.end(), bind1st(dispMapPusher(), pReoderRnd));
     }
 
-    if (sts != MFX_ERR_NONE)
+    if (MFX_WRN_VIDEO_PARAM_CHANGED == sts)
+        MFX_CHECK_STS_TRACE_EXPR(sts, m_pYUVSource->DecodeFrameAsync(bs, inSurface.pSurface, &pDecodedSurface, &syncp))
+    else if (sts != MFX_ERR_NONE)
     {
         if (bs.isNull && !m_components[eDEC].m_SyncPoints.empty())
         {
