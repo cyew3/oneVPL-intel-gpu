@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2007-2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2007-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -902,7 +902,9 @@ typedef enum {
     MFX_HANDLE_RESERVED1                        = 2,
     MFX_HANDLE_D3D11_DEVICE                     = 3,
     MFX_HANDLE_VA_DISPLAY                       = 4,
-    MFX_HANDLE_RESERVED3                        = 5
+    MFX_HANDLE_RESERVED3                        = 5,
+    MFX_HANDLE_VA_CONFIG_ID                     = 6,
+    MFX_HANDLE_VA_CONTEXT_ID                    = 7
 } mfxHandleType;
 
 typedef enum {

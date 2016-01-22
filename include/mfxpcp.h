@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
 
 File Name: mfxpcp.h
 
@@ -31,10 +31,11 @@ enum {
 
 /* Protected in mfxVideoParam */
 enum {
-    MFX_PROTECTION_PAVP         =   0x0001,
-    MFX_PROTECTION_GPUCP_PAVP   =   0x0002,
-    MFX_PROTECTION_GPUCP_AES128_CTR =   0x0003,
-    MFX_PROTECTION_RESERVED1        =   0x0004,
+    MFX_PROTECTION_PAVP                 = 0x0001,
+    MFX_PROTECTION_GPUCP_PAVP           = 0x0002,
+    MFX_PROTECTION_GPUCP_AES128_CTR     = 0x0003,
+    MFX_PROTECTION_WIDEVINE_CLASSIC     = 0x0004,
+    MFX_PROTECTION_WIDEVINE_GOOGLE_DASH = 0x0005
 };
 
 /* EncryptionType in mfxExtPAVPOption */
