@@ -20,16 +20,7 @@ public:
 private:
 
     tsNoiseFiller m_noise;
-    mfxExtVPPDoUse vpp_du;
-
-    enum
-    {
-        EXT_VPP_DENOISE = 1,
-        EXT_VPP_DETAIL,
-        EXT_VPP_FRC,
-        EXT_VPP_PROCAMP,
-        EXT_VPP_DEINTER,
-    };
+    mfxExtVPPDoUse* vpp_du;
 
     struct tc_struct
     {
@@ -52,37 +43,37 @@ private:
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
     {/*00*/ MFX_ERR_NONE, 2,
-            {EXT_VPP_DENOISE, EXT_VPP_DETAIL}
+            {MFX_EXTBUFF_VPP_DENOISE, MFX_EXTBUFF_VPP_DETAIL}
     },
     {/*01*/ MFX_ERR_NONE, 2,
-            {EXT_VPP_DENOISE, EXT_VPP_FRC}
+            {MFX_EXTBUFF_VPP_DENOISE, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION}
     },
     {/*02*/ MFX_ERR_NONE, 2,
-            {EXT_VPP_DENOISE, EXT_VPP_PROCAMP}
+            {MFX_EXTBUFF_VPP_DENOISE, MFX_EXTBUFF_VPP_PROCAMP}
     },
     {/*03*/ MFX_ERR_NONE, 2,
-            {EXT_VPP_DENOISE, EXT_VPP_DEINTER}
+            {MFX_EXTBUFF_VPP_DENOISE, MFX_EXTBUFF_VPP_DEINTERLACING}
     },
     {/*04*/ MFX_ERR_NONE, 2,
-            {EXT_VPP_DETAIL, EXT_VPP_FRC}
+            {MFX_EXTBUFF_VPP_DETAIL, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION}
     },
     {/*05*/ MFX_ERR_NONE, 2,
-            {EXT_VPP_DETAIL, EXT_VPP_PROCAMP}
+            {MFX_EXTBUFF_VPP_DETAIL, MFX_EXTBUFF_VPP_PROCAMP}
     },
     {/*06*/ MFX_ERR_NONE, 2,
-            {EXT_VPP_DETAIL, EXT_VPP_DEINTER}
+            {MFX_EXTBUFF_VPP_DETAIL, MFX_EXTBUFF_VPP_DEINTERLACING}
     },
     {/*07*/ MFX_ERR_NONE, 2,
-            {EXT_VPP_FRC, EXT_VPP_PROCAMP}
+            {MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION, MFX_EXTBUFF_VPP_PROCAMP}
     },
     {/*08*/ MFX_ERR_NONE, 2,
-            {EXT_VPP_FRC, EXT_VPP_DEINTER}
+            {MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION, MFX_EXTBUFF_VPP_DEINTERLACING}
     },
     {/*09*/ MFX_ERR_NONE, 2,
-            {EXT_VPP_PROCAMP, EXT_VPP_DEINTER}
+            {MFX_EXTBUFF_VPP_PROCAMP, MFX_EXTBUFF_VPP_DEINTERLACING}
     },
     {/*10*/ MFX_ERR_NONE, 5,
-            {EXT_VPP_DENOISE, EXT_VPP_DETAIL, EXT_VPP_FRC, EXT_VPP_PROCAMP, EXT_VPP_DEINTER}
+            {MFX_EXTBUFF_VPP_DENOISE, MFX_EXTBUFF_VPP_DETAIL, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION, MFX_EXTBUFF_VPP_PROCAMP, MFX_EXTBUFF_VPP_DEINTERLACING}
     },
 };
 
@@ -98,29 +89,15 @@ int TestSuite::RunTest(unsigned int id)
     m_par.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     m_par.AsyncDepth = 1;
 
-    vpp_du.Header.BufferId = MFX_EXTBUFF_VPP_DOUSE;
-    vpp_du.Header.BufferSz = sizeof(mfxExtVPPDoUse);
+    m_par.AddExtBuffer(MFX_EXTBUFF_VPP_DOUSE, sizeof(mfxExtVPPDoUse));
+    vpp_du = (mfxExtVPPDoUse*)m_par.GetExtBuffer(MFX_EXTBUFF_VPP_DOUSE);
+    vpp_du->NumAlg = tc.alg_num;
+    vpp_du->AlgList = new mfxU32[tc.alg_num];
 
-    vpp_du.NumAlg = tc.alg_num;
-    vpp_du.AlgList = new mfxU32[tc.alg_num];
+    memset(vpp_du->AlgList, 0, sizeof(mfxU32)*vpp_du->NumAlg);
 
     for (mfxU32 i = 0; i< tc.alg_num; i++)
-    {
-        if (tc.alg_list[i] == EXT_VPP_DENOISE)
-            vpp_du.AlgList[i] = MFX_EXTBUFF_VPP_DENOISE;
-        else if (tc.alg_list[i] == EXT_VPP_DETAIL)
-           vpp_du.AlgList[i] = MFX_EXTBUFF_VPP_DETAIL;
-        else if (tc.alg_list[i] == EXT_VPP_FRC)
-            vpp_du.AlgList[i] = MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION;
-        else if (tc.alg_list[i] == EXT_VPP_PROCAMP)
-            vpp_du.AlgList[i] = MFX_EXTBUFF_VPP_PROCAMP;
-        else if (tc.alg_list[i] == EXT_VPP_DEINTER)
-            vpp_du.AlgList[i] = MFX_EXTBUFF_VPP_DEINTERLACING;
-    }
-
-    m_par.ExtParam = new mfxExtBuffer*[1];
-    m_par.ExtParam[0] = (mfxExtBuffer*)&vpp_du;
-    m_par.NumExtParam = 1;
+        vpp_du->AlgList[i] = tc.alg_list[i];
 
     CreateAllocators();
 
@@ -130,37 +107,34 @@ int TestSuite::RunTest(unsigned int id)
     AllocSurfaces();
 
     g_tsStatus.expect(tc.sts);
-
     mfxStatus sts = Init(m_session, m_pPar);
     g_tsStatus.expect(MFX_ERR_NONE);
 
-    mfxVideoParam par2 = {0};
-    mfxExtVPPDoUse vpp_du2;
-    vpp_du2.Header.BufferId = MFX_EXTBUFF_VPP_DOUSE;
-    vpp_du2.Header.BufferSz = sizeof(mfxExtVPPDoUse);
+    tsExtBufType<mfxVideoParam> par_init;
+    mfxExtVPPDoUse* vpp_du2;
 
-    vpp_du2.NumAlg = tc.alg_num;
-    vpp_du2.AlgList = new mfxU32[tc.alg_num];
+    par_init.AddExtBuffer(MFX_EXTBUFF_VPP_DOUSE, sizeof(mfxExtVPPDoUse));
+    vpp_du2 = (mfxExtVPPDoUse*)par_init.GetExtBuffer(MFX_EXTBUFF_VPP_DOUSE);
+    vpp_du2->NumAlg = tc.alg_num;
+    vpp_du2->AlgList = new mfxU32[tc.alg_num];
 
-    par2.NumExtParam = 1;
-    par2.ExtParam = new mfxExtBuffer*[1];
-    par2.ExtParam[0] = (mfxExtBuffer*)&vpp_du2;
+    memset(vpp_du2->AlgList, 0, sizeof(mfxU32)*vpp_du2->NumAlg);
 
-    GetVideoParam(m_session, &par2);
+    GetVideoParam(m_session, &par_init);
     g_tsStatus.expect(MFX_ERR_NONE);
 
-    if (vpp_du2.NumAlg != vpp_du.NumAlg)
+    if (vpp_du2->NumAlg != vpp_du->NumAlg)
     {
         g_tsLog << "ERROR: Number of algorithms in specified DoUse buffer is not equal to number of algorithms in buffer returned by GetVideoParam() \n";
         g_tsStatus.check(MFX_ERR_ABORTED);
     }
 
-    for (mfxU32 i = 0; i< vpp_du.NumAlg; i++)
+    for (mfxU32 i = 0; i< vpp_du->NumAlg; i++)
     {
         sts = MFX_ERR_ABORTED;
-        for (mfxU32 j = 0; j< vpp_du2.NumAlg; j++)
+        for (mfxU32 j = 0; j< vpp_du2->NumAlg; j++)
         {
-            if (vpp_du.AlgList[i]==vpp_du2.AlgList[j])
+            if (vpp_du->AlgList[i]==vpp_du2->AlgList[j])
                 sts = MFX_ERR_NONE;
         }
         if (sts == MFX_ERR_ABORTED)
@@ -168,16 +142,12 @@ int TestSuite::RunTest(unsigned int id)
         g_tsStatus.check(sts);
     }
 
-    ProcessFrames(10);
+    ProcessFrames(2);
 
-    delete[] vpp_du.AlgList;
-    vpp_du.AlgList = 0;
-    delete[] vpp_du2.AlgList;
-    vpp_du2.AlgList = 0;
-    delete[] m_par.ExtParam;
-    m_par.ExtParam = 0;
-    delete[] par2.ExtParam;
-    par2.ExtParam = 0;
+    delete[] vpp_du->AlgList;
+    vpp_du->AlgList = 0;
+    delete[] vpp_du2->AlgList;
+    vpp_du2->AlgList = 0;
 
     TS_END;
     return 0;
