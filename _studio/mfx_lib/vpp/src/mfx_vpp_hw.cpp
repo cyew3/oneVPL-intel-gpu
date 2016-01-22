@@ -113,6 +113,11 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->rotation = 0;
     pMfxExecuteParams->scalingMode = MFX_SCALING_MODE_DEFAULT;
     pMfxExecuteParams->bEOS = false;
+    pMfxExecuteParams->bVideoSignalInfo = false;
+    pMfxExecuteParams->VidoSignalInfoIn.nominalRange    = 0;
+    pMfxExecuteParams->VidoSignalInfoIn.transferMatrix  = 0;
+    pMfxExecuteParams->VidoSignalInfoOut.nominalRange   = 0;
+    pMfxExecuteParams->VidoSignalInfoOut.transferMatrix = 0;
 } /*void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )*/
 
 
@@ -1400,7 +1405,6 @@ VideoVPPHW::VideoVPPHW(IOMode mode, VideoCORE *core)
     m_asyncDepth = ACCEPTED_DEVICE_ASYNC_DEPTH;
 
     /* KW fix */
-    //memset(&m_executeParams, 0, sizeof(mfxExecuteParams));
     MemSetZero4mfxExecuteParams(&m_executeParams);
 
     // sync workload mode by default
@@ -3150,7 +3154,53 @@ mfxStatus ConfigureExecuteParams(
             } //case MFX_EXTBUFF_VPP_FIELD_PROCESSING:
 
             case MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
-                return MFX_ERR_INVALID_VIDEO_PARAM;
+                for (mfxU32 jj = 0; jj < videoParam.NumExtParam; jj++)
+                {
+                    if (videoParam.ExtParam[jj]->BufferId == MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO)
+                    {
+                        mfxExtVPPVideoSignalInfo* extVSI = (mfxExtVPPVideoSignalInfo*) videoParam.ExtParam[jj];
+                        MFX_CHECK_NULL_PTR1(extVSI);
+
+                        /* Check params */
+                        if (extVSI->In.TransferMatrix != MFX_TRANSFERMATRIX_BT601 &&
+                            extVSI->In.TransferMatrix != MFX_TRANSFERMATRIX_BT709 &&
+                            extVSI->In.TransferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)
+                        {
+                            return MFX_ERR_INVALID_VIDEO_PARAM;
+                        }
+
+                        if (extVSI->Out.TransferMatrix != MFX_TRANSFERMATRIX_BT601 &&
+                            extVSI->Out.TransferMatrix != MFX_TRANSFERMATRIX_BT709 &&
+                            extVSI->Out.TransferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)
+                        {
+                            return MFX_ERR_INVALID_VIDEO_PARAM;
+                        }
+
+                        if (extVSI->In.NominalRange != MFX_NOMINALRANGE_0_255 &&
+                            extVSI->In.NominalRange != MFX_NOMINALRANGE_16_235 &&
+                            extVSI->In.NominalRange != MFX_NOMINALRANGE_UNKNOWN)
+                        {
+                            return MFX_ERR_INVALID_VIDEO_PARAM;
+                        }
+
+                        if (extVSI->Out.NominalRange != MFX_NOMINALRANGE_0_255 &&
+                            extVSI->Out.NominalRange != MFX_NOMINALRANGE_16_235 &&
+                            extVSI->Out.NominalRange != MFX_NOMINALRANGE_UNKNOWN)
+                        {
+                            return MFX_ERR_INVALID_VIDEO_PARAM;
+                        }
+
+                        /* Params look good */
+                        executeParams.bVideoSignalInfo = true;
+                        executeParams.VidoSignalInfoIn.nominalRange    = extVSI->In.NominalRange;
+                        executeParams.VidoSignalInfoIn.transferMatrix  = extVSI->In.TransferMatrix;
+                        executeParams.VidoSignalInfoOut.nominalRange   = extVSI->Out.NominalRange;
+                        executeParams.VidoSignalInfoOut.transferMatrix = extVSI->Out.TransferMatrix;
+                        break;
+                    }
+                }
+
+                break;
 
             default:
             {

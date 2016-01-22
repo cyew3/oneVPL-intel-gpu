@@ -73,6 +73,20 @@ typedef struct
 
 } sProcAmpParam;
 
+struct sVideoSignalInfoParam: public mfxExtVPPVideoSignalInfo
+{
+    FilterConfig mode;
+    sVideoSignalInfoParam():
+        mode(VPP_FILTER_DISABLED)
+    {
+        Header.BufferId = MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO;
+        Header.BufferSz = sizeof(mfxExtVPPVideoSignalInfo);
+        In.NominalRange   = MFX_NOMINALRANGE_UNKNOWN;
+        In.TransferMatrix = MFX_TRANSFERMATRIX_UNKNOWN;
+        Out = In;
+    };
+} ;
+
 typedef struct
 {    
     mfxU16  factor;

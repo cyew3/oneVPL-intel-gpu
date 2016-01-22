@@ -387,6 +387,12 @@ namespace MfxHwVideoProcessing
         mfxU16      scalingMode;
 
         bool        bEOS;
+
+        bool        bVideoSignalInfo;
+        struct {
+            mfxU16 transferMatrix;
+            mfxU16 nominalRange;
+        } VidoSignalInfoIn, VidoSignalInfoOut;
     } mfxExecuteParams;
 
 

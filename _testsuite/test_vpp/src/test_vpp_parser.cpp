@@ -176,7 +176,7 @@ mfxU8 GetPicStruct( mfxI8 picStruct )
 
 mfxU32 Str2FourCC( vm_char* strInput )
 {
-    mfxU32 fourcc = MFX_FOURCC_YV12;//default
+    mfxU32 fourcc = 0;//default
 
     if ( 0 == vm_string_strcmp(strInput, VM_STRING("yv12")) ) 
     {
@@ -335,7 +335,43 @@ mfxStatus vppParseResetPar(vm_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, sI
             //-----------------------------------------------------------------------------------
             //                   Video Enhancement Algorithms
             //-----------------------------------------------------------------------------------
-            if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-sw")) )
+            if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-ssinr")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+
+                pParams->videoSignalInfoParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
+
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->videoSignalInfoParam[paramID].In.NominalRange);
+            }
+            else if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-dsinr")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+
+                pParams->videoSignalInfoParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
+
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->videoSignalInfoParam[paramID].Out.NominalRange);
+            }
+            else if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-ssitm")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+
+                pParams->videoSignalInfoParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
+
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->videoSignalInfoParam[paramID].In.TransferMatrix);
+            }
+            else if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-dsitm")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+
+                pParams->videoSignalInfoParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
+
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->videoSignalInfoParam[paramID].Out.TransferMatrix);
+            }
+            else if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-sw")) )
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
@@ -662,7 +698,43 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
     {
         CHECK_POINTER(strInput[i], MFX_ERR_NULL_PTR);
         {      
-            if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-gpu_copy")) )
+            if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-ssinr")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+
+                pParams->videoSignalInfoParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
+
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->videoSignalInfoParam[0].In.NominalRange);
+            }
+            else if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-dsinr")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+
+                pParams->videoSignalInfoParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
+
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->videoSignalInfoParam[0].Out.NominalRange);
+            }
+            else if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-ssitm")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+
+                pParams->videoSignalInfoParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
+
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->videoSignalInfoParam[0].In.TransferMatrix);
+            }
+            else if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-dsitm")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+
+                pParams->videoSignalInfoParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
+
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->videoSignalInfoParam[0].Out.TransferMatrix);
+            }
+            else if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-gpu_copy")) )
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;

@@ -2528,6 +2528,70 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             }
             */
         }
+        else
+        {
+            D3D11_VIDEO_PROCESSOR_COLOR_SPACE inColorSpace;
+            inColorSpace.Usage = 0;
+            inColorSpace.RGB_Range       = 0; 
+            inColorSpace.YCbCr_Matrix    = 0; // bt601
+            inColorSpace.YCbCr_xvYCC     = 0;
+            inColorSpace.Nominal_Range   = (inInfo->FourCC == MFX_FOURCC_RGB4) ? D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255 : D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
+
+            SetStreamColorSpace(refIdx, &inColorSpace);
+
+            D3D11_VIDEO_PROCESSOR_COLOR_SPACE outColorSpace;
+            outColorSpace.Usage         = 0;
+            outColorSpace.RGB_Range     = 0;//;
+            outColorSpace.YCbCr_Matrix  = 0; // bt601
+            outColorSpace.YCbCr_xvYCC   = 0;
+            outColorSpace.Nominal_Range = (outInfo->FourCC == MFX_FOURCC_RGB4) ? D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255 : D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
+
+            SetOutputColorSpace(&outColorSpace);
+        }
+
+        /* Video signal info */
+        if (pParams->bVideoSignalInfo)
+        {
+            D3D11_VIDEO_PROCESSOR_COLOR_SPACE inColorSpace;
+            inColorSpace.Usage         = 0;
+            inColorSpace.RGB_Range     = 0; // 16-245 range
+            inColorSpace.YCbCr_Matrix  = 0; // bt601
+            inColorSpace.YCbCr_xvYCC   = 0;
+            inColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
+
+            if (pParams->VidoSignalInfoIn.nominalRange == D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255)
+            {
+                inColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255;
+                inColorSpace.RGB_Range     = 1;
+            }
+            if (pParams->VidoSignalInfoIn.transferMatrix == MFX_TRANSFERMATRIX_BT709)
+            {
+                inColorSpace.YCbCr_Matrix  = 1;
+            }
+
+            SetStreamColorSpace(refIdx, &inColorSpace);
+
+
+            D3D11_VIDEO_PROCESSOR_COLOR_SPACE outColorSpace;
+            outColorSpace.Usage         = 0;
+            outColorSpace.RGB_Range     = 0;
+            outColorSpace.YCbCr_Matrix  = 0;
+            outColorSpace.YCbCr_xvYCC   = 0;
+            outColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
+
+            if (pParams->VidoSignalInfoOut.nominalRange == D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255)
+            {
+                outColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255;
+                outColorSpace.RGB_Range     = 1;
+            }
+
+            if (pParams->VidoSignalInfoOut.transferMatrix == MFX_TRANSFERMATRIX_BT709)
+            {
+                outColorSpace.YCbCr_Matrix = 1;
+            }
+
+            SetOutputColorSpace(&outColorSpace);
+        }
 
         D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputDesc;
         inputDesc.ViewDimension        = D3D11_VPIV_DIMENSION_TEXTURE2D;

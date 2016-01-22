@@ -98,6 +98,12 @@ mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* p
         pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->frcConfig);
     }
 
+    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->videoSignalInfoParam[paramID].mode )
+    {
+        pResources->videoSignalInfoConfig = pParams->videoSignalInfoParam[paramID];
+        pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->videoSignalInfoConfig);
+    }
+
     if( VPP_FILTER_ENABLED_CONFIGURED == pParams->procampParam[paramID].mode )
     {
         pResources->procampConfig.Header.BufferId = MFX_EXTBUFF_VPP_PROCAMP;

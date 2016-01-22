@@ -219,6 +219,8 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
     vm_string_printf(VM_STRING("\n"));
     vm_string_printf(VM_STRING("Video Enhancement Algorithms\n"));
     vm_string_printf(VM_STRING("Deinterlace\t%s\n"), (pParams->frameInfoIn[0].PicStruct != pParams->frameInfoOut[0].PicStruct) ? VM_STRING("ON"): VM_STRING("OFF"));
+    vm_string_printf(VM_STRING("Signal info\t%s\n"),   (VPP_FILTER_DISABLED != pParams->videoSignalInfoParam[0].mode) ? VM_STRING("ON"): VM_STRING("OFF"));
+    vm_string_printf(VM_STRING("Scaling\t\t%s\n"),     (VPP_FILTER_DISABLED != pParams->bScaling) ? VM_STRING("ON"): VM_STRING("OFF"));
     vm_string_printf(VM_STRING("Denoise\t\t%s\n"),     (VPP_FILTER_DISABLED != pParams->denoiseParam[0].mode) ? VM_STRING("ON"): VM_STRING("OFF"));
 
     vm_string_printf(VM_STRING("SceneDetection\t%s\n"),    (VPP_FILTER_DISABLED != pParams->vaParam[0].mode)      ? VM_STRING("ON"): VM_STRING("OFF"));

@@ -120,6 +120,7 @@ typedef struct _filtersParam
     sSteParam                 *pSkinParam         ;
     sIStabParam               *pImgStabParam      ;
     sSVCParam                 *pSVCParam          ;
+    sVideoSignalInfoParam     *pVideoSignalInfo   ;
 } sFiltersParam;
 
 struct sInputParams
@@ -137,6 +138,8 @@ struct sInputParams
     std::vector<sFrameRateConversionParam> frcParam;
     std::vector<sVarianceReportParam     > varianceParam;
     std::vector<sIDetectParam            > idetectParam;
+
+    std::vector<sVideoSignalInfoParam    > videoSignalInfoParam;
 
     // MSDK 3.0
     std::vector<sGamutMappingParam       > gamutParam;
@@ -396,6 +399,7 @@ struct sAppResources
     mfxExtVPPScaling    scalingConfig;
     mfxExtVPPFrameRateConversion    frcConfig;
     mfxExtVPPDeinterlacing deinterlaceConfig;
+    mfxExtVPPVideoSignalInfo  videoSignalInfoConfig;
 
     // MSDK 3.0
     //  mfxExtVPPGamutMapping gamutConfig;

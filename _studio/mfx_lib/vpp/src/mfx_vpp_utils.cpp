@@ -952,6 +952,20 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 break;
             }
 
+            case (mfxU32)MFX_EXTBUFF_VPP_SCALING:
+            {
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "MFX_EXTBUFF_VPP_SCALING");
+                OutputDebugStringA(cStr);
+                break;
+            }
+
+             case (mfxU32)MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
+            {
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO");
+                OutputDebugStringA(cStr);
+                break;
+            }
+
             default:
             {
             }
@@ -1097,6 +1111,11 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
             case (mfxU32)MFX_EXTBUFF_VPP_FIELD_PROCESSING:
             {
                 fprintf(stderr, "VPP_FIELD_PROCESSING \n");
+                break;
+            }
+            case (mfxU32)MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
+            {
+                fprintf(stderr, "VPP_VIDEO_SIGNAL_INFO\n");
                 break;
             }
             default:
@@ -1617,6 +1636,14 @@ mfxStatus GetPipelineList(
         if( !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_SCALING ) )
         {
             pipelineList.push_back( MFX_EXTBUFF_VPP_SCALING );
+        }
+    }
+
+    if( IsFilterFound( &configList[0], configCount, MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO ) && !IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO) )
+    {
+        if( !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO ) )
+        {
+            pipelineList.push_back( MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO );
         }
     }
 

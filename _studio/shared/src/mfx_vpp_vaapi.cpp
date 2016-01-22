@@ -873,10 +873,12 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         {
         case MFX_FOURCC_RGB4:
             m_pipelineParam[refIdx].surface_color_standard = VAProcColorStandardNone;
+            m_pipelineParam[refIdx].input_surface_flag     = VA_SOURCE_RANGE_FULL;
             break;
         case MFX_FOURCC_NV12:  //VA_FOURCC_NV12:
         default:
             m_pipelineParam[refIdx].surface_color_standard = VAProcColorStandardBT601;
+            m_pipelineParam[refIdx].input_surface_flag     = VA_SOURCE_RANGE_REDUCED;
             break;
         }
 
@@ -885,10 +887,12 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         {
         case MFX_FOURCC_RGB4:
             m_pipelineParam[refIdx].output_color_standard = VAProcColorStandardNone;
+            m_pipelineParam[refIdx].output_surface_flag   = VA_SOURCE_RANGE_FULL;
             break;
         case MFX_FOURCC_NV12:
         default:
             m_pipelineParam[refIdx].output_color_standard = VAProcColorStandardBT601;
+            m_pipelineParam[refIdx].output_surface_flag   = VA_SOURCE_RANGE_REDUCED;
             break;
         }
 
@@ -919,8 +923,32 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             }
         }
 
-        m_pipelineParam[refIdx].filters  = m_filterBufs;
+        m_pipelineParam[refIdx].filters      = m_filterBufs;
         m_pipelineParam[refIdx].num_filters  = m_numFilterBufs;
+
+
+        if(pParams->bVideoSignalInfo)
+        {
+            if(pParams->VidoSignalInfoIn.transferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)
+            {
+                m_pipelineParam[refIdx].surface_color_standard = (MFX_TRANSFERMATRIX_BT709 == pParams->VidoSignalInfoIn.transferMatrix ? VAProcColorStandardBT709 : VAProcColorStandardBT601);
+            }
+
+            if(pParams->VidoSignalInfoIn.nominalRange != MFX_NOMINALRANGE_UNKNOWN)
+            {
+                m_pipelineParam[refIdx].input_surface_flag = (MFX_NOMINALRANGE_0_255 == pParams->VidoSignalInfoIn.nominalRange) ? VA_SOURCE_RANGE_FULL : VA_SOURCE_RANGE_REDUCED;
+            }
+
+            if(pParams->VidoSignalInfoOut.transferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)
+            {
+                m_pipelineParam[refIdx].output_color_standard = (MFX_TRANSFERMATRIX_BT709 == pParams->VidoSignalInfoOut.transferMatrix ? VAProcColorStandardBT709 : VAProcColorStandardBT601);
+            }
+
+            if(pParams->VidoSignalInfoOut.nominalRange != MFX_NOMINALRANGE_UNKNOWN)
+            {
+                m_pipelineParam[refIdx].output_surface_flag = (MFX_NOMINALRANGE_0_255 == pParams->VidoSignalInfoOut.nominalRange) ? VA_SOURCE_RANGE_FULL : VA_SOURCE_RANGE_REDUCED;
+            }
+        }
 
         vaSts = vaCreateBuffer(m_vaDisplay,
                             m_vaContextVPP,
