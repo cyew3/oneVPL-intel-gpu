@@ -452,12 +452,11 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
         pPWT = &task.m_pwt[fieldId];
 
     SliceDivider divider = MakeSliceDivider(
-        hwCaps.SliceStructure,
+        (hwCaps.SliceLevelRateCtrl)?4:hwCaps.SliceStructure,//temporal WA for KBL multislice as it reports 3 instead of 4
         task.m_numMbPerSlice,
         pps.NumSlice,
         sps.FrameWidth  / 16,
-        sps.FrameHeight / 16 / numPics,
-        hwCaps.SliceLevelRateCtrl);
+        sps.FrameHeight / 16 / numPics);
 
     if (divider.GetNumSlice() != slice.size())
     {
