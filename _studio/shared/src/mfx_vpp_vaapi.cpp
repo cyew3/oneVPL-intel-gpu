@@ -46,6 +46,11 @@ static float convertValue(const float OldMin,const float OldMax,const float NewM
 #define DEFAULT_CONTRAST 1
 #define DEFAULT_BRIGHTNESS 0
 
+
+#define VA_TOP_FIELD_WEAVE        0x00000004
+#define VA_BOTTOM_FIELD_WEAVE     0x00000008
+
+
 VAAPIVideoProcessing::VAAPIVideoProcessing():
   m_bRunning(false)
 , m_core(NULL)
@@ -389,7 +394,11 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
     caps.uMaxWidth  = 4096;
     caps.uMaxHeight = 4096;
 
+#if defined (MFX_ENABLE_MJPEG_WEAVE_DI_VPP)
     caps.uFieldWeavingControl = 1;
+#else
+    caps.uFieldWeavingControl = 0;
+#endif
 
     // [FourCC]
     // should be changed by libva support
@@ -902,10 +911,10 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             switch (pRefSurf->frameInfo.PicStruct)
             {
                 case MFX_PICSTRUCT_FIELD_TFF:
-                    m_pipelineParam[refIdx].filter_flags = 4;
+                    m_pipelineParam[refIdx].filter_flags = VA_TOP_FIELD_WEAVE;
                     break;
                 case MFX_PICSTRUCT_FIELD_BFF:
-                    m_pipelineParam[refIdx].filter_flags = 8;
+                    m_pipelineParam[refIdx].filter_flags = VA_BOTTOM_FIELD_WEAVE;
                     break;
             }
         }
@@ -1222,6 +1231,20 @@ mfxStatus VAAPIVideoProcessing::Execute_FakeOutput(mfxExecuteParams *pParams)
             case MFX_PICSTRUCT_FIELD_BFF:
                 m_pipelineParam[refIdx].filter_flags = VA_BOTTOM_FIELD;
                 break;
+		}
+
+        if (pParams->bFieldWeaving)
+        {
+            // Field weaving needs flags that are different from usual pipeline
+            switch (pRefSurf->frameInfo.PicStruct)
+            {
+                case MFX_PICSTRUCT_FIELD_TFF:
+                    m_pipelineParam[refIdx].filter_flags = VA_TOP_FIELD_WEAVE;
+                    break;
+                case MFX_PICSTRUCT_FIELD_BFF:
+                    m_pipelineParam[refIdx].filter_flags = VA_BOTTOM_FIELD_WEAVE;
+                    break;
+            }
         }
 
         m_pipelineParam[refIdx].filters  = m_filterBufs;
