@@ -1,6 +1,6 @@
 /*********************************************************************************\
 **
-** Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
+** Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
 **
 ** Project:                Hardware Motion Estimation C Model
 ** File:                MEforGen75_IME.cpp
@@ -119,11 +119,11 @@ int MEforGen75::IntegerMESearchUnit( )
     for(i=0;i<4;i++) UniOpportunitySad[1][i] = UniOpportunitySad[0][i] = MBINVALID_DIST;
     DistInter = MBINVALID_DIST;
 
-    if(e = GetNextSU( )) return e;
+    if((e = GetNextSU( ))) return e;
     do{
         x = NextSU.x; y = NextSU.y; i = NextRef; 
         if((e = OneSearchUnit(x,y,i))>1) return e;
-        if(e1 = GetNextSU( )) return e1;
+        if((e1 = GetNextSU( ))) return e1;
         if(NextRef==1){--AltMoreSU;}
         refIdx = (Vsta.VmeModes&4) ? i : 0;
         if (CheckNextReqValid==false || (CheckNextReqValid==true && NextRef<3))
@@ -1028,9 +1028,9 @@ void MEforGen75::PreBMEPartition(I32 *dist, U16 *mode, bool benablecopy)
             }
         }
         additionalCost = 0;
-        if(m&0x0200&&(!L0_BWD_Penalty) || ((!(m&0x0200))&&L0_BWD_Penalty))
+        if(((m&0x0200)&&(!L0_BWD_Penalty)) || ((!(m&0x0200))&&L0_BWD_Penalty))
             additionalCost +=1;
-        if(m&0x0800&&(!L0_BWD_Penalty) || ((!(m&0x0800))&&L0_BWD_Penalty))
+        if(((m&0x0800)&&(!L0_BWD_Penalty)) || ((!(m&0x0800))&&L0_BWD_Penalty))
             additionalCost +=1;
         additionalCost *= LutMode[LUTMODE_INTER_BWD];
         d = LutMode[LUTMODE_INTER_8x16]+useDist8x16_0+useDist8x16_1+additionalCost;
@@ -1093,9 +1093,9 @@ void MEforGen75::PreBMEPartition(I32 *dist, U16 *mode, bool benablecopy)
             }
         }
         additionalCost = 0;
-        if(m&0x0200&&(!L0_BWD_Penalty) || ((!(m&0x0200))&&L0_BWD_Penalty))
+        if(((m&0x0200)&&(!L0_BWD_Penalty)) || ((!(m&0x0200))&&L0_BWD_Penalty))
             additionalCost +=1;
-        if(m&0x2000&&(!L0_BWD_Penalty) || ((!(m&0x2000))&&L0_BWD_Penalty))
+        if(((m&0x2000)&&(!L0_BWD_Penalty)) || ((!(m&0x2000))&&L0_BWD_Penalty))
             additionalCost +=1;
         additionalCost *= LutMode[LUTMODE_INTER_BWD];
 
@@ -3130,7 +3130,7 @@ void MEforGen75::Select2SUs(int bDualRecord, bool in_bCheckInFlightSU)
     U8 numValidSUs = 0;
     int x = 0;
     int y = 0;
-    I16 SuCount[2] = {FixedCntSu[0] + AdaptiveCntSu[0],FixedCntSu[1] + AdaptiveCntSu[1]};
+    I16 SuCount[2] = {static_cast<I16>(FixedCntSu[0] + AdaptiveCntSu[0]), static_cast<I16>(FixedCntSu[1] + AdaptiveCntSu[1])};
 
     if(bCheckInFlightSU)
     {

@@ -4,13 +4,16 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2007-2012 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2007-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
 #include "umc_defs.h"
 
 #if defined (UMC_ENABLE_UMC_SCENE_ANALYZER)
+#if defined(__GNUC__)
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #include <ippi.h>
 #include <ipps.h>
@@ -124,6 +127,8 @@ Status SceneAnalyzerPicture::Init(Ipp32s srcWidth, Ipp32s srcHeight,
         break;
 
     case GRAY:
+        break;
+    default:
         break;
     }
 

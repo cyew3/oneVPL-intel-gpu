@@ -1,6 +1,6 @@
 /*********************************************************************************\
 **
-** Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
+** Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
 **
 ** Project:                Hardware Motion Estimation C Model
 ** File:                MEforGen75_INTRA.cpp
@@ -476,7 +476,7 @@ int MEforGen75::Intra8x8SearchUnit( )
     pmode = (IsEdgeBlock&4) ? DCP : ((x<y)?x:y);
 
     // 2nd 8x8 depends on B, C.  D is set based on B avail
-    IntraPredict8x8(src+ 8, lft, top+ 8, IsEdgeBlock&(NO_AVAIL_B | NO_AVAIL_C) | (TopDisableFlag ? NO_AVAIL_D : 0), pmode, &Intra8x8PredMode[1], &d );
+    IntraPredict8x8(src+ 8, lft, top+ 8, (IsEdgeBlock&(NO_AVAIL_B | NO_AVAIL_C)) | (TopDisableFlag ? NO_AVAIL_D : 0), pmode, &Intra8x8PredMode[1], &d );
     dist += d;
     x = ((VSICsta.LeftModes>>8)&15);
     y = Intra8x8PredMode[0];

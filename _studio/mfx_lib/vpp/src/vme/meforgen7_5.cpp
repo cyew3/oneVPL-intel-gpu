@@ -1,6 +1,6 @@
 /*********************************************************************************\
 **
-** Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
+** Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
 **
 ** Project:                Hardware Motion Estimation C Model
 ** File:                MEforGen75.cpp
@@ -45,7 +45,7 @@ Field cases:
         0x3F33  = two field blocks of 16x8, both fields bidirectional
         0x3F55  = four field 8x8 blocks, all forward.
 
-/*****************************************************************************************************/
+\*****************************************************************************************************/
 MEforGen75::MEforGen75( )
 /*****************************************************************************************************/
 {
@@ -131,9 +131,10 @@ Status MEforGen75::CheckVMEInput(int message_type)
                     (Vsta.RefW == 48 && Vsta.RefH == 36) || (Vsta.RefW == 44 && Vsta.RefH == 36) ||
                     (Vsta.RefW == 40 && Vsta.RefH == 36) || (Vsta.RefW == 36 && Vsta.RefH == 36)))
                 {
-                    //printf("[%d, %d]: single ref accepts subsets of 64x32, 32x64, or any of the following:\n \
-                    //    \t48x40, 44x40, 40x40, 36x40, 48x36, 44x36, 40x36, 36x36\n", 
-                    //    Vsta.SrcMB.x, Vsta.SrcMB.y);
+                    /*printf("[%d, %d]: single ref accepts subsets of 64x32, 32x64, or any of the following:\n \
+                        \t48x40, 44x40, 40x40, 36x40, 48x36, 44x36, 40x36, 36x36\n",
+                        Vsta.SrcMB.x, Vsta.SrcMB.y);
+                    */
                     return 1;
                 }
             }
@@ -263,7 +264,7 @@ Status MEforGen75::RunIME(mfxVME7_5UNIIn *uni, mfxVME7_5IMEIn *ime, mfxVME7_5UNI
     Status status;
     MFX_INTERNAL_CPY(&Vsta,uni,sizeof(mfxVME7_5UNIIn));
     MFX_INTERNAL_CPY(&VIMEsta,ime,sizeof(mfxVME7_5IMEIn));
-    if (status = CheckVMEInput(IME_MSG))
+    if ((status = CheckVMEInput(IME_MSG)))
     {
         return status;
     }
@@ -370,7 +371,7 @@ Status MEforGen75::RunIME(mfxVME7_5UNIOutput *uni_out, mfxVME7_5IMEOutput *ime_o
     EarlyImeStop   = (Vsta.EarlyImeStop  &15)<<(Vsta.EarlyImeStop  >>4);
     EarlyImeStop  &= MAXEARLYTHRESH; // JMHTODO: Is threshold same as SNB\IVB?
 
-    if(e = SetupLutCosts( )) return e;
+    if((e = SetupLutCosts( ))) return e;
     if(Vsta.SrcType&3){ // reduced macroblocks
         //Vsta.DoIntraInter &= 0xFFFD; // no intra;
         Vsta.SrcType &= (~(ST_FIELD_16X8|ST_FIELD_8X8)); // no field modes
@@ -411,7 +412,7 @@ Status MEforGen75::RunIME(mfxVME7_5UNIOutput *uni_out, mfxVME7_5IMEOutput *ime_o
             IsBottom[0] = true;
     }
 
-    if(e = SetupSearchPath( )) return e;
+    if((e = SetupSearchPath( ))) return e;
 
     // get correct ref ids for fetching
     // IME only uses 1st blk
@@ -467,7 +468,7 @@ Status MEforGen75::RunIME(mfxVME7_5UNIOutput *uni_out, mfxVME7_5IMEOutput *ime_o
 
     DistInter = MajorDist[0];
     
-    if(e = SummarizeFinalOutputIME( )) return e;
+    if((e = SummarizeFinalOutputIME( ))) return e;
     CleanRecordOut();
 
     if(Vsta.SrcType&1){ // 16x8 or 8x8
@@ -556,7 +557,7 @@ Status MEforGen75::RunSIC(mfxVME7_5UNIIn *uni, mfxVME7_5SICIn *sic, mfxVME7_5UNI
     Status status;
     MFX_INTERNAL_CPY(&Vsta,uni,sizeof(mfxVME7_5UNIIn));
     MFX_INTERNAL_CPY(&VSICsta,sic,sizeof(mfxVME7_5SICIn));
-    if (status = CheckVMEInput(SIC_MSG))
+    if ((status = CheckVMEInput(SIC_MSG)))
     {
         return status;
     }
@@ -658,7 +659,7 @@ Status MEforGen75::RunSIC(mfxVME7_5UNIOutput *uni_out)
     DistInter = MBMAXDIST;
     EarlySkipSuc = MBMAXDIST;
 
-    if(e = SetupLutCosts( )) return e;
+    if((e = SetupLutCosts( ))) return e;
     if((Vsta.SrcType&3) && !(Vsta.SadType&INTER_CHROMA_MODE)){ // reduced macroblocks
         //Vsta.DoIntraInter &= 0xFFFD; // no intra;
         Vsta.SrcType &= (~(ST_FIELD_16X8|ST_FIELD_8X8)); // no field modes
@@ -732,7 +733,7 @@ Status MEforGen75::RunSIC(mfxVME7_5UNIOutput *uni_out)
         if(VSICsta.IntraComputeType==INTRA_LUMA_CHROMA) ChromaPredMode = Intra8x8ChromaSearchUnit( );
     }
     
-    if(e = SummarizeFinalOutputSIC( )) return e;
+    if((e = SummarizeFinalOutputSIC( ))) return e;
     //CleanRecordOut();
 
     if(!(Vsta.VmeFlags&VF_PB_SKIP_ENABLE))
@@ -809,7 +810,7 @@ Status MEforGen75::RunFBR(mfxVME7_5UNIIn *uni, mfxVME7_5FBRIn *fbr, mfxVME7_5UNI
     Status status;
     MFX_INTERNAL_CPY(&Vsta,uni,sizeof(mfxVME7_5UNIIn));
     MFX_INTERNAL_CPY(&VFBRsta,fbr,sizeof(mfxVME7_5FBRIn));
-    if (status = CheckVMEInput(FBR_MSG))
+    if ((status = CheckVMEInput(FBR_MSG)))
     {
         return status;
     }
@@ -879,7 +880,7 @@ Status MEforGen75::RunFBR(mfxVME7_5UNIOutput *uni_out)
 
     Vsta.VmeModes |= VM_MODE_DDD; //For FBR, SearchControl is a don't care; So always Dual Reference
     
-    if(e = SetupLutCosts( )) return e;
+    if((e = SetupLutCosts( ))) return e;
     if(Vsta.SrcType&3){ // reduced macroblocks
         //Vsta.DoIntraInter &= 0xFFFD; // no intra;
         Vsta.SrcType &= (~(ST_FIELD_16X8|ST_FIELD_8X8)); // no field modes
@@ -1062,7 +1063,7 @@ Status MEforGen75::RunFBR(mfxVME7_5UNIOutput *uni_out)
     
     MajorMode[0] = ((SubPredMode[0]<<8)|MajorMode[0]);
 
-    if(e = SummarizeFinalOutputFBR( )) return e;
+    if((e = SummarizeFinalOutputFBR( ))) return e;
     //CleanRecordOut();
 
     if(Vsta.SrcType&1){ // 16x8 or 8x8
@@ -1255,7 +1256,7 @@ int MEforGen75::SummarizeFinalOutputIME( )
             Vout->RefId[k] = (BestRef[1][BHXH]<<4)|BestRef[0][BHXH];
         replFactor = 16;    
         for(k=0;k<replFactor;k++){
-            AssignMV(m&0x2 | (~m)&0x1, k, BHXH);
+            AssignMV((m&0x2) | ((~m)&0x1), k, BHXH);
         }
     }
     else if(m<0x1000){ // 8x16
@@ -2277,7 +2278,7 @@ void MEforGen75::AssignMV(int mode, int k, int shape, int bi)
 
 
      // dual ref, or single record, or dual record and L0 wins, output 0
-    if( (Vsta.VmeModes&4)  ||  (Vsta.VmeModes&2) && (!(mode&3)) || (!(Vsta.VmeModes&2)))
+    if( ((Vsta.VmeModes&4)  ||  (Vsta.VmeModes&2)) && ((!(mode&3)) || (!(Vsta.VmeModes&2))))
     {// REF 0
         if(bi==0||bi==2)
             Vout->Mvs[k][0] = Best[0][shape];

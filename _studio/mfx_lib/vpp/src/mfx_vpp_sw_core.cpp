@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          Common Video Pre\Post Processing
@@ -688,7 +688,7 @@ mfxStatus VideoVPPSW::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out,
     /*              hold  surfaces             */
     /* *************************************** */
     if( in && !bIgnoreInput && (MFX_ERR_NONE == stsReadinessPipeline ||
-        MFX_ERR_MORE_DATA_RUN_TASK == stsReadinessPipeline ||
+        static_cast<int>(MFX_ERR_MORE_DATA_RUN_TASK) == static_cast<int>(stsReadinessPipeline) ||
         MFX_ERR_MORE_SURFACE == stsReadinessPipeline) )
     {
         sts = m_core->IncreaseReference( &(in->Data) );
@@ -708,7 +708,7 @@ mfxStatus VideoVPPSW::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out,
 
     /* initialization for multi threading */
     if (MFX_ERR_NONE == stsReadinessPipeline ||
-        MFX_ERR_MORE_DATA_RUN_TASK == stsReadinessPipeline ||
+        static_cast<int>(MFX_ERR_MORE_DATA_RUN_TASK) == static_cast<int>(stsReadinessPipeline) ||
         MFX_ERR_MORE_SURFACE == stsReadinessPipeline)
     {
         AsyncParams *pAsyncParams = new AsyncParams;

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          Resize for Video Pre\Post Processing
@@ -14,6 +14,9 @@
 #include "mfx_common.h"
 
 #if defined(MFX_ENABLE_VPP) && defined(MFX_ENABLE_IMAGE_STABILIZATION_VPP)
+#if defined(__GNUC__)
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #include <assert.h>
 #include <math.h>
@@ -426,7 +429,7 @@ bool MFXVideoVPPImgStab::IsReadyOutput( mfxRequestType requestType )
 
 void MFXVideoVPPImgStab::InitMotionSmoothFilter(mfxF64 sigma)
 {
-    int i;
+    unsigned int i;
     double d = sigma * 2 / (int)(MSF_TAP / 2);
     double v = -sigma * 2;
     double s2 = sigma * sigma;
@@ -1016,8 +1019,8 @@ mfxStatus MFXVideoVPPImgStab::GetBufferSizeEx( SizeInfo & sizeInf )
         sizeInf.m_preOutSizeY  = m_preOut.Data.Pitch * m_preOut.Info.Height;
         sizeInf.m_preOutSizeUV = (m_preOut.Data.Pitch * m_preOut.Info.Height) >> 1;
 
-        IppiSize dstSize = {m_width, m_height};// aya: it is correct
-        IppiSize srcSize = {m_destWidth, m_destHeight};
+        IppiSize dstSize = {static_cast<int>(m_width), static_cast<int>(m_height)};// aya: it is correct
+        IppiSize srcSize = {static_cast<int>(m_destWidth), static_cast<int>(m_destHeight)};
 
         ippSts = ippiResizeYUV420GetBufSize(
             srcSize, 

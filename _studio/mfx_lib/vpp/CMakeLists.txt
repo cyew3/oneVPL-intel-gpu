@@ -1,5 +1,7 @@
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
+set( defs "-Wall -Werror" )
+
 list( APPEND cdirs
   scene_analyzer
   )
@@ -17,4 +19,5 @@ list( APPEND sources ${srcs})
 make_library( vpp sw static )
 include_directories( ${CMAKE_SOURCE_DIR}/mfx_lib/cmrt_cross_platform/include )
 make_library( vpp hw static )
+set( defs "" )
 
