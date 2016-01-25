@@ -739,11 +739,24 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     mfxExtFeiParam* feiParam = (mfxExtFeiParam*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_FEI_PARAM);
     m_isENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCPAK);
-    if(m_isENCPAK){
-        //force rc to cqp only
-        par->mfx.RateControlMethod = MFX_RATECONTROL_CQP;
+
+    m_video = *par;
+    /* FEI works with CQP only */
+    if ((m_isENCPAK) && (MFX_RATECONTROL_CQP != par->mfx.RateControlMethod)){
+        m_video.mfx.RateControlMethod =  MFX_RATECONTROL_CQP;
+    }
+    /* One more checking for FEI */
+    if ((m_isENCPAK) &&
+        ((MFX_PROFILE_AVC_BASELINE == m_video.mfx.CodecProfile) ||(MFX_PROFILE_AVC_MAIN == m_video.mfx.CodecProfile)) )
+    {
+        mfxExtCodingOption *       extOpt  = GetExtBuffer(m_video);
+        extOpt->InterPredBlockSize = MFX_BLOCKSIZE_MIN_16X16;
     }
 
+    /*!!! This is WA for number of references frames for FEI case*/
+    if ((m_isENCPAK) && (par->mfx.NumRefFrame >4))
+        m_video.mfx.NumRefFrame = 4;
+    
     m_video = *par;
     sts = ReadSpsPpsHeaders(m_video);
     MFX_CHECK_STS(sts);
@@ -1155,6 +1168,24 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         m_bestGOPCost[i] = MAX_SEQUENCE_COST;
     }
 #endif
+
+    if (m_isENCPAK)
+    {
+        // In case of FEI ENCPAK only stream level control is supported 
+        // for slice header parameters. The application must provide exactly the same
+        // number for slices to the number of slices specified during initialization
+        mfxU32 fieldCount = m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
+        for (mfxU32 i = 0; i < fieldCount; i++)
+        {
+            mfxExtFeiSliceHeader *pDataSliceHeader = GetExtBuffer(m_video, i);
+            if (NULL != pDataSliceHeader->Slice)
+            {
+                if ((pDataSliceHeader->NumSlice != pDataSliceHeader->NumSliceAlloc)
+                    || (GetMaxNumSlices(m_video) != pDataSliceHeader->NumSlice))
+                    return MFX_ERR_INVALID_VIDEO_PARAM;
+            }
+        }
+    }
 
     m_videoInit = m_video;
 
@@ -2094,6 +2125,20 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         m_stagesToGo = m_emulatorForAsyncPart.Go(!m_incoming.empty());
     }
 
+
+    mfxExtFeiParam const * extFeiParams = GetExtBuffer(m_video, 0);
+    mfxU32 stagesToGo = 0;
+    if ((MFX_CODINGOPTION_ON == extFeiParams->SingleFieldProcessing ) && (1 == m_fieldCounter))
+    {
+        stagesToGo = m_stagesToGo;
+        /* Coding last field in FEI Field processing mode
+        * task is ready, just need to call m_ddi->Execute() and
+        * m_ddi->QueryStatus()... And free encoding task
+        */
+        m_stagesToGo = AsyncRoutineEmulator::STG_BIT_RESTART*2;
+    }
+
+
 #if USE_AGOP
 #if 0
     fprintf(stderr,"num_calls: %d ", numCall);
@@ -2630,6 +2675,26 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             mfxStatus sts = m_ddi->Execute(task->m_handleRaw.first, *task, task->m_fid[f], m_sei);
             if (sts != MFX_ERR_NONE)
                 return Error(sts);
+            /* FEI Field processing mode: store first field */
+            if ((MFX_CODINGOPTION_ON == extFeiParams->SingleFieldProcessing)&& (0 == m_fieldCounter))
+            {
+                m_fieldCounter = 1;
+                m_lastFeiTask = *task;
+
+                task->m_bsDataLength[0] = task->m_bsDataLength[1] = 0;
+
+                if ((sts = QueryStatus(*task, task->m_fid[f])) != MFX_ERR_NONE)
+                    return sts;
+
+                if ((NULL == task->m_bs) && (bs != NULL))
+                    task->m_bs = bs;
+
+                if ((sts = UpdateBitstream(*task, task->m_fid[f])) != MFX_ERR_NONE)
+                    return Error(sts);
+                /*DO NOT submit second filed for execution in this case
+                 * (FEI Field processing mode)*/
+                break;
+            }
         }
 
         //printf("\rENC_SUBMITTED do=%4d eo=%4d type=%d\n", task->m_frameOrder, task->m_encOrder, task->m_type[0]); fflush(stdout);
@@ -2827,19 +2892,29 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         }
         else if (IsOff(extOpt->FieldOutput))
         {
-            for (mfxU32 f = 0; f <= task->m_fieldPicFlag; f++)
-            {
-                if ((sts = QueryStatus(*task, task->m_fid[f])) != MFX_ERR_NONE)
-                    return sts;
-            }
-            task->m_bs = bs;
-            for (mfxU32 f = 0; f <= task->m_fieldPicFlag; f++)
-            {
+            mfxU32 f = 0;
+            mfxU32 f_start = 0;
+            mfxU32 f_end = task->m_fieldPicFlag;
 
-                if ((sts = UpdateBitstream(*task, task->m_fid[f])) != MFX_ERR_NONE)
-                    return Error(sts);
-            }
-            OnEncodingQueried(task);
+            /* Query results if NO FEI Field processing mode (this is legacy encoding) */
+            if ((MFX_CODINGOPTION_OFF == extFeiParams->SingleFieldProcessing) ||
+                (MFX_CODINGOPTION_UNKNOWN == extFeiParams->SingleFieldProcessing))
+            {
+                for (f = f_start; f <= f_end; f++)
+                {
+                    if ((sts = QueryStatus(*task, task->m_fid[f])) != MFX_ERR_NONE)
+                        return sts;
+                }
+                task->m_bs = bs;
+                for (f = f_start; f <= f_end; f++)
+                {
+
+                    if ((sts = UpdateBitstream(*task, task->m_fid[f])) != MFX_ERR_NONE)
+                        return Error(sts);
+                }
+
+                OnEncodingQueried(task);
+            } // if (MFX_CODINGOPTION_OFF == extFeiParams->SingleFieldProcessing)
         }
         else
         {
@@ -2860,9 +2935,40 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 m_listOfPairsForStupidFieldOutputMode.pop_front();
                 m_listOfPairsForStupidFieldOutputMode.pop_front();
             }       
-        
         }
     }
+
+    /* FEI Field processing mode: second (last) field processing */
+    if ( ((AsyncRoutineEmulator::STG_BIT_RESTART*2) == m_stagesToGo ) &&
+         (MFX_CODINGOPTION_ON== extFeiParams->SingleFieldProcessing) &&
+         (1 == m_fieldCounter) )
+    {
+        std::list<DdiTask>  tempTaskList;
+        tempTaskList.push_back(m_lastFeiTask);
+        DdiTaskIter task = FindFrameToWaitEncode(tempTaskList.begin(), tempTaskList.end());
+        mfxU32 f = 1; // coding second field
+        PrepareSeiMessageBuffer(m_video, *task, task->m_fid[f], m_sei);
+
+        mfxStatus sts = m_ddi->Execute(task->m_handleRaw.first, *task, task->m_fid[f], m_sei);
+        if (sts != MFX_ERR_NONE)
+            return Error(sts);
+
+        task->m_bsDataLength[0] = task->m_bsDataLength[1] = 0;
+
+        if ((sts = QueryStatus(*task, task->m_fid[f])) != MFX_ERR_NONE)
+            return sts;
+
+        if ((NULL == task->m_bs) && (bs != NULL))
+            task->m_bs = bs;
+
+        if ((sts = UpdateBitstream(*task, task->m_fid[f])) != MFX_ERR_NONE)
+            return Error(sts);
+
+        m_fieldCounter = 0;
+        m_stagesToGo = stagesToGo;
+        OnEncodingQueried(task);
+    } // if (( (AsyncRoutineEmulator::STG_BIT_RESTART*2) == m_stagesToGo ) &&
+
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_RESTART)
     {
@@ -2989,6 +3095,26 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
         return checkSts;
 
     mfxStatus status = checkSts;
+
+    mfxExtFeiParam const * extFeiParams = GetExtBuffer(m_video, 0);
+    /* If (1): encoder in state "FEI field processing mode"
+     * and (2): first field is coded already
+     * scheduler can start execution immediately as task stored and ready
+     * */
+    if ((MFX_CODINGOPTION_ON == extFeiParams->SingleFieldProcessing ) && (1 == m_fieldCounter))
+    {
+        entryPoints[0].pState               = this;
+        entryPoints[0].pParam               = bs;
+        entryPoints[0].pCompleteProc        = 0;
+        entryPoints[0].pGetSubTaskProc      = 0;
+        entryPoints[0].pCompleteSubTaskProc = 0;
+        entryPoints[0].requiredNumThreads   = 1;
+        entryPoints[0].pRoutineName         = "AsyncRoutine";
+        entryPoints[0].pRoutine             = AsyncRoutineHelper;
+        numEntryPoints = 1;
+
+        return status;
+    }
 
     {
         UMC::AutomaticUMCMutex guard(m_listMutex);

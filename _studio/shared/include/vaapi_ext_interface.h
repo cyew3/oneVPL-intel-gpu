@@ -349,7 +349,7 @@ typedef struct _VAEncMiscParameterVP8SegmentMapParams
 //    unsigned char qp_y;
 //} VAEncQpBufferH264;
 
-#define VA_CONFIG_ATTRIB_FEI_INTERFACE_REV_INTEL  011
+#define VA_CONFIG_ATTRIB_FEI_INTERFACE_REV_INTEL  0x014
 
 /**
      * \brief FEI interface Revision attribute. Read-only.
@@ -689,17 +689,33 @@ typedef struct _VAEncFEIDistortionBufferH264Intel {
 
 
 //va_intel_statastics.h
+
+typedef struct _VAPictureFEI
+{
+    VASurfaceID picture_id;
+    /*
+     *      * see flags below.
+     *           */
+    unsigned int flags;
+} VAPictureFEI;
+/* flags in VAPictureFEI could be one of the following */
+#define VA_PICTURE_FEI_INVALID                   0xffffffff
+#define VA_PICTURE_FEI_PROGRESSIVE               0x00000000
+#define VA_PICTURE_FEI_TOP_FIELD                 0x00000001
+#define VA_PICTURE_FEI_BOTTOM_FIELD              0x00000002
+#define VA_PICTURE_FEI_CONTENT_UPDATED           0x00000010
+
 /** \brief Motion Vector and Statistics frame level controls.
  * VAStatsStatisticsParameterBufferTypeIntel for 16x16 block
  **/
 typedef struct _VAStatsStatisticsParameter16x16Intel
 {
     /** \brief Source surface ID.  */
-    VASurfaceID     input;
+    VAPictureFEI     input;
 
-    VASurfaceID     *past_references;
+    VAPictureFEI     *past_references;
     unsigned int    num_past_references;
-    VASurfaceID     *future_references;
+    VAPictureFEI     *future_references;
     unsigned int    num_future_references;
 
     /** \brief ID of the output buffer.
@@ -758,15 +774,8 @@ typedef struct _VAStatsStatisticsParameter16x16Intel
     unsigned int    disable_mv_output           : 1;
     /** \brief StatisticsOutput. When set to 1, Statistics output is NOT provided. */
     unsigned int    disable_statistics_output   : 1;
-    /** \brief interlaced.
-     * 0  : progressive
-     * 1  : top field
-     * 2  : bottom field
-     * 3-7: reserved
-     **/
-    unsigned int    interlaced                  : 3;
     unsigned int    enable_8x8statistics        : 1;
-    unsigned int    reserved3                   : 26;
+    unsigned int    reserved3                   : 29;
 
 } VAStatsStatisticsParameter16x16Intel;
 

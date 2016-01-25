@@ -3,7 +3,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -226,6 +226,8 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
 
     mfxStatus sts = MFX_ERR_NONE;
     DdiTask & task = m_incoming.front();
+    mfxU32 f = 0, f_start = 0;
+    mfxU32 fieldCount = task.m_fieldPicFlag;
 
     mfxU32 prevsfid         = m_prevTask.m_fid[1];
     mfxU8  idrPicFlag       = !!(task.GetFrameType() & MFX_FRAMETYPE_IDR);
@@ -265,7 +267,18 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
     if (sts != MFX_ERR_NONE)
           return Error(sts);
 
-    for (mfxU32 f = 0; f <= task.m_fieldPicFlag; f++)
+    if ((MFX_CODINGOPTION_ON == m_singleFieldProcessingMode) && (0 == m_firstFieldDone))
+    {
+        f_start = 0;
+        fieldCount = 0;
+    }
+    else if ((MFX_CODINGOPTION_ON == m_singleFieldProcessingMode) && (1 == m_firstFieldDone))
+    {
+        f_start = 1;
+        fieldCount = 1;
+    }
+
+    for (f = f_start; f <= fieldCount; f++)
     {
         //fprintf(stderr,"handle=0x%x mid=0x%x\n", task.m_handleRaw, task.m_midRaw );
         sts = m_ddi->Execute(task.m_handleRaw.first, task, task.m_fid[f], m_sei);
@@ -273,7 +286,13 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
                  return Error(sts);
     }
 
-    m_prevTask = task;
+    if ((0 == m_firstFieldDone) && (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode))
+        m_firstFieldDone = 1;
+    else if ((1 == m_firstFieldDone) && (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode))
+        m_firstFieldDone = 0;
+
+    if (0 == m_firstFieldDone)
+        m_prevTask = task;
 
     return sts;
 }
@@ -290,7 +309,24 @@ mfxStatus VideoPAK_PAK::Query(DdiTask& task)
     mdprintf(stderr,"query\n");
     mfxStatus sts = MFX_ERR_NONE;
     
-    for (mfxU32 f = 0; f <= task.m_fieldPicFlag; f++)
+    mfxU32 f = 0, f_start = 0;
+    mfxU32 fieldCount = task.m_fieldPicFlag;
+
+    mfxENCInput* in = (mfxENCInput*)task.m_userData[0];
+    mfxExtFeiEncFrameCtrl* feiCtrl = GetExtBufferFEI(in, 0);
+
+    if ((MFX_CODINGOPTION_ON == m_singleFieldProcessingMode) && (1 == m_firstFieldDone))
+    {
+        f_start = 0;
+        fieldCount = 0;
+    }
+    else if ((MFX_CODINGOPTION_ON == m_singleFieldProcessingMode) && (0 == m_firstFieldDone))
+    {
+        f_start = 1;
+        fieldCount = 1;
+    }
+
+    for (f = f_start; f <= fieldCount; f++)
     {
         sts = m_ddi->QueryStatus(task, task.m_fid[f]);
         if (sts == MFX_WRN_DEVICE_BUSY)
@@ -307,10 +343,12 @@ mfxStatus VideoPAK_PAK::Query(DdiTask& task)
     //m_incoming
     std::list<DdiTask>::iterator it = std::find(m_incoming.begin(), m_incoming.end(), task);
     if(it != m_incoming.end())
-    {
         m_free.splice(m_free.end(), m_incoming, it);
-    }else
+    else
         return MFX_ERR_NOT_FOUND;
+
+//    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
+//        m_firstFieldDone = MFX_CODINGOPTION_UNKNOWN;
 
     return MFX_ERR_NONE;
 
@@ -358,6 +396,8 @@ VideoPAK_PAK::VideoPAK_PAK(VideoCORE *core,  mfxStatus * sts)
     : m_bInit( false )
     , m_core( core )
     , m_prevTask()
+    ,m_singleFieldProcessingMode(0)
+    ,m_firstFieldDone(0)
 {
     *sts = MFX_ERR_NONE;
 } 
@@ -366,7 +406,6 @@ VideoPAK_PAK::VideoPAK_PAK(VideoCORE *core,  mfxStatus * sts)
 VideoPAK_PAK::~VideoPAK_PAK()
 {
     Close();
-
 } 
 
 mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
@@ -378,6 +417,11 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
     //add ext buffers from par to m_video
 
     MfxVideoParam tmp(*par);
+
+    if (par->mfx.NumRefFrame > 4)
+    {
+        m_video.mfx.NumRefFrame = tmp.mfx.NumRefFrame = 4;
+    }
 
     sts = ReadSpsPpsHeaders(tmp);
     MFX_CHECK_STS(sts);
@@ -403,6 +447,17 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
         GetFrameHeight(m_video));
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
+
+    const mfxExtFeiParam* params = GetExtBuffer(m_video);
+    if (NULL == params)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    else
+    {
+        if ((MFX_CODINGOPTION_ON == params->SingleFieldProcessing) &&
+             ((MFX_PICSTRUCT_FIELD_TFF == m_video.mfx.FrameInfo.PicStruct) ||
+              (MFX_PICSTRUCT_FIELD_BFF == m_video.mfx.FrameInfo.PicStruct)) )
+            m_singleFieldProcessingMode = MFX_CODINGOPTION_ON;
+    }
 
     sts = m_ddi->QueryEncodeCaps(m_caps);
     if (sts != MFX_ERR_NONE)
@@ -487,24 +542,46 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
 {
     MFX_CHECK( m_bInit, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    //set frame type
-    mfxU8 mtype = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
-    if (input->NumFrameL0 > 0) {
-        mtype = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
-        if (input->NumFrameL1 > 0)
-            mtype = MFX_FRAMETYPE_B;
-    }
+    if ((NULL == input) || (NULL == output))
+        return MFX_ERR_NULL_PTR;
 
+    //set frame type
+    mfxU8 mtype_first_field = 0;
+    mfxU8 mtype_second_field = 0;
+    if ((0 == input->NumFrameL0)  && (0 == input->NumFrameL1))
+        mtype_first_field = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR;
+    else if ((0 != input->NumFrameL0)  && (0 == input->NumFrameL1))
+        mtype_first_field = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
+    else if ((0 != input->NumFrameL0)  || (0 != input->NumFrameL1))
+        mtype_first_field = MFX_FRAMETYPE_B;
+
+    mtype_second_field = mtype_first_field;
+
+    if (MFX_PICSTRUCT_PROGRESSIVE != m_video.mfx.FrameInfo.PicStruct)
+    {
+        /* !!!
+         * Actually here is an issue
+         * Ref list for second field is different from ref list from first field
+         * BUT in (mfxENCInput *input) described only one list, which is same for
+         * first and second field.
+         * */
+        if ((0 == input->NumFrameL0)  && (0 == input->NumFrameL1))
+            mtype_second_field = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR;
+        else if ((0 != input->NumFrameL0)  && (0 == input->NumFrameL1))
+            mtype_second_field = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
+        else if ((0 != input->NumFrameL0)  || (0 != input->NumFrameL1))
+            mtype_second_field = MFX_FRAMETYPE_B;
+    }
 
     UMC::AutomaticUMCMutex guard(m_listMutex);
 
     m_free.front().m_yuv = input->InSurface;
     //m_free.front().m_ctrl = 0;
-    //m_free.front().m_type = Pair<mfxU8>(mtype, mtype); //ExtendFrameType(ctrl->FrameType);
-    m_free.front().m_type = ExtendFrameType(mtype);
+    m_free.front().m_type = Pair<mfxU8>(mtype_first_field, mtype_second_field);
 
     m_free.front().m_frameOrder = input->InSurface->Data.FrameOrder;
-    if (mtype & MFX_FRAMETYPE_IDR)
+    /* each I- is IDR */
+    if (mtype_first_field & MFX_FRAMETYPE_IDR)
     {
         m_free.front().m_frameOrderIdr = input->InSurface->Data.FrameOrder;
         /* Need to insert SPS for IDR frame */
@@ -512,7 +589,7 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
         m_free.front().m_insertSps[1] = 0;
     }
 
-    if (mtype & MFX_FRAMETYPE_I)
+    if (mtype_first_field & MFX_FRAMETYPE_I)
     {
         m_free.front().m_frameOrderI = input->InSurface->Data.FrameOrder;
     }
@@ -524,7 +601,10 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     m_free.front().m_userData.resize(2);
     m_free.front().m_userData[0] = input;
     m_free.front().m_userData[1] = output;
-    m_free.front().m_bs = output->Bs;
+    if (NULL != output->Bs)
+        m_free.front().m_bs = output->Bs;
+    else
+        return MFX_ERR_NULL_PTR;
 
     m_incoming.splice(m_incoming.end(), m_free, m_free.begin());
     DdiTask& task = m_incoming.front();
@@ -540,7 +620,7 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     m_core->IncreaseReference(&input->InSurface->Data);
 
     pEntryPoints[0].pState = this;
-    pEntryPoints[0].pParam = &task;
+    pEntryPoints[0].pParam = &m_incoming.front();
     pEntryPoints[0].pCompleteProc = 0;
     pEntryPoints[0].pGetSubTaskProc = 0;
     pEntryPoints[0].pCompleteSubTaskProc = 0;
@@ -550,7 +630,7 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     pEntryPoints[1] = pEntryPoints[0];
     pEntryPoints[1].pRoutineName = "Async Query";
     pEntryPoints[1].pRoutine = AsyncQuery;
-    pEntryPoints[1].pParam = &task;
+    pEntryPoints[1].pParam = &m_incoming.front();
 
     numEntryPoints = 2;
 

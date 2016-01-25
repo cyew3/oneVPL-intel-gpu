@@ -675,6 +675,7 @@ void UpdateSlice(
 
     mfxExtCodingOptionDDI * extDdi = GetExtBuffer(par);
     mfxExtCodingOption2 *  extOpt2 = GetExtBuffer(par);
+    mfxExtFeiSliceHeader * extFeiSlice = GetExtBuffer(par, fieldId);
     assert(extDdi != 0);
     assert(extOpt2 != 0);
 
@@ -744,9 +745,9 @@ void UpdateSlice(
         slice[i].cabac_init_idc                     = extDdi ? (mfxU8)extDdi->CabacInitIdcPlus1 - 1 : 0;
         slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.pic_init_qp);
 
-        slice[i].disable_deblocking_filter_idc = extOpt2->DisableDeblockingIdc;
-        slice[i].slice_alpha_c0_offset_div2 = 0;
-        slice[i].slice_beta_offset_div2 = 0;
+        slice[i].disable_deblocking_filter_idc = (extFeiSlice->Slice ? extFeiSlice->Slice[i].DisableDeblockingFilterIdc : extOpt2->DisableDeblockingIdc);
+        slice[i].slice_alpha_c0_offset_div2 = (extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2 : 0);
+        slice[i].slice_beta_offset_div2 = (extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceBetaOffsetDiv2 : 0);
     }
 
 } // void UpdateSlice(...)
@@ -766,6 +767,7 @@ void UpdateSliceSizeLimited(
 
     mfxExtCodingOptionDDI * extDdi = GetExtBuffer(par);
     mfxExtCodingOption2 * extOpt2 = GetExtBuffer(par);
+    mfxExtFeiSliceHeader * extFeiSlice = GetExtBuffer(par, fieldId);
     assert(extDdi != 0);
     assert(extOpt2 != 0);
 
@@ -840,9 +842,9 @@ void UpdateSliceSizeLimited(
         slice[i].cabac_init_idc                     = extDdi ? (mfxU8)extDdi->CabacInitIdcPlus1 - 1 : 0;
         slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.pic_init_qp);
 
-        slice[i].disable_deblocking_filter_idc = extOpt2->DisableDeblockingIdc;
-        slice[i].slice_alpha_c0_offset_div2 = 0;
-        slice[i].slice_beta_offset_div2 = 0;
+        slice[i].disable_deblocking_filter_idc = (extFeiSlice->Slice ? extFeiSlice->Slice[i].DisableDeblockingFilterIdc : extOpt2->DisableDeblockingIdc);
+        slice[i].slice_alpha_c0_offset_div2 = (extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2 : 0);
+        slice[i].slice_beta_offset_div2 = (extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceBetaOffsetDiv2 : 0);
     }
 
 } // void UpdateSlice(...)
@@ -1035,6 +1037,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     m_caps.UserMaxFrameSizeSupport = 1; // no request on support for libVA
     m_caps.MBBRCSupport = 1;            // starting 16.3 Beta, enabled in driver by default for TU-1,2
     m_caps.MbQpDataSupport = 1;
+	m_caps.NoWeightedPred = 1;          // unsupported for 16.4.3
     m_caps.Color420Only = 1;// fixme in case VAAPI direct YUY2/RGB support added
 
     vaExtQueryEncCapabilities pfnVaExtQueryCaps = NULL;
@@ -1203,8 +1206,8 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     {
             attrib[2].type = (VAConfigAttribType) VAConfigAttribEncFunctionTypeIntel;
             numAttrib++;
-            //attrib[3].type = (VAConfigAttribType) VAConfigAttribFeiInterfaceRevIntel;
-            //numAttrib++;
+            attrib[3].type = (VAConfigAttribType) VAConfigAttribFeiInterfaceRevIntel;
+            numAttrib++;
     }
 #endif
     vaSts = vaGetConfigAttributes(m_vaDisplay,
@@ -1237,12 +1240,12 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
         }else{
             attrib[2].value = VA_ENC_FUNCTION_ENC_PAK_INTEL;
         }
-//        if (VA_CONFIG_ATTRIB_FEI_INTERFACE_REV_INTEL != attrib[3].value)
-//        {
-//            /* DDI version in MSDk and in driver mismatched
-//             * This is fatal error */
-//            return MFX_ERR_DEVICE_FAILED;
-//        }
+        if (VA_CONFIG_ATTRIB_FEI_INTERFACE_REV_INTEL != attrib[3].value)
+        {
+            /* DDI version in MSDk and in driver mismatched
+             * This is fatal error */
+            //return MFX_ERR_DEVICE_FAILED;
+        }
     } //if(m_isENCPAK){
 
     attrib[0].value = VA_RT_FORMAT_YUV420;
@@ -1590,6 +1593,7 @@ mfxStatus VAAPIEncoder::Execute(
     mfxU16 skipMode = m_skipMode;
     mfxExtCodingOption2     const * ctrlOpt2      = GetExtBuffer(task.m_ctrl);
     mfxExtMBDisableSkipMap  const * ctrlNoSkipMap = GetExtBuffer(task.m_ctrl);
+    mfxExtCodingOption      const*  extOpt        = GetExtBuffer(m_videoParam);
 
     if (ctrlOpt2 && ctrlOpt2->SkipFrame <= MFX_SKIPFRAME_BRC_ONLY)
         skipMode = ctrlOpt2->SkipFrame;
@@ -1681,18 +1685,37 @@ mfxStatus VAAPIEncoder::Execute(
     VABufferID vaFeiMBControlId = VA_INVALID_ID;
     VABufferID vaFeiMBQPId = VA_INVALID_ID;
 
+    mfxU32 feiFieldId = fieldId;
+
     if (m_isENCPAK)
     {
+        /*Input FEI Ext buffer sequence for BFF is: bff tff bff tff
+         * So, MSDK need to swap feiFieldId values to get correct buffer */
+        if (MFX_PICSTRUCT_FIELD_BFF == m_videoParam.mfx.FrameInfo.PicStruct)
+        {
+            if (1 == feiFieldId)
+                feiFieldId = 0;
+            else
+                feiFieldId = 1;
+        }
+
         //find ext buffers
         const mfxEncodeCtrl& ctrl = task.m_ctrl;
-        mfxExtFeiEncMBCtrl* mbctrl = GetExtBuffer(task.m_ctrl, fieldId);;
-        mfxExtFeiEncMVPredictors* mvpred = GetExtBuffer(task.m_ctrl, fieldId);;
-        mfxExtFeiEncFrameCtrl* frameCtrl = GetExtBuffer(task.m_ctrl, fieldId);;
-        mfxExtFeiEncQP* mbqp = GetExtBuffer(task.m_ctrl, fieldId);;
+        mfxExtFeiEncMBCtrl* mbctrl = GetExtBuffer(task.m_ctrl, feiFieldId);
+        mfxExtFeiEncMVPredictors* mvpred = GetExtBuffer(task.m_ctrl, feiFieldId);
+        mfxExtFeiEncFrameCtrl* frameCtrl = GetExtBuffer(task.m_ctrl, feiFieldId);
+        mfxExtFeiEncQP* mbqp = GetExtBuffer(task.m_ctrl, feiFieldId);
+        mfxExtFeiSliceHeader*  extFeiSlice = GetExtBuffer(task.m_ctrl, fieldId);
         /* Output buffers passed via mfxBitstream structure*/
-        mfxExtFeiEncMBStat* mbstat = GetExtBufferBS(task.m_bs, fieldId);
-        mfxExtFeiEncMV* mvout = GetExtBufferBS(task.m_bs, fieldId);
-        mfxExtFeiPakMBCtrl* mbcodeout = GetExtBufferBS(task.m_bs, fieldId);
+        mfxExtFeiEncMBStat* mbstat = NULL;
+        mfxExtFeiEncMV* mvout = NULL;
+        mfxExtFeiPakMBCtrl* mbcodeout = NULL;
+        if (NULL != task.m_bs)
+        {
+            mbstat = GetExtBufferFEI(task.m_bs, feiFieldId);
+            mvout = GetExtBufferFEI(task.m_bs, feiFieldId);
+            mbcodeout = GetExtBufferFEI(task.m_bs, feiFieldId);
+        }
 
         if (frameCtrl != NULL && frameCtrl->MVPredictor && mvpred != NULL)
         {
@@ -1734,6 +1757,16 @@ mfxStatus VAAPIEncoder::Execute(
                     &vaFeiMBQPId);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
             configBuffers[buffersCount++] = vaFeiMBQPId;
+        }
+        /* Passing de-blocking params */
+        if (NULL != extFeiSlice)
+        {
+            for( size_t i = 0; i < m_slice.size(); ++i)
+            {
+                m_slice[i].disable_deblocking_filter_idc = (extFeiSlice->Slice ? extFeiSlice->Slice[i].DisableDeblockingFilterIdc : 0);
+                m_slice[i].slice_alpha_c0_offset_div2 = (extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2 : 0);
+                m_slice[i].slice_beta_offset_div2 = (extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceBetaOffsetDiv2 : 0);
+            }
         }
 
         //output buffer for MB distortions
@@ -1819,15 +1852,19 @@ mfxStatus VAAPIEncoder::Execute(
             vaFeiFrameControl->distortion_type = frameCtrl->DistortionType;
             vaFeiFrameControl->inter_sad = frameCtrl->InterSAD;
             vaFeiFrameControl->intra_part_mask = frameCtrl->IntraPartMask;
+            /*Correction for Main and Baseline profiles: prohibited 8x8 transform */
+            if ((extOpt) && (MFX_BLOCKSIZE_MIN_16X16 == extOpt->IntraPredBlockSize))
+                vaFeiFrameControl->intra_part_mask = 0x02;
             vaFeiFrameControl->intra_sad = frameCtrl->AdaptiveSearch;
             vaFeiFrameControl->intra_sad = frameCtrl->IntraSAD;
             vaFeiFrameControl->len_sp = frameCtrl->LenSP;
             vaFeiFrameControl->search_path = frameCtrl->SearchPath;
 
-            vaFeiFrameControl->distortion = m_vaFeiMBStatId[2*idxRecon + fieldId];
-            vaFeiFrameControl->mv_data = m_vaFeiMVOutId[2*idxRecon + fieldId];
-            vaFeiFrameControl->mb_code_data = m_vaFeiMCODEOutId[2*idxRecon + fieldId];
-            mdprintf(stderr,"fieldId: = %d; idxRecon = %d; m_vaFeiMCODEOutId[] = %d\n",fieldId, idxRecon, m_vaFeiMCODEOutId[2*idxRecon + fieldId]);
+            vaFeiFrameControl->distortion = m_vaFeiMBStatId[2*idxRecon + feiFieldId];
+            vaFeiFrameControl->mv_data = m_vaFeiMVOutId[2*idxRecon + feiFieldId];
+            vaFeiFrameControl->mb_code_data = m_vaFeiMCODEOutId[2*idxRecon + feiFieldId];
+            mdprintf(stderr,"feiFieldId: = %d; idxRecon = %d; m_vaFeiMCODEOutId[] = %d\n",
+                    feiFieldId, idxRecon, m_vaFeiMCODEOutId[2*idxRecon + feiFieldId]);
             vaFeiFrameControl->qp = vaFeiMBQPId;
             vaFeiFrameControl->mb_ctrl = vaFeiMBControlId;
             vaFeiFrameControl->mb_input = frameCtrl->PerMBInput;
@@ -2226,7 +2263,8 @@ mfxStatus VAAPIEncoder::Execute(
         configBuffers[buffersCount++] = m_roiBufferId;
     }
 
-    if (task.m_isMBQP)
+    /*FEI has its own interface for MBQp*/
+    if ((task.m_isMBQP) && (!m_isENCPAK))
     {
         const mfxExtMBQP *mbqp = GetExtBuffer(task.m_ctrl);
         mfxU32 mbW = m_sps.picture_width_in_mbs;
@@ -2442,9 +2480,9 @@ mfxStatus VAAPIEncoder::Execute(
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK) || defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
         if (m_isENCPAK)
         {
-            currentFeedback.mv        = m_vaFeiMVOutId[2*idxRecon + fieldId];
-            currentFeedback.mbstat    = m_vaFeiMBStatId[2*idxRecon + fieldId];
-            currentFeedback.mbcode    = m_vaFeiMCODEOutId[2*idxRecon + fieldId];
+            currentFeedback.mv        = m_vaFeiMVOutId[2*idxRecon + feiFieldId];
+            currentFeedback.mbstat    = m_vaFeiMBStatId[2*idxRecon + feiFieldId];
+            currentFeedback.mbcode    = m_vaFeiMCODEOutId[2*idxRecon + feiFieldId];
         }
 #endif
         m_feedbackCache.push_back( currentFeedback );
@@ -2616,10 +2654,27 @@ mfxStatus VAAPIEncoder::QueryStatus(
                 //VAEncFEIDistortionBufferTypeIntel,
                 if (m_isENCPAK)
                 {
+                    mfxU32 feiFieldId = fieldId;
+
+                    /*Input FEI Ext buffer sequence for BFF is: bff tff bff tff
+                     * So, MSDK need to swap feiFieldId values to get correct buffer */
+                    if (MFX_PICSTRUCT_FIELD_BFF == m_videoParam.mfx.FrameInfo.PicStruct)
+                    {
+                        if (1 == feiFieldId)
+                            feiFieldId = 0;
+                        else
+                            feiFieldId = 1;
+                    }
                     //find ext buffers
-                    mfxExtFeiEncMBStat* mbstat = GetExtBufferBS(task.m_bs, fieldId);
-                    mfxExtFeiEncMV* mvout = GetExtBufferBS(task.m_bs, fieldId);
-                    mfxExtFeiPakMBCtrl* mbcodeout = GetExtBufferBS(task.m_bs, fieldId);
+                    mfxExtFeiEncMBStat* mbstat = NULL;
+                    mfxExtFeiEncMV* mvout = NULL;
+                    mfxExtFeiPakMBCtrl* mbcodeout = NULL;
+                    if (NULL != task.m_bs)
+                    {
+                        mbstat = GetExtBufferFEI(task.m_bs, feiFieldId);
+                        mvout = GetExtBufferFEI(task.m_bs, feiFieldId);
+                        mbcodeout = GetExtBufferFEI(task.m_bs, feiFieldId);
+                    }
 
                     if (mbstat != NULL && vaFeiMBStatId != VA_INVALID_ID)
                     {

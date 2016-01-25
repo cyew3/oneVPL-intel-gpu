@@ -1145,10 +1145,9 @@ mfxU8 MfxHwH264Encode::GetCabacInitIdc(mfxU32 targetUsage)
 
 bool MfxHwH264Encode::IsLookAheadSupported(
     MfxVideoParam const & /*video*/,
-    eMFXHWType            /*platform*/)
+    eMFXHWType            platform)
 {
-    //probably need to ad specific for some IOT target linux platforms where it is not required
-    return true;
+    return ((platform >= MFX_HW_HSW) && (platform != MFX_HW_VLV));
 }
 
 // determine and return mode of Query operation (valid modes are 1, 2, 3, 4 - see MSDK spec for details)
@@ -1409,6 +1408,12 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_FEI_ENC_CTRL
         || id == MFX_EXTBUFF_FEI_ENC_MB
         || id == MFX_EXTBUFF_FEI_ENC_MV_PRED
+        || id == MFX_EXTBUFF_FEI_ENC_MB
+        || id == MFX_EXTBUFF_FEI_ENC_MV_PRED
+        || id == MFX_EXTBUFF_FEI_ENC_CTRL
+        || id == MFX_EXTBUFF_FEI_PREENC_QP
+        || id == MFX_EXTBUFF_FEI_SLICE
+
 #endif
         );
 }
@@ -1441,6 +1446,7 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_FEI_CODING_OPTION
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
         || id == MFX_EXTBUFF_FEI_PARAM
+        || id == MFX_EXTBUFF_FEI_SLICE
 #endif
         );
 }
@@ -1456,12 +1462,17 @@ mfxStatus MfxHwH264Encode::CheckExtBufferId(mfxVideoParam const & par)
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
         // check if buffer presents twice in video param
-        if (MfxHwH264Encode::GetExtBuffer(
-            par.ExtParam + i + 1,
-            par.NumExtParam - i - 1,
-            par.ExtParam[i]->BufferId) != 0)
+#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
+        if (par.ExtParam[i]->BufferId != MFX_EXTBUFF_FEI_SLICE)
+#endif
         {
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+            if (MfxHwH264Encode::GetExtBuffer(
+                par.ExtParam + i + 1,
+                par.NumExtParam - i - 1,
+                par.ExtParam[i]->BufferId) != 0)
+            {
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+            }
         }
     }
 
@@ -2002,6 +2013,16 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     {
         changed = true;
         par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
+    }
+    if(MFX_HW_VAAPI == vaType &&
+       par.mfx.RateControlMethod != 0 &&
+       par.mfx.RateControlMethod != MFX_RATECONTROL_CBR &&
+       par.mfx.RateControlMethod != MFX_RATECONTROL_VBR &&
+       par.mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
+       !bRateControlLA(par.mfx.RateControlMethod))
+    {
+        unsupported = true;
+        par.mfx.RateControlMethod = 0;
     }
     if (bRateControlLA(par.mfx.RateControlMethod) && IsOn(extOpt->CAVLC))
     {
@@ -4363,6 +4384,8 @@ void MfxHwH264Encode::SetDefaults(
     mfxExtSVCSeqDesc *         extSvc  = GetExtBuffer(par);
     mfxExtSVCRateControl *     extRc   = GetExtBuffer(par);
     mfxExtChromaLocInfo*       extCli  = GetExtBuffer(par);
+    mfxExtFeiParam* feiParam = (mfxExtFeiParam*)GetExtBuffer(par);
+    bool isENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCPAK);
 
     if (extOpt2->UseRawRef)
         extDdi->RefRaw = extOpt2->UseRawRef;
@@ -4524,14 +4547,36 @@ void MfxHwH264Encode::SetDefaults(
         extDdi->NumActiveRefP = extDdi->NumActiveRefBL0 = extDdi->NumActiveRefBL1 = 1;
     }
     if (extDdi->NumActiveRefP == 0)
+    {
         extDdi->NumActiveRefP = GetDefaultMaxNumRefActivePL0(par.mfx.TargetUsage, platform,IsOn(par.mfx.LowPower));
+        /* WA: it will be fixed for legacy encoder too
+         * Additional for FEI ENCODE: we can use 4 ref in L0 references for TU4
+         * */
+        if (isENCPAK)
+            extDdi->NumActiveRefP = 4;
+    }
 
     if (par.mfx.GopRefDist > 1)
     {
         if (extDdi->NumActiveRefBL0 == 0)
+        {
             extDdi->NumActiveRefBL0 = GetDefaultMaxNumRefActiveBL0(par.mfx.TargetUsage, platform);
+            /* WA: it will be fixed for legacy encoder too
+             * Additional for FEI ENCODE: we can use 4 ref in L0 references for TU4
+             * */
+            if (isENCPAK)
+                extDdi->NumActiveRefBL0 = 4;
+        } /* if (extDdi->NumActiveRefBL0 == 0) */
+
         if (extDdi->NumActiveRefBL1 == 0)
+        {
             extDdi->NumActiveRefBL1 = GetDefaultMaxNumRefActiveBL1(par.mfx.TargetUsage, platform);
+            /* Additional for FEI ENCODE: we can use 2 L1 references */
+            if ((isENCPAK) &&
+                    ( (MFX_PICSTRUCT_FIELD_TFF == par.mfx.FrameInfo.PicStruct) ||
+                      (MFX_PICSTRUCT_FIELD_BFF == par.mfx.FrameInfo.PicStruct)) )
+                extDdi->NumActiveRefBL1 = 2;
+        } /* if (extDdi->NumActiveRefBL1 == 0) */
     }
 
     if (par.mfx.GopPicSize == 0)
@@ -5314,6 +5359,8 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
     mfxEncodeCtrl *       ctrl)
 {
     mfxStatus checkSts = MFX_ERR_NONE;
+    mfxExtFeiParam const * feiParam = (mfxExtFeiParam*)GetExtBuffer(video);
+    bool isFeiENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCPAK);
 
     for (mfxU32 i = 0; i < ctrl->NumExtParam; i++)
         MFX_CHECK_NULL_PTR1(ctrl->ExtParam[i]);
@@ -5331,7 +5378,8 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
                 ctrl->NumExtParam - i - 1,
                 ctrl->ExtParam[i]->BufferId) != 0)
             {
-                if (!(ctrl->ExtParam[i]->BufferId == MFX_EXTBUFF_AVC_REFLISTS && video.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE))
+                if ((!(ctrl->ExtParam[i]->BufferId == MFX_EXTBUFF_AVC_REFLISTS && video.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)) &&
+                     !isFeiENCPAK)
                 {
                     // if buffer is attached twice, ignore second one and return warning
                     // the only exception is MFX_EXTBUFF_AVC_REFLISTS (it can be attached twice for interlace case)
@@ -6294,6 +6342,11 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     if (type * opts = GetExtBuffer(par))        \
         name = *opts;                           \
     m_extParam[NumExtParam++] = &name.Header;
+#define CONSTRUCT_EXT_BUFFER_EX(type, name, field)        \
+    InitExtBufHeader(name[field]);                     \
+    if (type * opts = GetExtBuffer(par, field))        \
+    name[field] = *opts;                           \
+    m_extParam[NumExtParam++] = &name[field].Header;
 
     CONSTRUCT_EXT_BUFFER(mfxExtCodingOption,         m_extOpt);
     CONSTRUCT_EXT_BUFFER(mfxExtCodingOptionSPSPPS,   m_extOptSpsPps);
@@ -6320,7 +6373,10 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     CONSTRUCT_EXT_BUFFER(mfxExtDirtyRect,            m_extDirtyRect);
     CONSTRUCT_EXT_BUFFER(mfxExtMoveRect,             m_extMoveRect);
     CONSTRUCT_EXT_BUFFER(mfxExtFeiCodingOption,      m_extFeiOpt);
+    CONSTRUCT_EXT_BUFFER_EX(mfxExtFeiSliceHeader,   m_extFeiSlice, 0);
+    CONSTRUCT_EXT_BUFFER_EX(mfxExtFeiSliceHeader,   m_extFeiSlice, 1);
 #undef CONSTRUCT_EXT_BUFFER
+#undef CONSTRUCT_EXT_BUFFER_EX
 
     ExtParam = m_extParam;
     assert(NumExtParam == mfxU16(sizeof m_extParam / sizeof m_extParam[0]));
@@ -7942,7 +7998,45 @@ mfxU32 HeaderPacker::WriteSlice(
             pps.weightedBipredIdc == 1 && sliceType == SLICE_TYPE_B)
         {
             mfxU32 chromaArrayType = sps.separateColourPlaneFlag ? 0 : sps.chromaFormatIdc;
-            WritePredWeightTable(obs, m_hwCaps, task, fieldId, chromaArrayType);
+            mfxI32 numRefIdxL0ActiveMinus1 = IPP_MAX(1, task.m_list0[fieldId].Size()) - 1;
+            //mfxI32 numRefIdxL1ActiveMinus1 = IPP_MAX(1, task.m_list1[fieldId].Size()) - 1;
+
+            if(sliceType == SLICE_TYPE_P)
+            {
+                obs.PutUe(task.m_lumaLog2WeightDenom[fieldId]);
+                if( chromaArrayType != 0 )
+                {
+                    obs.PutUe(task.m_chromaLog2WeightDenom[fieldId]);
+                }
+
+                for(int i=0; i<=numRefIdxL0ActiveMinus1; i++)
+                {
+                    const mfxU8 lumaFlag = task.m_weightTab[fieldId][i].m_lumaWeightL0Flag;
+                    obs.PutBit(lumaFlag);
+                    if( lumaFlag )
+                    {
+                        obs.PutSe(task.m_weightTab[fieldId][i].m_lumaWeightL0);
+                        obs.PutSe(task.m_weightTab[fieldId][i].m_lumaOffsetL0);
+                    }
+                    if( chromaArrayType != 0 )
+                    {
+                        const mfxU8 chromaFlag = task.m_weightTab[fieldId][i].m_chromaWeightL0Flag;
+                        obs.PutBit(chromaFlag);
+                        if( chromaFlag )
+                        {
+                            for(int j=0; j<2; j++)
+                            {
+                                obs.PutSe(task.m_weightTab[fieldId][i].m_chromaWeightL0[j]);
+                                obs.PutSe(task.m_weightTab[fieldId][i].m_chromaOffsetL0[j]);
+                            }
+                        }
+                    }
+                }
+            }
+            else if( sliceType == SLICE_TYPE_B)
+            {
+                assert(!"explicit weighted prediction for B slices is unsupported");
+            }
         }
         if (refPicFlag || task.m_nalRefIdc[fieldId])
         {
@@ -7957,9 +8051,9 @@ mfxU32 HeaderPacker::WriteSlice(
     obs.PutSe(task.m_cqpValue[fieldId] - (pps.picInitQpMinus26 + 26));
     if (pps.deblockingFilterControlPresentFlag)
     {
-        mfxU32 disableDeblockingFilterIdc = task.m_disableDeblockingIdc;
-        mfxI32 sliceAlphaC0OffsetDiv2     = 0;
-        mfxI32 sliceBetaOffsetDiv2        = 0;
+        mfxU32 disableDeblockingFilterIdc = task.m_disableDeblockingIdc[fieldId][sliceId];
+        mfxI32 sliceAlphaC0OffsetDiv2     = task.m_sliceAlphaC0OffsetDiv2[fieldId][sliceId];
+        mfxI32 sliceBetaOffsetDiv2        = task.m_sliceBetaOffsetDiv2[fieldId][sliceId];
 
         obs.PutUe(disableDeblockingFilterIdc);
         if (disableDeblockingFilterIdc != 1)
@@ -8153,7 +8247,45 @@ mfxU32 HeaderPacker::WriteSlice(
             pps.weightedBipredIdc == 1 && sliceType == SLICE_TYPE_B)
         {
             mfxU32 chromaArrayType = sps.separateColourPlaneFlag ? 0 : sps.chromaFormatIdc;
-            WritePredWeightTable(obs, m_hwCaps, task, fieldId, chromaArrayType);
+            mfxI32 numRefIdxL0ActiveMinus1 = IPP_MAX(1, task.m_list0[fieldId].Size()) - 1;
+            //mfxI32 numRefIdxL1ActiveMinus1 = IPP_MAX(1, task.m_list1[fieldId].Size()) - 1;
+
+            if(sliceType == SLICE_TYPE_P)
+            {
+                obs.PutUe(task.m_lumaLog2WeightDenom[fieldId]);
+                if( chromaArrayType != 0 )
+                {
+                    obs.PutUe(task.m_chromaLog2WeightDenom[fieldId]);
+                }
+
+                for(int i=0; i<=numRefIdxL0ActiveMinus1; i++)
+                {
+                    const mfxU8 lumaFlag = task.m_weightTab[fieldId][i].m_lumaWeightL0Flag;
+                    obs.PutBit(lumaFlag);
+                    if( lumaFlag )
+                    {
+                        obs.PutSe(task.m_weightTab[fieldId][i].m_lumaWeightL0);
+                        obs.PutSe(task.m_weightTab[fieldId][i].m_lumaOffsetL0);
+                    }
+                    if( chromaArrayType != 0 )
+                    {
+                        const mfxU8 chromaFlag = task.m_weightTab[fieldId][i].m_chromaWeightL0Flag;
+                        obs.PutBit(chromaFlag);
+                        if( chromaFlag )
+                        {
+                            for(int j=0; j<2; j++)
+                            {
+                                obs.PutSe(task.m_weightTab[fieldId][i].m_chromaWeightL0[j]);
+                                obs.PutSe(task.m_weightTab[fieldId][i].m_chromaOffsetL0[j]);
+                            }
+                        }
+                    }
+                }
+            }
+            else if( sliceType == SLICE_TYPE_B)
+            {
+                assert(!"explicit weighted prediction for B slices is unsupported");
+            }
         }
         if (refPicFlag)
         {
@@ -8168,9 +8300,13 @@ mfxU32 HeaderPacker::WriteSlice(
     obs.PutSe(task.m_cqpValue[fieldId] - (pps.picInitQpMinus26 + 26));
     if (pps.deblockingFilterControlPresentFlag)
     {
-        mfxU32 disableDeblockingFilterIdc = task.m_disableDeblockingIdc;
-        mfxI32 sliceAlphaC0OffsetDiv2     = 0;
-        mfxI32 sliceBetaOffsetDiv2        = 0;
+        // task.m_disableDeblockingIdc[fieldId] is initialized for fixed number of slices
+        // it can't be used to feed slice header generation for adaptive slice mode
+        // always use slice id 0
+        // the same for task.m_sliceAlphaC0OffsetDiv2 and task.m_sliceBetaOffsetDiv2
+        mfxU32 disableDeblockingFilterIdc = task.m_disableDeblockingIdc[fieldId][0];
+        mfxI32 sliceAlphaC0OffsetDiv2     = task.m_sliceAlphaC0OffsetDiv2[fieldId][0];
+        mfxI32 sliceBetaOffsetDiv2        = task.m_sliceBetaOffsetDiv2[fieldId][0];
 
         obs.PutUe(disableDeblockingFilterIdc);
         if (disableDeblockingFilterIdc != 1)

@@ -905,7 +905,6 @@ namespace MfxHwH264Encode
             , m_timeStamp(0)
             , m_minQP(0)
             , m_maxQP(0)
-            , m_disableDeblockingIdc(0)
             , m_resetBRC(false)
 
             , m_idxMBQP(NO_INDEX)
@@ -958,6 +957,11 @@ namespace MfxHwH264Encode
         Pair<ArrayRefListMod> m_refPicList1Mod;
         Pair<mfxU32>          m_initSizeList0;
         Pair<mfxU32>          m_initSizeList1;
+
+        //weight table support
+        Pair<mfxU8> m_lumaLog2WeightDenom;
+        Pair<mfxU8> m_chromaLog2WeightDenom;
+        Pair<ArrayWeightTab>  m_weightTab;
 
         // currently used for dpb control when svc temporal layers enabled
         mfxExtAVCRefListCtrl  m_internalListCtrl;
@@ -1059,7 +1063,9 @@ namespace MfxHwH264Encode
 
         mfxU8   m_minQP;
         mfxU8   m_maxQP;
-        mfxU8   m_disableDeblockingIdc;
+        std::vector<mfxU8>   m_disableDeblockingIdc[2];
+        std::vector<mfxI8>   m_sliceAlphaC0OffsetDiv2[2];
+        std::vector<mfxI8>   m_sliceBetaOffsetDiv2[2];
 
         bool m_resetBRC;
 
@@ -2010,6 +2016,7 @@ namespace MfxHwH264Encode
         eMFXVAType  m_currentVaType;
         bool        m_useWAForHighBitrates;  // FIXME: w/a for SNB issue with HRD at high bitrates
         bool        m_isENCPAK;
+        DdiTask     m_lastFeiTask;
         bool        m_isWiDi;
         bool        m_resetBRC;
 

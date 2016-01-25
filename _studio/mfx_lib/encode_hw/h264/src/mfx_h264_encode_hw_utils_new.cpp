@@ -2018,10 +2018,31 @@ void MfxHwH264Encode::ConfigureTask(
         if (task.m_minQP > 51 || (task.m_maxQP && task.m_minQP > task.m_maxQP))
             task.m_minQP = 0;
 
-        task.m_disableDeblockingIdc = mfxU8(extOpt2Cur->DisableDeblockingIdc);
+        mfxU32 fieldMaxCount = video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
+        for (mfxU32 field = 0; field < fieldMaxCount; field++)
+        {
+            mfxU32 fieldParity = field;
+            if (video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF)
+                fieldParity = 1 - fieldParity;
 
-        if (task.m_disableDeblockingIdc > 2)
-            task.m_disableDeblockingIdc = 0;
+            mfxExtFeiSliceHeader * extFeiSlice = GetExtBuffer(video, fieldParity);
+            /* To change de-blocking params in runtime we need to take params from runtime control */
+            mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBuffer(task.m_ctrl, fieldParity);
+            /*And runtime params has priority before iInit() params */
+            if (NULL != extFeiSliceInRintime)
+                extFeiSlice = extFeiSliceInRintime;
+
+            for (size_t i = 0; i < GetMaxNumSlices(video); ++ i)
+            {
+                mfxU8 disableDeblockingIdc = mfxU8(extFeiSlice->Slice ? extFeiSlice->Slice[i].DisableDeblockingFilterIdc : extOpt2Cur->DisableDeblockingIdc);
+                if (disableDeblockingIdc > 2)
+                    disableDeblockingIdc = 0;
+                task.m_disableDeblockingIdc[field].push_back(disableDeblockingIdc);
+
+                task.m_sliceAlphaC0OffsetDiv2[field].push_back(extFeiSlice->Slice ? (mfxI8)extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2 : 0);
+                task.m_sliceBetaOffsetDiv2[field].push_back(extFeiSlice->Slice ? (mfxI8)extFeiSlice->Slice[i].SliceBetaOffsetDiv2 : 0);
+            }
+        }
     }
 }
 
