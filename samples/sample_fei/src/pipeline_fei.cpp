@@ -3068,8 +3068,8 @@ mfxStatus CEncodingPipeline::GetFullBackwardSet(iTask* eTask, mfxFrameSurface1**
         }
         for (int i = 0; i < n_backward_second_field; i++){
             if (std::find(intersection.begin(), intersection.end(), l0_second_field[i]) == intersection.end()){
-                intersection.push_back(l0_second_field[i]);
                 l0_idx_field2.push_back((int)intersection.size());
+                intersection.push_back(l0_second_field[i]);
             }
             else{
                 l0_idx_field2.push_back(static_cast<int>(std::distance(intersection.begin(), std::find(intersection.begin(), intersection.end(), l0_second_field[i]))));
@@ -3113,8 +3113,8 @@ mfxStatus CEncodingPipeline::GetFullForwardSet(iTask* eTask, mfxFrameSurface1** 
         }
         for (int i = 0; i < n_forward_second_field; i++){
             if (std::find(intersection.begin(), intersection.end(), l1_second_field[i]) == intersection.end()){
-                intersection.push_back(l1_second_field[i]);
                 l1_idx_field2.push_back((int)intersection.size());
+                intersection.push_back(l1_second_field[i]);
             } else{
                 l1_idx_field2.push_back(static_cast<int>(std::distance(intersection.begin(), std::find(intersection.begin(), intersection.end(), l1_second_field[i]))));
             }
@@ -3429,6 +3429,8 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
     eTask->bufs = getFreeBufSet(m_encodeBufs);
     MSDK_CHECK_POINTER(eTask->bufs, MFX_ERR_NULL_PTR);
 
+    std::list<int> l0_idx_field1, l0_idx_field2, l1_idx_field1, l1_idx_field2;
+
     int pMvPredId = 0;
     for (int i = 0; i < eTask->bufs->PB_bufs.in.NumExtParam; i++)
     {
@@ -3498,57 +3500,12 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
             eTask->outPAK.NumExtParam = eTask->bufs->I_bufs.in.NumExtParam;
             eTask->outPAK.ExtParam    = eTask->bufs->I_bufs.in.ExtParam;
         }
-
-        /* Process SPS, and PPS only*/
-        if (feiPPS || feiSPS || feiSliceHeader)
-        {
-            for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
-            {
-                if (feiPPS)
-                {
-                    feiPPS[fieldId].NumRefIdxL0Active = 0;
-                    feiPPS[fieldId].NumRefIdxL1Active = 0;
-                    /*I is always reference */
-                    feiPPS[fieldId].ReferencePicFlag = 1;
-                    if (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_IDR)
-                    {
-                        feiPPS[fieldId].IDRPicFlag = 1;
-                        feiPPS[fieldId].FrameNum   = 0;
-                        m_refFrameCounter = 1;
-                    }
-                    else
-                    {
-                        feiPPS[fieldId].IDRPicFlag = 0;
-                        feiPPS[fieldId].FrameNum   = m_refFrameCounter;
-                    }
-                }
-
-                if (feiSliceHeader)
-                {
-                    MSDK_CHECK_POINTER(feiSliceHeader[fieldId].Slice, MFX_ERR_NULL_PTR);
-
-                    for (mfxU32 i = 0; i < feiSliceHeader[fieldId].NumSlice; i++)
-                    {
-                        MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL0, 32);
-                        MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL1, 32);
-                        feiSliceHeader[fieldId].Slice[i].SliceType = FEI_SLICETYPE_I;
-                    }
-                }
-            }
-
-            if (feiSPS)
-                feiSPS->Pack = (ExtractFrameType(*eTask) & MFX_FRAMETYPE_IDR) ? 1 : 0;
-
-            if (!(ExtractFrameType(*eTask) & MFX_FRAMETYPE_IDR) && feiPPS)
-                m_refFrameCounter++;
-        }
         break;
 
     case MFX_FRAMETYPE_P:
     {
         mfxFrameSurface1** l0 = NULL;
         mfxU16 n_backward = 0;
-        std::list<int> l0_idx_field1, l0_idx_field2;
 
         if (m_pmfxENC)
         {
@@ -3579,58 +3536,6 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
             eTask->outPAK.NumExtParam = eTask->bufs->PB_bufs.in.NumExtParam;
             eTask->outPAK.ExtParam    = eTask->bufs->PB_bufs.in.ExtParam;
         }
-
-        /* PPS only */
-        if (feiPPS || feiSliceHeader)
-        {
-            for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
-            {
-                if (feiPPS)
-                {
-                    feiPPS[fieldId].IDRPicFlag = 0;
-                    feiPPS[fieldId].NumRefIdxL0Active = eTask->in.NumFrameL0;
-                    feiPPS[fieldId].NumRefIdxL1Active = 0;
-                    feiPPS[fieldId].ReferencePicFlag = (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_REF) ? 1 : 0;
-
-                    if (eTask->prevTask && (ExtractFrameType(*(eTask->prevTask)) & MFX_FRAMETYPE_REF))
-                    {
-                        feiPPS[fieldId].FrameNum = m_refFrameCounter;
-                    }
-                }
-
-                if (feiSliceHeader)
-                {
-                    MSDK_CHECK_POINTER(feiSliceHeader[fieldId].Slice, MFX_ERR_NULL_PTR);
-
-                    for (mfxU32 i = 0; i < feiSliceHeader[fieldId].NumSlice; i++)
-                    {
-                        MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL0, 32);
-                        MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL1, 32);
-                        feiSliceHeader[fieldId].Slice[i].SliceType = FEI_SLICETYPE_P;
-
-                        int k = 0;
-                        for (std::list<int>::iterator it = ((fieldId == 0) ? l0_idx_field1.begin() : l0_idx_field2.begin());
-                            it != ((fieldId == 0) ? l0_idx_field1.end() : l0_idx_field2.end()); ++it)
-                        {
-                            feiSliceHeader[fieldId].Slice[i].RefL0[k].Index       = (mfxU16)(*it);
-                            feiSliceHeader[fieldId].Slice[i].RefL0[k].PictureType = (mfxU16)((m_numOfFields == 1) ? MFX_PICTYPE_FRAME :
-                                ((eTask->m_list0[eTask->m_fid[fieldId]][k] & 128) ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD));
-                        }
-                        /*
-                        for (mfxU16 k = 0; k < eTask->in.NumFrameL0; k++)
-                        {
-                            feiSliceHeader[fieldId].Slice[i].RefL0[k].Index       = k;
-                            feiSliceHeader[fieldId].Slice[i].RefL0[k].PictureType = (mfxU16)((m_numOfFields == 1) ? MFX_PICTYPE_FRAME :
-                                ((eTask->m_list0[eTask->m_fid[fieldId]][k] & 128) ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD));
-                        }*/
-                    }
-                }
-            }
-            if (feiPPS && eTask->prevTask && (ExtractFrameType(*(eTask->prevTask)) & MFX_FRAMETYPE_REF))
-                m_refFrameCounter++;
-        }
-        if (feiSPS)
-            feiSPS->Pack = 0;
     }
     break;
 
@@ -3638,7 +3543,6 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
     {
         mfxFrameSurface1** l0 = NULL, **l1 = NULL;
         mfxU16 n_backward = 0, n_forward = 0;
-        std::list<int> l0_idx_field1, l0_idx_field2, l1_idx_field1, l1_idx_field2;
 
         if (m_pmfxENC)
         {
@@ -3673,11 +3577,106 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
             eTask->outPAK.NumExtParam = eTask->bufs->PB_bufs.in.NumExtParam;
             eTask->outPAK.ExtParam    = eTask->bufs->PB_bufs.in.ExtParam;
         }
+    }
+    break;
+    }
 
-        /* PPS only */
-        if (feiPPS || feiSliceHeader)
+    /* SPS, PPS, SliceHeader processing */
+    for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
+    {
+        switch (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_IPB)
         {
-            for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
+        case MFX_FRAMETYPE_I:
+            /* Process SPS, and PPS only*/
+            if (feiPPS || feiSPS || feiSliceHeader)
+            {
+                if (feiPPS)
+                {
+                    feiPPS[fieldId].NumRefIdxL0Active = 0;
+                    feiPPS[fieldId].NumRefIdxL1Active = 0;
+                    /*I is always reference */
+                    feiPPS[fieldId].ReferencePicFlag = 1;
+                    if (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_IDR)
+                    {
+                        feiPPS[fieldId].IDRPicFlag = 1;
+                        feiPPS[fieldId].FrameNum = 0;
+                        m_refFrameCounter = 1;
+                    }
+                    else
+                    {
+                        feiPPS[fieldId].IDRPicFlag = 0;
+                        feiPPS[fieldId].FrameNum = m_refFrameCounter;
+                    }
+                }
+
+                if (feiSliceHeader)
+                {
+                    MSDK_CHECK_POINTER(feiSliceHeader[fieldId].Slice, MFX_ERR_NULL_PTR);
+
+                    for (mfxU32 i = 0; i < feiSliceHeader[fieldId].NumSlice; i++)
+                    {
+                        MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL0, 32);
+                        MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL1, 32);
+                        feiSliceHeader[fieldId].Slice[i].SliceType = FEI_SLICETYPE_I;
+                    }
+                }
+
+                if (feiSPS)
+                    feiSPS->Pack = (ExtractFrameType(*eTask) & MFX_FRAMETYPE_IDR) ? 1 : 0;
+
+                if (!(ExtractFrameType(*eTask) & MFX_FRAMETYPE_IDR) && feiPPS)
+                    m_refFrameCounter++;
+            }
+            break;
+
+        case MFX_FRAMETYPE_P:
+            /* PPS only */
+            if (feiPPS || feiSliceHeader)
+            {
+                if (feiPPS)
+                {
+                    feiPPS[fieldId].IDRPicFlag        = 0;
+                    feiPPS[fieldId].NumRefIdxL0Active = eTask->in.NumFrameL0;
+                    feiPPS[fieldId].NumRefIdxL1Active = 0;
+                    feiPPS[fieldId].ReferencePicFlag  = (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_REF) ? 1 : 0;
+
+                    if (eTask->prevTask && (ExtractFrameType(*(eTask->prevTask)) & MFX_FRAMETYPE_REF))
+                    {
+                        feiPPS[fieldId].FrameNum = m_refFrameCounter;
+                    }
+                }
+
+                if (feiSliceHeader)
+                {
+                    MSDK_CHECK_POINTER(feiSliceHeader[fieldId].Slice, MFX_ERR_NULL_PTR);
+
+                    for (mfxU32 i = 0; i < feiSliceHeader[fieldId].NumSlice; i++)
+                    {
+                        MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL0, 32);
+                        MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL1, 32);
+                        feiSliceHeader[fieldId].Slice[i].SliceType = FEI_SLICETYPE_P;
+
+                        int k = 0;
+                        for (std::list<int>::iterator it = ((fieldId == 0) ? l0_idx_field1.begin() : l0_idx_field2.begin());
+                            it != ((fieldId == 0) ? l0_idx_field1.end() : l0_idx_field2.end()); ++it)
+                        {
+                            feiSliceHeader[fieldId].Slice[i].RefL0[k].Index = (mfxU16)(*it);
+                            feiSliceHeader[fieldId].Slice[i].RefL0[k].PictureType = (mfxU16)((m_numOfFields == 1) ? MFX_PICTYPE_FRAME :
+                                ((eTask->m_list0[eTask->m_fid[fieldId]][k] & 128) ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD));
+                            k++;
+                        }
+                    }
+                }
+                if (feiPPS && eTask->prevTask && (ExtractFrameType(*(eTask->prevTask)) & MFX_FRAMETYPE_REF) && ((fieldId && m_isField) || (!fieldId && !m_isField)))
+                    m_refFrameCounter++;
+            }
+            if (feiSPS)
+                feiSPS->Pack = 0;
+            break;
+
+        case MFX_FRAMETYPE_B:
+            /* PPS only */
+            if (feiPPS || feiSliceHeader)
             {
                 if (feiPPS)
                 {
@@ -3706,6 +3705,7 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
                             feiSliceHeader[fieldId].Slice[i].RefL0[k].Index       = (mfxU16)(*it);
                             feiSliceHeader[fieldId].Slice[i].RefL0[k].PictureType = (mfxU16)((m_numOfFields == 1) ? MFX_PICTYPE_FRAME :
                                 ((eTask->m_list0[eTask->m_fid[fieldId]][k] & 128) ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD));
+                            k++;
                         }
                         k = 0;
                         for (std::list<int>::iterator it = ((fieldId == 0) ? l1_idx_field1.begin() : l1_idx_field2.begin());
@@ -3714,30 +3714,18 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
                             feiSliceHeader[fieldId].Slice[i].RefL1[k].Index       = (mfxU16)(*it);
                             feiSliceHeader[fieldId].Slice[i].RefL1[k].PictureType = (mfxU16)((m_numOfFields == 1) ? MFX_PICTYPE_FRAME :
                                 ((eTask->m_list1[eTask->m_fid[fieldId]][k] & 128) ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD));
+                            k++;
                         }
-                        /*
-                        for (mfxU16 k = 0; k < eTask->in.NumFrameL0; k++)
-                        {
-                            feiSliceHeader[fieldId].Slice[i].RefL0[k].Index       = k;
-                            feiSliceHeader[fieldId].Slice[i].RefL0[k].PictureType = (mfxU16)((m_numOfFields == 1) ? MFX_PICTYPE_FRAME :
-                                ((eTask->m_list0[eTask->m_fid[fieldId]][k] & 128) ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD));
-                        }
-                        for (mfxU16 k = 0; k < eTask->in.NumFrameL1; k++)
-                        {
-                            feiSliceHeader[fieldId].Slice[i].RefL1[k].Index       = k;
-                            feiSliceHeader[fieldId].Slice[i].RefL1[k].PictureType = (mfxU16)((m_numOfFields == 1) ? MFX_PICTYPE_FRAME :
-                                ((eTask->m_list1[eTask->m_fid[fieldId]][k] & 128) ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD));
-                        } */
                     }
-                }
+                } // if (feiSliceHeader)
             }
+            if (feiSPS)
+                feiSPS->Pack = 0;
+            break;
         }
-        if (feiSPS)
-            feiSPS->Pack = 0;
-    }
-    break;
     }
 
+    /* the rest ext buffers */
     int encCtrlId = 0;
     for (int i = 0; i<eTask->in.NumExtParam; i++)
     {
