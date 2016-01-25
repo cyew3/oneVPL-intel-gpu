@@ -262,6 +262,7 @@
     <ClCompile Include="src\gmock\test_suites\hevce_hrd_violation.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_level_profile.cpp" />
+    <ClCompile Include="src\gmock\test_suites\hevce_pic_timing.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_pts_dts.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_spspps_get.cpp" />

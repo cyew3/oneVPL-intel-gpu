@@ -541,6 +541,9 @@
     <ClCompile Include="src\gmock\test_suites\avce_gpu_hang.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevce_pic_timing.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vpp_getvppstat.cpp">
       <Filter>Source Files\test_suites\vpp</Filter>
     </ClCompile>
