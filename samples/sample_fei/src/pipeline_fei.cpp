@@ -2462,7 +2462,7 @@ mfxStatus CEncodingPipeline::Run()
         }
 
         sts = GetOneFrame(pSurf);
-        if (sts == MFX_ERR_MORE_DATA) // new cycle in loop mode
+        if (sts == MFX_ERR_MORE_DATA && m_encpakParams.nTimeout) // new cycle in loop mode
         {
             sts = MFX_ERR_NONE;
             continue;
@@ -2674,7 +2674,7 @@ mfxStatus CEncodingPipeline::GetOneFrame(mfxFrameSurface1* & pSurf)
             m_insertIDR = true;
             return MFX_ERR_MORE_DATA;
         }
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, sts);
 
         // ... after we're done call Unlock
         if (m_bExternalAlloc)
@@ -5133,7 +5133,7 @@ const char* getPicType(mfxU8 type)
 void CEncodingPipeline::ShowDpbInfo(iTask *task, int frame_order)
 {
     mdprintf(stderr, "\n\n--------------Show DPB Info of frame %d-------\n", frame_order);
-    for (int j = 0; j < 2; j++) {
+    for (int j = 0; j < m_numOfFields; j++) {
         mdprintf(stderr, "\t[%d]: List dpb frame of frame %d in (frame_order, frame_num, POC):\n\t\tDPB:", j, task->m_frameOrder);
         for (mfxU32 i = 0; i < task->m_dpb[task->m_fid[j]].Size(); i++) {
             DpbFrame & ref = task->m_dpb[task->m_fid[j]][i];
