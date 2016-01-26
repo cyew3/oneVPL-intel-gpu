@@ -184,6 +184,7 @@ mfxStatus SetFrameRate(
 
     return MFX_ERR_NONE;
 }
+
 mfxStatus SetBRCParallel(
     MfxVideoParam const & par,
     VADisplay    vaDisplay,
@@ -215,7 +216,7 @@ mfxStatus SetBRCParallel(
 
     misc_param->type = VAEncMiscParameterTypeParallelBRC;
     BRCParallel_param = (VAEncMiscParameterParallelRateControl *)misc_param->data;
- 
+
     if (!par.isBPyramid())
     {
         BRCParallel_param->num_b_in_gop[1] = par.mfx.GopRefDist - 1;
@@ -236,121 +237,52 @@ mfxStatus SetBRCParallel(
     {
         BRCParallel_param->num_b_in_gop[0]  = 0;
         BRCParallel_param->num_b_in_gop[1]  = 0;
-        BRCParallel_param->num_b_in_gop[2]  = 0;    
+        BRCParallel_param->num_b_in_gop[2]  = 0;
     }
 
     vaUnmapBuffer(vaDisplay, BRCParallel_id);
 
     return MFX_ERR_NONE;
 }
-mfxStatus SetPrivateParams(
+
+mfxStatus SetQualityLevelParams(
     MfxVideoParam const & par,
     VADisplay    vaDisplay,
     VAContextID  vaContextEncode,
-    VABufferID & privateParams_id,
-    mfxEncodeCtrl const * pCtrl)
+    VABufferID & qualityParams_id)
 {
-    if (!IsSupported__VAEncMiscParameterPrivate()) return MFX_ERR_UNSUPPORTED;
-
     VAStatus vaSts;
     VAEncMiscParameterBuffer *misc_param;
-    VAEncMiscParameterPrivate *private_param;
-    mfxExtCodingOption2 const * extOpt2  = &par.m_ext.CO2;
+    VAEncMiscParameterBufferQualityLevel *quality_param;
 
-
-    if ( privateParams_id != VA_INVALID_ID)
+    if ( qualityParams_id != VA_INVALID_ID)
     {
-        vaDestroyBuffer(vaDisplay, privateParams_id);
+        vaDestroyBuffer(vaDisplay, qualityParams_id);
     }
 
     vaSts = vaCreateBuffer(vaDisplay,
                    vaContextEncode,
                    VAEncMiscParameterBufferType,
-                   sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterPrivate),
+                   sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterBufferQualityLevel),
                    1,
                    NULL,
-                   &privateParams_id);
+                   &qualityParams_id);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     vaSts = vaMapBuffer(vaDisplay,
-                 privateParams_id,
+                 qualityParams_id,
                 (void **)&misc_param);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    misc_param->type = (VAEncMiscParameterType)VAEncMiscParameterTypePrivate;
-    private_param = (VAEncMiscParameterPrivate *)misc_param->data;
+    misc_param->type = (VAEncMiscParameterType)VAEncMiscParameterTypeQualityLevel;
+    quality_param = (VAEncMiscParameterBufferQualityLevel *)misc_param->data;
 
-    private_param->target_usage = (unsigned int)(par.mfx.TargetUsage);
-    private_param->useRawPicForRef = extOpt2 && IsOn(extOpt2->UseRawRef);
+    quality_param->quality_level = (unsigned int)(par.mfx.TargetUsage);
 
-    /*if (extOpt3)
-    {
-        private_param->directBiasAdjustmentEnable       = IsOn(extOpt3->DirectBiasAdjustment);
-        private_param->globalMotionBiasAdjustmentEnable = IsOn(extOpt3->GlobalMotionBiasAdjustment);
-
-        if (private_param->globalMotionBiasAdjustmentEnable && extOpt3->MVCostScalingFactor < 4)
-            private_param->HMEMVCostScalingFactor = extOpt3->MVCostScalingFactor;
-    }
-
-    if (extOptFEI)
-    {
-        private_param->HMEDisable      = !!extOptFEI->DisableHME;
-        private_param->SuperHMEDisable = !!extOptFEI->DisableSuperHME;
-        private_param->UltraHMEDisable = !!extOptFEI->DisableUltraHME;
-    }*/
-
-    /* if (pCtrl)
-    {
-        mfxExtCodingOption2 const * extOpt2rt  = GetExtBuffer(*pCtrl);
-        mfxExtCodingOption3 const * extOpt3rt  = GetExtBuffer(*pCtrl);
-        mfxExtAVCEncodeCtrl const * extPCQC    = GetExtBuffer(*pCtrl);
-
-        if (extOpt2rt)
-            private_param->useRawPicForRef = IsOn(extOpt2rt->UseRawRef);
-
-        if (extOpt3rt)
-        {
-            private_param->directBiasAdjustmentEnable       = IsOn(extOpt3rt->DirectBiasAdjustment);
-            private_param->globalMotionBiasAdjustmentEnable = IsOn(extOpt3rt->GlobalMotionBiasAdjustment);
-
-            if (private_param->globalMotionBiasAdjustmentEnable && extOpt3rt->MVCostScalingFactor < 4)
-                private_param->HMEMVCostScalingFactor = extOpt3rt->MVCostScalingFactor;
-        }
-
-        if (extPCQC)
-        {
-            private_param->skipCheckDisable = (extPCQC->SkipCheck & 0x0F) == MFX_SKIP_CHECK_DISABLE;
-            private_param->FTQEnable        = (extPCQC->SkipCheck & 0x0F) == MFX_SKIP_CHECK_FTQ_ON;
-            private_param->FTQOverride      = private_param->FTQEnable || (extPCQC->SkipCheck & 0x0F) == MFX_SKIP_CHECK_FTQ_OFF;
-
-            if (extPCQC->SkipCheck & MFX_SKIP_CHECK_SET_THRESHOLDS)
-            {
-                if (private_param->FTQEnable)
-                {
-                    private_param->FTQSkipThresholdLUTInput = 1;
-                    for (mfxU32 i = 0; i < 52; i ++)
-                        private_param->FTQSkipThresholdLUT[i] = (mfxU8)extPCQC->SkipThreshold[i];
-                }
-                else
-                {
-                    private_param->NonFTQSkipThresholdLUTInput = 1;
-                    Copy(private_param->NonFTQSkipThresholdLUT, extPCQC->SkipThreshold);
-                }
-            }
-
-            if (IsOn(extPCQC->LambdaValueFlag))
-            {
-                private_param->lambdaValueLUTInput = 1;
-                Copy(private_param->lambdaValueLUT, extPCQC->LambdaValue );
-            }
-        }
-    }*/
-
-    vaUnmapBuffer(vaDisplay, privateParams_id);
+    vaUnmapBuffer(vaDisplay, qualityParams_id);
 
     return MFX_ERR_NONE;
-} // void SetPrivateParams(...)
-
+}
 
 void FillConstPartOfPps(
     MfxVideoParam const & par,
@@ -556,7 +488,7 @@ VAAPIEncoder::VAAPIEncoder()
 , m_rateParamBufferId(VA_INVALID_ID)
 , m_BRCParallelParamBufferId(VA_INVALID_ID)
 , m_frameRateId(VA_INVALID_ID)
-, m_privateParamsId(VA_INVALID_ID)
+, m_qualityLevelBufferId(VA_INVALID_ID)
 , m_ppsBufferId(VA_INVALID_ID)
 , m_packedAudHeaderBufferId(VA_INVALID_ID)
 , m_packedAudBufferId(VA_INVALID_ID)
@@ -789,7 +721,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetBRCParallel(par, m_vaDisplay, m_vaContextEncode, m_BRCParallelParamBufferId), MFX_ERR_DEVICE_FAILED);
 #endif
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId), MFX_ERR_DEVICE_FAILED);
-    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetPrivateParams(par, m_vaDisplay, m_vaContextEncode, m_privateParamsId), MFX_ERR_DEVICE_FAILED);
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetQualityLevelParams(par, m_vaDisplay, m_vaContextEncode, m_qualityLevelBufferId), MFX_ERR_DEVICE_FAILED);
 
     FillConstPartOfPps(par, m_pps);
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
@@ -811,11 +743,11 @@ mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par)
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetHRD(par, m_vaDisplay, m_vaContextEncode, m_hrdBufferId), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRateControl(par, m_vaDisplay, m_vaContextEncode, m_rateParamBufferId, isBrcResetRequired), MFX_ERR_DEVICE_FAILED);
 
-#ifdef PARALLEL_BRC_support   
+#ifdef PARALLEL_BRC_support
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetBRCParallel(par, m_vaDisplay, m_vaContextEncode, m_BRCParallelParamBufferId), MFX_ERR_DEVICE_FAILED);
 #endif
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetFrameRate(par, m_vaDisplay, m_vaContextEncode, m_frameRateId), MFX_ERR_DEVICE_FAILED);
-    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetPrivateParams(par, m_vaDisplay, m_vaContextEncode, m_privateParamsId), MFX_ERR_DEVICE_FAILED);
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetQualityLevelParams(par, m_vaDisplay, m_vaContextEncode, m_qualityLevelBufferId), MFX_ERR_DEVICE_FAILED);
 
     FillConstPartOfPps(par, m_pps);
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
@@ -1195,9 +1127,9 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
 
 #ifdef PARALLEL_BRC_support
     configBuffers[buffersCount++] = m_BRCParallelParamBufferId;
-#endif    
+#endif
     configBuffers[buffersCount++] = m_frameRateId;
-    configBuffers[buffersCount++] = m_privateParamsId;
+    configBuffers[buffersCount++] = m_qualityLevelBufferId;
 
     assert(buffersCount <= configBuffers.size());
 
@@ -1373,12 +1305,12 @@ mfxStatus VAAPIEncoder::Destroy()
     MFX_DESTROY_VABUFFER(m_hrdBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_rateParamBufferId, m_vaDisplay);
 
-#ifdef PARALLEL_BRC_support 
+#ifdef PARALLEL_BRC_support
     MFX_DESTROY_VABUFFER(m_BRCParallelParamBufferId, m_vaDisplay);
 #endif
 
     MFX_DESTROY_VABUFFER(m_frameRateId, m_vaDisplay);
-    MFX_DESTROY_VABUFFER(m_privateParamsId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_qualityLevelBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_ppsBufferId, m_vaDisplay);
     for( mfxU32 i = 0; i < m_slice.size(); i++ )
     {

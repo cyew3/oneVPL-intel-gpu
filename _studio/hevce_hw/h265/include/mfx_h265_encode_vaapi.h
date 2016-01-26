@@ -48,12 +48,11 @@ mfxStatus SetHRD(
     VAContextID  vaContextEncode,
     VABufferID & hrdBuf_id);
 
-mfxStatus SetPrivateParams(
+mfxStatus SetQualityLevelParams(
     MfxHwH265Encode::MfxVideoParam const & par,
     VADisplay    vaDisplay,
     VAContextID  vaContextEncode,
-    VABufferID & privateParams_id,
-    mfxEncodeCtrl const * pCtrl = 0);
+    VABufferID & qualityParams_id);
 
 void FillConstPartOfPps(
     MfxHwH265Encode::MfxVideoParam const & par,
@@ -149,7 +148,7 @@ mfxStatus SetFrameRate(
         VABufferID m_rateParamBufferId;
         VABufferID m_BRCParallelParamBufferId; //VAEncMiscParameterParallelRateControl
         VABufferID m_frameRateId;
-        VABufferID m_privateParamsId;
+        VABufferID m_qualityLevelBufferId;
         VABufferID m_ppsBufferId;
         std::vector<VABufferID> m_sliceBufferId;
 
