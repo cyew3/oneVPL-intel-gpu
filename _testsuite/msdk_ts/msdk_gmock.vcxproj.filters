@@ -274,9 +274,6 @@
     <ClCompile Include="src\gmock\test_suites\fei_encode_encode_frame_async.cpp">
       <Filter>Source Files\test_suites\FEI</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\fei_encode_qp.cpp">
-      <Filter>Source Files\test_suites\FEI</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\fei_encode_field_coding.cpp">
       <Filter>Source Files\test_suites\FEI</Filter>
     </ClCompile>
@@ -543,6 +540,9 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\avce_gpu_hang.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_getvppstat.cpp">
+      <Filter>Source Files\test_suites\vpp</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
