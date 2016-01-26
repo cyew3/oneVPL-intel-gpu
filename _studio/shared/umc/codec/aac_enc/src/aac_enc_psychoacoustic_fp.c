@@ -24,6 +24,9 @@
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_AAC_AUDIO_ENCODER)
+#if defined(__GNUC__)
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #include <math.h>
 #include "aac_enc_psychoacoustic_fp.h"

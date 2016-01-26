@@ -11,6 +11,9 @@
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_AAC_AUDIO_ENCODER)
+#if defined(__GNUC__)
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #pragma warning(disable:4996)
 #include <stdio.h>
 
@@ -65,6 +68,8 @@ Ipp32s fill_program_config_element(sProgram_config_element* p_data,
     break;
   case AOT_AAC_LTP:
     p_data->object_type = 3;
+    break;
+  default:
     break;
   }
 

@@ -10,6 +10,9 @@
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_AAC_AUDIO_ENCODER)
+#if defined(__GNUC__)
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #pragma warning(disable:4996)
 #include "aac_enc_huff_tables.h"
 #include "aac_status.h"

@@ -12,6 +12,7 @@
 #if defined (UMC_ENABLE_AAC_AUDIO_ENCODER)
 
 #include <math.h>
+#include <stdlib.h>
 #include "align.h"
 #include "aac_status.h"
 #include "sbr_freq_tabs.h"

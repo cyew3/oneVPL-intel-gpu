@@ -10,6 +10,9 @@
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MP3_AUDIO_DECODER)
+#if defined(__GNUC__)
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #include "align.h"
 #include "mp3dec_own_fp.h"

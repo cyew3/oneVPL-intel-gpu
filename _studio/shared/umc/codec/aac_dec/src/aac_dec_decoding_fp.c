@@ -472,8 +472,12 @@ void coupling_gain_calculation(sCoupling_channel_element *pElement,
     if (pData->cge[c]) {
       Ipp32s   fac = -pElement->cc_fact[c][0][0];
       Ipp32s   ifac = fac >> shift;
-      Ipp32s   x = ((127 + ifac) << 23);
-      Ipp32f scale = (*(Ipp32f*)&x) * pgain_table[fac - (ifac << shift)];
+      union {
+        Ipp32s x;
+        Ipp32f xf;
+      } u;
+      u.x = ((127 + ifac) << 23);
+      Ipp32f scale = u.xf * pgain_table[fac - (ifac << shift)];
 
       for (g = 0; g < pElement->stream.num_window_groups; g++) {
         for (sfb = 0; sfb < pElement->stream.max_sfb; sfb++) {
@@ -492,8 +496,12 @@ void coupling_gain_calculation(sCoupling_channel_element *pElement,
               Ipp32s   sign = pElement->cc_fact[c][g][sfb] & 1;
               Ipp32s   fac = -(pElement->cc_fact[c][g][sfb] >> 1);
               Ipp32s   ifac = fac >> shift;
-              Ipp32s   x = ((127 + ifac) << 23);
-              Ipp32f scale = (*(Ipp32f*)&x) * pgain_table[fac - (ifac << shift)];
+              union {
+                Ipp32s x;
+                Ipp32f xf;
+              } u;
+              u.x = ((127 + ifac) << 23);
+              Ipp32f scale = u.xf * pgain_table[fac - (ifac << shift)];
 
               if (sign) scale = -scale;
               cc_gain[ch][g][sfb] = scale;
@@ -508,8 +516,12 @@ void coupling_gain_calculation(sCoupling_channel_element *pElement,
             if ((pElement->stream.sfb_cb[g][sfb] != ZERO_HCB)|| (pData->ind_sw_cce_flag)) {
               Ipp32s   fac = -(pElement->cc_fact[c][g][sfb]);
               Ipp32s   ifac = fac >> shift;
-              Ipp32s   x = ((127 + ifac) << 23);
-              Ipp32f scale = (*(Ipp32f*)&x) * pgain_table[fac - (ifac << shift)];
+              union {
+                Ipp32s x;
+                Ipp32f xf;
+              } u;
+              u.x = ((127 + ifac) << 23);
+              Ipp32f scale = u.xf * pgain_table[fac - (ifac << shift)];
               cc_gain[ch][g][sfb] = scale;
             } else {
               cc_gain[ch][g][sfb] = 0;

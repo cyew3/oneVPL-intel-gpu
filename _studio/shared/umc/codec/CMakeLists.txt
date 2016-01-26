@@ -44,6 +44,7 @@ endforeach( )
 
 # =============================================================================
 
+set( defs "-Wall -Werror" )
 set( sources "" )
 foreach( dir ${adirs} )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
@@ -51,6 +52,7 @@ foreach( dir ${adirs} )
 endforeach()
 
 make_library( umc_acodecs_merged none static )
+set( defs "" )
 
 # =============================================================================
 
