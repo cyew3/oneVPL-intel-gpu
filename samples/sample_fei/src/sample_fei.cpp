@@ -42,7 +42,9 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-qp qp_value] - QP value for frames\n"));
     msdk_printf(MSDK_STRING("   [-gop_opt closed|strict] - GOP optimization flags (can be used together)\n"));
     msdk_printf(MSDK_STRING("   [-trellis value] - bitfield: 0 = default, 1 = off, 2 = on for I frames, 4 = on for P frames, 8 = on for B frames (ENCODE only)\n"));
-    msdk_printf(MSDK_STRING("   [-preenc] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
+    msdk_printf(MSDK_STRING("   [-preenc ds_strength] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
+    msdk_printf(MSDK_STRING("                            if ds_strength parameter is missed or less than 2, PREENC is used on the full resolution\n"));
+    msdk_printf(MSDK_STRING("                            otherwise PREENC is used on downscaled (by VPP resize in ds_strength times) surfaces\n"));
     msdk_printf(MSDK_STRING("   [-encode] - use extended FEI interface ENC+PAK (FEI ENCODE) (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-encpak] - use extended FEI interface ENC only and PAK only (separate calls)\n"));
     //msdk_printf(MSDK_STRING("   [-enc] - use extended FEI interface ENC (only)\n"));
@@ -180,6 +182,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-preenc")))
         {
             pParams->bPREENC = true;
+
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->preencDSstrength) || pParams->preencDSstrength < 0)
+            {
+                pParams->preencDSstrength = 0;
+                i--;
+            }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-profile")))
         {
@@ -559,6 +567,20 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
+    if (!!pParams->preencDSstrength)
+    {
+        switch (pParams->preencDSstrength)
+        {
+        case 2:
+        case 4:
+        case 8:
+            break;
+        default:
+            msdk_printf(MSDK_STRING("\nUnsupported strength of PREENC downscaling!\n"));
+            return MFX_ERR_UNSUPPORTED;
+        }
+    }
+
     // check if all mandatory parameters were set
     if (0 == msdk_strlen(pParams->strSrcFile))
     {
@@ -878,6 +900,7 @@ int main(int argc, char *argv[])
     Params.bPREENC   = false;
     Params.bPerfMode = false;
     Params.bNPredSpecified = false;
+    Params.preencDSstrength = 0;
     Params.EncodedOrder    = false;
     Params.Enable8x8Stat   = false;
     Params.FTEnable        = false;

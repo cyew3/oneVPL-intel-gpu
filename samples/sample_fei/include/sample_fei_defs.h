@@ -400,6 +400,7 @@ struct iTask
     bufSet* bufs;
     bufSet* preenc_bufs;
     std::list<PreEncMVPInfo> preenc_mvp_info;
+    mfxFrameSurface1 *fullResSurface;
 
     mfxU16 PicStruct;
     mfxU16 BRefType;

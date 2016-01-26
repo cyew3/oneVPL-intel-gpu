@@ -76,6 +76,7 @@ struct sInputParams
     mfxU16 numRef;
     mfxU16 bRefType;
     mfxU16 nIdrInterval;
+    mfxU8 preencDSstrength;
 
     mfxU16 SearchWindow;
     mfxU16 LenSP;
@@ -215,6 +216,7 @@ protected:
     mfxU16 m_heightMB;
     mfxU16 m_widthMB;
     mfxU16 m_numMB;
+    mfxU16 m_numMBpreenc; // number of MBs in input for PreEnc surfaces
 
     MFXVideoSession m_mfxSession;
     MFXVideoSession m_preenc_mfxSession;
@@ -222,6 +224,7 @@ protected:
     MFXVideoSession* m_pVPP_mfxSession;
     MFXVideoDECODE*  m_pmfxDECODE;
     MFXVideoVPP*     m_pmfxVPP;
+    MFXVideoVPP*     m_pmfxDS;
     MFXVideoENCODE*  m_pmfxENCODE;
     MFXVideoENC*     m_pmfxPREENC;
     MFXVideoENC*     m_pmfxENC;
@@ -231,6 +234,7 @@ protected:
     mfxVideoParam m_mfxEncParams;
     mfxVideoParam m_mfxDecParams;
     mfxVideoParam m_mfxVppParams;
+    mfxVideoParam m_mfxDSParams;
     sInputParams  m_encpakParams;
 
     mfxBitstream m_mfxBS;  // contains encoded input data
@@ -243,11 +247,13 @@ protected:
     mfxSyncPoint   m_LastDecSyncPoint;
 
     mfxFrameSurface1* m_pDecSurfaces; // frames array for decoder input
+    mfxFrameSurface1* m_pDSSurfaces;  // frmaes array for downscaled surfaces for PREENC
     mfxFrameSurface1* m_pVppSurfaces; // frames array for vpp input
     mfxFrameSurface1* m_pEncSurfaces; // frames array for encoder input (vpp output)
     mfxFrameSurface1* m_pReconSurfaces; // frames array for reconstructed surfaces [FEI]
     mfxFrameAllocResponse m_DecResponse;  // memory allocation response for decoder
     mfxFrameAllocResponse m_VppResponse;  // memory allocation response for VPP input
+    mfxFrameAllocResponse m_dsResponse;   // memory allocation response for VPP input
     mfxFrameAllocResponse m_EncResponse;  // memory allocation response for encoder
     mfxFrameAllocResponse m_ReconResponse;  // memory allocation response for encoder for reconstructed surfaces [FEI]
 
@@ -316,7 +322,7 @@ protected:
     virtual mfxStatus DecodeOneFrame(ExtendedSurface *pOutSurf);
     virtual mfxStatus DecodeLastFrame(ExtendedSurface *pOutSurf);
 
-    virtual mfxStatus VPPOneFrame(mfxFrameSurface1 *pSurfaceIn, ExtendedSurface *pExtSurface);
+    virtual mfxStatus VPPOneFrame(MFXVideoVPP* VPPobj, MFXVideoSession* session, mfxFrameSurface1 *pSurfaceIn, ExtendedSurface *pExtSurface);
 
     iTask* CreateAndInitTask();
     iTask* FindFrameToEncode(bool buffered_frames);
@@ -340,6 +346,7 @@ protected:
     mfxStatus DropPREENCoutput(iTask* eTask);
     mfxStatus PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[2]);
     mfxStatus PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 numMVP[2]);
+    mfxStatus repackDSPreenc2EncExMB(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB[2], mfxExtFeiEncMVPredictors *EncMVPred, mfxU32 MBnum, mfxU32 refIdx[2], mfxU32 predIdx, bool perf);
 
     /* ENC(PAK) reflists */
     mfxStatus GetFullBackwardSet(iTask* eTask, mfxFrameSurface1** & l0, mfxU16 &n_backward, std::list<int> & l0_idx_field1, std::list<int> & l0_idx_field2, bool is_enc);
@@ -389,6 +396,7 @@ mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 co
 mfxStatus repackPreenc2Enc(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf);
 mfxStatus repackPreenc2EncExOneMB(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB[2], mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 refIdx[2], mfxU32 predIdx, mfxI16 *tmpBuf);
 mfxI16 get16Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1);
+mfxI16 get4Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1, int offset);
 
 bool compareL0Distortion(std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> frst,
     std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> scnd);
