@@ -9,6 +9,7 @@ foreach( dir ${vdirs} )
   include_directories( ${CMAKE_SOURCE_DIR}/mfx_lib/bsd/${dir}/include )
 endforeach()
 
+set( defs "-Wall -Werror" )
 set( sources "" )
 set( sources.plus "" )
 foreach( dir ${vdirs} )
@@ -17,4 +18,4 @@ foreach( dir ${vdirs} )
 endforeach()
 
 make_library( bsd none static )
-
+set( defs "" )

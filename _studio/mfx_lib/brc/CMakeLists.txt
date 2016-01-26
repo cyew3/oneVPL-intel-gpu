@@ -10,6 +10,7 @@ foreach( dir ${vdirs} )
   include_directories( ${CMAKE_SOURCE_DIR}/mfx_lib/brc/${dir}/include )
 endforeach()
 
+set( defs "-Wall -Werror" )
 set( sources "" )
 set( sources.plus "" )
 foreach( dir ${vdirs} )
@@ -18,4 +19,4 @@ foreach( dir ${vdirs} )
 endforeach()
 
 make_library( brc none static )
-
+set( defs "" )

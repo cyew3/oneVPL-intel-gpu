@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -98,9 +98,9 @@ protected:
         size_t offset;
     public:
         AudioFramesCollector(std::vector<mfxU8>& v, CommonCORE& core)
-            : offset(0)
+            : mCore(core)
             , buffer(v)
-            , mCore(core) {
+            , offset(0) {
         }
         void push(mfxAudioFrame* t) {
             if (t)
@@ -158,11 +158,11 @@ protected:
         }
     public:
         StateDataDivider(int ExpectedFrameSize, CommonCORE* core) 
-            : m_FrameSize(ExpectedFrameSize)
-            , m_nRestBytes(0)
+            : m_nRestBytes(0)
+            , m_FrameSize(ExpectedFrameSize)
             , m_lastStatus(MFX_ERR_NONE)
-            , m_nFrames(0)
-            , m_CommonCore(core) {
+            , m_CommonCore(core)
+            , m_nFrames(0) {
                 m_buffer.resize(ExpectedFrameSize);
                 m_AudioFrames.reset(new AudioFramesCollector(m_buffer, *m_CommonCore));
         
