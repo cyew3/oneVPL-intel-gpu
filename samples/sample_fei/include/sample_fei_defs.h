@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2005-2015 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2005-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //*/
@@ -475,6 +475,11 @@ inline mfxU8 ExtractFrameType(iTask& task, mfxU32 fieldId)
 inline mfxU16 createType(iTask& task)
 {
     return ((mfxU16)task.m_type[!GetFirstField(task)] << 8) | task.m_type[GetFirstField(task)];
+}
+
+inline mfxU8 extractType(mfxU16 type, mfxU32 parity)
+{
+    return parity ? (type>>8) : (type&255);
 }
 
 struct BasePredicateForRefPic

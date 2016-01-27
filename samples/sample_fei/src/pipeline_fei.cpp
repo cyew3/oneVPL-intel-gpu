@@ -214,16 +214,14 @@ mfxStatus CEncTaskPool::DropENCODEoutput(mfxBitstream& bs, mfxU32 m_nFieldId)
                     continue;
 
                 mvBuf = (mfxExtFeiEncMV*)(bs.ExtParam[i]);
-                if (!(bs.FrameType & MFX_FRAMETYPE_I)){
+                if (!(extractType(bs.FrameType, (bs.PicStruct & MFX_PICSTRUCT_FIELD_BFF) ? 1 - m_nFieldId : m_nFieldId) & MFX_FRAMETYPE_I)){
                     SAFE_FWRITE(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, mvENCPAKout, MFX_ERR_MORE_DATA);
-                    //fwrite(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, mvENCPAKout);
                 }
                 else{
                     mfxExtFeiEncMV::mfxExtFeiEncMVMB tmpMB;
                     memset(&tmpMB, 0x8000, sizeof(tmpMB));
                     for (mfxU32 k = 0; k < mvBuf->NumMBAlloc; k++){
                         SAFE_FWRITE(&tmpMB, sizeof(tmpMB), 1, mvENCPAKout, MFX_ERR_MORE_DATA);
-                        //fwrite(&tmpMB, sizeof(tmpMB), 1, mvENCPAKout);
                     }
                 }
             }
@@ -237,7 +235,6 @@ mfxStatus CEncTaskPool::DropENCODEoutput(mfxBitstream& bs, mfxU32 m_nFieldId)
             if (mbstatout){
                 mbstatBuf = (mfxExtFeiEncMBStat*)(bs.ExtParam[i]);
                 SAFE_FWRITE(mbstatBuf->MB, sizeof(mbstatBuf->MB[0])*mbstatBuf->NumMBAlloc, 1, mbstatout, MFX_ERR_MORE_DATA);
-                //fwrite(mbstatBuf->MB, sizeof(mbstatBuf->MB[0])*mbstatBuf->NumMBAlloc, 1, mbstatout);
             }
             break;
 
@@ -249,7 +246,6 @@ mfxStatus CEncTaskPool::DropENCODEoutput(mfxBitstream& bs, mfxU32 m_nFieldId)
             if (mbcodeout){
                 mbcodeBuf = (mfxExtFeiPakMBCtrl*)(bs.ExtParam[i]);
                 SAFE_FWRITE(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, mbcodeout, MFX_ERR_MORE_DATA);
-                //fwrite(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, mbcodeout);
             }
             break;
         } // switch (bs.ExtParam[i]->BufferId)
@@ -4072,7 +4068,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 num
     for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
     {
         mfxU32 nPred = numMVP[fieldId], nPred_actual = IPP_MIN(nPred, MaxFeiEncMVPNum);
-        if (nPred == 0)
+        if (nPred == 0 || (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_I))
             continue; // I-field
 
         mvs = new mfxExtFeiPreEncMV*[nPred_actual];
@@ -4510,7 +4506,7 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
                  * So, lets create new mfxENCInput with one  Pre-Enc control buffer but for second field,
                  * which is not yet processed
                  * */
-                mfxENCInput  inSecondField;
+                /*mfxENCInput  inSecondField;
                 mfxENCOutput outSecondField;
                 inSecondField.InSurface = eTask->in.InSurface;
                 inSecondField.NumExtParam = 0;
@@ -4519,7 +4515,7 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
                 {
                     if  (eTask->in.ExtParam[i]->BufferId == eTask->in.ExtParam[i + 1]->BufferId)
                     {
-                        inSecondField.ExtParam[inSecondField.NumExtParam++] = eTask->in.ExtParam[i + 1];
+                        inSecondField.ExtParam[inSecondField.NumExtParam] = eTask->in.ExtParam[i + 1];
                         if (MFX_EXTBUFF_FEI_PREENC_CTRL == inSecondField.ExtParam[inSecondField.NumExtParam]->BufferId)
                         {
                             mfxExtFeiPreEncCtrl *preENCCtr =(mfxExtFeiPreEncCtrl *) inSecondField.ExtParam[inSecondField.NumExtParam];
@@ -4528,6 +4524,7 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
                             else if (MFX_PICTYPE_BOTTOMFIELD == preENCCtr->PictureType)
                                 preENCCtr->PictureType = MFX_PICTYPE_TOPFIELD;
                         }
+                        inSecondField.NumExtParam++;
                     }
                 } // (mfxU16 i = 0; i < (eTask->in.NumExtParam -1); i++)
 
@@ -4541,11 +4538,18 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
                 }
                 sts = m_pmfxPREENC->ProcessFrameAsync(&inSecondField, &outSecondField, &eTask->EncSyncP);
                 MSDK_BREAK_ON_ERROR(sts);
-                /*PRE-ENC is running in separate session */
+                //PRE-ENC is running in separate session
                 sts = m_preenc_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
                 MSDK_BREAK_ON_ERROR(sts);
                 delete [] inSecondField.ExtParam;
                 delete [] outSecondField.ExtParam;
+                mdprintf(stderr, "preenc synced : %d\n", sts);*/
+
+                sts = m_pmfxPREENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
+                MSDK_BREAK_ON_ERROR(sts);
+                /*PRE-ENC is running in separate session */
+                sts = m_preenc_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
+                MSDK_BREAK_ON_ERROR(sts);
                 mdprintf(stderr, "preenc synced : %d\n", sts);
             }
 
@@ -5133,7 +5137,7 @@ const char* getPicType(mfxU8 type)
 void CEncodingPipeline::ShowDpbInfo(iTask *task, int frame_order)
 {
     mdprintf(stderr, "\n\n--------------Show DPB Info of frame %d-------\n", frame_order);
-    for (int j = 0; j < m_numOfFields; j++) {
+    for (mfxU32 j = 0; j < m_numOfFields; j++) {
         mdprintf(stderr, "\t[%d]: List dpb frame of frame %d in (frame_order, frame_num, POC):\n\t\tDPB:", j, task->m_frameOrder);
         for (mfxU32 i = 0; i < task->m_dpb[task->m_fid[j]].Size(); i++) {
             DpbFrame & ref = task->m_dpb[task->m_fid[j]][i];
