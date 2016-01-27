@@ -151,7 +151,15 @@ mfxStatus CheckProfile(mfxVideoParam& par)
 mfxU16 minRefForPyramid(mfxU16 GopRefDist)
 {
     assert(GopRefDist > 0);
-    return (GopRefDist - 1) / 2 + 2;
+    mfxU16 refB  = (GopRefDist - 1) / 2;
+
+    for (mfxU16 x = refB; x > 2;)
+    {
+        x     = (x - 1) / 2;
+        refB -= x;
+    }
+
+    return 2 + refB;
 }
 
 mfxU32 GetMaxDpbSizeByLevel(MfxVideoParam const & par)
