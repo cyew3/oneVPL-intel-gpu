@@ -1,7 +1,6 @@
 #include "ts_encoder.h"
 #include "ts_struct.h"
-#include "avc2_parser.h"
-#include "avc2_struct.h"
+#include "bs_parser++.h"
 
 namespace avce_mb_disable_skip_map
 {
@@ -9,13 +8,13 @@ namespace avce_mb_disable_skip_map
 #define IS_MB_SKIPPED(mbtype)\
   ((mbtype == BS_AVC2::P_Skip || mbtype == BS_AVC2::B_Skip) ? true : false)
 
-class TestSuite : public tsVideoEncoder, public tsBitstreamProcessor, public AVC2_BitStream
+class TestSuite : public tsVideoEncoder, public tsBitstreamProcessor, public BS_AVC2_parser
 {
     std::vector<mfxExtMBDisableSkipMap> m_skip_map;
 public:
     TestSuite()
         : tsVideoEncoder(MFX_CODEC_AVC)
-        , AVC2_BitStream(BS_AVC2::INIT_MODE_PARSE_SD)
+        , BS_AVC2_parser(BS_AVC2::INIT_MODE_PARSE_SD)
     {
         m_bs_processor = this;
     }
@@ -111,7 +110,7 @@ public:
     }
 };
 
-class TestEncoder : public tsVideoEncoder, public tsSurfaceProcessor, public tsBitstreamProcessor, public AVC2_BitStream
+class TestEncoder : public tsVideoEncoder, public tsSurfaceProcessor, public tsBitstreamProcessor, public BS_AVC2_parser
 {
     std::vector<mfxExtMBDisableSkipMap> m_skip_map;
     std::vector<mfxEncodeCtrl> m_ctrls;
@@ -125,7 +124,7 @@ public:
 
     TestEncoder(std::vector<mfxExtMBDisableSkipMap> skip_map)
         : tsVideoEncoder(MFX_CODEC_AVC)
-        , AVC2_BitStream(BS_AVC2::INIT_MODE_PARSE_SD)
+        , BS_AVC2_parser(BS_AVC2::INIT_MODE_PARSE_SD)
         , m_skip_map(skip_map)
     {
         m_curr_in_frame = 0;
