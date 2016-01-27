@@ -323,7 +323,7 @@ mfxStatus MFXVideoVPPFrameRateConversion::RunFrameVPP_AdvancedFRC(mfxFrameSurfac
         
         mfxU64 nextExpectedTimeStamp = GetExpectedPTS(ptr->numOutputFrames + 1, ptr->timeOffset, ptr->timeStampJump);
 
-        if( (ptr->defferedInputTimeStamp > nextExpectedTimeStamp) || abs((mfxI32)(ptr->defferedInputTimeStamp - nextExpectedTimeStamp)) < m_minDeltaTime )
+        if( (ptr->defferedInputTimeStamp > nextExpectedTimeStamp) || (mfxU64)(abs((mfxI32)(ptr->defferedInputTimeStamp - nextExpectedTimeStamp))) < m_minDeltaTime )
         {
             pParam->outPicStruct = ptr->refPicStruct[1];
 
@@ -449,7 +449,7 @@ mfxStatus MFXVideoVPPFrameRateConversion::RunFrameVPP_AdvancedFRC(mfxFrameSurfac
 
         mfxU64 nextExpectedTimeStamp = GetExpectedPTS(ptr->numOutputFrames + 1, ptr->timeOffset, ptr->timeStampJump);
 
-        if( (ptr->defferedInputTimeStamp > nextExpectedTimeStamp) || abs((mfxI32)(ptr->defferedInputTimeStamp - nextExpectedTimeStamp)) < m_minDeltaTime )
+        if( (ptr->defferedInputTimeStamp > nextExpectedTimeStamp) || (mfxU64)(abs((mfxI32)(ptr->defferedInputTimeStamp - nextExpectedTimeStamp))) < m_minDeltaTime )
         {
             ptr->bReadyOutput = true;
 
@@ -720,7 +720,7 @@ mfxStatus MFXVideoVPPFrameRateConversion::CheckProduceOutput_AdvancedFRC(mfxFram
                 
         mfxU64 nextExpectedTimeStamp = GetExpectedPTS(ptr->numOutputFrames + 1, ptr->timeOffset, ptr->timeStampJump);
 
-        if( (ptr->defferedInputTimeStamp > nextExpectedTimeStamp) || abs((mfxI32)(ptr->defferedInputTimeStamp - nextExpectedTimeStamp)) < m_minDeltaTime )
+        if( (ptr->defferedInputTimeStamp > nextExpectedTimeStamp) || (mfxU64)(abs((mfxI32)(ptr->defferedInputTimeStamp - nextExpectedTimeStamp))) < m_minDeltaTime )
         {
             out->Info.PicStruct = ptr->refPicStruct[1];
 
@@ -793,7 +793,7 @@ mfxStatus MFXVideoVPPFrameRateConversion::CheckProduceOutput_AdvancedFRC(mfxFram
 
         mfxU64 nextExpectedTimeStamp = GetExpectedPTS(ptr->numOutputFrames + 1, ptr->timeOffset, ptr->timeStampJump);
 
-        if( (ptr->defferedInputTimeStamp > nextExpectedTimeStamp) || abs((mfxI32)(ptr->defferedInputTimeStamp - nextExpectedTimeStamp)) < m_minDeltaTime )
+        if( (ptr->defferedInputTimeStamp > nextExpectedTimeStamp) || (mfxU64)(abs((mfxI32)(ptr->defferedInputTimeStamp - nextExpectedTimeStamp))) < m_minDeltaTime )
         {
             ptr->bReadyOutput = true;
 
