@@ -163,7 +163,7 @@ inline mfxExtBuffer* GetExtBuffer(mfxFrameCUC& cuc, mfxU32 extensionId)
 inline bool IsPreferred(mfxU32 FrameOrder, mfxExtAVCRefListCtrl *pRefPicListCtrl)
 {
     for (Ipp32s k = 0; k < 32; k ++)
-        if (FrameOrder != MFX_FRAMEORDER_UNKNOWN && pRefPicListCtrl->PreferredRefList[k].FrameOrder == FrameOrder &&
+        if (FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN) && pRefPicListCtrl->PreferredRefList[k].FrameOrder == FrameOrder &&
             (pRefPicListCtrl->PreferredRefList[k].PicStruct == MFX_PICSTRUCT_PROGRESSIVE || pRefPicListCtrl->PreferredRefList[k].PicStruct == MFX_PICSTRUCT_UNKNOWN))
             return true;
 
@@ -173,7 +173,7 @@ inline bool IsPreferred(mfxU32 FrameOrder, mfxExtAVCRefListCtrl *pRefPicListCtrl
 inline bool IsRejected(mfxU32 FrameOrder, mfxExtAVCRefListCtrl *pRefPicListCtrl)
 {
     for (Ipp32s k = 0; k < 16; k ++)
-        if (FrameOrder != MFX_FRAMEORDER_UNKNOWN && pRefPicListCtrl->RejectedRefList[k].FrameOrder == FrameOrder &&
+        if (FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN) && pRefPicListCtrl->RejectedRefList[k].FrameOrder == FrameOrder &&
             (pRefPicListCtrl->RejectedRefList[k].PicStruct == MFX_PICSTRUCT_PROGRESSIVE || pRefPicListCtrl->RejectedRefList[k].PicStruct == MFX_PICSTRUCT_UNKNOWN))
             return true;
 
@@ -183,7 +183,7 @@ inline bool IsRejected(mfxU32 FrameOrder, mfxExtAVCRefListCtrl *pRefPicListCtrl)
 inline bool IsLongTerm(mfxU32 FrameOrder, mfxExtAVCRefListCtrl *pRefPicListCtrl)
 {
     for (Ipp32s k = 0; k < 16; k ++)
-        if (FrameOrder != MFX_FRAMEORDER_UNKNOWN && pRefPicListCtrl->LongTermRefList[k].FrameOrder == FrameOrder &&
+        if (FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN) && pRefPicListCtrl->LongTermRefList[k].FrameOrder == FrameOrder &&
             (pRefPicListCtrl->LongTermRefList[k].PicStruct == MFX_PICSTRUCT_PROGRESSIVE || pRefPicListCtrl->LongTermRefList[k].PicStruct == MFX_PICSTRUCT_UNKNOWN))
             return true;
 

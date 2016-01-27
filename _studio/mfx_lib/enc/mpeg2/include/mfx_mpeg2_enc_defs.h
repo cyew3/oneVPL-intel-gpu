@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG2 encoder defines
@@ -35,6 +35,11 @@
 #define ISO_END_CODE       0x1B9L
 #define PACK_START_CODE    0x1BAL
 #define SYSTEM_START_CODE  0x1BBL
+
+enum
+{
+    MPEG2_Intra = 0x1a
+};
 
 ///* picture_structure ISO/IEC 13818-2, 6.3.10 table 6-14 */
 //enum

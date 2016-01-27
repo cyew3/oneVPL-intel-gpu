@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG2 encoder
@@ -1567,7 +1567,7 @@ mfxStatus MFXVideoENCODEMPEG2::GetFrameParam(mfxFrameParam *par)
 
   //par->MPEG2.BitStreamPCEelement
   mfxU32 actual_tff;
-  actual_tff = (m_codec.picture_structure == MPEG2_FRAME_PICTURE && m_codec.encodeInfo.info.interlace_type != UMC::PROGRESSIVE ||
+  actual_tff = ((m_codec.picture_structure == MPEG2_FRAME_PICTURE && m_codec.encodeInfo.info.interlace_type != UMC::PROGRESSIVE) ||
     m_codec.repeat_first_field);
 
   par->MPEG2.ProgressiveFrame   = (m_codec.encodeInfo.info.interlace_type == UMC::PROGRESSIVE);

@@ -92,7 +92,7 @@ struct MFX_ENTRY_POINT
     mfxU32 requiredNumThreads;
 
     // name of routine - for debug and tracing purpose
-    char *pRoutineName;
+    const char *pRoutineName;
 } MFX_ENTRY_POINT;
 
 struct MFX_TASK

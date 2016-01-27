@@ -3,13 +3,16 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 //#define USE_TEMPTEMP
 
 #include "mfx_common.h"
 
 #if defined (MFX_ENABLE_H264_VIDEO_ENCODE)
+#if defined(__GNUC__)
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 //#define SVC_DUMP_RECON
 
@@ -1822,7 +1825,7 @@ mfxStatus MFXVideoENCODEH264::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
     if (surface && !realSurface)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-    if (MFX_ERR_NONE == status || MFX_ERR_MORE_DATA_RUN_TASK == status || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == status || MFX_ERR_MORE_BITSTREAM == status)
+    if (MFX_ERR_NONE == status || static_cast<int>(MFX_ERR_MORE_DATA_RUN_TASK) == static_cast<int>(status) || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == status || MFX_ERR_MORE_BITSTREAM == status)
     {
         // lock surface. If input surface is opaque core will lock both opaque and associated realSurface
         if (realSurface) {
@@ -1833,7 +1836,7 @@ mfxStatus MFXVideoENCODEH264::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
 
         EncodeTaskInputParams *m_pTaskInputParams = (EncodeTaskInputParams*)H264_Malloc(sizeof(EncodeTaskInputParams));
         // MFX_ERR_MORE_DATA_RUN_TASK means that frame will be buffered and will be encoded later. Output bitstream isn't required for this task
-        m_pTaskInputParams->bs = (status == MFX_ERR_MORE_DATA_RUN_TASK) ? 0 : bs;
+        m_pTaskInputParams->bs = (static_cast<int>(status) == static_cast<int>(MFX_ERR_MORE_DATA_RUN_TASK)) ? 0 : bs;
         m_pTaskInputParams->ctrl = ctrl;
         m_pTaskInputParams->surface = surface;
         m_pTaskInputParams->picState = m_fieldOutput ? m_fieldOutputState : 0; // field-based output: tell async part is it called for 1st or 2nd field
@@ -2181,7 +2184,7 @@ mfxStatus MFXVideoENCODEH264::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
 
     minBufferSize = layer->enc->requiredBsBufferSize;
 
-    if( bs->MaxLength - (bs->DataOffset + bs->DataLength) < minBufferSize && cur_enc->m_info.rate_controls.method != H264_RCM_QUANT || bs->MaxLength - bs->DataOffset == 0)
+    if( (bs->MaxLength - (bs->DataOffset + bs->DataLength) < minBufferSize) && (cur_enc->m_info.rate_controls.method != H264_RCM_QUANT || bs->MaxLength - bs->DataOffset == 0))
         return MFX_ERR_NOT_ENOUGH_BUFFER;
 
     if (bs->Data == 0)
@@ -2221,14 +2224,14 @@ mfxStatus MFXVideoENCODEH264::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
                 st = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
         if (surface->Data.Y) {
-            if (surface->Info.FourCC == MFX_FOURCC_YV12 && (!surface->Data.U || !surface->Data.V) ||
-                surface->Info.FourCC == MFX_FOURCC_NV12 && !surface->Data.UV)
+            if ((surface->Info.FourCC == MFX_FOURCC_YV12 && (!surface->Data.U || !surface->Data.V)) ||
+                (surface->Info.FourCC == MFX_FOURCC_NV12 && !surface->Data.UV))
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             if (surface->Data.Pitch >= 0x8000 || !surface->Data.Pitch)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
         } else {
-            if (surface->Info.FourCC == MFX_FOURCC_YV12 && (surface->Data.U || surface->Data.V) ||
-                surface->Info.FourCC == MFX_FOURCC_NV12 && surface->Data.UV)
+            if ((surface->Info.FourCC == MFX_FOURCC_YV12 && (surface->Data.U || surface->Data.V)) ||
+                (surface->Info.FourCC == MFX_FOURCC_NV12 && surface->Data.UV))
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
     }
@@ -2244,10 +2247,10 @@ mfxStatus MFXVideoENCODEH264::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             // check for valid payload type
             if (ctrl->Payload[i]->Type <= SEI_TYPE_PIC_TIMING  ||
-                ctrl->Payload[i]->Type >= SEI_TYPE_DEC_REF_PIC_MARKING_REPETITION  && ctrl->Payload[i]->Type <= SEI_TYPE_SPARE_PIC ||
-                ctrl->Payload[i]->Type >= SEI_TYPE_SUB_SEQ_INFO && ctrl->Payload[i]->Type <= SEI_TYPE_SUB_SEQ_CHARACTERISTICS ||
+                (ctrl->Payload[i]->Type >= SEI_TYPE_DEC_REF_PIC_MARKING_REPETITION  && ctrl->Payload[i]->Type <= SEI_TYPE_SPARE_PIC) ||
+                (ctrl->Payload[i]->Type >= SEI_TYPE_SUB_SEQ_INFO && ctrl->Payload[i]->Type <= SEI_TYPE_SUB_SEQ_CHARACTERISTICS) ||
                 ctrl->Payload[i]->Type == SEI_TYPE_MOTION_CONSTRAINED_SLICE_GROUP_SET ||
-                ctrl->Payload[i]->Type > SEI_TYPE_TONE_MAPPING_INFO && ctrl->Payload[i]->Type != SEI_TYPE_FRAME_PACKING_ARRANGEMENT)
+                (ctrl->Payload[i]->Type > SEI_TYPE_TONE_MAPPING_INFO && ctrl->Payload[i]->Type != SEI_TYPE_FRAME_PACKING_ARRANGEMENT))
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
     }
@@ -2264,13 +2267,13 @@ mfxStatus MFXVideoENCODEH264::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
             if (isFieldEncoding || m_temporalLayers.NumLayers || cur_enc->m_info.B_frame_rate)
                 st = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
             for (mfxU8 i = 0; i < 32; i ++)
-                if (pRefPicListCtrl->PreferredRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN && pRefPicListCtrl->PreferredRefList[i].PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
+                if (pRefPicListCtrl->PreferredRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN) && pRefPicListCtrl->PreferredRefList[i].PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
             for (mfxU8 i = 0; i < 16; i ++)
-               if (pRefPicListCtrl->RejectedRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN && pRefPicListCtrl->RejectedRefList[i].PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
+               if (pRefPicListCtrl->RejectedRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN) && pRefPicListCtrl->RejectedRefList[i].PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
                    return MFX_ERR_UNDEFINED_BEHAVIOR;
             for (mfxU8 i = 0; i < 16; i ++)
-               if (pRefPicListCtrl->LongTermRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN && pRefPicListCtrl->LongTermRefList[i].PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
+               if (pRefPicListCtrl->LongTermRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN) && pRefPicListCtrl->LongTermRefList[i].PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
                    return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
 #ifdef H264_INTRA_REFRESH
@@ -2296,7 +2299,7 @@ mfxStatus MFXVideoENCODEH264::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
         }
         if (!ctrl) // for EncodedOrder application should provide FrameType via ctrl
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-        else if (!layer->m_frameCountSync && surface->Data.FrameOrder || layer->m_frameCountSync && !surface->Data.FrameOrder)
+        else if ((!layer->m_frameCountSync && surface->Data.FrameOrder) || (layer->m_frameCountSync && !surface->Data.FrameOrder))
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         if (ctrl) {
             mfxU16 firstFieldType = ctrl->FrameType & (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P | MFX_FRAMETYPE_B);
@@ -2946,7 +2949,7 @@ mfxStatus MFXVideoENCODEH264::Init(mfxVideoParam* par_in)
 
     if (videoParams.info.clip_info.width == 0 || videoParams.info.clip_info.height == 0 ||
         par->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 ||
-        videoParams.rate_controls.method != H264_RCM_QUANT && videoParams.info.bitrate == 0 && !pSvcLayers ||
+        ((videoParams.rate_controls.method != H264_RCM_QUANT && videoParams.info.bitrate == 0) && !pSvcLayers) ||
         videoParams.info.framerate == 0)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
@@ -2979,7 +2982,7 @@ mfxStatus MFXVideoENCODEH264::Init(mfxVideoParam* par_in)
     if (par->mfx.GopRefDist > 3 && (videoParams.num_ref_frames > ((par->mfx.GopRefDist - 1) / 2 + 1))) { // enable B-refs
         videoParams.treat_B_as_reference = 1;
     }
-    if (opts && opts->NalHrdConformance == MFX_CODINGOPTION_OFF || par->mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
+    if ((opts && opts->NalHrdConformance == MFX_CODINGOPTION_OFF) || par->mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
         videoParams.info.bitrate = par->calcParam.TargetKbps * 1000;
     else
         videoParams.info.bitrate = par->calcParam.MaxKbps * 1000;
@@ -2991,8 +2994,8 @@ mfxStatus MFXVideoENCODEH264::Init(mfxVideoParam* par_in)
     if (maxVertMV && maxVertMV < videoParams.max_mv_length_y)
         videoParams.max_mv_length_y = maxVertMV;
 
-    if (videoParams.profile_idc == H264_BASE_PROFILE &&
-        par->mfx.CodecProfile == MFX_PROFILE_AVC_CONSTRAINED_BASELINE || tempLayers)
+    if (((videoParams.profile_idc == H264_BASE_PROFILE) &&
+        (par->mfx.CodecProfile == MFX_PROFILE_AVC_CONSTRAINED_BASELINE)) || tempLayers)
         videoParams.m_ext_constraint_flags[1] = 1;
     else if (videoParams.profile_idc == H264_HIGH_PROFILE &&
         par->mfx.CodecProfile == MFX_PROFILE_AVC_CONSTRAINED_HIGH)
@@ -4140,14 +4143,14 @@ mfxStatus MFXVideoENCODEH264::Reset(mfxVideoParam *par_in)
         par->mfx.FrameInfo.Height > m_initValues.FrameHeight ||
         m_base.m_mfxVideoParam.mfx.FrameInfo.ChromaFormat != par->mfx.FrameInfo.ChromaFormat ||
         m_base.m_mfxVideoParam.mfx.GopRefDist < (videoParams.B_frame_rate + 1) ||
-        par->mfx.NumSlice != 0 && enc->m_info.num_slices != par->mfx.NumSlice ||
+        (par->mfx.NumSlice != 0 && enc->m_info.num_slices != par->mfx.NumSlice) ||
         m_base.m_mfxVideoParam.mfx.NumRefFrame < videoParams.num_ref_frames ||
         (m_base.m_mfxVideoParam.mfx.CodecProfile & 0xFF) != (par->mfx.CodecProfile & 0xFF) ||
-        par->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE && enc->m_info.coding_type == 0 )
+        (par->mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE && enc->m_info.coding_type == 0) )
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
-    if (videoParams.profile_idc == H264_BASE_PROFILE &&
-        par->mfx.CodecProfile == MFX_PROFILE_AVC_CONSTRAINED_BASELINE || tempLayers)
+    if ((videoParams.profile_idc == H264_BASE_PROFILE &&
+        par->mfx.CodecProfile == MFX_PROFILE_AVC_CONSTRAINED_BASELINE) || tempLayers)
         videoParams.m_ext_constraint_flags[1] = 1;
     else if (videoParams.profile_idc == H264_HIGH_PROFILE &&
         par->mfx.CodecProfile == MFX_PROFILE_AVC_CONSTRAINED_HIGH)
@@ -4176,7 +4179,7 @@ mfxStatus MFXVideoENCODEH264::Reset(mfxVideoParam *par_in)
 
     // ignore brc params to preserve current BRC HRD states in case of HRD-compliant encoding
     if ((m_base.m_extOption.NalHrdConformance ==  MFX_CODINGOPTION_OFF ||
-        opts && opts->NalHrdConformance == MFX_CODINGOPTION_OFF) &&
+        (opts && opts->NalHrdConformance == MFX_CODINGOPTION_OFF)) &&
         par->mfx.RateControlMethod != MFX_RATECONTROL_CQP) {
         if (m_base.m_brc[0]){
             m_base.m_brc[0]->Close();
@@ -4869,10 +4872,10 @@ mfxStatus MFXVideoENCODEH264::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
         if ( tempLayers != 0 ) {
             tempLayers->BaseLayerPID = 1;
 
-            for (mfxI8 i = 0; i < 4; i ++)
+            for (int i = 0; i < 4; i ++)
                 tempLayers->Layer[i].Scale = 1;
 
-            for (mfxI8 i = 4; i < 8; i ++)
+            for (int i = 4; i < 8; i ++)
                 tempLayers->Layer[i].Scale = 1;
         }
         // Scene analysis info from VPP is not used in Query and Init
@@ -5010,10 +5013,10 @@ mfxStatus MFXVideoENCODEH264::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
 
         // Check attached SPSPPS header
         if (optsSP_in) {
-            if ((optsSP_in->SPSBuffer == 0) != (optsSP_out->SPSBuffer == 0) ||
-                (optsSP_in->PPSBuffer == 0) != (optsSP_out->PPSBuffer == 0) ||
-                optsSP_in->SPSBuffer && (optsSP_out->SPSBufSize < optsSP_out->SPSBufSize) ||
-                optsSP_in->PPSBuffer && (optsSP_out->PPSBufSize < optsSP_out->PPSBufSize))
+            if (((optsSP_in->SPSBuffer == 0) != (optsSP_out->SPSBuffer == 0)) ||
+                ((optsSP_in->PPSBuffer == 0) != (optsSP_out->PPSBuffer == 0)) ||
+                (optsSP_in->SPSBuffer && (optsSP_out->SPSBufSize < optsSP_out->SPSBufSize)) ||
+                (optsSP_in->PPSBuffer && (optsSP_out->PPSBufSize < optsSP_out->PPSBufSize)))
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
 
             st = LoadSPSPPS(&par_SPSPPS, seq_parms, pic_parms);
@@ -5053,9 +5056,9 @@ mfxStatus MFXVideoENCODEH264::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
             out->mfx.FrameInfo.Height = 0;
             isInvalid ++;
         } else out->mfx.FrameInfo.Height = in->mfx.FrameInfo.Height;
-        if( !in->mfx.FrameInfo.FrameRateExtN && in->mfx.FrameInfo.FrameRateExtD ||
-            in->mfx.FrameInfo.FrameRateExtN && !in->mfx.FrameInfo.FrameRateExtD ||
-            in->mfx.FrameInfo.FrameRateExtD && ((mfxF64)in->mfx.FrameInfo.FrameRateExtN / in->mfx.FrameInfo.FrameRateExtD) > 172) {
+        if( (!in->mfx.FrameInfo.FrameRateExtN && in->mfx.FrameInfo.FrameRateExtD) ||
+            (in->mfx.FrameInfo.FrameRateExtN && !in->mfx.FrameInfo.FrameRateExtD) ||
+            (in->mfx.FrameInfo.FrameRateExtD && ((mfxF64)in->mfx.FrameInfo.FrameRateExtN / in->mfx.FrameInfo.FrameRateExtD) > 172)) {
             isInvalid ++;
             out->mfx.FrameInfo.FrameRateExtN = out->mfx.FrameInfo.FrameRateExtD = 0;
         } else {
@@ -5242,7 +5245,7 @@ mfxStatus MFXVideoENCODEH264::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
                 out->calcParam.TargetKbps = in->calcParam.TargetKbps;
                 out->calcParam.InitialDelayInKB = in->calcParam.InitialDelayInKB;
                 if (out->mfx.FrameInfo.Width && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.FrameRateExtD && out->calcParam.TargetKbps &&
-                    (opts2_out == 0 || opts2_out && opts2_in->BitrateLimit != MFX_CODINGOPTION_OFF)) {
+                    ((opts2_out == 0 || opts2_out) && (opts2_in->BitrateLimit != MFX_CODINGOPTION_OFF))) {
                     // last denominator 700 gives about 1 Mbps for 1080p x 30
                     mfxU32 minBitRate = (mfxU32)((mfxF64)out->mfx.FrameInfo.Width * out->mfx.FrameInfo.Height * 12 // size of raw image (luma + chroma 420) in bits
                                                  * out->mfx.FrameInfo.FrameRateExtN / out->mfx.FrameInfo.FrameRateExtD / 1000 / 700);
@@ -5502,7 +5505,7 @@ mfxStatus MFXVideoENCODEH264::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
 
             mfxU16 numLayers = 0;
 
-            for (mfxI8 i = 0; i < 8; i ++) {
+            for (int i = 0; i < 8; i ++) {
                 tempLayers_out->Layer[i].Scale = tempLayers_in->Layer[i].Scale;
                 if (tempLayers_out->Layer[i].Scale) {
                     numLayers ++;
@@ -6040,7 +6043,7 @@ mfxStatus MFXVideoENCODEH264::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocReque
     // check for valid IOPattern
     mfxU16 IOPatternIn = par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_IN_OPAQUE_MEMORY);
     if ((par->IOPattern & 0xffc8) || (par->IOPattern == 0) ||
-        (IOPatternIn != MFX_IOPATTERN_IN_VIDEO_MEMORY) && (IOPatternIn != MFX_IOPATTERN_IN_SYSTEM_MEMORY) && (IOPatternIn != MFX_IOPATTERN_IN_OPAQUE_MEMORY))
+        ((IOPatternIn != MFX_IOPATTERN_IN_VIDEO_MEMORY) && ((IOPatternIn != MFX_IOPATTERN_IN_SYSTEM_MEMORY) && (IOPatternIn != MFX_IOPATTERN_IN_OPAQUE_MEMORY))))
        return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (par->Protected != 0)
@@ -6345,8 +6348,8 @@ mfxStatus MFXVideoENCODEH264::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternal
         }
 
         if (!surface->Data.Y || surface->Data.Pitch > 0x7fff || surface->Data.Pitch < cur_enc->m_info.info.clip_info.width || !surface->Data.Pitch ||
-            surface->Info.FourCC == MFX_FOURCC_NV12 && !surface->Data.UV ||
-            surface->Info.FourCC == MFX_FOURCC_YV12 && (!surface->Data.U || !surface->Data.V) )
+            (surface->Info.FourCC == MFX_FOURCC_NV12 && !surface->Data.UV) ||
+            (surface->Info.FourCC == MFX_FOURCC_YV12 && (!surface->Data.U || !surface->Data.V)) )
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
         if( surface->Info.FourCC == MFX_FOURCC_YV12 ){
@@ -6701,7 +6704,7 @@ mfxU16 MFXVideoENCODEH264::SetBEncOrder (sH264EncoderFrame_8u16s *left, sH264Enc
         // find lower tId and closer to center
         else if (!pBest || pCurr->m_temporalId < pBest->m_temporalId ||
             (pCurr->m_temporalId == pBest->m_temporalId &&
-            (cdist > bdist || (cdist == bdist) && cpoc < bpoc) )) {
+            (cdist > bdist || ((cdist == bdist) && cpoc < bpoc)) )) {
             pBest = pCurr;
             bpoc = cpoc;
             bdist = cdist;
@@ -6841,8 +6844,8 @@ mfxI32 MFXVideoENCODEH264::SelectFrameType_forLast( bool bNotLast, mfxEncodeCtrl
         H264CoreEncoder_8u16s *topenc = m_svc_layers[m_maxDid] ? m_svc_layers[m_maxDid]->enc : enc;
         // currently I are possible only at 0th temporal layer
         if ( !frameNum ||
-            enc->m_pCurrentFrame && //enc->m_pCurrentFrame->m_temporalId == 0 &&
-            (Ipp32s)(frameNum-layer->m_lastIframe)*enc->rateDivider >= topenc->m_info.key_frame_controls.interval )
+            (enc->m_pCurrentFrame && //enc->m_pCurrentFrame->m_temporalId == 0 &&
+            (Ipp32s)(frameNum-layer->m_lastIframe)*enc->rateDivider >= topenc->m_info.key_frame_controls.interval) )
             eOriginalType = INTRAPIC;
         else if ((Ipp32s)(frameNum-layer->m_lastRefFrame)*enc->rateDivider > topenc->m_info.B_frame_rate)
             eOriginalType = PREDPIC;
@@ -6930,7 +6933,7 @@ mfxI32 MFXVideoENCODEH264::SelectFrameType_forLast( bool bNotLast, mfxEncodeCtrl
         }
         else if ( !frameNum || eOriginalType == INTRAPIC || scene_change || forced_IDR || forced_I) {
             ePictureType = INTRAPIC;
-        } else if (eOriginalType == PREDPIC  || optsSA && optsSA->SpatialComplexity*2 <= 3*optsSA->TemporalComplexity && optsSA->TemporalComplexity) {
+        } else if ((eOriginalType == PREDPIC  || optsSA) && ((optsSA->SpatialComplexity*2 <= 3*optsSA->TemporalComplexity) && optsSA->TemporalComplexity)) {
             ePictureType = PREDPIC;
         } else
             ePictureType = BPREDPIC; // B can be changed later
@@ -6999,7 +7002,7 @@ mfxI32 MFXVideoENCODEH264::SelectFrameType_forLast( bool bNotLast, mfxEncodeCtrl
         for (fr = enc->m_cpb.m_pHead; fr; fr = fr->m_pFutureFrame) {
             if (!fr->m_wasEncoded) {
                 if (!frEOSeq || fr->m_PicCodType > frEOSeq->m_PicCodType ||
-                    (fr->m_PicCodType == BPREDPIC && frEOSeq->m_PicCodType == BPREDPIC && (frEOSeq->m_RefPic && !fr->m_RefPic || (frEOSeq->m_RefPic == fr->m_RefPic && fr->m_PicOrderCnt[0] > frEOSeq->m_PicOrderCnt[0]))) ||
+                    (fr->m_PicCodType == BPREDPIC && frEOSeq->m_PicCodType == BPREDPIC && ((frEOSeq->m_RefPic && !fr->m_RefPic) || (frEOSeq->m_RefPic == fr->m_RefPic && fr->m_PicOrderCnt[0] > frEOSeq->m_PicOrderCnt[0]))) ||
                     (fr->m_PicCodType != BPREDPIC && fr->m_PicCodType == frEOSeq->m_PicCodType && fr->m_PicOrderCnt[0] > frEOSeq->m_PicOrderCnt[0]))
                     frEOSeq = fr;
             }
@@ -7201,7 +7204,7 @@ Status MFXVideoENCODEH264::Encode(
         core_enc->m_pCurrentFrame->m_pAux[0] = ctrl;
         core_enc->m_pCurrentFrame->m_pAux[1] = surface;
 //TODO check if FrameTag is set elsewhere (merging)
-        if (surface->Data.FrameOrder == MFX_FRAMEORDER_UNKNOWN)
+        if (surface->Data.FrameOrder == static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN))
             m_internalFrameOrders = true;
         // application doesn't provide FrameOrders, use own FrameOrders
         if (vp->mfx.EncodedOrder == 0 && surface->Data.FrameOrder == 0 && layer->m_frameCount > 0 &&
@@ -7880,9 +7883,9 @@ Status MFXVideoENCODEH264::ReorderListSVC( H264CoreEncoder_8u16s* core_enc, Enum
             mfxI32 i2 = refdist;
             if (i1 > 1 && req * i2 != i1) {
                 mfxI32 sarr[] = {2,3,5,7,11,13,17,19};
-                mfxI32 isarr, dv;
+                mfxI32 dv;
                 req = i1*i2;
-                for (isarr = 0; isarr < sizeof(sarr)/sizeof(sarr[0]); isarr++ ) {
+                for (size_t isarr = 0; isarr < sizeof(sarr)/sizeof(sarr[0]); isarr++ ) {
                     dv = sarr[isarr];
                     if (dv * dv > req) break;
                     while ((i1/dv)*dv == i1 && (i2/dv)*dv == i2) {
@@ -7973,15 +7976,15 @@ Status H264CoreEncoder_ReorderRefPicList(
 
         memset(pRefListOut, 0, sizeof(EncoderRefPicListStruct_8u16s));
         for (i = 0; i < 16; i ++) { // go through PreferredRefList and RejectedList
-            if (pRefPicListCtrl->PreferredRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN ||
-                pRefPicListCtrl->RejectedRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN) {
+            if (pRefPicListCtrl->PreferredRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN) ||
+                pRefPicListCtrl->RejectedRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN)) {
                 // check PicStruct
-                if (pRefPicListCtrl->PreferredRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN &&
+                if (pRefPicListCtrl->PreferredRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN) &&
                     pRefPicListCtrl->PreferredRefList[i].PicStruct != MFX_PICSTRUCT_PROGRESSIVE &&
                     pRefPicListCtrl->PreferredRefList[i].PicStruct != MFX_PICSTRUCT_UNKNOWN) {
                     return UMC_ERR_FAILED;
                 }
-                if (pRefPicListCtrl->RejectedRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN &&
+                if (pRefPicListCtrl->RejectedRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN) &&
                     pRefPicListCtrl->RejectedRefList[i].PicStruct != MFX_PICSTRUCT_PROGRESSIVE &&
                     pRefPicListCtrl->RejectedRefList[i].PicStruct != MFX_PICSTRUCT_UNKNOWN) {
                     return UMC_ERR_FAILED;
@@ -8015,7 +8018,7 @@ Status H264CoreEncoder_ReorderRefPicList(
         memset(pFieldsOut, 0, MAX_NUM_REF_FRAMES + 1);
 
         for (i = 0; i < 16; i ++) { // go through RejectedList
-            if ( pRefPicListCtrl->RejectedRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN) {
+            if ( pRefPicListCtrl->RejectedRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN)) {
                 if (pRefPicListCtrl->RejectedRefList[i].PicStruct != (MFX_PICSTRUCT_FIELD_TFF & MFX_PICSTRUCT_FIELD_BFF) &&
                     pRefPicListCtrl->RejectedRefList[i].PicStruct != MFX_PICSTRUCT_UNKNOWN)
                     return UMC_ERR_FAILED;
@@ -8139,9 +8142,9 @@ Status MFXVideoENCODEH264::H264CoreEncoder_ModifyRefPicList( H264CoreEncoder_8u1
     bool bClearPrevRefs = m_layer->m_mfxVideoParam.mfx.GopOptFlag & MFX_GOP_CLOSED || core_enc->m_pCurrentFrame->m_FrameCount > m_layer->m_lastIframe;
     bool bIsBFrame = core_enc->m_pCurrentFrame->m_PicCodType == BPREDPIC;
 
-    if (core_enc->m_pCurrentFrame->m_PicCodType != PREDPIC && core_enc->m_pCurrentFrame->m_PicCodType != BPREDPIC &&
-        core_enc->m_pCurrentFrame->m_PictureStructureForDec == FRM_STRUCTURE ||
-        bIsIP && fieldIdx == 0)
+    if ((core_enc->m_pCurrentFrame->m_PicCodType != PREDPIC && core_enc->m_pCurrentFrame->m_PicCodType != BPREDPIC &&
+        core_enc->m_pCurrentFrame->m_PictureStructureForDec == FRM_STRUCTURE) ||
+        (bIsIP && fieldIdx == 0))
         return UMC_OK;
 
     // reset reordering info
@@ -8188,7 +8191,7 @@ Status MFXVideoENCODEH264::H264CoreEncoder_ModifyRefPicList( H264CoreEncoder_8u1
             H264EncoderFrame_8u16s *fr = pRefListL0->m_RefPicList[i];
             if (fr->m_EncodedFrameNum != refFrameNum && IsRejected(fr->m_FrameTag, &refPicListCtrlL0) == false) {
                 j = 0;
-                while (refPicListCtrlL0.RejectedRefList[j].FrameOrder != MFX_FRAMEORDER_UNKNOWN) j++;
+                while (refPicListCtrlL0.RejectedRefList[j].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN)) j++;
                 refPicListCtrlL0.RejectedRefList[j].FrameOrder = fr->m_FrameTag;
             }
         }
@@ -8214,9 +8217,9 @@ Status MFXVideoENCODEH264::H264CoreEncoder_ModifyRefPicList( H264CoreEncoder_8u1
     }
 
     // disable ref pic lists reordering if it's not required
-    if (pRefPicListCtrl == 0 && refPicListCtrlL0.RejectedRefList[0].FrameOrder == MFX_FRAMEORDER_UNKNOWN)
+    if (pRefPicListCtrl == 0 && refPicListCtrlL0.RejectedRefList[0].FrameOrder == static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN))
         pRefPicListCtrlL0 = 0;
-    if (pRefPicListCtrl == 0 && refPicListCtrlL1.RejectedRefList[0].FrameOrder == MFX_FRAMEORDER_UNKNOWN)
+    if (pRefPicListCtrl == 0 && refPicListCtrlL1.RejectedRefList[0].FrameOrder == static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN))
         pRefPicListCtrlL1 = 0;
 
     if (pRefPicListCtrlL0) {
@@ -8302,7 +8305,7 @@ Status MFXVideoENCODEH264::H264CoreEncoder_ModifyRefPicList( H264CoreEncoder_8u1
 Status H264CoreEncoder_PrepareRefPicMarking(H264CoreEncoder_8u16s* core_enc, mfxEncodeCtrl *ctrl, EnumPicClass& ePic_Class, AVCTemporalLayers *tempLayers)
 {
 
-    if (ePic_Class == DISPOSABLE_PIC && core_enc->m_pCurrentFrame->m_RefPic == 0 ||
+    if ((ePic_Class == DISPOSABLE_PIC && core_enc->m_pCurrentFrame->m_RefPic == 0) ||
         core_enc->m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE)
         return UMC_OK;
 
@@ -8466,7 +8469,7 @@ Status H264CoreEncoder_PrepareRefPicMarking(H264CoreEncoder_8u16s* core_enc, mfx
         for (i = 0; i < 16; i ++) {
             // collect frames to mark as LT
             LTFrameOrder = pRefPicListCtrl->LongTermRefList[i].FrameOrder;
-            if (LTFrameOrder != MFX_FRAMEORDER_UNKNOWN && (IsRejected(LTFrameOrder, pRefPicListCtrl) == false)) {
+            if (LTFrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN) && (IsRejected(LTFrameOrder, pRefPicListCtrl) == false)) {
                 for (pFrm = pHead; pFrm; pFrm = pFrm->m_pFutureFrame) {
                     if (pFrm->m_FrameTag == LTFrameOrder &&
                         (H264EncoderFrame_isShortTermRef0_8u16s(pFrm) || pFrm == core_enc->m_pCurrentFrame)) {
@@ -8477,7 +8480,7 @@ Status H264CoreEncoder_PrepareRefPicMarking(H264CoreEncoder_8u16s* core_enc, mfx
             // collect frames to mark as "unused for reference"
             // TODO can be ignored with IDR
             FrameOrderToRemove = pRefPicListCtrl->RejectedRefList[i].FrameOrder;
-            if (FrameOrderToRemove != MFX_FRAMEORDER_UNKNOWN) {
+            if (FrameOrderToRemove != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN)) {
                 for (pFrm = pHead; pFrm; pFrm = pFrm->m_pFutureFrame) {
                     if (pFrm->m_FrameTag == FrameOrderToRemove) {
                         if (H264EncoderFrame_isShortTermRef0_8u16s(pFrm))
@@ -9630,7 +9633,7 @@ end_of_frame:
             if (ePic_Class != DISPOSABLE_PIC) {
                 H264CoreEncoder_UpdateRefPicMarking_8u16s(state);
 
-                if (core_enc->m_info.coding_type == 1 || core_enc->m_info.coding_type == 3 && core_enc->m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE)
+                if ((core_enc->m_info.coding_type == 1 || core_enc->m_info.coding_type == 3) && core_enc->m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE)
                 {
                     if (core_enc->m_field_index == 0)
                     {
@@ -9951,7 +9954,7 @@ Status MFXVideoENCODEH264::H264CoreEncoder_encodeSEI(
     Ipp8u NalHrdBpPresentFlag, VclHrdBpPresentFlag, CpbDpbDelaysPresentFlag, pic_struct_present_flag;
     Ipp8u sei_inserted = 0, need_insert_external_payload = 0;
     Ipp8u need_insert[36] = {};
-    Ipp8u is_cur_pic_field = core_enc->m_info.coding_type == 1 || core_enc->m_info.coding_type == 3 && core_enc->m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE;
+    Ipp8u is_cur_pic_field = core_enc->m_info.coding_type == 1 || (core_enc->m_info.coding_type == 3 && core_enc->m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE);
     Ipp16s GOP_structure_map = -1, Closed_caption = -1;
 
     size_t oldsize = 0;
@@ -10688,12 +10691,11 @@ mfxStatus MFXVideoENCODEH264::InitSVCLayer(const mfxExtSVCRateControl* rc, mfxU1
     par->mfx.IdrInterval = layer->m_InterLayerParam.IdrInterval;
 
     if (rc){
-        mfxI32 ii;
         mfxU16 topqid, toptid;
         par->mfx.RateControlMethod = rc->RateControlMethod;
         toptid = pInterParams->TemporalId[pInterParams->TemporalNum - 1];
         topqid = pInterParams->QualityNum - 1;
-        for(ii=0; ii<sizeof(rc->Layer)/sizeof(rc->Layer[0]); ii++) {
+        for(size_t ii=0; ii<sizeof(rc->Layer)/sizeof(rc->Layer[0]); ii++) {
             if (rc->Layer[ii].DependencyId == did && rc->Layer[ii].QualityId == topqid && rc->Layer[ii].TemporalId == toptid) {
                 switch (rc->RateControlMethod) {
                     case MFX_RATECONTROL_CBR:
@@ -10822,7 +10824,7 @@ mfxStatus MFXVideoENCODEH264::InitSVCLayer(const mfxExtSVCRateControl* rc, mfxU1
 
     if (videoParams.info.clip_info.width == 0 || videoParams.info.clip_info.height == 0 ||
         par->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 ||
-        videoParams.rate_controls.method != H264_RCM_QUANT && videoParams.info.bitrate == 0 || videoParams.info.framerate == 0)
+        (videoParams.rate_controls.method != H264_RCM_QUANT && videoParams.info.bitrate == 0) || videoParams.info.framerate == 0)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     // to set profile/level and related vars

@@ -15,6 +15,7 @@ foreach( dir ${cdirs} )
   include_directories( ${CMAKE_SOURCE_DIR}/shared/umc/codec/${dir}/include )
 endforeach( )
 
+set( defs "-Wall -Werror" )
 set( sources "" )
 set( sources.plus "" )
 foreach( dir ${vdirs} )
@@ -22,4 +23,4 @@ foreach( dir ${vdirs} )
   list( APPEND sources ${srcs})
 endforeach()
 make_library( encode none static )
-
+set( defs "" )

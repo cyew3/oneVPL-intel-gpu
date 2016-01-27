@@ -9,6 +9,7 @@ foreach( dir ${vdirs} )
 endforeach()
 include_directories( ${CMAKE_SOURCE_DIR}/shared/umc/codec/mpeg2_enc/include )
 
+set( defs "-Wall -Werror" )
 set( sources "" )
 set( sources.plus "" )
 foreach( dir ${vdirs} )
@@ -17,4 +18,4 @@ foreach( dir ${vdirs} )
 endforeach()
 
 make_library( enc none static )
-
+set( defs "" )

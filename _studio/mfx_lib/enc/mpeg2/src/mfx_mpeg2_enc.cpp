@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG2 encoder
@@ -200,15 +200,15 @@ mfxStatus MFXVideoENCMPEG2::Query(mfxVideoParam *in, mfxVideoParam *out)
 
     if (out->mfx.FrameInfo.Width > 0xff0)
       out->mfx.FrameInfo.Width = 0xff0;
-    if (out->mfx.FrameInfo.CropW == 0 ||
-        out->mfx.FrameInfo.CropW > out->mfx.FrameInfo.Width && out->mfx.FrameInfo.Width > 0)
+    if ((out->mfx.FrameInfo.CropW == 0) ||
+        ((out->mfx.FrameInfo.CropW > out->mfx.FrameInfo.Width) && (out->mfx.FrameInfo.Width > 0)))
       out->mfx.FrameInfo.CropW = out->mfx.FrameInfo.Width;
     out->mfx.FrameInfo.Width = (out->mfx.FrameInfo.Width + 15) & ~15;
 
     if (out->mfx.FrameInfo.Height > 0xff0)
       out->mfx.FrameInfo.Height = 0xff0;
-    if (out->mfx.FrameInfo.CropH == 0 ||
-        out->mfx.FrameInfo.CropH > out->mfx.FrameInfo.Height && out->mfx.FrameInfo.Height > 0)
+    if ((out->mfx.FrameInfo.CropH == 0) ||
+        ((out->mfx.FrameInfo.CropH > out->mfx.FrameInfo.Height) && (out->mfx.FrameInfo.Height > 0)))
       out->mfx.FrameInfo.CropH = out->mfx.FrameInfo.Height;
     if(/*out->mfx.FramePicture&&*/ (out->mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE))
       out->mfx.FrameInfo.Height = (out->mfx.FrameInfo.Height + 15) & ~15;
@@ -820,7 +820,7 @@ mfxStatus MFXVideoENCMPEG2::sliceME( MPEG2FrameState* state, mfxU32 mbstart, mfx
       Mb = &m_cuc->MbParam->Mb[k].MPEG2;
       Mb->Skip8x8Flag = 0; //pMBInfo[k].skipped;
       Mb->TransformFlag = pMBInfo[k].dct_type == DCT_FIELD;
-      Mb->MbType5Bits = MFX_MBTYPE_INTRA_MPEG2;
+      Mb->MbType5Bits = MPEG2_Intra;
       Mb->IntraMbFlag = 1;
       //Mb->QpScaleCode = (mfxU8)quantiser_scale_code; // to CHECK if needed !!!
       //Mb->QpScaleType = (mfxU8)q_scale_type;
@@ -1004,9 +1004,9 @@ mfxStatus MFXVideoENCMPEG2::sliceME( MPEG2FrameState* state, mfxU32 mbstart, mfx
       else if (k > mbstart && k < (mbstart + mbcount - 1) && // for B-picture
         !(pMBInfo[k-1].mb_type & MB_INTRA)
         && (!(pMBInfo[k - 1].mb_type & MB_FORWARD)
-        || i+((PMV[0][0].x+1)>>1)+15 < MBcountH*16 && j+((PMV[0][0].y+1)>>1)+15 < MBcountV*16)
+        || (((i+((PMV[0][0].x+1)>>1)+15) < MBcountH*16) && ((j+((PMV[0][0].y+1)>>1)+15) < MBcountV*16)))
         && (!(pMBInfo[k - 1].mb_type & MB_BACKWARD)
-        || i+((PMV[0][1].x+1)>>1)+15 < MBcountH*16 && j+((PMV[0][1].y+1)>>1)+15 < MBcountV*16) )
+        || (((i+((PMV[0][1].x+1)>>1)+15) < MBcountH*16) && ((j+((PMV[0][1].y+1)>>1)+15) < MBcountV*16))) )
       {
         Ipp32s blk;
         Ipp32s var, mean;
@@ -1703,20 +1703,20 @@ mfxStatus MFXVideoENCMPEG2::sliceCoef( MPEG2FrameState* state, mfxU32 mbstart, m
       if (!CodedBlockPattern && mbinfo[curr].prediction_type == MC_FRAME &&
         mbnum > mbstart && mbnum < (mbstart + mbcount - 1) &&
         Mb->MbType5Bits != MFX_MBTYPE_INTER_DUAL_PRIME ) {
-          if (picture_coding_type == MPEG2_P_PICTURE /*&& !state->ipflag*/
+          if ((picture_coding_type == MPEG2_P_PICTURE /*&& !state->ipflag*/
             && !(MB_MV(Mb,0,0)[0] | MB_MV(Mb,0,0)[1])
-            && MB_FSEL(Mb,0,0) == m_cuc->FrameParam->MPEG2.BottomFieldFlag
+            && MB_FSEL(Mb,0,0) == m_cuc->FrameParam->MPEG2.BottomFieldFlag)
           ||
-            picture_coding_type == MPEG2_B_PICTURE
+            (picture_coding_type == MPEG2_B_PICTURE
             && ((mbinfo[curr].mb_type ^ mbinfo[left].mb_type) & (MB_FORWARD | MB_BACKWARD)) == 0
             && ((mbinfo[curr].mb_type&MB_FORWARD) == 0 ||
-                MB_MV(Mb,0,0)[0] == MB_MV(Mb-1,0,0)[0] &&
-                MB_MV(Mb,0,0)[1] == MB_MV(Mb-1,0,0)[1] &&
-                MB_FSEL(Mb,0,0) == m_cuc->FrameParam->MPEG2.BottomFieldFlag )
+                ((MB_MV(Mb,0,0)[0] == MB_MV(Mb-1,0,0)[0]) &&
+                (MB_MV(Mb,0,0)[1] == MB_MV(Mb-1,0,0)[1]) &&
+                (MB_FSEL(Mb,0,0) == m_cuc->FrameParam->MPEG2.BottomFieldFlag)) )
             && ((mbinfo[curr].mb_type&MB_BACKWARD) == 0 ||
-                MB_MV(Mb,1,0)[0] == MB_MV(Mb-1,1,0)[0] &&
-                MB_MV(Mb,1,0)[1] == MB_MV(Mb-1,1,0)[1] &&
-                MB_FSEL(Mb,1,0) == m_cuc->FrameParam->MPEG2.BottomFieldFlag) ){
+                ((MB_MV(Mb,1,0)[0] == MB_MV(Mb-1,1,0)[0]) &&
+                (MB_MV(Mb,1,0)[1] == MB_MV(Mb-1,1,0)[1]) &&
+                (MB_FSEL(Mb,1,0) == m_cuc->FrameParam->MPEG2.BottomFieldFlag)))) ){
               Mb->Skip8x8Flag = 0xf;
           if(picture_coding_type == MPEG2_B_PICTURE)
             mbinfo[curr].mb_type = mbinfo[left].mb_type;

@@ -8,6 +8,7 @@ foreach( dir ${vdirs} )
   include_directories( ${CMAKE_SOURCE_DIR}/mfx_lib/enc_hw/${dir}/include )
 endforeach()
 
+set( defs "-Wall -Werror" )
 set( sources "" )
 set( sources.plus "" )
 foreach( dir ${vdirs} )
@@ -16,4 +17,4 @@ foreach( dir ${vdirs} )
 endforeach()
 
 make_library( enc hw static )
-
+set( defs "" )
