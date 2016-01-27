@@ -272,4 +272,44 @@ bool tsStatus::check(mfxStatus status)
     return check();
 }
 
+void GetBufferIdSz(const std::string& name, mfxU32& bufId, mfxU32& bufSz)
+{
+    //constexpr size_t maxBuffers = g_StringsOfBuffers / g_StringsOfBuffers[0];
+    const size_t maxBuffers = sizeof( g_StringsOfBuffers ) / sizeof( g_StringsOfBuffers[0] );
 
+    const std::string& buffer_name = name.substr(0, name.find(":"));
+
+    for(size_t i(0); i < maxBuffers; ++i)
+    {
+        //if( name.find(g_StringsOfBuffers[i].string) != std::string::npos )
+        if( buffer_name == g_StringsOfBuffers[i].string )
+        {
+            bufId = g_StringsOfBuffers[i].BufferId;
+            bufSz = g_StringsOfBuffers[i].BufferSz;
+
+            return;
+        }
+    }
+}
+
+void SetParam(void* base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value)
+{
+    memcpy((mfxU8*)base + offset, &value, size);
+}
+
+void SetParam(tsExtBufType<mfxVideoParam>* base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value)
+{
+    void* ptr = base;
+    if(name.find("mfxVideoParam") == std::string::npos)
+    {
+        mfxU32 bufId = 0, bufSz = 0;
+        GetBufferIdSz(name, bufId, bufSz);
+        ptr = base->GetExtBuffer(bufId);
+        if(!ptr)
+        {
+            base->AddExtBuffer(bufId, bufSz);
+            ptr = base->GetExtBuffer(bufId);
+        }
+    }
+    memcpy((mfxU8*)ptr + offset, &value, size);
+}

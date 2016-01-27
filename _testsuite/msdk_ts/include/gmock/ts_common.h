@@ -18,6 +18,19 @@ typedef struct {
     std::string cfg_filename;
 } tsConfig;
 
+typedef struct {
+    mfxU32 BufferId;
+    mfxU32 BufferSz;
+    char *string;
+} BufferIdToString;
+
+#define EXTBUF(TYPE, ID) {ID, sizeof(TYPE), #TYPE},
+static BufferIdToString g_StringsOfBuffers[] =
+{
+#include "ts_ext_buffers_decl.h"
+};
+#undef EXTBUF
+
 class MFXVideoTest : public ::testing::TestWithParam<unsigned int>
 {
     void SetUp();
@@ -121,17 +134,22 @@ extern tsConfig     g_tsConfig;
 
 #define MAX_NPARS 15
 
-#define SETPARS(p, type)\
-for(mfxU32 i = 0; i < MAX_NPARS; i++) \
-{ \
-    if(tc.set_par[i].f && tc.set_par[i].ext_type == type) \
-    { \
-        tsStruct::set(p, *tc.set_par[i].f, tc.set_par[i].v); \
-    } \
+#define SETPARS(p, type)                                                                                        \
+for(mfxU32 i = 0; i < MAX_NPARS; i++)                                                                           \
+{                                                                                                               \
+    if(tc.set_par[i].f && tc.set_par[i].ext_type == type)                                                       \
+    {                                                                                                           \
+        SetParam(p, tc.set_par[i].f->name, tc.set_par[i].f->offset, tc.set_par[i].f->size, tc.set_par[i].v);    \
+    }                                                                                                           \
 }
 
 std::string ENV(const char* name, const char* def);
 void set_brc_params(tsExtBufType<mfxVideoParam>* p);
 
 bool operator == (const mfxFrameInfo&, const mfxFrameInfo&);
+
+void GetBufferIdSz(const std::string& name, mfxU32& bufId, mfxU32& bufSz);
+
+void SetParam(void* base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value);
+void SetParam(tsExtBufType<mfxVideoParam>* base,  const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value);
 
