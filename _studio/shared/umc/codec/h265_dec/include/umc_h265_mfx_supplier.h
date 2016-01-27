@@ -133,9 +133,9 @@ public:
     // Returns implementation platform
     static eMFXPlatform MFX_CDECL GetPlatform_H265(VideoCORE * core, mfxVideoParam * par);
     // Initialize mfxVideoParam structure based on decoded bitstream header values
-    static UMC::Status MFX_CDECL FillVideoParam(TaskSupplier_H265 * supplier, ::mfxVideoParam *par, bool full, bool isHW);
+    static UMC::Status MFX_CDECL FillVideoParam(TaskSupplier_H265 * supplier, ::mfxVideoParam *par, bool full);
     // Find bitstream header NAL units, parse them and fill application parameters structure
-    static UMC::Status MFX_CDECL DecodeHeader(TaskSupplier_H265 * supplier, UMC::VideoDecoderParams* params, mfxBitstream *bs, mfxVideoParam *out, bool isHW);
+    static UMC::Status MFX_CDECL DecodeHeader(TaskSupplier_H265 * supplier, UMC::VideoDecoderParams* params, mfxBitstream *bs, mfxVideoParam *out);
 
     // MediaSDK DECODE_Query API function
     static mfxStatus MFX_CDECL Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMFXHWType type);

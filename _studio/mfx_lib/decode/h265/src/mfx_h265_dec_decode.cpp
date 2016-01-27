@@ -576,13 +576,24 @@ mfxStatus VideoDECODEH265::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
     MFX_AVC_Decoder_H265 decoder;
 
     decoder.SetMemoryAllocator(&tempAllocator);
-    UMC::Status umcRes = MFX_Utility::DecodeHeader(&decoder, &avcInfo, bs, par, MFX_Utility::GetPlatform_H265(core, par) != MFX_PLATFORM_SOFTWARE);
+    UMC::Status umcRes = MFX_Utility::DecodeHeader(&decoder, &avcInfo, bs, par);
 
     if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA)
         return MFX_ERR_MORE_DATA;
+    else if (umcRes != UMC::UMC_OK)
+        return ConvertUMCStatusToMfx(umcRes);
 
+    umcRes = MFX_Utility::FillVideoParam(&decoder, par, false);
     if (umcRes != UMC::UMC_OK)
         return ConvertUMCStatusToMfx(umcRes);
+
+    if (MFX_Utility::GetPlatform_H265(core, par) != MFX_PLATFORM_SOFTWARE)
+    {
+        par->mfx.FrameInfo.Width = UMC::align_value<mfxU16>(par->mfx.FrameInfo.Width, 64);
+        par->mfx.FrameInfo.Height = UMC::align_value<mfxU16>(par->mfx.FrameInfo.Height, 64);
+        if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+            par->mfx.FrameInfo.Shift = 1;
+    }
 
     // sps/pps headers
     mfxExtCodingOptionSPSPPS * spsPps = (mfxExtCodingOptionSPSPPS *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS);
@@ -1080,7 +1091,15 @@ void VideoDECODEH265::FillVideoParam(mfxVideoParamWrapper *par, bool full)
     if (!m_pH265VideoDecoder.get())
         return;
 
-    MFX_Utility::FillVideoParam(m_pH265VideoDecoder.get(), par, full, MFX_Utility::GetPlatform_H265(m_core, par) != MFX_PLATFORM_SOFTWARE);
+    MFX_Utility::FillVideoParam(m_pH265VideoDecoder.get(), par, full);
+    
+    if (MFX_Utility::GetPlatform_H265(m_core, par) != MFX_PLATFORM_SOFTWARE)
+    {
+        par->mfx.FrameInfo.Width = UMC::align_value<mfxU16>(par->mfx.FrameInfo.Width, 64);
+        par->mfx.FrameInfo.Height = UMC::align_value<mfxU16>(par->mfx.FrameInfo.Height, 64);
+        if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+            par->mfx.FrameInfo.Shift = 1;
+    }
 
     RawHeader_H265 *sps = m_pH265VideoDecoder->GetSPS();
     RawHeader_H265 *pps = m_pH265VideoDecoder->GetPPS();

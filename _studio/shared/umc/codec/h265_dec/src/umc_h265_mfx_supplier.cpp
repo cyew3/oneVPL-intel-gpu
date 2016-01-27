@@ -429,8 +429,8 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
     {
         if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
         {
-            if (MFX_ERR_NONE != core->IsGuidSupported(DXVA_Intel_ModeHEVC_VLD_Main10Profile, par) &&
-                MFX_ERR_NONE != core->IsGuidSupported(DXVA_ModeHEVC_VLD_Main10, par))
+            if (MFX_ERR_NONE != core->IsGuidSupported(DXVA_ModeHEVC_VLD_Main10, par) &&
+                MFX_ERR_NONE != core->IsGuidSupported(DXVA_Intel_ModeHEVC_VLD_Main10Profile, par))
             {
                 return MFX_PLATFORM_SOFTWARE;
             }
@@ -583,7 +583,7 @@ UMC::Status MFX_Utility::FillVideoParam(const H265SeqParamSet * seq, mfxVideoPar
 }
 
 // Initialize mfxVideoParam structure based on decoded bitstream header values
-UMC::Status MFX_Utility::FillVideoParam(TaskSupplier_H265 * supplier, mfxVideoParam *par, bool full, bool isHW)
+UMC::Status MFX_Utility::FillVideoParam(TaskSupplier_H265 * supplier, mfxVideoParam *par, bool full)
 {
     const H265SeqParamSet * seq = supplier->GetHeaders()->m_SeqParams.GetCurrentHeader();
     if (!seq)
@@ -591,14 +591,6 @@ UMC::Status MFX_Utility::FillVideoParam(TaskSupplier_H265 * supplier, mfxVideoPa
 
     if (MFX_Utility::FillVideoParam(seq, par, full) != UMC::UMC_OK)
         return UMC::UMC_ERR_FAILED;
-
-    if (isHW)
-    {
-        par->mfx.FrameInfo.Width = UMC::align_value<mfxU16>(par->mfx.FrameInfo.Width, 64);
-        par->mfx.FrameInfo.Height = UMC::align_value<mfxU16>(par->mfx.FrameInfo.Height, 64);
-        if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
-            par->mfx.FrameInfo.Shift = 1;
-    }
 
     return UMC::UMC_OK;
 }
@@ -800,7 +792,7 @@ UMC::Status HeadersAnalyzer::ProcessNalUnit(UMC::MediaData * data)
 }
 
 // Find bitstream header NAL units, parse them and fill application parameters structure
-UMC::Status MFX_Utility::DecodeHeader(TaskSupplier_H265 * supplier, UMC::VideoDecoderParams* params, mfxBitstream *bs, mfxVideoParam *out, bool isHW)
+UMC::Status MFX_Utility::DecodeHeader(TaskSupplier_H265 * supplier, UMC::VideoDecoderParams* params, mfxBitstream *bs, mfxVideoParam *out)
 {
     UMC::Status umcRes = UMC::UMC_OK;
 
@@ -820,13 +812,8 @@ UMC::Status MFX_Utility::DecodeHeader(TaskSupplier_H265 * supplier, UMC::VideoDe
     if (umcRes != UMC::UMC_OK)
         return umcRes;
 
-    umcRes = supplier->GetInfo(params);
-    if (umcRes == UMC::UMC_OK)
-    {
-        FillVideoParam(supplier, out, false, isHW);
-    }
-
-    return umcRes;
+    return
+        umcRes = supplier->GetInfo(params);
 }
 
 // MediaSDK DECODE_Query API function
