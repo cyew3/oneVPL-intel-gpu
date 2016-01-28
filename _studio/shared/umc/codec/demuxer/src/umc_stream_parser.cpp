@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2005-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2005-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -13,6 +13,9 @@
 #include "umc_frame_constructor.h"
 
 #define PARSER_CHECK_INIT CHECK_OBJ_INIT(m_pDataReader)
+#if defined(__GNUC__)
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 namespace UMC
 {
@@ -440,6 +443,14 @@ Status Mpeg2PesParser::ParsePmtInfo(Mpeg2TsPmt &pmt)
     return UMC_OK;
 }
 
+namespace
+{
+    unsigned int multiCharToInt(const char val[4])
+    {
+        return (val[0] << 24) + (val[1] << 16) + (val[2] << 8) + val[3];
+    }
+}
+
 Status WaveParser::CheckNextData(MediaData *pData, Ipp32u *pTrack)
 {
     PARSER_CHECK_INIT;
@@ -458,14 +469,14 @@ Status WaveParser::CheckNextData(MediaData *pData, Ipp32u *pTrack)
             return UMC_ERR_ALLOC;
 
         err = m_pDataReader->Get32uSwap(&longCode); // 'RIFF'
-        if (UMC_OK != err || longCode != 'RIFF') return UMC_ERR_INVALID_STREAM;
+        if (UMC_OK != err || longCode != multiCharToInt("RIFF")) return UMC_ERR_INVALID_STREAM;
         err = m_pDataReader->Get32uNoSwap(&longCode); // size
         if (UMC_OK != err) return err;
         err = m_pDataReader->Get32uSwap(&longCode); // 'WAVE'
-        if (UMC_OK != err || longCode != 'WAVE') return UMC_ERR_INVALID_STREAM;
+        if (UMC_OK != err || longCode != multiCharToInt("WAVE")) return UMC_ERR_INVALID_STREAM;
 
         err = m_pDataReader->Get32uSwap(&longCode); // 'fmt '
-        if (UMC_OK != err || longCode != 'fmt ') return UMC_ERR_INVALID_STREAM;
+        if (UMC_OK != err || longCode != multiCharToInt("fmt ")) return UMC_ERR_INVALID_STREAM;
         err = m_pDataReader->Get32uNoSwap(&fmtSize); // size
         if (UMC_OK != err) return err;
 
@@ -511,7 +522,7 @@ Status WaveParser::CheckNextData(MediaData *pData, Ipp32u *pTrack)
         if (UMC_OK != err) return err;
 
         err = m_pDataReader->Check32u(&longCode, 0);
-        while (UMC_OK == err && 'data' != longCode)
+        while (UMC_OK == err && multiCharToInt("data") != longCode)
         {
             err = m_pDataReader->Get32uSwap(&longCode);
             err = m_pDataReader->Get32uNoSwap(&longCode);
@@ -731,7 +742,7 @@ Status StreamParser::EstimateMPEGAudioDuration(void)
                         frame_len = 12000;
 
                     const size_t maxIdValue = sizeof(AudioFrameConstructor::MpegAFrequency)/sizeof(AudioFrameConstructor::MpegAFrequency[0]);
-                    if (id + mpg25 >= maxIdValue)
+                    if (static_cast<size_t>(id + mpg25) >= maxIdValue)
                     {
                         return UMC::UMC_ERR_INVALID_STREAM; // should not appear, but technically possible
                     }
@@ -784,7 +795,7 @@ Status StreamParser::EstimateMPEGAudioDuration(void)
                         frame_len = 12000;
 
                     const size_t maxIdValue = sizeof(AudioFrameConstructor::MpegAFrequency)/sizeof(AudioFrameConstructor::MpegAFrequency[0]);
-                    if (id + mpg25 >= maxIdValue)
+                    if (static_cast<size_t>(id + mpg25) >= maxIdValue)
                     {
                         return UMC::UMC_ERR_INVALID_STREAM; // should not appear, but technically possible
                     }

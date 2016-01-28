@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -28,10 +28,10 @@ Splitter *CreateMPEG4Splitter() { return (new MP4Splitter()); }
 
 MP4Splitter::MP4Splitter():
     IndexSplitter(),
+    m_pInitMoofThread(NULL),
     m_nFragPosEnd(0),
     m_pLastPTS(NULL),
-    m_bFlagStopInitMoof(false),
-    m_pInitMoofThread(NULL)
+    m_bFlagStopInitMoof(false)
 {
 }
 

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -88,7 +88,7 @@ protected:
     Status          ParseTrackFragmentDuration(Ipp64u* dDuration, T_atom_mp4 *atom);
 
 
-    bool Compare_Atom(T_atom_mp4 *atom, char *type);
+    bool Compare_Atom(T_atom_mp4 *atom, const char *type);
     Status Atom_Skip(UMC::DataReader *dr, T_atom_mp4 *atom);
 
     Status Read_Atom(DataReader *dr, T_atom_mp4 *atom);

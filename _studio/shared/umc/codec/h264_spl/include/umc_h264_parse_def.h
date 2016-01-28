@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -154,7 +154,8 @@ namespace UMC
         Ipp32u redundant_pic_cnt;
 
         H264SliceHeaderParse()
-            : first_mb_in_slice(0)
+            : is_valid(false)
+            , first_mb_in_slice(0)
             , slice_type(0)
             , pic_parameter_set_id(0)
             , frame_num(0)
@@ -164,7 +165,6 @@ namespace UMC
             , pic_order_cnt_lsb(0)
             , delta_pic_order_cnt_bottom(0)
             , redundant_pic_cnt(0)
-            , is_valid(false)
         {
             delta_pic_order_cnt[0] = 0;
             delta_pic_order_cnt[1] = 0;

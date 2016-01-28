@@ -63,6 +63,7 @@ foreach( dir ${dirs} )
   list( APPEND sources ${srcs})
 endforeach()
 
+set( defs "${defs} -Wall -Werror" )
 make_library( umc_codecs_merged none static )
 set( defs "" )
 

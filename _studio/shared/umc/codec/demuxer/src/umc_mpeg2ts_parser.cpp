@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2005-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2005-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -494,7 +494,7 @@ Status Mpeg2TsParser::ReSync(void)
     }
 
     Ipp64u uiCurPos = m_pDataReader->GetPosition();
-    Ipp64u uiPos = IPP_MAX(uiCurPos, m_iOrig);
+    Ipp64u uiPos = IPP_MAX(uiCurPos, static_cast<unsigned int>(m_iOrig));
     uiPos = ((uiPos - m_iOrig + m_iPacketSize - 1) / m_iPacketSize) * m_iPacketSize + m_iOrig;
     return uiPos > uiCurPos ? m_pDataReader->MovePosition(uiPos - uiCurPos) : UMC_OK;
 }

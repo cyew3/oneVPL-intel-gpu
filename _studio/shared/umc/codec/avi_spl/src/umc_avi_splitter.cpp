@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -61,7 +61,7 @@ Status AVISplitter::Init(SplitterParams& rInitParams)
     m_pReadESThread = new vm_thread[m_AviHdr.uiStreams];
     if (!m_pTrackIndex || !m_pReadESThread) return TerminateInit(UMC_ERR_ALLOC);
 
-    m_ppMediaBuffer = (MediaBuffer **)new (SampleBuffer *[m_AviHdr.uiStreams]);
+    m_ppMediaBuffer = (MediaBuffer **)new SampleBuffer *[m_AviHdr.uiStreams];
     if (!m_ppMediaBuffer) return TerminateInit(UMC_ERR_ALLOC);
     ippsZero_8u((Ipp8u *)m_ppMediaBuffer, m_AviHdr.uiStreams * sizeof(MediaBuffer *));
 
@@ -71,7 +71,7 @@ Status AVISplitter::Init(SplitterParams& rInitParams)
     umcRes = FillSplitterInfo();
     if (UMC_OK != umcRes) return TerminateInit(umcRes);
 
-    m_ppLockedFrame = new (MediaData *[m_AviHdr.uiStreams]);
+    m_ppLockedFrame = new MediaData *[m_AviHdr.uiStreams];
     if (!m_ppLockedFrame) return TerminateInit(UMC_ERR_ALLOC);
     m_pIsLocked = new Ipp32s[m_AviHdr.uiStreams];
     if (!m_pIsLocked) return TerminateInit(UMC_ERR_ALLOC);
@@ -185,7 +185,7 @@ Status AVISplitter::FillSplitterInfo(void)
     if (!m_pInfo)
         return UMC_ERR_ALLOC;
 
-    m_pInfo->m_ppTrackInfo = new (TrackInfo *[m_AviHdr.uiStreams]);
+    m_pInfo->m_ppTrackInfo = new TrackInfo *[m_AviHdr.uiStreams];
     if (!m_pInfo->m_ppTrackInfo)
         return UMC_ERR_ALLOC;
 
@@ -986,12 +986,16 @@ Status AVISplitter::InitIndexUsingNewAVIIndex(Ipp32u nTrackNum, Ipp8u *pIndexBuf
     if (bIndexType == AVI_INDEX_OF_CHUNKS || bIndexType == AVI_INDEX_OF_SUB_2FIELD)
     {
         // low half of qwBaseOffset
-        ((Ipp32u *)&qwBaseOffset)[0] = *(Ipp32u *)buf;
+        union {
+            Ipp64u qwBaseOffset;
+            Ipp32u buf[2];
+        } u;
+        u.buf[0] = *(Ipp32u *)buf;
         buf += 4;
 
         // high half of qwBaseOffset
-        ((Ipp32u *)&qwBaseOffset)[1] = *(Ipp32u *)buf;
-        qwBaseOffset = BIG_ENDIAN_SWAP64(qwBaseOffset);
+        u.buf[1] = *(Ipp32u *)buf;
+        qwBaseOffset = BIG_ENDIAN_SWAP64(u.qwBaseOffset);
         buf += 4;
 
         buf += 4; // reserved

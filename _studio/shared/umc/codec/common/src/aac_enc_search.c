@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//          Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //     Intel Integrated Performance Primitives AAC Encode Sample for Windows*
 //
@@ -25,6 +25,9 @@
 #include "umc_defs.h"
 
 #if defined (UMC_ENABLE_AAC_AUDIO_ENCODER) || defined (UMC_ENABLE_AAC_INT_AUDIO_ENCODER)
+#if defined(__GNUC__)
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #include <math.h>
 #include "ippac.h"

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2005-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2005-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -1406,6 +1406,14 @@ Status Segmentator::CheckPacketFromTrack(SplMediaData *pData)
     }
 }
 
+namespace
+{
+    unsigned int multiCharToInt(const char val[4])
+    {
+        return (val[0] << 24) + (val[1] << 16) + (val[2] << 8) + val[3];
+    }
+}
+
 SystemStreamType Demuxer::DetectSystem(DataReader* pDataReader)
 {
     Status umcRes = UMC_OK;
@@ -1423,12 +1431,12 @@ SystemStreamType Demuxer::DetectSystem(DataReader* pDataReader)
     if (UMC_OK != umcRes)
         return UNDEF_STREAM;
 
-    if (longCode == 'RIFF') // RIFF
+    if (longCode == multiCharToInt("RIFF")) // RIFF
     {
         umcRes = pDataReader->Check32u(&longCode, 8);
         if (UMC_OK != umcRes)
             return UNDEF_STREAM;
-        if (longCode == 'AVI ')
+        if (longCode == multiCharToInt("AVI "))
             return AVI_STREAM;
         else
             return WAVE_STREAM;
