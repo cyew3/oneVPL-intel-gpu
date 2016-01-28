@@ -554,7 +554,7 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
         }
 
         // return pointer to synchronization point
-        if (MFX_ERR_NONE == mfxRes || mfxRes == MFX_WRN_VIDEO_PARAM_CHANGED)
+        if (MFX_ERR_NONE == mfxRes)
         {
             *syncp = syncPoint;
         }

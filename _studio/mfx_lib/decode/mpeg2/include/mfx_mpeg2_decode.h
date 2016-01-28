@@ -227,6 +227,7 @@ protected:
     bool m_new_bs;
     bool m_isFrameRateFromInit;
     mfxF64 m_time[NUM_FRAMES];
+    mfxU8 m_aspect_ratio_information;
 
     Ipp32s m_NumThreads;
     Ipp32u maxNumFrameBuffered;
@@ -289,8 +290,8 @@ protected:
 
     void ResetFcState(FcState& state) { state.picStart = state.picHeader = 0; }
     mfxStatus UpdateCurrVideoParams(mfxFrameSurface1 *surface_work, int task_num);
-    mfxStatus UpdateWorkSurfaceParams(int task_num);
-    mfxStatus UpdateOutputSurfaceParamsFromWorkSurface(mfxFrameSurface1 *outputSurface, int display_index);
+    mfxStatus UpdateWorkSurfaceCrops(int task_num);
+    mfxStatus UpdateOutputSurfaceCrops(mfxFrameSurface1 *outputSurface, int display_index);
     mfxStatus SetSurfacePicStruct(mfxFrameSurface1 *surface, int task_num);
     mfxStatus SetOutputSurfaceParams(mfxFrameSurface1 *surface, int task_num);
 };
