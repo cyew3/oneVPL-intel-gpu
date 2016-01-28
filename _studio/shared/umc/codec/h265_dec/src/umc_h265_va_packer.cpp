@@ -44,7 +44,7 @@ Packer * Packer::CreatePacker(UMC::VideoAccelerator * va)
     Packer * packer = 0;
 
 #ifdef UMC_VA_DXVA
-    if (va->IsIntelCustomGUID()) // intel MVC profile
+    if (va->IsIntelCustomGUID())
         packer = new PackerDXVA2(va);
     else
         packer = new MSPackerDXVA2(va);
@@ -58,7 +58,6 @@ Packer * Packer::CreatePacker(UMC::VideoAccelerator * va)
 Packer::Packer(UMC::VideoAccelerator * va)
     : m_va(va)
 {
-
 }
 
 Packer::~Packer()
@@ -66,27 +65,46 @@ Packer::~Packer()
 }
 
 #ifdef UMC_VA
-template<int COUNT> static inline
-void initQMatrix(const H265ScalingList *scalingList, int sizeId, unsigned char qm[6][COUNT])
-{/*         n*m    listId
+
+//the tables used to restore original scan order of scaling lists (req. by drivers since ci-main-49045)
+Ipp16u const* SL_tab_up_right[] =
+{
+    ScanTableDiag4x4,
+    g_sigLastScanCG32x32,
+    g_sigLastScanCG32x32,
+    g_sigLastScanCG32x32
+};
+
+template <int COUNT>
+inline
+void initQMatrix(const H265ScalingList *scalingList, int sizeId, unsigned char qm[6][COUNT], bool force_upright_scan = false)
+{
+    /*        n*m    listId
         --------------------
         Intra   Y       0
         Intra   Cb      1
         Intra   Cr      2
         Inter   Y       3
         Inter   Cb      4
-        Inter   Cr      5           */
+        Inter   Cr      5         */
 
-    for(int n=0;n < 6;n++)
+    Ipp16u const* scan = 0;
+    if (force_upright_scan)
+        scan = SL_tab_up_right[sizeId];
+
+    for (int n = 0; n < 6; n++)
     {
         const int *src = scalingList->getScalingListAddress(sizeId, n);
-        for(int i=0;i < COUNT;i++)  // coef.
-            qm[n][i] = (unsigned char)src[i];
+        for (int i = 0; i < COUNT; i++)  // coef.
+        {
+            int const idx = scan ? scan[i] : i;
+            qm[n][i] = (unsigned char)src[idx];
+        }
     }
 }
 
-
-template<int COUNT> static inline
+template<int COUNT>
+inline
 void initQMatrix(const H265ScalingList *scalingList, int sizeId, unsigned char qm[3][2][COUNT])
 {
     for(int comp=0 ; comp <= 2 ; comp++)    // Y Cb Cr
@@ -101,19 +119,27 @@ void initQMatrix(const H265ScalingList *scalingList, int sizeId, unsigned char q
     }
 }
 
-static inline
-void initQMatrix(const H265ScalingList *scalingList, int sizeId, unsigned char qm[2][64])
-{/*      n      m     listId
+inline
+void initQMatrix(const H265ScalingList *scalingList, int sizeId, unsigned char qm[2][64], bool force_upright_scan = false)
+{
+    /*      n      m     listId
         --------------------
         Intra   Y       0
-        Inter   Y       1           */
+        Inter   Y       1         */
+
+    Ipp16u const* scan = 0;
+    if (force_upright_scan)
+        scan = SL_tab_up_right[sizeId];
 
     for(int n=0;n < 2;n++)  // Intra, Inter
     {
         const int *src = scalingList->getScalingListAddress(sizeId, n);
 
-        for(int i=0;i < 64;i++)  // coef.
-            qm[n][i] = (unsigned char)src[i];
+        for (int i = 0; i < 64; i++)  // coef.
+        {
+            int const idx = scan ? scan[i] : i;
+            qm[n][i] = (unsigned char)src[idx];
+        }
     }
 }
 
@@ -720,7 +746,7 @@ void PackerDXVA2::PackQmatrix(const H265Slice *pSlice)
     initQMatrix<16>(scalingList, SCALING_LIST_4x4,   pQmatrix->ucScalingLists0);    // 4x4
     initQMatrix<64>(scalingList, SCALING_LIST_8x8,   pQmatrix->ucScalingLists1);    // 8x8
     initQMatrix<64>(scalingList, SCALING_LIST_16x16, pQmatrix->ucScalingLists2);    // 16x16
-    initQMatrix(scalingList, SCALING_LIST_32x32, pQmatrix->ucScalingLists3);    // 32x32
+    initQMatrix    (scalingList, SCALING_LIST_32x32, pQmatrix->ucScalingLists3);    // 32x32
 
     for(int sizeId = SCALING_LIST_16x16; sizeId <= SCALING_LIST_32x32; sizeId++)
     {
@@ -733,7 +759,6 @@ void PackerDXVA2::PackQmatrix(const H265Slice *pSlice)
         }
     }
 }
-
 
 MSPackerDXVA2::MSPackerDXVA2(UMC::VideoAccelerator * va)
     : PackerDXVA2(va)
@@ -749,6 +774,11 @@ void MSPackerDXVA2::PackQmatrix(const H265Slice *pSlice)
 
     const H265ScalingList *scalingList = 0;
 
+    //new driver want list to be in raster scan, but we made it flatten during [H265HeadersBitstream::xDecodeScalingList]
+    //so we should restore it now
+    bool force_upright_scan =
+        m_va->ScalingListScanOrder() == 0;
+
     if (pSlice->GetPicParam()->pps_scaling_list_data_present_flag)
     {
         scalingList = pSlice->GetPicParam()->getScalingList();
@@ -763,7 +793,7 @@ void MSPackerDXVA2::PackQmatrix(const H265Slice *pSlice)
         static bool doInit = true;
         static H265ScalingList sl;
 
-        if(doInit)
+        if (doInit)
         {
             for(Ipp32u sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
             {
@@ -776,16 +806,17 @@ void MSPackerDXVA2::PackQmatrix(const H265Slice *pSlice)
                     sl.setScalingListDC(sizeId, listId, SCALING_LIST_DC);
                 }
             }
+
             doInit = false;
         }
 
         scalingList = &sl;
     }
 
-    initQMatrix<16>(scalingList, SCALING_LIST_4x4,   pQmatrix->ucScalingLists0);    // 4x4
-    initQMatrix<64>(scalingList, SCALING_LIST_8x8,   pQmatrix->ucScalingLists1);    // 8x8
-    initQMatrix<64>(scalingList, SCALING_LIST_16x16, pQmatrix->ucScalingLists2);    // 16x16
-    initQMatrix(scalingList, SCALING_LIST_32x32, pQmatrix->ucScalingLists3);    // 32x32
+    initQMatrix<16>(scalingList, SCALING_LIST_4x4,   pQmatrix->ucScalingLists0, force_upright_scan);    // 4x4
+    initQMatrix<64>(scalingList, SCALING_LIST_8x8,   pQmatrix->ucScalingLists1, force_upright_scan);    // 8x8
+    initQMatrix<64>(scalingList, SCALING_LIST_16x16, pQmatrix->ucScalingLists2, force_upright_scan);    // 16x16
+    initQMatrix    (scalingList, SCALING_LIST_32x32, pQmatrix->ucScalingLists3, force_upright_scan);    // 32x32
 
     for(Ipp32u sizeId = SCALING_LIST_16x16; sizeId <= SCALING_LIST_32x32; sizeId++)
     {

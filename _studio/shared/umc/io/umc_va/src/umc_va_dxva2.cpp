@@ -642,6 +642,7 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
                 m_bH264MVCSupport = GuidProfile::IsMVCGUID(m_guidDecoder);
                 m_Config = pConfig[idxConfig];
                 m_bH264ShortSlice = GuidProfile::isShortFormat(isHEVCGUID, m_Config.ConfigBitstreamRaw);
+                m_H265ScalingListScanOrder = (m_Config.Config4GroupedCoefs & 0x80000000) ? 0 : 1;
 
                 if (bInitilized)
                 {

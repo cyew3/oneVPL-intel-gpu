@@ -305,7 +305,8 @@ public:
         m_allocator(0),
         m_bH264ShortSlice(false),
         m_bH264MVCSupport(false),
-        m_isUseStatuReport(true)
+        m_isUseStatuReport(true),
+        m_H265ScalingListScanOrder(1)
     {
     }
 
@@ -344,6 +345,9 @@ public:
     bool IsUseStatusReport() { return m_isUseStatuReport; }
     void SetStatusReportUsing(bool isUseStatuReport) { m_isUseStatuReport = isUseStatuReport; }
 
+    Ipp32s ScalingListScanOrder() const
+    { return m_H265ScalingListScanOrder; }
+
     virtual void GetVideoDecoder(void **handle) = 0;
 
     VideoAccelerationProfile    m_Profile;          // entry point
@@ -358,6 +362,7 @@ protected:
     bool            m_bH264ShortSlice;
     bool            m_bH264MVCSupport;
     bool            m_isUseStatuReport;
+    Ipp32s          m_H265ScalingListScanOrder; //0 - up-right, 1 - raster (derived from DXVA2_ConfigPictureDecode.Config4GroupedCoefs). Default is 1 (raster) to conform old driver beh.
 };
 
 ///////////////////////////////////////////////////////////////////////////////////
