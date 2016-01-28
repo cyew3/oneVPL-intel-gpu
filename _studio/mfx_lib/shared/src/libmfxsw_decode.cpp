@@ -517,6 +517,7 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
 
         // reset the sync point
         *syncp = NULL;
+        *surface_out = NULL;
 
         memset(&task, 0, sizeof(MFX_TASK));
         mfxRes = session->m_pDECODE->DecodeFrameCheck(bs, surface_work, surface_out, &task.entryPoint);
@@ -554,7 +555,7 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
         }
 
         // return pointer to synchronization point
-        if (MFX_ERR_NONE == mfxRes)
+        if (MFX_ERR_NONE == mfxRes || (mfxRes == MFX_WRN_VIDEO_PARAM_CHANGED && *surface_out != NULL))
         {
             *syncp = syncPoint;
         }
