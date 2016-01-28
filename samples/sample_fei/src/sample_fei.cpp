@@ -622,7 +622,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         pParams->ColorFormat = MFX_FOURCC_YV12;
     }
 
-    if (!pParams->nPicStruct)
+    if (pParams->nPicStruct == MFX_PICSTRUCT_UNKNOWN)
     {
         pParams->nPicStruct = MFX_PICSTRUCT_PROGRESSIVE;
     }
@@ -863,6 +863,7 @@ int main(int argc, char *argv[])
 
     Params.CodecId  = MFX_CODEC_AVC; //only AVC is supported
     Params.DecodeId = 0; //default (invalid) value
+    Params.nPicStruct = MFX_PICSTRUCT_UNKNOWN;
     Params.nNumFrames = 0; //unlimited
     Params.nTimeout   = 0; //unlimited
     Params.refDist = 1; //only I frames

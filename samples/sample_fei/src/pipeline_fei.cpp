@@ -2482,6 +2482,9 @@ mfxStatus CEncodingPipeline::Run()
             m_frameType = GetFrameType(m_frameCount);
         }
 
+        if (m_encpakParams.nPicStruct == MFX_PICSTRUCT_FIELD_BFF)
+            std::swap(m_frameType[0], m_frameType[1]);
+
         if (m_frameType[m_ffid] & MFX_FRAMETYPE_IDR)
             m_frameOrderIdrInDisplayOrder = m_frameCount;
 
@@ -2841,9 +2844,6 @@ iTask* CEncodingPipeline::CreateAndInitTask()
     eTask->BRefType  = m_CodingOption2.BRefType; // m_encpakParams.bRefType;
     eTask->m_fid[0]  = m_ffid;
     eTask->m_fid[1]  = m_sfid;
-
-    if (eTask->PicStruct == MFX_PICSTRUCT_FIELD_BFF)
-        std::swap(m_frameType[0], m_frameType[1]);
 
     MSDK_ZERO_MEMORY(eTask->in);
     MSDK_ZERO_MEMORY(eTask->out);
