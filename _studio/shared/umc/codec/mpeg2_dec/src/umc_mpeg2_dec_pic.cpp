@@ -985,9 +985,7 @@ Status MPEG2VideoDecoderBase::SaveDecoderState()
 
 Status MPEG2VideoDecoderBase::RestoreDecoderState()
 {
-    sFrameBuffer tmp = frame_buffer;
     frame_buffer = frameBuffer_backup;
-    std::copy(tmp.task_locked, tmp.task_locked+20, frame_buffer.task_locked);
     frameBuffer_backup = frameBuffer_backup_previous;
     sequenceHeader.b_curr_number = b_curr_number_backup;
     sequenceHeader.first_i_occure = first_i_occure_backup;
@@ -997,10 +995,10 @@ Status MPEG2VideoDecoderBase::RestoreDecoderState()
 
 Status MPEG2VideoDecoderBase::RestoreDecoderStateAndRemoveLastField()
 {
-    RestoreDecoderState();
-    std::copy(frameBuffer_backup.frame_p_c_n, frameBuffer_backup.frame_p_c_n + 2*DPB_SIZE, frame_buffer.frame_p_c_n);
-    frame_buffer.latest_next = frameBuffer_backup.latest_next;
-    frame_buffer.latest_prev = frameBuffer_backup.latest_prev;
+    frame_buffer = frameBuffer_backup_previous;
+    sequenceHeader.b_curr_number = b_curr_number_backup;
+    sequenceHeader.first_i_occure = first_i_occure_backup;
+    sequenceHeader.frame_count = frame_count_backup;
     return UMC_OK;
 }
 

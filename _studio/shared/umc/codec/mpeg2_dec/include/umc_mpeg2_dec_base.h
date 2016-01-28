@@ -493,6 +493,7 @@ public:
         mp2_VLCTable              vlcMBPattern;
         mp2_VLCTable              vlcMotionVector;
 
+        int                       task_locked[DPB_SIZE*2];
         sFrameBuffer              frame_buffer;
         sFrameBuffer              frameBuffer_backup_previous;
         sFrameBuffer              frameBuffer_backup;

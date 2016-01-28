@@ -536,7 +536,7 @@ Status MPEG2VideoDecoderBase::Init(BaseCodecParams *pInit)
         ClearUserDataVector(frame_buffer.frame_p_c_n[i].user_data_v);
 
         frame_buffer.frame_p_c_n[i].va_index = -1;
-        frame_buffer.task_locked[i]          = -1;
+        task_locked[i] = -1;
         m_dTime[i].time = -1.;
         m_dTime[i].isOriginal = false;
         m_nNumberOfThreadsTask[i] = m_nNumberOfThreads;
@@ -1861,7 +1861,7 @@ Status MPEG2VideoDecoderBase::Reset()
         ClearUserDataVector(frame_buffer.frame_p_c_n[i].user_data_v);
 
         frame_buffer.frame_p_c_n[i].va_index = -1;
-        frame_buffer.task_locked[i]          = -1;
+        task_locked[i] = -1;
 
         m_dTime[i].time     = -1.;
         m_dTime[i].isOriginal = false;
@@ -2372,16 +2372,15 @@ int MPEG2VideoDecoderBase::FindFreeTask()
 {
     int i;
     for(i = 0; i < DPB_SIZE; i++)
-    {
-        if(frame_buffer.task_locked[i] == -1)
+        if(task_locked[i] == -1)
             return i;
-    }
+
     return -1;
 }
 
 void MPEG2VideoDecoderBase::LockTask(int index)
 {
-    frame_buffer.task_locked[index] = 1;
+    task_locked[index] = 1;
 }
 
 void MPEG2VideoDecoderBase::UnLockTask(int index)
@@ -2390,8 +2389,8 @@ void MPEG2VideoDecoderBase::UnLockTask(int index)
    //frame_buffer.frame_p_c_n[index].U_comp_data = NULL;
    // frame_buffer.frame_p_c_n[index].V_comp_data = NULL;
 
-    frame_buffer.task_locked[index] = -1;
-    frame_buffer.task_locked[index+DPB_SIZE] = -1;
+    task_locked[index] = -1;
+    task_locked[index+DPB_SIZE] = -1;
 }
 
 void MPEG2VideoDecoderBase::SetCorruptionFlag(int index)

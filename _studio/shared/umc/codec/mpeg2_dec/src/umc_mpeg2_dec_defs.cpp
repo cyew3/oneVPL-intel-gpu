@@ -70,7 +70,6 @@ sFrameBuffer::sFrameBuffer()
     , ret_array_free     (0)
     , ret_array_len      (0)
 {
-    memset(task_locked,        0, sizeof(task_locked));  //num tasks in depends on index (-1 -initially)
     memset(curr_index,         0, sizeof(curr_index));   // 0 initially
     memset(field_buffer_index, 0, sizeof(field_buffer_index));
     memset(ret_array,          0, sizeof(ret_array));

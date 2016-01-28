@@ -1996,6 +1996,8 @@ mfxStatus VideoDECODEMPEG2::SetOutputSurfaceParams(mfxFrameSurface1 *surface, in
     surface->Data.DataFlag = (mfxU16)((m_implUmc.isOriginalTimeStamp(display_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
     SetSurfacePicStruct(surface, display_index);
     UpdateOutputSurfaceParamsFromWorkSurface(surface, display_index);
+    SetSurfacePictureType(surface, display_index, &m_implUmc);
+    SetSurfaceTimeCode(surface, display_index, &m_implUmc);
 
     return MFX_ERR_NONE;
 }
@@ -2082,6 +2084,35 @@ mfxStatus VideoDECODEMPEG2::UpdateCurrVideoParams(mfxFrameSurface1 *surface_work
     pSurface->Info.FrameRateExtN = m_vPar.mfx.FrameInfo.FrameRateExtN;
 
     return sts;
+}
+
+mfxStatus VideoDECODEMPEG2::RestoreDecoder(Ipp32s frame_buffer_num, UMC::FrameMemID mem_id_to_unlock, Ipp32s task_num_to_unlock, bool end_frame, bool remove_2frames, int decrease_dec_field_count)
+{
+    end_frame;
+    m_frame[frame_buffer_num].DataLength = 0;
+    m_frame[frame_buffer_num].DataOffset = 0;
+    m_frame_in_use[frame_buffer_num] = false;
+    
+    if (mem_id_to_unlock >= 0 && mem_id_to_unlock < DPB)
+        m_FrameAllocator->DecreaseReference(mem_id_to_unlock);
+
+    if (task_num_to_unlock >= 0 && task_num_to_unlock < 2*DPB)
+        m_implUmc.UnLockTask(task_num_to_unlock);
+
+#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+    if (end_frame)
+        if (m_implUmc.pack_w.m_va->EndFrame() != UMC::UMC_OK)
+            return MFX_ERR_LOCK_MEMORY;
+#endif
+
+    if (remove_2frames)
+        m_implUmc.RestoreDecoderStateAndRemoveLastField();
+    else
+        m_implUmc.RestoreDecoderState();
+
+    dec_field_count -= decrease_dec_field_count;
+
+    return MFX_ERR_NONE;
 }
 
 static mfxStatus __CDECL MPEG2TaskRoutine(void *pState, void *pParam, mfxU32 /*threadNumber*/, mfxU32 /*callNumber*/)
@@ -2244,8 +2275,6 @@ static mfxStatus __CDECL MPEG2CompleteTasks(void *pState, void *pParam, mfxStatu
 mfxStatus VideoDECODEMPEG2::CompleteTasks(void *pParam)
 {
     MParam *parameters = (MParam *)pParam;
-    UMC::AutomaticUMCMutex guard(m_guard);
-
     THREAD_DEBUG_PRINTF(
         "(THREAD %x) CompleteTasks: task %x number, task num %d, curr thr idx %d, compl thr %d\n",
         GetCurrentThreadId(), pParam, parameters->task_num, parameters->m_curr_thread_idx, parameters->m_thread_completed)
@@ -2254,9 +2283,6 @@ mfxStatus VideoDECODEMPEG2::CompleteTasks(void *pParam)
 
     if (0 <= display_index)
     {
-        SetSurfacePictureType(parameters->surface_out, display_index, &m_implUmc);
-        SetSurfaceTimeCode(parameters->surface_out, display_index, &m_implUmc);
-
         THREAD_DEBUG_PRINTF("(THREAD %x) Dumping\n", GetCurrentThreadId())
 
         if (false == parameters->IsSWImpl)
@@ -2603,10 +2629,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
     m_frame_constructed = true;
 
     if (!(dec_field_count & 1))
-    {
-        UMC::AutomaticUMCMutex guard(m_guard);
         m_task_num = m_implUmc.FindFreeTask();
-    }
 
     if (-1 == m_task_num)
     {
@@ -2654,30 +2677,16 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
             IsField = !m_implUmc.IsFramePictureStructure(m_task_num);
             if (m_task_num >= DPB && !IsField)
             {
-                m_frame[m_frame_curr].DataLength = 0;
-                m_frame[m_frame_curr].DataOffset = 0;
-                m_frame_in_use[m_frame_curr] = false;
-
-                if (dec_field_count % 2 != 0)
-                    dec_field_count += 1;
-
-                m_implUmc.RestoreDecoderStateAndRemoveLastField();
+                int decrease_dec_field_count = dec_field_count % 2 ? 0 : 1;
                 Ipp32s previous_field = m_task_num - DPB;
-                m_FrameAllocator->DecreaseReference(mid[previous_field]);
-                m_implUmc.UnLockTask(previous_field);
-
+                MFX_CHECK_STS(RestoreDecoder(m_frame_curr, mid[previous_field], previous_field, NO_END_FRAME, REMOVE_LAST_2_FRAMES, decrease_dec_field_count))
                 return MFX_ERR_MORE_DATA;
             }
 
             if (UMC::UMC_OK != umcRes)
             {
-                m_frame[m_frame_curr].DataLength = 0;
-                m_frame[m_frame_curr].DataOffset = 0;
-                m_frame_in_use[m_frame_curr] = false;
-                {
-                    UMC::AutomaticUMCMutex guard(m_guard);
-                    m_implUmc.RestoreDecoderState();
-                }
+                MFX_CHECK_STS(RestoreDecoder(m_frame_curr, NO_SURFACE_TO_UNLOCK, NO_TASK_TO_UNLOCK, NO_END_FRAME, REMOVE_LAST_FRAME, 0))
+
                 IsSkipped = m_implUmc.IsFrameSkipped();
 
                 if (IsSkipped && !(dec_field_count & 1))
@@ -2843,16 +2852,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
             umcRes = m_implUmc.ProcessRestFrame(m_task_num);
             if (UMC::UMC_OK != umcRes)
             {
-                m_FrameAllocator->DecreaseReference(mid[curr_index]);
-                m_frame[m_frame_curr].DataLength = 0;
-                m_frame[m_frame_curr].DataOffset = 0;
-                m_frame_in_use[m_frame_curr] = false;
-#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
-                umcRes = m_implUmc.pack_w.m_va->EndFrame();
-                if (umcRes != UMC::UMC_OK)
-                    return MFX_ERR_LOCK_MEMORY;
-#endif
-                m_implUmc.RestoreDecoderState();
+                MFX_CHECK_STS(RestoreDecoder(m_frame_curr, mid[curr_index], NO_TASK_TO_UNLOCK, END_FRAME, REMOVE_LAST_FRAME, 0))
                 return MFX_ERR_MORE_DATA;
             }
 
@@ -2868,59 +2868,29 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
 
             dec_frame_count++;
 
-            {
-                UMC::AutomaticUMCMutex guard(m_guard);
+            memset(&m_task_param[m_task_num],0,sizeof(MParam));
+            m_implUmc.LockTask(m_task_num);
 
-                memset(&m_task_param[m_task_num],0,sizeof(MParam));
-                m_implUmc.LockTask(m_task_num);
-
-                umcRes = m_implUmc.DoDecodeSlices(0, m_task_num);
-
-
-            }
+            umcRes = m_implUmc.DoDecodeSlices(0, m_task_num);
 
             if (UMC::UMC_OK != umcRes &&
                 UMC::UMC_ERR_NOT_ENOUGH_DATA != umcRes &&
                 UMC::UMC_ERR_SYNC != umcRes)
             {
-                m_FrameAllocator->DecreaseReference(mid[curr_index]);
-                m_frame[m_frame_curr].DataLength = 0;
-                m_frame[m_frame_curr].DataOffset = 0;
-                m_frame_in_use[m_frame_curr] = false;
-                m_implUmc.RestoreDecoderState();
-                m_implUmc.UnLockTask(m_task_num);
-#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
-                umcRes = m_implUmc.pack_w.m_va->EndFrame();
-                if (umcRes != UMC::UMC_OK)
-                    return MFX_ERR_LOCK_MEMORY;
-#endif
-                dec_field_count -= IsField?1:2;
+                MFX_CHECK_STS(RestoreDecoder(m_frame_curr, mid[curr_index], m_task_num, END_FRAME, REMOVE_LAST_FRAME, IsField?1:2))
                 return MFX_ERR_MORE_DATA;
             }
-            else
+
+            umcRes = m_implUmc.PostProcessFrame(display_index, m_task_num);
+
+            if (umcRes != UMC::UMC_OK && umcRes != UMC::UMC_ERR_NOT_ENOUGH_DATA)
             {
-                umcRes = m_implUmc.PostProcessFrame(display_index, m_task_num);
-
-                if (umcRes != UMC::UMC_OK && umcRes != UMC::UMC_ERR_NOT_ENOUGH_DATA)
-                {
-                    m_FrameAllocator->DecreaseReference(mid[curr_index]);
-                    m_frame[m_frame_curr].DataLength = 0;
-                    m_frame[m_frame_curr].DataOffset = 0;
-                    m_frame_in_use[m_frame_curr] = false;
-                    m_implUmc.RestoreDecoderState();
-                    m_implUmc.UnLockTask(m_task_num);
-#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
-                    umcRes = m_implUmc.pack_w.m_va->EndFrame();
-                    if (umcRes != UMC::UMC_OK)
-                        return MFX_ERR_LOCK_MEMORY;
-#endif
-                    dec_field_count -= IsField?1:2;
-                    return MFX_ERR_MORE_DATA;
-                }
-
-                m_frame[m_frame_curr].DataLength = 0;
-                m_frame[m_frame_curr].DataOffset = 0;
+                MFX_CHECK_STS(RestoreDecoder(m_frame_curr, mid[curr_index], m_task_num, END_FRAME, REMOVE_LAST_FRAME, IsField?1:2))
+                return MFX_ERR_MORE_DATA;
             }
+
+            m_frame[m_frame_curr].DataLength = 0;
+            m_frame[m_frame_curr].DataOffset = 0;
 
             m_prev_task_num = m_task_num;
 

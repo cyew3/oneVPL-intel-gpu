@@ -177,7 +177,6 @@ struct sFrameBuffer
     sFrameBuffer();
 
     sVideoFrameBuffer     frame_p_c_n[DPB_SIZE*2];    // previous, current and next frames
-    int                   task_locked[DPB_SIZE*2]; //num tasks in depends on index (-1 -initially)
     Ipp8u                 *ptr_context_data; // pointer to allocated data
     MemID                 mid_context_data;  // pointer to allocated data
     Ipp32u                Y_comp_height;

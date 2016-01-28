@@ -36,6 +36,12 @@ typedef struct _DXVA_Status_VC1 *DXVA_Status_VC1;
 #define NUM_FRAMES DPB
 #define NUM_REST_BYTES 4
 #define NUM_FRAMES_BUFFERED 0
+#define END_FRAME true
+#define NO_END_FRAME false
+#define REMOVE_LAST_FRAME false
+#define REMOVE_LAST_2_FRAMES true
+#define NO_SURFACE_TO_UNLOCK -1
+#define NO_TASK_TO_UNLOCK -1
 
 enum
 {
@@ -288,6 +294,7 @@ protected:
     } m_fcState;
 
     void ResetFcState(FcState& state) { state.picStart = state.picHeader = 0; }
+    mfxStatus RestoreDecoder(Ipp32s frame_buffer_num, UMC::FrameMemID mem_id_to_unlock, Ipp32s task_num_to_unlock, bool end_frame, bool remove_2frames, int decrease_dec_field_count);
     mfxStatus UpdateCurrVideoParams(mfxFrameSurface1 *surface_work, int task_num);
     mfxStatus UpdateWorkSurfaceParams(int task_num);
     mfxStatus UpdateOutputSurfaceParamsFromWorkSurface(mfxFrameSurface1 *outputSurface, int display_index);
