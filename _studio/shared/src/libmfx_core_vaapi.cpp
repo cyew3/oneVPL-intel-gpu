@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
 
 File Name: libmf_core_vaapi.cpp
 
@@ -177,21 +177,35 @@ const mfx_device_item listLegalDevIDs[] = {
     { 0x22b3, MFX_HW_CHV},
 
     /* SCL */
-    { 0x1916, MFX_HW_SCL},
-    { 0x1906, MFX_HW_SCL},
-    { 0x1926, MFX_HW_SCL},
-    { 0x1921, MFX_HW_SCL},
-    { 0x190E, MFX_HW_SCL},
-    { 0x191E, MFX_HW_SCL},
-    { 0x1912, MFX_HW_SCL},
-    { 0x1902, MFX_HW_SCL},
-    { 0x191B, MFX_HW_SCL},
-    { 0x192B, MFX_HW_SCL},
-    { 0x190B, MFX_HW_SCL},
-    { 0x191A, MFX_HW_SCL},
-    { 0x192A, MFX_HW_SCL},
-    { 0x190A, MFX_HW_SCL},
-    { 0x191D, MFX_HW_SCL},
+	/* GT1F */
+	{ 0x1902, MFX_HW_SCL }, // DT, 2x1F, 510
+	{ 0x1906, MFX_HW_SCL }, // U-ULT, 2x1F, 510
+	{ 0x190A, MFX_HW_SCL }, // Server, 4x1F
+	{ 0x190B, MFX_HW_SCL },
+	{ 0x190E, MFX_HW_SCL }, // Y-ULX 2x1F
+	/*GT1.5*/
+	{ 0x1913, MFX_HW_SCL }, // U-ULT, 2x1.5
+	{ 0x1915, MFX_HW_SCL }, // Y-ULX, 2x1.5
+	{ 0x1917, MFX_HW_SCL }, // DT, 2x1.5
+	/* GT2 */
+	{ 0x1912, MFX_HW_SCL }, // DT, 2x2, 530
+	{ 0x1916, MFX_HW_SCL }, // U-ULD 2x2, 520
+	{ 0x191A, MFX_HW_SCL }, // 2x2,4x2, Server
+	{ 0x191B, MFX_HW_SCL }, // DT, 2x2, 530
+	{ 0x191D, MFX_HW_SCL }, // 4x2, WKS, P530
+	{ 0x191E, MFX_HW_SCL }, // Y-ULX, 2x2, P510,515
+	{ 0x1921, MFX_HW_SCL }, // U-ULT, 2x2F, 540
+	/* GT3 */
+	{ 0x1923, MFX_HW_SCL }, // U-ULT, 2x3, 535
+	{ 0x1926, MFX_HW_SCL }, // U-ULT, 2x3, 540 (15W)
+	{ 0x1927, MFX_HW_SCL }, // U-ULT, 2x3e, 550 (28W)
+	{ 0x192A, MFX_HW_SCL }, // Server, 2x3
+	{ 0x192B, MFX_HW_SCL }, // Halo 3e
+    /* GT4e*/
+	{ 0x1932, MFX_HW_SCL }, // DT
+	{ 0x193A, MFX_HW_SCL }, // SRV
+	{ 0x193B, MFX_HW_SCL }, // Halo
+	{ 0x193D, MFX_HW_SCL }, // WKS
 
     /* BXT */
     { 0x0A84, MFX_HW_BXT},
