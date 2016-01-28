@@ -895,11 +895,11 @@ int main(int argc, char *argv[])
     Params.mbstatoutFile = NULL;
     Params.mbcodeoutFile = NULL;
     Params.mbQpFile      = NULL;
-    Params.bRepackPreencMV = false;
+    Params.bRepackPreencMV      = false;
     Params.bFieldProcessingMode = false;
-    Params.bMBSize = false;
-    Params.memType = D3D9_MEMORY; //only HW memory is supported (ENCODE supports SW memory)
-    Params.bRefType  = MFX_B_REF_UNKNOWN; //let MSDK library to decide wheather to use B-pyramid or not
+    Params.bMBSize  = false;
+    Params.memType  = D3D9_MEMORY; //only HW memory is supported (ENCODE supports SW memory)
+    Params.bRefType = MFX_B_REF_UNKNOWN; //let MSDK library to decide wheather to use B-pyramid or not
     Params.QP              = 26; //default qp value
     Params.SearchWindow    = 5;  //48x40 (48 SUs)
     Params.RefWidth        = 32;

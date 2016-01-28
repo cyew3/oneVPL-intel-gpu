@@ -54,7 +54,7 @@ CEncTaskPool::CEncTaskPool()
     m_pmfxSession       = NULL;
     m_nTaskBufferStart  = 0;
     m_nPoolSize         = 0;
-    m_nFieldId          = 0;
+    m_nFieldId          = NOT_IN_SINGLE_FIELD_MODE;
 }
 
 CEncTaskPool::~CEncTaskPool()
@@ -119,7 +119,16 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask()
         {
             //Write output for encode
             mfxBitstream& bs = m_pTasks[m_nTaskBufferStart].mfxBS;
-            DropENCODEoutput(bs, m_nFieldId);
+            if (m_nFieldId == NOT_IN_SINGLE_FIELD_MODE){
+                for (int fieldId = 0; fieldId < ((bs.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2); fieldId++){
+                    sts = DropENCODEoutput(bs, fieldId);
+                    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                }
+            }
+            else{
+                sts = DropENCODEoutput(bs, m_nFieldId);
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            }
 
             sts = m_pTasks[m_nTaskBufferStart].WriteBitstream();
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -209,12 +218,11 @@ mfxStatus CEncTaskPool::DropENCODEoutput(mfxBitstream& bs, mfxU32 m_nFieldId)
         case MFX_EXTBUFF_FEI_ENC_MV:
             if (mvENCPAKout)
             {
-                mvBufCounter++;
-                if ((m_nFieldId) && (mvBufCounter != m_nFieldId))
+                if (mvBufCounter++ != m_nFieldId)
                     continue;
 
                 mvBuf = (mfxExtFeiEncMV*)(bs.ExtParam[i]);
-                if (!(extractType(bs.FrameType, (bs.PicStruct & MFX_PICSTRUCT_FIELD_BFF) ? 1 - m_nFieldId : m_nFieldId) & MFX_FRAMETYPE_I)){
+                if (!(extractType(bs.FrameType, m_nFieldId) & MFX_FRAMETYPE_I)){
                     SAFE_FWRITE(mvBuf->MB, sizeof(mvBuf->MB[0])*mvBuf->NumMBAlloc, 1, mvENCPAKout, MFX_ERR_MORE_DATA);
                 }
                 else{
@@ -228,22 +236,20 @@ mfxStatus CEncTaskPool::DropENCODEoutput(mfxBitstream& bs, mfxU32 m_nFieldId)
             break;
 
         case MFX_EXTBUFF_FEI_ENC_MB_STAT:
-            mbStatBufCounter++;
-            if ((m_nFieldId) && (mbStatBufCounter != m_nFieldId))
-                continue;
-
             if (mbstatout){
+                if (mbStatBufCounter++ != m_nFieldId)
+                    continue;
+
                 mbstatBuf = (mfxExtFeiEncMBStat*)(bs.ExtParam[i]);
                 SAFE_FWRITE(mbstatBuf->MB, sizeof(mbstatBuf->MB[0])*mbstatBuf->NumMBAlloc, 1, mbstatout, MFX_ERR_MORE_DATA);
             }
             break;
 
         case MFX_EXTBUFF_FEI_PAK_CTRL:
-            mbCodeBufCounter++;
-            if ((m_nFieldId) && (mbCodeBufCounter != m_nFieldId))
-                continue;
-
             if (mbcodeout){
+                if (mbCodeBufCounter++ != m_nFieldId)
+                    continue;
+
                 mbcodeBuf = (mfxExtFeiPakMBCtrl*)(bs.ExtParam[i]);
                 SAFE_FWRITE(mbcodeBuf->MB, sizeof(mbcodeBuf->MB[0])*mbcodeBuf->NumMBAlloc, 1, mbcodeout, MFX_ERR_MORE_DATA);
             }

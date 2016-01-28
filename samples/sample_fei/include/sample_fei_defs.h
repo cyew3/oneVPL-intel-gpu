@@ -477,9 +477,9 @@ inline mfxU16 createType(iTask& task)
     return ((mfxU16)task.m_type[!GetFirstField(task)] << 8) | task.m_type[GetFirstField(task)];
 }
 
-inline mfxU8 extractType(mfxU16 type, mfxU32 parity)
+inline mfxU8 extractType(mfxU16 type, mfxU32 fieldId)
 {
-    return parity ? (type>>8) : (type&255);
+    return fieldId ? (type >> 8) : (type & 255);
 }
 
 struct BasePredicateForRefPic

@@ -39,6 +39,8 @@
 #define MFX_FRAMETYPE_IP  (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P                  )
 #define MFX_FRAMETYPE_PB  (                  MFX_FRAMETYPE_P | MFX_FRAMETYPE_B)
 
+#define NOT_IN_SINGLE_FIELD_MODE 4
+
 enum {
     MVC_DISABLED          = 0x0,
     MVC_ENABLED           = 0x1,
