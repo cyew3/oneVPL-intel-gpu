@@ -495,6 +495,7 @@ STRUCT(mfxPluginUID,
 STRUCT(mfxExtFeiParam,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxFeiFunction, Func)
+    FIELD_T(mfxU16, SingleFieldProcessing)
 )
 
 STRUCT(mfxExtFeiEncFrameCtrl,

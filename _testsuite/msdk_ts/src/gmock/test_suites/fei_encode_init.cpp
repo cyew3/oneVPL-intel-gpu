@@ -23,7 +23,8 @@ private:
 
     enum
     {
-        MFXPAR = 1
+        MFXPAR = 1,
+        MFXFEIPAR,
     };
 
     struct tc_struct
@@ -67,6 +68,54 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
     {/*07*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 4}},
     {/*08*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.AsyncDepth, 4}},
+
+    /* invalid values for each field for Init() function */
+    {/*09*/ MFX_ERR_MEMORY_ALLOC, 0, {MFXPAR, &tsStruct::mfxVideoParam.AsyncDepth, 0xffff}},
+    {/*10*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.Protected, 0xffff}},
+    {/*11*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.IOPattern, 0x50}},
+    {/*12*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.LowPower, 0x40}},
+    {/*13*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.BRCParamMultiplier, 0xffffffff}},
+    {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecId, 0xff}},
+    {/*15*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, 0x40}},
+    {/*16*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, 0xffff}},
+    {/*17*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumThread, 0xffff}},
+    {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 8}},
+    {/*19*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 0xffff}},
+    {/*20*/ MFX_ERR_UNSUPPORTED, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0xffff}},
+    {/*21*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopOptFlag, 0xf0}},
+    {/*22*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 0xffff}},
+    {/*23*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, 16}},
+    {/*24*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 0xff}},
+    {/*25*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 0xffff}},
+    {/*26*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.EncodedOrder, 0xffff}},
+    {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.DecodedOrder, 0x80}},
+    {/*28*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.MaxDecFrameBuffering, 0xffff}},
+    {/*29*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.ExtendedPicStruct, 0x80}},
+    {/*30*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.TimeStampCalc, 4}},
+    {/*31*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.SliceGroupsPresent, 0xffff}},
+    {/*32*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.JPEGChromaFormat, 0x40}},
+    {/*33*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.InterleavedDec, 0x40}},
+    {/*34*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.Interleaved, 0xffff}},
+    {/*35*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.Quality, 0xffff}},
+    {/*36*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RestartInterval, 0xffff}},
+    {/*37*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, 0xffff}},
+    {/*38*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 0xffff}},
+    {/*39*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Shift, 0xffff}},
+    {/*40*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, 0xffff}},
+    {/*41*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0xf1}},
+    {/*42*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 0xf1}},
+    {/*43*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 0xffff}},
+    {/*44*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 0xffff}},
+    {/*45*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 0xffff}},
+    {/*46*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 0xffff}},
+    {/*47*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 0xffffffff}},
+    {/*48*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 0xffffffff}},
+    {/*49*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioW, 0xffff}},
+    {/*50*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioH, 0xffff}},
+    {/*51*/ MFX_ERR_NONE, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 0x80}},
+    {/*52*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, 0xff}},
+    {/*53*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXFEIPAR, &tsStruct::mfxExtFeiParam.Func, MFX_FEI_FUNCTION_PAK}},
+    {/*54*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {MFXFEIPAR, &tsStruct::mfxExtFeiParam.SingleFieldProcessing, 0x40}},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -84,6 +133,8 @@ int TestSuite::RunTest(unsigned int id)
     m_pPar->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
     // set up parameters for case
     SETPARS(m_pPar, MFXPAR);
+    mfxExtFeiParam& feiParam = m_par;
+    SETPARS(&feiParam, MFXFEIPAR);
 
     bool hw_surf = m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY;
     if (hw_surf)
