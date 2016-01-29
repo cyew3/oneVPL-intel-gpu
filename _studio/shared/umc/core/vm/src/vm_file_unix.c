@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 /*
@@ -88,12 +88,18 @@ Ipp32s vm_dir_mkdir(vm_char *path) {
 
 static vm_char *d_name = NULL;
 Ipp32s vm_dir_open(vm_dir **dd, vm_char *path) {
-   if ((dd[0]=opendir(path)) != NULL) {
+  if ((dd[0]=opendir(path)) != NULL) {
     d_name = NULL;
-    getcwd(d_name, 0);
-    chdir(path);
+    if(getcwd(d_name, 0) == NULL)
+    {
+      return 0;
     }
-   return (dd[0] != NULL) ? 1 : 0;
+    if(chdir(path))
+    {
+      return 0;
+    }
+  }
+  return (dd[0] != NULL) ? 1 : 0;
 }
 
 /*
@@ -113,7 +119,10 @@ Ipp32s vm_dir_read(vm_dir *dd, vm_char *filename,int nchars) {
 void vm_dir_close(vm_dir *dd) {
   if (dd != NULL) {
     if (d_name != NULL) {
-      chdir(d_name);
+      if(chdir(d_name))
+      {
+        // Add error handling
+      }
       free(d_name);
       d_name = NULL;
       }

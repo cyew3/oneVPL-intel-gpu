@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -636,7 +636,8 @@ Status DARtoPAR(Ipp32s width, Ipp32s height, Ipp32s dar_h, Ipp32s dar_v,
   // (width*par_h) / (height*par_v) == dar_h/dar_v =>
   // par_h / par_v == dar_h * height / (dar_v * width)
   Ipp32s simple_tab[] = {2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59};
-  Ipp32s i, denom;
+  Ipp32s denom;
+  size_t i;
 
   // suppose no overflow of 32s
   Ipp32s h = dar_h * height;
