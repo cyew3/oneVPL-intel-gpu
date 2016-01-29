@@ -44,10 +44,12 @@ namespace UMC
         Ipp32u frameSize = 0;
 
         if((Ipp32u)Info.in->GetBufferSize() == 0)
+        {
             if((Ipp32u)Info.out->GetDataSize() == 0)
                 return UMC_ERR_END_OF_STREAM;
             else
                 return UMC_OK;
+        }
 
         if((Ipp32u)Info.out->GetDataSize() == 0)
         {

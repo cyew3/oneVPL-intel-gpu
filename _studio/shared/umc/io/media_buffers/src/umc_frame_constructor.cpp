@@ -3611,6 +3611,7 @@ Status MJPEGFrameConstructor::GetFrame(SplMediaData *frame)
 
                 return UMC_OK;
             }
+            case StateWaitMarkerLength : break;
         }
     }
     switch(m_state)

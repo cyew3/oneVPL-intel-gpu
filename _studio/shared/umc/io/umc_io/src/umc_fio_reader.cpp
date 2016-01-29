@@ -51,7 +51,7 @@ UMC::Status UMC::FIOReader::Init(DataReaderParams *pInit)
     if (UMC_OK == umcRes)
     {
         Ipp64u lRes = vm_file_ftell(m_pFile);
-        if (-1 == lRes)
+        if (-1 == static_cast<int>(lRes))
         {   umcRes = UMC_ERR_FAILED;  }
         else
         {   m_stFileSize = (Ipp64u)lRes;    }
