@@ -4398,7 +4398,7 @@ mfxStatus CEncodingPipeline::FreeBuffers(std::list<bufSet*> bufs)
 
         MSDK_SAFE_DELETE_ARRAY((*it)->PB_bufs.out.ExtParam);
         MSDK_SAFE_DELETE_ARRAY((*it)-> I_bufs.out.ExtParam);
-
+        MSDK_SAFE_DELETE(*it);
     } // for (std::list<bufSet*>::iterator it = bufs.begin(); it != bufs.end(); ++it)
 
     bufs.clear();
