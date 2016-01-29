@@ -286,7 +286,6 @@ int TestSuite::RunTest(unsigned int id)
         memset(m_bitstream.Data, 0xFF, m_bitstream.DataLength);
         m_bitstream.DataLength += stream.Read(m_bitstream.Data + m_bitstream.DataLength, m_bitstream.MaxLength - m_bitstream.DataLength);
     }
-
     MFXInit();
 
     if(m_uid)
@@ -350,11 +349,20 @@ int TestSuite::RunTest(unsigned int id)
             ADD_FAILURE() << "FAILED: DecodeHeader should not change fields other than FrameInfo, CodecProfile, CodecLevel, DecodedOrder";
         }
 
+        mfxU16 expected_width = (mfxU16)sps.pic_width_in_luma_samples;
+        mfxU16 expected_height = (mfxU16)sps.pic_height_in_luma_samples;
+
+        if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCD_HW.Data, sizeof(MFX_PLUGINID_HEVCD_HW.Data)))
+        {
+            expected_width = (((mfxU16)sps.pic_width_in_luma_samples + 64 - 1) & ~(64 - 1));
+            expected_height = (((mfxU16)sps.pic_height_in_luma_samples + 64 - 1) & ~(64 - 1));
+        }
+
         EXPECT_EQ((mfxU16)sps.ptl.general.profile_idc,  m_par.mfx.CodecProfile);
         EXPECT_EQ((mfxU16)sps.ptl.general.level_idc/3,  m_par.mfx.CodecLevel);
         EXPECT_EQ(expectedFrameRate, FrameRate);
-        EXPECT_EQ((mfxU16)sps.pic_width_in_luma_samples, m_par.mfx.FrameInfo.Width);
-        EXPECT_EQ((mfxU16)sps.pic_height_in_luma_samples, m_par.mfx.FrameInfo.Height);
+        EXPECT_EQ(expected_width, m_par.mfx.FrameInfo.Width);
+        EXPECT_EQ(expected_height, m_par.mfx.FrameInfo.Height);
         EXPECT_EQ((mfxU16)sps.chroma_format_idc, m_par.mfx.FrameInfo.ChromaFormat);
         EXPECT_EQ(GetARW(sps.vui), m_par.mfx.FrameInfo.AspectRatioW);
         EXPECT_EQ(GetARH(sps.vui), m_par.mfx.FrameInfo.AspectRatioH);
