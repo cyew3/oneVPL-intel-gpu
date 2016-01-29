@@ -311,7 +311,7 @@ mfxStatus tsVideoDecoder::DecodeFrameAsync()
         SetPar4_DecodeFrameAsync();
     }
     DecodeFrameAsync(m_session, m_pBitstream, m_pSurf, &m_pSurfOut, m_pSyncPoint);
-    if(g_tsStatus.get() == 0)
+    if(g_tsStatus.get() == MFX_ERR_NONE || (g_tsStatus.get() == MFX_WRN_VIDEO_PARAM_CHANGED && *m_pSyncPoint != NULL))
     {
         m_surf_out.insert( std::make_pair(*m_pSyncPoint, m_pSurfOut) );
         if(m_pSurfOut)
@@ -408,7 +408,7 @@ mfxStatus tsVideoDecoder::DecodeFrames(mfxU32 n, bool check)
             continue;
         }
 
-        if(MFX_ERR_MORE_SURFACE == res || res > 0)
+        if(MFX_ERR_MORE_SURFACE == res || res > 0 && *m_pSyncPoint == NULL)
         {
             continue;
         }
