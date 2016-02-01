@@ -1929,7 +1929,9 @@ mfxStatus H265Encoder::SyncOnFrameCompletion(H265EncodeTaskInputParams *inputPar
     }
 
     // bs update on completion stage
+    vm_mutex_lock(&m_critSect);
     vm_interlocked_cas32(&(inputParam->m_doStage), 4, 5);
+    vm_mutex_unlock(&m_critSect);
 
     if (m_videoParam.hrdPresentFlag)
         m_hrd.Update((bs->DataLength - initialDataLength) * 8, *frame);
