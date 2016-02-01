@@ -499,7 +499,6 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiSPS &
     std::string str;
 
     str += dump(structName + ".Header", _struct.Header) + "\n";
-    DUMP_FIELD(Pack);
     DUMP_FIELD(SPSId);
     DUMP_FIELD(Profile);
     DUMP_FIELD(Level);
@@ -524,7 +523,6 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPPS &
     std::string str;
 
     str += dump(structName + ".Header", _struct.Header) + "\n";
-    DUMP_FIELD(Pack);
     DUMP_FIELD(SPSId);
     DUMP_FIELD(PPSId);
     DUMP_FIELD(FrameNum);
@@ -551,7 +549,6 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiSlice
 
     DUMP_FIELD(NumSliceAlloc);
     DUMP_FIELD(NumSlice);
-    DUMP_FIELD(Pack);
 
     if (_struct.Slice)
     {

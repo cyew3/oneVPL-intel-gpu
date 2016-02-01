@@ -309,8 +309,6 @@ typedef struct {
 typedef struct {
     mfxExtBuffer    Header;
 
-    mfxU16    Pack;
-
     mfxU16    SPSId;
     mfxU16    Profile;
     mfxU16    Level;
@@ -333,8 +331,6 @@ typedef struct {
 
 typedef struct {
     mfxExtBuffer    Header;
-
-    mfxU16    Pack;
 
     mfxU16    SPSId;
     mfxU16    PPSId;
@@ -362,7 +358,6 @@ typedef struct {
 //    mfxU32  reserved[];
     mfxU16    NumSliceAlloc;
     mfxU16    NumSlice;
-    mfxU16    Pack;
 
     struct mfxSlice{
         mfxU16    MBAaddress;
