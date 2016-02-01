@@ -5245,7 +5245,7 @@ mfxStatus MFXVideoENCODEH264::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
                 out->calcParam.TargetKbps = in->calcParam.TargetKbps;
                 out->calcParam.InitialDelayInKB = in->calcParam.InitialDelayInKB;
                 if (out->mfx.FrameInfo.Width && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.FrameRateExtD && out->calcParam.TargetKbps &&
-                    ((opts2_out == 0 || opts2_out) && (opts2_in->BitrateLimit != MFX_CODINGOPTION_OFF))) {
+                    (opts2_out == 0 || (opts2_out && opts2_in->BitrateLimit != MFX_CODINGOPTION_OFF))) {
                     // last denominator 700 gives about 1 Mbps for 1080p x 30
                     mfxU32 minBitRate = (mfxU32)((mfxF64)out->mfx.FrameInfo.Width * out->mfx.FrameInfo.Height * 12 // size of raw image (luma + chroma 420) in bits
                                                  * out->mfx.FrameInfo.FrameRateExtN / out->mfx.FrameInfo.FrameRateExtD / 1000 / 700);
