@@ -486,6 +486,8 @@ void MfxVideoParam::CopyCalcParams(MfxVideoParam const & par)
     LCUSize          = par.LCUSize;
     InsertHRDInfo    = par.InsertHRDInfo;
     RawRef           = par.RawRef;
+    SetTL(par.m_ext.AVCTL);
+
 }
 
 MfxVideoParam& MfxVideoParam::operator=(MfxVideoParam const & par)
