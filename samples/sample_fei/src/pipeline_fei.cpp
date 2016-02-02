@@ -4691,8 +4691,10 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
     mfxU32 total_l0 = (ExtractFrameType(*eTask, m_isField) & MFX_FRAMETYPE_P) ? ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_IDR) ? 1 : NumActiveRefP) : ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) ? 1 : NumActiveRefBL0);
     mfxU32 total_l1 = (ExtractFrameType(*eTask) & MFX_FRAMETYPE_B) ? (eTask->m_fieldPicFlag ? NumActiveRefBL1_i : NumActiveRefBL1) : 1; // just one iteration here for non-B
 
-    total_l0 = IPP_MIN(total_l0, m_mfxEncParams.mfx.NumRefFrame); // adjust to
-    total_l1 = IPP_MIN(total_l1, m_mfxEncParams.mfx.NumRefFrame); // user input
+    mfxU32 adj = m_encpakParams.bNPredSpecified ? m_encpakParams.NumMVPredictors : m_numOfFields*m_mfxEncParams.mfx.NumRefFrame;
+
+    total_l0 = IPP_MIN(total_l0, adj); // adjust to
+    total_l1 = IPP_MIN(total_l1, adj); // user input
 
     int preenc_ref_idx[2][2]; // indexes means [fieldId][L0L1]
     int ref_fid[2][2];
