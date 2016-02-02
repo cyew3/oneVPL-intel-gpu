@@ -801,7 +801,10 @@ namespace
         return DEFAULT_BY_TU[targetUsage];
     }
 
-    mfxU16 GetDefaultMaxNumRefActivePL0(mfxU32 targetUsage, eMFXHWType platform, bool isLowPower)
+    mfxU16 GetDefaultMaxNumRefActivePL0(mfxU32 targetUsage, 
+                                        eMFXHWType platform,
+                                        bool isLowPower,
+                                        const mfxFrameInfo& info)
     {
         if (platform == MFX_HW_IVB || platform == MFX_HW_VLV)
             return 1;
@@ -812,8 +815,17 @@ namespace
         }
         else if (!isLowPower)
         {
-            mfxU16 const DEFAULT_BY_TU[] = { 0, 8, 6, 4, 3, 2, 1, 1 };
-            return DEFAULT_BY_TU[targetUsage];
+            if((info.Width < 3840 && info.Height < 2160) ||
+               (info.PicStruct != MFX_PICSTRUCT_PROGRESSIVE))
+            {
+                mfxU16 const DEFAULT_BY_TU[] = { 0, 8, 6, 4, 3, 2, 1, 1 };
+                return DEFAULT_BY_TU[targetUsage];
+            }
+            else //progressive >= 4K
+            {
+                mfxU16 const DEFAULT_BY_TU[] = { 0, 4, 4, 4, 3, 2, 1, 1 };
+                return DEFAULT_BY_TU[targetUsage];
+            }
         }
         else
         {
@@ -4588,7 +4600,7 @@ void MfxHwH264Encode::SetDefaults(
     }
     if (extDdi->NumActiveRefP == 0)
     {
-        extDdi->NumActiveRefP = GetDefaultMaxNumRefActivePL0(par.mfx.TargetUsage, platform,IsOn(par.mfx.LowPower));
+        extDdi->NumActiveRefP = GetDefaultMaxNumRefActivePL0(par.mfx.TargetUsage, platform,IsOn(par.mfx.LowPower),par.mfx.FrameInfo);
         /* WA: it will be fixed for legacy encoder too
          * Additional for FEI ENCODE: we can use 4 ref in L0 references for TU4
          * */
