@@ -651,7 +651,12 @@ typedef struct {
     mfxI16      DeblockingAlphaTcOffset;  /* -12..12 (slice_alpha_c0_offset_div2 << 1) */
     mfxI16      DeblockingBetaOffset;     /* -12..12 (slice_beta_offset_div2 << 1) */
     mfxU16      GPB;                      /* tri-state option */
-    mfxU16      reserved[222];
+
+    mfxU32      MaxFrameSizeI;
+    mfxU32      MaxFrameSizeP;
+    mfxU32      reserved1[3];
+
+    mfxU16      reserved[212];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
@@ -733,7 +738,11 @@ enum {
     MFX_EXTBUFF_CODING_OPTION_VPS          = MFX_MAKEFOURCC('C','O','V','P'),
     MFX_EXTBUFF_VPP_ROTATION               = MFX_MAKEFOURCC('R','O','T',' '),
     MFX_EXTBUFF_ENCODED_SLICES_INFO        = MFX_MAKEFOURCC('E','N','S','I'),
-    MFX_EXTBUFF_VPP_SCALING                = MFX_MAKEFOURCC('V','S','C','L')
+    MFX_EXTBUFF_VPP_SCALING                = MFX_MAKEFOURCC('V','S','C','L'),
+    MFX_EXTBUFF_HEVC_REFLIST_CTRL          = MFX_EXTBUFF_AVC_REFLIST_CTRL,
+    MFX_EXTBUFF_HEVC_REFLISTS              = MFX_EXTBUFF_AVC_REFLISTS,
+    MFX_EXTBUFF_HEVC_TEMPORAL_LAYERS       = MFX_EXTBUFF_AVC_TEMPORAL_LAYERS,
+    MFX_EXTBUFF_VPP_MIRRORING              = MFX_MAKEFOURCC('M','I','R','R')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1144,11 +1153,20 @@ typedef struct {
     mfxExtBuffer    Header;
     mfxU16          reserved1[4];
 
-    struct  {
-        mfxU16  TransferMatrix;
-        mfxU16  NominalRange;
-        mfxU16  reserved2[6];
-    } In, Out;
+    union {
+        struct { // Init
+            struct  {
+                mfxU16  TransferMatrix;
+                mfxU16  NominalRange;
+                mfxU16  reserved2[6];
+            } In, Out;
+        };
+        struct { // Runtime
+            mfxU16  TransferMatrix;
+            mfxU16  NominalRange;
+            mfxU16  reserved3[14];
+        };
+    };
 } mfxExtVPPVideoSignalInfo;
 
 typedef struct {
@@ -1553,6 +1571,25 @@ typedef struct {
     mfxU16 Type;
     mfxU16 reserved[11];
 } mfxExtSceneChange;
+
+typedef mfxExtAVCRefListCtrl mfxExtHEVCRefListCtrl;
+typedef mfxExtAVCRefLists mfxExtHEVCRefLists;
+typedef mfxExtAvcTemporalLayers mfxExtHEVCTemporalLayers;
+
+/* MirroringType */
+enum
+{
+    MFX_MIRRORING_DISABLED   = 0,
+    MFX_MIRRORING_HORIZONTAL = 1,
+    MFX_MIRRORING_VERTICAL   = 2
+};
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16 Type;
+    mfxU16 reserved[11];
+} mfxExtVPPMirroring;
 
 #ifdef __cplusplus
 } // extern "C"
