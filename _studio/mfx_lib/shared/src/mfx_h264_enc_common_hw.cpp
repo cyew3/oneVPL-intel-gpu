@@ -833,11 +833,20 @@ namespace
         }
     }
 
-    mfxU16 GetDefaultMaxNumRefActiveBL1(mfxU32 targetUsage, eMFXHWType platform)
+    mfxU16 GetDefaultMaxNumRefActiveBL1(const mfxU32 targetUsage, 
+                                        const eMFXHWType platform,
+                                        const mfxU16 picStruct)
     {
-        platform; targetUsage;
-        mfxU16 const DEFAULT_BY_TU[] = { 2, 2, 1, 1, 1, 1, 1, 1 };
-        return DEFAULT_BY_TU[targetUsage];
+        if ((platform >= MFX_HW_HSW && platform != MFX_HW_VLV) && 
+            picStruct != MFX_PICSTRUCT_PROGRESSIVE)
+        {
+            mfxU16 const DEFAULT_BY_TU[] = { 0, 2, 2, 2, 2, 2, 1, 1 };
+            return DEFAULT_BY_TU[targetUsage];
+        }
+        else
+        {
+            return 1;
+        }
     }
 
     mfxU16 GetDefaultIntraPredBlockSize(
@@ -4570,7 +4579,7 @@ void MfxHwH264Encode::SetDefaults(
 
         if (extDdi->NumActiveRefBL1 == 0)
         {
-            extDdi->NumActiveRefBL1 = GetDefaultMaxNumRefActiveBL1(par.mfx.TargetUsage, platform);
+            extDdi->NumActiveRefBL1 = GetDefaultMaxNumRefActiveBL1(par.mfx.TargetUsage, platform, par.mfx.FrameInfo.PicStruct);
             /* Additional for FEI ENCODE: we can use 2 L1 references */
             if ((isENCPAK) &&
                     ( (MFX_PICSTRUCT_FIELD_TFF == par.mfx.FrameInfo.PicStruct) ||
