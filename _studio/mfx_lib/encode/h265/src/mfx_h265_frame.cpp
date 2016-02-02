@@ -400,9 +400,6 @@ namespace H265Enc {
         if (!par->doDumpRecon)
             return;
 
-        vm_char *fname = par->reconDumpFileName;
-        Ipp32s frame_num = frame->m_encOrder;
-        vm_file *f;
         mfxU8* fbuf = NULL;
         Ipp32s W = par->Width - par->CropLeft - par->CropRight;
         Ipp32s H = par->Height - par->CropTop - par->CropBottom;
@@ -413,69 +410,63 @@ namespace H265Enc {
         Ipp32s shift = 2 - shift_w - shift_h;
         Ipp32s plane_size = (W*H << bd_shift_luma) + (((W*H/2) << shift) << bd_shift_chroma);
 
-        Ipp32s numlater = 0; // number of dumped frames with later POC
-        if (frame->m_picCodeType == MFX_FRAMETYPE_B) {
-            for (FrameIter it = dpb.begin(); it != dpb.end(); it++ ) {
-                Frame *pFrm = (*it);
-                if ( NULL == (*it)->m_origin && frame->m_poc < pFrm->m_poc)
-                    numlater++;
-            }
-        }
-        if ( numlater ) { // simple reorder for B: read last ref, replacing with B, write ref
-            f = vm_file_fopen(fname,VM_STRING("r+b"));
-            if (!f) return;
-            fbuf = new mfxU8[numlater*plane_size];
-            vm_file_fseek(f, -numlater*plane_size, VM_FILE_SEEK_END);
-            vm_file_fread(fbuf, 1, numlater*plane_size, f);
-            vm_file_fseek(f, -numlater*plane_size, VM_FILE_SEEK_END);
-        } else {
-            f = vm_file_fopen(fname, frame_num ? VM_STRING("a+b") : VM_STRING("wb"));
-            if (!f) return;
-        }
-
+        vm_file *f = vm_file_fopen(par->reconDumpFileName, frame->m_frameOrder ? VM_STRING("ab") : VM_STRING("wb"));
         if (f == NULL)
             return;
 
+        Ipp64s seekPos = (par->picStruct == PROGR) ? frame->m_frameOrder * plane_size : (frame->m_frameOrder/2) * (plane_size*2);
+        vm_file_fseek(f, seekPos, VM_FILE_SEEK_SET);
+
         FrameData* recon = frame->m_recon;
-        int i;
         mfxU8 *p = recon->y + ((par->CropLeft + par->CropTop * recon->pitch_luma_pix) << bd_shift_luma);
-        for (i = 0; i < H; i++) {
+        for (Ipp32s i = 0; i < H; i++) {
+            if (par->picStruct != PROGR && frame->m_bottomFieldFlag)
+                vm_file_seek(f, W<<bd_shift_luma, VM_FILE_SEEK_CUR);
+
             vm_file_fwrite(p, 1<<bd_shift_luma, W, f);
             p += recon->pitch_luma_bytes;
+
+            if (par->picStruct != PROGR && !frame->m_bottomFieldFlag)
+                vm_file_seek(f, W<<bd_shift_luma, VM_FILE_SEEK_CUR);
         }
+
         // writing nv12 to yuv420
-        // maxlinesize = 4096
-        if (W <= 2048*2) { // else invalid dump
+        // maxlinesize = 8192
+        if (W <= 4096*2) { // else invalid dump
             if (bd_shift_chroma) {
-                mfxU16 uvbuf[2048];
+                mfxU16 uvbuf[4096];
                 mfxU16 *p;
                 for (int part = 0; part <= 1; part++) {
                     p = (Ipp16u*)recon->uv + part + (par->CropLeft >> shift_w << 1) + (par->CropTop>>shift_h) * recon->pitch_chroma_pix;
-                    for (i = 0; i < H >> shift_h; i++) {
+                    for (Ipp32s i = 0; i < H >> shift_h; i++) {
                         for (int j = 0; j < W>>shift_w; j++)
                             uvbuf[j] = p[2*j];
+                        if (par->picStruct != PROGR && frame->m_bottomFieldFlag)
+                            vm_file_seek(f, W<<bd_shift_chroma>>shift_w, VM_FILE_SEEK_CUR);
                         vm_file_fwrite(uvbuf, 2, W>>shift_w, f);
                         p += recon->pitch_chroma_pix;
+                        if (par->picStruct != PROGR && !frame->m_bottomFieldFlag)
+                            vm_file_seek(f, W<<bd_shift_chroma>>shift_w, VM_FILE_SEEK_CUR);
                     }
                 }
             } else {
-                mfxU8 uvbuf[2048];
+                mfxU8 uvbuf[4096];
                 for (int part = 0; part <= 1; part++) {
                     p = recon->uv + part + (par->CropLeft >> shift_w << 1) + (par->CropTop>>shift_h) * recon->pitch_chroma_pix;
-                    for (i = 0; i < H >> shift_h; i++) {
+                    for (Ipp32s i = 0; i < H >> shift_h; i++) {
                         for (int j = 0; j < W>>shift_w; j++)
                             uvbuf[j] = p[2*j];
+                        if (par->picStruct != PROGR && frame->m_bottomFieldFlag)
+                            vm_file_seek(f, W<<bd_shift_chroma>>shift_w, VM_FILE_SEEK_CUR);
                         vm_file_fwrite(uvbuf, 1, W>>shift_w, f);
                         p += recon->pitch_chroma_pix;
+                        if (par->picStruct != PROGR && !frame->m_bottomFieldFlag)
+                            vm_file_seek(f, W<<bd_shift_chroma>>shift_w, VM_FILE_SEEK_CUR);
                     }
                 }
             }
         }
 
-        if (fbuf) {
-            vm_file_fwrite(fbuf, 1, numlater*plane_size, f);
-            delete[] fbuf;
-        }
         vm_file_fclose(f);
     }
 
