@@ -534,7 +534,8 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
     //set frame type
     mfxU8 mtype_first_field = 0;
     mfxU8 mtype_second_field = 0;
-    if ((0 == input->NumFrameL0)  && (0 == input->NumFrameL1))
+    if ( ((0 == input->NumFrameL0)  && (0 == input->NumFrameL1)) ||
+        (0 == input->InSurface->Data.FrameOrder))
         mtype_first_field = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR;
     else if ((0 != input->NumFrameL0)  && (0 == input->NumFrameL1))
         mtype_first_field = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
@@ -551,16 +552,25 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
          * BUT in (mfxENCInput *input) described only one list, which is same for
          * first and second field.
          * */
-        if ((0 == input->NumFrameL0)  && (0 == input->NumFrameL1))
+        if ( ((0 == input->NumFrameL0)  && (0 == input->NumFrameL1)) ||
+            (0 == input->InSurface->Data.FrameOrder))
             mtype_second_field = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR;
         else if ((0 != input->NumFrameL0)  && (0 == input->NumFrameL1))
             mtype_second_field = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
         else if ((0 != input->NumFrameL0)  || (0 != input->NumFrameL1))
             mtype_second_field = MFX_FRAMETYPE_B;
+        /* WA for IP pair */
+        if (0 == input->InSurface->Data.FrameOrder)
+        {
+                mtype_second_field = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
+                //mtype_second_field = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR;
+        }
     }
 
     /* each I- is IDR */
-    if (mtype_first_field & MFX_FRAMETYPE_IDR)
+    if (!(mtype_first_field & MFX_FRAMETYPE_IDR))
+        m_free.front().m_insertSps[0] = m_free.front().m_insertSps[1] = 0;
+    else
     {
         m_free.front().m_frameOrderIdr = input->InSurface->Data.FrameOrder;
         /* Need to insert SPS for IDR frame */
@@ -598,7 +608,10 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
     task.m_fid[1]       = task.m_fieldPicFlag - task.m_fid[0];
 
     if (task.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF)
+    {
         std::swap(task.m_type.top, task.m_type.bot);
+        std::swap(task.m_insertSps[0],task.m_insertSps[1]);
+    }
 
     m_core->IncreaseReference(&input->InSurface->Data);
 
