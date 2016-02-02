@@ -316,6 +316,7 @@
     <ClCompile Include="src\gmock\test_suites\hevcd_query.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_res_change.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vpp_video_signal_info.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_deinterlacing.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_douse.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_getvppstat.cpp" />
