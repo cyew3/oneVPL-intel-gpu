@@ -3,7 +3,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -330,7 +330,7 @@ mfxStatus GetNativeHandleToRawSurface(
     nativeHandle = 0;
 
     if (   video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
-        || video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+        || (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
         sts = fa.GetHDL(fa.pthis, task.m_midRaw, &nativeHandle);
     else if (   video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY
              || video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
@@ -354,7 +354,7 @@ mfxStatus CopyRawSurfaceToVideoMemory(
     mfxFrameSurface1 * surface = task.m_surf_real;
 
     if (   video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
-        || video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+        || (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
     {
         mfxFrameAllocator & fa = core.FrameAllocator();
         mfxFrameData d3dSurf = {};
@@ -825,7 +825,7 @@ template<class T> void OptimizeSTRPS(T const & list, mfxU8 n, STRPS& oldRPS, mfx
         return;
 
     STRPS newRPS;
-    mfxI8 k = 0, i = 0, j = 0;
+    int k = 0, i = 0, j = 0;
 
     for (k = idx - 1; k >= 0; k --)
     {
@@ -1200,7 +1200,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
 
         for (mfxU32 i = 0; (moreLTR || sets.size() != 64); i ++)
         {
-            FakeTask new_frame = {i, GetFrameType(*this, i), 0, (mfxU32)MFX_FRAMEORDER_UNKNOWN};
+            FakeTask new_frame = {static_cast<int>(i), GetFrameType(*this, i), 0, (mfxU32)MFX_FRAMEORDER_UNKNOWN};
 
             frames.push_back(new_frame);
 
@@ -1743,7 +1743,7 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask, Sli
     {
         s.num_ref_idx_active_override_flag =
            (          m_pps.num_ref_idx_l0_default_active_minus1 + 1 != task.m_numRefActive[0]
-            || isB && m_pps.num_ref_idx_l1_default_active_minus1 + 1 != task.m_numRefActive[1]);
+            || (isB && m_pps.num_ref_idx_l1_default_active_minus1 + 1 != task.m_numRefActive[1]));
 
         s.num_ref_idx_l0_active_minus1 = task.m_numRefActive[0] - 1;
 
@@ -2041,7 +2041,7 @@ mfxU8 GetFrameType(
         return (MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF);
 
     //if ((gopOptFlag & MFX_GOP_STRICT) == 0)
-        if ((frameOrder + 1) % gopPicSize == 0 && (gopOptFlag & MFX_GOP_CLOSED) ||
+        if (((frameOrder + 1) % gopPicSize == 0 && (gopOptFlag & MFX_GOP_CLOSED)) ||
             (idrPicDist && (frameOrder + 1) % idrPicDist == 0))
             return (MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF); // switch last B frame to P frame
 
@@ -2096,7 +2096,7 @@ void InitDPB(
 
         if (pLCtrl)
         {
-            for (mfxU16 i = 0; i < 16 && pLCtrl->RejectedRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN; i++)
+            for (mfxU16 i = 0; i < 16 && pLCtrl->RejectedRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN); i++)
             {
                 mfxU16 idx = GetDPBIdxByFO(dpb, pLCtrl->RejectedRefList[i].FrameOrder);
 
@@ -2165,7 +2165,7 @@ void UpdateDPB(
 
         for (st0 = 0; dpb[st0].m_ltr && st0 < end; st0++);
 
-        for (mfxU16 i = 0; i < 16 && pLCtrl->LongTermRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN; i++)
+        for (mfxU16 i = 0; i < 16 && pLCtrl->LongTermRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN); i++)
         {
             mfxU16 idx = GetDPBIdxByFO(dpb, pLCtrl->LongTermRefList[i].FrameOrder);
 
@@ -2365,7 +2365,7 @@ void ConstructRPL(
         if (pLCtrl->NumRefIdxL1Active)
             MaxRef[1] = Min(pLCtrl->NumRefIdxL1Active, MaxRef[1]);
 
-        for (mfxU16 i = 0; i < 16 && pLCtrl->RejectedRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN; i++)
+        for (mfxU16 i = 0; i < 16 && pLCtrl->RejectedRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN); i++)
         {
             mfxU8 idx = GetDPBIdxByFO(DPB, pLCtrl->RejectedRefList[i].FrameOrder);
 
@@ -2386,7 +2386,7 @@ void ConstructRPL(
             }
         }
 
-        for (mfxU16 i = 0; i < 16 && pLCtrl->PreferredRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN; i++)
+        for (mfxU16 i = 0; i < 16 && pLCtrl->PreferredRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN); i++)
         {
             mfxU8 idx = GetDPBIdxByFO(DPB, pLCtrl->PreferredRefList[i].FrameOrder);
 
@@ -2692,7 +2692,7 @@ mfxI64 CalcDTSFromPTS(
     mfxU16               dpbOutputDelay,
     mfxU64               timeStamp)
 {
-    if (timeStamp != MFX_TIMESTAMP_UNKNOWN)
+    if (timeStamp != static_cast<mfxU64>(MFX_TIMESTAMP_UNKNOWN))
     {
         mfxF64 tcDuration90KHz = (mfxF64)info.FrameRateExtD / (info.FrameRateExtN ) * 90000; // calculate tick duration
         return mfxI64(timeStamp - tcDuration90KHz * dpbOutputDelay); // calculate DTS from PTS

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 //
 */
 #include "mfx_h265_encode_hw.h"
@@ -508,7 +508,7 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
     !Equal(m_vpar.m_sps, parNew.m_sps);
 
     isIdrRequired = isSpsChanged
-        || tempLayerIdx != 0 && changeLyncLayers
+        || (tempLayerIdx != 0 && changeLyncLayers)
         || m_vpar.mfx.GopPicSize != parNew.mfx.GopPicSize
         || m_vpar.m_ext.CO2.IntRefType != parNew.m_ext.CO2.IntRefType;
 
@@ -616,7 +616,7 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
         if (m_vpar.mfx.EncodedOrder)
         {
             task->m_frameType = task->m_ctrl.FrameType;
-            MFX_CHECK(surface->Data.FrameOrder != MFX_FRAMEORDER_UNKNOWN, MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(surface->Data.FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN), MFX_ERR_UNDEFINED_BEHAVIOR);
             MFX_CHECK(task->m_frameType != MFX_FRAMETYPE_UNKNOWN, MFX_ERR_UNDEFINED_BEHAVIOR);
             m_frameOrder = surface->Data.FrameOrder;
         }
@@ -632,7 +632,7 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
             m_lastIDR = m_frameOrder;
 
         task->m_poc = m_frameOrder - m_lastIDR;
-        task->m_fo = task->m_surf->Data.FrameOrder == MFX_FRAMEORDER_UNKNOWN ? m_frameOrder : task->m_surf->Data.FrameOrder;
+        task->m_fo = task->m_surf->Data.FrameOrder == static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN) ? m_frameOrder : task->m_surf->Data.FrameOrder;
         task->m_bpo = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
 
         m_core.IncreaseReference(&surface->Data);

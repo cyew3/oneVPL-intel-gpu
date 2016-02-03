@@ -117,4 +117,7 @@ endforeach()
 set( defs "-DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVCE_HW_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${HEVCE_HW_DESCRIPTION}\"\\\" ${HEVCE_HW_version_defs}" )
 
 gen_plugins_cfg("HEVC_Encoder_HW" ${HEVC_Encoder_HW_GUID} "mfx_hevce_hw64" "02" "HEVC")
+
+set( defs "${defs} -Wall -Werror" )
 make_library( mfx_hevce_hw64 hw shared )
+set( defs "" )

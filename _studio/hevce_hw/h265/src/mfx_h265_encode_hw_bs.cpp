@@ -3,7 +3,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_h265_encode_hw_bs.h"
@@ -16,8 +16,8 @@ BitstreamWriter::BitstreamWriter(mfxU8* bs, mfxU32 size, mfxU8 bitOffset)
     : m_bsStart(bs)
     , m_bsEnd(bs + size)
     , m_bs(bs)
-    , m_bitOffset(bitOffset & 7)
     , m_bitStart(bitOffset & 7)
+    , m_bitOffset(bitOffset & 7)
 {
     assert(bitOffset < 8);
     *m_bs &= 0xFF << (8 - m_bitOffset);
@@ -135,8 +135,8 @@ BitstreamReader::BitstreamReader(mfxU8* bs, mfxU32 size, mfxU8 bitOffset)
 : m_bsStart(bs)
 , m_bsEnd(bs + size)
 , m_bs(bs)
-, m_bitOffset(bitOffset & 7)
 , m_bitStart(bitOffset & 7)
+, m_bitOffset(bitOffset & 7)
 , m_emulation(true)
 {
 }
@@ -1806,7 +1806,7 @@ void HeaderPacker::GetSEI(Task const & task,mfxU8*& buf, mfxU32& sizeInBytes)
 void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& sizeInBytes, mfxU32* qpd_offset)
 {
     BitstreamWriter& rbsp = m_bs;
-    NALU nalu = {0, task.m_shNUT, 0, task.m_tid + 1};
+    NALU nalu = {0, task.m_shNUT, 0, static_cast<mfxU16>(task.m_tid + 1)};
     bool is1stNALU = (id == 0 && task.m_insertHeaders == 0);
 
     assert(m_par);
