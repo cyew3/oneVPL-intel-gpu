@@ -806,7 +806,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
     else if (m_pmfxVPP)
         EncRequest.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
     else if ((m_pmfxPAK) || (m_pmfxENC))
-        EncRequest.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_VPPIN  | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
+        EncRequest.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE  | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
 
     // alloc frames for encoder
     sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &EncRequest, &m_EncResponse);
@@ -822,8 +822,8 @@ mfxStatus CEncodingPipeline::AllocFrames()
         /* type of reconstructed surfaces for PAK should be same as for Media SDK's decoders!!!
          * Because libVA required reconstructed surfaces for vaCreateContext */
         ReconRequest.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
-        sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &ReconRequest, &m_ReconResponse);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        //sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &ReconRequest, &m_ReconResponse);
+        //MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
     // prepare mfxFrameSurface1 array for encoder
@@ -831,12 +831,13 @@ mfxStatus CEncodingPipeline::AllocFrames()
     MSDK_CHECK_POINTER(m_pEncSurfaces, MFX_ERR_MEMORY_ALLOC);
     MSDK_ZERO_ARRAY(m_pEncSurfaces, m_EncResponse.NumFrameActual);
 
-    if ((m_pmfxENC) || (m_pmfxPAK))
-    {
-        m_pReconSurfaces = new mfxFrameSurface1[m_ReconResponse.NumFrameActual];
-        MSDK_CHECK_POINTER(m_pReconSurfaces, MFX_ERR_MEMORY_ALLOC);
-        MSDK_ZERO_ARRAY(m_pReconSurfaces, m_ReconResponse.NumFrameActual);
-    }
+//    if ((m_pmfxENC) || (m_pmfxPAK))
+//    {
+//        m_pReconSurfaces = new mfxFrameSurface1[m_EncResponse.NumFrameActual];
+//        MSDK_CHECK_POINTER(m_pReconSurfaces, MFX_ERR_MEMORY_ALLOC);
+//        MSDK_ZERO_ARRAY(m_pReconSurfaces, m_EncResponse.NumFrameActual);
+//        m_ReconResponse.NumFrameActual = m_EncResponse.NumFrameActual;
+//    }
 
     for (int i = 0; i < m_EncResponse.NumFrameActual; i++)
     {
@@ -854,21 +855,27 @@ mfxStatus CEncodingPipeline::AllocFrames()
         }
     }
 
-    for (int i = 0; i < m_ReconResponse.NumFrameActual; i++)
+    if ((m_pmfxENC) || (m_pmfxPAK))
     {
-        MSDK_MEMCPY_VAR(m_pReconSurfaces[i].Info, &(m_mfxEncParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
-
-        if (m_bExternalAlloc)
-        {
-            m_pReconSurfaces[i].Data.MemId = m_ReconResponse.mids[i];
-        }
-        else
-        {
-            // get YUV pointers
-            sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, m_ReconResponse.mids[i], &(m_pReconSurfaces[i].Data));
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        }
+        m_pReconSurfaces = m_pEncSurfaces;
     }
+
+//    for (int i = 0; i < m_ReconResponse.NumFrameActual; i++)
+//    {
+//        MSDK_MEMCPY_VAR(m_pReconSurfaces[i].Info, &(m_mfxEncParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
+//
+//        if (m_bExternalAlloc)
+//        {
+//            //m_pReconSurfaces[i].Data.MemId = m_ReconResponse.mids[i];
+//            m_pReconSurfaces[i].Data.MemId = m_EncResponse.mids[i];
+//        }
+//        else
+//        {
+//            // get YUV pointers
+//            sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, m_ReconResponse.mids[i], &(m_pReconSurfaces[i].Data));
+//            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+//        }
+//    }
 
     return MFX_ERR_NONE;
 }
@@ -1053,8 +1060,16 @@ void CEncodingPipeline::DeleteFrames()
     MSDK_SAFE_DELETE_ARRAY(m_pDecSurfaces);
     MSDK_SAFE_DELETE_ARRAY(m_pVppSurfaces);
     MSDK_SAFE_DELETE_ARRAY(m_pDSSurfaces);
-    MSDK_SAFE_DELETE_ARRAY(m_pEncSurfaces);
-    MSDK_SAFE_DELETE_ARRAY(m_pReconSurfaces);
+    if (m_pEncSurfaces != m_pReconSurfaces)
+    {
+        MSDK_SAFE_DELETE_ARRAY(m_pEncSurfaces);
+        MSDK_SAFE_DELETE_ARRAY(m_pReconSurfaces);
+    }
+    else
+    {
+        MSDK_SAFE_DELETE_ARRAY(m_pEncSurfaces);
+        m_pReconSurfaces = NULL;
+    }
 
     // delete frames
     if (m_pMFXAllocator)
@@ -2071,7 +2086,10 @@ mfxStatus CEncodingPipeline::InitInterfaces()
 
             feiSPS->NumRefFrame = m_mfxEncParams.mfx.NumRefFrame;
             feiSPS->WidthInMBs  = m_widthMB;
-            feiSPS->HeightInMBs = m_heightMB;
+            if (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
+                feiSPS->HeightInMBs = m_heightMB;
+            else
+                feiSPS->HeightInMBs = m_heightMB/2;
 
             feiSPS->ChromaFormatIdc  = m_mfxEncParams.mfx.FrameInfo.ChromaFormat;
             feiSPS->FrameMBsOnlyFlag = (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 0;
@@ -2157,6 +2175,7 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                     feiPPS[fieldId].FrameNum = 0;
 
                     feiPPS[fieldId].PicInitQP = (m_encpakParams.QP != 0) ? m_encpakParams.QP : 26;
+                    //feiPPS[fieldId].PicInitQP = 26;
 
                     feiPPS[fieldId].NumRefIdxL0Active = 1;
                     feiPPS[fieldId].NumRefIdxL1Active = 1;
@@ -2203,8 +2222,8 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                         feiSliceHeader[fieldId].Slice->IdrPicId   = 0;
 
                         feiSliceHeader[fieldId].Slice->CabacInitIdc = 0;
-
-                        feiSliceHeader[fieldId].Slice->SliceQPDelta               = 0;// 26 - feiPPS[fieldId].PicInitQP;
+                        mfxU32 initQP = (m_encpakParams.QP != 0) ? m_encpakParams.QP : 26;
+                        feiSliceHeader[fieldId].Slice->SliceQPDelta               = initQP - feiPPS[fieldId].PicInitQP;
                         feiSliceHeader[fieldId].Slice->DisableDeblockingFilterIdc = m_encpakParams.DisableDeblockingIdc;
                         feiSliceHeader[fieldId].Slice->SliceAlphaC0OffsetDiv2     = m_encpakParams.SliceAlphaC0OffsetDiv2;
                         feiSliceHeader[fieldId].Slice->SliceBetaOffsetDiv2        = m_encpakParams.SliceBetaOffsetDiv2;
@@ -3771,8 +3790,8 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
                 if (feiPPS && eTask->prevTask && (ExtractFrameType(*(eTask->prevTask)) & MFX_FRAMETYPE_REF) && ((fieldId && m_isField) || (!fieldId && !m_isField)))
                     m_refFrameCounter++;
             }
-            if (feiSPS)
-                feiSPS->Pack = 0;
+            //if (feiSPS)
+            //    feiSPS->Pack = 0;
             break;
 
         case MFX_FRAMETYPE_B:
@@ -3820,8 +3839,8 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
                     }
                 } // if (feiSliceHeader)
             }
-            if (feiSPS)
-                feiSPS->Pack = 0;
+//            if (feiSPS)
+//                feiSPS->Pack = 0;
             break;
         }
     }
@@ -4969,17 +4988,18 @@ mfxStatus CEncodingPipeline::EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
     eTask->in.InSurface = eTask->inPAK.InSurface = pSurf;
     eTask->encoded = 0;
 
-    /* this is Recon surface which will be generated by FEI PAK*/
-    mfxFrameSurface1 *pSurfPool = m_pReconSurfaces;
-    mfxU16 poolSize = m_ReconResponse.NumFrameActual;
-    if (m_pmfxDECODE && !m_pmfxVPP)
-    {
-        pSurfPool = m_pDecSurfaces;
-        poolSize  = m_DecResponse.NumFrameActual;
-    }
-    mfxU16 nReconSurfIdx = GetFreeSurface(pSurfPool, poolSize);
-    MSDK_CHECK_ERROR(nReconSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
-    mfxFrameSurface1* pReconSurf = &pSurfPool[nReconSurfIdx];
+//    /* this is Recon surface which will be generated by FEI PAK*/
+//    mfxFrameSurface1 *pSurfPool = m_pReconSurfaces;
+//    mfxU16 poolSize = m_ReconResponse.NumFrameActual;
+//    if (m_pmfxDECODE && !m_pmfxVPP)
+//    {
+//        pSurfPool = m_pDecSurfaces;
+//        poolSize  = m_DecResponse.NumFrameActual;
+//    }
+//    mfxU16 nReconSurfIdx = GetFreeSurface(pSurfPool, poolSize);
+//    MSDK_CHECK_ERROR(nReconSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
+//    mfxFrameSurface1* pReconSurf = &pSurfPool[nReconSurfIdx];
+    mfxFrameSurface1* pReconSurf = pSurf;
     pReconSurf->Data.Locked++;
     eTask->out.OutSurface = eTask->outPAK.OutSurface = pReconSurf;
     eTask->outPAK.Bs = &pCurrentTask->mfxBS;
