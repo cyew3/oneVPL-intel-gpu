@@ -2218,8 +2218,10 @@ static mfxStatus CorrectAsyncDepth(mfxFrameAllocRequest &curReq, mfxU16 asyncDep
     }
     else
     {
-        // If surfaces are shared by 2 components, c1 and c2. NumSurf = c1_out + c2_in - AsyncDepth + 1
-        curReq.NumFrameSuggested = 2*curReq.NumFrameSuggested - asyncDepth + 1;
+        // The request holds summary of required surfaces numbers from 2 components and
+        // asyncDepth is included twice. Here we patch surfaces number removing
+        // one asyncDepth.
+        curReq.NumFrameSuggested = curReq.NumFrameSuggested - asyncDepth;
         curReq.NumFrameMin = curReq.NumFrameSuggested;
     }
 
