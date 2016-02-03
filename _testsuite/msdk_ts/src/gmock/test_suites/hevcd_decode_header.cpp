@@ -279,8 +279,9 @@ int TestSuite::RunTest(unsigned int id)
     m_pPar->mfx.CodecId = MFX_CODEC_HEVC;
     m_par.RefreshBuffers();
 
-    //set 1st 10 bytes to 0xFF and fill the rest by bitstream data
+    if (tc.stream != "")
     {
+        //set 1st 10 bytes to 0xFF and fill the rest by bitstream data
         tsReader stream(g_tsStreamPool.Get(tc.stream));
         m_bitstream.DataLength = 10;
         memset(m_bitstream.Data, 0xFF, m_bitstream.DataLength);
