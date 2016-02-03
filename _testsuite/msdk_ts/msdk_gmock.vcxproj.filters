@@ -553,5 +553,8 @@
     <ClCompile Include="src\gmock\test_suites\vpp_getvideoparam.cpp">
       <Filter>Source Files\test_suites\vpp</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_reset.cpp">
+      <Filter>Source Files\test_suites\vpp</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
