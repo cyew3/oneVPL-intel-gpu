@@ -126,7 +126,7 @@ enum
     vector[startIdx + 2] = 0x0e;                                                                            \
     /* num MVs and ExtendedForm, ExtendedForm is ignored. HW always set to 0 and default using Extended form*/ \
     vector[startIdx + 3] = (VME_Input_G1(srcMatrix, uint1, 0, 3) & 0x1f) | 0x80; /* MV Quantity*/
-    //ExtendedForm = (VME_Input_G1(srcMatrix, uint1, 0, 2) & 0x80)  /* ExtendedForm*/ |\
+    /*ExtendedForm = (VME_Input_G1(srcMatrix, uint1, 0, 2) & 0x80)  |\ // ExtendedForm */
 
 #define VME_GET_UNIInput_SkipModeEn(p) (VME_Output_S1(p, uint1, 1, 0) & 0x1)
 
@@ -1034,7 +1034,7 @@ void GetNeighbourParamP(matrix_ref<uint1, 16, 1> leftBlockValues,
     vector[startIdx + 2] = 0x0e;                                        \
     /* num MVs and ExtendedForm, ExtendedForm is ignored. HW always set to 0 and default using Extended form*/  \
     vector[startIdx + 3] = (VME_Input_G1(uniOut, uint1, 0, 3) & 0x1f) | 0x80; /* MV Quantity*/
-    //ExtendedForm = (VME_Input_G1(srcMatrix, uint1, 0, 2) & 0x80)  /* ExtendedForm*/ |\
+    /*ExtendedForm = (VME_Input_G1(srcMatrix, uint1, 0, 2) & 0x80) |\  // ExtendedForm */
 
 #define _VME_GET_UNIOutput_InterDistortion(uniOut, v)   \
     (v = VME_Output_S1(uniOut, uint2, 0, 4))

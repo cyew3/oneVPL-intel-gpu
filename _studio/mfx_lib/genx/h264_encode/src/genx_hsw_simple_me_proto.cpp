@@ -20,4 +20,4 @@ extern "C"
     void HistogramFields() {}
 }
 
-#endif CMRT_EMU
+#endif // CMRT_EMU
