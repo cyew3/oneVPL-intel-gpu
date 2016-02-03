@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 
 File Name: common.h
 
@@ -62,13 +62,19 @@ extern "C" {
 #if (defined(LINUX32) || defined(LINUX64))
 #include <stdbool.h>
 #include <inttypes.h>
+#ifndef __int64
 #define __int64 uint64_t
+#endif
 
     //Visual Studio C-compiler does not support C99, so that no bool type at all
     //Defining bool (in lower case) will cause a lot of errors in C++ files including this file
 #define BOOL bool
+#ifndef TRUE
 #define TRUE true
+#endif
+#ifndef FALSE
 #define FALSE false
+#endif
 #define BYTE unsigned char
 
 //#include <emmintrin.h> //SSE2 

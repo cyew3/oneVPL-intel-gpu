@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 
 File Name: ptir_vpp_plugin.cpp
 
@@ -278,7 +278,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
         Env.control.uiFrame++;
         if(!PTIR_MultipleMode(&Env, uiOpMode))
         {
-            while(Env.frmIn = PTIR_GetFrame(&Env))
+            while((Env.frmIn = PTIR_GetFrame(&Env)))
             {
                 if(!surf_out)
                     surf_out = frmSupply->GetWorkSurfaceMfx();
@@ -324,7 +324,7 @@ mfxStatus PTIR_ProcessorCPU::PTIR_ProcessFrame(mfxFrameSurface1 *surf_in, mfxFra
         {
             Env.control.uiEndOfFrames = 1;
             PTIR_MultipleMode(&Env, uiOpMode);
-            while(Env.frmIn = FrameQueue_Get(&Env.fqIn))
+            while((Env.frmIn = FrameQueue_Get(&Env.fqIn)))
             {
                 if(!surf_out)
                     surf_out = frmSupply->GetWorkSurfaceMfx();

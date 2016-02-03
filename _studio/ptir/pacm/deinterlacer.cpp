@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 
 File Name: deinterlacer.cpp
 
@@ -322,7 +322,7 @@ void DeinterlaceFilter::SumSAD(CmSurface2DUPEx &sadFrame, Frame *pfrmCur, int th
     sadFrame.Read(pSadFrame);
 
     UINT sadSum[5] = { 0 };
-    for (UINT index = 0; index < threadsWidth * threadsHeight; ++index) {
+    for (UINT index = 0; index < static_cast<UINT>(threadsWidth * threadsHeight); ++index) {
         UINT sadsIndex = index * 8;
 
         sadSum[InterStraightTop] += pSadFrame[sadsIndex];
@@ -355,7 +355,7 @@ void DeinterlaceFilter::SumRs(CmSurface2DUPEx &rsFrame, Frame *pFrame, UINT size
     UINT * pRs = (UINT*)rsFrame.DataPtr();
     UINT pitchInDW = rsFrame.Pitch() / sizeof (UINT);
     double * Rs = new double[sizeof(pFrame->plaY.ucStats.ucRs) / sizeof(pFrame->plaY.ucStats.ucRs[0])];
-    for (int i = 0; i < sizeof(pFrame->plaY.ucStats.ucRs) / sizeof(pFrame->plaY.ucStats.ucRs[0]); ++i) {
+    for (unsigned int i = 0; i < sizeof(pFrame->plaY.ucStats.ucRs) / sizeof(pFrame->plaY.ucStats.ucRs[0]); ++i) {
         Rs[i] = (double)0;
     }
     double data = 0.0;
@@ -450,7 +450,7 @@ void DeinterlaceFilter::SumRs(CmSurface2DUPEx &rsFrame, Frame *pFrame, UINT size
     Rs[9] = (Rs[9] / uiSize) * 1000;
     Rs[10] = (Rs[10] / uiSize) * 1000;
 
-    for (int i = 0; i < sizeof(pFrame->plaY.ucStats.ucRs) / sizeof(pFrame->plaY.ucStats.ucRs[0]); ++i) {
+    for (unsigned int i = 0; i < sizeof(pFrame->plaY.ucStats.ucRs) / sizeof(pFrame->plaY.ucStats.ucRs[0]); ++i) {
 #if !defined(CPUPATH) || 0 // 0 - valiation, 1 - no validattion
         pFrame->plaY.ucStats.ucRs[i] = Rs[i];
 #else

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 
 File Name: ptir_vpp_plugin.cpp
 
@@ -958,10 +958,10 @@ mfxStatus MFX_PTIR_Plugin::QueryReset(const mfxVideoParam& old_vp, const mfxVide
         //new: 30i -> 60p or 30i -> 30p mode
         ;//allowed
     }
-    else if((old_vp.vpp.In.FrameRateExtN * old_vp.vpp.Out.FrameRateExtD ==
+    else if(((old_vp.vpp.In.FrameRateExtN * old_vp.vpp.Out.FrameRateExtD ==
              old_vp.vpp.In.FrameRateExtD * old_vp.vpp.Out.FrameRateExtN) &&
               (4 * new_vp.vpp.In.FrameRateExtN * new_vp.vpp.In.FrameRateExtD ==
-               5 * new_vp.vpp.Out.FrameRateExtN * new_vp.vpp.Out.FrameRateExtD) ||
+               5 * new_vp.vpp.Out.FrameRateExtN * new_vp.vpp.Out.FrameRateExtD)) ||
               (new_vp.vpp.In.FrameRateExtN * new_vp.vpp.Out.FrameRateExtD ==
                new_vp.vpp.In.FrameRateExtD * new_vp.vpp.Out.FrameRateExtN))
     {

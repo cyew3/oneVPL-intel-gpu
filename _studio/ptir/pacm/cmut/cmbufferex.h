@@ -1,6 +1,6 @@
 /**             
 ***
-*** Copyright  (C) 1985-2014 Intel Corporation. All rights reserved.
+*** Copyright  (C) 1985-2016 Intel Corporation. All rights reserved.
 ***
 *** The information and source code contained herein is the exclusive
 *** property of Intel Corporation. and may not be disclosed, examined
@@ -195,7 +195,7 @@ class CmSurface2DUPEx
 {
 public:
   CmSurface2DUPEx(CmDeviceEx & deviceEx, unsigned int width, unsigned int height, CM_SURFACE_FORMAT format)
-    : malloced(false), pitch(0), deviceEx(deviceEx), format(format), height(height), width(width), pData(NULL)
+    : deviceEx(deviceEx), pData(NULL), width(width), height(height), pitch(0), format(format), malloced(false)
   {
 #ifdef _DEBUG
     //std::cout << "CmSurface2DUPEx (" << width << ", " << height << ")" << std::endl;
@@ -282,6 +282,8 @@ protected:
           return 1 * width;
       case CM_SURFACE_FORMAT_NV12:
           return 1 * width;
+      default:
+          break;
       }
       throw CMUT_EXCEPTION("Unkown Format Code");
   }
@@ -302,6 +304,8 @@ protected:
           return 1 * height;
       case CM_SURFACE_FORMAT_NV12:
           return 3 * height / 2;
+      default:
+          break;
       }
       throw CMUT_EXCEPTION("Unkown Format Code");
   }

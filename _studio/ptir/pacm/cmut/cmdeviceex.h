@@ -1,6 +1,6 @@
 /**             
 ***
-*** Copyright  (C) 1985-2014 Intel Corporation. All rights reserved.
+*** Copyright  (C) 1985-2016 Intel Corporation. All rights reserved.
 ***
 *** The information and source code contained herein is the exclusive
 *** property of Intel Corporation. and may not be disclosed, examined
@@ -48,7 +48,7 @@ public:
         result = CreateCmDevice(pDevice,version,(IDirect3DDeviceManager9*) mfxDeviceHdl);
     else if(MFX_HANDLE_D3D11_DEVICE == mfxDeviceType)
         result = CreateCmDevice(pDevice,version,(ID3D11Device*) mfxDeviceHdl);
-#else if defined(LINUX32) || defined (LINUX64)
+#elif defined(LINUX32) || defined (LINUX64)
     if(MFX_HANDLE_VA_DISPLAY == mfxDeviceType)
         result = CreateCmDevice(pDevice,version, (VADisplay) mfxDeviceHdl);
 #endif
@@ -103,7 +103,7 @@ protected:
           return ::CreateCmDevice(pDevice,version,(IDirect3DDeviceManager9*) mfxDeviceHdl);
       //else if(MFX_HANDLE_D3D11_DEVICE == mfxDeviceType)
       //    return ::CreateCmDevice(pDevice,version,(ID3D11Device*) mfxDeviceHdl);
-#else if defined(LINUX32) || defined (LINUX64)
+#elif defined(LINUX32) || defined (LINUX64)
       if(MFX_HANDLE_VA_DISPLAY == mfxDeviceType)
           return ::CreateCmDevice(pDevice,version, (VADisplay) mfxDeviceHdl);
 #endif

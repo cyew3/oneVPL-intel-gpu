@@ -4,13 +4,17 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 
 File Name: pacm.h
 
 \* ****************************************************************************** */
 
 #pragma once
+
+#if defined(__GNUC__)
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #include "cmut/cmrtex.h"
 extern "C" {
@@ -82,7 +86,7 @@ private:
     std::auto_ptr<CmKernelEx> kernelLowEdgeMaskTop;
     std::auto_ptr<CmKernelEx> kernelLowEdgeMask2Fields;
     std::auto_ptr<CmKernelEx> kernelUndo2FrameTop;
-    std::auto_ptr<CmKernelEx> kernelUndo2FrameBottom;    
+    std::auto_ptr<CmKernelEx> kernelUndo2FrameBottom;
     std::auto_ptr<CmKernelEx> kernelDeinterlaceBorderTop;
     std::auto_ptr<CmKernelEx> kernelDeinterlaceBorderBottom;
     std::vector<std::string> isaFileNames;

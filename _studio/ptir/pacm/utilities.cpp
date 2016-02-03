@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 
 File Name: utilities.cpp
 
@@ -895,7 +895,7 @@ void Frame_ReleaseCM(Frame *pfrmIn)
 //    } 
 //}
 
-unsigned int Convert_to_I420CM(unsigned char *pucIn, Frame *pfrmOut, char *pcFormat, double dFrameRate)
+unsigned int Convert_to_I420CM(unsigned char *pucIn, Frame *pfrmOut, const char *pcFormat, double dFrameRate)
 {
     pfrmOut->frmProperties.fr = dFrameRate;
     if (strcmp(pcFormat, "I420") == 0)
@@ -912,7 +912,7 @@ unsigned int Convert_to_I420CM(unsigned char *pucIn, Frame *pfrmOut, char *pcFor
         return 0;
 }
 
-void Frame_Prep_and_AnalysisCM(Frame **frmBuffer, char *pcFormat, double dFrameRate, unsigned int uiframeBufferIndexCur, unsigned int uiframeBufferIndexNext, unsigned int uiTemporalIndex)
+void Frame_Prep_and_AnalysisCM(Frame **frmBuffer, const char *pcFormat, double dFrameRate, unsigned int uiframeBufferIndexCur, unsigned int uiframeBufferIndexNext, unsigned int uiTemporalIndex)
 {
 #if PRINTDEBUG
     double    *dSAD,

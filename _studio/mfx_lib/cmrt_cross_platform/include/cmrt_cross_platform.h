@@ -1,6 +1,6 @@
 /**             
 ***
-*** Copyright  (C) 1985-2014 Intel Corporation. All rights reserved.
+*** Copyright  (C) 1985-2016 Intel Corporation. All rights reserved.
 ***
 *** The information and source code contained herein is the exclusive
 *** property of Intel Corporation. and may not be disclosed, examined
@@ -47,6 +47,9 @@ typedef unsigned int VADisplay;
 #ifdef __GNUC__
 #define LONG INCORRECT_64BIT_LONG
 #define ULONG INCORRECT_64BIT_ULONG
+#ifdef __int64
+#undef __int64
+#endif
 #include "cm_rt_linux.h"
 #else
 #include "cm_rt_win.h"  

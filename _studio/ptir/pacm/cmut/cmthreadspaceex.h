@@ -1,6 +1,6 @@
 /**             
 ***
-*** Copyright  (C) 1985-2014 Intel Corporation. All rights reserved.
+*** Copyright  (C) 1985-2016 Intel Corporation. All rights reserved.
 ***
 *** The information and source code contained herein is the exclusive
 *** property of Intel Corporation. and may not be disclosed, examined
@@ -22,7 +22,7 @@ class CmThreadSpaceEx
 {
 public:
   CmThreadSpaceEx(CmDeviceEx & deviceEx, unsigned int width, unsigned int height)
-    : deviceEx(deviceEx), pThreadSpace(NULL), height(height), width(width)
+    : deviceEx(deviceEx), pThreadSpace(NULL), width(width), height(height)
   {
     int result = deviceEx->CreateThreadSpace(width, height, pThreadSpace);
     CM_FAIL_IF(result != CM_SUCCESS || pThreadSpace == NULL, result);

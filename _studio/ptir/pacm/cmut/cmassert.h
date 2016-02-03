@@ -1,6 +1,6 @@
 /**             
 ***
-*** Copyright  (C) 1985-2014 Intel Corporation. All rights reserved.
+*** Copyright  (C) 1985-2016 Intel Corporation. All rights reserved.
 ***
 *** The information and source code contained herein is the exclusive
 *** property of Intel Corporation. and may not be disclosed, examined
@@ -38,7 +38,7 @@ template<> struct assert_static<true> {};
   } while (false)
 
 #define CMUT_ASSERT_EQUAL(expect, actual, message)  \
-  if (expect != actual) {                           \
+  if (expect != (actual)) {                           \
     throw CMUT_EXCEPTION(message);                 \
   }
 #define CMUT_ASSERT(condition)                        \
