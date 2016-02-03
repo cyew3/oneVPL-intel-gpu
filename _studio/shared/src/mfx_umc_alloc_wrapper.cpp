@@ -863,7 +863,8 @@ mfxStatus mfx_UMC_FrameAllocator::PrepareToOutput(mfxFrameSurface1 *surface_work
 {
     UMC::AutomaticUMCMutex guard(m_guard);
     mfxStatus sts;
-    isOpaq;
+    mfxU16 dstMemType = isOpaq?(MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET):(MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET);
+    
 
     UMC::FrameData* frame = &m_frameData[index].second.m_frame;
 
@@ -919,11 +920,11 @@ mfxStatus mfx_UMC_FrameAllocator::PrepareToOutput(mfxFrameSurface1 *surface_work
         return MFX_ERR_UNSUPPORTED;
     }
     m_surface.Info.FourCC = surface_work->Info.FourCC;
-
     sts = m_pCore->DoFastCopyWrapper(surface_work,
-                                     MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET,
+                                     dstMemType,
                                      &m_surface,
                                      MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY);
+
     MFX_CHECK_STS(sts);
 
     if (!m_IsUseExternalFrames)
