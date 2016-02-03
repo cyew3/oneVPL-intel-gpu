@@ -1893,8 +1893,10 @@ mfxStatus H265Encoder::SyncOnFrameCompletion(H265EncodeTaskInputParams *inputPar
                     vm_cond_signal(&m_feiCondVar);
                 }
 
+                vm_mutex_lock(&m_critSect);
                 vm_interlocked_inc32(&inputParam->m_reencode);
                 vm_interlocked_cas32(&(inputParam->m_doStage), 4, 5); // signal to restart!!!
+                vm_mutex_unlock(&m_critSect);
 
                 if (m_videoParam.num_threads > 1)
                     vm_cond_broadcast(&m_condVar);
@@ -2047,7 +2049,9 @@ void H265Encoder::PrepareToEncode(H265EncodeTaskInputParams *inputParam)
     if (m_newFrame[1] && !m_newFrame[1]->m_ttInitNewFrame.finished) {
         m_newFrame[1]->m_ttInitNewFrame.InitNewFrame(m_newFrame[1], inputParam->surface, m_newFrame[1]->m_frameOrder);
         AddTaskDependency(&m_ttComplete, &m_newFrame[1]->m_ttInitNewFrame); // COMPLETE <- INIT_NEW_FRAME
-        AddTaskDependency(&m_newFrame[1]->m_ttInitNewFrame, &m_newFrame[0]->m_ttInitNewFrame); 
+        if (!m_newFrame[0]->m_ttInitNewFrame.finished) {
+            AddTaskDependency(&m_newFrame[1]->m_ttInitNewFrame, &m_newFrame[0]->m_ttInitNewFrame); 
+        }
     }
 
     if (m_laFrame[0] && !m_laFrame[0]->m_ttLookahead.back().finished) {
