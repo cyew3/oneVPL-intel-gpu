@@ -216,7 +216,7 @@ int TestSuite::RunTest(unsigned int id)
         mfxExtVPPDoUse* vpp_du2;
 
         par2.AddExtBuffer(MFX_EXTBUFF_VPP_DOUSE, sizeof(mfxExtVPPDoUse));
-        vpp_du2 = (mfxExtVPPDoUse*)m_par.GetExtBuffer(MFX_EXTBUFF_VPP_DOUSE);
+        vpp_du2 = (mfxExtVPPDoUse*)par2.GetExtBuffer(MFX_EXTBUFF_VPP_DOUSE);
         vpp_du2->NumAlg = 1;
         vpp_du2->AlgList = new mfxU32[1];
 
