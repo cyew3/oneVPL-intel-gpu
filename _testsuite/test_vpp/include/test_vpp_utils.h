@@ -205,6 +205,20 @@ struct sInputParams
 
     /* MFXVideoVPP_Reset */
     std::vector<mfxU32> resetFrmNums;
+
+    sInputParams()
+    {
+        bInitEx     = false;
+        bPerf       = false;
+        need_plugin = false;
+        need_crc    = false;
+        use_extapi  = false;
+        ZERO_MEMORY(strPlgGuid);
+        ZERO_MEMORY(strSrcFile);
+        ZERO_MEMORY(strDstFile);
+        ZERO_MEMORY(strPerfFile);
+        ZERO_MEMORY(strCRCFile);
+    }
 };
 
 struct sFrameProcessor
