@@ -808,7 +808,7 @@ TEST(optimization, IDCT_sse4)
     }
 }
 
-TEST(optimization, IDCT_avx2)
+TEST(optimization, DISABLED_IDCT_avx2)
 {
     const int srcSize = 32*32;  // max 32x32
     const int dstSize = 64*64;  // alloc more space to confirm no writing outside of dst block

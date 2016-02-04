@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include <stdlib.h>
+#include <limits.h>
 #include <vector>
 #include <algorithm>
 
@@ -22,10 +23,10 @@ const Ipp32s Padding = 96;
 namespace PaddingTest {
     template <class T> void ReferencePadding(T *frame, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth, Ipp32s padw, Ipp32s padh)
     {
-        rectx = max(rectx, 0);
-        recty = max(recty, 0);
-        rectw = min(max(rectw, 1), width-rectx);
-        recth = min(max(recth, 1), height-recty);
+        rectx = IPP_MAX(rectx, 0);
+        recty = IPP_MAX(recty, 0);
+        rectw = IPP_MIN(IPP_MAX(rectw, 1), width-rectx);
+        recth = IPP_MIN(IPP_MAX(recth, 1), height-recty);
 
         auto SetValue = [frame, pitch](T value, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth) {
             for (Ipp32s y = recty; y < recty + recth; y++)
@@ -84,8 +85,8 @@ namespace PaddingTest {
 
     template <Ipp32u fourcc> void Test()
     {
-        typedef TestTraits<fourcc>::PixT PixT;
-        typedef TestTraits<fourcc>::DoublePixT DoublePixT;
+        typedef typename TestTraits<fourcc>::PixT PixT;
+        typedef typename TestTraits<fourcc>::DoublePixT DoublePixT;
         Ipp32s chromaHeightDiv = TestTraits<fourcc>::ChromaHeightDiv;
         Ipp32u chromaFormat = TestTraits<fourcc>::ChromaFormat;
         Ipp32s ctuwC = 32;

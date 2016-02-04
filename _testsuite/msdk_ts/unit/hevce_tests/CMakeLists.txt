@@ -16,6 +16,7 @@ if ( ENABLE_HEVC )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/encode/h265/include )
 include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/fei/h265/include )
+include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/cmrt_cross_platform/include )
 # gtest/gmock
 include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock/gtest/include )
 include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock/include )
@@ -47,8 +48,9 @@ list( APPEND LIBS
     hevc_pp_px
     hevc_pp_sse4
     hevc_pp_ssse3
-    umc_io_merged_sw
-    umc_core_merged
+    umc
+    vm
+    vm_plus
     ${ITT_LIBS}
     ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread dl va
