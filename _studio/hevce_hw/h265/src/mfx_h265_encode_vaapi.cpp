@@ -132,6 +132,8 @@ mfxStatus SetRateControl(
         rate_param->window_size     = par.mfx.Convergence * 100;
         rate_param->rc_flags.bits.reset = isBrcResetRequired;
 
+        //printf("isBrcResetRequired %d\n", isBrcResetRequired);
+
 #ifdef PARALLEL_BRC_support
         rate_param->rc_flags.bits.enable_parallel_brc =  (par.AsyncDepth > 1) && (par.mfx.GopRefDist > 1) && (par.mfx.GopRefDist <= 8) && par.isBPyramid();
 #else
@@ -594,12 +596,95 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     memset(&m_caps, 0, sizeof(m_caps));
 
-    m_caps.BRCReset = 1;
-    m_caps.MaxNum_Reference0 = 1; //FIXME
-    m_caps.MaxNum_Reference1 = 1; //FIXME
-    m_caps.MaxPicWidth = 1920; //FIXME
-    m_caps.MaxPicHeight = 1920; //FIXME
+    m_caps.BRCReset = 1; // no bitrate resolution control
 
+    VAConfigAttrib attrs[9];
+    
+    memset(attrs, 0, sizeof(attrs));
+
+    attrs[0].type  =VAConfigAttribRTFormat;
+    attrs[1].type  =VAConfigAttribRateControl;
+    attrs[2].type  =VAConfigAttribEncQuantization;
+    attrs[3].type  =VAConfigAttribEncIntraRefresh;
+    attrs[4].type  =VAConfigAttribMaxPictureHeight;
+    attrs[5].type  =VAConfigAttribMaxPictureWidth;
+    attrs[6].type  =VAConfigAttribEncParallelRateControl;
+    attrs[7].type  =VAConfigAttribEncMaxRefFrames;
+    attrs[8].type  =VAConfigAttribEncSliceStructure;
+
+    VAStatus vaSts = vaGetConfigAttributes(m_vaDisplay,
+                          ConvertProfileTypeMFX2VAAPI(m_videoParam.mfx.CodecProfile),
+                          VAEntrypointEncSlice,
+                           attrs, sizeof(attrs)/sizeof(attrs[0]));
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    //m_caps.VCMBitrateControl = attrs[1].value & VA_RC_VCM ? 1 : 0; //Video conference mode
+    m_caps.RollingIntraRefresh = (attrs[3].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
+    m_caps.UserMaxFrameSizeSupport = 1; // no request on support for libVA
+    m_caps.MBBRCSupport = 1;            // starting 16.3 Beta, enabled in driver by default for TU-1,2
+    m_caps.MbQpDataSupport = 1;
+    m_caps.Color420Only = 1;// fixme in case VAAPI direct YUY2/RGB support added
+
+    vaExtQueryEncCapabilities pfnVaExtQueryCaps = NULL;
+    pfnVaExtQueryCaps = (vaExtQueryEncCapabilities)vaGetLibFunc(m_vaDisplay,VPG_EXT_QUERY_ENC_CAPS);
+    /* This is for 16.3.* approach.
+     * It was used private libVA function to get information which feature is supported
+     * */
+    if (pfnVaExtQueryCaps)
+    {
+        VAEncQueryCapabilities VaEncCaps;
+        memset(&VaEncCaps, 0, sizeof(VaEncCaps));
+        VaEncCaps.size = sizeof(VAEncQueryCapabilities);
+        vaSts = pfnVaExtQueryCaps(m_vaDisplay, VAProfileH264Baseline, &VaEncCaps);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        //printf("pfnVaExtQueryCaps: MaxPicWidth %d, MaxPicHeight %d, SliceStructure %d\n", VaEncCaps.MaxPicWidth, VaEncCaps.MaxPicHeight, VaEncCaps.EncLimits.bits.SliceStructure);
+
+        m_caps.MaxPicWidth  = VaEncCaps.MaxPicWidth;
+        m_caps.MaxPicHeight = VaEncCaps.MaxPicHeight;
+        m_caps.SliceStructure = VaEncCaps.EncLimits.bits.SliceStructure;
+        m_caps.MaxNum_Reference0 = VaEncCaps.MaxNum_ReferenceL0;
+        m_caps.MaxNum_Reference1 = VaEncCaps.MaxNum_ReferenceL1;
+    }
+    else /* this is LibVA legacy approach. Should be supported from 16.4 driver */
+    {
+#ifdef MFX_VA_ANDROID
+        // To replace by vaQueryConfigAttributes()
+        // when the driver starts to support VAConfigAttribMaxPictureWidth/Height
+        m_caps.MaxPicWidth  = 1920;
+        m_caps.MaxPicHeight = 1920;
+#else
+
+        if ((attrs[5].value != VA_ATTRIB_NOT_SUPPORTED) && (attrs[5].value != 0))
+            m_caps.MaxPicWidth  = attrs[5].value;
+        else
+            m_caps.MaxPicWidth = 1920;
+
+        if ((attrs[4].value != VA_ATTRIB_NOT_SUPPORTED) && (attrs[4].value != 0))
+            m_caps.MaxPicHeight = attrs[4].value;
+        else
+            m_caps.MaxPicHeight = 1088;
+#endif
+        
+        //if (attrs[8].value != VA_ATTRIB_NOT_SUPPORTED)
+        //    m_caps.SliceStructure = attrs[8].value ;
+        //else
+            m_caps.SliceStructure = 4;
+
+
+        if (attrs[7].value != VA_ATTRIB_NOT_SUPPORTED)
+        {
+            m_caps.MaxNum_Reference0 = attrs[7].value & 0xffff;
+            m_caps.MaxNum_Reference1 = (attrs[7].value >>16) & 0xffff;
+        }
+        else
+        {
+            m_caps.MaxNum_Reference0 = 3;
+            m_caps.MaxNum_Reference1 = 1;
+        }
+
+    //printf("LibVA legacy: MaxPicWidth %d (%d), MaxPicHeight %d (%d), SliceStructure %d (%d), NumRef %d  %d (%x)\n", m_caps.MaxPicWidth, attrs[5].value,  m_caps.MaxPicHeight,attrs[4].value, m_caps.SliceStructure, attrs[8].value, m_caps.MaxNum_Reference0, m_caps.MaxNum_Reference1, attrs[7].value);
+    }    
     return MFX_ERR_NONE;
 }
 
@@ -851,27 +936,26 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
     VAStatus    vaSts;
 
     configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT + m_slice.size()*2);
+    UpdatePPS(task, m_pps, m_reconQueue);
 
     // update params
     {
-        size_t slice_size_old = m_slice.size();
+        size_t slice_size_old = m_sliceBufferId.size();
         //Destroy old buffers
         for(size_t i=0; i<slice_size_old; i++){
             MFX_DESTROY_VABUFFER(m_sliceBufferId[i], m_vaDisplay);
             MFX_DESTROY_VABUFFER(m_packeSliceHeaderBufferId[i], m_vaDisplay);
             MFX_DESTROY_VABUFFER(m_packedSliceBufferId[i], m_vaDisplay);
-        }
-
-        UpdatePPS(task, m_pps, m_reconQueue);
+        }       
 
         if (slice_size_old != m_slice.size())
         {
+            //printf("Number of slices %d\n", m_slice.size());
             m_sliceBufferId.resize(m_slice.size());
             m_packeSliceHeaderBufferId.resize(m_slice.size());
             m_packedSliceBufferId.resize(m_slice.size());
         }
         UpdateSlice(task, m_sps, m_pps, m_slice);
-
         configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT + m_slice.size()*2);
     }
 
