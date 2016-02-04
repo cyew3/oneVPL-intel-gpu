@@ -2913,6 +2913,15 @@ void ImplementationMvc::PatchTask(MvcTask const & mvcTask, DdiTask & curTask, mf
         curTask.m_idxRecon       += curTask.m_idxReconOffset;
         curTask.m_idxBs[fieldId] += curTask.m_idxBsOffset;
     }
+    
+    for (size_t i = 0; i < GetMaxNumSlices(m_video); ++ i)
+    {
+        mfxExtCodingOption2 const &     extOpt2        = GetExtBufferRef(m_video);
+        mfxU8 disableDeblockingIdc = mfxU8(extOpt2.DisableDeblockingIdc);
+        curTask.m_disableDeblockingIdc[fieldId].push_back(disableDeblockingIdc);
+        curTask.m_sliceAlphaC0OffsetDiv2[fieldId].push_back( 0);
+        curTask.m_sliceBetaOffsetDiv2[fieldId].push_back(0);
+    }
 }
 // MVC BD }
 
