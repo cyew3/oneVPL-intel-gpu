@@ -2041,7 +2041,7 @@ void TaskManager::ModifyRefPicLists(
 
         if (task.m_type[fieldId] & MFX_FRAMETYPE_B)
         {
-            mfxU32 numActiveRefL1 = ctrl->NumRefIdxL1Active ? IPP_MIN(ctrl->NumRefIdxL0Active,extDdi->NumActiveRefBL1) : extDdi->NumActiveRefBL1;
+            mfxU32 numActiveRefL1 = ctrl->NumRefIdxL1Active ? IPP_MIN(ctrl->NumRefIdxL1Active,extDdi->NumActiveRefBL1) : extDdi->NumActiveRefBL1;
             ReorderRefPicList(list1, dpb, m_recons, *ctrl, numActiveRefL1, ps);
         }
     }
