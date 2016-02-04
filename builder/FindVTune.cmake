@@ -38,7 +38,7 @@ if(__ITT)
 
     append("-DMFX_TRACE_ENABLE_ITT" CMAKE_C_FLAGS)
     append("-DMFX_TRACE_ENABLE_ITT" CMAKE_CXX_FLAGS)
-    
+
     set( ITT_LIBS "" )
     list( APPEND ITT_LIBS
       mfx_trace
@@ -46,6 +46,8 @@ if(__ITT)
       dl
     )
 
+  elseif( Darwin )
+    message( STATUS "MFX tracing is unsupported on Darwin.")
   else()
     message( FATAL_ERROR "MFX tracing is supported only for linux!")
   endif()
