@@ -26,7 +26,7 @@ private:
     {
         mfxStatus sts;
         mfxU32 alg_num;
-        mfxU32 alg_list[5];
+        mfxU32 alg_list[6];
     };
 
     static const tc_struct test_case[];
@@ -72,8 +72,11 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*09*/ MFX_ERR_NONE, 2,
             {MFX_EXTBUFF_VPP_PROCAMP, MFX_EXTBUFF_VPP_DEINTERLACING}
     },
-    {/*10*/ MFX_ERR_NONE, 5,
-            {MFX_EXTBUFF_VPP_DENOISE, MFX_EXTBUFF_VPP_DETAIL, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION, MFX_EXTBUFF_VPP_PROCAMP, MFX_EXTBUFF_VPP_DEINTERLACING}
+    {/*10*/ MFX_ERR_NONE, 6,
+            {MFX_EXTBUFF_VPP_DENOISE, MFX_EXTBUFF_VPP_DETAIL, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION, MFX_EXTBUFF_VPP_PROCAMP, MFX_EXTBUFF_VPP_DEINTERLACING, MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO}
+    },
+    {/*11*/ MFX_ERR_NONE, 1,
+            {MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO}
     },
 };
 
