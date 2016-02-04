@@ -1951,6 +1951,8 @@ TEST(optimization, PredictIntraAngleSingle_avx2)
 
 TEST(optimization, PredictIntraAngleMultiple_sse4)
 {
+    ASSERT_EQ(ippStsNoErr, MFX_HEVC_PP::InitDispatcher(MFX_HEVC_PP::CPU_FEAT_SSE4));
+
     const int pitch = 64;
     const int srcSize = (4*64+1)*2;
     const int dstSize = 35*pitch*pitch;
@@ -2057,6 +2059,8 @@ TEST(optimization, PredictIntraAngleMultiple_sse4)
 
 TEST(optimization, PredictIntraAngleMultiple_avx2)
 {
+    ASSERT_EQ(ippStsNoErr, MFX_HEVC_PP::InitDispatcher(MFX_HEVC_PP::CPU_FEAT_AVX2));
+
     const int pitch = 64;
     const int srcSize = (4*64+1)*2;
     const int dstSize = 35*pitch*pitch;
