@@ -78,18 +78,14 @@ private:
                 }
                 else if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_GACC.Data, sizeof(MFX_PLUGINID_HEVCE_GACC.Data)))
                 {
-                    // GACC: supported only TU = {4,7}. Mapping: {1,2,3,5}->4; 6->7
-                    if (tc.set_par[0].v == 4 || tc.set_par[0].v == 7)
+                    // GACC: supported only TU = {4,5,6,7}
+                    if (tc.set_par[0].v >= 4)
                     {
                         tsStruct::check_eq(m_pParOut, *tc.set_par[0].f, tsStruct::get(m_pPar, *tc.set_par[0].f));
                     }
                     else
                     {
-                        if (tc.set_par[0].v == 6)
-                            tsStruct::check_eq(m_pParOut, *tc.set_par[0].f, tsStruct::get(m_pPar, *tc.set_par[0].f) + 1);
-                        else
-                            tsStruct::check_eq(m_pParOut, *tc.set_par[0].f, 4);
-
+                        tsStruct::check_eq(m_pParOut, *tc.set_par[0].f, 4);
                     }
                 }
                 else // SW: supported TU = {1,2,3,4,5,6,7}
@@ -477,8 +473,8 @@ int TestSuite::RunTest(unsigned int id)
     }
     else if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_GACC.Data, sizeof(MFX_PLUGINID_HEVCE_GACC.Data)))
     {
-        // GACC: supported only TU = {4,7}. Mapping: {1,2,3,5}->4; 6->7
-        if ((!(tc.set_par[0].v == 4 || tc.set_par[0].v == 7)) && (tc.type == TARGET_USAGE))
+        // GACC: supported only TU = {4,5,6,7}
+        if ((tc.set_par[0].v < 4) && (tc.type == TARGET_USAGE))
         {
             g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
         }
