@@ -272,8 +272,11 @@ int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
     tc_struct tc = test_case[id];
-    g_tsStreamPool.Get(tc.stream, path);
-    g_tsStreamPool.Reg();
+    if (tc.stream != "")
+    {
+        g_tsStreamPool.Get(tc.stream, path);
+        g_tsStreamPool.Reg();
+    }
 
     memset(m_pPar, 0xF0, sizeof(mfxVideoParam));
     m_pPar->mfx.CodecId = MFX_CODEC_HEVC;
