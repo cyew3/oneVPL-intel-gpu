@@ -2419,6 +2419,8 @@ void H265FrameEncoder::SetEncodeFrame_GpuPostProc(Frame* frame, std::deque<Threa
                     if (ctb_row > regionCtbRowFirst) {
                         if (regionCtbColFirst == regionCtbColLast) { // special case: frame width <= 1 CTB, frame height > 1 CTB
                             AddTaskDependency(task_enc, task_enc - m_videoParam.PicWidthInCtbs * m_numTasksPerCu);
+                            if (m_videoParam.enableCmFlag)
+                                AddTaskDependency(task_pp, task_pp - m_videoParam.PicWidthInCtbs * m_numTasksPerCu);
                         } else if (ctb_col < regionCtbColLast) {
                             AddTaskDependency(task_enc, task_enc - (m_videoParam.PicWidthInCtbs - 1) * m_numTasksPerCu);
 
