@@ -65,7 +65,7 @@ ALIGN_DECL(32) static const short DCT4Tab[6][16] = {
 
 /* common kernel for DST/DCT, only difference is coefficient table */
 template <int SHIFT_FRW4_1ST>
-static __inline void h265_FwdKernel4x4(const short *H265_RESTRICT src, short *H265_RESTRICT dst, int dctFlag)
+static __inline void h265_FwdKernel4x4(const short *H265_RESTRICT src, Ipp32s srcStride, short *H265_RESTRICT dst, int dctFlag)
 {
     __m256i ymm0, ymm1, ymm2, ymm3, ymm4, round1, round2;
     __m256i *coefTab;
@@ -80,12 +80,15 @@ static __inline void h265_FwdKernel4x4(const short *H265_RESTRICT src, short *H2
     else
         coefTab = (__m256i *)DST4Tab;
 
-    ymm4 = _mm256_loadu_si256((__m256i *)src);    // load all 4*4 (16-bit) pixels for this block
+    Ipp64u row0 = *(const Ipp64u *)(src + 0*srcStride);
+    Ipp64u row1 = *(const Ipp64u *)(src + 1*srcStride);
+    Ipp64u row2 = *(const Ipp64u *)(src + 2*srcStride);
+    Ipp64u row3 = *(const Ipp64u *)(src + 3*srcStride);
 
     /* first 2 rows */
-    ymm2 = _mm256_permute4x64_epi64(ymm4, 0x50);  // [0 | 0 | 1 | 1]
-    ymm0 = _mm256_shuffle_epi32(ymm2, 0x00);      // [r0-01 | r0-01 | r0-01 | r0-01 | r1-01 | r1-01 | r1-01 | r1-01]
-    ymm2 = _mm256_shuffle_epi32(ymm2, 0x55);      // [r0-23 | r0-23 | r0-23 | r0-23 | r1-23 | r1-23 | r1-23 | r1-23]
+    ymm2 = _mm256_set_epi64x(row1, row1, row0, row0);   // [0 | 0 | 1 | 1]
+    ymm0 = _mm256_shuffle_epi32(ymm2, 0x00);            // [r0-01 | r0-01 | r0-01 | r0-01 | r1-01 | r1-01 | r1-01 | r1-01]
+    ymm2 = _mm256_shuffle_epi32(ymm2, 0x55);            // [r0-23 | r0-23 | r0-23 | r0-23 | r1-23 | r1-23 | r1-23 | r1-23]
 
     ymm0 = _mm256_madd_epi16(ymm0, coefTab[0]);
     ymm2 = _mm256_madd_epi16(ymm2, coefTab[1]);
@@ -95,9 +98,9 @@ static __inline void h265_FwdKernel4x4(const short *H265_RESTRICT src, short *H2
     ymm0 = _mm256_srai_epi32(ymm0, SHIFT_FRW4_1ST);
 
     /* second 2 rows */
-    ymm2 = _mm256_permute4x64_epi64(ymm4, 0xFA);  // [2 | 2 | 3 | 3]
-    ymm1 = _mm256_shuffle_epi32(ymm2, 0x00);      // [r2-01 | r2-01 | r2-01 | r2-01 | r1-01 | r1-01 | r1-01 | r1-01]
-    ymm2 = _mm256_shuffle_epi32(ymm2, 0x55);      // [r2-23 | r2-23 | r2-23 | r2-23 | r1-23 | r1-23 | r1-23 | r1-23]
+    ymm2 = _mm256_set_epi64x(row3, row3, row2, row2);   // [2 | 2 | 3 | 3]
+    ymm1 = _mm256_shuffle_epi32(ymm2, 0x00);            // [r2-01 | r2-01 | r2-01 | r2-01 | r1-01 | r1-01 | r1-01 | r1-01]
+    ymm2 = _mm256_shuffle_epi32(ymm2, 0x55);            // [r2-23 | r2-23 | r2-23 | r2-23 | r1-23 | r1-23 | r1-23 | r1-23]
 
     ymm1 = _mm256_madd_epi16(ymm1, coefTab[0]);
     ymm2 = _mm256_madd_epi16(ymm2, coefTab[1]);
@@ -134,21 +137,21 @@ static __inline void h265_FwdKernel4x4(const short *H265_RESTRICT src, short *H2
     _mm256_storeu_si256((__m256i *)dst, ymm0);
 }
 
-void H265_FASTCALL MAKE_NAME(h265_DST4x4Fwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst, Ipp32u bitDepth)
+void H265_FASTCALL MAKE_NAME(h265_DST4x4Fwd_16s)(const short *H265_RESTRICT src, Ipp32s srcStride, short *H265_RESTRICT dst, Ipp32u bitDepth)
 {
     switch (bitDepth) {
-    case  8: h265_FwdKernel4x4<SHIFT_FRW4_1ST_BASE + 0>(src, dst, 0);   break;
-    case  9: h265_FwdKernel4x4<SHIFT_FRW4_1ST_BASE + 1>(src, dst, 0);   break;
-    case 10: h265_FwdKernel4x4<SHIFT_FRW4_1ST_BASE + 2>(src, dst, 0);   break;
+    case  8: h265_FwdKernel4x4<SHIFT_FRW4_1ST_BASE + 0>(src, srcStride, dst, 0);   break;
+    case  9: h265_FwdKernel4x4<SHIFT_FRW4_1ST_BASE + 1>(src, srcStride, dst, 0);   break;
+    case 10: h265_FwdKernel4x4<SHIFT_FRW4_1ST_BASE + 2>(src, srcStride, dst, 0);   break;
     }
 }
 
-void H265_FASTCALL MAKE_NAME(h265_DCT4x4Fwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst, Ipp32u bitDepth)
+void H265_FASTCALL MAKE_NAME(h265_DCT4x4Fwd_16s)(const short *H265_RESTRICT src, Ipp32s srcStride, short *H265_RESTRICT dst, Ipp32u bitDepth)
 {
     switch (bitDepth) {
-    case  8: h265_FwdKernel4x4<SHIFT_FRW4_1ST_BASE + 0>(src, dst, 1);   break;
-    case  9: h265_FwdKernel4x4<SHIFT_FRW4_1ST_BASE + 1>(src, dst, 1);   break;
-    case 10: h265_FwdKernel4x4<SHIFT_FRW4_1ST_BASE + 2>(src, dst, 1);   break;
+    case  8: h265_FwdKernel4x4<SHIFT_FRW4_1ST_BASE + 0>(src, srcStride, dst, 1);   break;
+    case  9: h265_FwdKernel4x4<SHIFT_FRW4_1ST_BASE + 1>(src, srcStride, dst, 1);   break;
+    case 10: h265_FwdKernel4x4<SHIFT_FRW4_1ST_BASE + 2>(src, srcStride, dst, 1);   break;
     }
 }
 
@@ -204,7 +207,7 @@ ALIGN_DECL(32) static const short DCT8Tab[4*(1+8)][16] = {
 };
 
 template <int SHIFT_FRW8_1ST>
-static void h265_DCT8x8Fwd_16s_Kernel(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
+static void h265_DCT8x8Fwd_16s_Kernel(const short *H265_RESTRICT src, int srcStride, short *H265_RESTRICT dst)
 {
     int i;
     ALIGN_DECL(32) short tmp[8 * 8];
@@ -219,7 +222,7 @@ static void h265_DCT8x8Fwd_16s_Kernel(const short *H265_RESTRICT src, short *H26
     for (i = 0; i < 8; i++) {
         ymm0 = round1;
 
-        ymm1 = mm256(_mm_loadu_si128((__m128i *)(src + i*8)));  // load 8 16-bit pixels (one row)
+        ymm1 = mm256(_mm_loadu_si128((__m128i *)(src + i*srcStride)));  // load 8 16-bit pixels (one row)
         ymm1 = _mm256_permute2x128_si256(ymm1, ymm1, 0x00);
         ymm2 = _mm256_shuffle_epi32(ymm1, 0x39);
         ymm3 = _mm256_shuffle_epi32(ymm1, 0x4e);
@@ -338,12 +341,12 @@ static void h265_DCT8x8Fwd_16s_Kernel(const short *H265_RESTRICT src, short *H26
     _mm256_storeu_si256((__m256i *)(dst + 6*8), ymm6);
 }
 
-void H265_FASTCALL MAKE_NAME(h265_DCT8x8Fwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst, Ipp32u bitDepth)
+void H265_FASTCALL MAKE_NAME(h265_DCT8x8Fwd_16s)(const short *H265_RESTRICT src, int srcStride, short *H265_RESTRICT dst, Ipp32u bitDepth)
 {
     switch (bitDepth) {
-    case  8: h265_DCT8x8Fwd_16s_Kernel<SHIFT_FRW8_1ST_BASE + 0>(src, dst);  break;
-    case  9: h265_DCT8x8Fwd_16s_Kernel<SHIFT_FRW8_1ST_BASE + 1>(src, dst);  break;
-    case 10: h265_DCT8x8Fwd_16s_Kernel<SHIFT_FRW8_1ST_BASE + 2>(src, dst);  break;
+    case  8: h265_DCT8x8Fwd_16s_Kernel<SHIFT_FRW8_1ST_BASE + 0>(src, srcStride, dst);  break;
+    case  9: h265_DCT8x8Fwd_16s_Kernel<SHIFT_FRW8_1ST_BASE + 1>(src, srcStride, dst);  break;
+    case 10: h265_DCT8x8Fwd_16s_Kernel<SHIFT_FRW8_1ST_BASE + 2>(src, srcStride, dst);  break;
     }
 }
 
@@ -386,7 +389,7 @@ ALIGN_DECL(32) static const int c25[8] = {  25,  25,  25,  25,  25,  25,  25,  2
 ALIGN_DECL(32) static const int c09[8] = {   9,   9,   9,   9,   9,   9,   9,   9 };
 
 template <int SHIFT_FRW16_1ST>
-static void h265_DCT16x16Fwd_16s_Kernel(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
+static void h265_DCT16x16Fwd_16s_Kernel(const short *H265_RESTRICT src, Ipp32s srcStride, short *H265_RESTRICT dst)
 {
     int i;
     ALIGN_DECL(32) short tmp[16 * 16];
@@ -402,8 +405,8 @@ static void h265_DCT16x16Fwd_16s_Kernel(const short *H265_RESTRICT src, short *H
 
     p_tmp = tmp;
     for (i = 0; i < 16; i+=2) {
-        ymm2 = _mm256_loadu_si256((__m256i *)(src + (i + 0)*16));    // row 0: 0-15
-        ymm3 = _mm256_loadu_si256((__m256i *)(src + (i + 1)*16));    // row 1: 0-15
+        ymm2 = _mm256_loadu_si256((__m256i *)(src + (i + 0)*srcStride));    // row 0: 0-15
+        ymm3 = _mm256_loadu_si256((__m256i *)(src + (i + 1)*srcStride));    // row 1: 0-15
 
         ymm0 = _mm256_permute2x128_si256(ymm2, ymm3, 0x20);          // [row 0: 0-7  | row 1: 0-7 ]
         ymm1 = _mm256_permute2x128_si256(ymm2, ymm3, 0x31);          // [row 0: 8-15 | row 1: 8-15]
@@ -719,12 +722,12 @@ static void h265_DCT16x16Fwd_16s_Kernel(const short *H265_RESTRICT src, short *H
     }
 }
 
-void H265_FASTCALL MAKE_NAME(h265_DCT16x16Fwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst, Ipp32u bitDepth)
+void H265_FASTCALL MAKE_NAME(h265_DCT16x16Fwd_16s)(const short *H265_RESTRICT src, Ipp32s srcStride, short *H265_RESTRICT dst, Ipp32u bitDepth)
 {
     switch (bitDepth) {
-    case  8: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 0>(src, dst);   break;
-    case  9: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 1>(src, dst);   break;
-    case 10: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 2>(src, dst);   break;
+    case  8: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 0>(src, srcStride, dst);   break;
+    case  9: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 1>(src, srcStride, dst);   break;
+    case 10: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 2>(src, srcStride, dst);   break;
     }
 }
 

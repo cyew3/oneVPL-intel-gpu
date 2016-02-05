@@ -421,7 +421,7 @@ namespace MFX_HEVC_PP
 
     //void FASTCALL fwd_32x32_dct_avx2(short *__restrict src, short *__restrict dest)
     template <int SHIFT_FRW32_1ST>
-    static void h265_DCT32x32Fwd_16s_Kernel(const short *H265_RESTRICT src, short *H265_RESTRICT dst)
+    static void h265_DCT32x32Fwd_16s_Kernel(const short *H265_RESTRICT src, Ipp32s srcStride, short *H265_RESTRICT dst)
     {
         short ALIGN_DECL(32) temp[32*32];
         // temporal buffer short[32*4]. Intermediate results will be stored here. Rotate 4x4 and moved to temp[]
@@ -432,16 +432,14 @@ namespace MFX_HEVC_PP
 
         // Horizontal 1-D forward transform
 
-#define src_stride  32  // linear input buffer
-
         for (int i=0; i<32; i+=2) 
         {
             /* Read input data (32 signed shorts)            
             */
-            y4 = _mm256_load_si256((const __m256i *)(src + 16*0)); // a15..a08 | a07..a00   first line
-            y5 = _mm256_load_si256((const __m256i *)(src + 16*1)); // a31..a24 | a23..a16
-            y2 = _mm256_load_si256((const __m256i *)(src + 16*2)); // b15..b08 | b07..b00   second line
-            y3 = _mm256_load_si256((const __m256i *)(src + 16*3)); // b31..b24 | b23..b16
+            y4 = _mm256_load_si256((const __m256i *)(src + srcStride*0)); // a15..a08 | a07..a00   first line
+            y5 = _mm256_load_si256((const __m256i *)(src + srcStride*0+16)); // a31..a24 | a23..a16
+            y2 = _mm256_load_si256((const __m256i *)(src + srcStride*1)); // b15..b08 | b07..b00   second line
+            y3 = _mm256_load_si256((const __m256i *)(src + srcStride*1+16)); // b31..b24 | b23..b16
 
             y5 = _mm256_shuffle_epi8(y5, kefh_shuff);     // a24 a25 a26 a27 a28 a29 a30 a31 | a16 a17 a18 a19 a20 a21 a22 a23
             y3 = _mm256_shuffle_epi8(y3, kefh_shuff);     // b24 b25 b26 b27 b28 b29 b30 b31 | b16 b17 b18 b19 b20 b21 b22 b23
@@ -955,7 +953,7 @@ namespace MFX_HEVC_PP
             buff[num + 4] = _mm256_extracti128_si256(y4, 1);
             num += 5;
 #endif
-            src += 2*src_stride;
+            src += 2*srcStride;
         }
 
         transpose1(temp, buff);
@@ -1762,12 +1760,12 @@ namespace MFX_HEVC_PP
         transpose2(dst, buff);
     }
 
-    void H265_FASTCALL MAKE_NAME(h265_DCT32x32Fwd_16s)(const short *H265_RESTRICT src, short *H265_RESTRICT dst, Ipp32u bitDepth)
+    void H265_FASTCALL MAKE_NAME(h265_DCT32x32Fwd_16s)(const short *H265_RESTRICT src, Ipp32s srcStride, short *H265_RESTRICT dst, Ipp32u bitDepth)
     {
         switch (bitDepth) {
-        case  8: h265_DCT32x32Fwd_16s_Kernel<SHIFT_FRW32_1ST_BASE + 0>(src, dst);   break;
-        case  9: h265_DCT32x32Fwd_16s_Kernel<SHIFT_FRW32_1ST_BASE + 1>(src, dst);   break;
-        case 10: h265_DCT32x32Fwd_16s_Kernel<SHIFT_FRW32_1ST_BASE + 2>(src, dst);   break;
+        case  8: h265_DCT32x32Fwd_16s_Kernel<SHIFT_FRW32_1ST_BASE + 0>(src, srcStride, dst);   break;
+        case  9: h265_DCT32x32Fwd_16s_Kernel<SHIFT_FRW32_1ST_BASE + 1>(src, srcStride, dst);   break;
+        case 10: h265_DCT32x32Fwd_16s_Kernel<SHIFT_FRW32_1ST_BASE + 2>(src, srcStride, dst);   break;
         }
     }
 

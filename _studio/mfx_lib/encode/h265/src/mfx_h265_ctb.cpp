@@ -2288,9 +2288,7 @@ Ipp8u H265CU<PixType>::EncInterLumaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offset
     IppiSize roiSize = {width, width};
     Ipp16s *resid = m_interResidY;
     resid += (PUStartRow * MAX_CU_SIZE + PUStartColumn) << m_par->QuadtreeTULog2MinSize;
-    ippiCopy_16s_C1R(resid, MAX_CU_SIZE * sizeof(CoeffsType), m_residualsY + offset, width * sizeof(CoeffsType), roiSize);
-
-    TransformFwd(offset, width, 1, 0);
+    TransformFwd(resid, MAX_CU_SIZE, m_residualsY+offset, width, m_par->bitDepthLuma, 0);
     
     QuantFwdTuBase(absPartIdx, offset, width, m_data[absPartIdx].qp, 1);
 
@@ -2314,10 +2312,9 @@ void H265CU<PixType>::EncInterChromaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offse
 
     IppiSize roiSize = { width, width };
     Ipp32s offsetCh = GetChromaOffset1(m_par, absPartIdx, MAX_CU_SIZE >> m_par->chromaShiftW);
-    ippiCopy_16s_C1R(m_interResidU + offsetCh, (MAX_CU_SIZE >> m_par->chromaShiftW) * sizeof(CoeffsType), m_residualsU + offset, width * sizeof(CoeffsType), roiSize);
-    ippiCopy_16s_C1R(m_interResidV + offsetCh, (MAX_CU_SIZE >> m_par->chromaShiftW) * sizeof(CoeffsType), m_residualsV + offset, width * sizeof(CoeffsType), roiSize);
 
-    TransformFwd(offset, width, 0, 0);
+    TransformFwd(m_interResidU+offsetCh, MAX_CU_SIZE>>m_par->chromaShiftW, m_residualsU+offset, width, m_par->bitDepthChroma, 0);
+    TransformFwd(m_interResidV+offsetCh, MAX_CU_SIZE>>m_par->chromaShiftW, m_residualsV+offset, width, m_par->bitDepthChroma, 0);
 #ifdef AMT_DZ_RDOQ
     QuantFwdTu(absPartIdx, offset, width, m_data[absPartIdx].qp, 0, 0);
 #else
@@ -9695,14 +9692,15 @@ void H265CU<PixType>::EncAndRecLumaTu(Ipp32s absPartIdx, Ipp32s offset, Ipp32s w
                 TuDiffTransp(m_residualsY + offset, width, src, m_pitchSrcLuma, pred, pitch_pred, width);
             else
                 TuDiff(m_residualsY + offset, width, src, m_pitchSrcLuma, pred, pitch_pred, width);
+            TransformFwd(m_residualsY+offset, width, m_residualsY+offset, width, m_par->bitDepthLuma, isIntra);
         }
         else {
             Ipp16s *resid = m_interResidY;
             resid += (PUStartRow * MAX_CU_SIZE + PUStartColumn) << m_par->QuadtreeTULog2MinSize;
-            ippiCopy_16s_C1R(resid, MAX_CU_SIZE * sizeof(CoeffsType), m_residualsY + offset, width * sizeof(CoeffsType), roi);
+            //ippiCopy_16s_C1R(resid, MAX_CU_SIZE * sizeof(CoeffsType), m_residualsY + offset, width * sizeof(CoeffsType), roi);
+            TransformFwd(resid, MAX_CU_SIZE, m_residualsY+offset, width, m_par->bitDepthLuma, isIntra);
         }
 
-        TransformFwd(offset, width, 1, isIntra);
 #ifdef AMT_DZ_RDOQ
         QuantFwdTu(absPartIdx, offset, width, dataTu->qp, 1, isIntra);
 #else
@@ -9827,14 +9825,15 @@ void H265CU<PixType>::EncAndRecChromaTu(Ipp32s absPartIdx, Ipp32s idx422, Ipp32s
     if (!data->flags.skippedFlag) {
         if (data->predMode == MODE_INTRA) {
             h265_DiffNv12(pSrc, m_pitchSrcChroma, pRec, pitchRec, m_residualsU + offset, width, m_residualsV + offset, width, width, width);
+            TransformFwd(m_residualsU+offset, width, m_residualsU+offset, width, m_par->bitDepthChroma, 0);
+            TransformFwd(m_residualsV+offset, width, m_residualsV+offset, width, m_par->bitDepthChroma, 0);
         } else {
             IppiSize roiSize = { width, width };
             Ipp32s offsetCh = GetChromaOffset1(m_par, absPartIdx + idx422, MAX_CU_SIZE >> m_par->chromaShiftW);
-            ippiCopy_16s_C1R(m_interResidU + offsetCh, (MAX_CU_SIZE >> m_par->chromaShiftW) * sizeof(CoeffsType), m_residualsU + offset, width * sizeof(CoeffsType), roiSize);
-            ippiCopy_16s_C1R(m_interResidV + offsetCh, (MAX_CU_SIZE >> m_par->chromaShiftW) * sizeof(CoeffsType), m_residualsV + offset, width * sizeof(CoeffsType), roiSize);
+            TransformFwd(m_interResidU+offsetCh, MAX_CU_SIZE>>m_par->chromaShiftW, m_residualsU+offset, width, m_par->bitDepthChroma, 0);
+            TransformFwd(m_interResidV+offsetCh, MAX_CU_SIZE>>m_par->chromaShiftW, m_residualsV+offset, width, m_par->bitDepthChroma, 0);
         }
 
-        TransformFwd(offset, width, 0, 0);
 #ifdef AMT_DZ_RDOQ
         QuantFwdTu(absPartIdx, offset, width, data->qp, 0, data->predMode == MODE_INTRA);
 #else

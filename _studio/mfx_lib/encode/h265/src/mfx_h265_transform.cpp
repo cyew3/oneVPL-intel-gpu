@@ -95,43 +95,27 @@ void H265CU<PixType>::TransformInv2(void *dst, Ipp32s pitch_dst, Ipp32s offset, 
 }
 
 template <typename PixType>
-void H265CU<PixType>::TransformFwd(Ipp32s offset, Ipp32s width, Ipp8u is_luma, Ipp8u is_intra)
+void H265CU<PixType>::TransformFwd(CoeffsType *src, Ipp32s srcPitch, CoeffsType *dst, Ipp32s width, Ipp32s bitDepth, Ipp8u isIntra)
 {
-    Ipp32s bitDepth = is_luma ? m_par->bitDepthLuma : m_par->bitDepthChroma;
-
-    for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
-
-        CoeffsType *residuals = is_luma ? m_residualsY : (c_idx ? m_residualsV : m_residualsU);
-        residuals += offset;
-
-        if (is_luma && is_intra && width == 4) {
-            MFX_HEVC_PP::NAME(h265_DST4x4Fwd_16s)(residuals, residuals, bitDepth);
-        }
-        else {
-            switch (width) {
-            case 4:
-                MFX_HEVC_PP::NAME(h265_DCT4x4Fwd_16s)(residuals, residuals, bitDepth);
-                break;
-            case 8:
-                MFX_HEVC_PP::NAME(h265_DCT8x8Fwd_16s)(residuals, residuals, bitDepth);
-                break;
-            case 16:
-                MFX_HEVC_PP::NAME(h265_DCT16x16Fwd_16s)(residuals, residuals, bitDepth);
-                break;
-            case 32:
-                MFX_HEVC_PP::NAME(h265_DCT32x32Fwd_16s)(residuals, residuals, bitDepth);
-                break;
-            }
+    if (isIntra && width == 4)
+        return MFX_HEVC_PP::NAME(h265_DST4x4Fwd_16s)(src, srcPitch, dst, bitDepth);
+    else {
+        switch (width) {
+        case 4:  return MFX_HEVC_PP::NAME(h265_DCT4x4Fwd_16s)(src, srcPitch, dst, bitDepth);
+        case 8:  return MFX_HEVC_PP::NAME(h265_DCT8x8Fwd_16s)(src, srcPitch, dst, bitDepth);
+        case 16: return MFX_HEVC_PP::NAME(h265_DCT16x16Fwd_16s)(src, srcPitch, dst, bitDepth);
+        case 32: return MFX_HEVC_PP::NAME(h265_DCT32x32Fwd_16s)(src, srcPitch, dst, bitDepth);
         }
     }
 }
 
+
 template void H265CU<Ipp8u>::TransformInv(Ipp32s offset, Ipp32s width, Ipp8u isLuma, Ipp8u isIntra, Ipp8u bitDepth);
 template void H265CU<Ipp8u>::TransformInv2(void *dst, Ipp32s pitch_dst, Ipp32s offset, Ipp32s width, Ipp8u isLuma, Ipp8u isIntra, Ipp8u bitDepth);
-template void H265CU<Ipp8u>::TransformFwd(Ipp32s offset, Ipp32s width, Ipp8u isLuma, Ipp8u isIntra);
+template void H265CU<Ipp8u>::TransformFwd(CoeffsType *src, Ipp32s srcPitch, CoeffsType *dst, Ipp32s width, Ipp32s bitDepth, Ipp8u isIntra);
 template void H265CU<Ipp16u>::TransformInv(Ipp32s offset, Ipp32s width, Ipp8u isLuma, Ipp8u isIntra, Ipp8u bitDepth);
 template void H265CU<Ipp16u>::TransformInv2(void *dst, Ipp32s pitch_dst, Ipp32s offset, Ipp32s width, Ipp8u isLuma, Ipp8u isIntra, Ipp8u bitDepth);
-template void H265CU<Ipp16u>::TransformFwd(Ipp32s offset, Ipp32s width, Ipp8u isLuma, Ipp8u isIntra);
+template void H265CU<Ipp16u>::TransformFwd(CoeffsType *src, Ipp32s srcPitch, CoeffsType *dst, Ipp32s width, Ipp32s bitDepth, Ipp8u isIntra);
 
 } // namespace
 

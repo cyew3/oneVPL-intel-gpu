@@ -480,6 +480,7 @@ void PartialButterflyInverse32x32(Ipp32s shift, H265CoeffsPtrCommon src, DstCoef
 
     static
         void h265_transform_partial_butterfly_fwd4(CoeffsType *src,
+        Ipp32s srcStride,
         CoeffsType *dst,
         Ipp32s shift)
     {
@@ -501,13 +502,14 @@ void PartialButterflyInverse32x32(Ipp32s shift, H265CoeffsPtrCommon src, DstCoef
             dst[2*line] = (CoeffsType)((h265_t4[2][0]*E[0] + h265_t4[2][1]*E[1] + add) >> shift);
             dst[3*line] = (CoeffsType)((h265_t4[3][0]*O[0] + h265_t4[3][1]*O[1] + add) >> shift);
 
-            src += 4;
+            src += srcStride;
             dst++;
         }
     }
 
     static
         void h265_transform_partial_butterfly_fwd8(CoeffsType *src,
+        Ipp32s srcStride,
         CoeffsType *dst,
         Ipp32s shift)
     {
@@ -542,13 +544,14 @@ void PartialButterflyInverse32x32(Ipp32s shift, H265CoeffsPtrCommon src, DstCoef
             dst[5*line] = (CoeffsType)((h265_t8[5][0]*O[0] + h265_t8[5][1]*O[1] + h265_t8[5][2]*O[2] + h265_t8[5][3]*O[3] + add) >> shift);
             dst[7*line] = (CoeffsType)((h265_t8[7][0]*O[0] + h265_t8[7][1]*O[1] + h265_t8[7][2]*O[2] + h265_t8[7][3]*O[3] + add) >> shift);
 
-            src += 8;
+            src += srcStride;
             dst++;
         }
     }
 
     static
         void h265_transform_partial_butterfly_fwd16(CoeffsType *src,
+        Ipp32s srcStride,
         CoeffsType *dst,
         Ipp32s shift)
     {
@@ -600,13 +603,14 @@ void PartialButterflyInverse32x32(Ipp32s shift, H265CoeffsPtrCommon src, DstCoef
                     h265_t16[k][6]*O[6] + h265_t16[k][7]*O[7] + add) >> shift);
             }
 
-            src += 16;
+            src += srcStride;
             dst++;
         }
     }
 
     static
         void h265_transform_partial_butterfly_fwd32(CoeffsType *src,
+        Ipp32s srcStride,
         CoeffsType *dst,
         Ipp32s shift)
     {
@@ -678,13 +682,14 @@ void PartialButterflyInverse32x32(Ipp32s shift, H265CoeffsPtrCommon src, DstCoef
                     h265_t32[k][14]*O[14] + h265_t32[k][15]*O[15] + add) >> shift);
             }
 
-            src += 32;
+            src += srcStride;
             dst++;
         }
     }
 
     static
         void h265_transform_fast_forward_dst(CoeffsType *src,
+        Ipp32s srcStride,
         CoeffsType *dst,
         Ipp32s shift)
     {
@@ -693,13 +698,13 @@ void PartialButterflyInverse32x32(Ipp32s shift, H265CoeffsPtrCommon src, DstCoef
 
         for (i = 0; i < 4; i++)
         {
-            c[0] = src[4*i+0] + src[4*i+3];
-            c[1] = src[4*i+1] + src[4*i+3];
-            c[2] = src[4*i+0] - src[4*i+1];
-            c[3] = 74*src[4*i+2];
+            c[0] = src[srcStride*i+0] + src[srcStride*i+3];
+            c[1] = src[srcStride*i+1] + src[srcStride*i+3];
+            c[2] = src[srcStride*i+0] - src[srcStride*i+1];
+            c[3] = 74*src[srcStride*i+2];
 
             dst[   i] = (CoeffsType)((29*c[0] + 55*c[1]           + c[3]        + add) >> shift);
-            dst[ 4+i] = (CoeffsType)((74*(src[4*i+0] + src[4*i+1] - src[4*i+3]) + add) >> shift);
+            dst[ 4+i] = (CoeffsType)((74*(src[srcStride*i+0] + src[srcStride*i+1] - src[srcStride*i+3]) + add) >> shift);
             dst[ 8+i] = (CoeffsType)((29*c[2] + 55*c[0]           - c[3]        + add) >> shift);
             dst[12+i] = (CoeffsType)((55*c[2] - 29*c[1]           + c[3]        + add) >> shift);
         }
@@ -715,43 +720,43 @@ void PartialButterflyInverse32x32(Ipp32s shift, H265CoeffsPtrCommon src, DstCoef
     /*              forward transform                     */
     /* ************************************************** */
 
-    void H265_FASTCALL MAKE_NAME(h265_DST4x4Fwd_16s)( const short *H265_RESTRICT src, short *H265_RESTRICT dst, Ipp32u bitDepth )
+    void H265_FASTCALL MAKE_NAME(h265_DST4x4Fwd_16s)( const short *H265_RESTRICT src, Ipp32s srcStride, short *H265_RESTRICT dst, Ipp32u bitDepth )
     {
         CoeffsType tmp[4*4];
-        h265_transform_fast_forward_dst((Ipp16s*)src, tmp, bitDepth - 7);
-        h265_transform_fast_forward_dst(tmp, dst, 8);
+        h265_transform_fast_forward_dst((Ipp16s*)src, srcStride, tmp, bitDepth - 7);
+        h265_transform_fast_forward_dst(tmp, 4, dst, 8);
     }
 
 
-    void H265_FASTCALL MAKE_NAME(h265_DCT4x4Fwd_16s)( const short *H265_RESTRICT src, short *H265_RESTRICT dst, Ipp32u bitDepth )
+    void H265_FASTCALL MAKE_NAME(h265_DCT4x4Fwd_16s)( const short *H265_RESTRICT src, Ipp32s srcStride, short *H265_RESTRICT dst, Ipp32u bitDepth )
     {
         CoeffsType tmp[4*4];
-        h265_transform_partial_butterfly_fwd4((Ipp16s*)src, tmp, bitDepth - 7);
-        h265_transform_partial_butterfly_fwd4(tmp, dst, 8);
+        h265_transform_partial_butterfly_fwd4((Ipp16s*)src, srcStride, tmp, bitDepth - 7);
+        h265_transform_partial_butterfly_fwd4(tmp, 4, dst, 8);
     }
 
 
-    void H265_FASTCALL MAKE_NAME(h265_DCT8x8Fwd_16s)( const short *H265_RESTRICT src, short *H265_RESTRICT dst, Ipp32u bitDepth )
+    void H265_FASTCALL MAKE_NAME(h265_DCT8x8Fwd_16s)( const short *H265_RESTRICT src, Ipp32s srcStride, short *H265_RESTRICT dst, Ipp32u bitDepth )
     {
         CoeffsType tmp[8*8];
-        h265_transform_partial_butterfly_fwd8((Ipp16s*)src, tmp, bitDepth - 6);
-        h265_transform_partial_butterfly_fwd8(tmp, dst, 9);
+        h265_transform_partial_butterfly_fwd8((Ipp16s*)src, srcStride, tmp, bitDepth - 6);
+        h265_transform_partial_butterfly_fwd8(tmp, 8, dst, 9);
     }
 
 
-    void H265_FASTCALL MAKE_NAME(h265_DCT16x16Fwd_16s)( const short *H265_RESTRICT src, short *H265_RESTRICT dst, Ipp32u bitDepth )
+    void H265_FASTCALL MAKE_NAME(h265_DCT16x16Fwd_16s)( const short *H265_RESTRICT src, Ipp32s srcStride, short *H265_RESTRICT dst, Ipp32u bitDepth )
     {
         CoeffsType tmp[16*16];
-        h265_transform_partial_butterfly_fwd16((Ipp16s*)src, tmp, bitDepth - 5);
-        h265_transform_partial_butterfly_fwd16(tmp, dst, 10);
+        h265_transform_partial_butterfly_fwd16((Ipp16s*)src, srcStride, tmp, bitDepth - 5);
+        h265_transform_partial_butterfly_fwd16(tmp, 16, dst, 10);
     }
 
 
-    void H265_FASTCALL MAKE_NAME(h265_DCT32x32Fwd_16s)( const short *H265_RESTRICT src, short *H265_RESTRICT dst, Ipp32u bitDepth )
+    void H265_FASTCALL MAKE_NAME(h265_DCT32x32Fwd_16s)( const short *H265_RESTRICT src, Ipp32s srcStride, short *H265_RESTRICT dst, Ipp32u bitDepth )
     {
         CoeffsType tmp[32*32];
-        h265_transform_partial_butterfly_fwd32((Ipp16s*)src, tmp, bitDepth - 4);
-        h265_transform_partial_butterfly_fwd32(tmp, dst, 11);
+        h265_transform_partial_butterfly_fwd32((Ipp16s*)src, srcStride, tmp, bitDepth - 4);
+        h265_transform_partial_butterfly_fwd32(tmp, 32, dst, 11);
     }
 
 
