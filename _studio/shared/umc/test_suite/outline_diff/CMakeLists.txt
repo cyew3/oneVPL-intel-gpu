@@ -10,7 +10,7 @@ list( APPEND LIBS
   color_space_converter_sw
   mpeg2_dec_sw
   h264_dec_sw
-  vc1_dec_elk
+  vc1_dec_sw
   jpeg_dec_sw
   media_buffers
   umc_io
