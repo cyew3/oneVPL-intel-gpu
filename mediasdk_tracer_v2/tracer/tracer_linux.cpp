@@ -1,6 +1,6 @@
 /*********************************************************************************
 
-Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -73,7 +73,7 @@ mfxStatus MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
             Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_MEMORY_ALLOC));
             return MFX_ERR_MEMORY_ALLOC;
         }
-        loader->dlhandle = dlopen(g_mfxlib, RTLD_NOW);
+        loader->dlhandle = dlopen(g_mfxlib, RTLD_NOW|RTLD_LOCAL|RTLD_DEEPBIND);
         if (!loader->dlhandle){
             Log::WriteLog(context.dump("ver", ver));
             Log::WriteLog(context.dump("session", *session));
@@ -178,7 +178,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
             Log::WriteLog(context.dump_mfxStatus("status", MFX_ERR_MEMORY_ALLOC));
             return MFX_ERR_MEMORY_ALLOC;
         }
-        loader->dlhandle = dlopen(g_mfxlib, RTLD_NOW);
+        loader->dlhandle = dlopen(g_mfxlib, RTLD_NOW|RTLD_LOCAL|RTLD_DEEPBIND);
         if (!loader->dlhandle){
             Log::WriteLog(context.dump("par", par));
             Log::WriteLog(context.dump("session", *session));
