@@ -168,7 +168,6 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
                 pContext->threadNum = AddThreadToPool(pContext); // m_param.numberOfThreads modified here
 
                 // spawn a thread
-                vm_thread_set_invalid(&pContext->threadHandle);
                 iRes = vm_thread_create(&pContext->threadHandle,
                     scheduler_thread_proc,
                     pContext);
@@ -216,7 +215,6 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
 
             // allocate thread contexts
             m_pThreadCtx = new MFX_SCHEDULER_THREAD_CONTEXT[m_param.numberOfThreads];
-            memset(m_pThreadCtx, 0, sizeof(MFX_SCHEDULER_THREAD_CONTEXT) * m_param.numberOfThreads);
 
             // start threads
             for (i = 0; i < m_param.numberOfThreads; i += 1)
@@ -225,7 +223,6 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
                 m_pThreadCtx[i].threadNum = i;
                 m_pThreadCtx[i].pSchedulerCore = this;
                 // spawn a thread
-                vm_thread_set_invalid(&(m_pThreadCtx[i].threadHandle));
                 iRes = vm_thread_create(
                     &(m_pThreadCtx[i].threadHandle),
                     scheduler_thread_proc,

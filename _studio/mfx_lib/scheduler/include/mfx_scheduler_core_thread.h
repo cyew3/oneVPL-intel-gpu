@@ -1,14 +1,14 @@
-/*
-//
-//                  INTEL CORPORATION PROPRIETARY INFORMATION
-//     This software is supplied under the terms of a license agreement or
-//     nondisclosure agreement with Intel Corporation and may not be copied
-//     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2009 Intel Corporation. All Rights Reserved.
-//
-*/
+/********************************************************************************
 
-#if !defined (__MFX_SCHEDULER_CORE_THREAD_H)
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
+
+*********************************************************************************/
+
+#ifndef __MFX_SCHEDULER_CORE_THREAD_H
 #define __MFX_SCHEDULER_CORE_THREAD_H
 
 #include <mfxdefs.h>
@@ -20,6 +20,15 @@ class mfxSchedulerCore;
 
 struct MFX_SCHEDULER_THREAD_CONTEXT
 {
+    MFX_SCHEDULER_THREAD_CONTEXT()
+      : pSchedulerCore(NULL)
+      , threadNum(0)
+      , workTime(0)
+      , sleepTime(0)
+    {
+        vm_thread_set_invalid(&threadHandle);
+    }
+
     mfxSchedulerCore *pSchedulerCore;                           // (mfxSchedulerCore *) pointer to the owning core
     mfxU32 threadNum;                                           // (mfxU32) number of the thread
     vm_thread threadHandle;                                     // (vm_thread) handle to the thread
@@ -28,4 +37,4 @@ struct MFX_SCHEDULER_THREAD_CONTEXT
     mfxU64 sleepTime;                                           // (mfxU64) integral sleeping time
 };
 
-#endif // !defined (__MFX_SCHEDULER_CORE_THREAD_H)
+#endif // #ifndef __MFX_SCHEDULER_CORE_THREAD_H
