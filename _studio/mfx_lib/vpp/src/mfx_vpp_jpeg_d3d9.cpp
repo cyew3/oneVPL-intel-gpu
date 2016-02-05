@@ -67,11 +67,6 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->rotation = 0;
     pMfxExecuteParams->scalingMode = MFX_SCALING_MODE_DEFAULT;
     pMfxExecuteParams->bEOS = false;
-    pMfxExecuteParams->bVideoSignalInfo = false;
-    pMfxExecuteParams->VidoSignalInfoIn.nominalRange    = 0;
-    pMfxExecuteParams->VidoSignalInfoIn.transferMatrix  = 0;
-    pMfxExecuteParams->VidoSignalInfoOut.nominalRange   = 0;
-    pMfxExecuteParams->VidoSignalInfoOut.transferMatrix = 0;
 } /*void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )*/
 
 

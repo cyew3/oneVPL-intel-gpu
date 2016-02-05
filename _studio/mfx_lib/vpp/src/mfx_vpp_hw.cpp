@@ -113,11 +113,6 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->rotation = 0;
     pMfxExecuteParams->scalingMode = MFX_SCALING_MODE_DEFAULT;
     pMfxExecuteParams->bEOS = false;
-    pMfxExecuteParams->bVideoSignalInfo = false;
-    pMfxExecuteParams->VidoSignalInfoIn.nominalRange    = 0;
-    pMfxExecuteParams->VidoSignalInfoIn.transferMatrix  = 0;
-    pMfxExecuteParams->VidoSignalInfoOut.nominalRange   = 0;
-    pMfxExecuteParams->VidoSignalInfoOut.transferMatrix = 0;
 } /*void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )*/
 
 
@@ -2144,6 +2139,96 @@ mfxStatus VideoVPPHW::ProcessFieldCopy(int mask)
     }
 #endif /* #if  defined(MFX_VA)*/
 
+
+mfxStatus VideoVPPHW::MergeRuntimeParams(const DdiTask *pTask, MfxHwVideoProcessing::mfxExecuteParams *execParams)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    MFX_CHECK_NULL_PTR1(pTask);
+    MFX_CHECK_NULL_PTR1(execParams);
+    mfxU32 numSamples;
+    std::vector<ExtSurface> inputSurfs;
+    size_t i, indx;
+
+    numSamples = pTask->bkwdRefCount + 1 + pTask->fwdRefCount;
+    inputSurfs.resize(numSamples);
+    execParams->VideoSignalInfo.assign(numSamples, m_executeParams.VideoSignalInfoIn);
+
+    // bkwdFrames
+    for(i = 0; i < pTask->bkwdRefCount; i++)
+    {
+        indx = i;
+        inputSurfs[indx] = pTask->m_refList[i];
+    }
+
+    // cur Frame
+    indx = pTask->bkwdRefCount;
+    inputSurfs[indx] = pTask->input;
+
+    // fwd Frames
+    for( i = 0; i < pTask->fwdRefCount; i++ )
+    {
+        indx = pTask->bkwdRefCount + 1 + i;
+        inputSurfs[indx] = pTask->m_refList[pTask->bkwdRefCount + i];
+    }
+
+    mfxExtVPPVideoSignalInfo *vsi;
+    for (i = 0; i < numSamples; i++) 
+    {
+        // Update Video Signal info params for output
+        vsi = reinterpret_cast<mfxExtVPPVideoSignalInfo *>( GetExtendedBuffer(inputSurfs[i].pSurf->Data.ExtParam, inputSurfs[i].pSurf->Data.NumExtParam, MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO));
+        if (vsi)
+        {
+            /* Check params */
+            if (vsi->TransferMatrix != MFX_TRANSFERMATRIX_BT601 &&
+                vsi->TransferMatrix != MFX_TRANSFERMATRIX_BT709 &&
+                vsi->TransferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)
+            {
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+            }
+
+            if (vsi->NominalRange != MFX_NOMINALRANGE_0_255 &&
+                vsi->NominalRange != MFX_NOMINALRANGE_16_235 &&
+                vsi->NominalRange != MFX_NOMINALRANGE_UNKNOWN)
+            {
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+            }
+
+            /* Params look good */
+            execParams->VideoSignalInfo[i].enabled        = true;
+            execParams->VideoSignalInfo[i].NominalRange   = vsi->NominalRange;
+            execParams->VideoSignalInfo[i].TransferMatrix = vsi->TransferMatrix;
+        }
+    }
+
+    ExtSurface outputSurf = pTask->output;
+    // Update Video Signal info params for output
+    vsi = reinterpret_cast<mfxExtVPPVideoSignalInfo *>( GetExtendedBuffer(outputSurf.pSurf->Data.ExtParam, outputSurf.pSurf->Data.NumExtParam, MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO));
+    if (vsi)
+    {
+            /* Check params */
+            if (vsi->TransferMatrix != MFX_TRANSFERMATRIX_BT601 &&
+                vsi->TransferMatrix != MFX_TRANSFERMATRIX_BT709 &&
+                vsi->TransferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)
+            {
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+            }
+
+            if (vsi->NominalRange != MFX_NOMINALRANGE_0_255 &&
+                vsi->NominalRange != MFX_NOMINALRANGE_16_235 &&
+                vsi->NominalRange != MFX_NOMINALRANGE_UNKNOWN)
+            {
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+            }
+
+            /* Params look good */
+            execParams->VideoSignalInfoOut.enabled        = true;
+            execParams->VideoSignalInfoOut.NominalRange   = vsi->NominalRange;
+            execParams->VideoSignalInfoOut.TransferMatrix = vsi->TransferMatrix;
+     }
+
+    return sts;
+}
+
 mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -2302,8 +2387,11 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         m_executeParams.iDeinterlacingAlgorithm = 0;
     }
 
+    MfxHwVideoProcessing::mfxExecuteParams  execParams = m_executeParams;
+    sts = MergeRuntimeParams(pTask, &execParams);
+    MFX_CHECK_STS(sts);
 
-    sts = m_ddi->Execute(&m_executeParams);
+    sts = m_ddi->Execute(&execParams);
     if (sts != MFX_ERR_NONE)
     {
         pTask->SetFree(true);
@@ -2313,7 +2401,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     MFX_CHECK_STS(sts);
 
     //aya: wa for variance
-    if(m_executeParams.bVarianceEnable)
+    if(execParams.bVarianceEnable)
     {
         //pTask->frameNumber = m_executeParams.frameNumber;
         pTask->bVariance   = true;
@@ -2345,7 +2433,6 @@ mfxStatus VideoVPPHW::AsyncTaskSubmission(void *pState, void *pParam, mfxU32 thr
     return MFX_TASK_DONE;
 
 } // mfxStatus VideoVPPHW::AsyncTaskSubmission(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
-
 
 mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 {
@@ -3191,11 +3278,13 @@ mfxStatus ConfigureExecuteParams(
                         }
 
                         /* Params look good */
-                        executeParams.bVideoSignalInfo = true;
-                        executeParams.VidoSignalInfoIn.nominalRange    = extVSI->In.NominalRange;
-                        executeParams.VidoSignalInfoIn.transferMatrix  = extVSI->In.TransferMatrix;
-                        executeParams.VidoSignalInfoOut.nominalRange   = extVSI->Out.NominalRange;
-                        executeParams.VidoSignalInfoOut.transferMatrix = extVSI->Out.TransferMatrix;
+                        executeParams.VideoSignalInfoIn.NominalRange    = extVSI->In.NominalRange;
+                        executeParams.VideoSignalInfoIn.TransferMatrix  = extVSI->In.TransferMatrix;
+                        executeParams.VideoSignalInfoIn.enabled         = true;
+
+                        executeParams.VideoSignalInfoOut.NominalRange   = extVSI->Out.NominalRange;
+                        executeParams.VideoSignalInfoOut.TransferMatrix = extVSI->Out.TransferMatrix;
+                        executeParams.VideoSignalInfoOut.enabled        = true;
                         break;
                     }
                 }

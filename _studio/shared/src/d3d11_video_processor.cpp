@@ -2550,7 +2550,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         }
 
         /* Video signal info */
-        if (pParams->bVideoSignalInfo)
+        if (pParams->VideoSignalInfo[refIdx].enabled)
         {
             D3D11_VIDEO_PROCESSOR_COLOR_SPACE inColorSpace;
             inColorSpace.Usage         = 0;
@@ -2559,19 +2559,21 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             inColorSpace.YCbCr_xvYCC   = 0;
             inColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
 
-            if (pParams->VidoSignalInfoIn.nominalRange == D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255)
+            if (pParams->VideoSignalInfo[refIdx].NominalRange == D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255)
             {
                 inColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255;
                 inColorSpace.RGB_Range     = 1;
             }
-            if (pParams->VidoSignalInfoIn.transferMatrix == MFX_TRANSFERMATRIX_BT709)
+            if (pParams->VideoSignalInfo[refIdx].TransferMatrix == MFX_TRANSFERMATRIX_BT709)
             {
                 inColorSpace.YCbCr_Matrix  = 1;
             }
 
             SetStreamColorSpace(refIdx, &inColorSpace);
+        }
 
-
+        if(pParams->VideoSignalInfoOut.enabled)
+        {
             D3D11_VIDEO_PROCESSOR_COLOR_SPACE outColorSpace;
             outColorSpace.Usage         = 0;
             outColorSpace.RGB_Range     = 0;
@@ -2579,13 +2581,13 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             outColorSpace.YCbCr_xvYCC   = 0;
             outColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
 
-            if (pParams->VidoSignalInfoOut.nominalRange == D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255)
+            if (pParams->VideoSignalInfoOut.NominalRange == D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255)
             {
                 outColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255;
                 outColorSpace.RGB_Range     = 1;
             }
 
-            if (pParams->VidoSignalInfoOut.transferMatrix == MFX_TRANSFERMATRIX_BT709)
+            if (pParams->VideoSignalInfoOut.TransferMatrix == MFX_TRANSFERMATRIX_BT709)
             {
                 outColorSpace.YCbCr_Matrix = 1;
             }

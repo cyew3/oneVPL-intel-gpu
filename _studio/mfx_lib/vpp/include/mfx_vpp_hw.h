@@ -768,6 +768,8 @@ namespace MfxHwVideoProcessing
             mfxFrameAllocRequest* opaqReq);
     private:
 
+        mfxStatus MergeRuntimeParams(const DdiTask* pTask,  MfxHwVideoProcessing::mfxExecuteParams *execParams);
+
         mfxStatus QuerySceneChangeResults(
             mfxExtVppAuxData *pAuxData, 
             mfxU32 frameIndex);

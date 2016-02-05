@@ -311,9 +311,79 @@ namespace MfxHwVideoProcessing
 
     } mfxDrvSurface;
 
-
-    typedef struct _mfxExecuteParams
+    class mfxExecuteParams
     {
+        struct SignalInfo {
+            bool   enabled;
+            mfxU16 TransferMatrix;
+            mfxU16 NominalRange;
+        };
+
+    public:
+            mfxExecuteParams():
+                targetSurface()
+               ,targetTimeStamp()
+               ,pRefSurfaces(0)
+               ,refCount(0)
+               ,bkwdRefCount(0)
+               ,fwdRefCount(0)
+               ,iDeinterlacingAlgorithm(0)
+               ,bFMDEnable(false)
+               ,bDenoiseAutoAdjust(false)
+               ,denoiseFactor(0)
+               ,bDetailAutoAdjust(false)
+               ,detailFactor(0)
+               ,iTargetInterlacingMode(0)
+               ,bEnableProcAmp(false)
+               ,Brightness(0)
+               ,Contrast(0)
+               ,Hue(0)
+               ,Saturation(0)
+               ,bSceneDetectionEnable(false)
+               ,bVarianceEnable(false)
+               ,bImgStabilizationEnable(false)
+               ,istabMode(0)
+               ,bFRCEnable(false)
+               ,bComposite(false)
+               ,dstRects(0)
+               ,iBackgroundColor(0)
+               ,statusReportID(0)
+               ,bFieldWeaving(false)
+               ,iFieldProcessingMode(0)
+               ,bCameraPipeEnabled(false)
+               ,bCameraBlackLevelCorrection(false)
+               ,CameraBlackLevel()
+               ,bCameraWhiteBalaceCorrection(false)
+               ,CameraWhiteBalance()
+               ,bCameraHotPixelRemoval(false)
+               ,CameraHotPixel()
+               ,bCCM(false)
+               ,CCMParams()
+               ,bCameraGammaCorrection(false)
+               ,CameraForwardGammaCorrection()
+               ,bCameraVignetteCorrection(false)
+               ,CameraVignetteCorrection()
+               ,bCameraLensCorrection(false)
+               ,CameraLensCorrection()
+               ,bCamera3DLUT(false)
+               ,Camera3DLUT()
+               ,rotation(0)
+               ,scalingMode(MFX_SCALING_MODE_DEFAULT)
+               ,bEOS(false)
+            {
+                   memset(&targetSurface, 0, sizeof(mfxDrvSurface));
+                   dstRects.clear();
+                   memset(&customRateData, 0, sizeof(CustomRateData));
+                   VideoSignalInfoIn.enabled         = false;
+                   VideoSignalInfoIn.NominalRange    = MFX_NOMINALRANGE_16_235;
+                   VideoSignalInfoIn.TransferMatrix  = MFX_TRANSFERMATRIX_BT601;
+                   VideoSignalInfoOut.enabled        = false;
+                   VideoSignalInfoOut.NominalRange   = MFX_NOMINALRANGE_16_235;
+                   VideoSignalInfoOut.TransferMatrix = MFX_TRANSFERMATRIX_BT601;
+
+                   VideoSignalInfo.clear();
+            };
+
         //surfaces
         mfxDrvSurface  targetSurface;
         mfxU64         targetTimeStamp;
@@ -388,13 +458,11 @@ namespace MfxHwVideoProcessing
 
         bool        bEOS;
 
-        bool        bVideoSignalInfo;
-        struct {
-            mfxU16 transferMatrix;
-            mfxU16 nominalRange;
-        } VidoSignalInfoIn, VidoSignalInfoOut;
-    } mfxExecuteParams;
+        SignalInfo VideoSignalInfoIn;   // Common video signal info set on Init 
+        SignalInfo VideoSignalInfoOut;  // Video signal info for output
 
+        std::vector<SignalInfo> VideoSignalInfo; // Video signal info for each frame in a single run
+    };
 
     class DriverVideoProcessing
     {
