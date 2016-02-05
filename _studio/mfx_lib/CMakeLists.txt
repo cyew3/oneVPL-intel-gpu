@@ -106,7 +106,7 @@ foreach( variant sw hw )
     mpeg2_enc
     scene_analyzer
     vc1_common
-    vc1_dec_elk
+    vc1_dec_${variant}
     vc1_enc
     umc
     vm
