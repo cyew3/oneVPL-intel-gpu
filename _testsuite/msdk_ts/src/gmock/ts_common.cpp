@@ -5,6 +5,7 @@ tsStatus     g_tsStatus;
 mfxIMPL      g_tsImpl     = MFX_IMPL_AUTO;
 HWType       g_tsHWtype   = MFX_HW_UNKNOWN;
 OSFamily     g_tsOSFamily = MFX_OS_FAMILY_UNKNOWN;
+OSWinVersion g_tsWinVersion = MFX_WIN_VER_UNKNOWN;
 mfxVersion   g_tsVersion  = {MFX_VERSION_MINOR, MFX_VERSION_MAJOR};
 mfxU32       g_tsTrace    = 1;
 tsPlugin     g_tsPlugin;
@@ -127,7 +128,7 @@ void set_brc_params(tsExtBufType<mfxVideoParam>* p)
         p->mfx.TargetKbps = p->mfx.Convergence = p->mfx.Accuracy = 0;
 
         p->mfx.ICQQuality = 20;
-        
+
         if (p->mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ)
         {
             mfxExtCodingOption2* p_cod2 = (mfxExtCodingOption2*)p->GetExtBuffer(MFX_EXTBUFF_CODING_OPTION2);
@@ -177,6 +178,8 @@ void MFXVideoTest::SetUp()
         if (platform[0] == 'w')
         {
             g_tsOSFamily = MFX_OS_FAMILY_WINDOWS;
+            if (platform[1] == '1' && platform[2] == '0')
+                g_tsWinVersion = MFX_WIN_VER_W10;
         }
         else if (platform[0] == 'c')
         {
@@ -191,7 +194,7 @@ void MFXVideoTest::SetUp()
         {
             g_tsImpl = MFX_IMPL_AUTO;
         }
-        else 
+        else
         {
             if(platform.find("snb") != std::string::npos)
                 g_tsHWtype = MFX_HW_SNB;

@@ -44,6 +44,8 @@ tsVideoDecoder::tsVideoDecoder(mfxU32 CodecId, bool useDefaults, mfxU32 plugin_i
             {
                 if(g_tsHWtype < MFX_HW_HSW)
                     m_sw_fallback = true;
+                if (g_tsWinVersion >= MFX_WIN_VER_W10)
+                    m_sw_fallback = true;
             }
         }
     } else
@@ -444,7 +446,7 @@ mfxStatus tsVideoDecoder::Load()
     return g_tsStatus.get();
 }
 
-mfxStatus tsVideoDecoder::UnLoad() 
+mfxStatus tsVideoDecoder::UnLoad()
 {
     if(MFX_ERR_NONE == tsSession::UnLoad(m_session, m_uid))
     {

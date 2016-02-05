@@ -27,3 +27,13 @@ enum OSFamily
     MFX_OS_FAMILY_WINDOWS,
     MFX_OS_FAMILY_LINUX
 };
+
+enum OSWinVersion
+{
+    MFX_WIN_VER_UNKNOWN = 0,
+    MFX_WIN_VER_W7,
+    MFX_WIN_VER_W81,
+    MFX_WIN_VER_WS2012R2,
+    MFX_WIN_VER_W10,
+    MFX_WIN_VER_WS2016
+};
