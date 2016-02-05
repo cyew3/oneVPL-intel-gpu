@@ -202,17 +202,6 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
                 return MFX_ERR_UNKNOWN;
             }
 
-            // initialize the waiting objects.
-            m_pTaskAdded = new UMC::Event[m_param.numberOfThreads];
-            for (i = 0; i < m_param.numberOfThreads; i += 1)
-            {
-                umcRes = m_pTaskAdded[i].Init(0, 0);
-                if (UMC::UMC_OK != umcRes)
-                {
-                    return MFX_ERR_UNKNOWN;
-                }
-            }
-
             // allocate thread contexts
             m_pThreadCtx = new MFX_SCHEDULER_THREAD_CONTEXT[m_param.numberOfThreads];
 
@@ -240,6 +229,10 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
                 //{
                 //    vm_thread_set_priority(&(m_pThreadCtx[i].threadHandle), VM_THREAD_PRIORITY_HIGH);
                 //}
+                umcRes = m_pThreadCtx[i].taskAdded.Init(0, 0);
+                if (UMC::UMC_OK != umcRes) {
+                    return MFX_ERR_UNKNOWN;
+                }
             }
         }
         catch (...)
@@ -1021,15 +1014,9 @@ mfxU32 mfxSchedulerCore::AddThreadToPool(MFX_SCHEDULER_THREAD_CONTEXT * pContext
     size_t thNumber = m_ppThreadCtx.Size();
     *(m_ppThreadCtx + thNumber) = pContext;
     pContext->threadNum = (mfxU32)thNumber;
-    
-    size_t evNumber = m_ppTaskAdded.Size();
-    *(m_ppTaskAdded + evNumber) = new UMC::Event;
-    assert(thNumber == evNumber);
-
-    m_ppTaskAdded[evNumber]->Init(0, 0);
+    pContext->taskAdded.Init(0, 0);
 
     m_param.numberOfThreads++;
-
 
     return (mfxU32)thNumber;
 }
@@ -1055,14 +1042,6 @@ void mfxSchedulerCore::RemoveThreadFromPool(MFX_SCHEDULER_THREAD_CONTEXT * pCont
     m_ppThreadCtx[index] = 0;
 
     m_param.numberOfThreads--;
-
-    if (index >= m_ppTaskAdded.Size())
-    {
-        assert(!"Can't remove event with non-existing index");
-        return;
-    }
-    delete m_ppTaskAdded[index];
-    m_ppTaskAdded[index] = 0;
 }
 #endif
 

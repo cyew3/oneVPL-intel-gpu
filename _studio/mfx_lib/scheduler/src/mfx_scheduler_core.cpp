@@ -43,7 +43,6 @@ mfxSchedulerCore::mfxSchedulerCore(void) :
 
 #if !defined(MFX_EXTERNAL_THREADING)
     m_pThreadCtx = NULL;
-    m_pTaskAdded = NULL;
 #endif
     vm_event_set_invalid(&m_hwTaskDone);
     vm_thread_set_invalid(&m_hwWakeUpThread);
@@ -136,7 +135,6 @@ void mfxSchedulerCore::Close(void)
     }
 
     m_ppThreadCtx.Clean();
-    m_ppTaskAdded.Clean();
 #else  // !MFX_EXTERNAL_THREADING
     if (m_pThreadCtx)
     {
@@ -156,12 +154,6 @@ void mfxSchedulerCore::Close(void)
         }
 
         delete[] m_pThreadCtx;
-    }
-
-    // delete the array of waiting objects
-    if (m_pTaskAdded)
-    {
-        delete[] m_pTaskAdded;
     }
 #endif // MFX_EXTERNAL_THREADING
 
@@ -227,7 +219,6 @@ void mfxSchedulerCore::Close(void)
     m_bQuit = false;
 #if !defined(MFX_EXTERNAL_THREADING)
     m_pThreadCtx = NULL;
-    m_pTaskAdded = NULL;
 #endif
     // reset task variables
     memset(m_pTasks, 0, sizeof(m_pTasks));
@@ -343,6 +334,8 @@ void mfxSchedulerCore::SetThreadsAffinityToSockets(void)
 void mfxSchedulerCore::WakeUpThreads(const mfxU32 curThreadNum,
                                      const eWakeUpReason reason)
 {
+    MFX_SCHEDULER_THREAD_CONTEXT* thctx;
+
     if (m_param.flags == MFX_SINGLE_THREAD)
         return;
 
@@ -355,14 +348,7 @@ void mfxSchedulerCore::WakeUpThreads(const mfxU32 curThreadNum,
         // wake up the dedicated thread
         if ((curThreadNum) && (m_numHwTasks | m_numSwTasks))
         {
-#if defined(MFX_EXTERNAL_THREADING)
-            if (m_ppTaskAdded[0])
-            {
-                m_ppTaskAdded[0]->Set();
-            }
-#else
-            m_pTaskAdded[0].Set();
-#endif
+            if (NULL != (thctx = GetThreadCtx(0))) thctx->taskAdded.Set();
         }
 
         // wake up other threads
@@ -370,17 +356,9 @@ void mfxSchedulerCore::WakeUpThreads(const mfxU32 curThreadNum,
         {
             for (i = 1; i < m_param.numberOfThreads; i += 1)
             {
-#if defined(MFX_EXTERNAL_THREADING)
-                if (i != curThreadNum && m_ppTaskAdded[i])
-                {
-                    m_ppTaskAdded[i]->Set();
+                if ((i != curThreadNum) && (NULL != (thctx = GetThreadCtx(i)))) {
+                    thctx->taskAdded.Set();
                 }
-#else
-                if (i != curThreadNum)
-                {
-                    m_pTaskAdded[i].Set();
-                }
-#endif
             }
         }
     }
@@ -391,17 +369,10 @@ void mfxSchedulerCore::WakeUpThreads(const mfxU32 curThreadNum,
 
         for (i = 0; i < m_param.numberOfThreads; i += 1)
         {
-#if defined(MFX_EXTERNAL_THREADING)
-            if (m_ppTaskAdded[i])
-            {
-                m_ppTaskAdded[i]->Set();
-            }
-#else
-            m_pTaskAdded[i].Set();
-#endif
+            if (NULL != (thctx = GetThreadCtx(i))) thctx->taskAdded.Set();
         }
     }
-} // void mfxSchedulerCore::WakeUpThreads(const mfxU32 curThreadNum,
+}
 
 void mfxSchedulerCore::WakeUpNumThreads(mfxU32 numThreadsToWakeUp,
                                         const mfxU32 curThreadNum)
@@ -412,33 +383,22 @@ void mfxSchedulerCore::WakeUpNumThreads(mfxU32 numThreadsToWakeUp,
 
 void mfxSchedulerCore::Wait(const mfxU32 curThreadNum)
 {
-    // to avoid thread #0 to sleep too much
-    if (0 == curThreadNum)
-    {
-        //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Wait(1)");
-#if defined(MFX_EXTERNAL_THREADING)
-        if (m_ppTaskAdded[curThreadNum])
-        {
-            m_ppTaskAdded[curThreadNum]->Wait(m_zero_thread_wait);
-        }
-#else
-        m_pTaskAdded[curThreadNum].Wait(m_zero_thread_wait);
-#endif
-    }
-    else
-    {
-        //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Wait(1000)");
-#if defined(MFX_EXTERNAL_THREADING)
-        if (m_ppTaskAdded[curThreadNum])
-        {
-            m_ppTaskAdded[curThreadNum]->Wait(MFX_THREAD_TIME_TO_WAIT);
-        }
-#else
-        m_pTaskAdded[curThreadNum].Wait(MFX_THREAD_TIME_TO_WAIT);
-#endif
-    }
+    MFX_SCHEDULER_THREAD_CONTEXT* thctx = GetThreadCtx(curThreadNum);
 
-} // void mfxSchedulerCore::Wait(const mfxU32 curThreadNum)
+    if (thctx) {
+        // to avoid thread #0 to sleep too much
+        if (0 == curThreadNum)
+        {
+            //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Wait(1)");
+            thctx->taskAdded.Wait(m_zero_thread_wait);
+        }
+        else
+        {
+            //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Wait(1000)");
+            thctx->taskAdded.Wait(MFX_THREAD_TIME_TO_WAIT);
+        }
+    }
+}
 
 mfxU64 mfxSchedulerCore::GetHighPerformanceCounter(void)
 {

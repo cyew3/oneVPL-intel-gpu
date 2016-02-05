@@ -327,6 +327,13 @@ protected:
     // Sets scheduling for the specified thread
     bool SetScheduling(vm_thread& handle);
 
+    inline MFX_SCHEDULER_THREAD_CONTEXT* GetThreadCtx(mfxU32 thread_id)
+#if defined(MFX_EXTERNAL_THREADING)
+    { return m_ppThreadCtx[thread_id]; }
+#else
+    { return &m_pThreadCtx[thread_id]; }
+#endif
+
 #if defined(MFX_EXTERNAL_THREADING)
     mfxU32 AddThreadToPool(MFX_SCHEDULER_THREAD_CONTEXT * pContext);
     void RemoveThreadFromPool(MFX_SCHEDULER_THREAD_CONTEXT * pContext);
@@ -368,14 +375,9 @@ protected:
 #if defined(MFX_EXTERNAL_THREADING)
     // Threads contexts
     UMC::Array<MFX_SCHEDULER_THREAD_CONTEXT *> m_ppThreadCtx;
-    // Objects for waiting on in case of nothing to do
-    UMC::Array<UMC::Event *> m_ppTaskAdded;    
 #else
     // Threads contexts
     MFX_SCHEDULER_THREAD_CONTEXT *m_pThreadCtx;
-    // Objects for waiting on in case of nothing to do
-    UMC::Event *m_pTaskAdded;
-    
 #endif //MFX_EXTERNAL_THREADING
 
 

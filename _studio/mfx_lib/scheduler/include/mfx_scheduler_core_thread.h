@@ -14,6 +14,7 @@ Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 #include <mfxdefs.h>
 
 #include <vm_thread.h>
+#include <umc_event.h>
 
 // forward declaration of the owning class
 class mfxSchedulerCore;
@@ -32,6 +33,7 @@ struct MFX_SCHEDULER_THREAD_CONTEXT
     mfxSchedulerCore *pSchedulerCore;                           // (mfxSchedulerCore *) pointer to the owning core
     mfxU32 threadNum;                                           // (mfxU32) number of the thread
     vm_thread threadHandle;                                     // (vm_thread) handle to the thread
+    UMC::Event taskAdded;                                       // Objects for waiting on in case of nothing to do
 
     mfxU64 workTime;                                            // (mfxU64) integral working time
     mfxU64 sleepTime;                                           // (mfxU64) integral sleeping time
