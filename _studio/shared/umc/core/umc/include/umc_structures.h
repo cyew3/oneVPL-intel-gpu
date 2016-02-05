@@ -388,7 +388,12 @@ namespace UMC
         YUV444A ,       // Planar Y, U, V, Alpha
         YVU9    ,       // Planar Y, U, V
         GRAYA   ,       // Luminance with Alpha
-        P010    ,       
+        P010    ,       // Planar YUV 4:2:0 10 bit
+        P016    ,       // Planar YUV 4:2:0 16 bit
+        P210    ,       // Planar YUV 4:2:2 10 bit
+        P216    ,       // Planar YUV 4:2:2 16 bit
+        Y410    ,       // Packed YUV 4:4:4 10-bit.
+        Y416    ,       // Packed YUV 4:4:4 16-bit.
         D3D_SURFACE_DEC,// Pointer to D3D surface in decoder pool
         D3D_SURFACE     // Pointer to D3D surface
     };
