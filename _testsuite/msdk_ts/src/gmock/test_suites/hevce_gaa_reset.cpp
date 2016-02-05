@@ -37,7 +37,7 @@ private:
         std::string file_reset;
         mfxU16 nframes;
         mfxU32 mode;
-        struct f_pair 
+        struct f_pair
         {
             const  tsStruct::Field* f;
             mfxU32 v;
@@ -47,106 +47,106 @@ private:
         f_pair in_fei_reset[3];
         f_pair in_init[3];
         f_pair in_reset[3];
-       
+
     };
 
     static const tc_struct test_case[];
 };
 
 
-const TestSuite::tc_struct TestSuite::test_case[] = 
+const TestSuite::tc_struct TestSuite::test_case[] =
 {
-    
+
     {/*00*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0},
-    {/*01*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0, 
-        {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0}, 
-        {}, 
+    {/*01*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0,
+        {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0},
+        {},
         {},
         {},
         {},
         {}
     },// fail init
-    {/*02*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NOT_INITIALIZED, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, NOT_INIT, 
-        {}, 
-        {}, 
+    {/*02*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NOT_INITIALIZED, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, NOT_INIT,
         {},
         {},
-        {}, 
+        {},
+        {},
+        {},
         {}
     },
-    {/*03*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NOT_INITIALIZED, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, CLOSED, 
+    {/*03*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NOT_INITIALIZED, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, CLOSED,
         {},
         {},
         {},
         {},
-        {}, 
+        {},
         {}
     },
-    {/*04*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0, 
+    {/*04*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0,
         {},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0},
         {},
         {},
-        {}, 
+        {},
         {}
     },
-    {/*05*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0, 
+    {/*05*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0,
         {},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 0},
         {},
         {},
-        {}, 
+        {},
         {}
     },
-    {/*06*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0, 
+    {/*06*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0,
         {},
         {&tsStruct::mfxVideoParam.mfx.NumRefFrame, 9},
         {},
         {},
-        {}, 
+        {},
         {}
     },
-    {/*07*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0, 
+    {/*07*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0,
         {},
         {},
         {},
         {&tsStruct::mfxExtFEIH265Param.MaxCUSize, 0},
-        {}, 
+        {},
         {}
     },
-    {/*08*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0, 
+    {/*08*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0,
         {},
         {},
         {},
         {&tsStruct::mfxExtFEIH265Param.MPMode, 0},
-        {}, 
+        {},
         {}
     },
-    {/*09*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0, 
+    {/*09*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0,
         {},
         {},
         {},
         {&tsStruct::mfxExtFEIH265Param.NumIntraModes, 4},
-        {}, 
+        {},
         {}
     },
-    {/*10*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0, 
+    {/*10*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0,
         {},
         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY},
         {},
         {},
-        {}, 
+        {},
         {}
     },
-    {/*11*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0, 
+    {/*11*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0,
         {},
         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY},
         {},
         {},
-        {}, 
+        {},
         {}
     },
-    {/*12*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0, 
+    {/*12*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0,
         {},
         {{&tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP},
          {&tsStruct::mfxVideoParam.mfx.QPI, 21},
@@ -155,10 +155,10 @@ const TestSuite::tc_struct TestSuite::test_case[] =
          },
         {},
         {},
-        {}, 
+        {},
         {}
     },
-    {/*13*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0, 
+    {/*13*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0,
         {},
         {{&tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
          {&tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0},
@@ -167,10 +167,10 @@ const TestSuite::tc_struct TestSuite::test_case[] =
          },
         {},
         {},
-        {}, 
+        {},
         {}
     },
-    {/*14*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0, 
+    {/*14*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0,
         {},
         {{&tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR},
          {&tsStruct::mfxVideoParam.mfx.InitialDelayInKB, 0},
@@ -179,44 +179,44 @@ const TestSuite::tc_struct TestSuite::test_case[] =
          },
         {},
         {},
-        {}, 
+        {},
         {}
     },
-    {/*15*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0, 
+    {/*15*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0,
         {},
         {&tsStruct::mfxVideoParam.mfx.NumSlice, 4},
         {},
         {},
-        {}, 
+        {},
         {}
     },
-    {/*16*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0, 
+    {/*16*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0,
         {},
         {&tsStruct::mfxVideoParam.AsyncDepth, 4},
         {},
         {},
-        {}, 
+        {},
         {}
     },
-    {/*17*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foster_720x576", 1, 0, 
+    {/*17*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foreman_cif.yuv", "forBehaviorTest/foster_720x576.yuv", 1, 0,
         {},
         {{&tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 720},
          {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 576}},
         {},
         {},
-        {}, 
+        {},
         {}
     },
-    {/*18*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foster_720x576", "forBehaviorTest/foreman_cif.yuv", 1, 0, 
+    {/*18*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, "forBehaviorTest/foster_720x576.yuv", "forBehaviorTest/foreman_cif.yuv", 1, 0,
         {{&tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 720},
          {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 576}},
         {},
         {},
         {},
-        {}, 
+        {},
         {}
     }
-   
+
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -227,15 +227,15 @@ int TestSuite::RunTest(unsigned int id)
     const tc_struct& tc = test_case[id];
     mfxU32 encframes = 0;
     std::string file_name;
-    
+
 
     MFXInit();
-    
+
     g_tsPlugin.Reg(MFX_PLUGINTYPE_VIDEO_ENC, MFX_CODEC_HEVC, MFX_PLUGINID_HEVCE_FEI_HW);
     m_uid = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_ENC, MFX_CODEC_HEVC);
     m_loaded = false;
     Load();
-    
+
     // set defoult parameters
     m_pPar->mfx.FrameInfo.Width = 352;
     m_pPar->mfx.FrameInfo.Height = 288;
@@ -243,15 +243,15 @@ int TestSuite::RunTest(unsigned int id)
     m_pPar->mfx.FrameInfo.CropH = 0;
     m_pPar->mfx.NumRefFrame = 5;
     m_pPar->mfx.FrameInfo.FourCC = MFX_FOURCC_YV12;
-   
+
     m_ENCInput = new mfxENCInput();
     m_ENCOutput = new mfxENCOutput();
-    
+
     mfxExtFEIH265Param& FEIParam = m_par;
     FEIParam.MaxCUSize = 16;
     FEIParam.MPMode = 1;
     FEIParam.NumIntraModes = 1;
-    
+
     mfxExtFEIH265Input In = {0};
     In.Header.BufferId = MFX_EXTBUFF_FEI_H265_INPUT;
     In.FEIOp = MFX_FEI_H265_OP_NOP;
@@ -272,7 +272,7 @@ int TestSuite::RunTest(unsigned int id)
     m_ENCOutput->ExtParam = new mfxExtBuffer*[m_ENCOutput->NumExtParam];
     m_ENCOutput->ExtParam[0] = new mfxExtBuffer();
     m_ENCOutput->ExtParam[0] = (mfxExtBuffer*)&Out;
-    
+
     // set init parameters
     for(mfxU32 i = 0; i < n_par; i++)
     {
@@ -289,7 +289,7 @@ int TestSuite::RunTest(unsigned int id)
             tsStruct::set(&In, *tc.in_init[i].f, tc.in_init[i].v);
         }
     }
-    
+
     if(tc.mode != NOT_INIT)
     {
         g_tsStatus.expect(tc.sts_init);
@@ -301,7 +301,7 @@ int TestSuite::RunTest(unsigned int id)
             tsRawReader SurfProc_Init = tsRawReader(file_name.c_str(), m_pPar->mfx.FrameInfo, tc.nframes);
             g_tsStreamPool.Reg();
             m_filler = &SurfProc_Init;
-    
+
             for(;;)
             {
                 g_tsStatus.expect(tc.sts_init_e);
@@ -334,10 +334,10 @@ int TestSuite::RunTest(unsigned int id)
                 Close();
             }
         }
-    
+
     }
-    
-    
+
+
     // set defoult reset parameters
     m_pPar->mfx.FrameInfo.Width = 352;
     m_pPar->mfx.FrameInfo.Height = 288;
@@ -345,17 +345,17 @@ int TestSuite::RunTest(unsigned int id)
     m_pPar->mfx.FrameInfo.CropH = 0;
     m_pPar->mfx.NumRefFrame = 5;
     m_pPar->mfx.FrameInfo.FourCC = MFX_FOURCC_YV12;
-   
-      
+
+
     FEIParam.MaxCUSize = 16;
     FEIParam.MPMode = 1;
     FEIParam.NumIntraModes = 1;
-    
+
     In.FEIOp = MFX_FEI_H265_OP_NOP;
     In.FrameType = MFX_FRAMETYPE_I;
     In.RefIdx = m_pPar->mfx.NumRefFrame - 1;
 
-    
+
     //set reset parameters
     for(mfxU32 i = 0; i < n_par; i++)
     {
@@ -372,11 +372,11 @@ int TestSuite::RunTest(unsigned int id)
             tsStruct::set(&In, *tc.in_reset[i].f, tc.in_reset[i].v);
         }
     }
-    
-    
+
+
     g_tsStatus.expect(tc.sts_reset);
     Reset();
-    
+
     if(tc.sts_reset == MFX_ERR_NONE)
     {
         g_tsStreamPool.Init(0);
@@ -384,7 +384,7 @@ int TestSuite::RunTest(unsigned int id)
         tsRawReader SurfProc_Reset  = tsRawReader(file_name.c_str(), m_pPar->mfx.FrameInfo, tc.nframes);
         g_tsStreamPool.Reg();
         m_filler = &SurfProc_Reset;
-    
+
         for(;;)
         {
             g_tsStatus.expect(tc.sts_reset_e);
