@@ -501,7 +501,8 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(session->m_pScheduler, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK(session->m_pDECODE.get(), MFX_ERR_NOT_INITIALIZED);
-    MFX_CHECK(syncp, MFX_ERR_NULL_PTR);
+    MFX_CHECK_NULL_PTR1(syncp);
+    MFX_CHECK_NULL_PTR1(surface_out);
 
     try
     {
