@@ -382,6 +382,7 @@ namespace MfxHwVideoProcessing
                    VideoSignalInfoOut.TransferMatrix = MFX_TRANSFERMATRIX_BT601;
 
                    VideoSignalInfo.clear();
+                   VideoSignalInfo.assign(1, VideoSignalInfoIn);
             };
 
         //surfaces

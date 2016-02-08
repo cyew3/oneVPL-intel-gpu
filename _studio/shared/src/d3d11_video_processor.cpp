@@ -2550,7 +2550,8 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         }
 
         /* Video signal info */
-        if (pParams->VideoSignalInfo[refIdx].enabled)
+        size_t index = static_cast<size_t>(refIdx) < pParams->VideoSignalInfo.size() ? refIdx : (pParams->VideoSignalInfo.size()-1);
+        if (pParams->VideoSignalInfo[index].enabled)
         {
             D3D11_VIDEO_PROCESSOR_COLOR_SPACE inColorSpace;
             inColorSpace.Usage         = 0;
@@ -2559,12 +2560,12 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             inColorSpace.YCbCr_xvYCC   = 0;
             inColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
 
-            if (pParams->VideoSignalInfo[refIdx].NominalRange == D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255)
+            if (pParams->VideoSignalInfo[index].NominalRange == D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255)
             {
                 inColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255;
                 inColorSpace.RGB_Range     = 1;
             }
-            if (pParams->VideoSignalInfo[refIdx].TransferMatrix == MFX_TRANSFERMATRIX_BT709)
+            if (pParams->VideoSignalInfo[index].TransferMatrix == MFX_TRANSFERMATRIX_BT709)
             {
                 inColorSpace.YCbCr_Matrix  = 1;
             }

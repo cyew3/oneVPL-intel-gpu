@@ -1008,16 +1008,17 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
         }
 
         /* Video signal info */
-        if (pExecuteParams->VideoSignalInfo[refIdx].enabled)
+        size_t index = static_cast<size_t>(refIdx) < pExecuteParams->VideoSignalInfo.size() ? refIdx : ( pExecuteParams->VideoSignalInfo.size() - 1 );
+        if (pExecuteParams->VideoSignalInfo[index].enabled)
         {
-            if (pExecuteParams->VideoSignalInfo[refIdx].NominalRange != MFX_NOMINALRANGE_UNKNOWN)
+            if (pExecuteParams->VideoSignalInfo[index].NominalRange != MFX_NOMINALRANGE_UNKNOWN)
             {
-                pInputSample->SampleFormat.NominalRange = (pExecuteParams->VideoSignalInfo[refIdx].NominalRange == MFX_NOMINALRANGE_16_235) ? DXVA2_NominalRange_16_235 : DXVA2_NominalRange_0_255 ;
+                pInputSample->SampleFormat.NominalRange = (pExecuteParams->VideoSignalInfo[index].NominalRange == MFX_NOMINALRANGE_16_235) ? DXVA2_NominalRange_16_235 : DXVA2_NominalRange_0_255 ;
             }
 
-            if (pExecuteParams->VideoSignalInfo[refIdx].TransferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)
+            if (pExecuteParams->VideoSignalInfo[index].TransferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)
             {
-                pInputSample->SampleFormat.VideoTransferMatrix = (pExecuteParams->VideoSignalInfo[refIdx].TransferMatrix == MFX_TRANSFERMATRIX_BT709) ? DXVA2_VideoTransferMatrix_BT709 : DXVA2_VideoTransferMatrix_BT601 ;
+                pInputSample->SampleFormat.VideoTransferMatrix = (pExecuteParams->VideoSignalInfo[index].TransferMatrix == MFX_TRANSFERMATRIX_BT709) ? DXVA2_VideoTransferMatrix_BT709 : DXVA2_VideoTransferMatrix_BT601 ;
             }
         }
 
