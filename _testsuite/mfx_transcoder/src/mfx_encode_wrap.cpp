@@ -293,18 +293,7 @@ mfxStatus MFXEncodeWRAPPER::RenderFrame(mfxFrameSurface1 *pSurf, mfxEncodeCtrl *
             if (*freeSync != NULL)
             {
                 sts = m_encoder->SyncOperation( *freeSync, TimeoutVal<>::val());
-                if (MFX_ERR_MORE_DATA == sts)
-                {
-                    *freeSync = NULL;
-                    
-                    if (NULL != pSurf)
-                    {
-                        sts = MFX_ERR_NONE;
-                    }
-                }else
-                {
-                    MFX_CHECK_STS(sts);
-                }
+                MFX_CHECK_STS(sts);
             }
 
             sts2 = MFX_ERR_NONE;
@@ -372,22 +361,7 @@ mfxStatus MFXEncodeWRAPPER::RenderFrame(mfxFrameSurface1 *pSurf, mfxEncodeCtrl *
                     {
                         break;
                     }
-                    
-                    if (MFX_ERR_MORE_DATA == sts2)
-                    {
-                        m_pSyncPoints[j].m_SyncPoint = NULL;
-
-                        //exiting in case of EOS
-                        if (NULL == pSurf)
-                        {
-                            break;
-                        }
-                        sts2 = MFX_ERR_NONE;
-
-                    }else
-                    {
-                        MFX_CHECK_STS(sts2);
-                    }
+                    MFX_CHECK_STS(sts2);
                 }
             }
 
