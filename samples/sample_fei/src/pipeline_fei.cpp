@@ -1148,7 +1148,11 @@ CEncodingPipeline::CEncodingPipeline()
     m_nAsyncDepth         = 0;
     m_refFrameCounter     = 0;
     m_LastDecSyncPoint    = 0;
-
+    m_tmpForMedian        = NULL;
+    m_tmpForReading       = NULL;
+    m_tmpMBpreenc         = NULL;
+    m_tmpMBenc            = NULL;
+    m_ctr                 = NULL;
     m_last_task           = NULL;
 
     MSDK_ZERO_ARRAY(m_numOfRefs, 2);
@@ -1221,8 +1225,14 @@ mfxStatus CEncodingPipeline::ResetIOFiles(sInputParams pParams)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    sts = m_FileWriters.first->Init(pParams.dstFileBuff[0]);
+    sts = ResetBuffers();
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    if (m_FileWriters.first) // no file writers for preenc
+    {
+        sts = m_FileWriters.first->Init(pParams.dstFileBuff[0]);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
 
     if (pParams.bDECODE)
     {
@@ -1797,22 +1807,14 @@ mfxStatus CEncodingPipeline::SynchronizeFirstTask()
 
 mfxStatus CEncodingPipeline::InitInterfaces()
 {
-    m_tmpForMedian  = NULL;
-    m_tmpForReading = NULL;
-    m_tmpMBpreenc   = NULL;
-    m_tmpMBenc      = NULL;
-
-    m_ctr           = NULL;
-
     mfxU32 fieldId = 0;
     int numExtInParams = 0, numExtInParamsI = 0, numExtOutParams = 0, numExtOutParamsI = 0;
 
     if (m_encpakParams.bPREENC)
     {
         //setup control structures
-        m_disableMVoutPreENC     = m_encpakParams.mvoutFile == NULL       && !(m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC);
-        m_disableMBStatPreENC    = (m_encpakParams.mbstatoutFile == NULL) ||   m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC; //couple with ENC+PAK
-        m_disableMBStatPreENC    = (m_encpakParams.mbstatoutFile == NULL) && !m_encpakParams.bENCODE;
+        m_disableMVoutPreENC     = (m_encpakParams.mvoutFile     == NULL) && !(m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC);
+        m_disableMBStatPreENC    = (m_encpakParams.mbstatoutFile == NULL) && !(m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC);
         bool enableMVpredictor   = m_encpakParams.mvinFile != NULL;
         bool enableMBQP          = m_encpakParams.mbQpFile != NULL        && !(m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC);
 
@@ -1850,7 +1852,7 @@ mfxStatus CEncodingPipeline::InitInterfaces()
 
                 preENCCtr[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_CTRL;
                 preENCCtr[fieldId].Header.BufferSz = sizeof(mfxExtFeiPreEncCtrl);
-                preENCCtr[fieldId].PictureType = (mfxU16)(m_numOfFields == 1 ? MFX_PICTYPE_FRAME :
+                preENCCtr[fieldId].PictureType = (mfxU16)(!m_isField ? MFX_PICTYPE_FRAME :
                     fieldId == 0 ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD);
                 preENCCtr[fieldId].RefPictureType[0]       = preENCCtr[fieldId].PictureType;
                 preENCCtr[fieldId].RefPictureType[1]       = preENCCtr[fieldId].PictureType;
@@ -2042,7 +2044,6 @@ mfxStatus CEncodingPipeline::InitInterfaces()
     {
         bufSet*                   tmpForInit         = NULL;
         //FEI buffers
-        mfxEncodeCtrl*            feiCtrl            = NULL;
         mfxExtFeiSPS*             feiSPS             = NULL;
         mfxExtFeiPPS*             feiPPS             = NULL;
         mfxExtFeiSliceHeader*     feiSliceHeader     = NULL;
@@ -2054,11 +2055,11 @@ mfxStatus CEncodingPipeline::InitInterfaces()
         mfxExtFeiEncQP*           feiEncMbQp         = NULL;
         mfxExtFeiPakMBCtrl*       feiEncMBCode       = NULL;
 
-        feiCtrl = new mfxEncodeCtrl;
-        MSDK_ZERO_MEMORY(*feiCtrl);
-        feiCtrl->FrameType = MFX_FRAMETYPE_UNKNOWN;
-        feiCtrl->QP = m_encpakParams.QP;
-        m_ctr = feiCtrl;
+        m_ctr = new mfxEncodeCtrl;
+        MSDK_CHECK_POINTER(m_ctr, MFX_ERR_MEMORY_ALLOC);
+        MSDK_ZERO_MEMORY(*m_ctr);
+        m_ctr->FrameType = MFX_FRAMETYPE_UNKNOWN;
+        m_ctr->QP = m_encpakParams.QP;
 
         bool MVPredictors = (m_encpakParams.mvinFile   != NULL) || m_encpakParams.bPREENC; //couple with PREENC
         bool MBCtrl       = m_encpakParams.mbctrinFile != NULL;
@@ -2532,13 +2533,17 @@ mfxStatus CEncodingPipeline::Run()
     m_widthMB  /= 16;
     m_heightMB /= 16;
 
+    m_isField = (mfxU8)(m_numOfFields == 2);
+    m_ffid = m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF;
+    m_sfid = m_isField - m_ffid;
+
     if (m_encpakParams.bPREENC && m_encpakParams.preencDSstrength)
     {
         // PreEnc is performed on lower resolution
-        mfxU16 widthMB = ((m_mfxDSParams.vpp.Out.Width + 15) & ~15);
+        mfxU16 widthMB  = ((m_mfxDSParams.vpp.Out.Width  + 15) & ~15);
         mfxU16 heightMB = ((m_mfxDSParams.vpp.Out.Height + 15) & ~15);
         m_numMBpreenc = widthMB * heightMB / 256;
-        if (m_numOfFields == 2)
+        if (m_isField)
             m_numMBpreenc = widthMB / 16 * (((heightMB / 16) + 1) / 2);
     }
     else
@@ -2552,10 +2557,6 @@ mfxStatus CEncodingPipeline::Run()
     bool create_task = (m_encpakParams.bPREENC)  || (m_encpakParams.bENCPAK)  ||
                        (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK) ||
                        (m_encpakParams.bENCODE && m_encpakParams.EncodedOrder);
-
-    m_isField = (mfxU8)(m_numOfFields == 2);
-    m_ffid = m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF;
-    m_sfid = m_isField - m_ffid;
 
     iTask* eTask = NULL; // encoding task
     time_t start = time(0);
@@ -3105,14 +3106,23 @@ mfxStatus CEncodingPipeline::RemoveOneTask()
             MSDK_SAFE_DELETE_ARRAY((*it)->inPAK.L0Surface);
             MSDK_SAFE_DELETE_ARRAY((*it)->inPAK.L1Surface);
 
-            if ((*it)->outPAK.OutSurface && (*it)->outPAK.OutSurface->Data.Locked){
-                (*it)->outPAK.OutSurface->Data.Locked--;
-            }
+            SAFE_DEC_LOCKER((*it)->in.InSurface);
+
+            /* In case of preenc + enc (+ pak) pipeline we need to do decrement manually for both interfaces*/
+            if (m_twoEncoders && (m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC || m_encpakParams.bOnlyPAK))
+                SAFE_DEC_LOCKER((*it)->in.InSurface);
+
+            if (!!m_encpakParams.preencDSstrength)
+                SAFE_DEC_LOCKER((*it)->fullResSurface);
+
+            SAFE_DEC_LOCKER((*it)->outPAK.OutSurface);
+
+            /*
             if ((*it)->in.InSurface && (*it)->in.InSurface->Data.Locked)
             {
                 (*it)->in.InSurface->Data.Locked--;
 
-                /* In case of preenc + enc (+ pak) pipeline we need to do decrement manually for both interfaces*/
+                // In case of preenc + enc (+ pak) pipeline we need to do decrement manually for both interfaces
                 if (m_twoEncoders && (m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC || m_encpakParams.bOnlyPAK))
                     (*it)->in.InSurface->Data.Locked--;
 
@@ -3121,6 +3131,10 @@ mfxStatus CEncodingPipeline::RemoveOneTask()
                     (*it)->fullResSurface->Data.Locked--;
                 }
             }
+
+            if ((*it)->outPAK.OutSurface && (*it)->outPAK.OutSurface->Data.Locked){
+                (*it)->outPAK.OutSurface->Data.Locked--;
+            } */
 
             delete (*it);
             m_inputTasks.erase(it);
@@ -3150,15 +3164,33 @@ mfxStatus CEncodingPipeline::ClearTasks()
         MSDK_SAFE_DELETE_ARRAY((*it)->inPAK.L0Surface);
         MSDK_SAFE_DELETE_ARRAY((*it)->inPAK.L1Surface);
 
-        if ((*it)->in.InSurface)
-            (*it)->in.InSurface->Data.Locked      = 0;
-        if ((*it)->outPAK.OutSurface)
-            (*it)->outPAK.OutSurface->Data.Locked = 0;
+        SAFE_UNLOCK((*it)->in.InSurface);
+        SAFE_UNLOCK((*it)->outPAK.OutSurface);
+        SAFE_UNLOCK((*it)->fullResSurface);
 
         delete (*it);
     }
 
     m_inputTasks.clear();
+
+    return sts;
+}
+
+mfxStatus CEncodingPipeline::ResetBuffers()
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    if (m_encpakParams.bENCODE)
+    {
+        // synchronize all tasks that are left in task pool
+        while (MFX_ERR_NONE == sts) {
+            sts = m_TaskPool.SynchronizeFirstTask();
+        }
+        sts = MFX_ERR_NONE;
+    }
+
+    sts = ClearTasks();
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     return sts;
 }
@@ -3491,10 +3523,10 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
             preENCCtr = (mfxExtFeiPreEncCtrl*)(eTask->in.ExtParam[i]);
             preENCCtr->DisableMVOutput = (type & MFX_FRAMETYPE_I) ? 1 : m_disableMVoutPreENC;
 
-            preENCCtr->RefPictureType[0] = (mfxU16)(m_numOfFields == 1 ? MFX_PICTYPE_FRAME :
+            preENCCtr->RefPictureType[0] = (mfxU16)(!m_isField ? MFX_PICTYPE_FRAME :
                 ref_fid[preENCCtrId][0] == 0 ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD);
 
-            preENCCtr->RefPictureType[1] = (mfxU16)(m_numOfFields == 1 ? MFX_PICTYPE_FRAME :
+            preENCCtr->RefPictureType[1] = (mfxU16)(!m_isField ? MFX_PICTYPE_FRAME :
                 ref_fid[preENCCtrId][1] == 0 ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD);
 
             preENCCtr->RefFrame[0] = refSurf0[preENCCtrId];
@@ -3756,7 +3788,7 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
                 if (feiPPS)
                 {
                     feiPPS[fieldId].IDRPicFlag        = 0;
-                    feiPPS[fieldId].NumRefIdxL0Active = eTask->in.NumFrameL0;
+                    feiPPS[fieldId].NumRefIdxL0Active = (fieldId == 0) ? l0_idx_field1.size() : l0_idx_field2.size();
                     feiPPS[fieldId].NumRefIdxL1Active = 0;
                     feiPPS[fieldId].ReferencePicFlag  = (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_REF) ? 1 : 0;
 
@@ -3780,8 +3812,8 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
                         for (std::list<int>::iterator it = ((fieldId == 0) ? l0_idx_field1.begin() : l0_idx_field2.begin());
                             it != ((fieldId == 0) ? l0_idx_field1.end() : l0_idx_field2.end()); ++it)
                         {
-                            feiSliceHeader[fieldId].Slice[i].RefL0[k].Index = (mfxU16)(*it);
-                            feiSliceHeader[fieldId].Slice[i].RefL0[k].PictureType = (mfxU16)((m_numOfFields == 1) ? MFX_PICTYPE_FRAME :
+                            feiSliceHeader[fieldId].Slice[i].RefL0[k].Index       = (mfxU16)(*it);
+                            feiSliceHeader[fieldId].Slice[i].RefL0[k].PictureType = (mfxU16)(!m_isField ? MFX_PICTYPE_FRAME :
                                 ((eTask->m_list0[eTask->m_fid[fieldId]][k] & 128) ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD));
                             k++;
                         }
@@ -3801,8 +3833,8 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
                 if (feiPPS)
                 {
                     feiPPS[fieldId].IDRPicFlag        = 0;
-                    feiPPS[fieldId].NumRefIdxL0Active = eTask->in.NumFrameL0;
-                    feiPPS[fieldId].NumRefIdxL1Active = eTask->in.NumFrameL1;
+                    feiPPS[fieldId].NumRefIdxL0Active = (fieldId == 0) ? l0_idx_field1.size() : l0_idx_field2.size();
+                    feiPPS[fieldId].NumRefIdxL1Active = (fieldId == 0) ? l1_idx_field1.size() : l1_idx_field2.size();
                     feiPPS[fieldId].ReferencePicFlag  = 0;
                     feiPPS[fieldId].IDRPicFlag        = 0;
                     feiPPS[fieldId].FrameNum          = m_refFrameCounter;
@@ -3823,7 +3855,7 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
                             it != ((fieldId == 0) ? l0_idx_field1.end() : l0_idx_field2.end()); ++it)
                         {
                             feiSliceHeader[fieldId].Slice[i].RefL0[k].Index       = (mfxU16)(*it);
-                            feiSliceHeader[fieldId].Slice[i].RefL0[k].PictureType = (mfxU16)((m_numOfFields == 1) ? MFX_PICTYPE_FRAME :
+                            feiSliceHeader[fieldId].Slice[i].RefL0[k].PictureType = (mfxU16)(!m_isField ? MFX_PICTYPE_FRAME :
                                 ((eTask->m_list0[eTask->m_fid[fieldId]][k] & 128) ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD));
                             k++;
                         }
@@ -3832,7 +3864,7 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
                             it != ((fieldId == 0) ? l1_idx_field1.end() : l1_idx_field2.end()); ++it)
                         {
                             feiSliceHeader[fieldId].Slice[i].RefL1[k].Index       = (mfxU16)(*it);
-                            feiSliceHeader[fieldId].Slice[i].RefL1[k].PictureType = (mfxU16)((m_numOfFields == 1) ? MFX_PICTYPE_FRAME :
+                            feiSliceHeader[fieldId].Slice[i].RefL1[k].PictureType = (mfxU16)(!m_isField ? MFX_PICTYPE_FRAME :
                                 ((eTask->m_list1[eTask->m_fid[fieldId]][k] & 128) ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD));
                             k++;
                         }
@@ -4319,7 +4351,7 @@ mfxStatus CEncodingPipeline::repackDSPreenc2EncExMB(mfxExtFeiPreEncMV::mfxExtFei
 
     for (mfxU16 i = 0; i < pow(m_encpakParams.preencDSstrength,2); ++i)
     {
-        mfxU32 encMBidx = MBnum * pow(m_encpakParams.preencDSstrength,2) + i % m_encpakParams.preencDSstrength + m_widthMB*(i / m_encpakParams.preencDSstrength);
+        mfxU32 encMBidx = MBnum * (mfxU32)pow(m_encpakParams.preencDSstrength, 2) + i % m_encpakParams.preencDSstrength + m_widthMB*(i / m_encpakParams.preencDSstrength);
 
         if (encMBidx >= m_numMB)
             continue;

@@ -332,6 +332,7 @@ protected:
     mfxStatus RemoveOneTask();
     mfxStatus ReleasePreencMVPinfo(iTask* eTask);
     mfxStatus ClearTasks();
+    mfxStatus ResetBuffers();
     mfxStatus ProcessLastB();
     mfxU32 CountUnencodedFrames();
 
