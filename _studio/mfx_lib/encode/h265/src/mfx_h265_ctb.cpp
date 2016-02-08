@@ -5318,7 +5318,7 @@ void H265CU<PixType>::MeCu(Ipp32s absPartIdx, Ipp8u depth)
                 const PixType *predC = m_interPredBestC + GetChromaOffset(m_par, absPartIdx, MAX_CU_SIZE << m_par->chromaShiftWInv);
                 CoeffsType *residU = m_interResidU + GetChromaOffset1(m_par, absPartIdx, MAX_CU_SIZE >> m_par->chromaShiftW);
                 CoeffsType *residV = m_interResidV + GetChromaOffset1(m_par, absPartIdx, MAX_CU_SIZE >> m_par->chromaShiftW);
-                h265_DiffNv12(srcC, m_pitchSrcLuma, predC, MAX_CU_SIZE << m_par->chromaShiftWInv,
+                h265_DiffNv12(srcC, m_pitchSrcChroma, predC, MAX_CU_SIZE << m_par->chromaShiftWInv,
                               residU, MAX_CU_SIZE >> m_par->chromaShiftW, residV, MAX_CU_SIZE >> m_par->chromaShiftW,
                               cuWidth >> m_par->chromaShiftW, cuWidth >> m_par->chromaShiftH);
             }
@@ -7899,7 +7899,7 @@ void H265CU<PixType>::CheckMerge2Nx2N(Ipp32s absPartIdx, Ipp8u depth)
         if (m_par->AnalyseFlags & HEVC_COST_CHROMA) {
             CoeffsType *residU = m_interResidU + GetChromaOffset1(m_par, absPartIdx, MAX_CU_SIZE >> m_par->chromaShiftW);
             CoeffsType *residV = m_interResidV + GetChromaOffset1(m_par, absPartIdx, MAX_CU_SIZE >> m_par->chromaShiftW);
-            h265_DiffNv12(srcC, m_pitchSrcLuma, predC, MAX_CU_SIZE << m_par->chromaShiftWInv,
+            h265_DiffNv12(srcC, m_pitchSrcChroma, predC, MAX_CU_SIZE << m_par->chromaShiftWInv,
                           residU, MAX_CU_SIZE >> m_par->chromaShiftW, residV, MAX_CU_SIZE >> m_par->chromaShiftW,
                           cuWidth >> m_par->chromaShiftW, cuWidth >> m_par->chromaShiftH);
         }
