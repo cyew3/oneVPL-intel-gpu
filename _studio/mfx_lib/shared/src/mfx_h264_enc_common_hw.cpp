@@ -2057,7 +2057,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             changed = true;
             par.mfx.GopRefDist = 1;
         }
-        if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA)
+        if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA && !(par.mfx.LowPower == MFX_CODINGOPTION_ON && hwCaps.SliceLevelRateCtrl))
         {
             par.mfx.RateControlMethod = MFX_RATECONTROL_LA;
             changed = true;
@@ -2260,7 +2260,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         bool fieldCoding = (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
 
         SliceDivider divider = MakeSliceDivider(
-            hwCaps.SliceStructure,
+            (hwCaps.SliceLevelRateCtrl)?4:hwCaps.SliceStructure,
             extOpt2->NumMbPerSlice,
             par.mfx.NumSlice,
             par.mfx.FrameInfo.Width / 16,
@@ -2286,7 +2286,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         bool fieldCoding = (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
 
         SliceDivider divider = MakeSliceDivider(
-            hwCaps.SliceStructure,
+            (hwCaps.SliceLevelRateCtrl)?4:hwCaps.SliceStructure,
             extOpt2->NumMbPerSlice,
             extOpt3->NumSliceI,
             par.mfx.FrameInfo.Width / 16,
@@ -2312,7 +2312,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         bool fieldCoding = (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
 
         SliceDivider divider = MakeSliceDivider(
-            hwCaps.SliceStructure,
+            (hwCaps.SliceLevelRateCtrl)?4:hwCaps.SliceStructure,
             extOpt2->NumMbPerSlice,
             extOpt3->NumSliceP,
             par.mfx.FrameInfo.Width / 16,
@@ -2338,7 +2338,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         bool fieldCoding = (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
 
         SliceDivider divider = MakeSliceDivider(
-            hwCaps.SliceStructure,
+            (hwCaps.SliceLevelRateCtrl)?4:hwCaps.SliceStructure,
             extOpt2->NumMbPerSlice,
             extOpt3->NumSliceB,
             par.mfx.FrameInfo.Width / 16,
@@ -4461,16 +4461,24 @@ void MfxHwH264Encode::SetDefaults(
     {
         if (par.mfx.GopRefDist == 0)
             par.mfx.GopRefDist = 1;
-        if (par.mfx.RateControlMethod == 0)
-            par.mfx.RateControlMethod = MFX_RATECONTROL_LA;
-        if (extOpt2->LookAheadDepth == 0)
-            extOpt2->LookAheadDepth = 1;
         if (par.mfx.FrameInfo.PicStruct  == 0)
             par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-        if (extDdi->LaScaleFactor == 0)
-            extDdi->LaScaleFactor = 2;
         if (par.AsyncDepth == 0)
             par.AsyncDepth = 1;
+        if(par.mfx.LowPower != MFX_CODINGOPTION_ON)
+        {
+            if (par.mfx.RateControlMethod == 0)
+                par.mfx.RateControlMethod = MFX_RATECONTROL_LA;
+            if (extOpt2->LookAheadDepth == 0)
+                extOpt2->LookAheadDepth = 1;
+            if (extDdi->LaScaleFactor == 0)
+                extDdi->LaScaleFactor = 2;
+        }
+        else
+        {
+            if (par.mfx.RateControlMethod == 0)
+                par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
+        }
     }
 
     if (IsProtectionPavp(par.Protected))
@@ -6035,6 +6043,7 @@ SliceDivider MfxHwH264Encode::MakeSliceDivider(
     if(isLowPower){
         if(sliceHwCaps > 0 && sliceSizeInMbs > 0)
             return SliceDividerVDEncLync(sliceSizeInMbs, widthInMbs, heightInMbs);
+
         return SliceDividerVDEnc(numSlice, widthInMbs, heightInMbs);
     }
 
@@ -7973,7 +7982,8 @@ mfxU32 HeaderPacker::WriteSlice(
     mfxU8 startcode[4] = { 0, 0, 0, 1};
     mfxU8 * pStartCode = startcode;
 #if !defined(ANDROID)
-    if (task.m_AUStartsFromSlice[fieldId] == false || sliceId > 0)
+    //to avoid slice header corruption due to VDEnc limitation - we need to pass packed slice without zero byte and patch after encoding
+    if (task.m_AUStartsFromSlice[fieldId] == false || m_hwCaps.SliceLevelRateCtrl || sliceId > 0)
         pStartCode ++;
 #endif
     obs.PutRawBytes(pStartCode, startcode + sizeof startcode);

@@ -156,6 +156,24 @@ namespace MfxHwH264Encode
         return ps;
     }
 
+    bool isBitstreamUpdateRequired(MfxVideoParam const & video,
+        ENCODE_CAPS caps,
+        eMFXHWType platform)
+    {
+        if(video.Protected)
+        {
+            return false;
+        }
+        
+        mfxExtCodingOption2 & extOpt2 = GetExtBufferRef(video);
+        if(video.mfx.LowPower == MFX_CODINGOPTION_ON)
+            return video.calcParam.numTemporalLayer > 0;
+        else if(extOpt2.MaxSliceSize)
+            return true;
+        else if(caps.HeaderInsertion == 1 || platform == MFX_HW_SOFIA)
+            return true;
+        return false;
+    }
 
     PairU8 ExtendFrameType(mfxU32 type)
     {
@@ -6046,7 +6064,7 @@ BrcIface * MfxHwH264Encode::CreateBrc(MfxVideoParam const & video)
 {
     mfxExtCodingOption2 const * ext = GetExtBuffer(video);
 
-    if (ext->MaxSliceSize)
+    if (ext->MaxSliceSize && video.mfx.LowPower != MFX_CODINGOPTION_ON)
         return new UmcBrc;
 
     switch (video.mfx.RateControlMethod)

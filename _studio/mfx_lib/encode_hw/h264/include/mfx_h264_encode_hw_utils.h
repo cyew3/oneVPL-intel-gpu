@@ -279,7 +279,10 @@ namespace MfxHwH264Encode
     PairU16 GetPicStruct(
         MfxVideoParam const & video,
         DdiTask const &       task);
-
+    
+    bool isBitstreamUpdateRequired(MfxVideoParam const & video,
+        ENCODE_CAPS caps,
+        eMFXHWType platform);
     // Helper which checks number of allocated frames and auto-free.
 #if USE_AGOP
     static bool IsZero (mfxU32 i) { return (i == 0); }

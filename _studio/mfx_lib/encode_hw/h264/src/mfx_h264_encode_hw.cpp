@@ -676,9 +676,9 @@ mfxStatus ImplementationAvc::QueryIOSurf(
         if (tmp.mfx.EncodedOrder)
             request->NumFrameMin += tmp.mfx.GopRefDist - 1;
 
-         if (extOpt2 && extOpt2->MaxSliceSize!=0)
+        if (extOpt2 && extOpt2->MaxSliceSize!=0 && par->mfx.LowPower != MFX_CODINGOPTION_ON)
             request->NumFrameMin ++;
-         if (extOpt3 && IsOn(extOpt3->FadeDetection))
+        if (extOpt3 && IsOn(extOpt3->FadeDetection))
             request->NumFrameMin ++;
         request->NumFrameSuggested = request->NumFrameMin;
     }
@@ -1152,7 +1152,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         (m_currentPlatform < MFX_HW_HSW || m_currentPlatform == MFX_HW_VLV); // HRD WA for high bitrates isn't required for HSW and beyond
 
     // required for slice header patching
-    if ((extOpt2->MaxSliceSize||m_caps.HeaderInsertion == 1 || m_currentPlatform == MFX_HW_IVB && m_core->GetVAType() == MFX_HW_VAAPI || m_currentPlatform == MFX_HW_SOFIA) && m_video.Protected == 0 || (m_video.mfx.LowPower == MFX_CODINGOPTION_ON && m_video.calcParam.numTemporalLayer > 0))
+    if (isBitstreamUpdateRequired(m_video, m_caps, m_currentPlatform))
         m_tmpBsBuf.resize(m_maxBsSize);
 
     const size_t MAX_SEI_SIZE    = 10 * 1024;
@@ -1363,7 +1363,7 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
     if (isIdrRequired || IsOn(extResetOpt->StartNewSequence))
     {
 
-        if (extOpt2Old->MaxSliceSize && m_lastTask.m_yuv)
+        if (extOpt2Old->MaxSliceSize && m_lastTask.m_yuv && m_video.mfx.LowPower != MFX_CODINGOPTION_ON)
         {
             if (m_raw.Unlock(m_lastTask.m_idx) == (mfxU32)-1)
             {
@@ -2419,7 +2419,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         }
 
         //printf("\rLA_SUBMITTED  do=%4d eo=%4d type=%d\n", task->m_frameOrder, task->m_encOrder, task->m_type[0]); fflush(stdout);
-        if (extOpt2->MaxSliceSize && m_lastTask.m_yuv)
+        if (extOpt2->MaxSliceSize && m_lastTask.m_yuv && !m_caps.SliceLevelRateCtrl)
         {
             if (m_raw.Unlock(m_lastTask.m_idx) == (mfxU32)-1)
             {
@@ -2434,7 +2434,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             }
         }
         m_lastTask = *task;
-        if (extOpt2->MaxSliceSize && m_lastTask.m_yuv)
+        if (extOpt2->MaxSliceSize && m_lastTask.m_yuv && !m_caps.SliceLevelRateCtrl)
         {
             if (m_raw.Lock(m_lastTask.m_idx) == 0)
             {
@@ -3292,14 +3292,14 @@ mfxStatus ImplementationAvc::UpdateBitstream(
         m_currentPlatform != MFX_HW_SOFIA &&
         (IsSlicePatchNeeded(task, fid) || (m_video.mfx.NumRefFrame & 1));
 
-    bool doPatch = (m_video.mfx.LowPower == MFX_CODINGOPTION_ON && m_video.calcParam.numTemporalLayer > 0) ||
+    bool doPatch = (m_video.mfx.LowPower == MFX_CODINGOPTION_ON && (m_video.calcParam.numTemporalLayer > 0 || task.m_AUStartsFromSlice[fid])) ||
         needIntermediateBitstreamBuffer ||
         IsInplacePatchNeeded(m_video, task, fid);
 
     if (m_isWiDi && task.m_resetBRC)
         m_resetBRC = true;
 
-    if (!((m_video.mfx.LowPower == MFX_CODINGOPTION_ON && m_video.calcParam.numTemporalLayer > 0 )) &&
+    if (!((m_video.mfx.LowPower == MFX_CODINGOPTION_ON && (m_video.calcParam.numTemporalLayer > 0 || task.m_AUStartsFromSlice[fid]))) &&
         m_currentPlatform != MFX_HW_SOFIA && // SoFIA HW always writes slice headers. MSDK should patch them if required
         m_caps.HeaderInsertion == 0 &&
         (m_currentPlatform != MFX_HW_IVB || m_core->GetVAType() != MFX_HW_VAAPI)
@@ -3386,6 +3386,12 @@ mfxStatus ImplementationAvc::UpdateBitstream(
         {
             dbegin = task.m_bs->Data + task.m_bs->DataOffset + task.m_bs->DataLength;
             dend   = task.m_bs->Data + task.m_bs->MaxLength;
+        }
+        //to WA VDEnc hardcoded slice header size need to add zero byte to first slice when it is first AU in picture.
+        if(m_video.mfx.LowPower == MFX_CODINGOPTION_ON && task.m_AUStartsFromSlice[fid])
+        {
+            *dbegin = 0;
+            dbegin++;
         }
 
         mfxU8 * endOfPatchedBitstream =

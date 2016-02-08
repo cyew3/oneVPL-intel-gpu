@@ -95,7 +95,7 @@ void MfxHwH264Encode::FillSpsBuffer(
     sps.EarlySkip                               = extDdi->EarlySkip;
     sps.Trellis                                 = extOpt2->Trellis;
     sps.MBBRC                                   = IsOn(extOpt2->MBBRC) ? 1 : IsOff(extOpt2->MBBRC) ? 2 : 0;
-
+    sps.EnableSliceLevelRateCtrl                = (extOpt2->MaxSliceSize)?1:0;
     sps.UserMaxFrameSize                        = extOpt2->MaxFrameSize;
     //Removed AVBR support for this
     //sps.AVBRAccuracy                            = par.mfx.Accuracy;
@@ -222,6 +222,7 @@ void MfxHwH264Encode::FillConstPartOfPpsBuffer(
     pps.BRCPrecision                            = extDdi->BRCPrecision;
     pps.BRCMaxQp                                = 0;
     pps.BRCMinQp                                = 0;
+    pps.SliceSizeInBytes                        = extOpt2.MaxSliceSize;
 }
 
 
