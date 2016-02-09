@@ -112,17 +112,13 @@ typedef struct {
 
         mfxU16  NumOfNonZeroCoef;
         mfxU16  reserved1;
-
         mfxU32  SumOfCoef;
 
         mfxU32  reserved2;
 
         mfxU32  Variance16x16;
-
         mfxU32  Variance8x8[4];
-
         mfxU32  PixelAverage16x16;
-
         mfxU32  PixelAverage8x8[4];
     } *MB;
 } mfxExtFeiPreEncMBStat;
@@ -325,8 +321,6 @@ typedef struct {
     mfxU16    PicOrderCntType;
     mfxU16    Log2MaxPicOrderCntLsb;
     mfxU16    DeltaPicOrderAlwaysZeroFlag;
-
-//    mfxU32  reserved[];
 } mfxExtFeiSPS;
 
 typedef struct {
@@ -349,13 +343,11 @@ typedef struct {
     mfxU16    EntropyCodingModeFlag;
     mfxU16    ConstrainedIntraPredFlag;
     mfxU16    Transform8x8ModeFlag;
-
-//    mfxU32  reserved[];
 } mfxExtFeiPPS;
 
 typedef struct {
     mfxExtBuffer    Header;
-//    mfxU32  reserved[];
+
     mfxU16    NumSliceAlloc;
     mfxU16    NumSlice;
 
@@ -368,11 +360,13 @@ typedef struct {
 
         mfxU16    CabacInitIdc;
 
+        mfxU16    NumRefIdxL0Active;
+        mfxU16    NumRefIdxL1Active;
+
         mfxI16    SliceQPDelta;
         mfxU16    DisableDeblockingFilterIdc;
         mfxI16    SliceAlphaC0OffsetDiv2;
         mfxI16    SliceBetaOffsetDiv2;
-        //mfxU32  reserved[];
 
         struct {
             mfxU16   PictureType; 
@@ -386,7 +380,7 @@ typedef struct {
 typedef struct {
     mfxExtBuffer    Header;
 
-    mfxU16  DisableHME;  // 0 -enable, any other value means disable 
+    mfxU16  DisableHME;  /* 0 - enable, any other value means disable */
     mfxU16  DisableSuperHME;
     mfxU16  DisableUltraHME;
 

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
 //
 */
 #include "dump.h"
@@ -577,6 +577,8 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiSlice
     DUMP_FIELD(DisableDeblockingFilterIdc);
     DUMP_FIELD(SliceAlphaC0OffsetDiv2);
     DUMP_FIELD(SliceBetaOffsetDiv2);
+    DUMP_FIELD(NumRefIdxL0Active);
+    DUMP_FIELD(NumRefIdxL1Active);
 
     for (unsigned int i = 0; i < GET_ARRAY_SIZE(_struct.RefL0); i++)
     {
