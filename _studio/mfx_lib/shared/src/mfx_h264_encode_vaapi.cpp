@@ -590,7 +590,8 @@ void FillConstPartOfPps(
     }
 
 } // void FillConstPartOfPps(...)
-
+namespace MfxHwH264Encode
+{
 void UpdatePPS(
     DdiTask const & task,
     mfxU32          fieldId,
@@ -657,100 +658,101 @@ void UpdatePPS(
     }
 } // void UpdatePPS(...)
 
-void UpdateSlice(
-    ENCODE_CAPS const &                         hwCaps,
-    DdiTask const &                             task,
-    mfxU32                                      fieldId,
-    VAEncSequenceParameterBufferH264 const     & sps,
-    VAEncPictureParameterBufferH264 const      & pps,
-    std::vector<VAEncSliceParameterBufferH264> & slice,
-    MfxVideoParam const                        & par,
-    std::vector<ExtVASurface> const & reconQueue)
-{
-    mfxU32 numPics  = task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
-    if (task.m_numSlice[fieldId])
-        slice.resize(task.m_numSlice[fieldId]);
-    mfxU32 numSlice = slice.size();
-    mfxU32 idx = 0, ref = 0;
-
-    mfxExtCodingOptionDDI * extDdi = GetExtBuffer(par);
-    mfxExtCodingOption2 *  extOpt2 = GetExtBuffer(par);
-    mfxExtFeiSliceHeader * extFeiSlice = GetExtBuffer(par, fieldId);
-    assert(extDdi != 0);
-    assert(extOpt2 != 0);
-
-    SliceDivider divider = MakeSliceDivider(
-        hwCaps.SliceStructure,
-        task.m_numMbPerSlice,
-        numSlice,
-        sps.picture_width_in_mbs,
-        sps.picture_height_in_mbs / numPics);
-
-    ArrayDpbFrame const & dpb = task.m_dpb[fieldId];
-    ArrayU8x33 const & list0 = task.m_list0[fieldId];
-    ArrayU8x33 const & list1 = task.m_list1[fieldId];
-
-    for( size_t i = 0; i < slice.size(); ++i, divider.Next() )
+    void UpdateSlice(
+        ENCODE_CAPS const &                         hwCaps,
+        DdiTask const &                             task,
+        mfxU32                                      fieldId,
+        VAEncSequenceParameterBufferH264 const     & sps,
+        VAEncPictureParameterBufferH264 const      & pps,
+        std::vector<VAEncSliceParameterBufferH264> & slice,
+        MfxVideoParam const                        & par,
+        std::vector<ExtVASurface> const & reconQueue)
     {
-        slice[i].macroblock_address = divider.GetFirstMbInSlice();
-        slice[i].num_macroblocks = divider.GetNumMbInSlice();
-        slice[i].macroblock_info = VA_INVALID_ID;
+        mfxU32 numPics  = task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
+        if (task.m_numSlice[fieldId])
+            slice.resize(task.m_numSlice[fieldId]);
+        mfxU32 numSlice = slice.size();
+        mfxU32 idx = 0, ref = 0;
 
-        for (ref = 0; ref < list0.Size(); ref++)
+        mfxExtCodingOptionDDI * extDdi = GetExtBuffer(par);
+        mfxExtCodingOption2 *  extOpt2 = GetExtBuffer(par);
+        mfxExtFeiSliceHeader * extFeiSlice = GetExtBuffer(par, fieldId);
+        assert(extDdi != 0);
+        assert(extOpt2 != 0);
+
+        SliceDivider divider = MakeSliceDivider(
+            hwCaps.SliceStructure,
+            task.m_numMbPerSlice,
+            numSlice,
+            sps.picture_width_in_mbs,
+            sps.picture_height_in_mbs / numPics);
+
+        ArrayDpbFrame const & dpb = task.m_dpb[fieldId];
+        ArrayU8x33 const & list0 = task.m_list0[fieldId];
+        ArrayU8x33 const & list1 = task.m_list1[fieldId];
+
+        for( size_t i = 0; i < slice.size(); ++i, divider.Next() )
         {
-            slice[i].RefPicList0[ref].frame_idx    = idx  = dpb[list0[ref] & 0x7f].m_frameIdx & 0x7f;
-            slice[i].RefPicList0[ref].picture_id          = reconQueue[idx].surface;
-            if (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE)
-                slice[i].RefPicList0[ref].flags               = list0[ref] >> 7 ? VA_PICTURE_H264_BOTTOM_FIELD : VA_PICTURE_H264_TOP_FIELD;
+            slice[i].macroblock_address = divider.GetFirstMbInSlice();
+            slice[i].num_macroblocks = divider.GetNumMbInSlice();
+            slice[i].macroblock_info = VA_INVALID_ID;
+
+            for (ref = 0; ref < list0.Size(); ref++)
+            {
+                slice[i].RefPicList0[ref].frame_idx    = idx  = dpb[list0[ref] & 0x7f].m_frameIdx & 0x7f;
+                slice[i].RefPicList0[ref].picture_id          = reconQueue[idx].surface;
+                if (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE)
+                    slice[i].RefPicList0[ref].flags               = list0[ref] >> 7 ? VA_PICTURE_H264_BOTTOM_FIELD : VA_PICTURE_H264_TOP_FIELD;
+            }
+            for (; ref < 32; ref++)
+            {
+                slice[i].RefPicList0[ref].picture_id = VA_INVALID_ID;
+                slice[i].RefPicList0[ref].flags      = VA_PICTURE_H264_INVALID;
+            }
+
+            for (ref = 0; ref < list1.Size(); ref++)
+            {
+                slice[i].RefPicList1[ref].frame_idx    = idx  = dpb[list1[ref] & 0x7f].m_frameIdx & 0x7f;
+                slice[i].RefPicList1[ref].picture_id          = reconQueue[idx].surface;
+                if (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE)
+                    slice[i].RefPicList1[ref].flags               = list0[ref] >> 7 ? VA_PICTURE_H264_BOTTOM_FIELD : VA_PICTURE_H264_TOP_FIELD;
+            }
+            for (; ref < 32; ref++)
+            {
+                slice[i].RefPicList1[ref].picture_id = VA_INVALID_ID;
+                slice[i].RefPicList1[ref].flags      = VA_PICTURE_H264_INVALID;
+            }
+
+            slice[i].pic_parameter_set_id = pps.pic_parameter_set_id;
+            slice[i].slice_type = ConvertMfxFrameType2SliceType( task.m_type[fieldId] );
+
+            slice[i].direct_spatial_mv_pred_flag = 1;
+
+            slice[i].num_ref_idx_l0_active_minus1 = mfxU8(IPP_MAX(1, task.m_list0[fieldId].Size()) - 1);
+            slice[i].num_ref_idx_l1_active_minus1 = mfxU8(IPP_MAX(1, task.m_list1[fieldId].Size()) - 1);
+            slice[i].num_ref_idx_active_override_flag   =
+                        slice[i].num_ref_idx_l0_active_minus1 != pps.num_ref_idx_l0_active_minus1 ||
+                        slice[i].num_ref_idx_l1_active_minus1 != pps.num_ref_idx_l1_active_minus1;
+
+            slice[i].idr_pic_id = task.m_idrPicId;
+            slice[i].pic_order_cnt_lsb = mfxU16(task.GetPoc(fieldId));
+
+            slice[i].delta_pic_order_cnt_bottom         = 0;
+            slice[i].delta_pic_order_cnt[0]             = 0;
+            slice[i].delta_pic_order_cnt[1]             = 0;
+            slice[i].luma_log2_weight_denom             = 0;
+            slice[i].chroma_log2_weight_denom           = 0;
+
+            slice[i].cabac_init_idc                     = extDdi ? (mfxU8)extDdi->CabacInitIdcPlus1 - 1 : 0;
+            slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.pic_init_qp);
+
+            slice[i].disable_deblocking_filter_idc = (extFeiSlice->Slice ? extFeiSlice->Slice[i].DisableDeblockingFilterIdc : extOpt2->DisableDeblockingIdc);
+            slice[i].slice_alpha_c0_offset_div2 = (extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2 : 0);
+            slice[i].slice_beta_offset_div2 = (extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceBetaOffsetDiv2 : 0);
         }
-        for (; ref < 32; ref++)
-        {
-            slice[i].RefPicList0[ref].picture_id = VA_INVALID_ID;
-            slice[i].RefPicList0[ref].flags      = VA_PICTURE_H264_INVALID;
-        }
 
-        for (ref = 0; ref < list1.Size(); ref++)
-        {
-            slice[i].RefPicList1[ref].frame_idx    = idx  = dpb[list1[ref] & 0x7f].m_frameIdx & 0x7f;
-            slice[i].RefPicList1[ref].picture_id          = reconQueue[idx].surface;
-            if (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE)
-                slice[i].RefPicList1[ref].flags               = list0[ref] >> 7 ? VA_PICTURE_H264_BOTTOM_FIELD : VA_PICTURE_H264_TOP_FIELD;
-        }
-        for (; ref < 32; ref++)
-        {
-            slice[i].RefPicList1[ref].picture_id = VA_INVALID_ID;
-            slice[i].RefPicList1[ref].flags      = VA_PICTURE_H264_INVALID;
-        }
-
-        slice[i].pic_parameter_set_id = pps.pic_parameter_set_id;
-        slice[i].slice_type = ConvertMfxFrameType2SliceType( task.m_type[fieldId] );
-
-        slice[i].direct_spatial_mv_pred_flag = 1;
-
-        slice[i].num_ref_idx_l0_active_minus1 = mfxU8(IPP_MAX(1, task.m_list0[fieldId].Size()) - 1);
-        slice[i].num_ref_idx_l1_active_minus1 = mfxU8(IPP_MAX(1, task.m_list1[fieldId].Size()) - 1);
-        slice[i].num_ref_idx_active_override_flag   =
-                    slice[i].num_ref_idx_l0_active_minus1 != pps.num_ref_idx_l0_active_minus1 ||
-                    slice[i].num_ref_idx_l1_active_minus1 != pps.num_ref_idx_l1_active_minus1;
-
-        slice[i].idr_pic_id = task.m_idrPicId;
-        slice[i].pic_order_cnt_lsb = mfxU16(task.GetPoc(fieldId));
-
-        slice[i].delta_pic_order_cnt_bottom         = 0;
-        slice[i].delta_pic_order_cnt[0]             = 0;
-        slice[i].delta_pic_order_cnt[1]             = 0;
-        slice[i].luma_log2_weight_denom             = 0;
-        slice[i].chroma_log2_weight_denom           = 0;
-
-        slice[i].cabac_init_idc                     = extDdi ? (mfxU8)extDdi->CabacInitIdcPlus1 - 1 : 0;
-        slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.pic_init_qp);
-
-        slice[i].disable_deblocking_filter_idc = (extFeiSlice->Slice ? extFeiSlice->Slice[i].DisableDeblockingFilterIdc : extOpt2->DisableDeblockingIdc);
-        slice[i].slice_alpha_c0_offset_div2 = (extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2 : 0);
-        slice[i].slice_beta_offset_div2 = (extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceBetaOffsetDiv2 : 0);
-    }
-
-} // void UpdateSlice(...)
+    } // void UpdateSlice(...)
+} // namespace MfxHwH264Encode
 
 void UpdateSliceSizeLimited(
     ENCODE_CAPS const &                         hwCaps,

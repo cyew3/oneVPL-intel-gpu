@@ -86,6 +86,22 @@ namespace MfxHwH264Encode
 #endif
     } ExtVASurface;
 
+    void UpdatePPS(
+        DdiTask const & task,
+        mfxU32          fieldId,
+        VAEncPictureParameterBufferH264 & pps,
+        std::vector<ExtVASurface> const & reconQueue);
+
+    void UpdateSlice(
+        ENCODE_CAPS const &                         hwCaps,
+        DdiTask const &                             task,
+        mfxU32                                      fieldId,
+        VAEncSequenceParameterBufferH264 const     & sps,
+        VAEncPictureParameterBufferH264 const      & pps,
+        std::vector<VAEncSliceParameterBufferH264> & slice,
+        MfxVideoParam const                        & par,
+        std::vector<ExtVASurface> const & reconQueue);
+
     class VAAPIEncoder : public DriverEncoder
     {
     public:

@@ -86,12 +86,13 @@ private:
 
 private:
     std::auto_ptr<DriverEncoder> m_ddi;
+    std::vector<mfxU32>     m_recFrameOrder; // !!! HACK !!!
     ENCODE_CAPS m_caps;
 
     MfxHwH264Encode::MfxVideoParam                  m_video;
     PreAllocatedVector m_sei;
         
-    MfxHwH264Encode::MfxFrameAllocResponse          m_raw;
+    MfxHwH264Encode::MfxFrameAllocResponse          m_rec;
     MfxHwH264Encode::MfxFrameAllocResponse          m_opaqHren;
     
     std::list<DdiTask> m_free;

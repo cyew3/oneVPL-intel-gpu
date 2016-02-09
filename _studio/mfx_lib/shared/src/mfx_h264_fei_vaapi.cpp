@@ -1121,8 +1121,8 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     //find ext buffers
     /* In buffers */
     const mfxEncodeCtrl& ctrl = task.m_ctrl;
-    mfxExtFeiPPS *pDataPPS = NULL;//GetExtBufferFEI(in,feiFieldId);
-    mfxExtFeiSPS *pDataSPS = NULL;//GetExtBufferFEI(in,feiFieldId);
+    mfxExtFeiPPS *pDataPPS = GetExtBufferFEI(in,feiFieldId);
+    mfxExtFeiSPS *pDataSPS = GetExtBufferFEI(in,feiFieldId);
     mfxExtFeiSliceHeader *pDataSliceHeader = GetExtBufferFEI(in,feiFieldId);
     mfxExtFeiEncMBCtrl* mbctrl = GetExtBufferFEI(in,feiFieldId);
     mfxExtFeiEncMVPredictors* mvpred = GetExtBufferFEI(in,feiFieldId);
@@ -1133,30 +1133,142 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     mfxExtFeiEncMV* mvout = GetExtBufferFEI(out,feiFieldId);
     mfxExtFeiPakMBCtrl* mbcodeout = GetExtBufferFEI(out,feiFieldId);
 
-    // SPS
-    if ((task.m_insertSps[fieldId]) ||
-        ((NULL != pDataSPS) && (1 == pDataSPS->Pack)) )
+    /* Lets look does re-generation of headers required */
+    if ((NULL != pDataSPS) && (task.m_insertSps[fieldId]))
     {
-        if ((NULL != pDataSPS) && (1 == pDataSPS->Pack)) /* Copy header's data */
-        {
-            m_sps.seq_parameter_set_id = pDataSPS->SPSId;
-            //pDataSPS->Profile;
-            m_sps.level_idc = pDataSPS->Level;
+        mfxExtSpsHeader* extSps = GetExtBuffer(m_videoParam);
 
-            m_sps.max_num_ref_frames = pDataSPS->NumRefFrame;
-            m_sps.picture_width_in_mbs = pDataSPS->WidthInMBs;
-            m_sps.picture_height_in_mbs = pDataSPS->HeightInMBs;
+        /* SPS portion */
+        mdprintf(stderr,"Library's generated SPS header (it will be changed now on external one) \n");
+        mdprintf(stderr,"---->extSps->seqParameterSetId = %d\n", extSps->seqParameterSetId);
+        mdprintf(stderr,"---->extSps->levelIdc = %d\n", extSps->levelIdc);
+        mdprintf(stderr,"---->extSps->maxNumRefFrames = %d\n", extSps->maxNumRefFrames);
+        mdprintf(stderr,"---->extSps->picWidthInMbsMinus1 = %d\n", extSps->picWidthInMbsMinus1);
+        mdprintf(stderr,"---->extSps->picHeightInMapUnitsMinus1 = %d\n", extSps->picHeightInMapUnitsMinus1);
+        mdprintf(stderr,"---->extSps->chromaFormatIdc = %d\n", extSps->chromaFormatIdc);
+        mdprintf(stderr,"---->extSps->frameMbsOnlyFlag = %d\n", extSps->frameMbsOnlyFlag);
+        mdprintf(stderr,"---->extSps->mbAdaptiveFrameFieldFlag = %d\n", extSps->mbAdaptiveFrameFieldFlag);
+        mdprintf(stderr,"---->extSps->direct8x8InferenceFlag = %d\n", extSps->direct8x8InferenceFlag);
+        mdprintf(stderr,"---->extSps->log2MaxFrameNumMinus4 = %d\n", extSps->log2MaxFrameNumMinus4);
+        mdprintf(stderr,"---->extSps->picOrderCntType = %d\n", extSps->picOrderCntType);
+        mdprintf(stderr,"---->extSps->log2MaxPicOrderCntLsbMinus4 = %d\n", extSps->log2MaxPicOrderCntLsbMinus4);
+        mdprintf(stderr,"---->extSps->deltaPicOrderAlwaysZeroFlag = %d\n", extSps->deltaPicOrderAlwaysZeroFlag);
+        extSps->seqParameterSetId = pDataSPS->SPSId;
+        extSps->levelIdc = pDataSPS->Level;
+        extSps->maxNumRefFrames = pDataSPS->NumRefFrame;
+        extSps->picWidthInMbsMinus1 = pDataSPS->WidthInMBs -1 ;
+        extSps->picHeightInMapUnitsMinus1 = pDataSPS->HeightInMBs -1;
+        extSps->chromaFormatIdc = pDataSPS->ChromaFormatIdc;
+        extSps->frameMbsOnlyFlag = pDataSPS->FrameMBsOnlyFlag;
+        extSps->mbAdaptiveFrameFieldFlag = pDataSPS->MBAdaptiveFrameFieldFlag;
+        extSps->direct8x8InferenceFlag = pDataSPS->Direct8x8InferenceFlag;
+        extSps->log2MaxFrameNumMinus4 = pDataSPS->Log2MaxFrameNum;
+        extSps->picOrderCntType = pDataSPS->PicOrderCntType;
+        extSps->log2MaxPicOrderCntLsbMinus4 = pDataSPS->Log2MaxPicOrderCntLsb - 4 ;
+        extSps->deltaPicOrderAlwaysZeroFlag = pDataSPS->DeltaPicOrderAlwaysZeroFlag;
 
-            m_sps.seq_fields.bits.chroma_format_idc = pDataSPS->ChromaFormatIdc;
-            m_sps.seq_fields.bits.frame_mbs_only_flag = pDataSPS->FrameMBsOnlyFlag;
-            m_sps.seq_fields.bits.mb_adaptive_frame_field_flag = pDataSPS->MBAdaptiveFrameFieldFlag;
-            m_sps.seq_fields.bits.direct_8x8_inference_flag = pDataSPS->Direct8x8InferenceFlag;
-            m_sps.seq_fields.bits.log2_max_frame_num_minus4 = pDataSPS->Log2MaxFrameNum;
-            m_sps.seq_fields.bits.pic_order_cnt_type = pDataSPS->PicOrderCntType;
-            m_sps.seq_fields.bits.log2_max_pic_order_cnt_lsb_minus4 = pDataSPS->Log2MaxPicOrderCntLsb;
-            m_sps.seq_fields.bits.delta_pic_order_always_zero_flag = pDataSPS->DeltaPicOrderAlwaysZeroFlag;
-        }
+        mdprintf(stderr,"Applications's SPS header\n");
+        mdprintf(stderr,"---->extSps->seqParameterSetId = %d\n", extSps->seqParameterSetId);
+        mdprintf(stderr,"---->extSps->levelIdc = %d\n", extSps->levelIdc);
+        mdprintf(stderr,"---->extSps->maxNumRefFrames = %d\n", extSps->maxNumRefFrames);
+        mdprintf(stderr,"---->extSps->picWidthInMbsMinus1 = %d\n", extSps->picWidthInMbsMinus1);
+        mdprintf(stderr,"---->extSps->picHeightInMapUnitsMinus1 = %d\n", extSps->picHeightInMapUnitsMinus1);
+        mdprintf(stderr,"---->extSps->chromaFormatIdc = %d\n", extSps->chromaFormatIdc);
+        mdprintf(stderr,"---->extSps->frameMbsOnlyFlag = %d\n", extSps->frameMbsOnlyFlag);
+        mdprintf(stderr,"---->extSps->mbAdaptiveFrameFieldFlag = %d\n", extSps->mbAdaptiveFrameFieldFlag);
+        mdprintf(stderr,"---->extSps->direct8x8InferenceFlag = %d\n", extSps->direct8x8InferenceFlag);
+        mdprintf(stderr,"---->extSps->log2MaxFrameNumMinus4 = %d\n", extSps->log2MaxFrameNumMinus4);
+        mdprintf(stderr,"---->extSps->picOrderCntType = %d\n", extSps->picOrderCntType);
+        mdprintf(stderr,"---->extSps->log2MaxPicOrderCntLsbMinus4 = %d\n", extSps->log2MaxPicOrderCntLsbMinus4);
+        mdprintf(stderr,"---->extSps->deltaPicOrderAlwaysZeroFlag = %d\n", extSps->deltaPicOrderAlwaysZeroFlag);
+    }
+    /* PPS */
+    if ((NULL != pDataPPS) && (task.m_insertPps[fieldId]) )
+    {
+        mfxExtPpsHeader* extPps = GetExtBuffer(m_videoParam);
 
+        /* PPS */
+        mdprintf(stderr,"Library's generated PPS header (it will be changed now on external one) \n");
+        mdprintf(stderr,"---->extPps->seqParameterSetId = %d\n", extPps->seqParameterSetId);
+        mdprintf(stderr,"---->extPps->picParameterSetId = %d\n", extPps->picParameterSetId);
+        mdprintf(stderr,"---->extPps->picInitQpMinus26 = %d\n", extPps->picInitQpMinus26);
+        mdprintf(stderr,"---->extPps->numRefIdxL0DefaultActiveMinus1 = %d\n", extPps->numRefIdxL0DefaultActiveMinus1);
+        mdprintf(stderr,"---->extPps->numRefIdxL1DefaultActiveMinus1 = %d\n", extPps->numRefIdxL1DefaultActiveMinus1);
+        mdprintf(stderr,"---->extPps->chromaQpIndexOffset = %d\n", extPps->chromaQpIndexOffset);
+        mdprintf(stderr,"---->extPps->secondChromaQpIndexOffset = %d\n", extPps->secondChromaQpIndexOffset);
+        mdprintf(stderr,"---->extPps->entropyCodingModeFlag = %d\n", extPps->entropyCodingModeFlag);
+        mdprintf(stderr,"---->extPps->constrainedIntraPredFlag = %d\n", extPps->constrainedIntraPredFlag);
+        mdprintf(stderr,"---->extPps->transform8x8ModeFlag = %d\n", extPps->transform8x8ModeFlag);
+
+        extPps->seqParameterSetId = pDataPPS->SPSId;
+        extPps->picParameterSetId = pDataPPS->PPSId;
+
+        //extPps->frame_num = pDataPPS->FrameNum;
+
+        extPps->picInitQpMinus26 = pDataPPS->PicInitQP-26;
+        extPps->picInitQsMinus26 = pDataPPS->PicInitQP-26;;
+        extPps->numRefIdxL0DefaultActiveMinus1 = pDataPPS->NumRefIdxL0Active ? (pDataPPS->NumRefIdxL0Active - 1) : 0;
+        extPps->numRefIdxL1DefaultActiveMinus1 = pDataPPS->NumRefIdxL1Active ? (pDataPPS->NumRefIdxL1Active - 1) : 0;
+
+        extPps->chromaQpIndexOffset = pDataPPS->ChromaQPIndexOffset;
+        extPps->secondChromaQpIndexOffset = pDataPPS->SecondChromaQPIndexOffset;
+
+        //extPps->m_pps.pic_fields.bits.idr_pic_flag = pDataPPS->IDRPicFlag;
+        //extPps->rm_pps.pic_fields.bits.reference_pic_flag = pDataPPS->ReferencePicFlag;
+        extPps->entropyCodingModeFlag = pDataPPS->EntropyCodingModeFlag;
+        extPps->constrainedIntraPredFlag = pDataPPS->ConstrainedIntraPredFlag;
+        extPps->transform8x8ModeFlag = pDataPPS->Transform8x8ModeFlag;
+
+        mdprintf(stderr,"Applications's generated PPS header\n");
+        mdprintf(stderr,"---->extPps->seqParameterSetId = %d\n", extPps->seqParameterSetId);
+        mdprintf(stderr,"---->extPps->picParameterSetId = %d\n", extPps->picParameterSetId);
+        mdprintf(stderr,"---->extPps->picInitQpMinus26 = %d\n", extPps->picInitQpMinus26);
+        mdprintf(stderr,"---->extPps->numRefIdxL0DefaultActiveMinus1 = %d\n", extPps->numRefIdxL0DefaultActiveMinus1);
+        mdprintf(stderr,"---->extPps->numRefIdxL1DefaultActiveMinus1 = %d\n", extPps->numRefIdxL1DefaultActiveMinus1);
+        mdprintf(stderr,"---->extPps->chromaQpIndexOffset = %d\n", extPps->chromaQpIndexOffset);
+        mdprintf(stderr,"---->extPps->secondChromaQpIndexOffset = %d\n", extPps->secondChromaQpIndexOffset);
+        mdprintf(stderr,"---->extPps->entropyCodingModeFlag = %d\n", extPps->entropyCodingModeFlag);
+        mdprintf(stderr,"---->extPps->constrainedIntraPredFlag = %d\n", extPps->constrainedIntraPredFlag);
+        mdprintf(stderr,"---->extPps->transform8x8ModeFlag = %d\n", extPps->transform8x8ModeFlag);
+    }
+    /* repack headers by itself */
+    if ( ((NULL != pDataSPS) && (task.m_insertSps[fieldId])) ||
+         ((NULL != pDataPPS) && (task.m_insertPps[fieldId])) )
+    {
+//        std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSpsArray = m_headerPacker.GetSps();
+//        ENCODE_PACKEDHEADER_DATA const & packedSps = packedSpsArray[0];
+//        /* Dump SPS */
+//        mdprintf(stderr,"Dump of packed SPS\n");
+//        for (mfxU32 i = 0; i < packedSps.DataLength; i++)
+//        {
+//            mdprintf(stderr,"packedSps.pData[%u]=%u\n", i, packedSps.pData[i]);
+//        }
+//        std::vector<ENCODE_PACKEDHEADER_DATA> const & packedPpsArray = m_headerPacker.GetPps();
+//        ENCODE_PACKEDHEADER_DATA const & packedPps = packedPpsArray[0];
+//        /* Dump SPS */
+//        mdprintf(stderr,"Dump of packed PPS\n");
+//        for (mfxU32 i = 0; i < packedPps.DataLength; i++)
+//        {
+//            mdprintf(stderr,"packedPps.pData[%u]=%u\n", i, packedPps.pData[i]);
+//        }
+        m_headerPacker.Init(m_videoParam, m_caps);
+//        /* Dump SPS */
+//        mdprintf(stderr,"Dump of packed SPS\n");
+//        for (mfxU32 i = 0; i < packedSps.DataLength; i++)
+//        {
+//            mdprintf(stderr,"packedSps.pData[%u]=%u\n", i, packedSps.pData[i]);
+//        }
+//        /* Dump SPS */
+//        mdprintf(stderr,"Dump of packed PPS\n");
+//        for (mfxU32 i = 0; i < packedPps.DataLength; i++)
+//        {
+//            mdprintf(stderr,"packedPps.pData[%u]=%u\n", i, packedPps.pData[i]);
+//        }
+    }
+
+    // SPS
+    if ((task.m_insertSps[fieldId]) || (NULL != pDataSPS) )
+    {
         std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSpsArray = m_headerPacker.GetSps();
         ENCODE_PACKEDHEADER_DATA const & packedSps = packedSpsArray[0];
 
@@ -1347,47 +1459,38 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         mdprintf(stderr, "vaFeiFrameControlId=%d\n", vaFeiFrameControlId);
     }
 
-    /* to fill L0 List*/
+    /* Number of reference handling */
     mfxU32 ref_counter_l0 = 0, ref_counter_l1 = 0;
-    mfxU32 maxNumRefL0 = in->NumFrameL0;
-    /* Some sort of limitation for interleaved case
-     * in->NumFrameL0 has maximal number of references for second field!
-     * First field has one reference less.
-     * And parameter will be adjusted accordingly */
-    if (task.GetPicStructForEncode() == MFX_PICSTRUCT_FIELD_TFF)
+    mfxU32 maxNumRefL0 = 1, maxNumRefL1 = 1;
+    if ((NULL != pDataSliceHeader) && (NULL != pDataSliceHeader->Slice))
     {
-        if ((TFIELD == fieldId) && (task.m_type[fieldId] & MFX_FRAMETYPE_PB))
-            maxNumRefL0 = in->NumFrameL0 -1;
-        if ((BFIELD == fieldId) && (task.m_type[fieldId] & MFX_FRAMETYPE_PB))
-            maxNumRefL0 = in->NumFrameL0;
-    }
-    if (task.GetPicStructForEncode() == MFX_PICSTRUCT_FIELD_BFF)
-    {
-        if ((BFIELD == fieldId) && (task.m_type[fieldId] & MFX_FRAMETYPE_PB))
-            maxNumRefL0 = in->NumFrameL0 -1;
-        if ((TFIELD == fieldId) && (task.m_type[fieldId] & MFX_FRAMETYPE_PB))
-            maxNumRefL0 = in->NumFrameL0;
+        maxNumRefL0 = pDataSliceHeader->Slice[0].NumRefIdxL0Active;
+        maxNumRefL1 = pDataSliceHeader->Slice[0].NumRefIdxL1Active;
+        if ((maxNumRefL1 > 2) && (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE ))
+            maxNumRefL1 = 2;
     }
 
-    if ((in->NumFrameL0) && (task.m_type[fieldId] & MFX_FRAMETYPE_PB))
+    UpdatePPS(task, fieldId, m_pps, m_reconQueue);
+
+    /* to fill L0 List*/
+    if ((maxNumRefL0 > 0) && (task.m_type[fieldId] & MFX_FRAMETYPE_PB))
     {
         for (ref_counter_l0 = 0; ref_counter_l0 < maxNumRefL0; ref_counter_l0++)
         {
             mfxHDL handle;
             mfxSts = m_core->GetExternalFrameHDL(in->L0Surface[ref_counter_l0]->Data.MemId, &handle);
             MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
-            VASurfaceID* s = (VASurfaceID*) handle; //id in the memory by ptr
-            m_pps.ReferenceFrames[ref_counter_l0].picture_id = *s;
+            VASurfaceID s = *(VASurfaceID*) handle; //id in the memory by ptr
+            if (m_pps.ReferenceFrames[ref_counter_l0].picture_id != s)
+            {
+                //m_pps.ReferenceFrames[ref_counter_l0].picture_id = *s;
+                mdprintf(stderr, "!!!Warning picture_id from in->L0Surface[%u] = %u\n", ref_counter_l0, s);
+                mdprintf(stderr, "   But library's is m_pps.ReferenceFrames[%u].picture_id = %u\n", ref_counter_l0, m_pps.ReferenceFrames[ref_counter_l0].picture_id);
+            }
         }
     }
-    /* to fill L1 List*/
-    /* here is more strict maximal limitation */
-    mfxU32 maxNumRefL1 = 1;
-    /* Current limitation for interlaced case */
-    if ((in->NumFrameL1 > 2) && (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE ))
-        maxNumRefL1 = 2;
 
-    if (in->NumFrameL1)
+    if ((maxNumRefL1 > 1) && (task.m_type[fieldId] & MFX_FRAMETYPE_B))
     {
         /* continue to fill ref list */
         for (ref_counter_l1 = 0; ref_counter_l1 < maxNumRefL1; ref_counter_l1++)
@@ -1395,17 +1498,36 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
             mfxHDL handle;
             mfxSts = m_core->GetExternalFrameHDL(in->L1Surface[ref_counter_l1]->Data.MemId, &handle);
             MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
-            VASurfaceID* s = (VASurfaceID*) handle;
-            m_pps.ReferenceFrames[ref_counter_l0 + ref_counter_l1].picture_id = *s;
+            VASurfaceID s = *(VASurfaceID*) handle;
+            if (m_pps.ReferenceFrames[ref_counter_l0 + ref_counter_l1].picture_id != s)
+            {
+                //m_pps.ReferenceFrames[ref_counter_l0 + ref_counter_l1].picture_id = *s;
+                mdprintf(stderr, "!!!Warning picture_id from in->L1Surface[%u] = %u\n", ref_counter_l0 + ref_counter_l1, s);
+                mdprintf(stderr, "   But library's is m_pps.ReferenceFrames[%u].picture_id = %u\n",
+                        ref_counter_l0 + ref_counter_l1, m_pps.ReferenceFrames[ref_counter_l0].picture_id);
+            }
         }
     }
 
-    /* UpdatePPS */
-    m_pps.frame_num = task.m_frameNum;
-    m_pps.pic_fields.bits.idr_pic_flag = (task.m_type[fieldId] & MFX_FRAMETYPE_IDR) ? 1 : 0;
-    m_pps.pic_fields.bits.reference_pic_flag = (task.m_type[fieldId] & MFX_FRAMETYPE_REF) ? 1 : 0;
-    m_pps.CurrPic.TopFieldOrderCnt = task.GetPoc(TFIELD);
-    m_pps.CurrPic.BottomFieldOrderCnt = task.GetPoc(BFIELD);
+    /* Check application's provided data */
+    if (NULL != pDataPPS)
+    {
+        if (m_pps.pic_fields.bits.idr_pic_flag != pDataPPS->IDRPicFlag)
+        {
+            mdprintf(stderr, "!!!Warning pDataPPS->IDRPicFlag = %u\n", pDataPPS->IDRPicFlag);
+            mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.idr_pic_flag = %u\n", m_pps.pic_fields.bits.idr_pic_flag);
+        }
+        if (m_pps.pic_fields.bits.reference_pic_flag != pDataPPS->ReferencePicFlag)
+        {
+            mdprintf(stderr, "!!!Warning pDataPPS->ReferencePicFlag = %u\n", pDataPPS->ReferencePicFlag);
+            mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.reference_pic_flag = %u\n", m_pps.pic_fields.bits.reference_pic_flag);
+        }
+        if (m_pps.frame_num != pDataPPS->FrameNum)
+        {
+            mdprintf(stderr, "!!!Warning pDataPPS->FrameNum = %u\n", pDataPPS->FrameNum);
+            mdprintf(stderr, "   But library's is m_pps.frame_num = %u\n", m_pps.frame_num);
+        }
+    }
 
     /* ENC & PAK has issue with reconstruct surface.
      * How does it work right now?
@@ -1452,41 +1574,6 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         mdprintf(stderr, "m_codedBufferId=%d\n", m_codedBufferId);
     }
     m_pps.coded_buf = m_codedBufferId;
-
-    /* if we have User defined PPS */
-    if ((NULL != pDataPPS) && (1 == pDataPPS->Pack)) /* Copy header's data */
-    {
-        m_pps.seq_parameter_set_id = pDataPPS->SPSId;
-        m_pps.pic_parameter_set_id = pDataPPS->PPSId;
-
-        m_pps.frame_num = pDataPPS->FrameNum;
-
-        m_pps.pic_init_qp = pDataPPS->PicInitQP;
-        m_pps.num_ref_idx_l0_active_minus1 = pDataPPS->NumRefIdxL0Active ? (pDataPPS->NumRefIdxL0Active - 1) : 0;
-        m_pps.num_ref_idx_l1_active_minus1 = pDataPPS->NumRefIdxL1Active ? (pDataPPS->NumRefIdxL1Active - 1) : 0;
-
-        m_pps.chroma_qp_index_offset = pDataPPS->ChromaQPIndexOffset;
-        m_pps.second_chroma_qp_index_offset = pDataPPS->SecondChromaQPIndexOffset;
-
-        m_pps.pic_fields.bits.idr_pic_flag = pDataPPS->IDRPicFlag;
-        m_pps.pic_fields.bits.reference_pic_flag = pDataPPS->ReferencePicFlag;
-        m_pps.pic_fields.bits.entropy_coding_mode_flag = pDataPPS->EntropyCodingModeFlag;
-        m_pps.pic_fields.bits.constrained_intra_pred_flag = pDataPPS->ConstrainedIntraPredFlag;
-        m_pps.pic_fields.bits.transform_8x8_mode_flag = pDataPPS->Transform8x8ModeFlag;
-    }
-//    mdprintf(stderr,"---->m_pps.seq_parameter_set_id = %d\n", m_pps.seq_parameter_set_id);
-//    mdprintf(stderr,"---->m_pps.pic_parameter_set_id = %d\n", m_pps.pic_parameter_set_id);
-//    mdprintf(stderr,"---->m_pps.frame_num = %d\n", m_pps.frame_num);
-//    mdprintf(stderr,"---->m_pps.pic_init_qp = %d\n", m_pps.pic_init_qp);
-//    mdprintf(stderr,"---->m_pps.num_ref_idx_l0_active_minus1 = %d\n", m_pps.num_ref_idx_l0_active_minus1);
-//    mdprintf(stderr,"---->m_pps.num_ref_idx_l1_active_minus1 = %d\n", m_pps.num_ref_idx_l1_active_minus1);
-//    mdprintf(stderr,"---->m_pps.chroma_qp_index_offset = %d\n", m_pps.chroma_qp_index_offset);
-//    mdprintf(stderr,"---->m_pps.second_chroma_qp_index_offset = %d\n", m_pps.second_chroma_qp_index_offset);
-//    mdprintf(stderr,"---->m_pps.pic_fields.bits.idr_pic_flag = %d\n", m_pps.pic_fields.bits.idr_pic_flag);
-//    mdprintf(stderr,"---->m_pps.pic_fields.bits.reference_pic_flag = %d\n", m_pps.pic_fields.bits.reference_pic_flag);
-//    mdprintf(stderr,"---->m_pps.pic_fields.bits.entropy_coding_mode_flag = %d\n", m_pps.pic_fields.bits.entropy_coding_mode_flag);
-//    mdprintf(stderr,"---->m_pps.pic_fields.bits.constrained_intra_pred_flag = %d\n", m_pps.pic_fields.bits.constrained_intra_pred_flag);
-//    mdprintf(stderr,"---->m_pps.pic_fields.bits.transform_8x8_mode_flag = %d\n", m_pps.pic_fields.bits.transform_8x8_mode_flag);
 
     if ((MFX_PROFILE_AVC_BASELINE == m_videoParam.mfx.CodecProfile) ||
         (MFX_PROFILE_AVC_MAIN == m_videoParam.mfx.CodecProfile) ||
@@ -1542,164 +1629,239 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 
     /* slice parameters */
     mfxU32 numPics  = task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
-    //if (task.m_numSlice[fieldId])
-    //    m_slice.resize(task.m_numSlice[fieldId]);
     mfxU32 numSlice = task.m_numSlice[feiFieldId];
     mfxU32 idx = 0, ref = 0;
     /* Application defined slice params */
-    if ( (NULL != pDataSliceHeader) && (1 == pDataSliceHeader->Pack))
+    if (NULL != pDataSliceHeader)
     {
         if (pDataSliceHeader->NumSlice != pDataSliceHeader->NumSliceAlloc)
             return MFX_ERR_INVALID_VIDEO_PARAM;
         if ((pDataSliceHeader->NumSlice >=1) && (numSlice != pDataSliceHeader->NumSlice))
             numSlice = pDataSliceHeader->NumSlice;
     }
-    /*and final resize */
-    m_slice.resize(numSlice);
 
-    SliceDivider divider = MakeSliceDivider(
-        m_caps.SliceStructure,
-        task.m_numMbPerSlice,
-        numSlice,
-        m_sps.picture_width_in_mbs,
-        m_sps.picture_height_in_mbs / numPics);
+    UpdateSlice(m_caps, task, fieldId, m_sps, m_pps, m_slice, m_videoParam, m_reconQueue);
 
-    for( size_t i = 0; i < numSlice; ++i, divider.Next() )
+#if (mdprintf == fprintf)
+    mdprintf(stderr, "LIBRRAY's ref list-----\n");
+    for ( mfxU32 i = 0; i < 32; i++)
     {
-        m_slice[i].macroblock_address = divider.GetFirstMbInSlice();
-        m_slice[i].num_macroblocks = divider.GetNumMbInSlice();
-        m_slice[i].macroblock_info = VA_INVALID_ID;
-        m_slice[i].slice_type = ConvertMfxFrameType2SliceType( task.m_type[fieldId]) - 5;
-        mdprintf(stderr,"m_slice[%zu].slice_type=%d\n",i, m_slice[i].slice_type);
-        m_slice[i].pic_parameter_set_id = m_pps.pic_parameter_set_id;
-        m_slice[i].idr_pic_id = task.m_idrPicId;
-        m_slice[i].pic_order_cnt_lsb = mfxU16(task.GetPoc(fieldId));
-        m_slice[i].direct_spatial_mv_pred_flag = 1;
-        m_slice[i].cabac_init_idc = 0;
-        m_slice[i].slice_qp_delta = mfxI8(task.m_cqpValue[fieldId] - m_pps.pic_init_qp);
-        m_slice[i].disable_deblocking_filter_idc = 0;
-        m_slice[i].slice_alpha_c0_offset_div2 = 2;
-        m_slice[i].slice_beta_offset_div2 = 2;
-
-//        if ( NULL != pDataSliceHeader )
-//        {
-//            if (1 == pDataSliceHeader->Pack)
-//            {
-//                m_slice[i].macroblock_address = pDataSliceHeader->Slice[i].MBAaddress;
-//                m_slice[i].num_macroblocks = pDataSliceHeader->Slice[i].NumMBs;
-//                m_slice[i].slice_type = pDataSliceHeader->Slice[i].SliceType;
-//                if (pDataSliceHeader->Slice[i].PPSId != m_pps.pic_parameter_set_id)
-//                {
-//                    /*May be bug in application */
-//                    mdprintf(stderr,"pDataSliceHeader->Slice[%zu].PPSId = %u\n", i, pDataSliceHeader->Slice[i].PPSId);
-//                    mdprintf(stderr,"m_pps.pic_parameter_set_id = %u\n", m_pps.pic_parameter_set_id);
-//                }
-//                m_slice[i].idr_pic_id  = pDataSliceHeader->Slice[i].IdrPicId;
-//                m_slice[i].cabac_init_idc = pDataSliceHeader->Slice[i].CabacInitIdc;
-//                m_slice[i].slice_qp_delta = pDataSliceHeader->Slice[i].SliceQPDelta;
-//            }
-//            m_slice[i].disable_deblocking_filter_idc = pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc;
-//            m_slice[i].slice_alpha_c0_offset_div2 = pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2;
-//            m_slice[i].slice_beta_offset_div2 = pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2;
-//        }
-
-        if ( m_slice[i].slice_type == SLICE_TYPE_I ) {
-            m_slice[i].num_ref_idx_l0_active_minus1 = -1;
-            m_slice[i].num_ref_idx_l1_active_minus1 = -1;
-        } else if ( m_slice[i].slice_type == SLICE_TYPE_P ) {
-            m_slice[i].num_ref_idx_l0_active_minus1 = in->NumFrameL0 - 1;
-            m_slice[i].num_ref_idx_l1_active_minus1 = -1;
-        } else if ( m_slice[i].slice_type == SLICE_TYPE_B ) {
-            m_slice[i].num_ref_idx_l0_active_minus1 = in->NumFrameL0 - 1 ;
-            m_slice[i].num_ref_idx_l1_active_minus1 = in->NumFrameL1 - 1 ;
-        }
-        m_slice[i].num_ref_idx_active_override_flag   =
-            m_slice[i].num_ref_idx_l0_active_minus1 != m_pps.num_ref_idx_l0_active_minus1 ||
-            m_slice[i].num_ref_idx_l1_active_minus1 != m_pps.num_ref_idx_l1_active_minus1;
-        /*    */
-        for (mfxU32 j=0; j<32; j++)
+        if (VA_INVALID_ID != m_slice[0].RefPicList0[i].picture_id)
         {
-            m_slice[i].RefPicList0[j].picture_id = VA_INVALID_ID;
-            m_slice[i].RefPicList0[j].flags = VA_PICTURE_H264_INVALID;
-            m_slice[i].RefPicList1[j].picture_id = VA_INVALID_ID;
-            m_slice[i].RefPicList1[j].flags = VA_PICTURE_H264_INVALID;
+            mdprintf(stderr, " ------%d-----\n", i);
+            mdprintf(stderr, "m_slice[0].RefPicList0[%d].picture_id=%d\n", i, m_slice[0].RefPicList0[i].picture_id);
+            mdprintf(stderr, "m_slice[0].RefPicList0[%d].frame_idx=%d\n", i, m_slice[0].RefPicList0[i].frame_idx);
+            mdprintf(stderr, "m_slice[0].RefPicList0[%d].flags=%d\n", i, m_slice[0].RefPicList0[i].flags);
+            mdprintf(stderr, "m_slice[0].RefPicList0[%d].TopFieldOrderCnt=%d\n", i, m_slice[0].RefPicList0[i].TopFieldOrderCnt);
+            mdprintf(stderr, "m_slice[0].RefPicList0[%d].BottomFieldOrderCnt=%d\n", i, m_slice[0].RefPicList0[i].BottomFieldOrderCnt);
+        }
+    }
+    for ( mfxU32 i = 0; i < 32; i++)
+    {
+        if (VA_INVALID_ID != m_slice[0].RefPicList1[i].picture_id)
+        {
+            mdprintf(stderr, " ------%d-----\n", i);
+            mdprintf(stderr, "m_slice[0].RefPicList1[%d].picture_id=%d\n", i, m_slice[0].RefPicList1[i].picture_id);
+            mdprintf(stderr, "m_slice[0].RefPicList1[%d].frame_idx=%d\n", i, m_slice[0].RefPicList1[i].frame_idx);
+            mdprintf(stderr, "m_slice[0].RefPicList1[%d].flags=%d\n", i, m_slice[0].RefPicList1[i].flags);
+            mdprintf(stderr, "m_slice[0].RefPicList1[%d].TopFieldOrderCnt=%d\n", i, m_slice[0].RefPicList1[i].TopFieldOrderCnt);
+            mdprintf(stderr, "m_slice[0].RefPicList1[%d].BottomFieldOrderCnt=%d\n", i, m_slice[0].RefPicList1[i].BottomFieldOrderCnt);
+        }
+    }
+#endif //(mdprintf == fprintf)
+
+    for( mfxU32 i = 0; i < numSlice; i++ )
+    {
+        if ( NULL != pDataSliceHeader )
+        {
+            mdprintf(stderr,"Library's generated Slice header (it will be changed now on external one) \n");
+            mdprintf(stderr,"---->m_slice[%u].macroblock_address = %d\n", i, m_slice[i].macroblock_address);
+            mdprintf(stderr,"---->m_slice[%u].num_macroblocks = %d\n", i, m_slice[i].num_macroblocks);
+            mdprintf(stderr,"---->m_slice[%u].slice_type = %d\n", i, m_slice[i].slice_type);
+            mdprintf(stderr,"---->m_slice[%u].idr_pic_id = %d\n", i, m_slice[i].idr_pic_id);
+            mdprintf(stderr,"---->m_slice[%u].cabac_init_idc = %d\n", i, m_slice[i].cabac_init_idc);
+            mdprintf(stderr,"---->m_slice[%u].slice_qp_delta = %d\n", i, m_slice[i].slice_qp_delta);
+            mdprintf(stderr,"---->m_slice[%u].disable_deblocking_filter_idc = %d\n", i, m_slice[i].disable_deblocking_filter_idc);
+            mdprintf(stderr,"---->m_slice[%u].slice_alpha_c0_offset_div2 = %d\n", i, m_slice[i].slice_alpha_c0_offset_div2);
+            mdprintf(stderr,"---->m_slice[%u].slice_beta_offset_div2 = %d\n", i, m_slice[i].slice_beta_offset_div2);
+
+            m_slice[i].macroblock_address = pDataSliceHeader->Slice[i].MBAaddress;
+            m_slice[i].num_macroblocks = pDataSliceHeader->Slice[i].NumMBs;
+            m_slice[i].slice_type = pDataSliceHeader->Slice[i].SliceType;
+            if (pDataSliceHeader->Slice[i].PPSId != m_pps.pic_parameter_set_id)
+            {
+                /*May be bug in application */
+                mdprintf(stderr,"pDataSliceHeader->Slice[%u].PPSId = %u\n", i, pDataSliceHeader->Slice[i].PPSId);
+                mdprintf(stderr,"m_pps.pic_parameter_set_id = %u\n", m_pps.pic_parameter_set_id);
+            }
+            m_slice[i].idr_pic_id  = pDataSliceHeader->Slice[i].IdrPicId;
+            m_slice[i].cabac_init_idc = pDataSliceHeader->Slice[i].CabacInitIdc;
+            m_slice[i].slice_qp_delta = pDataSliceHeader->Slice[i].SliceQPDelta;
+
+            m_slice[i].disable_deblocking_filter_idc = pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc;
+            m_slice[i].slice_alpha_c0_offset_div2 = pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2;
+            m_slice[i].slice_beta_offset_div2 = pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2;
+
+            mdprintf(stderr,"Application's generated Slice header \n");
+            mdprintf(stderr,"---->m_slice[%u].macroblock_address = %d\n", i, m_slice[i].macroblock_address);
+            mdprintf(stderr,"---->m_slice[%u].num_macroblocks = %d\n", i, m_slice[i].num_macroblocks);
+            mdprintf(stderr,"---->m_slice[%u].slice_type = %d\n", i, m_slice[i].slice_type);
+            mdprintf(stderr,"---->m_slice[%u].idr_pic_id = %d\n", i, m_slice[i].idr_pic_id);
+            mdprintf(stderr,"---->m_slice[%u].cabac_init_idc = %d\n", i, m_slice[i].cabac_init_idc);
+            mdprintf(stderr,"---->m_slice[%u].slice_qp_delta = %d\n", i, m_slice[i].slice_qp_delta);
+            mdprintf(stderr,"---->m_slice[%u].disable_deblocking_filter_idc = %d\n", i, m_slice[i].disable_deblocking_filter_idc);
+            mdprintf(stderr,"---->m_slice[%u].slice_alpha_c0_offset_div2 = %d\n", i, m_slice[i].slice_alpha_c0_offset_div2);
+            mdprintf(stderr,"---->m_slice[%u].slice_beta_offset_div2 = %d\n", i, m_slice[i].slice_beta_offset_div2);
         }
 
-        if ((in->NumFrameL0) &&
-            ((m_slice[i].slice_type == SLICE_TYPE_P) || (m_slice[i].slice_type == SLICE_TYPE_B)) )
+        if ((m_slice[i].slice_type == SLICE_TYPE_P) || (m_slice[i].slice_type == SLICE_TYPE_B))
         {
             for (ref_counter_l0 = 0; ref_counter_l0 < maxNumRefL0; ref_counter_l0++)
             {
                 mfxHDL handle;
-                mfxSts = m_core->GetExternalFrameHDL(in->L0Surface[ref_counter_l0]->Data.MemId, &handle);
-                MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
-                m_slice[i].RefPicList0[ref_counter_l0].picture_id = *(VASurfaceID*) handle;
-                m_slice[i].RefPicList0[ref_counter_l0].flags = VA_PICTURE_H264_SHORT_TERM_REFERENCE;
-                if (TFIELD == fieldId)
+                mfxU16 indexFromSliceHeader = 0;
+                if (NULL != pDataSliceHeader)
                 {
-                    if (ref_counter_l0 % 2)
-                        m_slice[i].RefPicList0[ref_counter_l0].flags |= VA_PICTURE_H264_BOTTOM_FIELD;
-                    else
-                        m_slice[i].RefPicList0[ref_counter_l0].flags |= VA_PICTURE_H264_TOP_FIELD;
-                }
-                else if (BFIELD == fieldId)
-                {
-                    if (ref_counter_l0 % 2)
-                        m_slice[i].RefPicList0[ref_counter_l0].flags |= VA_PICTURE_H264_TOP_FIELD;
-                    else
-                        m_slice[i].RefPicList0[ref_counter_l0].flags |= VA_PICTURE_H264_BOTTOM_FIELD;
-                }
-                /* Additional condition for IP pair */
-                if (0 == task.m_frameOrder)
-                {
-                    if (TFIELD == fieldId)
-                        m_slice[i].RefPicList0[ref_counter_l0].flags = VA_PICTURE_H264_BOTTOM_FIELD;
-                    if (BFIELD == fieldId)
-                        m_slice[i].RefPicList0[ref_counter_l0].flags = VA_PICTURE_H264_TOP_FIELD;
-                }
-
-                if ( (NULL != pDataSliceHeader) && (1 == pDataSliceHeader->Pack) )
-                {
-                    mfxU16 indexFromSliceHeader = pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].Index;
+                    indexFromSliceHeader = pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].Index;
                     mfxSts = m_core->GetExternalFrameHDL(in->L0Surface[indexFromSliceHeader]->Data.MemId, &handle);
                     MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
-                    m_slice[i].RefPicList0[ref_counter_l0].picture_id = *(VASurfaceID*) handle;
+                    //m_slice[i].RefPicList0[ref_counter_l0].picture_id = *(VASurfaceID*) handle;
+                    VASurfaceID s = *(VASurfaceID*) handle; //id in the memory by ptr
+                    if (m_slice[i].RefPicList0[ref_counter_l0].picture_id != s)
+                    {
+                        //m_slice[i].RefPicList0[ref_counter_l0].picture_id = s;
+                        mdprintf(stderr, "!!!Warning picture_id from pDataSliceHeader->Slice[%u].RefL0[%u] = %u\n", i, ref_counter_l0, s);
+                        mdprintf(stderr, "   But library's is m_slice[%u].RefPicList0[%u].picture_id = %u\n",
+                                i, ref_counter_l0, m_slice[i].RefPicList0[ref_counter_l0].picture_id);
+                    }
+                    if (m_slice[i].RefPicList0[ref_counter_l0].flags != pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].PictureType)
+                    {
+                        //m_slice[i].RefPicList0[ref_counter_l0].flags = pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].PictureType;
+                        mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].RefL0[%u].PictureType = %u\n",
+                                i, ref_counter_l0, pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].PictureType);
+                        mdprintf(stderr, "   But library's is m_slice[%u].RefPicList0[%u].flag = %u\n",
+                                i, ref_counter_l0, m_slice[i].RefPicList0[ref_counter_l0].flags);
+                    }
                 }
             } /*for (ref_counter_l0 = 0; ref_counter_l0 < in->NumFrameL0; ref_counter_l0++)*/
+//            for ( ; ref_counter_l0 < 32; ref_counter_l0++)
+//            {
+//                m_slice[i].RefPicList0[ref_counter_l0].picture_id = VA_INVALID_ID;
+//                m_slice[i].RefPicList0[ref_counter_l0].flags = VA_PICTURE_H264_INVALID;
+//            }
         }
-        if ( (in->NumFrameL1) && (m_slice[i].slice_type == SLICE_TYPE_B) )
+        if (m_slice[i].slice_type == SLICE_TYPE_B)
         {
             for (ref_counter_l1 = 0; ref_counter_l1 < maxNumRefL1; ref_counter_l1++)
             {
                 mfxHDL handle;
-                mfxSts = m_core->GetExternalFrameHDL(in->L1Surface[ref_counter_l1]->Data.MemId, &handle);
-                MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
-                m_slice[i].RefPicList1[ref_counter_l1].picture_id = *(VASurfaceID*) handle;
-                m_slice[i].RefPicList1[ref_counter_l1].flags = VA_PICTURE_H264_SHORT_TERM_REFERENCE;
-                if (TFIELD == fieldId)
+                mfxU16 indexFromSliceHeader = 0;
+                if (NULL != pDataSliceHeader)
                 {
-                    if (ref_counter_l0 % 2)
-                        m_slice[i].RefPicList1[ref_counter_l1].flags |= VA_PICTURE_H264_BOTTOM_FIELD;
-                    else
-                        m_slice[i].RefPicList1[ref_counter_l1].flags |= VA_PICTURE_H264_TOP_FIELD;
-                }
-                else if (BFIELD == fieldId)
-                {
-                    if (ref_counter_l0 % 2)
-                        m_slice[i].RefPicList1[ref_counter_l1].flags |= VA_PICTURE_H264_TOP_FIELD;
-                    else
-                        m_slice[i].RefPicList1[ref_counter_l1].flags |= VA_PICTURE_H264_BOTTOM_FIELD;
-                }
-                if ( (NULL != pDataSliceHeader) && (1 == pDataSliceHeader->Pack) )
-                {
-                    mfxU16 indexFromSliceHeader = pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].Index;
+                    indexFromSliceHeader = pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].Index;
                     mfxSts = m_core->GetExternalFrameHDL(in->L1Surface[indexFromSliceHeader]->Data.MemId, &handle);
                     MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
-                    m_slice[i].RefPicList1[ref_counter_l1].picture_id = *(VASurfaceID*) handle;
+                    //m_slice[i].RefPicList1[ref_counter_l1].picture_id = *(VASurfaceID*) handle;
+                }
+                VASurfaceID s = *(VASurfaceID*) handle; //id in the memory by ptr
+                if (m_slice[i].RefPicList1[ref_counter_l1].picture_id != s)
+                {
+                    //m_slice[i].RefPicList1[ref_counter_l1].picture_id = s;
+                    mdprintf(stderr, "!!!Warning picture_id from pDataSliceHeader->Slice[%u].RefL1[%u] = %u\n", i, ref_counter_l1, s);
+                    mdprintf(stderr, "   But library's is m_slice[%u].RefPicList0[%u].picture_id = %u\n",
+                            i, ref_counter_l1, m_slice[i].RefPicList1[ref_counter_l1].picture_id);
+                }
+                if (m_slice[i].RefPicList1[ref_counter_l1].flags != pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType)
+                {
+                    //m_slice[i].RefPicList1[ref_counter_l1].flags = pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType;
+                    mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].RefL1[%u].PictureType = %u\n",
+                            i, ref_counter_l0, pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType);
+                    mdprintf(stderr, "   But library's is m_slice[%u].RefPicList1[%u].flag = %u\n",
+                            i, ref_counter_l1, m_slice[i].RefPicList1[ref_counter_l1].flags);
                 }
             } /* for (ref_counter_l1 = 0; ref_counter_l1 < in->NumFrameL1; ref_counter_l1++) */
+//            for ( ; ref_counter_l1 < 32; ref_counter_l1++)
+//            {
+//                m_slice[i].RefPicList1[ref_counter_l1].picture_id = VA_INVALID_ID;
+//                m_slice[i].RefPicList1[ref_counter_l1].flags = VA_PICTURE_H264_INVALID;
+//            }
+
         } // if ( (in->NumFrameL1) && (m_slice[i].slice_type == SLICE_TYPE_B) )
-    } // for( size_t i = 0; i < m_slice.size(); ++i, divider.Next() )
+    } // for( size_t i = 0; i < m_slice.size(); i++ )
+
+    mfxU32 prefix_bytes = (task.m_AUStartsFromSlice[fieldId] + 8) * m_headerPacker.isSvcPrefixUsed();
+    std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSliceArray = m_headerPacker.GetSlices();
+    ENCODE_PACKEDHEADER_DATA const & packedSlice = packedSliceArray[0];
+//    /* Dump Slice Header */
+//    mdprintf(stderr,"Dump of packed Slice Header (Before)\n");
+//    for (mfxU32 i = 0; i < (packedSlice.DataLength+7)/8; i++)
+//    {
+//        mdprintf(stderr,"packedSlice.pData[%u]=%u\n", i, packedSlice.pData[i]);
+//    }
+
+    //Slice headers only
+    std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSlices = m_headerPacker.PackSlices(task, fieldId);
+//    mdprintf(stderr,"Dump of packed Slice Header (AFTER)\n");
+//    for (mfxU32 i = 0; i < (packedSlice.DataLength+7)/8; i++)
+//    {
+//        mdprintf(stderr,"packedSlice.pData[%u]=%u\n", i, packedSlice.pData[i]);
+//    }
+
+    for (size_t i = 0; i < packedSlices.size(); i++)
+    {
+        ENCODE_PACKEDHEADER_DATA const & packedSlice = packedSlices[i];
+
+        if (prefix_bytes)
+        {
+            packed_header_param_buffer.type = VAEncPackedHeaderRawData;
+            packed_header_param_buffer.has_emulation_bytes = 1;
+            packed_header_param_buffer.bit_length = (prefix_bytes * 8);
+
+            vaSts = vaCreateBuffer(m_vaDisplay,
+                    m_vaContextEncode,
+                    VAEncPackedHeaderParameterBufferType,
+                    sizeof(packed_header_param_buffer),
+                    1,
+                    &packed_header_param_buffer,
+                    &m_packedSvcPrefixHeaderBufferId[i]);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+            vaSts = vaCreateBuffer(m_vaDisplay,
+                                m_vaContextEncode,
+                                VAEncPackedHeaderDataBufferType,
+                                 prefix_bytes, 1, packedSlice.pData,
+                                &m_packedSvcPrefixBufferId[i]);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+            configBuffers[buffersCount++] = m_packedSvcPrefixHeaderBufferId[i];
+            configBuffers[buffersCount++] = m_packedSvcPrefixBufferId[i];
+        }
+
+        packed_header_param_buffer.type = VAEncPackedHeaderH264_Slice;
+        packed_header_param_buffer.has_emulation_bytes = 0;
+        packed_header_param_buffer.bit_length = packedSlice.DataLength - (prefix_bytes * 8); // DataLength is already in bits !
+
+        //MFX_DESTROY_VABUFFER(m_packeSliceHeaderBufferId[i], m_vaDisplay);
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                m_vaContextEncode,
+                VAEncPackedHeaderParameterBufferType,
+                sizeof(packed_header_param_buffer),
+                1,
+                &packed_header_param_buffer,
+                &m_packeSliceHeaderBufferId[i]);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        //MFX_DESTROY_VABUFFER(m_packedSliceBufferId[i], m_vaDisplay);
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                            m_vaContextEncode,
+                            VAEncPackedHeaderDataBufferType,
+                            (packedSlice.DataLength + 7) / 8 - prefix_bytes, 1, packedSlice.pData + prefix_bytes,
+                            &m_packedSliceBufferId[i]);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        configBuffers[buffersCount++] = m_packeSliceHeaderBufferId[i];
+        configBuffers[buffersCount++] = m_packedSliceBufferId[i];
+    }
 
     for( size_t i = 0; i < m_slice.size(); i++ )
     {
@@ -1812,7 +1974,6 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
 
-
     //------------------------------------------------------------------
     // PostStage
     //------------------------------------------------------------------
@@ -1841,7 +2002,11 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     MFX_DESTROY_VABUFFER(m_packedPpsBufferId, m_vaDisplay);
 
     for(size_t i = 0; i < m_slice.size(); i++)
+    {
         MFX_DESTROY_VABUFFER(m_sliceBufferId[i], m_vaDisplay);
+        MFX_DESTROY_VABUFFER(m_packeSliceHeaderBufferId[i], m_vaDisplay);
+        MFX_DESTROY_VABUFFER(m_packedSliceBufferId[i], m_vaDisplay);
+    }
 
     mdprintf(stderr, "submit_vaapi done: %d\n", task.m_frameOrder);
     return MFX_ERR_NONE;
@@ -2305,14 +2470,146 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     //find ext buffers
     const mfxEncodeCtrl& ctrl = task.m_ctrl;
     mfxExtFeiEncFrameCtrl* frameCtrl = GetExtBufferFEI(out,feiFieldId);
-    mfxExtFeiSPS *pDataSPS = NULL;//GetExtBufferFEI(out,feiFieldId);
-    mfxExtFeiPPS *pDataPPS = NULL;//GetExtBufferFEI(out,feiFieldId);
+    mfxExtFeiSPS *pDataSPS = GetExtBufferFEI(out,feiFieldId);
+    mfxExtFeiPPS *pDataPPS = GetExtBufferFEI(out,feiFieldId);
     mfxExtFeiSliceHeader *pDataSliceHeader = GetExtBufferFEI(out,feiFieldId);
 
     /**/
     mfxExtFeiEncMV* mvout = GetExtBufferFEI(in,feiFieldId);
     mfxExtFeiPakMBCtrl* mbcodeout = GetExtBufferFEI(in,feiFieldId);
 
+    /* Lets look does re-generation of headers required */
+    if ((NULL != pDataSPS) && (task.m_insertSps[fieldId]))
+    {
+        mfxExtSpsHeader* extSps = GetExtBuffer(m_videoParam);
+
+        /* SPS portion */
+        mdprintf(stderr,"Library's generated SPS header (it will be changed now on external one) \n");
+        mdprintf(stderr,"---->extSps->seqParameterSetId = %d\n", extSps->seqParameterSetId);
+        mdprintf(stderr,"---->extSps->levelIdc = %d\n", extSps->levelIdc);
+        mdprintf(stderr,"---->extSps->maxNumRefFrames = %d\n", extSps->maxNumRefFrames);
+        mdprintf(stderr,"---->extSps->picWidthInMbsMinus1 = %d\n", extSps->picWidthInMbsMinus1);
+        mdprintf(stderr,"---->extSps->picHeightInMapUnitsMinus1 = %d\n", extSps->picHeightInMapUnitsMinus1);
+        mdprintf(stderr,"---->extSps->chromaFormatIdc = %d\n", extSps->chromaFormatIdc);
+        mdprintf(stderr,"---->extSps->frameMbsOnlyFlag = %d\n", extSps->frameMbsOnlyFlag);
+        mdprintf(stderr,"---->extSps->mbAdaptiveFrameFieldFlag = %d\n", extSps->mbAdaptiveFrameFieldFlag);
+        mdprintf(stderr,"---->extSps->direct8x8InferenceFlag = %d\n", extSps->direct8x8InferenceFlag);
+        mdprintf(stderr,"---->extSps->log2MaxFrameNumMinus4 = %d\n", extSps->log2MaxFrameNumMinus4);
+        mdprintf(stderr,"---->extSps->picOrderCntType = %d\n", extSps->picOrderCntType);
+        mdprintf(stderr,"---->extSps->log2MaxPicOrderCntLsbMinus4 = %d\n", extSps->log2MaxPicOrderCntLsbMinus4);
+        mdprintf(stderr,"---->extSps->deltaPicOrderAlwaysZeroFlag = %d\n", extSps->deltaPicOrderAlwaysZeroFlag);
+        extSps->seqParameterSetId = pDataSPS->SPSId;
+        extSps->levelIdc = pDataSPS->Level;
+        extSps->maxNumRefFrames = pDataSPS->NumRefFrame;
+        extSps->picWidthInMbsMinus1 = pDataSPS->WidthInMBs -1 ;
+        extSps->picHeightInMapUnitsMinus1 = pDataSPS->HeightInMBs -1;
+        extSps->chromaFormatIdc = pDataSPS->ChromaFormatIdc;
+        extSps->frameMbsOnlyFlag = pDataSPS->FrameMBsOnlyFlag;
+        extSps->mbAdaptiveFrameFieldFlag = pDataSPS->MBAdaptiveFrameFieldFlag;
+        extSps->direct8x8InferenceFlag = pDataSPS->Direct8x8InferenceFlag;
+        extSps->log2MaxFrameNumMinus4 = pDataSPS->Log2MaxFrameNum;
+        extSps->picOrderCntType = pDataSPS->PicOrderCntType;
+        extSps->log2MaxPicOrderCntLsbMinus4 = pDataSPS->Log2MaxPicOrderCntLsb - 4 ;
+        extSps->deltaPicOrderAlwaysZeroFlag = pDataSPS->DeltaPicOrderAlwaysZeroFlag;
+
+        mdprintf(stderr,"Applications's SPS header\n");
+        mdprintf(stderr,"---->extSps->seqParameterSetId = %d\n", extSps->seqParameterSetId);
+        mdprintf(stderr,"---->extSps->levelIdc = %d\n", extSps->levelIdc);
+        mdprintf(stderr,"---->extSps->maxNumRefFrames = %d\n", extSps->maxNumRefFrames);
+        mdprintf(stderr,"---->extSps->picWidthInMbsMinus1 = %d\n", extSps->picWidthInMbsMinus1);
+        mdprintf(stderr,"---->extSps->picHeightInMapUnitsMinus1 = %d\n", extSps->picHeightInMapUnitsMinus1);
+        mdprintf(stderr,"---->extSps->chromaFormatIdc = %d\n", extSps->chromaFormatIdc);
+        mdprintf(stderr,"---->extSps->frameMbsOnlyFlag = %d\n", extSps->frameMbsOnlyFlag);
+        mdprintf(stderr,"---->extSps->mbAdaptiveFrameFieldFlag = %d\n", extSps->mbAdaptiveFrameFieldFlag);
+        mdprintf(stderr,"---->extSps->direct8x8InferenceFlag = %d\n", extSps->direct8x8InferenceFlag);
+        mdprintf(stderr,"---->extSps->log2MaxFrameNumMinus4 = %d\n", extSps->log2MaxFrameNumMinus4);
+        mdprintf(stderr,"---->extSps->picOrderCntType = %d\n", extSps->picOrderCntType);
+        mdprintf(stderr,"---->extSps->log2MaxPicOrderCntLsbMinus4 = %d\n", extSps->log2MaxPicOrderCntLsbMinus4);
+        mdprintf(stderr,"---->extSps->deltaPicOrderAlwaysZeroFlag = %d\n", extSps->deltaPicOrderAlwaysZeroFlag);
+    }
+    /* PPS */
+    if ((NULL != pDataPPS) && (task.m_insertPps[fieldId]))
+    {
+        mfxExtPpsHeader* extPps = GetExtBuffer(m_videoParam);
+
+        /* PPS */
+        mdprintf(stderr,"Library's generated PPS header (it will be changed now on external one) \n");
+        mdprintf(stderr,"---->extPps->seqParameterSetId = %d\n", extPps->seqParameterSetId);
+        mdprintf(stderr,"---->extPps->picParameterSetId = %d\n", extPps->picParameterSetId);
+        mdprintf(stderr,"---->extPps->picInitQpMinus26 = %d\n", extPps->picInitQpMinus26);
+        mdprintf(stderr,"---->extPps->numRefIdxL0DefaultActiveMinus1 = %d\n", extPps->numRefIdxL0DefaultActiveMinus1);
+        mdprintf(stderr,"---->extPps->numRefIdxL1DefaultActiveMinus1 = %d\n", extPps->numRefIdxL1DefaultActiveMinus1);
+        mdprintf(stderr,"---->extPps->chromaQpIndexOffset = %d\n", extPps->chromaQpIndexOffset);
+        mdprintf(stderr,"---->extPps->secondChromaQpIndexOffset = %d\n", extPps->secondChromaQpIndexOffset);
+        mdprintf(stderr,"---->extPps->entropyCodingModeFlag = %d\n", extPps->entropyCodingModeFlag);
+        mdprintf(stderr,"---->extPps->constrainedIntraPredFlag = %d\n", extPps->constrainedIntraPredFlag);
+        mdprintf(stderr,"---->extPps->transform8x8ModeFlag = %d\n", extPps->transform8x8ModeFlag);
+
+        extPps->seqParameterSetId = pDataPPS->SPSId;
+        extPps->picParameterSetId = pDataPPS->PPSId;
+
+        //extPps->frame_num = pDataPPS->FrameNum;
+
+        extPps->picInitQpMinus26 = pDataPPS->PicInitQP-26;
+        extPps->picInitQsMinus26 = pDataPPS->PicInitQP-26;;
+        extPps->numRefIdxL0DefaultActiveMinus1 = pDataPPS->NumRefIdxL0Active ? (pDataPPS->NumRefIdxL0Active - 1) : 0;
+        extPps->numRefIdxL1DefaultActiveMinus1 = pDataPPS->NumRefIdxL1Active ? (pDataPPS->NumRefIdxL1Active - 1) : 0;
+
+        extPps->chromaQpIndexOffset = pDataPPS->ChromaQPIndexOffset;
+        extPps->secondChromaQpIndexOffset = pDataPPS->SecondChromaQPIndexOffset;
+
+        //extPps->m_pps.pic_fields.bits.idr_pic_flag = pDataPPS->IDRPicFlag;
+        //extPps->rm_pps.pic_fields.bits.reference_pic_flag = pDataPPS->ReferencePicFlag;
+        extPps->entropyCodingModeFlag = pDataPPS->EntropyCodingModeFlag;
+        extPps->constrainedIntraPredFlag = pDataPPS->ConstrainedIntraPredFlag;
+        extPps->transform8x8ModeFlag = pDataPPS->Transform8x8ModeFlag;
+
+        mdprintf(stderr,"Applications's generated PPS header\n");
+        mdprintf(stderr,"---->extPps->seqParameterSetId = %d\n", extPps->seqParameterSetId);
+        mdprintf(stderr,"---->extPps->picParameterSetId = %d\n", extPps->picParameterSetId);
+        mdprintf(stderr,"---->extPps->picInitQpMinus26 = %d\n", extPps->picInitQpMinus26);
+        mdprintf(stderr,"---->extPps->numRefIdxL0DefaultActiveMinus1 = %d\n", extPps->numRefIdxL0DefaultActiveMinus1);
+        mdprintf(stderr,"---->extPps->numRefIdxL1DefaultActiveMinus1 = %d\n", extPps->numRefIdxL1DefaultActiveMinus1);
+        mdprintf(stderr,"---->extPps->chromaQpIndexOffset = %d\n", extPps->chromaQpIndexOffset);
+        mdprintf(stderr,"---->extPps->secondChromaQpIndexOffset = %d\n", extPps->secondChromaQpIndexOffset);
+        mdprintf(stderr,"---->extPps->entropyCodingModeFlag = %d\n", extPps->entropyCodingModeFlag);
+        mdprintf(stderr,"---->extPps->constrainedIntraPredFlag = %d\n", extPps->constrainedIntraPredFlag);
+        mdprintf(stderr,"---->extPps->transform8x8ModeFlag = %d\n", extPps->transform8x8ModeFlag);
+    }
+    /* repack headers by itself */
+    if ( ((NULL != pDataSPS) && (task.m_insertSps[fieldId])) ||
+         ((NULL != pDataPPS) && (task.m_insertPps[fieldId])) )
+    {
+//        std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSpsArray = m_headerPacker.GetSps();
+//        ENCODE_PACKEDHEADER_DATA const & packedSps = packedSpsArray[0];
+//        /* Dump SPS */
+//        mdprintf(stderr,"Dump of packed SPS\n");
+//        for (mfxU32 i = 0; i < packedSps.DataLength; i++)
+//        {
+//            mdprintf(stderr,"packedSps.pData[%u]=%u\n", i, packedSps.pData[i]);
+//        }
+//        std::vector<ENCODE_PACKEDHEADER_DATA> const & packedPpsArray = m_headerPacker.GetPps();
+//        ENCODE_PACKEDHEADER_DATA const & packedPps = packedPpsArray[0];
+//        /* Dump SPS */
+//        mdprintf(stderr,"Dump of packed PPS\n");
+//        for (mfxU32 i = 0; i < packedPps.DataLength; i++)
+//        {
+//            mdprintf(stderr,"packedPps.pData[%u]=%u\n", i, packedPps.pData[i]);
+//        }
+        m_headerPacker.Init(m_videoParam, m_caps);
+//        /* Dump SPS */
+//        mdprintf(stderr,"Dump of packed SPS\n");
+//        for (mfxU32 i = 0; i < packedSps.DataLength; i++)
+//        {
+//            mdprintf(stderr,"packedSps.pData[%u]=%u\n", i, packedSps.pData[i]);
+//        }
+//        /* Dump SPS */
+//        mdprintf(stderr,"Dump of packed PPS\n");
+//        for (mfxU32 i = 0; i < packedPps.DataLength; i++)
+//        {
+//            mdprintf(stderr,"packedPps.pData[%u]=%u\n", i, packedPps.pData[i]);
+//        }
+    }
 
     /* Driver need both buffer to generate bitstream
      * So, if no buffers- this is fatal error
@@ -2321,29 +2618,8 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     // SPS
-    if ((task.m_insertSps[fieldId]) ||
-        ((NULL != pDataSPS) && (1 == pDataSPS->Pack)) )
+    if ((task.m_insertSps[fieldId]) || (NULL != pDataSPS) )
     {
-        if ((NULL != pDataSPS) && (1 == pDataSPS->Pack)) /* Copy header's data */
-        {
-            m_sps.seq_parameter_set_id = pDataSPS->SPSId;
-            //pDataSPS->Profile;
-            m_sps.level_idc = pDataSPS->Level;
-
-            m_sps.max_num_ref_frames = pDataSPS->NumRefFrame;
-            m_sps.picture_width_in_mbs = pDataSPS->WidthInMBs;
-            m_sps.picture_height_in_mbs = pDataSPS->HeightInMBs;
-
-            m_sps.seq_fields.bits.chroma_format_idc = pDataSPS->ChromaFormatIdc;
-            m_sps.seq_fields.bits.frame_mbs_only_flag = pDataSPS->FrameMBsOnlyFlag;
-            m_sps.seq_fields.bits.mb_adaptive_frame_field_flag = pDataSPS->MBAdaptiveFrameFieldFlag;
-            m_sps.seq_fields.bits.direct_8x8_inference_flag = pDataSPS->Direct8x8InferenceFlag;
-            m_sps.seq_fields.bits.log2_max_frame_num_minus4 = pDataSPS->Log2MaxFrameNum;
-            m_sps.seq_fields.bits.pic_order_cnt_type = pDataSPS->PicOrderCntType;
-            m_sps.seq_fields.bits.log2_max_pic_order_cnt_lsb_minus4 = pDataSPS->Log2MaxPicOrderCntLsb;
-            m_sps.seq_fields.bits.delta_pic_order_always_zero_flag = pDataSPS->DeltaPicOrderAlwaysZeroFlag;
-        }
-
         std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSpsArray = m_headerPacker.GetSps();
         ENCODE_PACKEDHEADER_DATA const & packedSps = packedSpsArray[0];
 
@@ -2522,31 +2798,22 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
         configBuffers[buffersCount++] = vaFeiFrameControlId;
     }
-//    mfxU32 idxRecon = task.m_idxBs[fieldId];
+
+    /* Number of reference handling */
+    mfxU32 ref_counter_l0 = 0, ref_counter_l1 = 0;
+    mfxU32 maxNumRefL0 = 1, maxNumRefL1 = 1;
+    if ((NULL != pDataSliceHeader) && (NULL != pDataSliceHeader->Slice))
+    {
+        maxNumRefL0 = pDataSliceHeader->Slice[0].NumRefIdxL0Active;
+        maxNumRefL1 = pDataSliceHeader->Slice[0].NumRefIdxL1Active;
+        if ((maxNumRefL1 > 2) && (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE ))
+            maxNumRefL1 = 2;
+    }
+
+    UpdatePPS(task, fieldId, m_pps, m_reconQueue);
 
     /* to fill L0 List*/
-    mfxU32 ref_counter_l0 = 0, ref_counter_l1 = 0;
-    mfxU32 maxNumRefL0 = in->NumFrameL0;
-    /* Some sort of limitation for interleaved case
-      * in->NumFrameL0 has maximal number of references for second field!
-      * First field has one reference less.
-      * And parameter will be adjusted accordingly */
-    if (task.GetPicStructForEncode() == MFX_PICSTRUCT_FIELD_TFF)
-    {
-        if ((TFIELD == fieldId) && (task.m_type[fieldId] & MFX_FRAMETYPE_PB))
-            maxNumRefL0 = in->NumFrameL0 -1;
-        if ((BFIELD == fieldId) && (task.m_type[fieldId] & MFX_FRAMETYPE_PB))
-            maxNumRefL0 = in->NumFrameL0;
-    }
-    if (task.GetPicStructForEncode() == MFX_PICSTRUCT_FIELD_BFF)
-    {
-        if ((BFIELD == fieldId) && (task.m_type[fieldId] & MFX_FRAMETYPE_PB))
-            maxNumRefL0 = in->NumFrameL0 -1;
-        if ((TFIELD == fieldId) && (task.m_type[fieldId] & MFX_FRAMETYPE_PB))
-            maxNumRefL0 = in->NumFrameL0;
-    }
-
-    if ((in->NumFrameL0) && (task.m_type[fieldId] & MFX_FRAMETYPE_PB))
+    if ((maxNumRefL0 > 0) && (task.m_type[fieldId] & MFX_FRAMETYPE_PB))
     {
         for (ref_counter_l0 = 0; ref_counter_l0 < maxNumRefL0; ref_counter_l0++)
         {
@@ -2554,34 +2821,70 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
             mfxSts = m_core->GetExternalFrameHDL(in->L0Surface[ref_counter_l0]->Data.MemId, &handle);
             MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
             VASurfaceID* s = (VASurfaceID*) handle; //id in the memory by ptr
-            m_pps.ReferenceFrames[ref_counter_l0].picture_id = *s;
+            if (m_pps.ReferenceFrames[ref_counter_l0].picture_id != *s)
+            {
+                //m_pps.ReferenceFrames[ref_counter_l0].picture_id = *s;
+                mdprintf(stderr, "!!!Warning picture_id from in->L0Surface[%u] = %u\n", ref_counter_l0, *s);
+                mdprintf(stderr, "   But library's is m_pps.ReferenceFrames[%u].picture_id = %u\n", ref_counter_l0, m_pps.ReferenceFrames[ref_counter_l0].picture_id);
+            }
         }
     }
-    /* to fill L1 List*/
-    /* here is more strict limitation */
-    mfxU32 maxNumRefL1 = 1;
-    /* Current limitation for interlaced case */
-    if ((in->NumFrameL1 > 2) && (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE ))
-        maxNumRefL1 = 2;
-    if (in->NumFrameL1)
+
+    if ((maxNumRefL1 > 1) && (task.m_type[fieldId] & MFX_FRAMETYPE_B))
     {
         /* continue to fill ref list */
-        for (ref_counter_l1 = 0 ; ref_counter_l1 < maxNumRefL1; ref_counter_l1++)
+        for (ref_counter_l1 = 0; ref_counter_l1 < maxNumRefL1; ref_counter_l1++)
         {
             mfxHDL handle;
             mfxSts = m_core->GetExternalFrameHDL(in->L1Surface[ref_counter_l1]->Data.MemId, &handle);
             MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
             VASurfaceID* s = (VASurfaceID*) handle;
-            m_pps.ReferenceFrames[ref_counter_l0 + ref_counter_l1].picture_id = *s;
+            if (m_pps.ReferenceFrames[ref_counter_l0 + ref_counter_l1].picture_id != *s)
+            {
+                //m_pps.ReferenceFrames[ref_counter_l0].picture_id = *s;
+                mdprintf(stderr, "!!!Warning picture_id from in->L1Surface[%u] = %u\n", ref_counter_l0 + ref_counter_l1, *s);
+                mdprintf(stderr, "   But library's is m_pps.ReferenceFrames[%u].picture_id = %u\n",
+                        ref_counter_l0 + ref_counter_l1, m_pps.ReferenceFrames[ref_counter_l0].picture_id);
+                //m_pps.ReferenceFrames[ref_counter_l0 + ref_counter_l1].picture_id = *s;
+            }
         }
     }
 
-    /* UpdatePPS */
-    m_pps.frame_num = task.m_frameNum;
-    m_pps.pic_fields.bits.idr_pic_flag = (task.m_type[fieldId] & MFX_FRAMETYPE_IDR) ? 1 : 0;
-    m_pps.pic_fields.bits.reference_pic_flag = (task.m_type[fieldId] & MFX_FRAMETYPE_REF) ? 1 : 0;
-    m_pps.CurrPic.TopFieldOrderCnt = task.GetPoc(TFIELD);
-    m_pps.CurrPic.BottomFieldOrderCnt = task.GetPoc(BFIELD);
+    /* Check application's provided data */
+    if (NULL != pDataPPS)
+    {
+        if (m_pps.pic_fields.bits.idr_pic_flag != pDataPPS->IDRPicFlag)
+        {
+            mdprintf(stderr, "!!!Warning pDataPPS->IDRPicFlag = %u\n", pDataPPS->IDRPicFlag);
+            mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.idr_pic_flag = %u\n", m_pps.pic_fields.bits.idr_pic_flag);
+        }
+        if (m_pps.pic_fields.bits.reference_pic_flag != pDataPPS->ReferencePicFlag)
+        {
+            mdprintf(stderr, "!!!Warning pDataPPS->ReferencePicFlag = %u\n", pDataPPS->ReferencePicFlag);
+            mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.reference_pic_flag = %u\n", m_pps.pic_fields.bits.reference_pic_flag);
+        }
+        if (m_pps.frame_num != pDataPPS->FrameNum)
+        {
+            mdprintf(stderr, "!!!Warning pDataPPS->FrameNum = %u\n", pDataPPS->FrameNum);
+            mdprintf(stderr, "   But library's is m_pps.frame_num = %u\n", m_pps.frame_num);
+        }
+    }
+
+    /* ENC & PAK has issue with reconstruct surface.
+     * How does it work right now?
+     * ENC & PAK has same surface pool, both for source and reconstructed surfaces,
+     * this surface pool should be passed to component when vaCreateContext() called on Init() stage.
+     * (1): Current source surface is equal to reconstructed surface. (src = recon surface)
+     * and this surface should be unchanged within ENC call.
+     * (2): ENC does not generate real reconstruct surface, but driver use surface ID to store
+     * additional internal information.
+     * (3): PAK generate real reconstruct surface. So, after PAK call content of source surfaces
+     * changed, inside already reconstructed surface. For me this is incorrect behavior.
+     * (4): Generated reconstructed surfaces become references and managed accordingly by application.
+     * (5): Library does not manage reference by itself.
+     * (6): And of course main rule: ENC (N number call) and PAK (N number call) should have same exactly
+     * same reference /reconstruct list ! (else GPU hang)
+     * */
 
     mfxHDL recon_handle;
     mfxSts = m_core->GetExternalFrameHDL(out->OutSurface->Data.MemId, &recon_handle);
@@ -2613,26 +2916,11 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     }
     m_pps.coded_buf = m_codedBufferId[feiFieldId];
 
-    /* if we have User defined PPS */
-    if ((NULL != pDataPPS) && (1 == pDataPPS->Pack)) /* Copy header's data */
+    if ((MFX_PROFILE_AVC_BASELINE == m_videoParam.mfx.CodecProfile) ||
+        (MFX_PROFILE_AVC_MAIN == m_videoParam.mfx.CodecProfile) ||
+        ((frameCtrl != NULL) && (0x2 == frameCtrl->IntraPartMask)) )
     {
-        m_pps.seq_parameter_set_id = pDataPPS->SPSId;
-        m_pps.pic_parameter_set_id = pDataPPS->PPSId;
-
-        m_pps.frame_num = pDataPPS->FrameNum;
-
-        m_pps.pic_init_qp = pDataPPS->PicInitQP;
-        m_pps.num_ref_idx_l0_active_minus1 = pDataPPS->NumRefIdxL0Active ? (pDataPPS->NumRefIdxL0Active - 1) : 0;
-        m_pps.num_ref_idx_l1_active_minus1 = pDataPPS->NumRefIdxL1Active ? (pDataPPS->NumRefIdxL1Active - 1) : 0;
-
-        m_pps.chroma_qp_index_offset = pDataPPS->ChromaQPIndexOffset;
-        m_pps.second_chroma_qp_index_offset = pDataPPS->SecondChromaQPIndexOffset;
-
-        m_pps.pic_fields.bits.idr_pic_flag = pDataPPS->IDRPicFlag;
-        m_pps.pic_fields.bits.reference_pic_flag = pDataPPS->ReferencePicFlag;
-        m_pps.pic_fields.bits.entropy_coding_mode_flag = pDataPPS->EntropyCodingModeFlag;
-        m_pps.pic_fields.bits.constrained_intra_pred_flag = pDataPPS->ConstrainedIntraPredFlag;
-        m_pps.pic_fields.bits.transform_8x8_mode_flag = pDataPPS->Transform8x8ModeFlag;
+        m_pps.pic_fields.bits.transform_8x8_mode_flag = 0;
     }
 
     vaSts = vaCreateBuffer(m_vaDisplay,
@@ -2684,165 +2972,227 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
     /* slice parameters */
     mfxU32 numPics  = task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
-    //if (task.m_numSlice[fieldId])
-    //    m_slice.resize(task.m_numSlice[fieldId]);
     mfxU32 numSlice = task.m_numSlice[fieldId];
     mfxU32 idx = 0, ref = 0;
     /* Application defined slice params */
-    if ( (NULL != pDataSliceHeader) && (1 == pDataSliceHeader->Pack))
+    if (NULL != pDataSliceHeader)
     {
         if (pDataSliceHeader->NumSlice != pDataSliceHeader->NumSliceAlloc)
             return MFX_ERR_INVALID_VIDEO_PARAM;
         if ((pDataSliceHeader->NumSlice >=1) && (numSlice != pDataSliceHeader->NumSlice))
             numSlice = pDataSliceHeader->NumSlice;
     }
-    /*and final resize */
-    m_slice.resize(numSlice);
 
-    SliceDivider divider = MakeSliceDivider(
-        m_caps.SliceStructure,
-        task.m_numMbPerSlice,
-        numSlice,
-        m_sps.picture_width_in_mbs,
-        m_sps.picture_height_in_mbs / numPics);
+    UpdateSlice(m_caps, task, fieldId, m_sps, m_pps, m_slice, m_videoParam, m_reconQueue);
 
-    for( size_t i = 0; i < numSlice; ++i, divider.Next() )
+#if (mdprintf == fprintf)
+    mdprintf(stderr, "LIBRRAY's ref list-----\n");
+    for ( mfxU32 i = 0; i < 32; i++)
     {
-        m_slice[i].macroblock_address = divider.GetFirstMbInSlice();
-        m_slice[i].num_macroblocks = divider.GetNumMbInSlice();
-        m_slice[i].macroblock_info = VA_INVALID_ID;
-        m_slice[i].slice_type = ConvertMfxFrameType2SliceType( task.m_type[fieldId]) - 5;
-        mdprintf(stderr,"m_slice[%zu].slice_type=%d\n",i, m_slice[i].slice_type);
-        m_slice[i].pic_parameter_set_id = m_pps.pic_parameter_set_id;
-        m_slice[i].idr_pic_id = task.m_idrPicId;
-        m_slice[i].pic_order_cnt_lsb = mfxU16(task.GetPoc(fieldId));
-        m_slice[i].direct_spatial_mv_pred_flag = 1;
-        m_slice[i].cabac_init_idc = 0;
-        m_slice[i].slice_qp_delta = mfxI8(task.m_cqpValue[fieldId] - m_pps.pic_init_qp);
-        m_slice[i].disable_deblocking_filter_idc = 0;
-        m_slice[i].slice_alpha_c0_offset_div2 = 0;
-        m_slice[i].slice_beta_offset_div2 = 0;
-
-//        if ( (NULL != pDataSliceHeader))
-//        {
-//            if (1 == pDataSliceHeader->Pack)
-//            {
-//                m_slice[i].macroblock_address = pDataSliceHeader->Slice[i].MBAaddress;
-//                m_slice[i].num_macroblocks = pDataSliceHeader->Slice[i].NumMBs;
-//                m_slice[i].slice_type = pDataSliceHeader->Slice[i].SliceType;
-//                if (pDataSliceHeader->Slice[i].PPSId != m_pps.pic_parameter_set_id)
-//                {
-//                    /*May be bug in application */
-//                    mdprintf(stderr,"pDataSliceHeader->Slice[%zu].PPSId = %u\n", i, pDataSliceHeader->Slice[i].PPSId);
-//                    mdprintf(stderr,"m_pps.pic_parameter_set_id = %u\n", m_pps.pic_parameter_set_id);
-//                }
-//                m_slice[i].idr_pic_id  = pDataSliceHeader->Slice[i].IdrPicId;
-//                m_slice[i].cabac_init_idc = pDataSliceHeader->Slice[i].CabacInitIdc;
-//                m_slice[i].slice_qp_delta = pDataSliceHeader->Slice[i].SliceQPDelta;
-//            }
-//            m_slice[i].disable_deblocking_filter_idc = pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc;
-//            m_slice[i].slice_alpha_c0_offset_div2 = pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2;
-//            m_slice[i].slice_beta_offset_div2 = pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2;
-//        }
-
-        if ( m_slice[i].slice_type == SLICE_TYPE_I ) {
-            m_slice[i].num_ref_idx_l0_active_minus1 = -1;
-            m_slice[i].num_ref_idx_l1_active_minus1 = -1;
-        } else if ( m_slice[i].slice_type == SLICE_TYPE_P ) {
-            m_slice[i].num_ref_idx_l0_active_minus1 = in->NumFrameL0 - 1;
-            m_slice[i].num_ref_idx_l1_active_minus1 = -1;
-        } else if ( m_slice[i].slice_type == SLICE_TYPE_B ) {
-            m_slice[i].num_ref_idx_l0_active_minus1 = in->NumFrameL0 - 1;
-            m_slice[i].num_ref_idx_l1_active_minus1 = in->NumFrameL1 - 1;
-        }
-        m_slice[i].num_ref_idx_active_override_flag   =
-            m_slice[i].num_ref_idx_l0_active_minus1 != m_pps.num_ref_idx_l0_active_minus1 ||
-            m_slice[i].num_ref_idx_l1_active_minus1 != m_pps.num_ref_idx_l1_active_minus1;
-        /*    */
-        for (mfxU32 j=0; j<32; j++)
+        if (VA_INVALID_ID != m_slice[0].RefPicList0[i].picture_id)
         {
-            m_slice[i].RefPicList0[j].picture_id = VA_INVALID_ID;
-            m_slice[i].RefPicList0[j].flags = VA_PICTURE_H264_INVALID;
-            m_slice[i].RefPicList1[j].picture_id = VA_INVALID_ID;
-            m_slice[i].RefPicList1[j].flags = VA_PICTURE_H264_INVALID;
+            mdprintf(stderr, " ------%d-----\n", i);
+            mdprintf(stderr, "m_slice[0].RefPicList0[%d].picture_id=%d\n", i, m_slice[0].RefPicList0[i].picture_id);
+            mdprintf(stderr, "m_slice[0].RefPicList0[%d].frame_idx=%d\n", i, m_slice[0].RefPicList0[i].frame_idx);
+            mdprintf(stderr, "m_slice[0].RefPicList0[%d].flags=%d\n", i, m_slice[0].RefPicList0[i].flags);
+            mdprintf(stderr, "m_slice[0].RefPicList0[%d].TopFieldOrderCnt=%d\n", i, m_slice[0].RefPicList0[i].TopFieldOrderCnt);
+            mdprintf(stderr, "m_slice[0].RefPicList0[%d].BottomFieldOrderCnt=%d\n", i, m_slice[0].RefPicList0[i].BottomFieldOrderCnt);
+        }
+    }
+    for ( mfxU32 i = 0; i < 32; i++)
+    {
+        if (VA_INVALID_ID != m_slice[0].RefPicList1[i].picture_id)
+        {
+            mdprintf(stderr, " ------%d-----\n", i);
+            mdprintf(stderr, "m_slice[0].RefPicList1[%d].picture_id=%d\n", i, m_slice[0].RefPicList1[i].picture_id);
+            mdprintf(stderr, "m_slice[0].RefPicList1[%d].frame_idx=%d\n", i, m_slice[0].RefPicList1[i].frame_idx);
+            mdprintf(stderr, "m_slice[0].RefPicList1[%d].flags=%d\n", i, m_slice[0].RefPicList1[i].flags);
+            mdprintf(stderr, "m_slice[0].RefPicList1[%d].TopFieldOrderCnt=%d\n", i, m_slice[0].RefPicList1[i].TopFieldOrderCnt);
+            mdprintf(stderr, "m_slice[0].RefPicList1[%d].BottomFieldOrderCnt=%d\n", i, m_slice[0].RefPicList1[i].BottomFieldOrderCnt);
+        }
+    }
+#endif //(mdprintf == fprintf)
+
+    for( mfxU32 i = 0; i < numSlice; i++)
+    {
+        if (NULL != pDataSliceHeader)
+        {
+            mdprintf(stderr,"Library's generated Slice header (it will be changed now on external one) \n");
+            mdprintf(stderr,"---->m_slice[%u].macroblock_address = %d\n", i, m_slice[i].macroblock_address);
+            mdprintf(stderr,"---->m_slice[%u].num_macroblocks = %d\n", i, m_slice[i].num_macroblocks);
+            mdprintf(stderr,"---->m_slice[%u].slice_type = %d\n", i, m_slice[i].slice_type);
+            mdprintf(stderr,"---->m_slice[%u].idr_pic_id = %d\n", i, m_slice[i].idr_pic_id);
+            mdprintf(stderr,"---->m_slice[%u].cabac_init_idc = %d\n", i, m_slice[i].cabac_init_idc);
+            mdprintf(stderr,"---->m_slice[%u].slice_qp_delta = %d\n", i, m_slice[i].slice_qp_delta);
+            mdprintf(stderr,"---->m_slice[%u].disable_deblocking_filter_idc = %d\n", i, m_slice[i].disable_deblocking_filter_idc);
+            mdprintf(stderr,"---->m_slice[%u].slice_alpha_c0_offset_div2 = %d\n", i, m_slice[i].slice_alpha_c0_offset_div2);
+            mdprintf(stderr,"---->m_slice[%u].slice_beta_offset_div2 = %d\n", i, m_slice[i].slice_beta_offset_div2);
+
+            m_slice[i].macroblock_address = pDataSliceHeader->Slice[i].MBAaddress;
+            m_slice[i].num_macroblocks = pDataSliceHeader->Slice[i].NumMBs;
+            m_slice[i].slice_type = pDataSliceHeader->Slice[i].SliceType;
+            if (pDataSliceHeader->Slice[i].PPSId != m_pps.pic_parameter_set_id)
+            {
+                /*May be bug in application */
+                mdprintf(stderr,"pDataSliceHeader->Slice[%u].PPSId = %u\n", i, pDataSliceHeader->Slice[i].PPSId);
+                mdprintf(stderr,"m_pps.pic_parameter_set_id = %u\n", m_pps.pic_parameter_set_id);
+            }
+            m_slice[i].idr_pic_id  = pDataSliceHeader->Slice[i].IdrPicId;
+            m_slice[i].cabac_init_idc = pDataSliceHeader->Slice[i].CabacInitIdc;
+            m_slice[i].slice_qp_delta = pDataSliceHeader->Slice[i].SliceQPDelta;
+            m_slice[i].disable_deblocking_filter_idc = pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc;
+            m_slice[i].slice_alpha_c0_offset_div2 = pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2;
+            m_slice[i].slice_beta_offset_div2 = pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2;
+
+            mdprintf(stderr,"Application's generated Slice header \n");
+            mdprintf(stderr,"---->m_slice[%u].macroblock_address = %d\n", i, m_slice[i].macroblock_address);
+            mdprintf(stderr,"---->m_slice[%u].num_macroblocks = %d\n", i, m_slice[i].num_macroblocks);
+            mdprintf(stderr,"---->m_slice[%u].slice_type = %d\n", i, m_slice[i].slice_type);
+            mdprintf(stderr,"---->m_slice[%u].idr_pic_id = %d\n", i, m_slice[i].idr_pic_id);
+            mdprintf(stderr,"---->m_slice[%u].cabac_init_idc = %d\n", i, m_slice[i].cabac_init_idc);
+            mdprintf(stderr,"---->m_slice[%u].slice_qp_delta = %d\n", i, m_slice[i].slice_qp_delta);
+            mdprintf(stderr,"---->m_slice[%u].disable_deblocking_filter_idc = %d\n", i, m_slice[i].disable_deblocking_filter_idc);
+            mdprintf(stderr,"---->m_slice[%u].slice_alpha_c0_offset_div2 = %d\n", i, m_slice[i].slice_alpha_c0_offset_div2);
+            mdprintf(stderr,"---->m_slice[%u].slice_beta_offset_div2 = %d\n", i, m_slice[i].slice_beta_offset_div2);
         }
 
-        if ((in->NumFrameL0) &&
-            ((m_slice[i].slice_type == SLICE_TYPE_P) || (m_slice[i].slice_type == SLICE_TYPE_B)) )
+        if ((m_slice[i].slice_type == SLICE_TYPE_P) || (m_slice[i].slice_type == SLICE_TYPE_B))
         {
             for (ref_counter_l0 = 0; ref_counter_l0 < maxNumRefL0; ref_counter_l0++)
             {
                 mfxHDL handle;
-                mfxSts = m_core->GetExternalFrameHDL(in->L0Surface[ref_counter_l0]->Data.MemId, &handle);
-                MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
-                m_slice[i].RefPicList0[ref_counter_l0].picture_id = *(VASurfaceID*) handle;
-                m_slice[i].RefPicList0[ref_counter_l0].flags = VA_PICTURE_H264_SHORT_TERM_REFERENCE;
-                if (TFIELD == fieldId)
+                mfxU16 indexFromSliceHeader = 0;
+                if (NULL != pDataSliceHeader)
                 {
-                    if (ref_counter_l0 % 2)
-                        m_slice[i].RefPicList0[ref_counter_l0].flags |= VA_PICTURE_H264_BOTTOM_FIELD;
-                    else
-                        m_slice[i].RefPicList0[ref_counter_l0].flags |= VA_PICTURE_H264_TOP_FIELD;
-                }
-                else if (BFIELD == fieldId)
-                {
-                    if (ref_counter_l0 % 2)
-                        m_slice[i].RefPicList0[ref_counter_l0].flags |= VA_PICTURE_H264_TOP_FIELD;
-                    else
-                        m_slice[i].RefPicList0[ref_counter_l0].flags |= VA_PICTURE_H264_BOTTOM_FIELD;
-                }
-                /* Additional condition for IP pair */
-                if (0 == task.m_frameOrder)
-                {
-                    if (TFIELD == fieldId)
-                        m_slice[i].RefPicList0[ref_counter_l0].flags = VA_PICTURE_H264_SHORT_TERM_REFERENCE | VA_PICTURE_H264_BOTTOM_FIELD;
-                    if (BFIELD == fieldId)
-                        m_slice[i].RefPicList0[ref_counter_l0].flags = VA_PICTURE_H264_SHORT_TERM_REFERENCE | VA_PICTURE_H264_TOP_FIELD;
-                }
-
-                if ( (NULL != pDataSliceHeader) && (1 == pDataSliceHeader->Pack) )
-                {
-                    mfxU16 indexFromSliceHeader = pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].Index;
+                    indexFromSliceHeader = pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].Index;
                     mfxSts = m_core->GetExternalFrameHDL(in->L0Surface[indexFromSliceHeader]->Data.MemId, &handle);
                     MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
-                    m_slice[i].RefPicList0[ref_counter_l0].picture_id = *(VASurfaceID*) handle;
+                    //m_slice[i].RefPicList0[ref_counter_l0].picture_id = *(VASurfaceID*) handle;
+                    VASurfaceID s = *(VASurfaceID*) handle; //id in the memory by ptr
+                    if (m_slice[i].RefPicList0[ref_counter_l0].picture_id != s)
+                    {
+                        //m_slice[i].RefPicList0[ref_counter_l0].picture_id = s;
+                        mdprintf(stderr, "!!!Warning picture_id from pDataSliceHeader->Slice[%u].RefL0[%u] = %u\n", i, ref_counter_l0, s);
+                        mdprintf(stderr, "   But library's is m_slice[%u].RefPicList0[%u].picture_id = %u\n",
+                                i, ref_counter_l0, m_slice[i].RefPicList0[ref_counter_l0].picture_id);
+                    }
+                    if (m_slice[i].RefPicList0[ref_counter_l0].flags != pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].PictureType)
+                    {
+                        //m_slice[i].RefPicList0[ref_counter_l0].flags = pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].PictureType;
+                        mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].RefL0[%u].PictureType = %u\n",
+                                i, ref_counter_l0, pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].PictureType);
+                        mdprintf(stderr, "   But library's is m_slice[%u].RefPicList0[%u].flag = %u\n",
+                                i, ref_counter_l0, m_slice[i].RefPicList0[ref_counter_l0].flags);
+                    }
                 }
             } /*for (ref_counter_l0 = 0; ref_counter_l0 < in->NumFrameL0; ref_counter_l0++)*/
         } // if ((in->NumFrameL0) &&
-        if ( (in->NumFrameL1) && (m_slice[i].slice_type == SLICE_TYPE_B) )
+        if (m_slice[i].slice_type == SLICE_TYPE_B)
         {
             for (ref_counter_l1 = 0; ref_counter_l1 < maxNumRefL1; ref_counter_l1++)
             {
                 mfxHDL handle;
-                mfxSts = m_core->GetExternalFrameHDL(in->L1Surface[ref_counter_l1]->Data.MemId, &handle);
-                MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
-                m_slice[i].RefPicList1[ref_counter_l1].picture_id = *(VASurfaceID*) handle;
-                m_slice[i].RefPicList1[ref_counter_l1].flags = VA_PICTURE_H264_SHORT_TERM_REFERENCE;
-                if (TFIELD == fieldId)
+                mfxU16 indexFromSliceHeader = 0;
+                if (NULL != pDataSliceHeader)
                 {
-                    if (ref_counter_l1 % 2)
-                        m_slice[i].RefPicList1[ref_counter_l1].flags |= VA_PICTURE_H264_BOTTOM_FIELD;
-                    else
-                        m_slice[i].RefPicList1[ref_counter_l1].flags |= VA_PICTURE_H264_TOP_FIELD;
-                }
-                else if (BFIELD == fieldId)
-                {
-                    if (ref_counter_l1 % 2)
-                        m_slice[i].RefPicList1[ref_counter_l1].flags |= VA_PICTURE_H264_TOP_FIELD;
-                    else
-                        m_slice[i].RefPicList1[ref_counter_l1].flags |= VA_PICTURE_H264_BOTTOM_FIELD;
-                }
-
-                if ( (NULL != pDataSliceHeader) && (1 == pDataSliceHeader->Pack) )
-                {
-                    mfxU16 indexFromSliceHeader = pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].Index;
+                    indexFromSliceHeader = pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].Index;
                     mfxSts = m_core->GetExternalFrameHDL(in->L1Surface[indexFromSliceHeader]->Data.MemId, &handle);
                     MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
-                    m_slice[i].RefPicList1[ref_counter_l1].picture_id = *(VASurfaceID*) handle;
+                    //m_slice[i].RefPicList1[ref_counter_l1].picture_id = *(VASurfaceID*) handle;
+                    VASurfaceID s = *(VASurfaceID*) handle; //id in the memory by ptr
+                    if (m_slice[i].RefPicList1[ref_counter_l1].picture_id != s)
+                    {
+                        //m_slice[i].RefPicList1[ref_counter_l1].picture_id = s;
+                        mdprintf(stderr, "!!!Warning picture_id from pDataSliceHeader->Slice[%u].RefL1[%u] = %u\n", i, ref_counter_l1, s);
+                        mdprintf(stderr, "   But library's is m_slice[%u].RefPicList0[%u].picture_id = %u\n",
+                                i, ref_counter_l1, m_slice[i].RefPicList1[ref_counter_l1].picture_id);
+                    }
+                    if (m_slice[i].RefPicList1[ref_counter_l1].flags != pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType)
+                    {
+                        //m_slice[i].RefPicList1[ref_counter_l1].flags = pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType;
+                        mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].RefL1[%u].PictureType = %u\n",
+                                i, ref_counter_l0, pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType);
+                        mdprintf(stderr, "   But library's is m_slice[%u].RefPicList1[%u].flag = %u\n",
+                                i, ref_counter_l1, m_slice[i].RefPicList1[ref_counter_l1].flags);
+                    }
                 }
             } /* for (ref_counter_l1 = 0; ref_counter_l1 < in->NumFrameL1; ref_counter_l1++) */
         } //if ( (in->NumFrameL1) && (m_slice[i].slice_type == SLICE_TYPE_B) )
     } // for( size_t i = 0; i < m_slice.size(); ++i, divider.Next() )
+
+    mfxU32 prefix_bytes = (task.m_AUStartsFromSlice[fieldId] + 8) * m_headerPacker.isSvcPrefixUsed();
+//    std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSliceArray = m_headerPacker.GetSlices();
+//    ENCODE_PACKEDHEADER_DATA const & packedSlice = packedSliceArray[0];
+//    /* Dump SPS */
+//    mdprintf(stderr,"Dump of packed Slice Header (Before)\n");
+//    for (mfxU32 i = 0; i < (packedSlice.DataLength+7)/8; i++)
+//    {
+//        mdprintf(stderr,"packedSlice.pData[%u]=%u\n", i, packedSlice.pData[i]);
+//    }
+
+//    //Slice headers only
+    std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSlices = m_headerPacker.PackSlices(task, fieldId);
+//    mdprintf(stderr,"Dump of packed Slice Header (AFTER)\n");
+//    for (mfxU32 i = 0; i < (packedSlice.DataLength+7)/8; i++)
+//    {
+//        mdprintf(stderr,"packedSlice.pData[%u]=%u\n", i, packedSlice.pData[i]);
+//    }
+
+    for (size_t i = 0; i < packedSlices.size(); i++)
+    {
+        ENCODE_PACKEDHEADER_DATA const & packedSlice = packedSlices[i];
+
+        if (prefix_bytes)
+        {
+            packed_header_param_buffer.type = VAEncPackedHeaderRawData;
+            packed_header_param_buffer.has_emulation_bytes = 1;
+            packed_header_param_buffer.bit_length = (prefix_bytes * 8);
+
+            vaSts = vaCreateBuffer(m_vaDisplay,
+                    m_vaContextEncode,
+                    VAEncPackedHeaderParameterBufferType,
+                    sizeof(packed_header_param_buffer),
+                    1,
+                    &packed_header_param_buffer,
+                    &m_packedSvcPrefixHeaderBufferId[i]);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+            vaSts = vaCreateBuffer(m_vaDisplay,
+                                m_vaContextEncode,
+                                VAEncPackedHeaderDataBufferType,
+                                 prefix_bytes, 1, packedSlice.pData,
+                                &m_packedSvcPrefixBufferId[i]);
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+            configBuffers[buffersCount++] = m_packedSvcPrefixHeaderBufferId[i];
+            configBuffers[buffersCount++] = m_packedSvcPrefixBufferId[i];
+        }
+
+        packed_header_param_buffer.type = VAEncPackedHeaderH264_Slice;
+        packed_header_param_buffer.has_emulation_bytes = 0;
+        packed_header_param_buffer.bit_length = packedSlice.DataLength - (prefix_bytes * 8); // DataLength is already in bits !
+
+        //MFX_DESTROY_VABUFFER(m_packeSliceHeaderBufferId[i], m_vaDisplay);
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                m_vaContextEncode,
+                VAEncPackedHeaderParameterBufferType,
+                sizeof(packed_header_param_buffer),
+                1,
+                &packed_header_param_buffer,
+                &m_packeSliceHeaderBufferId[i]);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        //MFX_DESTROY_VABUFFER(m_packedSliceBufferId[i], m_vaDisplay);
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                            m_vaContextEncode,
+                            VAEncPackedHeaderDataBufferType,
+                            (packedSlice.DataLength + 7) / 8 - prefix_bytes, 1, packedSlice.pData + prefix_bytes,
+                            &m_packedSliceBufferId[i]);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        configBuffers[buffersCount++] = m_packeSliceHeaderBufferId[i];
+        configBuffers[buffersCount++] = m_packedSliceBufferId[i];
+    }
 
     for( size_t i = 0; i < m_slice.size(); i++ )
     {
@@ -2993,7 +3343,11 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     MFX_DESTROY_VABUFFER(m_packedPpsBufferId, m_vaDisplay);
 
     for( size_t i = 0; i < m_slice.size(); i++ )
+    {
         MFX_DESTROY_VABUFFER(m_sliceBufferId[i], m_vaDisplay);
+        MFX_DESTROY_VABUFFER(m_packeSliceHeaderBufferId[i], m_vaDisplay);
+        MFX_DESTROY_VABUFFER(m_packedSliceBufferId[i], m_vaDisplay);
+    }
 
     mdprintf(stderr, "submit_vaapi done: %d\n", task.m_frameOrder);
     return MFX_ERR_NONE;
@@ -3003,7 +3357,8 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
 mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
         DdiTask & task,
-        mfxU32 fieldId) {
+        mfxU32 fieldId)
+{
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc QueryStatus");
     VAStatus vaSts;
     mfxStatus sts = MFX_ERR_NONE;
