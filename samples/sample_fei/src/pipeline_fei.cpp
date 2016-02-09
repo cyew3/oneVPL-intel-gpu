@@ -2080,7 +2080,6 @@ mfxStatus CEncodingPipeline::InitInterfaces()
             MSDK_ZERO_MEMORY(*feiSPS);
             feiSPS->Header.BufferId = MFX_EXTBUFF_FEI_SPS;
             feiSPS->Header.BufferSz = sizeof(mfxExtFeiSPS);
-            feiSPS->Pack    = m_encpakParams.bPassHeaders ? 1 : 0; /* MSDK will use this data to do packing*/
             feiSPS->SPSId   = 0;
             feiSPS->Profile = m_encpakParams.CodecProfile;
             feiSPS->Level   = m_encpakParams.CodecLevel;
@@ -2168,7 +2167,6 @@ mfxStatus CEncodingPipeline::InitInterfaces()
 
                     feiPPS[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PPS;
                     feiPPS[fieldId].Header.BufferSz = sizeof(mfxExtFeiPPS);
-                    feiPPS[fieldId].Pack = m_encpakParams.bPassHeaders ? 1 : 0;
 
                     feiPPS[fieldId].SPSId = feiSPS ? feiSPS->SPSId : 0;
                     feiPPS[fieldId].PPSId = 0;
@@ -2204,7 +2202,6 @@ mfxStatus CEncodingPipeline::InitInterfaces()
 
                     feiSliceHeader[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_SLICE;
                     feiSliceHeader[fieldId].Header.BufferSz = sizeof(mfxExtFeiSliceHeader);
-                    feiSliceHeader[fieldId].Pack = m_encpakParams.bPassHeaders ? 1 : 0;
 
                     feiSliceHeader[fieldId].NumSlice =
                         feiSliceHeader[fieldId].NumSliceAlloc = m_encpakParams.numSlices;
@@ -3773,9 +3770,6 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
                     }
                 }
 
-                if (feiSPS)
-                    feiSPS->Pack = (ExtractFrameType(*eTask) & MFX_FRAMETYPE_IDR) ? 1 : 0;
-
                 if (!(ExtractFrameType(*eTask) & MFX_FRAMETYPE_IDR) && feiPPS)
                     m_refFrameCounter++;
             }
@@ -3822,8 +3816,6 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
                 if (feiPPS && eTask->prevTask && (ExtractFrameType(*(eTask->prevTask)) & MFX_FRAMETYPE_REF) && ((fieldId && m_isField) || (!fieldId && !m_isField)))
                     m_refFrameCounter++;
             }
-            //if (feiSPS)
-            //    feiSPS->Pack = 0;
             break;
 
         case MFX_FRAMETYPE_B:
@@ -3871,8 +3863,6 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
                     }
                 } // if (feiSliceHeader)
             }
-//            if (feiSPS)
-//                feiSPS->Pack = 0;
             break;
         }
     }
@@ -5485,4 +5475,3 @@ void CEncodingPipeline::PrintInfo()
 
     msdk_printf(MSDK_STRING("\n"));
 }
-
