@@ -1358,7 +1358,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
 
     if (m_primarySurface4Composition == NULL)
     {
-        mfxDrvSurface* pRefSurf = &(pParams->pRefSurfaces[0]);
+        mfxDrvSurface* pRefSurf = &(pParams->targetSurface);
         mfxFrameInfo *inInfo = &(pRefSurf->frameInfo);
 
         m_primarySurface4Composition = (VASurfaceID*)calloc(1,1*sizeof(VASurfaceID));
