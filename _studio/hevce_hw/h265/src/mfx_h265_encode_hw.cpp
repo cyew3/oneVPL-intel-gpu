@@ -212,6 +212,7 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     Fill(m_lastTask, IDX_INVALID);
 
     m_numBuffered = 0;
+    m_NumberOfSlicesForOpt = m_vpar.mfx.NumSlice;
 
 #if DEBUG_REC_FRAMES_INFO
     mfxExtDumpFiles * extDump = &m_vpar.m_ext.DumpFiles;
@@ -462,7 +463,7 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
     parNew.SyncCalculableToVideoParam();
 
     if (!pSPSPPS || !pSPSPPS->SPSBuffer)
-        parNew.SyncMfxToHeadersParam(m_vpar.mfx.NumSlice);
+        parNew.SyncMfxToHeadersParam(m_NumberOfSlicesForOpt);
 
     sts = CheckHeaders(parNew, m_caps);
     MFX_CHECK_STS(sts);
@@ -511,6 +512,23 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
         || (tempLayerIdx != 0 && changeLyncLayers)
         || m_vpar.mfx.GopPicSize != parNew.mfx.GopPicSize
         || m_vpar.m_ext.CO2.IntRefType != parNew.m_ext.CO2.IntRefType;
+    
+    /*
+    printf("isIdrRequired %d, isSpsChanged %d \n", isIdrRequired, isSpsChanged);
+    if (isSpsChanged)
+    {
+        printf("addres of pic_width_in_luma_samples %d\n", (mfxU8*)&m_vpar.m_sps.pic_width_in_luma_samples -(mfxU8*)&m_vpar.m_sps);
+        printf("addres of log2_diff_max_min_pcm_luma_coding_block_size %d\n", (mfxU8*)&m_vpar.m_sps.log2_diff_max_min_pcm_luma_coding_block_size -(mfxU8*)&m_vpar.m_sps);
+        printf("addres of lt_ref_pic_poc_lsb_sps[0] %d\n", (mfxU8*)&m_vpar.m_sps.lt_ref_pic_poc_lsb_sps[0] -(mfxU8*)&m_vpar.m_sps);
+        printf("addres of vui[0] %d\n", (mfxU8*)&m_vpar.m_sps.vui -(mfxU8*)&m_vpar.m_sps);
+
+        for (int t = 0; t < sizeof(m_vpar.m_sps); t++)
+        {
+            if (((mfxU8*)&m_vpar.m_sps)[t]  != ((mfxU8*)&parNew.m_sps)[t])
+                printf("Difference in %d, %d, %d\n",t, ((mfxU8*)&m_vpar.m_sps)[t], ((mfxU8*)&parNew.m_sps)[t]);        
+        }    
+    }
+    */
 
     if (isIdrRequired && pResetOpt && IsOff(pResetOpt->StartNewSequence))
         return MFX_ERR_INVALID_VIDEO_PARAM; // Reset can't change parameters w/o IDR. Report an error

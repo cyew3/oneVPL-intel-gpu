@@ -115,6 +115,7 @@ protected:
     mfxU32                          m_lastIDR;
     mfxU32                          m_baseLayerOrder;
     mfxU32                          m_numBuffered;
+    mfxU16                          m_NumberOfSlicesForOpt;
     bool                            m_bInit;
 };
 
