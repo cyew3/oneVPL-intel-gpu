@@ -792,10 +792,25 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
+    if (pParams->bENCPAK && !pParams->bPassHeaders && (pParams->nIdrInterval || pParams->bRefType != MFX_B_REF_OFF)){
+        if (bIDRintSet || pParams->bRefType == MFX_B_REF_PYRAMID){
+            msdk_printf(MSDK_STRING("\nWARNING: Specified B-pyramid/IDR-interval control(s) for ENC+PAK would be ignored!\n"));
+            msdk_printf(MSDK_STRING("           Please use them together with -pass_headers option\n"));
+        }
+
+        pParams->bRefType = MFX_B_REF_OFF;
+        pParams->nIdrInterval = 0;
+    }
+
     if (pParams->bENCPAK /*&& (pParams->nPicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF))*/ && !pParams->bPassHeaders){
         msdk_printf(MSDK_STRING("\nWARNING: ENCPAK uses SliceHeader to store references; -pass_headers flag forced.\n"));
 
         pParams->bPassHeaders = true;
+    }
+
+    if (bHeaderValSpecified && !pParams->bPassHeaders){
+        msdk_printf(MSDK_STRING("\nWARNING: Specified SPS/PPS/Slice header parameters would be ignored!\n"));
+        msdk_printf(MSDK_STRING("           Please use them together with -pass_headers option\n"));
     }
 
     if (pParams->bPassHeaders && (pParams->ChromaQPIndexOffset > 12 || pParams->ChromaQPIndexOffset < -12)){
@@ -812,21 +827,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else
             PrintHelp(strInput[0], MSDK_STRING("Unsupported SecondChromaQPIndexOffset value!"));
         return MFX_ERR_UNSUPPORTED;
-    }
-
-    if (bHeaderValSpecified && !pParams->bPassHeaders){
-        msdk_printf(MSDK_STRING("\nWARNING: Specified SPS/PPS/Slice header parameters would be ignored!\n"));
-        msdk_printf(MSDK_STRING("           Please use them together with -pass_headers option\n"));
-    }
-
-    if (pParams->bENCPAK && !pParams->bPassHeaders && (pParams->nIdrInterval || pParams->bRefType != MFX_B_REF_OFF)){
-        if (bIDRintSet || pParams->bRefType == MFX_B_REF_PYRAMID){
-            msdk_printf(MSDK_STRING("\nWARNING: Specified B-pyramid/IDR-interval control(s) for ENC+PAK would be ignored!\n"));
-            msdk_printf(MSDK_STRING("           Please use them together with -pass_headers option\n"));
-        }
-
-        pParams->bRefType = MFX_B_REF_OFF;
-        pParams->nIdrInterval = 0;
     }
 
     if (pParams->EncodedOrder && pParams->bENCODE && pParams->nNumFrames == 0){
