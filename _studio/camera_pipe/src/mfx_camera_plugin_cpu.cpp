@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_camera_plugin_cpu.cpp
 
@@ -943,9 +943,9 @@ int CPUCameraProcessor::CPU_Decide_Average(short *R_A8,       // Restored averag
         //The second condition is to check color difference between two colors in a pixel (8-bit diff):
         //mask0
 
-        if (abs(eval(R_A8, x, y, w)>>Diff_Prec - eval(G_A8, x, y, w)>>Diff_Prec) > AVG_COLOR_TH  ||
-            abs(eval(G_A8, x, y, w)>>Diff_Prec - eval(B_A8, x, y, w)>>Diff_Prec) > AVG_COLOR_TH  ||
-            abs(eval(B_A8, x, y, w)>>Diff_Prec - eval(R_A8, x, y, w)>>Diff_Prec) > AVG_COLOR_TH )
+        if (abs((eval(R_A8, x, y, w)>>Diff_Prec) - (eval(G_A8, x, y, w)>>Diff_Prec)) > AVG_COLOR_TH  ||
+            abs((eval(G_A8, x, y, w)>>Diff_Prec) - (eval(B_A8, x, y, w)>>Diff_Prec)) > AVG_COLOR_TH  ||
+            abs((eval(B_A8, x, y, w)>>Diff_Prec) - (eval(R_A8, x, y, w)>>Diff_Prec)) > AVG_COLOR_TH )
         {
             updated_A[y*w+x] = AVG_False;
         }
@@ -1109,15 +1109,15 @@ int CPUCameraProcessor::CPU_Gamma_SKL(unsigned short* R_i, unsigned short* G_i, 
     if (input[15:0] < Point[0])
         Interpolation = Correct[0] * Input[15:0] / Point[0] ;
     else if (Input[15:0] >= Point[N-1])
-        Interpolation = Correct[63] + (0xFFFF – Correct[63]) * (Input[15:0] – Point[63]) / (0xFFFF – Point[63])     ;
+        Interpolation = Correct[63] + (0xFFFF - Correct[63]) * (Input[15:0] - Point[63]) / (0xFFFF - Point[63])     ;
     else
     {
         //find i such that Point[i] <= Input[15:0] <Point[i+1];
-        //Interpolation = Correct[i] + (Correct[i+1] - Correct[i]) * (Input[15:0] – Point[i]) / (Point[i+1] – Point[i]);
+        //Interpolation = Correct[i] + (Correct[i+1] - Correct[i]) * (Input[15:0] - Point[i]) / (Point[i+1] - Point[i]);
         for( i = 0; i < 64; i++)
         {
             if(Point[i] <= Input[15:0] <Point[i+1])
-                Interpolation = Correct[i] + (Correct[i+1] - Correct[i]) * (Input[15:0] – Point[i]) / (Point[i+1] – Point[i]);
+                Interpolation = Correct[i] + (Correct[i+1] - Correct[i]) * (Input[15:0] - Point[i]) / (Point[i+1] - Point[i]);
         }
     }
 #endif

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -1010,7 +1010,6 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, v
     //if(res != 0)
     //    return MFX_ERR_UNKNOWN;
 
-/*
     mfxU64 executionTime = 0;
     cmSts = e->GetExecutionTime(executionTime);
 
@@ -1045,10 +1044,10 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, v
     return MFX_ERR_NONE;
 
 } // mfxStatus CmCopyWrapper::CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, void *pSrc, mfxU32 srcPitch, IppiSize roi, bool isSecondMode)
-/*
+
 mfxStatus CmCopyWrapper::CopySystemToVideoMemory(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi, bool isSecondMode)
 {
-/*    dstPitch;
+    dstPitch;
     cmStatus cmSts = 0;
 
     CmEvent* e = NULL;

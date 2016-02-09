@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
 
 File Name: libmfxsw_sessions.cpp
 
@@ -158,8 +158,8 @@ mfxStatus MFXSetPriority(mfxSession session, mfxPriority priority)
 {
     // check error(s)
     if (((MFX_PRIORITY_LOW > priority) || (MFX_PRIORITY_HIGH < priority)) &&
-        (MFX_PRIORITY_STOP_HW_LISTENING != priority) &&
-        (MFX_PRIORITY_START_HW_LISTENING != priority))
+        (MFX_PRIORITY_STOP_HW_LISTENING != static_cast<int>(priority)) &&
+        (MFX_PRIORITY_START_HW_LISTENING != static_cast<int>(priority)))
     {
         return MFX_ERR_UNSUPPORTED;
     }

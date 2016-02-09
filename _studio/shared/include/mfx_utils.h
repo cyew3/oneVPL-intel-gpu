@@ -50,7 +50,7 @@ static inline T mfx_print_err(T sts, char *file, int line, char *func)
 static const mfxU32 MFX_TIME_STAMP_FREQUENCY = 90000; // will go to mfxdefs.h
 static const mfxU64 MFX_TIME_STAMP_INVALID = (mfxU64)-1; // will go to mfxdefs.h
 
-#define MFX_CHECK_UMC_STS(err) if (err != UMC::UMC_OK) {return ConvertStatusUmc2Mfx(err);}
+#define MFX_CHECK_UMC_STS(err) if (err != static_cast<int>(UMC::UMC_OK)) {return ConvertStatusUmc2Mfx(err);}
 
 inline
 mfxStatus ConvertStatusUmc2Mfx(UMC::Status umcStatus)
