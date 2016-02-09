@@ -2086,10 +2086,7 @@ mfxStatus CEncodingPipeline::InitInterfaces()
 
             feiSPS->NumRefFrame = m_mfxEncParams.mfx.NumRefFrame;
             feiSPS->WidthInMBs  = m_widthMB;
-            if (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
-                feiSPS->HeightInMBs = m_heightMB;
-            else
-                feiSPS->HeightInMBs = m_heightMB/2;
+            feiSPS->HeightInMBs = m_heightMB;
 
             feiSPS->ChromaFormatIdc  = m_mfxEncParams.mfx.FrameInfo.ChromaFormat;
             feiSPS->FrameMBsOnlyFlag = (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 0;
@@ -2171,10 +2168,12 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                     feiPPS[fieldId].SPSId = feiSPS ? feiSPS->SPSId : 0;
                     feiPPS[fieldId].PPSId = 0;
 
-                    feiPPS[fieldId].FrameNum = 0;
+                    feiPPS[fieldId].FrameNum = 2*m_frameCount + fieldId;
 
-                    feiPPS[fieldId].PicInitQP = (m_encpakParams.QP != 0) ? m_encpakParams.QP : 26;
-                    //feiPPS[fieldId].PicInitQP = 26;
+                    //feiPPS[fieldId].PicInitQP = (m_encpakParams.QP != 0) ? m_encpakParams.QP : 26;
+                    /* PicInitQP should be always 26 !!!
+                     * Adjusting of QP parameter should be done via Slice header */
+                    feiPPS[fieldId].PicInitQP = 26;
 
                     feiPPS[fieldId].NumRefIdxL0Active = 1;
                     feiPPS[fieldId].NumRefIdxL1Active = 1;
@@ -3767,6 +3766,8 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
                         MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL0, 32);
                         MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL1, 32);
                         feiSliceHeader[fieldId].Slice[i].SliceType = FEI_SLICETYPE_I;
+                        feiSliceHeader[fieldId].Slice[i].NumRefIdxL0Active = 0;
+                        feiSliceHeader[fieldId].Slice[i].NumRefIdxL1Active = 0;
                     }
                 }
 
@@ -3811,6 +3812,8 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
                                 ((eTask->m_list0[eTask->m_fid[fieldId]][k] & 128) ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD));
                             k++;
                         }
+                        feiSliceHeader[fieldId].Slice[i].NumRefIdxL0Active = k;
+                        feiSliceHeader[fieldId].Slice[i].NumRefIdxL1Active = 0;
                     }
                 }
                 if (feiPPS && eTask->prevTask && (ExtractFrameType(*(eTask->prevTask)) & MFX_FRAMETYPE_REF) && ((fieldId && m_isField) || (!fieldId && !m_isField)))
@@ -3851,6 +3854,7 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
                                 ((eTask->m_list0[eTask->m_fid[fieldId]][k] & 128) ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD));
                             k++;
                         }
+                        feiSliceHeader[fieldId].Slice[i].NumRefIdxL0Active = k;
                         k = 0;
                         for (std::list<int>::iterator it = ((fieldId == 0) ? l1_idx_field1.begin() : l1_idx_field2.begin());
                             it != ((fieldId == 0) ? l1_idx_field1.end() : l1_idx_field2.end()); ++it)
@@ -3860,6 +3864,7 @@ mfxStatus CEncodingPipeline::InitEncFrameParams(iTask* eTask)
                                 ((eTask->m_list1[eTask->m_fid[fieldId]][k] & 128) ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD));
                             k++;
                         }
+                        feiSliceHeader[fieldId].Slice[i].NumRefIdxL1Active = k;
                     }
                 } // if (feiSliceHeader)
             }
@@ -4106,7 +4111,7 @@ mfxStatus CEncodingPipeline::DropPREENCoutput(iTask* eTask)
             if (mvout){
                 if (ExtractFrameType(*eTask, mvsId) & MFX_FRAMETYPE_I)
                 {                                                   // IP pair
-                    for (int k = 0; k < m_numMBpreenc; k++){              // in progressive case Ext buffer for I frame is detached
+                    for (int k = 0; k < m_numMBpreenc; k++){        // in progressive case Ext buffer for I frame is detached
                         SAFE_FWRITE(m_tmpMBpreenc, sizeof(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB), 1, mvout, MFX_ERR_MORE_DATA);
                     }
                 }
