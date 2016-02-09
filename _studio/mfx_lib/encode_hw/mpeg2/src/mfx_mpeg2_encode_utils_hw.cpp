@@ -1050,7 +1050,7 @@ namespace MPEG2EncoderHW
                 if (core->GetVAType() != MFX_HW_VAAPI)
                 {
                     extOpt3->EnableMBQP = MFX_CODINGOPTION_OFF;
-                    bWarning = true;
+                    bUnsupported = true;
                 }
             }
             if (extOpt3 && extOpt3->EnableMBQP == MFX_CODINGOPTION_UNKNOWN)
@@ -1478,10 +1478,11 @@ namespace MPEG2EncoderHW
         mfxExtCodingOption3 * extOpt3 = (mfxExtCodingOption3 *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION3);
         if (extOpt3 && extOpt3->EnableMBQP == MFX_CODINGOPTION_ON)
         {
-            if (m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+            // MPEG2 MBQP currently only supported on Linux and only valid for CQP mode
+            if (m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod != MFX_RATECONTROL_CQP || m_pCore->GetVAType() != MFX_HW_VAAPI)
             {
                 extOpt3->EnableMBQP = MFX_CODINGOPTION_OFF;
-                bCorrected = true;
+                return MFX_ERR_UNSUPPORTED;
             }
             else
             {

@@ -284,39 +284,46 @@ public:
 
 };
 
+#if defined(_WIN32)
+#define UNSUPORTED_STATUS MFX_ERR_UNSUPPORTED
+#define NORMAL_STATUS MFX_ERR_UNSUPPORTED
+#else
+#define UNSUPORTED_STATUS MFX_WRN_INCOMPATIBLE_VIDEO_PARAM
+#define NORMAL_STATUS MFX_ERR_NONE
+#endif
 
 #define mfx_PicStruct tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
     // not CQP: Init
-    {/*00*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR}},
-    {/*01*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR}},
-    {/*02*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR}},
+    {/*00*/ UNSUPORTED_STATUS, INIT, { MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
+    {/*01*/ UNSUPORTED_STATUS, INIT, { MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
+    {/*02*/ UNSUPORTED_STATUS, INIT, { MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
     // not CQP: Query
-    {/*03*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR}},
-    {/*04*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR}},
-    {/*05*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR}},
+    {/*03*/ UNSUPORTED_STATUS, QUERY, { MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
+    {/*04*/ UNSUPORTED_STATUS, QUERY, { MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
+    {/*05*/ UNSUPORTED_STATUS, QUERY, { MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR } },
 
-    {/*06*/ MFX_ERR_NONE, 0},
-    {/*07*/ MFX_ERR_NONE, RESET_ON},
-    {/*08*/ MFX_ERR_NONE, RESET_OFF},
-    {/*09*/ MFX_ERR_NONE, RANDOM},
-    {/*10*/ MFX_ERR_NONE, RANDOM|RESET_ON},
-    {/*11*/ MFX_ERR_NONE, RANDOM|RESET_OFF},
+    {/*06*/ NORMAL_STATUS, 0},
+    {/*07*/ NORMAL_STATUS, RESET_ON},
+    {/*08*/ NORMAL_STATUS, RESET_OFF},
+    {/*09*/ NORMAL_STATUS, RANDOM},
+    {/*10*/ NORMAL_STATUS, RANDOM|RESET_ON},
+    {/*11*/ NORMAL_STATUS, RANDOM|RESET_OFF},
 
-    {/*12*/ MFX_ERR_NONE, 0,                  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
-    {/*13*/ MFX_ERR_NONE, RESET_ON,           { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
-    {/*14*/ MFX_ERR_NONE, RESET_OFF,          { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
-    {/*15*/ MFX_ERR_NONE, RANDOM,             { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
-    {/*16*/ MFX_ERR_NONE, RANDOM | RESET_ON,  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
-    {/*17*/ MFX_ERR_NONE, RANDOM | RESET_OFF, { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*12*/ NORMAL_STATUS, 0,                  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*13*/ NORMAL_STATUS, RESET_ON,           { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*14*/ NORMAL_STATUS, RESET_OFF,          { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*15*/ NORMAL_STATUS, RANDOM,             { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*16*/ NORMAL_STATUS, RANDOM | RESET_ON,  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
+    {/*17*/ NORMAL_STATUS, RANDOM | RESET_OFF, { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_TFF } },
 
-    {/*18*/ MFX_ERR_NONE, 0,                  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
-    {/*19*/ MFX_ERR_NONE, RESET_ON,           { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
-    {/*20*/ MFX_ERR_NONE, RESET_OFF,          { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
-    {/*21*/ MFX_ERR_NONE, RANDOM,             { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
-    {/*22*/ MFX_ERR_NONE, RANDOM | RESET_ON,  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
-    {/*23*/ MFX_ERR_NONE, RANDOM | RESET_OFF, { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } }
+    {/*18*/ NORMAL_STATUS, 0,                  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*19*/ NORMAL_STATUS, RESET_ON,           { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*20*/ NORMAL_STATUS, RESET_OFF,          { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*21*/ NORMAL_STATUS, RANDOM,             { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*22*/ NORMAL_STATUS, RANDOM | RESET_ON,  { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } },
+    {/*23*/ NORMAL_STATUS, RANDOM | RESET_OFF, { MFXPAR, &mfx_PicStruct, MFX_PICSTRUCT_FIELD_BFF } }
 
 };
 #undef mfx_PicStruct
@@ -354,11 +361,20 @@ int TestSuite::RunTest(unsigned int id)
     if (tc.mode & QUERY)
     {
         Query();
+#if defined(_WIN32)
+        return 0;
+#endif
     }
+
+#if defined(_WIN32)
+    Init(); 
+    return 0;
+#else
     if (tc.mode & INIT)
     {
         Init();
     }
+#endif
 
     mfxU32 nf = 30;
     if (tc.sts == MFX_ERR_NONE)
@@ -375,6 +391,9 @@ int TestSuite::RunTest(unsigned int id)
             {
                 mfxExtCodingOption3& co3 = m_par;
                 co3.EnableMBQP = MFX_CODINGOPTION_ON;
+#if defined(_WIN32)
+                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+#endif
             } else
             {
                 m_par.NumExtParam = 0;
