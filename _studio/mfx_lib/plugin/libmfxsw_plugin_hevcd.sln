@@ -35,8 +35,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "h265_dec", "..\..\shared\um
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{73648CAF-96E3-476E-B87A-9846762C427F}"
 	ProjectSection(SolutionItems) = preProject
-		Intel.Mfx.Common.props = Intel.Mfx.Common.props
-		Intel.Mfx.StaticLib.props = Intel.Mfx.StaticLib.props
+		Intel.Mfx.Plugin.props = Intel.Mfx.Plugin.props
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Optimization", "Optimization", "{7F062987-688B-4FFD-884C-18439EE8743F}"
