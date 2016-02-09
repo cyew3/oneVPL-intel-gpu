@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -756,7 +756,7 @@ Status MPEG2VideoDecoderBase::GetCCData(Ipp8u* ptr, Ipp32u *size, Ipp64u *time, 
         ippsCopy_8u((Ipp8u*)ccData.GetDataPointer(), ptr, *size);
     }
 
-    //*time = (Ipp64u)ccData.GetTime();
+    // *time = (Ipp64u)ccData.GetTime();
     *size *= 8;//in bits
 
     ccData.SetDataSize(0);
@@ -890,10 +890,12 @@ Status MPEG2VideoDecoderBase::GetPictureHeader(MediaData* input, int task_num, i
     GET_START_CODE(video->bs, code);
     // some headers are possible here
     if(code == (Ipp32u)UMC_ERR_NOT_ENOUGH_DATA)
+    {
       if(GET_OFFSET(video->bs) > 0) // some data was decoded
         return UMC_ERR_NOT_ENOUGH_DATA;
       else                          // no start codes found
         return UMC_ERR_SYNC;
+    }
     if(code == SEQUENCE_END_CODE)
       continue;
     if(code != PICTURE_START_CODE) {

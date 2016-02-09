@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -156,25 +156,25 @@ Ipp32s MotionVector[] =
 0x00000001, 0x00000000,
  0, /* 2-bit codes */
  2, /* 3-bit codes */
-0x00000002, 0x00000001, 0x00000003, 0xffffffff,
+0x00000002, 0x00000001, 0x00000003, static_cast<Ipp32s>(0xffffffff),
  2, /* 4-bit codes */
-0x00000002, 0x00000002, 0x00000003, 0xfffffffe,
+0x00000002, 0x00000002, 0x00000003, static_cast<Ipp32s>(0xfffffffe),
  2, /* 5-bit codes */
-0x00000002, 0x00000003, 0x00000003, 0xfffffffd,
+0x00000002, 0x00000003, 0x00000003, static_cast<Ipp32s>(0xfffffffd),
  0, /* 6-bit codes */
  2, /* 7-bit codes */
-0x00000006, 0x00000004, 0x00000007, 0xfffffffc,
+0x00000006, 0x00000004, 0x00000007, static_cast<Ipp32s>(0xfffffffc),
  6, /* 8-bit codes */
-0x0000000a, 0x00000005, 0x0000000b, 0xfffffffb, 0x00000008, 0x00000006, 0x00000009, 0xfffffffa,
-0x00000006, 0x00000007, 0x00000007, 0xfffffff9,
+0x0000000a, 0x00000005, 0x0000000b, static_cast<Ipp32s>(0xfffffffb), 0x00000008, 0x00000006, 0x00000009, static_cast<Ipp32s>(0xfffffffa),
+0x00000006, 0x00000007, 0x00000007, static_cast<Ipp32s>(0xfffffff9),
  0, /* 9-bit codes */
  6, /* 10-bit codes */
-0x00000016, 0x00000008, 0x00000017, 0xfffffff8, 0x00000014, 0x00000009, 0x00000015, 0xfffffff7,
-0x00000012, 0x0000000a, 0x00000013, 0xfffffff6,
+0x00000016, 0x00000008, 0x00000017, static_cast<Ipp32s>(0xfffffff8), 0x00000014, 0x00000009, 0x00000015, static_cast<Ipp32s>(0xfffffff7),
+0x00000012, 0x0000000a, 0x00000013, static_cast<Ipp32s>(0xfffffff6),
  12, /* 11-bit codes */
 0x00000022, 0x0000000b, 0x00000020, 0x0000000c, 0x0000001e, 0x0000000d, 0x0000001c, 0x0000000e,
-0x0000001a, 0x0000000f, 0x00000018, 0x00000010, 0x00000019, 0xfffffff0, 0x0000001b, 0xfffffff1,
-0x0000001d, 0xfffffff2, 0x0000001f, 0xfffffff3, 0x00000021, 0xfffffff4, 0x00000023, 0xfffffff5,
+0x0000001a, 0x0000000f, 0x00000018, 0x00000010, 0x00000019, static_cast<Ipp32s>(0xfffffff0), 0x0000001b, static_cast<Ipp32s>(0xfffffff1),
+0x0000001d, static_cast<Ipp32s>(0xfffffff2), 0x0000001f, static_cast<Ipp32s>(0xfffffff3), 0x00000021, static_cast<Ipp32s>(0xfffffff4), 0x00000023, static_cast<Ipp32s>(0xfffffff5),
 
 -1 /* end of table */
 };

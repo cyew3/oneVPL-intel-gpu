@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -596,7 +596,7 @@ extern const ownvc_AverageHP_8u_C1R_func ownvc_Average8x16HP_8u_C1R[4];
 #define HP_FLAG_AV  HP_FLAG_CP
 
 #define CHECK_OFFSET_L(offs, pitch, hh) \
-  if (offs < 0 || offs+(hh-1)*(pitch)+15 > (Ipp32s)video->pic_size) \
+  if (offs < 0 || (Ipp32s)(offs+(hh-1)*(pitch)+15) > (Ipp32s)video->pic_size) \
 { \
   return UMC_ERR_INVALID_STREAM; \
 }
@@ -746,16 +746,14 @@ extern const ownvc_AverageHP_8u_C1R_func ownvc_Average8x16HP_8u_C1R[4];
   _val1 = _tmp; \
 }
 
-#define RESET_PMV(array) {                         \
-  Ipp32s nn;                                       \
-  for(nn=0; nn<sizeof(array)/sizeof(Ipp32s); nn++) \
-    ((Ipp32s*)array)[nn] = 0;                      \
+#define RESET_PMV(array) {                                      \
+  for(unsigned int nn=0; nn<sizeof(array)/sizeof(Ipp32s); nn++) \
+    ((Ipp32s*)array)[nn] = 0;                                   \
 }
 
-#define COPY_PMV(adst,asrc) {                      \
-  Ipp32s nn;                                       \
-  for(nn=0; nn<sizeof(adst)/sizeof(Ipp32s); nn++)  \
-    ((Ipp32s*)adst)[nn] = ((Ipp32s*)asrc)[nn];     \
+#define COPY_PMV(adst,asrc) {                                   \
+  for(unsigned int nn=0; nn<sizeof(adst)/sizeof(Ipp32s); nn++)  \
+    ((Ipp32s*)adst)[nn] = ((Ipp32s*)asrc)[nn];                  \
 }
 
 #define RECONSTRUCT_INTRA_MB(BITSTREAM, NUM_BLK, DCT_TYPE)               \
@@ -1033,7 +1031,7 @@ extern const ownvc_AverageHP_8u_C1R_func ownvc_Average8x16HP_8u_C1R[4];
   DECODE_VLC(cc, BS, vlcMBAdressing);                                 \
   macroblock_address_increment += cc;                                 \
   macroblock_address_increment--;                                     \
-  if (macroblock_address_increment > (sequenceHeader.mb_width[task_num] - video->mb_col)) { \
+  if (static_cast<unsigned int>(macroblock_address_increment) > static_cast<unsigned int>(sequenceHeader.mb_width[task_num] - video->mb_col)) { \
     macroblock_address_increment = sequenceHeader.mb_width[task_num] - video->mb_col;       \
   }                                                                               \
 }
