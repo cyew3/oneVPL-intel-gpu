@@ -3457,7 +3457,7 @@ mfxFrameSurface1 ** CEncodingPipeline::GetCurrentL1SurfacesPak(iTask* eTask, mfx
 
 /* initialization functions */
 
-mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask[2][2], int ref_fid[2][2])
+mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask[2][2], int ref_fid[2][2], bool isDownsamplingNeeded)
 {
     MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
 
@@ -3548,6 +3548,9 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
 
             preENCCtr->RefFrame[0] = refSurf0[preENCCtrId];
             preENCCtr->RefFrame[1] = refSurf1[preENCCtrId];
+
+            if (!isDownsamplingNeeded && m_encpakParams.bPerfMode)
+                preENCCtr->DownsampleInput = MFX_CODINGOPTION_OFF; // the default is ON
 
             preENCCtrId++;
             break;
@@ -4766,6 +4769,7 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
     int preenc_ref_idx[2][2]; // indexes means [fieldId][L0L1]
     int ref_fid[2][2];
     iTask* refTask[2][2];
+    bool isDownsamplingNeeded = true;
 
     for (mfxU32 l0_idx = 0, l1_idx = 0; l0_idx < total_l0 || l1_idx < total_l1; l0_idx++, l1_idx++)
     {
@@ -4788,8 +4792,13 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
             }
         }
 
-        sts = InitPreEncFrameParamsEx(eTask, refTask, ref_fid);
+        sts = InitPreEncFrameParamsEx(eTask, refTask, ref_fid, isDownsamplingNeeded);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        // If input surface is not being changed between PreENC calls
+        // (including calls for different fields of the same field pair in Single Field processing mode),
+        // an application can avoid redundant downsampling on driver side.
+        isDownsamplingNeeded = false;
 
         // Doing PreEnc
         for (;;)

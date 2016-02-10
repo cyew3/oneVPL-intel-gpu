@@ -340,7 +340,7 @@ protected:
     std::list<iTask*>::iterator ReorderFrame(std::list<iTask*>& unencoded_queue);
     mfxU32 CountFutureRefs(mfxU32 frameOrder);
 
-    mfxStatus InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask[2][2], int ref_fid[2][2]);
+    mfxStatus InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask[2][2], int ref_fid[2][2], bool isDownsamplingNeeded);
     mfxStatus InitEncFrameParams(iTask* eTask);
     mfxStatus InitEncodeFrameParams(mfxFrameSurface1* encodeSurface, sTask* pCurrentTask, PairU8 frameType, bool is_buffered);
     mfxStatus ReadPAKdata(iTask* eTask);
