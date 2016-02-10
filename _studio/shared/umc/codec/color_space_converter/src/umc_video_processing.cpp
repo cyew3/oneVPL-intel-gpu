@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -60,11 +60,9 @@ VideoProcessing::VideoProcessing()
 
 Status VideoProcessing::Close()
 {
-    int i;
-
     pFilter[iColorConv0] = NULL; // duplication of iColorConv!!!
 
-    for (i = 0; i < UMC_ARRAY_SIZE(pFilter); i++)
+    for (unsigned int i = 0; i < UMC_ARRAY_SIZE(pFilter); i++)
     {
         UMC_DELETE(pFilter[i]);
     }
@@ -135,8 +133,8 @@ static ColorFormat GetIntermediatedColor(ColorFormat src_color)
     case YUV422A: return YUV422;
     case YUV444A: return YUV444;
     case YVU9: return YUV420;
+    default: return YUV420;
   }
-  return YUV420;
 }
 
 Status VideoProcessing::GetFrame(MediaData *input, MediaData *output)

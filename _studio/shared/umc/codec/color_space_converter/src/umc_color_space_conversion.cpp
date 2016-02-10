@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -14,6 +14,13 @@
 #include "ippi.h"
 #include "ippcc.h"
 #include "ippvc.h"
+
+#if defined(__GNUC__)
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+#if defined(__INTEL_COMPILER)
+    #pragma warning disable 1478
+#endif
 
 using namespace UMC;
 
