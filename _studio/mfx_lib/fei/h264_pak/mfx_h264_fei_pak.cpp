@@ -769,7 +769,7 @@ static mfxStatus CopyRawSurfaceToVideoMemory(  VideoCORE &  core,
 
     mfxFrameData d3dSurf = {0};
     if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+        (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
     {
         mfxFrameData sysSurf = src_sys->Data;
         d3dSurf.MemId = dst_d3d;

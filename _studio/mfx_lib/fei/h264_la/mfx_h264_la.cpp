@@ -3,7 +3,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -877,7 +877,7 @@ mfxStatus VideoENC_LA::RunFrameVmeENCCheck(
         sts = (m_LASyncContext.numBuffered--) > 0 ?  MFX_ERR_NONE : MFX_ERR_MORE_DATA;
     }
     if (MFX_ERR_NONE == sts ||
-        MFX_ERR_MORE_DATA_RUN_TASK == sts ||
+        MFX_ERR_MORE_DATA_RUN_TASK == static_cast<int>(sts) ||
         MFX_ERR_MORE_SURFACE == sts)
     {
         mfxFrameSurface1* pReord = 0;
@@ -1131,7 +1131,7 @@ mfxStatus CopyRawSurfaceToVideoMemory(  VideoCORE &  core,
 
     mfxFrameData d3dSurf = {0};
     if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+        (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
     {
         mfxFrameData sysSurf = src_sys->Data;
         d3dSurf.MemId = dst_d3d;
