@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_Intel|Win32">
+      <Configuration>Release_Intel</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_Intel|x64">
+      <Configuration>Release_Intel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\umc_vp9_bitstream.h" />
+    <ClInclude Include="include\umc_vp9_dec_defs.h" />
+    <ClInclude Include="include\umc_vp9_utils.h" />
+    <ClInclude Include="include\umc_vp9_va_packer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\umc_vp9_bitstream.cpp" />
+    <ClCompile Include="src\umc_vp9_utils.cpp" />
+    <ClCompile Include="src\umc_vp9_va_packer.cpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{A6112FED-B0F8-4396-BAD8-FFB466DF85CE}</ProjectGuid>
+    <RootNamespace>h265_dec_hw</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectName>vp9_dec_hw</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="..\..\..\..\mfx_lib\Intel.Mfx.Common.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries Condition="$(Configuration.Contains('Debug'))">true</UseDebugLibraries>
+    <WholeProgramOptimization Condition="$(Configuration.Contains('Release'))">true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset Condition="$(Configuration.Contains('Intel'))">Intel C++ Compiler XE 13.0</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\mfx_lib\Intel.Mfx.StaticLib.props" />
+  </ImportGroup>
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\codec\color_space_converter\include;..\..\codec\me\include;..\..\codec\scene_analyzer\include;..\..\codec\vc1_common\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;..\..\..\..\mfx_lib\optimization\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>AS_VP9D_PLUGIN;WIN32;_LIB;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="$(Configuration.Contains('Release'))">NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="$(Configuration.Contains('Debug'))">_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <!-- NTDDI_VERSION=NTDDI_WIN10_TH2 -->
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Lib />
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="$(Configuration.Contains('Intel'))">
+    <ClCompile>
+      <GenerateAlternateCodePaths>SSE41</GenerateAlternateCodePaths>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

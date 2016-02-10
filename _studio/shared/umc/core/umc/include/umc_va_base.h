@@ -170,6 +170,7 @@ enum VideoAccelerationProfile
     VP8_VLD         = VA_VP8 | VA_VLD,
     HEVC_VLD        = VA_H265 | VA_VLD,
     VP9_VLD         = VA_VP9 | VA_VLD,
+    VP9_10_VLD      = VA_VP9 | VA_VLD | VA_PROFILE_10,
 
     H264_VLD_MVC            = VA_H264 | VA_VLD | VA_PROFILE_MVC,
     H264_VLD_SVC_BASELINE   = VA_H264 | VA_VLD | VA_PROFILE_SVC_BASELINE,

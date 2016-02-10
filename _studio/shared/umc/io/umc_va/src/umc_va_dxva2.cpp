@@ -388,7 +388,12 @@ static const GuidProfile guidProfiles[] =
 
     { JPEG_VLD,  sDXVA2_Intel_IVB_ModeJPEG_VLD_NoFGT},
     { VP8_VLD,   sDXVA_Intel_ModeVP8_VLD},
-    { VP9_VLD,   sDXVA_Intel_ModeVP9_VLD},
+
+#if defined(NTDDI_WIN10_TH2) && (NTDDI_VERSION >= NTDDI_WIN10_TH2)
+    { VP9_VLD,                                    DXVA_ModeVP9_VLD_Profile0},
+#endif
+    { VP9_VLD,                                    DXVA_Intel_ModeVP9_Profile0_VLD },
+    { VP9_VLD | VA_PROFILE_10,                    DXVA_Intel_ModeVP9_Profile2_10bit_VLD },
 
     { VA_H264 | VA_VLD | VA_PROFILE_SVC_HIGH,     sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_High },
     { VA_H264 | VA_VLD | VA_PROFILE_SVC_BASELINE, sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_Baseline },
@@ -455,8 +460,12 @@ bool GuidProfile::isShortFormat(bool isHEVCGUID, Ipp32u configBitstreamRaw)
 
 bool GuidProfile::IsIntelCustomGUID(const GUID & guid)
 {
-    return (guid == sDXVA2_Intel_ModeVC1_D_Super || guid == sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT || guid == sDXVA_Intel_ModeH264_VLD_MVC || guid == DXVA_Intel_ModeHEVC_VLD_MainProfile ||
-        guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile);
+    return
+        guid == sDXVA2_Intel_ModeVC1_D_Super || 
+        guid == sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT || guid == sDXVA_Intel_ModeH264_VLD_MVC || 
+        guid == DXVA_Intel_ModeHEVC_VLD_MainProfile || guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile ||
+        guid == DXVA_Intel_ModeVP9_Profile0_VLD || guid == DXVA_Intel_ModeVP9_Profile2_10bit_VLD
+        ;
 }
 
 bool GuidProfile::IsMVCGUID(const GUID & guid)

@@ -22,7 +22,12 @@
 #include "mfx_vp9_dec_decode_utils.h"
 #include <list>
 
+#include "umc_vp9_dec_defs.h"
+#include "umc_vp9_frame.h"
+
 using namespace MfxVP9Decode;
+
+namespace UMC_VP9_DECODER { class Packer; }
 
 class VideoDECODEVP9_HW : public VideoDECODE
 {
@@ -53,15 +58,13 @@ protected:
     void CalculateTimeSteps(mfxFrameSurface1 *);
     static mfxStatus QueryIOSurfInternal(eMFXPlatform, mfxVideoParam *, mfxFrameAllocRequest *);
 
-    mfxStatus UpdateRefFrames(const mfxU8 refreshFrameFlags, VP9FrameInfo & info);
+    mfxStatus UpdateRefFrames(const mfxU8 refreshFrameFlags, UMC_VP9_DECODER::VP9DecoderFrame & info);
 
-    mfxStatus DecodeSuperFrame(mfxBitstream *in, VP9FrameInfo & info);
-    mfxStatus DecodeFrameHeader(mfxBitstream *in, VP9FrameInfo & info);
-    mfxStatus PackHeaders(mfxBitstream *bs, VP9FrameInfo const & info);
+    mfxStatus DecodeSuperFrame(mfxBitstream *in, UMC_VP9_DECODER::VP9DecoderFrame & info);
+    mfxStatus DecodeFrameHeader(mfxBitstream *in, UMC_VP9_DECODER::VP9DecoderFrame & info);
+    mfxStatus PackHeaders(mfxBitstream *bs, UMC_VP9_DECODER::VP9DecoderFrame const & info);
 
-    void UpdateVideoParam(mfxVideoParam *par, VP9FrameInfo const & frameInfo);
-
-    bool CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p_par);
+    void UpdateVideoParam(mfxVideoParam *par, UMC_VP9_DECODER::VP9DecoderFrame const & frameInfo);
 
     mfxStatus GetOutputSurface(mfxFrameSurface1 **surface_out, mfxFrameSurface1 *surface_work, UMC::FrameMemID index);
 
@@ -83,6 +86,8 @@ private:
     bool                    m_adaptiveMode;
     mfxU32                  m_index;
     std::auto_ptr<mfx_UMC_FrameAllocator> m_FrameAllocator;
+
+    std::auto_ptr<UMC_VP9_DECODER::Packer>  m_Packer;
 
     mfxFrameAllocResponse   m_response;
     mfxDecodeStat           m_stat;
@@ -106,7 +111,7 @@ private:
     typedef std::list<mfxFrameSurface1 *> StatuReportList;
     StatuReportList m_completedList;
 
-    VP9FrameInfo m_frameInfo;
+    UMC_VP9_DECODER::VP9DecoderFrame m_frameInfo;
 
     typedef struct {
         mfxU32 width;
@@ -115,7 +120,7 @@ private:
 
     SizeOfFrame m_firstSizes;
 
-    SizeOfFrame m_sizesOfRefFrame[NUM_REF_FRAMES];
+    SizeOfFrame m_sizesOfRefFrame[UMC_VP9_DECODER::NUM_REF_FRAMES];
     
     mfxBitstream m_bs;
 

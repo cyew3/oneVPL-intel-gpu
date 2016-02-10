@@ -4,7 +4,7 @@ list( APPEND vdirs
   h264 h265 mjpeg mpeg2 vc1 vp8 vp9
   )
 list( APPEND cdirs
-  h265_dec h264_dec mpeg2_dec vc1_dec jpeg_dec vc1_common color_space_converter jpeg_common
+  h265_dec h264_dec mpeg2_dec vp9_dec vc1_dec jpeg_dec vc1_common color_space_converter jpeg_common
   )
 mfx_include_dirs( )
 foreach( dir ${vdirs} )

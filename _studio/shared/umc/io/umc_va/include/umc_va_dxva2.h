@@ -47,6 +47,23 @@ DEFINE_GUID(DXVA_Intel_Decode_Elementary_Stream_AVC, 0xc528916c, 0xc0af, 0x4645,
 // {07CFAFFB-5A2E-4B99-B62A-E4CA53B6D5AA}
 DEFINE_GUID(DXVA_Intel_Decode_Elementary_Stream_HEVC, 0x7cfaffb, 0x5a2e, 0x4b99, 0xb6, 0x2a, 0xe4, 0xca, 0x53, 0xb6, 0xd5, 0xaa);
 
+/* Intel VP9 VLD GUIDs (VP9 decoding DDI version 0.88) */
+// {76988A52-DF13-419A-8E64-FFCF4A336CF5}
+DEFINE_GUID(DXVA_Intel_ModeVP9_Profile0_VLD, 
+0x76988a52, 0xdf13, 0x419a, 0x8e, 0x64, 0xff, 0xcf, 0x4a, 0x33, 0x6c, 0xf5);
+
+// {80A3A7BD-89D8-4497-A2B8-2126AF7E6EB8}
+DEFINE_GUID(DXVA_Intel_ModeVP9_Profile2_10bit_VLD, 
+0x80a3a7bd, 0x89d8, 0x4497, 0xa2, 0xb8, 0x21, 0x26, 0xaf, 0x7e, 0x6e, 0xb8);
+
+// {68A21C7B-D58F-4e74-9993-E4B8172B19A0}
+DEFINE_GUID(DXVA_Intel_ModeVP9_Profile1_YUV444_VLD, 
+0x68a21c7b, 0xd58f, 0x4e74, 0x99, 0x93, 0xe4, 0xb8, 0x17, 0x2b, 0x19, 0xa0);
+
+// {1D5C4D76-B55A-4430-904C-3383A7AE3B16}
+DEFINE_GUID(DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD, 
+0x1d5c4d76, 0xb55a, 0x4430, 0x90, 0x4c, 0x33, 0x83, 0xa7, 0xae, 0x3b, 0x16);
+
 DEFINE_GUID_(sDXVA_Intel_ModeH264_VLD_MVC, 0xe296bf50, 0x8808, 0x4ff8, 0x92, 0xd4, 0xf1, 0xee, 0x79, 0x9f, 0xc3, 0x3c);
 
 DEFINE_GUID_(sDXVA2_Intel_ModeVC1_D_Super,       0xE07EC519,0xE651,0x4cd6,0xAC, 0x84,0x13,0x70,0xCC,0xEE,0xC8,0x51);
@@ -159,15 +176,8 @@ protected:
 template <typename T>
 bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
 {
-    bool res = false;
-
-    Ipp32s profile = (profile_flags & (VA_ENTRY_POINT | VA_CODEC));
-
-    if (profile == JPEG_VLD || profile == VP8_VLD || profile == VP9_VLD)
-    {
-        //JPEG_DECODING_CAPS * info = (JPEG_DECODING_CAPS *)pConfig;
-        return true;
-    }
+    Ipp32s const profile = 
+        (profile_flags & (VA_ENTRY_POINT | VA_CODEC));
 
     if (protectedVA)
     {
@@ -182,10 +192,14 @@ bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
             return false;*/
     }
 
+    bool res = false;
     switch(profile)
     {
     case VC1_MC:
     case JPEG_VLD:
+    case VP8_VLD:
+    case VP9_VLD:
+    case VP9_10_VLD:
         res = true;
         break;
     case MPEG2_VLD:

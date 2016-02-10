@@ -73,7 +73,7 @@
     <ProjectName>mfxplugin_hw</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <Import Project="Intel.Mfx.Common.props" />
+  <Import Project="Intel.Mfx.Plugin.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
@@ -161,73 +161,9 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+  <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\Intel.Mfx.Common.props" />
-    <Import Project="Intel.Mfx.StaticLib.props" />
     <Import Project="..\Intel.Mfx.DllExe.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\Intel.Mfx.Common.props" />
-    <Import Project="Intel.Mfx.StaticLib.props" />
-    <Import Project="..\Intel.Mfx.DllExe.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\Intel.Mfx.Common.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\Intel.Mfx.Common.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="Intel.Mfx.StaticLib.props" />
-    <Import Project="..\Intel.Mfx.DllExe.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="Intel.Mfx.StaticLib.props" />
-    <Import Project="..\Intel.Mfx.DllExe.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="Intel.Mfx.StaticLib.props" />
-    <Import Project="..\Intel.Mfx.DllExe.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="Intel.Mfx.StaticLib.props" />
-    <Import Project="..\Intel.Mfx.DllExe.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="Intel.Mfx.StaticLib.props" />
-    <Import Project="..\Intel.Mfx.DllExe.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="Intel.Mfx.StaticLib.props" />
-    <Import Project="..\Intel.Mfx.DllExe.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -313,13 +249,9 @@
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>mfxplugin64_hw</TargetName>
-    <IncludePath>$(WindowsSdk8Path)\Include\um;$(WindowsSdk8Path)\Include\shared;$(IncludePath)</IncludePath>
-    <LibraryPath>$(WindowsSdk8Path)\Lib\win8\um\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|x64'">
     <TargetName>mfxplugin64_hw</TargetName>
-    <IncludePath>$(WindowsSdk8Path)\Include\um;$(WindowsSdk8Path)\Include\shared;$(IncludePath)</IncludePath>
-    <LibraryPath>$(WindowsSdk8Path)\Lib\win8\um\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\15dd936825ad475ea34e35f3f54217a6\</OutDir>
@@ -335,13 +267,9 @@
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>mfxplugin32_hw</TargetName>
-    <IncludePath>$(WindowsSdk8Path)\Include\um;$(WindowsSdk8Path)\Include\shared;$(IncludePath)</IncludePath>
-    <LibraryPath>$(WindowsSdk8Path)\Lib\win8\um\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">
     <TargetName>mfxplugin32_hw</TargetName>
-    <IncludePath>$(WindowsSdk8Path)\Include\um;$(WindowsSdk8Path)\Include\shared;$(IncludePath)</IncludePath>
-    <LibraryPath>$(WindowsSdk8Path)\Lib\win8\um\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\15dd936825ad475ea34e35f3f54217a6\</OutDir>
@@ -356,12 +284,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(WindowsSdk8Path)\Include\um;$(WindowsSdk8Path)\Include\shared;$(IncludePath)</IncludePath>
-    <LibraryPath>$(WindowsSdk8Path)\Lib\win8\um\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|x64'">
-    <IncludePath>$(WindowsSdk8Path)\Include\um;$(WindowsSdk8Path)\Include\shared;$(IncludePath)</IncludePath>
-    <LibraryPath>$(WindowsSdk8Path)\Lib\win8\um\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\15dd936825ad475ea34e35f3f54217a6\</OutDir>
@@ -372,13 +296,9 @@
     <IntDir>$(OutDir)..\..\..\objs\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(WindowsSdk8Path)\Include\um;$(WindowsSdk8Path)\Include\shared;$(IncludePath)</IncludePath>
-    <LibraryPath>$(WindowsSdk8Path)\Lib\win8\um\x86;$(LibraryPath)</LibraryPath>
     <ExecutablePath>$(VCInstallDir)PlatformSDK\bin;$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'">
-    <IncludePath>$(WindowsSdk8Path)\Include\um;$(WindowsSdk8Path)\Include\shared;$(IncludePath)</IncludePath>
-    <LibraryPath>$(WindowsSdk8Path)\Lib\win8\um\x86;$(LibraryPath)</LibraryPath>
     <ExecutablePath>$(VCInstallDir)PlatformSDK\bin;$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -832,6 +752,9 @@
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\codec\vp8_dec\vp8_dec_hw.vcxproj">
       <Project>{ebaf2767-b73d-43fb-aaae-1698484b7c27}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\shared\umc\codec\vp9_dec\vp9_dec_hw.vcxproj">
+      <Project>{a6112fed-b0f8-4396-bad8-ffb466df85ce}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\umc\base_classes.vcxproj">
       <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
