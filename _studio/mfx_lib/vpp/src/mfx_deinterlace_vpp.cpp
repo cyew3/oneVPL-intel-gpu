@@ -432,7 +432,7 @@ mfxStatus MFXVideoVPPDeinterlace::Init(mfxFrameInfo* In, mfxFrameInfo* Out)
   m_errPrtctState.In  = *In;
   m_errPrtctState.Out = *Out;
 
-  bool bIsPredefinedDI = (In->PicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF)) ? true : false;
+  bool bIsPredefinedDI = true; //(In->PicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF)) ? true : false;
 
   /* select algorithm */
   if( bIsPredefinedDI &&
