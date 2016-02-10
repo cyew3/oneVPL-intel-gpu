@@ -4,12 +4,15 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//    Copyright (c) 2001-2013 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2001-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MJPEG_VIDEO_DECODER)
+#if defined(__GNUC__)
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #include <stdio.h>
 #include <string.h>
@@ -5360,11 +5363,11 @@ JERRCODE CJPEGDecoder::DecodeScanBaseline(void)
   {
       m_curr_scan->first_comp = 0;
   }
-  else if(1 == m_curr_scan->scan_no && (2 == m_curr_scan->ncomps || 1 == m_curr_scan->ncomps && 3 == m_num_scans))
+  else if(1 == m_curr_scan->scan_no && (2 == m_curr_scan->ncomps || (1 == m_curr_scan->ncomps && 3 == m_num_scans)))
   {
       m_curr_scan->first_comp = 1;
   }
-  else if(1 == m_curr_scan->scan_no && 1 == m_curr_scan->ncomps && 2 == m_num_scans || 2 == m_curr_scan->scan_no)
+  else if((1 == m_curr_scan->scan_no && 1 == m_curr_scan->ncomps && 2 == m_num_scans) || 2 == m_curr_scan->scan_no)
   {
       m_curr_scan->first_comp = 2;
   }
