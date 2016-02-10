@@ -556,10 +556,8 @@ public:
 
     Ipp8u GetTrSplitMode(Ipp32s absPartIdx, Ipp8u depth, Ipp8u trDepth, Ipp8u partSize, Ipp8u strict = 1);
 
-    void TransformInv(Ipp32s offset, Ipp32s width, Ipp8u isLuma, Ipp8u isIntra, Ipp8u bitDepth);
-
-    void TransformInv2(void *dst, Ipp32s pitch_dst, Ipp32s offset, Ipp32s width, Ipp8u isLuma,
-                       Ipp8u isIntra, Ipp8u bitDepth);
+    void TransformInv(PixType *pred, Ipp32s pitchPred, CoeffsType *coef, Ipp32s width, void *dst, Ipp32s pitchDst,
+                      Ipp8u isLuma, Ipp8u isIntra, Ipp8u bitDepth);
 
     void TransformFwd(CoeffsType *src, Ipp32s srcPitch, CoeffsType *dst, Ipp32s width, Ipp32s bitDepth, Ipp8u isIntra);
 
@@ -577,14 +575,11 @@ public:
     void EncAndRecChromaTu(Ipp32s absPartIdx, Ipp32s idx422, Ipp32s offset, Ipp32s width, CostType *cost,
                            IntraPredOpt pred_opt, Ipp8u costPredFlag);
 
-    void QuantInvTu(Ipp32s absPartIdx, Ipp32s offset, Ipp32s width, Ipp32s qp, Ipp32s isLuma);
-#ifdef AMT_DZ_RDOQ
-    void QuantFwdTu(Ipp32s absPartIdx, Ipp32s offset, Ipp32s width, Ipp32s qp, Ipp32s isLuma, Ipp32s isIntra);
-#else
-    void QuantFwdTu(Ipp32s absPartIdx, Ipp32s offset, Ipp32s width, Ipp32s qp, Ipp32s isLuma);
-#endif
+    void QuantInvTu(const CoeffsType *coeff, CoeffsType *resid, Ipp32s width, Ipp32s qp, Ipp32s isLuma);
 
-    void QuantFwdTuBase(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s qp, Ipp32s is_luma);
+    void QuantFwdTu(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width, Ipp32s qp, Ipp32s isLuma, Ipp32s isIntra);
+
+    void QuantFwdTuBase(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width, Ipp32s qp, Ipp32s isLuma);
 
     void Deblock();
 

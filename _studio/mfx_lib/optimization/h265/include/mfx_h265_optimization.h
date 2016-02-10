@@ -208,7 +208,7 @@ namespace MFX_HEVC_PP
     typedef  void   (H265_FASTCALL *PTR_SATD_Pair_16u)(const Ipp16u* pSrcCur, int srcCurStep, const Ipp16u* pSrcRef, int srcRefStep, Ipp32s* satdPair);
 
     // [PTR.TransformInv]
-    typedef void (* PTR_TransformInv_16sT) (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
+    typedef void (* PTR_TransformInv_16sT) (void *pred, int predStride, void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
 
     // [PTR.TransformFwd]
     typedef void (H265_FASTCALL *PTR_TransformFwd_16s)(const short *H265_RESTRICT src, Ipp32s srcPitch, short *H265_RESTRICT dst, Ipp32u bitDepth);
@@ -466,11 +466,11 @@ namespace MFX_HEVC_PP
 #endif
 
         // [Transform Inv]
-        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DST4x4Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth) );
-        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT4x4Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth) );
-        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT8x8Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth) );
-        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT16x16Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth) );
-        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT32x32Inv_16sT, (void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth) );
+        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DST4x4Inv_16sT, (void *pred, int predStride, void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth) );
+        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT4x4Inv_16sT, (void *pred, int predStride, void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth) );
+        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT8x8Inv_16sT, (void *pred, int predStride, void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth) );
+        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT16x16Inv_16sT, (void *pred, int predStride, void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth) );
+        HEVCPP_API( PTR_TransformInv_16sT, void, h265_DCT32x32Inv_16sT, (void *pred, int predStride, void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth) );
 
         // [transform.forward]
         HEVCPP_API( PTR_TransformFwd_16s, void H265_FASTCALL, h265_DST4x4Fwd_16s, (const short *H265_RESTRICT src, int srcStride, short *H265_RESTRICT dst, Ipp32u bitDepth) );

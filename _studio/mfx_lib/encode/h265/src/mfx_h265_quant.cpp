@@ -184,95 +184,64 @@ Ipp32s h265_quant_getSigCtxInc(Ipp32s pattern_sig_ctx,
 }
 
 template <typename PixType>
-void H265CU<PixType>::QuantInvTu(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s qp, Ipp32s is_luma)
+void H265CU<PixType>::QuantInvTu(const CoeffsType *coeff, CoeffsType *resid, Ipp32s width, Ipp32s qp, Ipp32s is_luma)
 {
     Ipp32s QP = is_luma
         ? qp  + (m_par->bitDepthLuma - 8) * 6
         : GetChromaQP(qp, 0, m_par->chromaFormatIdc, m_par->bitDepthChroma);
     Ipp32s log2TrSize = h265_log2m2[width] + 2;
-
-    //VM_ASSERT(!m_par->csps->sps_scaling_list_data_present_flag);
-
-    for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
-        CoeffsType *residuals = is_luma ? m_residualsY : (c_idx ? m_residualsV : m_residualsU);
-        CoeffsType *coeff = is_luma ? m_coeffWorkY : (c_idx ? m_coeffWorkV : m_coeffWorkU);
-        h265_quant_inv(coeff + offset, NULL, residuals + offset, log2TrSize, is_luma ? m_par->bitDepthLuma : m_par->bitDepthChroma, QP);
-    }
+    Ipp32s bitDepth = is_luma ? m_par->bitDepthLuma : m_par->bitDepthChroma;
+    h265_quant_inv(coeff, NULL, resid, log2TrSize, bitDepth, QP);
 }
 
 template <typename PixType>
-#ifdef AMT_DZ_RDOQ
-void H265CU<PixType>::QuantFwdTu(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s qp, Ipp32s is_luma, Ipp32s is_intra)
-#else
-void H265CU<PixType>::QuantFwdTu(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s qp, Ipp32s is_luma)
-#endif
+void H265CU<PixType>::QuantFwdTu(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width,
+                                 Ipp32s qp, Ipp32s isLuma, Ipp32s isIntra)
 {
-    Ipp32s QP = is_luma
+    Ipp32s isIntraSlice = (m_cslice->slice_type == I_SLICE);
+    Ipp32s bitDepth = (isLuma) ? m_par->bitDepthLuma : m_par->bitDepthChroma;
+    EnumTextType textureType = (isLuma) ? TEXT_LUMA : TEXT_CHROMA;
+    Ipp32s QP = (isLuma)
         ? qp + (m_par->bitDepthLuma - 8) * 6
         : GetChromaQP(qp, 0, m_par->chromaFormatIdc, m_par->bitDepthChroma);
 
     Ipp32s log2TrSize = h265_log2m2[width] + 2;
 
-    //VM_ASSERT(!m_par->csps->sps_scaling_list_data_present_flag);
+    Ipp32u abs_sum = 0;
 
-    for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
-        CoeffsType *residuals = is_luma ? m_residualsY : (c_idx ? m_residualsV : m_residualsU);
-        CoeffsType *coeff = is_luma ? m_coeffWorkY : (c_idx ? m_coeffWorkV : m_coeffWorkU);
-        Ipp32u abs_sum = 0;
+    if ((isLuma || m_par->rdoqChromaFlag) && m_isRdoq) {
+        h265_quant_fwd_rdo<PixType>(this, resid, coeff, log2TrSize, bitDepth, isIntraSlice, isIntra,
+                                    textureType, absPartIdx, QP, m_bsf);
+    }
+    else {
+        Ipp32s delta_u[32*32];
+        h265_quant_fwd_base(resid, coeff, log2TrSize, bitDepth, isIntraSlice, QP,
+                            m_par->SBHFlag ? delta_u : NULL, abs_sum);
 
-        if ((is_luma || m_par->rdoqChromaFlag) && m_isRdoq) {
-#ifdef AMT_DZ_RDOQ
-            h265_quant_fwd_rdo<PixType>( this, residuals + offset, coeff + offset, log2TrSize,
-                                is_luma ? m_par->bitDepthLuma : m_par->bitDepthChroma, m_cslice->slice_type == I_SLICE, is_intra, is_luma ? TEXT_LUMA : TEXT_CHROMA,
-                                abs_part_idx, QP, m_bsf );
-#else
-            h265_quant_fwd_rdo<PixType>( this, residuals + offset, coeff + offset, log2TrSize,
-                                is_luma ? m_par->bitDepthLuma : m_par->bitDepthChroma, m_cslice->slice_type == I_SLICE, is_luma ? TEXT_LUMA : TEXT_CHROMA,
-                                abs_part_idx, QP, m_bsf );
-#endif
-        }
-        else {
-            Ipp32s delta_u[32*32];
-            h265_quant_fwd_base( residuals + offset, coeff + offset, log2TrSize, is_luma ? m_par->bitDepthLuma : m_par->bitDepthChroma,
-                                 m_cslice->slice_type == I_SLICE, QP,
-                                 m_par->SBHFlag ? delta_u : NULL,
-                                 abs_sum );
+        if (m_par->SBHFlag && abs_sum >= 2) {
+            Ipp32u scan_idx = GetCoefScanIdx(absPartIdx, log2TrSize, isLuma, IsIntra(absPartIdx));
 
-            if(this->m_par->SBHFlag && abs_sum >= 2) {
-                Ipp32u scan_idx = GetCoefScanIdx( abs_part_idx, log2TrSize, is_luma, IsIntra(abs_part_idx) );
+            if (scan_idx == COEFF_SCAN_ZIGZAG)
+                scan_idx = COEFF_SCAN_DIAG;
 
-                if (scan_idx == COEFF_SCAN_ZIGZAG)
-                    scan_idx = COEFF_SCAN_DIAG;
+            const Ipp16u *scan = h265_sig_last_scan[scan_idx - 1][log2TrSize - 1];
 
-                const Ipp16u *scan = h265_sig_last_scan[ scan_idx -1 ][ log2TrSize - 1 ];
-
-                h265_sign_bit_hiding( coeff + offset, residuals + offset, scan, delta_u, width );
-            }
+            h265_sign_bit_hiding(coeff, resid, scan, delta_u, width);
         }
     }
 }
 
 template <typename PixType>
-void H265CU<PixType>::QuantFwdTuBase(Ipp32s abs_part_idx, Ipp32s offset, Ipp32s width, Ipp32s qp, Ipp32s is_luma)
+void H265CU<PixType>::QuantFwdTuBase(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width, Ipp32s qp, Ipp32s isLuma)
 {
-    Ipp32s QP = is_luma
+    Ipp32s QP = (isLuma)
         ? qp + (m_par->bitDepthLuma - 8) * 6
         : GetChromaQP(qp, 0, m_par->chromaFormatIdc, m_par->bitDepthChroma);
-
     Ipp32s log2TrSize = h265_log2m2[width] + 2;
-
-    //VM_ASSERT(!m_par->csps->sps_scaling_list_data_present_flag);
-
-    for (Ipp32s c_idx = 0; c_idx < (is_luma ? 1 : 2); c_idx ++) {
-        CoeffsType *residuals = is_luma ? m_residualsY : (c_idx ? m_residualsV : m_residualsU);
-        CoeffsType *coeff = is_luma ? m_coeffWorkY : (c_idx ? m_coeffWorkV : m_coeffWorkU);
-        Ipp32u abs_sum = 0;
-
-        h265_quant_fwd_base( residuals + offset, coeff + offset, log2TrSize, is_luma ? m_par->bitDepthLuma : m_par->bitDepthChroma,
-                                 m_cslice->slice_type == I_SLICE, QP,
-                                 NULL,
-                                 abs_sum );
-    }
+    Ipp32s isIntraSlice = (m_cslice->slice_type == I_SLICE);
+    Ipp32s bitDepth = (isLuma) ? m_par->bitDepthLuma : m_par->bitDepthChroma;
+    Ipp32u abs_sum = 0;
+    h265_quant_fwd_base(resid, coeff, log2TrSize, bitDepth, isIntraSlice, QP, NULL, abs_sum);
 }
 
 

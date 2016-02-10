@@ -2288,11 +2288,10 @@ Ipp8u H265CU<PixType>::EncInterLumaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offset
     IppiSize roiSize = {width, width};
     Ipp16s *resid = m_interResidY;
     resid += (PUStartRow * MAX_CU_SIZE + PUStartColumn) << m_par->QuadtreeTULog2MinSize;
-    TransformFwd(resid, MAX_CU_SIZE, m_residualsY+offset, width, m_par->bitDepthLuma, 0);
-    
-    QuantFwdTuBase(absPartIdx, offset, width, m_data[absPartIdx].qp, 1);
 
-    cbf = !IsZero(m_coeffWorkY + offset, width * width);
+    TransformFwd(resid, MAX_CU_SIZE, m_residualsY+offset, width, m_par->bitDepthLuma, 0);
+    QuantFwdTuBase(m_residualsY+offset, m_coeffWorkY+offset, absPartIdx, width, m_data[absPartIdx].qp, 1);
+    cbf = !IsZero(m_coeffWorkY+offset, width * width);
     
     m_isRdoq = isRdoq;
     return cbf;
@@ -2314,15 +2313,13 @@ void H265CU<PixType>::EncInterChromaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offse
     Ipp32s offsetCh = GetChromaOffset1(m_par, absPartIdx, MAX_CU_SIZE >> m_par->chromaShiftW);
 
     TransformFwd(m_interResidU+offsetCh, MAX_CU_SIZE>>m_par->chromaShiftW, m_residualsU+offset, width, m_par->bitDepthChroma, 0);
-    TransformFwd(m_interResidV+offsetCh, MAX_CU_SIZE>>m_par->chromaShiftW, m_residualsV+offset, width, m_par->bitDepthChroma, 0);
-#ifdef AMT_DZ_RDOQ
-    QuantFwdTu(absPartIdx, offset, width, m_data[absPartIdx].qp, 0, 0);
-#else
-    QuantFwdTu(absPartIdx, offset, width, m_data[absPartIdx].qp, 0);
-#endif
+    QuantFwdTu(m_residualsU+offset, m_coeffWorkU+offset, absPartIdx, width, m_data[absPartIdx].qp, 0, 0);
+    nz[0] = !IsZero(m_coeffWorkU+offset, width * width);
 
-    nz[0] = !IsZero(m_coeffWorkU + offset, width * width);
-    nz[1] = !IsZero(m_coeffWorkV + offset, width * width); 
+    TransformFwd(m_interResidV+offsetCh, MAX_CU_SIZE>>m_par->chromaShiftW, m_residualsV+offset, width, m_par->bitDepthChroma, 0);
+    QuantFwdTu(m_residualsV+offset, m_coeffWorkV+offset, absPartIdx, width, m_data[absPartIdx].qp, 0, 0);
+    nz[1] = !IsZero(m_coeffWorkV+offset, width * width); 
+
     m_isRdoq = isRdoq;
 }
 template <typename PixType>
@@ -9688,10 +9685,12 @@ void H265CU<PixType>::EncAndRecLumaTu(Ipp32s absPartIdx, Ipp32s offset, Ipp32s w
     Ipp8u cbf = 0;
     if (!dataTu->flags.skippedFlag) {
         if (isIntra) {
-            if (is_pred_transposed)
-                TuDiffTransp(m_residualsY + offset, width, src, m_pitchSrcLuma, pred, pitch_pred, width);
-            else
-                TuDiff(m_residualsY + offset, width, src, m_pitchSrcLuma, pred, pitch_pred, width);
+            if (is_pred_transposed) {
+                _ippiTranspose_C1R(pred, pitch_pred, rec, pitch_rec, roi);
+                TuDiff(m_residualsY+offset, width, src, m_pitchSrcLuma, rec, pitch_rec, width);
+            } else {
+                TuDiff(m_residualsY+offset, width, src, m_pitchSrcLuma, pred, pitch_pred, width);
+            }
             TransformFwd(m_residualsY+offset, width, m_residualsY+offset, width, m_par->bitDepthLuma, isIntra);
         }
         else {
@@ -9701,59 +9700,40 @@ void H265CU<PixType>::EncAndRecLumaTu(Ipp32s absPartIdx, Ipp32s offset, Ipp32s w
             TransformFwd(resid, MAX_CU_SIZE, m_residualsY+offset, width, m_par->bitDepthLuma, isIntra);
         }
 
-#ifdef AMT_DZ_RDOQ
-        QuantFwdTu(absPartIdx, offset, width, dataTu->qp, 1, isIntra);
-#else
-        QuantFwdTu(absPartIdx, offset, width, dataTu->qp, 1);
-#endif
+        QuantFwdTu(m_residualsY+offset, m_coeffWorkY+offset, absPartIdx, width, dataTu->qp, 1, isIntra);
 
-        if (m_rdOptFlag)
-            cbf = !IsZero(m_coeffWorkY + offset, width * width);
+        cbf = !IsZero(m_coeffWorkY+offset, width * width);
 
-        if (!m_rdOptFlag || cbf)
-            QuantInvTu(absPartIdx, offset, width, dataTu->qp, 1);
-
-        (is_pred_transposed)
-            ? _ippiTranspose_C1R(pred, pitch_pred, rec, pitch_rec, roi)
-            : _ippiCopy_C1R(pred, pitch_pred, rec, pitch_rec, roi);
-
-        if (!m_rdOptFlag || cbf)
-            TransformInv2(rec, pitch_rec, offset, width, 1, isIntra, m_par->bitDepthLuma);
-
-    }
-    else {
-        memset(m_coeffWorkY + offset, 0, sizeof(CoeffsType) * width * width);
+        if (cbf) {
+            QuantInvTu(m_coeffWorkY+offset, m_residualsY+offset, width, dataTu->qp, 1);
+            if (is_pred_transposed)
+                TransformInv(rec, pitch_rec, m_residualsY+offset, width, rec, pitch_rec, 1, isIntra, m_par->bitDepthLuma);
+            else
+                TransformInv(pred, pitch_pred, m_residualsY+offset, width, rec, pitch_rec, 1, isIntra, m_par->bitDepthLuma);
+        } else if (!is_pred_transposed)
+            _ippiCopy_C1R(pred, pitch_pred, rec, pitch_rec, roi);
     }
 
-    if (cost) {
+    if (cost)
         *cost = TuSse(src, m_pitchSrcLuma, rec, pitch_rec, width, width, (m_par->bitDepthLumaShift << 1));
-    }
+
     if (dataTu->flags.skippedFlag)
         return;
 
-#ifdef AMT_ALT_ENCODE_OPT
-    if (m_rdOptFlag && (m_isRdoq || cost)) {
-#else
-    if (m_rdOptFlag && cost) {
-#endif
+    if (m_isRdoq || cost) {
         Ipp8u code_dqp = getdQPFlag();
 
         m_bsf->Reset();
         if (cbf) {
             SetCbf<0>(dataTu, dataTu->trIdx);
-#ifdef AMT_ALT_ENCODE_OPT
-            if(cost)
-#endif
-            PutTransform(m_bsf, offset, offset >> 2, absPartIdx, absPartIdx, depth + dataTu->trIdx, 
-                         width, dataTu->trIdx, code_dqp);
+            if (cost)
+                PutTransform(m_bsf, offset, offset >> 2, absPartIdx, absPartIdx, depth + dataTu->trIdx, 
+                             width, dataTu->trIdx, code_dqp);
         }
         else {
             ResetCbf<0>(dataTu);
-#ifdef AMT_ALT_ENCODE_OPT
-            if(cost)
-#endif
-            m_bsf->EncodeSingleBin_CABAC(
-                CTX(m_bsf,QT_CBF_HEVC) + GetCtxQtCbf(TEXT_LUMA, dataTu->trIdx), 0);
+            if (cost)
+                m_bsf->EncodeSingleBin_CABAC(CTX(m_bsf,QT_CBF_HEVC) + GetCtxQtCbf(TEXT_LUMA, dataTu->trIdx), 0);
         }
 
         if(cost) *cost += BIT_COST(m_bsf->GetNumBits());
@@ -9785,8 +9765,9 @@ void H265CU<PixType>::EncAndRecChromaTu(Ipp32s absPartIdx, Ipp32s idx422, Ipp32s
     Ipp32s pitchRec;
     H265CUData *data = m_data + absPartIdx;
     Ipp8u depth = data->depth;
+    Ipp32s isIntra = (data->predMode == MODE_INTRA);
 
-    if (data->predMode == MODE_INTRA) {
+    if (isIntra) {
         Ipp8u intra_pred_mode = data->intraChromaDir;
         if (intra_pred_mode == INTRA_DM_CHROMA) {
             Ipp32s mask = (m_par->NumPartInCU >> (depth << 1)) - 1;
@@ -9823,74 +9804,64 @@ void H265CU<PixType>::EncAndRecChromaTu(Ipp32s absPartIdx, Ipp32s idx422, Ipp32s
 
     Ipp8u cbf[2] = {0, 0};
     if (!data->flags.skippedFlag) {
-        if (data->predMode == MODE_INTRA) {
+        CoeffsType *residU = m_residualsU + offset;
+        CoeffsType *residV = m_residualsV + offset;
+        Ipp32s pitchResidU = width;
+        Ipp32s pitchResidV = width;
+
+        if (isIntra) {
             h265_DiffNv12(pSrc, m_pitchSrcChroma, pRec, pitchRec, m_residualsU + offset, width, m_residualsV + offset, width, width, width);
-            TransformFwd(m_residualsU+offset, width, m_residualsU+offset, width, m_par->bitDepthChroma, 0);
-            TransformFwd(m_residualsV+offset, width, m_residualsV+offset, width, m_par->bitDepthChroma, 0);
         } else {
             IppiSize roiSize = { width, width };
             Ipp32s offsetCh = GetChromaOffset1(m_par, absPartIdx + idx422, MAX_CU_SIZE >> m_par->chromaShiftW);
-            TransformFwd(m_interResidU+offsetCh, MAX_CU_SIZE>>m_par->chromaShiftW, m_residualsU+offset, width, m_par->bitDepthChroma, 0);
-            TransformFwd(m_interResidV+offsetCh, MAX_CU_SIZE>>m_par->chromaShiftW, m_residualsV+offset, width, m_par->bitDepthChroma, 0);
+            residU = m_interResidU + offsetCh;
+            residV = m_interResidV + offsetCh;
+            pitchResidU = MAX_CU_SIZE >> m_par->chromaShiftW;
+            pitchResidV = MAX_CU_SIZE >> m_par->chromaShiftW;
         }
 
-#ifdef AMT_DZ_RDOQ
-        QuantFwdTu(absPartIdx, offset, width, data->qp, 0, data->predMode == MODE_INTRA);
-#else
-        QuantFwdTu(absPartIdx, offset, width, data->qp, 0);
-#endif
-
+        TransformFwd(residU, pitchResidU, m_residualsU+offset, width, m_par->bitDepthChroma, 0);
+        QuantFwdTu(m_residualsU+offset, m_coeffWorkU+offset, absPartIdx, width, data->qp, 0, isIntra);
         cbf[0] = !IsZero(m_coeffWorkU + offset, width * width);
-        cbf[1] = !IsZero(m_coeffWorkV + offset, width * width);
-
-        if (cbf[0] | cbf[1]) {
-            QuantInvTu(absPartIdx, offset, width, data->qp, 0);
-            TransformInv(offset, width, 0, 0, m_par->bitDepthChroma);
+        if (cbf[0]) {
+            QuantInvTu(m_coeffWorkU+offset, m_residualsU+offset, width, data->qp, 0);
+            TransformInv(NULL, 0, m_residualsU+offset, width, m_residualsU+offset, width, 0, 0, m_par->bitDepthChroma); 
         }
-    }
-    else { // TODO check if needed
-        memset(m_coeffWorkU + offset, 0, sizeof(CoeffsType) * width * width);
-        memset(m_coeffWorkV + offset, 0, sizeof(CoeffsType) * width * width);
+
+        TransformFwd(residV, pitchResidV, m_residualsV+offset, width, m_par->bitDepthChroma, 0);
+        QuantFwdTu(m_residualsV+offset, m_coeffWorkV+offset, absPartIdx, width, data->qp, 0, isIntra);
+        cbf[1] = !IsZero(m_coeffWorkV + offset, width * width);
+        if (cbf[1]) {
+            QuantInvTu(m_coeffWorkV+offset, m_residualsV+offset, width, data->qp, 0);
+            TransformInv(NULL, 0, m_residualsV+offset, width, m_residualsV+offset, width, 0, 0, m_par->bitDepthChroma); 
+        }
     }
 
     if (cbf[0] | cbf[1]) {
-#ifdef AMT_CHROMA_GUIDED_INTER
-        tuAddClipNv12UV(pRec, pitchRec, pPred, pitchPred, m_residualsU + offset, m_residualsV + offset, width, width, m_par->bitDepthChroma);
-#else
-        tuAddClipNv12(pRec + 0, pitchRec, pPred + 0, pitchPred, m_residualsU + offset, width, width, m_par->bitDepthChroma);
-        tuAddClipNv12(pRec + 1, pitchRec, pPred + 1, pitchPred, m_residualsV + offset, width, width, m_par->bitDepthChroma);
-#endif
+        CoeffsType *residU = cbf[0] ? m_residualsU : m_coeffWorkU; // if cbf==0 coeffWork contains zeroes
+        CoeffsType *residV = cbf[1] ? m_residualsV : m_coeffWorkV; // if cbf==0 coeffWork contains zeroes
+        tuAddClipNv12UV(pRec, pitchRec, pPred, pitchPred, residU+offset, residV+offset, width, width, m_par->bitDepthChroma);
     }
-    else if (data->predMode != MODE_INTRA) { // TODO check if needed
+    else if (!isIntra) {
         IppiSize roiSize = {width * 2, width};
         _ippiCopy_C1R(pPred, pitchPred, pRec, pitchRec, roiSize);
     }
 
-#ifdef AMT_ADAPTIVE_INTRA_DEPTH
-    if (m_rdOptFlag && cost) {
+    if (cost) {
         *cost += TuSse(pSrc, m_pitchSrcChroma, pRec, pitchRec, width<<1, width, (m_par->bitDepthChromaShift << 1));
-        //kolya //WEIGHTED_CHROMA_DISTORTION (JCTVC-F386)
         if (m_par->IntraChromaRDO)
-            (*cost) *= m_ChromaDistWeight;
+            *cost *= m_ChromaDistWeight;
     }
-#else
-    if (cost && (m_par->AnalyseFlags & HEVC_COST_CHROMA)) {
-         *cost += TuSse(pSrc, m_pitchSrcChroma, pRec, pitchRec, width<<1, width, (m_par->bitDepthChromaShift << 1));
-    }
-    //kolya //WEIGHTED_CHROMA_DISTORTION (JCTVC-F386)
-    if (m_par->IntraChromaRDO && cost)
-        (*cost) *= m_ChromaDistWeight;
-#endif
 
     cbf[0] ? SetCbf<1>(data+idx422, data->trIdx) : ResetCbf<1>(data+idx422);
     cbf[1] ? SetCbf<2>(data+idx422, data->trIdx) : ResetCbf<2>(data+idx422);
 
-    if (m_rdOptFlag && cost) {
+    if (cost) {
         m_bsf->Reset();
         if (cbf[0])
-            CodeCoeffNxN(m_bsf, this, m_coeffWorkU + offset, absPartIdx, width, TEXT_CHROMA_U );
+            CodeCoeffNxN(m_bsf, this, m_coeffWorkU + offset, absPartIdx, width, TEXT_CHROMA_U);
         if (cbf[1])
-            CodeCoeffNxN(m_bsf, this, m_coeffWorkV + offset, absPartIdx, width, TEXT_CHROMA_V );
+            CodeCoeffNxN(m_bsf, this, m_coeffWorkV + offset, absPartIdx, width, TEXT_CHROMA_V);
         *cost += BIT_COST(m_bsf->GetNumBits());
     }
 }

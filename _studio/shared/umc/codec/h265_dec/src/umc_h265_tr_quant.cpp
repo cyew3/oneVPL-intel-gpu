@@ -42,6 +42,9 @@ H265TrQuant::~H265TrQuant()
 template <Ipp32s bitDepth, typename DstCoeffsType>
 void InverseTransform(CoeffsPtr coeff, DstCoeffsType* dst, size_t dstPitch, Ipp32s Size, Ipp32u Mode, Ipp32u bit_depth)
 {
+    DstCoeffsType* pred = dst; // predicted pels are already in dst buffer
+    Ipp32s predPitch = (Ipp32s)dstPitch;
+
     Ipp32s inplace = (sizeof(DstCoeffsType) == 1) ? 1 : 0;
     if (inplace)
         inplace = bitDepth > 8 ? 2 : 1;
@@ -52,24 +55,24 @@ void InverseTransform(CoeffsPtr coeff, DstCoeffsType* dst, size_t dstPitch, Ipp3
         {
             if (Mode != REG_DCT)
             {
-                MFX_HEVC_PP::h265_DST4x4Inv_16sT_px(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+                MFX_HEVC_PP::h265_DST4x4Inv_16sT_px(pred, predPitch, dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
             }
             else
             {
-                MFX_HEVC_PP::h265_DCT4x4Inv_16sT_px(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+                MFX_HEVC_PP::h265_DCT4x4Inv_16sT_px(pred, predPitch, dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
             }
         }
         else if (Size == 8)
         {
-            MFX_HEVC_PP::h265_DCT8x8Inv_16sT_px(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+            MFX_HEVC_PP::h265_DCT8x8Inv_16sT_px(pred, predPitch, dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
         }
         else if (Size == 16)
         {
-            MFX_HEVC_PP::h265_DCT16x16Inv_16sT_px(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+            MFX_HEVC_PP::h265_DCT16x16Inv_16sT_px(pred, predPitch, dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
         }
         else if (Size == 32)
         {
-            MFX_HEVC_PP::h265_DCT32x32Inv_16sT_px(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+            MFX_HEVC_PP::h265_DCT32x32Inv_16sT_px(pred, predPitch, dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
         }
     }
     else
@@ -78,24 +81,24 @@ void InverseTransform(CoeffsPtr coeff, DstCoeffsType* dst, size_t dstPitch, Ipp3
         {
             if (Mode != REG_DCT)
             {
-                MFX_HEVC_PP::NAME(h265_DST4x4Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+                MFX_HEVC_PP::NAME(h265_DST4x4Inv_16sT)(pred, predPitch, dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
             }
             else
             {
-                MFX_HEVC_PP::NAME(h265_DCT4x4Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+                MFX_HEVC_PP::NAME(h265_DCT4x4Inv_16sT)(pred, predPitch, dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
             }
         }
         else if (Size == 8)
         {
-            MFX_HEVC_PP::NAME(h265_DCT8x8Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+            MFX_HEVC_PP::NAME(h265_DCT8x8Inv_16sT)(pred, predPitch, dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
         }
         else if (Size == 16)
         {
-            MFX_HEVC_PP::NAME(h265_DCT16x16Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+            MFX_HEVC_PP::NAME(h265_DCT16x16Inv_16sT)(pred, predPitch, dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
         }
         else if (Size == 32)
         {
-            MFX_HEVC_PP::NAME(h265_DCT32x32Inv_16sT)(dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
+            MFX_HEVC_PP::NAME(h265_DCT32x32Inv_16sT)(pred, predPitch, dst, coeff, (Ipp32s)dstPitch, inplace, bit_depth);
         }
     }
 }

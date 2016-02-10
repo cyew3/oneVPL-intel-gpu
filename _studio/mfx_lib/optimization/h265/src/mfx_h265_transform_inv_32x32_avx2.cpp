@@ -52,12 +52,12 @@ namespace MFX_HEVC_PP
 #define mm128(s)               _mm256_castsi256_si128(s)  // xmm = low(ymm)
 
     // load dst[0-15], expand to 16 bits, add current results, clip/pack to 8 bytes, save back
-#define SAVE_RESULT_16_BYTES(tmp, yy, addr) \
-    tmp = _mm256_cvtepu8_epi16(MM_LOAD_EPI128(&addr)); \
+#define SAVE_RESULT_16_BYTES(tmp, yy, pred, dst) \
+    tmp = _mm256_cvtepu8_epi16(MM_LOAD_EPI128(&pred)); \
     yy  = _mm256_add_epi16(yy, tmp); \
     yy  = _mm256_packus_epi16(yy, yy); \
     yy  = _mm256_permute4x64_epi64(yy, 8); \
-    _mm_storeu_si128((__m128i *)&addr, _mm256_castsi256_si128(yy));
+    _mm_storeu_si128((__m128i *)&dst, _mm256_castsi256_si128(yy));
 
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -216,8 +216,8 @@ namespace MFX_HEVC_PP
 #endif
 
 
-template <int bitDepth, typename DstCoeffsType, bool inplace>
-static void h265_DCT32x32Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_RESTRICT coeff, int destStride)
+template <int bitDepth, typename PredPixType, typename DstCoeffsType, bool inplace>
+static void h265_DCT32x32Inv_16sT_Kernel(const PredPixType *pred, int predStride, DstCoeffsType *dst, const short *H265_RESTRICT coeff, int destStride)
 {
         const int SHIFT_INV_2ND = (SHIFT_INV_2ND_BASE - (bitDepth - 8));
         ALIGN_DECL(32) __m128i buffr[32*32];
@@ -677,16 +677,17 @@ static void h265_DCT32x32Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_R
                 y1 = _mm256_permute2x128_si256(y1, y0, 0x31); // d1 c1 (high parts)
 
                 if (inplace && sizeof(DstCoeffsType) == 1) {
-                    SAVE_RESULT_16_BYTES(y0, y2, dst[ 0]);
-                    SAVE_RESULT_16_BYTES(y0, y7, dst[16]);
-                    SAVE_RESULT_16_BYTES(y0, y6, dst[destStride + 0]);
-                    SAVE_RESULT_16_BYTES(y0, y1, dst[destStride + 16]);
+                    SAVE_RESULT_16_BYTES(y0, y2, pred[0], dst[ 0]);
+                    SAVE_RESULT_16_BYTES(y0, y7, pred[16], dst[16]);
+                    SAVE_RESULT_16_BYTES(y0, y6, pred[predStride + 0], dst[destStride + 0]);
+                    SAVE_RESULT_16_BYTES(y0, y1, pred[predStride + 16], dst[destStride + 16]);
                     dst += destStride * 2;
+                    pred += predStride * 2;
                 } else if (inplace && sizeof(DstCoeffsType) == 2) {
-                    y0 = _mm256_loadu_si256((__m256i *)(&dst[0]));
-                    y3 = _mm256_loadu_si256((__m256i *)(&dst[16]));
-                    y4 = _mm256_loadu_si256((__m256i *)(&dst[destStride]));
-                    y5 = _mm256_loadu_si256((__m256i *)(&dst[destStride + 16]));
+                    y0 = _mm256_loadu_si256((__m256i *)(&pred[0]));
+                    y3 = _mm256_loadu_si256((__m256i *)(&pred[16]));
+                    y4 = _mm256_loadu_si256((__m256i *)(&pred[predStride]));
+                    y5 = _mm256_loadu_si256((__m256i *)(&pred[predStride + 16]));
 
                     y2 = _mm256_adds_epi16(y2, y0);
                     y7 = _mm256_adds_epi16(y7, y3);
@@ -706,40 +707,42 @@ static void h265_DCT32x32Inv_16sT_Kernel(DstCoeffsType *dst, const short *H265_R
                     _mm256_store_si256((__m256i *)&dst[destStride + 0], y6);
                     _mm256_store_si256((__m256i *)&dst[destStride + 16], y1);
                     dst += 2 * destStride;
+                    pred += 2 * predStride;
                 } else { // destSize == 2
                     _mm256_store_si256((__m256i *)&dst[ 0], y2);
                     _mm256_store_si256((__m256i *)&dst[16], y7);
                     _mm256_store_si256((__m256i *)&dst[destStride + 0], y6);
                     _mm256_store_si256((__m256i *)&dst[destStride + 16], y1);
                     dst += destStride * 2;
+                    pred += 2 * predStride;
                 }
             }
         }
 
     } // 
 
-void MAKE_NAME(h265_DCT32x32Inv_16sT)(void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth)
+void MAKE_NAME(h265_DCT32x32Inv_16sT)(void *pred, int predStride, void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth)
 {
     if (inplace) {
         switch (bitDepth) {
         case  8:
             if (inplace == 2)
-                h265_DCT32x32Inv_16sT_Kernel< 8, Ipp16u,  true >((Ipp16u *) destPtr, coeff, destStride);
+                h265_DCT32x32Inv_16sT_Kernel< 8, Ipp8u, Ipp16u,  true >((Ipp8u *)pred, predStride, (Ipp16u *) destPtr, coeff, destStride);
             else
-                h265_DCT32x32Inv_16sT_Kernel< 8, Ipp8u,  true >((Ipp8u *) destPtr, coeff, destStride);
+                h265_DCT32x32Inv_16sT_Kernel< 8, Ipp8u, Ipp8u,  true >((Ipp8u *)pred, predStride, (Ipp8u *) destPtr, coeff, destStride);
             break;
-        case  9: h265_DCT32x32Inv_16sT_Kernel< 9, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
-        case 10: h265_DCT32x32Inv_16sT_Kernel<10, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
-        case 11: h265_DCT32x32Inv_16sT_Kernel<11, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
-        case 12: h265_DCT32x32Inv_16sT_Kernel<12, Ipp16u, true >((Ipp16u *)destPtr, coeff, destStride); break;
+        case  9: h265_DCT32x32Inv_16sT_Kernel< 9, Ipp16u, Ipp16u, true >((Ipp16u *)pred, predStride, (Ipp16u *)destPtr, coeff, destStride); break;
+        case 10: h265_DCT32x32Inv_16sT_Kernel<10, Ipp16u, Ipp16u, true >((Ipp16u *)pred, predStride, (Ipp16u *)destPtr, coeff, destStride); break;
+        case 11: h265_DCT32x32Inv_16sT_Kernel<11, Ipp16u, Ipp16u, true >((Ipp16u *)pred, predStride, (Ipp16u *)destPtr, coeff, destStride); break;
+        case 12: h265_DCT32x32Inv_16sT_Kernel<12, Ipp16u, Ipp16u, true >((Ipp16u *)pred, predStride, (Ipp16u *)destPtr, coeff, destStride); break;
         }
     } else {
         switch (bitDepth) {
-        case  8: h265_DCT32x32Inv_16sT_Kernel< 8, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
-        case  9: h265_DCT32x32Inv_16sT_Kernel< 9, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
-        case 10: h265_DCT32x32Inv_16sT_Kernel<10, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
-        case 11: h265_DCT32x32Inv_16sT_Kernel<11, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
-        case 12: h265_DCT32x32Inv_16sT_Kernel<12, Ipp16s, false>((Ipp16s *)destPtr, coeff, destStride); break;
+        case  8: h265_DCT32x32Inv_16sT_Kernel< 8, Ipp8u, Ipp16s, false>((Ipp8u *)NULL, 0, (Ipp16s *)destPtr, coeff, destStride); break;
+        case  9: h265_DCT32x32Inv_16sT_Kernel< 9, Ipp8u, Ipp16s, false>((Ipp8u *)NULL, 0, (Ipp16s *)destPtr, coeff, destStride); break;
+        case 10: h265_DCT32x32Inv_16sT_Kernel<10, Ipp8u, Ipp16s, false>((Ipp8u *)NULL, 0, (Ipp16s *)destPtr, coeff, destStride); break;
+        case 11: h265_DCT32x32Inv_16sT_Kernel<11, Ipp8u, Ipp16s, false>((Ipp8u *)NULL, 0, (Ipp16s *)destPtr, coeff, destStride); break;
+        case 12: h265_DCT32x32Inv_16sT_Kernel<12, Ipp8u, Ipp16s, false>((Ipp8u *)NULL, 0, (Ipp16s *)destPtr, coeff, destStride); break;
         }
     }
 }
