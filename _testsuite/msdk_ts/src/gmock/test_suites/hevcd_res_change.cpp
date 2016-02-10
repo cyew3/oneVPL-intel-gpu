@@ -76,6 +76,7 @@ public:
         surf_pool      = 0;
         m_ses          = 0;
         surf_pool_size = 0;
+        m_pVAHandle    = 0;
         memset(&bs,0,sizeof(bs));
 
         Init();
@@ -129,6 +130,30 @@ public:
     }
 
 private:
+    mfxStatus SetVAHandle()
+    {
+        mfxStatus sts = MFX_ERR_NONE;
+#if (defined(LINUX32) || defined(LINUX64))
+        // SetHandle on Linux is always required for HW
+        if (g_tsImpl != MFX_IMPL_SOFTWARE)
+        {
+            mfxHDL hdl;
+            mfxHandleType type;
+            if (!m_pVAHandle)
+            {
+                m_pVAHandle = new frame_allocator(
+                        frame_allocator::HARDWARE,
+                        frame_allocator::ALLOC_MAX,
+                        frame_allocator::ENABLE_ALL,
+                        frame_allocator::ALLOC_EMPTY);
+            }
+            m_pVAHandle->get_hdl(type, hdl);
+            sts = MFXVideoCORE_SetHandle(m_ses, type, hdl);
+        }
+#endif
+        return sts;
+    }
+
     mfxStatus Init()
     {
         memset(&bs, 0, sizeof(bs));
@@ -136,6 +161,9 @@ private:
 
         mfxStatus sts = MFXInit(MFX_IMPL_AUTO_ANY, 0, &m_ses);
         EXPECT_EQ_THROW(MFX_ERR_NONE, sts, "ERROR: Failed to Init MFX session of a verification instance of a decoder\n");
+
+        sts = SetVAHandle();
+        EXPECT_EQ_THROW(MFX_ERR_NONE, sts, "ERROR: Failed to SetHandle in a verification instance of a decoder\n");
 
         mfxVideoParam par = {};
         par.mfx.CodecId = CodecId;
@@ -200,6 +228,11 @@ private:
             surf_pool = 0;
             surf_pool_size = 0;
         }
+        if(m_pVAHandle)
+        {
+            delete m_pVAHandle;
+            m_pVAHandle = 0;
+        }
         return MFX_ERR_NONE;
     }
 
@@ -256,6 +289,7 @@ private:
         return 0;
     }
 
+    frame_allocator*  m_pVAHandle;
     tsBitstreamReader reader;
     mfxBitstream      bs;
     mfxFrameSurface1* surf_pool;
