@@ -34,6 +34,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPreEn
     DUMP_FIELD(DisableStatisticsOutput);
     DUMP_FIELD(Enable8x8Stat);
     DUMP_FIELD(PictureType);
+    DUMP_FIELD(DownsampleInput);
     DUMP_FIELD_RESERVED(reserved);
 
     return str;
