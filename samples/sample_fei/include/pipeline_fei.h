@@ -335,6 +335,7 @@ protected:
     mfxStatus ResetBuffers();
     mfxStatus ProcessLastB();
     mfxU32 CountUnencodedFrames();
+    mfxU16 GetCurPicType(mfxU32 fieldId);
 
     std::list<iTask*>::iterator ReorderFrame(std::list<iTask*>& unencoded_queue);
     mfxU32 CountFutureRefs(mfxU32 frameOrder);
@@ -405,6 +406,6 @@ bool compareL0Distortion(std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncM
 bool compareL1Distortion(std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> frst,
     std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> scnd);
 
-const char* getPicType(mfxU8 type);
+const char* getFrameType(mfxU8 type);
 
 #endif // __PIPELINE_FEI_H__

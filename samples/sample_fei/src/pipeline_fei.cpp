@@ -1852,8 +1852,7 @@ mfxStatus CEncodingPipeline::InitInterfaces()
 
                 preENCCtr[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_CTRL;
                 preENCCtr[fieldId].Header.BufferSz = sizeof(mfxExtFeiPreEncCtrl);
-                preENCCtr[fieldId].PictureType = (mfxU16)(!m_isField ? MFX_PICTYPE_FRAME :
-                    fieldId == 0 ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD);
+                preENCCtr[fieldId].PictureType             = GetCurPicType(fieldId);
                 preENCCtr[fieldId].RefPictureType[0]       = preENCCtr[fieldId].PictureType;
                 preENCCtr[fieldId].RefPictureType[1]       = preENCCtr[fieldId].PictureType;
                 preENCCtr[fieldId].DisableMVOutput         = m_disableMVoutPreENC;
@@ -3346,6 +3345,19 @@ mfxStatus CEncodingPipeline::ProcessLastB()
     }
 
     return MFX_ERR_NONE;
+}
+
+inline mfxU16 CEncodingPipeline::GetCurPicType(mfxU32 fieldId)
+{
+    if (!m_isField)
+        return MFX_PICTYPE_FRAME;
+    else
+    {
+        if (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF)
+            return fieldId ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD;
+        else
+            return fieldId ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD;
+    }
 }
 
 /* get reference frames */
@@ -5389,7 +5401,7 @@ mfxStatus CEncodingPipeline::VPPOneFrame(MFXVideoVPP* VPPobj, MFXVideoSession* s
 
 /* Info printing */
 
-const char* getPicType(mfxU8 type)
+const char* getFrameType(mfxU8 type)
 {
     switch (type & MFX_FRAMETYPE_IPB) {
         case MFX_FRAMETYPE_I:

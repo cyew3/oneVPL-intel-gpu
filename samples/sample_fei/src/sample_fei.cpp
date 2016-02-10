@@ -792,7 +792,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (pParams->bENCPAK && !pParams->bPassHeaders && (pParams->nIdrInterval || pParams->bRefType != MFX_B_REF_OFF)){
+    if ((pParams->bENCPAK || pParams->bOnlyENC || pParams->bOnlyPAK) && !pParams->bPassHeaders && (pParams->nIdrInterval || pParams->bRefType != MFX_B_REF_OFF)){
         if (bIDRintSet || pParams->bRefType == MFX_B_REF_PYRAMID){
             msdk_printf(MSDK_STRING("\nWARNING: Specified B-pyramid/IDR-interval control(s) for ENC+PAK would be ignored!\n"));
             msdk_printf(MSDK_STRING("           Please use them together with -pass_headers option\n"));
@@ -802,7 +802,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         pParams->nIdrInterval = 0;
     }
 
-    if (pParams->bENCPAK /*&& (pParams->nPicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF))*/ && !pParams->bPassHeaders){
+    if ((pParams->bENCPAK || pParams->bOnlyENC || pParams->bOnlyPAK) /*&& (pParams->nPicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF))*/ && !pParams->bPassHeaders){
         msdk_printf(MSDK_STRING("\nWARNING: ENCPAK uses SliceHeader to store references; -pass_headers flag forced.\n"));
 
         pParams->bPassHeaders = true;
@@ -1002,10 +1002,11 @@ mfxStatus CheckOptions(sInputParams* pParams)
         sts = MFX_ERR_UNSUPPORTED;
     }
 
+    /*
     if (pParams->bPREENC && pParams->nPicStruct == MFX_PICSTRUCT_FIELD_BFF) {
         fprintf(stderr, "Preenc doesn't support bff, use tff\n");
         sts = MFX_ERR_UNSUPPORTED;
-    }
+    } */
 
     if (!pParams->bENCODE && pParams->memType == SYSTEM_MEMORY) {
         fprintf(stderr, "Only ENCODE supports SW memory\n");
