@@ -518,6 +518,8 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         m_statParams.input.flags = VA_PICTURE_FEI_PROGRESSIVE;
     else /* This is disallowed to mix, surface types should be on Init() and within runtime */
         return MFX_ERR_INVALID_VIDEO_PARAM;
+    if (!IsOff(feiCtrl->DownsampleInput))
+        m_statParams.input.flags |= VA_PICTURE_FEI_CONTENT_UPDATED;
     m_statParams.inter_sad = feiCtrl->InterSAD;
     m_statParams.intra_sad = feiCtrl->IntraSAD;
     m_statParams.len_sp = feiCtrl->LenSP;
@@ -531,8 +533,6 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     m_statParams.enable_8x8statistics = feiCtrl->Enable8x8Stat;
     m_statParams.intra_part_mask = feiCtrl->IntraPartMask;
 
-    // TODO: for now MSDK always initiates downscaling of PREENC input surface
-    m_statParams.input.flags |= VA_PICTURE_FEI_CONTENT_UPDATED;
 #if 0
     mdprintf(stderr, "\n**** stat params:\n");
     mdprintf(stderr, "input {pic_id = %d, flag = %d}\n", m_statParams.input.picture_id, m_statParams.input.flags);
