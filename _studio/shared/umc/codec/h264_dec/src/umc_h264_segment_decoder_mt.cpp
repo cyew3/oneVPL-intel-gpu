@@ -1179,7 +1179,16 @@ void H264SegmentDecoderMultiThreaded::ReconstructDirectMotionVectorsSpatial(bool
         m_cur_mb.GlobalMacroblockInfo->mbtype = MBTYPE_BIDIR;
     }
 
-    if (isDirectMB && !(*(Ipp32u*)&mvL0) && !(*(Ipp32u*)&mvL1))
+    union UmvL
+    {
+        H264DecoderMotionVector mvL;
+        Ipp32u ippMvL;
+    };
+
+    UmvL uMvL0 = {mvL0};
+    UmvL uMvL1 = {mvL1};
+
+    if (isDirectMB && !uMvL0.ippMvL && !uMvL1.ippMvL)
     {
         fill_n<H264DecoderMotionVector>(pFwdMV, 16, mvL0);
         fill_n<H264DecoderMotionVector>(pBwdMV, 16, mvL1);

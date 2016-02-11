@@ -280,8 +280,8 @@ bool H264ThreadedDeblockingTools::IsDeblockingDone(void)
 H264Slice::H264Slice(MemoryAllocator *pMemoryAllocator)
     : m_pSeqParamSet(0)
     , m_coeffsBuffers(0)
-    , m_pMemoryAllocator(pMemoryAllocator)
     , m_bInited(false)
+    , m_pMemoryAllocator(pMemoryAllocator)
 {
     Reset();
 } // H264Slice::H264Slice()

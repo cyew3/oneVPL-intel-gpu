@@ -1249,9 +1249,13 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice4MBAFFField(Ipp32u dir
         else
         {
             if (HORIZONTAL_DEBLOCKING == dir)
+            {
                 SetEdgeStrength(pStrength + 0, 3);
+            }
             else
+            {
                 SetEdgeStrength(pStrength + 0, 4);
+            }
             *pDeblockingFlag = 1;
         }
     }
@@ -1518,9 +1522,13 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice4MBAFFField(Ipp32u dir
         else
         {
             if (HORIZONTAL_DEBLOCKING == dir)
+            {
                 SetEdgeStrength(pStrength + 0, 3);
+            }
             else
+            {
                 SetEdgeStrength(pStrength + 0, 4);
+            }
             *pDeblockingFlag = 1;
         }
     }

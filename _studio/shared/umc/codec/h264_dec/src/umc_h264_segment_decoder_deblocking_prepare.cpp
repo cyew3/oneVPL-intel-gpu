@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -109,12 +109,20 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice()
         break;
     }
 
-    if (m_deblockingParams.ExternalEdgeFlag[VERTICAL_DEBLOCKING] && !(*((Ipp32u *)(m_deblockingParams.Strength[VERTICAL_DEBLOCKING]))))
+    union
+    {
+        Ipp8u *Strength;
+        Ipp32u *edge;
+    } u;
+
+    u.Strength = m_deblockingParams.Strength[VERTICAL_DEBLOCKING];
+    if (m_deblockingParams.ExternalEdgeFlag[VERTICAL_DEBLOCKING] && !(*u.edge))
     {
         m_deblockingParams.ExternalEdgeFlag[VERTICAL_DEBLOCKING] = 0;
     }
 
-    if (m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING] && !(*((Ipp32u *)(m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING]))))
+    u.Strength = m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING];
+    if (m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING] && !(*u.edge))
     {
         m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING] = 0;
     }
@@ -166,12 +174,19 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice()
     }
 
     if (af) {
-        if (m_deblockingParams.ExternalEdgeFlag[VERTICAL_DEBLOCKING] && !(*((Ipp32u *)(m_deblockingParams.Strength[VERTICAL_DEBLOCKING]))))
+        union
+        {
+            Ipp8u *Strength;
+            Ipp32u *edge;
+        } u;
+        u.Strength = m_deblockingParams.Strength[VERTICAL_DEBLOCKING];
+        if (m_deblockingParams.ExternalEdgeFlag[VERTICAL_DEBLOCKING] && !(*u.edge))
         {
             m_deblockingParams.ExternalEdgeFlag[VERTICAL_DEBLOCKING] = 0;
         }
 
-        if (m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING] && !(*((Ipp32u *)(m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING]))))
+        u.Strength = m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING];
+        if (m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING] && !(*u.edge))
         {
             m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING] = 0;
         }
@@ -625,9 +640,13 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice4(Ipp32u dir)
         {
             if ((HORIZONTAL_DEBLOCKING == dir) &&
                 (m_deblockingParams.MBFieldCoded))
+            {
                 SetEdgeStrength(pStrength + 0, 3);
+            }
             else
+            {
                 SetEdgeStrength(pStrength + 0, 4);
+            }
             *pDeblockingFlag = 1;
         }
     }
@@ -933,9 +952,13 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice16x16Horz()
         else
         {
             if (m_deblockingParams.MBFieldCoded)
+            {
                 SetEdgeStrength(pStrength + 0, 3);
+            }
             else
+            {
                 SetEdgeStrength(pStrength + 0, 4);
+            }
             iDeblockingFlag = 1;
         }
     }
@@ -1681,9 +1704,13 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice4(Ipp32u dir)
         {
             if ((HORIZONTAL_DEBLOCKING == dir) &&
                 (m_deblockingParams.MBFieldCoded))
+            {
                 SetEdgeStrength(pStrength + 0, 3);
+            }
             else
+            {
                 SetEdgeStrength(pStrength + 0, 4);
+            }
             *pDeblockingFlag = 1;
         }
     }
@@ -2064,9 +2091,13 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x16Horz()
         else
         {
             if (m_deblockingParams.MBFieldCoded)
+            {
                 SetEdgeStrength(pStrength + 0, 3);
+            }
             else
+            {
                 SetEdgeStrength(pStrength + 0, 4);
+            }
             iDeblockingFlag = 1;
         }
     }
@@ -2306,9 +2337,13 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(Ipp32u dir)
         {
             if ((HORIZONTAL_DEBLOCKING == dir) &&
                 (m_deblockingParams.MBFieldCoded))
+            {
                 SetEdgeStrength(pStrength + 0, 3);
+            }
             else
+            {
                 SetEdgeStrength(pStrength + 0, 4);
+            }
             *pDeblockingFlag = 1;
         }
     }
@@ -2726,9 +2761,13 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice8x16(Ipp32u dir)
         {
             if ((HORIZONTAL_DEBLOCKING == dir) &&
                 (m_deblockingParams.MBFieldCoded))
+            {
                 SetEdgeStrength(pStrength + 0, 3);
+            }
             else
+            {
                 SetEdgeStrength(pStrength + 0, 4);
+            }
             *pDeblockingFlag = 1;
         }
     }
