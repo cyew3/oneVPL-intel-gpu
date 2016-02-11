@@ -172,6 +172,12 @@ namespace MfxHwH264Encode
             mfxU32    fieldId);
 
         virtual
+        mfxStatus QueryStatusFEI(
+            DdiTask const & task,
+            mfxU32  feiFieldId,
+            ExtVASurface const & curFeedback);
+
+        virtual
         mfxStatus Destroy();
 
         void ForceCodingFunction (mfxU16 /*codingFunction*/)

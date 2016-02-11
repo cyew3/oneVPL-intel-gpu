@@ -148,6 +148,7 @@ Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 #endif // #if defined (MFX_VA)
 
 #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
+//#define SYNCHRONIZATION_BY_VA_MAP_BUFFER
 
 #if defined(AS_H264LA_PLUGIN)
     #undef MFX_ENABLE_MJPEG_VIDEO_DECODE
