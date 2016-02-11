@@ -71,7 +71,7 @@ BEGIN
             VALUE "FileDescription", "Intel® Raw Media Accelerator Plug-in"
             VALUE "FileVersion", "5.14.4.17"
             VALUE "InternalName", "mfxplugin_camera_pipe"
-            VALUE "LegalCopyright", "Copyright© 2014-2015 Intel Corporation"
+            VALUE "LegalCopyright", "Copyright© 2014-2016 Intel Corporation"
             VALUE "OriginalFilename", "mfxplugin_camera_pipe"
             VALUE "ProductName", "Intel® Raw Media Accelerator"
             VALUE "ProductVersion", "1.9.1"

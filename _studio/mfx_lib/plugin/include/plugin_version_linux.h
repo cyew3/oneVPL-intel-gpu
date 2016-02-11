@@ -32,7 +32,7 @@ File Name: plugin_version_linux.h
 
 
 const char* g_MfxProductName = "mediasdk_product_name: " MFX_PLUGIN_PRODUCT_NAME;
-const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2007-2015 Intel Corporation";
+const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2007-2016 Intel Corporation";
 
 #if defined(HEVCD_EVALUATION) || defined(HEVCE_EVALUATION)
 const char* g_MfxProductVersion = "mediasdk_product_version: " MFX_PLUGIN_PRODUCT_VERSION " Evaluation version";
