@@ -2677,7 +2677,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
             IsField = !m_implUmc.IsFramePictureStructure(m_task_num);
             if (m_task_num >= DPB && !IsField)
             {
-                int decrease_dec_field_count = dec_field_count % 2 ? 0 : 1;
+                int decrease_dec_field_count = dec_field_count % 2 == 0 ? 0 : 1;
                 Ipp32s previous_field = m_task_num - DPB;
                 MFX_CHECK_STS(RestoreDecoder(m_frame_curr, mid[previous_field], previous_field, NO_END_FRAME, REMOVE_LAST_2_FRAMES, decrease_dec_field_count))
                 return MFX_ERR_MORE_DATA;
