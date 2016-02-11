@@ -11,6 +11,8 @@
   <ItemGroup />
   <ItemDefinitionGroup>
     <Link>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <TargetMachine Condition="'$(Platform)'=='x64'">MachineX64</TargetMachine>
       <TargetMachine Condition="'$(Platform)'=='Win32'">MachineX86</TargetMachine>
       <SubSystem>Windows</SubSystem>
