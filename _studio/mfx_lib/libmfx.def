@@ -59,12 +59,15 @@ EXPORTS
     MFXVideoENC_Close
     MFXVideoENC_ProcessFrameAsync
 
-    MFXVideoPAK_Query;
-    MFXVideoPAK_QueryIOSurf;
-    MFXVideoPAK_Init;
-    MFXVideoPAK_Reset;
-    MFXVideoPAK_Close;
-    MFXVideoPAK_ProcessFrameAsync;
+    MFXVideoPAK_Query
+    MFXVideoPAK_QueryIOSurf
+    MFXVideoPAK_Init
+    MFXVideoPAK_Reset
+    MFXVideoPAK_Close
+    MFXVideoPAK_ProcessFrameAsync
 
-    MFXInitEx;
-    MFXDoWork;
+    MFXInitEx
+    MFXDoWork
+
+    MFXVideoENC_GetVideoParam
+    MFXVideoPAK_GetVideoParam
