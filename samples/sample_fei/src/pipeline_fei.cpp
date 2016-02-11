@@ -1182,6 +1182,7 @@ CEncodingPipeline::CEncodingPipeline()
 
     m_frameNumMax = 4;
     m_numOfFields = 1; // default is progressive case
+    m_isField     = false;
 
     m_frameCount = 0;
     m_frameOrderIdrInDisplayOrder = 0;
@@ -2209,20 +2210,21 @@ mfxStatus CEncodingPipeline::InitInterfaces()
 
                     // TODO: Implement real slice divider
                     // For now only one slice is supported
+                    mfxU16 nMBinSlice = m_numMB / feiSliceHeader[fieldId].NumSlice;
                     for (int numSlice = 0; numSlice < feiSliceHeader[fieldId].NumSlice; numSlice++)
                     {
-                        feiSliceHeader[fieldId].Slice->MBAaddress = 0;
-                        feiSliceHeader[fieldId].Slice->NumMBs     = m_numMB / feiSliceHeader[fieldId].NumSlice;
-                        feiSliceHeader[fieldId].Slice->SliceType  = 0;
-                        feiSliceHeader[fieldId].Slice->PPSId      = feiPPS ? feiPPS[fieldId].PPSId : 0;
-                        feiSliceHeader[fieldId].Slice->IdrPicId   = 0;
+                        feiSliceHeader[fieldId].Slice[numSlice].MBAaddress = numSlice*nMBinSlice;
+                        feiSliceHeader[fieldId].Slice[numSlice].NumMBs     = nMBinSlice;
+                        feiSliceHeader[fieldId].Slice[numSlice].SliceType  = 0;
+                        feiSliceHeader[fieldId].Slice[numSlice].PPSId      = feiPPS ? feiPPS[fieldId].PPSId : 0;
+                        feiSliceHeader[fieldId].Slice[numSlice].IdrPicId   = 0;
 
-                        feiSliceHeader[fieldId].Slice->CabacInitIdc = 0;
+                        feiSliceHeader[fieldId].Slice[numSlice].CabacInitIdc = 0;
                         mfxU32 initQP = (m_encpakParams.QP != 0) ? m_encpakParams.QP : 26;
-                        feiSliceHeader[fieldId].Slice->SliceQPDelta               = initQP - feiPPS[fieldId].PicInitQP;
-                        feiSliceHeader[fieldId].Slice->DisableDeblockingFilterIdc = m_encpakParams.DisableDeblockingIdc;
-                        feiSliceHeader[fieldId].Slice->SliceAlphaC0OffsetDiv2     = m_encpakParams.SliceAlphaC0OffsetDiv2;
-                        feiSliceHeader[fieldId].Slice->SliceBetaOffsetDiv2        = m_encpakParams.SliceBetaOffsetDiv2;
+                        feiSliceHeader[fieldId].Slice[numSlice].SliceQPDelta               = initQP - feiPPS[fieldId].PicInitQP;
+                        feiSliceHeader[fieldId].Slice[numSlice].DisableDeblockingFilterIdc = m_encpakParams.DisableDeblockingIdc;
+                        feiSliceHeader[fieldId].Slice[numSlice].SliceAlphaC0OffsetDiv2     = m_encpakParams.SliceAlphaC0OffsetDiv2;
+                        feiSliceHeader[fieldId].Slice[numSlice].SliceBetaOffsetDiv2        = m_encpakParams.SliceBetaOffsetDiv2;
                     }
                 }
 
@@ -2510,9 +2512,9 @@ mfxStatus CEncodingPipeline::Run()
     mfxFrameSurface1* pSurf = NULL; // dispatching pointer
     sTask *pCurrentTask     = NULL; // a pointer to the current task
 
-    m_widthMB  = ((m_encpakParams.nWidth  + 15) & ~15);
-    m_heightMB = ((m_encpakParams.nHeight + 15) & ~15);
-    m_numMB = m_widthMB * m_heightMB / 256;
+    //m_widthMB  = ((m_encpakParams.nWidth  + 15) & ~15);
+    //m_heightMB = ((m_encpakParams.nHeight + 15) & ~15);
+    //m_numMB = m_widthMB * m_heightMB / 256;
 
     /* if TFF or BFF*/
     if ((m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF) ||
@@ -2522,13 +2524,20 @@ mfxStatus CEncodingPipeline::Run()
         // For interlaced mode, may need an extra MB vertically
         // For example if the progressive mode has 45 MB vertically
         // The interlace should have 23 MB for each field
-        m_numMB = m_widthMB / 16 * (((m_heightMB / 16) + 1) / 2);
+        //m_numMB = m_widthMB / 16 * (((m_heightMB / 16) + 1) / 2);
+        m_isField = true;
     }
 
-    m_widthMB  /= 16;
-    m_heightMB /= 16;
+    //m_widthMB  /= 16;
+    //m_heightMB /= 16;
 
-    m_isField = (mfxU8)(m_numOfFields == 2);
+    m_widthMB  = MSDK_ALIGN16(m_encpakParams.nWidth);
+    m_heightMB = m_isField ? MSDK_ALIGN32(m_encpakParams.nHeight) : MSDK_ALIGN16(m_encpakParams.nHeight);
+    m_numMB = (m_widthMB * m_heightMB) >> 8;
+    m_numMB /= m_numOfFields;
+    m_widthMB  >>= 4;
+    m_heightMB >>= 4;
+
     m_ffid = m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF;
     m_sfid = m_isField - m_ffid;
 
