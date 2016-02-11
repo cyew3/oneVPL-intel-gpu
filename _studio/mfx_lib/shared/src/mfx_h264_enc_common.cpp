@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          H264 encoder common
@@ -205,7 +205,7 @@ UMC_H264_ENCODER::MBTypeValue ConvertMBTypeToUMC(const mfxMbCodeAVC& mbCode, boo
 
 mfxI64 CalculateDTSFromPTS_H264enc(mfxFrameInfo info, mfxU16 dpb_output_delay, mfxU64 TimeStamp)
 {
-    if (TimeStamp != MFX_TIMESTAMP_UNKNOWN)
+    if (TimeStamp != static_cast<mfxU64>(MFX_TIMESTAMP_UNKNOWN))
     {
         mfxF64 tcDuration90KHz = (mfxF64)info.FrameRateExtD / (info.FrameRateExtN * 2) * 90000; // calculate tick duration
         return mfxI64(TimeStamp - tcDuration90KHz * dpb_output_delay); // calculate DTS from PTS
@@ -785,12 +785,12 @@ mfxStatus ConvertVideoParam_H264enc( mfxVideoInternalParam *parMFX, UMC::H264Enc
         {
             parUMC->transform_8x8_mode_flag = 0;
         }
-        else if (parUMC->profile_idc == MFX_PROFILE_AVC_SCALABLE_BASELINE)
+        else if (parUMC->profile_idc == static_cast<int>(MFX_PROFILE_AVC_SCALABLE_BASELINE))
         {
             //parUMC->transform_8x8_mode_flag = 0;
             parUMC->treat_B_as_reference = 0; // doesn't work in SVC
         }
-        else if (parUMC->profile_idc == MFX_PROFILE_AVC_SCALABLE_HIGH)
+        else if (parUMC->profile_idc == static_cast<int>(MFX_PROFILE_AVC_SCALABLE_HIGH))
         {
             parUMC->treat_B_as_reference = 0; // doesn't work in SVC
         }
@@ -850,8 +850,8 @@ mfxStatus ConvertVideoParam_H264enc( mfxVideoInternalParam *parMFX, UMC::H264Enc
         parUMC->num_ref_frames = IPP_MAX(parUMC->num_ref_frames, 2);
     parUMC->num_ref_to_start_code_B_slice = 1;
 
-    if (parUMC->profile_idc != MFX_PROFILE_AVC_SCALABLE_BASELINE &&
-        parUMC->profile_idc != MFX_PROFILE_AVC_SCALABLE_HIGH) // doesn't work in SVC
+    if (parUMC->profile_idc != static_cast<int>(MFX_PROFILE_AVC_SCALABLE_BASELINE) &&
+        parUMC->profile_idc != static_cast<int>(MFX_PROFILE_AVC_SCALABLE_HIGH)) // doesn't work in SVC
     if (parMFX->mfx.GopRefDist > 3 && (parUMC->num_ref_frames > ((parMFX->mfx.GopRefDist - 1) / 2 + 1))) { // enable B-refs
         parUMC->treat_B_as_reference = 1;
     }
@@ -1154,7 +1154,7 @@ mfxStatus LoadSPSPPS(const mfxVideoParam* in, H264SeqParamSet& seq_parms, H264Pi
     memset(&seq_parms, 0, sizeof(seq_parms));
     memset(&pic_parms, 0, sizeof(pic_parms));
 
-    if(opt == 0 || !(opt->SPSBuffer && opt->SPSBufSize) && !(opt->PPSBuffer && opt->PPSBufSize))
+    if(opt == 0 || (!(opt->SPSBuffer && opt->SPSBufSize) && !(opt->PPSBuffer && opt->PPSBufSize)))
         BS_FREE_RETURN(MFX_ERR_NOT_FOUND)
 
     if (opt->SPSBuffer || opt->PPSBuffer)
@@ -1835,6 +1835,7 @@ mfxStatus CorrectProfileLevel_H264enc(mfxVideoInternalParam *parMFX, bool queryM
     frameRate = CalculateUMCFramerate(parMFX->mfx.FrameInfo.FrameRateExtN, parMFX->mfx.FrameInfo.FrameRateExtD);
 
     if (frameRate <= 0)
+    {
         if (!queryMode)
             return MFX_ERR_INVALID_VIDEO_PARAM;
         else {
@@ -1849,12 +1850,13 @@ mfxStatus CorrectProfileLevel_H264enc(mfxVideoInternalParam *parMFX, bool queryM
             }
             return MFX_ERR_NONE;
         }
+    }
 
     // no correction for target bitrate, max bitrate, CPB size for const QP
     if (parMFX->mfx.RateControlMethod != MFX_RATECONTROL_CQP) {
         targetBitrate = parMFX->calcParam.TargetKbps * 1000;
         // HRD-conformance required
-        if (!opts || opts && opts->NalHrdConformance != MFX_CODINGOPTION_OFF) {
+        if (!opts || (opts && opts->NalHrdConformance != MFX_CODINGOPTION_OFF)) {
             bufSizeBits = (parMFX->calcParam.BufferSizeInKB * 1000) << 3;
             maxBitrate = parMFX->calcParam.MaxKbps * 1000;
         }
@@ -1874,7 +1876,7 @@ mfxStatus CorrectProfileLevel_H264enc(mfxVideoInternalParam *parMFX, bool queryM
 
     // Correction for TargetBitrate, MaxBitrate and BufferSize if not const QP and HRD-conformance required
     if (parMFX->mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
-        (!opts || opts && opts->NalHrdConformance != MFX_CODINGOPTION_OFF)) {
+        (!opts || (opts && opts->NalHrdConformance != MFX_CODINGOPTION_OFF))) {
         if (parMFX->mfx.RateControlMethod == MFX_RATECONTROL_CBR)
             maxBitrate = targetBitrate;
 
@@ -1893,7 +1895,7 @@ mfxStatus CorrectProfileLevel_H264enc(mfxVideoInternalParam *parMFX, bool queryM
         else
             bitsPerFrame = (Ipp32s)(targetBitrate / frameRate);
 
-        if (bufSizeBits > 0 && bufSizeBits < (bitsPerFrame << 1))
+        if (bufSizeBits > 0 && bufSizeBits < static_cast<Ipp64u>(bitsPerFrame << 1))
         {
             bufSizeBits = (bitsPerFrame << 1);
             // fix if specified too small (why not later?)
@@ -1914,7 +1916,7 @@ mfxStatus CorrectProfileLevel_H264enc(mfxVideoInternalParam *parMFX, bool queryM
         // if CodecLevel and BufferSizeInKB undefined then use level 4.1 for fast encoding with huge CPB (if not const QP and HRD-conformance required)
         if (!queryMode && parMFX->mfx.TargetUsage == MFX_TARGETUSAGE_BEST_SPEED && bufSizeBits == 0 &&
             parMFX->mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
-            (!opts || opts && opts->NalHrdConformance != MFX_CODINGOPTION_OFF))
+            (!opts || (opts && opts->NalHrdConformance != MFX_CODINGOPTION_OFF)))
             level_ind = H264_LIMIT_TABLE_LEVEL_41;
         else
             level_ind = H264_LIMIT_TABLE_LEVEL_1;
@@ -1922,7 +1924,7 @@ mfxStatus CorrectProfileLevel_H264enc(mfxVideoInternalParam *parMFX, bool queryM
 
     // Adjusting of target bitrate, max bitrate, CPB size, profile (if not const QP and HRD-conformance required)
     if (parMFX->mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
-        (!opts || opts && opts->NalHrdConformance != MFX_CODINGOPTION_OFF)) {
+        (!opts || (opts && opts->NalHrdConformance != MFX_CODINGOPTION_OFF))) {
         // If !queryMode set undefined of MaxBitrate, BufferSize to appropriate values for profile/level (by table A-1)
         // If queryMode just prepare profile/level for further correction
         if (!queryMode)
@@ -2028,7 +2030,7 @@ mfxStatus CorrectProfileLevel_H264enc(mfxVideoInternalParam *parMFX, bool queryM
             MB_per_sec > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_MBPS] ||
             maxBitrate > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_BR] ||
             bufSizeBits > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_CPB] ||
-            opts && opts->MVSearchWindow.y > 2*LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_MVV] ||
+            (opts && static_cast<unsigned int>(opts->MVSearchWindow.y) > 2*LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_MVV]) ||
             (!(parMFXSetByTU && parMFXSetByTU->mfx.NumRefFrame) && (DPBSize > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_DPB])))
     {
         if (level_ind == H264_LIMIT_TABLE_LEVEL_MAX) {
@@ -2121,7 +2123,7 @@ mfxStatus CorrectProfileLevel_H264enc(mfxVideoInternalParam *parMFX, bool queryM
         }
     }
     // zero BufferSizeInKB in Init for const QP and encoding w/o HRD
-    else if (parMFX->mfx.RateControlMethod == MFX_RATECONTROL_CQP || opts && opts->NalHrdConformance == MFX_CODINGOPTION_OFF)
+    else if (parMFX->mfx.RateControlMethod == MFX_RATECONTROL_CQP || (opts && opts->NalHrdConformance == MFX_CODINGOPTION_OFF))
         parMFX->calcParam.BufferSizeInKB = 0;
 
     return st;
@@ -2202,7 +2204,7 @@ mfxStatus CheckProfileLevelLimits_H264enc(mfxVideoInternalParam *parMFX, bool qu
     if (parMFX->mfx.RateControlMethod != MFX_RATECONTROL_CQP) {
         targetBitrate = parMFX->calcParam.TargetKbps * 1000;
         // HRD-conformance required
-        if (!opts || opts && opts->NalHrdConformance != MFX_CODINGOPTION_OFF) {
+        if (!opts || (opts && opts->NalHrdConformance != MFX_CODINGOPTION_OFF)) {
             bufSizeBits = (parMFX->calcParam.BufferSizeInKB * 1000) << 3;
             maxBitrate = parMFX->calcParam.MaxKbps * 1000;
         }
@@ -2232,7 +2234,7 @@ mfxStatus CheckProfileLevelLimits_H264enc(mfxVideoInternalParam *parMFX, bool qu
 
     // Correction for TargetBitrate, MaxBitrate and BufferSize if not const QP and HRD-conformance required
     if (parMFX->mfx.RateControlMethod != MFX_RATECONTROL_CQP &&
-        (!opts || opts && opts->NalHrdConformance != MFX_CODINGOPTION_OFF)) {
+        (!opts || (opts && opts->NalHrdConformance != MFX_CODINGOPTION_OFF))) {
         if (parMFX->mfx.RateControlMethod == MFX_RATECONTROL_CBR)
             maxBitrate = targetBitrate;
 
@@ -2251,7 +2253,7 @@ mfxStatus CheckProfileLevelLimits_H264enc(mfxVideoInternalParam *parMFX, bool qu
         else
             bitsPerFrame = (Ipp32s)(targetBitrate / frameRate);
 
-        if (bufSizeBits > 0 && bufSizeBits < (bitsPerFrame << 1))
+        if (bufSizeBits > 0 && bufSizeBits < static_cast<Ipp64u>(bitsPerFrame << 1))
         {
             bufSizeBits = (bitsPerFrame << 1);
             parMFX->calcParam.BufferSizeInKB = (mfxU32)((bufSizeBits >> 3)/ 1000);
@@ -2291,7 +2293,7 @@ mfxStatus CheckProfileLevelLimits_H264enc(mfxVideoInternalParam *parMFX, bool qu
         }
     }
 
-    if (opts && opts->MVSearchWindow.y > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_MVV]) {
+    if (opts && static_cast<unsigned int>(opts->MVSearchWindow.y) > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_MVV]) {
         opts->MVSearchWindow.y = (mfxI16)LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_MVV];
         st = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }else if (opts && opts->MVSearchWindow.y < -(mfxI16)LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_MVV]) {
@@ -2402,7 +2404,7 @@ mfxStatus CheckProfileLevelLimits_H264enc(mfxVideoInternalParam *parMFX, bool qu
         }
     }
     // zero BufferSizeInKB in Init for const QP and encoding w/o HRD
-    else if (parMFX->mfx.RateControlMethod == MFX_RATECONTROL_CQP || opts && opts->NalHrdConformance == MFX_CODINGOPTION_OFF)
+    else if (parMFX->mfx.RateControlMethod == MFX_RATECONTROL_CQP || (opts && opts->NalHrdConformance == MFX_CODINGOPTION_OFF))
         parMFX->calcParam.BufferSizeInKB = 0;
         
 
@@ -2427,7 +2429,7 @@ void RejectPrevRefsEncOrder(
         if (IsRejected(fr->m_FrameTag, pRefPicListCtrl) || H264EncoderFrame_isLongTermRef0_8u16s(fr) ||
             fr->m_EncFrameCount >= curFrm->m_LastIframeEncCount)
             continue;
-        while (pRefPicListCtrl->RejectedRefList[j].FrameOrder != MFX_FRAMEORDER_UNKNOWN)
+        while (pRefPicListCtrl->RejectedRefList[j].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN))
             j++;
         // reject ref frame from previous GOP
         pRefPicListCtrl->RejectedRefList[j++].FrameOrder = fr->m_FrameTag;
@@ -2457,7 +2459,7 @@ void RejectPastRefs(
             IsRejected(fr->m_FrameTag, pRefPicListCtrl) || IsPreferred(fr->m_FrameTag, pRefPicListCtrl) ||
             H264EncoderFrame_isLongTermRef0_8u16s(fr))
             continue;
-        while (pRefPicListCtrl->RejectedRefList[j].FrameOrder != MFX_FRAMEORDER_UNKNOWN)
+        while (pRefPicListCtrl->RejectedRefList[j].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN))
             j++;
         pRefPicListCtrl->RejectedRefList[j++].FrameOrder = fr->m_FrameTag;
     }
@@ -2480,7 +2482,7 @@ void RejectFutureRefs(
             IsRejected(fr->m_FrameTag, pRefPicListCtrl) || IsPreferred(fr->m_FrameTag, pRefPicListCtrl) ||
             H264EncoderFrame_isLongTermRef0_8u16s(fr))
             continue;
-        while (pRefPicListCtrl->RejectedRefList[j].FrameOrder != MFX_FRAMEORDER_UNKNOWN)
+        while (pRefPicListCtrl->RejectedRefList[j].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN))
             j++;
         pRefPicListCtrl->RejectedRefList[j++].FrameOrder = fr->m_FrameTag;
     }
@@ -2661,7 +2663,7 @@ void SetUMCFrame(H264EncoderFrame_8u16s* umcFrame, mfxExtAvcRefFrameParam* cucFr
                 mfxI8 field = sliceInfo.RefPicList[0][ref] >> 7;
                 if (idx < 16)
                 {
-                    poc0[ref] = refPicInfo.FieldOrderCntList[idx][field];
+                    poc0[ref] = refPicInfo.FieldOrderCntList[idx][static_cast<int>(field)];
                     fld0[ref] = field;
                 }
 
@@ -2669,7 +2671,7 @@ void SetUMCFrame(H264EncoderFrame_8u16s* umcFrame, mfxExtAvcRefFrameParam* cucFr
                 field = sliceInfo.RefPicList[1][ref] >> 7;
                 if (idx < 16)
                 {
-                    poc1[ref] = refPicInfo.FieldOrderCntList[idx][field];
+                    poc1[ref] = refPicInfo.FieldOrderCntList[idx][static_cast<int>(field)];
                     fld1[ref] = field;
                 }
             }
@@ -2954,6 +2956,8 @@ mfxI16Pair* PackMVs(const H264MacroblockGlobalInfo* mbinfo, mfxI16Pair* pMV, H26
                 }
             }
             break;
+        default:
+            break;
         }
     return pMV;
 }
@@ -3008,6 +3012,8 @@ void PackRefIdxs(const H264MacroblockGlobalInfo* mbinfo, mfxMbCode* mb, T_RefIdx
                 if( sinfo.dir & DIR_FWD ) mb->AVC.RefPicSelect[0][i] = refL0[sbOff[i]];
                 if( sinfo.dir & DIR_BWD ) mb->AVC.RefPicSelect[1][i] = refL1[sbOff[i]];
             }
+            break;
+        default:
             break;
     }
 }
@@ -3112,6 +3118,8 @@ void UnPackRefIdxs(const H264MacroblockGlobalInfo* mbinfo, mfxMbCodeAVC* mb, T_R
                 SetIdx(refL1, mb->RefPicSelect[1][i], sbOff[i], 2, 2);
             }
         }
+        break;
+    default:
         break;
     }
 }

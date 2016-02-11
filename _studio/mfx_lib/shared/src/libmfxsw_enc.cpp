@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 File Name: libmfxsw_enc.cpp
 
@@ -541,7 +541,7 @@ mfxStatus  MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mf
         if ((MFX_ERR_NONE == mfxRes) ||
             (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == mfxRes) ||
             (MFX_WRN_OUT_OF_RANGE == mfxRes) ||
-            (MFX_ERR_MORE_DATA_RUN_TASK == mfxRes) ||
+            (MFX_ERR_MORE_DATA_RUN_TASK == static_cast<int>(mfxRes)) ||
             (MFX_ERR_MORE_BITSTREAM == mfxRes))
         {
             // prepare the absolete kind of task.
@@ -621,7 +621,7 @@ mfxStatus  MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mf
             }
 
             // IT SHOULD BE REMOVED
-            if (MFX_ERR_MORE_DATA_RUN_TASK == mfxRes)
+            if (MFX_ERR_MORE_DATA_RUN_TASK == static_cast<int>(mfxRes))
             {
                 mfxRes = MFX_ERR_MORE_DATA;
                 syncPoint = NULL;

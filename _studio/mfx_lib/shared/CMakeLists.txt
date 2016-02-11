@@ -39,8 +39,10 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
   )
 endforeach()
 
+set( defs "${WARNING_FLAGS}" )
 make_library( mfx_common none static )
 append_property( mfx_common COMPILE_FLAGS " -DMFX_RT" )
+set( defs "" )
 
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
   list( APPEND sources
@@ -54,10 +56,12 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
   )
 endforeach()
 
+set( defs "${WARNING_FLAGS}" )
 make_library( mfx_common sw static )
 append_property( mfx_common_sw COMPILE_FLAGS " -DMFX_RT" )
 make_library( mfx_common hw static )
 append_property( mfx_common_hw COMPILE_FLAGS " -DMFX_RT" )
+set( defs "" )
 
 set( sources "" )
 set( sources.plus "" )
@@ -65,5 +69,6 @@ list( APPEND sources
   ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_vc1_enc_common.cpp
 )
 
+set( defs "${WARNING_FLAGS}" )
 make_library( vc1_shared none static )
 set( defs "" )
