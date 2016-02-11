@@ -199,13 +199,21 @@ mfxTraceU32 MFXTraceFtrace_vDebugMessage(mfxTraceStaticHandle* //static_handle
         p_str = mfx_trace_sprintf(p_str, len, "\n");
     }
 
-    write(trace_handle, str, strlen(str));
+    int ret_value = 0;
+
+    if (write(trace_handle, str, strlen(str)) == -1)
+    {
+        ret_value = 1;
+    }
 
     // printf("@@@ %s\n", str);
 
-    fsync(trace_handle);
+    if (fsync(trace_handle) == -1)
+    {
+        ret_value = 1;
+    }
 
-    return 0;
+    return ret_value;
 }
 
 /*------------------------------------------------------------------------------*/
