@@ -1490,24 +1490,24 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         }
     }
 
-    if ((maxNumRefL1 > 1) && (task.m_type[fieldId] & MFX_FRAMETYPE_B))
-    {
-        /* continue to fill ref list */
-        for (ref_counter_l1 = 0; ref_counter_l1 < maxNumRefL1; ref_counter_l1++)
-        {
-            mfxHDL handle;
-            mfxSts = m_core->GetExternalFrameHDL(in->L1Surface[ref_counter_l1]->Data.MemId, &handle);
-            MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
-            VASurfaceID s = *(VASurfaceID*) handle;
-            if (m_pps.ReferenceFrames[ref_counter_l0 + ref_counter_l1].picture_id != s)
-            {
-                //m_pps.ReferenceFrames[ref_counter_l0 + ref_counter_l1].picture_id = *s;
-                mdprintf(stderr, "!!!Warning picture_id from in->L1Surface[%u] = %u\n", ref_counter_l0 + ref_counter_l1, s);
-                mdprintf(stderr, "   But library's is m_pps.ReferenceFrames[%u].picture_id = %u\n",
-                        ref_counter_l0 + ref_counter_l1, m_pps.ReferenceFrames[ref_counter_l0].picture_id);
-            }
-        }
-    }
+//    if ((maxNumRefL1 > 1) && (task.m_type[fieldId] & MFX_FRAMETYPE_B))
+//    {
+//        /* continue to fill ref list */
+//        for (ref_counter_l1 = 0; ref_counter_l1 < maxNumRefL1; ref_counter_l1++)
+//        {
+//            mfxHDL handle;
+//            mfxSts = m_core->GetExternalFrameHDL(in->L1Surface[ref_counter_l1]->Data.MemId, &handle);
+//            MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
+//            VASurfaceID s = *(VASurfaceID*) handle;
+//            if (m_pps.ReferenceFrames[ref_counter_l0 + ref_counter_l1].picture_id != s)
+//            {
+//                //m_pps.ReferenceFrames[ref_counter_l0 + ref_counter_l1].picture_id = *s;
+//                mdprintf(stderr, "!!!Warning picture_id from in->L1Surface[%u] = %u\n", ref_counter_l0 + ref_counter_l1, s);
+//                mdprintf(stderr, "   But library's is m_pps.ReferenceFrames[%u].picture_id = %u\n",
+//                        ref_counter_l0 + ref_counter_l1, m_pps.ReferenceFrames[ref_counter_l0].picture_id);
+//            }
+//        }
+//    }
 
     /* Check application's provided data */
     if (NULL != pDataPPS)
@@ -2830,25 +2830,25 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         }
     }
 
-    if ((maxNumRefL1 > 1) && (task.m_type[fieldId] & MFX_FRAMETYPE_B))
-    {
-        /* continue to fill ref list */
-        for (ref_counter_l1 = 0; ref_counter_l1 < maxNumRefL1; ref_counter_l1++)
-        {
-            mfxHDL handle;
-            mfxSts = m_core->GetExternalFrameHDL(in->L1Surface[ref_counter_l1]->Data.MemId, &handle);
-            MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
-            VASurfaceID* s = (VASurfaceID*) handle;
-            if (m_pps.ReferenceFrames[ref_counter_l0 + ref_counter_l1].picture_id != *s)
-            {
-                //m_pps.ReferenceFrames[ref_counter_l0].picture_id = *s;
-                mdprintf(stderr, "!!!Warning picture_id from in->L1Surface[%u] = %u\n", ref_counter_l0 + ref_counter_l1, *s);
-                mdprintf(stderr, "   But library's is m_pps.ReferenceFrames[%u].picture_id = %u\n",
-                        ref_counter_l0 + ref_counter_l1, m_pps.ReferenceFrames[ref_counter_l0].picture_id);
-                //m_pps.ReferenceFrames[ref_counter_l0 + ref_counter_l1].picture_id = *s;
-            }
-        }
-    }
+//    if ((maxNumRefL1 > 1) && (task.m_type[fieldId] & MFX_FRAMETYPE_B))
+//    {
+//        /* continue to fill ref list */
+//        for (ref_counter_l1 = 0; ref_counter_l1 < maxNumRefL1; ref_counter_l1++)
+//        {
+//            mfxHDL handle;
+//            mfxSts = m_core->GetExternalFrameHDL(in->L1Surface[ref_counter_l1]->Data.MemId, &handle);
+//            MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
+//            VASurfaceID* s = (VASurfaceID*) handle;
+//            if (m_pps.ReferenceFrames[ref_counter_l0 + ref_counter_l1].picture_id != *s)
+//            {
+//                //m_pps.ReferenceFrames[ref_counter_l0].picture_id = *s;
+//                mdprintf(stderr, "!!!Warning picture_id from in->L1Surface[%u] = %u\n", ref_counter_l0 + ref_counter_l1, *s);
+//                mdprintf(stderr, "   But library's is m_pps.ReferenceFrames[%u].picture_id = %u\n",
+//                        ref_counter_l0 + ref_counter_l1, m_pps.ReferenceFrames[ref_counter_l0].picture_id);
+//                //m_pps.ReferenceFrames[ref_counter_l0 + ref_counter_l1].picture_id = *s;
+//            }
+//        }
+//    }
 
     /* Check application's provided data */
     if (NULL != pDataPPS)
