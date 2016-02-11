@@ -21,5 +21,6 @@ foreach( dir ${vdirs} )
   list( APPEND sources ${srcs})
 endforeach()
 
+set( defs "${WARNING_FLAGS}" )
 make_library( pak none static )
-
+set( defs "" )
