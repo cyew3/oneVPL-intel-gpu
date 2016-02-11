@@ -593,8 +593,6 @@ mfxStatus VideoDECODEH265::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
 
     if (MFX_Utility::GetPlatform_H265(core, par) != MFX_PLATFORM_SOFTWARE)
     {
-        par->mfx.FrameInfo.Width = UMC::align_value<mfxU16>(par->mfx.FrameInfo.Width, 64);
-        par->mfx.FrameInfo.Height = UMC::align_value<mfxU16>(par->mfx.FrameInfo.Height, 64);
         if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
             par->mfx.FrameInfo.Shift = 1;
     }
@@ -1133,8 +1131,6 @@ void VideoDECODEH265::FillVideoParam(mfxVideoParamWrapper *par, bool full)
     
     if (MFX_Utility::GetPlatform_H265(m_core, par) != MFX_PLATFORM_SOFTWARE)
     {
-        par->mfx.FrameInfo.Width = UMC::align_value<mfxU16>(par->mfx.FrameInfo.Width, 64);
-        par->mfx.FrameInfo.Height = UMC::align_value<mfxU16>(par->mfx.FrameInfo.Height, 64);
         if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
             par->mfx.FrameInfo.Shift = 1;
     }
