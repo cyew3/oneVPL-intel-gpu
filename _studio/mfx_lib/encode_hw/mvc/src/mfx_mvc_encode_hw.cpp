@@ -1608,6 +1608,28 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
 
     DdiTask task = realTask;
 
+    /* Aka simple patch task */
+    bool interlace = (task.GetPicStructForEncode() & MFX_PICSTRUCT_PROGRESSIVE) == 0;
+    for (mfxU32 i = 0; i < GetMaxNumSlices(impl.m_video); ++ i)
+    {
+        mfxExtCodingOption2 const &     extOpt2        = GetExtBufferRef(impl.m_video);
+        mfxU8 disableDeblockingIdc = mfxU8(extOpt2.DisableDeblockingIdc);
+        task.m_disableDeblockingIdc[firstFieldId].push_back(disableDeblockingIdc);
+        task.m_sliceAlphaC0OffsetDiv2[firstFieldId].push_back( 0);
+        task.m_sliceBetaOffsetDiv2[firstFieldId].push_back(0);
+    }
+    if (interlace)
+    {
+        for (mfxU32 i = 0; i < GetMaxNumSlices(impl.m_video); ++ i)
+        {
+            mfxExtCodingOption2 const &     extOpt2        = GetExtBufferRef(impl.m_video);
+            mfxU8 disableDeblockingIdc = mfxU8(extOpt2.DisableDeblockingIdc);
+            task.m_disableDeblockingIdc[!firstFieldId].push_back(disableDeblockingIdc);
+            task.m_sliceAlphaC0OffsetDiv2[!firstFieldId].push_back( 0);
+            task.m_sliceBetaOffsetDiv2[!firstFieldId].push_back(0);
+        }
+    }
+
     if (impl.m_numEncs > 1)
     {
 #ifdef MVC_ADD_REF
@@ -1627,6 +1649,26 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
                 dummyTask.m_dpb[firstFieldId].Resize(0);
                 dummyTask.m_viewIdx = 1;
                 dummyTask.m_idxRecon = CalcNumSurfRecon(impl.m_video); // inter-view recon is always last in recounstruct chain of 2nd encoder
+                /* Aka simple patch task */
+                for (mfxU32 i = 0; i < GetMaxNumSlices(impl.m_video); ++ i)
+                {
+                    mfxExtCodingOption2 const &     extOpt2        = GetExtBufferRef(impl.m_video);
+                    mfxU8 disableDeblockingIdc = mfxU8(extOpt2.DisableDeblockingIdc);
+                    dummyTask.m_disableDeblockingIdc[firstFieldId].push_back(disableDeblockingIdc);
+                    dummyTask.m_sliceAlphaC0OffsetDiv2[firstFieldId].push_back( 0);
+                    dummyTask.m_sliceBetaOffsetDiv2[firstFieldId].push_back(0);
+                }
+                if (interlace)
+                {
+                    for (mfxU32 i = 0; i < GetMaxNumSlices(impl.m_video); ++ i)
+                    {
+                        mfxExtCodingOption2 const &     extOpt2        = GetExtBufferRef(impl.m_video);
+                        mfxU8 disableDeblockingIdc = mfxU8(extOpt2.DisableDeblockingIdc);
+                        dummyTask.m_disableDeblockingIdc[!firstFieldId].push_back(disableDeblockingIdc);
+                        dummyTask.m_sliceAlphaC0OffsetDiv2[!firstFieldId].push_back( 0);
+                        dummyTask.m_sliceBetaOffsetDiv2[!firstFieldId].push_back(0);
+                    }
+                }
 
                 // speicfy correct DPB and ref list for 2nd field of 'dummy' frame
                 if (interlace)
