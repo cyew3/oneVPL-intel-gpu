@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//    Copyright (c) 2001-2012 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2001-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -134,6 +134,8 @@ JERRCODE CJPEGEncoder::ProcessRestart(
   case JPEG_LOSSLESS:
     status = ippiEncodeHuffmanOne_JPEG_16s1u_C1(
                0,dst,dstLen,&currPos,0,m_state_t[thread_id],1);
+    break;
+  default:
     break;
   }
 #ifdef _OPENMP

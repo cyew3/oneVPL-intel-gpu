@@ -4,12 +4,15 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//    Copyright (c) 2001-2014 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2001-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MJPEG_VIDEO_ENCODER)
+#if defined(__GNUC__)
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #include <stdio.h>
 #include <string.h>
@@ -1780,6 +1783,8 @@ JERRCODE CJPEGEncoder::ProcessRestart(
   case JPEG_LOSSLESS:
     status = ippiEncodeHuffmanOne_JPEG_16s1u_C1(
                0,dst,dstLen,&currPos,0,m_state,1);
+    break;
+  default:
     break;
   }
 
@@ -5527,6 +5532,8 @@ JERRCODE CJPEGEncoder::WriteHeader(void)
             return jerr;
           }
         }
+        break;
+      default:
         break;
       }
   }
