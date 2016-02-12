@@ -97,11 +97,11 @@ if(MAD < BestMAD)                                          \
   YMIN = YN;                                               \
 }
 #ifndef UMC_RESTRICTED_CODE
-//{ \
-//Ipp32s dv=abs(XN - InitialMV0.x) \
-//         +abs(YN - (InitialMV0.y >> FIELD_FLAG)); \
-//  MAD += abs(dv-7); \
-//} \
+/*{ \
+Ipp32s dv=abs(XN - InitialMV0.x) \
+         +abs(YN - (InitialMV0.y >> FIELD_FLAG)); \
+  MAD += abs(dv-7); \
+} \ */
 
 #endif // UMC_RESTRICTED_CODE
 /***********************************************************/

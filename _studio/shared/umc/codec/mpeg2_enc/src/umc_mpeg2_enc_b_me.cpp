@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2006-2010 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2006-2016 Intel Corporation. All Rights Reserved.
 //
 */
 #ifndef UMC_RESTRICTED_CODE
@@ -126,9 +126,9 @@ void MPEG2VideoEncoderBase::meB(Ipp32s numTh)
       if (i != 0 && i != MBcountH*16-16 &&
         !(pMBInfo[k-1].mb_type & MB_INTRA)
         && (!(pMBInfo[k - 1].mb_type & MB_FORWARD)
-        || i+((threadSpec[numTh].PMV[0][0].x+1)>>1)+15 < MBcountH*16 && j+((threadSpec[numTh].PMV[0][0].y+1)>>1)+15 < MBcountV*16)
+        || (i+((threadSpec[numTh].PMV[0][0].x+1)>>1)+15 < MBcountH*16 && j+((threadSpec[numTh].PMV[0][0].y+1)>>1)+15 < MBcountV*16))
         && (!(pMBInfo[k - 1].mb_type & MB_BACKWARD)
-        || i+((threadSpec[numTh].PMV[0][1].x+1)>>1)+15 < MBcountH*16 && j+((threadSpec[numTh].PMV[0][1].y+1)>>1)+15 < MBcountV*16) )
+        || (i+((threadSpec[numTh].PMV[0][1].x+1)>>1)+15 < MBcountH*16 && j+((threadSpec[numTh].PMV[0][1].y+1)>>1)+15 < MBcountV*16)) )
       {
         Ipp32s blk;
         Ipp32s var, mean;

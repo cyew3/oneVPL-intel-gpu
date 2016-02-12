@@ -4,5 +4,8 @@ include_directories (${CMAKE_SOURCE_DIR}/shared/umc/codec/me/include)
 
 set( sources "" )
 file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )
-list( APPEND sources ${srcs}) 
+list( APPEND sources ${srcs})
+
+set( defs "-Wall -Werror" )
 make_library( me none static )
+set( defs "" )

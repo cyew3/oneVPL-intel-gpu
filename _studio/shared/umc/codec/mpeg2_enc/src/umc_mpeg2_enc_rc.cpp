@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//      Copyright (c) 2005-2010 Intel Corporation. All Rights Reserved.
+//      Copyright (c) 2005-2016 Intel Corporation. All Rights Reserved.
 //
 //  Purpose
 //    frame adaptive bitrate control
@@ -343,11 +343,15 @@ Ipp32s MPEG2VideoEncoderBase::changeQuant(Ipp32s quant_value)
   quantiser_scale_value = Val_QScale[q_scale_type][quantiser_scale_code];
   if(quantiser_scale_value == curq) {
     if(quant_value > curq)
+    {
       if(quantiser_scale_code == 31) return quantiser_scale_value;
       else quantiser_scale_code ++;
+    }
     if(quant_value < curq)
+    {
       if(quantiser_scale_code == 1) return quantiser_scale_value;
       else quantiser_scale_code --;
+    }
     quantiser_scale_value = Val_QScale[q_scale_type][quantiser_scale_code];
   }
 

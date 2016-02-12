@@ -4,12 +4,15 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2002-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2002-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MPEG2_VIDEO_ENCODER)
+#if defined(__GNUC__)
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #include "ipps.h"
 #include "umc_mpeg2_enc_defs.h"
@@ -71,7 +74,7 @@ MPEG2VideoEncoderBase::MPEG2VideoEncoderBase ()
 #ifdef MPEG2_USE_DUAL_PRIME
   dpflag = 0;
   is_interlaced_queue = 0;
-  for(Ipp32s i = 0; i < sizeof(frame_history)/sizeof(Ipp32s); i++)
+  for(unsigned int i = 0; i < sizeof(frame_history)/sizeof(Ipp32s); i++)
     frame_history[i] = 0;
   frame_history_index = 0;
 #endif //MPEG2_USE_DUAL_PRIME
@@ -349,6 +352,8 @@ Status MPEG2VideoEncoderBase::Init(BaseCodecParams *params)
     func_mcB_frame_c = tmp_ippiMC8x8B_8u_C2P2; // NV12 func!!!
     func_mcB_field_c = tmp_ippiMC8x4B_8u_C2P2; // NV12 func!!!
 #endif
+    break;
+  default:
     break;
   }
 

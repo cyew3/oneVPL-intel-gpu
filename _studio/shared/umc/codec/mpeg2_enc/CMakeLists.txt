@@ -8,7 +8,7 @@ foreach( dir ${cdirs} )
 endforeach( )
 include_directories (${CMAKE_SOURCE_DIR}/shared/umc/codec/mpeg2_enc/include)
 
-set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN -DAS_H264LA_PLUGIN" )
+set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN -DAS_H264LA_PLUGIN -Wall -Werror" )
 set( sources "" )
 file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )
 list( APPEND sources ${srcs}) 
