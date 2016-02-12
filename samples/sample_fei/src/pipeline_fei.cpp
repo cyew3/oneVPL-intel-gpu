@@ -2210,11 +2210,12 @@ mfxStatus CEncodingPipeline::InitInterfaces()
 
                     // TODO: Implement real slice divider
                     // For now only one slice is supported
-                    mfxU16 nMBinSlice = m_numMB / feiSliceHeader[fieldId].NumSlice;
+                    mfxU16 nMBrows = (m_heightMB/m_numOfFields + feiSliceHeader[fieldId].NumSlice - 1) / feiSliceHeader[fieldId].NumSlice,
+                        nMBremain = m_heightMB/m_numOfFields;
                     for (int numSlice = 0; numSlice < feiSliceHeader[fieldId].NumSlice; numSlice++)
                     {
-                        feiSliceHeader[fieldId].Slice[numSlice].MBAaddress = numSlice*nMBinSlice;
-                        feiSliceHeader[fieldId].Slice[numSlice].NumMBs     = nMBinSlice;
+                        feiSliceHeader[fieldId].Slice[numSlice].MBAaddress = numSlice*(nMBrows*m_widthMB);
+                        feiSliceHeader[fieldId].Slice[numSlice].NumMBs     = MSDK_MIN(nMBrows, nMBremain)*m_widthMB;
                         feiSliceHeader[fieldId].Slice[numSlice].SliceType  = 0;
                         feiSliceHeader[fieldId].Slice[numSlice].PPSId      = feiPPS ? feiPPS[fieldId].PPSId : 0;
                         feiSliceHeader[fieldId].Slice[numSlice].IdrPicId   = 0;
@@ -2225,6 +2226,8 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                         feiSliceHeader[fieldId].Slice[numSlice].DisableDeblockingFilterIdc = m_encpakParams.DisableDeblockingIdc;
                         feiSliceHeader[fieldId].Slice[numSlice].SliceAlphaC0OffsetDiv2     = m_encpakParams.SliceAlphaC0OffsetDiv2;
                         feiSliceHeader[fieldId].Slice[numSlice].SliceBetaOffsetDiv2        = m_encpakParams.SliceBetaOffsetDiv2;
+
+                        nMBremain -= nMBrows;
                     }
                 }
 
