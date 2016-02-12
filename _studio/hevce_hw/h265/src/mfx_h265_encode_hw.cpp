@@ -454,6 +454,7 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
     MFX_CHECK_STS(sts);
 
     InheritDefaultValues(m_vpar, parNew);
+    parNew.SyncVideoToCalculableParam();
 
     sts = CheckVideoParam(parNew, m_caps);
     MFX_CHECK(sts >= MFX_ERR_NONE, sts);
@@ -650,7 +651,7 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
             m_lastIDR = m_frameOrder;
 
         task->m_poc = m_frameOrder - m_lastIDR;
-        task->m_fo = task->m_surf->Data.FrameOrder == static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN) ? m_frameOrder : task->m_surf->Data.FrameOrder;
+        task->m_fo =  m_frameOrder;
         task->m_bpo = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
 
         m_core.IncreaseReference(&surface->Data);

@@ -198,6 +198,9 @@ mfxU32 GetMaxCpbInKBByLevel(MfxVideoParam const & par)
 
 mfxStatus CorrectLevel(MfxVideoParam& par, bool bCheckOnly)
 {
+    if ( par.mfx.FrameInfo.FrameRateExtD == 0 || par.mfx.FrameInfo.FrameRateExtN == 0 ||par.mfx.GopRefDist == 0)
+        return MFX_ERR_NONE;
+
     mfxStatus sts = MFX_ERR_NONE;
     //mfxU32 CpbBrVclFactor    = 1000;
     mfxU32 CpbBrNalFactor    = 1100;
@@ -1341,9 +1344,9 @@ void SetDefaults(
         par.mfx.NumRefFrame = Max(mfxU16(par.NumTL() - 1), par.mfx.NumRefFrame);
         par.mfx.NumRefFrame = Min(maxDPB, par.mfx.NumRefFrame);
     }
-    else
+    else if (!par.isBPyramid())
     {
-        while (par.NumRefLX[0] + par    .NumRefLX[1] > par.mfx.NumRefFrame)
+        while (par.NumRefLX[0] + par.NumRefLX[1] > par.mfx.NumRefFrame)
         {
             if (   par.mfx.GopRefDist == 1 && par.NumRefLX[1] == 1
                 && par.NumRefLX[0] + par.NumRefLX[1] == par.mfx.NumRefFrame + 1)

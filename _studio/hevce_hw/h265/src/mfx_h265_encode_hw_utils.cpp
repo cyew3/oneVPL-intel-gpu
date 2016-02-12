@@ -654,7 +654,7 @@ void MfxVideoParam::SyncVideoToCalculableParam()
         MaxKbps          = 0;
     }
 
-    InsertHRDInfo = IsOn(m_ext.CO.VuiNalHrdParameters) || IsOn(m_ext.CO.PicTimingSEI);
+    InsertHRDInfo = IsOn(m_ext.CO.VuiNalHrdParameters) || !IsOff(m_ext.CO.PicTimingSEI);
     RawRef        = false;
 
     m_slice.resize(0);
