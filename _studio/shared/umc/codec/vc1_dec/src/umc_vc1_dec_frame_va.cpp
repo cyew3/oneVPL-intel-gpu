@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, Frame description VA support for multi-frame parallelization
@@ -1254,7 +1254,7 @@ namespace UMC
 
         UMCVACompBuffer* pCompBuf;
         m_pSliceInfo = (VASliceParameterBufferVC1*)m_va->GetCompBuffer(VASliceParameterBufferType, &pCompBuf, slice_counter * sizeof(VASliceParameterBufferVC1));
-        if (!pCompBuf || (pCompBuf->GetBufferSize() < slice_counter * sizeof(VASliceParameterBufferVC1)))
+        if (!pCompBuf || (static_cast<unsigned int>(pCompBuf->GetBufferSize()) < slice_counter * sizeof(VASliceParameterBufferVC1)))
             throw vc1_exception(mem_allocation_er);
         memset(m_pSliceInfo, 0, slice_counter * sizeof(VASliceParameterBufferVC1));
     }
@@ -1263,7 +1263,7 @@ namespace UMC
     {
         UMCVACompBuffer* pCompBuf;
         m_pPicPtr = (VAPictureParameterBufferVC1*)m_va->GetCompBuffer(VAPictureParameterBufferType, &pCompBuf,sizeof(VAPictureParameterBufferVC1));
-        if (!pCompBuf || (pCompBuf->GetBufferSize() < sizeof(VAPictureParameterBufferVC1)))
+        if (!pCompBuf || (static_cast<unsigned int>(pCompBuf->GetBufferSize()) < sizeof(VAPictureParameterBufferVC1)))
             throw vc1_exception(mem_allocation_er);
         memset(m_pPicPtr, 0, sizeof(VAPictureParameterBufferType));
     }

@@ -169,34 +169,34 @@ void VC1FrameDescriptor::Release()
 {
     if(m_pMemoryAllocator)
     {
-        if (m_iDiffMemID != -1)
+        if (static_cast<int>(m_iDiffMemID) != -1)
         {
             m_pMemoryAllocator->Unlock(m_iDiffMemID);
             m_pMemoryAllocator->Free(m_iDiffMemID);
             m_iDiffMemID = (MemID)-1;
         }
 
-        if (m_iInernBufferID != -1)
+        if (static_cast<int>(m_iInernBufferID) != -1)
         {
             m_pMemoryAllocator->Unlock(m_iInernBufferID);
             m_pMemoryAllocator->Free(m_iInernBufferID);
             m_iInernBufferID = (MemID)-1;
         }
-        if (m_iMemContextID != -1)
+        if (static_cast<int>(m_iMemContextID) != -1)
         {
             m_pMemoryAllocator->Unlock(m_iMemContextID);
             m_pMemoryAllocator->Free(m_iMemContextID);
             m_iMemContextID = (MemID)-1;
         }
 
-        if (m_iMBsMemID != -1)
+        if (static_cast<int>(m_iMBsMemID) != -1)
         {
             m_pMemoryAllocator->Unlock(m_iMBsMemID);
             m_pMemoryAllocator->Free(m_iMBsMemID);
             m_iMBsMemID = (MemID)-1;
         }
 
-        if (m_iDCACParamsMemID != -1)
+        if (static_cast<int>(m_iDCACParamsMemID) != -1)
         {
             m_pMemoryAllocator->Unlock(m_iDCACParamsMemID);
             m_pMemoryAllocator->Free(m_iDCACParamsMemID);

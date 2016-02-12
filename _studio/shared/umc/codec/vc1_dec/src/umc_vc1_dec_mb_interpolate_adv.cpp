@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, MB Layer common for simple\main profiles
@@ -1182,7 +1182,7 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_P_NewInterpolatio
 
     if ((pPicHeader->CurrField == 1) &&
         (((pPicHeader->NUMREF + pPicHeader->REFFIELD) ==0) ||
-         (pPicHeader->NUMREF == 1) && (!pMB->m_pBlocks[0].mv_s_polarity[0])))
+         ((pPicHeader->NUMREF == 1) && (!pMB->m_pBlocks[0].mv_s_polarity[0]))))
     {
         index = pContext->m_frmBuff.m_iCurrIndex;
         FCM = pContext->m_frmBuff.m_pFrames[index].FCM;
@@ -1269,7 +1269,7 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma1MV_B_NewInterpolatio
 
     if ((pPicHeader->CurrField == 1) &&
         (((pPicHeader->NUMREF + pPicHeader->REFFIELD) ==0) ||
-         (pPicHeader->NUMREF == 1) && (!pMB->m_pBlocks[0].mv_s_polarity[back]) && (!back)))
+         ((pPicHeader->NUMREF == 1) && (!pMB->m_pBlocks[0].mv_s_polarity[back]) && (!back))))
     {
         index = pContext->m_frmBuff.m_iCurrIndex;
         FCM = pContext->m_frmBuff.m_pFrames[index].FCM;
@@ -1359,7 +1359,7 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureLuma4MV_NewInterpolation(
 
     if ((pPicHeader->CurrField == 1) &&
         (((pPicHeader->NUMREF + pPicHeader->REFFIELD) ==0) ||
-         (pPicHeader->NUMREF == 1) && (!pMB->m_pBlocks[blk_num].mv_s_polarity[back]) && (!back)))
+         ((pPicHeader->NUMREF == 1) && (!pMB->m_pBlocks[blk_num].mv_s_polarity[back]) && (!back))))
     {
         index = pContext->m_frmBuff.m_iCurrIndex;
         FCM = pContext->m_frmBuff.m_pFrames[index].FCM;
@@ -1462,7 +1462,7 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureChroma1MV_NewInterpolatio
 
     if ((pPicHeader->CurrField == 1) &&
         (((pPicHeader->NUMREF + pPicHeader->REFFIELD) ==0) ||
-         (pPicHeader->NUMREF == 1) && (!pMB->m_pBlocks[0].mv_s_polarity[back]) && (!back)))
+         ((pPicHeader->NUMREF == 1) && (!pMB->m_pBlocks[0].mv_s_polarity[back]) && (!back))))
     {
         index = pContext->m_frmBuff.m_iCurrIndex;
         FCM = pContext->m_frmBuff.m_pFrames[index].FCM;
@@ -1662,7 +1662,7 @@ static VC1Status InterpolateBlock_InterlaceFieldPictureChroma4MV_NewInterpolatio
 
     if ((pPicHeader->CurrField == 1) &&
         (((pPicHeader->NUMREF + pPicHeader->REFFIELD) ==0) ||
-         (pPicHeader->NUMREF == 1) && (!pMB->m_pBlocks[4].mv_s_polarity[back]) && (!back)))
+         ((pPicHeader->NUMREF == 1) && (!pMB->m_pBlocks[4].mv_s_polarity[back]) && (!back))))
     {
         index = pContext->m_frmBuff.m_iCurrIndex;
         FCM = pContext->m_frmBuff.m_pFrames[index].FCM;

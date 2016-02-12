@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -42,7 +42,7 @@ const Ipp32u  VC1_FRAME_MIN   = 5; //first frame to debug
 const Ipp32u  VC1_FRAME_MAX   = 15; //last frame to debug
 
 #ifdef VC1_DEBUG_ON
-void VM_Debug::vm_debug_frame(Ipp32s _cur_frame, Ipp32s level,  vm_char *format,...)
+void VM_Debug::vm_debug_frame(Ipp32s _cur_frame, Ipp32s level, const vm_char *format,...)
 {
     vm_char line[1024];
     va_list args;
@@ -119,7 +119,7 @@ void VM_Debug::vm_debug_frame(Ipp32s _cur_frame, Ipp32s level,  vm_char *format,
 }
 #else
 #pragma warning( disable : 4100 ) // disable debug, empty function
-void VM_Debug::vm_debug_frame(Ipp32s _cur_frame, Ipp32s level,  vm_char *format,...) {}
+void VM_Debug::vm_debug_frame(Ipp32s _cur_frame, Ipp32s level, const vm_char *format,...) {}
 #endif
 
 

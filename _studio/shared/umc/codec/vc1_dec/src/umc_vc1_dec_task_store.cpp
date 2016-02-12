@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, Task processing base on H264
@@ -61,9 +61,9 @@ namespace UMC
                                                                   m_CurrIndex(-1),
                                                                   m_PrevIndex(-1),
                                                                   m_NextIndex(-1),
-                                                                  m_iICIndexB(-1),
                                                                   m_BFrameIndex(-1),
                                                                   m_iICIndex(-1),
+                                                                  m_iICIndexB(-1),
                                                                   m_pMainQueueTasksState(NULL),
                                                                   m_pAdditionaQueueTasksState(NULL),
                                                                   m_iIntStructID((MemID)-1),
@@ -105,14 +105,14 @@ namespace UMC
                     m_pDescriptorQueue[i]->Release();
             }
 
-            if (m_iIntStructID != -1)
+            if (static_cast<int>(m_iIntStructID) != -1)
             {
                 m_pMemoryAllocator->Unlock(m_iIntStructID);
                 m_pMemoryAllocator->Free(m_iIntStructID);
                 m_iIntStructID = (MemID)-1;
             }
 
-            if (m_iTSHeapID != -1)
+            if (static_cast<int>(m_iTSHeapID) != -1)
             {
                 m_pMemoryAllocator->Unlock(m_iTSHeapID);
                 m_pMemoryAllocator->Free(m_iTSHeapID);
@@ -283,14 +283,14 @@ namespace UMC
                     m_pDescriptorQueue[i]->Release();
             }
 
-            if (m_iIntStructID != -1)
+            if (static_cast<int>(m_iIntStructID) != -1)
             {
                 m_pMemoryAllocator->Unlock(m_iIntStructID);
                 m_pMemoryAllocator->Free(m_iIntStructID);
                 m_iIntStructID = (MemID)-1;
             }
 
-            if (m_iTSHeapID != -1)
+            if (static_cast<int>(m_iTSHeapID) != -1)
             {
                 m_pMemoryAllocator->Unlock(m_iTSHeapID);
                 m_pMemoryAllocator->Free(m_iTSHeapID);

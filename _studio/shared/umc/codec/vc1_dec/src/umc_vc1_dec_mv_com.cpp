@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) MV decoding
@@ -75,8 +75,8 @@ void PackDirectMVIField(VC1MB* pCurrMB, Ipp16s* pSavedMV, Ipp8u isBottom, Ipp8u*
         for (count=0;count<4;count++)
         {
 
-            if ((pCurrMB->m_pBlocks[count].mv_s_polarity[0])&&(isBottom)||
-                (!pCurrMB->m_pBlocks[count].mv_s_polarity[0])&&(!isBottom))
+            if (((pCurrMB->m_pBlocks[count].mv_s_polarity[0])&&(isBottom))||
+                ((!pCurrMB->m_pBlocks[count].mv_s_polarity[0])&&(!isBottom)))
             {
                 xLuMVB[MVBcount] = pCurrMB->m_pBlocks[count].mv[0][0];
                 yLuMVB[MVBcount] = pCurrMB->m_pBlocks[count].mv[0][1];

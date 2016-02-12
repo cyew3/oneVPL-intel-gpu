@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) MV decoding
@@ -68,7 +68,7 @@ Ipp16u DecodeMVDiff(VC1Context* pContext,Ipp32s hpelfl,
             if (hpelfl + index1 == 6)
                 hpel = 1;
 
-            VC1_GET_BITS(size_table[index1] - hpel, val);
+            VC1_GET_BITS((size_table[index1] - hpel), val);
             sign = 0 - (val & 1);
             dmv_x = (Ipp16s)(sign ^ ((val >> 1) + offset_table[index1]));
             dmv_x = dmv_x - (Ipp16s)sign;
@@ -84,7 +84,7 @@ Ipp16u DecodeMVDiff(VC1Context* pContext,Ipp32s hpelfl,
             if (hpelfl + index2 == 6)
                 hpel = 1;
 
-            VC1_GET_BITS(size_table[index2] - hpel, val);
+            VC1_GET_BITS((size_table[index2] - hpel), val);
             sign = 0 - (val & 1);
             dmv_y = (Ipp16s)(sign ^ ((val >> 1) + offset_table[index2]));
             dmv_y = dmv_y - (Ipp16s)sign;

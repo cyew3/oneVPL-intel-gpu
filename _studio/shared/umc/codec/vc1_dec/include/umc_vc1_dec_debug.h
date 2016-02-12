@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -57,7 +57,7 @@ class VM_Debug
 {
 public:
 
-    void vm_debug_frame(Ipp32s _cur_frame, Ipp32s level, vm_char *format, ...);
+    void vm_debug_frame(Ipp32s _cur_frame, Ipp32s level, const vm_char *format, ...);
     void _print_macroblocks(VC1Context* pContext);
     void _print_blocks(VC1Context* pContext);
     void print_bitplane(VC1Bitplane* pBitplane, Ipp32s width, Ipp32s height);

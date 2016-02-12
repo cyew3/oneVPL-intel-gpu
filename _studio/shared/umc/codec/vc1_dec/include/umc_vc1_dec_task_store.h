@@ -62,7 +62,7 @@ namespace UMC
             else
             {
                 //*pObj = new T((T)m_pBuf);
-                *pObj = new(m_pBuf)(T*[size]);
+                *pObj = new(m_pBuf)T*[size];
                 m_pBuf += align_value<Ipp32s>(size_T);
                 m_iRemSize -= align_value<Ipp32s>(size_T);
             }
@@ -76,7 +76,7 @@ namespace UMC
             else
             {
                 //*pObj = new T((T)m_pBuf);
-                *pObj = new(m_pBuf)(T[size]);
+                *pObj = new(m_pBuf)T[size];
                 m_pBuf += align_value<Ipp32s>(size_T);
                 m_iRemSize -= align_value<Ipp32s>(size_T);
             }

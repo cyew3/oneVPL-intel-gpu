@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) MV decoding
@@ -1924,7 +1924,7 @@ void DecodeMVDiff_Adv(VC1Context* pContext,Ipp16s* pdmv_x, Ipp16s* pdmv_y)
 
         if (index1)
         {
-            VC1_GET_BITS(index1 + extend_x,val);
+            VC1_GET_BITS((index1 + extend_x),val);
             sign = -(val & 1);
             dmv_x = (Ipp16s)((sign ^ ( (val >> 1) + curr_offset[index1])) - sign);
         }
@@ -1935,7 +1935,7 @@ void DecodeMVDiff_Adv(VC1Context* pContext,Ipp16s* pdmv_x, Ipp16s* pdmv_y)
 
         if (index2)
         {
-            VC1_GET_BITS(index2 + extend_y,val);
+            VC1_GET_BITS((index2 + extend_y),val);
             sign = -(val & 1);
             dmv_y = (Ipp16s)((sign ^ ( (val >> 1) + curr_offset[index2])) - sign);
         }
@@ -2027,7 +2027,7 @@ Ipp8u DecodeMVDiff_TwoReferenceField_Adv(VC1Context* pContext,
 
         if (index1)
         {
-            VC1_GET_BITS(index1 + extend_x,val);
+            VC1_GET_BITS((index1 + extend_x),val);
             sign = -(val & 1);
             dmv_x = (Ipp16s)((sign ^ ( (val >> 1) + curr_offset[index1])) - sign);
         }

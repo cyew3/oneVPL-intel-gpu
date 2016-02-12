@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, MB layer in B picture for advanced profile
@@ -840,7 +840,7 @@ static VC1Status MBLayer_InterlaceFrameBpicture_NONDIRECT_Decode(VC1Context* pCo
     }
 
 
-    if((VC1_IS_MVFIELD(pCurrMB->mbType)) &&(VC1_GET_PREDICT(pCurrMB->mbType)!=VC1_MB_INTERP)
+    if(((VC1_IS_MVFIELD(pCurrMB->mbType)) &&(VC1_GET_PREDICT(pCurrMB->mbType)!=VC1_MB_INTERP))
         || (((VC1_GET_MBTYPE(pCurrMB->mbType) == VC1_MB_1MV_INTER)
                     && (VC1_GET_PREDICT(pCurrMB->mbType)==VC1_MB_INTERP))))
     {

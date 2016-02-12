@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -83,10 +83,10 @@ VC1VideoDecoder::VC1VideoDecoder():m_pContext(NULL),
                                    m_CurrentMode(Routine),
                                    m_pHeap(NULL),
                                    m_bIsReorder(true),
-                                   m_bIsNeedAddFrameSC(false),
-                                   m_bIsNeedToShiftIn(true),
                                    m_pCurrentIn(NULL),
                                    m_pCurrentOut(NULL),
+                                   m_bIsNeedAddFrameSC(false),
+                                   m_bIsNeedToShiftIn(true),
                                    m_bIsNeedToFlush(false),
                                    m_AllocBuffer(0),
                                    m_pExtFrameAllocator(0),
@@ -1318,28 +1318,28 @@ Status VC1VideoDecoder::Close(void)
 
     if(m_pMemoryAllocator)
     {
-        if (m_iMemContextID != -1)
+        if (static_cast<int>(m_iMemContextID) != -1)
         {
             m_pMemoryAllocator->Unlock(m_iMemContextID);
             m_pMemoryAllocator->Free(m_iMemContextID);
             m_iMemContextID = (MemID)-1;
         }
 
-        if (m_iHeapID != -1)
+        if (static_cast<int>(m_iHeapID) != -1)
         {
             m_pMemoryAllocator->Unlock(m_iHeapID);
             m_pMemoryAllocator->Free(m_iHeapID);
             m_iHeapID = (MemID)-1;
         }
 
-        if (m_iFrameBufferID != -1)
+        if (static_cast<int>(m_iFrameBufferID) != -1)
         {
             m_pMemoryAllocator->Unlock(m_iFrameBufferID);
             m_pMemoryAllocator->Free(m_iFrameBufferID);
             m_iFrameBufferID = (MemID)-1;
         }
 
-        if (m_iNewMemID != -1)
+        if (static_cast<int>(m_iNewMemID) != -1)
         {
             m_pMemoryAllocator->Unlock(m_iNewMemID);
             m_pMemoryAllocator->Free(m_iNewMemID);
@@ -1575,7 +1575,7 @@ bool VC1VideoDecoder::GetFPS(VC1Context* pContext)
         return false;
 
     Ipp64f prevFPS = m_ClipInfo.framerate;
-    if((m_ClipInfo.stream_subtype == VC1_VIDEO_VC1)||(m_ClipInfo.stream_type == WVC1_VIDEO))
+    if((m_ClipInfo.stream_subtype == VC1_VIDEO_VC1)||(m_ClipInfo.stream_type == static_cast<int>(WVC1_VIDEO)))
     {
         m_ClipInfo.bitrate = pContext->m_seqLayerHeader.BITRTQ_POSTPROC;
         m_ClipInfo.framerate = pContext->m_seqLayerHeader.FRMRTQ_POSTPROC;
@@ -1800,8 +1800,8 @@ Status VC1VideoDecoder::GetStartCodes (Ipp8u* pDataPointer,
             if(*readPos == 0x01)
             {
                 if ((IS_VC1_DATA_SC(*(readPos + 1)) || IS_VC1_USER_DATA(*(readPos + 1))) &&
-                    ( (stCodes->count > 0 &&
-                      IS_VC1_DATA_SC(stCodes->values[/*stCodes->count - 1*/0] >> 24) ||
+                    ( ((stCodes->count > 0 &&
+                      IS_VC1_DATA_SC(stCodes->values[/*stCodes->count - 1*/0] >> 24)) ||
                       isWriteSlice)))
                 {
                     isWriteSlice = false;

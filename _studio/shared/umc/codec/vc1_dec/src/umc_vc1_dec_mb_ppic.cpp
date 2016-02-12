@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, MB Layer in P picture for simple\main profiles
@@ -407,6 +407,7 @@ VC1Status MBLayer_ProgressivePpicture(VC1Context* pContext)
         //end 4mv mode
 
         if(pCurrMB->m_cbpBits && pContext->m_seqLayerHeader.VSTRANSFORM == 1)
+        {
             if(picLayerHeader->TTMBF == 0 &&  !(pCurrMB->mbType & VC1_BLK_INTRA) )
             {
                 GetTTMB(pContext);
@@ -420,6 +421,7 @@ VC1Status MBLayer_ProgressivePpicture(VC1Context* pContext)
                             pCurrMB->m_pBlocks[blk_num].blkType = (Ipp8u)picLayerHeader->TTFRM;
                 }
             }
+        }
 
             CalculateIntraFlag(pContext);
 

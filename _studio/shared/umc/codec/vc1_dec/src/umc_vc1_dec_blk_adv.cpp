@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, block layer advanced profile
@@ -14,6 +14,9 @@
 #include "umc_defs.h"
 
 #if defined (UMC_ENABLE_VC1_VIDEO_DECODER)
+#if defined(__GNUC__)
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #include "ippi.h"
 
@@ -1533,8 +1536,8 @@ void write_Interluma_to_interlace_frame_MC_Adv(VC1MB * pCurrMB,
 
     Ipp32u predOffset[4] = {dstStep << 3, dstStep << 3, dstStep, dstStep << 3};
 
-    Ipp32s predStep[4] = {dstStep,   dstStep,
-                          dstStep << 1, dstStep};
+    Ipp32s predStep[4] = {static_cast<Ipp32s>(dstStep),   static_cast<Ipp32s>(dstStep),
+                          static_cast<Ipp32s>(dstStep << 1), static_cast<Ipp32s>(dstStep)};
 
     Ipp32u planeOffset[4] = {pCurrMB->currYPitch << 3 ,  pCurrMB->currYPitch,
                                pCurrMB->currYPitch,  pCurrMB->currYPitch};
