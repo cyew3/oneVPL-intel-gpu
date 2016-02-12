@@ -571,5 +571,8 @@
     <ClCompile Include="src\gmock\test_suites\hevcd_close.cpp">
       <Filter>Source Files\test_suites\hevcd</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avcd_decode_header.cpp">
+      <Filter>Source Files\test_suites\avcd</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

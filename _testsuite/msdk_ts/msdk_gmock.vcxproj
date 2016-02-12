@@ -212,6 +212,7 @@
   <ItemGroup>
     <ClCompile Include="src\gmock\test_suites\avcd_corruption.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_constraints.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avcd_decode_header.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_decorder.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_field_payload.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_picturetype.cpp" />
