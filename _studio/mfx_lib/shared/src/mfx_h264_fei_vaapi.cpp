@@ -281,7 +281,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
 
     //find output surfaces
     mfxExtFeiPreEncMV* mvsOut = GetExtBufferFEI(out, feiFieldId);
-    mfxExtFeiPreEncMBStat* mbstatOut = GetExtBufferFEI(out, feiFieldId);
+    mfxExtFeiPreEncMBStat* mbstatOut = GetExtBufferFEI(out, fieldId);
 
     //find in buffers
     mfxExtFeiPreEncCtrl* feiCtrl = GetExtBufferFEI(in, feiFieldId);
@@ -742,7 +742,7 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
             mfxExtFeiPreEncCtrl* feiCtrl = GetExtBufferFEI(in, feiFieldId);
             //find output surfaces
             mfxExtFeiPreEncMV* mvsOut = GetExtBufferFEI(out, feiFieldId);
-            mfxExtFeiPreEncMBStat* mbstatOut = GetExtBufferFEI(out, feiFieldId);
+            mfxExtFeiPreEncMBStat* mbstatOut = GetExtBufferFEI(out, fieldId);
 
             if (feiCtrl && !feiCtrl->DisableMVOutput && mvsOut)
             {
