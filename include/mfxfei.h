@@ -335,6 +335,7 @@ typedef struct {
     mfxU16    PicInitQP;
     mfxU16    NumRefIdxL0Active;
     mfxU16    NumRefIdxL1Active;
+    mfxU16    ReferenceFrames[16];
 
     mfxI16    ChromaQPIndexOffset;
     mfxI16    SecondChromaQPIndexOffset;

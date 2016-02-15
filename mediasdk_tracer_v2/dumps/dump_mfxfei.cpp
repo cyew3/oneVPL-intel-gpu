@@ -530,6 +530,8 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPPS &
     DUMP_FIELD(PicInitQP);
     DUMP_FIELD(NumRefIdxL0Active);
     DUMP_FIELD(NumRefIdxL1Active);
+    for (unsigned int i = 0; i < GET_ARRAY_SIZE(_struct.ReferenceFrames); i++)
+        str += structName + ".ReferenceFrames[" + ToString(i) + "]=" + ToString(_struct.ReferenceFrames[i]) + "\n";
     DUMP_FIELD(ChromaQPIndexOffset);
     DUMP_FIELD(SecondChromaQPIndexOffset);
     DUMP_FIELD(IDRPicFlag);
