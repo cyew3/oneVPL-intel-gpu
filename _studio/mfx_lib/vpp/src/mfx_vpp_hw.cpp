@@ -1428,7 +1428,7 @@ mfxStatus  VideoVPPHW::Init(
 {
     mfxStatus sts = MFX_ERR_NONE;
     bool bIsFilterSkipped = false;
-
+    isTemporal;
     //-----------------------------------------------------
     // [1] high level check
     //-----------------------------------------------------
@@ -1459,21 +1459,17 @@ mfxStatus  VideoVPPHW::Init(
     //-----------------------------------------------------
     m_params = *par;// PARAMS!!!
 
-    if (m_ddi.get() == 0)
-    {
-        m_ddi.reset( CreateVideoProcessing( m_pCore) );
-        if (m_ddi.get() == 0)
-        {
-            return MFX_WRN_PARTIAL_ACCELERATION;
-        }
+    sts = m_pCore->CreateVideoProcessing(&m_params);
+    MFX_CHECK_STS(sts);
 
-        sts = m_ddi->CreateDevice( m_pCore, par, isTemporal);
-        MFX_CHECK_STS( sts );
+    m_pCore->GetVideoProcessing((mfxHDL*)&m_ddi);
+    if (0 == m_ddi)
+    {
+        return MFX_WRN_PARTIAL_ACCELERATION;
     }
 
     mfxVppCaps caps;
-    sts = m_ddi->QueryCapabilities( caps );
-    MFX_CHECK_STS(sts);
+    caps = m_ddi->GetCaps();
 
     if (par->vpp.In.Width > caps.uMaxWidth  || par->vpp.In.Height  > caps.uMaxHeight ||
         par->vpp.Out.Width > caps.uMaxWidth || par->vpp.Out.Height > caps.uMaxHeight)
@@ -1504,7 +1500,7 @@ mfxStatus  VideoVPPHW::Init(
        (MFX_HW_D3D11 == m_pCore->GetVAType()) &&
        m_executeParams.customRateData.indexRateConversion != 0 )
     {
-        sts = m_ddi->ReconfigDevice(m_executeParams.customRateData.indexRateConversion);
+        sts = (*m_ddi)->ReconfigDevice(m_executeParams.customRateData.indexRateConversion);
         MFX_CHECK_STS(sts);
     }
 
@@ -1597,22 +1593,23 @@ mfxStatus  VideoVPPHW::Init(
 
 mfxStatus VideoVPPHW::QueryCaps(VideoCORE* core, MfxHwVideoProcessing::mfxVppCaps& caps)
 {
-    std::auto_ptr<MfxHwVideoProcessing::DriverVideoProcessing> ddi;
-    ddi.reset( CreateVideoProcessing(core) );
-    if (ddi.get() == 0) return MFX_ERR_UNKNOWN;
 
+    MFX_CHECK_NULL_PTR1(core);
+
+    VPPHWResMng* ddi = 0;
+    mfxStatus sts = MFX_ERR_NONE;
     mfxVideoParam tmpPar = {0};
-    tmpPar.vpp.In.Width = 352;
-    tmpPar.vpp.In.Height= 288;
-    tmpPar.vpp.In.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-    tmpPar.vpp.In.FourCC = MFX_FOURCC_NV12;
-    tmpPar.vpp.Out = tmpPar.vpp.In;
 
-    mfxStatus sts = ddi->CreateDevice( core, &tmpPar, true);
+    sts = core->CreateVideoProcessing(&tmpPar);
     MFX_CHECK_STS( sts );
 
-    sts = ddi->QueryCapabilities(caps);
-    MFX_CHECK_STS( sts );
+    core->GetVideoProcessing((mfxHDL*)&ddi);
+    if (0 == ddi)
+    {
+        return MFX_WRN_PARTIAL_ACCELERATION;
+    }
+
+    caps = ddi->GetCaps();
 
     return sts;
 
@@ -1626,25 +1623,24 @@ mfxStatus VideoVPPHW::QueryIOSurf(
     mfxFrameAllocRequest* request)
 {
     mfxStatus sts = MFX_ERR_NONE;
-
+    VPPHWResMng *vpp_ddi;
     MFX_CHECK_NULL_PTR1(par);
 
     sts = CheckIOMode(par, ioMode);
     MFX_CHECK_STS(sts);
 
-    std::auto_ptr<MfxHwVideoProcessing::DriverVideoProcessing> ddi;
-    ddi.reset( CreateVideoProcessing(core) );
-    if (ddi.get() == 0)
+    mfxVideoParam tmpPar = {0};
+    sts = core->CreateVideoProcessing(&tmpPar);
+    MFX_CHECK_STS(sts);
+
+    core->GetVideoProcessing((mfxHDL*)&vpp_ddi);
+    if (0 == vpp_ddi)
     {
         return MFX_WRN_PARTIAL_ACCELERATION;
     }
 
-    sts = ddi->CreateDevice( core, par, true);
-    MFX_CHECK_STS( sts );
-
     mfxVppCaps caps;
-    sts = ddi->QueryCapabilities(caps);
-    MFX_CHECK_STS( sts );
+    caps = vpp_ddi->GetCaps();
 
     if (par->vpp.In.Width > caps.uMaxWidth  || par->vpp.In.Height  > caps.uMaxHeight ||
         par->vpp.Out.Width > caps.uMaxWidth || par->vpp.Out.Height > caps.uMaxHeight)
@@ -1742,6 +1738,12 @@ mfxStatus VideoVPPHW::Close()
         //::DestroyCmDevice(device);
     }
 #endif
+
+    m_pCore->GetVideoProcessing((mfxHDL *)&m_ddi);
+    if (m_ddi->GetDevice())
+    {
+        m_ddi->Close();
+    }
 
     return sts;
 
@@ -1857,7 +1859,7 @@ mfxStatus VideoVPPHW::PreWorkOutSurface(ExtSurface & output)
     out = hdl;
 
     // register output surface (aya: make sense for DX9 only)
-    mfxStatus sts = m_ddi->Register(&out, 1, TRUE);
+    mfxStatus sts = (*m_ddi)->Register(&out, 1, TRUE);
     MFX_CHECK_STS(sts);
 
     m_executeParams.targetSurface.hdl       = static_cast<mfxHDLPair>(out);
@@ -1944,7 +1946,7 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
         }
 
         // register input surface
-        sts = m_ddi->Register(&in, 1, TRUE);
+        sts = (*m_ddi)->Register(&in, 1, TRUE);
         MFX_CHECK_STS(sts);
 
         memset(&m_executeSurf[i], 0, sizeof(mfxDrvSurface));
@@ -2012,7 +2014,7 @@ mfxStatus VideoVPPHW::PostWorkOutSurface(ExtSurface & output)
     }
 
     // unregister output surface (make sense in case DX9 only)
-    sts = m_ddi->Register( &(m_executeParams.targetSurface.hdl), 1, FALSE);
+    sts = (*m_ddi)->Register( &(m_executeParams.targetSurface.hdl), 1, FALSE);
     MFX_CHECK_STS(sts);
 
     return MFX_ERR_NONE;
@@ -2025,7 +2027,7 @@ mfxStatus VideoVPPHW::PostWorkInputSurface(mfxU32 numSamples)
     // unregister input surface(s) (make sense in case DX9 only)
     for (mfxU32 i = 0 ; i < numSamples; i += 1)
     {
-        mfxStatus sts = m_ddi->Register( &(m_executeSurf[i].hdl), 1, FALSE);
+        mfxStatus sts = (*m_ddi)->Register( &(m_executeSurf[i].hdl), 1, FALSE);
         MFX_CHECK_STS(sts);
     }
 
@@ -2391,7 +2393,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     sts = MergeRuntimeParams(pTask, &execParams);
     MFX_CHECK_STS(sts);
 
-    sts = m_ddi->Execute(&execParams);
+    sts = (*m_ddi)->Execute(&execParams);
     if (sts != MFX_ERR_NONE)
     {
         pTask->SetFree(true);
@@ -2450,7 +2452,7 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
     mfxU32 currentTaskIdx = pTask->taskIndex;
 
     if (0 == pHwVpp->m_executeParams.iFieldProcessingMode ) {
-        sts = pHwVpp->m_ddi->QueryTaskStatus(currentTaskIdx);
+        sts = (*pHwVpp->m_ddi)->QueryTaskStatus(currentTaskIdx);
         MFX_CHECK_STS(sts);
     }
 
@@ -2460,7 +2462,7 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
         // aya: windows part
         std::vector<UINT> variance;
 
-        sts = pHwVpp->m_ddi->QueryVariance(
+        sts = (*pHwVpp->m_ddi)->QueryVariance(
             pTask->taskIndex,
             variance);
         MFX_CHECK_STS(sts);

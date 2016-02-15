@@ -155,6 +155,7 @@ Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
     #undef MFX_ENABLE_H264_VIDEO_FEI_PREENC
     #undef MFX_ENABLE_H264_VIDEO_FEI_ENC
     #undef MFX_ENABLE_H264_VIDEO_FEI_PAK
+    #undef MFX_ENABLE_VPP
 #endif
 
 #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(AS_VP8D_PLUGIN) || defined(AS_VP8E_PLUGIN) || defined(AS_VP9D_PLUGIN) || defined(AS_CAMERA_PLUGIN) || defined (MFX_RT)
