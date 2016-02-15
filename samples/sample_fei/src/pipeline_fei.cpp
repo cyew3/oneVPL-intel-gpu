@@ -2186,6 +2186,22 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                     feiPPS[fieldId].EntropyCodingModeFlag     = 1;
                     feiPPS[fieldId].ConstrainedIntraPredFlag  = m_encpakParams.ConstrainedIntraPredFlag;
                     feiPPS[fieldId].Transform8x8ModeFlag      = m_encpakParams.Transform8x8ModeFlag;
+                    /*
+                    IntraPartMask description from manual
+                    This value specifies what block and sub-block partitions are enabled for intra MBs.
+                    0x01 - 16x16 is disabled
+                    0x02 - 8x8 is disabled
+                    0x04 - 4x4 is disabled
+
+                    So on, there is additional condition for Transform8x8ModeFlag:
+                    If partitions below 16x16 present Transform8x8ModeFlag flag should be ON
+                     * */
+                    if (!(feiEncCtrl[fieldId].IntraPartMask &0x02) || !(feiEncCtrl[fieldId].IntraPartMask &0x04) )
+                    {
+                        feiPPS[fieldId].Transform8x8ModeFlag = 1;
+                        msdk_printf(MSDK_STRING("\nWARNING: Transform8x8ModeFlag enforced!\n"));
+                        msdk_printf(MSDK_STRING("           Reason: IntraPartMask = %u, has does not disabled partitions below 16x16\n"), m_encpakParams.IntraPartMask);
+                    }
                 }
 
                 /* Slice Header */

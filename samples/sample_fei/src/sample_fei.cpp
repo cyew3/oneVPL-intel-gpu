@@ -852,9 +852,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
         if (!pParams->CodecLevel)
             pParams->CodecLevel = 41;    // MFX_LEVEL_AVC_41
-
-        if (pParams->bENCPAK || pParams->bOnlyENC || pParams->bOnlyPAK)
-            pParams->Transform8x8ModeFlag = true; // current limitation (ENC PAK)
     }
 
     /* One slice by default */
