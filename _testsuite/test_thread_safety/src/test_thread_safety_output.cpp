@@ -49,7 +49,6 @@ mfxHDL OutputRegistrator::Register()
 void OutputRegistrator::UnRegister(mfxHDL handle)
 {
     CommitData(handle, 0, 0);
-    m_numRegistered--;
 }
 
 mfxU32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
