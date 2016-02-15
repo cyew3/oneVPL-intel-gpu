@@ -116,7 +116,7 @@ public:
                           PPS   const &     pps,
                           Slice const &     slice,
                           mfxU32* qpd_offset = 0);
-    static void PackVUI  (BitstreamWriter& bs, VUI        const & vui);
+    static void PackVUI  (BitstreamWriter& bs, VUI        const & vui, mfxU16 max_sub_layers_minus1);
     static void PackHRD  (BitstreamWriter& bs, HRDInfo    const & hrd, bool commonInfPresentFlag, mfxU16 maxNumSubLayersMinus1);
     static void PackPTL  (BitstreamWriter& bs, LayersInfo const & ptl, mfxU16 max_sub_layers_minus1);
     static void PackSLO  (BitstreamWriter& bs, LayersInfo const & slo, mfxU16 max_sub_layers_minus1);

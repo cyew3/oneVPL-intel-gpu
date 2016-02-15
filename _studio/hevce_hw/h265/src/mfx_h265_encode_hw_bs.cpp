@@ -1020,7 +1020,7 @@ void HeaderPacker::PackHRD(
     }
 }
 
-void HeaderPacker::PackVUI(BitstreamWriter& bs, VUI const & vui)
+void HeaderPacker::PackVUI(BitstreamWriter& bs, VUI const & vui, mfxU16 max_sub_layers_minus1)
 {
     bs.PutBit(vui.aspect_ratio_info_present_flag);
 
@@ -1090,7 +1090,7 @@ void HeaderPacker::PackVUI(BitstreamWriter& bs, VUI const & vui)
         bs.PutBit(vui.hrd_parameters_present_flag);
 
         if (vui.hrd_parameters_present_flag)
-            PackHRD(bs, vui.hrd, 1, 0);
+            PackHRD(bs, vui.hrd, 1, max_sub_layers_minus1);
     }
 
     bs.PutBit(vui.bitstream_restriction_flag);
@@ -1192,7 +1192,7 @@ void HeaderPacker::PackSPS(BitstreamWriter& bs, SPS const & sps)
     bs.PutBit(sps.vui_parameters_present_flag);
 
     if (sps.vui_parameters_present_flag)
-        PackVUI(bs, sps.vui);
+        PackVUI(bs, sps.vui, sps.max_sub_layers_minus1);
 
     bs.PutBit(0); //sps.extension_flag
 
