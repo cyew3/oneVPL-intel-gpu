@@ -2226,8 +2226,8 @@ mfxStatus CEncodingPipeline::InitInterfaces()
 
                     // TODO: Implement real slice divider
                     // For now only one slice is supported
-                    mfxU16 nMBrows = (m_heightMB/m_numOfFields + feiSliceHeader[fieldId].NumSlice - 1) / feiSliceHeader[fieldId].NumSlice,
-                        nMBremain = m_heightMB/m_numOfFields;
+                    mfxU16 nMBrows = (m_heightMB + feiSliceHeader[fieldId].NumSlice - 1) / feiSliceHeader[fieldId].NumSlice,
+                        nMBremain = m_heightMB;
                     for (int numSlice = 0; numSlice < feiSliceHeader[fieldId].NumSlice; numSlice++)
                     {
                         feiSliceHeader[fieldId].Slice[numSlice].MBAaddress = numSlice*(nMBrows*m_widthMB);
@@ -2531,46 +2531,39 @@ mfxStatus CEncodingPipeline::Run()
     mfxFrameSurface1* pSurf = NULL; // dispatching pointer
     sTask *pCurrentTask     = NULL; // a pointer to the current task
 
-    //m_widthMB  = ((m_encpakParams.nWidth  + 15) & ~15);
-    //m_heightMB = ((m_encpakParams.nHeight + 15) & ~15);
-    //m_numMB = m_widthMB * m_heightMB / 256;
-
     /* if TFF or BFF*/
     if ((m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF) ||
         (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF))
     {
         m_numOfFields = 2;
-        // For interlaced mode, may need an extra MB vertically
-        // For example if the progressive mode has 45 MB vertically
-        // The interlace should have 23 MB for each field
-        //m_numMB = m_widthMB / 16 * (((m_heightMB / 16) + 1) / 2);
         m_isField = true;
     }
 
-    //m_widthMB  /= 16;
-    //m_heightMB /= 16;
+    // For interlaced mode, may need an extra MB vertically
+    // For example if the progressive mode has 45 MB vertically
+    // The interlace should have 23 MB for each field
 
     m_widthMB  = MSDK_ALIGN16(m_encpakParams.nWidth);
     m_heightMB = m_isField ? MSDK_ALIGN32(m_encpakParams.nHeight) : MSDK_ALIGN16(m_encpakParams.nHeight);
     m_numMB = (m_widthMB * m_heightMB) >> 8;
     m_numMB /= m_numOfFields;
-    m_widthMB  >>= 4;
-    m_heightMB >>= 4;
-
-    m_ffid = m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF;
-    m_sfid = m_isField - m_ffid;
 
     if (m_encpakParams.bPREENC && m_encpakParams.preencDSstrength)
     {
         // PreEnc is performed on lower resolution
-        mfxU16 widthMB  = ((m_mfxDSParams.vpp.Out.Width  + 15) & ~15);
-        mfxU16 heightMB = ((m_mfxDSParams.vpp.Out.Height + 15) & ~15);
-        m_numMBpreenc = widthMB * heightMB / 256;
-        if (m_isField)
-            m_numMBpreenc = widthMB / 16 * (((heightMB / 16) + 1) / 2);
+        mfxU16 widthMB  = MSDK_ALIGN16(m_mfxDSParams.vpp.Out.Width);
+        mfxU16 heightMB = m_isField ? MSDK_ALIGN32(m_mfxDSParams.vpp.Out.Height) : MSDK_ALIGN16(m_mfxDSParams.vpp.Out.Height);
+        m_numMBpreenc = (widthMB * heightMB) >> 8;
+        m_numMBpreenc /= m_numOfFields;
     }
     else
         m_numMBpreenc = m_numMB;
+
+    m_widthMB  >>= 4;
+    m_heightMB >>= m_isField ? 5 : 4;
+
+    m_ffid = m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF;
+    m_sfid = m_isField - m_ffid;
 
     // init parameters
     sts = InitInterfaces();
