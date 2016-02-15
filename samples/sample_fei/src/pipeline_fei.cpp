@@ -4085,9 +4085,10 @@ mfxStatus CEncodingPipeline::DropENCPAKoutput(iTask* eTask)
     mfxExtFeiEncMV*     mvBuf     = NULL;
     mfxExtFeiEncMBStat* mbstatBuf = NULL;
     mfxExtFeiPakMBCtrl* mbcodeBuf = NULL;
+
+    int mvBufId = 0;
     for (int i = 0; i < eTask->out.NumExtParam; i++)
     {
-        int mvBufId = 0;
         switch (eTask->out.ExtParam[i]->BufferId)
         {
         case MFX_EXTBUFF_FEI_ENC_MV:
