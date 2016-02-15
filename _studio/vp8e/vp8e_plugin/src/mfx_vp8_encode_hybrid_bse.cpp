@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -847,8 +847,8 @@ namespace MFX_VP8ENC
                             smode = (cMb->InterSplitModes >> (bl*2)) & 0x03;
                             vp8EncodeTreeToken(m_BoolEncStates, vp8_block_mv_map[smode],vp8_block_mv_tree, vp8_block_mv_probs[cntx], 0);
                             if(smode==VP8_B_MV_NEW) {
-                                vp8EncodeMvComponent(m_BoolEncStates, (cMb->NewMV4x4[bl].MV.mvy-nearMvs[0].MV.mvy)>>1, m_ctrl.mvContexts[0]);
-                                vp8EncodeMvComponent(m_BoolEncStates, (cMb->NewMV4x4[bl].MV.mvx-nearMvs[0].MV.mvx)>>1, m_ctrl.mvContexts[1]);
+                                vp8EncodeMvComponent(m_BoolEncStates, (cMb->NewMV4x4[static_cast<int>(bl)].MV.mvy-nearMvs[0].MV.mvy)>>1, m_ctrl.mvContexts[0]);
+                                vp8EncodeMvComponent(m_BoolEncStates, (cMb->NewMV4x4[static_cast<int>(bl)].MV.mvx-nearMvs[0].MV.mvx)>>1, m_ctrl.mvContexts[1]);
                             }
                             if (cMb->MbSubmode == VP8_MV_QUARTERS && j==1) bl+=4;
                             bl += offset;
@@ -1395,8 +1395,8 @@ namespace MFX_VP8ENC
                         {
                             smode = (cMb->InterSplitModes >> (bl*2)) & 0x03;
                             if(smode==VP8_B_MV_NEW) {
-                                vp8UpdateMVCounters(m_cnt1.mbMVs,  (cMb->NewMV4x4[bl].MV.mvy - nearMvs[0].MV.mvy)>>1);
-                                vp8UpdateMVCounters(m_cnt1.mbMVs+1,(cMb->NewMV4x4[bl].MV.mvx - nearMvs[0].MV.mvx)>>1);
+                                vp8UpdateMVCounters(m_cnt1.mbMVs,  (cMb->NewMV4x4[static_cast<int>(bl)].MV.mvy - nearMvs[0].MV.mvy)>>1);
+                                vp8UpdateMVCounters(m_cnt1.mbMVs+1,(cMb->NewMV4x4[static_cast<int>(bl)].MV.mvx - nearMvs[0].MV.mvx)>>1);
                             }
                             if (cMb->MbSubmode == VP8_MV_QUARTERS && j==1) bl+=4;
                             bl += offset;

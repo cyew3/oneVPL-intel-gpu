@@ -706,7 +706,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(mfxVideoParam const & par)
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     std::vector<VASurfaceID> reconSurf;
-    for(int i = 0; i < m_reconQueue.size(); i++)
+    for(size_t i = 0; i < m_reconQueue.size(); i++)
         reconSurf.push_back(m_reconQueue[i].surface);
 
     // Encoder create
