@@ -38,7 +38,8 @@ namespace MfxLoader
 
     SimpleLoader::~SimpleLoader()
     {
-        dlclose(so_handle);
+        if (so_handle)
+            dlclose(so_handle);
     }
 
 #define SIMPLE_LOADER_STRINGIFY1( x) #x
