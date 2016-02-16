@@ -2673,6 +2673,7 @@ H264DecoderFrame *TaskSupplier::GetFreeFrame(const H264Slice *pSlice)
     {
         if (pDPB->countAllFrames() >= view.maxDecFrameBuffering + m_DPBSizeEx)
         {
+            DEBUG_PRINT((VM_STRING("Fail to find disposable frame")));
             return 0;
         }
 
@@ -2683,6 +2684,12 @@ H264DecoderFrame *TaskSupplier::GetFreeFrame(const H264Slice *pSlice)
 
         pDPB->append(pFrame);
     }
+
+    DEBUG_PRINT((VM_STRING("Cleanup frame POC - %d, %d, field - %d, uid - %d, frame_num - %d, viewId - %d\n"),
+        pFrame->m_PicOrderCnt[0], pFrame->m_PicOrderCnt[1],
+        pFrame->GetNumberByParity(pSlice->GetSliceHeader()->bottom_field_flag),
+        pFrame->m_UID, pFrame->m_FrameNum, pFrame->m_viewId)
+    );
 
     DecReferencePictureMarking::Remove(pFrame);
     pFrame->Reset();
@@ -3719,7 +3726,6 @@ Status TaskSupplier::CompleteDecodedFrames(H264DecoderFrame ** decoded)
                         continue;
                     }
 
-                    DEBUG_PRINT((VM_STRING("Decode POC - %d, uid - %d, viewId - %d \n"), frame->m_PicOrderCnt[0], frame->m_UID, frame->m_viewId));
                     frame->OnDecodingCompleted();
                     existCompleted = true;
                 }
@@ -3991,6 +3997,7 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource)
 
         if (!(flags & MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME))
         {
+            VM_ASSERT(!m_pLastSlice);
             return AddSlice(0, true);
         }
     }

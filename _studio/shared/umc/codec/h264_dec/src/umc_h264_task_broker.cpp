@@ -20,10 +20,8 @@
 #include "umc_h264_dec_debug.h"
 #include "mfx_trace.h"
 
-//#define ECHO
 //#define ECHO_DEB
 //#define VM_DEBUG
-//#define _TASK_MESSAGE
 
 //#define TIME
 
@@ -52,30 +50,6 @@ Ipp32s TryToGet(void *p)
         lock_failed++;
     return res;
 }*/
-
-#if 0
-
-#undef DEBUG_PRINT
-
-#if defined ECHO || defined TIME
-#define DEBUG_PRINT(x) Trace x
-#else
-#define DEBUG_PRINT(x)
-#endif
-
-#if 0
-#define DEBUG_PRINT1(x) Trace x
-#else
-#define DEBUG_PRINT1(x)
-#endif
-
-
-#else
-#undef DEBUG_PRINT
-#undef DEBUG_PRINT1
-#define DEBUG_PRINT(x)
-#define DEBUG_PRINT1(x)
-#endif
 
 namespace UMC
 {

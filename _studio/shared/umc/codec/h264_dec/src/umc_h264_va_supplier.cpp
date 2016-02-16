@@ -146,6 +146,7 @@ H264DecoderFrame *VATaskSupplier::GetFreeFrame(const H264Slice * pSlice)
     {
         if (view.GetDPBList(0)->countAllFrames() >= view.maxDecFrameBuffering + m_DPBSizeEx)
         {
+            DEBUG_PRINT((VM_STRING("Fail to find disposable frame\n")));
             return 0;
         }
 
@@ -156,6 +157,12 @@ H264DecoderFrame *VATaskSupplier::GetFreeFrame(const H264Slice * pSlice)
 
         view.GetDPBList(0)->append(pFrame);
     }
+
+    DEBUG_PRINT((VM_STRING("Cleanup frame POC - %d, %d, field - %d, uid - %d, frame_num - %d, viewId - %d\n"),
+        pFrame->m_PicOrderCnt[0], pFrame->m_PicOrderCnt[1],
+        pFrame->GetNumberByParity(pSlice->GetSliceHeader()->bottom_field_flag),
+        pFrame->m_UID, pFrame->m_FrameNum, pFrame->m_viewId)
+    );
 
     DecReferencePictureMarking::Remove(pFrame);
     pFrame->Reset();
@@ -204,7 +211,14 @@ Status VATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
     if (umsRes != UMC_OK)
         return umsRes;
 
-    DEBUG_PRINT((VM_STRING("Complete frame POC - (%d,%d) type - %d, field - %d, count - %d, m_uid - %d, IDR - %d, viewId - %d\n"), pFrame->m_PicOrderCnt[0], pFrame->m_PicOrderCnt[1], pFrame->m_FrameType, field, pFrame->GetAU(field)->GetSliceCount(), pFrame->m_UID, pFrame->m_bIDRFlag, pFrame->m_viewId));
+    DEBUG_PRINT((VM_STRING("Complete frame POC - (%d,%d) type - %d, picStruct - %d, field - %d, count - %d, m_uid - %d, IDR - %d, viewId - %d\n"),
+        pFrame->m_PicOrderCnt[0], pFrame->m_PicOrderCnt[1],
+        pFrame->m_FrameType,
+        pFrame->m_displayPictureStruct,
+        field,
+        pFrame->GetAU(field)->GetSliceCount(),
+        pFrame->m_UID, pFrame->m_bIDRFlag, pFrame->m_viewId
+    ));
 
     // skipping algorithm
     {
