@@ -59,6 +59,8 @@ public:
         FRAME_RATE,
         BR,
         PROFILE,
+        NULL_GOPREFDIST,
+        NULL_FR,
         NONE
     };
 
@@ -131,6 +133,11 @@ private:
         mfxU32 MaxTileCols = TableA1[lidx][5];
         mfxU32 MaxLumaSr = TableA2[lidx][0];
         mfxU32 MaxBR = TableA2[lidx][1 + tidx];
+
+        if (m_par.mfx.GopPicSize < 3 || m_par.mfx.NumRefFrame == 1)
+            m_par.mfx.GopRefDist = 1;
+        else
+            m_par.mfx.GopRefDist = TS_MIN(m_par.mfx.GopPicSize - 1, 4);
 
         switch (tc.type)
         {
@@ -212,7 +219,22 @@ private:
                     m_par.mfx.RateControlMethod = 0;
                     break;
         }
-        default: break;
+        case NULL_GOPREFDIST:
+        {
+                    m_par.mfx.FrameInfo.Width = (((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8)) + 32 - 1) & ~(32 - 1)) + 32;
+                    m_par.mfx.FrameInfo.Height = ((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f);
+                    m_par.mfx.GopRefDist = 0;
+                    break;
+        }
+        case NULL_FR:
+        {
+                    m_par.mfx.FrameInfo.Width = (((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8)) + 32 - 1) & ~(32 - 1)) + 32;
+                    m_par.mfx.FrameInfo.Height = ((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f);
+                    m_par.mfx.FrameInfo.FrameRateExtN = 0;
+                    m_par.mfx.FrameInfo.FrameRateExtD = 0;
+                    break;
+        }
+        default:  break;
         }
         return 0;
     }
@@ -754,35 +776,35 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
     //------- Level 6  -------//
     // ok res, ok framerate
-    {/*74*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_6, FRAME_RATE, NONE, {
+    {/*73*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_6, FRAME_RATE, NONE, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_6},
 
        },
     },
     // wrong resolution
-    {/*75*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_6, RESOLUTION, NOT_ALLIGNED, {
+    {/*74*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_6, RESOLUTION, NOT_ALLIGNED, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_6},
 
        },
     },
     // ok res, wrong framerate
-    {/*76*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_61, FRAME_RATE, NONE, {
+    {/*75*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_61, FRAME_RATE, NONE, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_6},
 
        },
     },
     // ok slices
-    {/*77*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_6, SLICE, NONE, {
+    {/*76*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_6, SLICE, NONE, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_6},
 
        },
     },
     // wrong slices
-    {/*78*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_6, SLICE, NONE, {
+    {/*77*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_6, SLICE, NONE, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_6},
 
@@ -790,35 +812,35 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
     //------- Level 6.1  -------//
     // ok res, ok framerate
-    {/*79*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_61, FRAME_RATE, NONE, {
+    {/*78*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_61, FRAME_RATE, NONE, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_61},
 
        },
     },
     // wrong resolution
-    {/*80*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_61, RESOLUTION, NOT_ALLIGNED, {
+    {/*79*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_61, RESOLUTION, NOT_ALLIGNED, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_61},
 
        },
     },
     // ok res, wrong framerate
-    {/*81*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_62, FRAME_RATE, NONE, {
+    {/*80*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_62, FRAME_RATE, NONE, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_61},
 
        },
     },
     // ok slices
-    {/*82*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_61, SLICE, NONE, {
+    {/*81*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_61, SLICE, NONE, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_61},
 
        },
     },
     // wrong slices
-    {/*83*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_61, SLICE, NONE, {
+    {/*82*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_61, SLICE, NONE, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_61},
 
@@ -826,21 +848,21 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
     //------- Level 6.2  -------//
     // ok res, ok framerate
-    {/*84*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_62, FRAME_RATE, NONE, {
+    {/*83*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_62, FRAME_RATE, NONE, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_62},
 
        },
     },
     // wrong resolution
-    {/*85*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_62, RESOLUTION, NOT_ALLIGNED, {
+    {/*84*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_62, RESOLUTION, NOT_ALLIGNED, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_62},
 
        },
     },
     // ok res, wrong framerate
-    {/*86*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_62, NONE, NONE, {
+    {/*85*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_62, NONE, NONE, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_62},
         { MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 8192 },
@@ -850,21 +872,21 @@ const TestSuite::tc_struct TestSuite::test_case[] =
        },
     },
     // ok slices
-    {/*87*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_62, SLICE, NONE, {
+    {/*86*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_62, SLICE, NONE, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_62},
 
        },
     },
     // wrong slices
-    {/*88*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_62, SLICE, NONE, {
+    {/*87*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_62, SLICE, NONE, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_62},
 
        },
     },
     //------- unsupported profiles  -------//
-    {/*89*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_1, PROFILE, NONE, {
+    {/*88*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_1, PROFILE, NONE, {
         { MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAINSP },
         { MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_1 },
         { MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 128 },
@@ -874,13 +896,25 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         { MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 2 },
        },
     },
-    {/*90*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_1, PROFILE, NONE, {
+    {/*89*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_1, PROFILE, NONE, {
         { MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_AVC_HIGH },
         { MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_1 },
         { MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 128 },
         { MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 96 },
         { MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 30 },
         { MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1 },
+       },
+    },
+    {/*90*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_1, NULL_GOPREFDIST, NONE, {
+        { MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN },
+        { MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_1 },
+
+       },
+    },
+    {/*91*/ MFX_ERR_NONE, MFX_LEVEL_HEVC_1, NULL_FR, NONE, {
+        { MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_MAIN },
+        { MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_1 },
+
        },
     },
 };
