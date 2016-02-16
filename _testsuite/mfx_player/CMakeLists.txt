@@ -21,9 +21,10 @@ list( APPEND sources ${srcs})
 
 list( REMOVE_ITEM sources ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_player.cpp)
 
+set( defs "${defs} ${WARNING_FLAGS}" )
 make_library( mfx_pipeline universal static )
 
-set( defs "-DLUCAS_DLL" )
+set( defs "-DLUCAS_DLL -Wall -Werror" )
 make_library( mfx_pipeline_lucas universal static )
 
 # =============================================================================
@@ -50,6 +51,7 @@ list( APPEND LIBS
     ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
     pthread dl
 )
+set( defs "${defs} ${WARNING_FLAGS}" )
 make_executable( mfx_player universal static )
 
 set( defs "-DLUCAS_DLL" )
@@ -70,4 +72,5 @@ list( APPEND LIBS
     ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
     pthread dl
 )
+set( defs "${defs} ${WARNING_FLAGS}" )
 make_library( mfx_player_lucas universal shared )

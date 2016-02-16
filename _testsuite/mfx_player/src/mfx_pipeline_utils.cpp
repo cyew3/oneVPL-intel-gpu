@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -28,7 +28,7 @@ File Name: .h
 
 typedef struct {
     int code;
-    vm_char *string;
+    const vm_char *string;
 } CodeStringTable;
 
 
@@ -367,7 +367,7 @@ mfxU32 PipelineSetTrace(mfxU32 nProvider, mfxU32 sink)
                           {PROVIDER_WRN,   &g_WrnSink},
                           {PROVIDER_INFO,  &g_InfoSink} };
 
-    for (int i =0; i < MFX_ARRAY_SIZE(all_providers); i++)
+    for (unsigned int i =0; i < MFX_ARRAY_SIZE(all_providers); i++)
     {
         if ((nProvider & all_providers[i].type) == all_providers[i].type)
         {

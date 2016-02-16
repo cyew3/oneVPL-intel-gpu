@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -16,8 +16,8 @@ BitstreamDecoder::BitstreamDecoder(DecodeContext * pCtx)
     , InterfaceProxy<IYUVSource>(pCtx->pSource)
     , m_Ctx(*pCtx)
     , m_surfaces(pCtx->pTime)
-    , m_Alloc(pCtx->pAlloc)
     , m_bsRemained()
+    , m_Alloc(pCtx->pAlloc)
 {
 }
 

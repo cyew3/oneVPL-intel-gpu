@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -18,10 +18,10 @@ File Name: .h
 using namespace UMC;
 
 MFXBistreamBuffer::MFXBistreamBuffer()
-    : m_bStartedBuffering()
+    : m_bDonotUseLinear()
+    , m_bStartedBuffering()
     , m_bEnable()
     , m_bEos()
-    , m_bDonotUseLinear()
     , m_inputBS()
 {
 }
@@ -85,7 +85,7 @@ mfxStatus MFXBistreamBuffer::Reset()
     {
         m_UMCBuffer.UnLockInputBuffer(NULL, UMC_ERR_END_OF_STREAM);
         mfxBitstream2 bs;
-        if (UMC_OK == LockOutput(&bs))
+        if (UMC_OK == static_cast<int>(LockOutput(&bs)))
         {
             bs.DataLength = 0;
             UnLockOutput(&bs);

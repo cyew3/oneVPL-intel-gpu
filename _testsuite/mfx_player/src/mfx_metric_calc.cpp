@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -44,7 +44,7 @@ mfxStatus MFXPsnrCalc::Reset()
 
 vm_char* MFXPsnrCalc::GetMetricName()
 {
-    return VM_STRING("PSNR");
+    return const_cast<vm_char*>(VM_STRING("PSNR"));
 }
 
 mfxF64 MFXPsnrCalc::CalcPSNR(mfxF64 norm2, mfxI64 size)
@@ -266,14 +266,14 @@ mfxF64 MFXSSIMCalc::ssim(mfxU8* data1, mfxU32 pitch1, mfxU8* data2, mfxU32 pitch
 }
 
 MFXSSIMCalc::MFXSSIMCalc()
-: m_mu1(NULL)
+: m_width(0)
+, m_height(0)
+, m_mu1(NULL)
 , m_mu2(NULL)
 , m_mu1_sq(NULL)
 , m_mu2_sq(NULL)
 , m_mu1_mu2(NULL)
 , m_tmp(NULL)
-, m_width(0)
-, m_height(0)
 , m_nSize(0)
 {
     m_ssim_c1 = 6.5025f; m_ssim_c2 = 58.5225f;
@@ -319,7 +319,7 @@ mfxStatus MFXSSIMCalc::Reset()
 
 vm_char* MFXSSIMCalc::GetMetricName()
 {
-    return VM_STRING("SSIM");
+    return const_cast<vm_char*>(VM_STRING("SSIM"));
 }
 
 mfxStatus MFXSSIMCalc::GetLastCmpResult(double pResult[3])
@@ -490,7 +490,7 @@ mfxStatus MFXYUVDump::Reset()
 
 vm_char* MFXYUVDump::GetMetricName()
 {
-    return VM_STRING("DUMP");
+    return const_cast<vm_char*>(VM_STRING("DUMP"));
 }
 
 mfxStatus MFXYUVDump::Compare(mfxFrameSurface1 * pIn1, mfxFrameSurface1 * pIn2)

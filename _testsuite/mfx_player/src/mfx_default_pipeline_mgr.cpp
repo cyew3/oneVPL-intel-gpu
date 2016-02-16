@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -27,6 +27,10 @@ File Name: .h
 
 #define GO_OR_QUIT(action)\
     MFX_CHECK_WITH_ERR(MFX_ERR_NONE == pPipeline->action, vm_string_printf(VM_STRING("\nERROR: %s \nFAILED\n"), pPipeline->GetLastErrString()));
+
+#if defined(__GNUC__)
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 int MFXPipelineManager::Execute(IMFXPipelineConfig *pCfg)throw()
 {

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -311,11 +311,11 @@ bool MFXVC1FrameConstructor::IsStartCodeExist(mfxU8* pStart)
 
 //////////////////////////////////////////////////////////////////////////
 
-StartCodeIteratorMP4::StartCodeIteratorMP4() 
-: m_pSourceBase(0)
-, m_pSource(0)
+StartCodeIteratorMP4::StartCodeIteratorMP4()
+: m_pSource(0)
+, m_nSourceSize(0)
+, m_pSourceBase(0)
 , m_nSourceBaseSize(0)
-, m_nSourceSize(0) 
 {
 }
 

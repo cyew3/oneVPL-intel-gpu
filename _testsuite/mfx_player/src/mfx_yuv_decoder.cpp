@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -22,13 +22,13 @@ MFXYUVDecoder::MFXYUVDecoder(IVideoSession* session,
                              IMFXPipelineFactory * pFactory,
                              const vm_char *  outlineInput)
     : m_session(session)
+    , m_vParam()
+    //check for null faster that examinee string lenght each time frame gots constructed
+    , m_internalBS()
     , m_syncPoint((mfxSyncPoint)&m_syncPoint)
     , m_nFrames(0)
-    //check for null faster that examinee string lenght each time frame gots constructed
     , m_pOutlineFileName(vm_string_strlen(outlineInput) ? outlineInput : NULL)
-    , m_vParam()
-    , m_internalBS()
-{  
+{
     mfxFrameInfo &info = m_vParam.mfx.FrameInfo;
     mfxFrameInfo &infoIn = frameParam.mfx.FrameInfo;
 

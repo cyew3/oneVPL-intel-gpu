@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2010-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -21,14 +21,14 @@ BufferedBitstreamReader::BufferedBitstreamReader( IBitstreamReader *pReader
                                                 , int nDataSizeForwardSpecificSize
                                                 , const mfx_shared_ptr<IFile> & fileAcc)
 : base(pReader)
+, m_CurrFrame()
+, m_CurrFrameOffset()
 , m_CurChunk ()
 , m_CurChunkOffset ()
 , m_AllocationChunkAlgo(nAllocationChunk)
 , m_AllocationChunkize(nAllocationChunk & SpecificChunkSize ? nSpecificChunkSize : DefaultChunkLenght)
 , m_ForwardChunkAlgo(nDataSizeForward)
 , m_ForwardChunkize(nDataSizeForward & SpecificChunkSize ? nDataSizeForwardSpecificSize : DefaultChunkLenght)
-, m_CurrFrame()
-, m_CurrFrameOffset()
 , m_pFileAccess(fileAcc)
 {
 }

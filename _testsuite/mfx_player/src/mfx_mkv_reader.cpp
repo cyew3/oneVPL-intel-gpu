@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2014-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -188,7 +188,7 @@ int TagsMatched(mfxU8 *buffer, int size){
             return matched_tags;
         }
         match = true;
-        if ( elements[i].size < size){
+        if ( elements[i].size < static_cast<mfxU32>(size)){
             continue;
         }
         for(int j = 0; j < size; j++){
@@ -204,7 +204,7 @@ int TagsMatched(mfxU8 *buffer, int size){
     }
 }
 
-char *TagToString(TagId id) {
+const char *TagToString(TagId id) {
     for (int i = 0;; i++){
         if(elements[i].id == TAG_UNKNOWN){
             return "unknown";
@@ -228,7 +228,7 @@ void PrintValue(DataType type, void *value, int size){
             fprintf(stderr, " Value(byte3):  %d\n", *((int *)value));
             break;
         case DATATYPE_BYTE8:
-            fprintf(stderr, " Value(byte8):  %l\n", *((long *)value));
+            fprintf(stderr, " Value(byte8):  %ld\n", *((long *)value));
             break;
         case DATATYPE_SHORT:
             fprintf(stderr, " Value(short): %d\n", *((short *)value));
@@ -256,7 +256,7 @@ TagId FindTagId(mfxU8 *buffer, int size){
         if(elements[i].id == TAG_UNKNOWN){
             return TAG_UNKNOWN;
         }
-        if ( size == elements[i].size ){
+        if (static_cast<mfxU32>(size) == elements[i].size ){
             matched = true;
             for(int j = 0; j < size; j++){
                 if (buffer[j] != elements[i].tag[j]){
@@ -298,7 +298,10 @@ mfxU32 MKVReader::GetSize(){
         result = ((buffer[0] ^ BYTE4MASK) << 24 | buffer[1] << 16 |  buffer[2] << 8 | buffer[3] );
         rewind = -4;
     } else if ( BYTE8MASK & buffer[0] ){
-        result = (unsigned long)((buffer[0] ^ BYTE8MASK) << 56 | buffer[1] << 48 |  buffer[2] << 40| buffer[3] << 32 | buffer[4] << 24 | buffer[5] << 16 | buffer[6] << 8 | buffer[7]);
+        result = (unsigned long)(static_cast<uint64_t>(buffer[0] ^ BYTE8MASK) << 56 |
+                static_cast<uint64_t>(buffer[1]) << 48 |
+                static_cast<uint64_t>(buffer[2]) << 40|
+                static_cast<uint64_t>(buffer[3]) << 32 | buffer[4] << 24 | buffer[5] << 16 | buffer[6] << 8 | buffer[7]);
     }
 
     vm_file_fseek(m_fSource, rewind, VM_FILE_SEEK_CUR);
@@ -312,32 +315,42 @@ void MKVReader::ReadValue(mfxU32 size, DataType type, void *value){
     buffer = (mfxU8 *)malloc(size);
     switch(type){
         case DATATYPE_BYTE:
-            vm_file_fread(buffer, 1, 1, m_fSource);
+            if (!vm_file_fread(buffer, 1, 1, m_fSource))
+                break;
             *((mfxU8 *)value) = buffer[0];
             break;
         case DATATYPE_SHORT:
-            vm_file_fread(buffer, 1, 2, m_fSource);
+            if (!vm_file_fread(buffer, 1, 2, m_fSource))
+                break;
             *((short *)value) = ( buffer[0] << 8 | buffer[1]);
             break;
         case DATATYPE_INT:
-            vm_file_fread(buffer, 1, 4, m_fSource);
+            if (!vm_file_fread(buffer, 1, 4, m_fSource))
+                break;
             *((int *)value) = ( buffer[0] << 24 | buffer[1] << 16 | buffer[2] << 8 | buffer[3]);
             break;
         case DATATYPE_BYTE3:
-            vm_file_fread(buffer, 1, 3, m_fSource);
+            if (!vm_file_fread(buffer, 1, 3, m_fSource))
+                break;
             *((int *)value) = ( buffer[0] << 16 | buffer[1] << 8 | buffer[2] );
             break;
         case DATATYPE_BYTE8:
-            vm_file_fread(buffer, 1, size, m_fSource);
-            *((unsigned long *)value) = (buffer[0] << 56 | buffer[1] << 48 | buffer[2] << 40 | buffer[3] << 32 | buffer[4] << 24 | buffer[5] << 16 | buffer[6] << 8 | buffer[7]);
+            if (!vm_file_fread(buffer, 1, size, m_fSource))
+                break;
+            *((unsigned long *)value) = (static_cast<uint64_t>(buffer[0]) << 56 |
+                    static_cast<uint64_t>(buffer[1]) << 48 |
+                    static_cast<uint64_t>(buffer[2]) << 40 |
+                    static_cast<uint64_t>(buffer[3]) << 32 | buffer[4] << 24 | buffer[5] << 16 | buffer[6] << 8 | buffer[7]);
             break;
         case DATATYPE_STR:
-            vm_file_fread(buffer, 1, size, m_fSource);
+            if (!vm_file_fread(buffer, 1, size, m_fSource))
+                break;
             memcpy((char*)value, (char *)buffer, size);
             ((char*)value)[size] = '\0';
             break;
         case DATATYPE_BIN:
-            vm_file_fread(buffer, 1, size, m_fSource);
+            if (!vm_file_fread(buffer, 1, size, m_fSource))
+                break;
             memcpy((mfxU8*)value, (mfxU8 *)buffer, size);
             break;
     }
@@ -541,7 +554,10 @@ mfxStatus MKVReader::ReadTrack(void){
                 }
             } else if ( tag == TAG_CodecPrivate ){
                 codec_private = new mfxU8[size];
-                vm_file_fread(codec_private, 1, size, m_fSource);
+                if (!vm_file_fread(codec_private, 1, size, m_fSource))
+                {
+                    return MFX_ERR_UNKNOWN;
+                }
             } else if ( TagHasEmbedData(tag) ){
                 switch(size){
                     case 1:
@@ -654,7 +670,10 @@ SEEK:
 
             block_size-=shift+1;
             data = new mfxU8[block_size];
-            vm_file_fread(data, 1, block_size, m_fSource);
+            if (!vm_file_fread(data, 1, block_size, m_fSource))
+            {
+                return MFX_ERR_UNKNOWN;
+            }
  
             mfxU32 internal = 0;
             mfxU32 jump;

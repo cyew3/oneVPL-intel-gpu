@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -46,9 +46,9 @@ UMCSplWrapper::UMCSplWrapper(mfxU32 nCorruptionLevel)
     , m_pInitParams()
     , m_pConstructor()
     , m_isVC1()
-    , m_nCorruptionLevel(nCorruptionLevel)
     , m_bInited()
     , m_bDecSpecInfo()
+    , m_nCorruptionLevel(nCorruptionLevel)
 {
 }
 
@@ -321,6 +321,7 @@ mfxStatus UMCSplWrapper::ReadNextFrame(mfxBitstream2 &bs2)
             case I_PICTURE    : bs.FrameType  = MFX_FRAMETYPE_I; break;
             case P_PICTURE    : bs.FrameType  = MFX_FRAMETYPE_P; break;
             case B_PICTURE    : bs.FrameType  = MFX_FRAMETYPE_B; break;
+            default: break;
         }
         
 

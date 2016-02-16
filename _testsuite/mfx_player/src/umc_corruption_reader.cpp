@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 #include "umc_defs.h"
@@ -46,11 +46,11 @@ Status CorruptionReader::Init(DataReaderParams *pInitParams)
     sts = m_Init.pActual->Init(m_Init.pActualParams);
 
     //for CorruptData_Packages
-    LostPackNum   = (Ipp32u)(rand()*m_Init.nLostFrequency/(RAND_MAX+1));
-    LostDataSize  = (Ipp32u)(rand()*m_Init.nPacketSize/(RAND_MAX+1));
+    LostPackNum   = (Ipp32u)(rand()*m_Init.nLostFrequency/(static_cast<unsigned int>(RAND_MAX)+1));
+    LostDataSize  = (Ipp32u)(rand()*m_Init.nPacketSize/(static_cast<unsigned int>(RAND_MAX)+1));
 
     //for CorruptData_ExchangePackages
-    ExchangePackLeft  = (Ipp32u)(rand()*m_Init.nLostFrequency/(RAND_MAX+1));        
+    ExchangePackLeft  = (Ipp32u)(rand()*m_Init.nLostFrequency/(static_cast<unsigned int>(RAND_MAX)+1));
     ExchangePackRight = ExchangePackLeft + 1;  
 
     CurPackNum      = 0;
@@ -84,12 +84,12 @@ Status CorruptionReader::Reset()
 {
     Status sts = (NULL == m_Init.pActual) ? UMC_OK : m_Init.pActual->Reset();
 
-    LostPackNum       = (Ipp32u)(rand()*m_Init.nLostFrequency/(RAND_MAX+1));
-    LostDataSize      = (Ipp32u)(rand()*m_Init.nPacketSize/(RAND_MAX+1));
+    LostPackNum       = (Ipp32u)(rand()*m_Init.nLostFrequency/(static_cast<unsigned int>(RAND_MAX)+1));
+    LostDataSize      = (Ipp32u)(rand()*m_Init.nPacketSize/(static_cast<unsigned int>(RAND_MAX)+1));
     CurPackNum        = 0;
     ReadDataSize      = 0;
     PrevPackNum       = 0;
-    ExchangePackLeft  = (Ipp32u)(rand()*m_Init.nLostFrequency/(RAND_MAX+1));        
+    ExchangePackLeft  = (Ipp32u)(rand()*m_Init.nLostFrequency/(static_cast<unsigned int>(RAND_MAX)+1));
     ExchangePackRight = ExchangePackLeft + 1;  
 
     return sts;
@@ -137,9 +137,9 @@ Status CorruptionReader::GetData(void *data, Ipp32u *nsize)
         ReadDataSize     -= m_Init.nLostFrequency * m_Init.nPacketSize;
         CurPackNum        = ReadDataSize/m_Init.nPacketSize;
         PrevPackNum       = CurPackNum;
-        LostPackNum       = (Ipp32u)(rand() * m_Init.nLostFrequency/(RAND_MAX + 1));
-        LostDataSize      = (Ipp32u)(rand() * m_Init.nPacketSize   /(RAND_MAX + 1));
-        ExchangePackLeft  = (Ipp32u)(rand() * m_Init.nLostFrequency/(RAND_MAX + 1));        
+        LostPackNum       = (Ipp32u)(rand() * m_Init.nLostFrequency/(static_cast<unsigned int>(RAND_MAX) + 1));
+        LostDataSize      = (Ipp32u)(rand() * m_Init.nPacketSize   /(static_cast<unsigned int>(RAND_MAX) + 1));
+        ExchangePackLeft  = (Ipp32u)(rand() * m_Init.nLostFrequency/(static_cast<unsigned int>(RAND_MAX) + 1));
         ExchangePackRight = ExchangePackLeft + 1;  
     }
 
@@ -160,7 +160,7 @@ Status CorruptionReader::CorruptData_Packages(void *pData, Ipp32u *nsize)
         {
             pos = LostPackNum * m_Init.nPacketSize - ReadDataSize;
             assert(pos < *nsize);
-            shift = (Ipp32u)(rand() * (m_Init.nPacketSize - LostDataSize)/(RAND_MAX+1));
+            shift = (Ipp32u)(rand() * (m_Init.nPacketSize - LostDataSize)/ (static_cast<unsigned int>(RAND_MAX)+1));
             pos += shift;
             assert(*nsize - LostDataSize - pos < *nsize);
             for(i = 0; i < *nsize - LostDataSize - pos; i++)

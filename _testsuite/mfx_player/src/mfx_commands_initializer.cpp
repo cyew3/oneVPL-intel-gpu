@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -64,14 +64,14 @@ baseCmdsInitializer::baseCmdsInitializer( mfxU32 nActivatedFrame
                                         , mfxVideoParam * pMaskedEncParam
                                         , mfxExtBuffer  * bufToAttach
                                         , mfxU32 nBufToRemove)
-    : m_nActivatedFrame(nActivatedFrame)
-    , m_fWarminUpTime(fWarminUpTime)
+    : m_fWarminUpTime(fWarminUpTime)
     , m_fSeekToTime(fSeekToTime)
     , m_nMaxSkipLevel(nMaxSkipLevel)
+    , m_nActivatedFrame(nActivatedFrame)
     , m_nBufferToRemove(nBufToRemove)
     , m_ResetParams()
-    , m_pBufferToAttach(bufToAttach)
     , m_maskedParams()
+    , m_pBufferToAttach(bufToAttach)
     , m_Randomizer(pRand)
 {
     if (NULL != pResetEncParam)

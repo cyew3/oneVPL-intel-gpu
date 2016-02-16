@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -18,9 +18,9 @@ File Name: .h
 mfxU32 TIME_STAMP_FREQUENCY = 90000;
 
 MediaSDKSplWrapper::MediaSDKSplWrapper(vm_char *extractedAudioFile)
-    : m_pConstructor()
+    : m_streamParams()
+    , m_pConstructor()
     , m_extractedAudioFile(NULL)
-    , m_streamParams()
 {
     if (0 != vm_string_strlen(extractedAudioFile))
     {
@@ -121,7 +121,8 @@ mfxStatus MediaSDKSplWrapper::ReadNextFrame(mfxBitstream2 &bs2)
         }
         else if (sts == MFX_ERR_NONE && m_streamParams.TrackInfo[iOutputTrack]->Type & MFX_TRACK_ANY_AUDIO && m_extractedAudioFile)
         {
-            vm_file_fwrite(bs.Data, 1, bs.DataLength, m_extractedAudioFile);
+            if (!vm_file_fwrite(bs.Data, 1, bs.DataLength, m_extractedAudioFile))
+                return MFX_ERR_UNKNOWN;
         }
         if (sts == MFX_ERR_NONE)
         {

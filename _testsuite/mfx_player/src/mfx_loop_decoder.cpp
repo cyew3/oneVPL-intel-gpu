@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -17,8 +17,8 @@ File Name: .h
 
 MFXLoopDecoder::MFXLoopDecoder( mfxI32 nNumFramesInLoop, std::auto_ptr<IYUVSource>& target )
     : base(target)
-    , m_syncPoint((mfxSyncPoint)0x101) //some random constant to distinguish from zero
     , m_CurrSurfaceIndex()
+    , m_syncPoint((mfxSyncPoint)0x101) //some random constant to distinguish from zero
 {
     m_Surfaces.reserve(nNumFramesInLoop);
     

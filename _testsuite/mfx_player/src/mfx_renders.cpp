@@ -30,10 +30,10 @@ MFXVideoRender::MFXVideoRender( IVideoSession * core
     : m_nFrames()
     , m_bFrameLocked()
     //, m_nFourCC()
-    , m_bAutoView(false)
-    , m_bIsViewRender(false)//until we call to init we don't know whether the render is a view render
-    , m_nViewId()
     , m_VideoParams()
+    , m_bIsViewRender(false)//until we call to init we don't know whether the render is a view render
+    , m_bAutoView(false)
+    , m_nViewId()
 {
     if (NULL != status)
         *status = MFX_ERR_NONE;
@@ -201,9 +201,9 @@ mfxStatus MFXVideoRender::GetDevice(IHWDevice **ppDevice)
 
 MFXFileWriteRender::MFXFileWriteRender(const FileWriterRenderInputParams &params, IVideoSession * core, mfxStatus *status)
     : MFXVideoRender(core, status)
-    , m_pOpenMode(VM_STRING("wb"))
-    , m_nFourCC(params.info.FourCC)
     , m_params(params)
+    , m_nFourCC(params.info.FourCC)
+    , m_pOpenMode(VM_STRING("wb"))
     , m_yv12Surface()
 {
     //m_fDest = NULL;
@@ -300,7 +300,7 @@ mfxStatus MFXFileWriteRender::Init(mfxVideoParam *pInit, const vm_char *pFilenam
             {
                 VM_ASSERT(m_nFourCC != MFX_FOURCC_YUV422_16);
                 bool useP010 = m_nFourCC == MFX_FOURCC_YUV420_16 || m_params.use10bitOutput;
-                m_VideoParams.mfx.FrameInfo.FourCC = useP010 ? MFX_FOURCC_YUV420_16 : MFX_FOURCC_YV12;
+                m_VideoParams.mfx.FrameInfo.FourCC = useP010 ? MFX_FOURCC_YUV420_16 : static_cast<int>(MFX_FOURCC_YV12);
                 if (m_VideoParams.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422)
                     m_VideoParams.mfx.FrameInfo.FourCC = MFX_FOURCC_YV16;
             }
@@ -357,7 +357,7 @@ mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncode
             if (!m_params.useHMstyle)
             {
                 bool useP010 = m_nFourCC == MFX_FOURCC_YUV420_16 || m_params.use10bitOutput;
-                m_VideoParams.mfx.FrameInfo.FourCC = useP010 ? MFX_FOURCC_YUV420_16 : MFX_FOURCC_YV12;
+                m_VideoParams.mfx.FrameInfo.FourCC = useP010 ? MFX_FOURCC_YUV420_16 : static_cast<int>(MFX_FOURCC_YV12);
                 if (m_VideoParams.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422)
                     m_VideoParams.mfx.FrameInfo.FourCC = MFX_FOURCC_YV16;
             }
@@ -777,26 +777,26 @@ mfxStatus MFXBMPRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
 //////////////////////////////////////////////////////////////////////////
 MFXMetricComparatorRender::MFXMetricComparatorRender(const FileWriterRenderInputParams & params, IVideoSession *core, mfxStatus *status)
     : MFXFileWriteRender(params, core, status)
-    , m_nNewFileOffset(0)
-    , m_nInFileLen(0)
-    , m_bAllocated()
-    , m_pRefArray(0)
-    , m_metricType(0)
-    , m_bFileSourceMode()
-    , m_bVerbose()
-    , m_pRefsurface(&m_refsurface)
-    , m_nOldFileOffset()
-    , m_nFrameToProcess()
-    , m_pMetricsOutFileName()
-    , m_bFirstFrame()
-    , m_bDelaySetSurface()
-    , m_bDelaySetOutputPerfFile()
-    , m_refsurface()
 #ifdef LUCAS_DLL
     , m_reader(new LucasYUVReader)
 #else
     , m_reader(new CYUVReader)
 #endif
+    , m_refsurface()
+    , m_pRefsurface(&m_refsurface)
+    , m_bAllocated()
+    , m_nInFileLen(0)
+    , m_nNewFileOffset(0)
+    , m_nOldFileOffset()
+    , m_pRefArray(0)
+    , m_metricType(0)
+    , m_bFileSourceMode()
+    , m_bVerbose()
+    , m_nFrameToProcess()
+    , m_pMetricsOutFileName()
+    , m_bFirstFrame()
+    , m_bDelaySetSurface()
+    , m_bDelaySetOutputPerfFile()
 {
 }
 
@@ -1291,7 +1291,7 @@ void MFXMetricComparatorRender::ReportDifference(const vm_char * metricName)
     vm_string_printf(VM_STRING("\nFAILED: %s%s comparison at\n"), metricName, pMetricNumber);
     vm_string_printf(VM_STRING("    frame  : %d\n"), m_nFrames);
     vm_string_printf(VM_STRING("    comp   : %c\n"), m_Current.m_comp);
-    if (m_Current.m_pixX != -1 && m_Current.m_pixY != -1)
+    if (static_cast<int>(m_Current.m_pixX) != -1 && static_cast<int>(m_Current.m_pixY) != -1)
     {
         vm_string_printf(VM_STRING("    x, y   : %d, %d\n"), m_Current.m_pixX, m_Current.m_pixY);
     }

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 #ifndef __UMC_CORRUPTOION_READER_H__
@@ -43,11 +43,11 @@ namespace UMC
         Ipp32u             nLostFrequency;
 
         CorruptionReaderParams()
-            : nPacketSize(PACK_SIZE)
-            , nLostFrequency(LOST_FREQUENCY)
-            , pActual()
+            : pActual()
             , pActualParams()
             , CorruptMode()
+            , nPacketSize(PACK_SIZE)
+            , nLostFrequency(LOST_FREQUENCY)
         {
         }
     };

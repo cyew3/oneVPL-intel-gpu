@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -16,12 +16,12 @@ File Name: .h
 
 LatencyDecoder::LatencyDecoder(bool bAggregateInfo, IStringPrinter * pPrinter, ITime * pTimer, const tstring & name, std::auto_ptr<IYUVSource>&  pTarget)
     : InterfaceProxy<IYUVSource>(pTarget)
-    , m_pTime(pTimer)
-    , m_pPrinter(NULL == pPrinter ? new ConsolePrinter() : pPrinter)
-    , m_lastAssignedTimestamp((mfxU64)-1)
     , m_bAggregateInfo(bAggregateInfo)
     , m_bFirstCall(true)
     , m_decodeHeaderTimestamp()
+    , m_lastAssignedTimestamp((mfxU64)-1)
+    , m_pTime(pTimer)
+    , m_pPrinter(NULL == pPrinter ? new ConsolePrinter() : pPrinter)
     , m_name(name)
 {
 }
@@ -46,7 +46,7 @@ mfxStatus LatencyDecoder::DecodeFrameAsync(mfxBitstream2 &bs, mfxFrameSurface1 *
 {
     //assuming resolution of timer is high enough to have second condition passed only once for each bitstream in handling of
     //wrn device busy
-    if (!bs.isNull && m_lastAssignedTimestamp != bs.TimeStamp || bs.TimeStamp == (mfxU64)-1)
+    if ((!bs.isNull && m_lastAssignedTimestamp != bs.TimeStamp) || bs.TimeStamp == (mfxU64)-1)
     {
 #if DECODE_HEADER_LATENCY
         if (0 != m_decodeHeaderTimestamp)
@@ -63,7 +63,7 @@ mfxStatus LatencyDecoder::DecodeFrameAsync(mfxBitstream2 &bs, mfxFrameSurface1 *
     //packing frametype into last 4 bits in timestamp, it donot affect timestamps since they have big resolution
     if (!bs.isNull)
     {
-        bs.TimeStamp = bs.TimeStamp & ~0x0F | bs.FrameType;
+        bs.TimeStamp = (bs.TimeStamp & ~0x0F) | bs.FrameType;
     }
     
     mfxStatus sts =  m_pTarget->DecodeFrameAsync(bs, surface_work, surface_out, syncp);

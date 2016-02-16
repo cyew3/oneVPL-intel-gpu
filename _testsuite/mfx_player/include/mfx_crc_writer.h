@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -93,7 +93,8 @@ protected:
             vm_file *f ;
             MFX_CHECK_VM_FOPEN(f, m_crcFile.c_str(), VM_STRING("wb"));
         
-            vm_file_write(&m_crc32, 1, sizeof(m_crc32), f);
+            if (!vm_file_write(&m_crc32, 1, sizeof(m_crc32), f))
+                return MFX_ERR_UNKNOWN;
             vm_file_fclose(f);
         }
         return MFX_ERR_NONE;

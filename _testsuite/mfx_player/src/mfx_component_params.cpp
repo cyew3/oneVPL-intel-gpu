@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -37,7 +37,7 @@ mfxU32 ComponentParams::GetAdapter()
         {MFX_IMPL_HARDWARE4, 3},
     };
 
-    for (int i =0; i < MFX_ARRAY_SIZE(adapters); i++)
+    for (unsigned int i =0; i < MFX_ARRAY_SIZE(adapters); i++)
     {
         if (MFX_IMPL_BASETYPE(m_RealImpl) == adapters[i].impl)
         {
@@ -420,6 +420,8 @@ mfxStatus ComponentParams::FindFreeSurface( mfxU32 sourceId
                     case  USE_OLDEST_REVERSE:
                         idx = (int)(refSurfaces.size() - i - 1);
 
+                        break;
+                    default:
                         break;
                 }
                 if (0 == refSurfaces[idx].pSurface->Data.Locked)

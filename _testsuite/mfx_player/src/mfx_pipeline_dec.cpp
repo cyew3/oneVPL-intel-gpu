@@ -120,8 +120,10 @@ using namespace std;
 //////////////////////////////////////////////////////////////////////////
 
 MFXDecPipeline::MFXDecPipeline(IMFXPipelineFactory *pFactory)
-    : m_RenderType(MFX_SCREEN_RENDER)
+    : m_YUV_Width(0)
+    , m_YUV_Height(0)
     //, m_d3dDeviceManagerSpy()
+    , m_RenderType(MFX_SCREEN_RENDER)
     , m_pSpl()
     , m_pVPP()
     , m_pRender()
@@ -129,20 +131,18 @@ MFXDecPipeline::MFXDecPipeline(IMFXPipelineFactory *pFactory)
     //, m_components[eDEC](VM_STRING("Decoder"))
     //, m_components[eVPP](VM_STRING("VPP"))
     //, m_components[eREN](VM_STRING("Encoder"))
+    , m_bVPPUpdateInput(false)
     , m_OptProc(false)
     , m_bResetAfterIncompatParams()
     , m_bErrIncompat()
     , m_bErrIncompatValid(true)
-    , m_externalsync()
-    , m_pFactory(pFactory)
     , m_extDecVideoProcessing(new mfxExtDecVideoProcessing())
     , m_extExtCamBlackLevelCorrection(new mfxExtCamBlackLevelCorrection())
     , m_extExtCamWhiteBalance(new mfxExtCamWhiteBalance())
     , m_extExtCamGammaCorrection(new mfxExtCamGammaCorrection())
     , m_extExtColorCorrection3x3(new mfxExtCamColorCorrection3x3())
-    , m_bVPPUpdateInput(false)
-    , m_YUV_Width(0)
-    , m_YUV_Height(0)
+    , m_externalsync()
+    , m_pFactory(pFactory)
 {
 
     m_bStat                 = true;
@@ -589,11 +589,11 @@ mfxStatus MFXDecPipeline::ReleasePipeline()
             {
                 int dist = m_inParams.fps_frame_window ? m_inParams.fps_frame_window : 30 ;
                 Ipp64f max_time = 0;
-                for(int i = 0; i < m_time_stampts.size(); i++)
+                for(unsigned int i = 0; i < m_time_stampts.size(); i++)
                 {
-                    if ( i + 1 >= dist )
+                    if ( i + 1 >= static_cast<unsigned int>(dist) )
                     {
-                        if ( i + 1 == dist )
+                        if ( i + 1 == static_cast<unsigned int>(dist) )
                         {
                             max_time = m_time_stampts[i] > max_time ? m_time_stampts[i] : max_time;
                         }
@@ -1733,7 +1733,7 @@ mfxStatus MFXDecPipeline::CreateRender()
 
     if (m_inParams.outFrameInfo.FourCC == MFX_FOURCC_UNKNOWN)
     {
-        m_inParams.outFrameInfo.FourCC = m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422 ?  MFX_FOURCC_YV16 : MFX_FOURCC_YV12;
+        m_inParams.outFrameInfo.FourCC = (m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422) ? static_cast<int>(MFX_FOURCC_YV16) : MFX_FOURCC_YV12;
         m_inParams.outFrameInfo.BitDepthLuma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma;
         m_inParams.outFrameInfo.BitDepthChroma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma;
         if (m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P210)
@@ -3425,7 +3425,7 @@ vm_char * MFXDecPipeline::GetLastErrString()
         }
     }
 
-    return VM_STRING("Unknown");
+    return const_cast<vm_char*>(VM_STRING("Unknown"));
 }
 
 mfxStatus MFXDecPipeline::ProcessCommand(vm_char ** &argv, mfxI32 argc, bool bReportError)
@@ -4574,7 +4574,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 MFX_CHECK(1 + argv != argvEnd);
                 MFX_PARSE_INT(m_inParams.FrameInfo.Width, argv[1]);
 
-                vm_string_sscanf(argv[1], VM_STRING("%dx%d"), &m_inParams.FrameInfo.Width, &m_inParams.FrameInfo.Height);
+                vm_string_sscanf(argv[1], VM_STRING("%dx%d"), reinterpret_cast<int*>(&m_inParams.FrameInfo.Width), reinterpret_cast<int*>(&m_inParams.FrameInfo.Height));
                 argv++;
                 m_inParams.bYuvReaderMode = true;
             }
@@ -4834,7 +4834,7 @@ void MFXDecPipeline::PrintCommonHelp()
 {
     vm_char *argv[1], **_argv = argv;
     mfxI32 argc = 1;
-    argv[0] = VM_STRING("unsupported option");
+    argv[0] = const_cast<vm_char*>(VM_STRING("unsupported option"));
 
     m_OptProc.SetPrint(true);
     ProcessCommand(_argv, argc, false);
@@ -5021,7 +5021,7 @@ mfxStatus MFXDecPipeline::ReadParFile(const vm_char * pInFile, IProcessCommand *
 
         for (argc = 0; p[0] && p[0] != '#'; p++)
         {
-            if (IS_SEPARATOR(p[-1]) && !IS_SEPARATOR(p[0]) && argc < MFX_ARRAY_SIZE(argv))
+            if (IS_SEPARATOR(p[-1]) && !IS_SEPARATOR(p[0]) && static_cast<unsigned int>(argc) < MFX_ARRAY_SIZE(argv))
             {
                 argv[argc++] = p;
             }

@@ -22,9 +22,9 @@ MFXOutlineRender::MFXOutlineRender(const FileWriterRenderInputParams & params, I
 , m_checker (0)
 , m_decoderParams(0)
 , m_wasSequenceProcessed(false)
-, m_refOutline(0)
 , m_wasInitialized(false)
 , m_isNeedToCheckFramesNumber(false)
+, m_refOutline(0)
 {
 }
 

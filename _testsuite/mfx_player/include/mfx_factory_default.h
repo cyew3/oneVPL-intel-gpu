@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -139,16 +139,16 @@ public:
     MFXPipelineObjectDesc(){}
     MFXPipelineObjectDesc(mfxSession ext_session, const tstring &plugin_dll_name, int objType, T *pObj)
         : PipelineObjectBaseTmpl<T>(objType, pObj)
-        , session(ext_session)
         , splugin (plugin_dll_name)
+        , session(ext_session)
     {
     }
 
     MFXPipelineObjectDesc(mfxSession ext_session, const tstring &plugin_guid, mfxU32 plugin_version, int objType, T *pObj)
         : PipelineObjectBaseTmpl<T>(objType, pObj)
-        , session(ext_session)
         , sPluginGuid (plugin_guid)
         , PluginVersion (plugin_version)
+        , session(ext_session)
     {
     }
     //plugin filename
