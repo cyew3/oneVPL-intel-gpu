@@ -414,7 +414,7 @@ namespace H265Enc {
         if (f == NULL)
             return;
 
-        Ipp64s seekPos = (par->picStruct == PROGR) ? frame->m_frameOrder * plane_size : (frame->m_frameOrder/2) * (plane_size*2);
+        Ipp64s seekPos = (par->picStruct == PROGR) ? (Ipp64s)frame->m_frameOrder * plane_size : (frame->m_frameOrder/2) * (plane_size*2);
         vm_file_fseek(f, seekPos, VM_FILE_SEEK_SET);
 
         FrameData* recon = frame->m_recon;
