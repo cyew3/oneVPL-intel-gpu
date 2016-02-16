@@ -607,7 +607,7 @@ namespace MFX_HEVC_PP
 #define coef_stride 16
 
     template <int bitDepth, typename DstCoeffsType, bool inplace>
-    static H265_FORCEINLINE void IDCT_16x16_2ND_SSE4(DstCoeffsType *dst, const short *H265_RESTRICT coeff, int destStride)
+    static inline H265_FORCEINLINE void IDCT_16x16_2ND_SSE4(DstCoeffsType *dst, const short *H265_RESTRICT coeff, int destStride)
     {
         __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
         int i;

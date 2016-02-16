@@ -23,7 +23,7 @@ namespace MFX_HEVC_PP
 // ML: OPT: called in hot loops, compiler does not seem to always honor 'inline'
 // ML: OPT: TODO: Make sure compiler recognizes saturation idiom for vectorization
 template <typename T> 
-static T H265_FORCEINLINE ClipY(T Value, int c_bitDepth = 8) 
+static inline T H265_FORCEINLINE ClipY(T Value, int c_bitDepth = 8) 
 { 
     Value = (Value < 0) ? 0 : Value;
     const int c_Mask = ((1 << c_bitDepth) - 1);
@@ -32,7 +32,7 @@ static T H265_FORCEINLINE ClipY(T Value, int c_bitDepth = 8)
 }
 
 template <typename T> 
-static T H265_FORCEINLINE ClipC(T Value, int c_bitDepth = 8) 
+static inline T H265_FORCEINLINE ClipC(T Value, int c_bitDepth = 8) 
 { 
     Value = (Value < 0) ? 0 : Value;
     const int c_Mask = ((1 << c_bitDepth) - 1);

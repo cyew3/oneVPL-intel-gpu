@@ -1161,7 +1161,7 @@ MSDK_PLUGIN_API(mfxStatus) H265FEI_GetSurfaceDimensions_new(void *core, mfxFEIH2
     return MFX_ERR_NONE;
 }
 
-MSDK_PLUGIN_API(mfxStatus) H265FEI_AllocateSurfaceUp(mfxFEIH265 feih265, void *sysMemLu, void *sysMemCh, mfxHDL *pInSurf)
+MSDK_PLUGIN_API(mfxStatus) H265FEI_AllocateSurfaceUp(mfxFEIH265 feih265, mfxU8 *sysMemLu, mfxU8 *sysMemCh, mfxHDL *pInSurf)
 {
     H265CmCtx *hcm = (H265CmCtx *)feih265;
 

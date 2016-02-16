@@ -846,7 +846,7 @@ void MAKE_NAME(h265_DCT8x8Inv_16sT)(void *destPtr, const short *H265_RESTRICT co
 #define coef_stride 16
 
 template <int bitDepth, typename DstCoeffsType, bool inplace>
-static H265_FORCEINLINE void DCTInverse16x16_h_2nd_avx2(DstCoeffsType *dst, const short *H265_RESTRICT coeff, int destStride)
+static inline H265_FORCEINLINE void DCTInverse16x16_h_2nd_avx2(DstCoeffsType *dst, const short *H265_RESTRICT coeff, int destStride)
 {
    const int SHIFT_INV_2ND = (SHIFT_INV_2ND_BASE - (bitDepth - 8));
 

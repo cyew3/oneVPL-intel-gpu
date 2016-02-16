@@ -792,7 +792,7 @@ namespace MFX_HEVC_PP
     };
 
     template < UMC_HEVC_DECODER::EnumTextType plane_type, typename t_src, typename t_dst >
-    void H265_FORCEINLINE Interpolate(
+    void inline H265_FORCEINLINE Interpolate(
         MFX_HEVC_PP::EnumInterpType interp_type,
         const t_src* in_pSrc,
         Ipp32u in_SrcPitch, // in samples

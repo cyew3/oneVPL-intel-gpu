@@ -129,7 +129,7 @@ namespace H265Enc {
   #define H265_NONLINE __attribute__((noinline))
 #endif
 
-static void H265_FORCEINLINE small_memcpy( void* dst, const void* src, int len )
+static inline void H265_FORCEINLINE small_memcpy( void* dst, const void* src, int len )
 {
 #if  0 // defined( __INTEL_COMPILER ) // || defined( __GNUC__ )  // TODO: check with GCC // AL: temporarely disable optimized path for Beta
     // 128-bit loads/stores first with then REP MOVSB, aligning dst on 16-bit to avoid costly store splits
