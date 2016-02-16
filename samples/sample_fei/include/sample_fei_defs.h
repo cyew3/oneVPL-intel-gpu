@@ -21,6 +21,7 @@
 #include <memory>
 #include <cstring>
 #include <list>
+#include <vector>
 
 #define IPP_MAX( a, b ) ( ((a) > (b)) ? (a) : (b) )
 #define IPP_MIN( a, b ) ( ((a) < (b)) ? (a) : (b) )
@@ -448,6 +449,18 @@ struct iTask
     //.........................................................................................
 
     iTask* prevTask;
+};
+
+struct RefInfo
+{
+    std::vector<mfxFrameSurface1*> reference_frames;
+    struct{
+        std::vector<mfxU16> dpb_idx;
+        std::vector<mfxU16> l0_idx;
+        std::vector<mfxU16> l1_idx;
+        std::vector<mfxU16> l0_parity;
+        std::vector<mfxU16> l1_parity;
+    } state[2];
 };
 
 inline mfxU8 GetFirstField(iTask& task)

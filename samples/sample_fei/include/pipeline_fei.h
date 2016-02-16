@@ -273,8 +273,9 @@ protected:
     std::list<iTask*> m_inputTasks; //used in PreENC, ENC, PAK, ENCODE (in EncodedOrder)
     iTask* m_last_task;
 
-    std::list<bufSet*> m_preencBufs, m_encodeBufs;
+    RefInfo m_ref_info;
 
+    std::list<bufSet*> m_preencBufs, m_encodeBufs;
     mfxStatus FreeBuffers(std::list<bufSet*> bufs);
 
     CHWDevice *m_hwdev;
@@ -341,7 +342,7 @@ protected:
     mfxU32 CountFutureRefs(mfxU32 frameOrder);
 
     mfxStatus InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask[2][2], int ref_fid[2][2], bool isDownsamplingNeeded);
-    mfxStatus InitEncFrameParams(iTask* eTask);
+    mfxStatus InitEncPakFrameParams(iTask* eTask);
     mfxStatus InitEncodeFrameParams(mfxFrameSurface1* encodeSurface, sTask* pCurrentTask, PairU8 frameType, bool is_buffered);
     mfxStatus ReadPAKdata(iTask* eTask);
     mfxStatus DropENCPAKoutput(iTask* eTask);
@@ -351,8 +352,8 @@ protected:
     mfxStatus repackDSPreenc2EncExMB(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB[2], mfxExtFeiEncMVPredictors *EncMVPred, mfxU32 MBnum, mfxU32 refIdx[2], mfxU32 predIdx, bool perf);
 
     /* ENC(PAK) reflists */
-    mfxStatus GetFullBackwardSet(iTask* eTask, mfxFrameSurface1** & l0, mfxU16 &n_backward, std::list<int> & l0_idx_field1, std::list<int> & l0_idx_field2, bool is_enc);
-    mfxStatus GetFullForwardSet(iTask* eTask, mfxFrameSurface1** & l1, mfxU16 &n_forward, std::list<int> & l1_idx_field1, std::list<int> & l1_idx_field2, bool is_enc);
+    mfxStatus FillRefInfo(iTask* eTask);
+    mfxStatus ResetRefInfo();
     mfxFrameSurface1 ** GetCurrentL0SurfacesEnc(iTask* eTask, mfxU32 fieldId, bool fair_reconstruct);
     mfxFrameSurface1 ** GetCurrentL1SurfacesEnc(iTask* eTask, mfxU32 fieldId, bool fair_reconstruct);
     mfxFrameSurface1 ** GetCurrentL0SurfacesPak(iTask* eTask, mfxU32 fieldId);
