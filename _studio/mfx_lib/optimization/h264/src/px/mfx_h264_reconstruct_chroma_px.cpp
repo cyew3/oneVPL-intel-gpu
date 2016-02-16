@@ -715,6 +715,8 @@ void ippiReconstructChromaIntra4x4MB_H264_kernel(Coeffs **ppSrcDstCoeff,
             }
         }
         break;
+    default:
+        break;
     }
 
     ippiReconstructChromaInter4x4MB_H264_16s8u_C2R<Plane, Coeffs, chroma_format_idc>(ppSrcDstCoeff, pSrcDstUVPlane, srcdstUVStep, cbpU, cbpV, chromaQPU,chromaQPV,pQuantTableU,pQuantTableV, levelScaleDCU, levelScaleDCV, bypassFlag, bitDepth);

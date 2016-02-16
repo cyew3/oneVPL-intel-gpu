@@ -10,7 +10,7 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 set ( H264PP_LIBS "" )
 # =============================================================================
 
-set( defs "" )
+set( defs "-Wall -Werror" )
 set( sources "" )
 set( sources.plus "" )
 
@@ -23,7 +23,7 @@ set( defs "" )
 
 # =============================================================================
 
-set( defs "" )
+set( defs "-Wall -Werror" )
 set( sources "" )
 set( sources.plus "" )
 
@@ -38,7 +38,7 @@ list( APPEND H264PP_LIBS h264_px )
 
 # =============================================================================
 
-set( defs "" )
+set( defs "-Wall -Werror" )
 set( sources "" )
 set( sources.plus "" )
 
