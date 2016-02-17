@@ -46,7 +46,7 @@ bool CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p_video_param)
 
     if (p_core->IsGuidSupported(DXVA_Intel_ModeVP9_Profile0_VLD, p_video_param) != MFX_ERR_NONE &&
         p_core->IsGuidSupported(DXVA_Intel_ModeVP9_Profile2_10bit_VLD, p_video_param) != MFX_ERR_NONE &&
-#if defined(NTDDI_WIN10_TH2) && (NTDDI_VERSION >= NTDDI_WIN10_TH2)
+#if defined(NTDDI_WIN10_TH2)
         p_core->IsGuidSupported(DXVA_ModeVP9_VLD_Profile0, p_video_param) != MFX_ERR_NONE &&
         p_core->IsGuidSupported(DXVA_ModeVP9_VLD_10bit_Profile2_private_copy, p_video_param) != MFX_ERR_NONE)
 #else
@@ -568,7 +568,7 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
 #ifdef MFX_VA_LINUX
         if(UMC::UMC_OK != decoder.m_va->SyncTask(data.currFrameId))
             return MFX_ERR_DEVICE_FAILED;
-#elif defined(MFX_VA_WIN) && defined(NTDDI_WIN10_TH2) && (NTDDI_VERSION >= NTDDI_WIN10_TH2)
+#elif defined(MFX_VA_WIN) && defined(NTDDI_WIN10_TH2)
 
     DXVA_Status_VPx pStatusReport[NUMBER_OF_STATUS];
 

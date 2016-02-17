@@ -43,7 +43,7 @@ Packer * Packer::CreatePacker(UMC::VideoAccelerator * va)
 #ifdef UMC_VA_DXVA
     if (va->IsIntelCustomGUID()) // intel profile
         packer = new PackerIntel(va);
-#if defined(NTDDI_WIN10_TH2) && (NTDDI_VERSION >= NTDDI_WIN10_TH2)
+#if defined(NTDDI_WIN10_TH2)
     else
         packer = new PackerMS(va);
 #endif
@@ -241,7 +241,7 @@ void PackerIntel::PackSegmentParams(DXVA_Intel_Segment_VP9* segParam, VP9Decoder
     }
 }
 
-#if defined(NTDDI_WIN10_TH2) && (NTDDI_VERSION >= NTDDI_WIN10_TH2)
+#if defined(NTDDI_WIN10_TH2)
 PackerMS::PackerMS(UMC::VideoAccelerator * va)
     : PackerDXVA(va)
 {

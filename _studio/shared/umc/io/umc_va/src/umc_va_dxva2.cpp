@@ -389,7 +389,7 @@ static const GuidProfile guidProfiles[] =
     { JPEG_VLD,  sDXVA2_Intel_IVB_ModeJPEG_VLD_NoFGT},
     { VP8_VLD,   sDXVA_Intel_ModeVP8_VLD},
 
-#if defined(NTDDI_WIN10_TH2) && (NTDDI_VERSION >= NTDDI_WIN10_TH2)
+#if defined(NTDDI_WIN10_TH2)
     { VP9_VLD,                                    DXVA_ModeVP9_VLD_Profile0},
     { VP9_VLD | VA_PROFILE_10,                    DXVA_ModeVP9_VLD_10bit_Profile2_private_copy},
 #endif

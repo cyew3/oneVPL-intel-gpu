@@ -91,7 +91,7 @@ private:
     void PackSegmentParams(DXVA_Intel_Segment_VP9*, VP9DecoderFrame const*);
 };
 
-#if defined(NTDDI_WIN10_TH2) && (NTDDI_VERSION >= NTDDI_WIN10_TH2)
+#if defined(NTDDI_WIN10_TH2)
 class PackerMS
     : public PackerDXVA
 {
