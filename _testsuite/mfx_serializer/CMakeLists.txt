@@ -37,4 +37,6 @@ list(APPEND sources
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/yaml-cpp/src/tag.cpp
 )
 
+set( defs "${WARNING_FLAGS}" )
 make_library( mfx_serializer none static )
+set( defs "" )

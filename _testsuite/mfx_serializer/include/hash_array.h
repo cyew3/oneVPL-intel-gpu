@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2010-2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2010-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -81,7 +81,7 @@ public:
     {
         for(iterator it = base::begin(); it != base::end(); it++)
         {
-            if (it->first.find(key) == NULL)
+            if (it->first.find(key) == 0)
                 return true;
         }
         return false;

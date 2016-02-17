@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2010-2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2010-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -34,7 +34,7 @@ File Name: mfx_serial_utils.cpp
 
 typedef struct {
     int code;
-    char *string;
+    const char *string;
 } CodeStringTable;
 
 static CodeStringTable StringsOfFourcc[] =
@@ -515,7 +515,8 @@ std::string UploadSerialiedStructures(std::string file_name)
     fsize = ftell(pFILE);
     fseek(pFILE, 0, SEEK_SET);
     output.reserve(fsize);
-    fread((void*)output.c_str(), sizeof(char), fsize, pFILE);
+    if (fread((void*)output.c_str(), sizeof(char), fsize, pFILE) != fsize)
+        return std::string();
     fclose(pFILE);
 
     return output;
