@@ -1500,16 +1500,19 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     {
         if (m_pps.pic_fields.bits.idr_pic_flag != pDataPPS->IDRPicFlag)
         {
+            m_pps.pic_fields.bits.idr_pic_flag = pDataPPS->IDRPicFlag;
             mdprintf(stderr, "!!!Warning pDataPPS->IDRPicFlag = %u\n", pDataPPS->IDRPicFlag);
             mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.idr_pic_flag = %u\n", m_pps.pic_fields.bits.idr_pic_flag);
         }
         if (m_pps.pic_fields.bits.reference_pic_flag != pDataPPS->ReferencePicFlag)
         {
+            m_pps.pic_fields.bits.reference_pic_flag = pDataPPS->ReferencePicFlag;
             mdprintf(stderr, "!!!Warning pDataPPS->ReferencePicFlag = %u\n", pDataPPS->ReferencePicFlag);
             mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.reference_pic_flag = %u\n", m_pps.pic_fields.bits.reference_pic_flag);
         }
         if (m_pps.frame_num != pDataPPS->FrameNum)
         {
+            m_pps.frame_num = pDataPPS->FrameNum;
             mdprintf(stderr, "!!!Warning pDataPPS->FrameNum = %u\n", pDataPPS->FrameNum);
             mdprintf(stderr, "   But library's is m_pps.frame_num = %u\n", m_pps.frame_num);
         }
@@ -1671,22 +1674,68 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
             mdprintf(stderr,"---->m_slice[%u].slice_alpha_c0_offset_div2 = %d\n", i, m_slice[i].slice_alpha_c0_offset_div2);
             mdprintf(stderr,"---->m_slice[%u].slice_beta_offset_div2 = %d\n", i, m_slice[i].slice_beta_offset_div2);
 
-            m_slice[i].macroblock_address = pDataSliceHeader->Slice[i].MBAaddress;
-            m_slice[i].num_macroblocks = pDataSliceHeader->Slice[i].NumMBs;
-            m_slice[i].slice_type = pDataSliceHeader->Slice[i].SliceType;
+            if (m_slice[i].macroblock_address != pDataSliceHeader->Slice[i].MBAaddress)
+            {
+                m_slice[i].macroblock_address = pDataSliceHeader->Slice[i].MBAaddress;
+                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].MBAaddress = %u\n", i, pDataSliceHeader->Slice[i].MBAaddress);
+                mdprintf(stderr, "   But library's is m_slice[%u].macroblock_address = %u\n", i, m_slice[i].macroblock_address);
+            }
+            if (m_slice[i].num_macroblocks != pDataSliceHeader->Slice[i].NumMBs)
+            {
+                m_slice[i].num_macroblocks = pDataSliceHeader->Slice[i].NumMBs;
+                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].NumMBs = %u\n", i, pDataSliceHeader->Slice[i].NumMBs);
+                mdprintf(stderr, "   But library's is m_slice[%u].num_macroblocks = %u\n", i, m_slice[i].num_macroblocks);
+            }
+            if (m_slice[i].slice_type != pDataSliceHeader->Slice[i].SliceType)
+            {
+                m_slice[i].slice_type = pDataSliceHeader->Slice[i].SliceType;
+                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceType = %u\n", i, pDataSliceHeader->Slice[i].SliceType);
+                mdprintf(stderr, "   But library's is m_slice[%u].slice_type = %u\n", i, m_slice[i].slice_type);
+            }
             if (pDataSliceHeader->Slice[i].PPSId != m_pps.pic_parameter_set_id)
             {
                 /*May be bug in application */
                 mdprintf(stderr,"pDataSliceHeader->Slice[%u].PPSId = %u\n", i, pDataSliceHeader->Slice[i].PPSId);
                 mdprintf(stderr,"m_pps.pic_parameter_set_id = %u\n", m_pps.pic_parameter_set_id);
             }
-            m_slice[i].idr_pic_id  = pDataSliceHeader->Slice[i].IdrPicId;
-            m_slice[i].cabac_init_idc = pDataSliceHeader->Slice[i].CabacInitIdc;
-            m_slice[i].slice_qp_delta = pDataSliceHeader->Slice[i].SliceQPDelta;
+            if (m_slice[i].idr_pic_id != pDataSliceHeader->Slice[i].IdrPicId)
+            {
+                m_slice[i].idr_pic_id  = pDataSliceHeader->Slice[i].IdrPicId;
+                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].IdrPicId = %u\n", i, pDataSliceHeader->Slice[i].IdrPicId);
+                mdprintf(stderr, "   But library's is m_slice[%u].idr_pic_id = %u\n", i, m_slice[i].idr_pic_id);
+            }
+            if (m_slice[i].cabac_init_idc != pDataSliceHeader->Slice[i].CabacInitIdc)
+            {
+                m_slice[i].cabac_init_idc = pDataSliceHeader->Slice[i].CabacInitIdc;
+                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].CabacInitIdc = %u\n", i, pDataSliceHeader->Slice[i].CabacInitIdc);
+                mdprintf(stderr, "   But library's is m_slice[%u].cabac_init_idc = %u\n", i, m_slice[i].cabac_init_idc);
+            }
+            if (m_slice[i].slice_qp_delta != pDataSliceHeader->Slice[i].SliceQPDelta)
+            {
+                m_slice[i].slice_qp_delta = pDataSliceHeader->Slice[i].SliceQPDelta;
+                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceQPDelta = %u\n", i, pDataSliceHeader->Slice[i].SliceQPDelta);
+                mdprintf(stderr, "   But library's is m_slice[%u].slice_qp_delta = %u\n", i, m_slice[i].slice_qp_delta);
+            }
 
-            m_slice[i].disable_deblocking_filter_idc = pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc;
-            m_slice[i].slice_alpha_c0_offset_div2 = pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2;
-            m_slice[i].slice_beta_offset_div2 = pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2;
+            if (m_slice[i].disable_deblocking_filter_idc != pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc)
+            {
+                //m_slice[i].disable_deblocking_filter_idc = pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc;
+                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].DisableDeblockingFilterIdc = %u\n", i, pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc);
+                mdprintf(stderr, "   But library's is m_slice[%u].disable_deblocking_filter_idc = %u\n", i, m_slice[i].disable_deblocking_filter_idc);
+            }
+            if (m_slice[i].slice_alpha_c0_offset_div2 != pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2)
+            {
+                m_slice[i].slice_alpha_c0_offset_div2 = pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2;
+                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceAlphaC0OffsetDiv2 = %u\n", i, pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2);
+                mdprintf(stderr, "   But library's is m_slice[%u].slice_alpha_c0_offset_div2 = %u\n", i, m_slice[i].slice_alpha_c0_offset_div2);
+            }
+
+            if (m_slice[i].slice_beta_offset_div2 != pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2)
+            {
+                m_slice[i].slice_beta_offset_div2 = pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2;
+                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceBetaOffsetDiv2 = %u\n", i, pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2);
+                mdprintf(stderr, "   But library's is m_slice[%u].slice_beta_offset_div2 = %u\n", i, m_slice[i].slice_beta_offset_div2);
+            }
 
             mdprintf(stderr,"Application's generated Slice header \n");
             mdprintf(stderr,"---->m_slice[%u].macroblock_address = %d\n", i, m_slice[i].macroblock_address);
@@ -2826,16 +2875,19 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     {
         if (m_pps.pic_fields.bits.idr_pic_flag != pDataPPS->IDRPicFlag)
         {
+            m_pps.pic_fields.bits.idr_pic_flag = pDataPPS->IDRPicFlag;
             mdprintf(stderr, "!!!Warning pDataPPS->IDRPicFlag = %u\n", pDataPPS->IDRPicFlag);
             mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.idr_pic_flag = %u\n", m_pps.pic_fields.bits.idr_pic_flag);
         }
         if (m_pps.pic_fields.bits.reference_pic_flag != pDataPPS->ReferencePicFlag)
         {
+            m_pps.pic_fields.bits.reference_pic_flag = pDataPPS->ReferencePicFlag;
             mdprintf(stderr, "!!!Warning pDataPPS->ReferencePicFlag = %u\n", pDataPPS->ReferencePicFlag);
             mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.reference_pic_flag = %u\n", m_pps.pic_fields.bits.reference_pic_flag);
         }
         if (m_pps.frame_num != pDataPPS->FrameNum)
         {
+            m_pps.frame_num = pDataPPS->FrameNum;
             mdprintf(stderr, "!!!Warning pDataPPS->FrameNum = %u\n", pDataPPS->FrameNum);
             mdprintf(stderr, "   But library's is m_pps.frame_num = %u\n", m_pps.frame_num);
         }
@@ -2999,22 +3051,68 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
             mdprintf(stderr,"---->m_slice[%u].slice_alpha_c0_offset_div2 = %d\n", i, m_slice[i].slice_alpha_c0_offset_div2);
             mdprintf(stderr,"---->m_slice[%u].slice_beta_offset_div2 = %d\n", i, m_slice[i].slice_beta_offset_div2);
 
-            m_slice[i].macroblock_address = pDataSliceHeader->Slice[i].MBAaddress;
-            m_slice[i].num_macroblocks = pDataSliceHeader->Slice[i].NumMBs;
-            m_slice[i].slice_type = pDataSliceHeader->Slice[i].SliceType;
+            if (m_slice[i].macroblock_address != pDataSliceHeader->Slice[i].MBAaddress)
+            {
+                m_slice[i].macroblock_address = pDataSliceHeader->Slice[i].MBAaddress;
+                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].MBAaddress = %u\n", i, pDataSliceHeader->Slice[i].MBAaddress);
+                mdprintf(stderr, "   But library's is m_slice[%u].macroblock_address = %u\n", i, m_slice[i].macroblock_address);
+            }
+            if (m_slice[i].num_macroblocks != pDataSliceHeader->Slice[i].NumMBs)
+            {
+                m_slice[i].num_macroblocks = pDataSliceHeader->Slice[i].NumMBs;
+                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].NumMBs = %u\n", i, pDataSliceHeader->Slice[i].NumMBs);
+                mdprintf(stderr, "   But library's is m_slice[%u].num_macroblocks = %u\n", i, m_slice[i].num_macroblocks);
+            }
+            if (m_slice[i].slice_type != pDataSliceHeader->Slice[i].SliceType)
+            {
+                m_slice[i].slice_type = pDataSliceHeader->Slice[i].SliceType;
+                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceType = %u\n", i, pDataSliceHeader->Slice[i].SliceType);
+                mdprintf(stderr, "   But library's is m_slice[%u].slice_type = %u\n", i, m_slice[i].slice_type);
+            }
             if (pDataSliceHeader->Slice[i].PPSId != m_pps.pic_parameter_set_id)
             {
                 /*May be bug in application */
                 mdprintf(stderr,"pDataSliceHeader->Slice[%u].PPSId = %u\n", i, pDataSliceHeader->Slice[i].PPSId);
                 mdprintf(stderr,"m_pps.pic_parameter_set_id = %u\n", m_pps.pic_parameter_set_id);
             }
-            m_slice[i].idr_pic_id  = pDataSliceHeader->Slice[i].IdrPicId;
-            m_slice[i].cabac_init_idc = pDataSliceHeader->Slice[i].CabacInitIdc;
-            m_slice[i].slice_qp_delta = pDataSliceHeader->Slice[i].SliceQPDelta;
-            m_slice[i].disable_deblocking_filter_idc = pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc;
-            m_slice[i].slice_alpha_c0_offset_div2 = pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2;
-            m_slice[i].slice_beta_offset_div2 = pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2;
+            if (m_slice[i].idr_pic_id != pDataSliceHeader->Slice[i].IdrPicId)
+            {
+                m_slice[i].idr_pic_id  = pDataSliceHeader->Slice[i].IdrPicId;
+                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].IdrPicId = %u\n", i, pDataSliceHeader->Slice[i].IdrPicId);
+                mdprintf(stderr, "   But library's is m_slice[%u].idr_pic_id = %u\n", i, m_slice[i].idr_pic_id);
+            }
+            if (m_slice[i].cabac_init_idc != pDataSliceHeader->Slice[i].CabacInitIdc)
+            {
+                m_slice[i].cabac_init_idc = pDataSliceHeader->Slice[i].CabacInitIdc;
+                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].CabacInitIdc = %u\n", i, pDataSliceHeader->Slice[i].CabacInitIdc);
+                mdprintf(stderr, "   But library's is m_slice[%u].cabac_init_idc = %u\n", i, m_slice[i].cabac_init_idc);
+            }
+            if (m_slice[i].slice_qp_delta != pDataSliceHeader->Slice[i].SliceQPDelta)
+            {
+                m_slice[i].slice_qp_delta = pDataSliceHeader->Slice[i].SliceQPDelta;
+                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceQPDelta = %u\n", i, pDataSliceHeader->Slice[i].SliceQPDelta);
+                mdprintf(stderr, "   But library's is m_slice[%u].slice_qp_delta = %u\n", i, m_slice[i].slice_qp_delta);
+            }
 
+            if (m_slice[i].disable_deblocking_filter_idc != pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc)
+            {
+                m_slice[i].disable_deblocking_filter_idc = pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc;
+                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].DisableDeblockingFilterIdc = %u\n", i, pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc);
+                mdprintf(stderr, "   But library's is m_slice[%u].disable_deblocking_filter_idc = %u\n", i, m_slice[i].disable_deblocking_filter_idc);
+            }
+            if (m_slice[i].slice_alpha_c0_offset_div2 != pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2)
+            {
+                m_slice[i].slice_alpha_c0_offset_div2 = pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2;
+                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceAlphaC0OffsetDiv2 = %u\n", i, pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2);
+                mdprintf(stderr, "   But library's is m_slice[%u].slice_alpha_c0_offset_div2 = %u\n", i, m_slice[i].slice_alpha_c0_offset_div2);
+            }
+
+            if (m_slice[i].slice_beta_offset_div2 != pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2)
+            {
+                m_slice[i].slice_beta_offset_div2 = pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2;
+                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceBetaOffsetDiv2 = %u\n", i, pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2);
+                mdprintf(stderr, "   But library's is m_slice[%u].slice_beta_offset_div2 = %u\n", i, m_slice[i].slice_beta_offset_div2);
+            }
             mdprintf(stderr,"Application's generated Slice header \n");
             mdprintf(stderr,"---->m_slice[%u].macroblock_address = %d\n", i, m_slice[i].macroblock_address);
             mdprintf(stderr,"---->m_slice[%u].num_macroblocks = %d\n", i, m_slice[i].num_macroblocks);
