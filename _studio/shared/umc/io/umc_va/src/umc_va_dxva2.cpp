@@ -391,6 +391,7 @@ static const GuidProfile guidProfiles[] =
 
 #if defined(NTDDI_WIN10_TH2) && (NTDDI_VERSION >= NTDDI_WIN10_TH2)
     { VP9_VLD,                                    DXVA_ModeVP9_VLD_Profile0},
+    { VP9_VLD | VA_PROFILE_10,                    DXVA_ModeVP9_VLD_10bit_Profile2_private_copy},
 #endif
     { VP9_VLD,                                    DXVA_Intel_ModeVP9_Profile0_VLD },
     { VP9_VLD | VA_PROFILE_10,                    DXVA_Intel_ModeVP9_Profile2_10bit_VLD },

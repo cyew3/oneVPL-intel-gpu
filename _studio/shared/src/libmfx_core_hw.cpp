@@ -123,6 +123,10 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
         break;
     case MFX_CODEC_VP9:
         profile |= VA_VP9;
+        if (param->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+        {
+            profile |= VA_PROFILE_10;
+        }
         break;
     case MFX_CODEC_HEVC:
         profile |= VA_H265;
