@@ -1460,6 +1460,8 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVi
 
         case 10:
             params->mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
+            params->mfx.FrameInfo.BitDepthLuma = 10;
+            params->mfx.FrameInfo.BitDepthChroma = 10;
             break;
 
         case 12:
