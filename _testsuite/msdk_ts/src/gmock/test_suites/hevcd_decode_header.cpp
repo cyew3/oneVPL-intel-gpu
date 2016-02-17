@@ -356,12 +356,6 @@ int TestSuite::RunTest(unsigned int id)
         mfxU16 expected_width = (mfxU16)sps.pic_width_in_luma_samples;
         mfxU16 expected_height = (mfxU16)sps.pic_height_in_luma_samples;
 
-        if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCD_HW.Data, sizeof(MFX_PLUGINID_HEVCD_HW.Data)))
-        {
-            expected_width = (((mfxU16)sps.pic_width_in_luma_samples + 64 - 1) & ~(64 - 1));
-            expected_height = (((mfxU16)sps.pic_height_in_luma_samples + 64 - 1) & ~(64 - 1));
-        }
-
         EXPECT_EQ((mfxU16)sps.ptl.general.profile_idc,  m_par.mfx.CodecProfile);
         EXPECT_EQ((mfxU16)sps.ptl.general.level_idc/3,  m_par.mfx.CodecLevel);
         EXPECT_EQ(expectedFrameRate, FrameRate);
