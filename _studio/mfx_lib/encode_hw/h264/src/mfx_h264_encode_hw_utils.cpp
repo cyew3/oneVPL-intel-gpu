@@ -5315,7 +5315,7 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
         needBufferingPeriod = needPicTimingSei = 0; // in CQP HRD mode application inserts BP and PT SEI itself
 
     mfxU32 needAtLeastOneSei =
-        (task.m_ctrl.Payload && task.m_ctrl.NumPayload > 0) ||
+        (task.m_ctrl.Payload && task.m_ctrl.NumPayload > secondFieldPicFlag && task.m_ctrl.Payload[secondFieldPicFlag] != 0) ||
         (fillerSize > 0)    ||
         needBufferingPeriod ||
         needPicTimingSei    ||
