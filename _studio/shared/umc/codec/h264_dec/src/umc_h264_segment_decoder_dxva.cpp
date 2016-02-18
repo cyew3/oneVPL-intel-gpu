@@ -363,26 +363,27 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
     SwitchCurrentAU();
 #else
 
-    Status sts = UMC_OK;
-    VASurfaceStatus surfSts = VASurfaceSkipped;
-    VAStatus        surfErr = VA_STATUS_SUCCESS;
     for (H264DecoderFrameInfo * au = m_FirstAU; au; au = au->GetNextAU())
     {
-        sts = dxva_sd->GetPacker()->QueryTaskStatus(au->m_pFrame->m_index, &surfSts, &surfErr);
+        VASurfaceStatus surfSts = VASurfaceSkipped;
+        Status error = UMC_OK;
+        Status sts = dxva_sd->GetPacker()->QueryTaskStatus(au->m_pFrame->m_index, &surfSts, &error);
         if (sts != UMC_OK)
             throw h264_exception(sts);
 
         if (surfSts == VASurfaceReady)
         {
-            if(VA_STATUS_ERROR_DECODING_ERROR == surfErr)
-            {
+            if (error == VA_STATUS_ERROR_DECODING_ERROR)
                 au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MAJOR);
-            }
 
             au->SetStatus(H264DecoderFrameInfo::STATUS_COMPLETED);
             CompleteFrame(au->m_pFrame);
+
             break;
         }
+
+        if (error == UMC_ERR_GPU_HANG)
+            throw h264_exception(sts);
 
         break;
     }

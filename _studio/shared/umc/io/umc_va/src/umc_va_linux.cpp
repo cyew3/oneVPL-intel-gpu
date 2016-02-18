@@ -62,6 +62,9 @@ UMC::Status va_to_umc_res(VAStatus va_res)
     case VA_STATUS_ERROR_DECODING_ERROR:
         umcRes = UMC::UMC_ERR_INVALID_STREAM;
         break;
+    case VA_STATUS_ERROR_HW_BUSY:
+        umcRes = UMC::UMC_ERR_GPU_HANG;
+        break;
     default:
         umcRes = UMC::UMC_ERR_FAILED;
         break;
@@ -1051,9 +1054,18 @@ Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * statu
         // handle decoding errors
         va_sts = vaSyncSurface(m_dpy, *surface);
 
-        if ((VA_STATUS_ERROR_DECODING_ERROR == va_sts) && (NULL != error))
+        if (error)
         {
-            *(Status*)error = GetDecodingError();
+            switch (va_sts)
+            {
+                case VA_STATUS_ERROR_DECODING_ERROR:
+                    *(Status*)error = GetDecodingError();
+                    break;
+
+                case VA_STATUS_ERROR_HW_BUSY:
+                    *(Status*)error = va_to_umc_res(va_sts);
+                    break;
+            }
         }
     }
 

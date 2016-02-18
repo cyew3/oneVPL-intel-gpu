@@ -314,6 +314,8 @@ mfxStatus MFXTaskSupplier::RunThread(mfxU32 threadNumber)
 #if defined (MFX_VA)
     else if(sts == UMC_ERR_DEVICE_FAILED)
         return MFX_ERR_DEVICE_FAILED;
+    else if (sts == UMC_ERR_GPU_HANG)
+        return MFX_ERR_GPU_HANG;
 #endif
 
     if (sts != UMC_OK)
