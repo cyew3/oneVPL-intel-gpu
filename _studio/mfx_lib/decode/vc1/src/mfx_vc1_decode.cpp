@@ -3050,6 +3050,9 @@ mfxStatus MFXVideoDECODEVC1::GetStatusReport(mfxFrameSurface1 *surface_disp)
     if (pCurrDescriptor)
     {
         Status sts = va->SyncTask(pCurrDescriptor->m_pContext->m_frmBuff.m_iCurrIndex);
+        if (sts == UMC_ERR_GPU_HANG)
+            return MFX_ERR_GPU_HANG;
+
         if (sts != UMC_OK)
              MFX_ERR_DEVICE_FAILED;
     }
@@ -3066,6 +3069,9 @@ mfxStatus MFXVideoDECODEVC1::GetStatusReport(mfxFrameSurface1 *surface_disp)
     {
         VAStatus surfErr = VA_STATUS_SUCCESS;
         sts = va->QueryTaskStatus(pCurrDescriptor->m_pContext->m_frmBuff.m_iCurrIndex, &surfSts, &surfErr);
+        if (sts == UMC_ERR_GPU_HANG)
+            return MFX_ERR_GPU_HANG;
+
         if (sts != UMC_OK)
             return MFX_ERR_DEVICE_FAILED;
 

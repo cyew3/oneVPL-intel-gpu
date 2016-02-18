@@ -3713,12 +3713,19 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface, UM
 
     STATUS_REPORT_DEBUG_PRINTF("index %d with surfErr: %d (sts:%d)\n", index, surfErr, sts)
 
+    if (sts == UMC::UMC_ERR_GPU_HANG)
+        return MFX_ERR_GPU_HANG;
+
     if (sts != UMC::UMC_OK)
         return MFX_ERR_DEVICE_FAILED;
 #else
     VASurfaceStatus surfSts = VASurfaceSkipped;
 
     sts = va->QueryTaskStatus(surface_id, &surfSts, &surfErr);
+
+    if (sts == UMC::UMC_ERR_GPU_HANG)
+        return MFX_ERR_GPU_HANG;
+
     if (sts != UMC::UMC_OK)
         return MFX_ERR_DEVICE_FAILED;
 

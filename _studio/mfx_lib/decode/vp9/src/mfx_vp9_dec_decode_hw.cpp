@@ -566,8 +566,14 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
     }
 
 #ifdef MFX_VA_LINUX
-        if(UMC::UMC_OK != decoder.m_va->SyncTask(data.currFrameId))
-            return MFX_ERR_DEVICE_FAILED;
+
+    UMC::Status status = decoder.m_va->SyncTask(data.currFrameId);
+    if (UMC::UMC_ERR_GPU_HANG == status)
+        return MFX_ERR_GPU_HANG;
+
+    if (UMC::UMC_OK != status)
+        return MFX_ERR_DEVICE_FAILED;
+
 #elif defined(MFX_VA_WIN) && defined(NTDDI_WIN10_TH2)
 
     DXVA_Status_VPx pStatusReport[NUMBER_OF_STATUS];

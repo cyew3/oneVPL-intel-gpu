@@ -522,10 +522,13 @@ static mfxStatus MFX_CDECL VP8DECODERoutine(void *p_state, void *pp_param, mfxU3
     if (data.memIdToUnlock != -1)
     {
 #ifdef MFX_VA_LINUX
-        if(UMC::UMC_OK != decoder.m_p_video_accelerator->SyncTask(data.memIdToUnlock))
+        UMC::Status status = decoder.m_p_video_accelerator->SyncTask(data.memIdToUnlock);
+        if (UMC::UMC_ERR_GPU_HANG == status)
+            return MFX_ERR_GPU_HANG;
+        if(UMC::UMC_OK != status)
             return MFX_ERR_DEVICE_FAILED;
 #endif
-       decoder.m_p_frame_allocator.get()->DecreaseReference(data.memIdToUnlock);
+        decoder.m_p_frame_allocator.get()->DecreaseReference(data.memIdToUnlock);
     }
 
     delete &data;
