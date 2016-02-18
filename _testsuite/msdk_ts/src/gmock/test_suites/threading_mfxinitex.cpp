@@ -197,7 +197,7 @@ int TestSuite::RunTest(unsigned int id)
             expect = MFX_ERR_UNSUPPORTED;
 #if (defined(LINUX32) || defined(LINUX64))
         if (((tp.SchedulingType == TS_SCHED_FIFO) || (tp.SchedulingType == TS_SCHED_RR)) &&
-            geteuid()) { // this last condition checks whether test was started under root
+            geteuid() == 0) { // this last condition checks whether test was started under root
             expect = MFX_ERR_UNSUPPORTED;
         }
 #endif
