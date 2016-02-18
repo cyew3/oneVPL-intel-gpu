@@ -641,11 +641,11 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     //should we release here or not
     if (m_statParams.past_references)
     {
-        delete [] m_statParams.past_references;
+        delete m_statParams.past_references;
     }
     if (m_statParams.future_references)
     {
-        delete [] m_statParams.future_references;
+        delete m_statParams.future_references;
     }
 
     MFX_DESTROY_VABUFFER(mvPredid, m_vaDisplay);
