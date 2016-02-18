@@ -291,319 +291,269 @@ void GetAvailablity(H265CU<PixType> *pCU,
 
 template <typename PixType>
 static
-void GetPredPelsLuma(H265VideoParam *par, PixType* src, PixType* PredPel,
+void GetPredPelsLuma(H265VideoParam *par, PixType* src, PixType* predPel,
                      Ipp8u* neighborFlags, Ipp32s width, Ipp32s srcPitch)
 {
-    PixType* tmpSrcPtr;
-    PixType dcval;
-    Ipp32s minTUSize = 1 << par->QuadtreeTULog2MinSize;
-    Ipp32s numUnitsInCU = width >> par->QuadtreeTULog2MinSize;
-    Ipp32s numIntraNeighbor;
-    Ipp32s i, j;
+    assert(par->QuadtreeTULog2MinSize == 2);
+    Ipp32s width2 = width << 1;
+    Ipp32s numUnits = width >> 2;
+    Ipp32s numUnits2 = width >> 1;
 
-    dcval = (1 << (par->bitDepthLuma - 1));
+    Ipp32u leftAvailFlags = 0;
+    Ipp32u topAvailFlags = 0;
+    Ipp32u topLeftAvailFlag = 0;
+    Ipp32u allNeighborAvailMask = (1u<<numUnits2) - 1;
 
-    numIntraNeighbor = 0;
+    for (Ipp32s i = 0; i < numUnits2; i++)
+        leftAvailFlags += neighborFlags[i] << (numUnits2-1-i);
+    topLeftAvailFlag = Ipp32u(-neighborFlags[numUnits2]);
+    for (Ipp32s i = 0; i < numUnits2; i++)
+        topAvailFlags += neighborFlags[numUnits2+1+i] << i;
 
-    for (i = 0; i < 4*numUnitsInCU + 1; i++)
-    {
-        if (neighborFlags[i])
-            numIntraNeighbor++;
+    if ((leftAvailFlags | topAvailFlags | topLeftAvailFlag) == 0) {
+        _ippsSet(1<<(par->bitDepthLuma-1), predPel, 4*width+1); // no neighbors
     }
-
-    if (numIntraNeighbor == 0)
-    {
-        // Fill border with DC value
-
-        for (i = 0; i <= 4*width; i++)
-        {
-            PredPel[i] = dcval;
-        }
+    else if ((leftAvailFlags & topAvailFlags & topLeftAvailFlag) == allNeighborAvailMask) {
+        // all neighbors available
+        // top-left and top
+        predPel[0] = *(src - srcPitch - 1);
+        Ipp64u *p64 = (Ipp64u *)(predPel + 1);
+        Ipp64u *s64 = (Ipp64u *)(src - srcPitch);
+        for (Ipp32s i = 0; i < width2 * (Ipp32s)sizeof(PixType); i += sizeof(Ipp64u))
+            *p64++ = *s64++;
+        // left
+        PixType *s = src - 1;
+        PixType *p = predPel + width2+1;
+        for (Ipp32s i = 0; i < width2; i++, p++, s += srcPitch)
+            *p = *s;
     }
-    else if (numIntraNeighbor == (4*numUnitsInCU + 1))
-    {
-        // Fill top-left border with rec. samples
-        tmpSrcPtr = src - srcPitch - 1;
-        PredPel[0] = tmpSrcPtr[0];
-
-        // Fill top and top right border with rec. samples
-        tmpSrcPtr = src - srcPitch;
-        for (i = 0; i < 2*width; i++)
-        {
-            PredPel[1+i] = tmpSrcPtr[i];
-        }
-
-        // Fill left and below left border with rec. samples
-        tmpSrcPtr = src - 1;
-
-        for (i = 0; i < 2*width; i++)
-        {
-            PredPel[2*width+1+i] = tmpSrcPtr[0];
-            tmpSrcPtr += srcPitch;
-        }
-    }
-    else // reference samples are partially available
-    {
-        Ipp8u      *pbNeighborFlags;
-        Ipp32s     firstAvailableBlock;
+    else {
+        // some neighbors available
         PixType availableRef = 0;
-
-        // Fill top-left sample
-        pbNeighborFlags = neighborFlags + 2*numUnitsInCU;
-
-        if (*pbNeighborFlags)
-        {
-            tmpSrcPtr = src - srcPitch - 1;
-            PredPel[0] = tmpSrcPtr[0];
-        }
-
-        // Fill left & below-left samples
-        tmpSrcPtr = src - 1;
-
-        pbNeighborFlags = neighborFlags + 2*numUnitsInCU - 1;
-
-        for (j = 0; j < 2*numUnitsInCU; j++)
-        {
-            if (*pbNeighborFlags)
-            {
-                for (i = 0; i < minTUSize; i++)
-                {
-                    PredPel[2*width+1+j*minTUSize+i] = tmpSrcPtr[0];
-                    tmpSrcPtr += srcPitch;
-                }
+        if (topLeftAvailFlag & 0x1) {
+            // top-left value is available
+            availableRef = *(src - srcPitch - 1);
+        } else {
+            // search for top-left padded value
+            Ipp32u tmp = leftAvailFlags;
+            if (tmp) {
+                // padding from the last of left values
+                PixType *s = src - 1;
+                while ((tmp & 0x1)==0) { tmp >>= 1; s += (srcPitch << 2); }
+                availableRef = *s;
             } else {
-                tmpSrcPtr += srcPitch * minTUSize;
+                // padding from the first of top values
+                assert(topAvailFlags != 0);
+                PixType *s = src - srcPitch;
+                Ipp32u tmp = topAvailFlags;
+                while ((tmp & 0x1)==0) { tmp >>= 1; s += 4; }
+                availableRef = *s;
             }
-            pbNeighborFlags --;
         }
+        *predPel = availableRef; // top-left value
 
-        // Fill above & above-right samples
-        tmpSrcPtr = src - srcPitch;
-        pbNeighborFlags = neighborFlags + 2*numUnitsInCU + 1;
-
-        for (j = 0; j < 2*numUnitsInCU; j++)
-        {
-            if (*pbNeighborFlags)
+        // fill top line with correct padding
+        if (Ipp32u tmp = topAvailFlags) {
+            PixType *p = predPel + 1;
+            PixType *s = src - srcPitch;
+            for (Ipp32s i = 0; i < numUnits2; i++, tmp >>= 1)
             {
-                for (i = 0; i < minTUSize; i++)
-                {
-                    PredPel[1+j*minTUSize+i] = tmpSrcPtr[i];
+                if (tmp & 0x1) {
+                    *p++ = *s++;
+                    *p++ = *s++;
+                    *p++ = *s++;
+                    availableRef = *s++;
+                    *p++ = availableRef;
+                } else {
+                    *p++ = availableRef;
+                    *p++ = availableRef;
+                    *p++ = availableRef;
+                    *p++ = availableRef;
+                    s += 4;
                 }
             }
-            tmpSrcPtr += minTUSize;
-            pbNeighborFlags ++;
+            availableRef = *predPel;
+        } else {
+            _ippsSet(availableRef, predPel + 1, width2);
         }
 
-        /* Search first available block */
-        firstAvailableBlock = 0;
-
-        for (i = 0; i < 4*numUnitsInCU + 1; i++)
-        {
-            if (neighborFlags[i])
-                break;
-
-            firstAvailableBlock++;
-        }
-
-        /* Search first available sample */
-        if (firstAvailableBlock != 0)
-        {
-            if (firstAvailableBlock < 2*numUnitsInCU) /* left & below-left */
+        // fill left line with correct padding
+        if(Ipp32u tmp = leftAvailFlags) {
+            PixType *p = predPel + width2 + 1;
+            PixType *s = src - 1;
+            Ipp32u itIF = 0;
+            // Copy pixel values with holes, find last valid value, invert avialability mask
+            for (Ipp32s i = 0; i < numUnits2; i++, tmp >>= 1)
             {
-                availableRef = PredPel[4*width-firstAvailableBlock*minTUSize];
-
-            }
-            else if (firstAvailableBlock == 2*numUnitsInCU) /* top-left */
-            {
-                availableRef = PredPel[0];
-
-            }
-            else
-            {
-                availableRef = PredPel[(firstAvailableBlock-2*numUnitsInCU-1)*minTUSize+1];
-            }
-        }
-
-        /* left & below-left samples */
-        for (j = 0; j < 2*numUnitsInCU; j++)
-        {
-            if (!neighborFlags[j])
-            {
-                if (j != 0)
-                {
-                    availableRef = PredPel[4*width+1-j*minTUSize];
-                }
-
-                for (i = 0; i < minTUSize; i++)
-                {
-                    PredPel[4*width+1-(j+1)*minTUSize+i] = availableRef;
+                itIF <<= 1;
+                if (tmp & 0x1) {
+                    *p++ = *s; s += srcPitch;
+                    *p++ = *s; s += srcPitch;
+                    *p++ = *s; s += srcPitch;
+                    availableRef = *s; s += srcPitch;
+                    *p++ = availableRef;
+                    itIF |= 0x1;
+                } else {
+                    s += (srcPitch << 2);
+                    p += 4;
                 }
             }
-        }
-
-        /* top-left sample */
-        if (!neighborFlags[2*numUnitsInCU])
-        {
-            PredPel[0] = PredPel[2*width+1];
-        }
-
-        /* above & above-right samples */
-        for (j = 0; j < 2*numUnitsInCU; j++)
-        {
-            if (!neighborFlags[j+2*numUnitsInCU+1])
+            // Back-sweep filling holes
+            p  = predPel + width2 * 2;
+            for (Ipp32s i = 0; i < numUnits2; i++)
             {
-                availableRef = PredPel[j*minTUSize];
-
-                for (i = 0; i < minTUSize; i++)
-                {
-                    PredPel[1+j*minTUSize+i] = availableRef;
+                if (itIF & 0x1) {
+                    p -= 4; availableRef = p[1];
+                } else {
+                    *p-- = availableRef;
+                    *p-- = availableRef;
+                    *p-- = availableRef;
+                    *p-- = availableRef;
                 }
+                itIF >>= 1;
             }
+        } else {
+            _ippsSet(availableRef, predPel + width2 + 1, width2);
         }
     }
 }
 
+template <class PixType> struct ChromaUVPixType;
+template <> struct ChromaUVPixType<Ipp8u> { typedef Ipp16u type; };
+template <> struct ChromaUVPixType<Ipp16u> { typedef Ipp32u type; };
+
 template <typename PixType>
 static
-void GetPredPelsChromaNV12(H265VideoParam *par, PixType* src, PixType* PredPel,
-                           Ipp8u* neighborFlags, Ipp32s width, Ipp8u chroma422, Ipp32s srcPitch, PixType* src_ref)
+void GetPredPelsChromaNV12(H265VideoParam *par, PixType* src_, PixType* predPel_,
+                           Ipp8u* neighborFlags, Ipp32s width, Ipp8u chroma422, Ipp32s srcPitch_)
 {
-    PixType* tmpSrcPtr;
-    PixType dcval = (1 << (par->bitDepthChroma - 1));
-    Ipp32s minTUSize = 1 << par->QuadtreeTULog2MinSize;
-    Ipp32s numUnitsInCU = width >> par->QuadtreeTULog2MinSize;
-    if (!chroma422) {
-        minTUSize >>= 1;
-        numUnitsInCU <<= 1;
+    typedef typename ChromaUVPixType<PixType>::type ChromaPixType;
+    ChromaPixType *src = reinterpret_cast<ChromaPixType *>(src_);  // point UV pair of chroma pixels
+    ChromaPixType *predPel = reinterpret_cast<ChromaPixType *>(predPel_); // point UV pair of chroma pixels
+    Ipp32s srcPitch = srcPitch_ >> 1;
+    assert(par->QuadtreeTULog2MinSize == 2);
+    Ipp32s width2 = width << 1;
+    Ipp32s numUnits = width >> 2;
+    Ipp32s numUnits2 = width >> 1;
+
+    Ipp32u leftAvailFlags = 0;
+    Ipp32u topAvailFlags = 0;
+    Ipp32u topLeftAvailFlag = 0;
+    Ipp32u flagShift = chroma422 ? 1 : 2;
+
+    Ipp32s mult = chroma422 ? 1 : 2;
+    Ipp32u allNeighborAvailMask = (1u<<(mult*numUnits2)) - 1;
+    for (Ipp32s i = 0; i < mult*numUnits2; i++)
+        leftAvailFlags += neighborFlags[i] << (mult*numUnits2-1-i);
+    topLeftAvailFlag = Ipp32u(-neighborFlags[mult*numUnits2]);
+    for (Ipp32s i = 0; i < mult*numUnits2; i++)
+        topAvailFlags += neighborFlags[mult*numUnits2+1+i] << i;
+
+    if ((leftAvailFlags | topAvailFlags | topLeftAvailFlag) == 0) {
+        _ippsSet(1<<(par->bitDepthChroma-1), predPel_, 8*width+2); // no neighbors
     }
-    Ipp32s numIntraNeighbor;
-    Ipp32s i, j;
-    numIntraNeighbor = 0;
-
-    for (i = 0; i < 4*numUnitsInCU + 1; i++) {
-        if (neighborFlags[i])
-            numIntraNeighbor++;
+    else if ((leftAvailFlags & topAvailFlags & topLeftAvailFlag) == allNeighborAvailMask) {
+        // all neighbors available
+        // top-left and top
+        predPel[0] = *(src - srcPitch - 1);
+        Ipp64u *p64 = (Ipp64u *)(predPel + 1);
+        Ipp64u *s64 = (Ipp64u *)(src - srcPitch);
+        for (Ipp32s i = 0; i < width2 * (Ipp32s)sizeof(ChromaPixType); i += sizeof(Ipp64u))
+            *p64++ = *s64++;
+        // left
+        ChromaPixType *s = src - 1;
+        ChromaPixType *p = predPel + width2+1;
+        for (Ipp32s i = 0; i < width2; i++, p++, s += srcPitch)
+            *p = *s;
     }
-
-    if (numIntraNeighbor == 0) {
-        // Fill border with DC value
-        _ippsSet(dcval, PredPel, 4 * 2 * width + 2);
-
-    } else if (numIntraNeighbor == (4*numUnitsInCU + 1)) {
-        // Fill top-left border with rec. samples
-        // Fill top and top right border with rec. samples
-        _ippsCopy(src - srcPitch - 2, PredPel, 4 * width + 2);
-
-        // Fill left and below left border with rec. samples
-        tmpSrcPtr = src - 2;
-        for (i = 0; i < 2 * width; i++) {
-            PredPel[2 * 2 * width + 2 + 2 * i + 0] = tmpSrcPtr[0];
-            PredPel[2 * 2 * width + 2 + 2 * i + 1] = tmpSrcPtr[1];
-            tmpSrcPtr += srcPitch;
-        }
-
-    } else { // reference samples are partially available
-        Ipp8u  *pbNeighborFlags;
-        Ipp32s firstAvailableBlock;
-
-        // Fill top-left sample
-        pbNeighborFlags = neighborFlags + 2*numUnitsInCU;
-
-        if (*pbNeighborFlags) {
-            tmpSrcPtr = src - srcPitch - 2;
-            PredPel[0] = tmpSrcPtr[0];
-            PredPel[1] = tmpSrcPtr[1];
-        }
-
-        // Fill left & below-left samples
-        tmpSrcPtr = src - 2;
-
-        pbNeighborFlags = neighborFlags + 2*numUnitsInCU - 1;
-
-        for (j = 0; j < 2*numUnitsInCU; j++) {
-            if (*pbNeighborFlags) {
-                for (i = 0; i < minTUSize; i++) {
-                    PredPel[2 * 2 * width + 2 + j * 2 * minTUSize + 2 * i + 0] = tmpSrcPtr[0];
-                    PredPel[2 * 2 * width + 2 + j * 2 * minTUSize + 2 * i + 1] = tmpSrcPtr[1];
-                    tmpSrcPtr += srcPitch;
-                }
+    else {
+        // some neighbors available
+        ChromaPixType availableRef = 0;
+        if (topLeftAvailFlag & 0x1) {
+            // top-left value is available
+            availableRef = *(src - srcPitch - 1);
+        } else {
+            // search for top-left padded value
+            Ipp32u tmp = leftAvailFlags;
+            if (tmp) {
+                // padding from the last of left values
+                ChromaPixType *s = src - 1;
+                while ((tmp & 0x1)==0) { tmp >>= flagShift; s += (srcPitch << 2); }
+                availableRef = *s;
             } else {
-                tmpSrcPtr += srcPitch * minTUSize;
+                // padding from the first of top values
+                assert(topAvailFlags != 0);
+                ChromaPixType *s = src - srcPitch;
+                Ipp32u tmp = topAvailFlags;
+                while ((tmp & 0x1)==0) { tmp >>= flagShift; s += 4; }
+                availableRef = *s;
             }
-            pbNeighborFlags --;
         }
+        *predPel = availableRef; // top-left value
 
-        // Fill above & above-right samples
-        tmpSrcPtr = src - srcPitch;
-        pbNeighborFlags = neighborFlags + 2*numUnitsInCU + 1;
-
-        for (j = 0; j < 2*numUnitsInCU; j++) {
-            if (*pbNeighborFlags) {
-                for (i = 0; i < minTUSize; i++) {
-                    PredPel[2 + j * 2 * minTUSize + 2 * i + 0] = tmpSrcPtr[2 * i + 0];
-                    PredPel[2 + j * 2 * minTUSize + 2 * i + 1] = tmpSrcPtr[2 * i + 1];
+        // fill top line with correct padding
+        if (Ipp32u tmp = topAvailFlags) {
+            ChromaPixType *p = predPel + 1;
+            ChromaPixType *s = src - srcPitch;
+            for (Ipp32s i = 0; i < numUnits2; i++, tmp >>= flagShift)
+            {
+                if (tmp & 0x1) {
+                    *p++ = *s++;
+                    *p++ = *s++;
+                    *p++ = *s++;
+                    availableRef = *s++;
+                    *p++ = availableRef;
+                } else {
+                    *p++ = availableRef;
+                    *p++ = availableRef;
+                    *p++ = availableRef;
+                    *p++ = availableRef;
+                    s += 4;
                 }
             }
-            tmpSrcPtr += 2 * minTUSize;
-            pbNeighborFlags ++;
+            availableRef = *predPel;
+        } else {
+            _ippsSet(availableRef, predPel + 1, width2);
         }
 
-        /* Search first available block */
-        firstAvailableBlock = 0;
-
-        for (i = 0; i < 4*numUnitsInCU + 1; i++) {
-            if (neighborFlags[i])
-                break;
-            firstAvailableBlock++;
-        }
-
-        /* Search first available sample */
-        PixType availableRef[2] = { 0, 0 };
-        if (firstAvailableBlock != 0) {
-            if (firstAvailableBlock < 2 * numUnitsInCU) { /* left & below-left */
-                availableRef[0] = PredPel[4 * 2 * width - firstAvailableBlock * 2 * minTUSize + 0];
-                availableRef[1] = PredPel[4 * 2 * width - firstAvailableBlock * 2 * minTUSize + 1];
-            } else if (firstAvailableBlock == 2 * numUnitsInCU) { /* top-left */
-                availableRef[0] = PredPel[0];
-                availableRef[1] = PredPel[1];
-            } else {
-                availableRef[0] = PredPel[(firstAvailableBlock - 2 * numUnitsInCU - 1) * 2 * minTUSize + 2 + 0];
-                availableRef[1] = PredPel[(firstAvailableBlock - 2 * numUnitsInCU - 1) * 2 * minTUSize + 2 + 1];
-            }
-        }
-
-        /* left & below-left samples */
-        for (j = 0; j < 2*numUnitsInCU; j++) {
-            if (!neighborFlags[j]) {
-                if (j != 0) {
-                    availableRef[0] = PredPel[4 * 2 * width + 2 - j * 2 * minTUSize + 0];
-                    availableRef[1] = PredPel[4 * 2 * width + 2 - j * 2 * minTUSize + 1];
-                }
-                for (i = 0; i < minTUSize; i++) {
-                    PredPel[4 * 2 * width + 2 - (j + 1) * 2 * minTUSize + 2 * i + 0] = availableRef[0];
-                    PredPel[4 * 2 * width + 2 - (j + 1) * 2 * minTUSize + 2 * i + 1] = availableRef[1];
+        // fill left line with correct padding
+        if(Ipp32u tmp = leftAvailFlags) {
+            ChromaPixType *p = predPel + width2 + 1;
+            ChromaPixType *s = src - 1;
+            Ipp32u itIF = 0;
+            // Copy pixel values with holes, find last valid value, invert avialability mask
+            for (Ipp32s i = 0; i < numUnits2; i++, tmp >>= flagShift)
+            {
+                itIF <<= 1;
+                if (tmp & 0x1) {
+                    *p++ = *s; s += srcPitch;
+                    *p++ = *s; s += srcPitch;
+                    *p++ = *s; s += srcPitch;
+                    availableRef = *s; s += srcPitch;
+                    *p++ = availableRef;
+                    itIF |= 0x1;
+                } else {
+                    s += (srcPitch << 2);
+                    p += 4;
                 }
             }
-        }
-
-        /* top-left sample */
-        if (!neighborFlags[2 * numUnitsInCU]) {
-            PredPel[0] = PredPel[2 * 2 * width + 2 + 0];
-            PredPel[1] = PredPel[2 * 2 * width + 2 + 1];
-        }
-
-        /* above & above-right samples */
-        for (j = 0; j < 2 * numUnitsInCU; j++) {
-            if (!neighborFlags[j + 2 * numUnitsInCU + 1]) {
-                availableRef[0] = PredPel[j * 2 * minTUSize + 0];
-                availableRef[1] = PredPel[j * 2 * minTUSize + 1];
-                for (i = 0; i < minTUSize; i++) {
-                    PredPel[2 + j * 2 * minTUSize + 2 * i + 0] = availableRef[0];
-                    PredPel[2 + j * 2 * minTUSize + 2 * i + 1] = availableRef[1];
+            // Back-sweep filling holes
+            p  = predPel + width2 * 2;
+            for (Ipp32s i = 0; i < numUnits2; i++)
+            {
+                if (itIF & 0x1) {
+                    p -= 4; availableRef = p[1];
+                } else {
+                    *p-- = availableRef;
+                    *p-- = availableRef;
+                    *p-- = availableRef;
+                    *p-- = availableRef;
                 }
+                itIF >>= 1;
             }
+        } else {
+            _ippsSet(availableRef, predPel + width2 + 1, width2);
         }
-
     }
 }
 
@@ -690,7 +640,7 @@ void H265CU<PixType>::IntraPredTu(Ipp32s blockZScanIdx, Ipp32u idx422, Ipp32s wi
         GetAvailablity(this, blockZScanIdx + idx422,
             m_par->chromaFormatIdc == MFX_CHROMAFORMAT_YUV420 ? width << 1 : width,
             m_par->chroma422, m_par->constrainedIntrapredFlag, m_inNeighborFlags, m_outNeighborFlags);
-        GetPredPelsChromaNV12(m_par, pRec, PredPel, m_outNeighborFlags, width, m_par->chroma422, m_pitchRecChroma, m_uvRec- ((m_ctbPelX << m_par->chromaShiftWInv) + (m_ctbPelY * m_pitchRecChroma >> m_par->chromaShiftH)));
+        GetPredPelsChromaNV12(m_par, pRec, PredPel, m_outNeighborFlags, width, m_par->chroma422, m_pitchRecChroma);
 
         switch(pred_mode)
         {

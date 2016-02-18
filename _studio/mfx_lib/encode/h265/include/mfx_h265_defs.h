@@ -163,6 +163,11 @@ static inline IppStatus _ippsSet(Ipp16u val, Ipp16u* pDst, int len )
     return ippsSet_16s(val, (Ipp16s*)pDst, len);
 }
 
+static inline IppStatus _ippsSet(Ipp32u val, Ipp32u* pDst, int len )
+{
+    return ippsSet_32s(val, (Ipp32s*)pDst, len);
+}
+
 static inline IppStatus _ippsCopy( const Ipp8u* pSrc, Ipp8u* pDst, int len )
 {
     return ippsCopy_8u(pSrc, pDst, len);
