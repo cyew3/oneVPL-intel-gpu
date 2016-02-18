@@ -74,11 +74,14 @@ mfxStatus MFXVideoRcH264::Query(mfxVideoParam *in, mfxVideoParam *out)
     if (out->mfx.TargetKbps) {
       mfxF64 mFramerate = CalculateUMCFramerate(out->mfx.FrameInfo.FrameRateExtD, out->mfx.FrameInfo.FrameRateExtN);
 
-      if (out->mfx.BufferSizeInKB && out->mfx.BufferSizeInKB < (mfxU16)(out->mfx.TargetKbps * 8 / mFramerate) << 2)
-        out->mfx.BufferSizeInKB = (mfxU16)(out->mfx.TargetKbps * 8 / mFramerate) << 2;
-
-      if (out->mfx.InitialDelayInKB < (mfxU16)(out->mfx.TargetKbps * 8 / mFramerate) << 1)
-        out->mfx.InitialDelayInKB = (mfxU16)(out->mfx.TargetKbps * 8 / mFramerate) << 1;
+      if(mFramerate > 0) {
+        if (out->mfx.BufferSizeInKB && out->mfx.BufferSizeInKB < (mfxU16)(out->mfx.TargetKbps * 8 / mFramerate) << 2) {
+            out->mfx.BufferSizeInKB = (mfxU16)(out->mfx.TargetKbps * 8 / mFramerate) << 2;
+        }
+        if (out->mfx.InitialDelayInKB < (mfxU16)(out->mfx.TargetKbps * 8 / mFramerate) << 1) {
+            out->mfx.InitialDelayInKB = (mfxU16)(out->mfx.TargetKbps * 8 / mFramerate) << 1;
+        }
+      }
     }
 
     if (out->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 && out->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422 &&
@@ -225,7 +228,7 @@ void MFXVideoRcH264::UpdateQuantHRD(mfxI32 bEncoded, mfxI32 sts)
   quant = (mFrameType == MFX_FRAMETYPE_I) ? mQuantI : (mFrameType == MFX_FRAMETYPE_B) ? mQuantB : mQuantP;
   mQPprev = quant;
 
-  qs = pow((mfxF64)bEncoded/wantedBits, 2.0);
+  qs = wantedBits == 0 ? 0 : pow((mfxF64)bEncoded/wantedBits, 2.0);
   quant = (mfxI32)(quant * qs + 0.5);
 
   if (quant == mQPprev)

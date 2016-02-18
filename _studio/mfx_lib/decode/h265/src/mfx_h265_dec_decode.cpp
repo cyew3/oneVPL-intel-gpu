@@ -985,7 +985,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 #if defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)
                 if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
                 {
-                    mfxExtDecryptedParam * widevineDecryptParams = (mfxExtDecryptedParam *)GetExtendedBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_DECRYPTED_PARAM);
+                    mfxExtDecryptedParam * widevineDecryptParams = bs ? (mfxExtDecryptedParam *)GetExtendedBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_DECRYPTED_PARAM) : NULL;
                     if (widevineDecryptParams)
                     {
                         DecryptParametersWrapper HevcParams;

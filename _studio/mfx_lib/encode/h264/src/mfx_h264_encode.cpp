@@ -764,7 +764,7 @@ mfxStatus CheckAndSetLayerBitrates(struct LayerHRDParams HRDParams[MAX_DEP_LAYER
                                 mfxF64 newbotvalue = curvalue;
                                 curvalue = rightvalue - 0.125*delta;
                                 mfxI32 dd, qq;
-                                mfxF64 scale = newbotvalue / botvalue;
+                                mfxF64 scale = botvalue == 0 ? 0 : newbotvalue / botvalue;
                                 dd = qid > 0 ? did : did - 1;
                                 for (; dd >= 0; dd--) {
                                     if (!svcInfo->DependencyLayer[dd].Active)

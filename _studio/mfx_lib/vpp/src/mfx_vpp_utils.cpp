@@ -2749,7 +2749,7 @@ bool IsFrcInterpolationEnable(const mfxVideoParam & param, const MfxHwVideoProce
 {
     mfxF64 inFrameRate  = CalculateUMCFramerate(param.vpp.In.FrameRateExtN,  param.vpp.In.FrameRateExtD);
     mfxF64 outFrameRate = CalculateUMCFramerate(param.vpp.Out.FrameRateExtN, param.vpp.Out.FrameRateExtD);
-    mfxF64 mfxRatio = outFrameRate / inFrameRate;
+    mfxF64 mfxRatio = inFrameRate == 0 ? 0 : outFrameRate / inFrameRate;
 
     mfxU32 frcCount = (mfxU32)caps.frcCaps.customRateData.size();
     mfxF64 FRC_EPS = 0.01;
