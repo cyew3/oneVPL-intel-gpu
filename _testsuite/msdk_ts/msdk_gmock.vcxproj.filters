@@ -556,5 +556,8 @@
     <ClCompile Include="src\gmock\test_suites\vpp_res_change.cpp">
       <Filter>Source Files\test_suites\vpp</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mpeg2d_no_i_frames.cpp">
+      <Filter>Source Files\test_suites\mpeg2d</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
