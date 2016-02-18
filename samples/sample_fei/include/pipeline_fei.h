@@ -354,10 +354,6 @@ protected:
     /* ENC(PAK) reflists */
     mfxStatus FillRefInfo(iTask* eTask);
     mfxStatus ResetRefInfo();
-    mfxFrameSurface1 ** GetCurrentL0SurfacesEnc(iTask* eTask, mfxU32 fieldId, bool fair_reconstruct);
-    mfxFrameSurface1 ** GetCurrentL1SurfacesEnc(iTask* eTask, mfxU32 fieldId, bool fair_reconstruct);
-    mfxFrameSurface1 ** GetCurrentL0SurfacesPak(iTask* eTask, mfxU32 fieldId);
-    mfxFrameSurface1 ** GetCurrentL1SurfacesPak(iTask* eTask, mfxU32 fieldId);
     mfxU32 GetNBackward(iTask* eTask, mfxU32 fieldId);
     mfxU32 GetNForward(iTask* eTask, mfxU32 fieldId);
 

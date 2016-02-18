@@ -3058,8 +3058,10 @@ mfxStatus CEncodingPipeline::UpdateTaskQueue(iTask* eTask)
     if (!m_last_task)
         m_last_task = new iTask;
 
-    CopyState(eTask);
-    if (/*m_maxQueueLength*//*this->m_refDist * 2*/ m_mfxEncParams.mfx.NumRefFrame + 1 <= m_inputTasks.size()) {
+    sts = CopyState(eTask);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    if (/*m_maxQueueLength*//*this->m_refDist * 2*/ m_mfxEncParams.mfx.NumRefFrame + 1 <= (mfxU16)m_inputTasks.size()) {
         sts = RemoveOneTask();
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
@@ -3078,8 +3080,8 @@ mfxStatus CEncodingPipeline::CopyState(iTask* eTask)
     m_last_task->m_frameNum        = eTask->m_frameNum;
     m_last_task->m_type            = eTask->m_type;
     m_last_task->m_dpbPostEncoding = eTask->m_dpbPostEncoding;
-    m_last_task->m_poc[0]          = eTask->m_poc[0];
-    m_last_task->m_poc[1]          = eTask->m_poc[1];
+    m_last_task->m_poc             = eTask->m_poc;
+    m_last_task->PicStruct         = eTask->PicStruct;
 
     return MFX_ERR_NONE;
 }
@@ -3163,9 +3165,7 @@ mfxStatus CEncodingPipeline::ClearTasks()
         sts = ReleasePreencMVPinfo(*it);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-        if ((m_pmfxPAK) || (m_pmfxENC))
-            m_ref_info.reference_frames.clear();
-        else
+        if (!(m_pmfxPAK || m_pmfxENC))
         {
             MSDK_SAFE_DELETE_ARRAY((*it)->in.L0Surface);
             MSDK_SAFE_DELETE_ARRAY((*it)->in.L1Surface);
@@ -3311,20 +3311,22 @@ mfxU32 CEncodingPipeline::GetNBackward(iTask* eTask, mfxU32 fieldId)
 {
     MSDK_CHECK_POINTER(eTask, 0);
 
-    if (eTask->m_list0[eTask->m_fid[fieldId]].Size() == 0)
+    mfxU32 fid = eTask->m_fid[fieldId];
+
+    if (eTask->m_list0[fid].Size() == 0)
         return 0;
 
-    if (eTask->m_list1[eTask->m_fid[fieldId]].Size() == 0 ||
-        std::find(eTask->m_list0[eTask->m_fid[fieldId]].Begin(), eTask->m_list0[eTask->m_fid[fieldId]].End(), *eTask->m_list1[eTask->m_fid[fieldId]].Begin())
-        == eTask->m_list0[eTask->m_fid[fieldId]].End())
+    if (eTask->m_list1[fid].Size() == 0 ||
+        std::find(eTask->m_list0[fid].Begin(), eTask->m_list0[fid].End(), *eTask->m_list1[fid].Begin())
+        == eTask->m_list0[fid].End())
     {
         // No forward ref in L0
-        return eTask->m_list0[eTask->m_fid[fieldId]].Size();
+        return eTask->m_list0[fid].Size();
     }
     else
     {
-        return static_cast<mfxU32>(std::distance(eTask->m_list0[eTask->m_fid[fieldId]].Begin(),
-            std::find(eTask->m_list0[eTask->m_fid[fieldId]].Begin(), eTask->m_list0[eTask->m_fid[fieldId]].End(), *eTask->m_list1[eTask->m_fid[fieldId]].Begin())));
+        return static_cast<mfxU32>(std::distance(eTask->m_list0[fid].Begin(),
+            std::find(eTask->m_list0[fid].Begin(), eTask->m_list0[fid].End(), *eTask->m_list1[fid].Begin())));
     }
 }
 
@@ -3332,19 +3334,21 @@ mfxU32 CEncodingPipeline::GetNForward(iTask* eTask, mfxU32 fieldId)
 {
     MSDK_CHECK_POINTER(eTask, 0);
 
-    if (eTask->m_list1[eTask->m_fid[fieldId]].Size() == 0)
+    mfxU32 fid = eTask->m_fid[fieldId];
+
+    if (eTask->m_list1[fid].Size() == 0)
         return 0;
 
-    if (std::find(eTask->m_list1[eTask->m_fid[fieldId]].Begin(), eTask->m_list1[eTask->m_fid[fieldId]].End(), *eTask->m_list0[eTask->m_fid[fieldId]].Begin())
-        == eTask->m_list1[eTask->m_fid[fieldId]].End())
+    if (std::find(eTask->m_list1[fid].Begin(), eTask->m_list1[fid].End(), *eTask->m_list0[fid].Begin())
+        == eTask->m_list1[fid].End())
     {
         // No backward ref in L1
-        return eTask->m_list1[eTask->m_fid[fieldId]].Size();
+        return eTask->m_list1[fid].Size();
     }
     else
     {
-        return static_cast<mfxU32>(std::distance(eTask->m_list1[eTask->m_fid[fieldId]].Begin(),
-            std::find(eTask->m_list1[eTask->m_fid[fieldId]].Begin(), eTask->m_list1[eTask->m_fid[fieldId]].End(), *eTask->m_list0[eTask->m_fid[fieldId]].Begin())));
+        return static_cast<mfxU32>(std::distance(eTask->m_list1[fid].Begin(),
+            std::find(eTask->m_list1[fid].Begin(), eTask->m_list1[fid].End(), *eTask->m_list0[fid].Begin())));
     }
 }
 
@@ -3742,9 +3746,9 @@ mfxStatus CEncodingPipeline::InitEncPakFrameParams(iTask* eTask)
                         MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL1, 32);
                         feiSliceHeader[fieldId].Slice[i].SliceType = FEI_SLICETYPE_P;
 
-                        for (int k = 0; k < m_ref_info.state[fieldId].l0_idx.size(); k++)
+                        for (mfxU32 k = 0; k < m_ref_info.state[fieldId].l0_idx.size(); k++)
                         {
-                            feiSliceHeader[fieldId].Slice[i].RefL0[k].Index = m_ref_info.state[fieldId].l0_idx[k];
+                            feiSliceHeader[fieldId].Slice[i].RefL0[k].Index       = m_ref_info.state[fieldId].l0_idx[k];
                             feiSliceHeader[fieldId].Slice[i].RefL0[k].PictureType = (mfxU16)(!m_isField ? MFX_PICTYPE_FRAME :
                                 (m_ref_info.state[fieldId].l0_parity[k] ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD));
                         }
@@ -3784,13 +3788,13 @@ mfxStatus CEncodingPipeline::InitEncPakFrameParams(iTask* eTask)
                         MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL1, 32);
                         feiSliceHeader[fieldId].Slice[i].SliceType = FEI_SLICETYPE_B;
 
-                        for (int k = 0; k < m_ref_info.state[fieldId].l0_idx.size(); k++)
+                        for (mfxU32 k = 0; k < m_ref_info.state[fieldId].l0_idx.size(); k++)
                         {
                             feiSliceHeader[fieldId].Slice[i].RefL0[k].Index       = m_ref_info.state[fieldId].l0_idx[k];
                             feiSliceHeader[fieldId].Slice[i].RefL0[k].PictureType = (mfxU16)(!m_isField ? MFX_PICTYPE_FRAME :
                                 (m_ref_info.state[fieldId].l0_parity[k] ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD));
                         }
-                        for (int k = 0; k < m_ref_info.state[fieldId].l1_idx.size(); k++)
+                        for (mfxU32 k = 0; k < m_ref_info.state[fieldId].l1_idx.size(); k++)
                         {
                             feiSliceHeader[fieldId].Slice[i].RefL1[k].Index       = m_ref_info.state[fieldId].l1_idx[k];
                             feiSliceHeader[fieldId].Slice[i].RefL1[k].PictureType = (mfxU16)(!m_isField ? MFX_PICTYPE_FRAME :
@@ -4112,6 +4116,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[
         for (mfxU32 i = 0; i < m_numMBpreenc; i++) // get best nPred_actual L0/L1 predictors for each MB
         {
             sts = GetBestSetByDistortion(eTask->preenc_mvp_info, bestDistortionPredMB, refIdx, nPred_actual, fieldId, i);
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
             for (mfxU32 j = 0; j < nPred_actual; j++)
             {
@@ -4123,6 +4128,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[
                 {
                     sts = repackPreenc2EncExOneMB(bestDistortionPredMB[j], &mvp->MB[i], refIdx[j], j, m_tmpForMedian);
                 }
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
             }
         }
 
@@ -4338,7 +4344,7 @@ mfxStatus CEncodingPipeline::repackDSPreenc2EncExMB(mfxExtFeiPreEncMV::mfxExtFei
     return sts;
 }
 
-mfxI16 get16Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1)
+inline mfxI16 get16Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1)
 {
     switch (xy){
     case 0:
@@ -4359,7 +4365,7 @@ mfxI16 get16Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmp
     return (tmpBuf[7] + tmpBuf[8]) / 2;
 }
 
-mfxI16 get4Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1, int offset)
+inline mfxI16 get4Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1, int offset)
 {
     switch (xy){
     case 0:
@@ -4395,10 +4401,10 @@ bufSet* getFreeBufSet(std::list<bufSet*> bufs)
     return NULL;
 }
 
-mfxExtBuffer * getBufById(setElem* bufSet, mfxU32 id, mfxU32 fieldId)
+inline mfxExtBuffer * getBufById(setElem* bufSet, mfxU32 id, mfxU32 fieldId)
 {
     MSDK_CHECK_POINTER(bufSet, NULL);
-    for (mfxU16 i = 0; i < bufSet->NumExtParam; i++)
+    for (mfxU16 i = 0; i < bufSet->NumExtParam - fieldId; i++)
     {
         if (bufSet->ExtParam[i]->BufferId == id)
         {
@@ -4834,12 +4840,13 @@ mfxStatus CEncodingPipeline::GetRefTaskEx(iTask *eTask, mfxU32 l0_idx, mfxU32 l1
     {
         mfxU8 type = ExtractFrameType(*eTask, fieldId);
         mfxU32 l0_ref_count = GetNBackward(eTask, fieldId),
-               l1_ref_count = GetNForward(eTask, fieldId);
+               l1_ref_count = GetNForward(eTask, fieldId),
+               fid = eTask->m_fid[fieldId];
 
-        if (l0_idx < l0_ref_count && eTask->m_list0[eTask->m_fid[fieldId]].Size())
+        if (l0_idx < l0_ref_count && eTask->m_list0[fid].Size())
         {
-            mfxU8 const * l0_instance = eTask->m_list0[eTask->m_fid[fieldId]].Begin() + l0_idx;
-            iTask *L0_ref_task = GetTaskByFrameOrder(eTask->m_dpb[eTask->m_fid[fieldId]][*l0_instance & 127].m_frameOrder);
+            mfxU8 const * l0_instance = eTask->m_list0[fid].Begin() + l0_idx;
+            iTask *L0_ref_task = GetTaskByFrameOrder(eTask->m_dpb[fid][*l0_instance & 127].m_frameOrder);
             MSDK_CHECK_POINTER(L0_ref_task, MFX_ERR_NULL_PTR);
 
             refIdx[fieldId][0]     = l0_idx;
@@ -4848,11 +4855,11 @@ mfxStatus CEncodingPipeline::GetRefTaskEx(iTask *eTask, mfxU32 l0_idx, mfxU32 l1
 
             stsL0 = MFX_ERR_NONE;
         } else {
-            if (eTask->m_list0[eTask->m_fid[fieldId]].Size())
+            if (eTask->m_list0[fid].Size())
                 stsL0 = MFX_WRN_OUT_OF_RANGE;
         }
 
-        if (l1_idx < l1_ref_count && eTask->m_list1[eTask->m_fid[fieldId]].Size())
+        if (l1_idx < l1_ref_count && eTask->m_list1[fid].Size())
         {
             if (type & MFX_FRAMETYPE_IP)
             {
@@ -4861,8 +4868,8 @@ mfxStatus CEncodingPipeline::GetRefTaskEx(iTask *eTask, mfxU32 l0_idx, mfxU32 l1
             }
             else
             {
-                mfxU8 const *l1_instance = eTask->m_list1[eTask->m_fid[fieldId]].Begin() + l1_idx;
-                iTask *L1_ref_task = GetTaskByFrameOrder(eTask->m_dpb[eTask->m_fid[fieldId]][*l1_instance & 127].m_frameOrder);
+                mfxU8 const *l1_instance = eTask->m_list1[fid].Begin() + l1_idx;
+                iTask *L1_ref_task = GetTaskByFrameOrder(eTask->m_dpb[fid][*l1_instance & 127].m_frameOrder);
                 MSDK_CHECK_POINTER(L1_ref_task, MFX_ERR_NULL_PTR);
 
                 refIdx[fieldId][1]     = l1_idx;
@@ -4872,7 +4879,7 @@ mfxStatus CEncodingPipeline::GetRefTaskEx(iTask *eTask, mfxU32 l0_idx, mfxU32 l1
                 stsL1 = MFX_ERR_NONE;
             }
         } else {
-            if (eTask->m_list1[eTask->m_fid[fieldId]].Size())
+            if (eTask->m_list1[fid].Size())
                 stsL1 = MFX_WRN_OUT_OF_RANGE;
         }
     }

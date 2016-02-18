@@ -307,7 +307,7 @@ typedef FixedArray<mfxU8, 33>      ArrayU8x33;
 typedef FixedArray<mfxU32, 64>     ArrayU32x64;
 
 typedef Pair<mfxU8> PairU8;
-typedef mfxI32 PairI32[2];
+typedef Pair<mfxI32> PairI32;
 
 struct DpbFrame
 {
@@ -317,11 +317,10 @@ struct DpbFrame
     mfxU32  m_frameOrder;
     mfxU32  m_frameNum;
     mfxI32  m_frameNumWrap;
-    mfxI32  m_picNum[2];
+    PairI32 m_picNum;
     mfxU32  m_frameIdx;
     PairU8  m_longTermPicNum;
     PairU8  m_refPicFlag;
-    mfxU8   m_longTermIdxPlus1;
     mfxU8   m_longterm; // at least one field is a long term reference
     mfxU8   m_refBase;
 };
@@ -444,7 +443,6 @@ struct iTask
     mfxU32  m_tidx;             // temporal layer index (in acsending order of temporal_id)
 
     PairU8  m_longTermPicNum;
-    mfxU8   m_longTermFrameIdx;
     PairU8  m_reference;        // is refrence (short or long term) or not
     //.........................................................................................
 
@@ -672,7 +670,6 @@ inline void InitNewDpbFrame(
     ref.m_frameNumWrap = task.m_frameNumWrap;
     ref.m_longTermPicNum[0] = task.m_longTermPicNum[0];
     ref.m_longTermPicNum[1] = task.m_longTermPicNum[1];
-    ref.m_longTermIdxPlus1 = task.m_longTermFrameIdx + 1;
     ref.m_longterm = 0;
     ref.m_refBase = 0;
 

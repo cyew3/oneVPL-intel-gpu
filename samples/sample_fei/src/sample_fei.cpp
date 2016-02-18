@@ -1013,10 +1013,16 @@ mfxStatus CheckOptions(sInputParams* pParams)
         sts = MFX_ERR_UNSUPPORTED;
     }
 
-    if (pParams->bENCODE && (pParams->bFieldProcessingMode) &&
+    if (pParams->bPREENC && pParams->bFieldProcessingMode && pParams->nPicStruct == MFX_PICSTRUCT_FIELD_BFF)
+    {
+        fprintf(stderr, "PREENC: Field Processing mode works only for TFF\n");
+        sts = MFX_ERR_UNSUPPORTED;
+    }
+
+    if (pParams->bFieldProcessingMode &&
         !((pParams->nPicStruct == MFX_PICSTRUCT_FIELD_BFF) || (pParams->nPicStruct == MFX_PICSTRUCT_FIELD_TFF)))
     {
-        fprintf(stderr, "ENCODE Field Processing mode works for TFF or BFF\n");
+        fprintf(stderr, "Field Processing mode works only with interlaced content (TFF or BFF)\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
 

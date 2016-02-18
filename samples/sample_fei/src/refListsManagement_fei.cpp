@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2015 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2005-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "refListsManagement_fei.h"
@@ -19,37 +19,20 @@ void UpdateDpbFrames(
     {
         DpbFrame & ref = task.m_dpb[field][i];
 
-        // No long ref for now, may remove this long term ref part
-        if (ref.m_longTermIdxPlus1 > 1)
+        ref.m_frameNumWrap = (ref.m_frameNum > task.m_frameNum)
+            ? ref.m_frameNum - frameNumMax
+            : ref.m_frameNum;
+
+        // update picNum
+        if (ps == MFX_PICSTRUCT_PROGRESSIVE)
         {
-            if (ps == MFX_PICSTRUCT_PROGRESSIVE)
-            {
-                ref.m_longTermPicNum[0] = ref.m_longTermIdxPlus1 - 1;
-                ref.m_longTermPicNum[1] = ref.m_longTermIdxPlus1 - 1;
-            }
-            else
-            {
-                ref.m_longTermPicNum[0] = 2 * (ref.m_longTermIdxPlus1 - 1) + mfxU8(!field);
-                ref.m_longTermPicNum[1] = 2 * (ref.m_longTermIdxPlus1 - 1) + mfxU8(!!field);
-            }
+            ref.m_picNum[0] = ref.m_frameNumWrap;
+            ref.m_picNum[1] = ref.m_frameNumWrap;
         }
         else
         {
-            ref.m_frameNumWrap = (ref.m_frameNum > task.m_frameNum)
-                ? ref.m_frameNum - frameNumMax
-                : ref.m_frameNum;
-
-            // update picNum
-            if (ps == MFX_PICSTRUCT_PROGRESSIVE)
-            {
-                ref.m_picNum[0] = ref.m_frameNumWrap;
-                ref.m_picNum[1] = ref.m_frameNumWrap;
-            }
-            else
-            {
-                ref.m_picNum[0] = 2 * ref.m_frameNumWrap + (!field);
-                ref.m_picNum[1] = 2 * ref.m_frameNumWrap + (!!field);
-            }
+            ref.m_picNum[0] = 2 * ref.m_frameNumWrap + (!field);
+            ref.m_picNum[1] = 2 * ref.m_frameNumWrap + (!!field);
         }
     }
 }
