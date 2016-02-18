@@ -953,6 +953,34 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             }
         }
 
+        /* Scaling params */
+        switch (pParams->scalingMode)
+        {
+        case MFX_SCALING_MODE_LOWPOWER:
+            /* As per driver spec, VA_FILTER_SCALING_DEFAULT means the following:
+             *  First priority is SFC. If SFC can't work, revert to AVS
+             *  If scaling ratio between 1/8...8 -> SFC
+             *  If scaling ratio between 1/16...1/8 or larger than 8 -> AVS
+             *  If scaling ratio is less than 1/16 -> bilinear
+             */
+            m_pipelineParam[refIdx].filter_flags |= VA_FILTER_SCALING_DEFAULT;
+            break;
+        case MFX_SCALING_MODE_QUALITY:
+            /* As per driver spec, VA_FILTER_SCALING_HQ means the following:
+             *  If scaling ratio is less than 1/16 -> bilinear
+             *  For all other cases, AVS is used.
+             */
+            m_pipelineParam[refIdx].filter_flags |= VA_FILTER_SCALING_HQ;
+            break;
+        case MFX_SCALING_MODE_DEFAULT:
+        default:
+            /* Do nothing by default. Technically it's the same as setting
+             * VA_FILTER_SCALING_DEFAULT since it's equal to 0. This is
+             * different from Windows, where by default AVS is forced.
+             */
+            break;
+        }
+
         vaSts = vaCreateBuffer(m_vaDisplay,
                             m_vaContextVPP,
                             VAProcPipelineParameterBufferType,
