@@ -1732,7 +1732,7 @@ mfxStatus D3D9Encoder::QueryStatus(
             task.m_mad[fieldId] = feedback->MAD;
         task.m_resetBRC = !!feedback->reserved0; //WiDi w/a
         //for KBL we need retrive counter from HW instead of incrementing ourselfs.
-        if(m_caps.HWCounterAutoIncrement && (m_forcedCodingFunction & ENCODE_WIDI))
+        if(m_caps.HWCounterAutoIncrement)
         {
             task.m_aesCounter[0].Count = feedback->aes_counter.Counter;
             task.m_aesCounter[0].IV = feedback->aes_counter.IV;
