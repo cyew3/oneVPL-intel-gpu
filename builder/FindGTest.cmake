@@ -25,23 +25,27 @@
 ##  Content: Intel(R) Media SDK Samples projects creation and build
 ##******************************************************************************
 
-find_path( GTEST_INCLUDE gtest.h PATHS "/usr/local/include/gtest" )
-find_library( GTEST_LIBRARY gtest PATHS "/usr/local/lib" )
-find_library( GTEST_MAIN_LIBRARY gtest_main PATHS "/usr/local/lib" )
+find_path( GTEST_INCLUDE gtest/gtest.h PATHS "$ENV{GTEST_INCLUDE_PATH}" "/usr/local/include" )
+find_library( GTEST_LIBRARY gtest PATHS "$ENV{GTEST_LIBRARY_PATH}" "/usr/local/lib" )
+find_library( GTEST_MAIN_LIBRARY gtest_main PATHS "$ENV{GTEST_LIBRARY_PATH}" "/usr/local/lib" )
 
 if(NOT GTEST_INCLUDE MATCHES NOTFOUND)
   if(NOT GTEST_LIBRARY MATCHES NOTFOUND AND
-	 NOT GTEST_MAIN_LIBRARY MATCHES NOTFOUND)
+        NOT GTEST_MAIN_LIBRARY MATCHES NOTFOUND)
     set( GTEST_FOUND TRUE )
 
-    include_directories( "/usr/local/include" )
-    link_directories( "/usr/local/lib" )
+    get_filename_component(GTEST_LIB_DIR ${GTEST_LIBRARY} DIRECTORY)
+    get_filename_component(GTEST_MAIN_LIB_DIR ${GTEST_MAIN_LIBRARY} DIRECTORY)
+
+    include_directories( "${GTEST_INCLUDE}" )
+    link_directories( "${GTEST_LIB_DIR}" "${GTEST_MAIN_LIB_DIR}" )
   endif( )
 endif( )
 
 if(NOT DEFINED GTEST_FOUND)
-  message( WARNING "Google tests libraries were not found! Build GTest and install to the /usr/local." )
+  message( WARNING "Google tests libraries and headers were not found! Build GTest and install to /usr/local." )
 else ( )
-  message( STATUS "Google tests libraries were found here /usr/local/lib" )
+  message( STATUS "Google tests libraries were found in ${GTEST_LIB_DIR}" )
+  message( STATUS "Google tests headers were found in ${GTEST_INCLUDE}" )
 endif( )
 
