@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 File Name: test_h264_dec_command_line.cpp
 
@@ -17,8 +17,8 @@ File Name: test_h264_dec_command_line.cpp
 #include "test_statistics.h"
 
 Timer::Timer()
-: m_start(NOT_STARTED)
-, m_freq((Ipp64f)vm_time_get_frequency())
+: m_freq((Ipp64f)vm_time_get_frequency())
+, m_start(NOT_STARTED)
 , m_accum(0)
 , m_lastTiming(0)
 {
@@ -43,8 +43,8 @@ Ipp64f Timer::CurrentTiming()
 }
 
 PerfWriter::PerfWriter()
-: m_fd(NULL)
-, m_isWritten(false)
+: m_isWritten(false)
+, m_fd(NULL)
 , m_bOwnFD(false)
 {
 }

@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008-2011 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 #include <math.h>
 #include <memory.h>
@@ -70,7 +70,7 @@ void PrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
 mfxStatus ParseInputString(vm_char* strInput[], int nArgNum, sInputParams* pParams)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    vm_char* strArgument = VM_STRING("");
+    const vm_char* strArgument = VM_STRING("");
     CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
 
     if (nArgNum < 2)
@@ -240,7 +240,7 @@ mfxStatus ParseInputString(vm_char* strInput[], int nArgNum, sInputParams* pPara
                 PrintHelp(strInput[0], 0);
                 return MFX_ERR_NULL_PTR;
             default:
-                PrintHelp(strInput[0], VM_STRING("Unknown options"));
+                PrintHelp(strInput[0], const_cast<vm_char*>(VM_STRING("Unknown options")));
                 return MFX_ERR_UNSUPPORTED;
             }
         }
