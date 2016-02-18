@@ -77,7 +77,7 @@ void sInputParams::Reset()
 
     priority = MFX_PRIORITY_NORMAL;
     libType = MFX_IMPL_SOFTWARE;
-    MaxFrameNumber = 0xFFFFFFFF;
+    MaxFrameNumber = MFX_INFINITE;
     pVppCompDstRects = NULL;
     m_hwdev = NULL;
     DenoiseLevel=-1;
@@ -725,6 +725,9 @@ mfxStatus CTranscodingPipeline::Decode()
         if (time(0) - start >= m_nTimeout)
             bLastCycle = true;
 
+        if (bLastCycle)
+            SetNumFramesForReset(0);
+
         msdk_tick nBeginTime = msdk_time_get_tick(); // microseconds.
 
         if(shouldReadNextFrame)
@@ -736,7 +739,7 @@ mfxStatus CTranscodingPipeline::Decode()
                     sts = DecodeOneFrame(&DecExtSurface);
                     if (MFX_ERR_MORE_DATA == sts)
                     {
-                        sts = DecodeLastFrame(&DecExtSurface);
+                        sts = bLastCycle ? DecodeLastFrame(&DecExtSurface) : MFX_ERR_MORE_DATA;
                         bEndOfFile = bLastCycle ? true : false;
                     }
                 }

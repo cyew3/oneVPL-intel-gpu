@@ -451,6 +451,15 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
         // All sessions have to know about timeout
         if (m_InputParamsArray[i].nTimeout && (m_InputParamsArray[i].eMode == Sink))
         {
+            for (mfxU32 j = 0; j < m_InputParamsArray.size(); j++)
+            {
+                if (m_InputParamsArray[j].MaxFrameNumber != MFX_INFINITE)
+                {
+                    msdk_printf(MSDK_STRING("\"-timeout\" option isn't compatible wiht \"-n\". \"-n\" will be ignored.\n"));
+                    for (mfxU32 j = 0; j < m_InputParamsArray.size(); j++)
+                        m_InputParamsArray[j].MaxFrameNumber = MFX_INFINITE;
+                }
+            }
             msdk_printf(MSDK_STRING("Timeout %d seconds has been set to all sessions\n"), m_InputParamsArray[i].nTimeout);
             for (mfxU32 j = 0; j < m_InputParamsArray.size(); j++)
                 m_InputParamsArray[j].nTimeout = m_InputParamsArray[i].nTimeout;
