@@ -120,7 +120,7 @@ VAProfile g_Mpeg4Profiles[] =
 
 VAProfile g_H264Profiles[] =
 {
-    VAProfileH264High, VAProfileH264Main, VAProfileH264Baseline
+    VAProfileH264High, VAProfileH264Main, VAProfileH264ConstrainedBaseline
 };
 
 VAProfile g_H265Profiles[] =
