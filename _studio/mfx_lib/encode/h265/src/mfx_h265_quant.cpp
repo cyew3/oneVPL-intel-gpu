@@ -69,7 +69,7 @@ static const Ipp8u offTab[3*4*8] = {
     24, 24, 24, 12, 24, 24, 24, 0,
 };
 
-static const Ipp8u h265_qp_rem[90]=
+const Ipp8u h265_qp_rem[90]=
 {
     0,   1,   2,   3,   4,   5,   0,   1,   2,   3,   4,   5,   0,   1,   2,  3,   4,   5,
     0,   1,   2,   3,   4,   5,   0,   1,   2,   3,   4,   5,   0,   1,   2,  3,   4,   5,
@@ -78,7 +78,7 @@ static const Ipp8u h265_qp_rem[90]=
     0,   1,   2,   3,   4,   5,   0,   1,   2,   3,   4,   5,   0,   1,   2,  3,   4,   5
 };
 
-static const Ipp8u h265_qp6[90] =
+const Ipp8u h265_qp6[90] =
 {
     0,   0,   0,   0,   0,   0,   1,   1,   1,   1,   1,   1,   2,   2,   2,  2,   2,   2,
     3,   3,   3,   3,   3,   3,   4,   4,   4,   4,   4,   4,   5,   5,   5,  5,   5,   5,
@@ -87,12 +87,12 @@ static const Ipp8u h265_qp6[90] =
    12,  12,  12,  12,  12,  12,  13,  13,  13,  13,  13,  13,  14,  14,  14, 14,  14,  14
 };
 
-static const Ipp8u h265_quant_table_inv[] =
+const Ipp8u h265_quant_table_inv[] =
 {
     40, 45, 51, 57, 64, 72
 };
 
-static const Ipp16u h265_quant_table_fwd[] =
+const Ipp16u h265_quant_table_fwd[] =
 {
     26214, 23302, 20560, 18396, 16384, 14564
 };
@@ -288,7 +288,7 @@ void h265_quant_inv(const CoeffsType *qcoeffs,
         add = 1 << (shift - 1);
         Ipp32s scale = h265_quant_table_inv[qp_rem] << qp6;
 
-        MFX_HEVC_PP::h265_QuantInv_16s(qcoeffs, coeffs, len, scale, add, shift);
+        MFX_HEVC_PP::NAME(h265_QuantInv_16s)(qcoeffs, coeffs, len, scale, add, shift);
     }
 }
 

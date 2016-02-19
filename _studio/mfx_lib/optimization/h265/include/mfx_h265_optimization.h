@@ -217,6 +217,7 @@ namespace MFX_HEVC_PP
     typedef void   (H265_FASTCALL *PTR_QuantFwd_16s)    (const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);
     typedef Ipp32s (H265_FASTCALL *PTR_QuantFwd_SBH_16s)(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scale, int offset, int shift);
     typedef void   (H265_FASTCALL *PTR_Quant_zCost_16s) (const Ipp16s* pSrc, Ipp32u* qLevels, Ipp64s* zlCosts, Ipp32s len, Ipp32s qScale, Ipp32s qoffset, Ipp32s qbits, Ipp32s rdScale0);
+    typedef void   (H265_FASTCALL *PTR_QuantInv_16s)    (const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);
 
     // [PTR.deblocking]
     typedef Ipp32s (* PTR_FilterEdgeLuma_8u_I)(H265EdgeData *edge, Ipp8u *srcDst, Ipp32s srcDstStride, Ipp32s dir);
@@ -296,6 +297,7 @@ namespace MFX_HEVC_PP
     typedef void (* PTR_FilterPredictPels_8u)(Ipp8u* PredPel, Ipp32s width);
     typedef void (* PTR_FilterPredictPels_Bilinear_8u)(Ipp8u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight);
     typedef void (* PTR_PredictIntra_Planar_8u)(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
+    typedef void (* PTR_PredictIntra_Planar_ChromaNV12_8u)(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
 
     typedef void (* PTR_FilterPredictPels_16s)(Ipp16s* PredPel, Ipp32s width);
     typedef void (* PTR_FilterPredictPels_Bilinear_16s)(Ipp16s* pSrcDst, int width, int topLeft, int bottomLeft, int topRight);
@@ -479,10 +481,11 @@ namespace MFX_HEVC_PP
         HEVCPP_API( PTR_TransformFwd_16s, void H265_FASTCALL, h265_DCT16x16Fwd_16s, (const short *H265_RESTRICT src, int srcStride, short *H265_RESTRICT dst, Ipp32u bitDepth) );
         HEVCPP_API( PTR_TransformFwd_16s, void H265_FASTCALL, h265_DCT32x32Fwd_16s, (const short *H265_RESTRICT src, int srcStride, short *H265_RESTRICT dst, Ipp32u bitDepth) );
         
-        // forward quantization
-        HEVCPP_API( PTR_QuantFwd_16s,     void H265_FASTCALL,   h265_QuantFwd_16s,     (const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift) );
+        // quantization
+        HEVCPP_API( PTR_QuantFwd_16s,     void   H265_FASTCALL, h265_QuantFwd_16s,     (const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift) );
         HEVCPP_API( PTR_QuantFwd_SBH_16s, Ipp32s H265_FASTCALL, h265_QuantFwd_SBH_16s, (const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scale, int offset, int shift) );
-        HEVCPP_API( PTR_Quant_zCost_16s,  void H265_FASTCALL,   h265_Quant_zCost_16s,  (const Ipp16s* pSrc, Ipp32u* qLevels, Ipp64s* zlCosts, Ipp32s len, Ipp32s qScale, Ipp32s qoffset, Ipp32s qbits, Ipp32s rdScale0) );
+        HEVCPP_API( PTR_Quant_zCost_16s,  void   H265_FASTCALL, h265_Quant_zCost_16s,  (const Ipp16s* pSrc, Ipp32u* qLevels, Ipp64s* zlCosts, Ipp32s len, Ipp32s qScale, Ipp32s qoffset, Ipp32s qbits, Ipp32s rdScale0) );
+        HEVCPP_API( PTR_QuantInv_16s,     void   H265_FASTCALL, h265_QuantInv_16s,     (const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift) );
         
 
         // [deblocking]
@@ -553,14 +556,15 @@ namespace MFX_HEVC_PP
             Ipp32s width,
             Ipp32s bitDepth));
 
-        HEVCPP_API( PTR_FilterPredictPels_8u,          void, h265_FilterPredictPels_8u,          (Ipp8u* PredPel, Ipp32s width) );
-        HEVCPP_API( PTR_FilterPredictPels_Bilinear_8u, void, h265_FilterPredictPels_Bilinear_8u, (Ipp8u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight) );
-        HEVCPP_API( PTR_PredictIntra_Planar_8u,        void, h265_PredictIntra_Planar_8u,        (Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width) );
+        HEVCPP_API( PTR_FilterPredictPels_8u,              void, h265_FilterPredictPels_8u,              (Ipp8u* PredPel, Ipp32s width) );
+        HEVCPP_API( PTR_FilterPredictPels_Bilinear_8u,     void, h265_FilterPredictPels_Bilinear_8u,     (Ipp8u* pSrcDst, int width, int topLeft, int bottomLeft, int topRight) );
+        HEVCPP_API( PTR_PredictIntra_Planar_8u,            void, h265_PredictIntra_Planar_8u,            (Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width) );
+        HEVCPP_API( PTR_PredictIntra_Planar_ChromaNV12_8u, void, h265_PredictIntra_Planar_ChromaNV12_8u, (Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width) );
 
         HEVCPP_API( PTR_FilterPredictPels_16s,          void, h265_FilterPredictPels_16s,          (Ipp16s* PredPel, Ipp32s width) );
         HEVCPP_API( PTR_FilterPredictPels_Bilinear_16s, void, h265_FilterPredictPels_Bilinear_16s, (Ipp16s* pSrcDst, int width, int topLeft, int bottomLeft, int topRight) );
         HEVCPP_API( PTR_PredictIntra_Planar_16s,        void, h265_PredictIntra_Planar_16s,        (Ipp16s* PredPel, Ipp16s* pels, Ipp32s pitch, Ipp32s width) );
-
+        
         HEVCPP_API( PTR_AnalyzeGradient_8u,  void, h265_AnalyzeGradient_8u,  (const Ipp8u *src, Ipp32s pitch, Ipp16u *hist4, Ipp16u *hist8, Ipp32s width, Ipp32s height) );
         HEVCPP_API( PTR_AnalyzeGradient_16u, void, h265_AnalyzeGradient_16u, (const Ipp16u *src, Ipp32s pitch, Ipp32u *hist4, Ipp32u *hist8, Ipp32s width, Ipp32s height) );
 
@@ -639,7 +643,6 @@ namespace MFX_HEVC_PP
     // LIST OF NON-OPTIMIZED (and NON-DISPATCHERED) FUNCTIONS:
 
     /* Inverse Quantization */
-    void h265_QuantInv_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);
     void h265_QuantInv_ScaleList_LShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int shift);
     void h265_QuantInv_ScaleList_RShift_16s(const Ipp16s* pSrc, const Ipp16s* pScaleList, Ipp16s* pDst, int len, int offset, int shift);
 
@@ -1159,7 +1162,7 @@ namespace MFX_HEVC_PP
 
     static inline void h265_PredictIntra_Planar_ChromaNV12(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
     {
-        h265_PredictIntra_Planar_ChromaNV12_8u(PredPel, pDst, dstStride, blkSize);
+        MFX_HEVC_PP::NAME(h265_PredictIntra_Planar_ChromaNV12_8u)(PredPel, pDst, dstStride, blkSize);
     }
 
     static inline void h265_PredictIntra_Planar_ChromaNV12(Ipp16u* PredPel, Ipp16u* pDst, Ipp32s dstStride, Ipp32s blkSize)

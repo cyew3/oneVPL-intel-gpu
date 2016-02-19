@@ -13,6 +13,7 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined(MFX_ENABLE_H265_VIDEO_DECODE)
 
+#include "assert.h"
 #include "mfx_h265_optimization.h"
 #include "ipps.h"
 
@@ -488,57 +489,68 @@ namespace MFX_HEVC_PP
         PixType* pels,
         Ipp32s pitch,
         Ipp32s width,
-        Ipp32s isLuma)
+        Ipp32s /*isLuma*/)
     {
-        Ipp32s i, j, dcval;
-
-        dcval = 0;
-
-        for (i = 0; i < width; i++)
-        {
+        Ipp32s dcval = 0;
+        for (Ipp32s i = 0; i < width; i++) {
             dcval += PredPel[1+i];
-        }
-
-        for (i = 0; i < width; i++)
-        {
             dcval += PredPel[2*width+1+i];
         }
 
-        dcval = (dcval + width) / (2*width);
+        Ipp64u dcval64;
+        switch (width) {
+        case 4:
+            dcval = (dcval + 4) >> 3;
+            dcval64 = dcval * 0x0101010101010101;
+            *(Ipp32u *)(pels+1*pitch) = (Ipp32u)dcval64;
+            *(Ipp32u *)(pels+2*pitch) = (Ipp32u)dcval64;
+            *(Ipp32u *)(pels+3*pitch) = (Ipp32u)dcval64;
+            break;
+        case 8:
+            dcval = (dcval + 8) >> 4;
+            dcval64 = dcval * 0x0101010101010101;
+            *(Ipp64u *)(pels+1*pitch) = dcval64;
+            *(Ipp64u *)(pels+2*pitch) = dcval64;
+            *(Ipp64u *)(pels+3*pitch) = dcval64;
+            *(Ipp64u *)(pels+4*pitch) = dcval64;
+            *(Ipp64u *)(pels+5*pitch) = dcval64;
+            *(Ipp64u *)(pels+6*pitch) = dcval64;
+            *(Ipp64u *)(pels+7*pitch) = dcval64;
+            break;
+        case 16:
+            dcval = (dcval + 16) >> 5;
+            dcval64 = dcval * 0x0101010101010101;
+            for (Ipp32s j = 1; j < 16; j++) {
+                *(Ipp64u *)(pels+j*pitch+0) = dcval64;
+                *(Ipp64u *)(pels+j*pitch+8) = dcval64;
+            }
+            break;
+        case 32:
+            dcval = (dcval + 32) >> 6;
+            dcval64 = dcval * 0x0101010101010101;
+            for (Ipp32s j = 0; j < 32; j++) {
+                *(Ipp64u *)(pels+j*pitch+0) = dcval64;
+                *(Ipp64u *)(pels+j*pitch+8) = dcval64;
+                *(Ipp64u *)(pels+j*pitch+16) = dcval64;
+                *(Ipp64u *)(pels+j*pitch+24) = dcval64;
+            }
+            break;
+        }
 
-        if (isLuma && width <= 16)
+        if (/*isLuma &&*/ width <= 16)
         {
             pels[0] = (PixType)((PredPel[2*width+1] + 2 * dcval + PredPel[1] + 2) >> 2);
 
-            for (i = 1; i < width; i++)
+            for (Ipp32s i = 1; i < width; i++)
             {
                 pels[i] = (PixType)((PredPel[1+i] + 3 * dcval + 2) >> 2);
             }
 
-            for (j = 1; j < width; j++)
+            for (Ipp32s j = 1; j < width; j++)
             {
                 pels[j*pitch] = (PixType)((PredPel[2*width+1+j] + 3 * dcval + 2) >> 2);
             }
-
-            for (j = 1; j < width; j++)
-            {
-                for (i = 1; i < width; i++)
-                {
-                    pels[j*pitch+i] = (PixType)dcval;
-                }
-            }
         }
-        else
-        {
-            for (j = 0; j < width; j++)
-            {
-                for (i = 0; i < width; i++)
-                {
-                    pels[j*pitch+i] = (PixType)dcval;
-                }
-            }
-        }
-
     } // void h265_PredictIntra_DC_8u(
 
     static void h265_PredictIntra_Ang_8u_px_no_transp(
@@ -762,7 +774,7 @@ namespace MFX_HEVC_PP
     }
 #endif
 
-    void h265_PredictIntra_Planar_ChromaNV12_8u(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
+    void h265_PredictIntra_Planar_ChromaNV12_8u_px(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
     {
         Ipp32s bottomLeft, topRight;
         Ipp32s bottomLeft1, topRight1;
@@ -816,6 +828,15 @@ namespace MFX_HEVC_PP
         }
     }
 
+    namespace PredictIntra_DC_ChromaNV12_8u_Details {
+        inline void Sum128(__m128i sum128, Ipp32s &sumU, Ipp32s &sumV) {
+            Ipp64u sum64 = _mm_extract_epi64(sum128, 0) + _mm_extract_epi64(sum128, 1);
+            Ipp32u sum32 = (sum64 & 0xffffffff) + (sum64 >> 32);
+            sumU = sum32 & 0xffff;
+            sumV = sum32 >> 16;
+        }
+    };
+
     void h265_PredictIntra_DC_ChromaNV12_8u(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
     {
         Ipp32s k;
@@ -824,55 +845,91 @@ namespace MFX_HEVC_PP
         Ipp32s dc1, dc2;
         Ipp32s Sum1 = 0, Sum2 = 0;
 
-        for (Ipp32s Ind = 2; Ind < blkSize * 2 + 2; Ind += 2)
-        {
-            Sum1 += PredPel[Ind];
-            Sum2 += PredPel[Ind+1];
+        Ipp8u *predTop  = PredPel+2;
+        Ipp8u *predLeft = PredPel+2+4*blkSize;
+        __m128i acc = _mm_cvtepu8_epi16(_mm_cvtsi64_si128(*(Ipp64u*)(predTop)));
+        __m128i add = _mm_cvtepu8_epi16(_mm_cvtsi64_si128(*(Ipp64u*)(predLeft)));
+        acc = _mm_add_epi16(acc, add);
+        for (Ipp32s i = 8; i < 2 * blkSize; i += 8) {
+            add = _mm_cvtepu8_epi16(_mm_cvtsi64_si128(*(Ipp64u*)(predTop+i)));
+            acc = _mm_add_epi16(acc, add);
+            add = _mm_cvtepu8_epi16(_mm_cvtsi64_si128(*(Ipp64u*)(predLeft+i)));
+            acc = _mm_add_epi16(acc, add);
         }
-        for (Ipp32s Ind = blkSize * 4 + 2; Ind < blkSize * 6 + 2; Ind += 2)
-        {
-            Sum1 += PredPel[Ind];
-            Sum2 += PredPel[Ind+1];
-        }
+        PredictIntra_DC_ChromaNV12_8u_Details::Sum128(acc, Sum1, Sum2);
 
         dc1 = (Ipp32s)((Sum1 + blkSize) / (blkSize << 1));
         dc2 = (Ipp32s)((Sum2 + blkSize) / (blkSize << 1));
 
-        for (k = 0; k < blkSize; k++)
-        {
-            for (l = 0; l < blkSize * 2; l += 2)
-            {
-                pDst[k * dstStride + l] = (Ipp8u)dc1;
-                pDst[k * dstStride + l + 1] = (Ipp8u)dc2;
+        Ipp64u dcval64 = (dc1 + dc2 * 0x100) * 0x0001000100010001;
+
+        switch (blkSize) {
+        case 4:
+            *(Ipp64u *)(pDst+0*dstStride) = dcval64;
+            *(Ipp64u *)(pDst+1*dstStride) = dcval64;
+            *(Ipp64u *)(pDst+2*dstStride) = dcval64;
+            *(Ipp64u *)(pDst+3*dstStride) = dcval64;
+            break;
+        case 8:
+            for (Ipp32s j = 0; j < 8; j++) {
+                *(Ipp64u *)(pDst+j*dstStride+0) = dcval64;
+                *(Ipp64u *)(pDst+j*dstStride+8) = dcval64;
             }
+            break;
+        case 16:
+            for (Ipp32s j = 0; j < 16; j++) {
+                *(Ipp64u *)(pDst+j*dstStride+0)  = dcval64;
+                *(Ipp64u *)(pDst+j*dstStride+8)  = dcval64;
+                *(Ipp64u *)(pDst+j*dstStride+16) = dcval64;
+                *(Ipp64u *)(pDst+j*dstStride+24) = dcval64;
+            }
+            break;
+        case 32:
+            for (Ipp32s j = 0; j < 32; j++) {
+                *(Ipp64u *)(pDst+j*dstStride+0)  = dcval64;
+                *(Ipp64u *)(pDst+j*dstStride+8)  = dcval64;
+                *(Ipp64u *)(pDst+j*dstStride+16) = dcval64;
+                *(Ipp64u *)(pDst+j*dstStride+24) = dcval64;
+                *(Ipp64u *)(pDst+j*dstStride+32) = dcval64;
+                *(Ipp64u *)(pDst+j*dstStride+40) = dcval64;
+                *(Ipp64u *)(pDst+j*dstStride+48) = dcval64;
+                *(Ipp64u *)(pDst+j*dstStride+56) = dcval64;
+            }
+            break;
         }
     }
 
     void h265_PredictIntra_Hor_ChromaNV12_8u(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
     {
-        Ipp32s k;
-        Ipp32s l;
-
-        for (k = 0; k < blkSize; k++)
-        {
-            for (l = 0; l < blkSize * 2; l+=2)
-            {
-                pDst[k*dstStride+l] = PredPel[4*blkSize+2+2*k];
-                pDst[k*dstStride+l+1] = PredPel[4*blkSize+2+2*k+1];
+        assert(blkSize == 4 || blkSize == 8 || blkSize == 16 || blkSize == 32);
+        Ipp16u *predPel16 = (Ipp16u *)PredPel + 2 * blkSize + 1;
+        if (blkSize == 4) {
+            *((Ipp64u *)(pDst+0*dstStride)) = predPel16[0] * 0x0001000100010001;
+            *((Ipp64u *)(pDst+1*dstStride)) = predPel16[1] * 0x0001000100010001;
+            *((Ipp64u *)(pDst+2*dstStride)) = predPel16[2] * 0x0001000100010001;
+            *((Ipp64u *)(pDst+3*dstStride)) = predPel16[3] * 0x0001000100010001;
+        } else {
+            for (Ipp32s y = 0; y < blkSize; y++) {
+                __m128i val = _mm_set1_epi16(predPel16[y]);
+                for (Ipp32s x = 0; x < 2*blkSize; x += 16)
+                    _mm_store_si128((__m128i *)(pDst+y*dstStride+x), val);
             }
         }
     }
 
-    void h265_PredictIntra_Ver_ChromaNV12_8u(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
+    void h265_PredictIntra_Ver_ChromaNV12_8u(Ipp8u* predPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
     {
-        Ipp32s k;
-        Ipp32s l;
-
-        for (k = 0; k < blkSize; k++)
-        {
-            for (l = 0; l < blkSize * 2; l++)
-            {
-                pDst[k*dstStride+l] = PredPel[2+l];
+        assert(blkSize == 4 || blkSize == 8 || blkSize == 16 || blkSize == 32);
+        if (blkSize == 4) {
+            *((Ipp64u *)(pDst+0*dstStride)) = *((Ipp64u *)(predPel + 2));
+            *((Ipp64u *)(pDst+1*dstStride)) = *((Ipp64u *)(predPel + 2));
+            *((Ipp64u *)(pDst+2*dstStride)) = *((Ipp64u *)(predPel + 2));
+            *((Ipp64u *)(pDst+3*dstStride)) = *((Ipp64u *)(predPel + 2));
+        } else {
+            for (Ipp32s x = 0; x < 2*blkSize; x += 16) {
+                __m128i pred = _mm_loadu_si128((__m128i *)(predPel+2+x));
+                for (Ipp32s y = 0; y < blkSize; y++)
+                    _mm_store_si128((__m128i *)(pDst+y*dstStride+x), pred);
             }
         }
     }

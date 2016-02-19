@@ -289,11 +289,11 @@ void SetTargetSSE4()
     g_dispatcher.h265_DCT16x16Fwd_16s = &MFX_HEVC_PP::h265_DCT16x16Fwd_16s_sse;
     g_dispatcher.h265_DCT32x32Fwd_16s = &MFX_HEVC_PP::h265_DCT32x32Fwd_16s_sse;
 
-    // forward quantization
+    // quantization
     g_dispatcher.h265_QuantFwd_16s = &MFX_HEVC_PP::h265_QuantFwd_16s_sse;
     g_dispatcher.h265_QuantFwd_SBH_16s = &MFX_HEVC_PP::h265_QuantFwd_SBH_16s_sse;
-
     g_dispatcher.h265_Quant_zCost_16s = &MFX_HEVC_PP::h265_Quant_zCost_16s_sse;
+    g_dispatcher.h265_QuantInv_16s = &MFX_HEVC_PP::h265_QuantInv_16s_px;
 
     g_dispatcher.h265_SSE_8u  = &MFX_HEVC_PP::h265_SSE_px<Ipp8u>;
     g_dispatcher.h265_SSE_16u = &MFX_HEVC_PP::h265_SSE_px<Ipp16u>;
@@ -389,6 +389,7 @@ void SetTargetSSE4()
     g_dispatcher.h265_FilterPredictPels_8u = &MFX_HEVC_PP::h265_FilterPredictPels_8u_sse;
     g_dispatcher.h265_FilterPredictPels_Bilinear_8u = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_sse;
     g_dispatcher.h265_PredictIntra_Planar_8u = &MFX_HEVC_PP::h265_PredictIntra_Planar_8u_sse;
+    g_dispatcher.h265_PredictIntra_Planar_ChromaNV12_8u = h265_PredictIntra_Planar_ChromaNV12_8u_px;
 
     g_dispatcher.h265_FilterPredictPels_16s = &MFX_HEVC_PP::h265_FilterPredictPels_16s_sse;
     g_dispatcher.h265_FilterPredictPels_Bilinear_16s = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_16s_sse;
@@ -492,11 +493,11 @@ void SetTargetSSSE3()
     g_dispatcher.h265_DCT16x16Fwd_16s = &MFX_HEVC_PP::h265_DCT16x16Fwd_16s_ssse3;
     g_dispatcher.h265_DCT32x32Fwd_16s = &MFX_HEVC_PP::h265_DCT32x32Fwd_16s_ssse3;
 
-    // forward quantization
+    // quantization
     g_dispatcher.h265_QuantFwd_16s = &MFX_HEVC_PP::h265_QuantFwd_16s_px;
     g_dispatcher.h265_QuantFwd_SBH_16s = &MFX_HEVC_PP::h265_QuantFwd_SBH_16s_px;
-
     g_dispatcher.h265_Quant_zCost_16s = &MFX_HEVC_PP::h265_Quant_zCost_16s_px;
+    g_dispatcher.h265_QuantInv_16s = &MFX_HEVC_PP::h265_QuantInv_16s_px;
 
     g_dispatcher.h265_SSE_8u  = &MFX_HEVC_PP::h265_SSE_px<Ipp8u>;
     g_dispatcher.h265_SSE_16u = &MFX_HEVC_PP::h265_SSE_px<Ipp16u>;
@@ -592,6 +593,7 @@ void SetTargetSSSE3()
     g_dispatcher.h265_FilterPredictPels_8u = &MFX_HEVC_PP::h265_FilterPredictPels_8u_px;
     g_dispatcher.h265_FilterPredictPels_Bilinear_8u = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_px;
     g_dispatcher.h265_PredictIntra_Planar_8u = &MFX_HEVC_PP::h265_PredictIntra_Planar_8u_px;
+    g_dispatcher.h265_PredictIntra_Planar_ChromaNV12_8u = h265_PredictIntra_Planar_ChromaNV12_8u_px;
 
     g_dispatcher.h265_FilterPredictPels_16s = &MFX_HEVC_PP::h265_FilterPredictPels_16s_px;
     g_dispatcher.h265_FilterPredictPels_Bilinear_16s = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_16s_px;
@@ -695,11 +697,11 @@ void SetTargetAVX2()
     g_dispatcher.h265_DCT16x16Fwd_16s = &MFX_HEVC_PP::h265_DCT16x16Fwd_16s_avx2;
     g_dispatcher.h265_DCT32x32Fwd_16s = &MFX_HEVC_PP::h265_DCT32x32Fwd_16s_avx2;
 
-    // forward quantization
+    // quantization
     g_dispatcher.h265_QuantFwd_16s = &MFX_HEVC_PP::h265_QuantFwd_16s_avx2;
     g_dispatcher.h265_QuantFwd_SBH_16s = &MFX_HEVC_PP::h265_QuantFwd_SBH_16s_avx2;
-
     g_dispatcher.h265_Quant_zCost_16s = &MFX_HEVC_PP::h265_Quant_zCost_16s_avx2;
+    g_dispatcher.h265_QuantInv_16s = &MFX_HEVC_PP::h265_QuantInv_16s_avx2;
 
     g_dispatcher.h265_SSE_8u  = &MFX_HEVC_PP::h265_SSE_avx2<Ipp8u>;
     g_dispatcher.h265_SSE_16u = &MFX_HEVC_PP::h265_SSE_avx2<Ipp16u>;
@@ -813,6 +815,7 @@ void SetTargetAVX2()
     g_dispatcher.h265_FilterPredictPels_8u = &MFX_HEVC_PP::h265_FilterPredictPels_8u_avx2;
     g_dispatcher.h265_FilterPredictPels_Bilinear_8u = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_avx2;
     g_dispatcher.h265_PredictIntra_Planar_8u = &MFX_HEVC_PP::h265_PredictIntra_Planar_8u_avx2;
+    g_dispatcher.h265_PredictIntra_Planar_ChromaNV12_8u = h265_PredictIntra_Planar_ChromaNV12_8u_avx2;
 
     g_dispatcher.h265_FilterPredictPels_16s = &MFX_HEVC_PP::h265_FilterPredictPels_16s_avx2;
     g_dispatcher.h265_FilterPredictPels_Bilinear_16s = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_16s_avx2;
@@ -921,11 +924,11 @@ void SetTargetPX()
     g_dispatcher.h265_DCT16x16Fwd_16s = &MFX_HEVC_PP::h265_DCT16x16Fwd_16s_px;
     g_dispatcher.h265_DCT32x32Fwd_16s = &MFX_HEVC_PP::h265_DCT32x32Fwd_16s_px;
 
-    // forward quantization
+    // quantization
     g_dispatcher.h265_QuantFwd_16s = &MFX_HEVC_PP::h265_QuantFwd_16s_px;
     g_dispatcher.h265_QuantFwd_SBH_16s = &MFX_HEVC_PP::h265_QuantFwd_SBH_16s_px;
-
     g_dispatcher.h265_Quant_zCost_16s = &MFX_HEVC_PP::h265_Quant_zCost_16s_px;
+    g_dispatcher.h265_QuantInv_16s = &MFX_HEVC_PP::h265_QuantInv_16s_px;
 
     g_dispatcher.h265_SSE_8u  = &MFX_HEVC_PP::h265_SSE_px<Ipp8u>;
     g_dispatcher.h265_SSE_16u = &MFX_HEVC_PP::h265_SSE_px<Ipp16u>;
@@ -1021,6 +1024,7 @@ void SetTargetPX()
     g_dispatcher.h265_FilterPredictPels_8u = &MFX_HEVC_PP::h265_FilterPredictPels_8u_px;
     g_dispatcher.h265_FilterPredictPels_Bilinear_8u = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_8u_px;
     g_dispatcher.h265_PredictIntra_Planar_8u = &MFX_HEVC_PP::h265_PredictIntra_Planar_8u_px;
+    g_dispatcher.h265_PredictIntra_Planar_ChromaNV12_8u = h265_PredictIntra_Planar_ChromaNV12_8u_px;
 
     g_dispatcher.h265_FilterPredictPels_16s = &MFX_HEVC_PP::h265_FilterPredictPels_16s_px;
     g_dispatcher.h265_FilterPredictPels_Bilinear_16s = &MFX_HEVC_PP::h265_FilterPredictPels_Bilinear_16s_px;

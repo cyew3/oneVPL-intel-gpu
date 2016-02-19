@@ -1233,7 +1233,7 @@ void ReconstructorT<bitDepth, H265PlaneType>::PredictIntraChroma(Ipp32s predMode
         switch(predMode)
         {
         case INTRA_LUMA_PLANAR_IDX:
-            h265_PredictIntra_Planar_ChromaNV12_8u(PredPel, pRec, pitch, Size);
+            h265_PredictIntra_Planar_ChromaNV12(PredPel, pRec, pitch, Size);
             break;
         case INTRA_LUMA_DC_IDX:
             h265_PredictIntra_DC_ChromaNV12_8u(PredPel, pRec, pitch, Size);

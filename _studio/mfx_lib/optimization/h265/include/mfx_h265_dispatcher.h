@@ -393,6 +393,9 @@ namespace MFX_HEVC_PP
     void H265_FASTCALL h265_Quant_zCost_16s_px(const Ipp16s* pSrc, Ipp32u* qLevels, Ipp64s* zlCosts, Ipp32s len, Ipp32s qScale, Ipp32s qoffset, Ipp32s qbits, Ipp32s rdScale0);
     void H265_FASTCALL h265_Quant_zCost_16s_sse(const Ipp16s* pSrc, Ipp32u* qLevels, Ipp64s* zlCosts, Ipp32s len, Ipp32s qScale, Ipp32s qoffset, Ipp32s qbits, Ipp32s rdScale0);
     void H265_FASTCALL h265_Quant_zCost_16s_avx2(const Ipp16s* pSrc, Ipp32u* qLevels, Ipp64s* zlCosts, Ipp32s len, Ipp32s qScale, Ipp32s qoffset, Ipp32s qbits, Ipp32s rdScale0);
+
+    void H265_FASTCALL h265_QuantInv_16s_px(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);
+    void H265_FASTCALL h265_QuantInv_16s_avx2(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift);
 #endif
     // [transform.inv]
     void h265_DST4x4Inv_16sT_px  (void *pred, int predStride, void *destPtr, const short *H265_RESTRICT coeff, int destStride, int inplace, Ipp32u bitDepth);
@@ -526,6 +529,9 @@ namespace MFX_HEVC_PP
     void h265_PredictIntra_Planar_16s_px(Ipp16s* PredPel, Ipp16s* pels, Ipp32s pitch, Ipp32s width);
     void h265_PredictIntra_Planar_16s_sse(Ipp16s* PredPel, Ipp16s* pels, Ipp32s pitch, Ipp32s width);
     void h265_PredictIntra_Planar_16s_avx2(Ipp16s* PredPel, Ipp16s* pels, Ipp32s pitch, Ipp32s width);
+
+    void h265_PredictIntra_Planar_ChromaNV12_8u_px(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
+    void h265_PredictIntra_Planar_ChromaNV12_8u_avx2(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width);
 
     template <class PixType, class HistType>
     void h265_AnalyzeGradient_px(const PixType* src, Ipp32s pitch, HistType* hist4, HistType* hist8, Ipp32s width, Ipp32s height);

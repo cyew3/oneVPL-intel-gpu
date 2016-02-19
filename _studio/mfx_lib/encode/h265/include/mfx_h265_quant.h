@@ -17,6 +17,11 @@
 
 namespace H265Enc {
 
+extern const Ipp8u h265_qp_rem[];
+extern const Ipp8u h265_qp6[];
+extern const Ipp8u h265_quant_table_inv[];
+extern const Ipp16u h265_quant_table_fwd[];
+
 Ipp32s h265_quant_calcpattern_sig_ctx(
     const Ipp32u* sig_coeff_group_flag,
     Ipp32u posXCG,

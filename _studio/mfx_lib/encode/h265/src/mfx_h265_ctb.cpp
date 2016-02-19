@@ -10221,14 +10221,17 @@ void H265CU<PixType>::GetMergeCand(Ipp32s topLeftCUBlockZScanIdx, Ipp32s partMod
         refCnt++;
     }
 
+    Ipp32s noBpred = (m_cslice->slice_type != B_SLICE) || (partWidth + partHeight == 3);
     // check bi-pred availability and mark duplicates
-    for (Ipp32s i = 0; i < mergeInfo->numCand; i++) {
+    for (Ipp32s i = 0; i < MAX_NUM_MERGE_CANDS; i++) {
         H265MV *mv = mergeInfo->mvCand + 2 * i;
         Ipp8s *refIdx = mergeInfo->refIdx + 2 * i;
-        if (m_cslice->slice_type != B_SLICE || (partWidth + partHeight == 3 && refIdx[0] >= 0))
+        if (noBpred && refIdx[0] >= 0)
             refIdx[1] = -1;
         for (Ipp32s j = 0; j < i; j++) {
-            if (IsCandFound(refIdx, mv, mergeInfo, j, 2)) {
+            H265MV *omv = mergeInfo->mvCand + 2 * j;
+            Ipp8s *orefIdx = mergeInfo->refIdx + 2 * j;
+            if (*(Ipp16u*)refIdx == *(Ipp16s*)orefIdx && *(Ipp64u*)mv == *(Ipp64u*)omv) {
                 refIdx[0] = refIdx[1] = -1;
                 break;
             }

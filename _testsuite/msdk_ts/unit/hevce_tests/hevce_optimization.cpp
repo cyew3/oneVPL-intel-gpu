@@ -10,7 +10,8 @@
 #undef min
 #undef max
 
-//#define PRINT_TICKS
+#define PRINT_TICKS
+//#undef PRINT_TICKS
 
 namespace utils {
 
@@ -86,23 +87,24 @@ namespace utils {
                 block[c] = dist(randEngine);
     }
 
-    //template <typename Func, typename... Args> mfxI64 GetMinTicks(int number, Func func, Args&&... args)
-    //{
-    //    mfxI64 fastest = std::numeric_limits<mfxI64>::max();
-    //    for (int i = 0; i < number; i++) {
-    //        mfxI64 start = _rdtsc();
-    //        func(args...);
-    //        mfxI64 stop = _rdtsc();
-    //        mfxI64 ticks = stop - start;
-    //        fastest = std::min(fastest, ticks);
-    //    }
-    //    return fastest;
-    //}
+#ifdef PRINT_TICKS
+    template <typename Func, typename... Args> mfxI64 GetMinTicks(int number, Func func, Args&&... args)
+    {
+        mfxI64 fastest = std::numeric_limits<mfxI64>::max();
+        for (int i = 0; i < number; i++) {
+            mfxI64 start = _rdtsc();
+            func(args...);
+            mfxI64 stop = _rdtsc();
+            mfxI64 ticks = stop - start;
+            fastest = std::min(fastest, ticks);
+        }
+        return fastest;
+    }
+#endif // PRINT_TICKS
 };
 
 
 TEST(optimization, SAD_avx2) {
-
     const int pitch = 1920;
     const int size = 128 * pitch;
 
@@ -356,7 +358,6 @@ TEST(optimization, SSE_avx2) {
         {64,16}, {64,32}, {64,48}, {64,64}
     };
 
-//#define PRINT_TICKS
 #ifdef PRINT_TICKS
     for (auto wh: dims) {
         Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_avx2<Ipp8u>, src1.get(), pitch1, src2.get(), pitch2, wh[0], wh[1], shift_08b);
@@ -367,7 +368,6 @@ TEST(optimization, SSE_avx2) {
         ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_px<Ipp16u>,   src1_10b.get(), pitch1, src2_10b.get(), pitch2, wh[0], wh[1], shift_10b);
         printf("%2dx%2d 10bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
     }
-#undef PRINT_TICKS
 #endif // PRINT_TICKS
 
     //EXPECT_LE(utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_avx2<Ipp8u>, src1.get(), pitch1, src2.get(), pitch2, 16, 16),
@@ -426,7 +426,6 @@ TEST(optimization, DiffNv12_avx2) {
         {64, 16}, {64, 32}, {64, 48}, {64, 64}
     };
 
-//#define PRINT_TICKS
 #ifdef PRINT_TICKS
     for (auto wh: dims) {
         Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffNv12_avx2<Ipp8u>, src.get(), pitchSrc, pred.get(), pitchPred, diff1Tst.get(), wh[0], diff2Tst.get(), wh[0], wh[0], wh[1]);
@@ -437,7 +436,6 @@ TEST(optimization, DiffNv12_avx2) {
         ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffNv12_px<Ipp16u>,   src_10b.get(), pitchSrc, pred_10b.get(), pitchPred, diff1Ref.get(), wh[0], diff2Ref.get(), wh[0], wh[0], wh[1]);
         printf("%2dx%2d 10bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
     }
-#undef PRINT_TICKS
 #endif //PRINT_TICKS
 
     //EXPECT_LE(utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffNv12_avx2<Ipp8u>, src.get(), pitchSrc, pred.get(), pitchPred, diff1Tst.get(), 16, diff2Tst.get(), 16, 32, 16),
@@ -491,8 +489,6 @@ TEST(optimization, SplitChromaCtb_avx2) {
         {64, 64}
     };
 
-//#define PRINT_TICKS
-//#undef PRINT_TICKS
 #ifdef PRINT_TICKS
     for (auto wh: dims) {
         Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SplitChromaCtb_avx2<Ipp8u>, nv12.get(), pitchSrc, uTst.get(), wh[0], vTst.get(), wh[0], wh[0], wh[1]);
@@ -2174,3 +2170,185 @@ TEST(optimization, PredictIntraAngleMultiple_avx2)
     MFX_HEVC_PP::h265_PredictIntra_Ang_All_16u_avx2(predPel16.get(), filtPel16.get(), dst16_avx2.get(), 32, 10);
     EXPECT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(*dst16_avx2.get()) * dstSize));
 }
+
+TEST(optimization, PredictIntra_Planar_ChromaNV12_avx2) {
+    const int maxSize  = 32;
+    const int dstPitch = 64;
+    
+    Ipp8u  predPel8[4*maxSize+1];
+    Ipp16u predPel16[4*maxSize+1];
+    auto dst8_px    = utils::MakeAlignedPtr<Ipp8u>(maxSize * dstPitch, utils::AlignAvx2);
+    auto dst8_avx2  = utils::MakeAlignedPtr<Ipp8u>(maxSize * dstPitch, utils::AlignAvx2);
+    auto dst16_px   = utils::MakeAlignedPtr<Ipp16u>(maxSize * dstPitch, utils::AlignAvx2);
+    auto dst16_avx2 = utils::MakeAlignedPtr<Ipp16u>(maxSize * dstPitch, utils::AlignAvx2);
+    memset(dst8_px.get(), 0, sizeof(Ipp8u) * maxSize * dstPitch);
+    memset(dst8_avx2.get(), 0, sizeof(Ipp8u) * maxSize * dstPitch);
+    memset(dst16_px.get(), 0, sizeof(Ipp16u) * maxSize * dstPitch);
+    memset(dst16_avx2.get(), 0, sizeof(Ipp16u) * maxSize * dstPitch);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    for (Ipp32s bitDepth = 8; bitDepth <= 10; bitDepth++) {
+        for (Ipp32s blkSize = 4; blkSize <= 32; blkSize <<= 1) {
+            if (bitDepth == 8) {
+                utils::InitRandomBlock(rand, predPel8,  4*maxSize+1, 4*maxSize+1, 1, 0, 255);
+                MFX_HEVC_PP::h265_PredictIntra_Planar_ChromaNV12_8u_px(predPel8, dst8_px.get(),   dstPitch, blkSize);
+                MFX_HEVC_PP::h265_PredictIntra_Planar_ChromaNV12_8u_avx2(predPel8, dst8_avx2.get(), dstPitch, blkSize);
+                ASSERT_EQ(0, memcmp(dst8_px.get(), dst8_avx2.get(), sizeof(Ipp8u) * blkSize * dstPitch));
+
+#ifdef PRINT_TICKS
+                Ipp64s tpx = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_PredictIntra_Planar_ChromaNV12_8u_px, predPel8, dst8_px.get(),   dstPitch, blkSize);
+                Ipp64s tavx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_PredictIntra_Planar_ChromaNV12_8u_avx2, predPel8, dst8_avx2.get(), dstPitch, blkSize);
+                printf("%d-bit %2d*%-2d %d vs %d\n", bitDepth, blkSize, blkSize, (Ipp32s)tpx, (Ipp32s)tavx2);
+#endif // PRINT_TICKS
+            } else {
+                utils::InitRandomBlock(rand, predPel16, 4*maxSize+1, 4*maxSize+1, 1, 0, (1 << bitDepth) - 1);
+                MFX_HEVC_PP::h265_PredictIntra_Planar_ChromaNV12_16u(predPel16, dst16_px.get(),   dstPitch, blkSize);
+                MFX_HEVC_PP::h265_PredictIntra_Planar_ChromaNV12_16u(predPel16, dst16_avx2.get(), dstPitch, blkSize);
+                ASSERT_EQ(0, memcmp(dst16_px.get(), dst16_avx2.get(), sizeof(Ipp16u) * blkSize * dstPitch));
+            }
+        }
+    }
+}
+
+
+namespace H265Enc {
+    extern const Ipp8u h265_qp_rem[];
+    extern const Ipp8u h265_qp6[];
+    extern const Ipp8u h265_quant_table_inv[];
+    extern const Ipp16u h265_quant_table_fwd[];
+};
+
+TEST(optimization, QuantInv_avx2) {
+    const int srcSize = 32;
+    const int dstSize = 32;
+    const int srcPitch = 64;
+    const int dstPitch = 64;
+
+    auto src = utils::MakeAlignedPtr<short>(srcSize * srcPitch, utils::AlignAvx2);
+    auto dst_px = utils::MakeAlignedPtr<short>(dstSize * dstPitch, utils::AlignAvx2);
+    auto dst_avx2 = utils::MakeAlignedPtr<short>(dstSize * dstPitch, utils::AlignAvx2);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    for (Ipp32s bitDepth = 8; bitDepth <= 10; bitDepth++) {
+        for (Ipp32s log2TrSize = 2; log2TrSize <= 5; log2TrSize++) {
+            utils::InitRandomBlock(rand, src.get(), srcPitch, srcSize, srcSize, -0x8000, 0x7fff);
+            utils::InitRandomBlock(rand, dst_px.get(), dstPitch, dstSize, dstSize, -0x8000, 0x7fff);
+            memcpy(dst_avx2.get(), dst_px.get(), sizeof(Ipp16s) * dstPitch * dstSize);
+            for (Ipp32s qp = 0; qp <= 51 + (bitDepth - 8) * 6; qp++) {
+                Ipp32s qpRem = H265Enc::h265_qp_rem[qp];
+                Ipp32s qp6 = H265Enc::h265_qp6[qp];
+                Ipp32s scale = H265Enc::h265_quant_table_inv[qpRem] << qp6;
+                Ipp32s shift = bitDepth + log2TrSize - 9;
+                Ipp32s offset = 1 << (shift - 1);
+                Ipp32s numCoeffs = 1 << (log2TrSize << 1);
+
+                MFX_HEVC_PP::h265_QuantInv_16s_px(src.get(), dst_px.get(), numCoeffs, scale, offset, shift);
+                MFX_HEVC_PP::h265_QuantInv_16s_avx2(src.get(), dst_avx2.get(), numCoeffs, scale, offset, shift);
+                ASSERT_EQ(0, memcmp(dst_px.get(), dst_avx2.get(), sizeof(Ipp16s) * dstSize * dstPitch));
+
+#ifdef PRINT_TICKS
+                if (qp == 30 && bitDepth == 8) {
+                    Ipp64s tpx = utils::GetMinTicks(1000000, MFX_HEVC_PP::h265_QuantInv_16s_px, src.get(), dst_px.get(), numCoeffs, scale, offset, shift);
+                    Ipp64s tavx2 = utils::GetMinTicks(1000000, MFX_HEVC_PP::h265_QuantInv_16s_avx2, src.get(), dst_avx2.get(), numCoeffs, scale, offset, shift);
+                    printf("%d %d %d\n", 1 << log2TrSize, (Ipp32s)tpx, (Ipp32s)tavx2);
+                }
+#endif // PRINT_TICKS
+            }
+        }
+    }
+}
+
+
+TEST(optimization, QuantFwd_avx2) {
+    const int srcSize = 32;
+    const int dstSize = 32;
+    const int srcPitch = 64;
+    const int dstPitch = 64;
+
+    auto src = utils::MakeAlignedPtr<short>(srcSize * srcPitch, utils::AlignAvx2);
+    auto dst_px = utils::MakeAlignedPtr<short>(dstSize * dstPitch, utils::AlignAvx2);
+    auto dst_avx2 = utils::MakeAlignedPtr<short>(dstSize * dstPitch, utils::AlignAvx2);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    for (Ipp32s isIntra = 0; isIntra <= 1; isIntra++) {
+        for (Ipp32s bitDepth = 8; bitDepth <= 10; bitDepth++) {
+            for (Ipp32s log2TrSize = 2; log2TrSize <= 5; log2TrSize++) {
+                utils::InitRandomBlock(rand, src.get(), srcPitch, srcSize, srcSize, -0x8000, 0x7fff);
+                utils::InitRandomBlock(rand, dst_px.get(), dstPitch, dstSize, dstSize, -0x8000, 0x7fff);
+                memcpy(dst_avx2.get(), dst_px.get(), sizeof(Ipp16s) * dstPitch * dstSize);
+                for (Ipp32s qp = 0; qp <= 51 + (bitDepth - 8) * 6; qp++) {
+                    Ipp32s qpRem = H265Enc::h265_qp_rem[qp];
+                    Ipp32s qp6 = H265Enc::h265_qp6[qp];
+                    Ipp32s numCoeffs = 1 << (log2TrSize << 1);
+                    Ipp32s scale = 29 + qp6 - bitDepth - log2TrSize;
+                    Ipp32s scaleLevel = H265Enc::h265_quant_table_fwd[qpRem];
+                    Ipp32s scaleOffset = (isIntra ? 171 : 85) << (scale - 9);
+                    MFX_HEVC_PP::h265_QuantFwd_16s_px(src.get(), dst_px.get(), numCoeffs, scaleLevel, scaleOffset, scale);
+                    MFX_HEVC_PP::h265_QuantFwd_16s_avx2(src.get(), dst_avx2.get(), numCoeffs, scaleLevel, scaleOffset, scale);
+                    ASSERT_EQ(0, memcmp(dst_px.get(), dst_avx2.get(), sizeof(Ipp16s) * dstSize * dstPitch));
+
+#ifdef PRINT_TICKS
+                    if (qp == 30 && bitDepth == 8 && isIntra == 0) {
+                        Ipp64s tpx = utils::GetMinTicks(1000000, MFX_HEVC_PP::h265_QuantFwd_16s_px, src.get(), dst_px.get(), numCoeffs, scaleLevel, scaleOffset, scale);
+                        Ipp64s tavx2 = utils::GetMinTicks(1000000, MFX_HEVC_PP::h265_QuantFwd_16s_avx2, src.get(), dst_avx2.get(), numCoeffs, scaleLevel, scaleOffset, scale);
+                        printf("%d %d %d\n", 1 << log2TrSize, (Ipp32s)tpx, (Ipp32s)tavx2);
+                    }
+#endif // PRINT_TICKS
+                }
+            }
+        }
+    }
+}
+
+
+TEST(optimization, Quant_zCost_avx2) {
+    const int maxsize = 32;
+
+    auto src = utils::MakeAlignedPtr<short>(maxsize * maxsize, utils::AlignAvx2);
+    auto dstCoefs_px   = utils::MakeAlignedPtr<Ipp32u>(maxsize * maxsize, utils::AlignAvx2);
+    auto dstCoefs_avx2 = utils::MakeAlignedPtr<Ipp32u>(maxsize * maxsize, utils::AlignAvx2);
+    auto dstCosts_px   = utils::MakeAlignedPtr<Ipp64s>(maxsize * maxsize, utils::AlignAvx2);
+    auto dstCosts_avx2 = utils::MakeAlignedPtr<Ipp64s>(maxsize * maxsize, utils::AlignAvx2);
+    memset(dstCoefs_px.get(),   0, sizeof(Ipp32u) * maxsize * maxsize);
+    memset(dstCoefs_avx2.get(), 0, sizeof(Ipp32u) * maxsize * maxsize);
+    memset(dstCosts_px.get(),   0, sizeof(Ipp64s) * maxsize * maxsize);
+    memset(dstCosts_avx2.get(), 0, sizeof(Ipp64s) * maxsize * maxsize);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    for (Ipp32s bitDepth = 8; bitDepth <= 10; bitDepth++) {
+        for (Ipp32s log2TrSize = 2; log2TrSize <= 5; log2TrSize++) {
+            utils::InitRandomBlock(rand, src.get(), maxsize, maxsize, maxsize, -0x8000, 0x7fff);
+            for (Ipp32s qp = 0; qp <= 51 + (bitDepth - 8) * 6; qp++) {
+                Ipp32s qpRem = H265Enc::h265_qp_rem[qp];
+                Ipp32s qp6 = H265Enc::h265_qp6[qp];
+                Ipp32s numCoeffs = 1 << (log2TrSize << 1);
+                Ipp32s qbits = 29 + qp6 - bitDepth - log2TrSize;
+                Ipp32s scale = H265Enc::h265_quant_table_fwd[qpRem];
+                Ipp32s qshift = 1 << (qbits - 1);
+                MFX_HEVC_PP::h265_Quant_zCost_16s_px  (src.get(), dstCoefs_px.get(),   dstCosts_px.get(),   numCoeffs, scale, qshift, qbits, numCoeffs << 1);
+                MFX_HEVC_PP::h265_Quant_zCost_16s_avx2(src.get(), dstCoefs_avx2.get(), dstCosts_avx2.get(), numCoeffs, scale, qshift, qbits, numCoeffs << 1);
+                ASSERT_EQ(0, memcmp(dstCoefs_px.get(), dstCoefs_avx2.get(), sizeof(Ipp32u) * maxsize * maxsize));
+                ASSERT_EQ(0, memcmp(dstCosts_px.get(), dstCosts_avx2.get(), sizeof(Ipp64s) * maxsize * maxsize));
+
+#ifdef PRINT_TICKS
+                if (qp == 30 && bitDepth == 8) {
+                    MFX_HEVC_PP::h265_Quant_zCost_16s_px  (src.get(), dstCoefs_px.get(),   dstCosts_px.get(),   numCoeffs, scale, qshift, qbits, numCoeffs << 1);
+                    MFX_HEVC_PP::h265_Quant_zCost_16s_avx2(src.get(), dstCoefs_avx2.get(), dstCosts_avx2.get(), numCoeffs, scale, qshift, qbits, numCoeffs << 1);
+                    Ipp64s tpx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Quant_zCost_16s_px,   src.get(), dstCoefs_px.get(),   dstCosts_px.get(),   numCoeffs, scale, qshift, qbits, numCoeffs << 1);
+                    Ipp64s tavx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Quant_zCost_16s_avx2, src.get(), dstCoefs_avx2.get(), dstCosts_avx2.get(), numCoeffs, scale, qshift, qbits, numCoeffs << 1);
+                    printf("%2d*%-2d: %d %d\n", 1<<log2TrSize, 1<<log2TrSize, (Ipp32s)tpx, (Ipp32s)tavx2);
+                }
+#endif // PRINT_TICKS
+            }
+        }
+    }
+}
+

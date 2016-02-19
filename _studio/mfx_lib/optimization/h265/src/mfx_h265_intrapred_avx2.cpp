@@ -13,6 +13,7 @@
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined (MFX_ENABLE_H265_VIDEO_DECODE)
 
+#include "assert.h"
 #include "mfx_h265_optimization.h"
 
 #if defined(MFX_TARGET_OPTIMIZATION_AUTO) || \
@@ -2151,7 +2152,7 @@ void MAKE_NAME(h265_FilterPredictPels_8u)(Ipp8u* PredPel, Ipp32s width)
     Ipp32s i;
     __m256i ymm0, ymm1, ymm2, ymm7;
 
-    VM_ASSERT(width == 4 || width == 8 || width == 16 || width == 32);
+    assert(width == 4 || width == 8 || width == 16 || width == 32);
 
     _mm256_zeroupper();
 
@@ -2210,7 +2211,7 @@ void MAKE_NAME(h265_FilterPredictPels_Bilinear_8u) (
     _mm256_zeroupper();
 
     /* see calling code - if any of this changes, code would need to be rewritten */
-    VM_ASSERT(width == 32 && pSrcDst[0] == topLeft && pSrcDst[2*width] == topRight && pSrcDst[4*width] == bottomLeft);
+    assert(width == 32 && pSrcDst[0] == topLeft && pSrcDst[2*width] == topRight && pSrcDst[4*width] == bottomLeft);
 
     p0 = pSrcDst;
     if (topLeft == 128 && topRight == 128 && bottomLeft == 128) {
@@ -2276,7 +2277,7 @@ void MAKE_NAME(h265_FilterPredictPels_16s)(Ipp16s* PredPel, Ipp32s width)
     Ipp32s i;
     __m256i ymm0, ymm1, ymm2, ymm3, ymm7;
 
-    VM_ASSERT(width == 4 || width == 8 || width == 16 || width == 32);
+    assert(width == 4 || width == 8 || width == 16 || width == 32);
 
     _mm256_zeroupper();
 
@@ -2332,7 +2333,7 @@ void MAKE_NAME(h265_FilterPredictPels_Bilinear_16s) (
     _mm256_zeroupper();
 
     /* see calling code - if any of this changes, code would need to be rewritten */
-    VM_ASSERT(width == 32 && pSrcDst[0] == topLeft && pSrcDst[2*width] == topRight && pSrcDst[4*width] == bottomLeft);
+    assert(width == 32 && pSrcDst[0] == topLeft && pSrcDst[2*width] == topRight && pSrcDst[4*width] == bottomLeft);
 
     p0 = pSrcDst;
     if (topLeft == 128 && topRight == 128 && bottomLeft == 128) {
@@ -2561,7 +2562,7 @@ static void h265_PredictIntra_Planar_8u_Kernel(Ipp8u* PredPel, Ipp8u* pels, Ipp3
 /* planar intra prediction for 4x4, 8x8, 16x16, and 32x32 blocks (with arbitrary pitch) */
 void MAKE_NAME(h265_PredictIntra_Planar_8u)(Ipp8u* PredPel, Ipp8u* pels, Ipp32s pitch, Ipp32s width)
 {
-    VM_ASSERT(width == 4 || width == 8 || width == 16 || width == 32);
+    assert(width == 4 || width == 8 || width == 16 || width == 32);
 
     switch (width) {
     case 4:
@@ -2747,7 +2748,7 @@ static void h265_PredictIntra_Planar_16s_Kernel(Ipp16s* PredPel, Ipp16s* pels, I
 /* planar intra prediction for 4x4, 8x8, 16x16, and 32x32 blocks (with arbitrary pitch) */
 void MAKE_NAME(h265_PredictIntra_Planar_16s)(Ipp16s* PredPel, Ipp16s* pels, Ipp32s pitch, Ipp32s width)
 {
-    VM_ASSERT(width == 4 || width == 8 || width == 16 || width == 32);
+    assert(width == 4 || width == 8 || width == 16 || width == 32);
 
     switch (width) {
     case 4:
@@ -2762,6 +2763,66 @@ void MAKE_NAME(h265_PredictIntra_Planar_16s)(Ipp16s* PredPel, Ipp16s* pels, Ipp3
     case 32:
         h265_PredictIntra_Planar_16s_Kernel<32, 5>(PredPel, pels, pitch);
         break;
+    }
+}
+
+namespace PredictIntra_Planar_ChromaNV12_8u_avx2_details {
+    template <Ipp32s W, Ipp32s log2w> void Impl(Ipp8u* predPel, Ipp8u* dst, Ipp32s dstStride)
+    {
+        ALIGN_DECL(32) Ipp32u storedLeftByWplusW[32], storedTopRightMinusLeft[32];
+
+        __m256i width = _mm256_set1_epi16(W);
+        __m256i topRight = _mm256_set1_epi32(predPel[2*W+2] + (predPel[2*W+3] << 16));
+        __m256i botLeft  = _mm256_set1_epi32(predPel[6*W+2] + (predPel[6*W+3] << 16));
+
+        for (Ipp32s y = 0; y < W; y += 8) {
+            __m256i left = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i *)(predPel+4*W+2+2*y)));
+            __m256i topRightMinusLeft = _mm256_sub_epi16(topRight, left); // TopRight - Left[y]
+            __m256i leftByWplusW = _mm256_add_epi16(_mm256_slli_epi16(left, log2w), width); // Width * Left[y] + Width
+
+            _mm256_store_si256((__m256i*)(storedTopRightMinusLeft + y), topRightMinusLeft);
+            _mm256_store_si256((__m256i*)(storedLeftByWplusW + y), leftByWplusW);
+        }
+
+        __m256i seq8 = _mm256_setr_epi16(1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8); // x + 1
+        for (Ipp32s x = 0; x < W; x += 8) {
+            __m256i top  = _mm256_cvtepu8_epi16(_mm_loadu_si128((__m128i *)(predPel+2+2*x)));
+            __m256i botLeftMinusTop = _mm256_sub_epi16(botLeft, top); // BottomLeft - Top[x]
+            __m256i acc = _mm256_slli_epi16(top, log2w); // Width * Top[x]
+            for (Ipp32s y = 0; y < W; y++) {
+                __m256i res;
+                __m256i leftByWplusW = _mm256_set1_epi32(storedLeftByWplusW[y]);
+                __m256i topRightMinusLeft = _mm256_set1_epi32(storedTopRightMinusLeft[y]);
+                topRightMinusLeft = _mm256_mullo_epi16(topRightMinusLeft, seq8); // (x + 1) * (TopRight - Left[y])
+                acc = _mm256_add_epi16(acc, botLeftMinusTop); // Width * Top[x] + (y + 1) * (BottomLeft - Top[x])
+                res = _mm256_add_epi16(acc, leftByWplusW); // + Width * Left[x] + Width
+                res = _mm256_add_epi16(res, topRightMinusLeft); // + (x + 1) * (TopRight - Left[y])
+                res = _mm256_srli_epi16(res, log2w+1);
+                res = _mm256_packus_epi16(res, res);
+                if (W == 4) {
+                    *(Ipp64u *)(dst+y*dstStride+2*x) = _mm_extract_epi64(_mm256_castsi256_si128(res), 0);
+                } else {
+                    res = _mm256_permute4x64_epi64(res, 0xd8);
+                    _mm_storeu_si128((__m128i *)(dst+y*dstStride+2*x), mm128(res));
+                }
+            }
+
+            if (W > 8)
+                seq8 = _mm256_add_epi16(seq8, _mm256_set1_epi16(8));
+        }
+    }
+};
+
+/* planar intra prediction for 4x4, 8x8, 16x16, and 32x32 blocks (with arbitrary pitch) */
+void h265_PredictIntra_Planar_ChromaNV12_8u_avx2(Ipp8u* predPel, Ipp8u* dst, Ipp32s dstStride, Ipp32s blkSize)
+{
+    assert(blkSize == 4 || blkSize == 8 || blkSize == 16 || blkSize == 32);
+
+    switch (blkSize) {
+    case 4:  return PredictIntra_Planar_ChromaNV12_8u_avx2_details::Impl<4, 2>(predPel, dst, dstStride);
+    case 8:  return PredictIntra_Planar_ChromaNV12_8u_avx2_details::Impl<8, 3>(predPel, dst, dstStride);
+    case 16: return PredictIntra_Planar_ChromaNV12_8u_avx2_details::Impl<16,4>(predPel, dst, dstStride);
+    case 32: return PredictIntra_Planar_ChromaNV12_8u_avx2_details::Impl<32,5>(predPel, dst, dstStride);
     }
 }
 

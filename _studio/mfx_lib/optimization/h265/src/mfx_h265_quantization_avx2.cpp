@@ -19,6 +19,7 @@
 */
 
 #include "mfx_common.h"
+#include "assert.h"
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined(MFX_ENABLE_H265_VIDEO_DECODE)
 
@@ -32,37 +33,31 @@
 
 namespace MFX_HEVC_PP
 {
-    void H265_FASTCALL MAKE_NAME(h265_QuantFwd_16s)(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift)
+    void H265_FASTCALL MAKE_NAME(h265_QuantFwd_16s)(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale_, int offset_, int shift_)
     {
-        __m128i xmm_shift, xmm_src;
-        __m256i ymm0, ymm1, ymm3, ymm4;
+        assert((len & 0xf) == 0);
+        assert((offset_ >> shift_) == 0);
 
-        VM_ASSERT((len & 0x07) == 0);
-        VM_ASSERT((offset >> shift) == 0);
+        __m256i scale  = _mm256_set1_epi16(scale_);
+        __m256i offset = _mm256_set1_epi32(offset_);
+        __m128i shift  = _mm_cvtsi32_si128(shift_);
 
-        _mm256_zeroupper();
-
-        ymm3 = _mm256_set1_epi32(scale);
-        ymm4 = _mm256_set1_epi32(offset);
-        xmm_shift = _mm_cvtsi32_si128(shift);
-
-        for (Ipp32s i = 0; i < len; i += 8) {
-            // load 16-bit coefs, expand to 32 bits
-            xmm_src = _mm_loadu_si128((__m128i *)&pSrc[i]);
-            ymm0 = _mm256_cvtepi16_epi32(xmm_src);
-            ymm1 = _mm256_abs_epi32(ymm0);
-
-            // qval = (aval * scale + offset) >> shift; 
-            ymm1 = _mm256_mullo_epi32(ymm1, ymm3);
-            ymm1 = _mm256_add_epi32(ymm1, ymm4);
-            ymm1 = _mm256_sra_epi32(ymm1, xmm_shift);
-
-            // pDst = clip((qval ^ sign) - sign)
-            ymm1 = _mm256_sign_epi32(ymm1, ymm0);
-            ymm1 = _mm256_packs_epi32(ymm1, ymm1);
-            ymm1 = _mm256_permute4x64_epi64(ymm1, 0xd8);
-
-            _mm_storeu_si128((__m128i *)&pDst[i], mm128(ymm1));
+        for (Ipp32s i = 0; i < len; i += 16, pSrc += 16, pDst += 16) {
+            __m256i src = _mm256_loadu_si256((__m256i *)pSrc); // load 16-bit coefs
+            __m256i lo = _mm256_mullo_epi16(src, scale); // *=scale
+            __m256i hi = _mm256_mulhi_epi16(src, scale);
+            __m256i half1 = _mm256_unpacklo_epi16(lo, hi);
+            __m256i half2 = _mm256_unpackhi_epi16(lo, hi);
+            __m256i half1Abs = _mm256_abs_epi32(half1); // remove sign
+            __m256i half2Abs = _mm256_abs_epi32(half2);
+            half1Abs = _mm256_add_epi32(half1Abs, offset); // +=offset
+            half2Abs = _mm256_add_epi32(half2Abs, offset);
+            half1Abs = _mm256_sra_epi32(half1Abs, shift); // >>=shift
+            half2Abs = _mm256_sra_epi32(half2Abs, shift);
+            half1 = _mm256_sign_epi32(half1Abs, half1); // restore sign
+            half2 = _mm256_sign_epi32(half2Abs, half2);
+            __m256i dst = _mm256_packs_epi32(half1, half2); // pack
+            _mm256_storeu_si256((__m256i *)pDst, dst); // store
         }
     } // void h265_QuantFwd_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scaleLevel, int scaleOffset, int scale)
 
@@ -158,6 +153,42 @@ namespace MFX_HEVC_PP
             ymm0 = _mm256_cvtepi32_epi64(mm128(ymm1));
             ymm0 = _mm256_mul_epi32(ymm0, ymm13);              // r0=c2*c2, r1=0, r2=c3*c3, r3=0
             _mm256_storeu_si256((__m256i *)&zlCosts[i+4], ymm0);
+        }
+    }
+
+    void H265_FASTCALL h265_QuantInv_16s_avx2(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale_, int offset_, int shift_)
+    {
+        assert((len & 0xf) == 0);
+        __m256i offset = _mm256_set1_epi32(offset_);
+        __m128i shift = _mm_cvtsi32_si128(shift_);
+
+        if ((scale_ >> 15) == 0) {
+            __m256i scale = _mm256_set1_epi16(scale_);
+            for (Ipp32s i = 0; i < len; i += 16) {
+                __m256i src = _mm256_loadu_si256((__m256i *)&pSrc[i]); // load 16-bit coefs
+                __m256i lo = _mm256_mullo_epi16(src, scale); // *=scale
+                __m256i hi = _mm256_mulhi_epi16(src, scale);
+                __m256i half1 = _mm256_unpacklo_epi16(lo, hi);
+                __m256i half2 = _mm256_unpackhi_epi16(lo, hi);
+                half1 = _mm256_add_epi32(half1, offset); // +=offset
+                half2 = _mm256_add_epi32(half2, offset);
+                half1 = _mm256_sra_epi32(half1, shift); // >>=shift
+                half2 = _mm256_sra_epi32(half2, shift);
+                __m256i dst = _mm256_packs_epi32(half1, half2); // pack
+                _mm256_storeu_si256((__m256i *)&pDst[i], dst); // store
+            }
+        } else {
+            __m256i scale = _mm256_set1_epi32(scale_);
+            for (Ipp32s i = 0; i < len; i += 8) {
+                __m128i src16 = _mm_loadu_si128((__m128i *)&pSrc[i]); // load 16-bit coefs
+                __m256i src32 = _mm256_cvtepi16_epi32(src16); // expand to 32 bits
+                src32 = _mm256_mullo_epi32(src32, scale); // (coeff * scale + offset) >> shift;
+                src32 = _mm256_add_epi32(src32, offset);
+                src32 = _mm256_sra_epi32(src32, shift);
+                src32 = _mm256_packs_epi32(src32, src32); // saturate to 16s
+                src32 = _mm256_permute4x64_epi64(src32, 0xd8);
+                _mm_storeu_si128((__m128i *)&pDst[i], mm128(src32)); // store
+            }
         }
     }
 

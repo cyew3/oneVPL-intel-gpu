@@ -443,57 +443,71 @@ namespace MFX_HEVC_PP
         PixType* pels,
         Ipp32s pitch,
         Ipp32s width,
-        Ipp32s isLuma)
+        Ipp32s /*isLuma*/)
     {
-        Ipp32s i, j, dcval;
-
-        dcval = 0;
-
-        for (i = 0; i < width; i++)
-        {
+        Ipp32s dcval = 0;
+        for (Ipp32s i = 0; i < width; i++) {
             dcval += PredPel[1+i];
-        }
-
-        for (i = 0; i < width; i++)
-        {
             dcval += PredPel[2*width+1+i];
         }
 
-        dcval = (dcval + width) / (2*width);
+        Ipp64u dcval64; 
+        switch (width) {
+        case 4:
+            dcval = (dcval + 4) >> 3;
+            dcval64 = dcval * 0x0001000100010001;
+            *(Ipp64u *)(pels+1*pitch) = dcval64;
+            *(Ipp64u *)(pels+2*pitch) = dcval64;
+            *(Ipp64u *)(pels+3*pitch) = dcval64;
+            break;
+        case 8:
+            dcval = (dcval + 8) >> 4;
+            dcval64 = dcval * 0x0001000100010001;
+            for (Ipp32s j = 1; j < 8; j++) {
+                *(Ipp64u *)(pels+j*pitch+0) = dcval64;
+                *(Ipp64u *)(pels+j*pitch+4) = dcval64;
+            }
+            break;
+        case 16:
+            dcval = (dcval + 16) >> 5;
+            dcval64 = dcval * 0x0001000100010001;
+            for (Ipp32s j = 1; j < 16; j++) {
+                *(Ipp64u *)(pels+j*pitch+0)  = dcval64;
+                *(Ipp64u *)(pels+j*pitch+4)  = dcval64;
+                *(Ipp64u *)(pels+j*pitch+8)  = dcval64;
+                *(Ipp64u *)(pels+j*pitch+12) = dcval64;
+            }
+            break;
+        case 32:
+            dcval = (dcval + 32) >> 6;
+            dcval64 = dcval * 0x0001000100010001;
+            for (Ipp32s j = 0; j < 32; j++) {
+                *(Ipp64u *)(pels+j*pitch+0)  = dcval64;
+                *(Ipp64u *)(pels+j*pitch+4)  = dcval64;
+                *(Ipp64u *)(pels+j*pitch+8)  = dcval64;
+                *(Ipp64u *)(pels+j*pitch+12) = dcval64;
+                *(Ipp64u *)(pels+j*pitch+16) = dcval64;
+                *(Ipp64u *)(pels+j*pitch+20) = dcval64;
+                *(Ipp64u *)(pels+j*pitch+24) = dcval64;
+                *(Ipp64u *)(pels+j*pitch+28) = dcval64;
+            }
+            break;
+        }
 
-        if (isLuma && width <= 16)
+        if (/*isLuma && */width <= 16)
         {
             pels[0] = (PixType)((PredPel[2*width+1] + 2 * dcval + PredPel[1] + 2) >> 2);
 
-            for (i = 1; i < width; i++)
+            for (Ipp32s i = 1; i < width; i++)
             {
                 pels[i] = (PixType)((PredPel[1+i] + 3 * dcval + 2) >> 2);
             }
 
-            for (j = 1; j < width; j++)
+            for (Ipp32s j = 1; j < width; j++)
             {
                 pels[j*pitch] = (PixType)((PredPel[2*width+1+j] + 3 * dcval + 2) >> 2);
             }
-
-            for (j = 1; j < width; j++)
-            {
-                for (i = 1; i < width; i++)
-                {
-                    pels[j*pitch+i] = (PixType)dcval;
-                }
-            }
         }
-        else
-        {
-            for (j = 0; j < width; j++)
-            {
-                for (i = 0; i < width; i++)
-                {
-                    pels[j*pitch+i] = (PixType)dcval;
-                }
-            }
-        }
-
     } // void h265_PredictIntra_DC_8u(
 
     static void h265_PredictIntra_Ang_16u_px_no_transp(
@@ -712,24 +726,42 @@ namespace MFX_HEVC_PP
         {
             Sum1 += PredPel[Ind];
             Sum2 += PredPel[Ind+1];
-        }
-        for (Ipp32s Ind = blkSize * 4 + 2; Ind < blkSize * 6 + 2; Ind += 2)
-        {
-            Sum1 += PredPel[Ind];
-            Sum2 += PredPel[Ind+1];
+            Sum1 += PredPel[blkSize * 4 + Ind];
+            Sum2 += PredPel[blkSize * 4 + Ind+1];
         }
 
         dc1 = (Ipp32s)((Sum1 + blkSize) / (blkSize << 1));
         dc2 = (Ipp32s)((Sum2 + blkSize) / (blkSize << 1));
 
-        for (k = 0; k < blkSize; k++)
-        {
-            for (l = 0; l < blkSize * 2; l += 2)
-            {
-                pDst[k * dstStride + l] = (PixType)dc1;
-                pDst[k * dstStride + l + 1] = (PixType)dc2;
+        Ipp64u dcval64 = (dc1 + dc2 * 0x10000) * 0x0000000100000001;
+
+        switch (blkSize) {
+        case 4:
+            for (Ipp32s j = 0; j < 4; j++) {
+                *(Ipp64u *)(pDst+j*dstStride+0) = dcval64;
+                *(Ipp64u *)(pDst+j*dstStride+4) = dcval64;
             }
+            break;
+        case 8:
+            for (Ipp32s j = 0; j < 8; j++) {
+                *(Ipp64u *)(pDst+j*dstStride+0) = dcval64;
+                *(Ipp64u *)(pDst+j*dstStride+4) = dcval64;
+                *(Ipp64u *)(pDst+j*dstStride+8) = dcval64;
+                *(Ipp64u *)(pDst+j*dstStride+12) = dcval64;
+            }
+            break;
+        case 16:
+            for (Ipp32s j = 0; j < 16; j++)
+                for (Ipp32s i = 0; i < 32; i += 4)
+                    *(Ipp64u *)(pDst+j*dstStride+i) = dcval64;
+            break;
+        case 32:
+            for (Ipp32s j = 0; j < 32; j++)
+                for (Ipp32s i = 0; i < 64; i += 4)
+                    *(Ipp64u *)(pDst+j*dstStride+i) = dcval64;
+            break;
         }
+
     }
 
     void h265_PredictIntra_Hor_ChromaNV12_16u(PixType* PredPel, PixType* pDst, Ipp32s dstStride, Ipp32s blkSize)
