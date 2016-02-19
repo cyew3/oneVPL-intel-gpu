@@ -1661,6 +1661,8 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 
     for( mfxU32 i = 0; i < numSlice; i++ )
     {
+        /* Small correction: legacy use 5,6,7 type values, but for FEI 0,1,2 */
+        m_slice[i].slice_type = m_slice[i].slice_type - 5;
         if ( NULL != pDataSliceHeader )
         {
             mdprintf(stderr,"Library's generated Slice header (it will be changed now on external one) \n");
@@ -1797,30 +1799,29 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
                     mfxSts = m_core->GetExternalFrameHDL(in->L0Surface[indexFromSliceHeader]->Data.MemId, &handle);
                     MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
                     //m_slice[i].RefPicList1[ref_counter_l1].picture_id = *(VASurfaceID*) handle;
-                }
-                VASurfaceID s = *(VASurfaceID*) handle; //id in the memory by ptr
-                if (m_slice[i].RefPicList1[ref_counter_l1].picture_id != s)
-                {
-                    //m_slice[i].RefPicList1[ref_counter_l1].picture_id = s;
-                    mdprintf(stderr, "!!!Warning picture_id from pDataSliceHeader->Slice[%u].RefL1[%u] = %u\n", i, ref_counter_l1, s);
-                    mdprintf(stderr, "   But library's is m_slice[%u].RefPicList0[%u].picture_id = %u\n",
-                            i, ref_counter_l1, m_slice[i].RefPicList1[ref_counter_l1].picture_id);
-                }
-                if (m_slice[i].RefPicList1[ref_counter_l1].flags != pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType)
-                {
-                    //m_slice[i].RefPicList1[ref_counter_l1].flags = pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType;
-                    mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].RefL1[%u].PictureType = %u\n",
-                            i, ref_counter_l0, pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType);
-                    mdprintf(stderr, "   But library's is m_slice[%u].RefPicList1[%u].flag = %u\n",
-                            i, ref_counter_l1, m_slice[i].RefPicList1[ref_counter_l1].flags);
+                    VASurfaceID s = *(VASurfaceID*) handle; //id in the memory by ptr
+                    if (m_slice[i].RefPicList1[ref_counter_l1].picture_id != s)
+                    {
+                        //m_slice[i].RefPicList1[ref_counter_l1].picture_id = s;
+                        mdprintf(stderr, "!!!Warning picture_id from pDataSliceHeader->Slice[%u].RefL1[%u] = %u\n", i, ref_counter_l1, s);
+                        mdprintf(stderr, "   But library's is m_slice[%u].RefPicList0[%u].picture_id = %u\n",
+                                i, ref_counter_l1, m_slice[i].RefPicList1[ref_counter_l1].picture_id);
+                    }
+                    if (m_slice[i].RefPicList1[ref_counter_l1].flags != pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType)
+                    {
+                        //m_slice[i].RefPicList1[ref_counter_l1].flags = pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType;
+                        mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].RefL1[%u].PictureType = %u\n",
+                                i, ref_counter_l0, pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType);
+                        mdprintf(stderr, "   But library's is m_slice[%u].RefPicList1[%u].flag = %u\n",
+                                i, ref_counter_l1, m_slice[i].RefPicList1[ref_counter_l1].flags);
+                    }
                 }
             } /* for (ref_counter_l1 = 0; ref_counter_l1 < in->NumFrameL1; ref_counter_l1++) */
-//            for ( ; ref_counter_l1 < 32; ref_counter_l1++)
-//            {
-//                m_slice[i].RefPicList1[ref_counter_l1].picture_id = VA_INVALID_ID;
-//                m_slice[i].RefPicList1[ref_counter_l1].flags = VA_PICTURE_H264_INVALID;
-//            }
-
+            for ( ; ref_counter_l1 < 32; ref_counter_l1++)
+            {
+                m_slice[i].RefPicList1[ref_counter_l1].picture_id = VA_INVALID_ID;
+                m_slice[i].RefPicList1[ref_counter_l1].flags = VA_PICTURE_H264_INVALID;
+            }
         } // if ( (in->NumFrameL1) && (m_slice[i].slice_type == SLICE_TYPE_B) )
     } // for( size_t i = 0; i < m_slice.size(); i++ )
 
@@ -3038,6 +3039,9 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
     for( mfxU32 i = 0; i < numSlice; i++)
     {
+        /* Small correction: legacy use 5,6,7 type values, but for FEI 0,1,2 */
+        m_slice[i].slice_type = m_slice[i].slice_type - 5;
+
         if (NULL != pDataSliceHeader)
         {
             mdprintf(stderr,"Library's generated Slice header (it will be changed now on external one) \n");
@@ -3191,7 +3195,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
                     }
                 }
             } /* for (ref_counter_l1 = 0; ref_counter_l1 < in->NumFrameL1; ref_counter_l1++) */
-            for ( ; ref_counter_l1 < 32; ref_counter_l0++)
+            for ( ; ref_counter_l1 < 32; ref_counter_l1++)
             {
                 m_slice[i].RefPicList1[ref_counter_l1].picture_id = VA_INVALID_ID;
                 m_slice[i].RefPicList1[ref_counter_l1].flags = VA_PICTURE_H264_INVALID;
