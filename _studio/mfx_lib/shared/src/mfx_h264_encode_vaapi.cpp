@@ -1774,22 +1774,18 @@ mfxStatus VAAPIEncoder::Execute(
         //output buffer for MB distortions
         if ((mbstat != NULL) && (VA_INVALID_ID == m_vaFeiMBStatId[0]))
         {
-            /*WA for TFF*/
-            int numMB = m_sps.picture_height_in_mbs * m_sps.picture_width_in_mbs;
-
             for( mfxU32 ii = 0; ii < m_vaFeiMBStatId.size(); ii++ )
             {
                 vaSts = vaCreateBuffer(m_vaDisplay,
                         m_vaContextEncode,
                         (VABufferType)VAEncFEIDistortionBufferTypeIntel,
-                        //sizeof (VAEncFEIDistortionBufferH264Intel)*mbstat->NumMBAlloc,
-                        sizeof (VAEncFEIDistortionBufferH264Intel)*numMB,
+                        sizeof (VAEncFEIDistortionBufferH264Intel)*mbstat->NumMBAlloc,
                         //limitation from driver, num elements should be 1
                         1,
                         NULL, //should be mapped later
                         &m_vaFeiMBStatId[ii]);
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-                //dprintf(stderr, "MB Stat bufId=%d\n", vaFeiMBStatId);
+                //mdprintf(stderr, "MB Stat bufId=%d\n", vaFeiMBStatId);
             }
         }
 
