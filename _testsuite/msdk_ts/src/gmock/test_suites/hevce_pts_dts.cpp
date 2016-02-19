@@ -6,6 +6,13 @@
 
 namespace hevce_pts_dts
 {
+     enum
+     {
+        MFX_PAR,
+        NULL_FRAME_ORDER,
+        NONE
+    };
+
     inline Ipp32s H265_CeilLog2(Ipp32s a)
     {
         Ipp32s r = 0;
@@ -34,17 +41,12 @@ namespace hevce_pts_dts
         int RunTest(unsigned int id);
 
     private:
-        enum
-        {
-            MFX_PAR,
-            NONE
-        };
-
         struct tc_struct
         {
             mfxStatus sts;
             mfxU32 n;
             mfxU32 nB;
+            mfxU32 type;
             int pts[MAX_PTS];
             struct f_pair
             {
@@ -62,10 +64,12 @@ namespace hevce_pts_dts
     private:
         int pts[MAX_PTS];
         mfxU32 surf_number;
+        mfxU32 type;
     public:
-        SFiller(mfxU32 n, const int _pts[MAX_PTS])
+        SFiller(mfxU32 n, mfxU32 _type, const int _pts[MAX_PTS])
         {
             surf_number = 0;
+            type = _type;
             for (mfxU32 i = 0; i < n; i++)
             if ((i < MAX_PTS) && (_pts))
             {
@@ -137,6 +141,14 @@ namespace hevce_pts_dts
                 TRACE_FUNC3(mfxFrameAllocator::Unlock, pfa->pthis, ps->Data.MemId, &(ps->Data));
                 g_tsStatus.check(pfa->Unlock(pfa->pthis, ps->Data.MemId, &(ps->Data)));
             }
+
+            ps->Data.TimeStamp = pts[surf_number];
+            ps->Data.FrameOrder = -1;// default behaviour for our application
+            if (type == NULL_FRAME_ORDER)
+            {
+                ps->Data.FrameOrder = 0;
+            }
+            surf_number++;
         }
 
         if (m_eos)
@@ -144,8 +156,7 @@ namespace hevce_pts_dts
             m_max = m_cur;
             return 0;
         }
-        ps->Data.TimeStamp = pts[surf_number];
-        surf_number++;
+
         return ps;
     }
 
@@ -212,7 +223,7 @@ namespace hevce_pts_dts
 
         if ((dist1d(bs.DecodeTimeStamp, (mfxU64)dts_expected) > 90 * frD / frN) && (dts_expected != MFX_TIMESTAMP_UNKNOWN))
         {
-            g_tsLog << "ERROR: frame " << (frame_number - 1) << " DTS is wrong, expected " << dts_expected << "\n";
+            g_tsLog << "ERROR: DTS is wrong\nFrame: " << (frame_number - 1) << "real: " << bs.DecodeTimeStamp << ", expected " << dts_expected << "\n";
             return MFX_ERR_ABORTED;
         }
         return MFX_ERR_NONE;
@@ -238,7 +249,7 @@ namespace hevce_pts_dts
 
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
-        {/* 0*/ MFX_ERR_NONE, 30, 0,
+        {/* 0*/ MFX_ERR_NONE, 30, 0, NONE,
         /* pts*/{ 0, 3600, 7200, 10800, 14400, 18000, 21600, 25200, 28800, 32400,
                   36000, 39600, 43200, 46800, 50400, 54000, 57600, 61200, 64800, 68400,
                   72000, 75600, 79200, 82800, 86400, 90000, 93600, 97200, 100800, 104400 },
@@ -247,7 +258,7 @@ namespace hevce_pts_dts
                     { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1000 },
                 },
         },
-        {/* 1*/ MFX_ERR_NONE, 30, 0,
+        {/* 1*/ MFX_ERR_NONE, 30, 0, NONE,
         /* pts*/{ 100000, -1, -1, -1, -1, -1, -1, -1, -1, -1,
                   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
                   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
@@ -256,7 +267,7 @@ namespace hevce_pts_dts
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1001 },
             },
         },
-        {/* 2*/ MFX_ERR_NONE, 30, 1,
+        {/* 2*/ MFX_ERR_NONE, 30, 1, NONE,
         /* pts*/{ 0, 3600, 7200, 10800, 14400, 18000, 21600, 25200, 28800, 32400,
                   36000, 39600, 43200, 46800, 50400, 54000, 57600, 61200, 64800, 68400,
                   72000, 75600, 79200, 82800, 86400, 90000, 93600, 97200, 100800, 104400 },
@@ -265,7 +276,7 @@ namespace hevce_pts_dts
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1000 },
             },
         },
-        {/* 3*/ MFX_ERR_NONE, 30, 1,
+        {/* 3*/ MFX_ERR_NONE, 30, 1, NONE,
         /* pts*/{ 100000, -1, -1, -1, -1, -1, -1, -1, -1, -1,
                   -1, -1, -1, -1, 0, -1, -1, -1, -1, -1,
                   -1, -1, -1, -1, -1, -1, 1000, -1, -1, -1 },
@@ -274,7 +285,7 @@ namespace hevce_pts_dts
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1001 },
             },
         },
-        {/* 4*/ MFX_ERR_NONE, 30, 3,
+        {/* 4*/ MFX_ERR_NONE, 30, 3, NONE,
         /* pts*/{ 0, 3600, 7200, 10800, 14400, 18000, 21600, 25200, 28800, 32400,
                   36000, 39600, 43200, 46800, 50400, 54000, 57600, 61200, 64800, 68400,
                   72000, 75600, 79200, 82800, 86400, 90000, 93600, 97200, 100800, 104400 },
@@ -283,7 +294,7 @@ namespace hevce_pts_dts
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1000 },
             },
         },
-        {/* 5*/ MFX_ERR_NONE, 30, 3,
+        {/* 5*/ MFX_ERR_NONE, 30, 3, NONE,
         /* pts*/{ 100000, -1, -1, -1, -1, -1, -1, -1, -1, -1,
                   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
                   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
@@ -292,7 +303,7 @@ namespace hevce_pts_dts
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1001 },
             },
         },
-        {/* 6*/ MFX_ERR_NONE, 30, 7,
+        {/* 6*/ MFX_ERR_NONE, 30, 7, NONE,
         /* pts*/{ 0, 3600, 7200, 10800, 14400, 18000, 21600, 25200, 28800, 32400,
                   36000, 39600, 43200, 46800, 50400, 54000, 57600, 61200, 64800, 68400,
                   72000, 75600, 79200, 82800, 86400, 90000, 93600, 97200, 100800, 104400 },
@@ -301,7 +312,25 @@ namespace hevce_pts_dts
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1000 },
             },
         },
-        {/* 7*/ MFX_ERR_NONE, 30, 7,
+        {/* 7*/ MFX_ERR_NONE, 30, 7, NONE,
+        /* pts*/{ 100000, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                  -1, -1, -1, -1, 0, -1, -1, -1, -1, -1,
+                  -1, -1, -1, -1, -1, -1, 1000, -1, -1, -1 },
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 60000 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1001 },
+            },
+        },
+        {/* 8*/ MFX_ERR_NONE, 30, 1, NULL_FRAME_ORDER,
+        /* pts*/{ 0, 3600, 7200, 10800, 14400, 18000, 21600, 25200, 28800, 32400,
+                  36000, 39600, 43200, 46800, 50400, 54000, 57600, 61200, 64800, 68400,
+                  72000, 75600, 79200, 82800, 86400, 90000, 93600, 97200, 100800, 104400 },
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 30000 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1000 },
+            },
+        },
+        {/* 9*/ MFX_ERR_NONE, 30, 1, NULL_FRAME_ORDER,
         /* pts*/{ 100000, -1, -1, -1, -1, -1, -1, -1, -1, -1,
                   -1, -1, -1, -1, 0, -1, -1, -1, -1, -1,
                   -1, -1, -1, -1, -1, -1, 1000, -1, -1, -1 },
@@ -354,7 +383,7 @@ namespace hevce_pts_dts
         }
 
 
-        SFiller sf(tc.n, tc.pts);
+        SFiller sf(tc.n, tc.type, tc.pts);
         BitstreamChecker bs_check(tc.n, tc.pts, tc.nB, *m_pPar);
         m_filler = &sf;
         m_bs_processor = &bs_check;
