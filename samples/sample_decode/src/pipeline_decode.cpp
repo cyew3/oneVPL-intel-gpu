@@ -133,7 +133,6 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     {
         switch (pParams->videoType)
         {
-        case MFX_CODEC_HEVC:
         case MFX_CODEC_AVC:
             m_FileReader.reset(new CH264FrameReader());
             m_bIsCompleteFrame = true;
