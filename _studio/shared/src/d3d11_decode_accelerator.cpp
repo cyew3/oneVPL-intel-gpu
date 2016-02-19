@@ -77,7 +77,7 @@ mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mf
     m_bH264MVCSupport = GuidProfile::IsMVCGUID(m_DecoderGuid);
     m_isUseStatuReport = true;
     m_bH264ShortSlice = GuidProfile::isShortFormat((m_Profile & 0xf) == VA_H265, video_config.ConfigBitstreamRaw);
-
+    m_H265ScalingListScanOrder = (video_config.Config4GroupedCoefs & 0x80000000) ? 0 : 1;
     return MFX_ERR_NONE;
 
 } // mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator
