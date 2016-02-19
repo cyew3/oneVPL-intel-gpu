@@ -66,7 +66,7 @@ foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/pa )
   list( APPEND sources ${srcs})
 endforeach()
 
-set( defs "-Wall -Werror" )
+set( defs "${WARNING_FLAGS}" )
 make_library( pa none static )
 set( defs "" )
 
@@ -87,7 +87,7 @@ list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/cmrt_cross_platform/
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
-set( defs "-Wall -Werror" )
+set( defs "${WARNING_FLAGS}" )
 make_library( pacm none static )
 set( defs "" )
 
@@ -120,6 +120,6 @@ endforeach()
 
 set( defs "-DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${PTIR_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${PTIR_DESCRIPTION}\"\\\" ${ptir_version_defs}" )
 
-set( defs "${defs} -Wall -Werror" )
+set( defs "${defs} ${WARNING_FLAGS}" )
 make_library( mfx_ptir_hw64 hw shared )
 set( defs "" )

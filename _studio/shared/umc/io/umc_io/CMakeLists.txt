@@ -11,6 +11,6 @@ list( APPEND sources
   ${CMAKE_SOURCE_DIR}/shared/umc/codec/vc1_common/src/umc_vc1_spl_tbl.cpp
   ${CMAKE_SOURCE_DIR}/shared/umc/codec/vc1_common/src/umc_vc1_common.cpp
 )
-set( defs "-Wall -Werror" )
+set( defs "${WARNING_FLAGS}" )
 make_library( umc_io none static )
 set( defs "" )

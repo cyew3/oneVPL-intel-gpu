@@ -4,7 +4,7 @@ mfx_include_dirs( )
 
 include_directories( ${CMAKE_SOURCE_DIR}/mfx_lib/cmrt_cross_platform/include )
 
-set( defs "-Wall -Werror" )
+set( defs "${WARNING_FLAGS}" )
 set( sources "" )
 set( sources.plus "" )
 file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )

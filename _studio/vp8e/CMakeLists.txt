@@ -102,7 +102,7 @@ foreach( variant hw )
     dl
     )
 
-  set( defs "${defs} -Wall -Werror" )
+  set( defs "${defs} ${WARNING_FLAGS}" )
   make_library( ${plugin_name} ${variant} shared)
   set( defs "" )
 

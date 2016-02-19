@@ -44,7 +44,7 @@ endforeach( )
 
 # =============================================================================
 
-set( defs "-Wall -Werror" )
+set( defs "${WARNING_FLAGS}" )
 set( sources "" )
 foreach( dir ${adirs} )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
@@ -63,7 +63,7 @@ foreach( dir ${dirs} )
   list( APPEND sources ${srcs})
 endforeach()
 
-set( defs "${defs} -Wall -Werror" )
+set( defs "${defs} ${WARNING_FLAGS}" )
 make_library( umc_codecs_merged none static )
 set( defs "" )
 

@@ -118,6 +118,6 @@ set( defs "-DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVCE_HW_PRODUCT_NAME}\"\\\" -DMFX_
 
 gen_plugins_cfg("HEVC_Encoder_HW" ${HEVC_Encoder_HW_GUID} "mfx_hevce_hw64" "02" "HEVC")
 
-set( defs "${defs} -Wall -Werror" )
+set( defs "${defs} ${WARNING_FLAGS}" )
 make_library( mfx_hevce_hw64 hw shared )
 set( defs "" )

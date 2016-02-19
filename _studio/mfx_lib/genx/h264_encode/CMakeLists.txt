@@ -10,6 +10,6 @@ set( sources.plus "" )
 file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )
 list( APPEND sources.plus ${srcs})
 
-set( defs "-Wall -Werror" )
+set( defs "${WARNING_FLAGS}" )
 make_library( genx_h264_encode_embeded none static )
 set( defs "" )

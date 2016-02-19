@@ -6,6 +6,6 @@ set( sources "" )
 file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )
 list( APPEND sources ${srcs})
 
-set( defs "-Wall -Werror" )
+set( defs "${WARNING_FLAGS}" )
 make_library( umc_va_elk hw static )
 set( defs "" )

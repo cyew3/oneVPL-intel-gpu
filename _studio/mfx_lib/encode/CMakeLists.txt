@@ -15,7 +15,7 @@ foreach( dir ${cdirs} )
   include_directories( ${CMAKE_SOURCE_DIR}/shared/umc/codec/${dir}/include )
 endforeach( )
 
-set( defs "-Wall -Werror" )
+set( defs "${WARNING_FLAGS}" )
 set( sources "" )
 set( sources.plus "" )
 foreach( dir ${vdirs} )

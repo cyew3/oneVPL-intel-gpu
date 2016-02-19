@@ -10,7 +10,7 @@ foreach( dir ${vdirs} )
   include_directories( ${CMAKE_SOURCE_DIR}/mfx_lib/brc/${dir}/include )
 endforeach()
 
-set( defs "-Wall -Werror" )
+set( defs "${WARNING_FLAGS}" )
 set( sources "" )
 set( sources.plus "" )
 foreach( dir ${vdirs} )
