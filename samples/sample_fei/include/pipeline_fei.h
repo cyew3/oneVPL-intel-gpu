@@ -372,12 +372,12 @@ protected:
     bool m_disableMBStatPreENC;
 
     mfxU16 m_maxQueueLength;
-    mfxU16 m_refFrameCounter;
-    mfxU16 m_frameNumMax;
+    mfxU16 m_log2frameNumMax;
     mfxU8  m_ffid, m_sfid;
     mfxU32 m_frameCount, m_frameOrderIdrInDisplayOrder;
     PairU8 m_frameType;
     mfxU8  m_isField;
+    mfxU16 m_frameIdrCounter;
 
     mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* m_tmpForReading, *m_tmpMBpreenc;
     mfxExtFeiEncMV::mfxExtFeiEncMVMB*       m_tmpMBenc;
