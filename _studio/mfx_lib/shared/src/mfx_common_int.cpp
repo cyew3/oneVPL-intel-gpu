@@ -387,7 +387,7 @@ mfxStatus CheckBitstream(const mfxBitstream *bs)
 mfxStatus CheckEncryptedBitstream(const mfxBitstream *bs)
 {
        mfxEncryptedData *ptr = 0;
-        if  (!bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME)
+        if  (!(bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME))
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
         if(bs->EncryptedData)
