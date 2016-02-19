@@ -200,15 +200,13 @@ mfxStatus MFXVideoENCMPEG2::Query(mfxVideoParam *in, mfxVideoParam *out)
 
     if (out->mfx.FrameInfo.Width > 0xff0)
       out->mfx.FrameInfo.Width = 0xff0;
-    if ((out->mfx.FrameInfo.CropW == 0) ||
-        ((out->mfx.FrameInfo.CropW > out->mfx.FrameInfo.Width) && (out->mfx.FrameInfo.Width > 0)))
+    if ((out->mfx.FrameInfo.CropW == 0 || out->mfx.FrameInfo.CropW > out->mfx.FrameInfo.Width) && (out->mfx.FrameInfo.Width > 0))
       out->mfx.FrameInfo.CropW = out->mfx.FrameInfo.Width;
     out->mfx.FrameInfo.Width = (out->mfx.FrameInfo.Width + 15) & ~15;
 
     if (out->mfx.FrameInfo.Height > 0xff0)
       out->mfx.FrameInfo.Height = 0xff0;
-    if ((out->mfx.FrameInfo.CropH == 0) ||
-        ((out->mfx.FrameInfo.CropH > out->mfx.FrameInfo.Height) && (out->mfx.FrameInfo.Height > 0)))
+    if ((out->mfx.FrameInfo.CropH == 0 || out->mfx.FrameInfo.CropH > out->mfx.FrameInfo.Height) && (out->mfx.FrameInfo.Height > 0))
       out->mfx.FrameInfo.CropH = out->mfx.FrameInfo.Height;
     if(/*out->mfx.FramePicture&&*/ (out->mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE))
       out->mfx.FrameInfo.Height = (out->mfx.FrameInfo.Height + 15) & ~15;

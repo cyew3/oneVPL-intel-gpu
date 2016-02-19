@@ -2184,7 +2184,7 @@ mfxStatus MFXVideoENCODEH264::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
 
     minBufferSize = layer->enc->requiredBsBufferSize;
 
-    if( (bs->MaxLength - (bs->DataOffset + bs->DataLength) < minBufferSize) && (cur_enc->m_info.rate_controls.method != H264_RCM_QUANT || bs->MaxLength - bs->DataOffset == 0))
+    if(((bs->MaxLength - (bs->DataOffset + bs->DataLength) < minBufferSize) && cur_enc->m_info.rate_controls.method != H264_RCM_QUANT) || bs->MaxLength - bs->DataOffset == 0)
         return MFX_ERR_NOT_ENOUGH_BUFFER;
 
     if (bs->Data == 0)
@@ -6933,7 +6933,7 @@ mfxI32 MFXVideoENCODEH264::SelectFrameType_forLast( bool bNotLast, mfxEncodeCtrl
         }
         else if ( !frameNum || eOriginalType == INTRAPIC || scene_change || forced_IDR || forced_I) {
             ePictureType = INTRAPIC;
-        } else if ((eOriginalType == PREDPIC  || optsSA) && ((optsSA->SpatialComplexity*2 <= 3*optsSA->TemporalComplexity) && optsSA->TemporalComplexity)) {
+        } else if (eOriginalType == PREDPIC  || (optsSA && (optsSA->SpatialComplexity*2 <= 3*optsSA->TemporalComplexity) && optsSA->TemporalComplexity)) {
             ePictureType = PREDPIC;
         } else
             ePictureType = BPREDPIC; // B can be changed later
