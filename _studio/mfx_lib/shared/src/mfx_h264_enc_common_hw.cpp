@@ -4437,7 +4437,9 @@ void MfxHwH264Encode::SetDefaults(
     mfxExtSVCRateControl *     extRc   = GetExtBuffer(par);
     mfxExtChromaLocInfo*       extCli  = GetExtBuffer(par);
     mfxExtFeiParam* feiParam = (mfxExtFeiParam*)GetExtBuffer(par);
-    bool isENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCPAK);
+    bool isENCPAK = feiParam && ( (feiParam->Func == MFX_FEI_FUNCTION_ENCPAK) ||
+                                  (feiParam->Func == MFX_FEI_FUNCTION_ENC) ||
+                                  (feiParam->Func == MFX_FEI_FUNCTION_PAK) );
 
     if (extOpt2->UseRawRef)
         extDdi->RefRaw = extOpt2->UseRawRef;
