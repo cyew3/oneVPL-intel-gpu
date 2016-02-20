@@ -1387,6 +1387,19 @@ mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par)
         if (IsOn(extOpt3->MBDisableSkipMap))
             m_mb_noskip_buffer.resize(((m_width / 16 + 63) & ~63) * ((m_height / 16 + 7) & ~7));
     }
+    /* Destroy existing FEI buffers
+     * For next Execute() call new buffer sets will re-allocated */
+    if (m_isENCPAK)
+    {
+        for( mfxU32 i = 0; i < m_vaFeiMBStatId.size(); i++ )
+            MFX_DESTROY_VABUFFER(m_vaFeiMBStatId[i], m_vaDisplay);
+
+        for( mfxU32 i = 0; i < m_vaFeiMVOutId.size(); i++ )
+            MFX_DESTROY_VABUFFER(m_vaFeiMVOutId[i], m_vaDisplay);
+
+        for( mfxU32 i = 0; i < m_vaFeiMCODEOutId.size(); i++ )
+            MFX_DESTROY_VABUFFER(m_vaFeiMCODEOutId[i], m_vaDisplay);
+    }
 
     return MFX_ERR_NONE;
 
