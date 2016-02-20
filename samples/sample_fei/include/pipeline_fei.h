@@ -215,6 +215,7 @@ protected:
     mfxU32 m_numOfFields;
     mfxU16 m_heightMB;
     mfxU16 m_widthMB;
+    mfxU16 m_widthMBpreenc;
     mfxU16 m_numMB;
     mfxU16 m_numMBpreenc; // number of MBs in input for PreEnc surfaces
 

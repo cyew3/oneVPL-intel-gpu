@@ -2558,19 +2558,24 @@ mfxStatus CEncodingPipeline::Run()
     m_numMB = (m_widthMB * m_heightMB) >> 8;
     m_numMB /= (mfxU16)m_numOfFields;
 
+    m_widthMB >>= 4;
+    m_heightMB >>= m_isField ? 5 : 4;
+
     if (m_encpakParams.bPREENC && m_encpakParams.preencDSstrength)
     {
         // PreEnc is performed on lower resolution
-        mfxU16 widthMB  = MSDK_ALIGN16(m_mfxDSParams.vpp.Out.Width);
+        m_widthMBpreenc = MSDK_ALIGN16(m_mfxDSParams.vpp.Out.Width);
         mfxU16 heightMB = m_isField ? MSDK_ALIGN32(m_mfxDSParams.vpp.Out.Height) : MSDK_ALIGN16(m_mfxDSParams.vpp.Out.Height);
-        m_numMBpreenc = (widthMB * heightMB) >> 8;
+        m_numMBpreenc = (m_widthMBpreenc * heightMB) >> 8;
         m_numMBpreenc /= (mfxU16)m_numOfFields;
+
+        m_widthMBpreenc >>= 4;
     }
     else
+    {
+        m_widthMBpreenc = m_widthMB;
         m_numMBpreenc = m_numMB;
-
-    m_widthMB  >>= 4;
-    m_heightMB >>= m_isField ? 5 : 4;
+    }
 
     m_ffid = m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF;
     m_sfid = m_isField - m_ffid;
@@ -4276,11 +4281,11 @@ mfxStatus CEncodingPipeline::repackDSPreenc2EncExMB(mfxExtFeiPreEncMV::mfxExtFei
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxU32 mv_idx = 0;
-    static mfxI16 MVZigzagOrder[16] = {0, 1, 4, 5, 2, 3, 6, 7, 8, 9, 12, 13, 10, 11, 14, 15};
+    static mfxI16 MVZigzagOrder[16] = { 0, 1, 4, 5, 2, 3, 6, 7, 8, 9, 12, 13, 10, 11, 14, 15 };
 
     for (mfxU16 i = 0; i < pow(m_encpakParams.preencDSstrength,2); ++i)
     {
-        mfxU32 encMBidx = MBnum * (mfxU32)pow(m_encpakParams.preencDSstrength, 2) + i % m_encpakParams.preencDSstrength + m_widthMB*(i / m_encpakParams.preencDSstrength);
+        mfxU32 encMBidx = (MBnum % m_widthMBpreenc + MBnum / m_widthMBpreenc *  m_widthMB) * m_encpakParams.preencDSstrength + i % m_encpakParams.preencDSstrength + m_widthMB*(i / m_encpakParams.preencDSstrength);
 
         if (encMBidx >= m_numMB)
             continue;
