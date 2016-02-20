@@ -1833,7 +1833,7 @@ mfxStatus MFXVideoENCODEMVC::EncodeFrameCtrlCheck(mfxEncodeCtrl *ctrl, mfxFrameS
         pRefPicListCtrl = (mfxExtAVCRefListCtrl*)GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_AVC_REFLIST_CTRL);
         // ref pic list control info is ignored for B-frames
         if (pRefPicListCtrl)
-            if (((isFieldEncoding || !checked_view->m_mfxVideoParam.mfx.EncodedOrder) && checked_view->enc->m_info.B_frame_rate) || // field encoding or B-frames in GOP pattern
+            if (isFieldEncoding || (!checked_view->m_mfxVideoParam.mfx.EncodedOrder && checked_view->enc->m_info.B_frame_rate) || // field encoding or B-frames in GOP pattern
                 (checked_view->m_mfxVideoParam.mfx.EncodedOrder && ((ctrl->FrameType & (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P | MFX_FRAMETYPE_B)) == MFX_FRAMETYPE_B))) // B-frame in EncodedOrder
                 st = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
@@ -2032,7 +2032,7 @@ mfxStatus MFXVideoENCODEMVC::InitMVCView(mfxVideoParam *par_in, mfxExtCodingOpti
 
     if (videoParams.info.clip_info.width == 0 || videoParams.info.clip_info.height == 0 ||
         par->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 ||
-        ((videoParams.rate_controls.method != H264_RCM_QUANT && videoParams.info.bitrate == 0) || videoParams.info.framerate == 0))
+        (videoParams.rate_controls.method != H264_RCM_QUANT && videoParams.info.bitrate == 0) || videoParams.info.framerate == 0)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     // to set profile/level and related vars
@@ -3770,7 +3770,7 @@ mfxStatus MFXVideoENCODEMVC::Query(mfxVideoParam *par_in, mfxVideoParam *par_out
         out->calcParam.TargetKbps = in->calcParam.TargetKbps;
         out->calcParam.InitialDelayInKB = in->calcParam.InitialDelayInKB;
         if (out->mfx.FrameInfo.Width && out->mfx.FrameInfo.Height && out->mfx.FrameInfo.FrameRateExtD && out->calcParam.TargetKbps &&
-            ((opts2_out == 0 || opts2_out) && (opts2_out->BitrateLimit != MFX_CODINGOPTION_OFF))) {
+            (opts2_out == 0 || (opts2_out && opts2_out->BitrateLimit != MFX_CODINGOPTION_OFF))) {
             // last denominator 700 gives about 1 Mbps for 1080p x 30
             mfxU32 minBitRate = (mfxU32)((mfxF64)out->mfx.FrameInfo.Width * out->mfx.FrameInfo.Height * 12 // size of raw image (luma + chroma 420) in bits
                                          * out->mfx.FrameInfo.FrameRateExtN / out->mfx.FrameInfo.FrameRateExtD / 1000 / 700);
@@ -4010,7 +4010,7 @@ mfxStatus MFXVideoENCODEMVC::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocReques
     // check for valid IOPattern
     mfxU16 IOPatternIn = par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_IN_OPAQUE_MEMORY);
     if ((par->IOPattern & 0xffc8) || (par->IOPattern == 0) ||
-        (((IOPatternIn != MFX_IOPATTERN_IN_VIDEO_MEMORY) && (IOPatternIn != MFX_IOPATTERN_IN_SYSTEM_MEMORY)) && (IOPatternIn != MFX_IOPATTERN_IN_OPAQUE_MEMORY)))
+        ((IOPatternIn != MFX_IOPATTERN_IN_VIDEO_MEMORY) && (IOPatternIn != MFX_IOPATTERN_IN_SYSTEM_MEMORY) && (IOPatternIn != MFX_IOPATTERN_IN_OPAQUE_MEMORY)))
        return MFX_ERR_INVALID_VIDEO_PARAM;
 
     if (par->Protected != 0)
@@ -4572,7 +4572,7 @@ mfxI32 MFXVideoENCODEMVC::SelectFrameType_forLast( mfxI32 frameNum, bool bNotLas
         }
         else if ( !frameNum || eOriginalType == INTRAPIC || scene_change ) {
             ePictureType = INTRAPIC;
-        } else if ((eOriginalType == PREDPIC  || optsSA) && (optsSA->SpatialComplexity*2 <= 3*optsSA->TemporalComplexity && optsSA->TemporalComplexity)) {
+        } else if (eOriginalType == PREDPIC  || (optsSA && optsSA->SpatialComplexity*2 <= 3*optsSA->TemporalComplexity && optsSA->TemporalComplexity)) {
             ePictureType = PREDPIC;
         } else
             ePictureType = BPREDPIC; // B can be changed later
@@ -4651,7 +4651,7 @@ mfxI32 MFXVideoENCODEMVC::SelectFrameType_forLast( mfxI32 frameNum, bool bNotLas
             enc->m_pCurrentFrame->m_putEndOfSeq = true;
 
     // if current is B and no next frame or need to encode B in current GOP with no L1 refs
-    if ((((scene_change || enc->m_pCurrentFrame->m_bIsIDRPic) || close_gop) && !allowTypeChange) ||
+    if (((scene_change || enc->m_pCurrentFrame->m_bIsIDRPic || close_gop) && !allowTypeChange) ||
         (enc->m_pCurrentFrame->m_PicCodType == BPREDPIC && !bNotLast))
         return 1;
 
@@ -6001,7 +6001,7 @@ end_of_frame:
         if (ePic_Class != DISPOSABLE_PIC) {
             H264CoreEncoder_UpdateRefPicMarking_8u16s(state);
 
-            if ((core_enc->m_info.coding_type == 1 || core_enc->m_info.coding_type == 3) && core_enc->m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE)
+            if (core_enc->m_info.coding_type == 1 || (core_enc->m_info.coding_type == 3 && core_enc->m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE))
             {
                 if (core_enc->m_field_index == 0)
                 {
@@ -6318,7 +6318,7 @@ Status MFXVideoENCODEMVC::H264CoreEncoder_encodeSEI(
     Ipp8u NalHrdBpPresentFlag, VclHrdBpPresentFlag, CpbDpbDelaysPresentFlag, pic_struct_present_flag;
     Ipp8u sei_inserted = 0, need_insert_external_payload = 0;
     Ipp8u need_insert[36] = {};
-    Ipp8u is_cur_pic_field = (core_enc->m_info.coding_type == 1 || core_enc->m_info.coding_type == 3) && core_enc->m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE;
+    Ipp8u is_cur_pic_field = core_enc->m_info.coding_type == 1 || (core_enc->m_info.coding_type == 3 && core_enc->m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE);
     Ipp16s GOP_structure_map = -1, Closed_caption = -1;
 
     need_insert[SEI_TYPE_RECOVERY_POINT] = 0;

@@ -9633,7 +9633,7 @@ end_of_frame:
             if (ePic_Class != DISPOSABLE_PIC) {
                 H264CoreEncoder_UpdateRefPicMarking_8u16s(state);
 
-                if ((core_enc->m_info.coding_type == 1 || core_enc->m_info.coding_type == 3) && core_enc->m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE)
+                if (core_enc->m_info.coding_type == 1 || (core_enc->m_info.coding_type == 3 && core_enc->m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE))
                 {
                     if (core_enc->m_field_index == 0)
                     {
