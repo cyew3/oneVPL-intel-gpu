@@ -45,8 +45,13 @@ public:
     inline tsAutoTrace& operator<<(mfxU8* p) { *this << (void*)p; return *this; }
     inline tsAutoTrace& operator<<(mfxEncryptedData*& p){ *this << (void*)p; return *this; }
     inline tsAutoTrace& operator<<(mfx4CC& p) 
-    { 
-        *this << p.c[0] << p.c[1] << p.c[2] << p.c[3] << std::hex << "(0x" << p.n << ')' << std::dec; 
+    {
+        for(size_t i; i < 4; ++i)
+        {
+            if(p.c[i])  *this << p.c[i];
+            else        (std::ostream&)*this << "\\0";
+        }
+        (std::ostream&)*this << std::hex << "(0x" << p.n << ')' << std::dec; 
         return *this;
     }
 
