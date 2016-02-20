@@ -1251,6 +1251,10 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
               (extOpt2Old->MaxSliceSize != 0),
               MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
+    MFX_CHECK(m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA || 
+              m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT ||
+              m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD,
+              MFX_ERR_INCOMPATIBLE_VIDEO_PARAM); 
 
     // check if IDR required after change of encoding parameters
     bool isSpsChanged = extSpsNew->vuiParametersPresentFlag == 0 ?
