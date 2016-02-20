@@ -30,9 +30,9 @@ if(__TARGET_PLATFORM)
 endif( )
 #
 set( T_ARCH "sse4.2" )
-if( __TARGET_PLATFORM STREQUAL "BDW" )
-    set( T_ARCH "avx2" )
-endif()
+#if( __TARGET_PLATFORM STREQUAL "BDW" )
+#    set( T_ARCH "avx2" )
+#endif()
 message( STATUS "Target Architecture to compile: ${T_ARCH}" )
 #
 if( __TARGET_PLATFORM STREQUAL "BXTMIN" )
