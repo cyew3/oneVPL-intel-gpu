@@ -2278,7 +2278,7 @@ void MEforGen75::AssignMV(int mode, int k, int shape, int bi)
 
 
      // dual ref, or single record, or dual record and L0 wins, output 0
-    if( ((Vsta.VmeModes&4)  ||  (Vsta.VmeModes&2)) && ((!(mode&3)) || (!(Vsta.VmeModes&2))))
+    if( (Vsta.VmeModes&4)  ||  ((Vsta.VmeModes&2) && (!(mode&3))) || (!(Vsta.VmeModes&2)))
     {// REF 0
         if(bi==0||bi==2)
             Vout->Mvs[k][0] = Best[0][shape];

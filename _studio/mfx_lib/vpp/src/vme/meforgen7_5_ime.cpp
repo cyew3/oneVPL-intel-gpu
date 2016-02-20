@@ -1028,9 +1028,9 @@ void MEforGen75::PreBMEPartition(I32 *dist, U16 *mode, bool benablecopy)
             }
         }
         additionalCost = 0;
-        if(((m&0x0200)&&(!L0_BWD_Penalty)) || ((!(m&0x0200))&&L0_BWD_Penalty))
+        if((m&0x0200&&(!L0_BWD_Penalty)) || ((!(m&0x0200))&&L0_BWD_Penalty))
             additionalCost +=1;
-        if(((m&0x0800)&&(!L0_BWD_Penalty)) || ((!(m&0x0800))&&L0_BWD_Penalty))
+        if((m&0x0800&&(!L0_BWD_Penalty)) || ((!(m&0x0800))&&L0_BWD_Penalty))
             additionalCost +=1;
         additionalCost *= LutMode[LUTMODE_INTER_BWD];
         d = LutMode[LUTMODE_INTER_8x16]+useDist8x16_0+useDist8x16_1+additionalCost;
@@ -1093,9 +1093,9 @@ void MEforGen75::PreBMEPartition(I32 *dist, U16 *mode, bool benablecopy)
             }
         }
         additionalCost = 0;
-        if(((m&0x0200)&&(!L0_BWD_Penalty)) || ((!(m&0x0200))&&L0_BWD_Penalty))
+        if((m&0x0200&&(!L0_BWD_Penalty)) || ((!(m&0x0200))&&L0_BWD_Penalty))
             additionalCost +=1;
-        if(((m&0x2000)&&(!L0_BWD_Penalty)) || ((!(m&0x2000))&&L0_BWD_Penalty))
+        if((m&0x2000&&(!L0_BWD_Penalty)) || ((!(m&0x2000))&&L0_BWD_Penalty))
             additionalCost +=1;
         additionalCost *= LutMode[LUTMODE_INTER_BWD];
 
