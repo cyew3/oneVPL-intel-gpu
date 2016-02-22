@@ -9,6 +9,7 @@
 #include "pipeline_fei.h"
 
 mfxStatus CheckOptions(sInputParams* pParams);
+mfxStatus CheckDRCParams(sInputParams* pParams);
 
 void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
 {
@@ -47,6 +48,9 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("                            otherwise PREENC is used on downscaled (by VPP resize in ds_strength times) surfaces\n"));
     msdk_printf(MSDK_STRING("   [-encode] - use extended FEI interface ENC+PAK (FEI ENCODE) (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-encpak] - use extended FEI interface ENC only and PAK only (separate calls)\n"));
+    msdk_printf(MSDK_STRING("   [-reset_start] - set Start Frame No. to enable Dynamic Resolution change,please specify frame size with -dstw -dsth\n"));
+    msdk_printf(MSDK_STRING("   [-reset_end]   - set End Frame No. to disable Dynamic Resolution change\n"));
+
     //msdk_printf(MSDK_STRING("   [-enc] - use extended FEI interface ENC (only)\n"));
     msdk_printf(MSDK_STRING("   [-pak] - use extended FEI interface PAK (only)\n"));
     msdk_printf(MSDK_STRING("   [-profile decimal] - set AVC profile\n"));
@@ -448,6 +452,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("Destination picture Width is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
+            if (pParams->bDynamicRC)
+            {
+               pParams->nDrcWidth.push_back(pParams->nDstWidth);
+               pParams->MaxDrcWidth = pParams->nDstWidth > pParams->MaxDrcWidth? pParams->nDstWidth : pParams->MaxDrcWidth;
+               pParams->MaxDrcWidth = pParams->MaxDrcWidth >  pParams->nWidth ?pParams->MaxDrcWidth : pParams->nWidth;
+               pParams->nDstWidth = pParams->MaxDrcWidth;
+            }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dsth")))
         {
@@ -456,6 +467,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("Destination picture Height is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
+            if(pParams->bDynamicRC)
+            {
+                pParams->nDrcHeight.push_back(pParams->nDstHeight);
+                pParams->MaxDrcHeight = pParams->nDstHeight > pParams->MaxDrcHeight? pParams->nDstHeight :pParams->MaxDrcHeight;
+                pParams->MaxDrcHeight = pParams->MaxDrcHeight >  pParams->nHeight ?pParams->MaxDrcHeight : pParams->nHeight;
+                pParams->nDstHeight = pParams->MaxDrcHeight;
+            }
+
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-timeout")))
         {
@@ -468,6 +487,49 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-perf")))
         {
             pParams->bPerfMode = true;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-reset_start")))
+        {
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nResetStart))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Timeout is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+             //for first -resetstart
+            if (!pParams->bDynamicRC)
+            {
+                if (pParams->nDstWidth && pParams->nDstHeight)
+                {
+                    pParams->nDRCdefautW = pParams->nDstWidth;
+                    pParams->nDRCdefautH = pParams->nDstHeight;
+                    pParams->MaxDrcWidth = pParams->nDstWidth;
+                    pParams->MaxDrcHeight = pParams->nDstHeight;
+                }
+                else if (pParams->nWidth && pParams->nHeight)
+                {
+                    pParams->nDRCdefautW = pParams->nWidth;
+                    pParams->nDRCdefautH = pParams->nHeight;
+                }
+                if (0 != pParams->nResetStart)
+                {
+                   pParams->nResetEnd = pParams->nResetStart-1;
+                   pParams->nDrcEnd.push_back(pParams->nResetEnd);
+                   pParams->nDrcStart.push_back(0);
+                   pParams->nDrcWidth.push_back(pParams->nDRCdefautW);
+                   pParams->nDrcHeight.push_back(pParams->nDRCdefautH);
+                }
+                pParams->bDynamicRC = true;
+            }
+            pParams->nDrcStart.push_back(pParams->nResetStart);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-reset_end")))
+        {
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nResetEnd))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Timeout is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            pParams->nDrcEnd.push_back(pParams->nResetEnd);
         }
         else // 1-character options
         {
@@ -922,6 +984,13 @@ int main(int argc, char *argv[])
     Params.bRepackPreencMV      = false;
     Params.bFieldProcessingMode = false;
     Params.bMBSize  = false;
+    Params.bDynamicRC = false;
+    Params.nResetStart  = 0;
+    Params.nResetEnd    = 0;
+    Params.MaxDrcWidth  = 0;
+    Params.MaxDrcHeight = 0;
+    Params.nDRCdefautW  = 0;
+    Params.nDRCdefautH  = 0;
     Params.memType  = D3D9_MEMORY; //only HW memory is supported (ENCODE supports SW memory)
     Params.bRefType = MFX_B_REF_UNKNOWN; //let MSDK library to decide wheather to use B-pyramid or not
     Params.QP              = 26; //default qp value
@@ -950,6 +1019,9 @@ int main(int argc, char *argv[])
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
 
     sts = CheckOptions(&Params);
+    MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
+
+    sts = CheckDRCParams(&Params);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
 
     pPipeline.reset(new CEncodingPipeline);
@@ -1026,5 +1098,52 @@ mfxStatus CheckOptions(sInputParams* pParams)
         sts = MFX_ERR_UNSUPPORTED;
     }
 
+    return sts;
+}
+mfxStatus CheckDRCParams(sInputParams* pParams)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    if (!pParams->bDynamicRC)
+    {
+        return MFX_ERR_NONE;
+    }
+    if (pParams->bENCPAK || pParams->bOnlyPAK || pParams->bPREENC)
+    {
+        fprintf(stderr, "Only ENCODE supports Dynamic Resolution Change\n");
+        sts = MFX_ERR_UNSUPPORTED;
+    }
+    if (pParams->nDrcStart.size() != pParams->nDrcEnd.size())
+   {
+        fprintf(stderr, "Please Check -reset_start and -reset_End\n");
+        sts = MFX_ERR_UNSUPPORTED;
+    }
+
+    if (pParams->nDrcWidth.size() != pParams->nDrcHeight.size())
+    {
+        fprintf(stderr, "Please Check -dstw and -dsth\n");
+        sts = MFX_ERR_UNSUPPORTED;
+    }
+
+    if (pParams->nDrcStart.size() != pParams->nDrcWidth.size())
+    {
+        fprintf(stderr, "Please Check -reset_start/-reset_end and -dstw/-dsth\n");
+        sts = MFX_ERR_UNSUPPORTED;
+    }
+
+    for(size_t i=0;i < pParams->nDrcStart.size();i++)
+    {
+
+       if (pParams->nDrcEnd[i] < pParams->nDrcStart[i] + 1)
+       {
+          fprintf(stderr, "reset_end %d should be greater than %d reset_start+1\n",pParams->nDrcEnd[i] ,pParams->nDrcStart[i]);
+          sts = MFX_ERR_UNSUPPORTED;
+       }
+       if (i > 0 && pParams->nDrcEnd[i-1] >= pParams->nDrcStart[i])
+       {
+          fprintf(stderr, "Current -reset_end should be less than the next -reset_start.\n");
+          sts = MFX_ERR_UNSUPPORTED;
+       }
+
+    }
     return sts;
 }

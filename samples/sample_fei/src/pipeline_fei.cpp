@@ -47,7 +47,8 @@ static FILE* mbcodeout   = NULL;
 static FILE* pMvPred     = NULL;
 static FILE* pEncMBs     = NULL;
 static FILE* pPerMbQP    = NULL;
-
+static mfxU32 numMBs     = 0;
+static bool bDRCReset    = false;
 
 CEncTaskPool::CEncTaskPool()
 {
@@ -371,6 +372,20 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     m_mfxEncParams.mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
     m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
     m_mfxEncParams.mfx.FrameInfo.PicStruct    = pInParams->nPicStruct;
+
+    if (pInParams->bDynamicRC)
+    {
+       m_bNeedDRC = true;
+       m_drcDftW =pInParams->nDRCdefautW;
+       m_drcDftH = pInParams->nDRCdefautH;
+       size_t whsize = pInParams->nDrcWidth.size();
+       m_drcWidth.reserve(whsize);
+       m_drcHeight.reserve(whsize);
+       m_drcStart = pInParams->nDrcStart;
+       m_drcEnd = pInParams-> nDrcEnd;
+       m_drcWidth = pInParams->nDrcWidth;
+       m_drcHeight = pInParams->nDrcHeight;
+    }
 
     // set frame size and crops
     // width must be a multiple of 16
@@ -1155,6 +1170,9 @@ CEncodingPipeline::CEncodingPipeline()
     m_tmpMBenc            = NULL;
     m_ctr                 = NULL;
     m_last_task           = NULL;
+    m_bNeedDRC            = false;
+    m_drcDftW             = 0;
+    m_drcDftH             = 0;
 
     MSDK_ZERO_ARRAY(m_numOfRefs, 2);
 
@@ -1341,7 +1359,8 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 
     // create preprocessor if resizing was requested from command line
     if (pParams->nWidth  != pParams->nDstWidth ||
-        pParams->nHeight != pParams->nDstHeight)
+        pParams->nHeight != pParams->nDstHeight||
+        m_bNeedDRC)
     {
         if (pParams->bDECODE)
             m_pVPP_mfxSession = &m_decode_mfxSession;
@@ -2558,6 +2577,14 @@ mfxStatus CEncodingPipeline::Run()
     m_numMB = (m_widthMB * m_heightMB) >> 8;
     m_numMB /= (mfxU16)m_numOfFields;
 
+    if (m_bNeedDRC)
+    {
+       //set Max Number of MB for ext Buffer
+        m_widthMB  = ((m_encpakParams.nDstWidth  + 15) & ~15);
+        m_heightMB  = ((m_encpakParams.nDstHeight + 15) & ~15);
+        m_numMB = m_widthMB * m_heightMB / 256;
+    }
+
     m_widthMB >>= 4;
     m_heightMB >>= m_isField ? 5 : 4;
 
@@ -2591,6 +2618,7 @@ mfxStatus CEncodingPipeline::Run()
 
     iTask* eTask = NULL; // encoding task
     time_t start = time(0);
+    size_t rctime = 0;
 
     if (m_encpakParams.bENCODE)
     {
@@ -2615,6 +2643,12 @@ mfxStatus CEncodingPipeline::Run()
             continue;
         }
         MSDK_BREAK_ON_ERROR(sts);
+
+        if (m_bNeedDRC)
+        {
+           m_insertIDR  = false;
+           sts = ResizeFrame(m_frameCount,m_insertIDR,rctime);
+        }
 
         if (m_insertIDR)
         {
@@ -3866,6 +3900,10 @@ mfxStatus CEncodingPipeline::InitEncodeFrameParams(mfxFrameSurface1* encodeSurfa
 
     bufSet * freeSet = getFreeBufSet(m_encodeBufs);
     MSDK_CHECK_POINTER(freeSet, MFX_ERR_NULL_PTR);
+    if (m_bNeedDRC){
+       bool IsProgressive = MFX_PICSTRUCT_PROGRESSIVE == m_mfxEncParams.mfx.FrameInfo.PicStruct?1 : 0;
+       m_TaskPool.ResetExtBufMBnum(freeSet,IsProgressive);
+    }
     pCurrentTask->bufs.push_back(std::pair<bufSet*, mfxFrameSurface1*>(freeSet, encodeSurface));
 
     /* Load input Buffer for FEI ENCODE */
@@ -4233,6 +4271,99 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 num
     return sts;
 }
 
+mfxStatus CEncTaskPool::ResetExtBufMBnum(bufSet* freeSet,bool IsProgressive)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    mfxExtFeiEncMV*           mvBuf       = NULL;
+    mfxExtFeiEncMBStat*       mbstatBuf   = NULL;
+    mfxExtFeiPakMBCtrl*       mbcodeBuf   = NULL;
+    mfxExtFeiEncQP*           pMbQP       = NULL;
+    mfxExtFeiEncMBCtrl*       pMbEncCtrl  = NULL;
+    mfxExtFeiEncMVPredictors* pMvPredBuf  = NULL;
+    mfxU32 mvBufCounter     = 0;
+    mfxU32 mbStatBufCounter = 0;
+    mfxU32 mbCodeBufCounter = 0;
+    mfxU32 FieldId = 0;
+
+    if (bDRCReset == false)
+    {
+        return MFX_ERR_NONE;
+    }
+    setElem &bufsIn = freeSet->PB_bufs.in;
+    for (mfxU16 i = 0; i < bufsIn.NumExtParam; i++)
+    {
+        switch (bufsIn.ExtParam[i]->BufferId)
+        {
+        case MFX_EXTBUFF_FEI_ENC_MV_PRED:
+            if (pMvPred)
+            {
+                pMvPredBuf = (mfxExtFeiEncMVPredictors*)(bufsIn.ExtParam[i]);
+                pMvPredBuf->NumMBAlloc = numMBs ? numMBs : pMvPredBuf->NumMBAlloc;
+            }
+            break;
+
+        case MFX_EXTBUFF_FEI_ENC_MB:
+            if (pEncMBs)
+            {
+                pMbEncCtrl = (mfxExtFeiEncMBCtrl*)(freeSet->PB_bufs.in.ExtParam[i]);
+                pMbEncCtrl->NumMBAlloc  = numMBs ? numMBs :pMbEncCtrl->NumMBAlloc ;
+            }
+            break;
+
+        case MFX_EXTBUFF_FEI_PREENC_QP:
+            if (pPerMbQP)
+            {
+                pMbQP = (mfxExtFeiEncQP*)(bufsIn.ExtParam[i]);
+                pMbQP->NumQPAlloc = numMBs ? numMBs : pMbQP->NumQPAlloc;
+            }
+            break;
+        }
+    }
+    setElem &bufsOut = freeSet->PB_bufs.out;
+    if (m_nFieldId == NOT_IN_SINGLE_FIELD_MODE )
+    {
+       mfxU32 FieldId = IsProgressive ? 1 : 2;
+    }
+    for (mfxU16 i = 0; i < bufsOut.NumExtParam; i++)
+    {
+        switch (bufsOut.ExtParam[i]->BufferId)
+        {
+        case MFX_EXTBUFF_FEI_ENC_MV:
+            if (mvENCPAKout)
+            {
+               if (mvBufCounter++ != FieldId)
+                   continue;
+
+               mvBuf = (mfxExtFeiEncMV*)(bufsOut.ExtParam[i]);
+               mvBuf->NumMBAlloc = numMBs ? numMBs : mvBuf->NumMBAlloc;
+            }
+            break;
+
+       case MFX_EXTBUFF_FEI_ENC_MB_STAT:
+           if (mbstatout)
+           {
+               if (mbStatBufCounter++ != FieldId)
+                   continue;
+
+               mbstatBuf = (mfxExtFeiEncMBStat*)(bufsOut.ExtParam[i]);
+               mbstatBuf->NumMBAlloc = numMBs ? numMBs : mbstatBuf->NumMBAlloc;
+           }
+           break;
+
+       case MFX_EXTBUFF_FEI_PAK_CTRL:
+           if (mbcodeout)
+           {
+               if (mbCodeBufCounter++ != FieldId)
+                   continue;
+
+                mbcodeBuf = (mfxExtFeiPakMBCtrl*)(bufsOut.ExtParam[i]);
+                mbcodeBuf->NumMBAlloc = numMBs ? numMBs : mbcodeBuf->NumMBAlloc;
+          }
+          break;
+        }
+    }
+    return sts;
+}
 /* repackPreenc2Enc passes only one predictor (median of provided preenc MVs) because we dont have distortions to choose 4 best possible */
 
 mfxStatus repackPreenc2Enc(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf)
@@ -5239,6 +5370,16 @@ mfxStatus CEncodingPipeline::PreProcessOneFrame(mfxFrameSurface1* & pSurf)
     // surfaces are reused and VPP may change this parameter in certain configurations
     VppExtSurface.pSurface->Info.PicStruct = m_mfxEncParams.mfx.FrameInfo.PicStruct;
 
+    if (m_bNeedDRC)
+    {
+        VppExtSurface.pSurface->Info.Width = m_mfxEncParams.mfx.FrameInfo.Width;
+        VppExtSurface.pSurface->Info.Height = m_mfxEncParams.mfx.FrameInfo.Height;
+        VppExtSurface.pSurface->Info.CropW = m_mfxEncParams.mfx.FrameInfo.Width;
+        VppExtSurface.pSurface->Info.CropH = m_mfxEncParams.mfx.FrameInfo.Height;
+        VppExtSurface.pSurface->Info.CropX = 0;
+        VppExtSurface.pSurface->Info.CropY = 0;
+    }
+
     sts = VPPOneFrame(m_pmfxVPP, m_pVPP_mfxSession, pSurf, &VppExtSurface);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     pSurf = VppExtSurface.pSurface;
@@ -5284,6 +5425,66 @@ mfxStatus CEncodingPipeline::VPPOneFrame(MFXVideoVPP* VPPobj, MFXVideoSession* s
         }
     }
 
+    return sts;
+}
+
+mfxStatus CEncodingPipeline::ResizeFrame(mfxU32 m_frameCount, bool &m_insertIDR,size_t &rctime)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    mfxU32 RCEnd       = 0;
+    mfxU32 RCStart     = 0;
+    mfxU16 tmpRCWidth  = 0;
+    mfxU16 tmpRCHeight = 0;
+    bDRCReset     = false;
+
+    if (m_drcStart.size() - rctime > 0)
+    {
+        RCEnd = m_drcEnd[rctime];
+        RCStart = m_drcStart[rctime];
+        if (RCStart == m_frameCount )
+        {
+            tmpRCWidth =  MSDK_ALIGN16(m_drcWidth[rctime]);
+            tmpRCHeight =  MSDK_ALIGN16(m_drcHeight[rctime]);
+            bDRCReset = true;
+        }
+        else if (RCEnd ==  m_frameCount)
+        {
+            tmpRCWidth = MSDK_ALIGN16(m_drcDftW);
+            tmpRCHeight =  MSDK_ALIGN16(m_drcDftH);
+            bDRCReset = true;
+            if (RCEnd == m_drcStart[rctime+1] - 1)
+            {
+                bDRCReset = false;
+            }
+            rctime++;
+        }
+    }
+    if (bDRCReset)
+    {
+       //bDRCReset = false;
+       m_mfxEncParams.mfx.FrameInfo.Width = tmpRCWidth;
+       m_mfxEncParams.mfx.FrameInfo.Height = tmpRCHeight;
+       m_mfxEncParams.mfx.FrameInfo.CropW = m_mfxEncParams.mfx.FrameInfo.Width ;
+       m_mfxEncParams.mfx.FrameInfo.CropH = m_mfxEncParams.mfx.FrameInfo.Height;
+       m_mfxEncParams.mfx.FrameInfo.CropX = 0;
+       m_mfxEncParams.mfx.FrameInfo.CropY = 0;
+       sts = m_pmfxENCODE->Reset(&m_mfxEncParams);
+       MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+       m_mfxVppParams.vpp.Out.Width = m_mfxEncParams.mfx.FrameInfo.Width;
+       m_mfxVppParams.vpp.Out.Height =  m_mfxEncParams.mfx.FrameInfo.Height;
+       m_mfxVppParams.vpp.Out.CropW = m_mfxEncParams.mfx.FrameInfo.Width;
+       m_mfxVppParams.vpp.Out.CropH =  m_mfxEncParams.mfx.FrameInfo.Height;
+       m_mfxVppParams.vpp.Out.CropX = 0;
+       m_mfxVppParams.vpp.Out.CropY = 0;
+       sts = m_pmfxVPP->Reset(&m_mfxVppParams);
+       MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+       m_insertIDR = true;
+       numMBs = m_mfxVppParams.vpp.Out.Height * m_mfxVppParams.vpp.Out.Width / 256;
+
+       sts = UpdateVideoParams();
+       MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
     return sts;
 }
 

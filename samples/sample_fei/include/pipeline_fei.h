@@ -77,6 +77,12 @@ struct sInputParams
     mfxU16 bRefType;
     mfxU16 nIdrInterval;
     mfxU8 preencDSstrength;
+    mfxU32 nResetStart;
+    mfxU32 nResetEnd;
+    mfxU16 nDRCdefautW;
+    mfxU16 nDRCdefautH;
+    mfxU16 MaxDrcWidth;
+    mfxU16 MaxDrcHeight;
 
     mfxU16 SearchWindow;
     mfxU16 LenSP;
@@ -109,6 +115,10 @@ struct sInputParams
 
     std::vector<msdk_char*> srcFileBuff;
     std::vector<msdk_char*> dstFileBuff;
+    std::vector<mfxU16> nDrcWidth;//Dynamic Resolution Change Picture Width,specified if DRC requied
+    std::vector<mfxU16> nDrcHeight;//Dynamic Resolution Change Picture Height,specified if DRC requied
+    std::vector<mfxU32> nDrcStart; //Start Frame No. of Dynamic Resolution Change,specified if DRC requied
+    std::vector<mfxU32> nDrcEnd;  //End Frame No. of Dynamic Resolution Change, specified if DRC requied
 
     bool bDECODE;
     bool bENCODE;
@@ -133,6 +143,7 @@ struct sInputParams
     bool bNPredSpecified;
     bool bFieldProcessingMode;
     bool bPerfMode;
+    bool bDynamicRC;
     msdk_char* mvinFile;
     msdk_char* mbctrinFile;
     msdk_char* mvoutFile;
@@ -174,6 +185,7 @@ public:
     virtual mfxStatus SynchronizeFirstTask();
     virtual mfxStatus SetFieldToStore(mfxU32 fieldId);
     virtual mfxStatus DropENCODEoutput(mfxBitstream& bs, mfxU32 fieldId);
+    virtual mfxStatus ResetExtBufMBnum(bufSet* bufs,bool IsProgressive);
     virtual void Close();
 
 protected:
@@ -313,6 +325,7 @@ protected:
     virtual mfxStatus SynchronizeFirstTask();
 
     virtual mfxStatus GetOneFrame(mfxFrameSurface1* & pSurf);
+    virtual mfxStatus ResizeFrame(mfxU32 frameNum, bool &insertIDR,size_t &rctime);
 
     virtual mfxStatus PreProcessOneFrame(mfxFrameSurface1* & pSurf);
     virtual mfxStatus PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, bool is_buffered, bool &cont);
@@ -379,6 +392,14 @@ protected:
     PairU8 m_frameType;
     mfxU8  m_isField;
     mfxU16 m_frameIdrCounter;
+   //for Dynamic Resolution Change
+    bool m_bNeedDRC;//True if Dynamic Resolution Change requied
+    std::vector<mfxU32> m_drcStart;
+    std::vector<mfxU32> m_drcEnd;
+    std::vector<mfxU16> m_drcWidth;
+    std::vector<mfxU16> m_drcHeight;
+    mfxU16 m_drcDftW;
+    mfxU16 m_drcDftH;
 
     mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* m_tmpForReading, *m_tmpMBpreenc;
     mfxExtFeiEncMV::mfxExtFeiEncMVMB*       m_tmpMBenc;
