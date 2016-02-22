@@ -1277,26 +1277,16 @@ void H265CU<PixType>::InitCu(
         m_STC[0][0]     = 2;
         m_mvdMax  = 128;
         m_mvdCost = 60;
-        if(m_par->DeltaQpMode&AMT_DQP_CAQ) {
-            Ipp32s height = (m_ctbPelY + m_par->MaxCUSize > m_par->Height) ? (m_par->Height- m_ctbPelY) : m_par->MaxCUSize;
-            Ipp32s width  = (m_ctbPelX + m_par->MaxCUSize  > m_par->Width) ? (m_par->Width - m_ctbPelX) : m_par->MaxCUSize;
-            Ipp32s row4 = m_ctbPelY/4;
-            Ipp32s col4 = m_ctbPelX/4;
-            Ipp32s w4 = m_currFrame->m_origin->width/4;
-            Ipp32s bP = MAX_CU_SIZE>>2;
-            for(Ipp32s i=0;i<height/4;i++) {
-                for(Ipp32s j=0;j<width/4;j++) {
-                    m_lcuRs[i*bP+j] = m_currFrame->m_stats[0]->m_rs[(row4+i)*w4+(col4+j)];
-                    m_lcuCs[i*bP+j] = m_currFrame->m_stats[0]->m_cs[(row4+i)*w4+(col4+j)];
-                }
-            }
-        } else {
+        if ((m_par->DeltaQpMode & AMT_DQP_CAQ) == 0) {
+            Ipp32s *rs = m_currFrame->m_stats[0]->m_rs[0].data();
+            Ipp32s *cs = m_currFrame->m_stats[0]->m_cs[0].data();
+            Ipp32s pitch = m_currFrame->m_stats[0]->m_pitchRsCs4;
             if ((m_ctbPelX + m_par->MaxCUSize) > m_par->Width || (m_ctbPelY + m_par->MaxCUSize) > m_par->Height) {
                 Ipp32s height = (m_ctbPelY + m_par->MaxCUSize > m_par->Height) ? (m_par->Height- m_ctbPelY) : m_par->MaxCUSize;
                 Ipp32s width  = (m_ctbPelX + m_par->MaxCUSize  > m_par->Width) ? (m_par->Width - m_ctbPelX) : m_par->MaxCUSize;
-                h265_ComputeRsCs(m_ySrc, m_pitchSrcLuma, m_lcuRs, m_lcuCs, width, height);
+                h265_ComputeRsCs(m_ySrc, m_pitchSrcLuma, rs, cs, pitch, width, height);
             } else {
-                h265_ComputeRsCs(m_ySrc, m_pitchSrcLuma, m_lcuRs, m_lcuCs, m_par->MaxCUSize, m_par->MaxCUSize);
+                h265_ComputeRsCs(m_ySrc, m_pitchSrcLuma, rs, cs, pitch, m_par->MaxCUSize, m_par->MaxCUSize);
             }
         }
         GetSpatialComplexity(0, 0, 0, 0);
@@ -2121,17 +2111,17 @@ Ipp32s H265CU<PixType>::GetSpatialComplexity(Ipp32s absPartIdx, Ipp32s depth, Ip
     Ipp32u posy  = ((h265_scan_z2r4[absPartIdx+partAddr] >> 4) << m_par->QuadtreeTULog2MinSize);
     Ipp32s Rs2=0;
     Ipp32s Cs2=0;
-    Ipp32s bP = MAX_CU_SIZE>>2;
-
+    Ipp32s pitchRsCs = m_currFrame->m_stats[0]->m_pitchRsCs4;
+    
     if (m_ctbPelX + posx + width > m_par->Width)
         width = m_par->Width - posx - m_ctbPelX;
     if (m_ctbPelY + posy + height > m_par->Height)
         height = m_par->Height - posy - m_ctbPelY;
 
-    for(Ipp32u i=posy/4; i<(posy+height)/4; i++) {
+   for(Ipp32u i=posy/4; i<(posy+height)/4; i++) {
         for(Ipp32u j=posx/4; j<(posx+width)/4; j++) {
-            Rs2 += m_lcuRs[i*bP+j];
-            Cs2 += m_lcuCs[i*bP+j];
+            Rs2 += m_currFrame->m_stats[0]->m_rs[0][(m_ctbPelY/4+i)*pitchRsCs + m_ctbPelX/4+j];
+            Cs2 += m_currFrame->m_stats[0]->m_cs[0][(m_ctbPelY/4+i)*pitchRsCs + m_ctbPelX/4+j];
         }
     }
     float Rs2pp=(float)Rs2;
@@ -2189,7 +2179,7 @@ Ipp32s H265CU<PixType>::GetSpatioTemporalComplexityColocated(Ipp32s absPartIdx, 
 
     Ipp32s Rs2=0;
     Ipp32s Cs2=0;
-    Ipp32s bP = MAX_CU_SIZE>>2;
+    Ipp32s pitchRsCs = m_currFrame->m_stats[0]->m_pitchRsCs4;
 
     if (m_ctbPelX + posx + width > m_par->Width)
         width = m_par->Width - posx - m_ctbPelX;
@@ -2198,8 +2188,8 @@ Ipp32s H265CU<PixType>::GetSpatioTemporalComplexityColocated(Ipp32s absPartIdx, 
 
     for(Ipp32u i=posy/4; i<(posy+height)/4; i++) {
         for(Ipp32u j=posx/4; j<(posx+width)/4; j++) {
-            Rs2 += m_lcuRs[i*bP+j];
-            Cs2 += m_lcuCs[i*bP+j];
+            Rs2 += m_currFrame->m_stats[0]->m_rs[0][(m_ctbPelY/4+i)*pitchRsCs + m_ctbPelX/4+j];
+            Cs2 += m_currFrame->m_stats[0]->m_cs[0][(m_ctbPelY/4+i)*pitchRsCs + m_ctbPelX/4+j];
         }
     }
     float Rs2pp=(float)Rs2;
@@ -2233,7 +2223,7 @@ Ipp32s H265CU<PixType>::GetSpatioTemporalComplexity(Ipp32s absPartIdx, Ipp32s de
     Ipp32u posy  = ((h265_scan_z2r4[absPartIdx+partAddr] >> 4) << m_par->QuadtreeTULog2MinSize);
     Ipp32s Rs2=0;
     Ipp32s Cs2=0;
-    Ipp32s bP = MAX_CU_SIZE>>2;
+    Ipp32s pitchRsCs = m_currFrame->m_stats[0]->m_pitchRsCs4;
 
     if (m_ctbPelX + posx + width > m_par->Width)
         width = m_par->Width - posx - m_ctbPelX;
@@ -2242,8 +2232,8 @@ Ipp32s H265CU<PixType>::GetSpatioTemporalComplexity(Ipp32s absPartIdx, Ipp32s de
 
     for(Ipp32u i=posy/4; i<(posy+height)/4; i++) {
         for(Ipp32u j=posx/4; j<(posx+width)/4; j++) {
-            Rs2 += m_lcuRs[i*bP+j];
-            Cs2 += m_lcuCs[i*bP+j];
+            Rs2 += m_currFrame->m_stats[0]->m_rs[0][(m_ctbPelY/4+i)*pitchRsCs + m_ctbPelX/4+j];
+            Cs2 += m_currFrame->m_stats[0]->m_cs[0][(m_ctbPelY/4+i)*pitchRsCs + m_ctbPelX/4+j];
         }
     }
     float Rs2pp=(float)Rs2;

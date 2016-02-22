@@ -1123,75 +1123,6 @@ Ipp64s CalcHistDiff(Frame *prev, Frame *curr, Ipp32s planeIdx)
 }
 
 
-template <class PixType, class ResultType>
-void h265_ComputeRsCs1(const PixType *ySrc, Ipp32s pitchSrc, ResultType *lcuRs, ResultType *lcuCs, Ipp32s widthCu)
-{
-    Ipp32s bP = MAX_CU_SIZE>>2;
-    for (Ipp32s i=0; i<widthCu; i+=4) {
-        for(Ipp32s j=0; j<widthCu; j+=4) {
-            ResultType Rs=0;
-            ResultType Cs=0;
-            for(Ipp32s k=0; k<4; k++) {
-                for(Ipp32s l=0; l<4; l++) {
-                    ResultType temp = ySrc[(i+k)*pitchSrc+(j+l)]-ySrc[(i+k)*pitchSrc+(j+l-1)];
-                    Cs += temp*temp;
-
-                    temp = ySrc[(i+k)*pitchSrc+(j+l)]-ySrc[(i+k-1)*pitchSrc+(j+l)];
-                    Rs += temp*temp;
-                }
-            }
-            lcuCs[(i>>2)*bP+(j>>2)] = Cs / 16;
-            lcuRs[(i>>2)*bP+(j>>2)] = Rs / 16;
-        }
-    }
-}
-
-
-template <class PixType>
-void CalcFrameRsCs(FrameData* data, Statistics* stat)
-{
-    Ipp32s        i,j;
-    Ipp32s        locx, locy;
-    Ipp32s        hblocks, wblocks;
-
-    const Ipp32s BLOCK_SIZE = 4;
-    const Ipp32s RsCsSIZE = BLOCK_SIZE*BLOCK_SIZE;
-
-    //FrameData* data = frame->m_origin; // important!!! calq on original resolution only!!!
-    hblocks  = (Ipp32s)data->height / BLOCK_SIZE;
-    wblocks  = (Ipp32s)data->width / BLOCK_SIZE;    
-    //Statistics* stat = frame->m_stats[0];
-    stat->m_frameCs                =    0.0;
-    stat->m_frameRs                =    0.0;
-
-    Ipp32s pitch = data->pitch_luma_pix;
-
-    Ipp32s rs[(MAX_CU_SIZE/BLOCK_SIZE)*(MAX_CU_SIZE/BLOCK_SIZE)]={0}, cs[(MAX_CU_SIZE/BLOCK_SIZE)*(MAX_CU_SIZE/BLOCK_SIZE)]={0};
-    for (i=0;i<hblocks;i+=2) {
-        locy = i * wblocks;
-        for (j=0;j<wblocks;j+=2) {
-            PixType* ySrc = (PixType*)data->y + (i*BLOCK_SIZE)*pitch + (j*BLOCK_SIZE);
-            h265_ComputeRsCs(ySrc, pitch, rs, cs, BLOCK_SIZE*2, BLOCK_SIZE*2);
-            for(int k=0; k<2; k++) {
-                if(i+k>=hblocks) continue;
-                for(int l=0; l<2; l++) {
-                    if(j+l>=wblocks) continue;
-                    locx = locy+k*wblocks+j+l;
-                    stat->m_rs[locx] = rs[k*(MAX_CU_SIZE/BLOCK_SIZE)+l];
-                    stat->m_cs[locx] = cs[k*(MAX_CU_SIZE/BLOCK_SIZE)+l];
-                    stat->m_frameCs += stat->m_cs[locx];
-                    stat->m_frameRs += stat->m_rs[locx];
-                }
-            }
-        }
-    }
-
-    stat->m_frameCs                /=    hblocks * wblocks;
-    stat->m_frameRs                /=    hblocks * wblocks;
-    stat->m_frameCs                =    sqrt(stat->m_frameCs);
-    stat->m_frameRs                =    sqrt(stat->m_frameRs);
-}
-
 enum {
     BLOCK_SIZE = 4
 };
@@ -1200,75 +1131,30 @@ enum {
 template <class PixType>
 void CalcRsCs_OneRow(FrameData* data, Statistics* stat, H265VideoParam& par, Ipp32s row)
 {
-    Ipp32s        i,j;
-    Ipp32s        locx, locy;
-    Ipp32s        hblocks, wblocks;
+    Ipp32s locx, locy;
 
-    //const Ipp32s BLOCK_SIZE = 4;
     const Ipp32s RsCsSIZE = BLOCK_SIZE*BLOCK_SIZE;
+    Ipp32s hblocks = (Ipp32s)data->height / BLOCK_SIZE;
+    Ipp32s wblocks = (Ipp32s)data->width / BLOCK_SIZE;
     
-    hblocks  = (Ipp32s)data->height / BLOCK_SIZE;
-    wblocks  = (Ipp32s)data->width / BLOCK_SIZE;
-    
-    stat->m_frameCs                =    0.0;
-    stat->m_frameRs                =    0.0;
+    stat->m_frameCs = 0.0;
+    stat->m_frameRs = 0.0;
 
     Ipp32s pitch = data->pitch_luma_pix;
+    Ipp32s pitchRsCs4 = stat->m_pitchRsCs4;
 
-    Ipp32s rs[(MAX_CU_SIZE/BLOCK_SIZE)*(MAX_CU_SIZE/BLOCK_SIZE)]={0}, cs[(MAX_CU_SIZE/BLOCK_SIZE)*(MAX_CU_SIZE/BLOCK_SIZE)]={0};
+    Ipp32s iStart = (/*par.MaxCUSize*/ SIZE_BLK_LA / BLOCK_SIZE) * row;
+    Ipp32s iEnd  = (/*par.MaxCUSize*/ SIZE_BLK_LA / BLOCK_SIZE) * (row + 1);
+    iEnd = IPP_MIN(iEnd, hblocks);
 
-    //for (Ipp32s row = 0; row < par.PicHeightInCtbs; row++) 
-    {
-        
-        Ipp32s iStart = (/*par.MaxCUSize*/ SIZE_BLK_LA / BLOCK_SIZE) * row;
-        Ipp32s iEnd  = (/*par.MaxCUSize*/ SIZE_BLK_LA / BLOCK_SIZE) * (row + 1);
-        iEnd = IPP_MIN(iEnd, hblocks);
-
-        //for (i=0;i<hblocks;i+=2) {
-        for (i=iStart;i<iEnd;i+=2) {
-            locy = i * wblocks;
-
-            for (j=0;j<wblocks;j+=2) {
-                PixType* ySrc = (PixType*)data->y + (i*BLOCK_SIZE)*pitch + (j*BLOCK_SIZE);
-                h265_ComputeRsCs(ySrc, pitch, rs, cs, BLOCK_SIZE*2, BLOCK_SIZE*2);
-
-                for(int k=0; k<2; k++) {
-                    if(i+k>=hblocks) {
-                        continue;
-                    }
-
-                    for(int l=0; l<2; l++) {
-                        if(j+l>=wblocks) {
-                            continue;
-                        }
-
-                        locx = locy+k*wblocks+j+l;
-                        stat->m_rs[locx] = rs[k*(MAX_CU_SIZE/BLOCK_SIZE)+l];
-                        stat->m_cs[locx] = cs[k*(MAX_CU_SIZE/BLOCK_SIZE)+l];
-                    }
-                }
-            }
-        }
+    for (Ipp32s j = 0; j < wblocks; j += 16) {
+        PixType *ySrc = (PixType *)data->y + (iStart*BLOCK_SIZE)*pitch + BLOCK_SIZE*j;
+        Ipp32s *rs = stat->m_rs[0].data() + iStart * pitchRsCs4 + j;
+        Ipp32s *cs = stat->m_cs[0].data() + iStart * pitchRsCs4 + j;
+        h265_ComputeRsCs(ySrc, pitch, rs, cs, pitchRsCs4, BLOCK_SIZE*16, BLOCK_SIZE*(iEnd-iStart));
     }
 }
 
-template <class PixType>
-void CalcFrameRsCsByRow(FrameData* data, Statistics* stat, H265VideoParam& par)
-{
-    for (Ipp32s row = 0; row < par.PicHeightInCtbs; row++) {
-        CalcRsCs_OneRow<PixType>(data, stat, par, row);
-    }
-
-    stat->m_frameCs = std::accumulate(stat->m_cs.begin(), stat->m_cs.end(), 0);
-    stat->m_frameRs = std::accumulate(stat->m_rs.begin(), stat->m_rs.end(), 0);
-
-    Ipp32s hblocks  = (Ipp32s)data->height / BLOCK_SIZE;
-    Ipp32s wblocks  = (Ipp32s)data->width / BLOCK_SIZE;
-    stat->m_frameCs                /=    hblocks * wblocks;
-    stat->m_frameRs                /=    hblocks * wblocks;
-    stat->m_frameCs                =    sqrt(stat->m_frameCs);
-    stat->m_frameRs                =    sqrt(stat->m_frameRs);
-}
 
 // 8x8 blk
 Ipp32s GetSpatioTemporalComplexity_own(Ipp32s sad, Ipp32f scpp)
@@ -1392,8 +1278,8 @@ void H265Enc::DetermineQpMap_IFrame(FrameIter curr, FrameIter end, H265VideoPara
             Ipp64f Rs=0.0, Cs=0.0;
             for(i=0;i<m4T;i++) {
                 for(j=0;j<n4T;j++) {
-                    Rs += inFrame->m_stats[statIdx]->m_rs[(row*r4h+i)*w4+(col*r4w+j)];
-                    Cs += inFrame->m_stats[statIdx]->m_cs[(row*r4h+i)*w4+(col*r4w+j)];
+                    Rs += inFrame->m_stats[statIdx]->m_rs[0][(row*r4h+i)*w4+(col*r4w+j)];
+                    Cs += inFrame->m_stats[statIdx]->m_cs[0][(row*r4h+i)*w4+(col*r4w+j)];
                 }
             }
             Rs/=(m4T*n4T);
@@ -1528,8 +1414,8 @@ void H265Enc::DetermineQpMap_PFrame(FrameIter begin, FrameIter curr, FrameIter e
             Ipp64f Rs=0.0, Cs=0.0;
             for(i=0;i<m4T;i++) {
                 for(j=0;j<n4T;j++) {
-                    Rs += inFrame->m_stats[statIdx]->m_rs[(row*r4h+i)*w4+(col*r4w+j)];
-                    Cs += inFrame->m_stats[statIdx]->m_cs[(row*r4h+i)*w4+(col*r4w+j)];
+                    Rs += inFrame->m_stats[statIdx]->m_rs[0][(row*r4h+i)*w4+(col*r4w+j)];
+                    Cs += inFrame->m_stats[statIdx]->m_cs[0][(row*r4h+i)*w4+(col*r4w+j)];
                 }
             }
             Rs/=(m4T*n4T);
@@ -2184,8 +2070,8 @@ void H265Enc::AverageRsCs(Frame *in)
 
     Statistics* stat = in->m_stats[0];
     FrameData* data = in->m_origin;
-    stat->m_frameCs = std::accumulate(stat->m_cs.begin(), stat->m_cs.end(), 0);
-    stat->m_frameRs = std::accumulate(stat->m_rs.begin(), stat->m_rs.end(), 0);
+    stat->m_frameCs = std::accumulate(stat->m_cs[0].begin(), stat->m_cs[0].end(), 0);
+    stat->m_frameRs = std::accumulate(stat->m_rs[0].begin(), stat->m_rs[0].end(), 0);
 
     Ipp32s hblocks  = (Ipp32s)data->height / BLOCK_SIZE;
     Ipp32s wblocks  = (Ipp32s)data->width / BLOCK_SIZE;
@@ -2521,8 +2407,8 @@ int GetCalqDeltaQp(Frame* frame, const H265VideoParam & par, Ipp32s ctb_addr, Ip
         Ipp32s Rs=0,Cs=0;
         for(Ipp32s i=0;i<m4T;i++) {
             for(Ipp32s j=0;j<n4T;j++) {
-                Rs += frame->m_stats[0]->m_rs[(Y4+i)*w4+(X4+j)];
-                Cs += frame->m_stats[0]->m_cs[(Y4+i)*w4+(X4+j)];
+                Rs += frame->m_stats[0]->m_rs[0][(Y4+i)*w4+(X4+j)];
+                Cs += frame->m_stats[0]->m_cs[0][(Y4+i)*w4+(X4+j)];
             }
         }
         Rs/=(m4T*n4T);

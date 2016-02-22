@@ -13,13 +13,13 @@
  * software fallback when Cm version not available
  */
 
-#include <string.h>
-#include <math.h>
-
 #include "mfx_common.h"
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
+#include <string.h>
+#include <math.h>
+#include <assert.h>
 #include "mfx_h265_optimization.h"
 
 #if defined(MFX_TARGET_OPTIMIZATION_AUTO) || defined(MFX_TARGET_OPTIMIZATION_AVX2)
@@ -366,6 +366,103 @@ void MAKE_NAME(h265_AnalyzeGradient)(const PixType *src, Ipp32s pitch, HistType 
 
 template void MAKE_NAME(h265_AnalyzeGradient)<Ipp8u, Ipp16u> (const Ipp8u  *src, Ipp32s pitch, Ipp16u *hist4, Ipp16u *hist8, Ipp32s width, Ipp32s height);
 template void MAKE_NAME(h265_AnalyzeGradient)<Ipp16u, Ipp32u>(const Ipp16u *src, Ipp32s pitch, Ipp32u *hist4, Ipp32u *hist8, Ipp32s width, Ipp32s height);
+
+#define MAX_CU_SIZE 64
+
+void MAKE_NAME(h265_ComputeRsCs_8u)(const unsigned char *src, Ipp32s pitch, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s pitchRsCs, Ipp32s width, Ipp32s height)
+{
+    assert((size_t(src) & 0xf) == 0);
+    assert(width == 64);
+
+    __m256i diff;
+    __m256i lineL, lineC;
+
+    __m256i lineA0 = _mm256_cvtepu8_epi16(_mm_load_si128((__m128i *)(src-pitch+0)));
+    __m256i lineA1 = _mm256_cvtepu8_epi16(_mm_load_si128((__m128i *)(src-pitch+16)));
+    __m256i lineA2 = _mm256_cvtepu8_epi16(_mm_load_si128((__m128i *)(src-pitch+32)));
+    __m256i lineA3 = _mm256_cvtepu8_epi16(_mm_load_si128((__m128i *)(src-pitch+48)));
+    __m128i lineC128, lineL128;
+    for (Ipp32s y = 0; y < height; y += 4, lcuRs += pitchRsCs, lcuCs += pitchRsCs) {
+        __m256i cs0 = _mm256_setzero_si256();
+        __m256i cs1 = _mm256_setzero_si256();
+        __m256i cs2 = _mm256_setzero_si256();
+        __m256i cs3 = _mm256_setzero_si256();
+        __m256i rs0 = _mm256_setzero_si256();
+        __m256i rs1 = _mm256_setzero_si256();
+        __m256i rs2 = _mm256_setzero_si256();
+        __m256i rs3 = _mm256_setzero_si256();
+        for (Ipp32s yy = 0; yy < 4; yy++, src += pitch) {
+            lineL128 = _mm_load_si128((__m128i *)(src-16));
+            lineC128 = _mm_load_si128((__m128i *)(src));
+            lineL = _mm256_cvtepu8_epi16(_mm_alignr_epi8(lineC128, lineL128, 15));
+            lineC = _mm256_cvtepu8_epi16(lineC128);
+            diff = _mm256_sub_epi16(lineL, lineC);
+            diff = _mm256_madd_epi16(diff, diff);
+            cs0 = _mm256_add_epi32(cs0, diff);
+            diff = _mm256_sub_epi16(lineA0, lineC);
+            diff = _mm256_madd_epi16(diff, diff);
+            rs0 = _mm256_add_epi32(rs0, diff);
+            lineL128 = lineC128;
+            lineA0 = lineC;
+
+            lineC128 = _mm_load_si128((__m128i *)(src+16));
+            lineL = _mm256_cvtepu8_epi16(_mm_alignr_epi8(lineC128, lineL128, 15));
+            lineC = _mm256_cvtepu8_epi16(lineC128);
+            diff = _mm256_sub_epi16(lineL, lineC);
+            diff = _mm256_madd_epi16(diff, diff);
+            cs1 = _mm256_add_epi32(cs1, diff);
+            diff = _mm256_sub_epi16(lineA1, lineC);
+            diff = _mm256_madd_epi16(diff, diff);
+            rs1 = _mm256_add_epi32(rs1, diff);
+            lineL128 = lineC128;
+            lineA1 = lineC;
+
+            lineC128 = _mm_load_si128((__m128i *)(src+32));
+            lineL = _mm256_cvtepu8_epi16(_mm_alignr_epi8(lineC128, lineL128, 15));
+            lineC = _mm256_cvtepu8_epi16(lineC128);
+            diff = _mm256_sub_epi16(lineL, lineC);
+            diff = _mm256_madd_epi16(diff, diff);
+            cs2 = _mm256_add_epi32(cs2, diff);
+            diff = _mm256_sub_epi16(lineA2, lineC);
+            diff = _mm256_madd_epi16(diff, diff);
+            rs2 = _mm256_add_epi32(rs2, diff);
+            lineL128 = lineC128;
+            lineA2 = lineC;
+
+            lineC128 = _mm_load_si128((__m128i *)(src+48));
+            lineL = _mm256_cvtepu8_epi16(_mm_alignr_epi8(lineC128, lineL128, 15));
+            lineC = _mm256_cvtepu8_epi16(lineC128);
+            diff = _mm256_sub_epi16(lineL, lineC);
+            diff = _mm256_madd_epi16(diff, diff);
+            cs3 = _mm256_add_epi32(cs3, diff);
+            diff = _mm256_sub_epi16(lineA3, lineC);
+            diff = _mm256_madd_epi16(diff, diff);
+            rs3 = _mm256_add_epi32(rs3, diff);
+            lineL128 = lineC128;
+            lineA3 = lineC;
+        }
+
+        cs0 = _mm256_hadd_epi32(cs0, cs1);
+        cs0 = _mm256_permute4x64_epi64(cs0, 0xd8);
+        cs0 = _mm256_srli_epi32(cs0, 4);
+        _mm256_storeu_si256((__m256i *)(lcuCs), cs0);
+
+        cs2 = _mm256_hadd_epi32(cs2, cs3);
+        cs2 = _mm256_permute4x64_epi64(cs2, 0xd8);
+        cs2 = _mm256_srli_epi32(cs2, 4);
+        _mm256_storeu_si256((__m256i *)(lcuCs+8), cs2);
+
+        rs0 = _mm256_hadd_epi32(rs0, rs1);
+        rs0 = _mm256_permute4x64_epi64(rs0, 0xd8);
+        rs0 = _mm256_srli_epi32(rs0, 4);
+        _mm256_storeu_si256((__m256i *)(lcuRs), rs0);
+
+        rs2 = _mm256_hadd_epi32(rs2, rs3);
+        rs2 = _mm256_permute4x64_epi64(rs2, 0xd8);
+        rs2 = _mm256_srli_epi32(rs2, 4);
+        _mm256_storeu_si256((__m256i *)(lcuRs+8), rs2);
+    }
+}
 
 }; // namespace MFX_HEVC_PP
 

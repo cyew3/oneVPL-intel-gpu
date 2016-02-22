@@ -829,7 +829,7 @@ void SetTargetAVX2()
     g_dispatcher.h265_AnalyzeGradient_16u = &MFX_HEVC_PP::h265_AnalyzeGradient_sse<Ipp16u, Ipp32u>;
 #endif
 
-    g_dispatcher.h265_ComputeRsCs_8u = &MFX_HEVC_PP::h265_ComputeRsCs_8u_sse;
+    g_dispatcher.h265_ComputeRsCs_8u = &MFX_HEVC_PP::h265_ComputeRsCs_8u_avx2;
     g_dispatcher.h265_ComputeRsCs_16u = &MFX_HEVC_PP::h265_ComputeRsCs_16u_sse;
     g_dispatcher.h265_AddClipNv12UV_8u = &MFX_HEVC_PP::h265_AddClipNv12UV_8u_sse;
 

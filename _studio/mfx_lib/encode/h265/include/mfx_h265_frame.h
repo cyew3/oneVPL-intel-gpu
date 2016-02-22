@@ -74,8 +74,9 @@ namespace H265Enc {
         std::vector<H265MV> m_mv_pdist_future;
         std::vector<H265MV> m_mv_pdist_past;
 
-        std::vector<Ipp32s> m_rs;
-        std::vector<Ipp32s> m_cs;
+        Ipp32s m_pitchRsCs4;
+        std::vector<Ipp32s> m_rs[5];
+        std::vector<Ipp32s> m_cs[5];
         std::vector<Ipp64f> rscs_ctb;
         std::vector<Ipp32s> sc_mask;
         std::vector<Ipp32s> qp_mask;

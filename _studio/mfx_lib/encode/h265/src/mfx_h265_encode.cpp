@@ -1060,18 +1060,17 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
         m_frameDataLowresPool.Init(frameDataAllocInfo, 0);
     }
 
+    Statistics::AllocInfo statsAllocInfo;
+    statsAllocInfo.width = m_videoParam.Width;
+    statsAllocInfo.height = m_videoParam.Height;
+    m_statsPool.Init(statsAllocInfo, 0);
+
     if (m_la.get()) {
         if (m_videoParam.LowresFactor) {
             Statistics::AllocInfo statsAllocInfo;
             statsAllocInfo.width = m_videoParam.Width >> m_videoParam.LowresFactor;
             statsAllocInfo.height = m_videoParam.Height >> m_videoParam.LowresFactor;
             m_statsLowresPool.Init(statsAllocInfo, 0);
-        }
-        if (m_videoParam.DeltaQpMode || m_videoParam.LowresFactor == 0) {
-            Statistics::AllocInfo statsAllocInfo;
-            statsAllocInfo.width = m_videoParam.Width;
-            statsAllocInfo.height = m_videoParam.Height;
-            m_statsPool.Init(statsAllocInfo, 0);
         }
     }
 
@@ -2486,15 +2485,13 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
         out->m_lowres = m_frameDataLowresPool.Allocate();
 
     // attach statistics to frame
+    Statistics* stats = out->m_stats[0] = m_statsPool.Allocate();
+    stats->ResetAvgMetrics();
+    std::fill(stats->qp_mask.begin(), stats->qp_mask.end(), 0);
     if (m_la.get()) {
         if (m_videoParam.LowresFactor) {
             out->m_stats[1] = m_statsLowresPool.Allocate();
             out->m_stats[1]->ResetAvgMetrics();
-        }
-        if (m_videoParam.DeltaQpMode || m_videoParam.LowresFactor == 0) {
-            Statistics* stats = out->m_stats[0] = m_statsPool.Allocate();
-            stats->ResetAvgMetrics();
-            std::fill(stats->qp_mask.begin(), stats->qp_mask.end(), 0);
         }
     }
 

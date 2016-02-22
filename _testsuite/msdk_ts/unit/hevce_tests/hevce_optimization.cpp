@@ -11,7 +11,7 @@
 #undef max
 
 #define PRINT_TICKS
-//#undef PRINT_TICKS
+#undef PRINT_TICKS
 
 namespace utils {
 
@@ -2340,8 +2340,6 @@ TEST(optimization, Quant_zCost_avx2) {
 
 #ifdef PRINT_TICKS
                 if (qp == 30 && bitDepth == 8) {
-                    MFX_HEVC_PP::h265_Quant_zCost_16s_px  (src.get(), dstCoefs_px.get(),   dstCosts_px.get(),   numCoeffs, scale, qshift, qbits, numCoeffs << 1);
-                    MFX_HEVC_PP::h265_Quant_zCost_16s_avx2(src.get(), dstCoefs_avx2.get(), dstCosts_avx2.get(), numCoeffs, scale, qshift, qbits, numCoeffs << 1);
                     Ipp64s tpx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Quant_zCost_16s_px,   src.get(), dstCoefs_px.get(),   dstCosts_px.get(),   numCoeffs, scale, qshift, qbits, numCoeffs << 1);
                     Ipp64s tavx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Quant_zCost_16s_avx2, src.get(), dstCoefs_avx2.get(), dstCosts_avx2.get(), numCoeffs, scale, qshift, qbits, numCoeffs << 1);
                     printf("%2d*%-2d: %d %d\n", 1<<log2TrSize, 1<<log2TrSize, (Ipp32s)tpx, (Ipp32s)tavx2);
@@ -2350,5 +2348,33 @@ TEST(optimization, Quant_zCost_avx2) {
             }
         }
     }
+}
+
+
+TEST(optimization, ComputeRsCs_avx2) {
+    const Ipp32s padding = utils::AlignAvx2;
+    Ipp32s cusize = 64;
+    Ipp32s pitch  = std::max(256, cusize+3*padding);
+
+    Ipp32s rs_px[256] = {}, rs_avx2[256] = {};
+    Ipp32s cs_px[256] = {}, cs_avx2[256] = {};
+
+    auto srcBuf = utils::MakeAlignedPtr<unsigned char>(pitch*(cusize+2*padding), utils::AlignAvx2);
+    auto src = srcBuf.get() + padding + padding * pitch;
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+    utils::InitRandomBlock(rand, srcBuf.get(), pitch, cusize+2*padding, cusize+2*padding, 0, 255);
+
+    MFX_HEVC_PP::h265_ComputeRsCs_px<Ipp8u>(src, pitch, rs_px,   cs_px,   16, cusize, cusize);
+    MFX_HEVC_PP::h265_ComputeRsCs_8u_avx2  (src, pitch, rs_avx2, cs_avx2, 16, cusize, cusize);
+    ASSERT_EQ(0, memcmp(rs_px, rs_avx2, sizeof(rs_px)));
+    ASSERT_EQ(0, memcmp(cs_px, cs_avx2, sizeof(cs_px)));
+#ifdef PRINT_TICKS
+    Ipp64s tpx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_ComputeRsCs_px<Ipp8u>, src, pitch, rs_px,   cs_px,   16, cusize, cusize);
+    Ipp64s tsse  = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_ComputeRsCs_8u_sse,    src, pitch, rs_avx2, cs_avx2, 16, cusize, cusize);
+    Ipp64s tavx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_ComputeRsCs_8u_avx2,   src, pitch, rs_avx2, cs_avx2, 16, cusize, cusize);
+    printf("%d %d %d\n", (Ipp32s)tpx, (Ipp32s)tsse, (Ipp32s)tavx2);
+#endif // PRINT_TICKS
 }
 

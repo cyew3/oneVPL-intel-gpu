@@ -306,8 +306,8 @@ namespace MFX_HEVC_PP
     typedef void (* PTR_AnalyzeGradient_8u)(const Ipp8u* src, Ipp32s pitch, Ipp16u* hist4, Ipp16u* hist8, Ipp32s width, Ipp32s height);
     typedef void (* PTR_AnalyzeGradient_16u)(const Ipp16u* src, Ipp32s pitch, Ipp32u* hist4, Ipp32u* hist8, Ipp32s width, Ipp32s height);
 
-    typedef void (* PTR_ComputeRsCs_8u)(const Ipp8u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s width, Ipp32s height);
-    typedef void (* PTR_ComputeRsCs_16u)(const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s width, Ipp32s height);
+    typedef void (* PTR_ComputeRsCs_8u)(const Ipp8u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s pitchRsCs, Ipp32s width, Ipp32s height);
+    typedef void (* PTR_ComputeRsCs_16u)(const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s pitchRsCs, Ipp32s width, Ipp32s height);
     typedef void (* PTR_AddClipNv12UV_8u)(Ipp8u *dstNv12, Ipp32s pitchDst, const Ipp8u *src1Nv12, Ipp32s pitchSrc1, 
                                             const Ipp16s *src2Yv12U, const Ipp16s *src2Yv12V, Ipp32s pitchSrc2, Ipp32s size);
 
@@ -568,10 +568,9 @@ namespace MFX_HEVC_PP
         HEVCPP_API( PTR_AnalyzeGradient_8u,  void, h265_AnalyzeGradient_8u,  (const Ipp8u *src, Ipp32s pitch, Ipp16u *hist4, Ipp16u *hist8, Ipp32s width, Ipp32s height) );
         HEVCPP_API( PTR_AnalyzeGradient_16u, void, h265_AnalyzeGradient_16u, (const Ipp16u *src, Ipp32s pitch, Ipp32u *hist4, Ipp32u *hist8, Ipp32s width, Ipp32s height) );
 
-        HEVCPP_API( PTR_ComputeRsCs_8u,  void, h265_ComputeRsCs_8u,  (const Ipp8u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s width, Ipp32s height) );
-        HEVCPP_API( PTR_ComputeRsCs_16u, void, h265_ComputeRsCs_16u, (const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s width, Ipp32s height) );
-        HEVCPP_API( PTR_AddClipNv12UV_8u,  void, h265_AddClipNv12UV_8u,  (Ipp8u *dstNv12, Ipp32s pitchDst, const Ipp8u *src1Nv12, Ipp32s pitchSrc1, 
-                                                                              const CoeffsType *src2Yv12U, const CoeffsType *src2Yv12V, Ipp32s pitchSrc2, Ipp32s size) );
+        HEVCPP_API( PTR_ComputeRsCs_8u,  void, h265_ComputeRsCs_8u,  (const Ipp8u *ySrc,  Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s pitchRsCs, Ipp32s width, Ipp32s height) );
+        HEVCPP_API( PTR_ComputeRsCs_16u, void, h265_ComputeRsCs_16u, (const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s pitchRsCs, Ipp32s width, Ipp32s height) );
+        HEVCPP_API( PTR_AddClipNv12UV_8u,void, h265_AddClipNv12UV_8u,(Ipp8u *dstNv12, Ipp32s pitchDst, const Ipp8u *src1Nv12, Ipp32s pitchSrc1, const CoeffsType *src2Yv12U, const CoeffsType *src2Yv12V, Ipp32s pitchSrc2, Ipp32s size) );
 
         // [Interpolation]
         HEVCPP_API( PTR_Interp_s8_d16, void, h265_InterpLuma_s8_d16_H,   ( INTERP_S8_D16_PARAMETERS_LIST));
@@ -1250,14 +1249,14 @@ namespace MFX_HEVC_PP
         MFX_HEVC_PP::NAME(h265_AnalyzeGradient_16u)(src, pitch, hist4, hist8, width, height);
     }
 
-    static inline void h265_ComputeRsCs(const Ipp8u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s width, Ipp32s height) 
+    static inline void h265_ComputeRsCs(const Ipp8u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s pitchRsCs, Ipp32s width, Ipp32s height) 
     {
-        MFX_HEVC_PP::NAME(h265_ComputeRsCs_8u)(ySrc, pitchSrc, lcuRs, lcuCs, width, height);
+        MFX_HEVC_PP::NAME(h265_ComputeRsCs_8u)(ySrc, pitchSrc, lcuRs, lcuCs, pitchRsCs, width, height);
     }
 
-    static inline void h265_ComputeRsCs(const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s width, Ipp32s height) 
+    static inline void h265_ComputeRsCs(const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s pitchRsCs, Ipp32s width, Ipp32s height) 
     {
-        MFX_HEVC_PP::NAME(h265_ComputeRsCs_16u)(ySrc, pitchSrc, lcuRs, lcuCs, width, height);
+        MFX_HEVC_PP::NAME(h265_ComputeRsCs_16u)(ySrc, pitchSrc, lcuRs, lcuCs, pitchRsCs, width, height);
     }
 
     static inline void h265_GetCtuStatistics(SAOCU_ENCODE_PARAMETERS_LIST)

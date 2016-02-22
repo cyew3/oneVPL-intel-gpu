@@ -117,9 +117,14 @@ namespace H265Enc {
         m_mv_pdist_past.resize(numBlk, initMv);
         m_mv_pdist_future.resize(numBlk, initMv);
 
-        size_t len = width * height >> 4;// because RsCs configured for 4x4 blk only
-        m_rs.resize(len, 0);
-        m_cs.resize(len, 0);
+        Ipp32s alignedWidth = ((width+63)&~63);
+        Ipp32s alignedFrameSize = alignedWidth * ((height+63)&~63);
+        m_pitchRsCs4 = alignedWidth>>2;
+        for (Ipp32s log2BlkSize = 2; log2BlkSize <= 6; log2BlkSize ++) {
+            m_rs[log2BlkSize-2].resize(alignedFrameSize>>(log2BlkSize<<1), 0);
+            m_cs[log2BlkSize-2].resize(alignedFrameSize>>(log2BlkSize<<1), 0);
+        }
+
         rscs_ctb.resize(numBlk, 0);
         sc_mask.resize(numBlk, 0);
         qp_mask.resize(numBlk, 0);
@@ -141,8 +146,10 @@ namespace H265Enc {
         m_mv.resize(numBlk);
         m_mv_pdist_past.resize(numBlk);
         m_mv_pdist_future.resize(numBlk);
-        m_rs.resize(len);
-        m_cs.resize(len);
+        for (Ipp32s log2BlkSize = 2; log2BlkSize <= 6; log2BlkSize ++) {
+            m_rs[log2BlkSize-2].resize(0);
+            m_cs[log2BlkSize-2].resize(0);
+        }
         rscs_ctb.resize(numBlk);
         sc_mask.resize(numBlk);
         qp_mask.resize(numBlk);

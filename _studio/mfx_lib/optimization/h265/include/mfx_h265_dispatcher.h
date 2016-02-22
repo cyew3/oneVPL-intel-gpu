@@ -541,9 +541,10 @@ namespace MFX_HEVC_PP
     void h265_AnalyzeGradient_avx2(const PixType* src, Ipp32s pitch, HistType* hist4, HistType* hist8, Ipp32s width, Ipp32s height);
     
     template <class PixType>
-    void h265_ComputeRsCs_px(const PixType* ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s width, Ipp32s height);
-    void h265_ComputeRsCs_8u_sse (const Ipp8u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s width, Ipp32s height);
-    void h265_ComputeRsCs_16u_sse (const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s width, Ipp32s height);
+    void h265_ComputeRsCs_px(const PixType* ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s pitchRsCs, Ipp32s width, Ipp32s height);
+    void h265_ComputeRsCs_8u_sse (const Ipp8u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s pitchRsCs, Ipp32s width, Ipp32s height);
+    void h265_ComputeRsCs_8u_avx2 (const Ipp8u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s pitchRsCs, Ipp32s width, Ipp32s height);
+    void h265_ComputeRsCs_16u_sse (const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s pitchRsCs, Ipp32s width, Ipp32s height);
 
     void h265_AddClipNv12UV_8u_px  (Ipp8u *dstNv12, Ipp32s pitchDst, const Ipp8u *src1Nv12, Ipp32s pitchSrc1, 
                                       const Ipp16s *src2Yv12U, const Ipp16s *src2Yv12V, Ipp32s pitchSrc2, Ipp32s size);

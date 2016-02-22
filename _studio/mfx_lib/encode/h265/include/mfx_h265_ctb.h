@@ -342,8 +342,6 @@ public:
     SaoEstimator m_saoEst;
 
 #if defined(AMT_ICRA_OPT)
-    Ipp32s  m_lcuCs[(MAX_CU_SIZE/4)*(MAX_CU_SIZE/4)];
-    Ipp32s  m_lcuRs[(MAX_CU_SIZE/4)*(MAX_CU_SIZE/4)];
     Ipp32s  m_SCid[5][MAX_NUM_PARTITIONS];
     Ipp32f  m_SCpp[5][MAX_NUM_PARTITIONS];
     Ipp32s  m_STC[5][MAX_NUM_PARTITIONS];
