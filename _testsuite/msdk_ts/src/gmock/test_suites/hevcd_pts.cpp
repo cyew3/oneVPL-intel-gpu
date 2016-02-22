@@ -12,7 +12,7 @@ struct tc_struct
     mfxU32 frN;
     mfxU32 frD;
     mfxU32 bufSz;
-    mfxU64 pts[n_frames];
+    mfxI64 pts[n_frames];
 };
 
 class Reader : public tsBitstreamReader

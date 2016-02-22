@@ -121,7 +121,7 @@ typedef struct
     mfxU32      p2;
     callback    set_par;
     mfxU32      p3;
-    mfxU32      p4;
+    mfxI32      p4;
     mfxU32      p5;
 } tc_struct;
 

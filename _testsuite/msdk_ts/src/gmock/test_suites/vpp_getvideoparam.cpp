@@ -35,7 +35,7 @@ private:
         {
             mfxU32 ext_type;
             const  tsStruct::Field* f;
-            mfxU32 v;
+            mfxF32 v;
         } set_par[MAX_NPARS];
         mfxU32 alg_num;
         mfxU32 alg_list[5];
