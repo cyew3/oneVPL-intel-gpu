@@ -1023,7 +1023,7 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
             ENCODE_PACKEDHEADER_DATA * packedAud = PackHeader(task, AUD_NUT);
 
             packed_header_param_buffer.type = VAEncPackedHeaderRawData;
-            packed_header_param_buffer.has_emulation_bytes = !packedAud->SkipEmulationByteCount;
+            packed_header_param_buffer.has_emulation_bytes = 1; //!packedAud->SkipEmulationByteCount;
             packed_header_param_buffer.bit_length = packedAud->DataLength*8;
 
             MFX_DESTROY_VABUFFER(m_packedAudHeaderBufferId, m_vaDisplay);
@@ -1117,7 +1117,7 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
             ENCODE_PACKEDHEADER_DATA * packedPps = PackHeader(task, PPS_NUT);
 
             packed_header_param_buffer.type = VAEncPackedHeaderHEVC_PPS;
-            packed_header_param_buffer.has_emulation_bytes = !packedPps->SkipEmulationByteCount;
+            packed_header_param_buffer.has_emulation_bytes = 1; //!packedPps->SkipEmulationByteCount; 
             packed_header_param_buffer.bit_length = packedPps->DataLength*8;
 
             MFX_DESTROY_VABUFFER(m_packedPpsHeaderBufferId, m_vaDisplay);
@@ -1148,7 +1148,7 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
             ENCODE_PACKEDHEADER_DATA * packedSei = PackHeader(task, PREFIX_SEI_NUT);
 
             packed_header_param_buffer.type = VAEncPackedHeaderHEVC_SEI;
-            packed_header_param_buffer.has_emulation_bytes = !packedSei->SkipEmulationByteCount;
+            packed_header_param_buffer.has_emulation_bytes = 1; //!packedSei->SkipEmulationByteCount;
             packed_header_param_buffer.bit_length = packedSei->DataLength*8;
 
             MFX_DESTROY_VABUFFER(m_packedSeiHeaderBufferId, m_vaDisplay);
