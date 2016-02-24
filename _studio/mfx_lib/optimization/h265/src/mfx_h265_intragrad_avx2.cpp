@@ -392,6 +392,7 @@ void MAKE_NAME(h265_ComputeRsCs_8u)(const unsigned char *src, Ipp32s pitch, Ipp3
         __m256i rs2 = _mm256_setzero_si256();
         __m256i rs3 = _mm256_setzero_si256();
         for (Ipp32s yy = 0; yy < 4; yy++, src += pitch) {
+            _mm_prefetch((const char*)(src-16+pitch), _MM_HINT_T0);
             lineL128 = _mm_load_si128((__m128i *)(src-16));
             lineC128 = _mm_load_si128((__m128i *)(src));
             lineL = _mm256_cvtepu8_epi16(_mm_alignr_epi8(lineC128, lineL128, 15));

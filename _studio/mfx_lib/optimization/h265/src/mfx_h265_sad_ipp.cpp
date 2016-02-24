@@ -916,6 +916,19 @@ void MAKE_NAME(h265_AddClipNv12UV_8u)(Ipp8u *dstNv12, Ipp32s pitchDst,
     }
 } 
 
+
+template <class PixType>
+Ipp32s MAKE_NAME(h265_DiffDc)(const PixType *src, Ipp32s pitchSrc, const PixType *pred, Ipp32s pitchPred, Ipp32s width)
+{
+    Ipp32s dc = 0;
+    for(Ipp32s y = 0; y < width; y++)
+        for(Ipp32s x = 0; x < width; x++)
+            dc += Ipp32s(src[y*pitchSrc+x]) - Ipp32s(pred[y*pitchPred+x]);
+    return dc;
+}
+template Ipp32s MAKE_NAME(h265_DiffDc)<Ipp8u> (const Ipp8u  *src, Ipp32s pitchSrc, const Ipp8u  *pred, Ipp32s pitchPred, Ipp32s width);
+template Ipp32s MAKE_NAME(h265_DiffDc)<Ipp16u>(const Ipp16u *src, Ipp32s pitchSrc, const Ipp16u *pred, Ipp32s pitchPred, Ipp32s width);
+
 } // end namespace MFX_HEVC_PP
 
 #endif // #if defined (MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2)

@@ -311,6 +311,9 @@ namespace MFX_HEVC_PP
     typedef void (* PTR_AddClipNv12UV_8u)(Ipp8u *dstNv12, Ipp32s pitchDst, const Ipp8u *src1Nv12, Ipp32s pitchSrc1, 
                                             const Ipp16s *src2Yv12U, const Ipp16s *src2Yv12V, Ipp32s pitchSrc2, Ipp32s size);
 
+    typedef Ipp32s (* PTR_DiffDc_8u) (const Ipp8u  *src, Ipp32s pitchSrc, const Ipp8u  *pred, Ipp32s pitchPred, Ipp32s width);
+    typedef Ipp32s (* PTR_DiffDc_16u)(const Ipp16u *src, Ipp32s pitchSrc, const Ipp16u *pred, Ipp32s pitchPred, Ipp32s width);
+
     //-----------------------------------------------------
     // aya: approach from Ken/Jon
     // [PTR.Interpolation]
@@ -571,6 +574,9 @@ namespace MFX_HEVC_PP
         HEVCPP_API( PTR_ComputeRsCs_8u,  void, h265_ComputeRsCs_8u,  (const Ipp8u *ySrc,  Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s pitchRsCs, Ipp32s width, Ipp32s height) );
         HEVCPP_API( PTR_ComputeRsCs_16u, void, h265_ComputeRsCs_16u, (const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s pitchRsCs, Ipp32s width, Ipp32s height) );
         HEVCPP_API( PTR_AddClipNv12UV_8u,void, h265_AddClipNv12UV_8u,(Ipp8u *dstNv12, Ipp32s pitchDst, const Ipp8u *src1Nv12, Ipp32s pitchSrc1, const CoeffsType *src2Yv12U, const CoeffsType *src2Yv12V, Ipp32s pitchSrc2, Ipp32s size) );
+
+        HEVCPP_API( PTR_DiffDc_8u,  Ipp32s, h265_DiffDc_8u,  (const Ipp8u  *src, Ipp32s pitchSrc, const Ipp8u  *pred, Ipp32s pitchPred, Ipp32s width));
+        HEVCPP_API( PTR_DiffDc_16u, Ipp32s, h265_DiffDc_16u, (const Ipp16u *src, Ipp32s pitchSrc, const Ipp16u *pred, Ipp32s pitchPred, Ipp32s width));
 
         // [Interpolation]
         HEVCPP_API( PTR_Interp_s8_d16, void, h265_InterpLuma_s8_d16_H,   ( INTERP_S8_D16_PARAMETERS_LIST));
@@ -1337,6 +1343,15 @@ namespace MFX_HEVC_PP
     static inline void h265_ComputeRsCs4x4(const Ipp8u* pSrc, Ipp32s srcPitch, Ipp32s wblocks, Ipp32s hblocks, Ipp32f* pRs, Ipp32f* pCs)
     {
         return MFX_HEVC_PP::NAME(h265_ComputeRsCs4x4_8u)(pSrc, srcPitch, wblocks, hblocks, pRs, pCs);
+    }
+
+    static inline Ipp32s h265_DiffDc(const Ipp8u* pSrc, Ipp32s srcPitch, const Ipp8u* pPred, Ipp32s predPitch, Ipp32s size)
+    {
+        return MFX_HEVC_PP::NAME(h265_DiffDc_8u)(pSrc, srcPitch, pPred, predPitch, size);
+    }
+    static inline Ipp32s h265_DiffDc(const Ipp16u* pSrc, Ipp32s srcPitch, const Ipp16u* pPred, Ipp32s predPitch, Ipp32s size)
+    {
+        return MFX_HEVC_PP::NAME(h265_DiffDc_16u)(pSrc, srcPitch, pPred, predPitch, size);
     }
 } // namespace MFX_HEVC_PP
 

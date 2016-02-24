@@ -206,16 +206,17 @@ static void t_InterpLuma_s8_d16_H_AVX2(const unsigned char* pSrc, unsigned int s
     coeffs = filtTabLuma_S8[4 * (tab_index-1)];
     
     /* calculate 16 outputs per inner loop, working horizontally */
-#ifdef __INTEL_COMPILER
-    #pragma unroll(4)
-#endif
+//#ifdef __INTEL_COMPILER
+//    #pragma unroll(4)
+//#endif
     for (int row = 0; row < height; row++) {
-
+        _mm_prefetch((const char *)(pSrc+srcPitch), _MM_HINT_T0);
         for (int col = 0; col < width; col += 16) {
 
             /* load 24 8-bit pixels, permute into ymm lanes as [0-7 | 8-15 | 8-15 | 16-23] */
             ymm3 = _mm256_loadu_si256((__m256i *)(pSrc + col));
             ymm3 = _mm256_permute4x64_epi64(ymm3, _MM_SHUFFLE(2,1,1,0));
+            _mm_prefetch((const char *)(pSrc+col), _MM_HINT_T0);
 
             /* interleave pixels */
             ymm0 = _mm256_shuffle_epi8(ymm3, *(__m256i *)(shufTabPlane[0]));
@@ -500,10 +501,12 @@ static void t_InterpChroma_s8_d16_H_AVX2(const unsigned char* pSrc, unsigned int
 
     /* calculate 16 outputs per inner loop, working horizontally */
     do {
+        _mm_prefetch((const char *)(pSrc + srcPitch), _MM_HINT_T0);
         for (col = 0; col < width; col += 16) {
             /* load 24 8-bit pixels, permute into ymm lanes as [0-7 | 8-15 | 8-15 | 16-23] */
             ymm1 = _mm256_loadu_si256((__m256i *)(pSrc + col));
             ymm1 = _mm256_permute4x64_epi64(ymm1, 0x94);
+            _mm_prefetch((const char *)(pSrc + col), _MM_HINT_T0);
 
             /* interleave pixels */
             ymm0 = _mm256_shuffle_epi8(ymm1, *(__m256i *)(shufTab +  0));
@@ -1079,6 +1082,7 @@ static void t_InterpLuma_s8_d16_V_AVX2(const unsigned char* pSrc, unsigned int s
         for (int row = 0; row < height; row++) {
 
             __m256i y7 = _mm256_permute4x64_epi64(_mm256_loadu_si256((__m256i*)(pS + 7*srcPitch)), _MM_SHUFFLE(3,1,2,0));
+            _mm_prefetch((const char *)(pS + 8*srcPitch), _MM_HINT_T0);
 
             // interleave rows
             __m256i t0 = _mm256_unpacklo_epi8(y0, y1);
@@ -1751,6 +1755,7 @@ static void t_InterpLuma_s16_d16_V_AVX2(const short* pSrc, unsigned int srcPitch
         short *pD = pDst;
 
         // load 16 16-bit pixels from rows 0-6
+        _mm_prefetch((const char *)(pS + 7*srcPitch), _MM_HINT_T0);
         __m256i y0 = _mm256_permute4x64_epi64(_mm256_loadu_si256((__m256i*)(pS + 0*srcPitch)), _MM_SHUFFLE(3,1,2,0));
         __m256i y1 = _mm256_permute4x64_epi64(_mm256_loadu_si256((__m256i*)(pS + 1*srcPitch)), _MM_SHUFFLE(3,1,2,0));
         __m256i y2 = _mm256_permute4x64_epi64(_mm256_loadu_si256((__m256i*)(pS + 2*srcPitch)), _MM_SHUFFLE(3,1,2,0));
@@ -1760,12 +1765,13 @@ static void t_InterpLuma_s16_d16_V_AVX2(const short* pSrc, unsigned int srcPitch
         __m256i y6 = _mm256_permute4x64_epi64(_mm256_loadu_si256((__m256i*)(pS + 6*srcPitch)), _MM_SHUFFLE(3,1,2,0));
 
         // process rows vertically
-#ifdef __INTEL_COMPILER
-        #pragma unroll(8)
-#endif
+//#ifdef __INTEL_COMPILER
+//        #pragma unroll(8)
+//#endif
         for (int row = 0; row < height; row++) {
 
             __m256i y7 = _mm256_permute4x64_epi64(_mm256_loadu_si256((__m256i*)(pS + 7*srcPitch)), _MM_SHUFFLE(3,1,2,0));
+            _mm_prefetch((const char *)(pS + 8*srcPitch), _MM_HINT_T0);
 
             // interleave rows
             __m256i t0 = _mm256_unpacklo_epi16(y0, y1);

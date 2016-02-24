@@ -1150,13 +1150,13 @@ void H265CU<PixType>::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_
         {
             bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) +
                 NUM_QT_CBF_CTX +
-                GetCtxQtCbf(TEXT_CHROMA_U, tr_depth_cur),
+                GetCtxQtCbfChroma(tr_depth_cur),
                 GetCbf     ( abs_part_idx, TEXT_CHROMA_U, tr_depth_cur ));
             if (m_par->chroma422 && (!subdiv || width == 8)) {
                 cbfU1 = GetCbf( abs_part_idx + part_offset, TEXT_CHROMA_U, tr_depth_cur );
                 bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) +
                     NUM_QT_CBF_CTX +
-                    GetCtxQtCbf(TEXT_CHROMA_U, tr_depth_cur),
+                    GetCtxQtCbfChroma(tr_depth_cur),
                     cbfU1);
             }
         }
@@ -1164,13 +1164,13 @@ void H265CU<PixType>::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_
         {
             bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) +
                 NUM_QT_CBF_CTX +
-                GetCtxQtCbf(TEXT_CHROMA_V, tr_depth_cur),
+                GetCtxQtCbfChroma(tr_depth_cur),
                 GetCbf     ( abs_part_idx, TEXT_CHROMA_V, tr_depth_cur ));
             if (m_par->chroma422 && (!subdiv || width == 8)) {
                 cbfV1 = GetCbf( abs_part_idx + part_offset, TEXT_CHROMA_V, tr_depth_cur );
                 bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) +
                     NUM_QT_CBF_CTX +
-                    GetCtxQtCbf(TEXT_CHROMA_V, tr_depth_cur),
+                    GetCtxQtCbfChroma(tr_depth_cur),
                     cbfV1);
             }
         }
@@ -1216,7 +1216,7 @@ void H265CU<PixType>::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_
         else
         {
             bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) +
-                GetCtxQtCbf(TEXT_LUMA, luma_tr_mode),
+                GetCtxQtCbfLuma(luma_tr_mode),
                 GetCbf     ( abs_part_idx, TEXT_LUMA, luma_tr_mode ));
         }
 //    printf("CBFY: %d\n",cbfY);

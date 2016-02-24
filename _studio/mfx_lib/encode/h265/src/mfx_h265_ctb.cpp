@@ -299,12 +299,15 @@ static Ipp32s GetDistScaleFactor(Ipp32s currRefTb,
 template <typename PixType>
 Ipp8u H265CU<PixType>::GetQtRootCbf(Ipp32u idx)
 { 
-    Ipp8u cbf = GetCbf( idx, TEXT_LUMA, 0 ) || GetCbf( idx, TEXT_CHROMA_U, 0 ) || GetCbf( idx, TEXT_CHROMA_V, 0 );
+    Ipp8u cbf = m_data[idx].cbf[0] | m_data[idx].cbf[1] | m_data[idx].cbf[2];
+    //Ipp8u cbf = GetCbf( idx, TEXT_LUMA, 0 ) || GetCbf( idx, TEXT_CHROMA_U, 0 ) || GetCbf( idx, TEXT_CHROMA_V, 0 );
     if (m_par->chroma422) {
         Ipp32s idx_offset = m_par->NumPartInCU >> ((m_data[idx].depth<<1) + 1);
-        cbf |= GetCbf( idx + idx_offset, TEXT_CHROMA_U, 0 ) || GetCbf( idx + idx_offset, TEXT_CHROMA_V, 0 );
+        cbf |= m_data[idx+idx_offset].cbf[1];
+        cbf |= m_data[idx+idx_offset].cbf[2];
+        //cbf |= GetCbf( idx + idx_offset, TEXT_CHROMA_U, 0 ) || GetCbf( idx + idx_offset, TEXT_CHROMA_V, 0 );
     }
-    return  cbf;
+    return cbf & 1;
 }
 
 template <typename PixType>
@@ -466,17 +469,6 @@ Ipp32u H265CU<PixType>::GetCoefScanIdx(Ipp32s absPartIdx, Ipp32u log2Width, Ipp3
     }
 
     return scanIdx;
-}
-
-template <typename PixType>
-Ipp32u H265CU<PixType>::GetCtxQtCbf(EnumTextType type, Ipp32u trDepth) const
-{
-  if (type) {
-      return trDepth;
-  }
-  else {
-      return trDepth == 0 ? 1 : 0;
-  }
 }
 
 
@@ -1277,18 +1269,6 @@ void H265CU<PixType>::InitCu(
         m_STC[0][0]     = 2;
         m_mvdMax  = 128;
         m_mvdCost = 60;
-        if ((m_par->DeltaQpMode & AMT_DQP_CAQ) == 0) {
-            Ipp32s *rs = m_currFrame->m_stats[0]->m_rs[0].data();
-            Ipp32s *cs = m_currFrame->m_stats[0]->m_cs[0].data();
-            Ipp32s pitch = m_currFrame->m_stats[0]->m_pitchRsCs4;
-            if ((m_ctbPelX + m_par->MaxCUSize) > m_par->Width || (m_ctbPelY + m_par->MaxCUSize) > m_par->Height) {
-                Ipp32s height = (m_ctbPelY + m_par->MaxCUSize > m_par->Height) ? (m_par->Height- m_ctbPelY) : m_par->MaxCUSize;
-                Ipp32s width  = (m_ctbPelX + m_par->MaxCUSize  > m_par->Width) ? (m_par->Width - m_ctbPelX) : m_par->MaxCUSize;
-                h265_ComputeRsCs(m_ySrc, m_pitchSrcLuma, rs, cs, pitch, width, height);
-            } else {
-                h265_ComputeRsCs(m_ySrc, m_pitchSrcLuma, rs, cs, pitch, m_par->MaxCUSize, m_par->MaxCUSize);
-            }
-        }
         GetSpatialComplexity(0, 0, 0, 0);
 #endif
         m_intraMinDepth = 0;
@@ -2110,21 +2090,17 @@ Ipp32s H265CU<PixType>::GetSpatialComplexity(Ipp32s absPartIdx, Ipp32s depth, Ip
     Ipp32u height = (Ipp8u)(m_par->MaxCUSize>>partDepth);
     Ipp32u posx  = ((h265_scan_z2r4[absPartIdx+partAddr] & 15) << m_par->QuadtreeTULog2MinSize);
     Ipp32u posy  = ((h265_scan_z2r4[absPartIdx+partAddr] >> 4) << m_par->QuadtreeTULog2MinSize);
-    Ipp32s Rs2=0;
-    Ipp32s Cs2=0;
-    Ipp32s pitchRsCs = m_currFrame->m_stats[0]->m_pitchRsCs4;
     
     if (m_ctbPelX + posx + width > m_par->Width)
         width = m_par->Width - posx - m_ctbPelX;
     if (m_ctbPelY + posy + height > m_par->Height)
         height = m_par->Height - posy - m_ctbPelY;
 
-   for(Ipp32u i=posy/4; i<(posy+height)/4; i++) {
-        for(Ipp32u j=posx/4; j<(posx+width)/4; j++) {
-            Rs2 += m_currFrame->m_stats[0]->m_rs[0][(m_ctbPelY/4+i)*pitchRsCs + m_ctbPelX/4+j];
-            Cs2 += m_currFrame->m_stats[0]->m_cs[0][(m_ctbPelY/4+i)*pitchRsCs + m_ctbPelX/4+j];
-        }
-    }
+    Ipp32s log2BlkSize = m_par->Log2MaxCUSize - partDepth;
+    Ipp32s pitchRsCs = m_currFrame->m_stats[0]->m_pitchRsCs4 >> (log2BlkSize-2);
+    Ipp32s idx = ((m_ctbPelY+posy)>>log2BlkSize)*pitchRsCs + ((m_ctbPelX+posx)>>log2BlkSize);
+    Ipp32s Rs2 = m_currFrame->m_stats[0]->m_rs[log2BlkSize-2][idx];
+    Ipp32s Cs2 = m_currFrame->m_stats[0]->m_cs[log2BlkSize-2][idx];
     float Rs2pp=(float)Rs2;
     float Cs2pp=(float)Cs2;
     Rs2pp/=((width/4)*(height/4));
@@ -2178,21 +2154,17 @@ Ipp32s H265CU<PixType>::GetSpatioTemporalComplexityColocated(Ipp32s absPartIdx, 
     Ipp32u posx  = ((h265_scan_z2r4[absPartIdx+partAddr] & 15) << m_par->QuadtreeTULog2MinSize);
     Ipp32u posy  = ((h265_scan_z2r4[absPartIdx+partAddr] >> 4) << m_par->QuadtreeTULog2MinSize);
 
-    Ipp32s Rs2=0;
-    Ipp32s Cs2=0;
-    Ipp32s pitchRsCs = m_currFrame->m_stats[0]->m_pitchRsCs4;
 
     if (m_ctbPelX + posx + width > m_par->Width)
         width = m_par->Width - posx - m_ctbPelX;
     if (m_ctbPelY + posy + height > m_par->Height)
         height = m_par->Height - posy - m_ctbPelY;
 
-    for(Ipp32u i=posy/4; i<(posy+height)/4; i++) {
-        for(Ipp32u j=posx/4; j<(posx+width)/4; j++) {
-            Rs2 += m_currFrame->m_stats[0]->m_rs[0][(m_ctbPelY/4+i)*pitchRsCs + m_ctbPelX/4+j];
-            Cs2 += m_currFrame->m_stats[0]->m_cs[0][(m_ctbPelY/4+i)*pitchRsCs + m_ctbPelX/4+j];
-        }
-    }
+    Ipp32s log2BlkSize = m_par->Log2MaxCUSize - partDepth;
+    Ipp32s pitchRsCs = m_currFrame->m_stats[0]->m_pitchRsCs4 >> (log2BlkSize-2);
+    Ipp32s idx = ((m_ctbPelY+posy)>>log2BlkSize)*pitchRsCs + ((m_ctbPelX+posx)>>log2BlkSize);
+    Ipp32s Rs2 = m_currFrame->m_stats[0]->m_rs[log2BlkSize-2][idx];
+    Ipp32s Cs2 = m_currFrame->m_stats[0]->m_cs[log2BlkSize-2][idx];
     float Rs2pp=(float)Rs2;
     float Cs2pp=(float)Cs2;
     Rs2pp/=((width/4)*(height/4));
@@ -2222,21 +2194,17 @@ Ipp32s H265CU<PixType>::GetSpatioTemporalComplexity(Ipp32s absPartIdx, Ipp32s de
     Ipp32u height = (Ipp8u)(m_par->MaxCUSize>>partDepth);
     Ipp32u posx  = ((h265_scan_z2r4[absPartIdx+partAddr] & 15) << m_par->QuadtreeTULog2MinSize);
     Ipp32u posy  = ((h265_scan_z2r4[absPartIdx+partAddr] >> 4) << m_par->QuadtreeTULog2MinSize);
-    Ipp32s Rs2=0;
-    Ipp32s Cs2=0;
-    Ipp32s pitchRsCs = m_currFrame->m_stats[0]->m_pitchRsCs4;
 
     if (m_ctbPelX + posx + width > m_par->Width)
         width = m_par->Width - posx - m_ctbPelX;
     if (m_ctbPelY + posy + height > m_par->Height)
         height = m_par->Height - posy - m_ctbPelY;
 
-    for(Ipp32u i=posy/4; i<(posy+height)/4; i++) {
-        for(Ipp32u j=posx/4; j<(posx+width)/4; j++) {
-            Rs2 += m_currFrame->m_stats[0]->m_rs[0][(m_ctbPelY/4+i)*pitchRsCs + m_ctbPelX/4+j];
-            Cs2 += m_currFrame->m_stats[0]->m_cs[0][(m_ctbPelY/4+i)*pitchRsCs + m_ctbPelX/4+j];
-        }
-    }
+    Ipp32s log2BlkSize = m_par->Log2MaxCUSize - partDepth;
+    Ipp32s pitchRsCs = m_currFrame->m_stats[0]->m_pitchRsCs4 >> (log2BlkSize-2);
+    Ipp32s idx = ((m_ctbPelY+posy)>>log2BlkSize)*pitchRsCs + ((m_ctbPelX+posx)>>log2BlkSize);
+    Ipp32s Rs2 = m_currFrame->m_stats[0]->m_rs[log2BlkSize-2][idx];
+    Ipp32s Cs2 = m_currFrame->m_stats[0]->m_cs[log2BlkSize-2][idx];
     float Rs2pp=(float)Rs2;
     float Cs2pp=(float)Cs2;
     Rs2pp/=((width/4)*(height/4));
@@ -9276,7 +9244,7 @@ void H265CU<PixType>::EncAndRecChroma(Ipp32s absPartIdx, Ipp32s offset, Ipp8u de
         GetTrDepthMinMax(m_par, depth, data->partSize, &trDepthMin, &trDepthMax);
         if(data->flags.skippedFlag && !(m_par->AnalyseFlags & HEVC_COST_CHROMA) && trDepthMin==0) {
             CostType skipCost=0, mergeCost=0, lumaMergeCost=0;
-            CABAC_CONTEXT_H265 *ctx0 = CTX(m_bsf,QT_CBF_HEVC) + GetCtxQtCbf(TEXT_LUMA, 0);
+            CABAC_CONTEXT_H265 *ctx0 = CTX(m_bsf,QT_CBF_HEVC) + GetCtxQtCbfLuma(0);
             Ipp32s code0 = 0;
             Ipp32s bits = tab_cabacPBits[(*ctx0) ^ (code0 << 6)];
             // Sub Opt to promote chroma (if not intra chroma rdo)
@@ -9730,7 +9698,7 @@ void H265CU<PixType>::EncAndRecLumaTu(Ipp32s absPartIdx, Ipp32s offset, Ipp32s w
         else {
             ResetCbf<0>(dataTu);
             if (cost)
-                m_bsf->EncodeSingleBin_CABAC(CTX(m_bsf,QT_CBF_HEVC) + GetCtxQtCbf(TEXT_LUMA, dataTu->trIdx), 0);
+                m_bsf->EncodeSingleBin_CABAC(CTX(m_bsf,QT_CBF_HEVC) + GetCtxQtCbfLuma(dataTu->trIdx), 0);
         }
 
         if(cost) *cost += BIT_COST(m_bsf->GetNumBits());

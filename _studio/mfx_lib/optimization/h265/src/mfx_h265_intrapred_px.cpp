@@ -460,26 +460,40 @@ namespace MFX_HEVC_PP
         Ipp32s pitch,
         Ipp32s width,
         Ipp32s bit_depth,
-        Ipp32s isLuma)
+        Ipp32s /*isLuma*/)
     {
-        Ipp32s i, j;
-
-        for (j =0; j < width; j++)
-        {
-            for (i = 0; i < width; i++)
-            {
-                pels[i*pitch+j] = PredPel[2*width+1+i];
+        assert(width == 4 || width == 8 || width == 16 || width == 32);
+        Ipp8u *predPel = PredPel+2*width+1;
+        switch (width) {
+        case 4:
+            for (Ipp32s i = 0; i < 4; i++)
+                *((Ipp32u *)(pels+i*pitch)) = predPel[i] * 0x01010101;
+            break;
+        case 8:
+            for (Ipp32s i = 0; i < 8; i++)
+                *((Ipp64u *)(pels+i*pitch)) = predPel[i] * 0x0101010101010101;
+            break;
+        case 16:
+            for (Ipp32s y = 0; y < 16; y++)
+                _mm_store_si128((__m128i *)(pels+y*pitch), _mm_set1_epi8(predPel[y]));
+            break;
+        case 32:
+            for (Ipp32s y = 0; y < 32; y++) {
+                __m128i val = _mm_set1_epi8(predPel[y]);
+                _mm_store_si128((__m128i *)(pels+y*pitch+0),  val);
+                _mm_store_si128((__m128i *)(pels+y*pitch+16), val);
             }
+            break;
         }
 
-        if (isLuma && width <= 16)
-        {
-            for (i = 0; i < width; i++)
-            {
+        //for (Ipp32s j =0; j < width; j++)
+        //    for (Ipp32s i = 0; i < width; i++)
+        //        pels[i*pitch+j] = PredPel[2*width+1+i];
+
+        if (width <= 16)
+            for (Ipp32s i = 0; i < width; i++)
                 pels[i] = (PixType)Saturate(0, (1 << bit_depth) - 1,
                     pels[i] + ((PredPel[1+i] - PredPel[0]) >> 1));
-            }
-        }
 
     } // void h265_PredictIntra_Hor_8u(
 

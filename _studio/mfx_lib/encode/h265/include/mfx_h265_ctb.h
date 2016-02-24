@@ -493,8 +493,6 @@ public:
 
     Ipp32u GetCtxSplitFlag(Ipp32s absPartIdx, Ipp32u depth);
 
-    Ipp32u GetCtxQtCbf(EnumTextType type, Ipp32u trDepth) const;
-
     Ipp32u GetTransformIdx(Ipp32s absPartIdx) { return (Ipp32u)m_data[absPartIdx].trIdx; }
 
     Ipp32u GetCtxSkipFlag(Ipp32s absPartIdx);
@@ -921,6 +919,10 @@ private:
     //void FillRandom(Ipp32s absPartIdx, Ipp8u depth);
     //void FillZero(Ipp32s absPartIdx, Ipp8u depth);
 };
+
+inline Ipp32u GetCtxQtCbfLuma(Ipp32u trDepth) { return !trDepth; }
+inline Ipp32u GetCtxQtCbfChroma(Ipp32u trDepth) { return trDepth; }
+inline Ipp32u GetCtxQtCbf(EnumTextType type, Ipp32u trDepth) { return type == TEXT_LUMA ? GetCtxQtCbfLuma(trDepth) : GetCtxQtCbfChroma(trDepth); }
 
 template <class H265Bs>
 void CodeSaoCtbOffsetParam(H265Bs *bs, int compIdx, SaoOffsetParam& ctbParam, bool sliceEnabled);

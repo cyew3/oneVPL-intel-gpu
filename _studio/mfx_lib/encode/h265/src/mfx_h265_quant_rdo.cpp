@@ -871,7 +871,7 @@ void RDOQuant<PixType>::DoAlgorithm(
     bool isRootCbf = (!m_pCU->IsIntra(abs_part_idx) && m_pCU->GetTransformIdx( abs_part_idx ) == 0);
     if( !isRootCbf )
     {
-        ctx_cbf_inc = m_pCU->GetCtxQtCbf(type, m_pCU->GetTransformIdx(abs_part_idx) );
+        ctx_cbf_inc = GetCtxQtCbf(type, m_pCU->GetTransformIdx(abs_part_idx));
     }
 
     cost_best  = cost_zero_blk;// + GetCost_Cbf(0, ctx_cbf_inc, isRootCbf);

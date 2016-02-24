@@ -853,6 +853,73 @@ void H265CU<PixType>::CheckIntra(Ipp32s absPartIdx, Ipp32s depth)
 
 
 }
+
+
+namespace {
+    Ipp32s DiffDc(const Ipp8u *src, Ipp32s pitchSrc, const Ipp8u *pred, Ipp32s pitchPred, Ipp32s width) {
+        assert(width == 8 || width == 16 || width == 32);
+        if (width == 8) {
+            __m128i zero = _mm_setzero_si128();
+            __m128i dc = zero;
+            for (Ipp32s y = 0; y < 8; y++, src+=pitchSrc, pred+=pitchPred) {
+                __m128i s = _mm_set1_epi64x(*(Ipp64u*)(src));
+                __m128i p = _mm_set1_epi64x(*(Ipp64u*)(pred));
+                s = _mm_unpacklo_epi8(s, zero);
+                p = _mm_unpacklo_epi8(p, zero);
+                dc = _mm_add_epi16(dc, _mm_sub_epi16(s, p));
+            }
+            dc = _mm_hadd_epi16(dc, dc);
+            dc = _mm_hadd_epi16(dc, dc);
+            dc = _mm_hadd_epi16(dc, dc);
+            return (Ipp16s)_mm_extract_epi16(dc, 0);
+        }
+        else if (width == 16) {
+            __m128i zero = _mm_setzero_si128();
+            __m128i dc = zero;
+            for (Ipp32s y = 0; y < 16; y++, src+=pitchSrc, pred+=pitchPred) {
+                __m128i s = _mm_load_si128((__m128i*)(src));
+                __m128i p = _mm_load_si128((__m128i*)(pred));
+                __m128i s0 = _mm_unpacklo_epi8(s, zero);
+                __m128i s1 = _mm_unpackhi_epi8(s, zero);
+                __m128i p0 = _mm_unpacklo_epi8(p, zero);
+                __m128i p1 = _mm_unpackhi_epi8(p, zero);
+                dc = _mm_add_epi16(dc, _mm_sub_epi16(s0, p0));
+                dc = _mm_add_epi16(dc, _mm_sub_epi16(s1, p1));
+            }
+            dc = _mm_hadd_epi16(dc, dc);
+            dc = _mm_hadd_epi16(dc, dc);
+            dc = _mm_hadd_epi16(dc, dc);
+            return (Ipp16s)_mm_extract_epi16(dc, 0);
+        }
+        else {
+            __m128i zero = _mm_setzero_si128();
+            __m128i dc = zero;
+            for (Ipp32s y = 0; y < 32; y++, src+=pitchSrc, pred+=pitchPred) {
+                __m128i s = _mm_load_si128((__m128i*)(src));
+                __m128i p = _mm_load_si128((__m128i*)(pred));
+                __m128i s0 = _mm_unpacklo_epi8(s, zero);
+                __m128i s1 = _mm_unpackhi_epi8(s, zero);
+                __m128i p0 = _mm_unpacklo_epi8(p, zero);
+                __m128i p1 = _mm_unpackhi_epi8(p, zero);
+                dc = _mm_add_epi16(dc, _mm_sub_epi16(s0, p0));
+                dc = _mm_add_epi16(dc, _mm_sub_epi16(s1, p1));
+                s = _mm_load_si128((__m128i*)(src+16));
+                p = _mm_load_si128((__m128i*)(pred+16));
+                s0 = _mm_unpacklo_epi8(s, zero);
+                s1 = _mm_unpackhi_epi8(s, zero);
+                p0 = _mm_unpacklo_epi8(p, zero);
+                p1 = _mm_unpackhi_epi8(p, zero);
+                dc = _mm_add_epi16(dc, _mm_sub_epi16(s0, p0));
+                dc = _mm_add_epi16(dc, _mm_sub_epi16(s1, p1));
+            }
+            dc = _mm_hadd_epi16(dc, dc);
+            dc = _mm_hadd_epi16(dc, dc);
+            dc = _mm_hadd_epi16(dc, dc);
+            return (Ipp16s)_mm_extract_epi16(dc, 0);
+        }
+    }
+}
+
 #ifdef AMT_ICRA_OPT
 template <typename PixType>
 bool H265CU<PixType>::tryIntraRD(Ipp32s absPartIdx, Ipp32s depth, IntraLumaMode *modes)
@@ -878,20 +945,13 @@ bool H265CU<PixType>::tryIntraRD(Ipp32s absPartIdx, Ipp32s depth, IntraLumaMode 
     for(Ipp32s ic=0; ic<numCand1; ic++) {
         Ipp32s mode = modes[ic].mode;
         PixType *pred = m_predIntraAll + mode * widthCu * widthCu;
-        float dc=0;        
-        if(mode < 2 || mode >= 18 || m_cuIntraAngMode == INTRA_ANG_MODE_GRADIENT && mode == 10) {
-            for(Ipp32s r=0;r<widthCu; r++)
-                for(Ipp32s c=0;c<widthCu; c++)
-                    dc += (pSrc[r*m_pitchSrcLuma+c] - pred[r*widthCu+c]);
-            dc/=(widthCu*widthCu);
-            dc=fabsf(dc);
-        } else {
-            for(Ipp32s r=0;r<widthCu; r++)
-                for(Ipp32s c=0;c<widthCu; c++)
-                    dc += (m_srcTr[r*widthCu+c] - pred[r*widthCu+c]);
-            dc/=(widthCu*widthCu);
-            dc=fabsf(dc);
-        }
+        float dc=0;
+        if (mode < 2 || mode >= 18 || m_cuIntraAngMode == INTRA_ANG_MODE_GRADIENT && mode == 10)
+            dc = h265_DiffDc(pSrc, m_pitchSrcLuma, pred, widthCu, widthCu);
+        else
+            dc = h265_DiffDc(m_srcTr, widthCu, pred, widthCu, widthCu);
+        dc/=(widthCu*widthCu);
+        dc=fabsf(dc);
         IntraHad = modes[ic].satd;
         IntraHad -= dc*16*(widthCu/8)*(widthCu/8);
         IntraHad += (ic*m_rdLambda*256.0 + 0.5);

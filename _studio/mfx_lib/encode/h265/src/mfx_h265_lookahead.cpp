@@ -2009,15 +2009,15 @@ void H265Enc::AverageRsCs(Frame *in)
 
     Statistics* stat = in->m_stats[0];
     FrameData* data = in->m_origin;
-    stat->m_frameCs = std::accumulate(stat->m_cs[0].begin(), stat->m_cs[0].end(), 0);
-    stat->m_frameRs = std::accumulate(stat->m_rs[0].begin(), stat->m_rs[0].end(), 0);
+    stat->m_frameCs = std::accumulate(stat->m_cs[4].begin(), stat->m_cs[4].end(), 0);
+    stat->m_frameRs = std::accumulate(stat->m_rs[4].begin(), stat->m_rs[4].end(), 0);
 
     Ipp32s hblocks  = (Ipp32s)data->height / BLOCK_SIZE;
     Ipp32s wblocks  = (Ipp32s)data->width / BLOCK_SIZE;
-    stat->m_frameCs                /=    hblocks * wblocks;
-    stat->m_frameRs                /=    hblocks * wblocks;
-    stat->m_frameCs                =    sqrt(stat->m_frameCs);
-    stat->m_frameRs                =    sqrt(stat->m_frameRs);
+    stat->m_frameCs /= hblocks * wblocks;
+    stat->m_frameRs /= hblocks * wblocks;
+    stat->m_frameCs  = sqrt(stat->m_frameCs);
+    stat->m_frameRs  = sqrt(stat->m_frameRs);
 
     Ipp64f RsGlobal = in->m_stats[0]->m_frameRs;
     Ipp64f CsGlobal = in->m_stats[0]->m_frameCs;
@@ -2446,6 +2446,21 @@ Ipp32s rowsInRegion = useLowres ? m_lowresRowsInRegion : m_originRowsInRegion;
                             numRows = (frame->height - (region_row * rowsInRegion)*SIZE_BLK_LA) / SIZE_BLK_LA;
 #endif
 
+namespace {
+    __m128i LoadAndSum4(Ipp32s *p, Ipp32s pitch, Ipp32s x, Ipp32s y) {
+        return _mm_hadd_epi32(_mm_add_epi32(_mm_loadu_si128((__m128i *)(p+(x+0)+(y+0)*pitch)),
+                                            _mm_loadu_si128((__m128i *)(p+(x+0)+(y+1)*pitch))),
+                              _mm_add_epi32(_mm_loadu_si128((__m128i *)(p+(x+4)+(y+0)*pitch)),
+                                            _mm_loadu_si128((__m128i *)(p+(x+4)+(y+1)*pitch))));
+    }
+
+    void SumUp(Ipp32s *out, Ipp32s pitchOut, const Ipp32s *in, Ipp32s pitchIn, Ipp32u Width, Ipp32u Height, Ipp32s shift) {
+        for (Ipp32u y = 0; y < ((Height+(1<<shift)-1)>>shift); y++) {
+            for (Ipp32u x = 0; x < ((Width+(1<<shift)-1)>>shift); x++)
+                out[y*pitchOut+x] = in[(2*y)*pitchIn+(2*x)]+in[(2*y)*pitchIn+(2*x+1)]+in[(2*y+1)*pitchIn+(2*x)]+in[(2*y+1)*pitchIn+(2*x+1)];
+        }
+    }
+};
 
 mfxStatus Lookahead::Execute(ThreadingTask& task)
 {
@@ -2582,7 +2597,7 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
 
 
             // RsCs: only ORIGINAL
-            if (in && m_videoParam.DeltaQpMode) {
+            if (in) {
                 Ipp32s rowsInRegion = m_originRowsInRegion;
                 Ipp32s numActiveRows = GetNumActiveRows(region_row, rowsInRegion, in[0]->m_origin->height);
 
@@ -2601,6 +2616,108 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
 
     case TT_PREENC_END:
         {
+            if (in && m_videoParam.DeltaQpMode) {
+                for (Ipp32s fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
+                    Frame *curr = in[fieldNum];
+                    Ipp32s width4  = (m_videoParam.Width+63)&~63;
+                    Ipp32s height4 = (m_videoParam.Height+63)&~63;
+                    Ipp32s pitchRsCs4  = curr->m_stats[0]->m_pitchRsCs4;
+                    Ipp32s pitchRsCs8  = curr->m_stats[0]->m_pitchRsCs4>>1;
+                    Ipp32s pitchRsCs16 = curr->m_stats[0]->m_pitchRsCs4>>2;
+                    Ipp32s pitchRsCs32 = curr->m_stats[0]->m_pitchRsCs4>>3;
+                    Ipp32s pitchRsCs64 = curr->m_stats[0]->m_pitchRsCs4>>4;
+                    Ipp32s *rs4  = curr->m_stats[0]->m_rs[0].data();
+                    Ipp32s *rs8  = curr->m_stats[0]->m_rs[1].data();
+                    Ipp32s *rs16 = curr->m_stats[0]->m_rs[2].data();
+                    Ipp32s *rs32 = curr->m_stats[0]->m_rs[3].data();
+                    Ipp32s *rs64 = curr->m_stats[0]->m_rs[4].data();
+                    Ipp32s *cs4  = curr->m_stats[0]->m_cs[0].data();
+                    Ipp32s *cs8  = curr->m_stats[0]->m_cs[1].data();
+                    Ipp32s *cs16 = curr->m_stats[0]->m_cs[2].data();
+                    Ipp32s *cs32 = curr->m_stats[0]->m_cs[3].data();
+                    Ipp32s *cs64 = curr->m_stats[0]->m_cs[4].data();
+
+                    SumUp(rs8,  pitchRsCs8,  rs4,  pitchRsCs4,  m_videoParam.Width, m_videoParam.Height, 3);
+                    SumUp(rs16, pitchRsCs16, rs8,  pitchRsCs8,  m_videoParam.Width, m_videoParam.Height, 4);
+                    SumUp(rs32, pitchRsCs32, rs16, pitchRsCs16, m_videoParam.Width, m_videoParam.Height, 5);
+                    SumUp(rs64, pitchRsCs64, rs32, pitchRsCs32, m_videoParam.Width, m_videoParam.Height, 6);
+                    SumUp(cs8,  pitchRsCs8,  cs4,  pitchRsCs4,  m_videoParam.Width, m_videoParam.Height, 3);
+                    SumUp(cs16, pitchRsCs16, cs8,  pitchRsCs8,  m_videoParam.Width, m_videoParam.Height, 4);
+                    SumUp(cs32, pitchRsCs32, cs16, pitchRsCs16, m_videoParam.Width, m_videoParam.Height, 5);
+                    SumUp(cs64, pitchRsCs64, cs32, pitchRsCs32, m_videoParam.Width, m_videoParam.Height, 6);
+
+                    //for (Ipp32s y = 0; y < height4; y += 16) {
+                    //    for (Ipp32s x = 0; x < width4; x += 16) {
+                    //        __m128i sum8_0, sum8_1, sum8_2, sum8_3;
+                    //        __m128i sum16_0, sum16_1, sum16_2, sum16_3;
+                    //        __m128i sum32;
+                    //        sum8_0 = LoadAndSum4(rs4, pitchRsCs4, x+0, 0);
+                    //        sum8_1 = LoadAndSum4(rs4, pitchRsCs4, x+8, 0);
+                    //        sum8_2 = LoadAndSum4(rs4, pitchRsCs4, x+0, 2);
+                    //        sum8_3 = LoadAndSum4(rs4, pitchRsCs4, x+8, 2);
+                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+0*pitchRsCs8+0), _mm_srli_epi32(sum8_0, 2));
+                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+0*pitchRsCs8+4), _mm_srli_epi32(sum8_1, 2));
+                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+1*pitchRsCs8+0), _mm_srli_epi32(sum8_2, 2));
+                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+1*pitchRsCs8+4), _mm_srli_epi32(sum8_3, 2));
+
+                    //        sum16_0 = _mm_hadd_epi32(_mm_add_epi32(sum8_0, sum8_1), _mm_add_epi32(sum8_2, sum8_3));
+                    //        _mm_storeu_si128((__m128i *)(rs16+0*pitchRsCs16+(x>>2)), _mm_srli_epi32(sum16_0, 4));
+
+                    //        sum8_0 = LoadAndSum4(rs4, pitchRsCs4, x+0, 4);
+                    //        sum8_1 = LoadAndSum4(rs4, pitchRsCs4, x+8, 4);
+                    //        sum8_2 = LoadAndSum4(rs4, pitchRsCs4, x+0, 6);
+                    //        sum8_3 = LoadAndSum4(rs4, pitchRsCs4, x+8, 6);
+                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+2*pitchRsCs8+0), _mm_srli_epi32(sum8_0, 2));
+                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+2*pitchRsCs8+4), _mm_srli_epi32(sum8_1, 2));
+                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+3*pitchRsCs8+0), _mm_srli_epi32(sum8_2, 2));
+                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+3*pitchRsCs8+4), _mm_srli_epi32(sum8_3, 2));
+
+                    //        sum16_1 = _mm_hadd_epi32(_mm_add_epi32(sum8_0, sum8_1), _mm_add_epi32(sum8_2, sum8_3));
+                    //        _mm_storeu_si128((__m128i *)(rs16+1*pitchRsCs16+(x>>2)), _mm_srli_epi32(sum16_1, 4));
+
+                    //        sum8_0 = LoadAndSum4(rs4, pitchRsCs4, x+0, 8);
+                    //        sum8_1 = LoadAndSum4(rs4, pitchRsCs4, x+8, 8);
+                    //        sum8_2 = LoadAndSum4(rs4, pitchRsCs4, x+0, 10);
+                    //        sum8_3 = LoadAndSum4(rs4, pitchRsCs4, x+8, 10);
+                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+4*pitchRsCs8+0), _mm_srli_epi32(sum8_0, 2));
+                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+4*pitchRsCs8+4), _mm_srli_epi32(sum8_1, 2));
+                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+5*pitchRsCs8+0), _mm_srli_epi32(sum8_2, 2));
+                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+5*pitchRsCs8+4), _mm_srli_epi32(sum8_3, 2));
+
+                    //        sum16_2 = _mm_hadd_epi32(_mm_add_epi32(sum8_0, sum8_1), _mm_add_epi32(sum8_2, sum8_3));
+                    //        _mm_storeu_si128((__m128i *)(rs16+2*pitchRsCs16+(x>>2)), _mm_srli_epi32(sum16_2, 4));
+
+                    //        sum8_0 = LoadAndSum4(rs4, pitchRsCs4, x+0, 12);
+                    //        sum8_1 = LoadAndSum4(rs4, pitchRsCs4, x+8, 12);
+                    //        sum8_2 = LoadAndSum4(rs4, pitchRsCs4, x+0, 14);
+                    //        sum8_3 = LoadAndSum4(rs4, pitchRsCs4, x+8, 14);
+                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+6*pitchRsCs8+0), _mm_srli_epi32(sum8_0, 2));
+                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+6*pitchRsCs8+4), _mm_srli_epi32(sum8_1, 2));
+                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+7*pitchRsCs8+0), _mm_srli_epi32(sum8_2, 2));
+                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+7*pitchRsCs8+4), _mm_srli_epi32(sum8_3, 2));
+
+                    //        sum16_3 = _mm_hadd_epi32(_mm_add_epi32(sum8_0, sum8_1), _mm_add_epi32(sum8_2, sum8_3));
+                    //        _mm_storeu_si128((__m128i *)(rs16+3*pitchRsCs16+(x>>2)), _mm_srli_epi32(sum16_3, 4));
+
+                    //        sum32 = _mm_hadd_epi32(_mm_add_epi32(sum16_0, sum16_1), _mm_add_epi32(sum16_2, sum16_3));
+
+                    //        Ipp32s sum64 = (_mm_extract_epi32(sum32,0) + _mm_extract_epi32(sum32,1) + _mm_extract_epi32(sum32,2) + _mm_extract_epi32(sum32,3)) >> 8;
+                    //        *(Ipp64u *)(rs64+(x>>4)) = sum64;
+
+                    //        sum32 = _mm_srli_epi32(sum16_3, 6);
+                    //        *(Ipp64u *)(rs32+0*pitchRsCs16+(x>>3)) = _mm_extract_epi64(sum32, 0);
+                    //        *(Ipp64u *)(rs32+1*pitchRsCs16+(x>>3)) = _mm_extract_epi64(sum32, 1);
+
+                    //    }
+                    //    rs4  += 16*pitchRsCs4;
+                    //    rs8  += 8*pitchRsCs8;
+                    //    rs16 += 4*pitchRsCs16;
+                    //    rs32 += 2*pitchRsCs32;
+                    //    rs64 += 1*pitchRsCs64;
+                    //}
+
+                }
+            }
             // syncpoint only (like accumulation & refCounter--), no real hard working here!!!
             for (Ipp32s fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
                 if (m_videoParam.AnalyzeCmplx) {

@@ -408,6 +408,8 @@ void SetTargetSSE4()
     g_dispatcher.h265_ComputeRsCs_8u = &MFX_HEVC_PP::h265_ComputeRsCs_8u_sse;
     g_dispatcher.h265_ComputeRsCs_16u = &MFX_HEVC_PP::h265_ComputeRsCs_16u_sse;
     g_dispatcher.h265_AddClipNv12UV_8u = &MFX_HEVC_PP::h265_AddClipNv12UV_8u_sse;
+    g_dispatcher.h265_DiffDc_8u  = &MFX_HEVC_PP::h265_DiffDc_px<Ipp8u>;
+    g_dispatcher.h265_DiffDc_16u = &MFX_HEVC_PP::h265_DiffDc_px<Ipp16u>;
 
     // [WeightedPred]
     g_dispatcher.h265_CopyWeighted_S16U8 = &MFX_HEVC_PP::h265_CopyWeighted_S16U8_sse;
@@ -852,7 +854,9 @@ void SetTargetAVX2()
 
     g_dispatcher.h265_ComputeRsCs_8u = &MFX_HEVC_PP::h265_ComputeRsCs_8u_avx2;
     g_dispatcher.h265_ComputeRsCs_16u = &MFX_HEVC_PP::h265_ComputeRsCs_16u_sse;
-    g_dispatcher.h265_AddClipNv12UV_8u = &MFX_HEVC_PP::h265_AddClipNv12UV_8u_sse;
+    g_dispatcher.h265_AddClipNv12UV_8u = &MFX_HEVC_PP::h265_AddClipNv12UV_8u_avx2;
+    g_dispatcher.h265_DiffDc_8u  = &MFX_HEVC_PP::h265_DiffDc_avx2<Ipp8u>;
+    g_dispatcher.h265_DiffDc_16u = &MFX_HEVC_PP::h265_DiffDc_px<Ipp16u>;
 
     // [WeightedPred]
     g_dispatcher.h265_CopyWeighted_S16U8 = &MFX_HEVC_PP::h265_CopyWeighted_S16U8_avx2;
@@ -1064,6 +1068,8 @@ void SetTargetPX()
     g_dispatcher.h265_ComputeRsCs_8u = &MFX_HEVC_PP::h265_ComputeRsCs_px<Ipp8u>;
     g_dispatcher.h265_ComputeRsCs_16u = &MFX_HEVC_PP::h265_ComputeRsCs_px<Ipp16u>;
     g_dispatcher.h265_AddClipNv12UV_8u = &MFX_HEVC_PP::h265_AddClipNv12UV_8u_px;
+    g_dispatcher.h265_DiffDc_8u  = &MFX_HEVC_PP::h265_DiffDc_px<Ipp8u>;
+    g_dispatcher.h265_DiffDc_16u = &MFX_HEVC_PP::h265_DiffDc_px<Ipp16u>;
 
     // [WeightedPred]
     g_dispatcher.h265_CopyWeighted_S16U8 = &MFX_HEVC_PP::h265_CopyWeighted_S16U8_px;

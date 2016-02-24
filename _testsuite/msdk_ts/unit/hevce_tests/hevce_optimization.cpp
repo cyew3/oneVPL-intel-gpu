@@ -463,6 +463,49 @@ TEST(optimization, DiffNv12_avx2) {
 }
 
 
+TEST(optimization, AddClipNv12UV_avx2) {
+    Ipp32s pitch = 256;
+    Ipp32s maxsize = 64;
+
+    auto residU   = utils::MakeAlignedPtr<Ipp16s>(pitch * maxsize,   utils::AlignAvx2);
+    auto residV   = utils::MakeAlignedPtr<Ipp16s>(pitch * maxsize,   utils::AlignAvx2);
+    auto pred     = utils::MakeAlignedPtr<Ipp8u> (pitch * maxsize*2, utils::AlignAvx2);
+    auto dst_px   = utils::MakeAlignedPtr<Ipp8u> (pitch * maxsize*2, utils::AlignAvx2);
+    auto dst_avx2 = utils::MakeAlignedPtr<Ipp8u> (pitch * maxsize*2, utils::AlignAvx2);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    for (Ipp32s size = 4; size <= 64; size<<=1) {
+        utils::InitRandomBlock(rand, residU.get(), pitch, pitch, maxsize, -255, 255);
+        utils::InitRandomBlock(rand, residV.get(), pitch, pitch, maxsize, -255, 255);
+        utils::InitRandomBlock(rand, pred.get(),   pitch, pitch, maxsize*2, 0, 255);
+        utils::InitRandomBlock(rand, dst_px.get(), pitch, pitch, maxsize*2, 0, 255);
+        memcpy(dst_avx2.get(), dst_px.get(), sizeof(Ipp8u) * pitch * maxsize*2);
+
+        std::ostringstream buf;
+        buf << "Testing " << size << "x" << size << " 8bit";
+        SCOPED_TRACE(buf.str().c_str());
+        MFX_HEVC_PP::h265_AddClipNv12UV_8u_px  (dst_px.get(),   pitch, pred.get(), pitch, residU.get(), residV.get(), pitch, size);
+        MFX_HEVC_PP::h265_AddClipNv12UV_8u_avx2(dst_avx2.get(), pitch, pred.get(), pitch, residU.get(), residV.get(), pitch, size);
+        ASSERT_EQ(0, memcmp(dst_avx2.get(), dst_px.get(), sizeof(Ipp8u) * pitch * maxsize*2));
+    }
+
+#ifdef PRINT_TICKS
+    for (Ipp32s size = 4; size <= 64; size<<=1) {
+        Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_AddClipNv12UV_8u_avx2, dst_avx2.get(), pitch, pred.get(), pitch, residU.get(), residV.get(), pitch, size);
+        Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_AddClipNv12UV_8u_px,   dst_px.get(),   pitch, pred.get(), pitch, residU.get(), residV.get(), pitch, size);
+        printf("%2dx%-2d speedup = %lld / %lld = %.2f\n", size, size,  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+    }
+    for (Ipp32s size = 4; size <= 64; size<<=1) {
+        Ipp64u ticksSse  = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_AddClipNv12UV_8u_sse,  dst_avx2.get(), pitch, pred.get(), pitch, residU.get(), residV.get(), pitch, size);
+        Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_AddClipNv12UV_8u_px,   dst_px.get(),   pitch, pred.get(), pitch, residU.get(), residV.get(), pitch, size);
+        printf("%2dx%-2d SSE speedup = %lld / %lld = %.2f\n", size, size,  ticksPx, ticksSse, (double)ticksPx / ticksSse);
+    }
+#endif //PRINT_TICKS
+}
+
+
 TEST(optimization, SplitChromaCtb_avx2) {
     Ipp32s pitchSrc  = 256;
 
@@ -2378,3 +2421,53 @@ TEST(optimization, ComputeRsCs_avx2) {
 #endif // PRINT_TICKS
 }
 
+
+TEST(optimization, DiffDc_avx2) {
+    Ipp32s pitch = 256;
+    Ipp32s maxsize = 64;
+
+    auto src8   = utils::MakeAlignedPtr<Ipp8u>(pitch * maxsize, utils::AlignAvx2);
+    auto pred8  = utils::MakeAlignedPtr<Ipp8u>(pitch * maxsize, utils::AlignAvx2);
+    auto src16  = utils::MakeAlignedPtr<Ipp16u>(pitch * maxsize, utils::AlignAvx2);
+    auto pred16 = utils::MakeAlignedPtr<Ipp16u>(pitch * maxsize, utils::AlignAvx2);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    for (Ipp32s size = 8; size <= 32; size<<=1) {
+        utils::InitRandomBlock(rand, src8.get(),  pitch, pitch, maxsize, 0, 255);
+        utils::InitRandomBlock(rand, pred8.get(), pitch, pitch, maxsize, 0, 255);
+        utils::InitRandomBlock(rand, src16.get(),  pitch, pitch, maxsize, 0, 1023);
+        utils::InitRandomBlock(rand, pred16.get(), pitch, pitch, maxsize, 0, 1023);
+
+        {
+        std::ostringstream buf;
+        buf << "Testing " << size << "x" << size << " 8bit";
+        SCOPED_TRACE(buf.str().c_str());
+        Ipp32s dc_px   = MFX_HEVC_PP::h265_DiffDc_px  (src8.get(), pitch, pred8.get(), pitch, size);
+        Ipp32s dc_avx2 = MFX_HEVC_PP::h265_DiffDc_avx2(src8.get(), pitch, pred8.get(), pitch, size);
+        ASSERT_EQ(dc_px, dc_avx2);
+        }
+        //{
+        //std::ostringstream buf;
+        //buf << "Testing " << size << "x" << size << " 10bit";
+        //SCOPED_TRACE(buf.str().c_str());
+        //Ipp32s dc_px   = MFX_HEVC_PP::h265_DiffDc_px  (src16.get(), pitch, pred16.get(), pitch, size);
+        //Ipp32s dc_avx2 = MFX_HEVC_PP::h265_DiffDc_px  (src16.get(), pitch, pred16.get(), pitch, size);
+        //ASSERT_EQ(dc_px, dc_avx2);
+        //}
+    }
+
+#ifdef PRINT_TICKS
+    for (Ipp32s size = 8; size <= 32; size<<=1) {
+        Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffDc_px<Ipp8u>,   src8.get(), pitch, pred8.get(), pitch, size);
+        Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffDc_avx2<Ipp8u>, src8.get(), pitch, pred8.get(), pitch, size);
+        printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", size, size, 8, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+    }
+    //for (Ipp32s size = 8; size <= 32; size<<=1) {
+    //    Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffDc_px<Ipp16u>,   src16.get(), pitch, pred16.get(), pitch, size);
+    //    Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffDc_avx2<Ipp16u>, src16.get(), pitch, pred16.get(), pitch, size);
+    //    printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", size, size, 10, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+    //}
+#endif //PRINT_TICKS
+}
