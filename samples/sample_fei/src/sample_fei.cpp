@@ -48,11 +48,10 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("                            otherwise PREENC is used on downscaled (by VPP resize in ds_strength times) surfaces\n"));
     msdk_printf(MSDK_STRING("   [-encode] - use extended FEI interface ENC+PAK (FEI ENCODE) (RC is forced to constant QP)\n"));
     msdk_printf(MSDK_STRING("   [-encpak] - use extended FEI interface ENC only and PAK only (separate calls)\n"));
+    msdk_printf(MSDK_STRING("   [-enc] - use extended FEI interface ENC (only)\n"));
+    msdk_printf(MSDK_STRING("   [-pak] - use extended FEI interface PAK (only)\n"));
     msdk_printf(MSDK_STRING("   [-reset_start] - set Start Frame No. to enable Dynamic Resolution change,please specify frame size with -dstw -dsth\n"));
     msdk_printf(MSDK_STRING("   [-reset_end]   - set End Frame No. to disable Dynamic Resolution change\n"));
-
-    //msdk_printf(MSDK_STRING("   [-enc] - use extended FEI interface ENC (only)\n"));
-    msdk_printf(MSDK_STRING("   [-pak] - use extended FEI interface PAK (only)\n"));
     msdk_printf(MSDK_STRING("   [-profile decimal] - set AVC profile\n"));
     msdk_printf(MSDK_STRING("   [-level decimal] - set AVC level\n"));
     msdk_printf(MSDK_STRING("   [-EncodedOrder] - use internal logic for reordering, reading from files will be in encoded order (default is display; ENCODE only)\n"));
@@ -129,7 +128,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     msdk_char* stopCharacter;
 
     bool bRefWSizeSpecified = false, bAlrShownHelp = false, bHeaderValSpecified = false,
-         bIDRintSet = false;
+         bIDRintSet = false, bBRefSet = false;
 
     if (1 == nArgNum)
     {
@@ -175,10 +174,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->bENCPAK = true;
         }
-        /*else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-enc")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-enc")))
         {
             pParams->bOnlyENC = true;
-        }*/
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-pak")))
         {
             pParams->bOnlyPAK = true;
@@ -263,10 +262,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bref")))
         {
+            bBRefSet = true;
             pParams->bRefType = MFX_B_REF_PYRAMID;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-nobref")))
         {
+            bBRefSet = true;
             pParams->bRefType = MFX_B_REF_OFF;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-idr_interval")))
@@ -604,7 +605,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     }
 
     if (!( (pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
-          //(!pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
+          (!pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
           (!pParams->bPREENC && !pParams->bOnlyENC &&  pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
           (!pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  &&  pParams->bENCODE) ||
           (!pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCPAK  && !pParams->bENCODE) ||
@@ -855,7 +856,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     }
 
     if ((pParams->bENCPAK || pParams->bOnlyENC || pParams->bOnlyPAK) && !pParams->bPassHeaders && (pParams->nIdrInterval || pParams->bRefType != MFX_B_REF_OFF)){
-        if (bIDRintSet || pParams->bRefType == MFX_B_REF_PYRAMID){
+        if (bIDRintSet || bBRefSet){
             msdk_printf(MSDK_STRING("\nWARNING: Specified B-pyramid/IDR-interval control(s) for ENC+PAK would be ignored!\n"));
             msdk_printf(MSDK_STRING("           Please use them together with -pass_headers option\n"));
         }

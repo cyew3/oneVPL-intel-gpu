@@ -3260,7 +3260,7 @@ mfxStatus CEncodingPipeline::FillRefInfo(iTask* eTask)
     iTask* ref_task = NULL;
     mfxFrameSurface1* ref_surface = NULL;
     std::vector<mfxFrameSurface1*>::iterator rslt;
-    mfxU32 k = 0, fid;
+    mfxU32 k = 0, fid, n_l0, n_l1;
 
     for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
     {
@@ -3284,8 +3284,21 @@ mfxStatus CEncodingPipeline::FillRefInfo(iTask* eTask)
             }
         }
 
+        /* in some cases l0 and l1 lists are equal, if so same ref lists for l0 and l1 should be used*/
+        n_l0 = GetNBackward(eTask, fieldId), n_l1 = GetNForward(eTask, fieldId);
+
+        if (!n_l0 && eTask->m_list0[fid].Size() && !(eTask->m_type[fid] & MFX_FRAMETYPE_I))
+        {
+            n_l0 = eTask->m_list0[fid].Size();
+        }
+
+        if (!n_l1 && eTask->m_list1[fid].Size() && (eTask->m_type[fid] & MFX_FRAMETYPE_B))
+        {
+            n_l1 = eTask->m_list1[fid].Size();
+        }
+
         k = 0;
-        for (mfxU8 const * instance = eTask->m_list0[fid].Begin(); k < GetNBackward(eTask, fieldId) && instance != eTask->m_list0[fid].End(); instance++)
+        for (mfxU8 const * instance = eTask->m_list0[fid].Begin(); k < n_l0 && instance != eTask->m_list0[fid].End(); instance++)
         {
             ref_task = GetTaskByFrameOrder(eTask->m_dpb[fid][*instance & 127].m_frameOrder);
             MSDK_CHECK_POINTER(ref_task, MFX_ERR_NULL_PTR);
@@ -3308,7 +3321,7 @@ mfxStatus CEncodingPipeline::FillRefInfo(iTask* eTask)
         }
 
         k = 0;
-        for (mfxU8 const * instance = eTask->m_list1[fid].Begin(); k < GetNForward(eTask, fieldId) && instance != eTask->m_list1[fid].End(); instance++)
+        for (mfxU8 const * instance = eTask->m_list1[fid].Begin(); k < n_l1 && instance != eTask->m_list1[fid].End(); instance++)
         {
             ref_task = GetTaskByFrameOrder(eTask->m_dpb[fid][*instance & 127].m_frameOrder);
             MSDK_CHECK_POINTER(ref_task, MFX_ERR_NULL_PTR);
@@ -4926,6 +4939,12 @@ mfxStatus CEncodingPipeline::GetRefTaskEx(iTask *eTask, mfxU32 l0_idx, mfxU32 l1
         mfxU32 l0_ref_count = GetNBackward(eTask, fieldId),
                l1_ref_count = GetNForward(eTask, fieldId),
                fid = eTask->m_fid[fieldId];
+
+        /* adjustment for case of equal l0 and l1 lists*/
+        if (!l0_ref_count && eTask->m_list0[fid].Size() && !(eTask->m_type[fid] & MFX_FRAMETYPE_I))
+        {
+            l0_ref_count = eTask->m_list0[fid].Size();
+        }
 
         if (l0_idx < l0_ref_count && eTask->m_list0[fid].Size())
         {
