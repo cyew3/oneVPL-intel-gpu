@@ -34,8 +34,8 @@ if(NOT GTEST_INCLUDE MATCHES NOTFOUND)
         NOT GTEST_MAIN_LIBRARY MATCHES NOTFOUND)
     set( GTEST_FOUND TRUE )
 
-    get_filename_component(GTEST_LIB_DIR ${GTEST_LIBRARY} DIRECTORY)
-    get_filename_component(GTEST_MAIN_LIB_DIR ${GTEST_MAIN_LIBRARY} DIRECTORY)
+    get_filename_component(GTEST_LIB_DIR ${GTEST_LIBRARY} PATH)
+    get_filename_component(GTEST_MAIN_LIB_DIR ${GTEST_MAIN_LIBRARY} PATH)
 
     include_directories( "${GTEST_INCLUDE}" )
     link_directories( "${GTEST_LIB_DIR}" "${GTEST_MAIN_LIB_DIR}" )
