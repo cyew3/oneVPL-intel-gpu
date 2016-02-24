@@ -1810,9 +1810,14 @@ void CDecodingPipeline::PrintInfo()
     mfxF64 dFrameRate = CalculateFrameRate(Info.FrameRateExtN, Info.FrameRateExtD);
     msdk_printf(MSDK_STRING("Frame rate\t%.2f\n"), dFrameRate);
 
-    const msdk_char* sMemType = m_memType == D3D9_MEMORY  ? MSDK_STRING("d3d")
-                             : (m_memType == D3D11_MEMORY ? MSDK_STRING("d3d11")
-                                                          : MSDK_STRING("system"));
+    const msdk_char* sMemType =
+#if defined(_WIN32) || defined(_WIN64)
+        m_memType == D3D9_MEMORY  ? MSDK_STRING("d3d")
+#else
+        m_memType == D3D9_MEMORY  ? MSDK_STRING("vaapi")
+#endif
+        : (m_memType == D3D11_MEMORY ? MSDK_STRING("d3d11")
+        : MSDK_STRING("system"));
     msdk_printf(MSDK_STRING("Memory type\t\t%s\n"), sMemType);
 
 
