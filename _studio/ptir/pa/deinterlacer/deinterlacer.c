@@ -15,7 +15,7 @@ File Name: deinterlacer.c
 #define max(x, y) (((x) > (y)) ? (x) : (y))
 #define min(x, y) (((x) < (y)) ? (x) : (y))
 
-__inline unsigned int EDIError(BYTE* PrvLinePixel, BYTE* NxtLinePixel, int dir)
+ATTR_INLINE __inline unsigned int EDIError(BYTE* PrvLinePixel, BYTE* NxtLinePixel, int dir)
 {
     return abs(PrvLinePixel[dir] - NxtLinePixel[-dir]);
 }
