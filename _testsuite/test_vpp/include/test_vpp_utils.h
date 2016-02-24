@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2008 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008 - 2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -508,7 +508,7 @@ mfxStatus GetFreeSurface(
     mfxU16 nPoolSize, 
     mfxFrameSurface1** ppSurface);
 
-vm_char* IOpattern2Str( 
+const vm_char* IOpattern2Str(
     mfxU32 IOpattern);
 
 mfxStatus vppParseInputString(
@@ -522,14 +522,14 @@ bool CheckInputParams(
     sInputParams* pParams );
 
 void vppPrintHelp(
-    vm_char *strAppName, 
-    vm_char *strErrorMessage);
+    const vm_char *strAppName,
+    const vm_char *strErrorMessage);
 
 mfxStatus ConfigVideoEnhancementFilters( 
     sInputParams* pParams, 
     sAppResources* pResources,
     mfxU32 paramID );
 
-vm_char* PicStruct2Str( mfxU16  PicStruct );
+const vm_char* PicStruct2Str( mfxU16  PicStruct );
 #endif /* __TEST_VPP_UTILS_H */
 /* EOF */

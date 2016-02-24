@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008 - 2016 Intel Corporation. All Rights Reserved.
 //
 
 #include <vector>
@@ -35,7 +35,7 @@ void PutPerformanceToFile(sInputParams& Params, mfxF64 FPS)
     if (!fPRF)
         return;
 
-    vm_char *iopattern = IOpattern2Str(Params.IOPattern);
+    vm_char *iopattern = const_cast<vm_char*>(IOpattern2Str(Params.IOPattern));
     vm_char   iopattern_ascii[32] = {0};
     vm_char  *pIOP = iopattern_ascii;
     while (*iopattern)
@@ -848,7 +848,7 @@ int main(int argc, vm_char *argv[])
         // loop to get buffered frames from VPP
         while (MFX_ERR_NONE <= sts)
         {
-            mfxU32 did;
+            mfxU32 did = 0;
 
             if( bSvcMode )
             {

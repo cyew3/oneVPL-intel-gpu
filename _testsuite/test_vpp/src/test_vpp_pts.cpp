@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008 - 2016 Intel Corporation. All Rights Reserved.
 //
 
 #include <math.h>
@@ -22,8 +22,8 @@ m_FRateExtD_In(1),
 m_FRateExtN_Out(0),
 m_FRateExtD_Out(1),
 m_TimeOffset(0),
-m_MaxDiff(MaxTimeDifference), 
 m_CurrTime(0),
+m_MaxDiff(MaxTimeDifference),
 m_NumFrame_In(0),
 m_NumFrame_Out(0),
 m_IsJump(false),
@@ -118,7 +118,7 @@ bool PTSMaker::CheckBasicPTS(mfxFrameSurface1 *pSurface)
 {
     std::list<mfxU64>::iterator it;
     // -1 valid value
-    if (-1 == pSurface->Data.TimeStamp)
+    if (-1 == static_cast<int>(pSurface->Data.TimeStamp))
         return true;
 
     mfxU64 ts = pSurface->Data.TimeStamp;

@@ -28,4 +28,7 @@ list( APPEND LIBS
     dl
     pthread
 )
+
+set( defs "${defs} ${WARNING_FLAGS}" )
 make_executable( test_vpp universal static )
+set( defs "" )

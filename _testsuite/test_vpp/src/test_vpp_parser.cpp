@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010 - 2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "test_vpp_utils.h"
@@ -11,7 +11,7 @@
 
 #define VAL_CHECK(val) {if (val) return MFX_ERR_UNKNOWN;}
 
-void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
+void vppPrintHelp(const vm_char *strAppName, const vm_char *strErrorMessage)
 {
     if (strErrorMessage)
     {
@@ -417,7 +417,7 @@ mfxStatus vppParseResetPar(vm_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, sI
 
                 if( i+1 < nArgNum )
                 {                
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);                
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int *>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams->denoiseParam[paramID].factor = (mfxU16)readData;
@@ -432,7 +432,7 @@ mfxStatus vppParseResetPar(vm_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, sI
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int *>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams->deinterlaceParam[paramID].algorithm = (mfxU16)readData;
@@ -445,7 +445,7 @@ mfxStatus vppParseResetPar(vm_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, sI
             {
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int *>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams->deinterlaceParam[paramID].tc_pattern   = (mfxU16)readData;
@@ -459,7 +459,7 @@ mfxStatus vppParseResetPar(vm_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, sI
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int *>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams->deinterlaceParam[paramID].tc_pos   = (mfxU16)readData;
@@ -473,7 +473,7 @@ mfxStatus vppParseResetPar(vm_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, sI
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int *>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams->detailParam[paramID].factor = (mfxU16)readData;
@@ -595,7 +595,7 @@ mfxStatus vppParseResetPar(vm_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, sI
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int *>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams->istabParam[paramID].istabMode = (mfxU8)readData;
@@ -622,7 +622,7 @@ mfxStatus vppParseResetPar(vm_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, sI
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int *>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams->steParam[paramID].SkinToneFactor = (mfxU8)readData;
@@ -635,37 +635,37 @@ mfxStatus vppParseResetPar(vm_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, sI
             {
                 pParams->tccParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[paramID].Red);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), reinterpret_cast<double *>(&pParams->tccParam[paramID].Red));
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:green")))
             {
                 pParams->tccParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[paramID].Green);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), reinterpret_cast<double *>(&pParams->tccParam[paramID].Green));
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:blue")))
             {
                 pParams->tccParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[paramID].Blue);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), reinterpret_cast<double *>(&pParams->tccParam[paramID].Blue));
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:magenta")))
             {
                 pParams->tccParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[paramID].Magenta);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), reinterpret_cast<double *>(&pParams->tccParam[paramID].Magenta));
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:yellow")))
             {
                 pParams->tccParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[paramID].Yellow);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), reinterpret_cast<double *>(&pParams->tccParam[paramID].Yellow));
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:cyan")))
             {
                 pParams->tccParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[paramID].Cyan);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), reinterpret_cast<double *>(&pParams->tccParam[paramID].Cyan));
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-reset_end")))
             {
@@ -806,7 +806,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoIn[0].PicStruct);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), reinterpret_cast<short int *>(&pParams->frameInfoIn[0].PicStruct));
                 pParams->frameInfoIn[0].PicStruct = GetPicStruct(pParams->frameInfoIn[0].PicStruct);
             }
             else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-sf")))
@@ -855,7 +855,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoOut[0].PicStruct);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), reinterpret_cast<short int *>(&pParams->frameInfoOut[0].PicStruct));
                 pParams->frameInfoOut[0].PicStruct = GetPicStruct(pParams->frameInfoOut[0].PicStruct);
             }
             else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-df")))
@@ -873,7 +873,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int *>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams->denoiseParam[0].factor = (mfxU16)readData;
@@ -903,7 +903,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int *>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams->deinterlaceParam[0].algorithm = (mfxU16)readData;
@@ -916,7 +916,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             {
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int *>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams->deinterlaceParam[0].tc_pattern   = (mfxU16)readData;
@@ -930,7 +930,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int *>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams->deinterlaceParam[0].tc_pos   = (mfxU16)readData;
@@ -944,7 +944,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int *>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams->detailParam[0].factor = (mfxU16)readData;
@@ -1073,7 +1073,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int *>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams->istabParam[0].istabMode = (mfxU8)readData;
@@ -1100,7 +1100,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int *>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams->steParam[0].SkinToneFactor = (mfxU8)readData;
@@ -1113,37 +1113,37 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             {
                 pParams->tccParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[0].Red);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), reinterpret_cast<double *>(&pParams->tccParam[0].Red));
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:green")))
             {
                 pParams->tccParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[0].Green);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), reinterpret_cast<double *>(&pParams->tccParam[0].Green));
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:blue")))
             {
                 pParams->tccParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[0].Blue);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), reinterpret_cast<double *>(&pParams->tccParam[0].Blue));
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:magenta")))
             {
                 pParams->tccParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[0].Magenta);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), reinterpret_cast<double *>(&pParams->tccParam[0].Magenta));
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:yellow")))
             {
                 pParams->tccParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[0].Yellow);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), reinterpret_cast<double *>(&pParams->tccParam[0].Yellow));
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:cyan")))
             {
                 pParams->tccParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->tccParam[0].Cyan);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), reinterpret_cast<double *>(&pParams->tccParam[0].Cyan));
             }
             //-----------------------------------------------------------------------------------
             //                   Region of Interest Testing
@@ -1156,11 +1156,11 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
 
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->roiCheckParam.srcSeed);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), reinterpret_cast<short int*>(&pParams->roiCheckParam.srcSeed));
 
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->roiCheckParam.dstSeed);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), reinterpret_cast<short int*>(&pParams->roiCheckParam.dstSeed));
             }
             //-----------------------------------------------------------------------------------
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-i")))
@@ -1273,7 +1273,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                 VAL_CHECK(1 + i == nArgNum);
                 pParams->bPerf = true;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->numFrames);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), reinterpret_cast<short int*>(&pParams->numFrames));
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
                 vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->numRepeat);
@@ -1303,7 +1303,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
 
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->numFrames);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), reinterpret_cast<short int*>(&pParams->numFrames));
 
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-plugin_guid")))
@@ -1320,7 +1320,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-reset_start")) )
             {
                 VAL_CHECK(1 + i == nArgNum);
-                vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int*>(&readData));
                 i += 2;
 
                 pParams->resetFrmNums.push_back((mfxU16)readData);

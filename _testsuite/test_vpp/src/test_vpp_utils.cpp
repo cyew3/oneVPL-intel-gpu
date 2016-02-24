@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008 - 2016 Intel Corporation. All Rights Reserved.
 //
 
 #include <string>
@@ -40,157 +40,99 @@ IppStatus cc_NV12_to_YV12(
                           mfxFrameInfo* outInfo );
 /* ******************************************************************* */
 
-static 
-vm_char* FourCC2Str( mfxU32 FourCC )
+static
+const vm_char* FourCC2Str( mfxU32 FourCC )
 {
-    vm_char* strFourCC = VM_STRING("Unknown");//default
-
     switch ( FourCC )
     {
     case MFX_FOURCC_NV12:
-        strFourCC = VM_STRING("NV12");
-        break;
-
+        return VM_STRING("NV12");
     case MFX_FOURCC_YV12:
-        strFourCC = VM_STRING("YV12");
-        break;
-
+        return VM_STRING("YV12");
     case MFX_FOURCC_YUY2:
-        strFourCC = VM_STRING("YUY2");
-        break;
-
+        return VM_STRING("YUY2");
     case MFX_FOURCC_RGB3:
-        strFourCC = VM_STRING("RGB3");
-        break;
-
+        return VM_STRING("RGB3");
     case MFX_FOURCC_RGB4:
-        strFourCC = VM_STRING("RGB4");
-        break;
-
+        return VM_STRING("RGB4");
     case MFX_FOURCC_YUV400:
-        strFourCC = VM_STRING("YUV400");
-        break;
-
+        return VM_STRING("YUV400");
     case MFX_FOURCC_YUV411:
-        strFourCC = VM_STRING("YUV411");
-        break;
-
+        return VM_STRING("YUV411");
     case MFX_FOURCC_YUV422H:
-        strFourCC = VM_STRING("YUV422H");
-        break;
-
+        return VM_STRING("YUV422H");
     case MFX_FOURCC_YUV422V:
-        strFourCC = VM_STRING("YUV422V");
-        break;
-
+        return VM_STRING("YUV422V");
     case MFX_FOURCC_YUV444:
-        strFourCC = VM_STRING("YUV444");
-        break;
-
+        return VM_STRING("YUV444");
     case MFX_FOURCC_P010:
-        strFourCC = VM_STRING("P010");
-        break;
+        return VM_STRING("P010");
     case MFX_FOURCC_P210:
-        strFourCC = VM_STRING("P210");
-        break;
+        return VM_STRING("P210");
     case MFX_FOURCC_NV16:
-        strFourCC = VM_STRING("NV16");
-        break;
+        return VM_STRING("NV16");
     case MFX_FOURCC_A2RGB10:
-        strFourCC = VM_STRING("A2RGB10");
-        break;
+        return VM_STRING("A2RGB10");
     case MFX_FOURCC_UYVY:
-        strFourCC = VM_STRING("UYVY");
-        break;
-
+        return VM_STRING("UYVY");
+    default:
+        return VM_STRING("Unknown");
     }
-
-    return strFourCC;
 }
 
-vm_char* IOpattern2Str( mfxU32 IOpattern)
+const vm_char* IOpattern2Str( mfxU32 IOpattern)
 {
-    vm_char* strIOpattern = VM_STRING("Not defined");
-
     switch ( IOpattern )
     {
     case MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY:
-        strIOpattern = VM_STRING("sys_to_sys");
-        break;
-
+        return VM_STRING("sys_to_sys");
     case MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY:
-        strIOpattern = VM_STRING("sys_to_d3d");
-        break;
-
+        return VM_STRING("sys_to_d3d");
     case MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY:
-        strIOpattern = VM_STRING("d3d_to_sys");
-        break;
+        return VM_STRING("d3d_to_sys");
     case MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY:
-        strIOpattern = VM_STRING("d3d_to_d3d");
-        break;
+        return VM_STRING("d3d_to_d3d");
     default:
-        break;
+        return VM_STRING("Not defined");
     }
-
-    return strIOpattern;
 }
 
-static 
+static const
 vm_char* sptr2Str( mfxU32 sptr)
 {
-    vm_char* str_sptr = VM_STRING("Not defined");
-
     switch ( sptr)
     {
     case NO_PTR:
-        str_sptr = VM_STRING("MemID is used for in and out");
-        break;
-
+        return VM_STRING("MemID is used for in and out");
     case INPUT_PTR:
-        str_sptr = VM_STRING("Ptr is used for in, MemID for out");
-        break;
-
+        return VM_STRING("Ptr is used for in, MemID for out");
     case OUTPUT_PTR:
-        str_sptr = VM_STRING("Ptr is used for out, MemID for in");
-        break;
+        return VM_STRING("Ptr is used for out, MemID for in");
     case ALL_PTR:
-        str_sptr = VM_STRING("Ptr is used for in and out");
-        break;
+        return VM_STRING("Ptr is used for in and out");
     default:
-        break;
+        return VM_STRING("Not defined");
     }
-    return str_sptr;
 }
 
 /* ******************************************************************* */
 
 //static 
-vm_char* PicStruct2Str( mfxU16  PicStruct )
+const vm_char* PicStruct2Str( mfxU16  PicStruct )
 {
-    vm_char* strPicStruct = NULL;
-
-    if(PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
+    switch (PicStruct)
     {
-        strPicStruct = VM_STRING("progressive");
+        case MFX_PICSTRUCT_PROGRESSIVE:
+            return VM_STRING("progressive");
+        case MFX_PICSTRUCT_FIELD_TFF:
+            return VM_STRING("interlace (TFF)");
+        case MFX_PICSTRUCT_FIELD_BFF:
+            return VM_STRING("interlace (BFF)");
+        case MFX_PICSTRUCT_UNKNOWN:
+            return VM_STRING("unknown");
+        default:
+            return VM_STRING("interlace (no detail)");
     }
-    else if(PicStruct == MFX_PICSTRUCT_FIELD_TFF)
-    {
-        strPicStruct = VM_STRING("interlace (TFF)");
-    }
-    else if(PicStruct == MFX_PICSTRUCT_FIELD_BFF)
-    {
-        strPicStruct = VM_STRING("interlace (BFF)");
-    }
-    else if(PicStruct == MFX_PICSTRUCT_UNKNOWN)
-    {
-        strPicStruct = VM_STRING("unknown");
-    }
-    else
-    {
-        strPicStruct = VM_STRING("interlace (no detail)");
-    }
-
-    return strPicStruct;
 }
 
 /* ******************************************************************* */
