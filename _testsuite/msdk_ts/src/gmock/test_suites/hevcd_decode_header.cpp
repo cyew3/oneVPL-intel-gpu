@@ -8,7 +8,7 @@ namespace hevcd_decode_header
 class TestSuite : public tsVideoDecoder, public tsParserHEVC
 {
 public:
-    TestSuite() 
+    TestSuite()
         : tsVideoDecoder(MFX_CODEC_HEVC)
         , pAU(0)
     {
@@ -42,7 +42,7 @@ private:
         , REPACK_VSI
         , REPACK_FS
     };
-    
+
     struct tc_struct
     {
         mfxStatus sts;
@@ -73,16 +73,16 @@ private:
             case CLOSE:
                 MFXClose(); m_session = 0;
                 break;
-            case CHANGE_PAR:    
+            case CHANGE_PAR:
                 if(c.field) tsStruct::set(m_pPar, *c.field, c.par[0]);
                 else        m_pPar = 0;
                 break;
-            case CHANGE_BS:    
+            case CHANGE_BS:
                 if(c.field) tsStruct::set(m_pBitstream, *c.field, c.par[0]);
                 else        m_pBitstream = 0;
                 break;
             case ATTACH_EXT_BUF:
-                for(mfxU32 j = 1; j <= c.par[0] * 2; j += 2) 
+                for(mfxU32 j = 1; j <= c.par[0] * 2; j += 2)
                 {
                     m_par.AddExtBuffer(c.par[j], c.par[j + 1]);
                 }
@@ -171,7 +171,7 @@ void TestSuite::repackCWCrops(mfxU32 l, mfxU32 r, mfxU32 t, mfxU32 b)
     sps.conf_win_right_offset   = r;
     sps.conf_win_top_offset     = t;
     sps.conf_win_bottom_offset  = b;
-    
+
     sps.vui.hrd_parameters_present_flag = 0;
 
     repackNALU(nalu);
@@ -246,7 +246,7 @@ const char TestSuite::path[] = "conformance/hevc/itu/";
 
 #define EXT_BUF(eb) tsExtBufTypeToId<eb>::id, sizeof(eb)
 
-const TestSuite::tc_struct TestSuite::test_case[] = 
+const TestSuite::tc_struct TestSuite::test_case[] =
 {
     {/* 0*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin",},
     {/* 1*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {ATTACH_EXT_BUF, 0, {2, EXT_BUF(mfxExtCodingOptionSPSPPS), EXT_BUF(mfxExtVideoSignalInfo)}, {}, {}}},
@@ -260,11 +260,14 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/* 9*/ MFX_ERR_UNDEFINED_BEHAVIOR, "HRD_A_Fujitsu_3.bin", {CHANGE_BS, &tsStruct::mfxBitstream.DataOffset, {max_bs_size + 1} }},
     {/*10*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {REPACK_CROPS_CW, 0, {2, 4, 5, 3}}},
     {/*11*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {REPACK_CROPS_DW, 0, {5, 2, 7, 16}}},
-    {/*12*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {{REPACK_CROPS_CW, 0, {2, 4, 5, 3}}, {REPACK_CROPS_DW, 0, {5, 2, 7, 16}} }},
-    {/*13*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {REPACK_AR, 0, {13}}},
-    {/*14*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {REPACK_AR, 0, {255, 4, 3}}},
-    {/*15*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {{REPACK_VSI, 0, {4,1,1,3,3,3}}, {ATTACH_EXT_BUF, 0, {1, EXT_BUF(mfxExtVideoSignalInfo)}}}},
-    {/*16*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {REPACK_FS, 0, {1}}},
+    {/*12*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", { REPACK_CROPS_DW, 0, { 0, 0, 16, 16}}},
+    {/*13*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", { REPACK_CROPS_DW, 0, { 48, 48, 0, 0}}},
+    {/*14*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {{REPACK_CROPS_CW, 0, {2, 4, 5, 3}}, {REPACK_CROPS_DW, 0, {5, 2, 7, 16}} }},
+    {/*15*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {REPACK_AR, 0, {13}}},
+    {/*16*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {REPACK_AR, 0, {255, 4, 3}}},
+    {/*17*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {REPACK_AR, 0, {255, 16, 9}}},
+    {/*18*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {{REPACK_VSI, 0, {4,1,1,3,3,3}}, {ATTACH_EXT_BUF, 0, {1, EXT_BUF(mfxExtVideoSignalInfo)}}}},
+    {/*19*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {REPACK_FS, 0, {1}}},
 };
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
@@ -291,7 +294,6 @@ int TestSuite::RunTest(unsigned int id)
         m_bitstream.DataLength += stream.Read(m_bitstream.Data + m_bitstream.DataLength, m_bitstream.MaxLength - m_bitstream.DataLength);
     }
     MFXInit();
-
     if(m_uid)
     {
         Load();
@@ -314,7 +316,7 @@ int TestSuite::RunTest(unsigned int id)
         pAU = &ParseOrDie();
 
     }
-    
+
     if((mfxExtCodingOptionSPSPPS*)m_par)
     {
         mfxExtCodingOptionSPSPPS& eb = m_par;
@@ -367,12 +369,12 @@ int TestSuite::RunTest(unsigned int id)
 
         EXPECT_EQ(SubWidthC[cf] * (sps.conf_win_left_offset + sps.vui.def_disp_win_left_offset), m_par.mfx.FrameInfo.CropX);
         EXPECT_EQ(SubHeightC[cf] * (sps.conf_win_top_offset + sps.vui.def_disp_win_top_offset), m_par.mfx.FrameInfo.CropY);
-        EXPECT_EQ(sps.pic_width_in_luma_samples - SubWidthC[cf] * 
-            (  (sps.conf_win_left_offset + sps.vui.def_disp_win_left_offset) 
+        EXPECT_EQ(sps.pic_width_in_luma_samples - SubWidthC[cf] *
+            (  (sps.conf_win_left_offset + sps.vui.def_disp_win_left_offset)
              + (sps.conf_win_right_offset + sps.vui.def_disp_win_right_offset))
             , m_par.mfx.FrameInfo.CropW);
-        EXPECT_EQ(sps.pic_height_in_luma_samples - SubHeightC[cf] * 
-            (  (sps.conf_win_top_offset + sps.vui.def_disp_win_top_offset) 
+        EXPECT_EQ(sps.pic_height_in_luma_samples - SubHeightC[cf] *
+            (  (sps.conf_win_top_offset + sps.vui.def_disp_win_top_offset)
              + (sps.conf_win_bottom_offset + sps.vui.def_disp_win_bottom_offset))
             , m_par.mfx.FrameInfo.CropH);
 
@@ -382,7 +384,7 @@ int TestSuite::RunTest(unsigned int id)
         if((mfxExtCodingOptionSPSPPS*)m_par)
         {
             mfxExtCodingOptionSPSPPS& ecoSP = m_par;
-            
+
             EXPECT_EQ(sps_nalu.NumBytesInNalUnit, ecoSP.SPSBufSize);
             EXPECT_EQ(0, memcmp(ecoSP.SPSBuffer, m_bitstream.Data + sps_nalu.StartOffset, ecoSP.SPSBufSize));
             EXPECT_EQ(pps_nalu.NumBytesInNalUnit, ecoSP.PPSBufSize);
