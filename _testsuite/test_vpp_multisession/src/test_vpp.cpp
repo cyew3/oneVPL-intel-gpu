@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008 - 2016 Intel Corporation. All Rights Reserved.
 //
 
 #include <vector>
@@ -27,7 +27,7 @@ void PutPerformanceToFile(sInputParams& Params, mfxF64 FPS)
     if (!fPRF)
         return;
 
-    vm_char *iopattern = IOpattern2Str(Params.IOPattern);
+    vm_char *iopattern = const_cast<vm_char*>(IOpattern2Str(Params.IOPattern));
     vm_char   iopattern_ascii[32] = {0};
     vm_char  *pIOP = iopattern_ascii;
     while (*iopattern)
@@ -229,7 +229,7 @@ int main(int argc, vm_char *argv[])
 #endif
 
     //prepare mfxParams
-    for (int i = 0; i < Params.size(); i++)
+    for (unsigned int i = 0; i < Params.size(); i++)
     {
         sts = InitParamsVPP(&Resources[i]->m_mfxParamsVideo, Params[i]);
     }
@@ -244,7 +244,7 @@ int main(int argc, vm_char *argv[])
 
     Resources.front()->pAllocator->bUsedAsExternalAllocator = !Params.front()->bDefAlloc;
 
-    for (int i = 0; i < Params.size(); i++)
+    for (unsigned int i = 0; i < Params.size(); i++)
     {
         // prepare ROI generator
         if( ROI_VAR_TO_FIX == Params[i]->roiCheckParam.mode || ROI_VAR_TO_VAR == Params[i]->roiCheckParam.mode )
@@ -330,7 +330,7 @@ int main(int argc, vm_char *argv[])
 
     }
 
-    for ( int i = 0; i < Resources.size(); i++)
+    for (unsigned int i = 0; i < Resources.size(); i++)
     {
         mfxU16 addInputSurf  = 0;
         mfxU16 addOutputSurf = 0;
@@ -345,7 +345,7 @@ int main(int argc, vm_char *argv[])
 
     }
 
-    for ( int j = 0; j < Resources.front()->pAllocator->pSurfaces.size(); j++)
+    for (unsigned int j = 0; j < Resources.front()->pAllocator->pSurfaces.size(); j++)
     {
         fprintf(stderr, "Surface dimentions: %dx%d\n", Resources.front()->pAllocator->pSurfaces[j]->Info.Width, Resources.front()->pAllocator->pSurfaces[j]->Info.Height);
     }

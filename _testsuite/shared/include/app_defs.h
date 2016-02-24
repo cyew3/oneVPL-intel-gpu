@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2005-2011 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2005-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -30,7 +30,7 @@
 #define PRINT_RET_MSG(ERR) vm_string_printf(VM_STRING("Return on error: error code %d,\t%s\t%d\n\n"), ERR, VM_STRING(__FILE__), __LINE__)
 
 #define CHECK_ERROR(P, X, ERR)              {if ((X) == (P)) {PRINT_RET_MSG(ERR); return ERR;}}
-#define CHECK_NOT_EQUAL(P, X, ERR)          {if ((X) != (P)) {PRINT_RET_MSG(ERR); return ERR;}}
+#define CHECK_NOT_EQUAL(P, X, ERR)          {if (static_cast<unsigned int>(X) != static_cast<unsigned int>(P)) {PRINT_RET_MSG(ERR); return ERR;}}
 #define CHECK_RESULT(P, X, ERR)             {if ((X) > (P)) {PRINT_RET_MSG(ERR); return ERR;}}
 #define CHECK_RESULT_SAFE(P, X, ERR, ACTION) {if ((X) > (P)) {ACTION; PRINT_RET_MSG(ERR); return ERR;}}
 #define IGNORE_MFX_STS(P, X)                    {if ((X) == (P)) {P = MFX_ERR_NONE;}}

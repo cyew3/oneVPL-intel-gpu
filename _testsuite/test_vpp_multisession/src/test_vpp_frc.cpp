@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2008 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008 - 2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -225,6 +225,6 @@ void  FRCChecker::PrintDumpInfoAboutAverageError()
     vm_string_printf(VM_STRING("Error in FRC algorithm. Average error \n"));
     vm_string_printf(VM_STRING("Input frame number is %d\n"), m_NumFrame_In);
     vm_string_printf(VM_STRING("Output frame number is %d\n"), m_NumFrame_Out);
-    vm_string_printf(VM_STRING("Maximum error: input FRC, output FRC, Current value are: %d\t %d\t %d\n"), m_Error_In, m_Error_Out, m_AverageError);
+    vm_string_printf(VM_STRING("Maximum error: input FRC, output FRC, Current value are: %d\t %d\t %llu\n"), m_Error_In, m_Error_Out, m_AverageError);
 }
 

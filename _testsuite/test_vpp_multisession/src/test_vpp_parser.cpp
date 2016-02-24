@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010 - 2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "test_vpp_utils.h"
@@ -14,7 +14,7 @@
 
 
 
-void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
+void vppPrintHelp(const vm_char *strAppName, const vm_char *strErrorMessage)
 {
     if (strErrorMessage)
     {
@@ -455,7 +455,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, std::vector<sI
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams[linkIndex]->frameInfo[VPP_IN].PicStruct);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), reinterpret_cast<short int*>(&pParams[linkIndex]->frameInfo[VPP_IN].PicStruct));
                 pParams[linkIndex]->frameInfo[VPP_IN].PicStruct = GetPicStruct(pParams[linkIndex]->frameInfo[VPP_IN].PicStruct);
             }
             else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-sf")))
@@ -504,7 +504,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, std::vector<sI
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams[linkIndex]->frameInfo[VPP_OUT].PicStruct);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), reinterpret_cast<short int*>(&pParams[linkIndex]->frameInfo[VPP_OUT].PicStruct));
                 pParams[linkIndex]->frameInfo[VPP_OUT].PicStruct = GetPicStruct(pParams[linkIndex]->frameInfo[VPP_OUT].PicStruct);
             }
             else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-df")))
@@ -522,7 +522,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, std::vector<sI
 
                 if( i+1 < nArgNum )
                 {                
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);                
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int*>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams[linkIndex]->denoiseParam.factor = (mfxU16)readData;
@@ -552,7 +552,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, std::vector<sI
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int*>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams[linkIndex]->deinterlaceParam.algorithm = (mfxU16)readData;
@@ -565,7 +565,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, std::vector<sI
             {
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int*>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams[linkIndex]->deinterlaceParam.tc_pattern   = (mfxU16)readData;
@@ -579,7 +579,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, std::vector<sI
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int*>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams[linkIndex]->deinterlaceParam.tc_pos   = (mfxU16)readData;
@@ -593,7 +593,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, std::vector<sI
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int*>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams[linkIndex]->detailParam.factor = (mfxU16)readData;
@@ -715,7 +715,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, std::vector<sI
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int*>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams[linkIndex]->istabParam.istabMode = (mfxU8)readData;
@@ -742,7 +742,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, std::vector<sI
 
                 if( i+1 < nArgNum )
                 {
-                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), &readData);
+                    ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int*>(&readData));
                     if ( ioStatus > 0 )
                     {
                         pParams[linkIndex]->steParam.SkinToneFactor = (mfxU8)readData;
@@ -755,37 +755,37 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, std::vector<sI
             {
                 pParams[linkIndex]->tccParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams[linkIndex]->tccParam.Red);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), reinterpret_cast<double*>(&pParams[linkIndex]->tccParam.Red));
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:green")))
             {
                 pParams[linkIndex]->tccParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams[linkIndex]->tccParam.Green);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), reinterpret_cast<double*>(&pParams[linkIndex]->tccParam.Green));
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:blue")))
             {
                 pParams[linkIndex]->tccParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams[linkIndex]->tccParam.Blue);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), reinterpret_cast<double*>(&pParams[linkIndex]->tccParam.Blue));
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:magenta")))
             {
                 pParams[linkIndex]->tccParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams[linkIndex]->tccParam.Magenta);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), reinterpret_cast<double*>(&pParams[linkIndex]->tccParam.Magenta));
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:yellow")))
             {
                 pParams[linkIndex]->tccParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams[linkIndex]->tccParam.Yellow);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), reinterpret_cast<double*>(&pParams[linkIndex]->tccParam.Yellow));
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-tcc:cyan")))
             {
                 pParams[linkIndex]->tccParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams[linkIndex]->tccParam.Cyan);
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), reinterpret_cast<double*>(&pParams[linkIndex]->tccParam.Cyan));
             }
             //-----------------------------------------------------------------------------------
             //                   Region of Interest Testing
@@ -798,11 +798,11 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, std::vector<sI
 
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams[linkIndex]->roiCheckParam.srcSeed);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), reinterpret_cast<short int*>(&pParams[linkIndex]->roiCheckParam.srcSeed));
 
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams[linkIndex]->roiCheckParam.dstSeed);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), reinterpret_cast<short int*>(&pParams[linkIndex]->roiCheckParam.dstSeed));
             }
             //-----------------------------------------------------------------------------------
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-i")))
@@ -915,7 +915,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, std::vector<sI
                 VAL_CHECK(1 + i == nArgNum);
                 pParams[linkIndex]->bPerf = true;
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams[linkIndex]->numFrames);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), reinterpret_cast<short int*>(&pParams[linkIndex]->numFrames));
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
                 vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams[linkIndex]->numRepeat);
@@ -945,7 +945,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, std::vector<sI
 
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams[linkIndex]->numFrames);
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), reinterpret_cast<short int*>(&pParams[linkIndex]->numFrames));
 
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-plugin_guid")))

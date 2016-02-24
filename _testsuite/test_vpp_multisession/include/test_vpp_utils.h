@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2008 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008 - 2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -360,10 +360,10 @@ struct sAppResources
     sAppResources():
       m_pSrcFileReader(0),
       m_pDstFileWriter(0),
-      work_surf(VPP_OUT),
-      next(0),
       nFrames(0),
-      m_pParams(0)
+      m_pParams(0),
+      work_surf(VPP_OUT),
+      next(0)
     {
         bROITest[0] = false;
         bROITest[1] = false;
@@ -522,7 +522,7 @@ mfxStatus GetFreeSurface(
     mfxU16 nPoolSize, 
     mfxFrameSurface1** ppSurface);
 
-vm_char* IOpattern2Str( 
+const vm_char* IOpattern2Str(
     mfxU32 IOpattern);
 
 mfxStatus vppParseInputString(
@@ -535,14 +535,14 @@ bool CheckInputParams(
     sInputParams* pParams );
 
 void vppPrintHelp(
-    vm_char *strAppName, 
-    vm_char *strErrorMessage);
+    const vm_char *strAppName,
+    const vm_char *strErrorMessage);
 
 mfxStatus ConfigVideoEnhancementFilters( 
     sInputParams* pParams, 
     sAppResources* pResources );
 
-vm_char* PicStruct2Str( mfxU16  PicStruct );
+const vm_char* PicStruct2Str( mfxU16  PicStruct );
 
 const sOwnFrameInfo  defaultOwnFrameInfo = {0, 352, 288, 0, 0, 352, 288, MFX_FOURCC_NV12, MFX_PICSTRUCT_PROGRESSIVE, 30.0};
 const sProcAmpParam  defaultProcAmpParam = { 0.0, 1.0, 1.0, 0.0, VPP_FILTER_DISABLED};

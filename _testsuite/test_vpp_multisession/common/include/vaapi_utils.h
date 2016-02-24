@@ -143,7 +143,7 @@ namespace MfxLoader
         SimpleLoader lib; // should appear first in member list
 
     public:
-        typedef Display* (*XOpenDisplay_type) (char*);
+        typedef Display* (*XOpenDisplay_type) (const char*);
         typedef int (*XCloseDisplay_type)(Display*);
         typedef Window (*XCreateSimpleWindow_type)(Display *,
             Window, int, int,
