@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_camera_plugin_utils.h
 
@@ -23,8 +23,13 @@ File Name: mfx_camera_plugin_utils.h
 #include "mfx_plugin_module.h"
 #include "mfx_session.h"
 #include "mfxcamera.h"
+
+#pragma warning(disable:4505)
 #include "cm_def.h" // Needed for CM Vector
+#pragma warning(push)
+#pragma warning(disable:4100)
 #include "cm_vm.h"  //
+#pragma warning(pop)
 #include "cmrt_cross_platform.h"
 #include "vm_time.h"
 #include "Campipe.h"
@@ -72,7 +77,7 @@ File Name: mfx_camera_plugin_utils.h
 #define CAMERA_LOG(...)
 #endif
 
-#if defined( AS_VPP_PLUGIN )
+#if defined( AS_VPP_PLUGIN) || defined(AS_CAMERA_PLUGIN)
 
 #define CAMERA_CLIP(a, l, r) if (a < (l)) a = l; else if (a > (r)) a = r
 

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010 - 2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010 - 2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          SW Video Pre\Post Processing: internal implementation
@@ -334,6 +334,7 @@ mfxStatus VideoVPPSW::SetCrop(mfxFrameSurface1 *in, mfxFrameSurface1 *out)
 
 mfxStatus VideoVPPSW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
 {
+    In; Out;
 #if !defined(MFX_ENABLE_HW_ONLY_VPP)    
     mfxFrameInfo inFrameInfo;
     mfxFrameInfo outFrameInfo;

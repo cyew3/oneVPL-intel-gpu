@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_camera_plugin_dx11.h
 
@@ -15,8 +15,9 @@ File Name: mfx_camera_plugin_dx11.h
 
 #define MFX_VA_WIN
 #define MFX_ENABLE_VPP
-#define MFX_D3D11_ENABLED
-
+#ifndef MFX_D3D11_ENABLED
+ #define MFX_D3D11_ENABLED
+#endif
 #include "d3d11_video_processor.h"
 
 #define MFX_FOURCC_R16_BGGR MAKEFOURCC('I','R','W','0')
@@ -125,7 +126,7 @@ public:
         m_ddi.reset(0);
         m_executeParams = 0;
         m_executeSurf   = 0;
-        m_last_index    = -1;
+        m_last_index    = static_cast<mfxU32>(-1);
         m_paddedInput   = false;
         m_InSurfacePool  = new D3D11FrameAllocResponse();
         m_OutSurfacePool = new D3D11FrameAllocResponse();

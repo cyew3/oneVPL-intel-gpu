@@ -795,14 +795,14 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
             m_cmCtx->DestroyEventWithoutWait(e);
             if (pParam->Caps.bOutToARGB16)
             {
-                if (1 == pParam->FrameSizeExtra.tileNumHor && pParam->surf_out->Info.CropW*8 == out_pitch)
+                if (1 == pParam->FrameSizeExtra.tileNumHor && static_cast<mfxU16>(pParam->surf_out->Info.CropW*8) == out_pitch)
                     e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B);
                 else
                     e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B  + out_shift,out_pitch);
             }
             else
             {
-                if (1 == pParam->FrameSizeExtra.tileNumHor && pParam->surf_out->Info.CropW*4 == out_pitch)
+                if (1 == pParam->FrameSizeExtra.tileNumHor && static_cast<mfxU16>(pParam->surf_out->Info.CropW*4) == out_pitch)
                 {
                     e = m_cmCtx->EnqueueCopyGPUToCPU(m_gammaOutSurf, pParam->surf_out->Data.B);
                 }

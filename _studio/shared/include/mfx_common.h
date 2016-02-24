@@ -226,6 +226,7 @@
 #endif // #if defined(AS_HEVCD_PLUGIN)
 #if defined(AS_CAMERA_PLUGIN)
     #define MFX_ENABLE_VPP
+    #define MFX_ENABLE_HW_ONLY_VPP
 #endif
 #if defined(AS_HEVCD_PLUGIN)
     #define MFX_ENABLE_H265_VIDEO_DECODE

@@ -603,7 +603,7 @@ mfxStatus VideoVPPSW::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out,
     //printf("\nVideoVPPSW::VppFrameCheck()\n"); fflush(stdout);
 
     mfxStatus sts = MFX_ERR_NONE;
-    mfxStatus stsReadinessPipeline = MFX_ERR_NONE;
+    mfxStatus stsReadinessPipeline = MFX_ERR_NONE; stsReadinessPipeline;
 
     /* [IN] */
     // it is end of stream procedure if(NULL == in)
@@ -619,7 +619,7 @@ mfxStatus VideoVPPSW::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out,
     }
 
     // need for SW due to algorithm processing
-    mfxU16  realOutPicStruct = out->Info.PicStruct;
+    mfxU16  realOutPicStruct = out->Info.PicStruct; realOutPicStruct;
 
     /* *************************************** */
     /*              check info                 */

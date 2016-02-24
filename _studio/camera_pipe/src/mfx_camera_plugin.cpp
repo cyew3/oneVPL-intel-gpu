@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_camera_plugin.cpp
 
@@ -38,6 +38,7 @@ PluginModuleTemplate g_PluginModule = {
     &MFXCamera_Plugin::CreateByDispatcher
 };
 
+#ifndef UNIFIED_PLUGIN
 MSDK_PLUGIN_API(MFXVPPPlugin*) mfxCreateVPPPlugin()
 {
     if (!g_PluginModule.CreateVPPPlugin)
@@ -55,6 +56,8 @@ MSDK_PLUGIN_API(MFXPlugin*) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin)
     }
     return (MFXPlugin*) g_PluginModule.CreatePlugin(uid, plugin);
 }
+
+#endif
 
 const mfxPluginUID MFXCamera_Plugin::g_Camera_PluginGuid = MFX_PLUGINID_CAMERA_HW;
 

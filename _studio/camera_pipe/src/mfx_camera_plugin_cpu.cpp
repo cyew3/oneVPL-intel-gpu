@@ -222,13 +222,13 @@ int CPUCameraProcessor::CPU_WB(unsigned short* Bayer,
             Bayer[index] >>= shiftamount;
 
             if     ((x % 2 == 0 ) && (y % 2 == 0))
-                tmp = Bayer[index] * B;
+                tmp = static_cast<unsigned int>(Bayer[index] * B);
             else if((x % 2 == 1 ) && (y % 2 == 0))
-                tmp = Bayer[index] * G0;
+                tmp = static_cast<unsigned int>(Bayer[index] * G0);
             else if((x % 2 == 0 ) && (y % 2 == 1))
-                tmp = Bayer[index] * G1;
+                tmp = static_cast<unsigned int>(Bayer[index] * G1);
             else //((x % 2 == 1 ) && (y % 2 == 1))
-                tmp = Bayer[index] * R;
+                tmp = static_cast<unsigned int>(Bayer[index] * R);
 
             tmp = (tmp < 0)?         0 : tmp;
             tmp = (tmp > max_input)? max_input : tmp;
@@ -412,17 +412,17 @@ int CPUCameraProcessor::CPU_RestoreG(unsigned short *m_Pin,         //Pointer to
 
             //Horizontal output
             if(Gamma_w < Gamma_e)
-                m_Pout_H__m_G[y*m_Width+x] = (int)((5*G32+3*G34-B31+2*B33-B35)>>3);
+                m_Pout_H__m_G[y*m_Width+x] = static_cast<short>((5*G32+3*G34-B31+2*B33-B35)>>3);
             else
-                m_Pout_H__m_G[y*m_Width+x] = (int)((5*G34+3*G32-B31+2*B33-B35)>>3);
+                m_Pout_H__m_G[y*m_Width+x] = static_cast<short>((5*G34+3*G32-B31+2*B33-B35)>>3);
 
             //Vertical output
             if(Gamma_n < Gamma_s)
-                m_Pout_V__m_G[y*m_Width+x] = (int)((5*G23+3*G43-B13+2*B33-B53)>>3);
+                m_Pout_V__m_G[y*m_Width+x] = static_cast<short>((5*G23+3*G43-B13+2*B33-B53)>>3);
             else
-                m_Pout_V__m_G[y*m_Width+x] = (int)((5*G43+3*G23-B13+2*B33-B53)>>3);
+                m_Pout_V__m_G[y*m_Width+x] = static_cast<short>((5*G43+3*G23-B13+2*B33-B53)>>3);
 
-            m_Pout_G__m_G[y*m_Width+x] = B33 + Avg_G - Avg_B;
+            m_Pout_G__m_G[y*m_Width+x] = static_cast<short>(B33 + Avg_G - Avg_B);
         }
         else if(y%2 == 0 && x%2 == 0)
         {
@@ -447,17 +447,17 @@ int CPUCameraProcessor::CPU_RestoreG(unsigned short *m_Pin,         //Pointer to
 
             //For Horizontal
             if(Gamma_w < Gamma_e)
-                m_Pout_H__m_G[y*m_Width+x] = (int)((5*G32+3*G34-R31+2*R33-R35)>>3);
+                m_Pout_H__m_G[y*m_Width+x] = static_cast<short>((5*G32+3*G34-R31+2*R33-R35)>>3);
             else
-                m_Pout_H__m_G[y*m_Width+x] = (int)((5*G34+3*G32-R31+2*R33-R35)>>3);
+                m_Pout_H__m_G[y*m_Width+x] = static_cast<short>((5*G34+3*G32-R31+2*R33-R35)>>3);
 
             //For Vertical
             if(Gamma_n < Gamma_s)
-                m_Pout_V__m_G[y*m_Width+x] = (int)((5*G23+3*G43-R13+2*R33-R53)>>3);
+                m_Pout_V__m_G[y*m_Width+x] = static_cast<short>((5*G23+3*G43-R13+2*R33-R53)>>3);
             else
-                m_Pout_V__m_G[y*m_Width+x] = (int)((5*G43+3*G23-R13+2*R33-R53)>>3);
+                m_Pout_V__m_G[y*m_Width+x] = static_cast<short>((5*G43+3*G23-R13+2*R33-R53)>>3);
 
-            m_Pout_G__m_G[y*m_Width+x] = R33 + Avg_G - Avg_R;
+            m_Pout_G__m_G[y*m_Width+x] = static_cast<short>(R33 + Avg_G - Avg_R);
         }
         else
         {
@@ -465,9 +465,9 @@ int CPUCameraProcessor::CPU_RestoreG(unsigned short *m_Pin,         //Pointer to
             m_Pout_V__m_G[y*m_Width+x] = m_Pin[y*m_Width+x];
             m_Pout_G__m_G[y*m_Width+x] = m_Pin[y*m_Width+x];
         }
-        m_Pout_H__m_G[y*m_Width+x] = CLIP_VAL(m_Pout_H__m_G[y*m_Width+x], 0, Max_Intensity);
-        m_Pout_V__m_G[y*m_Width+x] = CLIP_VAL(m_Pout_V__m_G[y*m_Width+x], 0, Max_Intensity);
-        m_Pout_G__m_G[y*m_Width+x] = CLIP_VAL(m_Pout_G__m_G[y*m_Width+x], 0, Max_Intensity);
+        m_Pout_H__m_G[y*m_Width+x] = static_cast<short>(CLIP_VAL(m_Pout_H__m_G[y*m_Width+x], 0, Max_Intensity));
+        m_Pout_V__m_G[y*m_Width+x] = static_cast<short>(CLIP_VAL(m_Pout_V__m_G[y*m_Width+x], 0, Max_Intensity));
+        m_Pout_G__m_G[y*m_Width+x] = static_cast<short>(CLIP_VAL(m_Pout_G__m_G[y*m_Width+x], 0, Max_Intensity));
     }
 
     return 0;
@@ -499,14 +499,14 @@ int CPUCameraProcessor::CPU_RestoreBandR(unsigned short *m_Pin,         //Pointe
             int G23_V= m_Pout_V__m_G[y*m_Width+ x   ];
             int G24_V= m_Pout_V__m_G[y*m_Width+(x+1)];
 
-            m_Pout_V__m_B[y*m_Width+x] = (B22+B24-G22_V+2*G23_V-G24_V)/2;  // B32_V
-            m_Pout_H__m_B[y*m_Width+x] = (B22+B24-G22_H+2*G23_H-G24_H)/2;  // B32_H
+            m_Pout_V__m_B[y*m_Width+x] = static_cast<short>(B22+B24-G22_V+2*G23_V-G24_V)/2;  // B32_V
+            m_Pout_H__m_B[y*m_Width+x] = static_cast<short>(B22+B24-G22_H+2*G23_H-G24_H)/2;  // B32_H
 
             int G22_G= m_Pout_G__m_G[y*m_Width+(x-1)];
             int G23_G= m_Pout_G__m_G[y*m_Width+ x   ];
             int G24_G= m_Pout_G__m_G[y*m_Width+(x+1)];
 
-            m_Pout_G__m_B[y*m_Width+x] = (B22+B24-G22_G+2*G23_G-G24_G)/2;  // B32_A
+            m_Pout_G__m_B[y*m_Width+x] = static_cast<short>(B22+B24-G22_G+2*G23_G-G24_G)/2;  // B32_A
         }
         else if(y%2 ==0 && x%2==1)
         {
@@ -521,15 +521,15 @@ int CPUCameraProcessor::CPU_RestoreBandR(unsigned short *m_Pin,         //Pointe
             int G32_V = m_Pout_V__m_G[ y   *m_Width+x];
             int G42_V = m_Pout_V__m_G[(y+1)*m_Width+x];
 
-            m_Pout_H__m_B[y*m_Width+x] = (B22+B42-G22_H+2*G32_H-G42_H)/2;  // B23_H
-            m_Pout_V__m_B[y*m_Width+x] = (B22+B42-G22_V+2*G32_V-G42_V)/2;  // B23_V
+            m_Pout_H__m_B[y*m_Width+x] = static_cast<short>(B22+B42-G22_H+2*G32_H-G42_H)/2;  // B23_H
+            m_Pout_V__m_B[y*m_Width+x] = static_cast<short>(B22+B42-G22_V+2*G32_V-G42_V)/2;  // B23_V
 
 
             int G22_G = m_Pout_G__m_G[(y-1)*m_Width+x];
             int G32_G = m_Pout_G__m_G[ y   *m_Width+x];
             int G42_G = m_Pout_G__m_G[(y+1)*m_Width+x];
 
-            m_Pout_G__m_B[y*m_Width+x] = (B22+B42-G22_G+2*G32_G-G42_G)/2;  // B23_A
+            m_Pout_G__m_B[y*m_Width+x] = static_cast<short>(B22+B42-G22_G+2*G32_G-G42_G)/2;  // B23_A
 
         }
         else if(y%2 == 1 && x%2 == 1)
@@ -538,9 +538,9 @@ int CPUCameraProcessor::CPU_RestoreBandR(unsigned short *m_Pin,         //Pointe
             m_Pout_V__m_B[y*m_Width+x] = m_Pin[y*m_Width+x];               // B22_V
             m_Pout_G__m_B[y*m_Width+x] = m_Pin[y*m_Width+x];               // B22_A
         }
-        m_Pout_H__m_B[y*m_Width+x] = CLIP_VAL(m_Pout_H__m_B[y*m_Width+x], 0, Max_Intensity);
-        m_Pout_V__m_B[y*m_Width+x] = CLIP_VAL(m_Pout_V__m_B[y*m_Width+x], 0, Max_Intensity);
-        m_Pout_G__m_B[y*m_Width+x] = CLIP_VAL(m_Pout_G__m_B[y*m_Width+x], 0, Max_Intensity);
+        m_Pout_H__m_B[y*m_Width+x] = static_cast<short>(CLIP_VAL(m_Pout_H__m_B[y*m_Width+x], 0, Max_Intensity));
+        m_Pout_V__m_B[y*m_Width+x] = static_cast<short>(CLIP_VAL(m_Pout_V__m_B[y*m_Width+x], 0, Max_Intensity));
+        m_Pout_G__m_B[y*m_Width+x] = static_cast<short>(CLIP_VAL(m_Pout_G__m_B[y*m_Width+x], 0, Max_Intensity));
     }
     for(int y=2;y<m_Height-2;y++)
     for(int x=2;x<m_Width-2;x++)
@@ -562,9 +562,9 @@ int CPUCameraProcessor::CPU_RestoreBandR(unsigned short *m_Pin,         //Pointe
             int G43_V = m_Pout_V__m_G[(y+1)*m_Width+ x   ];
 
             //For Horizontal
-            m_Pout_H__m_B[y*m_Width+x] = (B32_H + B34_H - G32_H + 2* G33_H - G34_H)/2;   // B33_H
+            m_Pout_H__m_B[y*m_Width+x] = static_cast<short>(B32_H + B34_H - G32_H + 2* G33_H - G34_H)/2;   // B33_H
             //FOr vertical
-            m_Pout_V__m_B[y*m_Width+x] = (B23_V + B43_V - G23_V + 2* G33_V - G43_V)/2;   // B33_V
+            m_Pout_V__m_B[y*m_Width+x] = static_cast<short>(B23_V + B43_V - G23_V + 2* G33_V - G43_V)/2;   // B33_V
 
             int B32_G = m_Pout_G__m_B[ y   *m_Width+(x-1)];
             int B34_G = m_Pout_G__m_B[ y   *m_Width+(x+1)];
@@ -579,11 +579,11 @@ int CPUCameraProcessor::CPU_RestoreBandR(unsigned short *m_Pin,         //Pointe
             int G23_G = m_Pout_G__m_G[(y-1)*m_Width+ x   ];
             int G43_G = m_Pout_G__m_G[(y+1)*m_Width+ x   ];
 
-            m_Pout_G__m_B[y*m_Width+x] = (B32_G + B34_G + B23_G + B43_G - G32_G + 2* G33_G - G34_G -G23_G + 2* G33_G - G43_G)/4; // B33_A
+            m_Pout_G__m_B[y*m_Width+x] = static_cast<short>((B32_G + B34_G + B23_G + B43_G - G32_G + 2* G33_G - G34_G -G23_G + 2* G33_G - G43_G)/4); // B33_A
         }
-        m_Pout_H__m_B[y*m_Width+x] = CLIP_VAL(m_Pout_H__m_B[y*m_Width+x], 0, Max_Intensity);
-        m_Pout_V__m_B[y*m_Width+x] = CLIP_VAL(m_Pout_V__m_B[y*m_Width+x], 0, Max_Intensity);
-        m_Pout_G__m_B[y*m_Width+x] = CLIP_VAL(m_Pout_G__m_B[y*m_Width+x], 0, Max_Intensity);
+        m_Pout_H__m_B[y*m_Width+x] = static_cast<short>(CLIP_VAL(m_Pout_H__m_B[y*m_Width+x], 0, Max_Intensity));
+        m_Pout_V__m_B[y*m_Width+x] = static_cast<short>(CLIP_VAL(m_Pout_V__m_B[y*m_Width+x], 0, Max_Intensity));
+        m_Pout_G__m_B[y*m_Width+x] = static_cast<short>(CLIP_VAL(m_Pout_G__m_B[y*m_Width+x], 0, Max_Intensity));
     }
 
     //For R
@@ -603,14 +603,14 @@ int CPUCameraProcessor::CPU_RestoreBandR(unsigned short *m_Pin,         //Pointe
             int G23_V = m_Pout_V__m_G[y*m_Width+ x   ];
             int G24_V = m_Pout_V__m_G[y*m_Width+(x+1)];
 
-            m_Pout_V__m_R[y*m_Width+x] = (R22+R24-G22_V+2*G23_V-G24_V)/2;
-            m_Pout_H__m_R[y*m_Width+x] = (R22+R24-G22_H+2*G23_H-G24_H)/2;
+            m_Pout_V__m_R[y*m_Width+x] = static_cast<short>((R22+R24-G22_V+2*G23_V-G24_V)/2);
+            m_Pout_H__m_R[y*m_Width+x] = static_cast<short>((R22+R24-G22_H+2*G23_H-G24_H)/2);
 
             int G22_G = m_Pout_G__m_G[y*m_Width+(x-1)];
             int G23_G = m_Pout_G__m_G[y*m_Width+ x   ];
             int G24_G = m_Pout_G__m_G[y*m_Width+(x+1)];
 
-            m_Pout_G__m_R[y*m_Width+x] = (R22+R24-G22_G+2*G23_G-G24_G)/2;
+            m_Pout_G__m_R[y*m_Width+x] = static_cast<short>((R22+R24-G22_G+2*G23_G-G24_G)/2);
         }
         else if(y%2 ==1 && x%2==0)
         {
@@ -625,14 +625,14 @@ int CPUCameraProcessor::CPU_RestoreBandR(unsigned short *m_Pin,         //Pointe
             int G32_V = m_Pout_V__m_G[ y   *m_Width+x];
             int G42_V = m_Pout_V__m_G[(y+1)*m_Width+x];
 
-            m_Pout_H__m_R[y*m_Width+x] = (R22+R42-G22_H+2*G32_H-G42_H)/2;
-            m_Pout_V__m_R[y*m_Width+x] = (R22+R42-G22_V+2*G32_V-G42_V)/2;
+            m_Pout_H__m_R[y*m_Width+x] = static_cast<short>((R22+R42-G22_H+2*G32_H-G42_H)/2);
+            m_Pout_V__m_R[y*m_Width+x] = static_cast<short>((R22+R42-G22_V+2*G32_V-G42_V)/2);
 
             int G22_G = m_Pout_G__m_G[(y-1)*m_Width+x];
             int G32_G = m_Pout_G__m_G[ y   *m_Width+x];
             int G42_G = m_Pout_G__m_G[(y+1)*m_Width+x];
 
-            m_Pout_G__m_R[y*m_Width+x] = (R22+R42-G22_G+2*G32_G-G42_G)/2;
+            m_Pout_G__m_R[y*m_Width+x] = static_cast<short>((R22+R42-G22_G+2*G32_G-G42_G)/2);
         }
         else if(y%2 ==0 && x%2 ==0 )
         {
@@ -640,9 +640,9 @@ int CPUCameraProcessor::CPU_RestoreBandR(unsigned short *m_Pin,         //Pointe
             m_Pout_V__m_R[y*m_Width+x] = m_Pin[y*m_Width+x];
             m_Pout_G__m_R[y*m_Width+x] = m_Pin[y*m_Width+x];
         }
-        m_Pout_H__m_R[y*m_Width+x] = CLIP_VAL(m_Pout_H__m_R[y*m_Width+x], 0, Max_Intensity);
-        m_Pout_V__m_R[y*m_Width+x] = CLIP_VAL(m_Pout_V__m_R[y*m_Width+x], 0, Max_Intensity);
-        m_Pout_G__m_R[y*m_Width+x] = CLIP_VAL(m_Pout_G__m_R[y*m_Width+x], 0, Max_Intensity);
+        m_Pout_H__m_R[y*m_Width+x] = static_cast<short>(CLIP_VAL(m_Pout_H__m_R[y*m_Width+x], 0, Max_Intensity));
+        m_Pout_V__m_R[y*m_Width+x] = static_cast<short>(CLIP_VAL(m_Pout_V__m_R[y*m_Width+x], 0, Max_Intensity));
+        m_Pout_G__m_R[y*m_Width+x] = static_cast<short>(CLIP_VAL(m_Pout_G__m_R[y*m_Width+x], 0, Max_Intensity));
     }
 
     for(int y=2;y<m_Height-2;y++)
@@ -668,9 +668,9 @@ int CPUCameraProcessor::CPU_RestoreBandR(unsigned short *m_Pin,         //Pointe
                 dum = 1;
 
             //For Horizontal
-            m_Pout_H__m_R[y*m_Width+x] = (R32_H + R34_H - G32_H + 2* G33_H - G34_H)/2;
+            m_Pout_H__m_R[y*m_Width+x] = static_cast<short>((R32_H + R34_H - G32_H + 2* G33_H - G34_H)/2);
             //For Vertical
-            m_Pout_V__m_R[y*m_Width+x] = (R23_V + R43_V - G23_V + 2* G33_V - G43_V)/2;
+            m_Pout_V__m_R[y*m_Width+x] = static_cast<short>((R23_V + R43_V - G23_V + 2* G33_V - G43_V)/2);
 
             int R32_G = m_Pout_G__m_R[ y   *m_Width+(x-1)];
             int R34_G = m_Pout_G__m_R[ y   *m_Width+(x+1)];
@@ -686,11 +686,11 @@ int CPUCameraProcessor::CPU_RestoreBandR(unsigned short *m_Pin,         //Pointe
 
             int G43_G = m_Pout_G__m_G[(y+1)*m_Width+ x   ];
 
-            m_Pout_G__m_R[y*m_Width+x] = (R32_G + R34_G + R23_G + R43_G - G32_G + 2* G33_G - G34_G - G23_G + 2* G33_G - G43_G)/4;
+            m_Pout_G__m_R[y*m_Width+x] = static_cast<short>((R32_G + R34_G + R23_G + R43_G - G32_G + 2* G33_G - G34_G - G23_G + 2* G33_G - G43_G)/4);
         }
-        m_Pout_H__m_R[y*m_Width+x] = CLIP_VAL(m_Pout_H__m_R[y*m_Width+x], 0, Max_Intensity);
-        m_Pout_V__m_R[y*m_Width+x] = CLIP_VAL(m_Pout_V__m_R[y*m_Width+x], 0, Max_Intensity);
-        m_Pout_G__m_R[y*m_Width+x] = CLIP_VAL(m_Pout_G__m_R[y*m_Width+x], 0, Max_Intensity);
+        m_Pout_H__m_R[y*m_Width+x] = static_cast<short>(CLIP_VAL(m_Pout_H__m_R[y*m_Width+x], 0, Max_Intensity));
+        m_Pout_V__m_R[y*m_Width+x] = static_cast<short>(CLIP_VAL(m_Pout_V__m_R[y*m_Width+x], 0, Max_Intensity));
+        m_Pout_G__m_R[y*m_Width+x] = static_cast<short>(CLIP_VAL(m_Pout_G__m_R[y*m_Width+x], 0, Max_Intensity));
     }
 
     return 0;
@@ -729,8 +729,8 @@ int CPUCameraProcessor::CPU_SAD (short *m_Pout_H__m_G, short *m_Pout_V__m_G, //I
     int HDSUM_V[8] = {0,0,0,0,0,0,0,0};
     int VDSUM_V[8] = {0,0,0,0,0,0,0,0};
 
-    int Left = -4;
-    int Right = 5;
+    int Left = -4; Left;
+    int Right = 5; Right;
     int out_index, in_index;
 
     for(int y=8; y < m_Height-8; y++)
@@ -778,7 +778,7 @@ int CPUCameraProcessor::CPU_SAD (short *m_Pout_H__m_G, short *m_Pout_V__m_G, //I
             index++;
         }
         unsigned short HDSUM;
-        HDSUM = abs(DRG_H_H[5] - DRG_H_H[4]) + abs(DGB_H_H[5] - DGB_H_H[4]) + abs(DBR_H_H[5] - DBR_H_H[4]);
+        HDSUM = static_cast<unsigned short>(abs(DRG_H_H[5] - DRG_H_H[4]) + abs(DGB_H_H[5] - DGB_H_H[4]) + abs(DBR_H_H[5] - DBR_H_H[4]));
 
         int index_plus;
         for(index = 0; index <= 7; index++)
@@ -849,7 +849,7 @@ int CPUCameraProcessor::CPU_Decide_Average(short *R_A8,       // Restored averag
     //int index02;
     int Diff_Prec = bitdepth - 8;
     int w = m_Width;
-    int h = m_Height;
+    int h = m_Height; h;
     int out_index, in_index;
 
     int yp1, yp2, yp3, ym1, ym2;
@@ -1076,9 +1076,9 @@ int CPUCameraProcessor::CPU_CCM(unsigned short* R_i, unsigned short* G_i, unsign
             tmpB  += tmpint;
 
 #endif
-            R_i[index] = CLIP_VAL(tmpR, 0, MaxIntensity);
-             G_i[index] = CLIP_VAL(tmpG, 0, MaxIntensity);
-            B_i[index] = CLIP_VAL(tmpB, 0, MaxIntensity);
+            R_i[index] = static_cast<unsigned short>(CLIP_VAL(tmpR, 0, MaxIntensity));
+            G_i[index] = static_cast<unsigned short>(CLIP_VAL(tmpG, 0, MaxIntensity));
+            B_i[index] = static_cast<unsigned short>(CLIP_VAL(tmpB, 0, MaxIntensity));
         }
     }
 
@@ -1096,7 +1096,7 @@ int CPUCameraProcessor::CPU_Gamma_SKL(unsigned short* R_i, unsigned short* G_i, 
     //float max_input_level  = float(1<<int(SrcPrecision))-1;
     //float max_output_level = float(1<<int(outputprec  ))-1;
 
-    int max_input_level   = (int)(1<<int(SrcPrecision))-1;
+    int max_input_level   = (int)(1<<int(SrcPrecision))-1; max_input_level;
     int max_output_level  = (int)(1<<int(outputprec))-1;
 
     int Interpolation_R = 0;
@@ -1182,9 +1182,9 @@ int CPUCameraProcessor::CPU_Gamma_SKL(unsigned short* R_i, unsigned short* G_i, 
                 }
             }
 
-            R_i[ind] = CLIP_VAL(Interpolation_R, 0, ((1<<outputprec) -1));
-            G_i[ind] = CLIP_VAL(Interpolation_G, 0, ((1<<outputprec) -1));
-            B_i[ind] = CLIP_VAL(Interpolation_B, 0, ((1<<outputprec) -1));
+            R_i[ind] = static_cast<unsigned short>(CLIP_VAL(Interpolation_R, 0, ((1<<outputprec) -1)));
+            G_i[ind] = static_cast<unsigned short>(CLIP_VAL(Interpolation_G, 0, ((1<<outputprec) -1)));
+            B_i[ind] = static_cast<unsigned short>(CLIP_VAL(Interpolation_B, 0, ((1<<outputprec) -1)));
         }
     }
 
@@ -1204,9 +1204,9 @@ int CPUCameraProcessor::CPU_ARGB8Interleave(unsigned char* ARGB8, int OutWidth, 
 
             in_index  = j *  OutWidth    + (i/4);
             out_index = (offset + (multiplier)*j) * (OutPitch) + i;
-            ARGB8[out_index+0] = B[in_index] >> (BitDepth-8); // >> 8;
-            ARGB8[out_index+1] = G[in_index] >> (BitDepth-8); // >> 8;
-            ARGB8[out_index+2] = R[in_index] >> (BitDepth-8); // >> 8;
+            ARGB8[out_index+0] = static_cast<unsigned char>(B[in_index] >> (BitDepth-8)); // >> 8;
+            ARGB8[out_index+1] = static_cast<unsigned char>(G[in_index] >> (BitDepth-8)); // >> 8;
+            ARGB8[out_index+2] = static_cast<unsigned char>(R[in_index] >> (BitDepth-8)); // >> 8;
             ARGB8[out_index+3] = 0;
         }
     }
