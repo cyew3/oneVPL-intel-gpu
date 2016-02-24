@@ -127,6 +127,13 @@ function( configure_build_variant_linux target variant )
 
     target_link_libraries( ${ARGV0} va-x11 va X11 )
 
+  elseif( ARGV1 MATCHES none OR ARGV1 MATCHES sw)
+    # Multiple 'none' and 'sw' variants include cm_rt_linux.h. And
+    # cm_rt_linux.h includes LIBVA headers unconditionally. We need to tell the
+    # compiler where to find the LIBVA headers, especially if LIBVA is installed
+    # in a custom location.
+    append_property( ${ARGV0} COMPILE_FLAGS "${PKG_LIBVA_CFLAGS}" )
+
   endif( )
 endfunction( )
 
