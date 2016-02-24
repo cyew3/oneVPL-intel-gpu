@@ -559,5 +559,8 @@
     <ClCompile Include="src\gmock\test_suites\mpeg2d_no_i_frames.cpp">
       <Filter>Source Files\test_suites\mpeg2d</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevcd_close.cpp">
+      <Filter>Source Files\test_suites\hevcd</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
