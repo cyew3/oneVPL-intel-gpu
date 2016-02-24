@@ -1072,6 +1072,11 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
             statsAllocInfo.height = m_videoParam.Height >> m_videoParam.LowresFactor;
             m_statsLowresPool.Init(statsAllocInfo, 0);
         }
+        if (m_videoParam.SceneCut) {
+            SceneStats::AllocInfo statsAllocInfo;
+            // it doesn't make width/height here
+            m_sceneStatsPool.Init(statsAllocInfo, 0);
+        }
     }
 
     m_stopFeiThread = 0;
@@ -1120,6 +1125,7 @@ mfxStatus H265Encoder::InitInternal()
     m_miniGopCount = -1;
     m_lastTimeStamp = (mfxU64)MFX_TIMESTAMP_UNKNOWN;
     m_lastEncOrder = -1;
+    m_sceneOrder = 0;
 
     Zero(m_videoParam.cu_split_threshold_cu_sentinel);
     Zero(m_videoParam.cu_split_threshold_tu_sentinel);
@@ -1769,7 +1775,7 @@ mfxStatus H265Encoder::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *s
         buffering += m_videoParam.m_framesInParallel - 1;
         if (m_videoParam.SceneCut || m_videoParam.AnalyzeCmplx || m_videoParam.DeltaQpMode) {
             buffering += 1;
-            if (m_videoParam.SceneCut)     buffering += 10 + 1 + 1;
+            if (m_videoParam.SceneCut)     buffering += /*10 +*/ 1 + 1;
             if (m_videoParam.AnalyzeCmplx) buffering += m_videoParam.RateControlDepth;
             if (m_videoParam.DeltaQpMode) {
                 if      (m_videoParam.DeltaQpMode&(AMT_DQP_PAQ|AMT_DQP_CAL)) buffering += 2 * m_videoParam.GopRefDist + 1;
@@ -2493,6 +2499,9 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
             out->m_stats[1] = m_statsLowresPool.Allocate();
             out->m_stats[1]->ResetAvgMetrics();
         }
+        if (m_videoParam.SceneCut) {
+            out->m_sceneStats = m_sceneStatsPool.Allocate();
+        }
     }
 
     // each new frame should be analysed by lookahead algorithms family.
@@ -3001,18 +3010,15 @@ void Hrd::Init(const H265SeqParameterSet &sps, Ipp32u initialDelayInBits)
     prevAuCpbRemovalDelayMinus1 = -1;
     prevAuCpbRemovalDelayMsb = 0;
     prevAuFinalArrivalTime = 0.0;
-    prevBuffPeriodAuNominalRemovalTime = 0.0;
+    prevBuffPeriodAuNominalRemovalTime = initCpbRemovalDelay / 90000;
     prevBuffPeriodEncOrder = 0;
 }
 
 void Hrd::Update(Ipp32u sizeInbits, const Frame &pic)
 {
-    //Ipp32u picDpbOutputDelay = maxNumReorderPics + pic.m_poc - pic.m_encOrder;
-
     bool bufferingPeriodPic = pic.m_isIdrPic;
+    double auNominalRemovalTime;
 
-    // (C-10)
-    double auNominalRemovalTime = initCpbRemovalDelay / 90000;
     if (pic.m_encOrder > 0) {
         Ipp32u auCpbRemovalDelayMinus1 = (pic.m_encOrder - prevBuffPeriodEncOrder) - 1;
         // (D-1)
@@ -3025,40 +3031,59 @@ void Hrd::Update(Ipp32u sizeInbits, const Frame &pic)
         prevAuCpbRemovalDelayMinus1 = auCpbRemovalDelayMinus1;
         // (D-2)
         Ipp32u auCpbRemovalDelayValMinus1 = auCpbRemovalDelayMsb + auCpbRemovalDelayMinus1;
-        // (C-12)
+        // (C-10, C-11)
         auNominalRemovalTime = prevBuffPeriodAuNominalRemovalTime + clockTick * (auCpbRemovalDelayValMinus1 + 1.0);
-    }
-    // (C-14)
-    double auCpbRemovalTime = auNominalRemovalTime;
-    // (C-18)
-    double deltaTime90k = 90000 * (auNominalRemovalTime - prevAuFinalArrivalTime);
+    } else
+        // (C-9)
+        auNominalRemovalTime = initCpbRemovalDelay / 90000;
 
-    // update initCpbRemovalDelay (for next picture)
-    initCpbRemovalDelay = (cbrFlag)
-        // (C-20)
-        ? (Ipp32u)(deltaTime90k + 0.5)
-        // (C-19)
-        : (Ipp32u)MIN(deltaTime90k, cpbSize90k);
-
-    // (C-4)
+    // (C-3)
     double initArrivalTime = prevAuFinalArrivalTime;
     if (!cbrFlag) {
         double initArrivalEarliestTime = (bufferingPeriodPic)
-            // (C-8)
-            ? auNominalRemovalTime - initCpbRemovalDelay / 90000.0
             // (C-7)
+            ? auNominalRemovalTime - initCpbRemovalDelay / 90000.0
+            // (C-6)
             : auNominalRemovalTime - cpbSize90k / 90000.0;
-        // (C-5)
+        // (C-4)
         initArrivalTime = MAX(prevAuFinalArrivalTime, initArrivalEarliestTime);
     }
-    // (C-9)
+    // (C-8)
     double auFinalArrivalTime = initArrivalTime + (double)sizeInbits / bitrate;
 
     prevAuFinalArrivalTime = auFinalArrivalTime;
+
     if (bufferingPeriodPic) {
         prevBuffPeriodAuNominalRemovalTime = auNominalRemovalTime;
         prevBuffPeriodEncOrder = pic.m_encOrder;
     }
+}
+
+Ipp32u Hrd::GetInitCpbRemovalDelay(const Frame &pic)
+{
+    bool bufferingPeriodPic = pic.m_isIdrPic;
+    double auNominalRemovalTime;
+
+    if (pic.m_encOrder > 0) {
+        // (D-1)
+        Ipp32u auCpbRemovalDelayMsb = 0;
+        Ipp32u auCpbRemovalDelayMinus1 = pic.m_encOrder - prevBuffPeriodEncOrder - 1;
+
+        // (D-2)
+        Ipp32u auCpbRemovalDelayValMinus1 = auCpbRemovalDelayMsb + auCpbRemovalDelayMinus1;
+        // (C-10, C-11)
+        auNominalRemovalTime = prevBuffPeriodAuNominalRemovalTime + clockTick * (auCpbRemovalDelayValMinus1 + 1.0);
+
+        // (C-17)
+        double deltaTime90k = 90000 * (auNominalRemovalTime - prevAuFinalArrivalTime);
+
+        initCpbRemovalDelay = (cbrFlag)
+            // (C-19)
+            ? (Ipp32u)(deltaTime90k)
+            // (C-18)
+            : (Ipp32u)MIN(deltaTime90k, cpbSize90k);
+    }
+    return initCpbRemovalDelay;
 }
 
 Ipp32u Hrd::GetInitCpbRemovalDelay() const

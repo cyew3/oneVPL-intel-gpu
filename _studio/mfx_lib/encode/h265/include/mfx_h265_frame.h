@@ -96,8 +96,16 @@ namespace H265Enc {
         Ipp32f m_avgIntraSatd;
         Ipp32f m_avgInterSatd;
         Ipp32f m_intraRatio;
+
+        // SceneCut info
         Ipp32s m_sceneCut;
-        Ipp64s m_metric;// special metric per frame for sceneCut
+        Ipp64s m_metric;// special metric per frame for sceneCut based on +10 frames lookahead 
+        
+        /*std::vector<Ipp32f> m_fcs;
+        std::vector<Ipp32f> m_frs;
+        Ipp32f   m_AFD;
+        Ipp32f   m_RsCsDiff;
+        Ipp32f   m_MVdiffVal;*/
 
         void ResetAvgMetrics()
         {
@@ -111,13 +119,40 @@ namespace H265Enc {
             m_avgIntraSatd = 0.f;
             m_intraRatio = 0.f;
             m_sceneCut = 0;
-            m_metric = 0;
+            m_metric    = 0;
+            /*m_AFD       = 0.f;
+            m_RsCsDiff  = 0.f;
+            m_MVdiffVal = 0.f;*/
         }
 
         struct AllocInfo { Ipp32s width, height; };
         void Create(const AllocInfo &allocInfo);
         ~Statistics() { Destroy(); }
         void Destroy();
+    };
+
+    struct SceneStats : public RefCounter, public NonCopyable
+    {
+        // padded (+2 pix) Luma
+        __ALIGN16 mfxU8  data[8192]; // aligned pow(2,x) -> extH( 64 + 2*(2)) * extWidth (112 + 2*2)
+        mfxU8* Y;
+
+        H265MV mv[112 /*NUM_BLOCKS*/       ];
+        mfxF32 Cs[448 /*LOWRES_SIZE / 16*/ ];
+        mfxF32 Rs[448 /*LOWRES_SIZE / 16*/ ];
+
+        mfxF32   avgCs;
+        mfxF32   avgRs;
+
+        mfxF32   AFD;
+        mfxF32   TSC;
+        mfxF32   RsCsDiff;
+        mfxF32   MVdiffVal;
+
+        struct AllocInfo { Ipp32s width, height; };
+        void Create(const AllocInfo &allocInfo);
+        ~SceneStats() { Destroy(); }
+        void Destroy(){}
     };
 
     struct FrameData : public RefCounter, public NonCopyable
@@ -276,6 +311,7 @@ namespace H265Enc {
         Ipp32s m_numRefUnique;
         Ipp32s m_allRefFramesAreFromThePast;
         Ipp32u m_frameType;// full info for bs. m_frameType = m_codeType | isIDR ? | isRef ?
+        Ipp32s m_sceneOrder;
 
         std::vector<H265Slice> m_slices;
         Frame *m_dpb[16];
@@ -313,9 +349,10 @@ namespace H265Enc {
         volatile Ipp32u m_numFinishedThreadingTasks;
         Ipp32s m_encIdx; // we have "N" frameEncoders. this index indicates owner of the frame [0, ..., N-1]
 
-        // complexity/content statistics
+        // complexity statistics
         // 0 - original resolution, 1 - lowres
         Statistics* m_stats[2];
+        SceneStats* m_sceneStats;
 
         // BRC info
         Ipp64f m_avCmplx;
@@ -327,6 +364,7 @@ namespace H265Enc {
         Ipp32s m_predBits;
         Ipp64f m_cmplx;
         std::vector<Frame *> m_futureFrames;
+        Ipp8u  m_forceTryIntra;
 
         // FEI resources
         FeiInputData *m_feiOrigin;

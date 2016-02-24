@@ -616,6 +616,11 @@ namespace MFX_HEVC_PP
         void (H265_FASTCALL* h265_SplitChromaCtb_8u)(const Ipp8u*,Ipp32s,Ipp8u*,Ipp32s,Ipp8u*,Ipp32s,Ipp32s,Ipp32s);
         void (H265_FASTCALL* h265_SplitChromaCtb_16u)(const Ipp16u*,Ipp32s,Ipp16u*,Ipp32s,Ipp16u*,Ipp32s,Ipp32s,Ipp32s);
 
+        void (H265_FASTCALL* h265_ImageDiffHistogram_8u)(Ipp8u*, Ipp8u*, Ipp32s, Ipp32s, Ipp32s, Ipp32s histogram[5], Ipp64s*, Ipp64s*);
+
+        void (H265_FASTCALL* h265_SearchBestBlock8x8_8u)(Ipp8u*, Ipp8u*, Ipp32s, Ipp32s, Ipp32s, Ipp32u*, Ipp32s*, Ipp32s*);
+        void (H265_FASTCALL* h265_ComputeRsCsDiff)(Ipp32f* pRs0, Ipp32f* pCs0, Ipp32f* pRs1, Ipp32f* pCs1, Ipp32s len, Ipp32f* pRsDiff, Ipp32f* pCsDiff);
+        void (H265_FASTCALL* h265_ComputeRsCs4x4_8u)(const Ipp8u* pSrc, Ipp32s srcPitch, Ipp32s wblocks, Ipp32s hblocks, Ipp32f* pRs, Ipp32f* pCs);
         // [SATD]
         HEVCPP_API( PTR_SATD_8u, Ipp32s, h265_SATD_4x4_8u, (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep));
         HEVCPP_API( PTR_SATD_8u, Ipp32s, h265_SATD_8x8_8u, (const Ipp8u* pSrcCur, int srcCurStep, const Ipp8u* pSrcRef, int srcRefStep));
@@ -1259,6 +1264,10 @@ namespace MFX_HEVC_PP
         MFX_HEVC_PP::NAME(h265_ComputeRsCs_16u)(ySrc, pitchSrc, lcuRs, lcuCs, pitchRsCs, width, height);
     }
 
+    static inline void h265_ComputeRsCsDiff(Ipp32f* pRs0, Ipp32f* pCs0, Ipp32f* pRs1, Ipp32f* pCs1, Ipp32s len, Ipp32f* pRsDiff, Ipp32f* pCsDiff) 
+    {
+        MFX_HEVC_PP::NAME(h265_ComputeRsCsDiff)(pRs0, pCs0, pRs1, pCs1, len, pRsDiff, pCsDiff);
+    }
     static inline void h265_GetCtuStatistics(SAOCU_ENCODE_PARAMETERS_LIST)
     {
         MFX_HEVC_PP::NAME(h265_GetCtuStatistics_8u)(SAOCU_ENCODE_PARAMETERS_LIST_CALL);
@@ -1315,6 +1324,20 @@ namespace MFX_HEVC_PP
         return MFX_HEVC_PP::NAME(h265_SplitChromaCtb_16u)(nv12, pitchNv12, u, pitchU, v, pitchV, width, height);
     }
 
+    static inline void h265_ImageDiffHistogram(Ipp8u* pSrc, Ipp8u* pRef, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s histogram[5], Ipp64s *pSrcDC, Ipp64s *pRefDC)
+    {
+        return MFX_HEVC_PP::NAME(h265_ImageDiffHistogram_8u)(pSrc, pRef, pitch, width, height, histogram, pSrcDC, pRefDC);
+    }
+
+    static inline void h265_SearchBestBlock8x8(Ipp8u *pSrc, Ipp8u *pRef, Ipp32s pitch, Ipp32s xrange, Ipp32s yrange, Ipp32u *bestSAD, Ipp32s *bestX, Ipp32s *bestY) 
+    {
+        return MFX_HEVC_PP::NAME(h265_SearchBestBlock8x8_8u)(pSrc, pRef, pitch, xrange, yrange, bestSAD, bestX, bestY);
+    }
+
+    static inline void h265_ComputeRsCs4x4(const Ipp8u* pSrc, Ipp32s srcPitch, Ipp32s wblocks, Ipp32s hblocks, Ipp32f* pRs, Ipp32f* pCs)
+    {
+        return MFX_HEVC_PP::NAME(h265_ComputeRsCs4x4_8u)(pSrc, srcPitch, wblocks, hblocks, pRs, pCs);
+    }
 } // namespace MFX_HEVC_PP
 
 #endif // __MFX_H265_OPTIMIZATION_H__

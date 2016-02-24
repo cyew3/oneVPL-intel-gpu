@@ -16,6 +16,9 @@
 #include <list>
 #include <vector>
 
+#include "mfx_h265_defs.h"
+#include "mfx_h265_frame.h"
+
 namespace H265Enc {
 
     class H265Encoder;
@@ -53,9 +56,10 @@ namespace H265Enc {
         Ipp32s m_lowresRowsInRegion;
         Ipp32s m_originRowsInRegion;
         
-        std::vector<StatItem> m_slideWindowStat; // store metrics for SceneCut
+        void AnalyzeSceneCut_AndUpdateState_Atul(Frame* in);
         Ipp32s m_bufferingPaq; // paq need buffering = refDist + M (scenecut buffering)
         Frame* m_lastAcceptedFrame[2];
+        Ipp8u m_pendingSceneCut;// don't break B-pyramid for the best quality
         ObjectPool<ThreadingTask> m_ttHubPool;       // storage for threading tasks of type TT_HUB
     };
 
@@ -73,6 +77,8 @@ namespace H265Enc {
     void DetermineQpMap_IFrame(FrameIter curr, FrameIter end, H265VideoParam& videoParam);
 
     void DoPDistInterAnalysis_OneRow(Frame* curr, Frame* prevP, Frame* nextP, Ipp32s region_row, Ipp32s lowresRowsInRegion, Ipp32s originRowsInRegion, Ipp8u LowresFactor);
+
+    int  DetectSceneCut_AMT(Frame* input, Frame* prev);
 
 } // namespace
 

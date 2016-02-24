@@ -1299,11 +1299,12 @@ void H265CU<PixType>::InitCu(
             GetAdaptiveMinDepth(0, 0);
         m_isHistBuilt = false;
 
-        m_cuIntraAngMode = EnumIntraAngMode((m_currFrame->m_picCodeType == MFX_FRAMETYPE_B && !m_currFrame->m_isRef)
+        m_cuIntraAngMode = m_cslice->sliceIntraAngMode;
+        /*EnumIntraAngMode((m_currFrame->m_picCodeType == MFX_FRAMETYPE_B && !m_currFrame->m_isRef)
             ? m_par->intraAngModes[B_NONREF]
         : ((m_currFrame->m_picCodeType == MFX_FRAMETYPE_P)
             ? m_par->intraAngModes[SliceTypeIndex(P_SLICE)]
-        : m_par->intraAngModes[SliceTypeIndex(m_cslice->slice_type)]));
+        : m_par->intraAngModes[SliceTypeIndex(m_cslice->slice_type)]));*/
 
 #ifndef AMT_ALT_ENCODE
         m_interPredY = m_interPredBufsY[0];
@@ -2796,6 +2797,12 @@ CostType H265CU<PixType>::ModeDecision(Ipp32s absPartIdx, Ipp8u depth)
             if(tryIntra && splitMode == SPLIT_TRY && depth < m_intraMinDepth && costBestNonSplit>=cuSplitThresholdCu) tryIntra = false;
         }
 #endif
+
+        // hint from lookahead: (marked) RASL (due to scenecut) w/o intra could introduce strong artifact
+        if (m_currFrame->m_forceTryIntra && !tryIntra) {
+            tryIntra = true;
+        }
+
         if (tryIntra) {
 
             if (!m_par->enableCmFlag && m_cuIntraAngMode == INTRA_ANG_MODE_GRADIENT && !m_isHistBuilt) { 

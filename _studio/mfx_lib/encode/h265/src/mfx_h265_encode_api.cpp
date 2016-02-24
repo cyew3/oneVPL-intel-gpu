@@ -1411,9 +1411,6 @@ namespace {
                 optHevc.DeltaQpMode = 1; // off
             if (roi.NumROI)
                 optHevc.DeltaQpMode = 1; // off
-            // AYA: is supported for INTERLACE MODE???
-            //if (fi.PicStruct != PROGR)
-            //    optHevc.DeltaQpMode = 1; // off
         }
 
         if (optHevc.Enable10bit == 0)

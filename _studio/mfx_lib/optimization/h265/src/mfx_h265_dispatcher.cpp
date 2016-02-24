@@ -304,6 +304,13 @@ void SetTargetSSE4()
     g_dispatcher.h265_SplitChromaCtb_8u  = &MFX_HEVC_PP::h265_SplitChromaCtb_px<Ipp8u>;
     g_dispatcher.h265_SplitChromaCtb_16u = &MFX_HEVC_PP::h265_SplitChromaCtb_px<Ipp16u>;
 
+    g_dispatcher.h265_ImageDiffHistogram_8u  = &MFX_HEVC_PP::h265_ImageDiffHistogram_8u_sse;
+
+    g_dispatcher.h265_SearchBestBlock8x8_8u  = &MFX_HEVC_PP::h265_SearchBestBlock8x8_8u_sse;
+
+    g_dispatcher.h265_ComputeRsCsDiff  = &MFX_HEVC_PP::h265_ComputeRsCsDiff_sse;
+
+    g_dispatcher.h265_ComputeRsCs4x4_8u  = &MFX_HEVC_PP::h265_ComputeRsCs4x4_8u_sse;
     // SATD
     g_dispatcher.h265_SATD_4x4_8u = &MFX_HEVC_PP::h265_SATD_4x4_8u_sse;
     g_dispatcher.h265_SATD_8x8_8u = &MFX_HEVC_PP::h265_SATD_8x8_8u_sse;
@@ -508,6 +515,13 @@ void SetTargetSSSE3()
     g_dispatcher.h265_SplitChromaCtb_8u  = &MFX_HEVC_PP::h265_SplitChromaCtb_px<Ipp8u>;
     g_dispatcher.h265_SplitChromaCtb_16u = &MFX_HEVC_PP::h265_SplitChromaCtb_px<Ipp16u>;
 
+    g_dispatcher.h265_ImageDiffHistogram_8u  = &MFX_HEVC_PP::h265_ImageDiffHistogram_8u_px;
+
+    g_dispatcher.h265_SearchBestBlock8x8_8u  = &MFX_HEVC_PP::h265_SearchBestBlock8x8_8u_px;
+
+    g_dispatcher.h265_ComputeRsCsDiff  = &MFX_HEVC_PP::h265_ComputeRsCsDiff_px;
+
+    g_dispatcher.h265_ComputeRsCs4x4_8u  = &MFX_HEVC_PP::h265_ComputeRsCs4x4_8u_px;
     // SATD
     g_dispatcher.h265_SATD_4x4_8u = &MFX_HEVC_PP::h265_SATD_4x4_8u_px;
     g_dispatcher.h265_SATD_8x8_8u = &MFX_HEVC_PP::h265_SATD_8x8_8u_px;
@@ -712,6 +726,13 @@ void SetTargetAVX2()
     g_dispatcher.h265_SplitChromaCtb_8u  = &MFX_HEVC_PP::h265_SplitChromaCtb_avx2<Ipp8u>;
     g_dispatcher.h265_SplitChromaCtb_16u = &MFX_HEVC_PP::h265_SplitChromaCtb_avx2<Ipp16u>;
 
+    g_dispatcher.h265_ImageDiffHistogram_8u  = &MFX_HEVC_PP::h265_ImageDiffHistogram_8u_avx2;
+
+    g_dispatcher.h265_SearchBestBlock8x8_8u  = &MFX_HEVC_PP::h265_SearchBestBlock8x8_8u_avx2;
+
+    g_dispatcher.h265_ComputeRsCsDiff  = &MFX_HEVC_PP::h265_ComputeRsCsDiff_avx2;
+
+    g_dispatcher.h265_ComputeRsCs4x4_8u  = &MFX_HEVC_PP::h265_ComputeRsCs4x4_8u_avx2;
     // SATD
     g_dispatcher.h265_SATD_4x4_8u = &MFX_HEVC_PP::h265_SATD_4x4_8u_avx2;
     g_dispatcher.h265_SATD_8x8_8u = &MFX_HEVC_PP::h265_SATD_8x8_8u_avx2;
@@ -939,6 +960,13 @@ void SetTargetPX()
     g_dispatcher.h265_SplitChromaCtb_8u  = &MFX_HEVC_PP::h265_SplitChromaCtb_px<Ipp8u>;
     g_dispatcher.h265_SplitChromaCtb_16u = &MFX_HEVC_PP::h265_SplitChromaCtb_px<Ipp16u>;
 
+    g_dispatcher.h265_ImageDiffHistogram_8u  = &MFX_HEVC_PP::h265_ImageDiffHistogram_8u_px;
+
+    g_dispatcher.h265_SearchBestBlock8x8_8u  = &MFX_HEVC_PP::h265_SearchBestBlock8x8_8u_px;
+
+    g_dispatcher.h265_ComputeRsCsDiff  = &MFX_HEVC_PP::h265_ComputeRsCsDiff_px;
+
+    g_dispatcher.h265_ComputeRsCs4x4_8u  = &MFX_HEVC_PP::h265_ComputeRsCs4x4_8u_px;
     // SATD
     g_dispatcher.h265_SATD_4x4_8u = &MFX_HEVC_PP::h265_SATD_4x4_8u_px;
     g_dispatcher.h265_SATD_8x8_8u = &MFX_HEVC_PP::h265_SATD_8x8_8u_px;

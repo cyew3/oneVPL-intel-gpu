@@ -461,6 +461,11 @@ void H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice, Frame *frame)
     else
         slice->NalUnitType = frame->m_isRef ? NAL_TRAIL_R : NAL_TRAIL_N;
 
+    // hint from lookahead
+    if (frame->m_forceTryIntra && (slice->NalUnitType == NAL_RASL_R || slice->NalUnitType == NAL_RASL_N)) {
+       slice->sliceIntraAngMode = IPP_MIN(INTRA_ANG_MODE_GRADIENT, slice->sliceIntraAngMode);
+    }
+
     slice->slice_pic_order_cnt_lsb = frame->m_poc & ~(0xffffffff << m_sps.log2_max_pic_order_cnt_lsb);
     slice->deblocking_filter_override_flag = 0;
     slice->slice_deblocking_filter_disabled_flag = m_pps.pps_deblocking_filter_disabled_flag;
@@ -1409,6 +1414,20 @@ Ipp8u SameRps(const H265ShortTermRefPicSet *rps1, const H265ShortTermRefPicSet *
     return 1;
 }
 
+struct isEqual
+{
+    isEqual(Ipp32s frameOrder): m_frameOrder(frameOrder)
+    {}
+
+    template<typename T>
+    bool operator()(const T& l)
+    {
+        return (*l).m_frameOrder == m_frameOrder;
+    }
+
+    Ipp32s m_frameOrder;
+};
+
 void H265Encoder::ConfigureEncodeFrame(Frame* frame)
 {
     Frame *currFrame = frame;
@@ -1512,6 +1531,33 @@ void H265Encoder::ConfigureEncodeFrame(Frame* frame)
         currFrame->m_dpb[i]->AddRef();
 
     UpdateDpb(currFrame);
+
+    // hint from lookahead
+    if (currFrame->m_slices[0].NalUnitType != NAL_RASL_R && currFrame->m_slices[0].NalUnitType != NAL_RASL_N) {
+        currFrame->m_forceTryIntra = 0;
+    } /*else if (currFrame->m_forceTryIntra){
+        FILE *fp = fopen("markedRASL.txt", "a+");
+        fprintf(fp, "FrameOrder %i \n", currFrame->m_frameOrder);
+        fclose(fp);
+    }*/
+#if 0
+    else if (currFrame->m_forceTryIntra) { // means RASL with pendingSceneCut
+        Ipp32s targetScene = currFrame->m_sceneOrder;
+        Ipp32s isTargetSceneInRef[2] = {0};
+        for (Ipp32s dir = 0; dir < 2; dir++) {
+            for (Ipp32s refIdx = 0; refIdx < currFrame->m_refPicList[dir].m_refFramesCount; refIdx++) {
+                Frame* ref = currFrame->m_refPicList[dir].m_refFrames[refIdx];
+                if (targetScene == ref->m_sceneOrder) {
+                    isTargetSceneInRef[dir] = 1;
+                    break;
+                }
+            }
+        }
+        if (isTargetSceneInRef[0] || isTargetSceneInRef[1]) {
+            currFrame->m_forceTryIntra = 0; // it is expected prediction from ref is good enough
+        }
+    }
+#endif
 }
 
 // expect that frames in m_dpb is ordered by m_encOrder
@@ -1632,9 +1678,11 @@ void H265Encoder::OnEncodingQueried(Frame* encoded)
     SafeRelease(encoded->m_feiSaoModes);
     SafeRelease(encoded->m_lowres);
 
-    if (m_la.get())
+    if (m_la.get()) {
         for (Ipp32s idx = 0; idx < 2; idx++)
             SafeRelease(encoded->m_stats[idx]);
+        SafeRelease(encoded->m_sceneStats);
+    }
 
     // release encoded frame
     encoded->Release();

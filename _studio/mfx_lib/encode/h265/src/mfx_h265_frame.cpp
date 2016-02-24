@@ -491,6 +491,7 @@ namespace H265Enc {
         m_lowres = NULL;
         cu_data = NULL;
         m_stats[0] = m_stats[1] = NULL;
+        m_sceneStats = NULL;
 
         mem = NULL;
     }
@@ -533,6 +534,8 @@ namespace H265Enc {
         m_timeStamp   = 0;
         m_encIdx      = -1;
         m_dpbSize     = 0;
+        m_sceneOrder  = 0;
+        m_forceTryIntra = 0;
 
         if (m_stats[0]) {
             m_stats[0]->ResetAvgMetrics();

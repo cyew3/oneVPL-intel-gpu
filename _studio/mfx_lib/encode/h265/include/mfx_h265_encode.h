@@ -45,6 +45,7 @@ namespace H265Enc {
         Hrd() { Zero(*this); }
         void Init(const H265SeqParameterSet &sps, Ipp32u initialDelay);
         void Update(Ipp32u sizeInbits, const Frame &pic);
+        Ipp32u GetInitCpbRemovalDelay(const Frame &pic);
         Ipp32u GetInitCpbRemovalDelay() const;
         Ipp32u GetInitCpbRemovalOffset() const;
         Ipp32u GetAuCpbRemovalDelayMinus1(const Frame &pic) const;
@@ -127,6 +128,7 @@ namespace H265Enc {
         Ipp32s m_miniGopCount;
         mfxU64 m_lastTimeStamp;
         Ipp32s m_lastEncOrder;
+        Ipp32s m_sceneOrder;                        // in display order each frame belongs something scene (if sceneCut enabled)
 
         // threading
         vm_cond m_condVar;
@@ -156,6 +158,7 @@ namespace H265Enc {
         ObjectPool<FrameData>     m_frameDataLowresPool;    // storage for lowres original pixel data for lookahead
         ObjectPool<Statistics>    m_statsPool;              // storage for full-sized statistics per frame
         ObjectPool<Statistics>    m_statsLowresPool;        // storage for lowres statistics per frame
+        ObjectPool<SceneStats>    m_sceneStatsPool;         // storage for scenecut statistics per frame
         ObjectPool<FeiInputData>  m_feiInputDataPool;       // storage for full-sized original pixel data
         ObjectPool<FeiReconData>  m_feiReconDataPool;       // storage for full-sized reconstructed/reference pixel data
         ObjectPool<FeiOutData>    m_feiAngModesPool[4];     // storage for angular intra modes output by fei (4x4, 8x8, 16x16, 32x32)

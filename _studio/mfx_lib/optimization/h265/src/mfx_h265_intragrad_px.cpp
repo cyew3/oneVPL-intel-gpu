@@ -182,6 +182,115 @@ void MAKE_NAME(h265_ComputeRsCs)(const PixType *ySrc, Ipp32s pitchSrc, Ipp32s *l
 template void MAKE_NAME(h265_ComputeRsCs)<Ipp8u> (const Ipp8u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s pitchRsCs, Ipp32s width, Ipp32s height);
 template void MAKE_NAME(h265_ComputeRsCs)<Ipp16u>(const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s *lcuRs, Ipp32s *lcuCs, Ipp32s pitchRsCs, Ipp32s width, Ipp32s height);
 
+void MAKE_NAME(h265_ImageDiffHistogram_8u)(Ipp8u* pSrc, Ipp8u* pRef, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s histogram[5], Ipp64s *pSrcDC, Ipp64s *pRefDC)
+{
+    enum {HIST_THRESH_LO = 4, HIST_THRESH_HI = 12};
+    Ipp64s srcDC = 0;   
+    Ipp64s refDC = 0;
+
+    histogram[0] = 0;
+    histogram[1] = 0;
+    histogram[2] = 0;
+    histogram[3] = 0;
+    histogram[4] = 0;
+
+    for (Ipp32s i = 0; i < height; i++) {
+        for (Ipp32s j = 0; j < width; j++) {
+            Ipp32s s = pSrc[j];
+            Ipp32s r = pRef[j];
+            Ipp32s d = s - r;
+
+            srcDC += s;
+            refDC += r;
+
+            if (d < -HIST_THRESH_HI)
+                histogram[0]++;
+            else if (d < -HIST_THRESH_LO)
+                histogram[1]++;
+            else if (d < HIST_THRESH_LO)
+                histogram[2]++;
+            else if (d < HIST_THRESH_HI)
+                histogram[3]++;
+            else
+                histogram[4]++;
+        }
+        pSrc += pitch;
+        pRef += pitch;
+    }
+    *pSrcDC = srcDC;
+    *pRefDC = refDC;
+}
+
+
+void MAKE_NAME(h265_SearchBestBlock8x8_8u)(Ipp8u *pSrc, Ipp8u *pRef, Ipp32s pitch, Ipp32s xrange, Ipp32s yrange, Ipp32u *bestSAD, Ipp32s *bestX, Ipp32s *bestY) 
+{
+    enum {SAD_SEARCH_VSTEP  = 2};  // 1=FS 2=FHS
+    for (Ipp32s y = 0; y < yrange; y += SAD_SEARCH_VSTEP) {
+        for (Ipp32s x = 0; x < xrange; x++) {
+            Ipp8u* pr = pRef + (y * pitch) + x;
+            Ipp8u* ps = pSrc;
+            Ipp32u SAD = 0;
+            for (Ipp32s i = 0; i < 8; i++) {
+                SAD += abs(pr[0] - ps[0]);
+                SAD += abs(pr[1] - ps[1]);
+                SAD += abs(pr[2] - ps[2]);
+                SAD += abs(pr[3] - ps[3]);
+                SAD += abs(pr[4] - ps[4]);
+                SAD += abs(pr[5] - ps[5]);
+                SAD += abs(pr[6] - ps[6]);
+                SAD += abs(pr[7] - ps[7]);
+                pr += pitch;
+                ps += pitch;
+            }
+            if (SAD < *bestSAD) {
+                *bestSAD = SAD;
+                *bestX = x;
+                *bestY = y;
+            }
+        }
+    }
+}
+
+void MAKE_NAME(h265_ComputeRsCsDiff)(Ipp32f* pRs0, Ipp32f* pCs0, Ipp32f* pRs1, Ipp32f* pCs1, Ipp32s len, Ipp32f* pRsDiff, Ipp32f* pCsDiff)
+{
+    //Ipp32s len = wblocks * hblocks;
+    Ipp64f accRs = 0.0;
+    Ipp64f accCs = 0.0;
+
+    for (Ipp32s i = 0; i < len; i++) {
+        accRs += (pRs0[i] - pRs1[i]) * (pRs0[i] - pRs1[i]);
+        accCs += (pCs0[i] - pCs1[i]) * (pCs0[i] - pCs1[i]);
+    }
+    *pRsDiff = (Ipp32f)accRs;
+    *pCsDiff = (Ipp32f)accCs;
+}
+
+void MAKE_NAME(h265_ComputeRsCs4x4_8u)(const Ipp8u* pSrc, Ipp32s srcPitch, Ipp32s wblocks, Ipp32s hblocks, Ipp32f* pRs, Ipp32f* pCs)
+{
+    for (Ipp32s i = 0; i < hblocks; i++) {
+        for (Ipp32s j = 0; j < wblocks; j++) {
+            Ipp32s accRs = 0;
+            Ipp32s accCs = 0;
+
+            for (Ipp32s k = 0; k < 4; k++) {
+                for (Ipp32s l = 0; l < 4; l++) {
+                    Ipp32s dRs = pSrc[l] - pSrc[l - srcPitch];
+                    Ipp32s dCs = pSrc[l] - pSrc[l - 1];
+                    accRs += dRs * dRs;
+                    accCs += dCs * dCs;
+                }
+                pSrc += srcPitch;
+            }
+            pRs[i * wblocks + j] = accRs * (1.0f / 16);
+            pCs[i * wblocks + j] = accCs * (1.0f / 16);
+
+            pSrc -= 4 * srcPitch;
+            pSrc += 4;
+        }
+        pSrc -= 4 * wblocks;
+        pSrc += 4 * srcPitch;
+    }
+}
 }; // namespace MFX_HEVC_PP
 
 #endif // #if defined(MFX_TARGET_OPTIMIZATION_AUTO) || defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSSE3)

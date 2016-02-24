@@ -728,7 +728,7 @@ Ipp32s H265FrameEncoder::WriteBitstreamHeaderSet(mfxBitstream *mfxBS, Ipp32s bs_
         if (m_videoParam.writeBufPeriod) {
             BufferingPeriod bufferingPeriod = {};
             bufferingPeriod.bp_seq_parameter_set_id = m_topEnc.m_sps.sps_seq_parameter_set_id;
-            bufferingPeriod.nal_initial_cpb_removal_delay  = m_topEnc.m_hrd.GetInitCpbRemovalDelay();
+            bufferingPeriod.nal_initial_cpb_removal_delay  = m_topEnc.m_hrd.GetInitCpbRemovalDelay(*m_frame);
             bufferingPeriod.nal_initial_cpb_removal_offset = m_topEnc.m_hrd.GetInitCpbRemovalOffset();
             PutBufferingPeriod(&m_bs[bs_main_id], bufferingPeriod, m_topEnc.m_sps);
             nal.nal_unit_type = NAL_UT_PREFIX_SEI;

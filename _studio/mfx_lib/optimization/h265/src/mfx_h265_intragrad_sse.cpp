@@ -522,6 +522,343 @@ void MAKE_NAME(h265_ComputeRsCs_16u)(const Ipp16u *ySrc, Ipp32s pitchSrc, Ipp32s
 }
 
 
+
+#define _mm_loadh_epi64(a, ptr) _mm_castps_si128(_mm_loadh_pi(_mm_castsi128_ps(a), (__m64 *)(ptr)))
+#define _mm_movehl_epi64(a, b) _mm_castps_si128(_mm_movehl_ps(_mm_castsi128_ps(a), _mm_castsi128_ps(b)))
+    // Load 0..3 floats to XMM register from memory
+    // NOTE: elements of XMM are permuted [ 2 - 1 ]
+    static inline __m128 LoadPartialXmm(Ipp32f *pSrc, Ipp32s len)
+    {
+        __m128 xmm = _mm_setzero_ps();
+        if (len & 2)
+        {
+            xmm = _mm_loadh_pi(xmm, (__m64 *)pSrc);
+            pSrc += 2;
+        }
+        if (len & 1)
+        {
+            xmm = _mm_move_ss(xmm, _mm_load_ss(pSrc));
+        }
+        return xmm;
+    }
+
+        // Load 0..15 bytes to XMM register from memory
+    // NOTE: elements of XMM are permuted [ 8 4 2 - 1 ]
+    template <char init>
+    static inline __m128i LoadPartialXmm(Ipp8u *pSrc, Ipp32s len)
+    {
+        __m128i xmm = _mm_set1_epi8(init);
+        if (len & 8) {
+            xmm = _mm_loadh_epi64(xmm, (__m64 *)pSrc);
+            pSrc += 8;
+        }
+        if (len & 4) {
+            xmm = _mm_insert_epi32(xmm, *((Ipp32s *)pSrc), 1);
+            pSrc += 4;
+        }
+        if (len & 2) {
+            xmm = _mm_insert_epi16(xmm, *((short *)pSrc), 1);
+            pSrc += 2;
+        }
+        if (len & 1) {
+            xmm = _mm_insert_epi8(xmm, *pSrc, 0);
+        }
+        return xmm;
+    }
+
+
+
+void MAKE_NAME(h265_ImageDiffHistogram_8u)(Ipp8u* pSrc, Ipp8u* pRef, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s histogram[5], Ipp64s *pSrcDC, Ipp64s *pRefDC)
+{
+    enum {HIST_THRESH_LO = 4, HIST_THRESH_HI = 12};
+    __m128i sDC = _mm_setzero_si128();
+    __m128i rDC = _mm_setzero_si128();
+
+    __m128i h0 = _mm_setzero_si128();
+    __m128i h1 = _mm_setzero_si128();
+    __m128i h2 = _mm_setzero_si128();
+    __m128i h3 = _mm_setzero_si128();
+
+    __m128i zero = _mm_setzero_si128();
+
+    for (Ipp32s i = 0; i < height; i++)
+    {
+        // process 16 pixels per iteration
+        Ipp32s j;
+        for (j = 0; j < width - 15; j += 16)
+        {
+            __m128i s = _mm_loadu_si128((__m128i *)(&pSrc[j]));
+            __m128i r = _mm_loadu_si128((__m128i *)(&pRef[j]));
+
+            sDC = _mm_add_epi64(sDC, _mm_sad_epu8(s, zero));    //accumulate horizontal sums
+            rDC = _mm_add_epi64(rDC, _mm_sad_epu8(r, zero));
+
+            r = _mm_sub_epi8(r, _mm_set1_epi8(-128));   // convert to signed
+            s = _mm_sub_epi8(s, _mm_set1_epi8(-128));
+
+            __m128i dn = _mm_subs_epi8(r, s);   // -d saturated to [-128,127]
+            __m128i dp = _mm_subs_epi8(s, r);   // +d saturated to [-128,127]
+
+            __m128i m0 = _mm_cmpgt_epi8(dn, _mm_set1_epi8(HIST_THRESH_HI)); // d < -12
+            __m128i m1 = _mm_cmpgt_epi8(dn, _mm_set1_epi8(HIST_THRESH_LO)); // d < -4
+            __m128i m2 = _mm_cmpgt_epi8(_mm_set1_epi8(HIST_THRESH_LO), dp); // d < +4
+            __m128i m3 = _mm_cmpgt_epi8(_mm_set1_epi8(HIST_THRESH_HI), dp); // d < +12
+
+            m0 = _mm_sub_epi8(zero, m0);    // negate masks from 0xff to 1
+            m1 = _mm_sub_epi8(zero, m1);
+            m2 = _mm_sub_epi8(zero, m2);
+            m3 = _mm_sub_epi8(zero, m3);
+
+            h0 = _mm_add_epi32(h0, _mm_sad_epu8(m0, zero)); // accumulate horizontal sums
+            h1 = _mm_add_epi32(h1, _mm_sad_epu8(m1, zero));
+            h2 = _mm_add_epi32(h2, _mm_sad_epu8(m2, zero));
+            h3 = _mm_add_epi32(h3, _mm_sad_epu8(m3, zero));
+        }
+
+        // process remaining 1..15 pixels
+        if (j < width)
+        {
+            __m128i s = LoadPartialXmm<0>(&pSrc[j], width & 0xf);
+            __m128i r = LoadPartialXmm<0>(&pRef[j], width & 0xf);
+
+            sDC = _mm_add_epi64(sDC, _mm_sad_epu8(s, zero));    //accumulate horizontal sums
+            rDC = _mm_add_epi64(rDC, _mm_sad_epu8(r, zero));
+
+            s = LoadPartialXmm<-1>(&pSrc[j], width & 0xf);      // ensure unused elements not counted
+
+            r = _mm_sub_epi8(r, _mm_set1_epi8(-128));   // convert to signed
+            s = _mm_sub_epi8(s, _mm_set1_epi8(-128));
+
+            __m128i dn = _mm_subs_epi8(r, s);   // -d saturated to [-128,127]
+            __m128i dp = _mm_subs_epi8(s, r);   // +d saturated to [-128,127]
+
+            __m128i m0 = _mm_cmpgt_epi8(dn, _mm_set1_epi8(HIST_THRESH_HI)); // d < -12
+            __m128i m1 = _mm_cmpgt_epi8(dn, _mm_set1_epi8(HIST_THRESH_LO)); // d < -4
+            __m128i m2 = _mm_cmpgt_epi8(_mm_set1_epi8(HIST_THRESH_LO), dp); // d < +4
+            __m128i m3 = _mm_cmpgt_epi8(_mm_set1_epi8(HIST_THRESH_HI), dp); // d < +12
+
+            m0 = _mm_sub_epi8(zero, m0);    // negate masks from 0xff to 1
+            m1 = _mm_sub_epi8(zero, m1);
+            m2 = _mm_sub_epi8(zero, m2);
+            m3 = _mm_sub_epi8(zero, m3);
+
+            h0 = _mm_add_epi32(h0, _mm_sad_epu8(m0, zero)); // accumulate horizontal sums
+            h1 = _mm_add_epi32(h1, _mm_sad_epu8(m1, zero));
+            h2 = _mm_add_epi32(h2, _mm_sad_epu8(m2, zero));
+            h3 = _mm_add_epi32(h3, _mm_sad_epu8(m3, zero));
+        }
+        pSrc += pitch;
+        pRef += pitch;
+    }
+
+    // finish horizontal sums
+    sDC = _mm_add_epi64(sDC, _mm_movehl_epi64(sDC, sDC));
+    rDC = _mm_add_epi64(rDC, _mm_movehl_epi64(rDC, rDC));
+
+    h0 = _mm_add_epi32(h0, _mm_movehl_epi64(h0, h0));
+    h1 = _mm_add_epi32(h1, _mm_movehl_epi64(h1, h1));
+    h2 = _mm_add_epi32(h2, _mm_movehl_epi64(h2, h2));
+    h3 = _mm_add_epi32(h3, _mm_movehl_epi64(h3, h3));
+
+    _mm_storel_epi64((__m128i *)pSrcDC, sDC);
+    _mm_storel_epi64((__m128i *)pRefDC, rDC);
+
+    histogram[0] = _mm_cvtsi128_si32(h0);
+    histogram[1] = _mm_cvtsi128_si32(h1);
+    histogram[2] = _mm_cvtsi128_si32(h2);
+    histogram[3] = _mm_cvtsi128_si32(h3);
+    histogram[4] = width * height;
+
+    // undo cumulative counts, by differencing
+    histogram[4] -= histogram[3];
+    histogram[3] -= histogram[2];
+    histogram[2] -= histogram[1];
+    histogram[1] -= histogram[0];
+}
+
+
+ALIGN_DECL(16) static const mfxU16 tab_killmask[8][8] = {
+        0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+        0x0000, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+        0x0000, 0x0000, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+        0x0000, 0x0000, 0x0000, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+        0x0000, 0x0000, 0x0000, 0x0000, 0xffff, 0xffff, 0xffff, 0xffff,
+        0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xffff, 0xffff, 0xffff,
+        0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xffff, 0xffff,
+        0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xffff,
+    };
+
+void MAKE_NAME(h265_SearchBestBlock8x8_8u)(Ipp8u *pSrc, Ipp8u *pRef, Ipp32s pitch, Ipp32s xrange, Ipp32s yrange, Ipp32u *bestSAD, Ipp32s *bestX, Ipp32s *bestY)
+{
+    enum {SAD_SEARCH_VSTEP  = 2};  // 1=FS 2=FHS
+    __m128i
+        s0 = _mm_loadh_epi64(_mm_loadl_epi64((__m128i *)&pSrc[0*pitch]), (__m128i *)&pSrc[1*pitch]),
+        s1 = _mm_loadh_epi64(_mm_loadl_epi64((__m128i *)&pSrc[2*pitch]), (__m128i *)&pSrc[3*pitch]),
+        s2 = _mm_loadh_epi64(_mm_loadl_epi64((__m128i *)&pSrc[4*pitch]), (__m128i *)&pSrc[5*pitch]),
+        s3 = _mm_loadh_epi64(_mm_loadl_epi64((__m128i *)&pSrc[6*pitch]), (__m128i *)&pSrc[7*pitch]);
+    for (Ipp32s y = 0; y < yrange; y += SAD_SEARCH_VSTEP) {
+        for (Ipp32s x = 0; x < xrange; x += 8) {
+            Ipp8u* pr = pRef + (y * pitch) + x;
+            __m128i
+                r0 = _mm_loadu_si128((__m128i *)&pr[0*pitch]),
+                r1 = _mm_loadu_si128((__m128i *)&pr[1*pitch]),
+                r2 = _mm_loadu_si128((__m128i *)&pr[2*pitch]),
+                r3 = _mm_loadu_si128((__m128i *)&pr[3*pitch]),
+                r4 = _mm_loadu_si128((__m128i *)&pr[4*pitch]),
+                r5 = _mm_loadu_si128((__m128i *)&pr[5*pitch]),
+                r6 = _mm_loadu_si128((__m128i *)&pr[6*pitch]),
+                r7 = _mm_loadu_si128((__m128i *)&pr[7*pitch]);
+            r0 = _mm_add_epi16(_mm_mpsadbw_epu8(r0, s0, 0), _mm_mpsadbw_epu8(r0, s0, 5));
+            r1 = _mm_add_epi16(_mm_mpsadbw_epu8(r1, s0, 2), _mm_mpsadbw_epu8(r1, s0, 7));
+            r2 = _mm_add_epi16(_mm_mpsadbw_epu8(r2, s1, 0), _mm_mpsadbw_epu8(r2, s1, 5));
+            r3 = _mm_add_epi16(_mm_mpsadbw_epu8(r3, s1, 2), _mm_mpsadbw_epu8(r3, s1, 7));
+            r4 = _mm_add_epi16(_mm_mpsadbw_epu8(r4, s2, 0), _mm_mpsadbw_epu8(r4, s2, 5));
+            r5 = _mm_add_epi16(_mm_mpsadbw_epu8(r5, s2, 2), _mm_mpsadbw_epu8(r5, s2, 7));
+            r6 = _mm_add_epi16(_mm_mpsadbw_epu8(r6, s3, 0), _mm_mpsadbw_epu8(r6, s3, 5));
+            r7 = _mm_add_epi16(_mm_mpsadbw_epu8(r7, s3, 2), _mm_mpsadbw_epu8(r7, s3, 7));
+            r0 = _mm_add_epi16(r0, r1);
+            r2 = _mm_add_epi16(r2, r3);
+            r4 = _mm_add_epi16(r4, r5);
+            r6 = _mm_add_epi16(r6, r7);
+            r0 = _mm_add_epi16(r0, r2);
+            r4 = _mm_add_epi16(r4, r6);
+            r0 = _mm_add_epi16(r0, r4);
+            // kill out-of-bound values
+            if (xrange - x < 8)
+                r0 = _mm_or_si128(r0, _mm_load_si128((__m128i *)tab_killmask[xrange - x]));
+            r0 = _mm_minpos_epu16(r0);
+            Ipp32u SAD = _mm_extract_epi16(r0, 0);
+            if (SAD < *bestSAD) {
+                *bestSAD = SAD;
+                *bestX = x + _mm_extract_epi16(r0, 1);
+                *bestY = y;
+            }
+        }
+    }
+}
+
+void MAKE_NAME(h265_ComputeRsCsDiff)(Ipp32f* pRs0, Ipp32f* pCs0, Ipp32f* pRs1, Ipp32f* pCs1, Ipp32s len, Ipp32f* pRsDiff, Ipp32f* pCsDiff)
+    {
+        Ipp32s i;//, len = wblocks * hblocks;
+        __m128d accRs = _mm_setzero_pd();
+        __m128d accCs = _mm_setzero_pd();
+
+        for (i = 0; i < len - 3; i += 4)
+        {
+            __m128 rs = _mm_sub_ps(_mm_loadu_ps(&pRs0[i]), _mm_loadu_ps(&pRs1[i]));
+            __m128 cs = _mm_sub_ps(_mm_loadu_ps(&pCs0[i]), _mm_loadu_ps(&pCs1[i]));
+
+            rs = _mm_mul_ps(rs, rs);
+            cs = _mm_mul_ps(cs, cs);
+
+            accRs = _mm_add_pd(accRs, _mm_cvtps_pd(rs));
+            accCs = _mm_add_pd(accCs, _mm_cvtps_pd(cs));
+            accRs = _mm_add_pd(accRs, _mm_cvtps_pd(_mm_movehl_ps(rs, rs)));
+            accCs = _mm_add_pd(accCs, _mm_cvtps_pd(_mm_movehl_ps(cs, cs)));
+        }
+
+        if (i < len)
+        {
+            __m128 rs = _mm_sub_ps(LoadPartialXmm(&pRs0[i], len & 0x3), LoadPartialXmm(&pRs1[i], len & 0x3));
+            __m128 cs = _mm_sub_ps(LoadPartialXmm(&pCs0[i], len & 0x3), LoadPartialXmm(&pCs1[i], len & 0x3));
+
+            rs = _mm_mul_ps(rs, rs);
+            cs = _mm_mul_ps(cs, cs);
+
+            accRs = _mm_add_pd(accRs, _mm_cvtps_pd(rs));
+            accCs = _mm_add_pd(accCs, _mm_cvtps_pd(cs));
+            accRs = _mm_add_pd(accRs, _mm_cvtps_pd(_mm_movehl_ps(rs, rs)));
+            accCs = _mm_add_pd(accCs, _mm_cvtps_pd(_mm_movehl_ps(cs, cs)));
+        }
+
+        // horizontal sum
+        accRs = _mm_hadd_pd(accRs, accCs);
+
+        __m128 t = _mm_cvtpd_ps(accRs);
+        _mm_store_ss(pRsDiff, t);
+        _mm_store_ss(pCsDiff, _mm_shuffle_ps(t, t, _MM_SHUFFLE(0,0,0,1)));
+    }
+
+void MAKE_NAME(h265_ComputeRsCs4x4_8u)(const Ipp8u* pSrc, Ipp32s srcPitch, Ipp32s wblocks, Ipp32s hblocks, Ipp32f* pRs, Ipp32f* pCs)
+{
+    for (Ipp32s i = 0; i < hblocks; i++)
+    {
+        // 4 horizontal blocks at a time
+        Ipp32s j;
+        for (j = 0; j < wblocks - 3; j += 4)
+        {
+            __m128i rs = _mm_setzero_si128();
+            __m128i cs = _mm_setzero_si128();
+            __m128i a0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)&pSrc[-srcPitch + 0]));
+            __m128i a1 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)&pSrc[-srcPitch + 8]));
+
+#ifdef __INTEL_COMPILER
+#pragma unroll(4)
+#endif
+            for (Ipp32s k = 0; k < 4; k++)
+            {
+                __m128i b0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)&pSrc[-1]));
+                __m128i b1 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)&pSrc[7]));
+                __m128i c0 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)&pSrc[0]));
+                __m128i c1 = _mm_cvtepu8_epi16(_mm_loadl_epi64((__m128i *)&pSrc[8]));
+                pSrc += srcPitch;
+
+                // accRs += dRs * dRs
+                a0 = _mm_sub_epi16(c0, a0);
+                a1 = _mm_sub_epi16(c1, a1);
+                a0 = _mm_madd_epi16(a0, a0);
+                a1 = _mm_madd_epi16(a1, a1);
+                a0 = _mm_hadd_epi32(a0, a1);
+                rs = _mm_add_epi32(rs, a0);
+
+                // accCs += dCs * dCs
+                b0 = _mm_sub_epi16(c0, b0);
+                b1 = _mm_sub_epi16(c1, b1);
+                b0 = _mm_madd_epi16(b0, b0);
+                b1 = _mm_madd_epi16(b1, b1);
+                b0 = _mm_hadd_epi32(b0, b1);
+                cs = _mm_add_epi32(cs, b0);
+
+                // reuse next iteration
+                a0 = c0;
+                a1 = c1;
+            }
+
+            // scale by 1.0f/N and store
+            _mm_storeu_ps(&pRs[i * wblocks + j], _mm_mul_ps(_mm_cvtepi32_ps(rs), _mm_set1_ps(1.0f / 16)));
+            _mm_storeu_ps(&pCs[i * wblocks + j], _mm_mul_ps(_mm_cvtepi32_ps(cs), _mm_set1_ps(1.0f / 16)));
+
+            pSrc -= 4 * srcPitch;
+            pSrc += 16;
+        }
+
+        // remaining blocks
+        for (; j < wblocks; j++)
+        {
+            Ipp32s accRs = 0;
+            Ipp32s accCs = 0;
+
+            for (Ipp32s k = 0; k < 4; k++)
+            {
+                for (Ipp32s l = 0; l < 4; l++)
+                {
+                    Ipp32s dRs = pSrc[l] - pSrc[l - srcPitch];
+                    Ipp32s dCs = pSrc[l] - pSrc[l - 1];
+                    accRs += dRs * dRs;
+                    accCs += dCs * dCs;
+                }
+                pSrc += srcPitch;
+            }
+            pRs[i * wblocks + j] = accRs * (1.0f / 16);
+            pCs[i * wblocks + j] = accCs * (1.0f / 16);
+
+            pSrc -= 4 * srcPitch;
+            pSrc += 4;
+        }
+        pSrc -= 4 * wblocks;
+        pSrc += 4 * srcPitch;
+    }
+}
 }; // namespace MFX_HEVC_PP
 
 #endif // #if defined(MFX_TARGET_OPTIMIZATION_AUTO) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_ATOM)

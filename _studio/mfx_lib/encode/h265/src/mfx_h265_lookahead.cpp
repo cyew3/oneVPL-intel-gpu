@@ -576,7 +576,7 @@ void MeIntPelLog_Refine(FrameData *curr, FrameData *ref, Ipp32s pelX, Ipp32s pel
     PixType *src = m_ySrc + posx + posy * curr->pitch_luma_pix;
     Ipp32s refOffset = pelX + posx + (mv->mvx >> 2) + (pelY + posy + (mv->mvy >> 2)) * ref->pitch_luma_pix;
     const PixType *rec = (PixType*)ref->y + refOffset;
-    Ipp32s pitchRec = ref->pitch_luma_pix;
+    //Ipp32s pitchRec = ref->pitch_luma_pix;
     Ipp32s costR = h265_SAD_MxN_general_1(src, curr->pitch_luma_pix, rec, ref->pitch_luma_pix, 8, 8);
     *cost = costR;
     *mvCost = 0;
@@ -802,10 +802,10 @@ void DoInterAnalysis(FrameData* curr, Statistics* currStat, FrameData* ref, Ipp3
 
             if (isRefine) {
                 Ipp32s widthLowres  = width  >> lowresFactor;
-                Ipp32s heightLowres = height >> lowresFactor;
+                //Ipp32s heightLowres = height >> lowresFactor;
                 const Ipp32s sizeBlkLowres = SIZE_BLK_LA;
                 const Ipp32s picWidthInBlksLowres  = (widthLowres  + sizeBlkLowres - 1) / sizeBlkLowres;
-                const Ipp32s picHeightInBlksLowres = (heightLowres + sizeBlkLowres - 1) / sizeBlkLowres;
+                //const Ipp32s picHeightInBlksLowres = (heightLowres + sizeBlkLowres - 1) / sizeBlkLowres;
                 Ipp32s fPosLowres = (blk_row >> lowresFactor) * picWidthInBlksLowres + (blk_col >> lowresFactor);
 
                 if (mode == 0) {
@@ -879,7 +879,7 @@ void DoInterAnalysis_OneRow(FrameData* curr, Statistics* currStat, FrameData* re
     Ipp32s height = curr->height;
     const Ipp32s sizeBlk = SIZE_BLK_LA;
     const Ipp32s picWidthInBlks  = (width  + sizeBlk - 1) / sizeBlk;
-    const Ipp32s picHeightInBlks = (height + sizeBlk - 1) / sizeBlk;
+    //const Ipp32s picHeightInBlks = (height + sizeBlk - 1) / sizeBlk;
 
     Ipp32s bitDepth8 = (bitDepthLuma == 8) ? 1 : 0;
 
@@ -897,10 +897,10 @@ void DoInterAnalysis_OneRow(FrameData* curr, Statistics* currStat, FrameData* re
 
         if (isRefine) {
             Ipp32s widthLowres  = width  >> lowresFactor;
-            Ipp32s heightLowres = height >> lowresFactor;
+            //Ipp32s heightLowres = height >> lowresFactor;
             const Ipp32s sizeBlkLowres = SIZE_BLK_LA;
             const Ipp32s picWidthInBlksLowres  = (widthLowres  + sizeBlkLowres - 1) / sizeBlkLowres;
-            const Ipp32s picHeightInBlksLowres = (heightLowres + sizeBlkLowres - 1) / sizeBlkLowres;
+            //const Ipp32s picHeightInBlksLowres = (heightLowres + sizeBlkLowres - 1) / sizeBlkLowres;
             Ipp32s fPosLowres = (blk_row >> lowresFactor) * picWidthInBlksLowres + (blk_col >> lowresFactor);
 
             if (mode == 0) {
@@ -940,7 +940,7 @@ void DoInterAnalysis_OneRow(FrameData* curr, Statistics* currStat, FrameData* re
                 Ipp8u *src = curr->y + x + y * curr->pitch_luma_pix;
                 Ipp32s refOffset = x + (mv.mvx >> 2) + (y + (mv.mvy >> 2)) * ref->pitch_luma_pix;
                 const Ipp8u *rec = ref->y + refOffset;
-                Ipp32s pitchRec = ref->pitch_luma_pix;
+                //Ipp32s pitchRec = ref->pitch_luma_pix;
                 cost = h265_SAD_MxN_general_1(src, curr->pitch_luma_pix, rec, ref->pitch_luma_pix, 8, 8);
                 mvCost = 0;
             }
@@ -1010,7 +1010,7 @@ PixType NearestPixBlk(PixType* in, Ipp32s pitch, Ipp32s posx, Ipp32s posy, Ipp32
 }
 
 template <class PixType>
-Ipp64s Scale(FrameData* in, FrameData* out, Ipp32s planeIdx)
+Ipp64s Scale(FrameData* in, FrameData* out)
 {
     const PixType *pixIn = (const PixType *)in->y;
     PixType *pixOut = (PixType *)out->y;
@@ -1235,8 +1235,7 @@ struct isEqualRefFrame
 void H265Enc::DetermineQpMap_IFrame(FrameIter curr, FrameIter end, H265VideoParam& videoParam)
 {  
     Frame* inFrame    = *curr;
-
-    int widthInRegionGrid = inFrame->m_origin->width / 16;
+    
     int wBlock = inFrame->m_origin->width/8;
     int w4 = inFrame->m_origin->width/4;
 
@@ -1369,7 +1368,7 @@ void H265Enc::DetermineQpMap_PFrame(FrameIter begin, FrameIter curr, FrameIter e
 
     int row, col;
     int c8_width, c8_height;
-    int widthInRegionGrid = inFrame->m_origin->width / 16;
+    //int widthInRegionGrid = inFrame->m_origin->width / 16;
     int wBlock = inFrame->m_origin->width/8;
     int w4 = inFrame->m_origin->width/4;
 
@@ -1663,7 +1662,7 @@ void H265Enc::BackPropagateAvgTsc(FrameIter prevRef, FrameIter currRef)
 {
     Frame* input = *currRef;
 
-    Ipp32u frameType = input->m_picCodeType;
+    //Ipp32u frameType = input->m_picCodeType;
     FrameData* origFrame  =  input->m_origin;
     Statistics* origStats = input->m_stats[0];
 
@@ -1817,157 +1816,6 @@ void H265Encoder::OnLookaheadCompletion()
 
 bool MetricIsGreater(const StatItem &l, const StatItem &r) { return (l.met > r.met); }
 
-
-void Lookahead::DetectSceneCut(FrameIter begin, FrameIter end, /*FrameIter input*/ Frame* in, Ipp32s updateGop, Ipp32s updateState)
-{
-    enum {
-        ALG_PIX_DIFF = 0,
-        ALG_HIST_DIFF
-    };
-
-    struct ScdConfig {
-        Ipp32s M; // window size = 2*M+1
-        Ipp32s N; // if (peak1 / peak2 > N) => SC Detected!
-        Ipp32s algorithm; // ALG_PIX_DIFF, ALG_HIST_DIFF
-        Ipp32s scaleFactor; // analysis will be done on (origW >> scaleFactor, origH >> scaleFactor) resolution
-    } m_scdConfig;
-
-    m_scdConfig.M = 10;
-    m_scdConfig.N = 3;
-    m_scdConfig.algorithm = ALG_HIST_DIFF;
-
-    // accept new frame
-    if (in) {
-        bool isLowres = true; // always on lowres
-        Ipp32s lastpos = m_slideWindowStat.size() - 1;
-        m_slideWindowStat[ lastpos ].frameOrder = in->m_frameOrder;
-        Ipp64s metric = 0;
-        if (in->m_stats[0])
-            in->m_stats[0]->m_metric = metric; // to prevent any issue we sync both lowres and original stats
-        if (in->m_stats[1])
-            in->m_stats[1]->m_metric  = metric;
-
-
-        if (in->m_frameOrder > 0) {
-            FrameIter it = std::find_if(begin, end, isEqual(in->m_frameOrder-1));
-            if (it != end) {
-                Frame* prev = (*it);
-
-                FrameData* currFrame = isLowres ? in->m_lowres : in->m_origin;
-                FrameData* prevFrame = isLowres ? prev->m_lowres : prev->m_origin;
-
-                Ipp32s bitDepth8 = (in->m_bitDepthLuma == 8) ? 1 : 0;
-
-                if (m_scdConfig.algorithm == ALG_HIST_DIFF) {
-                    metric = bitDepth8 
-                        ? CalcHistDiff<Ipp8u>(prevFrame, currFrame, 0)
-                        : CalcHistDiff<Ipp16u>(prevFrame, currFrame, 0);
-                } else {
-                    metric = bitDepth8 
-                        ? CalcPixDiff<Ipp8u>(prevFrame, currFrame, 0)
-                        : CalcPixDiff<Ipp16u>(prevFrame, currFrame, 0);
-                }
-
-                // store metric in frame
-                if (in->m_stats[0])
-                    in->m_stats[0]->m_metric =  metric;
-                if (in->m_stats[1])
-                    in->m_stats[1]->m_metric =  metric;
-            }
-        }
-        // store statistics
-        m_slideWindowStat[ lastpos ].met = metric;
-    }
-
-
-    // make decision
-    Ipp32s centralPos = (m_slideWindowStat.size() - 1) >> 1;
-    Ipp32s frameOrderCentral = m_slideWindowStat[centralPos].frameOrder;
-    Ipp8u isBufferingEnough = (frameOrderCentral > 0); // skip first frame
-    FrameIter curr = std::find_if(begin, end, isEqual(frameOrderCentral));
-    
-    if (isBufferingEnough && curr != end) {
-
-        if ((*curr)->m_stats[0])
-            (*curr)->m_stats[0]->m_sceneCut = 0;
-        if ((*curr)->m_stats[1])
-            (*curr)->m_stats[1]->m_sceneCut = 0;
-
-        StatItem peaks[2];
-        std::partial_sort_copy(m_slideWindowStat.begin(), m_slideWindowStat.end(), peaks, peaks+2, MetricIsGreater);
-        Ipp64s metric = ( (*curr)->m_stats[1] ) ? (*curr)->m_stats[1]->m_metric : (*curr)->m_stats[0]->m_metric;
-        Ipp8u scd = (metric == peaks[0].met) && (peaks[0].met > m_scdConfig.N*peaks[1].met);        
-
-        if (scd) {
-            if ((*curr)->m_stats[0])
-                (*curr)->m_stats[0]->m_sceneCut = 1;
-            if ((*curr)->m_stats[1])
-                (*curr)->m_stats[1]->m_sceneCut = 1;
-        }
-
-
-        if (scd && !(*curr)->m_isIdrPic && updateGop) {
-            Frame* frame = (*curr);
-
-            // restore global state
-            m_enc.RestoreGopCountersFromFrame(frame, !!m_videoParam.encodedOrder);
-
-            // light configure
-            frame->m_isIdrPic = true;
-            frame->m_picCodeType = MFX_FRAMETYPE_I;
-            frame->m_poc = 0;
-
-            // special case: scenecut detected in second Field
-            if (frame->m_secondFieldFlag) {
-                FrameIter tmp = curr;
-                Frame* firstField = *(--tmp);
-                firstField->m_picCodeType = MFX_FRAMETYPE_P;
-            }
-
-            if (m_videoParam.PGopPicSize > 1) {
-                //const Ipp8u PGOP_LAYERS[PGOP_PIC_SIZE] = { 0, 2, 1, 2 };
-                frame->m_RPSIndex = 0;
-                frame->m_pyramidLayer = 0;//PGOP_LAYERS[frame->m_RPSIndex];
-            }
-
-            m_enc.UpdateGopCounters(frame, !!m_videoParam.encodedOrder);
-
-            if (frame->m_stats[1])
-                frame->m_stats[1]->m_sceneCut = 1;
-            if (frame->m_stats[0])
-                frame->m_stats[0]->m_sceneCut = 1;
-
-            // we need update all frames in inputQueue after Idr insertion to propogate SceneCut (frame type change) effect
-            for (FrameIter it = ++FrameIter(curr); it != end; it++) {
-                frame = (*it);
-                m_enc.ConfigureInputFrame(frame, !!m_videoParam.encodedOrder);
-                m_enc.UpdateGopCounters(frame, !!m_videoParam.encodedOrder);
-            }
-        }
-    }
-
-
-    if (updateState) {
-        // Release resource counters && Update algorithm state
-        if (isBufferingEnough && curr != end) {
-            if (curr != begin) {
-                (*(--FrameIter(curr)))->m_lookaheadRefCounter--;
-            }
-            Ipp8u isEos = (m_slideWindowStat[centralPos + 1].frameOrder == -1);
-            if (isEos) {
-                (*curr)->m_lookaheadRefCounter--;
-            }
-        }
-        // update statictics
-        std::copy(m_slideWindowStat.begin()+1, m_slideWindowStat.end(), m_slideWindowStat.begin());
-        // force last element to _zero_ to prevent issue with EndOfStream
-        m_slideWindowStat[m_slideWindowStat.size()-1].met = 0;
-        m_slideWindowStat[m_slideWindowStat.size()-1].frameOrder = -1;//invalid
-    }
-
-} // 
-
-
 //void WriteCmplx(Frame *frames[], Ipp32s numFrames)
 //{
 //    {
@@ -1981,15 +1829,106 @@ void Lookahead::DetectSceneCut(FrameIter begin, FrameIter end, /*FrameIter input
 //        fclose(fp);
 //    }
 //}
+// ========================================================
+void Lookahead::AnalyzeSceneCut_AndUpdateState_Atul(Frame* in)
+{
+    if (in == NULL)
+        return;
 
+    FrameIter curr = std::find_if(m_inputQueue.begin(), m_inputQueue.end(), isEqual(in->m_frameOrder));
+    Frame* prev = curr == m_inputQueue.begin() ? NULL : *(--FrameIter(curr));
+    Ipp32s sceneCut = DetectSceneCut_AMT(in, prev);
+
+#if 0
+    if (sceneCut) {
+        FILE *fp = fopen("sceneReport.txt", "a+");
+        fprintf(fp, "%i\t", in->m_frameOrder);
+        fclose(fp);
+    }
+#endif
+    
+    if (sceneCut) {
+        m_enc.m_sceneOrder++;
+    }
+
+    in->m_sceneOrder = m_enc.m_sceneOrder;
+
+    //special case for interlace mode to keep (P | I) pair instead of (I | P)
+    Ipp32s rightAnchor = (m_videoParam.picStruct == MFX_PICSTRUCT_PROGRESSIVE || (m_videoParam.picStruct != MFX_PICSTRUCT_PROGRESSIVE && in->m_secondFieldFlag));
+
+    Ipp8u insertKey = 0;
+    if (sceneCut) {
+        if (in->m_picCodeType == MFX_FRAMETYPE_B) {
+            m_pendingSceneCut = 1;
+        } else {
+            if  (rightAnchor){
+                m_pendingSceneCut = 0;
+                insertKey = 1;
+            }
+        }
+    } else if (m_pendingSceneCut && (in->m_picCodeType != MFX_FRAMETYPE_B) && rightAnchor) {
+        m_pendingSceneCut = 0;
+        insertKey = 1;
+    }
+
+    // special marker for accurate INTRA encode for RASL
+    if (m_pendingSceneCut) {
+        in->m_forceTryIntra = 1;
+    }
+
+    Ipp32s isInsertI = insertKey && (in->m_picCodeType == MFX_FRAMETYPE_P);
+    if (isInsertI) {
+        Frame* frame = in;
+
+        // restore global state
+        m_enc.RestoreGopCountersFromFrame(frame, !!m_videoParam.encodedOrder);
+
+        // light configure
+        frame->m_isIdrPic = false;
+        frame->m_picCodeType = MFX_FRAMETYPE_I;
+        //frame->m_poc = 0;
+
+        if (m_videoParam.PGopPicSize > 1) {
+            //const Ipp8u PGOP_LAYERS[PGOP_PIC_SIZE] = { 0, 2, 1, 2 };
+            frame->m_RPSIndex = 0;
+            frame->m_pyramidLayer = 0;//PGOP_LAYERS[frame->m_RPSIndex];
+        }
+
+        m_enc.UpdateGopCounters(frame, !!m_videoParam.encodedOrder);
+
+        // we need update all frames in inputQueue after replacement to propogate SceneCut (frame type change) effect
+        FrameIter it = curr;
+        it++;
+        for (it; it != m_inputQueue.end(); it++) {
+            frame = (*it);
+            m_enc.ConfigureInputFrame(frame, !!m_videoParam.encodedOrder);
+            m_enc.UpdateGopCounters(frame, !!m_videoParam.encodedOrder);
+        }
+    }
+
+#if 0
+    {
+        FILE *fp = fopen("scene.txt", "a+");
+        fprintf(fp, "FrameOrder %i SceneOrder %i SceneCutDetected %i InsertI %i\n", in->m_frameOrder, in->m_sceneOrder, sceneCut, isInsertI);
+        fclose(fp);
+    }
+#endif
+
+    if (insertKey && in->m_picCodeType == MFX_FRAMETYPE_I) {
+        if (in->m_stats[1])
+            in->m_stats[1]->m_sceneCut = 1;
+        if (in->m_stats[0])
+            in->m_stats[0]->m_sceneCut = 1;
+    }
+
+    if (prev) {
+        prev->m_lookaheadRefCounter--;
+    }
+
+} // 
+// ========================================================
 void Lookahead::ResetState()
 {
-    if (m_videoParam.SceneCut)
-        std::fill(m_slideWindowStat.begin(), m_slideWindowStat.end(), StatItem());
-    
-    //if (m_videoParam.DeltaQpMode) 
-    //    std::fill(m_slideWindowPaq.begin(), m_slideWindowPaq.end(), -1);
-
     m_lastAcceptedFrame[0] = m_lastAcceptedFrame[1] = NULL;
 }
 
@@ -2167,26 +2106,13 @@ Ipp32s H265Enc::BuildQpMap(FrameIter begin, FrameIter end, Ipp32s frameOrderCent
         }
     }
 
-    //return (in || isBufferingEnough) ? 1 : 0;
     return 0;
 } // 
 
-
-//Ipp32s Lookahead::GetDelay()
-//{
-//    Ipp32s delayScd   = m_videoParam.SceneCut ? m_scdConfig.M + 1 + 1: 0; // algorithm specific
-//    Ipp32s delayCmplx = m_videoParam.AnalyzeCmplx ? m_videoParam.RateControlDepth : 0;
-//    Ipp32s delayPaq   = (m_videoParam.DeltaQpMode&(AMT_DQP_CAL|AMT_DQP_PAQ)) ? 2*m_videoParam.GopRefDist + 1 : 0;
-//    Ipp32s lookaheadBuffering = delayScd + delayCmplx + delayPaq + 1; // +1 due to arch issue
-//
-//    return lookaheadBuffering;
-//}
-
-
-void H265Enc::GetLookaheadGranularity(const H265VideoParam& videoParam, Ipp32s & regionCount, Ipp32s & lowRowsInRegion, Ipp32s & originRowsInRegion, Ipp32s & numTasks)
+void H265Enc::GetLookaheadGranularity(const H265VideoParam& videoParam, Ipp32s& regionCount, Ipp32s& lowRowsInRegion, Ipp32s& originRowsInRegion, Ipp32s& numTasks)
 {
     Ipp32s lowresHeightInBlk = ((videoParam.Height >> videoParam.LowresFactor) + (SIZE_BLK_LA-1)) >> 3;
-    Ipp32s originHeightInBlk = ((videoParam.Height) + (SIZE_BLK_LA-1)) >> 3;
+    //Ipp32s originHeightInBlk = ((videoParam.Height) + (SIZE_BLK_LA-1)) >> 3;
 
     regionCount = videoParam.num_threads;// should be based on blk_8x8
     regionCount = IPP_MIN(lowresHeightInBlk, regionCount);
@@ -2200,69 +2126,30 @@ void H265Enc::GetLookaheadGranularity(const H265VideoParam& videoParam, Ipp32s &
     originRowsInRegion = lowRowsInRegion << videoParam.LowresFactor;
 
     /*Ipp32s*/ numTasks = 1 /*LA_START*/  + regionCount + 1 /*LA_END*/;
-
-    //m_threadingTasks.resize( numTasks );
+    
 }
-
 
 Lookahead::Lookahead(H265Encoder & enc)
     : m_inputQueue(enc.m_inputQueue)
     , m_videoParam(enc.m_videoParam)
     , m_enc(enc)
+    , m_pendingSceneCut(0)
 {
     m_bufferingPaq = 0;
 
-    // configuration of lookahead algorithm family
-    // SceneCut
-    Ipp32s bufferingSceneCut = 0;
-    if (m_videoParam.SceneCut > 0) {
-        bufferingSceneCut = 10;
-        Ipp32s N = 3;
-        //m_scdConfig.algorithm = ALG_HIST_DIFF;
-        //m_scdConfig.scaleFactor = m_videoParam.LowresFactor ? m_videoParam.LowresFactor : 1;
-        
-        Ipp32s windowSize = 2*/*m_scdConfig.*/bufferingSceneCut + 1;
-        m_slideWindowStat.resize( windowSize, StatItem());
-    }
-
-    // Content Analysis configuration
-    if (m_videoParam.DeltaQpMode)
-    {
-        Ipp32s M = 0;
-        if (m_videoParam.DeltaQpMode&(AMT_DQP_CAL|AMT_DQP_PAQ))
-            M = m_videoParam.GopRefDist;
-        if (m_videoParam.SceneCut) {
-            M = IPP_MAX(M, m_videoParam.GopRefDist + bufferingSceneCut);
-        }
-        //Ipp32s windowSize = 2*M + 1;
-       // m_slideWindowPaq.resize( windowSize, -1 );
-        m_bufferingPaq = M;
-
-        // reset lowres (tmp solution)
-        //m_videoParam.LowresFactor = 0;
-        if (m_videoParam.SceneCut) {
-            //m_scdConfig.scaleFactor = 1;
-        }
-    }
+    if (m_videoParam.DeltaQpMode & (AMT_DQP_CAL|AMT_DQP_PAQ))
+        m_bufferingPaq = m_videoParam.GopRefDist;
 
     // to prevent multiple PREENC_START per frame
     m_lastAcceptedFrame[0] = m_lastAcceptedFrame[1] = NULL;
 
     Ipp32s numTasks;
     GetLookaheadGranularity(m_videoParam, m_regionCount, m_lowresRowsInRegion, m_originRowsInRegion, numTasks);
-
-    //m_ttLookahead.resize( numTasks );
-    
-    //Build_ttGraph(0);
 }
-
 
 Lookahead::~Lookahead()
 {
-    m_slideWindowStat.resize(0);
-    //m_slideWindowPaq.resize(0);
 }
-
 
 //  pure functions
 template <typename PixType>
@@ -2376,7 +2263,7 @@ int GetCalqDeltaQp(Frame* frame, const H265VideoParam & par, Ipp32s ctb_addr, Ip
     else if(sliceQpY > pQPi[picClass][3])
         qpClass = 3;
     else
-        qpClass = (sliceQpY - 22 - picClass) / 5;
+        qpClass = (Ipp32s)((sliceQpY - 22 - picClass) / 5);
 
     Ipp32s col =  (ctb_addr % par.PicWidthInCtbs);
     Ipp32s row =  (ctb_addr / par.PicWidthInCtbs);
@@ -2499,7 +2386,7 @@ void H265Enc::ApplyDeltaQp(Frame* frame, const H265VideoParam & par, Ipp8u useBr
 
             Ipp32s lcuQp = frame->m_lcuQps[ctb] + deltaQp;
             lcuQp = Saturate(0, 51, lcuQp);
-            frame->m_lcuQps[ctb] = lcuQp;
+            frame->m_lcuQps[ctb] = (Ipp8s)lcuQp;
         }
     }
     // recalc (align) CTB lambdas with CTB Qp
@@ -2526,7 +2413,7 @@ void H265Enc::ApplyDeltaQp(Frame* frame, const H265VideoParam & par, Ipp8u useBr
             //totalDQP = Saturate(-MAX_DQP, MAX_DQP, totalDQP);
             Ipp32s lcuQp = frame->m_sliceQpY + totalDQP;
             lcuQp = Saturate(0, 51, lcuQp);
-            frame->m_lcuQps[ctb_addr] = lcuQp;
+            frame->m_lcuQps[ctb_addr] = (Ipp8s)lcuQp;
         }
     }
 
@@ -2568,10 +2455,10 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
 
     ThreadingTaskSpecifier action = task.action;
     Ipp32u region_row = task.row;
-    Ipp32u region_col = task.col;
+    //Ipp32u region_col = task.col;
     FrameIter begin = m_inputQueue.begin();
     FrameIter end   = m_inputQueue.end();
-    
+
     // fix for interlace processing to keep old-style (pair)
     Frame* in[2] = {NULL, NULL};
     {
@@ -2599,17 +2486,18 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
 
                 if (in[fieldNum] && (useLowres || m_videoParam.SceneCut)) {
                     if (in[fieldNum]->m_bitDepthLuma == 8)
-                        Scale<Ipp8u>(in[fieldNum]->m_origin, in[fieldNum]->m_lowres, 0);
+                        Scale<Ipp8u>(in[fieldNum]->m_origin, in[fieldNum]->m_lowres);
                     else
-                        Scale<Ipp16u>(in[fieldNum]->m_origin, in[fieldNum]->m_lowres, 0);
+                        Scale<Ipp16u>(in[fieldNum]->m_origin, in[fieldNum]->m_lowres);
 
                     if (m_videoParam.DeltaQpMode || m_videoParam.AnalyzeCmplx)
                         PadRectLuma(*in[fieldNum]->m_lowres, m_videoParam.fourcc, 0, 0, in[fieldNum]->m_lowres->width, in[fieldNum]->m_lowres->height);
                 }
                 if (m_videoParam.SceneCut) {
-                    Ipp32s updateGop = 1;
-                    Ipp32s updateState = 1;
-                    DetectSceneCut(begin, end, in[fieldNum], updateGop, updateState);
+                    //Ipp32s updateGop = 1;
+                    //Ipp32s updateState = 1;
+                    //DetectSceneCut(begin, end, in[fieldNum], updateGop, updateState);
+                    AnalyzeSceneCut_AndUpdateState_Atul(in[fieldNum]);
                 }
                 m_lastAcceptedFrame[fieldNum] = in[fieldNum];
             }
@@ -2747,4 +2635,926 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
     return MFX_ERR_NONE;
 
 } // 
+
+//
+// AMT SceneCut algorithm
+//
+enum {    
+        REF = 0,
+        CUR = 1,
+    
+        PAD_V = 2,
+        PAD_H = 2,
+        LOWRES_W  = 112,
+        LOWRES_H =  64,
+        LOWRES_SIZE = LOWRES_W * LOWRES_H,
+        LOWRES_PITCH = LOWRES_W + 2 *PAD_H,
+
+        BLOCK_W = 8,
+        BLOCK_H = 8,
+        WIDTH_IN_BLOCKS  = LOWRES_W / BLOCK_W,
+        HEIGHT_IN_BLOCKS = LOWRES_H / BLOCK_H,
+        NUM_BLOCKS = (LOWRES_H / BLOCK_H) * (LOWRES_W / BLOCK_W),
+
+        NUM_TSC = 10,
+        NUM_SC  = 10
+    };
+
+#define NABS(a)           (((a)<0)?(-(a)):(a))
+
+    Ipp32s SCDetectUF1(
+        Ipp64f diffMVdiffVal, Ipp64f RsCsDiff,   Ipp64f MVDiff,   Ipp64f Rs,       Ipp64f AFD,
+        Ipp64f CsDiff,        Ipp64f diffTSC,    Ipp64f TSC,      Ipp64f gchDC,    Ipp64f diffRsCsdiff,
+        Ipp64f posBalance,    Ipp64f SC,         Ipp64f TSCindex, Ipp64f Scindex,  Ipp64f Cs,
+        Ipp64f diffAFD,       Ipp64f negBalance, Ipp64f ssDCval,  Ipp64f refDCval, Ipp64f RsDiff);
+
+    const H265MV ZERO_MV = {0,0};
+
+    void MotionRangeDeliveryF(Ipp32s xLoc, Ipp32s yLoc, Ipp32s *limitXleft, Ipp32s *limitXright, Ipp32s *limitYup, Ipp32s *limitYdown) 
+    {
+        Ipp32s Extended_Height = LOWRES_H + 2 *PAD_V;
+        Ipp32s locY = yLoc / ((3 * (16 / BLOCK_H)) / 2);
+        Ipp32s locX = xLoc / ((3 * (16 / BLOCK_W)) / 2);
+        *limitXleft = IPP_MAX(-16, -(xLoc * BLOCK_W) - PAD_H);
+        *limitXright = IPP_MIN(15, LOWRES_PITCH - (((xLoc + 1) * BLOCK_W) + PAD_H));
+        *limitYup = IPP_MAX(-12, -(yLoc * BLOCK_H) - PAD_V);
+        *limitYdown = IPP_MIN(11, Extended_Height - (((yLoc + 1) * BLOCK_W) + PAD_V));
+    }
+
+    Ipp32s MVcalcSAD8x8(H265MV MV, Ipp8u* curY, Ipp8u* refY, Ipp32u *bestSAD, Ipp32s *distance) 
+    {
+        Ipp32s preDist = (MV.mvx * MV.mvx) + (MV.mvy * MV.mvy);
+        Ipp8u* fRef = refY + MV.mvx + (MV.mvy * LOWRES_PITCH);
+        Ipp32u SAD = MFX_HEVC_PP::NAME(h265_SAD_8x8_general_8u)(curY, fRef, LOWRES_PITCH, LOWRES_PITCH);
+        if ((SAD < *bestSAD) || ((SAD == *(bestSAD)) && *distance > preDist)) {
+            *distance = preDist;
+            *(bestSAD) = SAD;
+            return 1;
+        }
+        return 0;
+    }
+
+    void SearchLimitsCalc(Ipp32s xLoc, Ipp32s yLoc, Ipp32s *limitXleft, Ipp32s *limitXright, Ipp32s *limitYup, Ipp32s *limitYdown, Ipp32s range, H265MV mv) 
+    {
+        Ipp32s Extended_Height = LOWRES_H + 2 *PAD_V;
+        Ipp32s locX  = (xLoc * BLOCK_W) + PAD_H + mv.mvx;
+        Ipp32s locY  = (yLoc * BLOCK_H) + PAD_V + mv.mvy;
+        *limitXleft  = IPP_MAX(-locX,-range);
+        *limitXright = IPP_MIN(LOWRES_PITCH - ((xLoc + 1) * BLOCK_W) - PAD_H - mv.mvx, range);
+        *limitYup    = IPP_MAX(-locY,-range);
+        *limitYdown  = IPP_MIN(Extended_Height - ((yLoc + 1) * BLOCK_H) - PAD_V - mv.mvy, range);
+    }
+
+    Ipp32s DistInt(H265MV vector) 
+    {
+        return (vector.mvx*vector.mvx) + (vector.mvy*vector.mvy);
+    }
+
+    void MVpropagationCheck(Ipp32s xLoc, Ipp32s yLoc, H265MV *propagatedMV) 
+    {
+        Ipp32s Extended_Height = LOWRES_H + 2 *PAD_V;
+        Ipp32s
+            left = (xLoc * BLOCK_W) + PAD_H,
+            right = (LOWRES_PITCH - left - BLOCK_W),
+            up = (yLoc * BLOCK_H) + PAD_V,
+            down = (Extended_Height - up - BLOCK_H);
+
+        if(propagatedMV->mvx < 0) {
+            if(left + propagatedMV->mvx < 0)
+                propagatedMV->mvx = -left;
+        } else {
+            if(right - propagatedMV->mvx < 0)
+                propagatedMV->mvx = right;
+        }
+
+        if(propagatedMV->mvy < 0) {
+            if(up + propagatedMV->mvy < 0)
+                propagatedMV->mvy = -up;
+        } else {
+            if(down - propagatedMV->mvy < 0)
+                propagatedMV->mvy = down;
+        }
+    }
+
+    struct Rsad
+    {
+        Ipp32u SAD;
+        Ipp32u distance;
+        H265MV BestMV;
+    };
+
+    #define EXTRANEIGHBORS
+
+    Ipp32s HME_Low8x8fast(Ipp8u *src, Ipp8u *ref, H265MV *srcMv, Ipp32s fPos, Ipp32s first, Ipp32u accuracy, Ipp32u* SAD) 
+    {
+        H265MV
+            lineMV[2],
+            tMV,
+            ttMV,
+            preMV = ZERO_MV,
+            Nmv;
+        Ipp32s 
+            limitXleft = 0,
+            limitXright = 0,
+            limitYup = 0,
+            limitYdown = 0,
+            direction[2],
+            counter,
+            lineSAD[2],
+            distance = INT_MAX,
+            plane = 0,
+            bestPlane = 0,
+            bestPlaneN = 0,
+            zeroSAD = INT_MAX;
+            
+        Ipp32u
+            tl,
+            *outSAD,
+            bestSAD = INT_MAX;
+        Rsad
+            range;
+        Ipp32s
+            foundBetter = 0,//1,
+            truneighbor = 0;//1;
+
+        Ipp32s xLoc = (fPos % WIDTH_IN_BLOCKS);
+        Ipp32s yLoc = (fPos / WIDTH_IN_BLOCKS);
+        Ipp32s offset = (yLoc * LOWRES_PITCH * BLOCK_H) + (xLoc * BLOCK_W);
+        Ipp8u *objFrame = src + offset;
+        Ipp8u *refFrame = ref + offset;
+        H265MV *current = srcMv;
+        outSAD = SAD;
+        Ipp32s acc = (accuracy == 1) ? 1 : 4;
+
+        if (first) {
+            MVcalcSAD8x8(ZERO_MV, objFrame, refFrame, &bestSAD, &distance);
+            zeroSAD = bestSAD;
+            current[fPos] = ZERO_MV;
+            outSAD[fPos] = bestSAD;
+            if (zeroSAD == 0)
+                return zeroSAD;
+            MotionRangeDeliveryF(xLoc, yLoc, &limitXleft, &limitXright, &limitYup, &limitYdown);
+        }
+        
+        range.SAD = outSAD[fPos];
+        range.BestMV = current[fPos];
+        range.distance = INT_MAX;
+        
+        direction[0] = 0;
+        lineMV[0].mvx = 0;
+        lineMV[0].mvy = 0;
+        {
+            Ipp8u *ps = objFrame;
+            Ipp8u *pr = refFrame + (limitYup * LOWRES_PITCH) + limitXleft;
+            Ipp32s xrange = limitXright - limitXleft + 1,
+                yrange = limitYdown - limitYup + 1,
+                bX = 0,
+                bY = 0;
+            Ipp32u bSAD = INT_MAX;
+            h265_SearchBestBlock8x8(ps, pr, LOWRES_PITCH, xrange, yrange, &bSAD, &bX, &bY);
+            if (bSAD < range.SAD) {
+                range.SAD = bSAD;
+                range.BestMV.mvx = bX + limitXleft;
+                range.BestMV.mvy = bY + limitYup;
+                range.distance = DistInt(range.BestMV);
+            }
+        }
+        outSAD[fPos] = range.SAD;
+        current[fPos] = range.BestMV;
+
+        /*ExtraNeighbors*/
+#ifdef EXTRANEIGHBORS
+        if (fPos > (WIDTH_IN_BLOCKS * 3)) {
+            tl = range.SAD;
+            Nmv.mvx = current[fPos - (WIDTH_IN_BLOCKS * 3)].mvx;
+            Nmv.mvy = current[fPos - (WIDTH_IN_BLOCKS * 3)].mvy;
+            distance = DistInt(Nmv);
+            MVpropagationCheck(xLoc, yLoc, &Nmv);
+            if (MVcalcSAD8x8(Nmv, objFrame, refFrame, &tl, &distance)) {
+                range.BestMV = Nmv;
+                range.SAD = tl;
+                foundBetter = 0;
+                truneighbor = 1;
+                bestPlaneN = plane;
+            }
+        }
+        if ((fPos > (WIDTH_IN_BLOCKS * 2)) && (xLoc > 0)) {
+            tl = range.SAD;
+            Nmv.mvx = current[fPos - (WIDTH_IN_BLOCKS * 2) - 1].mvx;
+            Nmv.mvy = current[fPos - (WIDTH_IN_BLOCKS * 2) - 1].mvy;
+            distance = DistInt(Nmv);
+            MVpropagationCheck(xLoc, yLoc, &Nmv);
+            if (MVcalcSAD8x8(Nmv, objFrame, refFrame, &tl, &distance)) {
+                range.BestMV = Nmv;
+                range.SAD = tl;
+                foundBetter = 0;
+                truneighbor = 1;
+                bestPlaneN = plane;
+            }
+        }
+        if (fPos > (WIDTH_IN_BLOCKS * 2)) {
+            tl = range.SAD;
+            Nmv.mvx = current[fPos - (WIDTH_IN_BLOCKS * 2)].mvx;
+            Nmv.mvy = current[fPos - (WIDTH_IN_BLOCKS * 2)].mvy;
+            distance = DistInt(Nmv);
+            MVpropagationCheck(xLoc, yLoc, &Nmv);
+            if (MVcalcSAD8x8(Nmv, objFrame, refFrame, &tl, &distance)) {
+                range.BestMV = Nmv;
+                range.SAD = tl;
+                foundBetter = 0;
+                truneighbor = 1;
+                bestPlaneN = plane;
+            }
+        }
+        if ((fPos > (WIDTH_IN_BLOCKS * 2)) && (xLoc < WIDTH_IN_BLOCKS - 1)) {
+            tl = range.SAD;
+            Nmv.mvx = current[fPos - (WIDTH_IN_BLOCKS * 2) + 1].mvx;
+            Nmv.mvy = current[fPos - (WIDTH_IN_BLOCKS * 2) + 1].mvy;
+            distance = DistInt(Nmv);
+            MVpropagationCheck(xLoc, yLoc, &Nmv);
+            if (MVcalcSAD8x8(Nmv, objFrame, refFrame, &tl, &distance)) {
+                range.BestMV = Nmv;
+                range.SAD = tl;
+                foundBetter = 0;
+                truneighbor = 1;
+                bestPlaneN = plane;
+            }
+        }
+#endif
+        if ((fPos > WIDTH_IN_BLOCKS) && (xLoc > 0)) {
+            tl = range.SAD;
+            Nmv.mvx = current[fPos - WIDTH_IN_BLOCKS - 1].mvx;
+            Nmv.mvy = current[fPos - WIDTH_IN_BLOCKS - 1].mvy;
+            distance = DistInt(Nmv);
+            MVpropagationCheck(xLoc, yLoc, &Nmv);
+            if (MVcalcSAD8x8(Nmv, objFrame, refFrame, &tl, &distance)) {
+                range.BestMV = Nmv;
+                range.SAD = tl;
+                foundBetter = 0;
+                truneighbor = 1;
+                bestPlaneN = plane;
+            }
+        }
+        if (fPos > WIDTH_IN_BLOCKS) {
+            tl = range.SAD;
+            Nmv.mvx = current[fPos - WIDTH_IN_BLOCKS].mvx;
+            Nmv.mvy = current[fPos - WIDTH_IN_BLOCKS].mvy;
+            distance = DistInt(Nmv);
+            MVpropagationCheck(xLoc, yLoc, &Nmv);
+            if (MVcalcSAD8x8(Nmv, objFrame, refFrame, &tl, &distance)) {
+                range.BestMV = Nmv;
+                range.SAD = tl;
+                foundBetter = 0;
+                truneighbor = 1;
+                bestPlaneN = plane;
+            }
+        }
+        if ((fPos> WIDTH_IN_BLOCKS) && (xLoc < WIDTH_IN_BLOCKS - 1)) {
+            tl = range.SAD;
+            Nmv.mvx = current[fPos - WIDTH_IN_BLOCKS + 1].mvx;
+            Nmv.mvy = current[fPos - WIDTH_IN_BLOCKS + 1].mvy;
+            distance = DistInt(Nmv);
+            MVpropagationCheck(xLoc, yLoc, &Nmv);
+            if (MVcalcSAD8x8(Nmv, objFrame, refFrame, &tl, &distance)) {
+                range.BestMV = Nmv;
+                range.SAD = tl;
+                foundBetter = 0;
+                truneighbor = 1;
+                bestPlaneN = plane;
+            }
+        }
+        if (xLoc > 0) {
+            tl = range.SAD;
+            distance = INT_MAX;
+            Nmv.mvx = current[fPos - 1].mvx;
+            Nmv.mvy = current[fPos - 1].mvy;
+            distance = DistInt(Nmv);
+            MVpropagationCheck(xLoc, yLoc, &Nmv);
+            if (MVcalcSAD8x8(Nmv, objFrame, refFrame, &tl, &distance)) {
+                range.BestMV = Nmv;
+                range.SAD = tl;
+                foundBetter = 0;
+                truneighbor = 1;
+                bestPlaneN = plane;
+            }
+        }
+        if (xLoc > 1) {
+            tl = range.SAD;
+            distance = INT_MAX;
+            Nmv.mvx = current[fPos - 2].mvx;
+            Nmv.mvy = current[fPos - 2].mvy;
+            distance = DistInt(Nmv);
+            MVpropagationCheck(xLoc, yLoc, &Nmv);
+            if (MVcalcSAD8x8(Nmv, objFrame, refFrame, &tl, &distance)) {
+                range.BestMV = Nmv;
+                range.SAD = tl;
+                foundBetter = 0;
+                truneighbor = 1;
+                bestPlaneN = plane;
+            }
+        }
+        if (truneighbor) {
+            ttMV = range.BestMV;
+            bestSAD = range.SAD;
+            SearchLimitsCalc(xLoc, yLoc, &limitXleft, &limitXright, &limitYup, &limitYdown, 1, range.BestMV);
+            for (tMV.mvy = limitYup; tMV.mvy <= limitYdown; tMV.mvy++) {
+                for (tMV.mvx = limitXleft; tMV.mvx <= limitXright; tMV.mvx++) {
+                    preMV.mvx = tMV.mvx + ttMV.mvx;
+                    preMV.mvy = tMV.mvy + ttMV.mvy;
+                    foundBetter = MVcalcSAD8x8(preMV, objFrame, refFrame, &bestSAD, &distance);
+                    if (foundBetter) {
+                        range.BestMV = preMV;
+                        range.SAD = bestSAD;
+                        bestPlaneN = plane;
+                        foundBetter = 0;
+                    }
+                }
+            }
+
+            if (truneighbor) {
+                outSAD[fPos] = range.SAD;
+                current[fPos] = range.BestMV;
+                truneighbor = 0;
+                bestPlane = bestPlaneN;
+            }
+        }
+        range.SAD = outSAD[fPos];
+        /*Zero search*/
+        if (!first) {
+            SearchLimitsCalc(xLoc, yLoc, &limitXleft, &limitXright, &limitYup, &limitYdown, 16/*32*/, ZERO_MV);
+            counter = 0;
+            for (tMV.mvy = limitYup; tMV.mvy <= limitYdown; tMV.mvy += 2) {
+                lineSAD[0] = INT_MAX;
+                for (tMV.mvx = limitXleft + ((counter % 2) * 2); tMV.mvx <= limitXright; tMV.mvx += 4) {
+                    ttMV.mvx = tMV.mvx + ZERO_MV.mvx;
+                    ttMV.mvy = tMV.mvy + ZERO_MV.mvy;
+                    bestSAD = range.SAD;
+                    distance = range.distance;
+                    foundBetter = MVcalcSAD8x8(ttMV, objFrame, refFrame, &bestSAD, &distance);
+                    if (foundBetter) {
+                        range.BestMV = ttMV;
+                        range.SAD = bestSAD;
+                        range.distance = distance;
+                        foundBetter = 0;
+                        bestPlane = 0;
+                    }
+                }
+                counter++;
+            }
+        }
+        ttMV = range.BestMV;
+        SearchLimitsCalc(xLoc, yLoc, &limitXleft, &limitXright, &limitYup, &limitYdown, 1, range.BestMV);
+        for (tMV.mvy = limitYup; tMV.mvy <= limitYdown; tMV.mvy++) {
+            for (tMV.mvx = limitXleft; tMV.mvx <= limitXright; tMV.mvx++) {
+                preMV.mvx = tMV.mvx + ttMV.mvx;
+                preMV.mvy = tMV.mvy + ttMV.mvy;
+                foundBetter = MVcalcSAD8x8(preMV, objFrame, refFrame, &bestSAD, &distance);
+                if (foundBetter) {
+                    range.BestMV = preMV;
+                    range.SAD = bestSAD;
+                    range.distance = distance;
+                    bestPlane = 0;
+                    foundBetter = 0;
+                }
+            }
+        }
+        outSAD[fPos] = range.SAD;
+        current[fPos] = range.BestMV;
+
+        return(zeroSAD);
+    }
+
+    static Ipp32s PDISTTbl2[/*NumTSC*NumSC*/] =
+    {
+        2, 3, 3, 4, 4, 5, 5, 5, 5, 5,
+        2, 2, 3, 3, 4, 4, 5, 5, 5, 5,
+        1, 2, 2, 3, 3, 3, 4, 4, 5, 5,
+        1, 1, 2, 2, 3, 3, 3, 4, 4, 5,
+        1, 1, 2, 2, 3, 3, 3, 3, 3, 4,
+        1, 1, 1, 2, 2, 3, 3, 3, 3, 3,
+        1, 1, 1, 1, 2, 2, 3, 3, 3, 3,
+        1, 1, 1, 1, 2, 2, 2, 3, 3, 3,
+        1, 1, 1, 1, 1, 2, 2, 2, 2, 2,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+    };
+
+
+    const Ipp32f FLOAT_MAX  =       2241178.0;
+
+    static Ipp32f
+        lmt_sc2[/*NumSC*/] = { 4.0, 9.0, 15.0, 23.0, 32.0, 42.0, 53.0, 65.0, 78.0, FLOAT_MAX },             // lower limit of SFM(Rs,Cs) range for spatial classification
+        // 9 ranges of SC are: 0 0-4, 1 4-9, 2 9-15, 3 15-23, 4 23-32, 5 32-44, 6 42-53, 7 53-65, 8 65-78, 9 78->??
+        lmt_tsc2[/*NumTSC*/] = { 0.75, 1.5, 2.25, 3.0, 4.0, 5.0, 6.0, 7.5, 9.25, FLOAT_MAX };               // lower limit of AFD
+        // 8 ranges of TSC (based on FD) are:0 0-0.75 1 0.75-1.5, 2 1.5-2.25. 3 2.25-3, 4 3-4, 5 4-5, 6 5-6, 7 6-7.5, 8 7.5-9.25, 9 9.25->??
+
+    void SceneStats::Create(const AllocInfo &allocInfo)
+    {
+        for (Ipp32s idx = 0; idx < 2; idx++) {
+            memset(data, 0, sizeof(data)/sizeof(data[0]));
+            Ipp32s initialPoint = (LOWRES_PITCH * PAD_V) + PAD_H;
+            Y = data + initialPoint;
+        }
+    }
+
+    template <class T> void SubSampleImage(const T *pSrc, Ipp32s srcWidth, Ipp32s srcHeight, Ipp32s srcPitch, Ipp8u *pDst, Ipp32s dstWidth, Ipp32s dstHeight, Ipp32s dstPitch) 
+    {
+        Ipp32s shift = 2*(sizeof(T) - 1);
+
+        Ipp32s dstSSHstep = srcWidth / dstWidth;
+        Ipp32s dstSSVstep = srcHeight / dstHeight;
+
+        //No need for exact subsampling, approximation is good enough for analysis.
+        for(Ipp32s i = 0, j = 0 ; i < dstHeight; i++, j += dstSSVstep) {
+            for(Ipp32s k = 0, h = 0 ; k < dstWidth; k++, h += dstSSHstep) {
+                pDst[(i * dstPitch) + k] = (Ipp8u)(pSrc[(j * srcPitch) + h] >> shift);
+            }
+        }
+    }
+
+    Ipp32s TableLookUp(Ipp32s limit, Ipp32f *table, Ipp32f comparisonValue) 
+    {
+        for (Ipp32s pos = 0; pos < limit; pos++) {
+            if (comparisonValue < table[pos])
+                return pos;
+        }
+        return limit;
+    }
+
+    Ipp32s ShotDetect(SceneStats& input, SceneStats& ref, Ipp32s* histogram, Ipp64s ssDCint, Ipp64s refDCint) 
+    {
+        Ipp32f RsDiff, CsDiff;
+        {
+            Ipp32f* objRs = input.Rs;
+            Ipp32f* objCs = input.Cs;
+            Ipp32f* refRs = ref.Rs;
+            Ipp32f* refCs = ref.Cs;
+            Ipp32s len = (2*WIDTH_IN_BLOCKS) * (2*HEIGHT_IN_BLOCKS); // blocks in 8x8 but RsCs in 4x4
+            h265_ComputeRsCsDiff(objRs, objCs, refRs, refCs, len, &RsDiff, &CsDiff);
+            RsDiff /= NUM_BLOCKS * (2 / (8 / BLOCK_H)) * (2 / (8 / BLOCK_W));
+            CsDiff /= NUM_BLOCKS * (2 / (8 / BLOCK_H)) * (2 / (8 / BLOCK_W));
+            input.RsCsDiff = (Ipp32f)sqrt((RsDiff*RsDiff) + (CsDiff*CsDiff));
+        }
+        
+        Ipp64f ssDCval  = ssDCint * (1.0 / LOWRES_SIZE);
+        Ipp64f refDCval = refDCint * (1.0 / LOWRES_SIZE);
+        Ipp64f gchDC = NABS(ssDCval - refDCval);
+        Ipp64f posBalance = (Ipp32f)(histogram[3] + histogram[4]);
+        Ipp64f negBalance = (Ipp32f)(histogram[0] + histogram[1]);
+        posBalance -= negBalance;
+        posBalance = NABS(posBalance);
+        Ipp64f histTOT = (Ipp32f)(histogram[0] + histogram[1] + histogram[2] + histogram[3] + histogram[4]);
+        posBalance /= histTOT;
+        negBalance /= histTOT;
+
+        Ipp32f diffAFD = input.AFD - ref.AFD;
+        Ipp32f diffTSC = input.TSC - ref.TSC;
+        Ipp32f diffRsCsDiff = input.RsCsDiff - ref.RsCsDiff;
+        Ipp32f diffMVdiffVal = input.MVdiffVal - ref.MVdiffVal;
+        Ipp32s TSCindex = TableLookUp(NUM_TSC, lmt_tsc2, input.TSC);
+
+        Ipp32f SC = (Ipp32f)sqrt(( input.avgRs * input.avgRs) + (input.avgCs * input.avgCs));
+        Ipp32s SCindex  = TableLookUp(NUM_SC, lmt_sc2,  SC);
+
+        Ipp32s Schg = SCDetectUF1(diffMVdiffVal, input.RsCsDiff, input.MVdiffVal, input.avgRs, input.AFD, CsDiff, diffTSC, input.TSC, gchDC, diffRsCsDiff, posBalance, SC, TSCindex, SCindex, input.avgCs, diffAFD, negBalance, ssDCval, refDCval, RsDiff);
+
+        return Schg;
+    }
+
+    void MotionAnalysis(Ipp8u *src, H265MV *srcMv, Ipp8u *ref, H265MV *refMv, Ipp32f *TSC, Ipp32f *AFD, Ipp32f *MVdiffVal)
+    {
+        Ipp32u valNoM = 0, valb = 0;
+        Ipp32u SAD[NUM_BLOCKS];
+
+        *MVdiffVal = 0;
+        for (Ipp32s fPos = 0; fPos < NUM_BLOCKS; fPos++) {
+            valNoM += HME_Low8x8fast(src, ref, srcMv, fPos, 1, 1, SAD);
+            valb += SAD[fPos];
+            *MVdiffVal += (srcMv[fPos].mvx - refMv[fPos].mvx) * (srcMv[fPos].mvx - refMv[fPos].mvx);
+            *MVdiffVal += (srcMv[fPos].mvy - refMv[fPos].mvy) * (srcMv[fPos].mvy - refMv[fPos].mvy);
+        }
+
+        *TSC = (Ipp32f)valb / (Ipp32f)LOWRES_SIZE;
+        *AFD = (Ipp32f)valNoM / (Ipp32f)LOWRES_SIZE;
+        *MVdiffVal = (Ipp32f)((Ipp64f)*MVdiffVal / (Ipp64f)NUM_BLOCKS);
+    }
+
+    Ipp32s H265Enc::DetectSceneCut_AMT(Frame* input, Frame* prev)
+    {
+        {
+            Ipp32s srcWidth  = input->m_origin->width;
+            Ipp32s srcHeight = input->m_origin->height;
+            Ipp32s srcPitch  = input->m_origin->pitch_luma_pix;
+
+            Ipp8u* lowres = input->m_sceneStats->Y;
+            Ipp32s dstWidth  = LOWRES_W;
+            Ipp32s dstHeight = LOWRES_H;
+            Ipp32s dstPitch  = LOWRES_PITCH;
+
+            if (input->m_bitDepthLuma == 8) {
+                Ipp8u *origin = input->m_origin->y;
+                SubSampleImage(origin, srcWidth, srcHeight, srcPitch, lowres, dstWidth, dstHeight, dstPitch);
+            } else {
+                Ipp16u *origin = (Ipp16u*)input->m_origin->y;
+                SubSampleImage(origin, srcWidth, srcHeight, srcPitch, lowres, dstWidth, dstHeight, dstPitch);
+            }
+        }
+        
+        SceneStats* stats[2] = {prev ? prev->m_sceneStats : input->m_sceneStats, input->m_sceneStats};
+        Ipp8u  *src  = stats[CUR]->Y;
+        H265MV *srcMv =  stats[CUR]->mv;
+        Ipp8u  *ref  = stats[REF]->Y;
+        H265MV *refMv =  stats[REF]->mv;
+        {
+            const Ipp32s BLOCK_SIZE = 4;
+            const Ipp32s hblocks = LOWRES_H / BLOCK_SIZE;
+            const Ipp32s wblocks = LOWRES_W / BLOCK_SIZE;
+            const Ipp32s len = hblocks * wblocks;
+            SceneStats* data = stats[CUR];
+
+            h265_ComputeRsCs4x4(src, LOWRES_PITCH, wblocks, hblocks, data->Rs, data->Cs);
+            
+            ippsSum_32f(data->Rs, len, &data->avgRs, ippAlgHintFast);
+            data->avgRs = (Ipp32f)sqrt(data->avgRs / len);
+            ippsSqrt_32f_I(data->Rs, len);
+            ippsSum_32f(data->Cs, len, &data->avgCs, ippAlgHintFast);
+            data->avgCs = (Ipp32f)sqrt(data->avgCs / len);
+            ippsSqrt_32f_I(data->Cs, len);
+        }
+
+        Ipp32s Schg = 0;
+        if (prev == NULL) {
+            stats[CUR]->TSC = 0;
+            stats[CUR]->AFD = 0;
+            stats[CUR]->MVdiffVal = 0;
+            stats[CUR]->RsCsDiff = 0;
+        } else {
+            MotionAnalysis(src, srcMv, ref, refMv, &stats[CUR]->TSC, &stats[CUR]->AFD, &stats[CUR]->MVdiffVal);
+
+            Ipp64s ssDCint, refDCint;
+            Ipp32s histogram[5];
+            h265_ImageDiffHistogram(src, ref, LOWRES_PITCH, LOWRES_W, LOWRES_H, histogram, &ssDCint, &refDCint);
+            Schg = ShotDetect(*stats[CUR], *stats[REF], histogram, ssDCint, refDCint);
+        }
+
+        return Schg;
+    }
+
+    Ipp32s SCDetectUF1(
+        Ipp64f diffMVdiffVal, Ipp64f RsCsDiff,   Ipp64f MVDiff,   Ipp64f Rs,       Ipp64f AFD,
+        Ipp64f CsDiff,        Ipp64f diffTSC,    Ipp64f TSC,      Ipp64f gchDC,    Ipp64f diffRsCsdiff,
+        Ipp64f posBalance,    Ipp64f SC,         Ipp64f TSCindex, Ipp64f Scindex,  Ipp64f Cs,
+        Ipp64f diffAFD,       Ipp64f negBalance, Ipp64f ssDCval,  Ipp64f refDCval, Ipp64f RsDiff) 
+    {
+        if (diffMVdiffVal <= 100.429) {
+            if (diffAFD <= 12.187) {
+                if (diffRsCsdiff <= 160.697) {
+                    if (diffTSC <= 2.631) {
+                        if (MVDiff <= 262.598) {
+                            return 0;
+                        } else if (MVDiff > 262.598) {
+                            if (Scindex <= 2) {
+                                if (RsCsDiff <= 258.302) {
+                                    return 0;
+                                } else if (RsCsDiff > 258.302) {
+                                    if (AFD <= 29.182) {
+                                        return 1;
+                                    } else if (AFD > 29.182) {
+                                        return 0;
+                                    }
+                                }
+                            } else if (Scindex > 2) {
+                                return 0;
+                            }
+                        }
+                    } else if (diffTSC > 2.631) {
+                        if (negBalance <= 0.317) {
+                            return 0;
+                        } else if (negBalance > 0.317) {
+                            if (Cs <= 18.718) {
+                                if (AFD <= 10.086) {
+                                    return 1;
+                                } else if (AFD > 10.086) {
+                                    if (Scindex <= 3) {
+                                        if (SC <= 20.257) {
+                                            return 0;
+                                        } else if (SC > 20.257) {
+                                            if (AFD <= 23.616) {
+                                                return 0;
+                                            } else if (AFD > 23.616) {
+                                                return 1;
+                                            }
+                                        }
+                                    } else if (Scindex > 3) {
+                                        return 0;
+                                    }
+                                }
+                            }
+                            else if (Cs > 18.718)
+                            {
+                                return 0;
+                            }
+                        }
+                    }
+                }
+                else if (diffRsCsdiff > 160.697) {
+                    if (Scindex <= 3) {
+                        if (Rs <= 11.603) {
+                            return 1;
+                        } else if (Rs > 11.603) {
+                            if (MVDiff <= 239.661) {
+                                return 0;
+                            } else if (MVDiff > 239.661) {
+                                if (Rs <= 16.197) {
+                                    return 1;
+                                } else if (Rs > 16.197) {
+                                    return 0;
+                                }
+                            }
+                        }
+                    } else if (Scindex > 3) {
+                        return 0;
+                    }
+                }
+            } else if (diffAFD > 12.187) {
+                if (RsCsDiff <= 574.733) {
+                    if (negBalance <= 0.304) {
+                        if (MVDiff <= 226.839) {
+                            return 0;
+                        } else if (MVDiff > 226.839) {
+                            if (diffRsCsdiff <= 179.802) {
+                                return 0;
+                            } else if (diffRsCsdiff > 179.802) {
+                                if (RsDiff <= 187.951) {
+                                    return 1;
+                                } else if (RsDiff > 187.951) {
+                                    return 0;
+                                }
+                            }
+                        }
+                    } else if (negBalance > 0.304) {
+                        if (refDCval <= 51.521) {
+                            return 1;
+                        } else if (refDCval > 51.521) {
+                            if (diffTSC <= 9.661) {
+                                if (MVDiff <= 207.214) {
+                                    return 0;
+                                } else if (MVDiff > 207.214) {
+                                    if (ssDCval <= 41.36) {
+                                        return 1;
+                                    } else if (ssDCval > 41.36) {
+                                        if (diffRsCsdiff <= 330.407) {
+                                            return 0;
+                                        } else if (diffRsCsdiff > 330.407) {
+                                            return 1;
+                                        }
+                                    }
+                                }
+                            } else if (diffTSC > 9.661) {
+                                if (Scindex <= 5) {
+                                    if (posBalance <= 0.661) {
+                                        if (diffRsCsdiff <= 45.975) {
+                                            return 0;
+                                        } else if (diffRsCsdiff > 45.975) {
+                                            if (Scindex <= 4) {
+                                                return 1;
+                                            } else if (Scindex > 4) {
+                                                if (ssDCval <= 125.414) {
+                                                    return 1;
+                                                } else if (ssDCval > 125.414) {
+                                                    return 0;
+                                                }
+                                            }
+                                        }
+                                    } else if (posBalance > 0.661) {
+                                        return 0;
+                                    }
+                                } else if (Scindex > 5) {
+                                    return 0;
+                                }
+                            }
+                        }
+                    }
+                } else if (RsCsDiff > 574.733) {
+                    if (diffRsCsdiff <= 299.149) {
+                        return 0;
+                    } else if (diffRsCsdiff > 299.149) {
+                        if (SC <= 39.857) {
+                            if (MVDiff <= 325.304) {
+                                if (Cs <= 11.102) {
+                                    return 0;
+                                } else if (Cs > 11.102) {
+                                    return 1;
+                                }
+                            } else if (MVDiff > 325.304) {
+                                return 0;
+                            }
+                        } else if (SC > 39.857) {
+                            if (TSC <= 24.941) {
+                                return 0;
+                            } else if (TSC > 24.941) {
+                                if (diffRsCsdiff <= 635.748) {
+                                    return 0;
+                                } else if (diffRsCsdiff > 635.748) {
+                                    return 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else if (diffMVdiffVal > 100.429) {
+            if (diffAFD <= 9.929) {
+                if (diffAFD <= 7.126) {
+                    if (diffRsCsdiff <= 96.456) {
+                        return 0;
+                    } else if (diffRsCsdiff > 96.456) {
+                        if (Rs <= 24.984) {
+                            if (diffTSC <= -0.375) {
+                                if (ssDCval <= 41.813) {
+                                    return 1;
+                                } else if (ssDCval > 41.813) {
+                                    return 0;
+                                }
+                            } else if (diffTSC > -0.375) {
+                                return 1;
+                            }
+                        } else if (Rs > 24.984) {
+                            return 0;
+                        }
+                    }
+                } else if (diffAFD > 7.126) {
+                    if (refDCval <= 62.036) {
+                        if (posBalance <= 0.545) {
+                            return 1;
+                        } else if (posBalance > 0.545) {
+                            return 0;
+                        }
+                    } else if (refDCval > 62.036) {
+                        return 0;
+                    }
+                }
+            } else if (diffAFD > 9.929) {
+                if (negBalance <= 0.114) {
+                    if (diffAFD <= 60.112) {
+                        if (SC <= 21.607) {
+                            if (diffMVdiffVal <= 170.955) {
+                                return 0;
+                            } else if (diffMVdiffVal > 170.955) {
+                                return 1;
+                            }
+                        } else if (SC > 21.607) {
+                            if (CsDiff <= 394.574) {
+                                return 0;
+                            } else if (CsDiff > 394.574) {
+                                if (MVDiff <= 311.679) {
+                                    return 0;
+                                } else if (MVDiff > 311.679) {
+                                    return 1;
+                                }
+                            }
+                        }
+                    } else if (diffAFD > 60.112) {
+                        if (negBalance <= 0.021) {
+                            if (Cs <= 25.091) {
+                                if (ssDCval <= 161.319) {
+                                    return 1;
+                                } else if (ssDCval > 161.319) {
+                                    return 0;
+                                }
+                            } else if (Cs > 25.091) {
+                                return 0;
+                            }
+                        } else if (negBalance > 0.021) {
+                            if (CsDiff <= 118.864) {
+                                return 0;
+                            } else if (CsDiff > 118.864) {
+                                return 1;
+                            }
+                        }
+                    }
+                } else if (negBalance > 0.114) {
+                    if (diffRsCsdiff <= 73.957) {
+                        if (refDCval <= 52.698) {
+                            return 1;
+                        } else if (refDCval > 52.698) {
+                            if (CsDiff <= 292.448) {
+                                if (gchDC <= 17.615) {
+                                    if (diffRsCsdiff <= 31.82) {
+                                        return 0;
+                                    } else if (diffRsCsdiff > 31.82) {
+                                        if (TSCindex <= 8) {
+                                            return 1;
+                                        } else if (TSCindex > 8) {
+                                            if (diffTSC <= 9.277) {
+                                                return 0;
+                                            } else if (diffTSC > 9.277) {
+                                                return 1;
+                                            }
+                                        }
+                                    }
+                                } else if (gchDC > 17.615) {
+                                    return 0;
+                                }
+                            } else if (CsDiff > 292.448) {
+                                return 1;
+                            }
+                        }
+                    } else if (diffRsCsdiff > 73.957) {
+                        if (MVDiff <= 327.545) {
+                            if (TSCindex <= 8) {
+                                if (Scindex <= 2) {
+                                    return 1;
+                                } else if (Scindex > 2) {
+                                    if (Cs <= 15.328) {
+                                        if (gchDC <= 11.785) {
+                                            return 1;
+                                        } else if (gchDC > 11.785) {
+                                            return 0;
+                                        }
+                                    } else if (Cs > 15.328) {
+                                        return 0;
+                                    }
+                                }
+                            } else if (TSCindex > 8) {
+                                if (Scindex <= 3) {
+                                    if (posBalance <= 0.355) {
+                                        return 1;
+                                    } else if (posBalance > 0.355) {
+                                        if (Scindex <= 2) {
+                                            return 1;
+                                        } else if (Scindex > 2) {
+                                            if (CsDiff <= 190.806) {
+                                                if (AFD <= 30.279) {
+                                                    return 1;
+                                                } else if (AFD > 30.279) {
+                                                    if (Rs <= 11.233) {
+                                                        return 0;
+                                                    } else if (Rs > 11.233) {
+                                                        if (RsDiff <= 135.624) {
+                                                            if (Rs <= 13.737) {
+                                                                return 1;
+                                                            } else if (Rs > 13.737) {
+                                                                return 0;
+                                                            }
+                                                        } else if (RsDiff > 135.624) {
+                                                            return 1;
+                                                        }
+                                                    }
+                                                }
+                                            } else if (CsDiff > 190.806) {
+                                                return 1;
+                                            }
+                                        }
+                                    }
+                                } else if (Scindex > 3) {
+                                    if (diffMVdiffVal <= 132.973) {
+                                        if (Scindex <= 4) {
+                                            return 1;
+                                        } else if (Scindex > 4) {
+                                            if (TSC <= 18.753) {
+                                                return 0;
+                                            } else if (TSC > 18.753) {
+                                                return 1;
+                                            }
+                                        }
+                                    } else if (diffMVdiffVal > 132.973) {
+                                        return 1;
+                                    }
+                                }
+                            }
+                        } else if (MVDiff > 327.545) {
+                            if (CsDiff <= 369.087) {
+                                if (Rs <= 18.379) {
+                                    if (diffMVdiffVal <= 267.732) {
+                                        if (Cs <= 10.464) {
+                                            return 1;
+                                        } else if (Cs > 10.464) {
+                                            return 0;
+                                        }
+                                    } else if (diffMVdiffVal > 267.732) {
+                                        return 1;
+                                    }
+                                } else if (Rs > 18.379) {
+                                    if (diffAFD <= 35.587) {
+                                        return 0;
+                                    } else if (diffAFD > 35.587) {
+                                        if (CsDiff <= 190.153) {
+                                            return 0;
+                                        } else if (CsDiff > 190.153) {
+                                            return 1;
+                                        }
+                                    }
+                                }
+                            } else if (CsDiff > 369.087) {
+                                return 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE
+/* EOF */
