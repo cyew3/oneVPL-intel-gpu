@@ -20,4 +20,7 @@ list( APPEND LIBS
     pthread
     dl
 )
+
+set( defs "${defs} ${WARNING_FLAGS}" )
 make_executable( test_comp universal )
+set( defs "" )

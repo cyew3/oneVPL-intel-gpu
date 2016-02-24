@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2015 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2005-2016 Intel Corporation. All Rights Reserved.
 //
 
 #define ENABLE_OUTPUT    // Disabling this flag removes all YUV file writing
@@ -817,7 +817,7 @@ protected:
             if ( key.compare("stream") == 0 || key.compare("primarystream") == 0){
                 if (value.find("background") != string::npos)
                 {
-                    if (!sscanf(value.c_str(), "background(%d,%d,%d)", &m_Color.Y, &m_Color.U, &m_Color.V))
+                    if (!sscanf(value.c_str(), "background(%d,%d,%d)", reinterpret_cast<int*>(&m_Color.Y), reinterpret_cast<int*>(&m_Color.U), reinterpret_cast<int*>(&m_Color.V)))
                     {
                         m_Color.Y = 16;
                         m_Color.U = 128;
@@ -924,7 +924,7 @@ int main(int argc, char *argv[])
     std::auto_ptr<MfxLoader::VA_DRMProxy> m_vadrmlib;
 
     int m_card_fd = 0, major_version = 0, minor_version = 0;
-    VADisplay m_va_display;
+    VADisplay m_va_display = NULL;
     VAStatus va_res;
 #endif
 
