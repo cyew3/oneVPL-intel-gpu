@@ -1169,7 +1169,8 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9DecoderFrame const
     if (!m_Packer.get())
     {
         m_Packer.reset(Packer::CreatePacker(m_va));
-        VM_ASSERT(m_Packer.get());
+        if (!m_Packer.get())
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
     VP9Bitstream vp9bs(bs->Data + bs->DataOffset, bs->DataLength);
