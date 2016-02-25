@@ -141,6 +141,7 @@ mfxStatus CommonCORE::AllocFrames(mfxFrameAllocRequest *request,
         //sts = LockFrame(response->mids[i], &surf.Data);
         //MFX_CHECK_STS(sts);
         surf.Data.MemId = response->mids[i];
+        surf.Data.MemType = request->Type;
         opq_it = m_OpqTbl.insert(std::make_pair(pOpaqueSurface[i], surf)).first;
 
         // filling helper tables

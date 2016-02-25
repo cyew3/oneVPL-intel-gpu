@@ -334,6 +334,35 @@ mfxStatus mfxCORECreateAccelerationDevice(mfxHDL pthis, mfxHandleType type, mfxH
     return mfxRes;
 }// mfxStatus mfxCORECreateAccelerationDevice(mfxHDL pthis, mfxHandleType type, mfxHDL *handle)
 
+mfxStatus mfxCOREGetFrameHDL(mfxHDL pthis, mfxFrameData *fd, mfxHDL *handle)
+{
+    mfxSession session = (mfxSession)pthis;
+    mfxStatus mfxRes = MFX_ERR_NONE;
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
+    MFX_CHECK(session->m_pCORE.get(), MFX_ERR_NOT_INITIALIZED);
+    MFX_CHECK_NULL_PTR1(handle);
+    VideoCORE *pCore = session->m_pCORE.get();
+
+    try
+    {
+        if (   pCore->IsExternalFrameAllocator()
+            && !(fd->MemType & MFX_MEMTYPE_OPAQUE_FRAME))
+        {
+            mfxRes = pCore->GetExternalFrameHDL(fd->MemId, handle);
+        }
+        else
+        {
+            mfxRes = pCore->GetFrameHDL(fd->MemId, handle);
+        }
+    }
+    catch (MFX_CORE_CATCH_TYPE)
+    {
+        mfxRes = MFX_ERR_UNKNOWN;
+    }
+
+    return mfxRes;
+} // mfxStatus mfxCOREGetFrameHDL(mfxHDL pthis, mfxFrameData *fd, mfxHDL *handle)
+
 #define CORE_FUNC_IMPL(func_name, formal_param_list, actual_param_list) \
 mfxStatus mfxCORE##func_name formal_param_list \
 { \
@@ -489,6 +518,7 @@ void InitCoreInterface(mfxCoreInterface *pCoreInterface,
     pCoreInterface->pthis = (mfxHDL) session;
     pCoreInterface->GetCoreParam = &mfxCOREGetCoreParam;
     pCoreInterface->GetHandle = &mfxCOREGetHandle;
+    pCoreInterface->GetFrameHandle = &mfxCOREGetFrameHDL;
     pCoreInterface->IncreaseReference = &mfxCOREIncreaseReference;
     pCoreInterface->DecreaseReference = &mfxCOREDecreaseReference;
     pCoreInterface->CopyFrame = &mfxCORECopyFrame;

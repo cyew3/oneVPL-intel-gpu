@@ -337,7 +337,7 @@ mfxStatus GetNativeHandleToRawSurface(
         sts = fa.GetHDL(fa.pthis, task.m_midRaw, &nativeHandle);
     else if (   video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY
              || video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-        sts = fa.GetHDL(fa.pthis, surface->Data.MemId, &nativeHandle);
+        sts = core.GetFrameHandle(&surface->Data, &nativeHandle);
     else
         return (MFX_ERR_UNDEFINED_BEHAVIOR);
 
