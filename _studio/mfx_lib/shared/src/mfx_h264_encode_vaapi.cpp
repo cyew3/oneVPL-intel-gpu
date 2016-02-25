@@ -72,6 +72,23 @@ VAProfile ConvertProfileTypeMFX2VAAPI(mfxU32 type)
 
 } // VAProfile ConvertProfileTypeMFX2VAAPI(mfxU8 type)
 
+mfxU8 ConvertSliceStructureVAAPIToMFX(mfxU8 structure)
+{
+    switch (structure)
+    {
+        case VA_ENC_SLICE_STRUCTURE_POWER_OF_TWO_ROWS:
+            return 1;
+        case VA_ENC_SLICE_STRUCTURE_EQUAL_ROWS:
+            return 2;
+        case VA_ENC_SLICE_STRUCTURE_ARBITRARY_ROWS:
+            return 3;
+        case VA_ENC_SLICE_STRUCTURE_ARBITRARY_MACROBLOCKS:
+            return 4;
+        default:
+            return 0;
+    }
+}
+
 mfxStatus SetHRD(
     MfxVideoParam const & par,
     VADisplay    vaDisplay,
@@ -1016,7 +1033,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     attrs.push_back( {VAConfigAttribMaxPictureWidth, 0});
     attrs.push_back( {VAConfigAttribEncInterlaced, 0});
     attrs.push_back( {VAConfigAttribEncMaxRefFrames, 0});
-    attrs.push_back( {VAConfigAttribEncMaxSlices, 0});
+    attrs.push_back( {VAConfigAttribEncSliceStructure, 0});
 #ifdef SKIP_FRAME_SUPPORT
     attrs.push_back( {VAConfigAttribEncSkipFrame, 0});
 #endif
@@ -1083,11 +1100,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         const eMFXHWType hwtype = m_core->GetHWType();
         if (attrs[8].value != VA_ATTRIB_NOT_SUPPORTED)
         {
-            m_caps.SliceStructure = attrs[8].value;
-            // below is workaround for SKL platform
-            // driver may return SliceStructure = 0, while SKL supports arbitrary slice size in MBs
-            if (hwtype == MFX_HW_SCL && m_caps.SliceStructure == 0)
-                m_caps.SliceStructure = 4;
+            m_caps.SliceStructure = ConvertSliceStructureVAAPIToMFX(attrs[8].value);
         }
         else
         {
