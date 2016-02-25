@@ -2557,6 +2557,12 @@ mfxStatus CEncodingPipeline::Run()
 {
     mfxStatus sts = MFX_ERR_NONE;
 
+    if (m_encpakParams.bENCODE)
+    {
+        sts = UpdateVideoParams(); // update settings according to those that exposed by MSDK library
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
+
     mfxFrameSurface1* pSurf = NULL; // dispatching pointer
     sTask *pCurrentTask     = NULL; // a pointer to the current task
 
@@ -2585,7 +2591,7 @@ mfxStatus CEncodingPipeline::Run()
         m_numMB = m_widthMB * m_heightMB / 256;
     }
 
-    m_widthMB >>= 4;
+    m_widthMB  >>= 4;
     m_heightMB >>= m_isField ? 5 : 4;
 
     if (m_encpakParams.bPREENC && m_encpakParams.preencDSstrength)
@@ -2620,11 +2626,6 @@ mfxStatus CEncodingPipeline::Run()
     time_t start = time(0);
     size_t rctime = 0;
 
-    if (m_encpakParams.bENCODE)
-    {
-        sts = UpdateVideoParams(); // update settings according to those that exposed by MSDK library
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-    }
     sts = MFX_ERR_NONE;
 
     // main loop, preprocessing and encoding
@@ -3285,7 +3286,8 @@ mfxStatus CEncodingPipeline::FillRefInfo(iTask* eTask)
         }
 
         /* in some cases l0 and l1 lists are equal, if so same ref lists for l0 and l1 should be used*/
-        n_l0 = GetNBackward(eTask, fieldId), n_l1 = GetNForward(eTask, fieldId);
+        n_l0 = GetNBackward(eTask, fieldId);
+        n_l1 = GetNForward(eTask, fieldId);
 
         if (!n_l0 && eTask->m_list0[fid].Size() && !(eTask->m_type[fid] & MFX_FRAMETYPE_I))
         {

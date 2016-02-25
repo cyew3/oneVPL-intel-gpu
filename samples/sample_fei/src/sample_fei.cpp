@@ -1108,7 +1108,7 @@ mfxStatus CheckDRCParams(sInputParams* pParams)
     {
         return MFX_ERR_NONE;
     }
-    if (pParams->bENCPAK || pParams->bOnlyPAK || pParams->bPREENC)
+    if (pParams->bENCPAK || pParams->bOnlyENC || pParams->bOnlyPAK || pParams->bPREENC)
     {
         fprintf(stderr, "Only ENCODE supports Dynamic Resolution Change\n");
         sts = MFX_ERR_UNSUPPORTED;
