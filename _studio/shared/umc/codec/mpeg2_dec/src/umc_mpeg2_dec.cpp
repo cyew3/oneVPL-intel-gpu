@@ -336,7 +336,7 @@ bool MPEG2VideoDecoderBase::DeleteTables()
             Video[i] = NULL;
         }
         
-        ClearUserDataVector(frame_buffer.frame_p_c_n[i].user_data_v);
+        ClearUserDataVector(frame_user_data_v[i]);
     }
     if(frame_buffer.ptr_context_data)
     {
@@ -533,7 +533,7 @@ Status MPEG2VideoDecoderBase::Init(BaseCodecParams *pInit)
         frame_buffer.frame_p_c_n[i].duration = 0;
         frame_buffer.frame_p_c_n[i].IsUserDataDecoded = false;
         frame_buffer.frame_p_c_n[i].us_data_size = 0;        
-        ClearUserDataVector(frame_buffer.frame_p_c_n[i].user_data_v);
+        ClearUserDataVector(frame_user_data_v[i]);
 
         frame_buffer.frame_p_c_n[i].va_index = -1;
         task_locked[i] = -1;
@@ -788,12 +788,11 @@ Status MPEG2VideoDecoderBase::GetCCData(Ipp8u* ptr, Ipp32u *size, Ipp64u *time, 
 
     Ipp8u *p_user_data = m_user_data.front().first;
     Ipp32u user_data_size = (Ipp32u) m_user_data.front().second;
-    m_user_data.erase(m_user_data.begin());
-
     *size = user_data_size;
 
-    if (*size <= 0 || p_user_data == NULL)
+    if (*size == 0 || p_user_data == NULL)
     {
+        m_user_data.erase(m_user_data.begin());
         *size = 0;
         *time = 0;
         return UMC_OK;
@@ -812,6 +811,8 @@ Status MPEG2VideoDecoderBase::GetCCData(Ipp8u* ptr, Ipp32u *size, Ipp64u *time, 
 #else
     free(p_user_data);
 #endif
+
+    m_user_data.erase(m_user_data.begin());
 
     return umcRes;
 }
@@ -1370,18 +1371,16 @@ Status MPEG2VideoDecoderBase::PostProcessUserData(int display_index)
               m_user_ts_data.erase(m_user_ts_data.begin(), m_user_ts_data.begin() + items_to_discard);
           }
 
-          size_t userDataCount = frame_buffer.frame_p_c_n[display_index].user_data_v.size();
-          
-          sVideoFrameBuffer *p_buffer = &frame_buffer.frame_p_c_n[display_index];
-          
+          size_t userDataCount = frame_user_data_v[display_index].size();
+
           for (Ipp32u i = 0; i < userDataCount; i += 1)
           {
-              m_user_data.push_back(p_buffer->user_data_v[i]);
+              m_user_data.push_back(frame_user_data_v[display_index][i]);
               m_user_ts_data.push_back(std::make_pair(m_dTime[display_index].time, sizeof(Ipp64f)));
           }
 
           // memory ownership transfered to m_user_data, so just clear()
-          p_buffer->user_data_v.clear();
+          frame_user_data_v[display_index].clear();
       }
     /*
       if(m_pCCDataTS->LockInputBuffer(&ccData) == UMC_OK)
@@ -1860,7 +1859,7 @@ Status MPEG2VideoDecoderBase::Reset()
         frame_buffer.frame_p_c_n[i].duration = 0;
         frame_buffer.frame_p_c_n[i].IsUserDataDecoded = false;
         frame_buffer.frame_p_c_n[i].us_data_size = 0;
-        ClearUserDataVector(frame_buffer.frame_p_c_n[i].user_data_v);
+        ClearUserDataVector(frame_user_data_v[i]);
 
         frame_buffer.frame_p_c_n[i].va_index = -1;
         task_locked[i] = -1;
@@ -2009,7 +2008,7 @@ void MPEG2VideoDecoderBase::ReadCCData(int task_num)
         p[0] = 0; p[1] = 0; p[2] = 1; p[3] = 0xb2;
         ippsCopy_8u(readptr, p + 4, input_size);
         
-        frame_buffer.frame_p_c_n[t_num].user_data_v.push_back(std::make_pair(p, input_size + 4));
+        frame_user_data_v[t_num].push_back(std::make_pair(p, input_size + 4));
 
         frame_buffer.frame_p_c_n[t_num].IsUserDataDecoded = true;
       }

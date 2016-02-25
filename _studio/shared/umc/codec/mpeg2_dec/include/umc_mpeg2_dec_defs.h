@@ -99,7 +99,6 @@ struct sVideoFrameBuffer
     Ipp8u*           U_comp_data;
     Ipp8u*           V_comp_data;
     Ipp8u*           user_data;
-    UserDataVector   user_data_v;
     FrameType        frame_type; // 1-I, 2-P, 3-B
     Ipp64f           frame_time;
     bool             is_original_frame_time;
