@@ -364,7 +364,6 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
 {
     m_mfxEncParams.mfx.CodecId                 = pInParams->CodecId;
     m_mfxEncParams.mfx.TargetUsage             = pInParams->nTargetUsage; // trade-off between quality and speed
-    m_mfxEncParams.mfx.TargetKbps              = pInParams->nBitRate; // in Kbps
     m_mfxEncParams.mfx.RateControlMethod       = pInParams->nRateControlMethod;
     m_mfxEncParams.mfx.GopRefDist = pInParams->nGopRefDist;
     m_mfxEncParams.mfx.GopPicSize = pInParams->nGopPicSize;
@@ -376,6 +375,10 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_mfxEncParams.mfx.QPI = pInParams->nQPI;
         m_mfxEncParams.mfx.QPP = pInParams->nQPP;
         m_mfxEncParams.mfx.QPB = pInParams->nQPB;
+    }
+    else
+    {
+        m_mfxEncParams.mfx.TargetKbps = pInParams->nBitRate; // in Kbps
     }
     m_mfxEncParams.mfx.NumSlice = pInParams->nNumSlice;
     ConvertFrameRate(pInParams->dFrameRate, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtN, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtD);
@@ -1565,7 +1568,15 @@ void CEncodingPipeline::PrintInfo()
     msdk_printf(MSDK_STRING("\tCrop X,Y,W,H\t%d,%d,%d,%d\n"), DstPicInfo.CropX, DstPicInfo.CropY, DstPicInfo.CropW, DstPicInfo.CropH);
 
     msdk_printf(MSDK_STRING("Frame rate\t%.2f\n"), DstPicInfo.FrameRateExtN * 1.0 / DstPicInfo.FrameRateExtD);
-    msdk_printf(MSDK_STRING("Bit rate(Kbps)\t%d\n"), m_mfxEncParams.mfx.TargetKbps);
+    if (m_mfxEncParams.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    {
+        msdk_printf(MSDK_STRING("Bit rate(Kbps)\t%d\n"), m_mfxEncParams.mfx.TargetKbps);
+    }
+    else
+    {
+        msdk_printf(MSDK_STRING("QPI\t%d\nQPP\t%d\nQPB\t%d\n"), m_mfxEncParams.mfx.QPI, m_mfxEncParams.mfx.QPP, m_mfxEncParams.mfx.QPB);
+
+    }
     msdk_printf(MSDK_STRING("Gop size\t%d\n"), m_mfxEncParams.mfx.GopPicSize);
     msdk_printf(MSDK_STRING("Ref dist\t%d\n"), m_mfxEncParams.mfx.GopRefDist);
     msdk_printf(MSDK_STRING("Ref number\t%d\n"), m_mfxEncParams.mfx.NumRefFrame);
