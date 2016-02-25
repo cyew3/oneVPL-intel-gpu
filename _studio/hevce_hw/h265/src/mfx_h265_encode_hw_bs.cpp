@@ -120,9 +120,10 @@ void BitstreamWriter::PutGolomb(mfxU32 b)
     }
 }
 
-void BitstreamWriter::PutTrailingBits()
+void BitstreamWriter::PutTrailingBits(bool bCheckAligened)
 {
-    PutBit(1);
+    if ((!bCheckAligened) || m_bitOffset)
+        PutBit(1);
 
     if (m_bitOffset)
     {
@@ -1604,7 +1605,7 @@ void HeaderPacker::PackSEIPayload(
         }
     }
 
-    bs.PutTrailingBits();
+    bs.PutTrailingBits(true);
 }
 
 void HeaderPacker::PackSEIPayload(
@@ -1630,7 +1631,7 @@ void HeaderPacker::PackSEIPayload(
        assert(hrd.sub_pic_hrd_params_present_flag == 0);
     }
 
-    bs.PutTrailingBits();
+    bs.PutTrailingBits(true);
 }
 
 HeaderPacker::HeaderPacker()

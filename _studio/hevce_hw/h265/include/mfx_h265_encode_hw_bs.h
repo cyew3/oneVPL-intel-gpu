@@ -31,7 +31,7 @@ public:
     void PutBits        (mfxU32 n, mfxU32 b);
     void PutBit         (mfxU32 b);
     void PutGolomb      (mfxU32 b);
-    void PutTrailingBits();
+    void PutTrailingBits(bool bCheckAligned = false);
 
     inline void PutUE   (mfxU32 b)    { PutGolomb(b); }
     inline void PutSE   (mfxI32 b)    { (b > 0) ? PutGolomb((b<<1)-1) : PutGolomb((-b)<<1); }
