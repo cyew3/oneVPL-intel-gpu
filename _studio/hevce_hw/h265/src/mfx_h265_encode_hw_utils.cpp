@@ -1357,8 +1357,8 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
         m_sps.vui.time_scale        = m_vps.time_scale;
     }
 
-    if (InsertHRDInfo)
-        m_sps.vui.frame_field_info_present_flag = 1;
+    if (IsOn(m_ext.CO.PicTimingSEI))
+        m_sps.vui.frame_field_info_present_flag = 0; // temp: disable frame field info
 
     if (InsertHRDInfo && (mfx.RateControlMethod == MFX_RATECONTROL_CBR || mfx.RateControlMethod == MFX_RATECONTROL_VBR))
     {
