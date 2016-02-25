@@ -68,10 +68,10 @@ private:
             case MEMID     : m_use_memid = !!c.par[0];    break;
             case ALLOCATOR : SetAllocator(
                                  new frame_allocator(
-                                    (frame_allocator::AllocatorType)    c.par[0],
-                                    (frame_allocator::AllocMode)        c.par[1],
-                                    (frame_allocator::LockMode)         c.par[2],
-                                    (frame_allocator::OpaqueAllocMode)  c.par[3]
+                                    (frame_allocator::AllocatorType)    ((m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)) ? frame_allocator::SOFTWARE : frame_allocator::HARDWARE,
+                                    (frame_allocator::AllocMode)        c.par[0],
+                                    (frame_allocator::LockMode)         c.par[1],
+                                    (frame_allocator::OpaqueAllocMode)  c.par[2]
                                  ),
                                  false
                              ); break;
@@ -109,24 +109,55 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {INIT|MFXVPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, {208}}}
     },
     {/*10*/ MFX_ERR_NONE, {BITSTREAM, &tsStruct::mfxBitstream.DataFlag, {MFX_BITSTREAM_COMPLETE_FRAME}}},
-    {/*11*/ MFX_ERR_ABORTED,
-       {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX, frame_allocator::LARGE_PITCH_LOCK}},
-        {INIT|MEMID, 0, {1}}}
+    {/*11*/ MFX_ERR_LOCK_MEMORY,
+        {
+            {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
+            {INIT|ALLOCATOR, 0, {frame_allocator::ALLOC_MAX, frame_allocator::LARGE_PITCH_LOCK}},
+            {INIT|MEMID, 0, { 1 }}
+        }
     },
-    {/*12*/ MFX_ERR_UNDEFINED_BEHAVIOR, {BITSTREAM, &tsStruct::mfxBitstream.DataOffset, {100001}}},
-    {/*13*/ MFX_ERR_MORE_SURFACE, {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.Locked, {1}}},
-    {/*14*/ MFX_ERR_ABORTED,
-        {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX, frame_allocator::ZERO_LUMA_LOCK}},
-        {INIT|MEMID, 0, {1}}}
+    {/*12*/ MFX_ERR_UNDEFINED_BEHAVIOR,
+        {
+            {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
+            {INIT|ALLOCATOR, 0, {frame_allocator::ALLOC_MAX, frame_allocator::LARGE_PITCH_LOCK}},
+        }
     },
-    {/*15*/ MFX_ERR_NONE, {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}}},
-    {/*16*/ MFX_ERR_UNDEFINED_BEHAVIOR, {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.PitchHigh, {0x8000}}},
-    {/*17*/ MFX_ERR_UNDEFINED_BEHAVIOR, {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.Y, {0}}},
-    {/*18*/ MFX_ERR_NONE, {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}},
+    {/*13*/ MFX_ERR_UNDEFINED_BEHAVIOR, {BITSTREAM, &tsStruct::mfxBitstream.DataOffset, {100001}}},
+    {/*14*/ MFX_ERR_MORE_SURFACE, {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.Locked, {1}}},
+    {/*15*/ MFX_ERR_LOCK_MEMORY,
+        {
+            {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
+            {INIT|ALLOCATOR, 0, {frame_allocator::ALLOC_MAX, frame_allocator::ZERO_LUMA_LOCK}},
+            {INIT|MEMID, 0, {1}}
+        }
+    },
+    {/*16*/ MFX_ERR_UNDEFINED_BEHAVIOR,
+        {
+            {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
+            {INIT|ALLOCATOR, 0, {frame_allocator::ALLOC_MAX, frame_allocator::ZERO_LUMA_LOCK}},
+        }
+    },
+    {/*17*/ MFX_ERR_NONE, {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}}},
+    {/*18*/ MFX_ERR_NONE, {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}},
     {/*19*/ MFX_ERR_UNDEFINED_BEHAVIOR,
+        {
+            {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
+            {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.PitchHigh, {0x8000}}
+        }
+    },
+    {/*20*/ MFX_ERR_UNDEFINED_BEHAVIOR,
+        {
+            {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
+            {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.Y, {0}}
+        }
+    },
+    {/*21*/ MFX_ERR_NONE, {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}},
+    {/*22*/ MFX_ERR_NONE, {INIT|MEMID, 0, {1}}},
+    {/*23*/ MFX_ERR_UNDEFINED_BEHAVIOR,
        {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
         {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.Y, {1}}}
     },
+
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -139,11 +170,23 @@ int TestSuite::RunTest(unsigned int id)
     tsBitstreamReader reader(sname, 100000);
     m_bs_processor = &reader;
     auto tc = test_case[id];
+    mfxStatus expected = tc.sts;
 
     if (tc.sts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
         DecodeHeader();
 
+    if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCD_SW.Data, sizeof(MFX_PLUGINID_HEVCE_SW.Data)))
+    {
+        m_par.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+    }
+    else
+    {
+        m_par.IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
+        if (expected == MFX_ERR_LOCK_MEMORY)
+            expected = MFX_ERR_ABORTED;
+    }
     apply_par(tc, INIT);
+
     Init();
 
     SetPar4_DecodeFrameAsync();
@@ -152,13 +195,13 @@ int TestSuite::RunTest(unsigned int id)
 
     apply_par(tc, RUN);
 
-    if(tc.sts == MFX_ERR_NONE)
+    if(expected == MFX_ERR_NONE)
     {
         DecodeFrames(30);
     }
     else
     {
-        g_tsStatus.expect(tc.sts);
+        g_tsStatus.expect(expected);
         TRACE_FUNC5(MFXVideoDECODE_DecodeFrameAsync, m_session, m_pBitstream, m_pSurf, m_ppSurfOut, m_pSyncPoint);
         mfxStatus mfxRes = MFXVideoDECODE_DecodeFrameAsync(m_session, m_pBitstream, m_pSurf, m_ppSurfOut, m_pSyncPoint);
         TS_TRACE(mfxRes);
