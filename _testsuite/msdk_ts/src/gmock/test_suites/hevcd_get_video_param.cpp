@@ -3,7 +3,7 @@
 
 namespace hevcd_get_video_param
 {
-    
+
 inline BS_HEVC::NALU* GetNalu(BS_HEVC::AU& au, mfxU32 type)
 {
     for(mfxU32 i = 0; i < au.NumUnits; i ++)
@@ -42,7 +42,7 @@ public:
         m_original_stream = f;
         m_numFrames = n_frames;
 
-        if(!m_numFrames) 
+        if(!m_numFrames)
             return;
 
         open(f);
@@ -74,7 +74,7 @@ public:
         mfxU32 part1 = mfxU32(m_pAU->nalu[m_pAU->NumUnits-1]->StartOffset + m_pAU->nalu[m_pAU->NumUnits-1]->NumBytesInNalUnit);
         mfxU32 rsz = 0;
 
-        if(!m_numFrames) 
+        if(!m_numFrames)
             return;
 
         for(mfxU32 i = 0; i < m_pAU->NumUnits; i ++)
@@ -126,7 +126,7 @@ public:
 class TestSuite : public tsVideoDecoder
 {
 public:
-    TestSuite() 
+    TestSuite()
         : tsVideoDecoder(MFX_CODEC_HEVC)
         , m_stream()
     {
@@ -284,11 +284,14 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/* 6*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 10, {ATTACH_EXT_BUF, {2, EXT_BUF(mfxExtCodingOptionSPSPPS), EXT_BUF(mfxExtVideoSignalInfo)}}},
     {/* 7*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_CROPS_CW, {2, 4, 5, 3}}},
     {/* 8*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_CROPS_DW, {5, 2, 7, 16}}},
-    {/* 9*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {{REPACK_CROPS_CW, {2, 4, 5, 3}}, {REPACK_CROPS_DW, {5, 2, 7, 16}} }},
-    {/*10*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_AR, {13}}},
-    {/*11*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_AR, {255, 4, 3}}},
-    {/*12*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {{REPACK_VSI, {4,1,1,3,3,3}}, {ATTACH_EXT_BUF, {1, EXT_BUF(mfxExtVideoSignalInfo)}}}},
-    {/*13*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_FS, {1}}},
+    {/* 9*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_CROPS_DW, {0, 0, 16, 16}}},
+    {/*10*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_CROPS_DW, {48, 48, 0, 0}}},
+    {/*11*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {{REPACK_CROPS_CW, {2, 4, 5, 3}}, {REPACK_CROPS_DW, {5, 2, 7, 16}} }},
+    {/*12*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_AR, {13}}},
+    {/*13*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_AR, {255, 4, 3}}},
+    {/*14*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_AR, {255, 16, 9}}},
+    {/*15*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {{REPACK_VSI, {4,1,1,3,3,3}}, {ATTACH_EXT_BUF, {1, EXT_BUF(mfxExtVideoSignalInfo)}}}},
+    {/*16*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_FS, {1}}},
 };
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
@@ -350,10 +353,8 @@ int TestSuite::RunTest(unsigned int id)
         EXPECT_EQ((mfxU16)sps.ptl.general.profile_idc,  m_par.mfx.CodecProfile);
         EXPECT_EQ((mfxU16)sps.ptl.general.level_idc/3,  m_par.mfx.CodecLevel);
         EXPECT_EQ(expectedFrameRate, FrameRate);
-        EXPECT_EQ((static_cast<mfxU16> ((sps.pic_width_in_luma_samples + (64 - 1)) &
-            ~(64 - 1)) ), m_par.mfx.FrameInfo.Width);
-        EXPECT_EQ((static_cast<mfxU16> ((sps.pic_height_in_luma_samples + (64 - 1)) &
-            ~(64 - 1))), m_par.mfx.FrameInfo.Height);
+        EXPECT_EQ((mfxU16)sps.pic_width_in_luma_samples, m_par.mfx.FrameInfo.Width);
+        EXPECT_EQ((mfxU16)sps.pic_height_in_luma_samples, m_par.mfx.FrameInfo.Height);
         EXPECT_EQ((mfxU16)sps.chroma_format_idc, m_par.mfx.FrameInfo.ChromaFormat);
         EXPECT_EQ(GetARW(sps.vui), m_par.mfx.FrameInfo.AspectRatioW);
         EXPECT_EQ(GetARH(sps.vui), m_par.mfx.FrameInfo.AspectRatioH);
@@ -418,7 +419,7 @@ int TestSuite::RunTest(unsigned int id)
             }
         }
     }
-    
+
     TS_END;
     return 0;
 }
