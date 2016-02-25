@@ -2574,22 +2574,18 @@ mfxStatus CEncodingPipeline::Run()
         m_isField = true;
     }
 
+    //set Max Number of MB for ext Buffer
+    mfxU16 wdt = m_bNeedDRC ? m_encpakParams.nDstWidth  : m_encpakParams.nWidth,
+           hgt = m_bNeedDRC ? m_encpakParams.nDstHeight : m_encpakParams.nHeight;
+
     // For interlaced mode, may need an extra MB vertically
     // For example if the progressive mode has 45 MB vertically
     // The interlace should have 23 MB for each field
 
-    m_widthMB  = MSDK_ALIGN16(m_encpakParams.nWidth);
-    m_heightMB = m_isField ? MSDK_ALIGN32(m_encpakParams.nHeight) : MSDK_ALIGN16(m_encpakParams.nHeight);
+    m_widthMB  = MSDK_ALIGN16(wdt);
+    m_heightMB = m_isField ? MSDK_ALIGN32(hgt) : MSDK_ALIGN16(hgt);
     m_numMB = (m_widthMB * m_heightMB) >> 8;
     m_numMB /= (mfxU16)m_numOfFields;
-
-    if (m_bNeedDRC)
-    {
-       //set Max Number of MB for ext Buffer
-        m_widthMB  = ((m_encpakParams.nDstWidth  + 15) & ~15);
-        m_heightMB  = ((m_encpakParams.nDstHeight + 15) & ~15);
-        m_numMB = m_widthMB * m_heightMB / 256;
-    }
 
     m_widthMB  >>= 4;
     m_heightMB >>= m_isField ? 5 : 4;
