@@ -932,8 +932,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         , (mfxU32)MFX_RATECONTROL_VBR
         , (mfxU32)MFX_RATECONTROL_AVBR
         , (mfxU32)MFX_RATECONTROL_CQP
+#ifndef MFX_VA_LINUX
         , (mfxU32)MFX_RATECONTROL_ICQ
-        , caps.VCMBitRateControl ? MFX_RATECONTROL_VCM : 0);
+        , caps.VCMBitRateControl ? MFX_RATECONTROL_VCM : 0
+#endif
+        );
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
         unsupported += CheckMax(par.mfx.ICQQuality, 51);

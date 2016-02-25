@@ -689,7 +689,7 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
     {
 #ifdef HEADER_PACKING_TEST
         surface;
-        ENCODE_QUERY_STATUS_PARAMS_DDI0937 fb = {task.m_statusReportNumber,};
+        ENCODE_QUERY_STATUS_PARAMS fb = {task.m_statusReportNumber,};
         FrameLocker bs(m_core, task.m_midBs);
 
         for (mfxU32 i = 0; i < executeParams.NumCompBuffers; i ++)

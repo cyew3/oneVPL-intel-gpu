@@ -30,6 +30,8 @@ mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
         case MFX_RATECONTROL_CQP:  return VA_RC_CQP;
         case MFX_RATECONTROL_CBR:  return VA_RC_CBR | VA_RC_MB;
         case MFX_RATECONTROL_VBR:  return VA_RC_VBR | VA_RC_MB;
+        case MFX_RATECONTROL_ICQ:  return VA_RC_ICQ | VA_RC_MB;
+        case MFX_RATECONTROL_VCM:  return VA_RC_VCM | VA_RC_MB;
         default: assert(!"Unsupported RateControl"); return 0;
     }
 }
@@ -75,7 +77,8 @@ mfxStatus SetHRD(
     misc_param->type = VAEncMiscParameterTypeHRD;
     hrd_param = (VAEncMiscParameterHRD *)misc_param->data;
 
-    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    if (   par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
+        && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ)
     {
         hrd_param->initial_buffer_fullness = par.InitialDelayInKB * 8000;
         hrd_param->buffer_size = par.BufferSizeInKB * 8000;
@@ -124,7 +127,8 @@ mfxStatus SetRateControl(
     misc_param->type = VAEncMiscParameterTypeRateControl;
     rate_param = (VAEncMiscParameterRateControl *)misc_param->data;
 
-    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    if (   par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
+        && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ)
     {
         rate_param->bits_per_second = par.MaxKbps * 1000;
         if(par.MaxKbps)
@@ -140,6 +144,9 @@ mfxStatus SetRateControl(
         rate_param->rc_flags.bits.enable_parallel_brc = 0;
 #endif
     }
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
+        rate_param->ICQ_quality_factor = par.mfx.ICQQuality;
 
     rate_param->initial_qp = par.m_pps.init_qp_minus26 + 26;
 
@@ -525,7 +532,8 @@ void VAAPIEncoder::FillSps(
     sps.intra_period         = par.mfx.GopPicSize;
     sps.intra_idr_period     = par.mfx.GopPicSize*par.mfx.IdrInterval;
     sps.ip_period            = mfxU8(par.mfx.GopRefDist);
-    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    if (   par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
+        && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ)
     {
         sps.bits_per_second   = par.TargetKbps * 1000;
     }
@@ -618,7 +626,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
                            attrs, sizeof(attrs)/sizeof(attrs[0]));
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    //m_caps.VCMBitrateControl = attrs[1].value & VA_RC_VCM ? 1 : 0; //Video conference mode
+    m_caps.VCMBitRateControl = attrs[1].value & VA_RC_VCM ? 1 : 0; //Video conference mode
     m_caps.RollingIntraRefresh = (attrs[3].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
     m_caps.UserMaxFrameSizeSupport = 1; // no request on support for libVA
     m_caps.MBBRCSupport = 1;            // starting 16.3 Beta, enabled in driver by default for TU-1,2

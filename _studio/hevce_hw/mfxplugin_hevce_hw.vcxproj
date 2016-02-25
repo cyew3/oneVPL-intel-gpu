@@ -255,6 +255,12 @@
     <ClInclude Include="h265\include\mfx_h265_encode_hw_ddi_trace.h" />
     <ClInclude Include="h265\include\mfx_h265_encode_hw_set.h" />
     <ClInclude Include="h265\include\mfx_h265_encode_hw_utils.h" />
+    <ClInclude Include="h265\include\mfx_h265_encode_vaapi.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\shared\src\auxiliary_device.cpp" />
@@ -267,6 +273,12 @@
     <ClCompile Include="h265\src\mfx_h265_encode_hw_ddi_trace.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_par.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_utils.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_encode_vaapi.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
