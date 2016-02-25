@@ -77,7 +77,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*08*/ MFX_ERR_NONE, IMAGE_STAB, {
         {IMAGE_STAB, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_BOXING}}
     },
-    {/*09*/ MFX_ERR_NONE, COMPOSITION, {
+    {/*09*/ MFX_ERR_INVALID_VIDEO_PARAM, COMPOSITION, {
         {COMPOSITION, &tsStruct::mfxExtVPPComposite.NumInputStream, 0},
         {COMPOSITION_STREAM, &tsStruct::mfxVPPCompInputStream.DstW, 720},
         {COMPOSITION_STREAM, &tsStruct::mfxVPPCompInputStream.DstH, 480},
@@ -262,6 +262,8 @@ int TestSuite::RunTest(unsigned int id)
     SetHandle();
 
     g_tsStatus.expect((g_tsOSFamily == MFX_OS_FAMILY_WINDOWS) ? MFX_ERR_INVALID_VIDEO_PARAM : tc.sts);
+    if (tc.mode == IMAGE_STAB) g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
+
     Init(m_session, m_pPar);
 
     TS_END;
