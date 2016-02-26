@@ -401,6 +401,15 @@ namespace ExtBuffer
 
             return false;
         }
+        if (buf.PicWidthInLumaSamples== 0)
+            buf.PicWidthInLumaSamples  = Align(par.mfx.FrameInfo.CropW > 0 ? (mfxU16)(par.mfx.FrameInfo.CropW + par.mfx.FrameInfo.CropX) : par.mfx.FrameInfo.Width, CODED_PIC_ALIGN_W);
+        else
+            buf.PicWidthInLumaSamples  = Align(buf.PicWidthInLumaSamples, CODED_PIC_ALIGN_W);
+        
+        if (buf.PicHeightInLumaSamples == 0)
+            buf.PicHeightInLumaSamples = Align(par.mfx.FrameInfo.CropH > 0 ? (mfxU16)(par.mfx.FrameInfo.CropH + par.mfx.FrameInfo.CropY)  : par.mfx.FrameInfo.Height, CODED_PIC_ALIGN_H);
+        else
+            buf.PicHeightInLumaSamples = Align(buf.PicHeightInLumaSamples, CODED_PIC_ALIGN_H);
 
         return true;
     }

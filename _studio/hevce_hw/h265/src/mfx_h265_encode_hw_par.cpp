@@ -1322,7 +1322,7 @@ void SetDefaults(
         if (par.isTL() || hwCaps.SliceIPOnly || !par.NumRefLX[1] || par.mfx.GopPicSize < 3 || par.mfx.NumRefFrame == 1)
             par.mfx.GopRefDist = 1;
         else
-            par.mfx.GopRefDist = Min<mfxU16>(par.mfx.GopPicSize - 1, 4);
+            par.mfx.GopRefDist = Min<mfxU16>(par.mfx.GopPicSize - 1, 8);
     }
 
     if (par.m_ext.CO2.BRefType == MFX_B_REF_UNKNOWN)
