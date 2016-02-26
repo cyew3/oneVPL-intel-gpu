@@ -190,6 +190,7 @@ typedef struct _DpbFrame
     mfxU32   m_fo;  // FrameOrder
     mfxU32   m_eo;  // Encoded order
     mfxU32   m_bpo; // Bpyramid order
+    mfxU32   m_level; //pyramid level
     mfxU8    m_tid;
     bool     m_ltr; // is "long-term"
     bool     m_ldb; // is "low-delay B"

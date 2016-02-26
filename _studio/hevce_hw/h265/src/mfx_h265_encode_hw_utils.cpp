@@ -38,7 +38,7 @@ mfxU32 CountL1(DpbArray const & dpb, mfxI32 poc)
         c += dpb[i].m_poc > poc;
     return c;
 }
-mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 counter, bool & ref)
+mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 &level, mfxU32 before, bool & ref)
 {
     assert(displayOrder >= begin);
     assert(displayOrder <  end);
@@ -47,17 +47,20 @@ mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 co
 
     mfxU32 pivot = (begin + end) / 2;
     if (displayOrder == pivot)
-        return counter;
-    else if (displayOrder < pivot)
-        return GetEncodingOrder(displayOrder, begin, pivot, counter + 1, ref);
+        return level + before;
+
+    level ++;
+    if (displayOrder < pivot)
+        return GetEncodingOrder(displayOrder, begin, pivot,  level , before, ref);
     else
-        return GetEncodingOrder(displayOrder, pivot + 1, end, counter + 1 + pivot - begin, ref);
+        return GetEncodingOrder(displayOrder, pivot + 1, end, level, before + pivot - begin, ref);
 }
 
-mfxU32 GetBiFrameLocation(mfxU32 i, mfxU32 num, bool &ref) 
+mfxU32 GetBiFrameLocation(mfxU32 i, mfxU32 num, bool &ref, mfxU32 &level) 
 {
-    ref = false;
-    return GetEncodingOrder(i, 0, num, 0, ref);
+    ref  = false;
+    level = 0;
+    return GetEncodingOrder(i, 0, num, level, 0 ,ref);
 }
 
 template <class T> mfxU32 BPyrReorder(std::vector<T> brefs)
@@ -69,7 +72,7 @@ template <class T> mfxU32 BPyrReorder(std::vector<T> brefs)
 
         for(mfxU32 i = 0; i < (mfxU32)brefs.size(); i++)
         {
-            brefs[i]->m_bpo = GetBiFrameLocation(i,num, bRef);
+            brefs[i]->m_bpo = GetBiFrameLocation(i,num, bRef, brefs[i]->m_level);
             if (bRef) 
                 brefs[i]->m_frameType |= MFX_FRAMETYPE_REF;        
         }
@@ -751,6 +754,7 @@ struct FakeTask
     mfxU16 m_frameType;
     mfxU8  m_tid;
     mfxU32 m_bpo;
+    mfxU32 m_level;
 
 };
 
@@ -2567,6 +2571,7 @@ void ConfigureTask(
     const bool isP    = !!(task.m_frameType & MFX_FRAMETYPE_P);
     const bool isB    = !!(task.m_frameType & MFX_FRAMETYPE_B);
     const bool isIDR  = !!(task.m_frameType & MFX_FRAMETYPE_IDR);
+    mfxU8 PPyrQPDiff[4] = {0,2,1,2};
 
     mfxExtDPB*              pDPBReport = ExtBuffer::Get(*task.m_bs);
     mfxExtAVCRefLists*      pExtLists = ExtBuffer::Get(task.m_ctrl);
@@ -2609,15 +2614,19 @@ void ConfigureTask(
     if (isB)
     {
         task.m_qpY = (mfxU8)par.mfx.QPB;
-        // if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP && par.isBPyramid() && (isRef) )
-        //    task.m_qpY = (mfxU8)((par.mfx.QPB + par.mfx.QPP + 1)/2);
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP && par.isBPyramid())
+           task.m_qpY = (mfxU8)Min(task.m_qpY + (mfxU8)task.m_level,51);
     }
     else if (isP)
     {
         // encode P as GPB
         task.m_qpY = (mfxU8)par.mfx.QPP;
-        // if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP && par.isLowDelay() && ((task.m_poc - prevTask.m_lastIPoc) % par.NumRefLX[0]) == 0)
-        //    task.m_qpY = (mfxU8)((par.mfx.QPP + par.mfx.QPI + 1)/2);
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP && par.isLowDelay())
+        {
+           mfxU32 RSPIndex = (task.m_poc - prevTask.m_lastIPoc) % par.NumRefLX[0];
+           RSPIndex = RSPIndex % (sizeof(PPyrQPDiff)/sizeof(PPyrQPDiff[0]));
+           task.m_qpY = (mfxU8)Min(task.m_qpY + PPyrQPDiff[RSPIndex], 51);
+        }
         task.m_frameType &= ~MFX_FRAMETYPE_P;
         task.m_frameType |= MFX_FRAMETYPE_B;
         task.m_ldb = true;
