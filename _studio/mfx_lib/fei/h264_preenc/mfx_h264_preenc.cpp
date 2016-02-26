@@ -250,10 +250,6 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
 
     for (f = f_start; f <= fieldCount; f++)
     {
-        /*I- P- pair case for I frame
-         * skip processing of first I- field */
-        if (MFX_FRAMETYPE_I == (task.m_type[f] &(~MFX_FRAMETYPE_S)))
-            continue;
         //mprintf(stderr,"handle=0x%x mid=0x%x\n", task.m_handleRaw, task.m_midRaw );
         sts = m_ddi->Execute(task.m_handleRaw.first, task, task.m_fid[f], m_sei);
         if (sts != MFX_ERR_NONE)
@@ -287,10 +283,6 @@ mfxStatus VideoENC_PREENC::Query(DdiTask& task)
 
     for (f = f_start; f <= fieldCount; f++)
     {
-        /*I- P- pair case for I frame
-         * skip processing of first I- field */
-        if (MFX_FRAMETYPE_I == (task.m_type[f] &(~MFX_FRAMETYPE_S)))
-            continue;
         sts = m_ddi->QueryStatus(task, task.m_fid[f]);
         if (sts == MFX_WRN_DEVICE_BUSY)
             return MFX_TASK_BUSY;
