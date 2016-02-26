@@ -15,7 +15,9 @@ set(CMAKE_C_FLAGS_RELEASE   "${release_flags}" CACHE STRING "" FORCE)
 set(CMAKE_CXX_FLAGS_DEBUG   "${debug_flags}" CACHE STRING "" FORCE)
 set(CMAKE_CXX_FLAGS_RELEASE "${release_flags}" CACHE STRING "" FORCE)
 
+set(defs "${WARNING_FLAGS}")
 add_executable(mfx-tracer-config ${SOURCES} ${HEADERS})
 set_target_properties( mfx-tracer-config PROPERTIES LINK_FLAGS
-  "-Wl,--no-undefined,-z,relro,-z,now,-z,noexecstack -fstack-protector -pie" )
+  "-Wl,--no-undefined,-z,relro,-z,now,-z,noexecstack -fstack-protector -pie ${WARNING_FLAGS}" )
 target_link_libraries( mfx-tracer-config dl rt )
+set(defs "")

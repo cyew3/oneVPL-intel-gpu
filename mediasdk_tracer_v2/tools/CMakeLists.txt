@@ -55,9 +55,11 @@ set(sources
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
+set(defs "${WARNING_FLAGS}")
 make_library(mfx-tracer none shared)
 
 set_target_properties( mfx-tracer PROPERTIES LINK_FLAGS
   "${LINK_FLAGS} -Wl,--no-undefined,-z,relro,-z,now,-z,noexecstack,--version-script=${TRACER_DIR}/libmfx.map -fstack-protector" )
 
 target_link_libraries( mfx-tracer dl rt )
+set(defs "")
