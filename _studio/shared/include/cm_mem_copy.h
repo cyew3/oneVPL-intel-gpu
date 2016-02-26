@@ -146,7 +146,8 @@ public:
     mfxStatus CopySwapVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi, mfxU32 format);
     mfxStatus CopySwapSystemToVideoMemory(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi, mfxU32 format);
     mfxStatus CopySwapVideoToVideoMemory(void *pDst, void *pSrc, IppiSize roi, mfxU32 format);
-
+    mfxStatus CopyMirrorVideoToVideoMemory(void *pDst, void *pSrc, IppiSize roi, mfxU32 format);
+    
     mfxStatus ReleaseCmSurfaces(void);
     mfxStatus EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
                                     unsigned char* pSysMem,
@@ -167,6 +168,13 @@ public:
                                     const UINT option,
                                     CmEvent* & pEvent );
     mfxStatus EnqueueCopySwapRBGPUtoGPU(   CmSurface2D* pSurfaceIn,
+                                    CmSurface2D* pSurfaceOut,
+                                    int width,
+                                    int height,
+                                    mfxU32 format, 
+                                    const UINT option,
+                                    CmEvent* & pEvent );
+    mfxStatus EnqueueCopyMirrorGPUtoGPU(   CmSurface2D* pSurfaceIn,
                                     CmSurface2D* pSurfaceOut,
                                     int width,
                                     int height,

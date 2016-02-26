@@ -527,6 +527,83 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoGPU(   CmSurface2D* pSurfaceIn,
     
     return MFX_ERR_NONE;
 }
+
+mfxStatus CmCopyWrapper::EnqueueCopyMirrorGPUtoGPU(   CmSurface2D* pSurfaceIn,
+                                    CmSurface2D* pSurfaceOut,
+                                    int width,
+                                    int height,
+                                    mfxU32 format, 
+                                    const UINT option,
+                                    CmEvent* & pEvent )
+{
+    INT             hr                      = CM_SUCCESS;
+//    UINT            sizePerPixel            = (format==MFX_FOURCC_ARGB16||format==MFX_FOURCC_ABGR16)? 8: 4;//RGB now
+    
+    SurfaceIndex    *pSurf2DIndexCM_In  = NULL;
+    SurfaceIndex    *pSurf2DIndexCM_Out = NULL;
+    CmThreadSpace   *pTS                = NULL;
+    CmTask          *pGPUCopyTask       = NULL;
+    CmEvent         *pInternalEvent     = NULL;
+    
+    CmKernel        *m_pCmKernel            = 0;
+    CmBufferUP      *pCMBufferUP            = 0;
+    UINT            threadWidth             = 0;
+    UINT            threadHeight            = 0;
+    UINT            threadNum               = 0;
+
+    
+
+    if ( !pSurfaceIn || !pSurfaceOut )
+    {
+        return MFX_ERR_NULL_PTR;
+    }
+    
+    hr = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(SurfaceMirror_2DTo2D_NV12), m_pCmKernel);
+    CHECK_CM_HR(hr);
+    
+    MFX_CHECK(m_pCmKernel, MFX_ERR_DEVICE_FAILED);
+
+    hr = pSurfaceOut->GetIndex( pSurf2DIndexCM_Out );
+    CHECK_CM_HR(hr);
+    hr = pSurfaceIn->GetIndex( pSurf2DIndexCM_In );
+    CHECK_CM_HR(hr);
+
+    threadWidth = ( UINT )ceil( ( double )width/BLOCK_PIXEL_WIDTH );
+    threadHeight = ( UINT )ceil( ( double )height/BLOCK_HEIGHT );
+    threadNum = threadWidth * threadHeight;
+    hr = m_pCmKernel->SetThreadCount( threadNum );
+    CHECK_CM_HR(hr);
+    hr = m_pCmDevice->CreateThreadSpace( threadWidth, threadHeight, pTS );
+    CHECK_CM_HR(hr);
+
+    m_pCmKernel->SetKernelArg( 0, sizeof( SurfaceIndex ), pSurf2DIndexCM_In);
+    m_pCmKernel->SetKernelArg( 1, sizeof( SurfaceIndex ), pSurf2DIndexCM_Out);
+    
+    hr = m_pCmKernel->SetKernelArg( 2, sizeof( UINT ), &width );
+    CHECK_CM_HR(hr);
+    hr = m_pCmKernel->SetKernelArg( 3, sizeof( UINT ), &height );
+    CHECK_CM_HR(hr);
+
+    hr = m_pCmDevice->CreateTask(pGPUCopyTask);
+    CHECK_CM_HR(hr);
+    hr = pGPUCopyTask->AddKernel( m_pCmKernel );
+    CHECK_CM_HR(hr);
+    hr = m_pCmQueue->Enqueue( pGPUCopyTask, pInternalEvent, pTS );
+    CHECK_CM_HR(hr);
+
+    hr = m_pCmDevice->DestroyTask(pGPUCopyTask);
+    CHECK_CM_HR(hr);
+    hr = m_pCmDevice->DestroyThreadSpace(pTS);
+    CHECK_CM_HR(hr);
+
+    hr = pInternalEvent->WaitForTaskFinished();
+    CHECK_CM_HR(hr);
+    hr = m_pCmQueue->DestroyEvent(pInternalEvent);
+    CHECK_CM_HR(hr);
+    
+    return MFX_ERR_NONE;
+}
+
 mfxStatus CmCopyWrapper::Initialize(eMFXHWType hwtype)
 {
     cmStatus cmSts = CM_SUCCESS;
@@ -602,7 +679,8 @@ mfxStatus CmCopyWrapper::Initialize(eMFXHWType hwtype)
 
     cmSts = m_pCmDevice->CreateQueue(m_pCmQueue);
     CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
-
+    m_tableCmRelations2.clear();
+    m_tableCmIndex2.clear();
     //cmSts = m_pCmDevice->CreateTask(m_pCmTask1);
     //CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
 
@@ -1319,5 +1397,23 @@ mfxStatus CmCopyWrapper::CopySwapVideoToVideoMemory(void *pDst, void *pSrc, Ippi
     CHECK_CM_NULL_PTR(pSrcCmSurface2D, MFX_ERR_DEVICE_FAILED);
 
     return EnqueueCopySwapRBGPUtoGPU(pSrcCmSurface2D, pDstCmSurface2D, width, height, format, 0, e);
+}
+mfxStatus CmCopyWrapper::CopyMirrorVideoToVideoMemory(void *pDst, void *pSrc, IppiSize roi, mfxU32 format)
+{
+    CmEvent* e = NULL;
+
+    mfxU32 width  = roi.width;
+    mfxU32 height = roi.height;
+
+    // create or find already associated cm surface 2d
+    CmSurface2D *pDstCmSurface2D;
+    pDstCmSurface2D = CreateCmSurface2D(pDst, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    CHECK_CM_NULL_PTR(pDstCmSurface2D, MFX_ERR_DEVICE_FAILED);
+
+    CmSurface2D *pSrcCmSurface2D;
+    pSrcCmSurface2D = CreateCmSurface2D(pSrc, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    CHECK_CM_NULL_PTR(pSrcCmSurface2D, MFX_ERR_DEVICE_FAILED);
+
+    return EnqueueCopyMirrorGPUtoGPU(pSrcCmSurface2D, pDstCmSurface2D, width, height, format, 0, e);
 }
 #endif // defined (MFX_VA) && !defined(OSX)

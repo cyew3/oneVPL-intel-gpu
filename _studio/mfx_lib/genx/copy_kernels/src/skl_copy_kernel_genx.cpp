@@ -1991,6 +1991,193 @@ SurfaceCopy_BufferToBuffer(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int 
 	write(OUTBUF_IDX, dst_linear_offset + BLOCK_PIXEL_WIDTH * 4 * 7, outData7);
 }
 */
+
+/*
+const ushort indexTable[8] = {0x07,0x06,0x05,0x04,0x03,0x02,0x01,0x00};
+
+extern "C" _GENX_MAIN_  void  
+SurfaceMirror_2DTo2D_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width, int height)
+{
+	//copy Y plane
+	matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> outData1;
+	matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> outData2;
+	matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> outData3;
+	matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> outData4;
+	vector<uint, SUB_BLOCK_PIXEL_WIDTH> temp;
+	vector<ushort, SUB_BLOCK_PIXEL_WIDTH> idx(indexTable);
+	int horizOffset = get_thread_origin_x() * BLOCK_PIXEL_WIDTH;
+	int vertOffset = get_thread_origin_y() * BLOCK_HEIGHT;
+
+	read_plane(INBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset*4,                             vertOffset, outData1);
+	read_plane(INBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4,   vertOffset, outData2);
+	read_plane(INBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*2, vertOffset, outData3);
+	read_plane(INBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*3, vertOffset, outData4);
+
+	#pragma unroll
+	for(int i = 0; i < SUB_BLOCK_HEIGHT; i++){
+        temp = outData1.row(i).iselect(idx);
+        outData1.row(i).select<2,1>(0) = temp.select<2,1>(0).format<uchar>().iselect(idx).format<uint>();
+        outData1.row(i).select<2,1>(2) = temp.select<2,1>(2).format<uchar>().iselect(idx).format<uint>();
+        outData1.row(i).select<2,1>(4) = temp.select<2,1>(4).format<uchar>().iselect(idx).format<uint>();
+        outData1.row(i).select<2,1>(6) = temp.select<2,1>(6).format<uchar>().iselect(idx).format<uint>();
+    }
+    
+	#pragma unroll
+	for(int i = 0; i < SUB_BLOCK_HEIGHT; i++){
+        temp = outData2.row(i).iselect(idx);
+        outData2.row(i).select<2,1>(0) = temp.select<2,1>(0).format<uchar>().iselect(idx).format<uint>();
+        outData2.row(i).select<2,1>(2) = temp.select<2,1>(2).format<uchar>().iselect(idx).format<uint>();
+        outData2.row(i).select<2,1>(4) = temp.select<2,1>(4).format<uchar>().iselect(idx).format<uint>();
+        outData2.row(i).select<2,1>(6) = temp.select<2,1>(6).format<uchar>().iselect(idx).format<uint>();
+    }
+    
+	#pragma unroll
+	for(int i = 0; i < SUB_BLOCK_HEIGHT; i++){
+        temp = outData3.row(i).iselect(idx);
+        outData3.row(i).select<2,1>(0) = temp.select<2,1>(0).format<uchar>().iselect(idx).format<uint>();
+        outData3.row(i).select<2,1>(2) = temp.select<2,1>(2).format<uchar>().iselect(idx).format<uint>();
+        outData3.row(i).select<2,1>(4) = temp.select<2,1>(4).format<uchar>().iselect(idx).format<uint>();
+        outData3.row(i).select<2,1>(6) = temp.select<2,1>(6).format<uchar>().iselect(idx).format<uint>();
+    }
+
+    
+	#pragma unroll
+	for(int i = 0; i < SUB_BLOCK_HEIGHT; i++){
+        temp = outData4.row(i).iselect(idx);
+        outData4.row(i).select<2,1>(0) = temp.select<2,1>(0).format<uchar>().iselect(idx).format<uint>();
+        outData4.row(i).select<2,1>(2) = temp.select<2,1>(2).format<uchar>().iselect(idx).format<uint>();
+        outData4.row(i).select<2,1>(4) = temp.select<2,1>(4).format<uchar>().iselect(idx).format<uint>();
+        outData4.row(i).select<2,1>(6) = temp.select<2,1>(6).format<uchar>().iselect(idx).format<uint>();
+    }
+	write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, width -  horizOffset*4,                              vertOffset, outData1);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4),   vertOffset, outData2);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*2), vertOffset, outData3);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*3), vertOffset, outData4);
+
+	//copy UV plane
+	matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> outData_NV12_1;
+	matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> outData_NV12_2;
+	matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> outData_NV12_3;
+	matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> outData_NV12_4;
+
+	read_plane(INBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset*4,                             vertOffset/2, outData_NV12_1);
+	read_plane(INBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4,   vertOffset/2, outData_NV12_2);
+	read_plane(INBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*2, vertOffset/2, outData_NV12_3);
+	read_plane(INBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*3, vertOffset/2, outData_NV12_4);
+    
+	#pragma unroll
+	for(int i = 0; i < SUB_BLOCK_HEIGHT_NV12; i++){
+        temp = outData_NV12_1.row(i);
+        outData_NV12_1.row(i).select<4,1>(4) = temp.select<4,1>(0).format<ushort>().iselect(idx).format<uint>();
+        outData_NV12_1.row(i).select<4,1>(0) = temp.select<4,1>(4).format<ushort>().iselect(idx).format<uint>();
+    }
+    #pragma unroll
+	for(int i = 0; i < SUB_BLOCK_HEIGHT_NV12; i++){
+        temp = outData_NV12_2.row(i);
+        outData_NV12_2.row(i).select<4,1>(4) = temp.select<4,1>(0).format<ushort>().iselect(idx).format<uint>();
+        outData_NV12_2.row(i).select<4,1>(0) = temp.select<4,1>(4).format<ushort>().iselect(idx).format<uint>();
+    }
+    
+    #pragma unroll
+	for(int i = 0; i < SUB_BLOCK_HEIGHT_NV12; i++){
+        temp = outData_NV12_3.row(i);
+        outData_NV12_3.row(i).select<4,1>(4) = temp.select<4,1>(0).format<ushort>().iselect(idx).format<uint>();
+        outData_NV12_3.row(i).select<4,1>(0) = temp.select<4,1>(4).format<ushort>().iselect(idx).format<uint>();
+    }
+    
+    #pragma unroll
+	for(int i = 0; i < SUB_BLOCK_HEIGHT_NV12; i++){
+        temp = outData_NV12_4.row(i);
+        outData_NV12_4.row(i).select<4,1>(4) = temp.select<4,1>(0).format<ushort>().iselect(idx).format<uint>();
+        outData_NV12_4.row(i).select<4,1>(0) = temp.select<4,1>(4).format<ushort>().iselect(idx).format<uint>();
+    }
+
+	write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, width -  horizOffset*4,                              vertOffset, outData_NV12_1);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4),   vertOffset, outData_NV12_2);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*2), vertOffset, outData_NV12_3);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*3), vertOffset, outData_NV12_4);
+}
+*/
+
+/*32 index*/
+const ushort indexTable[32] = {0x1f,0x1e,0x1d,0x1c,0x1b,0x1a,0x19,0x18,0x17,0x16,0x15,0x14,0x13,0x12,0x11,0x10,
+                               0x0f,0x0e,0x0d,0x0c,0x0b,0x0a,0x09,0x08,0x07,0x06,0x05,0x04,0x03,0x02,0x01,0x00};
+
+extern "C" _GENX_MAIN_  void  
+SurfaceMirror_2DTo2D_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width, int height)
+{
+	//copy Y plane
+	matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> outData1;
+	matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> outData2;
+	matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> outData3;
+	matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> outData4;
+	matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> outData5;
+	vector<ushort, SUB_BLOCK_PIXEL_WIDTH*4> idx(indexTable);
+	int horizOffset = get_thread_origin_x() * BLOCK_PIXEL_WIDTH;
+	int vertOffset = get_thread_origin_y() * BLOCK_HEIGHT;
+
+	read_plane(INBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset*4,                             vertOffset, outData1);
+	read_plane(INBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4,   vertOffset, outData2);
+	read_plane(INBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*2, vertOffset, outData3);
+	read_plane(INBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*3, vertOffset, outData4);
+
+	#pragma unroll
+	for(int i = 0; i < SUB_BLOCK_HEIGHT; i++)
+		outData5.row(i) = outData1.row(i).format<uchar>().iselect(idx).format<uint>();
+
+	#pragma unroll
+	for(int i = 0; i < SUB_BLOCK_HEIGHT; i++)
+		outData1.row(i) = outData2.row(i).format<uchar>().iselect(idx).format<uint>();
+
+	#pragma unroll
+	for(int i = 0; i < SUB_BLOCK_HEIGHT; i++)
+		outData2.row(i) = outData3.row(i).format<uchar>().iselect(idx).format<uint>();
+
+	#pragma unroll
+	for(int i = 0; i < SUB_BLOCK_HEIGHT; i++)
+		outData3.row(i) = outData4.row(i).format<uchar>().iselect(idx).format<uint>();
+
+	write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, width -  horizOffset*4,                              vertOffset, outData5);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4),   vertOffset, outData1);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*2), vertOffset, outData2);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*3), vertOffset, outData3);
+
+	//copy UV plane
+	vector_ref<ushort, SUB_BLOCK_PIXEL_WIDTH*2> idxUV = idx.select<16,1>(16);
+	matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> outData_NV12_1;
+	matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> outData_NV12_2;
+	matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> outData_NV12_3;
+	matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> outData_NV12_4;
+	matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> outData_NV12_5;
+
+	read_plane(INBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset*4,                             vertOffset/2, outData_NV12_1);
+	read_plane(INBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4,   vertOffset/2, outData_NV12_2);
+	read_plane(INBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*2, vertOffset/2, outData_NV12_3);
+	read_plane(INBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*3, vertOffset/2, outData_NV12_4);
+
+	#pragma unroll
+	for(int i = 0; i < SUB_BLOCK_HEIGHT_NV12; i++)
+		outData_NV12_5.row(i) = outData_NV12_1.row(i).format<ushort>().iselect(idxUV).format<uint>();
+
+	#pragma unroll
+	for(int i = 0; i < SUB_BLOCK_HEIGHT_NV12; i++)
+		outData_NV12_1.row(i) = outData_NV12_2.row(i).format<ushort>().iselect(idxUV).format<uint>();
+
+	#pragma unroll
+	for(int i = 0; i < SUB_BLOCK_HEIGHT_NV12; i++)
+		outData_NV12_2.row(i) = outData_NV12_3.row(i).format<ushort>().iselect(idxUV).format<uint>();
+
+	#pragma unroll
+	for(int i = 0; i < SUB_BLOCK_HEIGHT_NV12; i++)
+		outData_NV12_3.row(i) = outData_NV12_4.row(i).format<ushort>().iselect(idxUV).format<uint>();
+
+	write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, width -  horizOffset*4,                              vertOffset, outData_NV12_5);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4),   vertOffset, outData_NV12_1);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*2), vertOffset, outData_NV12_2);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*3), vertOffset, outData_NV12_3);
+}
+//*/
+
 inline _GENX_  void  
 swapchannels(vector_ref<uchar,BLOCK_PIXEL_WIDTH*4> in,vector_ref<uchar,BLOCK_PIXEL_WIDTH*4> temp,int pixel_size)
 {
