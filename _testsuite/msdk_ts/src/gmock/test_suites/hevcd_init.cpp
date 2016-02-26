@@ -17,7 +17,7 @@ private:
 
     enum
     {
-          NOTHING = 0
+          NONE = 0
         , MFXVP
         , SESSION
         , UID
@@ -26,9 +26,10 @@ private:
     struct tc_struct
     {
         mfxStatus sts;
-        mfxU32 alloc_mode_plus1;
+        mfxU32 alloc_mode;
+        bool set_alloc;
         mfxU32 zero_ptr;
-        mfxU32 num_call_minus1;
+        mfxU32 num_call;
         struct f_pair
         {
             const  tsStruct::Field* f;
@@ -41,36 +42,41 @@ private:
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
-    {/* 0*/ MFX_ERR_INVALID_HANDLE, 0, SESSION},
-    {/* 1*/ MFX_ERR_NULL_PTR, 0, MFXVP},
-    {/* 2*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, UID},
-    {/* 3*/ MFX_ERR_NONE, },
-    {/* 4*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 0, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-    {/* 5*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 0, 0, {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12}},
-    {/* 6*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 0, 0, {
+    {/* 0*/ MFX_ERR_INVALID_HANDLE, frame_allocator::ALLOC_MAX, false, SESSION, 1},
+    {/* 1*/ MFX_ERR_NULL_PTR, frame_allocator::ALLOC_MAX, false, MFXVP, 1},
+    {/* 2*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, UID, 1},
+    {/* 3*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1},
+    {/* 4*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, true, NONE, 1},
+    {/* 5*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+    {/* 6*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, true, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+    {/* 7*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12}},
+    {/* 8*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {
         {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12}}},
-    {/* 7*/ MFX_ERR_NONE, 1 + frame_allocator::ALLOC_MAX, 0, 0},
-    {/* 8*/ MFX_ERR_NONE, 1 + frame_allocator::ALLOC_MAX, 0, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-    //{/* 9*/ MFX_ERR_MEMORY_ALLOC, 1 + frame_allocator::ALLOC_MIN_MINUS_1, 0, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
-    {/*10*/ MFX_ERR_NONE, 0, 0, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*11*/ MFX_ERR_NONE, 1 + frame_allocator::ALLOC_MAX, 0, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*12*/ MFX_ERR_INVALID_VIDEO_PARAM, 1 + frame_allocator::ALLOC_MIN_MINUS_1, 0, 0, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
-    {/*13*/ MFX_ERR_NONE, 0, 0, 0, {&tsStruct::mfxVideoParam.AsyncDepth, 1}},
-    {/*14*/ MFX_ERR_NONE, 0, 0, 0, {&tsStruct::mfxVideoParam.AsyncDepth, 10}},
-    {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 0, 0, {
+    {/* 9*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, true, NONE, 1, {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12}},
+    {/* 10*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, true, NONE, 1, {
+        {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY},
+        {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12}}},
+    {/* 11*/ MFX_ERR_MEMORY_ALLOC, frame_allocator::ALLOC_MIN_MINUS_1, true, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+    {/*12*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    {/*13*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, true, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MIN_MINUS_1, false, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MIN_MINUS_1, true, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
+    {/*16*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.AsyncDepth, 1}},
+    {/*17*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.AsyncDepth, 10}},
+    {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  0},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 0},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  0},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  0}}},
-    {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 0, 0, {
+    {/*19*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4106},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4106},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  4106},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  4106}}},
-    {/*17*/ MFX_ERR_NONE, 0, 0, 4},
-    {/*18*/ MFX_ERR_NONE, 0, 0, 5},
-    {/*19*/ MFX_ERR_NONE, 0, 0, 6},
+    {/*20*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 4},
+    {/*21*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 5},
+    {/*22*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 6},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -79,10 +85,8 @@ int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
     const tc_struct& tc = test_case[id];
-    bool set_allocator = !!tc.alloc_mode_plus1;
     m_par_set = true; //don't use DecodeHeader
     m_par.AsyncDepth = 5;
-
 
     if(tc.zero_ptr == UID)
     {
@@ -108,14 +112,27 @@ int TestSuite::RunTest(unsigned int id)
             }
         }
 
-        if(set_allocator)
+
+        if(tc.set_alloc)
         {
-            UseDefaultAllocator(!!(m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY));
-            GetAllocator()->reset(
-                (frame_allocator::AllocMode)(tc.alloc_mode_plus1-1),
-                frame_allocator::LockMode::ENABLE_ALL,
-                frame_allocator::OpaqueAllocMode::ALLOC_ERROR);
-            SetFrameAllocator(m_session, GetAllocator());
+            SetAllocator(
+            new frame_allocator((frame_allocator::AllocatorType)    (g_tsImpl == MFX_IMPL_SOFTWARE) ? frame_allocator::SOFTWARE : frame_allocator::HARDWARE,
+                                (frame_allocator::AllocMode)        tc.alloc_mode,
+                                (frame_allocator::LockMode)         frame_allocator::ENABLE_ALL,
+                                (frame_allocator::OpaqueAllocMode)  frame_allocator::ALLOC_ERROR
+                               ),
+                               false);
+            m_pFrameAllocator = GetAllocator();
+            SetFrameAllocator();
+            if (g_tsImpl != MFX_IMPL_SOFTWARE)
+            {
+                mfxHDL hdl;
+                mfxHandleType type;
+                m_pVAHandle = m_pFrameAllocator;
+                m_pVAHandle->get_hdl(type, hdl);
+                SetHandle(m_session, type, hdl);
+                m_is_handle_set = (g_tsStatus.get() >= 0);
+            }
         }
 
         if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
@@ -124,7 +141,7 @@ int TestSuite::RunTest(unsigned int id)
 
             QueryIOSurf();
 
-            if(1 + frame_allocator::ALLOC_MIN_MINUS_1 == tc.alloc_mode_plus1)
+            if(frame_allocator::ALLOC_MIN_MINUS_1 == tc.alloc_mode)
             {
                 m_request.NumFrameSuggested = m_request.NumFrameMin - 1;
             }
@@ -138,12 +155,12 @@ int TestSuite::RunTest(unsigned int id)
         m_pPar = 0;
     }
 
-    for(mfxU32 i = 0; i <= tc.num_call_minus1; i ++)
+    for(mfxU32 i = 0; i < tc.num_call; i ++)
     {
         g_tsStatus.expect(tc.sts);
         Init(m_session, m_pPar);
 
-        if(g_tsStatus.get() < 0 && GetAllocator())
+        if((g_tsStatus.get() < 0) && (tc.sts != MFX_ERR_MEMORY_ALLOC) && (tc.set_alloc))
         {
             EXPECT_EQ(0, GetAllocator()->cnt_surf());
         }
