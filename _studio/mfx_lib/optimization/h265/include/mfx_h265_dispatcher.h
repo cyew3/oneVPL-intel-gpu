@@ -317,6 +317,8 @@ namespace MFX_HEVC_PP
     template <class T> Ipp32s H265_FASTCALL h265_SSE_px  (const T *src1, Ipp32s pitchSrc1, const T *src2, Ipp32s pitchSrc2, Ipp32s width, Ipp32s height, Ipp32s shift);
     template <class T> Ipp32s H265_FASTCALL h265_SSE_avx2(const T *src1, Ipp32s pitchSrc1, const T *src2, Ipp32s pitchSrc2, Ipp32s width, Ipp32s height, Ipp32s shift);
 
+    template <class T> void H265_FASTCALL h265_Diff_px  (const T *src, Ipp32s pitchSrc, const T *pred, Ipp32s pitchPred, Ipp16s *diff, Ipp32s pitchDiff, Ipp32s size);
+    template <class T> void H265_FASTCALL h265_Diff_avx2(const T *src, Ipp32s pitchSrc, const T *pred, Ipp32s pitchPred, Ipp16s *diff, Ipp32s pitchDiff, Ipp32s size);
     template <class T> void H265_FASTCALL h265_DiffNv12_px  (const T *src, Ipp32s pitchSrc, const T *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height);
     template <class T> void H265_FASTCALL h265_DiffNv12_avx2(const T *src, Ipp32s pitchSrc, const T *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height);
 

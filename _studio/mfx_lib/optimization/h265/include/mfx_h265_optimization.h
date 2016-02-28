@@ -616,6 +616,8 @@ namespace MFX_HEVC_PP
         Ipp32s (H265_FASTCALL * h265_SSE_8u) (const Ipp8u*,Ipp32s,const Ipp8u*,Ipp32s,Ipp32s,Ipp32s,Ipp32s);
         Ipp32s (H265_FASTCALL * h265_SSE_16u)(const Ipp16u*,Ipp32s,const Ipp16u*,Ipp32s,Ipp32s,Ipp32s,Ipp32s);
 
+        void (H265_FASTCALL* h265_Diff_8u) (const Ipp8u*,Ipp32s,const Ipp8u*,Ipp32s,Ipp16s*,Ipp32s,Ipp32s);
+        void (H265_FASTCALL* h265_Diff_16u)(const Ipp16u*,Ipp32s,const Ipp16u*,Ipp32s,Ipp16s*,Ipp32s,Ipp32s);
         void (H265_FASTCALL* h265_DiffNv12_8u) (const Ipp8u*,Ipp32s,const Ipp8u*,Ipp32s,Ipp16s*,Ipp32s,Ipp16s*,Ipp32s,Ipp32s,Ipp32s);
         void (H265_FASTCALL* h265_DiffNv12_16u)(const Ipp16u*,Ipp32s,const Ipp16u*,Ipp32s,Ipp16s*,Ipp32s,Ipp16s*,Ipp32s,Ipp32s,Ipp32s);
 
@@ -1318,6 +1320,16 @@ namespace MFX_HEVC_PP
     static inline void h265_DiffNv12(const Ipp16u *src, Ipp32s pitchSrc, const Ipp16u *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height)
     {
         return MFX_HEVC_PP::NAME(h265_DiffNv12_16u)(src, pitchSrc, pred, pitchPred, diff1, pitchDiff1, diff2, pitchDiff2, width, height);
+    }
+
+    static inline void h265_Diff(const Ipp8u *src, Ipp32s pitchSrc, const Ipp8u *pred, Ipp32s pitchPred, Ipp16s *diff, Ipp32s pitchDiff, Ipp32s size)
+    {
+        return MFX_HEVC_PP::NAME(h265_Diff_8u)(src, pitchSrc, pred, pitchPred, diff, pitchDiff, size);
+    }
+
+    static inline void h265_Diff(const Ipp16u *src, Ipp32s pitchSrc, const Ipp16u *pred, Ipp32s pitchPred, Ipp16s *diff, Ipp32s pitchDiff, Ipp32s size)
+    {
+        return MFX_HEVC_PP::NAME(h265_Diff_16u)(src, pitchSrc, pred, pitchPred, diff, pitchDiff, size);
     }
 
     static inline void h265_SplitChromaCtb(const Ipp8u *nv12, Ipp32s pitchNv12, Ipp8u *u, Ipp32s pitchU, Ipp8u *v, Ipp32s pitchV, Ipp32s width, Ipp32s height)

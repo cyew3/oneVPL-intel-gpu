@@ -361,6 +361,10 @@ public:
     __ALIGN32 Ipp16s  m_predBufHi0[MAX_NUM_REF_IDX][4][4][((MAX_CU_SIZE>>3)+MEMOIZE_SUBPEL_EXT_W) * ((MAX_CU_SIZE>>3)+MEMOIZE_SUBPEL_EXT_H)];
     __ALIGN32 PixType m_predBuf0  [MAX_NUM_REF_IDX][4][4][((MAX_CU_SIZE>>3)+MEMOIZE_SUBPEL_EXT_W) * ((MAX_CU_SIZE>>3)+MEMOIZE_SUBPEL_EXT_H)];
 
+    ALIGN_DECL(32) PixType m_gaccAmvpPredBuf[3][MAX_CU_SIZE*MAX_CU_SIZE];
+    PixType *m_gaccAmvpPred[3];
+    Ipp32s   m_gaccAmvpPredPitch[3];
+
     Ipp32s m_satd8Buf1[MAX_NUM_REF_IDX][4][4][4][((MAX_CU_SIZE>>3)>>2) *((MAX_CU_SIZE>>3)>>2)];
     Ipp32s m_satd8Buf2[MAX_NUM_REF_IDX][4][4][4][((MAX_CU_SIZE>>3)>>1) *((MAX_CU_SIZE>>3)>>1)];
     Ipp32s m_satd8Buf3[MAX_NUM_REF_IDX][4][4][4][((MAX_CU_SIZE>>3)   ) *((MAX_CU_SIZE>>3)   )];
@@ -727,7 +731,7 @@ public:
                             const FrameData *refPic, Ipp32s useHadamard) const;
 
     void MatchingMetricPuCombine(Ipp32s *had, const PixType *src, const H265MEInfo* meInfo, const H265MV* mv, const H265MV* mvB,
-                            const Ipp8s refIdx[2], const Ipp8s refIdxB[2], Ipp32s useHadamard) const;
+                            const Ipp8s refIdx[2], const Ipp8s refIdxB[2], Ipp32s useHadamard);
 #ifdef MEMOIZE_SUBPEL
     void   MemoizeInit();
     void   MemoizeClear(Ipp8u depth);

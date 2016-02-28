@@ -2447,6 +2447,8 @@ namespace DiffNv12Details {
         assert(sizeof(T) <= 2);
 
         for (Ipp32s y = 0; y < height; y += hstep) {
+            _mm_prefetch((const char *)(src + pitchSrc), _MM_HINT_T0);
+            _mm_prefetch((const char *)(pred + pitchPred), _MM_HINT_T0);
             for (Ipp32s x = 0; x < width; x += wstep, src += 2*wstep, pred += 2*wstep, diff1 += wstep, diff2 += wstep) {
                 __m256i s = Load<T, wstep>(src, pitchSrc);
                 __m256i p = Load<T, wstep>(pred, pitchPred);
@@ -2496,6 +2498,112 @@ void H265_FASTCALL MAKE_NAME(h265_DiffNv12)(const T *src, Ipp32s pitchSrc, const
 }
 template void H265_FASTCALL MAKE_NAME(h265_DiffNv12)<Ipp8u> (const Ipp8u  *src, Ipp32s pitchSrc, const Ipp8u  *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height);
 template void H265_FASTCALL MAKE_NAME(h265_DiffNv12)<Ipp16u>(const Ipp16u *src, Ipp32s pitchSrc, const Ipp16u *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height);
+
+
+template <class T>
+void H265_FASTCALL MAKE_NAME(h265_Diff)(const T *src, Ipp32s pitchSrc, const T *pred, Ipp32s pitchPred, Ipp16s *diff, Ipp32s pitchDiff, Ipp32s size)
+{
+    assert(size == 4 || size == 8 || (size & 0xf) == 0);
+
+    if (sizeof(T) == 1) {
+        __m256i zero = _mm256_setzero_si256();
+        __m256i d, s, p, sHalf, pHalf;
+        if (size == 4) {
+            __m128i zero = _mm_setzero_si128();
+            __m128i s, p, d;
+            s = _mm_setr_epi32(*(Ipp32u *)(src + 0*pitchSrc), *(Ipp32u *)(src + 1*pitchSrc),
+                               *(Ipp32u *)(src + 2*pitchSrc), *(Ipp32u *)(src + 3*pitchSrc));
+            p = _mm_setr_epi32(*(Ipp32u *)(pred + 0*pitchPred), *(Ipp32u *)(pred + 1*pitchPred),
+                               *(Ipp32u *)(pred + 2*pitchPred), *(Ipp32u *)(pred + 3*pitchPred));
+            d = _mm_sub_epi16(_mm_unpacklo_epi8(s, zero), _mm_unpacklo_epi8(p, zero));
+            _mm_storel_epi64((__m128i*)diff, d);
+            _mm_storeh_pd((double*)(diff+pitchDiff), _mm_castsi128_pd(d));
+            d = _mm_sub_epi16(_mm_unpackhi_epi8(s, zero), _mm_unpackhi_epi8(p, zero));
+            _mm_storel_epi64((__m128i*)(diff+2*pitchDiff), d);
+            _mm_storeh_pd((double*)(diff+3*pitchDiff), _mm_castsi128_pd(d));
+        } else if (size == 8) {
+            for (Ipp32s y = 0; y < 8; y += 4, src += 4*pitchSrc, pred += 4*pitchPred, diff += 4*pitchDiff) {
+                s = _mm256_setr_epi64x(*(Ipp64u*)src, *(Ipp64u*)(src+2*pitchSrc), *(Ipp64u*)(src+pitchSrc), *(Ipp64u*)(src+3*pitchSrc));
+                p = _mm256_setr_epi64x(*(Ipp64u*)pred, *(Ipp64u*)(pred+2*pitchPred), *(Ipp64u*)(pred+pitchPred), *(Ipp64u*)(pred+3*pitchPred));
+                sHalf = _mm256_unpacklo_epi8(s, zero);
+                pHalf = _mm256_unpacklo_epi8(p, zero);
+                d = _mm256_sub_epi16(sHalf, pHalf);
+                _mm256_storeu2_m128i((__m128i*)(diff+pitchDiff), (__m128i*)(diff), d);
+                sHalf = _mm256_unpackhi_epi8(s, zero);
+                pHalf = _mm256_unpackhi_epi8(p, zero);
+                d = _mm256_sub_epi16(sHalf, pHalf);
+                _mm256_storeu2_m128i((__m128i*)(diff+3*pitchDiff), (__m128i*)(diff+2*pitchDiff), d);
+            }
+        } else if (size == 16) {
+            for (Ipp32s y = 0; y < 16; y += 2, src += 2*pitchSrc, pred += 2*pitchPred, diff += 2*pitchDiff) {
+                s = _mm256_loadu2_m128i((__m128i*)(src+pitchSrc), (__m128i*)src);
+                p = _mm256_loadu2_m128i((__m128i*)(pred+pitchPred), (__m128i*)pred);
+                //_mm_prefetch((char*)(src+2*pitchSrc), _MM_HINT_T0);
+                //_mm_prefetch((char*)(pred+2*pitchPred), _MM_HINT_T0);
+                s = _mm256_permute4x64_epi64(s, 0xd8);
+                p = _mm256_permute4x64_epi64(p, 0xd8);
+                sHalf = _mm256_unpacklo_epi8(s, zero);
+                pHalf = _mm256_unpacklo_epi8(p, zero);
+                d = _mm256_sub_epi16(sHalf, pHalf);
+                _mm256_store_si256((__m256i*)(diff), d);
+                sHalf = _mm256_unpackhi_epi8(s, zero);
+                pHalf = _mm256_unpackhi_epi8(p, zero);
+                d = _mm256_sub_epi16(sHalf, pHalf);
+                _mm256_store_si256((__m256i*)(diff+pitchDiff), d);
+            }
+        } else {
+            for (Ipp32s y = 0; y < size; y++, src += pitchSrc, pred += pitchPred, diff += pitchDiff) {
+                //_mm_prefetch((char*)(src+pitchSrc), _MM_HINT_T0);
+                //_mm_prefetch((char*)(pred+pitchPred), _MM_HINT_T0);
+                for (Ipp32s x = 0; x < size; x += 32) {
+                    s = _mm256_load_si256((__m256i*)(src+x));
+                    p = _mm256_load_si256((__m256i*)(pred+x));
+                    s = _mm256_permute4x64_epi64(s, 0xd8);
+                    p = _mm256_permute4x64_epi64(p, 0xd8);
+                    sHalf = _mm256_unpacklo_epi8(s, zero);
+                    pHalf = _mm256_unpacklo_epi8(p, zero);
+                    d = _mm256_sub_epi16(sHalf, pHalf);
+                    _mm256_store_si256((__m256i*)(diff+x+0), d);
+                    sHalf = _mm256_unpackhi_epi8(s, zero);
+                    pHalf = _mm256_unpackhi_epi8(p, zero);
+                    d = _mm256_sub_epi16(sHalf, pHalf);
+                    _mm256_store_si256((__m256i*)(diff+x+16), d);
+                }
+            }
+        }
+    } else {
+        __m256i s, p, d;
+        if (size == 4) {
+            s = _mm256_setr_epi64x(*(Ipp64u*)src, *(Ipp64u*)(src+pitchSrc), *(Ipp64u*)(src+2*pitchSrc), *(Ipp64u*)(src+3*pitchSrc));
+            p = _mm256_setr_epi64x(*(Ipp64u*)pred, *(Ipp64u*)(pred+pitchPred), *(Ipp64u*)(pred+2*pitchPred), *(Ipp64u*)(pred+3*pitchPred));
+            d = _mm256_sub_epi16(s, p);
+            __m128i half1 = _mm256_castsi256_si128(d);
+            _mm_storel_epi64((__m128i*)(diff), half1);
+            _mm_storeh_pd((double*)(diff+pitchDiff), _mm_castsi128_pd(half1));
+            __m128i half2 = _mm256_extracti128_si256(d, 1);
+            _mm_storel_epi64((__m128i*)(diff+2*pitchDiff), half2);
+            _mm_storeh_pd((double*)(diff+3*pitchDiff), _mm_castsi128_pd(half2));
+        } else if (size == 8) {
+            for (Ipp32s y = 0; y < size; y += 2, src += 2*pitchSrc, pred += 2*pitchPred, diff += 2*pitchDiff) {
+                s = _mm256_loadu2_m128i((__m128i*)(src+pitchSrc), (__m128i*)(src));
+                p = _mm256_loadu2_m128i((__m128i*)(pred+pitchPred), (__m128i*)(pred));
+                d = _mm256_sub_epi16(s, p);
+                _mm256_storeu2_m128i((__m128i*)(diff+pitchDiff), (__m128i*)(diff), d);
+            }
+        } else {
+            for (Ipp32s y = 0; y < size; y++, src += pitchSrc, pred += pitchPred, diff += pitchDiff) {
+                for (Ipp32s x = 0; x < size; x += 16) {
+                    s = _mm256_load_si256((__m256i*)(src+x));
+                    p = _mm256_load_si256((__m256i*)(pred+x));
+                    d = _mm256_sub_epi16(s, p);
+                    _mm256_store_si256((__m256i*)(diff+x), d);
+                }
+            }
+        }
+    }
+}
+template void H265_FASTCALL MAKE_NAME(h265_Diff)<Ipp8u> (const Ipp8u  *src, Ipp32s pitchSrc, const Ipp8u  *pred, Ipp32s pitchPred, Ipp16s *diff, Ipp32s pitchDiff, Ipp32s size);
+template void H265_FASTCALL MAKE_NAME(h265_Diff)<Ipp16u>(const Ipp16u *src, Ipp32s pitchSrc, const Ipp16u *pred, Ipp32s pitchPred, Ipp16s *diff, Ipp32s pitchDiff, Ipp32s size);
 
 
 #define CoeffsType Ipp16s

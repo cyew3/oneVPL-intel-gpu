@@ -883,6 +883,17 @@ template void H265_FASTCALL MAKE_NAME(h265_DiffNv12)<Ipp8u> (const Ipp8u  *src, 
 template void H265_FASTCALL MAKE_NAME(h265_DiffNv12)<Ipp16u>(const Ipp16u *src, Ipp32s pitchSrc, const Ipp16u *pred, Ipp32s pitchPred, Ipp16s *diff1, Ipp32s pitchDiff1, Ipp16s *diff2, Ipp32s pitchDiff2, Ipp32s width, Ipp32s height);
 
 
+template <class T>
+void H265_FASTCALL MAKE_NAME(h265_Diff)(const T *src, Ipp32s pitchSrc, const T *pred, Ipp32s pitchPred, Ipp16s *diff, Ipp32s pitchDiff, Ipp32s size)
+{
+    for (Ipp32s j = 0; j < size; j++)
+        for (Ipp32s i = 0; i < size; i++)
+            diff[j*pitchDiff+i] = (Ipp16s)src[j*pitchSrc+i] - pred[j*pitchPred+i];
+}
+template void H265_FASTCALL MAKE_NAME(h265_Diff)<Ipp8u> (const Ipp8u  *src, Ipp32s pitchSrc, const Ipp8u  *pred, Ipp32s pitchPred, Ipp16s *diff, Ipp32s pitchDiff, Ipp32s size);
+template void H265_FASTCALL MAKE_NAME(h265_Diff)<Ipp16u>(const Ipp16u *src, Ipp32s pitchSrc, const Ipp16u *pred, Ipp32s pitchPred, Ipp16s *diff, Ipp32s pitchDiff, Ipp32s size);
+
+
 #ifdef MAX
 #undef MAX
 #endif
