@@ -85,6 +85,18 @@ struct sVideoSignalInfoParam: public mfxExtVPPVideoSignalInfo
         In.TransferMatrix = MFX_TRANSFERMATRIX_UNKNOWN;
         Out = In;
     };
+};
+
+struct sMirroringParam: public mfxExtVPPMirroring
+{
+    FilterConfig mode;
+    sMirroringParam():
+        mode(VPP_FILTER_DISABLED)
+    {
+        Header.BufferId = MFX_EXTBUFF_VPP_MIRRORING;
+        Header.BufferSz = sizeof(mfxExtVPPMirroring);
+        Type = MFX_MIRRORING_DISABLED;
+    };
 } ;
 
 typedef struct

@@ -2886,7 +2886,10 @@ mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)
     // [Max Resolution]
     caps.uMaxWidth = 16352;
     caps.uMaxHeight = 16352;
-    
+
+#ifdef VPP_MIRRORING
+    caps.uMirroring = 1; // Mirroring supported thru special CM copy kernel
+#endif
 
     if( TRUE == m_vpreCaps.bFieldWeavingControl )
     {

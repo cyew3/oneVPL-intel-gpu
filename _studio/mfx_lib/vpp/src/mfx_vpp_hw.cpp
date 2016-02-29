@@ -1583,6 +1583,50 @@ mfxStatus  VideoVPPHW::Init(
         res = m_pCmDevice->CreateQueue(m_pCmQueue);
         if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
     }
+
+#ifdef VPP_MIRRORING
+    if (m_executeParams.mirroring && ! m_pCmCopy.get())
+    {
+        // Mirroring needs CMCopy stuff. Need to move platform specific items out of here
+        m_pCmCopy.reset(new CmCopyWrapper);
+        if (MFX_HW_D3D9 == m_pCore->GetVAType())
+        {
+            IDirect3DDeviceManager9 *m_pD3Dmanager = 0;
+            m_pCore->GetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL *)&m_pD3Dmanager);
+            if ( m_pD3Dmanager )
+            {
+                if (!m_pCmCopy.get()->GetCmDevice<IDirect3DDeviceManager9>(m_pD3Dmanager))
+                {
+                    m_pCmCopy.get()->Release();
+                    m_pCmCopy.reset();
+                    return MFX_WRN_PARTIAL_ACCELERATION;
+                }
+            }
+        }
+        else if (MFX_HW_D3D9 == m_pCore->GetVAType())
+        {
+            D3D11Interface* pD3d11 = QueryCoreInterface<D3D11Interface>(m_pCore);
+            MFX_CHECK_NULL_PTR1(pD3d11);
+
+            ID3D11Device *pDevice = pD3d11->GetD3D11Device(true);
+                
+            if (!m_pCmCopy.get()->GetCmDevice<ID3D11Device>(pDevice))
+            {
+                m_pCmCopy.get()->Release();
+                m_pCmCopy.reset();
+                return MFX_WRN_PARTIAL_ACCELERATION;
+            }
+        }
+        else
+        {
+            return MFX_WRN_PARTIAL_ACCELERATION;
+        }
+
+        sts = m_pCmCopy.get()->Initialize();
+        m_pCmCopy.get()->InitializeSwapKernels(m_pCore->GetHWType());
+        MFX_CHECK_STS(sts);
+    }
+#endif
 #endif
 
     return (bIsFilterSkipped) ? MFX_WRN_FILTER_SKIPPED : MFX_ERR_NONE;
@@ -1737,6 +1781,12 @@ mfxStatus VideoVPPHW::Close()
         m_pCmDevice->DestroyProgram(m_pCmProgram);
         //::DestroyCmDevice(device);
     }
+
+#ifdef VPP_MIRRORING
+    if (m_pCmCopy.get())
+        m_pCmCopy->Release();
+    m_pCmCopy.reset(0);
+#endif
 #endif
 
     m_pCore->GetVideoProcessing((mfxHDL *)&m_ddi);
@@ -2347,6 +2397,35 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         return sts;
     }
 
+#ifdef VPP_MIRRORING
+    /* Temporal solution for mirroring that makes nothing but mirroring 
+     * TODO: merge mirroring into pipeline
+     */
+    if (MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring)
+    {
+        sts = PreWorkOutSurface(pTask->output);
+        MFX_CHECK_STS(sts);
+
+        sts = PreWorkInputSurface(surfQueue);
+        MFX_CHECK_STS(sts);
+
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "HW_VPP: Mirror (d3d->d3d)");
+        IppiSize roi = {pTask->output.pSurf->Info.CropW, pTask->output.pSurf->Info.CropH};
+        sts = m_pCmCopy.get()->CopyMirrorVideoToVideoMemory(m_executeParams.targetSurface.hdl.first, m_executeSurf[0].hdl.first, roi, MFX_FOURCC_NV12);
+        MFX_CHECK_STS(sts);
+
+        sts = PostWorkOutSurface(pTask->output);
+        MFX_CHECK_STS(sts);
+
+        sts = PostWorkInputSurface(numSamples);
+        MFX_CHECK_STS(sts);
+
+        m_executeParams.targetSurface.memId = pTask->output.pSurf->Data.MemId;
+        m_executeParams.statusReportID = pTask->taskIndex;
+        return sts;
+    }
+#endif
+
     sts = PreWorkOutSurface(pTask->output);
     MFX_CHECK_STS(sts);
 
@@ -2451,7 +2530,7 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
 
     mfxU32 currentTaskIdx = pTask->taskIndex;
 
-    if (0 == pHwVpp->m_executeParams.iFieldProcessingMode ) {
+    if (0 == pHwVpp->m_executeParams.iFieldProcessingMode && ! pHwVpp->m_executeParams.mirroring) {
         sts = (*pHwVpp->m_ddi)->QueryTaskStatus(currentTaskIdx);
         MFX_CHECK_STS(sts);
     }
@@ -2880,6 +2959,45 @@ mfxStatus ConfigureExecuteParams(
 
                 break;
             }
+#ifdef VPP_MIRRORING
+            case MFX_EXTBUFF_VPP_MIRRORING:
+            {
+                if (caps.uMirroring)
+                {
+                    for (mfxU32 i = 0; i < videoParam.NumExtParam; i++)
+                    {
+                        if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_MIRRORING)
+                        {
+                            mfxExtVPPMirroring *extMirroring = (mfxExtVPPMirroring*) videoParam.ExtParam[i];
+                            if (extMirroring->Type != MFX_MIRRORING_DISABLED && extMirroring->Type != MFX_MIRRORING_HORIZONTAL)
+                            {
+                                return MFX_ERR_INVALID_VIDEO_PARAM;
+                            }
+
+                            if (videoParam.vpp.In.FourCC != videoParam.vpp.Out.FourCC || videoParam.vpp.In.FourCC != MFX_FOURCC_NV12)
+                            {
+                                // Only NV12 as in/out supported by mirroring now
+                                return MFX_ERR_INVALID_VIDEO_PARAM;
+                            }
+
+                            if (videoParam.vpp.In.CropW != videoParam.vpp.Out.CropW || videoParam.vpp.In.CropH != videoParam.vpp.Out.CropH)
+                            {
+                                // Scaling is not supported for mirroring now.
+                                return MFX_ERR_INVALID_VIDEO_PARAM;
+                            }
+
+                            executeParams.mirroring = extMirroring->Type;
+                        }
+                    }
+                }
+                else
+                {
+                    bIsFilterSkipped = true;
+                }
+
+                break;
+            }
+#endif
             case MFX_EXTBUFF_VPP_DETAIL:
             {
                 if(caps.uDetailFilter)

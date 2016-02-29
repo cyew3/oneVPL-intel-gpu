@@ -108,6 +108,11 @@ void vppPrintHelp(vm_char *strAppName, vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("   [-view:count value]   - enable Multi View preprocessing. range of views [1, 1024] (def: 1)\n\n"));
     vm_string_printf(VM_STRING("   [-svc id width height]- enable Scalable Video Processing mode\n"));
     vm_string_printf(VM_STRING("                           id-layerId, width/height-resolution \n\n"));
+    vm_string_printf(VM_STRING("   [-ssitm (id)]         - specify YUV<->RGB transfer matrix for input surface.\n"));
+    vm_string_printf(VM_STRING("   [-dsitm (id)]         - specify YUV<->RGB transfer matrix for output surface.\n"));
+    vm_string_printf(VM_STRING("   [-ssinr (id)]         - specify YUV nominal range for input surface.\n"));
+    vm_string_printf(VM_STRING("   [-dsinr (id)]         - specify YUV nominal range for output surface.\n\n"));
+    vm_string_printf(VM_STRING("   [-mirror (mode)]      - mirror image using specified mode.\n"));
 
     vm_string_printf(VM_STRING("   [-n frames] - number of frames to VPP process\n\n"));
 
@@ -324,6 +329,7 @@ mfxStatus vppParseResetPar(vm_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, sI
     pParams->istabParam.push_back(          *pDefaultFiltersParam->pImgStabParam       );
     pParams->svcParam.push_back(            *pDefaultFiltersParam->pSVCParam           );
     pParams->videoSignalInfoParam.push_back(*pDefaultFiltersParam->pVideoSignalInfo    );
+    pParams->mirroringParam.push_back(      *pDefaultFiltersParam->pMirroringParam     );
     pParams->rotate.push_back(               0                                         );
 
     mfxU32 readData;
@@ -367,10 +373,19 @@ mfxStatus vppParseResetPar(vm_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, sI
             {
                 VAL_CHECK(1 + i == nArgNum);
 
-                pParams->videoSignalInfoParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
+                pParams->videoSignalInfoParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
 
                 i++;
                 vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->videoSignalInfoParam[paramID].Out.TransferMatrix);
+            }
+            else if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-mirror")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+
+                pParams->mirroringParam[paramID].mode = VPP_FILTER_ENABLED_CONFIGURED;
+
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->mirroringParam[paramID].Type);
             }
             else if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-sw")) )
             {
@@ -734,6 +749,15 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
 
                 i++;
                 vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->videoSignalInfoParam[0].Out.TransferMatrix);
+            }
+            else if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-mirror")) )
+            {
+                VAL_CHECK(1 + i == nArgNum);
+
+                pParams->mirroringParam[0].mode = VPP_FILTER_ENABLED_CONFIGURED;
+
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->mirroringParam[0].Type);
             }
             else if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-gpu_copy")) )
             {

@@ -25,6 +25,7 @@ Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
 
 #if defined(MFX_VA)
 #include "cmrt_cross_platform.h"
+#include "cm_mem_copy.h" // Needed for mirroring
 #endif
 
 namespace MfxHwVideoProcessing
@@ -815,6 +816,8 @@ namespace MfxHwVideoProcessing
         VPPHWResMng * m_ddi;
 
 #if defined(MFX_VA) // SW LIB doesn't hace access to CM DEVICE
+        std::auto_ptr<CmCopyWrapper>    m_pCmCopy;
+
         CmDevice  *m_pCmDevice;
         CmProgram *m_pCmProgram;
         CmKernel  *m_pCmKernel;

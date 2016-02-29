@@ -104,7 +104,8 @@ void vppDefaultInitParams( sInputParams* pParams, sFiltersParam* pDefaultFilters
     pParams->numFrames    = 0;
 
     // Optional video processing features
-    pParams->videoSignalInfoParam.clear(); pParams->videoSignalInfoParam.push_back( *pDefaultFiltersParam->pVideoSignalInfo            );
+    pParams->mirroringParam.clear(); pParams->mirroringParam.push_back( *pDefaultFiltersParam->pMirroringParam         );
+    pParams->videoSignalInfoParam.clear(); pParams->videoSignalInfoParam.push_back( *pDefaultFiltersParam->pVideoSignalInfo);
     pParams->deinterlaceParam.clear(); pParams->deinterlaceParam.push_back( *pDefaultFiltersParam->pDIParam            );
     pParams->denoiseParam.clear();     pParams->denoiseParam.push_back(     *pDefaultFiltersParam->pDenoiseParam       );
     pParams->detailParam.clear();      pParams->detailParam.push_back(      *pDefaultFiltersParam->pDetailParam        );
@@ -352,6 +353,7 @@ int main(int argc, vm_char *argv[])
     sIStabParam               defaultImgStabParam         = { MFX_IMAGESTAB_MODE_BOXING, VPP_FILTER_DISABLED };
     sSVCParam                 defaultSVCParam             = { 0, 0, 0, 0, 0, 0, 0, 0, VPP_FILTER_DISABLED };
     sVideoSignalInfoParam     defaultVideoSignalInfoParam;
+    sMirroringParam           defaultMirroringParam;
 
     sFiltersParam             defaultFiltersParam = 
             { &defaultOwnFrameInfo,
@@ -370,7 +372,8 @@ int main(int argc, vm_char *argv[])
               &defaultSkinParam,
               &defaultImgStabParam,
               &defaultSVCParam,
-              &defaultVideoSignalInfoParam};
+              &defaultVideoSignalInfoParam,
+              &defaultMirroringParam};
 
     //reset pointers to the all internal resources
     ZERO_MEMORY(Resources);

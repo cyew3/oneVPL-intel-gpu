@@ -57,6 +57,9 @@
 
 namespace MfxHwVideoProcessing
 {
+
+    //#define VPP_MIRRORING
+
     const mfxU32 g_TABLE_SUPPORTED_FOURCC [] =
     {
         MFX_FOURCC_NV12      ,
@@ -267,6 +270,8 @@ namespace MfxHwVideoProcessing
 
         std::map <mfxU32, mfxU32> mFormatSupport;
 
+        mfxU32 uMirroring;
+
         mfxVppCaps()
             : uAdvancedDI(0)
             , uSimpleDI(0)
@@ -289,6 +294,7 @@ namespace MfxHwVideoProcessing
             , uRotation(0)
             , uScaling(0)
             , mFormatSupport()
+            , uMirroring(0)
         {
             memset(&cameraCaps, 0, sizeof(CameraCaps));
         };
@@ -367,6 +373,7 @@ namespace MfxHwVideoProcessing
                ,rotation(0)
                ,scalingMode(MFX_SCALING_MODE_DEFAULT)
                ,bEOS(false)
+               ,mirroring(0)
             {
                    memset(&targetSurface, 0, sizeof(mfxDrvSurface));
                    dstRects.clear();
@@ -460,6 +467,8 @@ namespace MfxHwVideoProcessing
         SignalInfo VideoSignalInfoOut;  // Video signal info for output
 
         std::vector<SignalInfo> VideoSignalInfo; // Video signal info for each frame in a single run
+
+        int        mirroring;
     };
 
     class DriverVideoProcessing

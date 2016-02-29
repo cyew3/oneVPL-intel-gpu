@@ -104,6 +104,12 @@ mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* p
         pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->videoSignalInfoConfig);
     }
 
+    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->mirroringParam[paramID].mode )
+    {
+        pResources->mirroringConfig = pParams->mirroringParam[paramID];
+        pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->mirroringConfig);
+    }
+
     if( VPP_FILTER_ENABLED_CONFIGURED == pParams->procampParam[paramID].mode )
     {
         pResources->procampConfig.Header.BufferId = MFX_EXTBUFF_VPP_PROCAMP;

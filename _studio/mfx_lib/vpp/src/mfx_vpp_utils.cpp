@@ -50,7 +50,8 @@ const mfxU32 g_TABLE_DO_USE [] =
     MFX_EXTBUFF_VPP_VARIANCE_REPORT,
     MFX_EXTBUFF_VPP_DEINTERLACING,
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
-    MFX_EXTBUFF_VPP_FIELD_PROCESSING
+    MFX_EXTBUFF_VPP_FIELD_PROCESSING,
+    MFX_EXTBUFF_VPP_MIRRORING
 };
 
 
@@ -67,7 +68,8 @@ const mfxU32 g_TABLE_CONFIG [] =
     MFX_EXTBUFF_VPP_DEINTERLACING,
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
     MFX_EXTBUFF_VPP_FIELD_PROCESSING,
-    MFX_EXTBUFF_VPP_SCALING
+    MFX_EXTBUFF_VPP_SCALING,
+    MFX_EXTBUFF_VPP_MIRRORING
 };
 
 
@@ -91,7 +93,8 @@ const mfxU32 g_TABLE_EXT_PARAM [] =
     MFX_EXTBUFF_VPP_DEINTERLACING,
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
     MFX_EXTBUFF_VPP_FIELD_PROCESSING,
-    MFX_EXTBUFF_VPP_SCALING
+    MFX_EXTBUFF_VPP_SCALING,
+    MFX_EXTBUFF_VPP_MIRRORING
 };
 
 // in according with spec rev. 22583 VPP uses new PicStruct processing
@@ -966,6 +969,13 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 break;
             }
 
+            case (mfxU32)MFX_EXTBUFF_VPP_MIRRORING:
+            {
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "MFX_EXTBUFF_VPP_MIRRORING");
+                OutputDebugStringA(cStr);
+                break;
+            }
+
             default:
             {
             }
@@ -1287,6 +1297,12 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
     if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_SCALING ) )
     {
         newList[index] = MFX_EXTBUFF_VPP_SCALING;
+        index++;
+    }
+
+    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_MIRRORING ) )
+    {
+        newList[index] = MFX_EXTBUFF_VPP_MIRRORING;
         index++;
     }
     // [1] update
@@ -1636,6 +1652,14 @@ mfxStatus GetPipelineList(
         if( !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_SCALING ) )
         {
             pipelineList.push_back( MFX_EXTBUFF_VPP_SCALING );
+        }
+    }
+
+    if( IsFilterFound( &configList[0], configCount, MFX_EXTBUFF_VPP_MIRRORING ) && !IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_MIRRORING) )
+    {
+        if( !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_MIRRORING ) )
+        {
+            pipelineList.push_back( MFX_EXTBUFF_VPP_MIRRORING );
         }
     }
 
