@@ -53,9 +53,6 @@ enum MemType {
     D3D11_MEMORY  = 0x02,
 };
 
-//#define INPUT_ALLOC 1
-//#define RECON_ALLOC 2
-
 struct sInputParams
 {
     mfxU16 nTargetUsage;
@@ -269,6 +266,7 @@ protected:
     mfxFrameAllocResponse m_dsResponse;   // memory allocation response for VPP input
     mfxFrameAllocResponse m_EncResponse;  // memory allocation response for encoder
     mfxFrameAllocResponse m_ReconResponse;  // memory allocation response for encoder for reconstructed surfaces [FEI]
+    mfxU32 m_BaseAllocID;
 
     // for look ahead BRC configuration
     mfxExtCodingOption2 m_CodingOption2;

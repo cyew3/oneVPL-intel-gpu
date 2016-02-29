@@ -754,6 +754,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
         MSDK_MEMCPY_VAR(DecRequest.Info, &(m_mfxDecParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
 
         DecRequest.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
+        DecRequest.AllocId = m_BaseAllocID;
 
         // alloc frames for decoder
         sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &DecRequest, &m_DecResponse);
@@ -782,6 +783,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
         VppRequest.NumFrameMin = VppRequest.NumFrameSuggested;
         if (!m_pmfxDECODE)
         {
+            VppRequest.AllocId = m_BaseAllocID;
             // in case of absence of DECODE we need to allocate input surfaces for VPP
             sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &VppRequest, &m_VppResponse);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -808,51 +810,44 @@ mfxStatus CEncodingPipeline::AllocFrames()
     }
 
     // prepare allocation requests
-
     EncRequest.NumFrameMin = nEncSurfNum;
     EncRequest.NumFrameSuggested = nEncSurfNum;
     MSDK_MEMCPY_VAR(EncRequest.Info, &(m_mfxEncParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
 
-    //EncRequest.AllocId = INPUT_ALLOC;
+    EncRequest.AllocId = m_BaseAllocID;
     if ((m_pmfxPREENC) || m_pmfxDECODE)
     {
-        EncRequest.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
+        EncRequest.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE | \
+                MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_ENC;
     }
     else if (m_pmfxVPP)
         EncRequest.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
     else if ((m_pmfxPAK) || (m_pmfxENC))
-        EncRequest.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE  | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
+        EncRequest.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_ENC | MFX_MEMTYPE_FROM_PAK | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
 
     // alloc frames for encoder
     sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &EncRequest, &m_EncResponse);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    /* Alloc reconstructed surfaces for PAK */
+    /* ENC use input source surfaces only & does not need real reconstructed surfaces.
+     * But source surfaces index is always equal to reconstructed surface index.
+     * PAK generate real reconstructed surfaces (instead of source surfaces)Alloc reconstructed surfaces for PAK
+     * So, after PAK call source surface changed on reconstructed surface
+     * This is important limitation for PAK
+     * */
     if ((m_pmfxENC) || (m_pmfxPAK))
     {
-        //ReconRequest.AllocId = RECON_ALLOC;
+        ReconRequest.AllocId = EncRequest.AllocId;
         MSDK_MEMCPY_VAR(ReconRequest.Info, &(m_mfxEncParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
-        ReconRequest.NumFrameMin       = nEncSurfNum; // m_mfxEncParams.mfx.GopRefDist * (m_pmfxVPP && !m_pmfxDECODE ? 4 : 2) + m_mfxEncParams.AsyncDepth;
-        ReconRequest.NumFrameSuggested = nEncSurfNum; // m_mfxEncParams.mfx.GopRefDist * (m_pmfxVPP && !m_pmfxDECODE ? 4 : 2) + m_mfxEncParams.AsyncDepth;
-        /* type of reconstructed surfaces for PAK should be same as for Media SDK's decoders!!!
-         * Because libVA required reconstructed surfaces for vaCreateContext */
-        ReconRequest.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
-        //sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &ReconRequest, &m_ReconResponse);
-        //MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        ReconRequest.NumFrameMin       = EncRequest.NumFrameMin;
+        ReconRequest.NumFrameSuggested = EncRequest.NumFrameSuggested;
+        ReconRequest.Type = EncRequest.Type;
     }
 
     // prepare mfxFrameSurface1 array for encoder
     m_pEncSurfaces = new mfxFrameSurface1[m_EncResponse.NumFrameActual];
     MSDK_CHECK_POINTER(m_pEncSurfaces, MFX_ERR_MEMORY_ALLOC);
     MSDK_ZERO_ARRAY(m_pEncSurfaces, m_EncResponse.NumFrameActual);
-
-//    if ((m_pmfxENC) || (m_pmfxPAK))
-//    {
-//        m_pReconSurfaces = new mfxFrameSurface1[m_EncResponse.NumFrameActual];
-//        MSDK_CHECK_POINTER(m_pReconSurfaces, MFX_ERR_MEMORY_ALLOC);
-//        MSDK_ZERO_ARRAY(m_pReconSurfaces, m_EncResponse.NumFrameActual);
-//        m_ReconResponse.NumFrameActual = m_EncResponse.NumFrameActual;
-//    }
 
     for (int i = 0; i < m_EncResponse.NumFrameActual; i++)
     {
@@ -874,23 +869,6 @@ mfxStatus CEncodingPipeline::AllocFrames()
     {
         m_pReconSurfaces = m_pEncSurfaces;
     }
-
-//    for (int i = 0; i < m_ReconResponse.NumFrameActual; i++)
-//    {
-//        MSDK_MEMCPY_VAR(m_pReconSurfaces[i].Info, &(m_mfxEncParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
-//
-//        if (m_bExternalAlloc)
-//        {
-//            //m_pReconSurfaces[i].Data.MemId = m_ReconResponse.mids[i];
-//            m_pReconSurfaces[i].Data.MemId = m_EncResponse.mids[i];
-//        }
-//        else
-//        {
-//            // get YUV pointers
-//            sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, m_ReconResponse.mids[i], &(m_pReconSurfaces[i].Data));
-//            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-//        }
-//    }
 
     return MFX_ERR_NONE;
 }
@@ -1315,6 +1293,9 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 
     sts = m_mfxSession.Init(impl, NULL);
 
+    mfxSession akaSession = m_mfxSession.operator mfxSession() ;
+    m_BaseAllocID = *((mfxU32*) &(akaSession) );
+
     // MSDK API version may not support multiple adapters - then try initialize on the default
     if (MFX_ERR_NONE != sts)
         sts = m_mfxSession.Init((impl & (!MFX_IMPL_HARDWARE_ANY)) | MFX_IMPL_HARDWARE, NULL);
@@ -1540,12 +1521,14 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
     // Init decode
     if (m_pmfxDECODE)
     {
+        m_mfxDecParams.AllocId     = m_BaseAllocID;
         sts = m_pmfxDECODE->Init(&m_mfxDecParams);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
     if (m_pmfxVPP)
     {
+        m_mfxVppParams.AllocId     = m_BaseAllocID;
         sts = m_pmfxVPP->Init(&m_mfxVppParams);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
@@ -1591,7 +1574,7 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
 
         preEncParams.NumExtParam = 1;
         preEncParams.ExtParam    = buf;
-        //preEncParams.AllocId     = INPUT_ALLOC;
+        preEncParams.AllocId     = m_BaseAllocID;
 
         sts = m_pmfxPREENC->Init(&preEncParams);
         if (MFX_WRN_PARTIAL_ACCELERATION == sts) {
@@ -1619,7 +1602,7 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
 
         encParams.NumExtParam = 1;
         encParams.ExtParam    = buf;
-        //encParams.AllocId     = m_pmfxPREENC ? RECON_ALLOC : INPUT_ALLOC;
+        encParams.AllocId     = m_BaseAllocID;
 
         sts = m_pmfxENC->Init(&encParams);
         if (MFX_WRN_PARTIAL_ACCELERATION == sts)
@@ -1648,7 +1631,7 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
 
         pakParams.NumExtParam = 1;
         pakParams.ExtParam    = buf;
-        //pakParams.AllocId     = RECON_ALLOC;
+        pakParams.AllocId     = m_BaseAllocID;
 
         sts = m_pmfxPAK->Init(&pakParams);
         if (MFX_WRN_PARTIAL_ACCELERATION == sts)

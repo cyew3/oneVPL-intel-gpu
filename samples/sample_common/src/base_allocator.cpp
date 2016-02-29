@@ -109,7 +109,10 @@ mfxStatus BaseFrameAllocator::AllocFrames(mfxFrameAllocRequest *request, mfxFram
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    if ( (request->Type & MFX_MEMTYPE_EXTERNAL_FRAME) && (request->Type & MFX_MEMTYPE_FROM_DECODE) )
+    if ( (request->Type & MFX_MEMTYPE_EXTERNAL_FRAME) &&
+         ( (request->Type & MFX_MEMTYPE_FROM_DECODE) ||
+           (request->Type & MFX_MEMTYPE_FROM_ENC) ||
+           (request->Type & MFX_MEMTYPE_FROM_PAK) ) )
     {
         bool foundInCache = false;
         // external decoder allocations
