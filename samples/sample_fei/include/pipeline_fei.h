@@ -75,7 +75,6 @@ struct sInputParams
     mfxU16 nIdrInterval;
     mfxU8 preencDSstrength;
     mfxU32 nResetStart;
-    mfxU32 nResetEnd;
     mfxU16 nDRCdefautW;
     mfxU16 nDRCdefautH;
     mfxU16 MaxDrcWidth;
@@ -115,7 +114,6 @@ struct sInputParams
     std::vector<mfxU16> nDrcWidth;//Dynamic Resolution Change Picture Width,specified if DRC requied
     std::vector<mfxU16> nDrcHeight;//Dynamic Resolution Change Picture Height,specified if DRC requied
     std::vector<mfxU32> nDrcStart; //Start Frame No. of Dynamic Resolution Change,specified if DRC requied
-    std::vector<mfxU32> nDrcEnd;  //End Frame No. of Dynamic Resolution Change, specified if DRC requied
 
     bool bDECODE;
     bool bENCODE;
@@ -141,6 +139,7 @@ struct sInputParams
     bool bFieldProcessingMode;
     bool bPerfMode;
     bool bDynamicRC;
+    bool bParseDRC;
     msdk_char* mvinFile;
     msdk_char* mbctrinFile;
     msdk_char* mvoutFile;
@@ -182,7 +181,6 @@ public:
     virtual mfxStatus SynchronizeFirstTask();
     virtual mfxStatus SetFieldToStore(mfxU32 fieldId);
     virtual mfxStatus DropENCODEoutput(mfxBitstream& bs, mfxU32 fieldId);
-    virtual mfxStatus ResetExtBufMBnum(bufSet* bufs,bool IsProgressive);
     virtual void Close();
 
 protected:
@@ -393,7 +391,6 @@ protected:
    //for Dynamic Resolution Change
     bool m_bNeedDRC;//True if Dynamic Resolution Change requied
     std::vector<mfxU32> m_drcStart;
-    std::vector<mfxU32> m_drcEnd;
     std::vector<mfxU16> m_drcWidth;
     std::vector<mfxU16> m_drcHeight;
     mfxU16 m_drcDftW;
@@ -412,6 +409,7 @@ mfxExtBuffer * getBufById(setElem* bufSet, mfxU32 id, mfxU32 fieldId);
 PairU8 ExtendFrameType(mfxU32 type);
 mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 counter, bool & ref);
 
+mfxStatus ResetExtBufMBnum(bufSet* bufs);
 mfxStatus repackPreenc2Enc(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf);
 mfxStatus repackPreenc2EncExOneMB(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB[2], mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 refIdx[2], mfxU32 predIdx, mfxI16 *tmpBuf);
 mfxI16 get16Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1);

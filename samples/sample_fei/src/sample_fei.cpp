@@ -50,8 +50,8 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-encpak] - use extended FEI interface ENC only and PAK only (separate calls)\n"));
     msdk_printf(MSDK_STRING("   [-enc] - use extended FEI interface ENC (only)\n"));
     msdk_printf(MSDK_STRING("   [-pak] - use extended FEI interface PAK (only)\n"));
-    msdk_printf(MSDK_STRING("   [-reset_start] - set Start Frame No. to enable Dynamic Resolution change,please specify frame size with -dstw -dsth\n"));
-    msdk_printf(MSDK_STRING("   [-reset_end]   - set End Frame No. to disable Dynamic Resolution change\n"));
+    msdk_printf(MSDK_STRING("   [-reset_start] - set start frame No. of Dynamic Resolution change, please indicate the new resolution with -dstw -dsth\n"));
+    msdk_printf(MSDK_STRING("   [-reset_end]   - specifies the end of current Dynamic Resolution Change related options\n"));
     msdk_printf(MSDK_STRING("   [-profile decimal] - set AVC profile\n"));
     msdk_printf(MSDK_STRING("   [-level decimal] - set AVC level\n"));
     msdk_printf(MSDK_STRING("   [-EncodedOrder] - use internal logic for reordering, reading from files will be in encoded order (default is display; ENCODE only)\n"));
@@ -455,10 +455,18 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             }
             if (pParams->bDynamicRC)
             {
-               pParams->nDrcWidth.push_back(pParams->nDstWidth);
+               if (pParams->bParseDRC)
+               {
+                   pParams->nDrcWidth.push_back(pParams->nDstWidth);
+               }
+               else if (!pParams->bParseDRC && pParams->nDRCdefautW == pParams->nWidth)
+               {
+                   pParams->nDrcWidth[0] = pParams->nDstWidth;
+               }
                pParams->MaxDrcWidth = pParams->nDstWidth > pParams->MaxDrcWidth? pParams->nDstWidth : pParams->MaxDrcWidth;
                pParams->MaxDrcWidth = pParams->MaxDrcWidth >  pParams->nWidth ?pParams->MaxDrcWidth : pParams->nWidth;
                pParams->nDstWidth = pParams->MaxDrcWidth;
+
             }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dsth")))
@@ -468,12 +476,19 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("Destination picture Height is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
-            if(pParams->bDynamicRC)
+            if (pParams->bDynamicRC)
             {
-                pParams->nDrcHeight.push_back(pParams->nDstHeight);
-                pParams->MaxDrcHeight = pParams->nDstHeight > pParams->MaxDrcHeight? pParams->nDstHeight :pParams->MaxDrcHeight;
-                pParams->MaxDrcHeight = pParams->MaxDrcHeight >  pParams->nHeight ?pParams->MaxDrcHeight : pParams->nHeight;
-                pParams->nDstHeight = pParams->MaxDrcHeight;
+               if (pParams->bParseDRC)
+               {
+                  pParams->nDrcHeight.push_back(pParams->nDstHeight);
+               }
+               else if (!pParams->bParseDRC && pParams->nDRCdefautH ==  pParams->nHeight)
+               {
+                   pParams->nDrcHeight[0]= pParams->nDstHeight;
+               }
+               pParams->MaxDrcHeight = pParams->nDstHeight > pParams->MaxDrcHeight? pParams->nDstHeight :pParams->MaxDrcHeight;
+               pParams->MaxDrcHeight = pParams->MaxDrcHeight >  pParams->nHeight ?pParams->MaxDrcHeight : pParams->nHeight;
+               pParams->nDstHeight = pParams->MaxDrcHeight;
             }
 
         }
@@ -491,9 +506,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-reset_start")))
         {
+            pParams->bParseDRC = true;
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nResetStart))
             {
-                PrintHelp(strInput[0], MSDK_STRING("Timeout is invalid"));
+                PrintHelp(strInput[0], MSDK_STRING("Reset_start is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
              //for first -resetstart
@@ -513,8 +529,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 }
                 if (0 != pParams->nResetStart)
                 {
-                   pParams->nResetEnd = pParams->nResetStart-1;
-                   pParams->nDrcEnd.push_back(pParams->nResetEnd);
                    pParams->nDrcStart.push_back(0);
                    pParams->nDrcWidth.push_back(pParams->nDRCdefautW);
                    pParams->nDrcHeight.push_back(pParams->nDRCdefautH);
@@ -525,12 +539,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-reset_end")))
         {
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nResetEnd))
+            if (!pParams->bDynamicRC)
             {
-                PrintHelp(strInput[0], MSDK_STRING("Timeout is invalid"));
+                PrintHelp(strInput[0], MSDK_STRING("Please Set -reset_start"));
                 return MFX_ERR_UNSUPPORTED;
             }
-            pParams->nDrcEnd.push_back(pParams->nResetEnd);
+            pParams->bParseDRC = false;
         }
         else // 1-character options
         {
@@ -986,8 +1000,8 @@ int main(int argc, char *argv[])
     Params.bFieldProcessingMode = false;
     Params.bMBSize    = false;
     Params.bDynamicRC = false;
+    Params.bParseDRC   = false;
     Params.nResetStart  = 0;
-    Params.nResetEnd    = 0;
     Params.MaxDrcWidth  = 0;
     Params.MaxDrcHeight = 0;
     Params.nDRCdefautW  = 0;
@@ -1113,12 +1127,6 @@ mfxStatus CheckDRCParams(sInputParams* pParams)
         fprintf(stderr, "Only ENCODE supports Dynamic Resolution Change\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
-    if (pParams->nDrcStart.size() != pParams->nDrcEnd.size())
-   {
-        fprintf(stderr, "Please Check -reset_start and -reset_End\n");
-        sts = MFX_ERR_UNSUPPORTED;
-    }
-
     if (pParams->nDrcWidth.size() != pParams->nDrcHeight.size())
     {
         fprintf(stderr, "Please Check -dstw and -dsth\n");
@@ -1133,15 +1141,9 @@ mfxStatus CheckDRCParams(sInputParams* pParams)
 
     for(size_t i=0;i < pParams->nDrcStart.size();i++)
     {
-
-       if (pParams->nDrcEnd[i] < pParams->nDrcStart[i] + 1)
+       if (i > 0 && pParams->nDrcStart[i] < pParams->nDrcStart[i-1] + 2)
        {
-          fprintf(stderr, "reset_end %d should be greater than %d reset_start+1\n",pParams->nDrcEnd[i] ,pParams->nDrcStart[i]);
-          sts = MFX_ERR_UNSUPPORTED;
-       }
-       if (i > 0 && pParams->nDrcEnd[i-1] >= pParams->nDrcStart[i])
-       {
-          fprintf(stderr, "Current -reset_end should be less than the next -reset_start.\n");
+          fprintf(stderr, "Current -reset_start FrameNo. should be greater than the last -reset_start FrameNo.+1.\n");
           sts = MFX_ERR_UNSUPPORTED;
        }
 
