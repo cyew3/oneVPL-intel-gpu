@@ -400,16 +400,12 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
     m_currentPlatform = m_core->GetHWType();
     m_currentVaType   = m_core->GetVAType();
 
-    //raw surfaces should be created before accel service
+    // PRE-ENC works with surfaces which was passed in vaCreateContext() stage
     mfxFrameAllocRequest request = { };
     request.Info = m_video.mfx.FrameInfo;
-
-    //first ask one frame only
-    request.Type = MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
-    request.NumFrameMin = 1;//m_video.mfx.GopRefDist*2;
-    request.NumFrameSuggested = 1;//m_video.AsyncDepth;
-    request.Info.Width = 16;
-    request.Info.Height = 16;
+    request.Type = MFX_MEMTYPE_FROM_ENC | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
+    request.NumFrameMin = m_video.mfx.GopRefDist*2;
+    request.NumFrameSuggested = request.NumFrameMin + m_video.AsyncDepth;
     request.AllocId = par->AllocId;
 
     sts = m_core->AllocFrames(&request, &m_raw);

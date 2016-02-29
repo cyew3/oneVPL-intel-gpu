@@ -557,7 +557,7 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
      * But all surfaces allocated internally!
      * The same behavior has all decoder's in Media SDK, so it was used same approach to solve issue:
      * to remember allocated reconstructed surfaces in allocator using MFX_MEMTYPE_FROM_DECODE type */
-    request.Type = MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
+    request.Type = MFX_MEMTYPE_FROM_PAK | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
     request.NumFrameMin = m_video.mfx.GopRefDist*2;
     request.NumFrameSuggested = request.NumFrameMin + m_video.AsyncDepth;
     request.AllocId = par->AllocId;
