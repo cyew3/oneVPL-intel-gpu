@@ -184,8 +184,15 @@ int TestSuite::RunTest(unsigned int id)
     }
     if (!in_name.length() || !m_par.mfx.FrameInfo.Width || !m_par.mfx.FrameInfo.Height)
     {
-        g_tsLog << "ERROR: input stream is not defined\n";
-        return 1;
+        m_par.mfx.FrameInfo.Width = 720;
+        m_par.mfx.FrameInfo.Height = 480;
+        m_par.mfx.FrameInfo.Width += m_par.mfx.FrameInfo.Width & 15;
+        m_par.mfx.FrameInfo.Height += m_par.mfx.FrameInfo.Height & 15;
+
+        m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+
+        in_name = "YUV/calendar_720x480_600_nv12.yuv";
     }
 
     ///////////////////////////////////////////////////////////////////////////
