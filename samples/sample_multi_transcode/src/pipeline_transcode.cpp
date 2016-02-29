@@ -689,18 +689,18 @@ mfxStatus CTranscodingPipeline::PreEncOneFrame(ExtendedSurface *pInSurface, Exte
 }
 
 // signal that there are no more frames
-void CTranscodingPipeline::NoMoreFramesSignal(ExtendedSurface &DecExtSurface)
+void CTranscodingPipeline::NoMoreFramesSignal()
 {
+    ExtendedSurface surf={};
     SafetySurfaceBuffer   *pNextBuffer = m_pBuffer;
-    DecExtSurface.pSurface = NULL;
-    pNextBuffer->AddSurface(DecExtSurface);
+    pNextBuffer->AddSurface(surf);
     /*if 1_to_N mode */
     if (0 == m_nVPPCompEnable)
     {
         while (pNextBuffer->m_pNext)
         {
             pNextBuffer = pNextBuffer->m_pNext;
-            pNextBuffer->AddSurface(DecExtSurface);
+            pNextBuffer->AddSurface(surf);
         }
     }
 }
@@ -886,7 +886,7 @@ mfxStatus CTranscodingPipeline::Decode()
 
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
 
-    NoMoreFramesSignal(PreEncExtSurface);
+    NoMoreFramesSignal();
 
     if (MFX_ERR_NONE == sts)
         sts = MFX_WRN_VALUE_NOT_CHANGED;
@@ -916,8 +916,19 @@ mfxStatus CTranscodingPipeline::Encode()
 
         if(shouldReadNextFrame)
         {
-            while (MFX_ERR_MORE_SURFACE == curBuffer->GetSurface(DecExtSurface) && !isQuit)
-                MSDK_SLEEP(TIME_TO_SLEEP);
+            if(isQuit)
+            {
+                // We're here because one of decoders has reported that there're no any more frames ready.
+                //So, let's pass null surface to extract data from the VPP and encoder caches.
+
+                MSDK_ZERO_MEMORY(DecExtSurface);
+            }
+            else
+            {
+                // Getting next frame
+                while (MFX_ERR_MORE_SURFACE == curBuffer->GetSurface(DecExtSurface))
+                    MSDK_SLEEP(TIME_TO_SLEEP);
+            }
 
             // if session is not joined and it is not parent - synchronize
             if (!m_bIsJoinSession && m_pParentPipeline)
@@ -966,7 +977,7 @@ mfxStatus CTranscodingPipeline::Encode()
 
         if (MFX_ERR_MORE_DATA == sts)
         {
-            if (isQuit)
+            if(isQuit)
             {
                 // to get buffered VPP or ENC frames
                 VppExtSurface.pSurface = NULL;
@@ -1141,6 +1152,21 @@ mfxStatus CTranscodingPipeline::Encode()
             }
         }
     }
+
+    // Clean up decoder buffers to avoid locking them (if some decoder still have some data to decode, but does not have enough surfaces)
+    if(m_nVPPCompEnable!=0)
+    {
+        for(SafetySurfaceBuffer * buf = m_pBuffer;buf!=NULL; buf=buf->m_pNext)
+        {
+            while (buf->GetSurface(DecExtSurface)!=MFX_ERR_MORE_SURFACE)
+            {
+                buf->ReleaseSurface(DecExtSurface.pSurface);
+                buf->CancelBuffering();
+            }
+        }
+    }
+
+
     if (MFX_ERR_NONE == sts)
         sts = MFX_WRN_VALUE_NOT_CHANGED;
     return sts;
@@ -2297,7 +2323,11 @@ mfxStatus CTranscodingPipeline::AllocFrames()
             SumAllocRequest(VPPOut, m_Request);
             bAddFrames = false;
         }
-        sts = CorrectAsyncDepth(VPPOut, m_AsyncDepth);
+        if(m_mfxEncParams.mfx.CodecId != MFX_FOURCC_DUMP)
+        {
+           // Do not correct anything if we're using raw output - we'll need those surfaces for sotring data for writer
+           sts = CorrectAsyncDepth(VPPOut, m_AsyncDepth);
+        }
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 #ifdef LIBVA_SUPPORT
@@ -2319,11 +2349,12 @@ mfxStatus CTranscodingPipeline::AllocFrames()
             bAddFrames = false;
         }
 
-        if (m_bDecodeEnable )
+        if (m_bDecodeEnable)
         {
-            if(0 == m_nVPPCompEnable || !m_bUseOpaqueMemory)
+            if(0 == m_nVPPCompEnable && m_mfxEncParams.mfx.CodecId != MFX_FOURCC_DUMP)
             {
-                //--- We should not multiply surface number in case of composition with opaque. Separate pool will be allocated for that case
+                //--- Make correction to number of surfaces only if composition is not enabled. In case of composition we need all the surfaces QueryIOSurf has requested to pass them to another session's VPP
+                // In other inter-session cases, other sessions request additional surfaces using additional calls to AllocFrames
                 sts = CorrectAsyncDepth(DecOut, m_AsyncDepth);
             }
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -3114,7 +3145,9 @@ void DecreaseReference(mfxFrameData *ptr)
     msdk_atomic_dec16((volatile mfxU16 *)&ptr->Locked);
 }
 
-SafetySurfaceBuffer::SafetySurfaceBuffer(SafetySurfaceBuffer *pNext):m_pNext(pNext)
+SafetySurfaceBuffer::SafetySurfaceBuffer(SafetySurfaceBuffer *pNext)
+    :m_pNext(pNext),
+     m_IsBufferingAllowed(true)
 {
 } // SafetySurfaceBuffer::SafetySurfaceBuffer
 
@@ -3126,17 +3159,20 @@ void SafetySurfaceBuffer::AddSurface(ExtendedSurface Surf)
 {
     AutomaticMutex  guard(m_mutex);
 
-    SurfaceDescriptor sDescriptor;
-    // Locked is used to signal when we can free surface
-    sDescriptor.Locked     = 1;
-    sDescriptor.ExtSurface = Surf;
-
-    if (Surf.pSurface)
+    if(m_IsBufferingAllowed)
     {
-        IncreaseReference(&Surf.pSurface->Data);
-    }
+        SurfaceDescriptor sDescriptor;
+        // Locked is used to signal when we can free surface
+        sDescriptor.Locked     = 1;
+        sDescriptor.ExtSurface = Surf;
 
-    m_SList.push_back(sDescriptor);
+        if (Surf.pSurface)
+        {
+            IncreaseReference(&Surf.pSurface->Data);
+        }
+
+        m_SList.push_back(sDescriptor);
+    }
 
 } // SafetySurfaceBuffer::AddSurface(mfxFrameSurface1 *pSurf)
 
@@ -3181,6 +3217,12 @@ mfxStatus SafetySurfaceBuffer::ReleaseSurface(mfxFrameSurface1* pSurf)
     return MFX_ERR_UNKNOWN;
 
 } // mfxStatus SafetySurfaceBuffer::ReleaseSurface(mfxFrameSurface1* pSurf)
+
+void SafetySurfaceBuffer::CancelBuffering()
+{
+    AutomaticMutex guard(m_mutex);
+    m_IsBufferingAllowed=false;
+}
 
 FileBitstreamProcessor::FileBitstreamProcessor()
 {

@@ -265,14 +265,14 @@ namespace TranscodingSample
         explicit ExtendedBSStore(mfxU32 size)
         {
             m_pExtBS.resize(size);
-        };
+        }
         virtual ~ExtendedBSStore()
         {
             for (mfxU32 i=0; i < m_pExtBS.size(); i++)
                 MSDK_SAFE_DELETE_ARRAY(m_pExtBS[i].Bitstream.Data);
             m_pExtBS.clear();
 
-        };
+        }
         ExtendedBS* GetNext()
         {
             for (mfxU32 i=0; i < m_pExtBS.size(); i++)
@@ -284,7 +284,7 @@ namespace TranscodingSample
                 }
             }
             return NULL;
-        };
+        }
         void Release(ExtendedBS* pBS)
         {
             for (mfxU32 i=0; i < m_pExtBS.size(); i++)
@@ -296,7 +296,7 @@ namespace TranscodingSample
                 }
             }
             return;
-        };
+        }
     protected:
         std::vector<ExtendedBS> m_pExtBS;
 
@@ -322,6 +322,7 @@ namespace TranscodingSample
         void              AddSurface(ExtendedSurface Surf);
         mfxStatus         GetSurface(ExtendedSurface &Surf);
         mfxStatus         ReleaseSurface(mfxFrameSurface1* pSurf);
+        void              CancelBuffering();
 
         SafetySurfaceBuffer               *m_pNext;
 
@@ -329,6 +330,7 @@ namespace TranscodingSample
 
         MSDKMutex                 m_mutex;
         std::list<SurfaceDescriptor>       m_SList;
+        bool m_IsBufferingAllowed;
     private:
         DISALLOW_COPY_AND_ASSIGN(SafetySurfaceBuffer);
     };
@@ -337,8 +339,8 @@ namespace TranscodingSample
     class BitstreamProcessor
     {
     public:
-        BitstreamProcessor() {};
-        virtual ~BitstreamProcessor() {};
+        BitstreamProcessor() {}
+        virtual ~BitstreamProcessor() {}
         virtual mfxStatus PrepareBitstream() = 0;
         virtual mfxStatus GetInputBitstream(mfxBitstream **pBitstream) = 0;
         virtual mfxStatus ProcessOutputBitstream(mfxBitstream* pBitstream) = 0;
@@ -468,7 +470,7 @@ namespace TranscodingSample
         mfxStatus RGB4toBS(mfxFrameSurface1* pSurface,mfxBitstream* pBS);
         mfxStatus YUY2toBS(mfxFrameSurface1* pSurface,mfxBitstream* pBS);
 
-        void NoMoreFramesSignal(ExtendedSurface &DecExtSurface);
+        void NoMoreFramesSignal();
         mfxStatus AddLaStreams(mfxU16 width, mfxU16 height);
 
         void LockPreEncAuxBuffer(PreEncAuxBuffer* pBuff);
