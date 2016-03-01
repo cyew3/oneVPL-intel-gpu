@@ -4492,6 +4492,8 @@ void H265CU<PixType>::MatchingMetricPuCombine(Ipp32s *had, const PixType *src, c
     // for Bi-pred either L0 or L1 or both are from Uni-pred
     if (m_currFrame->m_mapListRefUnique[0][refIdxB[0]] == m_currFrame->m_mapListRefUnique[1][refIdxB[1]]) {
         had[2] = had[0];    // useless case from encoder's standpoint if there're more ref frames in dpb
+        m_gaccAmvpPred[2] = m_gaccAmvpPred[0];
+        m_gaccAmvpPredPitch[2] = m_gaccAmvpPredPitch[0];
     } else {
 
         Ipp32s interpFlag0 = (mvB[0].mvx | mvB[0].mvy) & 3;
