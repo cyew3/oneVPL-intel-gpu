@@ -301,6 +301,84 @@ typedef struct {
     mfxFeiPakMBCtrl *MB;
 } mfxExtFeiPakMBCtrl;
 
+//1 decode stream out
+typedef struct {
+    //dword 0
+    mfxU32    InterMbMode         : 2;
+    mfxU32    MBSkipFlag          : 1;
+    mfxU32    Reserved00          : 1;
+    mfxU32    IntraMbMode         : 2;
+    mfxU32    Reserved01          : 1;
+    mfxU32    FieldMbPolarityFlag : 1;
+    mfxU32    MbType              : 5;
+    mfxU32    IntraMbFlag         : 1;
+    mfxU32    FieldMbFlag         : 1;
+    mfxU32    Transform8x8Flag    : 1;
+    mfxU32    Reserved02          : 1;
+    mfxU32    DcBlockCodedCrFlag  : 1;
+    mfxU32    DcBlockCodedCbFlag  : 1;
+    mfxU32    DcBlockCodedYFlag   : 1;
+    mfxU32    Reserved03          :12;
+
+    //dword 1
+    mfxU16     HorzOrigin;
+    mfxU16     VertOrigin;
+
+    //dword 2
+    mfxU32    CbpY                :16;
+    mfxU32    CbpCb               : 4;
+    mfxU32    CbpCr               : 4;
+    mfxU32    Reserved20          : 9;
+    mfxU32    IsLastMB            : 1;
+    mfxU32    ConcealMB           : 1;
+
+    //dword 3
+    mfxU32    QpPrimeY            : 7;
+    mfxU32    Reserved30          : 1;
+    mfxU32    Reserved31          : 8;
+    mfxU32    NzCoeffCount        : 9;
+    mfxU32    Reserved32          : 3;
+    mfxU32    Direct8x8Pattern    : 4;
+
+    //dword 4,5,6
+    union {
+        struct {// Intra MBs
+            //dword 4,5
+            mfxU16   LumaIntraPredModes[4];
+
+            //dword 6
+            mfxU32   ChromaIntraPredMode : 2;
+            mfxU32   IntraPredAvailFlags : 6;
+            mfxU32   Reserved60          : 24;
+        } IntraMB;
+
+        struct {// Inter MBs
+            //dword 4
+            mfxU8    SubMbShapes;
+            mfxU8    SubMbPredModes;
+            mfxU16   Reserved40;
+
+            //dword 5,6
+            mfxU8    RefIdx[2][4]; /* first index is 0 for L0 and 1 for L1 */
+        } InterMB;
+    };
+
+    //dword 7
+    mfxU32     Reserved70;
+
+    //dword 8-15
+    mfxI16Pair MV[8];
+}mfxFeiDecStreamOutMBCtrl;
+
+typedef struct {
+    mfxExtBuffer    Header;
+    mfxU16  reserved[25];
+    mfxU16  PicStruct;
+    mfxU32  NumMBAlloc;
+
+    mfxFeiDecStreamOutMBCtrl *MB;
+} mfxExtFeiDecStreamOut;
+
 
 //1 SPS, PPS, slice header
 typedef struct {
@@ -371,7 +449,7 @@ typedef struct {
         mfxI16    SliceBetaOffsetDiv2;
 
         struct {
-            mfxU16   PictureType; 
+            mfxU16   PictureType;
             mfxU16   Index;
         } RefL0[32], RefL1[32]; /* index in  mfxPAKInput::L0Surface array */
 
@@ -395,7 +473,8 @@ typedef enum {
     MFX_FEI_FUNCTION_PREENC     =1,
     MFX_FEI_FUNCTION_ENCPAK     =2,
     MFX_FEI_FUNCTION_ENC        =3,
-    MFX_FEI_FUNCTION_PAK        =4
+    MFX_FEI_FUNCTION_PAK        =4,
+    MFX_FEI_FUNCTION_DEC        =5
 } mfxFeiFunction;
 
 enum {
@@ -414,12 +493,13 @@ enum {
     MFX_EXTBUFF_FEI_SPS            = MFX_MAKEFOURCC('F','S','P','S'),
     MFX_EXTBUFF_FEI_PPS            = MFX_MAKEFOURCC('F','P','P','S'),
     MFX_EXTBUFF_FEI_SLICE          = MFX_MAKEFOURCC('F','S','L','C'),
-    MFX_EXTBUFF_FEI_CODING_OPTION  = MFX_MAKEFOURCC('F','C','D','O')
+    MFX_EXTBUFF_FEI_CODING_OPTION  = MFX_MAKEFOURCC('F','C','D','O'),
+    MFX_EXTBUFF_FEI_DEC_STREAM_OUT = MFX_MAKEFOURCC('F','D','S','O')
 };
 
 /* should be attached to mfxVideoParam during initialization to indicate FEI function */
 typedef struct {
-    mfxExtBuffer    Header; 
+    mfxExtBuffer    Header;
     mfxFeiFunction  Func;
     mfxU16  SingleFieldProcessing;
     mfxU16 reserved[57];

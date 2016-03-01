@@ -373,6 +373,9 @@ public:
                         case  MFX_EXTBUFF_FEI_CODING_OPTION:
                             str += dump(name, *((mfxExtFeiCodingOption*)_struct.ExtParam[i])) + "\n";
                             break;
+                        case MFX_EXTBUFF_FEI_DEC_STREAM_OUT:
+                            str += dump(name, *((mfxExtFeiDecStreamOut*)_struct.ExtParam[i])) + "\n";
+                            break;
                         default:
                             str += dump(name, *(_struct.ExtParam[i])) + "\n";
                             break;
@@ -502,6 +505,8 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtFeiSliceHeader);
     DEFINE_DUMP_FUNCTION(mfxExtFeiSliceHeader::mfxSlice);
     DEFINE_DUMP_FUNCTION(mfxExtFeiCodingOption);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiDecStreamOut);
+    DEFINE_DUMP_FUNCTION(mfxFeiDecStreamOutMBCtrl);
 
 
     //mfxvp8

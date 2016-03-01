@@ -405,6 +405,107 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPakMB
     return str;
 }
 
+std::string DumpContext::dump(const std::string structName, const mfxFeiDecStreamOutMBCtrl &_struct)
+{
+    std::string str;
+
+    //dword 0
+    DUMP_FIELD(InterMbMode);
+    DUMP_FIELD(MBSkipFlag);
+    DUMP_FIELD(Reserved00);
+    DUMP_FIELD(IntraMbMode);
+    DUMP_FIELD(Reserved01);
+    DUMP_FIELD(FieldMbPolarityFlag);
+    DUMP_FIELD(MbType);
+    DUMP_FIELD(IntraMbFlag);
+    DUMP_FIELD(FieldMbFlag);
+    DUMP_FIELD(Transform8x8Flag);
+    DUMP_FIELD(Reserved02);
+    DUMP_FIELD(DcBlockCodedCrFlag);
+    DUMP_FIELD(DcBlockCodedCbFlag);
+    DUMP_FIELD(DcBlockCodedYFlag);
+    DUMP_FIELD(Reserved03);
+    //dword 1
+    DUMP_FIELD(HorzOrigin);
+    DUMP_FIELD(VertOrigin);
+    //dword 2
+    DUMP_FIELD(CbpY);
+    DUMP_FIELD(CbpCb);
+    DUMP_FIELD(CbpCr);
+    DUMP_FIELD(Reserved20);
+    DUMP_FIELD(IsLastMB);
+    DUMP_FIELD(ConcealMB);
+    //dword 3
+    DUMP_FIELD(QpPrimeY);
+    DUMP_FIELD(Reserved30);
+    DUMP_FIELD(Reserved31);
+    DUMP_FIELD(NzCoeffCount);
+    DUMP_FIELD(Reserved32);
+    DUMP_FIELD(Direct8x8Pattern);
+
+    if (_struct.IntraMbMode)
+    {
+        //dword 4, 5
+        str += structName + ".IntraMB.LumaIntraPredModes[]=" + DUMP_RESERVED_ARRAY(_struct.IntraMB.LumaIntraPredModes) + "\n";
+        //dword 6
+        str += structName + ".IntraMB.ChromaIntraPredMode=" + ToString(_struct.IntraMB.ChromaIntraPredMode) + "\n";
+        str += structName + ".IntraMB.IntraPredAvailFlags=" + ToString(_struct.IntraMB.IntraPredAvailFlags) + "\n";
+        str += structName + ".IntraMB.Reserved60=" + ToString(_struct.IntraMB.Reserved60) + "\n";
+    }
+
+    if (_struct.InterMbMode)
+    {
+        //dword 4
+        str += structName + ".InterMB.SubMbShapes=" + ToString(_struct.InterMB.SubMbShapes) + "\n";
+        str += structName + ".InterMB.SubMbPredModes=" + ToString(_struct.InterMB.SubMbPredModes) + "\n";
+        str += structName + ".InterMB.Reserved40=" + ToString(_struct.InterMB.Reserved40) + "\n";
+        //dword 5, 6
+        for (unsigned int i = 0; i < GET_ARRAY_SIZE(_struct.InterMB.RefIdx); i++)
+        {
+            for (unsigned int j = 0; j < GET_ARRAY_SIZE(_struct.InterMB.RefIdx[0]); j++)
+            {
+                str += structName + ".InterMB.RefIdx[" + ToString(i) + "][" + ToString(j) + "]=" + ToString(_struct.InterMB.RefIdx[i][j]) + "\n";
+            }
+        }
+    }
+
+    //dword 7
+    DUMP_FIELD(Reserved70);
+
+    //dword 8-15
+    str += "{\n";
+    for (unsigned int j = 0; j < GET_ARRAY_SIZE(_struct.MV); j++)
+    {
+        str += "{ L0: {" + ToString(_struct.MV[j].x) + "," + ToString(_struct.MV[j].y)
+            + "}, L1: {" + ToString(_struct.MV[j].x) + "," + ToString(_struct.MV[j].y)
+            + "}}, ";
+    }
+    str += "}\n";
+
+    return str;
+}
+
+
+std::string DumpContext::dump(const std::string structName, const mfxExtFeiDecStreamOut &_struct)
+{
+    std::string str;
+
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    DUMP_FIELD_RESERVED(reserved);
+    DUMP_FIELD(PicStruct);
+    DUMP_FIELD(NumMBAlloc);
+    if (_struct.MB)
+    {
+        str += structName + ".MB[]={\n";
+        for (unsigned int i = 0; i < _struct.NumMBAlloc; i++)
+        {
+            str += dump("", _struct.MB[i]) + ",\n";
+        }
+        str += "}\n";
+    }
+    return str;
+}
+
 
 std::string DumpContext::dump(const std::string structName, const mfxExtFeiParam &_struct)
 {
@@ -412,7 +513,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiParam
 
     str += dump(structName + ".Header", _struct.Header) + "\n";
     DUMP_FIELD(Func);
-    DUMP_FIELD_RESERVED(reserved);    
+    DUMP_FIELD_RESERVED(reserved);
 
     return str;
 }
