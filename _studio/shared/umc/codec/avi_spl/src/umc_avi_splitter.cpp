@@ -683,6 +683,10 @@ Ipp64f GetSampleDuration(bool bIsVideoTrack, bool bIsVBRAudio, Ipp64f dFrameDura
     }
     else
     {
+        if(!nBlockAlign)
+        {
+            return 0;
+        }
         if (bIsVBRAudio)
             return dFrameDuration * ((nSampleSize - 1) / nBlockAlign + 1);
         else

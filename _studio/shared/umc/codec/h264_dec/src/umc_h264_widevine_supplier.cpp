@@ -304,6 +304,10 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
                 // Validate the incoming bitstream's image dimensions.
                 temp = m_Headers.m_SeqParams.GetHeader(sps.seq_parameter_set_id);
 
+                if(!temp)
+                {
+                    return UMC_ERR_NULL_PTR;
+                }
                 if (view)
                 {
                     view->SetDPBSize(&sps, m_level_idc);
@@ -600,6 +604,10 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
     }
 
     H264Slice * pSlice = m_ObjHeap.AllocateObject<H264Slice>();
+    if(!pSlice)
+    {
+        return 0;
+    }
     pSlice->SetHeap(&m_ObjHeap);
     pSlice->IncrementReference();
 
@@ -698,6 +706,10 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
     }
 
     pSlice->m_pSeqParamSetEx = m_Headers.m_SeqExParams.GetHeader(seq_parameter_set_id);
+    if(!pSlice->m_pSeqParamSetEx)
+    {
+        return 0;
+    }
     pSlice->m_pCurrentFrame = 0;
 
     //memory_leak_preventing.ClearNotification();

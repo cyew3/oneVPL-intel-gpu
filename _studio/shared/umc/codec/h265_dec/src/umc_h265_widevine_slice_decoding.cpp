@@ -260,8 +260,19 @@ bool H265WidevineSlice::DecodeSliceHeader(PocDecoding * pocDecoding)
 UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameList)
 {
     UMC::Status ps = UMC::UMC_OK;
-    H265DecoderRefPicList::ReferenceInformation* pRefPicList0 = m_pCurrentFrame->GetRefPicList(m_iNumber, 0)->m_refPicList;
-    H265DecoderRefPicList::ReferenceInformation* pRefPicList1 = m_pCurrentFrame->GetRefPicList(m_iNumber, 1)->m_refPicList;
+    H265DecoderRefPicList::ReferenceInformation* pRefPicList0 = NULL;
+    H265DecoderRefPicList::ReferenceInformation* pRefPicList1 = NULL;
+    const H265DecoderRefPicList* pPicList0 = m_pCurrentFrame->GetRefPicList(m_iNumber, 0);
+    const H265DecoderRefPicList* pPicList1 = m_pCurrentFrame->GetRefPicList(m_iNumber, 1);
+    if(pPicList0 && pPicList1)
+    {
+        pRefPicList0 = pPicList0->m_refPicList;
+        pRefPicList1 = pPicList1->m_refPicList;
+    }
+    else
+    {
+        return UMC::UMC_ERR_NULL_PTR;
+    }
 
     if (GetSliceHeader()->slice_type == I_SLICE)
     {
@@ -271,9 +282,9 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
         return UMC::UMC_OK;
     }
 
-    H265DecoderFrame *RefPicSetStCurr0[16];
-    H265DecoderFrame *RefPicSetStCurr1[16];
-    H265DecoderFrame *RefPicSetLtCurr[16];
+    H265DecoderFrame *RefPicSetStCurr0[16] = {NULL};
+    H265DecoderFrame *RefPicSetStCurr1[16] = {NULL};
+    H265DecoderFrame *RefPicSetLtCurr[16] = {NULL};
     Ipp32u NumPocStCurr0 = 0;
     Ipp32u NumPocStCurr1 = 0;
     Ipp32u NumPocLtCurr = 0;
@@ -416,8 +427,11 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
     {
         for (cIdx = 0; cIdx < MAX_NUM_REF_PICS; cIdx ++)
         {
-            pRefPicList1[cIdx].refFrame = refPicListTemp1[m_DecryptParams.RefFrames.ref_list_idx[1][cIdx]];
-            pRefPicList1[cIdx].isLongReference = m_DecryptParams.RefFrames.ref_list_idx[1][cIdx] >= (NumPocStCurr0 + NumPocStCurr1);
+            if(refPicListTemp1[m_DecryptParams.RefFrames.ref_list_idx[1][cIdx]] != NULL)
+            {
+                pRefPicList1[cIdx].refFrame = refPicListTemp1[m_DecryptParams.RefFrames.ref_list_idx[1][cIdx]];
+                pRefPicList1[cIdx].isLongReference = m_DecryptParams.RefFrames.ref_list_idx[1][cIdx] >= (NumPocStCurr0 + NumPocStCurr1);
+            }
         }
     }
 

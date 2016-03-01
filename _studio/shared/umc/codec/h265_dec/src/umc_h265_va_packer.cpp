@@ -1891,6 +1891,7 @@ PackerVA_Widevine::PackerVA_Widevine(VideoAccelerator * va)
 
 void PackerVA_Widevine::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier)
 {
+    if(!pCurrentFrame || !pSliceInfo || !supplier) { throw h265_exception(UMC_ERR_NULL_PTR); }
     H265Slice * pSlice = pSliceInfo->GetSlice(0);
     const H265SliceHeader* sliceHeader = pSlice->GetSliceHeader();
     const H265SeqParamSet* pSeqParamSet = pSlice->GetSeqParam();
@@ -2099,13 +2100,16 @@ void PackerVA_Widevine::PackPicParams(const H265DecoderFrame *pCurrentFrame, H26
 
 void PackerVA_Widevine::PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplier)
 {
+    if(!frame) { throw h265_exception(UMC_ERR_NULL_PTR); }
     H265DecoderFrameInfo * sliceInfo = frame->m_pSlicesInfo;
+    if(!sliceInfo) { throw h265_exception(UMC_ERR_NULL_PTR); }
     int sliceCount = sliceInfo->GetSliceCount();
 
     if (!sliceCount)
         return;
 
     H265Slice *pSlice = sliceInfo->GetSlice(0);
+    if(!pSlice) { throw h265_exception(UMC_ERR_NULL_PTR); }
     //const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
     H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
 
