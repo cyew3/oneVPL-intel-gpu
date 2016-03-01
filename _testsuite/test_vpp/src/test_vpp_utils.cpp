@@ -829,10 +829,10 @@ mfxStatus InitResources(sAppResources* pResources, mfxVideoParam* pParams, sInpu
     CHECK_POINTER(pResources, MFX_ERR_NULL_PTR);
     CHECK_POINTER(pParams,    MFX_ERR_NULL_PTR);
     sts = CreateFrameProcessor(pResources->pProcessor, pParams, pInParams);
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to CreateFrameProcessor\n")); WipeResources(pResources);});
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to CreateFrameProcessor\n")); WipeResources(pResources); WipeParams(pInParams);});
 
     sts = InitMemoryAllocator(pResources->pProcessor, pResources->pAllocator, pParams, pInParams);
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to InitMemoryAllocator\n")); WipeResources(pResources);});
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to InitMemoryAllocator\n")); WipeResources(pResources); WipeParams(pInParams);});
 
     sts = InitFrameProcessor(pResources->pProcessor, pParams);
 
@@ -840,7 +840,7 @@ mfxStatus InitResources(sAppResources* pResources, mfxVideoParam* pParams, sInpu
         return sts;
     else
     {
-        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to InitFrameProcessor\n")); WipeResources(pResources);});
+        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to InitFrameProcessor\n")); WipeResources(pResources); WipeParams(pInParams);});
     }
 
     return sts;
@@ -929,14 +929,33 @@ void WipeResources(sAppResources* pResources)
         pResources->pSrcFileReader->Close();
     }
 
-    if (pResources->pDstFileWriter)
+    if (pResources->pDstFileWriters)
     {
-        pResources->pDstFileWriter->Close();
+        for (mfxU32 i = 0; i < pResources->dstFileWritersN; i++)
+        {
+            pResources->pDstFileWriters[i].Close();
+        }
+        delete[] pResources->pDstFileWriters;
     }
 
     WipeConfigParam( pResources );
 
 } // void WipeResources(sAppResources* pResources)
+
+/* ******************************************************************* */
+
+void WipeParams(sInputParams* pParams)
+{
+    for (mfxU32 i = 0; i < pParams->strDstFiles.size(); i++)
+    {
+        if (pParams->strDstFiles[i])
+        {
+            delete[] pParams->strDstFiles[i];
+        }
+    }
+    pParams->strDstFiles.clear();
+
+} // void WipeParams(sInputParams* pParams)
 
 /* ******************************************************************* */
 

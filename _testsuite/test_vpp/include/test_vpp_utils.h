@@ -194,7 +194,7 @@ struct sInputParams
     /* input\output streams   */
     /* ********************** */
     vm_char  strSrcFile[MAX_FILELEN];
-    vm_char  strDstFile[MAX_FILELEN];
+    std::vector<vm_char*> strDstFiles;
 
     vm_char  strPerfFile[MAX_FILELEN];
     bool  isOutYV12;
@@ -210,16 +210,16 @@ struct sInputParams
 
     sInputParams()
     {
-        bInitEx     = false;
-        bPerf       = false;
-        need_plugin = false;
-        need_crc    = false;
-        use_extapi  = false;
+        bInitEx             = false;
+        bPerf               = false;
+        need_plugin         = false;
+        need_crc            = false;
+        use_extapi          = false;
         ZERO_MEMORY(strPlgGuid);
         ZERO_MEMORY(strSrcFile);
-        ZERO_MEMORY(strDstFile);
         ZERO_MEMORY(strPerfFile);
         ZERO_MEMORY(strCRCFile);
+        strDstFiles.clear();
     }
 };
 
@@ -393,7 +393,8 @@ struct sAppResources
 {
     CRawVideoReader*    pSrcFileReader;
     //CRawVideoWriter*    pDstFileWriter;
-    GeneralWriter*      pDstFileWriter;
+    GeneralWriter*      pDstFileWriters;
+    mfxU32              dstFileWritersN;
 
     sFrameProcessor*    pProcessor;
     mfxVideoParam*      pVppParams;
@@ -501,6 +502,7 @@ mfxStatus InitResources(
     sInputParams* pInParams);
 
 void WipeResources(sAppResources* pResources);
+void WipeParams(sInputParams* pParams);
 
 mfxStatus UpdateSurfacePool(mfxFrameInfo SurfacesInfo, mfxU16 nPoolSize, mfxFrameSurface1* pSurface);
 mfxStatus GetFreeSurface(

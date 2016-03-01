@@ -339,10 +339,22 @@ mfxStatus vppParseResetPar(vm_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, sI
     {
         CHECK_POINTER(strInput[i], MFX_ERR_NULL_PTR);
         {
+            if (0 == vm_string_strcmp(strInput[i], VM_STRING("-o")))
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+
+                vm_char* dstFile = new vm_char[MAX_FILELEN];
+                memset(dstFile, 0, sizeof(vm_char) * MAX_FILELEN);
+                vm_string_strcpy(dstFile, strInput[i]);
+
+                pParams->strDstFiles.push_back(dstFile);
+                pParams->isOutput = true;
+            }
             //-----------------------------------------------------------------------------------
             //                   Video Enhancement Algorithms
             //-----------------------------------------------------------------------------------
-            if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-ssinr")) )
+            else if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-ssinr")) )
             {
                 VAL_CHECK(1 + i == nArgNum);
 
@@ -1180,7 +1192,12 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_strcpy(pParams->strDstFile, strInput[i]);
+
+                vm_char* dstFile = new vm_char[MAX_FILELEN];
+                memset(dstFile, 0, sizeof(vm_char) * MAX_FILELEN);
+                vm_string_strcpy(dstFile, strInput[i]);
+
+                pParams->strDstFiles.push_back(dstFile);
                 pParams->isOutput = true;
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-pf")))
@@ -1377,9 +1394,9 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
         return MFX_ERR_UNSUPPORTED;
     };
 
-    if (0 == vm_string_strlen(pParams->strDstFile)) 
+    if (1 != pParams->strDstFiles.size() && (pParams->resetFrmNums.size() + 1) != pParams->strDstFiles.size())
     {
-        vppPrintHelp(strInput[0], VM_STRING("Destination file name not found"));
+        vppPrintHelp(strInput[0], VM_STRING("Destination file name should be declared once or for each parameter set (reset case)"));
         return MFX_ERR_UNSUPPORTED;
     };
 

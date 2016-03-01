@@ -104,25 +104,25 @@ void vppDefaultInitParams( sInputParams* pParams, sFiltersParam* pDefaultFilters
     pParams->numFrames    = 0;
 
     // Optional video processing features
-    pParams->mirroringParam.clear(); pParams->mirroringParam.push_back( *pDefaultFiltersParam->pMirroringParam         );
-    pParams->videoSignalInfoParam.clear(); pParams->videoSignalInfoParam.push_back( *pDefaultFiltersParam->pVideoSignalInfo);
-    pParams->deinterlaceParam.clear(); pParams->deinterlaceParam.push_back( *pDefaultFiltersParam->pDIParam            );
-    pParams->denoiseParam.clear();     pParams->denoiseParam.push_back(     *pDefaultFiltersParam->pDenoiseParam       );
-    pParams->detailParam.clear();      pParams->detailParam.push_back(      *pDefaultFiltersParam->pDetailParam        );
-    pParams->procampParam.clear();     pParams->procampParam.push_back(     *pDefaultFiltersParam->pProcAmpParam       );
+    pParams->mirroringParam.clear();        pParams->mirroringParam.push_back(      *pDefaultFiltersParam->pMirroringParam      );
+    pParams->videoSignalInfoParam.clear();  pParams->videoSignalInfoParam.push_back(*pDefaultFiltersParam->pVideoSignalInfo     );
+    pParams->deinterlaceParam.clear();      pParams->deinterlaceParam.push_back(    *pDefaultFiltersParam->pDIParam             );
+    pParams->denoiseParam.clear();          pParams->denoiseParam.push_back(        *pDefaultFiltersParam->pDenoiseParam        );
+    pParams->detailParam.clear();           pParams->detailParam.push_back(         *pDefaultFiltersParam->pDetailParam         );
+    pParams->procampParam.clear();          pParams->procampParam.push_back(        *pDefaultFiltersParam->pProcAmpParam        );
       // analytics
-    pParams->vaParam.clear();          pParams->vaParam.push_back(          *pDefaultFiltersParam->pVAParam            );
-    pParams->varianceParam.clear();    pParams->varianceParam.push_back(    *pDefaultFiltersParam->pVarianceParam      );
-    pParams->idetectParam.clear();     pParams->idetectParam.push_back(     *pDefaultFiltersParam->pIDetectParam       );
-    pParams->frcParam.clear();         pParams->frcParam.push_back(         *pDefaultFiltersParam->pFRCParam           );
+    pParams->vaParam.clear();               pParams->vaParam.push_back(             *pDefaultFiltersParam->pVAParam             );
+    pParams->varianceParam.clear();         pParams->varianceParam.push_back(       *pDefaultFiltersParam->pVarianceParam       );
+    pParams->idetectParam.clear();          pParams->idetectParam.push_back(        *pDefaultFiltersParam->pIDetectParam        );
+    pParams->frcParam.clear();              pParams->frcParam.push_back(            *pDefaultFiltersParam->pFRCParam            );
     // MSDK 3.0
-    pParams->multiViewParam.clear();   pParams->multiViewParam.push_back(   *pDefaultFiltersParam->pMultiViewParam     );
+    pParams->multiViewParam.clear();        pParams->multiViewParam.push_back(      *pDefaultFiltersParam->pMultiViewParam      );
     // MSDK API 1.5
-    pParams->gamutParam.clear();       pParams->gamutParam.push_back(       *pDefaultFiltersParam->pGamutParam         );
-    pParams->tccParam.clear();         pParams->tccParam.push_back(         *pDefaultFiltersParam->pClrSaturationParam );
-    pParams->aceParam.clear();         pParams->aceParam.push_back(         *pDefaultFiltersParam->pContrastParam      );
-    pParams->steParam.clear();         pParams->steParam.push_back(         *pDefaultFiltersParam->pSkinParam          );
-    pParams->istabParam.clear();       pParams->istabParam.push_back(       *pDefaultFiltersParam->pImgStabParam       );
+    pParams->gamutParam.clear();            pParams->gamutParam.push_back(          *pDefaultFiltersParam->pGamutParam          );
+    pParams->tccParam.clear();              pParams->tccParam.push_back(            *pDefaultFiltersParam->pClrSaturationParam  );
+    pParams->aceParam.clear();              pParams->aceParam.push_back(            *pDefaultFiltersParam->pContrastParam       );
+    pParams->steParam.clear();              pParams->steParam.push_back(            *pDefaultFiltersParam->pSkinParam           );
+    pParams->istabParam.clear();            pParams->istabParam.push_back(          *pDefaultFiltersParam->pImgStabParam        );
 
     //SVC
     pParams->svcParam.clear();         pParams->svcParam.push_back(         *pDefaultFiltersParam->pSVCParam           );
@@ -220,7 +220,8 @@ mfxStatus OutputProcessFrame(
 
         DecreaseReference(&pProcessedSurface->Data);
 
-        sts = Resources.pDstFileWriter->PutNextFrame(
+        GeneralWriter* writer = (1 == Resources.dstFileWritersN) ? &Resources.pDstFileWriters[0] : &Resources.pDstFileWriters[paramID];
+        sts = writer->PutNextFrame(
             Resources.pAllocator, 
             //(bSvcMode) ? &(pProcessedSurface->Info) : &(frameInfo[VPP_OUT]),
             (bSvcMode) ? &(Resources.realSvcOutFrameInfo[pProcessedSurface->Info.FrameId.DependencyId]) : &(frameInfo[VPP_OUT]),
@@ -299,7 +300,6 @@ int main(int argc, vm_char *argv[])
     mfxU32              nFrames = 0;
 
     CRawVideoReader     yuvReader;
-    GeneralWriter       yuvWriter;
 
     Timer               statTimer;
 
@@ -385,7 +385,6 @@ int main(int argc, vm_char *argv[])
     ZERO_MEMORY(realFrameInfo[VPP_OUT] );
 
     Resources.pSrcFileReader    = &yuvReader;
-    Resources.pDstFileWriter    = &yuvWriter;
     Resources.pProcessor        = &frameProcessor;
     Resources.pAllocator        = &allocator;
     Resources.pVppParams        = &mfxParamsVideo;
@@ -433,19 +432,25 @@ int main(int argc, vm_char *argv[])
         ptsMaker.reset(new PTSMaker);
     }
 
-    //prepare file reader (YUV/RGB file)  
+    //prepare file reader (YUV/RGB file)
     sts = yuvReader.Init(Params.strSrcFile, ptsMaker.get());
-    CHECK_RESULT(sts, MFX_ERR_NONE, 1);     
+    CHECK_RESULT(sts, MFX_ERR_NONE, 1);
 
-    //prepare file writer (YUV file)  
-    vm_char* istream = Params.isOutput ? Params.strDstFile : NULL;
-    sts = yuvWriter.Init(
-        istream, 
-        ptsMaker.get(),
-        (VPP_FILTER_DISABLED != Params.svcParam[0].mode) ? Params.svcParam[0].descr : NULL,
-        Params.isOutYV12, 
-        Params.need_crc);
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to init YUV writer\n")); WipeResources(&Resources);});
+    //prepare file writers (YUV file)
+    Resources.dstFileWritersN = Params.strDstFiles.size();
+    Resources.pDstFileWriters = new GeneralWriter[Resources.dstFileWritersN];
+    vm_char* istream;
+    for (mfxU32 i = 0; i < Resources.dstFileWritersN; i++)
+    {
+        istream = Params.isOutput ? Params.strDstFiles[i] : NULL;
+        sts = Resources.pDstFileWriters[i].Init(
+            istream, 
+            ptsMaker.get(),
+            (VPP_FILTER_DISABLED != Params.svcParam[0].mode) ? Params.svcParam[0].descr : NULL,
+            Params.isOutYV12,
+            Params.need_crc);
+        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to init YUV writer\n")); WipeResources(&Resources); WipeParams(&Params);});
+    }
 
 #ifdef LIBVA_SUPPORT
     if(!(Params.ImpLib & MFX_IMPL_SOFTWARE))
@@ -454,13 +459,13 @@ int main(int argc, vm_char *argv[])
 
     //prepare mfxParams
     sts = InitParamsVPP(&mfxParamsVideo, &Params, 0);
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to prepare mfxParams\n")); WipeResources(&Resources);});
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to prepare mfxParams\n")); WipeResources(&Resources); WipeParams(&Params);});
 
     // prepare pts Checker
     if (ptsMaker.get())
     {
         sts = ptsMaker.get()->Init(&mfxParamsVideo, Params.asyncNum - 1, Params.ptsAdvanced);
-        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to prepare pts Checker\n")); WipeResources(&Resources);});
+        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to prepare pts Checker\n")); WipeResources(&Resources); WipeParams(&Params);});
     }
 
     // prepare ROI generator
@@ -479,7 +484,7 @@ int main(int argc, vm_char *argv[])
     }
 
     sts = ConfigVideoEnhancementFilters(&Params, &Resources, 0);
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to ConfigVideoEnhancementFilters\n")); WipeResources(&Resources);});
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to ConfigVideoEnhancementFilters\n")); WipeResources(&Resources); WipeParams(&Params);});
 
     Resources.pAllocator->bUsedAsExternalAllocator = !Params.bDefAlloc;
 
@@ -519,7 +524,7 @@ int main(int argc, vm_char *argv[])
         IGNORE_MFX_STS(sts, MFX_WRN_FILTER_SKIPPED);
 
     }
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to InitResources\n")); WipeResources(&Resources);});
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to InitResources\n")); WipeResources(&Resources); WipeParams(&Params);});
 
     if (MFX_WRN_PARTIAL_ACCELERATION == sts)
     {
@@ -533,7 +538,7 @@ int main(int argc, vm_char *argv[])
     if (Params.bPerf)
     {
         sts = yuvReader.PreAllocateFrameChunk(&mfxParamsVideo, &Params, allocator.pMfxAllocator);
-        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to yuvReader.PreAllocateFrameChunk\n")); WipeResources(&Resources);});
+        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to yuvReader.PreAllocateFrameChunk\n")); WipeResources(&Resources); WipeParams(&Params);});
     }
     else if (Params.numFrames)
     {
@@ -613,13 +618,13 @@ int main(int argc, vm_char *argv[])
 
             //prepare mfxParams
             sts = InitParamsVPP(&mfxParamsVideo, &Params, paramID);
-            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to InitParamsVPP for VPP_Reset\n")); WipeResources(&Resources);});
+            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to InitParamsVPP for VPP_Reset\n")); WipeResources(&Resources); WipeParams(&Params);});
 
             sts = ConfigVideoEnhancementFilters(&Params, &Resources, paramID);
-            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to ConfigVideoEnhancementFilters for VPP_Reset\n")); WipeResources(&Resources);});
+            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to ConfigVideoEnhancementFilters for VPP_Reset\n")); WipeResources(&Resources); WipeParams(&Params);});
 
             sts = Resources.pProcessor->pmfxVPP->Reset(Resources.pVppParams);
-            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to Reset VPP component\n")); WipeResources(&Resources);});
+            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to Reset VPP component\n")); WipeResources(&Resources); WipeParams(&Params);});
 
             vppSafeRealInfo( &(Params.frameInfoIn[paramID]),  &realFrameInfo[VPP_IN]);
             vppSafeRealInfo( &(Params.frameInfoOut[paramID]), &realFrameInfo[VPP_OUT]);
@@ -836,13 +841,13 @@ int main(int argc, vm_char *argv[])
         if (MFX_ERR_MORE_DATA == sts)
         {
             sts = OutputProcessFrame(Resources, realFrameInfo, nFrames, paramID);
-            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to process remain sync points\n")); WipeResources(&Resources);});
+            CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Failed to process remain sync points\n")); WipeResources(&Resources); WipeParams(&Params);});
         }
 
         // means that file has ended, need to go to buffering loop
         IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
         // exit in case of other errors
-        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Exit in case of other errors\n")); WipeResources(&Resources);});
+        CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Exit in case of other errors\n")); WipeResources(&Resources); WipeParams(&Params);});
 
 
         // loop to get buffered frames from VPP
@@ -918,7 +923,8 @@ int main(int argc, vm_char *argv[])
                 vm_string_printf(VM_STRING("SyncOperation wait interval exceeded\n"));
             BREAK_ON_ERROR(sts);
 
-            sts = Resources.pDstFileWriter->PutNextFrame(
+            GeneralWriter* writer = (1 == Resources.dstFileWritersN) ? &Resources.pDstFileWriters[0] : &Resources.pDstFileWriters[paramID];
+            sts = writer->PutNextFrame(
                 Resources.pAllocator, 
                 (bSvcMode) ?  &(Resources.realSvcOutFrameInfo[pSurf[VPP_OUT]->Info.FrameId.DependencyId]) : &(realFrameInfo[VPP_OUT]), 
                 pSurf[VPP_OUT]);
@@ -969,7 +975,7 @@ int main(int argc, vm_char *argv[])
     IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
 
     // report any errors that occurred 
-    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Unexpected error during processing\n")); WipeResources(&Resources);});
+    CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { vm_string_printf(VM_STRING("Unexpected error during processing\n")); WipeResources(&Resources); WipeParams(&Params);});
 
     vm_string_printf(VM_STRING("\nVPP finished\n"));
     vm_string_printf(VM_STRING("\n"));
@@ -981,7 +987,7 @@ int main(int argc, vm_char *argv[])
     PutPerformanceToFile(Params, nFrames / statTimer.OverallTiming());
 
     if ( Params.need_crc ) {
-        mfxU32 crc = yuvWriter.GetCRC(pSurf[VPP_OUT]);
+        mfxU32 crc = Resources.pDstFileWriters[0].GetCRC(pSurf[VPP_OUT]);
         vm_file *fcrc;
         fcrc = vm_file_fopen(Params.strCRCFile, VM_STRING("wb"));
         if (!fcrc)
@@ -993,6 +999,7 @@ int main(int argc, vm_char *argv[])
     }
 
     WipeResources(&Resources);
+    WipeParams(&Params);
 
     SAFE_DELETE_ARRAY(extVPPAuxData);
 
