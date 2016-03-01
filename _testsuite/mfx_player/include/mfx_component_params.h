@@ -55,6 +55,7 @@ public:
         , m_zoomx()
         , m_zoomy()
         , m_rotate(0)
+        , m_mirroring(0)
         , m_pAllocator()
         , m_nStartSearch()
         , m_nSelectAlgo(USE_FIRST)
@@ -145,6 +146,7 @@ public:
     mfxF64                         m_zoomx;
     mfxF64                         m_zoomy;
     mfxU16                         m_rotate;
+    mfxU16                         m_mirroring;
     MFXExtBufferVector             m_extParams;
 
 
