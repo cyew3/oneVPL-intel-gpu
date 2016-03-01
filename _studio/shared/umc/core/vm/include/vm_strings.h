@@ -72,6 +72,7 @@ typedef char vm_char;
 #define vm_string_strspn    strspn
 
 #define vm_string_strlen    strlen
+#define vm_string_strnlen_s strnlen_s
 #define vm_string_strcmp    strcmp
 #define vm_string_strncmp   strncmp
 #define vm_string_stricmp   strcmp

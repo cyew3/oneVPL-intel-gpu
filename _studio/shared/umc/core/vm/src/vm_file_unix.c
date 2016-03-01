@@ -109,7 +109,7 @@ Ipp32s vm_dir_read(vm_dir *dd, vm_char *filename,int nchars) {
   if (dd != NULL) {
    struct dirent *ent=readdir(dd);
    if (ent) {
-       vm_string_strncpy_s(filename, nchars, ent->d_name, vm_string_strlen(ent->d_name));
+       vm_string_strncpy_s(filename, nchars, ent->d_name, vm_string_strnlen_s(ent->d_name, NAME_MAX));
      rtv = 1;
      }
    }

@@ -54,7 +54,7 @@ void vm_sys_info_get_date(vm_char *m_date, DateFormat df)
     if (NULL == m_date)
         return;
 
-    len = vm_string_strlen(m_date);
+    len = vm_string_strnlen_s(m_date, 1024);
 
     time(&ltime);
     if (NULL == (today = localtime(&ltime)))
@@ -151,11 +151,11 @@ void vm_sys_info_get_cpu_name(vm_char *cpu_name)
     {
         if (!vm_string_strncmp(buf, VM_STRING("vendor_id"), 9))
         {
-            vm_string_strncpy_s(tmp_buf, _MAX_LEN, (vm_char*)(buf + 12), vm_string_strlen(buf) - 13);
+            vm_string_strncpy_s(tmp_buf, _MAX_LEN, (vm_char*)(buf + 12), vm_string_strnlen_s(buf, _MAX_LEN) - 13);
         }
         else if (!vm_string_strncmp(buf, VM_STRING("model name"), 10))
         {
-            if ((len = vm_string_strlen(buf) - 14) > 8)
+            if ((len = vm_string_strnlen_s(buf, _MAX_LEN) - 14) > 8)
                 vm_string_strncpy_s(cpu_name, _MAX_LEN, (vm_char *)(buf + 13), len);
             else
                 vm_string_snprintf(cpu_name, PATH_MAX, VM_STRING("%s"), tmp_buf);
@@ -212,7 +212,7 @@ void vm_sys_info_get_program_name(vm_char *program_name)
         // Add error handling
     }
     i = vm_string_strrchr(path, (vm_char)('/')) - path + 1;
-    vm_string_strncpy_s(program_name, PATH_MAX, path + i, vm_string_strlen(path) - i);
+    vm_string_strncpy_s(program_name, PATH_MAX, path + i, vm_string_strnlen_s(path, PATH_MAX) - i);
 #endif /* __APPLE__ */
 
 } /* void vm_sys_info_get_program_name(vm_char *program_name) */
