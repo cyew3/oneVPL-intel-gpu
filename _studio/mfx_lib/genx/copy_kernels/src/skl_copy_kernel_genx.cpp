@@ -2137,10 +2137,10 @@ SurfaceMirror_2DTo2D_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int w
 	for(int i = 0; i < SUB_BLOCK_HEIGHT; i++)
 		outData3.row(i) = outData4.row(i).format<uchar>().iselect(idx).format<uint>();
 
-	write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, width -  horizOffset*4,                              vertOffset, outData5);
-	write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4),   vertOffset, outData1);
-	write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*2), vertOffset, outData2);
-	write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*3), vertOffset, outData3);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, width -  horizOffset*4 - BLOCK_PIXEL_WIDTH,                              vertOffset, outData5);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4) - BLOCK_PIXEL_WIDTH,   vertOffset, outData1);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*2) - BLOCK_PIXEL_WIDTH, vertOffset, outData2);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*3) - BLOCK_PIXEL_WIDTH, vertOffset, outData3);
 
 	//copy UV plane
 	vector_ref<ushort, SUB_BLOCK_PIXEL_WIDTH*2> idxUV = idx.select<16,1>(16);
@@ -2171,10 +2171,10 @@ SurfaceMirror_2DTo2D_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int w
 	for(int i = 0; i < SUB_BLOCK_HEIGHT_NV12; i++)
 		outData_NV12_3.row(i) = outData_NV12_4.row(i).format<ushort>().iselect(idxUV).format<uint>();
 
-	write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, width -  horizOffset*4,                              vertOffset, outData_NV12_5);
-	write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4),   vertOffset, outData_NV12_1);
-	write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*2), vertOffset, outData_NV12_2);
-	write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*3), vertOffset, outData_NV12_3);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, width -  horizOffset*4 - BLOCK_PIXEL_WIDTH,                              vertOffset/2, outData_NV12_5);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4) - BLOCK_PIXEL_WIDTH,   vertOffset/2, outData_NV12_1);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*2) - BLOCK_PIXEL_WIDTH, vertOffset/2, outData_NV12_2);
+	write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, width - (horizOffset*4 + SUB_BLOCK_PIXEL_WIDTH*4*3) - BLOCK_PIXEL_WIDTH, vertOffset/2, outData_NV12_3);
 }
 //*/
 
