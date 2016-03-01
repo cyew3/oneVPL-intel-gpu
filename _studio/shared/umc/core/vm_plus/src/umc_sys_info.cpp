@@ -59,7 +59,7 @@ SysInfo::SysInfo(vm_char *pProcessName)
 #if defined(LINUX32)
     { // obtaining user name on Linux system
         vm_char* username = getenv("LOGNAME");
-        if (username && (vm_string_strlen(username) < _MAX_LEN))
+        if (username && (vm_string_strnlen_s(username, _MAX_LEN) < _MAX_LEN))
         {
             vm_string_strcpy_s(m_sSystemInfo.user_name, _MAX_LEN, username);
         }
