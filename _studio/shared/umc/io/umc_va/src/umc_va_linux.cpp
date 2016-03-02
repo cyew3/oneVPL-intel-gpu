@@ -1112,6 +1112,9 @@ Status LinuxVideoAccelerator::SyncTask(Ipp32s FrameBufIndex, void * error)
             *(Status*)error = GetDecodingError();
             return UMC_OK;
         }
+        if (VA_STATUS_ERROR_HW_BUSY == va_sts)
+            return UMC_ERR_GPU_HANG;
+
         va_sts = VA_STATUS_SUCCESS;
         umcRes = va_to_umc_res(va_sts);
     }
