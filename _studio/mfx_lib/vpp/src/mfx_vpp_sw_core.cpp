@@ -897,12 +897,9 @@ mfxStatus VideoVPPSW::GetVideoParam(mfxVideoParam *par)
                     case MFX_EXTBUFF_VPP_ITC:
                     case MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
                     case MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10:
-
-                    case MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
                     {
                         continue;
                     }
-
                     case MFX_EXTBUFF_VPP_DENOISE:
                     case MFX_EXTBUFF_VPP_SCENE_ANALYSIS:
                     case MFX_EXTBUFF_VPP_PROCAMP:
@@ -914,6 +911,8 @@ mfxStatus VideoVPPSW::GetVideoParam(mfxVideoParam *par)
                     case MFX_EXTBUFF_VPP_DEINTERLACING:
                     case MFX_EXTBUFF_VPP_DI:
                     case MFX_EXTBUFF_VPP_DI_30i60p:
+                    case MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
+                    case MFX_EXTBUFF_VPP_MIRRORING:
                     {
                         if(numUsedFilters + 1 > pVPPHint->NumAlg)
                             return MFX_ERR_UNDEFINED_BEHAVIOR;
