@@ -250,6 +250,8 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
 
     mfxStatus mfxSts = MFX_ERR_NONE;
     VAStatus vaSts;
+    VAPictureFEI past_ref;
+    VAPictureFEI future_ref;
     VASurfaceID *inputSurface = (VASurfaceID*) surface;
 
     std::vector<VABufferID> configBuffers;
@@ -301,6 +303,20 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         m_statParams.disable_mv_output = (mvsOut == NULL) || feiCtrl->DisableMVOutput;
         m_statParams.mb_qp = (feiQP == NULL) && feiCtrl->MBQp;
         m_statParams.mv_predictor_ctrl = (feiMVPred != NULL) ? feiCtrl->MVPredictor : 0;
+        m_statParams.frame_qp = feiCtrl->Qp;
+        m_statParams.ft_enable = feiCtrl->FTEnable;
+        m_statParams.inter_sad = feiCtrl->InterSAD;
+        m_statParams.intra_sad = feiCtrl->IntraSAD;
+        m_statParams.len_sp = feiCtrl->LenSP;
+        m_statParams.search_path = feiCtrl->SearchPath;
+        //m_statParams.outputs = &outBuffers[0]; //bufIDs for outputs
+        m_statParams.sub_pel_mode = feiCtrl->SubPelMode;
+        m_statParams.sub_mb_part_mask = feiCtrl->SubMBPartMask;
+        m_statParams.ref_height = feiCtrl->RefHeight;
+        m_statParams.ref_width = feiCtrl->RefWidth;
+        m_statParams.search_window = feiCtrl->SearchWindow;
+        m_statParams.enable_8x8statistics = feiCtrl->Enable8x8Stat;
+        m_statParams.intra_part_mask = feiCtrl->IntraPartMask;
     }
     else
     {
@@ -309,6 +325,20 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         m_statParams.disable_mv_output = 1;
         m_statParams.mb_qp = 0;
         m_statParams.mv_predictor_ctrl = 0;
+        m_statParams.frame_qp = 26;
+        m_statParams.ft_enable = 0;
+        m_statParams.inter_sad = 2;
+        m_statParams.intra_sad = 2;
+        m_statParams.len_sp = 57;
+        m_statParams.search_path = 2;
+        //m_statParams.outputs = &outBuffers[0]; //bufIDs for outputs
+        m_statParams.sub_pel_mode = 3;
+        m_statParams.sub_mb_part_mask = 0;
+        m_statParams.ref_height = 32;
+        m_statParams.ref_width = 32;
+        m_statParams.search_window = 5;
+        m_statParams.enable_8x8statistics = 0;
+        m_statParams.intra_part_mask = 0;
     } // if (feiCtrl != NULL)
 
 
@@ -380,8 +410,6 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         configBuffers[buffersCount++] = m_statOutId[0];
     }
 
-    m_statParams.frame_qp = feiCtrl->Qp;
-    m_statParams.ft_enable = feiCtrl->FTEnable;
     /* PreEnc support only 1 forward and 1 backward reference */
     /*
      * (AL): I have decided to save previous implementation of passing reference
@@ -432,7 +460,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     {
         m_statParams.num_past_references = 1;
         mfxHDL handle;
-        VAPictureFEI* l0surfs = new VAPictureFEI;
+        VAPictureFEI* l0surfs = &past_ref;
         mfxSts = m_core->GetExternalFrameHDL(feiCtrl->RefFrame[0]->Data.MemId, &handle);
         if (MFX_ERR_NONE != mfxSts)
             return mfxSts;
@@ -487,7 +515,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     {
         m_statParams.num_future_references = 1;
         mfxHDL handle;
-        VAPictureFEI* l1surfs = new VAPictureFEI;
+        VAPictureFEI* l1surfs = &future_ref;
         mfxSts = m_core->GetExternalFrameHDL(feiCtrl->RefFrame[1]->Data.MemId, &handle);
         if (MFX_ERR_NONE != mfxSts)
             return mfxSts;
@@ -520,18 +548,9 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         return MFX_ERR_INVALID_VIDEO_PARAM;
     if (!IsOff(feiCtrl->DownsampleInput))
         m_statParams.input.flags |= VA_PICTURE_FEI_CONTENT_UPDATED;
-    m_statParams.inter_sad = feiCtrl->InterSAD;
-    m_statParams.intra_sad = feiCtrl->IntraSAD;
-    m_statParams.len_sp = feiCtrl->LenSP;
-    m_statParams.search_path = feiCtrl->SearchPath;
+
+    /* Link output va buffers */
     m_statParams.outputs = &outBuffers[0]; //bufIDs for outputs
-    m_statParams.sub_pel_mode = feiCtrl->SubPelMode;
-    m_statParams.sub_mb_part_mask = feiCtrl->SubMBPartMask;
-    m_statParams.ref_height = feiCtrl->RefHeight;
-    m_statParams.ref_width = feiCtrl->RefWidth;
-    m_statParams.search_window = feiCtrl->SearchWindow;
-    m_statParams.enable_8x8statistics = feiCtrl->Enable8x8Stat;
-    m_statParams.intra_part_mask = feiCtrl->IntraPartMask;
 
 #if 0
     mdprintf(stderr, "\n**** stat params:\n");
@@ -636,16 +655,6 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         currentFeedback.mv = m_statMVId[feiFieldId];
         currentFeedback.mbstat = m_statOutId[0];
         m_statFeedbackCache.push_back(currentFeedback);
-    }
-
-    //should we release here or not
-    if (m_statParams.past_references)
-    {
-        delete m_statParams.past_references;
-    }
-    if (m_statParams.future_references)
-    {
-        delete m_statParams.future_references;
     }
 
     MFX_DESTROY_VABUFFER(mvPredid, m_vaDisplay);

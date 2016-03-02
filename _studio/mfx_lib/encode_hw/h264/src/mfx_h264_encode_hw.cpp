@@ -3101,7 +3101,9 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
      * and (2): first field is coded already
      * scheduler can start execution immediately as task stored and ready
      * */
-    if ((MFX_CODINGOPTION_ON == extFeiParams->SingleFieldProcessing ) && (1 == m_fieldCounter))
+    if ((NULL != extFeiParams) &&
+        (MFX_CODINGOPTION_ON == extFeiParams->SingleFieldProcessing ) &&
+        (1 == m_fieldCounter))
     {
         entryPoints[0].pState               = this;
         entryPoints[0].pParam               = bs;
