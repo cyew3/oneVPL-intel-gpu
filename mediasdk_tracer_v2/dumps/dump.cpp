@@ -29,6 +29,11 @@ File Name: dump.cpp
 \* ****************************************************************************** */
 
 #include "dump.h"
+#if defined(_WIN32) || defined(_WIN64)
+    #include "windows.h"
+#else
+    #include "unistd.h"
+#endif
 
 std::string pVoidToHexString(void* x)
 {
@@ -244,15 +249,15 @@ const char* DumpContext::get_bufferid_str(mfxU32 bufferid)
 }
 
 std::string GetmfxIMPL(mfxIMPL impl) {
-    
+
     std::basic_stringstream<char> stream;
     std::string name = "UNKNOWN";
-        
+
     for (unsigned int i = 0; i < (sizeof(tbl_impl) / sizeof(tbl_impl[0])); i++)
         if (tbl_impl[i].id == (impl & (MFX_IMPL_VIA_ANY - 1)))
             name = tbl_impl[i].str;
     stream << name;
-    
+
     int via_flag = impl & ~(MFX_IMPL_VIA_ANY - 1);
 
     if (0 != via_flag)
@@ -268,7 +273,7 @@ std::string GetmfxIMPL(mfxIMPL impl) {
 }
 
 std::string GetFourCC(mfxU32 fourcc) {
-    
+
     std::basic_stringstream<char> stream;
     std::string name = "UNKNOWN";
     int j = 0;
@@ -291,7 +296,7 @@ std::string GetFourCC(mfxU32 fourcc) {
 }
 
 std::string GetStatusString(mfxStatus sts) {
-    
+
     std::basic_stringstream<char> stream;
     std::string name = "UNKNOWN_STATUS";
     for (unsigned int i = 0; i < (sizeof(tbl_sts) / sizeof(tbl_sts[0])); i++)
@@ -308,7 +313,7 @@ std::string GetStatusString(mfxStatus sts) {
 }
 
 std::string GetCodecIdString(mfxU32 id) {
-    
+
     std::basic_stringstream<char> stream;
     std::string name = "UNKNOWN";
     for (unsigned int i = 0; i < (sizeof(tbl_codecid) / sizeof(tbl_codecid[0])); i++)
@@ -341,6 +346,22 @@ std::string GetIOPattern(mfxU32 io) {
     return stream.str();
 }
 
+bool _IsBadReadPtr(void *ptr, size_t size)
+{
+#if defined(_WIN32) || defined(_WIN64)
+    return IsBadReadPtr(ptr, size);
+#else
+    int fb[2];
+    if (pipe(fb) >= 0)
+    {
+        bool tmp = (write(fb[1], ptr, size) <= 0);
+        close(fb[0]);
+        close(fb[1]);
+        return tmp;
+    }
+    return true;
+#endif
+}
 
 //mfxcommon
 DEFINE_GET_TYPE_DEF(mfxBitstream);

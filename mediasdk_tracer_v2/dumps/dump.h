@@ -49,12 +49,15 @@ File Name: dump.h
 #include "mfxprivate.h"
 
 
+
+
 std::string pVoidToHexString(void* x);
 std::string GetStatusString(mfxStatus sts);
 std::string GetmfxIMPL(mfxIMPL impl);
 std::string GetFourCC(mfxU32 fourcc);
 std::string GetCodecIdString (mfxU32 id);
 std::string GetIOPattern (mfxU32 io);
+bool _IsBadReadPtr(void *ptr, size_t size);
 
 #define GET_ARRAY_SIZE(x) sizeof(x)/sizeof(x[0])
 #define DUMP_RESERVED_ARRAY(r) dump_reserved_array(&(r[0]), GET_ARRAY_SIZE(r))
@@ -157,10 +160,11 @@ public:
 
         str += structName + ".NumExtParam=" + ToString(_struct.NumExtParam) + "\n";
         str += structName + ".ExtParam=" + ToString(_struct.ExtParam) + "\n";
+
         if (_struct.ExtParam) {
             for (mfxU16 i = 0; i < _struct.NumExtParam; ++i)
             {
-                if (_struct.ExtParam[i])
+                if ((!_IsBadReadPtr(_struct.ExtParam, sizeof(mfxExtBuffer**))) && (!_IsBadReadPtr(_struct.ExtParam[i], sizeof(mfxExtBuffer*))))
                 {
                     name = structName + ".ExtParam[" + ToString(i) + "]";
                     str += name + "=" + ToString(_struct.ExtParam[i]) + "\n";
@@ -379,7 +383,12 @@ public:
                         default:
                             str += dump(name, *(_struct.ExtParam[i])) + "\n";
                             break;
-                     };
+                    };
+                }
+                else
+                {
+                    str += "WARNING: Can't read from ExtParam[" + ToString(i) + "]!\n";
+                    return str;
                 }
 
             }
