@@ -46,7 +46,7 @@ public:
     inline tsAutoTrace& operator<<(mfxEncryptedData*& p){ *this << (void*)p; return *this; }
     inline tsAutoTrace& operator<<(mfx4CC& p) 
     {
-        for(size_t i; i < 4; ++i)
+        for(size_t i = 0; i < 4; ++i)
         {
             if(p.c[i])  *this << p.c[i];
             else        (std::ostream&)*this << "\\0";
