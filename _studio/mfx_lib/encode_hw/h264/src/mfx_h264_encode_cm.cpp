@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 */
 #include "ipps.h"
@@ -490,8 +490,8 @@ SurfaceIndex * CreateVmeSurfaceG75(
 
 CmContext::CmContext()
 : m_device(0)
-, m_program(0)
 , m_queue(0)
+, m_program(0)
 , m_programHist(0)
 {
 /*

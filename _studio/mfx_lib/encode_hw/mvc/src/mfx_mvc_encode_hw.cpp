@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -741,7 +741,7 @@ mfxStatus TaskManagerMvc::AssignTask(
     */
 
 // MVC BD {
-    if (m_viewOut == 0 || m_viewOut && m_currentView == 1)
+    if (m_viewOut == 0 || (m_viewOut && m_currentView == 1))
         m_currentTask->SetFree(false);
 
     if (m_currentView < m_numView && m_viewOut)
@@ -787,7 +787,7 @@ bool TaskManagerMvc::IsMvcTaskFinished(MvcTask & task)
     for (mfxU32 i = 0; i < m_numView; i ++)
     {
         if (task[i] == 0 ||
-            task[i] && task[i]->m_bsDataLength[0] == 0 && task[i]->m_bsDataLength[1] == 0)
+            (task[i] && task[i]->m_bsDataLength[0] == 0 && task[i]->m_bsDataLength[1] == 0))
             b_ready = false;
     }
 
@@ -1098,7 +1098,7 @@ mfxStatus ImplementationMvc::Init(mfxVideoParam *par)
 
     m_inputFrameType =
         m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
+        (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
             ? MFX_IOPATTERN_IN_SYSTEM_MEMORY
             : MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
@@ -1775,7 +1775,7 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
             // need to check if base view frame is already reconstructed and ready to be used as inter-view ref
             if (realTask.m_type[firstFieldId] & MFX_FRAMETYPE_IDR && realTask.m_frameOrder)
                 if (mvcTask[0] == 0 || (!interlace && mvcTask[0]->m_bsDataLength[0] == 0) ||
-                    interlace && (mvcTask[0]->m_bsDataLength[0] == 0 || mvcTask[0]->m_bsDataLength[1] == 0))
+                    (interlace && (mvcTask[0]->m_bsDataLength[0] == 0 || mvcTask[0]->m_bsDataLength[1] == 0)))
                 {
                     return MFX_TASK_BUSY;
                 }

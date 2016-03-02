@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -1066,7 +1066,7 @@ DdiTask * TaskManager::FindFrameToEncode()
         mfxU32 closedGop    = !!(m_video.mfx.GopOptFlag & MFX_GOP_CLOSED);
         mfxU32 strictGop    = !!(m_video.mfx.GopOptFlag & MFX_GOP_STRICT);
 
-        if (!strictGop && (idrPicFlag || intraPicFlag && closedGop))
+        if (!strictGop && (idrPicFlag || (intraPicFlag && closedGop)))
         {
             // find latest B frame prior to current I frame
             // since gop is closed such B frames will be encoded with only L1 ref
@@ -1262,7 +1262,7 @@ void TaskManager::UpdateDpb(
             // adaptive marking is supported only for progressive encoding
             assert(task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE);
 
-            for (mfxU32 i = 0; i < 16 && ctrl->RejectedRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN; i++)
+            for (mfxU32 i = 0; i < 16 && ctrl->RejectedRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN); i++)
             {
                 DpbFrame * ref = std::find_if(
                     currDpb.Begin(),
@@ -1286,7 +1286,7 @@ void TaskManager::UpdateDpb(
                 }
             }
 
-            for (mfxU32 i = 0; i < 16 && ctrl->LongTermRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN; i++)
+            for (mfxU32 i = 0; i < 16 && ctrl->LongTermRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN); i++)
             {
                 DpbFrame * dpbFrame = std::find_if(
                     currDpb.Begin(),
@@ -4678,7 +4678,7 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
             // check compatibility of fields types
             MFX_CHECK(
                 firstFieldType == secondFieldType ||
-                firstFieldType == MFX_FRAMETYPE_I && secondFieldType == MFX_FRAMETYPE_P,
+                (firstFieldType == MFX_FRAMETYPE_I && secondFieldType == MFX_FRAMETYPE_P),
                 MFX_ERR_INVALID_VIDEO_PARAM);
         }
     }
@@ -4710,7 +4710,7 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
         MFX_CHECK((surface->Data.Y == 0) == (surface->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(surface->Data.Pitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(surface->Data.Y != 0 || isExternalFrameAllocator || opaq, MFX_ERR_UNDEFINED_BEHAVIOR);
-        MFX_CHECK(surface->Data.Y == 0 && surface->Data.MemId == 0 || !opaq, MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK((surface->Data.Y == 0 && surface->Data.MemId == 0) || !opaq, MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(surface->Info.Width >= video.mfx.FrameInfo.Width, MFX_ERR_INVALID_VIDEO_PARAM);
         MFX_CHECK(surface->Info.Height >= video.mfx.FrameInfo.Height, MFX_ERR_INVALID_VIDEO_PARAM);
 
@@ -4760,9 +4760,9 @@ mfxStatus MfxHwH264Encode::CheckBeforeCopy(mfxExtMVCSeqDesc & dst, mfxExtMVCSeqD
 
 mfxStatus MfxHwH264Encode::CheckBeforeCopyQueryLike(mfxExtMVCSeqDesc & dst, mfxExtMVCSeqDesc const & src)
 {
-    if (dst.View   && dst.NumViewAlloc   < src.NumView   ||
-        dst.ViewId && dst.NumViewIdAlloc < src.NumViewId ||
-        dst.OP     && dst.NumOPAlloc     < src.NumOP)
+    if ((dst.View   && dst.NumViewAlloc   < src.NumView)   ||
+        (dst.ViewId && dst.NumViewIdAlloc < src.NumViewId) ||
+        (dst.OP     && dst.NumOPAlloc     < src.NumOP))
     {
         dst.NumView   = src.NumView;
         dst.NumViewId = src.NumViewId;
@@ -5295,16 +5295,16 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
         (extOpt2->IntRefType == 0 && isIPicture)));
 
     mfxU32 needCpbRemovalDelay = idrPicFlag || recoveryPoint || needRecoveryPointSei ||
-        isIPicture && extOpt2->BufferingPeriodSEI == MFX_BPSEI_IFRAME;
+        (isIPicture && extOpt2->BufferingPeriodSEI == MFX_BPSEI_IFRAME);
 
     mfxU32 needMarkingRepetitionSei =
         IsOn(extOpt->RefPicMarkRep) && task.m_decRefPicMrkRep[fieldId].presentFlag;
 
     mfxU32 needBufferingPeriod =
-        IsOn(extOpt->VuiNalHrdParameters) && needCpbRemovalDelay ||
-        IsOn(extOpt->VuiVclHrdParameters) && needCpbRemovalDelay ||
-        IsOn(extOpt->PicTimingSEI) &&
-        (idrPicFlag || (isIPicture && extOpt2->BufferingPeriodSEI == MFX_BPSEI_IFRAME)); // to activate sps
+        (IsOn(extOpt->VuiNalHrdParameters) && needCpbRemovalDelay) ||
+        (IsOn(extOpt->VuiVclHrdParameters) && needCpbRemovalDelay) ||
+        (IsOn(extOpt->PicTimingSEI) &&
+        (idrPicFlag || (isIPicture && extOpt2->BufferingPeriodSEI == MFX_BPSEI_IFRAME))); // to activate sps
 
     mfxU32 needPicTimingSei =
         IsOn(extOpt->VuiNalHrdParameters) ||
@@ -5457,9 +5457,9 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
         IsOn(extOpt->RefPicMarkRep) && task.m_decRefPicMrkRep[fieldId].presentFlag;
 
     mfxU32 needBufferingPeriod =
-        IsOn(extOpt->VuiNalHrdParameters) && needCpbRemovalDelay ||
-        IsOn(extOpt->VuiVclHrdParameters) && needCpbRemovalDelay ||
-        IsOn(extOpt->PicTimingSEI)        && idrPicFlag; // to activate sps
+        (IsOn(extOpt->VuiNalHrdParameters) && needCpbRemovalDelay) ||
+        (IsOn(extOpt->VuiVclHrdParameters) && needCpbRemovalDelay) ||
+        (IsOn(extOpt->PicTimingSEI)        && idrPicFlag); // to activate sps
 
     mfxU32 needPicTimingSei =
         IsOn(extOpt->VuiNalHrdParameters) ||

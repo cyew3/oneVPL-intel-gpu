@@ -996,6 +996,12 @@ void VAAPIEncoder::FillSps(
 
 } // void FillSps(...)
 
+VAConfigAttrib createVAConfigAttrib(VAConfigAttribType type, unsigned int value)
+{
+    VAConfigAttrib tmp = {type, value};
+    return tmp;
+}
+
 mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     VideoCORE* core,
     GUID /*guid*/,
@@ -1024,17 +1030,17 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     //VAConfigAttrib attrs[5];
     std::vector<VAConfigAttrib> attrs;
 
-    attrs.push_back( {VAConfigAttribRTFormat, 0});
-    attrs.push_back( {VAConfigAttribRateControl, 0});
-    attrs.push_back( {VAConfigAttribEncQuantization, 0});
-    attrs.push_back( {VAConfigAttribEncIntraRefresh, 0});
-    attrs.push_back( {VAConfigAttribMaxPictureHeight, 0});
-    attrs.push_back( {VAConfigAttribMaxPictureWidth, 0});
-    attrs.push_back( {VAConfigAttribEncInterlaced, 0});
-    attrs.push_back( {VAConfigAttribEncMaxRefFrames, 0});
-    attrs.push_back( {VAConfigAttribEncSliceStructure, 0});
+    attrs.push_back( createVAConfigAttrib(VAConfigAttribRTFormat, 0));
+    attrs.push_back( createVAConfigAttrib(VAConfigAttribRateControl, 0));
+    attrs.push_back( createVAConfigAttrib(VAConfigAttribEncQuantization, 0));
+    attrs.push_back( createVAConfigAttrib(VAConfigAttribEncIntraRefresh, 0));
+    attrs.push_back( createVAConfigAttrib(VAConfigAttribMaxPictureHeight, 0));
+    attrs.push_back( createVAConfigAttrib(VAConfigAttribMaxPictureWidth, 0));
+    attrs.push_back( createVAConfigAttrib(VAConfigAttribEncInterlaced, 0));
+    attrs.push_back( createVAConfigAttrib(VAConfigAttribEncMaxRefFrames, 0));
+    attrs.push_back( createVAConfigAttrib(VAConfigAttribEncSliceStructure, 0));
 #ifdef SKIP_FRAME_SUPPORT
-    attrs.push_back( {VAConfigAttribEncSkipFrame, 0});
+    attrs.push_back( createVAConfigAttrib(VAConfigAttribEncSkipFrame, 0));
 #endif
 
     VAStatus vaSts = vaGetConfigAttributes(m_vaDisplay,
@@ -1506,7 +1512,7 @@ mfxStatus VAAPIEncoder::QueryInputTilingSupport(mfxVideoParam const & par, mfxU3
 
     vaSts = vaQueryConfigAttributes(m_vaDisplay, config, &profile, &entrypoint, Begin(attrs), &numAttribs);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-    MFX_CHECK_WITH_ASSERT((mfxU32)numAttribs < maxNumAttribs, MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK_WITH_ASSERT((mfxU32)numAttribs < static_cast<mfxU32>(maxNumAttribs), MFX_ERR_UNDEFINED_BEHAVIOR);
 
     if (entrypoint == VAEntrypointEncSlice)
     {

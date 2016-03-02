@@ -38,5 +38,6 @@ foreach( prefix ${CMAKE_SOURCE_DIR}/mfx_lib/shared/src )
     )
 endforeach()
 
+set( defs "${defs} ${WARNING_FLAGS}" )
 make_library( encode hw static )
-
+set( defs "" )

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -86,7 +86,7 @@ mfxStatus MfxHwMJpegEncode::CheckJpegParam(VideoCORE *core, mfxVideoParam & par,
     MFX_CHECK(hwCaps.Sequential, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
     MFX_CHECK(hwCaps.Huffman, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-    MFX_CHECK(par.mfx.Interleaved && hwCaps.Interleaved || !par.mfx.Interleaved && hwCaps.NonInterleaved,
+    MFX_CHECK((par.mfx.Interleaved && hwCaps.Interleaved) || (!par.mfx.Interleaved && hwCaps.NonInterleaved),
         MFX_WRN_PARTIAL_ACCELERATION);
 
     MFX_CHECK(par.mfx.FrameInfo.Width > 0 && par.mfx.FrameInfo.Height > 0,

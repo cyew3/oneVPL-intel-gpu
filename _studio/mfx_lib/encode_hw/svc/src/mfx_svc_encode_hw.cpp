@@ -4,11 +4,11 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
-#include "mfx_common.h" 
+#include "mfx_common.h"
 #ifdef MFX_ENABLE_H264_VIDEO_ENCODE_HW
 
 #include <algorithm>
@@ -471,7 +471,7 @@ mfxStatus ImplementationSvc::Init(mfxVideoParam * par)
     mfxExtOpaqueSurfaceAlloc const * extOpaq = GetExtBuffer(m_video);
     m_inputFrameType =
         m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
+        (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
             ? MFX_IOPATTERN_IN_SYSTEM_MEMORY
             : MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
@@ -894,7 +894,7 @@ mfxStatus ImplementationSvc::CopyRawSurface(
     mfxExtSVCSeqDesc *         extSvc  = GetExtBuffer(m_video);
 
     if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+        (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
     {
         mfxFrameData d3dSurf = { 0, };
         mfxFrameData sysSurf = task.m_yuv->Data;
@@ -933,7 +933,7 @@ mfxHDL ImplementationSvc::GetRawSurfaceHandle(
     mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(m_video);
 
     if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+        (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
     {
         m_core->GetFrameHDL(m_raw.mids[task.m_idx], (mfxHDL *)&nativeSurface);
     }

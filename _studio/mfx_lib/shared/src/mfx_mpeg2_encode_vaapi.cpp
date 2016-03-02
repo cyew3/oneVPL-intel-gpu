@@ -1236,13 +1236,13 @@ mfxStatus VAAPIEncoder::FillMBQPBuffer(
     mfxU32 bufW = ((width_in_mbs*4 + 63) & ~63);
     mfxU32 bufH = ((height_in_mbs + 7) & ~7);
 
-    if (   mbqp && numMB >= width_in_mbs * height_in_mbs
+    if (   mbqp && numMB >= static_cast<mfxU32>(width_in_mbs * height_in_mbs)
         && m_mbqpDataBuffer.size()*4 >= (bufW* bufH))
     {
 
         Zero(m_mbqpDataBuffer);
-        for (mfxU32 mbRow = 0; mbRow < height_in_mbs; mbRow ++)
-            for (mfxU32 mbCol = 0; mbCol < width_in_mbs; mbCol ++)
+        for (mfxU32 mbRow = 0; mbRow < static_cast<mfxU32>(height_in_mbs); mbRow ++)
+            for (mfxU32 mbCol = 0; mbCol < static_cast<mfxU32>(width_in_mbs); mbCol ++)
                 m_mbqpDataBuffer[mbRow * (bufW/4) + mbCol].qp_y = mbqp[mbRow * width_in_mbs + mbCol];
     }
 

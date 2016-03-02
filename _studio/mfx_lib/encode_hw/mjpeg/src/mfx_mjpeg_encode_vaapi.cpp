@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          MJPEG encoder VAAPI
@@ -511,7 +511,7 @@ mfxStatus VAAPIEncoder::DestroyBuffers() {
     MFX_DESTROY_VABUFFER(m_htBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_scanBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_ppsBufferId, m_vaDisplay);
-    for (int index = 0; index < m_appBufferIds.size(); index++)
+    for (size_t index = 0; index < m_appBufferIds.size(); index++)
     {
         MFX_DESTROY_VABUFFER(m_appBufferIds[index], m_vaDisplay);
     }

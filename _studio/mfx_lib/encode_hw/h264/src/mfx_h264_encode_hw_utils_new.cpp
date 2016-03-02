@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -624,7 +624,7 @@ namespace
 
         for (mfxU8 i = 0; i < 32; i ++)
         {
-            if (ctrl.RefPicList0[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN
+            if (ctrl.RefPicList0[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN)
                 && ctrl.RefPicList0[i].PicStruct != MFX_PICSTRUCT_FIELD_TFF
                 && ctrl.RefPicList0[i].PicStruct != MFX_PICSTRUCT_FIELD_BFF)
             {
@@ -1098,7 +1098,7 @@ namespace
         //ArrayDpbFrame const &  dpb  = task.m_dpb[fieldId];
         //mfxU32 nrfMinForTemporal = video.calcParam.numTemporalLayer > 1 ? mfxU16(1 << (video.calcParam.numTemporalLayer - 2)) : 1;
 
-        for (mfxU32 i = 0; i < 16 && ctrl->LongTermRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN; i++)
+        for (mfxU32 i = 0; i < 16 && ctrl->LongTermRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN); i++)
         {
             isValid = false;
             if (temporalLayer)
@@ -1174,7 +1174,7 @@ namespace
             if (ctrl &&
               extSpeModes->refDummyFramesForWiDi == 0)  // no explicit DBP modifications for WA WiDi mode
             {
-                for (mfxU32 i = 0; i < 16 && ctrl->LongTermRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN; i++)
+                for (mfxU32 i = 0; i < 16 && ctrl->LongTermRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN); i++)
                 {
                     if (ctrl->LongTermRefList[i].FrameOrder == task.m_extFrameTag)
                     {
@@ -1222,7 +1222,7 @@ namespace
             if (ctrl &&
               extSpeModes->refDummyFramesForWiDi == 0) // no explicit DBP modifications for WA WiDi mode
             {
-                for (mfxU32 i = 0; i < 16 && ctrl->RejectedRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN; i++)
+                for (mfxU32 i = 0; i < 16 && ctrl->RejectedRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN); i++)
                 {
                     DpbFrame * ref = std::find_if(
                         currDpb.Begin(),
@@ -1253,7 +1253,7 @@ namespace
                     }
                 }
 
-                for (mfxU32 i = 0; i < 16 && ctrl->LongTermRefList[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN; i++)
+                for (mfxU32 i = 0; i < 16 && ctrl->LongTermRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN); i++)
                 {
                     // adaptive marking for long-term references is supported only for progressive encoding
                     assert(task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE);
@@ -1563,7 +1563,7 @@ PairU8 MfxHwH264Encode::GetFrameType(
         return ExtendFrameType(MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF);
 
     if ((gopOptFlag & MFX_GOP_STRICT) == 0)
-        if ((frameOrder + 1) % gopPicSize == 0 && (gopOptFlag & MFX_GOP_CLOSED) ||
+        if (((frameOrder + 1) % gopPicSize == 0 && (gopOptFlag & MFX_GOP_CLOSED)) ||
             (frameOrder + 1) % idrPicDist == 0)
             return ExtendFrameType(MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF); // switch last B frame to P frame
 
@@ -1888,7 +1888,7 @@ void MfxHwH264Encode::ConfigureTask(
 
         for (mfxU16 i = 0; i < numRoi; i ++)
         {
-            task.m_roi[task.m_numRoi] = *((mfxRoiDesc*)&(pRoi->ROI[i]));
+            memcpy_s(&task.m_roi[task.m_numRoi], sizeof(mfxRoiDesc), &pRoi->ROI[i], sizeof(mfxRoiDesc));
             if (extRoiRuntime)
             {
                 // check runtime ROI
@@ -1911,7 +1911,7 @@ void MfxHwH264Encode::ConfigureTask(
 
         for (mfxU16 i = 0; i < numRect; i ++)
         {
-            task.m_dirtyRect[task.m_numDirtyRect] = *((mfxRectDesc*)&(pDirtyRect->Rect[i]));
+            memcpy_s(&task.m_dirtyRect[task.m_numDirtyRect], sizeof(mfxRectDesc), &pDirtyRect->Rect[i], sizeof(mfxRectDesc));
             if (extDirtyRectRuntime)
             {
                 // check runtime dirty rectangle
@@ -1934,7 +1934,7 @@ void MfxHwH264Encode::ConfigureTask(
 
         for (mfxU16 i = 0; i < numRect; i ++)
         {
-            task.m_movingRect[task.m_numMovingRect] = *((mfxMovingRectDesc*)&(pMoveRect->Rect[i]));
+            memcpy_s(&task.m_movingRect[task.m_numMovingRect], sizeof(mfxMovingRectDesc), &pMoveRect->Rect[i], sizeof(mfxMovingRectDesc));
             if (extMoveRectRuntime)
             {
                 // check runtime moving rectangle
@@ -2066,7 +2066,7 @@ mfxStatus MfxHwH264Encode::CopyRawSurfaceToVideoMemory(
     mfxFrameSurface1 * surface = task.m_yuv;
 
     if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+        (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
     {
         if (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
         {
@@ -2206,7 +2206,7 @@ mfxStatus MfxHwH264Encode::GetNativeHandleToRawSurface(
     }
 
     if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+        (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
         sts = core.GetFrameHDL(task.m_midRaw, nativeHandle);
     else if (video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
         sts = core.GetExternalFrameHDL(surface->Data.MemId, nativeHandle);
@@ -2613,7 +2613,7 @@ namespace FadeDetectionHistLSE
             || ((CheckRange > 35) && Weight != (1 << logWDc) && abs(AveSampleDiff) <= 1 && VarSampleDiff == 0)
             || ((CheckRange > 25) && abs(RefPeakPos - CurPeakPos) <= 1 && abs(TransformedPeakPos - CurPeakPos) > abs(RefPeakPos - CurPeakPos) + 2)
             || (numClosedPixels >= (numSegments / 2) && (CheckRange > 35) && (transformedClosedPixelsDiff - sumClosedPixelsDiff > 2 || transformMaxDiff >= 2))
-            || (Weight == (1 << logWDc) && (abs(AveSampleDiff) <= 2 && AveDiff > 1 || (AveDiff * AveDiff) > IPP_MAX(1, VarSampleDiff / 2)))
+            || (Weight == (1 << logWDc) && ((abs(AveSampleDiff) <= 2 && AveDiff > 1) || (AveDiff * AveDiff) > IPP_MAX(1, VarSampleDiff / 2)))
             || (Weight != (1 << logWDc) && (maxdiff > 3 * abs(AveSampleDiff) || sumdiff >= 8 * abs(AveSampleDiff))))
         {
             pwt.LumaWeightFlag[list][idx] = 0;
@@ -2839,7 +2839,7 @@ mfxU32 AsyncRoutineEmulator::CheckStageOutput(mfxU32 stage)
     mfxU32 out = stage + 1;
     mfxU32 hasOutput = 0;
     if (m_queueFullness[in] >= m_stageGreediness[stage] ||
-        m_queueFullness[in] > 0 && m_queueFlush[in])
+        (m_queueFullness[in] > 0 && m_queueFlush[in]))
     {
         --m_queueFullness[in];
         ++m_queueFullness[out];

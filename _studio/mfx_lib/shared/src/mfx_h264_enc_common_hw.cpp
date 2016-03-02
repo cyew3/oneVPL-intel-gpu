@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          H264 encoder common
@@ -209,7 +209,7 @@ namespace
         return
             IsAvcBaseProfile(profile)       ||
             IsAvcHighProfile(profile)       ||
-            IsMvcProfile(profile) && (profile != MFX_PROFILE_AVC_MULTIVIEW_HIGH) || // Multiview high isn't supported by MSDK
+            (IsMvcProfile(profile) && (profile != MFX_PROFILE_AVC_MULTIVIEW_HIGH)) || // Multiview high isn't supported by MSDK
             profile == MFX_PROFILE_AVC_MAIN ||
             IsSvcProfile(profile);
     }
@@ -1140,7 +1140,7 @@ mfxI64 MfxHwH264Encode::CalcDTSFromPTS(
     mfxU16               dpbOutputDelay,
     mfxU64               timeStamp)
 {
-    if (timeStamp != MFX_TIMESTAMP_UNKNOWN)
+    if (timeStamp != static_cast<mfxU64>(MFX_TIMESTAMP_UNKNOWN))
     {
         mfxF64 tcDuration90KHz = (mfxF64)info.FrameRateExtD / (info.FrameRateExtN * 2) * 90000; // calculate tick duration
         return mfxI64(timeStamp - tcDuration90KHz * dpbOutputDelay); // calculate DTS from PTS
@@ -1620,11 +1620,11 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
     // first check mandatory parameters
     MFX_CHECK(
         extBits->SPSBuffer != 0 ||
-        par.mfx.FrameInfo.Width > 0 && par.mfx.FrameInfo.Height > 0, MFX_ERR_INVALID_VIDEO_PARAM);
+        (par.mfx.FrameInfo.Width > 0 && par.mfx.FrameInfo.Height > 0), MFX_ERR_INVALID_VIDEO_PARAM);
 
     MFX_CHECK(
-        extSps->vui.timeScale           > 0 && extSps->vui.numUnitsInTick      > 0 ||
-        par.mfx.FrameInfo.FrameRateExtN > 0 && par.mfx.FrameInfo.FrameRateExtD > 0,
+        (extSps->vui.timeScale           > 0 && extSps->vui.numUnitsInTick      > 0) ||
+        (par.mfx.FrameInfo.FrameRateExtN > 0 && par.mfx.FrameInfo.FrameRateExtD > 0),
         MFX_ERR_INVALID_VIDEO_PARAM);
 
     MFX_CHECK(par.mfx.TargetUsage            <= 7, MFX_ERR_INVALID_VIDEO_PARAM);
@@ -1658,6 +1658,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
         case MFX_WRN_INCOMPATIBLE_VIDEO_PARAM:
             checkSts = sts;
             break;
+        default:
+            break;
         }
     }
 
@@ -1672,6 +1674,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
         return sts;
     case MFX_WRN_INCOMPATIBLE_VIDEO_PARAM:
         checkSts = sts;
+        break;
+    default:
         break;
     }
 
@@ -2919,8 +2923,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     if (!CheckRangeDflt(extCli->ChromaSampleLocTypeTopField,    0, 5, 0)) changed = true;
     if (!CheckRangeDflt(extCli->ChromaSampleLocTypeBottomField, 0, 5, 0)) changed = true;
 
-    if (   IsOn(extOpt2->DisableVUI) && extCli->ChromaLocInfoPresentFlag
-        || !extCli->ChromaLocInfoPresentFlag && (extCli->ChromaSampleLocTypeTopField || extCli->ChromaSampleLocTypeBottomField))
+    if (   (IsOn(extOpt2->DisableVUI) && extCli->ChromaLocInfoPresentFlag)
+        || (!extCli->ChromaLocInfoPresentFlag && (extCli->ChromaSampleLocTypeTopField || extCli->ChromaSampleLocTypeBottomField)))
     {
         extCli->ChromaLocInfoPresentFlag       = 0;
         extCli->ChromaSampleLocTypeTopField    = 0;
@@ -2950,7 +2954,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                 }
             }
 
-            if (!IsOff(extOpt->NalHrdConformance) && extBits->SPSBuffer == 0 || IsOn(extOpt->VuiNalHrdParameters) || IsOn(extOpt->VuiVclHrdParameters))
+            if ((!IsOff(extOpt->NalHrdConformance) && extBits->SPSBuffer == 0) || IsOn(extOpt->VuiNalHrdParameters) || IsOn(extOpt->VuiVclHrdParameters))
             {
                 mfxU16 profile = mfxU16(IPP_MAX(MFX_PROFILE_AVC_BASELINE, par.mfx.CodecProfile & MASK_PROFILE_IDC));
                 for (; profile != MFX_PROFILE_UNKNOWN; profile = GetNextProfile(profile))
@@ -3343,8 +3347,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         unsupported = true;
     }
 
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ || par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR &&
-        extOpt2->MBBRC == MFX_CODINGOPTION_OFF)
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ || (par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR &&
+        extOpt2->MBBRC == MFX_CODINGOPTION_OFF))
     {
         // for ICQ or QVBR BRC mode MBBRC is ignored by driver and always treated as ON
         // need to change extOpt2->MBBRC respectively to notify application about it
@@ -4548,7 +4552,7 @@ void MfxHwH264Encode::SetDefaults(
     {
         if (IsAvcBaseProfile(par.mfx.CodecProfile) ||
             par.mfx.CodecProfile == MFX_PROFILE_AVC_CONSTRAINED_HIGH ||
-            par.calcParam.numTemporalLayer > 0 && par.calcParam.lyncMode ||
+            (par.calcParam.numTemporalLayer > 0 && par.calcParam.lyncMode) ||
             hwCaps.SliceIPOnly)
         {
             par.mfx.GopRefDist = 1;
@@ -4786,10 +4790,12 @@ void MfxHwH264Encode::SetDefaults(
             : extOpt2->LookAheadDepth;
 
     if (extDdi->LaScaleFactor == 0) // default: use LA 2X for TU3-7 and LA 1X for TU1-2
+    {
         if (par.mfx.TargetUsage > 2 || par.mfx.FrameInfo.Width >= 4000)
             extDdi->LaScaleFactor = 2;
         else
             extDdi->LaScaleFactor = 1;
+    }
 
     if ((extDdi->LaScaleFactor != 1) &&
         (extDdi->LaScaleFactor != 2) &&
@@ -5540,27 +5546,27 @@ mfxStatus MfxHwH264Encode::CheckRunTimePicStruct(
     static mfxU16 const TRPL = MFX_PICSTRUCT_FRAME_TRIPLING;
     static mfxU16 const REP  = MFX_PICSTRUCT_FIELD_REPEATED;
 
-    if (initPs == PRG && runtPs == UNK         ||
-        initPs == PRG && runtPs == PRG         ||
-        initPs == PRG && runtPs == (PRG | DBL) ||
-        initPs == PRG && runtPs == (PRG | TRPL))
+    if ((initPs == PRG && runtPs == UNK)         ||
+        (initPs == PRG && runtPs == PRG)         ||
+        (initPs == PRG && runtPs == (PRG | DBL)) ||
+        (initPs == PRG && runtPs == (PRG | TRPL)))
         return MFX_ERR_NONE;
 
-    if (initPs == BFF && runtPs == UNK ||
-        initPs == BFF && runtPs == BFF ||
-        initPs == UNK && runtPs == BFF ||
-        initPs == TFF && runtPs == UNK ||
-        initPs == TFF && runtPs == TFF ||
-        initPs == UNK && runtPs == TFF)
+    if ((initPs == BFF && runtPs == UNK) ||
+        (initPs == BFF && runtPs == BFF) ||
+        (initPs == UNK && runtPs == BFF) ||
+        (initPs == TFF && runtPs == UNK) ||
+        (initPs == TFF && runtPs == TFF) ||
+        (initPs == UNK && runtPs == TFF))
         return MFX_ERR_NONE;
 
-    if (initPs == UNK && runtPs == (PRG | BFF)       ||
-        initPs == UNK && runtPs == (PRG | TFF)       ||
-        initPs == UNK && runtPs == (PRG | BFF | REP) ||
-        initPs == UNK && runtPs == (PRG | TFF | REP) ||
-        initPs == UNK && runtPs == PRG               ||
-        initPs == BFF && runtPs == PRG               ||
-        initPs == TFF && runtPs == PRG)
+    if ((initPs == UNK && runtPs == (PRG | BFF))       ||
+        (initPs == UNK && runtPs == (PRG | TFF))       ||
+        (initPs == UNK && runtPs == (PRG | BFF | REP)) ||
+        (initPs == UNK && runtPs == (PRG | TFF | REP)) ||
+        (initPs == UNK && runtPs == PRG)               ||
+        (initPs == BFF && runtPs == PRG)               ||
+        (initPs == TFF && runtPs == PRG))
         return MFX_ERR_NONE;
 
     if (initPs == UNK && runtPs == UNK)
@@ -5616,10 +5622,10 @@ void MfxHwH264Encode::CopyFrameData(
         dstPitch *= 2;
     }
 
-    IppiSize roiLuma = { info.Width, height };
+    IppiSize roiLuma = { static_cast<int>(info.Width), static_cast<int>(height) };
     ippiCopy_8u_C1R(src.Y + srcOffset, srcPitch, dst.Y + dstOffset, dstPitch, roiLuma);
 
-    IppiSize roiChroma = { info.Width, height / 2 };
+    IppiSize roiChroma = { static_cast<int>(info.Width), static_cast<int>(height / 2) };
     ippiCopy_8u_C1R(src.UV + srcOffset, srcPitch, dst.UV + dstOffset, dstPitch, roiChroma);
 }
 
@@ -5670,15 +5676,30 @@ mfxStatus MfxHwH264Encode::ReadFrameData(
         }
 
         for (mfxU32 i = 0; i < info.Height; i++)
-            (void)vm_file_fread(data.Y + i * data.Pitch, 1, info.Width, file);
+        {
+            if(!vm_file_fread(data.Y + i * data.Pitch, 1, info.Width, file))
+            {
+                return MFX_ERR_UNKNOWN;
+            }
+        }
 
         for (mfxI32 y = 0; y < info.Height / 2; y++)
             for (mfxI32 x = 0; x < info.Width; x += 2)
-                (void)vm_file_fread(data.UV + y * data.Pitch + x, 1, 1, file);
+            {
+                if(!vm_file_fread(data.UV + y * data.Pitch + x, 1, 1, file))
+                {
+                    return MFX_ERR_UNKNOWN;
+                }
+            }
 
         for (mfxI32 y = 0; y < info.Height / 2; y++)
             for (mfxI32 x = 1; x < info.Width; x += 2)
-                (void)vm_file_fread(data.UV + y * data.Pitch + x, 1, 1, file);
+            {
+                if(!vm_file_fread(data.UV + y * data.Pitch + x, 1, 1, file))
+                {
+                    return MFX_ERR_UNKNOWN;
+                }
+            }
     }
 
     return MFX_ERR_NONE;
@@ -7669,7 +7690,7 @@ namespace
                 pps[i].seqParameterSetId = mfxU8(i);
                 pps[i].picParameterSetId = mfxU8(i);
             }
-            pps[i].constrainedIntraPredFlag = (i == numDep - 1 && numQualityAtLastDep == 1 || simulcast) ? 0 : 1;
+            pps[i].constrainedIntraPredFlag = ((i == numDep - 1 && numQualityAtLastDep == 1) || simulcast) ? 0 : 1;
         }
 
         // pack pps for enhanced quality layer of highest spatial layer if exists
@@ -8058,8 +8079,8 @@ mfxU32 HeaderPacker::WriteSlice(
             WriteRefPicListModification(obs, task.m_refPicList0Mod[fieldId]);
         if (sliceType == SLICE_TYPE_B)
             WriteRefPicListModification(obs, task.m_refPicList1Mod[fieldId]);
-        if (pps.weightedPredFlag  == 1 && sliceType == SLICE_TYPE_P ||
-            pps.weightedBipredIdc == 1 && sliceType == SLICE_TYPE_B)
+        if ((pps.weightedPredFlag  == 1 && sliceType == SLICE_TYPE_P) ||
+            (pps.weightedBipredIdc == 1 && sliceType == SLICE_TYPE_B))
         {
             mfxU32 chromaArrayType = sps.separateColourPlaneFlag ? 0 : sps.chromaFormatIdc;
             mfxI32 numRefIdxL0ActiveMinus1 = IPP_MAX(1, task.m_list0[fieldId].Size()) - 1;
@@ -8307,8 +8328,8 @@ mfxU32 HeaderPacker::WriteSlice(
             WriteRefPicListModification(obs, task.m_refPicList0Mod[fieldId]);
         if (sliceType == SLICE_TYPE_B)
             WriteRefPicListModification(obs, task.m_refPicList1Mod[fieldId]);
-        if (pps.weightedPredFlag  == 1 && sliceType == SLICE_TYPE_P ||
-            pps.weightedBipredIdc == 1 && sliceType == SLICE_TYPE_B)
+        if ((pps.weightedPredFlag  == 1 && sliceType == SLICE_TYPE_P) ||
+            (pps.weightedBipredIdc == 1 && sliceType == SLICE_TYPE_B))
         {
             mfxU32 chromaArrayType = sps.separateColourPlaneFlag ? 0 : sps.chromaFormatIdc;
             mfxI32 numRefIdxL0ActiveMinus1 = IPP_MAX(1, task.m_list0[fieldId].Size()) - 1;

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -695,10 +695,10 @@ ImplementationAvc::ImplementationAvc(VideoCORE * core)
 , m_enabledSwBrc(false)
 , m_maxBsSize(0)
 , m_NumSlices(0)
+, m_useMBQPSurf(false)
 , m_isENCPAK(false)
 , m_isWiDi(false)
 , m_resetBRC(false)
-, m_useMBQPSurf(false)
 {
 /*
     FEncLog = fopen("EncLog.txt", "wb");
@@ -718,7 +718,7 @@ void ImplementationAvc::DestroyDanglingCmResources()
         for (DdiTaskIter i = m_lookaheadStarted.begin(), e = m_lookaheadStarted.end(); i != e; ++i)
         {
             m_cmCtx->DestroyEvent(i->m_event);
-            if (extOpt2 && (extOpt2->MaxSliceSize == 0)||(extOpt3 && !IsOn(extOpt3->FadeDetection)))
+            if ((extOpt2 && (extOpt2->MaxSliceSize == 0))||(extOpt3 && !IsOn(extOpt3->FadeDetection)))
             {
                 int ffid = i->m_fid[0];
                 ArrayDpbFrame & iniDpb = i->m_dpb[ffid];
@@ -926,7 +926,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     m_inputFrameType =
         m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
+        (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
             ? MFX_IOPATTERN_IN_SYSTEM_MEMORY
             : MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
@@ -1258,7 +1258,7 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
     !Equal(*extSpsNew, *extSpsOld);
 
     isIdrRequired = isSpsChanged
-        || tempLayerIdx != 0 && changeLyncLayers
+        || (tempLayerIdx != 0 && changeLyncLayers)
         || newPar.mfx.GopPicSize != m_video.mfx.GopPicSize
         || extOpt2New->IntRefType != extOpt2Old->IntRefType;
 
@@ -2095,8 +2095,8 @@ struct FindNonSkip
 
     template <class T> bool operator ()(T const & task) const
     {
-        return m_skipFrameMode != MFX_SKIPFRAME_INSERT_NOTHING &&
-            m_skipFrameMode != MFX_SKIPFRAME_INSERT_DUMMY ||
+        return (m_skipFrameMode != MFX_SKIPFRAME_INSERT_NOTHING &&
+            m_skipFrameMode != MFX_SKIPFRAME_INSERT_DUMMY) ||
             task.m_ctrl.SkipFrame == 0;
     }
 
@@ -3291,8 +3291,8 @@ mfxStatus ImplementationAvc::UpdateBitstream(
 
     bool needIntermediateBitstreamBuffer =
         m_video.calcParam.numTemporalLayer > 0 ||
-        m_currentPlatform != MFX_HW_SOFIA &&
-        (IsSlicePatchNeeded(task, fid) || (m_video.mfx.NumRefFrame & 1));
+        (m_currentPlatform != MFX_HW_SOFIA &&
+        (IsSlicePatchNeeded(task, fid) || (m_video.mfx.NumRefFrame & 1)));
 
     bool doPatch = (m_video.mfx.LowPower == MFX_CODINGOPTION_ON && (m_video.calcParam.numTemporalLayer > 0 || task.m_AUStartsFromSlice[fid])) ||
         needIntermediateBitstreamBuffer ||
@@ -3301,10 +3301,10 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     if (m_isWiDi && task.m_resetBRC)
         m_resetBRC = true;
 
-    if (!((m_video.mfx.LowPower == MFX_CODINGOPTION_ON && (m_video.calcParam.numTemporalLayer > 0 || task.m_AUStartsFromSlice[fid]))) &&
+    if ((!((m_video.mfx.LowPower == MFX_CODINGOPTION_ON && (m_video.calcParam.numTemporalLayer > 0 || task.m_AUStartsFromSlice[fid]))) &&
         m_currentPlatform != MFX_HW_SOFIA && // SoFIA HW always writes slice headers. MSDK should patch them if required
         m_caps.HeaderInsertion == 0 &&
-        (m_currentPlatform != MFX_HW_IVB || m_core->GetVAType() != MFX_HW_VAAPI)
+        (m_currentPlatform != MFX_HW_IVB || m_core->GetVAType() != MFX_HW_VAAPI))
         || m_video.Protected != 0)
         doPatch = needIntermediateBitstreamBuffer = false;
 
