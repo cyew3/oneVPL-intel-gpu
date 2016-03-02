@@ -868,15 +868,7 @@ bool MFXStructureRef<mfxVersion>::DeSerialize(hash_array<std::string, std::strin
 
 void MFXStructureRef <bool>::ConstructValues() const
 {
-    switch (*m_pStruct)
-    {
-    case 1:
-        m_values_map[""] = "yes";
-        break;
-    default:
-        m_values_map[""] = "no";
-        break;
-    }
+    m_values_map[""] = (*m_pStruct) ? "yes" : "no";
 }
 
 bool MFXStructureRef <bool>::DeSerialize(hash_array<std::string, std::string> values_map)
