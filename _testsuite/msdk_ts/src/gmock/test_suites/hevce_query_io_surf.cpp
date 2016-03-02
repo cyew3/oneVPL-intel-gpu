@@ -109,9 +109,15 @@ namespace hevce_query_io_surf
             mfxU32 nFrameSuggested = 0;
             mfxU32 AsyncDepth = 0;
             mfxU32 type = 0;
+            bool isHW = false;
 
             MFXInit();
             Load();
+
+            // since memcmp() used for verification, all optional fields must be set
+            m_par.mfx.FrameInfo.AspectRatioW = m_par.mfx.FrameInfo.AspectRatioH = 1;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+            m_par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
             SETPARS(m_pPar, MFX_PAR);
             g_tsStatus.expect(tc.sts);
@@ -130,7 +136,7 @@ namespace hevce_query_io_surf
                 m_par.mfx.FrameInfo.Width = ((m_par.mfx.FrameInfo.Width + 32 - 1) & ~(32 - 1));
                 m_par.mfx.FrameInfo.Height = ((m_par.mfx.FrameInfo.Height + 32 - 1) & ~(32 - 1));
 
-
+                isHW = true;
             }
 
             if ((m_par.AsyncDepth > 1) && (tc.sts == MFX_ERR_NONE))
@@ -142,6 +148,8 @@ namespace hevce_query_io_surf
                 nFrameMin = AsyncDepth - 1 + m_request.NumFrameMin + 2;
                 nFrameSuggested = AsyncDepth - 1 + m_request.NumFrameSuggested + 2;
             }
+
+            mfxVideoParam tmp_par = m_par;
 
             //call tested funcion
             if (tc.type == NULL_SESSION)
@@ -165,7 +173,11 @@ namespace hevce_query_io_surf
             if (tc.sts == MFX_ERR_NONE)
             {
                 EXPECT_EQ(0, memcmp(&(m_request.Info), &(m_pPar->mfx.FrameInfo), sizeof(mfxFrameInfo)))
+                    << "ERROR: QueryIOSurf didn't fill up frame info in returned mfxFrameAllocRequest structure";
+
+                EXPECT_EQ(0, memcmp(&tmp_par, m_pPar, sizeof(mfxVideoParam)))
                     << "ERROR: Input parameters must not be changed in QueryIOSurf()";
+
                 switch (m_par.IOPattern)
                 {
                 case MFX_IOPATTERN_IN_SYSTEM_MEMORY:
@@ -179,14 +191,17 @@ namespace hevce_query_io_surf
                     break;
                 default: return MFX_ERR_INVALID_VIDEO_PARAM;
                 }
-                if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
+                if (isHW)
                 {
                     if (m_par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-                        type = MFX_MEMTYPE_D3D_EXT | MFX_MEMTYPE_OPAQUE_FRAME;
+                    {
+                        type &= ~MFX_MEMTYPE_SYSTEM_MEMORY;
+                        type |= MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
+                    }
                     if (nFrameMin)
-                        nFrameMin = nFrameMin - 2;
+                        nFrameMin -= 1;
                     if (nFrameSuggested)
-                        nFrameSuggested = nFrameSuggested - 2;
+                        nFrameSuggested -= 1;
                 }
 
                 EXPECT_EQ(type, m_request.Type)
