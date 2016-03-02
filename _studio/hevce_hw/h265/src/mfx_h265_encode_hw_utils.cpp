@@ -1952,7 +1952,8 @@ Task* TaskManager::Reorder(
     if (top == end)
         return 0;
 
-    top->m_dpb_output_delay = (mfxU32)std::distance(begin, top);
+    if (!par.mfx.EncodedOrder)
+        top->m_dpb_output_delay = (mfxU32)std::distance(begin, top);
 
     return &*top;
 }

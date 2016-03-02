@@ -575,6 +575,29 @@ mfxStatus Plugin::GetVideoParam(mfxVideoParam *par)
     return sts;
 }
 
+struct LessInc
+{
+    mfxU32* m_cnt;
+    mfxU32  m_ref;
+
+    LessInc(mfxU32 ref, mfxU32* cnt)
+    {
+        m_ref = ref;
+        m_cnt = cnt;
+    }
+
+   inline bool operator() (mfxU32 l)
+    {
+        if (l < m_ref)
+        {
+            if (m_cnt)
+                (*m_cnt)++;
+            return true;
+        }
+        return false;
+    }
+};
+
 mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxThreadTask *thread_task)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -638,6 +661,24 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
             MFX_CHECK(surface->Data.FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN), MFX_ERR_UNDEFINED_BEHAVIOR);
             MFX_CHECK(task->m_frameType != MFX_FRAMETYPE_UNKNOWN, MFX_ERR_UNDEFINED_BEHAVIOR);
             m_frameOrder = surface->Data.FrameOrder;
+
+            if (surface->Data.FrameOrder > 0)
+            {
+                m_reorderEmu.remove_if(LessInc(surface->Data.FrameOrder, &m_displOrder));
+
+                task->m_dpb_output_delay = surface->Data.FrameOrder - m_displOrder - 1;
+
+                if (task->m_dpb_output_delay)
+                    m_reorderEmu.push_back(surface->Data.FrameOrder);
+                else
+                    m_displOrder++;
+            }
+            else
+            {
+                task->m_dpb_output_delay = 0;
+                m_displOrder = 0;
+                m_reorderEmu.resize(0);
+            }
         }
         else
         {
