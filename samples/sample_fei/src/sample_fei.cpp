@@ -984,7 +984,7 @@ int main(int argc, char *argv[])
     Params.mbQpFile      = NULL;
     Params.bRepackPreencMV      = false;
     Params.bFieldProcessingMode = false;
-    Params.bMBSize  = false;
+    Params.bMBSize    = false;
     Params.bDynamicRC = false;
     Params.nResetStart  = 0;
     Params.nResetEnd    = 0;

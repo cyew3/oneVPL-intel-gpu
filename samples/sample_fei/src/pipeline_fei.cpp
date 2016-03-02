@@ -2528,7 +2528,7 @@ mfxStatus CEncodingPipeline::InitInterfaces()
 
         if (is_8x8tranform_forced){
             msdk_printf(MSDK_STRING("\nWARNING: Transform8x8ModeFlag enforced!\n"));
-            msdk_printf(MSDK_STRING("           Reason: IntraPartMask = %u, has does not disabled partitions below 16x16\n"), m_encpakParams.IntraPartMask);
+            msdk_printf(MSDK_STRING("           Reason: IntraPartMask = %u, does not disable partitions below 16x16\n"), m_encpakParams.IntraPartMask);
         }
 
     } // if (m_encpakParams.bENCODE)
@@ -4113,41 +4113,54 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[
 
     mfxStatus sts = MFX_ERR_NONE;
 
+    mfxU32 nPred_actual = 0;
+    mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB ** bestDistortionPredMB[MaxFeiEncMVPNum];
+    mfxU32 *refIdx[MaxFeiEncMVPNum];
+
     for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
     {
-        mfxU32 nPred = numMVP[fieldId], nPred_actual = IPP_MIN(nPred, MaxFeiEncMVPNum);
-        if (nPred == 0 || (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_I))
+        nPred_actual = IPP_MIN(numMVP[fieldId], MaxFeiEncMVPNum);
+        if (nPred_actual == 0 || (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_I))
             continue; // I-field
 
         if (set == NULL) {
             set = getFreeBufSet(m_encodeBufs);
-            MSDK_CHECK_POINTER(set, MFX_ERR_NULL_PTR);
+            if (set == NULL){
+                sts = MFX_ERR_NULL_PTR;
+                break;
+            }
         }
 
         mvp = (mfxExtFeiEncMVPredictors*)getBufById(&set->PB_bufs.in, MFX_EXTBUFF_FEI_ENC_MV_PRED, fieldId);
-        MSDK_CHECK_POINTER(mvp, MFX_ERR_NULL_PTR);
+        if (mvp == NULL){
+            sts = MFX_ERR_NULL_PTR;
+            break;
+        }
 
-        mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB ** bestDistortionPredMB[MaxFeiEncMVPNum];
         MSDK_ZERO_ARRAY(bestDistortionPredMB, MaxFeiEncMVPNum);
-
-        mfxU32 *refIdx[MaxFeiEncMVPNum];
         MSDK_ZERO_ARRAY(refIdx, MaxFeiEncMVPNum);
 
         for (mfxU32 j = 0; j < nPred_actual; j++) // alloc structures for predictors
         {
             bestDistortionPredMB[j] = new mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *[2]; // L0/L1 best 16 MV by distortion
-            MSDK_CHECK_POINTER(bestDistortionPredMB[j], MFX_ERR_NULL_PTR);
+            if (bestDistortionPredMB[j] == NULL){
+                sts = MFX_ERR_NULL_PTR;
+                break;
+            }
             MSDK_ZERO_ARRAY(bestDistortionPredMB[j], 2);
 
             refIdx[j] = new mfxU32[2];
-            MSDK_CHECK_POINTER(refIdx[j], MFX_ERR_NULL_PTR);
+            if (refIdx[j] == NULL){
+                sts = MFX_ERR_NULL_PTR;
+                break;
+            }
             MSDK_ZERO_ARRAY(refIdx[j], 2);
         }
 
         for (mfxU32 i = 0; i < m_numMBpreenc; i++) // get best nPred_actual L0/L1 predictors for each MB
         {
             sts = GetBestSetByDistortion(eTask->preenc_mvp_info, bestDistortionPredMB, refIdx, nPred_actual, fieldId, i);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            MSDK_BREAK_ON_ERROR(sts);
 
             for (mfxU32 j = 0; j < nPred_actual; j++)
             {
@@ -4159,7 +4172,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[
                 {
                     sts = repackPreenc2EncExOneMB(bestDistortionPredMB[j], &mvp->MB[i], refIdx[j], j, m_tmpForMedian);
                 }
-                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                MSDK_BREAK_ON_ERROR(sts);
             }
         }
 
@@ -4171,12 +4184,17 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[
 
     } // for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
 
+    /* do this if we breaked on error */
+    for (mfxU32 j = 0; j < nPred_actual; j++)
+    {
+        MSDK_SAFE_DELETE_ARRAY(bestDistortionPredMB[j]);
+        MSDK_SAFE_DELETE_ARRAY(refIdx[j]);
+    }
+
+    SAFE_RELEASE_EXT_BUFSET(set);
+
     sts = ReleasePreencMVPinfo(eTask);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    if (set){
-        set->vacant = true;
-    }
 
     return sts;
 }
@@ -4193,37 +4211,52 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 num
     bufSet*                   set = NULL;
 
     mfxU32 *refIdx[MaxFeiEncMVPNum];
+    mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMVoutMB[2];
+    mfxU32 nPred_actual = 0;
 
     for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
     {
-        mfxU32 nPred = numMVP[fieldId], nPred_actual = IPP_MIN(nPred, MaxFeiEncMVPNum);
-        if (nPred == 0 || (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_I))
+        nPred_actual = IPP_MIN(numMVP[fieldId], MaxFeiEncMVPNum);
+        if (nPred_actual == 0 || (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_I))
             continue; // I-field
 
         mvs = new mfxExtFeiPreEncMV*[nPred_actual];
-        MSDK_CHECK_POINTER(mvs, MFX_ERR_NULL_PTR);
-        MSDK_ZERO_ARRAY(mvs, nPred_actual);
+        if (mvs == NULL){
+            sts = MFX_ERR_NULL_PTR;
+            break;
+        }
 
+        MSDK_ZERO_ARRAY(mvs, nPred_actual);
         MSDK_ZERO_ARRAY(refIdx, MaxFeiEncMVPNum);
 
         if (set == NULL) {
             set = getFreeBufSet(m_encodeBufs);
-            MSDK_CHECK_POINTER(set, MFX_ERR_NULL_PTR);
+            if (set == NULL){
+                sts = MFX_ERR_NULL_PTR;
+                break;
+            }
         }
 
         mvp = (mfxExtFeiEncMVPredictors*)getBufById(&set->PB_bufs.in, MFX_EXTBUFF_FEI_ENC_MV_PRED, fieldId);
-        MSDK_CHECK_POINTER(mvp, MFX_ERR_NULL_PTR);
-
-        mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMVoutMB[2];
+        if (mvp == NULL){
+            sts = MFX_ERR_NULL_PTR;
+            break;
+        }
 
         mfxU32 j = 0;
         for (std::list<PreEncMVPInfo>::iterator it = eTask->preenc_mvp_info.begin(); it != eTask->preenc_mvp_info.end() && j < nPred_actual; ++it, ++j)
         {
             mvs[j] = (mfxExtFeiPreEncMV*)getBufById(&(*it).preenc_output_bufs->PB_bufs.out, MFX_EXTBUFF_FEI_PREENC_MV, fieldId);
-            MSDK_CHECK_POINTER(mvs[j], MFX_ERR_NULL_PTR);
+            if (mvs[j] == NULL){
+                sts = MFX_ERR_NULL_PTR;
+                break;
+            }
 
             refIdx[j] = new mfxU32[2];
-            MSDK_CHECK_POINTER(refIdx[j], MFX_ERR_NULL_PTR);
+            if (refIdx[j] == NULL){
+                sts = MFX_ERR_NULL_PTR;
+                break;
+            }
             memcpy(refIdx[j], (*it).refIdx[fieldId], 2*sizeof(mfxU32));
         }
 
@@ -4255,12 +4288,17 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 num
         }
     } // for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
 
+    /* do this if we breaked on error */
+    MSDK_SAFE_DELETE_ARRAY(mvs);
+    for (mfxU32 j = 0; j < nPred_actual; j++)
+    {
+        MSDK_SAFE_DELETE_ARRAY(refIdx[j]);
+    }
+
+    SAFE_RELEASE_EXT_BUFSET(set);
+
     sts = ReleasePreencMVPinfo(eTask);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    if (set){
-        set->vacant = true;
-    }
 
     return sts;
 }
