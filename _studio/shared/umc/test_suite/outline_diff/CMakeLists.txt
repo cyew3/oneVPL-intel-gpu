@@ -21,4 +21,7 @@ list( APPEND LIBS
   pthread
   dl
   )
+
+set( defs "${WARNING_FLAGS}" )
 make_executable( shortname none static )
+set( defs "" )

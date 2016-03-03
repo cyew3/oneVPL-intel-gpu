@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -32,7 +32,7 @@ public:
 
     virtual Ipp32u GetUNumberValueByTag(vm_char * tagName) const = 0;
 
-    virtual vm_char * GetAttribute(vm_char * name) const = 0;
+    virtual vm_char * GetAttribute(const vm_char * name) const = 0;
 
     virtual void GetAttributeFormat(const vm_char * tag, const vm_char * format, ...) const = 0;
 

@@ -13,8 +13,6 @@ elseif( Darwin )
   set (PKG_XERCES_FOUND false)
 endif ()
 
-
-
 if( PKG_XERCES_FOUND )
   link_directories ( ${CMAKE_CURRENT_SOURCE_DIR}/xerces/lib )
 
@@ -56,5 +54,7 @@ if( PKG_XERCES_FOUND )
      set(OUTLINE_LIB_NAME outline_d)
   endif()
 
+  set( defs "${defs} ${WARNING_FLAGS}" )
   make_library(${OUTLINE_LIB_NAME} none shared )
+  set( defs "" )
 endif()

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 #include "xerces_entry.h"
@@ -24,7 +24,7 @@ XML_Entry_Read::~XML_Entry_Read()
 {
 }
 
-vm_char * XML_Entry_Read::GetAttribute(vm_char * name) const
+vm_char * XML_Entry_Read::GetAttribute(const vm_char * name) const
 {
     return transcodeFromXML<vm_char>(GetXMLAttribute(name));
 }
