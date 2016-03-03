@@ -334,8 +334,10 @@ namespace MfxHwVideoProcessing
                ,bFMDEnable(false)
                ,bDenoiseAutoAdjust(false)
                ,denoiseFactor(0)
+               ,denoiseFactorOriginal(0)
                ,bDetailAutoAdjust(false)
                ,detailFactor(0)
+               ,detailFactorOriginal(0)
                ,iTargetInterlacingMode(0)
                ,bEnableProcAmp(false)
                ,Brightness(0)
@@ -347,6 +349,7 @@ namespace MfxHwVideoProcessing
                ,bImgStabilizationEnable(false)
                ,istabMode(0)
                ,bFRCEnable(false)
+               ,frcModeOrig(0)
                ,bComposite(false)
                ,dstRects(0)
                ,iBackgroundColor(0)
@@ -405,9 +408,11 @@ namespace MfxHwVideoProcessing
 
         bool           bDenoiseAutoAdjust;
         mfxU16         denoiseFactor;
+        mfxU16         denoiseFactorOriginal; // Original denoise factor provided by app.
 
         bool           bDetailAutoAdjust;
         mfxU16         detailFactor;
+        mfxU16         detailFactorOriginal;  // Original detail factor provided by app.
 
         mfxU32         iTargetInterlacingMode;
 
@@ -425,6 +430,7 @@ namespace MfxHwVideoProcessing
 
         bool           bFRCEnable;
         CustomRateData customRateData;
+        mfxU16         frcModeOrig; // Original mode provided by app
 
         bool           bComposite;
         std::vector<DstRect> dstRects;

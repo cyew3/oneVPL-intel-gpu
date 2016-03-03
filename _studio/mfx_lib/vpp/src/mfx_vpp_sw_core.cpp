@@ -924,11 +924,13 @@ mfxStatus VideoVPPSW::GetVideoParam(mfxVideoParam *par)
                     default:
                         return MFX_ERR_UNDEFINED_BEHAVIOR;
                 }
-
             }
         }
+    }
 
-        // Todo: filling of other extbuffers if required
+    if (m_pHWVPP.get())
+    {
+        return m_pHWVPP->GetVideoParams(par);
     }
 
     return MFX_ERR_NONE;

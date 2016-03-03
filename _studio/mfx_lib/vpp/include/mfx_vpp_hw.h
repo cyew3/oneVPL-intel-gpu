@@ -728,6 +728,8 @@ namespace MfxHwVideoProcessing
             mfxVideoParam *par, 
             bool isTemporal = false);
 
+        mfxStatus GetVideoParams(mfxVideoParam *par) const;
+
         static
         mfxStatus QueryIOSurf(
             IOMode ioMode,

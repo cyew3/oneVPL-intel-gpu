@@ -1422,6 +1422,148 @@ VideoVPPHW::~VideoVPPHW()
 } // VideoVPPHW::~VideoVPPHW()
 
 
+mfxStatus VideoVPPHW::GetVideoParams(mfxVideoParam *par) const
+{
+    MFX_CHECK_NULL_PTR1(par);
+
+    /* Step 1: Fill filters in use in DOUSE if specified.
+     *  This step is skipped since it's done on upper level already
+     */
+    if( NULL == par->ExtParam || 0 == par->NumExtParam)
+    {
+        return MFX_ERR_NONE;
+    }
+
+    for( mfxU32 i = 0; i < par->NumExtParam; i++ )
+    {
+        MFX_CHECK_NULL_PTR1(par->ExtParam[i]);
+        mfxU32 bufferId = par->ExtParam[i]->BufferId;
+        if(MFX_EXTBUFF_VPP_DEINTERLACING == bufferId)
+        {
+            mfxExtVPPDeinterlacing *bufDI = reinterpret_cast<mfxExtVPPDeinterlacing *>(par->ExtParam[i]);
+            MFX_CHECK_NULL_PTR1(bufDI);
+            bufDI->Mode = static_cast<mfxU16>(m_executeParams.iDeinterlacingAlgorithm);
+        }
+        else if (MFX_EXTBUFF_VPP_DENOISE == bufferId)
+        {
+            mfxExtVPPDenoise *bufDN = reinterpret_cast<mfxExtVPPDenoise *>(par->ExtParam[i]);
+            MFX_CHECK_NULL_PTR1(bufDN);
+            bufDN->DenoiseFactor = m_executeParams.denoiseFactorOriginal;
+        }
+        else if (MFX_EXTBUFF_VPP_PROCAMP == bufferId)
+        {
+            mfxExtVPPProcAmp *bufPA = reinterpret_cast<mfxExtVPPProcAmp *>(par->ExtParam[i]);
+            MFX_CHECK_NULL_PTR1(bufPA);
+            bufPA->Brightness = m_executeParams.Brightness;
+            bufPA->Contrast   = m_executeParams.Contrast;
+            bufPA->Hue        = m_executeParams.Hue;
+            bufPA->Saturation = m_executeParams.Saturation;
+        }
+        else if (MFX_EXTBUFF_VPP_DETAIL == bufferId)
+        {
+            mfxExtVPPDetail *bufDT = reinterpret_cast<mfxExtVPPDetail *>(par->ExtParam[i]);
+            MFX_CHECK_NULL_PTR1(bufDT);
+            bufDT->DetailFactor = m_executeParams.detailFactorOriginal;
+        }
+        else if (MFX_EXTBUFF_VIDEO_SIGNAL_INFO == bufferId)
+        {
+            mfxExtVPPVideoSignalInfo *bufVSI = reinterpret_cast<mfxExtVPPVideoSignalInfo *>(par->ExtParam[i]);
+            MFX_CHECK_NULL_PTR1(bufVSI);
+            bufVSI->In.NominalRange   = m_executeParams.VideoSignalInfoIn.NominalRange;
+            bufVSI->In.TransferMatrix = m_executeParams.VideoSignalInfoIn.TransferMatrix;
+            bufVSI->Out.NominalRange   = m_executeParams.VideoSignalInfoOut.NominalRange;
+            bufVSI->Out.TransferMatrix = m_executeParams.VideoSignalInfoOut.TransferMatrix;
+        }
+        else if (MFX_EXTBUFF_VPP_COMPOSITE == bufferId)
+        {
+            mfxExtVPPComposite *bufComp = reinterpret_cast<mfxExtVPPComposite *>(par->ExtParam[i]);
+            MFX_CHECK_NULL_PTR1(bufComp);
+            MFX_CHECK_NULL_PTR1(bufComp->InputStream);
+            bufComp->NumInputStream = static_cast<mfxU16>(m_executeParams.dstRects.size());
+            for (size_t k = 0; k < m_executeParams.dstRects.size(); k++)
+            {
+                MFX_CHECK_NULL_PTR1(bufComp->InputStream);
+                bufComp->InputStream[k].DstX = m_executeParams.dstRects[k].DstX;
+                bufComp->InputStream[k].DstY = m_executeParams.dstRects[k].DstY;
+                bufComp->InputStream[k].DstW = m_executeParams.dstRects[k].DstW;
+                bufComp->InputStream[k].DstH = m_executeParams.dstRects[k].DstH;
+                bufComp->InputStream[k].GlobalAlpha       = m_executeParams.dstRects[k].GlobalAlpha;
+                bufComp->InputStream[k].GlobalAlphaEnable = m_executeParams.dstRects[k].GlobalAlphaEnable;
+                bufComp->InputStream[k].LumaKeyEnable = m_executeParams.dstRects[k].LumaKeyEnable;
+                bufComp->InputStream[k].LumaKeyMax    = m_executeParams.dstRects[k].LumaKeyMax;
+                bufComp->InputStream[k].LumaKeyMin     = m_executeParams.dstRects[k].LumaKeyMin;
+                bufComp->InputStream[k].PixelAlphaEnable = m_executeParams.dstRects[k].PixelAlphaEnable;
+            }
+
+            bufComp->R = (m_executeParams.iBackgroundColor >> 16 ) & 0xFF;
+            bufComp->G = (m_executeParams.iBackgroundColor >> 8  ) & 0xFF;
+            bufComp->B = (m_executeParams.iBackgroundColor >> 0  ) & 0xFF;
+        }
+        else if (MFX_EXTBUFF_VPP_FIELD_PROCESSING == bufferId)
+        {
+            mfxExtVPPFieldProcessing *bufFP = reinterpret_cast<mfxExtVPPFieldProcessing *>(par->ExtParam[i]);
+            MFX_CHECK_NULL_PTR1(bufFP);
+            mfxU32 mode = m_executeParams.iFieldProcessingMode - 1;
+            if (FRAME2FRAME == mode)
+            {
+                bufFP->Mode = MFX_FIELDMODE_FRAME;
+                bufFP->InField  = par->vpp.In.PicStruct;
+                bufFP->OutField = par->vpp.Out.PicStruct;
+            }
+            else if (TFF2TFF == mode)
+            {
+                bufFP->Mode = MFX_VPP_COPY_FIELD;
+                bufFP->InField  = MFX_PICSTRUCT_FIELD_TFF;
+                bufFP->OutField = MFX_PICSTRUCT_FIELD_TFF;
+            }
+            else if (TFF2BFF == mode)
+            {
+                bufFP->Mode = MFX_VPP_COPY_FIELD;
+                bufFP->InField  = MFX_PICSTRUCT_FIELD_TFF;
+                bufFP->OutField = MFX_PICSTRUCT_FIELD_BFF;
+            }
+            else if (BFF2TFF == mode)
+            {
+                bufFP->Mode = MFX_VPP_COPY_FIELD;
+                bufFP->InField  = MFX_PICSTRUCT_FIELD_BFF;
+                bufFP->OutField = MFX_PICSTRUCT_FIELD_TFF;
+            }
+            else if (BFF2BFF == mode)
+            {
+                bufFP->Mode = MFX_VPP_COPY_FIELD;
+                bufFP->InField  = MFX_PICSTRUCT_FIELD_BFF;
+                bufFP->OutField = MFX_PICSTRUCT_FIELD_BFF;
+            }
+        }
+        else if (MFX_EXTBUFF_VPP_ROTATION == bufferId)
+        {
+            mfxExtVPPRotation *bufRot = reinterpret_cast<mfxExtVPPRotation *>(par->ExtParam[i]);
+            MFX_CHECK_NULL_PTR1(bufRot);
+            bufRot->Angle = static_cast<mfxU16>(m_executeParams.rotation);
+        }
+        else if (MFX_EXTBUFF_VPP_SCALING == bufferId)
+        {
+            mfxExtVPPScaling *bufSc = reinterpret_cast<mfxExtVPPScaling *>(par->ExtParam[i]);
+            MFX_CHECK_NULL_PTR1(bufSc);
+            bufSc->ScalingMode = m_executeParams.scalingMode;
+        }
+        else if (MFX_EXTBUFF_VPP_MIRRORING == bufferId)
+        {
+            mfxExtVPPMirroring *bufMir = reinterpret_cast<mfxExtVPPMirroring *>(par->ExtParam[i]);
+            MFX_CHECK_NULL_PTR1(bufMir);
+            bufMir->Type = static_cast<mfxU16>(m_executeParams.mirroring);
+        }
+        else if (MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION == bufferId)
+        {
+            mfxExtVPPFrameRateConversion *bufFRC = reinterpret_cast<mfxExtVPPFrameRateConversion *>(par->ExtParam[i]);
+            MFX_CHECK_NULL_PTR1(bufFRC);
+            bufFRC->Algorithm = m_executeParams.frcModeOrig;
+        }
+    }
+
+    return MFX_ERR_NONE;
+} // mfxStatus VideoVPPHW::GetVideoParams(mfxVideoParam *par) const
+
 mfxStatus  VideoVPPHW::Init(
     mfxVideoParam *par,
     bool isTemporal)
@@ -2896,7 +3038,7 @@ mfxStatus ConfigureExecuteParams(
                             mfxExtVPPDenoise *extDenoise= (mfxExtVPPDenoise*) videoParam.ExtParam[i];
 
                             executeParams.denoiseFactor = MapDNFactor(extDenoise->DenoiseFactor );
-
+                            executeParams.denoiseFactorOriginal = extDenoise->DenoiseFactor;
                             executeParams.bDenoiseAutoAdjust = FALSE;
                         }
                     }
@@ -3010,6 +3152,7 @@ mfxStatus ConfigureExecuteParams(
                         {
                             mfxExtVPPDetail *extDetail = (mfxExtVPPDetail*) videoParam.ExtParam[i];
                             executeParams.detailFactor = MapDNFactor(extDetail->DetailFactor);
+                            executeParams.detailFactorOriginal = extDetail->DetailFactor;
                         }
                         executeParams.bDetailAutoAdjust = FALSE;
                     }
@@ -3092,7 +3235,7 @@ mfxStatus ConfigureExecuteParams(
 
                 config.m_surfCount[VPP_IN]  = IPP_MAX(2, config.m_surfCount[VPP_IN]);
                 config.m_surfCount[VPP_OUT] = IPP_MAX(2, config.m_surfCount[VPP_OUT]);//aya fixme ????
-
+                executeParams.frcModeOrig = static_cast<mfxU16>(GetMFXFrcMode(videoParam));
 #if 0
                 // Disable interpolated FRC until related issues resolved
 
