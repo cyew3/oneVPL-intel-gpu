@@ -58,9 +58,8 @@ VAProfile ConvertProfileTypeMFX2VAAPI(mfxU32 type)
     switch (type)
     {
         case MFX_PROFILE_AVC_CONSTRAINED_BASELINE:
-            return VAProfileH264ConstrainedBaseline;
         case MFX_PROFILE_AVC_BASELINE:
-            return VAProfileH264Baseline;
+            return VAProfileH264ConstrainedBaseline;
         case MFX_PROFILE_AVC_MAIN:
             return VAProfileH264Main;
         case MFX_PROFILE_AVC_HIGH:
@@ -1069,7 +1068,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         VAEncQueryCapabilities VaEncCaps;
         memset(&VaEncCaps, 0, sizeof(VaEncCaps));
         VaEncCaps.size = sizeof(VAEncQueryCapabilities);
-        vaSts = pfnVaExtQueryCaps(m_vaDisplay, VAProfileH264Baseline, &VaEncCaps);
+        vaSts = pfnVaExtQueryCaps(m_vaDisplay, VAProfileH264ConstrainedBaseline, &VaEncCaps);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
         m_caps.MaxPicWidth  = VaEncCaps.MaxPicWidth;
