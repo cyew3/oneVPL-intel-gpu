@@ -3200,7 +3200,8 @@ mfxStatus CEncodingPipeline::ClearTasks()
 
         SAFE_UNLOCK((*it)->in.InSurface);
         SAFE_UNLOCK((*it)->outPAK.OutSurface);
-        SAFE_UNLOCK((*it)->fullResSurface);
+        if (!!m_encpakParams.preencDSstrength)
+            SAFE_UNLOCK((*it)->fullResSurface);
 
         delete (*it);
     }
@@ -3515,7 +3516,9 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
             preENCCtr->RefFrame[1] = refSurf1[preENCCtrId];
 
             if (!isDownsamplingNeeded && m_encpakParams.bPerfMode)
-                preENCCtr->DownsampleInput = MFX_CODINGOPTION_OFF; // the default is ON
+                preENCCtr->DownsampleInput = MFX_CODINGOPTION_OFF;
+            else
+                preENCCtr->DownsampleInput = MFX_CODINGOPTION_ON; // the default is ON too
 
             preENCCtrId++;
             break;
@@ -4166,7 +4169,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[
             {
                 if (!!m_encpakParams.preencDSstrength)
                 {
-                    sts = repackDSPreenc2EncExMB(bestDistortionPredMB[j], mvp, i, refIdx[j], j, false);
+                    sts = repackDSPreenc2EncExMB(bestDistortionPredMB[j], mvp, i, refIdx[j], j);
                 }
                 else
                 {
@@ -4260,23 +4263,48 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 num
             memcpy(refIdx[j], (*it).refIdx[fieldId], 2*sizeof(mfxU32));
         }
 
-        for (mfxU32 i = 0; i < m_numMBpreenc; i++) // get nPred_actual L0/L1 predictors for each MB
+        for (mfxU32 i = 0; i < m_numMB; i++) // get nPred_actual L0/L1 predictors for each MB
         {
             for (mfxU32 j = 0; j < nPred_actual; j++)
             {
+                mvp->MB[i].RefIdx[j].RefL0 = refIdx[j][0];
+                mvp->MB[i].RefIdx[j].RefL1 = refIdx[j][1];
+
                 if (!m_encpakParams.preencDSstrength)
                 {
-                    mvp->MB[i].RefIdx[j].RefL0 = refIdx[j][0];
-                    mvp->MB[i].RefIdx[j].RefL1 = refIdx[j][1];
-
                     memcpy(mvp->MB[i].MV[j], mvs[j]->MB[i].MV[0], 2 * sizeof(mfxI16Pair));
                 }
                 else
                 {
-                    MSDK_ZERO_ARRAY(preencMVoutMB, 2);
-                    preencMVoutMB[0] = &mvs[j]->MB[i]; // in perf mode we use the same ref idx in L0 and L1 (if applicable)
-                    preencMVoutMB[1] = &mvs[j]->MB[i];
-                    repackDSPreenc2EncExMB(preencMVoutMB, mvp, i, refIdx[j], j, true);
+                    static mfxI16 MVZigzagOrder[16] = { 0, 1, 4, 5, 2, 3, 6, 7, 8, 9, 12, 13, 10, 11, 14, 15 };
+
+                    mfxU32 preencMBidx = i / m_widthMB / m_encpakParams.preencDSstrength * m_widthMBpreenc + i % m_widthMB / m_encpakParams.preencDSstrength;
+                    if (preencMBidx >= m_numMBpreenc)
+                        continue;
+
+                    mfxU8 MVrow = i / m_widthMB % m_encpakParams.preencDSstrength, MVcolumn = i % m_widthMB % m_encpakParams.preencDSstrength;
+                    mfxU8 preencMBMVidx = 0;
+                    switch (m_encpakParams.preencDSstrength)
+                    {
+                    case 2:
+                        preencMBMVidx = MVrow * 8 + MVcolumn * 2;
+                        break;
+                    case 4:
+                        preencMBMVidx = MVrow * 4 + MVcolumn;
+                        break;
+                    case 8:
+                        preencMBMVidx = MVrow / 2 * 4 + MVcolumn / 2;
+                        break;
+                    default:
+                        break;
+                    }
+
+                    memcpy(mvp->MB[i].MV[j], mvs[j]->MB[preencMBidx].MV[MVZigzagOrder[preencMBMVidx]], 2 * sizeof(mfxI16Pair));
+
+                    mvp->MB[i].MV[j][0].x *= m_encpakParams.preencDSstrength;
+                    mvp->MB[i].MV[j][0].y *= m_encpakParams.preencDSstrength;
+                    mvp->MB[i].MV[j][1].x *= m_encpakParams.preencDSstrength;
+                    mvp->MB[i].MV[j][1].y *= m_encpakParams.preencDSstrength;
                 }
             }
         }
@@ -4440,7 +4468,7 @@ mfxStatus repackPreenc2EncExOneMB(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preenc
     return sts;
 }
 
-mfxStatus CEncodingPipeline::repackDSPreenc2EncExMB(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB[2], mfxExtFeiEncMVPredictors *EncMVPred, mfxU32 MBnum, mfxU32 refIdx[2], mfxU32 predIdx, bool perf)
+mfxStatus CEncodingPipeline::repackDSPreenc2EncExMB(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB[2], mfxExtFeiEncMVPredictors *EncMVPred, mfxU32 MBnum, mfxU32 refIdx[2], mfxU32 predIdx)
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxU32 mv_idx = 0;
@@ -4465,20 +4493,10 @@ mfxStatus CEncodingPipeline::repackDSPreenc2EncExMB(mfxExtFeiPreEncMV::mfxExtFei
         switch (m_encpakParams.preencDSstrength)
         {
         case 2:
-            if (perf)
-            {
-                EncMVPredMB->MV[predIdx][0].x = preencMVoutMB[0]->MV[i * 4][0].x;
-                EncMVPredMB->MV[predIdx][0].y = preencMVoutMB[0]->MV[i * 4][0].y;
-                EncMVPredMB->MV[predIdx][1].x = preencMVoutMB[1]->MV[i * 4][1].x;
-                EncMVPredMB->MV[predIdx][1].y = preencMVoutMB[1]->MV[i * 4][1].y;
-            }
-            else
-            {
-                EncMVPredMB->MV[predIdx][0].x = get4Median(preencMVoutMB[0], m_tmpForMedian, 0, 0, i);
-                EncMVPredMB->MV[predIdx][0].y = get4Median(preencMVoutMB[0], m_tmpForMedian, 1, 0, i);
-                EncMVPredMB->MV[predIdx][1].x = get4Median(preencMVoutMB[1], m_tmpForMedian, 0, 1, i);
-                EncMVPredMB->MV[predIdx][1].y = get4Median(preencMVoutMB[1], m_tmpForMedian, 1, 1, i);
-            }
+            EncMVPredMB->MV[predIdx][0].x = get4Median(preencMVoutMB[0], m_tmpForMedian, 0, 0, i);
+            EncMVPredMB->MV[predIdx][0].y = get4Median(preencMVoutMB[0], m_tmpForMedian, 1, 0, i);
+            EncMVPredMB->MV[predIdx][1].x = get4Median(preencMVoutMB[1], m_tmpForMedian, 0, 1, i);
+            EncMVPredMB->MV[predIdx][1].y = get4Median(preencMVoutMB[1], m_tmpForMedian, 1, 1, i);
             break;
         case 4:
             EncMVPredMB->MV[predIdx][0].x = preencMVoutMB[0]->MV[MVZigzagOrder[i]][0].x;

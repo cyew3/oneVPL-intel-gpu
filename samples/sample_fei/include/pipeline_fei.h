@@ -257,7 +257,7 @@ protected:
     mfxSyncPoint   m_LastDecSyncPoint;
 
     mfxFrameSurface1* m_pDecSurfaces; // frames array for decoder input
-    mfxFrameSurface1* m_pDSSurfaces;  // frmaes array for downscaled surfaces for PREENC
+    mfxFrameSurface1* m_pDSSurfaces;  // frames array for downscaled surfaces for PREENC
     mfxFrameSurface1* m_pVppSurfaces; // frames array for vpp input
     mfxFrameSurface1* m_pEncSurfaces; // frames array for encoder input (vpp output)
     mfxFrameSurface1* m_pReconSurfaces; // frames array for reconstructed surfaces [FEI]
@@ -361,7 +361,7 @@ protected:
     mfxStatus DropPREENCoutput(iTask* eTask);
     mfxStatus PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[2]);
     mfxStatus PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 numMVP[2]);
-    mfxStatus repackDSPreenc2EncExMB(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB[2], mfxExtFeiEncMVPredictors *EncMVPred, mfxU32 MBnum, mfxU32 refIdx[2], mfxU32 predIdx, bool perf);
+    mfxStatus repackDSPreenc2EncExMB(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB[2], mfxExtFeiEncMVPredictors *EncMVPred, mfxU32 MBnum, mfxU32 refIdx[2], mfxU32 predIdx);
 
     /* ENC(PAK) reflists */
     mfxStatus FillRefInfo(iTask* eTask);
