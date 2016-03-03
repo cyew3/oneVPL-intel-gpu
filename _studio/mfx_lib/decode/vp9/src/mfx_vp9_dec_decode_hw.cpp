@@ -904,8 +904,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9DecoderFrame
 
             try
             {
-                if (info.profile > 0)
-                    GetBitDepthAndColorSpace(&bsReader, &info);
+                GetBitDepthAndColorSpace(&bsReader, &info);
         
                 info.refreshFrameFlags = (mfxU8)bsReader.GetBits(NUM_REF_FRAMES);
                 GetFrameSize(&bsReader, &info);

@@ -112,6 +112,12 @@ void GetBitDepthAndColorSpace(VP9Bitstream* bs, VP9DecoderFrame* frame)
     else
         frame->bit_depth = 8;
 
+    if (frame->frameType != KEY_FRAME && frame->intraOnly && frame->profile == 0)
+    {
+        frame->subsamplingY = frame->subsamplingX = 1;
+        return;
+    }
+
     Ipp32u const colorspace
         = bs->GetBits(3);
 
