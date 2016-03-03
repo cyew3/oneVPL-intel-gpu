@@ -2998,6 +2998,8 @@ iTask* CEncodingPipeline::CreateAndInitTask()
 {
     iTask* eTask = new iTask;
     MSDK_CHECK_POINTER(eTask, NULL);
+    *eTask = {};
+
     eTask->m_fieldPicFlag = m_isField;
     eTask->PicStruct = m_mfxEncParams.mfx.FrameInfo.PicStruct;
     eTask->BRefType  = m_CodingOption2.BRefType; // m_encpakParams.bRefType;
@@ -3009,11 +3011,12 @@ iTask* CEncodingPipeline::CreateAndInitTask()
     MSDK_ZERO_MEMORY(eTask->inPAK);
     MSDK_ZERO_MEMORY(eTask->outPAK);
 
-    eTask->m_type       = m_frameType;
-    eTask->m_frameOrder = m_frameCount;
-    eTask->encoded      = 0;
-    eTask->bufs         = NULL;
-    eTask->preenc_bufs  = NULL;
+    eTask->m_type         = m_frameType;
+    eTask->m_frameOrder   = m_frameCount;
+    eTask->encoded        = 0;
+    eTask->bufs           = NULL;
+    eTask->preenc_bufs    = NULL;
+    eTask->fullResSurface = NULL;
 
     if (ExtractFrameType(*eTask) & MFX_FRAMETYPE_B)
     {
@@ -4214,7 +4217,6 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 num
     bufSet*                   set = NULL;
 
     mfxU32 *refIdx[MaxFeiEncMVPNum];
-    mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMVoutMB[2];
     mfxU32 nPred_actual = 0;
 
     for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
