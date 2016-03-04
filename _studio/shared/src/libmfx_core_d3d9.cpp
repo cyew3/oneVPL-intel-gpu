@@ -1556,6 +1556,26 @@ void* D3D9VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
         }
         return (void*)pCmDevice;
     }
+    else if (MFXICORECMCOPYWRAPPER_GUID == guid)
+    {
+        if (!m_pCmCopy.get())
+        {
+            m_pCmCopy.reset(new CmCopyWrapper);
+            if (!m_pCmCopy.get()->GetCmDevice<IDirect3DDeviceManager9>(m_pDirect3DDeviceManager)){
+                //!!!! WA: CM restricts multiple CmDevice creation from different device managers.
+                //if failed to create CM device, continue without CmCopy
+                m_bCmCopy = false;
+                m_bCmCopyAllowed = false;
+                m_pCmCopy.get()->Release();
+                m_pCmCopy.reset();
+                return NULL;
+            }else{
+                if(!m_pCmCopy.get()->Initialize())
+                    return NULL;
+            }
+        }
+        return (void*)m_pCmCopy.get();
+    }
     else if (MFXICMEnabledCore_GUID == guid)
     {
         if (!m_pCmAdapter.get())
