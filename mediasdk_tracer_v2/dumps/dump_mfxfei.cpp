@@ -146,7 +146,8 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncFr
     DUMP_FIELD(RepartitionCheckEnable);
     DUMP_FIELD(AdaptiveSearch);
     DUMP_FIELD(MVPredictor);
-    DUMP_FIELD(NumMVPredictors);
+    DUMP_FIELD(NumMVPredictors[0]);
+    DUMP_FIELD(NumMVPredictors[1]);
     DUMP_FIELD(PerMBQp);
     DUMP_FIELD(PerMBInput);
     DUMP_FIELD(MBSizeCtrl);

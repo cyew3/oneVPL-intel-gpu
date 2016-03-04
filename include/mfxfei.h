@@ -141,7 +141,7 @@ typedef struct {
     mfxU16    RepartitionCheckEnable;
     mfxU16    AdaptiveSearch;
     mfxU16    MVPredictor;
-    mfxU16    NumMVPredictors;
+    mfxU16    NumMVPredictors[2];
     mfxU16    PerMBQp;
     mfxU16    PerMBInput;
     mfxU16    MBSizeCtrl;
@@ -149,7 +149,7 @@ typedef struct {
     mfxU16    RefHeight;
     mfxU16    SearchWindow;
     mfxU16    ColocatedMbDistortion;
-    mfxU16    reserved[39];
+    mfxU16    reserved[38];
 } mfxExtFeiEncFrameCtrl;
 
 typedef struct {
