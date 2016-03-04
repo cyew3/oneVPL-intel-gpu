@@ -17,6 +17,7 @@ public:
 private:
 
     mfxExtVPPDoUse* vpp_du;
+    mfxExtVPPDoUse* vpp_du2;
 
     enum
     {
@@ -136,8 +137,6 @@ int TestSuite::RunTest(unsigned int id)
     }
     else if (tc.mode == DOUSE)
     {
-        mfxExtVPPDoUse* vpp_du2;
-
         par_init.AddExtBuffer(MFX_EXTBUFF_VPP_DOUSE, sizeof(mfxExtVPPDoUse));
         vpp_du2 = (mfxExtVPPDoUse*)par_init.GetExtBuffer(MFX_EXTBUFF_VPP_DOUSE);
         vpp_du2->NumAlg = tc.alg_num;
@@ -157,18 +156,59 @@ int TestSuite::RunTest(unsigned int id)
     {
         for (mfxU32 i = 0; i< vpp_du->NumAlg; i++)
         {
-            mfxExtBuffer* buff = par_init.GetExtBuffer(vpp_du->AlgList[i]);
+            if (vpp_du->AlgList[i] == MFX_EXTBUFF_VPP_DENOISE)
+            {
+                mfxExtVPPDenoise* denoise = (mfxExtVPPDenoise*)par_init.GetExtBuffer(MFX_EXTBUFF_VPP_DENOISE);
 
-            // Creating empty buffer
-            m_par.AddExtBuffer(vpp_du->AlgList[i], buff->BufferSz);
-            mfxExtBuffer* empty = m_par.GetExtBuffer(vpp_du->AlgList[i]);
+                if (denoise->DenoiseFactor > 100)
+                    TS_FAIL_TEST("Denoise factor is not valid", MFX_ERR_NONE);
 
-            EXPECT_FALSE(0 == memcmp(empty, buff, buff->BufferSz))
-                << "ERROR: Filter's parameters before and after GetVideoPram() are not equal \n";
+            } else if (vpp_du->AlgList[i] == MFX_EXTBUFF_VPP_DETAIL)
+            {
+                mfxExtVPPDetail* detail = (mfxExtVPPDetail*)par_init.GetExtBuffer(MFX_EXTBUFF_VPP_DETAIL);
+
+                if (detail->DetailFactor > 100)
+                    TS_FAIL_TEST("Detail factor is not valid", MFX_ERR_NONE);
+
+            } else if (vpp_du->AlgList[i] == MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION)
+            {
+                mfxExtVPPFrameRateConversion* frc = (mfxExtVPPFrameRateConversion*)par_init.GetExtBuffer(MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION);
+
+                if (frc->Algorithm != MFX_FRCALGM_PRESERVE_TIMESTAMP && frc->Algorithm != MFX_FRCALGM_DISTRIBUTED_TIMESTAMP
+                    && frc->Algorithm != MFX_FRCALGM_FRAME_INTERPOLATION)
+                    TS_FAIL_TEST("FRC Algorithm is not valid", MFX_ERR_NONE);
+
+            } else if (vpp_du->AlgList[i] == MFX_EXTBUFF_VPP_PROCAMP)
+            {
+                mfxExtVPPProcAmp* procamp = (mfxExtVPPProcAmp*)par_init.GetExtBuffer(MFX_EXTBUFF_VPP_PROCAMP);
+
+                if (procamp->Brightness < -100.0F || procamp->Brightness > 100.0F)
+                    TS_FAIL_TEST("ProcAmp Brightness is not valid", MFX_ERR_NONE);
+                if (procamp->Contrast < 0.0F || procamp->Contrast > 10.0F)
+                    TS_FAIL_TEST("ProcAmp Contrast is not valid", MFX_ERR_NONE);
+                if (procamp->Hue < -180.0F || procamp->Hue > 180.0F)
+                    TS_FAIL_TEST("ProcAmp Hue is not valid", MFX_ERR_NONE);
+                if (procamp->Saturation < 0.0F || procamp->Saturation > 10.0F)
+                    TS_FAIL_TEST("ProcAmp Saturation is not valid", MFX_ERR_NONE);
+
+            } else if (vpp_du->AlgList[i] == MFX_EXTBUFF_VPP_DEINTERLACING)
+            {
+                mfxExtVPPDeinterlacing* deinter = (mfxExtVPPDeinterlacing*)par_init.GetExtBuffer(MFX_EXTBUFF_VPP_DEINTERLACING);
+
+                if (deinter->Mode != MFX_DEINTERLACING_BOB && deinter->Mode != MFX_DEINTERLACING_ADVANCED
+                    && deinter->Mode != MFX_DEINTERLACING_AUTO_DOUBLE && deinter->Mode != MFX_DEINTERLACING_AUTO_SINGLE
+                    && deinter->Mode != MFX_DEINTERLACING_FULL_FR_OUT && deinter->Mode != MFX_DEINTERLACING_HALF_FR_OUT
+                    && deinter->Mode != MFX_DEINTERLACING_24FPS_OUT && deinter->Mode != MFX_DEINTERLACING_FIXED_TELECINE_PATTERN
+                    && deinter->Mode != MFX_DEINTERLACING_30FPS_OUT && deinter->Mode != MFX_DEINTERLACING_DETECT_INTERLACE
+                    && deinter->Mode != MFX_DEINTERLACING_ADVANCED_NOREF && deinter->Mode != MFX_DEINTERLACING_ADVANCED_SCD)
+                    TS_FAIL_TEST("Deinterlacing Mode is not valid", MFX_ERR_NONE);
+            }
         }
 
         delete[] vpp_du->AlgList;
         vpp_du->AlgList = 0;
+        delete[] vpp_du2->AlgList;
+        vpp_du2->AlgList = 0;
     }
     else if (tc.mode == MFX_PAR)
         EXPECT_EQ(m_par, par_init) << "ERROR: Filter's parameters before and after GetVideoPram() are not equal \n";
