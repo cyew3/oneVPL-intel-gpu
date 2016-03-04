@@ -482,7 +482,8 @@ typedef struct _VAEncMiscParameterFEIFrameControlH264Intel {
     VABufferID        mv_predictor;
 
     /** \brief number of MV predictors. It must not be greater than maximum supported MV predictor. */
-    unsigned int      num_mv_predictors;
+    unsigned int      num_mv_predictors_l0      : 16;
+    unsigned int      num_mv_predictors_l1      : 16;
 
     /** \brief control parameters */
     unsigned int      search_path                : 8;

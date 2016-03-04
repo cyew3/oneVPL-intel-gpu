@@ -234,7 +234,7 @@ public:
             feiEncCtrl[fieldId].RepartitionCheckEnable = 0;
             feiEncCtrl[fieldId].AdaptiveSearch = 0;
             feiEncCtrl[fieldId].MVPredictor = 0;
-            feiEncCtrl[fieldId].NumMVPredictors = 1;
+            feiEncCtrl[fieldId].NumMVPredictors[0] = 1;
             feiEncCtrl[fieldId].PerMBQp = 0; //non-zero value
             feiEncCtrl[fieldId].PerMBInput = 0;
             feiEncCtrl[fieldId].MBSizeCtrl = 0;

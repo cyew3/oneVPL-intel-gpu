@@ -534,7 +534,7 @@ int test(unsigned int id)
     in_efc.RepartitionCheckEnable = 0;
     in_efc.AdaptiveSearch = 0;
     in_efc.MVPredictor = 0;
-    in_efc.NumMVPredictors = 1;
+    in_efc.NumMVPredictors[0] = 1;
     in_efc.PerMBQp = 0;
     in_efc.PerMBInput = 0;
     in_efc.MBSizeCtrl = 0;

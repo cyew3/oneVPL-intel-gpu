@@ -178,7 +178,7 @@ public:
             fei_encode_ctrl[field].RepartitionCheckEnable = 0;
             fei_encode_ctrl[field].AdaptiveSearch         = 0;
             fei_encode_ctrl[field].MVPredictor            = 0;
-            fei_encode_ctrl[field].NumMVPredictors        = 0;
+            fei_encode_ctrl[field].NumMVPredictors[0]        = 0;
             fei_encode_ctrl[field].PerMBQp                = 26;
             fei_encode_ctrl[field].PerMBInput             = 0;
             fei_encode_ctrl[field].MBSizeCtrl             = 0;
@@ -380,7 +380,7 @@ int TestSuite::RunTest(unsigned int id)
                 fei_encode_ctrl[field].RepartitionCheckEnable = 0;
                 fei_encode_ctrl[field].AdaptiveSearch = 0;
                 fei_encode_ctrl[field].MVPredictor = 0;
-                fei_encode_ctrl[field].NumMVPredictors = 0;
+                fei_encode_ctrl[field].NumMVPredictors[0] = 0;
                 fei_encode_ctrl[field].PerMBQp = 26;
                 fei_encode_ctrl[field].PerMBInput = 0;
                 fei_encode_ctrl[field].MBSizeCtrl = 0;

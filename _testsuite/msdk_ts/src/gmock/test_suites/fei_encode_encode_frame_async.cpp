@@ -224,7 +224,7 @@ int TestSuite::RunTest(unsigned int id)
         in_efc.RepartitionCheckEnable = 0;
         in_efc.AdaptiveSearch = 1;
         in_efc.MVPredictor = 0;
-        in_efc.NumMVPredictors = 1; //always 4 predictors
+        in_efc.NumMVPredictors[0] = 1; //always 4 predictors
         in_efc.PerMBQp = 0;
         in_efc.PerMBInput = 0;
         in_efc.MBSizeCtrl = 0;
@@ -244,7 +244,7 @@ int TestSuite::RunTest(unsigned int id)
         in_mvp.MB = new mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB[num_mb];
         in_buffs.push_back((mfxExtBuffer*)&in_mvp);
         in_efc.MVPredictor = 1;
-        in_efc.NumMVPredictors = 1; //always 4 predictors
+        in_efc.NumMVPredictors[0] = 1; //always 4 predictors
     }
 
     mfxExtFeiEncMBCtrl in_mbc = {};

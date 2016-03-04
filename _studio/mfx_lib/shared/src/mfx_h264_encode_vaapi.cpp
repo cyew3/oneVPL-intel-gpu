@@ -1897,7 +1897,8 @@ mfxStatus VAAPIEncoder::Execute(
             vaFeiFrameControl->multi_pred_l1 = frameCtrl->MultiPredL1;
             vaFeiFrameControl->mv_predictor = vaFeiMVPredId;
             vaFeiFrameControl->mv_predictor_enable = frameCtrl->MVPredictor;
-            vaFeiFrameControl->num_mv_predictors = frameCtrl->NumMVPredictors;
+            vaFeiFrameControl->num_mv_predictors_l0 = frameCtrl->NumMVPredictors[0];
+            vaFeiFrameControl->num_mv_predictors_l1 = frameCtrl->NumMVPredictors[1];
             vaFeiFrameControl->ref_height = frameCtrl->RefHeight;
             vaFeiFrameControl->ref_width = frameCtrl->RefWidth;
             vaFeiFrameControl->repartition_check_enable = frameCtrl->RepartitionCheckEnable;
