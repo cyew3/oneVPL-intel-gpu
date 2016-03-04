@@ -1200,7 +1200,9 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
         newList[index] = MFX_EXTBUFF_VPP_ITC;
         index++;
     }
-    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DEINTERLACING ) )
+    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DEINTERLACING ) &&
+      ! IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DI_30i60p     ) &&
+      ! IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DI            ))
     {
         newList[index] = MFX_EXTBUFF_VPP_DEINTERLACING;
         index++;
@@ -1306,6 +1308,7 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
         index++;
     }
     // [1] update
+    pipelineList.resize(index);
     for( index = 0; index < (mfxU32)pipelineList.size(); index++ )
     {
         pipelineList[index] = newList[index];
@@ -1678,11 +1681,10 @@ mfxStatus GetPipelineList(
         if( IsFilterFound( g_TABLE_CONFIG, searchCount, configList[fIdx] ) &&
                 !IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), configList[fIdx]) )
         {
-            /* We have processed MFX_EXTBUFF_VPP_DEINTERLACING already*/
-            if( !IsFilterFound(  &configList[0], configCount, MFX_EXTBUFF_VPP_DEINTERLACING ) )
-            {
-                pipelineList.push_back(configList[fIdx]);
-            } /*if( !IsFilterFound */
+            /* Add filter to the list.
+             * Don't care about duplicates, they will be eliminated by Reorder... calls below 
+             */
+            pipelineList.push_back(configList[fIdx]);
         } /* if( IsFilterFound( g_TABLE_CONFIG */
     } /*for(fIdx = 0; fIdx < fCount; fIdx++)*/
 
