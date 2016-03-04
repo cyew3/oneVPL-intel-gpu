@@ -936,6 +936,8 @@ void WipeResources(sAppResources* pResources)
             pResources->pDstFileWriters[i].Close();
         }
         delete[] pResources->pDstFileWriters;
+        pResources->dstFileWritersN = 0;
+        pResources->pDstFileWriters = 0;
     }
 
     WipeConfigParam( pResources );
