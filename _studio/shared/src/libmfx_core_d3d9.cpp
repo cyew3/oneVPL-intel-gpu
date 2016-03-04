@@ -992,10 +992,20 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
     {
         if (m_bCmCopy == true && pDst->Info.FourCC != MFX_FOURCC_YV12 && CM_SUPPORTED_COPY_SIZE(roi))
         {
-            if(pSrc->Info.FourCC == MFX_FOURCC_RGB4 && pDst->Info.FourCC == MFX_FOURCC_BGR4)
-                sts = pCmCopy->CopySwapVideoToVideoMemory(pDst->Data.MemId, pSrc->Data.MemId, roi, MFX_FOURCC_BGR4);
-            else
-                sts = pCmCopy->CopyVideoToVideoMemoryAPI(pDst->Data.MemId, pSrc->Data.MemId, roi);
+            mfxStatus sts = MFX_ERR_NONE;
+            mfxU32 counter = 0;
+            do
+            {
+                if(pSrc->Info.FourCC == MFX_FOURCC_RGB4 && pDst->Info.FourCC == MFX_FOURCC_BGR4)
+                    sts = pCmCopy->CopySwapVideoToVideoMemory(pDst->Data.MemId, pSrc->Data.MemId, roi, MFX_FOURCC_BGR4);
+                else
+                    sts = pCmCopy->CopyVideoToVideoMemoryAPI(pDst->Data.MemId, pSrc->Data.MemId, roi);
+
+                if (sts != MFX_ERR_NONE)
+                    Sleep(20);
+            }
+            while(sts != MFX_ERR_NONE && ++counter < 4); // waiting 80 ms, source surface may be locked by application
+
             MFX_CHECK_STS(sts);
         }
         else
@@ -1006,16 +1016,24 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
 
             const tagRECT rect = {0, 0, roi.width, roi.height};
 
-            hRes = direct3DDevice->StretchRect((IDirect3DSurface9*) pSrc->Data.MemId, &rect,
-                                                  (IDirect3DSurface9*) pDst->Data.MemId, &rect,
-                                                   D3DTEXF_LINEAR);
-
-            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+            HRESULT stretchRectResult = S_OK;
+            mfxU32 counter = 0;
+            do
+            {
+                stretchRectResult = direct3DDevice->StretchRect((IDirect3DSurface9*) pSrc->Data.MemId, &rect,
+                                                                (IDirect3DSurface9*) pDst->Data.MemId, &rect,
+                                                                 D3DTEXF_LINEAR);
+                if (FAILED(stretchRectResult))
+                    Sleep(20);
+            }
+            while(FAILED(stretchRectResult) && ++counter < 4); // waiting 80 ms, source surface may be locked by application
 
             hRes = m_pDirect3DDeviceManager->UnlockDevice(m_hDirectXHandle, false);
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
 
             direct3DDevice->Release();
+
+            MFX_CHECK(SUCCEEDED(stretchRectResult), MFX_ERR_DEVICE_FAILED);
         }
     }
     else if (NULL != pSrc->Data.MemId && NULL != pDst->Data.Y)

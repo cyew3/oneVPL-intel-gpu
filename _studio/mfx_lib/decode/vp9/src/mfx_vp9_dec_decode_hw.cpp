@@ -535,34 +535,31 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
     if (data.copyFromFrame != UMC::FRAME_MID_INVALID)
     {
         UMC::AutomaticUMCMutex guard(decoder.m_mGuard);
-        mfxFrameSurface1 surface = *data.surface_work;
-        surface.Info.Width = (surface.Info.CropW + 15) & ~0x0f;
-        surface.Info.Height = (surface.Info.CropH + 15) & ~0x0f;
 
-#if 1
+        mfxFrameSurface1 surfaceDst = *data.surface_work;
+        surfaceDst.Info.Width = (surfaceDst.Info.CropW + 15) & ~0x0f;
+        surfaceDst.Info.Height = (surfaceDst.Info.CropH + 15) & ~0x0f;
+
         mfxFrameSurface1 *surfaceSrc = decoder.m_FrameAllocator->GetSurfaceByIndex(data.copyFromFrame);
         if (!surfaceSrc)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-        mfxFrameSurface1 surface1 = *surfaceSrc;
+        bool systemMemory = (decoder.m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) != 0;
+        mfxU16 srcMemType = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME;
+        mfxU16 dstMemType = systemMemory ? MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_EXTERNAL_FRAME : srcMemType;
 
-        bool isExternal = !(decoder.m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
-        mfxU16 memType = MFX_MEMTYPE_DXVA2_DECODER_TARGET;
-        memType |= isExternal ? MFX_MEMTYPE_EXTERNAL_FRAME : MFX_MEMTYPE_INTERNAL_FRAME;
+        mfxStatus sts = decoder.m_core->DoFastCopyWrapper(&surfaceDst, dstMemType, surfaceSrc, srcMemType);
+        MFX_CHECK_STS(sts);
 
-        mfxStatus sts = decoder.m_core->DoFastCopyWrapper(&surface, memType, &surface1, memType);
-        if (sts != MFX_ERR_NONE)
-            return sts;
-
-        decoder.m_FrameAllocator->SetDoNotNeedToCopyFlag(isExternal ? true : false);
-        decoder.m_FrameAllocator->PrepareToOutput(data.surface_work, data.copyFromFrame, 0, false);
+        decoder.m_FrameAllocator->SetDoNotNeedToCopyFlag(true);
+        sts = decoder.m_FrameAllocator->PrepareToOutput(data.surface_work, data.copyFromFrame, 0, false);
+        MFX_CHECK_STS(sts);
         decoder.m_FrameAllocator->SetDoNotNeedToCopyFlag(false);
-#endif
         
         if (data.currFrameId != -1)
-           decoder.m_FrameAllocator.get()->DecreaseReference(data.currFrameId);
+           decoder.m_FrameAllocator->DecreaseReference(data.currFrameId);
 
-        decoder.m_FrameAllocator.get()->DecreaseReference(data.copyFromFrame);
+        decoder.m_FrameAllocator->DecreaseReference(data.copyFromFrame);
 
         return MFX_ERR_NONE;
     }
@@ -633,13 +630,14 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
 
     if (decoder.m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
     {
-        decoder.m_FrameAllocator->PrepareToOutput(data.surface_work, data.currFrameId, 0, false);
+        mfxStatus sts = decoder.m_FrameAllocator->PrepareToOutput(data.surface_work, data.currFrameId, 0, false);
+        MFX_CHECK_STS(sts);
     }
 
     UMC::AutomaticUMCMutex guard(decoder.m_mGuard);
 
     if (data.currFrameId != -1)
-       decoder.m_FrameAllocator.get()->DecreaseReference(data.currFrameId);
+       decoder.m_FrameAllocator->DecreaseReference(data.currFrameId);
 
     return MFX_TASK_DONE;
 }
