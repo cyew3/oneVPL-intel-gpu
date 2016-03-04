@@ -2682,12 +2682,12 @@ template<> Ipp32s MAKE_NAME(h265_DiffDc)<Ipp8u>(const Ipp8u *src, Ipp32s pitchSr
 {
     assert(width == 8 || width == 16 || width == 32);
     if (width == 8) {
-        __m256i s = _mm256_cvtepu8_epi16(_mm_setr_epi64(*(__m64*)src, *(__m64*)(src+pitchSrc)));
-        __m256i p = _mm256_cvtepu8_epi16(_mm_setr_epi64(*(__m64*)pred, *(__m64*)(pred+pitchPred)));
+        __m256i s = _mm256_cvtepu8_epi16(_mm_set_epi64x(*(Ipp64u*)(src+pitchSrc), *(Ipp64u*)src));
+        __m256i p = _mm256_cvtepu8_epi16(_mm_set_epi64x(*(Ipp64u*)(pred+pitchPred), *(Ipp64u*)pred));
         __m256i dc = _mm256_sub_epi16(s,p);
         for (Ipp32s y = 2; y < 8; y += 2) {
-            s = _mm256_cvtepu8_epi16(_mm_setr_epi64(*(__m64*)(src+y*pitchSrc), *(__m64*)(src+(y+1)*pitchSrc)));
-            p = _mm256_cvtepu8_epi16(_mm_setr_epi64(*(__m64*)(pred+y*pitchPred), *(__m64*)(pred+(y+1)*pitchPred)));
+            s = _mm256_cvtepu8_epi16(_mm_set_epi64x(*(Ipp64u*)(src+(y+1)*pitchSrc), *(Ipp64u*)(src+y*pitchSrc)));
+            p = _mm256_cvtepu8_epi16(_mm_set_epi64x(*(Ipp64u*)(pred+(y+1)*pitchPred), *(Ipp64u*)(pred+y*pitchPred)));
             dc = _mm256_add_epi16(dc, _mm256_sub_epi16(s,p));
         }
         __m128i res = _mm_add_epi16(_mm256_castsi256_si128(dc), _mm256_extracti128_si256(dc,1));
