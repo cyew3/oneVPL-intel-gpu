@@ -196,7 +196,7 @@
     <ClInclude Include="include\gmock\ts_encoder.h" />
     <ClInclude Include="include\gmock\ts_ext_buffers.h" />
     <ClInclude Include="include\gmock\ts_ext_buffers_decl.h" />
-    <ClInclude Include="include\gmock\ts_fei.h" />
+    <ClInclude Include="include\gmock\ts_preenc.h" />
     <ClInclude Include="include\gmock\ts_parser.h" />
     <ClInclude Include="include\gmock\ts_platforms.h" />
     <ClInclude Include="include\gmock\ts_plugin.h" />
@@ -290,7 +290,7 @@
     <ClCompile Include="src\gmock\test_suites\mpeg2e_skipframes.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2e_aspectratio_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\platform_unsupported.cpp" />
-    <ClCompile Include="src\gmock\test_suites\preenc_init.cpp" />
+    <ClCompile Include="src\gmock\test_suites\fei_preenc_query_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_get_video_param.cpp" />
@@ -347,7 +347,7 @@
     <ClCompile Include="src\gmock\ts_enc.cpp" />
     <ClCompile Include="src\gmock\ts_pak.cpp" />
     <ClCompile Include="src\gmock\ts_encoder.cpp" />
-    <ClCompile Include="src\gmock\ts_fei.cpp" />
+    <ClCompile Include="src\gmock\ts_preenc.cpp" />
     <ClCompile Include="src\gmock\ts_plugin.cpp" />
     <ClCompile Include="src\gmock\ts_session.cpp" />
     <ClCompile Include="src\gmock\ts_streams.cpp" />

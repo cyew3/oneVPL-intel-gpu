@@ -32,7 +32,7 @@ list(APPEND sources
    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_surface.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_trace.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_vpp.cpp
-   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_fei.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_preenc.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_enc.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_pak.cpp
 )
