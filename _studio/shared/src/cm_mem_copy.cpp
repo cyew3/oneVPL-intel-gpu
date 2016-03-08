@@ -770,12 +770,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorNV12GPUtoCPU(   CmSurface2D* pSurface,
         }
         else //Last one event, need keep or destroy it
         {
-            UINT64 time;
-            CM_STATUS sts;
-
-            do {pInternalEvent->GetStatus(sts);}
-            while (sts != CM_STATUS_FINISHED);
-            hr = pInternalEvent->GetExecutionTime(time);//WaitForTaskFinished();
+            pInternalEvent->WaitForTaskFinished();
 
             CHECK_CM_HR(hr);
             hr = m_pCmQueue->DestroyEvent(pInternalEvent);

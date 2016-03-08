@@ -34,7 +34,7 @@
 /*32 index*/
 const ushort indexTable[32] = {0x1f,0x1e,0x1d,0x1c,0x1b,0x1a,0x19,0x18,0x17,0x16,0x15,0x14,0x13,0x12,0x11,0x10,
                                0x0f,0x0e,0x0d,0x0c,0x0b,0x0a,0x09,0x08,0x07,0x06,0x05,0x04,0x03,0x02,0x01,0x00};
-
+/*
 extern "C" _GENX_MAIN_  void  
 surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width_dword, int height,int ShiftLeftOffsetInBytes)
 {
@@ -664,12 +664,6 @@ surfaceMirror_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int wid
     int horizOffset_byte = horizOffset << 2;
     int sub_block_width_byte = SUB_BLOCK_PIXEL_WIDTH << 2;
 
-    uint linear_offset_dword = vertOffset * width_dword + (ShiftLeftOffsetInBytes/4) + (width_dword - horizOffset) - BLOCK_PIXEL_WIDTH;
-    uint linear_offset_byte = (linear_offset_dword << 2);
-    //uint linear_offset_NV12_dword = width_dword * ( height + vertOffset_NV12 ) + horizOffset_NV12 + (ShiftLeftOffsetInBytes/4);
-    uint linear_offset_NV12_dword = width_dword * ( height + vertOffset_NV12 ) + (ShiftLeftOffsetInBytes/4) + (width_dword - horizOffset_NV12 - BLOCK_PIXEL_WIDTH);
-    uint linear_offset_NV12_byte = (linear_offset_NV12_dword << 2);
-
     uint last_block_height = 8;
     if(height - vertOffset < BLOCK_HEIGHT)
     {
@@ -678,6 +672,10 @@ surfaceMirror_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int wid
     
     if (width_dword - horizOffset >= BLOCK_PIXEL_WIDTH)    // for aligned block
     {
+        uint linear_offset_dword = vertOffset * width_dword + (ShiftLeftOffsetInBytes/4) + (width_dword - horizOffset) - BLOCK_PIXEL_WIDTH;
+        uint linear_offset_byte = (linear_offset_dword << 2);
+        uint linear_offset_NV12_dword = width_dword * ( height + vertOffset_NV12 ) + (ShiftLeftOffsetInBytes/4) + (width_dword - horizOffset_NV12 - BLOCK_PIXEL_WIDTH);
+        uint linear_offset_NV12_byte = (linear_offset_NV12_dword << 2);
         read_plane(INBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset_byte,                             vertOffset, inData0);
         read_plane(INBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset_byte + SUB_BLOCK_PIXEL_WIDTH*4,   vertOffset, inData1);
         read_plane(INBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset_byte + SUB_BLOCK_PIXEL_WIDTH*4*2, vertOffset, inData2);
@@ -767,6 +765,12 @@ surfaceMirror_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int wid
     } 
     else    // for the unaligned most right blocks
     {
+        //for mirroring most right read being written to most left border, so no pixel offset required.
+        uint linear_offset_dword = vertOffset * width_dword + (ShiftLeftOffsetInBytes/4);
+        uint linear_offset_byte = (linear_offset_dword << 2);
+        uint linear_offset_NV12_dword = width_dword * ( height + vertOffset_NV12 ) + (ShiftLeftOffsetInBytes/4);
+        uint linear_offset_NV12_byte = (linear_offset_NV12_dword << 2);
+
         uint block_width = width_dword - horizOffset;
         uint last_block_size = block_width;
         uint read_times = 1;
