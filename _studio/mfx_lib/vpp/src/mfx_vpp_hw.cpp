@@ -1408,6 +1408,7 @@ VideoVPPHW::VideoVPPHW(IOMode mode, VideoCORE *core)
 
 #if defined(MFX_VA)
     // cm devices
+    m_pCmCopy    = NULL;
     m_pCmDevice  = NULL;
     m_pCmProgram = NULL;
     m_pCmKernel  = NULL;
@@ -1774,46 +1775,16 @@ mfxStatus  VideoVPPHW::Init(
     }
 
 #ifdef VPP_MIRRORING
-    if (m_executeParams.mirroring && ! m_pCmCopy.get())
+    if (m_executeParams.mirroring && ! m_pCmCopy)
     {
-        // Mirroring needs CMCopy stuff. Need to move platform specific items out of here
-        m_pCmCopy.reset(new CmCopyWrapper);
-        if (MFX_HW_D3D9 == m_pCore->GetVAType())
+        m_pCmCopy = QueryCoreInterface<CmCopyWrapper>(m_pCore, MFXICORECMCOPYWRAPPER_GUID);
+        if ( m_pCmCopy)
         {
-            IDirect3DDeviceManager9 *m_pD3Dmanager = 0;
-            m_pCore->GetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL *)&m_pD3Dmanager);
-            if ( m_pD3Dmanager )
-            {
-                if (!m_pCmCopy.get()->GetCmDevice<IDirect3DDeviceManager9>(m_pD3Dmanager))
-                {
-                    m_pCmCopy.get()->Release();
-                    m_pCmCopy.reset();
-                    return MFX_WRN_PARTIAL_ACCELERATION;
-                }
-            }
+            sts = m_pCmCopy->Initialize();
+            MFX_CHECK_STS(sts);
+            sts = m_pCmCopy->InitializeSwapKernels(m_pCore->GetHWType());
+            MFX_CHECK_STS(sts);
         }
-        else if (MFX_HW_D3D9 == m_pCore->GetVAType())
-        {
-            D3D11Interface* pD3d11 = QueryCoreInterface<D3D11Interface>(m_pCore);
-            MFX_CHECK_NULL_PTR1(pD3d11);
-
-            ID3D11Device *pDevice = pD3d11->GetD3D11Device(true);
-                
-            if (!m_pCmCopy.get()->GetCmDevice<ID3D11Device>(pDevice))
-            {
-                m_pCmCopy.get()->Release();
-                m_pCmCopy.reset();
-                return MFX_WRN_PARTIAL_ACCELERATION;
-            }
-        }
-        else
-        {
-            return MFX_WRN_PARTIAL_ACCELERATION;
-        }
-
-        sts = m_pCmCopy.get()->Initialize();
-        m_pCmCopy.get()->InitializeSwapKernels(m_pCore->GetHWType());
-        MFX_CHECK_STS(sts);
     }
 #endif
 #endif
@@ -1970,12 +1941,6 @@ mfxStatus VideoVPPHW::Close()
         m_pCmDevice->DestroyProgram(m_pCmProgram);
         //::DestroyCmDevice(device);
     }
-
-#ifdef VPP_MIRRORING
-    if (m_pCmCopy.get())
-        m_pCmCopy->Release();
-    m_pCmCopy.reset(0);
-#endif
 #endif
 
     m_pCore->GetVideoProcessing((mfxHDL *)&m_ddi);
@@ -2598,13 +2563,57 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         sts = PreWorkInputSurface(surfQueue);
         MFX_CHECK_STS(sts);
 
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "HW_VPP: Mirror (d3d->d3d)");
-        IppiSize roi = {pTask->output.pSurf->Info.CropW, pTask->output.pSurf->Info.CropH};
-        sts = m_pCmCopy.get()->CopyMirrorVideoToVideoMemory(m_executeParams.targetSurface.hdl.first, m_executeSurf[0].hdl.first, roi, MFX_FOURCC_NV12);
-        MFX_CHECK_STS(sts);
+        if( (SYS_TO_SYS == m_ioMode || D3D_TO_SYS == m_ioMode))
+        {
+            /* Special case when mirroring is combined with GPU copy */
+            mfxStatus sts = MFX_ERR_NONE;
+            mfxMemId dstMemId;
+            mfxFrameSurface1 dstSurface = {0};
 
-        sts = PostWorkOutSurface(pTask->output);
-        MFX_CHECK_STS(sts);
+            // save original mem ids
+            dstMemId = pTask->output.pSurf->Data.MemId;
+
+            dstSurface.Info = pTask->output.pSurf->Info;
+            bool isDstLocked = false;
+
+            /* Get destination. It's an external system mem always */
+            if (NULL == pTask->output.pSurf->Data.Y)
+            {
+                sts = m_pCore->LockExternalFrame(dstMemId, &dstSurface.Data);
+                MFX_CHECK_STS(sts);
+                isDstLocked = true;
+            }
+            else
+            {
+                dstSurface.Data = pTask->output.pSurf->Data;
+                dstSurface.Data.MemId = 0;
+            }
+
+            mfxI64 verticalPitch = (mfxI64)(dstSurface.Data.UV - dstSurface.Data.Y);
+            verticalPitch = (verticalPitch % dstSurface.Data.Pitch)? 0 : verticalPitch / dstSurface.Data.Pitch;
+            mfxU32 dstPitch = dstSurface.Data.PitchLow + ((mfxU32)dstSurface.Data.PitchHigh << 16);
+
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "HW_VPP: Mirror (d3d->sys)");
+            IppiSize roi = {pTask->output.pSurf->Info.CropW, pTask->output.pSurf->Info.CropH};
+            sts = m_pCmCopy->CopyMirrorVideoToSystemMemory(dstSurface.Data.Y, dstPitch, (mfxU32)verticalPitch, m_executeSurf[0].hdl.first, 0, roi, MFX_FOURCC_NV12);
+            MFX_CHECK_STS(sts);
+
+            if (true == isDstLocked)
+            {
+                sts = m_pCore->UnlockExternalFrame(dstMemId, &dstSurface.Data);
+                MFX_CHECK_STS(sts);
+            }
+        }
+        else
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "HW_VPP: Mirror (d3d->d3d)");
+            IppiSize roi = {pTask->output.pSurf->Info.CropW, pTask->output.pSurf->Info.CropH};
+            sts = m_pCmCopy->CopyMirrorVideoToVideoMemory(m_executeParams.targetSurface.hdl.first, m_executeSurf[0].hdl.first, roi, MFX_FOURCC_NV12);
+            MFX_CHECK_STS(sts);
+
+            sts = PostWorkOutSurface(pTask->output);
+            MFX_CHECK_STS(sts);
+        }
 
         sts = PostWorkInputSurface(numSamples);
         MFX_CHECK_STS(sts);

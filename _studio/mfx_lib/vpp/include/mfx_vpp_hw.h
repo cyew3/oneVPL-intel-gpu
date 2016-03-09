@@ -819,7 +819,7 @@ namespace MfxHwVideoProcessing
         VPPHWResMng * m_ddi;
 
 #if defined(MFX_VA) // SW LIB doesn't hace access to CM DEVICE
-        std::auto_ptr<CmCopyWrapper>    m_pCmCopy;
+        CmCopyWrapper *m_pCmCopy;
 
         CmDevice  *m_pCmDevice;
         CmProgram *m_pCmProgram;
