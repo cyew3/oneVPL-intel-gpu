@@ -186,7 +186,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->bPREENC = true;
 
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->preencDSstrength) || pParams->preencDSstrength < 0)
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->preencDSstrength))
             {
                 pParams->preencDSstrength = 0;
                 i--;
@@ -712,7 +712,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         pParams->nPicStruct = MFX_PICSTRUCT_PROGRESSIVE;
     }
 
-    if (pParams->SearchWindow < 0 || pParams->SearchWindow > 8)
+    if (pParams->SearchWindow > 8)
     {
         if (bAlrShownHelp)
             msdk_printf(MSDK_STRING("\nUnsupported value of -search_window parameter, must be in range [0, 8]!\n"));
@@ -815,11 +815,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (pParams->NumMVPredictors < 0 || pParams->NumMVPredictors > 4){
+    if (pParams->NumMVPredictors > 4){
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nUnsupported value number of MV predictors!\n"));
+            msdk_printf(MSDK_STRING("\nUnsupported value number of MV predictors (4 is maximum)!\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported value number of MV predictors!"));
+            PrintHelp(strInput[0], MSDK_STRING("Unsupported value number of MV predictors (4 is maximum)!"));
         return MFX_ERR_UNSUPPORTED;
     }
 

@@ -298,7 +298,7 @@ protected:
     virtual mfxStatus InitMfxVppParams(sInputParams *pParams);
 
     virtual mfxStatus InitFileWriters(sInputParams *pParams);
-    virtual mfxStatus ResetIOFiles(sInputParams pParams);
+    virtual mfxStatus ResetIOFiles(sInputParams & pParams);
     virtual void FreeFileWriters();
     virtual mfxStatus InitFileWriter(CSmplBitstreamWriter **ppWriter, const msdk_char *filename);
 

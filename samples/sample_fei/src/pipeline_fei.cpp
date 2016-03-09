@@ -376,7 +376,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     if (pInParams->bDynamicRC)
     {
        m_bNeedDRC = true;
-       m_drcDftW =pInParams->nDRCdefautW;
+       m_drcDftW = pInParams->nDRCdefautW;
        m_drcDftH = pInParams->nDRCdefautH;
        size_t whsize = pInParams->nDrcWidth.size();
        m_drcWidth.reserve(whsize);
@@ -1222,7 +1222,7 @@ mfxStatus CEncodingPipeline::InitFileWriters(sInputParams *pParams)
     return sts;
 }
 
-mfxStatus CEncodingPipeline::ResetIOFiles(sInputParams pParams)
+mfxStatus CEncodingPipeline::ResetIOFiles(sInputParams & pParams)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -4125,6 +4125,9 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[
 
     for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
     {
+        MSDK_ZERO_ARRAY(bestDistortionPredMB, MaxFeiEncMVPNum);
+        MSDK_ZERO_ARRAY(refIdx, MaxFeiEncMVPNum);
+
         nPred_actual = IPP_MIN(numMVP[fieldId], MaxFeiEncMVPNum);
         if (nPred_actual == 0 || (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_I))
             continue; // I-field
@@ -4142,9 +4145,6 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[
             sts = MFX_ERR_NULL_PTR;
             break;
         }
-
-        MSDK_ZERO_ARRAY(bestDistortionPredMB, MaxFeiEncMVPNum);
-        MSDK_ZERO_ARRAY(refIdx, MaxFeiEncMVPNum);
 
         for (mfxU32 j = 0; j < nPred_actual; j++) // alloc structures for predictors
         {
@@ -4221,6 +4221,8 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 num
 
     for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
     {
+        MSDK_ZERO_ARRAY(refIdx, MaxFeiEncMVPNum);
+
         nPred_actual = IPP_MIN(numMVP[fieldId], MaxFeiEncMVPNum);
         if (nPred_actual == 0 || (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_I))
             continue; // I-field
@@ -4230,9 +4232,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 num
             sts = MFX_ERR_NULL_PTR;
             break;
         }
-
         MSDK_ZERO_ARRAY(mvs, nPred_actual);
-        MSDK_ZERO_ARRAY(refIdx, MaxFeiEncMVPNum);
 
         if (set == NULL) {
             set = getFreeBufSet(m_encodeBufs);
