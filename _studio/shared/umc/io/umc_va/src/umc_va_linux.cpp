@@ -300,6 +300,7 @@ LinuxVideoAccelerator::~LinuxVideoAccelerator(void)
 
 Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "LinuxVideoAccelerator::Init");
     Status         umcRes = UMC_OK;
     VAStatus       va_res = VA_STATUS_SUCCESS;
     VAConfigAttrib va_attributes[4];
@@ -548,6 +549,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         }
         if (*m_pContext == VA_INVALID_ID)
         {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateContext");
             if (needAllocatedSurfaces)
                 va_res = vaCreateContext(m_dpy, *m_pConfigId, width, height, VA_PROGRESSIVE, (VASurfaceID*)pParams->m_surf, m_NumOfFrameBuffers, m_pContext);
             else
@@ -562,6 +564,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
 
 Status LinuxVideoAccelerator::Close(void)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "LinuxVideoAccelerator::Close");
     VACompBuffer* pCompBuf = NULL;
     Ipp32u i;
 
@@ -583,6 +586,7 @@ Status LinuxVideoAccelerator::Close(void)
     {
         if ((m_pContext && (*m_pContext != VA_INVALID_ID)) && !(m_pKeepVAState && *m_pKeepVAState))
         {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaDestroyContext");
             vaDestroyContext(m_dpy, *m_pContext);
             *m_pContext = VA_INVALID_ID;
         }
@@ -612,7 +616,6 @@ Status LinuxVideoAccelerator::Close(void)
 
 Status LinuxVideoAccelerator::BeginFrame(Ipp32s FrameBufIndex)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Dec: BeginFrame");
     Status   umcRes = UMC_OK;
     VAStatus va_res = VA_STATUS_SUCCESS;
 
@@ -629,8 +632,8 @@ Status LinuxVideoAccelerator::BeginFrame(Ipp32s FrameBufIndex)
         if (lvaBeforeBegin == m_FrameState)
         {
             {
-                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaBeginPicture");
-                MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, m_sDecodeTraceStart, "%d|%d", *m_pContext, 0);
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaBeginPicture");
+                MFX_LTRACE_2(MFX_TRACE_LEVEL_EXTCALL, m_sDecodeTraceStart, "%d|%d", *m_pContext, 0);
                 va_res = vaBeginPicture(m_dpy, *m_pContext, *surface);
             }
             umcRes = va_to_umc_res(va_res);
@@ -715,6 +718,7 @@ void* LinuxVideoAccelerator::GetCompBuffer(Ipp32s buffer_type, UMCVACompBuffer *
 
 VACompBuffer* LinuxVideoAccelerator::GetCompBufferHW(Ipp32s type, Ipp32s size, Ipp32s index)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "GetCompBufferHW");
     VAStatus   va_res = VA_STATUS_SUCCESS;
     VABufferID id;
     Ipp8u*      buffer = NULL;
@@ -807,7 +811,7 @@ VACompBuffer* LinuxVideoAccelerator::GetCompBufferHW(Ipp32s type, Ipp32s size, I
 Status
 LinuxVideoAccelerator::Execute()
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Dec: Execute");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Execute");
     Status         umcRes = UMC_OK;
     VAStatus       va_res = VA_STATUS_SUCCESS;
     VAStatus       va_sts = VA_STATUS_SUCCESS;
@@ -838,7 +842,7 @@ LinuxVideoAccelerator::Execute()
 
 
             {
-                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaRenderPicture");
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaRenderPicture");
                 va_sts = vaRenderPicture(m_dpy, *m_pContext, &id, 1); // TODO: send all at once?
                 if (VA_STATUS_SUCCESS == va_res) va_res = va_sts;
             }
@@ -873,7 +877,7 @@ LinuxVideoAccelerator::Execute()
 
 Status LinuxVideoAccelerator::EndFrame(void*)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Dec: EndFrame");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "EndFrame");
     Status   umcRes = UMC_OK;
     VAStatus va_res = VA_STATUS_SUCCESS, va_sts = VA_STATUS_SUCCESS;
     Ipp32u i;
@@ -898,9 +902,9 @@ Status LinuxVideoAccelerator::EndFrame(void*)
     if (UMC_OK == umcRes)
     {
         {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaEndPicture");
             va_sts = vaEndPicture(m_dpy, *m_pContext);
-            MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, m_sDecodeTraceEnd, "%d|%d", *m_pContext, 0);
+            MFX_LTRACE_2(MFX_TRACE_LEVEL_EXTCALL, m_sDecodeTraceEnd, "%d|%d", *m_pContext, 0);
         }
         if (VA_STATUS_SUCCESS != va_sts) va_res = va_sts;
         m_FrameState = lvaBeforeBegin;
@@ -947,6 +951,7 @@ Ipp32s LinuxVideoAccelerator::GetSurfaceID(Ipp32s idx)
 
 Status LinuxVideoAccelerator::GetDecodingError()
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetDecodingError");
     Status error = 0;
 
 #ifndef ANDROID
@@ -1035,8 +1040,12 @@ void LinuxVideoAccelerator::SetTraceStrings(Ipp32u umc_codec)
     }
 }
 
+// NOTE This function enables polling synchronization and was replaced by 'SyncTask' which
+// implements blopcking synchronization. If you encounter this function call - something
+// is WRONG!!
 Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * status, void * error)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "QueryTaskStatus");
     if ((FrameBufIndex < 0) || (FrameBufIndex >= m_NumOfFrameBuffers))
         return UMC_ERR_INVALID_PARAMS;
 
@@ -1094,7 +1103,10 @@ Status LinuxVideoAccelerator::SyncTask(Ipp32s FrameBufIndex, void * error)
 
     if (UMC_OK == umcRes)
     {
-        va_sts = vaSyncSurface(m_dpy, *surface);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaSyncSurface");
+            va_sts = vaSyncSurface(m_dpy, *surface);
+        }
         if ((VA_STATUS_ERROR_DECODING_ERROR == va_sts) && (NULL != error))
         {
             *(Status*)error = GetDecodingError();

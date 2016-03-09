@@ -1133,7 +1133,10 @@ VAAPIVideoCORE::DoFastCopyExtended(
                 MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
 
                 // vaMapBuffer
-                va_sts = vaMapBuffer(m_Display, va_image.buf, (void **) &pBits);
+                {
+                    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaMapBuffer");
+                    va_sts = vaMapBuffer(m_Display, va_image.buf, (void **) &pBits);
+                }
                 MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
 
                 Ipp32u srcPitch = va_image.pitches[0];

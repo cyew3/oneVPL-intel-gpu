@@ -2125,6 +2125,7 @@ static mfxStatus __CDECL MPEG2TaskRoutine(void *pState, void *pParam, mfxU32 /*t
 
 mfxStatus VideoDECODEMPEG2::TaskRoutine(void *pParam)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEMPEG2::TaskRoutine");
     MParam *parameters = (MParam *)pParam;
 
     UMC::Status res;
@@ -2274,6 +2275,7 @@ static mfxStatus __CDECL MPEG2CompleteTasks(void *pState, void *pParam, mfxStatu
 
 mfxStatus VideoDECODEMPEG2::CompleteTasks(void *pParam)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEMPEG2::CompleteTasks");
     MParam *parameters = (MParam *)pParam;
     THREAD_DEBUG_PRINTF(
         "(THREAD %x) CompleteTasks: task %x number, task num %d, curr thr idx %d, compl thr %d\n",

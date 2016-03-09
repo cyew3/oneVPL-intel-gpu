@@ -1442,6 +1442,7 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemory(void *pDst, mfxU32 dstPitch, mf
 */
 mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CmCopyWrapper::CopySystemToVideoMemoryAPI");
     cmStatus cmSts = 0;
 
     CmEvent* e = (CmEvent*)(-1);//NULL;
@@ -1486,6 +1487,7 @@ mfxStatus CmCopyWrapper::CopySwapSystemToVideoMemory(void *pDst, mfxU32 dstPitch
 
 mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CmCopyWrapper::CopyVideoToSystemMemoryAPI");
     cmStatus cmSts = 0;
     CmEvent* e = (CmEvent*)-1;//NULL;
     mfxStatus status = MFX_ERR_NONE;

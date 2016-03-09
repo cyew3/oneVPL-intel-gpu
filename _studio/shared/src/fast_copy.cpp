@@ -117,7 +117,7 @@ mfxStatus FastCopy::Release(void)
 
 mfxStatus FastCopy::Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "ippiCopyManaged");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FastCopy::Copy");
 
     if (NULL == pDst || NULL == pSrc)
     {
