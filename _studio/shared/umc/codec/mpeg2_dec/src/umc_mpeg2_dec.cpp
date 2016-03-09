@@ -1112,6 +1112,7 @@ void MPEG2VideoDecoderBase::SetOutputPointers(MediaData *output, int task_num)
 
 Status MPEG2VideoDecoderBase::ProcessRestFrame(int task_num)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MPEG2VideoDecoderBase::ProcessRestFrame");
     Status umcRes = UMC_OK;
     IppVideoContext* video = Video[task_num][0];
     Ipp32s i;
@@ -1409,6 +1410,7 @@ Status MPEG2VideoDecoderBase::PostProcessUserData(int display_index)
 
 Status MPEG2VideoDecoderBase::PostProcessFrame(int display_index, int task_num)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MPEG2VideoDecoderBase::PostProcessFrame");
     Status umcRes = UMC_OK;
 
 #if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)

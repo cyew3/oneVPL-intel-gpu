@@ -2535,6 +2535,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
                                              mfxFrameSurface1 **surface_disp,
                                              MFX_ENTRY_POINT *pEntryPoint)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEMPEG2::DecodeFrameCheck");
     mfxStatus sts = MFX_ERR_NONE;
 
     MFX_CHECK_NULL_PTR1(surface_disp);
@@ -3848,6 +3849,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
 
 mfxStatus VideoDECODEMPEG2::ConstructFrameImpl(mfxBitstream *in, mfxBitstream *out, mfxFrameSurface1 *surface_work)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoDECODEMPEG2::ConstructFrameImpl");
     mfxStatus sts = MFX_ERR_NONE;
 
     MFX_CHECK_NULL_PTR2(in, out);

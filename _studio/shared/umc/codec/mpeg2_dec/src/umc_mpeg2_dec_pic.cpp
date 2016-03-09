@@ -943,10 +943,9 @@ void MPEG2VideoDecoderBase::CalculateFrameTime(Ipp64f in_time, Ipp64f * out_time
 
 Status MPEG2VideoDecoderBase::DecodeSlices(Ipp32s threadID, int task_num)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MPEG2VideoDecoderBase::DecodeSlices");
     IppVideoContext *video = Video[task_num][threadID];
     Status umcRes = UMC_OK;
-
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "MPEG2Dec_work");
 
     for (;;) 
     {
