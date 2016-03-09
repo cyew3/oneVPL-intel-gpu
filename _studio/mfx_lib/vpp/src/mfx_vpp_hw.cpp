@@ -142,6 +142,7 @@ template<typename T> void Clear(std::vector<T> & v)
 //mfxU32 GetMFXFrcMode(mfxVideoParam & videoParam);
 
 mfxStatus CheckIOMode(mfxVideoParam *par, VideoVPPHW::IOMode mode);
+mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps);
 mfxStatus ConfigureExecuteParams(
     mfxVideoParam & videoParam, // [IN]
     mfxVppCaps & caps,          // [IN]
@@ -1564,6 +1565,52 @@ mfxStatus VideoVPPHW::GetVideoParams(mfxVideoParam *par) const
     return MFX_ERR_NONE;
 } // mfxStatus VideoVPPHW::GetVideoParams(mfxVideoParam *par) const
 
+mfxStatus VideoVPPHW::Query(VideoCORE *core, mfxVideoParam *par)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    VPPHWResMng *vpp_ddi = 0;
+    mfxVideoParam params = {0};
+    Config config = {0};
+    MfxHwVideoProcessing::mfxExecuteParams executeParams;
+
+    MFX_CHECK_NULL_PTR1(par);
+    MFX_CHECK_NULL_PTR1(core);
+
+    sts = CheckIOMode(par, VideoVPPHW::ALL);
+    MFX_CHECK_STS(sts);
+
+    params = *par;
+
+    sts = core->CreateVideoProcessing(&params);
+    MFX_CHECK_STS(sts);
+
+    core->GetVideoProcessing((mfxHDL*)&vpp_ddi);
+    if (0 == vpp_ddi)
+    {
+        return MFX_WRN_PARTIAL_ACCELERATION;
+    }
+
+    mfxVppCaps caps;
+    caps = vpp_ddi->GetCaps();
+
+    if (par->vpp.In.Width > caps.uMaxWidth  || par->vpp.In.Height  > caps.uMaxHeight ||
+        par->vpp.Out.Width > caps.uMaxWidth || par->vpp.Out.Height > caps.uMaxHeight)
+    {
+        return MFX_WRN_PARTIAL_ACCELERATION;
+    }
+
+    if ( !(caps.mFormatSupport[par->vpp.In.FourCC] & MFX_FORMAT_SUPPORT_INPUT) || !(caps.mFormatSupport[par->vpp.Out.FourCC] & MFX_FORMAT_SUPPORT_OUTPUT) )
+        return MFX_WRN_PARTIAL_ACCELERATION;
+    
+    sts = ValidateParams(&params, &caps);
+    MFX_CHECK_STS(sts);
+
+    config.m_IOPattern = 0;
+    sts = ConfigureExecuteParams(params, caps, executeParams, config);
+
+    return sts;
+}
+
 mfxStatus  VideoVPPHW::Init(
     mfxVideoParam *par,
     bool isTemporal)
@@ -2744,7 +2791,7 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
 
 } // mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 
-mfxStatus VideoVPPHW::ValidateParams(mfxVideoParam *par, mfxVppCaps *caps)
+mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps)
 {
     MFX_CHECK_NULL_PTR2(par, caps);
 

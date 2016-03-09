@@ -745,6 +745,9 @@ namespace MfxHwVideoProcessing
         mfxStatus Close(void);
 
         static
+        mfxStatus Query(VideoCORE* core,mfxVideoParam *par);
+
+        static
         mfxStatus QueryTaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
 
         static
@@ -788,8 +791,6 @@ namespace MfxHwVideoProcessing
         mfxStatus PostWorkInputSurface(mfxU32 numSamples);
 
         mfxStatus ProcessFieldCopy(int mask);
-
-        mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps);
 
         mfxU16 m_asyncDepth;
 
