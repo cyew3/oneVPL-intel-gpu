@@ -3892,6 +3892,7 @@ mfxStatus CEncodingPipeline::InitEncPakFrameParams(iTask* eTask)
 
 mfxStatus CEncodingPipeline::InitEncodeFrameParams(mfxFrameSurface1* encodeSurface, sTask* pCurrentTask, PairU8 frameType, bool is_buffered)
 {
+    mfxStatus sts = MFX_ERR_NONE;
     if (!is_buffered){
         MSDK_CHECK_POINTER(encodeSurface, MFX_ERR_NULL_PTR);
     }
@@ -3900,7 +3901,8 @@ mfxStatus CEncodingPipeline::InitEncodeFrameParams(mfxFrameSurface1* encodeSurfa
     bufSet * freeSet = getFreeBufSet(m_encodeBufs);
     MSDK_CHECK_POINTER(freeSet, MFX_ERR_NULL_PTR);
     if (m_bNeedDRC){
-        ResetExtBufMBnum(freeSet);
+        sts = ResetExtBufMBnum(freeSet);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
     pCurrentTask->bufs.push_back(std::pair<bufSet*, mfxFrameSurface1*>(freeSet, encodeSurface));
 
@@ -3985,7 +3987,7 @@ mfxStatus CEncodingPipeline::InitEncodeFrameParams(mfxFrameSurface1* encodeSurfa
     pCurrentTask->mfxBS.NumExtParam = freeSet->PB_bufs.out.NumExtParam;
     pCurrentTask->mfxBS.ExtParam    = freeSet->PB_bufs.out.ExtParam;
 
-    return MFX_ERR_NONE;
+    return sts;
 }
 
 /* read input / write output */
@@ -4340,9 +4342,6 @@ mfxStatus ResetExtBufMBnum(bufSet* freeSet)
     mfxExtFeiEncQP*           pMbQP       = NULL;
     mfxExtFeiEncMBCtrl*       pMbEncCtrl  = NULL;
     mfxExtFeiEncMVPredictors* pMvPredBuf  = NULL;
-    mfxU32 mvBufCounter     = 0;
-    mfxU32 mbStatBufCounter = 0;
-    mfxU32 mbCodeBufCounter = 0;
 
     if (bDRCReset == false)
     {

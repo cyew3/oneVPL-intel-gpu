@@ -72,7 +72,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("                            one direction and 1048 for bidirectional search\n"));
     msdk_printf(MSDK_STRING("   [-ref_window_h height] - height of search region (should be multiple of 4), maximum allowed is 32\n"));
     msdk_printf(MSDK_STRING("   [-len_sp length] - defines number of search units in search path. In range [1,63]\n"));
-    msdk_printf(MSDK_STRING("   [-search_path value] - defines shape of search path. In range [1,2]\n"));
+    msdk_printf(MSDK_STRING("   [-search_path value] - defines shape of search path. 0 -full, 1- diamond.\n"));
     msdk_printf(MSDK_STRING("   [-sub_mb_part_mask mask_hex] - specifies which partitions should be excluded from search. 0x00 - enable all (default is 0x77)\n"));
     msdk_printf(MSDK_STRING("   [-sub_pel_mode mode_hex] - specifies sub pixel precision for motion estimation 0x00-0x01-0x03 integer-half-quarter (default is 0)\n"));
     msdk_printf(MSDK_STRING("   [-intra_part_mask mask_hex] - specifies what blocks and sub-blocks partitions are enabled for intra prediction (default is 0)\n"));
@@ -128,7 +128,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     msdk_char* stopCharacter;
 
     bool bRefWSizeSpecified = false, bAlrShownHelp = false, bHeaderValSpecified = false,
-         bIDRintSet = false, bBRefSet = false;
+         bIDRintSet = false, bBRefSet = false, bParseDRC = false;
 
     if (1 == nArgNum)
     {
@@ -455,11 +455,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             }
             if (pParams->bDynamicRC)
             {
-               if (pParams->bParseDRC)
+               if (bParseDRC)
                {
                    pParams->nDrcWidth.push_back(pParams->nDstWidth);
                }
-               else if (!pParams->bParseDRC && pParams->nDRCdefautW == pParams->nWidth)
+               else if (!bParseDRC && pParams->nDRCdefautW == pParams->nWidth)
                {
                    pParams->nDrcWidth[0] = pParams->nDstWidth;
                }
@@ -478,11 +478,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             }
             if (pParams->bDynamicRC)
             {
-               if (pParams->bParseDRC)
+               if (bParseDRC)
                {
                   pParams->nDrcHeight.push_back(pParams->nDstHeight);
                }
-               else if (!pParams->bParseDRC && pParams->nDRCdefautH ==  pParams->nHeight)
+               else if (!bParseDRC && pParams->nDRCdefautH ==  pParams->nHeight)
                {
                    pParams->nDrcHeight[0]= pParams->nDstHeight;
                }
@@ -506,7 +506,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-reset_start")))
         {
-            pParams->bParseDRC = true;
+            bParseDRC = true;
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nResetStart))
             {
                 PrintHelp(strInput[0], MSDK_STRING("Reset_start is invalid"));
@@ -544,7 +544,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("Please Set -reset_start"));
                 return MFX_ERR_UNSUPPORTED;
             }
-            pParams->bParseDRC = false;
+            bParseDRC = false;
         }
         else // 1-character options
         {
@@ -780,12 +780,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (pParams->SearchPath < 1 || pParams->SearchPath > 2)
+    if (pParams->SearchPath > 1)
     {
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nUnsupported value of -search_path parameter, must be in range [1, 2]!\n"));
+            msdk_printf(MSDK_STRING("\nUnsupported value of -search_path parameter, must be 0 or 1!\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -search_path parameter, must be in range [1, 2]!"));
+            PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -search_path parameter, must be be 0 or 1!"));
         return MFX_ERR_UNSUPPORTED;
     }
 
@@ -1000,7 +1000,6 @@ int main(int argc, char *argv[])
     Params.bFieldProcessingMode = false;
     Params.bMBSize    = false;
     Params.bDynamicRC = false;
-    Params.bParseDRC   = false;
     Params.nResetStart  = 0;
     Params.MaxDrcWidth  = 0;
     Params.MaxDrcHeight = 0;
@@ -1013,7 +1012,7 @@ int main(int argc, char *argv[])
     Params.RefWidth        = 32;
     Params.RefHeight       = 32;
     Params.LenSP           = 57;
-    Params.SearchPath      = 2;    // exhaustive
+    Params.SearchPath      = 0;    // exhaustive (full search)
     Params.SubMBPartMask   = 0x00; // all enabled
     Params.IntraPartMask   = 0x00; // all enabled
     Params.SubPelMode      = 0x03; // quarter-pixel
