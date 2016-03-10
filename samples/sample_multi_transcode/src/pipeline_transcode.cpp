@@ -1168,7 +1168,15 @@ mfxStatus CTranscodingPipeline::Encode()
             }
         }
     }
-
+    else
+    {
+        // Clean up only current buffer
+        m_pBuffer->CancelBuffering();
+        while (m_pBuffer->GetSurface(DecExtSurface)!=MFX_ERR_MORE_SURFACE)
+        {
+            m_pBuffer->ReleaseSurface(DecExtSurface.pSurface);
+        }
+    }
 
     if (MFX_ERR_NONE == sts)
         sts = MFX_WRN_VALUE_NOT_CHANGED;
