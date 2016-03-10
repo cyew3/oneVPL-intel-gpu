@@ -63,7 +63,7 @@ mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 &l
 mfxU32 GetBiFrameLocation(mfxU32 i, mfxU32 num, bool &ref, mfxU32 &level) 
 {
     ref  = false;
-    level = 0;
+    level = 1;
     return GetEncodingOrder(i, 0, num, level, 0 ,ref);
 }
 
