@@ -1111,6 +1111,13 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
             changed += CheckOption(par.mfx.GopRefDist, 1, 0);
     }
 
+    if (caps.RollingIntraRefresh == 0)
+    {
+        changed += CheckOption(par.m_ext.CO2.IntRefType, 0);
+        changed += CheckOption(par.m_ext.CO2.IntRefCycleSize, 0);
+        changed += CheckOption(par.m_ext.CO3.IntRefCycleDist, 0);    
+    }
+
     if (par.m_ext.CO2.IntRefCycleSize != 0 &&
         par.mfx.GopPicSize != 0 &&
         par.m_ext.CO2.IntRefCycleSize >= par.mfx.GopPicSize)
