@@ -28,10 +28,6 @@ File Name: libmfx_core_vaapi.h
 #include "va/va.h"
 #include "vaapi_ext_interface.h"
 
-#if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
-#include "mfx_vpp_interface.h"
-#endif
-
 class CmCopyWrapper;
 
 // disable the "conditional expression is constant" warning
@@ -113,14 +109,6 @@ public:
     virtual eMFXVAType   GetVAType() const {return MFX_HW_VAAPI; };
     virtual void* QueryCoreInterface(const MFX_GUID &guid);
 
-#if defined (MFX_ENABLE_VPP)&& !defined(MFX_RT)
-    virtual void  GetVideoProcessing(mfxHDL* phdl)
-    {
-        *phdl = &m_vpp_hw_resmng;
-    };
-#endif
-    mfxStatus  CreateVideoProcessing(mfxVideoParam * param);
-
     mfxStatus              GetVAService(VADisplay *pVADisplay);
 
     // this function should not be virtual
@@ -151,10 +139,6 @@ protected:
     bool                                 m_bCmCopy;
     bool                                 m_bCmCopyAllowed;
     s_ptr<CmCopyWrapper, true>           m_pCmCopy;
-
-#if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
-    VPPHWResMng                          m_vpp_hw_resmng;
-#endif
 
 private:
 

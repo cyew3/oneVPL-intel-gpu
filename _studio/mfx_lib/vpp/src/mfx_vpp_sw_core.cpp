@@ -1493,8 +1493,9 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
 
         if(MFX_PLATFORM_HARDWARE == core->GetPlatformType() )
         {
-            // HW VPP checking
-            mfxStatus sts = VideoVPPHW::Query(core, out);
+            VideoVPPHW hwVPP(VideoVPPHW::ALL, core);
+            mfxStatus sts = hwVPP.Init(out, true);
+            hwVPP.Close();
 
             // Statuses returned by Init differ in several cases from Query
             if (MFX_ERR_INVALID_VIDEO_PARAM == sts ||

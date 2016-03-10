@@ -133,17 +133,32 @@ mfxStatus VideoVppJpegD3D9::Init(const mfxVideoParam *par)
         }
     }
 
-    sts = m_pCore->CreateVideoProcessing((mfxVideoParam *)par);
-    MFX_CHECK_STS( sts );
     m_pCore->GetVideoProcessing((mfxHDL*)&m_ddi);
 
     if (m_ddi == 0)
     {
-        return MFX_ERR_UNSUPPORTED;
+#if defined (MFX_VA_WIN)
+        sts = m_pCore->CreateVideoProcessing((mfxVideoParam *)par);
+        MFX_CHECK_STS( sts );
+
+        m_pCore->GetVideoProcessing((mfxHDL*)&m_ddi);
+        if(m_ddi == 0)
+        {
+            return MFX_ERR_UNSUPPORTED;
+        }
+#else
+        m_ddi = CreateVideoProcessing(m_pCore);
+        if(m_ddi == 0)
+        {
+            return MFX_ERR_UNSUPPORTED;
+        }
+        sts = m_ddi->CreateDevice(m_pCore, (mfxVideoParam *)par, false);
+        MFX_CHECK_STS( sts );
+#endif
     }
 
     mfxVppCaps caps;
-    caps = m_ddi->GetCaps();
+    sts = m_ddi->QueryCapabilities(caps);
     MFX_CHECK_STS( sts );
 
     if(par->vpp.In.Width > caps.uMaxWidth || par->vpp.In.Height > caps.uMaxHeight ||
@@ -167,6 +182,13 @@ mfxStatus VideoVppJpegD3D9::Close()
     mfxStatus sts = MFX_ERR_NONE;
 
     m_taskId = 1;
+
+#if !defined (MFX_VA_WIN)
+    if (m_ddi) {
+        delete m_ddi;
+        m_ddi = NULL;
+    }
+#endif
 
     if(m_isD3DToSys)
     {
@@ -199,6 +221,9 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
     MfxHwVideoProcessing::mfxExecuteParams m_executeParams;
 
     memset(&m_pExecuteSurface, 0, sizeof(MfxHwVideoProcessing::mfxDrvSurface));
+    /* KW fix */
+    //memset(&m_executeParams, 0, sizeof(MfxHwVideoProcessing::mfxExecuteParams));
+    MemSetZero4mfxExecuteParams(&m_executeParams);
 
     if(m_isD3DToSys)
     {
@@ -237,14 +262,14 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
     out = hdl;
 
     // register output surface
-    sts = (*m_ddi)->Register(&out, 1, TRUE);
+    sts = m_ddi->Register(&out, 1, TRUE);
     MFX_CHECK_STS(sts);
     
     MFX_SAFE_CALL(m_pCore->GetFrameHDL(pInputSurface->Data.MemId, (mfxHDL *)&hdl));
     in = hdl;
 
     // register input surface
-    sts = (*m_ddi)->Register(&in, 1, TRUE);
+    sts = m_ddi->Register(&in, 1, TRUE);
     MFX_CHECK_STS(sts);
  
     // set input surface
@@ -267,7 +292,7 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
     *taskId = m_taskId;
     m_taskId += 1;
 
-    sts = (*m_ddi)->Execute(&m_executeParams);
+    sts = m_ddi->Execute(&m_executeParams);
     MFX_CHECK_STS(sts);
 
     return MFX_ERR_NONE;
@@ -331,7 +356,7 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
     out = hdl;
 
     // register output surface
-    sts = (*m_ddi)->Register(&out, 1, TRUE);
+    sts = m_ddi->Register(&out, 1, TRUE);
     MFX_CHECK_STS(sts);
 
     MFX_SAFE_CALL(m_pCore->GetFrameHDL(pInputSurfaceTop->Data.MemId, (mfxHDL *)&hdl));
@@ -340,9 +365,9 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
     inBottom = hdl;
 
     // register input surfaces
-    sts = (*m_ddi)->Register(&inTop, 1, TRUE);
+    sts = m_ddi->Register(&inTop, 1, TRUE);
     MFX_CHECK_STS(sts);
-    sts = (*m_ddi)->Register(&inBottom, 1, TRUE);
+    sts = m_ddi->Register(&inBottom, 1, TRUE);
     MFX_CHECK_STS(sts);
 
     // set input surface
@@ -373,7 +398,7 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
     *taskId = m_taskId;
     m_taskId += 1;
 
-    sts = (*m_ddi)->Execute(&m_executeParams);
+    sts = m_ddi->Execute(&m_executeParams);
     MFX_CHECK_STS(sts);
 
     return MFX_ERR_NONE;
@@ -430,11 +455,11 @@ mfxStatus VideoVppJpegD3D9::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurface,
     }
     
     // unregister output surface
-    sts = (*m_ddi)->Register(&out, 1, FALSE);
+    sts = m_ddi->Register(&out, 1, FALSE);
     MFX_CHECK_STS(sts);
 
     // unregister input surface
-    sts = (*m_ddi)->Register(&in, 1, FALSE);
+    sts = m_ddi->Register(&in, 1, FALSE);
     MFX_CHECK_STS(sts);
 
     if(m_isD3DToSys)
@@ -499,13 +524,13 @@ mfxStatus VideoVppJpegD3D9::EndHwJpegProcessing(mfxFrameSurface1 *pInputSurfaceT
     }
     
     // unregister output surface
-    sts = (*m_ddi)->Register(&out, 1, FALSE);
+    sts = m_ddi->Register(&out, 1, FALSE);
     MFX_CHECK_STS(sts);
 
     // unregister input surface
-    sts = (*m_ddi)->Register(&inTop, 1, FALSE);
+    sts = m_ddi->Register(&inTop, 1, FALSE);
     MFX_CHECK_STS(sts);
-    sts = (*m_ddi)->Register(&inBottom, 1, FALSE);
+    sts = m_ddi->Register(&inBottom, 1, FALSE);
     MFX_CHECK_STS(sts);
 
     if(m_isD3DToSys)
@@ -521,7 +546,7 @@ mfxStatus VideoVppJpegD3D9::QueryTaskRoutine(mfxU16 taskId)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    sts = (*m_ddi)->QueryTaskStatus(taskId);
+    sts = m_ddi->QueryTaskStatus(taskId);
     
     return sts;
 

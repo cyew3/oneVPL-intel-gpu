@@ -113,7 +113,7 @@ public:
     #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
     virtual void          GetVideoProcessing(mfxHDL* phdl) 
     {
-        *phdl = &m_vpp_hw_resmng;
+        *phdl = m_pVideoProcessing.get();
     };
     #endif
     mfxStatus              CreateVideoProcessing(mfxVideoParam * param);
@@ -156,7 +156,7 @@ private:
     HANDLE                                     m_hDirectXHandle; // if m_pDirect3DDeviceManager was used
     std::auto_ptr<UMC::DXVA2Accelerator>       m_pVA;
     #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
-    VPPHWResMng                          m_vpp_hw_resmng;
+    std::auto_ptr<MfxHwVideoProcessing::DriverVideoProcessing>       m_pVideoProcessing;
     #endif
     IDirect3D9                          *m_pD3D;
     // Ordinal number of adapter to work

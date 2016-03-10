@@ -700,19 +700,6 @@ VAAPIVideoCORE::CreateVA(
 
 } // mfxStatus VAAPIVideoCORE::CreateVA(...)
 
-mfxStatus VAAPIVideoCORE::CreateVideoProcessing(mfxVideoParam * param)
-{
-    mfxStatus sts = MFX_ERR_NONE;
-#if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
-    if (!m_vpp_hw_resmng.GetDevice()){
-        sts = m_vpp_hw_resmng.CreateDevice(this);
-    }
-#else
-    param;
-    sts = MFX_ERR_UNSUPPORTED;
-#endif
-    return sts;
-}
 
 mfxStatus
 VAAPIVideoCORE::ProcessRenderTargets(

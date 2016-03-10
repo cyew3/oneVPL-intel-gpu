@@ -815,8 +815,7 @@ namespace MfxHwVideoProcessing
         mfxVideoParam m_params;
         TaskManager   m_taskMngr;
 
-        // Not an auto_ptr anymore since core owns create/delete semantic now.
-        VPPHWResMng * m_ddi;
+        std::auto_ptr<MfxHwVideoProcessing::DriverVideoProcessing> m_ddi;
 
 #if defined(MFX_VA) // SW LIB doesn't hace access to CM DEVICE
         CmCopyWrapper *m_pCmCopy;

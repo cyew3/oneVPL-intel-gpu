@@ -16,7 +16,6 @@
 #define __MFX_VPP_DDI_H
 
 #include <vector>
-#include <memory>
 #include "mfxdefs.h"
 #include "libmfx_core.h"
 #include "mfx_platform_headers.h"
@@ -298,6 +297,10 @@ namespace MfxHwVideoProcessing
         {
             memset(&cameraCaps, 0, sizeof(CameraCaps));
         };
+
+    private:
+        mfxVppCaps(mfxVppCaps& caps);
+        mfxVppCaps & operator= (mfxVppCaps & other);
     };
 
 
@@ -506,59 +509,6 @@ namespace MfxHwVideoProcessing
     DriverVideoProcessing* CreateVideoProcessing( VideoCORE* core );
 
 }; // namespace
-
-
-/*
- * Simple proxy for VPP device/caps create. It simplifies having a single
- * cached vpp processing device accessible thru VideoCORE
- */
-class VPPHWResMng
-{
-public:
-    VPPHWResMng(): m_ddi(0), m_caps() {};
-
-    ~VPPHWResMng() { Close(); };
-
-    mfxStatus Close(void){
-        m_ddi.reset(0);
-        return MFX_ERR_NONE;
-    }
-
-    MfxHwVideoProcessing::DriverVideoProcessing *GetDevice(void) const {
-        return m_ddi.get();
-    };
-
-    mfxStatus SetDevice(MfxHwVideoProcessing::DriverVideoProcessing *ddi){
-        MFX_CHECK_NULL_PTR1(ddi);
-        MFX_CHECK_STS(Close());
-        m_ddi.reset(ddi);
-        return MFX_ERR_NONE;
-    }
-
-    MfxHwVideoProcessing::mfxVppCaps GetCaps(void) const {
-        return m_caps;
-    }
-
-    mfxStatus  SetCaps(const MfxHwVideoProcessing::mfxVppCaps &caps){
-        m_caps = caps;
-        return MFX_ERR_NONE;
-    }
-
-    mfxStatus CreateDevice(VideoCORE * core);
-
-    // Just to make ResMang easier to use with existing code of DriverVideoProcessing
-    MfxHwVideoProcessing::DriverVideoProcessing *operator->() const {
-        return m_ddi.get();
-    }
-
-private:
-    VPPHWResMng(const VPPHWResMng &);
-    VPPHWResMng &operator=(const VPPHWResMng &);
-
-    std::auto_ptr<MfxHwVideoProcessing::DriverVideoProcessing> m_ddi;
-    MfxHwVideoProcessing::mfxVppCaps                           m_caps;
-};
-
 
 #endif // __MFX_VPP_BASE_DDI_H
 #endif // MFX_ENABLE_VPP
