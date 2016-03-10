@@ -228,9 +228,9 @@ mfxStatus SetBRCParallel(
 
     if (!par.isBPyramid())
     {
-        BRCParallel_param->num_b_in_gop[1] = par.mfx.GopRefDist - 1;
+        BRCParallel_param->num_b_in_gop[0] = par.mfx.GopRefDist - 1;
+        BRCParallel_param->num_b_in_gop[1] = 0;
         BRCParallel_param->num_b_in_gop[2] = 0;
-        BRCParallel_param->num_b_in_gop[3] = 0;
     }
     else if (par.mfx.GopRefDist <=  8)
     {
@@ -299,7 +299,7 @@ void FillConstPartOfPps(
 {
     Zero(pps);
 
-    for(mfxU32 i = 0; i < 16; i++ )
+    for(mfxU32 i = 0; i < 15; i++ )
     {
         pps.reference_frames[i].picture_id = VA_INVALID_ID;
     }

@@ -19,16 +19,20 @@
 namespace MfxHwH265Encode
 {
 
-template<class T, class A> void Insert(A& _to, mfxU32 _where, T const & _what)
+template<class T, class A> mfxStatus Insert(A& _to, mfxU32 _where, T const & _what)
 {
+    MFX_CHECK(_where + 1 < (sizeof(_to)/sizeof(_to[0])), MFX_ERR_UNDEFINED_BEHAVIOR);
     memmove(&_to[_where + 1], &_to[_where], sizeof(_to)-(_where + 1) * sizeof(_to[0]));
     _to[_where] = _what;
+    return MFX_ERR_NONE;
 }
 
-template<class A> void Remove(A& _from, mfxU32 _where, mfxU32 _num = 1)
+template<class A> mfxStatus Remove(A& _from, mfxU32 _where, mfxU32 _num = 1)
 {
+    MFX_CHECK(_where + _num < (sizeof(_from)/sizeof(_from[0])), MFX_ERR_UNDEFINED_BEHAVIOR);
     memmove(&_from[_where], &_from[_where + _num], sizeof(_from)-(_where + _num) * sizeof(_from[0]));
     memset(&_from[sizeof(_from) / sizeof(_from[0]) - _num], IDX_INVALID, sizeof(_from[0]) * _num);
+    return MFX_ERR_NONE;
 }
 
 mfxU32 CountL1(DpbArray const & dpb, mfxI32 poc)
@@ -1562,7 +1566,7 @@ bool isForcedDeltaPocMsbPresent(
     return false;
 }
 
-void MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask, Slice & s) const
+mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask, Slice & s) const
 {
     bool  isP   = !!(task.m_frameType & MFX_FRAMETYPE_P);
     bool  isB   = !!(task.m_frameType & MFX_FRAMETYPE_B);
@@ -1671,9 +1675,9 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask, Sli
                        s.num_long_term_sps ++;
 
                        if (curlt.used_by_curr_pic_lt_flag)
-                       {
-                           assert(nLTR < MAX_NUM_LONG_TERM_PICS); //KW
-                           LTR[nLTR++] = DPBLT[j];
+                       { 
+                          MFX_CHECK(nLTR < MAX_NUM_LONG_TERM_PICS, MFX_ERR_UNDEFINED_BEHAVIOR);
+                          LTR[nLTR++] = DPBLT[j];
                        }
 
                        DPBLT[j] = InvalidPOC;
@@ -1804,6 +1808,7 @@ void MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask, Sli
 
         assert(0 == s.num_entry_point_offsets);
     }
+    return MFX_ERR_NONE;
 }
 
 
@@ -2131,7 +2136,7 @@ void UpdateDPB(
     mfxU16 st0 = 0; // first ST ref in DPB
 
     while (!isDpbEnd(dpb, end)) end ++;
-    for (st0 = 0; dpb[st0].m_ltr && st0 < end; st0++);
+    for (st0 = 0; st0 < end && dpb[st0].m_ltr; st0++);
 
     // frames stored in DPB in POC ascending order,
     // LTRs before STRs (use LTR-candidate as STR as long as it possible)

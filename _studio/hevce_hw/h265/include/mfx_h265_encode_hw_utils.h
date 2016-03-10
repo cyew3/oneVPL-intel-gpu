@@ -511,6 +511,7 @@ public:
         : m_numTL(1)
     {
         Zero(m_TL);
+        m_TL[0].Scale = 1;
     }
 
     ~TemporalLayers(){}
@@ -540,7 +541,7 @@ public:
     {
         mfxU16 i;
 
-        if (!m_numTL)
+        if (m_numTL < 1 || m_numTL > 8)
             return 0;
 
         for (i = 0; i < m_numTL && (frameOrder % (m_TL[m_numTL - 1].Scale / m_TL[i].Scale))  ; i++);
@@ -614,7 +615,7 @@ public:
 
     mfxStatus FillPar(mfxVideoParam& par, bool query = false);
 
-    void GetSliceHeader(Task const & task, Task const & prevTask, Slice & s) const;
+    mfxStatus GetSliceHeader(Task const & task, Task const & prevTask, Slice & s) const;
 
     mfxStatus GetExtBuffers(mfxVideoParam& par, bool query = false);
     bool CheckExtBufferParam();
