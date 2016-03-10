@@ -2115,7 +2115,7 @@ void InitDPB(
 
         if (pLCtrl)
         {
-            for (mfxU16 i = 0; i < 16 && pLCtrl->RejectedRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN); i++)
+            for (mfxU16 i = 0; i < 16 && pLCtrl->RejectedRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN); i++)
             {
                 mfxU16 idx = GetDPBIdxByFO(dpb, pLCtrl->RejectedRefList[i].FrameOrder);
 
@@ -2184,7 +2184,7 @@ void UpdateDPB(
 
         for (st0 = 0; dpb[st0].m_ltr && st0 < end; st0++);
 
-        for (mfxU16 i = 0; i < 16 && pLCtrl->LongTermRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN); i++)
+        for (mfxU16 i = 0; i < 16 && pLCtrl->LongTermRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN); i++)
         {
             mfxU16 idx = GetDPBIdxByFO(dpb, pLCtrl->LongTermRefList[i].FrameOrder);
 
@@ -2384,7 +2384,7 @@ void ConstructRPL(
         if (pLCtrl->NumRefIdxL1Active)
             MaxRef[1] = Min(pLCtrl->NumRefIdxL1Active, MaxRef[1]);
 
-        for (mfxU16 i = 0; i < 16 && pLCtrl->RejectedRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN); i++)
+        for (mfxU16 i = 0; i < 16 && pLCtrl->RejectedRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN); i++)
         {
             mfxU8 idx = GetDPBIdxByFO(DPB, pLCtrl->RejectedRefList[i].FrameOrder);
 
@@ -2405,7 +2405,7 @@ void ConstructRPL(
             }
         }
 
-        for (mfxU16 i = 0; i < 16 && pLCtrl->PreferredRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN); i++)
+        for (mfxU16 i = 0; i < 16 && pLCtrl->PreferredRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN); i++)
         {
             mfxU8 idx = GetDPBIdxByFO(DPB, pLCtrl->PreferredRefList[i].FrameOrder);
 

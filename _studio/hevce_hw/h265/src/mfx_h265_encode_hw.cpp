@@ -658,7 +658,7 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
         if (m_vpar.mfx.EncodedOrder)
         {
             task->m_frameType = task->m_ctrl.FrameType;
-            MFX_CHECK(surface->Data.FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN), MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(surface->Data.FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN), MFX_ERR_UNDEFINED_BEHAVIOR);
             MFX_CHECK(task->m_frameType != MFX_FRAMETYPE_UNKNOWN, MFX_ERR_UNDEFINED_BEHAVIOR);
             m_frameOrder = surface->Data.FrameOrder;
 
