@@ -70,7 +70,7 @@ del embed_isa.obj
 rem for HSW
 SET CM_RT_PLATFORM=hsw
 copy /y ..\deinterlace_genx.cpp ..\deinterlace_genx_hsw.cpp
-icl /c /Qxcm /Qxcm_jit_target=gen7_5 ..\deinterlace_genx_hsw.cpp /mCM_print_asm_count
+icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen7_5 ..\deinterlace_genx_hsw.cpp /mCM_print_asm_count
 embed_isa deinterlace_genx_hsw.isa
 del ..\deinterlace_genx_hsw.cpp
 del ..\deinterlace_genx_hsw.isa
@@ -80,7 +80,7 @@ move deinterlace_genx_hsw.h deinterlace_genx_hsw_isa.h
 rem for BDW
 SET CM_RT_PLATFORM=bdw
 copy /y ..\deinterlace_genx.cpp ..\deinterlace_genx_bdw.cpp
-icl /c /Qxcm /Qxcm_jit_target=gen8 ..\deinterlace_genx_bdw.cpp /mCM_print_asm_count
+icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen8 ..\deinterlace_genx_bdw.cpp /mCM_print_asm_count
 embed_isa deinterlace_genx_bdw.isa
 del ..\deinterlace_genx_bdw.cpp
 del ..\deinterlace_genx_bdw.isa

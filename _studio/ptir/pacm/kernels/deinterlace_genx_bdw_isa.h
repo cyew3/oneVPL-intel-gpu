@@ -9,5 +9,5 @@
 
 #ifndef __deinterlace_genx_bdw__
 #define __deinterlace_genx_bdw__
-extern const unsigned char deinterlace_genx_bdw[1240046];
+extern const unsigned char deinterlace_genx_bdw[1154290];
 #endif
