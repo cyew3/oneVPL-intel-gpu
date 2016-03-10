@@ -2594,7 +2594,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
             mfxU32 dstPitch = dstSurface.Data.PitchLow + ((mfxU32)dstSurface.Data.PitchHigh << 16);
 
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "HW_VPP: Mirror (d3d->sys)");
-            IppiSize roi = {pTask->output.pSurf->Info.CropW, pTask->output.pSurf->Info.CropH};
+            IppiSize roi = {pTask->output.pSurf->Info.Width, pTask->output.pSurf->Info.Height};
             sts = m_pCmCopy->CopyMirrorVideoToSystemMemory(dstSurface.Data.Y, dstPitch, (mfxU32)verticalPitch, m_executeSurf[0].hdl.first, 0, roi, MFX_FOURCC_NV12);
             MFX_CHECK_STS(sts);
 

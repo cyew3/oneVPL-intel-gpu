@@ -622,7 +622,7 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
 //*/
 
 extern "C" _GENX_MAIN_  void  
-surfaceMirror_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width_dword, int height,int ShiftLeftOffsetInBytes)
+surfaceMirror_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int stride_dword, int height,int ShiftLeftOffsetInBytes, int width_dword, int height_stride)
 {
     //Y plane
     matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> inData0;
@@ -661,6 +661,7 @@ surfaceMirror_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int wid
     int vertOffset_NV12 = get_thread_origin_y() * BLOCK_HEIGHT_NV12;
 
     int width_byte = width_dword << 2;
+    int stride_byte = stride_dword << 2;
     int horizOffset_byte = horizOffset << 2;
     int sub_block_width_byte = SUB_BLOCK_PIXEL_WIDTH << 2;
 
@@ -672,9 +673,9 @@ surfaceMirror_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int wid
     
     if (width_dword - horizOffset >= BLOCK_PIXEL_WIDTH)    // for aligned block
     {
-        uint linear_offset_dword = vertOffset * width_dword + (ShiftLeftOffsetInBytes/4) + (width_dword - horizOffset) - BLOCK_PIXEL_WIDTH;
+        uint linear_offset_dword = vertOffset * stride_dword + (ShiftLeftOffsetInBytes/4) + (width_dword - horizOffset) - BLOCK_PIXEL_WIDTH;
         uint linear_offset_byte = (linear_offset_dword << 2);
-        uint linear_offset_NV12_dword = width_dword * ( height + vertOffset_NV12 ) + (ShiftLeftOffsetInBytes/4) + (width_dword - horizOffset_NV12 - BLOCK_PIXEL_WIDTH);
+        uint linear_offset_NV12_dword = stride_dword * ( height_stride + vertOffset_NV12 ) + (ShiftLeftOffsetInBytes/4) + (width_dword - horizOffset_NV12 - BLOCK_PIXEL_WIDTH);
         uint linear_offset_NV12_byte = (linear_offset_NV12_dword << 2);
         read_plane(INBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset_byte,                             vertOffset, inData0);
         read_plane(INBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset_byte + SUB_BLOCK_PIXEL_WIDTH*4,   vertOffset, inData1);
@@ -719,43 +720,43 @@ surfaceMirror_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int wid
         {
         case 8:
             write(OUTBUF_IDX, linear_offset_byte,                  outData0);
-            write(OUTBUF_IDX, linear_offset_byte + width_byte,     outData1);
-            write(OUTBUF_IDX, linear_offset_byte + width_byte * 2, outData2);
-            write(OUTBUF_IDX, linear_offset_byte + width_byte * 3, outData3);
-            write(OUTBUF_IDX, linear_offset_byte + width_byte * 4, outData4);
-            write(OUTBUF_IDX, linear_offset_byte + width_byte * 5, outData5);
-            write(OUTBUF_IDX, linear_offset_byte + width_byte * 6, outData6);
-            write(OUTBUF_IDX, linear_offset_byte + width_byte * 7, outData7);
+            write(OUTBUF_IDX, linear_offset_byte + stride_byte,     outData1);
+            write(OUTBUF_IDX, linear_offset_byte + stride_byte * 2, outData2);
+            write(OUTBUF_IDX, linear_offset_byte + stride_byte * 3, outData3);
+            write(OUTBUF_IDX, linear_offset_byte + stride_byte * 4, outData4);
+            write(OUTBUF_IDX, linear_offset_byte + stride_byte * 5, outData5);
+            write(OUTBUF_IDX, linear_offset_byte + stride_byte * 6, outData6);
+            write(OUTBUF_IDX, linear_offset_byte + stride_byte * 7, outData7);
 
             write(OUTBUF_IDX, linear_offset_NV12_byte,                  outData_NV12_0);
-            write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte,     outData_NV12_1);
-            write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte * 2, outData_NV12_2);
-            write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte * 3, outData_NV12_3);
+            write(OUTBUF_IDX, linear_offset_NV12_byte + stride_byte,     outData_NV12_1);
+            write(OUTBUF_IDX, linear_offset_NV12_byte + stride_byte * 2, outData_NV12_2);
+            write(OUTBUF_IDX, linear_offset_NV12_byte + stride_byte * 3, outData_NV12_3);
             break;
         case 6:
             write(OUTBUF_IDX, linear_offset_byte,                  outData0);
-            write(OUTBUF_IDX, linear_offset_byte + width_byte,     outData1);
-            write(OUTBUF_IDX, linear_offset_byte + width_byte * 2, outData2);
-            write(OUTBUF_IDX, linear_offset_byte + width_byte * 3, outData3);
-            write(OUTBUF_IDX, linear_offset_byte + width_byte * 4, outData4);
-            write(OUTBUF_IDX, linear_offset_byte + width_byte * 5, outData5);
+            write(OUTBUF_IDX, linear_offset_byte + stride_byte,     outData1);
+            write(OUTBUF_IDX, linear_offset_byte + stride_byte * 2, outData2);
+            write(OUTBUF_IDX, linear_offset_byte + stride_byte * 3, outData3);
+            write(OUTBUF_IDX, linear_offset_byte + stride_byte * 4, outData4);
+            write(OUTBUF_IDX, linear_offset_byte + stride_byte * 5, outData5);
 
             write(OUTBUF_IDX, linear_offset_NV12_byte,                  outData_NV12_0);
-            write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte,     outData_NV12_1);
-            write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte * 2, outData_NV12_2);
+            write(OUTBUF_IDX, linear_offset_NV12_byte + stride_byte,     outData_NV12_1);
+            write(OUTBUF_IDX, linear_offset_NV12_byte + stride_byte * 2, outData_NV12_2);
             break;
         case 4:
             write(OUTBUF_IDX, linear_offset_byte,                  outData0);
-            write(OUTBUF_IDX, linear_offset_byte + width_byte,     outData1);
-            write(OUTBUF_IDX, linear_offset_byte + width_byte * 2, outData2);
-            write(OUTBUF_IDX, linear_offset_byte + width_byte * 3, outData3);
+            write(OUTBUF_IDX, linear_offset_byte + stride_byte,     outData1);
+            write(OUTBUF_IDX, linear_offset_byte + stride_byte * 2, outData2);
+            write(OUTBUF_IDX, linear_offset_byte + stride_byte * 3, outData3);
 
             write(OUTBUF_IDX, linear_offset_NV12_byte,              outData_NV12_0);
-            write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte, outData_NV12_1);
+            write(OUTBUF_IDX, linear_offset_NV12_byte + stride_byte, outData_NV12_1);
             break;
         case 2:
             write(OUTBUF_IDX, linear_offset_byte,                  outData0);
-            write(OUTBUF_IDX, linear_offset_byte + width_byte,     outData1);
+            write(OUTBUF_IDX, linear_offset_byte + stride_byte,     outData1);
 
             write(OUTBUF_IDX, linear_offset_NV12_byte,                  outData_NV12_0);
             break;
@@ -766,11 +767,10 @@ surfaceMirror_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int wid
     else    // for the unaligned most right blocks
     {
         //for mirroring most right read being written to most left border, so no pixel offset required.
-        uint linear_offset_dword = vertOffset * width_dword + (ShiftLeftOffsetInBytes/4);
+        uint linear_offset_dword = vertOffset * stride_dword + (ShiftLeftOffsetInBytes/4);
         uint linear_offset_byte = (linear_offset_dword << 2);
-        uint linear_offset_NV12_dword = width_dword * ( height + vertOffset_NV12 ) + (ShiftLeftOffsetInBytes/4);
+        uint linear_offset_NV12_dword = stride_dword * ( height_stride + vertOffset_NV12 ) + (ShiftLeftOffsetInBytes/4);
         uint linear_offset_NV12_byte = (linear_offset_NV12_dword << 2);
-
         uint block_width = width_dword - horizOffset;
         uint last_block_size = block_width;
         uint read_times = 1;
@@ -797,7 +797,7 @@ surfaceMirror_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int wid
                 }
             }
         }
-
+        
         vector<uint, SUB_BLOCK_PIXEL_WIDTH> elment_offset(0);
 
         for (uint i=0; i < last_block_size; i++)
@@ -838,10 +838,17 @@ surfaceMirror_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int wid
                 outData_NV12_m.select<1, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(i, 0) = inData_NV12_3.row(i).format<ushort>().iselect(idxUV).format<uint>();
             
             //Padding unused by the first one pixel in the last sub block
-            for (int i = last_block_size; i < SUB_BLOCK_PIXEL_WIDTH; i ++)
+            for (int i = 0; i < last_block_height; i ++)
             {
-                outData_m.select<SUB_BLOCK_HEIGHT, 1, 1, 1>(0, 24 + i) = outData_m.select<SUB_BLOCK_HEIGHT, 1, 1, 1>(0, 24);
-                outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, 1, 1>(0, 24 + i) = outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, 1, 1>(0, 24);
+                outData_m.row(i).select<24, 1>(0) = outData_m.row(i).select<24, 1>(last_block_size);
+            }
+            for (int i = 0; i < last_block_height/2; i ++)
+                outData_NV12_m.row(i).select<24, 1>(0) = outData_NV12_m.row(i).select<24, 1>(last_block_size);
+
+            for (int i = 24; i < 24+last_block_size; i ++)
+            {
+                outData_m.select<SUB_BLOCK_HEIGHT, 1, 1, 1>(0, i) = outData_m.select<SUB_BLOCK_HEIGHT, 1, 1, 1>(0, i+last_block_size);
+                outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, 1, 1>(0, i) = outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, 1, 1>(0, i+last_block_size);
             }
 
             switch(last_block_height)
@@ -849,121 +856,121 @@ surfaceMirror_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int wid
             case 8:
                 //write Y plane to buffer
                 write(OUTBUF_IDX, linear_offset_byte,                  outData0.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte,     outData1.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 2, outData2.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 3, outData3.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 4, outData4.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 5, outData5.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 6, outData6.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 7, outData7.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte,     outData1.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 2, outData2.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 3, outData3.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 4, outData4.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 5, outData5.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 6, outData6.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 7, outData7.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_byte + 64,                  outData0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte,     outData1.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte * 2, outData2.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte * 3, outData3.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte * 4, outData4.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte * 5, outData5.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte * 6, outData6.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte * 7, outData7.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_byte + 64 + stride_byte,     outData1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_byte + 64 + stride_byte * 2, outData2.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_byte + 64 + stride_byte * 3, outData3.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_byte + 64 + stride_byte * 4, outData4.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_byte + 64 + stride_byte * 5, outData5.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_byte + 64 + stride_byte * 6, outData6.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_byte + 64 + stride_byte * 7, outData7.select<8, 1>(16));
 
                 write(OUTBUF_IDX, linear_offset_dword + 24,                   elment_offset, outData0.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword,     elment_offset, outData1.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 2, elment_offset, outData2.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 3, elment_offset, outData3.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 4, elment_offset, outData4.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 5, elment_offset, outData5.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 6, elment_offset, outData6.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 7, elment_offset, outData7.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword,     elment_offset, outData1.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 2, elment_offset, outData2.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 3, elment_offset, outData3.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 4, elment_offset, outData4.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 5, elment_offset, outData5.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 6, elment_offset, outData6.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 7, elment_offset, outData7.select<8, 1>(24));
 
                 //write UV plane to buffer
                 write(OUTBUF_IDX, linear_offset_NV12_byte,                       outData_NV12_0.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_dword * 4,     outData_NV12_1.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_dword * 4 * 2, outData_NV12_2.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_dword * 4 * 3, outData_NV12_3.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_dword * 4,     outData_NV12_1.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_dword * 4 * 2, outData_NV12_2.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_dword * 4 * 3, outData_NV12_3.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_byte + 64,                  outData_NV12_0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + 64 + width_byte,     outData_NV12_1.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + 64 + width_byte * 2, outData_NV12_2.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + 64 + width_byte * 3, outData_NV12_3.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + 64 + stride_byte,     outData_NV12_1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + 64 + stride_byte * 2, outData_NV12_2.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + 64 + stride_byte * 3, outData_NV12_3.select<8, 1>(16));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword + 24,                   elment_offset, outData_NV12_0.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + width_dword,     elment_offset, outData_NV12_1.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + width_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + width_dword * 3, elment_offset, outData_NV12_3.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + stride_dword,     elment_offset, outData_NV12_1.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + stride_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + stride_dword * 3, elment_offset, outData_NV12_3.select<8, 1>(24));
                 break;
             case 6:
                 //write Y plane to buffer
                 write(OUTBUF_IDX, linear_offset_byte,                  outData0.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte,     outData1.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 2, outData2.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 3, outData3.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 4, outData4.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 5, outData5.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte,     outData1.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 2, outData2.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 3, outData3.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 4, outData4.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 5, outData5.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_byte + 64,                  outData0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte,     outData1.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte * 2, outData2.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte * 3, outData3.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte * 4, outData4.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte * 5, outData5.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_byte + 64 + stride_byte,     outData1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_byte + 64 + stride_byte * 2, outData2.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_byte + 64 + stride_byte * 3, outData3.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_byte + 64 + stride_byte * 4, outData4.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_byte + 64 + stride_byte * 5, outData5.select<8, 1>(16));
 
                 write(OUTBUF_IDX, linear_offset_dword + 24,                   elment_offset, outData0.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword,     elment_offset, outData1.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 2, elment_offset, outData2.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 3, elment_offset, outData3.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 4, elment_offset, outData4.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 5, elment_offset, outData5.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword,     elment_offset, outData1.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 2, elment_offset, outData2.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 3, elment_offset, outData3.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 4, elment_offset, outData4.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 5, elment_offset, outData5.select<8, 1>(24));
 
                 //write UV plane to buffer
                 write(OUTBUF_IDX, linear_offset_NV12_byte,                       outData_NV12_0.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_dword * 4,     outData_NV12_1.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_dword * 4 * 2, outData_NV12_2.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_dword * 4,     outData_NV12_1.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_dword * 4 * 2, outData_NV12_2.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_byte + 64,                  outData_NV12_0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + 64 + width_byte,     outData_NV12_1.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + 64 + width_byte * 2, outData_NV12_2.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + 64 + stride_byte,     outData_NV12_1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + 64 + stride_byte * 2, outData_NV12_2.select<8, 1>(16));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword + 24,                   elment_offset, outData_NV12_0.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + width_dword,     elment_offset, outData_NV12_1.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + width_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + stride_dword,     elment_offset, outData_NV12_1.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + stride_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(24));
                 break;
             case 4:
                 //write Y plane to buffer
                 write(OUTBUF_IDX, linear_offset_byte,                  outData0.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte,     outData1.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 2, outData2.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 3, outData3.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte,     outData1.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 2, outData2.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 3, outData3.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_byte + 64,                  outData0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte,     outData1.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte * 2, outData2.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte * 3, outData3.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_byte + 64 + stride_byte,     outData1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_byte + 64 + stride_byte * 2, outData2.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_byte + 64 + stride_byte * 3, outData3.select<8, 1>(16));
 
                 write(OUTBUF_IDX, linear_offset_dword + 24,                   elment_offset, outData0.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword,     elment_offset, outData1.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 2, elment_offset, outData2.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 3, elment_offset, outData3.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword,     elment_offset, outData1.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 2, elment_offset, outData2.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 3, elment_offset, outData3.select<8, 1>(24));
 
                 //write UV plane to buffer
                 write(OUTBUF_IDX, linear_offset_NV12_byte,                       outData_NV12_0.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_dword * 4,     outData_NV12_1.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_dword * 4,     outData_NV12_1.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_byte + 64,                  outData_NV12_0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + 64 + width_byte,     outData_NV12_1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + 64 + stride_byte,     outData_NV12_1.select<8, 1>(16));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword + 24,                   elment_offset, outData_NV12_0.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + width_dword,     elment_offset, outData_NV12_1.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + stride_dword,     elment_offset, outData_NV12_1.select<8, 1>(24));
                 break;
             case 2:
                 //write Y plane to buffer
                 write(OUTBUF_IDX, linear_offset_byte,              outData0.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte, outData1.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte, outData1.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_byte + 64,              outData0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte, outData1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_byte + 64 + stride_byte, outData1.select<8, 1>(16));
 
                 write(OUTBUF_IDX, linear_offset_dword + 24,               elment_offset, outData0.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword, elment_offset, outData1.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword, elment_offset, outData1.select<8, 1>(24));
 
                 //write UV plane to buffer
                 write(OUTBUF_IDX, linear_offset_NV12_byte, outData_NV12_0.select<16, 1>(0));
@@ -1000,97 +1007,104 @@ surfaceMirror_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int wid
             for(int i = 0; i < SUB_BLOCK_HEIGHT_NV12; i++)
                 outData_NV12_m.select<1, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(i, 0) = inData_NV12_2.row(i).format<ushort>().iselect(idxUV).format<uint>();
 
-            //Padding unused by the first one pixel in the last sub block
-            for (int i = last_block_size; i < SUB_BLOCK_PIXEL_WIDTH; i ++)
-            {
-                outData_m.select<SUB_BLOCK_HEIGHT, 1, 1, 1>(0, 16 + i) = outData_m.select<SUB_BLOCK_HEIGHT, 1, 1, 1>(0, 16);
-                outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, 1, 1>(0, 16 + i) = outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, 1, 1>(0, 16);
-            }
+            if(last_block_size<8){
+                for (int i = 0; i < last_block_height; i ++)
+                {
+                    outData_m.row(i).select<16, 1>(0) = outData_m.row(i).select<16, 1>(last_block_size);
+                }
+                for (int i = 0; i < last_block_height/2; i ++)
+                    outData_NV12_m.row(i).select<16, 1>(0) = outData_NV12_m.row(i).select<16, 1>(last_block_size);
 
+                for (int i = 16; i < 16+last_block_size; i ++)
+                {
+                    outData_m.select<SUB_BLOCK_HEIGHT, 1, 1, 1>(0, i) = outData_m.select<SUB_BLOCK_HEIGHT, 1, 1, 1>(0, i+last_block_size);
+                    outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, 1, 1>(0, i) = outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, 1, 1>(0, i+last_block_size);
+                }
+            }
             switch(last_block_height)
             {
             case 8:
                 //write Y plane to buffer
                 write(OUTBUF_IDX, linear_offset_byte,                  outData0.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte,     outData1.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 2, outData2.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 3, outData3.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 4, outData4.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 5, outData5.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 6, outData6.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 7, outData7.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte,     outData1.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 2, outData2.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 3, outData3.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 4, outData4.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 5, outData5.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 6, outData6.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 7, outData7.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_dword + 16,                   elment_offset, outData0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword,     elment_offset, outData1.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 2, elment_offset, outData2.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 3, elment_offset, outData3.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 4, elment_offset, outData4.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 5, elment_offset, outData5.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 6, elment_offset, outData6.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 7, elment_offset, outData7.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword,     elment_offset, outData1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 2, elment_offset, outData2.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 3, elment_offset, outData3.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 4, elment_offset, outData4.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 5, elment_offset, outData5.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 6, elment_offset, outData6.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 7, elment_offset, outData7.select<8, 1>(16));
 
                 //write UV plane to buffer
                 write(OUTBUF_IDX, linear_offset_NV12_byte,                  outData_NV12_0.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte,     outData_NV12_1.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte * 2, outData_NV12_2.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte * 3, outData_NV12_3.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_byte,     outData_NV12_1.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_byte * 2, outData_NV12_2.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_byte * 3, outData_NV12_3.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword + 16,                   elment_offset, outData_NV12_0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + width_dword,     elment_offset, outData_NV12_1.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + width_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + width_dword * 3, elment_offset, outData_NV12_3.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + stride_dword,     elment_offset, outData_NV12_1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + stride_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + stride_dword * 3, elment_offset, outData_NV12_3.select<8, 1>(16));
                 break;
             case 6:
                 //write Y plane to buffer
                 write(OUTBUF_IDX, linear_offset_byte,                  outData0.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte,     outData1.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 2, outData2.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 3, outData3.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 4, outData4.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 5, outData5.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte,     outData1.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 2, outData2.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 3, outData3.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 4, outData4.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 5, outData5.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_dword + 16,                   elment_offset, outData0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword,     elment_offset, outData1.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 2, elment_offset, outData2.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 3, elment_offset, outData3.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 4, elment_offset, outData4.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 5, elment_offset, outData5.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword,     elment_offset, outData1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 2, elment_offset, outData2.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 3, elment_offset, outData3.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 4, elment_offset, outData4.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 5, elment_offset, outData5.select<8, 1>(16));
 
                 //write UV plane to buffer
                 write(OUTBUF_IDX, linear_offset_NV12_byte,                  outData_NV12_0.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte,     outData_NV12_1.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte * 2, outData_NV12_2.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_byte,     outData_NV12_1.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_byte * 2, outData_NV12_2.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword + 16,                   elment_offset, outData_NV12_0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + width_dword,     elment_offset, outData_NV12_1.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + width_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + stride_dword,     elment_offset, outData_NV12_1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + stride_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(16));
                 break;
             case 4:
                 //write Y plane to buffer
                 write(OUTBUF_IDX, linear_offset_byte,                  outData0.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte,     outData1.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 2, outData2.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 3, outData3.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte,     outData1.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 2, outData2.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 3, outData3.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_dword + 16,                   elment_offset, outData0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword,     elment_offset, outData1.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 2, elment_offset, outData2.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 3, elment_offset, outData3.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword,     elment_offset, outData1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 2, elment_offset, outData2.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 3, elment_offset, outData3.select<8, 1>(16));
 
                 //write UV plane to buffer
                 write(OUTBUF_IDX, linear_offset_NV12_byte,              outData_NV12_0.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte, outData_NV12_1.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_byte, outData_NV12_1.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword + 16,               elment_offset, outData_NV12_0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + width_dword, elment_offset, outData_NV12_1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + stride_dword, elment_offset, outData_NV12_1.select<8, 1>(16));
                 break;
             case 2:
                 //write Y plane to buffer
                 write(OUTBUF_IDX, linear_offset_byte,              outData0.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte, outData1.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte, outData1.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_dword + 16,               elment_offset, outData0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword, elment_offset, outData1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword, elment_offset, outData1.select<8, 1>(16));
 
                 //write UV plane to buffer
                 write(OUTBUF_IDX, linear_offset_NV12_byte, outData_NV12_0.select<16, 1>(0));
@@ -1117,89 +1131,97 @@ surfaceMirror_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int wid
             for(int i = 0; i < SUB_BLOCK_HEIGHT_NV12; i++)
                 outData_NV12_m.select<1, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(i, 0) = inData_NV12_1.row(i).format<ushort>().iselect(idxUV).format<uint>();
 
-            //Padding unused by the first one pixel in the last sub block
-            for (int i = last_block_size; i < SUB_BLOCK_PIXEL_WIDTH; i ++)
-            {
-                outData_m.select<SUB_BLOCK_HEIGHT, 1, 1, 1>(0, 8 + i) = outData_m.select<SUB_BLOCK_HEIGHT, 1, 1, 1>(0, 8);
-                outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, 1, 1>(0, 8 + i) = outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, 1, 1>(0, 8);
+            if(last_block_size<8){
+                for (int i = 0; i < last_block_height; i ++)
+                {
+                    outData_m.row(i).select<8, 1>(0) = outData_m.row(i).select<8, 1>(last_block_size);
+                }
+                for (int i = 0; i < last_block_height/2; i ++)
+                    outData_NV12_m.row(i).select<8, 1>(0) = outData_NV12_m.row(i).select<8, 1>(last_block_size);
+
+                for (int i = 8; i < 8+last_block_size; i ++)
+                {
+                    outData_m.select<SUB_BLOCK_HEIGHT, 1, 1, 1>(0, i) = outData_m.select<SUB_BLOCK_HEIGHT, 1, 1, 1>(0, i+last_block_size);
+                    outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, 1, 1>(0, i) = outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, 1, 1>(0, i+last_block_size);
+                }
             }
             switch(last_block_height)
             {
             case 8:
                 write(OUTBUF_IDX, linear_offset_byte,                  outData0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte,     outData1.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 2, outData2.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 3, outData3.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 4, outData4.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 5, outData5.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 6, outData6.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 7, outData7.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte,     outData1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 2, outData2.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 3, outData3.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 4, outData4.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 5, outData5.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 6, outData6.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 7, outData7.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_dword + 8,                   elment_offset, outData0.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword,     elment_offset, outData1.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 2, elment_offset, outData2.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 3, elment_offset, outData3.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 4, elment_offset, outData4.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 5, elment_offset, outData5.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 6, elment_offset, outData6.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 7, elment_offset, outData7.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword,     elment_offset, outData1.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 2, elment_offset, outData2.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 3, elment_offset, outData3.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 4, elment_offset, outData4.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 5, elment_offset, outData5.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 6, elment_offset, outData6.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 7, elment_offset, outData7.select<8, 1>(8));
 
                 write(OUTBUF_IDX, linear_offset_NV12_byte,                  outData_NV12_0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte,     outData_NV12_1.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte * 2, outData_NV12_2.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte * 3, outData_NV12_3.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_byte,     outData_NV12_1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_byte * 2, outData_NV12_2.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_byte * 3, outData_NV12_3.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword + 8,                   elment_offset, outData_NV12_0.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + width_dword,     elment_offset, outData_NV12_1.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + width_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + width_dword * 3, elment_offset, outData_NV12_3.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + stride_dword,     elment_offset, outData_NV12_1.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + stride_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + stride_dword * 3, elment_offset, outData_NV12_3.select<8, 1>(8));
                 break;
             case 6:
                 write(OUTBUF_IDX, linear_offset_byte,                  outData0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte,     outData1.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 2, outData2.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 3, outData3.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 4, outData4.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 5, outData5.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte,     outData1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 2, outData2.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 3, outData3.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 4, outData4.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 5, outData5.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_dword + 8,                   elment_offset, outData0.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword,     elment_offset, outData1.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 2, elment_offset, outData2.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 3, elment_offset, outData3.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 4, elment_offset, outData4.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 5, elment_offset, outData5.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword,     elment_offset, outData1.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 2, elment_offset, outData2.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 3, elment_offset, outData3.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 4, elment_offset, outData4.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 5, elment_offset, outData5.select<8, 1>(8));
 
                 write(OUTBUF_IDX, linear_offset_NV12_byte,                  outData_NV12_0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte,     outData_NV12_1.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte * 2, outData_NV12_2.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_byte,     outData_NV12_1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_byte * 2, outData_NV12_2.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword + 8,                   elment_offset, outData_NV12_0.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + width_dword,     elment_offset, outData_NV12_1.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + width_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + stride_dword,     elment_offset, outData_NV12_1.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + stride_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(8));
                 break;
             case 4:
                 write(OUTBUF_IDX, linear_offset_byte,                  outData0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte,     outData1.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 2, outData2.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte * 3, outData3.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte,     outData1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 2, outData2.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte * 3, outData3.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_dword + 8,                   elment_offset, outData0.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword,     elment_offset, outData1.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 2, elment_offset, outData2.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 3, elment_offset, outData3.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword,     elment_offset, outData1.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 2, elment_offset, outData2.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 3, elment_offset, outData3.select<8, 1>(8));
 
                 write(OUTBUF_IDX, linear_offset_NV12_byte,              outData_NV12_0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte, outData_NV12_1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_byte, outData_NV12_1.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword + 8,               elment_offset, outData_NV12_0.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + width_dword, elment_offset, outData_NV12_1.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + stride_dword, elment_offset, outData_NV12_1.select<8, 1>(8));
                 break;
             case 2:
                 write(OUTBUF_IDX, linear_offset_byte,              outData0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_byte + width_byte, outData1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_byte + stride_byte, outData1.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_dword + 8,               elment_offset, outData0.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword, elment_offset, outData1.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword, elment_offset, outData1.select<8, 1>(8));
 
                 write(OUTBUF_IDX, linear_offset_NV12_byte, outData_NV12_0.select<8, 1>(0));
 
@@ -1210,64 +1232,54 @@ surfaceMirror_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int wid
             }
             break;
         case 1:
-            
-            #pragma unroll
-            for(int i = 0; i < SUB_BLOCK_HEIGHT; i++)
-                outData_m.select<1, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(i, 0) = inData0.row(i).format<uchar>().iselect(idx).format<uint>();
-              
-            #pragma unroll
-            for(int i = 0; i < SUB_BLOCK_HEIGHT_NV12; i++)
-                outData_NV12_m.select<1, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(i, 0) = inData_NV12_0.row(i).format<ushort>().iselect(idxUV).format<uint>();
-            
-
-            //Padding unused by the first one pixel in the last sub block
-            for (int i = last_block_size; i < SUB_BLOCK_PIXEL_WIDTH; i ++)
-            {
-                outData_m.select<SUB_BLOCK_HEIGHT, 1, 1, 1>(0, i) = outData_m.select<SUB_BLOCK_HEIGHT, 1, 1, 1>(0, 0);
-                outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, 1, 1>(0, i) = outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, 1, 1>(0, 0);
+            if(last_block_size<8){
+                for (int i = 0; i < last_block_size; i ++)
+                {
+                    outData_m.select<SUB_BLOCK_HEIGHT, 1, 1, 1>(0, i) = outData_m.select<SUB_BLOCK_HEIGHT, 1, 1, 1>(0, i+last_block_size);
+                    outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, 1, 1>(0, i) = outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, 1, 1>(0, i+last_block_size);
+                }
             }
-
             switch(last_block_height)
             {
             case 8:
                 write(OUTBUF_IDX, linear_offset_dword,                   elment_offset, outData0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword,     elment_offset, outData1.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 2, elment_offset, outData2.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 3, elment_offset, outData3.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 4, elment_offset, outData4.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 5, elment_offset, outData5.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 6, elment_offset, outData6.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 7, elment_offset, outData7.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword,     elment_offset, outData1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 2, elment_offset, outData2.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 3, elment_offset, outData3.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 4, elment_offset, outData4.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 5, elment_offset, outData5.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 6, elment_offset, outData6.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 7, elment_offset, outData7.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword,                   elment_offset, outData_NV12_0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + width_dword,     elment_offset, outData_NV12_1.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + width_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + width_dword * 3, elment_offset, outData_NV12_3.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + stride_dword,     elment_offset, outData_NV12_1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + stride_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + stride_dword * 3, elment_offset, outData_NV12_3.select<8, 1>(0));
                 break;
             case 6:
                 write(OUTBUF_IDX, linear_offset_dword,                   elment_offset, outData0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword,     elment_offset, outData1.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 2, elment_offset, outData2.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 3, elment_offset, outData3.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 4, elment_offset, outData4.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 5, elment_offset, outData5.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword,     elment_offset, outData1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 2, elment_offset, outData2.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 3, elment_offset, outData3.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 4, elment_offset, outData4.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 5, elment_offset, outData5.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword,                   elment_offset, outData_NV12_0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + width_dword,     elment_offset, outData_NV12_1.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + width_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + stride_dword,     elment_offset, outData_NV12_1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + stride_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(0));
                 break;
             case 4:
                 write(OUTBUF_IDX, linear_offset_dword,                   elment_offset, outData0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword,     elment_offset, outData1.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 2, elment_offset, outData2.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 3, elment_offset, outData3.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword,     elment_offset, outData1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 2, elment_offset, outData2.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 3, elment_offset, outData3.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword,               elment_offset, outData_NV12_0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + width_dword, elment_offset, outData_NV12_1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + stride_dword, elment_offset, outData_NV12_1.select<8, 1>(0));
                 break;
             case 2:
                 write(OUTBUF_IDX, linear_offset_dword,               elment_offset, outData0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword, elment_offset, outData1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword, elment_offset, outData1.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword, elment_offset, outData_NV12_0.select<8, 1>(0));
                 break;

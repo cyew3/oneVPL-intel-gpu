@@ -732,13 +732,15 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorNV12GPUtoCPU(   CmSurface2D* pSurface,
 
         hr = m_pCmKernel->SetKernelArg( 2, sizeof( UINT ), &stride_in_dwords );
         CHECK_CM_HR(hr);
-        hr = m_pCmKernel->SetKernelArg( 3, sizeof( UINT ), &height_stride_in_rows );
+        hr = m_pCmKernel->SetKernelArg( 3, sizeof( UINT ), &height);
         CHECK_CM_HR(hr);
         hr = m_pCmKernel->SetKernelArg( 4, sizeof( UINT ), &AddedShiftLeftOffset );
         CHECK_CM_HR(hr);
+        hr = m_pCmKernel->SetKernelArg( 5, sizeof( UINT ), &width_dword );
+        CHECK_CM_HR(hr);
+        hr = m_pCmKernel->SetKernelArg( 6, sizeof( UINT ), &height_stride_in_rows );
+        CHECK_CM_HR(hr);
         //hr = m_pCmKernel->SetKernelArg( 5, sizeof( UINT ), &threadHeight );
-        //CHECK_CM_HR(hr);
-        //hr = m_pCmKernel->SetKernelArg( 6, sizeof( UINT ), &width_dword );
         //CHECK_CM_HR(hr);
         //hr = m_pCmKernel->SetKernelArg( 7, sizeof( UINT ), &slice_copy_height_row );
         //CHECK_CM_HR(hr);
