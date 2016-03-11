@@ -211,6 +211,10 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
                 // prepare context
                 m_pThreadCtx[i].threadNum = i;
                 m_pThreadCtx[i].pSchedulerCore = this;
+                umcRes = m_pThreadCtx[i].taskAdded.Init(0, 0);
+                if (UMC::UMC_OK != umcRes) {
+                    return MFX_ERR_UNKNOWN;
+                }
                 // spawn a thread
                 iRes = vm_thread_create(
                     &(m_pThreadCtx[i].threadHandle),
@@ -229,10 +233,6 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
                 //{
                 //    vm_thread_set_priority(&(m_pThreadCtx[i].threadHandle), VM_THREAD_PRIORITY_HIGH);
                 //}
-                umcRes = m_pThreadCtx[i].taskAdded.Init(0, 0);
-                if (UMC::UMC_OK != umcRes) {
-                    return MFX_ERR_UNKNOWN;
-                }
             }
         }
         catch (...)
