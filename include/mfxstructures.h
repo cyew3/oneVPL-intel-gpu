@@ -742,7 +742,8 @@ enum {
     MFX_EXTBUFF_HEVC_REFLIST_CTRL          = MFX_EXTBUFF_AVC_REFLIST_CTRL,
     MFX_EXTBUFF_HEVC_REFLISTS              = MFX_EXTBUFF_AVC_REFLISTS,
     MFX_EXTBUFF_HEVC_TEMPORAL_LAYERS       = MFX_EXTBUFF_AVC_TEMPORAL_LAYERS,
-    MFX_EXTBUFF_VPP_MIRRORING              = MFX_MAKEFOURCC('M','I','R','R')
+    MFX_EXTBUFF_VPP_MIRRORING              = MFX_MAKEFOURCC('M','I','R','R'),
+    MFX_EXTBUFF_MV_OVER_PIC_BOUNDARIES     = MFX_MAKEFOURCC('M','V','P','B')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1592,6 +1593,16 @@ typedef struct {
     mfxU16 Type;
     mfxU16 reserved[11];
 } mfxExtVPPMirroring;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16 StickTop;     /* tri-state option */
+    mfxU16 StickBottom;  /* tri-state option */
+    mfxU16 StickLeft;    /* tri-state option */
+    mfxU16 StickRight;   /* tri-state option */
+    mfxU16 reserved[8];
+} mfxExtMVOverPicBoundaries;
 
 #ifdef __cplusplus
 } // extern "C"
