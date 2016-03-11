@@ -90,7 +90,7 @@ struct sInputParams
     mfxU16 IntraPartMask;
     mfxU16 IntraSAD;
     mfxU16 InterSAD;
-    mfxU16 NumMVPredictors;
+    mfxU16 NumMVPredictors[2];
     mfxU16 GopOptFlag;
     mfxU16 CodecProfile;
     mfxU16 CodecLevel;
@@ -135,7 +135,8 @@ struct sInputParams
     bool ConstrainedIntraPredFlag;
     bool Transform8x8ModeFlag;
     bool bRepackPreencMV;
-    bool bNPredSpecified;
+    bool bNPredSpecified_l0;
+    bool bNPredSpecified_l1;
     bool bFieldProcessingMode;
     bool bPerfMode;
     bool bDynamicRC;
@@ -324,7 +325,7 @@ protected:
 
     virtual mfxStatus PreProcessOneFrame(mfxFrameSurface1* & pSurf);
     virtual mfxStatus PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, bool is_buffered, bool &cont);
-    virtual mfxStatus ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs[2]);
+    virtual mfxStatus ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs[2][2]);
     virtual mfxStatus EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
     virtual mfxStatus EncodeOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
     virtual mfxStatus SyncOneEncodeFrame(sTask* pCurrentTask, iTask* eTask, mfxU32 fieldProcessingCounter);
@@ -356,8 +357,8 @@ protected:
     mfxStatus ReadPAKdata(iTask* eTask);
     mfxStatus DropENCPAKoutput(iTask* eTask);
     mfxStatus DropPREENCoutput(iTask* eTask);
-    mfxStatus PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[2]);
-    mfxStatus PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 numMVP[2]);
+    mfxStatus PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[2][2]);
+    mfxStatus PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 numMVP[2][2]);
     mfxStatus repackDSPreenc2EncExMB(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB[2], mfxExtFeiEncMVPredictors *EncMVPred, mfxU32 MBnum, mfxU32 refIdx[2], mfxU32 predIdx);
 
     /* ENC(PAK) reflists */
@@ -370,7 +371,7 @@ protected:
     mfxStatus GetRefTaskEx(iTask *eTask, mfxU32 l0_idx, mfxU32 l1_idx, int refIdx[2][2], int ref_fid[2][2], iTask *outRefTask[2][2]);
     mfxStatus GetBestSetByDistortion(std::list<PreEncMVPInfo>& preenc_mvp_info,
         mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB ** bestDistortionPredMBext[MaxFeiEncMVPNum], mfxU32 * refIdx[MaxFeiEncMVPNum],
-        mfxU32 nPred_actual, mfxU32 fieldId, mfxU32 MB_idx);
+        mfxU32 nPred_actual[2], mfxU32 fieldId, mfxU32 MB_idx);
 
     void ShowDpbInfo(iTask *task, int frame_order);
 
@@ -399,7 +400,7 @@ protected:
     mfxExtFeiEncMV::mfxExtFeiEncMVMB*       m_tmpMBenc;
     mfxI16 *m_tmpForMedian;
 
-    mfxU16 m_numOfRefs[2];
+    mfxU16 m_numOfRefs[2][2]; // [fieldId][L0L1]
 };
 
 bufSet* getFreeBufSet(std::list<bufSet*> bufs);

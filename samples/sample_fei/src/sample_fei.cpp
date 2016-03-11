@@ -84,7 +84,8 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-multi_pred_l0] - MVs from neighbor MBs will be used as predictors for L0 prediction list (ENC)\n"));
     msdk_printf(MSDK_STRING("   [-multi_pred_l1] - MVs from neighbor MBs will be used as predictors for L1 prediction list (ENC)\n"));
     msdk_printf(MSDK_STRING("   [-adjust_distortion] - if enabled adds a cost adjustment to distortion, default is RAW distortion (ENC)\n"));
-    msdk_printf(MSDK_STRING("   [-n_mvpredictors num] - number of MV predictors, up to 4 is supported (default is 1) (ENC)\n"));
+    msdk_printf(MSDK_STRING("   [-n_mvpredictors_l0 num] - number of MV predictors for l0 list, up to 4 is supported (default is 1) (ENC)\n"));
+    msdk_printf(MSDK_STRING("   [-n_mvpredictors_l1 num] - number of MV predictors for l1 list, up to 4 is supported (default is 0) (ENC)\n"));
     msdk_printf(MSDK_STRING("   [-colocated_mb_distortion] - provides the distortion between the current and the co-located MB. It has performance impact(ENC)\n"));
     msdk_printf(MSDK_STRING("                                do not use it, unless it is necessary\n"));
     msdk_printf(MSDK_STRING("   [-dblk_idc value] - value of DisableDeblockingIdc (default is 0), in range [0,2]\n"));
@@ -403,11 +404,17 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             i++;
             pParams->InterSAD = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 16);
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-n_mvpredictors")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-n_mvpredictors_l0")))
         {
             i++;
-            pParams->bNPredSpecified = true;
-            pParams->NumMVPredictors = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+            pParams->bNPredSpecified_l0 = true;
+            pParams->NumMVPredictors[0] = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-n_mvpredictors_l1")))
+        {
+            i++;
+            pParams->bNPredSpecified_l1 = true;
+            pParams->NumMVPredictors[1] = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dblk_idc")))
         {
@@ -829,7 +836,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (pParams->NumMVPredictors > 4){
+    if (pParams->NumMVPredictors[0] > 4 || pParams->NumMVPredictors[1] > 4){
         if (bAlrShownHelp)
             msdk_printf(MSDK_STRING("\nUnsupported value number of MV predictors (4 is maximum)!\n"));
         else
@@ -976,7 +983,8 @@ int main(int argc, char *argv[])
     Params.bOnlyPAK  = false;
     Params.bPREENC   = false;
     Params.bPerfMode = false;
-    Params.bNPredSpecified = false;
+    Params.bNPredSpecified_l0 = false;
+    Params.bNPredSpecified_l1 = false;
     Params.preencDSstrength = 0;
     Params.EncodedOrder    = false;
     Params.Enable8x8Stat   = false;
@@ -1018,7 +1026,8 @@ int main(int argc, char *argv[])
     Params.SubPelMode      = 0x03; // quarter-pixel
     Params.IntraSAD        = 0x02; // Haar transform
     Params.InterSAD        = 0x02; // Haar transform
-    Params.NumMVPredictors = 1;
+    Params.NumMVPredictors[0] = 1;
+    Params.NumMVPredictors[1] = 0;
     Params.GopOptFlag      = 0;
     Params.CodecProfile    = 0;
     Params.CodecLevel      = 0;

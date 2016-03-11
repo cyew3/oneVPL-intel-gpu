@@ -1151,7 +1151,8 @@ CEncodingPipeline::CEncodingPipeline()
     m_drcDftW             = 0;
     m_drcDftH             = 0;
 
-    MSDK_ZERO_ARRAY(m_numOfRefs, 2);
+    MSDK_ZERO_ARRAY(m_numOfRefs[0], 2);
+    MSDK_ZERO_ARRAY(m_numOfRefs[1], 2);
 
     m_ref_info = {};
 
@@ -2144,9 +2145,14 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                 feiEncCtrl[fieldId].RepartitionCheckEnable = m_encpakParams.RepartitionCheckEnable;
                 feiEncCtrl[fieldId].AdaptiveSearch         = m_encpakParams.AdaptiveSearch;
                 feiEncCtrl[fieldId].MVPredictor            = MVPredictors;
-                m_numOfRefs[fieldId] =
-                feiEncCtrl[fieldId].NumMVPredictors = m_encpakParams.bNPredSpecified ?
-                    m_encpakParams.NumMVPredictors : m_mfxEncParams.mfx.NumRefFrame;
+
+                mfxU16 nmvp_l0 = m_encpakParams.bNPredSpecified_l0 ?
+                    m_encpakParams.NumMVPredictors[0] : IPP_MIN(m_mfxEncParams.mfx.NumRefFrame, MaxFeiEncMVPNum);
+                mfxU16 nmvp_l1 = m_encpakParams.bNPredSpecified_l1 ?
+                    m_encpakParams.NumMVPredictors[1] : IPP_MIN(m_mfxEncParams.mfx.NumRefFrame, MaxFeiEncMVPNum);
+
+                feiEncCtrl[fieldId].NumMVPredictors[0] = m_numOfRefs[fieldId][0] = nmvp_l0;
+                feiEncCtrl[fieldId].NumMVPredictors[1] = m_numOfRefs[fieldId][1] = nmvp_l1;
                 feiEncCtrl[fieldId].PerMBQp                = MBQP;
                 feiEncCtrl[fieldId].PerMBInput             = MBCtrl;
                 feiEncCtrl[fieldId].MBSizeCtrl             = m_encpakParams.bMBSize;
@@ -3969,7 +3975,9 @@ mfxStatus CEncodingPipeline::InitEncodeFrameParams(mfxFrameSurface1* encodeSurfa
             feiEncCtrl->MVPredictor = (!(frameType[feiEncCtrlId] & MFX_FRAMETYPE_I) && (m_encpakParams.mvinFile != NULL || m_encpakParams.bPREENC)) ? 1 : 0;
 
             // Need to set the number to actual ref number for each field
-            feiEncCtrl->NumMVPredictors = m_numOfRefs[fieldId++];
+            feiEncCtrl->NumMVPredictors[0] = m_numOfRefs[fieldId][0];
+            feiEncCtrl->NumMVPredictors[1] = m_numOfRefs[fieldId][1];
+            fieldId++;
 
             feiEncCtrlId = 1 - feiEncCtrlId; // set to sfid
             break;
@@ -4110,7 +4118,7 @@ mfxStatus CEncodingPipeline::DropPREENCoutput(iTask* eTask)
     return MFX_ERR_NONE;
 }
 
-mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[2])
+mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[2][2])
 {
     MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
 
@@ -4128,8 +4136,9 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[
         MSDK_ZERO_ARRAY(bestDistortionPredMB, MaxFeiEncMVPNum);
         MSDK_ZERO_ARRAY(refIdx, MaxFeiEncMVPNum);
 
-        nPred_actual = IPP_MIN(numMVP[fieldId], MaxFeiEncMVPNum);
-        if (nPred_actual == 0 || (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_I))
+        mfxU32 nPred_actual[2] = { IPP_MIN(numMVP[fieldId][0], MaxFeiEncMVPNum), IPP_MIN(numMVP[fieldId][1], MaxFeiEncMVPNum) }; //adjust n of passed pred
+        mfxU32 nOfPredPairs = IPP_MAX(nPred_actual[0], nPred_actual[1]);
+        if (nOfPredPairs == 0 || (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_I))
             continue; // I-field
 
         if (set == NULL) {
@@ -4140,13 +4149,14 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[
             }
         }
 
+        // MVP is predictors Ext Buffer
         mvp = (mfxExtFeiEncMVPredictors*)getBufById(&set->PB_bufs.in, MFX_EXTBUFF_FEI_ENC_MV_PRED, fieldId);
         if (mvp == NULL){
             sts = MFX_ERR_NULL_PTR;
             break;
         }
 
-        for (mfxU32 j = 0; j < nPred_actual; j++) // alloc structures for predictors
+        for (mfxU32 j = 0; j < nOfPredPairs; j++)
         {
             bestDistortionPredMB[j] = new mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *[2]; // L0/L1 best 16 MV by distortion
             if (bestDistortionPredMB[j] == NULL){
@@ -4168,7 +4178,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[
             sts = GetBestSetByDistortion(eTask->preenc_mvp_info, bestDistortionPredMB, refIdx, nPred_actual, fieldId, i);
             MSDK_BREAK_ON_ERROR(sts);
 
-            for (mfxU32 j = 0; j < nPred_actual; j++)
+            for (mfxU32 j = 0; j < nOfPredPairs; j++)
             {
                 if (!!m_encpakParams.preencDSstrength)
                 {
@@ -4182,7 +4192,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[
             }
         }
 
-        for (mfxU32 j = 0; j < nPred_actual; j++)
+        for (mfxU32 j = 0; j < nOfPredPairs; j++)
         {
             MSDK_SAFE_DELETE_ARRAY(bestDistortionPredMB[j]);
             MSDK_SAFE_DELETE_ARRAY(refIdx[j]);
@@ -4206,7 +4216,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[
 }
 
 /* Simplified conversion - no sorting by distortion, no median on MV */
-mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 numMVP[2])
+mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 numMVP[2][2])
 {
     MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
 
@@ -4223,16 +4233,17 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 num
     {
         MSDK_ZERO_ARRAY(refIdx, MaxFeiEncMVPNum);
 
-        nPred_actual = IPP_MIN(numMVP[fieldId], MaxFeiEncMVPNum);
-        if (nPred_actual == 0 || (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_I))
+        mfxU32 nPred_actual[2] = { IPP_MIN(numMVP[fieldId][0], MaxFeiEncMVPNum), IPP_MIN(numMVP[fieldId][1], MaxFeiEncMVPNum) }; //adjust n of passed pred
+        mfxU32 nOfPredPairs = IPP_MAX(nPred_actual[0], nPred_actual[1]);
+        if (nOfPredPairs == 0 || (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_I))
             continue; // I-field
 
-        mvs = new mfxExtFeiPreEncMV*[nPred_actual];
+        mvs = new mfxExtFeiPreEncMV*[nOfPredPairs];
         if (mvs == NULL){
             sts = MFX_ERR_NULL_PTR;
             break;
         }
-        MSDK_ZERO_ARRAY(mvs, nPred_actual);
+        MSDK_ZERO_ARRAY(mvs, nOfPredPairs);
 
         if (set == NULL) {
             set = getFreeBufSet(m_encodeBufs);
@@ -4249,7 +4260,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 num
         }
 
         mfxU32 j = 0;
-        for (std::list<PreEncMVPInfo>::iterator it = eTask->preenc_mvp_info.begin(); it != eTask->preenc_mvp_info.end() && j < nPred_actual; ++it, ++j)
+        for (std::list<PreEncMVPInfo>::iterator it = eTask->preenc_mvp_info.begin(); it != eTask->preenc_mvp_info.end() && j < nOfPredPairs; ++it, ++j)
         {
             mvs[j] = (mfxExtFeiPreEncMV*)getBufById(&(*it).preenc_output_bufs->PB_bufs.out, MFX_EXTBUFF_FEI_PREENC_MV, fieldId);
             if (mvs[j] == NULL){
@@ -4267,7 +4278,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 num
 
         for (mfxU32 i = 0; i < m_numMB; i++) // get nPred_actual L0/L1 predictors for each MB
         {
-            for (mfxU32 j = 0; j < nPred_actual; j++)
+            for (mfxU32 j = 0; j < nOfPredPairs; j++)
             {
                 mvp->MB[i].RefIdx[j].RefL0 = refIdx[j][0];
                 mvp->MB[i].RefIdx[j].RefL1 = refIdx[j][1];
@@ -4312,7 +4323,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 num
         }
 
         MSDK_SAFE_DELETE_ARRAY(mvs);
-        for (mfxU32 j = 0; j < nPred_actual; j++)
+        for (mfxU32 j = 0; j < nOfPredPairs; j++)
         {
             MSDK_SAFE_DELETE_ARRAY(refIdx[j]);
         }
@@ -4832,21 +4843,23 @@ mfxStatus CEncodingPipeline::PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
     return sts;
 }
 
-mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs[2])
+mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs[2][2])
 {
     MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
 
     mfxStatus sts = MFX_ERR_NONE;
-    MSDK_ZERO_ARRAY(num_of_refs, 2);
+    MSDK_ZERO_ARRAY(num_of_refs[0], 2);
+    MSDK_ZERO_ARRAY(num_of_refs[1], 2);
 
     // max possible candidates to L0 / L1
     mfxU32 total_l0 = (ExtractFrameType(*eTask, m_isField) & MFX_FRAMETYPE_P) ? ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_IDR) ? 1 : NumActiveRefP) : ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) ? 1 : NumActiveRefBL0);
     mfxU32 total_l1 = (ExtractFrameType(*eTask) & MFX_FRAMETYPE_B) ? (eTask->m_fieldPicFlag ? NumActiveRefBL1_i : NumActiveRefBL1) : 1; // just one iteration here for non-B
 
-    mfxU32 adj = m_encpakParams.bNPredSpecified ? m_encpakParams.NumMVPredictors : m_numOfFields*m_mfxEncParams.mfx.NumRefFrame;
+    mfxU32 adj_l0 = m_encpakParams.bNPredSpecified_l0 ? m_encpakParams.NumMVPredictors[0] : m_numOfFields*m_mfxEncParams.mfx.NumRefFrame;
+    mfxU32 adj_l1 = m_encpakParams.bNPredSpecified_l1 ? m_encpakParams.NumMVPredictors[1] : m_numOfFields*m_mfxEncParams.mfx.NumRefFrame;
 
-    total_l0 = IPP_MIN(total_l0, adj); // adjust to
-    total_l1 = IPP_MIN(total_l1, adj); // user input
+    total_l0 = IPP_MIN(total_l0, adj_l0); // adjust to
+    total_l1 = IPP_MIN(total_l1, adj_l1); // user input
 
     int preenc_ref_idx[2][2]; // indexes means [fieldId][L0L1]
     int ref_fid[2][2];
@@ -4868,10 +4881,8 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
 
         for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
         {
-            if (refTask[fieldId][0] || refTask[fieldId][1])
-            {
-                num_of_refs[fieldId]++;
-            }
+            if (refTask[fieldId][0]) { num_of_refs[fieldId][0]++; }
+            if (refTask[fieldId][1]) { num_of_refs[fieldId][1]++; }
         }
 
         sts = InitPreEncFrameParamsEx(eTask, refTask, ref_fid, isDownsamplingNeeded);
@@ -4924,7 +4935,7 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
         }
 
         // Store PreEnc output
-        PreEncMVPInfo result;
+        PreEncMVPInfo result = {};
         result.preenc_output_bufs = eTask->preenc_bufs;
 
         for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
@@ -5015,10 +5026,10 @@ mfxStatus CEncodingPipeline::GetRefTaskEx(iTask *eTask, mfxU32 l0_idx, mfxU32 l1
 
 mfxStatus CEncodingPipeline::GetBestSetByDistortion(std::list<PreEncMVPInfo>& preenc_mvp_info,
     mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB ** bestDistortionPredMBext[MaxFeiEncMVPNum], mfxU32 * refIdx[MaxFeiEncMVPNum],
-    mfxU32 nPred_actual, mfxU32 fieldId, mfxU32 MB_idx)
+    mfxU32 nPred[2], mfxU32 fieldId, mfxU32 MB_idx)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    for (mfxU32 i = 0; i < nPred_actual; i++)
+    for (mfxU32 i = 0; i < IPP_MAX(nPred[0],nPred[1]); i++)
     {
         MSDK_CHECK_POINTER(bestDistortionPredMBext[i], MFX_ERR_NOT_INITIALIZED);
         MSDK_CHECK_POINTER(refIdx[i],                  MFX_ERR_NOT_INITIALIZED);
@@ -5041,19 +5052,19 @@ mfxStatus CEncodingPipeline::GetBestSetByDistortion(std::list<PreEncMVPInfo>& pr
             (std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>(&mvs->MB[MB_idx], &mbdata->MB[MB_idx]), (*it).refIdx[fieldId]));
     }
 
-    curMBSet.sort(compareL0Distortion); // find and copy MaxFeiEncMVPNum best L0
+    curMBSet.sort(compareL0Distortion); // find and copy nPred[0] best L0
     mfxU32 i = 0;
     for (std::list<std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> >::iterator it = curMBSet.begin();
-        it != curMBSet.end() && i<nPred_actual; ++it)
+        it != curMBSet.end() && i<nPred[0]; ++it)
     {
         bestDistortionPredMBext[i][0]  = (*it).first.first;
         refIdx[i++][0] = (*it).second[0];
     }
 
-    curMBSet.sort(compareL1Distortion); // find and copy MaxFeiEncMVPNum best L1
+    curMBSet.sort(compareL1Distortion); // find and copy nPred[1] best L1
     i = 0;
     for (std::list<std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> >::iterator it = curMBSet.begin();
-        it != curMBSet.end() && i<nPred_actual; ++it)
+        it != curMBSet.end() && i<nPred[1]; ++it)
     {
         bestDistortionPredMBext[i][1]  = (*it).first.first;
         refIdx[i++][1] = (*it).second[1];
