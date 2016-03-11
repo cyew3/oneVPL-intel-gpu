@@ -2542,7 +2542,7 @@ IntraRefreshState GetIntraRefreshState(
         return state; // for current refresh period refresh cycle is already passed
 
     // check if Intra refresh required for current frame
-    mfxU32 refreshDimension = extOpt2Init->IntRefType == HORIZ_REFRESH ? video.mfx.FrameInfo.Height >> 4 : video.mfx.FrameInfo.Width >> 4;
+    mfxU32 refreshDimension = extOpt2Init->IntRefType == HORIZ_REFRESH ? video.mfx.FrameInfo.Height >> CeilLog2(video.LCUSize) : video.mfx.FrameInfo.Width >> CeilLog2(video.LCUSize);
     mfxU32 numFramesWithoutRefresh = extOpt2Init->IntRefCycleSize - (refreshDimension + intraStripeWidthInMBs - 1) / intraStripeWidthInMBs;
     mfxU32 idxInRefreshCycle = frameOrderInRefreshPeriod;
     state.firstFrameInCycle = (idxInRefreshCycle == 0);

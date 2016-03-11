@@ -1113,9 +1113,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     if (caps.RollingIntraRefresh == 0)
     {
-        changed += CheckOption(par.m_ext.CO2.IntRefType, 0);
-        changed += CheckOption(par.m_ext.CO2.IntRefCycleSize, 0);
-        changed += CheckOption(par.m_ext.CO3.IntRefCycleDist, 0);    
+        unsupported += CheckOption(par.m_ext.CO2.IntRefType, 0);
+        unsupported += CheckOption(par.m_ext.CO2.IntRefCycleSize, 0);
+        unsupported += CheckOption(par.m_ext.CO3.IntRefCycleDist, 0);    
     }
 
     if (par.m_ext.CO2.IntRefCycleSize != 0 &&
