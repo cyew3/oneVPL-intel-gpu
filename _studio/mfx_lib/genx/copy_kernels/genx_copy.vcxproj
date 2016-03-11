@@ -120,8 +120,8 @@
 SET ICLDIR=%25INSTALLDIR%25\compiler
 SET PATH=%25ICLDIR%25\bin%3b%25ICLDIR%25\lib%3b%25PATH%25
 SET INCLUDE=%25ICLDIR%25\include%3b%25ICLDIR%25\include\cm%3b%25INCLUDE%25
-icl /c /Qxcm /Qxcm_jit_target=gen9 .\src\skl_copy_kernel_genx.cpp /mCM_print_asm_count
-icl /c /Qxcm /Qxcm_jit_target=gen8 .\src\cht_copy_kernel_genx.cpp /mCM_print_asm_count
+icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen9 .\src\skl_copy_kernel_genx.cpp /mCM_print_asm_count
+icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen8 .\src\cht_copy_kernel_genx.cpp /mCM_print_asm_count
 cl .\src\embed_isa.c
 embed_isa skl_copy_kernel_genx.isa
 move skl_copy_kernel_genx.cpp .\src\genx_skl_copy_isa.cpp

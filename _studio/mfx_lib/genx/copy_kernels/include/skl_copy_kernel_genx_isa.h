@@ -9,5 +9,5 @@
 
 #ifndef __skl_copy_kernel_genx__
 #define __skl_copy_kernel_genx__
-extern const unsigned char skl_copy_kernel_genx[308611];
+extern const unsigned char skl_copy_kernel_genx[291745];
 #endif
