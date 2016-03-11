@@ -1327,7 +1327,8 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
 
         } // if (in->ExtParam && out->ExtParam && (in->NumExtParam == out->NumExtParam) )
         
-        if ( out->vpp.In.FourCC  != MFX_FOURCC_P010 && 
+        if ( out->vpp.In.FourCC  != MFX_FOURCC_P010 &&
+             out->vpp.In.FourCC  != MFX_FOURCC_P210 &&
              out->vpp.Out.FourCC == MFX_FOURCC_A2RGB10 ){
             if( out->vpp.In.FourCC )
             {
@@ -1336,10 +1337,11 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
             }
         }
 
-        if ( out->vpp.In.FourCC  == MFX_FOURCC_P010 && 
+        if ( out->vpp.In.FourCC  == MFX_FOURCC_P010 &&
              out->vpp.Out.FourCC != MFX_FOURCC_A2RGB10 &&
-             out->vpp.Out.FourCC != MFX_FOURCC_NV12 && 
-             out->vpp.Out.FourCC != MFX_FOURCC_P010){
+             out->vpp.Out.FourCC != MFX_FOURCC_NV12 &&
+             out->vpp.Out.FourCC != MFX_FOURCC_P010 &&
+             out->vpp.Out.FourCC != MFX_FOURCC_P210){
             if( out->vpp.In.FourCC )
             {
                 out->vpp.In.FourCC = 0;
@@ -1352,22 +1354,14 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
             out->vpp.In.FourCC != MFX_FOURCC_NV12 &&
             out->vpp.In.FourCC != MFX_FOURCC_YUY2 &&
             out->vpp.In.FourCC != MFX_FOURCC_RGB4 && 
-            out->vpp.In.FourCC != MFX_FOURCC_P010 )
+            out->vpp.In.FourCC != MFX_FOURCC_P010 &&
+            out->vpp.In.FourCC != MFX_FOURCC_P210)
         {
             if( out->vpp.In.FourCC )
             {
                 out->vpp.In.FourCC = 0;
                 mfxSts = MFX_ERR_UNSUPPORTED;
             }
-        }
-
-        if (MFX_FOURCC_NV12    != out->vpp.Out.FourCC && 
-            MFX_FOURCC_RGB4    != out->vpp.Out.FourCC &&
-            MFX_FOURCC_P010    != out->vpp.Out.FourCC &&
-            MFX_FOURCC_A2RGB10 != out->vpp.Out.FourCC)
-        {
-            out->vpp.Out.FourCC = 0;
-            mfxSts = MFX_ERR_UNSUPPORTED;
         }
 
         if (out->vpp.In.PicStruct != MFX_PICSTRUCT_PROGRESSIVE &&
@@ -1423,8 +1417,9 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
         /* [OUT VPP] data */
         if( out->vpp.Out.FourCC != MFX_FOURCC_YV12 &&
             out->vpp.Out.FourCC != MFX_FOURCC_NV12 &&
-            out->vpp.Out.FourCC != MFX_FOURCC_RGB4 && 
+            out->vpp.Out.FourCC != MFX_FOURCC_RGB4 &&
             out->vpp.Out.FourCC != MFX_FOURCC_P010 &&
+            out->vpp.Out.FourCC != MFX_FOURCC_P210 &&
             out->vpp.Out.FourCC != MFX_FOURCC_A2RGB10 )
         {
             out->vpp.Out.FourCC = 0;

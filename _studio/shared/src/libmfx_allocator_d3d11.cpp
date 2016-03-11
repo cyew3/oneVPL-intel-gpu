@@ -123,6 +123,7 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
     case MFX_FOURCC_R16_GBRG:
     case MFX_FOURCC_R16_GRBG:
     case MFX_FOURCC_ARGB16:
+    case MFX_FOURCC_A2RGB10:
         break;
     default:
         return MFX_ERR_UNSUPPORTED;

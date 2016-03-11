@@ -1595,15 +1595,6 @@ mfxStatus VideoVPPHW::Query(VideoCORE *core, mfxVideoParam *par)
     mfxVppCaps caps;
     caps = vpp_ddi->GetCaps();
 
-    if (par->vpp.In.Width > caps.uMaxWidth  || par->vpp.In.Height  > caps.uMaxHeight ||
-        par->vpp.Out.Width > caps.uMaxWidth || par->vpp.Out.Height > caps.uMaxHeight)
-    {
-        return MFX_WRN_PARTIAL_ACCELERATION;
-    }
-
-    if ( !(caps.mFormatSupport[par->vpp.In.FourCC] & MFX_FORMAT_SUPPORT_INPUT) || !(caps.mFormatSupport[par->vpp.Out.FourCC] & MFX_FORMAT_SUPPORT_OUTPUT) )
-        return MFX_WRN_PARTIAL_ACCELERATION;
-    
     sts = ValidateParams(&params, &caps);
     MFX_CHECK_STS(sts);
 
@@ -1689,14 +1680,6 @@ mfxStatus  VideoVPPHW::Init(
     mfxVppCaps caps;
     caps = m_ddi->GetCaps();
 
-    if (par->vpp.In.Width > caps.uMaxWidth  || par->vpp.In.Height  > caps.uMaxHeight ||
-        par->vpp.Out.Width > caps.uMaxWidth || par->vpp.Out.Height > caps.uMaxHeight)
-    {
-        return MFX_WRN_PARTIAL_ACCELERATION;
-    }
-
-    if ( !(caps.mFormatSupport[par->vpp.In.FourCC] & MFX_FORMAT_SUPPORT_INPUT) || !(caps.mFormatSupport[par->vpp.Out.FourCC] & MFX_FORMAT_SUPPORT_OUTPUT) )
-        return MFX_WRN_PARTIAL_ACCELERATION;
     sts = ValidateParams(&m_params, &caps);
     MFX_CHECK_STS(sts);
 
@@ -1874,14 +1857,8 @@ mfxStatus VideoVPPHW::QueryIOSurf(
     mfxVppCaps caps;
     caps = vpp_ddi->GetCaps();
 
-    if (par->vpp.In.Width > caps.uMaxWidth  || par->vpp.In.Height  > caps.uMaxHeight ||
-        par->vpp.Out.Width > caps.uMaxWidth || par->vpp.Out.Height > caps.uMaxHeight)
-    {
-        return MFX_WRN_PARTIAL_ACCELERATION;
-    }
-
-    if ( !(caps.mFormatSupport[par->vpp.In.FourCC] & MFX_FORMAT_SUPPORT_INPUT) || !(caps.mFormatSupport[par->vpp.Out.FourCC] & MFX_FORMAT_SUPPORT_OUTPUT) )
-        return MFX_WRN_PARTIAL_ACCELERATION;
+    sts = ValidateParams(par, &caps);
+    MFX_CHECK_STS(sts);
 
     mfxExecuteParams executeParams;
     MemSetZero4mfxExecuteParams(&executeParams);
@@ -2930,6 +2907,24 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps)
         } // switch
     }
 
+    /* 2. Check size */
+    if (par->vpp.In.Width > caps->uMaxWidth  || par->vpp.In.Height  > caps->uMaxHeight ||
+        par->vpp.Out.Width > caps->uMaxWidth || par->vpp.Out.Height > caps->uMaxHeight)
+    {
+        return MFX_WRN_PARTIAL_ACCELERATION;
+    }
+
+    /* 3. Check fourcc */
+    if ( !(caps->mFormatSupport[par->vpp.In.FourCC] & MFX_FORMAT_SUPPORT_INPUT) || !(caps->mFormatSupport[par->vpp.Out.FourCC] & MFX_FORMAT_SUPPORT_OUTPUT) )
+        return MFX_WRN_PARTIAL_ACCELERATION;
+
+    // p010 should be shifted (msdn)
+    if (MFX_FOURCC_P010 == par->vpp.In.FourCC && 0 == par->vpp.In.Shift)
+        return MFX_WRN_PARTIAL_ACCELERATION;
+
+    if (MFX_FOURCC_P010 == par->vpp.Out.FourCC && 0 == par->vpp.Out.Shift)
+        return MFX_WRN_PARTIAL_ACCELERATION;
+
     return sts;
 }
 //---------------------------------------------------------------------------------
@@ -3704,13 +3699,6 @@ mfxStatus ConfigureExecuteParams(
     }
 
     if (true == executeParams.bComposite && 0 == executeParams.dstRects.size()) // composition was enabled via DO USE
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-
-    // p010 should be shifted (msdn)
-    if (MFX_FOURCC_P010 == videoParam.vpp.In.FourCC && 0 == videoParam.vpp.In.Shift)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-
-    if (MFX_FOURCC_P010 == videoParam.vpp.Out.FourCC && 0 == videoParam.vpp.Out.Shift)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     return (bIsFilterSkipped) ? MFX_WRN_FILTER_SKIPPED : MFX_ERR_NONE;

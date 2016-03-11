@@ -61,6 +61,7 @@ mfxStatus mfxDefaultAllocatorD3D9::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequ
     case MFX_FOURCC_YUV444:
     case MFX_FOURCC_RGBP:
     case MFX_FOURCC_P010:
+    case MFX_FOURCC_A2RGB10:
         break;
     default:
         return MFX_ERR_UNSUPPORTED;
@@ -93,6 +94,10 @@ mfxStatus mfxDefaultAllocatorD3D9::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequ
     else if (MFX_FOURCC_BGR4 == fourcc)
     {
         fourcc = D3DFMT_A8B8G8R8;
+    }
+    else if (MFX_FOURCC_A2RGB10 == fourcc)
+    {
+        fourcc = D3DFMT_A2R10G10B10;
     }
 
     DWORD   target;
