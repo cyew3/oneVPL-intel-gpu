@@ -115,7 +115,7 @@ public:
     #if defined (MFX_ENABLE_VPP)&& !defined(MFX_RT)
     virtual void  GetVideoProcessing(mfxHDL* phdl) 
     {
-        *phdl = m_pVideoProcessing.get();
+        *phdl = &m_vpp_hw_resmng;
     };
     #endif
     mfxStatus  CreateVideoProcessing(mfxVideoParam * param);
@@ -167,7 +167,7 @@ private:
     // and providing HW capabilities
     std::auto_ptr<MFXD3D11Accelerator>    m_pAccelerator;
     #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
-    std::auto_ptr<MfxHwVideoProcessing::DriverVideoProcessing>       m_pVideoProcessing;
+    VPPHWResMng                          m_vpp_hw_resmng;
     #endif
     eMFXHWType                           m_HWType;
     // Ordinal number of adapter to work

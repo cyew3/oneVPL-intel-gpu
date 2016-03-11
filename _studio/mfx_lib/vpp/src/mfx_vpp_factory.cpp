@@ -75,5 +75,29 @@ DriverVideoProcessing* MfxHwVideoProcessing::CreateVideoProcessing(VideoCORE* co
 #endif
 } // mfxStatus CreateVideoProcessing( VideoCORE* core )
 
+
+mfxStatus VPPHWResMng::CreateDevice(VideoCORE * core){
+    MFX_CHECK_NULL_PTR1(core);
+    mfxStatus sts;
+    Close();
+    m_ddi.reset(MfxHwVideoProcessing::CreateVideoProcessing(core));
+
+    if ( ! m_ddi.get() )
+        return MFX_ERR_DEVICE_FAILED;
+
+    mfxVideoParam par    = {0};
+    par.vpp.In.Width     = 352;
+    par.vpp.In.Height    = 288;
+    par.vpp.In.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+    par.vpp.In.FourCC    = MFX_FOURCC_NV12;
+    par.vpp.Out          = par.vpp.In;
+
+    sts = m_ddi->CreateDevice(core, &par, false);
+    MFX_CHECK_STS(sts);
+
+    sts = m_ddi->QueryCapabilities(m_caps);
+    return sts;
+}
+
 #endif // ifdefined (MFX_ENABLE_VPP)
 /* EOF */

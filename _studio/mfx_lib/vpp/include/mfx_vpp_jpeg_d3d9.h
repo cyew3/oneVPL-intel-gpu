@@ -55,7 +55,7 @@ protected:
 
     std::map<mfxMemId, mfxI32> AssocIdx;
 
-    MfxHwVideoProcessing::DriverVideoProcessing* m_ddi;
+    VPPHWResMng* m_ddi;
 };
 
 
