@@ -30,12 +30,12 @@ FILE* mfx_trace_open_conf_file(const char* name)
 
     if (getenv("HOME"))
     {
-        snprintf(file_name, MAX_PATH-1, "%s/.%s", getenv("HOME"), name);
+        snprintf_s_ss(file_name, MAX_PATH-1, "%s/.%s", getenv("HOME"), name);
         file = fopen(file_name, "r");
     }
     else
     {
-        snprintf(file_name, MAX_PATH-1, "%s/%s", MFX_TRACE_CONFIG_PATH, name);
+        snprintf_s_ss(file_name, MAX_PATH-1, "%s/%s", MFX_TRACE_CONFIG_PATH, name);
         file = fopen(file_name, "r");
     }
     return file;

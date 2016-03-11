@@ -34,6 +34,7 @@ extern "C"
 #endif /* __cplusplus */
 
 #include <safe_lib.h>
+#include <snprintf_s.h>
 
 #ifdef __cplusplus
 }
