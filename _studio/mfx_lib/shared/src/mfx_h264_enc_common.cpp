@@ -2030,7 +2030,7 @@ mfxStatus CorrectProfileLevel_H264enc(mfxVideoInternalParam *parMFX, bool queryM
             MB_per_sec > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_MBPS] ||
             maxBitrate > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_BR] ||
             bufSizeBits > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_CPB] ||
-            (opts && static_cast<unsigned int>(opts->MVSearchWindow.y) > 2*LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_MVV]) ||
+            (opts && static_cast<Ipp64u>(opts->MVSearchWindow.y) > 2*LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_MVV]) ||
             (!(parMFXSetByTU && parMFXSetByTU->mfx.NumRefFrame) && (DPBSize > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_DPB])))
     {
         if (level_ind == H264_LIMIT_TABLE_LEVEL_MAX) {
@@ -2293,7 +2293,7 @@ mfxStatus CheckProfileLevelLimits_H264enc(mfxVideoInternalParam *parMFX, bool qu
         }
     }
 
-    if (opts && static_cast<unsigned int>(opts->MVSearchWindow.y) > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_MVV]) {
+    if (opts && static_cast<Ipp64u>(opts->MVSearchWindow.y) > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_MVV]) {
         opts->MVSearchWindow.y = (mfxI16)LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_MVV];
         st = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }else if (opts && opts->MVSearchWindow.y < -(mfxI16)LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_MVV]) {
@@ -2429,7 +2429,7 @@ void RejectPrevRefsEncOrder(
         if (IsRejected(fr->m_FrameTag, pRefPicListCtrl) || H264EncoderFrame_isLongTermRef0_8u16s(fr) ||
             fr->m_EncFrameCount >= curFrm->m_LastIframeEncCount)
             continue;
-        while (pRefPicListCtrl->RejectedRefList[j].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN))
+        while (pRefPicListCtrl->RejectedRefList[j].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN))
             j++;
         // reject ref frame from previous GOP
         pRefPicListCtrl->RejectedRefList[j++].FrameOrder = fr->m_FrameTag;
@@ -2459,7 +2459,7 @@ void RejectPastRefs(
             IsRejected(fr->m_FrameTag, pRefPicListCtrl) || IsPreferred(fr->m_FrameTag, pRefPicListCtrl) ||
             H264EncoderFrame_isLongTermRef0_8u16s(fr))
             continue;
-        while (pRefPicListCtrl->RejectedRefList[j].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN))
+        while (pRefPicListCtrl->RejectedRefList[j].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN))
             j++;
         pRefPicListCtrl->RejectedRefList[j++].FrameOrder = fr->m_FrameTag;
     }
@@ -2482,7 +2482,7 @@ void RejectFutureRefs(
             IsRejected(fr->m_FrameTag, pRefPicListCtrl) || IsPreferred(fr->m_FrameTag, pRefPicListCtrl) ||
             H264EncoderFrame_isLongTermRef0_8u16s(fr))
             continue;
-        while (pRefPicListCtrl->RejectedRefList[j].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN))
+        while (pRefPicListCtrl->RejectedRefList[j].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN))
             j++;
         pRefPicListCtrl->RejectedRefList[j++].FrameOrder = fr->m_FrameTag;
     }
