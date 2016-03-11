@@ -2267,13 +2267,13 @@ mfxStatus MFXVideoENCODEH264::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurf
             if (isFieldEncoding || m_temporalLayers.NumLayers || cur_enc->m_info.B_frame_rate)
                 st = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
             for (mfxU8 i = 0; i < 32; i ++)
-                if (pRefPicListCtrl->PreferredRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN) && pRefPicListCtrl->PreferredRefList[i].PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
+                if (pRefPicListCtrl->PreferredRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN) && pRefPicListCtrl->PreferredRefList[i].PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
             for (mfxU8 i = 0; i < 16; i ++)
-               if (pRefPicListCtrl->RejectedRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN) && pRefPicListCtrl->RejectedRefList[i].PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
+               if (pRefPicListCtrl->RejectedRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN) && pRefPicListCtrl->RejectedRefList[i].PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
                    return MFX_ERR_UNDEFINED_BEHAVIOR;
             for (mfxU8 i = 0; i < 16; i ++)
-               if (pRefPicListCtrl->LongTermRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN) && pRefPicListCtrl->LongTermRefList[i].PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
+               if (pRefPicListCtrl->LongTermRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN) && pRefPicListCtrl->LongTermRefList[i].PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
                    return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
 #ifdef H264_INTRA_REFRESH
@@ -7204,7 +7204,7 @@ Status MFXVideoENCODEH264::Encode(
         core_enc->m_pCurrentFrame->m_pAux[0] = ctrl;
         core_enc->m_pCurrentFrame->m_pAux[1] = surface;
 //TODO check if FrameTag is set elsewhere (merging)
-        if (surface->Data.FrameOrder == static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN))
+        if (surface->Data.FrameOrder == static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN))
             m_internalFrameOrders = true;
         // application doesn't provide FrameOrders, use own FrameOrders
         if (vp->mfx.EncodedOrder == 0 && surface->Data.FrameOrder == 0 && layer->m_frameCount > 0 &&
@@ -7976,15 +7976,15 @@ Status H264CoreEncoder_ReorderRefPicList(
 
         memset(pRefListOut, 0, sizeof(EncoderRefPicListStruct_8u16s));
         for (i = 0; i < 16; i ++) { // go through PreferredRefList and RejectedList
-            if (pRefPicListCtrl->PreferredRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN) ||
-                pRefPicListCtrl->RejectedRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN)) {
+            if (pRefPicListCtrl->PreferredRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN) ||
+                pRefPicListCtrl->RejectedRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN)) {
                 // check PicStruct
-                if (pRefPicListCtrl->PreferredRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN) &&
+                if (pRefPicListCtrl->PreferredRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN) &&
                     pRefPicListCtrl->PreferredRefList[i].PicStruct != MFX_PICSTRUCT_PROGRESSIVE &&
                     pRefPicListCtrl->PreferredRefList[i].PicStruct != MFX_PICSTRUCT_UNKNOWN) {
                     return UMC_ERR_FAILED;
                 }
-                if (pRefPicListCtrl->RejectedRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN) &&
+                if (pRefPicListCtrl->RejectedRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN) &&
                     pRefPicListCtrl->RejectedRefList[i].PicStruct != MFX_PICSTRUCT_PROGRESSIVE &&
                     pRefPicListCtrl->RejectedRefList[i].PicStruct != MFX_PICSTRUCT_UNKNOWN) {
                     return UMC_ERR_FAILED;
@@ -8018,7 +8018,7 @@ Status H264CoreEncoder_ReorderRefPicList(
         memset(pFieldsOut, 0, MAX_NUM_REF_FRAMES + 1);
 
         for (i = 0; i < 16; i ++) { // go through RejectedList
-            if ( pRefPicListCtrl->RejectedRefList[i].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN)) {
+            if ( pRefPicListCtrl->RejectedRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN)) {
                 if (pRefPicListCtrl->RejectedRefList[i].PicStruct != (MFX_PICSTRUCT_FIELD_TFF & MFX_PICSTRUCT_FIELD_BFF) &&
                     pRefPicListCtrl->RejectedRefList[i].PicStruct != MFX_PICSTRUCT_UNKNOWN)
                     return UMC_ERR_FAILED;
@@ -8191,7 +8191,7 @@ Status MFXVideoENCODEH264::H264CoreEncoder_ModifyRefPicList( H264CoreEncoder_8u1
             H264EncoderFrame_8u16s *fr = pRefListL0->m_RefPicList[i];
             if (fr->m_EncodedFrameNum != refFrameNum && IsRejected(fr->m_FrameTag, &refPicListCtrlL0) == false) {
                 j = 0;
-                while (refPicListCtrlL0.RejectedRefList[j].FrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN)) j++;
+                while (refPicListCtrlL0.RejectedRefList[j].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN)) j++;
                 refPicListCtrlL0.RejectedRefList[j].FrameOrder = fr->m_FrameTag;
             }
         }
@@ -8217,9 +8217,9 @@ Status MFXVideoENCODEH264::H264CoreEncoder_ModifyRefPicList( H264CoreEncoder_8u1
     }
 
     // disable ref pic lists reordering if it's not required
-    if (pRefPicListCtrl == 0 && refPicListCtrlL0.RejectedRefList[0].FrameOrder == static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN))
+    if (pRefPicListCtrl == 0 && refPicListCtrlL0.RejectedRefList[0].FrameOrder == static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN))
         pRefPicListCtrlL0 = 0;
-    if (pRefPicListCtrl == 0 && refPicListCtrlL1.RejectedRefList[0].FrameOrder == static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN))
+    if (pRefPicListCtrl == 0 && refPicListCtrlL1.RejectedRefList[0].FrameOrder == static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN))
         pRefPicListCtrlL1 = 0;
 
     if (pRefPicListCtrlL0) {
@@ -8469,7 +8469,7 @@ Status H264CoreEncoder_PrepareRefPicMarking(H264CoreEncoder_8u16s* core_enc, mfx
         for (i = 0; i < 16; i ++) {
             // collect frames to mark as LT
             LTFrameOrder = pRefPicListCtrl->LongTermRefList[i].FrameOrder;
-            if (LTFrameOrder != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN) && (IsRejected(LTFrameOrder, pRefPicListCtrl) == false)) {
+            if (LTFrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN) && (IsRejected(LTFrameOrder, pRefPicListCtrl) == false)) {
                 for (pFrm = pHead; pFrm; pFrm = pFrm->m_pFutureFrame) {
                     if (pFrm->m_FrameTag == LTFrameOrder &&
                         (H264EncoderFrame_isShortTermRef0_8u16s(pFrm) || pFrm == core_enc->m_pCurrentFrame)) {
@@ -8480,7 +8480,7 @@ Status H264CoreEncoder_PrepareRefPicMarking(H264CoreEncoder_8u16s* core_enc, mfx
             // collect frames to mark as "unused for reference"
             // TODO can be ignored with IDR
             FrameOrderToRemove = pRefPicListCtrl->RejectedRefList[i].FrameOrder;
-            if (FrameOrderToRemove != static_cast<unsigned int>(MFX_FRAMEORDER_UNKNOWN)) {
+            if (FrameOrderToRemove != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN)) {
                 for (pFrm = pHead; pFrm; pFrm = pFrm->m_pFutureFrame) {
                     if (pFrm->m_FrameTag == FrameOrderToRemove) {
                         if (H264EncoderFrame_isShortTermRef0_8u16s(pFrm))
