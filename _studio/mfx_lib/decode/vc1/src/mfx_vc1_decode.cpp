@@ -1132,7 +1132,8 @@ mfxStatus MFXVideoDECODEVC1::GetVideoParam(mfxVideoParam *par)
 
 mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_disp)
 {
-    mfxStatus       MFXSts;
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXVideoDECODEVC1::DecodeFrameCheck");
+    mfxStatus MFXSts;
 
     //UMC::AutomaticUMCMutex guard(m_guard);
 
@@ -1320,8 +1321,9 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
 }
 mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
 {
-    mfxStatus       MFXSts = MFX_ERR_NONE;
-    Status     IntUMCStatus = UMC_OK;
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXVideoDECODEVC1::SelfConstructFrame");
+    mfxStatus MFXSts = MFX_ERR_NONE;
+    Status IntUMCStatus = UMC_OK;
 
     if (!(m_par.mfx.FrameInfo.Width*m_par.mfx.FrameInfo.Height))
     {
@@ -2739,6 +2741,8 @@ mfxStatus MFXVideoDECODEVC1::RunThread(mfxFrameSurface1 *surface_work,
                                        mfxU32 taskID,
                                        bool isSkip)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXVideoDECODEVC1::RunThread");
+
     Status umcRes = UMC_OK;
     mfxStatus sts;
     // for SW we need to process task
@@ -2754,7 +2758,6 @@ mfxStatus MFXVideoDECODEVC1::RunThread(mfxFrameSurface1 *surface_work,
             return MFX_TASK_NEED_CONTINUE;
         else if (UMC_OK == umcRes || UMC_LAST_FRAME == umcRes) // surface is prepare to output
         {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "VC1Dec_postproc");
             UMC::AutomaticUMCMutex guard(m_guard);
 
             // if not waiting task - free desriptor and wait needed task

@@ -24,6 +24,7 @@
 #include "umc_vc1_dec_task_store.h"
 #include "umc_vc1_dec_task.h"
 #include "umc_color_space_conversion.h"
+#include "mfx_trace.h"
 
 #include "umc_memory_allocator.h"
 #include "umc_vc1_dec_time_statistics.h"
@@ -789,6 +790,7 @@ Status VC1VideoDecoder::StartCodesProcessing(Ipp8u*   pBStream,
                                              bool     IsDataPrepare,
                                              bool     IsNeedToInitCall)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VC1VideoDecoder::StartCodesProcessing");
     Status umcRes = UMC_OK;
     Ipp32u readSize = 0;
     Ipp32u UnitSize;
@@ -1712,6 +1714,7 @@ STATISTICS_END_TIME(m_timeStatistics->ColorConv_StartTime,
 
 Status VC1VideoDecoder::CreateFrameBuffer(Ipp32u bufferSize)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VC1VideoDecoder::CreateFrameBuffer");
     if(m_dataBuffer == NULL)
     {
        if (m_pMemoryAllocator->Alloc(&m_iFrameBufferID,
@@ -1748,6 +1751,7 @@ Status VC1VideoDecoder::GetStartCodes (Ipp8u* pDataPointer,
                                        MediaDataEx* out,
                                        Ipp32u* readSize)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VC1VideoDecoder::GetStartCodes");
     Ipp8u* readPos = pDataPointer;
     Ipp32u readBufSize =  DataSize;
     Ipp8u* readBuf = pDataPointer;

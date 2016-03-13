@@ -27,6 +27,7 @@
 #include "umc_vc1_dec_frame_descr.h"
 #include "ipps.h"
 #include "umc_vc1_dec_exception.h"
+#include "mfx_trace.h"
 
 
 using namespace UMC;
@@ -208,6 +209,7 @@ void VC1FrameDescriptor::Release()
 void VC1FrameDescriptor::processFrame(Ipp32u*  pOffsets,
                                       Ipp32u*  pValues)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VC1FrameDescriptor::processFrame");
     SliceParams slparams;
     memset(&slparams,0,sizeof(SliceParams));
     VC1Task task(0);
