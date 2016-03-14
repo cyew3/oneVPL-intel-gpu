@@ -17,6 +17,7 @@ extern "C"
 {
 
 #include <stdlib.h>
+#include "vm_sys_info.h"
 
 /*------------------------------------------------------------------------------*/
 
@@ -52,10 +53,10 @@ mfxTraceU32 mfx_trace_get_value_pos(FILE* file,
     if (!file || ! pName || !value_pos) return 1;
     while (NULL != (str = fgets(line, line_size-1,  file)))
     {
-        n = strlen(str);
+        n = strnlen_s(str, line_size-1);
         if ((n > 0) && (str[n-1] == '\n')) str[n-1] = '\0';
         for(; strchr(" \t", *str) && (*str); str++);
-        n = strlen(pName);
+        n = strnlen_s(pName, 256);
         if (!strncmp(str, pName, n))
         {
             str += n;
