@@ -456,7 +456,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     }
     */
 
-    if (NULL != feiCtrl->RefFrame[0])
+    if ((NULL != feiCtrl) && (NULL != feiCtrl->RefFrame[0]))
     {
         m_statParams.num_past_references = 1;
         mfxHDL handle;
@@ -511,7 +511,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     }
     */
 
-    if (NULL != feiCtrl->RefFrame[1])
+    if ((NULL != feiCtrl) && (NULL != feiCtrl->RefFrame[1]))
     {
         m_statParams.num_future_references = 1;
         mfxHDL handle;
