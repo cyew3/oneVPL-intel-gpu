@@ -307,6 +307,7 @@ protected:
     virtual void DeleteHWDevice();
 
     virtual mfxStatus AllocFrames();
+    virtual mfxStatus FillSurfacePool(mfxFrameSurface1* & surfacesPool, mfxFrameAllocResponse* allocResponse, mfxFrameInfo* FrameInfo);
     virtual void DeleteFrames();
 
     virtual mfxStatus ReleaseResources();
