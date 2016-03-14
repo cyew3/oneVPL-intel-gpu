@@ -295,7 +295,7 @@ void H265SegmentDecoderMultiThreaded::RestoreErrorRect(Ipp32s startMb, Ipp32s en
 
     IppiSize cuSize;
     cuSize.width = cuSize.height = m_pSlice->GetSeqParam()->MaxCUSize;
-    IppiSize picSize = {m_pSlice->GetSeqParam()->pic_width_in_luma_samples, m_pSlice->GetSeqParam()->pic_height_in_luma_samples};
+    IppiSize picSize = {static_cast<int>(m_pSlice->GetSeqParam()->pic_width_in_luma_samples), static_cast<int>(m_pSlice->GetSeqParam()->pic_height_in_luma_samples)};
 
     Ipp32s offsetX, offsetY;
     offsetX = (startMb % mb_width) * cuSize.height;
@@ -983,7 +983,7 @@ private:
 #pragma warning(disable: 4127)
 
 template<bool bitDepth, typename H265PlaneType>
-void ReconstructorT<bitDepth, H265PlaneType>::ReconstructPCMBlock(PlanePtrY luma, Ipp32s pitchLuma, Ipp32u PcmLeftShiftBitLuma, 
+void ReconstructorT<bitDepth, H265PlaneType>::ReconstructPCMBlock(PlanePtrY luma, Ipp32s pitchLuma, Ipp32u PcmLeftShiftBitLuma,
                                                                   PlanePtrY chroma, Ipp32s pitchChroma, Ipp32u PcmLeftShiftBitChroma, CoeffsPtr *pcm, Ipp32u size)
 {
     H265PlaneType * plane = (H265PlaneType *)luma;
