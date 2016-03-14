@@ -848,6 +848,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     mfxU32 maxBR   = 0xFFFFFFFF;
     mfxU32 maxBuf  = 0xFFFFFFFF;
     mfxU16 maxDPB  = 16;
+    mfxU16 maxQP   = 51;
+
+    if (par.mfx.FrameInfo.BitDepthLuma > 8)
+        maxQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
+
     changed +=  par.CheckExtBufferParam();
 
     if (par.mfx.CodecLevel)
@@ -1024,9 +1029,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
     {
-        changed += CheckRangeDflt(par.mfx.QPI, 1, 51, 0);
-        changed += CheckRangeDflt(par.mfx.QPP, 1, 51, 0);
-        changed += CheckRangeDflt(par.mfx.QPB, 1, 51, 0);
+        changed += CheckRangeDflt(par.mfx.QPI, 1, maxQP, 0);
+        changed += CheckRangeDflt(par.mfx.QPP, 1, maxQP, 0);
+        changed += CheckRangeDflt(par.mfx.QPB, 1, maxQP, 0);
     }
 
     if (par.BufferSizeInKB != 0)
@@ -1185,6 +1190,7 @@ void SetDefaults(
     mfxU32 maxBR   = 0xFFFFFFFF;
     mfxU32 maxBuf  = 0xFFFFFFFF;
     mfxU16 maxDPB  = 16;
+    mfxU16 maxQP   = 51;
 
     if (par.mfx.CodecLevel)
     {
@@ -1251,10 +1257,16 @@ void SetDefaults(
         par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 
     if (!par.mfx.FrameInfo.BitDepthLuma)
-        par.mfx.FrameInfo.BitDepthLuma = 8;
+        par.mfx.FrameInfo.BitDepthLuma = (par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010) ? 10 : 8;
 
     if (!par.mfx.FrameInfo.BitDepthChroma)
         par.mfx.FrameInfo.BitDepthChroma = par.mfx.FrameInfo.BitDepthLuma;
+
+    if (par.mfx.FrameInfo.BitDepthLuma > 8)
+    {
+        rawBits = rawBits / 8 * par.mfx.FrameInfo.BitDepthLuma;
+        maxQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
+    }
 
     if (!par.mfx.RateControlMethod)
         par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
@@ -1264,9 +1276,9 @@ void SetDefaults(
         if (!par.mfx.QPI)
             par.mfx.QPI = 26;
         if (!par.mfx.QPP)
-            par.mfx.QPP = (mfxU16) Min (par.mfx.QPI + 2, 51);
+            par.mfx.QPP = Min<mfxU16>(par.mfx.QPI + 2, maxQP);
         if (!par.mfx.QPB)
-            par.mfx.QPB = (mfxU16) Min (par.mfx.QPP + 2, 51);
+            par.mfx.QPB = Min<mfxU16>(par.mfx.QPP + 2, maxQP);
 
         if (!par.BufferSizeInKB)
             par.BufferSizeInKB = Min(maxBuf, mfxU32(rawBits / 8000));

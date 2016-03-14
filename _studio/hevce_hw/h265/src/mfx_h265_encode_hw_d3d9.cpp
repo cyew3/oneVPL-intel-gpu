@@ -185,6 +185,9 @@ void FillSpsBuffer(
         }
     }
 
+    if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+        sps.SourceBitDepth = 1; //10b
+
     sps.scaling_list_enable_flag           = par.m_sps.scaling_list_enabled_flag;
     sps.sps_temporal_mvp_enable_flag       = par.m_sps.temporal_mvp_enabled_flag;
     sps.strong_intra_smoothing_enable_flag = par.m_sps.strong_intra_smoothing_enabled_flag;
