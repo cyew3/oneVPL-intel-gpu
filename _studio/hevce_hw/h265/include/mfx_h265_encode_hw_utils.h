@@ -86,13 +86,8 @@ enum
     MAX_DPB_SIZE        = 15,
     IDX_INVALID         = 0xFF,
 
-#if defined(_WIN32) || defined(_WIN64)
     HW_SURF_ALIGN_W     = 16,
     HW_SURF_ALIGN_H     = 16,
-#else
-    HW_SURF_ALIGN_W     = 32,
-    HW_SURF_ALIGN_H     = 32,
-#endif
 
     CODED_PIC_ALIGN_W   = 16,
     CODED_PIC_ALIGN_H   = 16,
