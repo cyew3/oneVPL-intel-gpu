@@ -11,6 +11,8 @@ Copyright(c) 2011 Intel Corporation. All Rights Reserved.
 #if !defined(_WIN32) && !defined(_WIN64)
 
 #include "mfx_trace_utils.h"
+#include <sstream>
+#include <iomanip>
 
 #ifdef MFX_TRACE_ENABLE
 extern "C"
@@ -83,11 +85,14 @@ mfxTraceU32 mfx_trace_get_conf_dword(FILE* file,
         if (!strncmp(value_pos, "0x", 2))
         {
             value_pos += 2;
-            sscanf(value_pos, "%8x", (mfxTraceU32*)pValue);
+            std::stringstream ss(value_pos);
+            std::string s;
+            ss >> std::setw(8) >> s;
+            std::stringstream(s) >> std::hex >> *pValue;
         }
         else
         {
-            sscanf(value_pos, "%d", (mfxTraceU32*)pValue);
+            *pValue = atoi(value_pos);
         }
         return 0;
     }
