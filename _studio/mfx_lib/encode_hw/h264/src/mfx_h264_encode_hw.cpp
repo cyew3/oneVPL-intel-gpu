@@ -1281,7 +1281,7 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
         m_video.AsyncDepth                 == newPar.AsyncDepth                 &&
         m_videoInit.mfx.GopRefDist         >= newPar.mfx.GopRefDist             &&
         m_videoInit.mfx.NumSlice           >= newPar.mfx.NumSlice               &&
-        m_video.mfx.NumRefFrame            >= newPar.mfx.NumRefFrame            &&
+        m_videoInit.mfx.NumRefFrame        >= newPar.mfx.NumRefFrame            &&
         m_video.mfx.RateControlMethod      == newPar.mfx.RateControlMethod      &&
         m_videoInit.mfx.FrameInfo.Width    >= newPar.mfx.FrameInfo.Width        &&
         m_videoInit.mfx.FrameInfo.Height   >= newPar.mfx.FrameInfo.Height       &&
