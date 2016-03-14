@@ -1568,19 +1568,17 @@ mfxStatus VideoVPPHW::GetVideoParams(mfxVideoParam *par) const
 
 mfxStatus VideoVPPHW::Query(VideoCORE *core, mfxVideoParam *par)
 {
-    mfxStatus sts = MFX_ERR_NONE;
-    VPPHWResMng *vpp_ddi = 0;
-    mfxVideoParam params = {0};
-    Config config = {0};
-    MfxHwVideoProcessing::mfxExecuteParams executeParams;
-
     MFX_CHECK_NULL_PTR1(par);
     MFX_CHECK_NULL_PTR1(core);
 
+    mfxStatus sts = MFX_ERR_NONE;
+    VPPHWResMng *vpp_ddi = 0;
+    mfxVideoParam params = *par;
+    Config config = {0};
+    MfxHwVideoProcessing::mfxExecuteParams executeParams;
+
     sts = CheckIOMode(par, VideoVPPHW::ALL);
     MFX_CHECK_STS(sts);
-
-    params = *par;
 
     sts = core->CreateVideoProcessing(&params);
     MFX_CHECK_STS(sts);
