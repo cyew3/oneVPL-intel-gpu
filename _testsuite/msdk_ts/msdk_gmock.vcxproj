@@ -192,6 +192,7 @@
     <ClInclude Include="include\gmock\ts_alloc.h" />
     <ClInclude Include="include\gmock\ts_decoder.h" />
     <ClInclude Include="include\gmock\ts_enc.h" />
+    <ClInclude Include="include\gmock\ts_pak.h" />
     <ClInclude Include="include\gmock\ts_encoder.h" />
     <ClInclude Include="include\gmock\ts_ext_buffers.h" />
     <ClInclude Include="include\gmock\ts_ext_buffers_decl.h" />
@@ -344,6 +345,7 @@
     <ClCompile Include="src\gmock\ts_common.cpp" />
     <ClCompile Include="src\gmock\ts_decoder.cpp" />
     <ClCompile Include="src\gmock\ts_enc.cpp" />
+    <ClCompile Include="src\gmock\ts_pak.cpp" />
     <ClCompile Include="src\gmock\ts_encoder.cpp" />
     <ClCompile Include="src\gmock\ts_fei.cpp" />
     <ClCompile Include="src\gmock\ts_plugin.cpp" />

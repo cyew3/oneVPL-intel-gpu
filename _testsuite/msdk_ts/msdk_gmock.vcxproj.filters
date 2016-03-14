@@ -107,6 +107,9 @@
     <ClInclude Include="include\gmock\ts_enc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\gmock\ts_pak.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\test_sample_allocator.cpp">
@@ -278,6 +281,9 @@
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\ts_enc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\ts_pak.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\avce_skipframes.cpp">
