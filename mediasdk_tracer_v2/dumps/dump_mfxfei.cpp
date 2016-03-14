@@ -35,11 +35,16 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPreEn
     DUMP_FIELD(Enable8x8Stat);
     DUMP_FIELD(PictureType);
     DUMP_FIELD(DownsampleInput);
+    DUMP_FIELD(RefPictureType[0]);
+    DUMP_FIELD(RefPictureType[1]);
+    DUMP_FIELD(DownsampleReference[0]);
+    DUMP_FIELD(DownsampleReference[1]);
+    DUMP_FIELD(RefFrame[0]);
+    DUMP_FIELD(RefFrame[1]);
     DUMP_FIELD_RESERVED(reserved);
 
     return str;
 }
-
 
 std::string DumpContext::dump(const std::string structName, const mfxExtFeiPreEncMVPredictors &_struct)
 {
