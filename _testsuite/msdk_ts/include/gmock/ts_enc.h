@@ -26,6 +26,7 @@ public:
     tsVideoEncoder*             m_pEncode;
 
     tsVideoENC(mfxU32 CodecId = 0, bool useDefaults = true, tsVideoEncoder* enc = 0);
+    tsVideoENC(mfxFeiFunction func, mfxU32 CodecId = 0, bool useDefaults = true);
     ~tsVideoENC();
 
     mfxStatus Init();
