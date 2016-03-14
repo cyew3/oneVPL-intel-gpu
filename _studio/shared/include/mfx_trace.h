@@ -109,13 +109,45 @@ typedef enum
     MFX_TRACE_LEVEL_MAX = 0xFF
 } mfxTraceLevel;
 
-#define MFX_TRACE_LEVEL_API         MFX_TRACE_LEVEL_1
-#define MFX_TRACE_LEVEL_SCHED       MFX_TRACE_LEVEL_2
-#define MFX_TRACE_LEVEL_INTERNAL    MFX_TRACE_LEVEL_4
-#define MFX_TRACE_LEVEL_EXTCALL     MFX_TRACE_LEVEL_5
-#define MFX_TRACE_LEVEL_INTERNAL_VTUNE    MFX_TRACE_LEVEL_6
-#define MFX_TRACE_LEVEL_PARAMS      MFX_TRACE_LEVEL_8
+
+// TODO delete the following levels completely
+#define MFX_TRACE_LEVEL_INTERNAL_VTUNE  MFX_TRACE_LEVEL_2
+#define MFX_TRACE_LEVEL_SCHED       MFX_TRACE_LEVEL_10
 #define MFX_TRACE_LEVEL_PRIVATE     MFX_TRACE_LEVEL_16
+
+// TODO the following levels should remain only
+
+/** API level
+ * - Media SDK library entry points exposed in Media SDK official API
+ * - Media SDK library important internal entry points
+ */
+#define MFX_TRACE_LEVEL_API         MFX_TRACE_LEVEL_1
+
+/** HOTSPOTS level
+ * - Known Media SDK library internal hotspots (functions taking > ~50us on selected platforms/contents)
+ */
+#define MFX_TRACE_LEVEL_HOTSPOTS    MFX_TRACE_LEVEL_INTERNAL_VTUNE  // TODO should be MFX_TRACE_LEVEL_2
+
+/** EXTCALL level
+ * - Calls to external libaries (DXVA, LibVA, MDF/CM, etc.)
+ */
+#define MFX_TRACE_LEVEL_EXTCALL     MFX_TRACE_LEVEL_INTERNAL_VTUNE  // TODO should be MFX_TRACE_LEVEL_3
+
+/** SCHEDULER level
+ * - Media SDK internal scheduler functions calls
+ */
+#define MFX_TRACE_LEVEL_SCHEDULER   MFX_TRACE_LEVEL_4
+
+/** INTERNAL level
+ * - Media SDK components function calls. Use this level to get more deeper knowledge of
+ * calling stack.
+ */
+#define MFX_TRACE_LEVEL_INTERNAL    MFX_TRACE_LEVEL_5
+
+/** PARAMS level
+ * - Tracing of function parameters, variables, etc. Note that not all tracing modules support this.
+ */
+#define MFX_TRACE_LEVEL_PARAMS      MFX_TRACE_LEVEL_6
 
 // defines default trace category
 #define MFX_TRACE_CATEGORY_DEFAULT  NULL
