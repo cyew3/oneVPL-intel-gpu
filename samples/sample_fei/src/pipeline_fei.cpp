@@ -1835,6 +1835,8 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                 preENCCtr[fieldId].PictureType             = GetCurPicType(fieldId);
                 preENCCtr[fieldId].RefPictureType[0]       = preENCCtr[fieldId].PictureType;
                 preENCCtr[fieldId].RefPictureType[1]       = preENCCtr[fieldId].PictureType;
+                preENCCtr[fieldId].DownsampleReference[0]  = MFX_CODINGOPTION_OFF; // in sample_fei preenc works only in encoded order
+                preENCCtr[fieldId].DownsampleReference[1]  = MFX_CODINGOPTION_OFF; // so all references would be already downsampled
                 preENCCtr[fieldId].DisableMVOutput         = m_disableMVoutPreENC;
                 preENCCtr[fieldId].DisableStatisticsOutput = m_disableMBStatPreENC;
                 preENCCtr[fieldId].FTEnable                = m_encpakParams.FTEnable;
