@@ -447,11 +447,13 @@ namespace H265Enc {
         Ipp32s shift = 2 - shift_w - shift_h;
         Ipp32s plane_size = (W*H << bd_shift_luma) + (((W*H/2) << shift) << bd_shift_chroma);
 
-        vm_file *f = vm_file_fopen(par->reconDumpFileName, frame->m_frameOrder ? VM_STRING("ab") : VM_STRING("wb"));
+        vm_file *f = vm_file_fopen(par->reconDumpFileName, frame->m_frameOrder ? VM_STRING("r+b") : VM_STRING("w+b"));
         if (f == NULL)
             return;
 
-        Ipp64s seekPos = (par->picStruct == PROGR) ? (Ipp64s)frame->m_frameOrder * plane_size : (frame->m_frameOrder/2) * (plane_size*2);
+        Ipp64u seekPos = (par->picStruct == PROGR)
+            ? Ipp64u(frame->m_frameOrder)   * (plane_size)
+            : Ipp64u(frame->m_frameOrder/2) * (plane_size*2);
         vm_file_fseek(f, seekPos, VM_FILE_SEEK_SET);
 
         FrameData* recon = frame->m_recon;
