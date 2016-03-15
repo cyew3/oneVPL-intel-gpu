@@ -42,21 +42,23 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*00*/ MFX_ERR_NONE, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_BOB}}},
     {/*01*/ MFX_ERR_NONE, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_ADVANCED}}},
     {/*02*/ MFX_ERR_NONE, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_ADVANCED_NOREF}}},
-    
+    {/*03*/ MFX_ERR_NONE, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_ADVANCED_SCD}}},
+
     // PTIR modes are unsupported by regular VPP
-    {/*03*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_AUTO_DOUBLE}}},
-    {/*04*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_AUTO_SINGLE}}},
-    {/*05*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FULL_FR_OUT}}},
-    {/*06*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_HALF_FR_OUT}}},
-    {/*07*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_24FPS_OUT}}},
-    {/*08*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FIXED_TELECINE_PATTERN}}},
-    {/*09*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_30FPS_OUT}}},
-    {/*10*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_DETECT_INTERLACE}}},
-    {/*11*/ MFX_ERR_UNSUPPORTED, 0, {
+    {/*04*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_AUTO_DOUBLE}}},
+    {/*05*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_AUTO_SINGLE}}},
+    {/*06*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FULL_FR_OUT}}},
+    {/*07*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_HALF_FR_OUT}}},
+    {/*08*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_24FPS_OUT}}},
+    {/*09*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_FIXED_TELECINE_PATTERN}}},
+    {/*10*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_30FPS_OUT}}},
+    {/*11*/ MFX_ERR_UNSUPPORTED, 0, {{MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_DETECT_INTERLACE}}},
+    {/*12*/ MFX_ERR_UNSUPPORTED, 0, {
         {MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_DETECT_INTERLACE},
         {MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.TelecinePattern, 1},
         {MFX_PAR, &tsStruct::mfxExtVPPDeinterlacing.TelecineLocation, 1}}
-    }
+    },
+
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
