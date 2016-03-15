@@ -287,7 +287,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-no_gpu_copy")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gpucopy::on")))
+        {
+            pParams->gpuCopy = MFX_GPUCOPY_ON;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gpucopy::off")))
         {
             pParams->gpuCopy = MFX_GPUCOPY_OFF;
         }
