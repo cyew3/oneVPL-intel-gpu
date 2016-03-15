@@ -1066,25 +1066,6 @@ VAAPIVideoCORE::DoFastCopyExtended(
 
     if (NULL != pSrc->Data.MemId && NULL != pDst->Data.MemId)
     {
-#if 0
-        //should be init m_hDirectXHandle ???
-
-        hRes = m_pDirect3DDeviceManager->LockDevice(m_hDirectXHandle, &m_pDirect3DDevice, true);
-        MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
-
-        const tagRECT rect = {0, 0, roi.width, roi.height};
-
-        hRes = m_pDirect3DDevice->StretchRect((IDirect3DSurface9*) pSrc->Data.MemId, &rect,
-                                              (IDirect3DSurface9*) pDst->Data.MemId, &rect,
-                                               D3DTEXF_LINEAR);
-
-        MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
-
-        hRes = m_pDirect3DDeviceManager->UnlockDevice(m_hDirectXHandle, false);
-        MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
-
-        m_pDirect3DDevice->Release();
-#endif
         if (m_bCmCopy == true && pDst->Info.FourCC != MFX_FOURCC_YV12 && CM_SUPPORTED_COPY_SIZE(roi))
         {
             sts = pCmCopy->CopyVideoToVideoMemoryAPI(pDst->Data.MemId, pSrc->Data.MemId, roi);
@@ -1092,7 +1073,25 @@ VAAPIVideoCORE::DoFastCopyExtended(
         }
         else
         {
-            return MFX_ERR_UNSUPPORTED;
+            MFX_CHECK(m_Display, MFX_ERR_NOT_INITIALIZED);
+
+            VASurfaceID *va_surf_src = (VASurfaceID*)(pSrc->Data.MemId);
+            VASurfaceID *va_surf_dst = (VASurfaceID*)(pDst->Data.MemId);
+            MFX_CHECK(va_surf_src != va_surf_dst, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+            VAImage va_img_src = {};
+            VAStatus va_sts;
+
+            va_sts = vaDeriveImage(m_Display, *va_surf_src, &va_img_src);
+            MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
+
+            va_sts = vaPutImage(m_Display, *va_surf_dst, va_img_src.image_id,
+                                0, 0, roi.width, roi.height,
+                                0, 0, roi.width, roi.height);
+            MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
+
+            va_sts = vaDestroyImage(m_Display, va_img_src.image_id);
+            MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
         }
     }
     else if (NULL != pSrc->Data.MemId && NULL != pDst->Data.Y)
