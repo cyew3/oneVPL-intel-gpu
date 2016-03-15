@@ -117,6 +117,7 @@ public:
 
     mfxStatus TaskRoutine(void *pParam);
     mfxStatus CompleteTasks(void *pParam);
+    mfxStatus PerformStatusCheck(void *pParam);
 
     VideoDECODEMPEG2(VideoCORE *core, mfxStatus *sts);
     virtual ~VideoDECODEMPEG2();

@@ -2133,7 +2133,8 @@ mfxStatus VideoDECODEMPEG2::TaskRoutine(void *pParam)
 
     if (false == parameters->IsSWImpl)
     {
-        mfxStatus sts = MFX_ERR_NONE;
+        mfxStatus sts = PerformStatusCheck(pParam);
+        MFX_CHECK_STS(sts);
 
         if (0 <= parameters->display_index && true == parameters->m_isSoftwareBuffer)
         {
@@ -2148,7 +2149,6 @@ mfxStatus VideoDECODEMPEG2::TaskRoutine(void *pParam)
         sts = CompleteTasks(pParam);
         MFX_CHECK_STS(sts);
 
-        // there is nothing to do
         return MFX_TASK_DONE;
     }
 
@@ -2273,6 +2273,59 @@ static mfxStatus __CDECL MPEG2CompleteTasks(void *pState, void *pParam, mfxStatu
     return sts;
 }
 
+mfxStatus VideoDECODEMPEG2::PerformStatusCheck(void *pParam)
+{
+    MFX_CHECK_NULL_PTR1(pParam);
+    MParam *parameters = (MParam *)pParam;
+    Ipp32s display_index = parameters->display_index;
+    if (display_index < 0)
+        return MFX_ERR_NONE;
+
+    if (!IsStatusReportEnable(m_pCore))
+        return MFX_ERR_NONE;
+
+    //parameters->surface_out->Data.Corrupted = 0;
+
+    mfxStatus sts = GetStatusReport(parameters->surface_out, parameters->mid[display_index]);
+
+    if (MFX_ERR_NONE != sts)
+    {
+        parameters->m_FrameAllocator->DecreaseReference(parameters->mid[display_index]);
+        parameters->m_frame_in_use[parameters->m_frame_curr] = false;
+
+        return sts;
+    }
+
+    mfxU16 isCorrupted = parameters->surface_out->Data.Corrupted;
+    mfxU32 frameType = m_implUmc.GetFrameType(display_index);
+    Ipp32s prev_index = m_implUmc.GetPrevDecodingIndex(display_index);
+
+    if (isCorrupted && I_PICTURE == frameType)
+        m_implUmc.SetCorruptionFlag(display_index);
+
+    switch (frameType)
+    {
+        case I_PICTURE:
+
+            if (isCorrupted)
+            {
+                parameters->surface_out->Data.Corrupted = MFX_CORRUPTION_MAJOR;
+            }
+
+            break;
+
+        default: // P_PICTURE
+
+            if (true == m_implUmc.GetCorruptionFlag(prev_index))
+            {
+                m_implUmc.SetCorruptionFlag(display_index);
+                parameters->surface_out->Data.Corrupted = MFX_CORRUPTION_REFERENCE_FRAME;
+            }
+    }
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus VideoDECODEMPEG2::CompleteTasks(void *pParam)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEMPEG2::CompleteTasks");
@@ -2291,55 +2344,6 @@ mfxStatus VideoDECODEMPEG2::CompleteTasks(void *pParam)
         {
             STATUS_REPORT_DEBUG_PRINTF("thread task idx %d, display address %x\n", parameters->task_num, parameters->surface_out)
 
-            if (IsStatusReportEnable(m_pCore))
-            {
-                //parameters->surface_out->Data.Corrupted = 0;
-
-                // request status report structures and wait until frame is not ready
-                mfxStatus sts = GetStatusReport(parameters->surface_out, parameters->mid[display_index]);
-
-                if (MFX_ERR_NONE != sts)
-                {
-                    parameters->m_FrameAllocator->DecreaseReference(parameters->mid[display_index]);
-                    parameters->m_frame_in_use[parameters->m_frame_curr] = false;
-
-                    return sts;
-                }
-
-                
-                //if (false == parameters->m_is_wa)
-                {
-                    mfxU16 isCorrupted = parameters->surface_out->Data.Corrupted;
-                    
-                    mfxU32 frameType = m_implUmc.GetFrameType(display_index);
-                    Ipp32s prev_index = m_implUmc.GetPrevDecodingIndex(display_index);
-                    
-                    if (isCorrupted && I_PICTURE == frameType)
-                        m_implUmc.SetCorruptionFlag(display_index);
-
-                    switch (frameType)
-                    {
-                        case I_PICTURE:
-
-                            if (isCorrupted)
-                            {
-                                parameters->surface_out->Data.Corrupted = MFX_CORRUPTION_MAJOR;
-                            }
-
-                            break;
-                        
-                        default: // P_PICTURE
-
-                            if (true == m_implUmc.GetCorruptionFlag(prev_index))
-                            {
-                                m_implUmc.SetCorruptionFlag(display_index);
-                                parameters->surface_out->Data.Corrupted = MFX_CORRUPTION_REFERENCE_FRAME;
-                            }
-                    }
-                }
-                
-            }
-            
             if (B_PICTURE == m_implUmc.GetFrameType(display_index))
             {
                 parameters->m_FrameAllocator->DecreaseReference(parameters->mid[display_index]);
@@ -2433,12 +2437,8 @@ mfxStatus VideoDECODEMPEG2::CompleteTasks(void *pParam)
         }
     }
 
-    //if (true == parameters->IsSWImpl)
-    {
-        parameters->m_frame_in_use[parameters->m_frame_curr] = false;
-
-        STATUS_REPORT_DEBUG_PRINTF("m_frame_curr %d is %d\n", parameters->m_frame_curr, parameters->m_frame_in_use[parameters->m_frame_curr])
-    }
+    parameters->m_frame_in_use[parameters->m_frame_curr] = false;
+    STATUS_REPORT_DEBUG_PRINTF("m_frame_curr %d is %d\n", parameters->m_frame_curr, parameters->m_frame_in_use[parameters->m_frame_curr])
 
     return MFX_TASK_DONE;
 }
