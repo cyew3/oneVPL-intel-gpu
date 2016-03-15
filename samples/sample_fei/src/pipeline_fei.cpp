@@ -698,7 +698,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
     MSDK_MEMCPY_VAR(EncRequest.Info, &(m_mfxEncParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
 
     EncRequest.AllocId = m_BaseAllocID;
-    EncRequest.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
+    EncRequest.Type |= MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
     if (m_pmfxPREENC)
         EncRequest.Type |= MFX_MEMTYPE_FROM_ENC;
     if ((m_pmfxPAK) || (m_pmfxENC))
@@ -4431,9 +4431,11 @@ mfxStatus repackPreenc2EncExOneMB(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preenc
     EncMVPredMB->MV[predIdx][0].x = get16Median(preencMVoutMB[0], tmpBuf, 0, 0);
     EncMVPredMB->MV[predIdx][0].y = get16Median(preencMVoutMB[0], tmpBuf, 1, 0);
 
-    // if no L1 this predictor would contain four (0,0) vectors
-    EncMVPredMB->MV[predIdx][1].x = get16Median(preencMVoutMB[1], tmpBuf, 0, 1);
-    EncMVPredMB->MV[predIdx][1].y = get16Median(preencMVoutMB[1], tmpBuf, 1, 1);
+    if (preencMVoutMB[1])
+    {
+        EncMVPredMB->MV[predIdx][1].x = get16Median(preencMVoutMB[1], tmpBuf, 0, 1);
+        EncMVPredMB->MV[predIdx][1].y = get16Median(preencMVoutMB[1], tmpBuf, 1, 1);
+    }
 
     return sts;
 }
@@ -4465,21 +4467,30 @@ mfxStatus CEncodingPipeline::repackDSPreenc2EncExMB(mfxExtFeiPreEncMV::mfxExtFei
         case 2:
             EncMVPredMB->MV[predIdx][0].x = get4Median(preencMVoutMB[0], m_tmpForMedian, 0, 0, i);
             EncMVPredMB->MV[predIdx][0].y = get4Median(preencMVoutMB[0], m_tmpForMedian, 1, 0, i);
-            EncMVPredMB->MV[predIdx][1].x = get4Median(preencMVoutMB[1], m_tmpForMedian, 0, 1, i);
-            EncMVPredMB->MV[predIdx][1].y = get4Median(preencMVoutMB[1], m_tmpForMedian, 1, 1, i);
+            if (preencMVoutMB[1])
+            {
+                EncMVPredMB->MV[predIdx][1].x = get4Median(preencMVoutMB[1], m_tmpForMedian, 0, 1, i);
+                EncMVPredMB->MV[predIdx][1].y = get4Median(preencMVoutMB[1], m_tmpForMedian, 1, 1, i);
+            }
             break;
         case 4:
             EncMVPredMB->MV[predIdx][0].x = preencMVoutMB[0]->MV[MVZigzagOrder[i]][0].x;
             EncMVPredMB->MV[predIdx][0].y = preencMVoutMB[0]->MV[MVZigzagOrder[i]][0].y;
-            EncMVPredMB->MV[predIdx][1].x = preencMVoutMB[1]->MV[MVZigzagOrder[i]][1].x;
-            EncMVPredMB->MV[predIdx][1].y = preencMVoutMB[1]->MV[MVZigzagOrder[i]][1].y;
+            if (preencMVoutMB[1])
+            {
+                EncMVPredMB->MV[predIdx][1].x = preencMVoutMB[1]->MV[MVZigzagOrder[i]][1].x;
+                EncMVPredMB->MV[predIdx][1].y = preencMVoutMB[1]->MV[MVZigzagOrder[i]][1].y;
+            }
             break;
         case 8:
             mv_idx = MVZigzagOrder[i % 16 % 8 / 2 + i / 16 * 4];
             EncMVPredMB->MV[predIdx][0].x = preencMVoutMB[0]->MV[mv_idx][0].x;
             EncMVPredMB->MV[predIdx][0].y = preencMVoutMB[0]->MV[mv_idx][0].y;
-            EncMVPredMB->MV[predIdx][1].x = preencMVoutMB[1]->MV[mv_idx][1].x;
-            EncMVPredMB->MV[predIdx][1].y = preencMVoutMB[1]->MV[mv_idx][1].y;
+            if (preencMVoutMB[1])
+            {
+                EncMVPredMB->MV[predIdx][1].x = preencMVoutMB[1]->MV[mv_idx][1].x;
+                EncMVPredMB->MV[predIdx][1].y = preencMVoutMB[1]->MV[mv_idx][1].y;
+            }
             break;
         default:
             break;
@@ -4487,8 +4498,11 @@ mfxStatus CEncodingPipeline::repackDSPreenc2EncExMB(mfxExtFeiPreEncMV::mfxExtFei
 
         EncMVPredMB->MV[predIdx][0].x *= m_encpakParams.preencDSstrength;
         EncMVPredMB->MV[predIdx][0].y *= m_encpakParams.preencDSstrength;
-        EncMVPredMB->MV[predIdx][1].x *= m_encpakParams.preencDSstrength;
-        EncMVPredMB->MV[predIdx][1].y *= m_encpakParams.preencDSstrength;
+        if (preencMVoutMB[1])
+        {
+            EncMVPredMB->MV[predIdx][1].x *= m_encpakParams.preencDSstrength;
+            EncMVPredMB->MV[predIdx][1].y *= m_encpakParams.preencDSstrength;
+        }
     }
 
     return sts;
@@ -4828,8 +4842,8 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
     mfxU32 total_l0 = (ExtractFrameType(*eTask, m_isField) & MFX_FRAMETYPE_P) ? ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_IDR) ? 1 : NumActiveRefP) : ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) ? 1 : NumActiveRefBL0);
     mfxU32 total_l1 = (ExtractFrameType(*eTask) & MFX_FRAMETYPE_B) ? (eTask->m_fieldPicFlag ? NumActiveRefBL1_i : NumActiveRefBL1) : 1; // just one iteration here for non-B
 
-    mfxU32 adj_l0 = m_encpakParams.bNPredSpecified_l0 ? m_encpakParams.NumMVPredictors[0] : m_numOfFields*m_mfxEncParams.mfx.NumRefFrame;
-    mfxU32 adj_l1 = m_encpakParams.bNPredSpecified_l1 ? m_encpakParams.NumMVPredictors[1] : m_numOfFields*m_mfxEncParams.mfx.NumRefFrame;
+    mfxU32 adj_l0 = IPP_MAX(1, m_encpakParams.bNPredSpecified_l0 ? m_encpakParams.NumMVPredictors[0] : m_numOfFields*m_mfxEncParams.mfx.NumRefFrame);
+    mfxU32 adj_l1 = IPP_MAX(1, m_encpakParams.bNPredSpecified_l1 ? m_encpakParams.NumMVPredictors[1] : m_numOfFields*m_mfxEncParams.mfx.NumRefFrame);
 
     total_l0 = IPP_MIN(total_l0, adj_l0); // adjust to
     total_l1 = IPP_MIN(total_l1, adj_l1); // user input
