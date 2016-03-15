@@ -807,12 +807,12 @@ mfxStatus VideoVPPSW::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mfxFrameA
 
         {
             // suggested
-            request[VPP_IN].NumFrameSuggested  += (vppAsyncDepth - 1);
-            request[VPP_OUT].NumFrameSuggested += (vppAsyncDepth - 1);
+            request[VPP_IN].NumFrameSuggested  *= vppAsyncDepth;
+            request[VPP_OUT].NumFrameSuggested *= vppAsyncDepth;
 
             // min
-            request[VPP_IN].NumFrameMin  += (vppAsyncDepth - 1);
-            request[VPP_OUT].NumFrameMin += (vppAsyncDepth - 1);
+            request[VPP_IN].NumFrameMin  *= vppAsyncDepth;
+            request[VPP_OUT].NumFrameMin *= vppAsyncDepth;
         }
 
         mfxSts = CheckIOPattern_AndSetIOMemTypes(par->IOPattern, &(request[VPP_IN].Type), &(request[VPP_OUT].Type), bSWLib);
