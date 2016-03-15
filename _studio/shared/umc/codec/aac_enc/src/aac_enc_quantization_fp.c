@@ -680,6 +680,7 @@ void aac_FindSF(sEnc_individual_channel_stream* pStream,
     for (i = 0; i < width; i++) {
       sqrtMdctLine += (Ipp32f)sqrt(mdct_line_abs[sfb_start+i]);
     }
+    sqrtMdctLine = (sqrtMdctLine > 0) ? sqrtMdctLine : 1;
 
     if ((noiseThr[sfb] > 0) && (qData->energy[sfb] >= noiseThr[sfb])) {
       Ipp32f tmp;
