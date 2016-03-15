@@ -352,6 +352,7 @@ mfxStatus FullEncode::CancelFrame(mfxEncodeCtrl * /*ctrl*/, mfxEncodeInternalPar
 // Async algorithm
 mfxStatus FullEncode::SubmitFrame(sExtTask2 *pExtTask)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "FullEncode::SubmitFrame");
     mfxStatus         sts           = MFX_ERR_NONE;
     EncodeFrameTask*  pIntTask      = 0;
     mfxU32            nIntTask      = 0;
@@ -473,6 +474,7 @@ mfxStatus FullEncode::SubmitFrame(sExtTask2 *pExtTask)
 }
 mfxStatus FullEncode::QueryFrame(sExtTask2 *pExtTask)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "FullEncode::QueryFrame");
     mfxStatus         sts       = MFX_ERR_NONE;
     mfxU32            dataLen   = 0;
     EncodeFrameTask*  pIntTask  = 0;
@@ -508,7 +510,7 @@ mfxStatus FullEncode::QueryFrame(sExtTask2 *pExtTask)
 static
 mfxStatus TaskRoutineSubmit(void *pState, void *param, mfxU32 /*n*/, mfxU32 /*callNumber*/)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "MPEG2SubmitFrame");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "TaskRoutineSubmit");
 
     mfxStatus sts   = MFX_ERR_NONE;
     FullEncode* th  = (FullEncode*)pState;
@@ -526,7 +528,7 @@ mfxStatus TaskRoutineSubmit(void *pState, void *param, mfxU32 /*n*/, mfxU32 /*ca
 static
 mfxStatus TaskRoutineQuery(void *pState, void *param, mfxU32 /*n*/, mfxU32 /*callNumber*/)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "MPEG2QueryFrame");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "TaskRoutineQuery");
 
     mfxStatus sts   = MFX_ERR_NONE;
     FullEncode* th  = (FullEncode*)pState;
@@ -557,8 +559,6 @@ mfxStatus FullEncode::EncodeFrameCheck(
     mfxStatus      sts_ret  = MFX_ERR_NONE;
     mfxStatus      sts      = MFX_ERR_NONE;
     sExtTask2     *pExtTask = 0;
-
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "MPEG2Enc_check");
 
     if (surface)
     {
