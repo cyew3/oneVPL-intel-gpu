@@ -56,7 +56,7 @@ VideoVPP *CreateVPPSpecificClass(mfxU32 reserved, VideoCORE *core)
 mfxStatus MFXVideoVPP_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
 {
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
-    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, in);
+    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_PARAMS, in);
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(out, MFX_ERR_NULL_PTR);
@@ -99,7 +99,7 @@ mfxStatus MFXVideoVPP_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
         mfxRes = MFX_ERR_NULL_PTR;
     }
 
-    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, out);
+    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_PARAMS, out);
     MFX_LTRACE_I(MFX_TRACE_LEVEL_PARAMS, mfxRes);
     return mfxRes;
 }
@@ -107,7 +107,7 @@ mfxStatus MFXVideoVPP_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
 mfxStatus MFXVideoVPP_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
-    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);
+    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_PARAMS, par);
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(par, MFX_ERR_NULL_PTR);
@@ -141,8 +141,8 @@ mfxStatus MFXVideoVPP_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
         mfxRes = MFX_ERR_NULL_PTR;
     }
 
-    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, request);
-    MFX_LTRACE_I(MFX_TRACE_LEVEL_API, mfxRes);
+    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_PARAMS, request);
+    MFX_LTRACE_I(MFX_TRACE_LEVEL_PARAMS, mfxRes);
     return mfxRes;
 }
 
@@ -150,7 +150,7 @@ mfxStatus MFXVideoVPP_Init(mfxSession session, mfxVideoParam *par)
 {
     mfxStatus mfxRes = MFX_ERR_UNSUPPORTED;
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
-    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);
+    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_PARAMS, par);
 
     try
     {
@@ -202,7 +202,7 @@ mfxStatus MFXVideoVPP_Init(mfxSession session, mfxVideoParam *par)
         }
     }
 
-    MFX_LTRACE_I(MFX_TRACE_LEVEL_API, mfxRes);
+    MFX_LTRACE_I(MFX_TRACE_LEVEL_PARAMS, mfxRes);
     return mfxRes;
 
 } // mfxStatus MFXVideoVPP_Init(mfxSession session, mfxVideoParam *par)
@@ -244,7 +244,7 @@ mfxStatus MFXVideoVPP_Close(mfxSession session)
         }
     }
 
-    MFX_LTRACE_I(MFX_TRACE_LEVEL_API, mfxRes);
+    MFX_LTRACE_I(MFX_TRACE_LEVEL_PARAMS, mfxRes);
     return mfxRes;
 
 } // mfxStatus MFXVideoVPP_Close(mfxSession session)
@@ -253,7 +253,7 @@ static
 mfxStatus MFXVideoVPPLegacyRoutine(void *pState, void *pParam,
                                    mfxU32 threadNumber, mfxU32 callNumber)
 {
-    MFX_AUTO_LTRACE_WITHID(MFX_TRACE_LEVEL_SCHED, "VPP");
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
     VideoVPP *pVPP = (VideoVPP *) pState;
     MFX_THREAD_TASK_PARAMETERS *pTaskParam = (MFX_THREAD_TASK_PARAMETERS *) pParam;
     mfxStatus mfxRes;
@@ -287,9 +287,9 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
 {
     mfxStatus mfxRes;
 
-    MFX_AUTO_LTRACE_WITHID(MFX_TRACE_LEVEL_API, "MFX_RunFrameVPPAsync");
-    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, aux);
-    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, in);
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
+    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_PARAMS, aux);
+    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_PARAMS, in);    
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(session->m_pVPP.get(), MFX_ERR_NOT_INITIALIZED);
@@ -492,12 +492,12 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
         }
     }
 
-    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, out);
+    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_PARAMS, out);
     if (mfxRes == MFX_ERR_NONE && syncp)
     {
-        MFX_LTRACE_P(MFX_TRACE_LEVEL_API, *syncp);
+        MFX_LTRACE_P(MFX_TRACE_LEVEL_PARAMS, *syncp);
     }
-    MFX_LTRACE_I(MFX_TRACE_LEVEL_API, mfxRes);
+    MFX_LTRACE_I(MFX_TRACE_LEVEL_PARAMS, mfxRes);
     return mfxRes;
 
 } // mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp)
@@ -506,8 +506,8 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *i
 {
     mfxStatus mfxRes;
 
-    MFX_AUTO_LTRACE_WITHID(MFX_TRACE_LEVEL_API, "MFX_RunFrameVPPAsyncEx");
-    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, in);
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
+    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_PARAMS, in);
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(session->m_pVPP.get(), MFX_ERR_NOT_INITIALIZED);
@@ -581,12 +581,12 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *i
         }
     }
 
-    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, surface_work);
+    MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_PARAMS, surface_work);
     if (mfxRes == MFX_ERR_NONE && syncp)
     {
-        MFX_LTRACE_P(MFX_TRACE_LEVEL_API, *syncp);
+        MFX_LTRACE_P(MFX_TRACE_LEVEL_PARAMS, *syncp);
     }
-    MFX_LTRACE_I(MFX_TRACE_LEVEL_API, mfxRes);
+    MFX_LTRACE_I(MFX_TRACE_LEVEL_PARAMS, mfxRes);
     return mfxRes;
 
 } // mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxThreadTask *task);

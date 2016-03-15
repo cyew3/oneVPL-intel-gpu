@@ -139,6 +139,7 @@ mfxStatus VAAPIVideoProcessing::Close(void)
     }
     if( m_vaContextVPP )
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaDestroyContext");
         vaDestroyContext( m_vaDisplay, m_vaContextVPP );
         m_vaContextVPP = 0;
     }
@@ -255,13 +256,16 @@ mfxStatus VAAPIVideoProcessing::Init(_mfxPlatformAccelerationService* pVADisplay
         int width = pParams->vpp.Out.Width;
         int height = pParams->vpp.Out.Height;
 
-        vaSts = vaCreateContext(m_vaDisplay,
-                                m_vaConfig,
-                                width,
-                                height,
-                                VA_PROGRESSIVE,
-                                0, 0,
-                                &m_vaContextVPP);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateContext");
+            vaSts = vaCreateContext(m_vaDisplay,
+                                    m_vaConfig,
+                                    width,
+                                    height,
+                                    VA_PROGRESSIVE,
+                                    0, 0,
+                                    &m_vaContextVPP);
+        }
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
 
@@ -435,7 +439,7 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
 
 mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "VPP Execute");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIVideoProcessing::Execute");
 
     VASurfaceAttrib attrib;
     VAImage imagePrimarySurface;
@@ -1052,9 +1056,9 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 #endif
 
-    MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "A|VPP|FILTER|PACKET_START|", "%d|%d", m_vaContextVPP, 0);
+    MFX_LTRACE_2(MFX_TRACE_LEVEL_PARAMS, "A|VPP|FILTER|PACKET_START|", "%d|%d", m_vaContextVPP, 0);
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaBeginPicture");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaBeginPicture");
         vaSts = vaBeginPicture(m_vaDisplay,
                             m_vaContextVPP,
                             *outputSurface);
@@ -1063,14 +1067,14 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
 
 #if defined(VPP_NO_COLORFILL)
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaRenderPicture");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaRenderPicture");
         vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &outputParamBuf, 1);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
 #endif
 
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaRenderPicture");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaRenderPicture");
         for( refIdx = 0; refIdx < SampleCount; refIdx++ )
         {
             vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &m_pipelineParamID[refIdx], 1);
@@ -1079,11 +1083,11 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     }
 
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaEndPicture");
         vaSts = vaEndPicture(m_vaDisplay, m_vaContextVPP);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
-    MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "A|VPP|FILTER|PACKET_END|", "%d|%d", m_vaContextVPP, 0);
+    MFX_LTRACE_2(MFX_TRACE_LEVEL_PARAMS, "A|VPP|FILTER|PACKET_END|", "%d|%d", m_vaContextVPP, 0);
 
     for( refIdx = 0; refIdx < m_pipelineParamID.size(); refIdx++ )
     {
@@ -1175,7 +1179,7 @@ mfxStatus VAAPIVideoProcessing::RemoveBufferFromPipe(VABufferID id)
 
 mfxStatus VAAPIVideoProcessing::Execute_FakeOutput(mfxExecuteParams *pParams)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "VPP Execute");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIVideoProcessing::Execute_FakeOutput");
 
     VASurfaceAttrib attrib;
     VAImage imagePrimarySurface;
@@ -1393,9 +1397,9 @@ mfxStatus VAAPIVideoProcessing::Execute_FakeOutput(mfxExecuteParams *pParams)
 
     }// for( refIdx = 0; refIdx < SampleCount; refIdx++ )
 
-    MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "A|VPP|SKIP|PACKET_START|", "%d|%d", m_vaContextVPP, 0);
+    MFX_LTRACE_2(MFX_TRACE_LEVEL_PARAMS, "A|VPP|SKIP|PACKET_START|", "%d|%d", m_vaContextVPP, 0);
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaBeginPicture");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaBeginPicture");
         vaSts = vaBeginPicture(m_vaDisplay,
                             m_vaContextVPP,
                             *m_primarySurface4Composition);
@@ -1403,7 +1407,7 @@ mfxStatus VAAPIVideoProcessing::Execute_FakeOutput(mfxExecuteParams *pParams)
     }
 
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaRenderPicture");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaRenderPicture");
         for( refIdx = 0; refIdx < SampleCount; refIdx++ )
         {
             vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &m_pipelineParamID[refIdx], 1);
@@ -1412,11 +1416,11 @@ mfxStatus VAAPIVideoProcessing::Execute_FakeOutput(mfxExecuteParams *pParams)
     }
 
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaEndPicture");
         vaSts = vaEndPicture(m_vaDisplay, m_vaContextVPP);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
-    MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "A|VPP|SKIP|PACKET_END|", "%d|%d", m_vaContextVPP, 0);
+    MFX_LTRACE_2(MFX_TRACE_LEVEL_PARAMS, "A|VPP|SKIP|PACKET_END|", "%d|%d", m_vaContextVPP, 0);
 
     for( refIdx = 0; refIdx < m_pipelineParamID.size(); refIdx++ )
     {
@@ -1565,7 +1569,7 @@ BOOL    VAAPIVideoProcessing::isVideoWall(mfxExecuteParams *pParams)
 
 mfxStatus VAAPIVideoProcessing::Execute_Composition_VideoWall(mfxExecuteParams *pParams)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "VPP Execute");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIVideoProcessing::Execute_Composition_VideoWall");
 
     VAStatus vaSts = VA_STATUS_SUCCESS;
     VASurfaceAttrib attrib;
@@ -1721,7 +1725,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition_VideoWall(mfxExecuteParams *
     int groups = m_videoWallParams.tiles;
     for (int group_id = 0; group_id < groups; group_id++)
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaBeginPicture");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaBeginPicture");
         vaSts = vaBeginPicture(m_vaDisplay,
                                m_vaContextVPP,
                                *outputSurface);
@@ -1770,7 +1774,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition_VideoWall(mfxExecuteParams *
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         }
         {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "vaEndPicture");
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaEndPicture");
             vaSts = vaEndPicture(m_vaDisplay, m_vaContextVPP);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         }
@@ -1805,7 +1809,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition_VideoWall(mfxExecuteParams *
 
 mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "VPP Execute");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIVideoProcessing::Execute_Composition");
 
     VAStatus vaSts = VA_STATUS_SUCCESS;
     VASurfaceAttrib attrib;
@@ -2049,7 +2053,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
 
-    MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "A|VPP|COMP|PACKET_START|", "%d|%d", m_vaContextVPP, 0);
+    MFX_LTRACE_2(MFX_TRACE_LEVEL_PARAMS, "A|VPP|COMP|PACKET_START|", "%d|%d", m_vaContextVPP, 0);
     //VASurfaceID *outputSurface = (VASurfaceID*)(pParams->targetSurface.hdl.first);
     //if ((refCount + 1) < 8)
     {
@@ -2258,7 +2262,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         }
     } /* for( refIdx = 1; refIdx <= (pParams->fwdRefCount); refIdx++ )*/
-    MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "A|VPP|COMP|PACKET_END|", "%d|%d", m_vaContextVPP, 0);
+    MFX_LTRACE_2(MFX_TRACE_LEVEL_PARAMS, "A|VPP|COMP|PACKET_END|", "%d|%d", m_vaContextVPP, 0);
 
     for( refIdx = 0; refIdx < m_pipelineParamCompID.size(); refIdx++ )
     {
@@ -2327,7 +2331,7 @@ mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
 
 #if !defined(ANDROID)
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "VPP vaSyncSurface");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaSyncSurface");
         vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }

@@ -2196,6 +2196,7 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
 
 mfxStatus VideoVPPHW::PostWorkOutSurface(ExtSurface & output)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoVPPHW::PostWorkOutSurface");
     mfxStatus sts = MFX_ERR_NONE;
 
     // code here to resolve issue in case of sync issue with emcoder in case of system memory
@@ -2223,7 +2224,7 @@ mfxStatus VideoVPPHW::PostWorkOutSurface(ExtSurface & output)
         //    MFX_CHECK_STS(sts);
         //}
 
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "HW_VPP: Copy output (d3d->sys)");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "HW_VPP: Copy output (d3d->sys)");
         mfxFrameSurface1 d3dSurf;
         d3dSurf.Info = output.pSurf->Info;
         d3dSurf.Data.MemId = m_internalVidSurf[VPP_OUT].mids[ output.resIdx ];
@@ -2615,7 +2616,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
             verticalPitch = (verticalPitch % dstSurface.Data.Pitch)? 0 : verticalPitch / dstSurface.Data.Pitch;
             mfxU32 dstPitch = dstSurface.Data.PitchLow + ((mfxU32)dstSurface.Data.PitchHigh << 16);
 
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "HW_VPP: Mirror (d3d->sys)");
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "HW_VPP: Mirror (d3d->sys)");
             IppiSize roi = {pTask->output.pSurf->Info.Width, pTask->output.pSurf->Info.Height};
             sts = m_pCmCopy->CopyMirrorVideoToSystemMemory(dstSurface.Data.Y, dstPitch, (mfxU32)verticalPitch, m_executeSurf[0].hdl.first, 0, roi, MFX_FOURCC_NV12);
             MFX_CHECK_STS(sts);
@@ -2628,7 +2629,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         }
         else
         {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "HW_VPP: Mirror (d3d->d3d)");
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "HW_VPP: Mirror (d3d->d3d)");
             IppiSize roi = {pTask->output.pSurf->Info.CropW, pTask->output.pSurf->Info.CropH};
             sts = m_pCmCopy->CopyMirrorVideoToVideoMemory(m_executeParams.targetSurface.hdl.first, m_executeSurf[0].hdl.first, roi, MFX_FOURCC_NV12);
             MFX_CHECK_STS(sts);
@@ -2721,7 +2722,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 
 mfxStatus VideoVPPHW::AsyncTaskSubmission(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "VPP Submission");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoVPPHW::AsyncTaskSubmission");
     mfxStatus sts;
 
     // touch unreferenced parameters(s)
@@ -2737,7 +2738,7 @@ mfxStatus VideoVPPHW::AsyncTaskSubmission(void *pState, void *pParam, mfxU32 thr
 
 mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "VPP Query");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoVPPHW::QueryTaskRoutine");
     mfxStatus sts = MFX_ERR_NONE;
 
     threadNumber = threadNumber;
