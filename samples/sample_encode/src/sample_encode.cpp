@@ -745,7 +745,7 @@ int main(int argc, char *argv[])
     }
 
     sts = pPipeline->Init(&Params);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     pPipeline->PrintInfo();
 
