@@ -817,6 +817,7 @@ namespace MfxHwVideoProcessing
 
         // Not an auto_ptr anymore since core owns create/delete semantic now.
         VPPHWResMng * m_ddi;
+        bool          m_bMultiView;
 
 #if defined(MFX_VA) // SW LIB doesn't hace access to CM DEVICE
         CmCopyWrapper *m_pCmCopy;

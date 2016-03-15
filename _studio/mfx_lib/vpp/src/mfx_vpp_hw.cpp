@@ -1406,6 +1406,9 @@ VideoVPPHW::VideoVPPHW(IOMode mode, VideoCORE *core)
     // sync workload mode by default
     m_workloadMode = VPP_SYNC_WORKLOAD;
 
+    m_ddi = 0;
+    m_bMultiView = false;
+
 #if defined(MFX_VA)
     // cm devices
     m_pCmCopy    = NULL;
@@ -1647,13 +1650,40 @@ mfxStatus  VideoVPPHW::Init(
     //-----------------------------------------------------
     m_params = *par;// PARAMS!!!
 
-    sts = m_pCore->CreateVideoProcessing(&m_params);
-    MFX_CHECK_STS(sts);
+    mfxExtBuffer* pHint = NULL;
+    GetFilterParam(par, MFX_EXTBUFF_MVC_SEQ_DESC, &pHint);
 
-    m_pCore->GetVideoProcessing((mfxHDL*)&m_ddi);
-    if (0 == m_ddi)
+    if( pHint )
     {
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        /* Multi-view processing needs separate devices for each view. Using one device is not possible since 
+         * bakward/forward references from different views will be messed up. Thus each VPPHW instance needs to
+         * create its own device. Core is not able to handle this like it does for single view case.
+         */
+        try
+        {
+            m_ddi = new VPPHWResMng();
+        }
+        catch(std::bad_alloc)
+        {
+            return MFX_WRN_PARTIAL_ACCELERATION;
+        }
+
+        sts = m_ddi->CreateDevice(m_pCore);
+        MFX_CHECK_STS(sts);
+
+        m_bMultiView = true;
+
+    }
+    else
+    {
+        sts = m_pCore->CreateVideoProcessing(&m_params);
+        MFX_CHECK_STS(sts);
+
+        m_pCore->GetVideoProcessing((mfxHDL*)&m_ddi);
+        if (0 == m_ddi)
+        {
+            return MFX_WRN_PARTIAL_ACCELERATION;
+        }
     }
 
     mfxVppCaps caps;
@@ -1941,10 +1971,26 @@ mfxStatus VideoVPPHW::Close()
     }
 #endif
 
-    m_pCore->GetVideoProcessing((mfxHDL *)&m_ddi);
-    if (m_ddi->GetDevice())
+    /* Device close semantic is different for multi-view and single view */
+    if ( m_bMultiView )
     {
-        m_ddi->Close();
+        /* In case of multi-view, VPPHW created dedicated resource manager with
+         * device on Init, so need to close it be deleting resource manager
+         */
+        delete m_ddi;
+        m_bMultiView = false;
+    }
+    else
+    {
+       /* In case of single-view, VPPHW needs just close device, but does not
+        * need to destroy resource manager. It's still alive inside of the core.
+        * Core will take care on its removal.
+        */
+        m_pCore->GetVideoProcessing((mfxHDL *)&m_ddi);
+        if (m_ddi->GetDevice())
+        {
+            m_ddi->Close();
+        }
     }
 
     return sts;
