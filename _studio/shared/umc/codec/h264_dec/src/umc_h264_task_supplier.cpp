@@ -882,6 +882,7 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
 #endif
                     break;
                 case 3:
+
                     // Assign a long-term frame idx to a short-term picture
                     // Value is difference_of_pic_nums_minus1 followed by
                     // long_term_frame_idx. Only this case uses 2 value entries.
@@ -1001,7 +1002,49 @@ Status DecReferencePictureMarking::UpdateRefPicMarking(ViewItem &view, H264Decod
     }    // not IDR picture
 
     if (bCurrentisST)
-    { // set current as
+    {
+        AdaptiveMarkingInfo* pAdaptiveMarkingInfo = pSlice->GetAdaptiveMarkingInfo();
+        if (pAdaptiveMarkingInfo && pAdaptiveMarkingInfo->num_entries > 0 && !field_index)
+        {
+            //with MMCO we could overflow DPB after we add current picture as short term
+            //this case is not valid but could occure in broken streams and we try to handle it
+
+            Ipp32u NumShortTermRefs, NumLongTermRefs;
+            view.GetDPBList(0)->countActiveRefs(NumShortTermRefs, NumLongTermRefs);
+            const H264SeqParamSet* sps = pSlice->GetSeqParam();
+
+#define H264_DEC_HANDLE_BROKEN_MMCO
+            if (NumShortTermRefs + NumLongTermRefs + 1 > sps->num_ref_frames)
+            {
+#ifndef H264_DEC_HANDLE_BROKEN_MMCO
+                // mark all reference pictures as unused
+                for (H264DecoderFrame *pCurr = view.GetDPBList(0)->head(); pCurr; pCurr = pCurr->future())
+                {
+                    if (pCurr->isShortTermRef() || pCurr->isLongTermRef())
+                    {
+                        AddItemAndRun(pFrame, pCurr, UNSET_REFERENCE | FULL_FRAME | SHORT_TERM);
+                        AddItemAndRun(pFrame, pCurr, UNSET_REFERENCE | FULL_FRAME | LONG_TERM);
+                    }
+                }
+
+                return UMC_ERR_INVALID_STREAM;
+#else
+                DPBCommandsList::iterator
+                    f = m_commandsList.begin(),
+                    l = m_commandsList.end();
+                for (; f != l; ++f)
+                    if ((*f).m_type.isSet && !(*f).m_type.isShortTerm)
+                        break;
+
+                if (f != l)
+                {
+                    Undo(&(*f));
+                    m_commandsList.erase(f);
+                }
+#endif
+            }
+        }
+
         if (sliceHeader->field_pic_flag && field_index)
         {
         }

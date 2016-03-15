@@ -12,11 +12,9 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_H264_VIDEO_DECODER)
 
-
 #include "umc_h264_slice_decoding.h"
 #include "umc_h264_segment_decoder_mt.h"
 #include "umc_h264_heap.h"
-
 
 namespace UMC
 {
