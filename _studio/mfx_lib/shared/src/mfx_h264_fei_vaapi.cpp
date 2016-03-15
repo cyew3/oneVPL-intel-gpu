@@ -473,6 +473,8 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
             l0surfs->flags = VA_PICTURE_FEI_PROGRESSIVE;
         else // This is disallowed to mix, surface types should be on Init() and within runtime
             return MFX_ERR_INVALID_VIDEO_PARAM;
+        if (!IsOff(feiCtrl->DownsampleReference[0]))
+            l0surfs->flags |= VA_PICTURE_FEI_CONTENT_UPDATED;
         m_statParams.past_references = l0surfs;
     }
 
@@ -528,6 +530,8 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
             l1surfs->flags = VA_PICTURE_FEI_PROGRESSIVE;
         else // This is disallowed to mix, surface types should be on Init() and within runtime
             return MFX_ERR_INVALID_VIDEO_PARAM;
+        if (!IsOff(feiCtrl->DownsampleReference[1]))
+            l1surfs->flags |= VA_PICTURE_FEI_CONTENT_UPDATED;
         m_statParams.future_references = l1surfs;
     }
 
