@@ -2110,7 +2110,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     mfxExtCodingOption2    const * extOpt2 = GetExtBuffer(m_video);
     mfxExtCodingOption3    const & extOpt3 = GetExtBufferRef(m_video);
 
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "Avc::Async");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ImplementationAvc::AsyncRoutine");
 
 
 #if USE_AGOP
@@ -2303,7 +2303,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_START_LA)
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "Avc::START_LA");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Avc::START_LA");
         bool gopStrict = !!(m_video.mfx.GopOptFlag & MFX_GOP_STRICT);
 
         DdiTaskIter task = (m_video.mfx.EncodedOrder)
@@ -2447,7 +2447,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_WAIT_LA)
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "Avc::WAIT_LA");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Avc::WAIT_LA");
         if (bIntRateControlLA(m_video.mfx.RateControlMethod))
             if (!QueryLookahead(m_lookaheadStarted.front()))
                 return MFX_TASK_BUSY;
@@ -2500,7 +2500,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
         //char task_name [40];
         //sprintf(task_name,"Avc::START_ENCODE (%d) - %x", task->m_encOrder, task->m_yuv);
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "Avc::START_ENCODE");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Avc::START_ENCODE");
 
         Hrd hrd = m_hrd; // tmp copy
 
@@ -2704,6 +2704,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_WAIT_ENCODE)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Avc::WAIT_ENCODE");
         mfxExtCodingOption2 * extOpt2 = GetExtBuffer(m_video);
         DdiTaskIter task = FindFrameToWaitEncode(m_encoding.begin(), m_encoding.end());
         mfxU8*      pBuff[2] ={0,0};
@@ -3285,6 +3286,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     DdiTask & task,
     mfxU32    fid)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ImplementationAvc::UpdateBitstream");
     mfxFrameData bitstream = { 0 };
 
     mfxU32 fieldNumInStreamOrder = (task.GetFirstField() != fid);
@@ -3309,14 +3311,11 @@ mfxStatus ImplementationAvc::UpdateBitstream(
         doPatch = needIntermediateBitstreamBuffer = false;
 
     // Lock d3d surface with compressed picture.
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Surface lock (bitstream)");
     MFX_LTRACE_S(MFX_TRACE_LEVEL_INTERNAL, task.m_FrameName);
 
     FrameLocker lock(m_core, bitstream, task.m_midBit[fid]);
     if (bitstream.Y == 0)
         return Error(MFX_ERR_LOCK_MEMORY);
-
-    MFX_AUTO_TRACE_STOP();
 
     mfxU32 skippedff = task.m_numLeadingFF[fid];
     task.m_bsDataLength[fid] -= skippedff;
