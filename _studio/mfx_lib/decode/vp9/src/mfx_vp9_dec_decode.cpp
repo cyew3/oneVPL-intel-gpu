@@ -722,7 +722,7 @@ mfxStatus VideoDECODEVP9::ReadFrameInfo(mfxU8 *pData, mfxU32 size, VP9BaseFrameI
         {
             const mfxU32 frameSize = frameSizes[i];
 
-            InputBitstream bs(pData, pData + frameSize);
+            VP9Bitstream bs(pData, frameSize);
 
             if (VP9_FRAME_MARKER != bs.GetBits(2))
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -887,7 +887,7 @@ mfxStatus VideoDECODEVP9::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *s
         surface_work = GetOriginalSurface(surface_work);
     }
 
-    sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_VP9);
+    sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_VP9, false);
     MFX_CHECK_STS(sts);
 
     sts = CheckFrameData(surface_work);

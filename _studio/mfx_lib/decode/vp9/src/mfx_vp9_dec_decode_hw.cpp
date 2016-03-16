@@ -25,10 +25,10 @@
 #if defined (_WIN32) || defined (_WIN64)
 #pragma warning(disable : 4189)
 #pragma warning(disable : 4101)
-#endif
-
 #include <iostream>
 #include <dxva.h>
+#endif
+
 using namespace UMC_VP9_DECODER;
 
 static bool IsSameVideoParam(mfxVideoParam *newPar, mfxVideoParam *oldPar);

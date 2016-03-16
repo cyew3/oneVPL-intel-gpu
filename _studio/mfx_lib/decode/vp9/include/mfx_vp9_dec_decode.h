@@ -35,11 +35,11 @@ using namespace MfxVP9Decode;
 
 typedef struct
 {
-    mfxU16          Version;
-    VP9_FRAME_TYPE  FrameType;
-    mfxU16          ShowFrame;
-    mfxU16          Width;
-    mfxU16          Height;
+    mfxU16                           Version;
+    UMC_VP9_DECODER::VP9_FRAME_TYPE  FrameType;
+    mfxU16                           ShowFrame;
+    mfxU16                           Width;
+    mfxU16                           Height;
 } VP9BaseFrameInfo;
 
 typedef struct _IVF_FRAME_VP9
