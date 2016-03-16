@@ -96,6 +96,7 @@ void vppDefaultInitParams( sInputParams* pParams, sFiltersParam* pDefaultFilters
     pParams->bPerf       = false;
     pParams->isOutput     = false;
     pParams->ptsCheck     = false;
+    pParams->ptsAdvanced  = false;
     pParams->ptsFR        = 0;
     pParams->vaType       = ALLOC_IMPL_VIA_SYS;
     pParams->rotate.clear(); pParams->rotate.push_back(0);
