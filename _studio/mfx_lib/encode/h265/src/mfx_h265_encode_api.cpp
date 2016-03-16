@@ -434,6 +434,7 @@ namespace {
             ext->CUSplit = 1;
             ext->IntraAngModes = 1;
             ext->EnableCm = 0;
+            ext->EnableCmBiref = 0;
             ext->BPyramid = 1;
             ext->FastPUDecision = 1;
             ext->HadamardMe = 1;
@@ -1366,6 +1367,8 @@ namespace {
             optHevc.IntraAngModes = defaultOptHevc.IntraAngModes;
         if (optHevc.EnableCm == 0)
             optHevc.EnableCm = defaultOptHevc.EnableCm;
+        if (optHevc.EnableCmBiref == 0)
+            optHevc.EnableCmBiref = defaultOptHevc.EnableCmBiref;
         if (optHevc.FastPUDecision == 0)
             optHevc.FastPUDecision = defaultOptHevc.FastPUDecision;
         if (optHevc.HadamardMe == 0)

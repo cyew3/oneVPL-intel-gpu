@@ -22,7 +22,7 @@
 
 template <uint W, uint H>
 inline _GENX_
-void VerticalInterpolate(matrix<uint1, H+3, W> &data, matrix<uint1, H, W> &outV)
+void VerticalInterpolate(matrix<uint1, H+3, W> &data, matrix_ref<uint1, H, W> outV)
 {
     matrix<int2, H, W> interV; // x+0, y+0.5
 
@@ -39,14 +39,11 @@ void VerticalInterpolate(matrix<uint1, H+3, W> &data, matrix<uint1, H, W> &outV)
     outV = cm_shr<uint1>(interV, 3, SAT);
 }
 
-
 template <uint W, uint H, uint B>
 inline _GENX_
 void InterpolateBlockV(
     SurfaceIndex SURF_FPEL,
-    SurfaceIndex SURF_HPEL_HORZ,
     SurfaceIndex SURF_HPEL_VERT,
-    SurfaceIndex SURF_HPEL_DIAG,
     uint xBlk,
     uint yBlk)
 {
@@ -60,15 +57,38 @@ void InterpolateBlockV(
 
     read(SURF_FPEL, xBlk * W - B, yBlk * H - B - 1, data);
 
-    VerticalInterpolate(data, outV);
+    VerticalInterpolate(data, outV.select_all());
 
     write(SURF_HPEL_VERT, xBlk * W, yBlk * H, outV);
+}
+
+template <uint W, uint H, uint B>
+inline _GENX_
+void InterpolateBlockIVMerge(
+    matrix_ref<uint1, H, W> outInt,
+    matrix_ref<uint1, H, W> outVert,
+    SurfaceIndex SURF_FPEL,
+    uint xBlk,
+    uint yBlk)
+{
+    enum {
+        BLOCK_W = W,
+        BLOCK_H = H+3,
+    };
+
+    matrix<uint1, BLOCK_H, BLOCK_W> data;
+
+    //read_plane(SURF_FPEL, GENX_SURFACE_Y_PLANE, xBlk * W - B, yBlk * H - B - 1, data);
+    read(SURF_FPEL, xBlk * W - B, yBlk * H - B - 1, data);
+
+    outInt = data.template select<H, 1, W, 1>(1, 0);
+    VerticalInterpolate(data, outVert);
 }
 
 
 template <uint W, uint H>
 inline _GENX_
-void HoriDiagInterpolate(matrix<uint1, H+3, W*2> &data, matrix<uint1, H, W> &outH, matrix<uint1, H, W> &outD)
+void HoriDiagInterpolate(matrix<uint1, H+3, W*2> &data, matrix_ref<uint1, H, W> outH, matrix_ref<uint1, H, W> outD)
 {
     enum {
         BLOCK_W = W*2,
@@ -104,13 +124,11 @@ void HoriDiagInterpolate(matrix<uint1, H+3, W*2> &data, matrix<uint1, H, W> &out
     outH = cm_shr<uint1>(interH.template select<H, 1, W, 1>(1, 0), 3, SAT);
 }
 
-
 template <uint W, uint H, uint B>
 inline _GENX_
 void InterpolateBlockHD(
     SurfaceIndex SURF_FPEL,
     SurfaceIndex SURF_HPEL_HORZ,
-    SurfaceIndex SURF_HPEL_VERT,
     SurfaceIndex SURF_HPEL_DIAG,
     uint xBlk,
     uint yBlk)
@@ -128,10 +146,32 @@ void InterpolateBlockHD(
 
     read(SURF_FPEL, xBlk * W - B - 1, yBlk * H - B - 1, data);
 
-    HoriDiagInterpolate(data, outH, outD);
+    HoriDiagInterpolate(data, outH.select_all(), outD.select_all());
 
     write(SURF_HPEL_HORZ, xBlk * W, yBlk * H, outH);
     write(SURF_HPEL_DIAG, xBlk * W, yBlk * H, outD);
+}
+
+template <uint W, uint H, uint B>
+inline _GENX_
+void InterpolateBlockHDMerge(
+    matrix_ref<uint1, H, W> outH,
+    matrix_ref<uint1, H, W> outD,
+    SurfaceIndex SURF_FPEL,
+    uint xBlk,
+    uint yBlk)
+{
+    enum {
+        BLOCK_W = W*2,
+        BLOCK_H = H+3,
+    };
+    static_assert((BLOCK_W >= W + 3) && ((W & (W - 1)) == 0), "Width has to be power of 2 and greater than 3");
+
+    matrix<uint1, BLOCK_H, BLOCK_W> data;
+
+    read_plane(SURF_FPEL, GENX_SURFACE_Y_PLANE, xBlk * W - B - 1, yBlk * H - B - 1, data);
+
+    HoriDiagInterpolate(data, outH, outD);
 }
 
 
@@ -145,7 +185,49 @@ void InterpolateFrameWithBorder(SurfaceIndex SURF_FPEL, SurfaceIndex SURF_HPEL_H
     uint x = get_thread_origin_x();
     uint y = get_thread_origin_y();
 
-    InterpolateBlockV<BlockW, BlockH, BORDER>(SURF_FPEL, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y);
-    InterpolateBlockHD<BlockW, BlockH, BORDER>(SURF_FPEL, SURF_HPEL_HORZ, SURF_HPEL_VERT, SURF_HPEL_DIAG, x, y);
+    InterpolateBlockV<BlockW, BlockH, BORDER>(SURF_FPEL, SURF_HPEL_VERT, x, y);
+    InterpolateBlockHD<BlockW, BlockH, BORDER>(SURF_FPEL, SURF_HPEL_HORZ, SURF_HPEL_DIAG, x, y);
 
+}
+
+extern "C" _GENX_MAIN_
+void InterpolateFrameWithBorderMerge(SurfaceIndex SURF_FPEL, SurfaceIndex SURF_HPEL)
+{
+    const uint2 BlockW = 8;
+    const uint2 BlockH = 8;
+
+    uint x = get_thread_origin_x();
+    uint y = get_thread_origin_y();
+
+    matrix<uint1, BlockW * 2, BlockH * 2> out;
+    matrix_ref<uint1, BlockW, BlockH> outI = out.select<BlockW, 2, BlockH, 2> (0, 0);
+    matrix_ref<uint1, BlockW, BlockH> outH = out.select<BlockW, 2, BlockH, 2> (0, 1);
+    matrix_ref<uint1, BlockW, BlockH> outV = out.select<BlockW, 2, BlockH, 2> (1, 0);
+    matrix_ref<uint1, BlockW, BlockH> outD = out.select<BlockW, 2, BlockH, 2> (1, 1);
+
+    InterpolateBlockIVMerge<BlockW, BlockH, BORDER>(outI, outV, SURF_FPEL, x, y);
+    InterpolateBlockHDMerge<BlockW, BlockH, BORDER>(outH, outD, SURF_FPEL, x, y);
+
+    write(SURF_HPEL, x * BlockW * 2, y * BlockH * 2, out);
+}
+
+extern "C" _GENX_MAIN_
+void InterpolateFrameMerge(SurfaceIndex SURF_FPEL, SurfaceIndex SURF_HPEL, uint start_mbX, uint start_mbY)
+{
+    const uint2 BlockW = 8;
+    const uint2 BlockH = 8;
+
+    uint x = get_thread_origin_x() + start_mbX;
+    uint y = get_thread_origin_y() + start_mbY;
+
+    matrix<uint1, BlockW * 2, BlockH * 2> out;
+    matrix_ref<uint1, BlockW, BlockH> outI = out.select<BlockW, 2, BlockH, 2> (0, 0);
+    matrix_ref<uint1, BlockW, BlockH> outH = out.select<BlockW, 2, BlockH, 2> (0, 1);
+    matrix_ref<uint1, BlockW, BlockH> outV = out.select<BlockW, 2, BlockH, 2> (1, 0);
+    matrix_ref<uint1, BlockW, BlockH> outD = out.select<BlockW, 2, BlockH, 2> (1, 1);
+
+    InterpolateBlockIVMerge<BlockW, BlockH, 0>(outI, outV, SURF_FPEL, x, y);
+    InterpolateBlockHDMerge<BlockW, BlockH, 0>(outH, outD, SURF_FPEL, x, y);
+
+    write(SURF_HPEL, x * BlockW * 2, y * BlockH * 2, out);
 }

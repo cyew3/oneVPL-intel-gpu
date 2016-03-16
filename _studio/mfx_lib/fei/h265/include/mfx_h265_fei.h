@@ -70,8 +70,9 @@ enum
     MFX_FEI_H265_OP_INTRA_DIST      = 0x08,
     MFX_FEI_H265_OP_INTER_ME        = 0x10,
     MFX_FEI_H265_OP_INTERPOLATE     = 0x20,
-    MFX_FEI_H265_OP_POSTPROC        = 0x40, // both: deblock + sao
-    MFX_FEI_H265_OP_DEBLOCK         = 0x200,// deblocking only
+    MFX_FEI_H265_OP_BIREFINE        = 0x40,
+    MFX_FEI_H265_OP_POSTPROC        = 0x80, // both: deblock + sao
+    MFX_FEI_H265_OP_DEBLOCK         = 0x100,// deblocking only
 };
 
 typedef struct
@@ -79,6 +80,12 @@ typedef struct
     mfxU16 Dist;
     mfxU16 reserved;
 } mfxFEIH265IntraDist;
+
+typedef struct
+{
+    mfxI16Pair mv0;
+    mfxI16Pair mv1;
+} mfxFEIH265BirefData;
 
 enum 
 {
@@ -122,6 +129,7 @@ typedef struct
     mfxHDL             SurfIntraDist;
     mfxHDL             SurfInterData[64];
     mfxHDL             SurfInterp[3];
+    mfxHDL             SurfBirefData[64];
 
     mfxU16             reserved[24];
 } mfxExtFEIH265Output;
@@ -134,6 +142,7 @@ typedef struct
     mfxSurfInfoENC     IntraDist;
     mfxSurfInfoENC     InterData[64];   /* 64 = max number of inter block sizes */
     mfxSurfInfoENC     Interpolate[3];  /* 3 = half-pel planes (H,V,D) */
+    mfxSurfInfoENC     BirefData[64];
     mfxSurfInfoENC     SrcRefLuma;      /* luma plane of source and reconstracted reference frames */
     mfxSurfInfoENC     SrcRefChroma;    /* chroma plane of source and reconstracted reference frames */
 
@@ -182,6 +191,7 @@ typedef struct
     mfxU32 FourCC;
     mfxU32 TargetUsage;
     mfxU32 EnableChromaSao;
+    mfxU32 InterpFlag;
 } mfxFEIH265Param;
 
 /* basic info for current and reference frames */
@@ -199,7 +209,13 @@ typedef struct
     mfxHDL surfIn;
 } mfxFEIH265Frame;
 
-
+/* basic info for current and reference frames */
+typedef struct
+{
+//    mfxFEIH265Frame FEIFrameRefBi;
+    mfxHDL          InterDataRef0[12];
+    mfxHDL          InterDataRef1[12];
+} mfxFEIOptParamsBiref;
 
 /* FEI input - update before each call to ProcessFrameAsync */
 typedef struct
@@ -217,6 +233,13 @@ typedef struct
             mfxHDL surfRef;
             double lambda;
         } meArgs;
+
+        struct {
+            mfxHDL surfSrc;
+            mfxHDL surfRef0;
+            mfxHDL surfRef1;
+            mfxHDL params;
+        } birefArgs;
 
         struct {
             mfxHDL surfSys;
@@ -294,7 +317,6 @@ typedef struct
     CmBuffer      *postprocParam;
     double         lambda;
     bool           meControlInited;
-
 } mfxFEIH265InputSurface;
 
 typedef struct
@@ -306,7 +328,7 @@ typedef struct
     CmSurface2D   *bufDown4x;
     CmSurface2D   *bufDown8x;
     CmSurface2D   *bufDown16x;
-    CmSurface2D   *bufOrigInterp[3];
+    CmSurface2D   *bufInterpMerged;
 } mfxFEIH265ReconSurface;
 
 typedef struct

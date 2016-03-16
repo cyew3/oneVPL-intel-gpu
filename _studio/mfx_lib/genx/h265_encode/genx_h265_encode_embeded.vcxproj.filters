@@ -46,5 +46,8 @@
     <ClCompile Include="src\genx_hevce_deblock_skl_isa.cpp" />
     <ClCompile Include="src\genx_hevce_refine_me_p_64x64_skl_isa.cpp" />
     <ClCompile Include="src\genx_hevce_refine_me_p_32x16_skl_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_birefine_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_birefine_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_birefine_skl_isa.cpp" />
   </ItemGroup>
 </Project>

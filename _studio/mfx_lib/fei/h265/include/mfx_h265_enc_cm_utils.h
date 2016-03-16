@@ -685,6 +685,11 @@ template <> inline
 {
     kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
 }
+template <> inline
+    void SetKernelArgLast<vector<SurfaceIndex, 1> >(CmKernel * kernel, vector<SurfaceIndex, 1> const & arg, unsigned int index)
+{
+    kernel->SetKernelArg(index, arg.get_size_data(), ((vector<SurfaceIndex, 1> &)arg).get_addr_data());
+}
 
 
 template <class T0>

@@ -9,5 +9,5 @@
 
 #ifndef __genx_hevce_interpolate_frame_skl__
 #define __genx_hevce_interpolate_frame_skl__
-extern const unsigned char genx_hevce_interpolate_frame_skl[4259];
+extern const unsigned char genx_hevce_interpolate_frame_skl[13623];
 #endif

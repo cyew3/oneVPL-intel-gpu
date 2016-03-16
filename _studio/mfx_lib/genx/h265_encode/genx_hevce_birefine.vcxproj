@@ -15,7 +15,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{A0229FCE-D866-48C0-9306-AC934BE35C35}</ProjectGuid>
+    <ProjectGuid>{3F019109-BF5D-409A-853E-1B49747EB23B}</ProjectGuid>
     <RootNamespace>encode</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
@@ -95,7 +95,7 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PreBuildEvent>
-      <Command>build_kernel.cmd interpolate_frame hsw</Command>
+      <Command>build_kernel.cmd birefine hsw</Command>
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>rem for /L %%i in (0,1,4) do $(TargetPath)</Command>
@@ -124,7 +124,7 @@
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
     <PreBuildEvent>
-      <Command>build_kernel_all_targets.cmd interpolate_frame /Qxcm_release</Command>
+      <Command>build_kernel_all_targets.cmd birefine /Qxcm_release</Command>
     </PreBuildEvent>
     <Link>
       <AdditionalDependencies>igfxcmrt64.lib;</AdditionalDependencies>
@@ -169,16 +169,40 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\genx_hevce_interpolate_frame.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    <ClCompile Include="src\genx_hevce_birefine.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\genx_hevce_interpolate_frame_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_birefine_bdw_isa.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\genx_hevce_birefine_hsw_isa.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\genx_hevce_interpolate_frame.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\genx_hevce_interpolate_frame_hsw_isa.cpp" />
-    <ClCompile Include="src\test_interpolate_frame.cpp" />
+    <ClCompile Include="src\test_birefine.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\test_birefine_32x32.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\test_birefine_64x64.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\genx_hevce_interpolate_frame_bdw_isa.h" />
+    <ClInclude Include="include\genx_hevce_birefine_bdw_isa.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="include\genx_hevce_birefine_hsw_isa.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="include\genx_hevce_interpolate_frame_hsw_isa.h" />
     <ClInclude Include="include\test_common.h" />
   </ItemGroup>

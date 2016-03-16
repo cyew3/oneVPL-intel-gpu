@@ -224,6 +224,36 @@ namespace H265Enc {
         }
     }
 
+    void FeiBirefData::Create(const FeiBirefData::AllocInfo &allocInfo)
+    {
+        const mfxSurfInfoENC &info = allocInfo.allocInfo;
+
+        m_sysmem = (mfxU8 *)CM_ALIGNED_MALLOC(info.size, info.align);
+        if (!m_sysmem) {
+            Throw(std::runtime_error("CM_ALIGNED_MALLOC failed"));
+        }
+
+        if (H265FEI_AllocateOutputSurface(allocInfo.feiHdl, m_sysmem, const_cast<mfxSurfInfoENC *>(&info), &m_handle) != MFX_ERR_NONE) {
+            CM_ALIGNED_FREE(m_sysmem);
+            m_sysmem = NULL;
+            Throw(std::runtime_error("H265FEI_AllocateOutputSurface failed"));
+        }
+
+        m_pitch = (Ipp32s)info.pitch;
+        m_fei = allocInfo.feiHdl;
+    }
+
+    void FeiBirefData::Destroy()
+    {
+        if (m_fei && m_handle && m_sysmem) {
+            H265FEI_FreeSurface(m_fei, m_handle);
+            CM_ALIGNED_FREE(m_sysmem);
+            m_sysmem = NULL;
+            m_handle = NULL;
+            m_fei = NULL;
+        }
+    }
+
     void FeiBufferUp::Create(const AllocInfo &allocInfo)
     {
         m_allocated = new mfxU8[allocInfo.size + allocInfo.alignment];
@@ -549,6 +579,7 @@ namespace H265Enc {
         m_feiSyncPoint = NULL;
         Zero(m_feiIntraAngModes);
         Zero(m_feiInterData);
+        Zero(m_feiBirefData);
         m_feiCuData = NULL;
         m_feiSaoModes = NULL;
         m_feiOrigin = NULL;
@@ -573,6 +604,9 @@ namespace H265Enc {
             m_ttSubmitGpuMe[i].InitGpuSubmit(this, MFX_FEI_H265_OP_INTER_ME, 0);
             m_ttWaitGpuMe[i].InitGpuWait(MFX_FEI_H265_OP_INTER_ME, 0);
         }
+
+        m_ttSubmitGpuBiref.InitGpuSubmit(this, MFX_FEI_H265_OP_BIREFINE, 0);
+        m_ttWaitGpuBiref.InitGpuWait(MFX_FEI_H265_OP_BIREFINE, 0);
 
         m_ttSubmitGpuPostProc.InitGpuSubmit(this, MFX_FEI_H265_OP_POSTPROC, 0);
         m_ttWaitGpuPostProc.InitGpuWait(MFX_FEI_H265_OP_POSTPROC, 0);

@@ -8805,42 +8805,76 @@ void H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
 
     Ipp32s costList[2] = { costRefBest[0][idx0], costRefBest[1][idx1] };
 
-    if (costRefBest[0][idx0] != INT_MAX)
+    if (costRefBest[0][idx0] != INT_MAX) {
+        //H265MV mvc = mvRefBest[0][idx0];
+        //ClipMV(mvc);
+        //Ipp32s metric0 = MatchingMetricPu(src, meInfo, &mvc, m_currFrame->m_refPicList[0].m_refFrames[idx0]->m_recon, useHadamard);
         costList[0] = metric[0] + mvCostRefBest[0][idx0] + (Ipp32s)(bitsRefBest[0][idx0] * m_rdLambdaSqrt + 0.5);
-
-    if (costRefBest[1][idx1] != INT_MAX)
+	}
+    if (costRefBest[1][idx1] != INT_MAX) {
+        //H265MV mvc = mvRefBest[1][idx1];
+        //ClipMV(mvc);
+        //Ipp32s metric1 = MatchingMetricPu(src, meInfo, &mvc, m_currFrame->m_refPicList[1].m_refFrames[idx1]->m_recon, useHadamard);
         costList[1] = metric[1] + mvCostRefBest[1][idx1] + (Ipp32s)(bitsRefBest[1][idx1] * m_rdLambdaSqrt + 0.5);
-
+	}
     Ipp32s costBiBest = INT_MAX;
     H265MV mvBiBest[2] = { mvRefBest[0][refIdxBestB[0]], mvRefBest[1][refIdxBestB[1]] };
     Ipp32s costBiL0 = costRefBest[0][refIdxBestB[0]];
     Ipp32s costBiL1 = costRefBest[1][refIdxBestB[1]];
 
-    if (m_cslice->slice_type == B_SLICE && meInfo->width + meInfo->height != 12 && costBiL0 != INT_MAX && costBiL1 != INT_MAX) {
-        Frame *refF = m_currFrame->m_refPicList[0].m_refFrames[refIdxBestB[0]];
-        Frame *refB = m_currFrame->m_refPicList[1].m_refFrames[refIdxBestB[1]];
+    if (m_cslice->slice_type == B_SLICE && meInfo->width + meInfo->height != 12) {
+        if  (m_par->CmBirefineFlag && ((puSize == 2) || (puSize == 3))) {
+            // use GPU BiRefine
+            Ipp32s pitchBiref = m_currFrame->m_feiBirefData[puSize]->m_pitch;
+            mfxFEIH265BirefData FeiBirefData = ((mfxFEIH265BirefData *)(m_currFrame->m_feiBirefData[puSize]->m_sysmem + y * pitchBiref))[x];
 
-        Ipp32s mvCostBiBest = mvCostRefBest[0][refIdxBestB[0]] + mvCostRefBest[1][refIdxBestB[1]];
-        costBiBest = mvCostBiBest;
-        //costBiBest += MatchingMetricBipredPu(src, meInfo, refIdxBestB, mvBiBest, useHadamard);
-        costBiBest += metric[2];
+            refIdxBestB[0] = 0; // refIdx=0 from each list is supported now!!!
+            refIdxBestB[1] = 0;
 
-        // refine Bidir
-        if (IPP_MIN(costList[0], costList[1]) * 9 > 8 * costBiBest) {
-            if (m_par->numBiRefineIter > 1) { 
-                ClipMV(mvBiBest[0]);
-                ClipMV(mvBiBest[1]);
-                m_interpIdxFirst = m_interpIdxLast = 0; // for MatchingMetricBipredPuSearch inside RefineBiPred
-                RefineBiPred(meInfo, refIdxBestB, curPUidx, mvBiBest, &costBiBest, &mvCostBiBest);
-            }
+            mvBiBest[0].mvx = FeiBirefData.mv0.x;
+            mvBiBest[0].mvy = FeiBirefData.mv0.y;
+            mvBiBest[1].mvx = FeiBirefData.mv1.x;
+            mvBiBest[1].mvy = FeiBirefData.mv1.y;
 
-            Ipp32s bitsBiBest = MVP_LX_FLAG_BITS + predIdxBits[2];
+            ClipMV(mvBiBest[0]);
+            ClipMV(mvBiBest[1]);
+
+            Ipp32s mvCost = MvCost1RefLog(mvBiBest[0].mvx, mvBiBest[0].mvy, m_amvpCand[curPUidx] + 2 * refIdxBestB[0] + 0) +
+                            MvCost1RefLog(mvBiBest[1].mvx, mvBiBest[1].mvy, m_amvpCand[curPUidx] + 2 * refIdxBestB[1] + 1);
+
+            costBiBest = MatchingMetricBipredPu(src, meInfo, refIdxBestB, mvBiBest, useHadamard);
+
+            costBiBest += mvCost;
+            Ipp32s bitsBiBest = /*MVP_LX_FLAG_BITS +*/ MVP_LX_FLAG_BITS + predIdxBits[2];
             bitsBiBest += GetFlBits(refIdxBestB[0], m_cslice->num_ref_idx[0]);
             bitsBiBest += GetFlBits(refIdxBestB[1], m_cslice->num_ref_idx[1]);
             costBiBest += (Ipp32s)(bitsBiBest * m_rdLambdaSqrt + 0.5);
+        } else
+        if (costBiL0 != INT_MAX && costBiL1 != INT_MAX) {  // TODO: try to check also
+            Frame *refF = m_currFrame->m_refPicList[0].m_refFrames[refIdxBestB[0]];
+            Frame *refB = m_currFrame->m_refPicList[1].m_refFrames[refIdxBestB[1]];
+
+            Ipp32s mvCostBiBest = mvCostRefBest[0][refIdxBestB[0]] + mvCostRefBest[1][refIdxBestB[1]];
+            costBiBest = mvCostBiBest;
+            //costBiBest += MatchingMetricBipredPu(src, meInfo, refIdxBestB, mvBiBest, useHadamard);
+            costBiBest += metric[2];
+
+            // refine Bidir
+            if (IPP_MIN(costList[0], costList[1]) * 9 > 8 * costBiBest) {
+                if (m_par->numBiRefineIter > 1) {
+                    ClipMV(mvBiBest[0]);
+                    ClipMV(mvBiBest[1]);
+                    m_interpIdxFirst = m_interpIdxLast = 0; // for MatchingMetricBipredPuSearch inside RefineBiPred
+                    RefineBiPred(meInfo, refIdxBestB, curPUidx, mvBiBest, &costBiBest, &mvCostBiBest);
+                }
+
+                Ipp32s bitsBiBest = /*MVP_LX_FLAG_BITS +*/ MVP_LX_FLAG_BITS + predIdxBits[2];
+                bitsBiBest += GetFlBits(refIdxBestB[0], m_cslice->num_ref_idx[0]);
+                bitsBiBest += GetFlBits(refIdxBestB[1], m_cslice->num_ref_idx[1]);
+                costBiBest += (Ipp32s)(bitsBiBest * m_rdLambdaSqrt + 0.5);
+            }
         }
     }
-
 
     Ipp32s bestMergeCost = INT_MAX;
     H265MV bestMergeMv[2] = {};

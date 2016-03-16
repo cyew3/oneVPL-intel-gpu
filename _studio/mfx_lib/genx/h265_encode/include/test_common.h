@@ -33,7 +33,7 @@ typedef double Ipp64f;
 typedef float mfx32F;
 typedef float Ipp32f;
 
-typedef struct {
+typedef struct { 
     mfxI16  x;
     mfxI16  y;
 } mfxI16Pair;
@@ -55,6 +55,7 @@ typedef struct {
 
 enum { PASSED, FAILED };
 
+#if !defined CMRT_EMU
 //#define TEST_8K
 #ifdef TEST_8K
 const mfxI32 WIDTH  = 8192;
@@ -65,9 +66,11 @@ const mfxI32 WIDTH  = 1920;
 const mfxI32 HEIGHT = 1088;
 const mfxI8 YUV_NAME[] = "C:/yuv/1080p/BasketballDrive_1920x1080p_500_50.yuv";
 #endif
-//const mfxI32 WIDTH  = 416;
-//const mfxI32 HEIGHT = 240;
-//const mfxI8 YUV_NAME[] = "C:/yuv/JCTVC-G1200/240p/RaceHorses_416x240p_300_30.yuv";
+#else   // CMRT_EMU
+const mfxI32 WIDTH  = 416;
+const mfxI32 HEIGHT = 240;
+const mfxI8 YUV_NAME[] = "C:/yuv/JCTVC-G1200/240p/RaceHorses_416x240p_300_30.yuv";
+#endif
 
 struct ParamCopyCPUToGPUStride {
     ParamCopyCPUToGPUStride(CmSurface2D *gpumem_, const Ipp8u *cpumem_, Ipp32s pitch_) : gpumem(gpumem_), cpumem(cpumem_), pitch(pitch_) {}
@@ -206,7 +209,7 @@ inline mfxU8 ToU4U4(mfxU16 val) {
         shift++;
     }
     base += (rem << 1 >> shift);
-    return base | (shift << 4);
+    return (mfxU8)(base | (shift << 4));
 }
 
 

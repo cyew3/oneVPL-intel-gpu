@@ -53,6 +53,7 @@ private:
     CmProgram * programGradient;
     CmProgram * programHmeMe32;
     CmProgram * programMe16Refine32x32;
+    CmProgram * programBiRefine;
     CmProgram * programRefine64x64;
     CmProgram * programRefine32x32sad;
     CmProgram * programRefine32x16;
@@ -73,6 +74,7 @@ private:
 //    H265Enc::Kernel kernelMeIntra;
     H265Enc::Kernel kernelGradient;
     H265Enc::Kernel kernelMe;
+    H265Enc::Kernel kernelBiRefine;
     H265Enc::Kernel kernelRefine64x64;
     H265Enc::Kernel kernelRefine32x32sad;
     H265Enc::Kernel kernelInterpolateFrame;
@@ -96,6 +98,7 @@ private:
     mfxU32 fourcc;
     mfxU32 targetUsage;
     mfxU32 enableChromaSao;
+    mfxU32 enableInterp;
     mfxU32 rectParts;
 
     /* derived from initialization parameters */
@@ -139,6 +142,7 @@ public:
         programGradient(),
         programHmeMe32(),
         programMe16Refine32x32(),
+        programBiRefine(),
         programRefine64x64(),
         programRefine32x32sad(),
         programRefine32x16(),
@@ -161,6 +165,7 @@ public:
         kernelRefine32x32sad(),
         kernelInterpolateFrame(),
         kernelMe(),
+        kernelBiRefine(),
         kernelDeblock(),
         kernelFullPostProc(),
 
@@ -171,6 +176,7 @@ public:
         fourcc(), 
         targetUsage(),
         enableChromaSao(),
+        enableInterp(),
 
         width32(),
         height32(),

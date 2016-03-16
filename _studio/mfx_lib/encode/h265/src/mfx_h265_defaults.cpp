@@ -107,6 +107,7 @@ using namespace H265Enc::MfxEnumShortAliases;
     tab_##mode##_SAOChroma[x],\
     tab_##mode##_RepackProb[x],\
     tab_##mode##_NumRefLayers[x],\
+    tab_##mode##_EnableCmBiref[x],\
     }
 
     // Extended bit depth
@@ -311,10 +312,12 @@ using namespace H265Enc::MfxEnumShortAliases;
     TU_OPT_GACC(IntraNumCand2_6,                2,   2,   1,   1,   1,   1,   1);
 
     //GACC
-    TU_OPT_SW  (EnableCm,                     OFF, OFF, OFF, OFF, OFF, OFF, OFF);
-    TU_OPT_GACC(EnableCm,                      ON,  ON,  ON,  ON,  ON,  ON,  ON);
-    TU_OPT_SW  (CmIntraThreshold,               0,   0,   0,   0,   0,   0,   0);
-    TU_OPT_GACC(CmIntraThreshold,             576, 576, 576, 576, 576, 576, 576);
+    TU_OPT_SW  (EnableCm,                       OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+    TU_OPT_GACC(EnableCm,                        ON,  ON,  ON,  ON,  ON,  ON,  ON);
+    TU_OPT_SW  (CmIntraThreshold,                 0,   0,   0,   0,   0,   0,   0);
+    TU_OPT_GACC(CmIntraThreshold,               576, 576, 576, 576, 576, 576, 576);
+    TU_OPT_SW  (EnableCmBiref,                  OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+    TU_OPT_GACC(EnableCmBiref,                   ON,  ON,  ON,  ON,  ON, OFF, OFF);
 
     //Multithreading & optimizations
     TU_OPT_ALL (WPP,                          UNK, UNK, UNK, UNK, UNK, UNK, UNK);

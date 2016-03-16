@@ -9,5 +9,5 @@
 
 #ifndef __genx_hevce_interpolate_frame_hsw__
 #define __genx_hevce_interpolate_frame_hsw__
-extern const unsigned char genx_hevce_interpolate_frame_hsw[4318];
+extern const unsigned char genx_hevce_interpolate_frame_hsw[13767];
 #endif

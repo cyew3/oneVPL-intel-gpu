@@ -99,7 +99,9 @@ namespace H265Enc {
         Ipp16u cuSplitThreshold;
 
         Ipp8u  enableCmFlag;
-        Ipp8u  enableCmPostProc;// both: deblock + sao. limitations: 1) 420@8bit (2) sao only for luma 
+        Ipp8u  enableCmPostProc;  // both: deblock + sao. limitations: 1) 420@8bit (2) sao only for luma 
+        Ipp8u  CmBirefineFlag;  // GPU birefinement
+        Ipp8u  CmInterpFlag;    // GPU hpel interpolation for every recon
 
         Ipp8u  DeltaQpMode;      // 0 - disable, 0x1 = CAQ, 0x2 = CAL, 0x4 = PAQ
         Ipp64f LambdaCorrection;

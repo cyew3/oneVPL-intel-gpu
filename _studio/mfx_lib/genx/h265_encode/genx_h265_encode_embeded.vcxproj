@@ -30,6 +30,9 @@
     <ClCompile Include="src\genx_hevce_analyze_gradient_32x32_best_bdw_isa.cpp" />
     <ClCompile Include="src\genx_hevce_analyze_gradient_32x32_best_hsw_isa.cpp" />
     <ClCompile Include="src\genx_hevce_analyze_gradient_32x32_best_skl_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_birefine_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_birefine_hsw_isa.cpp" />
+    <ClCompile Include="src\genx_hevce_birefine_skl_isa.cpp" />
     <ClCompile Include="src\genx_hevce_deblock_bdw_isa.cpp" />
     <ClCompile Include="src\genx_hevce_deblock_hsw_isa.cpp" />
     <ClCompile Include="src\genx_hevce_deblock_skl_isa.cpp" />

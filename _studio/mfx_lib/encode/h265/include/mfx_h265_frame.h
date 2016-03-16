@@ -251,6 +251,20 @@ namespace H265Enc {
         Ipp32s m_pitch;
     };
 
+    struct FeiBirefData : public RefCounter
+    {
+        FeiBirefData() : m_fei(NULL), m_handle(NULL), m_sysmem(NULL), m_pitch(0) {}
+        ~FeiBirefData() { Destroy(); }
+        struct AllocInfo { void *feiHdl; mfxSurfInfoENC allocInfo; };
+        void Create(const AllocInfo &allocInfo);
+        void Destroy();
+
+        void *m_fei;
+        mfxHDL m_handle;
+        mfxU8 *m_sysmem;
+        Ipp32s m_pitch;
+    };
+
 
     struct SaoOffsetOut_gfx
     {
@@ -337,10 +351,12 @@ namespace H265Enc {
         ThreadingTask  m_ttSubmitGpuCopyRec;
         ThreadingTask  m_ttSubmitGpuIntra;
         ThreadingTask  m_ttSubmitGpuMe[4];
+        ThreadingTask  m_ttSubmitGpuBiref;
         ThreadingTask  m_ttSubmitGpuPostProc;
         ThreadingTask  m_ttWaitGpuCopyRec;
         ThreadingTask  m_ttWaitGpuIntra;
         ThreadingTask  m_ttWaitGpuMe[4];
+        ThreadingTask  m_ttWaitGpuBiref;
         ThreadingTask  m_ttWaitGpuPostProc;
         //ThreadingTask *m_ttLookahead;
         std::vector<ThreadingTask> m_ttLookahead;
@@ -372,6 +388,7 @@ namespace H265Enc {
         FeiOutData   *m_feiIntraAngModes[4];
         FeiOutData   *m_feiInterData[4][4];
         FeiBufferUp  *m_feiCuData;
+        FeiBirefData *m_feiBirefData[4];
         FeiBufferUp  *m_feiSaoModes;
         void *m_feiSyncPoint;
 

@@ -7,7 +7,7 @@
 //
 */
 
-#ifndef __genx_hevce_interpolate_frame_bdw__
-#define __genx_hevce_interpolate_frame_bdw__
-extern const unsigned char genx_hevce_interpolate_frame_bdw[13767];
+#ifndef __genx_hevce_birefine_hsw__
+#define __genx_hevce_birefine_hsw__
+extern const unsigned char genx_hevce_birefine_hsw[87526];
 #endif

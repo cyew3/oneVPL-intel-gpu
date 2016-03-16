@@ -21,7 +21,10 @@
 #ifdef CMRT_EMU
 extern "C"
 void InterpolateFrameWithBorder(SurfaceIndex SURF_FPEL, SurfaceIndex SURF_HPEL_HORZ,
-                      SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG);
+                                SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG);
+void InterpolateFrameWithBorderMerge(SurfaceIndex SURF_FPEL, SurfaceIndex SURF_HPELS);
+void InterpolateFrameMerge(SurfaceIndex SURF_FPEL, SurfaceIndex SURF_HPELS, uint start_mbX, uint start_mbY);
+
 #endif //CMRT_EMU
 
 #define BORDER 4
@@ -29,16 +32,49 @@ void InterpolateFrameWithBorder(SurfaceIndex SURF_FPEL, SurfaceIndex SURF_HPEL_H
 #define HEIGHTB (HEIGHT + BORDER*2)
 
 namespace {
-int RunGpu(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD);
+int RunGpuBorder(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD);
+int RunGpuBorderMerge(const mfxU8 *in, mfxU8 *out);
+int RunGpuMerge(const mfxU8 *in, mfxU8 *out);
+int RunCpuBorder(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD);
 int RunCpu(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD);
 };
 
+int TestInterpolateFrameWithBorder();
+int TestInterpolateFrameMerge();
+
+typedef int (*TestFuncPtr)();
+
+void RunTest(TestFuncPtr testFunc, char * kernelName)
+{
+    printf("%s... ", kernelName);
+    try {
+        int res = testFunc();
+        if (res == PASSED)
+            printf("passed\n");
+        else if (res == FAILED)
+            printf("FAILED!\n");
+    }
+    catch (std::exception & e) {
+        printf("EXCEPTION: %s\n", e.what());
+    }
+    catch (int***) {
+        printf("UNKNOWN EXCEPTION\n");
+    }
+}
+
 int main()
 {
-    mfxU8 *in   = new mfxU8[WIDTH * HEIGHT];
+    RunTest(TestInterpolateFrameWithBorder, "TestInterpolateFrameWithBorder");
+    RunTest(TestInterpolateFrameMerge, "TestInterpolateFrameMerge");
+}
+
+int TestInterpolateFrameWithBorder()
+{
+    mfxU8 *in   = new mfxU8[WIDTH * HEIGHT * 3 / 2];
     mfxU8 *outHorzGpu = new mfxU8[WIDTHB * HEIGHTB];
     mfxU8 *outVertGpu = new mfxU8[WIDTHB * HEIGHTB];
     mfxU8 *outDiagGpu = new mfxU8[WIDTHB * HEIGHTB];
+    mfxU8 *outMergeGpu = new mfxU8[WIDTHB * 2 * HEIGHTB * 2];
     mfxU8 *outHorzCpu = new mfxU8[WIDTHB * HEIGHTB];
     mfxU8 *outVertCpu = new mfxU8[WIDTHB * HEIGHTB];
     mfxU8 *outDiagCpu = new mfxU8[WIDTHB * HEIGHTB];
@@ -47,32 +83,59 @@ int main()
     FILE *f = fopen(YUV_NAME, "rb");
     if (!f)
         return printf("FAILED to open yuv file\n"), 1;
-    if (fread(in, 1, WIDTH * HEIGHT, f) != WIDTH * HEIGHT) // read luma 1 frame
+    if (fread(in, 1, WIDTH * HEIGHT * 3 / 2, f) != WIDTH * HEIGHT * 3 / 2) // read 1 frame
         return printf("FAILED to read first frame from yuv file\n"), 1;
     fclose(f);
 
-    res = RunGpu(in, outHorzGpu, outVertGpu, outDiagGpu);
+    res = RunGpuBorder(in, outHorzGpu, outVertGpu, outDiagGpu);
     CHECK_ERR(res);
 
-    res = RunCpu(in, outHorzCpu, outVertCpu, outDiagCpu);
+    res = RunGpuBorderMerge(in, outMergeGpu);
+    CHECK_ERR(res);
+
+    res = RunCpuBorder(in, outHorzCpu, outVertCpu, outDiagCpu);
     CHECK_ERR(res);
 
     // compare output
     for (mfxI32 y = 0; y < HEIGHTB; y++) {
         for (mfxI32 x = 0; x < WIDTHB; x++) {
             if (outHorzGpu[y * WIDTHB + x] != outHorzCpu[y * WIDTHB + x]) {
-                printf("bad sad value (%d != %d) for horizontal half-pel at (%.1f, %.1f)...\n",
+                printf("bad value (%d != %d) for horizontal half-pel at (%.1f, %.1f)...\n",
                         outHorzGpu[y * WIDTHB + x], outHorzCpu[y * WIDTHB + x], x + 0.5, y);
                 return 1;
             }
             if (outVertGpu[y * WIDTHB + x] != outVertCpu[y * WIDTHB + x]) {
-                printf("bad sad value (%d != %d) for horizontal half-pel at (%.1f, %.1f)...\n",
+                printf("bad value (%d != %d) for vertical half-pel at (%.1f, %.1f)...\n",
                         outVertGpu[y * WIDTHB + x], outVertCpu[y * WIDTHB + x], x, y + 0.5);
                 return 1;
             }
             if (outDiagGpu[y * WIDTHB + x] != outDiagCpu[y * WIDTHB + x]) {
-                printf("bad sad value (%d != %d) for horizontal half-pel at (%.1f, %.1f)...\n",
+                printf("bad value (%d != %d) for diagonal half-pel at (%.1f, %.1f)...\n",
                         outDiagGpu[y * WIDTHB + x], outDiagCpu[y * WIDTHB + x], x + 0.5, y + 0.5);
+                return 1;
+            }
+
+            // merged surface
+            mfxI32 inX = (x < BORDER) ? 0 : ((x >= WIDTH + BORDER) ? WIDTH - 1 : (x - BORDER));
+            mfxI32 inY = (y < BORDER) ? 0 : ((y >= HEIGHT + BORDER) ? HEIGHT - 1 : (y - BORDER));
+            if (outMergeGpu[y * 2 * WIDTHB * 2 + x * 2] != in[inY * WIDTH + inX]) {
+                printf("bad intpel value (%d != %d) for merged half-pel at (%.1f, %.1f)...\n",
+                        outMergeGpu[y * 2 * WIDTHB * 2 + x * 2], in[inY * WIDTH + inX], x + 0.0, y + 0.0);
+                return 1;
+            }
+            if (outMergeGpu[y * 2 * WIDTHB * 2 + (x * 2 + 1)] != outHorzCpu[y * WIDTHB + x]) {
+                printf("bad horizontal value (%d != %d) for merged half-pel at (%.1f, %.1f)...\n",
+                        outMergeGpu[y * 2 * WIDTHB * 2 + x * 2 + 1], outHorzCpu[y * WIDTHB + x], x + 0.5, y + 0.0);
+                return 1;
+            }
+            if (outMergeGpu[(y * 2 + 1) * WIDTHB * 2 + x * 2] != outVertCpu[y * WIDTHB + x]) {
+                printf("bad vertical value (%d != %d) for merged half-pel at (%.1f, %.1f)...\n",
+                        outMergeGpu[(y * 2 + 1) * WIDTHB * 2 + x * 2], outVertCpu[y * WIDTHB + x], x + 0.0, y + 0.5);
+                return 1;
+            }
+            if (outMergeGpu[(y * 2 + 1) * WIDTHB * 2 + (x * 2 + 1)] != outDiagCpu[y * WIDTHB + x]) {
+                printf("bad diagonal value (%d != %d) for merged half-pel at (%.1f, %.1f)...\n",
+                        outMergeGpu[(y * 2 + 1) * WIDTHB * 2 + (x * 2 + 1)], outDiagCpu[y * WIDTHB + x], x + 0.5, y + 0.5);
                 return 1;
             }
         }
@@ -86,11 +149,68 @@ int main()
     delete [] outVertCpu;
     delete [] outDiagCpu;
 
-    return printf("passed\n"), 0;
+    return 0;
+}
+
+int TestInterpolateFrameMerge()
+{
+    mfxU8 *in   = new mfxU8[WIDTH * HEIGHT * 3 / 2];
+    mfxU8 *outMergeGpu = new mfxU8[WIDTH * 2 * HEIGHT * 2];
+    mfxU8 *outHorzCpu = new mfxU8[WIDTH * HEIGHT];
+    mfxU8 *outVertCpu = new mfxU8[WIDTH * HEIGHT];
+    mfxU8 *outDiagCpu = new mfxU8[WIDTH * HEIGHT];
+    mfxI32 res = PASSED;
+
+    FILE *f = fopen(YUV_NAME, "rb");
+    if (!f)
+        return printf("FAILED to open yuv file\n"), 1;
+    if (fread(in, 1, WIDTH * HEIGHT * 3 / 2, f) != WIDTH * HEIGHT * 3 / 2) // read 1 frame
+        return printf("FAILED to read first frame from yuv file\n"), 1;
+    fclose(f);
+
+    res = RunGpuMerge(in, outMergeGpu);
+    CHECK_ERR(res);
+
+    res = RunCpu(in, outHorzCpu, outVertCpu, outDiagCpu);
+    CHECK_ERR(res);
+
+    // compare output
+    for (mfxI32 y = 0; y < HEIGHT; y++) {
+        for (mfxI32 x = 0; x < WIDTH; x++) {
+            // merged surface
+            if (outMergeGpu[y * 2 * WIDTH * 2 + x * 2] != in[y * WIDTH + x]) {
+                printf("\nbad intpel value (%d != %d) for merged half-pel at (%.1f, %.1f)...\n",
+                        outMergeGpu[y * 2 * WIDTH * 2 + x * 2], in[y * WIDTH + x], x + 0.0, y + 0.0);
+                return 1;
+            }
+            if (outMergeGpu[y * 2 * WIDTH * 2 + (x * 2 + 1)] != outHorzCpu[y * WIDTH + x]) {
+                printf("\nbad horizontal value (%d != %d) for merged half-pel at (%.1f, %.1f)...\n",
+                        outMergeGpu[y * 2 * WIDTH * 2 + x * 2 + 1], outHorzCpu[y * WIDTH + x], x + 0.5, y + 0.0);
+                return 1;
+            }
+            if (outMergeGpu[(y * 2 + 1) * WIDTH * 2 + x * 2] != outVertCpu[y * WIDTH + x]) {
+                printf("\nbad vertical value (%d != %d) for merged half-pel at (%.1f, %.1f)...\n",
+                        outMergeGpu[(y * 2 + 1) * WIDTH * 2 + x * 2], outVertCpu[y * WIDTH + x], x + 0.0, y + 0.5);
+                return 1;
+            }
+            if (outMergeGpu[(y * 2 + 1) * WIDTH * 2 + (x * 2 + 1)] != outDiagCpu[y * WIDTH + x]) {
+                printf("\nbad diagonal value (%d != %d) for merged half-pel at (%.1f, %.1f)...\n",
+                        outMergeGpu[(y * 2 + 1) * WIDTH * 2 + (x * 2 + 1)], outDiagCpu[y * WIDTH + x], x + 0.5, y + 0.5);
+                return 1;
+            }
+        }
+    }
+
+    delete [] in;
+    delete [] outHorzCpu;
+    delete [] outVertCpu;
+    delete [] outDiagCpu;
+
+    return 0;
 }
 
 namespace {
-int RunGpu(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD)
+int RunGpuBorder(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD)
 {
     mfxU32 version = 0;
     CmDevice *device = 0;
@@ -190,6 +310,9 @@ int RunGpu(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD)
     CHECK_CM_ERR(res);
 
     CmEvent * e = 0;
+#if !defined CMRT_EMU
+    for (int i=0; i<500; i++)
+#endif
     res = queue->Enqueue(task, e, threadSpace);
     CHECK_CM_ERR(res);
     
@@ -203,7 +326,7 @@ int RunGpu(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD)
     }
 
 #ifndef CMRT_EMU
-    printf("TIME=%.3fms ", GetAccurateGpuTime(queue, task, threadSpace) / 1000000.0);
+    printf("SEPARATE TIME=%.3fms ", GetAccurateGpuTime(queue, task, threadSpace) / 1000000.0);
 #endif //CMRT_EMU
 
     device->DestroyThreadSpace(threadSpace);
@@ -216,6 +339,214 @@ int RunGpu(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD)
     CM_ALIGNED_FREE(outHorzSys);
     CM_ALIGNED_FREE(outVertSys);
     CM_ALIGNED_FREE(outDiagSys);
+    device->DestroySurface(inFpel);
+    device->DestroyKernel(kernel);
+    device->DestroyProgram(program);
+    ::DestroyCmDevice(device);
+
+    return PASSED;
+}
+
+int RunGpuBorderMerge(const mfxU8 *in, mfxU8 *out)
+{
+    mfxU32 version = 0;
+    CmDevice *device = 0;
+    mfxI32 res = ::CreateCmDevice(device, version);
+    CHECK_CM_ERR(res);
+
+    CmProgram *program = 0;
+    res = device->LoadProgram((void *)genx_hevce_interpolate_frame_hsw, sizeof(genx_hevce_interpolate_frame_hsw), program);
+    CHECK_CM_ERR(res);
+
+    CmKernel *kernel = 0;
+    res = device->CreateKernel(program, CM_KERNEL_FUNCTION(InterpolateFrameWithBorderMerge), kernel);
+    CHECK_CM_ERR(res);
+
+    CmSurface2D *inFpel = 0;
+    res = device->CreateSurface2D(WIDTH, HEIGHT, CM_SURFACE_FORMAT_NV12, inFpel);
+    CHECK_CM_ERR(res);
+    res = inFpel->WriteSurface(in, NULL);
+    CHECK_CM_ERR(res);
+
+    mfxU32 outPitch = 0;
+    mfxU32 outSize = 0;
+    res = device->GetSurface2DInfo(WIDTHB * 2, HEIGHTB * 2, CM_SURFACE_FORMAT_P8, outPitch, outSize);
+    CHECK_CM_ERR(res);
+    mfxU8 *outSys = (mfxU8 *)CM_ALIGNED_MALLOC(outSize, 0x1000);
+    CmSurface2DUP *outCm = 0;
+    res = device->CreateSurface2DUP(WIDTHB * 2, HEIGHTB * 2, CM_SURFACE_FORMAT_P8, outSys, outCm);
+    CHECK_CM_ERR(res);
+
+    SurfaceIndex *idxInFpel = 0;
+    res = inFpel->GetIndex(idxInFpel);
+    CHECK_CM_ERR(res);
+
+    SurfaceIndex *idxOut = 0;
+    res = outCm->GetIndex(idxOut);
+    CHECK_CM_ERR(res);
+
+    res = kernel->SetKernelArg(0, sizeof(*idxInFpel), idxInFpel);
+    CHECK_CM_ERR(res);
+    res = kernel->SetKernelArg(1, sizeof(*idxOut), idxOut);
+    CHECK_CM_ERR(res);
+
+    const mfxU16 BlockW = 8;
+    const mfxU16 BlockH = 8;
+
+    mfxU32 tsWIDTHB = (WIDTHB + BlockW - 1) / BlockW;
+    mfxU32 tsHEIGHTB = (HEIGHTB + BlockH - 1) / BlockH;
+    res = kernel->SetThreadCount(tsWIDTHB * tsHEIGHTB);
+    CHECK_CM_ERR(res);
+
+    CmThreadSpace * threadSpace = 0;
+    res = device->CreateThreadSpace(tsWIDTHB, tsHEIGHTB, threadSpace);
+    CHECK_CM_ERR(res);
+
+    res = threadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+    CHECK_CM_ERR(res);
+
+    CmTask * task = 0;
+    res = device->CreateTask(task);
+    CHECK_CM_ERR(res);
+
+    res = task->AddKernel(kernel);
+    CHECK_CM_ERR(res);
+
+    CmQueue *queue = 0;
+    res = device->CreateQueue(queue);
+    CHECK_CM_ERR(res);
+
+    CmEvent * e = 0;
+#if !defined CMRT_EMU
+    for (int i=0; i<500; i++)
+#endif
+    res = queue->Enqueue(task, e, threadSpace);
+    CHECK_CM_ERR(res);
+    
+    res = e->WaitForTaskFinished();
+    CHECK_CM_ERR(res);
+
+    for (mfxI32 y = 0; y < HEIGHTB * 2; y++, out += WIDTHB * 2) {
+        memcpy(out, outSys + y * outPitch, WIDTHB * 2);
+    }
+
+#ifndef CMRT_EMU
+    printf("MERGE TIME=%.3fms ", GetAccurateGpuTime(queue, task, threadSpace) / 1000000.0);
+#endif //CMRT_EMU
+
+    device->DestroyThreadSpace(threadSpace);
+    device->DestroyTask(task);
+
+    queue->DestroyEvent(e);
+    device->DestroySurface2DUP(outCm);
+    CM_ALIGNED_FREE(outSys);
+    device->DestroySurface(inFpel);
+    device->DestroyKernel(kernel);
+    device->DestroyProgram(program);
+    ::DestroyCmDevice(device);
+
+    return PASSED;
+}
+
+int RunGpuMerge(const mfxU8 *in, mfxU8 *out)
+{
+    mfxU32 version = 0;
+    CmDevice *device = 0;
+    mfxI32 res = ::CreateCmDevice(device, version);
+    CHECK_CM_ERR(res);
+
+    CmProgram *program = 0;
+    res = device->LoadProgram((void *)genx_hevce_interpolate_frame_hsw, sizeof(genx_hevce_interpolate_frame_hsw), program);
+    CHECK_CM_ERR(res);
+
+    CmKernel *kernel = 0;
+    res = device->CreateKernel(program, CM_KERNEL_FUNCTION(InterpolateFrameMerge), kernel);
+    CHECK_CM_ERR(res);
+
+    CmSurface2D *inFpel = 0;
+    res = device->CreateSurface2D(WIDTH, HEIGHT, CM_SURFACE_FORMAT_NV12, inFpel);
+    CHECK_CM_ERR(res);
+    res = inFpel->WriteSurface(in, NULL);
+    CHECK_CM_ERR(res);
+
+    mfxU32 outPitch = 0;
+    mfxU32 outSize = 0;
+    res = device->GetSurface2DInfo(WIDTH * 2, HEIGHT * 2, CM_SURFACE_FORMAT_NV12, outPitch, outSize);
+    CHECK_CM_ERR(res);
+    mfxU8 *outSys = (mfxU8 *)CM_ALIGNED_MALLOC(outSize, 0x1000);
+    CmSurface2DUP *outCm = 0;
+    res = device->CreateSurface2DUP(WIDTH * 2, HEIGHT * 2, CM_SURFACE_FORMAT_NV12, outSys, outCm);
+    CHECK_CM_ERR(res);
+
+    SurfaceIndex *idxInFpel = 0;
+    res = inFpel->GetIndex(idxInFpel);
+    CHECK_CM_ERR(res);
+
+    SurfaceIndex *idxOut = 0;
+    res = outCm->GetIndex(idxOut);
+    CHECK_CM_ERR(res);
+    mfxU32 start_mbX = 0;
+    mfxU32 start_mbY = 0;
+
+    res = kernel->SetKernelArg(0, sizeof(*idxInFpel), idxInFpel);
+    CHECK_CM_ERR(res);
+    res = kernel->SetKernelArg(1, sizeof(*idxOut), idxOut);
+    CHECK_CM_ERR(res);
+    res = kernel->SetKernelArg(2, sizeof(mfxU32), &start_mbX);
+    CHECK_CM_ERR(res);
+    res = kernel->SetKernelArg(3, sizeof(mfxU32), &start_mbY);
+    CHECK_CM_ERR(res);
+
+    const mfxU16 BlockW = 8;
+    const mfxU16 BlockH = 8;
+
+    mfxU32 tsWIDTH = (WIDTH + BlockW - 1) / BlockW;
+    mfxU32 tsHEIGHT = (HEIGHT + BlockH - 1) / BlockH;
+    res = kernel->SetThreadCount(tsWIDTH * tsHEIGHT);
+    CHECK_CM_ERR(res);
+
+    CmThreadSpace * threadSpace = 0;
+    res = device->CreateThreadSpace(tsWIDTH, tsHEIGHT, threadSpace);
+    CHECK_CM_ERR(res);
+
+    res = threadSpace->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+    CHECK_CM_ERR(res);
+
+    CmTask * task = 0;
+    res = device->CreateTask(task);
+    CHECK_CM_ERR(res);
+
+    res = task->AddKernel(kernel);
+    CHECK_CM_ERR(res);
+
+    CmQueue *queue = 0;
+    res = device->CreateQueue(queue);
+    CHECK_CM_ERR(res);
+
+    CmEvent * e = 0;
+#if !defined CMRT_EMU
+    for (int i=0; i<500; i++)
+#endif
+    res = queue->Enqueue(task, e, threadSpace);
+    CHECK_CM_ERR(res);
+    
+    res = e->WaitForTaskFinished();
+    CHECK_CM_ERR(res);
+
+    for (mfxI32 y = 0; y < HEIGHT * 2; y++, out += WIDTH * 2) {
+        memcpy(out, outSys + y * outPitch, WIDTH * 2);
+    }
+
+#ifndef CMRT_EMU
+    printf("TIME=%.3fms ", GetAccurateGpuTime(queue, task, threadSpace) / 1000000.0);
+#endif //CMRT_EMU
+
+    device->DestroyThreadSpace(threadSpace);
+    device->DestroyTask(task);
+
+    queue->DestroyEvent(e);
+    device->DestroySurface2DUP(outCm);
+    CM_ALIGNED_FREE(outSys);
     device->DestroySurface(inFpel);
     device->DestroyKernel(kernel);
     device->DestroyProgram(program);
@@ -319,13 +650,26 @@ mfxU8 InterpolatePel(mfxU8 const * p, mfxI32 x, mfxI32 y)
     return (mfxU8)val;
 }
 
-int RunCpu(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD)
+int RunCpuBorder(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD)
 {
     for (mfxI32 y = 0; y < HEIGHTB; y++, outH += WIDTHB, outV += WIDTHB, outD += WIDTHB) {
         for (mfxI32 x = 0; x < WIDTHB; x++) {
             outH[x] = InterpolatePel(in, 4 * (x - BORDER) + 2, 4 * (y - BORDER) + 0);
             outV[x] = InterpolatePel(in, 4 * (x - BORDER) + 0, 4 * (y - BORDER) + 2);
             outD[x] = InterpolatePel(in, 4 * (x - BORDER) + 2, 4 * (y - BORDER) + 2);
+        }
+    }
+
+    return PASSED;
+}
+
+int RunCpu(const mfxU8 *in, mfxU8 *outH, mfxU8 *outV, mfxU8 *outD)
+{
+    for (mfxI32 y = 0; y < HEIGHT; y++, outH += WIDTH, outV += WIDTH, outD += WIDTH) {
+        for (mfxI32 x = 0; x < WIDTH; x++) {
+            outH[x] = InterpolatePel(in, 4 * x + 2, 4 * y + 0);
+            outV[x] = InterpolatePel(in, 4 * x + 0, 4 * y + 2);
+            outD[x] = InterpolatePel(in, 4 * x + 2, 4 * y + 2);
         }
     }
 

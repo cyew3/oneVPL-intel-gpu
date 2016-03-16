@@ -89,6 +89,7 @@ namespace {
         case MFX_FEI_H265_OP_INTER_ME:          return "ME";
         case MFX_FEI_H265_OP_INTERPOLATE:       return "INTERP";
         case MFX_FEI_H265_OP_POSTPROC:          return "PP";
+        case MFX_FEI_H265_OP_BIREFINE:          return "BIREFINE";
         case MFX_FEI_H265_OP_DEBLOCK:           return "PP_DBLK";
         default:                                return "<unk>";
         }
@@ -394,9 +395,6 @@ static void TaskLogDump()
         intParam.MaxTrSize = 1 << intParam.QuadtreeTULog2MaxSize;
         intParam.MaxCUSize = maxCUSize;
 
-        intParam.enableCmFlag = (optHevc.EnableCm == ON);
-        intParam.enableCmPostProc = intParam.enableCmFlag && (intParam.bitDepthLuma == 8) && (intParam.chromaFormatIdc == MFX_CHROMAFORMAT_YUV420);
-
         intParam.sourceWidth = hevcParam.PicWidthInLumaSamples;
         intParam.sourceHeight = hevcParam.PicHeightInLumaSamples;
         intParam.Width = hevcParam.PicWidthInLumaSamples;
@@ -412,6 +410,11 @@ static void TaskLogDump()
             intParam.CropTop = fi.CropY;
             intParam.CropBottom = hevcParam.PicHeightInLumaSamples - fi.CropH - fi.CropY;
         }
+
+        intParam.enableCmFlag = (optHevc.EnableCm == ON);
+        intParam.enableCmPostProc = intParam.enableCmFlag && (intParam.bitDepthLuma == 8) && (intParam.chromaFormatIdc == MFX_CHROMAFORMAT_YUV420);
+        intParam.CmBirefineFlag = (optHevc.EnableCmBiref == ON) && ((intParam.Width * intParam.Height) <= (4096 * 4096));  //GPU is out of memory for 8K !!!
+        intParam.CmInterpFlag = intParam.CmBirefineFlag;
 
         intParam.m_framesInParallel = optHevc.FramesInParallel;
         // intParam.m_lagBehindRefRows = 3;
@@ -768,6 +771,8 @@ H265Encoder::~H265Encoder()
         m_feiAngModesPool[i].Destroy();
     for (Ipp32s i = 0; i < 4; i++)
         m_feiInterDataPool[i].Destroy();
+    for (Ipp32s i = 2; i < 4; i++)
+        m_feiBirefDataPool[i].Destroy();
     m_feiCuDataPool.Destroy();
     m_feiSaoModesPool.Destroy();
     if (m_fei)
@@ -992,6 +997,7 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
         feiParams.NumIntraModes = 1;
         feiParams.FourCC = m_videoParam.fourcc;
         feiParams.EnableChromaSao = m_videoParam.SAOChromaFlag;
+        feiParams.InterpFlag = m_videoParam.CmInterpFlag;
 
         mfxExtFEIH265Alloc feiAlloc = {};
         MFXCoreInterface core(m_core.m_core);
@@ -1015,6 +1021,15 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
 
             feiOutAllocInfo.allocInfo = feiAlloc.InterData[feiBlkSizeIdx];
             m_feiInterDataPool[blksize].Init(feiOutAllocInfo, 0);
+        }
+
+        FeiBirefData::AllocInfo feiBirefAllocInfo;
+        feiBirefAllocInfo.feiHdl = m_fei;
+        for (Ipp32s blksize = 2; blksize < 4; blksize++) {
+            Ipp32s feiBlkSizeIdx = blkSizeInternal2Fei[blksize];
+
+            feiBirefAllocInfo.allocInfo = feiAlloc.BirefData[feiBlkSizeIdx];
+            m_feiBirefDataPool[blksize].Init(feiBirefAllocInfo, 0);
         }
 
         FeiBufferUp::AllocInfo feiBufferUpAllocInfo;
@@ -1639,6 +1654,31 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
                 AddTaskDependency(&frame->m_ttSubmitGpuMe[uniqRefIdx], &frame->m_ttSubmitGpuCopySrc); // GPU_SUBMIT_HME <- GPU_SUBMIT_COPY_SRC
                 AddTaskDependency(&frame->m_ttWaitGpuMe[uniqRefIdx], &frame->m_ttSubmitGpuMe[uniqRefIdx]); // GPU_WAIT_ME16 <- GPU_SUBMIT_ME16
             }
+        }
+
+        if (m_videoParam.CmBirefineFlag && frame->m_slices[0].slice_type == B_SLICE) {
+            // bi-refine configuration
+            // m_refPicList[0][0] and m_refPicList[1][0] are used for bi-refine only
+            frame->m_ttSubmitGpuBiref.numDownstreamDependencies = 0;
+            frame->m_ttSubmitGpuBiref.numUpstreamDependencies = 0;
+            frame->m_ttSubmitGpuBiref.finished = 0;
+            frame->m_ttSubmitGpuBiref.poc = frame->m_frameOrder;
+            frame->m_ttSubmitGpuBiref.listIdx = 0;  // is not used
+            frame->m_ttSubmitGpuBiref.refIdx = 0;  // is not used
+            for (Ipp32s blksize = 2; blksize < 4; blksize++) {
+                if (!frame->m_feiBirefData[blksize])
+                    frame->m_feiBirefData[blksize] = m_feiBirefDataPool[blksize].Allocate();
+            }
+
+            AddTaskDependency(&frame->m_ttSubmitGpuBiref, &frame->m_ttSubmitGpuMe[frame->m_mapListRefUnique[0][0]]); // GPU_SUBMIT_BIREF <- GPU_SUBMIT_ME L0 ref0
+            AddTaskDependency(&frame->m_ttSubmitGpuBiref, &frame->m_ttSubmitGpuMe[frame->m_mapListRefUnique[1][0]]); // GPU_SUBMIT_BIREF <- GPU_SUBMIT_ME L1 ref0
+
+            frame->m_ttWaitGpuBiref.numDownstreamDependencies = 0;
+            frame->m_ttWaitGpuBiref.numUpstreamDependencies = 0;
+            frame->m_ttWaitGpuBiref.finished = 0;
+            frame->m_ttWaitGpuBiref.syncpoint = NULL;
+            frame->m_ttWaitGpuBiref.poc = frame->m_frameOrder;
+            AddTaskDependency(&frame->m_ttWaitGpuBiref, &frame->m_ttSubmitGpuBiref); // GPU_WAIT_BIREF <- GPU_SUBMIT_BIREF
         }
 
         if (frame->m_isRef || m_videoParam.enableCmPostProc && m_videoParam.doDumpRecon && frame->m_doPostProc) { // need for dump_rec
@@ -2893,6 +2933,37 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
         for (Ipp32s blksize = 0; blksize < 4; blksize++) {
             Ipp32s feiBlkIdx = blkSizeInternal2Fei[blksize];
             out.SurfInterData[feiBlkIdx] = task.frame->m_feiInterData[uniqRefIdx][blksize]->m_handle;
+        }
+
+    } else if (task.feiOp == MFX_FEI_H265_OP_BIREFINE) {
+        Frame *ref0 = task.frame->m_refPicList[0].m_refFrames[0];
+        Frame *ref1 = task.frame->m_refPicList[1].m_refFrames[0];
+        //in.FEIFrameIn.PicOrder = task.frame->m_frameOrder;
+        //in.FEIFrameIn.EncOrder = task.frame->m_encOrder;
+        in.birefArgs.surfSrc = task.frame->m_feiOrigin->m_handle;
+        //in.FEIFrameRef.PicOrder = ref0->m_frameOrder;
+        //in.FEIFrameRef.EncOrder = ref0->m_encOrder;
+        in.birefArgs.surfRef0 = ref0->m_feiRecon->m_handle;
+        in.birefArgs.surfRef1 = ref1->m_feiRecon->m_handle;
+
+        mfxFEIOptParamsBiref optParam = {};
+        //optParam.FEIFrameRefBi.PicOrder = ref1->m_frameOrder;
+        //optParam.FEIFrameRefBi.EncOrder = ref1->m_encOrder;
+        //optParam.FEIFrameRefBi.surfIn = ref1->m_feiRecon->m_handle;
+
+        Ipp32s uniqRefIdx0 = task.frame->m_mapListRefUnique[0][0];
+        Ipp32s uniqRefIdx1 = task.frame->m_mapListRefUnique[1][0];
+        for (Ipp32s blksize = 2; blksize < 4; blksize++) {
+            Ipp32s feiBlkIdx = blkSizeInternal2Fei[blksize];
+            optParam.InterDataRef0[feiBlkIdx] = task.frame->m_feiInterData[uniqRefIdx0][blksize]->m_handle;
+            optParam.InterDataRef1[feiBlkIdx] = task.frame->m_feiInterData[uniqRefIdx1][blksize]->m_handle;
+        }
+
+        in.birefArgs.params = &optParam;
+
+        for (Ipp32s blksize = 2; blksize < 4; blksize++) { // 32x32 and 64x64 only
+            Ipp32s feiBlkIdx = blkSizeInternal2Fei[blksize];
+            out.SurfBirefData[feiBlkIdx] = task.frame->m_feiBirefData[blksize]->m_handle;
         }
 
     } else if (task.feiOp == MFX_FEI_H265_OP_POSTPROC || task.feiOp == MFX_FEI_H265_OP_DEBLOCK) {

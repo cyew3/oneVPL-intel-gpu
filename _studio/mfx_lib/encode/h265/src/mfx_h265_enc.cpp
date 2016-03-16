@@ -1675,6 +1675,9 @@ void H265Encoder::OnEncodingQueried(Frame* encoded)
             SafeRelease(encoded->m_feiInterData[i][j]);
         }
     }
+    for (Ipp32s i = 2; i < 4; i++)
+        SafeRelease(encoded->m_feiBirefData[i]);
+
     SafeRelease(encoded->m_feiSaoModes);
     SafeRelease(encoded->m_lowres);
 
@@ -2441,6 +2444,9 @@ void H265FrameEncoder::SetEncodeFrame_GpuPostProc(Frame* frame, std::deque<Threa
                         AddTaskDependency(task_enc, &frame->m_ttWaitGpuIntra, &m_topEnc.m_ttHubPool); // ENCODE_CTU(0,0) <- GPU_INTRA
                     for (Ipp32s i = 0; i < frame->m_numRefUnique; i++)
                         AddTaskDependency(task_enc, &frame->m_ttWaitGpuMe[i], &m_topEnc.m_ttHubPool); // ENCODE_CTU(0,0) <- GPU_ME(allrefs)
+
+                    if (m_videoParam.CmBirefineFlag && frame->m_slices[0].slice_type == B_SLICE)
+                        AddTaskDependency(task_enc, &frame->m_ttWaitGpuBiref, &m_topEnc.m_ttHubPool); // ENCODE_CTU(0,0) <- GPU_BIREF
 
                     if (m_videoParam.enableCmPostProc && m_frame->m_doPostProc) {
                         // (potential issue here if SW_PP work without wavefront) and we need add dep for each task_pp

@@ -329,6 +329,7 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(RepackProb);
     SERIALIZE_INT(NumRefLayers);
     SERIALIZE_INT(ConstQpOffset);
+    SERIALIZE_INT(EnableCmBiref);
 }
 
 void MFXStructureRef <mfxExtHEVCTiles>::ConstructValues() const
