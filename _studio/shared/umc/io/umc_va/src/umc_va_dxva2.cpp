@@ -35,7 +35,7 @@ namespace UMC
 {
     DXVA2Accelerator *CreateDXVA2Accelerator()
     {
-        MFX_LTRACE_S(MFX_TRACE_LEVEL_DXVA, "CreateDXVA2Accelerator()");
+        MFX_LTRACE_S(MFX_TRACE_LEVEL_EXTCALL, "CreateDXVA2Accelerator()");
         return (new DXVA2Accelerator);
     }
 }
@@ -304,12 +304,12 @@ Status DXVA2Accelerator::Execute()
     mfxU32 counter = 0;
     while (E_FRAME_LOCKED == hr && counter++ < 4) // 20 ms should be enough
     {
-        //MFX_AUTO_LTRACE_WITHID(MFX_TRACE_LEVEL_DXVA, "DXVA2_DecodeExecute");
+        //MFX_AUTO_LTRACE_WITHID(MFX_TRACE_LEVEL_EXTCALL, "DXVA2_DecodeExecute");
         hr = m_pDXVAVideoDecoder->Execute(pExecuteParams);
 
         if (hr != 0)
         {
-            MFX_LTRACE_I(MFX_TRACE_LEVEL_DXVA, hr);
+            MFX_LTRACE_I(MFX_TRACE_LEVEL_EXTCALL, hr);
         }
         
         //if (hr == E_FRAME_LOCKED)

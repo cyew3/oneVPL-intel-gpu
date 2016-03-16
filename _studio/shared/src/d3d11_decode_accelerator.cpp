@@ -321,7 +321,7 @@ Status MFXD3D11Accelerator::Execute()
     }
     
     {
-        //MFX_AUTO_LTRACE_WITHID(MFX_TRACE_LEVEL_DXVA, "DXVA2_DecodeExecute");
+        //MFX_AUTO_LTRACE_WITHID(MFX_TRACE_LEVEL_EXTCALL, "DXVA2_DecodeExecute");
          hr = m_pVideoContext->SubmitDecoderBuffers(m_pDecoder, (UINT)m_bufferOrder.size(), pSentBuffer);
 
     }
