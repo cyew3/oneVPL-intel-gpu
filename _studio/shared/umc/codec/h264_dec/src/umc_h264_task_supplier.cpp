@@ -14,6 +14,8 @@
 #include <algorithm>
 #include <memory>
 
+#include "mfx_trace.h"
+
 #include "umc_h264_task_supplier.h"
 #include "umc_h264_frame_list.h"
 #include "umc_h264_nal_spl.h"
@@ -3755,6 +3757,7 @@ Status TaskSupplier::CompleteDecodedFrames(H264DecoderFrame ** decoded)
 
 Status TaskSupplier::AddSource(MediaData * pSource)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "TaskSupplier::AddSource");
     Status umcRes = UMC_OK;
 
     CompleteDecodedFrames(0);

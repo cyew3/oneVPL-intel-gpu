@@ -701,6 +701,7 @@ mfxTaskThreadingPolicy VideoDECODEH264::GetThreadingPolicy(void)
 
 mfxStatus VideoDECODEH264::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEH264::Query");
     MFX_CHECK_NULL_PTR1(out);
 
     eMFXPlatform platform = MFX_Utility::GetPlatform(core, in);
@@ -852,6 +853,7 @@ mfxStatus VideoDECODEH264::GetVideoParam(mfxVideoParam *par)
 
 mfxStatus VideoDECODEH264::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEH264::DecodeHeader");
     MFX_CHECK_NULL_PTR2(bs, par);
 
     mfxStatus sts = CheckBitstream(bs);
@@ -1095,7 +1097,7 @@ mfxStatus VideoDECODEH264::GetDecodeStat(mfxDecodeStat *stat)
 
 static mfxStatus __CDECL AVCDECODERoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 )
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "DecodeFrame_AVC");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "AVCDECODERoutine");
     VideoDECODEH264 *decoder = (VideoDECODEH264 *)pState;
 
     mfxStatus sts = decoder->RunThread(pParam, threadNumber);
@@ -1110,6 +1112,7 @@ static mfxStatus AVCCompleteProc(void *, void *pParam, mfxStatus )
 
 mfxStatus VideoDECODEH264::RunThread(void * params, mfxU32 threadNumber)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEH264::RunThread");
     ThreadTaskInfo * info = (ThreadTaskInfo *)params;
 
     mfxStatus sts = MFX_TASK_WORKING;
@@ -1699,6 +1702,7 @@ void VideoDECODEH264::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
 
 mfxStatus VideoDECODEH264::DecodeFrame(mfxFrameSurface1 *surface_out, UMC::H264DecoderFrame * pFrame)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEH264::DecodeFrame");
     MFX_CHECK_NULL_PTR1(surface_out);
 
     mfxI32 index;

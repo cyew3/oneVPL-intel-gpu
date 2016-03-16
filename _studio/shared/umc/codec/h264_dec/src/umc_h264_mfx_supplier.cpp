@@ -125,6 +125,7 @@ MFXTaskSupplier::~MFXTaskSupplier()
 
 Status MFXTaskSupplier::Init(VideoDecoderParams *init)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXTaskSupplier::Init");
     if (NULL == init)
         return UMC_ERR_NULL_PTR;
 
@@ -347,6 +348,7 @@ bool MFXTaskSupplier::ProcessNonPairedField(H264DecoderFrame * pFrame)
 
 Status MFXTaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXTaskSupplier::CompleteFrame");
     if (!pFrame)
         return UMC_OK;
 
@@ -364,6 +366,7 @@ void MFXTaskSupplier::SetVideoParams(mfxVideoParam * par)
 
 Status MFXTaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXTaskSupplier::DecodeHeaders");
     Status sts = TaskSupplier::DecodeHeaders(nalUnit);
     if (sts != UMC_OK)
         return sts;
