@@ -2575,7 +2575,8 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
             return MFX_WRN_DEVICE_BUSY;
         }
 
-        memset(m_frame[m_frame_free].Data,0,m_frame[m_frame_free].MaxLength);
+        m_frame[m_frame_free].DataLength = 0;
+        m_frame[m_frame_free].DataOffset = 0;
     }
 
     m_frame_constructed = false;
