@@ -104,7 +104,7 @@ protected:
         //compare by resolution
         bool operator () (const UniqueResponse &response)const
         {
-            return m_width <= response.m_width && m_height <= response.m_height;
+            return m_width <= response.m_width && m_height <= response.m_height && (m_type&response.m_type)&(MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_FROM_ENC | MFX_MEMTYPE_FROM_PAK);
         }
     };
 

@@ -660,14 +660,15 @@ mfxStatus CEncodingPipeline::AllocFrames()
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxFrameAllocRequest DecRequest;
-    mfxFrameAllocRequest VppRequest;
+    mfxFrameAllocRequest VppRequest[2];
     mfxFrameAllocRequest EncRequest;
     mfxFrameAllocRequest ReconRequest;
 
     mfxU16 nEncSurfNum = 0; // number of surfaces for encoder
 
     MSDK_ZERO_MEMORY(DecRequest);
-    MSDK_ZERO_MEMORY(VppRequest);
+    MSDK_ZERO_MEMORY(VppRequest[0]); //VPP in
+    MSDK_ZERO_MEMORY(VppRequest[1]); //VPP out
     MSDK_ZERO_MEMORY(EncRequest);
     MSDK_ZERO_MEMORY(ReconRequest);
 
@@ -703,7 +704,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
 
     EncRequest.AllocId = m_BaseAllocID;
     EncRequest.Type |= MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET;
-    if (m_pmfxPREENC)
+    if (m_pmfxPREENC && !m_pmfxDS)
         EncRequest.Type |= MFX_MEMTYPE_FROM_ENC;
     if ((m_pmfxPAK) || (m_pmfxENC))
         EncRequest.Type |= (MFX_MEMTYPE_FROM_ENC | MFX_MEMTYPE_FROM_PAK);
@@ -719,7 +720,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
 
         // these surfaces are input surfaces for PREENC
         DSRequest[1].NumFrameMin = DSRequest[1].NumFrameSuggested = EncRequest.NumFrameSuggested;
-        DSRequest[1].Type = EncRequest.Type;
+        DSRequest[1].Type = EncRequest.Type | MFX_MEMTYPE_FROM_ENC;
         DSRequest[1].AllocId = m_BaseAllocID;
 
         sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &(DSRequest[1]), &m_dsResponse);
@@ -769,26 +770,22 @@ mfxStatus CEncodingPipeline::AllocFrames()
             return MFX_ERR_NONE;
     }
 
-    if (m_pmfxVPP)
+    if (m_pmfxVPP && !m_pmfxDECODE)
     {
-        if (!m_pmfxDS)
-            EncRequest.Type |= MFX_MEMTYPE_FROM_VPPOUT;
+        // in case of absence of DECODE we need to allocate input surfaces for VPP
 
-        sts = m_pmfxVPP->QueryIOSurf(&m_mfxVppParams, &VppRequest);
+        sts = m_pmfxVPP->QueryIOSurf(&m_mfxVppParams, VppRequest);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-        VppRequest.NumFrameMin = VppRequest.NumFrameSuggested;
-        if (!m_pmfxDECODE)
-        {
-            VppRequest.AllocId = m_BaseAllocID;
-            // in case of absence of DECODE we need to allocate input surfaces for VPP
-            sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &VppRequest, &m_VppResponse);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        VppRequest[0].NumFrameMin = VppRequest[0].NumFrameSuggested;
+        VppRequest[0].AllocId = m_BaseAllocID;
 
-            // prepare mfxFrameSurface1 array for VPP
-            sts = FillSurfacePool(m_pVppSurfaces, &m_VppResponse, &(m_mfxVppParams.mfx.FrameInfo));
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        }
+        sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &(VppRequest[0]), &m_VppResponse);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        // prepare mfxFrameSurface1 array for VPP
+        sts = FillSurfacePool(m_pVppSurfaces, &m_VppResponse, &(m_mfxVppParams.mfx.FrameInfo));
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
     // alloc frames for encoder
