@@ -55,7 +55,6 @@ enum MemType {
 
 struct sInputParams
 {
-    mfxU16 nTargetUsage;
     mfxU32 DecodeId; // type of input coded video
     mfxU32 CodecId;
     mfxU32 ColorFormat;
@@ -63,7 +62,6 @@ struct sInputParams
     mfxU16 nWidth; // source picture width
     mfxU16 nHeight; // source picture height
     mfxF64 dFrameRate;
-    mfxU16 nBitRate;
     mfxU32 nNumFrames;
     mfxU32 nTimeout;
     mfxU16 refDist; //number of frames to next I,P
@@ -73,7 +71,7 @@ struct sInputParams
     mfxU16 numRef;
     mfxU16 bRefType;
     mfxU16 nIdrInterval;
-    mfxU8 preencDSstrength;
+    mfxU8  preencDSstrength;
     mfxU32 nResetStart;
     mfxU16 nDRCdefautW;
     mfxU16 nDRCdefautH;
@@ -95,7 +93,7 @@ struct sInputParams
     mfxU16 CodecProfile;
     mfxU16 CodecLevel;
     mfxU16 Trellis;
-    mfxI16 DisableDeblockingIdc;
+    mfxU16 DisableDeblockingIdc;
     mfxI16 SliceAlphaC0OffsetDiv2;
     mfxI16 SliceBetaOffsetDiv2;
     mfxI16 ChromaQPIndexOffset;

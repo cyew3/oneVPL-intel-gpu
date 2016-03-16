@@ -32,8 +32,6 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-nobref] - do not use B-pyramid (by default the decision is made by library)\n"));
     msdk_printf(MSDK_STRING("   [-idr_interval size] - idr interval, default 0 means every I is an IDR, 1 means every other I frame is an IDR etc\n"));
     msdk_printf(MSDK_STRING("   [-f frameRate] - video frame rate (frames per second)\n"));
-    msdk_printf(MSDK_STRING("   [-b bitRate] - encoded bit rate (KBits per second), valid for H.264, H.265, MPEG2 and MVC encoders \n"));
-    msdk_printf(MSDK_STRING("   [-u speed|quality|balanced] - target usage, valid for H.264, H.265, MPEG2 and MVC encoders\n"));
     msdk_printf(MSDK_STRING("   [-n number] - number of frames to process\n"));
     msdk_printf(MSDK_STRING("   [-timeout seconds] - set time to run processing in seconds\n"));
     msdk_printf(MSDK_STRING("   [-r distance] - Distance between I- or P- key frames (1 means no B-frames) (0 - by default(I frames))\n"));
@@ -557,10 +555,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             switch (strInput[i][1])
             {
-            case MSDK_CHAR('u'):
-                GET_OPTION_POINTER(strArgument);
-                pParams->nTargetUsage = StrToTargetUsage(strArgument);
-                break;
             case MSDK_CHAR('w'):
                 GET_OPTION_POINTER(strArgument);
                 pParams->nWidth = (mfxU16)msdk_strtol(strArgument, &stopCharacter, 10);
@@ -584,10 +578,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             case MSDK_CHAR('r'):
                 GET_OPTION_POINTER(strArgument);
                 pParams->refDist = (mfxU16)msdk_strtol(strArgument, &stopCharacter, 10);
-                break;
-            case MSDK_CHAR('b'):
-                GET_OPTION_POINTER(strArgument);
-                pParams->nBitRate = (mfxU16)msdk_strtol(strArgument, &stopCharacter, 10);
                 break;
             case MSDK_CHAR('l'):
                 GET_OPTION_POINTER(strArgument);
@@ -694,11 +684,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (MFX_TARGETUSAGE_BEST_QUALITY != pParams->nTargetUsage && MFX_TARGETUSAGE_BEST_SPEED != pParams->nTargetUsage)
-    {
-        pParams->nTargetUsage = MFX_TARGETUSAGE_BALANCED;
-    }
-
     if (pParams->dFrameRate <= 0)
     {
         pParams->dFrameRate = 30;
@@ -713,13 +698,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     if (pParams->nDstHeight == 0)
     {
         pParams->nDstHeight = pParams->nHeight;
-    }
-
-    // calculate default bitrate based on the resolution (a parameter for encoder, so Dst resolution is used)
-    if (pParams->nBitRate == 0)
-    {
-        pParams->nBitRate = CalculateDefaultBitrate(pParams->CodecId, pParams->nTargetUsage, pParams->nDstWidth,
-            pParams->nDstHeight, pParams->dFrameRate);
     }
 
     // if nv12 option wasn't specified we expect input YUV file in YUV420 color format
@@ -836,7 +814,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (pParams->NumMVPredictors[0] > 4 || pParams->NumMVPredictors[1] > 4){
+    if (pParams->NumMVPredictors[0] > MaxFeiEncMVPNum || pParams->NumMVPredictors[1] > MaxFeiEncMVPNum){
         if (bAlrShownHelp)
             msdk_printf(MSDK_STRING("\nUnsupported value number of MV predictors (4 is maximum)!\n"));
         else

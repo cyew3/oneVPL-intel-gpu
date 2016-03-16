@@ -345,14 +345,18 @@ mfxStatus sTask::Reset()
 
 mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
 {
+    MSDK_CHECK_POINTER(pInParams, MFX_ERR_NULL_PTR);
+    mfxStatus sts = MFX_ERR_NONE;
+
     m_encpakParams = *pInParams;
 
-    m_mfxEncParams.mfx.CodecId                 = pInParams->CodecId;
-    m_mfxEncParams.mfx.TargetUsage             = pInParams->nTargetUsage; // trade-off between quality and speed
-    m_mfxEncParams.mfx.TargetKbps              = pInParams->nBitRate; // in Kbps
+    m_mfxEncParams.mfx.CodecId     = pInParams->CodecId;
+    m_mfxEncParams.mfx.TargetUsage = 0; // FEI doesn't have support of
+    m_mfxEncParams.mfx.TargetKbps  = 0; // these features
     /*For now FEI work with RATECONTROL_CQP only*/
     m_mfxEncParams.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
-    ConvertFrameRate(pInParams->dFrameRate, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtN, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtD);
+    sts = ConvertFrameRate(pInParams->dFrameRate, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtN, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtD);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     m_mfxEncParams.mfx.EncodedOrder = pInParams->EncodedOrder; // binary flag, 0 signals encoder to take frames in display order
 
     if (0 != pInParams->QP)
@@ -477,7 +481,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_mfxEncParams.NumExtParam = (mfxU16)m_EncExtParams.size();
     }
 
-    return MFX_ERR_NONE;
+    return sts;
 }
 
 mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
@@ -558,7 +562,8 @@ mfxStatus CEncodingPipeline::InitMfxDecodeParams(sInputParams *pInParams)
     m_mfxDecParams.mfx.CodecId = pInParams->DecodeId;
 
     m_BSReader.Init(pInParams->strSrcFile);
-    InitMfxBitstream(&m_mfxBS, 1024 * 1024);
+    sts = InitMfxBitstream(&m_mfxBS, 1024 * 1024);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // read a portion of data for DecodeHeader function
     sts = m_BSReader.ReadNextFrame(&m_mfxBS);
@@ -605,7 +610,7 @@ mfxStatus CEncodingPipeline::InitMfxDecodeParams(sInputParams *pInParams)
      // specify memory type
      m_mfxDecParams.IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
 
-    return MFX_ERR_NONE;
+    return sts;
 }
 
 mfxStatus CEncodingPipeline::CreateHWDevice()
@@ -622,8 +627,7 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
 #endif // #if MFX_D3D11_SUPPORT
         m_hwdev = new CD3D9Device();
 
-    if (NULL == m_hwdev)
-        return MFX_ERR_MEMORY_ALLOC;
+    MSDK_CHECK_POINTER(m_hwdev, MFX_ERR_MEMORY_ALLOC);
 
     sts = m_hwdev->Init(
         window,
@@ -640,7 +644,7 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
     sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(m_mfxSession));
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 #endif
-    return MFX_ERR_NONE;
+    return sts;
 }
 
 mfxStatus CEncodingPipeline::ResetDevice()
@@ -2122,9 +2126,9 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                 feiEncCtrl[fieldId].MVPredictor            = MVPredictors;
 
                 mfxU16 nmvp_l0 = m_encpakParams.bNPredSpecified_l0 ?
-                    m_encpakParams.NumMVPredictors[0] : IPP_MIN(m_mfxEncParams.mfx.NumRefFrame, MaxFeiEncMVPNum);
+                    m_encpakParams.NumMVPredictors[0] : IPP_MIN(m_mfxEncParams.mfx.NumRefFrame*m_numOfFields, MaxFeiEncMVPNum);
                 mfxU16 nmvp_l1 = m_encpakParams.bNPredSpecified_l1 ?
-                    m_encpakParams.NumMVPredictors[1] : IPP_MIN(m_mfxEncParams.mfx.NumRefFrame, MaxFeiEncMVPNum);
+                    m_encpakParams.NumMVPredictors[1] : IPP_MIN(m_mfxEncParams.mfx.NumRefFrame*m_numOfFields, MaxFeiEncMVPNum);
 
                 feiEncCtrl[fieldId].NumMVPredictors[0] = m_numOfRefs[fieldId][0] = nmvp_l0;
                 feiEncCtrl[fieldId].NumMVPredictors[1] = m_numOfRefs[fieldId][1] = nmvp_l1;
@@ -5583,22 +5587,20 @@ void CEncodingPipeline::PrintInfo()
     mfxFrameInfo SrcPicInfo = m_mfxEncParams.vpp.In;
     mfxFrameInfo DstPicInfo = m_mfxEncParams.mfx.FrameInfo;
 
-    msdk_printf(MSDK_STRING("Source picture:\n"));
+    msdk_printf(MSDK_STRING("\nSource picture:\n"));
     msdk_printf(MSDK_STRING("\tResolution\t%dx%d\n"), SrcPicInfo.Width, SrcPicInfo.Height);
     msdk_printf(MSDK_STRING("\tCrop X,Y,W,H\t%d,%d,%d,%d\n"), SrcPicInfo.CropX, SrcPicInfo.CropY, SrcPicInfo.CropW, SrcPicInfo.CropH);
 
-    msdk_printf(MSDK_STRING("Destination picture:\n"));
+    msdk_printf(MSDK_STRING("\nDestination picture:\n"));
     msdk_printf(MSDK_STRING("\tResolution\t%dx%d\n"), DstPicInfo.Width, DstPicInfo.Height);
     msdk_printf(MSDK_STRING("\tCrop X,Y,W,H\t%d,%d,%d,%d\n"), DstPicInfo.CropX, DstPicInfo.CropY, DstPicInfo.CropW, DstPicInfo.CropH);
 
-    msdk_printf(MSDK_STRING("Frame rate\t%.2f\n"), DstPicInfo.FrameRateExtN * 1.0 / DstPicInfo.FrameRateExtD);
-    msdk_printf(MSDK_STRING("Bit rate(KBps)\t%d\n"), m_mfxEncParams.mfx.TargetKbps);
-    msdk_printf(MSDK_STRING("Target usage\t%s\n"), TargetUsageToStr(m_mfxEncParams.mfx.TargetUsage));
+    msdk_printf(MSDK_STRING("\nFrame rate\t\t%.2f\n"), DstPicInfo.FrameRateExtN * 1.0 / DstPicInfo.FrameRateExtD);
 
-    const msdk_char* sMemType = m_memType == D3D9_MEMORY ? MSDK_STRING("d3d")
+    const msdk_char* sMemType = m_memType == D3D9_MEMORY ? MSDK_STRING("d3d9")
         : (m_memType == D3D11_MEMORY ? MSDK_STRING("d3d11")
         : MSDK_STRING("system"));
-    msdk_printf(MSDK_STRING("Memory type\t%s\n"), sMemType);
+    msdk_printf(MSDK_STRING("Memory type\t\t%s\n"), sMemType);
 
     mfxIMPL impl;
     m_mfxSession.QueryIMPL(&impl);
