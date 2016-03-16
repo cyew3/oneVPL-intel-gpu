@@ -63,7 +63,7 @@ public:
     }
     ~BsDump() {}
 
-    mfxStatus Init(mfxExtChromaLocInfo& chromaloc, mfxU16 vui)
+    mfxStatus Init(const mfxExtChromaLocInfo& chromaloc, mfxU16 vui)
     {
         chroma_loc_present = chromaloc.ChromaLocInfoPresentFlag;
         chroma_type_bottom = chromaloc.ChromaSampleLocTypeBottomField;
@@ -245,44 +245,23 @@ int TestSuite::RunTest(unsigned int id)
     TS_START;
     const tc_struct& tc = test_case[id];
 
-    std::vector<mfxExtBuffer*> buffs;
-    std::vector<mfxExtBuffer*> buffs_cpy;
-
     MFXInit();
 
     BsDump bs;
     m_bs_processor = &bs;
 
-    mfxExtChromaLocInfo chroma = {0};
-    chroma.Header.BufferId = MFX_EXTBUFF_CHROMA_LOC_INFO;
-    chroma.Header.BufferSz = sizeof(mfxExtChromaLocInfo);
+    mfxExtChromaLocInfo& chroma = m_par;
     SETPARS(&chroma, CHROMALOC);
-    buffs.push_back((mfxExtBuffer*)&chroma);
-    mfxExtChromaLocInfo chroma_cpy(chroma);
-    buffs_cpy.push_back((mfxExtBuffer*)&chroma_cpy);
 
-    mfxExtCodingOption2 cod2 = {0};
-    cod2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
-    cod2.Header.BufferSz = sizeof(mfxExtCodingOption2);
+    mfxExtCodingOption2& cod2 = m_par;
 
     if (tc.mode & VUI)
     {
         cod2.DisableVUI = MFX_CODINGOPTION_ON;
-        mfxExtCodingOption2 cod2_cpy(cod2);
-        buffs.push_back((mfxExtBuffer*)&cod2);
-        buffs_cpy.push_back((mfxExtBuffer*)&cod2_cpy);
     }
 
-    // no buffers were added to m_par before
+    // buffers are added and will be copied
     tsExtBufType<mfxVideoParam> par_cpy(m_par);
-
-    // adding buffers
-    if (buffs.size())
-    {
-        m_par.NumExtParam = par_cpy.NumExtParam = (mfxU16)buffs.size();
-        m_par.ExtParam = &buffs[0];
-        par_cpy.ExtParam = &buffs_cpy[0];
-    }
 
     if (tc.mode & QUERY)
     {
@@ -311,23 +290,23 @@ int TestSuite::RunTest(unsigned int id)
             g_tsStatus.expect(tc.sts);
             if (tc.mode & OFF_CHROMA)
             {
-                ((mfxExtChromaLocInfo*)buffs[0])->ChromaLocInfoPresentFlag = 0;
+                chroma.ChromaLocInfoPresentFlag = 0;
                 g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
             }
             else
             {
                 if (chroma.ChromaSampleLocTypeBottomField == 0)
                 {
-                    ((mfxExtChromaLocInfo*)buffs[0])->ChromaSampleLocTypeBottomField = 5;
-                    ((mfxExtChromaLocInfo*)buffs[0])->ChromaSampleLocTypeTopField = 5;
+                    chroma.ChromaSampleLocTypeBottomField = 5;
+                    chroma.ChromaSampleLocTypeTopField    = 5;
                 }
                 else
                 {
-                    ((mfxExtChromaLocInfo*)buffs[0])->ChromaSampleLocTypeBottomField = 0;
-                    ((mfxExtChromaLocInfo*)buffs[0])->ChromaSampleLocTypeTopField = 0;
+                    chroma.ChromaSampleLocTypeBottomField = 0;
+                    chroma.ChromaSampleLocTypeTopField    = 0;
                 }
             }
-            bs.Init(*((mfxExtChromaLocInfo*)buffs[0]), cod2.DisableVUI);
+            bs.Init(chroma, cod2.DisableVUI);
             Reset(m_session, m_pPar);
 
             tsAutoFlush af(*this, 3);
@@ -341,3 +320,4 @@ int TestSuite::RunTest(unsigned int id)
 
 TS_REG_TEST_SUITE_CLASS(avce_chromaloc);
 };
+
