@@ -48,7 +48,7 @@ public:
     {
         for(size_t i = 0; i < 4; ++i)
         {
-            if(p.c[i])  *this << p.c[i];
+            if(p.c[i])  (std::ostream&)*this << p.c[i];
             else        (std::ostream&)*this << "\\0";
         }
         (std::ostream&)*this << std::hex << "(0x" << p.n << ')' << std::dec; 
@@ -66,10 +66,23 @@ public:
 #undef FIELD_S
 };
 
+//printing "\0" symbol in unicode causes text file to be mailformed
+inline tsAutoTrace& operator<<(tsAutoTrace& os, const char p)
+{
+    if(p)  (std::ostream&)os << p;
+    else   (std::ostream&)os << "\\0";
+    (std::ostream&)os << " (" << +p << ')';  //operator+(T v) casts v to printable numerical type
+    return os;
+}
+inline tsAutoTrace& operator<<(tsAutoTrace& os, const unsigned char p)
+{
+    if(p)  (std::ostream&)os << p;
+    else   (std::ostream&)os << "\\0";
+    (std::ostream&)os << " (" << +p << ')'; 
+    return os;
+}
 inline tsAutoTrace& operator<<(tsAutoTrace& os, const char* p)              { (std::ostream&)os << p; return os; }
 inline tsAutoTrace& operator<<(tsAutoTrace& os, const unsigned char* p)     { (std::ostream&)os << p; return os; }
-inline tsAutoTrace& operator<<(tsAutoTrace& os, const char p)               { (std::ostream&)os << p; return os; }
-inline tsAutoTrace& operator<<(tsAutoTrace& os, const unsigned char p)      { (std::ostream&)os << p; return os; }
 inline tsAutoTrace& operator<<(tsAutoTrace& os, const short p)              { (std::ostream&)os << p; return os; }
 inline tsAutoTrace& operator<<(tsAutoTrace& os, const unsigned short p)     { (std::ostream&)os << p; return os; }
 inline tsAutoTrace& operator<<(tsAutoTrace& os, const int p)                { (std::ostream&)os << p; return os; }
@@ -81,7 +94,6 @@ inline tsAutoTrace& operator<<(tsAutoTrace& os, const unsigned long long p) { (s
 inline tsAutoTrace& operator<<(tsAutoTrace& os, const float p)              { (std::ostream&)os << p; return os; }
 inline tsAutoTrace& operator<<(tsAutoTrace& os, const double p)             { (std::ostream&)os << p; return os; }
 inline tsAutoTrace& operator<<(tsAutoTrace& os, const std::string p)        { (std::ostream&)os << p.c_str(); return os; }
-
 
 class tsTrace : public tsAutoTrace
 {
