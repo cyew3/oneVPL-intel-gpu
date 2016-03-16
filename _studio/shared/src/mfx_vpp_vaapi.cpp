@@ -990,10 +990,13 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             break;
         case MFX_SCALING_MODE_DEFAULT:
         default:
-            /* Do nothing by default. Technically it's the same as setting
-             * VA_FILTER_SCALING_DEFAULT since it's equal to 0. This is
-             * different from Windows, where by default AVS is forced.
-             */
+#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
+            /* Use SFC by default on BXT platforms due to power consumption considerations */
+            m_pipelineParam[refIdx].filter_flags |= VA_FILTER_SCALING_DEFAULT;
+#else
+            /* Force AVS by default for all platforms except BXT */
+            m_pipelineParam[refIdx].filter_flags |= VA_FILTER_SCALING_HQ;
+#endif
             break;
         }
 
@@ -1348,7 +1351,7 @@ mfxStatus VAAPIVideoProcessing::Execute_FakeOutput(mfxExecuteParams *pParams)
             case MFX_PICSTRUCT_FIELD_BFF:
                 m_pipelineParam[refIdx].filter_flags = VA_BOTTOM_FIELD;
                 break;
-		}
+        }
 
         if (pParams->bFieldWeaving)
         {
