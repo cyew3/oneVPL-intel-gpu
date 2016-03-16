@@ -283,7 +283,6 @@
     <ClCompile Include="src\umc_h264_slice_decoding.cpp" />
     <ClCompile Include="src\umc_h264_task_broker.cpp" />
     <ClCompile Include="src\umc_h264_task_supplier.cpp" />
-    <ClCompile Include="src\umc_h264_thread.cpp" />
     <ClCompile Include="src\umc_h264_va_packer.cpp" />
     <ClCompile Include="src\umc_h264_va_supplier.cpp" />
     <ClCompile Include="src\umc_h264_vda_supplier.cpp" />
@@ -328,7 +327,6 @@
     <ClInclude Include="include\umc_h264_slice_decoding.h" />
     <ClInclude Include="include\umc_h264_task_broker.h" />
     <ClInclude Include="include\umc_h264_task_supplier.h" />
-    <ClInclude Include="include\umc_h264_thread.h" />
     <ClInclude Include="include\umc_h264_timing.h" />
     <ClInclude Include="include\umc_h264_va_packer.h" />
     <ClInclude Include="include\umc_h264_va_supplier.h" />

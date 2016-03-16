@@ -18,7 +18,6 @@
 #include "umc_h264_slice_decoding.h"
 #include "umc_h264_dec_tables.h"
 
-#include "umc_h264_thread.h"
 #include "umc_h264_frame.h"
 
 #include "umc_h264_dec_deblocking.h"
