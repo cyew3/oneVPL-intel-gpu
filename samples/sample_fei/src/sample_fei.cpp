@@ -55,7 +55,8 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-reset_end]   - specifies the end of current Dynamic Resolution Change related options\n"));
     msdk_printf(MSDK_STRING("   [-profile decimal] - set AVC profile\n"));
     msdk_printf(MSDK_STRING("   [-level decimal] - set AVC level\n"));
-    msdk_printf(MSDK_STRING("   [-EncodedOrder] - use internal logic for reordering, reading from files will be in encoded order (default is display; ENCODE only)\n"));
+    msdk_printf(MSDK_STRING("   [-EncodedOrder] - use internal logic for reordering, reading from files (mvin, mbqp) will be in encoded order (default is display; ENCODE only)\n"));
+    msdk_printf(MSDK_STRING("   [-DecodedOrder] - output in decoded order (useful to dump streamout data in DecodedOrder). WARNING: all FEI interfaces expects frames to come in DisplayOrder.\n"));
     msdk_printf(MSDK_STRING("   [-mbctrl file] - use the input to set MB control for FEI (only ENC+PAK)\n"));
     msdk_printf(MSDK_STRING("   [-mbsize] - with this options size control fields will be used from MB control structure (only ENC+PAK)\n"));
     msdk_printf(MSDK_STRING("   [-mvin file] - use this input to set MV predictor for FEI. PREENC and ENC (ENCODE) expect different structures\n"));
@@ -64,6 +65,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-mbcode file] - file to output per MB information (structure mfxExtFeiPakMBCtrl) for each frame\n"));
     msdk_printf(MSDK_STRING("   [-mbstat file] - file to output per MB distortions for each frame\n"));
     msdk_printf(MSDK_STRING("   [-mbqp file] - file to input per MB QPs the same for each frame\n"));
+    msdk_printf(MSDK_STRING("   [-streamout file] - dump decode streamout structures\n"));
     msdk_printf(MSDK_STRING("   [-sys] - use system memory for surfaces (ENCODE only)\n"));
     msdk_printf(MSDK_STRING("   [-pass_headers] - pass SPS, PPS and Slice headers to Media SDK instead of default one (ENC or/and PAK only)\n"));
     msdk_printf(MSDK_STRING("   [-8x8stat] - set 8x8 block for statistic report, default is 16x16 (PREENC only)\n"));
@@ -247,6 +249,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mbctrl")))
         {
             pParams->mbctrinFile = strInput[i+1];
+            i++;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-streamout")))
+        {
+            pParams->bDECODESTREAMOUT = true;
+            pParams->decodestreamoutFile = strInput[i + 1];
             i++;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-nv12")))
@@ -644,7 +652,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             default:
                 if (!bAlrShownHelp){
                     msdk_printf(MSDK_STRING("\nWARNING: Unknown option %s\n\n"), strInput[i]);
-                    PrintHelp(strInput[0], NULL);// MSDK_STRING("Unknown options"));
+                    PrintHelp(strInput[0], NULL);
                     bAlrShownHelp = true;
                 }else {
                     msdk_printf(MSDK_STRING("\nWARNING: Unknown option %s\n\n"), strInput[i]);
@@ -653,15 +661,18 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
     }
 
-    if (!( (pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
-          (!pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
-          (!pParams->bPREENC && !pParams->bOnlyENC &&  pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
-          (!pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  &&  pParams->bENCODE) ||
-          (!pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCPAK  && !pParams->bENCODE) ||
-           //(pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
-           (pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  &&  pParams->bENCODE) ||
-           (pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCPAK  && !pParams->bENCODE) )
-    ){
+    bool allowedFEIpipeline = ( pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
+                              (!pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
+                              (!pParams->bPREENC && !pParams->bOnlyENC &&  pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
+                              (!pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  &&  pParams->bENCODE) ||
+                              (!pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCPAK  && !pParams->bENCODE) ||
+                              //(pParams->bPREENC &&  pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE) ||
+                              ( pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  &&  pParams->bENCODE) ||
+                              ( pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCPAK  && !pParams->bENCODE) ||
+                              (!pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK && !pParams->bENCPAK  && !pParams->bENCODE && pParams->bDECODESTREAMOUT);
+
+    if (!allowedFEIpipeline)
+    {
         if (bAlrShownHelp){
             msdk_printf(MSDK_STRING("\nERROR: Unsupported pipeline!\n"));
 
@@ -676,6 +687,16 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             msdk_printf(MSDK_STRING("PREENC + ENC + PAK (PREENC + ENCPAK)\n"));
         } else
             PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported pipeline!\nSupported pipelines are:\nPREENC\nENC\nPAK\nENCODE\nENC + PAK (ENCPAK)\nPREENC + ENC\nPREENC + ENCODE\nPREENC + ENC + PAK (PREENC + ENCPAK)\n"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if ((!pParams->bDECODE || pParams->DecodeId != MFX_CODEC_AVC) && pParams->bDECODESTREAMOUT)
+    {
+        if (bAlrShownHelp)
+            msdk_printf(MSDK_STRING("ERROR: Decode streamout requires AVC encoded stream at input"));
+        else
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Decode streamout requires AVC encoded stream at input\n"));
+
         return MFX_ERR_UNSUPPORTED;
     }
 
@@ -930,6 +951,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
+    if (pParams->DecodedOrder && pParams->bDECODE && (pParams->bPREENC || pParams->bENCPAK || pParams->bOnlyENC || pParams->bOnlyPAK || pParams->bENCODE)){
+        if (bAlrShownHelp)
+            msdk_printf(MSDK_STRING("\nERROR: DecodedOrder turned on, all FEI interfaces in sample_fei expects frame in DisplayOrder!\n"));
+        else
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: DecodedOrder turned on, all FEI interfaces in sample_fei expects frame in DisplayOrder!"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
     if ((pParams->bENCPAK || pParams->bOnlyENC || pParams->bOnlyPAK) && !pParams->bPassHeaders && (pParams->nIdrInterval || pParams->bRefType != MFX_B_REF_OFF)){
         if (bIDRintSet || bBRefSet){
             msdk_printf(MSDK_STRING("\nWARNING: Specified B-pyramid/IDR-interval control(s) for ENC+PAK would be ignored!\n"));
@@ -972,16 +1001,17 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         msdk_printf(MSDK_STRING("           could be non-bitexact with last frame in FEI ENCODE with Display Order!\n"));
     }
 
-    if (pParams->bPerfMode && (pParams->mvinFile || pParams->mvoutFile || pParams->mbctrinFile || pParams->mbstatoutFile || pParams->mbcodeoutFile || pParams->mbQpFile))
+    if (pParams->bPerfMode && (pParams->mvinFile || pParams->mvoutFile || pParams->mbctrinFile || pParams->mbstatoutFile || pParams->mbcodeoutFile || pParams->mbQpFile || pParams->decodestreamoutFile))
     {
         msdk_printf(MSDK_STRING("\nWARNING: All file operations would be ignored in performance mode!\n"));
 
-        pParams->mvinFile      = NULL;
-        pParams->mvoutFile     = NULL;
-        pParams->mbctrinFile   = NULL;
-        pParams->mbstatoutFile = NULL;
-        pParams->mbcodeoutFile = NULL;
-        pParams->mbQpFile      = NULL;
+        pParams->mvinFile            = NULL;
+        pParams->mvoutFile           = NULL;
+        pParams->mbctrinFile         = NULL;
+        pParams->mbstatoutFile       = NULL;
+        pParams->mbcodeoutFile       = NULL;
+        pParams->mbQpFile            = NULL;
+        pParams->decodestreamoutFile = NULL;
     }
 
     if (pParams->bENCODE || pParams->bENCPAK || pParams->bOnlyENC || pParams->bOnlyPAK){
@@ -1033,6 +1063,7 @@ int main(int argc, char *argv[])
     Params.NumRefActiveP   = 0;
     Params.NumRefActiveBL0 = 0;
     Params.NumRefActiveBL1 = 0;
+    Params.bDECODESTREAMOUT = false;
     Params.bDECODE   = false;
     Params.bENCODE   = false;
     Params.bENCPAK   = false;
@@ -1048,6 +1079,7 @@ int main(int argc, char *argv[])
     Params.bNPredSpecified_l1 = false;
     Params.preencDSstrength = 0;
     Params.EncodedOrder    = false;
+    Params.DecodedOrder    = false;
     Params.Enable8x8Stat   = false;
     Params.FTEnable        = false;
     Params.AdaptiveSearch  = false;

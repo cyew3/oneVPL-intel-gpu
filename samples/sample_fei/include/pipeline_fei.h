@@ -35,6 +35,13 @@
 #include <algorithm>
 #include <ctime>
 
+// Extensions for internal use, normally these macros are blank
+#ifdef MOD_FEI
+#include "extension_macros.h"
+#else
+    #define MSDK_DEBUG
+#endif
+
 #define MFX_FRAMETYPE_IPB (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P | MFX_FRAMETYPE_B)
 #define MFX_FRAMETYPE_IP  (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P                  )
 #define MFX_FRAMETYPE_PB  (                  MFX_FRAMETYPE_P | MFX_FRAMETYPE_B)
@@ -45,6 +52,13 @@
 #define MaxNumActiveRefBL0    4
 #define MaxNumActiveRefBL1    1
 #define MaxNumActiveRefBL1_i  2
+
+
+#if _DEBUG
+    #define mdprintf fprintf
+#else
+    #define mdprintf(...)
+#endif
 
 enum {
     MVC_DISABLED          = 0x0,
@@ -111,7 +125,6 @@ struct sInputParams
     mfxU16 nDstHeight; // destination picture height, specified if resizing required
 
     MemType memType;
-    //bool bUseHWLib; // true if application wants to use HW MSDK library
 
     msdk_char strSrcFile[MSDK_MAX_FILENAME_LEN];
 
@@ -127,7 +140,9 @@ struct sInputParams
     bool bOnlyENC;
     bool bOnlyPAK;
     bool bPREENC;
+    bool bDECODESTREAMOUT;
     bool EncodedOrder;
+    bool DecodedOrder;
     bool bMBSize;
     bool bPassHeaders;
     bool Enable8x8Stat;
@@ -156,6 +171,7 @@ struct sInputParams
     msdk_char* mbcodeoutFile;
     msdk_char* mbstatoutFile;
     msdk_char* mbQpFile;
+    msdk_char* decodestreamoutFile;
 };
 
 struct ExtendedSurface
@@ -276,7 +292,11 @@ protected:
     mfxFrameAllocResponse m_ReconResponse;  // memory allocation response for encoder for reconstructed surfaces [FEI]
     mfxU32 m_BaseAllocID;
 
-    // for trellis, B-pyramid, RAW-reference settings
+    std::vector<mfxExtFeiDecStreamOut*> m_StreamoutBufs;
+    std::list<std::pair<mfxFrameSurface1*, mfxFrameSurface1*> > m_DecodeToVppCorresp;
+    mfxExtFeiDecStreamOut* m_pExtBufDecodeStreamout; // current streamout buffer
+
+    // for trellis, B-pyramid, RAW-reference settings    mfxExtCodingOption2 m_CodingOption2;
     mfxExtCodingOption2 m_CodingOption2;
 
     // for P/B reference number settings
@@ -338,10 +358,11 @@ protected:
     virtual mfxStatus ResizeFrame(mfxU32 frameNum, bool &insertIDR,size_t &rctime, iTask* &eTask, sTask *pCurrentTask);
 
     virtual mfxStatus PreProcessOneFrame(mfxFrameSurface1* & pSurf);
-    virtual mfxStatus PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, bool is_buffered, bool &cont);
+    virtual mfxStatus PostProcessOneFrame(mfxFrameSurface1* pSurf);
+    virtual mfxStatus PreencOneFrame(iTask* &eTask, mfxFrameSurface1* & pSurf, bool is_buffered, bool &cont);
     virtual mfxStatus ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs[2][2]);
-    virtual mfxStatus EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
-    virtual mfxStatus EncodeOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
+    virtual mfxStatus EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* & pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
+    virtual mfxStatus EncodeOneFrame(iTask* &eTask, mfxFrameSurface1* & pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
     virtual mfxStatus SyncOneEncodeFrame(sTask* pCurrentTask, iTask* eTask, mfxU32 fieldProcessingCounter);
 
     virtual mfxStatus DecodeOneFrame(ExtendedSurface *pOutSurf);
@@ -357,6 +378,7 @@ protected:
     mfxStatus RemoveOneTask();
     mfxStatus ReleasePreencMVPinfo(iTask* eTask);
     mfxStatus ClearTasks();
+    mfxStatus ClearDecoderBuffers();
     mfxStatus ResetBuffers();
     mfxStatus ProcessLastB();
     mfxU32 CountUnencodedFrames();
@@ -371,6 +393,7 @@ protected:
     mfxStatus ReadPAKdata(iTask* eTask);
     mfxStatus DropENCPAKoutput(iTask* eTask);
     mfxStatus DropPREENCoutput(iTask* eTask);
+    mfxStatus DropDecodeStreamoutOutput(mfxFrameSurface1* pSurf);
     mfxStatus PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[2][2]);
     mfxStatus PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 numMVP[2][2]);
     mfxStatus repackDSPreenc2EncExMB(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB[2], mfxExtFeiEncMVPredictors *EncMVPred, mfxU32 MBnum, mfxU32 refIdx[2], mfxU32 predIdx);
