@@ -31,6 +31,10 @@ File Name: d3d11_video_processor.h
 #include "mfxdefs.h"
 #include "mfx_vpp_interface.h"
 
+#ifdef VPP_MIRRORING
+ #include <d3d11_1.h> // VideoProcessorSetStreamMirror
+#endif
+
 #include <set>
 #include <algorithm>
 

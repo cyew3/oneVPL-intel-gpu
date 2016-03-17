@@ -2224,6 +2224,19 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             angle);
     }
 
+#ifdef VPP_MIRRORING
+    switch(pParams->mirroring)
+    {
+    case MFX_MIRRORING_VERTICAL:
+        (reinterpret_cast<ID3D11VideoContext1 *>(m_pVideoContext))->VideoProcessorSetStreamMirror(m_pVideoProcessor, 0, TRUE, FALSE, TRUE);
+        break;
+    case MFX_MIRRORING_HORIZONTAL:
+    default:
+        (reinterpret_cast<ID3D11VideoContext1 *>(m_pVideoContext))->VideoProcessorSetStreamMirror(m_pVideoProcessor, 0, TRUE, TRUE, FALSE);
+        break;
+    }
+#endif
+
     // [5] Detail
     if (pParams->detailFactor > 0)
     {

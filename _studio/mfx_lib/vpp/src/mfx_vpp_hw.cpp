@@ -2576,7 +2576,8 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     /* Temporal solution for mirroring that makes nothing but mirroring 
      * TODO: merge mirroring into pipeline
      */
-    if (MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring)
+    if (MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring &&
+        MFX_HW_D3D11  != m_pCore->GetVAType()) // D3D11 has native support
     {
         sts = PreWorkOutSurface(pTask->output);
         MFX_CHECK_STS(sts);
