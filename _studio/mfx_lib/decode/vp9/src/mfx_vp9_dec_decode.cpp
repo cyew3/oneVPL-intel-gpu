@@ -1443,6 +1443,7 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVi
 
     params->mfx.CodecProfile = mfxU16(profile + 1);
 
+    params->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
     params->mfx.FrameInfo.AspectRatioW = 1;
     params->mfx.FrameInfo.AspectRatioH = 1;
 

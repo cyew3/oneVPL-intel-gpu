@@ -781,7 +781,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
         (*surface_out)->Data.TimeStamp = bs->TimeStamp != MFX_TIMESTAMP_UNKNOWN? bs->TimeStamp : GetMfxTimeStamp(m_frameOrder * m_in_framerate);
         (*surface_out)->Data.Corrupted = 0;
         (*surface_out)->Data.FrameOrder = m_frameOrder;
-
+        (*surface_out)->Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
         (*surface_out)->Info.CropW = (mfxU16)m_frameInfo.width;
         (*surface_out)->Info.CropH = (mfxU16)m_frameInfo.height;
 
