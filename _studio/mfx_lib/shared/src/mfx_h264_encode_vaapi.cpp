@@ -1321,11 +1321,14 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK) || defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
     if ( m_isENCPAK )
     {
-        /* driver need only 16 buffer for statistic */
-        m_vaFeiMBStatId.resize(16);
-        m_vaFeiMVOutId.resize(16);
-        m_vaFeiMCODEOutId.resize(16);
-        for( int i = 0; i < 16; i++ )
+        mfxU32 numBuffers = m_reconQueue.size();
+        if (MFX_PICSTRUCT_PROGRESSIVE != m_videoParam.mfx.FrameInfo.PicStruct)
+            numBuffers = 2*numBuffers;
+
+        m_vaFeiMBStatId.resize(numBuffers);
+        m_vaFeiMVOutId.resize(numBuffers);
+        m_vaFeiMCODEOutId.resize(numBuffers);
+        for( mfxU32 i = 0; i < numBuffers; i++ )
             m_vaFeiMBStatId[i] = m_vaFeiMVOutId[i] = m_vaFeiMCODEOutId[i] = VA_INVALID_ID;
     }
 #endif
@@ -1741,6 +1744,9 @@ mfxStatus VAAPIEncoder::Execute(
                 feiFieldId = 1;
         }
 
+        if (MFX_PICSTRUCT_PROGRESSIVE != m_videoParam.mfx.FrameInfo.PicStruct)
+            idxRecon = idxRecon *2;
+
         //find ext buffers
         const mfxEncodeCtrl& ctrl = task.m_ctrl;
         mfxExtFeiEncMBCtrl* mbctrl = GetExtBuffer(task.m_ctrl, feiFieldId);
@@ -1828,16 +1834,31 @@ mfxStatus VAAPIEncoder::Execute(
                 //mdprintf(stderr, "MB Stat bufId=%d\n", vaFeiMBStatId);
             }
         }
+        /* MbCode and MVout buffer always should be in pair - driver's request (aka limitation)
+         * If one from buffers does not requested by application but one of them requested
+         * library have to create both buffers sets. And for this need to know number of MBs
+         * */
+        mfxU32 numMbCodeToAlloc = 0;
+        mfxU32 numMVCodeToAlloc = 0;
+        if ((NULL != mbcodeout) && (mbcodeout->NumMBAlloc))
+            numMbCodeToAlloc = mbcodeout->NumMBAlloc;
+        if ((NULL != mvout) && (mvout->NumMBAlloc))
+            numMVCodeToAlloc = mvout->NumMBAlloc;
+        if ((NULL == mvout) && (NULL != mbcodeout))
+            numMVCodeToAlloc = numMbCodeToAlloc;
+        if ((NULL != mvout) && (NULL == mbcodeout))
+            numMbCodeToAlloc = numMVCodeToAlloc;
 
         //output buffer for MV
-        if ((mvout != NULL) && (VA_INVALID_ID == m_vaFeiMVOutId[0]) )
+        if ( ((mvout != NULL) || (mbcodeout != NULL)) &&
+             (VA_INVALID_ID == m_vaFeiMVOutId[0]) )
         {
             for( mfxU32 ii = 0; ii < m_vaFeiMVOutId.size(); ii++ )
             {
                 vaSts = vaCreateBuffer(m_vaDisplay,
                         m_vaContextEncode,
                         (VABufferType)VAEncFEIMVBufferTypeIntel,
-                        sizeof (VAMotionVectorIntel)*16*mvout->NumMBAlloc,
+                        sizeof (VAMotionVectorIntel)*16*numMVCodeToAlloc,
                         //limitation from driver, num elements should be 1
                         1,
                         NULL, //should be mapped later
@@ -1848,14 +1869,15 @@ mfxStatus VAAPIEncoder::Execute(
         }
 
         //output buffer for MBCODE (Pak object cmds)
-        if ((mbcodeout != NULL) && (VA_INVALID_ID == m_vaFeiMCODEOutId[0]))
+        if ( ((mvout != NULL) || (mbcodeout != NULL)) &&
+              (VA_INVALID_ID == m_vaFeiMCODEOutId[0]) )
         {
             for( mfxU32 ii = 0; ii < m_vaFeiMCODEOutId.size(); ii++ )
             {
                 vaSts = vaCreateBuffer(m_vaDisplay,
                         m_vaContextEncode,
                         (VABufferType)VAEncFEIModeBufferTypeIntel,
-                        sizeof (VAEncFEIModeBufferH264Intel)*mbcodeout->NumMBAlloc,
+                        sizeof (VAEncFEIModeBufferH264Intel)*numMbCodeToAlloc,
                         //limitation from driver, num elements should be 1
                         1,
                         NULL, //should be mapped later
@@ -1898,11 +1920,11 @@ mfxStatus VAAPIEncoder::Execute(
             vaFeiFrameControl->len_sp = frameCtrl->LenSP;
             vaFeiFrameControl->search_path = frameCtrl->SearchPath;
 
-            vaFeiFrameControl->distortion = m_vaFeiMBStatId[2*idxRecon + feiFieldId];
-            vaFeiFrameControl->mv_data = m_vaFeiMVOutId[2*idxRecon + feiFieldId];
-            vaFeiFrameControl->mb_code_data = m_vaFeiMCODEOutId[2*idxRecon + feiFieldId];
+            vaFeiFrameControl->distortion = m_vaFeiMBStatId[idxRecon + feiFieldId];
+            vaFeiFrameControl->mv_data = m_vaFeiMVOutId[idxRecon + feiFieldId];
+            vaFeiFrameControl->mb_code_data = m_vaFeiMCODEOutId[idxRecon + feiFieldId];
             mdprintf(stderr,"feiFieldId: = %d; idxRecon = %d; m_vaFeiMCODEOutId[] = %d\n",
-                    feiFieldId, idxRecon, m_vaFeiMCODEOutId[2*idxRecon + feiFieldId]);
+                    feiFieldId, idxRecon, m_vaFeiMCODEOutId[idxRecon + feiFieldId]);
             vaFeiFrameControl->qp = vaFeiMBQPId;
             vaFeiFrameControl->mb_ctrl = vaFeiMBControlId;
             vaFeiFrameControl->mb_input = frameCtrl->PerMBInput;
@@ -2519,9 +2541,9 @@ mfxStatus VAAPIEncoder::Execute(
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK) || defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
         if (m_isENCPAK)
         {
-            currentFeedback.mv        = m_vaFeiMVOutId[2*idxRecon + feiFieldId];
-            currentFeedback.mbstat    = m_vaFeiMBStatId[2*idxRecon + feiFieldId];
-            currentFeedback.mbcode    = m_vaFeiMCODEOutId[2*idxRecon + feiFieldId];
+            currentFeedback.mv        = m_vaFeiMVOutId[idxRecon + feiFieldId];
+            currentFeedback.mbstat    = m_vaFeiMBStatId[idxRecon + feiFieldId];
+            currentFeedback.mbcode    = m_vaFeiMCODEOutId[idxRecon + feiFieldId];
         }
 #endif
         m_feedbackCache.push_back( currentFeedback );
