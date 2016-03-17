@@ -41,6 +41,7 @@ public:
     virtual ~Packer();
 
     virtual UMC::Status GetStatusReport(void * pStatusReport, size_t size) = 0;
+    virtual UMC::Status SyncTask(Ipp32s index, void * error) = 0;
 
     virtual void BeginFrame() = 0;
     virtual void EndFrame() = 0;
@@ -69,6 +70,7 @@ public:
     PackerDXVA2(UMC::VideoAccelerator * va);
 
     virtual UMC::Status GetStatusReport(void * pStatusReport, size_t size);
+    virtual UMC::Status SyncTask(Ipp32s /*index*/, void * /*error*/) { return UMC::UMC_ERR_UNSUPPORTED; }
 
     virtual void BeginFrame();
     virtual void EndFrame();
@@ -131,6 +133,7 @@ public:
     PackerVA(UMC::VideoAccelerator * va);
 
     virtual UMC::Status GetStatusReport(void * pStatusReport, size_t size);
+    virtual UMC::Status SyncTask(Ipp32s index, void * error) { return m_va->SyncTask(index, error); }
 
     virtual void PackQmatrix(const H265Slice *pSlice);
 

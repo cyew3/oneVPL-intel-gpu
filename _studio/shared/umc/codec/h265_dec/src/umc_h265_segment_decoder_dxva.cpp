@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2013-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -156,7 +156,51 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
     if (!dxva_sd->GetPacker())
         return false;
 
-#ifdef UMC_VA_DXVA
+#if defined(UMC_VA_LINUX)
+#if !defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+    #error unsupported sync. type
+#else
+    UMC::Status sts = UMC::UMC_OK;
+    VAStatus surfErr = VA_STATUS_SUCCESS;
+    Ipp32s index;
+
+    for (H265DecoderFrameInfo * au = m_FirstAU; au; au = au->GetNextAU())
+    {
+        index = au->m_pFrame->m_index;
+
+        m_mGuard.Unlock();
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Dec vaSyncSurface");
+            sts = dxva_sd->GetPacker()->SyncTask(index, &surfErr);
+        }
+        m_mGuard.Lock();
+
+        //we should complete frame even we got an error
+        //this allows to return the error from [RunDecoding]
+        au->SetStatus(H265DecoderFrameInfo::STATUS_COMPLETED);
+        CompleteFrame(au->m_pFrame);
+
+        if (sts < UMC::UMC_OK)
+            au->m_pFrame->SetError(UMC::UMC_ERR_DEVICE_FAILED);
+        else if (sts == UMC::UMC_OK)
+            switch (surfErr)
+            {
+                case MFX_CORRUPTION_MAJOR:
+                    au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
+                    break;
+
+                case MFX_CORRUPTION_MINOR:
+                    au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MINOR);
+                    break;
+            }
+
+        if (sts != UMC::UMC_OK)
+            throw h265_exception(sts);
+    }
+
+    SwitchCurrentAU();
+#endif
+#elif defined(UMC_VA_DXVA)
     DXVA_Intel_Status_HEVC pStatusReport[NUMBER_OF_STATUS];
 
     bool wasCompleted = false;

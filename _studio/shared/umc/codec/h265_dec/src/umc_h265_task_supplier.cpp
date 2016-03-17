@@ -1498,12 +1498,8 @@ void TaskSupplier_H265::PreventDPBFullness()
 // If a frame has all slices found, add it to asynchronous decode queue
 UMC::Status TaskSupplier_H265::CompleteDecodedFrames(H265DecoderFrame ** decoded)
 {
-    bool existCompleted = false;
-
-    if (decoded)
-    {
-        *decoded = 0;
-    }
+    H265DecoderFrame* completed = 0;
+    UMC::Status sts = UMC::UMC_OK;
 
     ViewItem_H265 &view = *GetView();
     for (;;) //add all ready to decoding
@@ -1513,6 +1509,13 @@ UMC::Status TaskSupplier_H265::CompleteDecodedFrames(H265DecoderFrame ** decoded
 
         for (H265DecoderFrame * frame = view.pDPB->head(); frame; frame = frame->future())
         {
+            Ipp32s const frm_error = frame->GetError();
+
+            //we don't overwrite an error if we already got it
+            if (sts == UMC::UMC_OK && frm_error < 0)
+                //if we have ERROR_FRAME_DEVICE_FAILURE  bit is set then this error is  UMC::Status code
+                sts = static_cast<UMC::Status>(frm_error);
+
             if (!frame->IsDecoded())
             {
                 if (!frame->IsDecodingStarted() && frame->IsFullFrame())
@@ -1534,20 +1537,18 @@ UMC::Status TaskSupplier_H265::CompleteDecodedFrames(H265DecoderFrame ** decoded
 
                 DEBUG_PRINT((VM_STRING("Decode %s \n"), GetFrameInfoString(frame)));
                 frame->OnDecodingCompleted();
-                existCompleted = true;
+
+                if (frm_error != sts)
+                    completed = frame;;
             }
         }
 
+        if (sts != UMC::UMC_OK)
+            break;
+
         if (frameToAdd)
         {
-            if (m_pTaskBroker->AddFrameToDecoding(frameToAdd))
-            {
-                if (decoded)
-                {
-                    *decoded = frameToAdd;
-                }
-            }
-            else
+            if (!m_pTaskBroker->AddFrameToDecoding(frameToAdd))
                 break;
         }
 
@@ -1555,15 +1556,19 @@ UMC::Status TaskSupplier_H265::CompleteDecodedFrames(H265DecoderFrame ** decoded
             break;
     }
 
-    return existCompleted ? UMC::UMC_OK : UMC::UMC_ERR_NOT_ENOUGH_DATA;
+    if (decoded)
+        *decoded = completed;
+
+    return sts;
 }
 
 // Add a new bitstream data buffer to decoding
 UMC::Status TaskSupplier_H265::AddSource(UMC::MediaData * pSource)
 {
-    UMC::Status umcRes = UMC::UMC_OK;
-
-    CompleteDecodedFrames(0);
+    H265DecoderFrame* completed = 0;
+    UMC::Status umcRes = CompleteDecodedFrames(&completed);
+    if (umcRes != UMC::UMC_OK)
+        return pSource || !completed ? umcRes : UMC::UMC_OK;
 
     if (GetFrameToDisplayInternal(false))
         return UMC::UMC_OK;
@@ -1591,8 +1596,9 @@ UMC::Status TaskSupplier_H265::AddSource(UMC::MediaData * pSource)
         // some more hard reasons of frame lacking.
         if (!m_pTaskBroker->IsEnoughForStartDecoding(true))
         {
-            if (CompleteDecodedFrames(0) == UMC::UMC_OK)
-                return UMC::UMC_WRN_INFO_NOT_READY;
+            umcRes = CompleteDecodedFrames(&completed);
+            if (umcRes != UMC::UMC_OK)
+                return !completed ? umcRes : UMC::UMC_WRN_INFO_NOT_READY;
 
             if (GetFrameToDisplayInternal(true))
                 return UMC::UMC_ERR_NEED_FORCE_OUTPUT;
@@ -2524,7 +2530,9 @@ H265DecoderFrame * TaskSupplier_H265::FindSurface(UMC::FrameMemID id)
 // Start asynchronous decoding
 UMC::Status TaskSupplier_H265::RunDecoding()
 {
-    CompleteDecodedFrames(0);
+    UMC::Status umcRes = CompleteDecodedFrames(0);
+    if (umcRes != UMC::UMC_OK)
+        return umcRes;
 
     H265DecoderFrame *pFrame = GetView()->pDPB->head();
 

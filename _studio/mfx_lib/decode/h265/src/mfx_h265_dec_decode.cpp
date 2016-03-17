@@ -1061,6 +1061,10 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             {
                 sts = MFX_ERR_DEVICE_FAILED;
             }
+            if (umcRes == UMC::UMC_ERR_GPU_HANG)
+            {
+                sts = MFX_ERR_GPU_HANG;
+            }
 #endif
             if (!IS_PROTECTION_WIDEVINE(m_vPar.Protected) || umcRes != UMC::UMC_NTF_NEW_RESOLUTION)
             {
@@ -1069,6 +1073,15 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
             if (sts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
                 return sts;
+
+            //return these errors immediatelly unless we have [input == 0]
+            if (sts == MFX_ERR_DEVICE_FAILED || sts == MFX_ERR_GPU_HANG)
+            {
+                if (!bs)
+                    force = true;
+                else
+                    return sts;
+            }
 
             umcRes = m_pH265VideoDecoder->RunDecoding();
 

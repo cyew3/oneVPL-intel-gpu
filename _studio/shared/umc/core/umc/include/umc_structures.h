@@ -711,13 +711,14 @@ namespace UMC
 
     enum
     {
-        ERROR_FRAME_MINOR           = 0x00000001,
-        ERROR_FRAME_MAJOR           = 0x00000002,
-        ERROR_FRAME_REFERENCE_FRAME = 0x00000004,
-        ERROR_FRAME_DPB             = 0x00000008,
-        ERROR_FRAME_RECOVERY        = 0x00000010,  // major artifacts at recovery point
+        ERROR_FRAME_MINOR                   = 0x00000001,
+        ERROR_FRAME_MAJOR                   = 0x00000002,
+        ERROR_FRAME_REFERENCE_FRAME         = 0x00000004,
+        ERROR_FRAME_DPB                     = 0x00000008,
+        ERROR_FRAME_RECOVERY                = 0x00000010,  // major artifacts at recovery point
         ERROR_FRAME_TOP_FIELD_ABSENT        = 0x00000020,
-        ERROR_FRAME_BOTTOM_FIELD_ABSENT     = 0x00000040
+        ERROR_FRAME_BOTTOM_FIELD_ABSENT     = 0x00000040,
+        ERROR_FRAME_DEVICE_FAILURE          = 0x80000000   //if this bit is set, this means the error is [UMC::Status] code 
     };
 
     // template to align a pointer

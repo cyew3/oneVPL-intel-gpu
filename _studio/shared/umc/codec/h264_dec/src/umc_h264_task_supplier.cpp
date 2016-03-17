@@ -3688,12 +3688,8 @@ void TaskSupplier::PreventDPBFullness()
 
 Status TaskSupplier::CompleteDecodedFrames(H264DecoderFrame ** decoded)
 {
-    bool existCompleted = false;
-
-    if (decoded)
-    {
-        *decoded = 0;
-    }
+    H264DecoderFrame* completed = 0;
+    Status sts = UMC_OK;
 
     ViewList::iterator iter = m_views.begin();
     ViewList::iterator iter_end = m_views.end();
@@ -3709,6 +3705,13 @@ Status TaskSupplier::CompleteDecodedFrames(H264DecoderFrame ** decoded)
 
             for (H264DecoderFrame * frame = pDPB->head(); frame; frame = frame->future())
             {
+                Ipp32s const frm_error = frame->GetError();
+
+                //we don't overwrite an error if we already got it
+                if (sts == UMC_OK && frm_error < 0)
+                    //if we have ERROR_FRAME_DEVICE_FAILURE  bit is set then this error is  UMC::Status code
+                    sts = static_cast<Status>(frm_error);
+
                 if (frame->IsFrameExist() && !frame->IsDecoded())
                 {
                     if (!frame->IsDecodingStarted() && frame->IsFullFrame())
@@ -3729,38 +3732,39 @@ Status TaskSupplier::CompleteDecodedFrames(H264DecoderFrame ** decoded)
                     }
 
                     frame->OnDecodingCompleted();
-                    existCompleted = true;
+                    if (frm_error != sts)
+                        completed = frame;
                 }
             }
 
+            if (sts != UMC_OK)
+                break;
+
             if (frameToAdd)
             {
-                if (m_pTaskBroker->AddFrameToDecoding(frameToAdd))
-                {
-                    if (decoded)
-                    {
-                        *decoded = frameToAdd;
-                    }
-                }
-                else
+                if (!m_pTaskBroker->AddFrameToDecoding(frameToAdd))
                     break;
             }
 
             if (isOneToAdd)
                 break;
         }
-
     }
 
-    return existCompleted ? UMC_OK : UMC_ERR_NOT_ENOUGH_DATA;
+    if (decoded)
+        *decoded = completed;
+
+    return sts;
 }
 
 Status TaskSupplier::AddSource(MediaData * pSource)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "TaskSupplier::AddSource");
-    Status umcRes = UMC_OK;
 
-    CompleteDecodedFrames(0);
+    H264DecoderFrame* completed = 0;
+    Status umcRes = CompleteDecodedFrames(&completed);
+    if (umcRes != UMC_OK)
+        return pSource || !completed ? umcRes : UMC_OK;
 
     umcRes = AddOneFrame(pSource); // construct frame
 
@@ -3788,8 +3792,9 @@ Status TaskSupplier::AddSource(MediaData * pSource)
         // some more hard reasons of frame lacking.
         if (!m_pTaskBroker->IsEnoughForStartDecoding(true))
         {
-            if (CompleteDecodedFrames(0) == UMC_OK)
-                return UMC_WRN_INFO_NOT_READY;
+            umcRes = CompleteDecodedFrames(&completed);
+            if (umcRes != UMC_OK)
+                return !completed ? umcRes : UMC_WRN_INFO_NOT_READY;
 
             if (!m_DefaultNotifyChain.IsEmpty())
             {
@@ -4880,7 +4885,9 @@ H264DecoderFrame * TaskSupplier::FindSurface(FrameMemID id)
 
 Status TaskSupplier::RunDecoding()
 {
-    CompleteDecodedFrames(0);
+    Status umcRes = CompleteDecodedFrames(0);
+    if (umcRes != UMC_OK)
+        return umcRes;
 
     ViewList::iterator iter = m_views.begin();
     ViewList::iterator iter_end = m_views.end();

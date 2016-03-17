@@ -215,6 +215,8 @@ mfxStatus MFXTaskSupplier_H265::RunThread(mfxU32 threadNumber)
 #if defined (MFX_VA)
     else if(sts == UMC::UMC_ERR_DEVICE_FAILED)
         return MFX_ERR_DEVICE_FAILED;
+    else if (sts == UMC::UMC_ERR_GPU_HANG)
+        return MFX_ERR_GPU_HANG;
 #endif
 
     if (sts != UMC::UMC_OK)
