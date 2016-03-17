@@ -656,7 +656,9 @@ typedef struct {
     mfxU32      MaxFrameSizeP;
     mfxU32      reserved1[3];
 
-    mfxU16      reserved[212];
+    mfxU16      EnableQPOffset;           /* tri-state option */
+    mfxI16      QPOffset[8];              /* FrameQP = QPX + QPOffset[pyramid_layer]; QPX = QPB for B-pyramid, QPP for P-pyramid */
+    mfxU16      reserved[203];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
