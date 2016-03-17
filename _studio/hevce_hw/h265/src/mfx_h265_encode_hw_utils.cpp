@@ -2679,8 +2679,8 @@ void ConfigureTask(
         || par.m_sps.vui.hrd.vcl_hrd_parameters_present_flag)
         task.m_insertHeaders |= INSERT_PTSEI;
 
-    //if (RepeatePPS)  task.m_insertHeaders |= INSERT_PPS;
-    //if (AUDelimiter) task.m_insertHeaders |= INSERT_AUD
+    if (IsOn(par.m_ext.CO2.RepeatPPS))  task.m_insertHeaders |= INSERT_PPS;
+    if (IsOn(par.m_ext.CO.AUDelimiter)) task.m_insertHeaders |= INSERT_AUD;
 
     task.m_cpb_removal_delay = (isIDR ? 0 : prevTask.m_cpb_removal_delay + 1);
 

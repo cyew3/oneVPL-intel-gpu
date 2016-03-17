@@ -83,7 +83,7 @@ typedef struct {
     mfxU16 DirectSpatialMvPredFlag; // (tri-state: 0, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_ON)on=spatial on, off=temporal on
     mfxU16 reserved3;       // 0..31
     mfxU16 reserved4;       // 0..255
-    mfxU16 reserved5;
+    mfxU16 LongStartCodes;          // tri-state, use long start-codes for all NALU
     mfxU16 CabacInitIdcPlus1;       // 0 - use default value, 1 - cabac_init_idc = 0 and so on
     mfxU16 NumActiveRefBL1;         //
     mfxU16 QpUpdateRange;           // 

@@ -1807,8 +1807,8 @@ void HeaderPacker::GetSEI(Task const & task,mfxU8*& buf, mfxU32& sizeInBytes)
 void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& sizeInBytes, mfxU32* qpd_offset)
 {
     BitstreamWriter& rbsp = m_bs;
-    NALU nalu = {0, task.m_shNUT, 0, static_cast<mfxU16>(task.m_tid + 1)};
-    bool is1stNALU = (id == 0 && task.m_insertHeaders == 0);
+    bool LongStartCode = (id == 0 && task.m_insertHeaders == 0) || IsOn(m_par->m_ext.DDI.LongStartCodes);
+    NALU nalu = { mfxU16(LongStartCode), task.m_shNUT, 0, mfxU16(task.m_tid + 1) };
 
     assert(m_par);
     assert(id < m_par->m_slice.size());
@@ -1821,9 +1821,6 @@ void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& siz
     sh.segment_address = m_par->m_slice[id].SegmentAddress;
 
     buf = m_bs.GetStart() + CeilDiv(rbsp.GetOffset(), 8);
-
-    if (is1stNALU)
-        rbsp.PutBits(8, 0);
 
     PackSSH(rbsp, nalu, m_par->m_sps, m_par->m_pps, sh, qpd_offset);
 

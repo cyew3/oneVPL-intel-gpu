@@ -1183,6 +1183,8 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if (CheckOption(par.m_ext.VSI.VideoFullRange, 0))                     changed +=1;
     if (CheckOption(par.m_ext.VSI.ColourDescriptionPresent, 0))           changed +=1;
 
+    changed += CheckTriStateOption(par.m_ext.CO.AUDelimiter);
+    changed += CheckTriStateOption(par.m_ext.CO2.RepeatPPS);
 
     sts = CheckProfile(par);
 
@@ -1429,8 +1431,11 @@ void SetDefaults(
             (mfxU16)((par.mfx.FrameInfo.FrameRateExtN + par.mfx.FrameInfo.FrameRateExtD - 1) / par.mfx.FrameInfo.FrameRateExtD);
     }
 
+    if (!par.m_ext.CO.AUDelimiter)
+        par.m_ext.CO.AUDelimiter = MFX_CODINGOPTION_OFF;
 
-
+    if (!par.m_ext.CO2.RepeatPPS)
+        par.m_ext.CO2.RepeatPPS = MFX_CODINGOPTION_OFF;
 }
 
 } //namespace MfxHwH265Encode
