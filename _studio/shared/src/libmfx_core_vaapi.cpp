@@ -861,6 +861,7 @@ VAAPIVideoCORE::DoFastCopyWrapper(
     mfxFrameSurface1* pSrc,
     mfxU16 srcMemType)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIVideoCORE::DoFastCopyWrapper");
     mfxStatus sts;
 
     mfxHDL srcHandle, dstHandle;
@@ -1085,9 +1086,12 @@ VAAPIVideoCORE::DoFastCopyExtended(
             va_sts = vaDeriveImage(m_Display, *va_surf_src, &va_img_src);
             MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
 
-            va_sts = vaPutImage(m_Display, *va_surf_dst, va_img_src.image_id,
-                                0, 0, roi.width, roi.height,
-                                0, 0, roi.width, roi.height);
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaPutImage");
+                va_sts = vaPutImage(m_Display, *va_surf_dst, va_img_src.image_id,
+                                    0, 0, roi.width, roi.height,
+                                    0, 0, roi.width, roi.height);
+            }
             MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
 
             va_sts = vaDestroyImage(m_Display, va_img_src.image_id);
@@ -1131,7 +1135,6 @@ VAAPIVideoCORE::DoFastCopyExtended(
                 va_sts = vaDeriveImage(m_Display, *va_surface, &va_image);
                 MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
 
-                // vaMapBuffer
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaMapBuffer");
                     va_sts = vaMapBuffer(m_Display, va_image.buf, (void **) &pBits);
@@ -1145,8 +1148,10 @@ VAAPIVideoCORE::DoFastCopyExtended(
 
                 MFX_CHECK(srcPitch < 0x8000, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-                switch (pDst->Info.FourCC)
                 {
+                    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "memcpy_vid2sys");
+                    switch (pDst->Info.FourCC)
+                    {
                     case MFX_FOURCC_NV12:
 
                         sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)pBits + va_image.offsets[0], srcPitch, roi);
@@ -1227,13 +1232,15 @@ VAAPIVideoCORE::DoFastCopyExtended(
                     default:
 
                         return MFX_ERR_UNSUPPORTED;
+                    }
                 }
 
-                // vaUnmapBuffer
-                va_sts = vaUnmapBuffer(m_Display, va_image.buf);
+                {
+                    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
+                    va_sts = vaUnmapBuffer(m_Display, va_image.buf);
+                }
                 MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
 
-                // vaDestroyImage
                 va_sts = vaDestroyImage(m_Display, va_image.image_id);
                 MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
 
@@ -1243,6 +1250,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
     }
     else if (NULL != pSrc->Data.Y && NULL != pDst->Data.Y)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "memcpy_sys2sys");
         // system memories were passed
         // use common way to copy frames
 
@@ -1371,16 +1379,21 @@ VAAPIVideoCORE::DoFastCopyExtended(
             va_sts = vaDeriveImage(m_Display, *va_surface, &va_image);
             MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
 
-            // vaMapBuffer
-            va_sts = vaMapBuffer(m_Display, va_image.buf, (void **) &pBits);
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaMapBuffer");
+                va_sts = vaMapBuffer(m_Display, va_image.buf, (void **) &pBits);
+            }
             MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
 
             Ipp32u dstPitch = va_image.pitches[0];
 
             MFX_CHECK(dstPitch < 0x8000 || pDst->Info.FourCC == MFX_FOURCC_RGB4 || pDst->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-            switch (pDst->Info.FourCC)
             {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "memcpy_sys2vid");
+                
+                switch (pDst->Info.FourCC)
+                {
                 case MFX_FOURCC_NV12:
 
                     ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, (mfxU8 *)pBits + va_image.offsets[0], dstPitch, roi);
@@ -1457,10 +1470,13 @@ VAAPIVideoCORE::DoFastCopyExtended(
                 default:
 
                     return MFX_ERR_UNSUPPORTED;
+                }
             }
 
-            // vaUnmapBuffer
-            va_sts = vaUnmapBuffer(m_Display, va_image.buf);
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
+                va_sts = vaUnmapBuffer(m_Display, va_image.buf);
+            }
             MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
 
             // vaDestroyImage

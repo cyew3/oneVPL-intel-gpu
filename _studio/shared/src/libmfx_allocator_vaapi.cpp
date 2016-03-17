@@ -354,6 +354,7 @@ mfxDefaultAllocatorVAAPI::LockFrameHW(
 
     if (MFX_FOURCC_P8 == mfx_fourcc)   // bitstream processing
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaMapBuffer");
         VACodedBufferSegment *coded_buffer_segment;
         if (vaapi_mids->m_fourcc == MFX_FOURCC_VP8_SEGMAP)
             va_res =  vaMapBuffer(pSelf->pVADisplay, *(vaapi_mids->m_surface), (void **)(&pBuffer));
@@ -376,6 +377,7 @@ mfxDefaultAllocatorVAAPI::LockFrameHW(
 
         if (MFX_ERR_NONE == mfx_res)
         {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaMapBuffer");
             va_res = vaMapBuffer(pSelf->pVADisplay, vaapi_mids->m_image.buf, (void **) &pBuffer);
             mfx_res = VA_TO_MFX_STATUS(va_res);
         }
@@ -488,11 +490,15 @@ mfxStatus mfxDefaultAllocatorVAAPI::UnlockFrameHW(
 
     if (MFX_FOURCC_P8 == mfx_fourcc)   // bitstream processing
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
         vaUnmapBuffer(pSelf->pVADisplay, *(vaapi_mids->m_surface));
     }
     else  // Image processing
     {
-        vaUnmapBuffer(pSelf->pVADisplay, vaapi_mids->m_image.buf);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
+            vaUnmapBuffer(pSelf->pVADisplay, vaapi_mids->m_image.buf);
+        }
         vaDestroyImage(pSelf->pVADisplay, vaapi_mids->m_image.image_id);
 
         if (NULL != ptr)

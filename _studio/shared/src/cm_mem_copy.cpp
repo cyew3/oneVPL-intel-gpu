@@ -1540,6 +1540,7 @@ mfxStatus CmCopyWrapper::CopyMirrorVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPi
 }
 mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(void *pDst, void *pSrc, IppiSize roi)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CmCopyWrapper::CopyVideoToVideoMemoryAPI");
     cmStatus cmSts = 0;
 
     CmEvent* e = NULL;
