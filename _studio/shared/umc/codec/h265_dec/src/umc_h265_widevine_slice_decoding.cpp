@@ -343,8 +343,8 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
     }
 
     // ref_pic_list_init
-    H265DecoderFrame *refPicListTemp0[MAX_NUM_REF_PICS + 1];
-    H265DecoderFrame *refPicListTemp1[MAX_NUM_REF_PICS + 1];
+    H265DecoderFrame *refPicListTemp0[MAX_NUM_REF_PICS + 1] = {NULL};
+    H265DecoderFrame *refPicListTemp1[MAX_NUM_REF_PICS + 1] = {NULL};
     Ipp32s numPocTotalCurr = NumPocStCurr0 + NumPocStCurr1 + NumPocLtCurr;
 
     if (!numPocTotalCurr) // this is error
