@@ -131,7 +131,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
     if (1 == nArgNum)
     {
-        PrintHelp(strInput[0], NULL);
+        PrintHelp(strInput[0], MSDK_STRING("ERROR: Not enough input parameters"));
         return MFX_ERR_UNSUPPORTED;
     }
 
@@ -150,6 +150,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             mfxStatus sts = StrFormatToCodecFormatFourCC(strInput[i] + 4, pParams->DecodeId);
             if (sts != MFX_ERR_NONE)
             {
+                PrintHelp(strInput[0], MSDK_STRING("ERROR: Failed to extract decodeId from input stream"));
                 return MFX_ERR_UNSUPPORTED;
             }
             i++;
@@ -162,6 +163,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             case MFX_CODEC_VC1:
                 break;
             default:
+                PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported encoded input (only AVC, MPEG2, VC1 is supported)"));
                 return MFX_ERR_UNSUPPORTED;
             }
         }
@@ -274,7 +276,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             bIDRintSet = true;
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nIdrInterval))
             {
-                PrintHelp(strInput[0], MSDK_STRING("IdrInterval is invalid"));
+                PrintHelp(strInput[0], MSDK_STRING("ERROR: IdrInterval is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
         }
@@ -455,7 +457,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nDstWidth))
             {
-                PrintHelp(strInput[0], MSDK_STRING("Destination picture Width is invalid"));
+                PrintHelp(strInput[0], MSDK_STRING("ERROR: Destination picture Width is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
             if (pParams->bDynamicRC)
@@ -478,7 +480,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nDstHeight))
             {
-                PrintHelp(strInput[0], MSDK_STRING("Destination picture Height is invalid"));
+                PrintHelp(strInput[0], MSDK_STRING("ERROR: Destination picture Height is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
             if (pParams->bDynamicRC)
@@ -514,7 +516,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             bParseDRC = true;
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nResetStart))
             {
-                PrintHelp(strInput[0], MSDK_STRING("Reset_start is invalid"));
+                PrintHelp(strInput[0], MSDK_STRING("ERROR: Reset_start is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
              //for first -resetstart
@@ -546,7 +548,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             if (!pParams->bDynamicRC)
             {
-                PrintHelp(strInput[0], MSDK_STRING("Please Set -reset_start"));
+                PrintHelp(strInput[0], MSDK_STRING("ERROR: Please Set -reset_start"));
                 return MFX_ERR_UNSUPPORTED;
             }
             bParseDRC = false;
@@ -592,7 +594,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 if (msdk_strlen(strArgument) < sizeof(pParams->strSrcFile)){
                     msdk_strcopy(pParams->strSrcFile, strArgument);
                 }else{
-                    PrintHelp(strInput[0], MSDK_STRING("Too long input filename (limit is 1023 characters)!"));
+                    PrintHelp(strInput[0], MSDK_STRING("ERROR: Too long input filename (limit is 1023 characters)!"));
                     return MFX_ERR_UNSUPPORTED;
                 }
                 break;
@@ -605,11 +607,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             default:
                 if (!bAlrShownHelp){
-                    msdk_printf(MSDK_STRING("\nError: Unknown option %s\n\n"), strInput[i]);
+                    msdk_printf(MSDK_STRING("\nWARNING: Unknown option %s\n\n"), strInput[i]);
                     PrintHelp(strInput[0], NULL);// MSDK_STRING("Unknown options"));
                     bAlrShownHelp = true;
                 }else {
-                    msdk_printf(MSDK_STRING("\nUnknown option %s\n\n"), strInput[i]);
+                    msdk_printf(MSDK_STRING("\nWARNING: Unknown option %s\n\n"), strInput[i]);
                 }
             }
         }
@@ -625,7 +627,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
            (pParams->bPREENC && !pParams->bOnlyENC && !pParams->bOnlyPAK &&  pParams->bENCPAK  && !pParams->bENCODE) )
     ){
         if (bAlrShownHelp){
-            msdk_printf(MSDK_STRING("\nUnsupported pipeline!\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported pipeline!\n"));
 
             msdk_printf(MSDK_STRING("Supported pipelines are:\n"));
             msdk_printf(MSDK_STRING("PREENC\n"));
@@ -637,7 +639,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             msdk_printf(MSDK_STRING("PREENC + ENCODE\n"));
             msdk_printf(MSDK_STRING("PREENC + ENC + PAK (PREENC + ENCPAK)\n"));
         } else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported pipeline!\nSupported pipelines are:\nPREENC\nENC\nPAK\nENCODE\nENC + PAK (ENCPAK)\nPREENC + ENC\nPREENC + ENCODE\nPREENC + ENC + PAK (PREENC + ENCPAK)\n"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported pipeline!\nSupported pipelines are:\nPREENC\nENC\nPAK\nENCODE\nENC + PAK (ENCPAK)\nPREENC + ENC\nPREENC + ENCODE\nPREENC + ENC + PAK (PREENC + ENCPAK)\n"));
         return MFX_ERR_UNSUPPORTED;
     }
 
@@ -650,7 +652,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         case 8:
             break;
         default:
-            msdk_printf(MSDK_STRING("\nUnsupported strength of PREENC downscaling!\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported strength of PREENC downscaling!\n"));
             return MFX_ERR_UNSUPPORTED;
         }
     }
@@ -659,9 +661,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     if (0 == msdk_strlen(pParams->strSrcFile))
     {
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nSource file name not found\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Source file name not found\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Source file name not found"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Source file name not found"));
         return MFX_ERR_UNSUPPORTED;
     }
 
@@ -669,18 +671,18 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         (pParams->bENCPAK || pParams->bOnlyPAK) )
     {
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nDestination file name not found\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Destination file name not found\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Destination file name not found"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Destination file name not found"));
         return MFX_ERR_UNSUPPORTED;
     }
 
     if (0 == pParams->nWidth || 0 == pParams->nHeight)
     {
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\n-w, -h must be specified\n"));
+            msdk_printf(MSDK_STRING("\nERROR: -w, -h must be specified\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("-w, -h must be specified"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: -w, -h must be specified"));
         return MFX_ERR_UNSUPPORTED;
     }
 
@@ -714,14 +716,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     if (pParams->SearchWindow > 8)
     {
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nUnsupported value of -search_window parameter, must be in range [0, 8]!\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported value of -search_window parameter, must be in range [0, 8]!\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -search_window parameter, must be in range [0, 8]!"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported value of -search_window parameter, must be in range [0, 8]!"));
         return MFX_ERR_UNSUPPORTED; // valid values 0-8
     }
 
     if (bRefWSizeSpecified && pParams->SearchWindow != 0){
-        msdk_printf(MSDK_STRING("\n-search_window specified, -ref_window_w and -ref_window_h will be ignored.\n"));
+        msdk_printf(MSDK_STRING("\nWARNING: -search_window specified, -ref_window_w and -ref_window_h will be ignored.\n"));
         switch (pParams->SearchWindow){
         case 1: msdk_printf(MSDK_STRING("Search window size is 24x24 (4 SUs); Path - Tiny\n\n"));
             break;
@@ -748,10 +750,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
          pParams->RefHeight*pParams->RefWidth > 2048))
     {
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nUnsupported value of search window size. -ref_window_h, -ref_window_w parameters, must be multiple of 4!\n"
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported value of search window size. -ref_window_h, -ref_window_w parameters, must be multiple of 4!\n"
                                     "For bi-prediction window w*h must less than 1024 and less 2048 otherwise.\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported value of search window size. -ref_window_h, -ref_window_w parameters, must be multiple of 4!\n"
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported value of search window size. -ref_window_h, -ref_window_w parameters, must be multiple of 4!\n"
                                                "For bi-prediction window w*h must less than 1024 and less 2048 otherwise."));
         return MFX_ERR_UNSUPPORTED;
     }
@@ -759,98 +761,98 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     if (pParams->LenSP < 1 || pParams->LenSP > 63)
     {
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nUnsupported value of -len_sp parameter, must be in range [1, 63]!\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported value of -len_sp parameter, must be in range [1, 63]!\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -len_sp parameter, must be in range [1, 63]!"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported value of -len_sp parameter, must be in range [1, 63]!"));
         return MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->SearchPath > 1)
     {
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nUnsupported value of -search_path parameter, must be 0 or 1!\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported value of -search_path parameter, must be 0 or 1!\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -search_path parameter, must be be 0 or 1!"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported value of -search_path parameter, must be be 0 or 1!"));
         return MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->SubMBPartMask >= 0x7f ){
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nUnsupported value of -sub_mb_part_mask parameter, 0x7f disables all partitions!\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported value of -sub_mb_part_mask parameter, 0x7f disables all partitions!\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -sub_mb_part_mask parameter, 0x7f disables all partitions!"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported value of -sub_mb_part_mask parameter, 0x7f disables all partitions!"));
         return MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->SubPelMode != 0x00 && pParams->SubPelMode != 0x01 && pParams->SubPelMode != 0x03){
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nUnsupported value of -sub_pel_mode parameter, must be 0x00/0x01/0x03!\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported value of -sub_pel_mode parameter, must be 0x00/0x01/0x03!\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -sub_pel_mode parameter, must be 0x00/0x01/0x03!"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported value of -sub_pel_mode parameter, must be 0x00/0x01/0x03!"));
         return MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->IntraPartMask >= 0x07){
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nUnsupported value of -inra_part_mask parameter, 0x07 disables all partitions!\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported value of -inra_part_mask parameter, 0x07 disables all partitions!\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -inra_part_mask parameter, 0x07 disables all partitions!"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported value of -inra_part_mask parameter, 0x07 disables all partitions!"));
         return MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->IntraSAD != 0x02 && pParams->IntraSAD != 0x00){
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nUnsupported value of -intra_SAD, must be 0x00 or 0x02!\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported value of -intra_SAD, must be 0x00 or 0x02!\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -intra_SAD, must be 0x00 or 0x02!"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported value of -intra_SAD, must be 0x00 or 0x02!"));
         return MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->InterSAD != 0x02 && pParams->InterSAD != 0x00){
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nUnsupported value of -inter_SAD, must be 0x00 or 0x02!\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported value of -inter_SAD, must be 0x00 or 0x02!\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported value of -inter_SAD, must be 0x00 or 0x02!"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported value of -inter_SAD, must be 0x00 or 0x02!"));
         return MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->NumMVPredictors[0] > MaxFeiEncMVPNum || pParams->NumMVPredictors[1] > MaxFeiEncMVPNum){
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nUnsupported value number of MV predictors (4 is maximum)!\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported value number of MV predictors (4 is maximum)!\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported value number of MV predictors (4 is maximum)!"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported value number of MV predictors (4 is maximum)!"));
         return MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->Trellis > (MFX_TRELLIS_I | MFX_TRELLIS_P | MFX_TRELLIS_B)){
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nUnsupported trellis value!\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported trellis value!\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported trellis value!"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported trellis value!"));
         return MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->DisableDeblockingIdc > 2){
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nUnsupported DisableDeblockingIdc value!\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported DisableDeblockingIdc value!\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported DisableDeblockingIdc value!"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported DisableDeblockingIdc value!"));
         return MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->SliceAlphaC0OffsetDiv2 > 6 || pParams->SliceAlphaC0OffsetDiv2 < -6){
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nUnsupported SliceAlphaC0OffsetDiv2 value!\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported SliceAlphaC0OffsetDiv2 value!\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported SliceAlphaC0OffsetDiv2 value!"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported SliceAlphaC0OffsetDiv2 value!"));
         return MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->SliceBetaOffsetDiv2 > 6 || pParams->SliceBetaOffsetDiv2 < -6){
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nUnsupported SliceBetaOffsetDiv2 value!\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported SliceBetaOffsetDiv2 value!\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported SliceBetaOffsetDiv2 value!"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported SliceBetaOffsetDiv2 value!"));
         return MFX_ERR_UNSUPPORTED;
     }
 
@@ -877,17 +879,17 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
     if (pParams->bPassHeaders && (pParams->ChromaQPIndexOffset > 12 || pParams->ChromaQPIndexOffset < -12)){
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nUnsupported ChromaQPIndexOffset value!\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported ChromaQPIndexOffset value!\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported ChromaQPIndexOffset value!"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported ChromaQPIndexOffset value!"));
         return MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->bPassHeaders && (pParams->SecondChromaQPIndexOffset > 12 || pParams->SecondChromaQPIndexOffset < -12)){
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nUnsupported SecondChromaQPIndexOffset value!\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported SecondChromaQPIndexOffset value!\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("Unsupported SecondChromaQPIndexOffset value!"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported SecondChromaQPIndexOffset value!"));
         return MFX_ERR_UNSUPPORTED;
     }
 
@@ -1071,7 +1073,7 @@ mfxStatus CheckOptions(sInputParams* pParams)
 {
     mfxStatus sts = MFX_ERR_NONE;
     if(pParams->bENCODE && pParams->dstFileBuff.size() == 0) {
-        fprintf(stderr,"Output bitstream file should be specified for ENC+PAK (-o)\n");
+        fprintf(stderr,"ERROR: Output bitstream file should be specified for ENC+PAK (-o)\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
 
@@ -1082,20 +1084,20 @@ mfxStatus CheckOptions(sInputParams* pParams)
     } */
 
     if (!pParams->bENCODE && pParams->memType == SYSTEM_MEMORY) {
-        fprintf(stderr, "Only ENCODE supports SW memory\n");
+        fprintf(stderr, "ERROR: Only ENCODE supports SW memory\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->bPREENC && pParams->bFieldProcessingMode && pParams->nPicStruct == MFX_PICSTRUCT_FIELD_BFF)
     {
-        fprintf(stderr, "PREENC: Field Processing mode works only for TFF\n");
+        fprintf(stderr, "ERROR: PREENC: Field Processing mode works only for TFF\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->bFieldProcessingMode &&
         !((pParams->nPicStruct == MFX_PICSTRUCT_FIELD_BFF) || (pParams->nPicStruct == MFX_PICSTRUCT_FIELD_TFF)))
     {
-        fprintf(stderr, "Field Processing mode works only with interlaced content (TFF or BFF)\n");
+        fprintf(stderr, "ERROR: Field Processing mode works only with interlaced content (TFF or BFF)\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
 
@@ -1110,18 +1112,18 @@ mfxStatus CheckDRCParams(sInputParams* pParams)
     }
     if (pParams->bENCPAK || pParams->bOnlyENC || pParams->bOnlyPAK || pParams->bPREENC)
     {
-        fprintf(stderr, "Only ENCODE supports Dynamic Resolution Change\n");
+        fprintf(stderr, "ERROR: Only ENCODE supports Dynamic Resolution Change\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
     if (pParams->nDrcWidth.size() != pParams->nDrcHeight.size())
     {
-        fprintf(stderr, "Please Check -dstw and -dsth\n");
+        fprintf(stderr, "ERROR: Please Check -dstw and -dsth\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->nDrcStart.size() != pParams->nDrcWidth.size())
     {
-        fprintf(stderr, "Please Check -reset_start/-reset_end and -dstw/-dsth\n");
+        fprintf(stderr, "ERROR: Please Check -reset_start/-reset_end and -dstw/-dsth\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
 
@@ -1129,7 +1131,7 @@ mfxStatus CheckDRCParams(sInputParams* pParams)
     {
        if (i > 0 && pParams->nDrcStart[i] < pParams->nDrcStart[i-1] + 2)
        {
-          fprintf(stderr, "Current -reset_start FrameNo. should be greater than the last -reset_start FrameNo.+1.\n");
+          fprintf(stderr, "ERROR: Current -reset_start FrameNo. should be greater than the last -reset_start FrameNo.+1.\n");
           sts = MFX_ERR_UNSUPPORTED;
        }
 

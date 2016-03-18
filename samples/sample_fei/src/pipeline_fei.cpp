@@ -2123,9 +2123,9 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                 feiEncCtrl[fieldId].MVPredictor            = MVPredictors;
 
                 mfxU16 nmvp_l0 = m_encpakParams.bNPredSpecified_l0 ?
-                    m_encpakParams.NumMVPredictors[0] : IPP_MIN(m_mfxEncParams.mfx.NumRefFrame*m_numOfFields, MaxFeiEncMVPNum);
+                    m_encpakParams.NumMVPredictors[0] : IPP_MIN(m_mfxEncParams.mfx.NumRefFrame*(mfxU16)m_numOfFields, MaxFeiEncMVPNum);
                 mfxU16 nmvp_l1 = m_encpakParams.bNPredSpecified_l1 ?
-                    m_encpakParams.NumMVPredictors[1] : IPP_MIN(m_mfxEncParams.mfx.NumRefFrame*m_numOfFields, MaxFeiEncMVPNum);
+                    m_encpakParams.NumMVPredictors[1] : IPP_MIN(m_mfxEncParams.mfx.NumRefFrame*(mfxU16)m_numOfFields, MaxFeiEncMVPNum);
 
                 feiEncCtrl[fieldId].NumMVPredictors[0] = m_numOfRefs[fieldId][0] = nmvp_l0;
                 feiEncCtrl[fieldId].NumMVPredictors[1] = m_numOfRefs[fieldId][1] = nmvp_l1;
