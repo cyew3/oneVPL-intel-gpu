@@ -1004,7 +1004,7 @@ VAConfigAttrib createVAConfigAttrib(VAConfigAttribType type, unsigned int value)
 
 mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     VideoCORE* core,
-    GUID /*guid*/,
+    GUID guid,
     mfxU32 width,
     mfxU32 height,
     bool /*isTemporal*/)
@@ -1043,9 +1043,17 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     attrs.push_back( createVAConfigAttrib(VAConfigAttribEncSkipFrame, 0));
 #endif
 
+    VAEntrypoint entrypoint = VAEntrypointEncSlice;
+#ifdef MFX_VA_ANDROID
+    if ((MSDK_Private_Guid_Encode_AVC_LowPower_Query == guid) ||
+        (DXVA2_INTEL_LOWPOWERENCODE_AVC == guid))
+    {
+        entrypoint = VAEntrypointEncSliceLP;
+    }
+#endif
     VAStatus vaSts = vaGetConfigAttributes(m_vaDisplay,
                           ConvertProfileTypeMFX2VAAPI(m_videoParam.mfx.CodecProfile),
-                          VAEntrypointEncSlice,
+                          entrypoint,
                           Begin(attrs), attrs.size());
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
@@ -1061,7 +1069,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     m_caps.UserMaxFrameSizeSupport = 1; // no request on support for libVA
     m_caps.MBBRCSupport = 1;            // starting 16.3 Beta, enabled in driver by default for TU-1,2
     m_caps.MbQpDataSupport = 1;
-	m_caps.NoWeightedPred = 1;          // unsupported for 16.4.3
+    m_caps.NoWeightedPred = 1;          // unsupported for 16.4.3
     m_caps.Color420Only = 1;// fixme in case VAAPI direct YUY2/RGB support added
 
     vaExtQueryEncCapabilities pfnVaExtQueryCaps = NULL;
@@ -1190,13 +1198,13 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
         }
     }
 #endif
-    VAEntrypoint entryPoint = VAEntrypointEncSlice;
+    VAEntrypoint entryPoint = IsOn(par.mfx.LowPower) ? VAEntrypointEncSliceLP : VAEntrypointEncSlice;
     if( ! m_isENCPAK )
     {
         bool bEncodeEnable = false;
         for( entrypointsIndx = 0; entrypointsIndx < numEntrypoints; entrypointsIndx++ )
         {
-            if( VAEntrypointEncSlice == pEntrypoints[entrypointsIndx] )
+            if( entryPoint == pEntrypoints[entrypointsIndx] )
             {
                 bEncodeEnable = true;
                 break;
@@ -1461,7 +1469,7 @@ mfxStatus VAAPIEncoder::QueryMbPerSec(mfxVideoParam const & par, mfxU32 (&mbPerS
     VAStatus vaSts = vaCreateConfig(
         m_vaDisplay,
         ConvertProfileTypeMFX2VAAPI(par.mfx.CodecProfile),
-        VAEntrypointEncSlice,
+        IsOn(par.mfx.LowPower) ? VAEntrypointEncSliceLP : VAEntrypointEncSlice,
         attrib,
         2,
         &config);
@@ -1486,6 +1494,7 @@ mfxStatus VAAPIEncoder::QueryMbPerSec(mfxVideoParam const & par, mfxU32 (&mbPerS
 mfxStatus VAAPIEncoder::QueryInputTilingSupport(mfxVideoParam const & par, mfxU32 &inputTiling)
 {
     VAConfigID config = VA_INVALID_ID;
+    VAEntrypoint targetEntrypoint = IsOn(par.mfx.LowPower) ? VAEntrypointEncSliceLP : VAEntrypointEncSlice;
 
     VAConfigAttrib attrib[2];
     attrib[0].type = VAConfigAttribRTFormat;
@@ -1496,7 +1505,7 @@ mfxStatus VAAPIEncoder::QueryInputTilingSupport(mfxVideoParam const & par, mfxU3
     VAStatus vaSts = vaCreateConfig(
         m_vaDisplay,
         ConvertProfileTypeMFX2VAAPI(par.mfx.CodecProfile),
-        VAEntrypointEncSlice,
+        targetEntrypoint,
         attrib,
         2,
         &config);
@@ -1514,7 +1523,7 @@ mfxStatus VAAPIEncoder::QueryInputTilingSupport(mfxVideoParam const & par, mfxU3
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT((mfxU32)numAttribs < static_cast<mfxU32>(maxNumAttribs), MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    if (entrypoint == VAEntrypointEncSlice)
+    if (entrypoint == targetEntrypoint)
     {
         for(mfxI32 i=0; i<numAttribs; i++)
         {
