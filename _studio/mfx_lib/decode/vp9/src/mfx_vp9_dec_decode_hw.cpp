@@ -29,6 +29,8 @@
 #include <dxva.h>
 #endif
 
+//#define VP9_STATUS_REPORTING_ENABLED //need to implement different code for Intel/MSFT guids, disable for now
+
 using namespace UMC_VP9_DECODER;
 
 static bool IsSameVideoParam(mfxVideoParam *newPar, mfxVideoParam *oldPar);
@@ -574,7 +576,9 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
     if (UMC::UMC_OK != status)
         return MFX_ERR_DEVICE_FAILED;
 
-#elif defined(MFX_VA_WIN) && defined(NTDDI_WIN10_TH2)
+#endif
+
+#if defined(VP9_STATUS_REPORTING_ENABLED) && defined(MFX_VA_WIN) && defined(NTDDI_WIN10_TH2)
 
     DXVA_Status_VPx pStatusReport[NUMBER_OF_STATUS];
 
