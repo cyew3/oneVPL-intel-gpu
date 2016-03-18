@@ -2123,8 +2123,19 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             changed = true;
             extOpt2->LookAheadDepth = 2 * par.mfx.GopRefDist;
         }
+
+        if(bRateControlLA(par.mfx.RateControlMethod) && extOpt2->LookAheadDepth < 2 * par.mfx.NumRefFrame)
+        {
+            changed = true;
+            extOpt2->LookAheadDepth =  2 * par.mfx.NumRefFrame;
+        }
     }
 
+    if (extOpt2->LookAheadDS != MFX_LOOKAHEAD_DS_UNKNOWN)
+    {
+        changed = true;
+        extOpt2->LookAheadDS = MFX_LOOKAHEAD_DS_UNKNOWN;
+    }
 
     if (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART2)
     { // repeat/double/triple flags are for EncodeFrameAsync
@@ -5698,7 +5709,7 @@ mfxStatus MfxHwH264Encode::ReadFrameData(
                 if(!vm_file_fread(data.UV + y * data.Pitch + x, 1, 1, file))
                 {
                     return MFX_ERR_UNKNOWN;
-                }
+    }
             }
     }
 

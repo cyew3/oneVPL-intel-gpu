@@ -1315,6 +1315,12 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
         && !(m_cmCtx.get() && m_cmCtx->isHistogramSupported()))
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
+    if (bIntRateControlLA(m_video.mfx.RateControlMethod) )
+    {
+        MFX_CHECK(extOpt2Old->LookAheadDepth >= extOpt2New->LookAheadDepth,
+                  MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    }
+
     return checkStatus;
 } // ProcessAndCheckNewParameters
 
