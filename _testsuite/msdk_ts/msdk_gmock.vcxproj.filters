@@ -574,5 +574,8 @@
     <ClCompile Include="src\gmock\test_suites\encoders_gpu_hang.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avcd_init.cpp">
+      <Filter>Source Files\test_suites\avcd</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
