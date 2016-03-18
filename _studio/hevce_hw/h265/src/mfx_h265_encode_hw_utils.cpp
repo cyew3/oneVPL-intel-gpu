@@ -1177,7 +1177,8 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_sps.temporal_id_nesting_flag = m_vps.temporal_id_nesting_flag;
 
     m_sps.seq_parameter_set_id              = 0;
-    m_sps.chroma_format_idc                 = mfx.FrameInfo.ChromaFormat;
+    //hardcoded untill support for encoding in chroma format other than YUV420 support added.
+    m_sps.chroma_format_idc                 = MFX_CHROMAFORMAT_YUV420;//mfx.FrameInfo.ChromaFormat;
     m_sps.separate_colour_plane_flag        = 0;
     m_sps.pic_width_in_luma_samples         = m_ext.HEVCParam.PicWidthInLumaSamples;
     m_sps.pic_height_in_luma_samples        = m_ext.HEVCParam.PicHeightInLumaSamples;

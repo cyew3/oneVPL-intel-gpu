@@ -185,7 +185,13 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
 
     request.Type        = MFX_MEMTYPE_D3D_INT;
     request.NumFrameMin = MaxRec(m_vpar);
-
+    
+    if(request.Info.FourCC == MFX_FOURCC_RGB4)
+    {
+        //in case of ARGB input we need NV12 reconstruct allocation
+        request.Info.FourCC = MFX_FOURCC_NV12;
+        request.Info.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+    }
     sts = m_rec.Alloc(&m_core, request, false);
     MFX_CHECK_STS(sts);
 
