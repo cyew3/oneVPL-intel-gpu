@@ -7822,6 +7822,8 @@ void HeaderPacker::Init(
     }
 
     m_hwCaps = hwCaps;
+
+    m_longStartCodes = IsOn(extDdi->LongStartCodes) && !IsOn(par.mfx.LowPower);
 }
 
 void HeaderPacker::ResizeSlices(mfxU32 num)
@@ -8005,9 +8007,12 @@ mfxU32 HeaderPacker::WriteSlice(
     mfxU8 startcode[4] = { 0, 0, 0, 1};
     mfxU8 * pStartCode = startcode;
 #if !defined(ANDROID)
-    //to avoid slice header corruption due to VDEnc limitation - we need to pass packed slice without zero byte and patch after encoding
-    if (task.m_AUStartsFromSlice[fieldId] == false || m_hwCaps.SliceLevelRateCtrl || sliceId > 0)
-        pStartCode ++;
+    if (!m_longStartCodes)
+    {
+        //to avoid slice header corruption due to VDEnc limitation - we need to pass packed slice without zero byte and patch after encoding
+        if (task.m_AUStartsFromSlice[fieldId] == false || m_hwCaps.SliceLevelRateCtrl || sliceId > 0)
+            pStartCode++;
+    }
 #endif
     obs.PutRawBytes(pStartCode, startcode + sizeof startcode);
     obs.PutBit(0);
@@ -8257,6 +8262,9 @@ mfxU32 HeaderPacker::WriteSlice(
     mfxU8 startcode[4] = { 0, 0, 0, 1 };
 #else
     mfxU8 startcode[3] = { 0, 0, 1 };
+
+    if (m_longStartCodes)
+        obs.PutFillerBytes(0x00, 1);
 #endif
     obs.PutRawBytes(startcode, startcode + sizeof startcode);
     obs.PutBit(0);

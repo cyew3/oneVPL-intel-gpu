@@ -1460,6 +1460,7 @@ namespace MfxHwH264Encode
         bool                            m_needPrefixNalUnit;
         bool                            m_emulPrev;                 // insert emualtion prevention bytes when possible (sps/pps/sei/aud)
         bool                            m_isMVC;
+        bool                            m_longStartCodes;
 
         ENCODE_PACKEDHEADER_DATA                m_packedAud;
         ENCODE_PACKEDHEADER_DATA                m_packedScalabilitySei;
