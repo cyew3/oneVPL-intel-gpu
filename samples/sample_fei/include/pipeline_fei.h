@@ -138,6 +138,7 @@ struct sInputParams
     bool bFieldProcessingMode;
     bool bPerfMode;
     bool bDynamicRC;
+    bool bRawRef;
     msdk_char* mvinFile;
     msdk_char* mbctrinFile;
     msdk_char* mvoutFile;

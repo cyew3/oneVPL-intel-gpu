@@ -431,6 +431,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     // configure the depth of the look ahead BRC if specified in command line
     //if (pInParams->bRefType || pInParams->Trellis)
     {
+        m_CodingOption2.UseRawRef = pInParams->bRawRef ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF;
         m_CodingOption2.BRefType = pInParams->bRefType;
         m_CodingOption2.Trellis  = pInParams->Trellis;
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);

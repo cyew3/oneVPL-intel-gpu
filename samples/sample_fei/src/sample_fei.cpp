@@ -96,6 +96,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-dstw width] - destination picture width, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-perf] - switch on performance mode (no file operations, simplified predictors repacking)\n"));
+    msdk_printf(MSDK_STRING("   [-rawref] - use raw frames for reference instead of reconstructed frames (ENCODE only)\n"));
 
     // user module options
     msdk_printf(MSDK_STRING("\n"));
@@ -553,6 +554,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             }
             bParseDRC = false;
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-rawref")))
+        {
+            pParams->bRawRef = true;
+        }
         else // 1-character options
         {
             switch (strInput[i][1])
@@ -963,6 +968,7 @@ int main(int argc, char *argv[])
     Params.bOnlyPAK  = false;
     Params.bPREENC   = false;
     Params.bPerfMode = false;
+    Params.bRawRef   = false;
     Params.bNPredSpecified_l0 = false;
     Params.bNPredSpecified_l1 = false;
     Params.preencDSstrength = 0;
