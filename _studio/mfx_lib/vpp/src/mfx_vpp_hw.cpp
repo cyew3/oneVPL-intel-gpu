@@ -142,7 +142,7 @@ template<typename T> void Clear(std::vector<T> & v)
 //mfxU32 GetMFXFrcMode(mfxVideoParam & videoParam);
 
 mfxStatus CheckIOMode(mfxVideoParam *par, VideoVPPHW::IOMode mode);
-mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps);
+mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core);
 mfxStatus ConfigureExecuteParams(
     mfxVideoParam & videoParam, // [IN]
     mfxVppCaps & caps,          // [IN]
@@ -1595,7 +1595,7 @@ mfxStatus VideoVPPHW::Query(VideoCORE *core, mfxVideoParam *par)
     mfxVppCaps caps;
     caps = vpp_ddi->GetCaps();
 
-    sts = ValidateParams(&params, &caps);
+    sts = ValidateParams(&params, &caps, core);
     MFX_CHECK_STS(sts);
 
     config.m_IOPattern = 0;
@@ -1680,7 +1680,7 @@ mfxStatus  VideoVPPHW::Init(
     mfxVppCaps caps;
     caps = m_ddi->GetCaps();
 
-    sts = ValidateParams(&m_params, &caps);
+    sts = ValidateParams(&m_params, &caps, m_pCore);
     MFX_CHECK_STS(sts);
 
     m_config.m_IOPattern = 0;
@@ -1857,7 +1857,7 @@ mfxStatus VideoVPPHW::QueryIOSurf(
     mfxVppCaps caps;
     caps = vpp_ddi->GetCaps();
 
-    sts = ValidateParams(par, &caps);
+    sts = ValidateParams(par, &caps, core);
     MFX_CHECK_STS(sts);
 
     mfxExecuteParams executeParams;
@@ -2821,7 +2821,7 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
 
 } // mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 
-mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps)
+mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core)
 {
     MFX_CHECK_NULL_PTR2(par, caps);
 
@@ -2903,7 +2903,22 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps)
                 }
             }
             break;
-        } //case MFX_EXTBUFF_VPP_DEINTERLACING
+        } //case MFX_EXTBUFF_VPP_DOUSE
+        case MFX_EXTBUFF_VPP_COMPOSITE:
+        {
+            mfxExtVPPComposite* extComp = (mfxExtVPPComposite*)data;
+            MFX_CHECK_NULL_PTR1(extComp);
+            if (MFX_HW_D3D9 == core->GetVAType() && extComp->NumInputStream) // AlphaBlending & LumaKey filters are not supported at first sub-stream on DX9
+            {
+                if (extComp->InputStream[0].GlobalAlphaEnable || extComp->InputStream[0].LumaKeyEnable || extComp->InputStream[0].PixelAlphaEnable)
+                {
+                    sts = MFX_ERR_INVALID_VIDEO_PARAM;
+                    continue; // stop working with ExtParam[i]
+                }
+            }
+
+            break;
+        } //case MFX_EXTBUFF_VPP_COMPOSITE
         } // switch
     }
 
@@ -2926,7 +2941,9 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps)
         return MFX_WRN_PARTIAL_ACCELERATION;
 
     return sts;
-}
+} // mfxStatus VideoVPPHW::ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core)
+
+
 //---------------------------------------------------------------------------------
 // Check DI mode set by user, if not set use advanced as default (if supported)
 // Returns: 0 - cannot set due to HW limitations or wrong range, 1 - BOB, 2 - ADI )
