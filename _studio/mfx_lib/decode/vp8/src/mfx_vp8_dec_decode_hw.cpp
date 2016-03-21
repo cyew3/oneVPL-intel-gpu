@@ -523,10 +523,12 @@ static mfxStatus MFX_CDECL VP8DECODERoutine(void *p_state, void *pp_param, mfxU3
     {
 #ifdef MFX_VA_LINUX
         UMC::Status status = decoder.m_p_video_accelerator->SyncTask(data.memIdToUnlock);
-        if (UMC::UMC_ERR_GPU_HANG == status)
-            return MFX_ERR_GPU_HANG;
-        if(UMC::UMC_OK != status)
-            return MFX_ERR_DEVICE_FAILED;
+        if (status != UMC::UMC_OK)
+        {
+            mfxStatus CriticalErrorStatus = (status == UMC::UMC_ERR_GPU_HANG) ? MFX_ERR_GPU_HANG : MFX_ERR_DEVICE_FAILED;
+            decoder.SetCriticalErrorOccured(CriticalErrorStatus);
+            return CriticalErrorStatus;
+        }
 #endif
         decoder.m_p_frame_allocator.get()->DecreaseReference(data.memIdToUnlock);
     }
@@ -551,6 +553,9 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
     {
         return MFX_ERR_NOT_INITIALIZED;
     }
+
+    if (NeedToReturnCriticalStatus(p_bs))
+        return ReturningCriticalStatus();
 
     MFX_CHECK_NULL_PTR2(p_surface_work, pp_surface_out);
 

@@ -567,11 +567,12 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
 #ifdef MFX_VA_LINUX
 
     UMC::Status status = decoder.m_va->SyncTask(data.currFrameId);
-    if (UMC::UMC_ERR_GPU_HANG == status)
-        return MFX_ERR_GPU_HANG;
-
-    if (UMC::UMC_OK != status)
-        return MFX_ERR_DEVICE_FAILED;
+    if (status != UMC::UMC_OK)
+    {
+        mfxStatus CriticalErrorStatus = (status == UMC::UMC_ERR_GPU_HANG) ? MFX_ERR_GPU_HANG : MFX_ERR_DEVICE_FAILED;
+        SetCriticalErrorOccured(CriticalErrorStatus);
+        return CriticalErrorStatus;
+    }
 
 #endif
 
@@ -655,6 +656,9 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
 
     if (!m_isInit)
         return MFX_ERR_NOT_INITIALIZED;
+
+    if (NeedToReturnCriticalStatus(bs))
+        return ReturningCriticalStatus();
 
     MFX_CHECK_NULL_PTR2(surface_work, surface_out);
 

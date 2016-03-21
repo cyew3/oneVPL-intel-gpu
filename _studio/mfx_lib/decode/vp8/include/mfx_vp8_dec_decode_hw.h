@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -18,6 +18,7 @@
 
 #include "mfx_common_int.h"
 #include "mfx_umc_alloc_wrapper.h"
+#include "mfx_critical_error_handler.h"
 #include "umc_frame_data.h"
 #include "umc_media_buffer.h"
 #include "umc_media_data.h"
@@ -159,7 +160,7 @@ public:
 
 static mfxStatus MFX_CDECL VP8DECODERoutine(void *p_state, void *pp_param, mfxU32 thread_number, mfxU32);
 
-class VideoDECODEVP8_HW : public VideoDECODE
+class VideoDECODEVP8_HW : public VideoDECODE, public MfxCriticalErrorHandler
 {
 public:
 

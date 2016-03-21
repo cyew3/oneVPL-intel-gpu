@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -25,6 +25,7 @@
 #include "umc_vc1_spl_frame_constr.h"
 #include "umc_mutex.h"
 #include "mfx_task.h"
+#include "mfx_critical_error_handler.h"
 
 typedef struct 
 {
@@ -77,7 +78,7 @@ public:
 };
 
 class VideoDECODE;
-class MFXVideoDECODEVC1 : public VideoDECODE
+class MFXVideoDECODEVC1 : public VideoDECODE, public MfxCriticalErrorHandler
 {
 public:
     enum

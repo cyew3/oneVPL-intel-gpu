@@ -813,6 +813,7 @@
     <ClCompile Include="..\shared\src\mfx_check_hardware_support.cpp" />
     <ClCompile Include="..\shared\src\mfx_common_decode_int.cpp" />
     <ClCompile Include="..\shared\src\mfx_common_int.cpp" />
+    <ClCompile Include="..\shared\src\mfx_critical_error_handler.cpp" />
     <ClCompile Include="..\shared\src\mfx_enc_common.cpp" />
     <ClCompile Include="..\shared\src\mfx_h264_enc_common.cpp" />
     <ClCompile Include="..\shared\src\mfx_log.cpp" />
@@ -886,6 +887,7 @@
     <ClInclude Include="..\shared\include\mfx_check_hardware_support.h" />
     <ClInclude Include="..\shared\include\mfx_common_decode_int.h" />
     <ClInclude Include="..\shared\include\mfx_common_int.h" />
+    <ClInclude Include="..\shared\include\mfx_critical_error_handler.h" />
     <ClInclude Include="..\shared\include\mfx_frames.h" />
     <ClInclude Include="..\shared\include\mfx_interface.h" />
     <ClInclude Include="..\shared\include\mfx_interface_scheduler.h" />

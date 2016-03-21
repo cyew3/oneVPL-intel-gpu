@@ -92,6 +92,7 @@ foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
     ${prefix}/mfx_session.cpp
     ${prefix}/mfx_user_plugin.cpp
     ${prefix}/mfx_enc_common.cpp
+    ${prefix}/mfx_critical_error_handler.cpp
   )
 
 endforeach()

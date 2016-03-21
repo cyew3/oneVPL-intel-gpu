@@ -244,6 +244,7 @@
     <ClCompile Include="src\mfx_brc_common.cpp" />
     <ClCompile Include="src\mfx_common_decode_int.cpp" />
     <ClCompile Include="src\mfx_common_int.cpp" />
+    <ClCompile Include="src\mfx_critical_error_handler.cpp" />
     <ClCompile Include="src\mfx_enc_common.cpp" />
     <ClCompile Include="src\mfx_h264_enc_common.cpp" />
     <ClCompile Include="src\mfx_mpeg2_dec_common.cpp" />
@@ -253,6 +254,7 @@
     <ClInclude Include="include\mfx_brc_common.h" />
     <ClInclude Include="include\mfx_common_decode_int.h" />
     <ClInclude Include="include\mfx_common_int.h" />
+    <ClInclude Include="include\mfx_critical_error_handler.h" />
     <ClInclude Include="include\mfx_enc_common.h" />
     <ClInclude Include="include\mfx_h264_enc_common.h" />
     <ClInclude Include="include\mfx_interface.h" />

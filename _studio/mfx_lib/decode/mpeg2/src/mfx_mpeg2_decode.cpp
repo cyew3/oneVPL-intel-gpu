@@ -415,6 +415,7 @@ bool CalcAspectRatio(mfxI32 dar_code, mfxI32 width, mfxI32 height,
 
 VideoDECODEMPEG2::VideoDECODEMPEG2(VideoCORE* core, mfxStatus *sts)
 : VideoDECODE()
+, MfxCriticalErrorHandler()
 , m_implUmc()
 , m_pCore(core)
 , m_FrameAllocator(NULL)
@@ -2545,6 +2546,9 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
         return MFX_ERR_NOT_INITIALIZED;
     }
 
+    if (NeedToReturnCriticalStatus(bs))
+        return ReturningCriticalStatus();
+
     if (true == m_isOpaqueMemory)
     {
         if (surface_work->Data.MemId || surface_work->Data.Y || surface_work->Data.R || surface_work->Data.A || surface_work->Data.UV) // opaq surface
@@ -3720,11 +3724,13 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface, UM
 
     STATUS_REPORT_DEBUG_PRINTF("index %d with corruption: %d (sts:%d)\n", surface_id, surfCorruption, sts)
 
-    if (sts == UMC::UMC_ERR_GPU_HANG)
-        return MFX_ERR_GPU_HANG;
-
     if (sts != UMC::UMC_OK)
-        return MFX_ERR_DEVICE_FAILED;
+    {
+        mfxStatus CriticalErrorStatus = (sts == UMC::UMC_ERR_GPU_HANG) ? MFX_ERR_GPU_HANG : MFX_ERR_DEVICE_FAILED;
+        SetCriticalErrorOccured(CriticalErrorStatus);
+        return CriticalErrorStatus;
+    }
+
 #else
     VASurfaceStatus surfSts = VASurfaceSkipped;
 

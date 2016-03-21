@@ -1140,6 +1140,9 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
     if (!m_bIsDecInit)
         return MFX_ERR_NOT_INITIALIZED;
 
+    if (NeedToReturnCriticalStatus(bs))
+        return ReturningCriticalStatus();
+
     if(m_par.mfx.CodecProfile == 0)
     {
         if(bs)
@@ -3053,11 +3056,12 @@ mfxStatus MFXVideoDECODEVC1::GetStatusReport(mfxFrameSurface1 *surface_disp)
     if (pCurrDescriptor)
     {
         Status sts = va->SyncTask(pCurrDescriptor->m_pContext->m_frmBuff.m_iCurrIndex);
-        if (sts == UMC_ERR_GPU_HANG)
-            return MFX_ERR_GPU_HANG;
-
-        if (sts != UMC_OK)
-             MFX_ERR_DEVICE_FAILED;
+        if (sts != UMC::UMC_OK)
+        {
+            mfxStatus CriticalErrorStatus = (sts == UMC::UMC_ERR_GPU_HANG) ? MFX_ERR_GPU_HANG : MFX_ERR_DEVICE_FAILED;
+            SetCriticalErrorOccured(CriticalErrorStatus);
+            return CriticalErrorStatus;
+        }
     }
 #else
     VideoAccelerator *va;

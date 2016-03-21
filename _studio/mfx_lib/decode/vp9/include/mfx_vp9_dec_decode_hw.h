@@ -15,21 +15,20 @@
 
 #if defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW) && defined(MFX_VA)
 
-#include "mfx_umc_alloc_wrapper.h"
-#include "umc_mutex.h"
-
-#include "mfx_task.h"
 #include "mfx_vp9_dec_decode_utils.h"
-#include <list>
-
+#include "mfx_umc_alloc_wrapper.h"
+#include "mfx_task.h"
+#include "mfx_critical_error_handler.h"
+#include "umc_mutex.h"
 #include "umc_vp9_dec_defs.h"
 #include "umc_vp9_frame.h"
+#include <list>
 
 using namespace MfxVP9Decode;
 
 namespace UMC_VP9_DECODER { class Packer; }
 
-class VideoDECODEVP9_HW : public VideoDECODE
+class VideoDECODEVP9_HW : public VideoDECODE, public MfxCriticalErrorHandler
 {
 public:
 

@@ -27,7 +27,8 @@ typedef struct _DXVA_Status_VC1 *DXVA_Status_VC1;
 #include "umc_video_processing.h"
 #include "mfx_umc_alloc_wrapper.h"
 #include "mfxpcp.h"
-#include <mfx_task.h>
+#include "mfx_task.h"
+#include "mfx_critical_error_handler.h"
 
 #include <list>
 
@@ -103,7 +104,7 @@ typedef struct _MParam
 } MParam;
 
 
-class VideoDECODEMPEG2 : public VideoDECODE
+class VideoDECODEMPEG2 : public VideoDECODE, public MfxCriticalErrorHandler
 {
 
     enum {

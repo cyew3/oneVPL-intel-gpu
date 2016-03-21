@@ -36,6 +36,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
     ${prefix}/mfx_h264_enc_common.cpp
     ${prefix}/mfx_mpeg2_dec_common.cpp
     ${prefix}/mfx_vc1_dec_common.cpp
+    ${prefix}/mfx_critical_error_handler.cpp
   )
 endforeach()
 
