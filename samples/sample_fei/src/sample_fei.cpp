@@ -636,7 +636,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
             msdk_printf(MSDK_STRING("Supported pipelines are:\n"));
             msdk_printf(MSDK_STRING("PREENC\n"));
-            //msdk_printf(MSDK_STRING("ENC\n"));
+            msdk_printf(MSDK_STRING("ENC\n"));
             msdk_printf(MSDK_STRING("PAK\n"));
             msdk_printf(MSDK_STRING("ENCODE\n"));
             msdk_printf(MSDK_STRING("ENC + PAK (ENCPAK)\n"));
@@ -657,7 +657,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         case 8:
             break;
         default:
-            msdk_printf(MSDK_STRING("\nERROR: Unsupported strength of PREENC downscaling!\n"));
+            if (bAlrShownHelp)
+                msdk_printf(MSDK_STRING("\nERROR: Unsupported strength of PREENC downscaling!\n"));
+            else
+                PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported strength of PREENC downscaling!"));
             return MFX_ERR_UNSUPPORTED;
         }
     }
@@ -1082,12 +1085,6 @@ mfxStatus CheckOptions(sInputParams* pParams)
         fprintf(stderr,"ERROR: Output bitstream file should be specified for ENC+PAK (-o)\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
-
-    /*
-    if (pParams->bPREENC && pParams->nPicStruct == MFX_PICSTRUCT_FIELD_BFF) {
-        fprintf(stderr, "Preenc doesn't support bff, use tff\n");
-        sts = MFX_ERR_UNSUPPORTED;
-    } */
 
     if (!pParams->bENCODE && pParams->memType == SYSTEM_MEMORY) {
         fprintf(stderr, "ERROR: Only ENCODE supports SW memory\n");

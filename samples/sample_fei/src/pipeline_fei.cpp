@@ -489,6 +489,8 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
 {
     MSDK_CHECK_POINTER(pInParams, MFX_ERR_NULL_PTR);
 
+    mfxStatus sts = MFX_ERR_NONE;
+
     // specify memory type
     if (D3D9_MEMORY == pInParams->memType || D3D11_MEMORY == pInParams->memType)
     {
@@ -502,7 +504,8 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
     // input frame info
     m_mfxVppParams.vpp.In.FourCC = MFX_FOURCC_NV12;
     m_mfxVppParams.vpp.In.PicStruct = pInParams->nPicStruct;;
-    ConvertFrameRate(pInParams->dFrameRate, &m_mfxVppParams.vpp.In.FrameRateExtN, &m_mfxVppParams.vpp.In.FrameRateExtD);
+    sts = ConvertFrameRate(pInParams->dFrameRate, &m_mfxVppParams.vpp.In.FrameRateExtN, &m_mfxVppParams.vpp.In.FrameRateExtD);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // width must be a multiple of 16
     // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
@@ -549,7 +552,7 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
         m_mfxDSParams.vpp.Out.CropH = m_mfxDSParams.vpp.Out.Height;
     }
 
-    return MFX_ERR_NONE;
+    return sts;
 }
 
 mfxStatus CEncodingPipeline::InitMfxDecodeParams(sInputParams *pInParams)
@@ -2540,8 +2543,9 @@ mfxStatus CEncodingPipeline::Run()
     }
 
     //set Max Number of MB for ext Buffer
-    mfxU16 wdt = m_bNeedDRC ? m_encpakParams.nDstWidth  : m_encpakParams.nWidth,
-           hgt = m_bNeedDRC ? m_encpakParams.nDstHeight : m_encpakParams.nHeight;
+    bool chng_res = m_bNeedDRC || m_encpakParams.nDstWidth != m_encpakParams.nWidth || m_encpakParams.nDstHeight != m_encpakParams.nHeight;
+    mfxU16 wdt = chng_res ? m_encpakParams.nDstWidth  : m_encpakParams.nWidth,  // if no VPP or DRC used
+           hgt = chng_res ? m_encpakParams.nDstHeight : m_encpakParams.nHeight; // dstW/dstH is set the same as source W/H
 
     // For interlaced mode, may need an extra MB vertically
     // For example if the progressive mode has 45 MB vertically
@@ -3979,6 +3983,8 @@ mfxStatus CEncodingPipeline::InitEncodeFrameParams(mfxFrameSurface1* encodeSurfa
 
 mfxStatus CEncodingPipeline::ReadPAKdata(iTask* eTask)
 {
+    MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
+
     mfxExtFeiEncMV*     mvBuf     = NULL;
     mfxExtFeiPakMBCtrl* mbcodeBuf = NULL;
 
@@ -4005,6 +4011,8 @@ mfxStatus CEncodingPipeline::ReadPAKdata(iTask* eTask)
 
 mfxStatus CEncodingPipeline::DropENCPAKoutput(iTask* eTask)
 {
+    MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
+
     mfxExtFeiEncMV*     mvBuf     = NULL;
     mfxExtFeiEncMBStat* mbstatBuf = NULL;
     mfxExtFeiPakMBCtrl* mbcodeBuf = NULL;
@@ -4053,6 +4061,8 @@ mfxStatus CEncodingPipeline::DropENCPAKoutput(iTask* eTask)
 
 mfxStatus CEncodingPipeline::DropPREENCoutput(iTask* eTask)
 {
+    MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
+
     mfxExtFeiPreEncMBStat* mbdata = NULL;
     mfxExtFeiPreEncMV*     mvs    = NULL;
 
@@ -5582,7 +5592,7 @@ void CEncodingPipeline::PrintInfo()
         msdk_printf(MSDK_STRING("\nInput  video: %s\n"), CodecIdToStr(m_mfxDecParams.mfx.CodecId).c_str());
     msdk_printf(MSDK_STRING("Output video\t\t%s\n"), CodecIdToStr(m_mfxEncParams.mfx.CodecId).c_str());
 
-    mfxFrameInfo SrcPicInfo = m_mfxEncParams.vpp.In;
+    mfxFrameInfo SrcPicInfo = (m_pmfxVPP || m_pmfxDS) ? m_mfxVppParams.vpp.In : m_mfxEncParams.vpp.In;
     mfxFrameInfo DstPicInfo = m_mfxEncParams.mfx.FrameInfo;
 
     msdk_printf(MSDK_STRING("\nSource picture:\n"));
