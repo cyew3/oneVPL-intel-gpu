@@ -2037,7 +2037,6 @@ mfxStatus MFXVideoENCODEMVC::InitMVCView(mfxVideoParam *par_in, mfxExtCodingOpti
 
     // to set profile/level and related vars
     // first copy fields which could have been changed from TU
-    memset(&checkedSetByTU, 0, sizeof(mfxVideoParam));
 
     if (par->mfx.CodecProfile == MFX_PROFILE_UNKNOWN && videoParams.transform_8x8_mode_flag)
         par->mfx.CodecProfile = MFX_PROFILE_AVC_HIGH;
@@ -2681,7 +2680,6 @@ mfxStatus MFXVideoENCODEMVC::Init(mfxVideoParam* par_in)
     m_allocator = new mfx_UMC_MemAllocator;
     if (!m_allocator) return MFX_ERR_MEMORY_ALLOC;
 
-    memset(&pParams, 0, sizeof(UMC::MemoryAllocatorParams));
     m_allocator->InitMem(&pParams, m_core);
 
     // Allocate and initialize zero terminated arrays of pointers of SPS and PPS

@@ -2708,8 +2708,8 @@ namespace MPEG2EncoderHW
         }
         m_pFrameCUC = 0; 
         m_taskStatus = NOT_STARTED;
-        memset (&m_FrameEnc, 0, sizeof(FramesSet));
-        memset (&m_FramePak, 0, sizeof(FramesSet));
+        m_FrameEnc.Reset();
+        m_FramePak.Reset();
 
         return sts;    
     }
