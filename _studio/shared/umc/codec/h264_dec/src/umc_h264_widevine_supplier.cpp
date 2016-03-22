@@ -706,10 +706,6 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
     }
 
     pSlice->m_pSeqParamSetEx = m_Headers.m_SeqExParams.GetHeader(seq_parameter_set_id);
-    if(!pSlice->m_pSeqParamSetEx)
-    {
-        return 0;
-    }
     pSlice->m_pCurrentFrame = 0;
 
     //memory_leak_preventing.ClearNotification();
