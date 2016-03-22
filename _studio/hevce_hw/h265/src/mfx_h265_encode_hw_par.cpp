@@ -924,7 +924,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     if (par.mfx.RateControlMethod == (mfxU32)MFX_RATECONTROL_AVBR)
     {
-        par.mfx.RateControlMethod = (mfxU32)MFX_RATECONTROL_CBR;
+        par.mfx.RateControlMethod = (mfxU32)MFX_RATECONTROL_VBR;
         par.mfx.Accuracy = 0;
         par.mfx.Convergence = 0;
         changed ++;

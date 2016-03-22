@@ -114,15 +114,18 @@ void FillSpsBuffer(
     {
         sps.ContentInfo = eContent_NonVideoScreen;
     }
-    
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR || par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
+    {
+        sps.MinBitRate      = par.TargetKbps/2;
+        sps.TargetBitRate   = par.TargetKbps;
+        sps.MaxBitRate      = par.MaxKbps;
+    }   
 
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || 
-        par.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
-        par.mfx.RateControlMethod == MFX_RATECONTROL_VCM )
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
     {
         sps.MinBitRate      = par.TargetKbps;
         sps.TargetBitRate   = par.TargetKbps;
-        sps.MaxBitRate      = par.MaxKbps;
+        sps.MaxBitRate      = par.TargetKbps;
     }
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
     {
@@ -165,7 +168,7 @@ void FillSpsBuffer(
     {
         if (!par.isBPyramid())
         {
-            sps.NumOfBInGop[0]  = par.mfx.GopRefDist - 1;
+            sps.NumOfBInGop[0]  = (par.mfx.GopPicSize - 1) - (par.mfx.GopPicSize - 1)/par.mfx.GopRefDist;
             sps.NumOfBInGop[1]  = 0;
             sps.NumOfBInGop[2]  = 0;
         }
@@ -175,9 +178,12 @@ void FillSpsBuffer(
             static UINT B1[9] = {0,0,0,1,2,2,2,2,2};
             static UINT B2[9] = {0,0,0,0,0,1,2,3,4};
 
-            sps.NumOfBInGop[0]  = B[par.mfx.GopRefDist];
-            sps.NumOfBInGop[1]  = B1[par.mfx.GopRefDist];
-            sps.NumOfBInGop[2]  = B2[par.mfx.GopRefDist];
+            mfxI32 numBpyr   = par.mfx.GopPicSize/par.mfx.GopRefDist;
+            mfxI32 lastBpyrW = par.mfx.GopPicSize%par.mfx.GopRefDist;
+
+            sps.NumOfBInGop[0]  = numBpyr*B[par.mfx.GopRefDist] + B[lastBpyrW];
+            sps.NumOfBInGop[1]  = numBpyr*B1[par.mfx.GopRefDist]+ B1[lastBpyrW];
+            sps.NumOfBInGop[2]  = numBpyr*B2[par.mfx.GopRefDist]+ B2[lastBpyrW];
         }
         else
         {
