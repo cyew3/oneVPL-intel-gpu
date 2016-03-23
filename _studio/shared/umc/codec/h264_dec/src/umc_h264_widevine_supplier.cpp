@@ -803,8 +803,7 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
                     return 0;
                 }
 
-                Ipp32s bit_depth_luma = pSlice->m_SliceHeader.is_auxiliary ?
-                    pSlice->GetSeqParamEx()->bit_depth_aux : pSlice->GetSeqParam()->bit_depth_luma;
+                Ipp32s bit_depth_luma = pSlice->GetSeqParam()->bit_depth_luma;
 
                 iSQUANT = pSlice->m_pPicParamSet->pic_init_qp +
                           pSlice->m_SliceHeader.slice_qp_delta;
