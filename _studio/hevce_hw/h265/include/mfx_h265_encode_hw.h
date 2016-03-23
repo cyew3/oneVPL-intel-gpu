@@ -112,13 +112,11 @@ protected:
     Task                            m_lastTask;
     HRD                             m_hrd;
     mfxU32                          m_frameOrder;
-    mfxU32                          m_displOrder;
     mfxU32                          m_lastIDR;
     mfxU32                          m_baseLayerOrder;
     mfxU32                          m_numBuffered;
     mfxU16                          m_NumberOfSlicesForOpt;
     bool                            m_bInit;
-    std::list<mfxU32>               m_reorderEmu;
 };
 
 } //MfxHwH265Encode

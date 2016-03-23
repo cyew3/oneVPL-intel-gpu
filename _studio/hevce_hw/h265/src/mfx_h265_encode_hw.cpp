@@ -152,7 +152,7 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     sts = CheckHeaders(m_vpar, m_caps);
     MFX_CHECK_STS(sts);
 
-    m_hrd.Setup(m_vpar.m_sps, m_vpar.InitialDelayInKB);
+    m_hrd.Init(m_vpar.m_sps, m_vpar.InitialDelayInKB);
 
     sts = m_ddi->CreateAccelerationService(m_vpar);
     MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_DEVICE_FAILED);
@@ -667,24 +667,6 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
             MFX_CHECK(surface->Data.FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN), MFX_ERR_UNDEFINED_BEHAVIOR);
             MFX_CHECK(task->m_frameType != MFX_FRAMETYPE_UNKNOWN, MFX_ERR_UNDEFINED_BEHAVIOR);
             m_frameOrder = surface->Data.FrameOrder;
-
-            if (surface->Data.FrameOrder > 0)
-            {
-                m_reorderEmu.remove_if(LessInc(surface->Data.FrameOrder, &m_displOrder));
-
-                task->m_dpb_output_delay = surface->Data.FrameOrder - m_displOrder - 1;
-
-                if (task->m_dpb_output_delay)
-                    m_reorderEmu.push_back(surface->Data.FrameOrder);
-                else
-                    m_displOrder++;
-            }
-            else
-            {
-                task->m_dpb_output_delay = 0;
-                m_displOrder = 0;
-                m_reorderEmu.resize(0);
-            }
         }
         else
         {
@@ -775,8 +757,13 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
    {
         mfxHDLPair surfaceHDL = {};
 
-        taskForExecute->m_initial_cpb_removal_delay  = m_hrd.GetInitCpbRemovalDelay();
-        taskForExecute->m_initial_cpb_removal_offset = m_hrd.GetInitCpbRemovalDelayOffset();
+        if (taskForExecute->m_insertHeaders & INSERT_BPSEI)
+        {
+            taskForExecute->m_initial_cpb_removal_delay = m_hrd.GetInitCpbRemovalDelay(*taskForExecute);
+            taskForExecute->m_initial_cpb_removal_offset = m_hrd.GetInitCpbRemovalDelayOffset();
+        }
+
+        taskForExecute->m_cpb_removal_delay = m_hrd.GetAuCpbRemovalDelayMinus1(*taskForExecute) + 1;
 
 #ifndef HEADER_PACKING_TEST
         sts = GetNativeHandleToRawSurface(m_core, m_vpar, *taskForExecute, surfaceHDL.first);
@@ -828,7 +815,7 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
 
             bs->DataLength += bytes2copy;
 
-            m_hrd.RemoveAccessUnit(bytes2copy, !!(taskForQuery->m_frameType & MFX_FRAMETYPE_IDR));
+            m_hrd.Update(bytes2copy * 8, *taskForQuery);
 
             bs->TimeStamp       = taskForQuery->m_surf->Data.TimeStamp;
             

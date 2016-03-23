@@ -627,29 +627,41 @@ private:
 class HRD
 {
 public:
-    void Setup(SPS const & sps, mfxU32 InitialDelayInKB);
-
+    HRD() { /*Zero(*this);*/ m_bIsHrdRequired = false; }
+    void Init(const SPS &sps, mfxU32 InitialDelayInKB);
     void Reset(SPS const & sps);
+    void Update(mfxU32 sizeInbits, const Task &pic);
+    mfxU32 GetInitCpbRemovalDelay(const Task &pic);
 
-    void RemoveAccessUnit(
-        mfxU32 size,
-        mfxU32 bufferingPeriod);
+    inline mfxU32 GetInitCpbRemovalDelay() const
+    {
+        return (mfxU32)m_initCpbRemovalDelay;
+    }
 
-    mfxU32 GetInitCpbRemovalDelay() const;
+    inline mfxU32 GetInitCpbRemovalDelayOffset() const
+    {
+        return mfxU32(m_cpbSize90k - m_initCpbRemovalDelay);
+    }
 
-    mfxU32 GetInitCpbRemovalDelayOffset() const;
-    mfxU32 GetMaxFrameSize(mfxU32 bufferingPeriod) const;
+    inline mfxU32 GetAuCpbRemovalDelayMinus1(const Task &pic) const
+    {
+        return (pic.m_eo == 0) ? 0 : (pic.m_eo - m_prevBpEncOrder) - 1;
+    }
 
-private:
+protected:
+    bool   m_bIsHrdRequired;
+    bool   m_cbrFlag;
     mfxU32 m_bitrate;
-    mfxU32 m_rcMethod;
-    mfxU32 m_hrdIn90k;  // size of hrd buffer in 90kHz units
+    mfxU32 m_maxCpbRemovalDelay;
+    mfxF64 m_clockTick;
+    mfxF64 m_cpbSize90k;
+    mfxF64 m_initCpbRemovalDelay;
 
-    mfxF64 m_tick;      // clock tick
-    mfxF64 m_trn_cur;   // nominal removal time
-    mfxF64 m_taf_prv;   // final arrival time of prev unit
-
-    bool m_bIsHrdRequired;
+    mfxI32 m_prevAuCpbRemovalDelayMinus1;
+    mfxU32 m_prevAuCpbRemovalDelayMsb;
+    mfxF64 m_prevAuFinalArrivalTime;
+    mfxF64 m_prevBpAuNominalRemovalTime;
+    mfxU32 m_prevBpEncOrder;
 };
 
 class TaskManager
