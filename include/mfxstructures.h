@@ -658,7 +658,15 @@ typedef struct {
 
     mfxU16      EnableQPOffset;           /* tri-state option */
     mfxI16      QPOffset[8];              /* FrameQP = QPX + QPOffset[pyramid_layer]; QPX = QPB for B-pyramid, QPP for P-pyramid */
-    mfxU16      reserved[203];
+
+    mfxU16      NumRefActiveP;
+    mfxU16      NumRefActivePRef;
+    mfxU16      NumRefActiveBL0;
+    mfxU16      NumRefActiveBL1;
+    mfxU16      NumRefActiveBRefL0;
+    mfxU16      NumRefActiveBRefL1;
+
+    mfxU16      reserved[197];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
