@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, Frame Processing for multi-frame threading model
