@@ -2773,5 +2773,64 @@ bool IsFrcInterpolationEnable(const mfxVideoParam & param, const MfxHwVideoProce
 } // bool IsFrcInterpolationEnable(const mfxVideoParam & param, const MfxHwVideoProcessing::mfxVppCaps & caps)
 
 
+void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<mfxU32>& list)
+{
+    if(caps.uProcampFilter)
+    {
+        list.push_back(MFX_EXTBUFF_VPP_PROCAMP);
+    }
+
+    if(caps.uDenoiseFilter)
+    {
+        list.push_back(MFX_EXTBUFF_VPP_DENOISE);
+    }
+
+    if(caps.uDetailFilter)
+    {
+        list.push_back(MFX_EXTBUFF_VPP_DETAIL);
+    }
+
+    if(caps.uFrameRateConversion)
+    {
+        list.push_back(MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION);
+    }
+
+    if(caps.uDeinterlacing)
+    {
+        list.push_back(MFX_EXTBUFF_VPP_DEINTERLACING);
+    }
+
+    if(caps.uVideoSignalInfo)
+    {
+        list.push_back(MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO);
+    }
+
+    if(caps.uIStabFilter)
+    {
+        list.push_back(MFX_EXTBUFF_VPP_IMAGE_STABILIZATION);
+    }
+
+    if(caps.uVariance)
+    {
+        list.push_back(MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION);
+    }
+
+    if(caps.uRotation)
+    {
+        list.push_back(MFX_EXTBUFF_VPP_ROTATION);
+    }
+
+    if(caps.uScaling)
+    {
+        list.push_back(MFX_EXTBUFF_VPP_SCALING);
+    }
+
+    /* FIELD Copy is always present*/
+    list.push_back(MFX_EXTBUFF_VPP_FIELD_PROCESSING);
+    /* Composition is always present*/
+    list.push_back(MFX_EXTBUFF_VPP_COMPOSITE);
+
+} // void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<mfxU32> list)
+
 #endif // MFX_ENABLE_VPP
 /* EOF */

@@ -142,7 +142,7 @@ template<typename T> void Clear(std::vector<T> & v)
 //mfxU32 GetMFXFrcMode(mfxVideoParam & videoParam);
 
 mfxStatus CheckIOMode(mfxVideoParam *par, VideoVPPHW::IOMode mode);
-mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core);
+mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, bool bCorrectionEnable = false);
 mfxStatus ConfigureExecuteParams(
     mfxVideoParam & videoParam, // [IN]
     mfxVppCaps & caps,          // [IN]
@@ -1595,7 +1595,7 @@ mfxStatus VideoVPPHW::Query(VideoCORE *core, mfxVideoParam *par)
     mfxVppCaps caps;
     caps = vpp_ddi->GetCaps();
 
-    sts = ValidateParams(&params, &caps, core);
+    sts = ValidateParams(&params, &caps, core, true);
     MFX_CHECK_STS(sts);
 
     config.m_IOPattern = 0;
@@ -2823,17 +2823,13 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
 
 } // mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 
-mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core)
+mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, bool bCorrectionEnable)
 {
-    MFX_CHECK_NULL_PTR2(par, caps);
+    MFX_CHECK_NULL_PTR3(par, caps, core);
 
-    /* 1. Build pipeline */
-    std::vector<mfxU32> pipelineList;
-    mfxStatus sts = GetPipelineList( par, pipelineList, true );
-    MFX_CHECK_STS(sts);
+    mfxStatus sts = MFX_ERR_NONE;
 
-    sts = MFX_ERR_NONE;
-
+    /* 1. Check ext param */
     for (mfxU32 i = 0; i < par->NumExtParam; i++)
     {
         mfxU32 id    = par->ExtParam[i]->BufferId;
@@ -2849,7 +2845,7 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core)
             if (extFP->Mode != MFX_VPP_COPY_FRAME && extFP->Mode != MFX_VPP_COPY_FIELD)
             {
                 // Unsupported mode
-                return MFX_ERR_INVALID_VIDEO_PARAM;
+                sts = (MFX_ERR_INVALID_VIDEO_PARAM < sts) ? MFX_ERR_INVALID_VIDEO_PARAM : sts;
             }
 
             if (extFP->Mode == MFX_VPP_COPY_FIELD)
@@ -2857,7 +2853,7 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core)
                 if(extFP->InField != MFX_PICSTRUCT_FIELD_TFF && extFP->InField != MFX_PICSTRUCT_FIELD_BFF)
                 {
                     // Copy field needs specific type of interlace
-                    return MFX_ERR_INVALID_VIDEO_PARAM;
+                    sts = (MFX_ERR_INVALID_VIDEO_PARAM < sts) ? MFX_ERR_INVALID_VIDEO_PARAM : sts;
                 }
             }
             break;
@@ -2871,7 +2867,7 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core)
                 extDI->Mode != MFX_DEINTERLACING_ADVANCED_NOREF &&
                 extDI->Mode != MFX_DEINTERLACING_BOB)
             {
-                return MFX_ERR_UNSUPPORTED;
+                sts = (MFX_ERR_UNSUPPORTED < sts) ? MFX_ERR_UNSUPPORTED : sts;
             }
 
             break;
@@ -2884,13 +2880,13 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core)
             {
                 if( !CheckDoUseCompatibility( extDoUse->AlgList[algIdx] ) )
                 {
-                    sts = MFX_ERR_UNSUPPORTED;
+                    sts = (MFX_ERR_UNSUPPORTED < sts) ? MFX_ERR_UNSUPPORTED : sts;
                     continue; // stop working with ExtParam[i]
                 }
 
                 if(MFX_EXTBUFF_VPP_COMPOSITE == extDoUse->AlgList[algIdx])
                 {
-                    sts = MFX_ERR_INVALID_VIDEO_PARAM;
+                    sts = (MFX_ERR_INVALID_VIDEO_PARAM < sts) ? MFX_ERR_INVALID_VIDEO_PARAM : sts;
                     continue; // stop working with ExtParam[i]
                 }
 
@@ -2914,8 +2910,7 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core)
             {
                 if (extComp->InputStream[0].GlobalAlphaEnable || extComp->InputStream[0].LumaKeyEnable || extComp->InputStream[0].PixelAlphaEnable)
                 {
-                    sts = MFX_ERR_INVALID_VIDEO_PARAM;
-                    continue; // stop working with ExtParam[i]
+                    sts = (MFX_ERR_INVALID_VIDEO_PARAM < sts) ? MFX_ERR_INVALID_VIDEO_PARAM : sts;
                 }
             }
 
@@ -2924,26 +2919,51 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core)
         } // switch
     }
 
-    /* 2. Check size */
+    /* 2. Check unsupported filters on RGB */
+    if( par->vpp.In.FourCC == MFX_FOURCC_RGB4)
+    {
+        std::vector<mfxU32> pipelineList;
+        sts = GetPipelineList( par, pipelineList, true );
+        MFX_CHECK_STS(sts);
+
+        mfxU32  len   = (mfxU32)pipelineList.size();
+        mfxU32* pList = (len > 0) ? (mfxU32*)&pipelineList[0] : NULL;
+
+        if(IsFilterFound(pList, len, MFX_EXTBUFF_VPP_DENOISE)            ||
+           IsFilterFound(pList, len, MFX_EXTBUFF_VPP_DETAIL)             ||
+           IsFilterFound(pList, len, MFX_EXTBUFF_VPP_PROCAMP)            ||
+           IsFilterFound(pList, len, MFX_EXTBUFF_VPP_SCENE_CHANGE)       ||
+           IsFilterFound(pList, len, MFX_EXTBUFF_VPP_IMAGE_STABILIZATION) )
+        {
+            sts = (MFX_ERR_NONE == sts) ? MFX_WRN_FILTER_SKIPPED : sts;
+            if(bCorrectionEnable)
+            {
+                std::vector <mfxU32> tmpZeroDoUseList; //zero
+                SignalPlatformCapabilities(*par, tmpZeroDoUseList);
+            }
+        }
+    }
+
+    /* 3. Check size */
     if (par->vpp.In.Width > caps->uMaxWidth  || par->vpp.In.Height  > caps->uMaxHeight ||
         par->vpp.Out.Width > caps->uMaxWidth || par->vpp.Out.Height > caps->uMaxHeight)
     {
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
     }
 
-    /* 3. Check fourcc */
+    /* 4. Check fourcc */
     if ( !(caps->mFormatSupport[par->vpp.In.FourCC] & MFX_FORMAT_SUPPORT_INPUT) || !(caps->mFormatSupport[par->vpp.Out.FourCC] & MFX_FORMAT_SUPPORT_OUTPUT) )
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
 
     // p010 should be shifted (msdn)
     if (MFX_FOURCC_P010 == par->vpp.In.FourCC && 0 == par->vpp.In.Shift)
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
 
     if (MFX_FOURCC_P010 == par->vpp.Out.FourCC && 0 == par->vpp.Out.Shift)
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
 
     return sts;
-} // mfxStatus VideoVPPHW::ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core)
+} // mfxStatus VideoVPPHW::ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, bool bCorrectionEnable = false)
 
 
 //---------------------------------------------------------------------------------

@@ -68,10 +68,6 @@ using namespace MfxHwVideoProcessing;
     if( MFX_ERR_NONE == sts )  m_core->DecreaseReference( &surface->Data );\
 }
 
-
-void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<mfxU32>& list);
-
-
 /* ******************************************************************** */
 /*      implementation of VPP Pipeline: interface methods               */
 /* ******************************************************************** */
@@ -1474,17 +1470,12 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
             }
         }
 
+        MFX_CHECK_STS(mfxSts);
+
         //-------------------------------------------------
         // FRC, IS and similar enhancement algorithms
         // special "interface" to signal on application level about support/unsupport ones
-        bool bCorrectionEnable = true;
-        mfxStatus localSts = CheckPlatformLimitations(core, *out, bCorrectionEnable);
         //-------------------------------------------------
-
-        if (mfxSts != MFX_ERR_NONE)
-        {
-            return mfxSts;
-        }
 
         if(MFX_PLATFORM_HARDWARE == core->GetPlatformType() )
         {
@@ -1492,30 +1483,22 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
             mfxStatus sts = VideoVPPHW::Query(core, out);
 
             // Statuses returned by Init differ in several cases from Query
-            if (MFX_ERR_INVALID_VIDEO_PARAM == sts ||
-                MFX_ERR_UNSUPPORTED == sts)
+            if (MFX_ERR_INVALID_VIDEO_PARAM == sts)
             {
                 sts = MFX_ERR_UNSUPPORTED;
-                return sts;
             }
             if (MFX_ERR_NONE != sts && IS_PROTECTION_ANY(out->Protected))
             {
                 out->Protected = 0;
-                return MFX_ERR_UNSUPPORTED;
+                sts = MFX_ERR_UNSUPPORTED;
             }
 
-            if(MFX_ERR_NONE == sts)
-            {
-                return localSts;
-            }
-            else
-            {
-                return MFX_WRN_PARTIAL_ACCELERATION;
-            }
+            return sts;
         }
         else
         {
-            return  localSts;
+            mfxStatus sts = CheckPlatformLimitations(core, *out, true);
+            return sts;
         }
     }//else
 } // mfxStatus VideoVPPSW::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out)
@@ -1753,65 +1736,6 @@ mfxTaskThreadingPolicy VideoVPPSW::GetThreadingPolicy(void)
 //---------------------------------------------------------
 //                            UTILS
 //---------------------------------------------------------
-void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<mfxU32>& list)
-{
-    if(caps.uProcampFilter)
-    {
-        list.push_back(MFX_EXTBUFF_VPP_PROCAMP);
-    }
-
-    if(caps.uDenoiseFilter)
-    {
-        list.push_back(MFX_EXTBUFF_VPP_DENOISE);
-    }
-
-    if(caps.uDetailFilter)
-    {
-        list.push_back(MFX_EXTBUFF_VPP_DETAIL);
-    }
-
-    if(caps.uFrameRateConversion)
-    {
-        list.push_back(MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION);
-    }
-
-    if(caps.uDeinterlacing)
-    {
-        list.push_back(MFX_EXTBUFF_VPP_DEINTERLACING);
-    }
-
-    if(caps.uVideoSignalInfo)
-    {
-        list.push_back(MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO);
-    }
-
-    if(caps.uIStabFilter)
-    {
-        list.push_back(MFX_EXTBUFF_VPP_IMAGE_STABILIZATION);
-    }
-
-    if(caps.uVariance)
-    {
-        list.push_back(MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION);
-    }
-
-    if(caps.uRotation)
-    {
-        list.push_back(MFX_EXTBUFF_VPP_ROTATION);
-    }
-
-    if(caps.uScaling)
-    {
-        list.push_back(MFX_EXTBUFF_VPP_SCALING);
-    }
-
-    /* FIELD Copy is always present*/
-    list.push_back(MFX_EXTBUFF_VPP_FIELD_PROCESSING);
-    /* Composition is always present*/
-    list.push_back(MFX_EXTBUFF_VPP_COMPOSITE);
-
-} // void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<mfxU32> list)
-
 
 mfxStatus VideoVPPSW::CheckPlatformLimitations(
     VideoCORE* core,
@@ -1819,11 +1743,10 @@ mfxStatus VideoVPPSW::CheckPlatformLimitations(
     bool bCorrectionEnable)
 {
     std::vector<mfxU32> capsList;
-    //{
-        MfxHwVideoProcessing::mfxVppCaps caps;
-        QueryCaps(core, caps);
-        ConvertCaps2ListDoUse(caps, capsList);
-    //}
+
+    MfxHwVideoProcessing::mfxVppCaps caps;
+    QueryCaps(core, caps);
+    ConvertCaps2ListDoUse(caps, capsList);
 
     std::vector<mfxU32> pipelineList;
     bool bExtendedSupport = true;
@@ -1842,7 +1765,7 @@ mfxStatus VideoVPPSW::CheckPlatformLimitations(
     }
     else
     {
-        sts = CheckLimitationsHW(param, supportedList, bCorrectionEnable);// this function could return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM and WRN_FILTER_SKIPPED
+        //sts = CheckLimitationsHW(param, supportedList, bCorrectionEnable);// this function could return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM and WRN_FILTER_SKIPPED
     }
 
     // check unsupported list if we need to reset ext buffer fields

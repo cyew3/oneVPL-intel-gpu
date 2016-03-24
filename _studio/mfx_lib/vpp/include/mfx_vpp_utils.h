@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010 - 2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010 - 2016 Intel Corporation. All Rights Reserved.
 //
 //
 //                     utilities for (SW)VPP processing
@@ -174,6 +174,10 @@ mfxStatus GetCrossList(
     std::vector<mfxU32> & douseList,
     std::vector<mfxU32> & dontUseList);
 
+void SignalPlatformCapabilities(
+    const mfxVideoParam & param,
+    const std::vector<mfxU32> & supportedList);
+
 mfxStatus CheckLimitationsSW(
     const mfxVideoParam & param, 
     const std::vector<mfxU32> & supportedList, 
@@ -191,6 +195,8 @@ bool IsFrcInterpolationEnable(
 
 bool IsConfigurable( mfxU32 filterId );
 size_t GetConfigSize( mfxU32 filterId );
+
+void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<mfxU32>& list);
 
 //mfxStatus QueryExtParams()
 
