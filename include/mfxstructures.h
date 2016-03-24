@@ -242,7 +242,7 @@ typedef struct {
     mfxU16  NumThread;
 
     union {
-        struct {   /* MPEG-2/H.264 Encoding Options */
+        struct {   /* Encoding Options */
             mfxU16  TargetUsage;
 
             mfxU16  GopPicSize;
@@ -272,13 +272,14 @@ typedef struct {
             mfxU16  NumRefFrame;
             mfxU16  EncodedOrder;
         };
-        struct {   /* H.264, MPEG-2 and VC-1 Decoding Options */
+        struct {   /* Decoding Options */
             mfxU16  DecodedOrder;
             mfxU16  ExtendedPicStruct;
             mfxU16  TimeStampCalc;
             mfxU16  SliceGroupsPresent;
             mfxU16  MaxDecFrameBuffering;
-            mfxU16  reserved2[8];
+            mfxU16  EnableReallocRequest;
+            mfxU16  reserved2[7];
         };
         struct {   /* JPEG Decoding Options */
             mfxU16  JPEGChromaFormat;
