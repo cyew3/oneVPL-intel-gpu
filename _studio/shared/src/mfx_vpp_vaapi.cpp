@@ -912,16 +912,28 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             break;
         }
 
+        /* 16.5 driver needs interlaced flag passed only for 
+         * deinterlacing and scaling. All other filters must 
+         * use progressive even for interlaced content.
+         */
+        bool forceProgressive = true;
+        if (pParams->iDeinterlacingAlgorithm ||
+            inInfo->CropH != outInfo->CropH    ||
+            inInfo->CropW != outInfo->CropW)
+        {
+            forceProgressive = false;
+        }
+
         switch (pRefSurf->frameInfo.PicStruct)
         {
             case MFX_PICSTRUCT_PROGRESSIVE:
                 m_pipelineParam[refIdx].filter_flags = VA_FRAME_PICTURE;
                 break;
             case MFX_PICSTRUCT_FIELD_TFF:
-                m_pipelineParam[refIdx].filter_flags = VA_TOP_FIELD;
+                m_pipelineParam[refIdx].filter_flags = forceProgressive ? VA_FRAME_PICTURE : VA_TOP_FIELD;
                 break;
             case MFX_PICSTRUCT_FIELD_BFF:
-                m_pipelineParam[refIdx].filter_flags = VA_BOTTOM_FIELD;
+                m_pipelineParam[refIdx].filter_flags = forceProgressive ? VA_FRAME_PICTURE : VA_BOTTOM_FIELD;
                 break;
         }
 
