@@ -1619,7 +1619,7 @@ mfxStatus VAAPIEncoder::Execute(
     mfxU32          fieldId,
     PreAllocatedVector const & sei)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VAAPIEncoder::Execute");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIEncoder::Execute");
 
     VAEncPackedHeaderParameterBuffer packed_header_param_buffer;
     VASurfaceID reconSurface;
