@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2008 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
 
 File Name: mfxstructures-int.h
 
@@ -385,7 +385,6 @@ enum {
 typedef enum
 {
     MFX_ERR_MORE_DATA_RUN_TASK  = -10000,  /* MFX_ERR_MORE_DATA but async task should be added to Session */
-    MFX_ERR_REALLOC_SURFACE     = -10001
 } mfxInternalErrors;
 
 #ifdef __cplusplus
