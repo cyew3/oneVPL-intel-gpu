@@ -266,6 +266,7 @@ CmdProcessor::CmdProcessor()
     m_PerfFILE = NULL;
     m_parName = NULL;
     m_nTimeout = 0;
+    statisticsWindowSize = 0;
 
 } //CmdProcessor::CmdProcessor()
 

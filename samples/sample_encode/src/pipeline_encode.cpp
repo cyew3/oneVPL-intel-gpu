@@ -31,10 +31,15 @@ Copyright(c) 2005-2015 Intel Corporation. All Rights Reserved.
 
 #include "plugin_loader.h"
 
+#if defined (ENABLE_V4L2_SUPPORT)
+#include <pthread.h>
+#endif
+
 /* obtain the clock tick of an uninterrupted master clock */
 msdk_tick time_get_tick(void)
 {
-    return msdk_time_get_tick();/*
+    return msdk_time_get_tick();
+    /*
     LARGE_INTEGER t1;
 
     QueryPerformanceCounter(&t1);
@@ -45,7 +50,8 @@ msdk_tick time_get_tick(void)
 /* obtain the clock resolution */
 msdk_tick time_get_frequency(void)
 {
-    return msdk_time_get_frequency();/*
+    return msdk_time_get_frequency();
+    /*
     LARGE_INTEGER t1;
 
     QueryPerformanceFrequency(&t1);
@@ -452,8 +458,8 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     // In case of HEVC when height and/or width divided with 8 but not divided with 16
     // add extended parameter to increase performance
     if ( ( !((m_mfxEncParams.mfx.FrameInfo.CropW & 15 ) ^ 8 ) ||
-           !((m_mfxEncParams.mfx.FrameInfo.CropH & 15 ) ^ 8 ) ) &&
-             (m_mfxEncParams.mfx.CodecId == MFX_CODEC_HEVC) )
+        !((m_mfxEncParams.mfx.FrameInfo.CropH & 15 ) ^ 8 ) ) &&
+        (m_mfxEncParams.mfx.CodecId == MFX_CODEC_HEVC) )
     {
         m_ExtHEVCParam.PicWidthInLumaSamples = m_mfxEncParams.mfx.FrameInfo.CropW;
         m_ExtHEVCParam.PicHeightInLumaSamples = m_mfxEncParams.mfx.FrameInfo.CropH;
@@ -495,7 +501,15 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
     }
 
     // input frame info
+#if defined (ENABLE_V4L2_SUPPORT)
+    if (isV4L2InputEnabled)
+    {
+        m_mfxVppParams.vpp.In.FourCC    = v4l2Pipeline.ConvertToMFXFourCC(pInParams->v4l2Format);
+    }
+#else
     m_mfxVppParams.vpp.In.FourCC    = MFX_FOURCC_NV12;
+#endif
+
     m_mfxVppParams.vpp.In.PicStruct = pInParams->nPicStruct;;
     ConvertFrameRate(pInParams->dFrameRate, &m_mfxVppParams.vpp.In.FrameRateExtN, &m_mfxVppParams.vpp.In.FrameRateExtD);
 
@@ -512,6 +526,13 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
 
     // fill output frame info
     MSDK_MEMCPY_VAR(m_mfxVppParams.vpp.Out,&m_mfxVppParams.vpp.In, sizeof(mfxFrameInfo));
+
+#if defined (ENABLE_V4L2_SUPPORT)
+    if (isV4L2InputEnabled)
+    {
+        m_mfxVppParams.vpp.Out.FourCC    = MFX_FOURCC_NV12;
+    }
+#endif
 
     // only resizing is supported
     m_mfxVppParams.vpp.Out.Width = MSDK_ALIGN16(pInParams->nDstWidth);
@@ -633,6 +654,13 @@ mfxStatus CEncodingPipeline::AllocFrames()
         VppRequest[0].NumFrameSuggested = VppRequest[0].NumFrameMin = nVppSurfNum;
         MSDK_MEMCPY_VAR(VppRequest[0].Info, &(m_mfxVppParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
 
+#if defined (ENABLE_V4L2_SUPPORT)
+        if (isV4L2InputEnabled)
+        {
+            VppRequest[0].Type |= MFX_MEMTYPE_EXPORT_FRAME;
+        }
+#endif
+
         sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &(VppRequest[0]), &m_VppResponse);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
@@ -696,9 +724,9 @@ mfxStatus CEncodingPipeline::CreateAllocator()
 
         mfxHDL hdl = NULL;
         mfxHandleType hdl_t =
-        #if MFX_D3D11_SUPPORT
+#if MFX_D3D11_SUPPORT
             D3D11_MEMORY == m_memType ? MFX_HANDLE_D3D11_DEVICE :
-        #endif // #if MFX_D3D11_SUPPORT
+#endif // #if MFX_D3D11_SUPPORT
             MFX_HANDLE_D3D9_DEVICE_MANAGER;
 
         sts = m_hwdev->GetHandle(hdl_t, &hdl);
@@ -887,6 +915,8 @@ CEncodingPipeline::CEncodingPipeline()
 
     MSDK_ZERO_MEMORY(m_EncResponse);
     MSDK_ZERO_MEMORY(m_VppResponse);
+
+    isV4L2InputEnabled = false;
 }
 
 CEncodingPipeline::~CEncodingPipeline()
@@ -976,12 +1006,19 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    // prepare input file reader
-    sts = m_FileReader.Init(pParams->strSrcFile,
-                            pParams->ColorFormat,
-                            pParams->numViews,
-                            pParams->srcFileBuff);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+#if defined ENABLE_V4L2_SUPPORT
+    isV4L2InputEnabled = pParams->isV4L2InputEnabled;
+#endif
+
+    if (!isV4L2InputEnabled)
+    {
+        // prepare input file reader
+        sts = m_FileReader.Init(pParams->strSrcFile,
+            pParams->ColorFormat,
+            pParams->numViews,
+            pParams->srcFileBuff);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
 
     m_MVCflags = pParams->MVC_flags;
 
@@ -1119,7 +1156,69 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     sts = ResetMFXComponents(pParams);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+    InitV4L2Pipeline(pParams);
+
     return MFX_ERR_NONE;
+}
+
+void CEncodingPipeline::InitV4L2Pipeline(sInputParams *pParams)
+{
+#if defined (ENABLE_V4L2_SUPPORT)
+    if (isV4L2InputEnabled)
+    {
+        int i;
+        v4l2Pipeline.Init(pParams->DeviceName,
+            pParams->nWidth, pParams->nHeight,
+            m_VppResponse.NumFrameActual,
+            pParams->v4l2Format,
+            pParams->MipiMode,
+            pParams->MipiPort);
+
+        v4l2Pipeline.V4L2Alloc();
+
+        for(i=0; i<m_VppResponse.NumFrameActual; i++)
+        {
+
+            buffers[i].index = i;
+            struct vaapiMemId *vaapi = (struct vaapiMemId *)m_pVppSurfaces[i].Data.MemId;
+
+            buffers[i].fd = vaapi->m_buffer_info.handle;
+            v4l2Pipeline.V4L2QueueBuffer(&buffers[i]);
+        }
+    }
+#endif
+}
+
+mfxStatus CEncodingPipeline::CaptureStartV4L2Pipeline()
+{
+#if defined (ENABLE_V4L2_SUPPORT)
+    if (isV4L2InputEnabled)
+    {
+        v4l2Pipeline.V4L2StartCapture();
+
+        v4l2Device *m_v4l2Display = &v4l2Pipeline;
+
+
+        if (pthread_create(&m_PollThread, NULL, PollingThread, (void *)m_v4l2Display))
+        {
+            msdk_printf(MSDK_STRING("Couldn't create v4l2 polling thread\n"));
+            return MFX_ERR_UNKNOWN;
+        }
+    }
+
+#endif
+    return MFX_ERR_NONE;
+}
+
+void CEncodingPipeline::CaptureStopV4L2Pipeline()
+{
+#if defined (ENABLE_V4L2_SUPPORT)
+    if (isV4L2InputEnabled)
+    {
+        pthread_join(m_PollThread, NULL);
+        v4l2Pipeline.V4L2StopCapture();
+    }
+#endif
 }
 
 void CEncodingPipeline::Close()
@@ -1273,7 +1372,7 @@ mfxStatus CEncodingPipeline::Run()
 
     mfxSyncPoint VppSyncPoint = NULL; // a sync point associated with an asynchronous vpp call
     bool bVppMultipleOutput = false;  // this flag is true if VPP produces more frames at output
-                                      // than consumes at input. E.g. framerate conversion 30 fps -> 60 fps
+    // than consumes at input. E.g. framerate conversion 30 fps -> 60 fps
 
 
     // Since in sample we support just 2 views
@@ -1282,9 +1381,22 @@ mfxStatus CEncodingPipeline::Run()
 
     sts = MFX_ERR_NONE;
 
+#if defined (ENABLE_V4L2_SUPPORT)
+    if (isV4L2InputEnabled)
+    {
+        msdk_printf(MSDK_STRING("Press Ctrl+C to terminate this application\n"));
+    }
+#endif
+
     // main loop, preprocessing and encoding
     while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts)
     {
+#if defined (ENABLE_V4L2_SUPPORT)
+        if (v4l2Pipeline.GetV4L2TerminationSignal() && isV4L2InputEnabled)
+        {
+            break;
+        }
+#endif
         // get a pointer to a free task (bit stream and sync point for encoder)
         sts = GetFreeTask(&pCurrentTask);
         MSDK_BREAK_ON_ERROR(sts);
@@ -1300,8 +1412,15 @@ mfxStatus CEncodingPipeline::Run()
             // if vpp is enabled find free surface for vpp input and point pSurf to vpp surface
             if (m_pmfxVPP)
             {
+#if defined (ENABLE_V4L2_SUPPORT)
+                if (isV4L2InputEnabled)
+                {
+                    nVppSurfIdx = v4l2Pipeline.GetOffQ();
+                }
+#else
                 nVppSurfIdx = GetFreeSurface(m_pVppSurfaces, m_VppResponse.NumFrameActual);
                 MSDK_CHECK_ERROR(nVppSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
+#endif
 
                 pSurf = &m_pVppSurfaces[nVppSurfIdx];
             }
@@ -1317,9 +1436,14 @@ mfxStatus CEncodingPipeline::Run()
 
             pSurf->Info.FrameId.ViewId = currViewNum;
             m_statFile.StartTimeMeasurement();
-            sts = m_FileReader.LoadNextFrame(pSurf);
+
+            if (!isV4L2InputEnabled)
+            {
+                sts = m_FileReader.LoadNextFrame(pSurf);
+                MSDK_BREAK_ON_ERROR(sts);
+            }
+
             m_statFile.StopTimeMeasurement();
-            MSDK_BREAK_ON_ERROR(sts);
             if (MVC_ENABLED & m_MVCflags) currViewNum ^= 1; // Flip between 0 and 1 for ViewId
 
             // ... after we're done call Unlock
@@ -1597,8 +1721,8 @@ void CEncodingPipeline::PrintInfo()
     GetFirstSession().QueryIMPL(&impl);
 
     const msdk_char* sImpl = (MFX_IMPL_VIA_D3D11 == MFX_IMPL_VIA_MASK(impl)) ? MSDK_STRING("hw_d3d11")
-                     : (MFX_IMPL_HARDWARE & impl)  ? MSDK_STRING("hw")
-                                                   : MSDK_STRING("sw");
+        : (MFX_IMPL_HARDWARE & impl)  ? MSDK_STRING("hw")
+        : MSDK_STRING("sw");
     msdk_printf(MSDK_STRING("Media SDK impl\t\t%s\n"), sImpl);
 
     mfxVersion ver;

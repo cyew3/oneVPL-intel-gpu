@@ -93,7 +93,7 @@ mfxStatus vaapiFrameAllocator::Init(mfxAllocatorParams *pParams)
     m_dpy = p_vaapiParams->m_dpy;
     m_export_mode = p_vaapiParams->m_export_mode;
     m_exporter = p_vaapiParams->m_exporter;
-#if defined(LIBVA_WAYLAND_SUPPORT)
+#if defined(LIBVA_WAYLAND_SUPPORT) || defined (ENABLE_V4L2_SUPPORT)
     // TODO this should be done on application level via allocator parameters!!
     m_export_mode = vaapiAllocatorParams::PRIME;
 #endif
@@ -237,6 +237,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             }
         }
     }
+
     if ((MFX_ERR_NONE == mfx_res) &&
         (request->Type & MFX_MEMTYPE_EXPORT_FRAME))
     {
@@ -255,10 +256,14 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                 if (MFX_ERR_NONE != mfx_res) break;
 
                 va_res = m_libva->vaAcquireBufferHandle(m_dpy, vaapi_mids[i].m_image.buf, &(vaapi_mids[i].m_buffer_info));
+
+                mfx_res = va_to_mfx_status(va_res);
+
+                m_libva->vaDestroyImage(m_dpy, vaapi_mids[i].m_image.buf);
 #else
                 va_res = VA_STATUS_ERROR_OPERATION_FAILED;
-#endif
                 mfx_res = va_to_mfx_status(va_res);
+#endif
             }
             if (m_exporter) {
                 vaapi_mids[i].m_custom = m_exporter->acquire(&vaapi_mids[i]);

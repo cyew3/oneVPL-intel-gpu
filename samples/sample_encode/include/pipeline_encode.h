@@ -40,6 +40,10 @@
 
 #include "plugin_loader.h"
 
+#if defined (ENABLE_V4L2_SUPPORT)
+#include "v4l2_util.h"
+#endif
+
 msdk_tick time_get_tick(void);
 msdk_tick time_get_frequency(void);
 
@@ -106,6 +110,17 @@ struct sInputParams
 
     mfxU16 nNumSlice;
     bool UseRegionEncode;
+
+    bool isV4L2InputEnabled;
+
+#if defined (ENABLE_V4L2_SUPPORT)
+    msdk_char DeviceName[MSDK_MAX_FILENAME_LEN];
+    msdk_char MipiModeName[MSDK_MAX_FILENAME_LEN];
+    enum V4L2PixelFormat v4l2Format;
+    int MipiPort;
+    enum AtomISPMode MipiMode;
+#endif
+
 };
 
 struct sTask
@@ -164,9 +179,17 @@ public:
     void SetNumView(mfxU32 numViews) { m_nNumView = numViews; }
     virtual void  PrintInfo();
 
+    void InitV4L2Pipeline(sInputParams *pParams);
+    mfxStatus CaptureStartV4L2Pipeline();
+    void CaptureStopV4L2Pipeline();
+
+#if defined (ENABLE_V4L2_SUPPORT)
+    v4l2Device v4l2Pipeline;
+    pthread_t m_PollThread;
+#endif
+
 protected:
-    std::pair<CSmplBitstreamWriter *,
-              CSmplBitstreamWriter *> m_FileWriters;
+    std::pair<CSmplBitstreamWriter *,CSmplBitstreamWriter *> m_FileWriters;
     CSmplYUVReader m_FileReader;
     CEncTaskPool m_TaskPool;
 
@@ -209,6 +232,8 @@ protected:
     std::vector<mfxExtBuffer*> m_EncExtParams;
 
     CHWDevice *m_hwdev;
+
+    bool isV4L2InputEnabled;
 
     CTimeStatistics m_statOverall;
     CTimeStatistics m_statFile;

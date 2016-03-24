@@ -24,18 +24,18 @@ Copyright(c) 2005-2015 Intel Corporation. All Rights Reserved.
 { \
     if (val) \
     { \
-        PrintHelp(NULL, MSDK_STRING("Input argument number %d \"%s\" require more parameters"), argIdx, argName); \
-        return MFX_ERR_UNSUPPORTED;\
+    PrintHelp(NULL, MSDK_STRING("Input argument number %d \"%s\" require more parameters"), argIdx, argName); \
+    return MFX_ERR_UNSUPPORTED;\
     } \
 }
 
 // Extensions for internal use, normally these macros are blank
 #ifdef MOD_ENC
-    #include "extension_macros.h"
+#include "extension_macros.h"
 #else
-    #define MOD_ENC_CREATE_PIPELINE
-    #define MOD_ENC_PRINT_HELP
-    #define MOD_ENC_PARSE_INPUT
+#define MOD_ENC_CREATE_PIPELINE
+#define MOD_ENC_PRINT_HELP
+#define MOD_ENC_PARSE_INPUT
 #endif
 
 void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
@@ -105,6 +105,15 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-vaapi] - work with vaapi surfaces\n"));
     msdk_printf(MSDK_STRING("Example: %s h264|mpeg2|mvc -i InputYUVFile -o OutputEncodedFile -w width -h height -angle 180 -g 300 -r 1 \n"), strAppName);
 #endif
+#if defined (ENABLE_V4L2_SUPPORT)
+    msdk_printf(MSDK_STRING("   [-d]                            - Device video node (eg: /dev/video0)\n"));
+    msdk_printf(MSDK_STRING("   [-p]                            - Mipi Port number (eg: Port 0)\n"));
+    msdk_printf(MSDK_STRING("   [-m]                            - Mipi Mode Configuration [PREVIEW/CONTINUOUS/STILL/VIDEO]\n"));
+    msdk_printf(MSDK_STRING("   [-uyvy]                        - Input Raw format types V4L2 Encode\n"));
+    msdk_printf(MSDK_STRING("   [-YUY2]                        - Input Raw format types V4L2 Encode\n"));
+    msdk_printf(MSDK_STRING("   [-i::v4l2]                        - To enable v4l2 option\n"));
+    msdk_printf(MSDK_STRING("Example: %s h264|mpeg2|mvc -i::v4l2 -o OutputEncodedFile -w width -h height -d /dev/video0 -uyvy -m preview -p 0\n"), strAppName);
+#endif
     msdk_printf(MSDK_STRING("   [-viewoutput] - instruct the MVC encoder to output each view in separate bitstream buffer. Depending on the number of -o options behaves as follows:\n"));
     msdk_printf(MSDK_STRING("                   1: two views are encoded in single file\n"));
     msdk_printf(MSDK_STRING("                   2: two views are encoded in separate files\n"));
@@ -133,6 +142,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
     // default implementation
     pParams->bUseHWLib = true;
+    pParams->isV4L2InputEnabled = false;
+#if defined (ENABLE_V4L2_SUPPORT)
+    pParams->MipiPort = -1;
+    pParams->MipiMode = NONE;
+    pParams->v4l2Format = NO_FORMAT;
+#endif
 
     // parse command line parameters
     for (mfxU8 i = 1; i < nArgNum; i++)
@@ -354,6 +369,59 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->UseRegionEncode = true;
         }
         MOD_ENC_PARSE_INPUT
+#if defined (ENABLE_V4L2_SUPPORT)
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d")))
+        {
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->DeviceName))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Device name is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-uyvy")))
+        {
+            pParams->v4l2Format = UYVY;
+
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-yuy2")))
+        {
+            pParams->v4l2Format = YUY2;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-p")))
+        {
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->MipiPort))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Mipi-port is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-m")))
+        {
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->MipiModeName))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Device name is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+
+            if(strcasecmp(pParams->MipiModeName,"STILL") == 0)
+                pParams->MipiMode = STILL;
+            else if(strcasecmp(pParams->MipiModeName,"VIDEO") == 0)
+                pParams->MipiMode = VIDEO;
+            else if(strcasecmp(pParams->MipiModeName,"PREVIEW") == 0)
+                pParams->MipiMode = PREVIEW;
+            else if(strcasecmp(pParams->MipiModeName,"CONTINUOUS") == 0)
+                pParams->MipiMode = CONTINUOUS;
+            else
+                pParams->MipiMode = NONE;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-i::v4l2")))
+        {
+            pParams->isV4L2InputEnabled = true;
+        }
+#endif
         else // 1-character options
         {
             switch (strInput[i][1])
@@ -506,8 +574,32 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
     }
 
+#if defined (ENABLE_V4L2_SUPPORT)
+    if (pParams->isV4L2InputEnabled)
+    {
+        if (0 == msdk_strlen(pParams->DeviceName))
+        {
+            PrintHelp(strInput[0], MSDK_STRING("Device Name not found"));
+            return MFX_ERR_UNSUPPORTED;
+        }
+
+        if ((pParams->MipiPort > -1 && pParams->MipiMode == NONE) ||
+            (pParams->MipiPort < 0 && pParams->MipiMode != NONE))
+        {
+            PrintHelp(strInput[0], MSDK_STRING("Invalid Mipi Configuration\n"));
+            return MFX_ERR_UNSUPPORTED;
+        }
+
+        if (pParams->v4l2Format == NO_FORMAT)
+        {
+            PrintHelp(strInput[0], MSDK_STRING("NO input v4l2 format\n"));
+            return MFX_ERR_UNSUPPORTED;
+        }
+    }
+#endif
+
     // check if all mandatory parameters were set
-    if (0 == msdk_strlen(pParams->strSrcFile))
+    if (0 == msdk_strlen(pParams->strSrcFile) && !pParams->isV4L2InputEnabled)
     {
         PrintHelp(strInput[0], MSDK_STRING("Source file name not found"));
         return MFX_ERR_UNSUPPORTED;
@@ -751,6 +843,12 @@ int main(int argc, char *argv[])
 
     msdk_printf(MSDK_STRING("Processing started\n"));
 
+    if (pPipeline->CaptureStartV4L2Pipeline() != MFX_ERR_NONE)
+    {
+        msdk_printf(MSDK_STRING("V4l2 failure terminating the program\n"));
+        return 0;
+    }
+
     for (;;)
     {
         sts = pPipeline->Run();
@@ -771,6 +869,8 @@ int main(int argc, char *argv[])
             break;
         }
     }
+
+    pPipeline->CaptureStopV4L2Pipeline();
 
     pPipeline->Close();
 
