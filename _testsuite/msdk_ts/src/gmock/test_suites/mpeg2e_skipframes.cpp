@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
@@ -52,15 +62,15 @@ const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(Te
 
 class SurfProc : public tsSurfaceProcessor
 {
+    mfxEncodeCtrl* pCtrl;
+    mfxU32 m_curr_frame;
+    tsRawReader m_raw_reader;
+    mfxU32 m_target_frames;
+    mfxFrameInfo* pFrmInfo;
     std::string m_file_name;
     mfxU32 m_nframes;
-    tsRawReader m_raw_reader;
-    mfxEncodeCtrl* pCtrl;
-    mfxFrameInfo* pFrmInfo;
     std::vector<mfxU32> m_skip_frames;
     std::map<mfxU32, mfxU32> m_skip_values;
-    mfxU32 m_curr_frame;
-    mfxU32 m_target_frames;
 
 public:
 
@@ -192,7 +202,7 @@ int TestSuite::RunTest(unsigned int id)
         m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
         m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
 
-        in_name = "YUV/calendar_720x480_600_nv12.yuv";
+        in_name = std::string(g_tsStreamPool.Get("YUV/calendar_720x480_600_nv12.yuv"));
     }
 
     ///////////////////////////////////////////////////////////////////////////
