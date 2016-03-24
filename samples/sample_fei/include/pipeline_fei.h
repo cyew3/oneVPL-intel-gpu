@@ -321,7 +321,7 @@ protected:
     virtual mfxStatus SynchronizeFirstTask();
 
     virtual mfxStatus GetOneFrame(mfxFrameSurface1* & pSurf);
-    virtual mfxStatus ResizeFrame(mfxU32 frameNum, bool &insertIDR,size_t &rctime);
+    virtual mfxStatus ResizeFrame(mfxU32 frameNum, bool &insertIDR,size_t &rctime, iTask* &eTask, sTask *pCurrentTask);
 
     virtual mfxStatus PreProcessOneFrame(mfxFrameSurface1* & pSurf);
     virtual mfxStatus PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, bool is_buffered, bool &cont);

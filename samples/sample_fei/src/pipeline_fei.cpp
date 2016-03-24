@@ -2613,7 +2613,7 @@ mfxStatus CEncodingPipeline::Run()
         if (m_bNeedDRC)
         {
            m_insertIDR  = false;
-           sts = ResizeFrame(m_frameCount,m_insertIDR,rctime);
+           sts = ResizeFrame(m_frameCount, m_insertIDR, rctime, eTask, pCurrentTask);
         }
 
         if (m_insertIDR)
@@ -5427,8 +5427,8 @@ mfxStatus CEncodingPipeline::PreProcessOneFrame(mfxFrameSurface1* & pSurf)
     {
         VppExtSurface.pSurface->Info.Width = m_mfxEncParams.mfx.FrameInfo.Width;
         VppExtSurface.pSurface->Info.Height = m_mfxEncParams.mfx.FrameInfo.Height;
-        VppExtSurface.pSurface->Info.CropW = m_mfxEncParams.mfx.FrameInfo.Width;
-        VppExtSurface.pSurface->Info.CropH = m_mfxEncParams.mfx.FrameInfo.Height;
+        VppExtSurface.pSurface->Info.CropW = m_mfxEncParams.mfx.FrameInfo.CropW;
+        VppExtSurface.pSurface->Info.CropH = m_mfxEncParams.mfx.FrameInfo.CropH;
         VppExtSurface.pSurface->Info.CropX = 0;
         VppExtSurface.pSurface->Info.CropY = 0;
     }
@@ -5481,7 +5481,7 @@ mfxStatus CEncodingPipeline::VPPOneFrame(MFXVideoVPP* VPPobj, MFXVideoSession* s
     return sts;
 }
 
-mfxStatus CEncodingPipeline::ResizeFrame(mfxU32 m_frameCount, bool &m_insertIDR,size_t &rctime)
+mfxStatus CEncodingPipeline::ResizeFrame(mfxU32 m_frameCount, bool &m_insertIDR, size_t &rctime, iTask* &eTask, sTask *pCurrentTask)
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxU32 RCStart     = 0;
@@ -5494,41 +5494,62 @@ mfxStatus CEncodingPipeline::ResizeFrame(mfxU32 m_frameCount, bool &m_insertIDR,
         RCStart = m_drcStart[rctime];
         if (RCStart == m_frameCount )
         {
-            tmpRCWidth =  MSDK_ALIGN16(m_drcWidth[rctime]);
-            tmpRCHeight =  (MFX_PICSTRUCT_PROGRESSIVE == m_mfxEncParams.mfx.FrameInfo.PicStruct) ?
-                MSDK_ALIGN16(m_drcHeight[rctime]):MSDK_ALIGN32(m_drcHeight[rctime]);
-
+            tmpRCWidth = m_drcWidth[rctime];
+            tmpRCHeight = m_drcHeight[rctime];
             bDRCReset = true;
             rctime++;
         }
     }
     if (bDRCReset)
     {
+        if (m_refDist > 1 && m_frameCount > 0 )
+        {
+            sts = GetFreeTask(&pCurrentTask);
+            while (MFX_ERR_NONE <= sts)
+            {
+                bool need_to_continue = false;
+                sts = EncodeOneFrame(eTask, NULL, pCurrentTask, true, need_to_continue);
+                if (need_to_continue)
+                    continue;
+            }
+
+            MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
+
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+            while (MFX_ERR_NONE == sts) {
+                sts = m_TaskPool.SynchronizeFirstTask();
+            }
+            MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_FOUND);
+
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        }
        //bDRCReset = false;
-       m_mfxEncParams.mfx.FrameInfo.Width = tmpRCWidth;
-       m_mfxEncParams.mfx.FrameInfo.Height = tmpRCHeight;
-       m_mfxEncParams.mfx.FrameInfo.CropW = m_mfxEncParams.mfx.FrameInfo.Width ;
-       m_mfxEncParams.mfx.FrameInfo.CropH = m_mfxEncParams.mfx.FrameInfo.Height;
-       m_mfxEncParams.mfx.FrameInfo.CropX = 0;
-       m_mfxEncParams.mfx.FrameInfo.CropY = 0;
-       sts = m_pmfxENCODE->Reset(&m_mfxEncParams);
-       MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        m_mfxEncParams.mfx.FrameInfo.Width = MSDK_ALIGN16(tmpRCWidth);
+        m_mfxEncParams.mfx.FrameInfo.Height = m_isField ? MSDK_ALIGN32(tmpRCHeight) : MSDK_ALIGN16(tmpRCHeight);
+        m_mfxEncParams.mfx.FrameInfo.CropW = tmpRCWidth;
+        m_mfxEncParams.mfx.FrameInfo.CropH = tmpRCHeight;
+        m_mfxEncParams.mfx.FrameInfo.CropX = 0;
+        m_mfxEncParams.mfx.FrameInfo.CropY = 0;
 
-       m_mfxVppParams.vpp.Out.Width = m_mfxEncParams.mfx.FrameInfo.Width;
-       m_mfxVppParams.vpp.Out.Height =  m_mfxEncParams.mfx.FrameInfo.Height;
-       m_mfxVppParams.vpp.Out.CropW = m_mfxEncParams.mfx.FrameInfo.Width;
-       m_mfxVppParams.vpp.Out.CropH =  m_mfxEncParams.mfx.FrameInfo.Height;
-       m_mfxVppParams.vpp.Out.CropX = 0;
-       m_mfxVppParams.vpp.Out.CropY = 0;
-       sts = m_pmfxVPP->Reset(&m_mfxVppParams);
-       MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-       m_insertIDR = true;
+        sts = m_pmfxENCODE->Reset(&m_mfxEncParams);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-       numMBs = (m_mfxVppParams.vpp.Out.Height * m_mfxVppParams.vpp.Out.Width) >> 8;
-       numMBs /= (mfxU16)m_numOfFields;
+        //VPP itself ignores crops at initialization,so just re-initilize Width,Height.
+        m_mfxVppParams.vpp.Out.Width = m_mfxEncParams.mfx.FrameInfo.Width;
+        m_mfxVppParams.vpp.Out.Height = m_mfxEncParams.mfx.FrameInfo.Height;
 
-       sts = UpdateVideoParams();
-       MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        sts = m_pmfxVPP->Reset(&m_mfxVppParams);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        m_insertIDR = true;
+
+        numMBs = (m_mfxVppParams.vpp.Out.Height * m_mfxVppParams.vpp.Out.Width) >> 8;
+        numMBs /= (mfxU16)m_numOfFields;
+
+        sts = UpdateVideoParams();
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
     return sts;
 }
