@@ -24,9 +24,13 @@
 #endif
 
 #ifdef UMC_VA_LINUX
+#include "umc_va_linux.h"
 #include "umc_va_linux_protected.h"
 #include "umc_va_video_processing.h"
+#include "umc_va_fei.h"
 #endif
+
+#include "mfxfei.h"
 
 namespace UMC
 {
@@ -48,6 +52,19 @@ Packer::Packer(VideoAccelerator * va, TaskSupplier * supplier)
 Packer::~Packer()
 {
 }
+
+Status Packer::SyncTask(H264DecoderFrame* pFrame, void * error)
+{
+    return m_va->SyncTask(pFrame->m_index, error);
+}
+
+Status Packer::QueryTaskStatus(Ipp32s index, void * status, void * error)
+{
+    return m_va->QueryTaskStatus(index, status, error);
+}
+
+Status Packer::QueryStreamOut(H264DecoderFrame* pFrame)
+{ return UMC_OK; }
 
 Packer * Packer::CreatePacker(VideoAccelerator * va, TaskSupplier* supplier)
 {
@@ -1464,7 +1481,7 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
     return partial_data;
 }
 
-void PackerDXVA2::BeginFrame()
+void PackerDXVA2::BeginFrame(H264DecoderFrame*, Ipp32s)
 {
     m_statusReportFeedbackCounter++;
     m_picParams = 0;
@@ -1876,6 +1893,7 @@ void PackerDXVA2_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264
 PackerVA::PackerVA(VideoAccelerator * va, TaskSupplier * supplier)
     : Packer(va, supplier)
 {
+    m_enableStreamOut = !!DynamicCast<FEIVideoAccelerator>(va);
 }
 
 Status PackerVA::GetStatusReport(void * pStatusReport, size_t size)
@@ -2483,8 +2501,37 @@ void PackerVA::PackQmatrix(const H264ScalingPicParams * scaling)
     }
 }
 
-void PackerVA::BeginFrame()
+void PackerVA::BeginFrame(H264DecoderFrame* pFrame, Ipp32s field)
 {
+    if (!m_enableStreamOut)
+        return;
+
+    FrameData const* fd = pFrame->GetFrameData();
+    VM_ASSERT(fd);
+
+    FrameData::FrameAuxInfo const* aux = fd->GetAuxInfo();
+    VM_ASSERT(aux->type == MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
+    if (aux->type != MFX_EXTBUFF_FEI_DEC_STREAM_OUT)
+        throw h264_exception(UMC_ERR_FAILED);
+
+    mfxExtFeiDecStreamOut* so =
+        reinterpret_cast<mfxExtFeiDecStreamOut*>(aux->ptr);
+
+    Ipp32u size = so->NumMBAlloc * sizeof(mfxFeiDecStreamOutMBCtrl);
+    if (pFrame->GetAU(field)->IsField())
+        size /= 2;
+
+    VAStreamOutBuffer* buffer = NULL;
+    m_va->GetCompBuffer(VADecodeStreamOutDataBufferType, reinterpret_cast<UMCVACompBuffer**>(&buffer), size, pFrame->m_index);
+    if (buffer)
+    {
+        buffer->BindToField(field);
+        
+        mfxExtFeiDecStreamOut* so =
+            reinterpret_cast<mfxExtFeiDecStreamOut*>(aux->ptr);
+
+        buffer->RemapRefs(so->RemapRefIdx == MFX_CODINGOPTION_ON);
+    }
 }
 
 void PackerVA::EndFrame()
@@ -2553,9 +2600,66 @@ void PackerVA::PackAU(const H264DecoderFrame *pFrame, Ipp32s isTop)
     }
 }
 
-Status PackerVA::QueryTaskStatus(Ipp32s index, void * status, void * error)
+Status PackerVA::QueryStreamOut(H264DecoderFrame* pFrame)
 {
-    return m_va->QueryTaskStatus(index, status, error);
+    if (!m_enableStreamOut)
+        return UMC_OK;
+
+    VM_ASSERT(dynamic_cast<FEIVideoAccelerator*>(m_va) &&
+              "VA should be [FEIVideoAccelerator] if [streamout] is enabled");
+
+    FEIVideoAccelerator* fei_va =
+        static_cast<FEIVideoAccelerator*>(m_va);
+
+    FrameData const* fd = pFrame->GetFrameData();
+    VM_ASSERT(fd);
+
+    FrameData::FrameAuxInfo const* aux = fd->GetAuxInfo();
+    VM_ASSERT(aux->type == MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
+
+    if (aux->type != MFX_EXTBUFF_FEI_DEC_STREAM_OUT)
+        return UMC_ERR_FAILED;
+
+    mfxExtFeiDecStreamOut* so =
+        reinterpret_cast<mfxExtFeiDecStreamOut*>(aux->ptr);
+
+    Ipp32s const size =
+        pFrame->GetTotalMBs() * sizeof(mfxFeiDecStreamOutMBCtrl);
+
+    //top field
+    Ipp32s const top = pFrame->GetNumberByParity(0);
+    VAStreamOutBuffer* buffer = fei_va->QueryStreamOutBuffer(pFrame->m_index, top);
+    if (!buffer || !buffer->GetPtr())
+        return UMC_ERR_FAILED;
+
+    char* dst = reinterpret_cast<char*>(so->MB);
+    VM_ASSERT(dst);
+    
+    void const* src = buffer->GetPtr();
+    VM_ASSERT(src);
+
+    Ipp32s const offset1 =  size * top;
+    memcpy_s(dst + offset1, size, src, size);
+
+    fei_va->ReleaseBuffer(buffer);
+
+    if (!pFrame->GetAU(top)->IsField())
+        return UMC_OK;
+
+    Ipp32s const bottom = pFrame->GetNumberByParity(1);
+    buffer = fei_va->QueryStreamOutBuffer(pFrame->m_index, bottom);
+    if (!buffer || !buffer->GetPtr())
+        return UMC_ERR_FAILED;
+
+    src = buffer->GetPtr();
+    VM_ASSERT(src);
+
+    Ipp32s const offset2 =  size * bottom;
+    memcpy_s(dst + offset2, size, src, size);
+
+    fei_va->ReleaseBuffer(buffer);
+
+    return UMC_OK;
 }
 
 /****************************************************************************************************/

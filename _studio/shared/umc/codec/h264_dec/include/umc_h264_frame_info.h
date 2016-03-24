@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -87,7 +87,7 @@ public:
 
     bool IsField() const
     {
-        return m_pSliceQueue.size() && m_pSliceQueue[0]->IsField();
+        return m_IsField;
     }
 
     void AddSlice(H264Slice * pSlice)
@@ -113,9 +113,10 @@ public:
         }
 
         m_IsIntraAU = m_IsIntraAU && (sliceHeader.slice_type == INTRASLICE);
-        m_IsIDR = sliceHeader.IdrPicFlag != 0;
-        m_isBExist = m_isBExist || (sliceHeader.slice_type == BPREDSLICE);
-        m_isPExist = m_isPExist || (sliceHeader.slice_type == PREDSLICE);
+        m_IsField   = !!sliceHeader.field_pic_flag;
+        m_IsIDR     = sliceHeader.IdrPicFlag != 0;
+        m_isBExist  = m_isBExist || (sliceHeader.slice_type == BPREDSLICE);
+        m_isPExist  = m_isPExist || (sliceHeader.slice_type == PREDSLICE);
 
         m_IsNeedDeblocking = m_IsNeedDeblocking ||
             (sliceHeader.disable_deblocking_filter_idc != DEBLOCK_FILTER_OFF);
@@ -198,10 +199,13 @@ public:
         m_IsNeedDeblocking = false;
 
         m_IsReferenceAU = false;
-        m_IsIntraAU = true;
-        m_IsIDR = false;
-        m_isPExist = false;
-        m_isBExist = false;
+        m_IsIntraAU     = true;
+        m_IsField       = false;
+
+        m_IsIDR         = false;
+        m_isPExist      = false;
+        m_isBExist      = false;
+
         m_IsBottomField = false;
 
         m_NextAU = 0;
@@ -388,6 +392,7 @@ private:
 
     bool m_IsReferenceAU;
     bool m_IsIntraAU;
+    bool m_IsField;
 
     H264DecoderFrameInfo *m_NextAU;
     H264DecoderFrameInfo *m_RefAU;

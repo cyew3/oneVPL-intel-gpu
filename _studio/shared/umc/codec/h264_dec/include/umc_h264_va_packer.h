@@ -44,13 +44,29 @@ class TaskSupplier;
 
 class Packer
 {
+
 public:
+
     Packer(VideoAccelerator * va, TaskSupplier * supplier);
     virtual ~Packer();
 
     virtual Status GetStatusReport(void * pStatusReport, size_t size) = 0;
-    virtual Status SyncTask(Ipp32s index, void * error) = 0;
-    virtual Status QueryTaskStatus(Ipp32s index, void * status, void * error) = 0;
+    virtual Status SyncTask(H264DecoderFrame*, void * error);
+    virtual Status QueryTaskStatus(Ipp32s index, void * status, void * error);
+    virtual Status QueryStreamOut(H264DecoderFrame*);
+
+    VideoAccelerator * GetVideoAccelerator() { return m_va; }
+
+    virtual void PackAU(const H264DecoderFrame*, Ipp32s isTop) = 0;
+
+    virtual void BeginFrame(H264DecoderFrame*, Ipp32s field) = 0;
+    virtual void EndFrame() = 0;
+
+    virtual void Reset() {}
+
+    static Packer * CreatePacker(VideoAccelerator * va, TaskSupplier* supplier);
+
+private:
 
     virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice) = 0;
 
@@ -58,57 +74,51 @@ public:
 
     virtual void PackQmatrix(const UMC_H264_DECODER::H264ScalingPicParams * scaling) = 0;
 
-    VideoAccelerator * GetVideoAccelerator() { return m_va; }
-
-    virtual void PackAU(const H264DecoderFrame *pCurrentFrame, Ipp32s isTop) = 0;
-
-    virtual void BeginFrame() = 0;
-    virtual void EndFrame() = 0;
-
-    virtual void Reset() {}
-
-    static Packer * CreatePacker(VideoAccelerator * va, TaskSupplier* supplier);
-
 protected:
+
     VideoAccelerator *m_va;
-    TaskSupplier * m_supplier;
+    TaskSupplier     *m_supplier;
 };
 
 #ifdef UMC_VA_DXVA
 
-class PackerDXVA2 : public Packer
+class PackerDXVA2
+    : public Packer
 {
+
 public:
+
     PackerDXVA2(VideoAccelerator * va, TaskSupplier * supplier);
 
-    virtual Status GetStatusReport(void * pStatusReport, size_t size);
-    virtual Status SyncTask(Ipp32s index, void * error) { return UMC_ERR_UNSUPPORTED; }
-    virtual Status QueryTaskStatus(Ipp32s index, void * status, void * error) { return UMC_ERR_UNSUPPORTED; }
+    Status GetStatusReport(void * pStatusReport, size_t size);
 
-    virtual void PackQmatrix(const UMC_H264_DECODER::H264ScalingPicParams * scaling);
+    void PackAU(const H264DecoderFrame*, Ipp32s isTop);
 
-    virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice);
+    void BeginFrame(H264DecoderFrame*, Ipp32s field);
+    void EndFrame();
 
-    virtual Ipp32s PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chopping, Ipp32s numSlicesOfPrevField);
+private:
 
-    virtual void PackAU(const H264DecoderFrame *pCurrentFrame, Ipp32s isTop);
+    void PackQmatrix(const UMC_H264_DECODER::H264ScalingPicParams * scaling);
 
-    virtual void BeginFrame();
-    virtual void EndFrame();
+    void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice);
+
+    Ipp32s PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chopping, Ipp32s numSlicesOfPrevField);
 
 protected:
-    virtual void AddReferenceFrame(DXVA_PicParams_H264 * pPicParams_H264, Ipp32s &pos, H264DecoderFrame * pFrame, Ipp32s reference);
-    virtual DXVA_PicEntry_H264 GetFrameIndex(const H264DecoderFrame * frame);
+
+    void AddReferenceFrame(DXVA_PicParams_H264 * pPicParams_H264, Ipp32s &pos, H264DecoderFrame * pFrame, Ipp32s reference);
+    DXVA_PicEntry_H264 GetFrameIndex(const H264DecoderFrame * frame);
 
     void PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264DecoderFrame * frame);
-    virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice, DXVA_PicParams_H264* pPicParams_H264);
+    void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice, DXVA_PicParams_H264* pPicParams_H264);
     Ipp32s PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chopping, Ipp32s numSlicesOfPrevField, DXVA_Slice_H264_Long* pDXVA_Slice_H264);
 
     void SendPAVPStructure(Ipp32s numSlicesOfPrevField, H264Slice *pSlice);
 
     void CheckData(); //check correctness of encrypted data
 
-    virtual void PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s firstSlice, Ipp32s count);
+    void PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s firstSlice, Ipp32s count);
 
     void PackPicParamsMVC(const H264DecoderFrameInfo * pSliceInfo, DXVA_PicParams_H264_MVC* pMVCPicParams_H264);
     void PackPicParamsMVC(const H264DecoderFrameInfo * pSliceInfo, DXVA_Intel_PicParams_MVC* pMVCPicParams_H264);
@@ -120,15 +130,19 @@ protected:
     DXVA_PicParams_H264* m_picParams;
 };
 
-class PackerDXVA2_Widevine: public PackerDXVA2
+class PackerDXVA2_Widevine
+    : public PackerDXVA2
 {
+
 public:
+
     PackerDXVA2_Widevine(VideoAccelerator * va, TaskSupplier * supplier);
-    virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice);
+    void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice);
 
 private:
-    virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice, DXVA_PicParams_H264* pPicParams_H264);
-    virtual void PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s firstSlice, Ipp32s count);
+
+    void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice, DXVA_PicParams_H264* pPicParams_H264);
+    void PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s firstSlice, Ipp32s count);
 };
 
 #endif // UMC_VA_DXVA
@@ -136,30 +150,24 @@ private:
 
 #ifdef UMC_VA_LINUX
 
-class PackerVA : public Packer
+class PackerVA
+    : public Packer
 {
 public:
     PackerVA(VideoAccelerator * va, TaskSupplier * supplier);
 
-    virtual Status GetStatusReport(void * pStatusReport, size_t size);
-    virtual Status SyncTask(Ipp32s index, void * error) { return m_va->SyncTask(index, error); }
-    virtual Status QueryTaskStatus(Ipp32s index, void * status, void * error);
+    Status GetStatusReport(void * pStatusReport, size_t size);
+    Status QueryStreamOut(H264DecoderFrame*);
 
-    virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice);
+    void PackAU(const H264DecoderFrame*, Ipp32s isTop);
 
-    virtual void CreateSliceParamBuffer(H264DecoderFrameInfo * pSliceInfo);
-    virtual void CreateSliceDataBuffer(H264DecoderFrameInfo * pSliceInfo);
-
-    virtual Ipp32s PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chopping, Ipp32s numSlicesOfPrevField);
-
-    virtual void PackQmatrix(const UMC_H264_DECODER::H264ScalingPicParams * scaling);
-
-    virtual void PackAU(const H264DecoderFrame *pCurrentFrame, Ipp32s isTop);
-
-    virtual void BeginFrame();
-    virtual void EndFrame();
+    void BeginFrame(H264DecoderFrame*, Ipp32s field);
+    void EndFrame();
 
 protected:
+
+    void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice);
+
     void FillFrame(VAPictureH264 * pic, const H264DecoderFrame *pFrame,
         Ipp32s field, Ipp32s reference, Ipp32s defaultIndex);
 
@@ -174,12 +182,30 @@ protected:
     {
         VA_FRAME_INDEX_INVALID = 0x7f
     };
+
+protected:
+
+    void CreateSliceParamBuffer(H264DecoderFrameInfo * pSliceInfo);
+    void CreateSliceDataBuffer(H264DecoderFrameInfo * pSliceInfo);
+
+    Ipp32s PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chopping, Ipp32s numSlicesOfPrevField);
+
+    void PackQmatrix(const UMC_H264_DECODER::H264ScalingPicParams * scaling);
+
+private:
+
+    bool                       m_enableStreamOut;
 };
 
-class PackerVA_PAVP : public PackerVA
+class PackerVA_PAVP
+    : public PackerVA
 {
+
 public:
+
     PackerVA_PAVP(VideoAccelerator * va, TaskSupplier * supplier);
+
+private:
 
     virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice);
 
@@ -188,15 +214,20 @@ public:
     virtual Ipp32s PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chopping, Ipp32s numSlicesOfPrevField);
 
 protected:
-    void PackPavpParams(void);
+
+    void PackPavpParams();
 };
 
-class PackerVA_Widevine: public PackerVA
+class PackerVA_Widevine
+    : public PackerVA
 {
+
 public:
+
     PackerVA_Widevine(VideoAccelerator * va, TaskSupplier * supplier);
 
 private:
+
     virtual void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice);
     virtual void PackAU(const H264DecoderFrame *pCurrentFrame, Ipp32s isTop);
 };

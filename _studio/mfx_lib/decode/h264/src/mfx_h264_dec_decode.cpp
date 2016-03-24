@@ -14,6 +14,8 @@
 
 #if defined (MFX_ENABLE_H264_VIDEO_DECODE)
 
+#include "mfxfei.h"
+
 #include "mfx_common.h"
 #include "mfx_common_decode_int.h"
 
@@ -22,7 +24,6 @@
 // debug
 #include "umc_h264_frame_list.h"
 #include "vm_sys_info.h"
-#include "mfx_enc_common.h"
 
 #if defined(MFX_VA)
 #include "umc_h264_va_supplier.h"
@@ -36,7 +37,8 @@
 #include "umc_h264_vda_supplier.h"
 #endif
 
-static inline mfxU32 CalculateAsyncDepth(eMFXPlatform platform, mfxVideoParam *par)
+inline
+mfxU32 CalculateAsyncDepth(eMFXPlatform platform, mfxVideoParam *par)
 {
     mfxU32 asyncDepth = par->AsyncDepth;
     if (!asyncDepth)
@@ -47,7 +49,8 @@ static inline mfxU32 CalculateAsyncDepth(eMFXPlatform platform, mfxVideoParam *p
     return asyncDepth;
 }
 
-static inline mfxU32 CalculateNumThread(eMFXPlatform platform, mfxVideoParam *par)
+inline
+mfxU32 CalculateNumThread(eMFXPlatform platform, mfxVideoParam *par)
 {
     mfxU32 numThread = (MFX_PLATFORM_SOFTWARE == platform) ? vm_sys_info_get_cpu_num() : 1;
     if (!par->AsyncDepth)
@@ -56,7 +59,8 @@ static inline mfxU32 CalculateNumThread(eMFXPlatform platform, mfxVideoParam *pa
     return IPP_MIN(par->AsyncDepth, numThread);
 }
 
-static inline void mfx_memcpy(void * dst, size_t dstLen, void * src, size_t len)
+inline
+void mfx_memcpy(void * dst, size_t dstLen, void * src, size_t len)
 {
     memcpy_s(dst, dstLen, src, len);
 }
@@ -65,6 +69,22 @@ inline bool IsNeedToUseHWBuffering(eMFXHWType type)
 {
     type;return false;
     //return (type != MFX_HW_LAKE); // eagle lake has own workaround!
+}
+
+inline
+mfxExtBuffer* GetExtBuffer(mfxExtBuffer** ebuffers, mfxU32 nbuffers, mfxU32 BufferId, mfxU32 field)
+{
+    mfxExtBuffer* buffer = GetExtendedBuffer(ebuffers, nbuffers, BufferId);
+    if (!buffer || !field)
+        return buffer;
+
+    mfxU32 const idx = static_cast<mfxU32>(buffer - ebuffers[0]);
+    if (idx >= nbuffers - 1)
+        return 0;
+
+    buffer = GetExtendedBuffer(ebuffers + idx + 1, nbuffers - (idx + 1), BufferId);
+
+    return buffer;
 }
 
 struct ThreadTaskInfo
@@ -173,11 +193,11 @@ mfxU32 CalculateRequiredView(mfxVideoParam *par)
     if (!IsMVCProfile(par->mfx.CodecProfile))
         return 1;
 
-    mfxExtMVCSeqDesc * mvcPoints = (mfxExtMVCSeqDesc *)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
+    mfxExtMVCSeqDesc * mvcPoints = (mfxExtMVCSeqDesc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
     if (!mvcPoints)
         return 1;
 
-    mfxExtMVCTargetViews * targetViews = (mfxExtMVCTargetViews *)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_TARGET_VIEWS);
+    mfxExtMVCTargetViews * targetViews = (mfxExtMVCTargetViews *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_TARGET_VIEWS);
 
     ViewIDsList viewList;
     ViewIDsList dependencyList;
@@ -258,7 +278,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
 
     m_usePostProcessing = false;
 
-    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
     if (videoProcessing)
     {
         m_usePostProcessing = true;
@@ -511,7 +531,7 @@ mfxU16 VideoDECODEH264::GetChangedProfile(mfxVideoParam *par)
 {
     if (IsSVCProfile(par->mfx.CodecProfile))
     {
-        mfxExtSvcTargetLayer * svcTarget = (mfxExtSvcTargetLayer*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_SVC_TARGET_LAYER);
+        mfxExtSvcTargetLayer * svcTarget = (mfxExtSvcTargetLayer*)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_SVC_TARGET_LAYER);
         if (svcTarget && !svcTarget->TargetDependencyID && !svcTarget->TargetQualityID)
         {
             return MFX_PROFILE_AVC_HIGH;
@@ -521,7 +541,7 @@ mfxU16 VideoDECODEH264::GetChangedProfile(mfxVideoParam *par)
     if (!IsMVCProfile(par->mfx.CodecProfile))
         return par->mfx.CodecProfile;
 
-    mfxExtMVCTargetViews * targetViews = (mfxExtMVCTargetViews *)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_TARGET_VIEWS);
+    mfxExtMVCTargetViews * targetViews = (mfxExtMVCTargetViews *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_TARGET_VIEWS);
     if (targetViews && targetViews->NumView == 1 && targetViews->ViewId[0] == 0)
     {
         return MFX_PROFILE_AVC_HIGH;
@@ -534,14 +554,14 @@ mfxStatus VideoDECODEH264::SetTargetViewList(mfxVideoParam *par)
 {
     if (IsSVCProfile(par->mfx.CodecProfile))
     {
-        mfxExtSvcTargetLayer * svcTarget = (mfxExtSvcTargetLayer*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_SVC_TARGET_LAYER);
+        mfxExtSvcTargetLayer * svcTarget = (mfxExtSvcTargetLayer*)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_SVC_TARGET_LAYER);
         if (svcTarget)
         {
             m_pH264VideoDecoder->SetSVCTargetLayer(svcTarget->TargetDependencyID, svcTarget->TargetQualityID, svcTarget->TargetTemporalID);
         }
         else
         {
-            mfxExtSVCSeqDesc * svcDesc = (mfxExtSVCSeqDesc*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_SVC_SEQ_DESC);
+            mfxExtSVCSeqDesc * svcDesc = (mfxExtSVCSeqDesc*)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_SVC_SEQ_DESC);
             if (svcDesc)
             {
                 mfxU32 maxDependencyId = 0;
@@ -559,7 +579,7 @@ mfxStatus VideoDECODEH264::SetTargetViewList(mfxVideoParam *par)
     ViewIDsList viewList;
     ViewIDsList dependencyList;
 
-    mfxExtMVCSeqDesc * mvcPoints = (mfxExtMVCSeqDesc *)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
+    mfxExtMVCSeqDesc * mvcPoints = (mfxExtMVCSeqDesc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
     if (!mvcPoints)
     {
         viewList.push_back(0); // base view only
@@ -567,7 +587,7 @@ mfxStatus VideoDECODEH264::SetTargetViewList(mfxVideoParam *par)
         return MFX_ERR_NONE;
     }
 
-    mfxExtMVCTargetViews * targetViews = (mfxExtMVCTargetViews *)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_TARGET_VIEWS);
+    mfxExtMVCTargetViews * targetViews = (mfxExtMVCTargetViews *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_TARGET_VIEWS);
 
     if (targetViews)
     {
@@ -968,7 +988,7 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
     if (sts != MFX_ERR_NONE)
         return sts;
 
-    bool isVideoProcessing = GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING) != 0;
+    bool isVideoProcessing = GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING) != 0;
 
     if (isInternalManaging || isVideoProcessing)
     {
@@ -992,7 +1012,7 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
         request->Type |= MFX_MEMTYPE_EXTERNAL_FRAME;
     }
 
-    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+    mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
     if (videoProcessing)
     {
         // need to substitute output format
@@ -1027,7 +1047,7 @@ mfxStatus VideoDECODEH264::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
 {
     request->Info = par->mfx.FrameInfo;
 
-    mfxExtMVCSeqDesc * points = (mfxExtMVCSeqDesc *)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
+    mfxExtMVCSeqDesc * points = (mfxExtMVCSeqDesc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
     mfxU8 level_idc = (mfxU8)par->mfx.CodecLevel;
 
     if (IsMVCProfile(par->mfx.CodecProfile) && points && points->OP)
@@ -1553,7 +1573,7 @@ void VideoDECODEH264::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
 
     mfxFrameSurface1 *surface_out = *surf_out;
 
-    mfxExtDecodedFrameInfo * frameType = (mfxExtDecodedFrameInfo *)GetExtBuffer(surface_out->Data.ExtParam, surface_out->Data.NumExtParam, MFX_EXTBUFF_DECODED_FRAME_INFO);
+    mfxExtDecodedFrameInfo * frameType = (mfxExtDecodedFrameInfo *)GetExtendedBuffer(surface_out->Data.ExtParam, surface_out->Data.NumExtParam, MFX_EXTBUFF_DECODED_FRAME_INFO);
     if (frameType)
     {
         if (pFrame->GetAU(0)->IsIntraAU())
@@ -1614,7 +1634,7 @@ void VideoDECODEH264::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
 
     if (m_usePostProcessing)
     {
-        mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtBuffer(m_vFirstPar.ExtParam, m_vFirstPar.NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
+        mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(m_vFirstPar.ExtParam, m_vFirstPar.NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
         VM_ASSERT(videoProcessing);
 
         surface_out->Info.CropH = videoProcessing->Out.CropH;

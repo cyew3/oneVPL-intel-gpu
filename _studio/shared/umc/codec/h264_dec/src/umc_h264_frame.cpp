@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -18,6 +18,8 @@
 
 #include "umc_h264_log.h"
 #include "umc_h264_dec_ippwrap.h"
+
+#include "umc_h264_dec_debug.h"
 
 #define NON_LAYER_FRAME
 
@@ -429,7 +431,6 @@ void H264DecoderFrame::deallocateParsedFrameData()
 
     m_paddedParsedFrameDataSize.width = 0;
     m_paddedParsedFrameDataSize.height = 0;
-
 }    // deallocateParsedFrameData
 
 size_t H264DecoderFrame::GetFrameDataSize(const IppiSize &lumaSize)
