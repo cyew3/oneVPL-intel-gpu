@@ -329,7 +329,7 @@ typedef struct {
     mfxU32    CbpY                :16;
     mfxU32    CbpCb               : 4;
     mfxU32    CbpCr               : 4;
-    mfxU32    Reserved20          : 9;
+    mfxU32    Reserved20          : 6;
     mfxU32    IsLastMB            : 1;
     mfxU32    ConcealMB           : 1;
 
