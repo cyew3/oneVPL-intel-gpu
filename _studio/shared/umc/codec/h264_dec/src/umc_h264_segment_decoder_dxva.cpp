@@ -66,7 +66,7 @@ void H264_DXVA_SegmentDecoder::PackAllHeaders(H264DecoderFrame * pFrame, Ipp32s 
         VM_ASSERT(m_Packer.get());
     }
 
-    m_Packer->BeginFrame();
+    m_Packer->BeginFrame(pFrame, field);
     m_Packer->PackAU(pFrame, field);
     m_Packer->EndFrame();
 }
@@ -331,16 +331,23 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
     Status sts = UMC_OK;
     for (H264DecoderFrameInfo * au = m_FirstAU; au; au = au->GetNextAU())
     {
+        H264DecoderFrameInfo* prev = au->GetPrevAU();
+        //skip second field for sync.
+        bool skip = (prev && prev->m_pFrame == au->m_pFrame);
+
         Ipp16u surfCorruption = 0;
 #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
-        m_mGuard.Unlock();
+        if (!skip)
         {
+            m_mGuard.Unlock();
+
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Dec vaSyncSurface");
-            sts = dxva_sd->GetPacker()->SyncTask(au->m_pFrame->m_index, &surfCorruption);
+            sts = dxva_sd->GetPacker()->SyncTask(au->m_pFrame, &surfCorruption);
+
+            m_mGuard.Lock();
         }
-        m_mGuard.Lock();
 #else
-        sts = dxva_sd->GetPacker()->QueryTaskStatus(au->m_pFrame->m_index, &surfSts, &surfCorruption);
+        sts = dxva_sd->GetPacker()->QueryTaskStatus(au->m_pFrame, &surfSts, &surfCorruption);
 #endif
         //we should complete frame even we got an error
         //this allows to return the error from [RunDecoding]
@@ -367,7 +374,17 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
 
         if (sts != UMC_OK)
             throw h264_exception(sts);
+
+        if (!skip)
+        {
+            //query SO buffer with [SyncTask] only
+            sts = dxva_sd->GetPacker()->QueryStreamOut(au->m_pFrame);
+            if (sts != UMC_OK)
+                throw h264_exception(sts);
+        }
     }
+
+    SwitchCurrentAU();
 #endif
 
     return false;

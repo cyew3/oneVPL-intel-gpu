@@ -306,6 +306,7 @@ FrameData::FrameData()
     , m_FrameMID(FRAME_MID_INVALID)
     , m_FrameAlloc(0)
 {
+    SetAuxInfo(0, 0, -1);
 }
 
 FrameData::FrameData(const FrameData & fd)
@@ -319,6 +320,9 @@ FrameData::FrameData(const FrameData & fd)
     {
         m_FrameAlloc->IncreaseReference(m_FrameMID);
     }
+
+    FrameAuxInfo const* aux = fd.GetAuxInfo();
+    SetAuxInfo(aux->ptr, aux->size, aux->type);
 }
 
 FrameData::~FrameData()
@@ -347,12 +351,8 @@ FrameData& FrameData::operator=(const FrameData& fd)
         m_FrameAlloc->IncreaseReference(m_FrameMID);
     }
 
-    /*if (m_locked)
-    {
-        const FrameData * frm = m_FrameAlloc->Lock(m_FrameMID);
-        if (!frm)
-            throw VM_STRING("exception1");
-    }*/
+    FrameAuxInfo const* aux = fd.GetAuxInfo();
+    SetAuxInfo(aux->ptr, aux->size, aux->type);
 
     return *this;
 }
@@ -426,6 +426,13 @@ void FrameData::SetPlanePointer(Ipp8u* planePtr, Ipp32u plane, size_t pitch)
 
     m_PlaneInfo[plane].m_planePtr = planePtr;
     m_PlaneInfo[plane].m_pitch = pitch;
+}
+
+void FrameData::SetAuxInfo(void* ptr, size_t size, int type)
+{
+    m_AuxInfo.ptr = ptr;
+    m_AuxInfo.size = size;
+    m_AuxInfo.type = type;
 }
 
 } // end namespace UMC

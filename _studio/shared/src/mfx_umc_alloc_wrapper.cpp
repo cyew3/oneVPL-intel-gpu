@@ -16,6 +16,7 @@
 #include "mfx_common.h"
 #include "libmfx_core.h"
 #include "mfx_common_int.h"
+#include "mfxfei.h"
 
 #include "ippi.h"
 #include "ippcc.h"
@@ -609,6 +610,11 @@ mfxStatus mfx_UMC_FrameAllocator::SetCurrentMFXSurface(mfxFrameSurface1 *surf, b
             return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
+    mfxExtBuffer* extbuf = 
+        GetExtendedBuffer(surf->Data.ExtParam, surf->Data.NumExtParam, MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
+    if (extbuf && !m_IsUseExternalFrames)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
     // device checking
     {
         mfxStatus sts;
@@ -645,30 +651,30 @@ mfxStatus mfx_UMC_FrameAllocator::SetCurrentMFXSurface(mfxFrameSurface1 *surf, b
     }
 
     m_curIndex = -1;
+
     if (!m_IsUseExternalFrames)
-    {
         m_curIndex = FindFreeSurface();
-        return MFX_ERR_NONE;
-    }
-
-    m_curIndex = FindSurface(surf, isOpaq);
-
-    if (m_curIndex != -1)
-    {
-        m_extSurfaces[m_curIndex].FrameSurface = surf;
-        if (m_frameData[m_curIndex].first.Data.Locked) // surface was locked yet
-        {
-            m_curIndex = -1;
-        }
-
-        // update info
-        m_frameData[m_curIndex].first.Info = surf->Info;
-    }
     else
     {
-        m_curIndex = AddSurface(surf);
+        m_curIndex = FindSurface(surf, isOpaq);
+
         if (m_curIndex != -1)
+        {
             m_extSurfaces[m_curIndex].FrameSurface = surf;
+            if (m_frameData[m_curIndex].first.Data.Locked) // surface was locked yet
+            {
+                m_curIndex = -1;
+            }
+
+            // update info
+            m_frameData[m_curIndex].first.Info = surf->Info;
+        }
+        else
+        {
+            m_curIndex = AddSurface(surf);
+            if (m_curIndex != -1)
+                m_extSurfaces[m_curIndex].FrameSurface = surf;
+        }
     }
 
     return MFX_ERR_NONE;

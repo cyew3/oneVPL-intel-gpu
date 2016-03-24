@@ -26,6 +26,11 @@
 
 #include "umc_h264_dec_debug.h"
 
+#include "mfx_umc_alloc_wrapper.h"
+#include "mfx_common_int.h"
+
+#include "mfxfei.h"
+
 namespace UMC
 {
 
@@ -292,12 +297,26 @@ Status VATaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dim
     Status sts = m_pFrameAllocator->Alloc(&frmMID, &info, 0);
 
     if (sts != UMC_OK)
-    {
         throw h264_exception(UMC_ERR_ALLOC);
-    }
 
     FrameData frmData;
     frmData.Init(&info, frmMID, m_pFrameAllocator);
+
+    mfx_UMC_FrameAllocator* mfx_alloc = 
+        DynamicCast<mfx_UMC_FrameAllocator>(m_pFrameAllocator);
+    if (mfx_alloc)
+    {
+        mfxFrameSurface1* surface = 
+            mfx_alloc->GetSurfaceByIndex(frmMID);
+        if (!surface)
+            throw h264_exception(UMC_ERR_ALLOC);
+
+        mfxExtBuffer* extbuf = 
+            GetExtendedBuffer(surface->Data.ExtParam, surface->Data.NumExtParam, MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
+        if (extbuf)
+            frmData.SetAuxInfo(extbuf, extbuf->BufferSz, extbuf->BufferId);
+    }
+
     pFrame->allocate(&frmData, &info);
 
     pFrame->m_index = frmMID;

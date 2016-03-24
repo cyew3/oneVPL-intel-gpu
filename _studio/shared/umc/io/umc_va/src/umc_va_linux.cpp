@@ -24,7 +24,8 @@
 #include "mfxstructures.h"
 #include "huc_based_drm_common.h"
 
-#define UMC_VA_NUM_OF_COMP_BUFFERS 8
+#define UMC_VA_NUM_OF_COMP_BUFFERS       8
+#define UMC_VA_DECODE_STREAM_OUT_ENABLE  2
 
 UMC::Status va_to_umc_res(VAStatus va_res)
 {
@@ -553,9 +554,9 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateContext");
             if (needAllocatedSurfaces)
-                va_res = vaCreateContext(m_dpy, *m_pConfigId, width, height, VA_PROGRESSIVE, (VASurfaceID*)pParams->m_surf, m_NumOfFrameBuffers, m_pContext);
+                va_res = vaCreateContext(m_dpy, *m_pConfigId, width, height, pParams->m_CreateFlags, (VASurfaceID*)pParams->m_surf, m_NumOfFrameBuffers, m_pContext);
             else
-                va_res = vaCreateContext(m_dpy, *m_pConfigId, width, height, VA_PROGRESSIVE, NULL, 0, m_pContext);
+                va_res = vaCreateContext(m_dpy, *m_pConfigId, width, height, pParams->m_CreateFlags, NULL, 0, m_pContext);
 
             umcRes = va_to_umc_res(va_res);
         }
@@ -578,7 +579,6 @@ Status LinuxVideoAccelerator::Close(void)
             if (pCompBuf->NeedDestroy() && (NULL != m_dpy))
             {
                 vaDestroyBuffer(m_dpy, pCompBuf->GetID());
-                pCompBuf->SetDestroyStatus(false);
             }
             UMC_DELETE(m_pCompBuffers[i]);
         }
@@ -848,8 +848,6 @@ LinuxVideoAccelerator::Execute()
                 va_sts = vaRenderPicture(m_dpy, *m_pContext, &id, 1); // TODO: send all at once?
                 if (VA_STATUS_SUCCESS == va_res) va_res = va_sts;
             }
-
-            pCompBuf->SetDestroyStatus(false);
         }
 #if 0
         /* NOTE:

@@ -8,7 +8,9 @@
 //
 */
 
+#include <mfxcommon.h>
 #include "mfx_common.h"
+
 #if defined (MFX_ENABLE_H264_VIDEO_DECODE)
 
 #include "umc_defs.h"
