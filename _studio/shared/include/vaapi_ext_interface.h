@@ -719,10 +719,12 @@ typedef struct _VAStatsStatisticsParameter16x16Intel
     /** \brief Source surface ID.  */
     VAPictureFEI     input;
 
-    VAPictureFEI     *past_references;
+    VAPictureFEI    *past_references;
     unsigned int    num_past_references;
-    VAPictureFEI     *future_references;
+    VABufferID      *past_ref_stat_buf;
+    VAPictureFEI    *future_references;
     unsigned int    num_future_references;
+    VABufferID      *future_ref_stat_buf;
 
     /** \brief ID of the output buffer.
      * The number of outputs is determined by below DisableMVOutput and DisableStatisticsOutput.
