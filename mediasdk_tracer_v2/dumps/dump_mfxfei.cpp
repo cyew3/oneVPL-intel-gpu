@@ -479,11 +479,11 @@ std::string DumpContext::dump(const std::string structName, const mfxFeiDecStrea
     DUMP_FIELD(Reserved70);
 
     //dword 8-15
-    str += "{\n";
-    for (unsigned int j = 0; j < GET_ARRAY_SIZE(_struct.MV); j++)
+    str += structName + ".MV[]={\n";
+    for (unsigned int i = 0; i < GET_ARRAY_SIZE(_struct.MV); i++)
     {
-        str += "{ L0: {" + ToString(_struct.MV[j].x) + "," + ToString(_struct.MV[j].y)
-            + "}, L1: {" + ToString(_struct.MV[j].x) + "," + ToString(_struct.MV[j].y)
+        str += "{ L0: {" + ToString(_struct.MV[i][0].x) + "," + ToString(_struct.MV[i][0].y)
+            + "}, L1: {" + ToString(_struct.MV[i][1].x) + "," + ToString(_struct.MV[i][1].y)
             + "}}, ";
     }
     str += "}\n";

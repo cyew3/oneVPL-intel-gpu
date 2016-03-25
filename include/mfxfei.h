@@ -368,7 +368,7 @@ typedef struct {
     mfxU32     Reserved70;
 
     //dword 8-15
-    mfxI16Pair MV[8];
+    mfxI16Pair MV[4][2]; /* L0 – 0, L1 - 1 */
 }mfxFeiDecStreamOutMBCtrl;
 
 typedef struct {
