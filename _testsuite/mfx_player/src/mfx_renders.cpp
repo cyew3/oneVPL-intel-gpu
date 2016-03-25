@@ -400,6 +400,8 @@ mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncode
 #define WRITE(buff, count) MFX_CHECK_STS(PutData(buff, count));
 #endif
 
+void XOR31(mfxU16 *data, size_t size);
+
 mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
 {
     int i;
@@ -473,6 +475,9 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             for (i = 0; i < pInfo->CropH; i++)
             {
                 m_Current.m_pixY = i;
+                if (m_params.VpxDec16bFormat)
+                    XOR31((mfxU16 *)(pData->Y + (crop_y * pitch + crop_x) + i*pitch), pInfo->CropW);
+
                 WRITE(pData->Y + (crop_y * pitch + crop_x) + i*pitch, pInfo->CropW*2);
             }
 
@@ -487,12 +492,18 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
                 for (i = 0; i < height; i++)
                 {
                     m_Current.m_pixY = i;
+                    if (m_params.VpxDec16bFormat)
+                        XOR31((mfxU16 *)(pData->U + (crop_y * pitch/2 + crop_x) + i*pitch/2), pInfo->CropW/2);
+
                     WRITE(pData->U + (crop_y * pitch/2 + crop_x) + i*pitch/2, pInfo->CropW);
                 }
                 m_Current.m_comp = VM_STRING('V');
                 for (i = 0; i < height; i++)
                 {
                     m_Current.m_pixY = i;
+                    if (m_params.VpxDec16bFormat)
+                        XOR31((mfxU16 *)(pData->V + (crop_y * pitch/2 + crop_x) + i*pitch/2), pInfo->CropW/2);
+
                     WRITE(pData->V + (crop_y * pitch/2 + crop_x) + i*pitch/2, pInfo->CropW);
                 }
             }
@@ -1300,6 +1311,13 @@ void MFXMetricComparatorRender::ReportDifference(const vm_char * metricName)
     vm_string_printf(VM_STRING("    tstVal : %.2lf\n"), m_Current.m_valTst);
 }
 
+// Special "format" used in vpxdec, 6 LSBs == 31
+void XOR31(mfxU16 *data, size_t size)
+{
+    for (size_t i = 0; i < size; i++)
+        data[i] = data[i] | 31;
+}
+
 template<typename T_In, typename T_Out>
 void copyPlane(mfxU8 * inparam, size_t pitchIn, mfxU8 * outparam, size_t pitchOut, mfxU32 height, mfxU32 width, int shift)
 {
@@ -1518,7 +1536,8 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
             finalBitDepth = originalBDLuma;
 
         mfxI32 shift = pSurfaceIn->Info.Shift ? (16 - finalBitDepth) : originalBDLuma - finalBitDepth;
-
+        if (params->VpxDec16bFormat) //No need to remove shift if vpxdec format
+            shift = 0;
         if (pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12)
             copyPlane<mfxU8, mfxU16>(pSurfaceIn->Data.Y, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.Y, pSurfaceOut->Data.Pitch, pSurfaceIn->Info.Height, pSurfaceIn->Info.Width, shift);
         else
@@ -1528,7 +1547,8 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
             finalBitDepth = originalBDChroma;
 
         shift = pSurfaceIn->Info.Shift ? (16 - finalBitDepth) : originalBDChroma - finalBitDepth;
-
+        if (params->VpxDec16bFormat) //No need to remove shift if vpxdec format
+            shift = 0;
         if (pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12)
             copyChromaPlane<mfxU8, mfxU16>(pSurfaceIn->Data.UV, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.U, pSurfaceOut->Data.V, pSurfaceOut->Data.Pitch >> 1, pSurfaceIn->Info.Height / 2, pSurfaceIn->Info.Width / 2, shift);
         else

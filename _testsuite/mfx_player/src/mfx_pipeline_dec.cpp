@@ -1783,6 +1783,7 @@ mfxStatus MFXDecPipeline::CreateRender()
     renderParams.useSameBitDepthForComponents = m_inParams.isAllegroTest;
     renderParams.use10bitOutput = m_inParams.isAllegroTest;
     renderParams.useHMstyle = m_inParams.isHMTest;
+    renderParams.VpxDec16bFormat = m_inParams.VpxDec16bFormat;
     renderParams.alwaysWriteChroma = m_components[eDEC].m_params.mfx.CodecId == MFX_CODEC_HEVC ? false : true;
 
     switch (m_RenderType)
@@ -4791,6 +4792,10 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
           else if (m_OptProc.Check(argv[0], VM_STRING("-hm_disable"), VM_STRING("hm_disable")))
           {
                 m_inParams.isHMTest = false;
+          }
+          else if (m_OptProc.Check(argv[0], VM_STRING("-VpxDec16bFormat"), VM_STRING("Use 10bit (packed to 16bit) format used in vpxdec with option --output-bit-depth=16. Samples are shifted (located in MSBs); 6 LSBs equal to 31 (01 1111). Option works only when output format is YUV420_16, i.e. input is 10b and output FOURCC is not specified (-o out.yuv) ")))
+          {
+                m_inParams.VpxDec16bFormat = true;
           }
           else if (m_OptProc.Check(argv[0], VM_STRING("-i:picstruct"), VM_STRING("Set picstruct for decoded frames"), OPT_INT_32))
           {
