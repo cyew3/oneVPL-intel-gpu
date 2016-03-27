@@ -1,3 +1,11 @@
+//
+//               INTEL CORPORATION PROPRIETARY INFORMATION
+//  This software is supplied under the terms of a license agreement or
+//  nondisclosure agreement with Intel Corporation and may not be copied
+//  or disclosed except in accordance with the terms of that agreement.
+//        Copyright (c) 2015 - 2016 Intel Corporation. All Rights Reserved.
+//
+
 #include "stdexcept"
 
 #include "gtest/gtest.h"
@@ -263,7 +271,7 @@ TEST_F(InitTest, GetVideoParam_SpsPps) {
 #else
     __attribute__ ((aligned(32))) Ipp8u data[64*64*3/2] = {};
 #endif
-    mfxFrameSurface1 surfaces[10];
+    mfxFrameSurface1 surfaces[30];
     for (auto &surf: surfaces) {
         surf.Info = input.videoParam.mfx.FrameInfo;
         surf.Data.Y = data;
@@ -351,9 +359,15 @@ TEST_F(InitTest, GetVideoParam_SpsPps) {
     mfxFrameSurface1 *surf = surfaces;
     MFX_ENTRY_POINT entrypoint = {};
     EXPECT_CALL(core, IncreaseReference(_)).WillRepeatedly(Return(MFX_ERR_NONE));
+    EXPECT_CALL(core, DecreaseReference(_)).WillRepeatedly(Return(MFX_ERR_NONE));
     mfxStatus sts = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
-    while (sts == MFX_ERR_MORE_DATA_RUN_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0]))
+    while (sts == MFX_ERR_MORE_DATA_RUN_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0])) {
         sts = encoder.EncodeFrameCheck(nullptr, surf++, &bs, &reorder, nullptr, &entrypoint);
+        if (sts == MFX_ERR_MORE_DATA_RUN_TASK) {
+            ASSERT_EQ(MFX_ERR_NONE, entrypoint.pRoutine(entrypoint.pState, entrypoint.pParam, 0, 0));
+            ASSERT_EQ(MFX_ERR_NONE, entrypoint.pCompleteProc(entrypoint.pState, entrypoint.pParam, MFX_ERR_NONE));
+        }
+    }
     ASSERT_EQ(MFX_ERR_NONE, sts);
 
     EXPECT_CALL(core, DecreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
@@ -432,9 +446,15 @@ TEST_F(InitTest, GetVideoParam_Vps) {
     mfxFrameSurface1 *surf = surfaces;
     MFX_ENTRY_POINT entrypoint = {};
     EXPECT_CALL(core, IncreaseReference(_)).WillRepeatedly(Return(MFX_ERR_NONE));
+    EXPECT_CALL(core, DecreaseReference(_)).WillRepeatedly(Return(MFX_ERR_NONE));
     mfxStatus sts = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
-    while (sts == MFX_ERR_MORE_DATA_RUN_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0]))
+    while (sts == MFX_ERR_MORE_DATA_RUN_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0])) {
         sts = encoder.EncodeFrameCheck(nullptr, surf++, &bs, &reorder, nullptr, &entrypoint);
+        if (sts == MFX_ERR_MORE_DATA_RUN_TASK) {
+            ASSERT_EQ(MFX_ERR_NONE, entrypoint.pRoutine(entrypoint.pState, entrypoint.pParam, 0, 0));
+            ASSERT_EQ(MFX_ERR_NONE, entrypoint.pCompleteProc(entrypoint.pState, entrypoint.pParam, MFX_ERR_NONE));
+        }
+    }
     ASSERT_EQ(MFX_ERR_NONE, sts);
 
     EXPECT_CALL(core, DecreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));

@@ -586,6 +586,10 @@ namespace MFX_HEVC_PP
     void h265_InterpLumaFast_s8_d16_H_atom(INTERP_S8_D16_PARAMETERS_LIST);
     void h265_InterpLumaFast_s8_d16_H_avx2(INTERP_S8_D16_PARAMETERS_LIST);
 
+    // dst = (src0 + src1 + 1) >> 1
+    template <typename PixType> void h265_Average_px(const PixType *pSrc0, Ipp32s pitchSrc0, const PixType *pSrc1, Ipp32s pitchSrc1, PixType * H265_RESTRICT pDst, Ipp32s pitchDst, Ipp32s width, Ipp32s height);
+    template <typename PixType> void h265_Average_avx2(const PixType *pSrc0, Ipp32s pitchSrc0, const PixType *pSrc1, Ipp32s pitchSrc1, PixType * H265_RESTRICT pDst, Ipp32s pitchDst, Ipp32s width, Ipp32s height);
+
     // pack intermediate interpolation pels s16 to u8/u16
     template <typename PixType> void h265_InterpLumaPack_px(const Ipp16s *src, Ipp32s pitchSrc, PixType *dst, Ipp32s pitchDst, Ipp32s width, Ipp32s height, Ipp32s bitDepth);
     template <typename PixType> void h265_InterpLumaPack_sse(const Ipp16s *src, Ipp32s pitchSrc, PixType *dst, Ipp32s pitchDst, Ipp32s width, Ipp32s height, Ipp32s bitDepth);

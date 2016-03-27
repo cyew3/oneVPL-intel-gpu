@@ -1,3 +1,11 @@
+//
+//               INTEL CORPORATION PROPRIETARY INFORMATION
+//  This software is supplied under the terms of a license agreement or
+//  nondisclosure agreement with Intel Corporation and may not be copied
+//  or disclosed except in accordance with the terms of that agreement.
+//        Copyright (c) 2015 - 2016 Intel Corporation. All Rights Reserved.
+//
+
 #include "gtest/gtest.h"
 
 #include "hevce_common_api.h"
@@ -187,6 +195,8 @@ void ApiTestCommon::InitParamSetValid(ParamSet &paramset) {
     paramset.extCodingOptionHevc.SAOChroma = MFX_CODINGOPTION_OFF;
     paramset.extCodingOptionHevc.NumRefLayers = 2;
     paramset.extCodingOptionHevc.ConstQpOffset = 1;
+    paramset.extCodingOptionHevc.SplitThresholdMultiplier = 10;
+    paramset.extCodingOptionHevc.EnableCmBiref = 32;
     paramset.extCodingOption.AUDelimiter = MFX_CODINGOPTION_ON;
     paramset.extCodingOption2.DisableVUI = MFX_CODINGOPTION_ON;
     paramset.extCodingOption2.AdaptiveI = MFX_CODINGOPTION_ON;
@@ -479,6 +489,12 @@ template <> void ApiTestCommon::ExpectEqual<mfxExtCodingOptionHEVC>(const mfxExt
     EXPECT(RateControlDepth);
     EXPECT(LowresFactor);
     EXPECT(DeblockBorders);
+    EXPECT(SAOChroma);
+    EXPECT(RepackProb);
+    EXPECT(NumRefLayers);
+    EXPECT(ConstQpOffset);
+    EXPECT(SplitThresholdMultiplier);
+    EXPECT(EnableCmBiref);
     EXPECT_EQ(0, MemCompare(expected, actual)); // double check by full memcmp
 }
 template <> void ApiTestCommon::ExpectEqual<mfxExtHEVCParam>(const mfxExtHEVCParam &expected, const mfxExtHEVCParam &actual) {

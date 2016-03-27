@@ -878,11 +878,6 @@ void H265Encoder::InitShortTermRefPicSet()
     m_sps.num_short_term_ref_pic_sets = (Ipp8u)numShortTermRefPicSets;
 }
 
-#if defined(DUMP_COSTS_CU) || defined (DUMP_COSTS_TU)
-extern FILE *fp_cu, *fp_tu;
-#endif
-
-
 DispatchSaoApplyFilter::DispatchSaoApplyFilter()
 {
     m_bitDepth = 0;//unknown
@@ -948,7 +943,6 @@ H265FrameEncoder::H265FrameEncoder(H265Encoder& topEnc)
     , m_frame(NULL)
 {
 }
-
 
 mfxStatus H265FrameEncoder::Init()
 {
@@ -1037,18 +1031,6 @@ mfxStatus H265FrameEncoder::Init()
         }
     }
 
-#if defined(DUMP_COSTS_CU) || defined (DUMP_COSTS_TU)
-    char fname[100];
-#ifdef DUMP_COSTS_CU
-    sprintf(fname, "thres_cu_%d.bin",param->mfx.TargetUsage);
-    if (!(fp_cu = fopen(fname,"ab"))) return MFX_ERR_UNKNOWN;
-#endif
-#ifdef DUMP_COSTS_TU
-    sprintf(fname, "thres_tu_%d.bin",param->mfx.TargetUsage);
-    if (!(fp_tu = fopen(fname,"ab"))) return MFX_ERR_UNKNOWN;
-#endif
-#endif
-
     return MFX_ERR_NONE;
 }
 
@@ -1067,13 +1049,6 @@ void H265FrameEncoder::Close()
         H265_Free(memBuf);
         memBuf = NULL;
     }
-
-#ifdef DUMP_COSTS_CU
-    if (fp_cu) fclose(fp_cu);
-#endif
-#ifdef DUMP_COSTS_TU
-    if (fp_tu) fclose(fp_tu);
-#endif
 
 } // void H265FrameEncoder::Close()
 

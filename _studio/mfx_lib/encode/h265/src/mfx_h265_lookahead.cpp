@@ -2616,7 +2616,7 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
 
     case TT_PREENC_END:
         {
-            if (in && m_videoParam.DeltaQpMode) {
+            if (in) {
                 for (Ipp32s fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
                     Frame *curr = in[fieldNum];
                     Ipp32s width4  = (m_videoParam.Width+63)&~63;

@@ -35,6 +35,7 @@
 #if defined (MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_AUTO) 
 
 #include <immintrin.h>
+#include <assert.h>
 
 #ifdef __INTEL_COMPILER
 /* disable warning: unused function parameter (offset not needed with template implementation) */
@@ -2899,6 +2900,140 @@ void MAKE_NAME(h265_ConvertShiftR)(const short *src, int pitchSrc, unsigned char
             line = _mm256_permute4x64_epi64(line, 0x08);
             _mm_storeu_si128((__m128i*)(dst + col), _mm256_castsi256_si128(line));
         }
+    }
+}
+
+namespace AverageDetails {
+    void Impl_w4(const Ipp8u *pSrc0, Ipp32s pitchSrc0, const Ipp8u *pSrc1, Ipp32s pitchSrc1, Ipp8u * H265_RESTRICT pDst, Ipp32s pitchDst, Ipp32s height)
+    {
+        assert(height % 4 == 0);
+        for (int y = 0; y < height; y += 4, pSrc0 += 4*pitchSrc0, pSrc1 += 4*pitchSrc1, pDst += 4*pitchDst) {
+            __m128i src0 = _mm_set_epi32(*((Ipp64u*)(pSrc0 + 3 * pitchSrc0)), *((Ipp64u*)(pSrc0 + 2 * pitchSrc0)),
+                                            *((Ipp64u*)(pSrc0 + 1 * pitchSrc0)), *((Ipp64u*)(pSrc0 + 0 * pitchSrc0)));
+            __m128i src1 = _mm_set_epi32(*((Ipp64u*)(pSrc1 + 3 * pitchSrc1)), *((Ipp64u*)(pSrc1 + 2 * pitchSrc1)),
+                                            *((Ipp64u*)(pSrc1 + 1 * pitchSrc1)), *((Ipp64u*)(pSrc1 + 0 * pitchSrc1)));
+            __m128i avg = _mm_avg_epu8(src0, src1);
+            *(int*)(pDst+0*pitchDst) = _mm_cvtsi128_si32(avg);
+            *(int*)(pDst+1*pitchDst) = _mm_extract_epi32(avg,1);
+            *(int*)(pDst+2*pitchDst) = _mm_extract_epi32(avg,2);
+            *(int*)(pDst+3*pitchDst) = _mm_extract_epi32(avg,3);
+        }
+    }
+
+    void Impl_w8(const Ipp8u *pSrc0, Ipp32s pitchSrc0, const Ipp8u *pSrc1, Ipp32s pitchSrc1, Ipp8u * H265_RESTRICT pDst, Ipp32s pitchDst, Ipp32s height)
+    {
+        for (int y = 0; y < height; y += 2, pSrc0 += 2*pitchSrc0, pSrc1 += 2*pitchSrc1, pDst += 2*pitchDst) {
+            __m128i src0 = _mm_unpacklo_epi64(_mm_loadl_epi64((__m128i *)(pSrc0 + 0 * pitchSrc0)),
+                                                _mm_loadl_epi64((__m128i *)(pSrc0 + 1 * pitchSrc0)));
+            __m128i src1 = _mm_unpacklo_epi64(_mm_loadl_epi64((__m128i *)(pSrc1 + 0 * pitchSrc1)),
+                                                _mm_loadl_epi64((__m128i *)(pSrc1 + 1 * pitchSrc1)));
+            __m128i avg = _mm_avg_epu8(src0, src1);
+            _mm_storel_epi64((__m128i *)(pDst), avg);
+            _mm_storeh_pd((double  *)(pDst+pitchDst), _mm_castsi128_pd(avg));
+        }
+    }
+
+    void Impl_w16(const Ipp8u *pSrc0, Ipp32s pitchSrc0, const Ipp8u *pSrc1, Ipp32s pitchSrc1, Ipp8u * H265_RESTRICT pDst, Ipp32s pitchDst, Ipp32s height)
+    {
+        for (Ipp32s y = 0; y < height; y++, pSrc0 += pitchSrc0, pSrc1 += pitchSrc1, pDst += pitchDst) {
+            __m128i src0 = _mm_loadu_si128((__m128i *)pSrc0);
+            __m128i src1 = _mm_loadu_si128((__m128i *)pSrc1);
+            __m128i avg = _mm_avg_epu8(src0, src1);
+            _mm_store_si128((__m128i *)(pDst), avg);
+        }
+    }
+
+    void Impl_w32(const Ipp8u *pSrc0, Ipp32s pitchSrc0, const Ipp8u *pSrc1, Ipp32s pitchSrc1, Ipp8u * H265_RESTRICT pDst, Ipp32s pitchDst, Ipp32s width, Ipp32s height)
+    {
+        assert(width == 32 || width == 64);
+        for (Ipp32s y = 0; y < height; y++, pSrc0 += pitchSrc0, pSrc1 += pitchSrc1, pDst += pitchDst) {
+            for (Ipp32s x = 0; x < width; x += 32) {
+                __m256i src0 = _mm256_loadu_si256((__m256i *)(pSrc0+x));
+                __m256i src1 = _mm256_loadu_si256((__m256i *)(pSrc1+x));
+                __m256i avg = _mm256_avg_epu8(src0, src1);
+                _mm256_store_si256((__m256i *)(pDst+x), avg);
+            }
+        }
+    }
+
+    void Impl_w4(const Ipp16u *pSrc0, Ipp32s pitchSrc0, const Ipp16u *pSrc1, Ipp32s pitchSrc1, Ipp16u * H265_RESTRICT pDst, Ipp32s pitchDst, Ipp32s height)
+    {
+        for (int y = 0; y < height; y += 2, pSrc0 += 2*pitchSrc0, pSrc1 += 2*pitchSrc1, pDst += 2*pitchDst) {
+            __m128i src0 = _mm_unpacklo_epi64(_mm_loadl_epi64((__m128i *)(pSrc0 + 0 * pitchSrc0)),
+                                                _mm_loadl_epi64((__m128i *)(pSrc0 + 1 * pitchSrc0)));
+            __m128i src1 = _mm_unpacklo_epi64(_mm_loadl_epi64((__m128i *)(pSrc1 + 0 * pitchSrc1)),
+                                                _mm_loadl_epi64((__m128i *)(pSrc1 + 1 * pitchSrc1)));
+            __m128i avg = _mm_avg_epu16(src0, src1);
+            _mm_storel_epi64((__m128i *)(pDst), avg);
+            _mm_storeh_pd((double  *)(pDst+pitchDst), _mm_castsi128_pd(avg));
+        }
+    }
+
+    void Impl_w8(const Ipp16u *pSrc0, Ipp32s pitchSrc0, const Ipp16u *pSrc1, Ipp32s pitchSrc1, Ipp16u * H265_RESTRICT pDst, Ipp32s pitchDst, Ipp32s height)
+    {
+        for (Ipp32s y = 0; y < height; y++, pSrc0 += pitchSrc0, pSrc1 += pitchSrc1, pDst += pitchDst) {
+            __m128i src0 = _mm_loadu_si128((__m128i *)pSrc0);
+            __m128i src1 = _mm_loadu_si128((__m128i *)pSrc1);
+            __m128i avg = _mm_avg_epu16(src0, src1);
+            _mm_store_si128((__m128i *)(pDst), avg);
+        }
+    }
+
+    void Impl_w16(const Ipp16u *pSrc0, Ipp32s pitchSrc0, const Ipp16u *pSrc1, Ipp32s pitchSrc1, Ipp16u * H265_RESTRICT pDst, Ipp32s pitchDst, Ipp32s width, Ipp32s height)
+    {
+        for (Ipp32s y = 0; y < height; y++, pSrc0 += pitchSrc0, pSrc1 += pitchSrc1, pDst += pitchDst) {
+            for (Ipp32s x = 0; x < width; x += 16) {
+                __m256i src0 = _mm256_loadu_si256((__m256i *)(pSrc0+x));
+                __m256i src1 = _mm256_loadu_si256((__m256i *)(pSrc1+x));
+                __m256i avg = _mm256_avg_epu16(src0, src1);
+                _mm256_store_si256((__m256i *)(pDst+x), avg);
+            }
+        }
+    }
+};
+
+template <typename PixType> void h265_Average_avx2(const PixType *pSrc0, Ipp32s pitchSrc0, const PixType *pSrc1, Ipp32s pitchSrc1, PixType * H265_RESTRICT pDst, Ipp32s pitchDst, Ipp32s width, Ipp32s height);
+
+template <>
+void h265_Average_avx2<Ipp8u>(const Ipp8u *pSrc0, Ipp32s pitchSrc0, const Ipp8u *pSrc1, Ipp32s pitchSrc1,
+                              Ipp8u * H265_RESTRICT pDst, Ipp32s pitchDst, Ipp32s width, Ipp32s height)
+{
+    if (width == 4) {
+        AverageDetails::Impl_w4(pSrc0, pitchSrc0, pSrc1, pitchSrc1, pDst, pitchDst, height);
+    } else if (width == 8) {
+        AverageDetails::Impl_w8(pSrc0, pitchSrc0, pSrc1, pitchSrc1, pDst, pitchDst, height);
+    } else if (width == 12) {
+        AverageDetails::Impl_w8(pSrc0,   pitchSrc0, pSrc1,   pitchSrc1, pDst,   pitchDst, height);
+        AverageDetails::Impl_w4(pSrc0+8, pitchSrc0, pSrc1+8, pitchSrc1, pDst+8, pitchDst, height);
+    } else if (width == 16) {
+        AverageDetails::Impl_w16(pSrc0, pitchSrc0, pSrc1, pitchSrc1, pDst, pitchDst, height);
+    } else if (width == 24) {
+        AverageDetails::Impl_w16(pSrc0,    pitchSrc0, pSrc1,    pitchSrc1, pDst,    pitchDst, height);
+        AverageDetails::Impl_w8 (pSrc0+16, pitchSrc0, pSrc1+16, pitchSrc1, pDst+16, pitchDst, height);
+    } else if (width == 48) {
+        AverageDetails::Impl_w32(pSrc0,    pitchSrc0, pSrc1,    pitchSrc1, pDst,    pitchDst, 32, height);
+        AverageDetails::Impl_w16(pSrc0+32, pitchSrc0, pSrc1+32, pitchSrc1, pDst+32, pitchDst, height);
+    } else { assert(width == 32 || width == 64);
+        AverageDetails::Impl_w32(pSrc0, pitchSrc0, pSrc1, pitchSrc1, pDst, pitchDst, width, height);
+    }
+}
+
+template <>
+void h265_Average_avx2<Ipp16u>(const Ipp16u *pSrc0, Ipp32s pitchSrc0, const Ipp16u *pSrc1, Ipp32s pitchSrc1,
+                               Ipp16u * H265_RESTRICT pDst, Ipp32s pitchDst, Ipp32s width, Ipp32s height)
+{
+    if (width == 4) {
+        AverageDetails::Impl_w4(pSrc0, pitchSrc0, pSrc1, pitchSrc1, pDst, pitchDst, height);
+    } else if (width == 8) {
+        AverageDetails::Impl_w8(pSrc0, pitchSrc0, pSrc1, pitchSrc1, pDst, pitchDst, height);
+    } else if (width == 12) {
+        AverageDetails::Impl_w8(pSrc0,   pitchSrc0, pSrc1,   pitchSrc1, pDst,   pitchDst, height);
+        AverageDetails::Impl_w4(pSrc0+8, pitchSrc0, pSrc1+8, pitchSrc1, pDst+8, pitchDst, height);
+    } else if (width == 24) {
+        AverageDetails::Impl_w16(pSrc0,    pitchSrc0, pSrc1,    pitchSrc1, pDst,    pitchDst, 16, height);
+        AverageDetails::Impl_w8 (pSrc0+16, pitchSrc0, pSrc1+16, pitchSrc1, pDst+16, pitchDst, height);
+    } else { assert(width == 16 || width == 32 || width == 48 || width == 64);
+        AverageDetails::Impl_w16(pSrc0, pitchSrc0, pSrc1, pitchSrc1, pDst, pitchDst, width, height);
     }
 }
 

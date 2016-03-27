@@ -184,11 +184,9 @@ Ipp32s h265_quant_getSigCtxInc(Ipp32s pattern_sig_ctx,
 }
 
 template <typename PixType>
-void H265CU<PixType>::QuantInvTu(const CoeffsType *coeff, CoeffsType *resid, Ipp32s width, Ipp32s qp, Ipp32s is_luma)
+void H265CU<PixType>::QuantInvTu(const CoeffsType *coeff, CoeffsType *resid, Ipp32s width, Ipp32s is_luma)
 {
-    Ipp32s QP = is_luma
-        ? qp  + (m_par->bitDepthLuma - 8) * 6
-        : GetChromaQP(qp, 0, m_par->chromaFormatIdc, m_par->bitDepthChroma);
+    Ipp32s QP = (is_luma) ? m_lumaQp : m_chromaQp;
     Ipp32s log2TrSize = h265_log2m2[width] + 2;
     Ipp32s bitDepth = is_luma ? m_par->bitDepthLuma : m_par->bitDepthChroma;
     h265_quant_inv(coeff, NULL, resid, log2TrSize, bitDepth, QP);
@@ -196,14 +194,12 @@ void H265CU<PixType>::QuantInvTu(const CoeffsType *coeff, CoeffsType *resid, Ipp
 
 template <typename PixType>
 void H265CU<PixType>::QuantFwdTu(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width,
-                                 Ipp32s qp, Ipp32s isLuma, Ipp32s isIntra)
+                                 Ipp32s isLuma, Ipp32s isIntra)
 {
     Ipp32s isIntraSlice = (m_cslice->slice_type == I_SLICE);
     Ipp32s bitDepth = (isLuma) ? m_par->bitDepthLuma : m_par->bitDepthChroma;
     EnumTextType textureType = (isLuma) ? TEXT_LUMA : TEXT_CHROMA;
-    Ipp32s QP = (isLuma)
-        ? qp + (m_par->bitDepthLuma - 8) * 6
-        : GetChromaQP(qp, 0, m_par->chromaFormatIdc, m_par->bitDepthChroma);
+    Ipp32s QP = (isLuma) ? m_lumaQp : m_chromaQp;
 
     Ipp32s log2TrSize = h265_log2m2[width] + 2;
 
@@ -232,11 +228,9 @@ void H265CU<PixType>::QuantFwdTu(CoeffsType *resid, CoeffsType *coeff, Ipp32s ab
 }
 
 template <typename PixType>
-void H265CU<PixType>::QuantFwdTuBase(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width, Ipp32s qp, Ipp32s isLuma)
+void H265CU<PixType>::QuantFwdTuBase(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width, Ipp32s isLuma)
 {
-    Ipp32s QP = (isLuma)
-        ? qp + (m_par->bitDepthLuma - 8) * 6
-        : GetChromaQP(qp, 0, m_par->chromaFormatIdc, m_par->bitDepthChroma);
+    Ipp32s QP = (isLuma) ? m_lumaQp : m_chromaQp;
     Ipp32s log2TrSize = h265_log2m2[width] + 2;
     Ipp32s isIntraSlice = (m_cslice->slice_type == I_SLICE);
     Ipp32s bitDepth = (isLuma) ? m_par->bitDepthLuma : m_par->bitDepthChroma;
@@ -332,26 +326,26 @@ void h265_quant_fwd_base(
 template class H265CU<Ipp8u>;
 template class H265CU<Ipp16u>;
 
+static const Ipp8u h265_QPtoChromaQP[3][58] = {
+    {
+         0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
+        17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 29, 30, 31, 32,
+        33, 33, 34, 34, 35, 35, 36, 36, 37, 37, 38, 39, 40, 41, 42, 43, 44,
+        45, 46, 47, 48, 49, 50, 51
+    }, {
+         0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
+        17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+        34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+        51, 51, 51, 51, 51, 51, 51
+    }, {
+         0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
+        17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+        34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+        51, 51, 51, 51, 51, 51, 51
+    }
+};
 Ipp8s GetChromaQP(Ipp8s qpy, Ipp32s chromaQpOffset, Ipp8u chromaFormatIdc, Ipp8u bitDepthChroma)
 {
-    const Ipp8u h265_QPtoChromaQP[3][58] = {{
-             0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
-            17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 29, 30, 31, 32,
-            33, 33, 34, 34, 35, 35, 36, 36, 37, 37, 38, 39, 40, 41, 42, 43, 44,
-            45, 46, 47, 48, 49, 50, 51
-        }, {
-             0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
-            17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
-            34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
-            51, 51, 51, 51, 51, 51, 51
-        }, {
-             0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
-            17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
-            34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
-            51, 51, 51, 51, 51, 51, 51
-        }
-    };
-
     Ipp32s qpBdOffsetC = 6 * (bitDepthChroma - 8);
     Ipp32s qpc = Saturate(-qpBdOffsetC, 57, qpy + chromaQpOffset);
     if (qpc >= 0)

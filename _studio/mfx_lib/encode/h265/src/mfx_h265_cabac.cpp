@@ -529,14 +529,22 @@ void h265_code_qt_root_cbf(H265Bs *bs, H265CU<PixType>* pCU, Ipp32s abs_part_idx
 
 static Ipp32s h265_count_nonzero_coeffs(CoeffsType* coeff, Ipp32u size)
 {
-    Ipp32s count = 0;
-
-    for(Ipp32u i = 0; i < size; i++)
-    {
-        count += coeff[i] != 0;
+    __m128i zero = _mm_setzero_si128();
+    __m128i cnt = _mm_set1_epi16(size>>3);
+    for (Ipp32u i = 0; i < size; i += 8) {
+        __m128i coefs = _mm_load_si128((__m128i*)(coeff+i));
+        __m128i z = _mm_cmpeq_epi16(coefs, zero);
+        cnt = _mm_add_epi16(cnt, z);
     }
-
-    return count;
+    cnt = _mm_hadd_epi16(cnt, cnt);
+    cnt = _mm_hadd_epi16(cnt, cnt);
+    cnt = _mm_hadd_epi16(cnt, cnt);
+    Ipp32s r = _mm_cvtsi128_si32(cnt) & 0xffff;
+    return r;
+    //Ipp32s count = 0;
+    //for(Ipp32u i = 0; i < size; i++)
+    //    count += coeff[i] != 0;
+    //return count;
 }
 
 template <class H265Bs>
@@ -601,7 +609,7 @@ void h265_code_last_significant_xy(H265Bs *bs, Ipp32u pos_x, Ipp32u pos_y,
     }
 }
 
-#ifdef AMT_COEFF_COST_EST
+
 inline Ipp32u gr_bits (Ipp32u symbol, Ipp32s s)
 {
     /* get prefix: */
@@ -730,30 +738,32 @@ static Ipp32s FastParametricCoeffCostEstimator(CoeffsType *x, Ipp32u n, Ipp32s n
     for (i=0; i<N; i++) 
     {
         /* # bits required for vlc coding gen lap dist */ 
-        b = 0;
         v=scan[i][0];
         u=scan[i][1];
         d = x[u*n+v];
-        if(d<0) d=-d;
-        if(!d)  zero_run++;
-        else 
-        {
-            //z = 2*log2+1
-            if(zero_run) z = log2_by2(zero_run+1)+1;
-            else z = 1;
+
+        if (!d) {
+            zero_run++;
+        } else {
+            if (d < 0)
+                d = -d;
+
+            c++;
+            if (zero_run)
+                c += log2_by2(zero_run+1);
+
             zero_run=0;
             iscancoeff[levels] = d;
             levels++;
-            b+=z;
+            if (levels >= num_sig)
+                break;
         }
-        c += b;
-        if(levels>=num_sig) break;
     }
-    // log2+1
-    if(i<N) c += log2(N-i+1)+1;
-    if(levels)
-    for(i=levels;i>0;i--)
-    {
+
+    if (i<N)
+        c += log2(N-i+1)+1;
+    
+    for (i=levels; i>0; i--) {
         d = iscancoeff[i-1];
         c += gr_bits(d-1, vlcnum);
         c++; // sign
@@ -761,11 +771,8 @@ static Ipp32s FastParametricCoeffCostEstimator(CoeffsType *x, Ipp32u n, Ipp32s n
             vlcnum++;
     }
     
-    c*= EffciencyParameter[ctx0];
-
-    return c;
+    return c * EffciencyParameter[ctx0];
 }
-#endif
 
 template <typename PixType>
 template <class H265Bs>
@@ -773,35 +780,21 @@ void H265CU<PixType>::CodeCoeffNxN(H265Bs *bs, H265CU<PixType>* pCU, CoeffsType*
                                    Ipp32u width, EnumTextType type )
 {
     const H265VideoParam *par = pCU->m_par;
+    assert(width <= par->MaxTrSize);
 
-    if (width > par->MaxTrSize)
-        width = par->MaxTrSize;
+    Ipp32u num_sig = h265_count_nonzero_coeffs(coeffs, width * width);
+    assert(num_sig > 0);
 
-    Ipp32u num_sig = 0;
-    num_sig = h265_count_nonzero_coeffs(coeffs, width * width);
-    
-    if (num_sig == 0)
-        return;
-
-#ifdef AMT_COEFF_COST_EST
     if(!bs->isReal() && m_par->FastCoeffCost && !m_isRdoq) {
         // A radical approach, est coeff cost & match efficiency. (suboptimal only for higher TUs)
         Ipp32s est_bits=FastParametricCoeffCostEstimator(coeffs, width, num_sig, pCU->m_data[abs_part_idx].qp, pCU->m_data[abs_part_idx].predMode == MODE_INTRA);
         bs->m_base.m_bitOffset += est_bits;
         return;
     }
-#endif
 
     if (par->transformSkipEnabledFlag)
-    {
         h265_code_transform_skip_flags( bs, pCU, abs_part_idx, width, type );
-    }
-/*
-    if (tcu == 16)
-        printf("");
 
-    printf("tcu = %d\n",tcu++);
-*/
     type = type == TEXT_LUMA ? TEXT_LUMA : ( type == TEXT_NONE ? TEXT_NONE : TEXT_CHROMA );
 
     const Ipp32u log2_block_size = h265_log2m2[width] + 2;
@@ -1369,6 +1362,77 @@ void h265_encode_pred_info(H265Bs *bs, H265CU<PixType>* pCU, Ipp32s abs_part_idx
     }
 }
 
+
+template <typename PixType>
+CostType H265CU<PixType>::GetSkipModeCost(H265CUData *data, Ipp32s absPartIdx, Ipp32s depth)
+{
+    m_bsf->Reset();
+    m_data = data;
+
+    if ((m_par->MaxCUSize>>depth) >= m_par->MinCuDQPSize && m_par->UseDQP)
+        setdQPFlag(true);
+
+    Ipp32u ctx;
+    H265CUPtr left, above;
+    GetPuLeft(&left, m_absIdxInLcu + absPartIdx);
+    GetPuAbove(&above, m_absIdxInLcu + absPartIdx);
+
+    //h265_code_split_flag(m_bsf, this, absPartIdx, depth);
+    if (depth != m_par->MaxCUDepth - m_par->AddCUDepth) {
+        ctx = (left.ctbData && left.ctbData[left.absPartIdx].depth > depth);
+        ctx += (above.ctbData && above.ctbData[above.absPartIdx].depth > depth);
+        m_bsf->EncodeSingleBin_CABAC(CTX(m_bsf,SPLIT_CODING_UNIT_FLAG_HEVC)+ctx , 0);
+    }
+
+    //h265_code_skip_flag(m_bsf, this, absPartIdx);
+    ctx = (left.ctbData && isSkipped(left.ctbData, left.absPartIdx));
+    ctx += (above.ctbData && isSkipped(above.ctbData, above.absPartIdx));
+    m_bsf->EncodeSingleBin_CABAC(CTX(m_bsf,SKIP_FLAG_HEVC)+ctx, 1);
+
+    h265_code_merge_index(m_bsf, this, absPartIdx);
+
+    return BIT_COST(m_bsf->GetNumBits());
+}
+template CostType H265CU<Ipp8u>::GetSkipModeCost(H265CUData *data, Ipp32s absPartIdx, Ipp32s depth);
+template CostType H265CU<Ipp16u>::GetSkipModeCost(H265CUData *data, Ipp32s absPartIdx, Ipp32s depth);
+
+
+template <typename PixType>
+CostType H265CU<PixType>::GetInterModeCost(H265CUData *data, Ipp32s absPartIdx, Ipp32s depth)
+{
+    m_bsf->Reset();
+    m_data = data;
+
+    if ((m_par->MaxCUSize>>depth) >= m_par->MinCuDQPSize && m_par->UseDQP)
+        setdQPFlag(true);
+
+    Ipp32u ctx;
+    H265CUPtr left, above;
+    GetPuLeft(&left, m_absIdxInLcu + absPartIdx);
+    GetPuAbove(&above, m_absIdxInLcu + absPartIdx);
+
+    //h265_code_split_flag(m_bsf, this, absPartIdx, depth );
+    if (depth != m_par->MaxCUDepth - m_par->AddCUDepth) {
+        ctx = (left.ctbData && left.ctbData[left.absPartIdx].depth > depth);
+        ctx += (above.ctbData && above.ctbData[above.absPartIdx].depth > depth);
+        m_bsf->EncodeSingleBin_CABAC(CTX(m_bsf,SPLIT_CODING_UNIT_FLAG_HEVC)+ctx, 0);
+    }
+
+    //h265_code_skip_flag(m_bsf, this, absPartIdx );
+    ctx = (left.ctbData && isSkipped(left.ctbData, left.absPartIdx));
+    ctx += (above.ctbData && isSkipped(above.ctbData, above.absPartIdx));
+    m_bsf->EncodeSingleBin_CABAC(CTX(m_bsf,SKIP_FLAG_HEVC)+ctx, 0);
+
+    h265_code_pred_mode(m_bsf, this, absPartIdx );
+    h265_code_part_size(m_bsf, this, absPartIdx, depth );
+    h265_encode_pred_info(m_bsf, this, absPartIdx );
+
+    return BIT_COST(m_bsf->GetNumBits());
+}
+template CostType H265CU<Ipp8u>::GetInterModeCost(H265CUData *data, Ipp32s absPartIdx, Ipp32s depth);
+template CostType H265CU<Ipp16u>::GetInterModeCost(H265CUData *data, Ipp32s absPartIdx, Ipp32s depth);
+
+
 template <typename PixType>
 template <class H265Bs>
 void H265CU<PixType>::EncodeCU(H265Bs *bs, Ipp32s abs_part_idx, Ipp32s depth, Ipp8u rd_mode )
@@ -1443,12 +1507,14 @@ void H265CU<PixType>::EncodeCU(H265Bs *bs, Ipp32s abs_part_idx, Ipp32s depth, Ip
     if (m_par->transquantBypassEnableFlag)
         h265_code_transquant_bypass_flag(bs, pCU, abs_part_idx );
 
+    Ipp8u skipped_flag;
+    Ipp32u i, num_parts;
     if(m_cslice->slice_type != I_SLICE)
     {
-        Ipp8u skipped_flag = m_data[abs_part_idx].predMode == MODE_INTER &&
+        skipped_flag = m_data[abs_part_idx].predMode == MODE_INTER &&
             m_data[abs_part_idx].partSize == PART_SIZE_2Nx2N && m_data[abs_part_idx].flags.mergeFlag &&
             !GetQtRootCbf(abs_part_idx);
-        Ipp32u num_parts = ( m_par->NumPartInCU >> (depth<<1) );
+        num_parts = ( m_par->NumPartInCU >> (depth<<1) );
 
         for (Ipp32u i = 0; i < num_parts; i++)
             m_data[abs_part_idx + i].flags.skippedFlag = skipped_flag;

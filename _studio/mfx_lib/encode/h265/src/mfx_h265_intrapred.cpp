@@ -19,6 +19,50 @@
 
 namespace H265Enc {
 
+const Ipp8u h265_basicAvailMask32[(64/32)*(64/32)] = {
+    0x33, 0x31,
+    0x31, 0x11
+};
+
+const Ipp8u h265_basicAvailMask16[(64/16)*(64/16)] = {
+    0x33, 0x31, 0x33, 0x11,
+    0x33, 0x31, 0x31, 0x11,
+    0x33, 0x31, 0x31, 0x11,
+    0x33, 0x11, 0x31, 0x11,
+};
+
+const Ipp8u h265_basicAvailMask8[(64/4)*(64/4)] = {
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x31, 0x31, 0x11,
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x11, 0x31, 0x11,
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x31, 0x31, 0x11,
+    0x33, 0x31, 0x31, 0x11, 0x33, 0x11, 0x31, 0x11,
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x31, 0x31, 0x11,
+    0x33, 0x31, 0x31, 0x11, 0x33, 0x11, 0x31, 0x11,
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x11, 0x31, 0x11,
+    0x33, 0x31, 0x31, 0x11, 0x33, 0x11, 0x31, 0x11, 
+};
+
+const Ipp8u h265_basicAvailMask4[(64/4)*(64/4)] = {
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x31, 0x33, 0x11, 0x33, 0x11, 0x31, 0x11,
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x11, 0x31, 0x11,
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x31, 0x33, 0x11, 0x33, 0x11, 0x31, 0x11,
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x11, 0x31, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x11, 0x31, 0x11,
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x31, 0x33, 0x11, 0x33, 0x11, 0x31, 0x11,
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x11, 0x31, 0x11,
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x11, 0x31, 0x11,
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x11, 0x31, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x11, 0x31, 0x11,
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x31, 0x33, 0x11, 0x33, 0x11, 0x31, 0x11,
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x11, 0x31, 0x11,
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x11, 0x31, 0x11,
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x11, 0x31, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x11, 0x31, 0x11,
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x31, 0x33, 0x11, 0x33, 0x11, 0x31, 0x11,
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x11, 0x31, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x11, 0x31, 0x11,
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x11, 0x31, 0x11,
+    0x33, 0x31, 0x33, 0x11, 0x33, 0x11, 0x31, 0x11, 0x33, 0x31, 0x31, 0x11, 0x33, 0x11, 0x31, 0x11, 
+};
+
+const Ipp8u *h265_basicAvailMask[4] = { h265_basicAvailMask4, h265_basicAvailMask8, h265_basicAvailMask16, h265_basicAvailMask32 };
+
 template <typename PixType>
 static
 void IsAboveLeftAvailable(H265CU<PixType> *pCU,
@@ -264,6 +308,58 @@ void IsBelowLeftAvailable(H265CU<PixType> *pCU,
 
 template <typename PixType>
 static
+void GetAvailablityFast(H265CU<PixType> *pCU,
+                        Ipp32s absPartIdx,
+                        Ipp32s width,
+                        Ipp8u shiftW,
+                        Ipp8u ConstrainedIntraPredFlag,
+                        Ipp32u &leftAvailFlags,
+                        Ipp32u &topAvailFlags,
+                        Ipp32u &topLeftAvailFlag)
+{
+    Ipp32s rasterPartIdx = h265_scan_z2r4[absPartIdx];
+    Ipp32s rasterPartRow = rasterPartIdx >> 4;
+    Ipp32s rasterPartCol = rasterPartIdx & 15;
+    Ipp32s log2width = h265_log2m2[width] + 2;
+    Ipp32s depth = pCU->m_par->Log2MaxCUSize - log2width;
+
+    Ipp32u basicMask = h265_basicAvailMask[pCU->m_par->Log2MaxCUSize - depth - 2][absPartIdx>>((log2width - 2) << 1)];
+    Ipp32s leftAvail = basicMask & 1;
+    Ipp32s belowLeftAvail = (basicMask >> 1) & 1;
+    Ipp32s topAvail = (basicMask >> 4) & 1;
+    Ipp32s topRightAvail = (basicMask >> 5) & 1;
+    Ipp32s topLeftAvail = 1;
+
+    // check slice/tile borders
+    if (rasterPartRow == 0 && (pCU->m_aboveAddr < pCU->m_cslice->slice_segment_address || !pCU->m_aboveSameTile))
+        topAvail = topLeftAvail = topRightAvail = 0;
+    if (rasterPartCol == 0 && (pCU->m_leftAddr < pCU->m_cslice->slice_segment_address || !pCU->m_leftSameTile))
+        leftAvail = topLeftAvail = belowLeftAvail = 0;
+    if ((rasterPartCol<<2) + width >= (Ipp32s)pCU->m_par->MaxCUSize && (pCU->m_aboveRightAddr < pCU->m_cslice->slice_segment_address || !pCU->m_aboveRightSameTile))
+        topRightAvail = 0;
+    if ((rasterPartRow<<2) + width >= (Ipp32s)pCU->m_par->MaxCUSize)
+        belowLeftAvail = 0;
+
+    Ipp32s nbits = (width>>2);
+    Ipp32s mask = (1 << nbits) - 1;
+    
+    leftAvailFlags = mask * (leftAvail + (belowLeftAvail << nbits));
+    topAvailFlags = mask * (topAvail + (topRightAvail << nbits));
+    topLeftAvailFlag = topLeftAvail * 0xffffffff;
+
+    // check frame borders
+    if (topRightAvail && pCU->m_ctbPelX + (rasterPartCol<<2) + 2 * width > pCU->m_par->Width) {
+        Ipp32s numBlocksOutOfFrame = (pCU->m_ctbPelX + (rasterPartCol<<2) + 2 * width - pCU->m_par->Width) >> 2;
+        topAvailFlags &= (1 << (2*nbits - numBlocksOutOfFrame)) - 1;
+    }
+    if (belowLeftAvail && pCU->m_ctbPelY + (rasterPartRow<<2) + 2 * width > pCU->m_par->Height) {
+        Ipp32s numBlocksOutOfFrame = (pCU->m_ctbPelY + (rasterPartRow<<2) + 2 * width - pCU->m_par->Height) >> 2;
+        leftAvailFlags &= (1 << (2*nbits - numBlocksOutOfFrame)) - 1;
+    }
+}
+
+template <typename PixType>
+static
 void GetAvailablity(H265CU<PixType> *pCU,
                     Ipp32s blockZScanIdx,
                     Ipp32s width,
@@ -290,25 +386,15 @@ void GetAvailablity(H265CU<PixType> *pCU,
 }
 
 template <typename PixType>
-static
-void GetPredPelsLuma(H265VideoParam *par, PixType* src, PixType* predPel,
-                     Ipp8u* neighborFlags, Ipp32s width, Ipp32s srcPitch)
+static void GetPredPelsLuma(H265VideoParam *par, PixType* src, PixType* predPel, Ipp32u leftAvailFlags,
+                            Ipp32u topAvailFlags, Ipp32u topLeftAvailFlag, Ipp32s width, Ipp32s srcPitch)
 {
     assert(par->QuadtreeTULog2MinSize == 2);
     Ipp32s width2 = width << 1;
     Ipp32s numUnits = width >> 2;
     Ipp32s numUnits2 = width >> 1;
 
-    Ipp32u leftAvailFlags = 0;
-    Ipp32u topAvailFlags = 0;
-    Ipp32u topLeftAvailFlag = 0;
     Ipp32u allNeighborAvailMask = (1u<<numUnits2) - 1;
-
-    for (Ipp32s i = 0; i < numUnits2; i++)
-        leftAvailFlags += neighborFlags[i] << (numUnits2-1-i);
-    topLeftAvailFlag = Ipp32u(-neighborFlags[numUnits2]);
-    for (Ipp32s i = 0; i < numUnits2; i++)
-        topAvailFlags += neighborFlags[numUnits2+1+i] << i;
 
     if ((leftAvailFlags | topAvailFlags | topLeftAvailFlag) == 0) {
         _ippsSet(1<<(par->bitDepthLuma-1), predPel, 4*width+1); // no neighbors
@@ -418,6 +504,24 @@ void GetPredPelsLuma(H265VideoParam *par, PixType* src, PixType* predPel,
     }
 }
 
+template <typename PixType>
+static void GetPredPelsLuma(H265VideoParam *par, PixType* src, PixType* predPel,
+                            Ipp8u* neighborFlags, Ipp32s width, Ipp32s srcPitch)
+{
+    Ipp32u leftAvailFlags = 0;
+    Ipp32u topAvailFlags = 0;
+    Ipp32u topLeftAvailFlag = 0;
+    Ipp32s numUnits2 = width >> 1;
+
+    for (Ipp32s i = 0; i < numUnits2; i++)
+        leftAvailFlags += neighborFlags[i] << (numUnits2-1-i);
+    topLeftAvailFlag = Ipp32u(-neighborFlags[numUnits2]);
+    for (Ipp32s i = 0; i < numUnits2; i++)
+        topAvailFlags += neighborFlags[numUnits2+1+i] << i;
+
+    GetPredPelsLuma(par, src, predPel, leftAvailFlags, topAvailFlags, topLeftAvailFlag, width, srcPitch);
+}
+
 template <class PixType> struct ChromaUVPixType;
 template <> struct ChromaUVPixType<Ipp8u> { typedef Ipp16u type; };
 template <> struct ChromaUVPixType<Ipp16u> { typedef Ipp32u type; };
@@ -425,7 +529,8 @@ template <> struct ChromaUVPixType<Ipp16u> { typedef Ipp32u type; };
 template <typename PixType>
 static
 void GetPredPelsChromaNV12(H265VideoParam *par, PixType* src_, PixType* predPel_,
-                           Ipp8u* neighborFlags, Ipp32s width, Ipp8u chroma422, Ipp32s srcPitch_)
+                           Ipp32u leftAvailFlags, Ipp32u topAvailFlags, Ipp32u topLeftAvailFlag,
+                           Ipp32s width, Ipp32s srcPitch_)
 {
     typedef typename ChromaUVPixType<PixType>::type ChromaPixType;
     ChromaPixType *src = reinterpret_cast<ChromaPixType *>(src_);  // point UV pair of chroma pixels
@@ -433,21 +538,10 @@ void GetPredPelsChromaNV12(H265VideoParam *par, PixType* src_, PixType* predPel_
     Ipp32s srcPitch = srcPitch_ >> 1;
     assert(par->QuadtreeTULog2MinSize == 2);
     Ipp32s width2 = width << 1;
-    Ipp32s numUnits = width >> 2;
     Ipp32s numUnits2 = width >> 1;
-
-    Ipp32u leftAvailFlags = 0;
-    Ipp32u topAvailFlags = 0;
-    Ipp32u topLeftAvailFlag = 0;
-    Ipp32u flagShift = chroma422 ? 1 : 2;
-
-    Ipp32s mult = chroma422 ? 1 : 2;
+    Ipp32u flagShift = par->chroma422 ? 1 : 2;
+    Ipp32s mult = par->chroma422 ? 1 : 2;
     Ipp32u allNeighborAvailMask = (1u<<(mult*numUnits2)) - 1;
-    for (Ipp32s i = 0; i < mult*numUnits2; i++)
-        leftAvailFlags += neighborFlags[i] << (mult*numUnits2-1-i);
-    topLeftAvailFlag = Ipp32u(-neighborFlags[mult*numUnits2]);
-    for (Ipp32s i = 0; i < mult*numUnits2; i++)
-        topAvailFlags += neighborFlags[mult*numUnits2+1+i] << i;
 
     if ((leftAvailFlags | topAvailFlags | topLeftAvailFlag) == 0) {
         _ippsSet(1<<(par->bitDepthChroma-1), predPel_, 8*width+2); // no neighbors
@@ -558,6 +652,27 @@ void GetPredPelsChromaNV12(H265VideoParam *par, PixType* src_, PixType* predPel_
 }
 
 template <typename PixType>
+static
+void GetPredPelsChromaNV12(H265VideoParam *par, PixType* src_, PixType* predPel_,
+                           Ipp8u* neighborFlags, Ipp32s width, Ipp32s srcPitch_)
+{
+    assert(par->QuadtreeTULog2MinSize == 2);
+    Ipp32s numUnits2 = width >> 1;
+
+    Ipp32u leftAvailFlags = 0;
+    Ipp32u topAvailFlags = 0;
+    Ipp32u topLeftAvailFlag = 0;
+    Ipp32s mult = par->chroma422 ? 1 : 2;
+    for (Ipp32s i = 0; i < mult*numUnits2; i++)
+        leftAvailFlags += neighborFlags[i] << (mult*numUnits2-1-i);
+    topLeftAvailFlag = Ipp32u(-neighborFlags[mult*numUnits2]);
+    for (Ipp32s i = 0; i < mult*numUnits2; i++)
+        topAvailFlags += neighborFlags[mult*numUnits2+1+i] << i;
+
+    GetPredPelsChromaNV12(par, src_, predPel_, leftAvailFlags, topAvailFlags, topLeftAvailFlag, width, srcPitch_);
+}
+
+template <typename PixType>
 void H265CU<PixType>::IntraPredTu(Ipp32s blockZScanIdx, Ipp32u idx422, Ipp32s width, Ipp32s pred_mode, Ipp8u is_luma)
 {
     PixType PredPel[4*2*64+1];
@@ -586,9 +701,14 @@ void H265CU<PixType>::IntraPredTu(Ipp32s blockZScanIdx, Ipp32u idx422, Ipp32s wi
 
         pRec = m_yRec + ((PUStartRow * m_pitchRecLuma + PUStartColumn) << m_par->QuadtreeTULog2MinSize);
 
-        GetAvailablity(this, blockZScanIdx, width, 0, m_par->constrainedIntrapredFlag,
-            m_inNeighborFlags, m_outNeighborFlags);
-        GetPredPelsLuma(m_par, pRec, PredPel, m_outNeighborFlags, width, m_pitchRecLuma);
+        Ipp32u leftAvailFlags;
+        Ipp32u topAvailFlags;
+        Ipp32u topLeftAvailFlag;
+        GetAvailablityFast(this, blockZScanIdx, width, 0, m_par->constrainedIntrapredFlag, leftAvailFlags, topAvailFlags, topLeftAvailFlag);
+        GetPredPelsLuma(m_par, pRec, PredPel, leftAvailFlags, topAvailFlags, topLeftAvailFlag, width, m_pitchRecLuma);
+        //GetAvailablity(this, blockZScanIdx, width, 0, m_par->constrainedIntrapredFlag,
+        //    m_inNeighborFlags, m_outNeighborFlags);
+        //GetPredPelsLuma(m_par, pRec, PredPel, m_outNeighborFlags, width, m_pitchRecLuma);
 
         if (m_par->strongIntraSmoothingEnabledFlag && isFilterNeeded)
         {
@@ -637,10 +757,18 @@ void H265CU<PixType>::IntraPredTu(Ipp32s blockZScanIdx, Ipp32u idx422, Ipp32s wi
     else
     {
         pRec = m_uvRec + (((PUStartRow * m_pitchRecChroma >> m_par->chromaShiftH) + (PUStartColumn << m_par->chromaShiftWInv)) << m_par->QuadtreeTULog2MinSize);
-        GetAvailablity(this, blockZScanIdx + idx422,
-            m_par->chromaFormatIdc == MFX_CHROMAFORMAT_YUV420 ? width << 1 : width,
-            m_par->chroma422, m_par->constrainedIntrapredFlag, m_inNeighborFlags, m_outNeighborFlags);
-        GetPredPelsChromaNV12(m_par, pRec, PredPel, m_outNeighborFlags, width, m_par->chroma422, m_pitchRecChroma);
+        if (m_par->chroma422 == 0) {
+            Ipp32u leftAvailFlags;
+            Ipp32u topAvailFlags;
+            Ipp32u topLeftAvailFlag;
+            GetAvailablityFast(this, blockZScanIdx, width<<1, 0, m_par->constrainedIntrapredFlag, leftAvailFlags, topAvailFlags, topLeftAvailFlag);
+            GetPredPelsChromaNV12(m_par, pRec, PredPel, leftAvailFlags, topAvailFlags, topLeftAvailFlag, width, m_pitchRecLuma);
+        } else {
+            GetAvailablity(this, blockZScanIdx + idx422,
+                m_par->chromaFormatIdc == MFX_CHROMAFORMAT_YUV420 ? width << 1 : width,
+                m_par->chroma422, m_par->constrainedIntrapredFlag, m_inNeighborFlags, m_outNeighborFlags);
+            GetPredPelsChromaNV12(m_par, pRec, PredPel, m_outNeighborFlags, width, m_pitchRecChroma);
+        }
 
         switch(pred_mode)
         {
@@ -733,7 +861,6 @@ CostType H265CU<PixType>::GetCuModesCost(H265CUData *data, Ipp32s absPartIdx, Ip
     EncodeCU(m_bsf, absPartIdx, depth, RD_CU_MODES);
     return BIT_COST(m_bsf->GetNumBits());
 }
-
 
 #define HM_MATCH_1 0
 //kolya
@@ -847,11 +974,8 @@ template <typename PixType>
 void H265CU<PixType>::CheckIntra(Ipp32s absPartIdx, Ipp32s depth)
 {
     CheckIntraLuma(absPartIdx, depth);
-
     if (m_costCurr <= m_costStored[depth])
         CheckIntraChroma(absPartIdx, depth);
-
-
 }
 
 
@@ -920,7 +1044,7 @@ namespace {
     }
 }
 
-#ifdef AMT_ICRA_OPT
+
 template <typename PixType>
 bool H265CU<PixType>::tryIntraRD(Ipp32s absPartIdx, Ipp32s depth, IntraLumaMode *modes)
 {
@@ -963,8 +1087,8 @@ bool H265CU<PixType>::tryIntraRD(Ipp32s absPartIdx, Ipp32s depth, IntraLumaMode 
     }
     return !skipIntraRD;
 }
-#endif
-#ifdef AMT_ADAPTIVE_INTRA_RD
+
+
 template <typename PixType>
 Ipp32s H265CU<PixType>::GetNumIntraRDModes(Ipp32s absPartIdx, Ipp32s depth, Ipp32s trDepth, IntraLumaMode *modes, Ipp32s numModes)
 {
@@ -1001,7 +1125,6 @@ Ipp32s H265CU<PixType>::GetNumIntraRDModes(Ipp32s absPartIdx, Ipp32s depth, Ipp3
     }
     return numCand;
 }
-#endif
 
 template <typename PixType>
 void H265CU<PixType>::CheckIntraLuma(Ipp32s absPartIdx, Ipp32s depth)
@@ -1025,14 +1148,11 @@ void H265CU<PixType>::CheckIntraLuma(Ipp32s absPartIdx, Ipp32s depth)
     Ipp32s numModes = InitIntraLumaModes(absPartIdx, depth, 0, modes);
     numModes = FilterIntraLumaModesBySatd(absPartIdx, depth, 0, modes, numModes);
     bool tryIntra = true;
-#ifdef AMT_ICRA_OPT
     if(m_par->TryIntra>=2 && m_cslice->slice_type != I_SLICE) {
         tryIntra = tryIntraRD(absPartIdx, depth, modes);
     }
-#ifdef AMT_ADAPTIVE_INTRA_RD
-    if(m_par->TryIntra>=2 && tryIntra) numModes = GetNumIntraRDModes(absPartIdx, depth, 0, modes, numModes);
-#endif
-#endif
+    if(m_par->TryIntra>=2 && tryIntra)
+        numModes = GetNumIntraRDModes(absPartIdx, depth, 0, modes, numModes);
     if(tryIntra) {
         numModes = FilterIntraLumaModesByRdoTr0(absPartIdx, depth, 0, modes, numModes);
         numModes = FilterIntraLumaModesByRdoTrAll(absPartIdx, depth, 0, modes, numModes);
@@ -1062,9 +1182,8 @@ void H265CU<PixType>::CheckIntraLuma(Ipp32s absPartIdx, Ipp32s depth)
         for (Ipp32s i = 0, absPartIdxPu = absPartIdx; i < 4; i++, absPartIdxPu += numParts) {
             Ipp32s numModes = InitIntraLumaModes(absPartIdxPu, depth, 1, modes);
             numModes = FilterIntraLumaModesBySatd(absPartIdxPu, depth, 1, modes, numModes);
-#ifdef AMT_ADAPTIVE_INTRA_RD
-            if(m_par->TryIntra>=2) numModes = GetNumIntraRDModes(absPartIdx, depth, 1, modes, numModes);
-#endif
+            if (m_par->TryIntra>=2)
+                numModes = GetNumIntraRDModes(absPartIdx, depth, 1, modes, numModes);
             numModes = FilterIntraLumaModesByRdoTr0(absPartIdxPu, depth, 1, modes, numModes);
             numModes = FilterIntraLumaModesByRdoTrAll(absPartIdxPu, depth, 1, modes, numModes);
             nonZero |= m_data[absPartIdxPu].cbf[0];
@@ -1235,12 +1354,14 @@ Ipp32s H265CU<PixType>::FilterIntraLumaModesBySatd(Ipp32s absPartIdx, Ipp32s dep
     Ipp64f lambdaSatd = m_rdLambda;
 
     bool optimizedBranch = (SPLIT_MUST != GetTrSplitMode(absPartIdx, depth, trDepth, partMode, 1));
-#ifdef AMT_ICRA_OPT
     m_bIntraCandInBuf = optimizedBranch;
-#endif
     if (optimizedBranch) {
-        GetAvailablity(this, absPartIdx, width, 0, m_par->constrainedIntrapredFlag, m_inNeighborFlags, m_outNeighborFlags);
-        GetPredPelsLuma(m_par, rec, predPel, m_outNeighborFlags, width, m_pitchRecLuma);
+        Ipp32u leftAvailFlags;
+        Ipp32u topAvailFlags;
+        Ipp32u topLeftAvailFlag;
+        GetAvailablityFast(this, absPartIdx, width, 0, m_par->constrainedIntrapredFlag, leftAvailFlags, topAvailFlags, topLeftAvailFlag);
+        GetPredPelsLuma(m_par, rec, predPel, leftAvailFlags, topAvailFlags, topLeftAvailFlag, width, m_pitchRecLuma);
+
         FilterIntraPredPels(predPel, predPelFilt, width);
 
         _ippiTranspose_C1R(src, m_pitchSrcLuma, m_srcTr, width, roi);
@@ -1302,10 +1423,11 @@ Ipp32s H265CU<PixType>::FilterIntraLumaModesBySatd(Ipp32s absPartIdx, Ipp32s dep
     }
 
     Ipp32s numModesAfterSatdStage = m_par->num_cand_1[m_par->Log2MaxCUSize - depth - trDepth];
-#ifdef AMT_ICRA_OPT
     m_IntraCandMaxSatd = modes[0].satd;
-    for(Ipp32s iter=0;iter<numModes;iter++) { if(modes[iter].satd>m_IntraCandMaxSatd) m_IntraCandMaxSatd = modes[iter].satd; }
-#endif
+    for (Ipp32s iter=0;iter<numModes;iter++)
+        if (modes[iter].satd>m_IntraCandMaxSatd)
+            m_IntraCandMaxSatd = modes[iter].satd;
+
     SortLumaModesByCost(modes, numModes, numModesAfterSatdStage);
 
     if (INTRA_ANG_MODE_EVEN == m_cuIntraAngMode) {
@@ -1354,9 +1476,9 @@ Ipp32s H265CU<PixType>::FilterIntraLumaModesBySatd(Ipp32s absPartIdx, Ipp32s dep
             }
             m_costCurr = costCurrSaved;
         }
-#ifdef AMT_ICRA_OPT
-        for(Ipp32s iter=0;iter<numOddModes;iter++) { if(modes[numModesAfterSatdStage+iter].satd>m_IntraCandMaxSatd) m_IntraCandMaxSatd = modes[numModesAfterSatdStage+iter].satd; }
-#endif
+        for(Ipp32s iter=0;iter<numOddModes;iter++)
+            if(modes[numModesAfterSatdStage+iter].satd>m_IntraCandMaxSatd)
+                m_IntraCandMaxSatd = modes[numModesAfterSatdStage+iter].satd;
         SortLumaModesByCost(modes, numModesAfterSatdStage + numOddModes, numModesAfterSatdStage);
     }
 

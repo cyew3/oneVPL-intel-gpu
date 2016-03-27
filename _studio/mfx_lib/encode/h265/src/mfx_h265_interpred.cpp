@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2012 - 2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012 - 2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -75,59 +75,6 @@ const Ipp16s g_chromaInterpolateFilter[8][4] =
     { -2, 10, 58, -2 }
 };
 
-//template <typename PixType>
-//static void CopyPU(const PixType *in_pSrc,
-//                          Ipp32u in_SrcPitch, // in samples
-//                          Ipp16s* in_pDst,
-//                          Ipp32u in_DstPitch, // in samples
-//                          Ipp32s width,
-//                          Ipp32s height,
-//                          Ipp32s shift)
-//{
-//    const PixType *pSrc = in_pSrc;
-//    Ipp16s *pDst = in_pDst;
-//    Ipp32s i, j;
-//
-//    for (j = 0; j < height; j++)
-//    {
-//        for (i = 0; i < width; i++)
-//        {
-//            pDst[i] = (Ipp16s)(((Ipp32s)pSrc[i]) << shift);
-//        }
-//
-//        pSrc += in_SrcPitch;
-//        pDst += in_DstPitch;
-//    }
-//}
-
-template <typename PixType>
-void WriteAverageToPic(
-    const PixType * pSrc0,
-    Ipp32u        in_Src0Pitch,      // in samples
-    const PixType * pSrc1,
-    Ipp32u        in_Src1Pitch,      // in samples
-    PixType * H265_RESTRICT pDst,
-    Ipp32u        in_DstPitch,       // in samples
-    Ipp32s        width,
-    Ipp32s        height)
-{
-#ifdef __INTEL_COMPILER
-    #pragma ivdep
-#endif // __INTEL_COMPILER
-    for (int j = 0; j < height; j++)
-    {
-#ifdef __INTEL_COMPILER
-        #pragma ivdep
-        #pragma vector always
-#endif // __INTEL_COMPILER
-        for (int i = 0; i < width; i++)
-             pDst[i] = (((Ipp16u)pSrc0[i] + (Ipp16u)pSrc1[i] + 1) >> 1);
-
-        pSrc0 += in_Src0Pitch;
-        pSrc1 += in_Src1Pitch;
-        pDst += in_DstPitch;
-    }
-}
 
 template <typename PixType, EnumTextType PLANE_TYPE>
 PixType *GetRefPointer(FrameData *refFrame, Ipp32s blockX, Ipp32s blockY, const H265MV &mv, Ipp32s chromaShiftH)
@@ -209,7 +156,7 @@ void H265CU<PixType>::PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s pu
         }
         else {
             if (eAddAverage == MFX_HEVC_PP::AVERAGE_FROM_PIC) {
-                WriteAverageToPic(src, srcPitch, src2, srcPitch2, dstPic, dstPicPitch, puW, puH);
+                h265_Average(src, srcPitch, src2, srcPitch2, dstPic, dstPicPitch, puW, puH);
             } else {
                 VM_ASSERT(0); // should not be here
             }

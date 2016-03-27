@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2014-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -447,6 +447,23 @@ namespace MFX_HEVC_PP
             for (Ipp32s col = 0; col < width; col++)
                 dst[col] = Saturate(0, maxPel, (src[col] + offset) >> rshift);
     }
+
+    template <typename PixType> void h265_Average_px(const PixType *pSrc0, Ipp32s pitchSrc0, const PixType *pSrc1, Ipp32s pitchSrc1, PixType *H265_RESTRICT pDst, Ipp32s pitchDst, Ipp32s width, Ipp32s height)
+    {
+#ifdef __INTEL_COMPILER
+        #pragma ivdep
+#endif // __INTEL_COMPILER
+        for (int j = 0; j < height; j++, pSrc0 += pitchSrc0, pSrc1 += pitchSrc1, pDst += pitchDst) {
+#ifdef __INTEL_COMPILER
+            #pragma ivdep
+            #pragma vector always
+#endif // __INTEL_COMPILER
+            for (int i = 0; i < width; i++)
+                 pDst[i] = (((Ipp16u)pSrc0[i] + (Ipp16u)pSrc1[i] + 1) >> 1);
+        }
+    }
+    template void h265_Average_px<Ipp8u> (const Ipp8u  *pSrc0, Ipp32s pitchSrc0, const Ipp8u  *pSrc1, Ipp32s pitchSrc1, Ipp8u  *H265_RESTRICT pDst, Ipp32s pitchDst, Ipp32s width, Ipp32s height);
+    template void h265_Average_px<Ipp16u>(const Ipp16u *pSrc0, Ipp32s pitchSrc0, const Ipp16u *pSrc1, Ipp32s pitchSrc1, Ipp16u *H265_RESTRICT pDst, Ipp32s pitchDst, Ipp32s width, Ipp32s height);
 
 } // end namespace MFX_HEVC_PP
 

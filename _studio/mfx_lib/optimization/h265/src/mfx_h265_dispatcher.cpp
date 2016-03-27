@@ -378,6 +378,9 @@ void SetTargetSSE4()
     g_dispatcher.h265_InterpLumaFast_s16_d16_V = &MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_sse;
     g_dispatcher.h265_InterpLumaFast_s16_d16_H = &MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_H_sse;
 
+    g_dispatcher.h265_Average_8u  = &MFX_HEVC_PP::h265_Average_px<Ipp8u>;
+    g_dispatcher.h265_Average_16u = &MFX_HEVC_PP::h265_Average_px<Ipp16u>;
+
     g_dispatcher.h265_InterpLumaPack_d8 = &MFX_HEVC_PP::h265_InterpLumaPack_sse<Ipp8u>;
     g_dispatcher.h265_InterpLumaPack_d16 = &MFX_HEVC_PP::h265_InterpLumaPack_sse<Ipp16u>;
 
@@ -592,6 +595,9 @@ void SetTargetSSSE3()
     g_dispatcher.h265_InterpLumaFast_s8_d16_V  = &MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_V_ssse3;
     g_dispatcher.h265_InterpLumaFast_s16_d16_V = &MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_ssse3;
     g_dispatcher.h265_InterpLumaFast_s16_d16_H = &MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_H_ssse3;
+
+    g_dispatcher.h265_Average_8u  = &MFX_HEVC_PP::h265_Average_px<Ipp8u>;
+    g_dispatcher.h265_Average_16u = &MFX_HEVC_PP::h265_Average_px<Ipp16u>;
 
     g_dispatcher.h265_InterpLumaPack_d8 = &MFX_HEVC_PP::h265_InterpLumaPack_sse<Ipp8u>;
     g_dispatcher.h265_InterpLumaPack_d16 = &MFX_HEVC_PP::h265_InterpLumaPack_sse<Ipp16u>;
@@ -824,6 +830,9 @@ void SetTargetAVX2()
     g_dispatcher.h265_InterpLumaFast_s8_d16_H =  &MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_H_avx2;
     g_dispatcher.h265_InterpLumaFast_s8_d16_V =  &MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_V_avx2;
 
+    g_dispatcher.h265_Average_8u  = &MFX_HEVC_PP::h265_Average_avx2<Ipp8u>;
+    g_dispatcher.h265_Average_16u = &MFX_HEVC_PP::h265_Average_avx2<Ipp16u>;
+
     g_dispatcher.h265_InterpLumaPack_d8 = &MFX_HEVC_PP::h265_InterpLumaPack_avx2<Ipp8u>;
     g_dispatcher.h265_InterpLumaPack_d16 = &MFX_HEVC_PP::h265_InterpLumaPack_avx2<Ipp16u>;
 
@@ -1043,6 +1052,9 @@ void SetTargetPX()
     g_dispatcher.h265_InterpLumaFast_s8_d16_V = &MFX_HEVC_PP::h265_InterpLumaFast_s8_d16_V_px;
     g_dispatcher.h265_InterpLumaFast_s16_d16_V = &MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_V_px;
     g_dispatcher.h265_InterpLumaFast_s16_d16_H = &MFX_HEVC_PP::h265_InterpLumaFast_s16_d16_H_px;
+
+    g_dispatcher.h265_Average_8u  = &MFX_HEVC_PP::h265_Average_px<Ipp8u>;
+    g_dispatcher.h265_Average_16u = &MFX_HEVC_PP::h265_Average_px<Ipp16u>;
 
     g_dispatcher.h265_InterpLumaPack_d8 = &MFX_HEVC_PP::h265_InterpLumaPack_px<Ipp8u>;
     g_dispatcher.h265_InterpLumaPack_d16 = &MFX_HEVC_PP::h265_InterpLumaPack_px<Ipp16u>;

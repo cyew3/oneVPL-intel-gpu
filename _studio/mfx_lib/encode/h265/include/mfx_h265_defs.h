@@ -40,11 +40,6 @@
 
 
 //Optimization with Intelligent Content and RD Analysis (ICRA)
-#define AMT_ICRA_OPT 
-#ifdef AMT_ICRA_OPT
-#define AMT_BIREFINE_CONVERGE
-#define AMT_SPEEDUP_RDOQ
-#define AMT_DZ_RDOQ
 #define AMT_INT_ME_TRANSITION
 
 #define MEMOIZE_SUBPEL
@@ -55,18 +50,9 @@
 #define MEMOIZE_BIPRED_HI_SAVE
 //#define MEMOIZE_BIPRED_TEST
 
-#define MEMOIZE_CAND
-#ifdef MEMOIZE_CAND
 #define MEMOIZE_NUMCAND MAX_NUM_MERGE_CANDS
 //#define MEMOIZE_CAND_TEST
-#define MEMOIZE_CAND_SUBPEL
-#ifdef MEMOIZE_CAND_SUBPEL
-//#define MEMOIZE_CAND_SUBPEL_TEST
-// Do not turn On MEMOIZE_SUBPEL_RECON with subopt recon in rd loop (e.g. fast interp)
 #define MEMOIZE_SUBPEL_RECON
-//#define MEMOIZE_SUBPEL_RECON_TEST
-#endif
-#endif
 #define AMT_INT_ME_SEED
 #define AMT_FAST_SUBPEL_SEARCH
 #define AMT_FAST_SUBPEL_SEED
@@ -78,18 +64,15 @@
 #endif
 
 #define AMT_THRESHOLDS
-#define AMT_ADAPTIVE_INTRA_RD
 #define AMT_ALT_ENCODE
 #ifdef AMT_ALT_ENCODE
 #define AMT_ALT_ENCODE_OPT
-#define AMT_DZ_PDRDOQ
 #define AMT_ADAPTIVE_INTRA_DEPTH
 #endif
 #define AMT_SAO_MIN
 
 #define AMT_ADAPTIVE_TU_DEPTH
 #define AMT_FIX_CHROMA_SKIP
-#define AMT_COEFF_COST_EST
 
 #ifndef MFX_VA
 #define AMT_VQ_TUNE
@@ -113,7 +96,7 @@
 
 #define AMT_DQP_FIX
 
-#endif
+
 
 
 namespace H265Enc {

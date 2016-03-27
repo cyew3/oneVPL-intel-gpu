@@ -77,6 +77,7 @@ namespace H265Enc {
         Ipp8u SplitThresholdStrengthTUIntra;
         Ipp8u SplitThresholdStrengthCUInter;
         Ipp8u SplitThresholdTabIndex;       //0 d3efault (2), 1 - usuallu TU1-3, 2 - TU4-6, 3 fro TU7
+        Ipp64f SplitThresholdMultiplier;
         Ipp8u num_cand_0[4][8];
         Ipp8u num_cand_1[8];
         Ipp8u num_cand_2[8];
@@ -249,6 +250,11 @@ namespace H265Enc {
         // priority ROI
         Ipp16u numRoi;
         H265PriorityRoi roi[256];
+
+#if defined(DUMP_COSTS_CU) || defined (DUMP_COSTS_TU)
+        FILE *fp_cu;
+        FILE *fp_tu;
+#endif
     };
 
     class DispatchSaoApplyFilter

@@ -251,8 +251,8 @@ typedef struct {
     mfxU16      RepackProb;         // percent of random repack probabiility, 0 - no random repacks
     mfxU16      NumRefLayers;       // 0-1-default, 2+ use given
     mfxU16      ConstQpOffset;      // allows setting negative QPs for 10bit: finalQP[IPB] = mfx.QP[IPB] - ConstQpOffset
+    mfxU16      SplitThresholdMultiplier; //0-10-default: multipler = SplitThresholdMultiplier / 10.0
     mfxU16      EnableCmBiref;      // 0-default 1-enables Interpolation and GpuBiref 
-
     mfxU16      reserved[36];       // 256 bytes total} mfxExtCodingOptionHEVC;
 } mfxExtCodingOptionHEVC;
 

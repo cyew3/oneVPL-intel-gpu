@@ -67,18 +67,12 @@ void h265_quant_fwd_rdo(
     H265CU<PixType>* pCU,
     Ipp16s* pSrc,
     Ipp16s* pDst,
-
     Ipp32s  log2_tr_size,
-
     Ipp32s  bit_depth,
     Ipp32s  is_slice_i,
-#ifdef AMT_DZ_RDOQ
     Ipp32s  is_blk_i,
-#endif
-
     EnumTextType   type,
     Ipp32u  abs_part_idx,
-
     Ipp32s  QP,
     H265BsFake* bs);
 

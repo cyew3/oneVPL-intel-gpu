@@ -691,7 +691,6 @@ template <> inline
     kernel->SetKernelArg(index, arg.get_size_data(), ((vector<SurfaceIndex, 1> &)arg).get_addr_data());
 }
 
-
 template <class T0>
 void SetKernelArg(CmKernel * kernel, T0 const & arg0)
 {

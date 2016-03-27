@@ -1,3 +1,11 @@
+//
+//               INTEL CORPORATION PROPRIETARY INFORMATION
+//  This software is supplied under the terms of a license agreement or
+//  nondisclosure agreement with Intel Corporation and may not be copied
+//  or disclosed except in accordance with the terms of that agreement.
+//        Copyright (c) 2015 - 2016 Intel Corporation. All Rights Reserved.
+//
+
 #include "gtest/gtest.h"
 #include <algorithm>
 
@@ -281,7 +289,7 @@ TEST_F(QueryTest, Mode1_Main) {
     EXPECT_EQ(1, output.extCodingOptionHevc.ConstQpOffset);
     // check if the rest of ExtCodingOptionHevc is zeroed
     EXPECT_EQ(true, IsZero(output.extCodingOptionHevc.reserved));
-    EXPECT_EQ(38 * sizeof(mfxU16), sizeof(output.extCodingOptionHevc.reserved)); // if fails here then new fields were added, need to add tests for these fields
+    EXPECT_EQ(36 * sizeof(mfxU16), sizeof(output.extCodingOptionHevc.reserved)); // if fails here then new fields were added, need to add tests for these fields
 
     // check if ExtHevcTiles fields are set correctly
     EXPECT_EQ(1, output.extHevcTiles.NumTileRows);

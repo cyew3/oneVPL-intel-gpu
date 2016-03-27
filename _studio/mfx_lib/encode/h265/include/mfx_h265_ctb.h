@@ -35,7 +35,6 @@ struct H265VideoParam;
 
 #ifdef MEMOIZE_SUBPEL
 
-#ifdef MEMOIZE_CAND
 template <typename PixType>
 class MemCand
 {
@@ -45,17 +44,11 @@ public:
     H265MV  mv[MEMOIZE_NUMCAND][2];
     Ipp32s  refIdx[MEMOIZE_NUMCAND][2];
     Ipp32s  list[MEMOIZE_NUMCAND];
-#ifdef MEMOIZE_CAND_SUBPEL
     PixType *predBuf [MEMOIZE_NUMCAND];
-#endif
     void    Init() { count = 0; }
-#ifdef MEMOIZE_CAND_SUBPEL
     void    Init(Ipp32u idx, Ipp32s *buf, PixType *pBuf) { if(idx<MEMOIZE_NUMCAND) { satd8[idx] = buf; predBuf[idx] = pBuf; } }
-#else
-    void    Init(Ipp32u idx, Ipp32s *buf) { if(idx<MEMOIZE_NUMCAND) { satd8[idx] = buf; } }
-#endif
 };
-#endif
+
 
 template <typename PixType>
 class MemPred
@@ -86,11 +79,16 @@ public:
 };
 #endif
 
-template <int MAX_NUM_CAND>
-struct MvPredInfo
+struct MergePredInfo
 {
-    H265MV mvCand[2 * MAX_NUM_CAND];
-    Ipp8s  refIdx[2 * MAX_NUM_CAND];
+    H265MV mvCand[10];
+    Ipp8s  refIdx[10];
+    Ipp32s numCand;
+};
+
+struct AmvpInfo
+{
+    H265MV mvCand[2];
     Ipp32s numCand;
 };
 
@@ -277,8 +275,8 @@ public:
     Ipp32u m_region_border_left, m_region_border_top;
 
     // merge and AMVP candidates shared between function calls for one CU depth, one part mode and all PUs (1, 2, or 4)
-    MvPredInfo<5> m_mergeCand[4];
-    MvPredInfo<2> m_amvpCand[4][2 * MAX_NUM_REF_IDX];
+    MergePredInfo m_mergeCand[4];
+    AmvpInfo      m_amvpCand[4][2 * MAX_NUM_REF_IDX];
     Ipp32s        m_skipCandBest;
 
     Ipp32s m_aboveAddr;
@@ -320,13 +318,15 @@ public:
 
     H265BsFake *m_bsf;
 
-    Ipp8u m_rdOptFlag;
+    Ipp8u  m_rdOptFlag;
     Ipp64f m_rdLambda;
     Ipp64f m_rdLambdaChroma;
     Ipp64f m_rdLambdaInter;
     Ipp64f m_rdLambdaInterMv;
     Ipp64f m_rdLambdaSqrt;
     Ipp64f m_ChromaDistWeight;
+    Ipp32s m_lumaQp;
+    Ipp32s m_chromaQp;
 
     H265Slice *m_cslice;
     Ipp8u m_intraMinDepth;      // min CU depth from spatial analysis
@@ -341,7 +341,6 @@ public:
 
     SaoEstimator m_saoEst;
 
-#if defined(AMT_ICRA_OPT)
     Ipp32s  m_SCid[5][MAX_NUM_PARTITIONS];
     Ipp32f  m_SCpp[5][MAX_NUM_PARTITIONS];
     Ipp32s  m_STC[5][MAX_NUM_PARTITIONS];
@@ -349,7 +348,6 @@ public:
     Ipp32s  m_mvdCost;
     bool    m_bIntraCandInBuf;
     Ipp32s  m_IntraCandMaxSatd;
-#endif
 
 #ifdef MEMOIZE_SUBPEL
     __ALIGN32 Ipp16s  m_predBufHi3[MAX_NUM_REF_IDX][4][4][(MAX_CU_SIZE+MEMOIZE_SUBPEL_EXT_W) * (MAX_CU_SIZE+MEMOIZE_SUBPEL_EXT_H)];
@@ -381,20 +379,16 @@ public:
     } m_interpBufBi[INTERP_BUF_SZ];
     Ipp8u m_interpIdxFirst, m_interpIdxLast;
 
-#ifdef MEMOIZE_CAND
     MemCand<PixType>        m_memCandSubHad[4];  // [sizes]
 
     Ipp32s m_satd8CandBuf0[MEMOIZE_NUMCAND][((MAX_CU_SIZE>>3)>>3) *((MAX_CU_SIZE>>3)>>3)];
     Ipp32s m_satd8CandBuf1[MEMOIZE_NUMCAND][((MAX_CU_SIZE>>3)>>2) *((MAX_CU_SIZE>>3)>>2)];
     Ipp32s m_satd8CandBuf2[MEMOIZE_NUMCAND][((MAX_CU_SIZE>>3)>>1) *((MAX_CU_SIZE>>3)>>1)];
     Ipp32s m_satd8CandBuf3[MEMOIZE_NUMCAND][((MAX_CU_SIZE>>3)   ) *((MAX_CU_SIZE>>3)   )];
-#ifdef MEMOIZE_CAND_SUBPEL
     __ALIGN32 PixType m_predBufCand3  [MEMOIZE_NUMCAND][(MAX_CU_SIZE) * (MAX_CU_SIZE)];
     __ALIGN32 PixType m_predBufCand2  [MEMOIZE_NUMCAND][(MAX_CU_SIZE>>1) * (MAX_CU_SIZE>>1)];
     __ALIGN32 PixType m_predBufCand1  [MEMOIZE_NUMCAND][(MAX_CU_SIZE>>2) * (MAX_CU_SIZE>>2)];
     __ALIGN32 PixType m_predBufCand0  [MEMOIZE_NUMCAND][(MAX_CU_SIZE>>3) * (MAX_CU_SIZE>>3)];
-#endif
-#endif
 #endif
 
     Ipp32s m_SlicePixRowFirst;
@@ -451,17 +445,16 @@ public:
                              Ipp32s neighbourBlockRow, Ipp32s curBlockZScanIdx,
                              bool isNeedTocheckCurLCU);
 
-    bool AddMvpCand(MvPredInfo<2> *info, H265CUData *data, Ipp32s blockZScanIdx, Ipp32s refPicListIdx,
-                    Ipp32s refIdx, bool order);
+    bool AddMvpCand(AmvpInfo *info, H265CUData *data, Ipp32s blockZScanIdx, Ipp32s refPicListIdx, Ipp32s refIdx, bool order);
 
     void GetMvpCand(Ipp32s topLeftCUBlockZScanIdx, Ipp32s refPicListIdx, Ipp32s refIdx,
-                    Ipp32s partMode, Ipp32s partIdx, Ipp32s cuSize, MvPredInfo<2> *info);
+                    Ipp32s partMode, Ipp32s partIdx, Ipp32s cuSize, AmvpInfo *info);
 
-    void GetMergeCand(Ipp32s topLeftCUBlockZScanIdx, Ipp32s partMode, Ipp32s partIdx, Ipp32s cuSize,
-                      MvPredInfo<5> *mergeInfo);
+    void GetMergeCand(Ipp32s topLeftCUBlockZScanIdx, Ipp32s partMode, Ipp32s partIdx, Ipp32s cuSize, MergePredInfo *mergeInfo);
+    void GetMergeCandFast(Ipp32s topLeftCUBlockZScanIdx, Ipp32s cuSize, MergePredInfo *mergeInfo);
 
-    void GetAmvpCand(Ipp32s topLeftBlockZScanIdx, Ipp32s partMode, Ipp32s partIdx,
-                     MvPredInfo<2> amvpInfo[2 * MAX_NUM_REF_IDX]);
+    void GetAmvpCand(Ipp32s topLeftBlockZScanIdx, Ipp32s partMode, Ipp32s partIdx, AmvpInfo amvpInfo[2 * MAX_NUM_REF_IDX]);
+    void GetAmvpCandFast(Ipp32s topLeftBlockZScanIdx, AmvpInfo amvpInfo[2 * MAX_NUM_REF_IDX]);
 
     void SetupMvPredictionInfo(Ipp32s blockZScanIdx, Ipp32s partMode, Ipp32s curPUidx);
 
@@ -540,6 +533,8 @@ public:
     CostType GetCuSplitFlagCost(H265CUData *data, Ipp32s absPartIdx, Ipp32s depth);
 
     CostType GetCuModesCost(H265CUData *data, Ipp32s absPartIdx, Ipp32s depth);
+    CostType GetSkipModeCost(H265CUData *data, Ipp32s absPartIdx, Ipp32s depth);
+    CostType GetInterModeCost(H265CUData *data, Ipp32s absPartIdx, Ipp32s depth);
 
     template <EnumTextType PLANE_TYPE>
     void PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s listIdx,
@@ -575,11 +570,11 @@ public:
     void EncAndRecChromaTu(Ipp32s absPartIdx, Ipp32s idx422, Ipp32s offset, Ipp32s width, CostType *cost,
                            IntraPredOpt pred_opt, Ipp8u costPredFlag);
 
-    void QuantInvTu(const CoeffsType *coeff, CoeffsType *resid, Ipp32s width, Ipp32s qp, Ipp32s isLuma);
+    void QuantInvTu(const CoeffsType *coeff, CoeffsType *resid, Ipp32s width, Ipp32s isLuma);
 
-    void QuantFwdTu(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width, Ipp32s qp, Ipp32s isLuma, Ipp32s isIntra);
+    void QuantFwdTu(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width, Ipp32s isLuma, Ipp32s isIntra);
 
-    void QuantFwdTuBase(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width, Ipp32s qp, Ipp32s isLuma);
+    void QuantFwdTuBase(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width, Ipp32s isLuma);
 
     void Deblock();
 
@@ -613,7 +608,7 @@ public:
 
     //CostType CalcCostSkipExperimental(Ipp32s absPartIdx, Ipp8u depth);
 
-    Ipp32s CheckMergeCand(const H265MEInfo *meInfo, const MvPredInfo<5> *mergeCand,
+    Ipp32s CheckMergeCand(const H265MEInfo *meInfo, const MergePredInfo *mergeCand,
                           Ipp32s useHadamard, Ipp32s *mergeCandIdx);
 
     bool CheckFrameThreadingSearchRange(const H265MEInfo *meInfo, const H265MV *mv) const;
@@ -650,67 +645,62 @@ public:
 
     Ipp32s FilterIntraLumaModesByRdoTrAll(Ipp32s absPartIdx, Ipp32s depth, Ipp32s trDepth,
                                           IntraLumaMode *modes, Ipp32s numModes);
-#ifdef AMT_ICRA_OPT
     Ipp32s MePu(H265MEInfo *meInfos, Ipp32s partIdx, bool doME=true);
     Ipp32s MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx);
-#else
-    void MePu(H265MEInfo *meInfos, Ipp32s partIdx);
-    void MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx);
-#endif
 
     Ipp32s PuCost(H265MEInfo *meInfo);
 
     bool CheckGpuIntraCost(Ipp32s absPartIdx, Ipp32s depth) const;
 
 #ifdef AMT_INT_ME_SEED
-    void MeIntPel(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo, const FrameData *ref,
+    void MeIntPel(const H265MEInfo *meInfo, const AmvpInfo *predInfo, const FrameData *ref,
                   H265MV *mv, Ipp32s *cost, Ipp32s *mvCost, Ipp32s meStepRange = INT_MAX) const;
-    Ipp16s MeIntSeed(const H265MEInfo *meInfo, const MvPredInfo<2> *amvp, Ipp32s list, 
+    Ipp16s MeIntSeed(const H265MEInfo *meInfo, const AmvpInfo *amvp, Ipp32s list, 
                      Ipp32s refIdx, H265MV mvRefBest0, H265MV mvRefBest00, 
                      H265MV &mvBest, Ipp32s &costBest, Ipp32s &mvCostBest, H265MV &mvBestSub);
 #else
-    void MeIntPel(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo, const Frame *ref,
+    void MeIntPel(const H265MEInfo *meInfo, const AmvpInfo *predInfo, const Frame *ref,
                   H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
 #endif
 
-    void MeIntPelFullSearch(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo,
+    void MeIntPelFullSearch(const H265MEInfo *meInfo, const AmvpInfo *predInfo,
                             const FrameData *ref, H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
 
 #ifdef AMT_INT_ME_SEED
-    void MeIntPelLog(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo, const FrameData *ref,
+    void MeIntPelLog(const H265MEInfo *meInfo, const AmvpInfo *predInfo, const FrameData *ref,
                      H265MV *mv, Ipp32s *cost, Ipp32s *mvCost, Ipp32s meStepRange) const;
 #else
-    void MeIntPelLog(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo, const Frame *ref,
+    void MeIntPelLog(const H265MEInfo *meInfo, const AmvpInfo *predInfo, const Frame *ref,
                      H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
 #endif
 
 #ifdef MEMOIZE_SUBPEL
-    void MeSubPel(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo, const FrameData *ref,
+    void MeSubPel(const H265MEInfo *meInfo, const AmvpInfo *predInfo, const FrameData *ref,
                   H265MV *mv, Ipp32s *cost, Ipp32s *mvCost, Ipp32s refIdxMem);
 #ifdef AMT_FAST_SUBPEL_SEED
-    bool MeSubPelSeed(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo, 
+    bool MeSubPelSeed(const H265MEInfo *meInfo, const AmvpInfo *predInfo, 
                       const FrameData *ref, H265MV &mvBest, Ipp32s &costBest, Ipp32s &mvCostBest,
                       Ipp32s refIdxMem, H265MV &mvInt, H265MV &mvBestSub);
 #endif
 #else
-    void MeSubPel(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo, const Frame *ref,
+    void MeSubPel(const H265MEInfo *meInfo, const AmvpInfo *predInfo, const Frame *ref,
                   H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
 #endif
 
 
-    void AddMvCost(const MvPredInfo<2> *predInfo, Ipp32s log2Step, const Ipp32s *dists, H265MV *mv,
+    void AddMvCost(const AmvpInfo *predInfo, Ipp32s log2Step, const Ipp32s *dists, H265MV *mv,
                    Ipp32s *costBest, Ipp32s *mvCostBest, Ipp32s patternSubpel) const;
 
-    void MeSubPelBatchedBox(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo, const FrameData *ref,
+    void MeSubPelBatchedBox(const H265MEInfo *meInfo, const AmvpInfo *predInfo, const FrameData *ref,
                             H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
 
 #ifdef MEMOIZE_SUBPEL
-    void MemSubPelBatchedBox(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo,
+    void MemSubPelBatchedBox(const H265MEInfo *meInfo, const AmvpInfo *predInfo,
                                          const FrameData *ref, H265MV *mv, Ipp32s *cost, Ipp32s *mvCost, Ipp32s refIdxMem, Ipp32s size);
-    void MemSubPelBatchedFastBoxDiaOrth(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo,
+    void MemSubPelBatchedFastBoxDiaOrth(const H265MEInfo *meInfo, const AmvpInfo *predInfo,
                                          const FrameData *ref, H265MV *mv, Ipp32s *cost, Ipp32s *mvCost, Ipp32s refIdxMem, Ipp32s size);
 #endif
-    void MeSubPelBatchedDia(const H265MEInfo *meInfo, const MvPredInfo<2> *predInfo, const FrameData *ref,
+    void MeSubPelBatchedDia(const H265MEInfo *meInfo, const AmvpInfo *predInfo, const FrameData *ref,
                             H265MV *mv, Ipp32s *cost, Ipp32s *mvCost) const;
 
     void CuCost(Ipp32s absPartIdx, Ipp8u depth, const H265MEInfo* bestInfo);
@@ -794,8 +784,7 @@ public:
 
     void MeInterpolateUseSaveHi(const H265MEInfo* meInfo, const H265MV *mv, PixType *src,
                                     Ipp32s srcPitch, Ipp16s*& dst, Ipp32s& dstPitch, Ipp32s size, Ipp32s refIdxMem);
-#ifdef MEMOIZE_CAND
-#ifdef MEMOIZE_CAND_SUBPEL
+
     bool  MemCandUseSubpel(const H265MEInfo* meInfo, const Ipp8s listIdx, const Ipp8s *refIdx, 
                             const H265MV *mv,  const PixType*& predBuf, Ipp32s& memPitch);
     bool  MemSCandSave(const H265MEInfo* meInfo, Ipp32s listIdx, const Ipp8s *refIdx, 
@@ -807,19 +796,8 @@ public:
                         Ipp32s *memPitch, bool useHadamard);
     bool  MemBiCandUse(const H265MEInfo* meInfo, const Ipp8s *refIdx, const H265MV *mv,  const PixType*& predBuf, Ipp32s **satd8, 
                         Ipp32s *memPitch, bool useHadamard);
-#else
-    bool  MemSCandSave(const H265MEInfo* meInfo, Ipp32s listIdx, const Ipp8s *refIdx, const H265MV *mv,
-                        Ipp32s **satd8, Ipp32s *memPitch, bool useHadamard);
-    bool  MemBiCandSave(const H265MEInfo* meInfo, const Ipp8s *refIdx, const H265MV *mv, Ipp32s **satd8, 
-                        Ipp32s *memPitch, bool useHadamard);
-    bool  MemSCandUse(const H265MEInfo* meInfo, Ipp32s listIdx, const Ipp8s *refIdx, const H265MV *mv, Ipp32s **satd8, 
-                        Ipp32s *memPitch, bool useHadamard);
-    bool  MemBiCandUse(const H265MEInfo* meInfo, const Ipp8s *refIdx, const H265MV *mv,  Ipp32s **satd8, 
-                        Ipp32s *memPitch, bool useHadamard);
-#endif
 
 
-#ifdef MEMOIZE_CAND_SUBPEL
     Ipp32s MatchingMetricBipredPuUse(const PixType *src, const H265MEInfo *meInfo, const Ipp8s refIdx[2],
                                      const H265MV mvs[2], Ipp32s useHadamard, const PixType *predBuf, Ipp32s memPitch);
     Ipp32s MatchingMetricBipredPuSave(const PixType *src, const H265MEInfo *meInfo, const Ipp8s refIdx[2],
@@ -829,33 +807,23 @@ public:
     Ipp32s MatchingMetricPuSave(const PixType *src, const H265MEInfo *meInfo, const H265MV *mv,
                                 const FrameData *refPic, Ipp32s useHadamard, Ipp32s *satd8, PixType *predBuf, Ipp32s memPitch);
     
-#else
-    Ipp32s MatchingMetricPuSave(const PixType *src, const H265MEInfo *meInfo, const H265MV *mv,
-                                const Frame *refPic, Ipp32s useHadamard, Ipp32s *satd8, Ipp32s memPitch);
-    Ipp32s MatchingMetricBipredPuSave(const PixType *src, const H265MEInfo *meInfo, const Ipp8s refIdx[2],
-                                      const H265MV mvs[2], Ipp32s useHadamard, Ipp32s *satd8, Ipp32s memPitch);
-#endif
-
     Ipp32s MatchingMetricPuMemSCand(const PixType *src, const H265MEInfo *meInfo, Ipp32s listIdx, 
                     const Ipp8s *refIdx, const H265MV *mv, const FrameData *refPic, Ipp32s useHadamard);
     Ipp32s MatchingMetricBiPredPuMemCand(const PixType *src, const H265MEInfo *meInfo, 
                     const Ipp8s *refIdx, const H265MV *mv, Ipp32s useHadamard);
 #endif
-#endif
 
     Ipp32s MatchingMetricBipredPu(const PixType *src, const H265MEInfo *meInfo, const Ipp8s refIdx[2],
                                   const H265MV mvs[2], Ipp32s useHadamard);
 
-    Ipp32s MvCost1RefLog(H265MV mv, const MvPredInfo<2> *predInfo) const;
+    Ipp32s MvCost1RefLog(H265MV mv, const AmvpInfo *predInfo) const;
 
-    Ipp32s MvCost1RefLog(Ipp16s mvx, Ipp16s mvy, const MvPredInfo<2> *predInfo) const;
+    Ipp32s MvCost1RefLog(Ipp16s mvx, Ipp16s mvy, const AmvpInfo *predInfo) const;
 
     void InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTemp, Ipp32s cuAddr,
                 H265BsFake *_bsf, H265Slice *cslice, ThreadingTaskSpecifier stage,
                 costStat* _costStat, const Frame* frame, CoeffsType *m_coeffWork);
 
-#if defined(AMT_ICRA_OPT)
-    //void CalcRsCs(void);
     void GetSpatialComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth);
     Ipp32s GetSpatialComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth, Ipp32f& SCpp) const;
     Ipp32s GetSpatioTemporalComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth);
@@ -869,11 +837,8 @@ public:
     H265CUData* GetCuDataXY(Ipp32s x, Ipp32s y, Frame *ref);
     void GetProjectedDepth(Ipp32s absPartIdx, Ipp32s depth, Ipp8u splitMode);
     void FastCheckAMP(Ipp32s absPartIdx, Ipp8u depth, const H265MEInfo *meInfo2Nx2N);
-    void CheckSkipCandFullRD(const H265MEInfo *meInfo, const MvPredInfo<5> *mergeCand, Ipp32s *mergeCandIdx);
-#ifdef AMT_ADAPTIVE_INTRA_RD
+    void CheckSkipCandFullRD(const H265MEInfo *meInfo, const MergePredInfo *mergeCand, Ipp32s *mergeCandIdx);
     Ipp32s GetNumIntraRDModes(Ipp32s absPartIdx, Ipp32s depth, Ipp32s trDepth, IntraLumaMode *modes, Ipp32s numModes);
-#endif
-#endif
     CostType ModeDecision(Ipp32s absPartIdx, Ipp8u depth);
 
     bool getdQPFlag           ()                        { return m_bEncodeDQP;        }
@@ -923,6 +888,7 @@ private:
     //void FillRandom(Ipp32s absPartIdx, Ipp8u depth);
     //void FillZero(Ipp32s absPartIdx, Ipp8u depth);
 };
+
 
 inline Ipp32u GetCtxQtCbfLuma(Ipp32u trDepth) { return !trDepth; }
 inline Ipp32u GetCtxQtCbfChroma(Ipp32u trDepth) { return trDepth; }

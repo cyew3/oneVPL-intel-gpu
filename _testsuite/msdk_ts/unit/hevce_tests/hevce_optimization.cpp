@@ -1,3 +1,11 @@
+//
+//               INTEL CORPORATION PROPRIETARY INFORMATION
+//  This software is supplied under the terms of a license agreement or
+//  nondisclosure agreement with Intel Corporation and may not be copied
+//  or disclosed except in accordance with the terms of that agreement.
+//        Copyright (c) 2015 - 2016 Intel Corporation. All Rights Reserved.
+//
+
 #include "gtest/gtest.h"
 
 #include "random"
@@ -11,7 +19,7 @@
 #undef max
 
 #define PRINT_TICKS
-//#undef PRINT_TICKS
+#undef PRINT_TICKS
 
 namespace utils {
 
@@ -2522,5 +2530,78 @@ TEST(optimization, DiffDc_avx2) {
     //    Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffDc_avx2<Ipp16u>, src16.get(), pitch, pred16.get(), pitch, size);
     //    printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", size, size, 10, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
     //}
+#endif //PRINT_TICKS
+}
+
+TEST(optimization, Average_avx2) {
+    Ipp32s pitch = 256;
+    Ipp32s maxsize = 64;
+
+    auto src0_8     = utils::MakeAlignedPtr<Ipp8u> (pitch * maxsize, utils::AlignAvx2);
+    auto src1_8     = utils::MakeAlignedPtr<Ipp8u> (pitch * maxsize, utils::AlignAvx2);
+    auto dstpx_8    = utils::MakeAlignedPtr<Ipp8u> (pitch * maxsize, utils::AlignAvx2);
+    auto dstavx2_8  = utils::MakeAlignedPtr<Ipp8u> (pitch * maxsize, utils::AlignAvx2);
+    auto src0_10    = utils::MakeAlignedPtr<Ipp16u>(pitch * maxsize, utils::AlignAvx2);
+    auto src1_10    = utils::MakeAlignedPtr<Ipp16u>(pitch * maxsize, utils::AlignAvx2);
+    auto dstpx_10   = utils::MakeAlignedPtr<Ipp16u>(pitch * maxsize, utils::AlignAvx2);
+    auto dstavx2_10 = utils::MakeAlignedPtr<Ipp16u>(pitch * maxsize, utils::AlignAvx2);
+
+    std::minstd_rand0 rand;
+    rand.seed(0x1234);
+
+    Ipp32s dims[][2] = { // {width,height}
+        {4,4}, {4,8}, {4,16},
+        {8,4}, {8,8}, {8,16}, {8,32},
+        {12,16},
+        {16,4}, {16,8}, {16,12}, {16,16}, {16,32}, {16,64},
+        {24,32},
+        {32,8}, {32,16}, {32,24}, {32,32}, {32,64},
+        {48,64},
+        {64,16}, {64,32}, {64,48}, {64,64}
+    };
+
+    for (auto wh: dims) {
+        utils::InitRandomBlock(rand, src0_8.get(), pitch, pitch, maxsize, 0, 255);
+        utils::InitRandomBlock(rand, src1_8.get(), pitch, pitch, maxsize, 0, 255);
+        utils::InitRandomBlock(rand, dstpx_8.get(), pitch, pitch, maxsize, 0, 255);
+        memcpy(dstavx2_8.get(), dstpx_8.get(), sizeof(Ipp8u) * pitch * maxsize);
+
+        Ipp32s width = wh[0], height = wh[1];
+        std::ostringstream buf;
+        buf << "Testing " << width << "x" << height << " 8bit";
+        SCOPED_TRACE(buf.str().c_str());
+        MFX_HEVC_PP::h265_Average_px  (src0_8.get(), pitch, src1_8.get(), pitch, dstpx_8.get(),   pitch, width, height);
+        MFX_HEVC_PP::h265_Average_avx2(src0_8.get(), pitch, src1_8.get(), pitch, dstavx2_8.get(), pitch, width, height);
+        ASSERT_EQ(0, memcmp(dstavx2_8.get(), dstpx_8.get(), sizeof(Ipp8u) * pitch * maxsize));
+    }
+
+    for (auto wh: dims) {
+        utils::InitRandomBlock(rand, src0_10.get(), pitch, pitch, maxsize, 0, 1023);
+        utils::InitRandomBlock(rand, src1_10.get(), pitch, pitch, maxsize, 0, 1023);
+        utils::InitRandomBlock(rand, dstpx_10.get(), pitch, pitch, maxsize, 0, 1023);
+        memcpy(dstavx2_10.get(), dstpx_10.get(), sizeof(Ipp16u) * pitch * maxsize);
+
+        Ipp32s width = wh[0], height = wh[1];
+        std::ostringstream buf;
+        buf << "Testing " << width << "x" << height << " 10bit";
+        SCOPED_TRACE(buf.str().c_str());
+        MFX_HEVC_PP::h265_Average_px  (src0_10.get(), pitch, src1_10.get(), pitch, dstpx_10.get(),   pitch, width, height);
+        MFX_HEVC_PP::h265_Average_avx2(src0_10.get(), pitch, src1_10.get(), pitch, dstavx2_10.get(), pitch, width, height);
+        ASSERT_EQ(0, memcmp(dstavx2_10.get(), dstpx_10.get(), sizeof(Ipp16u) * pitch * maxsize));
+    }
+
+#ifdef PRINT_TICKS
+    for (auto wh: dims) {
+        Ipp32s width = wh[0], height = wh[1];
+        Ipp64u ticksPx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Average_px  <Ipp8u>, src0_8.get(), pitch, src1_8.get(), pitch, dstpx_8.get(),   pitch, width, height);
+        Ipp64u ticksAvx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Average_avx2<Ipp8u>, src0_8.get(), pitch, src1_8.get(), pitch, dstavx2_8.get(), pitch, width, height);
+        printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", width, height, 8, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+    }
+    for (auto wh: dims) {
+        Ipp32s width = wh[0], height = wh[1];
+        Ipp64u ticksPx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Average_px  <Ipp16u>, src0_10.get(), pitch, src1_10.get(), pitch, dstpx_10.get(),   pitch, width, height);
+        Ipp64u ticksAvx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Average_avx2<Ipp16u>, src0_10.get(), pitch, src1_10.get(), pitch, dstavx2_10.get(), pitch, width, height);
+        printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", width, height, 10, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+    }
 #endif //PRINT_TICKS
 }

@@ -337,6 +337,8 @@ namespace MFX_HEVC_PP
     typedef void (* PTR_Interp_s16_d16_Ext)(INTERP_S16_D16_PARAMETERS_LIST, int plane);
     typedef void (* PTR_InterpPack_d8)(const short*, int, unsigned char*, int, int, int, int);
     typedef void (* PTR_InterpPack_d16)(const short*, int, unsigned short*, int, int, int, int);
+    typedef void (* PTR_Average_8u)(const Ipp8u*,int,const Ipp8u*,int,Ipp8u*,int,int,int);
+    typedef void (* PTR_Average_16u)(const Ipp16u*,int,const Ipp16u*,int,Ipp16u*,int,int,int);
     
     // Convert w/ rshift
     typedef void (* PTR_ConvertShiftR)(const short*, int, unsigned char*, int, int, int, int);
@@ -595,6 +597,8 @@ namespace MFX_HEVC_PP
         // pack intermediate interpolation pels s16 to u8/u16 [ dst = Saturate( (src + 32) >> 6, 0, (1 << bitDepth) - 1 ) ]
         HEVCPP_API( PTR_InterpPack_d8, void, h265_InterpLumaPack_d8, (const short*, int, unsigned char*, int, int, int, int));
         HEVCPP_API( PTR_InterpPack_d16, void, h265_InterpLumaPack_d16, (const short*, int, unsigned short*, int, int, int, int));
+        HEVCPP_API( PTR_Average_8u, void, h265_Average_8u, (const Ipp8u*,int,const Ipp8u*,int,Ipp8u*,int,int,int));
+        HEVCPP_API( PTR_Average_16u, void, h265_Average_16u, (const Ipp16u*,int,const Ipp16u*,int,Ipp16u*,int,int,int));
 
         // [Convert w/ rshift]
         HEVCPP_API( PTR_ConvertShiftR, void, h265_ConvertShiftR, (const short*, int, unsigned char*, int, int, int, int));
@@ -1285,6 +1289,16 @@ namespace MFX_HEVC_PP
     {
         //h265_GetCtuStatistics_16u_px(SAOCU_ENCODE_PARAMETERS_LIST_CALL);
         MFX_HEVC_PP::NAME(h265_GetCtuStatistics_16u)(SAOCU_ENCODE_PARAMETERS_LIST_16U_CALL);
+    }
+
+    static inline void h265_Average(const Ipp8u *pSrc0, Ipp32s pitchSrc0, const Ipp8u *pSrc1, Ipp32s pitchSrc1, Ipp8u *pDst, Ipp32s pitchDst, Ipp32s width, Ipp32s height)
+    {
+        MFX_HEVC_PP::NAME(h265_Average_8u)(pSrc0, pitchSrc0, pSrc1, pitchSrc1, pDst, pitchDst, width, height);
+    }
+
+    static inline void h265_Average(const Ipp16u *pSrc0, Ipp32s pitchSrc0, const Ipp16u *pSrc1, Ipp32s pitchSrc1, Ipp16u *pDst, Ipp32s pitchDst, Ipp32s width, Ipp32s height)
+    {
+        MFX_HEVC_PP::NAME(h265_Average_16u)(pSrc0, pitchSrc0, pSrc1, pitchSrc1, pDst, pitchDst, width, height);
     }
 
     static inline void h265_InterpLumaPack(const Ipp16s *src, Ipp32s pitchSrc, Ipp8u *dst, Ipp32s pitchDst, Ipp32s width, Ipp32s height, Ipp32s bitDepth)

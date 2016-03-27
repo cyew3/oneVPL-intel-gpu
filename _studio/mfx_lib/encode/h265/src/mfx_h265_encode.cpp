@@ -306,6 +306,7 @@ static void TaskLogDump()
         intParam.SplitThresholdStrengthTUIntra = (Ipp8u)optHevc.SplitThresholdStrengthTUIntra - 1;
         intParam.SplitThresholdStrengthCUInter = (Ipp8u)optHevc.SplitThresholdStrengthCUInter - 1;
         intParam.SplitThresholdTabIndex        = (Ipp8u)optHevc.SplitThresholdTabIndex;
+        intParam.SplitThresholdMultiplier      = optHevc.SplitThresholdMultiplier / 10.0;
 
         intParam.FastInterp = (optHevc.FastInterp == ON);
         intParam.cpuFeature = optHevc.CpuFeature;
@@ -576,8 +577,20 @@ static void TaskLogDump()
         intParam.inputVideoMem = (mfxParam.IOPattern == VIDMEM) || (mfxParam.IOPattern == OPAQMEM && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY) == 0);
 
         intParam.randomRepackThreshold = Ipp32s(optHevc.RepackProb / 100.0 * MYRAND_MAX);
-    }
 
+#if defined(DUMP_COSTS_CU) || defined (DUMP_COSTS_TU)
+        char fname[100];
+        intParam.fp_cu = intParam.fp_tu = NULL;
+#ifdef DUMP_COSTS_CU
+        sprintf(fname, "thres_cu_%d.bin",mfx.TargetUsage);
+        if (!(intParam.fp_cu = fopen(fname,"ab"))) return;
+#endif
+#ifdef DUMP_COSTS_TU
+        sprintf(fname, "thres_tu_%d.bin",mfx.TargetUsage);
+        if (!(intParam.fp_tu = fopen(fname,"ab"))) return;
+#endif
+#endif
+    }
 
     Ipp8s GetConstQp(const Frame &frame, const H265VideoParam &param, Ipp32s repackCounter)
     {
@@ -790,6 +803,16 @@ H265Encoder::~H265Encoder()
         H265_Free(m_memBuf);
         m_memBuf = NULL;
     }
+
+#if defined(DUMP_COSTS_CU) || defined (DUMP_COSTS_TU)
+#ifdef DUMP_COSTS_CU
+    if (m_videoParam.fp_cu) fclose(m_videoParam.fp_cu);
+#endif
+#ifdef DUMP_COSTS_TU
+    if (m_videoParam.fp_tu) fclose(m_videoParam.fp_tu);
+#endif
+#endif
+
 #if TASK_LOG_ENABLE
     TaskLogDump();
     TaskLogClose();
@@ -976,8 +999,7 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
             return MFX_ERR_MEMORY_ALLOC;
     }
 
-    if (m_videoParam.SceneCut || m_videoParam.DeltaQpMode || m_videoParam.AnalyzeCmplx)
-        m_la.reset(new Lookahead(*this));
+    m_la.reset(new Lookahead(*this));
 
     FrameData::AllocInfo frameDataAllocInfo;
     SetFrameDataAllocInfo(frameDataAllocInfo, m_videoParam.Width, m_videoParam.Height, 96, m_videoParam.fourcc);
@@ -1152,7 +1174,7 @@ mfxStatus H265Encoder::InitInternal()
         for (Ipp32s isNotI = 0; isNotI <= 1; isNotI++) {
             for (Ipp32s i = 0; i < m_videoParam.MaxCUDepth; i++) {
                 m_videoParam.cu_split_threshold_cu[QP][isNotI][i] = h265_calc_split_threshold(m_videoParam.SplitThresholdTabIndex, 0, isNotI, m_videoParam.Log2MaxCUSize - i,
-                    isNotI ? m_videoParam.SplitThresholdStrengthCUInter : m_videoParam.SplitThresholdStrengthCUIntra, QP);
+                    isNotI ? m_videoParam.SplitThresholdStrengthCUInter : m_videoParam.SplitThresholdStrengthCUIntra, QP) * m_videoParam.SplitThresholdMultiplier;
                 m_videoParam.cu_split_threshold_tu[QP][isNotI][i] = h265_calc_split_threshold(m_videoParam.SplitThresholdTabIndex, 1, isNotI, m_videoParam.Log2MaxCUSize - i,
                     m_videoParam.SplitThresholdStrengthTUIntra, QP);
             }
@@ -1169,18 +1191,6 @@ mfxStatus H265Encoder::InitInternal()
 
 
     MFX_HEVC_PP::InitDispatcher(m_videoParam.cpuFeature);
-
-#if defined(DUMP_COSTS_CU) || defined (DUMP_COSTS_TU)
-    char fname[100];
-#ifdef DUMP_COSTS_CU
-    sprintf(fname, "thres_cu_%d.bin",param->mfx.TargetUsage);
-    if (!(fp_cu = fopen(fname,"ab"))) return MFX_ERR_UNKNOWN;
-#endif
-#ifdef DUMP_COSTS_TU
-    sprintf(fname, "thres_tu_%d.bin",param->mfx.TargetUsage);
-    if (!(fp_tu = fopen(fname,"ab"))) return MFX_ERR_UNKNOWN;
-#endif
-#endif
 
     return MFX_ERR_NONE;
 }
@@ -1813,8 +1823,8 @@ mfxStatus H265Encoder::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *s
     if (!m_videoParam.encodedOrder) {
         buffering += m_videoParam.GopRefDist - 1;
         buffering += m_videoParam.m_framesInParallel - 1;
+        buffering += 1; // RsCs
         if (m_videoParam.SceneCut || m_videoParam.AnalyzeCmplx || m_videoParam.DeltaQpMode) {
-            buffering += 1;
             if (m_videoParam.SceneCut)     buffering += /*10 +*/ 1 + 1;
             if (m_videoParam.AnalyzeCmplx) buffering += m_videoParam.RateControlDepth;
             if (m_videoParam.DeltaQpMode) {

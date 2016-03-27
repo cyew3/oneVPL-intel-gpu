@@ -107,6 +107,8 @@ using namespace H265Enc::MfxEnumShortAliases;
     tab_##mode##_SAOChroma[x],\
     tab_##mode##_RepackProb[x],\
     tab_##mode##_NumRefLayers[x],\
+    tab_##mode##_ConstQpOffset[x],\
+    tab_##mode##_SplitThresholdMultiplier[x],\
     tab_##mode##_EnableCmBiref[x],\
     }
 
@@ -188,6 +190,8 @@ using namespace H265Enc::MfxEnumShortAliases;
 #else
     TU_OPT_ALL (SplitThresholdTabIndex       ,  1,   1,   1,   1,   1,   1,   1); //Tab1 + strength 3 - fastest combination
 #endif
+    TU_OPT_SW  (SplitThresholdMultiplier,      10,  10,  10,  10,  10,  10,  10);
+    TU_OPT_GACC(SplitThresholdMultiplier,      10,  10,  10,  10,  10,  10,  10);
 
     //Chroma analysis
     TU_OPT_ALL (AnalyzeChroma,                 ON,  ON,  ON,  ON,  ON,  ON,  ON);
@@ -381,6 +385,8 @@ using namespace H265Enc::MfxEnumShortAliases;
     TU_OPT_SW  (NumRefLayers,                   3,   3,   3,   3,   4,   4,   4);
     TU_OPT_GACC(NumRefLayers,                   2,   2,   3,   3,   4,   4,   4);
 
+    TU_OPT_SW  (ConstQpOffset,                  0,   0,   0,   0,   0,   0,   0);
+    TU_OPT_GACC(ConstQpOffset,                  0,   0,   0,   0,   0,   0,   0);
 
 namespace H265Enc {
 

@@ -417,6 +417,7 @@ namespace {
             ext->SplitThresholdStrengthTUIntra = 1;
             ext->SplitThresholdStrengthCUInter = 1;
             ext->SplitThresholdTabIndex        = 1;
+            ext->SplitThresholdMultiplier = 1;
             ext->IntraNumCand1_2 = 1;
             ext->IntraNumCand1_3 = 1;
             ext->IntraNumCand1_4 = 1;
@@ -1355,6 +1356,8 @@ namespace {
             optHevc.SplitThresholdStrengthTUIntra = defaultOptHevc.SplitThresholdStrengthTUIntra;
         if (optHevc.SplitThresholdStrengthCUInter == 0)
             optHevc.SplitThresholdStrengthCUInter = defaultOptHevc.SplitThresholdStrengthCUInter;
+        if (optHevc.SplitThresholdMultiplier == 0)
+            optHevc.SplitThresholdMultiplier = defaultOptHevc.SplitThresholdMultiplier;
         if (optHevc.PartModes == 0)
             optHevc.PartModes = defaultOptHevc.PartModes;
         if (optHevc.CmIntraThreshold == 0)
