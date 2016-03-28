@@ -5987,7 +5987,7 @@ SliceDividerVDEncLync::SliceDividerVDEncLync(
     mfxU32 widthInMbs,
     mfxU32 heightInMbs)
 {
-    m_pfNext              = &SliceDividerLync::Next;
+    m_pfNext              = &SliceDividerVDEncLync::Next;
     m_numMbInRow          = 1;
     m_numMbRow            = heightInMbs*widthInMbs;
     m_currSliceFirstMbRow = 0;
