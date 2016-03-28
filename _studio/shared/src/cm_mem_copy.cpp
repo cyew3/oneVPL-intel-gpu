@@ -1543,8 +1543,7 @@ mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(void *pDst, void *pSrc, IppiS
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CmCopyWrapper::CopyVideoToVideoMemoryAPI");
     cmStatus cmSts = 0;
 
-    CmEvent* e = NULL;
-    CM_STATUS sts;
+    CmEvent* e = (CmEvent*)-1;//NULL;
     mfxStatus status = MFX_ERR_NONE;
 
     mfxU32 width  = roi.width;
@@ -1561,18 +1560,12 @@ mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(void *pDst, void *pSrc, IppiS
 
     cmSts = m_pCmQueue->EnqueueCopyGPUToGPU(pDstCmSurface2D, pSrcCmSurface2D, e);
 
-    if (CM_SUCCESS == cmSts && e)
+    if (CM_SUCCESS == cmSts)
     {
-        e->GetStatus(sts);
-
-        while (sts != CM_STATUS_FINISHED)
-        {
-            e->GetStatus(sts);
-        }
+        return status;
     }else{
         status = MFX_ERR_DEVICE_FAILED;
     }
-    if(e) m_pCmQueue->DestroyEvent(e);
 
     return status;
 }
