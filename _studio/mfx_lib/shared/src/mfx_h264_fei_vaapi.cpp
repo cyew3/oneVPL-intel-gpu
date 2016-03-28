@@ -542,16 +542,19 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
      * task.m_fieldPicFlag - actually value from mfxVideoParams from Init()
      * And this values should be matched
      * */
-    if ((MFX_PICTYPE_TOPFIELD == feiCtrl->PictureType) && (task.m_fieldPicFlag))
-        m_statParams.input.flags = VA_PICTURE_FEI_TOP_FIELD;
-    else if ((MFX_PICTYPE_BOTTOMFIELD == feiCtrl->PictureType) && (task.m_fieldPicFlag))
-        m_statParams.input.flags = VA_PICTURE_FEI_BOTTOM_FIELD;
-    else if ((MFX_PICTYPE_FRAME == feiCtrl->PictureType) && (!task.m_fieldPicFlag))
-        m_statParams.input.flags = VA_PICTURE_FEI_PROGRESSIVE;
-    else /* This is disallowed to mix, surface types should be on Init() and within runtime */
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-    if (!IsOff(feiCtrl->DownsampleInput))
-        m_statParams.input.flags |= VA_PICTURE_FEI_CONTENT_UPDATED;
+    if (NULL != feiCtrl)
+    {
+        if ((MFX_PICTYPE_TOPFIELD == feiCtrl->PictureType) && (task.m_fieldPicFlag))
+            m_statParams.input.flags = VA_PICTURE_FEI_TOP_FIELD;
+        else if ((MFX_PICTYPE_BOTTOMFIELD == feiCtrl->PictureType) && (task.m_fieldPicFlag))
+            m_statParams.input.flags = VA_PICTURE_FEI_BOTTOM_FIELD;
+        else if ((MFX_PICTYPE_FRAME == feiCtrl->PictureType) && (!task.m_fieldPicFlag))
+            m_statParams.input.flags = VA_PICTURE_FEI_PROGRESSIVE;
+        else /* This is disallowed to mix, surface types should be on Init() and within runtime */
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        if (!IsOff(feiCtrl->DownsampleInput))
+            m_statParams.input.flags |= VA_PICTURE_FEI_CONTENT_UPDATED;
+    }
 
     /* Link output va buffers */
     m_statParams.outputs = &outBuffers[0]; //bufIDs for outputs
