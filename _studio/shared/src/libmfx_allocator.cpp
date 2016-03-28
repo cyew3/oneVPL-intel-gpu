@@ -29,7 +29,8 @@ mfxStatus mfxDefaultAllocator::AllocBuffer(mfxHDL pthis, mfxU32 nbytes, mfxU16 t
 {
     if (!pthis)
         return MFX_ERR_INVALID_HANDLE;
-
+    if(!mid)
+        return MFX_ERR_NULL_PTR;
     mfxU32 header_size = ALIGN32(sizeof(BufferStruct));
     mfxU8 *buffer_ptr=(mfxU8 *)ippMalloc(header_size + nbytes);
 

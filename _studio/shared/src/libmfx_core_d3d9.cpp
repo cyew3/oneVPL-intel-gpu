@@ -581,7 +581,8 @@ mfxStatus D3D9VideoCORE::DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFr
 
 mfxStatus D3D9VideoCORE::CreateVA(mfxVideoParam * param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, UMC::FrameAllocator *allocator)
 {
-
+    if(!param || !request || !response)
+        return MFX_ERR_NULL_PTR;
     if (!(request->Type & MFX_MEMTYPE_FROM_DECODE) ||
         !(request->Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET))
         return MFX_ERR_NONE;

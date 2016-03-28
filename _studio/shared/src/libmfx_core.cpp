@@ -115,7 +115,8 @@ mfxStatus CommonCORE::AllocFrames(mfxFrameAllocRequest *request,
     m_bIsOpaqMode = true;
 
     mfxStatus sts;
-
+    if(!request || !response)
+        return MFX_ERR_NULL_PTR;
     if (!pOpaqueSurface)
         return MFX_ERR_MEMORY_ALLOC;
 
@@ -314,6 +315,8 @@ mfxStatus CommonCORE::GetFrameHDL(mfxHDL mid, mfxHDL* handle, bool ExtendedSearc
 mfxStatus CommonCORE::UnlockFrame(mfxHDL mid, mfxFrameData *ptr)
 {
     UMC::AutomaticUMCMutex guard(m_guard);
+    if(!ptr)
+        return MFX_ERR_NULL_PTR;
     try
     {
         MFX_CHECK_HDL(mid);
@@ -330,6 +333,8 @@ mfxStatus CommonCORE::UnlockFrame(mfxHDL mid, mfxFrameData *ptr)
 mfxStatus CommonCORE::FreeFrames(mfxFrameAllocResponse *response, bool ExtendedSearch)
 {
     mfxStatus sts = MFX_ERR_NONE;
+    if(!response)
+        return MFX_ERR_NULL_PTR;
     if (m_RefCtrTbl.size())
     {
         {
@@ -507,6 +512,8 @@ mfxStatus  CommonCORE::GetExternalFrameHDL(mfxMemId mid, mfxHDL *handle, bool Ex
 mfxStatus  CommonCORE::UnlockExternalFrame(mfxMemId mid, mfxFrameData *ptr, bool ExtendedSearch)
 {
     mfxStatus sts;
+    if(!ptr)
+        return MFX_ERR_NULL_PTR;
     try 
     {
         {
@@ -1151,7 +1158,8 @@ mfxStatus CommonCORE::DoFastCopy(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
 {
     UMC::AutomaticUMCMutex guard(m_guard);
     mfxStatus sts;
-
+    if(!dst || !src)
+        return MFX_ERR_NULL_PTR;
     IppiSize roi = {IPP_MIN(src->Info.Width, dst->Info.Width), IPP_MIN(src->Info.Height, dst->Info.Height)};
     if (!roi.width || !roi.height)
     {
