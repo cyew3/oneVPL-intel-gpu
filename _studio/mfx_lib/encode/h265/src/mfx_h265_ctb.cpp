@@ -7771,22 +7771,24 @@ void UpdateCuDataWithMeInfo(const H265MEInfo *meInfo, const MergePredInfo &merge
     if (!data[absPartIdx].flags.mergeFlag) {
         // setup mvp_idx and mvd
         for (Ipp32s listIdx = 0; listIdx < 2; listIdx++) {
-            const AmvpInfo &amvpCand = amvpCands[2 * meInfo->refIdx[listIdx] + listIdx];
+            if (meInfo->refIdx[listIdx] >= 0) {
+                const AmvpInfo &amvpCand = amvpCands[2 * meInfo->refIdx[listIdx] + listIdx];
 
-            // choose best mv predictor
-            data[absPartIdx].mvd[listIdx].mvx = meInfo->MV[listIdx].mvx - amvpCand.mvCand[0].mvx;
-            data[absPartIdx].mvd[listIdx].mvy = meInfo->MV[listIdx].mvy - amvpCand.mvCand[0].mvy;
-            Ipp32s dist0 = abs(data[absPartIdx].mvd[listIdx].mvx) + abs(data[absPartIdx].mvd[listIdx].mvy);
-            data[absPartIdx].mvpIdx[listIdx] = 0;
+                // choose best mv predictor
+                data[absPartIdx].mvd[listIdx].mvx = meInfo->MV[listIdx].mvx - amvpCand.mvCand[0].mvx;
+                data[absPartIdx].mvd[listIdx].mvy = meInfo->MV[listIdx].mvy - amvpCand.mvCand[0].mvy;
+                Ipp32s dist0 = abs(data[absPartIdx].mvd[listIdx].mvx) + abs(data[absPartIdx].mvd[listIdx].mvy);
+                data[absPartIdx].mvpIdx[listIdx] = 0;
             
-            if (amvpCand.numCand > 1) {
-                H265MV otherMvd;
-                otherMvd.mvx = meInfo->MV[listIdx].mvx - amvpCand.mvCand[1].mvx;
-                otherMvd.mvy = meInfo->MV[listIdx].mvy - amvpCand.mvCand[1].mvy;
-                Ipp32s dist1 = abs(otherMvd.mvx) + abs(otherMvd.mvy);
-                if (dist1 < dist0) {
-                    data[absPartIdx].mvpIdx[listIdx] = 1;
-                    data[absPartIdx].mvd[listIdx] = otherMvd;
+                if (amvpCand.numCand > 1) {
+                    H265MV otherMvd;
+                    otherMvd.mvx = meInfo->MV[listIdx].mvx - amvpCand.mvCand[1].mvx;
+                    otherMvd.mvy = meInfo->MV[listIdx].mvy - amvpCand.mvCand[1].mvy;
+                    Ipp32s dist1 = abs(otherMvd.mvx) + abs(otherMvd.mvy);
+                    if (dist1 < dist0) {
+                        data[absPartIdx].mvpIdx[listIdx] = 1;
+                        data[absPartIdx].mvd[listIdx] = otherMvd;
+                    }
                 }
             }
         }
