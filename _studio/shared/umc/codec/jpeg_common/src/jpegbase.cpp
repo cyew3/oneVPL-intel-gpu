@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//    Copyright (c) 2001-2012 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2001-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -140,7 +140,7 @@ const Ipp8u DefaultChrominanceACValues[256] =
 
 const vm_char* GetErrorStr(JERRCODE code)
 {
-  vm_char* str;
+  const vm_char* str;
 
   switch(code)
   {

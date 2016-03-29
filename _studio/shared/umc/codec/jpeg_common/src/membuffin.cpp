@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2005-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2005-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -88,7 +88,7 @@ JERRCODE CMemBuffInput::Read(void* buf,uic_size_t len,uic_size_t* cnt)
 {
   uic_size_t rb;
 
-  rb = (uic_size_t)IPP_MIN((int)len,m_buflen - m_currpos);
+  rb = (uic_size_t)IPP_MIN((int)len,static_cast<int>(m_buflen - m_currpos));
 
   ippsCopy_8u(m_buf + m_currpos,(Ipp8u*)buf,rb);
 
