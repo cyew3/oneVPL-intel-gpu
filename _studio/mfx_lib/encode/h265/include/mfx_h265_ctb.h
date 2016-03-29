@@ -270,6 +270,12 @@ public:
     H265CUData*   m_left;           ///< pointer of left CU
     H265CUData*   m_aboveLeft;      ///< pointer of above-left CU
     H265CUData*   m_aboveRight;     ///< pointer of above-right CU
+    struct {
+        H265CUData*   above;
+        H265CUData*   left;
+        H265CUData*   aboveLeft;
+        H265CUData*   aboveRight;
+    } m_availForPred;
 
     Ipp32u m_region_border_right, m_region_border_bottom;
     Ipp32u m_region_border_left, m_region_border_top;

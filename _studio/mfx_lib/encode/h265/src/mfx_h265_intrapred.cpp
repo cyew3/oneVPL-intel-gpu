@@ -331,11 +331,11 @@ void GetAvailablityFast(H265CU<PixType> *pCU,
     Ipp32s topLeftAvail = 1;
 
     // check slice/tile borders
-    if (rasterPartRow == 0 && (pCU->m_aboveAddr < pCU->m_cslice->slice_segment_address || !pCU->m_aboveSameTile))
+    if (rasterPartRow == 0 && !pCU->m_availForPred.above)
         topAvail = topLeftAvail = topRightAvail = 0;
-    if (rasterPartCol == 0 && (pCU->m_leftAddr < pCU->m_cslice->slice_segment_address || !pCU->m_leftSameTile))
+    if (rasterPartCol == 0 && !pCU->m_availForPred.left)
         leftAvail = topLeftAvail = belowLeftAvail = 0;
-    if ((rasterPartCol<<2) + width >= (Ipp32s)pCU->m_par->MaxCUSize && (pCU->m_aboveRightAddr < pCU->m_cslice->slice_segment_address || !pCU->m_aboveRightSameTile))
+    if ((rasterPartCol<<2) + width >= (Ipp32s)pCU->m_par->MaxCUSize && !pCU->m_availForPred.aboveRight)
         topRightAvail = 0;
     if ((rasterPartRow<<2) + width >= (Ipp32s)pCU->m_par->MaxCUSize)
         belowLeftAvail = 0;

@@ -1231,6 +1231,10 @@ void H265CU<PixType>::InitCu(
     m_above       = NULL;
     m_aboveLeft   = NULL;
     m_aboveRight  = NULL;
+    m_availForPred.left        = NULL;
+    m_availForPred.above       = NULL;
+    m_availForPred.aboveLeft   = NULL;
+    m_availForPred.aboveRight  = NULL;
 
     m_leftAddr = -1;
     m_aboveAddr = -1;
@@ -1272,6 +1276,12 @@ void H265CU<PixType>::InitCu(
         if (m_par->NumTiles == 1 || m_par->m_tile_ids[m_ctbAddr] == m_par->m_tile_ids[m_aboveRightAddr])
             m_aboveRightSameTile = 1;
     }
+
+    Ipp32s sliceStart = m_cslice->slice_segment_address;
+    m_availForPred.above      = (m_above      && m_aboveAddr      >= sliceStart && m_aboveSameTile)      ? m_above      : NULL;
+    m_availForPred.left       = (m_left       && m_leftAddr       >= sliceStart && m_leftSameTile)       ? m_left       : NULL;
+    m_availForPred.aboveLeft  = (m_aboveLeft  && m_aboveLeftAddr  >= sliceStart && m_aboveLeftSameTile)  ? m_aboveLeft  : NULL;
+    m_availForPred.aboveRight = (m_aboveRight && m_aboveRightAddr >= sliceStart && m_aboveRightSameTile) ? m_aboveRight : NULL;
 
     Ipp32s tile_row = tile_id / m_par->NumTileCols;
     Ipp32s tile_col = tile_id % m_par->NumTileCols;
@@ -9685,8 +9695,8 @@ void H265CU<PixType>::GetMergeCandFast(Ipp32s absPartIdx, Ipp32s cuSize, MergePr
     // left
     if (rasterIdx & 15)
         leftCuData = m_data + h265_scan_r2z4[rasterIdx + ((cuSize-1)<<4) - 1];
-    else if (m_left) // left border
-        leftCuData = m_left + h265_scan_r2z4[rasterIdx + ((cuSize-1)<<4) + 15];
+    else if (m_availForPred.left) // left border
+        leftCuData = m_availForPred.left + h265_scan_r2z4[rasterIdx + ((cuSize-1)<<4) + 15];
     if (leftCuData && leftCuData->predMode == MODE_INTER) {
         leftAvail = 1;
         candInterDir[mergeInfo->numCand] = CopyMotionInfo(*leftCuData, candMv, candRefIdx);
@@ -9698,8 +9708,8 @@ void H265CU<PixType>::GetMergeCandFast(Ipp32s absPartIdx, Ipp32s cuSize, MergePr
     // above
     if (rasterIdx > 15)
         aboveCuData = m_data + h265_scan_r2z4[rasterIdx + cuSize-1 - 16];
-    else if (m_above) // top border
-        aboveCuData = m_above + h265_scan_r2z4[rasterIdx + cuSize-1 + 240];
+    else if (m_availForPred.above) // top border
+        aboveCuData = m_availForPred.above + h265_scan_r2z4[rasterIdx + cuSize-1 + 240];
     if (aboveCuData && aboveCuData->predMode == MODE_INTER) {
         aboveAvail = 1;
         if (!leftAvail || !SameMotion(*leftCuData, *aboveCuData)) {
@@ -9713,10 +9723,10 @@ void H265CU<PixType>::GetMergeCandFast(Ipp32s absPartIdx, Ipp32s cuSize, MergePr
     // above right
     if (rasterIdx < 16) { // top border
         if (((rasterIdx + cuSize) & 15) == 0) { // right border
-            if (m_aboveRight)
-                aboveRightCuData = m_aboveRight + h265_scan_r2z4[240];
-        } else if (m_above) {
-            aboveRightCuData = m_above + h265_scan_r2z4[rasterIdx + cuSize + 240];
+            if (m_availForPred.aboveRight)
+                aboveRightCuData = m_availForPred.aboveRight + h265_scan_r2z4[240];
+        } else if (m_availForPred.above) {
+            aboveRightCuData = m_availForPred.above + h265_scan_r2z4[rasterIdx + cuSize + 240];
         }
     } else {
         if (((rasterIdx + cuSize) & 15)) { // not right border
@@ -9743,8 +9753,8 @@ void H265CU<PixType>::GetMergeCandFast(Ipp32s absPartIdx, Ipp32s cuSize, MergePr
             Ipp32s candIdx = h265_scan_r2z4[rasterIdx + (cuSize<<4) - 1];
             if (candIdx < absPartIdx)
                 belowLeftCuData = m_data + candIdx;
-        } else if (m_left) { // left border
-            belowLeftCuData = m_left + h265_scan_r2z4[rasterIdx + (cuSize<<4) + 15];
+        } else if (m_availForPred.left) { // left border
+            belowLeftCuData = m_availForPred.left + h265_scan_r2z4[rasterIdx + (cuSize<<4) + 15];
         }
     }
     if (m_ctbPelY + ((rasterIdx >> 4) << 2) + (cuSize << 2) >= m_par->Height)
@@ -9762,14 +9772,14 @@ void H265CU<PixType>::GetMergeCandFast(Ipp32s absPartIdx, Ipp32s cuSize, MergePr
     // above left
     if (mergeInfo->numCand < 4) {
         if (rasterIdx == 0) { // top-left corner
-            if (m_aboveLeft)
-                aboveLeftCuData = m_aboveLeft + 255;
+            if (m_availForPred.aboveLeft)
+                aboveLeftCuData = m_availForPred.aboveLeft + 255;
         } else if (rasterIdx < 16) { // top border
-            if (m_above)
-                aboveLeftCuData = m_above + h265_scan_r2z4[rasterIdx + 240 - 1];
+            if (m_availForPred.above)
+                aboveLeftCuData = m_availForPred.above + h265_scan_r2z4[rasterIdx + 240 - 1];
         } else if ((rasterIdx & 15) == 0) { // left border
-            if (m_left)
-                aboveLeftCuData = m_left + h265_scan_r2z4[rasterIdx - 1];
+            if (m_availForPred.left)
+                aboveLeftCuData = m_availForPred.left + h265_scan_r2z4[rasterIdx - 1];
         } else
             aboveLeftCuData = m_data + h265_scan_r2z4[rasterIdx - 17];
         if (aboveLeftCuData && aboveLeftCuData->predMode == MODE_INTER) {
@@ -10504,8 +10514,8 @@ void H265CU<PixType>::GetAmvpCandFast(Ipp32s absPartIdx, AmvpInfo amvpInfo[2 * M
     // left
     if (rasterIdx & 15)
         leftCuData = m_data + h265_scan_r2z4[rasterIdx + ((cuSize-1)<<4) - 1];
-    else if (m_left) // left border
-        leftCuData = m_left + h265_scan_r2z4[rasterIdx + ((cuSize-1)<<4) + 15];
+    else if (m_availForPred.left) // left border
+        leftCuData = m_availForPred.left + h265_scan_r2z4[rasterIdx + ((cuSize-1)<<4) + 15];
 
     // below left
     if (rasterIdx + (cuSize<<4) <= 255) { // not bottom border
@@ -10513,8 +10523,8 @@ void H265CU<PixType>::GetAmvpCandFast(Ipp32s absPartIdx, AmvpInfo amvpInfo[2 * M
             Ipp32s candIdx = h265_scan_r2z4[rasterIdx + (cuSize<<4) - 1];
             if (candIdx < absPartIdx)
                 belowLeftCuData = m_data + candIdx;
-        } else if (m_left) { // left border
-            belowLeftCuData = m_left + h265_scan_r2z4[rasterIdx + (cuSize<<4) + 15];
+        } else if (m_availForPred.left) { // left border
+            belowLeftCuData = m_availForPred.left + h265_scan_r2z4[rasterIdx + (cuSize<<4) + 15];
         }
     }
     if (m_ctbPelY + ((rasterIdx >> 4) << 2) + (cuSize << 2) >= m_par->Height)
@@ -10523,10 +10533,10 @@ void H265CU<PixType>::GetAmvpCandFast(Ipp32s absPartIdx, AmvpInfo amvpInfo[2 * M
     // above right
     if (rasterIdx < 16) { // top border
         if (((rasterIdx + cuSize) & 15) == 0) { // right border
-            if (m_aboveRight)
-                aboveRightCuData = m_aboveRight + h265_scan_r2z4[240];
-        } else if (m_above) {
-            aboveRightCuData = m_above + h265_scan_r2z4[rasterIdx + cuSize + 240];
+            if (m_availForPred.aboveRight)
+                aboveRightCuData = m_availForPred.aboveRight + h265_scan_r2z4[240];
+        } else if (m_availForPred.above) {
+            aboveRightCuData = m_availForPred.above + h265_scan_r2z4[rasterIdx + cuSize + 240];
         }
     } else {
         if (((rasterIdx + cuSize) & 15)) { // not right border
@@ -10541,19 +10551,19 @@ void H265CU<PixType>::GetAmvpCandFast(Ipp32s absPartIdx, AmvpInfo amvpInfo[2 * M
     // above
     if (rasterIdx > 15)
         aboveCuData = m_data + h265_scan_r2z4[rasterIdx + cuSize-1 - 16];
-    else if (m_above) // top border
-        aboveCuData = m_above + h265_scan_r2z4[rasterIdx + cuSize-1 + 240];
+    else if (m_availForPred.above) // top border
+        aboveCuData = m_availForPred.above + h265_scan_r2z4[rasterIdx + cuSize-1 + 240];
 
     // above left
     if (rasterIdx == 0) { // top-left corner
-        if (m_aboveLeft)
-            aboveLeftCuData = m_aboveLeft + 255;
+        if (m_availForPred.aboveLeft)
+            aboveLeftCuData = m_availForPred.aboveLeft + 255;
     } else if (rasterIdx < 16) { // top border
-        if (m_above)
-            aboveLeftCuData = m_above + h265_scan_r2z4[rasterIdx + 240 - 1];
+        if (m_availForPred.above)
+            aboveLeftCuData = m_availForPred.above + h265_scan_r2z4[rasterIdx + 240 - 1];
     } else if ((rasterIdx & 15) == 0) { // left border
-        if (m_left)
-            aboveLeftCuData = m_left + h265_scan_r2z4[rasterIdx - 1];
+        if (m_availForPred.left)
+            aboveLeftCuData = m_availForPred.left + h265_scan_r2z4[rasterIdx - 1];
     } else
         aboveLeftCuData = m_data + h265_scan_r2z4[rasterIdx - 17];
 
