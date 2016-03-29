@@ -411,6 +411,18 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPakMB
     return str;
 }
 
+std::string DumpContext::dump(const std::string structName, const mfxExtFeiRepackCtrl &_struct)
+{
+    std::string str;
+
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    DUMP_FIELD(MaxFrameSize);
+    DUMP_FIELD(NumPasses);
+    DUMP_FIELD_RESERVED(DeltaQP);
+
+    return str;
+}
+
 std::string DumpContext::dump(const std::string structName, const mfxFeiDecStreamOutMBCtrl &_struct)
 {
     std::string str;

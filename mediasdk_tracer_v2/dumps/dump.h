@@ -380,6 +380,9 @@ public:
                         case MFX_EXTBUFF_FEI_DEC_STREAM_OUT:
                             str += dump(name, *((mfxExtFeiDecStreamOut*)_struct.ExtParam[i])) + "\n";
                             break;
+                        case MFX_EXTBUFF_FEI_REPACK_CTRL:
+                            str += dump(name, *((mfxExtFeiRepackCtrl*)_struct.ExtParam[i])) + "\n";
+                            break;
                         default:
                             str += dump(name, *(_struct.ExtParam[i])) + "\n";
                             break;
@@ -506,6 +509,7 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtFeiEncMBStat::mfxExtFeiEncMBStatMB);
     DEFINE_DUMP_FUNCTION(mfxFeiPakMBCtrl);
     DEFINE_DUMP_FUNCTION(mfxExtFeiPakMBCtrl);
+    DEFINE_DUMP_FUNCTION(mfxExtFeiRepackCtrl);
     DEFINE_DUMP_FUNCTION(mfxExtFeiParam);
     DEFINE_DUMP_FUNCTION(mfxPAKInput);
     DEFINE_DUMP_FUNCTION(mfxPAKOutput);
