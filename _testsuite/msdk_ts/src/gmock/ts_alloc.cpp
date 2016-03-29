@@ -106,7 +106,6 @@ void tsSurfacePool::AllocOpaque(mfxFrameAllocRequest request, mfxExtOpaqueSurfac
 mfxStatus tsSurfacePool::AllocSurfaces(mfxFrameAllocRequest request, bool direct_pointers)
 {
     bool isSW = !(request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET));
-    mfxFrameAllocResponse response = {};
     mfxFrameSurface1 s = {};
     mfxFrameAllocRequest* pRequest = &request;
 
@@ -123,16 +122,16 @@ mfxStatus tsSurfacePool::AllocSurfaces(mfxFrameAllocRequest request, bool direct
         UseDefaultAllocator(isSW);
     }
 
-    TRACE_FUNC3(m_allocator->AllocFrame, m_allocator, pRequest, &response);
-    g_tsStatus.check( m_allocator->AllocFrame(m_allocator, pRequest, &response) );
+    TRACE_FUNC3(m_allocator->AllocFrame, m_allocator, pRequest, &m_response);
+    g_tsStatus.check( m_allocator->AllocFrame(m_allocator, pRequest, &m_response) );
     TS_CHECK_MFX;
 
-    for(mfxU16 i = 0; i < response.NumFrameActual; i++)
+    for(mfxU16 i = 0; i < m_response.NumFrameActual; i++)
     {
-        if(response.mids)
+        if(m_response.mids)
         {
             s.Data.Y = 0;
-            s.Data.MemId = response.mids[i];
+            s.Data.MemId = m_response.mids[i];
             if(direct_pointers && isSW)
             {
                 LockSurface(s);
@@ -141,6 +140,21 @@ mfxStatus tsSurfacePool::AllocSurfaces(mfxFrameAllocRequest request, bool direct
         }
         m_pool.push_back(s);
     }
+
+    return g_tsStatus.get();
+}
+
+mfxStatus tsSurfacePool::FreeSurfaces()
+{
+    if (m_pool.size() == 0)
+        return MFX_ERR_NONE;
+
+    TRACE_FUNC2(m_allocator->Free, m_allocator, &m_response);
+    g_tsStatus.check( m_allocator->Free(m_allocator, &m_response) );
+    TS_CHECK_MFX;
+
+    m_pool.clear();
+
     return g_tsStatus.get();
 }
 

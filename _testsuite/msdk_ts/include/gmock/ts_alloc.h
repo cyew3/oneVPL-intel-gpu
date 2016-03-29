@@ -1,3 +1,13 @@
+/* /////////////////////////////////////////////////////////////////////////////
+//
+//                  INTEL CORPORATION PROPRIETARY INFORMATION
+//     This software is supplied under the terms of a license agreement or
+//     nondisclosure agreement with Intel Corporation and may not be copied
+//     or disclosed except in accordance with the terms of that agreement.
+//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+//
+*/
+
 #pragma once
 
 #include "ts_common.h"
@@ -17,6 +27,7 @@ private:
     bool             m_isd3d11;
     std::vector<mfxFrameSurface1> m_pool;
     std::vector<mfxFrameSurface1*> m_opaque_pool;
+    mfxFrameAllocResponse m_response;
 
     void Close();
 
@@ -32,6 +43,7 @@ public:
     void AllocOpaque        (mfxFrameAllocRequest request, mfxExtOpaqueSurfaceAlloc& osa);
 
     mfxStatus AllocSurfaces (mfxFrameAllocRequest request, bool direct_pointers = true);
+    mfxStatus FreeSurfaces  ();
     mfxStatus LockSurface   (mfxFrameSurface1& s);
     mfxStatus UnlockSurface (mfxFrameSurface1& s);
 

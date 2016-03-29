@@ -595,5 +595,11 @@
     <ClCompile Include="src\gmock\test_suites\avcd_reset.cpp">
       <Filter>Source Files\test_suites\avcd</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_oversized_surfaces.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\fei_encode_oversized_surfaces.cpp">
+      <Filter>Source Files\test_suites\FEI</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

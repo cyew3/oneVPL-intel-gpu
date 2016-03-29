@@ -347,6 +347,8 @@
     <ClCompile Include="src\gmock\test_suites\vpp_frame_async_ex.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_frc_interp.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_uyvy.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_oversized_surfaces.cpp" />
+    <ClCompile Include="src\gmock\test_suites\fei_encode_oversized_surfaces.cpp" />
     <ClCompile Include="src\gmock\ts_alloc.cpp" />
     <ClCompile Include="src\gmock\ts_bitstream.cpp" />
     <ClCompile Include="src\gmock\ts_common.cpp" />
