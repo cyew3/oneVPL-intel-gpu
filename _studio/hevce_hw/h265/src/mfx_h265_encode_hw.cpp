@@ -22,8 +22,11 @@ void      InheritDefaultValues(MfxVideoParam const & parInit, MfxVideoParam &  p
 Plugin::Plugin(bool CreateByDispatcher)
     : m_createdByDispatcher(CreateByDispatcher)
     , m_adapter(this)
+    , m_NumberOfSlicesForOpt(0)
     , m_bInit(false)
+    
 {
+    ZeroParams();
 }
 
 Plugin::~Plugin()
@@ -212,13 +215,11 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
 
     m_task.Reset(MaxTask(m_vpar));
 
-    m_frameOrder = 0;
-    m_baseLayerOrder = 0;
 
     Fill(m_lastTask, IDX_INVALID);
 
-    m_numBuffered = 0;
     m_NumberOfSlicesForOpt = m_vpar.mfx.NumSlice;
+    ZeroParams();
 
 #if DEBUG_REC_FRAMES_INFO
     mfxExtDumpFiles * extDump = &m_vpar.m_ext.DumpFiles;
@@ -434,13 +435,13 @@ mfxStatus   Plugin::WaitingForAsyncTasks(bool bResetTasks)
 
     m_task.Reset();
 
-    m_frameOrder = 0;
     m_raw.Unlock();
     m_rec.Unlock();
     m_bs.Unlock();
 
     Fill(m_lastTask, 0xFF);
-    m_numBuffered = 0;
+    ZeroParams();
+
     return sts;
 
 
@@ -677,7 +678,7 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
         }
         else
         {
-            task->m_frameType = GetFrameType(m_vpar, m_frameOrder);
+            task->m_frameType = GetFrameType(m_vpar, m_frameOrder - m_lastIDR);
 
             if (task->m_ctrl.FrameType & MFX_FRAMETYPE_IDR)
                 task->m_frameType = MFX_FRAMETYPE_I|MFX_FRAMETYPE_REF|MFX_FRAMETYPE_IDR;

@@ -794,6 +794,7 @@ void InheritDefaultValues(
     mfxExtCodingOption *       extOptReset = &parReset.m_ext.CO;
 
     InheritOption(extOptInit->VuiNalHrdParameters,extOptReset->VuiNalHrdParameters);
+    InheritOption(extOptInit->NalHrdConformance,extOptReset->NalHrdConformance);
     InheritOption(extOptInit->PicTimingSEI,extOptReset->PicTimingSEI);
 
 
@@ -1079,8 +1080,19 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         }
     }
     changed += CheckTriStateOption(par.m_ext.CO.VuiNalHrdParameters);
+    changed += CheckTriStateOption(par.m_ext.CO.NalHrdConformance);
+
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    {
        changed += CheckOption(par.m_ext.CO.VuiNalHrdParameters, (mfxU32)MFX_CODINGOPTION_OFF, 0);
+       changed += CheckOption(par.m_ext.CO.NalHrdConformance,  (mfxU32)MFX_CODINGOPTION_OFF, 0);
+       par.InsertHRDInfo = false;
+    }
+    if (IsOff(par.m_ext.CO.NalHrdConformance))
+    {
+       changed += CheckOption(par.m_ext.CO.VuiNalHrdParameters, (mfxU32)MFX_CODINGOPTION_OFF, 0);
+       par.InsertHRDInfo = false;
+    }
 
     changed += CheckTriStateOption(par.m_ext.CO.PicTimingSEI);
 
@@ -1429,6 +1441,10 @@ void SetDefaults(
         // set intra refresh cycle to 1 sec by default
         par.m_ext.CO2.IntRefCycleSize =
             (mfxU16)((par.mfx.FrameInfo.FrameRateExtN + par.mfx.FrameInfo.FrameRateExtD - 1) / par.mfx.FrameInfo.FrameRateExtD);
+    }
+    if (IsOff(par.m_ext.CO.NalHrdConformance))
+    {
+       par.m_ext.CO.VuiNalHrdParameters = MFX_CODINGOPTION_OFF;
     }
 
     if (!par.m_ext.CO.AUDelimiter)

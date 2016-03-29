@@ -670,7 +670,7 @@ void MfxVideoParam::SyncVideoToCalculableParam()
         MaxKbps          = 0;
     }
 
-    InsertHRDInfo = !(IsOff(m_ext.CO.VuiNalHrdParameters) || IsOff(m_ext.CO.PicTimingSEI));
+    InsertHRDInfo = !(IsOff(m_ext.CO.NalHrdConformance) || IsOff(m_ext.CO.VuiNalHrdParameters) || IsOff(m_ext.CO.PicTimingSEI));
     RawRef        = false;
 
     m_slice.resize(0);
@@ -1989,7 +1989,17 @@ Task* TaskManager::Reorder(
     UMC::AutomaticUMCMutex guard(m_listMutex);
 
     TaskList::iterator begin = m_reordering.begin();
-    TaskList::iterator end   = m_reordering.end();
+    TaskList::iterator end   = m_reordering.begin();
+
+    while (end != m_reordering.end())
+    {
+        if ((end != begin) && (end->m_frameType & MFX_FRAMETYPE_IDR))
+        {
+            flush = true;
+            break;        
+        }
+        end++;    
+    }
     TaskList::iterator top   = MfxHwH265Encode::Reorder(par, dpb, begin, end, flush);
 
     if (top == end)

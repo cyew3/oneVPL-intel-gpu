@@ -85,6 +85,13 @@ public:
     {
         return MFX_ERR_UNSUPPORTED;
     }
+    void ZeroParams()
+    {
+       m_frameOrder = 0;
+       m_lastIDR = 0;
+       m_baseLayerOrder = 0;
+       m_numBuffered = 0;
+    }
 
 protected:
     explicit Plugin(bool CreateByDispatcher);

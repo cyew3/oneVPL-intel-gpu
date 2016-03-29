@@ -337,6 +337,8 @@ namespace ExtBuffer
     {
         _CopyPar1(PicTimingSEI);
         _CopyPar1(VuiNalHrdParameters);
+        _CopyPar1(NalHrdConformance);
+        _CopyPar1(AUDelimiter);
     }
     inline void  CopySupportedParams(mfxExtCodingOption2& buf_dst, mfxExtCodingOption2& buf_src)
     {
@@ -347,7 +349,10 @@ namespace ExtBuffer
         _CopyPar1(MBBRC);
         _CopyPar1(BRefType);
         _CopyPar1(NumMbPerSlice);
-        _CopyPar1(DisableDeblockingIdc);      
+        _CopyPar1(DisableDeblockingIdc);
+
+        _CopyPar1(RepeatPPS);
+
     }
 
     inline void  CopySupportedParams(mfxExtCodingOption3& buf_dst, mfxExtCodingOption3& buf_src)
@@ -386,7 +391,7 @@ namespace ExtBuffer
         bUnsuppoted = (memcmp(&buf_ref, &buf, sizeof(T))!=0);
         if (bUnsuppoted && bFix)
         {
-            buf = buf_ref;
+            memcpy(&buf, &buf_ref, sizeof(T));
         }
         return bUnsuppoted;    
     }
