@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2011-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2011-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "ippdefs.h"
@@ -242,10 +242,12 @@ Ipp32u SVCBaseMode_MB_Decision(
 
     Ipp32s tryResidualPrediction = 0;
     if (!ref_intra && pGetMBResidualPredictionFlag(cur_mb.GlobalMacroblockInfo))
+    {
       if (curr_slice->m_adaptive_residual_prediction_flag)
         tryResidualPrediction = 1;
       else if (curr_slice->m_default_residual_prediction_flag)
         tryResidualPrediction = 2;
+    }
 
     check2TransformModes = false;
     if (core_enc->m_spatial_resolution_change)

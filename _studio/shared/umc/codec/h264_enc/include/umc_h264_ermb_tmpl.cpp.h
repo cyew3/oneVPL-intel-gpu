@@ -2,8 +2,12 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2016 Intel Corporation. All Rights Reserved.
 //
+
+#if defined(__GNUC__)
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #if PIXBITS == 8
 
@@ -2343,8 +2347,8 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRec4x4IntraMB)(
                     {
                         if (!curr_slice->doSCoeffsPrediction)
                         {
-                            if ((core_enc->m_info.quant_opt_level > OPT_QUANT_INTRA8x8) &&
-                                (!pGetMBBaseModeFlag(cur_mb.GlobalMacroblockInfo)) || curr_slice->doTCoeffsPrediction || doIntraPred)
+                            if (((core_enc->m_info.quant_opt_level > OPT_QUANT_INTRA8x8) &&
+                                (!pGetMBBaseModeFlag(cur_mb.GlobalMacroblockInfo))) || curr_slice->doTCoeffsPrediction || doIntraPred)
                             {
                                 __ALIGN16 PIXTYPE pred[64];
                                 PIXTYPE pred_pels[25]; //Sources for prediction
@@ -2739,8 +2743,8 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRec4x4IntraMB)(
                     {
                         if (!curr_slice->doSCoeffsPrediction)
                         {
-                            if ((core_enc->m_info.quant_opt_level > OPT_QUANT_INTRA4x4) &&
-                                (!pGetMBBaseModeFlag(cur_mb.GlobalMacroblockInfo)) || curr_slice->doTCoeffsPrediction || doIntraPred)
+                            if (((core_enc->m_info.quant_opt_level > OPT_QUANT_INTRA4x4) &&
+                                (!pGetMBBaseModeFlag(cur_mb.GlobalMacroblockInfo))) || curr_slice->doTCoeffsPrediction || doIntraPred)
                             {
                                 PIXTYPE PredPel[13];
                                 //We need to calculate new prediction
@@ -3100,8 +3104,8 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRec4x4IntraMBRec)(
                 {
                     if (!curr_slice->doSCoeffsPrediction)
                     {
-                        if ((core_enc->m_info.quant_opt_level > OPT_QUANT_INTRA8x8) &&
-                            (!pGetMBBaseModeFlag(cur_mb.GlobalMacroblockInfo)) || curr_slice->doTCoeffsPrediction)
+                        if (((core_enc->m_info.quant_opt_level > OPT_QUANT_INTRA8x8) &&
+                            (!pGetMBBaseModeFlag(cur_mb.GlobalMacroblockInfo))) || curr_slice->doTCoeffsPrediction)
                         {
                             __ALIGN16 PIXTYPE pred[64];
                             PIXTYPE pred_pels[25]; //Sources for prediction
@@ -3218,8 +3222,8 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRec4x4IntraMBRec)(
                 {
                     if (!curr_slice->doSCoeffsPrediction)
                     {
-                        if ((core_enc->m_info.quant_opt_level > OPT_QUANT_INTRA4x4) &&
-                            (!pGetMBBaseModeFlag(cur_mb.GlobalMacroblockInfo)) || curr_slice->doTCoeffsPrediction)
+                        if (((core_enc->m_info.quant_opt_level > OPT_QUANT_INTRA4x4) &&
+                            (!pGetMBBaseModeFlag(cur_mb.GlobalMacroblockInfo))) || curr_slice->doTCoeffsPrediction)
                         {
                             PIXTYPE PredPel[13];
                             //We need to calculate new prediction
@@ -4781,10 +4785,12 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRecMB_SVC)(
                 if (IS_INTER_MBTYPE(cur_mb.GlobalMacroblockInfo->mbtype))
                 {
                     if (residualPredictionFlag && IS_INTER_MBTYPE(cur_mb.LocalMacroblockInfo->mbtype_ref))
+                    {
                         if (!tcoeff_level_prediction_flag)
                             curr_slice->doSCoeffsPrediction = 1;
                         else
                             curr_slice->doTCoeffsPrediction = 1;
+                    }
                 }
                 else if (baseModeFlag && (cur_mb.GlobalMacroblockInfo->mbtype != MBTYPE_PCM))
                 {
@@ -4886,8 +4892,8 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_CEncAndRecMB_SVC)(
         if (core_enc->m_svc_layer.isActive &&
             !core_enc->m_svc_layer.svc_ext.no_inter_layer_pred_flag &&
             !core_enc->m_spatial_resolution_change &&
-            (IS_INTRA_MBTYPE(cur_mb.GlobalMacroblockInfo->mbtype) && pGetMBBaseModeFlag(cur_mb.GlobalMacroblockInfo) ||
-             IS_INTER_MBTYPE(cur_mb.GlobalMacroblockInfo->mbtype) && pGetMBResidualPredictionFlag(cur_mb.GlobalMacroblockInfo)) )
+            ((IS_INTRA_MBTYPE(cur_mb.GlobalMacroblockInfo->mbtype) && pGetMBBaseModeFlag(cur_mb.GlobalMacroblockInfo)) ||
+            (IS_INTER_MBTYPE(cur_mb.GlobalMacroblockInfo->mbtype) && pGetMBResidualPredictionFlag(cur_mb.GlobalMacroblockInfo))) )
         {
             needRecalculate = 1;
         }

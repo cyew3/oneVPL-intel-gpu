@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2016 Intel Corporation. All Rights Reserved.
 //
 
 #if PIXBITS == 8
@@ -120,7 +120,7 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_CheckEncoderParameters)(
 #ifdef MB_THREADING
     if (//!core_enc && // tmp to exclude MBT
         (core_enc->m_info.numThreads > core_enc->m_info.num_slices) &&  // TODO: don't use MBT for coding_type == 2 when MBAFF is implemented
-            (!core_enc->m_info.entropy_coding_mode || ((core_enc->m_info.m_QualitySpeed < 2 || (core_enc->m_info.m_Analyse_restrict & ANALYSE_RD_MODE) && (core_enc->m_info.m_Analyse_restrict & ANALYSE_RD_OPT)) &&
+            (!core_enc->m_info.entropy_coding_mode || ((core_enc->m_info.m_QualitySpeed < 2 || ((core_enc->m_info.m_Analyse_restrict & ANALYSE_RD_MODE) && (core_enc->m_info.m_Analyse_restrict & ANALYSE_RD_OPT))) &&
             0 == (core_enc->m_info.m_Analyse_on & (ANALYSE_RD_MODE | ANALYSE_RD_OPT)))))
         {
         // Currently macroblock threading is enabled in the following conditions:
@@ -208,7 +208,7 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_CheckEncoderParameters)(
                 profile_check = false;
                 break;
             case H264_HIGH_PROFILE:
-                if(    core_enc->m_info.aux_format_idc && core_enc->m_info.bit_depth_aux != 8
+                if(    (core_enc->m_info.aux_format_idc && core_enc->m_info.bit_depth_aux != 8)
                     || core_enc->m_info.bit_depth_chroma != 8
                     || core_enc->m_info.bit_depth_luma != 8
                     || core_enc->m_info.chroma_format_idc > 1) {
@@ -220,7 +220,7 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_CheckEncoderParameters)(
             case H264_STEREOHIGH_PROFILE:
             case H264_SCALABLE_BASELINE_PROFILE:
             case H264_SCALABLE_HIGH_PROFILE:
-                if(    core_enc->m_info.aux_format_idc && core_enc->m_info.bit_depth_aux != 8
+                if(    (core_enc->m_info.aux_format_idc && core_enc->m_info.bit_depth_aux != 8)
                     || core_enc->m_info.bit_depth_chroma != 8
                     || core_enc->m_info.bit_depth_luma != 8
                     || core_enc->m_info.chroma_format_idc > 1) {
@@ -238,8 +238,8 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_CheckEncoderParameters)(
                     return(UMC_ERR_NOT_IMPLEMENTED);
                 }*/
             case H264_HIGH444_PROFILE:
-                if( core_enc->m_info.aux_format_idc &&
-                      ( core_enc->m_info.bit_depth_aux < 8 || core_enc->m_info.bit_depth_aux > 12 )
+                if( (core_enc->m_info.aux_format_idc &&
+                      ( core_enc->m_info.bit_depth_aux < 8 || core_enc->m_info.bit_depth_aux > 12 ))
                     || core_enc->m_info.bit_depth_chroma < 8
                     || core_enc->m_info.bit_depth_luma < 8
                     || core_enc->m_info.bit_depth_chroma > 12
@@ -247,7 +247,7 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_CheckEncoderParameters)(
                     return(UMC_ERR_INVALID_STREAM);
                 }
 #if !defined BITDEPTH_9_12
-                if( core_enc->m_info.aux_format_idc && core_enc->m_info.bit_depth_aux != 8
+                if( (core_enc->m_info.aux_format_idc && core_enc->m_info.bit_depth_aux != 8)
                     || core_enc->m_info.bit_depth_chroma != 8
                     || core_enc->m_info.bit_depth_luma != 8) {
                         return(UMC_ERR_NOT_IMPLEMENTED);
@@ -344,7 +344,7 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_CheckEncoderParameters)(
         core_enc->m_info.direct_pred_mode = 1;
     if (core_enc->m_info.use_direct_inference != 0 && core_enc->m_info.use_direct_inference != 1)
         core_enc->m_info.use_direct_inference = 1;
-    if (core_enc->m_info.profile_idc == H264_EXTENDED_PROFILE || core_enc->m_info.level_idc >= 30 || core_enc->m_info.coding_type && core_enc->m_info.coding_type != 2 ) // TODO: remove coding_type == 2 when MBAFF is implemented
+    if (core_enc->m_info.profile_idc == H264_EXTENDED_PROFILE || core_enc->m_info.level_idc >= 30 || (core_enc->m_info.coding_type && core_enc->m_info.coding_type != 2) ) // TODO: remove coding_type == 2 when MBAFF is implemented
         core_enc->m_info.use_direct_inference = 1;
     if (core_enc->m_info.deblocking_filter_idc != DEBLOCK_FILTER_ON &&
         core_enc->m_info.deblocking_filter_idc != DEBLOCK_FILTER_OFF &&
@@ -567,7 +567,7 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_UpdateRefPicList)(
     curr_slice->m_use_intra_mbs_only = core_enc->m_pCurrentFrame->m_use_intra_mbs_only[fieldIdx];
 
     curr_slice->num_ref_idx_active_override_flag = ((curr_slice->num_ref_idx_l0_active != core_enc->m_PicParamSet->num_ref_idx_l0_active)
-                                                 || (BPREDSLICE == slice_type) && (curr_slice->num_ref_idx_l1_active != core_enc->m_PicParamSet->num_ref_idx_l1_active));
+                                                 || ((BPREDSLICE == slice_type) && (curr_slice->num_ref_idx_l1_active != core_enc->m_PicParamSet->num_ref_idx_l1_active)));
 
     // Construction of ref pic lists is completed. Perform some additional initialization.
 

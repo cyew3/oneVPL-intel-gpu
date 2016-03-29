@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2016 Intel Corporation. All Rights Reserved.
 
 #if PIXBITS == 8
 
@@ -151,6 +151,8 @@ Status H264ENC_MAKE_NAME(H264EncoderFrame_Create)(
             state->alpha_plane = 3;
             break;
 #endif
+        default:
+            break;
     }
 
     if (downScale)
@@ -354,6 +356,8 @@ Status H264ENC_MAKE_NAME(H264EncoderFrame_allocate)(
 #endif
             case YUV422:
                 chromaSize = lumaSize;
+                break;
+            default:
                 break;
         }
         if (state->frameDataID) {

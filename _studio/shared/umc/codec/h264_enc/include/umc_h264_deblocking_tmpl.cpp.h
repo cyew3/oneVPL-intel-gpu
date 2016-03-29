@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -1581,9 +1581,13 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_PrepareDeblockingParametersPSlice4)(
         {
             if ((HORIZONTAL_DEBLOCKING == dir) &&
                 (pParams->MBFieldCoded))
+            {
                 SetEdgeStrength(pStrength + 0, 3);
+            }
             else
+            {
                 SetEdgeStrength(pStrength + 0, 4);
+            }
             *pDeblockingFlag = 1;
         }
     }
@@ -1935,9 +1939,13 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_PrepareDeblockingParametersPSlice16)(
         {
             if ((HORIZONTAL_DEBLOCKING == dir) &&
                 (pParams->MBFieldCoded))
+            {
                 SetEdgeStrength(pStrength + 0, 3);
+            }
             else
+            {
                 SetEdgeStrength(pStrength + 0, 4);
+            }
             *pDeblockingFlag = 1;
         }
     }
@@ -2350,9 +2358,13 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_PrepareDeblockingParametersBSlice4)(
         {
             if ((HORIZONTAL_DEBLOCKING == dir) &&
                 (pParams->MBFieldCoded))
+            {
                 SetEdgeStrength(pStrength + 0, 3);
+            }
             else
+            {
                 SetEdgeStrength(pStrength + 0, 4);
+            }
             *pDeblockingFlag = 1;
         }
     }
@@ -2902,9 +2914,13 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_PrepareDeblockingParametersBSlice16)(
         {
             if ((HORIZONTAL_DEBLOCKING == dir) &&
                 (pParams->MBFieldCoded))
+            {
                 SetEdgeStrength(pStrength + 0, 3);
+            }
             else
+            {
                 SetEdgeStrength(pStrength + 0, 4);
+            }
             *pDeblockingFlag = 1;
         }
     }
@@ -3257,9 +3273,13 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_PrepareDeblockingParametersBSlice16x8)(
         {
             if ((HORIZONTAL_DEBLOCKING == dir) &&
                 (pParams->MBFieldCoded))
+            {
                 SetEdgeStrength(pStrength + 0, 3);
+            }
             else
+            {
                 SetEdgeStrength(pStrength + 0, 4);
+            }
             *pDeblockingFlag = 1;
         }
     }
@@ -3804,9 +3824,13 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_PrepareDeblockingParametersBSlice8x16)(
         {
             if ((HORIZONTAL_DEBLOCKING == dir) &&
                 (pParams->MBFieldCoded))
+            {
                 SetEdgeStrength(pStrength + 0, 3);
+            }
             else
+            {
                 SetEdgeStrength(pStrength + 0, 4);
+            }
             *pDeblockingFlag = 1;
         }
     }

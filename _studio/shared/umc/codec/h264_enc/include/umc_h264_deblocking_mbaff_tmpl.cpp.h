@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -1571,9 +1571,13 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_PrepareDeblockingParametersPSlice4MBAFFFi
         else
         {
             if (HORIZONTAL_DEBLOCKING == dir)
+            {
                 SetEdgeStrength(pStrength + 0, 3);
+            }
             else
+            {
                 SetEdgeStrength(pStrength + 0, 4);
+            }
             *pDeblockingFlag = 1;
         }
     }
@@ -1891,9 +1895,13 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_PrepareDeblockingParametersBSlice4MBAFFFi
         else
         {
             if (HORIZONTAL_DEBLOCKING == dir)
+            {
                 SetEdgeStrength(pStrength + 0, 3);
+            }
             else
+            {
                 SetEdgeStrength(pStrength + 0, 4);
+            }
             *pDeblockingFlag = 1;
         }
     }

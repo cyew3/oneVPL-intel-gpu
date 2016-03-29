@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that aFgreement.
-//        Copyright (c) 2004 - 2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2016 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (__ICL)
@@ -743,8 +743,8 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_ComputeDirectSubblockSpatial)(
         }
 
         // 16x8 and 8x16 are not considered for direct
-        if (!is_diff_ref_idxs[list][MB_A] && is_diff_ref_idxs[list][MB_B] && is_diff_ref_idxs[list][MB_C] ||
-            neighbours[MB_B].mb_num < 0 && neighbours[MB_C].mb_num < 0) {
+        if ((!is_diff_ref_idxs[list][MB_A] && is_diff_ref_idxs[list][MB_B] && is_diff_ref_idxs[list][MB_C]) ||
+            (neighbours[MB_B].mb_num < 0 && neighbours[MB_C].mb_num < 0)) {
             //pred_type = MVPRED_A;
             MVPred.mvx = mvs[list][MB_A]->mvx;
             MVPred.mvy = mvs[list][MB_A]->mvy;
@@ -4587,7 +4587,7 @@ local_search:
 
     if (meInfo->flags & ANALYSE_ME_CONTINUED_SEARCH)
     {
-        if (!pass_counter || pass_counter && (bSAD < tempSAD))
+        if (!pass_counter || (pass_counter && (bSAD < tempSAD)))
         {
 //================================== near the border checking ================
             border_width_LR = temprX >> 2;
@@ -5691,7 +5691,7 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_ME_CandList16x16)(
         //if (meInfo->bestSAD <= meInfo->threshold)
         //    return;
     }
-    if (curr_slice->m_is_cur_mb_field || core_enc->m_info.coding_type == 3 && pPrevFrm->m_PictureStructureForDec < FRM_STRUCTURE)
+    if (curr_slice->m_is_cur_mb_field || (core_enc->m_info.coding_type == 3 && pPrevFrm->m_PictureStructureForDec < FRM_STRUCTURE))
         return;
     const Ipp32s POCcur = H264ENC_MAKE_NAME(H264EncoderFrame_PicOrderCnt)(core_enc->m_pCurrentFrame, 0, 3);
     const Ipp32s POCref = H264ENC_MAKE_NAME(H264EncoderFrame_PicOrderCnt)(H264ENC_MAKE_NAME(GetRefPicList)(curr_slice, list_id, curr_slice->m_is_cur_mb_field, uMB & 1)->m_RefPicList[refIdx], 0, 3);
@@ -6867,7 +6867,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_P)(
 #ifdef H264_INTRA_REFRESH
             if (core_enc->m_refrType) {
                 if (ppRefPicList[ref_idx]->m_periodCount < core_enc->m_periodCount ||
-                    curMBLine < core_enc->m_firstLineInStripe && ppRefPicList[ref_idx]->m_firstLineInStripe < 0)
+                    (curMBLine < core_enc->m_firstLineInStripe && ppRefPicList[ref_idx]->m_firstLineInStripe < 0))
                     continue;
                 else if (curMBLine < core_enc->m_firstLineInStripe) {
                     Ipp16s maxMV = (ppRefPicList[ref_idx]->m_firstLineInStripe + core_enc->m_stripeWidth - 2 - curMBLine) * 16;
@@ -7128,7 +7128,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_P)(
 #ifdef H264_INTRA_REFRESH
                 if (core_enc->m_refrType) {
                     if (ppRefPicList[ref_idx]->m_periodCount < core_enc->m_periodCount ||
-                        curMBLine < core_enc->m_firstLineInStripe && ppRefPicList[ref_idx]->m_firstLineInStripe < 0)
+                        (curMBLine < core_enc->m_firstLineInStripe && ppRefPicList[ref_idx]->m_firstLineInStripe < 0))
                         continue;
                     else if (curMBLine < core_enc->m_firstLineInStripe) {
                         Ipp16s maxMV = (ppRefPicList[ref_idx]->m_firstLineInStripe + core_enc->m_stripeWidth - 2 - curMBLine) * 16;
@@ -7504,7 +7504,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_P)(
 #ifdef H264_INTRA_REFRESH
                     if (core_enc->m_refrType) {
                         if (ppRefPicList[ref_idx]->m_periodCount < core_enc->m_periodCount ||
-                            curMBLine < core_enc->m_firstLineInStripe && ppRefPicList[ref_idx]->m_firstLineInStripe < 0)
+                            (curMBLine < core_enc->m_firstLineInStripe && ppRefPicList[ref_idx]->m_firstLineInStripe < 0))
                             continue;
                         else if (curMBLine < core_enc->m_firstLineInStripe) {
                             Ipp16s maxMV = (ppRefPicList[ref_idx]->m_firstLineInStripe + core_enc->m_stripeWidth - 2 - curMBLine) * 16;
@@ -7611,7 +7611,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_P)(
 #ifdef H264_INTRA_REFRESH
                     if (core_enc->m_refrType) {
                         if (ppRefPicList[ref_idx]->m_periodCount < core_enc->m_periodCount ||
-                            curMBLine < core_enc->m_firstLineInStripe && ppRefPicList[ref_idx]->m_firstLineInStripe < 0)
+                            (curMBLine < core_enc->m_firstLineInStripe && ppRefPicList[ref_idx]->m_firstLineInStripe < 0))
                             continue;
                         else if (curMBLine < core_enc->m_firstLineInStripe) {
                             Ipp16s maxMV = (ppRefPicList[ref_idx]->m_firstLineInStripe + core_enc->m_stripeWidth - 2 - curMBLine) * 16;

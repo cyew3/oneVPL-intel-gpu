@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2016 Intel Corporation. All Rights Reserved.
 //
 
 #if PIXBITS == 8
@@ -300,6 +300,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_MB_Decision)(
 
                 Ipp32s mb_type = cur_mb.GlobalMacroblockInfo->mbtype;
                 if (mb_type != MBTYPE_SKIPPED)
+                {
                     if ((core_enc->m_Analyse & ANALYSE_RD_OPT) || (core_enc->m_Analyse & ANALYSE_RD_MODE) || !(uBestInterSAD < (Ipp32u)EmptyThreshold[uMBQP])) {
                         H264ENC_MAKE_NAME(H264CoreEncoder_Intra16x16SelectAndPredict)(state, curr_slice, &uAIMBSAD_16x16, cur_mb.mb16x16.prediction);
                         uBestIntraSAD = uAIMBSAD_16x16;
@@ -321,6 +322,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_MB_Decision)(
                     } else {
                         best_sad = uBestInterSAD;
                     }
+                }
             }
         } else { // intra slice
             //Disable chroma coding in RD, no side effect in non RD mode
@@ -437,93 +439,102 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_MB_Decision)(
 
             Ipp32s mb_type = cur_mb.GlobalMacroblockInfo->mbtype;
             if (mb_type != MBTYPE_SKIPPED)
-            if ((core_enc->m_Analyse & ANALYSE_RD_OPT) || (core_enc->m_Analyse & ANALYSE_RD_MODE) || !(uBestInterSAD < (Ipp32u)EmptyThreshold[uMBQP])) {
-          //if (((core_enc->m_Analyse & ANALYSE_RD_OPT) || (core_enc->m_Analyse & ANALYSE_RD_MODE)) || (!((mb_type == MBTYPE_DIRECT) || (mb_type == MBTYPE_SKIPPED) || (uBestInterSAD < EmptyThreshold[uMBQP])))) {
-                Ipp32s cost_chroma=0;
-                Ipp32u chroma_cbp = cur_mb.LocalMacroblockInfo->cbp_chroma;
-                if ((core_enc->m_Analyse & ANALYSE_ME_CHROMA) && core_enc->m_PicParamSet->chroma_format_idc != 0) {
-                    Ipp32s uOffset = core_enc->m_pMBOffsets[uMB].uChromaOffset[core_enc->m_is_cur_pic_afrm][curr_slice->m_is_cur_mb_field];
-                    if((core_enc->m_Analyse & ANALYSE_RD_OPT) || (core_enc->m_Analyse & ANALYSE_RD_MODE)){
-                        pSetMB8x8TSPackFlag(cur_mb.GlobalMacroblockInfo, false);
-                        cur_mb.GlobalMacroblockInfo->mbtype = MBTYPE_INTRA; //make INTRA prediction - the same for I16x16, I8x8, I4x4
-#ifdef USE_NV12
-                        cost_chroma = H264ENC_MAKE_NAME(H264CoreEncoder_IntraSelectChromaRD_NV12)(
-                            state,
-                            curr_slice,
-                            core_enc->m_pCurrentFrame->m_pUPlane + uOffset,
-                            core_enc->m_pReconstructFrame->m_pUPlane + uOffset,
-                            cur_mb.mbPitchPixels,
-                            &cur_mb.LocalMacroblockInfo->intra_chroma_mode,
-                            cur_mb.mbChromaIntra.prediction,
-                            cur_mb.mbChromaIntra.prediction+8,
-                            0);
-#else // USE_NV12
-                        cost_chroma = H264ENC_MAKE_NAME(H264CoreEncoder_IntraSelectChromaRD)(
-                            state,
-                            curr_slice,
-                            core_enc->m_pCurrentFrame->m_pUPlane + uOffset,
-                            core_enc->m_pReconstructFrame->m_pUPlane + uOffset,
-                            core_enc->m_pCurrentFrame->m_pVPlane + uOffset,
-                            core_enc->m_pReconstructFrame->m_pVPlane + uOffset,
-                            cur_mb.mbPitchPixels,
-                            &cur_mb.LocalMacroblockInfo->intra_chroma_mode,
-                            cur_mb.mbChromaIntra.prediction,
-                            cur_mb.mbChromaIntra.prediction+8);
-#endif // USE_NV12
-                    }else{
-                        PIXTYPE* pPredBuf = cur_mb.mbChromaIntra.prediction;
-                        //Get intra chroma prediction
-#ifdef USE_NV12
-                        cost_chroma = H264ENC_MAKE_NAME(H264CoreEncoder_AIModeSelectChromaMBs_8x8_NV12)(
-                            state,
-                            curr_slice,
-                            core_enc->m_pCurrentFrame->m_pUPlane + uOffset,
-                            core_enc->m_pReconstructFrame->m_pUPlane + uOffset,
-                            cur_mb.mbPitchPixels,
-                            &cur_mb.LocalMacroblockInfo->intra_chroma_mode,
-                            pPredBuf,
-                            pPredBuf+8,
-                            0);  //up to 422 only
+            {
+                if ((core_enc->m_Analyse & ANALYSE_RD_OPT) || (core_enc->m_Analyse & ANALYSE_RD_MODE) || !(uBestInterSAD < (Ipp32u)EmptyThreshold[uMBQP])) {
+              //if (((core_enc->m_Analyse & ANALYSE_RD_OPT) || (core_enc->m_Analyse & ANALYSE_RD_MODE)) || (!((mb_type == MBTYPE_DIRECT) || (mb_type == MBTYPE_SKIPPED) || (uBestInterSAD < EmptyThreshold[uMBQP])))) {
+                    Ipp32s cost_chroma=0;
+                    Ipp32u chroma_cbp = cur_mb.LocalMacroblockInfo->cbp_chroma;
+                    if ((core_enc->m_Analyse & ANALYSE_ME_CHROMA) && core_enc->m_PicParamSet->chroma_format_idc != 0) {
+                        Ipp32s uOffset = core_enc->m_pMBOffsets[uMB].uChromaOffset[core_enc->m_is_cur_pic_afrm][curr_slice->m_is_cur_mb_field];
+                        if((core_enc->m_Analyse & ANALYSE_RD_OPT) || (core_enc->m_Analyse & ANALYSE_RD_MODE)){
+                            pSetMB8x8TSPackFlag(cur_mb.GlobalMacroblockInfo, false);
+                            cur_mb.GlobalMacroblockInfo->mbtype = MBTYPE_INTRA; //make INTRA prediction - the same for I16x16, I8x8, I4x4
+    #ifdef USE_NV12
+                            cost_chroma = H264ENC_MAKE_NAME(H264CoreEncoder_IntraSelectChromaRD_NV12)(
+                                state,
+                                curr_slice,
+                                core_enc->m_pCurrentFrame->m_pUPlane + uOffset,
+                                core_enc->m_pReconstructFrame->m_pUPlane + uOffset,
+                                cur_mb.mbPitchPixels,
+                                &cur_mb.LocalMacroblockInfo->intra_chroma_mode,
+                                cur_mb.mbChromaIntra.prediction,
+                                cur_mb.mbChromaIntra.prediction+8,
+                                0);
+    #else // USE_NV12
+                            cost_chroma = H264ENC_MAKE_NAME(H264CoreEncoder_IntraSelectChromaRD)(
+                                state,
+                                curr_slice,
+                                core_enc->m_pCurrentFrame->m_pUPlane + uOffset,
+                                core_enc->m_pReconstructFrame->m_pUPlane + uOffset,
+                                core_enc->m_pCurrentFrame->m_pVPlane + uOffset,
+                                core_enc->m_pReconstructFrame->m_pVPlane + uOffset,
+                                cur_mb.mbPitchPixels,
+                                &cur_mb.LocalMacroblockInfo->intra_chroma_mode,
+                                cur_mb.mbChromaIntra.prediction,
+                                cur_mb.mbChromaIntra.prediction+8);
+    #endif // USE_NV12
+                        }else{
+                            PIXTYPE* pPredBuf = cur_mb.mbChromaIntra.prediction;
+                            //Get intra chroma prediction
+    #ifdef USE_NV12
+                            cost_chroma = H264ENC_MAKE_NAME(H264CoreEncoder_AIModeSelectChromaMBs_8x8_NV12)(
+                                state,
+                                curr_slice,
+                                core_enc->m_pCurrentFrame->m_pUPlane + uOffset,
+                                core_enc->m_pReconstructFrame->m_pUPlane + uOffset,
+                                cur_mb.mbPitchPixels,
+                                &cur_mb.LocalMacroblockInfo->intra_chroma_mode,
+                                pPredBuf,
+                                pPredBuf+8,
+                                0);  //up to 422 only
 
-#else
-                        Ipp8u mode;
-                        cost_chroma = H264ENC_MAKE_NAME(H264CoreEncoder_AIModeSelectChromaMBs_8x8)(
-                            state,
-                            curr_slice,
-                            core_enc->m_pCurrentFrame->m_pUPlane + uOffset,
-                            core_enc->m_pReconstructFrame->m_pUPlane + uOffset,
-                            core_enc->m_pCurrentFrame->m_pVPlane + uOffset,
-                            core_enc->m_pReconstructFrame->m_pVPlane + uOffset,
-                            cur_mb.mbPitchPixels,
-                            &mode,
-                            pPredBuf,
-                            pPredBuf + 8);
-#endif
+    #else
+                            Ipp8u mode;
+                            cost_chroma = H264ENC_MAKE_NAME(H264CoreEncoder_AIModeSelectChromaMBs_8x8)(
+                                state,
+                                curr_slice,
+                                core_enc->m_pCurrentFrame->m_pUPlane + uOffset,
+                                core_enc->m_pReconstructFrame->m_pUPlane + uOffset,
+                                core_enc->m_pCurrentFrame->m_pVPlane + uOffset,
+                                core_enc->m_pReconstructFrame->m_pVPlane + uOffset,
+                                cur_mb.mbPitchPixels,
+                                &mode,
+                                pPredBuf,
+                                pPredBuf + 8);
+    #endif
+                        }
                     }
-                }
-                H264ENC_MAKE_NAME(H264CoreEncoder_Intra16x16SelectAndPredict)(state, curr_slice, &uAIMBSAD_16x16, cur_mb.mb16x16.prediction);
-                uBestIntraSAD = uAIMBSAD_16x16;
-                uBestIntraMBType = MBTYPE_INTRA_16x16;
-                // FAST intra decision
-                //f if (uAIMBSAD_16x16+cost_chroma <= 2 * uBestInterSAD && ((core_enc->m_Analyse & ANALYSE_RD_OPT) || (core_enc->m_Analyse & ANALYSE_RD_MODE) || (curr_slice->m_uMBInterSAD >= rd_quant_intra_min[uMBQP]))) {
-                if (uAIMBSAD_16x16+cost_chroma <= (uBestInterSAD * 5 >> 2)) {
-                    if ((core_enc->m_Analyse & ANALYSE_I_4x4) || (core_enc->m_Analyse & ANALYSE_I_8x8)) {
-                        // Use edge detection to determine if the MB is a flat region
-                        H264ENC_MAKE_NAME(ippiEdgesDetect16x16)(cur_mb.mbPtr, cur_mb.mbPitchPixels, EdgePelDiffTable[uMBQP], EdgePelCountTable[uMBQP], &MBHasEdges);
-                        if (MBHasEdges) {
+                    H264ENC_MAKE_NAME(H264CoreEncoder_Intra16x16SelectAndPredict)(state, curr_slice, &uAIMBSAD_16x16, cur_mb.mb16x16.prediction);
+                    uBestIntraSAD = uAIMBSAD_16x16;
+                    uBestIntraMBType = MBTYPE_INTRA_16x16;
+                    // FAST intra decision
+                    //f if (uAIMBSAD_16x16+cost_chroma <= 2 * uBestInterSAD && ((core_enc->m_Analyse & ANALYSE_RD_OPT) || (core_enc->m_Analyse & ANALYSE_RD_MODE) || (curr_slice->m_uMBInterSAD >= rd_quant_intra_min[uMBQP]))) {
+                    if (uAIMBSAD_16x16+cost_chroma <= (uBestInterSAD * 5 >> 2)) {
+                        if ((core_enc->m_Analyse & ANALYSE_I_4x4) || (core_enc->m_Analyse & ANALYSE_I_8x8)) {
+                            // Use edge detection to determine if the MB is a flat region
+                            H264ENC_MAKE_NAME(ippiEdgesDetect16x16)(cur_mb.mbPtr, cur_mb.mbPitchPixels, EdgePelDiffTable[uMBQP], EdgePelCountTable[uMBQP], &MBHasEdges);
+                            if (MBHasEdges) {
 
-                            if (core_enc->m_Analyse & ANALYSE_I_8x8) {
-                                pSetMB8x8TSFlag(curr_slice->m_cur_mb.GlobalMacroblockInfo, true);
-                                H264ENC_MAKE_NAME(H264CoreEncoder_AdvancedIntraModeSelectOneMacroblock8x8)(state, curr_slice, uBestIntraSAD, &uAIMBSAD_8x8);
-                                //Save intra_types
-                                MFX_INTERNAL_CPY(intra_types_save, curr_slice->m_cur_mb.intra_types, 16 * sizeof(T_AIMode));
-                                if (uAIMBSAD_8x8 < uBestIntraSAD) {
-                                    uBestIntraSAD = uAIMBSAD_8x8;
-                                    uBestIntraMBType = MBTYPE_INTRA;
-                                    bIntra8x8 = true;
-                                }
-                                pSetMB8x8TSFlag(curr_slice->m_cur_mb.GlobalMacroblockInfo, false);
-                                if ((core_enc->m_Analyse & ANALYSE_I_4x4) && (uAIMBSAD_8x8 <= (uAIMBSAD_16x16 * 5 >> 2))) {
+                                if (core_enc->m_Analyse & ANALYSE_I_8x8) {
+                                    pSetMB8x8TSFlag(curr_slice->m_cur_mb.GlobalMacroblockInfo, true);
+                                    H264ENC_MAKE_NAME(H264CoreEncoder_AdvancedIntraModeSelectOneMacroblock8x8)(state, curr_slice, uBestIntraSAD, &uAIMBSAD_8x8);
+                                    //Save intra_types
+                                    MFX_INTERNAL_CPY(intra_types_save, curr_slice->m_cur_mb.intra_types, 16 * sizeof(T_AIMode));
+                                    if (uAIMBSAD_8x8 < uBestIntraSAD) {
+                                        uBestIntraSAD = uAIMBSAD_8x8;
+                                        uBestIntraMBType = MBTYPE_INTRA;
+                                        bIntra8x8 = true;
+                                    }
+                                    pSetMB8x8TSFlag(curr_slice->m_cur_mb.GlobalMacroblockInfo, false);
+                                    if ((core_enc->m_Analyse & ANALYSE_I_4x4) && (uAIMBSAD_8x8 <= (uAIMBSAD_16x16 * 5 >> 2))) {
+                                        H264ENC_MAKE_NAME(H264CoreEncoder_AdvancedIntraModeSelectOneMacroblock)(state, curr_slice, uBestIntraSAD, &uAIMBSAD_4x4);
+                                        if (uAIMBSAD_4x4 < uBestIntraSAD) {
+                                            uBestIntraSAD = uAIMBSAD_4x4;
+                                            uBestIntraMBType = MBTYPE_INTRA;
+                                            bIntra8x8 = false;
+                                        }
+                                    }
+                                } else if (core_enc->m_Analyse & ANALYSE_I_4x4) {
                                     H264ENC_MAKE_NAME(H264CoreEncoder_AdvancedIntraModeSelectOneMacroblock)(state, curr_slice, uBestIntraSAD, &uAIMBSAD_4x4);
                                     if (uAIMBSAD_4x4 < uBestIntraSAD) {
                                         uBestIntraSAD = uAIMBSAD_4x4;
@@ -531,68 +542,61 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_MB_Decision)(
                                         bIntra8x8 = false;
                                     }
                                 }
-                            } else if (core_enc->m_Analyse & ANALYSE_I_4x4) {
-                                H264ENC_MAKE_NAME(H264CoreEncoder_AdvancedIntraModeSelectOneMacroblock)(state, curr_slice, uBestIntraSAD, &uAIMBSAD_4x4);
-                                if (uAIMBSAD_4x4 < uBestIntraSAD) {
-                                    uBestIntraSAD = uAIMBSAD_4x4;
-                                    uBestIntraMBType = MBTYPE_INTRA;
-                                    bIntra8x8 = false;
+                                /*
+                                if (core_enc->m_Analyse & ANALYSE_I_4x4) {
+                                    H264ENC_MAKE_NAME(H264CoreEncoder_AdvancedIntraModeSelectOneMacroblock)(state, curr_slice, uBestIntraSAD, &uAIMBSAD_4x4);
+                                    if (uAIMBSAD_4x4 < uBestIntraSAD) {
+                                        uBestIntraSAD = uAIMBSAD_4x4;
+                                        uBestIntraMBType = MBTYPE_INTRA;
+                                        bIntra8x8 = false;
+                                    }
                                 }
-                            }
-                            /*
-                            if (core_enc->m_Analyse & ANALYSE_I_4x4) {
-                                H264ENC_MAKE_NAME(H264CoreEncoder_AdvancedIntraModeSelectOneMacroblock)(state, curr_slice, uBestIntraSAD, &uAIMBSAD_4x4);
-                                if (uAIMBSAD_4x4 < uBestIntraSAD) {
-                                    uBestIntraSAD = uAIMBSAD_4x4;
-                                    uBestIntraMBType = MBTYPE_INTRA;
-                                    bIntra8x8 = false;
+                                //Save intra_types
+                                MFX_INTERNAL_CPY(intra_types_save, curr_slice->m_cur_mb.intra_types, 16 * sizeof(T_AIMode));
+                                if ((core_enc->m_Analyse & ANALYSE_I_8x8) && (uAIMBSAD_4x4 <= (uAIMBSAD_16x16 * 9 >> 3))) {
+                                    pSetMB8x8TSFlag(curr_slice->m_cur_mb.GlobalMacroblockInfo, true);
+                                    H264ENC_MAKE_NAME(H264CoreEncoder_AdvancedIntraModeSelectOneMacroblock8x8)(state, curr_slice, uBestIntraSAD, &uAIMBSAD_8x8);
+                                    if (uAIMBSAD_8x8 < uBestIntraSAD) {
+                                        uBestIntraSAD = uAIMBSAD_8x8;
+                                        uBestIntraMBType = MBTYPE_INTRA;
+                                        bIntra8x8 = true;
+                                    }
+                                    pSetMB8x8TSFlag(curr_slice->m_cur_mb.GlobalMacroblockInfo, false);
                                 }
+                                */
                             }
-                            //Save intra_types
-                            MFX_INTERNAL_CPY(intra_types_save, curr_slice->m_cur_mb.intra_types, 16 * sizeof(T_AIMode));
-                            if ((core_enc->m_Analyse & ANALYSE_I_8x8) && (uAIMBSAD_4x4 <= (uAIMBSAD_16x16 * 9 >> 3))) {
-                                pSetMB8x8TSFlag(curr_slice->m_cur_mb.GlobalMacroblockInfo, true);
-                                H264ENC_MAKE_NAME(H264CoreEncoder_AdvancedIntraModeSelectOneMacroblock8x8)(state, curr_slice, uBestIntraSAD, &uAIMBSAD_8x8);
-                                if (uAIMBSAD_8x8 < uBestIntraSAD) {
-                                    uBestIntraSAD = uAIMBSAD_8x8;
-                                    uBestIntraMBType = MBTYPE_INTRA;
-                                    bIntra8x8 = true;
-                                }
-                                pSetMB8x8TSFlag(curr_slice->m_cur_mb.GlobalMacroblockInfo, false);
-                            }
-                            */
                         }
                     }
-                }
-                cur_mb.LocalMacroblockInfo->cbp_chroma = chroma_cbp;
-                uBestIntraSAD += cost_chroma;
-                if (!((core_enc->m_Analyse & ANALYSE_RD_OPT) || (core_enc->m_Analyse & ANALYSE_RD_MODE)) && (curr_slice->m_slice_type == BPREDSLICE))
-                    uBestIntraSAD += BITS_COST(9, glob_RDQM[uMBQP]);
-                if (uBestIntraSAD < uBestInterSAD) {
-                    cur_mb.GlobalMacroblockInfo->mbtype = static_cast<MBTypeValue>(uBestIntraMBType);
-                    pSetMB8x8TSPackFlag(curr_slice->m_cur_mb.GlobalMacroblockInfo, bIntra8x8);
-                    if (uBestIntraMBType == MBTYPE_INTRA && !bIntra8x8) {
-                        cur_mb.LocalMacroblockInfo->cbp_luma = cur_mb.m_uIntraCBP4x4;
-                        //Restore intra_types
-//                        MFX_INTERNAL_CPY(curr_slice->m_cur_mb.intra_types, intra_types_save, 16*sizeof(T_AIMode));
-                    } else if (uBestIntraMBType == MBTYPE_INTRA && bIntra8x8) {
-                        cur_mb.LocalMacroblockInfo->cbp_luma = cur_mb.m_uIntraCBP8x8;
-                        //Restore intra_types
-                        MFX_INTERNAL_CPY(curr_slice->m_cur_mb.intra_types, intra_types_save, 16*sizeof(T_AIMode));
-                    } else
-                        cur_mb.LocalMacroblockInfo->cbp_luma = 0xffff;
-                    cur_mb.LocalMacroblockInfo->cbp_chroma = 0xffffffff;
-                    curr_slice->m_Intra_MB_Counter++;
-                    best_sad = uBestIntraSAD;
+                    cur_mb.LocalMacroblockInfo->cbp_chroma = chroma_cbp;
+                    uBestIntraSAD += cost_chroma;
+                    if (!((core_enc->m_Analyse & ANALYSE_RD_OPT) || (core_enc->m_Analyse & ANALYSE_RD_MODE)) && (curr_slice->m_slice_type == BPREDSLICE))
+                        uBestIntraSAD += BITS_COST(9, glob_RDQM[uMBQP]);
+                    if (uBestIntraSAD < uBestInterSAD) {
+                        cur_mb.GlobalMacroblockInfo->mbtype = static_cast<MBTypeValue>(uBestIntraMBType);
+                        pSetMB8x8TSPackFlag(curr_slice->m_cur_mb.GlobalMacroblockInfo, bIntra8x8);
+                        if (uBestIntraMBType == MBTYPE_INTRA && !bIntra8x8) {
+                            cur_mb.LocalMacroblockInfo->cbp_luma = cur_mb.m_uIntraCBP4x4;
+                            //Restore intra_types
+    //                        MFX_INTERNAL_CPY(curr_slice->m_cur_mb.intra_types, intra_types_save, 16*sizeof(T_AIMode));
+                        } else if (uBestIntraMBType == MBTYPE_INTRA && bIntra8x8) {
+                            cur_mb.LocalMacroblockInfo->cbp_luma = cur_mb.m_uIntraCBP8x8;
+                            //Restore intra_types
+                            MFX_INTERNAL_CPY(curr_slice->m_cur_mb.intra_types, intra_types_save, 16*sizeof(T_AIMode));
+                        } else
+                            cur_mb.LocalMacroblockInfo->cbp_luma = 0xffff;
+                        cur_mb.LocalMacroblockInfo->cbp_chroma = 0xffffffff;
+                        curr_slice->m_Intra_MB_Counter++;
+                        best_sad = uBestIntraSAD;
+                    } else {
+                        cur_mb.LocalMacroblockInfo->intra_chroma_mode = 0; //Needed for packing
+                        cur_mb.GlobalMacroblockInfo->mbtype = MBTypeInter;
+                        cur_mb.LocalMacroblockInfo->cbp_luma = uInterCBP4x4;
+                        best_sad = uBestInterSAD;
+                        pSetMB8x8TSPackFlag(cur_mb.GlobalMacroblockInfo, InterMB8x8PackFlag);
+                    }
                 } else {
-                    cur_mb.LocalMacroblockInfo->intra_chroma_mode = 0; //Needed for packing
-                    cur_mb.GlobalMacroblockInfo->mbtype = MBTypeInter;
-                    cur_mb.LocalMacroblockInfo->cbp_luma = uInterCBP4x4;
                     best_sad = uBestInterSAD;
-                    pSetMB8x8TSPackFlag(cur_mb.GlobalMacroblockInfo, InterMB8x8PackFlag);
                 }
-            } else {
-                best_sad = uBestInterSAD;
             }
         }
     } else { // intra slice
@@ -2266,7 +2270,7 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_Make_MBSlices)(
                     uSliceMBCnt++;
                     // if long MB (timing+next>2*ave) arrives: stop current and next slice will be 1 MB
                     if ((slice_timing >= average_frame_timing ||
-                        mb+1<mb_nums*(i+1) && slice_timing + ticks[mb+1] >= 2*average_frame_timing) &&
+                        (mb+1<mb_nums*(i+1) && slice_timing + ticks[mb+1] >= 2*average_frame_timing)) &&
                         (uSlice < num_slices - 1)) {
                             uSlice++;
                             slice_timing -= average_frame_timing;

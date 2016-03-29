@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2016 Intel Corporation. All Rights Reserved.
 //
 
 
@@ -1910,8 +1910,8 @@ Status H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_Put_MBHeader)(
                         0);
                 }
 
-                if (core_enc->m_SliceHeader.MbaffFrameFlag && ((cur_mb.uMB & 1) == 0 &&
-                    cur_mb.GlobalMacroblockInfo->mbtype!=MBTYPE_SKIPPED ||
+                if (core_enc->m_SliceHeader.MbaffFrameFlag && (((cur_mb.uMB & 1) == 0 &&
+                    cur_mb.GlobalMacroblockInfo->mbtype!=MBTYPE_SKIPPED) ||
                     ((cur_mb.uMB & 1) == 1 && cur_mb.GlobalMacroblockInfo->mbtype!=MBTYPE_SKIPPED &&
                     cur_mb.GlobalMacroblockPairInfo->mbtype==MBTYPE_SKIPPED)))
                 {
@@ -1928,8 +1928,8 @@ Status H264ENC_MAKE_NAME_BS_DEP(H264CoreEncoder_Put_MBHeader)(
                 }
             } else {
                 H264ENC_MAKE_NAME_BS(PutVLCCode)(pBitstream, curr_slice->m_uSkipRun);
-                if (core_enc->m_SliceHeader.MbaffFrameFlag && ((cur_mb.uMB & 1) == 0 &&
-                    cur_mb.GlobalMacroblockInfo->mbtype!=MBTYPE_SKIPPED ||
+                if (core_enc->m_SliceHeader.MbaffFrameFlag && (((cur_mb.uMB & 1) == 0 &&
+                    cur_mb.GlobalMacroblockInfo->mbtype!=MBTYPE_SKIPPED) ||
                     ((cur_mb.uMB & 1) == 1 && cur_mb.GlobalMacroblockInfo->mbtype!=MBTYPE_SKIPPED &&
                     cur_mb.GlobalMacroblockPairInfo->mbtype==MBTYPE_SKIPPED)))
                 {

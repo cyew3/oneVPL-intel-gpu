@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2016 Intel Corporation. All Rights Reserved.
 //
 
 #include <vm_thread.h>
@@ -2123,7 +2123,7 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Close)(
 #ifdef H264_RECODE_PCM
     H264_Free((void*)core_enc->m_mbPCM);
     core_enc->m_mbPCM = NULL;
-#endif H264_RECODE_PCM
+#endif // H264_RECODE_PCM
 #ifdef MB_THREADING_VM
     H264_Free((void*)core_enc->m_ThreadVM_MBT);
     core_enc->m_ThreadVM_MBT = NULL;

@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2009 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -28,10 +28,12 @@ namespace UMC_H264_ENCODER
 #endif // defined(_MSC_VER)
 
 #define IClip(Min, Max, Val) (((Val) < (Min)) ? (Min) : (((Val) > (Max)) ? (Max) : (Val)))
-#define SetEdgeStrength(edge, strength) \
-    *((Ipp32u *) (edge)) = (((((strength) * 256) + strength) * 256 + strength) * 256 + strength)
-#define CopyEdgeStrength(dst_edge, src_edge) \
-    *((Ipp32u *) (dst_edge)) = (*((Ipp32u *) (src_edge)))
+#define SetEdgeStrength(edge, strength) {                                               \
+    Ipp32u val = (((((strength) * 256) + strength) * 256 + strength) * 256 + strength); \
+    memcpy_s(edge, sizeof(Ipp32u), &val, sizeof(Ipp32u));                               \
+}
+#define CopyEdgeStrength(dst_edge, src_edge)  \
+    memcpy_s(dst_edge, sizeof(Ipp32u), src_edge, sizeof(Ipp32u))
 #define CompareEdgeStrength(strength, edge) \
     ((((((strength) * 256) + strength) * 256 + strength) * 256 + strength) == *((Ipp32u *) (edge)))
 
