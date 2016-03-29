@@ -1094,12 +1094,6 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     }
     else /* this is LibVA legacy approach. Should be supported from 16.4 driver */
     {
-#ifdef MFX_VA_ANDROID
-        // To replace by vaQueryConfigAttributes()
-        // when the driver starts to support VAConfigAttribMaxPictureWidth/Height
-        m_caps.MaxPicWidth  = 1920;
-        m_caps.MaxPicHeight = 1200;
-#else
         if ((attrs[5].value != VA_ATTRIB_NOT_SUPPORTED) && (attrs[5].value != 0))
             m_caps.MaxPicWidth  = attrs[5].value;
         else
@@ -1109,7 +1103,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
             m_caps.MaxPicHeight = attrs[4].value;
         else
             m_caps.MaxPicHeight = 1088;
-#endif
+
         const eMFXHWType hwtype = m_core->GetHWType();
         if (attrs[8].value != VA_ATTRIB_NOT_SUPPORTED)
         {
