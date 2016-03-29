@@ -428,15 +428,19 @@ Ipp32s MPEG2BRC::ChangeQuant(Ipp32s quant_value)
 
   if (quantiser_scale_value == curq) {
     if (quant_value > curq)
+    {
       if (quantiser_scale_code == 31)
         return quantiser_scale_value;
       else
         quantiser_scale_code++;
+    }
     if (quant_value < curq)
+    {
       if (quantiser_scale_code == 1)
         return quantiser_scale_value;
       else
         quantiser_scale_code--;
+    }
     quantiser_scale_value = Val_QScale[q_scale_type][quantiser_scale_code];
   }
 

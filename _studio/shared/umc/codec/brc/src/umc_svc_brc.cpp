@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //                     H.264 bitrate control
@@ -139,7 +139,7 @@ Status SVCBRC::InitHRDLayer(Ipp32s tid)
   if (maxBitrate < (Ipp64u)pParams->targetBitrate)
     maxBitrate = pParams->maxBitrate = 0;
 
-  if (bufSizeBits > 0 && bufSizeBits < (bitsPerFrame << 1))
+  if (bufSizeBits > 0 && bufSizeBits < static_cast<Ipp64u>(bitsPerFrame << 1))
     bufSizeBits = (bitsPerFrame << 1);
 
   profile_ind = ConvertProfileToTable(pParams->profile);
@@ -150,7 +150,7 @@ Status SVCBRC::InitHRDLayer(Ipp32s tid)
 
   if (pParams->targetBitrate > (Ipp32s)LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_51][H264_LIMIT_TABLE_MAX_BR])
     pParams->targetBitrate = (Ipp32s)LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_51][H264_LIMIT_TABLE_MAX_BR];
-  if (pParams->maxBitrate > LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_51][H264_LIMIT_TABLE_MAX_BR])
+  if (static_cast<Ipp64u>(pParams->maxBitrate) > LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_51][H264_LIMIT_TABLE_MAX_BR])
     maxBitrate = LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_51][H264_LIMIT_TABLE_MAX_BR];
   if (bufSizeBits > LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_51][H264_LIMIT_TABLE_MAX_CPB])
     bufSizeBits = LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_51][H264_LIMIT_TABLE_MAX_CPB];

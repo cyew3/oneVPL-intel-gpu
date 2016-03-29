@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //                     H.264 bitrate control
@@ -144,7 +144,7 @@ Status H264BRC::InitHRD()
   if (maxBitrate < (Ipp64u)mParams.targetBitrate)
     maxBitrate = mParams.maxBitrate = 0;
 
-  if (bufSizeBits > 0 && bufSizeBits < (bitsPerFrame << 1))
+  if (bufSizeBits > 0 && bufSizeBits < static_cast<Ipp64u>(bitsPerFrame << 1))
     bufSizeBits = (bitsPerFrame << 1);
 
   profile_ind = ConvertProfileToTable(mParams.profile);
@@ -152,7 +152,7 @@ Status H264BRC::InitHRD()
 
   if (mParams.targetBitrate > (Ipp32s)LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_MAX][H264_LIMIT_TABLE_MAX_BR])
     mParams.targetBitrate = (Ipp32s)LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_MAX][H264_LIMIT_TABLE_MAX_BR];
-  if (mParams.maxBitrate > LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_MAX][H264_LIMIT_TABLE_MAX_BR])
+  if (static_cast<Ipp64u>(mParams.maxBitrate) > LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_MAX][H264_LIMIT_TABLE_MAX_BR])
     maxBitrate = LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_MAX][H264_LIMIT_TABLE_MAX_BR];
   if (bufSizeBits > LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_MAX][H264_LIMIT_TABLE_MAX_CPB])
     bufSizeBits = LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_MAX][H264_LIMIT_TABLE_MAX_CPB];
@@ -492,9 +492,9 @@ Status H264BRC::Reset(BaseCodecParams *params, Ipp32s enableRecode)
   if (profile_ind < 0 || level_ind < 0)
     return UMC_ERR_INVALID_PARAMS;
 
-  if (bufSize > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_CPB])
+  if (static_cast<Ipp64u>(bufSize) > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_CPB])
     return UMC_ERR_INVALID_PARAMS;
-  if (maxBitrate > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_BR])
+  if (static_cast<Ipp64u>(maxBitrate) > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_BR])
     return UMC_ERR_INVALID_PARAMS;
 
   bool sizeNotChanged = (brcParams->info.clip_info.height == mParams.info.clip_info.height && brcParams->info.clip_info.width == mParams.info.clip_info.width);
@@ -755,8 +755,8 @@ BRCStatus H264BRC::PostPackFrame(FrameType picType, Ipp32s totalFrameBits, Ipp32
     } else {
         Ipp64u maxBitsPerFrame = IPP_MIN(mMaxBitsPerPic >> isField, mHRD.bufSize);
 
-        if (totalFrameBits > maxBitsPerFrame) {
-            if (maxBitsPerFrame > mHRD.minFrameSize) { // otherwise we ignore minCR requirement
+        if (static_cast<Ipp64u>(totalFrameBits) > maxBitsPerFrame) {
+            if (maxBitsPerFrame > static_cast<Ipp64u>(mHRD.minFrameSize)) { // otherwise we ignore minCR requirement
                 qstep = QP2Qstep(qp);
                 qs = (Ipp64f)totalFrameBits/maxBitsPerFrame;
                 qstep *= qs;
