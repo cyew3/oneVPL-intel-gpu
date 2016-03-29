@@ -1112,6 +1112,12 @@ Status LinuxVideoAccelerator::SyncTask(Ipp32s FrameBufIndex, void * error)
             *(Status*)error = GetDecodingError();
             return UMC_OK;
         }
+        if ((VA_STATUS_ERROR_OPERATION_FAILED == va_sts) && (NULL != error))
+        {
+            // WA for HSD10044508
+            *(Status*)error = MFX_CORRUPTION_MAJOR;
+            return UMC_OK;
+        }
         umcRes = va_to_umc_res(va_sts);
     }
 
