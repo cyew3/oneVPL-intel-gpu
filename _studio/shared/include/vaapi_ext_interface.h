@@ -511,6 +511,11 @@ typedef struct _VAEncMiscParameterFEIFrameControlH264Intel {
     unsigned int      ref_height                : 8;
     unsigned int      search_window             : 4;
     unsigned int      reserved2                 : 12;
+
+    unsigned int      max_frame_size;
+    unsigned int      num_passes;     //number of QPs
+    unsigned char     *delta_qp;      //list of detla QPs
+    unsigned int      reserved3;
 } VAEncMiscParameterFEIFrameControlH264Intel;
 
 

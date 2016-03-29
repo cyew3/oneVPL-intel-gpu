@@ -1636,6 +1636,7 @@ mfxStatus VAAPIEncoder::Execute(
     mfxExtCodingOption2     const * ctrlOpt2      = GetExtBuffer(task.m_ctrl);
     mfxExtMBDisableSkipMap  const * ctrlNoSkipMap = GetExtBuffer(task.m_ctrl);
     mfxExtCodingOption      const*  extOpt        = GetExtBuffer(m_videoParam);
+    mfxU8 qp_delta_list[] = {0,0,0,0, 0,0,0,0};
 
     if (ctrlOpt2 && ctrlOpt2->SkipFrame <= MFX_SKIPFRAME_BRC_ONLY)
         skipMode = ctrlOpt2->SkipFrame;
@@ -1751,6 +1752,7 @@ mfxStatus VAAPIEncoder::Execute(
         mfxExtFeiEncFrameCtrl* frameCtrl = GetExtBuffer(task.m_ctrl, feiFieldId);
         mfxExtFeiEncQP* mbqp = GetExtBuffer(task.m_ctrl, feiFieldId);
         mfxExtFeiSliceHeader*  extFeiSlice = GetExtBuffer(task.m_ctrl, fieldId);
+        mfxExtFeiRepackCtrl*  rePakCtrl = GetExtBuffer(task.m_ctrl, fieldId);
         /* Output buffers passed via mfxBitstream structure*/
         mfxExtFeiEncMBStat* mbstat = NULL;
         mfxExtFeiEncMV* mvout = NULL;
@@ -1939,6 +1941,18 @@ mfxStatus VAAPIEncoder::Execute(
             vaFeiFrameControl->search_window = frameCtrl->SearchWindow;
             vaFeiFrameControl->sub_mb_part_mask = frameCtrl->SubMBPartMask;
             vaFeiFrameControl->sub_pel_mode = frameCtrl->SubPelMode;
+            if (NULL != rePakCtrl)
+            {
+                vaFeiFrameControl->max_frame_size = rePakCtrl->MaxFrameSize;
+                // Maximum value of NumPasses is 8
+                if (rePakCtrl->NumPasses > 8)
+                    vaFeiFrameControl->num_passes = 8;
+                else
+                    vaFeiFrameControl->num_passes = rePakCtrl->NumPasses;
+                for (mfxU32 ii = 0; ii < vaFeiFrameControl->num_passes; ii++)
+                    qp_delta_list[ii] = rePakCtrl->DeltaQP[ii];
+                vaFeiFrameControl->delta_qp = &qp_delta_list[0];
+            }
             //MFX_DESTROY_VABUFFER(m_spsBufferId, m_vaDisplay);
 
             vaUnmapBuffer(m_vaDisplay, vaFeiFrameControlId);  //check for deletions
