@@ -189,25 +189,41 @@ foreach( variant sw hw)
   set (description_name ${${variant}_HEVC_DECODER_DESCRIPTION})
 
   set( LIBS "" )
-  list( APPEND LIBS
-    umc_h265_${variant}
-    color_space_converter_sw
-    hevc_pp_dispatcher
-    hevc_pp_atom
-    hevc_pp_avx2
-    hevc_pp_px
-    hevc_pp_sse4
-    hevc_pp_ssse3
-    media_buffers
-    umc_io
-    umc
-    vm
-    vm_plus
-    ${ITT_LIBS}
-    ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-    pthread
-    dl
-    )
+  if( variant MATCHES sw )
+    list( APPEND LIBS
+      umc_h265_${variant}
+      color_space_converter_sw
+      hevc_pp_dispatcher
+      hevc_pp_atom
+      hevc_pp_avx2
+      hevc_pp_px
+      hevc_pp_sse4
+      hevc_pp_ssse3
+      media_buffers
+      umc_io
+      umc
+      vm
+      vm_plus
+      ${ITT_LIBS}
+      ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+      pthread
+      dl
+      )
+  else()
+    list( APPEND LIBS
+      umc_h265_${variant}
+      color_space_converter_sw
+      media_buffers
+      umc_io
+      umc
+      vm
+      vm_plus
+      ${ITT_LIBS}
+      ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+      pthread
+      dl
+      )
+  endif()
   
   if(${variant} MATCHES hw)
     set( hw_defs "-DMFX_VA -DVA_HEVC_DECODER")
