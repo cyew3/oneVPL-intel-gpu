@@ -39,6 +39,9 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-l numSlices] - number of slices \n"));
     msdk_printf(MSDK_STRING("   [-x numRefs]   - number of reference frames \n"));
     msdk_printf(MSDK_STRING("   [-qp qp_value] - QP value for frames\n"));
+    msdk_printf(MSDK_STRING("   [-num_active_P numRefs] - number of maximum allowed references for P frames (up to 4(default))\n"));
+    msdk_printf(MSDK_STRING("   [-num_active_BL0 numRefs] - number of maximum allowed backward references for B frames (up to 4(default))\n"));
+    msdk_printf(MSDK_STRING("   [-num_active_BL1 numRefs] - number of maximum allowed forward references for B frames (up to 2(default) for interlaced, 1(default) for progressive)\n"));
     msdk_printf(MSDK_STRING("   [-gop_opt closed|strict] - GOP optimization flags (can be used together)\n"));
     msdk_printf(MSDK_STRING("   [-trellis value] - bitfield: 0 = default, 1 = off, 2 = on for I frames, 4 = on for P frames, 8 = on for B frames (ENCODE only)\n"));
     msdk_printf(MSDK_STRING("   [-preenc ds_strength] - use extended FEI interface PREENC (RC is forced to constant QP)\n"));
@@ -285,6 +288,24 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             i++;
             pParams->QP = (mfxU8)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-num_active_P")))
+        {
+            pParams->bNRefPSpecified = true;
+            i++;
+            pParams->NumRefActiveP = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-num_active_BL0")))
+        {
+            pParams->bNRefBL0Specified = true;
+            i++;
+            pParams->NumRefActiveBL0 = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-num_active_BL1")))
+        {
+            pParams->bNRefBL1Specified = true;
+            i++;
+            pParams->NumRefActiveBL1 = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gop_opt")))
         {
@@ -754,7 +775,36 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
     }
 
-    if ((pParams->SearchWindow != 0) && (pParams->RefHeight <= 0 || pParams->RefWidth <= 0 || pParams->RefHeight % 4 != 0 || pParams->RefWidth % 4 != 0 ||
+    if (pParams->NumRefActiveP > MaxNumActiveRefP)
+    {
+        if (bAlrShownHelp)
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported number of P frame references (4 is maximum)\n"));
+        else
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported number of P frame references (4 is maximum)"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (pParams->NumRefActiveBL0 > MaxNumActiveRefBL0)
+    {
+        if (bAlrShownHelp)
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported number of B frame backward references (4 is maximum)\n"));
+        else
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported number of B frame backward  references (4 is maximum)"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (pParams->NumRefActiveBL1 > MaxNumActiveRefBL1   && pParams->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE ||
+        pParams->NumRefActiveBL1 > MaxNumActiveRefBL1_i && pParams->nPicStruct == MFX_PICSTRUCT_FIELD_TFF   ||
+        pParams->NumRefActiveBL1 > MaxNumActiveRefBL1_i && pParams->nPicStruct == MFX_PICSTRUCT_FIELD_BFF)
+    {
+        if (bAlrShownHelp)
+            msdk_printf(MSDK_STRING("\nERROR: Unsupported number of B frame forward references (1 is maximum (2 for interlaced))\n"));
+        else
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported number of B frame forward  references (1 is maximum (2 for interlaced))"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if ((pParams->SearchWindow != 0) && (pParams->RefHeight == 0 || pParams->RefWidth == 0 || pParams->RefHeight % 4 != 0 || pParams->RefWidth % 4 != 0 ||
          pParams->RefHeight*pParams->RefWidth > 2048))
     {
         if (bAlrShownHelp)
@@ -964,6 +1014,9 @@ int main(int argc, char *argv[])
     Params.gopSize = 1; //only I frames
     Params.numRef  = 1; //one ref by default
     Params.nIdrInterval = 0xffff; //infinite
+    Params.NumRefActiveP   = 0;
+    Params.NumRefActiveBL0 = 0;
+    Params.NumRefActiveBL1 = 0;
     Params.bDECODE   = false;
     Params.bENCODE   = false;
     Params.bENCPAK   = false;
@@ -972,6 +1025,9 @@ int main(int argc, char *argv[])
     Params.bPREENC   = false;
     Params.bPerfMode = false;
     Params.bRawRef   = false;
+    Params.bNRefPSpecified    = false;
+    Params.bNRefBL0Specified  = false;
+    Params.bNRefBL1Specified  = false;
     Params.bNPredSpecified_l0 = false;
     Params.bNPredSpecified_l1 = false;
     Params.preencDSstrength = 0;

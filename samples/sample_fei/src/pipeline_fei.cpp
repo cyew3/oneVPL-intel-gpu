@@ -428,13 +428,29 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_mfxEncParams.mfx.NumSlice = pInParams->numSlices;
     }
 
-    // configure the depth of the look ahead BRC if specified in command line
-    //if (pInParams->bRefType || pInParams->Trellis)
+    // configure trellis, B-pyramid, RAW-reference settings
+    //if (pInParams->bRefType || pInParams->Trellis || pInParams->bRawRef)
     {
         m_CodingOption2.UseRawRef = pInParams->bRawRef ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF;
-        m_CodingOption2.BRefType = pInParams->bRefType;
-        m_CodingOption2.Trellis  = pInParams->Trellis;
+        m_CodingOption2.BRefType  = pInParams->bRefType;
+        m_CodingOption2.Trellis   = pInParams->Trellis;
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);
+    }
+
+    // configure P/B reference number
+    {
+        m_CodingOption3.NumRefActiveP      = pInParams->bNRefPSpecified   ? pInParams->NumRefActiveP   : MaxNumActiveRefP;
+        m_CodingOption3.NumRefActivePRef   = pInParams->bNRefPSpecified   ? pInParams->NumRefActiveP   : MaxNumActiveRefP;
+        m_CodingOption3.NumRefActiveBL0    = pInParams->bNRefBL0Specified ? pInParams->NumRefActiveBL0 : MaxNumActiveRefBL0;
+        m_CodingOption3.NumRefActiveBRefL0 = pInParams->bNRefBL0Specified ? pInParams->NumRefActiveBL0 : MaxNumActiveRefBL0;
+        m_CodingOption3.NumRefActiveBL1    = pInParams->bNRefBL1Specified ? pInParams->NumRefActiveBL1 :
+            (pInParams->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE ? MaxNumActiveRefBL1 : MaxNumActiveRefBL1_i);
+        m_CodingOption3.NumRefActiveBRefL1 = pInParams->bNRefBL1Specified ? pInParams->NumRefActiveBL1 :
+            (pInParams->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE ? MaxNumActiveRefBL1 : MaxNumActiveRefBL1_i);
+
+        /* values stored in m_CodingOption3 required to fill encoding task for PREENC/ENC/PAK*/
+        if (pInParams->bNRefPSpecified || pInParams->bNRefBL0Specified || pInParams->bNRefBL1Specified)
+            m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption3);
     }
 
     if(pInParams->bENCODE)
@@ -1045,6 +1061,8 @@ void CEncodingPipeline::DeleteFrames()
     if (m_pMFXAllocator)
     {
         m_pMFXAllocator->Free(m_pMFXAllocator->pthis, &m_DecResponse);
+        m_pMFXAllocator->Free(m_pMFXAllocator->pthis, &m_VppResponse);
+        m_pMFXAllocator->Free(m_pMFXAllocator->pthis, &m_dsResponse);
         m_pMFXAllocator->Free(m_pMFXAllocator->pthis, &m_EncResponse);
         m_pMFXAllocator->Free(m_pMFXAllocator->pthis, &m_ReconResponse);
     }
@@ -1141,6 +1159,10 @@ CEncodingPipeline::CEncodingPipeline()
     MSDK_ZERO_MEMORY(m_CodingOption2);
     m_CodingOption2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
     m_CodingOption2.Header.BufferSz = sizeof(m_CodingOption2);
+
+    MSDK_ZERO_MEMORY(m_CodingOption3);
+    m_CodingOption3.Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
+    m_CodingOption3.Header.BufferSz = sizeof(m_CodingOption3);
 
     MSDK_ZERO_MEMORY(m_VppDoNotUse);
     m_VppDoNotUse.Header.BufferId = MFX_EXTBUFF_VPP_DONOTUSE;
@@ -3020,6 +3042,10 @@ iTask* CEncodingPipeline::CreateAndInitTask()
     eTask->m_nalRefIdc[m_ffid] = eTask->m_reference[m_ffid];
     eTask->m_nalRefIdc[m_sfid] = eTask->m_reference[m_sfid];
 
+    eTask->NumRefActiveP   = m_CodingOption3.NumRefActiveP;
+    eTask->NumRefActiveBL0 = m_CodingOption3.NumRefActiveBL0;
+    eTask->NumRefActiveBL1 = m_CodingOption3.NumRefActiveBL1;
+
     return eTask;
 }
 
@@ -4853,8 +4879,8 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
     MSDK_ZERO_ARRAY(num_of_refs[1], 2);
 
     // max possible candidates to L0 / L1
-    mfxU32 total_l0 = (ExtractFrameType(*eTask, m_isField) & MFX_FRAMETYPE_P) ? ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_IDR) ? 1 : NumActiveRefP) : ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) ? 1 : NumActiveRefBL0);
-    mfxU32 total_l1 = (ExtractFrameType(*eTask) & MFX_FRAMETYPE_B) ? (eTask->m_fieldPicFlag ? NumActiveRefBL1_i : NumActiveRefBL1) : 1; // just one iteration here for non-B
+    mfxU32 total_l0 = (ExtractFrameType(*eTask, m_isField) & MFX_FRAMETYPE_P) ? ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_IDR) ? 1 : eTask->NumRefActiveP) : ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) ? 1 : eTask->NumRefActiveBL0);
+    mfxU32 total_l1 = (ExtractFrameType(*eTask) & MFX_FRAMETYPE_B) ? eTask->NumRefActiveBL1 : 1; // just one iteration here for non-B
 
     mfxU32 adj_l0 = IPP_MAX(1, m_encpakParams.bNPredSpecified_l0 ? m_encpakParams.NumMVPredictors[0] : m_numOfFields*m_mfxEncParams.mfx.NumRefFrame);
     mfxU32 adj_l1 = IPP_MAX(1, m_encpakParams.bNPredSpecified_l1 ? m_encpakParams.NumMVPredictors[1] : m_numOfFields*m_mfxEncParams.mfx.NumRefFrame);

@@ -231,10 +231,10 @@ void ModifyRefPicLists(
             list1.End());
     }
 
-    mfxU32 numActiveRefL1 = isField ? NumActiveRefBL1_i : NumActiveRefBL1;
+    mfxU32 numActiveRefL1 = task.NumRefActiveBL1;
     mfxU32 numActiveRefL0 = (task.m_type[fieldId] & MFX_FRAMETYPE_P)
-        ? NumActiveRefP
-        : NumActiveRefBL0;
+        ? task.NumRefActiveP
+        : task.NumRefActiveBL0;
 
 
     //bool bCanApplyRefCtrl = video.calcParam.numTemporalLayer == 0 || video.mfx.GopRefDist == 1;

@@ -26,10 +26,12 @@
 #define IPP_MAX( a, b ) ( ((a) > (b)) ? (a) : (b) )
 #define IPP_MIN( a, b ) ( ((a) < (b)) ? (a) : (b) )
 
+/*
 #define NumActiveRefP      4
 #define NumActiveRefBL0    4
 #define NumActiveRefBL1    1
 #define NumActiveRefBL1_i  2
+*/
 #define MaxFeiEncMVPNum    4
 
 #define MSDK_ZERO_ARRAY(VAR, NUM) {memset(VAR, 0, sizeof(*VAR)*NUM);}
@@ -406,6 +408,10 @@ struct iTask
 
     mfxU16 PicStruct;
     mfxU16 BRefType;
+
+    mfxU16 NumRefActiveP;   // these values
+    mfxU16 NumRefActiveBL0; // are used for
+    mfxU16 NumRefActiveBL1; // reflists management
 
     //..............................reflist control............................................
     ArrayDpbFrame   m_dpb[2];

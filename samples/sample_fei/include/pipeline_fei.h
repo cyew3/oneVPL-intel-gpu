@@ -41,6 +41,11 @@
 
 #define NOT_IN_SINGLE_FIELD_MODE 4
 
+#define MaxNumActiveRefP      4
+#define MaxNumActiveRefBL0    4
+#define MaxNumActiveRefBL1    1
+#define MaxNumActiveRefBL1_i  2
+
 enum {
     MVC_DISABLED          = 0x0,
     MVC_ENABLED           = 0x1,
@@ -59,7 +64,7 @@ struct sInputParams
     mfxU32 CodecId;
     mfxU32 ColorFormat;
     mfxU16 nPicStruct;
-    mfxU16 nWidth; // source picture width
+    mfxU16 nWidth;  // source picture width
     mfxU16 nHeight; // source picture height
     mfxF64 dFrameRate;
     mfxU32 nNumFrames;
@@ -68,31 +73,34 @@ struct sInputParams
     mfxU16 gopSize; //number of frames to next I
     mfxU8  QP;
     mfxU16 numSlices;
-    mfxU16 numRef;
-    mfxU16 bRefType;
-    mfxU16 nIdrInterval;
-    mfxU8  preencDSstrength;
+    mfxU16 numRef;           // number of reference frames (DPB size)
+    mfxU16 NumRefActiveP;    // maximal number of references for P frames
+    mfxU16 NumRefActiveBL0;  // maximal number of backward references for B frames
+    mfxU16 NumRefActiveBL1;  // maximal number of forward references for B frames
+    mfxU16 bRefType;         // B-pyramid ON/OFF/UNKNOWN (default, let MSDK lib to decide)
+    mfxU16 nIdrInterval;     // distance between IDR frames in GOPs
+    mfxU8  preencDSstrength; // downsample input before passing to preenc (2/4/8x are supported)
     mfxU32 nResetStart;
     mfxU16 nDRCdefautW;
     mfxU16 nDRCdefautH;
     mfxU16 MaxDrcWidth;
     mfxU16 MaxDrcHeight;
 
-    mfxU16 SearchWindow;
-    mfxU16 LenSP;
-    mfxU16 SearchPath;
-    mfxU16 RefWidth;
-    mfxU16 RefHeight;
+    mfxU16 SearchWindow; // search window size and search path from predifined presets
+    mfxU16 LenSP;        // search path length
+    mfxU16 SearchPath;   // search path type
+    mfxU16 RefWidth;     // search window width
+    mfxU16 RefHeight;    // search window height
     mfxU16 SubMBPartMask;
     mfxU16 SubPelMode;
     mfxU16 IntraPartMask;
     mfxU16 IntraSAD;
     mfxU16 InterSAD;
-    mfxU16 NumMVPredictors[2];
-    mfxU16 GopOptFlag;
+    mfxU16 NumMVPredictors[2];  // number of [0] - L0 predictors, [1] - L1 predictors
+    mfxU16 GopOptFlag;          // STRICT | CLOSED, default is OPEN GOP
     mfxU16 CodecProfile;
     mfxU16 CodecLevel;
-    mfxU16 Trellis;
+    mfxU16 Trellis;             // switch on trellis 2 - I | 4 - P | 8 - B, 1 - off, 0 - default
     mfxU16 DisableDeblockingIdc;
     mfxI16 SliceAlphaC0OffsetDiv2;
     mfxI16 SliceBetaOffsetDiv2;
@@ -139,6 +147,9 @@ struct sInputParams
     bool bPerfMode;
     bool bDynamicRC;
     bool bRawRef;
+    bool bNRefPSpecified;
+    bool bNRefBL0Specified;
+    bool bNRefBL1Specified;
     msdk_char* mvinFile;
     msdk_char* mbctrinFile;
     msdk_char* mvoutFile;
@@ -265,8 +276,11 @@ protected:
     mfxFrameAllocResponse m_ReconResponse;  // memory allocation response for encoder for reconstructed surfaces [FEI]
     mfxU32 m_BaseAllocID;
 
-    // for look ahead BRC configuration
+    // for trellis, B-pyramid, RAW-reference settings
     mfxExtCodingOption2 m_CodingOption2;
+
+    // for P/B reference number settings
+    mfxExtCodingOption3 m_CodingOption3;
 
     mfxExtFeiParam  m_encpakInit;
     mfxExtFeiSliceHeader m_encodeSliceHeader[2]; // 0 - first, 1 - second fields
