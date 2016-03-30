@@ -586,6 +586,9 @@
     <ClCompile Include="src\gmock\test_suites\hevce_qp_offset.cpp">
       <Filter>Source Files\test_suites\hevce</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avcd_close.cpp">
+      <Filter>Source Files\test_suites\avcd</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vpp_donotuse.cpp">
       <Filter>Source Files\test_suites\vpp</Filter>
     </ClCompile>
