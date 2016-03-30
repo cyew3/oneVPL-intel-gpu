@@ -1359,6 +1359,11 @@ mfxStatus VAAPIEncoder::QueryStatus(Task & task)
 
                 task.m_bsDataLength = codedBufferSegment->size;
 
+                if (codedBufferSegment->status & VA_CODED_BUF_STATUS_BAD_BITSTREAM)
+                    sts = MFX_ERR_GPU_HANG;
+                else if (!codedBufferSegment->size || !codedBufferSegment->buf)
+                    sts = MFX_ERR_DEVICE_FAILED;
+
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaUnmapBuffer");
                     vaUnmapBuffer( m_vaDisplay, codedBuffer );

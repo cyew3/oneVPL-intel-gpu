@@ -117,6 +117,7 @@ protected:
     mfxU32                          m_numBuffered;
     mfxU16                          m_NumberOfSlicesForOpt;
     bool                            m_bInit;
+    mfxStatus                       m_runtimeErr;
 };
 
 } //MfxHwH265Encode

@@ -229,6 +229,8 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
 #endif
 
     m_bInit = true;
+    m_runtimeErr = MFX_ERR_NONE;
+
     return qsts;
 }
 
@@ -381,12 +383,15 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 mfxStatus   Plugin::WaitingForAsyncTasks(bool bResetTasks)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    
-    // sheduler must wait untial all async tasks will be ready.
-    MFX_CHECK(m_task.GetSubmittedTask() == NULL, MFX_ERR_UNDEFINED_BEHAVIOR);
-    
-    if (!bResetTasks)
-       return sts;
+
+    if (m_runtimeErr == 0)
+    {
+       // sheduler must wait untial all async tasks will be ready.
+        MFX_CHECK(m_task.GetSubmittedTask() == NULL, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+        if (!bResetTasks)
+           return sts;
+    }
 
     for (;;)
     {
@@ -612,6 +617,8 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK_NULL_PTR1(bs);
 
+    MFX_CHECK_STS(m_runtimeErr);
+
     MFX_CHECK((mfxU8)FindFreeResourceIndex(m_bs)  != IDX_INVALID, MFX_WRN_DEVICE_BUSY);
     MFX_CHECK((mfxU8)FindFreeResourceIndex(m_rec) != IDX_INVALID, MFX_WRN_DEVICE_BUSY);
 
@@ -745,13 +752,14 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
 
 mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*uid_a*/)
 {
+    MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
+    MFX_CHECK_STS(m_runtimeErr);
+
     Task* taskForExecute = m_task.GetSubmittedTask();
     Task* inputTask = (Task*) thread_task;
     mfxStatus sts = MFX_ERR_NONE;
 
-    MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK_NULL_PTR1(inputTask);       
-
 
    if (inputTask == taskForExecute && taskForExecute->m_surf)
    {
@@ -785,12 +793,12 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
         Task* taskForQuery = m_task.GetTaskForQuery();
         MFX_CHECK (taskForQuery, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-
-
-
         sts = m_ddi->QueryStatus(*taskForQuery);
         if (sts == MFX_WRN_DEVICE_BUSY)
             return MFX_TASK_BUSY;
+
+        if (sts < 0)
+            m_runtimeErr = sts;
 
         MFX_CHECK_STS(sts);
 
