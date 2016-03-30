@@ -123,7 +123,7 @@ protected:
     virtual VACompBuffer* GetCompBufferHW(Ipp32s type, Ipp32s size, Ipp32s index = -1);
 
     // LinuxVideoAccelerator methods
-    UMC::Status GetDecodingError();
+    Ipp16u GetDecodingError();
 
     void SetTraceStrings(Ipp32u umc_codec);
 

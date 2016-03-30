@@ -949,10 +949,10 @@ Ipp32s LinuxVideoAccelerator::GetSurfaceID(Ipp32s idx)
     return *surface;
 }
 
-Status LinuxVideoAccelerator::GetDecodingError()
+Ipp16u LinuxVideoAccelerator::GetDecodingError()
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetDecodingError");
-    Status error = 0;
+    Ipp16u error = 0;
 
 #ifndef ANDROID
     // NOTE: at the moment there is no such support for Android, so no need to execute...
@@ -1068,11 +1068,11 @@ Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * statu
             switch (va_sts)
             {
                 case VA_STATUS_ERROR_DECODING_ERROR:
-                    *(Status*)error = GetDecodingError();
+                    *(Ipp16u*)error = GetDecodingError();
                     break;
 
                 case VA_STATUS_ERROR_HW_BUSY:
-                    *(Status*)error = va_to_umc_res(va_sts);
+                    va_status = VA_STATUS_ERROR_HW_BUSY;
                     break;
             }
         }
@@ -1088,40 +1088,33 @@ Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * statu
     return umcRes;
 }
 
-Status LinuxVideoAccelerator::SyncTask(Ipp32s FrameBufIndex, void * error)
+Status LinuxVideoAccelerator::SyncTask(Ipp32s FrameBufIndex, void *surfCorruption)
 {
-    Status umcRes = UMC_OK;
-    VAStatus va_sts = VA_STATUS_SUCCESS;
-
-    if ((UMC_OK == umcRes) && ((FrameBufIndex < 0) || (FrameBufIndex >= m_NumOfFrameBuffers)))
-        umcRes = UMC_ERR_INVALID_PARAMS;
+    if ((FrameBufIndex < 0) || (FrameBufIndex >= m_NumOfFrameBuffers))
+        return UMC_ERR_INVALID_PARAMS;
 
     VASurfaceID *surface;
-    Status sts = m_allocator->GetFrameHandle(FrameBufIndex, &surface);
-    if (sts != UMC_OK)
-        return sts;
+    Status umcRes = m_allocator->GetFrameHandle(FrameBufIndex, &surface);
+    if (umcRes != UMC_OK)
+        return umcRes;
 
-    if (UMC_OK == umcRes)
+    VAStatus va_sts = VA_STATUS_SUCCESS;
     {
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaSyncSurface");
-            va_sts = vaSyncSurface(m_dpy, *surface);
-        }
-        if ((VA_STATUS_ERROR_DECODING_ERROR == va_sts) && (NULL != error))
-        {
-            *(Status*)error = GetDecodingError();
-            return UMC_OK;
-        }
-        if ((VA_STATUS_ERROR_OPERATION_FAILED == va_sts) && (NULL != error))
-        {
-            // WA for HSD10044508
-            *(Status*)error = MFX_CORRUPTION_MAJOR;
-            return UMC_OK;
-        }
-        umcRes = va_to_umc_res(va_sts);
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaSyncSurface");
+        va_sts = vaSyncSurface(m_dpy, *surface);
     }
-
-    return umcRes;
+    if (VA_STATUS_ERROR_DECODING_ERROR == va_sts)
+    {
+        if (surfCorruption) *(Ipp16u*)surfCorruption = GetDecodingError();
+        return UMC_OK;
+    }
+    if (VA_STATUS_ERROR_OPERATION_FAILED == va_sts)
+    {
+        // WA for HSD10044508
+        if (surfCorruption) *(Ipp16u*)surfCorruption = MFX_CORRUPTION_MAJOR;
+        return UMC_OK;
+    }
+    return va_to_umc_res(va_sts);
 }
 
 }; // namespace UMC

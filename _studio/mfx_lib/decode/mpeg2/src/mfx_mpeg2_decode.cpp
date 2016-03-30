@@ -3709,13 +3709,13 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface, UM
     m_pCore->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
 
     UMC::Status sts = UMC::UMC_OK;
-    VAStatus        surfErr = VA_STATUS_SUCCESS;
+    mfxU16 surfCorruption = 0;
 
 #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
 
-    sts = va->SyncTask(surface_id, &surfErr);
+    sts = va->SyncTask(surface_id, &surfCorruption);
 
-    STATUS_REPORT_DEBUG_PRINTF("index %d with surfErr: %d (sts:%d)\n", index, surfErr, sts)
+    STATUS_REPORT_DEBUG_PRINTF("index %d with corruption: %d (sts:%d)\n", surface_id, surfCorruption, sts)
 
     if (sts == UMC::UMC_ERR_GPU_HANG)
         return MFX_ERR_GPU_HANG;
@@ -3725,7 +3725,7 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface, UM
 #else
     VASurfaceStatus surfSts = VASurfaceSkipped;
 
-    sts = va->QueryTaskStatus(surface_id, &surfSts, &surfErr);
+    sts = va->QueryTaskStatus(surface_id, &surfSts, &surfCorruption);
 
     if (sts == UMC::UMC_ERR_GPU_HANG)
         return MFX_ERR_GPU_HANG;
@@ -3735,7 +3735,7 @@ mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface, UM
 
 #endif // #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
 
-    displaySurface->Data.Corrupted = surfErr;
+    displaySurface->Data.Corrupted = surfCorruption;
 
 #endif // UMC_VA_LINUX
 

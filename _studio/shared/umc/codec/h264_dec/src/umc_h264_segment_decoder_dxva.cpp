@@ -332,7 +332,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
 #ifdef UMC_VA_LINUX
 #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
     Status sts = UMC_OK;
-    VAStatus surfErr = VA_STATUS_SUCCESS;
+    Ipp16u surfCorruption = 0;
     Ipp32s index;
 
     for (H264DecoderFrameInfo * au = m_FirstAU; au; au = au->GetNextAU())
@@ -342,21 +342,21 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
         m_mGuard.Unlock();
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Dec vaSyncSurface");
-            sts = dxva_sd->GetPacker()->SyncTask(index, &surfErr);
+            sts = dxva_sd->GetPacker()->SyncTask(index, &surfCorruption);
         }
         m_mGuard.Lock();
 
         if (sts != UMC_OK)
             throw h264_exception(sts);
 
-        if(MFX_CORRUPTION_MAJOR == surfErr)
+        if(MFX_CORRUPTION_MAJOR == surfCorruption)
         {
             au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MAJOR);
         }
-        else if(MFX_CORRUPTION_MINOR == surfErr)
+        else if(MFX_CORRUPTION_MINOR == surfCorruption)
         {
             au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MINOR);
-        } 
+        }
         au->SetStatus(H264DecoderFrameInfo::STATUS_COMPLETED);
         CompleteFrame(au->m_pFrame);
     }
@@ -366,24 +366,27 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
     for (H264DecoderFrameInfo * au = m_FirstAU; au; au = au->GetNextAU())
     {
         VASurfaceStatus surfSts = VASurfaceSkipped;
-        Status error = UMC_OK;
-        Status sts = dxva_sd->GetPacker()->QueryTaskStatus(au->m_pFrame->m_index, &surfSts, &error);
+        Ipp16u surfCorruption = 0;
+        Status sts = dxva_sd->GetPacker()->QueryTaskStatus(au->m_pFrame->m_index, &surfSts, &surfCorruption);
         if (sts != UMC_OK)
             throw h264_exception(sts);
 
         if (surfSts == VASurfaceReady)
         {
-            if (error == VA_STATUS_ERROR_DECODING_ERROR)
+            if(MFX_CORRUPTION_MAJOR == surfCorruption)
+            {
                 au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MAJOR);
+            }
+            else if(MFX_CORRUPTION_MINOR == surfCorruption)
+            {
+                au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MINOR);
+            }
 
             au->SetStatus(H264DecoderFrameInfo::STATUS_COMPLETED);
             CompleteFrame(au->m_pFrame);
 
             break;
         }
-
-        if (error == UMC_ERR_GPU_HANG)
-            throw h264_exception(sts);
 
         break;
     }
