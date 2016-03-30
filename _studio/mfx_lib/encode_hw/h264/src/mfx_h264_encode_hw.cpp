@@ -738,7 +738,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     MFX_CHECK_STS(sts);
 
     mfxExtFeiParam* feiParam = (mfxExtFeiParam*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_FEI_PARAM);
-    m_isENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCPAK);
+    m_isENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
 
     m_video = *par;
     /* FEI works with CQP only */

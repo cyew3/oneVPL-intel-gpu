@@ -4452,7 +4452,7 @@ void MfxHwH264Encode::SetDefaults(
     mfxExtSVCRateControl *     extRc   = GetExtBuffer(par);
     mfxExtChromaLocInfo*       extCli  = GetExtBuffer(par);
     mfxExtFeiParam* feiParam = (mfxExtFeiParam*)GetExtBuffer(par);
-    bool isENCPAK = feiParam && ( (feiParam->Func == MFX_FEI_FUNCTION_ENCPAK) ||
+    bool isENCPAK = feiParam && ( (feiParam->Func == MFX_FEI_FUNCTION_ENCODE) ||
                                   (feiParam->Func == MFX_FEI_FUNCTION_ENC) ||
                                   (feiParam->Func == MFX_FEI_FUNCTION_PAK) );
 
@@ -5457,7 +5457,7 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
 {
     mfxStatus checkSts = MFX_ERR_NONE;
     mfxExtFeiParam const * feiParam = (mfxExtFeiParam*)GetExtBuffer(video);
-    bool isFeiENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCPAK);
+    bool isFeiENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
 
     for (mfxU32 i = 0; i < ctrl->NumExtParam; i++)
         MFX_CHECK_NULL_PTR1(ctrl->ExtParam[i]);

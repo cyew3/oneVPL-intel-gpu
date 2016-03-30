@@ -1175,7 +1175,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
         for (int i = 0; i < par.NumExtParam; i++) {
             if (par.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PARAM) {
                 const mfxExtFeiParam* params = (mfxExtFeiParam*) (par.ExtParam[i]);
-                isFEI  = params->Func == MFX_FEI_FUNCTION_ENCPAK;
+                isFEI  = params->Func == MFX_FEI_FUNCTION_ENCODE;
                 break;
             }
         }
