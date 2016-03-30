@@ -4626,11 +4626,16 @@ void MfxHwH264Encode::SetDefaults(
     if (extDdi->NumActiveRefP == 0)
     {
         extDdi->NumActiveRefP = GetDefaultMaxNumRefActivePL0(par.mfx.TargetUsage, platform,IsOn(par.mfx.LowPower),par.mfx.FrameInfo);
-        /* WA: it will be fixed for legacy encoder too
-         * Additional for FEI ENCODE: we can use 4 ref in L0 references for TU4
+        /* Additional for FEI ENCODE: we can use 4 ref in L0 references for TU4
+         * Added processing of extOpt3->NumRefActiveP
          * */
         if (isENCPAK)
-            extDdi->NumActiveRefP = 4;
+        {
+            if (0 == extOpt3->NumRefActiveP)
+                extDdi->NumActiveRefP = 4;
+            else
+                extDdi->NumActiveRefP = extOpt3->NumRefActiveP;
+        }
     }
 
     if (par.mfx.GopRefDist > 1)
@@ -4638,21 +4643,34 @@ void MfxHwH264Encode::SetDefaults(
         if (extDdi->NumActiveRefBL0 == 0)
         {
             extDdi->NumActiveRefBL0 = GetDefaultMaxNumRefActiveBL0(par.mfx.TargetUsage, platform);
-            /* WA: it will be fixed for legacy encoder too
-             * Additional for FEI ENCODE: we can use 4 ref in L0 references for TU4
+            /* Additional for FEI ENCODE: we can use 4 ref in L0 references for TU4
+             * Added processing of extOpt3->NumRefActiveP
              * */
             if (isENCPAK)
-                extDdi->NumActiveRefBL0 = 4;
+            {
+                if (0 == extOpt3->NumRefActiveBL0)
+                    extDdi->NumActiveRefBL0 = 4;
+                else
+                    extDdi->NumActiveRefBL0 = extOpt3->NumRefActiveBL0;
+            }
         } /* if (extDdi->NumActiveRefBL0 == 0) */
 
         if (extDdi->NumActiveRefBL1 == 0)
         {
             extDdi->NumActiveRefBL1 = GetDefaultNumRefActiveBL1(par.mfx.TargetUsage, platform, par.mfx.FrameInfo.PicStruct);
             /* Additional for FEI ENCODE: we can use 2 L1 references */
-            if ((isENCPAK) &&
-                    ( (MFX_PICSTRUCT_FIELD_TFF == par.mfx.FrameInfo.PicStruct) ||
-                      (MFX_PICSTRUCT_FIELD_BFF == par.mfx.FrameInfo.PicStruct)) )
-                extDdi->NumActiveRefBL1 = 2;
+            if (isENCPAK)
+            {
+                if (0 == extOpt3->NumRefActiveBL1)
+                    extDdi->NumActiveRefBL1 = 1;
+                else
+                    extDdi->NumActiveRefBL1 = extOpt3->NumRefActiveBL1;
+                /* And additional condition for interlaced case */
+                if ((0 == extOpt3->NumRefActiveBL1) &&
+                      ( (MFX_PICSTRUCT_FIELD_TFF == par.mfx.FrameInfo.PicStruct) ||
+                        (MFX_PICSTRUCT_FIELD_BFF == par.mfx.FrameInfo.PicStruct)) )
+                    extDdi->NumActiveRefBL1 = 2;
+            }
         } /* if (extDdi->NumActiveRefBL1 == 0) */
     }
 
