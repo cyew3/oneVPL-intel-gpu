@@ -1710,18 +1710,11 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
 
     if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
-        mfxExtCodingOption2 *      extOpt2 = GetExtBuffer(par);
-        //mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(par);
+        mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(par);
 
-        mfxU32 numFrameMin = par.mfx.GopRefDist + (IsOn(extOpt2->UseRawRef) ? par.mfx.NumRefFrame : 0) + par.AsyncDepth - 1;
+        mfxU32 numFrameMin = CalcNumFrameMin(par);
 
-        if (IsMvcProfile(par.mfx.CodecProfile))
-        {
-            mfxExtMVCSeqDesc * extMvc  = GetExtBuffer(par);
-            numFrameMin *= extMvc->NumView;
-        }
-
-        //MFX_CHECK(extOpaq->In.NumSurface >= numFrameMin, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(extOpaq->In.NumSurface >= numFrameMin, MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
     return checkSts;

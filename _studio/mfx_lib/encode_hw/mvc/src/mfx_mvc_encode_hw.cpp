@@ -413,7 +413,7 @@ namespace
         else
         {
             mfxU32 bitsLeft = reader.NumBitsLeft();
-            
+
             for (; bitsLeft > 31; bitsLeft -= 32)
                 writer.PutBits(reader.GetBits(32), 32);
 
@@ -931,7 +931,6 @@ mfxStatus ImplementationMvc::QueryIOSurf(
         // in case of system memory
         // encode need enough input frames for reordering
         // then reordered surface is copied into video memory
-        request->NumFrameMin = tmp.mfx.GopRefDist;
         request->Type =
             MFX_MEMTYPE_EXTERNAL_FRAME |
             MFX_MEMTYPE_FROM_ENCODE |
@@ -939,26 +938,17 @@ mfxStatus ImplementationMvc::QueryIOSurf(
     }
     else // MFX_IOPATTERN_IN_VIDEO_MEMORY || MFX_IOPATTERN_IN_OPAQUE_MEMORY
     {
-        mfxExtCodingOptionDDI * extDdi = GetExtBuffer(tmp);
-        request->NumFrameMin = IsOn(extDdi->RefRaw)
-            ? tmp.mfx.GopRefDist + tmp.mfx.NumRefFrame
-            : tmp.mfx.GopRefDist;
-
         request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET;
         request->Type |= (inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
             ? MFX_MEMTYPE_OPAQUE_FRAME
             : MFX_MEMTYPE_EXTERNAL_FRAME;
     }
 
-    request->NumFrameMin       = request->NumFrameMin + tmp.AsyncDepth - 1;
-    request->NumFrameSuggested = request->NumFrameMin;
-
     // get FrameInfo from original VideoParam
     request->Info = par->mfx.FrameInfo;
 
-    mfxExtMVCSeqDesc * extMvc = GetExtBuffer(tmp);
-    request->NumFrameMin       = mfxU16(IPP_MIN(0xffff, request->NumFrameMin       * extMvc->NumView));
-    request->NumFrameSuggested = mfxU16(IPP_MIN(0xffff, request->NumFrameSuggested * extMvc->NumView));
+    request->NumFrameMin = CalcNumFrameMin(tmp);
+    request->NumFrameSuggested = request->NumFrameMin;
 
     return MFX_ERR_NONE;
 }
@@ -1356,7 +1346,7 @@ mfxStatus ImplementationMvc::EncodeFrameCheck(
         {
             mfxU32 viewIdx = assignSts == MFX_ERR_MORE_BITSTREAM ? 0 : 1;
             GetInitialHrdState(*task, viewIdx);
-            // in case of ViewOutput mode DdiTask is passed to async part 
+            // in case of ViewOutput mode DdiTask is passed to async part
             entryPoints[0].pParam           = (*task)[viewIdx];
             entryPoints[0].pRoutine         = TaskRoutineSubmitOneView;
         }
@@ -1395,7 +1385,7 @@ mfxStatus ImplementationMvc::EncodeFrameCheck(
         else
             return checkSts;
 // MVC BD }
-        
+
     }
     else if (assignSts == MFX_ERR_MORE_DATA)
     {
@@ -2803,7 +2793,7 @@ void ImplementationMvc::PatchTask(MvcTask const & mvcTask, DdiTask & curTask, mf
 #if 0 // dump copied frame
                     char fileName[100];
                     sprintf(fileName, "recon_%d.yuv", curTask.m_frameOrder);
-                
+
                     FILE * file = fopen(fileName, "w + b");
                     mfxI16 i, j;
                     mfxU8 buf[2048];
@@ -2955,7 +2945,7 @@ void ImplementationMvc::PatchTask(MvcTask const & mvcTask, DdiTask & curTask, mf
         curTask.m_idxRecon       += curTask.m_idxReconOffset;
         curTask.m_idxBs[fieldId] += curTask.m_idxBsOffset;
     }
-    
+
     for (size_t i = 0; i < GetMaxNumSlices(m_video); ++ i)
     {
         mfxExtCodingOption2 const &     extOpt2        = GetExtBufferRef(m_video);

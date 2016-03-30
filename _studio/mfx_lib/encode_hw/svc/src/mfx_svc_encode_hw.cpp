@@ -261,7 +261,7 @@ mfxStatus ImplementationSvc::Query(
 {
     core, in, out;
 
-    if (core 
+    if (core
      && core->GetVAType() == MFX_HW_VAAPI
      && core->GetHWType() <= MFX_HW_IVB)
     {
@@ -282,9 +282,9 @@ mfxStatus ImplementationSvc::QueryIOSurf(
     //need to fix
 
     GUID guid = DXVA2_Intel_Encode_SVC;    //m_core->IsGuidSupported(DXVA2_Intel_Encode_SVC, par, true) == MFX_ERR_NONE
-                                        //? DXVA2_Intel_Encode_SVC
-                                        //: DXVA2_Intel_Encode_AVC;
-    
+    //? DXVA2_Intel_Encode_SVC
+    //: DXVA2_Intel_Encode_AVC;
+
 
 
     mfxU32 inPattern = par->IOPattern & MFX_IOPATTERN_IN_MASK;
@@ -322,7 +322,6 @@ mfxStatus ImplementationSvc::QueryIOSurf(
         // in case of system memory
         // encode need enough input frames for reordering
         // then reordered surface is copied into video memory
-        request->NumFrameMin = tmp.mfx.GopRefDist;
         request->Type =
             MFX_MEMTYPE_EXTERNAL_FRAME |
             MFX_MEMTYPE_FROM_ENCODE |
@@ -330,19 +329,11 @@ mfxStatus ImplementationSvc::QueryIOSurf(
     }
     else // MFX_IOPATTERN_IN_VIDEO_MEMORY || MFX_IOPATTERN_IN_OPAQUE_MEMORY
     {
-        mfxExtCodingOptionDDI * extDdi = GetExtBuffer(tmp);
-        request->NumFrameMin = IsOn(extDdi->RefRaw)
-            ? tmp.mfx.GopRefDist + tmp.mfx.NumRefFrame
-            : tmp.mfx.GopRefDist;
-
         request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET;
         request->Type |= (inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
             ? MFX_MEMTYPE_OPAQUE_FRAME
             : MFX_MEMTYPE_EXTERNAL_FRAME;
     }
-
-    request->NumFrameMin       = request->NumFrameMin + tmp.AsyncDepth - 1;
-    request->NumFrameSuggested = request->NumFrameMin;
 
     // get FrameInfo from original VideoParam
     request->Info = tmp.mfx.FrameInfo;
@@ -353,14 +344,14 @@ mfxStatus ImplementationSvc::QueryIOSurf(
 
     mfxU16 numDependencyLayer = 0;
     for (mfxU32 i = 0; i < 8; i++)
-        if (extSvc->DependencyLayer[i].Active)
-            numDependencyLayer++;
+    if (extSvc->DependencyLayer[i].Active)
+        numDependencyLayer++;
 
-    request->Info.Width  = extSvc->DependencyLayer[lastDid].Width;
+    request->Info.Width = extSvc->DependencyLayer[lastDid].Width;
     request->Info.Height = extSvc->DependencyLayer[lastDid].Height;
 
-    request->NumFrameMin       = numDependencyLayer * request->NumFrameMin;
-    request->NumFrameSuggested = numDependencyLayer * request->NumFrameSuggested;
+    request->NumFrameMin = CalcNumFrameMin(*par);
+    request->NumFrameSuggested = request->NumFrameMin;
 
     return MFX_ERR_NONE;
 }
@@ -605,7 +596,7 @@ mfxStatus ImplementationSvc::Reset(mfxVideoParam *par)
 
     if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_CBR && IsOn(extOptNew->NalHrdConformance))
     {
-        MFX_CHECK(        
+        MFX_CHECK(
             m_video.calcParam.targetKbps == newPar.calcParam.targetKbps &&
             m_video.calcParam.maxKbps    == newPar.calcParam.maxKbps,
             MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
@@ -941,7 +932,7 @@ mfxHDL ImplementationSvc::GetRawSurfaceHandle(
     {
         if (MFX_IOPATTERN_IN_VIDEO_MEMORY == m_video.IOPattern)
             m_core->GetExternalFrameHDL(task.m_yuv->Data.MemId, (mfxHDL *)&nativeSurface);
-        else if (MFX_IOPATTERN_IN_OPAQUE_MEMORY == m_video.IOPattern) // opaq with internal video memory 
+        else if (MFX_IOPATTERN_IN_OPAQUE_MEMORY == m_video.IOPattern) // opaq with internal video memory
             m_core->GetFrameHDL(task.m_yuv->Data.MemId, (mfxHDL *)&nativeSurface);
     }
 
@@ -1185,7 +1176,7 @@ void ImplementationSvc::PrepareSeiMessageBuffer(
         }
 
         // dec_ref_pic_marking repetition sei
-        if (needDecRefPicMrkRep) 
+        if (needDecRefPicMrkRep)
         {
             mfxU8 frameMbsOnlyFlag = (m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 0;
 

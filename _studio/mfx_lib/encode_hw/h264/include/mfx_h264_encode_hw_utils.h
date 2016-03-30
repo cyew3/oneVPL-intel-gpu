@@ -75,6 +75,8 @@ namespace MfxHwH264Encode
     static const mfxU16 MFX_MEMTYPE_D3D_SERPENT_EXT =
         MFX_MEMTYPE_D3D_EXT | MFX_MEMTYPE_PROTECTED;
 
+    mfxU16 CalcNumFrameMin(const MfxHwH264Encode::MfxVideoParam &par);
+
     enum
     {
         TFIELD = 0,

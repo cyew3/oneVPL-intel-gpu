@@ -397,7 +397,7 @@ mfxStatus ImplementationAvc::Query(
         {
             sts = QueryHwCaps(core, hwCaps, MSDK_Private_Guid_Encode_AVC_Query, isWiDi != 0, Width, Height);
         }
-        
+
         if (sts != MFX_ERR_NONE)
             return IsOn(in->mfx.LowPower)? MFX_ERR_UNSUPPORTED: MFX_WRN_PARTIAL_ACCELERATION;
 
@@ -553,7 +553,7 @@ mfxStatus ImplementationAvc::Query(
         {
             sts = QueryMbProcRate(core, *out, mbPerSec, MSDK_Private_Guid_Encode_AVC_Query, isWiDi != 0, Width, Height);
         }
-        
+
         if (sts != MFX_ERR_NONE)
         {
             extCaps->MBPerSec = 0;
@@ -613,14 +613,13 @@ mfxStatus ImplementationAvc::QueryIOSurf(
 
     ENCODE_CAPS hwCaps = {};
     mfxExtAVCEncoderWiDiUsage * isWiDi = GetExtBuffer(*par);
-    mfxExtCodingOption2 *       extOpt2 = GetExtBuffer(*par);
-    mfxExtCodingOption3 *       extOpt3 = GetExtBuffer(*par);
+
 
     // let use dedault values if input resolution is 0x0, 1920x1088 - should cover almost all cases
-    mfxU32 Width  = par->mfx.FrameInfo.Width == 0 ? 1920 : par->mfx.FrameInfo.Width;
-    mfxU32 Height =  par->mfx.FrameInfo.Height == 0 ? 1088: par->mfx.FrameInfo.Height;
+    mfxU32 Width = par->mfx.FrameInfo.Width == 0 ? 1920 : par->mfx.FrameInfo.Width;
+    mfxU32 Height = par->mfx.FrameInfo.Height == 0 ? 1088 : par->mfx.FrameInfo.Height;
 
-    if(IsOn(par->mfx.LowPower))
+    if (IsOn(par->mfx.LowPower))
     {
         sts = QueryHwCaps(core, hwCaps, MSDK_Private_Guid_Encode_AVC_LowPower_Query, isWiDi != 0, Width, Height);
         if (sts != MFX_ERR_NONE){
@@ -656,8 +655,6 @@ mfxStatus ImplementationAvc::QueryIOSurf(
             MFX_MEMTYPE_EXTERNAL_FRAME |
             MFX_MEMTYPE_FROM_ENCODE |
             MFX_MEMTYPE_SYSTEM_MEMORY;
-        request->NumFrameMin = tmp.mfx.GopRefDist + ((par->AsyncDepth > tmp.AsyncDepth) ? par->AsyncDepth : tmp.AsyncDepth) - 1;
-        request->NumFrameSuggested = request->NumFrameMin;
     }
     else // MFX_IOPATTERN_IN_VIDEO_MEMORY || MFX_IOPATTERN_IN_OPAQUE_MEMORY
     {
@@ -665,24 +662,10 @@ mfxStatus ImplementationAvc::QueryIOSurf(
         request->Type |= (inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
             ? MFX_MEMTYPE_OPAQUE_FRAME
             : MFX_MEMTYPE_EXTERNAL_FRAME;
-        request->NumFrameMin = (mfxU16) AsyncRoutineEmulator(tmp).GetTotalGreediness() + ((par->AsyncDepth > tmp.AsyncDepth) ? par->AsyncDepth : tmp.AsyncDepth) - 1;
-
-        if (extOpt2 && IsOn(extOpt2->UseRawRef))
-            request->NumFrameMin += tmp.mfx.NumRefFrame;
-
-        // strange thing but for backward compatibility:
-        //   msdk needs to tell how many surfaces application will need for reordering
-        //   even if application does this reordering(!!!)
-        if (tmp.mfx.EncodedOrder)
-            request->NumFrameMin += tmp.mfx.GopRefDist - 1;
-
-        if (extOpt2 && extOpt2->MaxSliceSize!=0 && par->mfx.LowPower != MFX_CODINGOPTION_ON)
-            request->NumFrameMin ++;
-        if (extOpt3 && IsOn(extOpt3->FadeDetection))
-            request->NumFrameMin ++;
-        request->NumFrameSuggested = request->NumFrameMin;
     }
 
+    request->NumFrameMin = CalcNumFrameMin(tmp);
+    request->NumFrameSuggested = request->NumFrameMin;
     // get FrameInfo from original VideoParam
     request->Info = tmp.mfx.FrameInfo;
 
@@ -755,7 +738,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     /*!!! This is WA for number of references frames for FEI case*/
     if ((m_isENCPAK) && (par->mfx.NumRefFrame >4))
         m_video.mfx.NumRefFrame = 4;
-    
+
     m_video = *par;
     sts = ReadSpsPpsHeaders(m_video);
     MFX_CHECK_STS(sts);
@@ -842,7 +825,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
             m_video.mfx.RateControlMethod = MFX_RATECONTROL_VBR;
             m_video.mfx.MaxKbps = storedMaxKbps;
             extOpt2->LookAheadDepth = storedLookAheadDepth;
-        }        
+        }
         m_video.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
         sts = m_ddi->CreateAccelerationService(m_video);
         if (sts != MFX_ERR_NONE)
@@ -897,7 +880,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
         sts = m_raw.Alloc(m_core, request, true);
         MFX_CHECK_STS(sts);
-    } 
+    }
     else if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
         request.Type        = extOpaq->In.Type;
@@ -955,7 +938,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     m_recNonRef[0] = m_recNonRef[1] = 0xffffffff;
 
-   
+
 
 #if defined(MFX_VA_WIN)
     if (IsOn(extOpt3.EnableMBQP) && m_core->GetVAType() != MFX_HW_VAAPI)
@@ -964,7 +947,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
         //Allocated surfaces for MB QP data
         sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_MBQPDATA, request);
-        MFX_CHECK_STS(sts); 
+        MFX_CHECK_STS(sts);
 
         if (MFX_HW_D3D11 == m_core->GetVAType())
             request.Info.FourCC = MFX_FOURCC_P8_TEXTURE;
@@ -1053,7 +1036,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         sts = m_curbe.AllocCmBuffers(m_cmDevice, request);
         MFX_CHECK_STS(sts);
     }
-    
+
     if (IsOn(extOpt3.FadeDetection) && m_cmCtx.get() && m_cmCtx->isHistogramSupported())
     {
         request.Info.Width  = 256 * 2 * sizeof(uint);
@@ -1170,7 +1153,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     if (m_isENCPAK)
     {
-        // In case of FEI ENCPAK only stream level control is supported 
+        // In case of FEI ENCPAK only stream level control is supported
         // for slice header parameters. The application must provide exactly the same
         // number for slices to the number of slices specified during initialization
         mfxU32 fieldCount = m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
@@ -1215,12 +1198,12 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
 
     mfxStatus spsppsSts = CopySpsPpsToVideoParam(newPar);
 
-    
+
     //set NumSliceI/P/B to Numslice if not set by new parameters.
     ResetNumSliceIPB(newPar);
-    
+
     InheritDefaultValues(m_video, newPar);
-    
+
     mfxStatus checkStatus = CheckVideoParam(newPar, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType);
     if (checkStatus == MFX_WRN_PARTIAL_ACCELERATION)
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -1874,7 +1857,7 @@ void ImplementationAvc::OnLookaheadQueried()
     DdiTask & task = m_lookaheadStarted.front();
     int fid = task.m_fid[0];
     mfxExtCodingOption2 * extOpt2 = GetExtBuffer(m_video);
-    
+
     if (extOpt2->MaxSliceSize==0)
     {
         ArrayDpbFrame & iniDpb = task.m_dpb[fid];
@@ -2159,7 +2142,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     fprintf(stderr,"\n");
 #endif
 #endif
- 
+
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_ACCEPT_FRAME)
     {
@@ -2178,7 +2161,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             MFX_CHECK_NULL_PTR1(vmeData);
             mfxLAFrameInfo *pInfo = &vmeData->FrameStat[0];
 
-  
+
             newTask.m_ctrl.FrameType =  (pInfo->FrameDisplayOrder == 0) ? (mfxU8)( pInfo->FrameType |MFX_FRAMETYPE_IDR): (mfxU8) pInfo->FrameType;
             newTask.m_type = ExtendFrameType(newTask.m_ctrl.FrameType);
             newTask.m_frameOrder   = pInfo->FrameDisplayOrder;
@@ -2443,9 +2426,9 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             if (m_raw.Lock(m_lastTask.m_idx) == 0)
             {
                 m_core->IncreaseReference(&m_lastTask.m_yuv->Data);
-            }            
+            }
         }
-        OnLookaheadSubmitted(task);     
+        OnLookaheadSubmitted(task);
     }
 
 
@@ -2466,7 +2449,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         {
             DdiTask & task = m_histRun.front();
 
-            task.m_event = m_cmCtx->RunHistogram(task, 
+            task.m_event = m_cmCtx->RunHistogram(task,
                 m_video.mfx.FrameInfo.CropW, m_video.mfx.FrameInfo.CropH,
                 m_video.mfx.FrameInfo.CropX, m_video.mfx.FrameInfo.CropY);
         }
@@ -2614,7 +2597,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         if (m_enabledSwBrc)
         {
             if (bIntRateControlLA(m_video.mfx.RateControlMethod))
-                BrcPreEnc(*task);            
+                BrcPreEnc(*task);
             else if (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
             {
                  const mfxExtLAFrameStatistics *vmeData = GetExtBuffer(task->m_ctrl);
@@ -2627,7 +2610,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
 
             task->m_cqpValue[0] = task->m_cqpValue[1] = m_brc.GetQp(task->m_type[task->m_fid[0]], task->m_picStruct[ENC], task->m_encOrder);
-            
+
             if (extOpt2 ->MaxSliceSize)
             {
                 mfxStatus sts = FillSliceInfo(*task, extOpt2 ->MaxSliceSize, extOpt2 ->MaxSliceSize * m_NumSlices, m_video.calcParam.widthLa, m_video.calcParam.heightLa);
@@ -2719,7 +2702,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         {
             for (;; ++task->m_repack)
             {
-                mfxU32 bsDataLength = 0; 
+                mfxU32 bsDataLength = 0;
                 for (mfxU32 f = 0; f <= task->m_fieldPicFlag; f++)
                 {
                     if ((sts = QueryStatus(*task, task->m_fid[f])) != MFX_ERR_NONE)
@@ -2733,16 +2716,16 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                     mfxU32   bsSizeAvail = mfxU32(m_tmpBsBuf.size());
                     mfxU8    *pBS = &m_tmpBsBuf[0];
 
-                                    
+
                     for (mfxU32 f = 0; f <= 0 /*task->m_fieldPicFlag */; f++)
-                    {                            
+                    {
                         if ((sts = CopyBitstream(*m_core, m_video,*task, task->m_fid[f], pBS, bsSizeAvail)) != MFX_ERR_NONE)
                             return Error(sts);
 
                         sts = UpdateSliceInfo(pBS, pBS + task->m_bsDataLength[task->m_fid[f]], extOpt2->MaxSliceSize, *task, bRecoding);
                         if (sts != MFX_ERR_NONE)
                             return Error(sts);
-                        
+
                         if (bRecoding)
                         {
                            if (task->m_repack == 0)
@@ -2759,7 +2742,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                                {
                                   sts = CorrectSliceInfo(*task, 70, m_video.calcParam.widthLa, m_video.calcParam.heightLa);
                                   if (sts != MFX_ERR_NONE && sts != MFX_ERR_UNDEFINED_BEHAVIOR)
-                                      return Error(sts);                               
+                                      return Error(sts);
                                }
                                else
                                {
@@ -2776,7 +2759,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                                if (task->m_cqpValue[0] < 51)
                                {
                                     task->m_cqpValue[0] = task->m_cqpValue[0] + 1 + (mfxU8)(task->m_repack - 4);
-                                    if (task->m_cqpValue[0] > 51) 
+                                    if (task->m_cqpValue[0] > 51)
                                         task->m_cqpValue[0] = 51;
                                     task->m_cqpValue[1] = task->m_cqpValue[0];
                                }
@@ -2786,9 +2769,9 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                         }
 
                         pBuff[f] = pBS;
-                        pBS += task->m_bsDataLength[task->m_fid[f]];                            
+                        pBS += task->m_bsDataLength[task->m_fid[f]];
                         bsSizeAvail -= task->m_bsDataLength[task->m_fid[f]];
-                    }   
+                    }
                 } // extOpt2->MaxSliceSize
                 if (!bRecoding && (bsDataLength > (bs->MaxLength - bs->DataOffset - bs->DataLength)))
                 {
@@ -2797,7 +2780,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                         task->m_cqpValue[0]= task->m_cqpValue[0] + 1;
                         task->m_cqpValue[1]= task->m_cqpValue[0];
                         // printf("Recoding 0: frame %d, qp %d\n", task->m_frameOrder, task->m_cqpValue[0]);
-                        bRecoding = true;               
+                        bRecoding = true;
                 }
                 if (!bRecoding)
                 {
@@ -2830,8 +2813,8 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                     DdiTaskIter nextTask;
 
                     // wait for next tasks
-                    while ((nextTask = FindFrameToWaitEncodeNext(m_encoding.begin(), m_encoding.end(), curTask)) != curTask) 
-                    {                           
+                    while ((nextTask = FindFrameToWaitEncodeNext(m_encoding.begin(), m_encoding.end(), curTask)) != curTask)
+                    {
                         for (mfxU32 f = 0; f <= nextTask->m_fieldPicFlag; f++)
                         {
                             while ((sts = QueryStatus(*nextTask, nextTask->m_fid[f])) == MFX_TASK_BUSY)
@@ -2853,12 +2836,12 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                     }
                     // restart  encoded task
                     nextTask = task;
-                    do 
+                    do
                     {
                         curTask = nextTask;
                         curTask->m_bsDataLength[0] = curTask->m_bsDataLength[1] = 0;
                         for (mfxU32 f = 0; f <= curTask->m_fieldPicFlag; f++)
-                        {  
+                        {
                             PrepareSeiMessageBuffer(m_video, *curTask, curTask->m_fid[f], m_sei);
                             while ((sts =  m_ddi->Execute(curTask->m_handleRaw.first, *curTask, curTask->m_fid[f], m_sei)) == MFX_TASK_BUSY)
                             {
@@ -2869,9 +2852,9 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                         }
                     } while ((nextTask = FindFrameToWaitEncodeNext(m_encoding.begin(), m_encoding.end(), curTask)) != curTask) ;
 
-                    continue;                    
-                } 
-                
+                    continue;
+                }
+
 
                 break;
             }
@@ -2887,7 +2870,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             if (extOpt2->MaxSliceSize && task->m_repack < 4)
             {
                 mfxF32 w_avg = 0;
-                for (size_t t = 0; t < task->m_SliceInfo.size(); t ++ ) 
+                for (size_t t = 0; t < task->m_SliceInfo.size(); t ++ )
                     w_avg = w_avg + task->m_SliceInfo[t].weight;
                 w_avg = w_avg/m_NumSlices;
                 if (w_avg < 70.0f)
@@ -2939,7 +2922,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 UMC::AutomaticUMCMutex guard(m_listMutex);
                 m_listOfPairsForStupidFieldOutputMode.pop_front();
                 m_listOfPairsForStupidFieldOutputMode.pop_front();
-            }       
+            }
         }
     }
 
@@ -3403,7 +3386,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
 
         mfxU8 * endOfPatchedBitstream =
             (m_video.mfx.LowPower == MFX_CODINGOPTION_ON)?
-            InsertSVCNAL(task, fid, bsData, bsData + bsSizeActual, dbegin, dend)://insert SVC NAL for temporal scalability 
+            InsertSVCNAL(task, fid, bsData, bsData + bsSizeActual, dbegin, dend)://insert SVC NAL for temporal scalability
             PatchBitstream(m_video, task, fid, bsData, bsData + bsSizeActual, dbegin, dend);
 
         *dataLength += (mfxU32)(endOfPatchedBitstream - dbegin);
