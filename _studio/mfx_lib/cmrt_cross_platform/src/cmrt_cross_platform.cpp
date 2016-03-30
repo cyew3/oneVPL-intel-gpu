@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -171,7 +171,7 @@ public:
          default:    return CM_NOT_IMPLEMENTED;
          }
      }
-*/ 
+*/
     INT CreateSurface2DSubresource(AbstractSurfaceHandle pD3D11Texture2D, UINT subresourceCount, CmSurface2D ** ppSurfaces, UINT & createdSurfaceCount, UINT option)
     {
         switch (m_platform) {
@@ -198,7 +198,7 @@ public:
     IMPL_FOR_ALL(INT, DestroySurface, (CmSurface2D *& pSurface), (pSurface));
     IMPL_FOR_ALL(INT, DestroySurface, (CmBuffer *& pSurface), (pSurface));
     IMPL_FOR_ALL(INT, DestroySurface, (CmSurface3D *& pSurface), (pSurface));
-    IMPL_FOR_ALL(INT, CreateQueue, (CmQueue *& pQueue), (pQueue)); 
+    IMPL_FOR_ALL(INT, CreateQueue, (CmQueue *& pQueue), (pQueue));
     IMPL_FOR_ALL(INT, LoadProgram, (void * pCommonISACode, const UINT size, CmProgram *& pProgram, const char * options), (pCommonISACode, size, pProgram, options));
     IMPL_FOR_ALL(INT, CreateKernel, (CmProgram * pProgram, const char * kernelName, CmKernel *& pKernel, const char * options), (pProgram, kernelName, pKernel, options));
     IMPL_FOR_ALL(INT, CreateKernel, (CmProgram * pProgram, const char * kernelName, const void * fncPnt, CmKernel *& pKernel, const char * options), (pProgram, kernelName, fncPnt, pKernel, options));
@@ -206,7 +206,7 @@ public:
     IMPL_FOR_ALL(INT, DestroyKernel, (CmKernel *& pKernel), (pKernel));
     IMPL_FOR_ALL(INT, DestroySampler, (CmSampler *& pSampler), (pSampler));
     IMPL_FOR_ALL(INT, DestroyProgram, (CmProgram *& pProgram), (pProgram));
-    IMPL_FOR_ALL(INT, DestroyThreadSpace, (CmThreadSpace *& pTS), (pTS)); 
+    IMPL_FOR_ALL(INT, DestroyThreadSpace, (CmThreadSpace *& pTS), (pTS));
     IMPL_FOR_ALL(INT, CreateTask, (CmTask *& pTask), (pTask));
     IMPL_FOR_ALL(INT, DestroyTask, (CmTask *& pTask), (pTask));
     IMPL_FOR_ALL(INT, GetCaps, (CM_DEVICE_CAP_NAME capName, size_t & capValueSize, void * pCapValue), (capName, capValueSize, pCapValue));
@@ -238,7 +238,7 @@ public:
     IMPL_FOR_ALL(INT, DestroySamplerSurface, (SurfaceIndex *& pSamplerSurfaceIndex), (pSamplerSurfaceIndex));
     IMPL_FOR_ALL(INT, GetRTDllVersion, (CM_DLL_FILE_VERSION * pFileVersion), (pFileVersion));
     IMPL_FOR_ALL(INT, GetJITDllVersion, (CM_DLL_FILE_VERSION * pFileVersion), (pFileVersion));
-    IMPL_FOR_ALL(INT, InitPrintBuffer, (size_t printbufsize), (printbufsize)); 
+    IMPL_FOR_ALL(INT, InitPrintBuffer, (size_t printbufsize), (printbufsize));
     IMPL_FOR_ALL(INT, FlushPrintBuffer, (), ());
 };
 
@@ -311,7 +311,7 @@ INT CreateCmDevice(CmDevice* &pD, UINT& version, ID3D11Device * pD3D11Device, UI
     return CM_SUCCESS;
 }
 
-#else /* #ifndef __GNUC__ */  
+#else /* #ifndef __GNUC__ */
 
 INT CreateCmDevice(CmDevice *& pD, UINT & version, VADisplay va_dpy, UINT mode)
 {

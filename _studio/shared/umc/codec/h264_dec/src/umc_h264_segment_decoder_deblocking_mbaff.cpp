@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -267,7 +267,7 @@ void H264SegmentDecoder::ResetDeblockingVariablesMBAFF()
     pHeader = (m_bFrameDeblocking) ?
             (m_pCurrentFrame->GetAU(m_field_index)->GetSliceByNumber(m_gmbinfo->mbs[m_CurMBAddr].slice_id)->GetSliceHeader()) :
             (m_pSliceHeader);
- 
+
     Ipp32s pixel_luma_sz    = bit_depth_luma > 8 ? 2 : 1;
     Ipp32s pixel_chroma_sz  = bit_depth_chroma > 8 ? 2 : 1;
 
@@ -602,7 +602,6 @@ void H264SegmentDecoder::DeblockChromaVerticalMBAFF()
                                                     thresholds, pStrength,
                                                     bit_depth_chroma, m_pCurrentFrame->m_chroma_format,
                                                     GetMBFieldDecodingFlag(m_gmbinfo->mbs[m_CurMBAddr]) != 0);
-    
     //
     // step 2. Perform complex deblocking on internal edges
     //

@@ -63,7 +63,7 @@ void POCDecoderWidevine::DecodePictureOrderCount(const H264Slice *slice, Ipp32s 
         m_TopFieldPOC = sliceHeader->pic_order_cnt_lsb;
         m_BottomFieldPOC = sliceHeader->pic_order_cnt_lsb + sliceHeader->delta_pic_order_cnt_bottom;
 
-        if((sliceHeader->delta_pic_order_cnt[0] == 0) && (sliceHeader->delta_pic_order_cnt[0] == 0))
+        if ((sliceHeader->delta_pic_order_cnt[0] == 0) && (sliceHeader->delta_pic_order_cnt[0] == 0))
         {
             Ipp32u i;
             Ipp32u uAbsFrameNum;    // frame # relative to last IDR pic
@@ -115,13 +115,13 @@ void POCDecoderWidevine::DecodePictureOrderCount(const H264Slice *slice, Ipp32s 
             if (sliceHeader->nal_ref_idc == false)
                 ExpectedPicOrderCnt += sps->offset_for_non_ref_pic;
             m_PicOrderCnt = ExpectedPicOrderCnt + sliceHeader->delta_pic_order_cnt[0];
-            if( sliceHeader->field_pic_flag==0)
+            if (sliceHeader->field_pic_flag==0)
             {
                 m_TopFieldPOC = ExpectedPicOrderCnt + sliceHeader->delta_pic_order_cnt[ 0 ];
                 m_BottomFieldPOC = m_TopFieldPOC +
                     sps->offset_for_top_to_bottom_field + sliceHeader->delta_pic_order_cnt[ 1 ];
             }
-            else if( ! sliceHeader->bottom_field_flag)
+            else if (! sliceHeader->bottom_field_flag)
                 m_PicOrderCnt = ExpectedPicOrderCnt + sliceHeader->delta_pic_order_cnt[ 0 ];
             else
                 m_PicOrderCnt  = ExpectedPicOrderCnt + sps->offset_for_top_to_bottom_field + sliceHeader->delta_pic_order_cnt[ 0 ];
@@ -158,7 +158,7 @@ WidevineTaskSupplier::WidevineTaskSupplier():
 
 WidevineTaskSupplier::~WidevineTaskSupplier()
 {
-    if(m_pWidevineDecrypter)
+    if (m_pWidevineDecrypter)
         delete m_pWidevineDecrypter;
 }
 
@@ -220,21 +220,18 @@ bool IsNeedSPSInvalidate(const H264SeqParamSet *old_sps, const H264SeqParamSet *
 
     if (old_sps->vui.max_dec_frame_buffering < new_sps->vui.max_dec_frame_buffering)
         return true;
-//XXX2 May be uncomment?
-    /*if (old_sps->frame_cropping_rect_bottom_offset != new_sps->frame_cropping_rect_bottom_offset)
+
+    if (old_sps->chroma_format_idc != new_sps->chroma_format_idc)
         return true;
 
-    if (old_sps->frame_cropping_rect_left_offset != new_sps->frame_cropping_rect_left_offset)
+    if (old_sps->profile_idc != new_sps->profile_idc)
         return true;
 
-    if (old_sps->frame_cropping_rect_right_offset != new_sps->frame_cropping_rect_right_offset)
+    if (old_sps->bit_depth_luma != new_sps->bit_depth_luma)
         return true;
 
-    if (old_sps->frame_cropping_rect_top_offset != new_sps->frame_cropping_rect_top_offset)
+    if (old_sps->bit_depth_chroma != new_sps->bit_depth_chroma)
         return true;
-
-    if (old_sps->aspect_ratio_idc != new_sps->aspect_ratio_idc)
-        return true; */
 
     return false;
 }
@@ -271,9 +268,15 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
         //case NAL_UT_SPS:
             {
                 H264SeqParamSet sps;
+                sps.seq_parameter_set_id = MAX_NUM_SEQ_PARAM_SETS;
                 umcRes = pDecryptParams->GetSequenceParamSet(&sps);
                 if (umcRes != UMC_OK)
+                {
+                    H264SeqParamSet * old_sps = m_Headers.m_SeqParams.GetHeader(sps.seq_parameter_set_id);
+                    if (old_sps)
+                        old_sps->errorFlags = 1;
                     return UMC_ERR_INVALID_STREAM;
+                }
 
                 Ipp8u newDPBsize = (Ipp8u)CalculateDPBSize(sps.level_idc,
                                             sps.frame_width_in_mbs * 16,
@@ -298,13 +301,14 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
                 if (isNeedClean)
                     sps.vui.max_dec_frame_buffering = 0;
 
+                //DEBUG_PRINT((VM_STRING("debug headers SPS - %d, num_ref_frames - %d \n"), sps.seq_parameter_set_id, sps.num_ref_frames));
+
                 H264SeqParamSet * temp = m_Headers.m_SeqParams.GetHeader(sps.seq_parameter_set_id);
                 m_Headers.m_SeqParams.AddHeader(&sps);
 
                 // Validate the incoming bitstream's image dimensions.
                 temp = m_Headers.m_SeqParams.GetHeader(sps.seq_parameter_set_id);
-
-                if(!temp)
+                if (!temp)
                 {
                     return UMC_ERR_NULL_PTR;
                 }
@@ -319,6 +323,8 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
                     }
                 }
 
+                //m_pNALSplitter->SetSuggestedSize(CalculateSuggestedSize(&sps));
+
                 if (!temp->vui.timing_info_present_flag || m_use_external_framerate)
                 {
                     temp->vui.num_units_in_tick = 90000;
@@ -326,6 +332,8 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
                 }
 
                 m_local_delta_frame_time = 1 / ((0.5 * temp->vui.time_scale) / temp->vui.num_units_in_tick);
+
+                ErrorStatus::isSPSError = 0;
 
                 if (newResolution)
                     return UMC_NTF_NEW_RESOLUTION;
@@ -354,7 +362,12 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
                 // Get id
                 umcRes = pDecryptParams->GetPictureParamSetPart1(&pps);
                 if (UMC_OK != umcRes)
+                {
+                    H264PicParamSet * old_pps = m_Headers.m_PicParams.GetHeader(pps.pic_parameter_set_id);
+                    if (old_pps)
+                        old_pps->errorFlags = 1;
                     return UMC_ERR_INVALID_STREAM;
+                }
 
                 H264SeqParamSet *refSps = m_Headers.m_SeqParams.GetHeader(pps.seq_parameter_set_id);
                 Ipp32u prevActivePPS = m_Headers.m_PicParams.GetCurrentID();
@@ -373,8 +386,14 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
                 // Get rest of pic param set
                 umcRes = pDecryptParams->GetPictureParamSetPart2(&pps);
                 if (UMC_OK != umcRes)
+                {
+                    H264PicParamSet * old_pps = m_Headers.m_PicParams.GetHeader(pps.pic_parameter_set_id);
+                    if (old_pps)
+                        old_pps->errorFlags = 1;
                     return UMC_ERR_INVALID_STREAM;
+                }
 
+                //DEBUG_PRINT((VM_STRING("debug headers PPS - %d - SPS - %d\n"), pps.pic_parameter_set_id, pps.seq_parameter_set_id));
                 m_Headers.m_PicParams.AddHeader(&pps);
 
                 //m_Headers.m_SeqParams.SetCurrentID(pps.seq_parameter_set_id);
@@ -384,6 +403,8 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
                 {
                     m_Headers.m_PicParams.SetCurrentID(prevActivePPS);
                 }
+
+                ErrorStatus::isPPSError = 0;
             }
         //    break;
 
@@ -399,6 +420,10 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
         //        {
         //            return UMC_ERR_INVALID_STREAM;
         //        }
+
+        //        m_pNALSplitter->SetSuggestedSize(CalculateSuggestedSize(&sps));
+
+        //        DEBUG_PRINT((VM_STRING("debug headers SUBSET SPS - %d, profile_idc - %d, level_idc - %d, num_ref_frames - %d \n"), sps.seq_parameter_set_id, sps.profile_idc, sps.level_idc, sps.num_ref_frames));
 
         //        if ((sps.profile_idc == H264VideoDecoderParams::H264_PROFILE_SCALABLE_BASELINE) ||
         //            (sps.profile_idc == H264VideoDecoderParams::H264_PROFILE_SCALABLE_HIGH))
@@ -459,6 +484,7 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
         //                newResolution = true;
         //            }
 
+        //            DEBUG_PRINT((VM_STRING("debug headers SUBSET SPS MVC ext - %d \n"), sps.seq_parameter_set_id));
         //            m_Headers.m_SeqParamsMvcExt.AddHeader(&spsMvcExt);
 
         //            MVC_Extension::ChooseLevelIdc(&spsMvcExt, sps.level_idc, sps.level_idc);
@@ -604,7 +630,7 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
     }
 
     H264Slice * pSlice = m_ObjHeap.AllocateObject<H264Slice>();
-    if(!pSlice)
+    if (!pSlice)
     {
         return 0;
     }
@@ -711,8 +737,8 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
     //memory_leak_preventing.ClearNotification();
     pSlice->m_dTime = pDecryptParams->GetTime();
 
-    //if (!pSlice->Reset(pMem->GetPointer(), pMem->GetDataSize(), m_iThreadNum, &m_Headers.m_nalExtension))
-    //bool H264Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s , H264NalExtension *pNalExt)
+    //if (!pSlice->Reset(&m_Headers.m_nalExtension))
+    //bool H264Slice::Reset(H264NalExtension *pNalExt)
     {
         Ipp32s iMBInFrame;
         Ipp32s iFieldIndex;
@@ -813,6 +839,8 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
                     return 0;
                 }
 
+                //m_SliceHeader.hw_wa_redundant_elimination_bits[2] = (Ipp32u)m_BitStream.BitsDecoded();
+
                 if (pSlice->m_pPicParamSet->entropy_coding_mode)
                     pSlice->m_BitStream.AlignPointerRight();
             }
@@ -860,7 +888,7 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
         // reset through-decoding variables
         pSlice->m_nMBSkipCount = 0;
         pSlice->m_nQuantPrev = pSlice->m_pPicParamSet->pic_init_qp +
-                       pSlice->m_SliceHeader.slice_qp_delta;
+                               pSlice->m_SliceHeader.slice_qp_delta;
         pSlice->m_prev_dquant = 0;
         pSlice->m_field_index = iFieldIndex;
 
@@ -940,7 +968,7 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
     //{
     //    slice->m_pSource.SetData(nalUnit);
     //}
-    
+
     //Ipp32u* pbs;
     //Ipp32u bitOffset;
 
@@ -981,7 +1009,7 @@ Status WidevineTaskSupplier::ParseWidevineSEI(DecryptParametersWrapper* pDecrypt
             H264SEIPayLoad    m_SEIPayLoads;
 
             pDecryptParams->ParseSEIBufferingPeriod(m_Headers, &m_SEIPayLoads);
-            if(m_SEIPayLoads.isValid)
+            if (m_SEIPayLoads.isValid)
             {
                 H264SEIPayLoad* payload = m_Headers.m_SEIParams.AddHeader(&m_SEIPayLoads);
                 m_accessUnit.m_payloads.AddPayload(payload);
@@ -992,7 +1020,7 @@ Status WidevineTaskSupplier::ParseWidevineSEI(DecryptParametersWrapper* pDecrypt
             H264SEIPayLoad    m_SEIPayLoads;
 
             pDecryptParams->ParseSEIPicTiming(m_Headers, &m_SEIPayLoads);
-            if(m_SEIPayLoads.isValid)
+            if (m_SEIPayLoads.isValid)
             {
                 H264SEIPayLoad* payload = m_Headers.m_SEIParams.AddHeader(&m_SEIPayLoads);
                 m_accessUnit.m_payloads.AddPayload(payload);
@@ -1003,7 +1031,7 @@ Status WidevineTaskSupplier::ParseWidevineSEI(DecryptParametersWrapper* pDecrypt
             H264SEIPayLoad    m_SEIPayLoads;
 
             pDecryptParams->ParseSEIRecoveryPoint(&m_SEIPayLoads);
-            if(m_SEIPayLoads.isValid)
+            if (m_SEIPayLoads.isValid)
             {
                 H264SEIPayLoad* payload = m_Headers.m_SEIParams.AddHeader(&m_SEIPayLoads);
                 m_accessUnit.m_payloads.AddPayload(payload);
@@ -1021,7 +1049,7 @@ Status WidevineTaskSupplier::ParseWidevineSEI(DecryptParametersWrapper* pDecrypt
 Status WidevineTaskSupplier::DecryptWidevineHeaders(MediaData *pSource, DecryptParametersWrapper* pDecryptParams)
 {
     Status sts = m_pWidevineDecrypter->DecryptFrame(pSource, pDecryptParams);
-    if(sts != UMC_OK)
+    if (sts != UMC_OK)
     {
         return sts;
     }

@@ -2837,7 +2837,10 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
 
                 // Validate the incoming bitstream's image dimensions.
                 temp = m_Headers.m_SeqParams.GetHeader(sps.seq_parameter_set_id);
-
+                if (!temp)
+                {
+                    return UMC_ERR_NULL_PTR;
+                }
                 if (view)
                 {
                     view->SetDPBSize(&sps, m_level_idc);
@@ -3395,7 +3398,6 @@ void TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *frame, Lo
 
     Ipp32u PicWidthInMbs = slice->GetSeqParam()->frame_width_in_mbs;
     Ipp32u PicHeightInMapUnits = slice->GetSeqParam()->frame_height_in_mbs;
-    
     if (sliceHeader->field_pic_flag)
         PicHeightInMapUnits >>= 1;
 
@@ -3600,7 +3602,7 @@ void TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *frame, Lo
         Ipp32u i = n + 1;
         while (i < PicSizeInMbs && MbToSliceGroupMap[i] != MbToSliceGroupMap[n])
             i++;
-        
+
         next_mb_tables[n] = (i >= PicSizeInMbs) ? -1 : i;
     }
 
@@ -3921,7 +3923,7 @@ Status TaskSupplier::AddOneFrame(MediaData * pSource)
             if ((NAL_UT_IDR_SLICE != (NAL_Unit_Type)pMediaDataEx->values[i]) &&
                 (NAL_UT_SLICE != (NAL_Unit_Type)pMediaDataEx->values[i]))
             {
-                // Reset last prefix NAL unit 
+                // Reset last prefix NAL unit
                 m_Headers.m_nalExtension.extension_present = 0;
             }
 
@@ -4057,6 +4059,10 @@ H264Slice * TaskSupplier::DecodeSliceHeader(MediaDataEx *nalUnit)
     }
 
     H264Slice * pSlice = m_ObjHeap.AllocateObject<H264Slice>();
+    if (!pSlice)
+    {
+        return 0;
+    }
     pSlice->SetHeap(&m_ObjHeap);
     pSlice->IncrementReference();
 
@@ -4292,7 +4298,6 @@ Status TaskSupplier::AddSlice(H264Slice * pSlice, bool force)
 
             const H264SliceHeader *sliceHeader = slice->GetSliceHeader();
             Ipp32u field_index = setOfSlices->m_frame->GetNumberByParity(sliceHeader->bottom_field_flag);
-    
             if (!setOfSlices->m_frame->GetAU(field_index)->GetSliceCount())
             {
                 size_t count = setOfSlices->GetSliceCount();
@@ -4652,7 +4657,7 @@ Status TaskSupplier::InitFreeFrame(H264DecoderFrame * pFrame, const H264Slice *p
     pFrame->m_crop_flag = pSeqParam->frame_cropping_flag;
 
     pFrame->setFrameNum(pSlice->GetSliceHeader()->frame_num);
-    if (pSlice->GetSliceHeader()->nal_ext.extension_present && 
+    if (pSlice->GetSliceHeader()->nal_ext.extension_present &&
         0 == pSlice->GetSliceHeader()->nal_ext.svc_extension_flag)
     {
         pFrame->setViewId(pSlice->GetSliceHeader()->nal_ext.mvc.view_id);

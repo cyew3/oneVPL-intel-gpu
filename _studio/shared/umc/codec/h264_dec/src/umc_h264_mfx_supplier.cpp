@@ -51,9 +51,9 @@ void RawHeader::Reset()
 {
     m_id = -1;
     m_buffer.clear();
-#ifdef __APPLE__    
+#ifdef __APPLE__
     m_rbspSize = 0;
-#endif 
+#endif
 }
 
 Ipp32s RawHeader::GetID() const
@@ -76,18 +76,18 @@ void RawHeader::Resize(Ipp32s id, size_t newSize)
     m_id = id;
     m_buffer.resize(newSize);
 }
-    
-#ifdef __APPLE__    
+
+#ifdef __APPLE__
 size_t RawHeader::GetRBSPSize()
 {
     return m_rbspSize;
 }
-    
+
 void RawHeader::SetRBSPSize(size_t rbspSize)
 {
     m_rbspSize = rbspSize;
-}    
-#endif 
+}
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -418,9 +418,9 @@ Status MFXTaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                     hdr->Resize(id, size + sizeof(start_code_prefix));
                     MFX_INTERNAL_CPY(hdr->GetPointer(), start_code_prefix,  sizeof(start_code_prefix));
                     MFX_INTERNAL_CPY(hdr->GetPointer() + sizeof(start_code_prefix), (Ipp8u*)nalUnit->GetDataPointer(), (Ipp32u)size);
-#ifdef __APPLE__                    
+#ifdef __APPLE__
                     hdr->SetRBSPSize(size);
-#endif  
+#endif
                  }
             break;
         }
@@ -477,7 +477,7 @@ Status MFXTaskSupplier::DecodeSEI(MediaDataEx *nalUnit)
             size_t decoded1 = bitStream.BytesDecoded();
 
             bitStream.ParseSEI(m_Headers, &m_SEIPayLoads);
-            
+
             if (m_SEIPayLoads.payLoadType == SEI_PIC_TIMING_TYPE)
             {
                 DEBUG_PRINT((VM_STRING("debug headers SEI - %d, picstruct - %d\n"), m_SEIPayLoads.payLoadType, m_SEIPayLoads.SEI_messages.pic_timing.pic_struct));
@@ -518,9 +518,7 @@ Status MFXTaskSupplier::DecodeSEI(MediaDataEx *nalUnit)
 
                 nalUnit1.SetBufferPointer((Ipp8u*)nalUnit->GetDataPointer(), nal_u_size);
                 nalUnit1.SetDataSize(nal_u_size);
-            
                 nalUnit->MoveDataPointer((Ipp32s)nal_u_size);
-            
                 m_sei_messages->AddMessage(&nalUnit1, m_SEIPayLoads.payLoadType, -1);
             }
 

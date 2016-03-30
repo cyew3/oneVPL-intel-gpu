@@ -62,7 +62,7 @@ class ErrorStatus
 {
 public:
 
-    bool IsExistHeadersError() const 
+    bool IsExistHeadersError() const
     {
         return isSPSError || isPPSError;
     }
@@ -92,7 +92,7 @@ public:
     DPBOutput();
 
     void Reset(bool disableDelayFeature = false);
-    
+
     bool IsUseSEIDelayOutputValue() const;
     bool IsUsePicOrderCnt() const;
 
@@ -334,7 +334,7 @@ public:
     Status SetViewList(const std::vector<Ipp32u> & targetView, const std::vector<Ipp32u> & dependencyList);
 
     ViewItem *FindView(Ipp32s viewId);
-    
+
     ViewItem &GetView(Ipp32s viewId = -1);
 
     ViewItem &GetViewByNumber(Ipp32s viewNum);

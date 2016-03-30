@@ -2701,6 +2701,7 @@ void PackerVA_PAVP::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice *
 void PackerVA_PAVP::CreateSliceDataBuffer(H264DecoderFrameInfo * pSliceInfo)
 {
     Ipp32s count = pSliceInfo->GetSliceCount();
+    bool clear = 0;
 
     if (m_va->GetProtectedVA())
     {
@@ -2732,7 +2733,11 @@ void PackerVA_PAVP::CreateSliceDataBuffer(H264DecoderFrameInfo * pSliceInfo)
             memcpy(pVAAPI_BitStreamBuffer, encryptedData->Data, size);
             compBuf->SetDataSize(size);
         }
+        else
+            clear = 1;
     }
+    if (clear)
+        return PackerVA::CreateSliceDataBuffer(pSliceInfo);
 }
 
 Ipp32s PackerVA_PAVP::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chopping, Ipp32s)
@@ -2741,6 +2746,7 @@ Ipp32s PackerVA_PAVP::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s
     VASliceParameterBufferH264Base* pSlice_H264 = (VASliceParameterBufferH264Base*)m_va->GetCompBuffer(VASliceParameterBufferType, &compBuf);
     if (!pSlice_H264)
         throw h264_exception(UMC_ERR_FAILED);
+    bool clear = 0;
 
     pSlice_H264 +=sliceNum;
     memset(pSlice_H264, 0, sizeof(VASliceParameterBufferH264Base));
@@ -2762,7 +2768,11 @@ Ipp32s PackerVA_PAVP::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s
                 encryptedData = encryptedData->Next;
             }
         }
+        else
+            clear = 1;
     }
+    if (clear)
+        return PackerVA::PackSliceParams(pSlice, sliceNum, chopping, 0);
 
     if (!encryptedData)
         throw h264_exception(UMC_ERR_INVALID_PARAMS);
@@ -2787,10 +2797,6 @@ void PackerVA_PAVP::PackPavpParams(void)
         throw h264_exception(UMC_ERR_FAILED);
 
     memset(pEncryptParam, 0, sizeof(VAEncryptionParameterBuffer));
-    pEncryptParam->pavpCounterMode = m_va->GetProtectedVA()->GetCounterMode();
-    pEncryptParam->pavpEncryptionType = m_va->GetProtectedVA()->GetEncryptionMode();
-    pEncryptParam->hostEncryptMode = 2; //ENCRYPTION_PAVP
-    pEncryptParam->pavpHasBeenEnabled = 1;
 
     mfxBitstream *bs = m_va->GetProtectedVA()->GetBitstream();
     if (bs->EncryptedData)
@@ -2799,6 +2805,12 @@ void PackerVA_PAVP::PackPavpParams(void)
         memcpy(pEncryptParam->pavpAesCounter, &(encryptedData->CipherCounter), 16);
         pEncryptParam->app_id = encryptedData->AppId;
     }
+    else
+        return;
+    pEncryptParam->pavpCounterMode = m_va->GetProtectedVA()->GetCounterMode();
+    pEncryptParam->pavpEncryptionType = m_va->GetProtectedVA()->GetEncryptionMode();
+    pEncryptParam->hostEncryptMode = 2; //ENCRYPTION_PAVP
+    pEncryptParam->pavpHasBeenEnabled = 1;
 }
 
 #endif // UMC_VA_LINUX

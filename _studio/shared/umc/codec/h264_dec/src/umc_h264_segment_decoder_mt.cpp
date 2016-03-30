@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -1987,16 +1987,16 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectorsPSlice_CAVLC(void)
                                                pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
                 if (2 == num_ref_idx_l0_active)
                 {
-                    refs->refIndexs[0] = 
+                    refs->refIndexs[0] =
                     refs->refIndexs[1] = (RefIndexType)(m_pBitStream->Get1Bit() ^ 1);
-                    refs->refIndexs[2] = 
+                    refs->refIndexs[2] =
                     refs->refIndexs[3] = (RefIndexType)(m_pBitStream->Get1Bit() ^ 1);
                 }
                 else if (2 < num_ref_idx_l0_active)
                 {
-                    refs->refIndexs[0] = 
+                    refs->refIndexs[0] =
                     refs->refIndexs[1] = (RefIndexType)m_pBitStream->GetVLCElement(false);
-                    refs->refIndexs[2] = 
+                    refs->refIndexs[2] =
                     refs->refIndexs[3] = (RefIndexType)m_pBitStream->GetVLCElement(false);
                 }
                 else
@@ -2023,16 +2023,16 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectorsPSlice_CAVLC(void)
                                                pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
                 if (2 == num_ref_idx_l0_active)
                 {
-                    refs->refIndexs[0] = 
+                    refs->refIndexs[0] =
                     refs->refIndexs[2] = (RefIndexType) (m_pBitStream->Get1Bit() ^ 1);
-                    refs->refIndexs[1] = 
+                    refs->refIndexs[1] =
                     refs->refIndexs[3] = (RefIndexType) (m_pBitStream->Get1Bit() ^ 1);
                 }
                 else if (2 < num_ref_idx_l0_active)
                 {
-                    refs->refIndexs[0] = 
+                    refs->refIndexs[0] =
                     refs->refIndexs[2] = (RefIndexType) m_pBitStream->GetVLCElement(false);
-                    refs->refIndexs[1] = 
+                    refs->refIndexs[1] =
                     refs->refIndexs[3] = (RefIndexType) m_pBitStream->GetVLCElement(false);
                 }
                 else

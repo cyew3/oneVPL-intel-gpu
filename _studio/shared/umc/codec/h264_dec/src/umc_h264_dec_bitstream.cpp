@@ -432,7 +432,7 @@ Status H264HeadersBitstream::GetSequenceParamSet(H264SeqParamSet *sps)
         return UMC_ERR_INVALID_STREAM;
 
     sps->frame_mbs_only_flag = Get1Bit();
-    sps->frame_height_in_mbs  = (2-sps->frame_mbs_only_flag)*sps->frame_height_in_mbs;
+    sps->frame_height_in_mbs = (2-sps->frame_mbs_only_flag)*sps->frame_height_in_mbs;
     if (sps->frame_mbs_only_flag == 0)
     {
         sps->mb_adaptive_frame_field_flag = Get1Bit();
@@ -491,7 +491,7 @@ Status H264HeadersBitstream::GetSequenceParamSet(H264SeqParamSet *sps)
             sps->vui = vui;
         }
     }
-    
+
     return ps;
 }    // GetSequenceParamSet
 
@@ -781,7 +781,7 @@ Status H264HeadersBitstream::GetSequenceParamSetSvcVuiExt(H264SeqParamSetSVCExte
         vui.vui_entry[i].vui_ext_quality_id         = GetBits(4);
         vui.vui_entry[i].vui_ext_temporal_id        = GetBits(3);
 
-        vui.vui_entry[i].vui_ext_timing_info_present_flag = Get1Bit(); 
+        vui.vui_entry[i].vui_ext_timing_info_present_flag = Get1Bit();
 
         if (vui.vui_entry[i].vui_ext_timing_info_present_flag)
         {
@@ -1011,7 +1011,6 @@ Status H264HeadersBitstream::GetPictureParamSetPart2(H264PicParamSet  *pps)
     pps->num_slice_groups = GetVLCElement(false) + 1;
     if (pps->num_slice_groups != 1)
     {
-
         if (pps->num_slice_groups > MAX_NUM_SLICE_GROUPS)
         {
             return UMC_ERR_INVALID_STREAM;

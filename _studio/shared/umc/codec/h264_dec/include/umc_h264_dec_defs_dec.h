@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -347,7 +347,6 @@ enum
     H264_MAX_DEPENDENCY_ID      = 7, // svc decoder
     H264_MAX_QUALITY_ID         = 15,// svc decoder
     H264_MAX_TEMPORAL_ID        = 7, // svc decoder
-    
 
     H264_MAX_NUM_VIEW           = 1024,
     H264_MAX_NUM_OPS            = 64,
@@ -434,7 +433,6 @@ using namespace UMC;
 
 struct H264VUI
 {
-
     void Reset()
     {
         H264VUI vui = {0};
@@ -964,7 +962,6 @@ struct H264NalMvcExtension
     {
         non_idr_flag = 0;
         priority_id = 0;
-        
         view_id = 0;
         temporal_id = 0;
         anchor_pic_flag = 0;
@@ -1457,7 +1454,6 @@ Ipp64u CreateIPPCBPMask444(Ipp32u cbpU, Ipp32u cbpV)
 
 #define pSetMBSkippedFlag(x)  ((x)->mbflags.isSkipped = 1);
 #define SetMBSkippedFlag(x)  ((x).mbflags.isSkipped = 1);
-
 
 #define pSetMBFieldDecodingFlag(x,y)     \
     (x->mbflags.fdf = (Ipp8u)y)

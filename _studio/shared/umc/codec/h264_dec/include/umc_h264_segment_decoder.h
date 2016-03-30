@@ -144,7 +144,7 @@ public:
     // forward declaration of internal types
     typedef void (H264SegmentDecoder::*DeblockingFunction)(Ipp32s nMBAddr);
     typedef void (H264SegmentDecoder::*PrepareMBParams)();
-    
+
     volatile bool m_bFrameDeblocking;                                    // (bool) frame deblocking flag
 
     H264Slice *m_pSlice;                                        // (H264Slice *) current slice pointer

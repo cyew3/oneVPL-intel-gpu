@@ -329,7 +329,7 @@ H264Slice * VATaskSupplier::DecodeSliceHeader(MediaDataEx *nalUnit)
     {
         slice->m_pSource.SetData(nalUnit);
     }
-    
+
     Ipp32u* pbs;
     Ipp32u bitOffset;
 

@@ -682,8 +682,6 @@ H264DecoderFrameInfo * TaskBroker::FindAU()
                     return slicesInfo;
             }
         }
-
-        
         H264DecoderFrame *temp = UMC::GetAuxiliaryFrame(frame);
         if (temp)
         {

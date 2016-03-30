@@ -437,7 +437,7 @@ mfxStatus MFXVideoDECODE_Init(mfxSession session, mfxVideoParam *par)
             session->m_pDECODE.reset(CreateDECODESpecificClass(par->mfx.CodecId, session->m_pCORE.get(), session));
             MFX_CHECK(session->m_pDECODE.get(), MFX_ERR_INVALID_VIDEO_PARAM);
         }
-#endif        
+#endif
 
     mfxRes = session->m_pDECODE->Init(par);
 
@@ -531,8 +531,8 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
             task.priority = session->m_priority;
             task.threadingPolicy = session->m_pDECODE->GetThreadingPolicy();
             // fill dependencies
-// specific plug-in case to run additional task after main task 
-#if !defined(AS_HEVCD_PLUGIN) && !defined(AS_VP8D_PLUGIN) 
+// specific plug-in case to run additional task after main task
+#if !defined(AS_HEVCD_PLUGIN) && !defined(AS_VP8D_PLUGIN)
             task.pSrc[0] = *surface_out;
 #endif
             task.pDst[0] = *surface_out;

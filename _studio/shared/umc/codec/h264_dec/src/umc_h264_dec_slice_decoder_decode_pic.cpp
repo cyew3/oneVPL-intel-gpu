@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -767,7 +767,7 @@ void H264Slice::ReOrderRefPicList(H264DecoderFrame **pRefPicList,
     H264DBPList *pDecoderFrameList = GetDPB(views, m_SliceHeader.nal_ext.mvc.view_id, dIdIndex);
 
     Ipp32s pocForce = bIsFieldSlice ? 0 : 3;
-    
+
     // Reference: Reordering process for reference picture lists, 8.2.4.3
     picNumCurr = m_pCurrentFrame->PicNum(m_pCurrentFrame->GetNumberByParity(m_SliceHeader.bottom_field_flag), pocForce);
     picNumPred = picNumCurr;

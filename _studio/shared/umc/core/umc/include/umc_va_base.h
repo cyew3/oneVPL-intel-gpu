@@ -44,7 +44,7 @@
 #   ifndef UMC_VA_DXVA
 #       define UMC_VA_DXVA           // HW acceleration through DXVA
 #   endif
-#elif defined(__APPLE__) 
+#elif defined(__APPLE__)
 #   ifndef UMC_VA_OSX
 #      define UMC_VA_OSX
 #   endif
@@ -218,7 +218,7 @@ enum VideoAccelerationHW
     VA_HW_CHV       = 0x080000,
 
     VA_HW_SCL       = 0x090000,
-    
+
     VA_HW_KBL       = 0x100000,
 
     VA_HW_BXT       = 0x110000,

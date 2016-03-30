@@ -16,6 +16,8 @@
 #include "umc_h264_widevine_decrypter.h"
 #include "mfx_common.h"
 
+#include <limits.h>
+
 namespace UMC
 {
 #ifdef UMC_VA_DXVA
@@ -209,10 +211,10 @@ Status DecryptParametersWrapper::GetSequenceParamSet(H264SeqParamSet *sps)
 
         sps->qpprime_y_zero_transform_bypass_flag = SeqParams.lossless_qpprime_y_zero_flag;  //TBD check that
         sps->seq_scaling_matrix_present_flag = SeqParams.seq_scaling_matrix_present_flag;
-        if(sps->seq_scaling_matrix_present_flag)
+        if (sps->seq_scaling_matrix_present_flag)
         {
             // 0
-            if(SeqParams.seq_scaling_list_present_flag[0])
+            if (SeqParams.seq_scaling_list_present_flag[0])
             {
                 FillScalingList4x4(&sps->ScalingLists4x4[0],(Ipp8u*) SeqParams.ScalingList4x4[0]);
                 sps->type_of_scaling_list_used[0] = SCLREDEFINED;
@@ -222,9 +224,8 @@ Status DecryptParametersWrapper::GetSequenceParamSet(H264SeqParamSet *sps)
                 FillScalingList4x4(&sps->ScalingLists4x4[0],(Ipp8u*) default_intra_scaling_list4x4);
                 sps->type_of_scaling_list_used[0] = SCLDEFAULT;
             }
-
             // 1
-            if(SeqParams.seq_scaling_list_present_flag[1])
+            if (SeqParams.seq_scaling_list_present_flag[1])
             {
                 FillScalingList4x4(&sps->ScalingLists4x4[1],(Ipp8u*) SeqParams.ScalingList4x4[1]);
                 sps->type_of_scaling_list_used[1] = SCLREDEFINED;
@@ -234,9 +235,8 @@ Status DecryptParametersWrapper::GetSequenceParamSet(H264SeqParamSet *sps)
                 FillScalingList4x4(&sps->ScalingLists4x4[1],(Ipp8u*) sps->ScalingLists4x4[0].ScalingListCoeffs);
                 sps->type_of_scaling_list_used[1] = SCLDEFAULT;
             }
-
             // 2
-            if(SeqParams.seq_scaling_list_present_flag[2])
+            if (SeqParams.seq_scaling_list_present_flag[2])
             {
                 FillScalingList4x4(&sps->ScalingLists4x4[2],(Ipp8u*) SeqParams.ScalingList4x4[2]);
                 sps->type_of_scaling_list_used[2] = SCLREDEFINED;
@@ -246,9 +246,8 @@ Status DecryptParametersWrapper::GetSequenceParamSet(H264SeqParamSet *sps)
                 FillScalingList4x4(&sps->ScalingLists4x4[2],(Ipp8u*) sps->ScalingLists4x4[1].ScalingListCoeffs);
                 sps->type_of_scaling_list_used[2] = SCLDEFAULT;
             }
-
             // 3
-            if(SeqParams.seq_scaling_list_present_flag[3])
+            if (SeqParams.seq_scaling_list_present_flag[3])
             {
                 FillScalingList4x4(&sps->ScalingLists4x4[3],(Ipp8u*) SeqParams.ScalingList4x4[3]);
                 sps->type_of_scaling_list_used[3] = SCLREDEFINED;
@@ -258,9 +257,8 @@ Status DecryptParametersWrapper::GetSequenceParamSet(H264SeqParamSet *sps)
                 FillScalingList4x4(&sps->ScalingLists4x4[3],(Ipp8u*) default_inter_scaling_list4x4);
                 sps->type_of_scaling_list_used[3] = SCLDEFAULT;
             }
-
             // 4
-            if(SeqParams.seq_scaling_list_present_flag[4])
+            if (SeqParams.seq_scaling_list_present_flag[4])
             {
                 FillScalingList4x4(&sps->ScalingLists4x4[4],(Ipp8u*) SeqParams.ScalingList4x4[4]);
                 sps->type_of_scaling_list_used[4] = SCLREDEFINED;
@@ -270,9 +268,8 @@ Status DecryptParametersWrapper::GetSequenceParamSet(H264SeqParamSet *sps)
                 FillScalingList4x4(&sps->ScalingLists4x4[4],(Ipp8u*) sps->ScalingLists4x4[3].ScalingListCoeffs);
                 sps->type_of_scaling_list_used[4] = SCLDEFAULT;
             }
-
             // 5
-            if(SeqParams.seq_scaling_list_present_flag[5])
+            if (SeqParams.seq_scaling_list_present_flag[5])
             {
                 FillScalingList4x4(&sps->ScalingLists4x4[5],(Ipp8u*) SeqParams.ScalingList4x4[5]);
                 sps->type_of_scaling_list_used[5] = SCLREDEFINED;
@@ -284,7 +281,7 @@ Status DecryptParametersWrapper::GetSequenceParamSet(H264SeqParamSet *sps)
             }
 
             // 0
-            if(SeqParams.seq_scaling_list_present_flag[6])
+            if (SeqParams.seq_scaling_list_present_flag[6])
             {
                 FillScalingList8x8(&sps->ScalingLists8x8[0],(Ipp8u*) SeqParams.ScalingList8x8[0]);
                 sps->type_of_scaling_list_used[6] = SCLREDEFINED;
@@ -294,9 +291,8 @@ Status DecryptParametersWrapper::GetSequenceParamSet(H264SeqParamSet *sps)
                 FillScalingList8x8(&sps->ScalingLists8x8[0],(Ipp8u*) default_intra_scaling_list8x8);
                 sps->type_of_scaling_list_used[6] = SCLDEFAULT;
             }
-
             // 1
-            if(SeqParams.seq_scaling_list_present_flag[7])
+            if (SeqParams.seq_scaling_list_present_flag[7])
             {
                 FillScalingList8x8(&sps->ScalingLists8x8[1],(Ipp8u*) SeqParams.ScalingList8x8[1]);
                 sps->type_of_scaling_list_used[7] = SCLREDEFINED;
@@ -387,6 +383,10 @@ Status DecryptParametersWrapper::GetSequenceParamSet(H264SeqParamSet *sps)
     // picture height in MBs (bitstream contains value - 1)
     sps->frame_height_in_mbs = SeqParams.sps_disp.pic_height_in_map_units_minus1 + 1;
 
+    if (!(sps->frame_width_in_mbs * 16 < USHRT_MAX) ||
+        !(sps->frame_height_in_mbs * 16 < USHRT_MAX))
+        return UMC_ERR_INVALID_STREAM;
+
     sps->frame_mbs_only_flag = SeqParams.sps_disp.frame_mbs_only_flag;
     sps->frame_height_in_mbs = (2-sps->frame_mbs_only_flag)*sps->frame_height_in_mbs;
     if (sps->frame_mbs_only_flag == 0)
@@ -447,8 +447,7 @@ Status DecryptParametersWrapper::GetSequenceParamSet(H264SeqParamSet *sps)
     }
 
     return ps;
-}
-
+}    // GetSequenceParamSet
 
 Status DecryptParametersWrapper::GetVUIParam(H264SeqParamSet *sps, H264VUI *vui)
 {
@@ -487,18 +486,18 @@ Status DecryptParametersWrapper::GetVUIParam(H264SeqParamSet *sps, H264VUI *vui)
         vui->overscan_appropriate_flag = 0;             //TBD
 
     vui->video_signal_type_present_flag = SeqParams.sps_disp.vui_seq_parameters.video_signal_type_present_flag;
-    if( vui->video_signal_type_present_flag ) {
+    if (vui->video_signal_type_present_flag) {
         vui->video_format = SeqParams.sps_disp.vui_seq_parameters.video_format;
         vui->video_full_range_flag = 0;                                                  //TBD
         vui->colour_description_present_flag = SeqParams.sps_disp.vui_seq_parameters.colour_description_present_flag;
-        if( vui->colour_description_present_flag ) {
+        if (vui->colour_description_present_flag) {
             vui->colour_primaries = SeqParams.sps_disp.vui_seq_parameters.colour_primaries;
             vui->transfer_characteristics = SeqParams.sps_disp.vui_seq_parameters.transfer_characteristics;
             vui->matrix_coefficients = SeqParams.sps_disp.vui_seq_parameters.matrix_coefficients;
         }
     }
     vui->chroma_loc_info_present_flag = 0;                      //TBD
-    if( vui->chroma_loc_info_present_flag ) {
+    if (vui->chroma_loc_info_present_flag ) {
         vui->chroma_sample_loc_type_top_field = 0;              //TBD
         vui->chroma_sample_loc_type_bottom_field = 0;           //TBD
     }
@@ -515,16 +514,16 @@ Status DecryptParametersWrapper::GetVUIParam(H264SeqParamSet *sps, H264VUI *vui)
     }
 
     vui->nal_hrd_parameters_present_flag = SeqParams.sps_disp.vui_seq_parameters.nal_hrd_parameters_present_flag;
-    if( vui->nal_hrd_parameters_present_flag )
+    if (vui->nal_hrd_parameters_present_flag)
         ps=GetHRDParam(sps, &SeqParams.sps_disp.vui_seq_parameters.NalHrd, vui);
     vui->vcl_hrd_parameters_present_flag = SeqParams.sps_disp.vui_seq_parameters.vcl_hrd_parameters_present_flag;
-    if( vui->vcl_hrd_parameters_present_flag )
+    if (vui->vcl_hrd_parameters_present_flag)
         ps=GetHRDParam(sps, &SeqParams.sps_disp.vui_seq_parameters.VclHrd, vui);
-    if( vui->nal_hrd_parameters_present_flag  ||  vui->vcl_hrd_parameters_present_flag )
+    if (vui->nal_hrd_parameters_present_flag || vui->vcl_hrd_parameters_present_flag)
         vui->low_delay_hrd_flag = SeqParams.sps_disp.vui_seq_parameters.low_delay_hrd_flag;
     vui->pic_struct_present_flag  = SeqParams.sps_disp.vui_seq_parameters.pic_struct_present_flag;
     vui->bitstream_restriction_flag = SeqParams.sps_disp.vui_seq_parameters.bitstream_restriction_flag;
-    if( vui->bitstream_restriction_flag ) {
+    if (vui->bitstream_restriction_flag) {
         vui->motion_vectors_over_pic_boundaries_flag = 0;                   //TBD
         vui->max_bytes_per_pic_denom = 0;                                   //TBD
         vui->max_bits_per_mb_denom = 0;                                     //TBD
@@ -596,7 +595,7 @@ Status DecryptParametersWrapper::GetPictureParamSetPart1(H264PicParamSet *pps)
     }
 
     return UMC_OK;
-}
+}    // GetPictureParamSetPart1
 
 Status DecryptParametersWrapper::GetPictureParamSetPart2(H264PicParamSet *pps)
 {
@@ -776,7 +775,7 @@ Status DecryptParametersWrapper::GetPictureParamSetPart2(H264PicParamSet *pps)
     pps->chroma_qp_index_offset[1] = (Ipp8s)PicParams.second_chroma_qp_index_offset;
 
     return UMC_OK;
-}
+}    // GetPictureParamSet
 
 
 Status DecryptParametersWrapper::GetSliceHeaderPart1(H264SliceHeader *hdr)
@@ -812,6 +811,8 @@ Status DecryptParametersWrapper::GetSliceHeaderPart1(H264SliceHeader *hdr)
         return UMC_ERR_INVALID_STREAM;
 
     hdr->slice_type = (EnumSliceCodType)val;
+    if (NAL_UT_IDR_SLICE == hdr->nal_unit_type && hdr->slice_type != INTRASLICE)
+        return UMC_ERR_INVALID_STREAM;
 
     Ipp32u pic_parameter_set_id = PicParams.pic_parameter_set_id;
     hdr->pic_parameter_set_id = (Ipp16u)pic_parameter_set_id;
@@ -821,7 +822,7 @@ Status DecryptParametersWrapper::GetSliceHeaderPart1(H264SliceHeader *hdr)
     }
 
     return UMC_OK;
-}
+} // Status GetSliceHeaderPart1(H264SliceHeader *pSliceHeader)
 
 Status DecryptParametersWrapper::GetSliceHeaderPart2(H264SliceHeader *hdr,
                                                      const H264PicParamSet *pps,
@@ -841,9 +842,17 @@ Status DecryptParametersWrapper::GetSliceHeaderPart2(H264SliceHeader *hdr,
         }
     }
 
-    //// correct frst_mb_in_slice in order to handle MBAFF
-    //if (hdr->MbaffFrameFlag && hdr->first_mb_in_slice)
-    //    hdr->first_mb_in_slice <<= 1;
+    //if (hdr->MbaffFrameFlag)
+    //{
+    //    Ipp32u const first_mb_in_slice
+    //        = hdr->first_mb_in_slice;
+
+    //    if (first_mb_in_slice * 2 > INT_MAX)
+    //        return UMC_ERR_INVALID_STREAM;
+
+    //    // correct frst_mb_in_slice in order to handle MBAFF
+    //    hdr->first_mb_in_slice *= 2;
+    //}
 
     //if (hdr->IdrPicFlag)
     //{
@@ -871,10 +880,13 @@ Status DecryptParametersWrapper::GetSliceHeaderPart2(H264SliceHeader *hdr,
 
     //if (pps->redundant_pic_cnt_present_flag)
     //{
+    //    hdr->hw_wa_redundant_elimination_bits[0] = (Ipp32u)BitsDecoded();
     //    // redundant pic count
     //    hdr->redundant_pic_cnt = GetVLCElement(false);
     //    if (hdr->redundant_pic_cnt > 127)
     //        return UMC_ERR_INVALID_STREAM;
+
+    //    hdr->hw_wa_redundant_elimination_bits[1] = (Ipp32u)BitsDecoded();
     //}
 
     return UMC_OK;
@@ -1124,7 +1136,7 @@ Status DecryptParametersWrapper::GetSliceHeaderPart3(
                     }
                 } // while
 
-                if(RefPicMarking.dec_ref_pic_marking_count != num_entries)
+                if (RefPicMarking.dec_ref_pic_marking_count != num_entries)
                 {
                     return UMC_ERR_INVALID_STREAM;
                 }
@@ -1236,7 +1248,7 @@ Status DecryptParametersWrapper::GetSliceHeaderPart3(
     //}
 
     return UMC_OK;
-}
+} // GetSliceHeaderPart3()
 
 Status DecryptParametersWrapper::GetSliceHeaderPart4(H264SliceHeader *hdr,
                                                      const H264SeqParamSetSVCExtension *)
@@ -1244,7 +1256,7 @@ Status DecryptParametersWrapper::GetSliceHeaderPart4(H264SliceHeader *hdr,
     hdr->scan_idx_start = 0;
     hdr->scan_idx_end = 15;
     return UMC_OK;
-}
+} // GetSliceHeaderPart4()
 
 void DecryptParametersWrapper::ParseSEIBufferingPeriod(const Headers & headers, H264SEIPayLoad *spl)
 {
@@ -1268,7 +1280,7 @@ void DecryptParametersWrapper::ParseSEIBufferingPeriod(const Headers & headers, 
         for(Ipp32s i=0; i < MAX_CPB_CNT; i++)
             initial_cpb_removal_delay_vcl_check_sum += abs(SeiBufferingPeriod.initial_cpb_removal_delay_vcl[i]);
 
-        if( !SeiBufferingPeriod.seq_param_set_id &&
+        if (!SeiBufferingPeriod.seq_param_set_id &&
             !initial_cpb_removal_delay_nal_check_sum &&
             !initial_cpb_removal_delay_offset_nal_check_sum &&
             !initial_cpb_removal_delay_offset_vcl_check_sum &&
@@ -1328,7 +1340,7 @@ void DecryptParametersWrapper::ParseSEIPicTiming(const Headers & headers, H264SE
 
     //check for zero
     {
-        if( !SeiPicTiming.cpb_removal_delay &&
+        if (!SeiPicTiming.cpb_removal_delay &&
             !SeiPicTiming.dpb_output_delay &&
             !SeiPicTiming.pic_struct)
         {
@@ -1411,7 +1423,7 @@ void DecryptParametersWrapper::ParseSEIPicTiming(const Headers & headers, H264SE
         //            }
         //        }
 
-        //        if(csps->time_offset_length > 0)
+        //        if (csps->time_offset_length > 0)
         //            pts.clock_timestamps[i].time_offset = (Ipp8u)GetBits(csps->time_offset_length);
         //    }
         //}
@@ -1424,7 +1436,7 @@ void DecryptParametersWrapper::ParseSEIRecoveryPoint(H264SEIPayLoad *spl)
 
     //check for zero
     {
-        if( !SeiRecoveryPoint.broken_link_flag &&
+        if (!SeiRecoveryPoint.broken_link_flag &&
             !SeiRecoveryPoint.changing_slice_group_idc &&
             !SeiRecoveryPoint.exact_match_flag &&
             !SeiRecoveryPoint.recovery_frame_cnt)
@@ -1455,14 +1467,14 @@ void DecryptParametersWrapper::ParseSEIRecoveryPoint(H264SEIPayLoad *spl)
 #ifdef UMC_VA_DXVA
 Status WidevineDecrypter::DecryptFrame(MediaData *pSource, DecryptParametersWrapper* pDecryptParams)
 {
-    if(!pSource)
+    if (!pSource)
     {
         return UMC_OK;
     }
 
     IDirectXVideoDecoder *pDXVAVideoDecoder;
     m_va->GetVideoDecoder((void**)&pDXVAVideoDecoder);
-    if(!pDXVAVideoDecoder)
+    if (!pDXVAVideoDecoder)
         return UMC_ERR_NOT_INITIALIZED;
 
     IDirectXVideoDecoderService *pDecoderService;
@@ -1472,7 +1484,7 @@ Status WidevineDecrypter::DecryptFrame(MediaData *pSource, DecryptParametersWrap
         return UMC_ERR_DEVICE_FAILED;
     }
 
-    if(!m_bitstreamSubmitted && (pSource->GetDataSize() != 0))
+    if (!m_bitstreamSubmitted && (pSource->GetDataSize() != 0))
     {
         if (!m_pDummySurface)
         {

@@ -1,4 +1,4 @@
-/**             
+/**
 ***
 *** Copyright  (C) 1985-2016 Intel Corporation. All rights reserved.
 ***
@@ -8,7 +8,7 @@
 *** from the company.
 ***
 *** ----------------------------------------------------------------------------
-**/ 
+**/
 #pragma once
 
 #if !defined(OSX)
@@ -52,12 +52,12 @@ typedef unsigned int VADisplay;
 #endif
 #include "cm_rt_linux.h"
 #else
-#include "cm_rt_win.h"  
+#include "cm_rt_win.h"
 #endif
 
 #define CM_KERNEL_FUNCTION(...) CM_KERNEL_FUNCTION2(__VA_ARGS__)
 
-#define CM_RT_API 
+#define CM_RT_API
 
 #define CM_1_0 100
 #define CM_2_0 200
@@ -93,7 +93,7 @@ typedef unsigned int VADisplay;
 #define CM_EXCEED_MAX_KERNEL_SIZE_IN_BYTE           -22
 #define CM_EXCEED_MAX_THREAD_AMOUNT_PER_ENQUEUE     -23
 #define CM_EXCEED_VME_STATE_G6_AMOUNT               -24
-#define CM_INVALID_THREAD_SPACE                     -25 
+#define CM_INVALID_THREAD_SPACE                     -25
 #define CM_EXCEED_MAX_TIMEOUT                       -26
 #define CM_JITDLL_LOAD_FAILURE                      -27
 #define CM_JIT_COMPILE_FAILURE                      -28
@@ -120,7 +120,7 @@ typedef unsigned int VADisplay;
 #define CM_KERNELPAYLOAD_PERTHREADARG_MUTEX_FAIL    -49
 #define CM_KERNELPAYLOAD_PERKERNELARG_MUTEX_FAIL    -50
 #define CM_KERNELPAYLOAD_SETTING_FAILURE            -51
-#define CM_KERNELPAYLOAD_SURFACE_INVALID_BTINDEX    -52 
+#define CM_KERNELPAYLOAD_SURFACE_INVALID_BTINDEX    -52
 #define CM_NOT_SET_KERNEL_ARGUMENT                  -53
 #define CM_GPUCOPY_INVALID_SURFACES                 -54
 #define CM_GPUCOPY_INVALID_SIZE                     -55
@@ -189,10 +189,10 @@ typedef enum _CM_STATUS
 typedef struct _CM_SAMPLER_STATE
 {
     CM_TEXTURE_FILTER_TYPE minFilterType;
-    CM_TEXTURE_FILTER_TYPE magFilterType;   
-    CM_TEXTURE_ADDRESS_TYPE addressU;   
-    CM_TEXTURE_ADDRESS_TYPE addressV;   
-    CM_TEXTURE_ADDRESS_TYPE addressW; 
+    CM_TEXTURE_FILTER_TYPE magFilterType;
+    CM_TEXTURE_ADDRESS_TYPE addressU;
+    CM_TEXTURE_ADDRESS_TYPE addressV;
+    CM_TEXTURE_ADDRESS_TYPE addressW;
 } CM_SAMPLER_STATE;
 
 typedef enum _GPU_PLATFORM{
@@ -255,7 +255,7 @@ typedef struct _CM_DLL_FILE_VERSION
     WORD    wMANVERSION;
     WORD    wMANREVISION;
     WORD    wSUBREVISION;
-    WORD    wBUILD_NUMBER; 
+    WORD    wBUILD_NUMBER;
     //Version constructed as : "wMANVERSION.wMANREVISION.wSUBREVISION.wBUILD_NUMBER"
 } CM_DLL_FILE_VERSION, *PCM_DLL_FILE_VERSION;
 
@@ -322,7 +322,7 @@ typedef struct _VME_RD_LUT_SET_G6
     // DWORD 2
     union
     {
-        struct 
+        struct
         {
             DWORD   LUT_MV_0        : 8;
             DWORD   LUT_MV_1        : 8;
@@ -430,7 +430,7 @@ typedef enum _MEMORY_OBJECT_CONTROL{
     // IVB
     MEMORY_OBJECT_CONTROL_FROM_GTT_ENTRY = MEMORY_OBJECT_CONTROL_USE_GTT_ENTRY,                                 // Caching dependent on pte
     MEMORY_OBJECT_CONTROL_L3,                                             // Cached in L3$
-    MEMORY_OBJECT_CONTROL_LLC,                                            // Cached in LLC 
+    MEMORY_OBJECT_CONTROL_LLC,                                            // Cached in LLC
     MEMORY_OBJECT_CONTROL_LLC_L3,                                         // Cached in LLC & L3$
 
     // HSW
@@ -482,7 +482,7 @@ typedef enum _L3_SUGGEST_CONFIG
     IVB_L3_PLANE_9,
     IVB_L3_PLANE_10,
     IVB_L3_PLANE_11,
-    
+
     HSW_L3_PLANE_DEFAULT = IVB_L3_PLANE_DEFAULT,
     HSW_L3_PLANE_1,
     HSW_L3_PLANE_2,
@@ -500,7 +500,7 @@ typedef enum _L3_SUGGEST_CONFIG
     HSW_SLM_PLANE_DEFAULT = HSW_L3_PLANE_9
 } L3_SUGGEST_CONFIG;
 
-static const L3_CONFIG_REGISTER_VALUES IVB_L3_PLANE[IVB_1_L3_CONFIG_NUM]  = 
+static const L3_CONFIG_REGISTER_VALUES IVB_L3_PLANE[IVB_1_L3_CONFIG_NUM]  =
 {                                                                    // SLM    URB   Rest DC     RO     I/S    C    T      Sum
     {0x01730000, 0x00080040, 0x00000000},     // {0,    256,    0,     0,     256,    0,     0,    0,     512},
     {0x00730000, 0x02040040, 0x00000000},     //{0,    256,    0,   128,     128,    0,     0,    0,     512},
@@ -516,7 +516,7 @@ static const L3_CONFIG_REGISTER_VALUES IVB_L3_PLANE[IVB_1_L3_CONFIG_NUM]  =
     {0x00730000, 0x008000a1, 0x00040420}      //{128,    128,    0,    32,       0,  128,   32,    64,     512}
 };
 
-static const L3_CONFIG_REGISTER_VALUES HSW_L3_PLANE[HSW_L3_CONFIG_NUM]  = 
+static const L3_CONFIG_REGISTER_VALUES HSW_L3_PLANE[HSW_L3_CONFIG_NUM]  =
 {                                                                    // SLM    URB   Rest DC     RO     I/S    C    T      Sum
     {0x01610000, 0x00080040, 0x00000000},     // {0,    256,    0,     0,     256,    0,     0,    0,     512},
     {0x00610000, 0x02040040, 0x00000000},     //{0,    256,    0,   128,     128,    0,     0,    0,     512},
@@ -532,7 +532,7 @@ static const L3_CONFIG_REGISTER_VALUES HSW_L3_PLANE[HSW_L3_CONFIG_NUM]  =
     {0x00610000, 0x008000a1, 0x00040420}      //{128,    128,    0,    32,       0,  128,   32,    64,     512}
 };
 
-static const L3_CONFIG_REGISTER_VALUES BDW_L3_PLANE[BDW_L3_CONFIG_NUM]  = 
+static const L3_CONFIG_REGISTER_VALUES BDW_L3_PLANE[BDW_L3_CONFIG_NUM]  =
 {                                                                    // SLM    URB   Rest DC     RO     I/S    C    T      Sum
     {0x01610000, 0x00080040, 0x00000000},     //{0,    48,    48,    0,    0,    0,    0,    0,    96},
     {0x00610000, 0x02040040, 0x00000000},     //{0,    48,    0,    16,    32,    0,    0,    0,    96},
@@ -593,19 +593,19 @@ typedef enum _CM_VA_FUNCTION_
 
 //GT-PIN
 typedef struct _CM_SURFACE_DETAILS{
-    UINT        width; 
-    UINT        height; 
-    UINT        depth; 
-    CM_SURFACE_FORMAT   format; 
+    UINT        width;
+    UINT        height;
+    UINT        depth;
+    CM_SURFACE_FORMAT   format;
     UINT        planeIndex;
-    UINT        pitch; 
+    UINT        pitch;
     UINT        slicePitch;
     UINT        SurfaceBaseAddress;
     UINT8       TiledSurface;
     UINT8       TileWalk;
     UINT        XOffset;
-    UINT        YOffset; 
-    
+    UINT        YOffset;
+
 }CM_SURFACE_DETAILS;
 
 
@@ -642,7 +642,7 @@ typedef struct _CM_AVS_NONPIPLINED_STATE{
     BYTE maxDerivative4Pixels;
     BYTE maxDerivative8Pixels;
     BYTE transitionArea4Pixels;
-    BYTE transitionArea8Pixels;    
+    BYTE transitionArea8Pixels;
     CM_AVS_COEFF_TABLE Tbl0X[CM_NUM_COEFF_ROWS];
     CM_AVS_COEFF_TABLE Tbl0Y[CM_NUM_COEFF_ROWS];
     CM_AVS_COEFF_TABLE Tbl1X[CM_NUM_COEFF_ROWS];
@@ -656,7 +656,7 @@ typedef struct _CM_AVS_INTERNEL_NONPIPLINED_STATE{
     BYTE maxDerivative4Pixels;
     BYTE maxDerivative8Pixels;
     BYTE transitionArea4Pixels;
-    BYTE transitionArea8Pixels;    
+    BYTE transitionArea8Pixels;
     CM_AVS_INTERNEL_COEFF_TABLE Tbl0X[CM_NUM_COEFF_ROWS];
     CM_AVS_INTERNEL_COEFF_TABLE Tbl0Y[CM_NUM_COEFF_ROWS];
     CM_AVS_INTERNEL_COEFF_TABLE Tbl1X[CM_NUM_COEFF_ROWS];
@@ -664,7 +664,7 @@ typedef struct _CM_AVS_INTERNEL_NONPIPLINED_STATE{
 }CM_AVS_INTERNEL_NONPIPLINED_STATE;
 
 typedef struct _CM_AVS_STATE_MSG{
-    bool AVSTYPE; //true nearest, false adaptive    
+    bool AVSTYPE; //true nearest, false adaptive
     bool EightTapAFEnable; //HSW+
     bool BypassIEF; //ignored for BWL, moved to sampler8x8 payload.
     bool ShuffleOutputWriteback; //SKL mode only to be set when AVS msg sequence is 4x4 or 8x4
@@ -701,7 +701,7 @@ typedef struct _CM_CONVOLVE_COEFF_TABLE{
     float   FilterCoeff_0_13;
     float   FilterCoeff_0_14;
     float   FilterCoeff_0_15;
-    float   FilterCoeff_0_16;    
+    float   FilterCoeff_0_16;
     float   FilterCoeff_0_17;
     float   FilterCoeff_0_18;
     float   FilterCoeff_0_19;
@@ -725,7 +725,7 @@ typedef struct _CM_CONVOLVE_STATE_MSG{
         bool CoeffSize; //true 16-bit, false 8-bit
         byte SclDwnValue; //Scale down value
         byte Width; //Kernel Width
-        byte Height; //Kernel Height   
+        byte Height; //Kernel Height
         //SKL mode
         bool isVertical32Mode;
         bool isHorizontal32Mode;
@@ -826,7 +826,7 @@ typedef struct _CM_MISC_STATE {
         };
     } DW7;
 } CM_MISC_STATE;
- 
+
 typedef struct _CM_MISC_STATE_MSG{
     //DWORD 0
     union{
@@ -953,17 +953,17 @@ typedef struct _CM_SAMPLER_8X8_STATE {
 
 typedef struct _CM_HAL_SAMPLER_8X8_STATE_PARAM{
     CM_SAMPLER_8X8_STATE    sampler8x8State;
-    DWORD                              dwHandle;                                       // [out] Handle 
+    DWORD                              dwHandle;                                       // [out] Handle
 } CM_HAL_SAMPLER_8X8_STATE_PARAM;
 
 //GT-PINS urfaceDetails
 typedef struct _CM_HAL_SURFACE_DETAILS{
     CM_SAMPLER_8X8_STATE    sampler8x8State;
-    DWORD                   dwHandle;                                       // [out] Handle 
+    DWORD                   dwHandle;                                       // [out] Handle
 } CM_HAL_SURFACE_DETAILS;
 
 //!
-//! CM Sampler8X8 
+//! CM Sampler8X8
 //!
 class CmSampler8x8
 {
@@ -984,7 +984,7 @@ class CmThreadSpace;
 
 class CmKernel
 {
-public:       
+public:
     CM_RT_API virtual INT SetThreadCount(UINT count ) = 0;
     CM_RT_API virtual INT SetKernelArg(UINT index, size_t size, const void * pValue ) = 0;
 
@@ -993,18 +993,18 @@ public:
 
     CM_RT_API virtual INT SetKernelPayloadData(size_t size, const void *pValue) = 0;
     CM_RT_API virtual INT SetKernelPayloadSurface(UINT surfaceCount, SurfaceIndex** pSurfaces) = 0;
-    CM_RT_API virtual INT SetSurfaceBTI(SurfaceIndex* pSurface, UINT BTIndex) = 0;    
+    CM_RT_API virtual INT SetSurfaceBTI(SurfaceIndex* pSurface, UINT BTIndex) = 0;
 
     CM_RT_API virtual INT AssociateThreadSpace(CmThreadSpace* & pTS) = 0;
 };
 
 class CmTask
 {
-public:       
+public:
     CM_RT_API virtual INT AddKernel(CmKernel *pKernel) = 0;
     CM_RT_API virtual INT Reset(void) = 0;
     CM_RT_API virtual INT AddSync(void) = 0;
-}; 
+};
 
 class CmProgram;
 class SurfaceIndex;
@@ -1013,7 +1013,7 @@ class SamplerIndex;
 class CmBuffer
 {
 public:
-    CM_RT_API virtual INT GetIndex( SurfaceIndex*& pIndex ) = 0; 
+    CM_RT_API virtual INT GetIndex( SurfaceIndex*& pIndex ) = 0;
     CM_RT_API virtual INT ReadSurface( unsigned char* pSysMem, CmEvent* pEvent, UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL ) = 0;
     CM_RT_API virtual INT WriteSurface( const unsigned char* pSysMem, CmEvent* pEvent, UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL ) = 0;
     CM_RT_API virtual INT InitSurface(const DWORD initValue, CmEvent* pEvent) = 0;
@@ -1023,14 +1023,14 @@ public:
 class CmBufferUP
 {
 public:
-    CM_RT_API virtual INT GetIndex( SurfaceIndex*& pIndex ) = 0; 
+    CM_RT_API virtual INT GetIndex( SurfaceIndex*& pIndex ) = 0;
     CM_RT_API virtual INT SetMemoryObjectControl(MEMORY_OBJECT_CONTROL mem_ctrl, MEMORY_TYPE mem_type, UINT  age) = 0;
 };
 
 class CmSurface2D
 {
-public:    
-    CM_RT_API virtual INT GetIndex( SurfaceIndex*& pIndex ) = 0; 
+public:
+    CM_RT_API virtual INT GetIndex( SurfaceIndex*& pIndex ) = 0;
 #ifndef __GNUC__
     CM_RT_API virtual INT GetD3DSurface( AbstractSurfaceHandle & pD3DSurface) = 0;
 #endif //__GNUC__
@@ -1049,17 +1049,17 @@ public:
 #endif
 };
 
-class CmSurface2DUP  
+class CmSurface2DUP
 {
-public:    
-    CM_RT_API virtual INT GetIndex( SurfaceIndex*& pIndex ) = 0; 
+public:
+    CM_RT_API virtual INT GetIndex( SurfaceIndex*& pIndex ) = 0;
     CM_RT_API virtual INT SetMemoryObjectControl(MEMORY_OBJECT_CONTROL mem_ctrl, MEMORY_TYPE mem_type, UINT  age) = 0;
 };
 
-class CmSurface3D  
+class CmSurface3D
 {
-public:    
-    CM_RT_API virtual INT GetIndex( SurfaceIndex*& pIndex ) = 0; 
+public:
+    CM_RT_API virtual INT GetIndex( SurfaceIndex*& pIndex ) = 0;
     CM_RT_API virtual INT ReadSurface( unsigned char* pSysMem, CmEvent* pEvent, UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL ) = 0;
     CM_RT_API virtual INT WriteSurface( const unsigned char* pSysMem, CmEvent* pEvent, UINT64 sysMemSize = 0xFFFFFFFFFFFFFFFFULL ) = 0;
     CM_RT_API virtual INT InitSurface(const DWORD initValue, CmEvent* pEvent) = 0;
@@ -1084,13 +1084,13 @@ class CmVebox_G75;
 
 class CmQueue
 {
-public:    
+public:
     CM_RT_API virtual INT Enqueue( CmTask* pTask, CmEvent* & pEvent, const CmThreadSpace* pTS = NULL ) = 0;
-    CM_RT_API virtual INT DestroyEvent( CmEvent* & pEvent ) = 0; 
+    CM_RT_API virtual INT DestroyEvent( CmEvent* & pEvent ) = 0;
     CM_RT_API virtual INT EnqueueWithGroup( CmTask* pTask, CmEvent* & pEvent, const CmThreadGroupSpace* pTGS = NULL )=0;
-    CM_RT_API virtual INT EnqueueCopyCPUToGPU( CmSurface2D* pSurface, const unsigned char* pSysMem, CmEvent* & pEvent ) = 0; 
+    CM_RT_API virtual INT EnqueueCopyCPUToGPU( CmSurface2D* pSurface, const unsigned char* pSysMem, CmEvent* & pEvent ) = 0;
     CM_RT_API virtual INT EnqueueCopyGPUToCPU( CmSurface2D* pSurface, unsigned char* pSysMem, CmEvent* & pEvent ) = 0;
-    CM_RT_API virtual INT EnqueueCopyCPUToGPUStride( CmSurface2D* pSurface, const unsigned char* pSysMem, const UINT stride, CmEvent* & pEvent ) = 0; 
+    CM_RT_API virtual INT EnqueueCopyCPUToGPUStride( CmSurface2D* pSurface, const unsigned char* pSysMem, const UINT stride, CmEvent* & pEvent ) = 0;
     CM_RT_API virtual INT EnqueueCopyGPUToCPUStride( CmSurface2D* pSurface, unsigned char* pSysMem, const UINT stride, CmEvent* & pEvent ) = 0;
     CM_RT_API virtual INT EnqueueInitSurface2D( CmSurface2D* pSurface, const DWORD initValue, CmEvent* &pEvent ) = 0;
     CM_RT_API virtual INT EnqueueCopyGPUToGPU( CmSurface2D* pOutputSurface, CmSurface2D* pInputSurface, CmEvent* & pEvent ) = 0;
@@ -1120,7 +1120,7 @@ namespace CmDx9
         CM_RT_API virtual INT DestroySurface( CmBuffer* & pSurface) = 0;
         CM_RT_API virtual INT DestroySurface( CmSurface2D* & pSurface) = 0;
         CM_RT_API virtual INT DestroySurface( CmSurface3D* & pSurface) = 0;
-        CM_RT_API virtual INT CreateQueue( CmQueue* & pQueue) = 0; 
+        CM_RT_API virtual INT CreateQueue( CmQueue* & pQueue) = 0;
         CM_RT_API virtual INT LoadProgram( void* pCommonISACode, const UINT size, CmProgram*& pProgram, const char* options = NULL ) = 0;
         CM_RT_API virtual INT CreateKernel( CmProgram* pProgram, const char* kernelName, CmKernel* & pKernel, const char* options = NULL) = 0;
         CM_RT_API virtual INT CreateKernel( CmProgram* pProgram, const char* kernelName, const void * fncPnt, CmKernel* & pKernel, const char* options = NULL) = 0;
@@ -1128,7 +1128,7 @@ namespace CmDx9
         CM_RT_API virtual INT DestroyKernel( CmKernel*& pKernel) = 0;
         CM_RT_API virtual INT DestroySampler( CmSampler*& pSampler ) = 0;
         CM_RT_API virtual INT DestroyProgram( CmProgram*& pProgram ) = 0;
-        CM_RT_API virtual INT DestroyThreadSpace( CmThreadSpace* & pTS ) = 0; 
+        CM_RT_API virtual INT DestroyThreadSpace( CmThreadSpace* & pTS ) = 0;
         CM_RT_API virtual INT CreateTask(CmTask *& pTask)=0;
         CM_RT_API virtual INT DestroyTask(CmTask*& pTask)=0;
         CM_RT_API virtual INT GetCaps(CM_DEVICE_CAP_NAME capName, size_t& capValueSize, void* pCapValue ) = 0;
@@ -1160,7 +1160,7 @@ namespace CmDx9
         CM_RT_API virtual INT DestroySamplerSurface(SurfaceIndex* & pSamplerSurfaceIndex) = 0;
         CM_RT_API virtual INT GetRTDllVersion(CM_DLL_FILE_VERSION* pFileVersion) = 0;
         CM_RT_API virtual INT GetJITDllVersion(CM_DLL_FILE_VERSION* pFileVersion) = 0;
-        CM_RT_API virtual INT InitPrintBuffer(size_t printbufsize = 1048576) = 0; 
+        CM_RT_API virtual INT InitPrintBuffer(size_t printbufsize = 1048576) = 0;
         CM_RT_API virtual INT FlushPrintBuffer() = 0;
     };
 };
@@ -1178,7 +1178,7 @@ namespace CmDx11
         CM_RT_API virtual INT DestroySurface( CmBuffer* & pSurface) = 0;
         CM_RT_API virtual INT DestroySurface( CmSurface2D* & pSurface) = 0;
         CM_RT_API virtual INT DestroySurface( CmSurface3D* & pSurface) = 0;
-        CM_RT_API virtual INT CreateQueue( CmQueue* & pQueue) = 0; 
+        CM_RT_API virtual INT CreateQueue( CmQueue* & pQueue) = 0;
         CM_RT_API virtual INT LoadProgram( void* pCommonISACode, const UINT size, CmProgram*& pProgram, const char* options = NULL ) = 0;
         CM_RT_API virtual INT CreateKernel( CmProgram* pProgram, const char* kernelName, CmKernel* & pKernel, const char* options = NULL) = 0;
         CM_RT_API virtual INT CreateKernel( CmProgram* pProgram, const char* kernelName, const void * fncPnt, CmKernel* & pKernel, const char* options = NULL) = 0;
@@ -1186,7 +1186,7 @@ namespace CmDx11
         CM_RT_API virtual INT DestroyKernel( CmKernel*& pKernel) = 0;
         CM_RT_API virtual INT DestroySampler( CmSampler*& pSampler ) = 0;
         CM_RT_API virtual INT DestroyProgram( CmProgram*& pProgram ) = 0;
-        CM_RT_API virtual INT DestroyThreadSpace( CmThreadSpace* & pTS ) = 0; 
+        CM_RT_API virtual INT DestroyThreadSpace( CmThreadSpace* & pTS ) = 0;
         CM_RT_API virtual INT CreateTask(CmTask *& pTask)=0;
         CM_RT_API virtual INT DestroyTask(CmTask*& pTask)=0;
         CM_RT_API virtual INT GetCaps(CM_DEVICE_CAP_NAME capName, size_t& capValueSize, void* pCapValue ) = 0;
@@ -1219,7 +1219,7 @@ namespace CmDx11
         CM_RT_API virtual INT DestroySamplerSurface(SurfaceIndex* & pSamplerSurfaceIndex) = 0;
         CM_RT_API virtual INT GetRTDllVersion(CM_DLL_FILE_VERSION* pFileVersion) = 0;
         CM_RT_API virtual INT GetJITDllVersion(CM_DLL_FILE_VERSION* pFileVersion) = 0;
-        CM_RT_API virtual INT InitPrintBuffer(size_t printbufsize = 1048576) = 0; 
+        CM_RT_API virtual INT InitPrintBuffer(size_t printbufsize = 1048576) = 0;
         CM_RT_API virtual INT FlushPrintBuffer() = 0;
         CM_RT_API virtual INT CreateSurface2DSubresource( ID3D11Texture2D* pD3D11Texture2D, UINT subresourceCount, CmSurface2D** ppSurfaces, UINT& createdSurfaceCount, UINT option = 0 ) = 0;
         CM_RT_API virtual INT CreateSurface2DbySubresourceIndex( ID3D11Texture2D* pD3D11Texture2D, UINT FirstArraySlice, UINT FirstMipSlice, CmSurface2D* &pSurface) = 0;
@@ -1239,7 +1239,7 @@ namespace CmLinux
         CM_RT_API virtual INT DestroySurface( CmBuffer* & pSurface) = 0;
         CM_RT_API virtual INT DestroySurface( CmSurface2D* & pSurface) = 0;
         CM_RT_API virtual INT DestroySurface( CmSurface3D* & pSurface) = 0;
-        CM_RT_API virtual INT CreateQueue( CmQueue* & pQueue) = 0; 
+        CM_RT_API virtual INT CreateQueue( CmQueue* & pQueue) = 0;
         CM_RT_API virtual INT LoadProgram( void* pCommonISACode, const UINT size, CmProgram*& pProgram, const char* options = NULL ) = 0;
         CM_RT_API virtual INT CreateKernel( CmProgram* pProgram, const char* kernelName, CmKernel* & pKernel, const char* options = NULL) = 0;
         CM_RT_API virtual INT CreateKernel( CmProgram* pProgram, const char* kernelName, const void * fncPnt, CmKernel* & pKernel, const char* options = NULL) = 0;
@@ -1247,7 +1247,7 @@ namespace CmLinux
         CM_RT_API virtual INT DestroyKernel( CmKernel*& pKernel) = 0;
         CM_RT_API virtual INT DestroySampler( CmSampler*& pSampler ) = 0;
         CM_RT_API virtual INT DestroyProgram( CmProgram*& pProgram ) = 0;
-        CM_RT_API virtual INT DestroyThreadSpace( CmThreadSpace* & pTS ) = 0; 
+        CM_RT_API virtual INT DestroyThreadSpace( CmThreadSpace* & pTS ) = 0;
         CM_RT_API virtual INT CreateTask(CmTask *& pTask)=0;
         CM_RT_API virtual INT DestroyTask(CmTask*& pTask)=0;
         CM_RT_API virtual INT GetCaps(CM_DEVICE_CAP_NAME capName, size_t& capValueSize, void* pCapValue ) = 0;
@@ -1279,7 +1279,7 @@ namespace CmLinux
         CM_RT_API virtual INT DestroySamplerSurface(SurfaceIndex* & pSamplerSurfaceIndex) = 0;
         CM_RT_API virtual INT GetRTDllVersion(CM_DLL_FILE_VERSION* pFileVersion) = 0;
         CM_RT_API virtual INT GetJITDllVersion(CM_DLL_FILE_VERSION* pFileVersion) = 0;
-        CM_RT_API virtual INT InitPrintBuffer(size_t printbufsize = 1048576) = 0; 
+        CM_RT_API virtual INT InitPrintBuffer(size_t printbufsize = 1048576) = 0;
         CM_RT_API virtual INT FlushPrintBuffer() = 0;
     };
 };
@@ -1297,7 +1297,7 @@ public:
     CM_RT_API virtual INT DestroySurface( CmBuffer* & pSurface) = 0;
     CM_RT_API virtual INT DestroySurface( CmSurface2D* & pSurface) = 0;
     CM_RT_API virtual INT DestroySurface( CmSurface3D* & pSurface) = 0;
-    CM_RT_API virtual INT CreateQueue( CmQueue* & pQueue) = 0; 
+    CM_RT_API virtual INT CreateQueue( CmQueue* & pQueue) = 0;
     CM_RT_API virtual INT LoadProgram( void* pCommonISACode, const UINT size, CmProgram*& pProgram, const char* options = NULL ) = 0;
     CM_RT_API virtual INT CreateKernel( CmProgram* pProgram, const char* kernelName, CmKernel* & pKernel, const char* options = NULL) = 0;
     CM_RT_API virtual INT CreateKernel( CmProgram* pProgram, const char* kernelName, const void * fncPnt, CmKernel* & pKernel, const char* options = NULL) = 0;
@@ -1305,7 +1305,7 @@ public:
     CM_RT_API virtual INT DestroyKernel( CmKernel*& pKernel) = 0;
     CM_RT_API virtual INT DestroySampler( CmSampler*& pSampler ) = 0;
     CM_RT_API virtual INT DestroyProgram( CmProgram*& pProgram ) = 0;
-    CM_RT_API virtual INT DestroyThreadSpace( CmThreadSpace* & pTS ) = 0; 
+    CM_RT_API virtual INT DestroyThreadSpace( CmThreadSpace* & pTS ) = 0;
     CM_RT_API virtual INT CreateTask(CmTask *& pTask) = 0;
     CM_RT_API virtual INT DestroyTask(CmTask*& pTask) = 0;
     CM_RT_API virtual INT GetCaps(CM_DEVICE_CAP_NAME capName, size_t& capValueSize, void* pCapValue ) = 0;
@@ -1337,7 +1337,7 @@ public:
     CM_RT_API virtual INT DestroySamplerSurface(SurfaceIndex* & pSamplerSurfaceIndex) = 0;
     CM_RT_API virtual INT GetRTDllVersion(CM_DLL_FILE_VERSION* pFileVersion) = 0;
     CM_RT_API virtual INT GetJITDllVersion(CM_DLL_FILE_VERSION* pFileVersion) = 0;
-    CM_RT_API virtual INT InitPrintBuffer(size_t printbufsize = 1048576) = 0; 
+    CM_RT_API virtual INT InitPrintBuffer(size_t printbufsize = 1048576) = 0;
     CM_RT_API virtual INT FlushPrintBuffer() = 0;
     CM_RT_API virtual INT CreateSurface2DSubresource( AbstractSurfaceHandle pD3D11Texture2D, UINT subresourceCount, CmSurface2D** ppSurfaces, UINT& createdSurfaceCount, UINT option = 0 ) = 0;
     CM_RT_API virtual INT CreateSurface2DbySubresourceIndex( AbstractSurfaceHandle pD3D11Texture2D, UINT FirstArraySlice, UINT FirstMipSlice, CmSurface2D* &pSurface) = 0;

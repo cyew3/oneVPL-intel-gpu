@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2015 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -35,6 +35,8 @@ namespace MFX_H264_PP
     class H264_Dispatcher
     {
     public:
+
+        virtual ~H264_Dispatcher(){};
 
         virtual void FilterDeblockingLumaEdge(Ipp16u* pSrcDst, Ipp32s  srcdstStep,
                                            Ipp8u*  pAlpha, Ipp8u*  pBeta,
@@ -185,6 +187,7 @@ namespace MFX_H264_PP
     class H264_Dispatcher_sse : public H264_Dispatcher
     {
     public:
+        virtual ~H264_Dispatcher_sse(){};
 
         virtual void FilterDeblockingChromaEdge(Ipp8u* pSrcDst, Ipp32s  srcdstStep,
                                                 Ipp8u*  pAlpha, Ipp8u*  pBeta,

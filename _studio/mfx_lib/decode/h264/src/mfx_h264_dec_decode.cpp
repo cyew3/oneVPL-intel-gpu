@@ -25,7 +25,6 @@
 #include "mfx_enc_common.h"
 
 #if defined(MFX_VA)
-#include "umc_va_base.h"
 #include "umc_h264_va_supplier.h"
 #include "umc_h264_widevine_supplier.h"
 #include "umc_va_dxva2_protected.h"
@@ -280,7 +279,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
         return MFX_ERR_UNSUPPORTED;
 #else
         m_pH264VideoDecoder.reset(new UMC::MFXTaskSupplier());
-        
+
         /*if (m_vPar.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422 || m_vPar.mfx.FrameInfo.BitDepthLuma > 8 || m_vPar.mfx.FrameInfo.BitDepthChroma > 8)
             m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_NV12());
         else*/

@@ -335,7 +335,7 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
     //        return UMC::UMC_ERR_FAILED;
 
     //    *pNewMemID = static_cast<UMC::FrameMemID>((size_t)pair.second);
-    //} 
+    //}
     //else
     {
         *pNewMemID = (UMC::FrameMemID)index;
@@ -385,7 +385,7 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
         {
             sts = m_pCore->IncreaseReference(&m_extSurfaces[index].FrameSurface->Data);
             if (sts < MFX_ERR_NONE)
-                return UMC::UMC_ERR_FAILED; 
+                return UMC::UMC_ERR_FAILED;
 
             m_extSurfaces[m_curIndex].isUsed = true;
         }
@@ -596,7 +596,7 @@ mfxStatus mfx_UMC_FrameAllocator::SetCurrentMFXSurface(mfxFrameSurface1 *surf, b
         return MFX_ERR_MORE_SURFACE;
 
     // check input surface
-    
+
     if ((surf->Info.BitDepthLuma ? surf->Info.BitDepthLuma : 8) != (m_surface.Info.BitDepthLuma ? m_surface.Info.BitDepthLuma : 8))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
@@ -907,7 +907,7 @@ mfxStatus mfx_UMC_FrameAllocator::PrepareToOutput(mfxFrameSurface1 *surface_work
         m_surface.Data.PitchHigh = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch / (1 << 16));
         m_surface.Data.PitchLow  = (mfxU16)(frame->GetPlaneMemoryInfo(0)->m_pitch % (1 << 16));
         break;
-        
+
     case UMC::YUY2:
         m_surface.Data.Y = frame->GetPlaneMemoryInfo(0)->m_planePtr;
         m_surface.Data.U = m_surface.Data.Y + 1;
@@ -941,7 +941,7 @@ mfxStatus mfx_UMC_FrameAllocator::PrepareToOutput(mfxFrameSurface1 *surface_work
 
     return sts;
 }
-#if !defined( AS_HEVCD_PLUGIN ) || defined (AS_VP8D_PLUGIN) // HEVC decode natively supportes NV12 format - no need to make conversion 
+#if !defined( AS_HEVCD_PLUGIN ) || defined (AS_VP8D_PLUGIN) // HEVC decode natively supportes NV12 format - no need to make conversion
 UMC::Status mfx_UMC_FrameAllocator_NV12::InitMfx(UMC::FrameAllocatorParams *pParams,
                                                  VideoCORE* mfxCore,
                                                  const mfxVideoParam * params,
@@ -1423,7 +1423,7 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::StartPreparingToOutput(mfxFrameS
         UMC::FrameMemID index = in->GetFrameMID();
 
         mfxMemId memId = isOpaq?(m_frameData[index].first.Data.MemId):(m_pCore->MapIdx(m_frameData[index].first.Data.MemId));
-        
+
         mfxHDLPair pPair;
         if(isOpaq)
             sts = m_pCore->GetFrameHDL(surface_work->Data.MemId, (mfxHDL*)&pPair);
@@ -1439,7 +1439,7 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::StartPreparingToOutput(mfxFrameS
         else
         {
             mfxFrameSurface1 pSrc;
-            
+
             pSrc = m_frameData[index].first;
             if(par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
             {
@@ -1456,7 +1456,7 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::StartPreparingToOutput(mfxFrameS
 
             sts = DoHwJpegCc(pCc, m_pCore, surface_work, &pSrc, par, isD3DToSys, taskId);
             if (sts < MFX_ERR_NONE)
-                return sts;        
+                return sts;
 
             return MFX_ERR_NONE;
         }
@@ -1484,7 +1484,7 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::StartPreparingToOutput(mfxFrameS
         else
         {
             mfxFrameSurface1 pSrcTop, pSrcBottom;
-            
+
             pSrcTop = m_frameData[indexTop].first;
             pSrcBottom = m_frameData[indexBottom].first;
 
@@ -1503,7 +1503,7 @@ mfxStatus mfx_UMC_FrameAllocator_D3D_Converter::StartPreparingToOutput(mfxFrameS
 
             sts = DoHwJpegCcFw(pCc, m_pCore, surface_work, &pSrcTop, &pSrcBottom, par, isD3DToSys, taskId);
             if (sts < MFX_ERR_NONE)
-                return sts;        
+                return sts;
 
             return MFX_ERR_NONE;
         }

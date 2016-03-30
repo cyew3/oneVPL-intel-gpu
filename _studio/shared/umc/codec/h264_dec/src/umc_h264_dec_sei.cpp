@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -407,7 +407,7 @@ void H264Bitstream::scalability_info(H264SEIPayLoad *spl)
         Ipp8u   parameter_sets_info_present_flag = (Ipp8u)Get1Bit();
         Ipp8u   bitstream_restriction_info_present_flag = (Ipp8u)Get1Bit();
         Ipp8u   exact_inter_layer_pred_flag = (Ipp8u)Get1Bit();
-        
+
         if (sub_pic_layer_flag || iroi_division_info_present_flag)
         {
             Ipp8u   exact_sample_value_match_flag = (Ipp8u)Get1Bit();
@@ -588,7 +588,7 @@ void H264Bitstream::scalability_info(H264SEIPayLoad *spl)
 
 #pragma warning(default : 4189)
 
-typedef struct 
+typedef struct
 {
     Ipp8u   all_layer_representations_in_au_flag;
     Ipp32u  num_layer_representations;

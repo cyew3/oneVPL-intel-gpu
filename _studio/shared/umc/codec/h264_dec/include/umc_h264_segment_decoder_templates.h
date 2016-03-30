@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -672,7 +672,7 @@ public:
         }
 
     } // void DecodeMacroblock_BSlice_CAVLC(H264SegmentDecoderMultiThreaded *sd)
-    
+
     void DecodeMacroblock_I_CABAC(H264SegmentDecoderMultiThreaded *sd)
     {
         bool noSubMbPartSizeLessThan8x8Flag;
@@ -1139,14 +1139,13 @@ public:
                 transform_size_8x8_mode_flag  = (Ipp8u) sd->m_pBitStream->Get1Bit();
                 pSetMB8x8TSFlag(sd->m_cur_mb.GlobalMacroblockInfo, transform_size_8x8_mode_flag);
             }
-            
+
             // check for usual case of zero QP delta
             if (!sd->m_pBitStream->NextBit())
             {
                 sd->DecodeMBQPDelta_CAVLC();
                 sd->m_QuantPrev = sd->m_cur_mb.LocalMacroblockInfo->QP;
             }
-
 
             sd->m_pBitStream->SetIdx(sd->m_pSliceHeader->scan_idx_start,
                                      sd->m_pSliceHeader->scan_idx_end);

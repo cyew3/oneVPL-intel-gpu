@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -156,7 +156,7 @@ Status FillVideoParam(const UMC_H264_DECODER::H264SeqParamSet * seq, mfxVideoPar
     }
 
     par->mfx.FrameInfo.PicStruct = (mfxU8)(seq->frame_mbs_only_flag ? MFX_PICSTRUCT_PROGRESSIVE : MFX_PICSTRUCT_UNKNOWN);
-    
+
     if (seq->chroma_format_idc == 2)
     {
         par->mfx.FrameInfo.ChromaFormat = (mfxU16)MFX_CHROMAFORMAT_YUV422;

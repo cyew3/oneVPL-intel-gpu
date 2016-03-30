@@ -311,20 +311,21 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
 
     // checking errors in input parameters
     if ((UMC_OK == umcRes) && (NULL == pParams))
-        return UMC_ERR_NULL_PTR;
-
-    m_allocator = pParams->m_allocator;
-
-    if ((NULL == m_allocator) ||
-        (NULL == pParams->m_pVideoStreamInfo) ||
-        (NULL == pParams->m_Display) ||
-        (NULL == pParams->m_pConfigId) ||
-        (NULL == pParams->m_pContext) ||
-        (NULL == pParams->m_pKeepVAState) ||
-        (pParams->m_iNumberSurfaces < 0))
-    {
-        return UMC_ERR_INVALID_PARAMS;
-    }
+        umcRes = UMC_ERR_NULL_PTR;
+    if ((UMC_OK == umcRes) && (NULL == pParams->m_pVideoStreamInfo))
+        umcRes = UMC_ERR_INVALID_PARAMS;
+    if ((UMC_OK == umcRes) && (NULL == pParams->m_Display))
+        umcRes = UMC_ERR_INVALID_PARAMS;
+    if ((UMC_OK == umcRes) && (NULL == pParams->m_pConfigId))
+        umcRes = UMC_ERR_INVALID_PARAMS;
+    if ((UMC_OK == umcRes) && (NULL == pParams->m_pContext))
+        umcRes = UMC_ERR_INVALID_PARAMS;
+    if ((UMC_OK == umcRes) && (NULL == pParams->m_pKeepVAState))
+        umcRes = UMC_ERR_INVALID_PARAMS;
+    if ((UMC_OK == umcRes) && (NULL == pParams->m_allocator))
+        umcRes = UMC_ERR_INVALID_PARAMS;
+    if ((UMC_OK == umcRes) && (pParams->m_iNumberSurfaces < 0))
+        umcRes = UMC_ERR_INVALID_PARAMS;
     if (UMC_OK == umcRes)
     {
         vm_mutex_set_invalid(&m_SyncMutex);
@@ -338,6 +339,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         width               = pParams->m_pVideoStreamInfo->clip_info.width;
         height              = pParams->m_pVideoStreamInfo->clip_info.height;
         m_NumOfFrameBuffers = pParams->m_iNumberSurfaces;
+        m_allocator         = pParams->m_allocator;
         m_FrameState        = lvaBeforeBegin;
 
         if (IS_PROTECTION_ANY(pParams->m_protectedVA))
