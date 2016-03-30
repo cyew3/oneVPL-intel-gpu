@@ -375,7 +375,7 @@ typedef struct {
     mfxU32     Reserved70;
 
     //dword 8-15
-    mfxI16Pair MV[4][2]; /* L0 – 0, L1 - 1 */
+    mfxI16Pair MV[4][2]; /* L0 - 0, L1 - 1 */
 }mfxFeiDecStreamOutMBCtrl;
 
 typedef struct {
@@ -479,6 +479,7 @@ typedef struct {
 typedef enum {
     MFX_FEI_FUNCTION_PREENC     =1,
     MFX_FEI_FUNCTION_ENCPAK     =2,
+    MFX_FEI_FUNCTION_ENCODE     =2,
     MFX_FEI_FUNCTION_ENC        =3,
     MFX_FEI_FUNCTION_PAK        =4,
     MFX_FEI_FUNCTION_DEC        =5
