@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #pragma once
 
 #include "ts_alloc.h"
@@ -227,3 +237,6 @@ public:
 
 mfxF64 PSNR(tsFrame& ref, tsFrame& src, mfxU32 id);
 mfxF64 SSIM(tsFrame& ref, tsFrame& src, mfxU32 id);
+
+bool operator == (const mfxFrameSurface1& s1, const mfxFrameSurface1& s2);
+bool operator != (const mfxFrameSurface1& s1, const mfxFrameSurface1& s2);

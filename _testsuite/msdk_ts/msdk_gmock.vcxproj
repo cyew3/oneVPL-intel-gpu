@@ -218,6 +218,7 @@
     <ClCompile Include="src\gmock\test_suites\avcd_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_get_decode_stat.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_picturetype.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avcd_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_res_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_advanced_ref_lists.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_b_pyramid.cpp" />

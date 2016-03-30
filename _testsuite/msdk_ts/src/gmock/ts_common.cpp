@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_common.h"
 
 tsTrace      g_tsLog(std::cout.rdbuf());
@@ -15,6 +25,11 @@ tsConfig     g_tsConfig = {0};
 bool operator == (const mfxFrameInfo& v1, const mfxFrameInfo& v2)
 {
     return !memcmp(&v1, &v2, sizeof(mfxFrameInfo));
+}
+
+bool operator == (const mfxFrameData& v1, const mfxFrameData& v2)
+{
+    return !memcmp(&v1, &v2, sizeof(mfxFrameData));
 }
 
 #pragma warning(disable:4996)

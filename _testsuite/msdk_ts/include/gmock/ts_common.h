@@ -158,6 +158,7 @@ std::string ENV(const char* name, const char* def);
 void set_brc_params(tsExtBufType<mfxVideoParam>* p);
 
 bool operator == (const mfxFrameInfo&, const mfxFrameInfo&);
+bool operator == (const mfxFrameData&, const mfxFrameData&);
 
 void GetBufferIdSz(const std::string& name, mfxU32& bufId, mfxU32& bufSz);
 
