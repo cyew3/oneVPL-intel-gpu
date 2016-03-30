@@ -315,8 +315,7 @@ mfxStatus CommonCORE::GetFrameHDL(mfxHDL mid, mfxHDL* handle, bool ExtendedSearc
 mfxStatus CommonCORE::UnlockFrame(mfxHDL mid, mfxFrameData *ptr)
 {
     UMC::AutomaticUMCMutex guard(m_guard);
-    if(!ptr)
-        return MFX_ERR_NULL_PTR;
+
     try
     {
         MFX_CHECK_HDL(mid);
