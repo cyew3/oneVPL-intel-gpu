@@ -1,4 +1,10 @@
-
+//
+//                  INTEL CORPORATION PROPRIETARY INFORMATION
+//     This software is supplied under the terms of a license agreement or
+//     nondisclosure agreement with Intel Corporation and may not be copied
+//     or disclosed except in accordance with the terms of that agreement.
+//          Copyright(c) 2014 - 2016 Intel Corporation. All Rights Reserved.
+//
 
 STRUCT(mfxI16Pair,
     FIELD_T(mfxI16, x)
@@ -661,6 +667,17 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16      , FadeDetection                 ) /* tri-state option */
     FIELD_T(mfxI16      , DeblockingAlphaTcOffset       ) /* -12..12 (slice_alpha_c0_offset_div2 << 1) */
     FIELD_T(mfxI16      , DeblockingBetaOffset          ) /* -12..12 (slice_beta_offset_div2 << 1) */
+    FIELD_T(mfxU16      , GPB                           )
+    FIELD_T(mfxU32      , MaxFrameSizeI                 )
+    FIELD_T(mfxU32      , MaxFrameSizeP                 )
+    FIELD_T(mfxU16      , EnableQPOffset                )
+    FIELD_T(mfxI16      , QPOffset                      )
+    FIELD_T(mfxU16      , NumRefActiveP                 )
+    FIELD_T(mfxU16      , NumRefActivePRef              )
+    FIELD_T(mfxU16      , NumRefActiveBL0               )
+    FIELD_T(mfxU16      , NumRefActiveBL1               )
+    FIELD_T(mfxU16      , NumRefActiveBRefL0            )
+    FIELD_T(mfxU16      , NumRefActiveBRefL1            )
 )
 
 STRUCT(mfxExtLAControl,

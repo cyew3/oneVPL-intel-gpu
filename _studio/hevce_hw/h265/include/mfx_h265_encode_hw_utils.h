@@ -359,6 +359,8 @@ namespace ExtBuffer
     {
         _CopyPar1(PRefType);
         _CopyPar1(IntRefCycleDist);
+        _CopyPar1(EnableQPOffset);
+        Copy(buf_dst.QPOffset, buf_src.QPOffset);
     }
 
     inline void  CopySupportedParams(mfxExtCodingOptionDDI& buf_dst, mfxExtCodingOptionDDI& buf_src)

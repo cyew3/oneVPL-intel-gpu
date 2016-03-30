@@ -2622,7 +2622,8 @@ void ConfigureTask(
     const bool isP    = !!(task.m_frameType & MFX_FRAMETYPE_P);
     const bool isB    = !!(task.m_frameType & MFX_FRAMETYPE_B);
     const bool isIDR  = !!(task.m_frameType & MFX_FRAMETYPE_IDR);
-    mfxU8 PPyrQPDiff[4] = {0,2,1,2};
+    const mfxU8 maxQP = mfxU8(51 + 6 * (par.mfx.FrameInfo.BitDepthLuma - 8));
+    const mfxU8 PPyrLayer[4] = {0,2,1,2};
 
     mfxExtDPB*              pDPBReport = ExtBuffer::Get(*task.m_bs);
     mfxExtAVCRefLists*      pExtLists = ExtBuffer::Get(task.m_ctrl);
@@ -2665,8 +2666,8 @@ void ConfigureTask(
     if (isB)
     {
         task.m_qpY = (mfxU8)par.mfx.QPB;
-        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP && par.isBPyramid())
-           task.m_qpY = (mfxU8)Min(task.m_qpY + (mfxU8)task.m_level,51);
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP && par.isBPyramid())                // m_level starts from 1
+            task.m_qpY = (mfxU8)Clip3<mfxI32>(1, maxQP, par.m_ext.CO3.QPOffset[Clip3<mfxI32>(0, 7, task.m_level - 1)] + task.m_qpY); 
     }
     else if (isP)
     {
@@ -2674,9 +2675,9 @@ void ConfigureTask(
         task.m_qpY = (mfxU8)par.mfx.QPP;
         if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP && par.isLowDelay())
         {
-           mfxU32 RSPIndex = (task.m_poc - prevTask.m_lastIPoc) % par.NumRefLX[0];
-           RSPIndex = RSPIndex % (sizeof(PPyrQPDiff)/sizeof(PPyrQPDiff[0]));
-           task.m_qpY = (mfxU8)Min(task.m_qpY + PPyrQPDiff[RSPIndex], 51);
+            mfxU32 RSPIndex = (task.m_poc - prevTask.m_lastIPoc) % par.NumRefLX[0];
+            RSPIndex = RSPIndex % (sizeof(PPyrLayer)/sizeof(PPyrLayer[0]));
+            task.m_qpY = (mfxU8)Clip3<mfxI32>(1, maxQP, par.m_ext.CO3.QPOffset[Min<mfxU32>(7, PPyrLayer[RSPIndex])] + task.m_qpY);
         }
         task.m_frameType &= ~MFX_FRAMETYPE_P;
         task.m_frameType |= MFX_FRAMETYPE_B;

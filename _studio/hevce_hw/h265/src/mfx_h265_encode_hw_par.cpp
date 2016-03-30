@@ -851,6 +851,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     mfxU16 maxDPB  = 16;
     mfxU16 maxQP   = 51;
 
+    mfxExtCodingOption2& CO2 = par.m_ext.CO2;
+    mfxExtCodingOption3& CO3 = par.m_ext.CO3;
+
     if (par.mfx.FrameInfo.BitDepthLuma > 8)
         maxQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
 
@@ -1196,7 +1199,25 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if (CheckOption(par.m_ext.VSI.ColourDescriptionPresent, 0))           changed +=1;
 
     changed += CheckTriStateOption(par.m_ext.CO.AUDelimiter);
-    changed += CheckTriStateOption(par.m_ext.CO2.RepeatPPS);
+    changed += CheckTriStateOption(CO2.RepeatPPS);
+    changed += CheckTriStateOption(CO3.EnableQPOffset);
+
+    if (   IsOn(CO3.EnableQPOffset)
+        && (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
+        || (par.mfx.GopRefDist > 1 && CO2.BRefType == MFX_B_REF_OFF)
+        || (par.mfx.GopRefDist == 1 && CO3.PRefType == MFX_P_REF_SIMPLE)))
+    {
+        CO3.EnableQPOffset = MFX_CODINGOPTION_OFF;
+        changed ++;
+    }
+
+    if (IsOn(CO3.EnableQPOffset))
+    {
+        mfxI16 QPX = (par.mfx.GopRefDist == 1) ? par.mfx.QPP : par.mfx.QPB;
+
+        for (mfxI16 i = 0; i < 8; i++)
+            changed += CheckRange(CO3.QPOffset[i], 1 - QPX, maxQP - QPX);
+    }
 
     sts = CheckProfile(par);
 
@@ -1204,7 +1225,6 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     {
         if (sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM) changed +=1;
         sts = CorrectLevel(par, false);
-
     }
 
     if (sts == MFX_ERR_NONE && changed)
@@ -1229,6 +1249,9 @@ void SetDefaults(
     mfxU32 maxBuf  = 0xFFFFFFFF;
     mfxU16 maxDPB  = 16;
     mfxU16 maxQP   = 51;
+
+    mfxExtCodingOption2& CO2 = par.m_ext.CO2;
+    mfxExtCodingOption3& CO3 = par.m_ext.CO3;
 
     if (par.mfx.CodecLevel)
     {
@@ -1452,6 +1475,42 @@ void SetDefaults(
 
     if (!par.m_ext.CO2.RepeatPPS)
         par.m_ext.CO2.RepeatPPS = MFX_CODINGOPTION_OFF;
+
+    if (!CO3.EnableQPOffset)
+    {
+        if (   par.mfx.RateControlMethod == MFX_RATECONTROL_CQP
+            && (CO2.BRefType == MFX_B_REF_PYRAMID || CO3.PRefType == MFX_P_REF_PYRAMID))
+        {
+            CO3.EnableQPOffset = MFX_CODINGOPTION_ON;
+            mfxI16 QPX = (par.mfx.GopRefDist == 1) ? par.mfx.QPP : par.mfx.QPB;
+
+            for (mfxI16 i = 0; i < 8; i++)
+                CO3.QPOffset[i] = Clip3<mfxI16>(1 - QPX, maxQP - QPX, i + (par.mfx.GopRefDist > 1));
+        }
+        else
+            CO3.EnableQPOffset = MFX_CODINGOPTION_OFF;
+    }
+
+    if (IsOff(CO3.EnableQPOffset))
+        Zero(CO3.QPOffset);
+
+    if (!CO3.NumRefActiveP)
+        CO3.NumRefActiveP = par.NumRefLX[0];
+
+    if (!CO3.NumRefActivePRef)
+        CO3.NumRefActivePRef = par.NumRefLX[0];
+
+    if (!CO3.NumRefActiveBL0)
+        CO3.NumRefActiveBL0 = par.NumRefLX[0];
+
+    if (!CO3.NumRefActiveBL1)
+        CO3.NumRefActiveBL1 = par.NumRefLX[1];
+
+    if (!CO3.NumRefActiveBRefL0)
+        CO3.NumRefActiveBRefL0 = par.NumRefLX[0];
+
+    if (!CO3.NumRefActiveBRefL1)
+        CO3.NumRefActiveBRefL1 = par.NumRefLX[1];
 }
 
 } //namespace MfxHwH265Encode
