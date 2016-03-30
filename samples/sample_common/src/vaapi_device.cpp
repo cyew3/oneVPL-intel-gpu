@@ -223,7 +223,7 @@ mfxStatus CVAAPIDeviceWayland::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrame
     if (pSurface->Info.FourCC == MFX_FOURCC_NV12)
     {
         drm_format = WL_DRM_FORMAT_NV12;
-    } else if(pSurface->Info.FourCC = MFX_FOURCC_RGB4)
+    } else if(pSurface->Info.FourCC == MFX_FOURCC_RGB4)
     {
         drm_format = WL_DRM_FORMAT_ARGB8888;
     }

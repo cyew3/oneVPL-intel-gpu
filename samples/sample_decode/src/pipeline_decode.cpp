@@ -724,6 +724,7 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
     {
         m_mfxVideoParams.mfx.FrameInfo.FourCC = MFX_FOURCC_RGB4;
         m_mfxVideoParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        m_mfxVideoParams.mfx.JPEGColorFormat = MFX_JPEG_COLORFORMAT_RGB;
     }
 
     // If MVC mode we need to detect number of views in stream
