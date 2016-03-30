@@ -363,13 +363,14 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
     if ((UMC_OK == umcRes) && (UNKNOWN == m_Profile))
         umcRes = UMC_ERR_INVALID_PARAMS;
 
+    bool needAllocatedSurfaces =    (((m_Profile & VA_CODEC) != UMC::VA_H264)
+                                  && ((m_Profile & VA_CODEC) != UMC::VA_H265)
 #if defined(ANDROID)
-    bool needAllocatedSurfaces = (((m_Profile & VA_CODEC) != UMC::VA_H264) &&
-                                  ((m_Profile & VA_CODEC) != UMC::VA_H265) &&
-                                  ((m_Profile & VA_CODEC) != UMC::VA_VP8));
+                                  && ((m_Profile & VA_CODEC) != UMC::VA_VP8)
 #else
-    bool needAllocatedSurfaces = true;
+                                  && ((m_Profile & VA_CODEC) != UMC::VA_MPEG2)
 #endif
+                                    );
 
     SetTraceStrings(m_Profile & VA_CODEC);
 
@@ -553,10 +554,17 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         if (*m_pContext == VA_INVALID_ID)
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateContext");
+
             if (needAllocatedSurfaces)
+            {
+                VM_ASSERT(pParams->m_surf && "render targets tied to the context shoul not be NULL");
                 va_res = vaCreateContext(m_dpy, *m_pConfigId, width, height, pParams->m_CreateFlags, (VASurfaceID*)pParams->m_surf, m_NumOfFrameBuffers, m_pContext);
+            }
             else
+            {
+                VM_ASSERT(!pParams->m_surf && "render targets tied to the context shoul be NULL");
                 va_res = vaCreateContext(m_dpy, *m_pConfigId, width, height, pParams->m_CreateFlags, NULL, 0, m_pContext);
+            }
 
             umcRes = va_to_umc_res(va_res);
         }

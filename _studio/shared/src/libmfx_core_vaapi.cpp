@@ -675,19 +675,35 @@ VAAPIVideoCORE::CreateVA(
         return MFX_ERR_UNSUPPORTED;
     }
 
-    VASurfaceID RenderTargets[128]; // 32 should be enough
+    bool init_render_targets =
+#if defined(ANDROID)
+        true
+#else
+        param->mfx.CodecId != MFX_CODEC_MPEG2 &&
+        param->mfx.CodecId != MFX_CODEC_AVC   &&
+        param->mfx.CodecId != MFX_CODEC_HEVC
+#endif
+        ;
 
-    for (mfxU32 i = 0; i < response->NumFrameActual; i++)
+    VASurfaceID* RenderTargets = NULL;
+    std::vector<VASurfaceID> rt_pool;
+    if (init_render_targets)
     {
-        mfxMemId InternalMid = response->mids[i];
-        mfxFrameAllocator* pAlloc = GetAllocatorAndMid(InternalMid);
-        VASurfaceID *pSurface = NULL;
-        if (pAlloc)
-            pAlloc->GetHDL(pAlloc->pthis, InternalMid, (mfxHDL*)&pSurface);
-        else
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        rt_pool.resize(response->NumFrameActual);
+        RenderTargets = &rt_pool[0];
 
-        RenderTargets[i] = *pSurface;
+        for (mfxU32 i = 0; i < response->NumFrameActual; i++)
+        {
+            mfxMemId InternalMid = response->mids[i];
+            mfxFrameAllocator* pAlloc = GetAllocatorAndMid(InternalMid);
+            VASurfaceID *pSurface = NULL;
+            if (pAlloc)
+                pAlloc->GetHDL(pAlloc->pthis, InternalMid, (mfxHDL*)&pSurface);
+            else
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+            rt_pool[i] = *pSurface;
+        }
     }
 
     if(GetExtBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK))
