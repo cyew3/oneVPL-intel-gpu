@@ -544,6 +544,9 @@
     <ClCompile Include="src\gmock\test_suites\avcd_init.cpp">
       <Filter>Source Files\test_suites\avcd</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avcd_get_decode_stat.cpp">
+      <Filter>Source Files\test_suites\avcd</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevce_close.cpp">
       <Filter>Source Files\test_suites\hevce</Filter>
     </ClCompile>

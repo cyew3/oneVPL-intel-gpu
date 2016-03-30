@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_decoder.h"
 
 tsVideoDecoder::tsVideoDecoder(mfxU32 CodecId, bool useDefaults, mfxU32 plugin_id)
@@ -6,10 +16,12 @@ tsVideoDecoder::tsVideoDecoder(mfxU32 CodecId, bool useDefaults, mfxU32 plugin_i
     , m_par()
     , m_bitstream()
     , m_request()
+    , m_stat()
     , m_pPar(&m_par)
     , m_pParOut(&m_par)
     , m_pRequest(&m_request)
     , m_pSyncPoint(&m_syncpoint)
+    , m_pStat(&m_stat)
     , m_pBitstream(&m_bitstream)
     , m_pSurf(0)
     , m_pSurfOut(0)
@@ -227,6 +239,20 @@ mfxStatus tsVideoDecoder::GetVideoParam(mfxSession session, mfxVideoParam *par)
     TRACE_FUNC2(MFXVideoDECODE_GetVideoParam, session, par);
     g_tsStatus.check( MFXVideoDECODE_GetVideoParam(session, par) );
     TS_TRACE(par);
+
+    return g_tsStatus.get();
+}
+
+mfxStatus tsVideoDecoder::GetDecodeStat()
+{
+    return GetDecodeStat(m_session, m_pStat);
+}
+
+mfxStatus tsVideoDecoder::GetDecodeStat(mfxSession session, mfxDecodeStat *stat)
+{
+    TRACE_FUNC2(MFXVideoDECODE_GetDecodeStat, session, stat);
+    g_tsStatus.check( MFXVideoDECODE_GetDecodeStat(session, stat) );
+    TS_TRACE(stat);
 
     return g_tsStatus.get();
 }
