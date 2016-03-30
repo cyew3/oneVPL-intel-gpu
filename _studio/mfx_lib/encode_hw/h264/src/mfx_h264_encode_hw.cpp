@@ -3095,6 +3095,8 @@ mfxStatus ImplementationAvc::EncodeFrameCheckNormalWay(
     MFX_ENTRY_POINT           entryPoints[],
     mfxU32 &                  numEntryPoints)
 {
+    MFX_CHECK_STS(m_failedStatus);
+
     mfxStatus checkSts = CheckEncodeFrameParam(
         m_video, ctrl, surface, bs,
         m_core->IsExternalFrameAllocator());

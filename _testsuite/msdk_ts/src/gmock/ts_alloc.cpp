@@ -1,3 +1,13 @@
+/* /////////////////////////////////////////////////////////////////////////////
+//
+//                  INTEL CORPORATION PROPRIETARY INFORMATION
+//     This software is supplied under the terms of a license agreement or
+//     nondisclosure agreement with Intel Corporation and may not be copied
+//     or disclosed except in accordance with the terms of that agreement.
+//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+//
+*/
+
 #include "ts_alloc.h"
 #include "time_defs.h"
 #include <algorithm>
@@ -192,7 +202,7 @@ mfxFrameSurface1* tsSurfacePool::GetSurface()
 
 mfxFrameSurface1* tsSurfacePool::GetSurface(mfxU32 ind)
 {
-    if (ind > m_pool.size())
+    if (ind >= m_pool.size())
         return 0;
 
     return &m_pool[ind];
