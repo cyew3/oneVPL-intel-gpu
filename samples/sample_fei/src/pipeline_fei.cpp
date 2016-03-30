@@ -459,7 +459,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         MSDK_ZERO_MEMORY(m_encpakInit);
         m_encpakInit.Header.BufferId = MFX_EXTBUFF_FEI_PARAM;
         m_encpakInit.Header.BufferSz = sizeof (mfxExtFeiParam);
-        m_encpakInit.Func = MFX_FEI_FUNCTION_ENCPAK;
+        m_encpakInit.Func = MFX_FEI_FUNCTION_ENCODE;
         if (pInParams->bFieldProcessingMode)
             m_encpakInit.SingleFieldProcessing = MFX_CODINGOPTION_ON;
         m_EncExtParams.push_back((mfxExtBuffer *)&m_encpakInit);
