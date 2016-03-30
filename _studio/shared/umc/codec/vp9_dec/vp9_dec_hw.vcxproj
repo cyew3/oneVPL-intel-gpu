@@ -17,6 +17,14 @@
       <Configuration>Release_Intel</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_THM|Win32">
+      <Configuration>Release_THM</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_THM|x64">
+      <Configuration>Release_THM</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
@@ -70,7 +78,6 @@
       <PreprocessorDefinitions Condition="$(Configuration.Contains('Debug'))">_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <!-- NTDDI_VERSION=NTDDI_WIN10_TH2 -->
       <TreatWarningAsError>true</TreatWarningAsError>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Lib />
