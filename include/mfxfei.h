@@ -478,7 +478,6 @@ typedef struct {
 //1 functions
 typedef enum {
     MFX_FEI_FUNCTION_PREENC     =1,
-    MFX_FEI_FUNCTION_ENCPAK     =2,
     MFX_FEI_FUNCTION_ENCODE     =2,
     MFX_FEI_FUNCTION_ENC        =3,
     MFX_FEI_FUNCTION_PAK        =4,
