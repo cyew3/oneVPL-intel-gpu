@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_hevc_dec_plugin.cpp
 
@@ -18,6 +18,8 @@ File Name: mfx_hevc_dec_plugin.cpp
 #include "mfx_plugin_module.h"
 
 #include "plugin_version_linux.h"
+
+#include <mfx_trace.h>
 
 #ifndef UNIFIED_PLUGIN
 
@@ -69,6 +71,9 @@ mfxStatus MFXHEVCDecoderPlugin::PluginInit(mfxCoreInterface *core)
     mfxCoreParam par;
     mfxStatus mfxRes = MFX_ERR_NONE;
 
+    MFX_TRACE_INIT(NULL, MFX_TRACE_OUTPUT_TRASH);
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXHEVCDecoderPlugin::PluginInit");
+
     m_pmfxCore = core;
     mfxRes = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &par);
     MFX_CHECK_STS(mfxRes);
@@ -92,6 +97,7 @@ mfxStatus MFXHEVCDecoderPlugin::PluginClose()
     mfxStatus mfxRes2 = MFX_ERR_NONE;
     if (m_session)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXHEVCDecoderPlugin::PluginClose");
         //The application must ensure there is no active task running in the session before calling this (MFXDisjoinSession) function.
         mfxRes = MFXVideoDECODE_Close(m_session);
         //Return the first met wrn or error
@@ -105,6 +111,7 @@ mfxStatus MFXHEVCDecoderPlugin::PluginClose()
             mfxRes2 = mfxRes;
         m_session = 0;
     }
+    MFX_TRACE_CLOSE();
     if (m_createdByDispatcher) {
         delete this;
     }

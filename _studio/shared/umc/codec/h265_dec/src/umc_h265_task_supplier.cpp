@@ -1498,6 +1498,7 @@ void TaskSupplier_H265::PreventDPBFullness()
 // If a frame has all slices found, add it to asynchronous decode queue
 UMC::Status TaskSupplier_H265::CompleteDecodedFrames(H265DecoderFrame ** decoded)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "TaskSupplier_H265::CompleteDecodedFrames");
     H265DecoderFrame* completed = 0;
     UMC::Status sts = UMC::UMC_OK;
 
@@ -1565,6 +1566,7 @@ UMC::Status TaskSupplier_H265::CompleteDecodedFrames(H265DecoderFrame ** decoded
 // Add a new bitstream data buffer to decoding
 UMC::Status TaskSupplier_H265::AddSource(UMC::MediaData * pSource)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "TaskSupplier_H265::AddSource");
     H265DecoderFrame* completed = 0;
     UMC::Status umcRes = CompleteDecodedFrames(&completed);
     if (umcRes != UMC::UMC_OK)
@@ -1662,6 +1664,7 @@ UMC::Status TaskSupplier_H265::ProcessNalUnit(UMC::MediaDataEx *nalUnit)
 // Find NAL units in new bitstream buffer and process them
 UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "TaskSupplier_H265::AddOneFrame");
     if (m_pLastSlice)
     {
         UMC::Status sts = AddSlice(m_pLastSlice, !pSource);
@@ -1855,6 +1858,7 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource)
 // Decode slice header start, set slice links to SPS and PPS and correct tile offsets table if needed
 H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "TaskSupplier_H265::DecodeSliceHeader");
     if ((0 > m_Headers.m_SeqParams.GetCurrentID()) ||
         (0 > m_Headers.m_PicParams.GetCurrentID()))
     {
@@ -2107,6 +2111,7 @@ bool TaskSupplier_H265::IsSkipForCRAorBLA(const H265Slice *pSlice)
 // Add a new slice to frame
 UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "TaskSupplier_H265::AddSlice");
     m_pLastSlice = 0;
 
     if (!pSlice) // complete frame

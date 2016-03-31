@@ -17,6 +17,7 @@ File Name: libmfxsw_sessions.cpp
 
 mfxStatus MFXJoinSession(mfxSession session, mfxSession child_session)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXJoinSession");
     mfxStatus mfxRes;
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     //MFX_CHECK(session->m_pScheduler, MFX_ERR_NOT_INITIALIZED);
@@ -76,6 +77,7 @@ mfxStatus MFXJoinSession(mfxSession session, mfxSession child_session)
 
 mfxStatus MFXDisjoinSession(mfxSession session)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXDisjoinSession");
     mfxStatus mfxRes;
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
@@ -242,6 +244,7 @@ mfxStatus MFXGetLogMessage(mfxSession session, char *msg, mfxU32 size)
 
 mfxStatus MFXInternalPseudoJoinSession(mfxSession session, mfxSession child_session)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXInternalPseudoJoinSession");
     mfxStatus mfxRes;
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
@@ -287,6 +290,7 @@ mfxStatus MFXInternalPseudoJoinSession(mfxSession session, mfxSession child_sess
 } // mfxStatus MFXJoinSession(mfxSession session, mfxSession child_session)
 mfxStatus MFXInternalPseudoDisjoinSession(mfxSession session)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXInternalPseudoDisjoinSession");
     mfxStatus mfxRes;
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);

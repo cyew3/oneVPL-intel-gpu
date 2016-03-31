@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2013-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -23,6 +23,8 @@
 #include "umc_h265_task_broker.h"
 #include "umc_h265_va_packer.h"
 #include "umc_h265_frame_info.h"
+
+#include <mfx_trace.h>
 
 #define UMC_VA_MAX_FRAME_BUFFER 32 //max number of uncompressed buffers
 
@@ -110,6 +112,7 @@ public:
 
     void StartDecodingFrame(H265DecoderFrame * pFrame)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "DXVASupport::StartDecodingFrame");
         if (!m_va)
             return;
 
@@ -130,6 +133,7 @@ public:
 
     void EndDecodingFrame()
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "DXVASupport::EndDecodingFrame");
         if (!m_va)
             return;
 

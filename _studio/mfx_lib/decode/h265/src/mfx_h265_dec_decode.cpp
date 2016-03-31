@@ -106,6 +106,7 @@ VideoDECODEH265::~VideoDECODEH265(void)
 // Initialize decoder instance
 mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEH265::Init");
     UMC::AutomaticUMCMutex guard(m_mGuard);
 
     if (m_isInit)
@@ -414,6 +415,7 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
 // Free decoder resources
 mfxStatus VideoDECODEH265::Close(void)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEH265::Close");
     UMC::AutomaticUMCMutex guard(m_mGuard);
 
     if (!m_isInit || !m_pH265VideoDecoder.get())
@@ -779,7 +781,6 @@ mfxStatus VideoDECODEH265::GetDecodeStat(mfxDecodeStat *stat)
 // Decoder threads entry point
 static mfxStatus __CDECL HEVCDECODERoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 )
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "DecodeFrame_HEVC");
     VideoDECODEH265 *decoder = (VideoDECODEH265 *)pState;
 
     mfxStatus sts = decoder->RunThread(pParam, threadNumber);
@@ -796,6 +797,7 @@ static mfxStatus HEVCCompleteProc(void *, void *pParam, mfxStatus )
 // Decoder instance threads entry point. Do async tasks here
 mfxStatus VideoDECODEH265::RunThread(void * params, mfxU32 threadNumber)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEH265::RunThread");
     ThreadTaskInfo * info = (ThreadTaskInfo *)params;
 
     mfxStatus sts = MFX_TASK_WORKING;
@@ -906,6 +908,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs,
 // Check if there is enough data to start decoding in async mode
 mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEH265::DecodeFrameCheck");
     if (!m_isInit)
         return MFX_ERR_NOT_INITIALIZED;
 
@@ -1244,6 +1247,7 @@ void VideoDECODEH265::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
 // Wait until a frame is ready to be output and set necessary surface flags
 mfxStatus VideoDECODEH265::DecodeFrame(mfxFrameSurface1 *surface_out, H265DecoderFrame * pFrame)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoDECODEH265::DecodeFrame");
     MFX_CHECK_NULL_PTR1(surface_out);
 
     mfxI32 index;

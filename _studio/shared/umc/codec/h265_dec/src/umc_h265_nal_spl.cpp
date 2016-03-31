@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -135,6 +135,7 @@ public:
     // Set destination bitstream pointer and size to NAL unit
     Ipp32s GetNALUnitInternal(UMC::MediaData * pSource, UMC::MediaData * pDst)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "GetNALUnitInternal");
         static const Ipp8u start_code_prefix[] = {0, 0, 1};
 
         if (m_code == -1)
