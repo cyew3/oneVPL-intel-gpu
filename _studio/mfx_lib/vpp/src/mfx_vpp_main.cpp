@@ -227,6 +227,18 @@ mfxStatus VideoVPPMain::VppFrameCheck(mfxFrameSurface1 *in,
         return MFX_ERR_NOT_INITIALIZED;
     }
 
+    if (in && m_bOpaqMode[VPP_IN])
+    {
+        if (in->Data.Y || in->Data.U || in->Data.V || in->Data.A || in->Data.MemId)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    if (out && m_bOpaqMode[VPP_OUT])
+    {
+        if (out->Data.Y || out->Data.U || out->Data.V || out->Data.A || out->Data.MemId)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
     mfxFrameSurface1* pInputNative  =  GetNativeSurface(in, VPP_IN);
     mfxFrameSurface1* pOutputNative =  GetNativeSurface(out, VPP_OUT);
 
