@@ -99,7 +99,7 @@ Status PackerDXVA2::GetStatusReport(void * pStatusReport, size_t size)
 
 void PackerDXVA2::PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s first_slice, Ipp32s count_all)
 {
-    if (!count_all)
+    if (!m_va || !count_all)
         return;
 
     Ipp32u sliceStructSize = m_va->IsLongSliceControl() ? sizeof(DXVA_Slice_H264_Long) : sizeof(DXVA_Slice_H264_Short);
@@ -159,7 +159,7 @@ void PackerDXVA2::PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s first_slice, I
         count_all -= partial_count;
     }
 
-    if (m_va && m_va->GetProtectedVA())
+    if (m_va->GetProtectedVA())
     {
         mfxBitstream * bs = m_va->GetProtectedVA()->GetBitstream();
 
@@ -1526,7 +1526,7 @@ PackerDXVA2_Widevine::PackerDXVA2_Widevine(VideoAccelerator * va, TaskSupplier *
 
 void PackerDXVA2_Widevine::PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s first_slice, Ipp32s count_all)
 {
-    if (!count_all)
+    if (!m_va || !count_all)
         return;
 
     //Ipp32u sliceStructSize = m_va->IsLongSliceControl() ? sizeof(DXVA_Slice_H264_Long) : sizeof(DXVA_Slice_H264_Short);
@@ -1586,7 +1586,7 @@ void PackerDXVA2_Widevine::PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s first
         count_all -= partial_count;
     }
 
-    if (m_va && m_va->GetProtectedVA())
+    if (m_va->GetProtectedVA())
     {
         mfxBitstream * bs = m_va->GetProtectedVA()->GetBitstream();
 
@@ -2496,7 +2496,7 @@ void PackerVA::PackAU(const H264DecoderFrame *pFrame, Ipp32s isTop)
     H264DecoderFrameInfo * sliceInfo = const_cast<H264DecoderFrameInfo *>(pFrame->GetAU(isTop));
     Ipp32s count_all = sliceInfo->GetSliceCount();
 
-    if (!count_all)
+    if (!m_va || !count_all)
         return;
 
     Ipp32s first_slice = 0;
@@ -2665,7 +2665,7 @@ void PackerVA_Widevine::PackAU(const H264DecoderFrame *pFrame, Ipp32s isTop)
     H264DecoderFrameInfo * sliceInfo = const_cast<H264DecoderFrameInfo *>(pFrame->GetAU(isTop));
     Ipp32s count_all = sliceInfo->GetSliceCount();
 
-    if (!count_all)
+    if (!m_va || !count_all)
         return;
 
     Ipp32s first_slice = 0;
