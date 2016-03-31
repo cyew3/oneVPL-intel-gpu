@@ -2456,7 +2456,11 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         if (pParams->bComposite)
         {
             // for sub-streams use DstRect info from ext buffer set by app
-            MFX_CHECK(refIdx < (int) pParams->dstRects.size(), MFX_ERR_UNKNOWN);
+            if(static_cast<int>(pParams->dstRects.size()) <= refIdx)
+            {
+                SAFE_DELETE_ARRAY(videoProcessorStreams);
+                return MFX_ERR_UNKNOWN;
+            }
             const DstRect& rec = pParams->dstRects[refIdx];
             pRect.top = rec.DstY;
             pRect.left = rec.DstX;

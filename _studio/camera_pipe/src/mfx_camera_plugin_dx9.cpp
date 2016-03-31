@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_camera_plugin_dx9.cpp
 
@@ -486,6 +486,10 @@ mfxStatus DXVAHDVideoProcessor::CreateDevice(VideoCORE *core, mfxVideoParam *par
             m_pD3Dmanager = pID3D->GetD3D9DeviceManager();
         }
     }
+
+    if ( ! m_pD3Dmanager )
+        return MFX_ERR_UNSUPPORTED;
+
     m_pD3Dmanager->OpenDeviceHandle(&DirectXHandle);
     m_pD3Dmanager->LockDevice(DirectXHandle, &(IDirect3DDevice9 *)m_pD3DDevice, true);
 
@@ -555,6 +559,7 @@ mfxStatus DXVAHDVideoProcessor::CreateDevice(VideoCORE *core, mfxVideoParam *par
     hr = GetSetOutputExtension(DXVAHD_BLT_STATE_PRIVATE, sizeof(dxvahdPData), &dxvahdPData, FALSE, FALSE);
     if ( FAILED(hr) )
     {
+        delete [] _pVPEGuids;
         return MFX_ERR_DEVICE_FAILED;
     }
 
@@ -571,6 +576,7 @@ mfxStatus DXVAHDVideoProcessor::CreateDevice(VideoCORE *core, mfxVideoParam *par
     hr = ExecuteVPrepFunction(VPE_FN_SET_VERSION_PARAM, &vprepParams, sizeof(vprepParams));
     if ( FAILED(hr) )
     {
+        delete [] _pVPEGuids;
         return MFX_ERR_DEVICE_FAILED;
     }
 
@@ -581,24 +587,38 @@ mfxStatus DXVAHDVideoProcessor::CreateDevice(VideoCORE *core, mfxVideoParam *par
     hr = ExecuteVPrepFunction(VPE_FN_SET_STATUS_PARAM, &vprepParams, sizeof(vprepParams));
     if ( FAILED(hr) )
     {
+        delete [] _pVPEGuids;
         return MFX_ERR_DEVICE_FAILED;
     }
 
     {
         // Allocate memory for 3DLUT tables
         m_camera3DLUT17 = (LUT17 *)malloc(sizeof(LUT17));
-        MFX_CHECK_NULL_PTR1(m_camera3DLUT17);
+        if(!m_camera3DLUT17)
+        {
+            delete [] _pVPEGuids;
+            return MFX_ERR_MEMORY_ALLOC;
+        }
         memset(m_camera3DLUT17, 0, sizeof(LUT17));
 
         m_camera3DLUT33 = (LUT33 *)malloc(sizeof(LUT33));
-        MFX_CHECK_NULL_PTR1(m_camera3DLUT33);
+        if(!m_camera3DLUT33)
+        {
+            delete [] _pVPEGuids;
+            return MFX_ERR_MEMORY_ALLOC;
+        }
         memset(m_camera3DLUT33, 0, sizeof(LUT33));
 
         m_camera3DLUT65 = (LUT65 *)malloc(sizeof(LUT65));
-        MFX_CHECK_NULL_PTR1(m_camera3DLUT65);
+        if(!m_camera3DLUT65)
+        {
+            delete [] _pVPEGuids;
+            return MFX_ERR_MEMORY_ALLOC;
+        }
         memset(m_camera3DLUT65, 0, sizeof(LUT65));
     }
 
+    delete [] _pVPEGuids;
     return MFX_ERR_NONE;
 }
 
