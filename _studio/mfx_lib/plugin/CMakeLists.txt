@@ -2,25 +2,25 @@
 #
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
-set(HEVC_DECODER_HW_GUID "33a61c0b4c27454ca8d85dde757c6f8e")
-set(HEVC_DECODER_SW_GUID "15dd936825ad475ea34e35f3f54217a6")
+set(HEVC_DECODER_HW_GUID   "33a61c0b4c27454ca8d85dde757c6f8e")
+set(HEVC_DECODER_SW_GUID   "15dd936825ad475ea34e35f3f54217a6")
 set(HEVC_ENCODER_GACC_GUID "e5400a06c74d41f5b12d430bbaa23d0b")
-set(HEVC_ENCODER_SW_GUID "2fca99749fdb49aeb121a5b63ef568f7")
-set(H264LA_ENCODER_GUID "588f1185d47b42968dea377bb5d0dcb4")
-set(H265FEI_ENCODER_GUID "87e0e80207375240852515cf4a5edde6")
-set(VP8_DECODER_HW_GUID "f622394d8d87452f878c51f2fc9b4131")
-set(VP8_DECODER_SW_GUID "bca276ec7a854a598c30e0dc5748f1f6")
+set(HEVC_ENCODER_SW_GUID   "2fca99749fdb49aeb121a5b63ef568f7")
+set(H264LA_ENCODER_GUID    "588f1185d47b42968dea377bb5d0dcb4")
+set(H265FEI_ENCODER_GUID   "87e0e80207375240852515cf4a5edde6")
+set(VP8_DECODER_HW_GUID    "f622394d8d87452f878c51f2fc9b4131")
+set(VP8_DECODER_SW_GUID    "bca276ec7a854a598c30e0dc5748f1f6")
 # =============================================================================
 
 mfx_include_dirs( )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../decode/h265/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../encode/h265/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h264_preenc )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../fei/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h265/include )
+include_directories( ${MSDK_LIB_ROOT}/decode/h265/include )
+include_directories( ${MSDK_LIB_ROOT}/encode/h265/include )
+include_directories( ${MSDK_LIB_ROOT}/fei/h264_preenc )
+include_directories( ${MSDK_LIB_ROOT}/fei/include )
+include_directories( ${MSDK_LIB_ROOT}/fei/h265/include )
 
 list( APPEND umc_dirs
   common
@@ -28,14 +28,17 @@ list( APPEND umc_dirs
   mpeg2_dec mpeg2_enc
   vc1_common vc1_dec vc1_spl
   h264_dec h264_enc
+  h265_dec
   jpeg_common jpeg_dec jpeg_enc)
 
 if ( ENABLE_HEVC )
-  list( APPEND umc_dirs h265_dec )
-endif()
+  message( STATUS "Building HEVC with software libraries: SW Decoder & Encoder, GACC." )
+else( )
+  message( STATUS "Building HEVC with only hardware libraries." )
+endif( )
 
 foreach( dir ${umc_dirs} )
-  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/${dir}/include )
+  include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/${dir}/include )
 endforeach( )
 
 list( APPEND vdecs
@@ -69,7 +72,7 @@ endforeach( )
 list( APPEND vdirs_impl vpp cmrt_cross_platform genx/h264_encode genx/h265_encode)
 
 foreach( dir  ${vdirs} ${vdirs_impl} ${vdirs_hw} )
-  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../${dir}/include )
+  include_directories( ${MSDK_LIB_ROOT}/${dir}/include )
 endforeach( )
 
 ###################################################################################################################
@@ -77,7 +80,7 @@ endforeach( )
 # Plugins section
 # =============================================================================
 
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
+foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
   list( APPEND plugin_common_sources
     ${prefix}/mfx_check_hardware_support.cpp
     ${prefix}/mfx_common_int.cpp
@@ -93,7 +96,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
 
 endforeach()
 
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/src )
+foreach( prefix ${MSDK_STUDIO_ROOT}/shared/src )
   list( APPEND plugin_common_sources
     ${prefix}/cm_mem_copy.cpp
     ${prefix}/fast_copy.cpp
@@ -107,10 +110,10 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/src )
   )
 endforeach()
 list( APPEND plugin_common_sources
-  ${CMAKE_CURRENT_SOURCE_DIR}/../cmrt_cross_platform/src/cmrt_cross_platform.cpp
+  ${MSDK_LIB_ROOT}/cmrt_cross_platform/src/cmrt_cross_platform.cpp
 )
 
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../scheduler/src )
+foreach( prefix ${MSDK_LIB_ROOT}/scheduler/src )
   list( APPEND plugin_common_sources
     ${prefix}/mfx_scheduler_core.cpp
     ${prefix}/mfx_scheduler_core_iunknown.cpp
@@ -121,20 +124,19 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../scheduler/src )
   )
 endforeach()
 
-# hevc_version used by almost all plugins TODO: remove this dependency, vesrions have to be independent
+# HEVC Common Part
+
 if( NOT DEFINED ENV{MFX_HEVC_VERSION} )
   set( hevc_version 0.0.000.0000 )
 else( )
   set( hevc_version $ENV{MFX_HEVC_VERSION} )
 endif( )
 
-if (ENABLE_HEVC)
-
-set (HEVC_PRODUCT_NAME "Intel(R) Media Server Studio 2015 - HEVC Decode and Encode")
-set (sw_HEVC_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - HEVC Software Decode Plug-in")
-set (hw_HEVC_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - HEVC Hardware Decode Plug-in")
-set (sw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - HEVC Software Encode Plug-in")
-set (hw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - HEVC GPU Accelerated Encode Plug-in")
+set (HEVC_PRODUCT_NAME "Intel(R) Media Server Studio 2017 - HEVC Decode and Encode")
+set (sw_HEVC_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - HEVC Software Decode Plug-in")
+set (hw_HEVC_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - HEVC Hardware Decode Plug-in")
+set (sw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - HEVC Software Encode Plug-in")
+set (hw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - HEVC GPU Accelerated Encode Plug-in")
 
   if( Linux OR Darwin )
     execute_process(
@@ -149,17 +151,15 @@ set (hw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - HEVC GPU A
     set(hevc_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${hevc_version}\"\\\"")
   endif( )
 
-# HEVC
-
 set( sources "" )
 set( sources.plus "" )
 
 list( APPEND sources ${plugin_common_sources} )
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../scheduler/include )
+include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
 
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfxsw_decode.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../decode/h265/src/mfx_h265_dec_decode.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/shared/src/libmfxsw_decode.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/decode/h265/src/mfx_h265_dec_decode.cpp )
 
 set( sources.plus "" )
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
@@ -171,9 +171,14 @@ endforeach()
 set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )
 
-# HEVC
+# HEVC Decoder
 
-foreach( variant sw hw)
+set( hevcd_variants hw )
+if (ENABLE_HEVC)
+  set( hevcd_variants sw hw )
+endif()
+
+foreach( variant ${hevcd_variants} )
   if( __ARCH MATCHES intel64 )
     set( plugin_name mfx_hevcd_${variant}64 )
     set( eval_plugin_name mfx_eval_hevcd_${variant}64 )
@@ -189,55 +194,44 @@ foreach( variant sw hw)
   set (description_name ${${variant}_HEVC_DECODER_DESCRIPTION})
 
   set( LIBS "" )
+
+  list( APPEND LIBS
+    umc_h265_${variant}
+    color_space_converter_sw )
+
   if( variant MATCHES sw )
     list( APPEND LIBS
-      umc_h265_${variant}
-      color_space_converter_sw
       hevc_pp_dispatcher
       hevc_pp_atom
       hevc_pp_avx2
       hevc_pp_px
       hevc_pp_sse4
-      hevc_pp_ssse3
-      media_buffers
-      umc_io
-      umc
-      vm
-      vm_plus
-      ${ITT_LIBS}
-      ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-      pthread
-      dl
-      )
-  else()
+      hevc_pp_ssse3 )
+  endif()
+
+  list( APPEND LIBS
+    media_buffers
+    umc_io
+    umc
+    vm
+    vm_plus
+    ${ITT_LIBS}
+    ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+    pthread
+    dl )
+  
+  if( variant MATCHES hw )
+    set( hw_defs "-DMFX_VA -DVA_HEVC_DECODER" )
     list( APPEND LIBS
-      umc_h265_${variant}
-      color_space_converter_sw
-      media_buffers
-      umc_io
-      umc
-      vm
-      vm_plus
-      ${ITT_LIBS}
-      ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-      pthread
-      dl
-      )
+      umc_va_elk_hw )
   endif()
   
-  if(${variant} MATCHES hw)
-    set( hw_defs "-DMFX_VA -DVA_HEVC_DECODER")
-    list( APPEND LIBS
-      umc_va_elk_hw
-    )
-  endif()
-  
-  set( defs "-DAS_HEVCD_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs} ${hw_defs}" )  
-  if(${variant} MATCHES hw)
+  set( defs "-DAS_HEVCD_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs} ${hw_defs}" )
+  if( variant MATCHES hw)
     gen_plugins_cfg("HEVC_Decoder_HW" ${HEVC_DECODER_HW_GUID} ${plugin_name} "01" "HEVC" "not_eval")
-  else()
+  else( )
     gen_plugins_cfg("HEVC_Decoder_SW" ${HEVC_DECODER_SW_GUID} ${plugin_name} "01" "HEVC" "not_eval")
-  endif()
+  endif( )
   make_library( ${plugin_name} ${variant} shared)
 
   set( defs "-DAS_HEVCD_PLUGIN -DHEVCD_EVALUATION -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
@@ -250,14 +244,20 @@ foreach( variant sw hw)
 
 endforeach()
 
+# HEVC Encoder (SW & GACC)
+
+set( hevce_variants "" )
+if (ENABLE_HEVC)
+  set( hevce_variants sw hw )
+endif()
 set( defs "" )
 
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/../encode/h265/src )
+foreach( dir ${MSDK_LIB_ROOT}/encode/h265/src )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
   list( APPEND sources ${srcs})
 endforeach()
 
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
+foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
   list( APPEND sources
     ${prefix}/libmfxsw_encode.cpp
     ${prefix}/mfx_enc_common.cpp
@@ -272,18 +272,17 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
   )
 endforeach()
 
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h265_encode/src )
+foreach( dir ${MSDK_LIB_ROOT}/genx/h265_encode/src )
   file( GLOB_RECURSE srcs "${dir}/*_isa.cpp" )
   list( APPEND sources ${srcs})
 endforeach()
 
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h265/src )
+foreach( dir ${MSDK_LIB_ROOT}/fei/h265/src )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
   list( APPEND sources.plus ${srcs})
 endforeach()
 
-
-foreach( variant sw hw )
+foreach( variant ${hevce_variants} )
   if( __ARCH MATCHES intel64 )
     if( variant MATCHES hw )
       set( plugin_name mfx_hevce_gacc64 )
@@ -306,7 +305,7 @@ foreach( variant sw hw )
     set( eval_plugin_name ${eval_plugin_name}_d )
   endif()
 
-  set (description_name ${${variant}_HEVC_ENCODER_DESCRIPTION})  
+  set( description_name ${${variant}_HEVC_ENCODER_DESCRIPTION} )
   set( LIBS "" )
   list( APPEND LIBS
     hevc_pp_dispatcher
@@ -326,7 +325,7 @@ foreach( variant sw hw )
     dl
     )
 
-  if(${variant} MATCHES hw)
+  if( variant MATCHES hw)
     list( APPEND LIBS
       umc_va_elk_hw
     )
@@ -340,30 +339,6 @@ foreach( variant sw hw )
   endif()
   make_library( ${plugin_name} ${variant} shared)
  
-  set( LIBS "" )
-  list( APPEND LIBS
-    hevc_pp_dispatcher
-    hevc_pp_atom
-    hevc_pp_avx2
-    hevc_pp_px
-    hevc_pp_sse4
-    hevc_pp_ssse3
-    media_buffers
-    umc_io
-    umc
-    vm
-    vm_plus
-    ${ITT_LIBS}
-    ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-    pthread
-    dl
-    )
-  if(${variant} MATCHES hw)
-    list( APPEND LIBS
-      umc_va_elk_hw
-    )
-  endif()
-
   set( defs "-DAS_HEVCE_PLUGIN -DHEVCE_EVALUATION -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
   if(${variant} MATCHES hw)
     gen_plugins_cfg("HEVC_Encoder_GACC" ${HEVC_ENCODER_GACC_GUID} ${eval_plugin_name} "02" "HEVC" "eval")
@@ -375,14 +350,12 @@ foreach( variant sw hw )
 endforeach()
 set( defs "" )
 
-endif() # ENABLE_HEVC
-
 # =============================================================================
 # 1toN Lookahead
 # =============================================================================
 
-set (H264LA_PRODUCT_NAME "Intel(R) Media Server Studio 2015 - SDK Advanced AVC Encode Pack")
-set (hw_H264LA_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - SDK Advanced AVC Hardware Encode Plug-in")
+set (H264LA_PRODUCT_NAME "Intel(R) Media Server Studio 2017 - SDK Advanced AVC Encode Pack")
+set (hw_H264LA_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - SDK Advanced AVC Hardware Encode Plug-in")
 
   if( NOT DEFINED ENV{MFX_H264LA_VERSION} )
     set( h264la_version 0.0.000.0000 )
@@ -398,7 +371,7 @@ set (hw_H264LA_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - SDK Adva
       OUTPUT_VARIABLE cur_date
       OUTPUT_STRIP_TRAILING_WHITESPACE
       )
-    string( SUBSTRING ${hevc_version} 0 1 ver )
+    string( SUBSTRING ${h264la_version} 0 1 ver )
 
     set(h264la_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${h264la_version}\"\\\"")
   endif( )
@@ -409,7 +382,7 @@ set( sources.plus "" )
 
 list( APPEND sources ${plugin_common_sources} )
 
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
+foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
   list( APPEND sources
     ${prefix}/mfx_enc_common.cpp
     ${prefix}/mfx_brc_common.cpp
@@ -424,7 +397,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
   )
 endforeach()
 
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/h264/src )
+foreach( prefix ${MSDK_LIB_ROOT}/encode_hw/h264/src )
   list( APPEND sources
     ${prefix}/mfx_h264_encode_cm.cpp
     ${prefix}/mfx_h264_encode_hw_utils.cpp
@@ -433,7 +406,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/h264/src )
   )
 endforeach()
 
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h264_encode/src )
+foreach( prefix ${MSDK_LIB_ROOT}/genx/h264_encode/src )
   list( APPEND sources
     ${prefix}/genx_hsw_simple_me_isa.cpp
     ${prefix}/genx_bdw_simple_me_isa.cpp
@@ -444,12 +417,12 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h264_encode/src )
   )
 endforeach()
 
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../cmrt_cross_platform/src/cmrt_cross_platform.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/mvc/src/mfx_mvc_encode_hw.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/svc/src/mfx_svc_encode_hw.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/svc/src/mfx_svc_encode_simulcast_over_avc.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../enc_hw/h264/src/mfx_h264_enc_hw.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h264_la/mfx_h264_la.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/cmrt_cross_platform/src/cmrt_cross_platform.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/encode_hw/mvc/src/mfx_mvc_encode_hw.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/encode_hw/svc/src/mfx_svc_encode_hw.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/encode_hw/svc/src/mfx_svc_encode_simulcast_over_avc.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/enc_hw/h264/src/mfx_h264_enc_hw.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/fei/h264_la/mfx_h264_la.cpp )
 
 set( sources.plus "" )
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
@@ -510,15 +483,12 @@ foreach( variant hw )
   gen_plugins_cfg("H264la_Encoder" ${H264LA_ENCODER_GUID} ${plugin_name} "04" "AVC")
   make_library( ${plugin_name} ${variant} shared)
 
-#  set( defs "-DAS_H264LA_PLUGIN -DH264LA_EVALUATION -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
-#  make_library( ${eval_plugin_name} ${variant} shared)
-
 endforeach()
 
 # H265FEI
 
 if( ENABLE_HEVC_FEI )
-  set (H265FEI_PRODUCT_NAME "Intel(R) Media Server Studio 2015")
+  set (H265FEI_PRODUCT_NAME "Intel(R) Media Server Studio 2017")
   set (hw_H265FEI_ENCODER_DESCRIPTION "HEVC GPU Assist APIs Plug-in")
 
   if( NOT DEFINED ENV{MFX_H265FEI_VERSION} )
@@ -535,7 +505,7 @@ if( ENABLE_HEVC_FEI )
       OUTPUT_VARIABLE cur_date
       OUTPUT_STRIP_TRAILING_WHITESPACE
       )
-    string( SUBSTRING ${hevc_version} 0 1 ver )
+    string( SUBSTRING ${h265fei_version} 0 1 ver )
 
     set(h265fei_version_defs "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${h265fei_version}\"\\\"")
   endif( )
@@ -546,18 +516,18 @@ if( ENABLE_HEVC_FEI )
 
   list( APPEND sources ${plugin_common_sources} )
 
-  foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h265_encode/src )
+  foreach( dir ${MSDK_LIB_ROOT}/genx/h265_encode/src )
     file( GLOB_RECURSE srcs "${dir}/*_isa.cpp" )
     list( APPEND sources ${srcs})
   endforeach()
 
-  foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
+  foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
     list( APPEND sources
       ${prefix}/libmfxsw_enc.cpp
     )
   endforeach()
 
-  foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../plugin/src )
+  foreach( prefix ${MSDK_LIB_ROOT}/plugin/src )
     list( APPEND sources
       ${prefix}/mfx_h265fei_plugin.cpp
     )
@@ -565,7 +535,7 @@ if( ENABLE_HEVC_FEI )
 
 # list separately instead of just including h265_fei lib because different
 # define needed for plugin
-  foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h265/src )
+  foreach( prefix ${MSDK_LIB_ROOT}/fei/h265/src )
     list( APPEND sources
       ${prefix}/mfx_h265_enc_cm_fei.cpp
       ${prefix}/mfx_h265_enc_cm_plugin.cpp
@@ -574,7 +544,7 @@ if( ENABLE_HEVC_FEI )
   endforeach()
 
   list( REMOVE_ITEM sources
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/src/mfx_umc_alloc_wrapper.cpp )
+  ${MSDK_STUDIO_ROOT}/shared/src/mfx_umc_alloc_wrapper.cpp )
 
   foreach( variant hw )
     if( __ARCH MATCHES intel64 )
@@ -617,9 +587,9 @@ set( defs "" )
 # =============================================================================
 # VP8
 # =============================================================================
-set (VP8_PRODUCT_NAME "Intel(R) Media Server Studio 2015 - SDK VP8 Pack")
-set (sw_VP8_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - SDK VP8 Software Decode Plug-in")
-set (hw_VP8_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - SDK VP8 Hardware Decode Plug-in")
+set (VP8_PRODUCT_NAME "Intel(R) Media Server Studio 2017 - SDK VP8 Pack")
+set (sw_VP8_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - SDK VP8 Software Decode Plug-in")
+set (hw_VP8_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - SDK VP8 Hardware Decode Plug-in")
 
   if( NOT DEFINED ENV{MFX_VP8_VERSION} )
     set( vp8_version 0.0.000.0000 )
@@ -647,13 +617,13 @@ set( sources.plus "" )
 
 list( APPEND sources ${plugin_common_sources} )
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../scheduler/include )
+include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
 include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/vp8_libvpx )
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/vp8_dec/include )
+include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp8_dec/include )
 
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/libmfxsw_decode.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/vp8_dec/src/vp8_tables.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/shared/src/libmfxsw_decode.cpp )
+list( APPEND sources ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp8_dec/src/vp8_tables.cpp )
 
 
 set( USE_STRICT_NAME TRUE )
@@ -687,7 +657,7 @@ foreach( variant sw hw )
       umc_va_elk_hw
     )
 
-    foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../decode/vp8/src )
+    foreach( prefix ${MSDK_LIB_ROOT}/decode/vp8/src )
     list( APPEND sources
       ${prefix}/mfx_vp8_dec_decode_hw.cpp
       ${prefix}/mfx_vp8_dec_decode.cpp
@@ -697,7 +667,7 @@ foreach( variant sw hw )
     )
     endforeach()
 
-    foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/io/umc_va/src )
+    foreach( prefix ${MSDK_STUDIO_ROOT}/shared/umc/io/umc_va/src )
     list( APPEND sources
       ${prefix}/umc_va_linux.cpp
     )
@@ -709,7 +679,7 @@ foreach( variant sw hw )
 
   else()
 
-    foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../decode/vp8/src )
+    foreach( prefix ${MSDK_LIB_ROOT}/decode/vp8/src )
     list( APPEND sources
       ${prefix}/mfx_vp8_dec_decode.cpp
       ${prefix}/mfx_vp8_dec_decode_common.cpp

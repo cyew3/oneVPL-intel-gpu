@@ -2,8 +2,8 @@ set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 # Plugin version info
 
-set (PTIR_PRODUCT_NAME "Intel(R) Media Server Studio 2015 - PTIR")
-set (PTIR_DESCRIPTION "Intel(R) Media Server Studio 2015 - Premium Telecine Interlace Reverser Plug-in")
+set (PTIR_PRODUCT_NAME "Intel(R) Media Server Studio 2017 - PTIR")
+set (PTIR_DESCRIPTION "Intel(R) Media Server Studio 2017 - Premium Telecine Interlace Reverser Plug-in")
 
   if( NOT DEFINED ENV{MFX_PTIR_VERSION} )
     set( ptir_version 0.0.000.0000 )

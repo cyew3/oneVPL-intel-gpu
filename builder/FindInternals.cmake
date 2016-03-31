@@ -42,4 +42,7 @@ function( mfx_include_dirs )
     ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/fei/h264_la
     ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/SafeStringStaticLibrary/include
   )
+
+  set ( MSDK_STUDIO_ROOT ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio         PARENT_SCOPE )
+  set ( MSDK_LIB_ROOT    ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib PARENT_SCOPE )
 endfunction( )

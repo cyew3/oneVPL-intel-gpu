@@ -5,8 +5,8 @@ mfx_include_dirs( )
 # VP8E
 # =============================================================================
 
-set (VP8_PRODUCT_NAME "Intel(R) Media Server Studio 2015 - SDK VP8 Pack")
-set (hw_VP8_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2015 - SDK VP8 Hardware Encode Plug-in")
+set (VP8_PRODUCT_NAME "Intel(R) Media Server Studio 2017 - SDK VP8 Pack")
+set (hw_VP8_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - SDK VP8 Hardware Encode Plug-in")
 
 if( NOT DEFINED ENV{MFX_VP8_VERSION} )
   set( vp8_version 0.0.000.0000 )

@@ -2,8 +2,8 @@ set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 # Plugin version info
 
-set (CAMERA_PRODUCT_NAME "Intel(R) Media Server Studio 2015 - RAW Accelerator")
-set (CAMERA_DESCRIPTION "Intel(R) Media Server Studio 2015 - RAW Accelerator Plug-in")
+set (CAMERA_PRODUCT_NAME "Intel(R) Media Server Studio 2017 - RAW Accelerator")
+set (CAMERA_DESCRIPTION "Intel(R) Media Server Studio 2017 - RAW Accelerator Plug-in")
 
   if( NOT DEFINED ENV{MFX_CAMERA_VERSION} )
     set( camera_version 0.0.000.0000 )
@@ -30,10 +30,10 @@ set (CAMERA_DESCRIPTION "Intel(R) Media Server Studio 2015 - RAW Accelerator Plu
 mfx_include_dirs( )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/plugin/include )
+include_directories( ${MSDK_LIB_ROOT}/plugin/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/genx/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/genx/src )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/cmrt_cross_platform/include )
+include_directories( ${MSDK_LIB_ROOT}/cmrt_cross_platform/include )
 
 # =============================================================================
 
@@ -42,13 +42,13 @@ set( sources "" )
 set( sources.plus "" )
 
 set( USE_STRICT_NAME TRUE )
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/plugin/libmfxsw_plugin.map" )
+set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MSDK_LIB_ROOT}/plugin/libmfxsw_plugin.map" )
 
 
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/genx/src/genx_hsw_camerapipe_isa.cpp )
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/genx/src/genx_bdw_camerapipe_isa.cpp )
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/genx/src/genx_skl_camerapipe_isa.cpp )
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/src )
+foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
 
   list( APPEND sources
     ${prefix}/mfx_check_hardware_support.cpp
@@ -64,7 +64,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/src )
 
 endforeach()
 
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
+foreach( prefix ${MSDK_STUDIO_ROOT}/shared/src )
   list( APPEND sources
     ${prefix}/cm_mem_copy.cpp
     ${prefix}/fast_copy.cpp
@@ -78,10 +78,10 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
   )
 endforeach()
 list( APPEND sources
-  ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/cmrt_cross_platform/src/cmrt_cross_platform.cpp
+  ${MSDK_LIB_ROOT}/cmrt_cross_platform/src/cmrt_cross_platform.cpp
 )
 
-foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/scheduler/src )
+foreach( prefix ${MSDK_LIB_ROOT}/scheduler/src )
   list( APPEND sources
     ${prefix}/mfx_scheduler_core.cpp
     ${prefix}/mfx_scheduler_core_iunknown.cpp
@@ -92,33 +92,33 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/scheduler/src )
   )
 endforeach()
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/scheduler/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/codec/color_space_converter/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/codec/scene_analyzer/include/ )
+include_directories( ${MSDK_LIB_ROOT}/vpp/include )
+include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
+include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/color_space_converter/include )
+include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/scene_analyzer/include/ )
 
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/src/libmfxsw_vpp.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_vpp_utils.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_vpp_main.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_vpp_sw_core.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_vpp_sw_internal.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_vpp_sw_threading.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_vpp_factory.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_vpp_service.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_vpp_hw.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src/mfx_vpp_vaapi.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_vpp_svc.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_vpp_mvc.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_denoise_vpp.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_resize_vpp.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_frame_rate_conversion_vpp.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_deinterlace_vpp.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_shift_vpp.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_color_space_conversion_vpp.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_video_signal_conversion_vpp.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_procamp_vpp.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_detail_enhancement_vpp.cpp )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/vpp/src/mfx_video_analysis_vpp.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/shared/src/libmfxsw_vpp.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_vpp_utils.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_vpp_main.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_vpp_sw_core.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_vpp_sw_internal.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_vpp_sw_threading.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_vpp_factory.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_vpp_service.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_vpp_hw.cpp )
+list( APPEND sources ${MSDK_STUDIO_ROOT}/shared/src/mfx_vpp_vaapi.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_vpp_svc.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_vpp_mvc.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_denoise_vpp.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_resize_vpp.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_frame_rate_conversion_vpp.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_deinterlace_vpp.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_shift_vpp.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_color_space_conversion_vpp.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_video_signal_conversion_vpp.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_procamp_vpp.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_detail_enhancement_vpp.cpp )
+list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_video_analysis_vpp.cpp )
 
 foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/src )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
