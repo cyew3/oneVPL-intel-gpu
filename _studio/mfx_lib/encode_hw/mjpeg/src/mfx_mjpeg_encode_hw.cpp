@@ -423,6 +423,10 @@ mfxStatus MFXVideoENCODEMJPEG_HW::QueryIOSurf(VideoCORE * core, mfxVideoParam *p
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
 
+    sts = CheckJpegParam(core, *par, hwCaps);
+    if (sts == MFX_WRN_PARTIAL_ACCELERATION)
+        return MFX_WRN_PARTIAL_ACCELERATION;
+
     mfxU32 inPattern = par->IOPattern;
     MFX_CHECK(
         inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
