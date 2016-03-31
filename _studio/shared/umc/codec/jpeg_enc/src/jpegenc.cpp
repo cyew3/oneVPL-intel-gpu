@@ -20,6 +20,9 @@
 #include "ippj.h"
 #include "jpegbase.h"
 #include "jpegenc.h"
+#if defined(LINUX32) || defined(LINUX64)
+#include <safe_lib.h>
+#endif
 
 
 CJPEGEncoder::CJPEGEncoder(void)
@@ -1259,7 +1262,7 @@ JERRCODE CJPEGEncoder::WriteCOM(
     sprintf(ptr,"Intel(R) IPP JPEG encoder [%d.%d.%d] - %s",
       jv->major,jv->minor,jv->build,jv->BuildDate);
 
-    len = (int)strlen(ptr) + 1;
+    len = (int)strnlen_s(ptr, 256) + 1;
   }
 
   if(comment != 0)
@@ -1268,7 +1271,7 @@ JERRCODE CJPEGEncoder::WriteCOM(
     ptr[len-1] = ';';
     ptr[len  ] = ' ';
 
-    sz = (int)IPP_MIN(strlen(comment),127);
+    sz = (int)IPP_MIN(strnlen_s(comment, 127),127);
 
     for(int i = 0; i < sz; i++)
       ptr[len + i] = comment[i];
