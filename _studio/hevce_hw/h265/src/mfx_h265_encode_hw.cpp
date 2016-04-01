@@ -36,6 +36,9 @@ Plugin::~Plugin()
 
 mfxStatus Plugin::PluginInit(mfxCoreInterface *core)
 {
+    MFX_TRACE_INIT(NULL, MFX_TRACE_OUTPUT_TRASH);
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Plugin::PluginInit");
+
     MFX_CHECK_NULL_PTR1(core);
 
     m_core = *core;
@@ -45,8 +48,13 @@ mfxStatus Plugin::PluginInit(mfxCoreInterface *core)
 
 mfxStatus Plugin::PluginClose()
 {
-   if (m_createdByDispatcher)
-       Release();
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Plugin::PluginClose");
+        if (m_createdByDispatcher)
+            Release();
+    }
+
+    MFX_TRACE_CLOSE();
 
     return MFX_ERR_NONE;
 }
@@ -117,6 +125,7 @@ mfxStatus LoadSPSPPS(MfxVideoParam& par, mfxExtCodingOptionSPSPPS* pSPSPPS)
 }
 mfxStatus Plugin::InitImpl(mfxVideoParam *par)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Plugin::InitImpl");
     mfxStatus sts = MFX_ERR_NONE, qsts = MFX_ERR_NONE;
 
     m_ddi.reset( CreatePlatformH265Encoder(&m_core) );
@@ -770,7 +779,7 @@ mfxStatus Plugin::PrepareTask(Task& input_task)
 
 mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*uid_a*/)
 {
-    
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Plugin::Execute");
     Task* inputTask = (Task*) thread_task;
     mfxStatus sts = MFX_ERR_NONE;
 

@@ -778,15 +778,18 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
         reconSurf.push_back(m_reconQueue[i].surface);
 
     // Encoder create
-    vaSts = vaCreateContext(
-        m_vaDisplay,
-        m_vaConfig,
-        m_width,
-        m_height,
-        flag,
-        &*reconSurf.begin(),
-        reconSurf.size(),
-        &m_vaContextEncode);
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateContext");
+        vaSts = vaCreateContext(
+            m_vaDisplay,
+            m_vaConfig,
+            m_width,
+            m_height,
+            flag,
+            &*reconSurf.begin(),
+            reconSurf.size(),
+            &m_vaContextEncode);
+    }
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     mfxU16 maxNumSlices = par.m_slice.size();
@@ -929,9 +932,7 @@ bool operator!=(const ENCODE_ENC_CTRL_CAPS& l, const ENCODE_ENC_CTRL_CAPS& r)
 
 mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
 {
-    {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc Execute");
-    }
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIEncoder::Execute");
 
     VAEncPackedHeaderParameterBuffer packed_header_param_buffer;
     VASurfaceID reconSurface;
@@ -1225,9 +1226,9 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
 
     assert(buffersCount <= configBuffers.size());
 
-    MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "A|ENCODE|AVC|PACKET_START|", "%p|%d", m_vaContextEncode, task.m_statusReportNumber);
+    MFX_LTRACE_2(MFX_TRACE_LEVEL_EXTCALL, "A|ENCODE|AVC|PACKET_START|", "%p|%d", m_vaContextEncode, task.m_statusReportNumber);
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaBeginPicture");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaBeginPicture");
 
         vaSts = vaBeginPicture(
             m_vaDisplay,
@@ -1236,7 +1237,7 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaRenderPicture");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaRenderPicture");
         vaSts = vaRenderPicture(
             m_vaDisplay,
             m_vaContextEncode,
@@ -1255,12 +1256,12 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
         }
     }
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaEndPicture");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaEndPicture");
 
         vaSts = vaEndPicture(m_vaDisplay, m_vaContextEncode);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
-    MFX_LTRACE_2(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "A|ENCODE|AVC|PACKET_END|", "%d|%d", m_vaContextEncode, task.m_statusReportNumber);
+    MFX_LTRACE_2(MFX_TRACE_LEVEL_EXTCALL, "A|ENCODE|AVC|PACKET_END|", "%d|%d", m_vaContextEncode, task.m_statusReportNumber);
 
     //------------------------------------------------------------------
     // PostStage
@@ -1282,7 +1283,7 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
 mfxStatus VAAPIEncoder::QueryStatus(Task & task)
 {
 
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc QueryStatus");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIEncoder::QueryStatus");
     mfxStatus sts = MFX_ERR_NONE;
 
     VAStatus vaSts;
@@ -1325,7 +1326,7 @@ mfxStatus VAAPIEncoder::QueryStatus(Task & task)
         guard.Unlock();
 
         {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaSyncSurface");
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaSyncSurface");
             vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         }
@@ -1349,7 +1350,7 @@ mfxStatus VAAPIEncoder::QueryStatus(Task & task)
                 VACodedBufferSegment *codedBufferSegment;
 
                 {
-                    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaMapBuffer");
+                    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaMapBuffer");
                     vaSts = vaMapBuffer(
                         m_vaDisplay,
                         codedBuffer,
@@ -1365,7 +1366,7 @@ mfxStatus VAAPIEncoder::QueryStatus(Task & task)
                     sts = MFX_ERR_DEVICE_FAILED;
 
                 {
-                    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc vaUnmapBuffer");
+                    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
                     vaUnmapBuffer( m_vaDisplay, codedBuffer );
                 }
                 return sts;
@@ -1388,6 +1389,7 @@ mfxStatus VAAPIEncoder::Destroy()
 {
     if (m_vaContextEncode != VA_INVALID_ID)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaDestroyContext");
         vaDestroyContext(m_vaDisplay, m_vaContextEncode);
         m_vaContextEncode = VA_INVALID_ID;
     }
