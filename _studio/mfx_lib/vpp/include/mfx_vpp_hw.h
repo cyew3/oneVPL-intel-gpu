@@ -26,6 +26,7 @@ Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 #if defined(MFX_VA)
 #include "cmrt_cross_platform.h"
 #include "cm_mem_copy.h" // Needed for mirroring
+#include "genx_fcopy_cmcode_isa.cpp" // Field copy kernel
 #endif
 
 namespace MfxHwVideoProcessing

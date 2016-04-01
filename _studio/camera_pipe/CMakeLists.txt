@@ -92,6 +92,7 @@ foreach( prefix ${MSDK_LIB_ROOT}/scheduler/src )
   )
 endforeach()
 
+include_directories( ${MSDK_LIB_ROOT}/genx/field_copy/src )
 include_directories( ${MSDK_LIB_ROOT}/vpp/include )
 include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
 include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/color_space_converter/include )
