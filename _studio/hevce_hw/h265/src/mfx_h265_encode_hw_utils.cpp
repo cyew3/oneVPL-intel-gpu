@@ -29,9 +29,17 @@ template<class T, class A> mfxStatus Insert(A& _to, mfxU32 _where, T const & _wh
 
 template<class A> mfxStatus Remove(A& _from, mfxU32 _where, mfxU32 _num = 1)
 {
-    MFX_CHECK(_where + _num < (sizeof(_from)/sizeof(_from[0])), MFX_ERR_UNDEFINED_BEHAVIOR);
-    memmove(&_from[_where], &_from[_where + _num], sizeof(_from)-(_where + _num) * sizeof(_from[0]));
-    memset(&_from[sizeof(_from) / sizeof(_from[0]) - _num], IDX_INVALID, sizeof(_from[0]) * _num);
+    const mfxU32 S0 = sizeof(_from[0]);
+    const mfxU32 S = sizeof(_from);
+    const mfxU32 N = S / S0;
+
+    MFX_CHECK(_where < N && _num <= (N - _where), MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    if (_where + _num < N)
+        memmove(&_from[_where], &_from[_where + _num], S - ((_where + _num) * S0));
+
+    memset(&_from[N - _num], IDX_INVALID, S0 * _num);
+
     return MFX_ERR_NONE;
 }
 
@@ -1716,8 +1724,10 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
 
                 if (curlt.used_by_curr_pic_lt_flag)
                 {
-                    assert(nLTR < MAX_NUM_LONG_TERM_PICS); //KW
-                    LTR[nLTR++] = DPBLT[j];
+                    if (nLTR < MAX_NUM_LONG_TERM_PICS) //KW
+                        LTR[nLTR++] = DPBLT[j];
+                    else
+                        assert(!"too much LTRs");
                 }
             }
         }
@@ -2220,8 +2230,10 @@ void UpdateDPB(
         end --;
     }
 
-    assert(end < MAX_DPB_SIZE); //just for KW
-    dpb[end++] = task;
+    if (end < MAX_DPB_SIZE) //just for KW
+        dpb[end++] = task;
+    else
+        assert(!"DPB overflow, no space for new frame");
 
     if (pLCtrl)
     {

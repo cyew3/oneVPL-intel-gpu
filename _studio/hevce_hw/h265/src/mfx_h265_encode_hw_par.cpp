@@ -1358,7 +1358,15 @@ void SetDefaults(
              || par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
     {
         if (!par.TargetKbps)
-            par.TargetKbps = Min(maxBR, mfxU32(rawBits * par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD / 150000));
+        {
+            if (par.mfx.FrameInfo.FrameRateExtD) // KW
+                par.TargetKbps = Min(maxBR, mfxU32(rawBits * par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD / 150000));
+            else
+            {
+                assert(!"FrameRateExtD = 0");
+                par.TargetKbps = Min(maxBR, mfxU32(rawBits * Min(maxFR, 30000. / 1001) / 150000));
+            }
+        }
         if (!par.MaxKbps)
             par.MaxKbps = par.TargetKbps;
         if (!par.BufferSizeInKB)
