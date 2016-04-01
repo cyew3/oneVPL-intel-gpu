@@ -1479,10 +1479,14 @@ namespace MPEG2EncoderHW
         if (extOpt3 && extOpt3->EnableMBQP == MFX_CODINGOPTION_ON)
         {
             // MPEG2 MBQP currently only supported on Linux and only valid for CQP mode
-            if (m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod != MFX_RATECONTROL_CQP || m_pCore->GetVAType() != MFX_HW_VAAPI)
+            if (m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
             {
                 extOpt3->EnableMBQP = MFX_CODINGOPTION_OFF;
-                return MFX_ERR_UNSUPPORTED;
+                if (m_pCore->GetVAType() != MFX_HW_VAAPI)
+                {
+                    return MFX_ERR_UNSUPPORTED;
+                }
+                bCorrected = true; // return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
             }
             else
             {
