@@ -301,7 +301,13 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
 
         for (size_t i = 0; i < GetMaxNumSlices(m_video); i++)
         {
-            mfxU8 disableDeblockingIdc = mfxU8(extFeiSlice->Slice ? extFeiSlice->Slice[i].DisableDeblockingFilterIdc : extOpt2Cur->DisableDeblockingIdc);
+            mfxU8 disableDeblockingIdc = 1;
+            if ((NULL != extFeiSlice) && (NULL != extFeiSlice->Slice))
+            {
+                    disableDeblockingIdc = mfxU8(extFeiSlice->Slice ?
+                                            extFeiSlice->Slice[i].DisableDeblockingFilterIdc :
+                                            extOpt2Cur->DisableDeblockingIdc);
+            }
             if (disableDeblockingIdc > 2)
                 disableDeblockingIdc = 0;
             task.m_disableDeblockingIdc[field].push_back(disableDeblockingIdc);
