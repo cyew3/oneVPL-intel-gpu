@@ -4754,7 +4754,15 @@ void TaskSupplier::InitFrameCounter(H264DecoderFrame * pFrame, const H264Slice *
 
     if (view.GetPOCDecoder(0)->DetectFrameNumGap(pSlice, true))
     {
-        pFrame->SetErrorFlagged(ERROR_FRAME_REFERENCE_FRAME);
+        H264DBPList* dpb = view.GetDPBList(0);
+        VM_ASSERT(dpb);
+
+        Ipp32u NumShortTerm, NumLongTerm;
+        dpb->countActiveRefs(NumShortTerm, NumLongTerm);
+
+        //set error flag only we have some references in DPB
+        if ((NumShortTerm + NumLongTerm > 0))
+            pFrame->SetErrorFlagged(ERROR_FRAME_REFERENCE_FRAME);
     }
 
     if (sliceHeader->IdrPicFlag)
