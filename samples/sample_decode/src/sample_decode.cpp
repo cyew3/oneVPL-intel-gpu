@@ -50,10 +50,11 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-di bob/adi]             - enable deinterlacing BOB/ADI\n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Output format parameters:\n"));
-    msdk_printf(MSDK_STRING("   [-i420]                   - by default\n"));
-    msdk_printf(MSDK_STRING("   [-rgb4]\n"));
-    msdk_printf(MSDK_STRING("   [-p010]\n"));
-    msdk_printf(MSDK_STRING("   [-a2rgb10]\n"));
+    msdk_printf(MSDK_STRING("   [-i420] - pipeline output format: NV12, output file format: I420\n"));
+    msdk_printf(MSDK_STRING("   [-nv12] - pipeline output format: NV12, output file format: NV12\n"));
+    msdk_printf(MSDK_STRING("   [-rgb4] - pipeline output format: RGB4, output file format: RGB4\n"));
+    msdk_printf(MSDK_STRING("   [-p010] - pipeline output format: P010, output file format: P010\n"));
+    msdk_printf(MSDK_STRING("   [-a2rgb10] - pipeline output format: A2RGB10, output file format: A2RGB10\n"));
     msdk_printf(MSDK_STRING("\n"));
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d]                    - work with d3d9 surfaces\n"));
@@ -483,6 +484,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-i420")))
+        {
+            pParams->fourcc = MFX_FOURCC_NV12;
+            pParams->outI420 = true;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-nv12")))
         {
             pParams->fourcc = MFX_FOURCC_NV12;
         }

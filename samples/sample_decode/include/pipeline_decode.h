@@ -87,6 +87,7 @@ struct sInputParams
     mfxU32  fourcc;
     mfxU32  nFrames;
     mfxU16  eDeinterlace;
+    bool    outI420;
 
     bool    bPerfMode;
     bool    bRenderWin;
@@ -238,6 +239,7 @@ protected: // variables
     bool                    m_bIsCompleteFrame;
     mfxU32                  m_fourcc; // color format of vpp out, i420 by default
     bool                    m_bPrintLatency;
+    bool                    m_bOutI420;
 
     mfxU16                  m_vppOutWidth;
     mfxU16                  m_vppOutHeight;

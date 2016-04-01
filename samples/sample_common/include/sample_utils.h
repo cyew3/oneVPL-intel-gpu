@@ -127,6 +127,7 @@ public :
     virtual void      Close();
     virtual mfxStatus Init(const msdk_char *strFileName, const mfxU32 numViews);
     virtual mfxStatus WriteNextFrame(mfxFrameSurface1 *pSurface);
+    virtual mfxStatus WriteNextFrameI420(mfxFrameSurface1 *pSurface);
 
     void SetMultiView() { m_bIsMultiView = true; }
 

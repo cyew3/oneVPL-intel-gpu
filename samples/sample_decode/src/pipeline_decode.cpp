@@ -105,6 +105,8 @@ CDecodingPipeline::CDecodingPipeline()
 
     m_hwdev = NULL;
 
+    m_bOutI420 = false;
+
 #ifdef LIBVA_SUPPORT
     m_export_mode = vaapiAllocatorParams::DONOT_EXPORT;
     m_bPerfMode = false;
@@ -183,6 +185,8 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
 
     m_nMaxFps = pParams->nMaxFPS;
     m_nFrames = pParams->nFrames ? pParams->nFrames : MFX_INFINITE;
+
+    m_bOutI420 = pParams->outI420;
 
     if (MFX_CODEC_CAPTURE != pParams->videoType)
     {
@@ -1345,7 +1349,8 @@ mfxStatus CDecodingPipeline::DeliverOutput(mfxFrameSurface1* frame)
         if (m_eWorkMode == MODE_FILE_DUMP) {
             res = m_pGeneralAllocator->Lock(m_pGeneralAllocator->pthis, frame->Data.MemId, &(frame->Data));
             if (MFX_ERR_NONE == res) {
-                res = m_FileWriter.WriteNextFrame(frame);
+                res = m_bOutI420 ? m_FileWriter.WriteNextFrameI420(frame)
+                    : m_FileWriter.WriteNextFrame(frame);
                 sts = m_pGeneralAllocator->Unlock(m_pGeneralAllocator->pthis, frame->Data.MemId, &(frame->Data));
             }
             if ((MFX_ERR_NONE == res) && (MFX_ERR_NONE != sts)) {
@@ -1360,7 +1365,8 @@ mfxStatus CDecodingPipeline::DeliverOutput(mfxFrameSurface1* frame)
         }
     }
     else {
-        res = m_FileWriter.WriteNextFrame(frame);
+        res = m_bOutI420 ? m_FileWriter.WriteNextFrameI420(frame)
+            : m_FileWriter.WriteNextFrame(frame);
     }
 
     return res;
