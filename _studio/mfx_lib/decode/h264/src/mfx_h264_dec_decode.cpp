@@ -1532,7 +1532,8 @@ void VideoDECODEH264::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
     const UMC::FrameData * fd = pFrame->GetFrameData();
 
     *surf_out = m_FrameAllocator->GetSurface(fd->GetFrameMID(), surface_work, &m_vPar);
-    *surf_out = m_core->GetOpaqSurface((*surf_out)->Data.MemId) ? m_core->GetOpaqSurface((*surf_out)->Data.MemId) : (*surf_out);
+     if(m_isOpaq) 
+       *surf_out = m_core->GetOpaqSurface((*surf_out)->Data.MemId);
 
     VM_ASSERT(*surf_out);
 

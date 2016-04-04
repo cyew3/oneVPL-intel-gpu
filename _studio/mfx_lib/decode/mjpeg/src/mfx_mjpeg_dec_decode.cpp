@@ -1110,7 +1110,7 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
             *surface_out = m_FrameAllocator->GetSurface(dst->GetFrameMID(),
                                                         GetOriginalSurface(surface_work),
                                                         &m_vPar);
-            *surface_out = m_core->GetOpaqSurface((*surface_out)->Data.MemId) ? m_core->GetOpaqSurface((*surface_out)->Data.MemId) : (*surface_out);
+            *surface_out = (m_isOpaq) ? m_core->GetOpaqSurface((*surface_out)->Data.MemId) : (*surface_out);
 
             if (!(*surface_out))
                 return MFX_ERR_UNDEFINED_BEHAVIOR;

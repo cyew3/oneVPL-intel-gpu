@@ -3617,7 +3617,10 @@ mfxStatus VideoDECODEMPEG2::GetOutputSurface(mfxFrameSurface1 **surface_out, mfx
     
     if (pNativeSurface)
     {
-        *surface_out = m_pCore->GetOpaqSurface(pNativeSurface->Data.MemId) ? m_pCore->GetOpaqSurface(pNativeSurface->Data.MemId) : pNativeSurface;
+        if(m_isOpaqueMemory)
+            *surface_out = m_pCore->GetOpaqSurface(pNativeSurface->Data.MemId);
+        else 
+            *surface_out = pNativeSurface;
     }
     else
     {
