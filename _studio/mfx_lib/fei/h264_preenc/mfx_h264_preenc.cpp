@@ -221,6 +221,8 @@ static mfxStatus AsyncRoutine(void * state, void * param, mfxU32, mfxU32)
 
 mfxStatus VideoENC_PREENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoENC_PREENC::RunFrameVmeENC");
+
     //mfxExtCodingOption    const * extOpt = GetExtBuffer(m_video);
     //mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
 
@@ -364,6 +366,7 @@ VideoENC_PREENC::~VideoENC_PREENC()
 
 mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoENC_PREENC::Init");
     mfxStatus sts = MfxEncPREENC::CheckExtBufferId(*par);
     MFX_CHECK_STS(sts);
 
@@ -539,6 +542,7 @@ static mfxStatus CopyRawSurfaceToVideoMemory(  VideoCORE &  core,
                                         mfxMemId            dst_d3d,
                                         mfxHDL&             handle)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FEI:PeENC::CopyRawSurfaceToVideoMemory");
     mfxExtOpaqueSurfaceAlloc const * extOpaq = GetExtBuffer(video);
 
     mfxFrameData d3dSurf = {0};
@@ -552,7 +556,7 @@ static mfxStatus CopyRawSurfaceToVideoMemory(  VideoCORE &  core,
 
         MFX_CHECK_NULL_PTR1(sysSurf.Y)
         {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Copy input (sys->d3d)");
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Copy input (sys->d3d)");
             MFX_CHECK_STS(MfxHwH264Encode::CopyFrameDataBothFields(&core, d3dSurf, sysSurf, video.mfx.FrameInfo));
         }
 

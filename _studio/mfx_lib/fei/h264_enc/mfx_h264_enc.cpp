@@ -226,6 +226,7 @@ void TEMPORAL_HACK_WITH_DPB(
 
 mfxStatus VideoENC_ENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoENC_ENC::RunFrameVmeENC");
     mfxExtSpsHeader const &         extSps         = GetExtBufferRef(m_video);
     mfxU32 const FRAME_NUM_MAX = 1 << (extSps.log2MaxFrameNumMinus4 + 4);
 
@@ -477,6 +478,7 @@ VideoENC_ENC::~VideoENC_ENC()
 
 mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoENC_ENC::Init");
     mfxStatus sts = MfxEncENC::CheckExtBufferId(*par);
     MFX_CHECK_STS(sts);
 
@@ -765,7 +767,7 @@ static mfxStatus CopyRawSurfaceToVideoMemory(  VideoCORE &  core,
 
         MFX_CHECK_NULL_PTR1(sysSurf.Y)
         {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Copy input (sys->d3d)");
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Copy input (sys->d3d)");
             MFX_CHECK_STS(MfxHwH264Encode::CopyFrameDataBothFields(&core, d3dSurf, sysSurf, video.mfx.FrameInfo));
         }
 

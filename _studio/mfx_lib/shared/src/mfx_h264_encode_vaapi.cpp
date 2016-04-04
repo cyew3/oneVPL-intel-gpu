@@ -1732,6 +1732,7 @@ mfxStatus VAAPIEncoder::Execute(
 
     if (m_isENCPAK)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FEI config");
         /*Input FEI Ext buffer sequence for BFF is: bff tff bff tff
          * So, MSDK need to swap feiFieldId values to get correct buffer */
         if (MFX_PICSTRUCT_FIELD_BFF == m_videoParam.mfx.FrameInfo.PicStruct)
@@ -1766,6 +1767,7 @@ mfxStatus VAAPIEncoder::Execute(
 
         if (frameCtrl != NULL && frameCtrl->MVPredictor && mvpred != NULL)
         {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer (MVP)");
             vaSts = vaCreateBuffer(m_vaDisplay,
                     m_vaContextEncode,
                     (VABufferType) VAEncFEIMVPredictorBufferTypeIntel,
@@ -1780,6 +1782,7 @@ mfxStatus VAAPIEncoder::Execute(
 
         if (frameCtrl != NULL && frameCtrl->PerMBInput && mbctrl != NULL)
         {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer (MBctrl)");
             vaSts = vaCreateBuffer(m_vaDisplay,
                     m_vaContextEncode,
                     (VABufferType)VAEncFEIMBControlBufferTypeIntel,
@@ -1794,6 +1797,7 @@ mfxStatus VAAPIEncoder::Execute(
 
         if (frameCtrl != NULL && frameCtrl->PerMBQp && mbqp != NULL)
         {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer (MBqp)");
             vaSts = vaCreateBuffer(m_vaDisplay,
                     m_vaContextEncode,
                     (VABufferType)VAEncQpBufferType,
@@ -1819,8 +1823,10 @@ mfxStatus VAAPIEncoder::Execute(
         //output buffer for MB distortions
         if ((mbstat != NULL) && (VA_INVALID_ID == m_vaFeiMBStatId[0]))
         {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MBstat");
             for( mfxU32 ii = 0; ii < m_vaFeiMBStatId.size(); ii++ )
             {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer");
                 vaSts = vaCreateBuffer(m_vaDisplay,
                         m_vaContextEncode,
                         (VABufferType)VAEncFEIDistortionBufferTypeIntel,
@@ -1852,8 +1858,10 @@ mfxStatus VAAPIEncoder::Execute(
         if ( ((mvout != NULL) || (mbcodeout != NULL)) &&
              (VA_INVALID_ID == m_vaFeiMVOutId[0]) )
         {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MV");
             for( mfxU32 ii = 0; ii < m_vaFeiMVOutId.size(); ii++ )
             {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer");
                 vaSts = vaCreateBuffer(m_vaDisplay,
                         m_vaContextEncode,
                         (VABufferType)VAEncFEIMVBufferTypeIntel,
@@ -1871,8 +1879,10 @@ mfxStatus VAAPIEncoder::Execute(
         if ( ((mvout != NULL) || (mbcodeout != NULL)) &&
               (VA_INVALID_ID == m_vaFeiMCODEOutId[0]) )
         {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MBcode");
             for( mfxU32 ii = 0; ii < m_vaFeiMCODEOutId.size(); ii++ )
             {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer");
                 vaSts = vaCreateBuffer(m_vaDisplay,
                         m_vaContextEncode,
                         (VABufferType)VAEncFEIModeBufferTypeIntel,
@@ -1888,19 +1898,27 @@ mfxStatus VAAPIEncoder::Execute(
 
         if (frameCtrl != NULL)
         {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FrameCtrl");
             VAEncMiscParameterBuffer *miscParam;
-            vaSts = vaCreateBuffer(m_vaDisplay,
+
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateBuffer");
+                vaSts = vaCreateBuffer(m_vaDisplay,
                     m_vaContextEncode,
                     VAEncMiscParameterBufferType,
                     sizeof(VAEncMiscParameterBuffer) + sizeof (VAEncMiscParameterFEIFrameControlH264Intel),
                     1,
                     NULL,
                     &vaFeiFrameControlId);
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+            }
 
-            vaMapBuffer(m_vaDisplay,
-                vaFeiFrameControlId,
-                (void **)&miscParam);
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaMapBuffer");
+                vaMapBuffer(m_vaDisplay,
+                    vaFeiFrameControlId,
+                    (void **)&miscParam);
+            }
 
             miscParam->type = (VAEncMiscParameterType)VAEncMiscParameterTypeFEIFrameControlIntel;
             VAEncMiscParameterFEIFrameControlH264Intel* vaFeiFrameControl = (VAEncMiscParameterFEIFrameControlH264Intel*)miscParam->data;
@@ -1955,7 +1973,10 @@ mfxStatus VAAPIEncoder::Execute(
             }
             //MFX_DESTROY_VABUFFER(m_spsBufferId, m_vaDisplay);
 
-            vaUnmapBuffer(m_vaDisplay, vaFeiFrameControlId);  //check for deletions
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
+                vaUnmapBuffer(m_vaDisplay, vaFeiFrameControlId);  //check for deletions
+            }
 
             configBuffers[buffersCount++] = vaFeiFrameControlId;
         }
@@ -2777,6 +2798,7 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
 
     if (mbstat != NULL && vaFeiMBStatId != VA_INVALID_ID)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MBstat");
         VAEncFEIDistortionBufferH264Intel* mbs;
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaMapBuffer");
@@ -2799,6 +2821,7 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
 
     if (mvout != NULL && vaFeiMVOutId != VA_INVALID_ID)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MV");
         VAMotionVectorIntel* mvs;
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaMapBuffer");
@@ -2822,6 +2845,7 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
 
     if (mbcodeout != NULL && vaFeiMBCODEOutId != VA_INVALID_ID)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MBcode");
         VAEncFEIModeBufferH264Intel* mbcs;
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaMapBuffer");
