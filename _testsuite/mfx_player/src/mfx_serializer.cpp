@@ -580,12 +580,7 @@ void MFXStructureRef <MFXBufType>::ConstructValues () const
 
 void MFXStructureRef <bool>::ConstructValues () const
 {
-    switch (*m_pStruct)
-    {
-    case 0:  m_values_map[VM_STRING("")]=VM_STRING("no"); break;
-    default:           
-        m_values_map[VM_STRING("")]=VM_STRING("yes"); break;
-    }
+    m_values_map[VM_STRING("")] = (*m_pStruct) ? VM_STRING("yes") : VM_STRING("no");
 }
 
 void MFXStructureRef <mfxIMPL>::ConstructValues () const
