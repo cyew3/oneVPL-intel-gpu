@@ -670,7 +670,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
                                                  m_statParams.future_references[ii].flags);
     mdprintf(stderr, " ]\n");
 
-    mdprintf(stderr, "outputs=0x%x [", m_statParams.outputs);
+    mdprintf(stderr, "outputs=%p [", m_statParams.outputs);
     for (int i = 0; i < 2; i++)
         mdprintf(stderr, " %d", m_statParams.outputs[i]);
     mdprintf(stderr, " ]\n");
