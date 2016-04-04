@@ -2080,7 +2080,7 @@ mfxStatus MFXVideoENCODEMPEG2::GetFrame(mfxEncodeInternalParams *pInternalParams
       sts = m_core->DoFastCopyWrapper(pCpy, 
                                       MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
                                       pInp,
-                                      MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET);
+                                      mfxU16((m_IOPattern & MFX_MEMTYPE_OPAQUE_FRAME) ? MFX_MEMTYPE_INTERNAL_FRAME : MFX_MEMTYPE_EXTERNAL_FRAME) | MFX_MEMTYPE_DXVA2_DECODER_TARGET);
       MFX_CHECK_STS(sts);
 
       pCpy->Data.FrameOrder = pInp->Data.FrameOrder;
