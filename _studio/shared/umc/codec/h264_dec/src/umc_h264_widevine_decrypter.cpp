@@ -481,25 +481,15 @@ Status DecryptParametersWrapper::GetVUIParam(H264SeqParamSet *sps, H264VUI *vui)
         }
     }
 
-    vui->overscan_info_present_flag = 0;                //TBD
-    if (vui->overscan_info_present_flag)
-        vui->overscan_appropriate_flag = 0;             //TBD
-
     vui->video_signal_type_present_flag = SeqParams.sps_disp.vui_seq_parameters.video_signal_type_present_flag;
     if (vui->video_signal_type_present_flag) {
         vui->video_format = SeqParams.sps_disp.vui_seq_parameters.video_format;
-        vui->video_full_range_flag = 0;                                                  //TBD
         vui->colour_description_present_flag = SeqParams.sps_disp.vui_seq_parameters.colour_description_present_flag;
         if (vui->colour_description_present_flag) {
             vui->colour_primaries = SeqParams.sps_disp.vui_seq_parameters.colour_primaries;
             vui->transfer_characteristics = SeqParams.sps_disp.vui_seq_parameters.transfer_characteristics;
             vui->matrix_coefficients = SeqParams.sps_disp.vui_seq_parameters.matrix_coefficients;
         }
-    }
-    vui->chroma_loc_info_present_flag = 0;                      //TBD
-    if (vui->chroma_loc_info_present_flag ) {
-        vui->chroma_sample_loc_type_top_field = 0;              //TBD
-        vui->chroma_sample_loc_type_bottom_field = 0;           //TBD
     }
     vui->timing_info_present_flag = SeqParams.sps_disp.vui_seq_parameters.timing_info_present_flag;
 
@@ -524,11 +514,6 @@ Status DecryptParametersWrapper::GetVUIParam(H264SeqParamSet *sps, H264VUI *vui)
     vui->pic_struct_present_flag  = SeqParams.sps_disp.vui_seq_parameters.pic_struct_present_flag;
     vui->bitstream_restriction_flag = SeqParams.sps_disp.vui_seq_parameters.bitstream_restriction_flag;
     if (vui->bitstream_restriction_flag) {
-        vui->motion_vectors_over_pic_boundaries_flag = 0;                   //TBD
-        vui->max_bytes_per_pic_denom = 0;                                   //TBD
-        vui->max_bits_per_mb_denom = 0;                                     //TBD
-        vui->log2_max_mv_length_horizontal = 0;                             //TBD
-        vui->log2_max_mv_length_vertical = 0;                               //TBD
         vui->num_reorder_frames = (Ipp8u)SeqParams.sps_disp.vui_seq_parameters.num_reorder_frames;
 
         Ipp32s value = SeqParams.sps_disp.vui_seq_parameters.max_dec_frame_buffering;
