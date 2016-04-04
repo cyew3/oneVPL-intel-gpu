@@ -914,6 +914,7 @@ namespace MfxHwH264Encode
             , m_midMBQP(MID_INVALID)
             , m_isMBQP(false)
             
+            , m_cmRawForHist(0)
             , m_cmHist(0)
             , m_cmHistSys(0)
         {
@@ -1076,6 +1077,7 @@ namespace MfxHwH264Encode
         mfxMemId m_midMBQP; 
         bool     m_isMBQP;
 
+        CmSurface2D *         m_cmRawForHist;
         CmBufferUP *          m_cmHist;     // Histogram data, kernel output
         void *                m_cmHistSys;
         mfxExtPredWeightTable m_pwt[2];     // obtained from fade detection

@@ -714,11 +714,10 @@ void ImplementationAvc::DestroyDanglingCmResources()
     if (m_cmDevice)
     {
         mfxExtCodingOption2 * extOpt2 = GetExtBuffer(m_video);
-        mfxExtCodingOption3 * extOpt3 = GetExtBuffer(m_video);
         for (DdiTaskIter i = m_lookaheadStarted.begin(), e = m_lookaheadStarted.end(); i != e; ++i)
         {
             m_cmCtx->DestroyEvent(i->m_event);
-            if ((extOpt2 && (extOpt2->MaxSliceSize == 0))||(extOpt3 && !IsOn(extOpt3->FadeDetection)))
+            if (extOpt2 && (extOpt2->MaxSliceSize == 0))
             {
                 int ffid = i->m_fid[0];
                 ArrayDpbFrame & iniDpb = i->m_dpb[ffid];
@@ -1912,11 +1911,11 @@ void ImplementationAvc::OnLookaheadQueried()
         ReleaseResource(m_rawLa, task.m_cmRawLa);
         ReleaseResource(m_mb,    task.m_cmMb);
 
-        /* moved to OnHistogramQueried()
-        if (m_cmDevice){
+        if (m_cmDevice)
+        {
             m_cmDevice->DestroySurface(task.m_cmRaw);
             task.m_cmRaw = NULL;
-        }*/
+        }
     }
 
     m_histRun.splice(m_histRun.end(), m_lookaheadStarted, m_lookaheadStarted.begin());
@@ -1950,12 +1949,12 @@ void ImplementationAvc::OnHistogramQueried()
     if ((task.m_reference[0] + task.m_reference[1]) == 0)
     {
         ReleaseResource(m_histogram, task.m_cmHist);
+    }
 
-        if (m_cmDevice && task.m_cmRaw)
-        {
-            m_cmDevice->DestroySurface(task.m_cmRaw);
-            task.m_cmRaw = 0;
-        }
+    if (m_cmDevice && task.m_cmRawForHist)
+    {
+        m_cmDevice->DestroySurface(task.m_cmRawForHist);
+        task.m_cmRawForHist = 0;
     }
 
     m_lookaheadFinished.splice(m_lookaheadFinished.end(), m_histWait, m_histWait.begin());
@@ -2363,8 +2362,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
             memset(task->m_cmHistSys, 0, sizeof(uint)* 512);
 
-            if (!task->m_cmRaw)
-                task->m_cmRaw = CreateSurface(m_cmDevice, task->m_handleRaw.first, m_currentVaType);
+            task->m_cmRawForHist = CreateSurface(m_cmDevice, task->m_handleRaw.first, m_currentVaType);
         }
 
         task->m_isENCPAK = m_isENCPAK;

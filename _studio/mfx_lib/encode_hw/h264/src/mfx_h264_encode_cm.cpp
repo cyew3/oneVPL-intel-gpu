@@ -903,10 +903,10 @@ CmEvent * CmContext::RunHistogram(
     for (tsH = numThreadsPerGroup, tsW = 1; tsH > tsW || tsW * tsH != numThreadsPerGroup; tsH = numThreadsPerGroup / ++tsW);
     for (gsH = numGroups, gsW = 1; gsH > gsW || gsW * gsH != numGroups; gsH = numGroups / ++gsW);
 
-    if ((result = kernel->SetThreadCount(numThreads)) != CM_SUCCESS)
+    if ((result = kernel->SetThreadCount(tsW * tsH * gsW * gsH)) != CM_SUCCESS)
         throw CmRuntimeError();
 
-    SetKernelArg(kernel, GetIndex(task.m_cmRaw), GetIndex(task.m_cmHist), maxH, maxV, offX, offY);
+    SetKernelArg(kernel, GetIndex(task.m_cmRawForHist), GetIndex(task.m_cmHist), maxH, maxV, offX, offY);
 
     CmTask * cmTask = 0;
     if ((result = m_device->CreateTask(cmTask)) != CM_SUCCESS)
