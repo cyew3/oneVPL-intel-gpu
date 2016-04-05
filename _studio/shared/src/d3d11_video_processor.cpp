@@ -2627,7 +2627,11 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             m_pVideoProcessorEnum,
             &inputDesc,
             ppInputView);
-        CHECK_HRES(hRes);
+        if(FAILED(hRes))
+        {
+            SAFE_DELETE_ARRAY(videoProcessorStreams);
+            return MFX_ERR_DEVICE_FAILED;
+        }
 
         if(m_file)
         {
