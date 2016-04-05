@@ -675,7 +675,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
                                                  m_statParams.future_references[ii].flags);
     mdprintf(stderr, " ]\n");
 
-    mdprintf(stderr, "outputs=%p [", m_statParams.outputs);
+    mdprintf(stderr, "outputs=0x%p [", m_statParams.outputs);
     for (int i = 0; i < 2; i++)
         mdprintf(stderr, " %d", m_statParams.outputs[i]);
     mdprintf(stderr, " ]\n");
@@ -2268,7 +2268,7 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
                                mbs, sizeof (VAEncFEIDistortionBufferH264Intel) * mbstat->NumMBAlloc);
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
-                    vaUnmapBuffer(m_vaDisplay, vaFeiMBStatId);
+                     vaSts = vaUnmapBuffer(m_vaDisplay, vaFeiMBStatId);
                     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 }
                 mdprintf(stderr, "Destroy - Distortion bufId=%d\n", m_vaFeiMBStatId[feiFieldId]);
@@ -2293,7 +2293,7 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
                     mvs, sizeof (VAMotionVectorIntel) * 16 * mvout->NumMBAlloc);
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
-                    vaUnmapBuffer(m_vaDisplay, vaFeiMVOutId);
+                    vaSts = vaUnmapBuffer(m_vaDisplay, vaFeiMVOutId);
                     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 }
                 mdprintf(stderr, "Destroy - MV bufId=%d\n", m_vaFeiMVOutId[feiFieldId]);
@@ -2317,7 +2317,7 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
                                   mbcs, sizeof (VAEncFEIModeBufferH264Intel) * mbcodeout->NumMBAlloc);
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
-                    vaUnmapBuffer(m_vaDisplay, vaFeiMBCODEOutId);
+                    vaSts = vaUnmapBuffer(m_vaDisplay, vaFeiMBCODEOutId);
                 }
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 mdprintf(stderr, "Destroy - MBCODE bufId=%d\n", m_vaFeiMCODEOutId[feiFieldId]);

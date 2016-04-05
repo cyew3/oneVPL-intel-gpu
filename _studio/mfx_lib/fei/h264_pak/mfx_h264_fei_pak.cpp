@@ -302,20 +302,30 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
 
         for (size_t i = 0; i < GetMaxNumSlices(m_video); i++)
         {
-            mfxU8 disableDeblockingIdc = 1;
-            if ((NULL != extFeiSlice) && (NULL != extFeiSlice->Slice))
+            /* default parameters */
+            mfxU8 disableDeblockingIdc = 0;
+            mfxI8 sliceAlphaC0OffsetDiv2 = 0;
+            mfxI8 sliceBetaOffsetDiv2 = 0;
+            if (NULL != extFeiSlice)
             {
-                    disableDeblockingIdc = mfxU8(extFeiSlice->Slice ?
-                                            extFeiSlice->Slice[i].DisableDeblockingFilterIdc :
-                                            extOpt2Cur->DisableDeblockingIdc);
-            }
-            if (disableDeblockingIdc > 2)
-                disableDeblockingIdc = 0;
+                if (NULL != extOpt2Cur)
+                    disableDeblockingIdc = (mfxU8) extOpt2Cur->DisableDeblockingIdc;
+
+                if (NULL != extFeiSlice->Slice)
+                {
+                    disableDeblockingIdc = (mfxU8) extFeiSlice->Slice[i].DisableDeblockingFilterIdc;
+                    if (disableDeblockingIdc > 2)
+                        disableDeblockingIdc = 0;
+                    sliceAlphaC0OffsetDiv2 = (mfxI8) extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2;
+                    sliceBetaOffsetDiv2 = (mfxI8) extFeiSlice->Slice[i].SliceBetaOffsetDiv2;
+                }
+            } // if (NULL != extFeiSlice)
+            /* Now put values */
             task.m_disableDeblockingIdc[field].push_back(disableDeblockingIdc);
-            task.m_sliceAlphaC0OffsetDiv2[field].push_back(extFeiSlice->Slice ? (mfxI8)extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2 : 0);
-            task.m_sliceBetaOffsetDiv2[field].push_back(extFeiSlice->Slice ? (mfxI8)extFeiSlice->Slice[i].SliceBetaOffsetDiv2 : 0);
-        }
-    }
+            task.m_sliceAlphaC0OffsetDiv2[field].push_back(sliceAlphaC0OffsetDiv2);
+            task.m_sliceBetaOffsetDiv2[field].push_back(sliceBetaOffsetDiv2);
+        } // for (size_t i = 0; i < GetMaxNumSlices(video); i++)
+    } // for (mfxU32 field = 0; field < fieldMaxCount; field++)
 
     mfxHDL handle_src, handle_rec;
     sts = m_core->GetExternalFrameHDL(inParams->InSurface->Data.MemId, &handle_src);

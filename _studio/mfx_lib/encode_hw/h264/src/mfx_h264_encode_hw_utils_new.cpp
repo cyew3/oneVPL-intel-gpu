@@ -2002,63 +2002,70 @@ void MfxHwH264Encode::ConfigureTask(
         }
     }
 
+    const mfxExtCodingOption2* extOpt2Cur = (extOpt2Runtime ? extOpt2Runtime : &extOpt2);
+
+    if (task.m_type[ffid] & MFX_FRAMETYPE_I)
     {
-        const mfxExtCodingOption2* extOpt2Cur = (extOpt2Runtime ? extOpt2Runtime : &extOpt2);
-
-        if (task.m_type[ffid] & MFX_FRAMETYPE_I)
-        {
-            task.m_minQP = extOpt2Cur->MinQPI;
-            task.m_maxQP = extOpt2Cur->MaxQPI;
-        }
-        else if (task.m_type[ffid] & MFX_FRAMETYPE_P)
-        {
-            task.m_minQP = extOpt2Cur->MinQPP;
-            task.m_maxQP = extOpt2Cur->MaxQPP;
-        }
-        else if (task.m_type[ffid] & MFX_FRAMETYPE_B)
-        {
-            task.m_minQP = extOpt2Cur->MinQPB;
-            task.m_maxQP = extOpt2Cur->MaxQPB;
-        }
-
-        if (task.m_maxQP > 51)
-            task.m_maxQP = 0;
-
-        if (task.m_minQP > 51 || (task.m_maxQP && task.m_minQP > task.m_maxQP))
-            task.m_minQP = 0;
-
-        mfxU32 fieldMaxCount = video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
-        for (mfxU32 field = 0; field < fieldMaxCount; field++)
-        {
-            mfxU32 fieldParity = field;
-            if (video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF)
-                fieldParity = 1 - fieldParity;
-
-            mfxExtFeiSliceHeader * extFeiSlice = GetExtBuffer(video, fieldParity);
-            /* To change de-blocking params in runtime we need to take params from runtime control */
-            mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBuffer(task.m_ctrl, fieldParity);
-            /*And runtime params has priority before iInit() params */
-            if (NULL != extFeiSliceInRintime)
-                extFeiSlice = extFeiSliceInRintime;
-
-            for (size_t i = 0; i < GetMaxNumSlices(video); ++ i)
-            {
-                mfxU8 disableDeblockingIdc = 1;
-                if ((NULL != extFeiSlice) && (NULL != extFeiSlice->Slice))
-                {
-                        disableDeblockingIdc = mfxU8(extFeiSlice->Slice ?
-                                                extFeiSlice->Slice[i].DisableDeblockingFilterIdc :
-                                                extOpt2Cur->DisableDeblockingIdc);
-                }
-                if (disableDeblockingIdc > 2)
-                    disableDeblockingIdc = 0;
-                task.m_disableDeblockingIdc[field].push_back(disableDeblockingIdc);
-
-                task.m_sliceAlphaC0OffsetDiv2[field].push_back(extFeiSlice->Slice ? (mfxI8)extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2 : 0);
-                task.m_sliceBetaOffsetDiv2[field].push_back(extFeiSlice->Slice ? (mfxI8)extFeiSlice->Slice[i].SliceBetaOffsetDiv2 : 0);
-            }
-        }
+        task.m_minQP = extOpt2Cur->MinQPI;
+        task.m_maxQP = extOpt2Cur->MaxQPI;
     }
+    else if (task.m_type[ffid] & MFX_FRAMETYPE_P)
+    {
+        task.m_minQP = extOpt2Cur->MinQPP;
+        task.m_maxQP = extOpt2Cur->MaxQPP;
+    }
+    else if (task.m_type[ffid] & MFX_FRAMETYPE_B)
+    {
+        task.m_minQP = extOpt2Cur->MinQPB;
+        task.m_maxQP = extOpt2Cur->MaxQPB;
+    }
+
+    if (task.m_maxQP > 51)
+        task.m_maxQP = 0;
+
+    if (task.m_minQP > 51 || (task.m_maxQP && task.m_minQP > task.m_maxQP))
+        task.m_minQP = 0;
+
+    mfxU32 fieldMaxCount = video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
+    for (mfxU32 field = 0; field < fieldMaxCount; field++)
+    {
+        mfxU32 fieldParity = field;
+        if (video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF)
+            fieldParity = 1 - fieldParity;
+
+        mfxExtFeiSliceHeader * extFeiSlice = GetExtBuffer(video, fieldParity);
+        /* To change de-blocking params in runtime we need to take params from runtime control */
+        mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBuffer(task.m_ctrl, fieldParity);
+        /*And runtime params has priority before iInit() params */
+        if (NULL != extFeiSliceInRintime)
+            extFeiSlice = extFeiSliceInRintime;
+
+        for (size_t i = 0; i < GetMaxNumSlices(video); i++)
+        {
+            /* default parameters */
+            mfxU8 disableDeblockingIdc = 0;
+            mfxI8 sliceAlphaC0OffsetDiv2 = 0;
+            mfxI8 sliceBetaOffsetDiv2 = 0;
+            if (NULL != extFeiSlice)
+            {
+                if (NULL != extOpt2Cur)
+                    disableDeblockingIdc = (mfxU8) extOpt2Cur->DisableDeblockingIdc;
+
+                if (NULL != extFeiSlice->Slice)
+                {
+                    disableDeblockingIdc = (mfxU8) extFeiSlice->Slice[i].DisableDeblockingFilterIdc;
+                    if (disableDeblockingIdc > 2)
+                        disableDeblockingIdc = 0;
+                    sliceAlphaC0OffsetDiv2 = (mfxI8) extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2;
+                    sliceBetaOffsetDiv2 = (mfxI8) extFeiSlice->Slice[i].SliceBetaOffsetDiv2;
+                }
+            } // if (NULL != extFeiSlice)
+            /* Now put values */
+            task.m_disableDeblockingIdc[field].push_back(disableDeblockingIdc);
+            task.m_sliceAlphaC0OffsetDiv2[field].push_back(sliceAlphaC0OffsetDiv2);
+            task.m_sliceBetaOffsetDiv2[field].push_back(sliceBetaOffsetDiv2);
+        } // for (size_t i = 0; i < GetMaxNumSlices(video); i++)
+    } // for (mfxU32 field = 0; field < fieldMaxCount; field++)
 }
 
 
