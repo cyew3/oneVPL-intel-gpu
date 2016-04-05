@@ -351,7 +351,7 @@ void PackerMS::PackPicParams(DXVA_PicParams_VP9* pp, VP9DecoderFrame const* info
 
     if (KEY_FRAME == info->frameType)
         for (int i = 0; i < NUM_REF_FRAMES; i++)
-            pp->ref_frame_map[i].AssociatedFlag = 1;
+            pp->ref_frame_map[i].bPicEntry = 255;
     else
         for (int i = 0; i < NUM_REF_FRAMES; ++i)
         {
@@ -368,10 +368,17 @@ void PackerMS::PackPicParams(DXVA_PicParams_VP9* pp, VP9DecoderFrame const* info
     for (int i = 0; i < REFS_PER_FRAME; i++)
     {
         if (KEY_FRAME == info->frameType || info->intraOnly)
-            pp->frame_refs[i].AssociatedFlag = 1;
+            pp->frame_refs[i].bPicEntry = 255;
         else
-            pp->frame_refs[i].Index7Bits = (UCHAR)info->activeRefIdx[0];
-
+        {
+            Ipp32s index = info->activeRefIdx[i];
+            if (index < 0 || index >= NUM_REF_FRAMES)
+            {
+                index = 0;
+                VM_ASSERT(false);
+            }
+            pp->frame_refs[i].Index7Bits = pp->ref_frame_map[index].Index7Bits;
+        }
         pp->ref_frame_sign_bias[i + 1] = (UCHAR)info->refFrameSignBias[i + 1];
     }
     
@@ -394,7 +401,11 @@ void PackerMS::PackPicParams(DXVA_PicParams_VP9* pp, VP9DecoderFrame const* info
     pp->uv_dc_delta_q = (CHAR)info->uv_dc_delta_q;
     pp->uv_ac_delta_q = (CHAR)info->uv_ac_delta_q;
 
-    //pp->stVP9Segments.wSegmentInfoFlags = ;
+    pp->stVP9Segments.enabled = info->segmentation.enabled;
+    pp->stVP9Segments.update_map = info->segmentation.updateMap;
+    pp->stVP9Segments.temporal_update = info->segmentation.temporalUpdate;
+    pp->stVP9Segments.abs_delta = info->segmentation.absDelta;
+
     for (Ipp8u i = 0; i < VP9_NUM_OF_SEGMENT_TREE_PROBS; i++)
         pp->stVP9Segments.tree_probs[i] = info->segmentation.treeProbs[i];
 
