@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "transcode_model_reference.h"
@@ -117,6 +117,21 @@ mfxStatus TranscodeModelReference::Init( AppParam& params )
 
     sts = CreateAllocator( params.IOPattern );
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    // on Linux SetHandle call is mandatory before any components' calls
+#if defined (LIBVA_SUPPORT)
+    sts = m_pSessionDecode->SetHandle(MFX_HANDLE_VA_DISPLAY, static_cast<mfxHDL>(m_allocator.va_display));
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    sts = m_pSessionVPP->SetHandle(MFX_HANDLE_VA_DISPLAY, static_cast<mfxHDL>(m_allocator.va_display));
+    MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    sts = m_pSessionEncode->SetHandle(MFX_HANDLE_VA_DISPLAY, static_cast<mfxHDL>(m_allocator.va_display));
+    MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+#endif
+
     // QueryIOSurf()
     //{
         mfxFrameAllocRequest decodeFrameRequest = {0};
@@ -162,6 +177,7 @@ mfxStatus TranscodeModelReference::Init( AppParam& params )
 
     sts = CreateAllocator( params.IOPattern );
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
 
         // surfaces manager ()
         {        
@@ -751,22 +767,6 @@ void TranscodeModelReference::DestroyAllocator(void)
 mfxStatus TranscodeModelReference::SetAllocatorMFXSessions( mfxU16 IOPattern )
 {
     mfxStatus sts = MFX_ERR_NONE;    
-
-    // on Linux SetHandle call is mandatory
-#if defined (LIBVA_SUPPORT)
-    sts = m_pSessionDecode->SetHandle(MFX_HANDLE_VA_DISPLAY, static_cast<mfxHDL>(m_allocator.va_display));
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    sts = m_pSessionVPP->SetHandle(MFX_HANDLE_VA_DISPLAY, static_cast<mfxHDL>(m_allocator.va_display));
-    MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    sts = m_pSessionEncode->SetHandle(MFX_HANDLE_VA_DISPLAY, static_cast<mfxHDL>(m_allocator.va_display));
-    MSDK_IGNORE_MFX_STS(sts, MFX_ERR_UNDEFINED_BEHAVIOR); //(workaround if session called twice) 
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-#endif
-
-
 
     if( IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY) ) // allocator need for Decode & VPP
     {
