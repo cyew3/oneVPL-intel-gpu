@@ -275,7 +275,6 @@ mfxStatus MFXDoWork(mfxSession session)
 
 mfxStatus MFXClose(mfxSession session)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXClose");
     mfxStatus mfxRes = MFX_ERR_NONE;
 
     // check error(s)
@@ -286,6 +285,12 @@ mfxStatus MFXClose(mfxSession session)
 
     try
     {
+        // NOTE MFXClose function calls MFX_TRACE_CLOSE, so no tracing points should be
+        // used after it. special care should be taken with MFX_AUTO_TRACE macro
+        // since it inserts class variable on stack which calls to trace library in the
+        // destructor.
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXClose");
+
         // parent session can't be closed,
         // because there is no way to let children know about parent's death.
         
