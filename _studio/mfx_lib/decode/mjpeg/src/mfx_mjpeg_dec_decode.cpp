@@ -2032,6 +2032,22 @@ void MFX_JPEG_Utility::AdjustFrameAllocRequest(mfxFrameAllocRequest *request,
         break;
     }
 
+#ifdef MFX_ENABLE_MJPEG_ROTATE_VPP
+    if(info->Rotation == MFX_ROTATION_90 || info->Rotation == MFX_ROTATION_180 || info->Rotation == MFX_ROTATION_270)
+    {
+        *needVpp = true;
+    }
+
+    if(info->Rotation == MFX_ROTATION_90 || info->Rotation == MFX_ROTATION_270)
+    {
+        std::swap(request->Info.Height, request->Info.Width);
+        std::swap(request->Info.AspectRatioH, request->Info.AspectRatioW);
+        std::swap(request->Info.CropH, request->Info.CropW);
+        std::swap(request->Info.CropY, request->Info.CropX);
+    }
+#endif
+
+
     if(info->Rotation == MFX_ROTATION_90 || info->Rotation == MFX_ROTATION_270)
         std::swap(mcuWidth, mcuHeight);
 

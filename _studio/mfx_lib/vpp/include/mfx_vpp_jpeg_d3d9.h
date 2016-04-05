@@ -48,7 +48,9 @@ protected:
     bool   m_isD3DToSys;
     bool   m_isOpaq;
     mfxU16 m_taskId;
-
+#ifdef MFX_ENABLE_MJPEG_ROTATE_VPP
+    mfxI32 m_rotation;
+#endif
     std::vector<mfxFrameSurface1>  m_surfaces;
     mfxFrameAllocResponse m_response;
     UMC::Mutex m_guard;

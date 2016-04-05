@@ -537,7 +537,11 @@ FrameData *MJPEGVideoDecoderMFX::GetDst(void)
 
 Status MJPEGVideoDecoderMFX::SetRotation(Ipp16u rotation)
 {
-    m_rotation = rotation;    
+#ifdef MFX_ENABLE_MJPEG_ROTATE_VPP
+    m_rotation = 0;
+#else
+    m_rotation = rotation;
+#endif
     return UMC_OK;
 
 } // MJPEGVideoDecoderMFX::SetRotation(Ipp16u rotation)

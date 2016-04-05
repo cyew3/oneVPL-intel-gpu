@@ -90,11 +90,13 @@ VideoVppJpegD3D9::VideoVppJpegD3D9(VideoCORE *core, bool isD3DToSys, bool isOpaq
 {
     m_pCore = core;
     m_isD3DToSys = isD3DToSys;
-    
+
     m_isOpaq = isOpaq;
 
     m_taskId = 1;
-
+#ifdef MFX_ENABLE_MJPEG_ROTATE_VPP
+    m_rotation = 0;
+#endif
 } // VideoVppJpegD3D9::VideoVppJpegD3D9(VideoCORE *core)
 
 
@@ -146,6 +148,29 @@ mfxStatus VideoVppJpegD3D9::Init(const mfxVideoParam *par)
 
     mfxVppCaps caps;
     caps = m_ddi.GetCaps();
+
+#ifdef MFX_ENABLE_MJPEG_ROTATE_VPP
+    if (caps.uRotation) {
+        switch(par->mfx.Rotation)
+        {
+        case MFX_ROTATION_0:
+            m_rotation = MFX_ANGLE_0;
+            break;
+        case MFX_ROTATION_90:
+            m_rotation = MFX_ANGLE_90;
+            break;
+        case MFX_ROTATION_180:
+            m_rotation = MFX_ANGLE_180;
+            break;
+        case MFX_ROTATION_270:
+            m_rotation = MFX_ANGLE_270;
+            break;
+        }
+    } else {
+        if(MFX_ROTATION_0 != par->mfx.Rotation)
+            return MFX_ERR_UNSUPPORTED;
+    }
+#endif
 
     if(par->vpp.In.Width > caps.uMaxWidth || par->vpp.In.Height > caps.uMaxHeight ||
        par->vpp.Out.Width > caps.uMaxWidth || par->vpp.Out.Height > caps.uMaxHeight)
@@ -265,7 +290,9 @@ mfxStatus VideoVppJpegD3D9::BeginHwJpegProcessing(mfxFrameSurface1 *pInputSurfac
 
     m_executeParams.refCount = 1;
     m_executeParams.pRefSurfaces = &m_pExecuteSurface;
-
+#ifdef MFX_ENABLE_MJPEG_ROTATE_VPP
+    m_executeParams.rotation = m_rotation;
+#endif
     m_executeParams.statusReportID = m_taskId;
     *taskId = m_taskId;
     m_taskId += 1;
