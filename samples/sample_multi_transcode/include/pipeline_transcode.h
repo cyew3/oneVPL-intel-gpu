@@ -146,6 +146,7 @@ namespace TranscodingSample
         mfxU16 BufferSizeInKB;
         mfxU16 GopPicSize;
         mfxU16 GopRefDist;
+        mfxU16 NumRefFrame;
 
         // MVC Specific Options
         bool   bIsMVC; // true if Multi-View-Codec is in use

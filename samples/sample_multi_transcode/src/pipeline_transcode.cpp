@@ -1868,6 +1868,11 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
         m_mfxEncParams.mfx.GopRefDist = pInParams->GopRefDist;
     }
 
+    if (pInParams->NumRefFrame)
+    {
+        m_mfxEncParams.mfx.NumRefFrame = pInParams->NumRefFrame;
+    }
+
     return MFX_ERR_NONE;
 }// mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
 
