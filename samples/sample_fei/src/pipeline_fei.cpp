@@ -2641,12 +2641,15 @@ mfxStatus CEncodingPipeline::Run()
         if (m_insertIDR)
         {
             m_insertIDR = false;
+            m_ctr->FrameType = !m_isField ? (MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF):
+                (MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_xREF);
             m_frameType = PairU8((mfxU8)(MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF),
                                  (mfxU8)(MFX_FRAMETYPE_P                     | MFX_FRAMETYPE_REF));
         }
         else
         {
-            m_frameType = GetFrameType(m_frameCount);
+            m_ctr->FrameType = MFX_FRAMETYPE_UNKNOWN;
+            m_frameType = GetFrameType(m_frameCount - m_frameOrderIdrInDisplayOrder);
         }
 
         if (m_encpakParams.nPicStruct == MFX_PICSTRUCT_FIELD_BFF)
@@ -2883,7 +2886,7 @@ mfxStatus CEncodingPipeline::GetOneFrame(mfxFrameSurface1* & pSurf)
                 return MFX_ERR_MORE_DATA;
             }
             DecExtSurface.pSurface = NULL;
-            return MFX_ERR_NONE;
+            return sts;
         }
 
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
