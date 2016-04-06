@@ -98,11 +98,12 @@ enum
 
 enum
 {
-    FRAME_ACCEPTED      = 0x01,
-    FRAME_REORDERED     = 0x02,
-    FRAME_SUBMITTED     = 0x04,
-    FRAME_ENCODED       = 0x08,
-    STAGE_SUBMIT        = FRAME_ACCEPTED    | FRAME_REORDERED,
+    FRAME_NEW           = 0x01,
+    FRAME_ACCEPTED      = 0x02,
+    FRAME_REORDERED     = 0x04,
+    FRAME_SUBMITTED     = 0x08,
+    FRAME_ENCODED       = 0x10,
+    STAGE_SUBMIT        = FRAME_NEW | FRAME_ACCEPTED | FRAME_REORDERED,
     STAGE_QUERY         = STAGE_SUBMIT      | FRAME_SUBMITTED,
     STAGE_READY         = STAGE_QUERY       | FRAME_ENCODED,
 };
@@ -679,11 +680,13 @@ public:
     Task* New       ();
     Task* Reorder   (MfxVideoParam const & par, DpbArray const & dpb, bool flush);
     void  Submit    (Task* task);
-    Task* GetSubmittedTask();
+    Task* GetTaskForSubmit();
     void  SubmitForQuery(Task* task);
     bool  isSubmittedForQuery(Task* task);
     Task* GetTaskForQuery();
     void  Ready     (Task* task);
+    void  SkipTask  (Task* task);
+    Task* GetNewTask();
 
 private:
     TaskList   m_free;
