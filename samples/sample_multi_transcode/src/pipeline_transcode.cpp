@@ -2267,7 +2267,7 @@ static mfxStatus CorrectAsyncDepth(mfxFrameAllocRequest &curReq, mfxU16 asyncDep
         // The request holds summary of required surfaces numbers from 2 components and
         // asyncDepth is included twice. Here we patch surfaces number removing
         // one asyncDepth.
-        curReq.NumFrameSuggested = curReq.NumFrameSuggested - asyncDepth;
+        curReq.NumFrameSuggested = curReq.NumFrameSuggested - asyncDepth +1;
         curReq.NumFrameMin = curReq.NumFrameSuggested;
     }
 
@@ -2348,12 +2348,15 @@ mfxStatus CTranscodingPipeline::AllocFrames()
 
 #ifdef LIBVA_SUPPORT
         if ((m_nVPPCompEnable == VppCompOnly) &&
-            (m_libvaBackend == MFX_LIBVA_DRM_MODESET))
+            ((m_libvaBackend == MFX_LIBVA_DRM_MODESET) ||
+#if defined(X11_DRI3_SUPPORT)
+            (m_libvaBackend == MFX_LIBVA_X11) ||
+#endif // X11_DRI3_SUPPORT
+            (m_libvaBackend == MFX_LIBVA_WAYLAND)))
         {
             VPPOut.Type |= MFX_MEMTYPE_EXPORT_FRAME;
         }
 #endif
-
         sts = AllocFrames(&VPPOut, false);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }

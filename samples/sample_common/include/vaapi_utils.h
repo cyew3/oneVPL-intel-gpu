@@ -24,6 +24,10 @@ Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
 #endif
 #if defined(LIBVA_X11_SUPPORT)
 #include <va/va_x11.h>
+#if defined(X11_DRI3_SUPPORT)
+#include <xcb/dri3.h>
+#include <xcb/present.h>
+#endif // X11_DRI3_SUPPORT
 #endif
 
 #include "sample_defs.h"
@@ -71,10 +75,8 @@ namespace MfxLoader
         typedef VAStatus (*vaDeriveImage_type)(VADisplay, VASurfaceID, VAImage *);
         typedef VAStatus (*vaDestroyImage_type)(VADisplay, VAImageID);
         typedef VAStatus (*vaGetLibFunc_type)(VADisplay, const char *func);
-#ifndef DISABLE_VAAPI_BUFFER_EXPORT
         typedef VAStatus (*vaAcquireBufferHandle_type)(VADisplay, VABufferID, VABufferInfo *);
         typedef VAStatus (*vaReleaseBufferHandle_type)(VADisplay, VABufferID);
-#endif
 
         VA_Proxy();
         ~VA_Proxy();
@@ -91,10 +93,8 @@ namespace MfxLoader
         const vaDeriveImage_type     vaDeriveImage;
         const vaDestroyImage_type    vaDestroyImage;
         const vaGetLibFunc_type      vaGetLibFunc;
-#ifndef DISABLE_VAAPI_BUFFER_EXPORT
         const vaAcquireBufferHandle_type vaAcquireBufferHandle;
         const vaReleaseBufferHandle_type vaReleaseBufferHandle;
-#endif
     };
 #endif
 
@@ -174,6 +174,7 @@ namespace MfxLoader
           drm_intel_bufmgr *bufmgr, int prime_fd, int size);
         typedef void (*drm_intel_bo_unreference_type)(drm_intel_bo *bo);
         typedef drm_intel_bufmgr* (*drm_intel_bufmgr_gem_init_type)(int fd, int batch_size);
+        typedef int (*drm_intel_bo_gem_export_to_prime_type) (drm_intel_bo *, int *);
 
         DrmIntel_Proxy();
         ~DrmIntel_Proxy();
@@ -182,6 +183,9 @@ namespace MfxLoader
         __DECLARE(drm_intel_bo_gem_create_from_prime);
         __DECLARE(drm_intel_bo_unreference);
         __DECLARE(drm_intel_bufmgr_gem_init);
+#if defined(X11_DRI3_SUPPORT)
+        __DECLARE(drm_intel_bo_gem_export_to_prime);
+#endif
 
 #undef __DECLARE
     };
@@ -264,7 +268,11 @@ namespace MfxLoader
         typedef int (*XSync_type)(Display*, Bool);
         typedef int (*XDestroyWindow_type)(Display*, Window);
         typedef int (*XResizeWindow_type)(Display *, Window, unsigned int, unsigned int);
-
+#if defined(X11_DRI3_SUPPORT)
+        typedef Status (*XGetGeometry_type)(register Display *, Drawable, Window *,
+                            int *, int *, unsigned int *, unsigned int *,
+                            unsigned int *, unsigned int *);
+#endif // X11_DRI3_SUPPORT
         XLib_Proxy();
         ~XLib_Proxy();
 
@@ -275,17 +283,100 @@ namespace MfxLoader
         const XSync_type               XSync;
         const XDestroyWindow_type      XDestroyWindow;
         const XResizeWindow_type       XResizeWindow;
+#if defined(X11_DRI3_SUPPORT)
+        const XGetGeometry_type        XGetGeometry;
+#endif // X11_DRI3_SUPPORT
     };
-#endif
+
+#if defined(X11_DRI3_SUPPORT)
+
+    class XCB_Dri3_Proxy
+    {
+        private:
+        SimpleLoader lib; // should appear first in member list
+
+        public:
+        typedef xcb_void_cookie_t (*xcb_dri3_pixmap_from_buffer_type) (xcb_connection_t *,
+                                    xcb_pixmap_t,
+                                    xcb_drawable_t,
+                                    uint32_t,
+                                    uint16_t,
+                                    uint16_t,
+                                    uint16_t,
+                                    uint8_t,
+                                    uint8_t,
+                                    int32_t);
+        XCB_Dri3_Proxy();
+        ~XCB_Dri3_Proxy();
+
+        const xcb_dri3_pixmap_from_buffer_type  xcb_dri3_pixmap_from_buffer;
+    };
+
+    class Xcb_Proxy
+    {
+        private:
+        SimpleLoader lib; // should appear first in member list
+
+        public:
+        typedef uint32_t (*xcb_generate_id_type) (xcb_connection_t *);
+        typedef xcb_void_cookie_t (*xcb_free_pixmap_type) (xcb_connection_t *, xcb_pixmap_t);
+        typedef int (*xcb_flush_type)(xcb_connection_t *);
+
+        Xcb_Proxy();
+        ~Xcb_Proxy();
+
+        const xcb_generate_id_type      xcb_generate_id;
+        const xcb_free_pixmap_type  xcb_free_pixmap;
+        const xcb_flush_type        xcb_flush;
+    };
+
+    class X11_Xcb_Proxy
+    {
+        private:
+        SimpleLoader lib; // should appear first in member list
+
+        public:
+        typedef xcb_connection_t * (*XGetXCBConnection_type) (Display *dpy);
+
+        X11_Xcb_Proxy();
+        ~X11_Xcb_Proxy();
+
+        const XGetXCBConnection_type XGetXCBConnection;
+    };
+
+    class Xcbpresent_Proxy
+    {
+        private:
+        SimpleLoader lib;
+
+        public:
+        typedef xcb_void_cookie_t (*xcb_present_pixmap_type) (xcb_connection_t *,
+                                    xcb_window_t,
+                                    xcb_pixmap_t,
+                                    uint32_t,
+                                    xcb_xfixes_region_t,
+                                    xcb_xfixes_region_t,
+                                    int16_t,
+                                    int16_t,
+                                    xcb_randr_crtc_t,
+                                    xcb_sync_fence_t,
+                                    xcb_sync_fence_t,
+                                    uint32_t,
+                                    uint64_t,
+                                    uint64_t,
+                                    uint64_t,
+                                    uint32_t,
+                                    const xcb_present_notify_t *);
+        Xcbpresent_Proxy();
+        ~Xcbpresent_Proxy();
+
+        const xcb_present_pixmap_type   xcb_present_pixmap;
+    };
+
+#endif // X11_DRI3_SUPPORT
+
+#endif // LIBVA_X11_SUPPORT
 } // namespace MfxLoader
-
-
-typedef VAStatus (*vaExtGetSurfaceHandle)(
-    VADisplay dpy,
-    VASurfaceID *surface,
-    int *prime_fd);
-
-#define VPG_EXT_GET_SURFACE_HANDLE "vpgExtGetSurfaceHandle"
 
 
 class CLibVA
@@ -320,13 +411,9 @@ protected:
     VADisplay m_va_dpy;
     VADisplay m_va_dpy_render;
 
-    vaExtGetSurfaceHandle m_fnVaGetSurfaceHandle;
-
 private:
     DISALLOW_COPY_AND_ASSIGN(CLibVA);
 };
-
-#define IHD_DRV_VIDEO_DRIVER "iHD_drv_video.so"
 
 CLibVA* CreateLibVA(int type = MFX_LIBVA_DRM);
 

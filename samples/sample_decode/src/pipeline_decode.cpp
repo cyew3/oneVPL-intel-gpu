@@ -876,7 +876,7 @@ mfxStatus CDecodingPipeline::CreateHWDevice()
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 #if defined(LIBVA_WAYLAND_SUPPORT)
-    if (m_eWorkMode == MODE_RENDERING) {
+    if (m_eWorkMode == MODE_RENDERING && m_libvaBackend == MFX_LIBVA_WAYLAND) {
         mfxHDL hdl = NULL;
         mfxHandleType hdlw_t = (mfxHandleType)HANDLE_WAYLAND_DRIVER;
         Wayland *wld;
@@ -1125,7 +1125,7 @@ mfxStatus CDecodingPipeline::CreateAllocator()
                 CVAAPIDeviceDRM* drmdev = dynamic_cast<CVAAPIDeviceDRM*>(m_hwdev);
                 p_vaapiAllocParams->m_export_mode = vaapiAllocatorParams::CUSTOM_FLINK;
                 p_vaapiAllocParams->m_exporter = dynamic_cast<vaapiAllocatorParams::Exporter*>(drmdev->getRenderer());
-            } else if (m_libvaBackend == MFX_LIBVA_WAYLAND) {
+            } else if (m_libvaBackend == MFX_LIBVA_WAYLAND || m_libvaBackend == MFX_LIBVA_X11) {
                 p_vaapiAllocParams->m_export_mode = vaapiAllocatorParams::PRIME;
             }
         }

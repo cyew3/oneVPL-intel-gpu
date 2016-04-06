@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -21,10 +21,15 @@ Copyright(c) 2013-2015 Intel Corporation. All Rights Reserved.
 #include <va/va_x11.h>
 #include <X11/Xlib.h>
 #include "vaapi_allocator.h"
+#if defined(X11_DRI3_SUPPORT)
+#include <fcntl.h>
+
+#define ALIGN(x, y) (((x) + (y) - 1) & -(y))
+#define PAGE_ALIGN(x) ALIGN(x, 4096)
+#endif // X11_DRI3_SUPPORT
 
 #define VAAPI_GET_X_DISPLAY(_display) (Display*)(_display)
 #define VAAPI_GET_X_WINDOW(_window) (Window*)(_window)
-
 
 CVAAPIDeviceX11::~CVAAPIDeviceX11(void)
 {
@@ -68,6 +73,32 @@ mfxStatus CVAAPIDeviceX11::Init(mfxHDL hWindow, mfxU16 nViews, mfxU32 nAdapterNu
             }
         }
     }
+#if defined(X11_DRI3_SUPPORT)
+    MfxLoader::DrmIntel_Proxy & drmintellib = m_X11LibVA.GetDrmIntelX11();
+    MfxLoader::XLib_Proxy & x11lib = m_X11LibVA.GetX11();
+    MfxLoader::X11_Xcb_Proxy & x11xcblib = m_X11LibVA.GetX11XcbX11();
+
+    m_dpy = x11lib.XOpenDisplay(NULL);
+    if (m_dpy == NULL){
+        msdk_printf(MSDK_STRING("Failed to open display\n"));
+        return MFX_ERR_NOT_INITIALIZED;
+    }
+    m_xcbconn = x11xcblib.XGetXCBConnection(m_dpy);
+
+    m_dri_fd = open("/dev/dri/card0", O_RDWR);
+    if (m_dri_fd < 0) {
+        msdk_printf(MSDK_STRING("Failed to open dri device\n"));
+        return MFX_ERR_NOT_INITIALIZED;
+    }
+
+    m_bufmgr = drmintellib.drm_intel_bufmgr_gem_init(m_dri_fd, 4096);
+    if (!m_bufmgr){
+        msdk_printf(MSDK_STRING("Failed to get buffer manager\n"));
+        return MFX_ERR_NOT_INITIALIZED;
+    }
+
+#endif
+
     return mfx_res;
 }
 
@@ -84,6 +115,17 @@ void CVAAPIDeviceX11::Close(void)
         free(m_window);
         m_window = NULL;
     }
+#if defined(X11_DRI3_SUPPORT)
+    if (m_dri_fd)
+    {
+        close(m_dri_fd);
+    }
+    if (m_dpy)
+    {
+        MfxLoader::XLib_Proxy & x11lib = m_X11LibVA.GetX11();
+        x11lib.XCloseDisplay(m_dpy);
+    }
+#endif
 }
 
 mfxStatus CVAAPIDeviceX11::Reset(void)
@@ -113,12 +155,14 @@ mfxStatus CVAAPIDeviceX11::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllo
     VAStatus va_res = VA_STATUS_SUCCESS;
     mfxStatus mfx_res = MFX_ERR_NONE;
     vaapiMemId * memId = NULL;
+
+#if !defined(X11_DRI3_SUPPORT)
     VASurfaceID surface;
     Display* display = VAAPI_GET_X_DISPLAY(m_X11LibVA.GetXDisplay());
     Window* window = VAAPI_GET_X_WINDOW(m_window);
 
     if(!window || !(*window)) mfx_res = MFX_ERR_NOT_INITIALIZED;
-    // should MFX_ERR_NONE be returned below considuring situation as EOS?
+    // should MFX_ERR_NONE be returned below considering situation as EOS?
     if ((MFX_ERR_NONE == mfx_res) && NULL == pSurface) mfx_res = MFX_ERR_NULL_PTR;
     if (MFX_ERR_NONE == mfx_res)
     {
@@ -165,6 +209,90 @@ mfxStatus CVAAPIDeviceX11::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllo
 
     }
     return mfx_res;
+#else //\/ X11_DRI3_SUPPORT
+    Window* window = VAAPI_GET_X_WINDOW(m_window);
+    Window root;
+    drm_intel_bo *bo = NULL;
+    unsigned int border, depth, stride, size,
+                width, height;
+    int fd = 0, bpp, x, y;
+
+    MfxLoader::Xcb_Proxy & xcblib = m_X11LibVA.GetXcbX11();
+    MfxLoader::XLib_Proxy & x11lib = m_X11LibVA.GetX11();
+    MfxLoader::DrmIntel_Proxy & drmintellib = m_X11LibVA.GetDrmIntelX11();
+    MfxLoader::Xcbpresent_Proxy & xcbpresentlib = m_X11LibVA.GetXcbpresentX11();
+    MfxLoader::XCB_Dri3_Proxy & dri3lib= m_X11LibVA.GetXCBDri3X11();
+
+    if(!window || !(*window)) mfx_res = MFX_ERR_NOT_INITIALIZED;
+    // should MFX_ERR_NONE be returned below considering situation as EOS?
+    if ((MFX_ERR_NONE == mfx_res) && NULL == pSurface) mfx_res = MFX_ERR_NULL_PTR;
+    if (MFX_ERR_NONE == mfx_res)
+    {
+        memId = (vaapiMemId*)(pSurface->Data.MemId);
+        if (!memId || !memId->m_surface) mfx_res = MFX_ERR_NULL_PTR;
+    }
+
+    if(memId->m_buffer_info.mem_type != VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME){
+        msdk_printf(MSDK_STRING("Memory type invalid!\n"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (MFX_ERR_NONE == mfx_res)
+    {
+        x11lib.XResizeWindow(m_dpy, *window, pSurface->Info.CropW, pSurface->Info.CropH);
+        x11lib.XGetGeometry(m_dpy, *window, &root, &x, &y, &width, &height, &border, &depth);
+
+        switch (depth) {
+            case 8: bpp = 8; break;
+            case 15: case 16: bpp = 16; break;
+            case 24: case 32: bpp = 32; break;
+            default: msdk_printf(MSDK_STRING("Invalid depth\n"));
+        }
+
+        width = pSurface->Info.CropX + pSurface->Info.CropW;
+        height = pSurface->Info.CropY + pSurface->Info.CropH;
+
+        stride = width * bpp/8;
+        size = PAGE_ALIGN(stride * height);
+
+        bo = drmintellib.drm_intel_bo_gem_create_from_prime(m_bufmgr, memId->m_buffer_info.handle, size);
+        if (!bo) {
+            msdk_printf(MSDK_STRING("Failed to create buffer object\n"));
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+
+        drmintellib.drm_intel_bo_gem_export_to_prime(bo, &fd);
+        if (!fd){
+            msdk_printf(MSDK_STRING("Invalid fd\n"));
+            return MFX_ERR_NOT_INITIALIZED;
+        }
+
+        xcb_pixmap_t pixmap = xcblib.xcb_generate_id(m_xcbconn);
+        dri3lib.xcb_dri3_pixmap_from_buffer(m_xcbconn, pixmap, root, size, width, height, stride, depth, bpp, fd);
+
+        xcbpresentlib.xcb_present_pixmap(m_xcbconn,
+                *window, pixmap,
+                0,
+                0,
+                0,
+                0,
+                0,
+                None,
+                None,
+                None,
+                XCB_PRESENT_OPTION_NONE,
+                0,
+                0,
+                0,
+                0, NULL);
+
+        xcblib.xcb_free_pixmap(m_xcbconn, pixmap);
+        xcblib.xcb_flush(m_xcbconn);
+    }
+
+    return mfx_res;
+
+#endif // X11_DRI3_SUPPORT
 }
 #endif
 
@@ -339,6 +467,7 @@ CHWDevice* CreateVAAPIDevice(int type)
             device = NULL;
         }
 #endif
+        break;
     case MFX_LIBVA_WAYLAND:
 #if defined(LIBVA_WAYLAND_SUPPORT)
         device = new CVAAPIDeviceWayland;

@@ -18,6 +18,10 @@ Copyright(c) 2010-2015 Intel Corporation. All Rights Reserved.
 
 #include "sample_multi_transcode.h"
 
+#if defined(LIBVA_WAYLAND_SUPPORT)
+#include "class_wayland.h"
+#endif
+
 using namespace std;
 using namespace TranscodingSample;
 
@@ -122,6 +126,8 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 #elif defined(LIBVA_X11_SUPPORT) || defined(LIBVA_DRM_SUPPORT)
     if (m_eDevType == MFX_HANDLE_VA_DISPLAY)
     {
+        mfxI32  libvaBackend;
+
         m_pAllocParam.reset(new vaapiAllocatorParams);
         vaapiAllocatorParams *pVAAPIParams = dynamic_cast<vaapiAllocatorParams*>(m_pAllocParam.get());
         /* The last param set in vector always describe VPP+ENCODE or Only VPP
@@ -129,6 +135,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         if (m_InputParamsArray[m_InputParamsArray.size() -1].eModeExt == VppCompOnly)
         {
             sInputParams& params = m_InputParamsArray[m_InputParamsArray.size() -1];
+            libvaBackend = params.libvaBackend;
 
             /* Rendering case */
             m_hwdev.reset(CreateVAAPIDevice(params.libvaBackend));
@@ -141,7 +148,27 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                 CVAAPIDeviceDRM* drmdev = dynamic_cast<CVAAPIDeviceDRM*>(m_hwdev.get());
                 pVAAPIParams->m_export_mode = vaapiAllocatorParams::CUSTOM_FLINK;
                 pVAAPIParams->m_exporter = dynamic_cast<vaapiAllocatorParams::Exporter*>(drmdev->getRenderer());
+
             }
+#if defined(LIBVA_WAYLAND_SUPPORT)
+            else if (params.libvaBackend == MFX_LIBVA_WAYLAND) {
+                VADisplay va_dpy = NULL;
+                sts = m_hwdev->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL *)&va_dpy);
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                hdl = pVAAPIParams->m_dpy =(VADisplay)va_dpy;
+
+                mfxHDL whdl = NULL;
+                mfxHandleType hdlw_t = (mfxHandleType)HANDLE_WAYLAND_DRIVER;
+                Wayland *wld;
+                sts = m_hwdev->GetHandle(hdlw_t, &whdl);
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                wld = (Wayland*)whdl;
+                wld->SetRenderWinPos(params.nRenderWinX, params.nRenderWinY);
+                wld->SetPerfMode(params.bPerfMode);
+
+                pVAAPIParams->m_export_mode = vaapiAllocatorParams::PRIME;
+            }
+#endif // LIBVA_WAYLAND_SUPPORT
             params.m_hwdev = m_hwdev.get();
         }
         else /* NO RENDERING*/
@@ -153,12 +180,13 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             }
             sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber());
         }
-
+        if (libvaBackend != MFX_LIBVA_WAYLAND) {
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         sts = m_hwdev->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL*)&hdl);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         // set Device to external vaapi allocator
         pVAAPIParams->m_dpy =(VADisplay)hdl;
+    }
     }
 #endif
     if (!m_pAllocParam.get())

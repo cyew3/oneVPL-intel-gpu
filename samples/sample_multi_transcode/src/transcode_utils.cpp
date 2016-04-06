@@ -905,6 +905,17 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             InputParams.libvaBackend = MFX_LIBVA_X11;
         }
 #endif
+
+#if defined(LIBVA_WAYLAND_SUPPORT)
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-rwld")))
+        {
+            InputParams.nRenderWinX = 0;
+            InputParams.nRenderWinY = 0;
+            InputParams.bPerfMode = false;
+            InputParams.libvaBackend = MFX_LIBVA_WAYLAND;
+        }
+#endif
+
 #if defined(LIBVA_DRM_SUPPORT)
         else if (0 == msdk_strncmp(argv[i], MSDK_STRING("-rdrm"), 5))
         {

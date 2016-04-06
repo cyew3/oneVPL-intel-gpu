@@ -90,7 +90,12 @@ private:
     mfxU32 m_nRenderWinY;
     mfxU32 m_nRenderWinW;
     mfxU32 m_nRenderWinH;
-
+#if defined(X11_DRI3_SUPPORT)
+    int m_dri_fd;
+    Display* m_dpy;
+    drm_intel_bufmgr* m_bufmgr;
+    xcb_connection_t *m_xcbconn;
+#endif
     // no copies allowed
     CVAAPIDeviceX11(const CVAAPIDeviceX11 &);
     void operator=(const CVAAPIDeviceX11 &);

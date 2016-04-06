@@ -192,6 +192,13 @@ namespace TranscodingSample
         mfxU16 nRenderColorForamt; /*0 NV12 - default, 1 is ARGB*/
 
         mfxI32  monitorType;
+
+#if defined(LIBVA_WAYLAND_SUPPORT)
+        mfxU16 nRenderWinX;
+        mfxU16 nRenderWinY;
+        bool  bPerfMode;
+#endif
+
 #if defined(LIBVA_SUPPORT)
         mfxI32  libvaBackend;
 #endif // defined(MFX_LIBVA_SUPPORT)

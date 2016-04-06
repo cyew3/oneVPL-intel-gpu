@@ -8,6 +8,7 @@ option( ENABLE_SW "Build SW versions of the targets?" OFF )
 if( ${CMAKE_SYSTEM_NAME} MATCHES Linux )
 option( ENABLE_DRM "Build DRM versions of the targets?" ON )
 option( ENABLE_X11 "Build X11 versions of the targets?" ON )
+option( ENABLE_X11_DRI3 "Build X11 DRI3 versions of the targets?" OFF )
 option( ENABLE_WAYLAND "Build WAYLAND versions of the targets?" OFF )
 endif()
 

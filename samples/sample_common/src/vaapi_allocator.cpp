@@ -93,7 +93,7 @@ mfxStatus vaapiFrameAllocator::Init(mfxAllocatorParams *pParams)
     m_dpy = p_vaapiParams->m_dpy;
     m_export_mode = p_vaapiParams->m_export_mode;
     m_exporter = p_vaapiParams->m_exporter;
-#if defined(LIBVA_WAYLAND_SUPPORT) || defined (ENABLE_V4L2_SUPPORT)
+#if defined(LIBVA_WAYLAND_SUPPORT) || defined (ENABLE_V4L2_SUPPORT)|| defined (X11_DRI3_SUPPORT)
     // TODO this should be done on application level via allocator parameters!!
     m_export_mode = vaapiAllocatorParams::PRIME;
 #endif
@@ -247,7 +247,6 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         for (i=0; i < surfaces_num; ++i)
         {
             if (m_export_mode & vaapiAllocatorParams::NATIVE_EXPORT_MASK) {
-#ifndef DISABLE_VAAPI_BUFFER_EXPORT
                 vaapi_mids[i].m_buffer_info.mem_type = (m_export_mode & vaapiAllocatorParams::PRIME)?
                   VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME: VA_SURFACE_ATTRIB_MEM_TYPE_KERNEL_DRM;
                 va_res = m_libva->vaDeriveImage(m_dpy, surfaces[i], &(vaapi_mids[i].m_image));
@@ -260,10 +259,6 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                 mfx_res = va_to_mfx_status(va_res);
 
                 m_libva->vaDestroyImage(m_dpy, vaapi_mids[i].m_image.buf);
-#else
-                va_res = VA_STATUS_ERROR_OPERATION_FAILED;
-                mfx_res = va_to_mfx_status(va_res);
-#endif
             }
             if (m_exporter) {
                 vaapi_mids[i].m_custom = m_exporter->acquire(&vaapi_mids[i]);
@@ -339,9 +334,7 @@ mfxStatus vaapiFrameAllocator::ReleaseResponse(mfxFrameAllocResponse *response)
                     m_exporter->release(&vaapi_mids[i], vaapi_mids[i].m_custom);
                 }
                 if (m_export_mode & vaapiAllocatorParams::NATIVE_EXPORT_MASK) {
-#ifndef DISABLE_VAAPI_BUFFER_EXPORT
                     m_libva->vaReleaseBufferHandle(m_dpy, vaapi_mids[i].m_image.buf);
-#endif
                     m_libva->vaDestroyImage(m_dpy, vaapi_mids[i].m_image.image_id);
                 }
             }
