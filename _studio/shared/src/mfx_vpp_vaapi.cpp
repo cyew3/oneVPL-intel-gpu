@@ -1066,6 +1066,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     }
 
 #if defined(VPP_NO_COLORFILL)
+    if(0 == output_region.front().x && 0 == output_region.front().y) // Do not disable colorfill if letterboxing is used
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaRenderPicture");
         vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &outputParamBuf, 1);
@@ -1981,16 +1982,16 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
             break;
         }
 
-        if(pParams->VideoSignalInfo[refIdx].enabled)
+        if(refIdx > 0 && pParams->VideoSignalInfo[refIdx-1].enabled)
         {
-            if(pParams->VideoSignalInfo[refIdx].TransferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)
+            if(pParams->VideoSignalInfo[refIdx-1].TransferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)
             {
-                m_pipelineParam[refIdx].surface_color_standard = (MFX_TRANSFERMATRIX_BT709 == pParams->VideoSignalInfo[refIdx].TransferMatrix ? VAProcColorStandardBT709 : VAProcColorStandardBT601);
+                m_pipelineParam[refIdx].surface_color_standard = (MFX_TRANSFERMATRIX_BT709 == pParams->VideoSignalInfo[refIdx-1].TransferMatrix ? VAProcColorStandardBT709 : VAProcColorStandardBT601);
             }
 
-            if(pParams->VideoSignalInfo[refIdx].NominalRange != MFX_NOMINALRANGE_UNKNOWN)
+            if(pParams->VideoSignalInfo[refIdx-1].NominalRange != MFX_NOMINALRANGE_UNKNOWN)
             {
-                m_pipelineParam[refIdx].input_surface_flag = (MFX_NOMINALRANGE_0_255 == pParams->VideoSignalInfo[refIdx].NominalRange) ? VA_SOURCE_RANGE_FULL : VA_SOURCE_RANGE_REDUCED;
+                m_pipelineParam[refIdx].input_surface_flag = (MFX_NOMINALRANGE_0_255 == pParams->VideoSignalInfo[refIdx-1].NominalRange) ? VA_SOURCE_RANGE_FULL : VA_SOURCE_RANGE_REDUCED;
             }
         }
 
@@ -2161,16 +2162,16 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
             break;
         }
 
-        if(pParams->VideoSignalInfo[refIdx].enabled)
+        if(refIdx > 0 && pParams->VideoSignalInfo[refIdx-1].enabled)
         {
-            if(pParams->VideoSignalInfo[refIdx].TransferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)
+            if(pParams->VideoSignalInfo[refIdx-1].TransferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)
             {
-                m_pipelineParam[refIdx].surface_color_standard = (MFX_TRANSFERMATRIX_BT709 == pParams->VideoSignalInfo[refIdx].TransferMatrix ? VAProcColorStandardBT709 : VAProcColorStandardBT601);
+                m_pipelineParam[refIdx].surface_color_standard = (MFX_TRANSFERMATRIX_BT709 == pParams->VideoSignalInfo[refIdx-1].TransferMatrix ? VAProcColorStandardBT709 : VAProcColorStandardBT601);
             }
 
-            if(pParams->VideoSignalInfo[refIdx].NominalRange != MFX_NOMINALRANGE_UNKNOWN)
+            if(pParams->VideoSignalInfo[refIdx-1].NominalRange != MFX_NOMINALRANGE_UNKNOWN)
             {
-                m_pipelineParam[refIdx].input_surface_flag = (MFX_NOMINALRANGE_0_255 == pParams->VideoSignalInfo[refIdx].NominalRange) ? VA_SOURCE_RANGE_FULL : VA_SOURCE_RANGE_REDUCED;
+                m_pipelineParam[refIdx].input_surface_flag = (MFX_NOMINALRANGE_0_255 == pParams->VideoSignalInfo[refIdx-1].NominalRange) ? VA_SOURCE_RANGE_FULL : VA_SOURCE_RANGE_REDUCED;
             }
         }
 
