@@ -249,7 +249,7 @@ typedef struct _VAEncMiscParameterVP8SegmentMapParams
     // VAEncMacroblockMapBufferType.
     char yac_quantization_index_delta[4];
 } VAEncMiscParameterVP8SegmentMapParams;
-
+#if 0
 /*======================= FEI ==================================*/
     /**
      * \brief VAEntrypointEncFEIIntel
@@ -290,7 +290,7 @@ typedef struct _VAEncMiscParameterVP8SegmentMapParams
      *
      **/
 #define VAEntrypointStatisticsIntel 1002
-
+#endif //0
     /**
      * \brief Encode function type.
      *
@@ -319,6 +319,7 @@ typedef struct _VAEncMiscParameterVP8SegmentMapParams
     /**
      * \brief Intel specific buffer types start at 1001
      */
+#if 0 // defined in va.h
 #define VAEncFEIMVBufferTypeIntel                 1001
 #define VAEncFEIModeBufferTypeIntel               1002
 #define VAEncFEIDistortionBufferTypeIntel         1003
@@ -329,10 +330,10 @@ typedef struct _VAEncMiscParameterVP8SegmentMapParams
 #define VAStatsMotionVectorBufferTypeIntel        1008
 #define VAStatsMVPredictorBufferTypeIntel         1009
 
-
     /* Intel specific types start at 1001
      VAEntrypointEncFEIIntel */
 #define VAEncMiscParameterTypeFEIFrameControlIntel 1001
+#endif //0
 
 
 // move above definition to va_private.h file
@@ -358,7 +359,7 @@ typedef struct _VAEncMiscParameterVP8SegmentMapParams
      * point. The attribute value is used by MSDK team to track va FEI interface change version
      */
 #define VAConfigAttribFeiInterfaceRevIntel        1004
-
+#if 0 // defined in va.h
 /**
  * \brief Intel specific attribute definitions
  */
@@ -432,6 +433,7 @@ typedef struct _VAMotionVectorIntel {
     short  mv1[2];  /* future reference */
 } VAMotionVectorIntel;
 
+#endif // 0
 
 //va_intel_fei.h
 /**
