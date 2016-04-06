@@ -387,7 +387,8 @@ typedef struct {
 
 typedef struct {
     mfxExtBuffer    Header;
-    mfxU16  reserved[25];
+    mfxU16  reserved[24];
+    mfxU16  RemapRefIdx; /* tri-state option, default is OFF */
     mfxU16  PicStruct;
     mfxU32  NumMBAlloc;
 

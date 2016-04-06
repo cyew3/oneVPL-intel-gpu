@@ -512,6 +512,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiDecSt
 
     str += dump(structName + ".Header", _struct.Header) + "\n";
     DUMP_FIELD_RESERVED(reserved);
+    DUMP_FIELD(RemapRefIdx);
     DUMP_FIELD(PicStruct);
     DUMP_FIELD(NumMBAlloc);
     if (_struct.MB)
