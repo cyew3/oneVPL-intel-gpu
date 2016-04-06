@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 - 2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011 - 2016 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -444,22 +444,33 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameSurface1 *surface)
         if (!p->bAlloc)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-        ID3D11Texture2D* pTexture2D;
+        ID3D11Texture2D* pTexture2D, *pStagingTexture2D;
 
-        for(size_t i = 0; i < 1; i++)
+        hRes = m_initParams.pDevice->CreateTexture2D(&desc, NULL, &pTexture2D);
+        if (FAILED(hRes))
         {
-            hRes = m_initParams.pDevice->CreateTexture2D(&desc, NULL, &pTexture2D);
+            printf("CreateTexture2D failed, hr = 0x%X\n", hRes);
+            return MFX_ERR_MEMORY_ALLOC;
+        }
 
-            if (FAILED(hRes))
-            {
-                printf("CreateTexture2D(%d) failed, hr = 0x%X\n", i, hRes);
-                return MFX_ERR_MEMORY_ALLOC;
-            }
+        desc.ArraySize = 1;
+        desc.Usage = D3D11_USAGE_STAGING;
+        desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+        desc.BindFlags = 0;
+        desc.MiscFlags = 0;
+
+        hRes = m_initParams.pDevice->CreateTexture2D(&desc, NULL, &pStagingTexture2D);
+        if (FAILED(hRes))
+        {
+            printf("CreateTexture2D failed, hr = 0x%X\n", hRes);
+            return MFX_ERR_MEMORY_ALLOC;
         }
 
         ptrdiff_t idx = (uintptr_t)MFXReadWriteMid(surface->Data.MemId).raw() - (uintptr_t)p->outerMids.front();
         p->textures[idx]->Release();
+        p->stagingTexture[idx]->Release();
         p->textures[idx] = pTexture2D;
+        p->stagingTexture[idx] = pStagingTexture2D;
     }
 
     return MFX_ERR_NONE;
