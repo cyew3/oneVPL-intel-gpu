@@ -1,3 +1,13 @@
+/* /////////////////////////////////////////////////////////////////////////////
+//
+//                  INTEL CORPORATION PROPRIETARY INFORMATION
+//     This software is supplied under the terms of a license agreement or
+//     nondisclosure agreement with Intel Corporation and may not be copied
+//     or disclosed except in accordance with the terms of that agreement.
+//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+//
+*/
+
 #include "ts_preenc.h"
 
 tsVideoPreENC::tsVideoPreENC(bool useDefaults)
@@ -44,6 +54,7 @@ tsVideoPreENC::tsVideoPreENC(mfxFeiFunction func, mfxU32 CodecId, bool useDefaul
     , m_pPar(&m_par)
     , m_pParOut(&m_par)
     , m_pRequest(&m_request)
+    , m_pSyncPoint(&m_syncpoint)
     , m_pSurf(0)
     , m_filler(0)
     , m_frames_buffered(0)
@@ -199,4 +210,94 @@ mfxStatus tsVideoPreENC::QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
     TS_TRACE(request);
 
     return g_tsStatus.get();
+}
+
+mfxStatus tsVideoPreENC::Reset()
+{
+    return Reset(m_session, m_pPar);
+}
+
+mfxStatus tsVideoPreENC::Reset(mfxSession session, mfxVideoParam *par)
+{
+    TRACE_FUNC2(MFXVideoENC_Reset, session, par);
+    g_tsStatus.check( MFXVideoENC_Reset(session, par) );
+
+    //m_frames_buffered = 0;
+
+    return g_tsStatus.get();
+}
+
+mfxStatus tsVideoPreENC::ProcessFrameAsync()
+{
+    if(m_default)
+    {
+        if(!PoolSize())
+        {
+            if(m_pFrameAllocator && !GetAllocator())
+            {
+                SetAllocator(m_pFrameAllocator, true);
+            }
+            AllocSurfaces();TS_CHECK_MFX;
+            if(!m_pFrameAllocator && (m_request.Type & (MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET|MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET)))
+            {
+                m_pFrameAllocator = GetAllocator();
+                SetFrameAllocator();TS_CHECK_MFX;
+            }
+        }
+        if(!m_initialized)
+        {
+            Init();TS_CHECK_MFX;
+        }
+        m_PreENCInput->InSurface = GetSurface();TS_CHECK_MFX;
+        if(m_filler)
+        {
+            m_PreENCInput->InSurface = m_filler->ProcessSurface(m_PreENCInput->InSurface, m_pFrameAllocator);
+        }
+    }
+    mfxStatus mfxRes = ProcessFrameAsync(m_session, m_PreENCInput, m_PreENCOutput, m_pSyncPoint);
+
+    return mfxRes;
+}
+
+mfxStatus tsVideoPreENC::ProcessFrameAsync(mfxSession session, mfxENCInput *in, mfxENCOutput *out, mfxSyncPoint *syncp)
+{
+    TRACE_FUNC4(MFXVideoENC_ProcessFrameAsync, session, in, out, syncp);
+    mfxStatus mfxRes = MFXVideoENC_ProcessFrameAsync(session, in, out, syncp);
+    TS_TRACE(mfxRes);
+    TS_TRACE(in);
+    TS_TRACE(out);
+    TS_TRACE(syncp);
+
+    m_frames_buffered += (mfxRes >= 0);
+
+    return g_tsStatus.m_status = mfxRes;
+}
+
+
+mfxStatus tsVideoPreENC::SyncOperation()
+{
+    return SyncOperation(m_syncpoint);
+}
+
+mfxStatus tsVideoPreENC::SyncOperation(mfxSyncPoint syncp)
+{
+    mfxU32 nFrames = m_frames_buffered;
+    mfxStatus res = SyncOperation(m_session, syncp, MFX_INFINITE);
+
+    return g_tsStatus.m_status = res;
+}
+
+mfxStatus tsVideoPreENC::SyncOperation(mfxSession session,  mfxSyncPoint syncp, mfxU32 wait)
+{
+    m_frames_buffered = 0;
+    return tsSession::SyncOperation(session, syncp, wait);
+}
+
+mfxStatus tsVideoPreENC::AllocSurfaces()
+{
+    if(m_default && !m_request.NumFrameMin)
+    {
+        QueryIOSurf();TS_CHECK_MFX;
+    }
+    return tsSurfacePool::AllocSurfaces(m_request);
 }
