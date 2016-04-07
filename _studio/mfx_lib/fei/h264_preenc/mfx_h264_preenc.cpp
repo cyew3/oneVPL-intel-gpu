@@ -244,10 +244,15 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
     if (sts != MFX_ERR_NONE)
           return Error(sts);
 
-    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
+    if ((MFX_CODINGOPTION_ON == m_singleFieldProcessingMode) && (0 == m_firstFieldDone))
     {
         f_start = 0;
         fieldCount = 0;
+    }
+    else if ((MFX_CODINGOPTION_ON == m_singleFieldProcessingMode) && (1 == m_firstFieldDone))
+    {
+        f_start = 1;
+        fieldCount = 1;
     }
 
     for (f = f_start; f <= fieldCount; f++)
@@ -257,6 +262,11 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
         if (sts != MFX_ERR_NONE)
                  return Error(sts);
     }
+
+    if ((0 == m_firstFieldDone) && (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode))
+        m_firstFieldDone = 1;
+    else if ((1 == m_firstFieldDone) && (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode))
+        m_firstFieldDone = 0;
 
     return sts;
 }
@@ -277,10 +287,15 @@ mfxStatus VideoENC_PREENC::Query(DdiTask& task)
     mfxENCInput* in = (mfxENCInput*)task.m_userData[0];
     mfxExtFeiPreEncCtrl* feiCtrl = GetExtBufferFEI(in, 0);
     
-    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
+    if ((MFX_CODINGOPTION_ON == m_singleFieldProcessingMode) && (1 == m_firstFieldDone))
     {
         f_start = 0;
         fieldCount = 0;
+    }
+    else if ((MFX_CODINGOPTION_ON == m_singleFieldProcessingMode) && (0 == m_firstFieldDone))
+    {
+        f_start = 1;
+        fieldCount = 1;
     }
 
     for (f = f_start; f <= fieldCount; f++)
@@ -303,8 +318,8 @@ mfxStatus VideoENC_PREENC::Query(DdiTask& task)
     else
         return MFX_ERR_NOT_FOUND;
 
-    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
-        m_firstFieldDone = MFX_CODINGOPTION_UNKNOWN;
+//    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
+//        m_firstFieldDone = MFX_CODINGOPTION_UNKNOWN;
 
     return MFX_ERR_NONE;
 
