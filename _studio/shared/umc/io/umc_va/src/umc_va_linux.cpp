@@ -459,7 +459,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
                 }
             }
             m_Profile = (UMC::VideoAccelerationProfile)profile;
-            if (va_entrypoint < 0) umcRes = UMC_ERR_FAILED;
+            if (va_entrypoint == (VAEntrypoint)-1) umcRes = UMC_ERR_FAILED;
         }
         if (UMC_OK == umcRes)
         {
