@@ -286,7 +286,7 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request,
     SetDefaults(tmp, caps);
 
     request->Info = tmp.mfx.FrameInfo;
-
+    request->Info.Shift = tmp.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10? 1: 0;
     request->NumFrameMin = MaxRaw(tmp);
 
     request->NumFrameSuggested = request->NumFrameMin;

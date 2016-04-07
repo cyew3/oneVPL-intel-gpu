@@ -899,6 +899,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     {
         unsupported += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 10, 0);
         unsupported += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 10, 0);
+        par.mfx.FrameInfo.Shift = 1;
     }
     if (   caps.TileSupport == 0
         && (par.m_ext.HEVCTiles.NumTileColumns > 1 || par.m_ext.HEVCTiles.NumTileRows > 1))
