@@ -2267,7 +2267,7 @@ static mfxStatus CorrectAsyncDepth(mfxFrameAllocRequest &curReq, mfxU16 asyncDep
         // The request holds summary of required surfaces numbers from 2 components and
         // asyncDepth is included twice. Here we patch surfaces number removing
         // one asyncDepth.
-        curReq.NumFrameSuggested = curReq.NumFrameSuggested - asyncDepth +1;
+        curReq.NumFrameSuggested = curReq.NumFrameSuggested - asyncDepth;
         curReq.NumFrameMin = curReq.NumFrameSuggested;
     }
 
@@ -2339,9 +2339,16 @@ mfxStatus CTranscodingPipeline::AllocFrames()
             SumAllocRequest(VPPOut, m_Request);
             bAddFrames = false;
         }
+
+        // Do not correct anything if we're using raw output - we'll need those surfaces for storing data for writer
         if(m_mfxEncParams.mfx.CodecId != MFX_FOURCC_DUMP)
         {
-           // Do not correct anything if we're using raw output - we'll need those surfaces for sotring data for writer
+           // In case of rendering enabled we need to add 1 additional surface for renderer
+           if(m_nVPPCompEnable == VppCompOnly)
+           {
+               VPPOut.NumFrameSuggested++;
+               VPPOut.NumFrameMin++;
+           }
            sts = CorrectAsyncDepth(VPPOut, m_AsyncDepth);
         }
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
