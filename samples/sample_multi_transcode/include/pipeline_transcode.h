@@ -253,7 +253,7 @@ namespace TranscodingSample
 
             inline void PrintStatistics(mfxU32 numPipelineid)
             {
-                msdk_printf(MSDK_STRING("stat[%llu]: %s=%d;Total=%.3lf;Samples=%lld;StdDev=%.3lf;Min=%.3lf;Max=%.3lf;Avg=%.3lf\n"),rdtsc(),bufDir,numPipelineid,totalTime*1000,GetTimeStdDev()*1000,minTime*1000,maxTime*1000,numMeasurements,GetAvgTime()*1000);
+                msdk_printf(MSDK_STRING("stat[%llu]: %s=%d;Total=%.3lf;Samples=%lld;StdDev=%.3lf;Min=%.3lf;Max=%.3lf;Avg=%.3lf\n"),rdtsc(),bufDir,numPipelineid,totalTime*1000,(mfxI64)GetTimeStdDev()*1000,minTime*1000,maxTime*1000,numMeasurements,GetAvgTime()*1000);
             }
         protected:
             msdk_char bufDir[MAX_PREF_LEN];

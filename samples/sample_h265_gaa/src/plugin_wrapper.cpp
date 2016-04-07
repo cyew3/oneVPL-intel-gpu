@@ -131,7 +131,7 @@ mfxStatus CH265FEI::Init(SampleParams *sp)
         {
             /* load from path specified on command line */
             uid = msdkGetPluginUID(MFX_IMPL_HARDWARE, MSDK_VENC, MFX_CODEC_HEVC);
-            sts = MFXVideoUSER_LoadByPath(*m_pmfxSession.get(), &uid, 1, sp->PluginPath, (mfxU32)strlen(sp->PluginPath) + 1);
+            sts = MFXVideoUSER_LoadByPath(*m_pmfxSession.get(), &uid, 1, sp->PluginPath, (mfxU32)msdk_strnlen(sp->PluginPath, MSDK_MAX_FILENAME_LEN) + 1);
         }
         else
         {

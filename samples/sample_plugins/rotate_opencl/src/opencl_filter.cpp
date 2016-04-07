@@ -292,10 +292,7 @@ cl_int OpenCLFilterBase::ProcessSurface(int width, int height, mfxMemId pSurfIn,
     }
 
     error =  ReleaseResources();
-    if (error)
-    {
-        return error;
-    }
+    return error;
 }
 
 cl_int OpenCLFilterBase::ProcessSurface()
