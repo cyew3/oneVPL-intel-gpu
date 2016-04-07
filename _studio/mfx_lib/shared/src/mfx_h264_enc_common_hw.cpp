@@ -2713,6 +2713,13 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod = 0;
     }
 
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_VCM &&
+        par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
+    {
+        changed = true;
+        par.mfx.RateControlMethod = MFX_RATECONTROL_VBR;
+    }
+
     if (hwCaps.MBBRCSupport == 0 && hwCaps.ICQBRCSupport == 0 && IsOn(extOpt2->MBBRC))
     {
         changed = true;
