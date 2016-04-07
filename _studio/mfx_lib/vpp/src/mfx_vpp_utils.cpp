@@ -1538,6 +1538,9 @@ mfxStatus GetPipelineList(
              * If DI mode in Ext Buffer is not related BOB or ADVANCED Ext buffer ignored
              * */
             if (extDI->Mode == MFX_DEINTERLACING_ADVANCED ||
+#if defined (MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
+                extDI->Mode == MFX_DEINTERLACING_ADVANCED_SCD ||
+#endif
                 extDI->Mode == MFX_DEINTERLACING_BOB ||
                 extDI->Mode == MFX_DEINTERLACING_ADVANCED_NOREF)
             {

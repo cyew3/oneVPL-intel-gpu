@@ -24,8 +24,11 @@ Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 #include "mfx_vpp_defs.h"
 
 #if defined(MFX_VA)
-#include "cmrt_cross_platform.h"
-#include "cm_mem_copy.h" // Needed for mirroring
+ #include "cmrt_cross_platform.h" // Gpucopy stuff
+ #if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
+  #include "mfx_vpp_scd.h"        // Scene change detection
+ #endif
+ #include "cm_mem_copy.h"         // Needed for mirroring kernels
 #include "genx_fcopy_cmcode_isa.cpp" // Field copy kernel
 #endif
 
@@ -816,12 +819,19 @@ namespace MfxHwVideoProcessing
         mfxVideoParam m_params;
         TaskManager   m_taskMngr;
 
+        mfxU32 m_scene_change;
+        mfxU32 m_frame_num;
+
         // Not an auto_ptr anymore since core owns create/delete semantic now.
         VPPHWResMng * m_ddi;
         bool          m_bMultiView;
 
 #if defined(MFX_VA) // SW LIB doesn't hace access to CM DEVICE
         CmCopyWrapper *m_pCmCopy;
+
+#if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
+        SceneChangeDetector m_SCD;
+#endif
 
         CmDevice  *m_pCmDevice;
         CmProgram *m_pCmProgram;

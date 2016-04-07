@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="cmassert.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cmbenchmark.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cmbufferex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cmdeviceex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cmexample.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cminfrastructure.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cmkernelex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cmkernelruntimeenv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cmkerneltest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cmperformance.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cmqueueex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cmrtex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cmsurface2dext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cmsurface2dupext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cmtaskex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cmthreadspaceex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cmutility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cmutility_genx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="check.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

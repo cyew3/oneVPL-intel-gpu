@@ -314,6 +314,11 @@ namespace MfxHwVideoProcessing
 
     } mfxDrvSurface;
 
+    typedef enum {
+        VPP_SCENE_NO_CHANGE  = 0,
+        VPP_SCENE_NEW        = 1
+    } vppScene;
+
     class mfxExecuteParams
     {
         struct SignalInfo {
@@ -377,6 +382,7 @@ namespace MfxHwVideoProcessing
                ,scalingMode(MFX_SCALING_MODE_DEFAULT)
                ,bEOS(false)
                ,mirroring(0)
+               ,scene(VPP_SCENE_NO_CHANGE)
             {
                    memset(&targetSurface, 0, sizeof(mfxDrvSurface));
                    dstRects.clear();
@@ -475,6 +481,8 @@ namespace MfxHwVideoProcessing
         std::vector<SignalInfo> VideoSignalInfo; // Video signal info for each frame in a single run
 
         int        mirroring;
+
+        vppScene    scene;     // Keep information about scene change
     };
 
     class DriverVideoProcessing

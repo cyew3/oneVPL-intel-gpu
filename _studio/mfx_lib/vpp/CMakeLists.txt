@@ -19,6 +19,8 @@ list( APPEND sources ${srcs})
 make_library( vpp sw static )
 include_directories( ${CMAKE_SOURCE_DIR}/mfx_lib/cmrt_cross_platform/include )
 include_directories( ${CMAKE_SOURCE_DIR}/mfx_lib/genx/field_copy/src )
+include_directories( ${CMAKE_SOURCE_DIR}/mfx_lib/genx/scd )
+include_directories( ${CMAKE_SOURCE_DIR}/mfx_lib/cmut )	
 make_library( vpp hw static )
 set( defs "" )
 

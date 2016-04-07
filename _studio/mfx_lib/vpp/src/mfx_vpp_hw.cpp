@@ -110,6 +110,7 @@ static void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )
     pMfxExecuteParams->rotation = 0;
     pMfxExecuteParams->scalingMode = MFX_SCALING_MODE_DEFAULT;
     pMfxExecuteParams->bEOS = false;
+    pMfxExecuteParams->scene = VPP_SCENE_NO_CHANGE;
 } /*void MemSetZero4mfxExecuteParams (mfxExecuteParams *pMfxExecuteParams )*/
 
 
@@ -1608,6 +1609,8 @@ mfxStatus  VideoVPPHW::Init(
     mfxStatus sts = MFX_ERR_NONE;
     bool bIsFilterSkipped = false;
     isTemporal;
+
+    m_frame_num = 0;
     //-----------------------------------------------------
     // [1] high level check
     //-----------------------------------------------------
@@ -1782,6 +1785,34 @@ mfxStatus  VideoVPPHW::Init(
         if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
     }
 
+#if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
+    if (MFX_DEINTERLACING_ADVANCED_SCD == m_executeParams.iDeinterlacingAlgorithm)
+    {
+        mfxHandleType mfxDeviceType = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9;
+        mfxHDL mfxDeviceHdl = 0;
+        eMFXVAType vaType = m_pCore->GetVAType();
+        if(MFX_HW_D3D9 == vaType)
+        {
+            mfxDeviceType = MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9;
+        }
+        else if(MFX_HW_D3D11 == vaType)
+        {
+            mfxDeviceType = MFX_HANDLE_D3D11_DEVICE;
+        }
+        else if(MFX_HW_VAAPI == vaType)
+        {
+            mfxDeviceType = MFX_HANDLE_VA_DISPLAY;
+        }
+        sts = m_pCore->GetHandle(mfxDeviceType, &mfxDeviceHdl);
+        MFX_CHECK_STS(sts);
+
+        sts = m_SCD.Init(m_pCore, par->vpp.In.CropW, par->vpp.In.CropH, par->vpp.In.Width, par->vpp.In.PicStruct, 0, mfxDeviceType, mfxDeviceHdl);
+        MFX_CHECK_STS(sts);
+
+        m_SCD.SetGoPSize(HEVC_Gop);
+    }
+#endif
+
 #ifdef VPP_MIRRORING
     if (m_executeParams.mirroring && ! m_pCmCopy)
     {
@@ -1899,7 +1930,7 @@ mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
                  inFrameRate     = (mfxF64) m_params.vpp.In.FrameRateExtN  / (mfxF64) m_params.vpp.In.FrameRateExtD,
                  outFrameRate    = (mfxF64) m_params.vpp.Out.FrameRateExtN / (mfxF64) m_params.vpp.Out.FrameRateExtD;
 
-    if ( abs(inFrameRateCur / outFrameRateCur - inFrameRate / outFrameRate) > std::numeric_limits<mfxF64>::epsilon() )
+    if ( fabs(inFrameRateCur / outFrameRateCur - inFrameRate / outFrameRate) > std::numeric_limits<mfxF64>::epsilon() )
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM; // Frame Rate ratio check
 
     if (m_params.vpp.In.FourCC  != par->vpp.In.FourCC ||
@@ -1937,6 +1968,11 @@ mfxStatus VideoVPPHW::Close()
     m_workloadMode = VPP_SYNC_WORKLOAD;
 
 #if defined (MFX_VA)
+
+#if defined (MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
+    m_SCD.Close();
+#endif
+
     // CM device
     if(m_pCmDevice) {
         m_pCmDevice->DestroyKernel(m_pCmKernel);
@@ -2650,6 +2686,62 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     sts = PreWorkInputSurface(surfQueue);
     MFX_CHECK_STS(sts);
 
+#if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP) && defined(MFX_VA)
+    m_frame_num++;
+
+    if (MFX_DEINTERLACING_ADVANCED_SCD == m_executeParams.iDeinterlacingAlgorithm)
+    {
+        BOOL analysisReady = false;
+
+        /* Feed scene change detector with input rame */
+        mfxFrameSurface1 * inFrame = surfQueue[pTask->bkwdRefCount].pSurf;
+        MFX_CHECK_NULL_PTR1(inFrame);
+
+        mfxU32 scene_change = 0;
+
+        if (m_executeParams.bFMDEnable && m_frame_num % 2 != 0 && m_frame_num > 1)
+        {
+            // This frame was analyzed already, so just re-use data.
+            scene_change = m_scene_change;
+        }
+        else
+        {
+            mfxHDL frameHandle;
+            mfxFrameSurface1 frameSurface;
+            memset(&frameSurface, 0, sizeof(mfxFrameSurface1));
+            frameSurface.Info = inFrame->Info;
+
+            if (SYS_TO_D3D == m_ioMode || SYS_TO_SYS == m_ioMode)
+            {
+                sts = m_pCore->GetFrameHDL(m_internalVidSurf[VPP_IN].mids[surfQueue[pTask->bkwdRefCount].resIdx], &frameHandle);
+                MFX_CHECK_STS(sts);
+            }
+            else
+            {
+                if(m_IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+                {
+                    MFX_SAFE_CALL(m_pCore->GetFrameHDL(surfQueue[pTask->bkwdRefCount].pSurf->Data.MemId, (mfxHDL *)&frameHandle));
+                }
+                else
+                {
+                    MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(surfQueue[pTask->bkwdRefCount].pSurf->Data.MemId, (mfxHDL *)&frameHandle));
+                }
+            }
+            frameSurface.Data.MemId = frameHandle;
+
+            sts = m_SCD.MapFrame(&frameSurface);
+            MFX_CHECK_STS(sts);
+
+            analysisReady = m_SCD.ProcessField(); // First field
+            scene_change += m_SCD.Get_frame_shot_Decision() + m_SCD.Get_frame_last_in_scene();
+            analysisReady = m_SCD.ProcessField(); // Second field
+            scene_change += m_SCD.Get_frame_shot_Decision() + m_SCD.Get_frame_last_in_scene();
+            m_scene_change = scene_change;
+        }
+
+        m_executeParams.scene = scene_change ? VPP_SCENE_NEW : VPP_SCENE_NO_CHANGE;
+    }
+#endif
 
     m_executeParams.refCount     = numSamples;
     m_executeParams.bkwdRefCount = pTask->bkwdRefCount;
@@ -2861,6 +2953,9 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
             mfxExtVPPDeinterlacing* extDI = (mfxExtVPPDeinterlacing*) data;
 
             if (extDI->Mode != MFX_DEINTERLACING_ADVANCED &&
+#if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
+                extDI->Mode != MFX_DEINTERLACING_ADVANCED_SCD &&
+#endif
                 extDI->Mode != MFX_DEINTERLACING_ADVANCED_NOREF &&
                 extDI->Mode != MFX_DEINTERLACING_BOB)
             {
@@ -2978,6 +3073,9 @@ mfxI32 GetDeinterlaceMode( const mfxVideoParam& videoParam, const mfxVppCaps& ca
         {
             mfxExtVPPDeinterlacing* extDI = (mfxExtVPPDeinterlacing*) videoParam.ExtParam[i];
             if (extDI->Mode != MFX_DEINTERLACING_ADVANCED &&
+#if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
+                extDI->Mode != MFX_DEINTERLACING_ADVANCED_SCD &&
+#endif
                 extDI->Mode != MFX_DEINTERLACING_ADVANCED_NOREF &&
                 extDI->Mode != MFX_DEINTERLACING_BOB)
             {
@@ -2986,6 +3084,10 @@ mfxI32 GetDeinterlaceMode( const mfxVideoParam& videoParam, const mfxVppCaps& ca
             /* To check if driver support desired DI mode*/
             if ((MFX_DEINTERLACING_ADVANCED == extDI->Mode) && (caps.uAdvancedDI) )
                 deinterlacingMode = extDI->Mode;
+#if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
+            if ((MFX_DEINTERLACING_ADVANCED_SCD == extDI->Mode) && (caps.uAdvancedDI) )
+                deinterlacingMode = extDI->Mode;
+#endif
             if ((MFX_DEINTERLACING_ADVANCED_NOREF == extDI->Mode) && (caps.uAdvancedDI) )
                 deinterlacingMode = extDI->Mode;
 
@@ -3076,7 +3178,11 @@ mfxStatus ConfigureExecuteParams(
                      * Something wrong. User requested DI but MSDK can't do it */
                     return MFX_ERR_UNKNOWN;
                 }
-                if(MFX_DEINTERLACING_ADVANCED == executeParams.iDeinterlacingAlgorithm)
+                if(MFX_DEINTERLACING_ADVANCED     == executeParams.iDeinterlacingAlgorithm
+#if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
+                || MFX_DEINTERLACING_ADVANCED_SCD == executeParams.iDeinterlacingAlgorithm
+#endif
+                )
                 {
                     // use motion adaptive ADI with reference frame (quality)
                     config.m_bRefFrameEnable = true;
@@ -3121,7 +3227,11 @@ mfxStatus ConfigureExecuteParams(
                 }
 
                 config.m_bMode30i60pEnable = true;
-                if(MFX_DEINTERLACING_ADVANCED == executeParams.iDeinterlacingAlgorithm)
+                if(MFX_DEINTERLACING_ADVANCED     == executeParams.iDeinterlacingAlgorithm
+#if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
+                || MFX_DEINTERLACING_ADVANCED_SCD == executeParams.iDeinterlacingAlgorithm
+#endif
+                )
                 {
                     // use motion adaptive ADI with reference frame (quality)
                     config.m_bRefFrameEnable = true;

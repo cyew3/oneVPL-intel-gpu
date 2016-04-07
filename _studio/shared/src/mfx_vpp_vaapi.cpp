@@ -560,6 +560,14 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
                 }
             } //  if ((pParams->bFMDEnable == true) && (pParams->refCount > 1)) /* For 30i->60p mode only*/
 
+            if ( MFX_DEINTERLACING_ADVANCED_SCD == pParams->iDeinterlacingAlgorithm &&
+                 VPP_SCENE_NEW == pParams->scene)
+            {
+                // This frame is a beginning of the new scene. Need to pass this info
+                // to the driver
+                deint.flags |= 0x0010; // There will be a special define in va_vpp.h
+            }
+
             vaSts = vaCreateBuffer(m_vaDisplay,
                                    m_vaContextVPP,
                                    VAProcFilterParameterBufferType,
