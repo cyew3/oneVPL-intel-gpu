@@ -1,3 +1,12 @@
+/*
+//
+//                  INTEL CORPORATION PROPRIETARY INFORMATION
+//     This software is supplied under the terms of a license agreement or
+//     nondisclosure agreement with Intel Corporation and may not be copied
+//     or disclosed except in accordance with the terms of that agreement.
+//       Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
+//
+*/
 #include "ts_decoder.h"
 #include "ts_struct.h"
 
@@ -159,7 +168,7 @@ private:
         memset(&bs, 0, sizeof(bs));
         reader.ProcessBitstream(bs, 1);
 
-        mfxStatus sts = MFXInit(MFX_IMPL_AUTO_ANY, 0, &m_ses);
+        mfxStatus sts = MFXInit(g_tsImpl, 0, &m_ses);
         EXPECT_EQ_THROW(MFX_ERR_NONE, sts, "ERROR: Failed to Init MFX session of a verification instance of a decoder\n");
 
         sts = SetVAHandle();
