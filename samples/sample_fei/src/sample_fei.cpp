@@ -1147,12 +1147,6 @@ mfxStatus CheckOptions(sInputParams* pParams)
         sts = MFX_ERR_UNSUPPORTED;
     }
 
-    if (pParams->bPREENC && pParams->bFieldProcessingMode && pParams->nPicStruct == MFX_PICSTRUCT_FIELD_BFF)
-    {
-        fprintf(stderr, "ERROR: PREENC: Field Processing mode works only for TFF\n");
-        sts = MFX_ERR_UNSUPPORTED;
-    }
-
     if (pParams->bFieldProcessingMode &&
         !((pParams->nPicStruct == MFX_PICSTRUCT_FIELD_BFF) || (pParams->nPicStruct == MFX_PICSTRUCT_FIELD_TFF)))
     {

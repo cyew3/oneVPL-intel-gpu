@@ -3533,7 +3533,7 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
             preENCCtr->RefFrame[0] = refSurf0[preENCCtrId];
             preENCCtr->RefFrame[1] = refSurf1[preENCCtrId];
 
-            if (!isDownsamplingNeeded && m_encpakParams.bPerfMode)
+            if (!isDownsamplingNeeded)
                 preENCCtr->DownsampleInput = MFX_CODINGOPTION_OFF;
             else
                 preENCCtr->DownsampleInput = MFX_CODINGOPTION_ON; // the default is ON too
