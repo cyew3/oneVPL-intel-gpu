@@ -2028,7 +2028,12 @@ Task* TaskManager::Reorder(
     TaskList::iterator top   = MfxHwH265Encode::Reorder(par, dpb, begin, end, flush);
 
     if (top == end)
-        return 0;
+    {
+        if (end != m_reordering.end() && end->m_stage == FRAME_REORDERED)
+            return &*end; //formal task without surface
+        else 
+            return 0;
+    }
 
     return &*top;
 }
@@ -2113,7 +2118,7 @@ void TaskManager::SkipTask(Task* pTask)
 
     for (TaskList::iterator it = m_reordering.begin(); it != m_reordering.end(); it ++)
     {
-        if ((pTask == &*it) && (pTask->m_stage == FRAME_NEW))
+        if (pTask == &*it)
         {
             m_free.splice(m_free.end(), m_reordering, it);
             pTask->m_stage = 0;

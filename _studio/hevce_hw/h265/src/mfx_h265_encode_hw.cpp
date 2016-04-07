@@ -746,6 +746,10 @@ mfxStatus Plugin::PrepareTask(Task& input_task)
         task = m_task.Reorder(m_vpar, m_lastTask.m_dpb[1], !task->m_surf);
     MFX_CHECK(task, MFX_ERR_NONE);
 
+    if (!task->m_surf)
+        m_task.SkipTask(task);
+
+
     task->m_idxRaw = (mfxU8)FindFreeResourceIndex(m_raw);
     task->m_idxRec = (mfxU8)FindFreeResourceIndex(m_rec);
     task->m_idxBs  = (mfxU8)FindFreeResourceIndex(m_bs);
