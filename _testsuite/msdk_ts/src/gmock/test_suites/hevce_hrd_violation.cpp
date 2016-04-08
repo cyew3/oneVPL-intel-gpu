@@ -1,3 +1,12 @@
+/*
+//
+//                  INTEL CORPORATION PROPRIETARY INFORMATION
+//     This software is supplied under the terms of a license agreement or
+//     nondisclosure agreement with Intel Corporation and may not be copied
+//     or disclosed except in accordance with the terms of that agreement.
+//       Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
+//
+*/
 #include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
@@ -83,6 +92,8 @@ namespace hevce_hrd_violation
                 // HEVCE_HW heve don't support NalHrdConformance
                 if (tc.sts != MFX_ERR_NONE)
                     g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+                if ((tc.val == MFX_CODINGOPTION_OFF) || (tc.val == MFX_CODINGOPTION_UNKNOWN))
+                    g_tsStatus.expect(MFX_ERR_NONE);
             }
 
             //init mfxExtCodingOption
