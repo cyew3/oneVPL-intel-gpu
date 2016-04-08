@@ -3953,7 +3953,7 @@ IppStatus ownippiDecodeCAVLCChromaDcCoeffs_H264_1u16s (Ipp32u **ppBitStream,
     {
 
 
-    Ipp16s        CoeffBuf[16];        /* Temp buffer to hold coeffs read from bitstream*/
+    Ipp16s        CoeffBuf[16] = {};        /* Temp buffer to hold coeffs read from bitstream*/
     Ipp32u        uTR1Mask;
     Ipp32u        TrOneSigns;            /* return sign bits (1==neg) in low 3 bits*/
     Ipp32u        uCoeffIndex            = 0;

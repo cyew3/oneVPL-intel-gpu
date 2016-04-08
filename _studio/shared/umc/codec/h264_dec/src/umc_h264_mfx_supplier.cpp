@@ -810,7 +810,7 @@ UMC::Status PosibleMVC::DecodeHeader(UMC::MediaData * data, mfxBitstream *bs, mf
         H264SeqParamSet* obj;
         sps_heap_obj() : obj(0) {}
         ~sps_heap_obj() { if (obj) obj->DecrementReference(); }
-        void set(H264SeqParamSet* sps) { obj = sps; obj->IncrementReference(); }
+        void set(H264SeqParamSet* sps) { if(sps) { obj = sps; obj->IncrementReference();} }
     } first_sps;
 
     UMC::Status umcRes = UMC::UMC_ERR_NOT_ENOUGH_DATA;

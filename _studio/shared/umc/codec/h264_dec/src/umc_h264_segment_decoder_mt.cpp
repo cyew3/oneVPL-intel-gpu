@@ -534,7 +534,7 @@ void H264SegmentDecoderMultiThreaded::DecodeMotionVectors_CABAC(void)
     // initialize blocks coding pattern maps
 
     Ipp32s type = m_cur_mb.GlobalMacroblockInfo->mbtype - MBTYPE_FORWARD;
-    if(type >= 0)
+    if(type >= 0 && type < 5)
     {
         if (m_cur_mb.LocalMacroblockInfo->sbdir[0] > D_DIR_BIDIR) // direct or skip MB
         {
