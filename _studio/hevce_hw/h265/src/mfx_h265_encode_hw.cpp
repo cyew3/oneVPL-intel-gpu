@@ -746,25 +746,24 @@ mfxStatus Plugin::PrepareTask(Task& input_task)
         task = m_task.Reorder(m_vpar, m_lastTask.m_dpb[1], !task->m_surf);
     MFX_CHECK(task, MFX_ERR_NONE);
 
-    if (!task->m_surf)
-        m_task.SkipTask(task);
+    if (task->m_surf)
+    {
+
+        task->m_idxRaw = (mfxU8)FindFreeResourceIndex(m_raw);
+        task->m_idxRec = (mfxU8)FindFreeResourceIndex(m_rec);
+        task->m_idxBs  = (mfxU8)FindFreeResourceIndex(m_bs);
+        MFX_CHECK(task->m_idxBs  != IDX_INVALID, MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(task->m_idxRec != IDX_INVALID, MFX_ERR_UNDEFINED_BEHAVIOR);
 
 
-    task->m_idxRaw = (mfxU8)FindFreeResourceIndex(m_raw);
-    task->m_idxRec = (mfxU8)FindFreeResourceIndex(m_rec);
-    task->m_idxBs  = (mfxU8)FindFreeResourceIndex(m_bs);
-    MFX_CHECK(task->m_idxBs  != IDX_INVALID, MFX_ERR_UNDEFINED_BEHAVIOR);
-    MFX_CHECK(task->m_idxRec != IDX_INVALID, MFX_ERR_UNDEFINED_BEHAVIOR);
+        task->m_midRaw = AcquireResource(m_raw, task->m_idxRaw);
+        task->m_midRec = AcquireResource(m_rec, task->m_idxRec);
+        task->m_midBs  = AcquireResource(m_bs,  task->m_idxBs);
+        MFX_CHECK(task->m_midRec && task->m_midBs, MFX_ERR_UNDEFINED_BEHAVIOR);  
 
-
-    task->m_midRaw = AcquireResource(m_raw, task->m_idxRaw);
-    task->m_midRec = AcquireResource(m_rec, task->m_idxRec);
-    task->m_midBs  = AcquireResource(m_bs,  task->m_idxBs);
-    MFX_CHECK(task->m_midRec && task->m_midBs, MFX_ERR_UNDEFINED_BEHAVIOR);  
-
-    ConfigureTask(*task, m_lastTask, m_vpar, m_baseLayerOrder);
-    m_lastTask = *task;
- 
+        ConfigureTask(*task, m_lastTask, m_vpar, m_baseLayerOrder);
+        m_lastTask = *task; 
+    }
     m_task.Submit(task);
     return sts;
 }
