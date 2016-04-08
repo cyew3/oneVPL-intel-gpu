@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -50,11 +50,6 @@ UMC::Status VATaskSupplier::Init(UMC::VideoDecoderParams *pInit)
 
     if (m_va)
     {
-#ifdef UMC_VA_DXVA
-        static_cast<TaskBrokerSingleThreadDXVA*>(m_pTaskBroker)->DXVAStatusReportingMode(true);
-#else
-        static_cast<TaskBrokerSingleThreadDXVA*>(m_pTaskBroker)->DXVAStatusReportingMode(false);
-#endif
         m_DPBSizeEx = m_iThreadNum + pInit->info.bitrate;
     }
 

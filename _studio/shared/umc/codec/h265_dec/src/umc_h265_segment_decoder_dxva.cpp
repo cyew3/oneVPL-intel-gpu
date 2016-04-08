@@ -94,7 +94,6 @@ UMC::Status H265_DXVA_SegmentDecoder::ProcessSegment(void)
 TaskBrokerSingleThreadDXVA::TaskBrokerSingleThreadDXVA(TaskSupplier_H265 * pTaskSupplier)
     : TaskBroker_H265(pTaskSupplier)
     , m_lastCounter(0)
-    , m_useDXVAStatusReporting(true)
 {
     m_counterFrequency = vm_time_get_frequency();
 }
@@ -128,17 +127,6 @@ void TaskBrokerSingleThreadDXVA::Start()
 
     TaskBroker_H265::Start();
     m_completedQueue.clear();
-
-    if (m_useDXVAStatusReporting)
-        return;
-
-    for (H265DecoderFrameInfo *pTemp = m_FirstAU; pTemp; pTemp = pTemp->GetNextAU())
-    {
-        pTemp->SetStatus(H265DecoderFrameInfo::STATUS_COMPLETED);
-        CompleteFrame(pTemp->m_pFrame);
-    }
-
-    m_FirstAU = 0;
 }
 
 enum
@@ -148,9 +136,6 @@ enum
 
 bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
 {
-    if (!m_useDXVAStatusReporting)
-        return false;
-
     H265_DXVA_SegmentDecoder * dxva_sd = static_cast<H265_DXVA_SegmentDecoder *>(m_pTaskSupplier->m_pSegmentDecoder[0]);
 
     if (!dxva_sd->GetPacker())

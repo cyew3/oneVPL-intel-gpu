@@ -166,11 +166,6 @@ public:
 
     virtual void Reset();
 
-    void DXVAStatusReportingMode(bool mode)
-    {
-        m_useDXVAStatusReporting = mode;
-    }
-
 protected:
     virtual void AwakeThreads();
 
@@ -203,8 +198,6 @@ protected:
     Report m_reports;
     Ipp64u m_lastCounter;
     Ipp64u m_counterFrequency;
-
-    bool   m_useDXVAStatusReporting;
 };
 
 } // namespace UMC_HEVC_DECODER
