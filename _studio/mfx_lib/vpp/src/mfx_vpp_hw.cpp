@@ -3054,6 +3054,10 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
     if (MFX_FOURCC_P010 == par->vpp.Out.FourCC && 0 == par->vpp.Out.Shift)
         sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
 
+    // HSD 8159506
+    if (MFX_FOURCC_YV12 == par->vpp.In.FourCC && MFX_HW_BDW < core->GetHWType() && (par->vpp.In.Width > 6144 || par->vpp.In.Height > 6144))
+        sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
+
     return sts;
 } // mfxStatus VideoVPPHW::ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, bool bCorrectionEnable = false)
 
