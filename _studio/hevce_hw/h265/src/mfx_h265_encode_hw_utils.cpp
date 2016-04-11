@@ -1986,24 +1986,9 @@ Task* TaskManager::New()
     {
         pTask = &m_free.front();
         m_reordering.splice(m_reordering.end(), m_free, m_free.begin());
-        Zero(*pTask);
-        pTask->m_stage = FRAME_NEW;
     }
 
     return pTask;
-}
-Task* TaskManager::GetNewTask()
-{
-   UMC::AutomaticUMCMutex guard(m_listMutex);
-
-    for (TaskList::iterator it = m_reordering.begin(); it != m_reordering.end(); it ++)
-    {
-        if (it->m_stage == FRAME_NEW)
-        {
-            return  &*it;
-        }
-    }
-    return 0;
 }
 
 Task* TaskManager::Reorder(
@@ -2016,7 +2001,7 @@ Task* TaskManager::Reorder(
     TaskList::iterator begin = m_reordering.begin();
     TaskList::iterator end   = m_reordering.begin();
 
-    while (end != m_reordering.end() && end->m_stage == FRAME_ACCEPTED)
+    while (end != m_reordering.end())
     {
         if ((end != begin) && (end->m_frameType & MFX_FRAMETYPE_IDR))
         {
@@ -2028,12 +2013,7 @@ Task* TaskManager::Reorder(
     TaskList::iterator top   = MfxHwH265Encode::Reorder(par, dpb, begin, end, flush);
 
     if (top == end)
-    {
-        if (end != m_reordering.end() && end->m_stage == FRAME_REORDERED)
-            return &*end; //formal task without surface
-        else 
-            return 0;
-    }
+        return 0;
 
     return &*top;
 }
@@ -2047,12 +2027,11 @@ void TaskManager::Submit(Task* pTask)
         if (pTask == &*it)
         {
             m_encoding.splice(m_encoding.end(), m_reordering, it);
-            pTask->m_stage |= FRAME_REORDERED;
             break;
         }
     }
 }
-Task* TaskManager::GetTaskForSubmit()
+Task* TaskManager::GetSubmittedTask()
 {
     UMC::AutomaticUMCMutex guard(m_listMutex);
     if (m_encoding.size() > 0)
@@ -2070,7 +2049,6 @@ void TaskManager::SubmitForQuery(Task* pTask)
         if (pTask == &*it)
         {
             m_querying.splice(m_querying.end(), m_encoding, it);
-            pTask->m_stage |= FRAME_SUBMITTED;
             break;
         }
     }
@@ -2107,26 +2085,10 @@ void TaskManager::Ready(Task* pTask)
         if (pTask == &*it)
         {
             m_free.splice(m_free.end(), m_querying, it);
-            pTask->m_stage = 0;
             break;
         }
     }
 }
-void TaskManager::SkipTask(Task* pTask)
-{
-    UMC::AutomaticUMCMutex guard(m_listMutex);
-
-    for (TaskList::iterator it = m_reordering.begin(); it != m_reordering.end(); it ++)
-    {
-        if (pTask == &*it)
-        {
-            m_free.splice(m_free.end(), m_reordering, it);
-            pTask->m_stage = 0;
-            break;
-        }
-    }
-}
-
 
 mfxU8 GetFrameType(
     MfxVideoParam const & video,
@@ -2667,6 +2629,7 @@ void ConfigureTask(
     MfxVideoParam const & par,
     mfxU32 &baseLayerOrder)
 {
+    assert(task.m_bs != 0);
     const bool isI    = !!(task.m_frameType & MFX_FRAMETYPE_I);
     const bool isP    = !!(task.m_frameType & MFX_FRAMETYPE_P);
     const bool isB    = !!(task.m_frameType & MFX_FRAMETYPE_B);
@@ -2674,7 +2637,7 @@ void ConfigureTask(
     const mfxU8 maxQP = mfxU8(51 + 6 * (par.mfx.FrameInfo.BitDepthLuma - 8));
     const mfxU8 PPyrLayer[4] = {0,2,1,2};
 
-    mfxExtDPB*              pDPBReport = task.m_bs ? (mfxExtDPB*)ExtBuffer::Get(*task.m_bs) : 0;
+    mfxExtDPB*              pDPBReport = ExtBuffer::Get(*task.m_bs);
     mfxExtAVCRefLists*      pExtLists = ExtBuffer::Get(task.m_ctrl);
     mfxExtAVCRefListCtrl*   pExtListCtrl = ExtBuffer::Get(task.m_ctrl);
 

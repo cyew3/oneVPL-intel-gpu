@@ -680,13 +680,11 @@ public:
     Task* New       ();
     Task* Reorder   (MfxVideoParam const & par, DpbArray const & dpb, bool flush);
     void  Submit    (Task* task);
-    Task* GetTaskForSubmit();
+    Task* GetSubmittedTask();
     void  SubmitForQuery(Task* task);
     bool  isSubmittedForQuery(Task* task);
     Task* GetTaskForQuery();
     void  Ready     (Task* task);
-    void  SkipTask  (Task* task);
-    Task* GetNewTask();
 
 private:
     TaskList   m_free;
