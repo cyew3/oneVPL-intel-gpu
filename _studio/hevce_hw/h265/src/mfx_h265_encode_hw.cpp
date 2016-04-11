@@ -396,7 +396,6 @@ mfxStatus   Plugin::WaitingForAsyncTasks(bool bResetTasks)
     if (m_runtimeErr == 0)
     {   
         // sheduler must wait untial all async tasks will be ready.
-        MFX_CHECK(m_task.GetTaskForSubmit() == NULL, MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(m_task.GetNewTask() == NULL, MFX_ERR_UNDEFINED_BEHAVIOR);
 
         if (!bResetTasks)
@@ -748,7 +747,7 @@ mfxStatus Plugin::PrepareTask(Task& input_task)
     }
     else
     {
-        task->m_stage = FRAME_REORDERED;
+        m_task.Submit(task);
     }
 
     if (!m_vpar.mfx.EncodedOrder)
@@ -772,8 +771,8 @@ mfxStatus Plugin::PrepareTask(Task& input_task)
 
         ConfigureTask(*task, m_lastTask, m_vpar, m_baseLayerOrder);
         m_lastTask = *task; 
+        m_task.Submit(task);
     }
-    m_task.Submit(task);
     return sts;
 }
 
