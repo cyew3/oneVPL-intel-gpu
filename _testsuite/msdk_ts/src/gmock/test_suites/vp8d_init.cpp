@@ -207,11 +207,6 @@ int TestSuite::RunTest(unsigned int id)
 
     UseDefaultAllocator(!!(m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY));
 
-    if (tc.mode == NEED_ALLOC)
-    {
-        SetFrameAllocator(m_session, GetAllocator());
-    }
-
     if (m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
     {
         if (m_pVAHandle)
@@ -225,6 +220,11 @@ int TestSuite::RunTest(unsigned int id)
             GetAllocator()->get_hdl(type, hdl);
             SetHandle(m_session, type, hdl);
         }
+    }
+
+    if (tc.mode == NEED_ALLOC)
+    {
+        SetFrameAllocator(m_session, GetAllocator());
     }
 
     if (tc.mode == ALLOC_OPAQUE)
