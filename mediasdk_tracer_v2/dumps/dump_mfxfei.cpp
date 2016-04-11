@@ -328,7 +328,9 @@ std::string DumpContext::dump(const std::string structName, const mfxFeiPakMBCtr
 {
     std::string str;
 
-    DUMP_FIELD_RESERVED(reserved0);
+    DUMP_FIELD(Header);
+    DUMP_FIELD(MVDataLength);
+    DUMP_FIELD(MVDataOffset);
     DUMP_FIELD(InterMbMode);
     DUMP_FIELD(MBSkipFlag);
     DUMP_FIELD(Reserved00);

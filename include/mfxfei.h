@@ -228,8 +228,15 @@ typedef struct {
     } *MB;
 } mfxExtFeiEncMBStat;
 
+enum {
+    MFX_PAK_OBJECT_HEADER = 0x7149000A
+};
+
 typedef struct {
-    mfxU32    reserved0[3];
+    /* dword 0-3 */
+    mfxU32    Header;  /* MFX_PAK_OBJECT_HEADER */
+    mfxU32    MVDataLength;
+    mfxU32    MVDataOffset;
 
     //dword 3
     mfxU32    InterMbMode         : 2;
