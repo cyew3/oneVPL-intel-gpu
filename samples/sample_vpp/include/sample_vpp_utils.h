@@ -28,6 +28,8 @@
 #include <psapi.h>
 #endif
 
+#include "hw_device.h"
+
 #include "sample_defs.h"
 
 #ifdef MFX_D3D11_SUPPORT
@@ -64,7 +66,6 @@ enum
 {
     VPP_IN   = 0,
     VPP_OUT  = 1,
-    VPP_WORK = 2
 };
 
 enum
@@ -155,7 +156,6 @@ struct sInputParams
     mfxU16   IOPattern;
     mfxIMPL  ImpLib;
     mfxU32   sptr;
-    bool     bDefAlloc;
     mfxU16   asyncNum;
     mfxU32   vaType;
 
@@ -200,6 +200,12 @@ struct sInputParams
     /* MFXVideoVPP_Reset */
     std::vector<mfxU32> resetFrmNums;
 
+    sOwnFrameInfo inFrameInfo[MAX_INPUT_STREAMS];
+    mfxU16        numStreams;
+    sOwnFrameInfo outFrameInfo;
+
+    sCompositionParam   compositionParam;
+
     sInputParams()
     {
         bInitEx             = false;
@@ -229,24 +235,28 @@ struct sMemoryAllocator
     mfxAllocatorParams* pAllocatorParams;
     bool                bUsedAsExternalAllocator;
 
-    mfxFrameSurface1*     pSurfaces[2]; // IN/OUT
-    mfxFrameAllocResponse response[2];  // IN/OUT
+    mfxFrameSurface1*     pSurfacesIn[MAX_INPUT_STREAMS]; // SINGLE_IN/OUT/MULTIPLE_INs
+    mfxFrameSurface1*     pSurfacesOut;
+    mfxFrameAllocResponse responseIn[MAX_INPUT_STREAMS];  // SINGLE_IN/OUT/MULTIPLE_INs
+    mfxFrameAllocResponse responseOut;
 
     mfxFrameSurface1*     pSvcSurfaces[8]; //output surfaces per layer
     mfxFrameAllocResponse svcResponse[8];     //per layer
 
-#ifdef D3D_SURFACES_SUPPORT
-    IDirect3DDeviceManager9* pd3dDeviceManager;
-#endif
+    CHWDevice* pDevice;
 
-#ifdef MFX_D3D11_SUPPORT
+    /*#ifdef D3D_SURFACES_SUPPORT
+    IDirect3DDeviceManager9* pd3dDeviceManager;
+    #endif
+
+    #ifdef MFX_D3D11_SUPPORT
     ID3D11Device *pD3D11Device;
     ID3D11DeviceContext *pD3D11DeviceContext;
-#endif
+    #endif
 
-#ifdef LIBVA_SUPPORT
+    #ifdef LIBVA_SUPPORT
     std::auto_ptr<CLibVA> libvaKeeper;
-#endif
+    #endif*/
 };
 
 class PTSMaker;
@@ -272,12 +282,14 @@ public :
     mfxStatus  GetNextInputFrame(
         sMemoryAllocator* pAllocator,
         mfxFrameInfo* pInfo,
-        mfxFrameSurface1** pSurface);
+        mfxFrameSurface1** pSurface,
+        mfxU16 streamIndex);
 
-private:
     mfxStatus  LoadNextFrame(
         mfxFrameData* pData,
         mfxFrameInfo* pInfo);
+
+private:
     mfxStatus  GetPreAllocFrame(mfxFrameSurface1 **pSurface);
 
     FILE*       m_fSrc;
@@ -368,7 +380,9 @@ public:
 
 struct sAppResources
 {
-    CRawVideoReader*    pSrcFileReader;
+    CRawVideoReader*    pSrcFileReaders[MAX_INPUT_STREAMS];
+    mfxU16              numSrcFiles;
+
     //CRawVideoWriter*    pDstFileWriter;
     GeneralWriter*      pDstFileWriters;
     mfxU32              dstFileWritersN;
@@ -395,6 +409,7 @@ struct sAppResources
     mfxExtVPPDeinterlacing deinterlaceConfig;
     mfxExtVPPVideoSignalInfo  videoSignalInfoConfig;
     mfxExtVPPMirroring  mirroringConfig;
+    mfxExtVPPComposite     compositeConfig;
 
     // MSDK 3.0
     //  mfxExtVPPGamutMapping gamutConfig;
@@ -507,5 +522,7 @@ mfxStatus ConfigVideoEnhancementFilters(
     mfxU32 paramID );
 
 const msdk_char* PicStruct2Str( mfxU16  PicStruct );
+
+mfxStatus ParseCompositionParfile(const msdk_char* parFileName, sInputParams* pParams);
 #endif /* __SAMPLE_VPP_UTILS_H */
 /* EOF */

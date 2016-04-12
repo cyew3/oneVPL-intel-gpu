@@ -24,6 +24,14 @@ enum
     NOT_INIT_VALUE      =   0xFFF7
 };
 
+enum MemType {
+    SYSTEM_MEMORY = 0x00,
+    D3D9_MEMORY   = 0x01,
+    D3D11_MEMORY  = 0x02,
+    VAAPI_MEMORY  = 0x03
+};
+
+
 // number of video enhancement filters (denoise, procamp, detail, video_analysis, multi_view, ste, istab, tcc, ace, svc)
 #define ENH_FILTERS_COUNT                (20)
 
@@ -36,6 +44,7 @@ enum
 #define VPP_FILTER_FACTOR_DEFAULT       NOT_INIT_VALUE
 
 #define MULTI_VIEW_COUNT_MAX            (1024)
+#define MAX_INPUT_STREAMS 64
 
 typedef enum
 {
@@ -128,6 +137,20 @@ typedef struct
     FilterConfig mode;
 
 } sDIParam;
+
+typedef struct
+{
+    msdk_char             streamName[MSDK_MAX_FILENAME_LEN];
+    mfxVPPCompInputStream compStream;
+    mfxU32 streamFourcc;
+} sCompositionStreamInfo;
+
+typedef struct
+{
+    sCompositionStreamInfo streamInfo[MAX_INPUT_STREAMS];
+
+    FilterConfig mode;
+} sCompositionParam;
 
 //------------------------------------------
 // MSDK 3.0 (re-priority)

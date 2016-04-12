@@ -215,6 +215,41 @@ mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* p
         pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->multiViewConfig);
     }
 
+    // Composition
+    if( VPP_FILTER_ENABLED_CONFIGURED == pParams->compositionParam.mode )
+    {
+        pResources->compositeConfig.Header.BufferId = MFX_EXTBUFF_VPP_COMPOSITE;
+        pResources->compositeConfig.Header.BufferSz = sizeof(mfxExtVPPComposite);
+        pResources->compositeConfig.NumInputStream  = pParams->numStreams;
+        pResources->compositeConfig.InputStream     = new mfxVPPCompInputStream[pResources->compositeConfig.NumInputStream];
+        memset(pResources->compositeConfig.InputStream, 0, sizeof(mfxVPPCompInputStream) * pResources->compositeConfig.NumInputStream);
+
+        for (int i = 0; i < pResources->compositeConfig.NumInputStream; i++)
+        {
+            pResources->compositeConfig.InputStream[i].DstX = pParams->compositionParam.streamInfo[i].compStream.DstX;
+            pResources->compositeConfig.InputStream[i].DstY = pParams->compositionParam.streamInfo[i].compStream.DstY;
+            pResources->compositeConfig.InputStream[i].DstW = pParams->compositionParam.streamInfo[i].compStream.DstW;
+            pResources->compositeConfig.InputStream[i].DstH = pParams->compositionParam.streamInfo[i].compStream.DstH;
+            if (pParams->compositionParam.streamInfo[i].compStream.GlobalAlphaEnable != 0 )
+            {
+                pResources->compositeConfig.InputStream[i].GlobalAlphaEnable = pParams->compositionParam.streamInfo[i].compStream.GlobalAlphaEnable;
+                pResources->compositeConfig.InputStream[i].GlobalAlpha = pParams->compositionParam.streamInfo[i].compStream.GlobalAlpha;
+            }
+            if (pParams->compositionParam.streamInfo[i].compStream.LumaKeyEnable != 0 )
+            {
+                pResources->compositeConfig.InputStream[i].LumaKeyEnable = pParams->compositionParam.streamInfo[i].compStream.LumaKeyEnable;
+                pResources->compositeConfig.InputStream[i].LumaKeyMin = pParams->compositionParam.streamInfo[i].compStream.LumaKeyMin;
+                pResources->compositeConfig.InputStream[i].LumaKeyMax = pParams->compositionParam.streamInfo[i].compStream.LumaKeyMax;
+            }
+            if (pParams->compositionParam.streamInfo[i].compStream.PixelAlphaEnable != 0 )
+            {
+                pResources->compositeConfig.InputStream[i].PixelAlphaEnable = pParams->compositionParam.streamInfo[i].compStream.PixelAlphaEnable;
+            }
+        } // for (int i = 0; i < pResources->compositeConfig.NumInputStream; i++)
+
+        pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->compositeConfig);
+    }
+
     // confirm configuration
     if( 0 == pVppParam->NumExtParam )
     {

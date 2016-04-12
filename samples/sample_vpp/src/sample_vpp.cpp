@@ -78,15 +78,19 @@ void PutPerformanceToFile(sInputParams& Params, mfxF64 FPS)
 } // void PutPerformanceToFile(sInputVppParams& Params, mfxF64 FPS)
 
 static
-void vppDefaultInitParams( sInputParams* pParams, sFiltersParam* pDefaultFiltersParam )
+    void vppDefaultInitParams( sInputParams* pParams, sFiltersParam* pDefaultFiltersParam )
 {
     pParams->frameInfoIn.clear();  pParams->frameInfoIn.push_back ( *pDefaultFiltersParam->pOwnFrameInfo );
     pParams->frameInfoOut.clear(); pParams->frameInfoOut.push_back( *pDefaultFiltersParam->pOwnFrameInfo );
 
     pParams->IOPattern    = MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
-    pParams->ImpLib       = MFX_IMPL_AUTO;
+    pParams->ImpLib       = MFX_IMPL_HARDWARE |
+#ifdef LIBVA_SUPPORT
+        MFX_IMPL_VIA_VAAPI;
+#else
+        MFX_IMPL_VIA_D3D9;
+#endif
     pParams->sptr         = NO_PTR;
-    pParams->bDefAlloc   = false;
     pParams->asyncNum     = 1;
     pParams->bPerf       = false;
     pParams->isOutput     = false;
@@ -106,7 +110,7 @@ void vppDefaultInitParams( sInputParams* pParams, sFiltersParam* pDefaultFilters
     pParams->denoiseParam.clear();          pParams->denoiseParam.push_back(        *pDefaultFiltersParam->pDenoiseParam        );
     pParams->detailParam.clear();           pParams->detailParam.push_back(         *pDefaultFiltersParam->pDetailParam         );
     pParams->procampParam.clear();          pParams->procampParam.push_back(        *pDefaultFiltersParam->pProcAmpParam        );
-      // analytics
+    // analytics
     pParams->frcParam.clear();              pParams->frcParam.push_back(            *pDefaultFiltersParam->pFRCParam            );
     // MSDK 3.0
     pParams->multiViewParam.clear();        pParams->multiViewParam.push_back(      *pDefaultFiltersParam->pMultiViewParam      );
@@ -139,23 +143,6 @@ void vppDefaultInitParams( sInputParams* pParams, sFiltersParam* pDefaultFilters
 
 } // void vppDefaultInitParams( sInputParams* pParams )
 
-
-static
-void vppSafeRealInfo( sOwnFrameInfo* in, mfxFrameInfo* out)
-{
-    out->Width  = in->nWidth;
-    out->Height = in->nHeight;
-    out->CropX  = 0;
-    out->CropY  = 0;
-    out->CropW  = out->Width;
-    out->CropH  = out->Height;
-    out->FourCC = in->FourCC;
-
-    return;
-
-} // void vppSafeRealInfo( sOwnFrameInfo* in, mfxFrameInfo* out)
-
-
 void SaveRealInfoForSvcOut(sSVCLayerDescr in[8], mfxFrameInfo out[8], mfxU32 fourcc)
 {
     for(mfxU32 did = 0; did < 8; did++)
@@ -178,7 +165,7 @@ void SaveRealInfoForSvcOut(sSVCLayerDescr in[8], mfxFrameInfo out[8], mfxU32 fou
 
 mfxStatus OutputProcessFrame(
     sAppResources Resources,
-    mfxFrameInfo* frameInfo,
+    mfxFrameInfo* pOutFrameInfo,
     mfxU32 &nFrames,
     mfxU32 paramID)
 {
@@ -201,7 +188,7 @@ mfxStatus OutputProcessFrame(
         GeneralWriter* writer = (1 == Resources.dstFileWritersN) ? &Resources.pDstFileWriters[0] : &Resources.pDstFileWriters[paramID];
         sts = writer->PutNextFrame(
             Resources.pAllocator,
-            &(frameInfo[VPP_OUT]),
+            pOutFrameInfo,
             pProcessedSurface);
         if(sts)
             msdk_printf(MSDK_STRING("Failed to write frame to disk\n"));
@@ -226,6 +213,31 @@ mfxStatus OutputProcessFrame(
 } // mfxStatus OutputProcessFrame(
 
 
+void ownToMfxFrameInfo( sOwnFrameInfo* in, mfxFrameInfo* out )
+{
+    //out->Width  = in->nWidth;
+    //out->Height = in->nHeight;
+    //out->CropX  = 0;
+    //out->CropY  = 0;
+    //out->CropW  = out->Width;
+    //out->CropH  = out->Height;
+    //out->FourCC = in->FourCC;
+
+    out->Width  = in->nWidth;
+    out->Height = in->nHeight;
+    out->CropX  = in->CropX;
+    out->CropY  = in->CropY;
+    out->CropW  = (in->CropW == NOT_INIT_VALUE) ? in->nWidth : in->CropW;
+    out->CropH  = (in->CropH == NOT_INIT_VALUE) ? in->nHeight : in->CropH;
+    out->FourCC = in->FourCC;
+    out->PicStruct = in->PicStruct;
+    ConvertFrameRate(in->dFrameRate, &out->FrameRateExtN, &out->FrameRateExtD);
+
+    return;
+
+} // void ownToMfxFrameInfo( sOwnFrameInfo* in, mfxFrameInfo* out )
+
+
 #if defined(_WIN32) || defined(_WIN64)
 int _tmain(int argc, TCHAR *argv[])
 #else
@@ -234,8 +246,9 @@ int main(int argc, msdk_char *argv[])
 {
     mfxStatus           sts = MFX_ERR_NONE;
     mfxU32              nFrames = 0;
+    mfxU16              nInStreamInd = 0;
 
-    CRawVideoReader     yuvReader;
+    CRawVideoReader     yuvReaders[MAX_INPUT_STREAMS];
 
     CTimeStatistics     statTimer;
 
@@ -246,11 +259,13 @@ int main(int argc, msdk_char *argv[])
     mfxVideoParam       mfxParamsVideo;
 
     // to prevent incorrect read/write of image in case of CropW/H != width/height
-    mfxFrameInfo        realFrameInfo[2];
-
-    mfxFrameSurface1*   pSurf[3];// 0 - in, 1 - out, 2 - work
-
+    mfxFrameInfo        realFrameInfoIn[MAX_INPUT_STREAMS]; // Inputs+output
+    mfxFrameInfo        realFrameInfoOut;
     sAppResources       Resources;
+
+    mfxFrameSurface1*   pInSurf[MAX_INPUT_STREAMS]={0};
+    mfxFrameSurface1*   pOutSurf = NULL;
+    mfxFrameSurface1*   pWorkSurf = NULL;
 
     mfxSyncPoint        syncPoint;
 
@@ -265,7 +280,8 @@ int main(int argc, msdk_char *argv[])
     ROIGenerator       inROIGenerator;
     ROIGenerator       outROIGenerator;
     bool               bROITest[2] = {false, false};
-    unsigned int       work_surf   = VPP_OUT;
+
+    //mfxU16              argbSurfaceIndex = 0xffff;
 
     /* default parameters */
     sOwnFrameInfo             defaultOwnFrameInfo         = { 0, 352, 288, 0, 0, 352, 288, MFX_FOURCC_NV12, MFX_PICSTRUCT_PROGRESSIVE, 30.0 };
@@ -289,34 +305,35 @@ int main(int argc, msdk_char *argv[])
     sMirroringParam           defaultMirroringParam;
 
     sFiltersParam             defaultFiltersParam =
-            { &defaultOwnFrameInfo,
-              &defaultDIParam,
-              &defaultProcAmpParam,
-              &defaultDetailParam,
-              &defaultDenoiseParam,
-              &defaultVAParam,
-              &defaultIDetectParam,
-              &defaultFRCParam,
-              &defaultMultiViewParam,
-              &defaultGamutParam,
-              &defaultClrSaturationParam,
-              &defaultContrastParam,
-              &defaultSkinParam,
-              &defaultImgStabParam,
-              &defaultSVCParam,
-              &defaultVideoSignalInfoParam,
-              &defaultMirroringParam};
+    { &defaultOwnFrameInfo,
+    &defaultDIParam,
+    &defaultProcAmpParam,
+    &defaultDetailParam,
+    &defaultDenoiseParam,
+    &defaultVAParam,
+    &defaultIDetectParam,
+    &defaultFRCParam,
+    &defaultMultiViewParam,
+    &defaultGamutParam,
+    &defaultClrSaturationParam,
+    &defaultContrastParam,
+    &defaultSkinParam,
+    &defaultImgStabParam,
+    &defaultSVCParam,
+    &defaultVideoSignalInfoParam,
+    &defaultMirroringParam};
 
     //reset pointers to the all internal resources
     MSDK_ZERO_MEMORY(Resources);
-    //MSDK_ZERO_MEMORY(mfxParamsVideo);
-    //MSDK_ZERO_MEMORY(Params);
     MSDK_ZERO_MEMORY(allocator);
-    //MSDK_ZERO_MEMORY(frameProcessor);
-    MSDK_ZERO_MEMORY(realFrameInfo[VPP_IN]  );
-    MSDK_ZERO_MEMORY(realFrameInfo[VPP_OUT] );
+    MSDK_ZERO_MEMORY(realFrameInfoIn);
+    MSDK_ZERO_MEMORY(realFrameInfoOut);
 
-    Resources.pSrcFileReader    = &yuvReader;
+    for (int i = 0; i < Resources.numSrcFiles; i++)
+    {
+        Resources.pSrcFileReaders[i] = &yuvReaders[i];
+    }
+
     Resources.pProcessor        = &frameProcessor;
     Resources.pAllocator        = &allocator;
     Resources.pVppParams        = &mfxParamsVideo;
@@ -333,16 +350,6 @@ int main(int argc, msdk_char *argv[])
         return 1;
     }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
-
-    if ( Params.use_extapi )
-    {
-        work_surf = VPP_WORK;
-    }
-
-    // to prevent incorrect read/write of image in case of CropW/H != width/height
-    // application save real image size
-    vppSafeRealInfo( &(Params.frameInfoIn[0]),  &realFrameInfo[VPP_IN]);
-    vppSafeRealInfo( &(Params.frameInfoOut[0]), &realFrameInfo[VPP_OUT]);
 
     // to check time stamp settings
     if (Params.ptsFR)
@@ -361,8 +368,26 @@ int main(int argc, msdk_char *argv[])
     }
 
     //prepare file reader (YUV/RGB file)
-    sts = yuvReader.Init(Params.strSrcFile, ptsMaker.get());
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
+    Resources.numSrcFiles = 1;
+    if (Params.compositionParam.mode == VPP_FILTER_ENABLED_CONFIGURED)
+    {
+        Resources.numSrcFiles = Params.numStreams > MAX_INPUT_STREAMS ? MAX_INPUT_STREAMS : Params.numStreams;
+        for (int i = 0; i < Resources.numSrcFiles; i++)
+        {
+            ownToMfxFrameInfo( &(Params.inFrameInfo[i]), &(realFrameInfoIn[i]) );
+            // Set ptsMaker for the first stream only - it will store PTSes
+            sts = yuvReaders[i].Init(Params.compositionParam.streamInfo[i].streamName,i==0 ? ptsMaker.get() : NULL);
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        }
+    }
+    else
+    {
+        ownToMfxFrameInfo( &(Params.frameInfoIn[0]),  &realFrameInfoIn[0]);
+        sts = yuvReaders[VPP_IN].Init(Params.strSrcFile,ptsMaker.get());
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
+    ownToMfxFrameInfo( &(Params.frameInfoOut[0]), &realFrameInfoOut);
+
 
     //prepare file writers (YUV file)
     Resources.dstFileWritersN = (mfxU32)Params.strDstFiles.size();
@@ -379,10 +404,10 @@ int main(int argc, msdk_char *argv[])
         MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { msdk_printf(MSDK_STRING("Failed to init YUV writer\n")); WipeResources(&Resources); WipeParams(&Params);});
     }
 
-#ifdef LIBVA_SUPPORT
-    if(!(Params.ImpLib & MFX_IMPL_SOFTWARE))
-        allocator.libvaKeeper.reset(CreateLibVA());
-#endif
+//#ifdef LIBVA_SUPPORT
+//    if(!(Params.ImpLib & MFX_IMPL_SOFTWARE))
+//        allocator.libvaKeeper.reset(CreateLibVA());
+//#endif
 
     //prepare mfxParams
     sts = InitParamsVPP(&mfxParamsVideo, &Params, 0);
@@ -398,22 +423,20 @@ int main(int argc, msdk_char *argv[])
     // prepare ROI generator
     if( ROI_VAR_TO_FIX == Params.roiCheckParam.mode || ROI_VAR_TO_VAR == Params.roiCheckParam.mode )
     {
-        inROIGenerator.Init(realFrameInfo[VPP_IN].Width, realFrameInfo[VPP_IN].Height, Params.roiCheckParam.srcSeed);
+        inROIGenerator.Init(realFrameInfoIn[0].Width, realFrameInfoIn[0].Height, Params.roiCheckParam.srcSeed);
         Params.roiCheckParam.srcSeed = inROIGenerator.GetSeed();
         bROITest[VPP_IN] = true;
 
     }
     if( ROI_FIX_TO_VAR == Params.roiCheckParam.mode || ROI_VAR_TO_VAR == Params.roiCheckParam.mode )
     {
-        outROIGenerator.Init(realFrameInfo[VPP_OUT].Width, realFrameInfo[VPP_OUT].Height, Params.roiCheckParam.dstSeed);
+        outROIGenerator.Init(realFrameInfoIn[0].Width, realFrameInfoIn[0].Height, Params.roiCheckParam.dstSeed);
         Params.roiCheckParam.dstSeed = outROIGenerator.GetSeed();
         bROITest[VPP_OUT] = true;
     }
 
     sts = ConfigVideoEnhancementFilters(&Params, &Resources, 0);
     MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { msdk_printf(MSDK_STRING("Failed to ConfigVideoEnhancementFilters\n")); WipeResources(&Resources); WipeParams(&Params);});
-
-    Resources.pAllocator->bUsedAsExternalAllocator = !Params.bDefAlloc;
 
     sts = InitResources(&Resources, &mfxParamsVideo, &Params);
     if(MFX_WRN_FILTER_SKIPPED == sts)
@@ -433,9 +456,13 @@ int main(int argc, msdk_char *argv[])
         Params.bPartialAccel = false;
     }
 
+
     if (Params.bPerf)
     {
-        sts = yuvReader.PreAllocateFrameChunk(&mfxParamsVideo, &Params, allocator.pMfxAllocator);
+        for (int i = 0; i < Resources.numSrcFiles; i++)
+        {
+            sts = yuvReaders[i].PreAllocateFrameChunk(&mfxParamsVideo, &Params, allocator.pMfxAllocator);
+        }
         MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { msdk_printf(MSDK_STRING("Failed to yuvReader.PreAllocateFrameChunk\n")); WipeResources(&Resources); WipeParams(&Params);});
     }
     else if (Params.numFrames)
@@ -494,7 +521,7 @@ int main(int argc, msdk_char *argv[])
     mfxU16 paramID = 0;
     mfxU32 nextResetFrmNum = (Params.resetFrmNums.size() > 0) ? Params.resetFrmNums[0] : NOT_INIT_VALUE;
 
-//---------------------------------------------------------
+    //---------------------------------------------------------
     do
     {
         if (bNeedReset)
@@ -513,10 +540,23 @@ int main(int argc, msdk_char *argv[])
             sts = Resources.pProcessor->pmfxVPP->Reset(Resources.pVppParams);
             MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { msdk_printf(MSDK_STRING("Failed to Reset VPP component\n")); WipeResources(&Resources); WipeParams(&Params);});
 
-            vppSafeRealInfo( &(Params.frameInfoIn[paramID]),  &realFrameInfo[VPP_IN]);
-            vppSafeRealInfo( &(Params.frameInfoOut[paramID]), &realFrameInfo[VPP_OUT]);
-            UpdateSurfacePool(mfxParamsVideo.vpp.Out, allocator.response[VPP_OUT].NumFrameActual, allocator.pSurfaces[VPP_OUT]);
-            UpdateSurfacePool(mfxParamsVideo.vpp.In,  allocator.response[VPP_IN].NumFrameActual,  allocator.pSurfaces[VPP_IN]);
+            ownToMfxFrameInfo( &(Params.frameInfoIn[paramID]),  &realFrameInfoIn[0]);
+            ownToMfxFrameInfo( &(Params.frameInfoOut[paramID]), &realFrameInfoOut);
+            UpdateSurfacePool(mfxParamsVideo.vpp.Out, allocator.responseOut.NumFrameActual, allocator.pSurfacesOut);
+            if(Params.numStreams==1)
+            {
+                UpdateSurfacePool(mfxParamsVideo.vpp.In,  allocator.responseIn[0].NumFrameActual,  allocator.pSurfacesIn[0]);
+            }
+            else
+            {
+                for(int i=0;i<Params.numStreams;i++)
+                {
+                    ownToMfxFrameInfo(&(Params.inFrameInfo[i]),  &realFrameInfoIn[i]);
+
+                    UpdateSurfacePool(mfxParamsVideo.vpp.In, allocator.responseIn[i].NumFrameActual, allocator.pSurfacesIn[i]);
+                }
+            }
+
             msdk_printf(MSDK_STRING("VPP reseted at frame number %d\n"), numGetFrames);
         }
 
@@ -524,6 +564,12 @@ int main(int argc, msdk_char *argv[])
         {
             mfxU16 viewID = 0;
             mfxU16 viewIndx = 0;
+
+            if (nInStreamInd >= MAX_INPUT_STREAMS)
+            {
+                sts = MFX_ERR_UNKNOWN;
+                break;
+            }
 
             // update for multiple output of multi-view
             if( bMultiView )
@@ -533,7 +579,7 @@ int main(int argc, msdk_char *argv[])
 
                 if( bMultipleOutStore[viewIndx] )
                 {
-                    pSurf[VPP_IN] = viewSurfaceStore[viewIndx];
+                    pInSurf[nInStreamInd] = viewSurfaceStore[viewIndx];
                     bDoNotUpdateIn = true;
 
                     bMultipleOutStore[viewIndx] = false;
@@ -553,15 +599,13 @@ int main(int argc, msdk_char *argv[])
                     break;
                 }
 
-                sts = yuvReader.GetNextInputFrame(
-                    &allocator,
-                    &(realFrameInfo[VPP_IN]),
-                    &pSurf[VPP_IN]);
+                // if we share allocator with mediasdk we need to call Lock to access surface data and after we're done call Unlock
+                sts = yuvReaders[nInStreamInd].GetNextInputFrame(&allocator,&realFrameInfoIn[nInStreamInd],&pInSurf[nInStreamInd],nInStreamInd);
                 MSDK_BREAK_ON_ERROR(sts);
 
                 if( bMultiView )
                 {
-                    pSurf[VPP_IN]->Info.FrameId.ViewId = viewID;
+                    pInSurf[nInStreamInd]->Info.FrameId.ViewId = viewID;
                 }
 
                 if (numGetFrames++ == Params.numFrames && bFrameNumLimit)
@@ -575,37 +619,37 @@ int main(int argc, msdk_char *argv[])
             bDoNotUpdateIn = false;
 
             sts = GetFreeSurface(
-                allocator.pSurfaces[VPP_OUT],
-                allocator.response[VPP_OUT].NumFrameActual ,
-                &pSurf[work_surf]);
+                allocator.pSurfacesOut,
+                allocator.responseOut.NumFrameActual ,
+                (Params.use_extapi ? &pWorkSurf : &pOutSurf));
             MSDK_BREAK_ON_ERROR(sts);
 
             if( bROITest[VPP_IN] )
             {
-                inROIGenerator.SetROI(  &(pSurf[VPP_IN]->Info) );
+                inROIGenerator.SetROI(  &(pInSurf[nInStreamInd]->Info) );
             }
             if( bROITest[VPP_OUT] )
             {
-                outROIGenerator.SetROI( &(pSurf[work_surf]->Info) );
+                outROIGenerator.SetROI((Params.use_extapi ? &pWorkSurf->Info : &pOutSurf->Info));
             }
 
             if ( Params.use_extapi )
             {
                 sts = frameProcessor.pmfxVPP->RunFrameVPPAsyncEx(
-                    pSurf[VPP_IN],
-                    pSurf[VPP_WORK],
+                    pInSurf[nInStreamInd],
+                    pWorkSurf,
                     //pExtData,
-                    &pSurf[VPP_OUT],
+                    &pOutSurf,
                     &syncPoint);
 
                 while(MFX_WRN_DEVICE_BUSY == sts)
                 {
                     MSDK_SLEEP(500);
                     sts = frameProcessor.pmfxVPP->RunFrameVPPAsyncEx(
-                        pSurf[VPP_IN],
-                        pSurf[VPP_WORK],
+                        pInSurf[nInStreamInd],
+                        pWorkSurf,
                         //pExtData,
-                        &pSurf[VPP_OUT],
+                        &pOutSurf,
                         &syncPoint);
                 }
 
@@ -615,11 +659,16 @@ int main(int argc, msdk_char *argv[])
             else
             {
                 sts = frameProcessor.pmfxVPP->RunFrameVPPAsync(
-                    pSurf[VPP_IN],
-                    pSurf[VPP_OUT],
+                    pInSurf[nInStreamInd],
+                    pOutSurf,
                     NULL,
                     &syncPoint);
             }
+
+            nInStreamInd++;
+            if (nInStreamInd == Resources.numSrcFiles)
+                nInStreamInd = 0;
+
 
             if (MFX_ERR_MORE_DATA == sts)
             {
@@ -640,7 +689,7 @@ int main(int argc, msdk_char *argv[])
                         DecreaseReference( &(viewSurfaceStore[viewIndx]->Data) );
                     }
 
-                    viewSurfaceStore[viewIndx] = pSurf[VPP_IN];
+                    viewSurfaceStore[viewIndx] = pInSurf[nInStreamInd];
                     IncreaseReference( &(viewSurfaceStore[viewIndx]->Data) );
 
                     bMultipleOutStore[viewIndx] = true;
@@ -670,39 +719,38 @@ int main(int argc, msdk_char *argv[])
             }
 
             MSDK_BREAK_ON_ERROR(sts);
-            surfStore.m_SyncPoints.push_back(SurfaceVPPStore::SyncPair(syncPoint,pSurf[VPP_OUT]));
-            IncreaseReference(&pSurf[VPP_OUT]->Data);
+            surfStore.m_SyncPoints.push_back(SurfaceVPPStore::SyncPair(syncPoint,pOutSurf));
+            IncreaseReference(&pOutSurf->Data);
             if (surfStore.m_SyncPoints.size() != (size_t)(Params.asyncNum * Params.multiViewParam[paramID].viewCount))
             {
                 continue;
             }
 
-            sts = OutputProcessFrame(Resources, realFrameInfo, nFrames, paramID);
+            sts = OutputProcessFrame(Resources, &realFrameInfoOut, nFrames, paramID);
             MSDK_BREAK_ON_ERROR(sts);
 
         } // main while loop
-    //---------------------------------------------------------
+        //---------------------------------------------------------
 
         //process remain sync points
         if (MFX_ERR_MORE_DATA == sts)
         {
-            sts = OutputProcessFrame(Resources, realFrameInfo, nFrames, paramID);
-            MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { msdk_printf(MSDK_STRING("Failed to process remain sync points\n")); WipeResources(&Resources); WipeParams(&Params);});
+            sts = OutputProcessFrame(Resources, &realFrameInfoOut, nFrames, paramID);
+            MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { msdk_printf(MSDK_STRING("Failed to process remain sync points\n")); WipeResources(&Resources); WipeParams(&Params);});
         }
 
         // means that file has ended, need to go to buffering loop
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
         // exit in case of other errors
-        MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, 1, { msdk_printf(MSDK_STRING("Exit in case of other errors\n")); WipeResources(&Resources); WipeParams(&Params);});
-
+        MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { msdk_printf(MSDK_STRING("Exit in case of other errors\n")); WipeResources(&Resources); WipeParams(&Params);});
 
         // loop to get buffered frames from VPP
         while (MFX_ERR_NONE <= sts)
         {
             sts = GetFreeSurface(
-                allocator.pSurfaces[VPP_OUT],
-                allocator.response[VPP_OUT].NumFrameActual ,
-                &pSurf[work_surf]);
+                allocator.pSurfacesOut,
+                allocator.responseOut.NumFrameActual ,
+                (Params.use_extapi ? &pWorkSurf : &pOutSurf));
             MSDK_BREAK_ON_ERROR(sts);
 
             bDoNotUpdateIn = false;
@@ -711,16 +759,16 @@ int main(int argc, msdk_char *argv[])
             {
                 sts = frameProcessor.pmfxVPP->RunFrameVPPAsyncEx(
                     NULL,
-                    pSurf[VPP_WORK],
-                    &pSurf[VPP_OUT],
+                    pWorkSurf,
+                    &pOutSurf,
                     &syncPoint );
                 while(MFX_WRN_DEVICE_BUSY == sts)
                 {
                     MSDK_SLEEP(500);
                     sts = frameProcessor.pmfxVPP->RunFrameVPPAsyncEx(
                         NULL,
-                        pSurf[VPP_WORK],
-                        &pSurf[VPP_OUT],
+                        pWorkSurf,
+                        &pOutSurf,
                         &syncPoint );
                 }
             }
@@ -728,7 +776,7 @@ int main(int argc, msdk_char *argv[])
             {
                 sts = frameProcessor.pmfxVPP->RunFrameVPPAsync(
                     NULL,
-                    pSurf[VPP_OUT],
+                    pOutSurf,
                     NULL,
                     &syncPoint );
             }
@@ -745,13 +793,13 @@ int main(int argc, msdk_char *argv[])
             GeneralWriter* writer = (1 == Resources.dstFileWritersN) ? &Resources.pDstFileWriters[0] : &Resources.pDstFileWriters[paramID];
             sts = writer->PutNextFrame(
                 Resources.pAllocator,
-                &(realFrameInfo[VPP_OUT]),
-                pSurf[VPP_OUT]);
+                &realFrameInfoOut,
+                pOutSurf);
             if(sts)
                 msdk_printf(MSDK_STRING("Failed to write frame to disk\n"));
             MSDK_CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, MFX_ERR_ABORTED);
 
-        nFrames++;
+            nFrames++;
 
             //VPP progress
             if (!Params.bPerf)
