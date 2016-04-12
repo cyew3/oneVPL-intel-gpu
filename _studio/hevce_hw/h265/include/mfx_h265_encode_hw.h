@@ -120,6 +120,7 @@ protected:
     HRD                             m_hrd;
     mfxU32                          m_frameOrder;
     mfxU32                          m_lastIDR;
+    mfxU32                          m_prevBPEO;
     mfxU32                          m_baseLayerOrder;
     mfxU32                          m_numBuffered;
     mfxU16                          m_NumberOfSlicesForOpt;
