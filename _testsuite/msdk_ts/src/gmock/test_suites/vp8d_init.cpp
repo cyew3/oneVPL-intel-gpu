@@ -92,7 +92,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*17*/ MFX_ERR_NONE, TestSuite::NEED_ALLOC, {{&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}}},
     {/*18*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}},
     // opaque is unsupported
-    {/*19*/ MFX_ERR_UNSUPPORTED, TestSuite::ALLOC_OPAQUE, {{&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}},
+    {/*19*/ MFX_ERR_INVALID_VIDEO_PARAM, TestSuite::ALLOC_OPAQUE, {{&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}},
     {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}},
 
     // Codec profiles (1 to 4 supported)
@@ -230,7 +230,14 @@ int TestSuite::RunTest(unsigned int id)
     if (tc.mode == ALLOC_OPAQUE)
     {
         mfxExtOpaqueSurfaceAlloc& osa = m_par;
+
+        // If opaque memory is unsupported for Init, then QueryIOSurf should
+        // report that it's an invalid param.
+        if (m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+            g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
         QueryIOSurf();
+        g_tsStatus.expect(MFX_ERR_NONE);
+
         AllocOpaque(m_request, osa);
     }
 
