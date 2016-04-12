@@ -126,7 +126,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 #elif defined(LIBVA_X11_SUPPORT) || defined(LIBVA_DRM_SUPPORT)
     if (m_eDevType == MFX_HANDLE_VA_DISPLAY)
     {
-        mfxI32  libvaBackend;
+        mfxI32  libvaBackend = 0;
 
         m_pAllocParam.reset(new vaapiAllocatorParams);
         vaapiAllocatorParams *pVAAPIParams = dynamic_cast<vaapiAllocatorParams*>(m_pAllocParam.get());
