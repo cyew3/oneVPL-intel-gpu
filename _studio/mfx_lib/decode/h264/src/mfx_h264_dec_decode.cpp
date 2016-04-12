@@ -1866,6 +1866,26 @@ UMC::H264DecoderFrame * VideoDECODEH264::GetFrameToDisplay(bool force)
     return pFrame;
 }
 
+namespace impl
+{
+    enum
+    {
+        MFX_SKIPMODE_NODEBLOCK      = 0x22,
+        MFX_SKIPMODE_NOSTATUSREPORT = 0x23,
+    };
+
+    inline
+    int check_private_mode(int mode)
+    {
+        switch (mode)
+        {
+            case 0x22: return MFX_SKIPMODE_NODEBLOCK;
+            case 0x23: return MFX_SKIPMODE_NOSTATUSREPORT;
+            default:   return mode;
+        }
+    }
+}
+
 mfxStatus VideoDECODEH264::SetSkipMode(mfxSkipMode mode)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -1873,47 +1893,48 @@ mfxStatus VideoDECODEH264::SetSkipMode(mfxSkipMode mode)
     if (!m_isInit)
         return MFX_ERR_NOT_INITIALIZED;
 
-    if (mode == 0x22)
-    {
-        m_pH264VideoDecoder->PermanentDisableDeblocking(true);
-        return MFX_ERR_NONE;
-    }
-
-    if (mode == 0x23)
-    {
-#if defined MFX_VA_WIN
-        UMC::VideoAccelerator *va;
-        m_core->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
-        if (va)
-            va->SetStatusReportUsing(false);
-#endif
-        return MFX_ERR_NONE;
-    }
+    int const pmode =
+        impl::check_private_mode(mode);
 
     Ipp32s test_num = 0;
     m_pH264VideoDecoder->ChangeVideoDecodingSpeed(test_num);
 
     Ipp32s num = 0;
-
-    switch(mode)
+    switch (pmode)
     {
-    case MFX_SKIPMODE_NOSKIP:
-        num = -10;
-        break;
-    case MFX_SKIPMODE_MORE:
-        num = 1;
-        break;
-    case MFX_SKIPMODE_LESS:
-        num = -1;
-        break;
+        case MFX_SKIPMODE_NOSKIP:
+            num = -10;
+            break;
 
-    default:
-        return MFX_ERR_UNSUPPORTED;
+        case MFX_SKIPMODE_MORE:
+            num = 1;
+            break;
+
+        case MFX_SKIPMODE_LESS:
+            num = -1;
+            break;
+
+        case impl::MFX_SKIPMODE_NODEBLOCK:
+            m_pH264VideoDecoder->PermanentDisableDeblocking(true);
+            return MFX_ERR_NONE;
+
+        case impl::MFX_SKIPMODE_NOSTATUSREPORT:
+#if defined MFX_VA_WIN
+            UMC::VideoAccelerator *va;
+            m_core->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
+            if (va)
+                va->SetStatusReportUsing(false);
+#endif
+            return MFX_ERR_NONE;
+
+        default:
+            return MFX_ERR_UNSUPPORTED;
     }
 
     m_pH264VideoDecoder->ChangeVideoDecodingSpeed(num);
 
-    return test_num == num ? MFX_WRN_VALUE_NOT_CHANGED : MFX_ERR_NONE;
+    return
+        test_num == num ? MFX_WRN_VALUE_NOT_CHANGED : MFX_ERR_NONE;
 }
 
 bool VideoDECODEH264::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * oldPar, eMFXHWType type)

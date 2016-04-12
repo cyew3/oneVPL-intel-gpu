@@ -2978,12 +2978,6 @@ void _GetBlockCoeffs_CAVLC(Ipp32u ** const & ppBitStream,
     /* When NumTrOnes is less than 3, need to add 1 to level of first coeff */
     Ipp32s uFirstAdjust = ((sNumTrailingOnes < 3) ? 1 : 0);
 
-    //if (suffixLength < 6)
-    {
-        if (uCoeffLevel > vlc_inc[suffixLength])
-            suffixLength++;
-    }
-
     Ipp32s NumZeros = -1;
     for (Ipp32s w = 0; !w; NumZeros++)
     {

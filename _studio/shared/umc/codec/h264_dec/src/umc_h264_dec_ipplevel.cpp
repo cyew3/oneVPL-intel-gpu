@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -514,9 +514,6 @@ IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStrea
 
         if (minNumTrailingOnes > 4)
             minNumTrailingOnes = 4;
-
-        if (minNumCoeff > 17)
-            minNumCoeff  = 17;
 
         for (j = 0, i = 0; i <= targetCoeffTokenIdx; j++)
         {
