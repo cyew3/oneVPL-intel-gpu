@@ -1994,7 +1994,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         {
             if(pParams->VideoSignalInfo[refIdx-1].TransferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)
             {
-                m_pipelineParam[refIdx].surface_color_standard = (MFX_TRANSFERMATRIX_BT709 == pParams->VideoSignalInfo[refIdx-1].TransferMatrix ? VAProcColorStandardBT709 : VAProcColorStandardBT601);
+                m_pipelineParam[refIdx].surface_color_standard = (MFX_TRANSFERMATRIX_BT709 == pParams->VideoSignalInfo[refIdx-1].TransferMatrix) ? VAProcColorStandardBT709 : VAProcColorStandardBT601;
             }
 
             if(pParams->VideoSignalInfo[refIdx-1].NominalRange != MFX_NOMINALRANGE_UNKNOWN)
@@ -2133,6 +2133,17 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
             //    uOutputIndex = 0;
             //if (uInputIndex > 2)
             //    uInputIndex = 0;
+
+            switch (pParams->targetSurface.frameInfo.FourCC)
+            {
+            case MFX_FOURCC_RGB4:
+                m_pipelineParamComp[uBeginPictureCounter].surface_color_standard = VAProcColorStandardNone;
+                break;
+            case MFX_FOURCC_NV12:
+            default:
+                m_pipelineParamComp[uBeginPictureCounter].surface_color_standard = (MFX_TRANSFERMATRIX_BT709 == pParams->VideoSignalInfoOut.TransferMatrix) ? VAProcColorStandardBT709 : VAProcColorStandardBT601;
+                break;
+            }
 
             vaSts = vaCreateBuffer(m_vaDisplay,
                                 m_vaContextVPP,
