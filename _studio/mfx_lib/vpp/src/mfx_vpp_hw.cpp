@@ -1681,6 +1681,11 @@ mfxStatus  VideoVPPHW::Init(
     caps = m_ddi->GetCaps();
 
     sts = ValidateParams(&m_params, &caps, m_pCore);
+    if( MFX_WRN_FILTER_SKIPPED == sts )
+    {
+        bIsFilterSkipped = true;
+        sts = MFX_ERR_NONE;
+    }
     MFX_CHECK_STS(sts);
 
     m_config.m_IOPattern = 0;
@@ -1886,6 +1891,10 @@ mfxStatus VideoVPPHW::QueryIOSurf(
     caps = vpp_ddi->GetCaps();
 
     sts = ValidateParams(par, &caps, core);
+    if( MFX_WRN_FILTER_SKIPPED == sts )
+    {
+        sts = MFX_ERR_NONE;
+    }
     MFX_CHECK_STS(sts);
 
     mfxExecuteParams executeParams;
@@ -3011,7 +3020,29 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
         } // switch
     }
 
-    /* 2. Check unsupported filters on RGB */
+    /* 2. Check size */
+    if (par->vpp.In.Width > caps->uMaxWidth  || par->vpp.In.Height  > caps->uMaxHeight ||
+        par->vpp.Out.Width > caps->uMaxWidth || par->vpp.Out.Height > caps->uMaxHeight)
+    {
+        sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
+    }
+
+    /* 3. Check fourcc */
+    if ( !(caps->mFormatSupport[par->vpp.In.FourCC] & MFX_FORMAT_SUPPORT_INPUT) || !(caps->mFormatSupport[par->vpp.Out.FourCC] & MFX_FORMAT_SUPPORT_OUTPUT) )
+        sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
+
+    /* 4. p010 should be shifted (msdn) */
+    if (MFX_FOURCC_P010 == par->vpp.In.FourCC && 0 == par->vpp.In.Shift)
+        sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
+
+    if (MFX_FOURCC_P010 == par->vpp.Out.FourCC && 0 == par->vpp.Out.Shift)
+        sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
+
+    /* 4. HSD 8159506 */
+    if (MFX_FOURCC_YV12 == par->vpp.In.FourCC && MFX_HW_BDW < core->GetHWType() && (par->vpp.In.Width > 6144 || par->vpp.In.Height > 6144))
+        sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
+
+    /* 5. Check unsupported filters on RGB */
     if( par->vpp.In.FourCC == MFX_FOURCC_RGB4)
     {
         std::vector<mfxU32> pipelineList;
@@ -3035,28 +3066,6 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
             }
         }
     }
-
-    /* 3. Check size */
-    if (par->vpp.In.Width > caps->uMaxWidth  || par->vpp.In.Height  > caps->uMaxHeight ||
-        par->vpp.Out.Width > caps->uMaxWidth || par->vpp.Out.Height > caps->uMaxHeight)
-    {
-        sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
-    }
-
-    /* 4. Check fourcc */
-    if ( !(caps->mFormatSupport[par->vpp.In.FourCC] & MFX_FORMAT_SUPPORT_INPUT) || !(caps->mFormatSupport[par->vpp.Out.FourCC] & MFX_FORMAT_SUPPORT_OUTPUT) )
-        sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
-
-    // p010 should be shifted (msdn)
-    if (MFX_FOURCC_P010 == par->vpp.In.FourCC && 0 == par->vpp.In.Shift)
-        sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
-
-    if (MFX_FOURCC_P010 == par->vpp.Out.FourCC && 0 == par->vpp.Out.Shift)
-        sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
-
-    // HSD 8159506
-    if (MFX_FOURCC_YV12 == par->vpp.In.FourCC && MFX_HW_BDW < core->GetHWType() && (par->vpp.In.Width > 6144 || par->vpp.In.Height > 6144))
-        sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
 
     return sts;
 } // mfxStatus VideoVPPHW::ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, bool bCorrectionEnable = false)
