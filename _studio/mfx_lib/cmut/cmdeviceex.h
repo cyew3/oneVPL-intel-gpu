@@ -51,6 +51,10 @@ namespace mdfut {
     if(MFX_HANDLE_VA_DISPLAY == mfxDeviceType)
         result = CreateCmDevice(pDevice,version, (VADisplay) mfxDeviceHdl);
 #endif
+    else
+    {
+        throw MDFUT_EXCEPTION("Cannot create CM device for unknown device type\n");
+    }
 
     CmProgram * pProgram = NULL;
     if(jit)
