@@ -1064,29 +1064,6 @@ void VideoDECODEVP9::SetOutputParams(mfxFrameSurface1 *surface_work)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
 
-bool MFX_VP9_Utility::IsNeedPartialAcceleration(mfxVideoParam *params)
-{
-    if (!params)
-        return false;
-
-    if (params->mfx.FrameInfo.Width > 4096 || params->mfx.FrameInfo.Height > 4096)
-        return true;
-
-    return false;
-}
-
-eMFXPlatform MFX_VP9_Utility::GetPlatform(VideoCORE *core, mfxVideoParam *params)
-{
-    eMFXPlatform platform = core->GetPlatformType();
-
-    if (params && IsNeedPartialAcceleration(params) && platform != MFX_PLATFORM_SOFTWARE)
-    {
-        return MFX_PLATFORM_SOFTWARE;
-    }
-
-    return platform;
-}
-
 mfxStatus MFX_VP9_Utility::Query(VideoCORE *core, mfxVideoParam *p_in, mfxVideoParam *p_out, eMFXHWType type)
 {
     MFX_CHECK_NULL_PTR1(p_out);
@@ -1207,12 +1184,6 @@ mfxStatus MFX_VP9_Utility::Query(VideoCORE *core, mfxVideoParam *p_in, mfxVideoP
                 sts = MFX_ERR_UNDEFINED_BEHAVIOR;
             }
         }
-
-        if (GetPlatform(core, p_out) != core->GetPlatformType() && sts == MFX_ERR_NONE)
-        {
-            VM_ASSERT(GetPlatform(core, p_out) == MFX_PLATFORM_SOFTWARE);
-            sts = MFX_WRN_PARTIAL_ACCELERATION;
-        }
     }
     else
     {
@@ -1255,7 +1226,7 @@ mfxStatus MFX_VP9_Utility::Query(VideoCORE *core, mfxVideoParam *p_in, mfxVideoP
     return sts;
 }
 
-bool MFX_VP9_Utility::CheckVideoParam(mfxVideoParam *p_in, eMFXHWType )
+bool MFX_VP9_Utility::CheckVideoParam(mfxVideoParam *p_in, eMFXPlatform platform)
 {
     if (!p_in)
         return false;
@@ -1266,26 +1237,12 @@ bool MFX_VP9_Utility::CheckVideoParam(mfxVideoParam *p_in, eMFXHWType )
     if (MFX_CODEC_VP9 != p_in->mfx.CodecId)
         return false;
 
-    if (p_in->mfx.FrameInfo.Width > 4096 || (p_in->mfx.FrameInfo.Width % 16))
-        return false;
+    if (platform == MFX_PLATFORM_SOFTWARE)
+        if (p_in->mfx.FrameInfo.Width > 4096 || p_in->mfx.FrameInfo.Height > 4096)
+            return false;
 
-    if (p_in->mfx.FrameInfo.Height > 4096 || (p_in->mfx.FrameInfo.Height % 16))
+    if (p_in->mfx.FrameInfo.Height % 16 || p_in->mfx.FrameInfo.Width % 16)
         return false;
-
-#if 0
-    // ignore Crop paramsameters at Init/Reset stage
-    if (in->mfx.FrameInfo.CropX > in->mfx.FrameInfo.Width)
-        return false;
-
-    if (in->mfx.FrameInfo.CropY > in->mfx.FrameInfo.Height)
-        return false;
-
-    if (in->mfx.FrameInfo.CropX + in->mfx.FrameInfo.CropW > in->mfx.FrameInfo.Width)
-        return false;
-
-    if (in->mfx.FrameInfo.CropY + in->mfx.FrameInfo.CropH > in->mfx.FrameInfo.Height)
-        return false;
-#endif
 
     if (p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 &&
         p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_P010)
@@ -1474,12 +1431,8 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVi
 
     params->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 
-    if (GetPlatform(core, params) != MFX_PLATFORM_SOFTWARE)
-    {
-        if (params->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 ||
-            params->mfx.FrameInfo.FourCC == MFX_FOURCC_P210)
-                params->mfx.FrameInfo.Shift = 1;
-    }
+    if (core->GetPlatformType() == MFX_PLATFORM_HARDWARE && params->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+        params->mfx.FrameInfo.Shift = 1;
 
     return MFX_ERR_NONE;
 }

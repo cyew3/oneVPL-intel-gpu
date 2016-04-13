@@ -98,7 +98,7 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
     UMC::Status umcSts   = UMC::UMC_OK;
     eMFXHWType type = m_core->GetHWType();
 
-    m_platform = MFX_VP9_Utility::GetPlatform(m_core, par);
+    m_platform = m_core->GetPlatformType();
 
     if (MFX_ERR_NONE > CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type))
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -106,7 +106,7 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
     if (!CheckHardwareSupport(m_core, par))
         return MFX_ERR_UNSUPPORTED;
 
-    if (!MFX_VP9_Utility::CheckVideoParam(par, type))
+    if (!MFX_VP9_Utility::CheckVideoParam(par, m_platform))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
     m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D());
@@ -179,7 +179,7 @@ mfxStatus VideoDECODEVP9_HW::Reset(mfxVideoParam *par)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    if (!MFX_VP9_Utility::CheckVideoParam(par, type))
+    if (!MFX_VP9_Utility::CheckVideoParam(par, m_core->GetPlatformType()))
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -364,14 +364,6 @@ mfxStatus VideoDECODEVP9_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
 
     MFX_CHECK_NULL_PTR3(p_core, p_video_param, p_request);
 
-    eMFXPlatform platform = MFX_VP9_Utility::GetPlatform(p_core, p_video_param);
-
-    eMFXHWType type = MFX_HW_UNKNOWN;
-    if (platform == MFX_PLATFORM_HARDWARE)
-    {
-        type = p_core->GetHWType();
-    }
-
     mfxVideoParam p_params = *p_video_param;
 
     if (!(p_params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(p_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
@@ -392,7 +384,7 @@ mfxStatus VideoDECODEVP9_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
     }
     else
     {
-        sts = QueryIOSurfInternal(platform, p_video_param, p_request);
+        sts = QueryIOSurfInternal(p_core->GetPlatformType(), p_video_param, p_request);
     }
 
     if (!CheckHardwareSupport(p_core, p_video_param))

@@ -144,15 +144,10 @@ class VideoDECODEVP9: public VideoDECODE
 class MFX_VP9_Utility
 {
 public:
-
-    static eMFXPlatform GetPlatform(VideoCORE *pCore, mfxVideoParam *pPar);
     static mfxStatus Query(VideoCORE *pCore, mfxVideoParam *pIn, mfxVideoParam *pOut, eMFXHWType type);
-    static bool CheckVideoParam(mfxVideoParam *pIn, eMFXHWType type);
+    static bool CheckVideoParam(mfxVideoParam *pIn, eMFXPlatform platform);
     static mfxStatus DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs, mfxVideoParam *params);
 
-private:
-
-    static bool IsNeedPartialAcceleration(mfxVideoParam * pPar);
 };
 
 #endif // #if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
