@@ -1028,7 +1028,7 @@ bool TaskBroker::GetNextSliceToDeblocking(H264DecoderFrameInfo * info, H264Task 
         {
             H264Slice *pSlice = info->GetSlice(i);
 
-            if (pSlice->m_bDeblocked)
+            if (pSlice && pSlice->m_bDeblocked)
                 continue;
 
             bNothingToDo = false;
