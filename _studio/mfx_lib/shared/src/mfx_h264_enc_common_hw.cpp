@@ -2079,7 +2079,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             extDdi->LookAheadDependency = 0;
             changed = true;
         }
-        if (par.AsyncDepth > 1)
+        if (par.AsyncDepth > 1 && par.mfx.LowPower != MFX_CODINGOPTION_ON)
         {
             par.AsyncDepth  = 1;
             changed = true;

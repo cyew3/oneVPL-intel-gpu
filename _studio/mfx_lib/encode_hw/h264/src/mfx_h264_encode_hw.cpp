@@ -1229,9 +1229,12 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
     mfxExtCodingOption2 const * extOpt2Old = GetExtBuffer(m_video);
     mfxExtCodingOption3 const * extOpt3New = GetExtBuffer(newPar);
 
-    MFX_CHECK((extOpt2New->MaxSliceSize != 0) ==
-              (extOpt2Old->MaxSliceSize != 0),
-              MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    if(!IsOn(m_video.mfx.LowPower)) 
+    {
+        MFX_CHECK((extOpt2New->MaxSliceSize != 0) ==
+                  (extOpt2Old->MaxSliceSize != 0),
+                  MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    }
 
 
     // check if IDR required after change of encoding parameters
