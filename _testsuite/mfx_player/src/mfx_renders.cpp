@@ -486,25 +486,29 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
                 crop_x >>= 1;
                 crop_y >>= isHalfHeight;
 
-                mfxI32 height = isHalfHeight ? ((pInfo->CropH + 1) >> 1) : pInfo->CropH;
-
+                mfxI32 height = 0;
+                if (isHalfHeight)
+                    height = m_params.VpxDec16bFormat ? (pInfo->CropH + 1)/2 : pInfo->CropH/2; // For VP9 if resolution is odd, chroma on edges will be dumped, otherwise it is cut
+                else
+                    height = pInfo->CropH;
+                mfxI32 width = m_params.VpxDec16bFormat ? (pInfo->CropW + 1)/2 : pInfo->CropW/2; // For VP9 if resolution is odd, chroma on edges will be dumped, otherwise it is cut
                 m_Current.m_comp = VM_STRING('U');
                 for (i = 0; i < height; i++)
                 {
                     m_Current.m_pixY = i;
                     if (m_params.VpxDec16bFormat)
-                        XOR31((mfxU16 *)(pData->U + (crop_y * pitch/2 + crop_x) + i*pitch/2), pInfo->CropW/2);
+                        XOR31((mfxU16 *)(pData->U + (crop_y * pitch/2 + crop_x) + i*pitch/2), width);
 
-                    WRITE(pData->U + (crop_y * pitch/2 + crop_x) + i*pitch/2, pInfo->CropW);
+                    WRITE(pData->U + (crop_y * pitch/2 + crop_x) + i*pitch/2, width*2);
                 }
                 m_Current.m_comp = VM_STRING('V');
                 for (i = 0; i < height; i++)
                 {
                     m_Current.m_pixY = i;
                     if (m_params.VpxDec16bFormat)
-                        XOR31((mfxU16 *)(pData->V + (crop_y * pitch/2 + crop_x) + i*pitch/2), pInfo->CropW/2);
+                        XOR31((mfxU16 *)(pData->V + (crop_y * pitch/2 + crop_x) + i*pitch/2), width);
 
-                    WRITE(pData->V + (crop_y * pitch/2 + crop_x) + i*pitch/2, pInfo->CropW);
+                    WRITE(pData->V + (crop_y * pitch/2 + crop_x) + i*pitch/2, width*2);
                 }
             }
             break;
