@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -381,6 +381,12 @@ bool MFX_VP8_Utility::CheckVideoParam(mfxVideoParam *p_in, eMFXHWType )
         return false;
 
     if ((p_in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && (p_in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) && (p_in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
+        return false;
+
+    if (p_in->mfx.CodecProfile > MFX_PROFILE_VP8_3)
+        return false;
+
+    if (p_in->mfx.CodecLevel != MFX_LEVEL_UNKNOWN)
         return false;
 
     return true;
