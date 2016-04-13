@@ -2057,10 +2057,7 @@ mfxStatus CTranscodingPipeline::AddLaStreams(mfxU16 width, mfxU16 height)
     if (pInParams->nDstWidth)
     {
         m_mfxVppParams.vpp.Out.CropW = pInParams->nDstWidth;
-        // WA for HEVCe HW. It requires 32 bit alignment so far.
-        // With others codecs MSDK_ALIGN16 macro can be used.
-        m_mfxVppParams.vpp.Out.Width     = MSDK_ALIGN32(pInParams->nDstWidth);
-        //m_mfxVppParams.vpp.Out.Width     = MSDK_ALIGN16(pInParams->nDstWidth);
+        m_mfxVppParams.vpp.Out.Width     = MSDK_ALIGN16(pInParams->nDstWidth);
     }
 
     // Framerate conversion
@@ -2072,11 +2069,8 @@ mfxStatus CTranscodingPipeline::AddLaStreams(mfxU16 width, mfxU16 height)
     if (pInParams->nDstHeight)
     {
         m_mfxVppParams.vpp.Out.CropH = pInParams->nDstHeight;
-        // WA for HEVCe HW. It requires 32 bit alignment so far.
-        // With others codecs commented out code (below) can be used.
-        m_mfxVppParams.vpp.Out.Height = MSDK_ALIGN32(pInParams->nDstHeight);
-        // m_mfxVppParams.vpp.Out.Height    = (MFX_PICSTRUCT_PROGRESSIVE == m_mfxVppParams.vpp.Out.PicStruct) ?
-        //                                      MSDK_ALIGN16(pInParams->nDstHeight) : MSDK_ALIGN32(pInParams->nDstHeight);
+        m_mfxVppParams.vpp.Out.Height    = (MFX_PICSTRUCT_PROGRESSIVE == m_mfxVppParams.vpp.Out.PicStruct) ?
+                                             MSDK_ALIGN16(pInParams->nDstHeight) : MSDK_ALIGN32(pInParams->nDstHeight);
     }
 
 
