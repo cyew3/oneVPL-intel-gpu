@@ -84,6 +84,7 @@ bool VideoDECODEVP8_HW::CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p
 
 mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEVP8_HW::Init");
     mfxStatus sts = MFX_ERR_NONE;
 
     if (m_is_initialized)
@@ -256,6 +257,7 @@ mfxStatus VideoDECODEVP8_HW::Reset(mfxVideoParam *p_video_param)
 
 mfxStatus VideoDECODEVP8_HW::Close()
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEVP8_HW::Close");
     if(m_is_initialized == false)
         return MFX_ERR_NOT_INITIALIZED;
 
@@ -445,6 +447,7 @@ mfxStatus VideoDECODEVP8_HW::PreDecodeFrame(mfxBitstream *p_bs, mfxFrameSurface1
 
 mfxStatus VideoDECODEVP8_HW::ConstructFrame(mfxBitstream *p_in, mfxBitstream *p_out, VP8DecodeCommon::IVF_FRAME& frame)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoDECODEVP8_HW::ConstructFrame");
     MFX_CHECK_NULL_PTR1(p_out);
 
     if (p_in->DataLength == 0)
@@ -509,6 +512,7 @@ UMC::FrameMemID VideoDECODEVP8_HW::GetMemIdToUnlock()
 
 static mfxStatus MFX_CDECL VP8DECODERoutine(void *p_state, void *pp_param, mfxU32 thread_number, mfxU32)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VP8DECODERoutine");
     p_state; pp_param; thread_number;
     mfxStatus sts = MFX_ERR_NONE;
     VideoDECODEVP8_HW::VP8DECODERoutineData& data = *(VideoDECODEVP8_HW::VP8DECODERoutineData*)p_state;
@@ -546,7 +550,7 @@ static mfxStatus VP8CompleteProc(void *, void *pp_param, mfxStatus)
 
 mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 *p_surface_work, mfxFrameSurface1 **pp_surface_out, MFX_ENTRY_POINT * p_entry_point)
 {
-
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoDECODEVP8_HW::DecodeFrameCheck");
     mfxStatus sts = MFX_ERR_NONE;
 
     if(m_is_initialized == false)
@@ -1003,7 +1007,7 @@ void VideoDECODEVP8_HW::DecodeInitDequantization(MFX_VP8_BoolDecoder &dec)
 
 mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 {
-
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoDECODEVP8_HW::DecodeFrameHeader");
     using namespace VP8Defs;
 
     mfxU8* data_in     = 0;
