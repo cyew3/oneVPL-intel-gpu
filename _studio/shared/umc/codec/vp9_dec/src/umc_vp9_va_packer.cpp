@@ -264,23 +264,24 @@ void PackerMS::PackAU(VP9Bitstream* bs, VP9DecoderFrame const* info)
     Ipp32u length;
     bs->GetOrg(&data, &length);
 
-    Ipp32u const offset =
-        static_cast<Ipp32u>(bs->BytesDecoded());
+    Ipp32u const offset = static_cast<Ipp32u>(bs->BytesDecoded());
     data += offset;
     length -= offset;
 
-    USHORT chopping = 0;
+    UMC::UMCVACompBuffer* compBufSlice = NULL;
+    DXVA_Slice_VPx_Short* slice =
+        reinterpret_cast<DXVA_Slice_VPx_Short*>(m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &compBufSlice));
+    if (!compBufSlice || compBufSlice->GetBufferSize() < sizeof(DXVA_Slice_VPx_Short))
+        throw vp9_exception(MFX_ERR_MEMORY_ALLOC);
+
+    compBufSlice->SetDataSize(sizeof(DXVA_Slice_VPx_Short));
+    memset(slice, 0, sizeof(DXVA_Slice_VPx_Short));
+    slice->BSNALunitDataLocation = 0;
+    slice->SliceBytesInBuffer = length;
+    slice->wBadSliceChopping = 0;
+
     do
     {
-        UMC::UMCVACompBuffer* compBufSlice = NULL;
-        DXVA_Slice_VPx_Short* slice =
-            reinterpret_cast<DXVA_Slice_VPx_Short*>(m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &compBufSlice));
-        if (!compBufSlice || compBufSlice->GetBufferSize() < sizeof(DXVA_Slice_VPx_Short))
-            throw vp9_exception(MFX_ERR_MEMORY_ALLOC);
-
-        compBufSlice->SetDataSize(sizeof(DXVA_Slice_VPx_Short));
-        memset(slice, 0, sizeof(DXVA_Slice_VPx_Short));
-
         UMC::UMCVACompBuffer* compBufBs = NULL;
         mfxU8* bistreamData = 
             reinterpret_cast<mfxU8 *>(m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &compBufBs));
@@ -294,21 +295,15 @@ void PackerMS::PackAU(VP9Bitstream* bs, VP9DecoderFrame const* info)
         mfxU32 const padding = 
             align_value<Ipp32s>(lenght2, 128) - lenght2;
 
-        slice->BSNALunitDataLocation = 0;
-        slice->SliceBytesInBuffer = lenght2 + padding;
-        slice->wBadSliceChopping = chopping | (lenght2 < length);
-
         mfx_memcpy(bistreamData, lenght2, data, lenght2);
 
         bistreamData += lenght2;
         memset(bistreamData, 0, padding);
 
-        compBufBs->SetDataSize(slice->SliceBytesInBuffer);
+        compBufBs->SetDataSize(lenght2);
 
         length -= lenght2;
         data += lenght2;
-        if (!chopping)
-            chopping = 2;
 
         if (length)
         {
