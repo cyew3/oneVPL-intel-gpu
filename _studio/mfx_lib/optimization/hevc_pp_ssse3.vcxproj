@@ -189,6 +189,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>false</TreatWarningAsError>
       <AdditionalOptions>$(CPPFLAGS) /debug:inline-debug-info %(AdditionalOptions)</AdditionalOptions>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -233,6 +234,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>false</TreatWarningAsError>
       <AdditionalOptions>$(CPPFLAGS) /debug:inline-debug-info %(AdditionalOptions)</AdditionalOptions>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -275,6 +277,7 @@
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FunctionLevelLinking>false</FunctionLevelLinking>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -320,6 +323,7 @@
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FunctionLevelLinking>false</FunctionLevelLinking>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>

@@ -167,6 +167,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>false</TreatWarningAsError>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -210,6 +211,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>false</TreatWarningAsError>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -253,6 +255,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <FunctionLevelLinking>false</FunctionLevelLinking>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -297,6 +300,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <FunctionLevelLinking>false</FunctionLevelLinking>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>

@@ -236,6 +236,7 @@
       <WarningLevel>Level3</WarningLevel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/debug:inline-debug-info %(AdditionalOptions)</AdditionalOptions>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -274,6 +275,7 @@
       <WarningLevel>Level3</WarningLevel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/debug:inline-debug-info %(AdditionalOptions)</AdditionalOptions>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -300,6 +302,7 @@
       <WarningLevel>Level3</WarningLevel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/debug:inline-debug-info %(AdditionalOptions)</AdditionalOptions>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -332,6 +335,7 @@
       <WarningLevel>Level3</WarningLevel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/debug:inline-debug-info %(AdditionalOptions)</AdditionalOptions>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>
