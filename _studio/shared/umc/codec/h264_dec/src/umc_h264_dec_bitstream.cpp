@@ -3137,7 +3137,7 @@ IppStatus ownippiDecodeCAVLCCoeffs_H264_1u16s (Ipp32u **ppBitStream,
                                                      const Ipp32s *pScanMatrix) /* buffer to return up to 16 */
 
 {
-    Ipp16s        CoeffBuf[16];    /* Temp buffer to hold coeffs read from bitstream*/
+    Ipp16s        CoeffBuf[16] = {};    /* Temp buffer to hold coeffs read from bitstream*/
     Ipp32u        uVLCIndex        = 2;
     Ipp32u        uCoeffIndex        = 0;
     Ipp32s        sTotalZeros        = 0;
@@ -3481,7 +3481,7 @@ IppStatus MyippiDecodeCAVLCCoeffs_H264_1u16s (Ipp32u ** const ppBitStream,
                                                      scanIdxStart,
                                                      coeffLimit + scanIdxStart - 1);
 #else
-    Ipp32s        CoeffBuf[16];    /* Temp buffer to hold coeffs read from bitstream*/
+    Ipp32s        CoeffBuf[16] = {};    /* Temp buffer to hold coeffs read from bitstream*/
     Ipp32s        uVLCIndex        = 2;
     Ipp32s        sTotalZeros        = 0;
     Ipp32s        sRunBefore;
@@ -4241,7 +4241,7 @@ IppStatus MyippiDecodeCAVLCChromaDcCoeffs_H264_1u16s(Ipp32u **ppBitStream,
 #endif
     {
 
-    Ipp32s        CoeffBuf[16];        /* Temp buffer to hold coeffs read from bitstream*/
+    Ipp32s        CoeffBuf[16] = {};        /* Temp buffer to hold coeffs read from bitstream*/
     Ipp32u        TrOneSigns;            /* return sign bits (1==neg) in low 3 bits*/
     Ipp32u        uCoeffIndex            = 0;
     Ipp32s        sTotalZeros            = 0;
