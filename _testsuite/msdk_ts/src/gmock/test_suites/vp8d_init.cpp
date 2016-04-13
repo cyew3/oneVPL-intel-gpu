@@ -100,11 +100,11 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*22*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_VP8_1}}},
     {/*23*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_VP8_2}}},
     {/*24*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_VP8_3}}},
-    {/*25*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.mfx.CodecProfile, 5}}},
+    {/*25*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.mfx.CodecProfile, 5}}},
 
     // Codec levels
     {/*26*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.mfx.CodecLevel, 0}}},
-    {/*27*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.mfx.CodecLevel, 5}}},
+    {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.mfx.CodecLevel, 5}}},
 
     // Width/height
     {/*28*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 0}}},
