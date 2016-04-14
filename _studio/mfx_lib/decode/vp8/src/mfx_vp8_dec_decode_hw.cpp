@@ -329,7 +329,7 @@ mfxStatus VideoDECODEVP8_HW::QueryIOSurfInternal(eMFXPlatform, mfxVideoParam *p_
     {
         if(p_params->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
             p_request->Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE;
-        else return MFX_ERR_UNSUPPORTED;
+        else return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
     return MFX_ERR_NONE;
