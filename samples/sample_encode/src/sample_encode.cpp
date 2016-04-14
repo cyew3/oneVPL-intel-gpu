@@ -749,7 +749,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         pParams->nDstWidth != pParams->nWidth ||
         pParams->nDstHeight != pParams->nHeight ||
         MVC_ENABLED & pParams->MVC_flags ||
-        pParams->memType & D3D11_MEMORY ||
         pParams->nRateControlMethod == MFX_RATECONTROL_LA))
     {
         PrintHelp(strInput[0], MSDK_STRING("Some of the command line options are not supported with rotation plugin!"));
