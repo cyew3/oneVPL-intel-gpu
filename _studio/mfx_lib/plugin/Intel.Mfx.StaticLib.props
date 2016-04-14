@@ -5,9 +5,11 @@
   <PropertyGroup>
     <WindowsSdk8Path Condition="Exists('$(MINIDDK_ROOT)')">$(MINIDDK_ROOT)</WindowsSdk8Path>
     <WindowsSdk8Path Condition="!Exists('$(MINIDDK_ROOT)')">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v8.1@InstallationFolder)</WindowsSdk8Path>
+
+    <Library_Miniddk_Version>$([MSBuild]::ValueOrDefault(`$(MINIDDK_VERSION)`, `winv6.3`))</Library_Miniddk_Version>
+    <IncludePath>$(WindowsSdk8Path)\Include\$(MINIDDK_VERSION)\um;$(WindowsSdk8Path)\Include\$(MINIDDK_VERSION)\shared;$(IncludePath)</IncludePath>
     <OutDir>$(MfxBuildDir)win_$(Platform)\lib\</OutDir>
     <IntDir>$(MfxBuildDir)win_$(Platform)\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(WindowsSdk8Path)\Include\um;$(WindowsSdk8Path)\Include\shared;$(IncludePath)</IncludePath>    
   </PropertyGroup>
   <Target Name="Win8SdkCheck" BeforeTargets="Build">
     <Error Text=" Unable to find Windows SDK 8.1 by both MINIDDK_ROOT and registry lookup. Please check if it installed correctly or reinstall it from http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx."
@@ -17,10 +19,10 @@
     <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='Win32'">
-    <LibraryPath>$(WindowsSdk8Path)\Lib\win8\um\x86;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(WindowsSdk8Path)\Lib\$(Library_Miniddk_Version)\um\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='x64'">
-    <LibraryPath>$(WindowsSdk8Path)\Lib\win8\um\x64;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(WindowsSdk8Path)\Lib\$(Library_Miniddk_Version)\um\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Debug' or '$(Configuration)'=='debug' or '$(Configuration)'=='Debug_Intel' or '$(Configuration)'=='Debug_MD' or '$(Configuration)'=='Debug_THM' ">
     <TargetName>$(ProjectName)_d</TargetName>
