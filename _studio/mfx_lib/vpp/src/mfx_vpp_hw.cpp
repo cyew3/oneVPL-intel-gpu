@@ -3046,8 +3046,8 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
     if( par->vpp.In.FourCC == MFX_FOURCC_RGB4)
     {
         std::vector<mfxU32> pipelineList;
-        sts = GetPipelineList( par, pipelineList, true );
-        MFX_CHECK_STS(sts);
+        mfxStatus internalSts = GetPipelineList( par, pipelineList, true );
+        MFX_CHECK_STS(internalSts);
 
         mfxU32  len   = (mfxU32)pipelineList.size();
         mfxU32* pList = (len > 0) ? (mfxU32*)&pipelineList[0] : NULL;
