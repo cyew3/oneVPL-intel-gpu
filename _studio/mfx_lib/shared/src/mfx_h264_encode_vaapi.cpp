@@ -891,6 +891,7 @@ VAAPIEncoder::VAAPIEncoder()
 , m_roiBufferId(VA_INVALID_ID)
 , m_ppsBufferId(VA_INVALID_ID)
 , m_mbqpBufferId(VA_INVALID_ID)
+, m_triggerGpuHangBufferId(VA_INVALID_ID)
 , m_mbNoSkipBufferId(VA_INVALID_ID)
 , m_packedAudHeaderBufferId(VA_INVALID_ID)
 , m_packedAudBufferId(VA_INVALID_ID)
@@ -1631,6 +1632,7 @@ mfxStatus VAAPIEncoder::Execute(
     mfxU16      buffersCount = 0;
     mfxU32      packedDataSize = 0;
     VAStatus    vaSts;
+    unsigned int trigger_hang = 1;
     mfxU8 skipFlag  = task.SkipFlag();
     mfxU16 skipMode = m_skipMode;
     mfxExtCodingOption2     const * ctrlOpt2      = GetExtBuffer(task.m_ctrl);
@@ -2423,6 +2425,21 @@ mfxStatus VAAPIEncoder::Execute(
         }
     }
 
+    if ((mfxExtIntGPUHang*)GetExtBuffer(task.m_ctrl))
+    {
+        MFX_DESTROY_VABUFFER(m_triggerGpuHangBufferId, m_vaDisplay);
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                               m_vaContextEncode,
+                               VATriggerCodecHangBufferType,
+                               sizeof(trigger_hang),
+                               1,
+                               &trigger_hang,
+                               &m_triggerGpuHangBufferId);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        configBuffers[buffersCount++] = m_triggerGpuHangBufferId;
+    }
+
     if (ctrlOpt2)
     {
         MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetPrivateParams(m_videoParam, m_vaDisplay,
@@ -2901,6 +2918,7 @@ mfxStatus VAAPIEncoder::Destroy()
     MFX_DESTROY_VABUFFER(m_roiBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_ppsBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_mbqpBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_triggerGpuHangBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_mbNoSkipBufferId, m_vaDisplay);
     for( mfxU32 i = 0; i < m_slice.size(); i++ )
     {

@@ -1406,7 +1406,8 @@ bool MfxHwH264Encode::IsRunTimeOnlyExtBuffer(mfxU32 id)
         || id == MFX_EXTBUFF_ENCODED_FRAME_INFO
         || id == MFX_EXTBUFF_MBQP
         || id == MFX_EXTBUFF_MB_DISABLE_SKIP_MAP
-        || id == MFX_EXTBUFF_AVC_ENCODE_CTRL;
+        || id == MFX_EXTBUFF_AVC_ENCODE_CTRL
+        || id == MFX_EXTBUFF_GPU_HANG;
 }
 
 bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
@@ -1425,6 +1426,7 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_ENCODER_WIDI_USAGE
         || id == MFX_EXTBUFF_AVC_ENCODE_CTRL
         || id == MFX_EXTBUFF_PRED_WEIGHT_TABLE
+        || id == MFX_EXTBUFF_GPU_HANG
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
         || id == MFX_EXTBUFF_FEI_ENC_CTRL
         || id == MFX_EXTBUFF_FEI_ENC_MB

@@ -223,6 +223,7 @@ namespace MfxHwH264Encode
         VABufferID m_roiBufferId;
         VABufferID m_ppsBufferId;
         VABufferID m_mbqpBufferId;
+        VABufferID m_triggerGpuHangBufferId;
         VABufferID m_mbNoSkipBufferId;
         std::vector<VABufferID> m_sliceBufferId;
 
@@ -264,7 +265,7 @@ namespace MfxHwH264Encode
 
         std::vector<VAEncROI> m_arrayVAEncROI;
 
-        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 26 + 5; //added FEI buffers
+        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 27 + 5; //added FEI buffers
 
         UMC::Mutex m_guard;
         HeaderPacker m_headerPacker;
