@@ -15,11 +15,14 @@
 namespace avce_gpu_hang
 {
 
-int test(mfxU32 codecId)
+int test(mfxU32 codecId, mfxU32 version)
 {
     TS_START;
 
-    MSDK_SLEEP(2000);
+    if (version == 0)
+    {
+        MSDK_SLEEP(2000);
+    }
 
     tsVideoEncoder enc(codecId);
     tsNoiseFiller f;
@@ -43,9 +46,13 @@ int test(mfxU32 codecId)
     enc.m_request.NumFrameSuggested ++;
     enc.AllocSurfaces();
 
-    //fill all surfaces before encoding to reduce time between EncodeFrameAsync()
-    //for (mfxU32 i = 0; ((tsSurfaceProcessor*)&f)->ProcessSurface(enc.GetSurface(i), enc.m_pFrameAllocator); i++);
-    enc.m_filler = &f;
+
+    if (version == 0)
+    {
+        //fill all surfaces before encoding to reduce time between EncodeFrameAsync()
+        //for (mfxU32 i = 0; ((tsSurfaceProcessor*)&f)->ProcessSurface(enc.GetSurface(i), enc.m_pFrameAllocator); i++);
+        enc.m_filler = &f;
+    }
 
     // try to cause hang several times to compensate "echo 1 > /sys/kernel/debug/dri/0/i915_wedged" method instability
     for (mfxU16 j = 0; j < 50 && !hang_detected; j++)
@@ -54,7 +61,18 @@ int test(mfxU32 codecId)
         {
             if (enc.EncodeFrameAsync() == MFX_ERR_NONE)
             {
-                system("echo 1 > /sys/kernel/debug/dri/0/i915_wedged");
+                if (version == 0)
+                    system("echo 1 > /sys/kernel/debug/dri/0/i915_wedged");
+                else
+                {
+                    if (sp.size() == 2)
+                    {
+                        enc.m_ctrl.AddExtBuffer(MFX_MAKEFOURCC('H','A','N','G'), sizeof(mfxExtBuffer));
+                        enc.m_pCtrl = &enc.m_ctrl;
+                    }
+                    else enc.m_pCtrl = 0;
+                }
+
                 sp.push_back(*enc.m_pSyncPoint);
                 g_tsStatus.check();
             }
@@ -108,12 +126,19 @@ int test(mfxU32 codecId)
     return 0;
 }
 
-int AVCTest(unsigned int) { return test(MFX_CODEC_AVC); }
-int MPEG2Test(unsigned int) { return test(MFX_CODEC_MPEG2); }
-int HEVCTest(unsigned int) { return test(MFX_CODEC_HEVC); }
+int AVCTest     (unsigned int) { return test(MFX_CODEC_AVC, 0); }
+int MPEG2Test   (unsigned int) { return test(MFX_CODEC_MPEG2, 0); }
+int HEVCTest    (unsigned int) { return test(MFX_CODEC_HEVC, 0); }
+int AVCTest1    (unsigned int) { return test(MFX_CODEC_AVC, 1); }
+int MPEG2Test1  (unsigned int) { return test(MFX_CODEC_MPEG2, 1); }
+int HEVCTest1   (unsigned int) { return test(MFX_CODEC_HEVC, 1); }
 
 // any% pass-rate is acceptable
 TS_REG_TEST_SUITE(avce_gpu_hang, AVCTest, 10);
 //TS_REG_TEST_SUITE(mpeg2e_gpu_hang, MPEG2Test, 1);
 TS_REG_TEST_SUITE(hevce_gpu_hang, HEVCTest, 10);
+
+TS_REG_TEST_SUITE(hevce_gpu_hang1, HEVCTest1, 1);
+TS_REG_TEST_SUITE(avce_gpu_hang1, AVCTest1, 1);
+TS_REG_TEST_SUITE(mpeg2e_gpu_hang1, MPEG2Test1, 1);
 }

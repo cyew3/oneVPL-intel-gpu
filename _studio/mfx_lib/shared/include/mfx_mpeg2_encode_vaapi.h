@@ -136,6 +136,7 @@ namespace MfxHwMpeg2Encode
         VABufferID                          m_packedUserDataParamsId;
         VABufferID                          m_packedUserDataId;
         VABufferID                          m_mbqpBufferId;
+        VABufferID                          m_triggerGpuHangBufferId;
         std::vector<VAEncQpBufferMPEG2>     m_mbqpDataBuffer;
 
 

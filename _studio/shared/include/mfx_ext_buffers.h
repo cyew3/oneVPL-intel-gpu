@@ -264,4 +264,9 @@ typedef struct {
 
 #endif // ADVANCED_REF
 
+#define MFX_EXTBUFF_GPU_HANG MFX_MAKEFOURCC('H','A','N','G')
+typedef struct {
+    mfxExtBuffer Header;
+} mfxExtIntGPUHang;
+
 #endif // __MFX_EXT_BUFFERS_H__

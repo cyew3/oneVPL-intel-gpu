@@ -123,6 +123,7 @@ FullEncode::FullEncode(VideoCORE *core, mfxStatus *sts)
     m_pBRC = 0;
     m_nCurrTask   = 0;
     m_pExtTasks    = 0;
+    m_runtimeErr = MFX_ERR_NONE;
 
     *sts = (core ? MFX_ERR_NONE : MFX_ERR_NULL_PTR);
 }
@@ -141,6 +142,8 @@ mfxStatus FullEncode::Init(mfxVideoParam *par)
 {
     mfxStatus sts  = MFX_ERR_NONE;
     mfxStatus sts1 = MFX_ERR_NONE;
+
+    m_runtimeErr = MFX_ERR_NONE;
 
     if (is_initialized())
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -340,6 +343,9 @@ mfxStatus FullEncode::EncodeFrameCheck(
     if(!is_initialized())
         return MFX_ERR_NOT_INITIALIZED;
 
+    if (m_runtimeErr)
+        return m_runtimeErr;
+
     return  m_pController->EncodeFrameCheck(ctrl,surface,bs,reordered_surface,pInternalParams);
 }
 mfxStatus FullEncode::CancelFrame(mfxEncodeCtrl * /*ctrl*/, mfxEncodeInternalParams * /*pInternalParams*/, mfxFrameSurface1 *surface, mfxBitstream * /*bs*/)
@@ -504,6 +510,10 @@ mfxStatus FullEncode::QueryFrame(sExtTask2 *pExtTask)
         pIntTask->m_Frames.ReleaseFrames(m_pCore);
         m_pController->FinishFrame(bs->DataLength - dataLen);
     }
+
+    if (sts < 0)
+        m_runtimeErr = sts;
+
     return sts;
 }
 

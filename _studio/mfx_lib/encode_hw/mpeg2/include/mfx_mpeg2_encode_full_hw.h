@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          HW MPEG2  encoder
@@ -129,6 +129,10 @@ namespace MPEG2EncoderHW
                  m_pExecuteBuffers->m_mbqp_data[0] = 0;
              }
              m_pExecuteBuffers->m_SkipFrame = (mfxU8)pIntTask->m_sEncodeInternalParams.SkipFrame;
+
+             m_pExecuteBuffers->m_bTriggerGpuHang =
+                     !!GetExtBuffer(pIntTask->m_sEncodeInternalParams.ExtParam,
+                                    pIntTask->m_sEncodeInternalParams.NumExtParam, MFX_EXTBUFF_GPU_HANG);
 
              mfxStatus sts = MFX_ERR_NONE;
              sts = SubmitFrame(&pIntTask->m_FrameParams, &pIntTask->m_Frames, pUserData, userDataLen, qp);
@@ -400,6 +404,7 @@ public:
         mfxU32                           m_nFrameTasks;
         mfxU32                           m_nCurrTask;
         UserDataBuffer                   m_UDBuff;
+        mfxStatus                        m_runtimeErr;
     };
 }
 

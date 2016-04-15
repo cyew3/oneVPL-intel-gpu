@@ -13,6 +13,7 @@
 
 #define VAAPI_DRIVER_VPG
 
+#define VATriggerCodecHangBufferType ((VABufferType)-16)
 // Misc parameter for encoder
 #define  VAEncMiscParameterTypePrivate     -2
 // encryption parameters for PAVP

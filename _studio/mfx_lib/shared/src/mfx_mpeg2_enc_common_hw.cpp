@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG2 encoder
@@ -260,6 +260,7 @@ mfxStatus ExecuteBuffers::Init(const mfxVideoParamEx_MPEG2* par, mfxU32 funcId, 
     memset(&m_sps,  0, sizeof(m_sps));
     memset(&m_pps,  0, sizeof(m_pps));
 
+    m_bTriggerGpuHang = false;
     m_bOutOfRangeMV = false;
     m_bErrMBType    = false;
     m_bUseRawFrames = par->bRawFrames;
@@ -619,7 +620,6 @@ mfxStatus ExecuteBuffers::InitPictureParameters(mfxFrameCUC* pCUC)
             m_RefFrameMemID[1]= pCUC->FrameSurface->Data[3]->MemId;        
         }    
     }
-    
 
     return MFX_ERR_NONE;
 

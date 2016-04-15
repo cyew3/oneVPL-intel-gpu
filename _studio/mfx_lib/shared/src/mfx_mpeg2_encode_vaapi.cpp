@@ -483,6 +483,7 @@ VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
     , m_packedUserDataParamsId(VA_INVALID_ID)
     , m_packedUserDataId(VA_INVALID_ID)
     , m_mbqpBufferId(VA_INVALID_ID)
+    , m_triggerGpuHangBufferId(VA_INVALID_ID)
     , m_vbvBufSize(0)
     , m_initFrameWidth(0)
     , m_initFrameHeight(0)
@@ -1310,10 +1311,11 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
     mfxStatus mfxSts;
     VAStatus vaSts;
 
-    const mfxU32            NumCompBuffer = 14;
+    const mfxU32            NumCompBuffer = 15;
     std::vector<VABufferID> configBuffers(NumCompBuffer, VA_INVALID_ID);
     
     mfxU16 buffersCount = 0;
+    unsigned int trigger_hang = 1;
 
     if (pExecuteBuffers->m_bAddSPS)
     {    
@@ -1437,6 +1439,22 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
             configBuffers[buffersCount++] = m_mbqpBufferId;
 
         pExecuteBuffers->m_mbqp_data[0] = 0;
+    }
+
+
+    if (pExecuteBuffers->m_bTriggerGpuHang)
+    {
+        MFX_DESTROY_VABUFFER(m_triggerGpuHangBufferId, m_vaDisplay);
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                               m_vaContextEncode,
+                               VATriggerCodecHangBufferType,
+                               sizeof(trigger_hang),
+                               1,
+                               &trigger_hang,
+                               &m_triggerGpuHangBufferId);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        configBuffers[buffersCount++] = m_triggerGpuHangBufferId;
     }
 
     //------------------------------------------------------------------
@@ -1649,6 +1667,7 @@ mfxStatus VAAPIEncoder::Close()
     MFX_DESTROY_VABUFFER(m_packedUserDataId, m_vaDisplay);
 
     MFX_DESTROY_VABUFFER(m_mbqpBufferId, m_vaDisplay);
+    MFX_DESTROY_VABUFFER(m_triggerGpuHangBufferId, m_vaDisplay);
 
     if (m_allocResponseMB.NumFrameActual != 0)
     {
@@ -1925,6 +1944,13 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
         bitstreamSize = codedBufferSegment->size;
         //pBitstream->DataLength = codedBufferSegment->size;
         //task.m_bsDataLength[fieldId] = codedBufferSegment->size;
+
+        if (codedBufferSegment->status & VA_CODED_BUF_STATUS_BAD_BITSTREAM)
+            sts = MFX_ERR_GPU_HANG;
+        else if (!codedBufferSegment->size || !codedBufferSegment->buf)
+            sts = MFX_ERR_DEVICE_FAILED;
+
+        MFX_CHECK_STS(sts);
 
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
