@@ -1887,7 +1887,7 @@ void HRD::Update(mfxU32 sizeInbits, const Task &pic)
         // (D-1)
         mfxU32 auCpbRemovalDelayMsb = 0;
 
-        if (!bufferingPeriodPic)
+        if (!bufferingPeriodPic && (pic.m_eo - m_prevBpEncOrder) != 1)
         {
             auCpbRemovalDelayMsb = ((mfxI32)auCpbRemovalDelayMinus1 <= m_prevAuCpbRemovalDelayMinus1)
                 ? m_prevAuCpbRemovalDelayMsb + m_maxCpbRemovalDelay
