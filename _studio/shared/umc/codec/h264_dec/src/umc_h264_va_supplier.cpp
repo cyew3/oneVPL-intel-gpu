@@ -28,6 +28,7 @@
 
 #include "mfx_umc_alloc_wrapper.h"
 #include "mfx_common_int.h"
+#include "mfx_ext_buffers.h"
 
 #include "mfxfei.h"
 
@@ -313,6 +314,11 @@ Status VATaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dim
 
         mfxExtBuffer* extbuf = 
             GetExtendedBuffer(surface->Data.ExtParam, surface->Data.NumExtParam, MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
+        if (extbuf)
+            frmData.SetAuxInfo(extbuf, extbuf->BufferSz, extbuf->BufferId);
+
+        extbuf = 
+            GetExtendedBuffer(surface->Data.ExtParam, surface->Data.NumExtParam, MFX_EXTBUFF_GPU_HANG);
         if (extbuf)
             frmData.SetAuxInfo(extbuf, extbuf->BufferSz, extbuf->BufferId);
     }

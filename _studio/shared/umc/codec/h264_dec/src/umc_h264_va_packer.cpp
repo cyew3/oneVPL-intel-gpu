@@ -28,6 +28,8 @@
 #include "umc_va_linux_protected.h"
 #include "umc_va_video_processing.h"
 #include "umc_va_fei.h"
+
+#include "mfx_ext_buffers.h"
 #endif
 
 #include "mfxfei.h"
@@ -2503,13 +2505,39 @@ void PackerVA::PackQmatrix(const H264ScalingPicParams * scaling)
 
 void PackerVA::BeginFrame(H264DecoderFrame* pFrame, Ipp32s field)
 {
+    FrameData* fd = pFrame->GetFrameData();
+    VM_ASSERT(fd);
+
+    FrameData::FrameAuxInfo* aux = fd->GetAuxInfo(MFX_EXTBUFF_GPU_HANG);
+    if (aux)
+    {
+        VM_ASSERT(aux->type == MFX_EXTBUFF_GPU_HANG);
+
+        mfxExtIntGPUHang* ht = reinterpret_cast<mfxExtIntGPUHang*>(aux->ptr);
+        VM_ASSERT(ht && "Buffer pointer should be valid here");
+        if (!ht)
+            throw h264_exception(UMC_ERR_FAILED);
+
+        //clear trigger to ensure GPU hang fired only once for this frame
+        fd->ClearAuxInfo(aux->type);
+
+        UMCVACompBuffer* buffer = NULL;
+        m_va->GetCompBuffer(VATriggerCodecHangBufferType, &buffer, sizeof(unsigned int));
+        if (buffer)
+        {
+            unsigned int* trigger =
+                reinterpret_cast<unsigned int*>(buffer->GetPtr());
+            if (!trigger)
+                throw h264_exception(UMC_ERR_FAILED);
+
+            *trigger = 1;
+        }
+    }
+
     if (!m_enableStreamOut)
         return;
 
-    FrameData const* fd = pFrame->GetFrameData();
-    VM_ASSERT(fd);
-
-    FrameData::FrameAuxInfo const* aux = fd->GetAuxInfo(MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
+    aux = fd->GetAuxInfo(MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
     if (aux)
     {
         VM_ASSERT(aux->type == MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
