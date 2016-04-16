@@ -787,24 +787,25 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
 
 #if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
-    if (!m_pdx11event && !m_hwTaskDone.handle)
     {
-        m_pdx11event = new DX11GlobalEvent(m_param.pCore);
-        m_hwTaskDone.handle = m_pdx11event->CreateBatchBufferEvent();
-
-        //back original sleep
-        if (m_hwTaskDone.handle)
-            m_zero_thread_wait = 15;
-        else
+        UMC::AutomaticUMCMutex guard(m_guard);
+        if (!m_pdx11event && !m_hwTaskDone.handle)
         {
-            delete m_pdx11event;
-            m_pdx11event = 0;
+            m_pdx11event = new DX11GlobalEvent(m_param.pCore);
+            m_hwTaskDone.handle = m_pdx11event->CreateBatchBufferEvent();
+
+            //back original sleep
+            if (m_hwTaskDone.handle)
+                m_zero_thread_wait = 15;
+            else
+            {
+                delete m_pdx11event;
+                m_pdx11event = 0;
+            }
+
+            if (m_param.flags != MFX_SINGLE_THREAD)
+                StartWakeUpThread();
         }
-
-        if (m_param.flags != MFX_SINGLE_THREAD)
-            StartWakeUpThread();
-
-
     }
 #endif
 #endif
