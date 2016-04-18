@@ -75,6 +75,14 @@ bool VideoDECODEVP8_HW::CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p
         return false;
     }
 
+    #elif defined(MFX_VA_LINUX)
+
+    // GUID is not used on Linux
+    if (p_core->IsGuidSupported(GUID(), p_video_param) != MFX_ERR_NONE)
+    {
+        return false;
+    }
+
     // todo : VA API alternative ?
     #endif
 
@@ -297,16 +305,10 @@ mfxStatus VideoDECODEVP8_HW::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVi
 
     eMFXHWType type = p_core->GetHWType();
 
-#ifdef MFX_VA_WIN
-
-    if (p_core->IsGuidSupported(sDXVA_Intel_ModeVP8_VLD, p_in) != MFX_ERR_NONE)
+    if (!CheckHardwareSupport(p_core, p_in))
     {
         return MFX_WRN_PARTIAL_ACCELERATION;
     }
-
-    // todo : VA API alternative?!
-
-#endif
 
     return MFX_VP8_Utility::Query(p_core, p_in, p_out, type);
 
@@ -374,15 +376,10 @@ mfxStatus VideoDECODEVP8_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
         sts = QueryIOSurfInternal(platform, p_video_param, p_request);
     }
 
-#ifdef MFX_VA_WIN
-
-    if (p_core->IsGuidSupported(sDXVA_Intel_ModeVP8_VLD, p_video_param) != MFX_ERR_NONE)
+    if (!CheckHardwareSupport(p_core, p_video_param))
     {
         return MFX_WRN_PARTIAL_ACCELERATION;
     }
-    // todo : VA API alternative ?
-
-#endif
 
     return sts;
 

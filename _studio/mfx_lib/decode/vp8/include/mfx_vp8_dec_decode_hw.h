@@ -198,7 +198,7 @@ private:
     void DecodeInitDequantization(MFX_VP8_BoolDecoder &);
     mfxStatus PackHeaders(mfxBitstream *p_bistream);
 
-    bool CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p_par);
+    static bool CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p_par);
 
     UMC::FrameMemID GetMemIdToUnlock();
 
