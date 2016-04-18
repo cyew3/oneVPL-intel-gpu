@@ -211,6 +211,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>false</TreatWarningAsError>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -231,6 +232,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>false</TreatWarningAsError>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -273,6 +275,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -294,6 +297,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -333,6 +337,7 @@
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -353,6 +358,7 @@
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -395,6 +401,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <FloatingPointModel>Precise</FloatingPointModel>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>
@@ -415,6 +422,7 @@
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>1885</DisableSpecificWarnings>
     </ClCompile>
     <Lib />
     <Bscmake>
