@@ -34,10 +34,10 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-f frameRate] - video frame rate (frames per second)\n"));
     msdk_printf(MSDK_STRING("   [-n number] - number of frames to process\n"));
     msdk_printf(MSDK_STRING("   [-timeout seconds] - set time to run processing in seconds\n"));
-    msdk_printf(MSDK_STRING("   [-r distance] - Distance between I- or P- key frames (1 means no B-frames) (0 - by default(I frames))\n"));
+    msdk_printf(MSDK_STRING("   [-r (-GopRefDist) distance] - Distance between I- or P- key frames (1 means no B-frames) (0 - by default(I frames))\n"));
     msdk_printf(MSDK_STRING("   [-g size] - GOP size (1(default) means I-frames only)\n"));
     msdk_printf(MSDK_STRING("   [-l numSlices] - number of slices \n"));
-    msdk_printf(MSDK_STRING("   [-x numRefs]   - number of reference frames \n"));
+    msdk_printf(MSDK_STRING("   [-x (-NumRefFrame) numRefs]   - number of reference frames \n"));
     msdk_printf(MSDK_STRING("   [-qp qp_value] - QP value for frames\n"));
     msdk_printf(MSDK_STRING("   [-num_active_P numRefs] - number of maximum allowed references for P frames (up to 4(default))\n"));
     msdk_printf(MSDK_STRING("   [-num_active_BL0 numRefs] - number of maximum allowed backward references for B frames (up to 4(default))\n"));
@@ -81,13 +81,13 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-inter_SAD] - specifies inter distortion adjustment. 0x00 - none, 0x02 - Haar transform (default)\n"));
     msdk_printf(MSDK_STRING("   [-adaptive_search] - enables adaptive search\n"));
     msdk_printf(MSDK_STRING("   [-forward_transform] - enables forward transform. Additional stat is calculated and reported, QP required (PREENC only)\n"));
-    msdk_printf(MSDK_STRING("   [-repartition_check] - enables additional sub pixel and bidirectional refinements (ENC)\n"));
-    msdk_printf(MSDK_STRING("   [-multi_pred_l0] - MVs from neighbor MBs will be used as predictors for L0 prediction list (ENC)\n"));
-    msdk_printf(MSDK_STRING("   [-multi_pred_l1] - MVs from neighbor MBs will be used as predictors for L1 prediction list (ENC)\n"));
-    msdk_printf(MSDK_STRING("   [-adjust_distortion] - if enabled adds a cost adjustment to distortion, default is RAW distortion (ENC)\n"));
-    msdk_printf(MSDK_STRING("   [-n_mvpredictors_l0 num] - number of MV predictors for l0 list, up to 4 is supported (default is 1) (ENC)\n"));
-    msdk_printf(MSDK_STRING("   [-n_mvpredictors_l1 num] - number of MV predictors for l1 list, up to 4 is supported (default is 0) (ENC)\n"));
-    msdk_printf(MSDK_STRING("   [-colocated_mb_distortion] - provides the distortion between the current and the co-located MB. It has performance impact(ENC)\n"));
+    msdk_printf(MSDK_STRING("   [-repartition_check] - enables additional sub pixel and bidirectional refinements (ENC, ENCODE)\n"));
+    msdk_printf(MSDK_STRING("   [-multi_pred_l0] - MVs from neighbor MBs will be used as predictors for L0 prediction list (ENC, ENCODE)\n"));
+    msdk_printf(MSDK_STRING("   [-multi_pred_l1] - MVs from neighbor MBs will be used as predictors for L1 prediction list (ENC, ENCODE)\n"));
+    msdk_printf(MSDK_STRING("   [-adjust_distortion] - if enabled adds a cost adjustment to distortion, default is RAW distortion (ENC, ENCODE)\n"));
+    msdk_printf(MSDK_STRING("   [-n_mvpredictors_l0 num] - number of MV predictors for l0 list, up to 4 is supported (default is 1) (ENC, ENCODE)\n"));
+    msdk_printf(MSDK_STRING("   [-n_mvpredictors_l1 num] - number of MV predictors for l1 list, up to 4 is supported (default is 0) (ENC, ENCODE)\n"));
+    msdk_printf(MSDK_STRING("   [-colocated_mb_distortion] - provides the distortion between the current and the co-located MB. It has performance impact (ENC, ENCODE)\n"));
     msdk_printf(MSDK_STRING("                                do not use it, unless it is necessary\n"));
     msdk_printf(MSDK_STRING("   [-dblk_idc value] - value of DisableDeblockingIdc (default is 0), in range [0,2]\n"));
     msdk_printf(MSDK_STRING("   [-dblk_alpha value] - value of SliceAlphaC0OffsetDiv2 (default is 0), in range [-6,6]\n"));
@@ -96,7 +96,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-s_chroma_qpi_offset second_offset] - second offset used for chroma qp in range [-12, 12] (used in PPS, pass_headers should be set)\n"));
     msdk_printf(MSDK_STRING("   [-constrained_intra_pred_flag] - use constrained intra prediction (default is off, used in PPS, pass_headers should be set)\n"));
     msdk_printf(MSDK_STRING("   [-transform_8x8_mode_flag] - enables 8x8 transform, by default only 4x4 is used (used in PPS, pass_headers should be set)\n"));
-    msdk_printf(MSDK_STRING("   [-dstw width] - destination picture width, invokes VPP resizing\n"));
+    msdk_printf(MSDK_STRING("   [-dstw width]  - destination picture width, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-perf] - switch on performance mode (no file operations, simplified predictors repacking)\n"));
     msdk_printf(MSDK_STRING("   [-rawref] - use raw frames for reference instead of reconstructed frames (ENCODE only)\n"));
@@ -579,6 +579,16 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->bRawRef = true;
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-GopRefDist")))
+        {
+            i++;
+            pParams->refDist = (mfxU16)msdk_strtol(strArgument, &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-NumRefFrame")))
+        {
+            i++;
+            pParams->numRef = (mfxU16)msdk_strtol(strArgument, &stopCharacter, 10);
+        }
         else // 1-character options
         {
             switch (strInput[i][1])
@@ -773,6 +783,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         default:
             break;
         }
+    }
+
+    if (pParams->bPassHeaders && !(pParams->bOnlyENC || pParams->bOnlyPAK || pParams->bENCPAK))
+    {
+        PrintHelp(strInput[0], MSDK_STRING("WARNING: -pass_headers supported only by ENC/PAK interfaces, this flag will be ignored"));
+        pParams->bPassHeaders = false;
     }
 
     if (pParams->NumRefActiveP > MaxNumActiveRefP)

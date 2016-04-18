@@ -431,7 +431,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     // configure trellis, B-pyramid, RAW-reference settings
     //if (pInParams->bRefType || pInParams->Trellis || pInParams->bRawRef)
     {
-        m_CodingOption2.UseRawRef = pInParams->bRawRef ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF;
+        m_CodingOption2.UseRawRef = (mfxU16)(pInParams->bRawRef ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
         m_CodingOption2.BRefType  = pInParams->bRefType;
         m_CodingOption2.Trellis   = pInParams->Trellis;
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);
