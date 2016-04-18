@@ -115,7 +115,7 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
 
     if(CheckHardwareSupport(m_p_core, p_video_param) == false)
     {
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        return MFX_ERR_UNSUPPORTED;
     }
 
     // how "D3D" cound be related to VA API code !? (crappy naming!)
@@ -307,7 +307,7 @@ mfxStatus VideoDECODEVP8_HW::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVi
 
     if (!CheckHardwareSupport(p_core, p_in))
     {
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        return MFX_ERR_UNSUPPORTED;
     }
 
     return MFX_VP8_Utility::Query(p_core, p_in, p_out, type);
@@ -378,7 +378,7 @@ mfxStatus VideoDECODEVP8_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
 
     if (!CheckHardwareSupport(p_core, p_video_param))
     {
-        return MFX_WRN_PARTIAL_ACCELERATION;
+        return MFX_ERR_UNSUPPORTED;
     }
 
     return sts;
