@@ -1540,7 +1540,7 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID /*guid*/,
             return MFX_WRN_PARTIAL_ACCELERATION;
         break;
     case MFX_CODEC_VP8:
-        if (m_HWType < MFX_HW_CHV)
+        if (m_HWType < MFX_HW_BDW)
             return MFX_ERR_UNSUPPORTED;
     case MFX_CODEC_VP9:
         break;
