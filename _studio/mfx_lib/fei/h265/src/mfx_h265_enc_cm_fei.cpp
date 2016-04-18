@@ -271,7 +271,7 @@ void * H265CmCtx::AllocateSurface(mfxFEIH265SurfaceType surfaceType, void *sysMe
         s->sRec.bufDown8x = CreateSurface(device,  width8x,  height8x,  CM_SURFACE_FORMAT_NV12);
         s->sRec.bufDown16x = CreateSurface(device, width16x, height16x, CM_SURFACE_FORMAT_NV12);
         if (enableInterp)
-            s->sRec.bufInterpMerged = CreateSurface(device, interpWidth * 2, interpHeight * 2, CM_SURFACE_FORMAT_P8);
+            s->sRec.bufInterpMerged = CreateSurface(device, interpWidth * 2, interpHeight * 2, CM_SURFACE_FORMAT_A8);
         return s;
 
     case MFX_FEI_H265_SURFTYPE_UP:
