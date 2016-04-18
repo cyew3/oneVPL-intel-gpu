@@ -241,6 +241,14 @@ int TestSuite::RunTest(unsigned int id)
         AllocOpaque(m_request, osa);
     }
 
+    if (g_tsHWtype < MFX_HW_BDW && tc.mode != NULL_SESSION) // vp8 not supported less than BDW
+    {
+        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+        Query();
+        g_tsLog << "WARNING: Unsupported HW Platform!\n";
+        return 0;
+    }
+
     g_tsStatus.expect(tc.sts);
     Init(m_session, m_pPar);
 
