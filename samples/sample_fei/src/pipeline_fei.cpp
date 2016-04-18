@@ -3246,9 +3246,6 @@ mfxStatus CEncodingPipeline::ResetBuffers()
         sts = MFX_ERR_NONE;
     }
 
-    sts = ClearTasks();
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
     return sts;
 }
 
