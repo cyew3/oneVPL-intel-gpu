@@ -1850,8 +1850,8 @@ void HRD::Init(const SPS &sps, mfxU32 InitialDelayInKB)
     m_bitrate             = (cpb0.bit_rate_value_minus1 + 1) << (6 + hrd.bit_rate_scale);
     m_maxCpbRemovalDelay  = 1 << (hrd.au_cpb_removal_delay_length_minus1 + 1);
 
-    m_cpbSize90k          = 90000. * cpbSize / m_bitrate;
-    m_initCpbRemovalDelay = 90000. * 8000. * InitialDelayInKB / m_bitrate;
+    m_cpbSize90k          = mfxU32(90000. * cpbSize / m_bitrate);
+    m_initCpbRemovalDelay = mfxU32(90000. * 8000. * InitialDelayInKB / m_bitrate);
     m_clockTick           = (mfxF64)vui.num_units_in_tick / vui.time_scale;
 
     m_prevAuCpbRemovalDelayMinus1 = -1;
@@ -1928,6 +1928,10 @@ void HRD::Update(mfxU32 sizeInbits, const Task &pic)
         m_prevBpAuNominalRemovalTime = auNominalRemovalTime;
         m_prevBpEncOrder = pic.m_eo;
     }
+    
+    /*printf ("\ninitArrivalTime = %f\nauFinalArrivalTime = %f\nauNominalRemovalTime = %f\n",
+        initArrivalTime, auFinalArrivalTime, auNominalRemovalTime);
+    fflush(stdout);*/
 }
 
 mfxU32 HRD::GetInitCpbRemovalDelay(const Task &pic)
