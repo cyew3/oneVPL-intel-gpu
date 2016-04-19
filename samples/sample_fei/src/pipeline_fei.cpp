@@ -1176,8 +1176,12 @@ CEncodingPipeline::CEncodingPipeline()
     MSDK_ZERO_MEMORY(m_DecResponse);
     MSDK_ZERO_MEMORY(m_EncResponse);
 
-    m_bEndOfFile = false;
-    m_insertIDR  = false;
+    m_bEndOfFile          = false;
+    m_insertIDR           = false;
+    m_twoEncoders         = false;
+    m_disableMVoutPreENC  = false;
+    m_disableMBStatPreENC = false;
+    m_enableMVpredPreENC  = false;
 
     m_log2frameNumMax = 8;
     m_numOfFields = 1; // default is progressive case
@@ -1820,10 +1824,10 @@ mfxStatus CEncodingPipeline::InitInterfaces()
     if (m_encpakParams.bPREENC)
     {
         //setup control structures
-        m_disableMVoutPreENC     = (m_encpakParams.mvoutFile     == NULL) && !(m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC);
-        m_disableMBStatPreENC    = (m_encpakParams.mbstatoutFile == NULL) && !(m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC);
-        bool enableMVpredictor   = m_encpakParams.mvinFile != NULL;
-        bool enableMBQP          = m_encpakParams.mbQpFile != NULL        && !(m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC);
+        m_disableMVoutPreENC  = (m_encpakParams.mvoutFile     == NULL) && !(m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC);
+        m_disableMBStatPreENC = (m_encpakParams.mbstatoutFile == NULL) && !(m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC);
+        m_enableMVpredPreENC  = m_encpakParams.mvinFile != NULL;
+        bool enableMBQP       = m_encpakParams.mbQpFile != NULL        && !(m_encpakParams.bENCODE || m_encpakParams.bENCPAK || m_encpakParams.bOnlyENC);
 
         bufSet*                      tmpForInit = NULL;
         mfxExtFeiPreEncCtrl*         preENCCtr  = NULL;
@@ -1870,7 +1874,7 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                 preENCCtr[fieldId].AdaptiveSearch          = m_encpakParams.AdaptiveSearch;
                 preENCCtr[fieldId].LenSP                   = m_encpakParams.LenSP;
                 preENCCtr[fieldId].MBQp                    = enableMBQP;
-                preENCCtr[fieldId].MVPredictor             = enableMVpredictor;
+                preENCCtr[fieldId].MVPredictor             = m_enableMVpredPreENC;
                 preENCCtr[fieldId].RefHeight               = m_encpakParams.RefHeight;
                 preENCCtr[fieldId].RefWidth                = m_encpakParams.RefWidth;
                 preENCCtr[fieldId].SubPelMode              = m_encpakParams.SubPelMode;
@@ -2019,7 +2023,7 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                 tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)(preENCCtr + fieldId);
                 tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)(preENCCtr + fieldId);
             }
-            if (enableMVpredictor){
+            if (m_enableMVpredPreENC){
                 for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
                     tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)(mvPreds + fieldId);
                     tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)(mvPreds + fieldId);
@@ -3538,6 +3542,10 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
                 preENCCtr->DownsampleInput = MFX_CODINGOPTION_OFF;
             else
                 preENCCtr->DownsampleInput = MFX_CODINGOPTION_ON; // the default is ON too
+
+            if (m_enableMVpredPreENC){
+                preENCCtr->MVPredictor = (0x02 * (!!preENCCtr->RefPictureType[1])) | (0x01 * (!!preENCCtr->RefPictureType[0]));
+            }
 
             preENCCtrId++;
             break;

@@ -394,6 +394,7 @@ protected:
     bool m_twoEncoders;
     bool m_disableMVoutPreENC;
     bool m_disableMBStatPreENC;
+    bool m_enableMVpredPreENC;
 
     mfxU16 m_maxQueueLength;
     mfxU16 m_log2frameNumMax;
