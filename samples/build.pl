@@ -44,6 +44,8 @@ my $clean = "";
 my $msdk  = "";
 my $toolchain = "";
 my $mfx_home = "";
+my $vtune_home = "";
+my $enable_itt = "no";
 my $enable_sw  = "yes";
 my $enable_drm = "yes";
 my $enable_x11 = "yes";
@@ -99,12 +101,15 @@ sub usage {
   print "\n";
   print "Environment variables:\n";
   print "\tMFX_HOME=/path/to/mediasdk/package # required, can be overwritten by --mfx-home option\n";
+  print "\tVTUNE_HOME=/path/to/vtune/package  # optional, can be overwritten by --vtune-home option\n";
   print "\tMFX_VERSION=\"0.0.000.0000\"       # optional\n";
   print "\n";
   print "Optional flags:\n";
   print "\t--clean - clean build directory before projects generation / build\n";
   print "\t--build - try to build projects after generation (requires cmake>=2.8.0)\n";
   print "\t--mfx-home=/path/to/mediasdk/package - Media SDK package location [default: <none>]\n";
+  print "\t--vtune-home=/path/to/vtune/package - VTune package location [default: <none>]\n";
+  print "\t--enable-itt=yes|no     - enable ITT instrumentation support [default: $enable_sw]\n";
   print "\t--enable-sw=yes|no      - enable SW backend support [default: $enable_sw]\n";
   print "\t--enable-drm=yes|no     - enable DRM backend support [default: $enable_drm]\n";
   print "\t--enable-x11=yes|no     - enable X11 backend support [default: $enable_x11]\n";
@@ -131,7 +136,9 @@ GetOptions (
   '--verbose' => \$verb,
   '--cross=s' => \$toolchain,
   '--mfx-home=s' => \$mfx_home,
+  '--vtune-home=s' => \$vtune_home,
   '--enable-sw=s' => \$enable_sw,
+  '--enable-itt=s' => \$enable_itt,
   '--enable-drm=s' => \$enable_drm,
   '--enable-x11=s' => \$enable_x11,
   '--enable-x11-dri3=s' => \$enable_x11_dri3,
@@ -181,6 +188,7 @@ $cmake_cmd_gen.= "-DCMAKE_BUILD_TYPE:STRING=$build{'config'} " if($build{'genera
 $cmake_cmd_gen.= "-D__GENERATOR:STRING=$build{'generator'} -D__ARCH:STRING=$build{'arch'} -D__CONFIG:STRING=$build{'config'} ";
 $cmake_cmd_gen.= "-DCMAKE_TOOLCHAIN_FILE=$toolchain " if $toolchain ne "";
 
+$cmake_cmd_gen.= "-DENABLE_ITT:STRING=" . (($enable_itt eq "yes") ? "ON": "OFF") . " ";
 $cmake_cmd_gen.= "-DENABLE_SW:STRING=" . (($enable_sw eq "yes") ? "ON": "OFF") . " ";
 $cmake_cmd_gen.= "-DENABLE_DRM:STRING=" . (($enable_drm eq "yes") ? "ON": "OFF") . " ";
 $cmake_cmd_gen.= "-DENABLE_X11:STRING=" . (($enable_x11 eq "yes") ? "ON": "OFF") . " ";
@@ -193,6 +201,11 @@ my $mfx_home_abs = "";
 
 $mfx_home_abs = File::Spec->rel2abs($mfx_home) if $mfx_home ne "";
 $cmake_cmd_gen.= "-DCMAKE_MFX_HOME:STRING=$mfx_home_abs " if $mfx_home_abs ne "";
+
+my $vtune_home_abs = "";
+
+$vtune_home_abs = File::Spec->rel2abs($vtune_home) if $vtune_home ne "";
+$cmake_cmd_gen.= "-DCMAKE_VTUNE_HOME:STRING=$vtune_home_abs " if $vtune_home_abs ne "";
 
 $cmake_cmd_gen.= nativepath($sample_path);
 

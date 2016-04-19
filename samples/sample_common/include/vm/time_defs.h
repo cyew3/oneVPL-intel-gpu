@@ -15,6 +15,7 @@ Copyright(c) 2012-2015 Intel Corporation. All Rights Reserved.
 #define __TIME_DEFS_H__
 
 #include "mfxdefs.h"
+#include "mfx_itt_trace.h"
 
 #if defined(_WIN32) || defined(_WIN64)
 
@@ -36,8 +37,19 @@ Copyright(c) 2012-2015 Intel Corporation. All Rights Reserved.
 
 #include <unistd.h>
 
-#define MSDK_SLEEP(msec) usleep(1000*msec)
-#define MSDK_USLEEP(usec) usleep(usec)
+#define MSDK_SLEEP(msec) \
+  do { \
+    MFX_ITT_TASK_BEGIN("MSDK_SLEEP"); \
+    usleep(1000*msec); \
+    MFX_ITT_TASK_END(); \
+  } while(0)
+
+#define MSDK_USLEEP(usec) \
+  do { \
+    MFX_ITT_TASK_BEGIN("MSDK_USLEEP"); \
+    usleep(usec); \
+    MFX_ITT_TASK_END(); \
+  } while(0)
 
 #endif // #if defined(_WIN32) || defined(_WIN64)
 

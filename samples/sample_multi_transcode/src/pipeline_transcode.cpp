@@ -21,6 +21,7 @@ Copyright(c) 2010-2015 Intel Corporation. All Rights Reserved.
 #include "transcode_utils.h"
 #include "sample_utils.h"
 #include "mfx_vpp_plugin.h"
+#include "mfx_itt_trace.h"
 
 #include "plugin_loader.h"
 
@@ -736,7 +737,9 @@ mfxStatus CTranscodingPipeline::Decode()
             {
                 if (!bEndOfFile)
                 {
+                    MFX_ITT_TASK_BEGIN("DecodeOneFrame");
                     sts = DecodeOneFrame(&DecExtSurface);
+                    MFX_ITT_TASK_END();
                     if (MFX_ERR_MORE_DATA == sts)
                     {
                         sts = bLastCycle ? DecodeLastFrame(&DecExtSurface) : MFX_ERR_MORE_DATA;
@@ -745,7 +748,9 @@ mfxStatus CTranscodingPipeline::Decode()
                 }
                 else
                 {
+                    MFX_ITT_TASK_BEGIN("DecodeLastFrame");
                     sts = DecodeLastFrame(&DecExtSurface);
+                    MFX_ITT_TASK_END();
                 }
 
                 if (sts == MFX_ERR_NONE)
@@ -788,7 +793,9 @@ mfxStatus CTranscodingPipeline::Decode()
 
         if (m_pmfxVPP.get())
         {
+            MFX_ITT_TASK_BEGIN("VPPOneFrame");
             sts = VPPOneFrame(&DecExtSurface, &VppExtSurface);
+            MFX_ITT_TASK_END();
         }
         else // no VPP - just copy pointers
         {
@@ -851,7 +858,9 @@ mfxStatus CTranscodingPipeline::Decode()
         // if session is not joined and it is not parent - synchronize
         if (!m_bIsJoinSession && m_pParentPipeline)
         {
+            MFX_ITT_TASK_BEGIN("SyncOperation");
             sts = m_pmfxSession->SyncOperation(PreEncExtSurface.Syncp, MSDK_WAIT_INTERVAL);
+            MFX_ITT_TASK_END();
             PreEncExtSurface.Syncp = NULL;
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
@@ -939,7 +948,9 @@ mfxStatus CTranscodingPipeline::Encode()
                 // if it is not already synchronized
                 if (DecExtSurface.Syncp)
                 {
+                    MFX_ITT_TASK_BEGIN("SyncOperation");
                     sts = m_pParentPipeline->m_pmfxSession->SyncOperation(DecExtSurface.Syncp, MSDK_WAIT_INTERVAL);
+                    MFX_ITT_TASK_END();
                     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
                 }
             }
