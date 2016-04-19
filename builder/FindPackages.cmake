@@ -70,6 +70,15 @@ function(configure_libmfx_target target)
   endif()
 endfunction()
 
+function(configure_itt_target target)
+  configure_target(${ARGV0} "${ITT_CFLAGS}" "${ITT_LIBRARY_DIRS}")
+
+  set(SCOPE_CFLAGS ${SCOPE_CFLAGS} PARENT_SCOPE)
+  set(SCOPE_LINKFLAGS ${SCOPE_LINKFLAGS} PARENT_SCOPE)
+  set(SCOPE_LIBS ${SCOPE_LIBS} ittnotify PARENT_SCOPE)
+endfunction()
+
+
 function(configure_libdrm_target target)
   configure_target(${ARGV0} "${PKG_LIBDRM_CFLAGS}" "${PKG_LIBDRM_LIBRARY_DIRS}")
 
@@ -208,6 +217,10 @@ function(configure_dependencies target dependencies variant)
   foreach(dependency ${ARGV1})
     if(${dependency} STREQUAL libmfx)
       configure_libmfx_target(${ARGV0})
+    elseif(${dependency} STREQUAL itt)
+      if(ENABLE_ITT)
+        configure_itt_target(${ARGV0})
+      endif()
     elseif(${dependency} STREQUAL _enable_sw)
       # that's fake dependency to check --enable-sw=yes|no option
       if(NOT ENABLE_SW)

@@ -16,5 +16,5 @@ file( GLOB_RECURSE sources "[^.]*.c" "[^.]*.cpp" "${CMAKE_SOURCE_DIR}/sample_mul
 list( APPEND LIBS_VARIANT sample_common )
 list( APPEND LIBS_NOVARIANT vpp_plugin )
 
-set(DEPENDENCIES libmfx dl pthread)
+set(DEPENDENCIES itt libmfx dl pthread)
 make_executable( shortname universal )
