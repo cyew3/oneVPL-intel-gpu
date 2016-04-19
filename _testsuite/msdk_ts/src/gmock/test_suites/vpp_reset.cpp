@@ -1,42 +1,21 @@
+/* ////////////////////////////////////////////////////////////////////////////// */
+/*
+//
+//              INTEL CORPORATION PROPRIETARY INFORMATION
+//  This software is supplied under the terms of a license  agreement or
+//  nondisclosure agreement with Intel Corporation and may not be copied
+//  or disclosed except in  accordance  with the terms of that agreement.
+//        Copyright (c) 2016 Intel Corporation. All Rights Reserved.
+//
+//
+*/
+
 #include "ts_vpp.h"
 #include "ts_struct.h"
 #include "mfxstructures.h"
 
 namespace vpp_reset
 {
-
-typedef struct {
-    mfxU32 BufferId;
-    mfxU32 BufferSz;
-    char *string;
-} BufferIdToString;
-
-#define EXTBUF(TYPE, ID) {ID, sizeof(TYPE), #TYPE},
-static BufferIdToString g_StringsOfBuffers[] =
-{
-#include "ts_ext_buffers_decl.h"
-};
-#undef EXTBUF
-
-void GetBufferIdSz(const std::string& name, mfxU32& bufId, mfxU32& bufSz)
-{
-    //constexpr size_t maxBuffers = g_StringsOfBuffers / g_StringsOfBuffers[0];
-    const size_t maxBuffers = sizeof( g_StringsOfBuffers ) / sizeof( g_StringsOfBuffers[0] );
-
-    const std::string& buffer_name = name.substr(0, name.find(":"));
-
-    for(size_t i(0); i < maxBuffers; ++i)
-    {
-        //if( name.find(g_StringsOfBuffers[i].string) != std::string::npos )
-        if( buffer_name == g_StringsOfBuffers[i].string )
-        {
-            bufId = g_StringsOfBuffers[i].BufferId;
-            bufSz = g_StringsOfBuffers[i].BufferSz;
-
-            return;
-        }
-    }
-}
 
 class TestSuite : tsVideoVPP, public tsSurfaceProcessor
 {
@@ -49,13 +28,6 @@ public:
     ~TestSuite() {}
     int RunTest(unsigned int id);
     static const unsigned int n_cases;
-
-    struct f_pair
-    {
-        mfxU32 mode;
-        const  tsStruct::Field* f;
-        mfxU64 v;
-    };
 
     struct do_not_use
     {
@@ -76,7 +48,12 @@ private:
     struct tc_struct
     {
         mfxStatus sts;
-        f_pair set_par[MAX_NPARS];
+        struct f_pair
+        {
+            mfxU32 ext_type;
+            const  tsStruct::Field* f;
+            mfxU32 v;
+        } set_par[MAX_NPARS];
         do_not_use dnu_struct;
     };
 
@@ -95,94 +72,100 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 {
     {/*00*/ MFX_ERR_NONE,
         {
-            {INIT, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 50},
-            {INIT, &tsStruct::mfxExtVPPDetail.DetailFactor, 50},
-            {INIT, &tsStruct::mfxExtVPPProcAmp.Brightness, 0},
-            {INIT, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_BOB},
-            {INIT, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FRAME},
+            {INIT, &tsStruct::mfxExtVPPDenoise.DenoiseFactor,   50},
+            {INIT, &tsStruct::mfxExtVPPDetail.DetailFactor,     40},
+            {INIT, &tsStruct::mfxExtVPPProcAmp.Brightness,      30},
+            {INIT, &tsStruct::mfxExtVPPDeinterlacing.Mode,      MFX_DEINTERLACING_BOB},
 
-            {RESET, &tsStruct::mfxExtVPPDetail.DetailFactor, 80},
-            {RESET, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 60},
+            {RESET, &tsStruct::mfxExtVPPDetail.DetailFactor,    80},
+            {RESET, &tsStruct::mfxExtVPPDenoise.DenoiseFactor,  60},
         },
         {}
     },
     {/*01*/ MFX_ERR_NONE,
         {
-            {INIT, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 50},
-            {INIT, &tsStruct::mfxExtVPPDetail.DetailFactor, 50},
-            {INIT, &tsStruct::mfxExtVPPProcAmp.Brightness, 0},
-            {INIT, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_BOB},
-            {INIT, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FRAME},
+            {INIT, &tsStruct::mfxExtVPPDenoise.DenoiseFactor,   50},
+            {INIT, &tsStruct::mfxExtVPPDetail.DetailFactor,     40},
+            {INIT, &tsStruct::mfxExtVPPProcAmp.Brightness,      30},
+            {INIT, &tsStruct::mfxExtVPPDeinterlacing.Mode,      MFX_DEINTERLACING_BOB},
         },
         {3, {MFX_EXTBUFF_VPP_DETAIL, MFX_EXTBUFF_VPP_PROCAMP, MFX_EXTBUFF_VPP_DENOISE}}
     },
     {/*02*/ MFX_ERR_NONE,
         {
-            {INIT, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 50},
-            {INIT, &tsStruct::mfxExtVPPDetail.DetailFactor, 50},
-            {INIT, &tsStruct::mfxExtVPPProcAmp.Brightness, 0},
+            {INIT, &tsStruct::mfxExtVPPDenoise.DenoiseFactor,   50},
+            {INIT, &tsStruct::mfxExtVPPDetail.DetailFactor,     40},
+            {INIT, &tsStruct::mfxExtVPPProcAmp.Brightness,      30},
             {INIT, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_BOB},
 
-            {RESET, &tsStruct::mfxExtVPPDetail.DetailFactor, 80},
-            {RESET, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 60},
+            {RESET, &tsStruct::mfxExtVPPDetail.DetailFactor,    80},
+            {RESET, &tsStruct::mfxExtVPPDenoise.DenoiseFactor,  60},
         },
         {1, {MFX_EXTBUFF_VPP_PROCAMP}}
     },
     {/*03*/ MFX_ERR_NONE,
         {
-            {RESET, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 50},
-            {RESET, &tsStruct::mfxExtVPPDetail.DetailFactor, 50},
-            {RESET, &tsStruct::mfxExtVPPProcAmp.Brightness, 0},
-            {RESET, &tsStruct::mfxExtVPPDeinterlacing.Mode, MFX_DEINTERLACING_BOB},
-            {RESET, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FRAME},
+            {RESET, &tsStruct::mfxExtVPPDenoise.DenoiseFactor,  50},
+            {RESET, &tsStruct::mfxExtVPPDetail.DetailFactor,    40},
+            {RESET, &tsStruct::mfxExtVPPProcAmp.Brightness,     30},
+            {RESET, &tsStruct::mfxExtVPPDeinterlacing.Mode,     MFX_DEINTERLACING_BOB},
         }
     },
     {/*04*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
         {
-            {RESET, &tsStruct::mfxVideoParam.vpp.In.Height, 496},
-            {RESET, &tsStruct::mfxVideoParam.vpp.In.Width, 736},
-            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Height, 496},
-            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Width, 736},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Height,     496},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Width,      736},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Height,    496},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Width,     736},
         },
         {}
     },
     {/*05*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
         {
-            {RESET, &tsStruct::mfxVideoParam.vpp.In.Height, 496},
-            {RESET, &tsStruct::mfxVideoParam.vpp.In.Width, 736},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Height,     496},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Width,      736},
         },
         {}
     },
     {/*06*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
         {
-            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Height, 496},
-            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Width, 736},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Height,    496},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Width,     736},
         },
         {}
     },
     {/*07*/ MFX_ERR_NONE,
         {
-            {RESET, &tsStruct::mfxVideoParam.vpp.In.Height, 464},
-            {RESET, &tsStruct::mfxVideoParam.vpp.In.Width, 704},
-            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Height, 464},
-            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Width, 704},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Height,     464},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Width,      704},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Height,    464},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Width,     704},
         },
         {}
     },
     {/*08*/ MFX_ERR_NONE,
         {
-            {RESET, &tsStruct::mfxVideoParam.vpp.In.Height, 464},
-            {RESET, &tsStruct::mfxVideoParam.vpp.In.Width, 704},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Height,     464},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Width,      704},
         },
         {}
     },
     {/*09*/ MFX_ERR_NONE,
         {
-            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Height, 464},
-            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Width, 704},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Height,    464},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Width,     704},
         },
         {}
     },
+#if !defined(_WIN32)
+    {/*10*/ MFX_ERR_NONE,
+        {
+            {INIT,  &tsStruct::mfxExtVPPFieldProcessing.Mode,   MFX_VPP_COPY_FRAME},
+
+            {RESET, &tsStruct::mfxExtVPPFieldProcessing.Mode,   MFX_VPP_COPY_FIELD},
+        },
+    },
+#endif
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -204,57 +187,11 @@ void SetParamsDoNotUse(tsExtBufType<mfxVideoParam>& par, const TestSuite::do_not
     }
 }
 
-void SetParams(tsExtBufType<mfxVideoParam>& par, const TestSuite::f_pair pairs[], mfxU32 mode)
-{
-    const size_t length = MAX_NPARS;
-
-    for(size_t i(0); i < length; ++i)
-    {
-        if(pairs[i].f && pairs[i].mode == mode)
-        {
-            void* ptr = 0;
-
-            if(pairs[i].f->name.find("mfxVideoParam") != std::string::npos)
-            {
-                ptr = &par;
-            }
-            else
-            {
-                mfxU32 bufId = 0, bufSz = 0;
-                GetBufferIdSz(pairs[i].f->name, bufId, bufSz);
-                if(0 == bufId + bufSz)
-                {
-                    EXPECT_NE(0, bufId + bufSz) << "ERROR: (in test) failed to get Ext buffer Id or Size\n";
-                    throw tsFAIL;
-                }
-                ptr = par.GetExtBuffer(bufId);
-                if(!ptr)
-                {
-                    par.AddExtBuffer(bufId, bufSz);
-                    ptr = par.GetExtBuffer(bufId);
-                }
-            }
-
-            tsStruct::set(ptr, *pairs[i].f, pairs[i].v);
-        }
-    }
-
-}
-
 void CreateEmptyBuffers(tsExtBufType<mfxVideoParam>& par, tsExtBufType<mfxVideoParam>& pattern)
 {
     for (mfxU32 i = 0; i < pattern.NumExtParam; i++)
     {
-        if (pattern.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DONOTUSE)
-        {
-            par.AddExtBuffer(MFX_EXTBUFF_VPP_DONOTUSE, sizeof(mfxExtVPPDoNotUse));
-            mfxExtVPPDoNotUse* vpp_dnu = (mfxExtVPPDoNotUse*)par.GetExtBuffer(MFX_EXTBUFF_VPP_DONOTUSE);
-            vpp_dnu->NumAlg = MAX_NPARS;
-            vpp_dnu->AlgList = new mfxU32[MAX_NPARS];
-
-            memset(vpp_dnu->AlgList, 0, sizeof(mfxU32)*vpp_dnu->NumAlg);
-        }
-        else
+        if (pattern.ExtParam[i]->BufferId != MFX_EXTBUFF_VPP_DONOTUSE)
             par.AddExtBuffer(pattern.ExtParam[i]->BufferId, pattern.ExtParam[i]->BufferSz);
     }
 }
@@ -271,7 +208,7 @@ int TestSuite::RunTest(unsigned int id)
 
     tsExtBufType<mfxVideoParam> def (m_par);
 
-    SetParams(*&m_par, tc.set_par, INIT);
+    SETPARS(&m_par, INIT);
 
     CreateAllocators();
     SetFrameAllocator();
@@ -290,7 +227,7 @@ int TestSuite::RunTest(unsigned int id)
     EXPECT_EQ(m_par, par_init) << "ERROR: Init parameters and parameters from GetVideoParams are not equal\n";
 
     tsExtBufType<mfxVideoParam> par_reset (def);
-    SetParams(*&par_reset, tc.set_par, RESET);
+    SETPARS(&par_reset, RESET);
     SetParamsDoNotUse(*&par_reset, tc.dnu_struct);
 
     g_tsStatus.expect(tc.sts);
@@ -325,6 +262,7 @@ int TestSuite::RunTest(unsigned int id)
                 if (par_init.ExtParam[i]->BufferId == dnu->AlgList[j])
                 {
                     in_dnu = true;
+                    break;
                 }
             }
         }
@@ -341,6 +279,8 @@ int TestSuite::RunTest(unsigned int id)
 
     for (mfxU32 i = 0; i< par_reset.NumExtParam; i++)
     {
+        if (par_reset.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DONOTUSE) continue; // VPP should not configure mfxExtVPPDoNotUse buffer!
+
         mfxExtBuffer* after_reset = 0;
         after_reset = par_after_reset.GetExtBuffer(par_reset.ExtParam[i]->BufferId);
  
