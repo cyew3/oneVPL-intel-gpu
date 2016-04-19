@@ -197,6 +197,7 @@ void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
     SERIALIZE_INT(BitstreamRestriction);
     SERIALIZE_INT(WeightedPred);
     SERIALIZE_INT(WeightedBiPred);
+    SERIALIZE_INT(PRefType);
     SERIALIZE_INT(FadeDetection);
     SERIALIZE_INT(GPB);
 }

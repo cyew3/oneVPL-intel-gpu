@@ -360,6 +360,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION3(BitstreamRestriction,       OPT_UINT_16,   ""),
         HANDLE_EXT_OPTION3(WeightedPred,               OPT_UINT_16,   "0=unknown, 1=default, 2=explicit"),
         HANDLE_EXT_OPTION3(WeightedBiPred,             OPT_UINT_16,   "0=unknown, 1=default, 2=explicit, 3=implicit"),
+        HANDLE_EXT_OPTION3(PRefType,                   OPT_UINT_16,   "control usage of P frames as reference in AVC encoder in low delay mode: 0 - undef, 1 - simple, 2 - P ref pyramid"),
         HANDLE_EXT_OPTION3(FadeDetection,              OPT_TRI_STATE, "on|off"),
         HANDLE_EXT_OPTION3(GPB,                        OPT_TRI_STATE, "Generalized P/B"),
 
