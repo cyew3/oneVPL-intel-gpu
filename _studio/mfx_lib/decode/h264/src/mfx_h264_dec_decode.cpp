@@ -920,13 +920,6 @@ mfxStatus VideoDECODEH264::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
         }
     }
 
-    //eMFXPlatform platform = MFX_Utility::GetPlatform(core, par);
-    //if (platform != core->GetPlatformType())
-    //{
-    //    VM_ASSERT(platform == MFX_PLATFORM_SOFTWARE);
-    //    return MFX_WRN_PARTIAL_ACCELERATION;
-    //}
-
     return MFX_ERR_NONE;
 }
 
@@ -937,6 +930,11 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
     eMFXPlatform platform = MFX_Utility::GetPlatform(core, par);
 #if defined(__APPLE__)
     platform = MFX_PLATFORM_SOFTWARE;
+#endif
+
+#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+    if (platform != MFX_PLATFORM_HARDWARE)
+        return MFX_ERR_UNSUPPORTED;
 #endif
 
     eMFXHWType type = MFX_HW_UNKNOWN;
