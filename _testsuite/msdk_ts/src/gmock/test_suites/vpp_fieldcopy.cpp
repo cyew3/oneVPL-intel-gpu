@@ -1,3 +1,15 @@
+/* ////////////////////////////////////////////////////////////////////////////// */
+/*
+//
+//              INTEL CORPORATION PROPRIETARY INFORMATION
+//  This software is supplied under the terms of a license  agreement or
+//  nondisclosure agreement with Intel Corporation and may not be copied
+//  or disclosed except in  accordance  with the terms of that agreement.
+//        Copyright (c) 2016 Intel Corporation. All Rights Reserved.
+//
+//
+*/
+
 #include "ts_vpp.h"
 #include "ts_struct.h"
 #include "mfxstructures.h"
@@ -191,8 +203,6 @@ int TestSuite::RunTest(unsigned int id)
     SetFrameAllocator();
     SetHandle();
 
-    AllocSurfaces();
-
     tsExtBufType<mfxVideoParam> par_out;
     par_out=m_par;
 
@@ -258,7 +268,10 @@ int TestSuite::RunTest(unsigned int id)
     }
 
     if ( MFX_ERR_NONE == sts_init )
+    {
+        AllocSurfaces();
         ProcessFrames(10);
+    }
 
     TS_END;
     return 0;
