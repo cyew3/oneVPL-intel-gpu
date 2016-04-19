@@ -33,6 +33,7 @@ enum LibVABackend
 {
     MFX_LIBVA_AUTO,
     MFX_LIBVA_DRM,
+    MFX_LIBVA_DRM_MODESET,
     MFX_LIBVA_X11,
     MFX_LIBVA_WAYLAND
 };
