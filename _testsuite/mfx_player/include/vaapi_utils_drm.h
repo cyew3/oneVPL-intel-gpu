@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2012-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2012-2016 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -13,13 +13,15 @@ Copyright(c) 2012-2015 Intel Corporation. All Rights Reserved.
 
 #if defined(LIBVA_DRM_SUPPORT)
 
+#include <stdlib.h>
 #include <va/va_drm.h>
 #include "vaapi_utils.h"
+#include <string.h>
 
 class DRMLibVA : public CLibVA
 {
 public:
-    DRMLibVA(void);
+    DRMLibVA(int type = MFX_LIBVA_DRM);
     virtual ~DRMLibVA(void);
 
 protected:
