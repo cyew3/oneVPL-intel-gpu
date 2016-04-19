@@ -1962,9 +1962,10 @@ mfxStatus VAAPIEncoder::Execute(
             if (NULL != rePakCtrl)
             {
                 vaFeiFrameControl->max_frame_size = rePakCtrl->MaxFrameSize;
-                // Maximum value of NumPasses is 8
-                if (rePakCtrl->NumPasses > 8)
-                    vaFeiFrameControl->num_passes = 8;
+                // Maximum value of NumPasses is 4
+                // This is driver's limitation
+                if (rePakCtrl->NumPasses > 4)
+                    vaFeiFrameControl->num_passes = 4;
                 else
                     vaFeiFrameControl->num_passes = rePakCtrl->NumPasses;
                 for (mfxU32 ii = 0; ii < vaFeiFrameControl->num_passes; ii++)
