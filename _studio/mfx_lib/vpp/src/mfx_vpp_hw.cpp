@@ -4027,6 +4027,22 @@ mfxU32 GetMFXFrcMode(const mfxVideoParam & videoParam)
         }
     }
 
+    for (mfxU32 i = 0; i < videoParam.NumExtParam; i++)
+    {
+        if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DOUSE)
+        {
+            mfxExtVPPDoUse *extDoUse = (mfxExtVPPDoUse *) videoParam.ExtParam[i];
+
+            for (mfxU32 j = 0; j < extDoUse->NumAlg; j++)
+            {
+                if (extDoUse->AlgList[j] == MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION)
+                {
+                    return MFX_FRCALGM_PRESERVE_TIMESTAMP;
+                }
+            }
+        }
+    }
+
     return 0;//EMPTY
 
 } //  mfxU32 GetMFXFrcMode(mfxVideoParam & videoParam)
