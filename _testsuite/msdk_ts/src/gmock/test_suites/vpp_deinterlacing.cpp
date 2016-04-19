@@ -1,3 +1,15 @@
+/* ////////////////////////////////////////////////////////////////////////////// */
+/*
+//
+//              INTEL CORPORATION PROPRIETARY INFORMATION
+//  This software is supplied under the terms of a license  agreement or
+//  nondisclosure agreement with Intel Corporation and may not be copied
+//  or disclosed except in  accordance  with the terms of that agreement.
+//        Copyright (c) 2016 Intel Corporation. All Rights Reserved.
+//
+//
+*/
+
 #include "ts_vpp.h"
 #include "ts_struct.h"
 #include "mfxstructures.h"
@@ -68,6 +80,8 @@ int TestSuite::RunTest(unsigned int id)
     TS_START;
     const tc_struct& tc = test_case[id];
 
+    mfxStatus sts = tc.sts;
+
     MFXInit();
 
     m_par.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
@@ -75,9 +89,17 @@ int TestSuite::RunTest(unsigned int id)
 
     SETPARS(&m_par, MFX_PAR);
 
+    if (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS)
+    {
+        mfxExtVPPDeinterlacing* extVPPDi = (mfxExtVPPDeinterlacing*)m_par.GetExtBuffer(MFX_EXTBUFF_VPP_DEINTERLACING);
+
+        if (extVPPDi->Mode == MFX_DEINTERLACING_ADVANCED_SCD)
+            sts = MFX_ERR_UNSUPPORTED; // only linux supports SCD mode
+    }
+
     SetHandle();
 
-    g_tsStatus.expect(tc.sts);
+    g_tsStatus.expect(sts);
     Init(m_session, m_pPar);
 
     TS_END;
