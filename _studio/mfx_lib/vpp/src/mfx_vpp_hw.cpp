@@ -3818,6 +3818,94 @@ mfxStatus ConfigureExecuteParams(
     } // for (mfxU32 i = 0; i < filtersNum; i += 1)
     //-----------------------------------------------------
 
+    // disabling filters
+    for (mfxU32 i = 0; i < videoParam.NumExtParam; i++)
+    {
+        if (MFX_EXTBUFF_VPP_DONOTUSE == videoParam.ExtParam[i]->BufferId)
+        {
+            mfxExtVPPDoNotUse* extDoNotUse = (mfxExtVPPDoNotUse*) videoParam.ExtParam[i];
+            MFX_CHECK_NULL_PTR1(extDoNotUse);
+
+            for (mfxU32 j = 0; j < extDoNotUse->NumAlg; j++)
+            {
+                mfxU32 bufferId = extDoNotUse->AlgList[j];
+                if(MFX_EXTBUFF_VPP_DEINTERLACING == bufferId)
+                {
+                    executeParams.iTargetInterlacingMode  = DEINTERLACE_DISABLE;
+                    executeParams.iDeinterlacingAlgorithm = 0;
+                }
+                else if (MFX_EXTBUFF_VPP_DENOISE == bufferId)
+                {
+                    executeParams.bDenoiseAutoAdjust    = false;
+                    executeParams.denoiseFactor         = 0;
+                    executeParams.denoiseFactorOriginal = 0;
+                }
+                else if (MFX_EXTBUFF_VPP_PROCAMP == bufferId)
+                {
+                    executeParams.bEnableProcAmp = false;
+                    executeParams.Brightness     = 0;
+                    executeParams.Contrast       = 0;
+                    executeParams.Hue            = 0;
+                    executeParams.Saturation     = 0;
+                }
+                else if (MFX_EXTBUFF_VPP_DETAIL == bufferId)
+                {
+                    executeParams.bDetailAutoAdjust    = false;
+                    executeParams.detailFactor         = 0;
+                    executeParams.detailFactorOriginal = 0;
+                }
+                else if (MFX_EXTBUFF_VIDEO_SIGNAL_INFO == bufferId)
+                {
+                    executeParams.VideoSignalInfoIn.NominalRange    = MFX_NOMINALRANGE_UNKNOWN;
+                    executeParams.VideoSignalInfoIn.TransferMatrix  = MFX_TRANSFERMATRIX_UNKNOWN;
+                    executeParams.VideoSignalInfoOut.NominalRange   = MFX_NOMINALRANGE_UNKNOWN;
+                    executeParams.VideoSignalInfoOut.TransferMatrix = MFX_TRANSFERMATRIX_UNKNOWN;
+                }
+                else if (MFX_EXTBUFF_VPP_COMPOSITE == bufferId)
+                {
+                    executeParams.bComposite = false;
+                    executeParams.dstRects.clear();
+
+                    if (videoParam.vpp.Out.FourCC == MFX_FOURCC_NV12 ||
+                        videoParam.vpp.Out.FourCC == MFX_FOURCC_YV12 ||
+                        videoParam.vpp.Out.FourCC == MFX_FOURCC_NV16 ||
+                        videoParam.vpp.Out.FourCC == MFX_FOURCC_YUY2 ||
+                        videoParam.vpp.Out.FourCC == MFX_FOURCC_P010 ||
+                        videoParam.vpp.Out.FourCC == MFX_FOURCC_P210)
+                    {
+                        executeParams.iBackgroundColor = 0xff108080; // black in YUV interpretation
+                    }
+                    else
+                    {
+                        executeParams.iBackgroundColor = 0xff000000; // black in RGB interpretation
+                    }
+                }
+                else if (MFX_EXTBUFF_VPP_FIELD_PROCESSING == bufferId)
+                {
+                    executeParams.iFieldProcessingMode = 0;
+                }
+                else if (MFX_EXTBUFF_VPP_ROTATION == bufferId)
+                {
+                    executeParams.rotation = MFX_ANGLE_0;
+                }
+                else if (MFX_EXTBUFF_VPP_SCALING == bufferId)
+                {
+                    executeParams.scalingMode = MFX_SCALING_MODE_DEFAULT;
+                }
+                else if (MFX_EXTBUFF_VPP_MIRRORING == bufferId)
+                {
+                    executeParams.mirroring = MFX_MIRRORING_DISABLED;
+                }
+                else if (MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION == bufferId)
+                {
+                    executeParams.bFRCEnable  = false;
+                    executeParams.frcModeOrig = 0;
+                    memset(&(executeParams.customRateData), 0, sizeof(CustomRateData));
+                }
+            }
+        }
+    }
+
     // Post Correction Params
     if(MFX_FRCALGM_DISTRIBUTED_TIMESTAMP == GetMFXFrcMode(videoParam))
     {
