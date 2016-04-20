@@ -55,6 +55,8 @@ public:
     virtual mfxStatus SetBufferAllocator(mfxBufferAllocator *allocator);
     virtual mfxStatus SetFrameAllocator(mfxFrameAllocator *allocator);
 
+    virtual mfxStatus QueryPlatform(mfxPlatform* platform);
+
     // Utility functions for memory access
     virtual mfxStatus  AllocBuffer(mfxU32 nbytes, mfxU16 type, mfxMemId *mid);
     virtual mfxStatus  LockBuffer(mfxMemId mid, mfxU8 **ptr);

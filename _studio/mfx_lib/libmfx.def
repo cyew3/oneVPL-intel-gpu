@@ -14,6 +14,7 @@ EXPORTS
     MFXVideoCORE_SetFrameAllocator
     MFXVideoCORE_SetHandle
     MFXVideoCORE_GetHandle
+    MFXVideoCORE_QueryPlatform
     MFXVideoCORE_SyncOperation
 
     MFXVideoENCODE_Query
@@ -50,6 +51,7 @@ EXPORTS
 
     MFXVideoUSER_Register
     MFXVideoUSER_Unregister
+    MFXVideoUSER_GetPlugin
     MFXVideoUSER_ProcessFrameAsync
 
     MFXVideoENC_Query

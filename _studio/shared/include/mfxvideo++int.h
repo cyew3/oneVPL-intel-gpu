@@ -201,6 +201,7 @@ public:
     virtual mfxStatus SetHandle(mfxHandleType type, mfxHDL handle) = 0;
     virtual mfxStatus SetBufferAllocator(mfxBufferAllocator *allocator) = 0;
     virtual mfxStatus SetFrameAllocator(mfxFrameAllocator *allocator) = 0;
+    virtual mfxStatus QueryPlatform(mfxPlatform* platform) = 0;
 
     // Internal interface only
     // Utility functions for memory access
@@ -674,6 +675,8 @@ public:
     virtual VideoDECODE* GetDecodePtr() = 0;
     virtual VideoVPP* GetVPPPtr() = 0;
     virtual VideoENC* GetEncPtr() = 0;
+
+    virtual void GetPlugin(mfxPlugin& plugin) = 0;
 };
 
 #endif // __MFXVIDEOPLUSPLUS_INTERNAL_H

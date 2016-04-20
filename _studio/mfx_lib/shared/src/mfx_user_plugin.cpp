@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_user_plugin.cpp
 
@@ -440,4 +440,11 @@ VideoDECODE* VideoUSERPlugin::GetDecodePtr()
 VideoVPP* VideoUSERPlugin::GetVPPPtr()
 {
     return new VideoENCDECImpl(this);
+}
+
+
+
+void VideoUSERPlugin::GetPlugin(mfxPlugin& plugin)
+{
+    plugin = m_plugin;
 }

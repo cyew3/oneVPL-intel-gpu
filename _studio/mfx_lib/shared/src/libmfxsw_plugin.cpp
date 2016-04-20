@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
 
 File Name: libmfxsw_plugin.cpp
 
@@ -233,6 +233,50 @@ mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type,
     return mfxRes;
 
 } // mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type,
+
+mfxStatus MFXVideoUSER_GetPlugin(mfxSession session, mfxU32 type, mfxPlugin *par)
+{
+    mfxStatus mfxRes;
+
+    // check error(s)
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
+    MFX_CHECK_NULL_PTR1(par);
+    
+    try
+    {
+        SessionPtr sessionPtr(session, type);
+        std::auto_ptr<VideoCodecUSER> & pluginPtr = sessionPtr.plugin();
+
+        if (!pluginPtr.get())
+        {
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+
+        pluginPtr->GetPlugin(*par);
+
+        mfxRes = MFX_ERR_NONE;
+    }
+    catch(MFX_CORE_CATCH_TYPE)
+    {
+        // set the default error value
+        mfxRes = MFX_ERR_UNKNOWN;
+        if (0 == session)
+        {
+            mfxRes = MFX_ERR_INVALID_HANDLE;
+        }
+        else if (0 == par)
+        {
+            mfxRes = MFX_ERR_NULL_PTR;
+        }
+        else if (type > MFX_PLUGINTYPE_VIDEO_ENC)
+        {
+            mfxRes = MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+    }
+
+    return mfxRes;
+
+} // mfxStatus MFXVideoUSER_GetPlugin(mfxSession session, mfxU32 type, mfxPlugin *par)
 
 mfxStatus MFXVideoUSER_Unregister(mfxSession session, mfxU32 type)
 {

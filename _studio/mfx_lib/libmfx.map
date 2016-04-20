@@ -87,8 +87,10 @@ LIBMFX_1.14 {
     MFXDoWork;
 } LIBMFX_1.13;
 
-LIBMFX_1.18 {
+LIBMFX_1.19 {
   global:
     MFXVideoENC_GetVideoParam;
     MFXVideoPAK_GetVideoParam;
+    MFXVideoCORE_QueryPlatform;
+    MFXVideoUSER_GetPlugin;
 } LIBMFX_1.14;

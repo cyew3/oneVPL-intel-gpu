@@ -363,6 +363,27 @@ mfxStatus mfxCOREGetFrameHDL(mfxHDL pthis, mfxFrameData *fd, mfxHDL *handle)
     return mfxRes;
 } // mfxStatus mfxCOREGetFrameHDL(mfxHDL pthis, mfxFrameData *fd, mfxHDL *handle)
 
+mfxStatus mfxCOREQueryPlatform(mfxHDL pthis, mfxPlatform *platform)
+{
+    mfxSession session = (mfxSession)pthis;
+    mfxStatus mfxRes = MFX_ERR_NONE;
+    MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
+    MFX_CHECK(session->m_pCORE.get(), MFX_ERR_NOT_INITIALIZED);
+    MFX_CHECK_NULL_PTR1(platform);
+    VideoCORE *pCore = session->m_pCORE.get();
+
+    try
+    {
+        mfxRes = pCore->QueryPlatform(platform);
+    }
+    catch (MFX_CORE_CATCH_TYPE)
+    {
+        mfxRes = MFX_ERR_UNKNOWN;
+    }
+
+    return mfxRes;
+} // mfxCOREQueryPlatform(mfxHDL pthis, mfxPlatform *platform)
+
 #define CORE_FUNC_IMPL(func_name, formal_param_list, actual_param_list) \
 mfxStatus mfxCORE##func_name formal_param_list \
 { \
@@ -528,7 +549,7 @@ void InitCoreInterface(mfxCoreInterface *pCoreInterface,
     pCoreInterface->GetRealSurface = &mfxCOREGetRealSurface;
     pCoreInterface->GetOpaqueSurface = &mfxCOREGetOpaqueSurface;
     pCoreInterface->CreateAccelerationDevice = &mfxCORECreateAccelerationDevice;
-
+    pCoreInterface->QueryPlatform = &mfxCOREQueryPlatform;
 
 } // void InitCoreInterface(mfxCoreInterface *pCoreInterface,
 

@@ -42,6 +42,7 @@ FUNCTION_IMPL(CORE, SetBufferAllocator, (mfxSession session, mfxBufferAllocator 
     FUNCTION_IMPL(CORE, SetFrameAllocator, (mfxSession session, mfxFrameAllocator *allocator), (allocator))
     FUNCTION_IMPL(CORE, SetHandle, (mfxSession session, mfxHandleType type, mfxHDL hdl), (type, hdl))
     FUNCTION_IMPL(CORE, GetHandle, (mfxSession session, mfxHandleType type, mfxHDL *hdl), (type, hdl))
+    FUNCTION_IMPL(CORE, QueryPlatform, (mfxSession session, mfxPlatform* platform), (platform))
 
 #define MFX_CHECK_HDL(hdl) {if (!hdl) MFX_RETURN(MFX_ERR_INVALID_HANDLE);}
 
@@ -807,6 +808,34 @@ mfxStatus CommonCORE::SetHandle(mfxHandleType type, mfxHDL hdl)
     }
     return MFX_ERR_NONE;
 }// mfxStatus CommonCORE::SetHandle(mfxHandleType type, mfxHDL handle)
+
+mfxStatus CommonCORE::QueryPlatform(mfxPlatform* platform)
+{
+    MFX_CHECK_NULL_PTR1(platform);
+
+    if (!m_hdl && MFX_HW_VAAPI == GetVAType())
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    eMFXHWType type = GetHWType();
+
+    switch (type)
+    {
+    case MFX_HW_SNB    : platform->CodeName = MFX_PLATFORM_SANDYBRIDGE; break;
+    case MFX_HW_IVB    : platform->CodeName = MFX_PLATFORM_IVYBRIDGE;   break;
+    case MFX_HW_HSW    :
+    case MFX_HW_HSW_ULT: platform->CodeName = MFX_PLATFORM_HASWELL;     break;
+    case MFX_HW_VLV    : platform->CodeName = MFX_PLATFORM_BAYTRAIL;    break;
+    case MFX_HW_BDW    : platform->CodeName = MFX_PLATFORM_BROADWELL;   break;
+    case MFX_HW_CHV    : platform->CodeName = MFX_PLATFORM_CHERRYTRAIL; break;
+    case MFX_HW_SCL    : platform->CodeName = MFX_PLATFORM_SKYLAKE;     break;
+    case MFX_HW_BXT    : platform->CodeName = MFX_PLATFORM_BROXTON;     break;
+    case MFX_HW_KBL    : platform->CodeName = MFX_PLATFORM_KABYLAKE;    break;
+    case MFX_HW_CNL    :
+    default:             platform->CodeName = MFX_PLATFORM_UNKNOWN;     break;
+    }
+
+    return MFX_ERR_NONE;
+} // mfxStatus CommonCORE::QueryPlatform(mfxPlatform* platform)
 
 mfxStatus CommonCORE::SetBufferAllocator(mfxBufferAllocator *allocator)
 {
