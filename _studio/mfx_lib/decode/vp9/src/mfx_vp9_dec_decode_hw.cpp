@@ -537,8 +537,10 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
         bool systemMemory = (decoder.m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) != 0;
-        mfxU16 srcMemType = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME;
-        mfxU16 dstMemType = systemMemory ? MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_EXTERNAL_FRAME : srcMemType;
+        mfxU16 srcMemType = MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+        srcMemType |= systemMemory ? MFX_MEMTYPE_INTERNAL_FRAME : MFX_MEMTYPE_EXTERNAL_FRAME;
+        mfxU16 dstMemType = MFX_MEMTYPE_EXTERNAL_FRAME;
+        dstMemType |= systemMemory ? MFX_MEMTYPE_SYSTEM_MEMORY : MFX_MEMTYPE_DXVA2_DECODER_TARGET;
 
         mfxStatus sts = decoder.m_core->DoFastCopyWrapper(&surfaceDst, dstMemType, surfaceSrc, srcMemType);
         MFX_CHECK_STS(sts);
