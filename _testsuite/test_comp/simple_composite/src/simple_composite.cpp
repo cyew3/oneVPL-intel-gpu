@@ -45,6 +45,16 @@
   #include <va/va.h>
   #include <va/va_drm.h>
   #include <unistd.h>
+  #include <sys/types.h>
+  #include <sys/stat.h>
+  #include <unistd.h>
+  #include <fcntl.h>
+
+  #include <dirent.h>
+  #include <stdexcept>
+
+  #include <drm_fourcc.h>
+  #include <intel_bufmgr.h>
 #endif
 
 
@@ -917,6 +927,148 @@ private:
     Background           m_Color;
 };
 
+#if !defined(_WIN32) && !defined(_WIN64)
+#define MFX_PCI_DIR "/sys/bus/pci/devices"
+#define MFX_DRI_DIR "/dev/dri/"
+#define MFX_PCI_DISPLAY_CONTROLLER_CLASS 0x03
+
+struct mfx_disp_adapters
+{
+    mfxU32 vendor_id;
+    mfxU32 device_id;
+};
+
+static int mfx_dir_filter(const struct dirent* dir_ent)
+{
+    if (!dir_ent) return 0;
+    if (!strcmp(dir_ent->d_name, ".")) return 0;
+    if (!strcmp(dir_ent->d_name, "..")) return 0;
+    return 1;
+}
+
+typedef int (*fsort)(const struct dirent**, const struct dirent**);
+
+static mfxU32 mfx_init_adapters(struct mfx_disp_adapters** p_adapters)
+{
+    mfxU32 adapters_num = 0;
+    int i = 0;
+    struct mfx_disp_adapters* adapters = NULL;
+    struct dirent** dir_entries = NULL;
+    int entries_num = scandir(MFX_PCI_DIR, &dir_entries, mfx_dir_filter, (fsort)alphasort);
+
+    char file_name[300] = {};
+    char str[16] = {0};
+    FILE* file = NULL;
+
+    for (i = 0; i < entries_num; ++i)
+    {
+        long int class_id = 0, vendor_id = 0, device_id = 0;
+
+        if (!dir_entries[i])
+            continue;
+
+        // obtaining device class id
+        snprintf(file_name, sizeof(file_name)/sizeof(file_name[0]), "%s/%s/%s", MFX_PCI_DIR, dir_entries[i]->d_name, "class");
+        file = fopen(file_name, "r");
+        if (file)
+        {
+            if (fgets(str, sizeof(str), file))
+            {
+                class_id = strtol(str, NULL, 16);
+            }
+            fclose(file);
+
+            if (MFX_PCI_DISPLAY_CONTROLLER_CLASS == (class_id >> 16))
+            {
+                // obtaining device vendor id
+                snprintf(file_name, sizeof(file_name)/sizeof(file_name[0]), "%s/%s/%s", MFX_PCI_DIR, dir_entries[i]->d_name, "vendor");
+                file = fopen(file_name, "r");
+                if (file)
+                {
+                    if (fgets(str, sizeof(str), file))
+                    {
+                        vendor_id = strtol(str, NULL, 16);
+                    }
+                    fclose(file);
+                }
+                // obtaining device id
+                snprintf(file_name, sizeof(file_name)/sizeof(file_name[0]), "%s/%s/%s", MFX_PCI_DIR, dir_entries[i]->d_name, "device");
+                file = fopen(file_name, "r");
+                if (file)
+                {
+                    if (fgets(str, sizeof(str), file))
+                    {
+                        device_id = strtol(str, NULL, 16);
+                    }
+                    fclose(file);
+                }
+                // adding valid adapter to the list
+                if (vendor_id && device_id)
+                {
+                    struct mfx_disp_adapters* tmp_adapters = NULL;
+
+                    tmp_adapters = (mfx_disp_adapters*)realloc(adapters,
+                                                               (adapters_num+1)*sizeof(struct mfx_disp_adapters));
+
+                    if (tmp_adapters)
+                    {
+                        adapters = tmp_adapters;
+                        adapters[adapters_num].vendor_id = vendor_id;
+                        adapters[adapters_num].device_id = device_id;
+
+                        ++adapters_num;
+                    }
+                }
+            }
+        }
+        free(dir_entries[i]);
+    }
+    if (entries_num) free(dir_entries);
+    if (p_adapters) *p_adapters = adapters;
+
+    return adapters_num;
+}
+
+mfxStatus va_to_mfx_status(VAStatus va_res)
+{
+    mfxStatus mfxRes = MFX_ERR_NONE;
+
+    switch (va_res)
+    {
+    case VA_STATUS_SUCCESS:
+        mfxRes = MFX_ERR_NONE;
+        break;
+    case VA_STATUS_ERROR_ALLOCATION_FAILED:
+        mfxRes = MFX_ERR_MEMORY_ALLOC;
+        break;
+    case VA_STATUS_ERROR_ATTR_NOT_SUPPORTED:
+    case VA_STATUS_ERROR_UNSUPPORTED_PROFILE:
+    case VA_STATUS_ERROR_UNSUPPORTED_ENTRYPOINT:
+    case VA_STATUS_ERROR_UNSUPPORTED_RT_FORMAT:
+    case VA_STATUS_ERROR_UNSUPPORTED_BUFFERTYPE:
+    case VA_STATUS_ERROR_FLAG_NOT_SUPPORTED:
+    case VA_STATUS_ERROR_RESOLUTION_NOT_SUPPORTED:
+        mfxRes = MFX_ERR_UNSUPPORTED;
+        break;
+    case VA_STATUS_ERROR_INVALID_DISPLAY:
+    case VA_STATUS_ERROR_INVALID_CONFIG:
+    case VA_STATUS_ERROR_INVALID_CONTEXT:
+    case VA_STATUS_ERROR_INVALID_SURFACE:
+    case VA_STATUS_ERROR_INVALID_BUFFER:
+    case VA_STATUS_ERROR_INVALID_IMAGE:
+    case VA_STATUS_ERROR_INVALID_SUBPICTURE:
+        mfxRes = MFX_ERR_NOT_INITIALIZED;
+        break;
+    case VA_STATUS_ERROR_INVALID_PARAMETER:
+        mfxRes = MFX_ERR_INVALID_VIDEO_PARAM;
+    default:
+        mfxRes = MFX_ERR_UNKNOWN;
+        break;
+    }
+    return mfxRes;
+}
+#endif
+
 int main(int argc, char *argv[])
 {
 #if !defined(_WIN32) && !defined(_WIN64)
@@ -926,6 +1078,11 @@ int main(int argc, char *argv[])
     int m_card_fd = 0, major_version = 0, minor_version = 0;
     VADisplay m_va_display = NULL;
     VAStatus va_res;
+
+    const mfxU32 IntelVendorID = 0x8086;
+    //the first Intel adapter is only required now, the second - in the future
+    const mfxU32 numberOfRequiredIntelAdapter = 1;
+    const char nodesNames[][8] = {"renderD", "card"};
 #endif
 
     mfxStatus sts = MFX_ERR_NONE;
@@ -950,6 +1107,40 @@ int main(int argc, char *argv[])
     {
         m_libva.reset(new MfxLoader::VA_Proxy);
         m_vadrmlib.reset(new MfxLoader::VA_DRMProxy);
+    }
+
+    mfx_disp_adapters* adapters = NULL;
+    int adapters_num = mfx_init_adapters(&adapters);
+
+    // Search for the required display adapter
+    int i = 0, nFoundAdapters = 0;
+    int nodesNumbers[] = {0,0};
+    
+    while ((i < adapters_num) && (nFoundAdapters != numberOfRequiredIntelAdapter))
+    {
+        if (adapters[i].vendor_id == IntelVendorID)
+        {
+            nFoundAdapters++;
+            nodesNumbers[0] = i+128; //for render nodes
+            nodesNumbers[1] = i;     //for card
+        }
+        i++;
+    }
+    if (adapters_num) free(adapters);
+    // If Intel adapter with specified number wasn't found, throws exception
+    if (nFoundAdapters != numberOfRequiredIntelAdapter)
+        throw std::range_error("The Intel adapter with a specified number wasn't found");
+
+    // Initialization of paths to the device nodes
+    char** adapterPaths = new char* [2];
+    for (int i=0; i<2; i++)
+    {
+        /*if ((i == 0) && (type == MFX_LIBVA_DRM_MODESET)) {
+          adapterPaths[i] = NULL;
+          continue;
+        }*/
+        adapterPaths[i] = new char[sizeof(MFX_DRI_DIR) + sizeof(nodesNames[i]) + 3];
+        sprintf(adapterPaths[i], "%s%s%d", MFX_DRI_DIR, nodesNames[i], nodesNumbers[i]);
     }
 #endif
 
@@ -976,37 +1167,63 @@ int main(int argc, char *argv[])
 #if !(defined(_WIN32) || defined(_WIN64))
     if (!isActivatedSW)
     {
-        m_card_fd = open("/dev/dri/card0", O_RDWR);
-
-        if (m_card_fd < 0)
+        // Loading display. At first trying to open render nodes, then card.
+        for (int i=0; i<2; i++)
         {
-            sts = MFX_ERR_NOT_INITIALIZED;
-            return sts;
-        }
-        if (MFX_ERR_NONE == sts)
-        {
-            m_va_display = m_vadrmlib->vaGetDisplayDRM(m_card_fd);
-            if (!m_va_display)
-            {
-                close(m_card_fd);
-                m_card_fd = -1;
-                sts = MFX_ERR_NULL_PTR;
-                return sts;
+            if (!adapterPaths[i]) {
+              sts = MFX_ERR_UNSUPPORTED;
+              continue;
             }
-        }
-        if (MFX_ERR_NONE == sts)
-        {
-            va_res = m_libva->vaInitialize(m_va_display, &major_version, &minor_version);
-            if (VA_STATUS_SUCCESS != va_res)
+            sts = MFX_ERR_NONE;
+            m_card_fd = open(adapterPaths[i], O_RDWR);
+
+            if (m_card_fd < 0)
             {
-                close(m_card_fd);
-                m_card_fd = -1;
                 sts = MFX_ERR_NOT_INITIALIZED;
                 return sts;
             }
+
+            if (MFX_ERR_NONE == sts)
+            {
+                m_va_display = m_vadrmlib->vaGetDisplayDRM(m_card_fd);
+
+                if (!m_va_display)
+                {
+                    close(m_card_fd);
+                    m_card_fd = -1;
+                    sts = MFX_ERR_NULL_PTR;
+                    return sts;
+                }
+            }
+
+            if (MFX_ERR_NONE == sts)
+            {
+                va_res = m_libva->vaInitialize(m_va_display, &major_version, &minor_version);
+                sts = va_to_mfx_status(va_res);
+                if (MFX_ERR_NONE != sts)
+                {
+                    close(m_card_fd);
+                    m_card_fd = -1;
+                    sts = MFX_ERR_NOT_INITIALIZED;
+                    return sts;
+                }
+
+            }
+
+            if (MFX_ERR_NONE == sts) break;
         }
-        sts = mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, m_va_display);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        for (int i=0; i<2; i++)
+        {
+            delete [] adapterPaths[i];
+        }
+        delete [] adapterPaths;
+
+        if (MFX_ERR_NONE != sts)
+            throw std::bad_alloc();
+
+         sts = mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, m_va_display);
+         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 #endif
 
