@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -283,6 +283,76 @@ mfxStatus MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mfx
             
             return status;
         }
+    }
+    catch (std::exception& e) {
+        std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
+    }
+}
+
+mfxStatus MFXVideoENC_GetVideoParam(mfxSession session, mfxVideoParam *par)
+{
+    try {
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
+        Log::WriteLog("function: MFXVideoENC_GetVideoParam(mfxSession session=" + ToString(session) + ", mfxVideoParam* par=" + ToString(par) + ") +");
+        mfxLoader *loader = (mfxLoader*)session;
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+
+        mfxFunctionPointer proc = loader->table[eMFXVideoENC_GetVideoParam_tracer];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+        session = loader->session;
+        Log::WriteLog(context.dump("session", session));
+        if (par) Log::WriteLog(context.dump("par", *par));
+
+        Timer t;
+        mfxStatus status = (*(fMFXVideoENC_GetVideoParam)proc)(session, par);
+        std::string elapsed = TimeToString(t.GetTime());
+
+        Log::WriteLog(">> MFXVideoENC_GetVideoParam called");
+
+        Log::WriteLog(context.dump("session", session));
+        if (par) Log::WriteLog(context.dump("par", *par));
+
+        Log::WriteLog("function: MFXVideoENC_GetVideoParam(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e) {
+        std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
+    }
+}
+
+mfxStatus MFXVideoPAK_GetVideoParam(mfxSession session, mfxVideoParam *par)
+{
+    try {
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
+        Log::WriteLog("function: MFXVideoPAK_GetVideoParam(mfxSession session=" + ToString(session) + ", mfxVideoParam* par=" + ToString(par) + ") +");
+        mfxLoader *loader = (mfxLoader*)session;
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+
+        mfxFunctionPointer proc = loader->table[eMFXVideoPAK_GetVideoParam_tracer];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+        session = loader->session;
+        Log::WriteLog(context.dump("session", session));
+        if (par) Log::WriteLog(context.dump("par", *par));
+
+        Timer t;
+        mfxStatus status = (*(fMFXVideoPAK_GetVideoParam)proc)(session, par);
+        std::string elapsed = TimeToString(t.GetTime());
+
+        Log::WriteLog(">> MFXVideoPAK_GetVideoParam called");
+
+        Log::WriteLog(context.dump("session", session));
+        if (par) Log::WriteLog(context.dump("par", *par));
+
+        Log::WriteLog("function: MFXVideoPAK_GetVideoParam(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
     }
     catch (std::exception& e) {
         std::cerr << "Exception: " << e.what() << '\n';

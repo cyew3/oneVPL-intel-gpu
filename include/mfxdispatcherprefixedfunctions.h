@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2015-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -144,5 +144,12 @@ File Name: mfxdispatcherprefixedfunctions.h
 #define MFXAudioUSER_ProcessFrameAsync   disp_MFXAudioUSER_ProcessFrameAsync
 #define MFXAudioUSER_Load                disp_MFXAudioUSER_Load
 #define MFXAudioUSER_UnLoad              disp_MFXAudioUSER_UnLoad
+
+// API 1.19 functions
+
+#define MFXVideoENC_GetVideoParam        disp_MFXVideoENC_GetVideoParam
+#define MFXVideoPAK_GetVideoParam        disp_MFXVideoPAK_GetVideoParam
+#define MFXVideoCORE_QueryPlatform       disp_MFXVideoCORE_QueryPlatform
+#define MFXVideoUSER_GetPlugin           disp_MFXVideoUSER_GetPlugin
 
 #endif 

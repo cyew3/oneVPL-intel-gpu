@@ -414,6 +414,7 @@ public:
     DEFINE_DUMP_FUNCTION(mfxVersion);
     DEFINE_DUMP_FUNCTION(mfxSyncPoint);
     DEFINE_DUMP_FUNCTION(mfxExtThreadsParam);
+    DEFINE_DUMP_FUNCTION(mfxPlatform);
 
     //mfxenc
     DEFINE_DUMP_FUNCTION(mfxENCInput);

@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -101,5 +101,13 @@ std::string DumpContext::dump(const std::string structName, const mfxVersion &ve
     str += structName + ".Major=" + ToString(version.Major) + "\n";
     str += structName + ".Minor=" + ToString(version.Minor) + "\n";
     str += structName + ".Version=" + ToString(version.Version);
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxPlatform &platform)
+{
+    std::string str;
+    str += structName + ".CodeName=" + ToString(platform.CodeName) + "\n";
+    str += structName + ".DeviceId=" + ToString(platform.DeviceId) + "\n";
     return str;
 }

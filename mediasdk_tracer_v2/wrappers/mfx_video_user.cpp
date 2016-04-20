@@ -185,5 +185,42 @@ mfxStatus MFXVideoUSER_ProcessFrameAsync(mfxSession session, const mfxHDL *in, m
     }
 }
 
+mfxStatus MFXVideoUSER_GetPlugin(mfxSession session, mfxU32 type, mfxPlugin *par)
+{
+    try {
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
+        Log::WriteLog("function: MFXVideoUSER_GetPlugin(mfxSession session=" + ToString(session) + ", mfxU32 type=" + ToString(type) + ", mfxPlugin *par=" + ToString(par) + ") +");
+        mfxLoader *loader = (mfxLoader*) session;
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+
+        mfxFunctionPointer proc = loader->table[eMFXVideoUSER_GetPlugin_tracer];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+        session = loader->session;
+        Log::WriteLog(context.dump("session", session));
+        Log::WriteLog(context.dump_mfxU32("type", type));
+        if (par) Log::WriteLog(context.dump("par", *par));
+
+        Timer t;
+        mfxStatus status = (*(fMFXVideoUSER_GetPlugin) proc)(session, type, par);
+        std::string elapsed = TimeToString(t.GetTime());
+
+        Log::WriteLog(">> MFXVideoUSER_GetPlugin called");
+
+        Log::WriteLog(context.dump("session", session));
+        Log::WriteLog(context.dump_mfxU32("type", type));
+        if (par) Log::WriteLog(context.dump("par", *par));
+
+        Log::WriteLog("function: MFXVideoUSER_GetPlugin(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e) {
+        std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
+    }
+}
+
 mfxStatus  MFXAudioUSER_Register(mfxSession session, mfxU32 type, const mfxPlugin *par) { return MFX_ERR_NONE;}
 mfxStatus  MFXAudioUSER_Unregister(mfxSession session, mfxU32 type) {return MFX_ERR_NONE;}

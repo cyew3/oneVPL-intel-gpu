@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -160,6 +160,38 @@ mfxStatus MFXVideoCORE_GetHandle(mfxSession session, mfxHandleType type, mfxHDL 
         Log::WriteLog(context.dump("type", type));
         Log::WriteLog(context.dump_mfxHDL("hdl", hdl));
         Log::WriteLog("function: MFXVideoCORE_GetHandle(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
+        return status;
+    }
+    catch (std::exception& e){
+        std::cerr << "Exception: " << e.what() << '\n';
+        return MFX_ERR_ABORTED;
+    }
+}
+
+mfxStatus MFXVideoCORE_QueryPlatform(mfxSession session, mfxPlatform* platform)
+{
+    try{
+        DumpContext context;
+        context.context = DUMPCONTEXT_MFX;
+        Log::WriteLog("function: MFXVideoCORE_QueryPlatform(mfxSession session=" + ToString(session) + ", mfxPlatform* platform=" + ToString(platform) + ") +");
+        mfxLoader *loader = (mfxLoader*) session;
+
+        if (!loader) return MFX_ERR_INVALID_HANDLE;
+
+        mfxFunctionPointer proc = loader->table[eMFXVideoCORE_QueryPlatform_tracer];
+        if (!proc) return MFX_ERR_INVALID_HANDLE;
+
+        session = loader->session;
+        Log::WriteLog(context.dump("session", session));
+        Log::WriteLog(context.dump("platform", platform));
+
+        Timer t;
+        mfxStatus status = (*(fMFXVideoCORE_QueryPlatform) proc) (session, platform);
+        std::string elapsed = TimeToString(t.GetTime());
+        Log::WriteLog(">> MFXVideoCORE_QueryPlatform called");
+        Log::WriteLog(context.dump("session", session));
+        Log::WriteLog(context.dump("platform", platform));
+        Log::WriteLog("function: MFXVideoCORE_QueryPlatform(" + elapsed + ", " + context.dump_mfxStatus("status", status) + ") - \n\n");
         return status;
     }
     catch (std::exception& e){
