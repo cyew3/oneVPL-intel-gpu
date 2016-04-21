@@ -43,6 +43,7 @@ static FILE* pMvPred         = NULL;
 static FILE* pEncMBs         = NULL;
 static FILE* pPerMbQP        = NULL;
 static FILE* decodeStreamout = NULL;
+static FILE* pRepackCtrl     = NULL;
 static mfxU32 numMBs     = 0;
 static bool bDRCReset    = false;
 
@@ -1065,6 +1066,7 @@ mfxStatus CEncodingPipeline::ReleaseResources()
     SAFE_FCLOSE(pEncMBs,         MFX_ERR_INVALID_HANDLE);
     SAFE_FCLOSE(pPerMbQP,        MFX_ERR_INVALID_HANDLE);
     SAFE_FCLOSE(decodeStreamout, MFX_ERR_INVALID_HANDLE);
+    SAFE_FCLOSE(pRepackCtrl,     MFX_ERR_INVALID_HANDLE);
 
     //unlock last frames
     sts = ClearTasks();
@@ -1243,13 +1245,15 @@ mfxStatus CEncodingPipeline::ResetIOFiles(sInputParams & pParams)
     }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    SAFE_FSEEK(mbstatout,   0, SEEK_SET, MFX_ERR_MORE_DATA);
-    SAFE_FSEEK(mvout,       0, SEEK_SET, MFX_ERR_MORE_DATA);
-    SAFE_FSEEK(mvENCPAKout, 0, SEEK_SET, MFX_ERR_MORE_DATA);
-    SAFE_FSEEK(mbcodeout,   0, SEEK_SET, MFX_ERR_MORE_DATA);
-    SAFE_FSEEK(pMvPred,     0, SEEK_SET, MFX_ERR_MORE_DATA);
-    SAFE_FSEEK(pEncMBs,     0, SEEK_SET, MFX_ERR_MORE_DATA);
-    SAFE_FSEEK(pPerMbQP,    0, SEEK_SET, MFX_ERR_MORE_DATA);
+    SAFE_FSEEK(mbstatout,       0, SEEK_SET, MFX_ERR_MORE_DATA);
+    SAFE_FSEEK(mvout,           0, SEEK_SET, MFX_ERR_MORE_DATA);
+    SAFE_FSEEK(mvENCPAKout,     0, SEEK_SET, MFX_ERR_MORE_DATA);
+    SAFE_FSEEK(mbcodeout,       0, SEEK_SET, MFX_ERR_MORE_DATA);
+    SAFE_FSEEK(pMvPred,         0, SEEK_SET, MFX_ERR_MORE_DATA);
+    SAFE_FSEEK(pEncMBs,         0, SEEK_SET, MFX_ERR_MORE_DATA);
+    SAFE_FSEEK(pPerMbQP,        0, SEEK_SET, MFX_ERR_MORE_DATA);
+    SAFE_FSEEK(decodeStreamout, 0, SEEK_SET, MFX_ERR_MORE_DATA);
+    SAFE_FSEEK(pRepackCtrl,     0, SEEK_SET, MFX_ERR_MORE_DATA);
 
     return sts;
 }
@@ -2109,6 +2113,7 @@ mfxStatus CEncodingPipeline::InitInterfaces()
         mfxExtFeiEncMV*           feiEncMV           = NULL;
         mfxExtFeiEncQP*           feiEncMbQp         = NULL;
         mfxExtFeiPakMBCtrl*       feiEncMBCode       = NULL;
+        mfxExtFeiRepackCtrl*      feiRepack          = NULL;
 
         if (m_encpakParams.bENCODE)
         {
@@ -2123,9 +2128,10 @@ mfxStatus CEncodingPipeline::InitInterfaces()
         bool MBCtrl       = m_encpakParams.mbctrinFile != NULL;
         bool MBQP         = m_encpakParams.mbQpFile    != NULL;
 
-        bool MBStatOut    = m_encpakParams.mbstatoutFile != NULL;
-        bool MVOut        = m_encpakParams.mvoutFile     != NULL;
-        bool MBCodeOut    = m_encpakParams.mbcodeoutFile != NULL;
+        bool MBStatOut    = m_encpakParams.mbstatoutFile  != NULL;
+        bool MVOut        = m_encpakParams.mvoutFile      != NULL;
+        bool MBCodeOut    = m_encpakParams.mbcodeoutFile  != NULL;
+        bool RepackCtrl   = m_encpakParams.repackctrlFile != NULL;
 
         bool nonDefDblk = (m_encpakParams.DisableDeblockingIdc || m_encpakParams.SliceAlphaC0OffsetDiv2 ||
             m_encpakParams.SliceBetaOffsetDiv2) && !m_encpakParams.bENCODE;
@@ -2345,6 +2351,32 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                         m_tmpForMedian = new mfxI16[16];
                         MSDK_CHECK_POINTER(m_tmpForMedian, MFX_ERR_MEMORY_ALLOC);
                         MSDK_ZERO_ARRAY(m_tmpForMedian, 16);
+                    }
+                }
+
+                if (RepackCtrl)
+                {
+                    if (fieldId == 0){
+                        feiRepack = new mfxExtFeiRepackCtrl[m_numOfFields];
+                        MSDK_CHECK_POINTER(feiRepack, MFX_ERR_MEMORY_ALLOC);
+                        MSDK_ZERO_ARRAY(feiRepack, m_numOfFields);
+                    }
+                    numExtInParams++;
+                    numExtInParamsI++;
+
+                    feiRepack[fieldId].Header.BufferId =  MFX_EXTBUFF_FEI_REPACK_CTRL;
+                    feiRepack[fieldId].Header.BufferSz = sizeof(mfxExtFeiRepackCtrl);
+                    feiRepack[fieldId].MaxFrameSize = 0;
+                    feiRepack[fieldId].NumPasses = 1;
+                    memset(feiRepack[fieldId].DeltaQP, 0, 8 * sizeof(mfxU8));
+                    if ((pRepackCtrl == NULL) && (m_encpakParams.repackctrlFile != NULL))
+                    {
+                        printf("Using Frame Size control input file: %s\n", m_encpakParams.repackctrlFile);
+                        MSDK_FOPEN(pRepackCtrl, m_encpakParams.repackctrlFile, MSDK_CHAR("rb"));
+                        if (pRepackCtrl == NULL) {
+                            mdprintf(stderr, "Can't open file %s\n", m_encpakParams.repackctrlFile);
+                            exit(-1);
+                        }
                     }
                 }
 
@@ -2574,6 +2606,12 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                 for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
                     tmpForInit-> I_bufs.out.ExtParam[tmpForInit-> I_bufs.out.NumExtParam++] = (mfxExtBuffer*)(&feiEncMBCode[fieldId]);
                     tmpForInit->PB_bufs.out.ExtParam[tmpForInit->PB_bufs.out.NumExtParam++] = (mfxExtBuffer*)(&feiEncMBCode[fieldId]);
+                }
+            }
+            if (RepackCtrl){
+                for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
+                    tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)(&feiRepack[fieldId]);
+                    tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)(&feiRepack[fieldId]);
                 }
             }
 
@@ -3989,10 +4027,11 @@ mfxStatus CEncodingPipeline::InitEncodeFrameParams(mfxFrameSurface1* encodeSurfa
     pCurrentTask->bufs.push_back(std::pair<bufSet*, mfxFrameSurface1*>(freeSet, encodeSurface));
 
     /* Load input Buffer for FEI ENCODE */
-    mfxExtFeiEncMVPredictors* pMvPredBuf = NULL;
-    mfxExtFeiEncMBCtrl*       pMbEncCtrl = NULL;
-    mfxExtFeiEncQP*           pMbQP      = NULL;
-    mfxExtFeiEncFrameCtrl*    feiEncCtrl = NULL;
+    mfxExtFeiEncMVPredictors* pMvPredBuf    = NULL;
+    mfxExtFeiEncMBCtrl*       pMbEncCtrl    = NULL;
+    mfxExtFeiEncQP*           pMbQP         = NULL;
+    mfxExtFeiEncFrameCtrl*    feiEncCtrl    = NULL;
+    mfxExtFeiRepackCtrl*      feiRepackCtrl = NULL;
 
     mfxU32 feiEncCtrlId = m_ffid, pMvPredId = m_ffid, fieldId = 0;
     for (mfxU32 i = 0; i < freeSet->PB_bufs.in.NumExtParam; i++)
@@ -4056,6 +4095,19 @@ mfxStatus CEncodingPipeline::InitEncodeFrameParams(mfxFrameSurface1* encodeSurfa
             fieldId++;
 
             feiEncCtrlId = 1 - feiEncCtrlId; // set to sfid
+            break;
+
+        case MFX_EXTBUFF_FEI_REPACK_CTRL:
+            if (pRepackCtrl)
+            {
+                feiRepackCtrl = (mfxExtFeiRepackCtrl*)(freeSet->PB_bufs.in.ExtParam[i]);
+                SAFE_FREAD(&(feiRepackCtrl->MaxFrameSize), sizeof(mfxU32),  1, pRepackCtrl, MFX_ERR_MORE_DATA);
+                SAFE_FREAD(&(feiRepackCtrl->NumPasses),    sizeof(mfxU32),  1, pRepackCtrl, MFX_ERR_MORE_DATA);
+                SAFE_FREAD(feiRepackCtrl->DeltaQP,         sizeof(mfxU8)*8, 1, pRepackCtrl, MFX_ERR_MORE_DATA);
+                if (feiRepackCtrl->NumPasses > 4) {
+                    msdk_printf(MSDK_STRING("WARNING: NumPasses should be less than or equal to 4\n"));
+                }
+            }
             break;
         } // switch (freeSet->PB_bufs.in.ExtParam[i]->BufferId)
     } // for (int i = 0; i<freeSet->PB_bufs.in.NumExtParam; i++)
@@ -4729,6 +4781,14 @@ mfxStatus CEncodingPipeline::FreeBuffers(std::list<bufSet*> bufs)
             {
                 mfxExtFeiPreEncCtrl* preENCCtr = (mfxExtFeiPreEncCtrl*)((*it)->PB_bufs.in.ExtParam[i]);
                 MSDK_SAFE_DELETE_ARRAY(preENCCtr);
+                i += m_numOfFields;
+            }
+            break;
+
+            case MFX_EXTBUFF_FEI_REPACK_CTRL:
+            {
+                mfxExtFeiRepackCtrl* feiRepack = (mfxExtFeiRepackCtrl*)((*it)->PB_bufs.in.ExtParam[i]);
+                MSDK_SAFE_DELETE_ARRAY(feiRepack);
                 i += m_numOfFields;
             }
             break;

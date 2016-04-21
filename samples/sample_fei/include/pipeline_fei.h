@@ -171,6 +171,7 @@ struct sInputParams
     msdk_char* mbcodeoutFile;
     msdk_char* mbstatoutFile;
     msdk_char* mbQpFile;
+    msdk_char* repackctrlFile;
     msdk_char* decodestreamoutFile;
 };
 

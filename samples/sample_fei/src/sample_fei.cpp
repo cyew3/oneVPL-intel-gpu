@@ -65,6 +65,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-mbcode file] - file to output per MB information (structure mfxExtFeiPakMBCtrl) for each frame\n"));
     msdk_printf(MSDK_STRING("   [-mbstat file] - file to output per MB distortions for each frame\n"));
     msdk_printf(MSDK_STRING("   [-mbqp file] - file to input per MB QPs the same for each frame\n"));
+    msdk_printf(MSDK_STRING("   [-repackctrl file] - file to input max encoded frame size,number of pass and delta qp for each frame(ENCODE only)\n "));
     msdk_printf(MSDK_STRING("   [-streamout file] - dump decode streamout structures\n"));
     msdk_printf(MSDK_STRING("   [-sys] - use system memory for surfaces (ENCODE only)\n"));
     msdk_printf(MSDK_STRING("   [-pass_headers] - pass SPS, PPS and Slice headers to Media SDK instead of default one (ENC or/and PAK only)\n"));
@@ -240,6 +241,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mbqp")))
         {
             pParams->mbQpFile = strInput[i+1];
+            i++;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-repackctrl")))
+        {
+            pParams->repackctrlFile = strInput[i+1];
             i++;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mbsize")))
@@ -1001,7 +1007,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         msdk_printf(MSDK_STRING("           could be non-bitexact with last frame in FEI ENCODE with Display Order!\n"));
     }
 
-    if (pParams->bPerfMode && (pParams->mvinFile || pParams->mvoutFile || pParams->mbctrinFile || pParams->mbstatoutFile || pParams->mbcodeoutFile || pParams->mbQpFile || pParams->decodestreamoutFile))
+    if (pParams->bPerfMode && (pParams->mvinFile || pParams->mvoutFile || pParams->mbctrinFile || pParams->mbstatoutFile || pParams->mbcodeoutFile || pParams->mbQpFile || pParams->repackctrlFile || pParams->decodestreamoutFile))
     {
         msdk_printf(MSDK_STRING("\nWARNING: All file operations would be ignored in performance mode!\n"));
 
@@ -1011,6 +1017,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         pParams->mbstatoutFile       = NULL;
         pParams->mbcodeoutFile       = NULL;
         pParams->mbQpFile            = NULL;
+        pParams->repackctrlFile      = NULL;
         pParams->decodestreamoutFile = NULL;
     }
 
@@ -1091,12 +1098,14 @@ int main(int argc, char *argv[])
     Params.ColocatedMbDistortion    = false;
     Params.ConstrainedIntraPredFlag = false;
     Params.Transform8x8ModeFlag     = false;
-    Params.mvinFile      = NULL;
-    Params.mvoutFile     = NULL;
-    Params.mbctrinFile   = NULL;
-    Params.mbstatoutFile = NULL;
-    Params.mbcodeoutFile = NULL;
-    Params.mbQpFile      = NULL;
+    Params.mvinFile       = NULL;
+    Params.mvoutFile      = NULL;
+    Params.mbctrinFile    = NULL;
+    Params.mbstatoutFile  = NULL;
+    Params.mbcodeoutFile  = NULL;
+    Params.mbQpFile       = NULL;
+    Params.repackctrlFile = NULL;
+    Params.decodestreamoutFile = NULL;
     Params.bRepackPreencMV      = false;
     Params.bFieldProcessingMode = false;
     Params.bMBSize    = false;
