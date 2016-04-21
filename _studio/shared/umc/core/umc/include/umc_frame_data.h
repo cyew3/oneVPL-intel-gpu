@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2011 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -265,13 +265,6 @@ public:
         size_t m_pitch;
     };
 
-    struct FrameAuxInfo
-    {
-        void*  ptr;
-        size_t size;
-        int    type;
-    };
-
     FrameData();
     FrameData(const FrameData & fd);
 
@@ -290,13 +283,6 @@ public:
     FrameMemID Release();
 
     void SetPlanePointer(Ipp8u* planePtr, Ipp32u plane, size_t pitch);
-    
-    void SetAuxInfo(void* ptr, size_t size, int type);
-
-    FrameAuxInfo* GetAuxInfo()
-    { return &m_AuxInfo; }
-    FrameAuxInfo const* GetAuxInfo() const
-    { return &m_AuxInfo; }
 
     FrameData& operator=(const FrameData& );
 
@@ -314,7 +300,6 @@ protected:
     FrameAllocator *m_FrameAlloc;
 
     PlaneMemoryInfo m_PlaneInfo[NUM_PLANES];
-    FrameAuxInfo    m_AuxInfo;
 };
 
 } // namespace UMC

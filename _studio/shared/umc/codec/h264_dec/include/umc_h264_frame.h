@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -22,7 +22,6 @@
 namespace UMC
 {
 class H264DecoderFrameInfo;
-class H264StreamOut;
 
 extern H264DecoderFrame g_GlobalFakeFrame;
 
@@ -75,9 +74,7 @@ enum BusyStates
     BUSY_STATE_NOT_DECODED = 3
 };
 
-class H264DecoderFrame
-    : public H264DecYUVBufferPadded
-    , public RefCounter
+class H264DecoderFrame : public H264DecYUVBufferPadded, public RefCounter
 {
     DYNAMIC_CAST_DECL(H264DecoderFrame, H264DecYUVBufferPadded)
 
@@ -522,8 +519,6 @@ public:
         m_ErrorType |= errorType;
     }
 
-    Ipp32s GetTotalMBs() const
-    { return totalMBs; }
 
 protected:
     // Declare memory management tools

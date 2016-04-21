@@ -4796,8 +4796,6 @@ Status TaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dimen
     pFrame->m_index = frmMID;
 
     Status umcRes = pFrame->allocateParsedFrameData();
-    if (sts != UMC_OK)
-        return umcRes;
 
     return umcRes;
 }

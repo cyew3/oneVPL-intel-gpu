@@ -17,7 +17,6 @@ File Name: libmf_core_vaapi.cpp
 #if defined (MFX_VA_LINUX)
 
 #include "umc_va_linux.h"
-
 #include "libmfx_core_vaapi.h"
 #include "mfx_utils.h"
 #include "mfx_session.h"
@@ -25,10 +24,8 @@ File Name: libmf_core_vaapi.cpp
 #include "ippi.h"
 #include "mfx_common_decode_int.h"
 #include "mfx_enc_common.h"
-#include "mfxfei.h"
 
 #include "umc_va_linux_protected.h"
-#include "umc_va_fei.h"
 
 #include "cm_mem_copy.h"
 
@@ -695,6 +692,8 @@ VAAPIVideoCORE::CreateVA(
     else
         m_KeepVAState = false;
 
+    m_pVA.reset(new LinuxVideoAccelerator); //aya must be fixed late???
+
     sts = CreateVideoAccelerator(param, profile, response->NumFrameActual, RenderTargets, allocator);
 
     return sts;
@@ -821,6 +820,10 @@ VAAPIVideoCORE::CreateVideoAccelerator(
     VideoInfo.clip_info.width = pInfo->Width;
     VideoInfo.clip_info.height = pInfo->Height;
 
+    m_pVA.get()->m_Platform = UMC::VA_LINUX;
+    m_pVA.get()->m_Profile = (VideoAccelerationProfile)profile;
+    m_pVA.get()->m_HWPlatform = ConvertMFXToUMCType(m_HWType);
+
     // Init Accelerator
     params.m_Display = m_Display;
     params.m_pConfigId = (VAConfigID*)&m_VAConfigHandle;
@@ -837,18 +840,6 @@ VAAPIVideoCORE::CreateVideoAccelerator(
     {
         params.m_needVideoProcessingVA = true;
     }
-
-    //check 'StreamOut' feature is requested
-    {
-        mfxExtBuffer* ext = GetExtBuffer(param->ExtParam, param->NumExtParam, MFX_EXTBUFF_FEI_PARAM);
-        if (ext)
-            params.m_CreateFlags |= reinterpret_cast<mfxExtFeiParam*>(ext)->Func == MFX_FEI_FUNCTION_DEC ? VA_DECODE_STREAM_OUT_ENABLE : 0;
-    }
-
-    m_pVA.reset((params.m_CreateFlags & VA_DECODE_STREAM_OUT_ENABLE) ? new FEIVideoAccelerator() : new LinuxVideoAccelerator());
-    m_pVA.get()->m_Platform = UMC::VA_LINUX;
-    m_pVA.get()->m_Profile = (VideoAccelerationProfile)profile;
-    m_pVA.get()->m_HWPlatform = ConvertMFXToUMCType(m_HWType);
 
     st = m_pVA.get()->Init(&params); //, m_ExtOptions);
 

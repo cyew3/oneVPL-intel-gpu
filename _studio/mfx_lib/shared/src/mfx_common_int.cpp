@@ -11,7 +11,6 @@
 #include "mfx_common_int.h"
 #include "mfx_ext_buffers.h"
 #include "mfxpcp.h"
-#include "mfxfei.h"
 #include <stdexcept>
 #include <string>
 
@@ -488,8 +487,7 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam* par)
                                                                MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
                                                                MFX_EXTBUFF_SVC_SEQ_DESC,
                                                                MFX_EXTBUFF_SVC_TARGET_LAYER,
-                                                               MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK,
-                                                               MFX_EXTBUFF_FEI_PARAM};
+                                                               MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK};
 
     static const mfxU32 g_decoderSupportedExtBuffersHEVC[]  = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
                                                                MFX_EXTBUFF_HEVC_PARAM,
@@ -736,7 +734,6 @@ void mfxVideoParamWrapper::CopyVideoParam(const mfxVideoParam & par)
         case MFX_EXTBUFF_JPEG_QT:
         case MFX_EXTBUFF_JPEG_HUFFMAN:
         case MFX_EXTBUFF_HEVC_PARAM:
-        case MFX_EXTBUFF_FEI_PARAM:
             {
                 void * in = GetExtendedBufferInternal(par.ExtParam, par.NumExtParam, par.ExtParam[i]->BufferId);
                 m_buffers.AddBuffer(par.ExtParam[i]);

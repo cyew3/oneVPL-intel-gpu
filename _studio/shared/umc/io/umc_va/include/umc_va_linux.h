@@ -58,9 +58,7 @@ protected:
 class LinuxVideoAcceleratorParams : public VideoAcceleratorParams
 {
     DYNAMIC_CAST_DECL(LinuxVideoAcceleratorParams, VideoAcceleratorParams);
-
 public:
-
     LinuxVideoAcceleratorParams(void)
     {
         m_Display            = NULL;
@@ -68,15 +66,12 @@ public:
         m_pConfigId          = NULL;
         m_pContext           = NULL;
         m_pKeepVAState       = NULL;
-        m_CreateFlags        = VA_PROGRESSIVE;
     }
-
     VADisplay     m_Display;
     bool          m_bComputeVAFncsInfo;
     VAConfigID*   m_pConfigId;
     VAContextID*  m_pContext;
     bool*         m_pKeepVAState;
-    int           m_CreateFlags;
 };
 
 /* LinuxVideoAccelerator -----------------------------------------------------*/
