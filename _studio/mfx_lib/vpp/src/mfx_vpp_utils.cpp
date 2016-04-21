@@ -2492,6 +2492,16 @@ mfxStatus CheckExtParam(VideoCORE * core, mfxExtBuffer** ppExtParam, mfxU16 coun
         bError = true;
     }
 
+    for( mfxU32 extParIdx = 0; extParIdx < count; extParIdx++ )
+    {
+        // configured via extended parameters filter should not be disabled
+        if ( IsFilterFound( pDnuList, dnuCount, ppExtParam[extParIdx]->BufferId ) )
+        {
+            sts = MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+        MFX_CHECK_STS(sts);
+    }
+
     // [4] Do USE
     mfxU32* pDO_USE_List = NULL;
     mfxU32  douseCount = 0;

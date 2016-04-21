@@ -1228,6 +1228,18 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
                                 extDoNotUseOut->AlgList[algIdx] = extDoNotUseIn->AlgList[algIdx];
                             }
                             extDoNotUseOut->NumAlg = extDoNotUseIn->NumAlg;
+
+                            for( mfxU32 extParIdx = 0; extParIdx < in->NumExtParam; extParIdx++ )
+                            {
+                                // configured via extended parameters filter should not be disabled
+                                if ( IsFilterFound( extDoNotUseIn->AlgList, extDoNotUseIn->NumAlg, in->ExtParam[extParIdx]->BufferId ) )
+                                {
+                                    mfxU32 filterIdx = GetFilterIndex( extDoNotUseIn->AlgList, extDoNotUseIn->NumAlg, in->ExtParam[extParIdx]->BufferId );
+                                    extDoNotUseIn->AlgList[filterIdx] = 0;
+                                    mfxSts = MFX_ERR_UNSUPPORTED;
+                                    continue; // stop working with ExtParam[i]
+                                }
+                            }
                         }
                     }
 
