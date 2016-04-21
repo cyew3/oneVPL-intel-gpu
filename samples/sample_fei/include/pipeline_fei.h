@@ -262,8 +262,7 @@ protected:
 
     MFXVideoSession m_mfxSession;
     MFXVideoSession m_preenc_mfxSession;
-    MFXVideoSession m_decode_mfxSession;
-    MFXVideoSession* m_pVPP_mfxSession;
+    MFXVideoSession* m_pPreencSession;
     MFXVideoDECODE*  m_pmfxDECODE;
     MFXVideoVPP*     m_pmfxVPP;
     MFXVideoVPP*     m_pmfxDS;
@@ -424,6 +423,7 @@ protected:
     bool m_twoEncoders;
     bool m_disableMVoutPreENC;
     bool m_disableMBStatPreENC;
+    bool m_bSeparatePreENCSession;
     bool m_enableMVpredPreENC;
 
     mfxU16 m_maxQueueLength;
