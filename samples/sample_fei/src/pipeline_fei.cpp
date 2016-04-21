@@ -886,12 +886,7 @@ mfxStatus CEncodingPipeline::CreateAllocator()
             sts = m_mfxSession.SetHandle(hdl_t, hdl);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-            if (m_encpakParams.bDECODE){
-                sts = m_decode_mfxSession.SetHandle(hdl_t, hdl);
-                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-            }
-
-            if (m_encpakParams.bPREENC){
+            if (m_bSeparatePreENCSession){
                 sts = m_preenc_mfxSession.SetHandle(hdl_t, hdl);
                 MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
             }
@@ -928,11 +923,7 @@ mfxStatus CEncodingPipeline::CreateAllocator()
         Call SetAllocator to pass allocator to Media SDK */
         sts = m_mfxSession.SetFrameAllocator(m_pMFXAllocator);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        if (m_encpakParams.bDECODE){
-            sts = m_decode_mfxSession.SetFrameAllocator(m_pMFXAllocator);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        }
-        if (m_encpakParams.bPREENC){
+        if (m_bSeparatePreENCSession){
             sts = m_preenc_mfxSession.SetFrameAllocator(m_pMFXAllocator);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
@@ -950,11 +941,7 @@ mfxStatus CEncodingPipeline::CreateAllocator()
         // provide device manager to MediaSDK
         sts = m_mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, hdl);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        if (m_encpakParams.bDECODE){
-            sts = m_decode_mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, hdl);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        }
-        if (m_encpakParams.bPREENC){
+        if (m_bSeparatePreENCSession){
             sts = m_preenc_mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, hdl);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
@@ -974,11 +961,7 @@ mfxStatus CEncodingPipeline::CreateAllocator()
         Call SetAllocator to pass allocator to mediasdk */
         sts = m_mfxSession.SetFrameAllocator(m_pMFXAllocator);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        if (m_encpakParams.bDECODE){
-            sts = m_decode_mfxSession.SetFrameAllocator(m_pMFXAllocator);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        }
-        if (m_encpakParams.bPREENC){
+        if (m_bSeparatePreENCSession){
             sts = m_preenc_mfxSession.SetFrameAllocator(m_pMFXAllocator);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
@@ -1004,11 +987,7 @@ mfxStatus CEncodingPipeline::CreateAllocator()
             sts = m_mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, hdl);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-            if (m_encpakParams.bDECODE){
-                sts = m_decode_mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, hdl);
-                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-            }
-            if (m_encpakParams.bPREENC){
+            if (m_bSeparatePreENCSession){
                 sts = m_preenc_mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, hdl);
                 MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
             }
@@ -1127,7 +1106,6 @@ CEncodingPipeline::CEncodingPipeline()
     m_bExternalAlloc      = false;
     m_pDecSurfaces        = NULL;
     m_pEncSurfaces        = NULL;
-    m_pVPP_mfxSession     = NULL;
     m_pVppSurfaces        = NULL;
     m_pDSSurfaces         = NULL;
     m_pReconSurfaces      = NULL;
@@ -1184,6 +1162,7 @@ CEncodingPipeline::CEncodingPipeline()
     m_log2frameNumMax = 8;
     m_numOfFields = 1; // default is progressive case
     m_isField     = false;
+    m_bSeparatePreENCSession = false;
 
     m_frameCount = 0;
     m_frameOrderIdrInDisplayOrder = 0;
@@ -1268,6 +1247,9 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
 
     mfxStatus sts = MFX_ERR_NONE;
+    bool bVPPneeded = pParams->nWidth != pParams->nDstWidth ||
+        pParams->nHeight != pParams->nDstHeight ||
+        m_bNeedDRC;
 
     m_refDist = pParams->refDist > 0 ? pParams->refDist : 1;
     m_gopSize = pParams->gopSize > 0 ? pParams->gopSize : 1;
@@ -1305,21 +1287,17 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     if (MFX_ERR_NONE != sts)
         sts = m_mfxSession.Init((impl & (!MFX_IMPL_HARDWARE_ANY)) | MFX_IMPL_HARDWARE, NULL);
 
-    if (pParams->bDECODE){
-        sts = m_decode_mfxSession.Init(impl, NULL);
-
-        // MSDK API version may not support multiple adapters - then try initialize on the default
-        if (MFX_ERR_NONE != sts)
-            sts = m_decode_mfxSession.Init((impl & (!MFX_IMPL_HARDWARE_ANY)) | MFX_IMPL_HARDWARE, NULL);
-    }
-
-    if(pParams->bPREENC){
+    if (pParams->bPREENC && (pParams->bENCPAK || pParams->bOnlyENC || (pParams->preencDSstrength && bVPPneeded))){
         sts = m_preenc_mfxSession.Init(impl, NULL);
+        m_bSeparatePreENCSession = true;
+        m_pPreencSession = &m_preenc_mfxSession;
 
         // MSDK API version may not support multiple adapters - then try initialize on the default
         if (MFX_ERR_NONE != sts)
            sts = m_preenc_mfxSession.Init((impl & (!MFX_IMPL_HARDWARE_ANY)) | MFX_IMPL_HARDWARE, NULL);
     }
+    else
+        m_pPreencSession = &m_mfxSession;
 
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -1336,7 +1314,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     if (pParams->bDECODE)
     {
         // create decoder
-        m_pmfxDECODE = new MFXVideoDECODE(m_decode_mfxSession);
+        m_pmfxDECODE = new MFXVideoDECODE(m_mfxSession);
         MSDK_CHECK_POINTER(m_pmfxDECODE, MFX_ERR_MEMORY_ALLOC);
 
         sts = InitMfxDecodeParams(pParams);
@@ -1344,26 +1322,14 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     }
 
     // create preprocessor if resizing was requested from command line
-    if (pParams->nWidth  != pParams->nDstWidth ||
-        pParams->nHeight != pParams->nDstHeight||
-        m_bNeedDRC)
+    if (bVPPneeded)
     {
-        if (pParams->bDECODE)
-            m_pVPP_mfxSession = &m_decode_mfxSession;
-        else if (pParams->bPREENC && !pParams->preencDSstrength) // in case of downscaled input surfaces for PreEnc, its session already contains VPP
-        {
-            m_pVPP_mfxSession = &m_preenc_mfxSession;
-        }
-        else
-            m_pVPP_mfxSession = &m_mfxSession;
-        m_pmfxVPP = new MFXVideoVPP(*m_pVPP_mfxSession);
+        m_pmfxVPP = new MFXVideoVPP(m_mfxSession);
         MSDK_CHECK_POINTER(m_pmfxVPP, MFX_ERR_MEMORY_ALLOC);
 
         sts = InitMfxVppParams(pParams);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
-    else
-        m_pVPP_mfxSession = NULL;
 
     //if(pParams->bENCODE){
         // create encoder
@@ -1372,7 +1338,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     //}
 
     if(pParams->bPREENC){
-        m_pmfxPREENC = new MFXVideoENC(m_preenc_mfxSession);
+        m_pmfxPREENC = new MFXVideoENC(*m_pPreencSession);
         MSDK_CHECK_POINTER(m_pmfxPREENC, MFX_ERR_MEMORY_ALLOC);
 
         if (pParams->preencDSstrength)
@@ -1382,7 +1348,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
                 sts = InitMfxVppParams(pParams);
                 MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
             }
-            m_pmfxDS = new MFXVideoVPP(m_preenc_mfxSession);
+            m_pmfxDS = new MFXVideoVPP(*m_pPreencSession);
             MSDK_CHECK_POINTER(m_pmfxDS, MFX_ERR_MEMORY_ALLOC);
         }
     }
@@ -1444,11 +1410,7 @@ void CEncodingPipeline::Close()
 
     m_TaskPool.Close();
     m_mfxSession.Close();
-    if (m_encpakParams.bDECODE)
-    {
-        m_decode_mfxSession.Close();
-    }
-    if (m_encpakParams.bPREENC){
+    if (m_bSeparatePreENCSession){
         m_preenc_mfxSession.Close();
     }
 
@@ -2988,12 +2950,12 @@ mfxStatus CEncodingPipeline::GetOneFrame(mfxFrameSurface1* & pSurf)
 
         for (;;)
         {
-            sts = m_decode_mfxSession.SyncOperation(DecExtSurface.Syncp, MSDK_WAIT_INTERVAL);
+            sts = m_mfxSession.SyncOperation(DecExtSurface.Syncp, MSDK_WAIT_INTERVAL);
 
             if (MFX_ERR_NONE < sts && !DecExtSurface.Syncp) // repeat the call if warning and no output
             {
                 if (MFX_WRN_DEVICE_BUSY == sts){
-                    WaitForDeviceToBecomeFree(m_decode_mfxSession, DecExtSurface.Syncp, sts); // wait if device is busy
+                    WaitForDeviceToBecomeFree(m_mfxSession, DecExtSurface.Syncp, sts); // wait if device is busy
                 }
             }
             else if (MFX_ERR_NONE <= sts && DecExtSurface.Syncp) {
@@ -5003,7 +4965,7 @@ mfxStatus CEncodingPipeline::PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
         // surfaces are reused and VPP may change this parameter in certain configurations
         VppExtSurface.pSurface->Info.PicStruct = m_mfxEncParams.mfx.FrameInfo.PicStruct;
 
-        sts = VPPOneFrame(m_pmfxDS, &m_preenc_mfxSession, eTask->fullResSurface, &VppExtSurface);
+        sts = VPPOneFrame(m_pmfxDS, m_pPreencSession, eTask->fullResSurface, &VppExtSurface);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         eTask->in.InSurface = VppExtSurface.pSurface;
         eTask->in.InSurface->Data.Locked++;
@@ -5099,7 +5061,7 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
             sts = m_pmfxPREENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
             MSDK_BREAK_ON_ERROR(sts);
             /*PRE-ENC is running in separate session */
-            sts = m_preenc_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
+            sts = m_pPreencSession->SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
             MSDK_BREAK_ON_ERROR(sts);
             mdprintf(stderr, "preenc synced : %d\n", sts);
             if (m_encpakParams.bFieldProcessingMode)
@@ -5107,7 +5069,7 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
                 sts = m_pmfxPREENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
                 MSDK_BREAK_ON_ERROR(sts);
                 /*PRE-ENC is running in separate session */
-                sts = m_preenc_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
+                sts = m_pPreencSession->SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
                 MSDK_BREAK_ON_ERROR(sts);
                 mdprintf(stderr, "preenc synced : %d\n", sts);
             }
@@ -5116,7 +5078,7 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
             {
                 if (MFX_WRN_DEVICE_BUSY == sts)
                 {
-                    WaitForDeviceToBecomeFree(m_preenc_mfxSession, eTask->EncSyncP, sts);
+                    WaitForDeviceToBecomeFree(*m_pPreencSession, eTask->EncSyncP, sts);
                 }
             }
             else if (MFX_ERR_NONE < sts && eTask->EncSyncP) {
@@ -5549,7 +5511,7 @@ mfxStatus CEncodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
     {
         if (MFX_WRN_DEVICE_BUSY == sts)
         {
-            WaitForDeviceToBecomeFree(m_decode_mfxSession,m_LastDecSyncPoint,sts);
+            WaitForDeviceToBecomeFree(m_mfxSession,m_LastDecSyncPoint,sts);
         }
         else if (MFX_ERR_MORE_DATA == sts)
         {
@@ -5596,7 +5558,7 @@ mfxStatus CEncodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
     {
         if (MFX_WRN_DEVICE_BUSY == sts)
         {
-            WaitForDeviceToBecomeFree(m_decode_mfxSession,m_LastDecSyncPoint,sts);
+            WaitForDeviceToBecomeFree(m_mfxSession,m_LastDecSyncPoint,sts);
         }
         // find free surface for decoder input
         mfxU16 nDecSurfIdx = GetFreeSurface(m_pDecSurfaces, m_DecResponse.NumFrameActual);
@@ -5636,7 +5598,7 @@ mfxStatus CEncodingPipeline::PreProcessOneFrame(mfxFrameSurface1* & pSurf)
         VppExtSurface.pSurface->Info.CropY = 0;
     }
 
-    sts = VPPOneFrame(m_pmfxVPP, m_pVPP_mfxSession, pSurf, &VppExtSurface);
+    sts = VPPOneFrame(m_pmfxVPP, &m_mfxSession, pSurf, &VppExtSurface);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     pSurf = VppExtSurface.pSurface;
