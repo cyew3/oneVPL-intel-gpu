@@ -55,6 +55,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-h]                      - output height\n"));
     msdk_printf(MSDK_STRING("   [-di bob/adi]             - enable deinterlacing BOB/ADI\n"));
     msdk_printf(MSDK_STRING("\n"));
+    msdk_printf(MSDK_STRING("JPEG Chroma Type:\n"));
+    msdk_printf(MSDK_STRING("   [-jpeg_rgb] - RGB Chroma Type\n"));
     msdk_printf(MSDK_STRING("Output format parameters:\n"));
     msdk_printf(MSDK_STRING("   [-i420] - pipeline output format: NV12, output file format: I420\n"));
     msdk_printf(MSDK_STRING("   [-nv12] - pipeline output format: NV12, output file format: NV12\n"));
@@ -489,6 +491,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             {
                 PrintHelp(strInput[0], MSDK_STRING("rendering frame rate is invalid"));
                 return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-jpeg_rgb")))
+        {
+            if(MFX_CODEC_JPEG == pParams->videoType)
+            {
+               pParams->chromaType = MFX_JPEG_COLORFORMAT_RGB;
             }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-i420")))

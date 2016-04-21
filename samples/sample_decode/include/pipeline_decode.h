@@ -92,6 +92,7 @@ struct sInputParams
     mfxU16  Height;
 
     mfxU32  fourcc;
+    mfxU16  chromaType;
     mfxU32  nFrames;
     mfxU16  eDeinterlace;
     bool    outI420;

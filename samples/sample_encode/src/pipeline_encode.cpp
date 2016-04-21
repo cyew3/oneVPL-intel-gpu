@@ -407,10 +407,27 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
     }
 
-    // frame info parameters
-    m_mfxEncParams.mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
-    m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-    m_mfxEncParams.mfx.FrameInfo.PicStruct    = pInParams->nPicStruct;
+    if (MFX_CODEC_JPEG == pInParams->CodecId)
+    {
+        // frame info parameters
+        m_mfxEncParams.mfx.FrameInfo.FourCC       = pInParams->ColorFormat;
+        m_mfxEncParams.mfx.FrameInfo.PicStruct    = pInParams->nPicStruct;
+        if (MFX_FOURCC_RGB4 == pInParams->ColorFormat)
+        {
+            m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        }
+        else if (MFX_FOURCC_YUY2 == pInParams->ColorFormat)
+        {
+            m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+        }
+    }
+    else
+    {
+        // frame info parameters
+        m_mfxEncParams.mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
+        m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        m_mfxEncParams.mfx.FrameInfo.PicStruct    = pInParams->nPicStruct;
+    }
 
     // set frame size and crops
     if(pInParams->CodecId==MFX_CODEC_HEVC && !memcmp(pInParams->pluginParams.pluginGuid.Data,MFX_PLUGINID_HEVCE_HW.Data,sizeof(MFX_PLUGINID_HEVCE_HW.Data)))

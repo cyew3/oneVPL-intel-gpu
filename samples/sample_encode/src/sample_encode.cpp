@@ -66,7 +66,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   If codecid is jpeg, -q option is mandatory.)\n"));
     msdk_printf(MSDK_STRING("Options: \n"));
     MOD_ENC_PRINT_HELP;
-    msdk_printf(MSDK_STRING("   [-nv12] - input is in NV12 color format, if not specified YUV420 is expected\n"));
+    msdk_printf(MSDK_STRING("   [-nv12|yuy2] - input is in NV12 color format, if not specified YUV420 is expected. YUY2 are for JPEG encode only\n"));
     msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom fielf first, if not specified progressive is expected\n"));
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
     msdk_printf(MSDK_STRING("   [-nobref] -  do not use B-pyramid (by default the decision is made by library)\n"));
@@ -207,6 +207,15 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-hw")))
         {
             pParams->bUseHWLib = true;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-yuy2")))
+        {
+            if (MFX_CODEC_JPEG != pParams->CodecId)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("-yuy2 option is supported only for JPEG encoder"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            pParams->ColorFormat = MFX_FOURCC_YUY2;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-nv12")))
         {
