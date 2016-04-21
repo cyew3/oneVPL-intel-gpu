@@ -36,11 +36,6 @@ File Name: mfxvp9.h
 extern "C" {
 #endif
 
-/* CodecProfile*/
-enum {
-    MFX_PROFILE_VP9_0                       = 1
-};
-
 /* Extended Buffer Ids */
 enum {
     MFX_EXTBUFF_CODING_OPTION_VP9 =   MFX_MAKEFOURCC('I','V','P','9'),

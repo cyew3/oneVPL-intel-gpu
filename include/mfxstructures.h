@@ -432,6 +432,12 @@ enum {
 
     MFX_TIER_HEVC_MAIN  = 0,
     MFX_TIER_HEVC_HIGH  = 0x100,
+
+    /* VP9 Profiles */
+    MFX_PROFILE_VP9_0                       = 1,
+    MFX_PROFILE_VP9_1                       = 2,
+    MFX_PROFILE_VP9_2                       = 3,
+    MFX_PROFILE_VP9_3                       = 4,
 };
 
 /* GopOptFlag */
@@ -754,7 +760,8 @@ enum {
     MFX_EXTBUFF_HEVC_REFLISTS              = MFX_EXTBUFF_AVC_REFLISTS,
     MFX_EXTBUFF_HEVC_TEMPORAL_LAYERS       = MFX_EXTBUFF_AVC_TEMPORAL_LAYERS,
     MFX_EXTBUFF_VPP_MIRRORING              = MFX_MAKEFOURCC('M','I','R','R'),
-    MFX_EXTBUFF_MV_OVER_PIC_BOUNDARIES     = MFX_MAKEFOURCC('M','V','P','B')
+    MFX_EXTBUFF_MV_OVER_PIC_BOUNDARIES     = MFX_MAKEFOURCC('M','V','P','B'),
+    MFX_EXTBUFF_VPP_COLORFILL              = MFX_MAKEFOURCC('V','C','L','F')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1622,6 +1629,13 @@ typedef struct {
     mfxU16 StickRight;   /* tri-state option */
     mfxU16 reserved[8];
 } mfxExtMVOverPicBoundaries;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16 Enable;        /* tri-state option */
+    mfxU16 reserved[11];
+} mfxExtVPPColorFill;
 
 #ifdef __cplusplus
 } // extern "C"
