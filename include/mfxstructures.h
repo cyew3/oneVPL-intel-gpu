@@ -821,8 +821,14 @@ typedef struct {
     mfxU16          RepeatedFrame;
 } mfxExtVppAuxData;
 
+/* CtrlFlags */
+enum {
+    MFX_PAYLOAD_CTRL_SUFFIX = 0x00000001 /* HEVC suffix SEI */
+};
+
 typedef struct {
-    mfxU32      reserved[4];
+    mfxU32      CtrlFlags;
+    mfxU32      reserved[3];
     mfxU8       *Data;      /* buffer pointer */
     mfxU32      NumBit;     /* number of bits */
     mfxU16      Type;       /* SEI message type in H.264 or user data start_code in MPEG-2 */
