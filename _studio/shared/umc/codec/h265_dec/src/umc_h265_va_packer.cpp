@@ -1101,13 +1101,18 @@ PackerDXVA2_Widevine::PackerDXVA2_Widevine(VideoAccelerator * va)
 
 void PackerDXVA2_Widevine::PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplier)
 {
-    H265DecoderFrameInfo * sliceInfo = frame->m_pSlicesInfo;
-    int sliceCount = sliceInfo->GetSliceCount();
-
-    if (!sliceCount)
+    if (!m_va || !frame || !supplier)
         return;
 
+    H265DecoderFrameInfo * sliceInfo = frame->m_pSlicesInfo;
+    if (!sliceInfo)
+        return;
+
+    int sliceCount = sliceInfo->GetSliceCount();
     H265Slice *pSlice = sliceInfo->GetSlice(0);
+    if (!pSlice || !sliceCount)
+        return;
+
     //const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
     H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
 
@@ -1166,7 +1171,7 @@ void PackerDXVA2_Widevine::PackAU(const H265DecoderFrame *frame, TaskSupplier_H2
     //    break;
     //}
 
-    if (m_va && m_va->GetProtectedVA())
+    if (m_va->GetProtectedVA())
     {
         mfxBitstream * bs = m_va->GetProtectedVA()->GetBitstream();
 
@@ -1188,7 +1193,10 @@ void PackerDXVA2_Widevine::PackPicParams(const H265DecoderFrame *pCurrentFrame,
 
     memset(pPicParam, 0, sizeof(DXVA_Intel_PicParams_HEVC));
 
-    H265Slice *pSlice = pSliceInfo->GetSlice(0);
+    H265Slice *pSlice = pSliceInfo ? pSliceInfo->GetSlice(0) : NULL;
+    if (!pSlice)
+        return;
+
     H265SliceHeader * sliceHeader = pSlice->GetSliceHeader();
     const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
     //const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
