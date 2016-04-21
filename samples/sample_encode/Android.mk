@@ -22,11 +22,14 @@ LOCAL_CFLAGS += \
 LOCAL_STATIC_LIBRARIES += libsample_common libmfx
 LOCAL_SHARED_LIBRARIES := libdl libva libva-android
 
-ifeq ($(LOCAL_CXX_STL),)
+ifeq ($(MFX_NDK),true)
    LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
 endif
 
+LOCAL_MULTILIB := both
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := sample_encode
+LOCAL_MODULE_STEM_32 := sample_encode32
+LOCAL_MODULE_STEM_64 := sample_encode64
 
 include $(BUILD_EXECUTABLE)
