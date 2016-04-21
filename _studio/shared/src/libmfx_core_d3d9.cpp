@@ -350,6 +350,10 @@ mfxStatus D3D9VideoCORE::SetHandle(mfxHandleType type, mfxHDL hdl)
         mfxStatus sts = CommonCORE::SetHandle(type, hdl);
         MFX_CHECK_STS(sts);
 
+#if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
+        m_vpp_hw_resmng.Close();
+#endif
+
         if (m_pDirect3DDeviceManager)
             Close();
 

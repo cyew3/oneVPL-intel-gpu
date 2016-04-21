@@ -92,7 +92,7 @@ mfxStatus VPPHWResMng::CreateDevice(VideoCORE * core){
     par.vpp.In.FourCC    = MFX_FOURCC_NV12;
     par.vpp.Out          = par.vpp.In;
 
-    sts = m_ddi->CreateDevice(core, &par, false);
+    sts = m_ddi->CreateDevice(core, &par, true);
     MFX_CHECK_STS(sts);
 
     sts = m_ddi->QueryCapabilities(m_caps);
