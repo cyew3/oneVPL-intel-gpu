@@ -14,6 +14,10 @@ include $(MFX_HOME)/android/mfx_env.mk
 
 MFX_CFLAGS := -DANDROID
 
+ifdef RESOURCES_LIMIT
+  MFX_CFLAGS += \
+    -DMFX_RESOURCES_LIMIT=$(RESOURCES_LIMIT)
+endif
 ifeq ($(MFX_ANDROID_PLATFORM),)
   MFX_ANDROID_PLATFORM:=$(TARGET_BOARD_PLATFORM)
 endif
@@ -50,6 +54,17 @@ MFX_C_INCLUDES := \
 # Setting usual link flags
 MFX_LDFLAGS :=
 
+#  Security
+MFX_CFLAGS += \
+  -fstack-protector \
+  -fPIE -fPIC -pie \
+  -O2 -D_FORTIFY_SOURCE=2 \
+  -Wformat -Wformat-security
+MFX_LDFLAGS += \
+  -z noexecstack \
+  -z relro -z now
+# Setting vendor
+LOCAL_MODULE_OWNER := intel
 # =============================================================================
 
 # Android OS specifics

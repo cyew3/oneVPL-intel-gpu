@@ -12,26 +12,17 @@ MFX_C_INCLUDES_OMX := \
   frameworks/native/include/media/openmax \
   frameworks/native/include/media/hardware
 
-ifeq ($(MFX_ANDROID_VERSION), MFX_OTC_JB)
-  MFX_C_INCLUDES_OMX += \
-    $(TARGET_OUT_HEADERS)/libmixcodec
-endif
+UFO_ENABLE_GEN ?= gen7
 
-ifeq ($(MFX_ANDROID_VERSION), MFX_MCG_JB)
-  MFX_C_INCLUDES_OMX += \
-    $(TARGET_OUT_HEADERS)/libmix_videoencoder
-endif
+# libpavp.h
 
-ifeq ($(MFX_ANDROID_VERSION), MFX_MCG_KK)
-  MFX_C_INCLUDES_OMX += \
-    $(TARGET_OUT_HEADERS)/libmix_videoencoder
-endif
 
 ifeq ($(MFX_OMX_PAVP),true)
-  ifneq ($(filter $(MFX_ANDROID_VERSION), MFX_MCG_JB MFX_MCG_KK),)
-    # libpavp.h
+  ifneq ($(filter $(MFX_ANDROID_VERSION), MFX_MCG_JB MFX_MCG_KK MFX_MCG_LD MFX_MM),)
     MFX_C_INCLUDES_OMX += \
       $(TOP)/vendor/intel/hardware/PRIVATE/ufo/inc/libpavp \
-      $(TOP)/vendor/intel/ufo/gen7/$(TARGET_ARCH)
+      $(TOP)/vendor/intel/ufo/$(UFO_ENABLE_GEN)/x86 \
+      $(TOP)/vendor/intel/ufo/$(UFO_ENABLE_GEN)/include/libpavp \
+      $(TOP)/vendor/intel/ufo/$(UFO_ENABLE_GEN)_dev/include/libpavp
   endif
 endif

@@ -23,8 +23,12 @@ include $(MFX_HOME)/android/mfx_defs.mk
 LOCAL_SRC_FILES := $(filter-out src/mfx_transcoder.cpp, \
     $(addprefix src/, $(notdir $(wildcard $(LOCAL_PATH)/src/*.cpp))))
 
-LOCAL_CFLAGS += $(MFX_TRANSODER_CFLAGS)
-LOCAL_C_INCLUDES += $(MFX_TRANSODER_INCLUDES)
+LOCAL_CFLAGS := $(MFX_TRANSODER_CFLAGS)
+LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
+LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
+LOCAL_C_INCLUDES := $(MFX_TRANSODER_INCLUDES)
+LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_32)
+LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_64)
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx_trans_pipeline
@@ -39,10 +43,14 @@ include $(MFX_HOME)/android/mfx_defs.mk
 LOCAL_SRC_FILES := $(filter-out src/mfx_transcoder.cpp, \
     $(addprefix src/, $(notdir $(wildcard $(LOCAL_PATH)/src/*.cpp))))
 
-LOCAL_CFLAGS += \
+LOCAL_CFLAGS := \
     $(MFX_TRANSODER_CFLAGS) \
     $(MFX_CFLAGS_LUCAS)
-LOCAL_C_INCLUDES += $(MFX_TRANSODER_INCLUDES)
+LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
+LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
+LOCAL_C_INCLUDES := $(MFX_TRANSODER_INCLUDES)
+LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_32)
+LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_64)
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx_trans_pipeline_lucas
@@ -57,12 +65,18 @@ include $(MFX_HOME)/android/mfx_defs.mk
 LOCAL_SRC_FILES := $(addprefix src/, \
     mfx_transcoder.cpp)
 
-LOCAL_CFLAGS += $(MFX_TRANSODER_CFLAGS)
-LOCAL_C_INCLUDES += $(MFX_TRANSODER_INCLUDES)
+LOCAL_CFLAGS := $(MFX_TRANSODER_CFLAGS)
+LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
+LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
+LOCAL_C_INCLUDES := $(MFX_TRANSODER_INCLUDES)
+LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_32)
+LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_64)
 
-LOCAL_LDFLAGS += \
+LOCAL_LDFLAGS := \
     $(MFX_LDFLAGS_INTERNAL) \
     -lippvc_l -lippcc_l -lippcp_l -lippdc_l -lippi_l -lipps_l -lippcore_l
+LOCAL_LDFLAGS_32 := $(MFX_LDFLAGS_INTERNAL_32)
+LOCAL_LDFLAGS_64 := $(MFX_LDFLAGS_INTERNAL_64)
 
 LOCAL_STATIC_LIBRARIES += \
     libmfx \
@@ -73,12 +87,19 @@ LOCAL_STATIC_LIBRARIES += \
     libsample_spl_mux_dispatcher \
     libumc_codecs_merged \
     libumc_io_merged_sw \
-    libumc_core_merged
+    libumc_core_merged \
+    libsafec
 
-LOCAL_SHARED_LIBRARIES := libstlport-mfx libgabi++-mfx libdl libva libva-android
+LOCAL_SHARED_LIBRARIES := libdl libva libva-android
+ifeq ($(MFX_NDK),true)
+   LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
+endif
 
+LOCAL_MULTILIB := both
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := mfx_transcoder
+LOCAL_MODULE_STEM_32 := mfx_transcoder32
+LOCAL_MODULE_STEM_64 := mfx_transcoder64
 
 include $(BUILD_EXECUTABLE)
 
@@ -90,14 +111,20 @@ include $(MFX_HOME)/android/mfx_defs.mk
 LOCAL_SRC_FILES := $(addprefix src/, \
     mfx_transcoder.cpp)
 
-LOCAL_CFLAGS += \
+LOCAL_CFLAGS := \
     $(MFX_TRANSODER_CFLAGS) \
     $(MFX_CFLAGS_LUCAS)
-LOCAL_C_INCLUDES += $(MFX_TRANSODER_INCLUDES)
+LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
+LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
+LOCAL_C_INCLUDES := $(MFX_TRANSODER_INCLUDES)
+LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_32)
+LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_64)
 
-LOCAL_LDFLAGS += \
+LOCAL_LDFLAGS := \
     $(MFX_LDFLAGS_INTERNAL) \
     -lippvc_l -lippcc_l -lippcp_l -lippdc_l -lippi_l -lipps_l -lippcore_l
+LOCAL_LDFLAGS_32 := $(MFX_LDFLAGS_INTERNAL_32)
+LOCAL_LDFLAGS_64 := $(MFX_LDFLAGS_INTERNAL_64)
 
 LOCAL_STATIC_LIBRARIES += \
     libmfx \
@@ -108,9 +135,13 @@ LOCAL_STATIC_LIBRARIES += \
     libsample_spl_mux_dispatcher \
     libumc_codecs_merged \
     libumc_io_merged_sw \
-    libumc_core_merged
+    libumc_core_merged \
+    libsafec
 
-LOCAL_SHARED_LIBRARIES := libstlport-mfx libgabi++-mfx libdl libva libva-android
+LOCAL_SHARED_LIBRARIES := libdl libva libva-android
+ifeq ($(MFX_NDK),true)
+   LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
+endif
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := mfx_transcoder_pipeline

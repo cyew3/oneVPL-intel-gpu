@@ -8,8 +8,12 @@
 MFX_CFLAGS_STL := -fexceptions -frtti
 
 ## Variant with stlport & gabi++
-MFX_C_INCLUDES_STL := \
-    ndk/sources/cxx-stl/stlport/stlport
+MFX_C_INCLUDES_STL :=
+MAJOR_VERSION :=$(shell echo $(PLATFORM_VERSION) | cut -f1 -d.)
+MFX_NDK :=$(shell test $(MAJOR_VERSION) -lt 6 && echo true)
+ifeq ($(MFX_NDK),true)
+  MFX_C_INCLUDES_STL += ndk/sources/cxx-stl/stlport/stlport
+endif
 
 ## Variant with llvm
 #MFX_C_INCLUDES_STL := \

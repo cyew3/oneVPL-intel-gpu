@@ -19,7 +19,10 @@ MFX_LOCAL_DIRS = \
     fei
 
 MFX_OPTIMIZATION_DIRS = \
-    optimization/h265
+    optimization/h265/src \
+    optimization/h264/src \
+    optimization/h264/src/px \
+    optimization/h264/src/sse
 
 MFX_LOCAL_DIRS_IMPL = \
     $(addprefix decode/, $(MFX_LOCAL_DECODERS)) \
@@ -32,7 +35,7 @@ MFX_LOCAL_DIRS_HW = \
     cmrt_cross_platform
 
 MFX_OPTIMIZATION_FILES = \
-    $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_OPTIMIZATION_DIRS), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/src/*.cpp)))
+    $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_OPTIMIZATION_DIRS), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/*.cpp)))
 
 MFX_LOCAL_SRC_FILES = \
     $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/src/*.cpp)))
@@ -46,7 +49,8 @@ MFX_LOCAL_SRC_FILES_HW = \
     $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS_HW), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/src/*.cpp)))
 
 MFX_LOCAL_C_INCLUDES = \
-    $(foreach dir, $(MFX_LOCAL_DIRS), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/include))
+    $(foreach dir, $(MFX_LOCAL_DIRS), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/include)) \
+    $(MFX_HOME)/thirdparty/SafeStringStaticLibrary/include
 
 MFX_LOCAL_C_INCLUDES_IMPL = \
     $(MFX_LOCAL_C_INCLUDES) \
@@ -56,6 +60,38 @@ MFX_LOCAL_C_INCLUDES_HW = \
     $(MFX_LOCAL_C_INCLUDES_IMPL) \
     $(foreach dir, $(MFX_LOCAL_DIRS_HW), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/include))
 
+MFX_LOCAL_STATIC_LIBRARIES_HW += \
+    libmfx_lib_merged_hw \
+    libumc_codecs_merged_hw \
+    libumc_codecs_merged \
+    libmfx_optimization \
+    libumc_io_merged_hw \
+    libumc_core_merged \
+    libmfx_trace_hw \
+    libsafec
+
+MFX_LOCAL_STATIC_LIBRARIES_SW += \
+    libmfx_lib_merged_sw \
+    libumc_codecs_merged_sw \
+    libumc_codecs_merged \
+    libmfx_optimization \
+    libumc_io_merged_sw \
+    libumc_core_merged \
+    libmfx_trace_sw \
+    libsafec
+
+MFX_LOCAL_LDFLAGS_HW += \
+    $(MFX_LDFLAGS_INTERNAL_HW) \
+    -Wl,--version-script=$(LOCAL_PATH)/mfx_lib/libmfx.map \
+    -Wl,--no-warn-shared-textrel \
+    -lippj_l -lippvc_l -lippcc_l -lippcv_l -lippi_l -lipps_l -lippcore_l -lippmsdk_l -lvpx-mfx
+
+MFX_LOCAL_LDFLAGS_SW += \
+    $(MFX_LDFLAGS_INTERNAL) \
+    -Wl,--version-script=$(LOCAL_PATH)/mfx_lib/libmfx.map \
+    -Wl,--no-warn-shared-textrel \
+    -lippj_l -lippvc_l -lippcc_l -lippcv_l -lippi_l -lipps_l -lippcore_l -lippmsdk_l -lvpx-mfx
+
 # =============================================================================
 
 UMC_DIRS = \
@@ -63,7 +99,7 @@ UMC_DIRS = \
     brc color_space_converter jpeg_common
 
 UMC_DIRS_IMPL = \
-    h265_dec h264_dec mpeg2_dec vc1_dec jpeg_dec vp8_dec\
+    h265_dec h264_dec mpeg2_dec vc1_dec jpeg_dec vp8_dec vp9_dec\
     vc1_common vc1_spl jpeg_common \
     scene_analyzer color_space_converter
 
@@ -85,6 +121,7 @@ MFX_SHARED_FILES_IMPL = $(addprefix mfx_lib/shared/src/, \
     mfx_enc_common.cpp \
     mfx_h264_enc_common.cpp \
     mfx_vc1_enc_common.cpp \
+    mfx_vp8_enc_common.cpp \
     mfx_mpeg2_dec_common.cpp \
     mfx_vc1_dec_common.cpp \
     mfx_common_decode_int.cpp)
@@ -95,7 +132,8 @@ MFX_SHARED_FILES_HW = \
 MFX_SHARED_FILES_HW += $(addprefix mfx_lib/shared/src/, \
     mfx_h264_enc_common_hw.cpp \
     mfx_h264_encode_vaapi.cpp \
-    mfx_h264_encode_factory.cpp)
+    mfx_h264_encode_factory.cpp \
+    mfx_vp8_enc_common_hw.cpp)
 
 MFX_LIB_SHARED_FILES_1 = $(addprefix mfx_lib/shared/src/, \
     libmfxsw.cpp \
@@ -135,11 +173,16 @@ include $(MFX_HOME)/android/mfx_defs.mk
 LOCAL_SRC_FILES := \
     $(MFX_OPTIMIZATION_FILES)
 
-LOCAL_C_INCLUDES += \
+LOCAL_C_INCLUDES := \
     $(MFX_LOCAL_C_INCLUDES) \
     $(UMC_LOCAL_C_INCLUDES) \
     $(MFX_C_INCLUDES_INTERNAL)
-LOCAL_CFLAGS += $(MFX_CFLAGS_INTERNAL)
+LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_32)
+LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_64)
+
+LOCAL_CFLAGS := $(MFX_CFLAGS_INTERNAL)
+LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
+LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx_optimization
@@ -157,11 +200,16 @@ ifeq ($(MFX_IMPL_HW), true)
     $(MFX_LOCAL_SRC_FILES_HW) \
     $(MFX_SHARED_FILES_HW)
 
-  LOCAL_C_INCLUDES += \
+  LOCAL_C_INCLUDES := \
     $(MFX_LOCAL_C_INCLUDES_HW) \
     $(UMC_LOCAL_C_INCLUDES_HW) \
     $(MFX_C_INCLUDES_INTERNAL_HW)
-  LOCAL_CFLAGS += $(MFX_CFLAGS_INTERNAL_HW)
+  LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_HW_32)
+  LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_HW_64)
+
+  LOCAL_CFLAGS := $(MFX_CFLAGS_INTERNAL_HW)
+  LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_HW_32)
+  LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_HW_64)
 
   LOCAL_MODULE_TAGS := optional
   LOCAL_MODULE := libmfx_lib_merged_hw
@@ -180,11 +228,16 @@ ifeq ($(MFX_IMPL_SW), true)
     $(MFX_LOCAL_SRC_FILES_IMPL) \
     $(MFX_SHARED_FILES_IMPL)
 
-  LOCAL_C_INCLUDES += \
+  LOCAL_C_INCLUDES := \
     $(MFX_LOCAL_C_INCLUDES_IMPL) \
     $(UMC_LOCAL_C_INCLUDES_IMPL) \
     $(MFX_C_INCLUDES_INTERNAL)
-  LOCAL_CFLAGS += $(MFX_CFLAGS_INTERNAL)
+  LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_32)
+  LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_64)
+
+  LOCAL_CFLAGS := $(MFX_CFLAGS_INTERNAL)
+  LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
+  LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
   LOCAL_MODULE_TAGS := optional
   LOCAL_MODULE := libmfx_lib_merged_sw
@@ -200,35 +253,102 @@ ifeq ($(MFX_IMPL_HW), true)
 
   LOCAL_SRC_FILES := $(MFX_LIB_SHARED_FILES_1) $(MFX_LIB_SHARED_FILES_2)
 
-  LOCAL_C_INCLUDES += \
+  LOCAL_C_INCLUDES := \
     $(MFX_LOCAL_C_INCLUDES_HW) \
     $(UMC_LOCAL_C_INCLUDES_HW) \
     $(MFX_C_INCLUDES_INTERNAL_HW)
-  LOCAL_CFLAGS += $(MFX_CFLAGS_INTERNAL_HW)
+  LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_HW_32)
 
-  LOCAL_STATIC_LIBRARIES += \
-    libmfx_lib_merged_hw \
-    libumc_codecs_merged_hw \
-    libumc_codecs_merged \
-    libmfx_optimization \
-    libumc_io_merged_hw \
-    libumc_core_merged \
-    libmfx_trace_hw
+  LOCAL_CFLAGS := $(MFX_CFLAGS_INTERNAL_HW)
+  LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_HW_32)
 
-  LOCAL_LDFLAGS += \
-    $(MFX_LDFLAGS_INTERNAL_HW) \
-    -Wl,--version-script=$(LOCAL_PATH)/mfx_lib/libmfx.map \
-    -Wl,--no-warn-shared-textrel \
-    -lippj_l -lippvc_l -lippcc_l -lippcv_l -lippi_l -lipps_l -lippcore_l -lippmsdk_l -lvpx-mfx
+  LOCAL_STATIC_LIBRARIES := $(MFX_LOCAL_STATIC_LIBRARIES_HW)
 
-  LOCAL_SHARED_LIBRARIES := libstlport-mfx libgabi++-mfx libva libdl
+  LOCAL_LDFLAGS := $(MFX_LOCAL_LDFLAGS_HW)
+  LOCAL_LDFLAGS_32 := $(MFX_LDFLAGS_INTERNAL_HW_32)
+
+  LOCAL_SHARED_LIBRARIES := libva libdl
+
+  ifeq ($(MFX_NDK),true)
+    LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
+  endif
 
   LOCAL_MODULE_TAGS := optional
-  ifeq ($(TARGET_ARCH), x86)
-    LOCAL_MODULE := libmfxhw32
-  else
-    LOCAL_MODULE := libmfxhw64
+  LOCAL_MODULE := libmfxhw32
+  LOCAL_MODULE_TARGET_ARCH := x86
+  LOCAL_MULTILIB := 32
+
+  include $(BUILD_SHARED_LIBRARY)
+endif # ifeq ($(MFX_IMPL_HW), true)
+
+# =============================================================================
+
+ifeq ($(MFX_IMPL_HW), true)
+  include $(CLEAR_VARS)
+  include $(MFX_HOME)/android/mfx_defs.mk
+
+  LOCAL_SRC_FILES := $(MFX_LIB_SHARED_FILES_1) $(MFX_LIB_SHARED_FILES_2)
+
+  LOCAL_C_INCLUDES := \
+    $(MFX_LOCAL_C_INCLUDES_HW) \
+    $(UMC_LOCAL_C_INCLUDES_HW) \
+    $(MFX_C_INCLUDES_INTERNAL_HW)
+  LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_HW_64)
+
+  LOCAL_CFLAGS := $(MFX_CFLAGS_INTERNAL_HW)
+  LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_HW_64)
+
+  LOCAL_STATIC_LIBRARIES := $(MFX_LOCAL_STATIC_LIBRARIES_HW)
+
+  LOCAL_LDFLAGS := $(MFX_LOCAL_LDFLAGS_HW)
+  LOCAL_LDFLAGS_64 := $(MFX_LDFLAGS_INTERNAL_HW_64)
+
+  LOCAL_SHARED_LIBRARIES := libva libdl
+
+  ifeq ($(MFX_NDK),true)
+    LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
   endif
+
+  LOCAL_MODULE_TAGS := optional
+  LOCAL_MODULE := libmfxhw64
+  LOCAL_MODULE_TARGET_ARCH := x86_64
+  LOCAL_MULTILIB := 64
+
+  include $(BUILD_SHARED_LIBRARY)
+endif # ifeq ($(MFX_IMPL_HW), true)
+
+# =============================================================================
+
+ifeq ($(MFX_IMPL_SW), true)
+  include $(CLEAR_VARS)
+  include $(MFX_HOME)/android/mfx_defs.mk
+
+  LOCAL_SRC_FILES := $(MFX_LIB_SHARED_FILES_1) $(MFX_LIB_SHARED_FILES_2)
+
+  LOCAL_C_INCLUDES := \
+    $(MFX_LOCAL_C_INCLUDES_IMPL) \
+    $(UMC_LOCAL_C_INCLUDES_IMPL) \
+    $(MFX_C_INCLUDES_INTERNAL)
+  LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_32)
+
+  LOCAL_CFLAGS := $(MFX_CFLAGS_INTERNAL)
+  LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
+
+  LOCAL_STATIC_LIBRARIES := $(MFX_LOCAL_STATIC_LIBRARIES_SW)
+
+  LOCAL_LDFLAGS := $(MFX_LOCAL_LDFLAGS_SW)
+  LOCAL_LDFLAGS_32 := $(MFX_LDFLAGS_INTERNAL_32)
+
+  LOCAL_SHARED_LIBRARIES := libdl
+
+  ifeq ($(MFX_NDK),true)
+    LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
+  endif
+
+  LOCAL_MODULE_TAGS := optional
+  LOCAL_MODULE := libmfxsw32
+  LOCAL_MODULE_TARGET_ARCH := x86
+  LOCAL_MULTILIB := 32
 
   include $(BUILD_SHARED_LIBRARY)
 endif # ifeq ($(MFX_IMPL_HW), true)
@@ -245,32 +365,26 @@ ifeq ($(MFX_IMPL_SW), true)
     $(MFX_LOCAL_C_INCLUDES_IMPL) \
     $(UMC_LOCAL_C_INCLUDES_IMPL) \
     $(MFX_C_INCLUDES_INTERNAL)
-  LOCAL_CFLAGS += $(MFX_CFLAGS_INTERNAL)
+  LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_64)
 
-  LOCAL_STATIC_LIBRARIES += \
-    libmfx_lib_merged_sw \
-    libumc_codecs_merged_sw \
-    libumc_codecs_merged \
-    libmfx_optimization \
-    libumc_io_merged_sw \
-    libumc_core_merged \
-    libmfx_trace_sw
+  LOCAL_CFLAGS := $(MFX_CFLAGS_INTERNAL)
+  LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
-  LOCAL_LDFLAGS += \
-    $(MFX_LDFLAGS_INTERNAL) \
-    -Wl,--version-script=$(LOCAL_PATH)/mfx_lib/libmfx.map \
-    -Wl,--no-warn-shared-textrel \
-    -lippj_l -lippvc_l -lippcc_l -lippcv_l -lippi_l -lipps_l -lippcore_l -lippmsdk_l -lvpx-mfx
+  LOCAL_STATIC_LIBRARIES := $(MFX_LOCAL_STATIC_LIBRARIES_SW)
 
-  LOCAL_SHARED_LIBRARIES := libstlport-mfx libgabi++-mfx libdl
+  LOCAL_LDFLAGS := $(MFX_LOCAL_LDFLAGS_SW)
+  LOCAL_LDFLAGS_64 := $(MFX_LDFLAGS_INTERNAL_64)
+
+  LOCAL_SHARED_LIBRARIES := libdl
+
+  ifeq ($(MFX_NDK),true)
+    LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
+  endif
 
   LOCAL_MODULE_TAGS := optional
-
-  ifeq ($(TARGET_ARCH), x86)
-    LOCAL_MODULE := libmfxsw32
-  else
-    LOCAL_MODULE := libmfxsw64
-  endif
+  LOCAL_MODULE := libmfxsw64
+  LOCAL_MODULE_TARGET_ARCH := x86_64
+  LOCAL_MULTILIB := 64
 
   include $(BUILD_SHARED_LIBRARY)
 endif # ifeq ($(MFX_IMPL_HW), true)
