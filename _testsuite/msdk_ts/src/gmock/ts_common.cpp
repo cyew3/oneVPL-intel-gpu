@@ -16,6 +16,7 @@ mfxIMPL      g_tsImpl     = MFX_IMPL_AUTO;
 HWType       g_tsHWtype   = MFX_HW_UNKNOWN;
 OSFamily     g_tsOSFamily = MFX_OS_FAMILY_UNKNOWN;
 OSWinVersion g_tsWinVersion = MFX_WIN_VER_UNKNOWN;
+bool         g_tsIsSSW = false;
 mfxVersion   g_tsVersion  = {MFX_VERSION_MINOR, MFX_VERSION_MAJOR};
 mfxU32       g_tsTrace    = 1;
 tsPlugin     g_tsPlugin;
@@ -200,8 +201,11 @@ void MFXVideoTest::SetUp()
         {
             g_tsOSFamily = MFX_OS_FAMILY_LINUX;
         }
-
-        if(platform.find("_sw_") != std::string::npos)
+        if (platform.find("_ssw_") != std::string::npos)
+        {
+                g_tsIsSSW = true;
+        }
+        else if(platform.find("_sw_") != std::string::npos)
         {
             g_tsImpl = MFX_IMPL_SOFTWARE;
         }

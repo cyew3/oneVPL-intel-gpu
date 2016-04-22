@@ -1,3 +1,12 @@
+/*
+//
+//                  INTEL CORPORATION PROPRIETARY INFORMATION
+//     This software is supplied under the terms of a license agreement or
+//     nondisclosure agreement with Intel Corporation and may not be copied
+//     or disclosed except in accordance with the terms of that agreement.
+//       Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
+//
+*/
 #include "ts_decoder.h"
 #include "ts_struct.h"
 
@@ -197,35 +206,47 @@ int TestSuite::RunTest(unsigned int id)
         m_par_set = true;
     }
 
-
-    Init();
-    GetVideoParam();
-
-    if(tc.stream[0] != "")
+    if (g_tsIsSSW && (m_par.IOPattern == MFX_IOPATTERN_OUT_VIDEO_MEMORY))
     {
-        DecodeFrames(3);
+        g_tsLog<<"WARNING: Case Skipped!\n";
     }
-
-    if(tc.stream[1] != "")
+    else
     {
-        if (m_bs_processor)
-            delete m_bs_processor;
-        m_bs_processor = new tsBitstreamReader(stream1, 100000);
-        m_bitstream.DataLength = 0;
-        DecodeHeader();
-    }
+        Init();
+        GetVideoParam();
 
-    apply_par(tc, RESET);
+        if(tc.stream[0] != "")
+        {
+            DecodeFrames(3);
+        }
 
-    for(mfxU32 i = 0; i < m_repeat; i ++)
-    {
-        g_tsStatus.expect(tc.sts);
-        Reset(m_session, m_pPar);
-    }
+        if(tc.stream[1] != "")
+        {
+            if (m_bs_processor)
+                delete m_bs_processor;
+            m_bs_processor = new tsBitstreamReader(stream1, 100000);
+            m_bitstream.DataLength = 0;
+            DecodeHeader();
+        }
 
-    if((tc.stream[0] != "" || tc.stream[1] != "") && (tc.sts >= MFX_ERR_NONE))
-    {
-        DecodeFrames(3);
+        apply_par(tc, RESET);
+        if (g_tsIsSSW && (m_par.IOPattern == MFX_IOPATTERN_OUT_VIDEO_MEMORY))
+        {
+            g_tsLog<<"WARNING: Reset Skipped!\n";
+        }
+        else
+        {
+            for(mfxU32 i = 0; i < m_repeat; i ++)
+            {
+                g_tsStatus.expect(tc.sts);
+                Reset(m_session, m_pPar);
+            }
+
+            if((tc.stream[0] != "" || tc.stream[1] != "") && (tc.sts >= MFX_ERR_NONE))
+            {
+                DecodeFrames(3);
+            }
+        }
     }
 
     TS_END;
