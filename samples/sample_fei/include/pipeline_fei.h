@@ -292,9 +292,9 @@ protected:
     mfxFrameAllocResponse m_EncResponse;  // memory allocation response for encoder
     mfxFrameAllocResponse m_ReconResponse;  // memory allocation response for encoder for reconstructed surfaces [FEI]
     mfxU32 m_BaseAllocID;
+    mfxU32 m_EncPakReconAllocID;
 
     std::vector<mfxExtFeiDecStreamOut*> m_StreamoutBufs;
-    std::list<std::pair<mfxFrameSurface1*, mfxFrameSurface1*> > m_DecodeToVppCorresp;
     mfxExtFeiDecStreamOut* m_pExtBufDecodeStreamout; // current streamout buffer
 
     // for trellis, B-pyramid, RAW-reference settings    mfxExtCodingOption2 m_CodingOption2;
@@ -359,11 +359,10 @@ protected:
     virtual mfxStatus ResizeFrame(mfxU32 frameNum, bool &insertIDR,size_t &rctime, iTask* &eTask, sTask *pCurrentTask);
 
     virtual mfxStatus PreProcessOneFrame(mfxFrameSurface1* & pSurf);
-    virtual mfxStatus PostProcessOneFrame(mfxFrameSurface1* pSurf);
-    virtual mfxStatus PreencOneFrame(iTask* &eTask, mfxFrameSurface1* & pSurf, bool is_buffered, bool &cont);
+    virtual mfxStatus PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, bool is_buffered, bool &cont);
     virtual mfxStatus ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs[2][2]);
-    virtual mfxStatus EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* & pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
-    virtual mfxStatus EncodeOneFrame(iTask* &eTask, mfxFrameSurface1* & pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
+    virtual mfxStatus EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
+    virtual mfxStatus EncodeOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
     virtual mfxStatus SyncOneEncodeFrame(sTask* pCurrentTask, iTask* eTask, mfxU32 fieldProcessingCounter);
 
     virtual mfxStatus DecodeOneFrame(ExtendedSurface *pOutSurf);
