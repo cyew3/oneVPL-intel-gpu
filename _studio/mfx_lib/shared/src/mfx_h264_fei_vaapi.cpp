@@ -1256,8 +1256,6 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         extSps->seqParameterSetId = pDataSPS->SPSId;
         extSps->levelIdc = pDataSPS->Level;
         extSps->maxNumRefFrames = pDataSPS->NumRefFrame;
-        extSps->picWidthInMbsMinus1 = pDataSPS->WidthInMBs -1 ;
-        extSps->picHeightInMapUnitsMinus1 = pDataSPS->HeightInMBs -1;
         extSps->chromaFormatIdc = pDataSPS->ChromaFormatIdc;
         extSps->frameMbsOnlyFlag = pDataSPS->FrameMBsOnlyFlag;
         extSps->mbAdaptiveFrameFieldFlag = pDataSPS->MBAdaptiveFrameFieldFlag;
@@ -2668,8 +2666,6 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         extSps->seqParameterSetId = pDataSPS->SPSId;
         extSps->levelIdc = pDataSPS->Level;
         extSps->maxNumRefFrames = pDataSPS->NumRefFrame;
-        extSps->picWidthInMbsMinus1 = pDataSPS->WidthInMBs -1 ;
-        extSps->picHeightInMapUnitsMinus1 = pDataSPS->HeightInMBs -1;
         extSps->chromaFormatIdc = pDataSPS->ChromaFormatIdc;
         extSps->frameMbsOnlyFlag = pDataSPS->FrameMBsOnlyFlag;
         extSps->mbAdaptiveFrameFieldFlag = pDataSPS->MBAdaptiveFrameFieldFlag;
