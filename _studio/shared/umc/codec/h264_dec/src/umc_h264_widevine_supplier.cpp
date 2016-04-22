@@ -187,6 +187,8 @@ Status WidevineTaskSupplier::Init(VideoDecoderParams *pInit)
     }
 #endif
 
+    m_DPBSizeEx += 2; // Fix for Netflix freeze issue
+
     return UMC_OK;
 }
 
