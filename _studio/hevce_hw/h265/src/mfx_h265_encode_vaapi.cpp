@@ -632,6 +632,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     m_caps.MBBRCSupport = 1;            // starting 16.3 Beta, enabled in driver by default for TU-1,2
     m_caps.MbQpDataSupport = 1;
     m_caps.Color420Only = 1;// fixme in case VAAPI direct YUY2/RGB support added
+    m_caps.TUSupport = 73;  //
 
     vaExtQueryEncCapabilities pfnVaExtQueryCaps = NULL;
     pfnVaExtQueryCaps = (vaExtQueryEncCapabilities)vaGetLibFunc(m_vaDisplay,VPG_EXT_QUERY_ENC_CAPS);

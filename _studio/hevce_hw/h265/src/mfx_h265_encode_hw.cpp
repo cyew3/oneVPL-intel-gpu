@@ -397,7 +397,6 @@ mfxStatus   Plugin::WaitingForAsyncTasks(bool bResetTasks)
     if (m_runtimeErr == 0)
     {
        // sheduler must wait untial all async tasks will be ready.
-        MFX_CHECK(m_task.GetSubmittedTask() == NULL, MFX_ERR_UNDEFINED_BEHAVIOR);
 
         if (!bResetTasks)
            return sts;
