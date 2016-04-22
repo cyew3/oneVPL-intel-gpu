@@ -2143,8 +2143,6 @@ mfxStatus CEncodingPipeline::InitInterfaces()
             feiSPS->Level   = m_encpakParams.CodecLevel;
 
             feiSPS->NumRefFrame = m_mfxEncParams.mfx.NumRefFrame;
-            feiSPS->WidthInMBs  = m_widthMB;
-            feiSPS->HeightInMBs = m_heightMB;
 
             feiSPS->ChromaFormatIdc  = m_mfxEncParams.mfx.FrameInfo.ChromaFormat;
             feiSPS->FrameMBsOnlyFlag = (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 0;
