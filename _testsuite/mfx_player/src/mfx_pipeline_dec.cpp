@@ -2590,6 +2590,9 @@ mfxStatus MFXDecPipeline::CreateAllocator()
         {
             PrintInfo(VM_STRING("Decode.Surface Type"), VM_STRING("OPAQ=>%s"), (_request[eDEC]->Type & MFX_MEMTYPE_SYSTEM_MEMORY) ? VM_STRING("system"):VM_STRING("D3D"));
         }
+
+        if (m_inParams.nDecoderSurfs)
+            numDecSfr = m_inParams.nDecoderSurfs;
     }
 
     //if vpp isn't used we will keep frames in a single storage
@@ -4821,6 +4824,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
           {
               m_inParams.bVP9_DRC = true;
           }
+          else HANDLE_INT_OPTION(m_inParams.nDecoderSurfs, VM_STRING("-dec:surfs"), VM_STRING("specifies number of surfaces in decoder's pool"))
           else
           {
                MFX_TRACE_AT_EXIT_IF( MFX_ERR_UNSUPPORTED

@@ -114,6 +114,7 @@ struct sCommandlineParams
   mfxI32         nDecodeInAdvance;//buffer decoded frames
   mfxU16         DecodedOrder;
   mfxU16         EncodedOrder;
+  mfxU32         nDecoderSurfs;
   EncodeExtraParams encodeExtraParams;
 
   mfxU16         InputPicstruct;
