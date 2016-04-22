@@ -394,7 +394,7 @@ namespace ExtBuffer
         bUnsuppoted = (memcmp(&buf_ref, &buf, sizeof(T))!=0);
         if (bUnsuppoted && bFix)
         {
-            memcpy(&buf, &buf_ref, sizeof(T));
+            memcpy_s(&buf, sizeof(T), &buf_ref, sizeof(T));
         }
         return bUnsuppoted;    
     }
