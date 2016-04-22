@@ -166,7 +166,12 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
         CompleteFrame(au->m_pFrame);
 
         if (sts < UMC::UMC_OK)
-            au->m_pFrame->SetError(UMC::UMC_ERR_DEVICE_FAILED);
+        {
+            if (sts != UMC::UMC_ERR_GPU_HANG)
+                sts = UMC::UMC_ERR_DEVICE_FAILED;
+
+            au->m_pFrame->SetError(sts);
+        }
         else if (sts == UMC::UMC_OK)
             switch (surfErr)
             {

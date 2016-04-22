@@ -355,7 +355,12 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
         CompleteFrame(au->m_pFrame);
 
         if (sts < UMC_OK)
-            au->m_pFrame->SetError(UMC_ERR_DEVICE_FAILED);
+        {
+            if (sts != UMC_ERR_GPU_HANG)
+                sts = UMC_ERR_DEVICE_FAILED;
+
+            au->m_pFrame->SetError(sts);
+        }
 #if !defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
         else if (surfSts == VASurfaceReady)
 #else
