@@ -280,6 +280,7 @@ mfxStatus VideoENC_ENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
 //          return Error(sts);
     /* Passing deblocking params */
     mfxENCInput* inParams = (mfxENCInput*)task.m_userData[0];
+    mfxENCOutput* outParams = (mfxENCOutput*)task.m_userData[1];
     mfxExtCodingOption2 const *   extOpt2        = GetExtBuffer(m_video);
     mfxExtCodingOption2 const *   extOpt2Runtime = GetExtBuffer(task.m_ctrl);
     const mfxExtCodingOption2* extOpt2Cur = (extOpt2Runtime ? extOpt2Runtime : extOpt2);
@@ -324,24 +325,47 @@ mfxStatus VideoENC_ENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
         } // for (size_t i = 0; i < GetMaxNumSlices(video); i++)
     } // for (mfxU32 field = 0; field < fieldMaxCount; field++)
 
-    mfxHDL handle_src, handle_rec;
-    sts = m_core->GetExternalFrameHDL(inParams->InSurface->Data.MemId, &handle_src);
-    MFX_CHECK(MFX_ERR_NONE == sts, MFX_ERR_INVALID_HANDLE);
-    for(mfxU32 i = 0; i < m_rec.NumFrameActual; i++)
-    {
-        task.m_midRec    = AcquireResource(m_rec, i);
-        sts = m_core->GetFrameHDL(m_rec.mids[i], &handle_rec);
+//    mfxHDL handle_src, handle_rec;
+//    sts = m_core->GetExternalFrameHDL(inParams->InSurface->Data.MemId, &handle_src);
+//    MFX_CHECK(MFX_ERR_NONE == sts, MFX_ERR_INVALID_HANDLE);
+//    for(mfxU32 i = 0; i < m_rec.NumFrameActual; i++)
+//    {
+//        task.m_midRec    = AcquireResource(m_rec, i);
+//        sts = m_core->GetFrameHDL(m_rec.mids[i], &handle_rec);
+//        MFX_CHECK(MFX_ERR_NONE == sts, MFX_ERR_INVALID_HANDLE);
+//        mfxU32* src_surf_id = (mfxU32 * )handle_src;
+//        mfxU32* rec_surf_id = (mfxU32 * )handle_rec;
+//        if ((*src_surf_id) == (*rec_surf_id))
+//        {
+//            task.m_idxRecon = i;
+//            break;
+//        }
+//        else
+//            ReleaseResource(m_rec, task.m_midRec);
+//    }
+
+//    task.m_idxRecon = FindFreeResourceIndex(m_rec);
+//    task.m_midRec    = AcquireResource(m_rec, task.m_idxRecon);
+
+        mfxHDL handle_src, handle_rec;
+        sts = m_core->GetExternalFrameHDL(outParams->OutSurface->Data.MemId, &handle_src);
         MFX_CHECK(MFX_ERR_NONE == sts, MFX_ERR_INVALID_HANDLE);
-        mfxU32* src_surf_id = (mfxU32 * )handle_src;
-        mfxU32* rec_surf_id = (mfxU32 * )handle_rec;
-        if ((*src_surf_id) == (*rec_surf_id))
+        for(mfxU32 i = 0; i < m_rec.NumFrameActual; i++)
         {
-            task.m_idxRecon = i;
-            break;
+            task.m_midRec    = AcquireResource(m_rec, i);
+            sts = m_core->GetFrameHDL(m_rec.mids[i], &handle_rec);
+            MFX_CHECK(MFX_ERR_NONE == sts, MFX_ERR_INVALID_HANDLE);
+            mfxU32* src_surf_id = (mfxU32 * )handle_src;
+            mfxU32* rec_surf_id = (mfxU32 * )handle_rec;
+            if ((*src_surf_id) == (*rec_surf_id))
+            {
+                task.m_idxRecon = i;
+                break;
+            }
+            else
+                ReleaseResource(m_rec, task.m_midRec);
         }
-        else
-            ReleaseResource(m_rec, task.m_midRec);
-    }
+
     //!!! HACK !!!
     m_recFrameOrder[task.m_idxRecon] = task.m_frameOrder;
     TEMPORAL_HACK_WITH_DPB(task.m_dpb[0],          m_rec.mids, m_recFrameOrder);
@@ -431,6 +455,8 @@ mfxStatus VideoENC_ENC::Query(DdiTask& task)
 
 //    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
 //        m_firstFieldDone = MFX_CODINGOPTION_UNKNOWN;
+
+    ReleaseResource(m_rec, task.m_midRec);
 
     return MFX_ERR_NONE;
 
@@ -566,11 +592,12 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
      * same reference /reconstruct list !
      * */
     request.Type = MFX_MEMTYPE_FROM_ENC | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
-    request.NumFrameMin = m_video.mfx.GopRefDist*2;
-    request.NumFrameSuggested = request.NumFrameMin + m_video.AsyncDepth;
+    request.NumFrameMin = m_video.mfx.GopRefDist * 2 + (m_video.AsyncDepth-1) + 1 + m_video.mfx.NumRefFrame + 1;
+    request.NumFrameSuggested = request.NumFrameMin;
     request.AllocId = par->AllocId;
 
-    sts = m_core->AllocFrames(&request, &m_rec);
+    //sts = m_core->AllocFrames(&request, &m_rec);
+    sts = m_rec.Alloc(m_core,request, false);
     MFX_CHECK_STS(sts);
 
     sts = m_ddi->Register(m_rec, D3DDDIFMT_NV12);
