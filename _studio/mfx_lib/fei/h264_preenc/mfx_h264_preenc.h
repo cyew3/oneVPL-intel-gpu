@@ -59,8 +59,10 @@ public:
 
     mfxStatus Submit(mfxEncodeInternalParams * iParams);    
     
-    mfxStatus Query(DdiTask& task);
+    mfxStatus QueryStatus(DdiTask& task);
 
+    static
+    mfxStatus Query(VideoCORE*, mfxVideoParam *in, mfxVideoParam *out);
     static 
     mfxStatus QueryIOSurf(VideoCORE*, mfxVideoParam *par, mfxFrameAllocRequest *request);
 

@@ -275,10 +275,10 @@ static mfxStatus AsyncQuery(void * state, void * param, mfxU32 /*threadNumber*/,
 {
     VideoENC_PREENC & impl = *(VideoENC_PREENC *)state;
     DdiTask& task = *(DdiTask *)param;
-    return impl.Query(task);
+    return impl.QueryStatus(task);
 }
 
-mfxStatus VideoENC_PREENC::Query(DdiTask& task)
+mfxStatus VideoENC_PREENC::QueryStatus(DdiTask& task)
 {
     mdprintf(stderr,"query\n");
     mfxStatus sts = MFX_ERR_NONE;
@@ -324,6 +324,12 @@ mfxStatus VideoENC_PREENC::Query(DdiTask& task)
     return MFX_ERR_NONE;
 
 }
+
+
+mfxStatus VideoENC_PREENC::Query(VideoCORE*, mfxVideoParam *in, mfxVideoParam *out)
+{
+    return MFX_ERR_NONE;
+} // mfxStatus VideoENC_PREENC::Query(VideoCORE*, mfxVideoParam *in, mfxVideoParam *out)
 
 mfxStatus VideoENC_PREENC::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrameAllocRequest *request)
 {

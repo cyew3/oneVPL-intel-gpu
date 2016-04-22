@@ -149,7 +149,6 @@ mfxStatus MFXVideoENC_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
         // unsupported reserved to codecid != requested codecid
         if (MFX_ERR_UNSUPPORTED == mfxRes)
 #endif
-
         switch (out->mfx.CodecId)
         {
 #ifdef MFX_ENABLE_VC1_VIDEO_ENC
@@ -158,7 +157,8 @@ mfxStatus MFXVideoENC_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
             break;
 #endif
 
-#if defined (MFX_ENABLE_H264_VIDEO_ENC) && !defined (MFX_VA) || (defined (MFX_ENABLE_H264_VIDEO_ENC_HW) || defined(MFX_ENABLE_LA_H264_VIDEO_HW))&& defined (MFX_VA)
+#if (defined (MFX_ENABLE_H264_VIDEO_ENC) && !defined (MFX_VA)) || \
+    (defined (MFX_ENABLE_H264_VIDEO_ENC_HW) || defined(MFX_ENABLE_LA_H264_VIDEO_HW) || defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC))&& defined (MFX_VA)
         case MFX_CODEC_AVC:
 #ifdef MFX_VA
 #if defined (MFX_ENABLE_H264_VIDEO_ENC_HW)
@@ -167,6 +167,11 @@ mfxStatus MFXVideoENC_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
 #if defined(MFX_ENABLE_LA_H264_VIDEO_HW)
         if (bEnc_LA(in))
             mfxRes = VideoENC_LA::Query(session->m_pCORE.get(), in, out);
+#endif
+
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
+        if (bEnc_PREENC(out))
+            mfxRes = VideoENC_PREENC::Query(session->m_pCORE.get(),in, out);
 #endif
 #else //MFX_VA
             mfxRes = MFXVideoEncH264::Query(in, out);
