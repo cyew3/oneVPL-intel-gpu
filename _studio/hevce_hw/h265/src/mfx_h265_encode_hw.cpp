@@ -771,22 +771,17 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
 
     MFX_CHECK_NULL_PTR1(inputTask);       
 
-   if (taskForExecute && taskForExecute->m_surf)
+   if (inputTask == taskForExecute && taskForExecute->m_surf)
    {
         mfxHDLPair surfaceHDL = {};
 
-        taskForExecute->m_cpb_removal_delay = (taskForExecute->m_eo == 0) ? 0 : (taskForExecute->m_eo - m_prevBPEO);
-
         if (taskForExecute->m_insertHeaders & INSERT_BPSEI)
         {
-            // wait until all previously submitted encoding tasks are finished
-            if (m_task.GetTaskForQuery())
-                goto query_task;
-
             taskForExecute->m_initial_cpb_removal_delay = m_hrd.GetInitCpbRemovalDelay(*taskForExecute);
             taskForExecute->m_initial_cpb_removal_offset = m_hrd.GetInitCpbRemovalDelayOffset();
-            m_prevBPEO = taskForExecute->m_eo;
         }
+
+        taskForExecute->m_cpb_removal_delay = m_hrd.GetAuCpbRemovalDelayMinus1(*taskForExecute) + 1;
 
 #ifndef HEADER_PACKING_TEST
         sts = GetNativeHandleToRawSurface(m_core, m_vpar, *taskForExecute, surfaceHDL.first);
@@ -802,7 +797,6 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
         m_task.SubmitForQuery(taskForExecute);
     }
 
-query_task:
    if (inputTask->m_bs)
    {
         mfxBitstream* bs = inputTask->m_bs;
