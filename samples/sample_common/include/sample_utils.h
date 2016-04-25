@@ -76,17 +76,6 @@ enum {
     CODEC_MVC = MFX_MAKEFOURCC('M','V','C',' '),
 };
 
-enum
-{
-    MFX_FOURCC_IMC3         = MFX_MAKEFOURCC('I','M','C','3'),
-    MFX_FOURCC_YUV400       = MFX_MAKEFOURCC('4','0','0','P'),
-    MFX_FOURCC_YUV411       = MFX_MAKEFOURCC('4','1','1','P'),
-    MFX_FOURCC_YUV422H      = MFX_MAKEFOURCC('4','2','2','H'),
-    MFX_FOURCC_YUV422V      = MFX_MAKEFOURCC('4','2','2','V'),
-    MFX_FOURCC_YUV444       = MFX_MAKEFOURCC('4','4','4','P'),
-    MFX_FOURCC_RGBP         = MFX_MAKEFOURCC('R','G','B','P')
-};
-
 bool IsDecodeCodecSupported(mfxU32 codecFormat);
 bool IsEncodeCodecSupported(mfxU32 codecFormat);
 bool IsPluginCodecSupported(mfxU32 codecFormat);
