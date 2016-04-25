@@ -287,7 +287,7 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in,
 {
     mfxStatus mfxRes;
 
-    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
+    MFX_AUTO_LTRACE_WITHID(MFX_TRACE_LEVEL_API, "MFX_RunFrameVPPAsync");
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_PARAMS, aux);
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_PARAMS, in);    
 
@@ -506,7 +506,7 @@ mfxStatus MFXVideoVPP_RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *i
 {
     mfxStatus mfxRes;
 
-    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
+    MFX_AUTO_LTRACE_WITHID(MFX_TRACE_LEVEL_API, "MFX_RunFrameVPPAsyncEx");
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_PARAMS, in);
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);

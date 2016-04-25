@@ -1265,7 +1265,7 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
     }
 
 
-    MFX_LTRACE_2(MFX_TRACE_LEVEL_EXTCALL, "A|ENCODE|AVC|PACKET_START|", "%p|%d", m_vaContextEncode, task.m_statusReportNumber);
+    MFX_LTRACE_2(MFX_TRACE_LEVEL_HOTSPOTS, "A|ENCODE|AVC|PACKET_START|", "%p|%d", m_vaContextEncode, task.m_statusReportNumber);
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaBeginPicture");
 
@@ -1302,7 +1302,7 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
         vaSts = vaEndPicture(m_vaDisplay, m_vaContextEncode);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
-    MFX_LTRACE_2(MFX_TRACE_LEVEL_EXTCALL, "A|ENCODE|AVC|PACKET_END|", "%d|%d", m_vaContextEncode, task.m_statusReportNumber);
+    MFX_LTRACE_2(MFX_TRACE_LEVEL_HOTSPOTS, "A|ENCODE|AVC|PACKET_END|", "%d|%d", m_vaContextEncode, task.m_statusReportNumber);
 
     //------------------------------------------------------------------
     // PostStage

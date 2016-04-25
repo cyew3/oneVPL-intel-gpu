@@ -1039,6 +1039,7 @@ mfxStatus VAAPIEncoder::Execute(
     // Rendering
     //------------------------------------------------------------------
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaBeginPicture");
         vaSts = vaBeginPicture(
             m_vaDisplay,
             m_vaContextEncode,
@@ -1046,6 +1047,7 @@ mfxStatus VAAPIEncoder::Execute(
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaRenderPicture");
         vaSts = vaRenderPicture(
             m_vaDisplay,
             m_vaContextEncode,
@@ -1054,7 +1056,7 @@ mfxStatus VAAPIEncoder::Execute(
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "vaEndPicture");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaEndPicture");
         vaSts = vaEndPicture(m_vaDisplay, m_vaContextEncode);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }

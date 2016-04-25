@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 
 File Name: vp8e_plugin.cpp
 
@@ -128,7 +128,7 @@ mfxStatus MFX_VP8E_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
 
     if (pTask->m_status == MFX_VP8ENC::TASK_INITIALIZED)
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "VP8::SubmitFrame");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VP8::SubmitFrame");
         mfxStatus sts = MFX_ERR_NONE;
         {
             UMC::AutomaticUMCMutex guard(m_taskMutex);
@@ -169,7 +169,7 @@ mfxStatus MFX_VP8E_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
     }
     else
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "VP8::SyncFrame");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VP8::SyncFrame");
         mfxStatus           sts = MFX_ERR_NONE;
 
         {
@@ -195,7 +195,7 @@ mfxStatus MFX_VP8E_Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         bool bInsertSH  = bInsertIVF && pTask->m_frameOrder==0 && m_bStartIVFSequence;
 
         {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "VP8::Pack BS");
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VP8::Pack BS");
             sts = m_BSE.RunBSP(bInsertIVF, bInsertSH, pTask->m_pBitsteam, (MFX_VP8ENC::TaskHybridDDI *)pTask, layout, m_pmfxCore);
             MFX_CHECK_STS(sts);
         }
@@ -255,7 +255,7 @@ mfxStatus MFX_VP8E_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest 
 }
 mfxStatus MFX_VP8E_Plugin::Init(mfxVideoParam *par)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "VP8::Init");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VP8::Init");
     mfxStatus sts  = MFX_ERR_NONE;
     mfxStatus sts1 = MFX_ERR_NONE; // to save warnings ater parameters checking
 
