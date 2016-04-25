@@ -737,8 +737,10 @@ VAAPIVideoCORE::ProcessRenderTargets(
     mfxFrameAllocResponse* response,
     mfxBaseWideFrameAllocator* pAlloc)
 {
+#if defined(ANDROID)
     if (response->NumFrameActual > 128)
         return MFX_ERR_UNSUPPORTED;
+#endif
 
     RegisterMids(response, request->Type, !m_bUseExtAllocForHWFrames, pAlloc);
     m_pcHWAlloc.pop();
