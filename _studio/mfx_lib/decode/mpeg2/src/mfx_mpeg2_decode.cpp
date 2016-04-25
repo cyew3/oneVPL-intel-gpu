@@ -2102,8 +2102,7 @@ mfxStatus VideoDECODEMPEG2::RestoreDecoder(Ipp32s frame_buffer_num, UMC::FrameMe
 
 #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
     if (end_frame)
-        if (m_implUmc.pack_w.m_va->EndFrame() != UMC::UMC_OK)
-            return MFX_ERR_LOCK_MEMORY;
+        m_implUmc.pack_w.m_va->EndFrame();
 #endif
 
     if (remove_2frames)
@@ -2681,6 +2680,8 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
         {
             m_implUmc.SaveDecoderState();
             umcRes = m_implUmc.GetPictureHeader(&m_in[m_task_num], m_task_num, m_prev_task_num);
+
+            //VM_ASSERT( m_implUmc.PictureHeader[m_task_num].picture_coding_type != 3 || ( mid[ m_implUmc.frame_buffer.latest_next ] != -1 && mid[ m_implUmc.frame_buffer.latest_prev ] != -1 ));
 
             IsField = !m_implUmc.IsFramePictureStructure(m_task_num);
             if (m_task_num >= DPB && !IsField)

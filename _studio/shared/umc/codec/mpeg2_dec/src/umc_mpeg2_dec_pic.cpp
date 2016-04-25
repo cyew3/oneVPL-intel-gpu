@@ -370,15 +370,6 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
         m_ClipInfo.clip_info.width     = (code >> 20) & ((1 << 12) - 1);
         sequenceHeader.frame_count = 0;
 
-        // this workaround for initialization (m_InitClipInfo not yet filled)
-        if((!!m_InitClipInfo.clip_info.height) && (!!m_InitClipInfo.clip_info.width))
-        {
-            if(m_InitClipInfo.clip_info.height < m_ClipInfo.clip_info.height)
-                return UMC_ERR_INVALID_PARAMS;
-            if(m_InitClipInfo.clip_info.width < m_ClipInfo.clip_info.width)
-                return UMC_ERR_INVALID_PARAMS;
-        }
-
         dar_code = (code >> 4) & ((1 << 4) - 1);
 
         GET_BITS32(video->bs, code)
@@ -440,6 +431,15 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
                     shMask.memSize += (Ipp16u) (video->bs_curr_ptr - (video->bs_sequence_header_start + shMask.memSize));
                 }
             }
+        }
+
+        // this workaround for initialization (m_InitClipInfo not yet filled)
+        if((!!m_InitClipInfo.clip_info.height) && (!!m_InitClipInfo.clip_info.width))
+        {
+            if(m_InitClipInfo.clip_info.height < m_ClipInfo.clip_info.height)
+                return UMC_ERR_INVALID_PARAMS;
+            if(m_InitClipInfo.clip_info.width < m_ClipInfo.clip_info.width)
+                return UMC_ERR_INVALID_PARAMS;
         }
 
 #if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
@@ -1194,13 +1194,13 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
 
         // second field must be the same, except IP
         if (frame_buffer.field_buffer_index[task_num] != 0)
-            if (m_picture_coding_type_save != PictureHeader[task_num].picture_coding_type &&
-                m_picture_coding_type_save != MPEG2_I_PICTURE && PictureHeader[task_num].picture_coding_type != MPEG2_P_PICTURE)
-            {
-                frame_buffer.field_buffer_index[task_num] = 0;
-                m_IsFrameSkipped = true;
-                return UMC_ERR_INVALID_STREAM;
-            }
+            if (! (m_picture_coding_type_save == MPEG2_I_PICTURE && PictureHeader[task_num].picture_coding_type == MPEG2_P_PICTURE) )
+                if ( m_picture_coding_type_save != PictureHeader[task_num].picture_coding_type)
+                {
+                    frame_buffer.field_buffer_index[task_num] = 0;
+                    m_IsFrameSkipped = true;
+                    return UMC_ERR_INVALID_STREAM;
+                }
         m_picture_coding_type_save = PictureHeader[task_num].picture_coding_type;
     }
 

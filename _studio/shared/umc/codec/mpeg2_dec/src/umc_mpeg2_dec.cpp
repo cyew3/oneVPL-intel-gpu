@@ -900,9 +900,9 @@ Status MPEG2VideoDecoderBase::GetPictureHeader(MediaData* input, int task_num, i
     if(code == SEQUENCE_END_CODE)
       continue;
     if(code != PICTURE_START_CODE) {
-      if (DecodeHeader(code, video, task_num) == UMC_ERR_NOT_ENOUGH_DATA) {
-        return (UMC_ERR_NOT_ENOUGH_DATA);
-      }
+      Status s = DecodeHeader(code, video, task_num);
+      if (s != UMC_OK)
+        return s;
     }
   } while (code != PICTURE_START_CODE);
 
