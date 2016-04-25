@@ -102,6 +102,7 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_bDecodeEnable(true),
     m_bEncodeEnable(true),
     m_nVPPCompEnable(0),
+    m_nVPPCompEnableEncode(false),
     m_hwdev4Rendering(NULL),
     m_bUseOpaqueMemory(false),
     m_pBuffer(NULL),
@@ -383,6 +384,11 @@ mfxStatus CTranscodingPipeline::EncodePreInit(sInputParams *pParams)
 
             // create encoder
             m_pmfxENC.reset(new MFXVideoENCODE(*m_pmfxSession.get()));
+
+            if (m_nVPPCompEnableEncode)
+            {
+                pParams->EncoderFourCC  = MFX_FOURCC_NV12;
+            }
 
             sts = InitEncMfxParams(pParams);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -1026,7 +1032,7 @@ mfxStatus CTranscodingPipeline::Encode()
         SetSurfaceAuxIDR(VppExtSurface, &encAuxCtrl, bInsertIDR);
         bInsertIDR = false;
 
-        if (m_nVPPCompEnable != VppCompOnly)
+        if (m_nVPPCompEnable != VppCompOnly || m_nVPPCompEnableEncode)
         {
             if(m_mfxEncParams.mfx.CodecId != MFX_FOURCC_DUMP)
             {
@@ -1089,8 +1095,11 @@ mfxStatus CTranscodingPipeline::Encode()
                 // get result coded stream
                 if(VppExtSurface.pSurface)
                 {
-                    sts = m_pmfxSession->SyncOperation(VppExtSurface.Syncp, MSDK_WAIT_INTERVAL);
-                    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                    if(!m_nVPPCompEnableEncode)
+                    {
+                        sts = m_pmfxSession->SyncOperation(VppExtSurface.Syncp, MSDK_WAIT_INTERVAL);
+                        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                    }
 #if defined(_WIN32) || defined(_WIN64)
                     sts = m_hwdev4Rendering->RenderFrame(VppExtSurface.pSurface, m_pMFXAllocator);
 #else
@@ -1101,11 +1110,14 @@ mfxStatus CTranscodingPipeline::Encode()
 
                 UnPreEncAuxBuffer(pBitstreamEx_temp->pCtrl);
 
-                pBitstreamEx_temp->Bitstream.DataLength = 0;
-                pBitstreamEx_temp->Bitstream.DataOffset = 0;
+                if (!m_nVPPCompEnableEncode)
+                {
+                    pBitstreamEx_temp->Bitstream.DataLength = 0;
+                    pBitstreamEx_temp->Bitstream.DataOffset = 0;
 
-                m_BSPool.pop_front();
-                m_pBSStore->Release(pBitstreamEx_temp);
+                    m_BSPool.pop_front();
+                    m_pBSStore->Release(pBitstreamEx_temp);
+                }
             }
 
             //--- If there's no data coming out from VPP and there's no data coming from decoders (isQuit==true),
@@ -1116,7 +1128,7 @@ mfxStatus CTranscodingPipeline::Encode()
             }
         }
 
-        if (m_nVPPCompEnable != VppCompOnly)
+        if (m_nVPPCompEnable != VppCompOnly || m_nVPPCompEnableEncode)
         {
             if (m_BSPool.size() == m_AsyncDepth)
             {
@@ -1143,7 +1155,7 @@ mfxStatus CTranscodingPipeline::Encode()
     }
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
 
-    if (m_nVPPCompEnable != VppCompOnly)
+    if (m_nVPPCompEnable != VppCompOnly || m_nVPPCompEnableEncode)
     {
         // need to get buffered bitstream
         if (MFX_ERR_NONE == sts)
@@ -2677,6 +2689,10 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
 
             m_hwdev4Rendering->Init(RenderParam);
 #else
+            if(pParams->EncodeId)
+            {
+                m_nVPPCompEnableEncode = true;
+            }
             m_hwdev4Rendering = pParams->m_hwdev;
 #endif
         }
@@ -2828,7 +2844,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // Encode component initialization
-    if (m_nVPPCompEnable != VppCompOnly)
+    if (m_nVPPCompEnable != VppCompOnly || m_nVPPCompEnableEncode)
     {
         sts = EncodePreInit(pParams);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);

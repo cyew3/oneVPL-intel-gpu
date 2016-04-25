@@ -580,6 +580,7 @@ namespace TranscodingSample
 
         bool           m_bDecodeEnable;
         bool           m_bEncodeEnable;
+        bool           m_nVPPCompEnableEncode;
         mfxU32         m_nVPPCompEnable;
         mfxI32         m_libvaBackend;
 
