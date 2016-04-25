@@ -48,6 +48,9 @@
     <Filter Include="Source Files\test_suites\hevce">
       <UniqueIdentifier>{a00c6d13-e3cb-4ce9-8afe-cc7b3eef84ef}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\test_suites\mpeg2e">
+      <UniqueIdentifier>{f4d99549-2347-4ad0-a616-7e8ebbcd4e9e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\test_sample_allocator.h">
@@ -600,6 +603,9 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\fei_encode_oversized_surfaces.cpp">
       <Filter>Source Files\test_suites\FEI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mpeg2e_ratecontrol.cpp">
+      <Filter>Source Files\test_suites\mpeg2e</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

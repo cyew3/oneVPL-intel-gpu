@@ -293,6 +293,7 @@
     <ClCompile Include="src\gmock\test_suites\mpeg2e_mbqp.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2e_level_profile.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2d_timecode.cpp" />
+    <ClCompile Include="src\gmock\test_suites\mpeg2e_ratecontrol.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2e_skipframes.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2e_aspectratio_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\platform_unsupported.cpp" />
