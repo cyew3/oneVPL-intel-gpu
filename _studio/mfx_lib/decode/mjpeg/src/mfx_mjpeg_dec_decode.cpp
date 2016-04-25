@@ -407,13 +407,12 @@ mfxStatus VideoDECODEMJPEG::Reset(mfxVideoParam *par)
         m_pMJPEGVideoDecoder->Reset();
         m_numPic = 0;
        
-#if defined (MFX_VA_WIN) 
         if(m_pCc != NULL)
         {
             delete m_pCc;
             m_pCc    = NULL;
         }
-#endif
+
         {
             UMC::AutomaticUMCMutex guard(m_guard);
 
@@ -488,13 +487,13 @@ mfxStatus VideoDECODEMJPEG::Close(void)
 
         m_pMJPEGVideoDecoder->Close();
         m_numPic = 0;
-#if defined (MFX_VA_WIN)
+
         if(m_pCc != NULL)
         {
             delete m_pCc;
             m_pCc    = NULL;
         }
-#endif
+
         {
             UMC::AutomaticUMCMutex guard(m_guard);
 
