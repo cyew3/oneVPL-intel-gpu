@@ -1538,9 +1538,7 @@ UMC::Status TaskSupplier_H265::CompleteDecodedFrames(H265DecoderFrame ** decoded
 
                 DEBUG_PRINT((VM_STRING("Decode %s \n"), GetFrameInfoString(frame)));
                 frame->OnDecodingCompleted();
-
-                if (frm_error != sts)
-                    completed = frame;;
+                completed = frame;;
             }
         }
 
@@ -1600,7 +1598,9 @@ UMC::Status TaskSupplier_H265::AddSource(UMC::MediaData * pSource)
         {
             umcRes = CompleteDecodedFrames(&completed);
             if (umcRes != UMC::UMC_OK)
-                return !completed ? umcRes : UMC::UMC_WRN_INFO_NOT_READY;
+                return umcRes;
+            else if (completed)
+                return UMC::UMC_WRN_INFO_NOT_READY;
 
             if (GetFrameToDisplayInternal(true))
                 return UMC::UMC_ERR_NEED_FORCE_OUTPUT;

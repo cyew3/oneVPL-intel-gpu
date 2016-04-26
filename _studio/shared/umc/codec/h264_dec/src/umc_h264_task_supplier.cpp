@@ -3777,8 +3777,7 @@ Status TaskSupplier::CompleteDecodedFrames(H264DecoderFrame ** decoded)
                     }
 
                     frame->OnDecodingCompleted();
-                    if (frm_error != sts)
-                        completed = frame;
+                    completed = frame;
                 }
             }
 
@@ -3839,7 +3838,9 @@ Status TaskSupplier::AddSource(MediaData * pSource)
         {
             umcRes = CompleteDecodedFrames(&completed);
             if (umcRes != UMC_OK)
-                return !completed ? umcRes : UMC_WRN_INFO_NOT_READY;
+                return umcRes;
+            else if (completed)
+                return UMC_WRN_INFO_NOT_READY;
 
             if (!m_DefaultNotifyChain.IsEmpty())
             {
