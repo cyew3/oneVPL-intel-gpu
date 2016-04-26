@@ -5,8 +5,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "sample_com
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_decode", "sample_decode\sample_decode.vcxproj", "{A6E3D645-0F58-45F4-BDC3-CA457C87D7BC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_decvpp", "sample_decvpp\sample_decvpp.vcxproj", "{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_encode", "sample_encode\sample_encode.vcxproj", "{B5CEF93B-C13B-48CB-AAFD-848B6740A749}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_h265_gaa", "sample_h265_gaa\sample_h265_gaa.vcxproj", "{43B1EFA0-DF99-4C0A-8BA9-C1A42AEE7F6F}"
@@ -65,18 +63,6 @@ Global
 		{A6E3D645-0F58-45F4-BDC3-CA457C87D7BC}.Release|Win32.Build.0 = Release|Win32
 		{A6E3D645-0F58-45F4-BDC3-CA457C87D7BC}.Release|x64.ActiveCfg = Release|x64
 		{A6E3D645-0F58-45F4-BDC3-CA457C87D7BC}.Release|x64.Build.0 = Release|x64
-		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Debug_WithDebugAPI|Win32.ActiveCfg = Debug_WithDebugAPI|Win32
-		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Debug_WithDebugAPI|Win32.Build.0 = Debug_WithDebugAPI|Win32
-		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Debug_WithDebugAPI|x64.ActiveCfg = Debug_WithDebugAPI|x64
-		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Debug_WithDebugAPI|x64.Build.0 = Debug_WithDebugAPI|x64
-		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Debug|Win32.ActiveCfg = Debug|Win32
-		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Debug|Win32.Build.0 = Debug|Win32
-		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Debug|x64.ActiveCfg = Debug|x64
-		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Debug|x64.Build.0 = Debug|x64
-		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Release|Win32.ActiveCfg = Release|Win32
-		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Release|Win32.Build.0 = Release|Win32
-		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Release|x64.ActiveCfg = Release|x64
-		{E51FCEF5-E27C-40F9-A0C1-B124E0CD7668}.Release|x64.Build.0 = Release|x64
 		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Debug_WithDebugAPI|Win32.ActiveCfg = Debug_WithDebugAPI|Win32
 		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Debug_WithDebugAPI|Win32.Build.0 = Debug_WithDebugAPI|Win32
 		{B5CEF93B-C13B-48CB-AAFD-848B6740A749}.Debug_WithDebugAPI|x64.ActiveCfg = Debug_WithDebugAPI|x64
