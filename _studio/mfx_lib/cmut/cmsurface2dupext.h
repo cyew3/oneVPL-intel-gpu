@@ -99,7 +99,7 @@ namespace mdfut {
       }
 
       for (int i = 0; i < Height (); ++i) {
-        memcpy (DataPtr (i), (T *)pSysMem + i * Width (), Width () * sizeof(T));
+        memcpy_s (DataPtr (i), Width () * sizeof(T), (T *)pSysMem + i * Width (), Width () * sizeof(T));
       }
     }
 
