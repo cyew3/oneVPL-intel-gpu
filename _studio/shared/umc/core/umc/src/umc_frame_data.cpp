@@ -12,6 +12,8 @@
 #include "umc_frame_data.h"
 #include "ipps.h"
 
+#include <algorithm>
+
 namespace UMC
 {
 
@@ -305,24 +307,20 @@ FrameData::FrameData()
     : m_locked(false)
     , m_FrameMID(FRAME_MID_INVALID)
     , m_FrameAlloc(0)
-{
-    SetAuxInfo(0, 0, -1);
-}
+{}
 
 FrameData::FrameData(const FrameData & fd)
     : m_locked(false)
     , m_Info(fd.m_Info)
     , m_FrameMID(fd.m_FrameMID)
     , m_FrameAlloc(fd.m_FrameAlloc)
+    , m_AuxInfo(fd.m_AuxInfo)
 {
     MFX_INTERNAL_CPY(m_PlaneInfo, fd.m_PlaneInfo, sizeof(m_PlaneInfo));
     if (m_FrameAlloc)
     {
         m_FrameAlloc->IncreaseReference(m_FrameMID);
     }
-
-    FrameAuxInfo const* aux = fd.GetAuxInfo();
-    SetAuxInfo(aux->ptr, aux->size, aux->type);
 }
 
 FrameData::~FrameData()
@@ -351,8 +349,7 @@ FrameData& FrameData::operator=(const FrameData& fd)
         m_FrameAlloc->IncreaseReference(m_FrameMID);
     }
 
-    FrameAuxInfo const* aux = fd.GetAuxInfo();
-    SetAuxInfo(aux->ptr, aux->size, aux->type);
+    m_AuxInfo = fd.m_AuxInfo;
 
     return *this;
 }
@@ -409,6 +406,8 @@ void FrameData::Close()
 
     memset(m_PlaneInfo, 0, sizeof(m_PlaneInfo));
     m_Info.Close();
+
+    m_AuxInfo.clear();
 }
 
 const FrameData::PlaneMemoryInfo * FrameData::GetPlaneMemoryInfo(Ipp32u plane) const
@@ -430,9 +429,32 @@ void FrameData::SetPlanePointer(Ipp8u* planePtr, Ipp32u plane, size_t pitch)
 
 void FrameData::SetAuxInfo(void* ptr, size_t size, int type)
 {
-    m_AuxInfo.ptr = ptr;
-    m_AuxInfo.size = size;
-    m_AuxInfo.type = type;
+     FrameAuxInfo* aux = GetAuxInfo(type);
+     if (!aux)
+     {
+         m_AuxInfo.push_back(FrameAuxInfo());
+         aux = &m_AuxInfo.back();
+     }
+
+     aux->ptr = ptr;
+     aux->size = size;
+     aux->type = type;
+}
+
+void FrameData::ClearAuxInfo(int type)
+{
+    FrameAuxInfo aux = { 0, 0, type };
+    m_AuxInfo.remove(aux);
+}
+
+FrameData::FrameAuxInfo const* FrameData::GetAuxInfo(int type) const
+{
+    FrameAuxInfo aux = { 0, 0, type };
+    std::list<FrameAuxInfo>::const_iterator
+        i = std::find(m_AuxInfo.begin(), m_AuxInfo.end(), aux);
+
+    return
+        i != m_AuxInfo.end() ? &(*i) : 0;
 }
 
 } // end namespace UMC

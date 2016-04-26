@@ -17,6 +17,8 @@
 
 #include "umc_frame_allocator.h"
 
+#include <list>
+
 /*
     USAGE MODEL:
     I. Initialization of VideoData parameters. It has to be done after construction
@@ -270,6 +272,9 @@ public:
         void*  ptr;
         size_t size;
         int    type;
+
+        bool operator==(FrameAuxInfo const& i) const
+        { return type == i.type; }
     };
 
     FrameData();
@@ -290,13 +295,17 @@ public:
     FrameMemID Release();
 
     void SetPlanePointer(Ipp8u* planePtr, Ipp32u plane, size_t pitch);
-    
-    void SetAuxInfo(void* ptr, size_t size, int type);
 
-    FrameAuxInfo* GetAuxInfo()
-    { return &m_AuxInfo; }
-    FrameAuxInfo const* GetAuxInfo() const
-    { return &m_AuxInfo; }
+    void SetAuxInfo(void* ptr, size_t size, int type);
+    void ClearAuxInfo(int type);
+
+    FrameAuxInfo* GetAuxInfo(int type)
+    {
+        return
+            const_cast<FrameAuxInfo*>(const_cast<FrameData const*>(this)->GetAuxInfo(type)) ;
+    }
+
+    FrameAuxInfo const* GetAuxInfo(int type) const;
 
     FrameData& operator=(const FrameData& );
 
@@ -309,12 +318,13 @@ protected:
         NUM_PLANES = 4
     };
 
-    VideoDataInfo   m_Info;
-    FrameMemID      m_FrameMID;
-    FrameAllocator *m_FrameAlloc;
+    VideoDataInfo            m_Info;
+    FrameMemID               m_FrameMID;
+    FrameAllocator*          m_FrameAlloc;
 
-    PlaneMemoryInfo m_PlaneInfo[NUM_PLANES];
-    FrameAuxInfo    m_AuxInfo;
+    PlaneMemoryInfo          m_PlaneInfo[NUM_PLANES];
+
+    std::list<FrameAuxInfo>  m_AuxInfo;
 };
 
 } // namespace UMC

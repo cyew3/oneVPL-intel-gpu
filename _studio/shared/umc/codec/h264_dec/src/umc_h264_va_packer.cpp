@@ -2509,28 +2509,27 @@ void PackerVA::BeginFrame(H264DecoderFrame* pFrame, Ipp32s field)
     FrameData const* fd = pFrame->GetFrameData();
     VM_ASSERT(fd);
 
-    FrameData::FrameAuxInfo const* aux = fd->GetAuxInfo();
-    VM_ASSERT(aux->type == MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
-    if (aux->type != MFX_EXTBUFF_FEI_DEC_STREAM_OUT)
-        throw h264_exception(UMC_ERR_FAILED);
-
-    mfxExtFeiDecStreamOut* so =
-        reinterpret_cast<mfxExtFeiDecStreamOut*>(aux->ptr);
-
-    Ipp32u size = so->NumMBAlloc * sizeof(mfxFeiDecStreamOutMBCtrl);
-    if (pFrame->GetAU(field)->IsField())
-        size /= 2;
-
-    VAStreamOutBuffer* buffer = NULL;
-    m_va->GetCompBuffer(VADecodeStreamOutDataBufferType, reinterpret_cast<UMCVACompBuffer**>(&buffer), size, pFrame->m_index);
-    if (buffer)
+    FrameData::FrameAuxInfo const* aux = fd->GetAuxInfo(MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
+    if (aux)
     {
-        buffer->BindToField(field);
-        
+        VM_ASSERT(aux->type == MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
+
         mfxExtFeiDecStreamOut* so =
             reinterpret_cast<mfxExtFeiDecStreamOut*>(aux->ptr);
+        if (!so)
+            throw h264_exception(UMC_ERR_FAILED);
 
-        buffer->RemapRefs(so->RemapRefIdx == MFX_CODINGOPTION_ON);
+        Ipp32u size = so->NumMBAlloc * sizeof(mfxFeiDecStreamOutMBCtrl);
+        if (pFrame->GetAU(field)->IsField())
+            size /= 2;
+
+        VAStreamOutBuffer* buffer = NULL;
+        m_va->GetCompBuffer(VADecodeStreamOutDataBufferType, reinterpret_cast<UMCVACompBuffer**>(&buffer), size, pFrame->m_index);
+        if (buffer)
+        {
+            buffer->BindToField(field);
+            buffer->RemapRefs(so->RemapRefIdx == MFX_CODINGOPTION_ON);
+        }
     }
 }
 
@@ -2614,14 +2613,16 @@ Status PackerVA::QueryStreamOut(H264DecoderFrame* pFrame)
     FrameData const* fd = pFrame->GetFrameData();
     VM_ASSERT(fd);
 
-    FrameData::FrameAuxInfo const* aux = fd->GetAuxInfo();
-    VM_ASSERT(aux->type == MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
-
-    if (aux->type != MFX_EXTBUFF_FEI_DEC_STREAM_OUT)
+    FrameData::FrameAuxInfo const* aux = fd->GetAuxInfo(MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
+    if (!aux)
         return UMC_ERR_FAILED;
+
+    VM_ASSERT(aux->type == MFX_EXTBUFF_FEI_DEC_STREAM_OUT);
 
     mfxExtFeiDecStreamOut* so =
         reinterpret_cast<mfxExtFeiDecStreamOut*>(aux->ptr);
+    if (!so)
+        return UMC_ERR_FAILED;
 
     Ipp32s const size =
         pFrame->GetTotalMBs() * sizeof(mfxFeiDecStreamOutMBCtrl);
@@ -2633,7 +2634,8 @@ Status PackerVA::QueryStreamOut(H264DecoderFrame* pFrame)
         return UMC_ERR_FAILED;
 
     char* dst = reinterpret_cast<char*>(so->MB);
-    VM_ASSERT(dst);
+    if (!dst)
+        return UMC_ERR_FAILED;
     
     void const* src = buffer->GetPtr();
     VM_ASSERT(src);
