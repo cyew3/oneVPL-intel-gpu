@@ -50,6 +50,7 @@ my $enable_x11 = "yes";
 my $enable_x11_dri3="no";
 my $enable_wayland = "no";
 my $enable_v4l2 = "no";
+my $enable_mondello = "no";
 my $enable_ffmpeg = "yes";
 my $enable_opencl = "yes";
 
@@ -112,6 +113,7 @@ sub usage {
   print "\t--enable-x11-dri3=yes|no - enable X11 DRI3 backend support [default: $enable_x11_dri3]\n";
   print "\t--enable-wayland=yes|no - enable Wayland backend support [default: $enable_wayland]\n";
   print "\t--enable-v4l2=yes|no - enable v4l2 support [default: $enable_v4l2]\n";
+  print "\t--enable-mondello=yes|no - enable MOndello/v4l2 support [default: $enable_mondello]\n";
   print "\t--enable-ffmpeg=yes|no  - build ffmpeg dependent targets [default: $enable_ffmpeg]\n";
   print "\t--enable-opencl=yes|no  - build OpenCL dependent targets [default: $enable_opencl]\n";
   print "\n";
@@ -139,6 +141,7 @@ GetOptions (
   '--enable-x11-dri3=s' => \$enable_x11_dri3,
   '--enable-wayland=s' => \$enable_wayland,
   '--enable-v4l2=s' => \$enable_v4l2,
+  '--enable-mondello=s' => \$enable_mondello,
   '--enable-ffmpeg=s' => \$enable_ffmpeg,
   '--enable-opencl=s' => \$enable_opencl
 );
@@ -160,6 +163,7 @@ if(in_array(\@list_arch, $build{'arch'}) and
    in_array(\@list_yesno, $enable_x11_dri3) and
    in_array(\@list_yesno, $enable_wayland) and
    in_array(\@list_yesno, $enable_v4l2) and
+   in_array(\@list_yesno, $enable_mondello) and
    in_array(\@list_yesno, $enable_ffmpeg) and
    in_array(\@list_yesno, $enable_opencl)) {
    $configuration_valid = 1;
@@ -191,6 +195,7 @@ $cmake_cmd_gen.= "-DENABLE_X11:STRING=" . (($enable_x11 eq "yes") ? "ON": "OFF")
 $cmake_cmd_gen.= "-DENABLE_X11_DRI3:STRING=" . (($enable_x11_dri3 eq "yes") ? "ON": "OFF") . " ";
 $cmake_cmd_gen.= "-DENABLE_WAYLAND:STRING=" . (($enable_wayland eq "yes") ? "ON": "OFF") . " ";
 $cmake_cmd_gen.= "-DENABLE_V4L2:STRING=" . (($enable_v4l2 eq "yes") ? "ON": "OFF") . " ";
+$cmake_cmd_gen.= "-DENABLE_MONDELLO:STRING=" . (($enable_mondello eq "yes") ? "ON": "OFF") . " ";
 $cmake_cmd_gen.= "-DENABLE_FFMPEG:STRING=" . (($enable_ffmpeg eq "yes") ? "ON": "OFF") . " ";
 $cmake_cmd_gen.= "-DENABLE_OPENCL:STRING=" . (($enable_opencl eq "yes") ? "ON": "OFF") . " ";
 

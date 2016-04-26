@@ -1387,6 +1387,13 @@ const msdk_char* ColorFormatToStr(mfxU32 format)
         return MSDK_STRING("NV12");
     case MFX_FOURCC_YV12:
         return MSDK_STRING("YUV420");
+    case MFX_FOURCC_RGB4:
+        return MSDK_STRING("RGB4");
+    case MFX_FOURCC_YUY2:
+        return MSDK_STRING("YUY2");
+    case MFX_FOURCC_UYVY:
+       return MSDK_STRING("UYVY");
+
     default:
         return MSDK_STRING("unsupported");
     }

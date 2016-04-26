@@ -216,6 +216,28 @@ XLib_Proxy::~XLib_Proxy()
 
 #endif
 
+#if defined (ENABLE_MONDELLO_SUPPORT)
+LibCamhalProxy::LibCamhalProxy()
+    :lib("libcamhal.so")
+    , SIMPLE_LOADER_FUNCTION(_ZN7icamera15camera_hal_initEv)
+    , SIMPLE_LOADER_FUNCTION(_ZN7icamera17camera_hal_deinitEv)
+    , SIMPLE_LOADER_FUNCTION(_ZN7icamera18camera_device_openEi)
+    , SIMPLE_LOADER_FUNCTION(_ZN7icamera19camera_device_closeEi)
+    , SIMPLE_LOADER_FUNCTION(_ZN7icamera19camera_device_startEi)
+    , SIMPLE_LOADER_FUNCTION(_ZN7icamera18camera_device_stopEi)
+    , SIMPLE_LOADER_FUNCTION(_ZN7icamera21get_number_of_camerasEv)
+    , SIMPLE_LOADER_FUNCTION(_ZN7icamera15get_camera_infoEiRNS_13camera_info_tE)
+    , SIMPLE_LOADER_FUNCTION(_ZN7icamera28camera_device_config_streamsEiPNS_15stream_config_tE)
+    , SIMPLE_LOADER_FUNCTION(_ZN7icamera18camera_stream_qbufEiiPNS_15camera_buffer_tE)
+    , SIMPLE_LOADER_FUNCTION(_ZN7icamera19camera_stream_dqbufEiiPPNS_15camera_buffer_tE)
+{
+}
+
+LibCamhalProxy::~LibCamhalProxy()
+{}
+#endif
+
+
 #undef SIMPLE_LOADER_FUNCTION
 
 } // MfxLoader

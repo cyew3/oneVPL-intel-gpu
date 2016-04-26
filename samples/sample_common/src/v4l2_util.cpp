@@ -21,9 +21,17 @@
 #include <assert.h>
 #include <linux/videodev2.h>
 #include "v4l2_util.h"
+#if defined (ENABLE_MONDELLO_SUPPORT)
+#include "libcamhal/api/ICamera.h"
+#include "vaapi_utils.h"
+#include <time.h>
+#define FPS_TIME_INTERVAL 2
+#define FPS_BUF_COUNT_START 10
+using namespace icamera;
+#endif
 
 /* Global Declaration */
-Buffer *buffers, *CurBuffers;
+Buffer buffers, CurBuffers;
 bool CtrlFlag = false;
 int m_q[5], m_first = 0, m_last = 0, m_numInQ = 0;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -68,14 +76,14 @@ int v4l2Device::GetAtomISPModes(enum AtomISPMode mode)
 {
     switch(mode)
     {
-    case VIDEO:        return _ISP_MODE_VIDEO;
-    case PREVIEW:        return _ISP_MODE_PREVIEW;
-    case CONTINUOUS:    return _ISP_MODE_CONTINUOUS;
-    case STILL:        return _ISP_MODE_STILL;
+        case VIDEO:    return _ISP_MODE_VIDEO;
+        case PREVIEW:    return _ISP_MODE_PREVIEW;
+        case CONTINUOUS:    return _ISP_MODE_CONTINUOUS;
+        case STILL:    return _ISP_MODE_STILL;
+        case NONE:
 
-    case NONE:
-    default:
-                return _ISP_MODE_NONE;
+        default:
+            return _ISP_MODE_NONE;
     }
 }
 
@@ -83,13 +91,14 @@ int v4l2Device::ConvertToMFXFourCC(enum V4L2PixelFormat v4l2Format)
 {
     switch (v4l2Format)
     {
-    case UYVY:  return MFX_FOURCC_UYVY;
-    case YUY2:  return MFX_FOURCC_YUY2;
+        case UYVY:  return MFX_FOURCC_UYVY;
+        case YUY2:  return MFX_FOURCC_YUY2;
+        case RGB4:  return MFX_FOURCC_RGB4;
+        case NO_FORMAT:
 
-    case NO_FORMAT:
-    default:
-        assert( !"Unsupported mfx fourcc");
-        return 0;
+        default:
+            assert( !"Unsupported mfx fourcc");
+            return 0;
     }
 }
 
@@ -97,13 +106,13 @@ int v4l2Device::ConvertToV4L2FourCC()
 {
     switch (m_v4l2Format)
     {
-    case UYVY:  return V4L2_PIX_FMT_UYVY;
-    case YUY2:  return V4L2_PIX_FMT_YUYV;
+        case UYVY:    return V4L2_PIX_FMT_UYVY;
+        case YUY2:    return V4L2_PIX_FMT_YUYV;
+        case NO_FORMAT:
 
-    case NO_FORMAT:
-    default:
-        assert( !"Unsupported v4l2 fourcc");
-        return 0;
+        default:
+            assert( !"Unsupported v4l2 fourcc");
+            return 0;
     }
 }
 
@@ -188,7 +197,7 @@ void v4l2Device::V4L2Init()
         (char*)&fmt.fmt.pix.pixelformat,
         fmt.fmt.pix.bytesperline,
         fmt.fmt.pix.sizeimage,
-            fmt.fmt.pix.field);
+        fmt.fmt.pix.field);
 
     fmt.fmt.pix = m_format;
 
@@ -224,10 +233,10 @@ void v4l2Device::V4L2Init()
 
 void v4l2Device::V4L2Alloc()
 {
-    buffers = (Buffer *)malloc(sizeof(Buffer) * (int) m_num_buffers);
+    buffers.V4L2Buf = (V4L2Buffer *)malloc(sizeof(V4L2Buffer) * (int) m_num_buffers);
 }
 
-void v4l2Device::V4L2QueueBuffer(Buffer *buffer)
+void v4l2Device::V4L2QueueBuffer(V4L2Buffer *buffer)
 {
     struct v4l2_buffer buf;
     int ret;
@@ -243,7 +252,7 @@ void v4l2Device::V4L2QueueBuffer(Buffer *buffer)
     buf.index, ERRSTR, buffer->fd, buffer->index);
 }
 
-Buffer *v4l2Device::V4L2DeQueueBuffer(Buffer *buffer)
+V4L2Buffer *v4l2Device::V4L2DeQueueBuffer(V4L2Buffer *buffer)
 {
     struct v4l2_buffer buf;
     int ret;
@@ -306,11 +315,188 @@ int v4l2Device::GetOffQ()
 
 int v4l2Device::GetV4L2TerminationSignal()
 {
-    if (CtrlFlag && m_numInQ == 0)
-    return 1;
+#if defined (ENABLE_MONDELLO_SUPPORT)
+    if (m_isMondelloRender)
+        return (CtrlFlag)? 1 : 0;
+#endif
 
-    return 0;
+    return (CtrlFlag && m_numInQ == 0)? 1 : 0;
 }
+
+#if defined (ENABLE_MONDELLO_SUPPORT)
+
+MondelloDevice::MondelloDevice(const char *devname,
+    uint32_t width,
+    uint32_t height,
+    enum V4L2PixelFormat mondelloFormat,
+    bool interlaced,
+    uint32_t num_buffers):
+    m_device_name(devname),
+    m_height(height),
+    m_width(width),
+    m_mondelloFormat(mondelloFormat),
+    m_interlaced(interlaced),
+    m_num_buffers(num_buffers)
+{}
+
+MondelloDevice::~MondelloDevice()
+{
+    if (m_device_id > 0)
+    {
+        free(buffers.MondelloBuf);
+
+        /* camera_device_close() */
+        libcamhal._ZN7icamera19camera_device_closeEi(m_device_id);
+    }
+
+    /* camera_hal_deinit() */
+    libcamhal._ZN7icamera17camera_hal_deinitEv();
+}
+
+const char* MondelloDevice::GetCurrentCameraName()
+{
+    const char* CAMERA_INPUT = "cameraInput";
+    const char *input = getenv(CAMERA_INPUT);
+    if (!input)
+        input = "tpg";
+
+    return input;
+}
+
+int MondelloDevice::GetCurrentCameraId()
+{
+    int cameraId = 0, id = 0;
+    const char* input = GetCurrentCameraName();
+    /* get_number_of_cameras() */
+    int count = libcamhal._ZN7icamera21get_number_of_camerasEv();
+
+    for (; id < count; id++)
+    {
+        camera_info_t info;
+        CLEAR(info);
+
+        /* get_camera_info() */
+        libcamhal._ZN7icamera15get_camera_infoEiRNS_13camera_info_tE(id, info);
+
+        if (strcmp(info.name, input) == 0)
+        {
+            cameraId = id;
+            break;
+        }
+    }
+    BYE_ON(id == count, "No camera name matched, please check if cameraInput is correc: %s\n", ERRSTR);
+
+    return cameraId;
+}
+
+int MondelloDevice::ConvertToV4L2FourCC()
+{
+    switch (m_mondelloFormat)
+    {
+        case UYVY:  return V4L2_PIX_FMT_UYVY;
+        case RGB4:  return V4L2_PIX_FMT_XBGR32;
+
+        case NO_FORMAT:
+        default:
+            assert( !"Unsupported v4l2 fourcc");
+            return 0;
+    }
+}
+
+void MondelloDevice::Init(uint32_t width,
+    uint32_t height,
+    enum V4L2PixelFormat mondelloFormat,
+    uint32_t num_buffers,
+    bool isInterlacedEnabled)
+{
+    (m_width != width )? m_width = width : m_width;
+    (m_height != height)? m_height = height : m_height;
+    (m_mondelloFormat != mondelloFormat )? m_mondelloFormat = mondelloFormat : m_mondelloFormat;
+    (m_num_buffers != num_buffers)? m_num_buffers = num_buffers : m_num_buffers;
+    (m_interlaced != isInterlacedEnabled)? m_interlaced = isInterlacedEnabled : m_interlaced;
+
+    /* Setup the streams information */
+    m_streams[0].format = ConvertToV4L2FourCC();
+    m_streams[0].width = m_width;
+    m_streams[0].height = m_height;
+    m_streams[0].memType = V4L2_MEMORY_DMABUF;
+
+    (m_interlaced == true)?
+        m_streams[0].field = V4L2_FIELD_ALTERNATE :
+        m_streams[0].field = V4L2_FIELD_ANY;
+
+    m_StreamList.num_streams = 1;
+    m_StreamList.streams = m_streams;
+
+    MondelloInit();
+}
+
+void MondelloDevice::MondelloInit()
+{
+    int ret, count = 0;
+    camera_info_t info;
+
+    /* camera_hal_init() */
+    ret = libcamhal._ZN7icamera15camera_hal_initEv();
+    BYE_ON(ret < 0, "failed to init libcamhal device: %s\n", ERRSTR);
+
+    m_device_id = GetCurrentCameraId();
+
+    /* camera_device_open() */
+    ret = libcamhal._ZN7icamera18camera_device_openEi(m_device_id);
+    if (ret < 0)
+    {
+        /* camera_hal_deinit() */
+        libcamhal._ZN7icamera17camera_hal_deinitEv();
+        BYE_ON(ret < 0, "inCorrect device id: %s\n", ERRSTR);
+    }
+
+    /* camera_device_config_streams() */
+    ret = libcamhal._ZN7icamera28camera_device_config_streamsEiPNS_15stream_config_tE(m_device_id, &m_StreamList);
+    BYE_ON(ret < 0, "failed to add stream: %s\n", ERRSTR);
+    m_stream_id = m_streams[0].id;
+}
+
+void MondelloDevice::MondelloAlloc()
+{
+    buffers.MondelloBuf = (camera_buffer_t *)malloc(sizeof(camera_buffer_t) * (int)m_num_buffers);
+}
+
+void MondelloDevice::MondelloSetup()
+{
+    int i, ret;
+
+    for (i = 0, CurBuffers.MondelloBuf = buffers.MondelloBuf;
+        i < m_num_buffers;
+        i++, CurBuffers.MondelloBuf++)
+    {
+        CurBuffers.MondelloBuf->s = m_streams[0];
+
+        /* camera_device_stream_qbuf() */
+        ret = libcamhal._ZN7icamera18camera_stream_qbufEiiPNS_15camera_buffer_tE(m_device_id, m_stream_id, CurBuffers.MondelloBuf);
+        BYE_ON(ret < 0, "qbuf failed: %s\n", ERRSTR);
+    }
+}
+
+void MondelloDevice::MondelloStartCapture()
+{
+    int ret;
+
+    /* camera_device_start() */
+    ret = libcamhal._ZN7icamera19camera_device_startEi(m_device_id);
+    BYE_ON(ret < 0, "mondello STREAMON failed: %s\n", ERRSTR);
+}
+
+void MondelloDevice::MondelloStopCapture()
+{
+    int ret;
+
+    /* camera_device_stop() */
+    ret = libcamhal._ZN7icamera18camera_device_stopEi(m_device_id);
+    BYE_ON(ret < 0, "mondello STREAMOFF failed: %s\n", ERRSTR);
+}
+
+#endif // ifdef ENABLE_MONDELLO_SUPPORT
 
 static void CtrlCTerminationHandler(int s) { CtrlFlag = true; }
 
@@ -318,10 +504,6 @@ void *PollingThread(void *data)
 {
 
     v4l2Device *v4l2 = (v4l2Device *)data;
-    struct pollfd fd;
-
-    fd.fd = v4l2->GetV4L2DisplayID();
-    fd.events = POLLIN;
 
     struct sigaction sigIntHandler;
     sigIntHandler.sa_handler = CtrlCTerminationHandler;
@@ -329,23 +511,131 @@ void *PollingThread(void *data)
     sigIntHandler.sa_flags = 0;
     sigaction(SIGINT, &sigIntHandler, NULL);
 
-    while(1)
+    if (v4l2->ISV4L2Enabled())
     {
-    if (poll(&fd, 1, 5000) > 0)
-    {
-        if (fd.revents & POLLIN)
+        struct pollfd fd;
+        fd.fd = v4l2->GetV4L2DisplayID();
+        fd.events = POLLIN;
+
+        while(1)
         {
-        CurBuffers = v4l2->V4L2DeQueueBuffer(buffers);
-        v4l2->PutOnQ(CurBuffers->index);
+            if (poll(&fd, 1, 5000) > 0)
+            {
+                if (fd.revents & POLLIN)
+                {
+                    CurBuffers.V4L2Buf = v4l2->V4L2DeQueueBuffer(buffers.V4L2Buf);
+                    v4l2->PutOnQ(CurBuffers.V4L2Buf->index);
 
-        if (CtrlFlag)
-            break;
+                    if (CtrlFlag)
+                        break;
 
-        if (CurBuffers)
-            v4l2->V4L2QueueBuffer(&buffers[CurBuffers->index]);
+                    if (CurBuffers.V4L2Buf)
+                        v4l2->V4L2QueueBuffer(&buffers.V4L2Buf[CurBuffers.V4L2Buf->index]);
+                }
+            }
         }
     }
+
+#if defined (ENABLE_MONDELLO_SUPPORT)
+    if (v4l2->Mondello.ISMondelloEnabled())
+    {
+        int ret;
+        int m_device_id, m_stream_id;
+        struct timeval dqbuf_start_tm_count, dqbuf_tm_start,qbuf_tm_end;
+        double buf_count = 0, last_buf_count = 0;
+        double max_fps = 0, min_fps = 0;
+        double av_fps = 0, sum_time = 0, tm_interval = 0, init_max_min_fps = true;
+
+        m_device_id = v4l2->Mondello.GetDeviceId();
+        m_stream_id = v4l2->Mondello.GetStreamId();
+        bool m_printfps = v4l2->Mondello.GetPrintFPSMode();
+
+        while(1)
+        {
+            if (m_printfps)
+            {
+                buf_count++;
+                if (buf_count == FPS_BUF_COUNT_START)
+                {
+                    gettimeofday(&dqbuf_start_tm_count,NULL);
+                    dqbuf_tm_start = dqbuf_start_tm_count;
+                    last_buf_count = buf_count;
+                }
+                else if (buf_count > FPS_BUF_COUNT_START)
+                {
+                    gettimeofday(&qbuf_tm_end, NULL);
+
+                    double div = (qbuf_tm_end.tv_sec-dqbuf_tm_start.tv_sec) *
+                        1000000 + qbuf_tm_end.tv_usec - dqbuf_tm_start.tv_usec;
+
+                    sum_time += div;
+                    tm_interval += div;
+                    dqbuf_tm_start = qbuf_tm_end;
+
+                    if (tm_interval >= (FPS_TIME_INTERVAL*1000000))
+                    {
+                        double interval_fps = (buf_count - last_buf_count) /
+                            (tm_interval/1000000);
+
+                        msdk_printf("fps:%.4f\n",interval_fps);
+
+                        if (init_max_min_fps)
+                        {
+                            max_fps = interval_fps;
+                            min_fps = interval_fps;
+                            init_max_min_fps = false;
+                        }
+
+                        if (interval_fps >= max_fps)
+                            max_fps = interval_fps;
+                        else if (interval_fps < min_fps)
+                            min_fps = interval_fps;
+
+                        tm_interval = 0;
+                        last_buf_count = buf_count;
+                    }
+                }
+            }
+
+            /* camera_stream_dqbuf() */
+            ret = v4l2->Mondello.libcamhal.
+                _ZN7icamera19camera_stream_dqbufEiiPPNS_15camera_buffer_tE(
+                m_device_id, m_stream_id, &CurBuffers.MondelloBuf);
+
+            BYE_ON(ret < 0, "Mondello DQBUF failed: %s\n", ERRSTR);
+
+            v4l2->PutOnQ(CurBuffers.MondelloBuf->index);
+
+            if (CtrlFlag)
+                break;
+
+            if (CurBuffers.MondelloBuf)
+            {
+                /* camera_stream_qbuf() */
+                ret = v4l2->Mondello.
+                    libcamhal._ZN7icamera18camera_stream_qbufEiiPNS_15camera_buffer_tE(
+                    m_device_id, m_stream_id, CurBuffers.MondelloBuf);
+
+                BYE_ON(ret < 0, "Mondello QBUF failed: %s\n", ERRSTR);
+            }
+        }
+
+        if (m_printfps)
+        {
+            av_fps = (buf_count - FPS_BUF_COUNT_START) / (sum_time / 1000000);
+
+            if (buf_count <= FPS_BUF_COUNT_START)
+                msdk_printf("num-buffers value is too low, should be at least %d\n\n", FPS_BUF_COUNT_START);
+            else if (max_fps == 0 || min_fps == 0)
+                msdk_printf("Average fps is:%.4f\n\n",av_fps);
+            else
+                msdk_printf("\nTotal frame is:%g\n",buf_count);
+
+            msdk_printf("\nMax fps is:%.4f,Minimum fps is:%.4f,Average fps is:%.4f\n\n",
+                max_fps, min_fps, av_fps);
+        }
     }
+#endif
 }
 
-#endif // ENABLE_V4L2_SUPPORT
+#endif // ifdef ENABLE_V4L2_SUPPORT
