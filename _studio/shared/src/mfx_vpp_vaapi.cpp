@@ -2244,7 +2244,12 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         if ((pParams->dstRects[refIdx-1].LumaKeyEnable == 0 ) &&
             (pParams->dstRects[refIdx-1].PixelAlphaEnable != 0 ) )
         {
-            blend_state[refIdx].flags |= VA_BLEND_PREMULTIPLIED_ALPHA;
+            /* Per-pixel alpha case. Having VA_BLEND_PREMULTIPLIED_ALPHA as a parameter
+             * leads to using BLEND_PARTIAL approach by driver that may produce
+             * "white line"-like artifacts on transparent-opaque borders (see HSD10045182).
+             * Setting nothing here triggers using a BLEND_SOURCE approach that is used on
+             * Windows and looks to be free of such kind of artifacts */
+            blend_state[refIdx].flags |= 0;
         }
         if ((pParams->dstRects[refIdx-1].GlobalAlphaEnable != 0) ||
                 (pParams->dstRects[refIdx-1].LumaKeyEnable != 0) ||
