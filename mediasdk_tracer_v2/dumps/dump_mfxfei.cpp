@@ -626,8 +626,6 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiSPS &
     DUMP_FIELD(Profile);
     DUMP_FIELD(Level);
     DUMP_FIELD(NumRefFrame);
-    DUMP_FIELD(WidthInMBs);
-    DUMP_FIELD(HeightInMBs);
     DUMP_FIELD(ChromaFormatIdc);
     DUMP_FIELD(FrameMBsOnlyFlag);
     DUMP_FIELD(MBAdaptiveFrameFieldFlag);

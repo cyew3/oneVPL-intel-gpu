@@ -404,8 +404,6 @@ typedef struct {
     mfxU16    Level;
 
     mfxU16    NumRefFrame;
-    mfxU16    WidthInMBs;
-    mfxU16    HeightInMBs;
 
     mfxU16    ChromaFormatIdc;
     mfxU16    FrameMBsOnlyFlag;
