@@ -1,3 +1,15 @@
+/* ////////////////////////////////////////////////////////////////////////////// */
+/*
+//
+//              INTEL CORPORATION PROPRIETARY INFORMATION
+//  This software is supplied under the terms of a license  agreement or
+//  nondisclosure agreement with Intel Corporation and may not be copied
+//  or disclosed except in  accordance  with the terms of that agreement.
+//        Copyright (c) 2016 Intel Corporation. All Rights Reserved.
+//
+//
+*/
+
 #include "ts_decoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
@@ -15,7 +27,7 @@ class H264BsPerFrameReader : public tsBitstreamProcessor, public tsReader, priva
 public:
     H264BsPerFrameReader(const char* fname, mfxU32 buf_size = 1920*1088*3/2)
         : filename(fname), m_eos(false), bs_eos(false), curr_pos(0), m_buf(0), m_buf_size(buf_size), repeats(0), bs_offset(0),
-          tsReader(fname)
+          tsReader(fname), pic_order_cnt_type(0)
     {
         BSErr bs_sts = tsParserH264AU::open(filename);
         EXPECT_EQ(BS_ERR_NONE, bs_sts) << "ERROR: Parser failed to open input file: " << filename << "\n";
@@ -111,7 +123,10 @@ public:
                             if(!first_mb_found)
                             {
                                 first_mb_found = true;
-                                m_frame_num = hdr->slice_hdr->pic_order_cnt_lsb / 2; //TODO: check later
+                                if(2 == pic_order_cnt_type)
+                                    m_frame_num = m_frames_found;
+                                else
+                                    m_frame_num = hdr->slice_hdr->pic_order_cnt_lsb / 2; //TODO: check later
                             }
                             else
                             {
@@ -120,6 +135,12 @@ public:
                                 break;
                             }
                         }
+                    }
+                    else if(0x07 == hdr->nal_unit_type) //SPS
+                    {
+                        pic_order_cnt_type = hdr->SPS->pic_order_cnt_type;
+                        prev_offset = offset;
+                        continue;
                     }
                     //else if(0x06 == hdr->nal_unit_type) //SEI
                     //{
@@ -202,6 +223,7 @@ public:
     }
 private:
     const char* filename;
+    Bs32u  pic_order_cnt_type;
 };
 
 class TestSuite : public tsVideoDecoder
@@ -425,7 +447,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
     /* Driver reports significant problem (bStatus = 2) for all error. 
        The reason is that there is no clear definition for Minor or Significant (or Major) problem in DDI, 
-       driver doesn’t know how to map HW returned flags to Minor or Major result in bStatus. */
+       driver doesn't know how to map HW returned flags to Minor or Major result in bStatus. */
     {/*06*/ fDecodeFrameAsync, MFX_ERR_NONE, {6, "forBehaviorTest/corrupted/matrix_1920x1080_6i_minor_on_2_zeroes.264" , {0,/*MINOR*/MAJOR,0,0,0,0},},},
     {/*07*/ fDecodeFrameAsync, MFX_ERR_NONE, {6, "forBehaviorTest/corrupted/matrix_1920x1080_6i_minor_on_2_trash.264" ,  {0,/*MINOR*/MAJOR,0,0,0,0},},},
 
