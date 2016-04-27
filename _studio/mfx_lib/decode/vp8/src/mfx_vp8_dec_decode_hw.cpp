@@ -145,7 +145,7 @@ mfxStatus VideoDECODEVP8_HW::Init(mfxVideoParam *p_video_param)
     memset(&request, 0, sizeof(request));
     memset(&m_response, 0, sizeof(m_response));
 
-    sts = QueryIOSurfInternal(m_platform, &m_video_params, &request);
+    sts = QueryIOSurfInternal(&m_video_params, &request);
     MFX_CHECK_STS(sts);
 
     request.AllocId = p_video_param->AllocId;
@@ -314,7 +314,7 @@ mfxStatus VideoDECODEVP8_HW::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVi
 
 } // mfxStatus VideoDECODEVP8_HW::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVideoParam *p_out)
 
-mfxStatus VideoDECODEVP8_HW::QueryIOSurfInternal(eMFXPlatform, mfxVideoParam *p_params, mfxFrameAllocRequest *p_request)
+mfxStatus VideoDECODEVP8_HW::QueryIOSurfInternal(mfxVideoParam *p_params, mfxFrameAllocRequest *p_request)
 {
     p_request->NumFrameMin = mfxU16 (4);
 
@@ -335,21 +335,13 @@ mfxStatus VideoDECODEVP8_HW::QueryIOSurfInternal(eMFXPlatform, mfxVideoParam *p_
     }
 
     return MFX_ERR_NONE;
-} // mfxStatus VideoDECODEVP8::QueryIOSurfInternal(eMFXPlatform platform, mfxVideoParam *p_params, mfxFrameAllocRequest *p_request)
+} // mfxStatus VideoDECODEVP8_HW::QueryIOSurfInternal(mfxVideoParam *p_params, mfxFrameAllocRequest *p_request)
 
 mfxStatus VideoDECODEVP8_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_video_param, mfxFrameAllocRequest *p_request)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
     MFX_CHECK_NULL_PTR3(p_core, p_video_param, p_request);
-
-    eMFXPlatform platform = MFX_VP8_Utility::GetPlatform(p_core, p_video_param);
-
-    eMFXHWType type = MFX_HW_UNKNOWN;
-    if (platform == MFX_PLATFORM_HARDWARE)
-    {
-        type = p_core->GetHWType();
-    }
 
     mfxVideoParam p_params = *p_video_param;
 
@@ -363,17 +355,16 @@ mfxStatus VideoDECODEVP8_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    p_request->Info = p_params.mfx.FrameInfo;
-
     if(p_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
     {
+        p_request->Info = p_params.mfx.FrameInfo;
         p_request->NumFrameMin = 1;
         p_request->NumFrameSuggested = p_request->NumFrameMin + (p_params.AsyncDepth ? p_params.AsyncDepth : MFX_AUTO_ASYNC_DEPTH_VALUE);
         p_request->Type = MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE;
     }
     else
     {
-        sts = QueryIOSurfInternal(platform, p_video_param, p_request);
+        sts = QueryIOSurfInternal(p_video_param, p_request);
     }
 
     if (!CheckHardwareSupport(p_core, p_video_param))
