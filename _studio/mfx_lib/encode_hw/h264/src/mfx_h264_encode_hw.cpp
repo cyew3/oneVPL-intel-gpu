@@ -1007,8 +1007,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
             m_vmeDataStorage[i].mb.resize(numMb);
         m_tmpVmeData.reserve(extOpt2->LookAheadDepth);
 
-        mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
-        if (extDdi && extDdi->LaScaleFactor > 1)
+        if (extOpt2->LookAheadDS > 1)
         {
             request.Info.FourCC = MFX_FOURCC_NV12;
             request.Type        = MFX_MEMTYPE_D3D_INT;
@@ -2329,7 +2328,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             task->m_cmRawLa = (CmSurface2D *)AcquireResource(m_rawLa);
             task->m_cmCurbe = (CmBuffer *)AcquireResource(m_curbe);
             task->m_vmeData = FindUnusedVmeData(m_vmeDataStorage);
-            if ((!task->m_cmRawLa && extDdi->LaScaleFactor > 1) || !task->m_cmMb || !task->m_cmCurbe || !task->m_vmeData)
+            if ((!task->m_cmRawLa && extOpt2->LookAheadDS > 1) || !task->m_cmMb || !task->m_cmCurbe || !task->m_vmeData)
                 return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
 #if USE_AGOP
             if(!(task->m_cmRaw))
@@ -2397,7 +2396,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             task->m_cmRefs = CreateVmeSurfaceG75(m_cmDevice, task->m_cmRaw,
                 fwd ? &fwd->m_cmRaw : 0, bwd ? &bwd->m_cmRaw : 0, !!fwd, !!bwd);
 
-            if (extDdi->LaScaleFactor > 1)
+            if (extOpt2->LookAheadDS > 1)
                 task->m_cmRefsLa = CreateVmeSurfaceG75(m_cmDevice, task->m_cmRawLa,
                     fwd ? &fwd->m_cmRawLa : 0, bwd ? &bwd->m_cmRawLa : 0, !!fwd, !!bwd);
 

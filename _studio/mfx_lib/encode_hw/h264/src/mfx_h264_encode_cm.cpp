@@ -809,13 +809,13 @@ void CmContext::Setup(
     if (m_device->CreateQueue(m_queue) != CM_SUCCESS)
         throw CmRuntimeError();
 
-    mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
-    if (!extDdi)
+    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
+    if (!extOpt2)
         throw CmRuntimeError();
 
     widthLa = video.calcParam.widthLa;
     heightLa = video.calcParam.heightLa;
-    LaScaleFactor = extDdi->LaScaleFactor;
+    LaScaleFactor = extOpt2->LookAheadDS;
 
     m_programHist = 0;
 
@@ -1384,6 +1384,7 @@ void CmContext::SetCurbeData(
     mfxU32            qp)
 {
     mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
+    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
     //mfxExtCodingOption const *    extOpt = GetExtBuffer(m_video);
 
     mfxU32 interSad       = 2; // 0-sad,2-haar
@@ -1608,7 +1609,7 @@ void CmContext::SetCurbeData(
     curbeData.HMERefWindowsCombiningThreshold = (task.m_type[ffid] & MFX_FRAMETYPE_B) ? 8 : 16; //  0;  !sergo (should be =8 for B frames)
     curbeData.CheckAllFractionalEnable        = 0;
     //DW37
-    curbeData.CurLayerDQId                    = extDdi->LaScaleFactor;  // 0; !sergo use 8 bit as LaScaleFactor
+    curbeData.CurLayerDQId                    = extOpt2->LookAheadDS;  // 0; !sergo use 8 bit as LaScaleFactor
     curbeData.TemporalId                      = 0;
     curbeData.NoInterLayerPredictionFlag      = 1;
     curbeData.AdaptivePredictionFlag          = 0;
