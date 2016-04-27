@@ -232,11 +232,8 @@ private:
                             m_video_params;
     mfxU32                  m_init_w,
                             m_init_h;
-    mfxU32                  m_num_output_frames;
     mfxF64                  m_in_framerate;
     mfxU16                  m_frameOrder;
-
-    vm_mutex                m_mutex;
 
     mfxBitstream            m_bs;
     VP8Defs::vp8_FrameInfo  m_frame_info;
