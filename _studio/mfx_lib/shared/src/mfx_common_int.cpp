@@ -499,7 +499,10 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam* par)
                                                                MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
                                                                MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK};
 
-    static const mfxU32 g_decoderSupportedExtBuffersVPX[]   = {MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK};
+    static const mfxU32 g_decoderSupportedExtBuffersVP8[]   = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
+                                                               MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK};
+
+    static const mfxU32 g_decoderSupportedExtBuffersVP9[]   = {MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK};
 
     static const mfxU32 g_decoderSupportedExtBuffersMJPEG[] = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
                                                                MFX_EXTBUFF_JPEG_HUFFMAN,
@@ -529,10 +532,15 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam* par)
         supported_buffers = g_decoderSupportedExtBuffersMJPEG;
         numberOfSupported = sizeof(g_decoderSupportedExtBuffersMJPEG) / sizeof(g_decoderSupportedExtBuffersMJPEG[0]);
     }
-    else if (par->mfx.CodecId == MFX_CODEC_VP8 || par->mfx.CodecId == MFX_CODEC_VP9)
+    else if (par->mfx.CodecId == MFX_CODEC_VP8)
     {
-        supported_buffers = g_decoderSupportedExtBuffersVPX;
-        numberOfSupported = sizeof(g_decoderSupportedExtBuffersVPX) / sizeof(g_decoderSupportedExtBuffersVPX[0]);
+        supported_buffers = g_decoderSupportedExtBuffersVP8;
+        numberOfSupported = sizeof(g_decoderSupportedExtBuffersVP8) / sizeof(g_decoderSupportedExtBuffersVP8[0]);
+    }
+    else if (par->mfx.CodecId == MFX_CODEC_VP9)
+    {
+        supported_buffers = g_decoderSupportedExtBuffersVP9;
+        numberOfSupported = sizeof(g_decoderSupportedExtBuffersVP9) / sizeof(g_decoderSupportedExtBuffersVP9[0]);
     }
 
     if (!supported_buffers)

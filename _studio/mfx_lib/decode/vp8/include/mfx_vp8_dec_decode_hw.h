@@ -188,6 +188,9 @@ public:
 
 private:
 
+    mfxFrameSurface1 * GetOriginalSurface(mfxFrameSurface1 *);
+    mfxStatus GetOutputSurface(mfxFrameSurface1 **, mfxFrameSurface1 *, UMC::FrameMemID);
+
     mfxStatus ConstructFrame(mfxBitstream *, mfxBitstream *, VP8DecodeCommon::IVF_FRAME&);
     mfxStatus PreDecodeFrame(mfxBitstream *, mfxFrameSurface1 *);
     static mfxStatus QueryIOSurfInternal(mfxVideoParam *, mfxFrameAllocRequest *);
@@ -225,6 +228,7 @@ private:
     };
 
     bool                    m_is_initialized;
+    bool                    m_is_opaque_memory;
     VideoCORE*              m_p_core;
     eMFXPlatform            m_platform;
 
