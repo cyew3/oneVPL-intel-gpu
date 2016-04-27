@@ -247,17 +247,17 @@ int TestSuite::RunTest(unsigned int id)
         mfxExtBuffer* reset = 0;
         mfxExtBuffer* after_reset = 0;
 
-        reset = par_reset.GetExtBuffer(par_init.ExtParam[i]->BufferId);
+        reset       = par_reset.GetExtBuffer(      par_init.ExtParam[i]->BufferId);
         after_reset = par_after_reset.GetExtBuffer(par_init.ExtParam[i]->BufferId);
 
         // Creating empty buffer
         def.AddExtBuffer(par_init.ExtParam[i]->BufferId, par_init.ExtParam[i]->BufferSz);
         mfxExtBuffer* empty = def.GetExtBuffer(par_init.ExtParam[i]->BufferId);
 
-        bool in_dnu=false;
+        bool in_dnu = false;
         if (dnu != 0)
         {
-            for (mfxU32 j = 0; j < MAX_NPARS; j++)
+            for (mfxU32 j = 0; j < dnu->NumAlg; j++)
             {
                 if (par_init.ExtParam[i]->BufferId == dnu->AlgList[j])
                 {
