@@ -250,7 +250,7 @@ mfxStatus VideoDECODEVP8_HW::Reset(mfxVideoParam *p_video_param)
     lastrefIndex = 0;
     m_bs.DataLength = 0;
 
-    for(int i = 0; i < m_frames.size(); i++)
+    for(size_t i = 0; i < m_frames.size(); i++)
     {
         m_p_frame_allocator.get()->DecreaseReference(m_frames[i].memId);
     }
