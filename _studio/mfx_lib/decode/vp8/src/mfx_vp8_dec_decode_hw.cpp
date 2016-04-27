@@ -515,11 +515,6 @@ static mfxStatus MFX_CDECL VP8DECODERoutine(void *p_state, void *pp_param, mfxU3
     VideoDECODEVP8_HW::VP8DECODERoutineData& data = *(VideoDECODEVP8_HW::VP8DECODERoutineData*)p_state;
     VideoDECODEVP8_HW& decoder = *data.decoder;
 
-    if (decoder.m_video_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
-    {
-        sts = decoder.m_p_frame_allocator->PrepareToOutput(data.surface_work, data.memId, &decoder.m_on_init_video_params, false);
-    }
-
     if (data.memIdToUnlock != -1)
     {
 #ifdef MFX_VA_LINUX
@@ -533,6 +528,9 @@ static mfxStatus MFX_CDECL VP8DECODERoutine(void *p_state, void *pp_param, mfxU3
 #endif
         decoder.m_p_frame_allocator.get()->DecreaseReference(data.memIdToUnlock);
     }
+
+    if (decoder.m_video_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+        sts = decoder.m_p_frame_allocator->PrepareToOutput(data.surface_work, data.memId, &decoder.m_on_init_video_params, false);
 
     delete &data;
 
