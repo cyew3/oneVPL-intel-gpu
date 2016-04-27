@@ -214,6 +214,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->EncodedOrder = true;
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-DecodedOrder")))
+        {
+            pParams->DecodedOrder = true;
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mvin")))
         {
             pParams->mvinFile = strInput[i+1];
