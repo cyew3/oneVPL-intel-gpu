@@ -311,7 +311,8 @@ namespace ExtBuffer
         EXTBUF(mfxExtEncoderResetOption,    MFX_EXTBUFF_ENCODER_RESET_OPTION);
         EXTBUF(mfxExtCodingOptionVPS,       MFX_EXTBUFF_CODING_OPTION_VPS);
         EXTBUF(mfxExtVideoSignalInfo,       MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
-        EXTBUF(mfxExtEncoderCapability,     MFX_EXTBUFF_ENCODER_CAPABILITY );
+        EXTBUF(mfxExtEncoderCapability,     MFX_EXTBUFF_ENCODER_CAPABILITY);
+        EXTBUF(mfxExtIntGPUHang,            MFX_EXTBUFF_GPU_HANG);
     #undef EXTBUF
 
     #define _CopyPar(dst, src, PAR) dst.PAR = src.PAR;

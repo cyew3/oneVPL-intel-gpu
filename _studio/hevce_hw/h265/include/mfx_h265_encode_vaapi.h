@@ -7,13 +7,9 @@
 //          Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
 //
 */
-
-#ifndef __MFX_H265_ENCODE_VAAPI__H
-#define __MFX_H265_ENCODE_VAAPI__H
+#pragma once
 
 #include "mfx_common.h"
-
-#if defined (MFX_VA_LINUX)
 
 #include "umc_mutex.h"
 
@@ -25,6 +21,9 @@
 #include "mfx_h265_encode_hw_utils.h"
 #include "mfx_h265_encode_hw_ddi.h"
 #include "mfx_h265_encode_hw_ddi_trace.h"
+#include <vector>
+#include <map>
+#include <algorithm>
 
 #define MFX_DESTROY_VABUFFER(vaBufferId, vaDisplay)    \
 do {                                               \
@@ -37,6 +36,71 @@ do {                                               \
 
 namespace MfxHwH265Encode
 {
+
+class VABuffersHandler
+{
+public:
+    typedef enum VA_BUFFER_STORAGE_ID
+    {
+          VABID_SPS = 0
+        , VABID_PPS
+        , VABID_Slice
+        , VABID_HRD
+        , VABID_RateParam
+        , VABID_BRCParallel
+        , VABID_FrameRate
+        , VABID_QualityLevel
+        , VABID_TriggerCodecHang
+
+        , VABID_PACKED_AUD_H
+        , VABID_PACKED_AUD
+        , VABID_PACKED_VPS_H
+        , VABID_PACKED_VPS
+        , VABID_PACKED_SPS_H
+        , VABID_PACKED_SPS
+        , VABID_PACKED_PPS_H
+        , VABID_PACKED_PPS
+        , VABID_PACKED_SEI_H
+        , VABID_PACKED_SEI
+        , VABID_PACKED_Slice_H
+        , VABID_PACKED_Slice
+        , VABID_PACKED_SkippedSlice_H
+        , VABID_PACKED_SkippedSlice
+    } IdType;
+
+    VABuffersHandler()
+    {
+        m_pool.resize(1, 0);
+        m_vaDisplay = 0;
+    }
+
+    ~VABuffersHandler()
+    {
+        VABuffersDestroy();
+    }
+
+    VABufferID& VABuffersNew(IdType id, mfxU32 pool, mfxU32 num);
+    void VABuffersDestroy();
+    void VABuffersDestroyPool(mfxU32 pool);
+
+    inline VABufferID& VABufferNew(IdType id, mfxU32 pool) { return  VABuffersNew(id, pool, 1); }
+    inline VABufferID* VABuffersBegin(mfxU32 pool) { return &(*_PoolBegin(pool)); }
+    inline VABufferID* VABuffersEnd  (mfxU32 pool) { return &(*_PoolEnd  (pool)); }
+
+
+protected:
+    VADisplay                   m_vaDisplay;
+
+private:
+    std::vector<size_t>         m_pool;
+    std::map<mfxU32, mfxU32>    m_poolMap;
+    std::vector<VABufferID>     m_buf;
+    std::vector<IdType>         m_id;
+
+    void _CheckPool(mfxU32 pool);
+    inline std::vector<VABufferID>::iterator _PoolBegin(mfxU32 pool) { _CheckPool(pool); return m_buf.begin() + m_pool[m_poolMap[pool]]; };
+    inline std::vector<VABufferID>::iterator _PoolEnd  (mfxU32 pool) { _CheckPool(pool); return m_buf.begin() + m_pool[m_poolMap[pool] + 1]; };
+};
 
 mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl);
 
@@ -71,7 +135,7 @@ mfxStatus SetFrameRate(
         mfxU32 idxBs;
     } ExtVASurface;
 
-    class VAAPIEncoder : public DriverEncoder, DDIHeaderPacker
+    class VAAPIEncoder : public DriverEncoder, DDIHeaderPacker, VABuffersHandler
     {
     public:
         VAAPIEncoder();
@@ -134,38 +198,12 @@ mfxStatus SetFrameRate(
         MFXCoreInterface*    m_core;
         MfxVideoParam m_videoParam;
 
-        VADisplay    m_vaDisplay;
         VAContextID  m_vaContextEncode;
         VAConfigID   m_vaConfig;
 
         VAEncSequenceParameterBufferHEVC m_sps;
         VAEncPictureParameterBufferHEVC  m_pps;
         std::vector<VAEncSliceParameterBufferHEVC> m_slice;
-
-        // encode buffer to send vaRender()
-        VABufferID m_spsBufferId;
-        VABufferID m_hrdBufferId;
-        VABufferID m_rateParamBufferId;
-        VABufferID m_BRCParallelParamBufferId; //VAEncMiscParameterParallelRateControl
-        VABufferID m_frameRateId;
-        VABufferID m_qualityLevelBufferId;
-        VABufferID m_ppsBufferId;
-        std::vector<VABufferID> m_sliceBufferId;
-
-        VABufferID m_packedAudHeaderBufferId;
-        VABufferID m_packedAudBufferId;
-        VABufferID m_packedSpsHeaderBufferId;
-        VABufferID m_packedSpsBufferId;
-        VABufferID m_packedVpsHeaderBufferId;
-        VABufferID m_packedVpsBufferId;
-        VABufferID m_packedPpsHeaderBufferId;
-        VABufferID m_packedPpsBufferId;
-        VABufferID m_packedSeiHeaderBufferId;
-        VABufferID m_packedSeiBufferId;
-        VABufferID m_packedSkippedSliceHeaderBufferId;
-        VABufferID m_packedSkippedSliceBufferId;
-        std::vector<VABufferID> m_packeSliceHeaderBufferId;
-        std::vector<VABufferID> m_packedSliceBufferId;
 
         std::vector<ExtVASurface> m_feedbackCache;
         std::vector<ExtVASurface> m_bsQueue;
@@ -184,6 +222,3 @@ mfxStatus SetFrameRate(
         VAEncMiscParameterFrameRate    m_vaFrameRate;
     };
 }
-
-#endif // MFX_VA_LINUX
-#endif // __MFX_H265_ENCODE_VAAPI__H
