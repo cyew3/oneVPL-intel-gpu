@@ -17,10 +17,19 @@ static mfxU32 mv_data_length_offset = 0;
 static const int mb_type_remap[26] = {0, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 25};
 static const int intra_16x16[26]   = {2,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  2};
 
-mfxStatus PakOneStreamoutFrame(mfxExtFeiDecStreamOut* m_pExtBufDecodeStreamout, mfxU32 m_numOfFields, iTask *eTask)
+mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask)
 {
+    MSDK_CHECK_POINTER(eTask,                  MFX_ERR_NULL_PTR);
+    MSDK_CHECK_POINTER(eTask->inPAK.InSurface, MFX_ERR_NULL_PTR);
+
+    mfxExtFeiDecStreamOut* m_pExtBufDecodeStreamout = NULL;
+    for (int i = 0; i < eTask->inPAK.InSurface->Data.NumExtParam; i++)
+        if (eTask->inPAK.InSurface->Data.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_DEC_STREAM_OUT)
+        {
+            m_pExtBufDecodeStreamout = (mfxExtFeiDecStreamOut*)eTask->inPAK.InSurface->Data.ExtParam[i];
+            break;
+        }
     MSDK_CHECK_POINTER(m_pExtBufDecodeStreamout, MFX_ERR_NULL_PTR);
-    MSDK_CHECK_POINTER(eTask,                    MFX_ERR_NULL_PTR);
 
     mfxStatus sts = MFX_ERR_NONE;
 

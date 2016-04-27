@@ -749,8 +749,8 @@ mfxStatus CEncodingPipeline::AllocFrames()
                 DecRequest.NumFrameMin = DecRequest.NumFrameSuggested = nEncSurfNum;
             else
                 DecRequest.NumFrameMin = DecRequest.NumFrameSuggested = m_decodePoolSize + nEncSurfNum;
-            if ((m_pmfxENC) || (m_pmfxPAK)) // plus reconstructed frames for PAK
-                DecRequest.NumFrameMin = DecRequest.NumFrameSuggested = DecRequest.NumFrameSuggested + m_mfxEncParams.mfx.GopRefDist * 2 + m_mfxEncParams.AsyncDepth;
+            //if ((m_pmfxENC) || (m_pmfxPAK)) // plus reconstructed frames for PAK
+            //    DecRequest.NumFrameMin = DecRequest.NumFrameSuggested = DecRequest.NumFrameSuggested + m_mfxEncParams.mfx.GopRefDist * 2 + m_mfxEncParams.AsyncDepth;
         }
         MSDK_MEMCPY_VAR(DecRequest.Info, &(m_mfxDecParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
 
@@ -770,7 +770,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
         sts = FillSurfacePool(m_pDecSurfaces, &m_DecResponse, &(m_mfxDecParams.mfx.FrameInfo));
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-        if (!m_pmfxVPP)
+        if (!(m_pmfxVPP || m_pmfxENC || m_pmfxPAK))
             return MFX_ERR_NONE;
     }
 
@@ -792,9 +792,12 @@ mfxStatus CEncodingPipeline::AllocFrames()
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
-    // alloc frames for encoder
-    sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &EncRequest, &m_EncResponse);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    if (!m_pmfxDECODE)
+    {
+        // alloc frames for encoder
+        sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &EncRequest, &m_EncResponse);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
 
     /* ENC use input source surfaces only & does not need real reconstructed surfaces.
      * But source surfaces index is always equal to reconstructed surface index.
@@ -817,14 +820,12 @@ mfxStatus CEncodingPipeline::AllocFrames()
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
-    // prepare mfxFrameSurface1 array for encoder
-    sts = FillSurfacePool(m_pEncSurfaces, &m_EncResponse, &(m_mfxEncParams.mfx.FrameInfo));
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-//    if ((m_pmfxENC) || (m_pmfxPAK))
-//    {
-//        m_pReconSurfaces = m_pEncSurfaces;
-//    }
+    if (!m_pmfxDECODE)
+    {
+        // prepare mfxFrameSurface1 array for encoder
+        sts = FillSurfacePool(m_pEncSurfaces, &m_EncResponse, &(m_mfxEncParams.mfx.FrameInfo));
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
 
     return MFX_ERR_NONE;
 }
@@ -1834,8 +1835,8 @@ mfxStatus CEncodingPipeline::InitInterfaces()
 
     if (m_encpakParams.bDECODESTREAMOUT)
     {
-        m_StreamoutBufs.reserve(m_decodePoolSize);
-        for (int i = 0; i < m_decodePoolSize; i++) // alloc a streamout buffer per decoder surface
+        m_StreamoutBufs.reserve(m_DecResponse.NumFrameActual);
+        for (int i = 0; i < m_DecResponse.NumFrameActual; i++) // alloc a streamout buffer per decoder surface
         {
             m_pExtBufDecodeStreamout = new mfxExtFeiDecStreamOut;
             MSDK_CHECK_POINTER(m_pExtBufDecodeStreamout, MFX_ERR_MEMORY_ALLOC);
@@ -4167,7 +4168,7 @@ mfxStatus CEncodingPipeline::DropDecodeStreamoutOutput(mfxFrameSurface1* pSurf)
             break;
         }
 
-    MSDK_CHECK_POINTER(m_pExtBufDecodeStreamout, MFX_ERR_NULL_PTR);
+    MSDK_CHECK_POINTER(m_pExtBufDecodeStreamout,     MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(m_pExtBufDecodeStreamout->MB, MFX_ERR_NULL_PTR);
 
     if (decodeStreamout)
@@ -4959,13 +4960,14 @@ mfxStatus CEncodingPipeline::ClearDecoderBuffers()
 {
     if (m_encpakParams.bDECODESTREAMOUT)
     {
+        m_pExtBufDecodeStreamout = NULL;
+
         for (int i = 0; i < m_StreamoutBufs.size(); i++)
         {
             MSDK_SAFE_DELETE_ARRAY(m_StreamoutBufs[i]->MB);
             MSDK_SAFE_DELETE(m_StreamoutBufs[i]);
         }
 
-        m_pExtBufDecodeStreamout = NULL;
         m_StreamoutBufs.clear();
     }
     return MFX_ERR_NONE;
