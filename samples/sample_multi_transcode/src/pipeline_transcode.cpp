@@ -112,7 +112,6 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_bDecodeEnable(true),
     m_bEncodeEnable(true),
     m_nVPPCompEnable(0),
-    m_nVPPCompEnableEncode(false),
     m_hwdev4Rendering(NULL),
     m_bUseOpaqueMemory(false),
     m_pBuffer(NULL),
@@ -396,7 +395,7 @@ mfxStatus CTranscodingPipeline::EncodePreInit(sInputParams *pParams)
             // create encoder
             m_pmfxENC.reset(new MFXVideoENCODE(*m_pmfxSession.get()));
 
-            if (m_nVPPCompEnableEncode)
+            if (m_nVPPCompEnable == VppCompOnlyEncode)
             {
                 pParams->EncoderFourCC  = MFX_FOURCC_NV12;
             }
@@ -1048,7 +1047,7 @@ mfxStatus CTranscodingPipeline::Encode()
         SetSurfaceAuxIDR(VppExtSurface, &encAuxCtrl, bInsertIDR);
         bInsertIDR = false;
 
-        if (m_nVPPCompEnable != VppCompOnly || m_nVPPCompEnableEncode)
+        if ((m_nVPPCompEnable != VppCompOnly) || (m_nVPPCompEnable == VppCompOnlyEncode))
         {
             if(m_mfxEncParams.mfx.CodecId != MFX_FOURCC_DUMP)
             {
@@ -1102,7 +1101,7 @@ mfxStatus CTranscodingPipeline::Encode()
 
         /* Actually rendering... if enabled
          * SYNC have not done by driver !!! */
-        if (m_nVPPCompEnable == VppCompOnly)
+        if ((m_nVPPCompEnable == VppCompOnly) || (m_nVPPCompEnable == VppCompOnlyEncode))
         {
             if(m_BSPool.size())
             {
@@ -1111,7 +1110,7 @@ mfxStatus CTranscodingPipeline::Encode()
                 // get result coded stream
                 if(VppExtSurface.pSurface)
                 {
-                    if(!m_nVPPCompEnableEncode)
+                    if(m_nVPPCompEnable != VppCompOnlyEncode)
                     {
                         sts = m_pmfxSession->SyncOperation(VppExtSurface.Syncp, MSDK_WAIT_INTERVAL);
                         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -1126,7 +1125,7 @@ mfxStatus CTranscodingPipeline::Encode()
 
                 UnPreEncAuxBuffer(pBitstreamEx_temp->pCtrl);
 
-                if (!m_nVPPCompEnableEncode)
+                if (m_nVPPCompEnable != VppCompOnlyEncode)
                 {
                     pBitstreamEx_temp->Bitstream.DataLength = 0;
                     pBitstreamEx_temp->Bitstream.DataOffset = 0;
@@ -1144,7 +1143,7 @@ mfxStatus CTranscodingPipeline::Encode()
             }
         }
 
-        if (m_nVPPCompEnable != VppCompOnly || m_nVPPCompEnableEncode)
+        if ((m_nVPPCompEnable != VppCompOnly) || (m_nVPPCompEnable == VppCompOnlyEncode))
         {
             if (m_BSPool.size() == m_AsyncDepth)
             {
@@ -1171,7 +1170,7 @@ mfxStatus CTranscodingPipeline::Encode()
     }
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
 
-    if (m_nVPPCompEnable != VppCompOnly || m_nVPPCompEnableEncode)
+    if (m_nVPPCompEnable != VppCompOnly || (m_nVPPCompEnable == VppCompOnlyEncode))
     {
         // need to get buffered bitstream
         if (MFX_ERR_NONE == sts)
@@ -2135,7 +2134,8 @@ mfxStatus CTranscodingPipeline::AddLaStreams(mfxU16 width, mfxU16 height)
     if (((pInParams->eModeExt == VppComp) || (pInParams->eModeExt == VppCompOnly)) &&
         (pInParams->numSurf4Comp != 0))
     {
-        m_nVPPCompEnable = pInParams->eModeExt;
+        if(m_nVPPCompEnable != VppCompOnlyEncode)
+            m_nVPPCompEnable = pInParams->eModeExt;
         m_VppCompParams.Header.BufferId = MFX_EXTBUFF_VPP_COMPOSITE;
         m_VppCompParams.Header.BufferSz = sizeof(mfxExtVPPComposite);
         m_VppCompParams.NumInputStream = (mfxU16)pInParams->numSurf4Comp;
@@ -2349,7 +2349,7 @@ mfxStatus CTranscodingPipeline::AllocFrames()
         if(m_mfxEncParams.mfx.CodecId != MFX_FOURCC_DUMP)
         {
            // In case of rendering enabled we need to add 1 additional surface for renderer
-           if(m_nVPPCompEnable == VppCompOnly)
+           if((m_nVPPCompEnable == VppCompOnly) || (m_nVPPCompEnable == VppCompOnlyEncode))
            {
                VPPOut.NumFrameSuggested++;
                VPPOut.NumFrameMin++;
@@ -2359,7 +2359,7 @@ mfxStatus CTranscodingPipeline::AllocFrames()
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 #ifdef LIBVA_SUPPORT
-        if ((m_nVPPCompEnable == VppCompOnly) &&
+        if ((m_nVPPCompEnable == VppCompOnly) || (m_nVPPCompEnable == VppCompOnlyEncode) &&
             ((m_libvaBackend == MFX_LIBVA_DRM_MODESET) ||
 #if defined(X11_DRI3_SUPPORT)
             (m_libvaBackend == MFX_LIBVA_X11) ||
@@ -2406,7 +2406,7 @@ mfxStatus CTranscodingPipeline::AllocFrames()
             sts = AllocPreEncAuxPool();
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
-        else if((m_nVPPCompEnable==VppComp || m_nVPPCompEnable==VppCompOnly) && m_bUseOpaqueMemory)
+        else if((m_nVPPCompEnable==VppComp || m_nVPPCompEnable==VppCompOnly || m_nVPPCompEnable==VppCompOnlyEncode) && m_bUseOpaqueMemory)
         {
             //--- N->1 case, allocating empty pool for opaque only
             sts = AllocFrames(&DecOut, true);
@@ -2549,7 +2549,7 @@ void CTranscodingPipeline::CorrectNumberOfAllocatedFrames(mfxFrameAllocRequest  
 mfxStatus CTranscodingPipeline::InitOpaqueAllocBuffers()
 {
     if (m_pmfxDEC.get() ||
-        (m_bUseOpaqueMemory && (m_nVPPCompEnable==VppComp || m_nVPPCompEnable==VppCompOnly) && m_pSurfaceDecPool.size()))
+        (m_bUseOpaqueMemory && (m_nVPPCompEnable==VppComp || m_nVPPCompEnable==VppCompOnly || m_nVPPCompEnable==VppCompOnlyEncode) && m_pSurfaceDecPool.size()))
     {
         m_DecOpaqueAlloc.Out.Surfaces = &m_pSurfaceDecPool[0]; // vestor is stored linearly in memory
         m_DecOpaqueAlloc.Out.NumSurface = (mfxU16)m_pSurfaceDecPool.size();
@@ -2716,7 +2716,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
 #else
             if(pParams->EncodeId)
             {
-                m_nVPPCompEnableEncode = true;
+                m_nVPPCompEnable = VppCompOnlyEncode;
             }
             m_hwdev4Rendering = pParams->m_hwdev;
 #endif
@@ -2728,7 +2728,10 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     }
 
     if ((VppComp == pParams->eModeExt) || (VppCompOnly == pParams->eModeExt))
-        m_nVPPCompEnable = pParams->eModeExt;
+    {
+        if(m_nVPPCompEnable != VppCompOnlyEncode)
+            m_nVPPCompEnable = pParams->eModeExt;
+    }
 
 #ifdef LIBVA_SUPPORT
     m_libvaBackend = pParams->libvaBackend;
@@ -2869,7 +2872,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // Encode component initialization
-    if (m_nVPPCompEnable != VppCompOnly || m_nVPPCompEnableEncode)
+    if ((m_nVPPCompEnable != VppCompOnly) || (m_nVPPCompEnable == VppCompOnlyEncode))
     {
         sts = EncodePreInit(pParams);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);

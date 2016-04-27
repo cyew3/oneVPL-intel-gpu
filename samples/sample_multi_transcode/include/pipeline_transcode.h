@@ -81,7 +81,8 @@ namespace TranscodingSample
         Sink,              // means that pipeline makes decode only and put data to shared buffer
         Source,            // means that pipeline makes vpp + encode and get data from shared buffer
         VppComp,           // means that pipeline makes vpp composition + encode and get data from shared buffer
-        VppCompOnly        // means that pipeline makes vpp composition and get data from shared buffer
+        VppCompOnly,       // means that pipeline makes vpp composition and get data from shared buffer
+        VppCompOnlyEncode  // means that pipeline makes vpp composition + encode and get data from shared buffer
     };
 
     enum EFieldCopyMode
@@ -586,7 +587,6 @@ namespace TranscodingSample
 
         bool           m_bDecodeEnable;
         bool           m_bEncodeEnable;
-        bool           m_nVPPCompEnableEncode;
         mfxU32         m_nVPPCompEnable;
         mfxI32         m_libvaBackend;
 
