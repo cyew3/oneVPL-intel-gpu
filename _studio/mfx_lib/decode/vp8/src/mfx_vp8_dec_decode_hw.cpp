@@ -41,8 +41,8 @@ VideoDECODEVP8_HW::VideoDECODEVP8_HW(VideoCORE *p_core, mfxStatus *sts)
     : m_is_initialized(false)
     , m_p_core(p_core)
     , m_platform(MFX_PLATFORM_HARDWARE)
-    , m_p_video_accelerator(NULL)
     , m_firstFrame(true)
+    , m_p_video_accelerator(NULL)
 {
     UMC_SET_ZERO(m_bs);
     UMC_SET_ZERO(m_frame_info);
