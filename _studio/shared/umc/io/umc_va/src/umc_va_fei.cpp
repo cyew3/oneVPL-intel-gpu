@@ -171,8 +171,13 @@ namespace UMC
                     Ipp32u const* map = &((*f).second[offset]);
                     for (int k = 0; k < 4; ++k)
                     {
-                        Ipp32u const field = (mb->InterMB.RefIdx[j][k] & 0x1);
-                        Ipp32u const idx   = (mb->InterMB.RefIdx[j][k] & 0x1e) >> 1;
+                        //NOTE: we still have no info about ref. filed use hardcoded zero
+                        Ipp32u const field = 0;
+
+                        //NOTE: while GFX spec describe Store ID as bits 4:1 forms the index
+                        //we see that all 4:0 bits do this
+                        Ipp32u const idx   = (mb->InterMB.RefIdx[j][k] & 0x1f);
+
                         mb->InterMB.RefIdx[j][k] =  map[count * field + idx];
                     }
                 }
