@@ -4,7 +4,7 @@
  This software is supplied under the terms of a license agreement or nondisclosure
  agreement with Intel Corporation and may not be copied or disclosed except in
  accordance with the terms of that agreement
- Copyright(c) 2012-2014 Intel Corporation. All Rights Reserved.
+ Copyright(c) 2012-2016 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -15,6 +15,7 @@
 #endif
 
 #include "mfx_vm++_pthread.h"
+#include <assert.h>
 
 struct _MfxMutexHandle
 {
@@ -38,7 +39,8 @@ MfxMutex::MfxMutex(void)
 
 MfxMutex::~MfxMutex(void)
 {
-    pthread_mutex_destroy(&m_handle.m_mutex);
+    int res = pthread_mutex_destroy(&m_handle.m_mutex);
+    assert(!res); // we experienced undefined behavior
 }
 
 mfxStatus MfxMutex::Lock(void)

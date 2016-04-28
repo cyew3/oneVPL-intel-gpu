@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2015 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -14,6 +14,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 
 #include "vm_cond.h"
 
@@ -169,7 +170,8 @@ void vm_cond_destroy(vm_cond *cond)
 
     if (cond->is_valid)
     {
-        pthread_cond_destroy(&cond->handle);
+        int res = pthread_cond_destroy(&cond->handle);
+        assert(!res); // we experienced undefined behavior
         vm_cond_set_invalid_internal(cond);
     }
 } /* void vm_cond_destroy(vm_cond *cond) */

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -15,6 +15,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "vm_semaphore.h"
 
@@ -64,7 +65,8 @@ vm_status vm_semaphore_init(vm_semaphore *sem, Ipp32s init_count)
         res = pthread_mutex_init(&sem->mutex, 0);
         if (res)
         {
-            pthread_cond_destroy(&sem->cond);
+            int cres = pthread_cond_destroy(&sem->cond);
+            assert(!cres); // we experienced undefined behavior
             vm_semaphore_set_invalid_internal(sem);
         }
     }
@@ -89,7 +91,8 @@ vm_status vm_semaphore_init_max(vm_semaphore *sem, Ipp32s init_count, Ipp32s max
         res = pthread_mutex_init(&sem->mutex, 0);
         if (res)
         {
-            pthread_cond_destroy(&sem->cond);
+            int cres = pthread_cond_destroy(&sem->cond);
+            assert(!res); // we experienced undefined behavior
             vm_semaphore_set_invalid_internal(sem);
         }
     }
@@ -299,8 +302,10 @@ void vm_semaphore_destroy(vm_semaphore *sem)
 
     if (0 <= sem->count)
     {
-        pthread_cond_destroy(&sem->cond);
-        pthread_mutex_destroy(&sem->mutex);
+        int res = pthread_cond_destroy(&sem->cond);
+        assert(!res); // we experienced undefined behavior
+        res = pthread_mutex_destroy(&sem->mutex);
+        assert(!res); // we experienced undefined behavior
 
         vm_semaphore_set_invalid_internal(sem);
     }

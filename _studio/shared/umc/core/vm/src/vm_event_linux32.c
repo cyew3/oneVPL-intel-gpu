@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -14,6 +14,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <errno.h>
+#include <assert.h>
 
 #include "vm_event.h"
 
@@ -62,7 +63,8 @@ vm_status vm_event_init(vm_event *event, Ipp32s manual, Ipp32s state)
         res = pthread_mutex_init(&event->mutex, 0);
         if (res)
         {
-            pthread_cond_destroy(&event->cond);
+            int cres = pthread_cond_destroy(&event->cond);
+            assert(!cres); // we experienced undefined behavior
             vm_event_set_invalid_internal(event);
         }
     }
@@ -336,8 +338,10 @@ void vm_event_destroy(vm_event *event)
 
     if (event->state >= 0)
     {
-        pthread_cond_destroy(&event->cond);
-        pthread_mutex_destroy(&event->mutex);
+        int res = pthread_cond_destroy(&event->cond);
+        assert(!res); // we experienced undefined behavior
+        res = pthread_mutex_destroy(&event->mutex);
+        assert(!res); // we experienced undefined behavior
 
         vm_event_set_invalid_internal(event);
     }
