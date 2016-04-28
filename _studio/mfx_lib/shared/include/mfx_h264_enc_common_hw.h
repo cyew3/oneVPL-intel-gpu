@@ -1477,6 +1477,24 @@ namespace MfxHwH264Encode
     };
 
     void DumpExecuteBuffers(ENCODE_EXECUTE_PARAMS const & params, GUID guid);
+
+    inline const mfxU16 LaDSenumToFactor(const mfxU16& LookAheadDS)
+    {
+        switch (LookAheadDS)
+        {
+        case MFX_LOOKAHEAD_DS_UNKNOWN:
+            return 0;
+        case MFX_LOOKAHEAD_DS_OFF:
+            return 1;
+        case MFX_LOOKAHEAD_DS_2x :
+            return 2;
+        case MFX_LOOKAHEAD_DS_4x :
+            return 4;
+        default:
+            assert(0);
+            return LookAheadDS;
+        }
+    }
 };
 
 #endif // MFX_ENABLE_H264_VIDEO_..._HW

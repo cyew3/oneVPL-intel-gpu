@@ -815,7 +815,7 @@ void CmContext::Setup(
 
     widthLa = video.calcParam.widthLa;
     heightLa = video.calcParam.heightLa;
-    LaScaleFactor = extOpt2->LookAheadDS;
+    LaScaleFactor = LaDSenumToFactor(extOpt2->LookAheadDS);
 
     m_programHist = 0;
 
@@ -1609,7 +1609,7 @@ void CmContext::SetCurbeData(
     curbeData.HMERefWindowsCombiningThreshold = (task.m_type[ffid] & MFX_FRAMETYPE_B) ? 8 : 16; //  0;  !sergo (should be =8 for B frames)
     curbeData.CheckAllFractionalEnable        = 0;
     //DW37
-    curbeData.CurLayerDQId                    = extOpt2->LookAheadDS;  // 0; !sergo use 8 bit as LaScaleFactor
+    curbeData.CurLayerDQId                    = LaDSenumToFactor(extOpt2->LookAheadDS);  // 0; !sergo use 8 bit as LaScaleFactor
     curbeData.TemporalId                      = 0;
     curbeData.NoInterLayerPredictionFlag      = 1;
     curbeData.AdaptivePredictionFlag          = 0;

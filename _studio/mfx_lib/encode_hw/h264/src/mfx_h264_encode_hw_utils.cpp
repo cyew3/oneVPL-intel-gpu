@@ -2937,7 +2937,7 @@ void LookAheadBrc2::Init(MfxVideoParam const & video)
 
     m_lookAhead     = extOpt2->LookAheadDepth - extDdi->LookAheadDependency;
     m_lookAheadDep  = extDdi->LookAheadDependency;
-    m_LaScaleFactor = extOpt2->LookAheadDS;
+    m_LaScaleFactor = LaDSenumToFactor(extOpt2->LookAheadDS);
     m_qpUpdateRange = extDdi->QpUpdateRange;
     m_strength      = extDdi->StrengthN;
 
@@ -2988,7 +2988,7 @@ void VMEBrc::Init(MfxVideoParam const & video)
     mfxExtCodingOption3  const *   extOpt3  = GetExtBuffer(video);
 
 
-    m_LaScaleFactor = extOpt2->LookAheadDS;
+    m_LaScaleFactor = LaDSenumToFactor(extOpt2->LookAheadDS);
     m_qpUpdateRange = extDdi->QpUpdateRange;
     m_strength      = extDdi->StrengthN;
 

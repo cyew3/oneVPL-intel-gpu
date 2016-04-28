@@ -2903,16 +2903,17 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod = 0;
     }
 
-    if (extOpt2->LookAheadDS < 2 && par.mfx.FrameInfo.Width > 4000)
+    if ((LaDSenumToFactor(extOpt2->LookAheadDS) < 2 && par.mfx.FrameInfo.Width > 4000) ||
+        (MFX_LOOKAHEAD_DS_4x == extOpt2->LookAheadDS) )
     {
-        extOpt2->LookAheadDS = 2;
+        extOpt2->LookAheadDS = MFX_LOOKAHEAD_DS_2x;
         changed = true;
     }
 
-    if (extOpt2->LookAheadDS > 1)
+    if (extOpt2->LookAheadDS > MFX_LOOKAHEAD_DS_OFF)
     {
-        par.calcParam.widthLa = AlignValue<mfxU16>((par.mfx.FrameInfo.Width / extOpt2->LookAheadDS), 16);
-        par.calcParam.heightLa = AlignValue<mfxU16>((par.mfx.FrameInfo.Height / extOpt2->LookAheadDS), 16);
+        par.calcParam.widthLa = AlignValue<mfxU16>((par.mfx.FrameInfo.Width / LaDSenumToFactor(extOpt2->LookAheadDS)), 16);
+        par.calcParam.heightLa = AlignValue<mfxU16>((par.mfx.FrameInfo.Height / LaDSenumToFactor(extOpt2->LookAheadDS)), 16);
     } else
     {
         par.calcParam.widthLa = par.mfx.FrameInfo.Width;
@@ -4484,8 +4485,8 @@ void MfxHwH264Encode::SetDefaults(
                 par.mfx.RateControlMethod = MFX_RATECONTROL_LA;
             if (extOpt2->LookAheadDepth == 0)
                 extOpt2->LookAheadDepth = 1;
-            if (extOpt2->LookAheadDS == 0)
-                extOpt2->LookAheadDS = 2;
+            if (extOpt2->LookAheadDS == MFX_LOOKAHEAD_DS_UNKNOWN)
+                extOpt2->LookAheadDS = MFX_LOOKAHEAD_DS_2x;
         }
         else
         {
@@ -4814,18 +4815,18 @@ void MfxHwH264Encode::SetDefaults(
             ? IPP_MIN(10, extOpt2->LookAheadDepth / 4)
             : extOpt2->LookAheadDepth;
 
-    if (extOpt2->LookAheadDS == 0) // default: use LA 2X for TU3-7 and LA 1X for TU1-2
+    if (extOpt2->LookAheadDS == MFX_LOOKAHEAD_DS_UNKNOWN) // default: use LA 2X for TU3-7 and LA 1X for TU1-2
     {
         if (par.mfx.TargetUsage > 2 || par.mfx.FrameInfo.Width >= 4000)
-            extOpt2->LookAheadDS = 2;
+            extOpt2->LookAheadDS = MFX_LOOKAHEAD_DS_2x;
         else
-            extOpt2->LookAheadDS = 1;
+            extOpt2->LookAheadDS = MFX_LOOKAHEAD_DS_OFF;
     }
 
-    if ((extOpt2->LookAheadDS != 1) &&
-        (extOpt2->LookAheadDS != 2) &&
-        (extOpt2->LookAheadDS != 4))
-        extOpt2->LookAheadDS = 1;
+    if ((extOpt2->LookAheadDS != MFX_LOOKAHEAD_DS_OFF) &&
+        (extOpt2->LookAheadDS != MFX_LOOKAHEAD_DS_2x)  &&
+        (extOpt2->LookAheadDS != MFX_LOOKAHEAD_DS_4x) )
+        extOpt2->LookAheadDS = MFX_LOOKAHEAD_DS_OFF;
 
     if (extDdi->QpUpdateRange == 0)
         extDdi->QpUpdateRange = 10;
