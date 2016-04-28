@@ -1394,6 +1394,16 @@ void SetDefaults(
     if (!par.mfx.GopPicSize)
         par.mfx.GopPicSize = (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP ? 1 : 0xFFFF);
 
+    if ((!par.NumRefLX[0]) && (par.mfx.TargetUsage == 7)  &&  (!par.mfx.NumRefFrame))
+    {
+        par.NumRefLX[0] = 1;
+    }
+    
+    if ((!par.NumRefLX[1]) && (par.mfx.TargetUsage == 7)  &&  (!par.mfx.NumRefFrame))
+    {
+        par.NumRefLX[1] = 1;
+    }
+
     if (!par.NumRefLX[0] && par.m_ext.DDI.NumActiveRefBL0)
         par.NumRefLX[0] = par.m_ext.DDI.NumActiveRefBL0;
 
