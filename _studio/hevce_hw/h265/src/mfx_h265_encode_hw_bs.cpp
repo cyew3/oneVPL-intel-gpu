@@ -8,6 +8,8 @@
 
 #include "mfx_h265_encode_hw_bs.h"
 #include <assert.h>
+#include <list>
+#include <algorithm>
 
 namespace MfxHwH265Encode
 {
@@ -41,6 +43,85 @@ void BitstreamWriter::Reset(mfxU8* bs, mfxU32 size, mfxU8 bitOffset)
     {
         m_bs        = m_bsStart;
         m_bitOffset = m_bitStart;
+    }
+}
+
+void BitstreamWriter::PutBitsBuffer(mfxU32 n, void* bb, mfxU32 o)
+{
+    mfxU8* b = (mfxU8*)bb;
+    mfxU32 N, B;
+
+    assert(bb);
+
+    if (o)
+    {
+        N  = o / 8;
+        b += N;
+        o &= 7;
+
+        if (o)
+        {
+            N = (n < (8 - o)) ? n : 0;
+
+            PutBits(8 - o, ((b[0] & (0xff >> o)) >> N));
+
+            n -= (N ? N : (8 - o));
+            b++;
+
+            if (!n)
+                return;
+        }
+    }
+
+    if (!m_bitOffset)
+    {
+        N = n / 8;
+        n &= 7;
+
+        assert(N + !!n < (m_bsEnd - m_bs));
+        memcpy_s(m_bs, N, b, N);
+
+        m_bs += N;
+
+        if (n)
+        {
+            m_bs[0] = b[N];
+            m_bs[0] &= (0xff << (8 - n));
+            m_bitOffset = (mfxU8)n;
+        }
+    }
+    else
+    {
+        assert( (n + 7 - m_bitOffset) / 8 < (m_bsEnd - m_bs));
+
+        while (n >= 24)
+        {
+            B = ((((mfxU32)b[0] << 24) | ((mfxU32)b[1] << 16) | ((mfxU32)b[2] << 8)) >> m_bitOffset);
+
+            m_bs[0] |= (mfxU8)(B >> 24);
+            m_bs[1]  = (mfxU8)(B >> 16);
+            m_bs[2]  = (mfxU8)(B >> 8);
+            m_bs[3]  = (mfxU8) B;
+
+            m_bs += 3;
+            b    += 3;
+            n    -= 24;
+        }
+
+        while (n >= 8)
+        {
+            B = ((mfxU32)b[0] << 8) >> m_bitOffset;
+
+            m_bs[0] |= (mfxU8)(B >> 8);
+            m_bs[1]  = (mfxU8) B;
+
+            m_bs++;
+            b++;
+            n -= 8;
+        }
+
+        if (n)
+            PutBits(n, (b[0] >> (8 - n)));
     }
 }
 
@@ -1684,116 +1765,277 @@ mfxStatus HeaderPacker::Reset(MfxVideoParam const & par)
     return sts;
 }
 
-void HeaderPacker::GetSEI(Task const & task,mfxU8*& buf, mfxU32& sizeInBytes)
+void PackBPPayload(BitstreamWriter& rbsp, MfxVideoParam const & par, Task const & task)
 {
-    NALU nalu = {0, PREFIX_SEI_NUT, 0, 1};
+    BufferingPeriodSEI bp = {};
+
+    bp.seq_parameter_set_id = par.m_sps.seq_parameter_set_id;
+    bp.nal[0].initial_cpb_removal_delay  = bp.vcl[0].initial_cpb_removal_delay  = task.m_initial_cpb_removal_delay;
+    bp.nal[0].initial_cpb_removal_offset = bp.vcl[0].initial_cpb_removal_offset = task.m_initial_cpb_removal_offset;
+
+    mfxU32 size = CeilDiv(rbsp.GetOffset(), 8);
+    mfxU8* pl = rbsp.GetStart() + size; // payload start
+
+    rbsp.PutBits(8, 0);    //payload type
+    rbsp.PutBits(8, 0xff); //place for payload  size
+    size += 2;
+
+    HeaderPacker::PackSEIPayload(rbsp, par.m_sps.vui, bp);
+
+    size = CeilDiv(rbsp.GetOffset(), 8) - size;
+
+    assert(size < 256);
+    pl[1] = (mfxU8)size; //payload size
+}
+
+void PackPTPayload(BitstreamWriter& rbsp, MfxVideoParam const & par, Task const & task)
+{
+    PicTimingSEI pt = {};
+
+    switch (task.m_surf->Info.PicStruct)
+    {
+    case mfxU16(MFX_PICSTRUCT_PROGRESSIVE):
+        pt.pic_struct       = 0;
+        pt.source_scan_type = 1;
+        break;
+    case mfxU16(MFX_PICSTRUCT_FIELD_TFF):
+        pt.pic_struct       = 3;
+        pt.source_scan_type = 0;
+        break;
+    case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF):
+        pt.pic_struct       = 3;
+        pt.source_scan_type = 1;
+        break;
+    case mfxU16(MFX_PICSTRUCT_FIELD_BFF):
+        pt.pic_struct       = 4;
+        pt.source_scan_type = 0;
+        break;
+    case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_BFF):
+        pt.pic_struct       = 4;
+        pt.source_scan_type = 1;
+        break;
+    case mfxU16(MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_REPEATED):
+        pt.pic_struct       = 5;
+        pt.source_scan_type = 0;
+        break;
+    case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_REPEATED):
+        pt.pic_struct       = 5;
+        pt.source_scan_type = 1;
+        break;
+    case mfxU16(MFX_PICSTRUCT_FIELD_BFF | MFX_PICSTRUCT_FIELD_REPEATED):
+        pt.pic_struct       = 6;
+        pt.source_scan_type = 0;
+        break;
+    case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_BFF | MFX_PICSTRUCT_FIELD_REPEATED):
+        pt.pic_struct       = 6;
+        pt.source_scan_type = 1;
+        break;
+    case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FRAME_DOUBLING):
+        pt.pic_struct       = 7;
+        pt.source_scan_type = 1;
+        break;
+    case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FRAME_TRIPLING):
+        pt.pic_struct       = 8;
+        pt.source_scan_type = 1;
+        break;
+    default:
+        pt.pic_struct       = 0;
+        pt.source_scan_type = 2;
+        break;
+    }
+
+    pt.duplicate_flag = 0;
+
+    pt.au_cpb_removal_delay_minus1 = Max(task.m_cpb_removal_delay, 1U) - 1;
+    pt.pic_dpb_output_delay        = task.m_dpb_output_delay;
+
+    mfxU32 size = CeilDiv(rbsp.GetOffset(), 8);
+    mfxU8* pl = rbsp.GetStart() + size; // payload start
+
+    rbsp.PutBits(8, 1);    //payload type
+    rbsp.PutBits(8, 0xFF); //place for payload  size
+    size += 2;
+
+    HeaderPacker::PackSEIPayload(rbsp, par.m_sps.vui, pt);
+
+    size = CeilDiv(rbsp.GetOffset(), 8) - size;
+
+    assert(size < 256);
+    pl[1] = (mfxU8)size; //payload size
+}
+
+struct PLTypeEq
+{
+    mfxU16 m_type;
+    PLTypeEq(mfxU16 type) { m_type = type; }
+    inline bool operator() (const mfxPayload* pl) { return (pl && (pl->Type == m_type)); }
+};
+
+void HeaderPacker::GetPrefixSEI(Task const & task, mfxU8*& buf, mfxU32& sizeInBytes)
+{
+    NALU nalu = {1, PREFIX_SEI_NUT, 0, 1};
     BitstreamWriter rbsp(m_rbsp, sizeof(m_rbsp));
+    std::list<const mfxPayload*> prefixPL;
+    std::list<const mfxPayload*>::iterator plIt;
+    mfxU32 prevNALUBytes = 0;
+    mfxPayload BPSEI = {}, PTSEI = {};
+    bool insertBP = false, insertPT = false;
 
-    PackNALU(rbsp, nalu);
-
-    if (task.m_insertHeaders & INSERT_BPSEI)
+    for (mfxU16 i = 0; i < task.m_ctrl.NumPayload; i++)
     {
-        BufferingPeriodSEI bp = {};
-
-        bp.seq_parameter_set_id = m_par->m_sps.seq_parameter_set_id;
-        bp.nal[0].initial_cpb_removal_delay  = bp.vcl[0].initial_cpb_removal_delay  = task.m_initial_cpb_removal_delay;
-        bp.nal[0].initial_cpb_removal_offset = bp.vcl[0].initial_cpb_removal_offset = task.m_initial_cpb_removal_offset;
-
-        mfxU32 size = CeilDiv(rbsp.GetOffset(), 8);
-        mfxU8* pl = rbsp.GetStart() + size; // payload start
-
-        rbsp.PutBits(8, 0);    //payload type
-        rbsp.PutBits(8, 0xFF); //place for payload  size
-        size += 2;
-
-        PackSEIPayload(rbsp, m_par->m_sps.vui, bp);
-
-        size = CeilDiv(rbsp.GetOffset(), 8) - size;
-
-        assert(size < 256);
-        pl[1] = (mfxU8)size; //payload size
+        if (!(task.m_ctrl.Payload[i]->CtrlFlags & MFX_PAYLOAD_CTRL_SUFFIX))
+            prefixPL.push_back(task.m_ctrl.Payload[i]);
     }
 
-    if (task.m_insertHeaders & INSERT_PTSEI)
+    if (m_par->mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {
-        PicTimingSEI pt = {};
-
-        switch (task.m_surf->Info.PicStruct)
-        {
-        case mfxU16(MFX_PICSTRUCT_PROGRESSIVE):
-            pt.pic_struct       = 0;
-            pt.source_scan_type = 1;
-            break;
-        case mfxU16(MFX_PICSTRUCT_FIELD_TFF):
-            pt.pic_struct       = 3;
-            pt.source_scan_type = 0;
-            break;
-        case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF):
-            pt.pic_struct       = 3;
-            pt.source_scan_type = 1;
-            break;
-        case mfxU16(MFX_PICSTRUCT_FIELD_BFF):
-            pt.pic_struct       = 4;
-            pt.source_scan_type = 0;
-            break;
-        case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_BFF):
-            pt.pic_struct       = 4;
-            pt.source_scan_type = 1;
-            break;
-        case mfxU16(MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_REPEATED):
-            pt.pic_struct       = 5;
-            pt.source_scan_type = 0;
-            break;
-        case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_REPEATED):
-            pt.pic_struct       = 5;
-            pt.source_scan_type = 1;
-            break;
-        case mfxU16(MFX_PICSTRUCT_FIELD_BFF | MFX_PICSTRUCT_FIELD_REPEATED):
-            pt.pic_struct       = 6;
-            pt.source_scan_type = 0;
-            break;
-        case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_BFF | MFX_PICSTRUCT_FIELD_REPEATED):
-            pt.pic_struct       = 6;
-            pt.source_scan_type = 1;
-            break;
-        case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FRAME_DOUBLING):
-            pt.pic_struct       = 7;
-            pt.source_scan_type = 1;
-            break;
-        case mfxU16(MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FRAME_TRIPLING):
-            pt.pic_struct       = 8;
-            pt.source_scan_type = 1;
-            break;
-        default:
-            pt.pic_struct       = 0;
-            pt.source_scan_type = 2;
-            break;
-        }
-
-        pt.duplicate_flag = 0;
-
-        pt.au_cpb_removal_delay_minus1 = Max(task.m_cpb_removal_delay, 1U) - 1;
-        pt.pic_dpb_output_delay        = task.m_dpb_output_delay;
-
-        mfxU32 size = CeilDiv(rbsp.GetOffset(), 8);
-        mfxU8* pl = rbsp.GetStart() + size; // payload start
-
-        rbsp.PutBits(8, 1);    //payload type
-        rbsp.PutBits(8, 0xFF); //place for payload  size
-        size += 2;
-
-        PackSEIPayload(rbsp, m_par->m_sps.vui, pt);
-
-        size = CeilDiv(rbsp.GetOffset(), 8) - size;
-
-        assert(size < 256);
-        pl[1] = (mfxU8)size; //payload size
+        prefixPL.remove_if(PLTypeEq(0)); //buffering_period
+        prefixPL.remove_if(PLTypeEq(1)); //pic_timing
     }
 
-    rbsp.PutTrailingBits();
+    if (prefixPL.empty() && !(task.m_insertHeaders & INSERT_SEI))
+    {
+        buf         = 0;
+        sizeInBytes = 0;
+        goto exit;
+    }
 
     buf         = m_bs_ssh;
     sizeInBytes = sizeof(m_bs_ssh);
+
+    /* An SEI NAL unit containing an active parameter sets SEI message shall contain only
+    one active parameter sets SEI message and shall not contain any other SEI messages. */
+    /* When an SEI NAL unit containing an active parameter sets SEI message is present
+    in an access unit, it shall be the first SEI NAL unit that follows the prevVclNalUnitInAu
+    of the SEI NAL unit and precedes the nextVclNalUnitInAu of the SEI NAL unit. */
+    plIt = std::find_if(prefixPL.begin(), prefixPL.end(), PLTypeEq(129));
+
+    if (plIt != prefixPL.end())
+    {
+        const mfxPayload& pl = **plIt;
+
+        PackNALU(rbsp, nalu);
+        rbsp.PutBitsBuffer(pl.NumBit, pl.Data);
+        rbsp.PutTrailingBits(true);
+        rbsp.PutTrailingBits();
+
+        prefixPL.remove_if(PLTypeEq(129));
+
+        if (MFX_ERR_NONE != PackRBSP(buf, m_rbsp, sizeInBytes, CeilDiv(rbsp.GetOffset(), 8)))
+        {
+            buf         = 0;
+            sizeInBytes = 0;
+        }
+
+        if (!buf || (prefixPL.empty() && !(task.m_insertHeaders & INSERT_SEI)))
+            goto exit;
+
+        buf += sizeInBytes;
+        prevNALUBytes += sizeInBytes;
+        sizeInBytes = sizeof(m_bs_ssh) - prevNALUBytes;
+
+        rbsp.Reset();
+    }
+    
+    plIt = std::find_if(prefixPL.begin(), prefixPL.end(), PLTypeEq(1));
+    insertPT = plIt != prefixPL.end();
+
+    if ((task.m_insertHeaders & INSERT_PTSEI) && !insertPT)
+    {
+        PTSEI.Type   = 1;
+        PTSEI.NumBit = rbsp.GetOffset();
+        PTSEI.Data   = rbsp.GetStart() + PTSEI.NumBit / 8;
+
+        PackPTPayload(rbsp, *m_par, task);
+
+        PTSEI.NumBit  = rbsp.GetOffset() - PTSEI.NumBit;
+        PTSEI.BufSize = (mfxU16)CeilDiv(PTSEI.NumBit, 8);
+
+        prefixPL.push_front(&PTSEI);
+        rbsp.PutTrailingBits(true);
+
+        insertPT = true;
+    }
+
+    plIt = std::find_if(prefixPL.begin(), prefixPL.end(), PLTypeEq(0));
+    insertBP = plIt != prefixPL.end();
+
+    if ((task.m_insertHeaders & INSERT_BPSEI) && !insertBP)
+    {
+        BPSEI.Type   = 0;
+        BPSEI.NumBit = rbsp.GetOffset();
+        BPSEI.Data   = rbsp.GetStart() + BPSEI.NumBit / 8;
+
+        PackBPPayload(rbsp, *m_par, task);
+
+        BPSEI.NumBit  = rbsp.GetOffset() - BPSEI.NumBit;
+        BPSEI.BufSize = (mfxU16)CeilDiv(BPSEI.NumBit, 8);
+
+        prefixPL.push_front(&BPSEI);
+        rbsp.PutTrailingBits(true);
+
+        insertBP = true;
+    }
+
+    /* When an SEI NAL unit contains a non-nested buffering period SEI message,
+    a non-nested picture timing SEI message, or a non-nested decoding unit information
+    SEI message, the SEI NAL unit shall not contain any other SEI message with payloadType
+    not equal to 0 (buffering period), 1 (picture timing) or 130 (decoding unit information). */
+    if (insertBP || insertPT || prefixPL.end() != std::find_if(prefixPL.begin(), prefixPL.end(), PLTypeEq(130)))
+    {
+        mfxU32 rbspOffset = rbsp.GetOffset() / 8;
+        mfxU8* rbspStart  = rbsp.GetStart() + rbspOffset;
+
+        PackNALU(rbsp, nalu);
+
+        for (plIt = prefixPL.begin(); plIt != prefixPL.end(); plIt++)
+        {
+            if (!*plIt)
+                continue;
+
+            const mfxPayload& pl = **plIt;
+
+            if (pl.Type == 0 || pl.Type == 1 || pl.Type == 130)
+            {
+                rbsp.PutBitsBuffer(pl.NumBit, pl.Data);
+                rbsp.PutTrailingBits(true);
+            }
+        }
+
+        prefixPL.remove_if(PLTypeEq(0));
+        prefixPL.remove_if(PLTypeEq(1));
+        prefixPL.remove_if(PLTypeEq(130));
+        
+        rbsp.PutTrailingBits();
+
+        if (MFX_ERR_NONE != PackRBSP(buf, rbspStart, sizeInBytes, CeilDiv(rbsp.GetOffset(), 8) - rbspOffset))
+        {
+            buf         = 0;
+            sizeInBytes = 0;
+        }
+
+        if (!buf || prefixPL.empty())
+            goto exit;
+
+        buf += sizeInBytes;
+        prevNALUBytes += sizeInBytes;
+        sizeInBytes = sizeof(m_bs_ssh) - prevNALUBytes;
+
+        rbsp.Reset();
+    }
+
+    PackNALU(rbsp, nalu);
+
+    for (plIt = prefixPL.begin(); plIt != prefixPL.end(); plIt++)
+    {
+        if (!*plIt)
+            continue;
+
+        rbsp.PutBitsBuffer((*plIt)->NumBit, (*plIt)->Data);
+        rbsp.PutTrailingBits(true);
+    }
+
+    rbsp.PutTrailingBits();
 
     if (MFX_ERR_NONE != PackRBSP(buf, m_rbsp, sizeInBytes, CeilDiv(rbsp.GetOffset(), 8)))
     {
@@ -1801,7 +2043,67 @@ void HeaderPacker::GetSEI(Task const & task,mfxU8*& buf, mfxU32& sizeInBytes)
         sizeInBytes = 0;
     }
 
+exit:
+    if (buf)
+    {
+        buf          = m_bs_ssh;
+        sizeInBytes += prevNALUBytes;
+    }
+
     m_bs.Reset(m_bs_ssh + sizeInBytes, sizeof(m_bs_ssh) - sizeInBytes);
+}
+
+void HeaderPacker::GetSuffixSEI(Task const & task, mfxU8*& buf, mfxU32& sizeInBytes)
+{
+    NALU nalu = {0, SUFFIX_SEI_NUT, 0, 1};
+    BitstreamWriter rbsp(m_rbsp, sizeof(m_rbsp));
+    std::list<const mfxPayload*> suffixPL, prefixPL;
+    std::list<const mfxPayload*>::iterator plIt;
+
+    for (mfxU16 i = 0; i < task.m_ctrl.NumPayload; i++)
+    {
+        if (task.m_ctrl.Payload[i]->CtrlFlags & MFX_PAYLOAD_CTRL_SUFFIX)
+            suffixPL.push_back(task.m_ctrl.Payload[i]);
+        else
+            prefixPL.push_back(task.m_ctrl.Payload[i]);
+    }
+
+     /* It is a requirement of bitstream conformance that when a prefix SEI message with payloadType
+     equal to 17 (progressive refinement segment end) or 22 (post-filter hint) is present in an access unit,
+     a suffix SEI message with the same value of payloadType shall not be present in the same access unit.*/
+    if (prefixPL.end() != std::find_if(prefixPL.begin(), prefixPL.end(), PLTypeEq(17)))
+        suffixPL.remove_if(PLTypeEq(17));
+    if (prefixPL.end() != std::find_if(prefixPL.begin(), prefixPL.end(), PLTypeEq(22)))
+        suffixPL.remove_if(PLTypeEq(22));
+
+    if (suffixPL.empty())
+    {
+        buf         = 0;
+        sizeInBytes = 0;
+        return;
+    }
+
+    PackNALU(rbsp, nalu);
+
+    for (plIt = suffixPL.begin(); plIt != suffixPL.end(); plIt++)
+    {
+        if (!*plIt)
+            continue;
+
+        rbsp.PutBitsBuffer((*plIt)->NumBit, (*plIt)->Data);
+        rbsp.PutTrailingBits(true);
+    }
+
+    rbsp.PutTrailingBits();
+
+    buf         = m_bs.GetStart() + CeilDiv(m_bs.GetOffset(), 8);
+    sizeInBytes = sizeof(m_bs_ssh) - mfxU32(buf - m_bs.GetStart());
+
+    if (MFX_ERR_NONE != PackRBSP(buf, m_rbsp, sizeInBytes, CeilDiv(rbsp.GetOffset(), 8)))
+    {
+        buf         = 0;
+        sizeInBytes = 0;
+    }
 }
 
 void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& sizeInBytes, mfxU32* qpd_offset)
@@ -1813,7 +2115,7 @@ void HeaderPacker::GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& siz
     assert(m_par);
     assert(id < m_par->m_slice.size());
 
-    if (id == 0 && !(task.m_insertHeaders & INSERT_SEI))
+    if (id == 0 && !(task.m_insertHeaders & INSERT_SEI) && task.m_ctrl.NumPayload == 0)
         rbsp.Reset(m_bs_ssh, sizeof(m_bs_ssh));
 
     Slice sh = task.m_sh;

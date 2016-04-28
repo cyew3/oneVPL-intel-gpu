@@ -189,6 +189,12 @@ mfxStatus SetFrameRate(
         virtual
         mfxStatus Destroy();
 
+        virtual
+        ENCODE_PACKEDHEADER_DATA* PackHeader(Task const & task, mfxU32 nut)
+        {
+            return DDIHeaderPacker::PackHeader(task, nut);
+        }
+
     protected:
         VAAPIEncoder(const VAAPIEncoder&);
         VAAPIEncoder& operator=(const VAAPIEncoder&);

@@ -1205,31 +1205,34 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
             packedDataSize += packed_header_param_buffer.bit_length;
         }
         // SEI
-        if (task.m_insertHeaders & INSERT_SEI)
+        if ((task.m_insertHeaders & INSERT_SEI) || (task.m_ctrl.NumPayload > 0))
         {
             ENCODE_PACKEDHEADER_DATA * packedSei = PackHeader(task, PREFIX_SEI_NUT);
 
-            packed_header_param_buffer.type = VAEncPackedHeaderHEVC_SEI;
-            packed_header_param_buffer.has_emulation_bytes = 1; //!packedSei->SkipEmulationByteCount;
-            packed_header_param_buffer.bit_length = packedSei->DataLength*8;
+            if (packedSei->DataLength)
+            {
+                packed_header_param_buffer.type = VAEncPackedHeaderHEVC_SEI;
+                packed_header_param_buffer.has_emulation_bytes = 1; //!packedSei->SkipEmulationByteCount;
+                packed_header_param_buffer.bit_length = packedSei->DataLength*8;
 
-            vaSts = vaCreateBuffer(m_vaDisplay,
-                    m_vaContextEncode,
-                    VAEncPackedHeaderParameterBufferType,
-                    sizeof(packed_header_param_buffer),
-                    1,
-                    &packed_header_param_buffer,
-                    &VABufferNew(VABID_PACKED_SEI_H, 0));
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+                vaSts = vaCreateBuffer(m_vaDisplay,
+                        m_vaContextEncode,
+                        VAEncPackedHeaderParameterBufferType,
+                        sizeof(packed_header_param_buffer),
+                        1,
+                        &packed_header_param_buffer,
+                        &VABufferNew(VABID_PACKED_SEI_H, 0));
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-            vaSts = vaCreateBuffer(m_vaDisplay,
-                                m_vaContextEncode,
-                                VAEncPackedHeaderDataBufferType,
-                                packedSei->DataLength, 1, packedSei->pData,
-                                &VABufferNew(VABID_PACKED_SEI, 0));
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+                vaSts = vaCreateBuffer(m_vaDisplay,
+                                    m_vaContextEncode,
+                                    VAEncPackedHeaderDataBufferType,
+                                    packedSei->DataLength, 1, packedSei->pData,
+                                    &VABufferNew(VABID_PACKED_SEI, 0));
+                MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-            packedDataSize += packed_header_param_buffer.bit_length;
+                packedDataSize += packed_header_param_buffer.bit_length;
+            }
         }
 
         //Slice headers only

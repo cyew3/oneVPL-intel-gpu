@@ -67,6 +67,12 @@ public:
     virtual
     mfxStatus Destroy();
 
+    virtual
+    ENCODE_PACKEDHEADER_DATA* PackHeader(Task const & task, mfxU32 nut)
+    {
+        return DDIHeaderPacker::PackHeader(task, nut);
+    }
+
 private:
     MFXCoreInterface*                           m_core;
     GUID                                        m_guid;

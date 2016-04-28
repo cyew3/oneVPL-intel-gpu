@@ -29,6 +29,7 @@ public:
     ~BitstreamWriter();
 
     void PutBits        (mfxU32 n, mfxU32 b);
+    void PutBitsBuffer  (mfxU32 n, void* b, mfxU32 offset = 0);
     void PutBit         (mfxU32 b);
     void PutGolomb      (mfxU32 b);
     void PutTrailingBits(bool bCheckAligned = false);
@@ -102,7 +103,8 @@ public:
     inline void GetVPS(mfxU8*& buf, mfxU32& len){buf = m_bs_vps; len = m_sz_vps;}  
     inline void GetSPS(mfxU8*& buf, mfxU32& len){buf = m_bs_sps; len = m_sz_sps;}
     inline void GetPPS(mfxU8*& buf, mfxU32& len){buf = m_bs_pps; len = m_sz_pps;}
-    void GetSEI(Task const & task, mfxU8*& buf, mfxU32& len);
+    void GetPrefixSEI(Task const & task, mfxU8*& buf, mfxU32& len);
+    void GetSuffixSEI(Task const & task, mfxU8*& buf, mfxU32& len);
     void GetSSH(Task const & task, mfxU32 id, mfxU8*& buf, mfxU32& len, mfxU32* qpd_offset = 0);
 
     static void PackNALU (BitstreamWriter& bs, NALU  const &  nalu);

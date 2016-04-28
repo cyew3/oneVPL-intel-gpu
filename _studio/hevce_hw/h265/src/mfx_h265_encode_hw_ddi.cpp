@@ -161,7 +161,7 @@ DDIHeaderPacker::~DDIHeaderPacker()
 
 void DDIHeaderPacker::Reset(MfxVideoParam const & par)
 {
-    m_buf.resize(5 + par.mfx.NumSlice);
+    m_buf.resize(6 + par.mfx.NumSlice);
     m_cur = m_buf.begin();
     m_packer.Reset(par);
 }
@@ -204,7 +204,10 @@ ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackHeader(Task const & task, mfxU32 
         }
         break;
     case PREFIX_SEI_NUT:
-        m_packer.GetSEI(task, m_cur->pData, m_cur->DataLength);
+        m_packer.GetPrefixSEI(task, m_cur->pData, m_cur->DataLength);
+        break;
+    case SUFFIX_SEI_NUT:
+        m_packer.GetSuffixSEI(task, m_cur->pData, m_cur->DataLength);
         break;
     default:
         return 0;

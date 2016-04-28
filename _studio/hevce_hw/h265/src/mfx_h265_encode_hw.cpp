@@ -832,6 +832,22 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
 
             bs->DataLength += bytes2copy;
 
+            if (!m_hrd.Enabled())
+            {
+                ENCODE_PACKEDHEADER_DATA* pSEI = m_ddi->PackHeader(*taskForQuery, SUFFIX_SEI_NUT);
+
+                if (pSEI && pSEI->DataLength)
+                {
+                    bytesAvailable -= bytes2copy;
+                    MFX_CHECK(bytesAvailable >= pSEI->DataLength, MFX_ERR_NOT_ENOUGH_BUFFER);
+
+                    memcpy_s(bs->Data + bs->DataOffset + bs->DataLength, pSEI->DataLength, pSEI->pData + pSEI->DataOffset, pSEI->DataLength);
+
+                    bs->DataLength += pSEI->DataLength;
+                    bytes2copy     += pSEI->DataLength;
+                }
+            }
+
             m_hrd.Update(bytes2copy * 8, *taskForQuery);
 
             bs->TimeStamp       = taskForQuery->m_surf->Data.TimeStamp;

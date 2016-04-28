@@ -445,6 +445,8 @@ public:
     virtual
     mfxStatus Destroy() = 0;
 
+    virtual
+    ENCODE_PACKEDHEADER_DATA* PackHeader(Task const & task, mfxU32 nut) = 0;
 };
 
 class DDIHeaderPacker

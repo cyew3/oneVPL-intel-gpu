@@ -680,10 +680,14 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
         ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA, *pPH, 1);
     }
 
-    if (task.m_insertHeaders & INSERT_SEI)
+    if ((task.m_insertHeaders & INSERT_SEI) || (task.m_ctrl.NumPayload > 0))
     {
         pPH = PackHeader(task, PREFIX_SEI_NUT); assert(pPH);
-        ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA, *pPH, 1);
+
+        if (pPH->DataLength)
+        {
+            ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA, *pPH, 1);
+        }
     }
 
     for (mfxU32 i = 0; i < m_slice.size(); i ++)
@@ -691,6 +695,16 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
         pPH = PackSliceHeader(task, i, &m_slice[i].SliceQpDeltaBitOffset); assert(pPH);
         ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA, *pPH, 1);
     }
+    
+    /*if (task.m_ctrl.NumPayload > 0)
+    {
+        pPH = PackHeader(task, SUFFIX_SEI_NUT); assert(pPH);
+
+        if (pPH->DataLength)
+        {
+            ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA, *pPH, 1);
+        }
+    }*/
 
     Trace(executeParams, 0);
 

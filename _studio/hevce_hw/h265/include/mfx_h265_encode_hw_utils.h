@@ -657,6 +657,8 @@ public:
         return (pic.m_eo == 0) ? 0 : (pic.m_eo - m_prevBpEncOrder) - 1;
     }
 
+    inline bool Enabled() { return m_bIsHrdRequired; }
+
 protected:
     bool   m_bIsHrdRequired;
     bool   m_cbrFlag;
