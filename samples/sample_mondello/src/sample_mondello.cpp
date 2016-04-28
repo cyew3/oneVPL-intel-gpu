@@ -109,24 +109,14 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-vaapi] - work with vaapi surfaces\n"));
     msdk_printf(MSDK_STRING("Example: %s h264|mpeg2|mvc -i InputYUVFile -o OutputEncodedFile -w width -h height -angle 180 -g 300 -r 1 \n"), strAppName);
 #endif
-#if defined (ENABLE_V4L2_SUPPORT)
-    msdk_printf(MSDK_STRING("   [-d]                            - Device video node (eg: /dev/video0)\n"));
-    msdk_printf(MSDK_STRING("   [-p]                            - Mipi Port number (eg: Port 0)\n"));
-    msdk_printf(MSDK_STRING("   [-m]                            - Mipi Mode Configuration [PREVIEW/CONTINUOUS/STILL/VIDEO]\n"));
-    msdk_printf(MSDK_STRING("   [-uyvy]                        - Input Raw format types V4L2 Encode\n"));
-    msdk_printf(MSDK_STRING("   [-YUY2]                        - Input Raw format types V4L2 Encode\n"));
 #if defined (ENABLE_MONDELLO_SUPPORT)
-    msdk_printf(MSDK_STRING("   [-rgb4]                        - Mondello input format\n"));
-#endif
-    msdk_printf(MSDK_STRING("   [-i::v4l2]                        - To enable v4l2 option\n"));
-    msdk_printf(MSDK_STRING("Example: %s h264|mpeg2|mvc -i::v4l2 -o OutputEncodedFile -w width -h height -d /dev/video0 -uyvy -m preview -p 0\n"), strAppName);
-#endif
-#if defined (ENABLE_MONDELLO_SUPPORT)
-    msdk_printf(MSDK_STRING("   [-i::mondello]      - To enable Mondello option\n"));
-    msdk_printf(MSDK_STRING("   [-dcc format]       - Format (FourCC) of dst video (support nv12|rgb4)\n"));
-    msdk_printf(MSDK_STRING("   [-rwld]         - Render to Wayland\n"));
-    msdk_printf(MSDK_STRING("   [-I]            - To enable Interlace option\n"));
-    msdk_printf(MSDK_STRING("   [-fps]            - Print out fps\n"));
+    msdk_printf(MSDK_STRING("   [-uyvy]            - Input Raw format types V4L2 Encode\n"));
+    msdk_printf(MSDK_STRING("   [-rgb4]            - Mondello input format\n"));
+    msdk_printf(MSDK_STRING("   [-i::mondello]     - To enable Mondello option\n"));
+    msdk_printf(MSDK_STRING("   [-dcc format]      - Format (FourCC) of dst video (support nv12|rgb4)\n"));
+    msdk_printf(MSDK_STRING("   [-rwld]            - Render to Wayland\n"));
+    msdk_printf(MSDK_STRING("   [-I]               - To enable Interlace option\n"));
+    msdk_printf(MSDK_STRING("   [-fps]             - Print out fps\n"));
     msdk_printf(MSDK_STRING("Example: %s h264 -uyvy|rgb4 -i::mondello -w width -h height -rwld -dcc rgb4|nv12\n"), strAppName);
     msdk_printf(MSDK_STRING("Example: %s h264 -uyvy|rgb4 -i::mondello -w width -h height -o OutputEncodedFile\n"), strAppName);
 #endif
@@ -158,15 +148,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
     // default implementation
     pParams->bUseHWLib = true;
-    pParams->isV4L2InputEnabled = false;
     pParams->isMondelloInputEnabled = false;
     pParams->isMondelloRender = false;
-#if defined (ENABLE_V4L2_SUPPORT)
-    pParams->MipiPort = -1;
-    pParams->MipiMode = NONE;
-    pParams->v4l2Format = NO_FORMAT;
-#endif
 #if defined (ENABLE_MONDELLO_SUPPORT)
+    pParams->MondelloFormat = NO_FORMAT;
     pParams->Printfps= false;
     pParams->isInterlaced = false;
     pParams->MondelloRenderFormat = MFX_FOURCC_NV12;
@@ -392,66 +377,16 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
         }
         MOD_ENC_PARSE_INPUT
-#if defined (ENABLE_V4L2_SUPPORT)
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d")))
-        {
-            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->DeviceName))
-            {
-                PrintHelp(strInput[0], MSDK_STRING("Device name is invalid"));
-                return MFX_ERR_UNSUPPORTED;
-            }
-        }
+#if defined (ENABLE_MONDELLO_SUPPORT)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-uyvy")))
         {
-            pParams->v4l2Format = UYVY;
+            pParams->MondelloFormat = UYVY;
 
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-yuy2")))
-        {
-            pParams->v4l2Format = YUY2;
-        }
-#if defined (ENABLE_MONDELLO_SUPPORT)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-rgb4")))
         {
-            pParams->v4l2Format = RGB4;
+            pParams->MondelloFormat = RGB4;
         }
-#endif
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-p")))
-        {
-            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->MipiPort))
-            {
-                PrintHelp(strInput[0], MSDK_STRING("Mipi-port is invalid"));
-                return MFX_ERR_UNSUPPORTED;
-            }
-        }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-m")))
-        {
-            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->MipiModeName))
-            {
-                PrintHelp(strInput[0], MSDK_STRING("Device name is invalid"));
-                return MFX_ERR_UNSUPPORTED;
-            }
-
-            if(strcasecmp(pParams->MipiModeName,"STILL") == 0)
-                pParams->MipiMode = STILL;
-            else if(strcasecmp(pParams->MipiModeName,"VIDEO") == 0)
-                pParams->MipiMode = VIDEO;
-            else if(strcasecmp(pParams->MipiModeName,"PREVIEW") == 0)
-                pParams->MipiMode = PREVIEW;
-            else if(strcasecmp(pParams->MipiModeName,"CONTINUOUS") == 0)
-                pParams->MipiMode = CONTINUOUS;
-            else
-                pParams->MipiMode = NONE;
-        }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-i::v4l2")))
-        {
-            pParams->isV4L2InputEnabled = true;
-        }
-#endif
-#if defined (ENABLE_MONDELLO_SUPPORT)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-i::mondello")))
         {
             pParams->isMondelloInputEnabled = true;
@@ -483,7 +418,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->isMondelloRender = true;
             pParams->libvaBackend = MFX_LIBVA_WAYLAND;
-       }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-r")))
+        {
+            pParams->isMondelloRender = true;
+            pParams->libvaBackend = MFX_LIBVA_X11;
+        }
 #endif
         else // 1-character options
         {
@@ -637,41 +577,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
     }
 
-#if defined (ENABLE_V4L2_SUPPORT)
-    if (pParams->isV4L2InputEnabled)
-    {
-        if (0 == msdk_strlen(pParams->DeviceName))
-        {
-            PrintHelp(strInput[0], MSDK_STRING("Device Name not found"));
-            return MFX_ERR_UNSUPPORTED;
-        }
-
-        if ((pParams->MipiPort > -1 && pParams->MipiMode == NONE) ||
-            (pParams->MipiPort < 0 && pParams->MipiMode != NONE))
-        {
-            PrintHelp(strInput[0], MSDK_STRING("Invalid Mipi Configuration\n"));
-            return MFX_ERR_UNSUPPORTED;
-        }
-
-        if (pParams->v4l2Format == NO_FORMAT)
-        {
-            PrintHelp(strInput[0], MSDK_STRING("NO input v4l2 format\n"));
-            return MFX_ERR_UNSUPPORTED;
-        }
-
-        if (pParams->isMondelloRender)
-        {
-            PrintHelp(strInput[0], MSDK_STRING("Rendering feature in only enable for mondello\n"));
-            return MFX_ERR_UNSUPPORTED;
-        }
-    }
-#endif
-
 #if defined (ENABLE_MONDELLO_SUPPORT)
     if (pParams->isMondelloRender &&
         pParams->MondelloRenderFormat == NO_FORMAT)
     {
-        if (pParams->v4l2Format == NO_FORMAT)
+        if (pParams->MondelloFormat == NO_FORMAT)
         {
             PrintHelp(strInput[0], MSDK_STRING("NO mondello input format\n"));
             return MFX_ERR_UNSUPPORTED;
@@ -688,7 +598,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     }
 
     if (pParams->isMondelloRender &&
-        pParams->v4l2Format == RGB4 &&
+        pParams->MondelloFormat == RGB4 &&
         pParams->MondelloRenderFormat != MFX_FOURCC_RGB4)
     {
         PrintHelp(strInput[0], MSDK_STRING("Rendering with -dcc option is only for RGB4\n"));
@@ -698,7 +608,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
     // check if all mandatory parameters were set
     if (0 == msdk_strlen(pParams->strSrcFile) &&
-        !(pParams->isV4L2InputEnabled || pParams->isMondelloInputEnabled))
+        !pParams->isMondelloInputEnabled)
     {
         PrintHelp(strInput[0], MSDK_STRING("Source file name not found"));
         return MFX_ERR_UNSUPPORTED;
@@ -920,9 +830,9 @@ int main(int argc, char *argv[])
 
     msdk_printf(MSDK_STRING("Processing started\n"));
 
-    if (pPipeline->CaptureStartV4L2Pipeline() != MFX_ERR_NONE)
+    if (pPipeline->CaptureStartMondelloPipeline() != MFX_ERR_NONE)
     {
-        msdk_printf(MSDK_STRING("V4l2 failure terminating the program\n"));
+        msdk_printf(MSDK_STRING("Mondello failure terminating the program\n"));
         return 0;
     }
 
@@ -947,7 +857,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    pPipeline->CaptureStopV4L2Pipeline();
+    pPipeline->CaptureStopMondelloPipeline();
 
     pPipeline->Close();
 

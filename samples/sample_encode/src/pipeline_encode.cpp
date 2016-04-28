@@ -1207,7 +1207,6 @@ void CEncodingPipeline::InitV4L2Pipeline(sInputParams *pParams)
 
         for(i=0; i<m_VppResponse.NumFrameActual; i++)
         {
-
             buffers[i].index = i;
             struct vaapiMemId *vaapi = (struct vaapiMemId *)m_pVppSurfaces[i].Data.MemId;
 

@@ -133,6 +133,10 @@ function(configure_universal_target target)
     set(LOCAL_CFLAGS "${LOCAL_CFLAGS} -DENABLE_V4L2_SUPPORT" )
   endif()
 
+  if(ENABLE_MONDELLO)
+    set(LOCAL_CFLAGS "${LOCAL_CFLAGS} -DENABLE_MONDELLO_SUPPORT" )
+  endif()
+
   if(PKG_LIBVA_FOUND)
     configure_target(${ARGV0} "${PKG_LIBVA_CFLAGS}" "${PKG_LIBVA_LIBRARY_DIRS}")
     set(LOCAL_CFLAGS "${LOCAL_CFLAGS} -DLIBVA_SUPPORT")
