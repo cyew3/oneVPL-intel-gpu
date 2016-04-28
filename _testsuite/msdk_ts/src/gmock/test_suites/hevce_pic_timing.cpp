@@ -75,6 +75,7 @@ namespace hevce_pic_timing
             source_scan_type = tc.source_scan_type;
             dublicate_flag = tc.dublicate_flag;
             skip = false;
+            set_trace_level(BS_HEVC::TRACE_LEVEL_SEI);
         }
         void SetSkip()
         {
@@ -229,6 +230,12 @@ namespace hevce_pic_timing
                     m_is_handle_set = (g_tsStatus.get() >= 0);
                 }
 
+                // option not supported
+                if (((mfxExtCodingOption*)extCodingOptions)->PicTimingSEI != MFX_CODINGOPTION_UNKNOWN)
+                {
+                    g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+                    bs_proc.SetSkip();
+                }
             }
             else
             {

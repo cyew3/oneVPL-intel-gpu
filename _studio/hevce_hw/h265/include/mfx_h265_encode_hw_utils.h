@@ -337,7 +337,7 @@ namespace ExtBuffer
 
     inline void CopySupportedParams (mfxExtCodingOption& buf_dst, mfxExtCodingOption& buf_src)
     {
-        _CopyPar1(PicTimingSEI);
+        //_CopyPar1(PicTimingSEI);
         _CopyPar1(VuiNalHrdParameters);
         _CopyPar1(NalHrdConformance);
         _CopyPar1(AUDelimiter);
