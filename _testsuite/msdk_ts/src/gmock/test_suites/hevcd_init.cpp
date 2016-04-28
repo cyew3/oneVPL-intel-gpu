@@ -1,3 +1,14 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
+
+File Name: hevcd_init.cpp
+
+\* ****************************************************************************** */
 #include "ts_decoder.h"
 #include "ts_struct.h"
 
@@ -124,7 +135,7 @@ int TestSuite::RunTest(unsigned int id)
                                false);
             m_pFrameAllocator = GetAllocator();
             SetFrameAllocator();
-            if (g_tsImpl != MFX_IMPL_SOFTWARE)
+            if ((g_tsImpl != MFX_IMPL_SOFTWARE) && (!m_pVAHandle))
             {
                 mfxHDL hdl;
                 mfxHandleType type;
