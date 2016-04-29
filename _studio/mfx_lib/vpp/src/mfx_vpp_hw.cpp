@@ -3829,7 +3829,12 @@ mfxStatus ConfigureExecuteParams(
             for (mfxU32 j = 0; j < extDoNotUse->NumAlg; j++)
             {
                 mfxU32 bufferId = extDoNotUse->AlgList[j];
-                if (MFX_EXTBUFF_VPP_DENOISE == bufferId)
+                if(MFX_EXTBUFF_VPP_DEINTERLACING == bufferId)
+                {
+                    executeParams.iTargetInterlacingMode  = DEINTERLACE_DISABLE;
+                    executeParams.iDeinterlacingAlgorithm = 0;
+                }
+                else if (MFX_EXTBUFF_VPP_DENOISE == bufferId)
                 {
                     executeParams.bDenoiseAutoAdjust    = false;
                     executeParams.denoiseFactor         = 0;
@@ -3891,25 +3896,11 @@ mfxStatus ConfigureExecuteParams(
                 {
                     executeParams.mirroring = MFX_MIRRORING_DISABLED;
                 }
-                else if (MFX_EXTBUFF_VPP_IMAGE_STABILIZATION == bufferId)
+                else if (MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION == bufferId)
                 {
-                    executeParams.bImgStabilizationEnable = false;
-                    executeParams.istabMode               = 0;
-                }
-                else if (MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO == bufferId)
-                {
-                    executeParams.VideoSignalInfoIn.NominalRange    = MFX_NOMINALRANGE_UNKNOWN;
-                    executeParams.VideoSignalInfoIn.TransferMatrix  = MFX_TRANSFERMATRIX_UNKNOWN;
-                    executeParams.VideoSignalInfoIn.enabled         = false;
-
-                    executeParams.VideoSignalInfoOut.NominalRange   = MFX_NOMINALRANGE_UNKNOWN;
-                    executeParams.VideoSignalInfoOut.TransferMatrix = MFX_TRANSFERMATRIX_UNKNOWN;
-                    executeParams.VideoSignalInfoOut.enabled        = false;
-                }
-                else
-                {
-                    // filter cannot be disabled
-                    return MFX_ERR_INVALID_VIDEO_PARAM;
+                    executeParams.bFRCEnable  = false;
+                    executeParams.frcModeOrig = 0;
+                    memset(&(executeParams.customRateData), 0, sizeof(CustomRateData));
                 }
             }
         }
