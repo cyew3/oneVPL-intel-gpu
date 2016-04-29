@@ -2178,22 +2178,11 @@ void ViewItem::Reset(void)
 
 void ViewItem::SetDPBSize(H264SeqParamSet *pSps, Ipp8u & level_idc)
 {
-    Ipp8u level = level_idc ? level_idc : pSps->level_idc;
-
     // calculate the new DPB size value
-    maxDecFrameBuffering = CalculateDPBSize(level,
+    maxDecFrameBuffering = CalculateDPBSize(level_idc ? level_idc : pSps->level_idc,
                                pSps->frame_width_in_mbs * 16,
                                pSps->frame_height_in_mbs * 16,
                                pSps->num_ref_frames);
-
-    if (level_idc)
-    {
-        level_idc = level;
-    }
-    else
-    {
-        pSps->level_idc = level;
-    }
 
     maxDecFrameBuffering = pSps->vui.max_dec_frame_buffering ? pSps->vui.max_dec_frame_buffering : maxDecFrameBuffering;
     if (pSps->vui.max_dec_frame_buffering > maxDecFrameBuffering)
@@ -2886,13 +2875,14 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                 }
                 if (view)
                 {
-                    view->SetDPBSize(&sps, m_level_idc);
-                    temp->vui.max_dec_frame_buffering = (Ipp8u)view->maxDecFrameBuffering;
+                    Ipp8u newDPBsize = (Ipp8u)CalculateDPBSize(m_level_idc ? m_level_idc : temp->level_idc,
+                                                                sps.frame_width_in_mbs * 16,
+                                                                sps.frame_height_in_mbs * 16,
+                                                                sps.num_ref_frames);
 
-                    if (m_TrickModeSpeed != 1)
-                    {
-                        view->maxDecFrameBuffering = 0;
-                    }
+                    temp->vui.max_dec_frame_buffering = temp->vui.max_dec_frame_buffering ? temp->vui.max_dec_frame_buffering : newDPBsize;
+                    if (temp->vui.max_dec_frame_buffering > newDPBsize)
+                        temp->vui.max_dec_frame_buffering = newDPBsize;
                 }
 
                 m_pNALSplitter->SetSuggestedSize(CalculateSuggestedSize(&sps));
@@ -3729,6 +3719,15 @@ void TaskSupplier::PreventDPBFullness()
         AfterErrorRestore();
 
     }
+}
+
+int GetCountZ(H264DecoderFrame* frame)
+{
+    int count = 0;
+    for (; frame; frame = frame->future(), ++count)
+        ;
+
+    return count;
 }
 
 Status TaskSupplier::CompleteDecodedFrames(H264DecoderFrame ** decoded)
