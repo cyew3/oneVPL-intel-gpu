@@ -709,12 +709,19 @@ mfxStatus CEncodingPipeline::AllocFrames()
 
     // The number of surfaces shared by vpp output and encode input.
     // When surfaces are shared 1 surface at first component output contains output frame that goes to next component input
-    nEncSurfNum = EncRequest.NumFrameSuggested + (m_nAsyncDepth - 1)+2;
-    if ((m_encpakParams.bPREENC) || (m_encpakParams.bENCPAK) || (m_encpakParams.bENCODE) ||
-        (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK))
+    if (m_encpakParams.nInputSurf == 0)
     {
-        nEncSurfNum = m_maxQueueLength;
-        nEncSurfNum += m_pmfxVPP ? m_refDist + 1 : 0;
+        nEncSurfNum = EncRequest.NumFrameSuggested + (m_nAsyncDepth - 1) + 2;
+        if ((m_encpakParams.bPREENC) || (m_encpakParams.bENCPAK) || (m_encpakParams.bENCODE) ||
+            (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK))
+        {
+            nEncSurfNum  = m_maxQueueLength;
+            nEncSurfNum += m_pmfxVPP ? m_refDist + 1 : 0;
+        }
+    }
+    else
+    {
+        nEncSurfNum = m_encpakParams.nInputSurf;
     }
 
     // prepare allocation requests
@@ -746,7 +753,8 @@ mfxStatus CEncodingPipeline::AllocFrames()
         sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &(DSRequest[1]), &m_dsResponse);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-        sts = FillSurfacePool(m_pDSSurfaces, &m_dsResponse, &(m_mfxDSParams.vpp.Out));
+        m_pDSSurfaces.PoolSize = m_dsResponse.NumFrameActual;
+        sts = FillSurfacePool(m_pDSSurfaces.SurfacesPool, &m_dsResponse, &(m_mfxDSParams.vpp.Out));
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
@@ -783,7 +791,8 @@ mfxStatus CEncodingPipeline::AllocFrames()
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         // prepare mfxFrameSurface1 array for decoder
-        sts = FillSurfacePool(m_pDecSurfaces, &m_DecResponse, &(m_mfxDecParams.mfx.FrameInfo));
+        m_pDecSurfaces.PoolSize = m_DecResponse.NumFrameActual;
+        sts = FillSurfacePool(m_pDecSurfaces.SurfacesPool, &m_DecResponse, &(m_mfxDecParams.mfx.FrameInfo));
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         if (!(m_pmfxVPP || m_pmfxENC || m_pmfxPAK))
@@ -804,7 +813,8 @@ mfxStatus CEncodingPipeline::AllocFrames()
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
         // prepare mfxFrameSurface1 array for VPP
-        sts = FillSurfacePool(m_pVppSurfaces, &m_VppResponse, &(m_mfxVppParams.mfx.FrameInfo));
+        m_pVppSurfaces.PoolSize = m_VppResponse.NumFrameActual;
+        sts = FillSurfacePool(m_pVppSurfaces.SurfacesPool, &m_VppResponse, &(m_mfxVppParams.mfx.FrameInfo));
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
@@ -825,21 +835,23 @@ mfxStatus CEncodingPipeline::AllocFrames()
     {
         ReconRequest.AllocId = m_EncPakReconAllocID;
         MSDK_MEMCPY_VAR(ReconRequest.Info, &(m_mfxEncParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
-        ReconRequest.NumFrameMin       = EncRequest.NumFrameMin;
-        ReconRequest.NumFrameSuggested = EncRequest.NumFrameSuggested;
+        ReconRequest.NumFrameMin       = m_encpakParams.nReconSurf ? m_encpakParams.nReconSurf : EncRequest.NumFrameMin;
+        ReconRequest.NumFrameSuggested = m_encpakParams.nReconSurf ? m_encpakParams.nReconSurf : EncRequest.NumFrameSuggested;
         ReconRequest.Type = EncRequest.Type;
 
         sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &ReconRequest, &m_ReconResponse);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-        sts = FillSurfacePool(m_pReconSurfaces, &m_ReconResponse, &(m_mfxEncParams.mfx.FrameInfo));
+        m_pReconSurfaces.PoolSize = m_ReconResponse.NumFrameActual;
+        sts = FillSurfacePool(m_pReconSurfaces.SurfacesPool, &m_ReconResponse, &(m_mfxEncParams.mfx.FrameInfo));
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
     if (!m_pmfxDECODE || m_pmfxVPP)
     {
         // prepare mfxFrameSurface1 array for encoder
-        sts = FillSurfacePool(m_pEncSurfaces, &m_EncResponse, &(m_mfxEncParams.mfx.FrameInfo));
+        m_pEncSurfaces.PoolSize = m_EncResponse.NumFrameActual;
+        sts = FillSurfacePool(m_pEncSurfaces.SurfacesPool, &m_EncResponse, &(m_mfxEncParams.mfx.FrameInfo));
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
@@ -1029,18 +1041,18 @@ mfxStatus CEncodingPipeline::CreateAllocator()
 void CEncodingPipeline::DeleteFrames()
 {
     // delete surfaces array
-    MSDK_SAFE_DELETE_ARRAY(m_pDecSurfaces);
-    MSDK_SAFE_DELETE_ARRAY(m_pVppSurfaces);
-    MSDK_SAFE_DELETE_ARRAY(m_pDSSurfaces);
-    if (m_pEncSurfaces != m_pReconSurfaces)
+    MSDK_SAFE_DELETE_ARRAY(m_pDecSurfaces.SurfacesPool);
+    MSDK_SAFE_DELETE_ARRAY(m_pVppSurfaces.SurfacesPool);
+    MSDK_SAFE_DELETE_ARRAY(m_pDSSurfaces.SurfacesPool);
+    if (m_pEncSurfaces.SurfacesPool != m_pReconSurfaces.SurfacesPool)
     {
-        MSDK_SAFE_DELETE_ARRAY(m_pEncSurfaces);
-        MSDK_SAFE_DELETE_ARRAY(m_pReconSurfaces);
+        MSDK_SAFE_DELETE_ARRAY(m_pEncSurfaces.SurfacesPool);
+        MSDK_SAFE_DELETE_ARRAY(m_pReconSurfaces.SurfacesPool);
     }
     else
     {
-        MSDK_SAFE_DELETE_ARRAY(m_pEncSurfaces);
-        m_pReconSurfaces = NULL;
+        MSDK_SAFE_DELETE_ARRAY(m_pEncSurfaces.SurfacesPool);
+        m_pReconSurfaces.SurfacesPool = NULL;
     }
 
     // delete frames
@@ -1120,11 +1132,6 @@ CEncodingPipeline::CEncodingPipeline()
     m_pmfxAllocatorParams = NULL;
     m_memType             = D3D9_MEMORY; //only hw memory is supported
     m_bExternalAlloc      = false;
-    m_pDecSurfaces        = NULL;
-    m_pEncSurfaces        = NULL;
-    m_pVppSurfaces        = NULL;
-    m_pDSSurfaces         = NULL;
-    m_pReconSurfaces      = NULL;
     m_nAsyncDepth         = 0;
     m_LastDecSyncPoint    = 0;
     m_tmpForMedian        = NULL;
@@ -1140,6 +1147,19 @@ CEncodingPipeline::CEncodingPipeline()
     m_bDRCReset           = false;
 
     m_pExtBufDecodeStreamout = NULL;
+
+    m_pDecSurfaces   = {};
+    m_pEncSurfaces   = {};
+    m_pVppSurfaces   = {};
+    m_pDSSurfaces    = {};
+    m_pReconSurfaces = {};
+
+    m_pDecSurfaces.LastPicked   = -1; // to pick from 0 surface
+    m_pEncSurfaces.LastPicked   = -1;
+    m_pVppSurfaces.LastPicked   = -1;
+    m_pDSSurfaces.LastPicked    = -1;
+    m_pReconSurfaces.LastPicked = -1;
+
 
     MSDK_ZERO_ARRAY(m_numOfRefs[0], 2);
     MSDK_ZERO_ARRAY(m_numOfRefs[1], 2);
@@ -1186,6 +1206,8 @@ CEncodingPipeline::CEncodingPipeline()
     m_frameOrderIdrInDisplayOrder = 0;
     m_frameType = PairU8((mfxU8)MFX_FRAMETYPE_UNKNOWN, (mfxU8)MFX_FRAMETYPE_UNKNOWN);
     m_frameIdrCounter = (mfxU16)(-1);
+
+    m_surfPoolStrategy = PREFER_FIRST_FREE;
 }
 
 CEncodingPipeline::~CEncodingPipeline()
@@ -1271,6 +1293,9 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 
     m_refDist = pParams->refDist > 0 ? pParams->refDist : 1;
     m_gopSize = pParams->gopSize > 0 ? pParams->gopSize : 1;
+
+    // define strategy of surface selection from pool
+    m_surfPoolStrategy = (pParams->nReconSurf || pParams->nInputSurf) ? PREFER_NEW: PREFER_FIRST_FREE;
 
     // prepare input file reader
     if (!pParams->bDECODE)
@@ -1835,8 +1860,8 @@ mfxStatus CEncodingPipeline::InitInterfaces()
             m_StreamoutBufs.push_back(m_pExtBufDecodeStreamout);
 
             /* attach created buffer to decoder surface */
-            m_pDecSurfaces[i].Data.ExtParam    = (mfxExtBuffer**)(&(m_StreamoutBufs[i]));
-            m_pDecSurfaces[i].Data.NumExtParam = 1;
+            m_pDecSurfaces.SurfacesPool[i].Data.ExtParam    = (mfxExtBuffer**)(&(m_StreamoutBufs[i]));
+            m_pDecSurfaces.SurfacesPool[i].Data.NumExtParam = 1;
         }
 
         if (m_encpakParams.decodestreamoutFile)
@@ -2928,17 +2953,12 @@ mfxStatus CEncodingPipeline::GetOneFrame(mfxFrameSurface1* & pSurf)
     if (!m_pmfxDECODE) // load frame from YUV file
     {
         // find free surface for encoder input
-        mfxFrameSurface1 *pSurfPool = m_pEncSurfaces;
-        mfxU16 poolSize = m_EncResponse.NumFrameActual;
-        if (m_pmfxVPP)
-        {
-            pSurfPool = m_pVppSurfaces;
-            poolSize = m_VppResponse.NumFrameActual;
-        }
-        mfxU16 nEncSurfIdx = GetFreeSurface(pSurfPool, poolSize);
+        ExtSurfPool & SurfPool = m_pmfxVPP ? m_pVppSurfaces : m_pEncSurfaces;
+
+        mfxU16 nEncSurfIdx = GetFreeSurfaceFEI(SurfPool);
         MSDK_CHECK_ERROR(nEncSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
         // point pSurf to encoder surface
-        pSurf = &pSurfPool[nEncSurfIdx];
+        pSurf = &SurfPool.SurfacesPool[nEncSurfIdx];
 
         // load frame from file to surface data
         // if we share allocator with Media SDK we need to call Lock to access surface data and...
@@ -3034,6 +3054,70 @@ mfxStatus CEncodingPipeline::GetOneFrame(mfxFrameSurface1* & pSurf)
     }
 
     return sts;
+}
+
+/* surface pool management */
+mfxU16 CEncodingPipeline::GetFreeSurfaceFEI(ExtSurfPool & SurfacesPool)
+{
+    switch (m_surfPoolStrategy)
+    {
+    case PREFER_NEW:
+        return GetFreeSurface_FirstNew(SurfacesPool);
+        break;
+
+    case PREFER_FIRST_FREE:
+    default:
+        return GetFreeSurface(SurfacesPool.SurfacesPool, SurfacesPool.PoolSize);
+        break;
+    }
+}
+
+mfxU16 CEncodingPipeline::GetFreeSurface_FirstNew(ExtSurfPool & SurfacesPool)
+{
+    mfxU32 SleepInterval = 10; // milliseconds
+
+    mfxU16 idx = MSDK_INVALID_SURF_IDX;
+
+    //wait if there's no free surface
+    for (mfxU32 i = 0; i < MSDK_SURFACE_WAIT_INTERVAL; i += SleepInterval)
+    {
+        // watch through the buffer for unlocked surface, start with last picked one
+        if (SurfacesPool.SurfacesPool)
+        {
+            for (mfxU16 j = ((mfxU16)(SurfacesPool.LastPicked + 1)) % SurfacesPool.PoolSize, n_watched = 0;
+                n_watched < SurfacesPool.PoolSize;
+                j = (++j) % SurfacesPool.PoolSize, ++n_watched)
+            {
+                if (0 == SurfacesPool.SurfacesPool[j].Data.Locked)
+                {
+                    SurfacesPool.LastPicked = j;
+                    mdprintf(stderr, "\n\n Picking surface %u\n\n", j);
+                    return j;
+                }
+            }
+        }
+        else
+        {
+            msdk_printf(MSDK_STRING("ERROR: Surface Pool is NULL\n"));
+            return MSDK_INVALID_SURF_IDX;
+        }
+
+        if (MSDK_INVALID_SURF_IDX != idx)
+        {
+            break;
+        }
+        else
+        {
+            MSDK_SLEEP(SleepInterval);
+        }
+    }
+
+    if (idx == MSDK_INVALID_SURF_IDX)
+    {
+        msdk_printf(MSDK_STRING("ERROR: No free surfaces in pool (during long period)\n"));
+    }
+
+    return idx;
 }
 
 /* reordering functions */
@@ -5080,7 +5164,7 @@ mfxStatus CEncodingPipeline::ClearDecoderBuffers()
     {
         m_pExtBufDecodeStreamout = NULL;
 
-        for (int i = 0; i < m_StreamoutBufs.size(); i++)
+        for (mfxU32 i = 0; i < m_StreamoutBufs.size(); i++)
         {
             MSDK_SAFE_DELETE_ARRAY(m_StreamoutBufs[i]->MB);
             MSDK_SAFE_DELETE(m_StreamoutBufs[i]);
@@ -5114,9 +5198,9 @@ mfxStatus CEncodingPipeline::PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
 
         // find/wait for a free output surface
         ExtendedSurface VppExtSurface = { 0 };
-        mfxU16 nVPPSurfIdx = GetFreeSurface(m_pDSSurfaces, m_dsResponse.NumFrameActual);
+        mfxU16 nVPPSurfIdx = GetFreeSurfaceFEI(m_pDSSurfaces);
         MSDK_CHECK_ERROR(nVPPSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
-        VppExtSurface.pSurface = &m_pDSSurfaces[nVPPSurfIdx];
+        VppExtSurface.pSurface = &m_pDSSurfaces.SurfacesPool[nVPPSurfIdx];
         MSDK_CHECK_POINTER(VppExtSurface.pSurface, MFX_ERR_MEMORY_ALLOC);
 
         // make sure picture structure has the initial value
@@ -5423,22 +5507,14 @@ mfxStatus CEncodingPipeline::EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
     pSurf->Data.Locked++;
     eTask->in.InSurface = eTask->inPAK.InSurface = pSurf;
 
-
     /* this is Recon surface which will be generated by FEI PAK*/
-    mfxFrameSurface1 *pSurfPool = m_pReconSurfaces;
-    mfxU16 poolSize = m_ReconResponse.NumFrameActual;
-    /*if (m_pmfxDECODE && !m_pmfxVPP)
-    {
-        pSurfPool = m_pDecSurfaces;
-        poolSize  = m_DecResponse.NumFrameActual;
-    }*/
-    mfxU16 nReconSurfIdx = GetFreeSurface(pSurfPool, poolSize);
+    mfxU16 nReconSurfIdx = GetFreeSurfaceFEI(m_pReconSurfaces);
     MSDK_CHECK_ERROR(nReconSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
-    mfxFrameSurface1* pReconSurf = &pSurfPool[nReconSurfIdx];
-//    mfxFrameSurface1* pReconSurf = pSurf;
+    mfxFrameSurface1* pReconSurf = &m_pReconSurfaces.SurfacesPool[nReconSurfIdx];
     pReconSurf->Data.Locked++;
+
     /* ENC & PAK share same reconstructed/reference surface */
-    eTask->out.OutSurface = pReconSurf;
+    eTask->out.OutSurface    = pReconSurf;
     eTask->outPAK.OutSurface = pReconSurf;
     eTask->outPAK.Bs = &pCurrentTask->mfxBS;
 
@@ -5686,9 +5762,9 @@ mfxStatus CEncodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
         else if (MFX_ERR_MORE_SURFACE == sts)
         {
             // find free surface for decoder input
-            mfxU16 nDecSurfIdx = GetFreeSurface(m_pDecSurfaces, m_DecResponse.NumFrameActual);
+            mfxU16 nDecSurfIdx = GetFreeSurfaceFEI(m_pDecSurfaces);
             MSDK_CHECK_ERROR(nDecSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
-            pDecSurf = &m_pDecSurfaces[nDecSurfIdx];
+            pDecSurf = &m_pDecSurfaces.SurfacesPool[nDecSurfIdx];
 
             MSDK_CHECK_POINTER(pDecSurf, MFX_ERR_MEMORY_ALLOC); // return an error if a free surface wasn't found
         }
@@ -5727,9 +5803,9 @@ mfxStatus CEncodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
             WaitForDeviceToBecomeFree(m_mfxSession,m_LastDecSyncPoint,sts);
         }
         // find free surface for decoder input
-        mfxU16 nDecSurfIdx = GetFreeSurface(m_pDecSurfaces, m_DecResponse.NumFrameActual);
+        mfxU16 nDecSurfIdx = GetFreeSurfaceFEI(m_pDecSurfaces);
         MSDK_CHECK_ERROR(nDecSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
-        pDecSurf = &m_pDecSurfaces[nDecSurfIdx];
+        pDecSurf = &m_pDecSurfaces.SurfacesPool[nDecSurfIdx];
 
         MSDK_CHECK_POINTER(pDecSurf, MFX_ERR_MEMORY_ALLOC); // return an error if a free surface wasn't found
 
@@ -5746,9 +5822,9 @@ mfxStatus CEncodingPipeline::PreProcessOneFrame(mfxFrameSurface1* & pSurf)
     ExtendedSurface VppExtSurface = { 0 };
 
     // find/wait for a free working surface
-    mfxU16 nVPPSurfIdx = GetFreeSurface(m_pEncSurfaces, m_EncResponse.NumFrameActual);
+    mfxU16 nVPPSurfIdx = GetFreeSurfaceFEI(m_pEncSurfaces);
     MSDK_CHECK_ERROR(nVPPSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
-    VppExtSurface.pSurface = &m_pEncSurfaces[nVPPSurfIdx];
+    VppExtSurface.pSurface = &m_pEncSurfaces.SurfacesPool[nVPPSurfIdx];
     MSDK_CHECK_POINTER(VppExtSurface.pSurface, MFX_ERR_MEMORY_ALLOC);
 
     // make sure picture structure has the initial value
@@ -5960,7 +6036,7 @@ void CEncodingPipeline::PrintInfo()
 
     msdk_printf(MSDK_STRING("\nFrame rate\t\t%.2f\n"), DstPicInfo.FrameRateExtN * 1.0 / DstPicInfo.FrameRateExtD);
 
-    const msdk_char* sMemType = m_memType == D3D9_MEMORY ? MSDK_STRING("d3d9")
+    const msdk_char* sMemType = m_memType == D3D9_MEMORY ? MSDK_STRING("d3d")
         : (m_memType == D3D11_MEMORY ? MSDK_STRING("d3d11")
         : MSDK_STRING("system"));
     msdk_printf(MSDK_STRING("Memory type\t\t%s\n"), sMemType);
