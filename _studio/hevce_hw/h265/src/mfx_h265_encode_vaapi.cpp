@@ -337,9 +337,12 @@ mfxStatus SetBRCParallel(
         static UINT B1[9] = {0,0,0,1,2,2,2,2,2};
         static UINT B2[9] = {0,0,0,0,0,1,2,3,4};
 
-        BRCParallel_param->num_b_in_gop[0]  = B[par.mfx.GopRefDist];
-        BRCParallel_param->num_b_in_gop[1]  = B1[par.mfx.GopRefDist];
-        BRCParallel_param->num_b_in_gop[2]  = B2[par.mfx.GopRefDist];
+        mfxI32 numBpyr   = par.mfx.GopPicSize/par.mfx.GopRefDist;
+        mfxI32 lastBpyrW = par.mfx.GopPicSize%par.mfx.GopRefDist;
+
+        BRCParallel_param->num_b_in_gop[0]  = numBpyr*B[par.mfx.GopRefDist] + B[lastBpyrW];;
+        BRCParallel_param->num_b_in_gop[1]  = numBpyr*B1[par.mfx.GopRefDist]+ B1[lastBpyrW];
+        BRCParallel_param->num_b_in_gop[2]  = numBpyr*B2[par.mfx.GopRefDist]+ B2[lastBpyrW];
     }
     else
     {
