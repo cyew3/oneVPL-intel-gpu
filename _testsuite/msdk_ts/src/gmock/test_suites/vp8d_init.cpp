@@ -166,8 +166,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     // Maximum supported resolution 1920x1088
     {/*72*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920}}},
     {/*73*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088}}},
-    {/*74*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 16416}}},
-    {/*75*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 16416}}}
+    {/*74*/ MFX_ERR_UNSUPPORTED, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 16416}}},
+    {/*75*/ MFX_ERR_UNSUPPORTED, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 16416}}}
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
