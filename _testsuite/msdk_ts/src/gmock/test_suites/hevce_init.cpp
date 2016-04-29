@@ -28,6 +28,7 @@ namespace hevce_init
         enum
         {
             MFX_PAR,
+            MFX_EXT_HEVCPARAM,
             EXT_BUFF,
             RATE_CONTROL,
             SESSION_NULL,
@@ -173,6 +174,16 @@ namespace hevce_init
                                                      (*buff)->BufferId = MFX_EXTBUFF_ENCODER_RESET_OPTION;
                                                      (*buff)->BufferSz = sizeof(mfxExtEncoderResetOption);
                                                      break;
+            }
+            case MFX_EXTBUFF_HEVC_PARAM:
+            {
+                                           (*buff) = (mfxExtBuffer*)(new mfxExtHEVCParam());
+                                           (*buff_out) = (mfxExtBuffer*)(new mfxExtHEVCParam());
+                                           memset((*buff), 0, sizeof(mfxExtHEVCParam));
+                                           (*buff)->BufferId = MFX_EXTBUFF_HEVC_PARAM;
+                                           (*buff)->BufferSz = sizeof(mfxExtHEVCParam);
+                                           printf("buffer created\n");
+                                           break;
             }
             case NONE:
             {
@@ -335,6 +346,59 @@ namespace hevce_init
         {/*58*/ MFX_ERR_INVALID_VIDEO_PARAM, NOT_LOAD_PLUGIN, NONE, {} },
         //call query
         {/*59*/ MFX_ERR_NONE, CALL_QUERY, NONE, {} },
+        //API mfxExtHEVCParam, for HW plugin only
+        //in current version PicWidthInLumaSamples/PicHeightInLumaSamples should be aligned on 16 due to hw limitation
+        //after this limitation removed, expected status for case #60/#61 would be updated
+        {/*60*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 1920 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 1080 },
+                { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicWidthInLumaSamples, 1920 },
+                { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 1080 },
+            }
+        },
+        {/*61*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 1920 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 1080 },
+                { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicWidthInLumaSamples, 1920 },
+                { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 1088 },
+            }
+        },
+        {/*62*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+            {
+                { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicWidthInLumaSamples, 0 },
+                { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 0 },
+            }
+        },
+        {/*63*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+            {
+                { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicWidthInLumaSamples, 0xff00 },
+                { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 0xff00 },
+            }
+        },
+        {/*64*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+            {
+                { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicWidthInLumaSamples, 32 },
+                { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 32 },
+            }
+        },
+        {/*65*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+            {
+                { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicWidthInLumaSamples, 8 },
+                { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 8 },
+            }
+        },
+        //GeneralConstraintFlags is not supported for HEVCE hw plugin
+        {/*66*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+            {
+                { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.GeneralConstraintFlags, MFX_HEVC_CONSTR_REXT_MAX_12BIT },
+            }
+        },
 
 
 
@@ -396,6 +460,12 @@ namespace hevce_init
             m_pParOut->NumExtParam = 1;
             m_pPar->ExtParam = &buff_in;
             m_pParOut->ExtParam = &buff_out;
+            //Only set the values for hevce hw plugin
+            if (tc.sub_type == MFX_EXTBUFF_HEVC_PARAM &&
+                0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))) {
+                SETPARS((mfxExtHEVCParam *)buff_in, MFX_EXT_HEVCPARAM);
+                SETPARS((mfxExtHEVCParam *)buff_out, MFX_EXT_HEVCPARAM);
+            }
         }
 
         sts = tc.sts;
@@ -440,6 +510,8 @@ namespace hevce_init
                     (tc.sub_type == MFX_EXTBUFF_ENCODER_RESET_OPTION) ||
                     (tc.sub_type == MFX_EXTBUFF_VIDEO_SIGNAL_INFO))
                     sts = MFX_ERR_NONE;
+                else if (tc.sub_type == MFX_EXTBUFF_HEVC_PARAM)
+                    sts = tc.sts;
                 else if (tc.sub_type == NONE)
                     sts = MFX_ERR_NULL_PTR;
                 else
@@ -485,6 +557,13 @@ namespace hevce_init
             }
 
 
+        } else {
+            //for non hevce hw plugin, return ERR_NONE as no parameters set in mfxExtHEVCParam
+            if (tc.type == EXT_BUFF)
+            {
+                if (tc.sub_type == MFX_EXTBUFF_HEVC_PARAM)
+                    sts = MFX_ERR_NONE;
+            }
         }
 
 

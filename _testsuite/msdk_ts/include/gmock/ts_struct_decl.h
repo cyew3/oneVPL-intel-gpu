@@ -815,3 +815,10 @@ STRUCT(mfxExtMBDisableSkipMap,
 //    FIELD_T(mfxU16      , VPSBufSize)
 //    FIELD_T(mfxU16      , VPSId)
 //)
+
+STRUCT(mfxExtHEVCParam,
+    FIELD_S(mfxExtBuffer , Header                )
+    FIELD_T(mfxU16       , PicWidthInLumaSamples )
+    FIELD_T(mfxU16       , PicHeightInLumaSamples)
+    FIELD_T(mfxU64       , GeneralConstraintFlags)
+)
