@@ -270,6 +270,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         PreAllocatedVector const & sei)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FEI::PreENC::Execute");
+    mdprintf(stderr, "VAAPIPREENCEncoder::Execute\n");
 
     mfxU32 surfInputIndexInList = 0;
     mfxU32 surfPastIndexInList = 0;
@@ -403,21 +404,6 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         mdprintf(stderr, "Qp bufId=%d\n", qpid);
     }
 
-    if ((!m_statParams.disable_mv_output) && (VA_INVALID_ID == m_statMVId[feiFieldId]))
-    {
-        vaSts = vaCreateBuffer(m_vaDisplay,
-                m_vaContextEncode,
-                (VABufferType)VAStatsMotionVectorBufferTypeIntel,
-                sizeof (VAMotionVectorIntel)*mvsOut->NumMBAlloc * 16, //16 MV per MB
-                1,
-                NULL, //should be mapped later
-                &m_statMVId[feiFieldId]);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-        outBuffers[numOutBufs++] = m_statMVId[feiFieldId];
-        mdprintf(stderr, "MV bufId=%d\n", m_statMVId[feiFieldId]);
-        configBuffers[buffersCount++] = m_statMVId[feiFieldId];
-    }
-
     /* Statistics buffers allocate below if required.
      * Buffers allocated onec for whole stream processing.
      * Statistics buffer delete at the end of processing, by Close() method  */
@@ -486,24 +472,6 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
             } // for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
         } // else // interlaced case 2 surface, but two buffers
     } // if ((!m_statParams.disable_statistics_output) && (VA_INVALID_ID == m_statOutId[0]))
-
-    /* To attach statistic buffers if required */
-    if (!m_statParams.disable_statistics_output)
-    {
-        surfInputIndexInList = GetSurfaceIndexFromList(m_reconQueue,*inputSurface);
-        if (MFX_PICSTRUCT_PROGRESSIVE != m_videoParam.mfx.FrameInfo.PicStruct)
-            surfInputIndexInList = 2*surfInputIndexInList;
-        outBuffers[numOutBufs++] = m_statOutId[surfInputIndexInList];
-        mdprintf(stderr, "m_statOutId[%u]=%d\n", surfInputIndexInList, m_statOutId[surfInputIndexInList]);
-        configBuffers[buffersCount++] = m_statOutId[surfInputIndexInList];
-        /*In interlaced case we always need to attached both buffer, for firts and for second field */
-        if (MFX_PICSTRUCT_PROGRESSIVE != m_videoParam.mfx.FrameInfo.PicStruct)
-        {
-            outBuffers[numOutBufs++] = m_statOutId[surfInputIndexInList + 1];
-            mdprintf(stderr, "m_statOutId[%u]=%d\n", surfInputIndexInList + 1 , m_statOutId[surfInputIndexInList + 1]);
-            configBuffers[buffersCount++] = m_statOutId[surfInputIndexInList + 1];
-        }
-    } // if (!m_statParams.disable_statistics_output)
 
     /* PreEnc support only 1 forward and 1 backward reference */
     /*
@@ -634,6 +602,43 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         m_statParams.future_ref_stat_buf = &m_statOutId[surfFutureIndexInList];
     }
 
+    if ((0 == m_statParams.num_past_references) && (0 == m_statParams.disable_mv_output))
+    {
+        m_statParams.disable_mv_output = 1;
+    }
+    if ((!m_statParams.disable_mv_output) && (VA_INVALID_ID == m_statMVId[feiFieldId]))
+    {
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                m_vaContextEncode,
+                (VABufferType)VAStatsMotionVectorBufferTypeIntel,
+                sizeof (VAMotionVectorIntel)*mvsOut->NumMBAlloc * 16, //16 MV per MB
+                1,
+                NULL, //should be mapped later
+                &m_statMVId[feiFieldId]);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        outBuffers[numOutBufs++] = m_statMVId[feiFieldId];
+        mdprintf(stderr, "MV bufId=%d\n", m_statMVId[feiFieldId]);
+        configBuffers[buffersCount++] = m_statMVId[feiFieldId];
+    }
+
+    /* To attach statistic buffers if required */
+    if (!m_statParams.disable_statistics_output)
+    {
+        surfInputIndexInList = GetSurfaceIndexFromList(m_reconQueue,*inputSurface);
+        if (MFX_PICSTRUCT_PROGRESSIVE != m_videoParam.mfx.FrameInfo.PicStruct)
+            surfInputIndexInList = 2*surfInputIndexInList;
+        outBuffers[numOutBufs++] = m_statOutId[surfInputIndexInList];
+        mdprintf(stderr, "m_statOutId[%u]=%d\n", surfInputIndexInList, m_statOutId[surfInputIndexInList]);
+        configBuffers[buffersCount++] = m_statOutId[surfInputIndexInList];
+        /*In interlaced case we always need to attached both buffer, for firts and for second field */
+        if (MFX_PICSTRUCT_PROGRESSIVE != m_videoParam.mfx.FrameInfo.PicStruct)
+        {
+            outBuffers[numOutBufs++] = m_statOutId[surfInputIndexInList + 1];
+            mdprintf(stderr, "m_statOutId[%u]=%d\n", surfInputIndexInList + 1 , m_statOutId[surfInputIndexInList + 1]);
+            configBuffers[buffersCount++] = m_statOutId[surfInputIndexInList + 1];
+        }
+    } // if (!m_statParams.disable_statistics_output)
+
     //mdprintf(stderr,"\n");
     m_statParams.input.picture_id = *inputSurface;
     /*
@@ -713,7 +718,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
             &m_statParams,
             &statParamsId);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-
+    mdprintf(stderr, "statParamsId=%d\n", statParamsId);
     configBuffers[buffersCount++] = statParamsId;
 
     assert(buffersCount <= configBuffers.size());
@@ -759,7 +764,10 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         ExtVASurface currentFeedback;
         currentFeedback.number = task.m_statusReportNumber[feiFieldId];
         currentFeedback.surface = *inputSurface;
-        currentFeedback.mv = m_statMVId[feiFieldId];
+        if (0 == m_statParams.disable_mv_output)
+            currentFeedback.mv = m_statMVId[feiFieldId];
+        else
+            currentFeedback.mv = VA_INVALID_ID;
         currentFeedback.mbstat = m_statOutId[surfInputIndexInList + feiFieldId];
         /* we have following order in statistic buffers list in interlaced case:
          * {top bot}, {top bot}, {top bot}
@@ -794,6 +802,7 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FEI::PreENC::QueryStatus");
     VAStatus vaSts;
     mfxStatus sts = MFX_ERR_NONE;
+    mdprintf(stderr, "VAAPIPREENCEncoder::QueryStatus\n");
 
     mdprintf(stderr, "query_vaapi status: %d\n", task.m_frameOrder);
     //------------------------------------------
@@ -875,7 +884,7 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
             mfxExtFeiPreEncMV* mvsOut = GetExtBufferFEI(out, feiFieldId);
             mfxExtFeiPreEncMBStat* mbstatOut = GetExtBufferFEI(out, feiFieldId);
 
-            if (feiCtrl && !feiCtrl->DisableMVOutput && mvsOut)
+            if (feiCtrl && !feiCtrl->DisableMVOutput && mvsOut && (VA_INVALID_ID != statMVid))
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MV");
                 {
