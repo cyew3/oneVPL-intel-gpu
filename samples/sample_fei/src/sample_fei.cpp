@@ -79,7 +79,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-repackctrl file] - file to input max encoded frame size,number of pass and delta qp for each frame(ENCODE only)\n "));
     msdk_printf(MSDK_STRING("   [-streamout file] - dump decode streamout structures\n"));
     msdk_printf(MSDK_STRING("   [-sys] - use system memory for surfaces (ENCODE only)\n"));
-    msdk_printf(MSDK_STRING("   [-pass_headers] - pass SPS, PPS and Slice headers to Media SDK instead of default one (ENC or/and PAK only)\n"));
+    msdk_printf(MSDK_STRING("   [-pass_headers] - pass SPS, PPS and Slice headers to Media SDK instead of default one (ENC or/and PAK)\n"));
     msdk_printf(MSDK_STRING("   [-8x8stat] - set 8x8 block for statistic report, default is 16x16 (PREENC only)\n"));
     msdk_printf(MSDK_STRING("   [-search_window value] - specifies one of the predefined search path and window size. In range [1,8] (0 is default).\n"));
     msdk_printf(MSDK_STRING("                            If non-zero value specified: -ref_window_w / _h, -len_sp, -max_len_sp are ignored\n"));
@@ -114,6 +114,8 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-perf] - switch on performance mode (no file operations, simplified predictors repacking)\n"));
     msdk_printf(MSDK_STRING("   [-rawref] - use raw frames for reference instead of reconstructed frames (ENCODE only)\n"));
+    msdk_printf(MSDK_STRING("   [-n_surf_input n] - specify number of surfaces that would be allocated for input frames\n"));
+    msdk_printf(MSDK_STRING("   [-n_surf_recon n] - specify number of surfaces that would be allocated for reconstruct frames (ENC or/and PAK)\n"));
 
     // user module options
     msdk_printf(MSDK_STRING("\n"));
@@ -615,12 +617,22 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-GopRefDist")))
         {
             i++;
-            pParams->refDist = (mfxU16)msdk_strtol(strArgument, &stopCharacter, 10);
+            pParams->refDist = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-NumRefFrame")))
         {
             i++;
-            pParams->numRef = (mfxU16)msdk_strtol(strArgument, &stopCharacter, 10);
+            pParams->numRef = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-n_surf_input")))
+        {
+            i++;
+            pParams->nInputSurf = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-n_surf_recon")))
+        {
+            i++;
+            pParams->nReconSurf = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
         else // 1-character options
         {
@@ -1163,6 +1175,8 @@ int main(int argc, char *argv[])
     Params.SliceBetaOffsetDiv2    = 0;
     Params.ChromaQPIndexOffset       = 0;
     Params.SecondChromaQPIndexOffset = 0;
+    Params.nInputSurf = 0;
+    Params.nReconSurf = 0;
 
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);

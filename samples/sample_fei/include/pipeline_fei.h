@@ -131,6 +131,9 @@ struct sInputParams
     mfxU16 nDstWidth;  // destination picture width, specified if resizing required
     mfxU16 nDstHeight; // destination picture height, specified if resizing required
 
+    mfxU16 nInputSurf;
+    mfxU16 nReconSurf;
+
     MemType memType;
 
     msdk_char strSrcFile[MSDK_MAX_FILENAME_LEN];
@@ -228,6 +231,19 @@ protected:
     virtual mfxU32 GetFreeTaskIndex();
 };
 
+enum SurfStrategy
+{
+    PREFER_FIRST_FREE = 1,
+    PREFER_NEW
+};
+
+struct ExtSurfPool
+{
+    mfxFrameSurface1* SurfacesPool;
+    mfxU16 LastPicked;
+    mfxU16 PoolSize;
+};
+
 /* This class implements a pipeline with 2 mfx components: vpp (video preprocessing) and encode */
 class CEncodingPipeline
 {
@@ -294,11 +310,11 @@ protected:
 
     mfxSyncPoint   m_LastDecSyncPoint;
 
-    mfxFrameSurface1* m_pDecSurfaces; // frames array for decoder input
-    mfxFrameSurface1* m_pDSSurfaces;  // frames array for downscaled surfaces for PREENC
-    mfxFrameSurface1* m_pVppSurfaces; // frames array for vpp input
-    mfxFrameSurface1* m_pEncSurfaces; // frames array for encoder input (vpp output)
-    mfxFrameSurface1* m_pReconSurfaces; // frames array for reconstructed surfaces [FEI]
+    ExtSurfPool m_pDecSurfaces;   // frames array for decoder input
+    ExtSurfPool m_pDSSurfaces;    // frames array for downscaled surfaces for PREENC
+    ExtSurfPool m_pVppSurfaces;   // frames array for vpp input
+    ExtSurfPool m_pEncSurfaces;   // frames array for encoder input (vpp output)
+    ExtSurfPool m_pReconSurfaces; // frames array for reconstructed surfaces [FEI]
     mfxFrameAllocResponse m_DecResponse;  // memory allocation response for decoder
     mfxFrameAllocResponse m_VppResponse;  // memory allocation response for VPP input
     mfxFrameAllocResponse m_dsResponse;   // memory allocation response for VPP input
@@ -384,6 +400,9 @@ protected:
 
     virtual mfxStatus VPPOneFrame(MFXVideoVPP* VPPobj, MFXVideoSession* session, mfxFrameSurface1 *pSurfaceIn, ExtendedSurface *pExtSurface);
 
+    virtual mfxU16 GetFreeSurfaceFEI(ExtSurfPool & SurfacesPool);
+    mfxU16 GetFreeSurface_FirstNew(ExtSurfPool & SurfacesPool);
+
     iTask* CreateAndInitTask();
     iTask* FindFrameToEncode(bool buffered_frames);
     iTask* ConfigureTask(iTask* eTask, bool is_buffered);
@@ -454,6 +473,8 @@ protected:
     mfxI16 *m_tmpForMedian;
 
     mfxU16 m_numOfRefs[2][2]; // [fieldId][L0L1]
+
+    SurfStrategy m_surfPoolStrategy;
 };
 
 bufSet* getFreeBufSet(std::list<bufSet*> bufs);
