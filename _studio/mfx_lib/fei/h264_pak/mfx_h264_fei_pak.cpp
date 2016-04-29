@@ -281,7 +281,7 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
     if (sts != MFX_ERR_NONE)
           return Error(sts);
 
-    mfxPAKInput* inParams = (mfxPAKInput*)task.m_userData[0];
+    //mfxPAKInput* inParams = (mfxPAKInput*)task.m_userData[0];
     mfxPAKOutput* outParams = (mfxPAKOutput*)task.m_userData[1];
     mfxExtCodingOption2 const *   extOpt2        = GetExtBuffer(m_video);
     mfxExtCodingOption2 const *   extOpt2Runtime = GetExtBuffer(task.m_ctrl);
