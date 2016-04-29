@@ -1927,8 +1927,6 @@ mfxStatus CommonCORE::CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
     }
     else if(src->Data.MemId && dst->Data.Y)
     {
-        bool unlock_internal = false;
-        bool unlock_external = false;
         mfxMemId srcHandle = 0;
         mfxU16 srcMemType = MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
         mfxU16 dstMemType = MFX_MEMTYPE_SYSTEM_MEMORY;
@@ -1943,18 +1941,10 @@ mfxStatus CommonCORE::CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
 
         sts = DoFastCopyWrapper(dst, dstMemType, src, srcMemType);
         MFX_CHECK_STS(sts);
-        if(unlock_external)
-        {
-            sts = UnlockExternalFrame(dst->Data.MemId, &dst->Data);
-        } else if (unlock_internal) {
-            sts = UnlockFrame(dst->Data.MemId, &dst->Data);
-        }
         return sts;
     }
     else if(src->Data.Y && dst->Data.MemId)
     {
-        bool unlock_internal = false;
-        bool unlock_external = false;
         mfxMemId dstHandle = 0;
         mfxU16 dstMemType = MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;
         mfxU16 srcMemType = MFX_MEMTYPE_SYSTEM_MEMORY;
@@ -1968,12 +1958,6 @@ mfxStatus CommonCORE::CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
 
         sts = DoFastCopyWrapper(dst, dstMemType, src, srcMemType);
         MFX_CHECK_STS(sts);
-        if(unlock_external)
-        {
-            sts = UnlockExternalFrame(src->Data.MemId, &src->Data);
-        } else if (unlock_internal) {
-            sts = UnlockFrame(src->Data.MemId, &src->Data);
-        }
         return sts;
     }
     else if(src->Data.MemId && dst->Data.MemId)
