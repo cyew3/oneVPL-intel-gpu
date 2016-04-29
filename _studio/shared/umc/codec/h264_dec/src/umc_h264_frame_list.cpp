@@ -1559,9 +1559,10 @@ void H264DBPList::DebugPrint()
 {
 #ifdef ENABLE_TRACE
     Trace(VM_STRING("-==========================================\n"));
-    for (H264DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
+    H264DecoderFrame * pTmp = m_pHead;
+    for (int i = 0; pTmp; pTmp = pTmp->future(), i++)
     {
-        Trace(VM_STRING("\n\nUID - %d POC - %d %d  - resetcount - %d\n"), pTmp->m_UID, pTmp->m_PicOrderCnt[0], pTmp->m_PicOrderCnt[1], pTmp->RefPicListResetCount(0));
+        Trace(VM_STRING("\n\n#%02d: UID - %d POC - %d %d  - resetcount - %d\n"), i, pTmp->m_UID, pTmp->m_PicOrderCnt[0], pTmp->m_PicOrderCnt[1], pTmp->RefPicListResetCount(0));
         Trace(VM_STRING("ViewId - %d, m_isInterViewRef - %d \n"), pTmp->m_viewId, pTmp->m_isInterViewRef[0]);
         Trace(VM_STRING("Short - %d %d \n"), pTmp->isShortTermRef(0), pTmp->isShortTermRef(1));
         Trace(VM_STRING("Long - %d %d \n"), pTmp->isLongTermRef(0), pTmp->isLongTermRef(1));
@@ -1575,7 +1576,7 @@ void H264DBPList::DebugPrint()
     }
 
     Trace(VM_STRING("-==========================================\n"));
-    //fflush(stdout);
+    fflush(stdout);
 #endif
 }
 

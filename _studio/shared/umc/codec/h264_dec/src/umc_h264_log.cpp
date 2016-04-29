@@ -185,17 +185,15 @@ void Logging::LogFrame(H264DecoderFrame * pFrame)
 {
     m_pFrame = pFrame;
 
-    H264DecoderFrameInfo * slicesInfo = m_pFrame->GetAU(0);
-    const H264SeqParamSet *pSeqParam = slicesInfo->GetSlice(0)->GetSeqParam();
-
     Trace(VM_STRING("\n"));
     Ipp32s bitSize = CalculateFrameSize(m_pFrame);
     Trace(VM_STRING("frame type - %s, uid - %d, size - %d\n"), frameTypes[m_pFrame->m_FrameType], m_pFrame->m_UID, bitSize);
 
-
     LogRefFrame(m_pFrame);
 
-    PictureInfo & currentPicture = picturesStat[m_pFrame->m_FrameType - 1];
+#ifdef UMC_RESTRICTED_CODE_VA
+    H264DecoderFrameInfo * slicesInfo = m_pFrame->GetAU(0);
+    const H264SeqParamSet *pSeqParam = slicesInfo->GetSlice(0)->GetSeqParam();
 
     Ipp32s iMBCount = pSeqParam->frame_width_in_mbs * pSeqParam->frame_height_in_mbs;
 
@@ -205,12 +203,14 @@ void Logging::LogFrame(H264DecoderFrame * pFrame)
         MBLayerStat(m_pFrame->m_mbinfo, x, stat);
     }
 
+    PictureInfo & currentPicture = picturesStat[m_pFrame->m_FrameType - 1];
     PrintStat(stat, currentPicture.type);
 
     currentPicture.count++;
     currentPicture.stat.Add(stat);
     currentPicture.bitSize += bitSize;
     currentPicture.mbsCount = iMBCount;
+#endif
 }
 
 void Logging::LogRefFrame(H264DecoderFrame * pFrame)
