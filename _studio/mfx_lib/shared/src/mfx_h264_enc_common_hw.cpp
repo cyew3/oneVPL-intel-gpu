@@ -1865,9 +1865,9 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         hwCaps.MaxNum_TemporalLayer < par.calcParam.numTemporalLayer)
         return Error(MFX_WRN_PARTIAL_ACCELERATION);
 
-#if defined(LOWPOWERENCODE_AVC)
     if (!CheckTriStateOption(par.mfx.LowPower)) changed = true;
 
+#if defined(LOWPOWERENCODE_AVC)
     if (IsOn(par.mfx.LowPower))
     {
         if (par.mfx.GopRefDist > 1)
@@ -1902,6 +1902,12 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             if (!CheckRange(par.mfx.QPP, 10, 51)) changed = true;
             if (!CheckRange(par.mfx.QPB, 10, 51)) changed = true;
         }
+    }
+#else
+    if (IsOn(par.mfx.LowPower))
+    {
+        unsupported = true;
+        par.mfx.LowPower = 0;
     }
 #endif
 
