@@ -53,6 +53,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-i420] - pipeline output format: NV12, output file format: I420\n"));
     msdk_printf(MSDK_STRING("   [-nv12] - pipeline output format: NV12, output file format: NV12\n"));
     msdk_printf(MSDK_STRING("   [-rgb4] - pipeline output format: RGB4, output file format: RGB4\n"));
+    msdk_printf(MSDK_STRING("   [-rgb4_fcr] - pipeline output format: RGB4 in full color range, output file format: RGB4 in full color range\n"));
     msdk_printf(MSDK_STRING("   [-p010] - pipeline output format: P010, output file format: P010\n"));
     msdk_printf(MSDK_STRING("   [-a2rgb10] - pipeline output format: A2RGB10, output file format: A2RGB10\n"));
     msdk_printf(MSDK_STRING("\n"));
@@ -122,6 +123,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 
     // set default implementation
     pParams->bUseHWLib = true;
+    pParams->bUseFullColorRange = false;
 #if defined(LIBVA_SUPPORT)
     pParams->libvaBackend = MFX_LIBVA_DRM;
 #endif
@@ -495,6 +497,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-rgb4")))
         {
             pParams->fourcc = MFX_FOURCC_RGB4;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-rgb4_fcr")))
+        {
+            pParams->fourcc = MFX_FOURCC_RGB4;
+            pParams->bUseFullColorRange = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-p010")))
         {

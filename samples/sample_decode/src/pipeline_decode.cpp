@@ -103,6 +103,10 @@ CDecodingPipeline::CDecodingPipeline()
     m_VppDeinterlacing.Header.BufferId = MFX_EXTBUFF_VPP_DEINTERLACING;
     m_VppDeinterlacing.Header.BufferSz = sizeof(m_VppDeinterlacing);
 
+    MSDK_ZERO_MEMORY(m_VppVideoSignalInfo);
+    m_VppVideoSignalInfo.Header.BufferId = MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO;
+    m_VppVideoSignalInfo.Header.BufferSz = sizeof(m_VppVideoSignalInfo);
+
     m_hwdev = NULL;
 
     m_bOutI420 = false;
@@ -215,6 +219,11 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     if (pParams->eDeinterlace)
     {
         m_diMode = pParams->eDeinterlace;
+    }
+
+    if (pParams->bUseFullColorRange)
+    {
+        m_bVppFullColorRange = pParams->bUseFullColorRange;
     }
 
     if (pParams->nThreadsNum) {
@@ -827,6 +836,17 @@ mfxStatus CDecodingPipeline::InitVppParams()
 
     m_mfxVppVideoParams.ExtParam = &m_VppExtParams[0];
     m_mfxVppVideoParams.NumExtParam = (mfxU16)m_VppExtParams.size();
+
+    m_VppSurfaceExtParams.clear();
+    if (m_bVppFullColorRange)
+    {
+        //Let MSDK figure out the transfer matrix to use
+        m_VppVideoSignalInfo.TransferMatrix = MFX_TRANSFERMATRIX_UNKNOWN;
+        m_VppVideoSignalInfo.NominalRange = MFX_NOMINALRANGE_0_255;
+
+        m_VppSurfaceExtParams.push_back((mfxExtBuffer*)&m_VppVideoSignalInfo);
+    }
+
     return MFX_ERR_NONE;
 }
 
@@ -1029,6 +1049,11 @@ mfxStatus CDecodingPipeline::AllocFrames()
         MSDK_MEMCPY_VAR(m_pSurfaces[i].frame.Info, &(Request.Info), sizeof(mfxFrameInfo));
         if (m_bExternalAlloc) {
             m_pSurfaces[i].frame.Data.MemId = m_mfxResponse.mids[i];
+            if (m_bVppFullColorRange)
+            {
+                m_pSurfaces[i].frame.Data.ExtParam = &m_VppSurfaceExtParams[0];
+                m_pSurfaces[i].frame.Data.NumExtParam = (mfxU16)m_VppSurfaceExtParams.size();
+            }
         }
         else {
             sts = m_pGeneralAllocator->Lock(m_pGeneralAllocator->pthis, m_mfxResponse.mids[i], &(m_pSurfaces[i].frame.Data));
@@ -1041,6 +1066,11 @@ mfxStatus CDecodingPipeline::AllocFrames()
         MSDK_MEMCPY_VAR(m_pVppSurfaces[i].frame.Info, &(VppRequest[1].Info), sizeof(mfxFrameInfo));
         if (m_bExternalAlloc) {
             m_pVppSurfaces[i].frame.Data.MemId = m_mfxVppResponse.mids[i];
+            if (m_bVppFullColorRange)
+            {
+                m_pVppSurfaces[i].frame.Data.ExtParam = &m_VppSurfaceExtParams[0];
+                m_pVppSurfaces[i].frame.Data.NumExtParam = (mfxU16)m_VppSurfaceExtParams.size();
+            }
         }
         else {
             sts = m_pGeneralAllocator->Lock(m_pGeneralAllocator->pthis, m_mfxVppResponse.mids[i], &(m_pVppSurfaces[i].frame.Data));
