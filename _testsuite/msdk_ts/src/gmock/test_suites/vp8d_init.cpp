@@ -226,26 +226,22 @@ int TestSuite::RunTest(unsigned int id)
         SetFrameAllocator(m_session, GetAllocator());
     }
 
-    if (tc.mode == ALLOC_OPAQUE)
-    {
-        mfxExtOpaqueSurfaceAlloc& osa = m_par;
-
-        // If opaque memory is unsupported for Init, then QueryIOSurf should
-        // report that it's an invalid param.
-        if (m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-            g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
-        QueryIOSurf();
-        g_tsStatus.expect(MFX_ERR_NONE);
-
-        AllocOpaque(m_request, osa);
-    }
-
     if (g_tsHWtype < MFX_HW_BDW && tc.mode != NULL_SESSION) // vp8 not supported less than BDW
     {
         g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
         Query();
         g_tsLog << "WARNING: Unsupported HW Platform!\n";
         return 0;
+    }
+
+    if (tc.mode == ALLOC_OPAQUE)
+    {
+        mfxExtOpaqueSurfaceAlloc& osa = m_par;
+
+        QueryIOSurf();
+        g_tsStatus.expect(MFX_ERR_NONE);
+
+        AllocOpaque(m_request, osa);
     }
 
     g_tsStatus.expect(tc.sts);
