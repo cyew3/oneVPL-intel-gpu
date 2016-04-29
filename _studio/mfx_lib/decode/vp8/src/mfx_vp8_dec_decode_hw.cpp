@@ -354,7 +354,7 @@ mfxStatus VideoDECODEVP8_HW::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVi
 
     eMFXHWType type = p_core->GetHWType();
 
-    if (!CheckHardwareSupport(p_core, p_in))
+    if (!CheckHardwareSupport(p_core, p_in ? p_in : p_out))
     {
         return MFX_ERR_UNSUPPORTED;
     }
