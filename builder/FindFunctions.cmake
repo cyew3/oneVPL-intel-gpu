@@ -1,5 +1,5 @@
 ##******************************************************************************
-##  Copyright(C) 2012 Intel Corporation. All Rights Reserved.
+##  Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
 ##  
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
@@ -113,7 +113,6 @@ function( gen_plugins_cfg plugin_id guid plugin_name type codecID )
   string(REPLACE "#define MFX_VERSION_MAJOR " "" MFX_VERSION_MAJOR ${MFX_VERSION_MAJOR})
   string(REPLACE "#define MFX_VERSION_MINOR " "" MFX_VERSION_MINOR ${MFX_VERSION_MINOR})
   math(EXPR api_version "${MFX_VERSION_MAJOR}*256 + ${MFX_VERSION_MINOR}")
-  set(PLUGINS_PATH "/opt/intel/mediasdk/plugins/")
 
   if((NOT DEFINED ARGV5) OR (ARGV5 STREQUAL "eval"))
     get_property( PLUGINS_EVAL_CFG GLOBAL PROPERTY PROP_PLUGINS_EVAL_CFG )
@@ -121,7 +120,7 @@ function( gen_plugins_cfg plugin_id guid plugin_name type codecID )
     set(PLUGINS_EVAL_CFG "${PLUGINS_EVAL_CFG}GUID = ${guid}\n")
     set(PLUGINS_EVAL_CFG "${PLUGINS_EVAL_CFG}PluginVersion = 1\n")
     set(PLUGINS_EVAL_CFG "${PLUGINS_EVAL_CFG}APIVersion = ${api_version}\n")
-    set(PLUGINS_EVAL_CFG "${PLUGINS_EVAL_CFG}Path = ${PLUGINS_PATH}lib${plugin_name}.so\n") 
+    set(PLUGINS_EVAL_CFG "${PLUGINS_EVAL_CFG}Path = ${MFX_PLUGINS_DIR}/lib${plugin_name}.so\n")
     set(PLUGINS_EVAL_CFG "${PLUGINS_EVAL_CFG}Type = ${type}\n") 
     set(PLUGINS_EVAL_CFG "${PLUGINS_EVAL_CFG}CodecID = ${codecID}\n")
     set(PLUGINS_EVAL_CFG "${PLUGINS_EVAL_CFG}Default = 0\n")
@@ -134,8 +133,8 @@ function( gen_plugins_cfg plugin_id guid plugin_name type codecID )
     set(PLUGINS_CFG "${PLUGINS_CFG}GUID = ${guid}\n")
     set(PLUGINS_CFG "${PLUGINS_CFG}PluginVersion = 1\n")
     set(PLUGINS_CFG "${PLUGINS_CFG}APIVersion = ${api_version}\n")
-    set(PLUGINS_CFG "${PLUGINS_CFG}Path = ${PLUGINS_PATH}lib${plugin_name}.so\n") 
-    set(PLUGINS_CFG "${PLUGINS_CFG}Type = ${type}\n") 
+    set(PLUGINS_CFG "${PLUGINS_CFG}Path = ${MFX_PLUGINS_DIR}/lib${plugin_name}.so\n")
+    set(PLUGINS_CFG "${PLUGINS_CFG}Type = ${type}\n")
     set(PLUGINS_CFG "${PLUGINS_CFG}CodecID = ${codecID}\n")
     set(PLUGINS_CFG "${PLUGINS_CFG}Default = 0\n")
     set_property( GLOBAL PROPERTY PROP_PLUGINS_CFG ${PLUGINS_CFG} )

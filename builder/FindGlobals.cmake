@@ -48,6 +48,8 @@ else( )
   endif( )
   message( STATUS "CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}" )
 
+  set( MFX_PLUGINS_DIR ${CMAKE_INSTALL_PREFIX}/plugins )
+
   add_definitions(-DUNIX)
 
   if( Linux )
