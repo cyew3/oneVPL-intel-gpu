@@ -1,5 +1,5 @@
 ##******************************************************************************
-##  Copyright(C) 2012 Intel Corporation. All Rights Reserved.
+##  Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
 ##  
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
@@ -40,6 +40,14 @@ if( Windows )
   message( FATAL_ERROR "Windows is not currently supported!" )
 
 else( )
+
+  # If user did not override CMAKE_INSTALL_PREFIX, then set the default prefix
+  # to /opt/intel/mediasdk instead of cmake's default
+  if( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
+    set( CMAKE_INSTALL_PREFIX /opt/intel/mediasdk CACHE PATH "Install Path Prefix" FORCE )
+  endif( )
+  message( STATUS "CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}" )
+
   add_definitions(-DUNIX)
 
   if( Linux )
