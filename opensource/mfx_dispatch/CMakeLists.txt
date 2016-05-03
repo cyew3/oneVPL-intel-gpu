@@ -119,6 +119,12 @@ endfunction( )
 set( defs "${WARNING_FLAGS}" )
 make_static_library( mfx )
 
+if(__ARCH MATCHES intel64)
+  install( TARGETS mfx ARCHIVE DESTINATION lib64 )
+else( )
+  install( TARGETS mfx ARCHIVE DESTINATION lib )
+endif( )
+
 set( defs "-DMFX_DISPATCHER_EXPOSED_PREFIX ${WARNING_FLAGS}" )
 make_static_library( dispatch_shared )
 
