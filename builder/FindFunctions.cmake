@@ -148,6 +148,9 @@ function( create_plugins_cfg directory )
   get_property( PLUGINS_EVAL_CFG GLOBAL PROPERTY PROP_PLUGINS_EVAL_CFG )
   file(WRITE ${directory}/plugins.cfg ${PLUGINS_CFG})
   file(WRITE ${directory}/plugins_eval.cfg ${PLUGINS_EVAL_CFG})
+
+  install( FILES ${directory}/plugins.cfg ${directory}/plugins_eval.cfg DESTINATION ${MFX_PLUGINS_DIR} )
+
 endfunction()
 
 #

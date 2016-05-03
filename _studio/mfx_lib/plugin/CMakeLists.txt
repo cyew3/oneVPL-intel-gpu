@@ -243,6 +243,8 @@ foreach( variant ${hevcd_variants} )
   endif()
   make_library( ${eval_plugin_name} ${variant} shared)
 
+  install( TARGETS ${plugin_name} ${eval_plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+
 endforeach()
 
 # HEVC Encoder (SW & GACC)
@@ -347,6 +349,8 @@ foreach( variant ${hevce_variants} )
     gen_plugins_cfg("HEVC_Encoder_SW" ${HEVC_ENCODER_SW_GUID} ${eval_plugin_name} "02" "HEVC" "eval")
   endif()
   make_library( ${eval_plugin_name} ${variant} shared)
+
+  install( TARGETS ${plugin_name} ${eval_plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
 
 endforeach()
 set( defs "" )
@@ -484,6 +488,8 @@ foreach( variant hw )
   gen_plugins_cfg("H264la_Encoder" ${H264LA_ENCODER_GUID} ${plugin_name} "04" "AVC")
   make_library( ${plugin_name} ${variant} shared)
 
+  install( TARGETS ${plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+
 endforeach()
 
 # H265FEI
@@ -579,6 +585,8 @@ if( ENABLE_HEVC_FEI )
     set( defs "-DAS_H265FEI_PLUGIN -DAS_HEVCE_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${H265FEI_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${h265fei_version_defs}")
     gen_plugins_cfg("H265FEI_Encoder" ${H265FEI_ENCODER_GUID} ${plugin_name} "04" "HEVC")
     make_library( ${plugin_name} ${variant} shared)
+
+    install( TARGETS ${plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
 
   endforeach()
 endif()
@@ -710,5 +718,7 @@ foreach( variant sw hw )
     )
 
   make_library( ${plugin_name} ${variant} shared)
+
+  install( TARGETS ${plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
 
 endforeach()
