@@ -125,6 +125,8 @@ else( )
   install( TARGETS mfx ARCHIVE DESTINATION lib )
 endif( )
 
+install( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../include/ DESTINATION include FILES_MATCHING PATTERN *.h )
+
 set( defs "-DMFX_DISPATCHER_EXPOSED_PREFIX ${WARNING_FLAGS}" )
 make_static_library( dispatch_shared )
 
