@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2014 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -79,7 +79,7 @@ enum
 enum
 {
     MFX_UNKNOWN_KEY     = -1,
-    MFX_STORAGE_ID_OPT  = 0, // storage is: /opt/intel
+    MFX_STORAGE_ID_OPT  = 0, // storage is: MFX_MODULES_DIR
     MFX_APP_FOLDER      = 1,
 
     MFX_STORAGE_ID_FIRST   =  MFX_STORAGE_ID_OPT,
