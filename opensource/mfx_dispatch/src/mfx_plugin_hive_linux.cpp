@@ -50,7 +50,7 @@ File Name: mfx_plugin_hive_linux.cpp
 
 namespace 
 {
-    const char rootPluginPath[] = "/opt/intel/mediasdk/plugins/plugins.cfg";
+    const char rootPluginPath[] = MFX_PLUGINS_DIR"/plugins.cfg";
     //const wchar_t rootDispatchPath[] = L"Software\\Intel\\MediaSDK\\Dispatch";
     const char pluginSubkey[] = "Plugin";
     const char TypeKeyName[] = "Type";
