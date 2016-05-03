@@ -145,6 +145,9 @@ foreach( variant sw hw )
   set( defs "${defs} ${WARNING_FLAGS}")
   make_library( ${mfxlibname} ${variant} shared)
   make_library( mfx${variant}_static ${variant} static)
+
+  install( TARGETS ${mfxlibname} LIBRARY DESTINATION ${MFX_MODULES_DIR} )
+
   set( defs "" )
   #message( STATUS "xxxxxxxxxxxxxxx __ARCH: "${__ARCH}, "mfxlibname: "${mfxlibname}, "variant: "${variant})
 endforeach()
