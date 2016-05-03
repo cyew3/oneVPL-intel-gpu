@@ -62,4 +62,8 @@ set_target_properties( mfx-tracer PROPERTIES LINK_FLAGS
   "${LINK_FLAGS} -Wl,--no-undefined,-z,relro,-z,now,-z,noexecstack,--version-script=${TRACER_DIR}/libmfx.map -fstack-protector" )
 
 target_link_libraries( mfx-tracer dl rt )
+
+install( TARGETS mfx-tracer LIBRARY DESTINATION tools/tracer )
+install( FILES ../README DESTINATION tools/tracer )
+
 set(defs "")

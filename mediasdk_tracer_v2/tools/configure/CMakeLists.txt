@@ -20,4 +20,5 @@ add_executable(mfx-tracer-config ${SOURCES} ${HEADERS})
 set_target_properties( mfx-tracer-config PROPERTIES LINK_FLAGS
   "-Wl,--no-undefined,-z,relro,-z,now,-z,noexecstack -fstack-protector -pie ${WARNING_FLAGS}" )
 target_link_libraries( mfx-tracer-config dl rt )
+install( TARGETS mfx-tracer-config RUNTIME DESTINATION tools/tracer )
 set(defs "")
