@@ -599,8 +599,6 @@ mfxStatus VAAPIEncoder::Init(ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrame
 mfxStatus VAAPIEncoder::Init(ENCODE_FUNC func, ExecuteBuffers* pExecuteBuffers)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIEncoder::Init");
-    mfxStatus   sts    = MFX_ERR_NONE;    
-
     m_initFrameWidth   = 16 * ((pExecuteBuffers->m_sps.FrameWidth + 15) >> 4);
     
     if (pExecuteBuffers->m_sps.progressive_sequence)
@@ -712,8 +710,6 @@ mfxStatus VAAPIEncoder::Init(ENCODE_FUNC func, ExecuteBuffers* pExecuteBuffers)
     vm_time_init ( &lock_MB_data_time[2]);
 
 #endif 
-
-    return sts;
 } // mfxStatus VAAPIEncoder::Init(ENCODE_FUNC func,ExecuteBuffers* pExecuteBuffers)
 
 
@@ -1954,7 +1950,8 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
 
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
-            vaUnmapBuffer( m_vaDisplay, codedBuffer );
+            vaSts = vaUnmapBuffer( m_vaDisplay, codedBuffer );
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         }
 
         // remove task
