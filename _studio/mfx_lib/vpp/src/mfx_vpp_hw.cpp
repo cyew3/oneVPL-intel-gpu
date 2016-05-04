@@ -3829,16 +3829,21 @@ mfxStatus ConfigureExecuteParams(
             for (mfxU32 j = 0; j < extDoNotUse->NumAlg; j++)
             {
                 mfxU32 bufferId = extDoNotUse->AlgList[j];
-                if(MFX_EXTBUFF_VPP_DEINTERLACING == bufferId)
-                {
-                    executeParams.iTargetInterlacingMode  = DEINTERLACE_DISABLE;
-                    executeParams.iDeinterlacingAlgorithm = 0;
-                }
-                else if (MFX_EXTBUFF_VPP_DENOISE == bufferId)
+                if (MFX_EXTBUFF_VPP_DENOISE == bufferId)
                 {
                     executeParams.bDenoiseAutoAdjust    = false;
                     executeParams.denoiseFactor         = 0;
                     executeParams.denoiseFactorOriginal = 0;
+                }
+                else if (MFX_EXTBUFF_VPP_SCENE_ANALYSIS == bufferId)
+                {
+                    executeParams.bSceneDetectionEnable = false;
+                }
+                else if (MFX_EXTBUFF_VPP_DETAIL == bufferId)
+                {
+                    executeParams.bDetailAutoAdjust    = false;
+                    executeParams.detailFactor         = 0;
+                    executeParams.detailFactorOriginal = 0;
                 }
                 else if (MFX_EXTBUFF_VPP_PROCAMP == bufferId)
                 {
@@ -3896,11 +3901,25 @@ mfxStatus ConfigureExecuteParams(
                 {
                     executeParams.mirroring = MFX_MIRRORING_DISABLED;
                 }
-                else if (MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION == bufferId)
+                else if (MFX_EXTBUFF_VPP_IMAGE_STABILIZATION == bufferId)
                 {
-                    executeParams.bFRCEnable  = false;
-                    executeParams.frcModeOrig = 0;
-                    memset(&(executeParams.customRateData), 0, sizeof(CustomRateData));
+                    executeParams.bImgStabilizationEnable = false;
+                    executeParams.istabMode               = 0;
+                }
+                else if (MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO == bufferId)
+                {
+                    executeParams.VideoSignalInfoIn.NominalRange    = MFX_NOMINALRANGE_UNKNOWN;
+                    executeParams.VideoSignalInfoIn.TransferMatrix  = MFX_TRANSFERMATRIX_UNKNOWN;
+                    executeParams.VideoSignalInfoIn.enabled         = false;
+
+                    executeParams.VideoSignalInfoOut.NominalRange   = MFX_NOMINALRANGE_UNKNOWN;
+                    executeParams.VideoSignalInfoOut.TransferMatrix = MFX_TRANSFERMATRIX_UNKNOWN;
+                    executeParams.VideoSignalInfoOut.enabled        = false;
+                }
+                else
+                {
+                    // filter cannot be disabled
+                    return MFX_ERR_INVALID_VIDEO_PARAM;
                 }
             }
         }
