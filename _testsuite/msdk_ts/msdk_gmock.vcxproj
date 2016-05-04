@@ -306,6 +306,7 @@
     <ClCompile Include="src\gmock\test_suites\ptir_query.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_frame_async_ex.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_query_io_surf.cpp" />
+    <ClCompile Include="src\gmock\test_suites\query_platform.cpp" />
     <ClCompile Include="src\gmock\test_suites\screen_capture_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\screen_capture_decode_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\screen_capture_decode_header.cpp" />

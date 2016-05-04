@@ -28,7 +28,11 @@ enum HWType
 
     MFX_HW_CHV       = 0x800000,
 
-    MFX_HW_SKL       = 0x900000
+    MFX_HW_SKL       = 0x900000,
+
+    MFX_HW_BXT       = 0xb00000,
+
+    MFX_HW_KBL       = 0xa00000
 };
 
 enum OSFamily

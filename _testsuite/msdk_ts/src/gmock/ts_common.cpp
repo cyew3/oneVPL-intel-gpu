@@ -229,6 +229,10 @@ void MFXVideoTest::SetUp()
                 g_tsHWtype = MFX_HW_BDW;
             else if(platform.find("skl") != std::string::npos)
                 g_tsHWtype = MFX_HW_SKL;
+            else if(platform.find("bxt") != std::string::npos)
+                g_tsHWtype = MFX_HW_BXT;
+            else if(platform.find("kbl") != std::string::npos)
+                g_tsHWtype = MFX_HW_KBL;
             else
                 g_tsHWtype = MFX_HW_UNKNOWN;
 
