@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_camera_plugin_dx11.cpp
 
@@ -88,7 +88,7 @@ mfxStatus D3D11CameraProcessor::Init(CameraParams *CameraParams)
 
     // Initial frameinfo contains just R16 that should be updated to the
     // internal FourCC representing
-    request.Info.FourCC = BayerToFourCC(CameraParams->Caps.BayerPatternType);
+    request.Info.FourCC = m_params.vpp.In.FourCC == MFX_FOURCC_R16 ? BayerToFourCC(CameraParams->Caps.BayerPatternType) : m_params.vpp.In.FourCC;
     request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_INTERNAL_FRAME;
     request.NumFrameMin = request.NumFrameSuggested = m_AsyncDepth;
 
@@ -435,7 +435,7 @@ mfxStatus D3D11CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 
     InSurf.Info        = appInputSurface.Info;
     InSurf.Info.Width  = m_width;
     InSurf.Info.Height = m_height;
-    InSurf.Info.FourCC =  BayerToFourCC(m_CameraParams.Caps.BayerPatternType);
+    InSurf.Info.FourCC =  m_params.vpp.In.FourCC == MFX_FOURCC_R16 ? BayerToFourCC(m_CameraParams.Caps.BayerPatternType) : m_params.vpp.In.FourCC;
 
     if ( m_paddedInput && appInputSurface.Info.CropX == 0 && appInputSurface.Info.CropY == 0 )
     {

@@ -86,6 +86,7 @@ DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
     case MFX_FOURCC_R16_GBRG:
         return DXGI_FORMAT_R16_TYPELESS;
     case MFX_FOURCC_ARGB16:
+    case MFX_FOURCC_ABGR16:
         return DXGI_FORMAT_R16G16B16A16_UNORM;
     case MFX_FOURCC_A2RGB10:
         return DXGI_FORMAT_R10G10B10A2_UNORM;
@@ -123,6 +124,7 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
     case MFX_FOURCC_R16_GBRG:
     case MFX_FOURCC_R16_GRBG:
     case MFX_FOURCC_ARGB16:
+    case MFX_FOURCC_ABGR16:
     case MFX_FOURCC_A2RGB10:
         break;
     default:

@@ -111,6 +111,12 @@ mfxStatus CMCameraProcessor::Query(mfxVideoParam *in, mfxVideoParam *out)
 {
     if (in)
     {
+        if (MFX_FOURCC_R16 != in->vpp.In.FourCC)
+        {
+            // CM supports R16 in only at the moment
+            return MFX_ERR_UNSUPPORTED;
+        }
+
         //ToDo: we need to carry about width/height in case of system memory passthrough without copy,
         //please think about it, so actual formula should be calculated from width and height, and magic number below doesn't look like applicable
         if ( in->vpp.In.CropW * in->vpp.In.CropH > 0x16E3600 )

@@ -1496,7 +1496,7 @@ mfxStatus D3D9CameraProcessor::Init(CameraParams *CameraParams)
                 {
                     sts = m_pCmCopy.get()->Initialize();
                     MFX_CHECK_STS(sts);
-                    if(m_params.vpp.Out.FourCC == MFX_FOURCC_ARGB16)
+                    if(m_params.vpp.Out.FourCC == MFX_FOURCC_ARGB16 || m_params.vpp.In.FourCC == MFX_FOURCC_ARGB16)
                         sts = m_pCmCopy.get()->InitializeSwapKernels(m_core->GetHWType());
                     MFX_CHECK_STS(sts);
                 }
@@ -1538,9 +1538,21 @@ mfxStatus D3D9CameraProcessor::Init(CameraParams *CameraParams)
     m_outputSurf.resize(0);
     // Directly create DXVAHD surfaces that will be used as input for Blt
     m_inputSurf.resize(m_AsyncDepth);
+
+    if (MFX_FOURCC_R16 == m_params.vpp.In.FourCC)
+    {
+        // use Bayer-specific format provided thru ext buffer
+        m_inFormat = (D3DFORMAT)BayerToFourCC(CameraParams->Caps.BayerPatternType);
+    }
+    else
+    {
+        // If input is not bayer, it's 16bit ARGB.
+        m_inFormat = D3DFMT_A16B16G16R16;
+    }
+
     for(int i = 0; i < m_AsyncDepth; i++)
     {
-        m_inputSurf[i].surf = m_ddi->SurfaceCreate(m_width, m_height, (D3DFORMAT)BayerToFourCC(CameraParams->Caps.BayerPatternType), MFX_MEMTYPE_FROM_VPPIN);
+        m_inputSurf[i].surf = m_ddi->SurfaceCreate(m_width, m_height, m_inFormat, MFX_MEMTYPE_FROM_VPPIN);
         MFX_CHECK_NULL_PTR1(m_inputSurf[i].surf);
     }
 
@@ -1907,10 +1919,10 @@ mfxStatus D3D9CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 *
     mfxFrameSurface1 InSurf = {0};
     mfxFrameSurface1 appInputSurface = *surf;
     
-    InSurf.Info       = surf->Info;
-    InSurf.Info.Width = m_width;
+    InSurf.Info        = surf->Info;
+    InSurf.Info.Width  = m_width;
     InSurf.Info.Height = m_height;
-    InSurf.Info.FourCC =  BayerToFourCC(m_CameraParams.Caps.BayerPatternType);
+    InSurf.Info.FourCC = m_inFormat;
 
     // [1] Copy from system mem to the internal video frame
     IppiSize roi = {m_width, m_height};
@@ -1925,13 +1937,17 @@ mfxStatus D3D9CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 *
 
     appInputSurface.Data.Y += appInputSurface.Data.Pitch*appInputSurface.Info.CropY + appInputSurface.Info.CropX*2;
     // [1] Copy from system mem to the internal video frame
-
-    sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(m_inputSurf[*poolIndex].surf, 0, appInputSurface.Data.Y, surf->Data.Pitch, (mfxU32)verticalPitch, roi);
+    if (appInputSurface.Info.FourCC == MFX_FOURCC_ARGB16)
+        sts = m_pCmCopy.get()->CopySwapSystemToVideoMemory(m_inputSurf[*poolIndex].surf, 0, IPP_MIN(IPP_MIN(appInputSurface.Data.R,appInputSurface.Data.G),appInputSurface.Data.B), surf->Data.Pitch, (mfxU32)m_height, roi, MFX_FOURCC_ABGR16);
+    else if (appInputSurface.Info.FourCC == MFX_FOURCC_ABGR16)
+        sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(m_inputSurf[*poolIndex].surf, 0, IPP_MIN(IPP_MIN(appInputSurface.Data.R,appInputSurface.Data.G),appInputSurface.Data.B), surf->Data.Pitch, (mfxU32)m_height, roi);
+    else
+        sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(m_inputSurf[*poolIndex].surf, 0, appInputSurface.Data.Y, surf->Data.Pitch, (mfxU32)verticalPitch, roi);
     MFX_CHECK_STS(sts);
 
     // Fill in Drv surfaces
     InSurf.Info       = surf->Info;
-    InSurf.Info.FourCC = BayerToFourCC(m_CameraParams.Caps.BayerPatternType);
+    InSurf.Info.FourCC = m_inFormat;
     drvSurf->hdl.first = m_inputSurf[*poolIndex].surf;
     drvSurf->bExternal = false;
     drvSurf->frameInfo = InSurf.Info;

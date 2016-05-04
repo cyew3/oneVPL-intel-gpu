@@ -390,7 +390,9 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             sts = MFX_ERR_UNSUPPORTED;
         }
 
-        if (out->vpp.In.FourCC != MFX_FOURCC_R16)
+        if (out->vpp.In.FourCC != MFX_FOURCC_R16 && 
+            out->vpp.In.FourCC != MFX_FOURCC_ARGB16 &&
+            out->vpp.In.FourCC != MFX_FOURCC_ABGR16)
         {
             {
                 out->vpp.In.FourCC = 0;
@@ -418,12 +420,18 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             }
         }
 
-        if(out->vpp.In.ChromaFormat)
+        if(out->vpp.In.FourCC == MFX_FOURCC_R16 && out->vpp.In.ChromaFormat != MFX_CHROMAFORMAT_YUV400)
         {
-            {
-                out->vpp.In.ChromaFormat = 0;
-                sts = MFX_ERR_UNSUPPORTED;
-            }
+            // R16 must be monochrome
+            out->vpp.In.ChromaFormat = 0;
+            sts = MFX_ERR_UNSUPPORTED;
+        }
+
+        if(out->vpp.In.FourCC != MFX_FOURCC_R16 && out->vpp.In.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
+        {
+            // Non-R16 input must be RGB-like
+            out->vpp.In.ChromaFormat = 0;
+            sts = MFX_ERR_UNSUPPORTED;
         }
 
         if (!(out->vpp.In.FrameRateExtN * out->vpp.In.FrameRateExtD) &&
@@ -1484,8 +1492,17 @@ mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFram
 
     if(m_mfxVideoParam.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
-        if(!surface_in->Data.Y16)
-            return MFX_ERR_NULL_PTR;
+        if(MFX_FOURCC_R16 == surface_in->Info.FourCC)
+        {
+            if(!surface_in->Data.Y16)
+                return MFX_ERR_NULL_PTR;
+        }
+        else
+        {
+            if(!surface_in->Data.R || !surface_in->Data.G || !surface_in->Data.B )
+                return MFX_ERR_NULL_PTR;
+        }
+
         if(surface_in->Data.Pitch & 15)
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     }
@@ -1525,7 +1542,7 @@ mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFram
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     if (surface_out->Info.CropH + surface_out->Info.CropY > surface_out->Info.Height)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    if(surface_in->Info.FourCC != MFX_FOURCC_R16)
+    if(surface_in->Info.FourCC != MFX_FOURCC_R16 && surface_in->Info.FourCC != MFX_FOURCC_ARGB16 && surface_in->Info.FourCC != MFX_FOURCC_ABGR16)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     if(surface_out->Info.FourCC != MFX_FOURCC_RGB4 &&
        surface_out->Info.FourCC != MFX_FOURCC_ARGB16 &&
