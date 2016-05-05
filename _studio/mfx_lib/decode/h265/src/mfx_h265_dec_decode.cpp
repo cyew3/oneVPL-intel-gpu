@@ -150,8 +150,12 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
 
     if (MFX_PLATFORM_SOFTWARE == m_platform)
     {
+#if defined (MFX_VA)
+        return MFX_ERR_UNSUPPORTED;
+#else
         m_pH265VideoDecoder.reset(new MFXTaskSupplier_H265());
         m_FrameAllocator.reset(new mfx_UMC_FrameAllocator());
+#endif
     }
     else
     {
