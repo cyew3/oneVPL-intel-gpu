@@ -196,6 +196,7 @@ namespace TranscodingSample
         mfxU16 nRenderColorForamt; /*0 NV12 - default, 1 is ARGB*/
 
         mfxI32  monitorType;
+        bool shouldUseGreedyFormula;
 
 #if defined(LIBVA_WAYLAND_SUPPORT)
         mfxU16 nRenderWinX;
@@ -452,7 +453,7 @@ namespace TranscodingSample
 
         // need for heterogeneous pipeline
         mfxStatus CalculateNumberOfReqFrames(mfxFrameAllocRequest  &pRequestDecOut, mfxFrameAllocRequest  &pRequestVPPOut);
-        void      CorrectNumberOfAllocatedFrames(mfxFrameAllocRequest  *pRequest);
+        void      CorrectNumberOfAllocatedFrames(mfxFrameAllocRequest  *pNewReq);
         void      FreeFrames();
 
         void      FreePreEncAuxPool();
@@ -615,6 +616,8 @@ namespace TranscodingSample
 
         CIOStat inputStatistics;
         CIOStat outputStatistics;
+
+        bool shouldUseGreedyFormula;
     private:
         DISALLOW_COPY_AND_ASSIGN(CTranscodingPipeline);
 

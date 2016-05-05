@@ -101,6 +101,8 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("                Collect performance statistics in specified file\n"));
     msdk_printf(MSDK_STRING("  -timeout <seconds>\n"));
     msdk_printf(MSDK_STRING("                Set time to run transcoding in seconds\n"));
+    msdk_printf(MSDK_STRING("  -greedy \n"));
+    msdk_printf(MSDK_STRING("                Use greedy formula to calculate number of surfaces\n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Pipeline description (general options):\n"));
     msdk_printf(MSDK_STRING("  -i::h265|h264|mpeg2|vc1|mvc|jpeg|vp8 <file-name>\n"));
@@ -276,6 +278,7 @@ CmdProcessor::CmdProcessor()
     m_parName = NULL;
     m_nTimeout = 0;
     statisticsWindowSize = 0;
+    shouldUseGreedyFormula=false;
 
 } //CmdProcessor::CmdProcessor()
 
@@ -344,6 +347,10 @@ mfxStatus CmdProcessor::ParseCmdLine(int argc, msdk_char *argv[])
         {
             PrintHelp();
             return MFX_ERR_UNSUPPORTED;
+        }
+        else if (0 == msdk_strcmp(argv[0], MSDK_STRING("-greedy")))
+        {
+            shouldUseGreedyFormula=true;
         }
         else if (0 == msdk_strcmp(argv[0], MSDK_STRING("-p")))
         {
@@ -537,6 +544,8 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
     TranscodingSample::sInputParams InputParams;
     if (m_nTimeout)
         InputParams.nTimeout = m_nTimeout;
+
+    InputParams.shouldUseGreedyFormula = shouldUseGreedyFormula;
 
     InputParams.statisticsWindowSize = statisticsWindowSize;
 
