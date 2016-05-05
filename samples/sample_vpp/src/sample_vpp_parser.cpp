@@ -39,17 +39,18 @@ else
 msdk_printf(MSDK_STRING("Usage1: %s [Options] -i InputFile -o OutputFile\n"), strAppName);
 
 msdk_printf(MSDK_STRING("Options: \n"));
-msdk_printf(MSDK_STRING("   [-lib  type]        - type of used library. sw, hw (def: sw)\n"));
+msdk_printf(MSDK_STRING("   [-lib  type]        - type of used library. sw, hw (def: sw)\n\n"));
 #if defined(D3D_SURFACES_SUPPORT)
-msdk_printf(MSDK_STRING("\n   [-d3d]                - use d3d9 surfaces\n"));
+msdk_printf(MSDK_STRING("   [-d3d]                - use d3d9 surfaces\n\n"));
 #endif
 #if MFX_D3D11_SUPPORT
-msdk_printf(MSDK_STRING("\n   [-d3d11]              - use d3d11 surfaces\n"));
+msdk_printf(MSDK_STRING("   [-d3d11]              - use d3d11 surfaces\n\n"));
 #endif
 #ifdef LIBVA_SUPPORT
-msdk_printf(MSDK_STRING("\n   [-vaapi]                - work with vaapi surfaces\n"));
+msdk_printf(MSDK_STRING("   [-vaapi]                - work with vaapi surfaces\n\n"));
 #endif
-msdk_printf(MSDK_STRING("   [-plugin_guid GUID] - use VPP plug-in with specified GUID\n\n"));
+msdk_printf(MSDK_STRING("   [-plugin_guid GUID]\n"));
+msdk_printf(MSDK_STRING("   [-p GUID]           - use VPP plug-in with specified GUID\n\n"));
 msdk_printf(MSDK_STRING("   [-extapi]           - use RunFrameVPPAsyncEx instead of RunFrameVPPAsync. Need for PTIR.\n\n"));
 msdk_printf(MSDK_STRING("   [-gpu_copy]         - Specify GPU copy mode. This option triggers using of InitEX instead of Init.\n\n"));
 
@@ -1318,6 +1319,13 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 i++;
                 msdk_sscanf(strInput[i], MSDK_STRING("%hd"), reinterpret_cast<short int*>(&pParams->numFrames));
 
+            }
+            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-p")))
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                msdk_strcopy(pParams->strPlgGuid, strInput[i]);
+                pParams->need_plugin = true;
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-plugin_guid")))
             {
