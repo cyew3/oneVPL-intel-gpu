@@ -709,7 +709,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     m_caps.VCMBitRateControl = attrs[1].value & VA_RC_VCM ? 1 : 0; //Video conference mode
-    m_caps.RollingIntraRefresh = (attrs[3].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
+    m_caps.RollingIntraRefresh = 0; /* (attrs[3].value & (~VA_ATTRIB_NOT_SUPPORTED))  ? 1 : 0*/
     m_caps.UserMaxFrameSizeSupport = 1; // no request on support for libVA
     m_caps.MBBRCSupport = 1;            // starting 16.3 Beta, enabled in driver by default for TU-1,2
     m_caps.MbQpDataSupport = 1;
