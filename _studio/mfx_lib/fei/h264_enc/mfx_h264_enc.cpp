@@ -33,7 +33,7 @@
 #include "mfx_ext_buffers.h"
 
 //#if defined (MFX_VA_LINUX)
-    #include "mfx_h264_encode_vaapi.h"    
+    #include "mfx_h264_encode_vaapi.h"
 //#endif
 
 #if defined(_DEBUG)
@@ -134,17 +134,17 @@ static mfxU16  GetFrameType(mfxU32 frameOrder, int gopSize, int gopRefDist)
 
 static bool CheckExtenedBuffer(mfxVideoParam *par)
 {
-    mfxU32  BufferId[2] = {MFX_EXTBUFF_LOOKAHEAD_CTRL, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION}; 
+    mfxU32  BufferId[2] = {MFX_EXTBUFF_LOOKAHEAD_CTRL, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION};
     mfxU32  num = sizeof(BufferId)/sizeof(BufferId[0]);
     if (!par->ExtParam) return true;
-   
+
     for (mfxU32 i = 0; i < par->NumExtParam; i++)
     {
         mfxU32 j = 0;
         for (; j < num; j++)
         {
             if (par->ExtParam[i] != 0 && par->ExtParam[i]->BufferId == BufferId[j]) break;
-        } 
+        }
         if (j == num) return false;
     }
     return true;
@@ -208,7 +208,7 @@ bool bEnc_ENC(mfxVideoParam *par)
             pControl = (mfxExtFeiParam *)par->ExtParam[i];
             break;
         }
-    
+
     bool res = pControl ? (pControl->Func == MFX_FEI_FUNCTION_ENC) : false;
     return res;
 }
@@ -414,7 +414,7 @@ mfxStatus VideoENC_ENC::Query(DdiTask& task)
     mfxStatus sts = MFX_ERR_NONE;
     mfxU32 f = 0, f_start = 0;
     mfxU32 fieldCount = task.m_fieldPicFlag;
-    
+
     mfxENCInput* in = (mfxENCInput*)task.m_userData[0];
     mfxExtFeiEncFrameCtrl* feiCtrl = GetExtBufferFEI(in, 0);
 
@@ -610,16 +610,27 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
 
     m_bInit = true;
     return sts;
-} 
+}
 mfxStatus VideoENC_ENC::Reset(mfxVideoParam *par)
 {
     Close();
     return Init(par);
-} 
+}
 
 mfxStatus VideoENC_ENC::GetVideoParam(mfxVideoParam *par)
 {
-    //MFX_CHECK(CheckExtenedBuffer(par), MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK_NULL_PTR1(par);
+
+    if (par->ExtParam || par->NumExtParam != 0) {
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
+    par->mfx        = m_video.mfx;
+    par->Protected  = m_video.Protected;
+    par->IOPattern  = m_video.IOPattern;
+    par->AsyncDepth = m_video.AsyncDepth;
+    par->AllocId    = m_video.AllocId;
+
     return MFX_ERR_NONE;
 }
 
