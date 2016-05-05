@@ -31,6 +31,8 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "plugin_loader.h"
 
+#undef max
+
 using namespace TranscodingSample;
 
 mfxU32 MFX_STDCALL TranscodingSample::ThranscodeRoutine(void   *pObj)
@@ -120,7 +122,8 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_pBSProcessor(NULL),
     m_nReqFrameTime(0),
     m_LastDecSyncPoint(0),
-    m_NumFramesForReset(0)
+    m_NumFramesForReset(0),
+    shouldUseGreedyFormula(false)
 {
     MSDK_ZERO_MEMORY(m_mfxDecParams);
     MSDK_ZERO_MEMORY(m_mfxVppParams);
@@ -2319,28 +2322,6 @@ static void SumAllocRequest(mfxFrameAllocRequest  &curReq, mfxFrameAllocRequest 
     }
 }
 
-static void CheckAllocRequest(mfxFrameAllocRequest  &curReq, mfxFrameAllocRequest  &newReq)
-{
-    curReq.NumFrameSuggested = curReq.NumFrameSuggested <  newReq.NumFrameSuggested ? newReq.NumFrameSuggested : curReq.NumFrameSuggested;
-    curReq.NumFrameMin = curReq.NumFrameSuggested;
-    curReq.Type = curReq.Type | newReq.Type;
-
-    if ((curReq.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && ((curReq.Type & 0xf0) != MFX_MEMTYPE_SYSTEM_MEMORY))
-        curReq.Type = (mfxU16)(curReq.Type & (~ MFX_MEMTYPE_SYSTEM_MEMORY));
-    if ((curReq.Type & MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET) && ((curReq.Type & 0xf0) != MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET))
-        curReq.Type = (mfxU16)(curReq.Type & (~ MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET));
-
-    if (curReq.Info.Width == 0)
-    {
-        curReq.Info = newReq.Info;
-    }
-    else
-    {
-        curReq.Info.Width  = curReq.Info.Width < newReq.Info.Width ? newReq.Info.Width : curReq.Info.Width ;
-        curReq.Info.Height = curReq.Info.Height < newReq.Info.Height ? newReq.Info.Height : curReq.Info.Height ;
-    }
-}
-
 mfxStatus CTranscodingPipeline::AllocFrames()
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -2534,9 +2515,34 @@ mfxStatus CTranscodingPipeline::CalculateNumberOfReqFrames(mfxFrameAllocRequest 
 
     return MFX_ERR_NONE;
 }
-void CTranscodingPipeline::CorrectNumberOfAllocatedFrames(mfxFrameAllocRequest  *pRequest)
+void CTranscodingPipeline::CorrectNumberOfAllocatedFrames(mfxFrameAllocRequest  *pNewReq)
 {
-    CheckAllocRequest(m_Request, *pRequest);
+    if(shouldUseGreedyFormula)
+    {
+        m_Request.NumFrameSuggested+=pNewReq->NumFrameSuggested;
+    }
+    else
+    {
+        m_Request.NumFrameSuggested = std::max(m_Request.NumFrameSuggested,pNewReq->NumFrameSuggested);
+    }
+
+    m_Request.NumFrameMin = m_Request.NumFrameSuggested;
+    m_Request.Type = m_Request.Type | pNewReq->Type;
+
+    if ((m_Request.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && ((m_Request.Type & 0xf0) != MFX_MEMTYPE_SYSTEM_MEMORY))
+        m_Request.Type = (mfxU16)(m_Request.Type & (~ MFX_MEMTYPE_SYSTEM_MEMORY));
+    if ((m_Request.Type & MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET) && ((m_Request.Type & 0xf0) != MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET))
+        m_Request.Type = (mfxU16)(m_Request.Type & (~ MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET));
+
+    if (m_Request.Info.Width == 0)
+    {
+        m_Request.Info = pNewReq->Info;
+    }
+    else
+    {
+        m_Request.Info.Width  = m_Request.Info.Width < pNewReq->Info.Width ? pNewReq->Info.Width : m_Request.Info.Width ;
+        m_Request.Info.Height = m_Request.Info.Height < pNewReq->Info.Height ? pNewReq->Info.Height : m_Request.Info.Height ;
+    }
 }
 
 mfxStatus CTranscodingPipeline::InitOpaqueAllocBuffers()
@@ -2633,6 +2639,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     m_pMFXAllocator = pMFXAllocator;
 
     m_pParentPipeline = pParentPipeline;
+    shouldUseGreedyFormula = pParams->shouldUseGreedyFormula;
 
     m_nTimeout = pParams->nTimeout;
     m_AsyncDepth = (0 == pParams->nAsyncDepth)? 1: pParams->nAsyncDepth;
