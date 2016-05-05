@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_pak.h"
 
 tsVideoPAK::tsVideoPAK(mfxFeiFunction func, mfxU32 CodecId, bool useDefaults)
@@ -159,6 +169,15 @@ mfxStatus tsVideoPAK::QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
     TS_TRACE(request);
 
     return g_tsStatus.get();
+}
+
+mfxStatus tsVideoPAK::AllocSurfaces()
+{
+    if(m_default && !m_request.NumFrameMin)
+    {
+        QueryIOSurf();TS_CHECK_MFX;
+    }
+    return tsSurfacePool::AllocSurfaces(m_request);
 }
 
 mfxStatus tsVideoPAK::Reset()

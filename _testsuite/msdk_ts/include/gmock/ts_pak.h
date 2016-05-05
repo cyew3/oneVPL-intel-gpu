@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #pragma once
 
 #include "ts_session.h"
@@ -36,6 +46,8 @@ public:
 
     mfxStatus QueryIOSurf();
     mfxStatus QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request);
+
+    mfxStatus AllocSurfaces();
 
     mfxStatus Reset();
     mfxStatus Reset(mfxSession session, mfxVideoParam *par);
