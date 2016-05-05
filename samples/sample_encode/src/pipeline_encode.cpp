@@ -392,6 +392,12 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     {
         m_mfxEncParams.mfx.TargetKbps = pInParams->nBitRate; // in Kbps
     }
+
+    if(pInParams->enableQSVFF)
+    {
+        m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_ON;
+    }
+
     m_mfxEncParams.mfx.NumSlice = pInParams->nNumSlice;
     ConvertFrameRate(pInParams->dFrameRate, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtN, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtD);
     m_mfxEncParams.mfx.EncodedOrder            = 0; // binary flag, 0 signals encoder to take frames in display order

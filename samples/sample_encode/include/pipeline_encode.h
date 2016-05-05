@@ -112,6 +112,8 @@ struct sInputParams
     mfxU16 nQPP;
     mfxU16 nQPB;
 
+    bool enableQSVFF;
+
     mfxU16 nNumSlice;
     bool UseRegionEncode;
 

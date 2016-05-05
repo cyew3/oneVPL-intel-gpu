@@ -197,6 +197,7 @@ namespace TranscodingSample
 
         mfxI32  monitorType;
         bool shouldUseGreedyFormula;
+        bool enableQSVFF;
 
 #if defined(LIBVA_WAYLAND_SUPPORT)
         mfxU16 nRenderWinX;

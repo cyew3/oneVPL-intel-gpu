@@ -31,6 +31,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "plugin_loader.h"
 
+// let's use std::max instead
 #undef max
 
 using namespace TranscodingSample;
@@ -1771,6 +1772,11 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
         m_mfxEncParams.mfx.QPB = pInParams->nQPB;
     }
 
+    if(pInParams->enableQSVFF)
+    {
+        m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_ON;
+    }
+
     if (m_bIsVpp)
     {
         MSDK_MEMCPY_VAR(m_mfxEncParams.mfx.FrameInfo, &m_mfxVppParams.vpp.Out, sizeof(mfxFrameInfo));
@@ -1839,7 +1845,7 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
         m_mfxEncParams.mfx.CodecProfile = m_mfxDecParams.mfx.CodecProfile;
     }
 
-    // JPEG encoder settings overlap with other encoders settings in mfxInfoMFX structure
+    // JPEG encoder settings overlap nasc other encoders settings in mfxInfoMFX structure
     if (MFX_CODEC_JPEG == pInParams->EncodeId)
     {
         m_mfxEncParams.mfx.Interleaved = 1;
@@ -2527,7 +2533,7 @@ void CTranscodingPipeline::CorrectNumberOfAllocatedFrames(mfxFrameAllocRequest  
     }
 
     m_Request.NumFrameMin = m_Request.NumFrameSuggested;
-    m_Request.Type = m_Request.Type | pNewReq->Type;
+    m_Request.Type = m_Request.Type | pNewReq-> Type;
 
     if ((m_Request.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && ((m_Request.Type & 0xf0) != MFX_MEMTYPE_SYSTEM_MEMORY))
         m_Request.Type = (mfxU16)(m_Request.Type & (~ MFX_MEMTYPE_SYSTEM_MEMORY));

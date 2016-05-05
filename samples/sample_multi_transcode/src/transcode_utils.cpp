@@ -157,6 +157,7 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -qpi          Constant quantizer for I frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
     msdk_printf(MSDK_STRING("  -qpp          Constant quantizer for P frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
     msdk_printf(MSDK_STRING("  -qpb          Constant quantizer for B frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
+    msdk_printf(MSDK_STRING("  -qsv-ff       Enable QSV-FF mode\n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Pipeline description (vpp options):\n"));
     msdk_printf(MSDK_STRING("  -deinterlace             Forces VPP to deinterlace input stream\n"));
@@ -1136,6 +1137,10 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 return MFX_ERR_UNSUPPORTED;
             }
         }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-qsv-ff")))
+        {
+            InputParams.enableQSVFF=true;
+        }
         MOD_SMT_PARSE_INPUT
         else if((stsExtBuf = CVPPExtBuffersStorage::ParseCmdLine(argv,argc,i,&InputParams,skipped))
             !=MFX_ERR_MORE_DATA)
@@ -1348,6 +1353,11 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
     {
         PrintError(MSDK_STRING("MaxSliceSize option is supported only with H.264 encoder!"));
         return MFX_ERR_UNSUPPORTED;
+    }
+
+    if(InputParams.enableQSVFF && InputParams.eMode == Sink)
+    {
+        msdk_printf(MSDK_STRING("WARNING: -qsv-ff option is not valid for decoder-only sessions, this parameter will be ignored.\n"));
     }
 
     std::map<mfxU32, sPluginParams>::iterator it;
