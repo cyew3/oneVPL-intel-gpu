@@ -21,6 +21,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "refListsManagement_fei.h"
 #include "sysmem_allocator.h"
 #include "math.h"
+#include "mfx_itt_trace.h"
 
 #if D3D_SURFACES_SUPPORT
 #include "d3d_allocator.h"
@@ -2880,6 +2881,7 @@ mfxStatus CEncodingPipeline::Run()
 
 mfxStatus CEncodingPipeline::GetOneFrame(mfxFrameSurface1* & pSurf)
 {
+    MFX_ITT_TASK("GetOneFrame");
     mfxStatus sts = MFX_ERR_NONE;
 
     if (!m_pmfxDECODE) // load frame from YUV file
@@ -4950,6 +4952,7 @@ mfxStatus CEncodingPipeline::ClearDecoderBuffers()
 
 mfxStatus CEncodingPipeline::PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, bool is_buffered, bool &cont)
 {
+    MFX_ITT_TASK("PreencOneFrame");
     MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(pSurf, MFX_ERR_NULL_PTR);
 
@@ -4961,6 +4964,7 @@ mfxStatus CEncodingPipeline::PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
 
     if (m_encpakParams.preencDSstrength)
     {
+        MFX_ITT_TASK("DownsampleInput");
         // PREENC needs to be performed on downscaled surface
         // For simplicity, let's just replace the original surface
         eTask->fullResSurface = eTask->in.InSurface;
@@ -4999,6 +5003,7 @@ mfxStatus CEncodingPipeline::PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
 
         if (m_isField || !(ExtractFrameType(*eTask) & MFX_FRAMETYPE_I)){
             //repack MV predictors
+            MFX_ITT_TASK("RepackMVs");
             if (!m_encpakParams.bPerfMode)
                 sts = PassPreEncMVPred2EncEx(eTask, m_numOfRefs);
             else
@@ -5041,6 +5046,7 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
 
     for (mfxU32 l0_idx = 0, l1_idx = 0; l0_idx < total_l0 || l1_idx < total_l1; l0_idx++, l1_idx++)
     {
+        MFX_ITT_TASK("PreENCpass");
         sts = GetRefTaskEx(eTask, l0_idx, l1_idx, preenc_ref_idx, ref_fid, refTask);
 
         if (ExtractFrameType(*eTask) & MFX_FRAMETYPE_I)
@@ -5262,6 +5268,7 @@ bool compareL1Distortion(std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncM
 
 mfxStatus CEncodingPipeline::EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont)
 {
+    MFX_ITT_TASK("EncPakOneFrame");
     MSDK_CHECK_POINTER(eTask,        MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(pSurf,        MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(pCurrentTask, MFX_ERR_NULL_PTR);
@@ -5393,6 +5400,7 @@ mfxStatus CEncodingPipeline::EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
 
 mfxStatus CEncodingPipeline::EncodeOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont)
 {
+    MFX_ITT_TASK("EncodeOneFrame");
     if (!is_buffered){
         MSDK_CHECK_POINTER(pSurf,    MFX_ERR_NULL_PTR);
     }
@@ -5512,6 +5520,7 @@ mfxStatus CEncodingPipeline::SyncOneEncodeFrame(sTask* pCurrentTask, iTask* eTas
 
 mfxStatus CEncodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
 {
+    MFX_ITT_TASK("DecodeOneFrame");
     MSDK_CHECK_POINTER(pExtSurface, MFX_ERR_NULL_PTR);
 
     mfxStatus sts = MFX_ERR_MORE_SURFACE;
@@ -5558,6 +5567,7 @@ mfxStatus CEncodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
 
 mfxStatus CEncodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
 {
+    MFX_ITT_TASK("DecodeLastFrame");
     MSDK_CHECK_POINTER(pExtSurface, MFX_ERR_NULL_PTR);
 
     mfxFrameSurface1 *pDecSurf = NULL;
@@ -5585,6 +5595,7 @@ mfxStatus CEncodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
 
 mfxStatus CEncodingPipeline::PreProcessOneFrame(mfxFrameSurface1* & pSurf)
 {
+    MFX_ITT_TASK("VPPOneFrame");
     MSDK_CHECK_POINTER(pSurf, MFX_ERR_NULL_PTR);
     mfxStatus sts = MFX_ERR_NONE;
     ExtendedSurface VppExtSurface = { 0 };
