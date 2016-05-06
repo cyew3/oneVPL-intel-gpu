@@ -18,6 +18,7 @@
 #include "mfx_h265_encode_hw_utils.h"
 
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
+#define PARALLEL_BRC_support
 
 namespace MfxHwH265Encode
 {
