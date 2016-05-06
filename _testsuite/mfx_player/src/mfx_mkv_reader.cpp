@@ -711,7 +711,7 @@ SEEK:
             // Copy data to bitstream
             memcpy(bs.Data + bs.DataLength, data, block_size);
             bs.DataLength += block_size;
-            delete data;
+            delete[] data;
             if ( (MFX_CODEC_VP8 == m_codec) || (MFX_CODEC_VP9 == m_codec) )
             {
                 return MFX_ERR_NONE;
