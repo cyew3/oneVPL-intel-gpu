@@ -39,6 +39,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "vaapi_allocator.h"
 #endif
 
+#include "general_allocator.h"
 
 
 #define MFX_CHECK_STS(sts) {if (MFX_ERR_NONE != sts) return sts;}
@@ -447,110 +448,6 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
 
 /* ******************************************************************* */
 
-#ifdef D3D_SURFACES_SUPPORT
-
-#ifdef MFX_D3D11_SUPPORT
-
-mfxStatus CreateD3D11Device(ID3D11Device** ppD3D11Device, ID3D11DeviceContext** ppD3D11DeviceContext)
-{
-
-    HRESULT hRes = S_OK;
-
-    static D3D_FEATURE_LEVEL FeatureLevels[] = { D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0 };
-    D3D_FEATURE_LEVEL pFeatureLevelsOut;
-
-    hRes = D3D11CreateDevice(NULL,
-        D3D_DRIVER_TYPE_HARDWARE,
-        NULL,
-        0,
-        FeatureLevels,
-        sizeof(FeatureLevels) / sizeof(D3D_FEATURE_LEVEL),
-        D3D11_SDK_VERSION,
-        ppD3D11Device,
-        &pFeatureLevelsOut,
-        ppD3D11DeviceContext);
-
-    if (FAILED(hRes))
-    {
-        return MFX_ERR_DEVICE_FAILED;
-    }
-
-
-    CComQIPtr<ID3D10Multithread> p_mt(*ppD3D11DeviceContext);
-
-    if (p_mt)
-        p_mt->SetMultithreadProtected(true);
-    else
-        return MFX_ERR_DEVICE_FAILED;
-
-
-    return MFX_ERR_NONE;
-}
-
-#endif
-
-mfxStatus CreateDeviceManager(IDirect3DDeviceManager9** ppManager)
-{
-    MSDK_CHECK_POINTER(ppManager, MFX_ERR_NULL_PTR);
-
-    //CComPtr<IDirect3D9> d3d = Direct3DCreate9(D3D_SDK_VERSION);
-    CComPtr<IDirect3D9> d3d;
-    d3d.Attach(Direct3DCreate9(D3D_SDK_VERSION));
-
-    if (!d3d)
-    {
-        return MFX_ERR_NULL_PTR;
-    }
-
-    POINT point = {0, 0};
-    HWND window = WindowFromPoint(point);
-
-    D3DPRESENT_PARAMETERS d3dParams;
-    memset(&d3dParams, 0, sizeof(d3dParams));
-    d3dParams.Windowed = TRUE;
-    d3dParams.hDeviceWindow = window;
-    d3dParams.SwapEffect = D3DSWAPEFFECT_DISCARD;
-    d3dParams.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
-    d3dParams.Flags = D3DPRESENTFLAG_VIDEO;
-    d3dParams.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
-    d3dParams.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
-    d3dParams.BackBufferCount = 1;
-    d3dParams.BackBufferFormat = D3DFMT_X8R8G8B8;
-    d3dParams.BackBufferWidth = 0;
-    d3dParams.BackBufferHeight = 0;
-
-    CComPtr<IDirect3DDevice9> d3dDevice = 0;
-    HRESULT hr = d3d->CreateDevice(
-        D3DADAPTER_DEFAULT,
-        D3DDEVTYPE_HAL,
-        window,
-        D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_MULTITHREADED | D3DCREATE_FPU_PRESERVE,
-        &d3dParams,
-        &d3dDevice);
-    if (FAILED(hr) || !d3dDevice)
-        return MFX_ERR_NULL_PTR;
-
-    UINT resetToken = 0;
-    CComPtr<IDirect3DDeviceManager9> d3dDeviceManager = 0;
-    hr = DXVA2CreateDirect3DDeviceManager9(&resetToken, &d3dDeviceManager);
-    if (FAILED(hr) || !d3dDeviceManager)
-        return MFX_ERR_NULL_PTR;
-
-    hr = d3dDeviceManager->ResetDevice(d3dDevice, resetToken);
-    if (FAILED(hr))
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-    *ppManager = d3dDeviceManager.Detach();
-
-    if (NULL == *ppManager)
-    {
-        return MFX_ERR_NULL_PTR;
-    }
-
-    return MFX_ERR_NONE;
-}
-#endif
-
 mfxStatus InitFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pParams)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -662,14 +559,6 @@ mfxStatus InitMemoryAllocator(
 
             pd3dAllocParams->pManager = (IDirect3DDeviceManager9*)hdl;
             pAllocator->pAllocatorParams = pd3dAllocParams;
-
-            /* In case of video memory we must provide mediasdk with external allocator
-            thus we demonstrate "external allocator" usage model.
-            Call SetAllocator to pass allocator to mediasdk */
-            sts = pProcessor->mfxSession.SetFrameAllocator(pAllocator->pMfxAllocator);
-            MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
-
-            pAllocator->bUsedAsExternalAllocator = true;
 #endif
         }
         else if(pInParams->ImpLib & MFX_IMPL_VIA_D3D9)
@@ -691,11 +580,6 @@ mfxStatus InitMemoryAllocator(
 
             pd3d11AllocParams->pDevice = (ID3D11Device*)hdl;
             pAllocator->pAllocatorParams = pd3d11AllocParams;
-
-            sts = pProcessor->mfxSession.SetFrameAllocator(pAllocator->pMfxAllocator);
-            MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
-
-            pAllocator->bUsedAsExternalAllocator = true;
 #endif
         }
         else if (pInParams->ImpLib & MFX_IMPL_VIA_VAAPI)
@@ -719,10 +603,6 @@ mfxStatus InitMemoryAllocator(
             pVaapiAllocParams->m_dpy = (VADisplay)hdl;
             pAllocator->pAllocatorParams = pVaapiAllocParams;
 
-            sts = pProcessor->mfxSession.SetFrameAllocator(pAllocator->pMfxAllocator);
-            MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
-
-            pAllocator->bUsedAsExternalAllocator = true;
 #endif
         }
     }
@@ -748,11 +628,11 @@ mfxStatus InitMemoryAllocator(
         }
 #endif
 
-        /* In case of system memory we demonstrate "no external allocator" usage model.
-        We don't call SetAllocator, mediasdk uses internal allocator.
-        We use software allocator object only as a memory manager for application */
-
     }
+    /* This sample uses external memory allocator model for both system and HW memory */
+    sts = pProcessor->mfxSession.SetFrameAllocator(pAllocator->pMfxAllocator);
+    MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+    pAllocator->bUsedAsExternalAllocator = true;
 
     sts = pAllocator->pMfxAllocator->Init(pAllocator->pAllocatorParams);
     MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
@@ -1939,6 +1819,7 @@ mfxStatus UpdateSurfacePool(mfxFrameInfo SurfacesInfo, mfxU16 nPoolSize, mfxFram
     }
     return MFX_ERR_NONE;
 }
+
 mfxStatus GetFreeSurface(mfxFrameSurface1* pSurfacesPool, mfxU16 nPoolSize, mfxFrameSurface1** ppSurface)
 {
     MSDK_CHECK_POINTER(pSurfacesPool, MFX_ERR_NULL_PTR);
@@ -1965,195 +1846,6 @@ mfxStatus GetFreeSurface(mfxFrameSurface1* pSurfacesPool, mfxU16 nPoolSize, mfxF
     }
 
     return MFX_ERR_NOT_ENOUGH_BUFFER;
-}
-
-// Wrapper on standard allocator for concurrent allocation of
-// D3D and system surfaces
-GeneralAllocator::GeneralAllocator()
-{
-#ifdef MFX_D3D11_SUPPORT
-    m_D3D11Allocator.reset(new D3D11FrameAllocator);
-#endif
-#ifdef D3D_SURFACES_SUPPORT
-    m_D3DAllocator.reset(new D3DFrameAllocator);
-#endif
-#ifdef LIBVA_SUPPORT
-    m_vaapiAllocator.reset(new vaapiFrameAllocator);
-#endif
-    m_SYSAllocator.reset(new SysMemFrameAllocator);
-
-    m_isDx11 = false;
-
-};
-GeneralAllocator::~GeneralAllocator()
-{
-};
-mfxStatus GeneralAllocator::Init(mfxAllocatorParams *pParams)
-{
-    mfxStatus sts = MFX_ERR_NONE;
-#ifdef MFX_D3D11_SUPPORT
-    if (true == m_isDx11)
-        sts = m_D3D11Allocator.get()->Init(pParams);
-    else
-#endif
-#ifdef D3D_SURFACES_SUPPORT
-        sts = m_D3DAllocator.get()->Init(pParams);
-#endif
-
-    MSDK_CHECK_RESULT(MFX_ERR_NONE, sts, sts);
-
-#ifdef LIBVA_SUPPORT
-    sts = m_vaapiAllocator.get()->Init(pParams);
-    MSDK_CHECK_RESULT(MFX_ERR_NONE, sts, sts);
-#endif
-
-    sts = m_SYSAllocator.get()->Init(0);
-    MSDK_CHECK_RESULT(MFX_ERR_NONE, sts, sts);
-
-    return sts;
-}
-mfxStatus GeneralAllocator::Close()
-{
-    mfxStatus sts = MFX_ERR_NONE;
-
-#ifdef MFX_D3D11_SUPPORT
-    if (true == m_isDx11)
-        sts = m_D3D11Allocator.get()->Close();
-    else
-#endif
-#ifdef D3D_SURFACES_SUPPORT
-        sts = m_D3DAllocator.get()->Close();
-#endif
-#ifdef LIBVA_SUPPORT
-    sts = m_vaapiAllocator.get()->Close();
-#endif
-    MSDK_CHECK_RESULT(MFX_ERR_NONE, sts, sts);
-
-    sts = m_SYSAllocator.get()->Close();
-    MSDK_CHECK_RESULT(MFX_ERR_NONE, sts, sts);
-
-    m_isDx11 = false;
-
-    return sts;
-}
-
-mfxStatus GeneralAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
-{
-#ifdef MFX_D3D11_SUPPORT
-    if (true == m_isDx11)
-        return isD3DMid(mid) ? m_D3D11Allocator.get()->Lock(m_D3D11Allocator.get(), mid, ptr):
-        m_SYSAllocator.get()->Lock(m_SYSAllocator.get(),mid, ptr);
-    else
-#endif
-#ifdef D3D_SURFACES_SUPPORT
-        return isD3DMid(mid) ? m_D3DAllocator.get()->Lock(m_D3DAllocator.get(), mid, ptr):
-        m_SYSAllocator.get()->Lock(m_SYSAllocator.get(),mid, ptr);
-#elif LIBVA_SUPPORT
-        return isD3DMid(mid)?m_vaapiAllocator.get()->Lock(m_vaapiAllocator.get(), mid, ptr):
-        m_SYSAllocator.get()->Lock(m_SYSAllocator.get(),mid, ptr);
-#else
-        return m_SYSAllocator.get()->Lock(m_SYSAllocator.get(),mid, ptr);
-#endif
-}
-mfxStatus GeneralAllocator::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
-{
-#ifdef MFX_D3D11_SUPPORT
-    if (true == m_isDx11)
-        return isD3DMid(mid)?m_D3D11Allocator.get()->Unlock(m_D3D11Allocator.get(), mid, ptr):
-        m_SYSAllocator.get()->Unlock(m_SYSAllocator.get(),mid, ptr);
-    else
-#endif
-#ifdef D3D_SURFACES_SUPPORT
-        return isD3DMid(mid)?m_D3DAllocator.get()->Unlock(m_D3DAllocator.get(), mid, ptr):
-        m_SYSAllocator.get()->Unlock(m_SYSAllocator.get(),mid, ptr);
-#elif LIBVA_SUPPORT
-        return isD3DMid(mid)?m_vaapiAllocator.get()->Unlock(m_vaapiAllocator.get(), mid, ptr):
-        m_SYSAllocator.get()->Unlock(m_SYSAllocator.get(),mid, ptr);
-#else
-        return m_SYSAllocator.get()->Unlock(m_SYSAllocator.get(),mid, ptr);
-#endif
-}
-
-mfxStatus GeneralAllocator::GetFrameHDL(mfxMemId mid, mfxHDL *handle)
-{
-#ifdef MFX_D3D11_SUPPORT
-    if (true == m_isDx11)
-        return isD3DMid(mid)?m_D3D11Allocator.get()->GetHDL(m_D3D11Allocator.get(), mid, handle):
-        m_SYSAllocator.get()->GetHDL(m_SYSAllocator.get(), mid, handle);
-    else
-#endif
-#ifdef D3D_SURFACES_SUPPORT
-        return isD3DMid(mid)?m_D3DAllocator.get()->GetHDL(m_D3DAllocator.get(), mid, handle):
-        m_SYSAllocator.get()->GetHDL(m_SYSAllocator.get(), mid, handle);
-
-#elif LIBVA_SUPPORT
-        return isD3DMid(mid)?m_vaapiAllocator.get()->GetHDL(m_vaapiAllocator.get(), mid, handle):
-        m_SYSAllocator.get()->GetHDL(m_SYSAllocator.get(), mid, handle);
-#else
-        return m_SYSAllocator.get()->GetHDL(m_SYSAllocator.get(), mid, handle);
-#endif
-}
-
-mfxStatus GeneralAllocator::ReleaseResponse(mfxFrameAllocResponse *response)
-{
-    // try to ReleaseResponsevia D3D allocator
-#ifdef MFX_D3D11_SUPPORT
-    if (true == m_isDx11)
-        return isD3DMid(response->mids[0])?m_D3D11Allocator.get()->Free(m_D3D11Allocator.get(),response):
-        m_SYSAllocator.get()->Free(m_SYSAllocator.get(), response);
-    else
-#endif
-#ifdef D3D_SURFACES_SUPPORT
-        return isD3DMid(response->mids[0])?m_D3DAllocator.get()->Free(m_D3DAllocator.get(),response):
-        m_SYSAllocator.get()->Free(m_SYSAllocator.get(), response);
-#elif LIBVA_SUPPORT
-        return isD3DMid(response->mids[0])?m_vaapiAllocator.get()->Free(m_vaapiAllocator.get(),response):
-        m_SYSAllocator.get()->Free(m_SYSAllocator.get(), response);
-#else
-        return m_SYSAllocator.get()->Free(m_SYSAllocator.get(), response);
-#endif
-}
-mfxStatus GeneralAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
-{
-    mfxStatus sts;
-    if (request->Type & MFX_MEMTYPE_DXVA2_DECODER_TARGET || request->Type & MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET)
-    {
-#ifdef MFX_D3D11_SUPPORT
-        if (true == m_isDx11)
-            sts = m_D3D11Allocator.get()->Alloc(m_D3D11Allocator.get(), request, response);
-        else
-#endif
-#ifdef D3D_SURFACES_SUPPORT
-            sts = m_D3DAllocator.get()->Alloc(m_D3DAllocator.get(), request, response);
-#endif
-#ifdef LIBVA_SUPPORT
-        sts = m_vaapiAllocator.get()->Alloc(m_vaapiAllocator.get(), request, response);
-#endif
-        StoreFrameMids(true, response);
-    }
-    else
-    {
-        sts = m_SYSAllocator.get()->Alloc(m_SYSAllocator.get(), request, response);
-        StoreFrameMids(false, response);
-    }
-    return sts;
-}
-void GeneralAllocator::StoreFrameMids(bool isD3DFrames, mfxFrameAllocResponse *response)
-{
-    for (mfxU32 i = 0; i < response->NumFrameActual; i++)
-        m_Mids.insert(std::pair<mfxHDL, bool>(response->mids[i], isD3DFrames));
-}
-bool GeneralAllocator::isD3DMid(mfxHDL mid)
-{
-    std::map<mfxHDL, bool>::iterator it;
-    it = m_Mids.find(mid);
-    return it->second;
-
-}
-
-void GeneralAllocator::SetDX11(void)
-{
-    m_isDx11 = true;
 }
 
 //---------------------------------------------------------

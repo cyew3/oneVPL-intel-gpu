@@ -430,52 +430,6 @@ struct sAppResources
 
 };
 
-class D3DFrameAllocator;
-
-#ifdef MFX_D3D11_SUPPORT
-class D3D11FrameAllocator;
-#endif
-
-class SysMemFrameAllocator;
-
-class GeneralAllocator : public BaseFrameAllocator
-{
-public:
-    GeneralAllocator();
-    virtual ~GeneralAllocator();
-
-    virtual mfxStatus Init(mfxAllocatorParams *pParams);
-    virtual mfxStatus Close();
-
-    void SetDX11(void);
-
-protected:
-    virtual mfxStatus LockFrame(mfxMemId mid, mfxFrameData *ptr);
-    virtual mfxStatus UnlockFrame(mfxMemId mid, mfxFrameData *ptr);
-    virtual mfxStatus GetFrameHDL(mfxMemId mid, mfxHDL *handle);
-
-    virtual mfxStatus ReleaseResponse(mfxFrameAllocResponse *response);
-    virtual mfxStatus AllocImpl(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
-
-    void    StoreFrameMids(bool isD3DFrames, mfxFrameAllocResponse *response);
-    bool    isD3DMid(mfxHDL mid);
-
-    std::map<mfxHDL, bool>              m_Mids;
-    bool m_isDx11;
-
-#ifdef MFX_D3D11_SUPPORT
-    std::auto_ptr<D3D11FrameAllocator>    m_D3D11Allocator;
-#endif
-#ifdef D3D_SURFACES_SUPPORT
-    std::auto_ptr<D3DFrameAllocator>    m_D3DAllocator;
-#endif
-#ifdef LIBVA_SUPPORT
-    std::auto_ptr<vaapiFrameAllocator>    m_vaapiAllocator;
-#endif
-    std::auto_ptr<SysMemFrameAllocator> m_SYSAllocator;
-
-};
-
 /* ******************************************************************* */
 /*                        service functions                            */
 /* ******************************************************************* */
