@@ -472,6 +472,7 @@ enum
 
 mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
 {
+    MFX_ITT_TASK("DecodeOneFrame");
     MSDK_CHECK_POINTER(pExtSurface,  MFX_ERR_NULL_PTR);
 
     mfxStatus sts = MFX_ERR_MORE_SURFACE;
@@ -535,6 +536,7 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
 } // mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
 mfxStatus CTranscodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
 {
+    MFX_ITT_TASK("DecodeLastFrame");
     mfxFrameSurface1    *pmfxSurface = NULL;
     mfxStatus sts = MFX_ERR_MORE_SURFACE;
     mfxU32 i = 0;
@@ -576,6 +578,7 @@ mfxStatus CTranscodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
 
 mfxStatus CTranscodingPipeline::VPPOneFrame(ExtendedSurface *pSurfaceIn, ExtendedSurface *pExtSurface)
 {
+    MFX_ITT_TASK("VPPOneFrame");
     MSDK_CHECK_POINTER(pExtSurface,  MFX_ERR_NULL_PTR);
     mfxFrameSurface1 *pmfxSurface = NULL;
     // find/wait for a free working surface
@@ -753,9 +756,7 @@ mfxStatus CTranscodingPipeline::Decode()
             {
                 if (!bEndOfFile)
                 {
-                    MFX_ITT_TASK_BEGIN("DecodeOneFrame");
                     sts = DecodeOneFrame(&DecExtSurface);
-                    MFX_ITT_TASK_END();
                     if (MFX_ERR_MORE_DATA == sts)
                     {
                         sts = bLastCycle ? DecodeLastFrame(&DecExtSurface) : MFX_ERR_MORE_DATA;
@@ -764,9 +765,7 @@ mfxStatus CTranscodingPipeline::Decode()
                 }
                 else
                 {
-                    MFX_ITT_TASK_BEGIN("DecodeLastFrame");
                     sts = DecodeLastFrame(&DecExtSurface);
-                    MFX_ITT_TASK_END();
                 }
 
                 if (sts == MFX_ERR_NONE)
@@ -809,9 +808,7 @@ mfxStatus CTranscodingPipeline::Decode()
 
         if (m_pmfxVPP.get())
         {
-            MFX_ITT_TASK_BEGIN("VPPOneFrame");
             sts = VPPOneFrame(&DecExtSurface, &VppExtSurface);
-            MFX_ITT_TASK_END();
         }
         else // no VPP - just copy pointers
         {
@@ -874,9 +871,8 @@ mfxStatus CTranscodingPipeline::Decode()
         // if session is not joined and it is not parent - synchronize
         if (!m_bIsJoinSession && m_pParentPipeline)
         {
-            MFX_ITT_TASK_BEGIN("SyncOperation");
+            MFX_ITT_TASK("SyncOperation");
             sts = m_pmfxSession->SyncOperation(PreEncExtSurface.Syncp, MSDK_WAIT_INTERVAL);
-            MFX_ITT_TASK_END();
             PreEncExtSurface.Syncp = NULL;
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
@@ -964,9 +960,8 @@ mfxStatus CTranscodingPipeline::Encode()
                 // if it is not already synchronized
                 if (DecExtSurface.Syncp)
                 {
-                    MFX_ITT_TASK_BEGIN("SyncOperation");
+                    MFX_ITT_TASK("SyncOperation");
                     sts = m_pParentPipeline->m_pmfxSession->SyncOperation(DecExtSurface.Syncp, MSDK_WAIT_INTERVAL);
-                    MFX_ITT_TASK_END();
                     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
                 }
             }

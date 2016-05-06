@@ -111,7 +111,7 @@ sub usage {
   print "\t--build - try to build projects after generation (requires cmake>=2.8.0)\n";
   print "\t--mfx-home=/path/to/mediasdk/package - Media SDK package location [default: <none>]\n";
   print "\t--vtune-home=/path/to/vtune/package - VTune package location [default: <none>]\n";
-  print "\t--enable-itt=yes|no     - enable ITT instrumentation support [default: $enable_sw]\n";
+  print "\t--enable-itt=yes|no     - enable ITT instrumentation support [default: $enable_itt]\n";
   print "\t--enable-sw=yes|no      - enable SW backend support [default: $enable_sw]\n";
   print "\t--enable-drm=yes|no     - enable DRM backend support [default: $enable_drm]\n";
   print "\t--enable-x11=yes|no     - enable X11 backend support [default: $enable_x11]\n";

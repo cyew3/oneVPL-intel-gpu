@@ -11,5 +11,5 @@ include_directories (
 
 list( APPEND LIBS_VARIANT sample_common )
 
-set(DEPENDENCIES ${skipping} libmfx dl pthread)
+set(DEPENDENCIES ${skipping} itt libmfx dl pthread)
 make_executable( shortname universal )

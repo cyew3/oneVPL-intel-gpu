@@ -45,16 +45,14 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #define MSDK_SLEEP(msec) \
   do { \
-    MFX_ITT_TASK_BEGIN("MSDK_SLEEP"); \
+    MFX_ITT_TASK("MSDK_SLEEP"); \
     usleep(1000*msec); \
-    MFX_ITT_TASK_END(); \
   } while(0)
 
 #define MSDK_USLEEP(usec) \
   do { \
-    MFX_ITT_TASK_BEGIN("MSDK_USLEEP"); \
+    MFX_ITT_TASK("MSDK_USLEEP"); \
     usleep(usec); \
-    MFX_ITT_TASK_END(); \
   } while(0)
 
 #endif // #if defined(_WIN32) || defined(_WIN64)
