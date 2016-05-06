@@ -24,6 +24,7 @@ Plugin::Plugin(bool CreateByDispatcher)
     , m_adapter(this)
     , m_NumberOfSlicesForOpt(0)
     , m_bInit(false)
+    , m_brc(0)
     
 {
     ZeroParams();
@@ -237,6 +238,12 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
         vm_file_fclose(file);
     }
 #endif
+    m_brc = CreateBrc(m_vpar);
+    if (m_brc)
+    {
+        sts = m_brc->Init(m_vpar);
+        MFX_CHECK_STS(sts);
+    }
 
     m_bInit = true;
     m_runtimeErr = MFX_ERR_NONE;
@@ -420,21 +427,33 @@ mfxStatus   Plugin::WaitingForAsyncTasks(bool bResetTasks)
     // drop other tasks (not submitted into async part)
     for (;;)
     {
+        Task* pTask = m_task.GetNewTask();
+        if (!pTask)
+            break;
+
+        if (pTask->m_surf)
+        {
+            m_core.DecreaseReference(&pTask->m_surf->Data);
+            pTask->m_surf = 0;
+        }
+        m_task.SkipTask(pTask);
+    }
+
+    for (;;)
+    {        
         Task* pTask = m_task.Reorder(m_vpar, m_lastTask.m_dpb[0], true);
         if (!pTask)
             break;
-        pTask->m_stage = FRAME_REORDERED;
         m_task.Submit(pTask);
     }
     // free reordered tasks
     for (;;)
     {
-        Task* task = m_task.GetSubmittedTask();
+        Task* task = m_task.GetTaskForSubmit();
         if (!task)
             break;
 
         m_task.SubmitForQuery(task);
-        task->m_stage = STAGE_READY;
         if (task->m_surf)
             FreeTask(*task);
         m_task.Ready(task);
@@ -581,6 +600,13 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
     m_hrd.Reset(m_vpar.m_sps);
     m_ddi->Reset(m_vpar);
 
+    if (m_brc)
+    {
+        sts = m_brc->Reset(m_vpar);
+        MFX_CHECK_STS(sts);
+    }
+
+
     return sts;
 }
 
@@ -627,10 +653,6 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     MFX_CHECK_NULL_PTR1(bs);
 
     MFX_CHECK_STS(m_runtimeErr);
-
-    MFX_CHECK((mfxU8)FindFreeResourceIndex(m_bs)  != IDX_INVALID, MFX_WRN_DEVICE_BUSY);
-    MFX_CHECK((mfxU8)FindFreeResourceIndex(m_rec) != IDX_INVALID, MFX_WRN_DEVICE_BUSY);
-
     if (surface)
     {
         MFX_CHECK((surface->Data.Y == 0) == (surface->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -652,7 +674,6 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     {
         task = m_task.New();
         MFX_CHECK(task, MFX_WRN_DEVICE_BUSY);
-        Zero(*task);
 
         task->m_surf = surface;
         if (ctrl)
@@ -677,17 +698,70 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
         else
             task->m_surf_real = task->m_surf;
 
+        m_core.IncreaseReference(&surface->Data);
+    }
+    else if (m_numBuffered)
+    {
+        task = m_task.New();
+        MFX_CHECK(task, MFX_WRN_DEVICE_BUSY);
+        task->m_bs = bs;
+        *thread_task = task;
+        m_numBuffered --;
+        return MFX_ERR_NONE;
+    }
+    else
+        return MFX_ERR_MORE_DATA;
+
+    task->m_bs = bs;
+    *thread_task = task;
+
+    if (surface!=0)
+    {
+        mfxI32 numBuff = (!m_vpar.mfx.EncodedOrder) ? m_vpar.mfx.GopRefDist- 1 : 0;
+        mfxI32 asyncDepth = (m_vpar.AsyncDepth > 1) ? 1 : 0;
+        if ((mfxI32)m_numBuffered < numBuff + asyncDepth)
+        {
+            m_numBuffered ++;
+            sts = MFX_ERR_MORE_DATA_SUBMIT_TASK;
+            task->m_bs = 0;       
+        }
+     } 
+    return sts;
+}
+mfxStatus Plugin::PrepareTask(Task& input_task)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    Task* task = &input_task;
+    MFX_CHECK (task->m_stage == FRAME_NEW, MFX_ERR_NONE);
+
+    if (task->m_surf)
+    {
         if (m_vpar.mfx.EncodedOrder)
         {
             task->m_frameType = task->m_ctrl.FrameType;
-            MFX_CHECK(surface->Data.FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN), MFX_ERR_UNDEFINED_BEHAVIOR);
+            m_frameOrder = task->m_surf->Data.FrameOrder;
+
+            if (m_brc && m_brc->IsVMEBRC()) 
+            {
+                mfxExtLAFrameStatistics *vmeData = ExtBuffer::Get(task->m_ctrl);
+                MFX_CHECK_NULL_PTR1(vmeData);
+                mfxStatus sts = m_brc->SetFrameVMEData(vmeData, m_vpar.mfx.FrameInfo.Width, m_vpar.mfx.FrameInfo.Height);
+                MFX_CHECK_STS(sts);
+                mfxLAFrameInfo *pInfo = &vmeData->FrameStat[0];
+                task->m_frameType = (mfxU16)pInfo->FrameType;
+                m_frameOrder = pInfo->FrameDisplayOrder;
+                task->m_eo = pInfo->FrameEncodeOrder;
+                MFX_CHECK(m_frameOrder <= task->m_eo + m_vpar.mfx.GopRefDist - 1, MFX_ERR_UNDEFINED_BEHAVIOR);
+                task->m_level = pInfo->Layer;
+            }
+            MFX_CHECK(m_frameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN), MFX_ERR_UNDEFINED_BEHAVIOR);
             MFX_CHECK(task->m_frameType != MFX_FRAMETYPE_UNKNOWN, MFX_ERR_UNDEFINED_BEHAVIOR);
-            m_frameOrder = surface->Data.FrameOrder;
+
+           
         }
         else
         {
             task->m_frameType = GetFrameType(m_vpar, m_frameOrder - m_lastIDR);
-
             if (task->m_ctrl.FrameType & MFX_FRAMETYPE_IDR)
                 task->m_frameType = MFX_FRAMETYPE_I|MFX_FRAMETYPE_REF|MFX_FRAMETYPE_IDR;
         }
@@ -698,64 +772,41 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
         task->m_poc = m_frameOrder - m_lastIDR;
         task->m_fo =  m_frameOrder;
         task->m_bpo = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
-
-        m_core.IncreaseReference(&surface->Data);
-
+        
         m_frameOrder ++;
-        task->m_stage |= FRAME_ACCEPTED;
+        task->m_stage = FRAME_ACCEPTED;
     }
+    else
+    {
+        m_task.Submit(task);
+    }
+
     if (!m_vpar.mfx.EncodedOrder)
-        task = m_task.Reorder(m_vpar, m_lastTask.m_dpb[1], !surface);
+        task = m_task.Reorder(m_vpar, m_lastTask.m_dpb[1], !task->m_surf);
+    MFX_CHECK(task, MFX_ERR_NONE);
 
-    if (!task)
+    if (task->m_surf)
     {
-        if (m_numBuffered && !surface)
-        {
-            task = m_task.New();
-            MFX_CHECK(task, MFX_WRN_DEVICE_BUSY);
-            Zero(*task);
-            task->m_bs = bs;
-            *thread_task = task;
-            task->m_stage |= FRAME_REORDERED;
-            m_task.Submit(task);
 
-            m_numBuffered --;
-            return MFX_ERR_NONE;
+        task->m_idxRaw = (mfxU8)FindFreeResourceIndex(m_raw);
+        task->m_idxRec = (mfxU8)FindFreeResourceIndex(m_rec);
+        task->m_idxBs  = (mfxU8)FindFreeResourceIndex(m_bs);
+        MFX_CHECK(task->m_idxBs  != IDX_INVALID, MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(task->m_idxRec != IDX_INVALID, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-        }
-        else
-            return MFX_ERR_MORE_DATA;
+
+        task->m_midRaw = AcquireResource(m_raw, task->m_idxRaw);
+        task->m_midRec = AcquireResource(m_rec, task->m_idxRec);
+        task->m_midBs  = AcquireResource(m_bs,  task->m_idxBs);
+        MFX_CHECK(task->m_midRec && task->m_midBs, MFX_ERR_UNDEFINED_BEHAVIOR);  
+
+        if (m_brc)
+          task->m_qpY = (mfxU8)m_brc->GetQP(m_vpar,*task);
+
+        ConfigureTask(*task, m_lastTask, m_vpar, m_baseLayerOrder);
+        m_lastTask = *task; 
+        m_task.Submit(task);
     }
-
-    task->m_idxRaw = (mfxU8)FindFreeResourceIndex(m_raw);
-    task->m_idxRec = (mfxU8)FindFreeResourceIndex(m_rec);
-    task->m_idxBs  = (mfxU8)FindFreeResourceIndex(m_bs);
-    MFX_CHECK(task->m_idxBs  != IDX_INVALID, MFX_ERR_UNDEFINED_BEHAVIOR);
-    MFX_CHECK(task->m_idxRec != IDX_INVALID, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-
-    task->m_midRaw = AcquireResource(m_raw, task->m_idxRaw);
-    task->m_midRec = AcquireResource(m_rec, task->m_idxRec);
-    task->m_midBs  = AcquireResource(m_bs,  task->m_idxBs);
-    MFX_CHECK(task->m_midRec && task->m_midBs, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-    task->m_bs = bs;
-
-    ConfigureTask(*task, m_lastTask, m_vpar, m_baseLayerOrder);
-    m_lastTask = *task;
-
-    *thread_task = task;
-
-    task->m_stage |= FRAME_REORDERED;
-
-    if ((surface!=0) && (m_numBuffered < (mfxU32)((m_vpar.AsyncDepth > 1) ? 1 : 0) ))
-    {
-        m_numBuffered ++;
-        sts = MFX_ERR_MORE_DATA_SUBMIT_TASK;
-        task->m_bs = 0;
-    }
-
-    m_task.Submit(task);
     return sts;
 }
 
@@ -764,13 +815,25 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
     MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK_STS(m_runtimeErr);
 
-    Task* taskForExecute = m_task.GetSubmittedTask();
     Task* inputTask = (Task*) thread_task;
     mfxStatus sts = MFX_ERR_NONE;
 
-    MFX_CHECK_NULL_PTR1(inputTask);       
+    MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
+    MFX_CHECK_NULL_PTR1(inputTask);
+  
+    sts = PrepareTask(*inputTask); 
+    MFX_CHECK_STS(sts);    
 
-   if (inputTask == taskForExecute && taskForExecute->m_surf)
+   while (Task* taskForExecute = m_task.GetTaskForSubmit())
+   {
+
+       if (!taskForExecute->m_surf)
+           break;
+
+       if ((taskForExecute->m_insertHeaders & INSERT_BPSEI) && m_task.GetTaskForQuery())
+           break; // sync is needed
+
+       if (taskForExecute->m_surf)
    {
         mfxHDLPair surfaceHDL = {};
 
@@ -791,9 +854,9 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
 #endif
         sts = m_ddi->Execute(*taskForExecute, surfaceHDL.first);
         MFX_CHECK_STS(sts);
-
-        taskForExecute->m_stage |= FRAME_SUBMITTED;
-        m_task.SubmitForQuery(taskForExecute);
+        
+            m_task.SubmitForQuery(taskForExecute);
+        }
     }
 
    if (inputTask->m_bs)
@@ -855,6 +918,8 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
             bs->DecodeTimeStamp = CalcDTSFromPTS(this->m_vpar.mfx.FrameInfo, (mfxU16)dpbOutputDelay, bs->TimeStamp);;
             bs->PicStruct       = MFX_PICSTRUCT_PROGRESSIVE;
             bs->FrameType       = taskForQuery->m_frameType;
+            if (m_brc)
+                m_brc->PostPackFrame(m_vpar,*taskForQuery, taskForQuery->m_bsDataLength*8,0,0);
         }
 
 #if DEBUG_REC_FRAMES_INFO
@@ -1014,6 +1079,11 @@ void Plugin::FreeResources()
     {
         m_core.UnmapOpaqueSurface(opaq.In.NumSurface, opaq.In.Type, opaq.In.Surfaces);
         Zero(opaq);
+    }
+    if (m_brc)
+    {
+        delete m_brc;
+        m_brc = 0;
     }
 }
 

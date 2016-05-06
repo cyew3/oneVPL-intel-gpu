@@ -704,7 +704,8 @@ void MfxVideoParam::SyncCalculableToVideoParam()
     if (mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
         mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
         mfx.RateControlMethod == MFX_RATECONTROL_AVBR||
-        mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
+        mfx.RateControlMethod == MFX_RATECONTROL_QVBR ||
+        mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
     {
         mfx.TargetKbps = (mfxU16)CeilDiv(TargetKbps, mfx.BRCParamMultiplier);
 
@@ -1434,7 +1435,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_pps.init_qp_minus26                       = 0;
     m_pps.constrained_intra_pred_flag           = 0;
     m_pps.transform_skip_enabled_flag           = 0;
-    m_pps.cu_qp_delta_enabled_flag              = (mfx.RateControlMethod == MFX_RATECONTROL_CQP) ? 0 : 1;
+    m_pps.cu_qp_delta_enabled_flag              = (mfx.RateControlMethod == MFX_RATECONTROL_CQP || mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT) ? 0 : 1;
 
     m_pps.cb_qp_offset                          = 0;
     m_pps.cr_qp_offset                          = 0;
@@ -1800,7 +1801,7 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
         s.five_minus_max_num_merge_cand = 0;
     }
 
-    if (mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    if (mfx.RateControlMethod == MFX_RATECONTROL_CQP || mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
         s.slice_qp_delta = mfxI8(task.m_qpY - (m_pps.init_qp_minus26 + 26));
 
     if (m_pps.slice_chroma_qp_offsets_present_flag)
@@ -1990,9 +1991,24 @@ Task* TaskManager::New()
     {
         pTask = &m_free.front();
         m_reordering.splice(m_reordering.end(), m_free, m_free.begin());
+        Zero(*pTask);
+        pTask->m_stage = FRAME_NEW;
     }
 
     return pTask;
+}
+Task* TaskManager::GetNewTask()
+{
+   UMC::AutomaticUMCMutex guard(m_listMutex);
+
+    for (TaskList::iterator it = m_reordering.begin(); it != m_reordering.end(); it ++)
+    {
+        if (it->m_stage == FRAME_NEW)
+        {
+            return  &*it;
+        }
+    }
+    return 0;
 }
 
 Task* TaskManager::Reorder(
@@ -2005,7 +2021,7 @@ Task* TaskManager::Reorder(
     TaskList::iterator begin = m_reordering.begin();
     TaskList::iterator end   = m_reordering.begin();
 
-    while (end != m_reordering.end())
+    while (end != m_reordering.end() && end->m_stage == FRAME_ACCEPTED)
     {
         if ((end != begin) && (end->m_frameType & MFX_FRAMETYPE_IDR))
         {
@@ -2017,7 +2033,12 @@ Task* TaskManager::Reorder(
     TaskList::iterator top   = MfxHwH265Encode::Reorder(par, dpb, begin, end, flush);
 
     if (top == end)
-        return 0;
+    {
+        if (end != m_reordering.end() && end->m_stage == FRAME_REORDERED)
+            return &*end; //formal task without surface
+        else 
+            return 0;
+    }
 
     return &*top;
 }
@@ -2031,11 +2052,12 @@ void TaskManager::Submit(Task* pTask)
         if (pTask == &*it)
         {
             m_encoding.splice(m_encoding.end(), m_reordering, it);
+            pTask->m_stage |= FRAME_REORDERED;
             break;
         }
     }
 }
-Task* TaskManager::GetSubmittedTask()
+Task* TaskManager::GetTaskForSubmit()
 {
     UMC::AutomaticUMCMutex guard(m_listMutex);
     if (m_encoding.size() > 0)
@@ -2053,6 +2075,7 @@ void TaskManager::SubmitForQuery(Task* pTask)
         if (pTask == &*it)
         {
             m_querying.splice(m_querying.end(), m_encoding, it);
+            pTask->m_stage |= FRAME_SUBMITTED;
             break;
         }
     }
@@ -2089,10 +2112,26 @@ void TaskManager::Ready(Task* pTask)
         if (pTask == &*it)
         {
             m_free.splice(m_free.end(), m_querying, it);
+            pTask->m_stage = 0;
             break;
         }
     }
 }
+void TaskManager::SkipTask(Task* pTask)
+{
+    UMC::AutomaticUMCMutex guard(m_listMutex);
+
+    for (TaskList::iterator it = m_reordering.begin(); it != m_reordering.end(); it ++)
+    {
+        if (pTask == &*it)
+        {
+            m_free.splice(m_free.end(), m_reordering, it);
+            pTask->m_stage = 0;
+            break;
+        }
+    }
+}
+
 
 mfxU8 GetFrameType(
     MfxVideoParam const & video,
@@ -2633,7 +2672,6 @@ void ConfigureTask(
     MfxVideoParam const & par,
     mfxU32 &baseLayerOrder)
 {
-    assert(task.m_bs != 0);
     const bool isI    = !!(task.m_frameType & MFX_FRAMETYPE_I);
     const bool isP    = !!(task.m_frameType & MFX_FRAMETYPE_P);
     const bool isB    = !!(task.m_frameType & MFX_FRAMETYPE_B);
@@ -2641,7 +2679,7 @@ void ConfigureTask(
     const mfxU8 maxQP = mfxU8(51 + 6 * (par.mfx.FrameInfo.BitDepthLuma - 8));
     const mfxU8 PPyrLayer[4] = {0,2,1,2};
 
-    mfxExtDPB*              pDPBReport = ExtBuffer::Get(*task.m_bs);
+    mfxExtDPB*              pDPBReport = task.m_bs ? (mfxExtDPB*)ExtBuffer::Get(*task.m_bs) : 0;
     mfxExtAVCRefLists*      pExtLists = ExtBuffer::Get(task.m_ctrl);
     mfxExtAVCRefListCtrl*   pExtListCtrl = ExtBuffer::Get(task.m_ctrl);
 
@@ -2678,37 +2716,45 @@ void ConfigureTask(
 
     const bool isRef = !!(task.m_frameType & MFX_FRAMETYPE_REF);
 
-    // set coding type and QP
-    if (isB)
-    {
-        task.m_qpY = (mfxU8)par.mfx.QPB;
-        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP && par.isBPyramid())                // m_level starts from 1
-            task.m_qpY = (mfxU8)Clip3<mfxI32>(1, maxQP, par.m_ext.CO3.QPOffset[Clip3<mfxI32>(0, 7, task.m_level - 1)] + task.m_qpY); 
-    }
-    else if (isP)
+     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+     {
+        // set coding type and QP
+        if (isB)
+        {
+            task.m_qpY = (mfxU8)par.mfx.QPB;
+            if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP && par.isBPyramid())                // m_level starts from 1
+                task.m_qpY = (mfxU8)Clip3<mfxI32>(1, maxQP, par.m_ext.CO3.QPOffset[Clip3<mfxI32>(0, 7, task.m_level - 1)] + task.m_qpY); 
+        }
+        else if (isP)
+        {
+            // encode P as GPB
+            task.m_qpY = (mfxU8)par.mfx.QPP;
+            if (par.isLowDelay())
+            {
+                mfxU32 RSPIndex = (task.m_poc - prevTask.m_lastIPoc) % par.NumRefLX[0];
+                RSPIndex = RSPIndex % (sizeof(PPyrLayer)/sizeof(PPyrLayer[0]));
+                task.m_qpY = (mfxU8)Clip3<mfxI32>(1, maxQP, par.m_ext.CO3.QPOffset[Min<mfxU32>(7, PPyrLayer[RSPIndex])] + task.m_qpY);
+            }
+         }
+        else
+        {
+            assert(task.m_frameType & MFX_FRAMETYPE_I);
+            task.m_qpY = (mfxU8)par.mfx.QPI;
+        }
+
+        if (task.m_ctrl.QP)
+            task.m_qpY = (mfxU8)task.m_ctrl.QP;
+     }
+     else if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT)
+        task.m_qpY = 0;
+
+    if (isP)
     {
         // encode P as GPB
-        task.m_qpY = (mfxU8)par.mfx.QPP;
-        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP && par.isLowDelay())
-        {
-            mfxU32 RSPIndex = (task.m_poc - prevTask.m_lastIPoc) % par.NumRefLX[0];
-            RSPIndex = RSPIndex % (sizeof(PPyrLayer)/sizeof(PPyrLayer[0]));
-            task.m_qpY = (mfxU8)Clip3<mfxI32>(1, maxQP, par.m_ext.CO3.QPOffset[Min<mfxU32>(7, PPyrLayer[RSPIndex])] + task.m_qpY);
-        }
         task.m_frameType &= ~MFX_FRAMETYPE_P;
         task.m_frameType |= MFX_FRAMETYPE_B;
         task.m_ldb = true;
     }
-    else
-    {
-        assert(task.m_frameType & MFX_FRAMETYPE_I);
-        task.m_qpY = (mfxU8)par.mfx.QPI;
-    }
-
-    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
-        task.m_qpY = 0;
-    else if (task.m_ctrl.QP)
-        task.m_qpY = (mfxU8)task.m_ctrl.QP;
 
     task.m_lastIPoc = prevTask.m_lastIPoc;
     task.m_eo = prevTask.m_eo + 1;

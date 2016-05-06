@@ -127,6 +127,7 @@ mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
     switch (rateControl)
     {
         case MFX_RATECONTROL_CQP:  return VA_RC_CQP;
+        case MFX_RATECONTROL_LA_EXT: return VA_RC_CQP;
         case MFX_RATECONTROL_CBR:  return VA_RC_CBR | VA_RC_MB;
         case MFX_RATECONTROL_VBR:  return VA_RC_VBR | VA_RC_MB;
         case MFX_RATECONTROL_ICQ:  return VA_RC_ICQ | VA_RC_MB;
@@ -227,11 +228,12 @@ mfxStatus SetRateControl(
     rate_param = (VAEncMiscParameterRateControl *)misc_param->data;
 
     if (   par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
-        && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ)
+        && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT)
     {
         rate_param->bits_per_second = par.MaxKbps * 1000;
         if(par.MaxKbps)
             rate_param->target_percentage = (unsigned int)(100.0 * (mfxF64)par.TargetKbps / (mfxF64)par.MaxKbps);
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
         rate_param->window_size     = par.mfx.Convergence * 100;
         rate_param->rc_flags.bits.reset = isBrcResetRequired;
 
@@ -615,7 +617,8 @@ void VAAPIEncoder::FillSps(
     sps.intra_idr_period     = par.mfx.GopPicSize*par.mfx.IdrInterval;
     sps.ip_period            = mfxU8(par.mfx.GopRefDist);
     if (   par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
-        && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ)
+          && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ 
+          && par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT)
     {
         sps.bits_per_second   = par.TargetKbps * 1000;
     }

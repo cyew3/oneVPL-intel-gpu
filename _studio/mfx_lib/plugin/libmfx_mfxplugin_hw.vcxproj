@@ -772,6 +772,7 @@
     <ClCompile Include="..\..\camera_pipe\src\mfx_camera_plugin_dx9.cpp" />
     <ClCompile Include="..\..\camera_pipe\src\mfx_camera_plugin_utils.cpp" />
     <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw.cpp" />
+    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_brc.cpp" />
     <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_bs.cpp" />
     <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_d3d11.cpp" />
     <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_d3d9.cpp" />

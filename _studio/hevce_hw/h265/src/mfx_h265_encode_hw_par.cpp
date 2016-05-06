@@ -667,6 +667,17 @@ bool CheckOption(T & opt, U0 deflt, U1 s0, U2 s1, U3 s2, U4 s3, U5 s4, U6 s5)
     }
     return false;
 }
+template <class T, class U0, class U1, class U2, class U3, class U4, class U5, class U6, class U7>
+bool CheckOption(T & opt, U0 deflt, U1 s0, U2 s1, U3 s2, U4 s3, U5 s4, U6 s5, U7 s6)
+{
+    if (opt == T(deflt)) return false;
+    if (CheckOption(opt, (T)s0, (T)s1, (T)s2, (T)s3, (T)s4, (T)s5, (T)s6))
+    {
+        opt = T(deflt);
+        return true;
+    }
+    return false;
+}
 #endif
 
 bool CheckTU(mfxU8 support, mfxU16& tu)
@@ -942,6 +953,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         , (mfxU32)MFX_RATECONTROL_VBR
         , (mfxU32)MFX_RATECONTROL_AVBR
         , (mfxU32)MFX_RATECONTROL_CQP
+        , (mfxU32)MFX_RATECONTROL_LA_EXT
 #ifndef MFX_VA_LINUX
         , (mfxU32)MFX_RATECONTROL_ICQ
         , caps.VCMBitRateControl ? MFX_RATECONTROL_VCM : 0
@@ -962,10 +974,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     changed += CheckTriStateOption(par.m_ext.CO2.MBBRC);
 
-    if (caps.MBBRCSupport == 0 || par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    if (caps.MBBRCSupport == 0 || par.mfx.RateControlMethod == MFX_RATECONTROL_CQP ||par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
         changed += CheckOption(par.m_ext.CO2.MBBRC, (mfxU32)MFX_CODINGOPTION_OFF, 0);
-
-    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    else 
         changed += CheckOption(par.m_ext.CO2.MBBRC, (mfxU32)MFX_CODINGOPTION_ON, 0);
 
     changed += CheckOption(par.mfx.FrameInfo.PicStruct, (mfxU16)MFX_PICSTRUCT_PROGRESSIVE, 0);
@@ -1047,7 +1058,8 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         par.MaxKbps = par.TargetKbps;
         changed ++;
     }
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
+    if ((par.mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
+        par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
         && par.MaxKbps != par.TargetKbps
         && par.MaxKbps!= 0
         && par.TargetKbps!= 0)
@@ -1356,7 +1368,8 @@ void SetDefaults(
     }
     else if (   par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
              || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR
-             || par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
+             || par.mfx.RateControlMethod == MFX_RATECONTROL_VCM
+             || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
     {
         if (!par.TargetKbps)
         {
@@ -1375,7 +1388,7 @@ void SetDefaults(
         if (!par.InitialDelayInKB)
             par.InitialDelayInKB = par.BufferSizeInKB / 2;
         if (par.m_ext.CO2.MBBRC == MFX_CODINGOPTION_UNKNOWN)
-            par.m_ext.CO2.MBBRC = MFX_CODINGOPTION_ON;
+            par.m_ext.CO2.MBBRC = (mfxU16)(par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT? MFX_CODINGOPTION_OFF: MFX_CODINGOPTION_ON);
     }
     else if(par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
     {
@@ -1421,7 +1434,7 @@ void SetDefaults(
         if (par.isTL() || hwCaps.SliceIPOnly || !par.NumRefLX[1] || par.mfx.GopPicSize < 3 || par.mfx.NumRefFrame == 1)
             par.mfx.GopRefDist = 1;
         else
-            par.mfx.GopRefDist = Min<mfxU16>(par.mfx.GopPicSize - 1, (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) ? 8 : 4);
+            par.mfx.GopRefDist = Min<mfxU16>(par.mfx.GopPicSize - 1, (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT) ? 8 : 4);
     }
 
     if (par.m_ext.CO2.BRefType == MFX_B_REF_UNKNOWN)

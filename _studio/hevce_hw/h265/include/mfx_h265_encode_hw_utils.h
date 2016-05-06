@@ -12,6 +12,7 @@
 #include "mfx_common.h"
 #include "mfxplugin++.h"
 #include "umc_mutex.h"
+#include "mfxla.h"
 
 #define DEBUG_REC_FRAMES_INFO 0   // dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
 #ifdef DEBUG_REC_FRAMES_INFO
@@ -289,7 +290,8 @@ namespace ExtBuffer
      MFX_EXTBUFF_DUMP, \
      MFX_EXTBUFF_ENCODER_RESET_OPTION,\
      MFX_EXTBUFF_CODING_OPTION_VPS,\
-     MFX_EXTBUFF_VIDEO_SIGNAL_INFO
+     MFX_EXTBUFF_VIDEO_SIGNAL_INFO,\
+     MFX_EXTBUFF_LOOKAHEAD_STAT
     ;
 
     template<class T> struct ExtBufferMap {};
@@ -312,6 +314,7 @@ namespace ExtBuffer
         EXTBUF(mfxExtCodingOptionVPS,       MFX_EXTBUFF_CODING_OPTION_VPS);
         EXTBUF(mfxExtVideoSignalInfo,       MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
         EXTBUF(mfxExtEncoderCapability,     MFX_EXTBUFF_ENCODER_CAPABILITY);
+        EXTBUF(mfxExtLAFrameStatistics,     MFX_EXTBUFF_LOOKAHEAD_STAT);
         EXTBUF(mfxExtIntGPUHang,            MFX_EXTBUFF_GPU_HANG);
     #undef EXTBUF
 
@@ -683,11 +686,13 @@ public:
     Task* New       ();
     Task* Reorder   (MfxVideoParam const & par, DpbArray const & dpb, bool flush);
     void  Submit    (Task* task);
-    Task* GetSubmittedTask();
+    Task* GetTaskForSubmit();
     void  SubmitForQuery(Task* task);
     bool  isSubmittedForQuery(Task* task);
     Task* GetTaskForQuery();
     void  Ready     (Task* task);
+    void  SkipTask  (Task* task);
+    Task* GetNewTask();
 
 private:
     TaskList   m_free;

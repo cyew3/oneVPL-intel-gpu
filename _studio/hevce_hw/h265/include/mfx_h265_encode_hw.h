@@ -13,6 +13,7 @@
 #include "mfx_h265_encode_hw_utils.h"
 #include "umc_mutex.h"
 #include "mfxplugin++.h"
+#include "mfx_h265_encode_hw_brc.h"
 
 namespace MfxHwH265Encode
 {
@@ -103,6 +104,7 @@ protected:
     bool m_createdByDispatcher;
     MFXPluginAdapter<MFXEncoderPlugin> m_adapter;
 
+    mfxStatus PrepareTask( Task& task);
     mfxStatus FreeTask(Task& task);
 
     std::auto_ptr<DriverEncoder>    m_ddi;
@@ -125,6 +127,7 @@ protected:
     mfxU16                          m_NumberOfSlicesForOpt;
     bool                            m_bInit;
     mfxStatus                       m_runtimeErr;
+    BrcIface*                       m_brc; 
 };
 
 } //MfxHwH265Encode
