@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          HW MPEG2  encoder
@@ -174,7 +174,7 @@ namespace MPEG2EncoderHW
             Close();
         }
         mfxStatus Close(void);
-        mfxStatus Reset(mfxVideoParam *par, bool bAllowRawFrames = true);
+        mfxStatus Reset(mfxVideoParam *par, bool bAllowRawFrames);
         mfxStatus GetVideoParam(mfxVideoParam *par);
         mfxStatus GetFrameParam(mfxFrameParam *par);
         mfxStatus GetEncodeStat(mfxEncodeStat *stat);
@@ -365,6 +365,9 @@ namespace MPEG2EncoderHW
     class FrameStore
     {
     private:
+        FrameStore(const FrameStore&);      // non-copyable
+        void operator=(const FrameStore&);  // non-copyable
+
         mfxU16                  m_InputType;
         bool                    m_bHWFrames;
 
@@ -372,11 +375,15 @@ namespace MPEG2EncoderHW
         mfxFrameSurface1        *m_pRawFrame[2];
         mfxU32                  m_nRefFrame[2];
 
-        mfxFrameSurface1        *m_pFramesStore;
-        mfxU32                  m_nFrames;
+        mfxFrameSurface1        *m_pRefFramesStore;   // reference frames
+        mfxFrameSurface1        *m_pInputFramesStore; // input frames in case of system memory
+        mfxU32                  m_nRefFrames;
+        mfxU32                  m_nInputFrames;
         VideoCORE*              m_pCore;
-        mfxFrameAllocRequest    m_request;
-        mfxFrameAllocResponse   m_response;
+        mfxFrameAllocRequest    m_RefRequest;
+        mfxFrameAllocResponse   m_RefResponse;
+        mfxFrameAllocRequest    m_InputRequest;
+        mfxFrameAllocResponse   m_InputResponse;
         mfxU32                  m_nFrame;
         mfxI32                  m_nLastRefBeforeIntra;
         mfxI32                  m_nLastRef;
@@ -384,21 +391,24 @@ namespace MPEG2EncoderHW
 
     protected:
         mfxStatus ReleaseFrames();
-        mfxStatus GetInternalFrame(mfxFrameSurface1** ppFrame);
+        mfxStatus GetInternalRefFrame(mfxFrameSurface1** ppFrame);
+        mfxStatus GetInternalInputFrame(mfxFrameSurface1** ppFrame);
 
     public:
 
         FrameStore(VideoCORE* pCore)
         {
             m_InputType    = 0;
-            m_bHWFrames    = 0;
+            m_bHWFrames    = false;
 
             memset (m_pRefFrame,0,sizeof(mfxFrameSurface1*)*2);
             memset (m_pRawFrame,0,sizeof(mfxFrameSurface1*)*2);
             memset (m_nRefFrame,0,sizeof(mfxU32)*2);
 
-            m_pFramesStore = 0;
-            m_nFrames = 0;
+            m_pRefFramesStore = 0;
+            m_pInputFramesStore = 0;
+            m_nRefFrames = 0;
+            m_nInputFrames = 0;
 
             m_nFrame = 0;
             m_nRefFrame[0] = 0;
@@ -406,23 +416,26 @@ namespace MPEG2EncoderHW
             m_nLastRefBeforeIntra = -1;
             m_nLastRef = -1;
 
-            memset(&m_request,0,  sizeof(mfxFrameAllocRequest));
-            memset(&m_response,0, sizeof(mfxFrameAllocResponse));
+            memset(&m_RefRequest, 0,  sizeof(mfxFrameAllocRequest));
+            memset(&m_RefResponse, 0, sizeof(mfxFrameAllocResponse));
+            memset(&m_InputRequest, 0,  sizeof(mfxFrameAllocRequest));
+            memset(&m_InputResponse, 0, sizeof(mfxFrameAllocResponse));
 
             m_bRawFrame = 0;
             m_pCore = pCore; 
         }
+
         ~FrameStore()
         {
             Close();
         }
 
-        inline mfxStatus Reset(bool bRawFrame, mfxU16 InputFrameType, bool bHWFrames, mfxU32 nTasks, mfxFrameInfo* pFrameInfo,bool bProtected = false)
+        inline mfxStatus Reset(bool bRawFrame, mfxU16 InputFrameType, bool bHWFrames, mfxU32 nTasks, mfxFrameInfo* pFrameInfo, bool bProtected = false)
         {
-            return Init(bRawFrame, InputFrameType, bHWFrames, nTasks, pFrameInfo,bProtected);
+            return Init(bRawFrame, InputFrameType, bHWFrames, nTasks, pFrameInfo, bProtected);
         }
 
-        mfxStatus Init(bool bRawFrame, mfxU16 InputFrameType, bool bHWFrames, mfxU32 mTasks, mfxFrameInfo* pFrameInfo,bool bProtected = false);
+        mfxStatus Init(bool bRawFrame, mfxU16 InputFrameType, bool bHWFrames, mfxU32 mTasks, mfxFrameInfo* pFrameInfo, bool bProtected = false);
 
         mfxStatus NextFrame(mfxFrameSurface1 *pInputFrame, mfxU32 nFrame, mfxU16 frameType, mfxU32 intFlags, FramesSet *pFrames);
 
@@ -430,7 +443,7 @@ namespace MPEG2EncoderHW
 
         inline mfxFrameAllocResponse* GetFrameAllocResponse()
         {
-            return  &m_response;    
+            return  &m_RefResponse;
         }
     };
 

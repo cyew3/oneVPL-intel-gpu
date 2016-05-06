@@ -874,7 +874,7 @@ namespace MPEG2EncoderHW
 
             if (ext_in && ext_out)
             {
-                mfxExtCodingOption temp = {0};
+                mfxExtCodingOption temp = {};
 
                 mfxU32 bufOffset = sizeof(mfxExtBuffer);
                 mfxU32 bufSize   = sizeof(mfxExtCodingOption) - bufOffset;
@@ -1576,7 +1576,10 @@ namespace MPEG2EncoderHW
             sts = m_pWaitingList->Init(maxFramesInWaitingList, minFramesInWaitingList,delayInWaitingList);
             MFX_CHECK_STS(sts);
         }
-        m_VideoParamsEx.bRawFrames = bAllowRawFrames ? (m_VideoParamsEx.mfxVideoParams.mfx.TargetUsage > 5):false;
+
+        m_VideoParamsEx.bRawFrames = bAllowRawFrames
+            && (m_pCore->GetHWType() <= MFX_HW_IVB) 
+            && (m_VideoParamsEx.mfxVideoParams.mfx.TargetUsage > 5);
 
         m_VideoParamsEx.mfxVideoParams.mfx.NumSlice = (mfxU16)((m_VideoParamsEx.mfxVideoParams.mfx.FrameInfo.Height)>>4);
 
@@ -2431,10 +2434,10 @@ namespace MPEG2EncoderHW
 
 #define isNONLocked(pSurface) (pSurface->Data.Y == 0)
     
-    mfxStatus FrameStore::GetInternalFrame(mfxFrameSurface1** ppFrame)
+    mfxStatus FrameStore::GetInternalRefFrame(mfxFrameSurface1** ppFrame)
     {
-        mfxFrameSurface1*   pFrames     = m_pFramesStore;
-        mfxU32              numFrames   = m_nFrames;   
+        mfxFrameSurface1*   pFrames     = m_pRefFramesStore;
+        mfxU32              numFrames   = m_nRefFrames;   
 
         for (mfxU32 i = 0; i < numFrames; i++)
         {
@@ -2446,6 +2449,23 @@ namespace MPEG2EncoderHW
         }
         return MFX_ERR_NOT_FOUND;    
     }
+
+    mfxStatus FrameStore::GetInternalInputFrame(mfxFrameSurface1** ppFrame)
+    {
+        mfxFrameSurface1*   pFrames     = m_pInputFramesStore;
+        mfxU32              numFrames   = m_nInputFrames;   
+
+        for (mfxU32 i = 0; i < numFrames; i++)
+        {
+            if (!pFrames[i].Data.Locked)
+            {
+                *ppFrame = &pFrames[i];
+                return MFX_ERR_NONE;
+            }        
+        }
+        return MFX_ERR_NOT_FOUND;    
+    }
+
     mfxStatus FrameStore::ReleaseFrames ()
     {
         mfxStatus sts = MFX_ERR_NONE;
@@ -2489,7 +2509,8 @@ namespace MPEG2EncoderHW
     mfxStatus FrameStore::Init(bool bRawFrame, mfxU16 InputFrameType, bool bHW, mfxU32 mTasks, mfxFrameInfo* pFrameInfo, bool bProtected)
     {
         mfxStatus sts = MFX_ERR_NONE;
-        mfxU32 num = 0;
+        mfxU32 numref = 0;
+        mfxU32 numinput = 0;
         mfxU16 type=0;
         bool bHWInput = ((InputFrameType & MFX_MEMTYPE_DXVA2_DECODER_TARGET) != 0);
 
@@ -2501,17 +2522,20 @@ namespace MPEG2EncoderHW
 
         if (bHWInput != bHW)
         {
-            num += mTasks;
+            numinput += mTasks;
             if (m_bRawFrame)
             {
-                num += mTasks*2;            
+                numinput += mTasks*2;            
             }
         }
-        num += mTasks*3;  // reconstructed frames     
+        numref += mTasks*3;  // reconstructed frames
 
-        m_request.NumFrameSuggested = m_request.NumFrameMin = (mfxU16)num;
+        m_RefRequest.NumFrameSuggested = m_RefRequest.NumFrameMin = (mfxU16)numref;
+
+        m_InputRequest.NumFrameSuggested = m_InputRequest.NumFrameMin = (mfxU16)numinput;
+
         type = bHW ?
-            (mfxU16)(MFX_MEMTYPE_INTERNAL_FRAME |MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE):
+            (mfxU16)(MFX_MEMTYPE_INTERNAL_FRAME |MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE|MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET):
             (mfxU16)(MFX_MEMTYPE_INTERNAL_FRAME |MFX_MEMTYPE_SYSTEM_MEMORY|MFX_MEMTYPE_FROM_ENCODE); 
 
 #ifdef PAVP_SUPPORT
@@ -2522,46 +2546,92 @@ namespace MPEG2EncoderHW
 #endif
 
 
-        if (m_response.NumFrameActual>0)
+        if (m_RefResponse.NumFrameActual>0)
         {
-            MFX_CHECK(m_request.Type == type, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);  
-            MFX_CHECK(m_request.Info.Width >= pFrameInfo->Width && m_request.Info.Height >= pFrameInfo->Height, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-            MFX_CHECK(m_response.NumFrameActual >= m_request.NumFrameMin, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            MFX_CHECK(m_RefRequest.Type == type, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);  
+            MFX_CHECK(m_RefRequest.Info.Width >= pFrameInfo->Width && m_RefRequest.Info.Height >= pFrameInfo->Height, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            MFX_CHECK(m_RefResponse.NumFrameActual >= m_RefRequest.NumFrameMin, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-            m_nFrames = m_response.NumFrameActual;
-            for (mfxU32 i=0; i<m_nFrames; i++)
+            m_nRefFrames = m_RefResponse.NumFrameActual;
+            for (mfxU32 i = 0; i < m_nRefFrames; i++)
             {
-                m_pFramesStore[i].Data.Locked = 0;
+                m_pRefFramesStore[i].Data.Locked = 0;
             }
         } 
-        else if (m_request.NumFrameSuggested)
+        else if (m_RefRequest.NumFrameSuggested)
         {
-            m_request.Type = type;
-            memcpy_s (&m_request.Info, sizeof(mfxFrameInfo), pFrameInfo, sizeof(mfxFrameInfo)); 
+            m_RefRequest.Type = type;
+            memcpy_s (&m_RefRequest.Info, sizeof(mfxFrameInfo), pFrameInfo, sizeof(mfxFrameInfo)); 
 
-            sts = m_pCore->AllocFrames(&m_request, &m_response);
+            sts = m_pCore->AllocFrames(&m_RefRequest, &m_RefResponse);
             MFX_CHECK_STS(sts);
 
-            if (m_response.NumFrameActual < m_request.NumFrameMin)
+            if (m_RefResponse.NumFrameActual < m_RefRequest.NumFrameMin)
                 return MFX_ERR_MEMORY_ALLOC;
 
-            m_nFrames = m_response.NumFrameActual;
+            m_nRefFrames = m_RefResponse.NumFrameActual;
 
-            if (m_pFramesStore)
+            if (m_pRefFramesStore)
                 return MFX_ERR_MEMORY_ALLOC;
 
-            m_pFramesStore = new mfxFrameSurface1 [m_nFrames];
-            MFX_CHECK_NULL_PTR1(m_pFramesStore);
+            m_pRefFramesStore = new mfxFrameSurface1 [m_nRefFrames];
+            MFX_CHECK_NULL_PTR1(m_pRefFramesStore);
 
-            memset (m_pFramesStore,0,sizeof(mfxFrameSurface1)*m_nFrames);
+            memset (m_pRefFramesStore, 0, sizeof(mfxFrameSurface1)*m_nRefFrames);
 
-            for (mfxU32 i=0; i<m_nFrames; i++)
+            for (mfxU32 i=0; i < m_nRefFrames; i++)
             {
-                m_pFramesStore[i].Data.MemId = m_response.mids[i];
-                m_pFramesStore[i].Info = m_request.Info;
-                m_pFramesStore[i].Data.reserved[0] = 0x01;
+                m_pRefFramesStore[i].Data.MemId = m_RefResponse.mids[i];
+                m_pRefFramesStore[i].Info = m_RefRequest.Info;
+                m_pRefFramesStore[i].Data.reserved[0] = 0x01;
             }
         }
+
+        type = bHW ?
+            (mfxU16)(MFX_MEMTYPE_INTERNAL_FRAME |MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE):
+            (mfxU16)(MFX_MEMTYPE_INTERNAL_FRAME |MFX_MEMTYPE_SYSTEM_MEMORY|MFX_MEMTYPE_FROM_ENCODE); 
+
+        if (m_InputResponse.NumFrameActual>0)
+        {
+            MFX_CHECK(m_InputRequest.Type == type, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);  
+            MFX_CHECK(m_InputRequest.Info.Width >= pFrameInfo->Width && m_InputRequest.Info.Height >= pFrameInfo->Height, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+            MFX_CHECK(m_InputResponse.NumFrameActual >= m_InputRequest.NumFrameMin, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+
+            m_nInputFrames = m_InputResponse.NumFrameActual;
+            for (mfxU32 i = 0; i < m_nInputFrames; i++)
+            {
+                m_pInputFramesStore[i].Data.Locked = 0;
+            }
+        } 
+        else if (m_InputRequest.NumFrameSuggested)
+        {
+            m_InputRequest.Type = type;
+            memcpy_s (&m_InputRequest.Info, sizeof(mfxFrameInfo), pFrameInfo, sizeof(mfxFrameInfo)); 
+
+            sts = m_pCore->AllocFrames(&m_InputRequest, &m_InputResponse);
+            MFX_CHECK_STS(sts);
+
+            if (m_InputResponse.NumFrameActual < m_InputRequest.NumFrameMin)
+                return MFX_ERR_MEMORY_ALLOC;
+
+            m_nInputFrames = m_InputResponse.NumFrameActual;
+
+            if (m_pInputFramesStore)
+                return MFX_ERR_MEMORY_ALLOC;
+
+            m_pInputFramesStore = new mfxFrameSurface1 [m_nInputFrames];
+            MFX_CHECK_NULL_PTR1(m_pInputFramesStore);
+
+            memset (m_pInputFramesStore, 0, sizeof(mfxFrameSurface1)*m_nInputFrames);
+
+            for (mfxU32 i=0; i < m_nInputFrames; i++)
+            {
+                m_pInputFramesStore[i].Data.MemId = m_InputResponse.mids[i];
+                m_pInputFramesStore[i].Info = m_InputRequest.Info;
+                m_pInputFramesStore[i].Data.reserved[0] = 0x01;
+            }
+        }
+
         return MFX_ERR_NONE;    
     }
     mfxStatus FrameStore::NextFrame(mfxFrameSurface1 *pInputFrame, mfxU32 nFrame, mfxU16 frameType, mfxU32 intFlags, FramesSet *pFrames)
@@ -2591,7 +2661,7 @@ namespace MPEG2EncoderHW
         else
         {
             mfxFrameSurface1* pTmpFrame = 0;
-            sts = GetInternalFrame(&pTmpFrame);
+            sts = GetInternalInputFrame(&pTmpFrame);
             MFX_CHECK_STS(sts);
             sts = m_pCore->DoFastCopyWrapper(pTmpFrame, localFrameType, pInputFrame, m_InputType);
             MFX_CHECK_STS(sts);
@@ -2604,7 +2674,7 @@ namespace MPEG2EncoderHW
         // prepare reconstructed 
         {
             mfxFrameSurface1* pTmpFrame = 0;
-            sts = GetInternalFrame(&pTmpFrame);
+            sts = GetInternalRefFrame(&pTmpFrame);
             MFX_CHECK_STS(sts);
             pFrames->m_pRecFrame = pTmpFrame;  
             sts = m_pCore->IncreaseReference(&pFrames->m_pRecFrame->Data);
@@ -2677,23 +2747,38 @@ namespace MPEG2EncoderHW
         sts = ReleaseFrames();
         MFX_CHECK_STS(sts);
 
-        if (m_response.NumFrameActual)
+        if (m_RefResponse.NumFrameActual)
         {
-            sts = m_pCore->FreeFrames(&m_response);
-            m_response.NumFrameActual = 0;        
+            sts = m_pCore->FreeFrames(&m_RefResponse);
+            m_RefResponse.NumFrameActual = 0;
         }
 
-        if (m_nFrames)
+        if (m_nRefFrames)
         {
-            delete [] m_pFramesStore;
-            m_nFrames = 0;
-            m_pFramesStore = 0;
+            delete [] m_pRefFramesStore;
+            m_nRefFrames = 0;
+            m_pRefFramesStore = 0;
+        }
+
+        if (m_InputResponse.NumFrameActual)
+        {
+            sts = m_pCore->FreeFrames(&m_InputResponse);
+            m_InputResponse.NumFrameActual = 0;
+        }
+
+        if (m_nInputFrames)
+        {
+            delete [] m_pInputFramesStore;
+            m_nInputFrames = 0;
+            m_pInputFramesStore = 0;
         }
 
         m_InputType = 0;
 
-        memset(&m_request,0,  sizeof(mfxFrameAllocRequest));
-        memset(&m_response,0, sizeof(mfxFrameAllocResponse));
+        memset(&m_RefRequest,  0, sizeof(mfxFrameAllocRequest));
+        memset(&m_RefResponse, 0, sizeof(mfxFrameAllocResponse));
+        memset(&m_InputRequest,  0, sizeof(mfxFrameAllocRequest));
+        memset(&m_InputResponse, 0, sizeof(mfxFrameAllocResponse));
 
         return sts;   
     }    

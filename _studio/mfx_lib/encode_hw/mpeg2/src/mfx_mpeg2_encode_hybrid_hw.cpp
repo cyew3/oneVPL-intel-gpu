@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG2 encoder
@@ -70,7 +70,7 @@ namespace MPEG2EncoderHW
 
         m_pController = new ControllerBase(m_pCore);
 
-        sts = m_pController->Reset(par);
+        sts = m_pController->Reset(par, true);
         if (sts == MFX_WRN_PARTIAL_ACCELERATION || sts < MFX_ERR_NONE)
         {
             Close();
@@ -98,7 +98,7 @@ namespace MPEG2EncoderHW
 
         MFX_CHECK(is_initialized(), MFX_ERR_NOT_INITIALIZED);
 
-        sts = m_pController->Reset(par);
+        sts = m_pController->Reset(par, true);
         if (sts == MFX_WRN_PARTIAL_ACCELERATION || sts < MFX_ERR_NONE)
         {
             return sts;
