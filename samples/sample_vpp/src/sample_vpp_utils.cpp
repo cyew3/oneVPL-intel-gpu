@@ -636,6 +636,8 @@ mfxStatus InitMemoryAllocator(
     bool isInPtr = (pInParams->sptr & INPUT_PTR)?true:false;
     bool isOutPtr = (pInParams->sptr & OUTPUT_PTR)?true:false;
 
+    pAllocator->pMfxAllocator =  new GeneralAllocator;
+
     bool isHWLib       = (MFX_IMPL_HARDWARE & pInParams->ImpLib) ? true : false;
     bool isExtVideoMem = (pInParams->IOPattern != (MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY)) ? true : false;
 
@@ -656,8 +658,6 @@ mfxStatus InitMemoryAllocator(
             MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
 
             // prepare allocator
-            pAllocator->pMfxAllocator = new D3DFrameAllocator;
-
             D3DAllocatorParams *pd3dAllocParams = new D3DAllocatorParams;
 
             pd3dAllocParams->pManager = (IDirect3DDeviceManager9*)hdl;
@@ -687,8 +687,6 @@ mfxStatus InitMemoryAllocator(
             MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
 
             // prepare allocator
-            pAllocator->pMfxAllocator = new D3D11FrameAllocator;
-
             D3D11AllocatorParams *pd3d11AllocParams = new D3D11AllocatorParams;
 
             pd3d11AllocParams->pDevice = (ID3D11Device*)hdl;
@@ -716,8 +714,6 @@ mfxStatus InitMemoryAllocator(
             MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
 
             // prepare allocator
-            pAllocator->pMfxAllocator = new vaapiFrameAllocator;
-
             vaapiAllocatorParams *pVaapiAllocParams = new vaapiAllocatorParams;
 
             pVaapiAllocParams->m_dpy = (VADisplay)hdl;
@@ -751,9 +747,6 @@ mfxStatus InitMemoryAllocator(
             MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
         }
 #endif
-
-        // prepare allocator
-        pAllocator->pMfxAllocator = new SysMemFrameAllocator;
 
         /* In case of system memory we demonstrate "no external allocator" usage model.
         We don't call SetAllocator, mediasdk uses internal allocator.

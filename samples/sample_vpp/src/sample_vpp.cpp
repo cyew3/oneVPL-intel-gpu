@@ -186,9 +186,11 @@ mfxStatus OutputProcessFrame(
         sts = Resources.pProcessor->mfxSession.SyncOperation(
             Resources.pSurfStore->m_SyncPoints.front().first,
             MSDK_VPP_WAIT_INTERVAL);
-        if(sts)
+        if(sts==MFX_WRN_IN_EXECUTION)
+        {
             msdk_printf(MSDK_STRING("SyncOperation wait interval exceeded\n"));
-        MSDK_CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, MFX_ERR_ABORTED);
+        }
+        MSDK_CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, sts);
 
         pProcessedSurface = Resources.pSurfStore->m_SyncPoints.front().second.pSurface;
 
@@ -393,7 +395,7 @@ int main(int argc, msdk_char *argv[])
     {
         ownToMfxFrameInfo( &(Params.frameInfoIn[0]),  &realFrameInfoIn[0]);
         sts = yuvReaders[VPP_IN].Init(Params.strSrcFile,ptsMaker.get());
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, msdk_printf(MSDK_STRING("Cannot initialize file reader")));
     }
     ownToMfxFrameInfo( &(Params.frameInfoOut[0]), &realFrameInfoOut);
 
