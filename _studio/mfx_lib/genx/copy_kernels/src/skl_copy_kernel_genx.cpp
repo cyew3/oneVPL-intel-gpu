@@ -34,9 +34,92 @@
 /*32 index*/
 const ushort indexTable[32] = {0x1f,0x1e,0x1d,0x1c,0x1b,0x1a,0x19,0x18,0x17,0x16,0x15,0x14,0x13,0x12,0x11,0x10,
                                0x0f,0x0e,0x0d,0x0c,0x0b,0x0a,0x09,0x08,0x07,0x06,0x05,0x04,0x03,0x02,0x01,0x00};
-/*
+
+
 extern "C" _GENX_MAIN_  void  
-surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width_dword, int height,int ShiftLeftOffsetInBytes)
+surfaceCopy_write_P010_shift(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int stride_dword, int stride_height,int ShiftLeftOffsetInBytes, int bitshift)
+{
+    //write Y plane
+    matrix<ushort, BLOCK_HEIGHT, BLOCK_PIXEL_WIDTH*2> inData_m;
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData0(inData_m.row(0).format<uint>());
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData1(inData_m.row(1).format<uint>());
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData2(inData_m.row(2).format<uint>());
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData3(inData_m.row(3).format<uint>());
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData4(inData_m.row(4).format<uint>());
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData5(inData_m.row(5).format<uint>());
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData6(inData_m.row(6).format<uint>());
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData7(inData_m.row(7).format<uint>());
+
+    matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> outData0;
+    matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> outData1;
+    matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> outData2;
+    matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> outData3;
+
+    int horizOffset = get_thread_origin_x() * BLOCK_PIXEL_WIDTH;
+    int vertOffset = get_thread_origin_y() * BLOCK_HEIGHT;
+
+    int width_byte = stride_dword << 2;
+    int horizOffset_byte = horizOffset << 2;
+    int sub_block_width_byte = SUB_BLOCK_PIXEL_WIDTH << 2;
+
+    uint linear_offset_byte = (( vertOffset * stride_dword + horizOffset ) << 2) + ShiftLeftOffsetInBytes;
+
+    read(DWALIGNED(INBUF_IDX), linear_offset_byte,                  inData0);
+    read(DWALIGNED(INBUF_IDX), linear_offset_byte + width_byte,     inData1);
+    read(DWALIGNED(INBUF_IDX), linear_offset_byte + width_byte * 2, inData2);
+    read(DWALIGNED(INBUF_IDX), linear_offset_byte + width_byte * 3, inData3);
+    read(DWALIGNED(INBUF_IDX), linear_offset_byte + width_byte * 4, inData4);
+    read(DWALIGNED(INBUF_IDX), linear_offset_byte + width_byte * 5, inData5);
+    read(DWALIGNED(INBUF_IDX), linear_offset_byte + width_byte * 6, inData6);
+    read(DWALIGNED(INBUF_IDX), linear_offset_byte + width_byte * 7, inData7);
+
+    outData0.format<ushort>() = inData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 0)<<bitshift;
+    outData1.format<ushort>() = inData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 16)<<bitshift;
+    outData2.format<ushort>() = inData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 32)<<bitshift;
+    outData3.format<ushort>() = inData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 48)<<bitshift;
+
+    write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset_byte,                          vertOffset, outData0);
+    write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset_byte + sub_block_width_byte,   vertOffset, outData1);
+    write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset_byte + sub_block_width_byte*2, vertOffset, outData2);
+    write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset_byte + sub_block_width_byte*3, vertOffset, outData3);
+
+    //write UV plane
+    matrix<ushort, BLOCK_HEIGHT_NV12, BLOCK_PIXEL_WIDTH*2> inData_NV12_m;
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData_NV12_0 = inData_NV12_m.row(0).format<uint>();
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData_NV12_1 = inData_NV12_m.row(1).format<uint>();
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData_NV12_2 = inData_NV12_m.row(2).format<uint>();
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData_NV12_3 = inData_NV12_m.row(3).format<uint>();
+
+    matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> outData_NV12_0;
+    matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> outData_NV12_1;
+    matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> outData_NV12_2;
+    matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> outData_NV12_3;
+
+    int horizOffset_NV12 = get_thread_origin_x() * BLOCK_PIXEL_WIDTH;
+    int vertOffset_NV12 = get_thread_origin_y() * BLOCK_HEIGHT_NV12;
+
+    uint linear_offset_NV12_byte = (( stride_dword * ( stride_height + vertOffset_NV12 ) + horizOffset_NV12 ) << 2) + ShiftLeftOffsetInBytes;
+
+    read(DWALIGNED(INBUF_IDX), linear_offset_NV12_byte,                  inData_NV12_0);
+    read(DWALIGNED(INBUF_IDX), linear_offset_NV12_byte + width_byte,     inData_NV12_1);
+    read(DWALIGNED(INBUF_IDX), linear_offset_NV12_byte + width_byte * 2, inData_NV12_2);
+    read(DWALIGNED(INBUF_IDX), linear_offset_NV12_byte + width_byte * 3, inData_NV12_3);
+
+    outData_NV12_0.format<ushort>() = inData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 0)<<bitshift;
+    outData_NV12_1.format<ushort>() = inData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 16)<<bitshift;
+    outData_NV12_2.format<ushort>() = inData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 32)<<bitshift;
+    outData_NV12_3.format<ushort>() = inData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 48)<<bitshift;
+
+    write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset_byte,                          vertOffset >> 1, outData_NV12_0);
+    write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset_byte + sub_block_width_byte,   vertOffset >> 1, outData_NV12_1);
+    write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset_byte + sub_block_width_byte*2, vertOffset >> 1, outData_NV12_2);
+    write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset_byte + sub_block_width_byte*3, vertOffset >> 1, outData_NV12_3);
+
+}
+
+
+extern "C" _GENX_MAIN_  void  
+surfaceCopy_read_P010_shift(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width_dword, int height, int ShiftLeftOffsetInBytes, int bitshift, int stride_dword, int stride_height)
 {
     //Y plane
     matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> inData0;
@@ -44,15 +127,15 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
     matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> inData2;
     matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> inData3;
 
-    matrix<uint, BLOCK_HEIGHT, BLOCK_PIXEL_WIDTH> outData_m;
-    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData0(outData_m.row(0));
-    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData1(outData_m.row(1));
-    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData2(outData_m.row(2));
-    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData3(outData_m.row(3));
-    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData4(outData_m.row(4));
-    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData5(outData_m.row(5));
-    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData6(outData_m.row(6));
-    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData7(outData_m.row(7));
+    matrix<ushort, BLOCK_HEIGHT, BLOCK_PIXEL_WIDTH*2> outData_m;
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData0(outData_m.row(0).format<uint>());
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData1(outData_m.row(1).format<uint>());
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData2(outData_m.row(2).format<uint>());
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData3(outData_m.row(3).format<uint>());
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData4(outData_m.row(4).format<uint>());
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData5(outData_m.row(5).format<uint>());
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData6(outData_m.row(6).format<uint>());
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData7(outData_m.row(7).format<uint>());
 
     //UV plane
     matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> inData_NV12_0;
@@ -60,27 +143,27 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
     matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> inData_NV12_2;
     matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> inData_NV12_3;
 
-    matrix<uint, BLOCK_HEIGHT_NV12, BLOCK_PIXEL_WIDTH> outData_NV12_m;
-    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData_NV12_0 = outData_NV12_m.row(0);
-    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData_NV12_1 = outData_NV12_m.row(1);
-    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData_NV12_2 = outData_NV12_m.row(2);
-    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData_NV12_3 = outData_NV12_m.row(3);
+    matrix<ushort, BLOCK_HEIGHT_NV12, BLOCK_PIXEL_WIDTH*2> outData_NV12_m;
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData_NV12_0 = outData_NV12_m.row(0).format<uint>();
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData_NV12_1 = outData_NV12_m.row(1).format<uint>();
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData_NV12_2 = outData_NV12_m.row(2).format<uint>();
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> outData_NV12_3 = outData_NV12_m.row(3).format<uint>();
 
-    int horizOffset = get_thread_origin_x() * BLOCK_PIXEL_WIDTH;
     int vertOffset = get_thread_origin_y() * BLOCK_HEIGHT;
+    int horizOffset = get_thread_origin_x() * BLOCK_PIXEL_WIDTH;
 
     int horizOffset_NV12 = get_thread_origin_x() * BLOCK_PIXEL_WIDTH;
     int vertOffset_NV12 = get_thread_origin_y() * BLOCK_HEIGHT_NV12;
 
-    int width_byte = width_dword << 2;
+    int width_byte = stride_dword << 2;
     int horizOffset_byte = horizOffset << 2;
     int sub_block_width_byte = SUB_BLOCK_PIXEL_WIDTH << 2;
 
-    uint linear_offset_dword = vertOffset * width_dword + horizOffset + (ShiftLeftOffsetInBytes/4);
+    uint linear_offset_dword = vertOffset * stride_dword + horizOffset + (ShiftLeftOffsetInBytes/4);
     uint linear_offset_byte = (linear_offset_dword << 2);
 
-    uint linear_offset_NV12_dword = width_dword * ( height + vertOffset_NV12 ) + horizOffset_NV12 + (ShiftLeftOffsetInBytes/4);
-    uint linear_offset_NV12_byte = (linear_offset_NV12_dword << 2) ;
+    uint linear_offset_NV12_dword = stride_dword * ( stride_height + vertOffset_NV12 ) + horizOffset_NV12 + (ShiftLeftOffsetInBytes/4);
+    uint linear_offset_NV12_byte = (linear_offset_NV12_dword << 2);
 
     uint last_block_height = 8;
     if(height - vertOffset < BLOCK_HEIGHT)
@@ -100,15 +183,15 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
         read_plane(INBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset_byte + sub_block_width_byte*2, vertOffset >> 1, inData_NV12_2);
         read_plane(INBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset_byte + sub_block_width_byte*3, vertOffset >> 1, inData_NV12_3);
 
-        outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 0)  = inData0;
-        outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 8)  = inData1;
-        outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 16) = inData2;
-        outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 24) = inData3;
+        outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 0)  = inData0.format<ushort>()>>bitshift;
+        outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 16) = inData1.format<ushort>()>>bitshift;
+        outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 32) = inData2.format<ushort>()>>bitshift;
+        outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 48) = inData3.format<ushort>()>>bitshift;
 
-        outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 0)  = inData_NV12_0;
-        outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 8)  = inData_NV12_1;
-        outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 16) = inData_NV12_2;
-        outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 24) = inData_NV12_3;
+        outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 0)  = inData_NV12_0.format<ushort>()>>bitshift;
+        outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 16) = inData_NV12_1.format<ushort>()>>bitshift;
+        outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 32) = inData_NV12_2.format<ushort>()>>bitshift;
+        outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 48) = inData_NV12_3.format<ushort>()>>bitshift;
 
         switch(last_block_height)
         {
@@ -197,15 +280,15 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
         switch (read_times)
         {
         case 4:
-            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 0)  = inData0;
-            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 8)  = inData1;
-            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 16) = inData2;
-            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 24) = inData3;
+            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 0)  = inData0.format<ushort>()>>bitshift;
+            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 16) = inData1.format<ushort>()>>bitshift;
+            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 32) = inData2.format<ushort>()>>bitshift;
+            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 48) = inData3.format<ushort>()>>bitshift;
 
-            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 0)  = inData_NV12_0;
-            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 8)  = inData_NV12_1;
-            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 16) = inData_NV12_2;
-            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 24) = inData_NV12_3;
+            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 0)  = inData_NV12_0.format<ushort>()>>bitshift;
+            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 16) = inData_NV12_1.format<ushort>()>>bitshift;
+            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 32) = inData_NV12_2.format<ushort>()>>bitshift;
+            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 48) = inData_NV12_3.format<ushort>()>>bitshift;
 
             //Padding unused by the first one pixel in the last sub block
             for (int i = last_block_size; i < SUB_BLOCK_PIXEL_WIDTH; i ++)
@@ -237,19 +320,19 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
                 write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte * 7, outData7.select<8, 1>(16));
 
                 write(OUTBUF_IDX, linear_offset_dword + 24,                   elment_offset, outData0.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword,     elment_offset, outData1.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 2, elment_offset, outData2.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 3, elment_offset, outData3.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 4, elment_offset, outData4.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 5, elment_offset, outData5.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 6, elment_offset, outData6.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 7, elment_offset, outData7.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword,     elment_offset, outData1.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 2, elment_offset, outData2.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 3, elment_offset, outData3.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 4, elment_offset, outData4.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 5, elment_offset, outData5.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 6, elment_offset, outData6.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 7, elment_offset, outData7.select<8, 1>(24));
 
                 //write UV plane to buffer
                 write(OUTBUF_IDX, linear_offset_NV12_byte,                       outData_NV12_0.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_dword * 4,     outData_NV12_1.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_dword * 4 * 2, outData_NV12_2.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_dword * 4 * 3, outData_NV12_3.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_dword * 4,     outData_NV12_1.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_dword * 4 * 2, outData_NV12_2.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_dword * 4 * 3, outData_NV12_3.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_byte + 64,                  outData_NV12_0.select<8, 1>(16));
                 write(OUTBUF_IDX, linear_offset_NV12_byte + 64 + width_byte,     outData_NV12_1.select<8, 1>(16));
@@ -257,9 +340,9 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
                 write(OUTBUF_IDX, linear_offset_NV12_byte + 64 + width_byte * 3, outData_NV12_3.select<8, 1>(16));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword + 24,                   elment_offset, outData_NV12_0.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + width_dword,     elment_offset, outData_NV12_1.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + width_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + width_dword * 3, elment_offset, outData_NV12_3.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + stride_dword,     elment_offset, outData_NV12_1.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + stride_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + stride_dword * 3, elment_offset, outData_NV12_3.select<8, 1>(24));
                 break;
             case 6:
                 //write Y plane to buffer
@@ -278,24 +361,24 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
                 write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte * 5, outData5.select<8, 1>(16));
 
                 write(OUTBUF_IDX, linear_offset_dword + 24,                   elment_offset, outData0.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword,     elment_offset, outData1.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 2, elment_offset, outData2.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 3, elment_offset, outData3.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 4, elment_offset, outData4.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 5, elment_offset, outData5.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword,     elment_offset, outData1.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 2, elment_offset, outData2.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 3, elment_offset, outData3.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 4, elment_offset, outData4.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 5, elment_offset, outData5.select<8, 1>(24));
 
                 //write UV plane to buffer
                 write(OUTBUF_IDX, linear_offset_NV12_byte,                       outData_NV12_0.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_dword * 4,     outData_NV12_1.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_dword * 4 * 2, outData_NV12_2.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_dword * 4,     outData_NV12_1.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_dword * 4 * 2, outData_NV12_2.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_byte + 64,                  outData_NV12_0.select<8, 1>(16));
                 write(OUTBUF_IDX, linear_offset_NV12_byte + 64 + width_byte,     outData_NV12_1.select<8, 1>(16));
                 write(OUTBUF_IDX, linear_offset_NV12_byte + 64 + width_byte * 2, outData_NV12_2.select<8, 1>(16));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword + 24,                   elment_offset, outData_NV12_0.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + width_dword,     elment_offset, outData_NV12_1.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + width_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + stride_dword,     elment_offset, outData_NV12_1.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + stride_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(24));
                 break;
             case 4:
                 //write Y plane to buffer
@@ -310,19 +393,19 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
                 write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte * 3, outData3.select<8, 1>(16));
 
                 write(OUTBUF_IDX, linear_offset_dword + 24,                   elment_offset, outData0.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword,     elment_offset, outData1.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 2, elment_offset, outData2.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword * 3, elment_offset, outData3.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword,     elment_offset, outData1.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 2, elment_offset, outData2.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword * 3, elment_offset, outData3.select<8, 1>(24));
 
                 //write UV plane to buffer
                 write(OUTBUF_IDX, linear_offset_NV12_byte,                       outData_NV12_0.select<16, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_byte + width_dword * 4,     outData_NV12_1.select<16, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_byte + stride_dword * 4,     outData_NV12_1.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_byte + 64,                  outData_NV12_0.select<8, 1>(16));
                 write(OUTBUF_IDX, linear_offset_NV12_byte + 64 + width_byte,     outData_NV12_1.select<8, 1>(16));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword + 24,                   elment_offset, outData_NV12_0.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + width_dword,     elment_offset, outData_NV12_1.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 24 + stride_dword,     elment_offset, outData_NV12_1.select<8, 1>(24));
                 break;
             case 2:
                 //write Y plane to buffer
@@ -333,7 +416,7 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
                 write(OUTBUF_IDX, linear_offset_byte + 64 + width_byte, outData1.select<8, 1>(16));
 
                 write(OUTBUF_IDX, linear_offset_dword + 24,               elment_offset, outData0.select<8, 1>(24));
-                write(OUTBUF_IDX, linear_offset_dword + 24 + width_dword, elment_offset, outData1.select<8, 1>(24));
+                write(OUTBUF_IDX, linear_offset_dword + 24 + stride_dword, elment_offset, outData1.select<8, 1>(24));
 
                 //write UV plane to buffer
                 write(OUTBUF_IDX, linear_offset_NV12_byte, outData_NV12_0.select<16, 1>(0));
@@ -347,13 +430,13 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
             }
             break;
         case 3:
-            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 0)  = inData0;
-            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 8)  = inData1;
-            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 16) = inData2;
+            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 0) = inData0.format<ushort>()>>bitshift;
+            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 16) = inData1.format<ushort>()>>bitshift;
+            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 32) = inData2.format<ushort>()>>bitshift;
 
-            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 0)  = inData_NV12_0;
-            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 8)  = inData_NV12_1;
-            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 16) = inData_NV12_2;
+            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 0)  = inData_NV12_0.format<ushort>()>>bitshift;
+            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 16) = inData_NV12_1.format<ushort>()>>bitshift;
+            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 32) = inData_NV12_2.format<ushort>()>>bitshift;
 
             //Padding unused by the first one pixel in the last sub block
             for (int i = last_block_size; i < SUB_BLOCK_PIXEL_WIDTH; i ++)
@@ -376,13 +459,13 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
                 write(OUTBUF_IDX, linear_offset_byte + width_byte * 7, outData7.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_dword + 16,                   elment_offset, outData0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword,     elment_offset, outData1.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 2, elment_offset, outData2.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 3, elment_offset, outData3.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 4, elment_offset, outData4.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 5, elment_offset, outData5.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 6, elment_offset, outData6.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 7, elment_offset, outData7.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword,     elment_offset, outData1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 2, elment_offset, outData2.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 3, elment_offset, outData3.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 4, elment_offset, outData4.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 5, elment_offset, outData5.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 6, elment_offset, outData6.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 7, elment_offset, outData7.select<8, 1>(16));
 
                 //write UV plane to buffer
                 write(OUTBUF_IDX, linear_offset_NV12_byte,                  outData_NV12_0.select<16, 1>(0));
@@ -391,9 +474,9 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
                 write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte * 3, outData_NV12_3.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword + 16,                   elment_offset, outData_NV12_0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + width_dword,     elment_offset, outData_NV12_1.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + width_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + width_dword * 3, elment_offset, outData_NV12_3.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + stride_dword,     elment_offset, outData_NV12_1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + stride_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + stride_dword * 3, elment_offset, outData_NV12_3.select<8, 1>(16));
                 break;
             case 6:
                 //write Y plane to buffer
@@ -405,11 +488,11 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
                 write(OUTBUF_IDX, linear_offset_byte + width_byte * 5, outData5.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_dword + 16,                   elment_offset, outData0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword,     elment_offset, outData1.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 2, elment_offset, outData2.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 3, elment_offset, outData3.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 4, elment_offset, outData4.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 5, elment_offset, outData5.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword,     elment_offset, outData1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 2, elment_offset, outData2.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 3, elment_offset, outData3.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 4, elment_offset, outData4.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 5, elment_offset, outData5.select<8, 1>(16));
 
                 //write UV plane to buffer
                 write(OUTBUF_IDX, linear_offset_NV12_byte,                  outData_NV12_0.select<16, 1>(0));
@@ -417,8 +500,8 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
                 write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte * 2, outData_NV12_2.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword + 16,                   elment_offset, outData_NV12_0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + width_dword,     elment_offset, outData_NV12_1.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + width_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + stride_dword,     elment_offset, outData_NV12_1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + stride_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(16));
                 break;
             case 4:
                 //write Y plane to buffer
@@ -428,16 +511,16 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
                 write(OUTBUF_IDX, linear_offset_byte + width_byte * 3, outData3.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_dword + 16,                   elment_offset, outData0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword,     elment_offset, outData1.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 2, elment_offset, outData2.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword * 3, elment_offset, outData3.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword,     elment_offset, outData1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 2, elment_offset, outData2.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword * 3, elment_offset, outData3.select<8, 1>(16));
 
                 //write UV plane to buffer
                 write(OUTBUF_IDX, linear_offset_NV12_byte,              outData_NV12_0.select<16, 1>(0));
                 write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte, outData_NV12_1.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword + 16,               elment_offset, outData_NV12_0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + width_dword, elment_offset, outData_NV12_1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 16 + stride_dword, elment_offset, outData_NV12_1.select<8, 1>(16));
                 break;
             case 2:
                 //write Y plane to buffer
@@ -445,7 +528,7 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
                 write(OUTBUF_IDX, linear_offset_byte + width_byte, outData1.select<16, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_dword + 16,               elment_offset, outData0.select<8, 1>(16));
-                write(OUTBUF_IDX, linear_offset_dword + 16 + width_dword, elment_offset, outData1.select<8, 1>(16));
+                write(OUTBUF_IDX, linear_offset_dword + 16 + stride_dword, elment_offset, outData1.select<8, 1>(16));
 
                 //write UV plane to buffer
                 write(OUTBUF_IDX, linear_offset_NV12_byte, outData_NV12_0.select<16, 1>(0));
@@ -457,11 +540,11 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
             }
             break;
         case 2:
-            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 0) = inData0;
-            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 8) = inData1;
+            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 0) = inData0.format<ushort>()>>bitshift;
+            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 16) = inData1.format<ushort>()>>bitshift;
 
-            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 0) = inData_NV12_0;
-            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 8) = inData_NV12_1;
+            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 0) = inData_NV12_0.format<ushort>()>>bitshift;
+            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 16) = inData_NV12_1.format<ushort>()>>bitshift;
 
             //Padding unused by the first one pixel in the last sub block
             for (int i = last_block_size; i < SUB_BLOCK_PIXEL_WIDTH; i ++)
@@ -482,13 +565,13 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
                 write(OUTBUF_IDX, linear_offset_byte + width_byte * 7, outData7.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_dword + 8,                   elment_offset, outData0.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword,     elment_offset, outData1.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 2, elment_offset, outData2.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 3, elment_offset, outData3.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 4, elment_offset, outData4.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 5, elment_offset, outData5.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 6, elment_offset, outData6.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 7, elment_offset, outData7.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword,     elment_offset, outData1.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 2, elment_offset, outData2.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 3, elment_offset, outData3.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 4, elment_offset, outData4.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 5, elment_offset, outData5.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 6, elment_offset, outData6.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 7, elment_offset, outData7.select<8, 1>(8));
 
                 write(OUTBUF_IDX, linear_offset_NV12_byte,                  outData_NV12_0.select<8, 1>(0));
                 write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte,     outData_NV12_1.select<8, 1>(0));
@@ -496,9 +579,9 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
                 write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte * 3, outData_NV12_3.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword + 8,                   elment_offset, outData_NV12_0.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + width_dword,     elment_offset, outData_NV12_1.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + width_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + width_dword * 3, elment_offset, outData_NV12_3.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + stride_dword,     elment_offset, outData_NV12_1.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + stride_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + stride_dword * 3, elment_offset, outData_NV12_3.select<8, 1>(8));
                 break;
             case 6:
                 write(OUTBUF_IDX, linear_offset_byte,                  outData0.select<8, 1>(0));
@@ -509,19 +592,19 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
                 write(OUTBUF_IDX, linear_offset_byte + width_byte * 5, outData5.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_dword + 8,                   elment_offset, outData0.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword,     elment_offset, outData1.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 2, elment_offset, outData2.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 3, elment_offset, outData3.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 4, elment_offset, outData4.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 5, elment_offset, outData5.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword,     elment_offset, outData1.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 2, elment_offset, outData2.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 3, elment_offset, outData3.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 4, elment_offset, outData4.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 5, elment_offset, outData5.select<8, 1>(8));
 
                 write(OUTBUF_IDX, linear_offset_NV12_byte,                  outData_NV12_0.select<8, 1>(0));
                 write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte,     outData_NV12_1.select<8, 1>(0));
                 write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte * 2, outData_NV12_2.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword + 8,                   elment_offset, outData_NV12_0.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + width_dword,     elment_offset, outData_NV12_1.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + width_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + stride_dword,     elment_offset, outData_NV12_1.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + stride_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(8));
                 break;
             case 4:
                 write(OUTBUF_IDX, linear_offset_byte,                  outData0.select<8, 1>(0));
@@ -530,22 +613,22 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
                 write(OUTBUF_IDX, linear_offset_byte + width_byte * 3, outData3.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_dword + 8,                   elment_offset, outData0.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword,     elment_offset, outData1.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 2, elment_offset, outData2.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword * 3, elment_offset, outData3.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword,     elment_offset, outData1.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 2, elment_offset, outData2.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword * 3, elment_offset, outData3.select<8, 1>(8));
 
                 write(OUTBUF_IDX, linear_offset_NV12_byte,              outData_NV12_0.select<8, 1>(0));
                 write(OUTBUF_IDX, linear_offset_NV12_byte + width_byte, outData_NV12_1.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword + 8,               elment_offset, outData_NV12_0.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + width_dword, elment_offset, outData_NV12_1.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + 8 + stride_dword, elment_offset, outData_NV12_1.select<8, 1>(8));
                 break;
             case 2:
                 write(OUTBUF_IDX, linear_offset_byte,              outData0.select<8, 1>(0));
                 write(OUTBUF_IDX, linear_offset_byte + width_byte, outData1.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_dword + 8,               elment_offset, outData0.select<8, 1>(8));
-                write(OUTBUF_IDX, linear_offset_dword + 8 + width_dword, elment_offset, outData1.select<8, 1>(8));
+                write(OUTBUF_IDX, linear_offset_dword + 8 + stride_dword, elment_offset, outData1.select<8, 1>(8));
 
                 write(OUTBUF_IDX, linear_offset_NV12_byte, outData_NV12_0.select<8, 1>(0));
 
@@ -556,8 +639,8 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
             }
             break;
         case 1:
-            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 0) = inData0;
-            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 0) = inData_NV12_0;
+            outData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 0) = inData0.format<ushort>()>>bitshift;
+            outData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 0) = inData_NV12_0.format<ushort>()>>bitshift;
 
             //Padding unused by the first one pixel in the last sub block
             for (int i = last_block_size; i < SUB_BLOCK_PIXEL_WIDTH; i ++)
@@ -570,43 +653,43 @@ surfaceCopy_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width
             {
             case 8:
                 write(OUTBUF_IDX, linear_offset_dword,                   elment_offset, outData0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword,     elment_offset, outData1.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 2, elment_offset, outData2.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 3, elment_offset, outData3.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 4, elment_offset, outData4.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 5, elment_offset, outData5.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 6, elment_offset, outData6.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 7, elment_offset, outData7.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword,     elment_offset, outData1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 2, elment_offset, outData2.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 3, elment_offset, outData3.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 4, elment_offset, outData4.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 5, elment_offset, outData5.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 6, elment_offset, outData6.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 7, elment_offset, outData7.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword,                   elment_offset, outData_NV12_0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + width_dword,     elment_offset, outData_NV12_1.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + width_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + width_dword * 3, elment_offset, outData_NV12_3.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + stride_dword,     elment_offset, outData_NV12_1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + stride_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + stride_dword * 3, elment_offset, outData_NV12_3.select<8, 1>(0));
                 break;
             case 6:
                 write(OUTBUF_IDX, linear_offset_dword,                   elment_offset, outData0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword,     elment_offset, outData1.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 2, elment_offset, outData2.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 3, elment_offset, outData3.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 4, elment_offset, outData4.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 5, elment_offset, outData5.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword,     elment_offset, outData1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 2, elment_offset, outData2.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 3, elment_offset, outData3.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 4, elment_offset, outData4.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 5, elment_offset, outData5.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword,                   elment_offset, outData_NV12_0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + width_dword,     elment_offset, outData_NV12_1.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + width_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + stride_dword,     elment_offset, outData_NV12_1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + stride_dword * 2, elment_offset, outData_NV12_2.select<8, 1>(0));
                 break;
             case 4:
                 write(OUTBUF_IDX, linear_offset_dword,                   elment_offset, outData0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword,     elment_offset, outData1.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 2, elment_offset, outData2.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword * 3, elment_offset, outData3.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword,     elment_offset, outData1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 2, elment_offset, outData2.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword * 3, elment_offset, outData3.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword,               elment_offset, outData_NV12_0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_NV12_dword + width_dword, elment_offset, outData_NV12_1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_NV12_dword + stride_dword, elment_offset, outData_NV12_1.select<8, 1>(0));
                 break;
             case 2:
                 write(OUTBUF_IDX, linear_offset_dword,               elment_offset, outData0.select<8, 1>(0));
-                write(OUTBUF_IDX, linear_offset_dword + width_dword, elment_offset, outData1.select<8, 1>(0));
+                write(OUTBUF_IDX, linear_offset_dword + stride_dword, elment_offset, outData1.select<8, 1>(0));
 
                 write(OUTBUF_IDX, linear_offset_NV12_dword, elment_offset, outData_NV12_0.select<8, 1>(0));
                 break;
@@ -1292,7 +1375,6 @@ surfaceMirror_read_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int str
         }
     }
 }
-
 
 extern "C" _GENX_MAIN_  void  
 SurfaceMirror_2DTo2D_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width, int height)

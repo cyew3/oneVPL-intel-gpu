@@ -358,7 +358,7 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
             else
                 m_bCmCopy = false;
         }
-        if(m_pCmCopy.get() && !m_bCmCopySwap && (request->Info.FourCC == MFX_FOURCC_BGR4 || request->Info.FourCC == MFX_FOURCC_RGB4 || request->Info.FourCC == MFX_FOURCC_ARGB16 || request->Info.FourCC == MFX_FOURCC_ARGB16))
+        if(m_pCmCopy.get() && !m_bCmCopySwap && (request->Info.FourCC == MFX_FOURCC_BGR4 || request->Info.FourCC == MFX_FOURCC_RGB4 || request->Info.FourCC == MFX_FOURCC_ARGB16 || request->Info.FourCC == MFX_FOURCC_ARGB16 || request->Info.FourCC == MFX_FOURCC_P010))
         {
             sts = m_pCmCopy.get()->InitializeSwapKernels(GetHWType());
             m_bCmCopySwap = true;
@@ -792,7 +792,6 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-
     IppiSize roi = {IPP_MIN(pSrc->Info.Width, pDst->Info.Width), IPP_MIN(pSrc->Info.Height, pDst->Info.Height)};
 
     // check that region of interest is valid
@@ -845,9 +844,14 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
     {
         mfxI64 verticalPitch = (mfxI64)(pDst->Data.UV - pDst->Data.Y);
         verticalPitch = (verticalPitch % dstPitch)? 0 : verticalPitch / dstPitch;
-        if (m_bCmCopy == true && CM_ALIGNED(pDst->Data.Pitch) && (pDst->Info.FourCC == MFX_FOURCC_NV12 || pDst->Info.FourCC == MFX_FOURCC_P010) && CM_ALIGNED(pDst->Data.Y) && CM_ALIGNED(pDst->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pDst->Info.Height && verticalPitch <= 16384)
+        if (m_bCmCopy == true && CM_ALIGNED(pDst->Data.Pitch) && (pDst->Info.FourCC == MFX_FOURCC_NV12 || (pDst->Info.FourCC == MFX_FOURCC_P010 && pDst->Info.Shift == pSrc->Info.Shift)) && CM_ALIGNED(pDst->Data.Y) && CM_ALIGNED(pDst->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pDst->Info.Height && verticalPitch <= 16384)
         {
             sts = pCmCopy->CopyVideoToSystemMemoryAPI(pDst->Data.Y, pDst->Data.Pitch,(mfxU32)verticalPitch,((mfxHDLPair*)pSrc->Data.MemId)->first, 0, roi);
+            MFX_CHECK_STS(sts);
+        }
+        if (m_bCmCopy == true && CM_ALIGNED(pDst->Data.Pitch) && (pDst->Info.FourCC == MFX_FOURCC_P010 && pDst->Info.Shift != pSrc->Info.Shift) && CM_ALIGNED(pDst->Data.Y) && CM_ALIGNED(pDst->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pDst->Info.Height && verticalPitch <= 4096)
+        {
+            sts = pCmCopy->CopyShiftVideoToSystemMemory(pDst->Data.Y, pDst->Data.Pitch,(mfxU32)verticalPitch,((mfxHDLPair*)pSrc->Data.MemId)->first, 0, roi, 16-pDst->Info.BitDepthLuma);
             MFX_CHECK_STS(sts);
         }
         else if (m_bCmCopy == true && CM_ALIGNED(pDst->Data.Pitch) && pDst->Info.FourCC == MFX_FOURCC_RGB4 && CM_ALIGNED(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B)) && roi.height <= 16352 && roi.width <= 16352)
@@ -955,17 +959,29 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
                 break;
 
             case MFX_FOURCC_P010:
+                if(pDst->Info.Shift == pSrc->Info.Shift){
+                    roi.width <<= 1;
 
-                roi.width <<= 1;
+                    sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)sLockRect.pData, srcPitch, roi);
+                    MFX_CHECK_STS(sts);
 
-                sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)sLockRect.pData, srcPitch, roi);
-                MFX_CHECK_STS(sts);
+                    roi.height >>= 1;
 
-                roi.height >>= 1;
+                    sts = pFastCopy->Copy(pDst->Data.UV, dstPitch, (mfxU8 *)sLockRect.pData + sSurfDesc.Height * srcPitch, srcPitch, roi);
+                    MFX_CHECK_STS(sts);
+                }
+                else if(pDst->Info.Shift == 0)
+                {
+                    roi.width <<= 1;
 
-                sts = pFastCopy->Copy(pDst->Data.UV, dstPitch, (mfxU8 *)sLockRect.pData + sSurfDesc.Height * srcPitch, srcPitch, roi);
-                MFX_CHECK_STS(sts);
+                    sts = pFastCopy->Copy((mfxU16*)(pDst->Data.Y), dstPitch, (mfxU16 *)sLockRect.pData, srcPitch, roi, 0, (Ipp8u)(16-pDst->Info.BitDepthLuma));
+                    MFX_CHECK_STS(sts);
 
+                    roi.height >>= 1;
+
+                    sts = pFastCopy->Copy((mfxU16*)(pDst->Data.UV), dstPitch, (mfxU16 *)sLockRect.pData + sSurfDesc.Height * srcPitch, srcPitch, roi, 0, (Ipp8u)(16-pDst->Info.BitDepthChroma));
+                    MFX_CHECK_STS(sts);
+                }
                 break;
             case MFX_FOURCC_YV12:
 
@@ -1180,9 +1196,14 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
             verticalPitch = pDst->Info.Height;
         }
 
-        if (m_bCmCopy == true && CM_ALIGNED(pSrc->Data.Pitch) && (pDst->Info.FourCC == MFX_FOURCC_NV12 || pDst->Info.FourCC == MFX_FOURCC_P010) && CM_ALIGNED(pSrc->Data.Y) && CM_ALIGNED(pSrc->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pSrc->Info.Height && verticalPitch <= 16384)
+        if (m_bCmCopy == true && CM_ALIGNED(pSrc->Data.Pitch) && (pDst->Info.FourCC == MFX_FOURCC_NV12 || (pDst->Info.FourCC == MFX_FOURCC_P010 && pDst->Info.Shift == pSrc->Info.Shift)) && CM_ALIGNED(pSrc->Data.Y) && CM_ALIGNED(pSrc->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pSrc->Info.Height && verticalPitch <= 16384)
         {
             sts = pCmCopy->CopySystemToVideoMemoryAPI(((mfxHDLPair*)pDst->Data.MemId)->first, 0, pSrc->Data.Y, pSrc->Data.Pitch,(mfxU32)verticalPitch, roi);
+            MFX_CHECK_STS(sts);
+        }
+        else if (m_bCmCopy == true && CM_ALIGNED(pSrc->Data.Pitch) && (pDst->Info.FourCC == MFX_FOURCC_P010 && pDst->Info.Shift != pSrc->Info.Shift) && CM_ALIGNED(pSrc->Data.Y) && CM_ALIGNED(pSrc->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pSrc->Info.Height && verticalPitch <= 4096)
+        {
+            sts = pCmCopy->CopyShiftSystemToVideoMemory(((mfxHDLPair*)pDst->Data.MemId)->first, 0, pSrc->Data.Y, pSrc->Data.Pitch,(mfxU32)verticalPitch, roi, 16 - pSrc->Info.BitDepthLuma);
             MFX_CHECK_STS(sts);
         }
         else if(m_bCmCopy == true && CM_ALIGNED(pSrc->Data.Pitch) && pSrc->Info.FourCC == MFX_FOURCC_RGB4 && CM_ALIGNED(IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B)) && roi.height <= 16352 && roi.width <= 16352){
@@ -1277,15 +1298,29 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
                 break;
 
             case MFX_FOURCC_P010:
+                if(pDst->Info.Shift == pSrc->Info.Shift){
 
-                roi.width <<= 1;
+                    roi.width <<= 1;
 
-                ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, (mfxU8 *)sLockRect.pData, dstPitch, roi);
+                    ippiCopy_8u_C1R(pSrc->Data.Y, srcPitch, (mfxU8 *)sLockRect.pData, dstPitch, roi);
 
-                roi.height >>= 1;
+                    roi.height >>= 1;
 
-                ippiCopy_8u_C1R(pSrc->Data.UV, srcPitch, (mfxU8 *)sLockRect.pData + sSurfDesc.Height * dstPitch, dstPitch, roi);
+                    ippiCopy_8u_C1R(pSrc->Data.UV, srcPitch, (mfxU8 *)sLockRect.pData + sSurfDesc.Height * dstPitch, dstPitch, roi);
+                
+                }
+                else if(pSrc->Info.Shift == 0)
+                {
+                    roi.width <<= 1;
 
+                    sts = pFastCopy->Copy((mfxU16*)(pSrc->Data.Y), srcPitch, (mfxU16 *)sLockRect.pData, dstPitch, roi, (Ipp8u)(16-pDst->Info.BitDepthLuma), 0);
+                    MFX_CHECK_STS(sts);
+
+                    roi.height >>= 1;
+
+                    sts = pFastCopy->Copy((mfxU16*)(pSrc->Data.UV), srcPitch, (mfxU16 *)sLockRect.pData + sSurfDesc.Height * dstPitch, srcPitch, roi, (Ipp8u)(16-pDst->Info.BitDepthChroma), 0);
+                    MFX_CHECK_STS(sts);
+                }
                 break;
             case MFX_FOURCC_YV12:
 

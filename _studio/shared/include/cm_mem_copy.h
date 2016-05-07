@@ -145,6 +145,8 @@ public:
     
     mfxStatus CopySwapVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi, mfxU32 format);
     mfxStatus CopySwapSystemToVideoMemory(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi, mfxU32 format);
+    mfxStatus CopyShiftSystemToVideoMemory(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi, mfxU32 bitshift);
+    mfxStatus CopyShiftVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi, mfxU32 bitshift);
     mfxStatus CopyMirrorVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi, mfxU32 format);
     mfxStatus CopySwapVideoToVideoMemory(void *pDst, void *pSrc, IppiSize roi, mfxU32 format);
     mfxStatus CopyMirrorVideoToVideoMemory(void *pDst, void *pSrc, IppiSize roi, mfxU32 format);
@@ -190,6 +192,26 @@ public:
                                     const UINT heightStride,
                                     mfxU32 format, 
                                     const UINT option,
+                                    CmEvent* & pEvent );
+    mfxStatus EnqueueCopyShiftP010GPUtoCPU(   CmSurface2D* pSurface,
+                                    unsigned char* pSysMem,
+                                    int width,
+                                    int height,
+                                    const UINT widthStride, 
+                                    const UINT heightStride,
+                                    mfxU32 format, 
+                                    const UINT option,
+                                    int bitshift,
+                                    CmEvent* & pEvent );
+    mfxStatus EnqueueCopyShiftP010CPUtoGPU( CmSurface2D* pSurface,
+                                    unsigned char* pSysMem,
+                                    int width,
+                                    int height,
+                                    const UINT widthStride, 
+                                    const UINT heightStride,
+                                    mfxU32 format, 
+                                    const UINT option,
+                                    int bitshift,
                                     CmEvent* & pEvent );
 protected:
 

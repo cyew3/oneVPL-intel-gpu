@@ -156,7 +156,52 @@ mfxStatus FastCopy::Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPi
     return MFX_ERR_NONE;
 
 } // mfxStatus FastCopy::Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi)
+#ifndef LINUX64
+mfxStatus FastCopy::Copy(mfxU16 *pDst, mfxU32 dstPitch, mfxU16 *pSrc, mfxU32 srcPitch, IppiSize roi, Ipp8u lshift, Ipp8u rshift)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FastCopy::Copy");
 
+    if (NULL == pDst || NULL == pSrc)
+    {
+        return MFX_ERR_NULL_PTR;
+    }
+
+    //mfxU32 partSize = roi.height / m_numThreads;
+    //mfxU32 rest = roi.height % m_numThreads;
+
+    //roi.height = partSize;
+    /*
+    // distribute tasks
+    for (mfxU32 i = 0; i < m_numThreads - 1; i += 1)
+    {
+        m_tasks[i].pS = pSrc + i * (partSize * srcPitch);
+        m_tasks[i].pD = pDst + i * (partSize * dstPitch);
+        m_tasks[i].srcPitch = srcPitch;
+        m_tasks[i].dstPitch = dstPitch;
+        m_tasks[i].roi = roi;
+
+        m_tasks[i].EventStart.Set();
+    }
+
+    if (rest != 0)
+    {
+        roi.height = rest;
+    }
+    */
+//    pSrc = pSrc + (m_numThreads - 1) * (partSize * srcPitch);
+//    pDst = pDst + (m_numThreads - 1) * (partSize * dstPitch);
+
+    ippiCopyManaged_8u_C1R((Ipp8u*)pSrc, srcPitch, (Ipp8u*)pDst, dstPitch, roi, 2);
+    if(rshift)
+        ippiRShiftC_16u_C1IR(rshift, (Ipp16u*)pDst, dstPitch,roi);
+    if(lshift)
+        ippiLShiftC_16u_C1IR(lshift, (Ipp16u*)pDst, dstPitch,roi);
+//    Synchronize();
+
+    return MFX_ERR_NONE;
+
+} // mfxStatus FastCopy::Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi)
+#endif
 
 eFAST_COPY_MODE FastCopy::GetSupportedMode(void) const
 {

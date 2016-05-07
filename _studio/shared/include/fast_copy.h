@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -57,7 +57,10 @@ public:
 
     // copy memory by streaming
     mfxStatus Copy(mfxU8 *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, IppiSize roi);
-
+#ifndef LINUX64
+    // copy memory by streaming with shifting
+    mfxStatus Copy(mfxU16 *pDst, mfxU32 dstPitch, mfxU16 *pSrc, mfxU32 srcPitch, IppiSize roi, Ipp8u lshift, Ipp8u rshift);
+#endif
     // return supported mode
     virtual eFAST_COPY_MODE GetSupportedMode(void) const;
 

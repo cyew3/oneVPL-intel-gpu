@@ -1248,12 +1248,14 @@ mfxStatus   mfx_UMC_FrameAllocator_D3D::PrepareToOutput(mfxFrameSurface1 *surfac
             UMC::VideoDataInfo VInfo;
 
             mfxMemId idx = m_frameData[index].first.Data.MemId;
-
+            memset(&m_surface.Data,0,sizeof(mfxFrameData));
+            m_surface.Info = m_frameData[index].first.Info;
             m_surface.Data.Y = 0;
             m_surface.Data.MemId = idx;
             sts = m_pCore->DoFastCopyWrapper(surface_work,
                                              MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY,
                                              &m_surface,
+
                                              MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET
                                              );
             MFX_CHECK_STS(sts);
