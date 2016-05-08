@@ -117,6 +117,116 @@ surfaceCopy_write_P010_shift(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, in
 
 }
 
+extern "C" _GENX_MAIN_  void  
+surfaceMirror_write_NV12(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int stride_dword, int stride_height,int ShiftLeftOffsetInBytes, int width_dword)
+{
+    //write Y plane
+    matrix<uint, BLOCK_HEIGHT, BLOCK_PIXEL_WIDTH> inData_m;
+    vector<ushort, SUB_BLOCK_PIXEL_WIDTH*4> idx(indexTable);
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData0(inData_m.row(0));
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData1(inData_m.row(1));
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData2(inData_m.row(2));
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData3(inData_m.row(3));
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData4(inData_m.row(4));
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData5(inData_m.row(5));
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData6(inData_m.row(6));
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData7(inData_m.row(7));
+    
+    vector_ref<ushort, SUB_BLOCK_PIXEL_WIDTH*2> idxUV = idx.select<16,1>(16);
+    matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> outData0;
+    matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> outData1;
+    matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> outData2;
+    matrix<uint, SUB_BLOCK_HEIGHT, SUB_BLOCK_PIXEL_WIDTH> outData3;
+
+    int horizOffset = get_thread_origin_x() * BLOCK_PIXEL_WIDTH;
+    int vertOffset = get_thread_origin_y() * BLOCK_HEIGHT;
+    int horizOffset_NV12 = get_thread_origin_x() * BLOCK_PIXEL_WIDTH;
+    int vertOffset_NV12 = get_thread_origin_y() * BLOCK_HEIGHT_NV12;
+    int width_byte = stride_dword << 2;
+    int horizOffset_byte = horizOffset << 2;
+    int sub_block_width_byte = SUB_BLOCK_PIXEL_WIDTH << 2;
+    uint linear_offset_dword = vertOffset * stride_dword + (ShiftLeftOffsetInBytes/4) + (width_dword - horizOffset) - BLOCK_PIXEL_WIDTH;
+    uint linear_offset_byte = (linear_offset_dword << 2);
+    uint linear_offset_NV12_dword = stride_dword * ( stride_height + vertOffset_NV12 ) + (ShiftLeftOffsetInBytes/4) + (width_dword - horizOffset_NV12 - BLOCK_PIXEL_WIDTH);
+    uint linear_offset_NV12_byte = (linear_offset_NV12_dword << 2);
+    //uint linear_offset_byte = (( vertOffset * stride_dword + horizOffset ) << 2) + ShiftLeftOffsetInBytes;
+
+    read(DWALIGNED(INBUF_IDX), linear_offset_byte,                  inData0);
+    read(DWALIGNED(INBUF_IDX), linear_offset_byte + width_byte,     inData1);
+    read(DWALIGNED(INBUF_IDX), linear_offset_byte + width_byte * 2, inData2);
+    read(DWALIGNED(INBUF_IDX), linear_offset_byte + width_byte * 3, inData3);
+    read(DWALIGNED(INBUF_IDX), linear_offset_byte + width_byte * 4, inData4);
+    read(DWALIGNED(INBUF_IDX), linear_offset_byte + width_byte * 5, inData5);
+    read(DWALIGNED(INBUF_IDX), linear_offset_byte + width_byte * 6, inData6);
+    read(DWALIGNED(INBUF_IDX), linear_offset_byte + width_byte * 7, inData7);
+    #pragma unroll
+    for(int i = 0; i < SUB_BLOCK_HEIGHT; i++)
+        outData0.row(i) = inData_m.select<1, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(i, 0).format<uchar>().iselect(idx).format<uint>();
+    
+    #pragma unroll
+    for(int i = 0; i < SUB_BLOCK_HEIGHT; i++)
+        outData1.row(i) = inData_m.select<1, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(i, 8).format<uchar>().iselect(idx).format<uint>();
+    
+    #pragma unroll
+    for(int i = 0; i < SUB_BLOCK_HEIGHT; i++)
+        outData2.row(i) = inData_m.select<1, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(i, 16).format<uchar>().iselect(idx).format<uint>();
+    
+    #pragma unroll
+    for(int i = 0; i < SUB_BLOCK_HEIGHT; i++)
+        outData3.row(i) = inData_m.select<1, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(i, 24).format<uchar>().iselect(idx).format<uint>();
+    /*outData0 = inData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 0);
+    outData1 = inData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 8);
+    outData2 = inData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 16);
+    outData3 = inData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 24);*/
+
+    write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset_byte,                          vertOffset, outData0);
+    write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset_byte + sub_block_width_byte,   vertOffset, outData1);
+    write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset_byte + sub_block_width_byte*2, vertOffset, outData2);
+    write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset_byte + sub_block_width_byte*3, vertOffset, outData3);
+
+    //write UV plane
+    matrix<uint, BLOCK_HEIGHT_NV12, BLOCK_PIXEL_WIDTH> inData_NV12_m;
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData_NV12_0 = inData_NV12_m.row(0);
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData_NV12_1 = inData_NV12_m.row(1);
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData_NV12_2 = inData_NV12_m.row(2);
+    vector_ref<uint, BLOCK_PIXEL_WIDTH> inData_NV12_3 = inData_NV12_m.row(3);
+
+    matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> outData_NV12_0;
+    matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> outData_NV12_1;
+    matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> outData_NV12_2;
+    matrix<uint, SUB_BLOCK_HEIGHT_NV12, SUB_BLOCK_PIXEL_WIDTH> outData_NV12_3;
+
+
+    //uint linear_offset_NV12_byte = (( stride_dword * ( stride_height + vertOffset_NV12 ) + horizOffset_NV12 ) << 2) + ShiftLeftOffsetInBytes;
+
+    read(DWALIGNED(INBUF_IDX), linear_offset_NV12_byte,                  inData_NV12_0);
+    read(DWALIGNED(INBUF_IDX), linear_offset_NV12_byte + width_byte,     inData_NV12_1);
+    read(DWALIGNED(INBUF_IDX), linear_offset_NV12_byte + width_byte * 2, inData_NV12_2);
+    read(DWALIGNED(INBUF_IDX), linear_offset_NV12_byte + width_byte * 3, inData_NV12_3);
+    #pragma unroll
+    for(int i = 0; i < SUB_BLOCK_HEIGHT_NV12; i++)
+        outData_NV12_0.row(i) = inData_NV12_m.select<1, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(i, 0).format<ushort>().iselect(idxUV).format<uint>();
+    #pragma unroll
+    for(int i = 0; i < SUB_BLOCK_HEIGHT_NV12; i++)
+        outData_NV12_1.row(i) = inData_NV12_m.select<1, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(i, 8).format<ushort>().iselect(idxUV).format<uint>();
+    #pragma unroll
+    for(int i = 0; i < SUB_BLOCK_HEIGHT_NV12; i++)
+        outData_NV12_2.row(i) = inData_NV12_m.select<1, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(i, 16).format<ushort>().iselect(idxUV).format<uint>();  
+    #pragma unroll
+    for(int i = 0; i < SUB_BLOCK_HEIGHT_NV12; i++)
+        outData_NV12_3.row(i) = inData_NV12_m.select<1, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(i, 24).format<ushort>().iselect(idxUV).format<uint>();
+    /*outData_NV12_0 = inData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 0);
+    outData_NV12_1 = inData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 8);
+    outData_NV12_2 = inData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 16);
+    outData_NV12_3 = inData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH, 1>(0, 24);*/
+
+    write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset_byte,                          vertOffset >> 1, outData_NV12_0);
+    write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset_byte + sub_block_width_byte,   vertOffset >> 1, outData_NV12_1);
+    write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset_byte + sub_block_width_byte*2, vertOffset >> 1, outData_NV12_2);
+    write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset_byte + sub_block_width_byte*3, vertOffset >> 1, outData_NV12_3);
+
+}
+
 
 extern "C" _GENX_MAIN_  void  
 surfaceCopy_read_P010_shift(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width_dword, int height, int ShiftLeftOffsetInBytes, int bitshift, int stride_dword, int stride_height)
