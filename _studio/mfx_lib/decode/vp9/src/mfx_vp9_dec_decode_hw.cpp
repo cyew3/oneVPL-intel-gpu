@@ -342,7 +342,11 @@ mfxStatus VideoDECODEVP9_HW::QueryIOSurfInternal(eMFXPlatform /* platform */, mf
 
     if(p_params->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
     {
-        p_request->Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE;
+        p_request->Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE
+#ifdef MFX_VA_WIN
+            | MFX_MEMTYPE_SHARED_RESOURCE
+#endif
+            ;
     }
     else if (p_params->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
     {

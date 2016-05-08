@@ -173,6 +173,7 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
     else
         Desc.BindFlags = D3D11_BIND_DECODER;
 
+
     //aya: P8 with 0
     if(request->Info.FourCC == MFX_FOURCC_P8)
     {
@@ -236,7 +237,12 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
         }
         pSelf->m_NumSurface = maxNumFrames;
         pSelf->m_SrfPool.resize(maxNumFrames);
-
+        
+        if(request->Type & MFX_MEMTYPE_SHARED_RESOURCE)
+        {
+            Desc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+            Desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
+        }
         // aya: d3d11 wo
         if( DXGI_FORMAT_P8 == Desc.Format )
         {

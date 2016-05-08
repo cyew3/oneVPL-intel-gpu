@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012-2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -310,6 +310,9 @@ mfxStatus VideoDECODEVP8::Init(mfxVideoParam *p_params)
         else
         {
             m_request.AllocId = p_params->AllocId;
+#ifdef MFX_VA_WIN
+            m_request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
+#endif
             sts = m_p_core->AllocFrames(&m_request, &m_response,type != MFX_HW_VLV);
             MFX_CHECK_STS(sts);
         }

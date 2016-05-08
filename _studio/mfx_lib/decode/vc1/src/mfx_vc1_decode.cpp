@@ -761,7 +761,10 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
         else
         {
             bool isNeedCopy = ((MFX_IOPATTERN_OUT_SYSTEM_MEMORY & IOPattern) && (request.Type & MFX_MEMTYPE_INTERNAL_FRAME)) || ((MFX_IOPATTERN_OUT_VIDEO_MEMORY & IOPattern) && (m_isSWPlatform));
-            request.AllocId = par->AllocId;
+
+#ifdef MFX_VA_WIN
+            request.Type|=MFX_MEMTYPE_SHARED_RESOURCE;
+#endif
             MFXSts = m_pCore->AllocFrames(&request, &m_response,isNeedCopy);
             MFX_CHECK_STS(MFXSts);
         }

@@ -648,7 +648,7 @@ mfxStatus ImplementationAvc::QueryIOSurf(
         return MFX_WRN_PARTIAL_ACCELERATION; // return immediately
 
     SetDefaults(tmp, hwCaps, true, core->GetHWType(), core->GetVAType());
-
+    mfxExtCodingOption3 const &   extOpt3 = GetExtBufferRef(tmp);
     if (tmp.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
         request->Type =
@@ -662,6 +662,10 @@ mfxStatus ImplementationAvc::QueryIOSurf(
         request->Type |= (inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
             ? MFX_MEMTYPE_OPAQUE_FRAME
             : MFX_MEMTYPE_EXTERNAL_FRAME;
+        //if MDF is in pipeline need to allocate shared resource to avoid performance issues due to decompression when MMCD is enabled
+#ifdef MFX_VA_WIN
+        request->Type|= (bIntRateControlLA(par->mfx.RateControlMethod) || IsOn(extOpt3.FadeDetection))? MFX_MEMTYPE_SHARED_RESOURCE:0;
+#endif
     }
 
     request->NumFrameMin = CalcNumFrameMin(tmp);
@@ -876,6 +880,9 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
         request.Type        = MFX_MEMTYPE_D3D_INT;
+#ifdef MFX_VA_WIN
+        request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
+#endif
         request.NumFrameMin = mfxU16(CalcNumSurfRaw(m_video));
 
         sts = m_raw.Alloc(m_core, request, true);
@@ -892,6 +899,9 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         if (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
         {
             request.Type        = MFX_MEMTYPE_D3D_INT;
+#ifdef MFX_VA_WIN
+            request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
+#endif
             request.NumFrameMin = extOpaq->In.NumSurface;
             sts = m_raw.Alloc(m_core, request, true);
         }
@@ -926,8 +936,10 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         bParallelEncPak);
     request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
     //For MMCD encoder bind flag is required, panic mode using reconstruct frame copy for refframe skipping, where no warranty that compressed frame will be processed proper way.
-    if(!bPanicModeSupport)
+    if(!bIntRateControlLA(par->mfx.RateControlMethod))
         request.Type |= MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET;
+    else
+        request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
     sts = m_rec.Alloc(m_core, request,bPanicModeSupport);
     MFX_CHECK_STS(sts);
 

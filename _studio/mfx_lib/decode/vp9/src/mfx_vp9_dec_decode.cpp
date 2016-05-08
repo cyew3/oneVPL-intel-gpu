@@ -269,7 +269,6 @@ mfxStatus VideoDECODEVP9::Init(mfxVideoParam *params)
         else
         {
             m_request.AllocId = params->AllocId;
-
             sts = m_core->AllocFrames(&m_request, &m_response);
             MFX_CHECK_STS(sts);
         }

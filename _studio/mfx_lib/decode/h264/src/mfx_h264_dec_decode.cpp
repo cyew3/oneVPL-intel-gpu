@@ -396,6 +396,9 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     {
         m_response_alien = m_response;
         m_FrameAllocator->SetExternalFramesResponse(&m_response_alien);
+#ifdef MFX_VA_WIN
+        request_internal.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
+#endif
         request = request_internal;
         mfxSts = m_core->AllocFrames(&request_internal, &m_response, true);
         if (mfxSts < MFX_ERR_NONE)

@@ -753,6 +753,9 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam *par)
         {
             bool isNeedCopy = ((MFX_IOPATTERN_OUT_SYSTEM_MEMORY & IOPattern) && (allocRequest.Type & MFX_MEMTYPE_INTERNAL_FRAME)) || ((MFX_IOPATTERN_OUT_VIDEO_MEMORY & IOPattern) && (m_isSWImpl));
             allocRequest.AllocId = par->AllocId;
+#ifdef MFX_VA_WIN
+            allocRequest.Type |=MFX_MEMTYPE_SHARED_RESOURCE;
+#endif
             mfxSts = m_pCore->AllocFrames(&allocRequest, &allocResponse, isNeedCopy);
             if(mfxSts)
                 return MFX_ERR_INVALID_VIDEO_PARAM;

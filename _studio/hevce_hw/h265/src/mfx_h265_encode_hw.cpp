@@ -10,6 +10,7 @@
 #include "mfx_h265_encode_hw.h"
 #include <assert.h>
 #include <vm_time.h>
+#include "ippi.h"
 
 namespace MfxHwH265Encode
 {
@@ -884,12 +885,12 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
             }
 
             MFX_CHECK(bytesAvailable >= bytes2copy, MFX_ERR_NOT_ENOUGH_BUFFER);
-
+            //codedFrame.MemType = MFX_MEMTYPE_INTERNAL_FRAME;
             sts = fa.Lock(fa.pthis, taskForQuery->m_midBs, &codedFrame);
             MFX_CHECK(codedFrame.Y, MFX_ERR_LOCK_MEMORY);
-
-            memcpy_s(bsData, bytes2copy, codedFrame.Y, bytes2copy);
-
+            IppiSize roi = {(Ipp32s)bytes2copy,1};
+            //memcpy_s(bs->Data + bs->DataOffset + bs->DataLength, bytes2copy, codedFrame.Y, bytes2copy);
+            ippiCopyManaged_8u_C1R(codedFrame.Y,codedFrame.Pitch,bsData,bytes2copy,roi,IPP_NONTEMPORAL_LOAD);
             sts = fa.Unlock(fa.pthis, taskForQuery->m_midBs, &codedFrame);
             MFX_CHECK_STS(sts);
 

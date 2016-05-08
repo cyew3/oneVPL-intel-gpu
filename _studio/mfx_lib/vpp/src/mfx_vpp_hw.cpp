@@ -1732,6 +1732,9 @@ mfxStatus  VideoVPPHW::Init(
 
         request.Info        = par->vpp.Out;
         request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_INTERNAL_FRAME;
+#ifdef MFX_VA_WIN
+        request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
+#endif
         request.NumFrameMin = request.NumFrameSuggested = m_config.m_surfCount[VPP_OUT] ;
 
         if (m_config.m_surfCount[VPP_OUT] != m_internalVidSurf[VPP_OUT].NumFrameActual)
@@ -1751,6 +1754,9 @@ mfxStatus  VideoVPPHW::Init(
 
         request.Info        = par->vpp.In;
         request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_INTERNAL_FRAME;
+#ifdef MFX_VA_WIN
+        request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
+#endif
         request.NumFrameMin = request.NumFrameSuggested = m_config.m_surfCount[VPP_IN] ;
 
         if (m_config.m_surfCount[VPP_IN] != m_internalVidSurf[VPP_IN].NumFrameActual)

@@ -559,6 +559,9 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
         //currently MDF do not support BGR, doesn't matter what format we set for internal frame, result will be the same
         request.Info.FourCC = (m_pCore->GetVAType() == MFX_HW_VAAPI)?MFX_FOURCC_BGR4:MFX_FOURCC_RGB4;
         request.Type = MFX_MEMTYPE_VIDEO_INT;
+#ifdef MFX_VA_WIN
+        request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
+#endif
 #if defined(LINUX)
         request.Type |= MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET; // required for libva especially for RGB32
 #endif
@@ -585,7 +588,10 @@ mfxStatus MFXVideoENCODEMJPEG_HW::Init(mfxVideoParam *par)
     // Allocate raw surfaces.
     // This is required only in case of system memory at input
 
-        request.Type = MFX_MEMTYPE_VIDEO_INT ;
+        request.Type = MFX_MEMTYPE_VIDEO_INT;
+#ifdef MFX_VA_WIN
+        request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
+#endif
 #if defined(LINUX)
         request.Type |= MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET; // required for libva especially for RGB32
 #endif

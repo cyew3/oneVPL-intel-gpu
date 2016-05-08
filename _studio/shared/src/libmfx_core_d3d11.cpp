@@ -306,22 +306,21 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
     {
         MFX_CHECK_NULL_PTR2(request, response);
         mfxStatus sts = MFX_ERR_NONE;
-        mfxFrameAllocRequest temp_request = *request;
+        //mfxFrameAllocRequest temp_request = *request;
 
         // external allocator doesn't know how to allocate opaque surfaces
         // we can treat opaque as internal
-        if (temp_request.Type & MFX_MEMTYPE_OPAQUE_FRAME)
+        if (request->Type & MFX_MEMTYPE_OPAQUE_FRAME || request->Info.FourCC == MFX_FOURCC_P8)
         {
-            temp_request.Type -= MFX_MEMTYPE_OPAQUE_FRAME;
-            temp_request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
+            request->Type |= MFX_MEMTYPE_INTERNAL_FRAME;
         }
 
-        if (IsBayerFormat(temp_request.Info.FourCC))
+        if (IsBayerFormat(request->Info.FourCC))
         {
             // use internal allocator for R16 since creating requires
             // Intel's internal resource extensions that are not
             // exposed for external application
-            temp_request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
+            request->Type |= MFX_MEMTYPE_INTERNAL_FRAME;
         }
         if (!m_bFastCopy)
         {
@@ -373,10 +372,10 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
             eMFXHWType platform = GetHWType();
             bool useEncodeBindFlag = (request->Type & MFX_MEMTYPE_INTERNAL_FRAME)&&(request->Type & MFX_MEMTYPE_VIDEO_MEMORY_ENCODER_TARGET) && platform>=MFX_HW_SCL;
             //Temporal solution for SKL only to allocate frames with encoder bind flag using internal allocator
-            if (m_bSetExtFrameAlloc && ! IsBayerFormat(temp_request.Info.FourCC) && !useEncodeBindFlag && !(temp_request.Info.FourCC == MFX_FOURCC_P8) && !(temp_request.Type & MFX_MEMTYPE_INTERNAL_FRAME))
+            if (m_bSetExtFrameAlloc && ! IsBayerFormat(request->Info.FourCC) && !useEncodeBindFlag && !(request->Type & MFX_MEMTYPE_INTERNAL_FRAME))
             {
 
-                sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis,&temp_request, response);
+                sts = (*m_FrameAllocator.frameAllocator.Alloc)(m_FrameAllocator.frameAllocator.pthis,request, response);
 
                 // if external allocator cannot allocate d3d frames - use default memory allocator
                 if (MFX_ERR_UNSUPPORTED == sts || MFX_ERR_MEMORY_ALLOC == sts)
