@@ -1427,6 +1427,8 @@ void TaskSupplier_H265::PostProcessDisplayFrame(H265DecoderFrame *pFrame)
             view.localFrameTime += (m_local_delta_frame_time / 2);
         }
         break;
+    default:
+        break;
     }
 
     view.localFrameTime += m_local_delta_frame_time;
