@@ -171,7 +171,7 @@ bool H265WidevineSlice::DecodeSliceHeader(PocDecoding * pocDecoding)
 
                 ReferencePictureSet *rps = getRPS();
                 Ipp32u offset = rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures();
-                for(Ipp32s index = offset; index < offset + rps->getNumberOfLongtermPictures(); index++)
+                for(Ipp32u index = offset; index < offset + rps->getNumberOfLongtermPictures(); index++)
                 {
                     rps->m_POC[index] = sliceHdr->slice_pic_order_cnt_lsb + rps->m_DeltaPOC[index];
                 }

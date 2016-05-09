@@ -1086,7 +1086,7 @@ void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265
         //        if (offset + rps->num_long_term_sps + rps->num_long_term_pics > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1])
         //            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-                for(Ipp32u j = offset, k = 0; k < rps->num_lt_pics; j++, k++)
+                for(Ipp32s j = offset, k = 0; k < rps->num_lt_pics; j++, k++)
                 {
         //            int pocLsbLt;
         //            if (k < rps->num_long_term_sps)

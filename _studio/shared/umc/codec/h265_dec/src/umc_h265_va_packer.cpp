@@ -1434,7 +1434,7 @@ void PackerVA::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderF
     picParam->CurrPic.pic_order_cnt = pCurrentFrame->m_PicOrderCnt;
     picParam->CurrPic.flags = 0;
 
-    int count = 0;
+    size_t count = 0;
     H265DBPList *dpb = supplier->GetDPBList();
     for(H265DecoderFrame* frame = dpb->head() ; frame && count < sizeof(picParam->ReferenceFrames)/sizeof(picParam->ReferenceFrames[0]) ; frame = frame->future())
     {
@@ -1452,14 +1452,15 @@ void PackerVA::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderF
         }
     }
 
-    for (Ipp32u n = count;n < sizeof(picParam->ReferenceFrames)/sizeof(picParam->ReferenceFrames[0]); n++)
+    for (size_t n = count; n < sizeof(picParam->ReferenceFrames)/sizeof(picParam->ReferenceFrames[0]); n++)
     {
         picParam->ReferenceFrames[n].picture_id = VA_INVALID_SURFACE;
         picParam->ReferenceFrames[n].flags = VA_PICTURE_HEVC_INVALID;
     }
 
     ReferencePictureSet *rps = pSlice->getRPS();
-    Ipp32s index, pocList[3*8];
+    Ipp32u index;
+    Ipp32s pocList[3*8];
     Ipp32s numRefPicSetStCurrBefore = 0,
         numRefPicSetStCurrAfter  = 0,
         numRefPicSetLtCurr       = 0;
@@ -1493,7 +1494,7 @@ void PackerVA::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderF
         if (!rps->getUsed(n))
             continue;
 
-        for(Ipp32s k=0;k < count;k++)
+        for(size_t k=0;k < count;k++)
         {
             if(pocList[n] == picParam->ReferenceFrames[k].pic_order_cnt)
             {
@@ -1696,7 +1697,7 @@ bool PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastS
 
     for(Ipp32s iDir = 0; iDir < 2; iDir++)
     {
-        Ipp32s index = 0;
+        size_t index = 0;
         const H265DecoderRefPicList::ReferenceInformation* pRefPicList = pCurrentFrame->GetRefPicList(pSlice->GetSliceNum(), iDir)->m_refPicList;
 
         EnumRefPicList eRefPicList = ( iDir == 1 ? REF_PIC_LIST_1 : REF_PIC_LIST_0 );
@@ -1708,7 +1709,8 @@ bool PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastS
                 bool isFound = false;
                 for (uint8_t j = 0; j < sizeof(picParams->ReferenceFrames)/sizeof(picParams->ReferenceFrames[0]); j++)
                 {
-                    if (picParams->ReferenceFrames[j].picture_id == m_va->GetSurfaceID(frameInfo.refFrame->m_index))
+                    //VASurfaceID
+                    if (picParams->ReferenceFrames[j].picture_id == (VASurfaceID)m_va->GetSurfaceID(frameInfo.refFrame->m_index))
                     {
                         sliceParams->RefPicList[iDir][index] = j;
                         index++;
@@ -1917,7 +1919,7 @@ void PackerVA_Widevine::PackPicParams(const H265DecoderFrame *pCurrentFrame, H26
     picParam->CurrPic.pic_order_cnt = pCurrentFrame->m_PicOrderCnt;
     picParam->CurrPic.flags = 0;
 
-    int count = 0;
+    size_t count = 0;
     H265DBPList *dpb = supplier->GetDPBList();
     for(H265DecoderFrame* frame = dpb->head() ; frame && count < sizeof(picParam->ReferenceFrames)/sizeof(picParam->ReferenceFrames[0]) ; frame = frame->future())
     {
@@ -1935,14 +1937,15 @@ void PackerVA_Widevine::PackPicParams(const H265DecoderFrame *pCurrentFrame, H26
         }
     }
 
-    for (Ipp32u n = count;n < sizeof(picParam->ReferenceFrames)/sizeof(picParam->ReferenceFrames[0]); n++)
+    for (size_t n = count;n < sizeof(picParam->ReferenceFrames)/sizeof(picParam->ReferenceFrames[0]); n++)
     {
         picParam->ReferenceFrames[n].picture_id = VA_INVALID_SURFACE;
         picParam->ReferenceFrames[n].flags = VA_PICTURE_HEVC_INVALID;
     }
 
     ReferencePictureSet *rps = pSlice->getRPS();
-    Ipp32s index, pocList[3*8];
+    Ipp32u index;
+    Ipp32s pocList[3*8];
     Ipp32s numRefPicSetStCurrBefore = 0,
         numRefPicSetStCurrAfter  = 0,
         numRefPicSetLtCurr       = 0;
@@ -1976,7 +1979,7 @@ void PackerVA_Widevine::PackPicParams(const H265DecoderFrame *pCurrentFrame, H26
         if (!rps->getUsed(n))
             continue;
 
-        for(Ipp32s k=0;k < count;k++)
+        for(size_t k=0;k < count;k++)
         {
             if(pocList[n] == picParam->ReferenceFrames[k].pic_order_cnt)
             {

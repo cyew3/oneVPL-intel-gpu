@@ -1066,7 +1066,7 @@ UMC::Status TaskSupplier_H265::xDecodeSPS(H265Bitstream &bs)
     if (!sps.getPTL()->GetGeneralPTL()->level_idc && sps.sps_max_dec_pic_buffering[HighestTid])
     {
         Ipp32u level_idc = levelIndexArray[0];
-        for (int i = 0; i < sizeof(levelIndexArray)/sizeof(levelIndexArray[0]); i++)
+        for (size_t i = 0; i < sizeof(levelIndexArray)/sizeof(levelIndexArray[0]); i++)
         {
             level_idc = levelIndexArray[i];
             newDPBsize = (Ipp8u)CalculateDPBSize(level_idc,
