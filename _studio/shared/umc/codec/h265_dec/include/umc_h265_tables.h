@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -46,7 +46,7 @@ extern const Ipp32u g_MinInGroup[10];
 // ML: OPT: called in hot loops, compiler does not seem to always honor 'inline'
 // ML: OPT: TODO: Make sure compiler recognizes saturation idiom for vectorization
 template <typename T>
-static T H265_FORCEINLINE ClipY(T Value, int c_bitDepth = 8)
+static T inline H265_FORCEINLINE ClipY(T Value, int c_bitDepth = 8)
 {
     Value = (Value < 0) ? 0 : Value;
     const int c_Mask = ((1 << c_bitDepth) - 1);
@@ -56,7 +56,7 @@ static T H265_FORCEINLINE ClipY(T Value, int c_bitDepth = 8)
 
 // clip x, such that 0 <= x <= maximum chroma value
 template <typename T>
-static T H265_FORCEINLINE ClipC(T Value, int c_bitDepth = 8)
+static T inline H265_FORCEINLINE ClipC(T Value, int c_bitDepth = 8)
 {
     Value = (Value < 0) ? 0 : Value;
     const int c_Mask = ((1 << c_bitDepth) - 1);

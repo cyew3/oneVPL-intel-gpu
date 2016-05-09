@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -1453,7 +1453,7 @@ inline size_t CalculateSuggestedSize(const H265SeqParamSet * sps)
 }
 
 // Fast memcpy inline function for small memory blocks like 4-32 bytes, used in interpolation
-static void H265_FORCEINLINE  small_memcpy( void* dst, const void* src, int len )
+static void inline H265_FORCEINLINE  small_memcpy( void* dst, const void* src, int len )
 {
 #if defined( __INTEL_COMPILER ) // || defined( __GNUC__ )  // TODO: check with GCC
     // 128-bit loads/stores first with then REP MOVSB, aligning dst on 16-bit to avoid costly store splits

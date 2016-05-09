@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -1863,7 +1863,7 @@ bool H265SegmentDecoder::DecodeSliceEnd(Ipp32u AbsPartIdx, Ipp32u Depth)
 }
 
 // Returns CABAC context index for sig_coeff_flag. HEVC spec 9.3.4.2.5
-static H265_FORCEINLINE Ipp32u getSigCtxInc(Ipp32s patternSigCtx,
+static inline H265_FORCEINLINE Ipp32u getSigCtxInc(Ipp32s patternSigCtx,
                                  Ipp32u scanIdx,
                                  const Ipp32u PosX,
                                  const Ipp32u PosY,
@@ -1904,7 +1904,7 @@ static const Ipp32u stXoffs[3] = { 0xFB9E4910, 0xE4E4E4E4, 0xFFAA5500 };
 static const Ipp32u stYoffs[3] = { 0xEDB1B184, 0xFFAA5500, 0xE4E4E4E4 };
 
 // Raster to Z-scan conversion
-static H265_FORCEINLINE Ipp32u Rst2ZS(const Ipp32u x, const Ipp32u y, const Ipp32u l2w)
+static inline H265_FORCEINLINE Ipp32u Rst2ZS(const Ipp32u x, const Ipp32u y, const Ipp32u l2w)
 {
     const Ipp32u diagId = x + y;
     const Ipp32u w = 1<<l2w;
