@@ -77,6 +77,8 @@ if( NOT MFX_LIB_ONLY )
   list( APPEND sources ${srcs}) 
   include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/h265_dec/include )
 
+  set( defs "${defs} ${WARNING_FLAGS}" )
+
   foreach( variant sw hw )
     make_library( umc_h265 ${variant} static )
   endforeach( )
@@ -92,5 +94,5 @@ foreach( dir ${dirs_splmux} )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
   list( APPEND sources ${srcs})
 endforeach()
-
+set( defs "${defs} ${WARNING_FLAGS}" )
 make_library( umc_splmux_merged none static )
