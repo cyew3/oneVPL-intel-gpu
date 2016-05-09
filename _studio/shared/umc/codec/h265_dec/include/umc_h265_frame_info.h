@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -44,9 +44,9 @@ public:
     H265DecoderFrameInfo(H265DecoderFrame * pFrame, Heap_Objects * pObjHeap)
         : m_pFrame(pFrame)
         , m_prepared(0)
+        , m_sps(0)
         , m_SliceCount(0)
         , m_pObjHeap(pObjHeap)
-        , m_sps(0)
     {
         Reset();
     }

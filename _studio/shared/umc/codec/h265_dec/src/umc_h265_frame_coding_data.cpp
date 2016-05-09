@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -103,14 +103,14 @@ H265FrameCodingData::H265FrameCodingData()
     , m_MaxCUWidth(0)
     , m_NumCUsInFrame(0)
     , m_CU(0)
+    , m_cumulativeMemoryPtr(0)
     , m_CUOrderMap(0)
     , m_TileIdxMap(0)
     , m_InverseCUOrderMap(0)
-    , m_edge(0)
-    , m_colocatedInfo(0)
-    , m_cumulativeMemoryPtr(0)
     , m_saoLcuParam(0)
     , m_sizeOfSAOData(0)
+    , m_edge(0)
+    , m_colocatedInfo(0)
 {
 }
 

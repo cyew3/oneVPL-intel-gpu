@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -32,8 +32,8 @@ class H265SegmentDecoderBase
 {
 public:
     H265SegmentDecoderBase(TaskBroker_H265 * pTaskBroker)
-        : m_pTaskBroker(pTaskBroker)
-        , m_iNumber(0)
+        : m_iNumber(0)
+        , m_pTaskBroker(pTaskBroker)
     {
     }
 

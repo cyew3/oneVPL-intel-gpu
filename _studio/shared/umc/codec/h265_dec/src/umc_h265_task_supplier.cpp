@@ -590,6 +590,8 @@ TaskSupplier_H265::TaskSupplier_H265()
     , m_pSegmentDecoder(0)
     , m_iThreadNum(0)
     , m_use_external_framerate(false)
+    , m_decodedOrder(false)
+    , m_checkCRAInsideResetProcess(false)
     , m_pLastSlice(0)
     , m_pLastDisplayed(0)
     , m_pMemoryAllocator(0)
@@ -600,8 +602,6 @@ TaskSupplier_H265::TaskSupplier_H265()
     , m_UIDFrameCounter(0)
     , m_sei_messages(0)
     , m_isInitialized(false)
-    , m_decodedOrder(false)
-    , m_checkCRAInsideResetProcess(false)
 {
 }
 
