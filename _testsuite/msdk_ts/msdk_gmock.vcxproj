@@ -297,6 +297,7 @@
     <ClCompile Include="src\gmock\test_suites\mpeg2e_ratecontrol.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2e_skipframes.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2e_aspectratio_reset.cpp" />
+    <ClCompile Include="src\gmock\test_suites\mpeg2e_user_data.cpp" />
     <ClCompile Include="src\gmock\test_suites\platform_unsupported.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_preenc_query_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_init.cpp" />
