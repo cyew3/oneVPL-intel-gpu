@@ -1995,7 +1995,7 @@ void H265SegmentDecoder::ParseCoeffNxNCABACOptimized(CoeffsPtr pCoef, Ipp32u Abs
     Ipp32u TransformShift = MAX_TR_DYNAMIC_RANGE - bit_depth - c_Log2TrSize;
 
     Ipp32s Shift;
-    Ipp32s Add, Scale;
+    Ipp32s Add(0), Scale;
     Ipp16s *pDequantCoef;
     bool shift_right = true;
 
