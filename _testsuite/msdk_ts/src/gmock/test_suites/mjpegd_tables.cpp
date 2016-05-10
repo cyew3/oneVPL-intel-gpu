@@ -740,7 +740,7 @@ exit:
                         throw tsFAIL;
                     }
                 }
-                else if ((ht.NumACTable == 0) && (tc.table_ctr.in_file.find('none') != tc.table_ctr.in_file.npos))
+                else if ((ht.NumACTable == 0) && (tc.table_ctr.in_file.find("none") != tc.table_ctr.in_file.npos))
                 {
                     g_tsLog<<"FILED HT from OutBitstream is wrong!"<<"\n";
                     throw tsFAIL;
