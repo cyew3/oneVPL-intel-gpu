@@ -431,14 +431,14 @@ int TestSuite::RunTest(unsigned int id)
             {
                 if(expected_filters_list[i] == filter_from_getvideoparam[j])
                 {
-                    EXPECT_EQ(false,filter_found[i]) << "Fail.: Filter was reported more than once\n";
+                    EXPECT_FALSE(filter_found[i]) << "Fail.: Filter was reported more than once\n";
                     filter_found[i] = true;
                 }
             }
         }
         for(mfxU32 i = 0; i < actual_f_n; ++i)
         {
-            EXPECT_EQ(true,filter_found[i]) << "Fail. Reset had returned ERR_NONE, but required filter was not reported by GetVideoParam\n";
+            EXPECT_TRUE(filter_found[i]) << "Fail. Reset had returned ERR_NONE, but required filter was not reported by GetVideoParam\n";
         }
         //GetVideoParam should still work with explicitly filters attached
         GetVideoParam();
