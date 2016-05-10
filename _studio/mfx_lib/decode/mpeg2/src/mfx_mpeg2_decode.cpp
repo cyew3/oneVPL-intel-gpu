@@ -1388,9 +1388,8 @@ mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE *core, mfxBitstream* bs, mfxV
 
         if (false == find_seq_ext)
         {
-        //  Skip MPEG1 bitstream
-        //  par->mfx.CodecProfile = MFX_PROFILE_MPEG1;
-        //  par->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+            par->mfx.CodecProfile = MFX_PROFILE_MPEG1;
+            par->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
         }
 
         if (MFX_PICSTRUCT_PROGRESSIVE != par->mfx.FrameInfo.PicStruct)
