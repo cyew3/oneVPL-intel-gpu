@@ -1509,31 +1509,29 @@ mfxStatus VideoVPPHW::GetVideoParams(mfxVideoParam *par) const
             mfxU32 mode = m_executeParams.iFieldProcessingMode - 1;
             if (FRAME2FRAME == mode)
             {
-                bufFP->Mode = MFX_FIELDMODE_FRAME;
-                bufFP->InField  = par->vpp.In.PicStruct;
-                bufFP->OutField = par->vpp.Out.PicStruct;
+                bufFP->Mode     = MFX_VPP_COPY_FRAME;
             }
             else if (TFF2TFF == mode)
             {
-                bufFP->Mode = MFX_VPP_COPY_FIELD;
+                bufFP->Mode     = MFX_VPP_COPY_FIELD;
                 bufFP->InField  = MFX_PICSTRUCT_FIELD_TFF;
                 bufFP->OutField = MFX_PICSTRUCT_FIELD_TFF;
             }
             else if (TFF2BFF == mode)
             {
-                bufFP->Mode = MFX_VPP_COPY_FIELD;
+                bufFP->Mode     = MFX_VPP_COPY_FIELD;
                 bufFP->InField  = MFX_PICSTRUCT_FIELD_TFF;
                 bufFP->OutField = MFX_PICSTRUCT_FIELD_BFF;
             }
             else if (BFF2TFF == mode)
             {
-                bufFP->Mode = MFX_VPP_COPY_FIELD;
+                bufFP->Mode     = MFX_VPP_COPY_FIELD;
                 bufFP->InField  = MFX_PICSTRUCT_FIELD_BFF;
                 bufFP->OutField = MFX_PICSTRUCT_FIELD_TFF;
             }
             else if (BFF2BFF == mode)
             {
-                bufFP->Mode = MFX_VPP_COPY_FIELD;
+                bufFP->Mode     = MFX_VPP_COPY_FIELD;
                 bufFP->InField  = MFX_PICSTRUCT_FIELD_BFF;
                 bufFP->OutField = MFX_PICSTRUCT_FIELD_BFF;
             }
@@ -2948,7 +2946,8 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
 
             if (extFP->Mode == MFX_VPP_COPY_FIELD)
             {
-                if(extFP->InField != MFX_PICSTRUCT_FIELD_TFF && extFP->InField != MFX_PICSTRUCT_FIELD_BFF)
+                if( (extFP->InField != MFX_PICSTRUCT_FIELD_TFF  && extFP->InField != MFX_PICSTRUCT_FIELD_BFF)
+                 || (extFP->OutField != MFX_PICSTRUCT_FIELD_TFF && extFP->OutField != MFX_PICSTRUCT_FIELD_BFF) )
                 {
                     // Copy field needs specific type of interlace
                     sts = (MFX_ERR_INVALID_VIDEO_PARAM < sts) ? MFX_ERR_INVALID_VIDEO_PARAM : sts;
