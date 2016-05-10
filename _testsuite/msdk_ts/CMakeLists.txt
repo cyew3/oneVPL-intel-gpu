@@ -57,7 +57,10 @@ list( APPEND LIBS
   mfx_serializer
 )
 list( APPEND LIBS_SUFFIX gmock )
+
+set( defs "${WARNING_FLAGS}" )
 make_executable( msdk_gmock universal )
+set( defs "" )
 
 # =============================================================================
 # msdk_ts application
@@ -99,7 +102,10 @@ list( APPEND LIBS
   sample_common
   pthread
 )
+
+set( defs "${WARNING_FLAGS}" )
 make_executable( msdk_ts universal )
+set( defs "" )
 
 # =============================================================================
 # msdk_ts_dll library
@@ -178,5 +184,7 @@ list( APPEND LIBS
   sample_common
   ${PERL_LIBRARY}
 )
-make_library( msdk_ts_dll universal shared )
 
+# set( defs "${WARNING_FLAGS}" )
+make_library( msdk_ts_dll universal shared )
+# set( defs "" )
