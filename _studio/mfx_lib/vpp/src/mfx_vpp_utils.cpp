@@ -1867,10 +1867,10 @@ mfxStatus CompareFrameInfo(mfxFrameInfo* info1, mfxFrameInfo* info2)
     if( info1->FourCC != info2->FourCC )
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
-    if( info1->Width != info2->Width )
+    if( info1->Width < info2->Width )
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
-    if( info1->Height != info2->Height )
+    if( info1->Height < info2->Height )
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
     return MFX_ERR_NONE;
