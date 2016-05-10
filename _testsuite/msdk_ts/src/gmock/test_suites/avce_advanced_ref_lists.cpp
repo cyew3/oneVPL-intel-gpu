@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
@@ -481,7 +491,7 @@ bool isOlder(Frame& i, Frame& j)
 
         if (field)
         {
-            if ((m_ctrl.FrameType & MFX_FRAMETYPE_IDR) || m_par.mfx.EncodedOrder == 0 && (ps->Data.FrameOrder % m_par.mfx.GopPicSize == 0))
+            if ((m_ctrl.FrameType & MFX_FRAMETYPE_IDR) || (m_par.mfx.EncodedOrder == 0 && (ps->Data.FrameOrder % m_par.mfx.GopPicSize == 0)))
             {
                 m_dpbFrameOrders.clear();
             }
@@ -517,7 +527,7 @@ bool isOlder(Frame& i, Frame& j)
 
     if (alreadyInDpb == false)
     {
-        if ((m_ctrl.FrameType & MFX_FRAMETYPE_IDR) || m_par.mfx.EncodedOrder == 0 && (ps->Data.FrameOrder % m_par.mfx.GopPicSize == 0))
+        if ((m_ctrl.FrameType & MFX_FRAMETYPE_IDR) || (m_par.mfx.EncodedOrder == 0 && (ps->Data.FrameOrder % m_par.mfx.GopPicSize == 0)))
         {
             m_dpbFrameOrders.clear();
         }

@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
@@ -70,7 +80,7 @@ public:
         if (m_sh->slice_type % 5 == 2)  // Intra
         {
             // 7-11
-            if (m_mb->mb_type == 0 && m_mb->coded_block_pattern == 0 || m_mb->mb_type == 25)
+            if ((m_mb->mb_type == 0 && m_mb->coded_block_pattern == 0) || m_mb->mb_type == 25)
                 return QP_DO_NOT_CHECK;
         } else
         {

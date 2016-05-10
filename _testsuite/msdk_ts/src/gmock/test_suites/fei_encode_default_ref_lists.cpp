@@ -425,7 +425,7 @@ public:
             H264AUWrapper au(ParseOrDie());
             slice_header* sh;
 
-            while (sh = au.NextSlice())
+            while ((sh = au.NextSlice()))
             {
                 if (sh->first_mb_in_slice)
                     continue;

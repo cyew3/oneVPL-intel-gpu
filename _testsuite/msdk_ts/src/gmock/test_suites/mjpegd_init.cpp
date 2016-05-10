@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_alloc.h"
 #include "ts_decoder.h"
 #include "ts_struct.h"
@@ -220,7 +230,7 @@ int TestSuite::RunTest(unsigned int id)
                 SetFrameAllocator();
             }
 
-            if(!m_par_set && (m_bs_processor || m_pBitstream && m_pBitstream->DataLength))
+            if(!m_par_set && (m_bs_processor || (m_pBitstream && m_pBitstream->DataLength)))
             {
                 DecodeHeader();
             }

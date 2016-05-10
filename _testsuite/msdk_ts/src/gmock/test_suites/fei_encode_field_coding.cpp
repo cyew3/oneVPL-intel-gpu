@@ -115,7 +115,7 @@ public:
         if (m_sh->slice_type % 5 == 2)  // Intra
         {
             // 7-11
-            if (m_mb->mb_type == 0 && m_mb->coded_block_pattern == 0 || m_mb->mb_type == 25)
+            if ((m_mb->mb_type == 0 && m_mb->coded_block_pattern == 0) || m_mb->mb_type == 25)
                 return QP_DO_NOT_CHECK;
         } else
         {
@@ -423,13 +423,13 @@ public:
                 while (sh) {
                     switch (sh->slice_type % 5) {
                     case 0: //p slice
-                        while (mb = au.NextMB()) {
+                        while ((mb = au.NextMB())) {
                             if (mb->mb_type > 4) nCountIntra++;
                             if (mb->mb_skip_flag) nCountSkip++;
                         }
                         break;
                     case 1: //b slice
-                        while (mb = au.NextMB()) {
+                        while ((mb = au.NextMB())) {
                             if (mb->mb_type > 22) nCountIntra++;
                             if (mb->mb_skip_flag) nCountSkip++;
                         }

@@ -112,7 +112,7 @@ mfxStatus tsVideoDecoder::Init()
             SetHandle(m_session, type, hdl);
             m_is_handle_set = (g_tsStatus.get() >= 0);
         }
-        if(!m_par_set && (m_bs_processor || m_pBitstream && m_pBitstream->DataLength))
+        if(!m_par_set && (m_bs_processor || (m_pBitstream && m_pBitstream->DataLength)))
         {
             DecodeHeader();
         }
@@ -437,7 +437,7 @@ mfxStatus tsVideoDecoder::DecodeFrames(mfxU32 n, bool check)
             continue;
         }
 
-        if(MFX_ERR_MORE_SURFACE == res || res > 0 && *m_pSyncPoint == NULL)
+        if(MFX_ERR_MORE_SURFACE == res || (res > 0 && *m_pSyncPoint == NULL))
         {
             continue;
         }

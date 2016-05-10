@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_vpp.h"
 #include "ts_struct.h"
 #include "mfxstructures.h"
@@ -87,7 +97,7 @@ private:
         for (mfxU32 i = 0; i < MAX_NPARS; i++)
         {
             // set ExtBuffer
-            if ((tc.mode & mode) && (tc.set_buf[i].ext_type == mode) || (tc.set_buf[i].ext_type == DEFAULT))
+            if (((tc.mode & mode) && (tc.set_buf[i].ext_type == mode)) || (tc.set_buf[i].ext_type == DEFAULT))
             {
                 if (tc.set_buf[i].func == NULL)
                     break;

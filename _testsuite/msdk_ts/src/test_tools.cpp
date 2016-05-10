@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 //test_tools.cpp - non-testing blocks (memory allocation, file operations, parameters manipulation etc.)
 //prefix "t_" for each block
 #include "stdafx.h"
@@ -612,7 +622,7 @@ msdk_ts_BLOCK(t_NewBsParser){
 
     var_old_or_new<BS_parser*>("p_bs_parser") = parser;
 
-    if(f = var_def<char*>("bs_file", NULL)){
+    if((f = var_def<char*>("bs_file", NULL))){
         if(parser->open(f)){
             RETERR(resFAIL, "can't open file '" << f << "'");
         }

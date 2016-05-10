@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_trace.h"
 #include <iomanip>
 
@@ -86,7 +96,7 @@ enum
 
 tsTrace& tsTrace::operator<<(const mfxVideoParam& p)
 {
-    m_flags = (!!(p.IOPattern & 0x0F) | 2 * !!(p.IOPattern & 0xF0));
+    m_flags = ((!!(p.IOPattern & 0x0F)) | 2 * (!!(p.IOPattern & 0xF0)));
 
     STRUCT_BODY(mfxVideoParam,
         if(m_flags != VPP || !m_flags)

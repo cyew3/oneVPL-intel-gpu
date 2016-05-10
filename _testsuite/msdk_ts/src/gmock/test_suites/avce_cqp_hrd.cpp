@@ -54,7 +54,7 @@ mfxExtBuffer* GetExtendedBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU32 
     return 0;
 }
 
-#define CHECK(cond,status) if(sts == MFX_ERR_NONE && cond == 0) sts = status;
+#define CHECK(cond,status) if((sts == MFX_ERR_NONE) && ((cond) == 0)) sts = status;
 
 class TestSuite : public tsVideoEncoder
 {

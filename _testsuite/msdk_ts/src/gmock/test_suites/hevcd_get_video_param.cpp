@@ -72,7 +72,7 @@ public:
         for(mfxU32 i = 0; i < m_numFrames; i ++)
         {
             m_pAU = &ParseOrDie();
-            if(p = GetNalu(*m_pAU, BS_HEVC::SPS_NUT))
+            if((p = GetNalu(*m_pAU, BS_HEVC::SPS_NUT)))
                 m_sps = *p;
         }
 
@@ -134,9 +134,9 @@ public:
         for(mfxU32 i = 0; i < m_numFrames; i ++)
         {
             m_pAU = &ParseOrDie();
-            if(p = GetNalu(*m_pAU, BS_HEVC::SPS_NUT))
+            if((p = GetNalu(*m_pAU, BS_HEVC::SPS_NUT)))
                 m_sps = *p;
-            if(p = GetNalu(*m_pAU, BS_HEVC::PPS_NUT))
+            if((p = GetNalu(*m_pAU, BS_HEVC::PPS_NUT)))
                 m_pps = *p;
         }
 
@@ -197,8 +197,8 @@ private:
         {
             const tc_struct::tctrl& c = p.ctrl[i];
 
-            if(    repack_only && c.type < start_REPACK
-                || !repack_only && c.type >= start_REPACK)
+            if(    (repack_only && c.type < start_REPACK)
+                || (!repack_only && c.type >= start_REPACK))
                 continue;
 
             switch(c.type)

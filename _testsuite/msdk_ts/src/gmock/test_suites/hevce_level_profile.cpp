@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
@@ -959,7 +969,7 @@ int TestSuite::RunTest(unsigned int id)
             }
             if (tc.sts == MFX_ERR_UNSUPPORTED)
             {
-                if ( (tc.type == RESOLUTION) && (tc.sub_type == NOT_ALLIGNED) ||
+                if ( ((tc.type == RESOLUTION) && (tc.sub_type == NOT_ALLIGNED)) ||
                      (tc.type == SLICE) )
                 {
                     g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);

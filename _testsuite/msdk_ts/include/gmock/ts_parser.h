@@ -42,7 +42,7 @@ public:
     {
         TRACE_FUNC0(BS_parser::parse_next_unit);
         m_sts = this->parse_next_unit();
-        if(m_sts && m_sts != BS_ERR_MORE_DATA || m_sts && orDie)
+        if((m_sts && m_sts != BS_ERR_MORE_DATA) || (m_sts && orDie))
         {
             g_tsLog << "FAILED in tsParser\n";
             g_tsStatus.check(MFX_ERR_UNKNOWN);

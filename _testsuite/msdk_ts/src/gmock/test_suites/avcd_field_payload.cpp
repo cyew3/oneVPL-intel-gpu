@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_decoder.h"
 #include "ts_struct.h"
 
@@ -31,8 +41,8 @@ public:
                 break;
 
             if (myPayload.NumBit >= 12*8) {
-                if ( myFlag && myData[12] != 0xfc ||
-                    !myFlag && myData[12] != 0xfd)
+                if (( myFlag && myData[12] != 0xfc) ||
+                    (!myFlag && myData[12] != 0xfd))
                 {
                     g_tsLog << "ERROR: out of order Payload data\n";
                     return MFX_ERR_ABORTED;
