@@ -1513,6 +1513,9 @@ mfxStatus VideoDECODEMPEG2::CheckProtectionSettings(mfxVideoParam *input, mfxVid
             if (GetExtendedBuffer(input->ExtParam, input->NumExtParam, MFX_EXTBUFF_PAVP_OPTION) ||
                 GetExtendedBuffer(output->ExtParam, output->NumExtParam, MFX_EXTBUFF_PAVP_OPTION))
                 return MFX_ERR_UNSUPPORTED;
+
+            if (input->Protected == MFX_PROTECTION_GPUCP_AES128_CTR && core->GetVAType() != MFX_HW_D3D11)
+                return MFX_ERR_UNSUPPORTED;
         }
     }
     else
