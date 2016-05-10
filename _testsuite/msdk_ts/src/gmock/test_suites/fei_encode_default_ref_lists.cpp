@@ -304,10 +304,12 @@ public:
                 }
 
                 if (!fid && isRef && m_dpb.size() == m_pVideo->mfx.NumRefFrame)
+                {
                     if (m_isBPyramid)
                         m_dpb.erase(std::max_element(m_dpb.begin(), m_dpb.end(), GreaterOrder()));
                     else
                         m_dpb.erase(m_dpb.begin());
+                }
             }
         }
         else if (!isI)
@@ -335,10 +337,12 @@ public:
         if (isRef)
         {
             if (m_dpb.size() == m_pVideo->mfx.NumRefFrame)
+            {
                 if (m_isBPyramid)
                     m_dpb.erase(std::max_element(m_dpb.begin(), m_dpb.end(), GreaterOrder()));
                 else
                     m_dpb.erase(m_dpb.begin());
+            }
             m_dpb.push_back(*itOut);
         }
 
