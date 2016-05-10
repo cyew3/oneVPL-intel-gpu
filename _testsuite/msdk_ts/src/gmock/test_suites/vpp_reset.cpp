@@ -160,9 +160,11 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 #if !defined(_WIN32)
     {/*10*/ MFX_ERR_NONE,
         {
-            {INIT,  &tsStruct::mfxExtVPPFieldProcessing.Mode,   MFX_VPP_COPY_FRAME},
+            {INIT,  &tsStruct::mfxExtVPPFieldProcessing.Mode,     MFX_VPP_COPY_FRAME},
 
-            {RESET, &tsStruct::mfxExtVPPFieldProcessing.Mode,   MFX_VPP_COPY_FIELD},
+            {RESET, &tsStruct::mfxExtVPPFieldProcessing.Mode,     MFX_VPP_COPY_FIELD},
+            {RESET, &tsStruct::mfxExtVPPFieldProcessing.InField,  MFX_PICSTRUCT_FIELD_TFF},
+            {RESET, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICSTRUCT_FIELD_BFF},
         },
     },
 #endif
