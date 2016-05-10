@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "stdafx.h"
 #include "msdk_ts.h"
 #include <vector>
@@ -187,6 +197,9 @@ test_result ts::run(){
         case loopCONTINUE:
         case loopBREAK:
             std::cout << "FAIL REASON: invalid pipeline - loop operation block used out of the loop\n";
+            break;
+        case resEXCPT:
+            std::cout << "FAIL REASON: exception" << std::endl;
             break;
     }
     return res;
