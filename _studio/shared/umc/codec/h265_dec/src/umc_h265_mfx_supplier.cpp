@@ -464,9 +464,7 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo * frameInfo)
     switch (codecProfile)
     {
     case MFX_PROFILE_HEVC_MAIN10:
-        fourcc = MFX_FOURCC_P010;
-        break;
-    case 4:
+    case MFX_PROFILE_HEVC_REXT:
         if (frameInfo->BitDepthLuma > 8 || frameInfo->BitDepthChroma > 8)
         {
             fourcc = (frameInfo->ChromaFormat == MFX_CHROMAFORMAT_YUV422) ? MFX_FOURCC_P210 : MFX_FOURCC_P010;
