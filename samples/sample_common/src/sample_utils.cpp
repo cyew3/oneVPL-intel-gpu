@@ -227,7 +227,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
             }
             break;
         case MFX_FOURCC_YUY2:
-            pitch = (mfxU16)2*w;
+            pitch = pData.Pitch;
             ptr = pData.Y + pInfo.CropX + pInfo.CropY * pData.Pitch;
 
             for(i = 0; i < h; i++)
@@ -240,7 +240,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
                 {
                     return MFX_ERR_UNSUPPORTED;
                 }
-                if (pitch != nBytesRead)
+                if ((mfxU32)2*w != nBytesRead)
                 {
                     return MFX_ERR_MORE_DATA;
                 }

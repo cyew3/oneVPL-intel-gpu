@@ -211,11 +211,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-yuy2")))
         {
-            if (MFX_CODEC_JPEG != pParams->CodecId)
-            {
-                PrintHelp(strInput[0], MSDK_STRING("-yuy2 option is supported only for JPEG encoder"));
-                return MFX_ERR_UNSUPPORTED;
-            }
+#if defined (ENABLE_V4L2_SUPPORT)
+            pParams->v4l2Format = YUY2;
+#endif
             pParams->ColorFormat = MFX_FOURCC_YUY2;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-nv12")))
@@ -403,10 +401,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->v4l2Format = UYVY;
 
-        }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-yuy2")))
-        {
-            pParams->v4l2Format = YUY2;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-p")))
         {
@@ -644,6 +638,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         MFX_CODEC_HEVC != pParams->CodecId)
     {
         PrintHelp(strInput[0], MSDK_STRING("Unknown codec"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    if (MFX_CODEC_JPEG != pParams->CodecId &&
+        pParams->ColorFormat == MFX_FOURCC_YUY2 &&
+        !pParams->isV4L2InputEnabled)
+    {
+        PrintHelp(strInput[0], MSDK_STRING("-yuy2 option is supported only for JPEG encoder"));
         return MFX_ERR_UNSUPPORTED;
     }
 
