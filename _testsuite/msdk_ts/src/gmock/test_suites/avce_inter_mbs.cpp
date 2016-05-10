@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
@@ -144,10 +154,10 @@ public:
         mfxEncodeCtrl& ctrl,
         tsSurfacePool& pool)
         : m_r(sp)
-        , m_par(par)
-        , m_isBPyramid(isBPyramid)
         , m_ctrl(ctrl)
         , m_spool(pool)
+        , m_par(par)
+        , m_isBPyramid(isBPyramid)
     {
         m_cur = 0;
     }
@@ -228,8 +238,9 @@ private:
     //tsBitstreamWriter m_w;
 public:
     Test()
-        : tsVideoEncoder(MFX_CODEC_AVC)
+        : tsBitstreamProcessor()
         , tsParserAVC2(INIT_MODE_PARSE_SD)
+        , tsVideoEncoder(MFX_CODEC_AVC)
         //, m_w("debug.264")
     {
         m_bs_processor = this;

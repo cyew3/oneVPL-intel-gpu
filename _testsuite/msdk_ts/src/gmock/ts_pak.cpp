@@ -13,6 +13,7 @@ Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 tsVideoPAK::tsVideoPAK(mfxFeiFunction func, mfxU32 CodecId, bool useDefaults)
     : m_default(useDefaults)
     , m_initialized(false)
+    , m_loaded(false)
     , m_par()
     , m_bitstream()
     , m_request()
@@ -24,7 +25,6 @@ tsVideoPAK::tsVideoPAK(mfxFeiFunction func, mfxU32 CodecId, bool useDefaults)
     , m_filler(0)
     , m_frames_buffered(0)
     , m_uid(0)
-    , m_loaded(false)
 {
     if(m_default)
     {

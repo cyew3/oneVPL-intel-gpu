@@ -1,8 +1,19 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_enc.h"
 
 tsVideoENC::tsVideoENC(mfxU32 CodecId, bool useDefaults, tsVideoEncoder* enc)
     : m_default(useDefaults)
     , m_initialized(false)
+    , m_loaded(false)
     , m_par()
     , m_request()
     , m_pPar(&m_par)
@@ -12,7 +23,6 @@ tsVideoENC::tsVideoENC(mfxU32 CodecId, bool useDefaults, tsVideoEncoder* enc)
     , m_filler(0)
     , m_frames_buffered(0)
     , m_uid(0)
-    , m_loaded(false)
     , m_ENCInput(0)
     , m_ENCOutput(0)
     , m_pEncode(0)
@@ -44,6 +54,7 @@ tsVideoENC::tsVideoENC(mfxU32 CodecId, bool useDefaults, tsVideoEncoder* enc)
 tsVideoENC::tsVideoENC(mfxFeiFunction func, mfxU32 CodecId, bool useDefaults)
     : m_default(useDefaults)
     , m_initialized(false)
+    , m_loaded(false)
     , m_par()
     , m_request()
     , m_pPar(&m_par)
@@ -53,7 +64,6 @@ tsVideoENC::tsVideoENC(mfxFeiFunction func, mfxU32 CodecId, bool useDefaults)
     , m_filler(0)
     , m_frames_buffered(0)
     , m_uid(0)
-    , m_loaded(false)
     , m_ENCInput(0)
     , m_ENCOutput(0)
     , m_pEncode(0)

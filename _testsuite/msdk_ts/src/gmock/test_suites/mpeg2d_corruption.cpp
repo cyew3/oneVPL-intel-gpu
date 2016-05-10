@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_decoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
@@ -14,8 +24,18 @@ class MPEG2BsPerFrameReader : public tsBitstreamProcessor, public tsReader, priv
 {
 public:
     MPEG2BsPerFrameReader(const char* fname, mfxU32 buf_size = 1920*1088*3/2)
-        : filename(fname), m_eos(false), bs_eos(false), curr_pos(0), m_buf(0), m_buf_size(buf_size), repeats(0), bs_offset(0), m_first_pic_header(false),
-          tsReader(fname)
+        : tsBitstreamProcessor()
+        , tsReader(fname)
+        , tsParserMPEG2()
+        , m_buf_size(buf_size)
+        , bs_eos(false)
+        , m_eos(false)
+        , m_buf(0)
+        , curr_pos(0)
+        , bs_offset(0)
+        , repeats(0)
+        , m_first_pic_header(false)
+        , filename(fname)
     {
         BSErr bs_sts = tsParserMPEG2::open(filename);
         EXPECT_EQ(BS_ERR_NONE, bs_sts) << "ERROR: Parser failed to open input file: " << filename << "\n";
@@ -313,8 +333,18 @@ public:
     mfxU32 expectSpsSize;
 
     Verifier(const mfxU8* flags, const mfxU16 N, const tsExtBufType<mfxVideoParam>& par, mfxU64 start = 0, mfxU64 step = 0, const mfxSession _session = 0)
-        : expected_flag(flags, flags + N), init_par(par), frame(0), m_session(_session),
-            startTimeStamp(start), stepTimeStamp(step), count(0), noFlagCheck(false), expectSpsSize(0){}
+        : tsSurfaceProcessor()
+        , init_par(par)
+        , startTimeStamp(start)
+        , stepTimeStamp(step)
+        , m_session(_session)
+        , count(0)
+        , expected_flag(flags, flags + N)
+        , frame(0)
+        , noFlagCheck(false)
+        , expectSpsSize(0)
+    { }
+
     ~Verifier() {}
 
     mfxStatus ProcessSurface(mfxFrameSurface1& s)

@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "test_sample_allocator.h"
 #include "sysmem_allocator.h"
 #include "d3d_allocator.h"
@@ -26,14 +36,14 @@
 }
 
 frame_allocator::frame_allocator(AllocatorType _allocator_type, AllocMode _alloc_mode, LockMode _lock_mode, OpaqueAllocMode _opaque_mode)
-    : p_allocator    (NULL)
+    : alloc_mode     (_alloc_mode)
+    , lock_mode      (_lock_mode)
+    , opaque_mode    (_opaque_mode)
+    , allocator_type (_allocator_type)
+    , p_allocator    (NULL)
     , p_device       (NULL)
     , p_allocator_par(NULL)
     , hdl            (NULL)
-    , allocator_type (_allocator_type)
-    , alloc_mode     (_alloc_mode)
-    , lock_mode      (_lock_mode)
-    , opaque_mode    (_opaque_mode)
     , surf_cnt       (0)
     , is_valid       (false)
 {

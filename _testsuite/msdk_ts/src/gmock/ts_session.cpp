@@ -1,16 +1,26 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_session.h"
 
 tsSession::tsSession(mfxIMPL impl, mfxVersion version) 
-    : m_session(0)
+    : m_initialized(false)
+    , m_sw_fallback(false)
+    , m_is_handle_set(false)
+    , m_session(0)
     , m_impl(impl)
     , m_version(version)
     , m_pSession(&m_session)
     , m_pVersion(&m_version)
     , m_pFrameAllocator(0)
     , m_pVAHandle(0)
-    , m_initialized(false)
-    , m_sw_fallback(false)
-    , m_is_handle_set(false)
     , m_init_par()
 {
 }

@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_decoder.h"
 #include "ts_struct.h"
 #include "ts_bitstream.h"
@@ -72,14 +82,15 @@ public:
     int     in_pts;
 
     FrameReader(const char* fname, bool read_by_frame, bool complete_frame)
-        : tsParserMPEG2(BS_MPEG2_INIT_MODE_MB)
+        : tsBitstreamProcessor()
         , tsReader(fname)
-        , offset(0)
-        , m_buf_size(200000) // should be more than size of biggest frame
-        , m_first_pic_header(false)
+        , tsParserMPEG2(BS_MPEG2_INIT_MODE_MB)
         , m_eos(false)
+        , m_first_pic_header(false)
         , m_read_by_frame(read_by_frame)
         , m_complete_frame(complete_frame)
+        , m_buf_size(200000) // should be more than size of biggest frame
+        , offset(0)
         , in_pts(1)
     {
         tsParserMPEG2::open(fname);

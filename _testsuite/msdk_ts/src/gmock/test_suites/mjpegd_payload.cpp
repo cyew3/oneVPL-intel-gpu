@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_alloc.h"
 #include "ts_encoder.h"
 #include "ts_struct.h"
@@ -147,14 +157,16 @@ namespace mjpegd_payload
         mfxU32 m_target_frames;
     public:
         SurfProc(const char* fname, mfxFrameInfo& fi, mfxU32 n_frames)
-            : pCtrl(0)
-            , m_curr_frame(0)
-            , m_raw_reader(fname, fi, n_frames)
-            , m_target_frames(n_frames)
-            , pFrmInfo(&fi)
+            : tsSurfaceProcessor()
             , m_file_name(fname)
             , m_nframes(n_frames)
+            , m_raw_reader(fname, fi, n_frames)
+            , pCtrl(0)
+            , pFrmInfo(&fi)
+            , m_curr_frame(0)
+            , m_target_frames(n_frames)
         {}
+
         ~SurfProc() {} ;
 
         mfxStatus Init(mfxEncodeCtrl& ctrl)

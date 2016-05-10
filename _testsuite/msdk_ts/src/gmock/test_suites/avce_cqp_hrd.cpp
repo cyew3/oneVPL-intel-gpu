@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
@@ -543,10 +553,12 @@ class SurfProc : public tsSurfaceProcessor
     mfxU32 m_curr_frame;
 public:
     SurfProc(const char* fname, mfxFrameInfo& fi, mfxU32 n_frames, mfxEncodeCtrl * ctrl)
-        : m_pCtrl(ctrl)
-        , m_curr_frame(0)
+        : tsSurfaceProcessor()
         , m_raw_reader(fname, fi, n_frames)
-    {}
+        , m_pCtrl(ctrl)
+        , m_curr_frame(0)
+    { }
+
     ~SurfProc() {} ;
 
     mfxStatus ProcessSurface(mfxFrameSurface1& s)

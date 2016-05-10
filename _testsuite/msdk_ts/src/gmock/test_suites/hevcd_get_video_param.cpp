@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_decoder.h"
 #include "ts_parser.h"
 
@@ -12,12 +22,23 @@ inline BS_HEVC::NALU* GetNalu(BS_HEVC::AU& au, mfxU32 type)
     return 0;
 }
 
-class BsRepacker : public tsBitstreamReader, public tsParserHEVC
+class BsRepackerHelper
+{
+private:
+    friend class BsRepacker;
+
+    BsRepackerHelper()
+      : m_bs_int()
+    { }
+
+    mfxBitstream m_bs_int;
+};
+
+class BsRepacker : public BsRepackerHelper, public tsBitstreamReader, public tsParserHEVC
 {
 private:
     static const mfxU32 virtual_buffer_size = 5000;
     static const mfxU32 max_repack_buf_size = 256;
-    mfxBitstream m_bs_int;
     std::string m_original_stream;
     mfxU32 m_numFrames;
 public:
@@ -26,14 +47,14 @@ public:
     BS_HEVC::NALU m_pps;
 
     BsRepacker()
-        : m_bs_int()
-        , m_sps()
-        , m_original_stream("")
-        , m_pAU(0)
-        , m_numFrames(0)
+        : BsRepackerHelper()
         , tsBitstreamReader(m_bs_int, virtual_buffer_size)
-    {
-    }
+        , tsParserHEVC()
+        , m_original_stream("")
+        , m_numFrames(0)
+        , m_pAU(0)
+        , m_sps()
+    { }
 
     void Init(const char* f, mfxU32 n_frames)
     {

@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_bitstream.h"
 
 tsReader::tsReader(mfxBitstream bs)
@@ -200,10 +210,10 @@ mfxStatus tsBitstreamReaderIVF::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrame
 
 
 tsBitstreamCRC32::tsBitstreamCRC32(mfxBitstream bs, mfxU32 buf_size)
-    : m_eos(false)
+    : m_crc(0)
+    , m_eos(false)
     , m_buf(new mfxU8[buf_size])
     , m_buf_size(buf_size)
-    , m_crc(0)
 {
 }
 

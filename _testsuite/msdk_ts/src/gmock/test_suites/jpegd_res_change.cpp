@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_decoder.h"
 #include "ts_struct.h"
 
@@ -68,18 +78,20 @@ public:
     const mfxU32 CodecId;
     mfxU32 frame;
     Verifier(const char* fname, mfxU32 codec)
-        : reader(fname, 100000),
-        CodecId(codec)
+        : tsSurfaceProcessor()
+        , CodecId(codec)
+        , frame(0)
+        , m_pVAHandle(0)
+        , reader(fname, 100000)
+        , surf_pool(0)
+        , m_ses(0)
+        , surf_pool_size(0)
     {
-        frame          = 0;
-        surf_pool      = 0;
-        m_ses          = 0;
-        surf_pool_size = 0;
-        m_pVAHandle    = 0;
         memset(&bs,0,sizeof(bs));
 
         Init();
     }
+
     ~Verifier()
     {
         Close();

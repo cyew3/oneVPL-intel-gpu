@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #pragma once
 
 #include "ts_common.h"
@@ -10,16 +20,16 @@ public:
     BSErr m_sts;
 
     tsParser(mfxU32 mode = 0)
-        : m_sts(BS_ERR_NONE)
-        , T(mode)
+        : T(mode)
+        , m_sts(BS_ERR_NONE)
     {
         if(!g_tsTrace)
             this->set_trace_level(0);
     }
 
     tsParser(mfxBitstream b, mfxU32 mode = 0)
-        : m_sts(BS_ERR_NONE)
-        , T(mode)
+        : T(mode)
+        , m_sts(BS_ERR_NONE)
     {
         if(!g_tsTrace)
             this->set_trace_level(0);

@@ -213,21 +213,21 @@ mfxStatus tsNoiseFiller::ProcessSurface(mfxFrameSurface1& s)
 }
 
 tsRawReader::tsRawReader(const char* fname, mfxFrameInfo fi, mfxU32 n_frames)
-    : tsReader(fname)
-    , tsSurfaceProcessor(n_frames)
+    : tsSurfaceProcessor(n_frames)
+    , tsReader(fname)
+    , m_surf()
     , m_fsz(0)
     , m_buf(0)
-    , m_surf()
 {
     Init(fi);
 }
 
 tsRawReader::tsRawReader(mfxBitstream bs, mfxFrameInfo fi, mfxU32 n_frames)
-    : tsReader(bs)
-    , tsSurfaceProcessor(n_frames)
+    : tsSurfaceProcessor(n_frames)
+    , tsReader(bs)
+    , m_surf()
     , m_fsz(0)
     , m_buf(0)
-    , m_surf()
 {
     Init(fi);
 }

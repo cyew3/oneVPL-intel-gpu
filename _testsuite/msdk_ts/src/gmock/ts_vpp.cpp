@@ -1,9 +1,19 @@
-#include "ts_vpp.h"
+/* ****************************************************************************** *\
 
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
+#include "ts_vpp.h"
 
 tsVideoVPP::tsVideoVPP(bool useDefaults, mfxU32 plugin_id)
     : m_default(useDefaults)
     , m_initialized(false)
+    , m_loaded(false)
     , m_par()
     , m_pPar(&m_par)
     , m_pParOut(&m_par)
@@ -11,11 +21,11 @@ tsVideoVPP::tsVideoVPP(bool useDefaults, mfxU32 plugin_id)
     , m_pSyncPoint(&m_syncpoint)
     , m_pSurfIn(0)
     , m_pSurfOut(0)
-    , m_surf_in_processor(0)
-    , m_surf_out_processor(0)
+    , m_pStat(&m_stat)
     , m_pSurfPoolIn(&m_spool_in)
     , m_pSurfPoolOut(&m_spool_out)
-    , m_pStat(&m_stat)
+    , m_surf_in_processor(0)
+    , m_surf_out_processor(0)
 {
     memset(m_request, 0, sizeof(m_request));
 

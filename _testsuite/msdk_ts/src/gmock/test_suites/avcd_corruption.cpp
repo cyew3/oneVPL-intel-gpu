@@ -26,8 +26,18 @@ class H264BsPerFrameReader : public tsBitstreamProcessor, public tsReader, priva
 {
 public:
     H264BsPerFrameReader(const char* fname, mfxU32 buf_size = 1920*1088*3/2)
-        : filename(fname), m_eos(false), bs_eos(false), curr_pos(0), m_buf(0), m_buf_size(buf_size), repeats(0), bs_offset(0),
-          tsReader(fname), pic_order_cnt_type(0)
+        : tsBitstreamProcessor()
+        , tsReader(fname)
+        , tsParserH264AU()
+        , m_buf_size(buf_size)
+        , bs_eos(false)
+        , m_eos(false)
+        , m_buf(0)
+        , curr_pos(0)
+        , bs_offset(0)
+        , repeats(0)
+        , filename(fname)
+        , pic_order_cnt_type(0)
     {
         BSErr bs_sts = tsParserH264AU::open(filename);
         EXPECT_EQ(BS_ERR_NONE, bs_sts) << "ERROR: Parser failed to open input file: " << filename << "\n";
@@ -321,8 +331,16 @@ public:
     mfxU16 frame;
 
     Verifier(const mfxU8* flags, const mfxU16 N, const tsExtBufType<mfxVideoParam>& par, mfxU64 start = 0, mfxU64 step = 0, const mfxSession _session = 0)
-        : expected_flag(flags, flags + N), init_par(par), frame(0), m_session(_session),
-            startTimeStamp(start), stepTimeStamp(step), count(0){}
+        : tsSurfaceProcessor()
+        , init_par(par)
+        , startTimeStamp(start)
+        , stepTimeStamp(step)
+        , m_session(_session)
+        , count(0)
+        , expected_flag(flags, flags + N)
+        , frame(0)
+    { }
+
     ~Verifier() {}
 
     mfxStatus ProcessSurface(mfxFrameSurface1& s)
