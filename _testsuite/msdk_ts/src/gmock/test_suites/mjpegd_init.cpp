@@ -85,7 +85,7 @@ private:
                 if(c.field)
                     tsStruct::set(*base, *c.field, c.par);
                 else
-                    *base = (void*)c.par;
+                    *base = (void*)&c.par;
             }
         }
     }

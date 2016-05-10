@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_decoder.h"
 #include "ts_struct.h"
 
@@ -84,7 +94,7 @@ private:
                 if(c.field)
                     tsStruct::set(*base, *c.field, c.par[0]);
                 else
-                    *base = (void*)c.par[0];
+                    *base = (void*)c.par;
             }
         }
     }
