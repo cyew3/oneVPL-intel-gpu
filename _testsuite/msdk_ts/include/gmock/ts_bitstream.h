@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #pragma once
 
 #include "ts_common.h"
@@ -19,6 +29,8 @@ public:
 class tsBitstreamProcessor
 {
 public:
+    virtual ~tsBitstreamProcessor() { }
+
     mfxBitstream* ProcessBitstream(mfxBitstream& bs);
     virtual mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames){ return MFX_ERR_NONE; };
 };
@@ -27,7 +39,7 @@ class tsBitstreamErazer : public tsBitstreamProcessor
 {
 public:
     tsBitstreamErazer() {};
-    ~tsBitstreamErazer() {};
+    virtual ~tsBitstreamErazer() {};
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames){ bs.DataLength = 0; return MFX_ERR_NONE; }
 };
 
@@ -37,7 +49,7 @@ private:
     FILE* m_file;
 public:
     tsBitstreamWriter(const char* fname);
-    ~tsBitstreamWriter();
+    virtual ~tsBitstreamWriter();
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
 };
 
@@ -50,7 +62,7 @@ public:
 
     tsBitstreamReader(const char* fname, mfxU32 buf_size);
     tsBitstreamReader(mfxBitstream bs, mfxU32 buf_size);
-    ~tsBitstreamReader();
+    virtual ~tsBitstreamReader();
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
 };
 
@@ -60,7 +72,7 @@ public:
     bool m_first_call;
     tsBitstreamReaderIVF(const char* fname, mfxU32 buf_size) : tsBitstreamReader(fname, buf_size), m_first_call(true) {};
     tsBitstreamReaderIVF(mfxBitstream bs, mfxU32 buf_size) : tsBitstreamReader(bs, buf_size), m_first_call(true)  {};
-    ~tsBitstreamReaderIVF(){};
+    virtual ~tsBitstreamReaderIVF(){};
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
 };
 
@@ -81,6 +93,6 @@ public:
     {
     }
     tsBitstreamCRC32(mfxBitstream bs, mfxU32 buf_size);
-    ~tsBitstreamCRC32();
+    virtual ~tsBitstreamCRC32();
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
 };
