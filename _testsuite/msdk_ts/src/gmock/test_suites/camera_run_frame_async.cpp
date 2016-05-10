@@ -356,48 +356,48 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RUN|SURF_OUT,  &tsStruct::mfxFrameSurface1.Data.PitchHigh, {0} } }
     },
 
-    /*{/*19*//* MFX_ERR_INVALID_VIDEO_PARAM, {S_004_03_A01,S_004_03_A01}, {5,5},
-           {{INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {4096}},
-            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height, {2160}},
-            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropW,  {4096}},
-            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropH,  {2160}}}
-    },*/ //disable currently - test is wrong.
-    /*{/*20*//* MFX_ERR_INVALID_VIDEO_PARAM, {S_004_03_A01,S_4K1K_RAW__SR_B__5000p}, {5,5},      //Reset to lower resolution
-           {{INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {4096}}, //with processing
-            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height, {2160}}, //and with filter change
-            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropW,  {4096}},
-            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropH,  {2160}},
-            {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Height, {1080}},
-            {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.CropH,  {1080}},
-            /*{INIT|EXT_BUF,  0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
-            //{INIT|EXT_BUF,  0, {EXT_BUF_PAR(mfxExtCamWhiteBalance         )}},
-            //{INIT|EXT_BUF,  0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
-            //{RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}}}
-    },*/ //disable currently - test is wrong.
+//     {/*19*/ MFX_ERR_INVALID_VIDEO_PARAM, {S_004_03_A01,S_004_03_A01}, {5,5},
+//            {{INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {4096}},
+//             {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height, {2160}},
+//             {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropW,  {4096}},
+//             {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropH,  {2160}}}
+//     }, //disable currently - test is wrong.
+//     {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM, {S_004_03_A01,S_4K1K_RAW__SR_B__5000p}, {5,5},      //Reset to lower resolution
+//            {{INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {4096}}, //with processing
+//             {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height, {2160}}, //and with filter change
+//             {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropW,  {4096}},
+//             {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropH,  {2160}},
+//             {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Height, {1080}},
+//             {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.CropH,  {1080}},
+//             {INIT|EXT_BUF,  0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
+//             //{INIT|EXT_BUF,  0, {EXT_BUF_PAR(mfxExtCamWhiteBalance         )}},
+//             //{INIT|EXT_BUF,  0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
+//             //{RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}}}
+//     }, //disable currently - test is wrong.
 
     {/*21*/ MFX_ERR_NONE, {TRASH,TRASH}, {5,5}, {RESET|REPEAT, 0, {10}}},
     
-    /*{/*22*//* MFX_ERR_NONE, {S_004_03_A01,S_4K1K_RAW__SR_B__5000p}, {5,5},
-       {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MIN}},
-        {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {4096}},
-        {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height, {2160}},
-        {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropW,  {4096}},
-        {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropH,  {2160}},
-        {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Height, {1080}},
-        {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.CropH,  {1080}},
-        {REPEAT, 0, {7}}}
-    },*/ //disable currently - test is wrong.
-    /*{/*23*//* MFX_ERR_NONE, {S_004_03_A01,S_4K1K_RAW__SR_B__5000p}, {5,5},
-       {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MIN}},
-        {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {4096}},
-        {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height, {2160}},
-        {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropW,  {4096}},
-        {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropH,  {2160}},
-        {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Height, {1080}},
-        {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.CropH,  {1080}},
-        {INIT|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {0}},
-        {REPEAT, 0, {7}}}
-    },*///disable currently - test is wrong.
+//     {/*22*/ MFX_ERR_NONE, {S_004_03_A01,S_4K1K_RAW__SR_B__5000p}, {5,5},
+//        {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MIN}},
+//         {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {4096}},
+//         {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height, {2160}},
+//         {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropW,  {4096}},
+//         {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropH,  {2160}},
+//         {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Height, {1080}},
+//         {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.CropH,  {1080}},
+//         {REPEAT, 0, {7}}}
+//     }, //disable currently - test is wrong.
+//     {/*23*/ MFX_ERR_NONE, {S_004_03_A01,S_4K1K_RAW__SR_B__5000p}, {5,5},
+//        {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MIN}},
+//         {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {4096}},
+//         {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Height, {2160}},
+//         {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropW,  {4096}},
+//         {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.CropH,  {2160}},
+//         {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.Height, {1080}},
+//         {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.Out.CropH,  {1080}},
+//         {INIT|MFXVPAR, &tsStruct::mfxVideoParam.AsyncDepth, {0}},
+//         {REPEAT, 0, {7}}}
+//     },//disable currently - test is wrong.
     //{/*24*/ MFX_ERR_INVALID_VIDEO_PARAM, {S_4KDCI_RAW__SR_V__5994p,S_QFHD_HRAW__SR_B__5000p}, {5,5},
     //   {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MIN}},
     //    {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {4096}},

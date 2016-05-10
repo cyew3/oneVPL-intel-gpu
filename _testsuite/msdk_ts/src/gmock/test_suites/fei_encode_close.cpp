@@ -117,7 +117,7 @@ int TestSuite::RunTest(unsigned int id)
     else
         Close();
 
-    /*for (mfxU32 i = 0; i < m_pSurf)
+    for (mfxU32 i = 0; i < m_pSurf)
     {
         EXPECT_EQ(0, m_pSurfPoolIn->GetSurface(i)->Data.Locked);
     }
