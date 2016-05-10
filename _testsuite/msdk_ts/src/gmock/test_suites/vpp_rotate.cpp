@@ -295,6 +295,9 @@ int TestSuite::RunTest(unsigned int id)
     if (m_par.vpp.Out.FourCC == MFX_FOURCC_YV12)  // yv12 on output is not supported in any case case
         g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
 
+    if (m_par.vpp.Out.FourCC == MFX_FOURCC_YUY2 && g_tsOSFamily == MFX_OS_FAMILY_LINUX)  // yuy2 on output is supported on windows only
+        g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
+
     if ( (m_par.vpp.In.FourCC == MFX_FOURCC_NV16) || (m_par.vpp.Out.FourCC == MFX_FOURCC_NV16) ) // nv16 usage leads to SW fallback, where rotation cannot be used
         g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
 
