@@ -42,7 +42,7 @@ private:
             const  tsStruct::Field* f;
             mfxU32 v;
         } set_par[MAX_NPARS];
-        char* skips;
+        std::string skips;
     };
 
     static const tc_struct test_case[];

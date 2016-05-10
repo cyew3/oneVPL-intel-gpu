@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 //test_blocks.cpp - MFX functions only (one block = one function)
 //prefix "b_" for each block
 #include "stdafx.h"
@@ -794,7 +804,7 @@ msdk_ts_BLOCK(b_MFXInitAudio){
     default_ver.Major = MFX_VERSION_MAJOR;
     default_ver.Minor = MFX_VERSION_MINOR;
     mfxIMPL default_impl =  MFX_IMPL_AUDIO;
-    std::string platform = var_def<char*>("platform", "");
+    std::string platform = var_def<const char*>("platform", "");
     if(platform.size()){
         TRACE_PAR(platform);
 

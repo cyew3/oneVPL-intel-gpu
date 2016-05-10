@@ -22,7 +22,7 @@ namespace TEST_NAME
 typedef struct {
     mfxU32 BufferId;
     mfxU32 BufferSz;
-    char *string;
+    std::string string;
 } BufferIdToString;
 
 #define EXTBUF(TYPE, ID) {ID, sizeof(TYPE), #TYPE},

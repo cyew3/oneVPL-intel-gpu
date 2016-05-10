@@ -311,7 +311,7 @@ namespace mjpegd_payload
         mfxPayload payload;
         payload.Type = 65534;
         mfxU8 data[256];
-        char* comment = "coment";
+        const char* comment = "coment";
         data[0] = 255;
         data[1] = 254;
         for (mfxU16 i = 2; i <= strlen(comment) + 2; i++)

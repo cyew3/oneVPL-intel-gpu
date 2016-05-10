@@ -23,7 +23,7 @@ Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
 msdk_ts_BLOCK(t_AllocSurfPool){
     mfxFrameAllocRequest& request = var_old<mfxFrameAllocRequest>("request");
     FrameSurfPool& pool = var_new<FrameSurfPool>("surf_pool");
-    std::string stype = var_def<char*>("surface_type", "direct_pointers");
+    std::string stype = var_def<const char*>("surface_type", "direct_pointers");
     mfxU16 w = request.Info.Width;
     mfxU16 h = request.Info.Height;
 
@@ -721,7 +721,7 @@ msdk_ts_BLOCK(t_ParseMPEG2){
 }
 
 msdk_ts_BLOCK(t_DefineAllocator){
-    std::string platform = var_def<char*>("platform", "");
+    std::string platform = var_def<const char*>("platform", "");
     bool        is_d3d11 = false;
 
     if(platform.find("d3d11") != platform.npos)
@@ -730,10 +730,10 @@ msdk_ts_BLOCK(t_DefineAllocator){
     frame_allocator & alloc = var_new<frame_allocator>(
         "global_allocator_instance", 
         new frame_allocator(
-            getAllocatorType(var_def<char*> ("alloc_type", (char*)(is_d3d11 ? "d3d11" : "hw"))),
-            getAllocMode    (var_def<char*> ("alloc_mode", "max")),
-            getLockMode     (var_def<char*> ("lock_mode" , "valid")),
-            getOpaqueMode   (var_def<char*> ("opaque_alloc_mode", "error"))
+            getAllocatorType(var_def<const char*> ("alloc_type", (const char*)(is_d3d11 ? "d3d11" : "hw"))),
+            getAllocMode    (var_def<const char*> ("alloc_mode", "max")),
+            getLockMode     (var_def<const char*> ("lock_mode" , "valid")),
+            getOpaqueMode   (var_def<const char*> ("opaque_alloc_mode", "error"))
         )
     );
 
