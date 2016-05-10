@@ -611,7 +611,7 @@ int TestSuite::RunTest(unsigned int id)
 
     if(0 == tc.function)
     {
-        EXPECT_NE(0, tc.function) << "ERROR: test is not implemented\n";
+        EXPECT_NE(0u, tc.function) << "ERROR: test is not implemented\n";
         throw tsFAIL;
     }
 

@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_struct.h"
 #include "mfxplugin.h"
@@ -117,7 +127,7 @@ bool TestSuite::check_output(mfxExtFEIH265Param *in, mfxFEIH265Output *out, mfxU
     {
     case MFX_FEI_H265_OP_INTRA_MODE:  
         {
-            for (int i = 0; i < out->IntraMaxModes; i++)
+            for (mfxU32 i = 0; i < out->IntraMaxModes; i++)
             {
                  if ((!out->IntraModes16x16[i]) ||
                      (!out->IntraModes32x32[i]) ||

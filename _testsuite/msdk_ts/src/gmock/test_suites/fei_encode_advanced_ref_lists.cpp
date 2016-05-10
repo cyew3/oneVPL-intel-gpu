@@ -212,12 +212,12 @@ public:
     {
         // calculate ref lists using requested logic
         CreateRefLists(m_par, s.Data.FrameOrder, m_tc.controlFlags, m_list[m_buf_idx], m_list[m_buf_idx + 1]);
-        if (m_list[m_buf_idx].RefPicList0[0].FrameOrder != MFX_FRAMEORDER_UNKNOWN ||
-            m_list[m_buf_idx].RefPicList1[0].FrameOrder != MFX_FRAMEORDER_UNKNOWN)
+        if (m_list[m_buf_idx].RefPicList0[0].FrameOrder != (mfxU32)MFX_FRAMEORDER_UNKNOWN ||
+            m_list[m_buf_idx].RefPicList1[0].FrameOrder != (mfxU32)MFX_FRAMEORDER_UNKNOWN)
             m_ctrl.NumExtParam = 1;
 
-        if (m_list[m_buf_idx + 1].RefPicList0[0].FrameOrder != MFX_FRAMEORDER_UNKNOWN ||
-            m_list[m_buf_idx + 1].RefPicList1[0].FrameOrder != MFX_FRAMEORDER_UNKNOWN)
+        if (m_list[m_buf_idx + 1].RefPicList0[0].FrameOrder != (mfxU32)MFX_FRAMEORDER_UNKNOWN ||
+            m_list[m_buf_idx + 1].RefPicList1[0].FrameOrder != (mfxU32)MFX_FRAMEORDER_UNKNOWN)
             m_ctrl.NumExtParam = 1;
     }
     else
@@ -337,7 +337,7 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 
                         for (mfxU16 i = 0; i <= s.num_ref_idx_l0_active_minus1; i ++)
                         {
-                            EXPECT_EQ(GetPOC(rl.RefPicList0[i], m_IdrCnt), s.RefPicList[0][i]->PicOrderCnt);
+                            EXPECT_EQ(GetPOC(rl.RefPicList0[i], m_IdrCnt), (mfxU32)s.RefPicList[0][i]->PicOrderCnt);
                         }
                     }
 
@@ -347,7 +347,7 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 
                         for (mfxU16 i = 0; i <= s.num_ref_idx_l1_active_minus1; i ++)
                         {
-                            EXPECT_EQ(GetPOC(rl.RefPicList1[i], m_IdrCnt), s.RefPicList[1][i]->PicOrderCnt);
+                            EXPECT_EQ(GetPOC(rl.RefPicList1[i], m_IdrCnt), (mfxU32)s.RefPicList[1][i]->PicOrderCnt);
                         }
                     }
 
@@ -379,7 +379,7 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 
                         for (mfxU16 i = 0; i <= s.num_ref_idx_l0_active_minus1; i ++)
                         {
-                            EXPECT_EQ(GetPOC(lists[0].RefPicList0[i], m_IdrCnt), s.RefPicList[0][i]->PicOrderCnt);
+                            EXPECT_EQ(GetPOC(lists[0].RefPicList0[i], m_IdrCnt), (mfxU32)s.RefPicList[0][i]->PicOrderCnt);
                         }
                     }
 
@@ -389,7 +389,7 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 
                         for (mfxU16 i = 0; i <= s.num_ref_idx_l1_active_minus1; i ++)
                         {
-                            EXPECT_EQ(GetPOC(lists[0].RefPicList1[i], m_IdrCnt), s.RefPicList[1][i]->PicOrderCnt);
+                            EXPECT_EQ(GetPOC(lists[0].RefPicList1[i], m_IdrCnt), (mfxU32)s.RefPicList[1][i]->PicOrderCnt);
                         }
                     }
                 }

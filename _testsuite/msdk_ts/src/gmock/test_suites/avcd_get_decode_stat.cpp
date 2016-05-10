@@ -118,7 +118,7 @@ int TestSuite::RunTest(unsigned int id)
     if (tc.mode == NULL_SESSION)
         m_session = m_session_tmp;
     else if (tc.mode == CHECK)
-        EXPECT_NE(m_pStat->NumFrame, 0) << "ERROR: Num decoded frames in decode stat = 0 \n";
+        EXPECT_NE(m_pStat->NumFrame, 0u) << "ERROR: Num decoded frames in decode stat = 0 \n";
 
     TS_END;
     return 0;

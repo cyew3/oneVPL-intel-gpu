@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_decoder.h"
 #include "ts_struct.h"
 #include "mfxsc.h"
@@ -164,9 +174,9 @@ public:
         for(i = 0; i < dr->NumRect; ++i)
         {
             //mfxRect rect;
-            EXPECT_NE(0, (dr->Rect[i].Left +   dr->Rect[i].Top + dr->Rect[i].Right + dr->Rect[i].Bottom) ) << "ERROR: dirty rect has zero coordinates!\n";
-            EXPECT_NE(0, (dr->Rect[i].Right -  dr->Rect[i].Left) )   << "ERROR: dirty rect has zero width!\n";
-            EXPECT_NE(0, (dr->Rect[i].Bottom - dr->Rect[i].Top) )    << "ERROR: dirty rect has zero height!\n";
+            EXPECT_NE(0u, (dr->Rect[i].Left +   dr->Rect[i].Top + dr->Rect[i].Right + dr->Rect[i].Bottom) ) << "ERROR: dirty rect has zero coordinates!\n";
+            EXPECT_NE(0u, (dr->Rect[i].Right -  dr->Rect[i].Left) )   << "ERROR: dirty rect has zero width!\n";
+            EXPECT_NE(0u, (dr->Rect[i].Bottom - dr->Rect[i].Top) )    << "ERROR: dirty rect has zero height!\n";
             EXPECT_LE(dr->Rect[i].Right,       s.Info.Width)         << "ERROR: right coordinate of dirty rect > frame width!\n";
             EXPECT_LE(dr->Rect[i].Bottom,      s.Info.Height)        << "ERROR: bottom coordinate of dirty rect > frame height!\n";
             EXPECT_LE(dr->Rect[i].Left,        dr->Rect[i].Right)    << "ERROR: left coordinate of dirty rect > right coordinate!\n";
@@ -184,7 +194,7 @@ public:
         const size_t maxRects = sizeof(dr->Rect) / sizeof(dr->Rect[0]);
         for(i; i < maxRects; ++i)
         {
-            EXPECT_EQ(0, (dr->Rect[i].Left + dr->Rect[i].Top + dr->Rect[i].Right + dr->Rect[i].Bottom) ) << "ERROR: Although only "<< dr->NumRect <<"rects reported, rect #"<< i <<"is dirty!\n";
+            EXPECT_EQ(0u, (dr->Rect[i].Left + dr->Rect[i].Top + dr->Rect[i].Right + dr->Rect[i].Bottom) ) << "ERROR: Although only "<< dr->NumRect <<"rects reported, rect #"<< i <<"is dirty!\n";
         }
 
         return MFX_ERR_NONE;
@@ -204,7 +214,7 @@ public:
 
     mfxStatus ProcessSurface(mfxFrameSurface1& s)
     {
-        if (s.Data.TimeStamp != -1)
+        if (s.Data.TimeStamp != (mfxU64)MFX_TIMESTAMP_UNKNOWN)
         {
             g_tsLog << "ERROR: s.Data.TimeStamp == " << s.Data.TimeStamp << ". Should be -1\n";
             return MFX_ERR_ABORTED;

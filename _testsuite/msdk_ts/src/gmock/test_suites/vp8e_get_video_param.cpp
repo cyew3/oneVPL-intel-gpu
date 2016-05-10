@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 
 namespace
@@ -114,7 +124,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
 
-#define _CHECK_SET(field, base, check) if(base.field) { EXPECT_EQ(base.field, check.field); } else { EXPECT_NE(0, check.field); }
+#define _CHECK_SET(field, base, check) if(base.field) { EXPECT_EQ(base.field, check.field); } else { EXPECT_NE(0u, check.field); }
 #define CHECK_SET(field) _CHECK_SET(field, m_par, par0)
 #define CHECK_EXTCO(field) _CHECK_SET(field, ((mfxExtVP8CodingOption&)m_par), (*extco))
 

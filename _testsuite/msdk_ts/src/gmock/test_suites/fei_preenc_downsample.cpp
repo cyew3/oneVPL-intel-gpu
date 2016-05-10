@@ -200,7 +200,7 @@ mfxU16  TestSuite::CmpMBStat(mfxExtFeiPreEncMBStat *out_mbStat_st1, mfxExtFeiPre
     mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB* p_MB1 = out_mbStat_st1->MB;
     mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB* p_MB2 = out_mbStat_st2->MB;
 
-    for (int i = 0; i < out_mbStat_st1->NumMBAlloc; i++) {
+    for (size_t i = 0; i < out_mbStat_st1->NumMBAlloc; i++) {
         if(memcmp(p_MB1[i].Inter, p_MB2[i].Inter,sizeof(p_MB1[i].Inter[0])*2) || \
             p_MB1[i].BestIntraDistortion != p_MB2[i].BestIntraDistortion || \
             p_MB1[i].IntraMode!= p_MB2[i].IntraMode || \
@@ -211,7 +211,7 @@ mfxU16  TestSuite::CmpMBStat(mfxExtFeiPreEncMBStat *out_mbStat_st1, mfxExtFeiPre
         }
     }
 
-    for (int i = 0; i < out_mbStat_st1->NumMBAlloc; i++) {
+    for (size_t i = 0; i < out_mbStat_st1->NumMBAlloc; i++) {
         if (Enable8x8Stat && (memcpy(p_MB1[i].Variance8x8, p_MB2[i].Variance8x8, sizeof(p_MB1[i].Variance8x8[0])*4) || \
             memcpy(p_MB1[i].PixelAverage8x8, p_MB2[i].PixelAverage8x8, sizeof(p_MB1[i].PixelAverage8x8[0])*4))) {
             SameVA = false;

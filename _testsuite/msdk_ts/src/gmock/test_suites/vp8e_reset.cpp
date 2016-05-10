@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_parser.h"
 
@@ -196,7 +206,7 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     {
         tsParserVP8::UnitType& hdr = ParseOrDie();
 
-        EXPECT_EQ(m_par.mfx.CodecProfile - 1, hdr.udc->version);
+        EXPECT_EQ(m_par.mfx.CodecProfile - 1, (int)hdr.udc->version);
 
         if(!hdr.udc->key_frame)
         {

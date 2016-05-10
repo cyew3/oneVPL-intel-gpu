@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_decoder.h"
 #include "ts_parser.h"
 
@@ -131,7 +141,7 @@ public:
     {
         if(m_tc.pts[m_cur-1] != -1)
         {
-            EXPECT_EQ(m_tc.pts[m_cur-1], s.Data.TimeStamp);
+            EXPECT_EQ(m_tc.pts[m_cur-1], (mfxI64)s.Data.TimeStamp);
             EXPECT_EQ(MFX_FRAMEDATA_ORIGINAL_TIMESTAMP, s.Data.DataFlag);
         }
         else
@@ -145,7 +155,7 @@ public:
             d = pts_expected - s.Data.TimeStamp;
             if(d) d = TS_MIN(3, TS_MAX(-3, d));
 
-            EXPECT_EQ(pts_expected - d, s.Data.TimeStamp);
+            EXPECT_EQ(pts_expected - d, (mfxI64)s.Data.TimeStamp);
             EXPECT_EQ(0, s.Data.DataFlag);
         }
         m_prev_pts = s.Data.TimeStamp;

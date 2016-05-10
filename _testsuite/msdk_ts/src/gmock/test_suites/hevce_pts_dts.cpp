@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
@@ -231,7 +241,7 @@ namespace hevce_pts_dts
 
     mfxU32 BitstreamChecker::GetFrameOreder(mfxU32 _pts)
     {
-        if (_pts != -1)
+        if (_pts != (mfxU32)-1)
         {
             for (int i = 0; i < MAX_PTS; i++)
             {

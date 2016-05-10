@@ -296,7 +296,7 @@ msdk_ts_BLOCK(t_Read_mfxBitstream){
 
         f.getinfo(file_name);
         mfxU32 toRead = MIN( static_cast<mfxU32>(f.file_size), bs.MaxLength - bs.DataOffset);
-        CHECK( !(f.read(bs.Data + bs.DataOffset, toRead) != toRead), "Failed to read file");
+        CHECK( !((mfxU32)f.read(bs.Data + bs.DataOffset, toRead) != toRead), "Failed to read file");
 
         LengthOfReadData = toRead;
         bs.DataLength = LengthOfReadData;
@@ -318,7 +318,7 @@ msdk_ts_BLOCK(t_Read_mfxBitstream){
         mfxU32 tail = LengthOfReadData - bs.DataOffset;
         memmove(bs.Data, bs.Data + bs.DataOffset, tail);
         mfxU32 toRead = MIN(static_cast<mfxU32>(f.file_size - pos), bs.MaxLength - tail);
-        if (f.read(bs.Data + tail, toRead) != toRead)
+        if ((mfxU32)f.read(bs.Data + tail, toRead) != toRead)
         {
             bs.DataLength = tail;
             f.fseek(pos, VM_FILE_SEEK_SET);

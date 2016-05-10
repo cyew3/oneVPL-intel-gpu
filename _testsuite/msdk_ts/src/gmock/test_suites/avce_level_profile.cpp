@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
@@ -648,8 +658,8 @@ int TestSuite::RunTest(unsigned int id)
         EncodeFrames(nf);
 
         //ensure there are >=1 SPS in the stream.
-        EXPECT_GT(m_profile.size(), 0);
-        EXPECT_GT(m_level.size(), 0);
+        EXPECT_GT(m_profile.size(), (size_t)0);
+        EXPECT_GT(m_level.size(), (size_t)0);
     }
 
     TS_END;

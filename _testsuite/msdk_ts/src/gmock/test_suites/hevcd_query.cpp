@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_decoder.h"
 #include "ts_struct.h"
 
@@ -143,15 +153,15 @@ int TestSuite::RunTest(unsigned int id)
     {
         EXPECT_NE(out_par.AsyncDepth, 0);
         EXPECT_NE(out_par.IOPattern, 0);
-        EXPECT_NE(out_par.mfx.CodecId, 0);
+        EXPECT_NE(out_par.mfx.CodecId, (mfxU32)0);
         EXPECT_NE(out_par.mfx.CodecProfile, 0);
         EXPECT_NE(out_par.mfx.CodecLevel, 0);
         EXPECT_NE(out_par.mfx.ExtendedPicStruct, 0);
-        EXPECT_NE(out_par.mfx.FrameInfo.FourCC, 0);
+        EXPECT_NE(out_par.mfx.FrameInfo.FourCC, (mfxU32)0);
         EXPECT_NE(out_par.mfx.FrameInfo.Width, 0);
         EXPECT_NE(out_par.mfx.FrameInfo.Height, 0);
-        EXPECT_NE(out_par.mfx.FrameInfo.FrameRateExtN, 0);
-        EXPECT_NE(out_par.mfx.FrameInfo.FrameRateExtD, 0);
+        EXPECT_NE(out_par.mfx.FrameInfo.FrameRateExtN, (mfxU32)0);
+        EXPECT_NE(out_par.mfx.FrameInfo.FrameRateExtD, (mfxU32)0);
         EXPECT_NE(out_par.mfx.FrameInfo.AspectRatioW, 0);
         EXPECT_NE(out_par.mfx.FrameInfo.AspectRatioH, 0);
         EXPECT_NE(out_par.mfx.FrameInfo.PicStruct, 0);

@@ -173,7 +173,7 @@ int TestSuite::RunTest(unsigned int id)
 
         if((g_tsStatus.get() < 0) && (tc.sts != MFX_ERR_MEMORY_ALLOC) && (tc.set_alloc))
         {
-            EXPECT_EQ(0, GetAllocator()->cnt_surf());
+            EXPECT_EQ(0u, GetAllocator()->cnt_surf());
         }
 
         if(m_initialized)

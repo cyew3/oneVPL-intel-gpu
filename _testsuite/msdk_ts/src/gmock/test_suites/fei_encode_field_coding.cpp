@@ -315,7 +315,7 @@ public:
                 //According to Sergey, only one of the three parameters can be set at one time.
                 m_ctl[index] = (mfxU8)(rand() % 3);//possible values: 0, 1, 2;
                 printf("m_ctl[%d] = %d\n", index, m_ctl[index]);
-                for (int i = 0; i < numMB; i++) {
+                for (mfxU32 i = 0; i < numMB; i++) {
                     switch (m_ctl[index]) {
                     case SET_FORCE_INTRA:
                         feiEncMbCtl[fieldId].MB[i].ForceToIntra    = 1;
@@ -452,7 +452,7 @@ public:
                         EXPECT_EQ(nCountSkip, numMB);
                         break;
                     case SET_FORCE_NONSKIP:
-                        EXPECT_EQ(nCountSkip, 0);
+                        EXPECT_EQ(nCountSkip, (mfxU32)0);
                         break;
                     }
                 }

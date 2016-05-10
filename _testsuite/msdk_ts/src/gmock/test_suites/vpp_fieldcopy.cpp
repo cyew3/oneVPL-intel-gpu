@@ -244,7 +244,7 @@ int TestSuite::RunTest(unsigned int id)
             g_tsStatus.check(sts);
         }
 
-        for (mfxU32 i = 0; i< m_par.NumExtParam - 1; i++)
+        for (int i = 0; i < m_par.NumExtParam - 1; i++)
         {
             if (m_par.ExtParam[i]->BufferId != MFX_EXTBUFF_VPP_DOUSE)
             {

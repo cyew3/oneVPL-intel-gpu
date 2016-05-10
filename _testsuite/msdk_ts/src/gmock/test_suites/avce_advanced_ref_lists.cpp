@@ -147,8 +147,8 @@ bool SomethingInRefLists(mfxExtAVCRefLists& lists)
     bool isThereSomething = false;
 
     if (lists.NumRefIdxL0Active || lists.NumRefIdxL1Active ||
-        lists.RefPicList0[0].FrameOrder != MFX_FRAMEORDER_UNKNOWN ||
-        lists.RefPicList1[0].FrameOrder != MFX_FRAMEORDER_UNKNOWN)
+        lists.RefPicList0[0].FrameOrder != (mfxU32)MFX_FRAMEORDER_UNKNOWN ||
+        lists.RefPicList1[0].FrameOrder != (mfxU32)MFX_FRAMEORDER_UNKNOWN)
         isThereSomething = true;
 
     return isThereSomething;
@@ -157,7 +157,7 @@ bool SomethingInRefLists(mfxExtAVCRefLists& lists)
 mfxU8 CalcL0Entries(mfxExtAVCRefLists& lists)
 {
     mfxU8 i = 0;
-    while (lists.RefPicList0[i].FrameOrder !=  MFX_FRAMEORDER_UNKNOWN)
+    while (lists.RefPicList0[i].FrameOrder !=  (mfxU32)MFX_FRAMEORDER_UNKNOWN)
         i ++;
 
     return i;
@@ -166,7 +166,7 @@ mfxU8 CalcL0Entries(mfxExtAVCRefLists& lists)
 mfxU8 CalcL1Entries(mfxExtAVCRefLists& lists)
 {
     mfxU8 i = 0;
-    while (lists.RefPicList1[i].FrameOrder !=  MFX_FRAMEORDER_UNKNOWN)
+    while (lists.RefPicList1[i].FrameOrder !=  (mfxU32)MFX_FRAMEORDER_UNKNOWN)
         i ++;
 
     return i;
@@ -716,9 +716,9 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
             {
                 for (mfxU16 i = 0; i <= s.num_ref_idx_l0_active_minus1; i ++)
                 {
-                    if (rl.RefPicList0[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN)
+                    if (rl.RefPicList0[i].FrameOrder != (mfxU32)MFX_FRAMEORDER_UNKNOWN)
                     {
-                        EXPECT_EQ(GetPOC(rl.RefPicList0[i]), s.RefPicList[0][i]->PicOrderCnt);
+                        EXPECT_EQ(GetPOC(rl.RefPicList0[i]), (mfxU32)s.RefPicList[0][i]->PicOrderCnt);
                     }
                 }
             }
@@ -727,9 +727,9 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
             {
                 for (mfxU16 i = 0; i <= s.num_ref_idx_l1_active_minus1; i ++)
                 {
-                    if (rl.RefPicList1[i].FrameOrder != MFX_FRAMEORDER_UNKNOWN)
+                    if (rl.RefPicList1[i].FrameOrder != (mfxU32)MFX_FRAMEORDER_UNKNOWN)
                     {
-                        EXPECT_EQ(GetPOC(rl.RefPicList1[i]), s.RefPicList[1][i]->PicOrderCnt);
+                        EXPECT_EQ(GetPOC(rl.RefPicList1[i]), (mfxU32)s.RefPicList[1][i]->PicOrderCnt);
                     }
                 }
             }

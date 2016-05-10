@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_decoder.h"
 #include "ts_vpp.h"
@@ -254,7 +264,7 @@ void SetParams(tsExtBufType<TB>& par, const TestSuite::f_pair pairs[], const siz
                 GetBufferIdSz(pairs[i].f->name, bufId, bufSz);
                 if(0 == bufId + bufSz)
                 {
-                    EXPECT_NE(0, bufId + bufSz) << "ERROR: (in test) failed to get Ext buffer Id or Size\n";
+                    EXPECT_NE((mfxU32)0, bufId + bufSz) << "ERROR: (in test) failed to get Ext buffer Id or Size\n";
                     throw tsFAIL;
                 }
                 ptr = par.GetExtBuffer(bufId);
@@ -291,7 +301,7 @@ void CheckParams(tsExtBufType<TB>& par, const TestSuite::f_pair pairs[], const s
                 GetBufferIdSz(pairs[i].f->name, bufId, bufSz);
                 if(0 == bufId + bufSz)
                 {
-                    EXPECT_NE(0, bufId + bufSz) << "ERROR: (in test) failed to get Ext buffer Id or Size\n";
+                    EXPECT_NE((mfxU32)0, bufId + bufSz) << "ERROR: (in test) failed to get Ext buffer Id or Size\n";
                     throw tsFAIL;
                 }
                 ptr = par.GetExtBuffer(bufId);
@@ -391,7 +401,7 @@ int TestSuite::RunTest(unsigned int id)
 
     if(0 == tc.component)
     {
-        EXPECT_NE(0, tc.component) << "ERROR: test is not implemented\n";
+        EXPECT_NE((mfxU32)0, tc.component) << "ERROR: test is not implemented\n";
         throw tsFAIL;
     }
 

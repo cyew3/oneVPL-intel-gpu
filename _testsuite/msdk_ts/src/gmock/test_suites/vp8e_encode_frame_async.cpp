@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
@@ -67,7 +77,7 @@ public:
         {
             tsParserVP8::UnitType& hdr = p.ParseOrDie();
 
-            EXPECT_EQ(m_par.mfx.CodecProfile - 1, hdr.udc->version);
+            EXPECT_EQ(m_par.mfx.CodecProfile - 1, (int)hdr.udc->version);
 
             if(!hdr.udc->key_frame)
             {
@@ -245,7 +255,7 @@ int TestSuite::RunTest(unsigned int id)
 
     if (tc.preEncMode == ASYNC)
     {
-        for(mfxI32 i = 1; i < tc.set_par_pre_encode[0].v; i ++)
+        for(mfxI32 i = 1; i < (mfxI64)tc.set_par_pre_encode[0].v; i ++)
         {
             EncodeFrameAsync();
             if(g_tsStatus.get() == MFX_ERR_MORE_DATA)

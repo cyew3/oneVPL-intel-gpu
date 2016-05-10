@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_vpp.h"
 #include "ts_struct.h"
 #include "ts_alloc.h"
@@ -367,8 +377,8 @@ int TestSuite::RunTest(unsigned int id)
         EXPECT_NE(0, pout->IOPattern);
         EXPECT_NE(0, pout->vpp.In.ChromaFormat);
         EXPECT_NE(0, pout->vpp.Out.ChromaFormat);
-        EXPECT_NE(0, pout->vpp.In.FourCC);
-        EXPECT_NE(0, pout->vpp.Out.FourCC);
+        EXPECT_NE((mfxU32)0, pout->vpp.In.FourCC);
+        EXPECT_NE((mfxU32)0, pout->vpp.Out.FourCC);
         EXPECT_NE(0, pout->vpp.In.Width);
         EXPECT_NE(0, pout->vpp.Out.Width);
         EXPECT_NE(0, pout->vpp.In.Height);
