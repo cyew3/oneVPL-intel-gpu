@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_plugin.h"
 #include <unordered_set>
 
@@ -59,18 +69,15 @@ void tsPlugin::Init(std::string env, std::string platform)
 
 mfxU32 tsPlugin::GetType(const mfxPluginUID& uid) {
 
-    std::pair<mfxU32, mfxU32> type;
+    typedef std::pair<mfxU32, mfxU32> Type;
 
-    auto res = std::find_if(std::begin(m_puid), std::end(m_puid),
-                            [&](const std::pair<std::pair<mfxU32, mfxU32>, mfxPluginUID*> &par) {
-        if (memcmp(uid.Data, par.second->Data, sizeof(par.second->Data)) == 0) {
-            return par.second->Data;
-        }
-    });
+    auto predicate = [&](const std::pair<Type, mfxPluginUID*> &par) {
+        return memcmp(uid.Data, par.second->Data, sizeof(par.second->Data)) == 0;
+    };
 
-    type = res->first;
+    auto res = std::find_if(std::begin(m_puid), std::end(m_puid), predicate);
 
-    return std::get<0>(type);
+    return std::get<0>(res->first);
 }
 
 void func_name(std::unordered_multiset<mfxU32>::const_iterator it) {
