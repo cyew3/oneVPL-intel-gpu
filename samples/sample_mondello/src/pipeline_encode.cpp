@@ -37,10 +37,8 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "plugin_loader.h"
 
-#if defined (ENABLE_MONDELLO_SUPPORT)
 #include <pthread.h>
 #include "class_wayland.h"
-#endif
 
 /* obtain the clock tick of an uninterrupted master clock */
 msdk_tick time_get_tick(void)
@@ -413,13 +411,11 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
     m_mfxEncParams.mfx.FrameInfo.PicStruct    = pInParams->nPicStruct;
 
-#if defined (ENABLE_MONDELLO_SUPPORT)
     if (m_isMondelloRender)
     {
         m_mfxEncParams.mfx.FrameInfo.FourCC = pInParams->MondelloRenderFormat;
         m_mfxEncParams.mfx.FrameInfo.ChromaFormat = pInParams->MondelloRenderChroma;
     }
-#endif
 
     // set frame size and crops
     if(pInParams->CodecId==MFX_CODEC_HEVC && !memcmp(pInParams->pluginParams.pluginGuid.Data,MFX_PLUGINID_HEVCE_HW.Data,sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
@@ -516,10 +512,8 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
     }
 
     // input frame info
-#if defined (ENABLE_MONDELLO_SUPPORT)
     if (m_isMondelloInputEnabled)
         m_mfxVppParams.vpp.In.FourCC = ConvertToMFXFourCC(pInParams->MondelloFormat);
-#endif
 
     if (!m_isMondelloInputEnabled)
         m_mfxVppParams.vpp.In.FourCC    = MFX_FOURCC_NV12;
@@ -545,10 +539,8 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
     {
         m_mfxVppParams.vpp.Out.FourCC = MFX_FOURCC_NV12;
 
-#if defined (ENABLE_MONDELLO_SUPPORT)
         if (m_isMondelloRender)
             m_mfxVppParams.vpp.Out.FourCC = pInParams->MondelloRenderFormat;
-#endif
     }
 
     // only resizing is supported
@@ -601,7 +593,6 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 #endif
 
-#if defined (ENABLE_MONDELLO_SUPPORT)
 #if defined(LIBVA_WAYLAND_SUPPORT)
     if (m_isMondelloRender && m_libvaBackend == MFX_LIBVA_WAYLAND)
     {
@@ -616,7 +607,6 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
         wld->SetRenderWinPos(0, 0);
     }
 #endif //LIBVA_WAYLAND_SUPPORT
-#endif // ENABLE_MONDELLO_SUPPORT
 
     return MFX_ERR_NONE;
 }
@@ -678,10 +668,9 @@ mfxStatus CEncodingPipeline::AllocFrames()
     {
         EncRequest.Type |= MFX_MEMTYPE_FROM_VPPOUT; // surfaces are shared between vpp output and encode input
     }
-#if defined (ENABLE_MONDELLO_SUPPORT)
+
     if (m_isMondelloRender)
         EncRequest.Type |= MFX_MEMTYPE_EXPORT_FRAME;
-#endif
 
     // alloc frames for encoder
     sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &EncRequest, &m_EncResponse);
@@ -693,10 +682,8 @@ mfxStatus CEncodingPipeline::AllocFrames()
         VppRequest[0].NumFrameSuggested = VppRequest[0].NumFrameMin = nVppSurfNum;
         MSDK_MEMCPY_VAR(VppRequest[0].Info, &(m_mfxVppParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
 
-#if defined (ENABLE_MONDELLO_SUPPORT)
         if (m_isMondelloInputEnabled)
             VppRequest[0].Type |= MFX_MEMTYPE_EXPORT_FRAME;
-#endif
 
         sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &(VppRequest[0]), &m_VppResponse);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -1048,10 +1035,8 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     m_libvaBackend = pParams->libvaBackend;
 #endif
 
-#if defined (ENABLE_MONDELLO_SUPPORT)
     m_isMondelloInputEnabled = pParams->isMondelloInputEnabled;
     m_isMondelloRender = pParams->isMondelloRender;
-#endif
 
     if (!m_isMondelloInputEnabled)
     {
@@ -1209,7 +1194,6 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 
 void CEncodingPipeline::InitMondelloPipeline(sInputParams *pParams)
 {
-#if defined (ENABLE_MONDELLO_SUPPORT)
     if (m_isMondelloInputEnabled)
     {
         int i, count = m_VppResponse.NumFrameActual;
@@ -1242,12 +1226,10 @@ void CEncodingPipeline::InitMondelloPipeline(sInputParams *pParams)
 
         MondelloPipeline.MondelloSetup();
     }
-#endif
 }
 
 mfxStatus CEncodingPipeline::CaptureStartMondelloPipeline()
 {
-#if defined (ENABLE_MONDELLO_SUPPORT)
     if (m_isMondelloInputEnabled)
     {
         MondelloPipeline.MondelloStartCapture();
@@ -1259,20 +1241,17 @@ mfxStatus CEncodingPipeline::CaptureStartMondelloPipeline()
             return MFX_ERR_UNKNOWN;
         }
     }
-#endif
 
     return MFX_ERR_NONE;
 }
 
 void CEncodingPipeline::CaptureStopMondelloPipeline()
 {
-#if defined (ENABLE_MONDELLO_SUPPORT)
     if (m_isMondelloInputEnabled)
     {
         pthread_join(m_PollThread, NULL);
         MondelloPipeline.MondelloStopCapture();
     }
-#endif
 }
 
 void CEncodingPipeline::Close()
@@ -1441,19 +1420,16 @@ mfxStatus CEncodingPipeline::Run()
 
     sts = MFX_ERR_NONE;
 
-#if defined (ENABLE_MONDELLO_SUPPORT)
     if (m_isMondelloInputEnabled)
         msdk_printf(MSDK_STRING("Press Ctrl+C to terminate this application\n"));
-#endif
 
     // main loop, preprocessing and encoding
     while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts)
     {
-#if defined (ENABLE_MONDELLO_SUPPORT)
         if (MondelloPipeline.GetMondelloTerminationSignal() &&
             m_isMondelloInputEnabled)
             break;
-#endif
+
         if (!m_isMondelloRender)
         {
             // get a pointer to a free task (bit stream and sync point for encoder)
@@ -1465,10 +1441,8 @@ mfxStatus CEncodingPipeline::Run()
         nEncSurfIdx = GetFreeSurface(m_pEncSurfaces, m_EncResponse.NumFrameActual);
         MSDK_CHECK_ERROR(nEncSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
 
-#if defined (ENABLE_MONDELLO_SUPPORT)
         if (!m_pmfxVPP && m_isMondelloRender)
             nEncSurfIdx = MondelloPipeline.GetOffQ();
-#endif
 
         // point pSurf to encoder surface
         pSurf = &m_pEncSurfaces[nEncSurfIdx];
@@ -1477,13 +1451,11 @@ mfxStatus CEncodingPipeline::Run()
             // if vpp is enabled find free surface for vpp input and point pSurf to vpp surface
             if (m_pmfxVPP)
             {
-#if defined (ENABLE_MONDELLO_SUPPORT)
                 if (m_isMondelloInputEnabled)
                     nVppSurfIdx = MondelloPipeline.GetOffQ();
-#else
+
                 nVppSurfIdx = GetFreeSurface(m_pVppSurfaces, m_VppResponse.NumFrameActual);
                 MSDK_CHECK_ERROR(nVppSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
-#endif
 
                 pSurf = &m_pVppSurfaces[nVppSurfIdx];
             }
@@ -1517,7 +1489,6 @@ mfxStatus CEncodingPipeline::Run()
             }
         }
 
-#if defined (ENABLE_MONDELLO_SUPPORT)
         // The scenario here is when MSDK-mondello receives a RGB-8888 signal and wants to
         // render straight away without going through any VPP operation
         if (!m_pmfxVPP && m_isMondelloRender)
@@ -1525,7 +1496,6 @@ mfxStatus CEncodingPipeline::Run()
             m_hwdev->RenderFrame(&m_pEncSurfaces[nEncSurfIdx], m_pMFXAllocator);
             continue;
         }
-#endif
 
         // perform preprocessing if required
         if (m_pmfxVPP)
@@ -1570,13 +1540,12 @@ mfxStatus CEncodingPipeline::Run()
         {
             VppSyncPoint = NULL;
 
-#if defined (ENABLE_MONDELLO_SUPPORT)
             if (m_isMondelloRender)
             {
                 m_hwdev->RenderFrame(&m_pEncSurfaces[nEncSurfIdx], m_pMFXAllocator);
                 continue;
             }
-#endif
+
             pCurrentTask->DependentVppTasks.push_back(VppSyncPoint);
         }
 
@@ -1614,10 +1583,8 @@ mfxStatus CEncodingPipeline::Run()
     // exit in case of other errors
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-#if defined (ENABLE_MONDELLO_SUPPORT)
     if (m_isMondelloRender)
         return sts;
-#endif
 
     if (m_pmfxVPP)
     {

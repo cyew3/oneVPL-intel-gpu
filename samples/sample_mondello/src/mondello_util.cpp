@@ -8,8 +8,6 @@
  *
  * \* ****************************************************************************** */
 
-#if defined (ENABLE_MONDELLO_SUPPORT)
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -367,5 +365,3 @@ void *PollingThread(void *data)
             max_fps, min_fps, av_fps);
     }
 }
-
-#endif // ifdef ENABLE_MONDELLO_SUPPORT

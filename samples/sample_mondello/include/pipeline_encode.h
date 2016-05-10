@@ -44,9 +44,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "plugin_loader.h"
 
-#if defined (ENABLE_MONDELLO_SUPPORT)
 #include "mondello_util.h"
-#endif
 
 msdk_tick time_get_tick(void);
 msdk_tick time_get_frequency(void);
@@ -121,14 +119,12 @@ struct sInputParams
     mfxI32  libvaBackend;
 #endif
 
-#if defined (ENABLE_MONDELLO_SUPPORT)
     enum MondelloPixelFormat MondelloFormat;
     bool Printfps;
     bool isInterlaced;
     mfxU32 MondelloRenderFormat;
     mfxU16 MondelloRenderChroma;
     msdk_char RenderFormatName[MSDK_MAX_FILENAME_LEN];
-#endif
 
 };
 
@@ -192,10 +188,8 @@ public:
     mfxStatus CaptureStartMondelloPipeline();
     void CaptureStopMondelloPipeline();
 
-#if defined (ENABLE_MONDELLO_SUPPORT)
     MondelloDevice MondelloPipeline;
     pthread_t m_PollThread;
-#endif
 
 protected:
     std::pair<CSmplBitstreamWriter *,CSmplBitstreamWriter *> m_FileWriters;

@@ -109,7 +109,6 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-vaapi] - work with vaapi surfaces\n"));
     msdk_printf(MSDK_STRING("Example: %s h264|mpeg2|mvc -i InputYUVFile -o OutputEncodedFile -w width -h height -angle 180 -g 300 -r 1 \n"), strAppName);
 #endif
-#if defined (ENABLE_MONDELLO_SUPPORT)
     msdk_printf(MSDK_STRING("   [-uyvy]            - Input Raw format types V4L2 Encode\n"));
     msdk_printf(MSDK_STRING("   [-rgb4]            - Mondello input format\n"));
     msdk_printf(MSDK_STRING("   [-i::mondello]     - To enable Mondello option\n"));
@@ -119,7 +118,6 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-fps]             - Print out fps\n"));
     msdk_printf(MSDK_STRING("Example: %s h264 -uyvy|rgb4 -i::mondello -w width -h height -rwld -dcc rgb4|nv12\n"), strAppName);
     msdk_printf(MSDK_STRING("Example: %s h264 -uyvy|rgb4 -i::mondello -w width -h height -o OutputEncodedFile\n"), strAppName);
-#endif
     msdk_printf(MSDK_STRING("   [-viewoutput] - instruct the MVC encoder to output each view in separate bitstream buffer. Depending on the number of -o options behaves as follows:\n"));
     msdk_printf(MSDK_STRING("                   1: two views are encoded in single file\n"));
     msdk_printf(MSDK_STRING("                   2: two views are encoded in separate files\n"));
@@ -150,13 +148,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     pParams->bUseHWLib = true;
     pParams->isMondelloInputEnabled = false;
     pParams->isMondelloRender = false;
-#if defined (ENABLE_MONDELLO_SUPPORT)
     pParams->MondelloFormat = NO_FORMAT;
     pParams->Printfps= false;
     pParams->isInterlaced = false;
     pParams->MondelloRenderFormat = MFX_FOURCC_NV12;
     pParams->MondelloRenderChroma = MFX_CHROMAFORMAT_YUV420;
-#endif
 #if defined(LIBVA_SUPPORT)
     pParams->libvaBackend = MFX_LIBVA_DRM;
 #endif
@@ -377,7 +373,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
         }
         MOD_ENC_PARSE_INPUT
-#if defined (ENABLE_MONDELLO_SUPPORT)
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-uyvy")))
         {
             pParams->MondelloFormat = UYVY;
@@ -424,7 +419,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->isMondelloRender = true;
             pParams->libvaBackend = MFX_LIBVA_X11;
         }
-#endif
         else // 1-character options
         {
             switch (strInput[i][1])
@@ -577,7 +571,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
     }
 
-#if defined (ENABLE_MONDELLO_SUPPORT)
     if (pParams->isMondelloRender &&
         pParams->MondelloRenderFormat == NO_FORMAT)
     {
@@ -604,7 +597,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         PrintHelp(strInput[0], MSDK_STRING("Rendering with -dcc option is only for RGB4\n"));
         return MFX_ERR_UNSUPPORTED;
     }
-#endif
 
     // check if all mandatory parameters were set
     if (0 == msdk_strlen(pParams->strSrcFile) &&
