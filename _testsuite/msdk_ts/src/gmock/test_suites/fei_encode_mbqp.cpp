@@ -216,7 +216,7 @@ public:
         m_pCtrl->ExtParam = &(m_InBufs[m_fo])[0];
         m_pCtrl->NumExtParam = (mfxU16)in_buffs.size();
         printf("m_pCtrl->NumExtParam = %d\n", m_pCtrl->NumExtParam);
-        printf("m_pCtrl->ExtParam = %d\n", m_pCtrl->ExtParam);
+        printf("m_pCtrl->ExtParam = %p\n", m_pCtrl->ExtParam);
 
         m_fo++;
         return sts;
