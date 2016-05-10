@@ -144,16 +144,21 @@ mfxStatus tsSurfacePool::AllocSurfaces(mfxFrameAllocRequest request, bool direct
     return g_tsStatus.get();
 }
 
+//surface pool created in AllocOpaque() or/and AllocSurfaces() is freed in this function
 mfxStatus tsSurfacePool::FreeSurfaces()
 {
     if (m_pool.size() == 0)
         return MFX_ERR_NONE;
 
-    TRACE_FUNC2(m_allocator->Free, m_allocator, &m_response);
-    g_tsStatus.check( m_allocator->Free(m_allocator, &m_response) );
-    TS_CHECK_MFX;
+    //If opaque memory is not set, (m_pool.size() > 0) && (m_opaque_pool.size() == 0)
+    if (m_opaque_pool.size() == 0 && m_allocator) {
+        TRACE_FUNC2(m_allocator->Free, m_allocator, &m_response);
+        g_tsStatus.check( m_allocator->Free(m_allocator, &m_response) );
+        TS_CHECK_MFX;
+    }
 
     m_pool.clear();
+    m_opaque_pool.clear();
 
     return g_tsStatus.get();
 }
