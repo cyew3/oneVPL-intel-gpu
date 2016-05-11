@@ -950,6 +950,8 @@ Status MPEG2VideoDecoderBase::DecodeSlices(Ipp32s threadID, int task_num)
     for (;;) 
     {
         umcRes = DecodeSliceHeader(video, task_num);
+        if (umcRes == UMC_WRN_INVALID_STREAM)
+            continue;
         UMC_CHECK_STATUS(umcRes);
 
         umcRes = DecodeSlice(video, task_num);

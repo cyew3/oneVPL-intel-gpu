@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -494,14 +494,14 @@ mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure ==
     {
         if(video->slice_vertical_position > 0x80)
           return UMC_ERR_INVALID_STREAM;
-        GET_TO9BITS(video->bs, 3, /*video->slice_vertical_position_extension*/code)
+        GET_TO9BITS(video->bs, 3, code)
         video->slice_vertical_position += code << 7;
     }
     if( video->slice_vertical_position > PictureHeader[task_num].max_slice_vert_pos)
     {
         video->slice_vertical_position = PictureHeader[task_num].max_slice_vert_pos;
         isCorrupted = true;
-//        return UMC_ERR_INVALID_STREAM;
+        return UMC_WRN_INVALID_STREAM;
     }
 
     if((sequenceHeader.extension_start_code_ID[task_num] == SEQUENCE_SCALABLE_EXTENSION_ID) &&
@@ -570,7 +570,7 @@ mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure ==
       pack_l.pSliceInfo->intra_slice_flag = PictureHeader[task_num].picture_coding_type == MPEG2_I_PICTURE;
 
       if (video->stream_type != MPEG1_VIDEO)
-          {
+      {
            const int field_pic = PictureHeader[task_num].picture_structure != FRAME_PICTURE;
            pack_l.pSliceInfo->slice_vertical_position = (start_code - 0x00000101) << field_pic; //SLICE_MIN_START_CODE 0x00000101
            if(BOTTOM_FIELD == PictureHeader[task_num].picture_structure)
@@ -579,10 +579,9 @@ mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure ==
            Ipp32u macroblock_address_increment=0;
            DECODE_MB_INCREMENT(video->bs, macroblock_address_increment);
            pack_w.pSliceInfo->slice_horizontal_position = macroblock_address_increment;
-          }
+      }
       else
           pack_l.pSliceInfo->slice_vertical_position = video->slice_vertical_position-1;
-
 
       pack_l.pSliceInfo->slice_data_flag = VA_SLICE_DATA_FLAG_ALL;
     }
