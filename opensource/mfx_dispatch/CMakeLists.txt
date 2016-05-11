@@ -11,6 +11,30 @@ if( ${CMAKE_SYSTEM_NAME} MATCHES Windows )
     add_definitions(-DWIN64)
   endif( )
 else( )
+
+  # If user did not override CMAKE_INSTALL_PREFIX, then set the default prefix
+  # to /opt/intel/mediasdk instead of cmake's default
+  if( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
+    set( CMAKE_INSTALL_PREFIX /opt/intel/mediasdk CACHE PATH "Install Path Prefix" FORCE )
+  endif( )
+  message( STATUS "CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}" )
+
+  if( NOT DEFINED MFX_PLUGINS_DIR )
+    set( MFX_PLUGINS_DIR ${CMAKE_INSTALL_PREFIX}/plugins )
+  endif( )
+  add_definitions( -DMFX_PLUGINS_DIR="${MFX_PLUGINS_DIR}" )
+  message( STATUS "MFX_PLUGINS_DIR=${MFX_PLUGINS_DIR}" )
+
+  if( NOT DEFINED MFX_MODULES_DIR )
+    if(__ARCH MATCHES intel64)
+        set( MFX_MODULES_DIR ${CMAKE_INSTALL_PREFIX}/lib64 )
+    else( )
+        set( MFX_MODULES_DIR ${CMAKE_INSTALL_PREFIX}/lib )
+    endif( )
+  endif( )
+  add_definitions( -DMFX_MODULES_DIR="${MFX_MODULES_DIR}" )
+  message( STATUS "MFX_MODULES_DIR=${MFX_MODULES_DIR}" )
+
   add_definitions(-DUNIX)
 
   if( ${CMAKE_SYSTEM_NAME} MATCHES Linux )
