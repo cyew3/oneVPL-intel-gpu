@@ -315,6 +315,7 @@
     <ClCompile Include="src\gmock\test_suites\screen_capture_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\screen_capture_query.cpp" />
     <ClCompile Include="src\gmock\test_suites\screen_capture_query_io_surf.cpp" />
+    <ClCompile Include="src\gmock\test_suites\slice_size_reporting.cpp" />
     <ClCompile Include="src\gmock\test_suites\threading_mfxinitex.cpp" />
     <ClCompile Include="src\gmock\test_suites\vc1d_res_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp10_fourcc.cpp" />
