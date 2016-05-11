@@ -71,11 +71,6 @@ namespace UMC
     {
         VM_ASSERT(m_remap_refs);
 
-        //skip INTRASLICE & S_INTRASLICE
-        if ((sp->slice_type % 5) == 2 ||
-            (sp->slice_type % 5) == 4)
-            return;
-
         //NOTE: we keep [slice_map] sorted implicitly
         slice_map::iterator s =
             std::lower_bound(m_slice_map.begin(), m_slice_map.end(),
@@ -87,6 +82,12 @@ namespace UMC
             return;
 
         m_slice_map.push_back(std::make_pair(sp->first_mb_in_slice, std::vector<Ipp32u>()));
+
+        //skip INTRASLICE & S_INTRASLICE
+        if ((sp->slice_type % 5) == 2 ||
+            (sp->slice_type % 5) == 4)
+            return;
+
         std::vector<Ipp32u>& slice_refs = m_slice_map.back().second;
 
         Ipp32u const count = sizeof(m_references) / sizeof(m_references[0]);
@@ -130,7 +131,7 @@ namespace UMC
         //Bit 6:5: reserved MBZ
         //Bit 4:0: Frame store index or Frame Store ID (Bit 4:1 is used to form the binding table index in intel implementation)
 
-        mfxFeiDecStreamOutMBCtrl* mb
+        mfxFeiDecStreamOutMBCtrl* mb_begin
             = reinterpret_cast<mfxFeiDecStreamOutMBCtrl*>(data);
         Ipp32s const mb_total = size / sizeof(mfxFeiDecStreamOutMBCtrl);
         Ipp32u const count = sizeof(m_references) / sizeof(m_references[0]);
@@ -141,10 +142,15 @@ namespace UMC
             l = m_slice_map.end();
         for (; f != l; ++f)
         {
+            std::vector<Ipp32u> const& slice_refs = (*f).second;
+            if (slice_refs.empty())
+                continue;
+
             slice_map::iterator n = f; ++n;
             
+            Ipp16u const first_mb_in_slice = (*f).first;
             Ipp32s const mb_per_slice_count =
-                ((n != l ? (*n).first : m_allowed_max_mbs_in_slice)) - (*f).first;
+                ((n != l ? (*n).first : m_allowed_max_mbs_in_slice)) - first_mb_in_slice;
 
             mb_processed += mb_per_slice_count;
             if (mb_processed > mb_total)
@@ -153,7 +159,11 @@ namespace UMC
                 break;
             }
 
-            mfxFeiDecStreamOutMBCtrl const* mb_end = mb + mb_per_slice_count;
+            mfxFeiDecStreamOutMBCtrl*
+                mb     = mb_begin + first_mb_in_slice;
+            mfxFeiDecStreamOutMBCtrl const*
+                mb_end = mb + mb_per_slice_count;
+
             for (; mb != mb_end; ++mb)
             {
                 if (mb->IntraMbFlag)
@@ -168,7 +178,7 @@ namespace UMC
                     Ipp32u const offset =
                         (count * 2 + 1) * j;
 
-                    Ipp32u const* map = &((*f).second[offset]);
+                    Ipp32u const* map = &slice_refs[offset];
                     for (int k = 0; k < 4; ++k)
                     {
                         //NOTE: we still have no info about ref. filed use hardcoded zero
