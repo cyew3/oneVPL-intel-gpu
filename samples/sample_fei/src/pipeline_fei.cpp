@@ -804,7 +804,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
-    if (!m_pmfxDECODE)
+    if (!m_pmfxDECODE || m_pmfxVPP)
     {
         // alloc frames for encoder
         sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &EncRequest, &m_EncResponse);
@@ -832,7 +832,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
-    if (!m_pmfxDECODE)
+    if (!m_pmfxDECODE || m_pmfxVPP)
     {
         // prepare mfxFrameSurface1 array for encoder
         sts = FillSurfacePool(m_pEncSurfaces, &m_EncResponse, &(m_mfxEncParams.mfx.FrameInfo));
