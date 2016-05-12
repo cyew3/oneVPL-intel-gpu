@@ -829,6 +829,39 @@ namespace MFX_HEVC_PP
         Ipp32u shift,
         Ipp16s offset,
         Ipp32u bit_depth,
+        Ipp32s isFast,
+        MFX_HEVC_PP::EnumAddAverageType eAddAverage = MFX_HEVC_PP::AVERAGE_NO,
+        const void* in_pSrc2 = NULL,
+        int    in_Src2Pitch = 0) // in samples
+    {
+        ALIGN_DECL(16) short tmpBuf[64*64];
+
+        Ipp32s accum_pitch = ((interp_type == MFX_HEVC_PP::INTERP_HOR) ? (plane_type == UMC_HEVC_DECODER::TEXT_CHROMA ? 2 : 1) : in_SrcPitch);
+
+        const t_src* pSrc = in_pSrc - ((( ( (plane_type == UMC_HEVC_DECODER::TEXT_LUMA) && (isFast == 0) ) ? 8 : 4) >> 1) - 1) * accum_pitch;
+
+        width <<= int(plane_type == UMC_HEVC_DECODER::TEXT_CHROMA);
+
+        if (is_unsigned<t_dst>::value)
+            Interp_WithAvg<0>(pSrc, in_SrcPitch, in_pDst, in_DstPitch, (void *)in_pSrc2, in_Src2Pitch, eAddAverage, tab_index, width, height, shift, (short)offset, interp_type, plane_type, bit_depth, tmpBuf);
+        else
+            Interp_NoAvg<0>(pSrc, in_SrcPitch, (short *)in_pDst, in_DstPitch, tab_index, width, height, shift, (short)offset, interp_type, plane_type);
+    }
+
+
+    template <UMC_HEVC_DECODER::EnumTextType plane_type, typename t_src, typename t_dst>
+    void inline H265_FORCEINLINE InterpolateEnc(
+        MFX_HEVC_PP::EnumInterpType interp_type,
+        const t_src* in_pSrc,
+        Ipp32u in_SrcPitch, // in samples
+        t_dst* in_pDst,
+        Ipp32u in_DstPitch, // in samples
+        Ipp32u tab_index,
+        Ipp32u width,
+        Ipp32u height,
+        Ipp32u shift,
+        Ipp16s offset,
+        Ipp32u bit_depth,
         Ipp16s *tmpBuf,
         MFX_HEVC_PP::EnumAddAverageType eAddAverage = MFX_HEVC_PP::AVERAGE_NO,
         const void* in_pSrc2 = NULL,
@@ -848,7 +881,7 @@ namespace MFX_HEVC_PP
 
 
     template <UMC_HEVC_DECODER::EnumTextType plane_type, typename t_src, typename t_dst>
-    void inline H265_FORCEINLINE InterpolateFast(
+    void inline H265_FORCEINLINE InterpolateEncFast(
         MFX_HEVC_PP::EnumInterpType interp_type,
         const t_src* in_pSrc,
         Ipp32u in_SrcPitch, // in samples

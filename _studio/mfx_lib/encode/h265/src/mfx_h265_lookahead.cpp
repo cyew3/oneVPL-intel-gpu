@@ -229,20 +229,20 @@ void MeInterpolate(const H265MEInfo* me_info, const H265MV *MV, PixType *src,
 
     VM_ASSERT (!(dx == 0 && dy == 0));
     if (dy == 0) {
-        InterpolateFast<UMC_HEVC_DECODER::TEXT_LUMA, PixType, PixType>( INTERP_HOR, src, srcPitch, dst, dstPitch, dx, w, h, 6, 32, bitDepth, preAvgTmpBuf);
+        InterpolateEncFast<UMC_HEVC_DECODER::TEXT_LUMA, PixType, PixType>( INTERP_HOR, src, srcPitch, dst, dstPitch, dx, w, h, 6, 32, bitDepth, preAvgTmpBuf);
     } else if (dx == 0) {
-        InterpolateFast<UMC_HEVC_DECODER::TEXT_LUMA, PixType, PixType>( INTERP_VER, src, srcPitch, dst, dstPitch, dy, w, h, 6, 32, bitDepth, preAvgTmpBuf);
+        InterpolateEncFast<UMC_HEVC_DECODER::TEXT_LUMA, PixType, PixType>( INTERP_VER, src, srcPitch, dst, dstPitch, dy, w, h, 6, 32, bitDepth, preAvgTmpBuf);
     } else {
         Ipp16s tmpBuf[80 * 80];
         Ipp16s *tmp = tmpBuf + 80 * 8 + 8;
         Ipp32s tmpPitch = 80;
 
-        InterpolateFast<UMC_HEVC_DECODER::TEXT_LUMA, PixType, Ipp16s>( INTERP_HOR, src - 1 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 3, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
+        InterpolateEncFast<UMC_HEVC_DECODER::TEXT_LUMA, PixType, Ipp16s>( INTERP_HOR, src - 1 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 3, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
 
         Ipp32s shift  = 20 - bitDepth;
         Ipp16s offset = 1 << (shift - 1);
 
-        InterpolateFast<UMC_HEVC_DECODER::TEXT_LUMA, Ipp16s, PixType>( INTERP_VER,  tmp + 1 * tmpPitch, tmpPitch, dst, dstPitch, dy, w, h, shift, offset, bitDepth, preAvgTmpBuf);
+        InterpolateEncFast<UMC_HEVC_DECODER::TEXT_LUMA, Ipp16s, PixType>( INTERP_VER,  tmp + 1 * tmpPitch, tmpPitch, dst, dstPitch, dy, w, h, shift, offset, bitDepth, preAvgTmpBuf);
     }
 
     return;
@@ -607,14 +607,14 @@ template <typename TSrc, typename TDst>
 void InterpHor(const TSrc *src, Ipp32s pitchSrc, TDst *dst, Ipp32s pitchDst, Ipp32s dx,
                Ipp32s width, Ipp32s height, Ipp32u shift, Ipp16s offset, Ipp32u bitDepth, Ipp16s *tmpBuf)
 {
-    InterpolateFast<LUMA, TSrc, TDst>(INTERP_HOR, src, pitchSrc, dst, pitchDst, dx, width, height, shift, offset, bitDepth, tmpBuf);//isFast
+    InterpolateEncFast<LUMA, TSrc, TDst>(INTERP_HOR, src, pitchSrc, dst, pitchDst, dx, width, height, shift, offset, bitDepth, tmpBuf);//isFast
 }
 
 template <typename TSrc, typename TDst>
 void InterpVer(const TSrc *src, Ipp32s pitchSrc, TDst *dst, Ipp32s pitchDst, Ipp32s dy,
                Ipp32s width, Ipp32s height, Ipp32u shift, Ipp16s offset, Ipp32u bitDepth, Ipp16s *tmpBuf)
 {
-    InterpolateFast<LUMA, TSrc, TDst>(INTERP_VER, src, pitchSrc, dst, pitchDst, dy, width, height, shift, offset, bitDepth, tmpBuf);//isFast
+    InterpolateEncFast<LUMA, TSrc, TDst>(INTERP_VER, src, pitchSrc, dst, pitchDst, dy, width, height, shift, offset, bitDepth, tmpBuf);//isFast
 }
 
 template <typename PixType>

@@ -4449,7 +4449,7 @@ void H265CU<PixType>::MeInterpolateUseSaveHi(const H265MEInfo* meInfo, const H26
             if (m_interpIdxFirst == m_interpIdxLast) // replaced oldest
                 m_interpIdxFirst = (m_interpIdxFirst + 1) & (INTERP_BUF_SZ - 1);
             dstPitch = MAX_CU_SIZE;
-            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src, srcPitch, dst, dstPitch, dx, w, h, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
+            InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src, srcPitch, dst, dstPitch, dx, w, h, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
         } else {
             dst = interpBuf;
             dstPitch = interpPitch;
@@ -4466,7 +4466,7 @@ void H265CU<PixType>::MeInterpolateUseSaveHi(const H265MEInfo* meInfo, const H26
                 ext_offset += (MemSubpelExtH[size][hPh][vPh]/2)*srcPitch;
                 Ipp32s w2 = w+MemSubpelExtW[size][hPh][vPh];
                 Ipp32s h2 = h+MemSubpelExtH[size][hPh][vPh];
-                Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, src-ext_offset, srcPitch, predPtrHi, pitchRec, dy, w2, h2, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
+                InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, src-ext_offset, srcPitch, predPtrHi, pitchRec, dy, w2, h2, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
                 h265_InterpLumaPack(predPtrHi, pitchRec, predPtr, pitchRec, w2, h2, bitDepth);
                 dst = predPtrHi + (MemSubpelExtH[size][hPh][vPh]/2)*pitchRec+(MemSubpelExtW[size][hPh][vPh]/2);
                 dstPitch = pitchRec;
@@ -4478,7 +4478,7 @@ void H265CU<PixType>::MeInterpolateUseSaveHi(const H265MEInfo* meInfo, const H26
                 if (m_interpIdxFirst == m_interpIdxLast) // replaced oldest
                     m_interpIdxFirst = (m_interpIdxFirst + 1) & (INTERP_BUF_SZ - 1);
                 dstPitch = MAX_CU_SIZE;
-                Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, src, srcPitch, dst, dstPitch, dy, w, h, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
+                InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, src, srcPitch, dst, dstPitch, dy, w, h, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
             }
         } else {
             dst = interpBuf;
@@ -4500,10 +4500,10 @@ void H265CU<PixType>::MeInterpolateUseSaveHi(const H265MEInfo* meInfo, const H26
             Ipp16s *tmp = tmpBuf + ((64+8)+8+8) * 8 + 8;
             Ipp32s tmpPitch = ((64+8)+8+8);
 
-            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src - 3 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 8, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
+            InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src - 3 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 8, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
             Ipp32s shift  = 6;
             Ipp16s offset = 0;
-            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER,  tmp + 3 * tmpPitch, tmpPitch, dst, dstPitch, dy, w, h, shift, offset, bitDepth, preAvgTmpBuf);
+            InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER,  tmp + 3 * tmpPitch, tmpPitch, dst, dstPitch, dy, w, h, shift, offset, bitDepth, preAvgTmpBuf);
         } else {
             dst = interpBuf;
             dstPitch = interpPitch;
@@ -4541,7 +4541,7 @@ void H265CU<PixType>::MeInterpolateUseHi(const H265MEInfo* meInfo, const H265MV 
             if (m_interpIdxFirst == m_interpIdxLast) // replaced oldest
                 m_interpIdxFirst = (m_interpIdxFirst + 1) & (INTERP_BUF_SZ - 1);
             dstPitch = MAX_CU_SIZE;
-            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src, srcPitch, dst, dstPitch, dx, w, h, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
+            InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src, srcPitch, dst, dstPitch, dx, w, h, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
         } else {
             dst = interpBuf;
             dstPitch = interpPitch;
@@ -4557,7 +4557,7 @@ void H265CU<PixType>::MeInterpolateUseHi(const H265MEInfo* meInfo, const H265MV 
             if (m_interpIdxFirst == m_interpIdxLast) // replaced oldest
                 m_interpIdxFirst = (m_interpIdxFirst + 1) & (INTERP_BUF_SZ - 1);
             dstPitch = MAX_CU_SIZE;
-            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, src, srcPitch, dst, dstPitch, dy, w, h, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
+            InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, src, srcPitch, dst, dstPitch, dy, w, h, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
         } else {
             dst = interpBuf;
             dstPitch = interpPitch;
@@ -4578,10 +4578,10 @@ void H265CU<PixType>::MeInterpolateUseHi(const H265MEInfo* meInfo, const H265MV 
             Ipp16s *tmp = tmpBuf + ((64+8)+8+8) * 8 + 8;
             Ipp32s tmpPitch = ((64+8)+8+8);
 
-            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src - 3 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 8, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
+            InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src - 3 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 8, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
             Ipp32s shift  = 6;
             Ipp16s offset = 0;
-            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER,  tmp + 3 * tmpPitch, tmpPitch, dst, dstPitch, dy, w, h, shift, offset, bitDepth, preAvgTmpBuf);
+            InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER,  tmp + 3 * tmpPitch, tmpPitch, dst, dstPitch, dy, w, h, shift, offset, bitDepth, preAvgTmpBuf);
         } else {
             dst = interpBuf;
             dstPitch = interpPitch;
@@ -5928,14 +5928,14 @@ template <typename TSrc, typename TDst>
 void InterpHor(const TSrc *src, Ipp32s pitchSrc, TDst *dst, Ipp32s pitchDst, Ipp32s dx,
                Ipp32s width, Ipp32s height, Ipp32u shift, Ipp16s offset, Ipp32u bitDepth, Ipp16s *tmpBuf)
 {
-    Interpolate<LUMA>(INTERP_HOR, src, pitchSrc, dst, pitchDst, dx, width, height, shift, offset, bitDepth, tmpBuf);
+    InterpolateEnc<LUMA>(INTERP_HOR, src, pitchSrc, dst, pitchDst, dx, width, height, shift, offset, bitDepth, tmpBuf);
 }
 
 template <typename TSrc, typename TDst>
 void InterpVer(const TSrc *src, Ipp32s pitchSrc, TDst *dst, Ipp32s pitchDst, Ipp32s dy,
                Ipp32s width, Ipp32s height, Ipp32u shift, Ipp16s offset, Ipp32u bitDepth, Ipp16s *tmpBuf)
 {
-    Interpolate<LUMA>(INTERP_VER, src, pitchSrc, dst, pitchDst, dy, width, height, shift, offset, bitDepth, tmpBuf);
+    InterpolateEnc<LUMA>(INTERP_VER, src, pitchSrc, dst, pitchDst, dy, width, height, shift, offset, bitDepth, tmpBuf);
 }
 
 

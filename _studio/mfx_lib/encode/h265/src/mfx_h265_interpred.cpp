@@ -166,30 +166,30 @@ void H265CU<PixType>::PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s pu
     }
     else if (dy == 0) {
         if (!isBiPred) // Write directly into buffer
-            Interpolate<PLANE_TYPE_>(INTERP_HOR, src, srcPitch, dstPic, dstPicPitch, dx, puW, puH, shift, offset, bitDepth, preAvgTmpBuf);
+            InterpolateEnc<PLANE_TYPE_>(INTERP_HOR, src, srcPitch, dstPic, dstPicPitch, dx, puW, puH, shift, offset, bitDepth, preAvgTmpBuf);
         else if (eAddAverage == AVERAGE_NO)
-            Interpolate<PLANE_TYPE_>(INTERP_HOR, src, srcPitch, dstBuf, dstBufPitch, dx, puW, puH, shift, offset, bitDepth, preAvgTmpBuf);
+            InterpolateEnc<PLANE_TYPE_>(INTERP_HOR, src, srcPitch, dstBuf, dstBufPitch, dx, puW, puH, shift, offset, bitDepth, preAvgTmpBuf);
         else if (eAddAverage == AVERAGE_FROM_BUF)
-            Interpolate<PLANE_TYPE_>(INTERP_HOR, src, srcPitch, dstPic, dstPicPitch, dx, puW, puH, shift, offset, bitDepth, preAvgTmpBuf, AVERAGE_FROM_BUF, dstBuf, dstBufPitch);
+            InterpolateEnc<PLANE_TYPE_>(INTERP_HOR, src, srcPitch, dstPic, dstPicPitch, dx, puW, puH, shift, offset, bitDepth, preAvgTmpBuf, AVERAGE_FROM_BUF, dstBuf, dstBufPitch);
         else if (eAddAverage == AVERAGE_FROM_PIC)
-            Interpolate<PLANE_TYPE_>(INTERP_HOR, src, srcPitch, dstPic, dstPicPitch, dx, puW, puH, shift, offset, bitDepth, preAvgTmpBuf, AVERAGE_FROM_PIC, src2, srcPitch2);
+            InterpolateEnc<PLANE_TYPE_>(INTERP_HOR, src, srcPitch, dstPic, dstPicPitch, dx, puW, puH, shift, offset, bitDepth, preAvgTmpBuf, AVERAGE_FROM_PIC, src2, srcPitch2);
     }
     else if (dx == 0) {
         if (!isBiPred) // Write directly into buffer
-            Interpolate<PLANE_TYPE_>(INTERP_VER, src, srcPitch, dstPic, dstPicPitch, dy, puW, puH, shift, offset, bitDepth, preAvgTmpBuf);
+            InterpolateEnc<PLANE_TYPE_>(INTERP_VER, src, srcPitch, dstPic, dstPicPitch, dy, puW, puH, shift, offset, bitDepth, preAvgTmpBuf);
         else if (eAddAverage == AVERAGE_NO)
-            Interpolate<PLANE_TYPE_>(INTERP_VER, src, srcPitch, dstBuf, dstBufPitch, dy, puW, puH, shift, offset, bitDepth, preAvgTmpBuf);
+            InterpolateEnc<PLANE_TYPE_>(INTERP_VER, src, srcPitch, dstBuf, dstBufPitch, dy, puW, puH, shift, offset, bitDepth, preAvgTmpBuf);
         else if (eAddAverage == AVERAGE_FROM_BUF)
-            Interpolate<PLANE_TYPE_>(INTERP_VER, src, srcPitch, dstPic, dstPicPitch, dy, puW, puH, shift, offset, bitDepth, preAvgTmpBuf, AVERAGE_FROM_BUF, dstBuf, dstBufPitch);
+            InterpolateEnc<PLANE_TYPE_>(INTERP_VER, src, srcPitch, dstPic, dstPicPitch, dy, puW, puH, shift, offset, bitDepth, preAvgTmpBuf, AVERAGE_FROM_BUF, dstBuf, dstBufPitch);
         else if (eAddAverage == AVERAGE_FROM_PIC)
-            Interpolate<PLANE_TYPE_>(INTERP_VER, src, srcPitch, dstPic, dstPicPitch, dy, puW, puH, shift, offset, bitDepth, preAvgTmpBuf, AVERAGE_FROM_PIC, src2, srcPitch2);
+            InterpolateEnc<PLANE_TYPE_>(INTERP_VER, src, srcPitch, dstPic, dstPicPitch, dy, puW, puH, shift, offset, bitDepth, preAvgTmpBuf, AVERAGE_FROM_PIC, src2, srcPitch2);
     }
     else {
         Ipp16s *horBuf = m_scratchPad.interp.predInterUni.tmpBuf;
         const Ipp32s horBufPitch = AlignValue(puW << (PLANE_TYPE == TEXT_CHROMA), 16);
         Ipp16s *horBufPtr = horBuf;
 
-        Interpolate<PLANE_TYPE_>(INTERP_HOR,  src - ((tap >> 1) - 1) * srcPitch, srcPitch, horBufPtr, horBufPitch, dx, puW, puH + tap - 1, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
+        InterpolateEnc<PLANE_TYPE_>(INTERP_HOR,  src - ((tap >> 1) - 1) * srcPitch, srcPitch, horBufPtr, horBufPitch, dx, puW, puH + tap - 1, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
 
         shift = 20 - bitDepth;
         offset = 1 << (19 - bitDepth);
@@ -200,13 +200,13 @@ void H265CU<PixType>::PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s pu
 
         horBufPtr += ((tap >> 1) - 1) * horBufPitch;
         if (!isBiPred) // Write directly into buffer
-            Interpolate<PLANE_TYPE_>(INTERP_VER, horBufPtr, horBufPitch, dstPic, dstPicPitch, dy, puW, puH, shift, offset, bitDepth, preAvgTmpBuf);
+            InterpolateEnc<PLANE_TYPE_>(INTERP_VER, horBufPtr, horBufPitch, dstPic, dstPicPitch, dy, puW, puH, shift, offset, bitDepth, preAvgTmpBuf);
         else if (eAddAverage == AVERAGE_NO)
-            Interpolate<PLANE_TYPE_>(INTERP_VER, horBufPtr, horBufPitch, dstBuf, dstBufPitch, dy, puW, puH, shift, offset, bitDepth, preAvgTmpBuf);
+            InterpolateEnc<PLANE_TYPE_>(INTERP_VER, horBufPtr, horBufPitch, dstBuf, dstBufPitch, dy, puW, puH, shift, offset, bitDepth, preAvgTmpBuf);
         else if (eAddAverage == AVERAGE_FROM_BUF)
-            Interpolate<PLANE_TYPE_>(INTERP_VER, horBufPtr, horBufPitch, dstPic, dstPicPitch, dy, puW, puH, shift, offset, bitDepth, preAvgTmpBuf, AVERAGE_FROM_BUF, dstBuf, dstBufPitch);
+            InterpolateEnc<PLANE_TYPE_>(INTERP_VER, horBufPtr, horBufPitch, dstPic, dstPicPitch, dy, puW, puH, shift, offset, bitDepth, preAvgTmpBuf, AVERAGE_FROM_BUF, dstBuf, dstBufPitch);
         else // eAddAverage == AVERAGE_FROM_PIC
-            Interpolate<PLANE_TYPE_>(INTERP_VER, horBufPtr, horBufPitch, dstPic, dstPicPitch, dy, puW, puH, shift, offset, bitDepth, preAvgTmpBuf, AVERAGE_FROM_PIC, src2, srcPitch2);
+            InterpolateEnc<PLANE_TYPE_>(INTERP_VER, horBufPtr, horBufPitch, dstPic, dstPicPitch, dy, puW, puH, shift, offset, bitDepth, preAvgTmpBuf, AVERAGE_FROM_PIC, src2, srcPitch2);
     }
 }
 
@@ -294,33 +294,33 @@ void H265CU<PixType>::MeInterpolateSave(const H265MEInfo* me_info, const H265MV 
     VM_ASSERT (!(dx == 0 && dy == 0));
     if (dy == 0)
     {
-        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src, srcPitch, dstHi, dstPitch, dx, w, h, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
+        InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src, srcPitch, dstHi, dstPitch, dx, w, h, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
         h265_InterpLumaPack(dstHi, dstPitch, dst, dstPitch, w, h, bitDepth);
     }
     else if (dx == 0)
     {
-        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, src, srcPitch, dstHi, dstPitch, dy, w, h, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
+        InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, src, srcPitch, dstHi, dstPitch, dy, w, h, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
         h265_InterpLumaPack(dstHi, dstPitch, dst, dstPitch, w, h, bitDepth);
     }
     else
     {
         if(hdstHi) {
-            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src - 3 * srcPitch, srcPitch, hdstHi, dstPitch, dx, w, h + 8, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
+            InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src - 3 * srcPitch, srcPitch, hdstHi, dstPitch, dx, w, h + 8, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
             h265_InterpLumaPack(hdstHi, dstPitch, hdst, dstPitch, w, h+6, bitDepth);
 
             Ipp32s shift  = 6;
             Ipp16s offset = 0;
-            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER,  hdstHi + 3 * dstPitch, dstPitch, dstHi, dstPitch, dy, w, h, shift, offset, bitDepth, preAvgTmpBuf);
+            InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER,  hdstHi + 3 * dstPitch, dstPitch, dstHi, dstPitch, dy, w, h, shift, offset, bitDepth, preAvgTmpBuf);
             h265_InterpLumaPack(dstHi, dstPitch, dst, dstPitch, w, h, bitDepth);
         } else {
             Ipp16s tmpBuf[((64+8)+8+8) * ((64+8)+8+8)];
             Ipp16s *tmp = tmpBuf + ((64+8)+8+8) * 8 + 8;
             Ipp32s tmpPitch = ((64+8)+8+8);
-            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src - 3 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 8, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
+            InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src - 3 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 8, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
 
             Ipp32s shift  = 6;
             Ipp16s offset = 0;
-            Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER,  tmp + 3 * tmpPitch, tmpPitch, dstHi, dstPitch, dy, w, h, shift, offset, bitDepth, preAvgTmpBuf);
+            InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER,  tmp + 3 * tmpPitch, tmpPitch, dstHi, dstPitch, dy, w, h, shift, offset, bitDepth, preAvgTmpBuf);
             h265_InterpLumaPack(dstHi, dstPitch, dst, dstPitch, w, h, bitDepth);
         }
 
@@ -347,22 +347,22 @@ void H265CU<PixType>::MeInterpolate(const H265MEInfo* me_info, const H265MV *MV,
     VM_ASSERT (!(dx == 0 && dy == 0));
     if (dy == 0)
     {
-         Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src, srcPitch, dst, dstPitch, dx, w, h, 6, 32, bitDepth, preAvgTmpBuf);
+         InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src, srcPitch, dst, dstPitch, dx, w, h, 6, 32, bitDepth, preAvgTmpBuf);
     }
     else if (dx == 0)
     {
-         Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, src, srcPitch, dst, dstPitch, dy, w, h, 6, 32, bitDepth, preAvgTmpBuf);
+         InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, src, srcPitch, dst, dstPitch, dy, w, h, 6, 32, bitDepth, preAvgTmpBuf);
     }
     else
     {
         Ipp16s *tmpBuf = (Ipp16s *)m_scratchPad.interp.meInterpolate.tmpBuf;
         Ipp16s *tmp = tmpBuf;
         Ipp32s tmpPitch = AlignValue(w, 16);
-        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src - 3 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 7, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
+        InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src - 3 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 7, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
 
         Ipp32s shift  = 20 - bitDepth;
         Ipp16s offset = 1 << (shift - 1);
-        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER,  tmp + 3 * tmpPitch, tmpPitch, dst, dstPitch, dy, w, h, shift, offset, bitDepth, preAvgTmpBuf);
+        InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER,  tmp + 3 * tmpPitch, tmpPitch, dst, dstPitch, dy, w, h, shift, offset, bitDepth, preAvgTmpBuf);
 
     }
 }
@@ -386,20 +386,20 @@ void H265CU<PixType>::MeInterpolateCombine(const H265MEInfo* me_info, const H265
     VM_ASSERT (!(dx == 0 && dy == 0));
     if (dy == 0)
     {
-        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src, srcPitch, dstHi, dstPitch, dx, w, h, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
+        InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src, srcPitch, dstHi, dstPitch, dx, w, h, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
     }
     else if (dx == 0)
     {
-        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, src, srcPitch, dstHi, dstPitch, dy, w, h, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
+        InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER, src, srcPitch, dstHi, dstPitch, dy, w, h, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
     }
     else
     {
         Ipp32s tmpPitch = AlignValue(w, 16);
-        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src - 3 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 7, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
+        InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_HOR, src - 3 * srcPitch, srcPitch, tmp, tmpPitch, dx, w, h + 7, bitDepth - 8, 0, bitDepth, preAvgTmpBuf);
 
         Ipp32s shift  = 6;
         Ipp16s offset = 0;
-        Interpolate<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER,  tmp + 3 * tmpPitch, tmpPitch, dstHi, dstPitch, dy, w, h, shift, offset, bitDepth, preAvgTmpBuf);
+        InterpolateEnc<UMC_HEVC_DECODER::TEXT_LUMA>( INTERP_VER,  tmp + 3 * tmpPitch, tmpPitch, dstHi, dstPitch, dy, w, h, shift, offset, bitDepth, preAvgTmpBuf);
     }
 }
 
