@@ -1176,7 +1176,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                msdk_strcopy(pParams->strSrcFile, strInput[i]);
+                msdk_strncopy_s(pParams->strSrcFile, MSDK_MAX_FILENAME_LEN, strInput[i], MSDK_MAX_FILENAME_LEN);
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-o")))
             {
@@ -1190,8 +1190,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                msdk_strcopy(pParams->strPerfFile, strInput[i]);
-
+                msdk_strncopy_s(pParams->strPerfFile, MSDK_MAX_FILENAME_LEN, strInput[i], MSDK_MAX_FILENAME_LEN);
             }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-scc")))
             {
@@ -1593,7 +1592,7 @@ mfxStatus ParseCompositionParfile(const msdk_char* parFileName, sInputParams* pP
         }
         else if ((key.compare("stream") == 0 || key.compare("primarystream") == 0) && nStreamInd < (MAX_INPUT_STREAMS - 1))
         {
-            const mfxU16 len_size = MSDK_MAX_FILENAME_LEN;
+            const mfxU16 len_size = MSDK_MAX_FILENAME_LEN - 1;
 
             if (firstStreamFound == 1)
             {
