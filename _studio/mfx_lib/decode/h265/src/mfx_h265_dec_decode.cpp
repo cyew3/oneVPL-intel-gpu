@@ -60,8 +60,8 @@ struct ThreadTaskInfo
     ThreadTaskInfo()
         : surface_work(0)
         , surface_out(0)
-        , pFrame(0)
         , taskID(0)
+        , pFrame(0)
     {
     }
 
