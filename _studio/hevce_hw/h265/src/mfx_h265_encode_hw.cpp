@@ -824,36 +824,36 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
     sts = PrepareTask(*inputTask); 
     MFX_CHECK_STS(sts);    
 
-   while (Task* taskForExecute = m_task.GetTaskForSubmit())
-   {
+    while (Task* taskForExecute = m_task.GetTaskForSubmit())
+    {
+        if (!taskForExecute->m_surf)
+            break;
 
-       if (!taskForExecute->m_surf)
-           break;
+        if ((taskForExecute->m_insertHeaders & INSERT_BPSEI) && m_task.GetTaskForQuery())
+            break; // sync is needed
 
-       if ((taskForExecute->m_insertHeaders & INSERT_BPSEI) && m_task.GetTaskForQuery())
-           break; // sync is needed
-
-       if (taskForExecute->m_surf)
-   {
-        mfxHDLPair surfaceHDL = {};
-
-        if (taskForExecute->m_insertHeaders & INSERT_BPSEI)
+        if (taskForExecute->m_surf)
         {
-            taskForExecute->m_initial_cpb_removal_delay = m_hrd.GetInitCpbRemovalDelay(*taskForExecute);
-            taskForExecute->m_initial_cpb_removal_offset = m_hrd.GetInitCpbRemovalDelayOffset();
-        }
+            mfxHDLPair surfaceHDL = {};
 
-        taskForExecute->m_cpb_removal_delay = m_hrd.GetAuCpbRemovalDelayMinus1(*taskForExecute) + 1;
+            taskForExecute->m_cpb_removal_delay = (taskForExecute->m_eo == 0) ? 0 : (taskForExecute->m_eo - m_prevBPEO);
+
+            if (taskForExecute->m_insertHeaders & INSERT_BPSEI)
+            {
+                taskForExecute->m_initial_cpb_removal_delay = m_hrd.GetInitCpbRemovalDelay(*taskForExecute);
+                taskForExecute->m_initial_cpb_removal_offset = m_hrd.GetInitCpbRemovalDelayOffset();
+                m_prevBPEO = taskForExecute->m_eo;
+            }
 
 #ifndef HEADER_PACKING_TEST
-        sts = GetNativeHandleToRawSurface(m_core, m_vpar, *taskForExecute, surfaceHDL.first);
-        MFX_CHECK_STS(sts);
+            sts = GetNativeHandleToRawSurface(m_core, m_vpar, *taskForExecute, surfaceHDL.first);
+            MFX_CHECK_STS(sts);
 
-        sts = CopyRawSurfaceToVideoMemory(m_core, m_vpar, *taskForExecute);
-        MFX_CHECK_STS(sts);
+            sts = CopyRawSurfaceToVideoMemory(m_core, m_vpar, *taskForExecute);
+            MFX_CHECK_STS(sts);
 #endif
-        sts = m_ddi->Execute(*taskForExecute, surfaceHDL.first);
-        MFX_CHECK_STS(sts);
+            sts = m_ddi->Execute(*taskForExecute, surfaceHDL.first);
+            MFX_CHECK_STS(sts);
         
             m_task.SubmitForQuery(taskForExecute);
         }

@@ -645,20 +645,20 @@ public:
     void Update(mfxU32 sizeInbits, const Task &pic);
     mfxU32 GetInitCpbRemovalDelay(const Task &pic);
 
-    inline mfxU32 GetInitCpbRemovalDelay() const
+    /*inline mfxU32 GetInitCpbRemovalDelay() const
     {
         return (mfxU32)m_initCpbRemovalDelay;
-    }
+    }*/
 
     inline mfxU32 GetInitCpbRemovalDelayOffset() const
     {
         return mfxU32(m_cpbSize90k - m_initCpbRemovalDelay);
     }
 
-    inline mfxU32 GetAuCpbRemovalDelayMinus1(const Task &pic) const
+    /*inline mfxU32 GetAuCpbRemovalDelayMinus1(const Task &pic) const
     {
         return (pic.m_eo == 0) ? 0 : (pic.m_eo - m_prevBpEncOrder) - 1;
-    }
+    }*/
 
     inline bool Enabled() { return m_bIsHrdRequired; }
 

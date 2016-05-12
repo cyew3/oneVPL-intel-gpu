@@ -248,6 +248,7 @@
   <ItemGroup>
     <ClInclude Include="..\shared\include\auxiliary_device.h" />
     <ClInclude Include="h265\include\mfx_h265_encode_hw.h" />
+    <ClInclude Include="h265\include\mfx_h265_encode_hw_brc.h" />
     <ClInclude Include="h265\include\mfx_h265_encode_hw_bs.h" />
     <ClInclude Include="h265\include\mfx_h265_encode_hw_d3d11.h" />
     <ClInclude Include="h265\include\mfx_h265_encode_hw_d3d9.h" />
@@ -266,6 +267,7 @@
     <ClCompile Include="..\shared\src\auxiliary_device.cpp" />
     <ClCompile Include="h265\src\export.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_encode_hw_brc.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_bs.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_d3d11.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_d3d9.cpp" />
