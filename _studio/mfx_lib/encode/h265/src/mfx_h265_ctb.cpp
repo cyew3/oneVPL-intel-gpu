@@ -2491,20 +2491,22 @@ template <typename PixType>
 void H265CU<PixType>::MemoizeInit() 
 {
     Ipp32s j,k,l;
-    for(j=0;j<m_currFrame->m_numRefUnique;j++) {
-        m_memBestMV[3][j].Init();
-        m_memBestMV[2][j].Init();
-        m_memBestMV[1][j].Init();
-        for(k=0;k<4;k++) {
-            for(l=0;l<4;l++) {
-                m_memSubpel[3][j][k][l].Init(&(m_predBufHi3[j][k][l][0]), &(m_predBuf3[j][k][l][0]));
-                m_memSubpel[2][j][k][l].Init(&(m_predBufHi2[j][k][l][0]), &(m_predBuf2[j][k][l][0]));
-                m_memSubpel[1][j][k][l].Init(&(m_predBufHi1[j][k][l][0]), &(m_predBuf1[j][k][l][0]));
-                m_memSubpel[0][j][k][l].Init(&(m_predBufHi0[j][k][l][0]), &(m_predBuf0[j][k][l][0]));
-                if(m_par->hadamardMe>=2) {
-                    m_memSubHad[3][j][k][l].Init(&(m_satd8Buf3[j][k][l][0][0]), &(m_satd8Buf3[j][k][l][1][0]), &(m_satd8Buf3[j][k][l][2][0]), &(m_satd8Buf3[j][k][l][3][0]));
-                    m_memSubHad[2][j][k][l].Init(&(m_satd8Buf2[j][k][l][0][0]), &(m_satd8Buf2[j][k][l][1][0]), &(m_satd8Buf2[j][k][l][2][0]), &(m_satd8Buf2[j][k][l][3][0]));
-                    m_memSubHad[1][j][k][l].Init(&(m_satd8Buf1[j][k][l][0][0]), &(m_satd8Buf1[j][k][l][1][0]), &(m_satd8Buf1[j][k][l][2][0]), &(m_satd8Buf1[j][k][l][3][0]));
+    if (!m_par->enableCmFlag || m_par->numBiRefineIter > 1) {
+        for(j=0;j<m_currFrame->m_numRefUnique;j++) {
+            m_memBestMV[3][j].Init();
+            m_memBestMV[2][j].Init();
+            m_memBestMV[1][j].Init();
+            for(k=0;k<4;k++) {
+                for(l=0;l<4;l++) {
+                    m_memSubpel[3][j][k][l].Init(&(m_predBufHi3[j][k][l][0]), &(m_predBuf3[j][k][l][0]));
+                    m_memSubpel[2][j][k][l].Init(&(m_predBufHi2[j][k][l][0]), &(m_predBuf2[j][k][l][0]));
+                    m_memSubpel[1][j][k][l].Init(&(m_predBufHi1[j][k][l][0]), &(m_predBuf1[j][k][l][0]));
+                    m_memSubpel[0][j][k][l].Init(&(m_predBufHi0[j][k][l][0]), &(m_predBuf0[j][k][l][0]));
+                    if(m_par->hadamardMe>=2) {
+                        m_memSubHad[3][j][k][l].Init(&(m_satd8Buf3[j][k][l][0][0]), &(m_satd8Buf3[j][k][l][1][0]), &(m_satd8Buf3[j][k][l][2][0]), &(m_satd8Buf3[j][k][l][3][0]));
+                        m_memSubHad[2][j][k][l].Init(&(m_satd8Buf2[j][k][l][0][0]), &(m_satd8Buf2[j][k][l][1][0]), &(m_satd8Buf2[j][k][l][2][0]), &(m_satd8Buf2[j][k][l][3][0]));
+                        m_memSubHad[1][j][k][l].Init(&(m_satd8Buf1[j][k][l][0][0]), &(m_satd8Buf1[j][k][l][1][0]), &(m_satd8Buf1[j][k][l][2][0]), &(m_satd8Buf1[j][k][l][3][0]));
+                    }
                 }
             }
         }
@@ -2525,22 +2527,24 @@ template <typename PixType>
 void H265CU<PixType>::MemoizeClear(Ipp8u depth) 
 {
     Ipp32s memSize = (m_par->Log2MaxCUSize-3-depth);
-    if(m_par->hadamardMe>=2 && memSize>0) {
-        for(Ipp32s j=0;j<m_currFrame->m_numRefUnique;j++) {
-            m_memBestMV[memSize][j].Init();
-            for(Ipp32s k=0;k<4;k++) {
-                for(Ipp32s l=0;l<4;l++) {
-                    m_memSubpel[memSize][j][k][l].Init();
-                    m_memSubHad[memSize][j][k][l].Init();
+    if (!m_par->enableCmFlag || m_par->numBiRefineIter > 1) {
+        if (m_par->hadamardMe>=2 && memSize>0) {
+            for(Ipp32s j=0;j<m_currFrame->m_numRefUnique;j++) {
+                m_memBestMV[memSize][j].Init();
+                for(Ipp32s k=0;k<4;k++) {
+                    for(Ipp32s l=0;l<4;l++) {
+                        m_memSubpel[memSize][j][k][l].Init();
+                        m_memSubHad[memSize][j][k][l].Init();
+                    }
                 }
             }
-        }
-    } else {
-        for(Ipp32s j=0;j<m_currFrame->m_numRefUnique;j++) {
-            m_memBestMV[memSize][j].Init();
-            for(Ipp32s k=0;k<4;k++)
-                for(Ipp32s l=0;l<4;l++)
-                    m_memSubpel[memSize][j][k][l].Init();
+        } else {
+            for(Ipp32s j=0;j<m_currFrame->m_numRefUnique;j++) {
+                m_memBestMV[memSize][j].Init();
+                for(Ipp32s k=0;k<4;k++)
+                    for(Ipp32s l=0;l<4;l++)
+                        m_memSubpel[memSize][j][k][l].Init();
+            }
         }
     }
     m_memCandSubHad[memSize].Init();
@@ -4213,7 +4217,7 @@ Ipp32s H265CU<PixType>::MatchingMetricPu(const PixType *src, const H265MEInfo *m
 // absPartIdx - for minimal TU
 template <typename PixType>
 void H265CU<PixType>::MatchingMetricPuCombine(Ipp32s *had, const PixType *src, const H265MEInfo *meInfo, const H265MV *mv, const H265MV *mvB,
-                                              const Ipp8s refIdx[2], const Ipp8s refIdxB[2], Ipp32s useHadamard)
+                                              const Ipp8s refIdx[2], const Ipp8s refIdxB[2])
 {
     Zero(m_gaccAmvpPred);
     Zero(m_gaccAmvpPredPitch);
@@ -4229,15 +4233,11 @@ void H265CU<PixType>::MatchingMetricPuCombine(Ipp32s *had, const PixType *src, c
             MeInterpolate(meInfo, &mv[0], (PixType*)refFrame->m_recon->y, refFrame->m_recon->pitch_luma_pix, m_gaccAmvpPredBuf[0], MAX_CU_SIZE);
             m_gaccAmvpPred[0] = m_gaccAmvpPredBuf[0];
             m_gaccAmvpPredPitch[0] = MAX_CU_SIZE;
-            had[0] =  ((useHadamard)
-                ? tuHadNxN(src, m_pitchSrcLuma, m_gaccAmvpPredBuf[0], MAX_CU_SIZE, meInfo->width)
-                : h265_SAD_MxN_special(src, m_gaccAmvpPredBuf[0], m_pitchSrcLuma, meInfo->width, meInfo->height)) >> m_par->bitDepthLumaShift;
+            had[0] = tuHadNxN(src, m_pitchSrcLuma, m_gaccAmvpPredBuf[0], MAX_CU_SIZE, meInfo->width) >> m_par->bitDepthLumaShift;
         } else {
             m_gaccAmvpPred[0] = rec0;
             m_gaccAmvpPredPitch[0] = pitchRec0;
-            had[0] =  ((useHadamard)
-                ? tuHadNxN(src, m_pitchSrcLuma, rec0, pitchRec0, meInfo->width)
-                : h265_SAD_MxN_general(src, m_pitchSrcLuma, rec0, pitchRec0, meInfo->width, meInfo->height)) >> m_par->bitDepthLumaShift;
+            had[0] = tuHadNxN(src, m_pitchSrcLuma, rec0, pitchRec0, meInfo->width) >> m_par->bitDepthLumaShift;
         }
         return;
     }
@@ -4268,16 +4268,11 @@ void H265CU<PixType>::MatchingMetricPuCombine(Ipp32s *had, const PixType *src, c
         pitchRec0 = MAX_CU_SIZE;
         m_gaccAmvpPred[0] = m_gaccAmvpPredBuf[0];
         m_gaccAmvpPredPitch[0] = MAX_CU_SIZE;
-        
-        had[0] =  ((useHadamard)
-            ? tuHadNxN(src, m_pitchSrcLuma, rec0, pitchRec0, meInfo->width)
-            : h265_SAD_MxN_special(src, rec0, m_pitchSrcLuma, meInfo->width, meInfo->height)) >> m_par->bitDepthLumaShift;
+        had[0] = tuHadNxN(src, m_pitchSrcLuma, rec0, pitchRec0, meInfo->width) >> m_par->bitDepthLumaShift;
     } else {
         m_gaccAmvpPred[0] = rec0;
         m_gaccAmvpPredPitch[0] = pitchRec0;
-        had[0] =  ((useHadamard)
-            ? tuHadNxN(src, m_pitchSrcLuma, rec0, pitchRec0, meInfo->width)
-            : h265_SAD_MxN_general(src, m_pitchSrcLuma, rec0, pitchRec0, meInfo->width, meInfo->height)) >> m_par->bitDepthLumaShift;
+        had[0] = tuHadNxN(src, m_pitchSrcLuma, rec0, pitchRec0, meInfo->width) >> m_par->bitDepthLumaShift;
     }
  
     if (refIdx[0] == m_currFrame->m_mapListRefUnique[1][refIdx[1]]&& mv[0] == mv[1]) {
@@ -4296,16 +4291,11 @@ void H265CU<PixType>::MatchingMetricPuCombine(Ipp32s *had, const PixType *src, c
             pitchRec1 = MAX_CU_SIZE;
             m_gaccAmvpPred[1] = m_gaccAmvpPredBuf[1];
             m_gaccAmvpPredPitch[1] = MAX_CU_SIZE;
-        
-            had[1] =  ((useHadamard)
-                ? tuHadNxN(src, m_pitchSrcLuma, rec1, pitchRec1, meInfo->width)
-                : h265_SAD_MxN_special(src, rec1, m_pitchSrcLuma, meInfo->width, meInfo->height)) >> m_par->bitDepthLumaShift;
+            had[1] = tuHadNxN(src, m_pitchSrcLuma, rec1, pitchRec1, meInfo->width) >> m_par->bitDepthLumaShift;
         } else {
             m_gaccAmvpPred[1] = rec1;
             m_gaccAmvpPredPitch[1] = pitchRec1;
-            had[1] =  ((useHadamard)
-                ? tuHadNxN(src, m_pitchSrcLuma, rec1, pitchRec1, meInfo->width)
-                : h265_SAD_MxN_general(src, m_pitchSrcLuma, rec1, pitchRec1, meInfo->width, meInfo->height)) >> m_par->bitDepthLumaShift;
+            had[1] = tuHadNxN(src, m_pitchSrcLuma, rec1, pitchRec1, meInfo->width) >> m_par->bitDepthLumaShift;
         }
     }
 
@@ -4334,28 +4324,16 @@ void H265CU<PixType>::MatchingMetricPuCombine(Ipp32s *had, const PixType *src, c
         m_gaccAmvpPredPitch[2] = MAX_CU_SIZE;
         if(!interpFlag0 && !interpFlag1) {
             h265_Average(rec0, pitchRec0, rec1, pitchRec1, m_gaccAmvpPredBuf[2], MAX_CU_SIZE, meInfo->width, meInfo->height);
-
-            had[2] = ((useHadamard)
-                ? tuHadNxN(src, m_pitchSrcLuma, m_gaccAmvpPredBuf[2], MAX_CU_SIZE, meInfo->width)
-                : h265_SAD_MxN_special(src, m_gaccAmvpPredBuf[2], m_pitchSrcLuma, meInfo->width, meInfo->height)) >> (m_par->bitDepthLumaShift);
+            had[2] = tuHadNxN(src, m_pitchSrcLuma, m_gaccAmvpPredBuf[2], MAX_CU_SIZE, meInfo->width) >> m_par->bitDepthLumaShift;
         } else if(!interpFlag0) {
             WriteBiAverageToPicP(pBufHi1, pitchBufHi, (PixType*)rec0, pitchRec0, m_gaccAmvpPredBuf[2], MAX_CU_SIZE, meInfo->width, meInfo->height, m_par->bitDepthLuma);
-
-            had[2] = ((useHadamard)
-                ? tuHadNxN(src, m_pitchSrcLuma, m_gaccAmvpPredBuf[2], MAX_CU_SIZE, meInfo->width)
-                : h265_SAD_MxN_special(src, m_gaccAmvpPredBuf[2], m_pitchSrcLuma, meInfo->width, meInfo->height)) >> (m_par->bitDepthLumaShift);
+            had[2] = tuHadNxN(src, m_pitchSrcLuma, m_gaccAmvpPredBuf[2], MAX_CU_SIZE, meInfo->width) >> m_par->bitDepthLumaShift;
         } else if(!interpFlag1) {
             WriteBiAverageToPicP(pBufHi0, pitchBufHi, (PixType*)rec1, pitchRec1, m_gaccAmvpPredBuf[2], MAX_CU_SIZE, meInfo->width, meInfo->height, m_par->bitDepthLuma);
-
-            had[2] = ((useHadamard)
-                ? tuHadNxN(src, m_pitchSrcLuma, m_gaccAmvpPredBuf[2], MAX_CU_SIZE, meInfo->width)
-                : h265_SAD_MxN_special(src, m_gaccAmvpPredBuf[2], m_pitchSrcLuma, meInfo->width, meInfo->height)) >> (m_par->bitDepthLumaShift);
+            had[2] = tuHadNxN(src, m_pitchSrcLuma, m_gaccAmvpPredBuf[2], MAX_CU_SIZE, meInfo->width) >> m_par->bitDepthLumaShift;
         } else {
             WriteBiAverageToPicB(pBufHi0, pitchBufHi, pBufHi1, pitchBufHi, m_gaccAmvpPredBuf[2], MAX_CU_SIZE, meInfo->width, meInfo->height, m_par->bitDepthLuma);
-
-            had[2] = ((useHadamard)
-                ? tuHadNxN(src, m_pitchSrcLuma, m_gaccAmvpPredBuf[2], MAX_CU_SIZE, meInfo->width)
-                : h265_SAD_MxN_special(src, m_gaccAmvpPredBuf[2], m_pitchSrcLuma, meInfo->width, meInfo->height)) >> (m_par->bitDepthLumaShift);
+            had[2] = tuHadNxN(src, m_pitchSrcLuma, m_gaccAmvpPredBuf[2], MAX_CU_SIZE, meInfo->width) >> m_par->bitDepthLumaShift;
         }
     }
 
@@ -8658,7 +8636,7 @@ Ipp32s H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
     ClipMV_NR(mvBest[1]);
     ClipMV_NR(mvBestB[0]);
     ClipMV_NR(mvBestB[1]);
-    MatchingMetricPuCombine(metric, src, meInfo, mvBest, mvBestB, refIdxBest, refIdxBestB, useHadamard);
+    MatchingMetricPuCombine(metric, src, meInfo, mvBest, mvBestB, refIdxBest, refIdxBestB);
 
     Ipp32s costList[2] = { costRefBest[0][idx0], costRefBest[1][idx1] };
 

@@ -1195,6 +1195,10 @@ template void MFX_HEVC_PP::Interp_NoAvg<1>(const short*, unsigned, short*, unsig
 
 /* NOTE: average functions assume maximum block size of 64x64, including 7 extra output rows for H pass */
 
+enum {
+    PITCH_TMP_BUF  = 80
+};
+
 /* typically used for ~15% of total pixels, does first-pass horizontal or vertical filter, optionally with average against reference */
 template <int isFast>
 void MFX_HEVC_PP::Interp_WithAvg(
@@ -1218,28 +1222,28 @@ void MFX_HEVC_PP::Interp_WithAvg(
     if (plane == TEXT_LUMA) {
         if (dir == INTERP_HOR) {
             if ( isFast )
-                NAME(h265_InterpLumaFast_s8_d16_H)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLumaFast_s8_d16_H)(pSrc, srcPitch, tmpBuf, PITCH_TMP_BUF, tab_index, width, height, shift, offset);
             else
-                NAME(h265_InterpLuma_s8_d16_H)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLuma_s8_d16_H)(pSrc, srcPitch, tmpBuf, PITCH_TMP_BUF, tab_index, width, height, shift, offset);
         } else {
             if ( isFast )
-                NAME(h265_InterpLumaFast_s8_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLumaFast_s8_d16_V)(pSrc, srcPitch, tmpBuf, PITCH_TMP_BUF, tab_index, width, height, shift, offset);
             else
-                NAME(h265_InterpLuma_s8_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLuma_s8_d16_V)(pSrc, srcPitch, tmpBuf, PITCH_TMP_BUF, tab_index, width, height, shift, offset);
         }
     } else {
         if (dir == INTERP_HOR)
-            NAME(h265_InterpChroma_s8_d16_H)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset, plane);
+            NAME(h265_InterpChroma_s8_d16_H)(pSrc, srcPitch, tmpBuf, PITCH_TMP_BUF, tab_index, width, height, shift, offset, plane);
         else
-            NAME(h265_InterpChroma_s8_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+            NAME(h265_InterpChroma_s8_d16_V)(pSrc, srcPitch, tmpBuf, PITCH_TMP_BUF, tab_index, width, height, shift, offset);
     }
 
     if (avgMode == AVERAGE_NO)
-        NAME(h265_AverageModeN)(tmpBuf, 64, pDst, dstPitch, width, height);
+        NAME(h265_AverageModeN)(tmpBuf, PITCH_TMP_BUF, pDst, dstPitch, width, height);
     else if (avgMode == AVERAGE_FROM_PIC)
-        NAME(h265_AverageModeP)(tmpBuf, 64, (unsigned char *)pvAvg, avgPitch, pDst, dstPitch, width, height);
+        NAME(h265_AverageModeP)(tmpBuf, PITCH_TMP_BUF, (unsigned char *)pvAvg, avgPitch, pDst, dstPitch, width, height);
     else if (avgMode == AVERAGE_FROM_BUF)
-        NAME(h265_AverageModeB)(tmpBuf, 64, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height);
+        NAME(h265_AverageModeB)(tmpBuf, PITCH_TMP_BUF, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height);
 }
 template void MFX_HEVC_PP::Interp_WithAvg<0>(const unsigned char*, unsigned, unsigned char*, unsigned, void*, unsigned, int, int, int, int, int, short, int, int, unsigned, short*);
 template void MFX_HEVC_PP::Interp_WithAvg<1>(const unsigned char*, unsigned, unsigned char*, unsigned, void*, unsigned, int, int, int, int, int, short, int, int, unsigned, short*);
@@ -1271,18 +1275,18 @@ void MFX_HEVC_PP::Interp_WithAvg(
 
     if (plane == TEXT_LUMA) {
         if ( isFast )
-            NAME(h265_InterpLumaFast_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+            NAME(h265_InterpLumaFast_s16_d16_V)(pSrc, srcPitch, tmpBuf, PITCH_TMP_BUF, tab_index, width, height, shift, offset);
         else
-            NAME(h265_InterpLuma_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+            NAME(h265_InterpLuma_s16_d16_V)(pSrc, srcPitch, tmpBuf, PITCH_TMP_BUF, tab_index, width, height, shift, offset);
     } else 
-        NAME(h265_InterpChroma_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+        NAME(h265_InterpChroma_s16_d16_V)(pSrc, srcPitch, tmpBuf, PITCH_TMP_BUF, tab_index, width, height, shift, offset);
 
     if (avgMode == AVERAGE_NO)
-        NAME(h265_AverageModeN)(tmpBuf, 64, pDst, dstPitch, width, height);
+        NAME(h265_AverageModeN)(tmpBuf, PITCH_TMP_BUF, pDst, dstPitch, width, height);
     else if (avgMode == AVERAGE_FROM_PIC)
-        NAME(h265_AverageModeP)(tmpBuf, 64, (unsigned char *)pvAvg, avgPitch, pDst, dstPitch, width, height);
+        NAME(h265_AverageModeP)(tmpBuf, PITCH_TMP_BUF, (unsigned char *)pvAvg, avgPitch, pDst, dstPitch, width, height);
     else if (avgMode == AVERAGE_FROM_BUF)
-        NAME(h265_AverageModeB)(tmpBuf, 64, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height);
+        NAME(h265_AverageModeB)(tmpBuf, PITCH_TMP_BUF, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height);
 }
 template void MFX_HEVC_PP::Interp_WithAvg<0>(const short*, unsigned, unsigned char*, unsigned, void*, unsigned, int, int, int, int, int, short, int, int, unsigned, short*);
 template void MFX_HEVC_PP::Interp_WithAvg<1>(const short*, unsigned, unsigned char*, unsigned, void*, unsigned, int, int, int, int, int, short, int, int, unsigned, short*);
@@ -1353,28 +1357,28 @@ void MFX_HEVC_PP::Interp_WithAvg(
     if (plane == TEXT_LUMA) {
         if (dir == INTERP_HOR) {
             if ( isFast )
-                NAME(h265_InterpLumaFast_s16_d16_H)((const short *)pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLumaFast_s16_d16_H)((const short *)pSrc, srcPitch, tmpBuf, PITCH_TMP_BUF, tab_index, width, height, shift, offset);
             else
-                NAME(h265_InterpLuma_s16_d16_H)((const short *)pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLuma_s16_d16_H)((const short *)pSrc, srcPitch, tmpBuf, PITCH_TMP_BUF, tab_index, width, height, shift, offset);
         } else {
             if ( isFast )
-                NAME(h265_InterpLumaFast_s16_d16_V)((const short *)pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLumaFast_s16_d16_V)((const short *)pSrc, srcPitch, tmpBuf, PITCH_TMP_BUF, tab_index, width, height, shift, offset);
             else
-                NAME(h265_InterpLuma_s16_d16_V)((const short *)pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLuma_s16_d16_V)((const short *)pSrc, srcPitch, tmpBuf, PITCH_TMP_BUF, tab_index, width, height, shift, offset);
         }
     } else {
         if (dir == INTERP_HOR)
-            NAME(h265_InterpChroma_s16_d16_H)((const short *)pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset, plane);
+            NAME(h265_InterpChroma_s16_d16_H)((const short *)pSrc, srcPitch, tmpBuf, PITCH_TMP_BUF, tab_index, width, height, shift, offset, plane);
         else
-            NAME(h265_InterpChroma_s16_d16_V)((const short *)pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+            NAME(h265_InterpChroma_s16_d16_V)((const short *)pSrc, srcPitch, tmpBuf, PITCH_TMP_BUF, tab_index, width, height, shift, offset);
     }
 
     if (avgMode == AVERAGE_NO)
-        NAME(h265_AverageModeN_U16)(tmpBuf, 64, pDst, dstPitch, width, height, bit_depth);
+        NAME(h265_AverageModeN_U16)(tmpBuf, PITCH_TMP_BUF, pDst, dstPitch, width, height, bit_depth);
     else if (avgMode == AVERAGE_FROM_PIC)
-        NAME(h265_AverageModeP_U16)(tmpBuf, 64, (Ipp16u *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
+        NAME(h265_AverageModeP_U16)(tmpBuf, PITCH_TMP_BUF, (Ipp16u *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
     else if (avgMode == AVERAGE_FROM_BUF)
-        NAME(h265_AverageModeB_U16)(tmpBuf, 64, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
+        NAME(h265_AverageModeB_U16)(tmpBuf, PITCH_TMP_BUF, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
 }
 template void MFX_HEVC_PP::Interp_WithAvg<0>(const Ipp16u*, unsigned, Ipp16u *, unsigned, void *, unsigned, int, int, int, int, int, short, int, int, unsigned, short*);
 template void MFX_HEVC_PP::Interp_WithAvg<1>(const Ipp16u*, unsigned, Ipp16u *, unsigned, void *, unsigned, int, int, int, int, int, short, int, int, unsigned, short*);
@@ -1406,18 +1410,18 @@ void MFX_HEVC_PP::Interp_WithAvg(
 
     if (plane == TEXT_LUMA) {
         if ( isFast )
-            NAME(h265_InterpLumaFast_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+            NAME(h265_InterpLumaFast_s16_d16_V)(pSrc, srcPitch, tmpBuf, PITCH_TMP_BUF, tab_index, width, height, shift, offset);
         else
-            NAME(h265_InterpLuma_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+            NAME(h265_InterpLuma_s16_d16_V)(pSrc, srcPitch, tmpBuf, PITCH_TMP_BUF, tab_index, width, height, shift, offset);
     } else
-        NAME(h265_InterpChroma_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
+        NAME(h265_InterpChroma_s16_d16_V)(pSrc, srcPitch, tmpBuf, PITCH_TMP_BUF, tab_index, width, height, shift, offset);
 
     if (avgMode == AVERAGE_NO)
-        NAME(h265_AverageModeN_U16)(tmpBuf, 64, pDst, dstPitch, width, height, bit_depth);
+        NAME(h265_AverageModeN_U16)(tmpBuf, PITCH_TMP_BUF, pDst, dstPitch, width, height, bit_depth);
     else if (avgMode == AVERAGE_FROM_PIC)
-        NAME(h265_AverageModeP_U16)(tmpBuf, 64, (Ipp16u *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
+        NAME(h265_AverageModeP_U16)(tmpBuf, PITCH_TMP_BUF, (Ipp16u *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
     else if (avgMode == AVERAGE_FROM_BUF)
-        NAME(h265_AverageModeB_U16)(tmpBuf, 64, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
+        NAME(h265_AverageModeB_U16)(tmpBuf, PITCH_TMP_BUF, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
 }
 template void MFX_HEVC_PP::Interp_WithAvg<0>(const short*, unsigned, Ipp16u *, unsigned, void *, unsigned, int, int, int, int, int, short, int, int, unsigned, short*);
 template void MFX_HEVC_PP::Interp_WithAvg<1>(const short*, unsigned, Ipp16u *, unsigned, void *, unsigned, int, int, int, int, int, short, int, int, unsigned, short*);

@@ -95,7 +95,6 @@ static
     }
 }
 
-
 static inline Ipp32s H265_Calc_SATD(Ipp8u* pSrc, Ipp32s srcStep, Ipp8u* pRef, Ipp32s width)
 {
     Ipp32s numblks = width >> 3;
@@ -263,24 +262,23 @@ Ipp32s MatchingMetricPu(const PixType *src, Ipp32s srcPitch, FrameData *refPic, 
         pitchRec = MAX_CU_SIZE;
 
         if(useHadamard)
-            return (tuHad_Kernel(src, srcPitch, rec, pitchRec, 8, 8));
+            return (tuHad_Kernel(src, srcPitch, rec, pitchRec, SIZE_BLK_LA, SIZE_BLK_LA));
         else
-            return h265_SAD_MxN_general_1(src, srcPitch, rec, pitchRec, 8, 8);
+            return h265_SAD_MxN_general_1(src, srcPitch, rec, pitchRec, SIZE_BLK_LA, SIZE_BLK_LA);
 
     } else {
         if(useHadamard)
-            return (tuHad_Kernel(src, srcPitch, rec, pitchRec, 8, 8));
+            return (tuHad_Kernel(src, srcPitch, rec, pitchRec, SIZE_BLK_LA, SIZE_BLK_LA));
         else
-            return h265_SAD_MxN_general_1(src, srcPitch, rec, pitchRec, 8, 8);
+            return h265_SAD_MxN_general_1(src, srcPitch, rec, pitchRec, SIZE_BLK_LA, SIZE_BLK_LA);
     }
 }
 
 template 
     Ipp32s MatchingMetricPu<Ipp8u>(const Ipp8u *src, Ipp32s srcPitch, FrameData *refPic, const H265MEInfo *meInfo, const H265MV *mv, Ipp32s useHadamard, Ipp32s pelX, Ipp32s pelY);
 
-
 template <typename PixType>
-Ipp32s IntraPredSATD(PixType *pSrc, Ipp32s srcPitch, Ipp32s x, Ipp32s y, IppiSize roi, Ipp32s width, Ipp8u bitDepthLuma)
+Ipp32s IntraPredSATD(PixType *pSrc, Ipp32s srcPitch, Ipp32s x, Ipp32s y, IppiSize roi, Ipp32s width, Ipp8u bitDepthLuma, Ipp32s modes)
 {
     typedef typename GetHistogramType<PixType>::type HistType;
     PixType PredPel[4*2*64+1];
@@ -294,6 +292,7 @@ Ipp32s IntraPredSATD(PixType *pSrc, Ipp32s srcPitch, Ipp32s x, Ipp32s y, IppiSiz
 
     h265_PredictIntra_DC(PredPel, recPel, width, width, 1);
     Ipp32s bestSATD = H265_Calc_SATD(pSrc, srcPitch, recPel, width);
+    if(!modes) return bestSATD;
 
     h265_PredictIntra_Ver(PredPel, recPel, width, width, bitDepthLuma, 1);
     Ipp32s satd = H265_Calc_SATD(pSrc, srcPitch, recPel, width);
@@ -343,7 +342,7 @@ Ipp32s IntraPredSATD(PixType *pSrc, Ipp32s srcPitch, Ipp32s x, Ipp32s y, IppiSiz
     return bestSATD;
 }
 
-template Ipp32s IntraPredSATD<Ipp8u>(Ipp8u *pSrc, Ipp32s srcPitch, Ipp32s x, Ipp32s y, IppiSize roi, Ipp32s width, Ipp8u bitDepthLuma);
+template Ipp32s IntraPredSATD<Ipp8u>(Ipp8u *pSrc, Ipp32s srcPitch, Ipp32s x, Ipp32s y, IppiSize roi, Ipp32s width, Ipp8u bitDepthLuma, Ipp32s modes);
 
 template <typename PixType>
 void DoIntraAnalysis(FrameData* frame, Ipp32s* intraCost)
@@ -372,7 +371,7 @@ void DoIntraAnalysis(FrameData* frame, Ipp32s* intraCost)
 }
 
 template <typename PixType>
-void DoIntraAnalysis_OneRow(FrameData* frame, Ipp32s* intraCost, Ipp32s row)
+void DoIntraAnalysis_OneRow(FrameData* frame, Ipp32s* intraCost, Ipp32s row, Ipp32s sizeBlk, Ipp32s modes)
 {
     Ipp32s width  = frame->width;
     Ipp32s height = frame->height;
@@ -382,7 +381,7 @@ void DoIntraAnalysis_OneRow(FrameData* frame, Ipp32s* intraCost, Ipp32s row)
     Ipp8u  bitDepthLuma = bitDepth;
 
     // analysis for blk 8x8
-    const Ipp32s sizeBlk = SIZE_BLK_LA;
+    //const Ipp32s sizeBlk = SIZE_BLK_LA;
     const Ipp32s picWidthInBlks  = (width  + sizeBlk - 1) / sizeBlk;
     const Ipp32s picHeightInBlks = (height + sizeBlk - 1) / sizeBlk;
     const IppiSize frmSize = {width, height};
@@ -394,7 +393,7 @@ void DoIntraAnalysis_OneRow(FrameData* frame, Ipp32s* intraCost, Ipp32s row)
             Ipp32s x = blk_col*sizeBlk;
             Ipp32s y = blk_row*sizeBlk;
             Ipp32s fPos = blk_row * picWidthInBlks + blk_col;
-            intraCost[fPos] = IntraPredSATD(luma, pitch_luma_pix, x, y, frmSize, sizeBlk, bitDepthLuma);
+            intraCost[fPos] = IntraPredSATD(luma, pitch_luma_pix, x, y, frmSize, sizeBlk, bitDepthLuma, modes);
         }
     }
 }
@@ -456,7 +455,7 @@ void MeIntPelLog(Frame *curr, Frame *ref, Ipp32s pelX, Ipp32s pelY, Ipp32s posx,
     // limits to clip MV allover the CU
     const Ipp32s MvShift = 2;
     const Ipp32s offset = 8;
-    const Ipp32s blkSize = 8;
+    const Ipp32s blkSize = SIZE_BLK_LA;
     Ipp32s HorMax = (curr->width + offset - pelX - 1) << MvShift;
     Ipp32s HorMin = ( - (Ipp32s)blkSize - offset - (Ipp32s) pelX + 1) << MvShift;
     Ipp32s VerMax = (curr->height + offset - pelY - 1) << MvShift;
@@ -549,7 +548,6 @@ void MeIntPelLog(Frame *curr, Frame *ref, Ipp32s pelX, Ipp32s pelY, Ipp32s posx,
     *cost = costBest;
     *mvCost = mvCostBest;
 
-#if 1
     if(cost_satd) {
         // recalc hadamar
         H265MEInfo meInfo;
@@ -558,21 +556,70 @@ void MeIntPelLog(Frame *curr, Frame *ref, Ipp32s pelX, Ipp32s pelY, Ipp32s posx,
         useHadamard = 1;
         *cost_satd = MatchingMetricPu(src, curr->pitch_luma_pix, ref, &meInfo, mv, useHadamard, pelX, pelY);
     }
-#endif
 } //
 
 
 template <typename PixType>
-void MeIntPelLog_Refine(FrameData *curr, FrameData *ref, Ipp32s pelX, Ipp32s pelY, Ipp32s posx, Ipp32s posy, H265MV *mv, Ipp32s *cost, Ipp32s *cost_satd, Ipp32s *mvCost)
+void MeIntPelLog_Refine(FrameData *curr, FrameData *ref, Ipp32s pelX, Ipp32s pelY, H265MV *mv, Ipp32s *cost, Ipp32s *cost_satd, Ipp32s *mvCost, Ipp32s blkSize)
 {
-    PixType *m_ySrc = (PixType*)curr->y + pelX + pelY * curr->pitch_luma_pix;
-    PixType *src = m_ySrc + posx + posy * curr->pitch_luma_pix;
-    Ipp32s refOffset = pelX + posx + (mv->mvx >> 2) + (pelY + posy + (mv->mvy >> 2)) * ref->pitch_luma_pix;
-    const PixType *rec = (PixType*)ref->y + refOffset;
-    //Ipp32s pitchRec = ref->pitch_luma_pix;
-    Ipp32s costR = h265_SAD_MxN_general_1(src, curr->pitch_luma_pix, rec, ref->pitch_luma_pix, 8, 8);
-    *cost = costR;
-    *mvCost = 0;
+    Ipp16s meStepBest = 2; 
+    Ipp16s meStepMax = 8;
+
+    // regulation from outside
+    H265MV mvBest = *mv;
+    Ipp32s costBest = *cost;
+    Ipp32s mvCostBest = *mvCost;
+
+    PixType *src = (PixType*)curr->y + pelX + pelY * curr->pitch_luma_pix;
+    Ipp32s srcPitch = curr->pitch_luma_pix;
+    Ipp32s useHadamard = 0;
+    Ipp16s mePosBest = 0;
+
+    // limits to clip MV allover the CU
+    const Ipp32s MvShift = 2;
+    const Ipp32s offset = 8;
+    
+    Ipp32s HorMax = (curr->width + offset - pelX - 1) << MvShift;
+    Ipp32s HorMin = ( - (Ipp32s)blkSize - offset - (Ipp32s) pelX + 1) << MvShift;
+    Ipp32s VerMax = (curr->height + offset - pelY - 1) << MvShift;
+    Ipp32s VerMin = ( - (Ipp32s) blkSize - offset - (Ipp32s) pelY + 1) << MvShift;
+
+    // expanding search
+    H265MV mvCenter = mvBest;
+    for (Ipp16s meStep = meStepBest; (1<<meStep) <= meStepMax; meStep ++) {
+        for (Ipp16s mePos = 0; mePos < 9; mePos++) {
+            H265MV mv = {
+                Ipp16s(mvCenter.mvx + (tab_mePattern[mePos][0] << meStep)),
+                Ipp16s(mvCenter.mvy + (tab_mePattern[mePos][1] << meStep))
+            };
+
+            //if (ClipMV(mv))
+            if ( ClipMV(mv, HorMin, HorMax, VerMin, VerMax) )
+                continue;
+
+            Ipp32s refOffset = pelX + (mv.mvx >> 2) + (pelY + (mv.mvy >> 2)) * ref->pitch_luma_pix;
+            const PixType *rec = (PixType*)ref->y + refOffset;
+            Ipp32s pitchRec = ref->pitch_luma_pix;
+            Ipp32s cost = h265_SAD_MxN_general_1(src, srcPitch, rec, pitchRec, blkSize, blkSize);
+
+            if (costBest > cost) {
+                costBest = cost;
+                mvCostBest = 0;
+                mvBest = mv;
+                meStepBest = meStep;
+                mePosBest = mePos;
+            }
+        }
+    }
+    *mv = mvBest;
+    *cost = costBest;
+    *mvCost = mvCostBest;
+    if (cost_satd) {
+        // recalc hadamar
+        Ipp32s refOffset = pelX + (mv->mvx >> 2) + (pelY + (mv->mvy >> 2)) * ref->pitch_luma_pix;
+        const PixType *rec = (PixType*)ref->y + refOffset;
+        *cost_satd = tuHad_Kernel(src, srcPitch, rec, ref->pitch_luma_pix, blkSize, blkSize);
+    }
     return;
 } //
 
@@ -691,10 +738,8 @@ void MeSubPelBatchedBox(const H265MEInfo *meInfo,
     }
 
     AddMvCost(/*predInfo,*/ 1, costs, &mvBest, &costBest, &mvCostBest, patternSubPel);
-#ifdef AMT_DQP_FIX
-    if(bQPel)
-#endif
-    {
+
+    if (bQPel) {
         Ipp32s hpelx = mvBest.mvx - mv->mvx + 4; // can be 2, 4 or 6
         Ipp32s hpely = mvBest.mvy - mv->mvy + 4; // can be 2, 4 or 6
         Ipp32s dx = hpelx & 3; // can be 0 or 2
@@ -769,7 +814,7 @@ void MeSubPelBatchedBox(const H265MEInfo *meInfo,
 template
     void MeIntPelLog<Ipp8u>(FrameData *curr, FrameData *ref, Ipp32s pelX, Ipp32s pelY, Ipp32s posx, Ipp32s posy, H265MV *mv, Ipp32s *cost, Ipp32s *cost_satd, Ipp32s *mvCost);
 template 
-    void MeIntPelLog_Refine<Ipp8u>(FrameData *curr, FrameData *ref, Ipp32s pelX, Ipp32s pelY, Ipp32s posx, Ipp32s posy, H265MV *mv, Ipp32s *cost, Ipp32s *cost_satd, Ipp32s *mvCost);
+    void MeIntPelLog_Refine<Ipp8u>(FrameData *curr, FrameData *ref, Ipp32s pelX, Ipp32s pelY, H265MV *mv, Ipp32s *cost, Ipp32s *cost_satd, Ipp32s *mvCost, Ipp32s blkSize);
 
 // mode: 0 - means regular ME{ F(i), F(i+1) }, 1 - means pdist Future ME { P, Pnext }, 2 - means pdist Past ME { P, Pprev }
 void DoInterAnalysis(FrameData* curr, Statistics* currStat, FrameData* ref, Ipp32s* sad, Ipp32s* satd, H265MV* out_mv, Ipp8u isRefine, Ipp8u mode, Ipp32s lowresFactor, Ipp8u bitDepthLuma) 
@@ -796,10 +841,10 @@ void DoInterAnalysis(FrameData* curr, Statistics* currStat, FrameData* ref, Ipp3
 
             if (isRefine) {
                 Ipp32s widthLowres  = width  >> lowresFactor;
-                //Ipp32s heightLowres = height >> lowresFactor;
+                Ipp32s heightLowres = height >> lowresFactor;
                 const Ipp32s sizeBlkLowres = SIZE_BLK_LA;
                 const Ipp32s picWidthInBlksLowres  = (widthLowres  + sizeBlkLowres - 1) / sizeBlkLowres;
-                //const Ipp32s picHeightInBlksLowres = (heightLowres + sizeBlkLowres - 1) / sizeBlkLowres;
+                const Ipp32s picHeightInBlksLowres = (heightLowres + sizeBlkLowres - 1) / sizeBlkLowres;
                 Ipp32s fPosLowres = (blk_row >> lowresFactor) * picWidthInBlksLowres + (blk_col >> lowresFactor);
 
                 if (mode == 0) {
@@ -825,7 +870,7 @@ void DoInterAnalysis(FrameData* curr, Statistics* currStat, FrameData* ref, Ipp3
                     Ipp32s pelY = y;
                     const Ipp32s MvShift = 2;
                     const Ipp32s offset = 8;
-                    const Ipp32s blkSize = 8;
+                    const Ipp32s blkSize = SIZE_BLK_LA;
                     Ipp32s HorMax = (width + offset - pelX - 1) << MvShift;
                     Ipp32s HorMin = ( - (Ipp32s)blkSize - offset - (Ipp32s) pelX + 1) << MvShift;
                     Ipp32s VerMax = (curr->height + offset - pelY - 1) << MvShift;
@@ -835,7 +880,7 @@ void DoInterAnalysis(FrameData* curr, Statistics* currStat, FrameData* ref, Ipp3
                 }
 
 
-                MeIntPelLog_Refine<Ipp8u>(curr, ref, x, y, 0, 0, &mv, &cost, &cost_satd, &mvCost);
+                MeIntPelLog_Refine<Ipp8u>(curr, ref, x, y, &mv, &cost, &cost_satd, &mvCost, SIZE_BLK_LA);
 
             } else {
 
@@ -865,18 +910,17 @@ void DoInterAnalysis(FrameData* curr, Statistics* currStat, FrameData* ref, Ipp3
     }
 }
 
-
-void DoInterAnalysis_OneRow(FrameData* curr, Statistics* currStat, FrameData* ref, Ipp32s* sad, Ipp32s* satd, H265MV* out_mv, Ipp8u isRefine, Ipp8u mode, Ipp32s lowresFactor, Ipp8u bitDepthLuma, Ipp32s row) 
+void DoInterAnalysis_OneRow(FrameData* curr, Statistics* currStat, FrameData* ref, Ipp32s* sad, Ipp32s* satd, H265MV* out_mv, Ipp8u isRefine, Ipp8u mode, Ipp32s lowresFactor, Ipp8u bitDepthLuma, Ipp32s row, FrameData* frame=NULL, FrameData* framePrev=NULL) 
 {
     // analysis for blk 8x8.
     Ipp32s width  = curr->width;
     Ipp32s height = curr->height;
     const Ipp32s sizeBlk = SIZE_BLK_LA;
     const Ipp32s picWidthInBlks  = (width  + sizeBlk - 1) / sizeBlk;
-    //const Ipp32s picHeightInBlks = (height + sizeBlk - 1) / sizeBlk;
+    const Ipp32s picHeightInBlks = (height + sizeBlk - 1) / sizeBlk;
 
     Ipp32s bitDepth8 = (bitDepthLuma == 8) ? 1 : 0;
-
+    const IppiSize frmSize = {width, height};
     //for (Ipp32s blk_row = 0; blk_row < picHeightInBlks; blk_row++) {
     Ipp32s blk_row = row;
     for (Ipp32s blk_col = 0; blk_col < picWidthInBlks; blk_col++) {
@@ -891,10 +935,10 @@ void DoInterAnalysis_OneRow(FrameData* curr, Statistics* currStat, FrameData* re
 
         if (isRefine) {
             Ipp32s widthLowres  = width  >> lowresFactor;
-            //Ipp32s heightLowres = height >> lowresFactor;
+            Ipp32s heightLowres = height >> lowresFactor;
             const Ipp32s sizeBlkLowres = SIZE_BLK_LA;
             const Ipp32s picWidthInBlksLowres  = (widthLowres  + sizeBlkLowres - 1) / sizeBlkLowres;
-            //const Ipp32s picHeightInBlksLowres = (heightLowres + sizeBlkLowres - 1) / sizeBlkLowres;
+            const Ipp32s picHeightInBlksLowres = (heightLowres + sizeBlkLowres - 1) / sizeBlkLowres;
             Ipp32s fPosLowres = (blk_row >> lowresFactor) * picWidthInBlksLowres + (blk_col >> lowresFactor);
 
             if (mode == 0) {
@@ -920,7 +964,7 @@ void DoInterAnalysis_OneRow(FrameData* curr, Statistics* currStat, FrameData* re
                 Ipp32s pelY = y;
                 const Ipp32s MvShift = 2;
                 const Ipp32s offset = 8;
-                const Ipp32s blkSize = 8;
+                const Ipp32s blkSize = SIZE_BLK_LA;
                 Ipp32s HorMax = (width + offset - pelX - 1) << MvShift;
                 Ipp32s HorMin = ( - (Ipp32s)blkSize - offset - (Ipp32s) pelX + 1) << MvShift;
                 Ipp32s VerMax = (curr->height + offset - pelY - 1) << MvShift;
@@ -934,19 +978,30 @@ void DoInterAnalysis_OneRow(FrameData* curr, Statistics* currStat, FrameData* re
                 Ipp8u *src = curr->y + x + y * curr->pitch_luma_pix;
                 Ipp32s refOffset = x + (mv.mvx >> 2) + (y + (mv.mvy >> 2)) * ref->pitch_luma_pix;
                 const Ipp8u *rec = ref->y + refOffset;
-                //Ipp32s pitchRec = ref->pitch_luma_pix;
-                cost = h265_SAD_MxN_general_1(src, curr->pitch_luma_pix, rec, ref->pitch_luma_pix, 8, 8);
+                Ipp32s pitchRec = ref->pitch_luma_pix;
+                cost = h265_SAD_MxN_general_1(src, curr->pitch_luma_pix, rec, ref->pitch_luma_pix, SIZE_BLK_LA, SIZE_BLK_LA);
                 mvCost = 0;
             }
             else
-                MeIntPelLog_Refine<Ipp16u>(curr, ref, x, y, 0, 0, &mv, &cost, satd ? (&cost_satd) : NULL, &mvCost);
+            {
+                Ipp16u *src = (Ipp16u *)curr->y + x + y * curr->pitch_luma_pix;
+                Ipp32s refOffset = x + (mv.mvx >> 2) + (y + (mv.mvy >> 2)) * ref->pitch_luma_pix;
+                const Ipp16u *rec = (Ipp16u *)ref->y + refOffset;
+                Ipp32s pitchRec = ref->pitch_luma_pix;
+                cost = h265_SAD_MxN_general_1(src, curr->pitch_luma_pix, rec, ref->pitch_luma_pix, SIZE_BLK_LA, SIZE_BLK_LA);
+                mvCost = 0;
+            }
 
         } else {
 
             if (bitDepth8)
-                MeIntPelLog<Ipp8u>(curr, ref, x, y, 0, 0, &mv, &cost, satd ? (&cost_satd) : NULL, &mvCost);
+                MeIntPelLog<Ipp8u>(curr, ref, x, y, 0, 0, &mv, &cost, /*satd ? (&cost_satd) :*/ NULL, &mvCost);
             else
-                MeIntPelLog<Ipp16u>(curr, ref, x, y, 0, 0, &mv, &cost, satd ? (&cost_satd) : NULL, &mvCost);
+                MeIntPelLog<Ipp16u>(curr, ref, x, y, 0, 0, &mv, &cost, /*satd ? (&cost_satd) :*/ NULL, &mvCost);
+
+            sad[fPos] = cost;
+            out_mv[fPos] = mv;
+
         }
 
         {
@@ -956,14 +1011,46 @@ void DoInterAnalysis_OneRow(FrameData* curr, Statistics* currStat, FrameData* re
             meInfo.posy = 0;
             meInfo.width  = SIZE_BLK_LA;
             meInfo.height = SIZE_BLK_LA;
+            Ipp32s subSatd = (satd) ? 1: 0;
+            if(lowresFactor && !isRefine && frame && framePrev) subSatd = 0;
 
             if (bitDepth8)
-                MeSubPelBatchedBox<Ipp8u>(&meInfo, curr, ref, x, y, &mv_sad, &cost, &mvCost, /*m_par, */satd ? (satd + fPos) : NULL, (lowresFactor && !isRefine) ? true: false);
+                MeSubPelBatchedBox<Ipp8u>(&meInfo, curr, ref, x, y, &mv_sad, &cost, &mvCost, /*m_par, */subSatd ? (satd + fPos) : NULL, (lowresFactor && !isRefine) ? true: false);
             else
-                MeSubPelBatchedBox<Ipp16u>(&meInfo, curr, ref, x, y, &mv_sad, &cost, &mvCost, /*m_par, */satd ? (satd + fPos) : NULL, (lowresFactor && !isRefine) ? true: false);
+                MeSubPelBatchedBox<Ipp16u>(&meInfo, curr, ref, x, y, &mv_sad, &cost, &mvCost, /*m_par, */subSatd ? (satd + fPos) : NULL, (lowresFactor && !isRefine) ? true: false);
 
             sad[fPos] = cost;
             out_mv[fPos] = mv_sad;
+
+            if (lowresFactor && !isRefine && frame && framePrev) {
+                // LowresFactor FullresMetrics for GopCqBrc
+                Ipp32s widthFullres  = width  << lowresFactor;
+                Ipp32s heightFullres = height << lowresFactor;
+                const Ipp32s sizeBlkFullres = SIZE_BLK_LA << lowresFactor;
+                Ipp32s xFullres = blk_col * sizeBlkFullres;
+                Ipp32s yFullres = blk_row * sizeBlkFullres;
+                const IppiSize frmSizeFullres = {widthFullres, heightFullres};
+                H265MV mvFullres = {0, 0};
+                mvFullres.mvx = mv_sad.mvx << lowresFactor;
+                mvFullres.mvy = mv_sad.mvy << lowresFactor;
+                if (bitDepth8) {
+                    Ipp8u *src = frame->y + xFullres + yFullres * frame->pitch_luma_pix;
+                    Ipp32s refOffset = xFullres + (mvFullres.mvx >> 2) + (yFullres + (mvFullres.mvy >> 2)) * framePrev->pitch_luma_pix;
+                    const Ipp8u *rec = framePrev->y + refOffset;
+                    cost = h265_SAD_MxN_general_1(src, frame->pitch_luma_pix, rec, ref->pitch_luma_pix, sizeBlkFullres, sizeBlkFullres);
+                    MeIntPelLog_Refine<Ipp8u>(frame, framePrev, xFullres, yFullres, &mvFullres, &cost, satd ? (satd + fPos) : NULL, &mvCost, sizeBlkFullres);
+                } else {
+                    Ipp16u *src = (Ipp16u *)frame->y + xFullres + yFullres * frame->pitch_luma_pix;
+                    Ipp32s refOffset = xFullres + (mvFullres.mvx >> 2) + (yFullres + (mvFullres.mvy >> 2)) * framePrev->pitch_luma_pix;
+                    const Ipp16u *rec = (Ipp16u *)framePrev->y + refOffset;
+                    cost = h265_SAD_MxN_general_1(src, frame->pitch_luma_pix, rec, ref->pitch_luma_pix, sizeBlkFullres, sizeBlkFullres);
+                    MeIntPelLog_Refine<Ipp16u>(frame, framePrev, xFullres, yFullres, &mvFullres, &cost, satd ? (satd + fPos) : NULL, &mvCost, sizeBlkFullres);
+                }
+
+                mv_sad.mvx = mvFullres.mvx >> lowresFactor;
+                mv_sad.mvy = mvFullres.mvy >> lowresFactor;
+                out_mv[fPos] = mv_sad;
+            }
         }
     }
     //}
@@ -1229,7 +1316,7 @@ struct isEqualRefFrame
 void H265Enc::DetermineQpMap_IFrame(FrameIter curr, FrameIter end, H265VideoParam& videoParam)
 {  
     Frame* inFrame    = *curr;
-    
+
     int wBlock = inFrame->m_origin->width/8;
     int w4 = inFrame->m_origin->width/4;
 
@@ -1762,7 +1849,7 @@ int Lookahead::ConfigureLookaheadFrame(Frame* in, Ipp32s fieldNum)
         Ipp32s poc = in->m_frameOrder;
 
         size_t startIdx = 0;
-        tt[startIdx].Init(TT_PREENC_START, 0, 0, poc, 0, 0);
+        tt[startIdx].Init(TT_PREENC_START, 0, 0, poc, 1, 0);
         tt[startIdx].la = this;
 
         size_t endIdx   = tt.size() - 1;
@@ -1843,6 +1930,10 @@ void Lookahead::AnalyzeSceneCut_AndUpdateState_Atul(Frame* in)
     
     if (sceneCut) {
         m_enc.m_sceneOrder++;
+        if (in->m_stats[1])
+            in->m_stats[1]->m_sceneCut = -1;
+        if (in->m_stats[0])
+            in->m_stats[0]->m_sceneCut = -1;
     }
 
     in->m_sceneOrder = m_enc.m_sceneOrder;
@@ -1940,11 +2031,16 @@ void H265Enc::AverageComplexity(Frame *in, H265VideoParam& videoParam)
     Ipp64s sumSatdInter = 0;
     Ipp32s intraBlkCount = 0;
 
-    if (in->m_frameOrder > 0 && in->m_picCodeType != MFX_FRAMETYPE_I) {
+    if (in->m_frameOrder > 0 && (in->m_picCodeType != MFX_FRAMETYPE_I || stat->m_sceneCut > 0)) {
+    //if (in->m_frameOrder > 0 && (in->m_picCodeType != MFX_FRAMETYPE_I)) {
         Ipp32s blkCount = (Ipp32s)stat->m_intraSatd.size();
 
         for (Ipp32s blk = 0; blk < blkCount; blk++) {
-            sumSatd += IPP_MIN(stat->m_intraSatd[blk], stat->m_interSatd[blk]);
+            if (in->m_picCodeType != MFX_FRAMETYPE_I)
+                sumSatd += IPP_MIN(stat->m_intraSatd[blk], stat->m_interSatd[blk]);
+            else
+                sumSatd += stat->m_intraSatd[blk];
+
             if( stat->m_intraSatd[blk] <= stat->m_interSatd[blk] ) {
                 intraBlkCount++;
             }
@@ -1962,6 +2058,10 @@ void H265Enc::AverageComplexity(Frame *in, H265VideoParam& videoParam)
 
     // store metric in frame
     Ipp32s resolution = frame->width * frame->height;
+    if(useLowres && videoParam.FullresMetrics) {
+        resolution = in->m_origin->width * in->m_origin->height;
+    }
+
     stat->m_avgBestSatd = (Ipp32f)sumSatd / (resolution);
     stat->m_avgIntraSatd = (Ipp32f)sumSatdIntra / (resolution);
     stat->m_avgInterSatd = (Ipp32f)sumSatdInter / (resolution);
@@ -1979,18 +2079,22 @@ void H265Enc::AverageComplexity(Frame *in, H265VideoParam& videoParam)
     }
 
     if (useLowres) {
-        useLowres--;
-        useLowres = Saturate(0, 1, useLowres);
-        Ipp32f tabCorrFactor[] = {1.5f, 2.f};
+        Ipp8u res = Saturate(0, 1, useLowres-1);
+        Ipp32f scaleFactor = 1.29;
+        if (!videoParam.FullresMetrics) {
+            Ipp32f tabCorrFactor[] = {1.5f, 2.f};
+            scaleFactor = tabCorrFactor[res];
+        }
+        if(videoParam.picStruct != MFX_PICSTRUCT_PROGRESSIVE) scaleFactor *= 1.29;
         if (in->m_stats[0]) {
-            in->m_stats[0]->m_avgBestSatd /= tabCorrFactor[useLowres];
-            in->m_stats[0]->m_avgIntraSatd /= tabCorrFactor[useLowres];
-            in->m_stats[0]->m_avgInterSatd /= tabCorrFactor[useLowres];
+            in->m_stats[0]->m_avgBestSatd /= scaleFactor;
+            in->m_stats[0]->m_avgIntraSatd /= scaleFactor;
+            in->m_stats[0]->m_avgInterSatd /= scaleFactor;
         } 
         if (in->m_stats[1]) {
-            in->m_stats[1]->m_avgBestSatd /= tabCorrFactor[useLowres];
-            in->m_stats[1]->m_avgIntraSatd /= tabCorrFactor[useLowres];
-            in->m_stats[1]->m_avgInterSatd /= tabCorrFactor[useLowres];
+            in->m_stats[1]->m_avgBestSatd /= scaleFactor;
+            in->m_stats[1]->m_avgIntraSatd /= scaleFactor;
+            in->m_stats[1]->m_avgInterSatd /= scaleFactor;
         }
     }
 }
@@ -2265,18 +2369,9 @@ int GetCalqDeltaQp(Frame* frame, const H265VideoParam & par, Ipp32s ctb_addr, Ip
     Ipp32s pelY = row * par.MaxCUSize;
 
     //TODO: replace by template call here
-#ifndef AMT_DQP_FIX
-    Ipp8u* ySrc = frame->m_origin->y + pelX + pelY * frame->m_origin->pitch_luma_pix;
-    Ipp64f rscs = compute_block_rscs(ySrc, (Ipp32s)par.MaxCUSize, (Ipp32s)par.MaxCUSize, frame->m_origin->pitch_luma_pix);
-#else
     // complex ops in Enqueue frame can cause severe threading eff loss -NG
     Ipp64f rscs = 0;
-    //if(par.DeltaQpMode&AMT_DQP_PAQ) {
-    //    // pre-calculated
-    //    rscs = frame->m_stats[0]->rscs_ctb[ctb_addr];
-    //} else {
-    if(picClass<2)
-    {
+    if (picClass < 2) {
         // calulate from 4x4 Rs/Cs
         Ipp32s N = (col==par.PicWidthInCtbs-1)?(frame->m_origin->width-(par.PicWidthInCtbs-1)*par.MaxCUSize):par.MaxCUSize;
         Ipp32s M = (row==par.PicHeightInCtbs-1)?(frame->m_origin->height-(par.PicHeightInCtbs-1)*par.MaxCUSize):par.MaxCUSize;
@@ -2296,7 +2391,7 @@ int GetCalqDeltaQp(Frame* frame, const H265VideoParam & par, Ipp32s ctb_addr, Ip
         Cs/=(m4T*n4T);
         rscs = sqrt(Rs + Cs);
     }
-#endif
+
     Ipp32s rscsClass = 0;
     {
         Ipp32s k = 7;
@@ -2541,7 +2636,10 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
                         Ipp32s numActiveRows = GetNumActiveRows(region_row, rowsInRegion, frame->height);
 
                         for (Ipp32s i=0; i<numActiveRows; i++) {
-                            DoInterAnalysis_OneRow(frame, NULL, framePrev, &stat->m_interSad[0], &stat->m_interSatd[0], &stat->m_mv[0], 0, 0, m_videoParam.LowresFactor, curr->m_bitDepthLuma, region_row * rowsInRegion + i);
+                            DoInterAnalysis_OneRow(frame, NULL, framePrev, &stat->m_interSad[0], &stat->m_interSatd[0], 
+                                &stat->m_mv[0], 0, 0, m_videoParam.LowresFactor, curr->m_bitDepthLuma, region_row * rowsInRegion + i,
+                                m_videoParam.FullresMetrics ? curr->m_origin : NULL, 
+                                m_videoParam.FullresMetrics ? prev->m_origin : NULL);
                         }
 
                         if ((m_videoParam.DeltaQpMode & (AMT_DQP_PAQ|AMT_DQP_CAL)) && useLowres) { // need refine for _Original_ resolution
@@ -2576,6 +2674,13 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
                         }
                     }
                 } // foreach fieldNum
+            } else {
+                for (Ipp32s fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
+                    Frame* curr = in[fieldNum];
+                    Statistics* stat = curr->m_stats[ useLowres ? 1 : 0 ];
+                    std::fill(stat->m_interSad.begin(), stat->m_interSad.end(), IPP_MAX_32S);
+                    std::fill(stat->m_interSatd.begin(), stat->m_interSatd.end(), IPP_MAX_32S);
+                }
             }
 
             // INTRA:  optional ORIGINAL / LOWRES 
@@ -2585,11 +2690,17 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
                     Statistics* stat = in[fieldNum]->m_stats[useLowres ? 1 : 0];
                     Ipp32s rowsInRegion = useLowres ? m_lowresRowsInRegion : m_originRowsInRegion;
                     Ipp32s numActiveRows = GetNumActiveRows(region_row, rowsInRegion, frame->height);
-
+                    Ipp32s size = SIZE_BLK_LA;
+                    Ipp32s modes = 1;
+                    if(useLowres && m_videoParam.FullresMetrics) {
+                        frame = in[fieldNum]->m_origin;
+                        size = (SIZE_BLK_LA)<<m_videoParam.LowresFactor;
+                        modes = 0;
+                    }
                     if (in[fieldNum]->m_bitDepthLuma == 8) {
-                        for (Ipp32s i=0; i<numActiveRows; i++) DoIntraAnalysis_OneRow<Ipp8u>(frame, &stat->m_intraSatd[0], region_row * rowsInRegion + i);
+                        for (Ipp32s i=0; i<numActiveRows; i++) DoIntraAnalysis_OneRow<Ipp8u>(frame, &stat->m_intraSatd[0], region_row * rowsInRegion + i, size, modes);
                     } else { 
-                        for (Ipp32s i=0; i<numActiveRows; i++) DoIntraAnalysis_OneRow<Ipp16u>(frame, &stat->m_intraSatd[0], region_row * rowsInRegion + i);
+                        for (Ipp32s i=0; i<numActiveRows; i++) DoIntraAnalysis_OneRow<Ipp16u>(frame, &stat->m_intraSatd[0], region_row * rowsInRegion + i, size, modes);
                     }
                 }
             }

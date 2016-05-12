@@ -394,17 +394,18 @@ static void TaskLogDump()
         intParam.num_cand_2[6] = (Ipp8u)optHevc.IntraNumCand2_6;
 
         intParam.LowresFactor = optHevc.LowresFactor - 1;
+        intParam.FullresMetrics = 0;
         intParam.DeltaQpMode  = (opt2.MBBRC == OFF) ? 0 : optHevc.DeltaQpMode  - 1;
         if (mfx.EncodedOrder) {
             intParam.DeltaQpMode = intParam.DeltaQpMode&AMT_DQP_CAQ;
         }
 
-#ifdef AMT_DQP_FIX
         intParam.LambdaCorrection = tab_defaultLambdaCorrIP[(intParam.DeltaQpMode&AMT_DQP_CAQ)?mfx.TargetUsage:0];
-#endif
 
         intParam.SceneCut = mfx.EncodedOrder ? 0 : (opt2.AdaptiveI == ON);
         intParam.AnalyzeCmplx = /*mfx.EncodedOrder ? 0 : */optHevc.AnalyzeCmplx - 1;
+        if(intParam.AnalyzeCmplx && intParam.BiPyramidLayers > 1 && intParam.LowresFactor && mfx.RateControlMethod != CQP)
+            intParam.FullresMetrics = 1;
         intParam.RateControlDepth = optHevc.RateControlDepth;
         intParam.TryIntra = optHevc.TryIntra;
         intParam.FastAMPSkipME = optHevc.FastAMPSkipME;
@@ -1709,6 +1710,8 @@ Frame *H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, 
 
         if (m_brc && m_videoParam.AnalyzeCmplx > 0) {
             Ipp32s laDepth = m_videoParam.RateControlDepth - 1;
+            if (m_videoParam.picStruct == TFF || m_videoParam.picStruct == BFF)
+                laDepth = m_videoParam.RateControlDepth * 2 - 1;
             for (FrameIter i = m_reorderedQueue.begin(); i != m_reorderedQueue.end() && laDepth > 0; ++i, --laDepth)
                 m_encodeQueue.back()->m_futureFrames.push_back(*i);
         }
@@ -1720,6 +1723,12 @@ Frame *H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, 
 void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
 {
     Frame *frame = m_encodeQueue.front();
+
+    // second field recode case - first field is already encoded, keep it
+    if (frame->m_ttEncComplete.finished) {
+        m_outputQueue.splice(m_outputQueue.end(), m_encodeQueue, m_encodeQueue.begin());
+        return;
+    }
 
     if (frame->m_encIdx < 0) {
         for (size_t encIdx = 0; encIdx < m_frameEncoder.size(); encIdx++) {
@@ -1735,7 +1744,7 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
 
     if (m_videoParam.enableCmFlag) {
         frame->m_ttSubmitGpuCopySrc.numDownstreamDependencies = 0;
-        frame->m_ttSubmitGpuCopySrc.numUpstreamDependencies = 0;
+        frame->m_ttSubmitGpuCopySrc.numUpstreamDependencies = 1;
         frame->m_ttSubmitGpuCopySrc.finished = 0;
         frame->m_ttSubmitGpuCopySrc.poc = frame->m_frameOrder;
         AddTaskDependencyThreaded(&frame->m_ttSubmitGpuCopySrc, &frame->m_ttInitNewFrame); // GPU_SUBMIT_COPY_SRC <- INIT_NEW_FRAME
@@ -1914,15 +1923,15 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
         // because finished, numDownstreamDependencies and downstreamDependencies[]
         // may be accessed from FeiThreadRoutine()
         vm_mutex_lock(&m_feiCritSect);
-        if (frame->m_ttSubmitGpuCopySrc.numUpstreamDependencies == 0) {
-            m_feiSubmitTasks.push_back(&frame->m_ttSubmitGpuCopySrc); // GPU_COPY_SRC is independent
-            vm_cond_signal(&m_feiCondVar);
-        }
         for (Ipp32s i = 0; i < frame->m_numRefUnique; i++) {
             Ipp32s listIdx = frame->m_ttSubmitGpuMe[i].listIdx;
             Ipp32s refIdx = frame->m_ttSubmitGpuMe[i].refIdx;
             Frame *ref = frame->m_refPicList[listIdx].m_refFrames[refIdx];
             AddTaskDependencyThreaded(&frame->m_ttSubmitGpuMe[i], &ref->m_ttSubmitGpuCopyRec); // GPU_SUBMIT_HME <- GPU_COPY_REF
+        }
+        if (vm_interlocked_dec32(&frame->m_ttSubmitGpuCopySrc.numUpstreamDependencies) == 0) {
+            m_feiSubmitTasks.push_back(&frame->m_ttSubmitGpuCopySrc); // GPU_COPY_SRC is independent
+            vm_cond_signal(&m_feiCondVar);
         }
         m_outputQueue.splice(m_outputQueue.end(), m_encodeQueue, m_encodeQueue.begin());
         vm_mutex_unlock(&m_feiCritSect);
@@ -2252,6 +2261,7 @@ void H265Encoder::PrepareToEncode(H265EncodeTaskInputParams *inputParam)
     //    laFrame.TT_PREENC_END (if finished don't reenqueue TT_PREENC_START, TT_PREENC_ROUTINE and TT_PREENC_END, otherwise reenqueue all of them
 
     inputParam->m_ttComplete.InitComplete(-1);
+    inputParam->m_ttComplete.numUpstreamDependencies = 1;
 
     if (inputParam->m_newFrame[0] && !inputParam->m_newFrame[0]->m_ttInitNewFrame.finished) {
         inputParam->m_newFrame[0]->m_ttInitNewFrame.InitNewFrame(inputParam->m_newFrame[0], inputParam->surface, inputParam->m_newFrame[0]->m_frameOrder);
@@ -2266,9 +2276,12 @@ void H265Encoder::PrepareToEncode(H265EncodeTaskInputParams *inputParam)
         }
     }
 
+    bool isLookaheadConfigured = false;
+
     if (m_laFrame[0] && !m_laFrame[0]->m_ttLookahead.back().finished) {
         //assert(m_videoParam.picStruct == PROGR && "unsupported in field mode");
         if (m_la->ConfigureLookaheadFrame(m_laFrame[0], 0) == 1) {
+            isLookaheadConfigured = true;
             AddTaskDependency(&inputParam->m_ttComplete, &m_laFrame[0]->m_ttLookahead.back()); // COMPLETE <- TT_PREENC_END
             AddTaskDependencyThreaded(&m_laFrame[0]->m_ttLookahead.front(), &m_laFrame[0]->m_ttInitNewFrame); // TT_PREENC_START <- INIT_NEW_FRAME
         }
@@ -2285,12 +2298,14 @@ void H265Encoder::PrepareToEncode(H265EncodeTaskInputParams *inputParam)
             EnqueueFrameEncoder(inputParam);
 
         inputParam->m_targetFrame[0] = *m_outputQueue.begin();
-        inputParam->m_ttComplete.poc = inputParam->m_targetFrame[0]->m_frameOrder;
-        AddTaskDependency(&inputParam->m_ttComplete, &inputParam->m_targetFrame[0]->m_ttEncComplete); // COMPLETE <- ENC_COMPLETE[0]
+        inputParam->m_ttComplete.poc = inputParam->m_targetFrame[0]->m_frameOrder;        
+        if (!inputParam->m_targetFrame[0]->m_ttEncComplete.finished) // second field recode case - first field is already encoded
+            AddTaskDependency(&inputParam->m_ttComplete, &inputParam->m_targetFrame[0]->m_ttEncComplete); // COMPLETE <- ENC_COMPLETE[0]
         if (m_videoParam.picStruct != PROGR) {
             inputParam->m_targetFrame[1] = *++m_outputQueue.begin();
-            AddTaskDependency(&inputParam->m_ttComplete, &inputParam->m_targetFrame[1]->m_ttEncComplete); // COMPLETE <- ENC_COMPLETE[1]
-            AddTaskDependency(&inputParam->m_targetFrame[1]->m_ttEncComplete, &inputParam->m_targetFrame[0]->m_ttEncComplete); // ENC_COMPLETE[1] <- ENC_COMPLETE[0]
+            AddTaskDependency(&inputParam->m_ttComplete, &inputParam->m_targetFrame[1]->m_ttEncComplete); // COMPLETE <- ENC_COMPLETE[1]            
+            if (!inputParam->m_targetFrame[0]->m_ttEncComplete.finished) // second field recode case - first field is already encoded
+                AddTaskDependency(&inputParam->m_targetFrame[1]->m_ttEncComplete, &inputParam->m_targetFrame[0]->m_ttEncComplete); // ENC_COMPLETE[1] <- ENC_COMPLETE[0]
         }
     } else {
         assert(inputParam->m_targetFrame[0] == NULL);
@@ -2319,10 +2334,10 @@ void H265Encoder::PrepareToEncode(H265EncodeTaskInputParams *inputParam)
                 m_pendingTasks.push_front(&tframe->m_ttEncComplete); // targetFrame.ENC_COMPLETE's dependencies are already resolved
         }
 
-        if (m_laFrame[0] && !m_laFrame[0]->m_ttLookahead.front().finished && m_laFrame[0]->m_ttLookahead.front().numUpstreamDependencies == 0)
+        if (isLookaheadConfigured && vm_interlocked_dec32(&m_laFrame[0]->m_ttLookahead.front().numUpstreamDependencies) == 0)
             m_pendingTasks.push_back(&m_laFrame[0]->m_ttLookahead.front()); // LA_START is independent
 
-        if (inputParam->m_ttComplete.numUpstreamDependencies == 0)
+        if (vm_interlocked_dec32(&inputParam->m_ttComplete.numUpstreamDependencies) == 0)
             m_pendingTasks.push_front(&inputParam->m_ttComplete); // COMPLETE's dependencies are already resolved
 
         vm_mutex_unlock(&m_critSect);

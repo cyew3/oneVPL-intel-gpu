@@ -264,7 +264,7 @@ static void h265_sao_BO_sse(
     int endX,
     int endY)
 {
-    const int shiftBits = 5;
+    const int shiftBits = sizeof(PixType) == 1 ? 3 : 5;
     for (int y=0; y<endY; y++)
     {
         for (int x=0; x<endX; x++)

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2013 - 2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2013 - 2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          Bitrate control
@@ -153,6 +153,7 @@ struct VmeData
     mfxU32              propCost;
     std::vector   <MbData> mb;
 };
+
 template <size_t N>
 class Regression
 {
@@ -349,21 +350,29 @@ protected:
     Ipp64f mPrevQstepLayer[8];
     Ipp32s mPrevQpLayer[8];
 
+    Ipp64f mPrevCmplxIP;
+    Ipp32s mPrevBitsIP;
+    Ipp64f mPrevQstepIP;
+    Ipp32s mPrevQpIP;
+    Ipp32s mSceneNum;
+
+
     Ipp64f mTotAvComplx;
     Ipp64f mTotComplxCnt;
     Ipp64f mTotPrevCmplx;
 
     Ipp64f mComplxSum;
     Ipp64f mTotMeanComplx;
-
-
     Ipp64f mCmplxRate;
     Ipp64f mTotTarget;
+    
     Ipp64f mQstepScale;
     Ipp64f mQstepScale0;
-    Ipp32s mIBitsLoan;
     Ipp32s mLoanLength;
     Ipp32s mLoanBitsPerFrame;
+
+    //Ipp32s mLoanLengthP;
+    //Ipp32s mLoanBitsPerFrameP;
 
     Ipp64f mQstepBase;
 

@@ -110,6 +110,7 @@ namespace H265Enc {
         Ipp8u  SceneCut;         // Enable Scene Change Detection and insert IDR frame
         Ipp8u  AnalyzeCmplx;     // analyze frame complexity (for BRC)
         Ipp8u  LowresFactor;     // > 0 means lookahead algorithms is applied on downscaled frames
+        Ipp8u  FullresMetrics;  // 0 use Lowres metrics, 1 means process LA with Lowres but compute final metrics on Fullres
 
         Ipp8u  TryIntra;        // 0-default, 1-always, 2-Try intra based on spatio temporal content analysis in inter
         Ipp8u  FastAMPSkipME;   // 0-default, 1-never, 2-Skip AMP ME of Large Partition when Skip is best

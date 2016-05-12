@@ -97,11 +97,6 @@
 #define AMT_VQ_TU
 #endif
 
-#define AMT_DQP_FIX
-
-
-
-
 namespace H265Enc {
 
 #define H265_Malloc  ippMalloc

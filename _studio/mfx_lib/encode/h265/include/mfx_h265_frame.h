@@ -381,6 +381,8 @@ namespace H265Enc {
         Ipp64f m_complxSum;
         Ipp32s m_predBits;
         Ipp64f m_cmplx;
+        Ipp32s m_refQp;
+
         std::vector<Frame *> m_futureFrames;
         Ipp8u  m_forceTryIntra;
 

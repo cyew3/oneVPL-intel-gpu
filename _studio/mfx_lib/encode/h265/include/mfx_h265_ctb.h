@@ -419,7 +419,7 @@ public:
             };
 
             struct {
-                __ALIGN64 Ipp16s tmpBuf[64*64+64*16];
+                __ALIGN64 Ipp16s tmpBuf[(64+16)*(64+8)];
             } interpWithAvg;
 
             struct {
@@ -812,7 +812,7 @@ public:
                             const FrameData *refPic, Ipp32s useHadamard) const;
 
     void MatchingMetricPuCombine(Ipp32s *had, const PixType *src, const H265MEInfo* meInfo, const H265MV* mv, const H265MV* mvB,
-                            const Ipp8s refIdx[2], const Ipp8s refIdxB[2], Ipp32s useHadamard);
+                            const Ipp8s refIdx[2], const Ipp8s refIdxB[2]);
 #ifdef MEMOIZE_SUBPEL
     void   MemoizeInit();
     void   MemoizeClear(Ipp8u depth);

@@ -2116,10 +2116,9 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
                 cu_ithread->EncAndRecChroma(0, 0, 0, NULL, INTRA_PRED_CALC);
 #endif
         }
-#ifdef AMT_DQP_FIX
         if (pars->UseDQP)
             cu_ithread->UpdateCuQp();
-#endif
+
         if (m_frame->m_doPostProc) {
             if (m_videoParam.RDOQFlag) {
                 small_memcpy(m_bsf[bsf_id].m_base.context_array + tab_ctxIdxOffset[QT_CBF_HEVC], context_array_save + tab_ctxIdxOffset[QT_CBF_HEVC],
@@ -2138,10 +2137,6 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
 
             m_bsf[bsf_id].CtxSave(m_bs[bs_id].m_base.context_array_enc);
         } else {
-#ifndef AMT_DQP_FIX
-            if (pars->UseDQP)
-                cu_ithread->UpdateCuQp();
-#endif
             cu_ithread->EncodeCU(&m_bs[bs_id], 0, 0, 0);
 
             if (m_topEnc.m_pps.entropy_coding_sync_enabled_flag && ctb_col == 1)
@@ -2201,10 +2196,6 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
             doSao = false;
 #endif
         bool doDbl = pars->deblockingFlag;
-#ifndef AMT_DQP_FIX
-        if (pars->UseDQP)
-            cu_ithread->UpdateCuQp();
-#endif
 #ifdef AMT_SAO_MIN
         // subopt sao works (cpu only)
         if (doDbl && (isRef || (doSao && pars->saoSubOpt!=2) || pars->doDumpRecon)) {
