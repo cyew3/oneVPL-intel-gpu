@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_struct.h"
 
@@ -117,7 +127,12 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     // Non LA BRC
     {/*51*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, SD_HIGH|WINDOW, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR}},
     {/*52*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, SD_HIGH|WINDOW, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR}},
+#if defined(_WIN32)
     {/*53*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, SD_HIGH|WINDOW, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR}},
+#else
+    // AVBR is UNSUPPORTED on Linux
+    {/*53*/ MFX_ERR_UNSUPPORTED, SD_HIGH|WINDOW, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR}},
+#endif
     {/*54*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, SD_HIGH|WINDOW, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP}},
 };
 
