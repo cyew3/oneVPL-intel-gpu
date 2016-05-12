@@ -1958,7 +1958,10 @@ mfxStatus VAAPIEncoder::Execute(
             vaFeiFrameControl->ref_height = frameCtrl->RefHeight;
             vaFeiFrameControl->ref_width = frameCtrl->RefWidth;
             vaFeiFrameControl->repartition_check_enable = frameCtrl->RepartitionCheckEnable;
-            vaFeiFrameControl->search_window = frameCtrl->SearchWindow;
+            if (0 == frameCtrl->SearchWindow)
+                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+            else
+                vaFeiFrameControl->search_window = frameCtrl->SearchWindow;
             vaFeiFrameControl->sub_mb_part_mask = frameCtrl->SubMBPartMask;
             vaFeiFrameControl->sub_pel_mode = frameCtrl->SubPelMode;
             if (NULL != rePakCtrl)
