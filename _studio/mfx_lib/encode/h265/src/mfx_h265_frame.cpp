@@ -68,8 +68,8 @@ namespace H265Enc {
         y = align_pointer<Ipp8u *>(mem + vertPaddingSizeInBytesLu, allocInfo.alignment);
         uv = y + allocInfo.sizeInBytesLu - vertPaddingSizeInBytesLu + vertPaddingSizeInBytesCh;
         uv = align_pointer<Ipp8u *>(uv, allocInfo.alignment);
-        y += (allocInfo.paddingLu << bdShiftLu);
-        uv += (allocInfo.paddingChW << bdShiftCh);
+        y  = align_pointer<Ipp8u *>(y + (allocInfo.paddingLu << bdShiftLu), 64);
+        uv = align_pointer<Ipp8u *>(uv + (allocInfo.paddingChW << bdShiftCh), 64);
 
         if (allocInfo.feiHdl) {
             m_fei = allocInfo.feiHdl;
@@ -121,8 +121,11 @@ namespace H265Enc {
         Ipp32s alignedFrameSize = alignedWidth * ((height+63)&~63);
         m_pitchRsCs4 = alignedWidth>>2;
         for (Ipp32s log2BlkSize = 2; log2BlkSize <= 6; log2BlkSize ++) {
-            m_rs[log2BlkSize-2].resize(alignedFrameSize>>(log2BlkSize<<1), 0);
-            m_cs[log2BlkSize-2].resize(alignedFrameSize>>(log2BlkSize<<1), 0);
+			m_rcscSize[log2BlkSize-2] = alignedFrameSize>>(log2BlkSize<<1);
+			m_rs[log2BlkSize-2] = (Ipp32s *)H265_Malloc(sizeof(Ipp32s) * m_rcscSize[log2BlkSize-2]); // ippMalloc is 64-bytes aligned
+			m_cs[log2BlkSize-2] = (Ipp32s *)H265_Malloc(sizeof(Ipp32s) * m_rcscSize[log2BlkSize-2]);
+            memset(m_rs[log2BlkSize-2], 0, sizeof(Ipp32s) * m_rcscSize[log2BlkSize-2]);
+            memset(m_cs[log2BlkSize-2], 0, sizeof(Ipp32s) * m_rcscSize[log2BlkSize-2]);
         }
 
         rscs_ctb.resize(numBlk, 0);
@@ -146,9 +149,9 @@ namespace H265Enc {
         m_mv.resize(numBlk);
         m_mv_pdist_past.resize(numBlk);
         m_mv_pdist_future.resize(numBlk);
-        for (Ipp32s log2BlkSize = 2; log2BlkSize <= 6; log2BlkSize ++) {
-            m_rs[log2BlkSize-2].resize(0);
-            m_cs[log2BlkSize-2].resize(0);
+        for (Ipp32s log2BlkSize = 2; log2BlkSize <= 6; log2BlkSize++) {
+			if (m_rs[log2BlkSize-2]) { H265_Free(m_rs[log2BlkSize-2]); m_rs[log2BlkSize-2] = NULL; }
+			if (m_cs[log2BlkSize-2]) { H265_Free(m_cs[log2BlkSize-2]); m_cs[log2BlkSize-2] = NULL; }
         }
         rscs_ctb.resize(numBlk);
         sc_mask.resize(numBlk);
@@ -413,9 +416,15 @@ namespace H265Enc {
 
     void PadRectLuma(const FrameData &fdata, Ipp32s fourcc, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth)
     {
+        // work-around for 8x and 16x downsampling on gpu
+        // currently DS kernel expect right border is padded up to pitch
+        Ipp32s paddingW = fdata.padding;
+        if (fdata.m_handle)
+            paddingW = fdata.pitch_luma_pix - fdata.width - AlignValue(fdata.padding, 64);
+
         (fourcc == NV12 || fourcc == NV16)
-            ? PadRect((Ipp8u *)fdata.y, fdata.pitch_luma_pix, fdata.width, fdata.height, rectx, recty, rectw, recth, fdata.padding, fdata.padding)
-            : PadRect((Ipp16u*)fdata.y, fdata.pitch_luma_pix, fdata.width, fdata.height, rectx, recty, rectw, recth, fdata.padding, fdata.padding);
+            ? PadRect((Ipp8u *)fdata.y, fdata.pitch_luma_pix, fdata.width, fdata.height, rectx, recty, rectw, recth, paddingW, fdata.padding)
+            : PadRect((Ipp16u*)fdata.y, fdata.pitch_luma_pix, fdata.width, fdata.height, rectx, recty, rectw, recth, paddingW, fdata.padding);
     }
 
     void PadRectChroma(const FrameData &fdata, Ipp32s fourcc, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth)
@@ -568,6 +577,7 @@ namespace H265Enc {
         m_dpbSize     = 0;
         m_sceneOrder  = 0;
         m_forceTryIntra = 0;
+        m_sliceQpY    = 0;
 
         if (m_stats[0]) {
             m_stats[0]->ResetAvgMetrics();

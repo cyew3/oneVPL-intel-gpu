@@ -446,22 +446,22 @@ void MAKE_NAME(h265_ComputeRsCs_8u)(const unsigned char *src, Ipp32s pitch, Ipp3
         cs0 = _mm256_hadd_epi32(cs0, cs1);
         cs0 = _mm256_permute4x64_epi64(cs0, 0xd8);
         cs0 = _mm256_srli_epi32(cs0, 4);
-        _mm256_storeu_si256((__m256i *)(lcuCs), cs0);
+        _mm256_store_si256((__m256i *)(lcuCs), cs0);
 
         cs2 = _mm256_hadd_epi32(cs2, cs3);
         cs2 = _mm256_permute4x64_epi64(cs2, 0xd8);
         cs2 = _mm256_srli_epi32(cs2, 4);
-        _mm256_storeu_si256((__m256i *)(lcuCs+8), cs2);
+        _mm256_store_si256((__m256i *)(lcuCs+8), cs2);
 
         rs0 = _mm256_hadd_epi32(rs0, rs1);
         rs0 = _mm256_permute4x64_epi64(rs0, 0xd8);
         rs0 = _mm256_srli_epi32(rs0, 4);
-        _mm256_storeu_si256((__m256i *)(lcuRs), rs0);
+        _mm256_store_si256((__m256i *)(lcuRs), rs0);
 
         rs2 = _mm256_hadd_epi32(rs2, rs3);
         rs2 = _mm256_permute4x64_epi64(rs2, 0xd8);
         rs2 = _mm256_srli_epi32(rs2, 4);
-        _mm256_storeu_si256((__m256i *)(lcuRs+8), rs2);
+        _mm256_store_si256((__m256i *)(lcuRs+8), rs2);
     }
 }
 

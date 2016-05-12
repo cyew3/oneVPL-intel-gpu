@@ -102,6 +102,19 @@ RDOQuant<PixType>::RDOQuant(H265CU<PixType>* pCU, H265BsFake* bs, EnumTextType t
 
     m_lambda *= 256;//to meet HM10 code
 
+    qlevels =              pCU->m_scratchPad.rdoq.qlevels;
+    zeroCosts =            pCU->m_scratchPad.rdoq.zeroCosts;
+    cost_nz_level =        pCU->m_scratchPad.rdoq.cost_nz_level;
+    cost_zero_level =      pCU->m_scratchPad.rdoq.cost_zero_level;
+    cost_sig =             pCU->m_scratchPad.rdoq.cost_sig;
+    rate_inc_up =          pCU->m_scratchPad.rdoq.rate_inc_up;
+    rate_inc_down =        pCU->m_scratchPad.rdoq.rate_inc_down;
+    sig_rate_delta =       pCU->m_scratchPad.rdoq.sig_rate_delta;
+    delta_u =              pCU->m_scratchPad.rdoq.delta_u;
+    srcScanOrder =         pCU->m_scratchPad.rdoq.srcScanOrder;
+    sig_coeff_group_flag = pCU->m_scratchPad.rdoq.sig_coeff_group_flag;
+    sbh_possible =         pCU->m_scratchPad.rdoq.sbh_possible;
+    cost_coeff_group_sig = pCU->m_scratchPad.rdoq.cost_coeff_group_sig;
 } // RDOQuant::RDOQuant(H265CU* pcCU, H265BsFake* bs)
 
 template <typename PixType>
@@ -268,6 +281,308 @@ void EncodeOneCoeff(
 
 } // void EncodeOneCoeff(...)
 
+void Rast2Scan_px(const Ipp16s *src, Ipp16s *dst, Ipp32s scan_idx, Ipp32s log2_tr_size)
+{
+    Ipp32s numCoeff = (1 << (log2_tr_size << 1));
+    const Ipp16u *scan = H265Enc::h265_sig_last_scan[scan_idx - 1][log2_tr_size - 1];
+    for (Ipp32s i = 0; i < numCoeff; i++)
+        dst[i] = src[scan[i]];
+}
+
+template <Ipp32s pitch>
+inline void Rast2Scan8x4(const Ipp16s *src, Ipp16s *dst0, Ipp16s *dst1)
+{
+    __m128i a,b,c,d,e,f;
+    a = _mm_load_si128((__m128i*)(src+0*pitch));
+    b = _mm_load_si128((__m128i*)(src+1*pitch));
+    c = _mm_load_si128((__m128i*)(src+2*pitch));
+    d = _mm_load_si128((__m128i*)(src+3*pitch));
+    e = _mm_unpacklo_epi16(b, c);
+    f = _mm_unpacklo_epi16(a, e);
+    f = _mm_insert_epi16(f, src[3*pitch], 6);
+    f = _mm_shufflehi_epi16(f, _MM_SHUFFLE(3,2,0,1));
+    _mm_store_si128((__m128i*)dst0, f);
+    e = _mm_unpackhi_epi64(e, e);
+    e = _mm_unpacklo_epi16(e, d);
+    e = _mm_shufflelo_epi16(e, _MM_SHUFFLE(2,3,1,0));
+    e = _mm_insert_epi16(e, src[3], 1);
+    _mm_store_si128((__m128i*)dst0+1, e);
+
+    e = _mm_unpackhi_epi16(b, c); // 4 8 5 9 6 10 7 11
+    f = _mm_unpacklo_epi64(e, e); // 4 8 5 9 4 8 5 9 
+    f = _mm_unpackhi_epi16(a, f); // 0 4 1 8 2 5 3 9
+    f = _mm_insert_epi16(f, src[3*pitch+4], 6);
+    f = _mm_shufflehi_epi16(f, _MM_SHUFFLE(3,2,0,1));
+    _mm_store_si128((__m128i*)dst1+0, f);
+    e = _mm_unpackhi_epi16(e, d);
+    e = _mm_shufflelo_epi16(e, _MM_SHUFFLE(2,3,1,0));
+    e = _mm_insert_epi16(e, src[7], 1);
+    _mm_store_si128((__m128i*)dst1+1, e);
+}
+
+void Rast2Scan(const Ipp16s *src, Ipp16s *dst, Ipp32s scan_idx, Ipp32s log2_tr_size)
+{
+    if (scan_idx == 1) {
+        if (log2_tr_size == 2) {
+            _mm_store_si128((__m128i*)dst, _mm_load_si128((__m128i*)src));
+            _mm_store_si128((__m128i*)dst+1, _mm_load_si128((__m128i*)src+1));
+        } else if (log2_tr_size == 3) {
+            __m128i s0 = _mm_load_si128((__m128i*)src);     //  0..7
+            __m128i s1 = _mm_load_si128((__m128i*)src+1);   //  8..15
+            __m128i s2 = _mm_load_si128((__m128i*)src+2);   // 16..23
+            __m128i s3 = _mm_load_si128((__m128i*)src+3);   // 24..31
+            _mm_store_si128((__m128i*)dst+0, _mm_unpacklo_epi64(s0, s1)); // 0 1 2 3 8 9 10 11
+            _mm_store_si128((__m128i*)dst+1, _mm_unpacklo_epi64(s2, s3)); // 16 17 18 19 24 25 26 27
+            _mm_store_si128((__m128i*)dst+2, _mm_unpackhi_epi64(s0, s1)); // 4 5 6 7 12 13 14 15
+            _mm_store_si128((__m128i*)dst+3, _mm_unpackhi_epi64(s2, s3)); // 20 21 22 23 28 29 30 31
+            s0 = _mm_load_si128((__m128i*)src+4);
+            s1 = _mm_load_si128((__m128i*)src+5);
+            s2 = _mm_load_si128((__m128i*)src+6);
+            s3 = _mm_load_si128((__m128i*)src+7);
+            _mm_store_si128((__m128i*)dst+4, _mm_unpacklo_epi64(s0, s1));
+            _mm_store_si128((__m128i*)dst+5, _mm_unpacklo_epi64(s2, s3));
+            _mm_store_si128((__m128i*)dst+6, _mm_unpackhi_epi64(s0, s1));
+            _mm_store_si128((__m128i*)dst+7, _mm_unpackhi_epi64(s2, s3));
+        } else if (log2_tr_size == 4) {
+            for (Ipp32s i = 0; i < 256; i += 64, src += 64, dst += 64) {
+                __m128i s0 = _mm_load_si128((__m128i*)src);     //  0..7
+                __m128i s1 = _mm_load_si128((__m128i*)src+1);   //  8..15
+                __m128i s2 = _mm_load_si128((__m128i*)src+2);   // 16..23
+                __m128i s3 = _mm_load_si128((__m128i*)src+3);   // 24..31
+                __m128i s4 = _mm_load_si128((__m128i*)src+4);   // 32..39
+                __m128i s5 = _mm_load_si128((__m128i*)src+5);   // 40..47
+                __m128i s6 = _mm_load_si128((__m128i*)src+6);   // 48..55
+                __m128i s7 = _mm_load_si128((__m128i*)src+7);   // 56..63
+                _mm_store_si128((__m128i*)dst+0, _mm_unpacklo_epi64(s0, s2)); //  0..3  16..19
+                _mm_store_si128((__m128i*)dst+1, _mm_unpacklo_epi64(s4, s6)); // 32..35 48..51
+                _mm_store_si128((__m128i*)dst+2, _mm_unpackhi_epi64(s0, s2)); //  4..7  20..23
+                _mm_store_si128((__m128i*)dst+3, _mm_unpackhi_epi64(s4, s6)); // 36..39 52..55
+                _mm_store_si128((__m128i*)dst+4, _mm_unpacklo_epi64(s1, s3));
+                _mm_store_si128((__m128i*)dst+5, _mm_unpacklo_epi64(s5, s7));
+                _mm_store_si128((__m128i*)dst+6, _mm_unpackhi_epi64(s1, s3));
+                _mm_store_si128((__m128i*)dst+7, _mm_unpackhi_epi64(s5, s7));
+            }
+        } else { assert(log2_tr_size == 5);
+            for (Ipp32s i = 0; i < 1024; i += 128, src += 128, dst += 128) {
+                __m128i s0 = _mm_load_si128((__m128i*)src);     //  0..7
+                __m128i s1 = _mm_load_si128((__m128i*)src+1);   //  8..15
+                __m128i s2 = _mm_load_si128((__m128i*)src+2);   // 16..23
+                __m128i s3 = _mm_load_si128((__m128i*)src+3);   // 24..31
+                __m128i s4 = _mm_load_si128((__m128i*)src+4);   // 32..39
+                __m128i s5 = _mm_load_si128((__m128i*)src+5);   // 40..47
+                __m128i s6 = _mm_load_si128((__m128i*)src+6);   // 48..55
+                __m128i s7 = _mm_load_si128((__m128i*)src+7);   // 56..63
+                __m128i s8 = _mm_load_si128((__m128i*)src+8);
+                __m128i s9 = _mm_load_si128((__m128i*)src+9);
+                __m128i s10 = _mm_load_si128((__m128i*)src+10);
+                __m128i s11 = _mm_load_si128((__m128i*)src+11);
+                __m128i s12 = _mm_load_si128((__m128i*)src+12);
+                __m128i s13 = _mm_load_si128((__m128i*)src+13);
+                __m128i s14 = _mm_load_si128((__m128i*)src+14);
+                __m128i s15 = _mm_load_si128((__m128i*)src+15);
+                _mm_store_si128((__m128i*)dst+0, _mm_unpacklo_epi64(s0, s4)); //  0..3  32..35
+                _mm_store_si128((__m128i*)dst+1, _mm_unpacklo_epi64(s8, s12));
+                _mm_store_si128((__m128i*)dst+2, _mm_unpackhi_epi64(s0, s4)); //  4..7  36..39
+                _mm_store_si128((__m128i*)dst+3, _mm_unpackhi_epi64(s8, s12));
+                _mm_store_si128((__m128i*)dst+4, _mm_unpacklo_epi64(s1, s5));
+                _mm_store_si128((__m128i*)dst+5, _mm_unpacklo_epi64(s9, s13));
+                _mm_store_si128((__m128i*)dst+6, _mm_unpackhi_epi64(s1, s5));
+                _mm_store_si128((__m128i*)dst+7, _mm_unpackhi_epi64(s9, s13));
+                _mm_store_si128((__m128i*)dst+8, _mm_unpacklo_epi64(s2, s6));
+                _mm_store_si128((__m128i*)dst+9, _mm_unpacklo_epi64(s10, s14));
+                _mm_store_si128((__m128i*)dst+10, _mm_unpackhi_epi64(s2, s6));
+                _mm_store_si128((__m128i*)dst+11, _mm_unpackhi_epi64(s10, s14));
+                _mm_store_si128((__m128i*)dst+12, _mm_unpacklo_epi64(s3, s7));
+                _mm_store_si128((__m128i*)dst+13, _mm_unpacklo_epi64(s11, s15));
+                _mm_store_si128((__m128i*)dst+14, _mm_unpackhi_epi64(s3, s7));
+                _mm_store_si128((__m128i*)dst+15, _mm_unpackhi_epi64(s11, s15));
+            }
+        }
+    } else if (scan_idx == 2) {
+        if (log2_tr_size == 2) {
+            __m128i a = _mm_load_si128((__m128i*)src);
+            __m128i b = _mm_load_si128((__m128i*)src+1);
+            __m128i c = _mm_unpacklo_epi16(a, b);
+            __m128i d = _mm_unpackhi_epi16(a, b);
+            a = _mm_unpacklo_epi16(c, d);
+            b = _mm_unpackhi_epi16(c, d);
+            _mm_store_si128((__m128i*)dst+0, a);
+            _mm_store_si128((__m128i*)dst+1, b);
+        } else if (log2_tr_size == 3) {
+            __m128i s0 = _mm_load_si128((__m128i*)src);                 //  0..7
+            __m128i s1 = _mm_load_si128((__m128i*)src+1);               //  8..15
+            __m128i s2 = _mm_load_si128((__m128i*)src+2);               // 16..23
+            __m128i s3 = _mm_load_si128((__m128i*)src+3);               // 24..31
+            __m128i s4 = _mm_load_si128((__m128i*)src+4);               // 32..39
+            __m128i s5 = _mm_load_si128((__m128i*)src+5);               // 40..47
+            __m128i s6 = _mm_load_si128((__m128i*)src+6);               // 48..55
+            __m128i s7 = _mm_load_si128((__m128i*)src+7);               // 56..63
+            __m128i a = _mm_unpacklo_epi16(s0, s1);                     // 00 08 01 09 02 10 03 11
+            __m128i b = _mm_unpacklo_epi16(s2, s3);                     // 16 24 17 25 18 26 19 27
+            _mm_store_si128((__m128i*)dst, _mm_unpacklo_epi32(a, b));   // 00 08 16 24 01 09 17 25
+            _mm_store_si128((__m128i*)dst+1, _mm_unpackhi_epi32(a, b)); // 02 10 18 26 03 11 19 27
+            a = _mm_unpacklo_epi16(s4, s5);
+            b = _mm_unpacklo_epi16(s6, s7);
+            _mm_store_si128((__m128i*)dst+2, _mm_unpacklo_epi32(a, b));
+            _mm_store_si128((__m128i*)dst+3, _mm_unpackhi_epi32(a, b));
+            a = _mm_unpackhi_epi16(s0, s1);
+            b = _mm_unpackhi_epi16(s2, s3);
+            _mm_store_si128((__m128i*)dst+4, _mm_unpacklo_epi32(a, b));
+            _mm_store_si128((__m128i*)dst+5, _mm_unpackhi_epi32(a, b));
+            a = _mm_unpackhi_epi16(s4, s5);
+            b = _mm_unpackhi_epi16(s6, s7);
+            _mm_store_si128((__m128i*)dst+6, _mm_unpacklo_epi32(a, b));
+            _mm_store_si128((__m128i*)dst+7, _mm_unpackhi_epi32(a, b));
+        } else if (log2_tr_size == 4) {
+            for (Ipp32s i = 0; i < 256; i += 64, src += 64, dst += 16) {
+                __m128i s0 = _mm_load_si128((__m128i*)src);                 //  0..7
+                __m128i s1 = _mm_load_si128((__m128i*)src+1);               //  8..15
+                __m128i s2 = _mm_load_si128((__m128i*)src+2);               // 16..23
+                __m128i s3 = _mm_load_si128((__m128i*)src+3);               // 24..31
+                __m128i s4 = _mm_load_si128((__m128i*)src+4);               // 32..39
+                __m128i s5 = _mm_load_si128((__m128i*)src+5);               // 40..47
+                __m128i s6 = _mm_load_si128((__m128i*)src+6);               // 48..55
+                __m128i s7 = _mm_load_si128((__m128i*)src+7);               // 56..63
+                __m128i a = _mm_unpacklo_epi16(s0, s2);                     // 00 16 01 17 02 18 03 19
+                __m128i b = _mm_unpacklo_epi16(s4, s6);                     // 32 48 33 49 34 50 35 51
+                _mm_store_si128((__m128i*)dst+0, _mm_unpacklo_epi32(a, b)); // 00 16 32 48 01 17 33 49
+                _mm_store_si128((__m128i*)dst+1, _mm_unpackhi_epi32(a, b)); // 02 18 34 50 03 19 35 51
+                a = _mm_unpackhi_epi16(s0, s2);
+                b = _mm_unpackhi_epi16(s4, s6);
+                _mm_store_si128((__m128i*)dst+8, _mm_unpacklo_epi32(a, b));
+                _mm_store_si128((__m128i*)dst+9, _mm_unpackhi_epi32(a, b));
+                a = _mm_unpacklo_epi16(s1, s3);
+                b = _mm_unpacklo_epi16(s5, s7);
+                _mm_store_si128((__m128i*)dst+16, _mm_unpacklo_epi32(a, b));
+                _mm_store_si128((__m128i*)dst+17, _mm_unpackhi_epi32(a, b));
+                a = _mm_unpackhi_epi16(s1, s3);
+                b = _mm_unpackhi_epi16(s5, s7);
+                _mm_store_si128((__m128i*)dst+24, _mm_unpacklo_epi32(a, b));
+                _mm_store_si128((__m128i*)dst+25, _mm_unpackhi_epi32(a, b));
+            }
+        } else { assert(log2_tr_size == 5);
+            for (Ipp32s i = 0; i < 1024; i += 128, src += 128, dst += 16) {
+                __m128i s0  = _mm_load_si128((__m128i*)src);     //  0..7
+                __m128i s1  = _mm_load_si128((__m128i*)src+1);   //  8..15
+                __m128i s2  = _mm_load_si128((__m128i*)src+2);  // 16..23
+                __m128i s3  = _mm_load_si128((__m128i*)src+3);  // 24..31
+                __m128i s4  = _mm_load_si128((__m128i*)src+4);   // 32..39
+                __m128i s5  = _mm_load_si128((__m128i*)src+5);   // 40..47
+                __m128i s6  = _mm_load_si128((__m128i*)src+6); 
+                __m128i s7  = _mm_load_si128((__m128i*)src+7); 
+                __m128i s8  = _mm_load_si128((__m128i*)src+8);   // 64..71
+                __m128i s9  = _mm_load_si128((__m128i*)src+9);   // 72..79
+                __m128i s10 = _mm_load_si128((__m128i*)src+10); 
+                __m128i s11 = _mm_load_si128((__m128i*)src+11); 
+                __m128i s12 = _mm_load_si128((__m128i*)src+12);  // 96..103
+                __m128i s13 = _mm_load_si128((__m128i*)src+13);  //104..111
+                __m128i s14 = _mm_load_si128((__m128i*)src+14);
+                __m128i s15 = _mm_load_si128((__m128i*)src+15);
+                __m128i a = _mm_unpacklo_epi16(s0, s4);
+                __m128i b = _mm_unpacklo_epi16(s8, s12);
+                _mm_store_si128((__m128i*)dst+0, _mm_unpacklo_epi32(a, b));
+                _mm_store_si128((__m128i*)dst+1, _mm_unpackhi_epi32(a, b));
+                a = _mm_unpackhi_epi16(s0, s4);
+                b = _mm_unpackhi_epi16(s8, s12);
+                _mm_store_si128((__m128i*)dst+16, _mm_unpacklo_epi32(a, b));
+                _mm_store_si128((__m128i*)dst+17, _mm_unpackhi_epi32(a, b));
+                a = _mm_unpacklo_epi16(s1, s5);
+                b = _mm_unpacklo_epi16(s9, s13);
+                _mm_store_si128((__m128i*)dst+32, _mm_unpacklo_epi32(a, b));
+                _mm_store_si128((__m128i*)dst+33, _mm_unpackhi_epi32(a, b));
+                a = _mm_unpackhi_epi16(s1, s5);
+                b = _mm_unpackhi_epi16(s9, s13);
+                _mm_store_si128((__m128i*)dst+48, _mm_unpacklo_epi32(a, b));
+                _mm_store_si128((__m128i*)dst+49, _mm_unpackhi_epi32(a, b));
+                a = _mm_unpacklo_epi16(s2, s6);
+                b = _mm_unpacklo_epi16(s10, s14);
+                _mm_store_si128((__m128i*)dst+64, _mm_unpacklo_epi32(a, b));
+                _mm_store_si128((__m128i*)dst+65, _mm_unpackhi_epi32(a, b));
+                a = _mm_unpackhi_epi16(s2, s6);
+                b = _mm_unpackhi_epi16(s10, s14);
+                _mm_store_si128((__m128i*)dst+80, _mm_unpacklo_epi32(a, b));
+                _mm_store_si128((__m128i*)dst+81, _mm_unpackhi_epi32(a, b));
+                a = _mm_unpacklo_epi16(s3, s7);
+                b = _mm_unpacklo_epi16(s11, s15);
+                _mm_store_si128((__m128i*)dst+96, _mm_unpacklo_epi32(a, b));
+                _mm_store_si128((__m128i*)dst+97, _mm_unpackhi_epi32(a, b));
+                a = _mm_unpackhi_epi16(s3, s7);
+                b = _mm_unpackhi_epi16(s11, s15);
+                _mm_store_si128((__m128i*)dst+112, _mm_unpacklo_epi32(a, b));
+                _mm_store_si128((__m128i*)dst+113, _mm_unpackhi_epi32(a, b));
+            }
+        }
+    } else { assert(scan_idx == 3);
+        if (log2_tr_size == 2) {
+            __m128i a,b,c,d,e;
+            a = _mm_load_si128((__m128i*)src);
+            b = _mm_load_si128((__m128i*)src+1);
+            c = _mm_unpackhi_epi16(a, b);                       // x | 12 | 5 | ...
+            c = _mm_shufflelo_epi16(c, _MM_SHUFFLE(0,0,1,2));   // 5 | 12 | ...
+            c = _mm_unpacklo_epi32(a, c);                       // 0 | 1 | 5 | 12 | ...
+            d = _mm_shuffle_epi32(a, _MM_SHUFFLE(0,3,2,1));     // 2 | 3 | 4 | 5 | 6 | 7 | 0 | 1
+            e = _mm_shufflelo_epi16(d, _MM_SHUFFLE(0,0,0,2));   // 4 | 2 | ....
+            e = _mm_unpacklo_epi16(e, b);                       // 4 | 8 | 2 | 9 | ...
+            c = _mm_unpacklo_epi16(c, e);                       // 0 | 4 | 1 | 8 | 5 | 2 | 12 | 9
+            _mm_store_si128((__m128i*)dst, c);
+            c = _mm_shuffle_epi32(b, _MM_SHUFFLE(2,1,0,3));     // 14 | 15 | 8 | 9 | 10 | 11 | 12 | 13
+            e = _mm_shufflehi_epi16(c, _MM_SHUFFLE(2,0,1,3));   // 14 | 15 | 8 | 9 | 13 | 11 | 10 | 12
+            e = _mm_unpackhi_epi16(d, e);                       // 6 | 13 | 7 | 11 | ...
+            d = _mm_unpacklo_epi32(a, b);                       // 0 | 1 | 8 | 9 | 2 | 3 | 10 | 11
+            d = _mm_shufflehi_epi16(d, _MM_SHUFFLE(3,0,2,1));   // 0 | 1 | 8 | 9 | 3 | 10 | 2 | 11
+            d = _mm_shuffle_epi32(d, _MM_SHUFFLE(3,1,0,2));     // 3 | 10 | 0 | 1 | 8 | 9 | 2 | 11
+            d = _mm_unpacklo_epi32(d, c);                       // 3 | 10 | 14 | 15 | ...
+            d = _mm_unpacklo_epi16(e, d);                       // 6 | 3 | 13 | 10 | 7 | 14 | 11 | 15 
+            _mm_store_si128((__m128i*)dst+1, d);
+        } else if (log2_tr_size == 3) {
+            Rast2Scan8x4<8>(src,     dst+0,  dst+32);
+            Rast2Scan8x4<8>(src+4*8, dst+16, dst+48);
+        } else if (log2_tr_size == 4) {
+            Rast2Scan8x4<16>(src,         dst+0*16,  dst+2*16);
+            Rast2Scan8x4<16>(src+8,       dst+5*16,  dst+9*16);
+            Rast2Scan8x4<16>(src+4*16,    dst+1*16,  dst+4*16);
+            Rast2Scan8x4<16>(src+4*16+8,  dst+8*16,  dst+12*16);
+            Rast2Scan8x4<16>(src+8*16,    dst+3*16,  dst+7*16);
+            Rast2Scan8x4<16>(src+8*16+8,  dst+11*16, dst+14*16);
+            Rast2Scan8x4<16>(src+12*16,   dst+6*16,  dst+10*16);
+            Rast2Scan8x4<16>(src+12*16+8, dst+13*16, dst+15*16);
+        } else { assert(log2_tr_size == 5);
+            Rast2Scan8x4<32>(src,          dst+0*16,  dst+2*16);
+            Rast2Scan8x4<32>(src+8,        dst+5*16,  dst+9*16);
+            Rast2Scan8x4<32>(src+16,       dst+14*16, dst+20*16);
+            Rast2Scan8x4<32>(src+24,       dst+27*16, dst+35*16);
+            Rast2Scan8x4<32>(src+4*32,     dst+1*16,  dst+4*16);
+            Rast2Scan8x4<32>(src+4*32+8,   dst+8*16,  dst+13*16);
+            Rast2Scan8x4<32>(src+4*32+16,  dst+19*16, dst+26*16);
+            Rast2Scan8x4<32>(src+4*32+24,  dst+34*16, dst+42*16);
+            Rast2Scan8x4<32>(src+8*32,     dst+3*16,  dst+7*16);
+            Rast2Scan8x4<32>(src+8*32+8,   dst+12*16, dst+18*16);
+            Rast2Scan8x4<32>(src+8*32+16,  dst+25*16, dst+33*16);
+            Rast2Scan8x4<32>(src+8*32+24,  dst+41*16, dst+48*16);
+            Rast2Scan8x4<32>(src+12*32,    dst+6*16,  dst+11*16);
+            Rast2Scan8x4<32>(src+12*32+8,  dst+17*16, dst+24*16);
+            Rast2Scan8x4<32>(src+12*32+16, dst+32*16, dst+40*16);
+            Rast2Scan8x4<32>(src+12*32+24, dst+47*16, dst+53*16);
+            Rast2Scan8x4<32>(src+16*32,    dst+10*16, dst+16*16);
+            Rast2Scan8x4<32>(src+16*32+8,  dst+23*16, dst+31*16);
+            Rast2Scan8x4<32>(src+16*32+16, dst+39*16, dst+46*16);
+            Rast2Scan8x4<32>(src+16*32+24, dst+52*16, dst+57*16);
+            Rast2Scan8x4<32>(src+20*32,    dst+15*16, dst+22*16);
+            Rast2Scan8x4<32>(src+20*32+8,  dst+30*16, dst+38*16);
+            Rast2Scan8x4<32>(src+20*32+16, dst+45*16, dst+51*16);
+            Rast2Scan8x4<32>(src+20*32+24, dst+56*16, dst+60*16);
+            Rast2Scan8x4<32>(src+24*32,    dst+21*16, dst+29*16);
+            Rast2Scan8x4<32>(src+24*32+8,  dst+37*16, dst+44*16);
+            Rast2Scan8x4<32>(src+24*32+16, dst+50*16, dst+55*16);
+            Rast2Scan8x4<32>(src+24*32+24, dst+59*16, dst+62*16);
+            Rast2Scan8x4<32>(src+28*32,    dst+28*16, dst+36*16);
+            Rast2Scan8x4<32>(src+28*32+8,  dst+43*16, dst+49*16);
+            Rast2Scan8x4<32>(src+28*32+16, dst+54*16, dst+58*16);
+            Rast2Scan8x4<32>(src+28*32+24, dst+61*16, dst+63*16);
+        }
+    }
+}
+
 template <typename PixType>
 template <Ipp8u rdoqCGZ, Ipp8u SBH>
 void RDOQuant<PixType>::DoAlgorithm(
@@ -309,21 +624,10 @@ void RDOQuant<PixType>::DoAlgorithm(
     }
     const Ipp8u  qp_rem = h265_qp_rem[QP];
     const Ipp32s uiQ    = h265_quant_table_fwd[qp_rem];
-    const Ipp64f errScale = 2.0 * coeffCount / (uiQ * uiQ);
+    const Ipp64f errScale = 2.0 * coeffCount * h265_quant_table_fwd_pow_minus2[qp_rem];
     const Ipp32u scan_idx = GetCoefScanIdx(abs_part_idx, log2_tr_size, type==TEXT_LUMA);
 
-    const int MAX_TU_SIZE = 32 * 32;
-    Ipp64f cost_nz_level[ MAX_TU_SIZE ];
-    Ipp64f cost_zero_level[ MAX_TU_SIZE ];
-    Ipp64f cost_sig[ MAX_TU_SIZE ];
-    Ipp32u qlevels[MAX_TU_SIZE];//abs levels
-
     memset(pDst, 0, sizeof(Ipp16s)*coeffCount);
-
-    Ipp32s rate_inc_up   [MAX_TU_SIZE];
-    Ipp32s rate_inc_down [MAX_TU_SIZE];
-    Ipp32s sig_rate_delta[MAX_TU_SIZE];
-    Ipp32s delta_u       [MAX_TU_SIZE];
 
     if (SBH) {
         memset( rate_inc_up,    0, sizeof(Ipp32s) * coeffCount );
@@ -339,16 +643,13 @@ void RDOQuant<PixType>::DoAlgorithm(
         scanCG = h265_sig_scan_CG32x32;
     }
 
-    Ipp32u sig_coeff_group_flag[MLS_GRP_NUM];
-    memset( sig_coeff_group_flag,   0, sizeof(Ipp32u) * cgCount );
-    Ipp32u sbh_possible[MLS_GRP_NUM];
+    memset( sig_coeff_group_flag,   0, sizeof(*sig_coeff_group_flag) * cgCount );
 
     const Ipp32u shift        = MLS_CG_SIZE >> 1;
     const Ipp32u num_blk_side = width >> shift;
     const Ipp32u log2_num_blk_side = log2_tr_size - shift;
     const Ipp32u sizeCG = (1 << MLS_CG_SIZE);//16
 
-    Ipp64f cost_coeff_group_sig[ MLS_GRP_NUM ];
     memset(cost_coeff_group_sig,   0, sizeof(Ipp64f) * cgCount );
 
     const Ipp16u *scan = h265_sig_last_scan[ scan_idx -1 ][ log2_tr_size - 1 ];
@@ -365,45 +666,63 @@ void RDOQuant<PixType>::DoAlgorithm(
     local_cabac.c2Idx   = 0;
     local_cabac.go_rice_param = 0;
 
-    Ipp64f cost_zero_blk = 0;
     Ipp64f cost_base = 0;
 
     Ipp32s last_nz_subset = -1;
     Ipp32s last_nz_pos    = -1;// in scan order
 
+    Rast2Scan(pSrc, srcScanOrder, scan_idx, log2_tr_size);
+    //for (Ipp32u i = 0; i < coeffCount; i++)
+    //    srcScanOrder[i] = pSrc[scan[i]];
+
     // PreQuantize optimization
-    Ipp64s zeroCosts[MAX_TU_SIZE];
-    MFX_HEVC_PP::NAME(h265_Quant_zCost_16s)(pSrc, qlevels, zeroCosts, coeffCount, uiQ, qshiftOff, qbits, coeffCount<<1);
-    for (Ipp32s subset = last_scan_set; subset >= 0; subset--) {//subset means CG
-        Ipp32s sub_pos    = subset << LOG2_SCAN_SET_SIZE;
-        Ipp32u CG_blk_pos = scanCG[ subset ];
-        Ipp32u first_nz_pos_in_CG=0; 
-        Ipp32u last_nz_pos_in_CG=0;
-        for (Ipp32s pos_in_CG = sizeCG-1; pos_in_CG >= 0; pos_in_CG--) {
-            Ipp32s scan_pos = sub_pos + pos_in_CG;
-            Ipp32u blk_pos  = scan[scan_pos];
+    Ipp64f cost_zero_blk = MFX_HEVC_PP::NAME(h265_Quant_zCost_16s)(srcScanOrder, qlevels, zeroCosts, coeffCount, uiQ, qshiftOff, qbits, coeffCount<<1);
+    if (!SBH) {
+        for (Ipp32u scan_pos = 0; scan_pos < coeffCount; scan_pos++) {
+            cost_zero_level[scan_pos] = zeroCosts[scan_pos];
+            cost_base += cost_zero_level[ scan_pos ];
 
-            cost_zero_level[scan_pos] = zeroCosts[blk_pos];
-            cost_zero_blk += cost_zero_level[ scan_pos ];
+            if (qlevels[scan_pos]) {
+                last_nz_pos = scan_pos;
+                sig_coeff_group_flag[scanCG[scan_pos >> LOG2_SCAN_SET_SIZE]] = 1;
+                cost_base = 0.0;
+            }
+        }
 
-            if ( qlevels[ blk_pos ] > 0 && last_nz_pos < 0 ) {
-                last_nz_pos         = scan_pos;
-                local_cabac.ctx_set = (scan_pos < SCAN_SET_SIZE || type != TEXT_LUMA) ? 0 : 2;
-                last_nz_subset      = subset;
-            }
-            if ( last_nz_pos < 0 ) {
-                cost_base += cost_zero_level[ scan_pos ];
-            }
-            if (qlevels[ blk_pos ]) {
-                sig_coeff_group_flag[ CG_blk_pos ] = 1;
-                if (SBH) {
-                    if(!last_nz_pos_in_CG) last_nz_pos_in_CG = scan_pos;
-                    first_nz_pos_in_CG = scan_pos;
+        if (last_nz_pos >= 0) {
+            local_cabac.ctx_set = (last_nz_pos < SCAN_SET_SIZE || type != TEXT_LUMA) ? 0 : 2;
+            last_nz_subset      = last_nz_pos >> LOG2_SCAN_SET_SIZE;
+        }
+    } else {
+        for (Ipp32s subset = last_scan_set; subset >= 0; subset--) {//subset means CG
+            Ipp32s sub_pos    = subset << LOG2_SCAN_SET_SIZE;
+            Ipp32u CG_blk_pos = scanCG[ subset ];
+            Ipp32u first_nz_pos_in_CG=0; 
+            Ipp32u last_nz_pos_in_CG=0;
+            for (Ipp32s pos_in_CG = sizeCG-1; pos_in_CG >= 0; pos_in_CG--) {
+                Ipp32s scan_pos = sub_pos + pos_in_CG;
+
+                cost_zero_level[scan_pos] = zeroCosts[scan_pos];
+
+                if ( qlevels[ scan_pos ] > 0 && last_nz_pos < 0 ) {
+                    last_nz_pos         = scan_pos;
+                    local_cabac.ctx_set = (scan_pos < SCAN_SET_SIZE || type != TEXT_LUMA) ? 0 : 2;
+                    last_nz_subset      = subset;
                 }
-            }            
-        } //end for (Ipp32s pos_in_CG = sizeCG-1; pos_in_CG >= 0; pos_in_CG--)             
-        if(SBH) sbh_possible[CG_blk_pos] = ((last_nz_pos_in_CG - first_nz_pos_in_CG)>=SBH_THRESHOLD)?1:0;
-    } //end for (Ipp32s subset = last_scan_set; subset >= 0; subset--)//subset means CG
+                if ( last_nz_pos < 0 ) {
+                    cost_base += cost_zero_level[ scan_pos ];
+                }
+                if (qlevels[ scan_pos ]) {
+                    sig_coeff_group_flag[ CG_blk_pos ] = 1;
+                    if (SBH) {
+                        if(!last_nz_pos_in_CG) last_nz_pos_in_CG = scan_pos;
+                        first_nz_pos_in_CG = scan_pos;
+                    }
+                }            
+            } //end for (Ipp32s pos_in_CG = sizeCG-1; pos_in_CG >= 0; pos_in_CG--)             
+            if(SBH) sbh_possible[CG_blk_pos] = ((last_nz_pos_in_CG - first_nz_pos_in_CG)>=SBH_THRESHOLD)?1:0;
+        } //end for (Ipp32s subset = last_scan_set; subset >= 0; subset--)//subset means CG
+    }
     
     for (Ipp32s subset = last_nz_subset; subset >= 0; subset--) {//subset means CG
         Ipp32s sub_pos    = subset << LOG2_SCAN_SET_SIZE;
@@ -446,14 +765,14 @@ void RDOQuant<PixType>::DoAlgorithm(
         {
             for (Ipp32s pos_in_CG = sizeCG-1; pos_in_CG >= 0; pos_in_CG--) {
                 Ipp32s scan_pos = sub_pos + pos_in_CG;
-                Ipp32u blk_pos  = scan[scan_pos];
                 
-                Ipp32s level_float        = pSrc[ blk_pos ];
+                Ipp32s level_float        = srcScanOrder[ scan_pos ];
                 level_float               = (Ipp32s)IPP_MIN((Ipp32s)abs(level_float) * uiQ , MAX_INT - qshift);
 
-                Ipp32u max_abs_level = qlevels[ blk_pos ];
+                Ipp32u max_abs_level = qlevels[ scan_pos ];
 
                 if ( scan_pos<=last_nz_pos ) {
+                    Ipp32u blk_pos  = scan[scan_pos];
                     Ipp32u  ctx_sig_inc = 0;
                     bool    isLast = true;
 
@@ -498,7 +817,7 @@ void RDOQuant<PixType>::DoAlgorithm(
                         }
                     }
 
-                    qlevels[ blk_pos ] = qval;
+                    qlevels[ scan_pos ] = qval;
                     cost_base += cost_nz_level [ scan_pos ];
 
                     EncodeOneCoeff(qval, scan_pos, type, &local_cabac); //update localc_cabac ctx
@@ -511,7 +830,7 @@ void RDOQuant<PixType>::DoAlgorithm(
                     }
                 }
 
-                if (qlevels[ blk_pos ] ) {
+                if (qlevels[ scan_pos ] ) {
                     sig_coeff_group_flag[ CG_blk_pos ] = 1;
                     if (rdoqCGZ) {
                         CG_report.cost_nz_levels   += cost_nz_level[ scan_pos ] - cost_sig[ scan_pos ];
@@ -527,12 +846,11 @@ void RDOQuant<PixType>::DoAlgorithm(
         {
             for (Ipp32s pos_in_CG = sizeCG-1; pos_in_CG >= 0; pos_in_CG--) {
                 Ipp32s scan_pos = sub_pos + pos_in_CG;
-                Ipp32u blk_pos  = scan[scan_pos];
 
-                Ipp32s level_float        = pSrc[ blk_pos ];
+                Ipp32s level_float        = srcScanOrder[ scan_pos ];
                 level_float               = (Ipp32s)IPP_MIN((Ipp32s)abs(level_float) * uiQ , MAX_INT - qshift);
 
-                Ipp32u max_abs_level = qlevels[ blk_pos ];
+                Ipp32u max_abs_level = qlevels[ scan_pos ];
 
                 if ( scan_pos<=last_nz_pos ) {
                     Ipp32u  ctx_sig_inc = 0;
@@ -540,6 +858,7 @@ void RDOQuant<PixType>::DoAlgorithm(
 
                     if( scan_pos != last_nz_pos ) {
                         isLast = false;
+                        Ipp32u blk_pos  = scan[scan_pos];
                         Ipp32u pos_y = blk_pos >> log2_tr_size;
                         Ipp32u pos_x = blk_pos & (width - 1);
 
@@ -564,7 +883,7 @@ void RDOQuant<PixType>::DoAlgorithm(
                         errScale,
                         isLast);
 
-                    qlevels[ blk_pos ] = qval;
+                    qlevels[ scan_pos ] = qval;
                     cost_base += cost_nz_level [ scan_pos ];
 
                     EncodeOneCoeff(qval, scan_pos, type, &local_cabac); //update localc_cabac ctx
@@ -578,7 +897,7 @@ void RDOQuant<PixType>::DoAlgorithm(
                     }
                 }
 
-                if (qlevels[ blk_pos ] ) {
+                if (qlevels[ scan_pos ] ) {
                     sig_coeff_group_flag[ CG_blk_pos ] = 1;
                     if (rdoqCGZ) {
                         CG_report.cost_nz_levels   += cost_nz_level[ scan_pos ] - cost_sig[ scan_pos ];
@@ -638,10 +957,9 @@ void RDOQuant<PixType>::DoAlgorithm(
 
                             for (Ipp32s pos_in_CG = sizeCG-1; pos_in_CG >= 0; pos_in_CG--) {
                                 Ipp32s scan_pos = sub_pos + pos_in_CG;
-                                Ipp16u blk_pos  = scan[ scan_pos ];
 
-                                if (qlevels[ blk_pos ]) {
-                                    qlevels [ blk_pos ] = 0;
+                                if (qlevels[ scan_pos ]) {
+                                    qlevels [ scan_pos ] = 0;
                                     cost_nz_level[ scan_pos ] = cost_zero_level[ scan_pos ];
                                     cost_sig  [ scan_pos ] = 0;
                                 }
@@ -686,13 +1004,13 @@ void RDOQuant<PixType>::DoAlgorithm(
         if (sig_coeff_group_flag[ CG_blk_pos ]) {
             for (Ipp32s pos_in_CG = sizeCG-1; pos_in_CG >= 0; pos_in_CG--) {
                 Ipp32s scan_pos = (subset<<MLS_CG_SIZE) + pos_in_CG;
-                Ipp32u blk_pos  = scan[scan_pos];
 
                 if (scan_pos > last_nz_pos) {
                     continue;
                 }
 
-                if( qlevels[ blk_pos ] ) {
+                if( qlevels[ scan_pos ] ) {
+                    Ipp32u blk_pos  = scan[scan_pos];
                     Ipp32u   pos_y       = blk_pos >> log2_tr_size;
                     Ipp32u   pos_x       = blk_pos & ( width - 1 );
 
@@ -704,7 +1022,7 @@ void RDOQuant<PixType>::DoAlgorithm(
                         cost_best     = cost_total;
                         last_nz_subsetp1 = subset;
                     }
-                    if( qlevels[ blk_pos ] > 1 ) { //early termination
+                    if( qlevels[ scan_pos ] > 1 ) { //early termination
                         is_found_last = true;
                         break;
                     }
@@ -723,8 +1041,8 @@ void RDOQuant<PixType>::DoAlgorithm(
 
     for ( Ipp32s scan_pos = 0; scan_pos < scan_pos_best_lastp1; scan_pos++ ) {
         Ipp32s blk_pos = scan[ scan_pos ];
-        Ipp32s qval    = qlevels[ blk_pos ];
-        pDst[blk_pos]  = (CoeffsType)Saturate(-32768, 32767, pSrc[ blk_pos ] < 0 ? -qval : qval);
+        Ipp32s qval    = qlevels[ scan_pos ];
+        pDst[blk_pos]  = (CoeffsType)Saturate(-32768, 32767, srcScanOrder[ scan_pos ] < 0 ? -qval : qval);
 
         if (SBH)
             abs_sum += qval;

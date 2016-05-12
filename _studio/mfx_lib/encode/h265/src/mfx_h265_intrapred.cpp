@@ -675,7 +675,7 @@ void GetPredPelsChromaNV12(H265VideoParam *par, PixType* src_, PixType* predPel_
 template <typename PixType>
 void H265CU<PixType>::IntraPredTu(Ipp32s blockZScanIdx, Ipp32u idx422, Ipp32s width, Ipp32s pred_mode, Ipp8u is_luma)
 {
-    PixType PredPel[4*2*64+1];
+    __ALIGN64 PixType PredPel[4 * 64 + 1];
     Ipp32s PURasterIdx = h265_scan_z2r4[blockZScanIdx + idx422];
     Ipp32s PUStartRow = PURasterIdx >> 4;
     Ipp32s PUStartColumn = PURasterIdx & 15;
@@ -756,7 +756,7 @@ void H265CU<PixType>::IntraPredTu(Ipp32s blockZScanIdx, Ipp32u idx422, Ipp32s wi
     }
     else
     {
-        pRec = m_uvRec + (((PUStartRow * m_pitchRecChroma >> m_par->chromaShiftH) + (PUStartColumn << m_par->chromaShiftWInv)) << m_par->QuadtreeTULog2MinSize);
+        pRec = m_uvRec + (((PUStartRow * m_pitchRecChroma >> m_par->chromaShiftH) + (PUStartColumn << m_par->chromaShiftWInv)) << LOG2_MIN_TU_SIZE);
         if (m_par->chroma422 == 0) {
             Ipp32u leftAvailFlags;
             Ipp32u topAvailFlags;
@@ -1062,7 +1062,7 @@ bool H265CU<PixType>::tryIntraRD(Ipp32s absPartIdx, Ipp32s depth, IntraLumaMode 
     Ipp32s offsetPred = GetLumaOffset(m_par, absPartIdx, MAX_CU_SIZE);
     const PixType *predY = m_interPredY + offsetPred;
 
-    InterHad = tuHad(pSrc, m_pitchSrcLuma, predY, MAX_CU_SIZE, widthCu, widthCu)>> m_par->bitDepthLumaShift;
+    InterHad = tuHadNxN(pSrc, m_pitchSrcLuma, predY, MAX_CU_SIZE, widthCu) >> m_par->bitDepthLumaShift;
     InterHad+= ((Ipp64f)m_mvdCost*m_rdLambda*256.0 + 0.5);
 
     bool skipIntraRD = true;
@@ -1074,7 +1074,7 @@ bool H265CU<PixType>::tryIntraRD(Ipp32s absPartIdx, Ipp32s depth, IntraLumaMode 
             dc = h265_DiffDc(pSrc, m_pitchSrcLuma, pred, widthCu, widthCu);
         else
             dc = h265_DiffDc(m_srcTr, widthCu, pred, widthCu, widthCu);
-        dc/=(widthCu*widthCu);
+        dc *= h265_reci_1to116[(widthCu>>2)-1] * h265_reci_1to116[(widthCu>>2)-1] * (1.0f / 16);
         dc=fabsf(dc);
         IntraHad = modes[ic].satd;
         IntraHad -= dc*16*(widthCu/8)*(widthCu/8);
@@ -1130,7 +1130,7 @@ template <typename PixType>
 void H265CU<PixType>::CheckIntraLuma(Ipp32s absPartIdx, Ipp32s depth)
 {
     CostType costInitial = m_costCurr;
-    CABAC_CONTEXT_H265 ctxInitial[NUM_CABAC_CONTEXT];
+    __ALIGN64 CABAC_CONTEXT_H265 ctxInitial[NUM_CABAC_CONTEXT];
     if (depth == m_par->MaxCUDepth - m_par->AddCUDepth && depth + 1 <= m_par->MaxCUDepth) {
         // we are going to test 2 modes: Intra_2Nx2N and Intra_NxN
         // need to save initial state
@@ -1212,7 +1212,7 @@ void H265CU<PixType>::CheckIntraChroma(Ipp32s absPartIdx, Ipp32s depth)
         // we are going to test to modes: Intra_2Nx2N and Intra_NxN
         // need to save initial state
         CostType costInitial = m_costCurr;
-        CABAC_CONTEXT_H265 ctxInitial[NUM_CABAC_CONTEXT];
+        __ALIGN64 CABAC_CONTEXT_H265 ctxInitial[NUM_CABAC_CONTEXT];
         m_bsf->CtxSave(ctxInitial);
         m_costStored[depth + 1] = COST_MAX;
 
@@ -1258,8 +1258,8 @@ Ipp32s H265CU<PixType>::InitIntraLumaModes(Ipp32s absPartIdx, Ipp32s depth, Ipp3
     if (m_cuIntraAngMode == INTRA_ANG_MODE_DC_PLANAR_ONLY) {
     }
     else if (m_cuIntraAngMode == INTRA_ANG_MODE_GRADIENT) {
-        Ipp32s x = (h265_scan_z2r4[absPartIdx] & 15) << m_par->QuadtreeTULog2MinSize;
-        Ipp32s y = (h265_scan_z2r4[absPartIdx] >> 4) << m_par->QuadtreeTULog2MinSize;
+        Ipp32s x = (h265_scan_z2r4[absPartIdx] & 15) << LOG2_MIN_TU_SIZE;
+        Ipp32s y = (h265_scan_z2r4[absPartIdx] >> 4) << LOG2_MIN_TU_SIZE;
 
         Ipp32s log2BlockSize = m_par->Log2MaxCUSize - depth - trDepth;
 
@@ -1403,8 +1403,8 @@ Ipp32s H265CU<PixType>::FilterIntraLumaModesBySatd(Ipp32s absPartIdx, Ipp32s dep
             Ipp8u mode = modes[i].mode;
             predPtr = m_predIntraAll + mode * size;
             Ipp32s satd = (mode < 2 || mode >= 18 || m_cuIntraAngMode == INTRA_ANG_MODE_GRADIENT && mode == 10)
-                ? tuHad(src, m_pitchSrcLuma, predPtr, width, width, width) // prediction block is not transposed
-                : tuHad(m_srcTr, width, predPtr, width, width, width); // prediction block is transposed
+                ? tuHadNxN(src, m_pitchSrcLuma, predPtr, width, width) // prediction block is not transposed
+                : tuHadNxN(m_srcTr, width, predPtr, width, width); // prediction block is transposed
             modes[i].satd = modes[i].cost = satd >> m_par->bitDepthLumaShift;
             modes[i].cost += modes[i].bitCost;
         }
@@ -1458,8 +1458,8 @@ Ipp32s H265CU<PixType>::FilterIntraLumaModesBySatd(Ipp32s absPartIdx, Ipp32s dep
                 PixType *predPtr = m_predIntraAll + mode * size;
                 h265_PredictIntra_Ang_NoTranspose(mode, predPels, predPtr, width, width);
                 Ipp32s satd = (mode >= 2 && mode < 18)
-                    ? tuHad(m_srcTr, width, predPtr, width, width, width)
-                    : tuHad(src, m_pitchSrcLuma, predPtr, width, width, width);
+                    ? tuHadNxN(m_srcTr, width, predPtr, width, width)
+                    : tuHadNxN(src, m_pitchSrcLuma, predPtr, width, width);
                 modes[i].satd = modes[i].cost = satd >> m_par->bitDepthLumaShift;
                 modes[i].cost += modes[i].bitCost;
             }
@@ -1517,7 +1517,7 @@ Ipp32s H265CU<PixType>::FilterIntraLumaModesByRdoTr0(Ipp32s absPartIdx, Ipp32s d
 
     // store initial states before making decision between several modes
     CostType costInitial = m_costCurr;
-    CABAC_CONTEXT_H265 ctxInitial[NUM_CABAC_CONTEXT];
+    __ALIGN64 CABAC_CONTEXT_H265 ctxInitial[NUM_CABAC_CONTEXT];
     m_bsf->CtxSave(ctxInitial);
 
     CostType costCurrSaved = m_costCurr;
@@ -1550,7 +1550,7 @@ Ipp32s H265CU<PixType>::FilterIntraLumaModesByRdoTrAll(Ipp32s absPartIdx, Ipp32s
 
     // store initial states before making decision between several modes
     CostType costInitial = m_costCurr;
-    CABAC_CONTEXT_H265 ctxInitial[NUM_CABAC_CONTEXT];
+    __ALIGN64 CABAC_CONTEXT_H265 ctxInitial[NUM_CABAC_CONTEXT];
     m_bsf->CtxSave(ctxInitial);
     // and initialize storage
     m_costStored[depth + trDepth + 1] = COST_MAX;
@@ -1588,8 +1588,8 @@ Ipp8u H265CU<PixType>::GetTrSplitMode(Ipp32s abs_part_idx, Ipp8u depth, Ipp8u tr
         if (m_par->Log2MaxCUSize - depth - tr_depth > tuLog2MinSizeInCu) {
             if (strict && m_par->Log2MaxCUSize - depth - tr_depth > m_par->QuadtreeTULog2MaxSize)
                 return SPLIT_MUST;
-            Ipp32u lpel_x = m_ctbPelX + ((h265_scan_z2r4[abs_part_idx] & 15) << m_par->QuadtreeTULog2MinSize);
-            Ipp32u tpel_y = m_ctbPelY + ((h265_scan_z2r4[abs_part_idx] >> 4) << m_par->QuadtreeTULog2MinSize);
+            Ipp32u lpel_x = m_ctbPelX + ((h265_scan_z2r4[abs_part_idx] & 15) << LOG2_MIN_TU_SIZE);
+            Ipp32u tpel_y = m_ctbPelY + ((h265_scan_z2r4[abs_part_idx] >> 4) << LOG2_MIN_TU_SIZE);
             Ipp32s width = m_par->MaxCUSize >> (depth + tr_depth);
             if (lpel_x + width > m_par->Width || tpel_y + width > m_par->Height)
                 return SPLIT_MUST;

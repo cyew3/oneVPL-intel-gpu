@@ -1123,6 +1123,7 @@ enum EnumPlane
 /* this is the most heavily used path (~50% of total pixels) and most highly optimized 
 * read in 8-bit pixels and apply H or V filter, save output to 16-bit buffer (for second filtering pass or for averaging with reference)
 */
+template <int isFast>
 void MFX_HEVC_PP::Interp_NoAvg(
     const unsigned char* pSrc, 
     unsigned int srcPitch, 
@@ -1134,7 +1135,7 @@ void MFX_HEVC_PP::Interp_NoAvg(
     int shift, 
     short offset, 
     int dir, 
-    int plane, int isFast)
+    int plane)
 {
     VM_ASSERT( ( (plane == TEXT_LUMA) && ((width & 0x3) == 0) ) || ( (plane != TEXT_LUMA) && ((width & 0x1) == 0) ) );
 
@@ -1157,8 +1158,11 @@ void MFX_HEVC_PP::Interp_NoAvg(
             NAME(h265_InterpChroma_s8_d16_V)(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
     }
 }
+template void MFX_HEVC_PP::Interp_NoAvg<0>(const unsigned char*, unsigned, short*, unsigned, int, int, int, int, short, int, int);
+template void MFX_HEVC_PP::Interp_NoAvg<1>(const unsigned char*, unsigned, short*, unsigned, int, int, int, int, short, int, int);
 
 /* typically used for ~15% of total pixels, does vertical filter pass only */
+template <int isFast>
 void MFX_HEVC_PP::Interp_NoAvg(
     const short* pSrc, 
     unsigned int srcPitch, 
@@ -1170,7 +1174,7 @@ void MFX_HEVC_PP::Interp_NoAvg(
     int shift, 
     short offset, 
     int dir, 
-    int plane, int isFast)
+    int plane)
 {
     VM_ASSERT( ( (plane == TEXT_LUMA) && ((width & 0x3) == 0) ) || ( (plane != TEXT_LUMA) && ((width & 0x1) == 0) ) );
 
@@ -1186,10 +1190,13 @@ void MFX_HEVC_PP::Interp_NoAvg(
     } else
         NAME(h265_InterpChroma_s16_d16_V)(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
 }
+template void MFX_HEVC_PP::Interp_NoAvg<0>(const short*, unsigned, short*, unsigned, int, int, int, int, short, int, int);
+template void MFX_HEVC_PP::Interp_NoAvg<1>(const short*, unsigned, short*, unsigned, int, int, int, int, short, int, int);
 
 /* NOTE: average functions assume maximum block size of 64x64, including 7 extra output rows for H pass */
 
 /* typically used for ~15% of total pixels, does first-pass horizontal or vertical filter, optionally with average against reference */
+template <int isFast>
 void MFX_HEVC_PP::Interp_WithAvg(
     const unsigned char* pSrc, 
     unsigned int srcPitch, 
@@ -1204,42 +1211,42 @@ void MFX_HEVC_PP::Interp_WithAvg(
     int shift, 
     short offset, 
     int dir, 
-    int plane, unsigned, int isFast)
+    int plane, unsigned, short *tmpBuf)
 {
-    /* pretty big stack buffer, probably want to pass this in (allocate on heap) */
-    ALIGN_DECL(16) short tmpBuf[(64+8)*(64+16)];
-
     VM_ASSERT( ( (plane == TEXT_LUMA) && ((width & 0x3) == 0) ) || ( (plane != TEXT_LUMA) && ((width & 0x1) == 0) ) );
 
     if (plane == TEXT_LUMA) {
         if (dir == INTERP_HOR) {
             if ( isFast )
-                NAME(h265_InterpLumaFast_s8_d16_H)(pSrc, srcPitch, tmpBuf, 64+16, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLumaFast_s8_d16_H)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
             else
-                NAME(h265_InterpLuma_s8_d16_H)(pSrc, srcPitch, tmpBuf, 64+16, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLuma_s8_d16_H)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
         } else {
             if ( isFast )
-                NAME(h265_InterpLumaFast_s8_d16_V)(pSrc, srcPitch, tmpBuf, 64+16, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLumaFast_s8_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
             else
-                NAME(h265_InterpLuma_s8_d16_V)(pSrc, srcPitch, tmpBuf, 64+16, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLuma_s8_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
         }
     } else {
         if (dir == INTERP_HOR)
-            NAME(h265_InterpChroma_s8_d16_H)(pSrc, srcPitch, tmpBuf, 64+16, tab_index, width, height, shift, offset, plane);
+            NAME(h265_InterpChroma_s8_d16_H)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset, plane);
         else
-            NAME(h265_InterpChroma_s8_d16_V)(pSrc, srcPitch, tmpBuf, 64+16, tab_index, width, height, shift, offset);
+            NAME(h265_InterpChroma_s8_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
     }
 
     if (avgMode == AVERAGE_NO)
-        NAME(h265_AverageModeN)(tmpBuf, 64+16, pDst, dstPitch, width, height);
+        NAME(h265_AverageModeN)(tmpBuf, 64, pDst, dstPitch, width, height);
     else if (avgMode == AVERAGE_FROM_PIC)
-        NAME(h265_AverageModeP)(tmpBuf, 64+16, (unsigned char *)pvAvg, avgPitch, pDst, dstPitch, width, height);
+        NAME(h265_AverageModeP)(tmpBuf, 64, (unsigned char *)pvAvg, avgPitch, pDst, dstPitch, width, height);
     else if (avgMode == AVERAGE_FROM_BUF)
-        NAME(h265_AverageModeB)(tmpBuf, 64+16, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height);
+        NAME(h265_AverageModeB)(tmpBuf, 64, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height);
 }
+template void MFX_HEVC_PP::Interp_WithAvg<0>(const unsigned char*, unsigned, unsigned char*, unsigned, void*, unsigned, int, int, int, int, int, short, int, int, unsigned, short*);
+template void MFX_HEVC_PP::Interp_WithAvg<1>(const unsigned char*, unsigned, unsigned char*, unsigned, void*, unsigned, int, int, int, int, int, short, int, int, unsigned, short*);
 
 
 /* typically used for ~20% of total pixels, does second-pass vertical filter only, optionally with average against reference */
+template <int isFast>
 void MFX_HEVC_PP::Interp_WithAvg(
     const short* pSrc, 
     unsigned int srcPitch, 
@@ -1254,11 +1261,8 @@ void MFX_HEVC_PP::Interp_WithAvg(
     int shift, 
     short offset, 
     int dir, 
-    int plane, unsigned , int isFast)
+    int plane, unsigned, short *tmpBuf)
 {
-    /* pretty big stack buffer, probably want to pass this in (allocate on heap) */
-    ALIGN_DECL(16) short tmpBuf[(64+8)*(64+16)];
-
     /* only V is supported/needed */
     if (dir != INTERP_VER)
         return;
@@ -1267,23 +1271,26 @@ void MFX_HEVC_PP::Interp_WithAvg(
 
     if (plane == TEXT_LUMA) {
         if ( isFast )
-            NAME(h265_InterpLumaFast_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64+16, tab_index, width, height, shift, offset);
+            NAME(h265_InterpLumaFast_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
         else
-            NAME(h265_InterpLuma_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64+16, tab_index, width, height, shift, offset);
+            NAME(h265_InterpLuma_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
     } else 
-        NAME(h265_InterpChroma_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64+16, tab_index, width, height, shift, offset);
+        NAME(h265_InterpChroma_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
 
     if (avgMode == AVERAGE_NO)
-        NAME(h265_AverageModeN)(tmpBuf, 64+16, pDst, dstPitch, width, height);
+        NAME(h265_AverageModeN)(tmpBuf, 64, pDst, dstPitch, width, height);
     else if (avgMode == AVERAGE_FROM_PIC)
-        NAME(h265_AverageModeP)(tmpBuf, 64+16, (unsigned char *)pvAvg, avgPitch, pDst, dstPitch, width, height);
+        NAME(h265_AverageModeP)(tmpBuf, 64, (unsigned char *)pvAvg, avgPitch, pDst, dstPitch, width, height);
     else if (avgMode == AVERAGE_FROM_BUF)
-        NAME(h265_AverageModeB)(tmpBuf, 64+16, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height);
+        NAME(h265_AverageModeB)(tmpBuf, 64, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height);
 }
+template void MFX_HEVC_PP::Interp_WithAvg<0>(const short*, unsigned, unsigned char*, unsigned, void*, unsigned, int, int, int, int, int, short, int, int, unsigned, short*);
+template void MFX_HEVC_PP::Interp_WithAvg<1>(const short*, unsigned, unsigned char*, unsigned, void*, unsigned, int, int, int, int, int, short, int, int, unsigned, short*);
 
 /* this is the most heavily used path (~50% of total pixels) and most highly optimized 
 * read in 8-bit pixels and apply H or V filter, save output to 16-bit buffer (for second filtering pass or for averaging with reference)
 */
+template <int isFast>
 void MFX_HEVC_PP::Interp_NoAvg(
     const Ipp16u* pSrc, 
     unsigned int srcPitch, 
@@ -1295,7 +1302,7 @@ void MFX_HEVC_PP::Interp_NoAvg(
     int shift, 
     short offset, 
     int dir, 
-    int plane, int isFast)
+    int plane)
 {
     VM_ASSERT( ( (plane == TEXT_LUMA) && ((width & 0x3) == 0) ) || ( (plane != TEXT_LUMA) && ((width & 0x1) == 0) ) );
 
@@ -1318,10 +1325,12 @@ void MFX_HEVC_PP::Interp_NoAvg(
             NAME(h265_InterpChroma_s16_d16_V)((const short *)pSrc, srcPitch, pDst, dstPitch, tab_index, width, height, shift, offset);
     }
 }
-
+template void MFX_HEVC_PP::Interp_NoAvg<0>(const Ipp16u*, unsigned, short*, unsigned, int, int, int, int, short, int, int);
+template void MFX_HEVC_PP::Interp_NoAvg<1>(const Ipp16u*, unsigned, short*, unsigned, int, int, int, int, short, int, int);
 /* NOTE: average functions assume maximum block size of 64x64, including 7 extra output rows for H pass */
 
 /* typically used for ~15% of total pixels, does first-pass horizontal or vertical filter, optionally with average against reference */
+template <int isFast>
 void MFX_HEVC_PP::Interp_WithAvg(
     const Ipp16u* pSrc, 
     unsigned int srcPitch, 
@@ -1337,42 +1346,41 @@ void MFX_HEVC_PP::Interp_WithAvg(
     short offset, 
     int dir, 
     int plane,
-    unsigned bit_depth, int isFast)
+    unsigned bit_depth, short *tmpBuf)
 {
-    /* pretty big stack buffer, probably want to pass this in (allocate on heap) */
-    ALIGN_DECL(16) short tmpBuf[(64+8)*(64+16)];
-
     VM_ASSERT( ( (plane == TEXT_LUMA) && ((width & 0x3) == 0) ) || ( (plane != TEXT_LUMA) && ((width & 0x1) == 0) ) );
 
     if (plane == TEXT_LUMA) {
         if (dir == INTERP_HOR) {
             if ( isFast )
-                NAME(h265_InterpLumaFast_s16_d16_H)((const short *)pSrc, srcPitch, tmpBuf, 64+16, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLumaFast_s16_d16_H)((const short *)pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
             else
-                NAME(h265_InterpLuma_s16_d16_H)((const short *)pSrc, srcPitch, tmpBuf, 64+16, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLuma_s16_d16_H)((const short *)pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
         } else {
             if ( isFast )
-                NAME(h265_InterpLumaFast_s16_d16_V)((const short *)pSrc, srcPitch, tmpBuf, 64+16, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLumaFast_s16_d16_V)((const short *)pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
             else
-                NAME(h265_InterpLuma_s16_d16_V)((const short *)pSrc, srcPitch, tmpBuf, 64+16, tab_index, width, height, shift, offset);
+                NAME(h265_InterpLuma_s16_d16_V)((const short *)pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
         }
     } else {
         if (dir == INTERP_HOR)
-            NAME(h265_InterpChroma_s16_d16_H)((const short *)pSrc, srcPitch, tmpBuf, 64+16, tab_index, width, height, shift, offset, plane);
+            NAME(h265_InterpChroma_s16_d16_H)((const short *)pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset, plane);
         else
-            NAME(h265_InterpChroma_s16_d16_V)((const short *)pSrc, srcPitch, tmpBuf, 64+16, tab_index, width, height, shift, offset);
+            NAME(h265_InterpChroma_s16_d16_V)((const short *)pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
     }
 
     if (avgMode == AVERAGE_NO)
-        NAME(h265_AverageModeN_U16)(tmpBuf, 64+16, pDst, dstPitch, width, height, bit_depth);
+        NAME(h265_AverageModeN_U16)(tmpBuf, 64, pDst, dstPitch, width, height, bit_depth);
     else if (avgMode == AVERAGE_FROM_PIC)
-        NAME(h265_AverageModeP_U16)(tmpBuf, 64+16, (Ipp16u *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
+        NAME(h265_AverageModeP_U16)(tmpBuf, 64, (Ipp16u *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
     else if (avgMode == AVERAGE_FROM_BUF)
-        NAME(h265_AverageModeB_U16)(tmpBuf, 64+16, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
+        NAME(h265_AverageModeB_U16)(tmpBuf, 64, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
 }
-
+template void MFX_HEVC_PP::Interp_WithAvg<0>(const Ipp16u*, unsigned, Ipp16u *, unsigned, void *, unsigned, int, int, int, int, int, short, int, int, unsigned, short*);
+template void MFX_HEVC_PP::Interp_WithAvg<1>(const Ipp16u*, unsigned, Ipp16u *, unsigned, void *, unsigned, int, int, int, int, int, short, int, int, unsigned, short*);
 
 /* typically used for ~20% of total pixels, does second-pass vertical filter only, optionally with average against reference */
+template <int isFast>
 void MFX_HEVC_PP::Interp_WithAvg(
     const short* pSrc, 
     unsigned int srcPitch, 
@@ -1388,11 +1396,8 @@ void MFX_HEVC_PP::Interp_WithAvg(
     short offset, 
     int dir, 
     int plane,
-    unsigned bit_depth, int isFast)
+    unsigned bit_depth, short *tmpBuf)
 {
-    /* pretty big stack buffer, probably want to pass this in (allocate on heap) */
-    ALIGN_DECL(16) short tmpBuf[(64+8)*(64+16)];
-
     /* only V is supported/needed */
     if (dir != INTERP_VER)
         return;
@@ -1401,18 +1406,20 @@ void MFX_HEVC_PP::Interp_WithAvg(
 
     if (plane == TEXT_LUMA) {
         if ( isFast )
-            NAME(h265_InterpLumaFast_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64+16, tab_index, width, height, shift, offset);
+            NAME(h265_InterpLumaFast_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
         else
-            NAME(h265_InterpLuma_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64+16, tab_index, width, height, shift, offset);
+            NAME(h265_InterpLuma_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
     } else
-        NAME(h265_InterpChroma_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64+16, tab_index, width, height, shift, offset);
+        NAME(h265_InterpChroma_s16_d16_V)(pSrc, srcPitch, tmpBuf, 64, tab_index, width, height, shift, offset);
 
     if (avgMode == AVERAGE_NO)
-        NAME(h265_AverageModeN_U16)(tmpBuf, 64+16, pDst, dstPitch, width, height, bit_depth);
+        NAME(h265_AverageModeN_U16)(tmpBuf, 64, pDst, dstPitch, width, height, bit_depth);
     else if (avgMode == AVERAGE_FROM_PIC)
-        NAME(h265_AverageModeP_U16)(tmpBuf, 64+16, (Ipp16u *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
+        NAME(h265_AverageModeP_U16)(tmpBuf, 64, (Ipp16u *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
     else if (avgMode == AVERAGE_FROM_BUF)
-        NAME(h265_AverageModeB_U16)(tmpBuf, 64+16, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
+        NAME(h265_AverageModeB_U16)(tmpBuf, 64, (short *)pvAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
 }
+template void MFX_HEVC_PP::Interp_WithAvg<0>(const short*, unsigned, Ipp16u *, unsigned, void *, unsigned, int, int, int, int, int, short, int, int, unsigned, short*);
+template void MFX_HEVC_PP::Interp_WithAvg<1>(const short*, unsigned, Ipp16u *, unsigned, void *, unsigned, int, int, int, int, int, short, int, int, unsigned, short*);
 
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE

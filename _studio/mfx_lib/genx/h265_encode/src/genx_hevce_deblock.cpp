@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -473,7 +473,7 @@ void ReadPQData(
     int2 shift = (param.MaxCUDepth << 1);
     vector<uint4, 16> addr = cudataQ.ctbAddr << shift;
     addr += cudataQ.absPartIdx;
-    addr *= 10; // addr and offsets are in dwords
+    addr *= 8; // addr and offsets are in dwords
 #ifdef CMRT_EMU
     int4 maxAddr = ((param.PicWidthInCtbs * param.PicHeightInCtbs) << param.Log2NumPartInCU) * 10 - 10;
     vector<int4, 16> tmpAddr = addr;
@@ -485,7 +485,7 @@ void ReadPQData(
 
     addr = cudataP.ctbAddr << shift;
     addr += cudataP.absPartIdx;
-    addr *= 10; // addr and offsets are in dwords
+    addr *= 8; // addr and offsets are in dwords
 #ifdef CMRT_EMU
     tmpAddr = addr;
     tmpAddr.merge(0, tmpAddr < 0);

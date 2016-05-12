@@ -458,7 +458,7 @@ static inline void h265_PredictIntra_Ang_Kernel (
     Ipp32s width)
 {
     Ipp32s intraPredAngle = intraPredAngleTable[mode];
-    PixType refMainBuf[4*64+1];
+    ALIGN_DECL(64) PixType refMainBuf[4*64+1];
     PixType *refMain = refMainBuf + 128;
     PixType *PredPel1, *PredPel2;
     Ipp32s invAngle = invAngleTable[mode];
@@ -2510,7 +2510,7 @@ static void h265_PredictIntra_Planar_8u_Kernel(Ipp8u* PredPel, Ipp8u* pels, Ipp3
 
             /* store 16 8-bit pixels */
             ymm3 = _mm256_permute4x64_epi64(ymm3, 0xd8);
-            _mm_storeu_si128((__m128i *)(&pels[row*pitch]), mm128(ymm3));
+            _mm_store_si128((__m128i *)(&pels[row*pitch]), mm128(ymm3));
         }
     } else if (width == 32) {
         /* broadcast scalar values */
@@ -2551,7 +2551,7 @@ static void h265_PredictIntra_Planar_8u_Kernel(Ipp8u* PredPel, Ipp8u* pels, Ipp3
 
                 /* store 16 8-bit pixels */
                 ymm3 = _mm256_permute4x64_epi64(ymm3, 0xd8);
-                _mm_storeu_si128((__m128i *)(&pels[row*pitch+col]), mm128(ymm3));
+                _mm_store_si128((__m128i *)(&pels[row*pitch+col]), mm128(ymm3));
             }
             /* add 16 to each offset for next 16 columns */
             ymm7 = _mm256_add_epi16(ymm7, _mm256_set1_epi16(16));

@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2013-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -533,8 +533,8 @@ namespace MFX_HEVC_PP
 
     }
 
-    const int   g_skipLinesR[3] = {1, 3, 3};//YCbCr
-    const int   g_skipLinesB[3] = {1, 2, 2};//YCbCr
+    const int   g_skipLinesR[3] = {1, 1, 1};//YCbCr
+    const int   g_skipLinesB[3] = {1, 1, 1};//YCbCr
 
     void MAKE_NAME(h265_GetCtuStatistics_16u)(SAOCU_ENCODE_PARAMETERS_LIST_16U)
         //(

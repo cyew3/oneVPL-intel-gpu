@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2012 - 2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012 - 2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -438,6 +438,9 @@ const Ipp64f h265_lambda[100] =
     6.4507957755e+002, 8.1274933861e+002, 1.0240000000e+003, 1.2901591551e+003, 1.6254986772e+003, 2.0480000000e+003, 2.5803183102e+003, 3.2509973544e+003,
     4.0960000000e+003, 5.1606366204e+003, 6.5019947089e+003, 8.1920000000e+003 
 };
+
+const float h265_reci_1to116[16] = { 1.f,   1.f/2,  1.f/3,  1.f/4,  1.f/5,  1.f/6,  1.f/7,  1.f/8,
+                                     1.f/9, 1.f/10, 1.f/11, 1.f/12, 1.f/13, 1.f/14, 1.f/15, 1.f/16 };
 
 } // namespace
 

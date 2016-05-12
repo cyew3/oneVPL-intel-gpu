@@ -37,14 +37,16 @@ void H265CU<PixType>::TransformInv(PixType *pred, Ipp32s pitchPred, CoeffsType *
 template <typename PixType>
 void H265CU<PixType>::TransformFwd(CoeffsType *src, Ipp32s srcPitch, CoeffsType *dst, Ipp32s width, Ipp32s bitDepth, Ipp8u isIntra)
 {
+    __m128i *buffr = m_scratchPad.dct.buffr;
+    Ipp16s  *temp = m_scratchPad.dct.temp;
     if (isIntra && width == 4)
         return MFX_HEVC_PP::NAME(h265_DST4x4Fwd_16s)(src, srcPitch, dst, bitDepth);
     else {
         switch (width) {
         case 4:  return MFX_HEVC_PP::NAME(h265_DCT4x4Fwd_16s)(src, srcPitch, dst, bitDepth);
         case 8:  return MFX_HEVC_PP::NAME(h265_DCT8x8Fwd_16s)(src, srcPitch, dst, bitDepth);
-        case 16: return MFX_HEVC_PP::NAME(h265_DCT16x16Fwd_16s)(src, srcPitch, dst, bitDepth);
-        case 32: return MFX_HEVC_PP::NAME(h265_DCT32x32Fwd_16s)(src, srcPitch, dst, bitDepth);
+        case 16: return MFX_HEVC_PP::NAME(h265_DCT16x16Fwd_16s)(src, srcPitch, dst, bitDepth, temp);
+        case 32: return MFX_HEVC_PP::NAME(h265_DCT32x32Fwd_16s)(src, srcPitch, dst, bitDepth, temp, buffr);
         }
     }
 }

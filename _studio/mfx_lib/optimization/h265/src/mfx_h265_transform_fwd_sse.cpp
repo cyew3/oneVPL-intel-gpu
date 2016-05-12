@@ -534,7 +534,7 @@ namespace MFX_HEVC_PP
 
 #define coef_stride 16
     template <int SHIFT_FRW16_1ST>
-    static void h265_DCT16x16Fwd_16s_Kernel(const short *H265_RESTRICT src, int srcStride, short *H265_RESTRICT dst)
+    static void h265_DCT16x16Fwd_16s_Kernel(const short *H265_RESTRICT src, int srcStride, short *H265_RESTRICT dst, Ipp16s *temp)
     {
         M128I_W8C( tf_dct16_f0123_01,  90, 87,  87, 57,  80,  9,  70,-43);
         M128I_W8C( tf_dct16_f4567_01,  57,-80,  43,-90,  25,-70,   9,-25);
@@ -572,7 +572,7 @@ namespace MFX_HEVC_PP
         M128I_DC (round2m, 1<<(SHIFT_FRW16_2ND-1-6));
 
         static const int tmp_stride = 16;
-        ALIGNED_SSE2 short tmp[16 * 16];
+        short *tmp = temp;
 
         //partialButterfly16(src, tmp, 3, 16);
 
@@ -871,12 +871,12 @@ namespace MFX_HEVC_PP
         }
     }
 
-    void H265_FASTCALL MAKE_NAME(h265_DCT16x16Fwd_16s)(const short *H265_RESTRICT src, int srcStride, short *H265_RESTRICT dst, Ipp32u bitDepth)
+    void H265_FASTCALL MAKE_NAME(h265_DCT16x16Fwd_16s)(const short *H265_RESTRICT src, int srcStride, short *H265_RESTRICT dst, Ipp32u bitDepth, Ipp16s *temp)
     {
         switch (bitDepth) {
-        case  8: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 0>(src, srcStride, dst);   break;
-        case  9: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 1>(src, srcStride, dst);   break;
-        case 10: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 2>(src, srcStride, dst);   break;
+        case  8: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 0>(src, srcStride, dst, temp);   break;
+        case  9: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 1>(src, srcStride, dst, temp);   break;
+        case 10: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 2>(src, srcStride, dst, temp);   break;
         }
     }
 
@@ -893,12 +893,12 @@ namespace MFX_HEVC_PP
 #define _mm_storeh_epi64(p, A) _mm_storeh_pd((double *)(p), _mm_castsi128_pd(A))
 
     template <int SHIFT_FRW32_1ST>
-    static void h265_DCT32x32Fwd_16s_Kernel(const short *H265_RESTRICT src, int srcStride, short *H265_RESTRICT dest)
+    static void h265_DCT32x32Fwd_16s_Kernel(const short *H265_RESTRICT src, int srcStride, short *H265_RESTRICT dest, Ipp16s *temp_, __m128i *buff_)
     {
-        short ALIGNED_SSE2 temp[32*32];
+        short *temp = temp_;
         // temporal buffer short[32*4]. Intermediate results will be stored here. Rotate 4x4 and moved to temp[]
         // Using this buffer will accelerate the functions: from 10000 CPU clocks to 8000
-        __m128i ALIGNED_SSE2 buff[16];
+        __m128i *buff = buff_;
         int num = 0;
         __m128i s0, s1, s2, s3, s4, s5, s6, s7;
         s4 = _mm_setzero_si128();
@@ -1866,12 +1866,12 @@ namespace MFX_HEVC_PP
         }
     }
 
-    void H265_FASTCALL MAKE_NAME(h265_DCT32x32Fwd_16s)(const short *H265_RESTRICT src, int srcStride, short *H265_RESTRICT dst, Ipp32u bitDepth)
+    void H265_FASTCALL MAKE_NAME(h265_DCT32x32Fwd_16s)(const short *H265_RESTRICT src, int srcStride, short *H265_RESTRICT dst, Ipp32u bitDepth, Ipp16s *temp, __m128i *buff)
     {
         switch (bitDepth) {
-        case  8: h265_DCT32x32Fwd_16s_Kernel<SHIFT_FRW32_1ST_BASE + 0>(src, srcStride, dst);   break;
-        case  9: h265_DCT32x32Fwd_16s_Kernel<SHIFT_FRW32_1ST_BASE + 1>(src, srcStride, dst);   break;
-        case 10: h265_DCT32x32Fwd_16s_Kernel<SHIFT_FRW32_1ST_BASE + 2>(src, srcStride, dst);   break;
+        case  8: h265_DCT32x32Fwd_16s_Kernel<SHIFT_FRW32_1ST_BASE + 0>(src, srcStride, dst, temp, buff);   break;
+        case  9: h265_DCT32x32Fwd_16s_Kernel<SHIFT_FRW32_1ST_BASE + 1>(src, srcStride, dst, temp, buff);   break;
+        case 10: h265_DCT32x32Fwd_16s_Kernel<SHIFT_FRW32_1ST_BASE + 2>(src, srcStride, dst, temp, buff);   break;
         }
     }
 

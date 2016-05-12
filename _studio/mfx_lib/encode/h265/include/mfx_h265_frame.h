@@ -75,8 +75,9 @@ namespace H265Enc {
         std::vector<H265MV> m_mv_pdist_past;
 
         Ipp32s m_pitchRsCs4;
-        std::vector<Ipp32s> m_rs[5];
-        std::vector<Ipp32s> m_cs[5];
+		Ipp32s m_rcscSize[5];
+        Ipp32s* m_rs[5];
+        Ipp32s* m_cs[5];
         std::vector<Ipp64f> rscs_ctb;
         std::vector<Ipp32s> sc_mask;
         std::vector<Ipp32s> qp_mask;
@@ -126,6 +127,7 @@ namespace H265Enc {
         }
 
         struct AllocInfo { Ipp32s width, height; };
+		Statistics() { Zero(m_rs); Zero(m_cs); };
         void Create(const AllocInfo &allocInfo);
         ~Statistics() { Destroy(); }
         void Destroy();

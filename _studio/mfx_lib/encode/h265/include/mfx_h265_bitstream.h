@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
@@ -11,6 +11,8 @@
 #ifndef __MFX_H265_BITSTREAM_H__
 #define __MFX_H265_BITSTREAM_H__
 
+#include "assert.h"
+#include "emmintrin.h"
 #include "mfx_h265_defs.h"
 #include "mfx_h265_cabac_tables.h"
 
@@ -40,7 +42,7 @@ typedef struct _IppvcCABACStateH265 {
     Ipp32u nPreCabacBitOffset;
 } IppvcCABACStateH265;
 
-#define NUM_CABAC_CONTEXT 188
+#define NUM_CABAC_CONTEXT ((188+63)&~63)
 
 typedef struct sH265BsBase {
     Ipp8u* m_pbs;  // m_pbs points to the current position of the buffer.
@@ -49,8 +51,8 @@ typedef struct sH265BsBase {
     Ipp32u m_maxBsSize; // Maximum buffer size in bytes.};
     Ipp8u* m_pbsRBSPBase;  // Points to beginning of previous "Raw Byte Sequence Payload"
 
-    CABAC_CONTEXT_H265 context_array[NUM_CABAC_CONTEXT];
-    CABAC_CONTEXT_H265 context_array_enc[NUM_CABAC_CONTEXT];
+    __ALIGN64 CABAC_CONTEXT_H265 context_array[NUM_CABAC_CONTEXT];
+    __ALIGN64 CABAC_CONTEXT_H265 context_array_enc[NUM_CABAC_CONTEXT];
 } H265BsBase;
 
 class H265BsFake {
@@ -110,7 +112,23 @@ public:
     
     void CtxSave(CABAC_CONTEXT_H265 *ptr) const
     {
-        CtxSave(ptr, 0, NUM_CABAC_CONTEXT);
+        const __m128i *src = (const __m128i *)m_base.context_array;
+        __m128i *dst = (__m128i *)ptr;
+        assert((size_t(src) & 15) == 0);
+        assert((size_t(dst) & 15) == 0);
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        //CtxSave(ptr, 0, NUM_CABAC_CONTEXT);
     }
     
     void CtxRestore(const CABAC_CONTEXT_H265 *ptr, Ipp32s offset, Ipp32s num)
@@ -125,7 +143,23 @@ public:
 
     void CtxRestore(const CABAC_CONTEXT_H265 *ptr)
     {
-        CtxRestore(ptr, 0, NUM_CABAC_CONTEXT);
+        const __m128i *src = (const __m128i *)ptr;
+        __m128i *dst = (__m128i *)m_base.context_array;
+        assert((size_t(src) & 15) == 0);
+        assert((size_t(dst) & 15) == 0);
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        _mm_store_si128(dst++, _mm_load_si128(src++));
+        //CtxRestore(ptr, 0, NUM_CABAC_CONTEXT);
     }
 
     int isReal()

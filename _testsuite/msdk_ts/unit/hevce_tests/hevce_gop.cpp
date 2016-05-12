@@ -105,10 +105,10 @@ TEST_F(GopTest, ReorderBiFrames) {
         auto iter = out.begin();
         EXPECT_EQ(100, (*iter++)->m_frameOrder);
         EXPECT_EQ(2,   (*iter++)->m_frameOrder);
-        EXPECT_EQ(0,   (*iter++)->m_frameOrder);
         EXPECT_EQ(1,   (*iter++)->m_frameOrder);
-        EXPECT_EQ(3,   (*iter++)->m_frameOrder);
+        EXPECT_EQ(0,   (*iter++)->m_frameOrder);
         EXPECT_EQ(4,   (*iter++)->m_frameOrder);
+        EXPECT_EQ(3,   (*iter++)->m_frameOrder);
         iter = std::next(out.begin());
         EXPECT_EQ(1,   (*iter++)->m_pyramidLayer);
         EXPECT_EQ(2,   (*iter++)->m_pyramidLayer);
@@ -128,18 +128,18 @@ TEST_F(GopTest, ReorderBiFrames) {
         // check order of tasks in output queue
         auto iter = out.begin();
         EXPECT_EQ(100, (*iter++)->m_frameOrder);
-        EXPECT_EQ(16,  (*iter++)->m_frameOrder);
-        EXPECT_EQ(14,  (*iter++)->m_frameOrder);
-        EXPECT_EQ(15,  (*iter++)->m_frameOrder);
-        EXPECT_EQ(18,  (*iter++)->m_frameOrder);
         EXPECT_EQ(17,  (*iter++)->m_frameOrder);
+        EXPECT_EQ(15,  (*iter++)->m_frameOrder);
+        EXPECT_EQ(14,  (*iter++)->m_frameOrder);
+        EXPECT_EQ(16,  (*iter++)->m_frameOrder);
         EXPECT_EQ(19,  (*iter++)->m_frameOrder);
+        EXPECT_EQ(18,  (*iter++)->m_frameOrder);
         iter = std::next(out.begin());
         EXPECT_EQ(1,   (*iter++)->m_pyramidLayer);
         EXPECT_EQ(2,   (*iter++)->m_pyramidLayer);
         EXPECT_EQ(3,   (*iter++)->m_pyramidLayer);
-        EXPECT_EQ(2,   (*iter++)->m_pyramidLayer);
         EXPECT_EQ(3,   (*iter++)->m_pyramidLayer);
+        EXPECT_EQ(2,   (*iter++)->m_pyramidLayer);
         EXPECT_EQ(3,   (*iter++)->m_pyramidLayer);
     }
     { // 7B, in the middle, initial layer != 1
@@ -273,9 +273,9 @@ TEST_F(GopTest, ReorderFrames) {
     iter = out.begin();
     EXPECT_EQ(MFX_FRAMETYPE_P, (*iter)->m_picCodeType);
     EXPECT_EQ(4, (*iter++)->m_frameOrder);
-    EXPECT_EQ(1, (*iter++)->m_frameOrder); 
+    EXPECT_EQ(2, (*iter++)->m_frameOrder); 
+    EXPECT_EQ(1, (*iter++)->m_frameOrder);
     EXPECT_EQ(0, (*iter++)->m_frameOrder);
-    EXPECT_EQ(2, (*iter++)->m_frameOrder);
     EXPECT_EQ(3, (*iter++)->m_frameOrder);
     for (auto task: out)
         EXPECT_EQ(4, task->m_biFramesInMiniGop);
@@ -343,13 +343,13 @@ TEST_F(GopTest, ReorderFrames) {
     iter = out.begin();
     EXPECT_EQ(9, (*iter++)->m_frameOrder);
     EXPECT_EQ(4, (*iter++)->m_frameOrder); 
+    EXPECT_EQ(2, (*iter++)->m_frameOrder);
     EXPECT_EQ(1, (*iter++)->m_frameOrder);
     EXPECT_EQ(0, (*iter++)->m_frameOrder);
-    EXPECT_EQ(2, (*iter++)->m_frameOrder);
     EXPECT_EQ(3, (*iter++)->m_frameOrder);
+    EXPECT_EQ(7, (*iter++)->m_frameOrder);
     EXPECT_EQ(6, (*iter++)->m_frameOrder);
     EXPECT_EQ(5, (*iter++)->m_frameOrder);
-    EXPECT_EQ(7, (*iter++)->m_frameOrder);
     EXPECT_EQ(8, (*iter++)->m_frameOrder);
     for (auto task: out)
         EXPECT_EQ(9, task->m_biFramesInMiniGop);
@@ -385,17 +385,19 @@ TEST_F(GopTest, ReorderFrames) {
     iter = out.begin();
     EXPECT_EQ(MFX_FRAMETYPE_P, (*iter)->m_picCodeType);
     EXPECT_EQ(11,(*iter++)->m_frameOrder);
+
     EXPECT_EQ(5, (*iter++)->m_frameOrder);
     EXPECT_EQ(2, (*iter++)->m_frameOrder);
-    EXPECT_EQ(0, (*iter++)->m_frameOrder);
     EXPECT_EQ(1, (*iter++)->m_frameOrder);
-    EXPECT_EQ(3, (*iter++)->m_frameOrder);
+    EXPECT_EQ(0, (*iter++)->m_frameOrder);
     EXPECT_EQ(4, (*iter++)->m_frameOrder);
+    EXPECT_EQ(3, (*iter++)->m_frameOrder);
     EXPECT_EQ(8, (*iter++)->m_frameOrder);
-    EXPECT_EQ(6, (*iter++)->m_frameOrder);
     EXPECT_EQ(7, (*iter++)->m_frameOrder);
-    EXPECT_EQ(9, (*iter++)->m_frameOrder);
-    EXPECT_EQ(10,(*iter++)->m_frameOrder);
+    EXPECT_EQ(6, (*iter++)->m_frameOrder);
+    EXPECT_EQ(10, (*iter++)->m_frameOrder);
+    EXPECT_EQ(9,(*iter++)->m_frameOrder);
+
     for (auto task: out)
         EXPECT_EQ(11, task->m_biFramesInMiniGop);
 
@@ -433,20 +435,21 @@ TEST_F(GopTest, ReorderFrames) {
     ReorderFrames(in, out, param, false);
     iter = out.begin();
     EXPECT_EQ(14, (*iter++)->m_frameOrder);
-    EXPECT_EQ(6, (*iter++)->m_frameOrder);
-    EXPECT_EQ(2, (*iter++)->m_frameOrder);
-    EXPECT_EQ(0, (*iter++)->m_frameOrder);
-    EXPECT_EQ(1, (*iter++)->m_frameOrder);
-    EXPECT_EQ(4, (*iter++)->m_frameOrder);
-    EXPECT_EQ(3, (*iter++)->m_frameOrder);
-    EXPECT_EQ(5, (*iter++)->m_frameOrder);
-    EXPECT_EQ(10,(*iter++)->m_frameOrder);
-    EXPECT_EQ(8, (*iter++)->m_frameOrder);
+
     EXPECT_EQ(7, (*iter++)->m_frameOrder);
+    EXPECT_EQ(3, (*iter++)->m_frameOrder);
+    EXPECT_EQ(1, (*iter++)->m_frameOrder);
+    EXPECT_EQ(0, (*iter++)->m_frameOrder);
+    EXPECT_EQ(2, (*iter++)->m_frameOrder);
+    EXPECT_EQ(5, (*iter++)->m_frameOrder);
+    EXPECT_EQ(4, (*iter++)->m_frameOrder);
+    EXPECT_EQ(6,(*iter++)->m_frameOrder);
+    EXPECT_EQ(11, (*iter++)->m_frameOrder);
     EXPECT_EQ(9, (*iter++)->m_frameOrder);
-    EXPECT_EQ(12,(*iter++)->m_frameOrder);
-    EXPECT_EQ(11,(*iter++)->m_frameOrder);
+    EXPECT_EQ(8, (*iter++)->m_frameOrder);
+    EXPECT_EQ(10,(*iter++)->m_frameOrder);
     EXPECT_EQ(13,(*iter++)->m_frameOrder);
+    EXPECT_EQ(12,(*iter++)->m_frameOrder);
     for (auto task: out)
         EXPECT_EQ(14, task->m_biFramesInMiniGop);
 
@@ -484,21 +487,22 @@ TEST_F(GopTest, ReorderFrames) {
     ReorderFrames(in, out, param, false);
     iter = out.begin();
     EXPECT_EQ(16, (*iter++)->m_frameOrder);
-    EXPECT_EQ(7, (*iter++)->m_frameOrder);
-    EXPECT_EQ(3, (*iter++)->m_frameOrder);
+
+    EXPECT_EQ(8, (*iter++)->m_frameOrder);
+    EXPECT_EQ(4, (*iter++)->m_frameOrder);
+    EXPECT_EQ(2, (*iter++)->m_frameOrder);
     EXPECT_EQ(1, (*iter++)->m_frameOrder);
     EXPECT_EQ(0, (*iter++)->m_frameOrder);
-    EXPECT_EQ(2, (*iter++)->m_frameOrder);
-    EXPECT_EQ(5, (*iter++)->m_frameOrder);
-    EXPECT_EQ(4, (*iter++)->m_frameOrder);
+    EXPECT_EQ(3, (*iter++)->m_frameOrder);
     EXPECT_EQ(6, (*iter++)->m_frameOrder);
+    EXPECT_EQ(5, (*iter++)->m_frameOrder);
+    EXPECT_EQ(7,(*iter++)->m_frameOrder);
+    EXPECT_EQ(12, (*iter++)->m_frameOrder);
+    EXPECT_EQ(10, (*iter++)->m_frameOrder);
+    EXPECT_EQ(9,(*iter++)->m_frameOrder);
     EXPECT_EQ(11,(*iter++)->m_frameOrder);
-    EXPECT_EQ(9, (*iter++)->m_frameOrder);
-    EXPECT_EQ(8, (*iter++)->m_frameOrder);
-    EXPECT_EQ(10,(*iter++)->m_frameOrder);
-    EXPECT_EQ(13,(*iter++)->m_frameOrder);
-    EXPECT_EQ(12,(*iter++)->m_frameOrder);
     EXPECT_EQ(14,(*iter++)->m_frameOrder);
+    EXPECT_EQ(13,(*iter++)->m_frameOrder);
     EXPECT_EQ(15,(*iter++)->m_frameOrder);
     for (auto task: out)
         EXPECT_EQ(16, task->m_biFramesInMiniGop);

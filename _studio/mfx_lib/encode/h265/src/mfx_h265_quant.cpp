@@ -97,11 +97,16 @@ const Ipp16u h265_quant_table_fwd[] =
     26214, 23302, 20560, 18396, 16384, 14564
 };
 
+const Ipp64f h265_quant_table_fwd_pow_minus2[] = // 1.0 / (h265_quant_table_fwd[x] * h265_quant_table_fwd[x])
+{
+    1.4552359327741304e-09, 1.8416775926645421e-09, 2.3656679132159456e-09, 2.954970830655539e-09, 3.725290298461914e-09, 4.7145327773553975e-09
+};
+
+
 static const Ipp32s matrixIdTable[] = {0, 1, 2};
 
 
-Ipp32s h265_quant_calcpattern_sig_ctx( const Ipp32u* sig_coeff_group_flag, Ipp32u posXCG, Ipp32u posYCG,
-                                    Ipp32u width )
+Ipp32s h265_quant_calcpattern_sig_ctx(const Ipp8u *sig_coeff_group_flag, Ipp32u posXCG, Ipp32u posYCG, Ipp32u width)
 {
     if( width == 4 ) return -1;
 
@@ -120,11 +125,11 @@ Ipp32s h265_quant_calcpattern_sig_ctx( const Ipp32u* sig_coeff_group_flag, Ipp32
     return sig_right + (sig_lower<<1);
 }
 
-Ipp32u h265_quant_getSigCoeffGroupCtxInc ( const Ipp32u* sig_coeff_group_flag,
-                                           const Ipp32u   uCG_pos_x,
-                                           const Ipp32u   uCG_pos_y,
-                                           const Ipp32u   scanIdx,
-                                           Ipp32u width)
+Ipp32u h265_quant_getSigCoeffGroupCtxInc ( const Ipp8u *sig_coeff_group_flag,
+                                           const Ipp32u uCG_pos_x,
+                                           const Ipp32u uCG_pos_y,
+                                           const Ipp32u scanIdx,
+                                           Ipp32u       width)
 {
     Ipp32u uiRight = 0;
     Ipp32u uiLower = 0;
@@ -192,50 +197,81 @@ void H265CU<PixType>::QuantInvTu(const CoeffsType *coeff, CoeffsType *resid, Ipp
     h265_quant_inv(coeff, NULL, resid, log2TrSize, bitDepth, QP);
 }
 
+
+template <class T>
+bool IsZero(const T *arr, Ipp32s size)
+{
+    assert(reinterpret_cast<Ipp64u>(arr) % sizeof(Ipp64u) == 0);
+    assert(size * sizeof(T) % sizeof(Ipp64u) == 0);
+
+    const Ipp64u *arr64 = reinterpret_cast<const Ipp64u *>(arr);
+    const Ipp64u *arr64end = reinterpret_cast<const Ipp64u *>(arr + size);
+
+    for (; arr64 != arr64end; arr64++)
+        if (*arr64)
+            return false;
+    return true;
+}
+
 template <typename PixType>
-void H265CU<PixType>::QuantFwdTu(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width,
-                                 Ipp32s isLuma, Ipp32s isIntra)
+Ipp8u H265CU<PixType>::QuantFwdTu(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width,
+                                  Ipp32s isLuma, Ipp32s isIntra)
 {
     Ipp32s isIntraSlice = (m_cslice->slice_type == I_SLICE);
     Ipp32s bitDepth = (isLuma) ? m_par->bitDepthLuma : m_par->bitDepthChroma;
-    EnumTextType textureType = (isLuma) ? TEXT_LUMA : TEXT_CHROMA;
     Ipp32s QP = (isLuma) ? m_lumaQp : m_chromaQp;
-
     Ipp32s log2TrSize = h265_log2m2[width] + 2;
 
-    Ipp32u abs_sum = 0;
+    if (!((isLuma || m_par->rdoqChromaFlag) && m_isRdoq)) {
+        Ipp32s qp_rem = h265_qp_rem[QP];
+        Ipp32s qp6 = h265_qp6[QP];
+        Ipp32s len = 1 << (log2TrSize << 1);
+        Ipp32s scale = 29 + qp6 - bitDepth - log2TrSize;
+        Ipp32s scaleLevel = h265_quant_table_fwd[qp_rem];
+        Ipp32s scaleOffset = (isIntraSlice ? 171 : 85) << (scale - 9);
 
-    if ((isLuma || m_par->rdoqChromaFlag) && m_isRdoq) {
+        if (!m_par->SBHFlag) {
+            return MFX_HEVC_PP::NAME(h265_QuantFwd_16s)(resid, coeff, len, scaleLevel, scaleOffset, scale);
+        } else {
+            Ipp32s *delta_u = m_scratchPad.quantFwdTuSbh.delta_u;
+            assert(sizeof(m_scratchPad) >= sizeof(*delta_u) * 32 * 32);
+            assert((size_t(delta_u) & 63) == 0);
+            Ipp32u abs_sum = (Ipp32u)MFX_HEVC_PP::NAME(h265_QuantFwd_SBH_16s)(resid, coeff, delta_u, len, scaleLevel, scaleOffset, scale);
+
+            if (abs_sum >= 2) {
+                Ipp32u scan_idx = GetCoefScanIdx(absPartIdx, log2TrSize, isLuma, IsIntra(absPartIdx));
+                if (scan_idx == COEFF_SCAN_ZIGZAG)
+                    scan_idx = COEFF_SCAN_DIAG;
+
+                const Ipp16u *scan = h265_sig_last_scan[scan_idx - 1][log2TrSize - 1];
+                h265_sign_bit_hiding(coeff, resid, scan, delta_u, width);
+            }
+            return !IsZero(coeff, width*width);
+        }
+    } else {
+        EnumTextType textureType = (isLuma) ? TEXT_LUMA : TEXT_CHROMA;
         h265_quant_fwd_rdo<PixType>(this, resid, coeff, log2TrSize, bitDepth, isIntraSlice, isIntra,
                                     textureType, absPartIdx, QP, m_bsf);
-    }
-    else {
-        Ipp32s delta_u[32*32];
-        h265_quant_fwd_base(resid, coeff, log2TrSize, bitDepth, isIntraSlice, QP,
-                            m_par->SBHFlag ? delta_u : NULL, abs_sum);
-
-        if (m_par->SBHFlag && abs_sum >= 2) {
-            Ipp32u scan_idx = GetCoefScanIdx(absPartIdx, log2TrSize, isLuma, IsIntra(absPartIdx));
-
-            if (scan_idx == COEFF_SCAN_ZIGZAG)
-                scan_idx = COEFF_SCAN_DIAG;
-
-            const Ipp16u *scan = h265_sig_last_scan[scan_idx - 1][log2TrSize - 1];
-
-            h265_sign_bit_hiding(coeff, resid, scan, delta_u, width);
-        }
+        return !IsZero(coeff, width*width);
     }
 }
 
 template <typename PixType>
-void H265CU<PixType>::QuantFwdTuBase(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width, Ipp32s isLuma)
+Ipp8u H265CU<PixType>::QuantFwdTuBase(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width, Ipp32s isLuma)
 {
     Ipp32s QP = (isLuma) ? m_lumaQp : m_chromaQp;
     Ipp32s log2TrSize = h265_log2m2[width] + 2;
     Ipp32s isIntraSlice = (m_cslice->slice_type == I_SLICE);
     Ipp32s bitDepth = (isLuma) ? m_par->bitDepthLuma : m_par->bitDepthChroma;
-    Ipp32u abs_sum = 0;
-    h265_quant_fwd_base(resid, coeff, log2TrSize, bitDepth, isIntraSlice, QP, NULL, abs_sum);
+
+    Ipp32s qp_rem = h265_qp_rem[QP];
+    Ipp32s qp6 = h265_qp6[QP];
+    Ipp32s len = width * width;
+    Ipp32s scale = 29 + qp6 - bitDepth - log2TrSize;
+    Ipp32s scaleLevel = h265_quant_table_fwd[qp_rem];
+    Ipp32s scaleOffset = (isIntraSlice ? 171 : 85) << (scale - 9);
+
+    return MFX_HEVC_PP::NAME(h265_QuantFwd_16s)(resid, coeff, len, scaleLevel, scaleOffset, scale);
 }
 
 
@@ -286,42 +322,6 @@ void h265_quant_inv(const CoeffsType *qcoeffs,
     }
 }
 
-void h265_quant_fwd_base(
-    const CoeffsType *coeffs,
-    CoeffsType *qcoeffs,
-    Ipp32s log2_tr_size,
-    Ipp32s bit_depth,
-    Ipp32s is_slice_i,
-    Ipp32s QP,
-
-    Ipp32s*  delta,
-    Ipp32u&  abs_sum )
-{
-    Ipp32s qp_rem = h265_qp_rem[QP];
-    Ipp32s qp6 = h265_qp6[QP];
-    Ipp32s len = 1 << (log2_tr_size << 1);
-    //Ipp8s  sign;
-    Ipp32s scaleLevel;
-    Ipp32s scaleOffset;
-    //Ipp32s qval;
-
-    Ipp32s scale = 29 + qp6 - bit_depth - log2_tr_size;
-
-    scaleLevel = h265_quant_table_fwd[qp_rem];
-    scaleOffset = (is_slice_i ? 171 : 85) << (scale - 9);
-
-    abs_sum = 0;
-
-    if( delta )
-    {
-        abs_sum = (Ipp32u)MFX_HEVC_PP::NAME(h265_QuantFwd_SBH_16s)(coeffs, qcoeffs, delta, len, scaleLevel, scaleOffset, scale);
-    }
-    else
-    {
-        MFX_HEVC_PP::NAME(h265_QuantFwd_16s)(coeffs, qcoeffs, len, scaleLevel, scaleOffset, scale);
-    }
-
-} // void h265_quant_fwd_base(...)
 
 template class H265CU<Ipp8u>;
 template class H265CU<Ipp16u>;

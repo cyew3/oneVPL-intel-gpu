@@ -33,33 +33,49 @@
 
 namespace MFX_HEVC_PP
 {
-    void H265_FASTCALL MAKE_NAME(h265_QuantFwd_16s)(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale_, int offset_, int shift_)
-    {
-        assert((len & 0xf) == 0);
-        assert((offset_ >> shift_) == 0);
-
-        __m256i scale  = _mm256_set1_epi16(scale_);
-        __m256i offset = _mm256_set1_epi32(offset_);
-        __m128i shift  = _mm_cvtsi32_si128(shift_);
-
-        for (Ipp32s i = 0; i < len; i += 16, pSrc += 16, pDst += 16) {
-            __m256i src = _mm256_loadu_si256((__m256i *)pSrc); // load 16-bit coefs
-            __m256i lo = _mm256_mullo_epi16(src, scale); // *=scale
-            __m256i hi = _mm256_mulhi_epi16(src, scale);
-            __m256i half1 = _mm256_unpacklo_epi16(lo, hi);
-            __m256i half2 = _mm256_unpackhi_epi16(lo, hi);
-            __m256i half1Abs = _mm256_abs_epi32(half1); // remove sign
-            __m256i half2Abs = _mm256_abs_epi32(half2);
-            half1Abs = _mm256_add_epi32(half1Abs, offset); // +=offset
-            half2Abs = _mm256_add_epi32(half2Abs, offset);
-            half1Abs = _mm256_sra_epi32(half1Abs, shift); // >>=shift
-            half2Abs = _mm256_sra_epi32(half2Abs, shift);
-            half1 = _mm256_sign_epi32(half1Abs, half1); // restore sign
-            half2 = _mm256_sign_epi32(half2Abs, half2);
-            __m256i dst = _mm256_packs_epi32(half1, half2); // pack
-            _mm256_storeu_si256((__m256i *)pDst, dst); // store
+    namespace QuantFwdDetails {
+        template <int len> inline Ipp8u Impl(const Ipp16s* pSrc, Ipp16s* pDst, int scale_, int offset_, int shift_)
+        {
+            __m256i scale  = _mm256_set1_epi16(scale_);
+            __m256i offset = _mm256_set1_epi32(offset_);
+            __m128i shift  = _mm_cvtsi32_si128(shift_);
+            __m256i cbf = _mm256_setzero_si256();
+#ifdef __INTEL_COMPILER
+            //#pragma unroll(4)
+#endif
+            for (Ipp32s i = 0; i < len; i += 16, pSrc += 16, pDst += 16) {
+                __m256i src = _mm256_load_si256((__m256i *)pSrc); // load 16-bit coefs
+                __m256i lo = _mm256_mullo_epi16(src, scale); // *=scale
+                __m256i hi = _mm256_mulhi_epi16(src, scale);
+                __m256i half1 = _mm256_unpacklo_epi16(lo, hi);
+                __m256i half2 = _mm256_unpackhi_epi16(lo, hi);
+                __m256i half1Abs = _mm256_abs_epi32(half1); // remove sign
+                __m256i half2Abs = _mm256_abs_epi32(half2);
+                half1Abs = _mm256_add_epi32(half1Abs, offset); // +=offset
+                half2Abs = _mm256_add_epi32(half2Abs, offset);
+                half1Abs = _mm256_sra_epi32(half1Abs, shift); // >>=shift
+                half2Abs = _mm256_sra_epi32(half2Abs, shift);
+                half1 = _mm256_sign_epi32(half1Abs, half1); // restore sign
+                half2 = _mm256_sign_epi32(half2Abs, half2);
+                __m256i dst = _mm256_packs_epi32(half1, half2); // pack
+                cbf = _mm256_or_si256(cbf, dst);
+                _mm256_store_si256((__m256i *)pDst, dst); // store
+            }
+            return (Ipp8u)!_mm256_testz_si256(cbf, cbf);
         }
-    } // void h265_QuantFwd_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scaleLevel, int scaleOffset, int scale)
+    }
+
+    Ipp8u H265_FASTCALL MAKE_NAME(h265_QuantFwd_16s)(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale_, int offset_, int shift_)
+    {
+        assert((offset_ >> shift_) == 0);
+        switch (len) {
+        case 32*32: return QuantFwdDetails::Impl<32*32>(pSrc, pDst, scale_, offset_, shift_);
+        case 16*16: return QuantFwdDetails::Impl<16*16>(pSrc, pDst, scale_, offset_, shift_);
+        case 8*8:   return QuantFwdDetails::Impl<8*8>(pSrc, pDst, scale_, offset_, shift_);
+        case 4*4:   return QuantFwdDetails::Impl<4*4>(pSrc, pDst, scale_, offset_, shift_);
+        default: assert(0); return 0;
+        }
+    }
 
 
     Ipp32s H265_FASTCALL MAKE_NAME(h265_QuantFwd_SBH_16s)(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scale, int offset, int shift)
@@ -117,42 +133,71 @@ namespace MFX_HEVC_PP
         return abs_sum;
     } // Ipp32s h265_QuantFwd_SBH_16s(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scaleLevel, int scaleOffset, int scale)
 
-    void H265_FASTCALL MAKE_NAME(h265_Quant_zCost_16s)(const Ipp16s* pSrc, Ipp32u* qLevels, Ipp64s* zlCosts, Ipp32s len, Ipp32s qScale, Ipp32s qoffset, Ipp32s qbits, Ipp32s rdScale0)
-    {
-        int i;
-        __m256i ymm0, ymm1, ymm2, ymm3, ymm6, ymm7, ymm10, ymm11, ymm13;
-        __m128i xmm4, xmm12;
-
-        VM_ASSERT((len & 0x03) == 0);
-        _mm256_zeroupper();
-        ymm10 = _mm256_set1_epi32(qScale);
-        ymm11 = _mm256_set1_epi32(qoffset);
-        xmm12 = _mm_cvtsi32_si128(qbits);
-        ymm13 = _mm256_setr_epi32 (rdScale0, 0, rdScale0, 0, rdScale0, 0, rdScale0, 0);
-
-        for (i = 0; i < len; i += 8) 
+    namespace QuantzCostDetails {
+        template <Ipp32s len>
+        Ipp64s H265_FASTCALL Impl(const Ipp16s* pSrc, Ipp16u* qLevels, Ipp64s* zlCosts, Ipp32s qScale, Ipp32s qoffset, Ipp32s qbits, Ipp32s rdScale0)
         {
-            // load 16-bit coefs, expand to 32 bits
-            xmm4 = _mm_loadu_si128((__m128i *)&pSrc[i]);       // r0:= [c7, c6, c5, c4, c3, c2, c1, c0], r1:=0x0
-            ymm3 = _mm256_cvtepi16_epi32(xmm4);                // r0=c0 r1=c1, r2=c2, r3=c3 are 4 signed-32bit data
-            ymm7 = _mm256_abs_epi32(ymm3);                     // r0=abs(c0) r1=abs(c1), r2=abs(c2), r3=abs(c3)
+            __m256i scale = _mm256_set1_epi16(qScale);
+            __m256i offset = _mm256_set1_epi32(qoffset);
+            __m128i shift = _mm_cvtsi32_si128(qbits);
+            __m256i rdscale = _mm256_setr_epi32(rdScale0, 0, rdScale0, 0, rdScale0, 0, rdScale0, 0);
+            __m256i src, src1, src2, lo, hi, dst1, dst2;
+            __m256i totalZeroCost = _mm256_setzero_si256();
 
-            // qval = (aval * scale + offset) >> shift; 
-            ymm6 = _mm256_mullo_epi32(ymm7, ymm10);            // r0=c0*qScale, r1=c1*qScale, r2=c2*qScale, r3=c3*qScale
-            ymm2 = _mm256_add_epi32(ymm6, ymm11);              // r0=c0*scale+offset, r1=c1*scale+offset, ...
-            ymm2 = _mm256_sra_epi32(ymm2, xmm12);              // r0=q0=(c0*scale+offset)>>shift, r1=(c1*scale+offset)>>shift, ...
-            _mm256_storeu_si256((__m256i *)&qLevels[i], ymm2);
+#ifdef __INTEL_COMPILER
+            #pragma unroll(4)
+#endif
+            for (Ipp32s i = 0; i < len; i += 16) {
+                src = _mm256_load_si256((__m256i *)(pSrc+i));
+                src = _mm256_abs_epi16(src);
+                lo = _mm256_mullo_epi16(src, scale);
+                hi = _mm256_mulhi_epi16(src, scale);
+                dst1 = _mm256_unpacklo_epi16(lo, hi);
+                dst2 = _mm256_unpackhi_epi16(lo, hi);
+                dst1 = _mm256_add_epi32(dst1, offset);
+                dst1 = _mm256_sra_epi32(dst1, shift);
+                dst2 = _mm256_add_epi32(dst2, offset);
+                dst2 = _mm256_sra_epi32(dst2, shift);
+                dst1 = _mm256_packus_epi32(dst1, dst2);
+                _mm256_store_si256((__m256i *)(qLevels+i), dst1);
 
-            // zero level cost = aLevel * aLevel * rdScale0
-            ymm1 = _mm256_mullo_epi32(ymm7, ymm7);             // r0=c0*c0, r1=c1*c1, r2=c2*c2, r3=c3*c3
-            ymm0 = _mm256_cvtepi32_epi64(mm128(ymm1));
-            ymm0 = _mm256_mul_epi32(ymm0, ymm13);              // r0=c0*c0, r1=0, r2=c1*c1, r3=0
-            _mm256_storeu_si256((__m256i *)&zlCosts[i], ymm0);
+                lo = _mm256_mullo_epi16(src, src);
+                hi = _mm256_mulhi_epi16(src, src);
+                src1 = _mm256_unpacklo_epi16(lo, hi);
+                src2 = _mm256_unpackhi_epi16(lo, hi);
 
-            ymm1 = _mm256_permute2x128_si256(ymm1, ymm1, 1);
-            ymm0 = _mm256_cvtepi32_epi64(mm128(ymm1));
-            ymm0 = _mm256_mul_epi32(ymm0, ymm13);              // r0=c2*c2, r1=0, r2=c3*c3, r3=0
-            _mm256_storeu_si256((__m256i *)&zlCosts[i+4], ymm0);
+                dst1 = _mm256_cvtepu32_epi64(_mm256_castsi256_si128(src1));
+                dst1 = _mm256_mul_epi32(dst1, rdscale);
+                totalZeroCost = _mm256_add_epi64(totalZeroCost, dst1);
+                _mm256_store_si256((__m256i *)(zlCosts+i), dst1);
+                dst1 = _mm256_cvtepu32_epi64(_mm256_castsi256_si128(src2));
+                dst1 = _mm256_mul_epi32(dst1, rdscale);
+                totalZeroCost = _mm256_add_epi64(totalZeroCost, dst1);
+                _mm256_store_si256((__m256i *)(zlCosts+i+4), dst1);
+                src1 = _mm256_permute2x128_si256(src1, src1, 1);
+                dst1 = _mm256_cvtepu32_epi64(_mm256_castsi256_si128(src1));
+                dst1 = _mm256_mul_epi32(dst1, rdscale);
+                totalZeroCost = _mm256_add_epi64(totalZeroCost, dst1);
+                _mm256_store_si256((__m256i *)(zlCosts+i+8), dst1);
+                src2 = _mm256_permute2x128_si256(src2, src2, 1);
+                dst1 = _mm256_cvtepu32_epi64(_mm256_castsi256_si128(src2));
+                dst1 = _mm256_mul_epi32(dst1, rdscale);
+                totalZeroCost = _mm256_add_epi64(totalZeroCost, dst1);
+                _mm256_store_si256((__m256i *)(zlCosts+i+12), dst1);
+            }
+            __m128i subtot = _mm_add_epi64(_mm256_castsi256_si128(totalZeroCost), _mm256_extracti128_si256(totalZeroCost, 1));
+            return _mm_extract_epi64(subtot, 0) + _mm_extract_epi64(subtot, 1);
+        }
+    };
+
+    Ipp64s H265_FASTCALL MAKE_NAME(h265_Quant_zCost_16s)(const Ipp16s* pSrc, Ipp16u* qLevels, Ipp64s* zlCosts, Ipp32s len, Ipp32s qScale, Ipp32s qoffset, Ipp32s qbits, Ipp32s rdScale0)
+    {
+        switch (len) {
+        case 32*32: return QuantzCostDetails::Impl<32*32>(pSrc, qLevels, zlCosts, qScale, qoffset, qbits, rdScale0);
+        case 16*16: return QuantzCostDetails::Impl<16*16>(pSrc, qLevels, zlCosts, qScale, qoffset, qbits, rdScale0);
+        case 8*8:   return QuantzCostDetails::Impl<8*8>(pSrc, qLevels, zlCosts, qScale, qoffset, qbits, rdScale0);
+        case 4*4:   return QuantzCostDetails::Impl<4*4>(pSrc, qLevels, zlCosts, qScale, qoffset, qbits, rdScale0);
+        default: assert(0); return 0;
         }
     }
 

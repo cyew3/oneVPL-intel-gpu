@@ -200,6 +200,7 @@ void ApiTestCommon::InitParamSetValid(ParamSet &paramset) {
     paramset.extCodingOption.AUDelimiter = MFX_CODINGOPTION_ON;
     paramset.extCodingOption2.DisableVUI = MFX_CODINGOPTION_ON;
     paramset.extCodingOption2.AdaptiveI = MFX_CODINGOPTION_ON;
+    paramset.extCodingOption2.MBBRC = MFX_CODINGOPTION_OFF;
     paramset.extCodingOption3.GPB = MFX_CODINGOPTION_ON;
     paramset.extEncoderROI.NumROI = 1;
     paramset.extEncoderROI.ROI[0].Left = paramset.extEncoderROI.ROI[0].Right = paramset.extEncoderROI.ROI[0].Top = paramset.extEncoderROI.ROI[0].Bottom = 0;

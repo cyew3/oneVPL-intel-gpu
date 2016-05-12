@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -264,7 +264,7 @@ static void h265_sao_BO_sse(
     int endX,
     int endY)
 {
-    const int shiftBits = 3;
+    const int shiftBits = 5;
     for (int y=0; y<endY; y++)
     {
         for (int x=0; x<endX; x++)

@@ -125,6 +125,19 @@ private:
     CabacBits   m_cabacBits;
     Ipp8u m_bitDepth;
     EnumTextType m_textType;
+    Ipp16u *qlevels;
+    Ipp64s *zeroCosts;
+    Ipp64f *cost_nz_level;
+    Ipp64f *cost_zero_level;
+    Ipp64f *cost_sig;
+    Ipp32s *rate_inc_up;
+    Ipp32s *rate_inc_down;
+    Ipp32s *sig_rate_delta;
+    Ipp32s *delta_u;
+    Ipp16s *srcScanOrder;
+    Ipp8u  *sig_coeff_group_flag;
+    Ipp8u  *sbh_possible;
+    Ipp64f *cost_coeff_group_sig;
 };
 
 } // namespace

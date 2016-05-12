@@ -65,8 +65,8 @@ protected:
     MFX_ENTRY_POINT entryPoint;
 
     Ipp8u bsBuf[8 * 1024];
-    Ipp8u lumaBuf[32 * 32];
-    Ipp8u chromaBuf[16 * 16];
+    __ALIGN16 Ipp8u lumaBuf[32 * 32];
+    __ALIGN16 Ipp8u chromaBuf[16 * 16];
 };
 
 TEST_F(RuntimeTest, ParamValidation) {

@@ -15,14 +15,17 @@
 #pragma warning(disable: 4100; disable: 4505; disable: 4127; disable: 4324)
 
 #if (defined(__INTEL_COMPILER) || defined(_MSC_VER)) && !defined(_WIN32_WCE)
+#define __ALIGN64 __declspec (align(64))
 #define __ALIGN32 __declspec (align(32))
 #define __ALIGN16 __declspec (align(16))
 #define __ALIGN8 __declspec (align(8))
 #elif defined(__GNUC__)
+#define __ALIGN64 __attribute__ ((aligned (64)))
 #define __ALIGN32 __attribute__ ((aligned (32)))
 #define __ALIGN16 __attribute__ ((aligned (16)))
 #define __ALIGN8 __attribute__ ((aligned (8)))
 #else
+#define __ALIGN64
 #define __ALIGN32
 #define __ALIGN16
 #define __ALIGN8
@@ -134,6 +137,12 @@ static inline void H265_FORCEINLINE small_memcpy( void* dst, const void* src, in
 #else
     ippsCopy_8u((const Ipp8u*)src, (Ipp8u*)dst, len);
 #endif
+}
+
+template<class T> inline T AlignValue(T value, mfxU32 alignment)
+{
+    assert((alignment & (alignment - 1)) == 0); // should be 2^n
+    return static_cast<T>((value + alignment - 1) & ~(alignment - 1));
 }
 
 static inline IppStatus _ippsSet(Ipp8u val, Ipp8u* pDst, int len )
@@ -280,6 +289,8 @@ const Ipp32s OPT_LAMBDA_PYRAMID  = 1;
 #define  MAX_DQP (6)
 // size of block for lookahead algorithms
 #define SIZE_BLK_LA (8)
+
+const Ipp32s LOG2_MIN_TU_SIZE = 2;
 
 enum {
     B_SLICE = 0,
@@ -641,6 +652,18 @@ struct ThreadingTask
         finished = 0;
     }
 };
+
+typedef enum {
+    THREADING_WORKING,
+    THREADING_PAUSE,
+    THREADING_ERROR,
+} ThreadingStage;
+
+typedef enum {
+    THREADING_ITASK_INI,
+    THREADING_ITASK_WORKING,
+    THREADING_ITASK_COMPLETE,
+} ThreadingInputTaskStage;
 
 inline Ipp32s H265_CeilLog2(Ipp32s a) {
     Ipp32s r = 0;

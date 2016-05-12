@@ -16,83 +16,17 @@
 #include <map>
 #include <utility>
 
-#include "mfx_h265_defs.h"
+//#include "mfx_h265_defs.h"
 #include "mfx_h265_enc_cm_utils.h"
 
 namespace H265Enc {
-
-#if defined(_WIN32) || defined(_WIN64)
-
-struct Timers
+    
+inline void small_memcpy( void* dst, const void* src, int len )
 {
-    struct Timer {
-        void Add(mfxU64 t) { total += t; min = callCount > 0 ? IPP_MIN(min, t) : t; callCount++; }
-        mfxU64 total;
-        mfxU64 min;
-        mfxU32 callCount;
-        mfxU64 freq;
-    } me1x, me2x, refine32x32, refine32x16, refine16x32, refine, dsSrc, dsFwd,
-        writeSrc, writeFwd, readDist32x32, readDist32x16, readDist16x32, readMb1x, readMb2x, runVme, processMv;
-} TIMERS = {};
-
-mfxU64 gettick() {
-    LARGE_INTEGER t;
-    QueryPerformanceCounter(&t);
-    return t.QuadPart;
-}
-mfxU64 getfreq() {
-    LARGE_INTEGER t;
-    QueryPerformanceFrequency(&t);
-    return t.QuadPart;
+    memcpy_s(dst, len, src, len);
 }
 
-mfxU64 GetCmTime(CmEvent * e) {
-    mfxU64 t = 0;
-    e->GetExecutionTime(t);
-    return t;
-}
-
-void printTime(char * name, Timers::Timer const & timer)
-{
-///    double totTimeMs = timer.total / double(timer.freq) * 1000.0;
-///    double minTimeMs = timer.min   / double(timer.freq) * 1000.0;
-///    double avgTimeMs = totTimeMs / timer.callCount;
-    //printf("%s (called %3u times) time min=%.3f avg=%.3f total=%.3f ms\n", name, timer.callCount, minTimeMs, avgTimeMs, totTimeMs);
-}
-
-typedef std::map<std::pair<int, int>, double> Map;
-Map interpolationTime;
-
-void PrintTimes()
-{
-    TIMERS.runVme.freq = TIMERS.processMv.freq = TIMERS.readMb1x.freq = TIMERS.readMb2x.freq = getfreq();
-    TIMERS.writeSrc.freq = TIMERS.writeFwd.freq = TIMERS.readDist32x32.freq = TIMERS.readDist32x16.freq = TIMERS.readDist16x32.freq = TIMERS.dsSrc.freq =
-        TIMERS.dsFwd.freq = TIMERS.me1x.freq = TIMERS.me2x.freq = TIMERS.refine32x32.freq = TIMERS.refine32x16.freq = TIMERS.refine16x32.freq = TIMERS.refine.freq = 1000000000;
-
-    printTime("RunVme           ", TIMERS.runVme);
-    printTime("Write src        ", TIMERS.writeSrc);
-    printTime("Write fwd        ", TIMERS.writeFwd);
-    printTime("read dist32x32   ", TIMERS.readDist32x32);
-    printTime("read dist32x16   ", TIMERS.readDist32x16);
-    printTime("read dist16x32   ", TIMERS.readDist16x32);
-    printTime("Downscale src    ", TIMERS.dsSrc);
-    printTime("Downscale fwd    ", TIMERS.dsFwd);
-    printTime("ME 1x            ", TIMERS.me1x);
-    printTime("ME 2x            ", TIMERS.me2x);
-    printTime("Refine32x32      ", TIMERS.refine32x32);
-    printTime("Refine32x16      ", TIMERS.refine32x16);
-    printTime("Refine16x32      ", TIMERS.refine16x32);
-    printTime("Read Mb 1x       ", TIMERS.readMb1x);
-    printTime("Read Mb 2x       ", TIMERS.readMb2x);
-    printTime("Process Mv       ", TIMERS.processMv);
-
-    //double sum = 0.0;
-    //for (Map::iterator i = interpolationTime.begin(); i != interpolationTime.end(); ++i)
-    //    printf("Interpolate_%02dx%02d time %.3f\n", i->first.first, i->first.second, i->second), sum += i->second;
-    //printf("Interpolate_AVERAGE time %.3f\n", sum/interpolationTime.size());
-}
-
-#endif // #if defined(_WIN32) || defined(_WIN64)
+template<class T> inline void Zero(T &obj) { memset(&obj, 0, sizeof(obj)); }
 
 template<class T> inline T AlignValue(T value, mfxU32 alignment)
 {
@@ -571,7 +505,7 @@ void SetupMeControl(MeControl &ctrl, int width, int height, double lambda)
         0x00,0x00,0x00,0x00,0x00,0x00,//51
     };
 
-    small_memcpy(ctrl.longSp, Diamond, MIN(sizeof(Diamond), sizeof(ctrl.longSp)));
+    small_memcpy(ctrl.longSp, Diamond, IPP_MIN(sizeof(Diamond), sizeof(ctrl.longSp)));
     ctrl.longSpLenSp = 16;
     ctrl.longSpMaxNumSu = 57;
 
@@ -579,7 +513,7 @@ void SetupMeControl(MeControl &ctrl, int width, int height, double lambda)
         0x0F, 0xF0, 0x01, 0x00
     };
 
-    small_memcpy(ctrl.shortSp, ShortPath, MIN(sizeof(ShortPath), sizeof(ctrl.shortSp)));
+    small_memcpy(ctrl.shortSp, ShortPath, IPP_MIN(sizeof(ShortPath), sizeof(ctrl.shortSp)));
     ctrl.shortSpLenSp = 4;
     ctrl.shortSpMaxNumSu = 9;
 

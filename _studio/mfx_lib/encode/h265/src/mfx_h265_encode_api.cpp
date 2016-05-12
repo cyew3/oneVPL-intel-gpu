@@ -528,7 +528,7 @@ namespace {
             ext->MaxFrameSize = 0;
             ext->MaxSliceSize = 0;
             ext->BitrateLimit = 0;
-            ext->MBBRC = 0;
+            ext->MBBRC = 1;
             ext->ExtBRC = 0;
             ext->LookAheadDepth = 0;
             ext->Trellis = 0;
@@ -803,6 +803,7 @@ namespace {
         if (opt2) {
             wrnIncompatible = !CheckTriState(opt2->AdaptiveI);
             wrnIncompatible = !CheckTriState(opt2->DisableVUI);
+            wrnIncompatible = !CheckTriState(opt2->MBBRC);
         }
 
         if (opt3) {
@@ -1104,10 +1105,11 @@ namespace {
             }
             if (optHevc->BPyramid == OFF || mfx.GopRefDist == 1) // no CALQ, no PAQ if Bpyramid disabled
                 wrnIncompatible = !CheckMaxSat(optHevc->DeltaQpMode, 1);
-            //if (fi.PicStruct == TFF || fi.PicStruct == BFF) // no CAL/CAQ/PAQ if interlace
-            //    wrnIncompatible = !CheckMaxSat(optHevc->DeltaQpMode, 1);
         }
 
+        // conflict MBBRC vs GopRefDist
+        if (opt2 && opt2->MBBRC == ON && (optHevc && optHevc->BPyramid == OFF || mfx.GopRefDist == 1 || optHevc && optHevc->DeltaQpMode == 1))
+            opt2->MBBRC = OFF, wrnIncompatible = true;
 
         if ((mfx.GopOptFlag & MFX_GOP_STRICT) && opt2 && opt2->AdaptiveI)
             wrnIncompatible = !CheckEq(opt2->AdaptiveI, OFF);
@@ -1417,6 +1419,13 @@ namespace {
                 optHevc.DeltaQpMode = 1; // off
             if (roi.NumROI)
                 optHevc.DeltaQpMode = 1; // off
+        }
+
+        if (opt2.MBBRC == 0) {
+            if ((optHevc.BPyramid == OFF || mfx.GopRefDist == 1 || optHevc.DeltaQpMode == 1))
+                opt2.MBBRC = OFF;
+            else 
+                opt2.MBBRC = ON;
         }
 
         if (optHevc.Enable10bit == 0)
@@ -1760,16 +1769,18 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(
     }
 
     if (m_mfxParam.mfx.EncodedOrder) {
-        if (ctrl == NULL)
-            return MFX_ERR_NULL_PTR;
-        if ((ctrl->FrameType & 7) != MFX_FRAMETYPE_I &&
-            (ctrl->FrameType & 7) != MFX_FRAMETYPE_P &&
-            (ctrl->FrameType & 7) != MFX_FRAMETYPE_B)
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-        if (m_mfxParam.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT) {
-            mfxExtLAFrameStatistics *laStat = GetExtBuffer(*ctrl);
-            if (laStat == NULL)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
+        if (surface) {
+            if (ctrl == NULL)
+                return MFX_ERR_NULL_PTR;
+            if ((ctrl->FrameType & 7) != MFX_FRAMETYPE_I &&
+                (ctrl->FrameType & 7) != MFX_FRAMETYPE_P &&
+                (ctrl->FrameType & 7) != MFX_FRAMETYPE_B)
+                return MFX_ERR_INVALID_VIDEO_PARAM;        
+            if (m_mfxParam.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT) {
+                mfxExtLAFrameStatistics *laStat = GetExtBuffer(*ctrl);
+                if (laStat == NULL)
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
         }
     }
 

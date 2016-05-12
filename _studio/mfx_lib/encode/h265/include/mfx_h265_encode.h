@@ -63,6 +63,7 @@ namespace H265Enc {
         double prevAuFinalArrivalTime;
         double prevBuffPeriodAuNominalRemovalTime;
         Ipp32u prevBuffPeriodEncOrder;
+        Ipp32s bpResetFlag;
     };
 
     class H265Encoder : public NonCopyable {
@@ -131,10 +132,18 @@ namespace H265Enc {
         Ipp32s m_sceneOrder;                        // in display order each frame belongs something scene (if sceneCut enabled)
 
         // threading
+        volatile Ipp32u   m_doStage;
+        volatile Ipp32u   m_threadCount;
+        volatile Ipp32u   m_reencode;     // BRC repack
+        volatile Ipp32u   m_taskSubmitCount;
+        volatile Ipp32u   m_taskEncodeCount;
+
         vm_cond m_condVar;
         vm_mutex m_critSect;
+        vm_mutex m_prepCritSect;
         std::deque<ThreadingTask *> m_pendingTasks;
-        ThreadingTask   m_ttComplete;
+        std::deque<H265EncodeTaskInputParams *> m_inputTasks;
+        H265EncodeTaskInputParams *m_inputTaskInProgress;
         volatile Ipp32u m_threadingTaskRunning;
         std::vector<Ipp32u> m_ithreadPool;
     
@@ -148,10 +157,7 @@ namespace H265Enc {
 
         std::list<Frame *> m_dpb;             // _global_ pool of frames: encoded reference frames + being encoded frames
         std::list<Frame *> m_actualDpb;       // reference frames for next frame to encode
-
-        Frame *m_newFrame[2];
         Frame *m_laFrame[2];
-        Frame *m_targetFrame[2];
 
         ObjectPool<FrameData>     m_inputFrameDataPool;     // storage for full-sized original pixel data
         ObjectPool<FrameData>     m_reconFrameDataPool;     // storage for full-sized reconstructed/reference pixel data
@@ -168,9 +174,13 @@ namespace H265Enc {
         ObjectPool<FeiBufferUp>   m_feiSaoModesPool;        // storage for sao modes chosen by GPU (1 buffer/frame)
         ObjectPool<ThreadingTask> m_ttHubPool;              // storage for threading tasks of type TT_HUB
 
+        std::vector<ThreadingTask *> m_ttRootTasks;
+
         Ipp8u* m_memBuf;
         void *m_cu;
         Ipp16u *m_tile_ids;
+        Ipp16u *m_tile_row_ids;
+        Ipp16u *m_tile_col_ids;
         Segment *m_tiles;
         Ipp16u *m_slice_ids;
         Segment *m_slices;
@@ -219,7 +229,7 @@ namespace H265Enc {
 
         friend class H265Enc::Lookahead;
         friend class H265Enc::H265FrameEncoder;
-        void ConfigureInputFrame(Frame *frame, bool bEncOrder) const;
+        void ConfigureInputFrame(Frame *frame, bool bEncOrder, bool bEncCtrl = false) const;
         void UpdateGopCounters(Frame *frame, bool bEncOrder);
         void RestoreGopCountersFromFrame(Frame *frame, bool bEncOrder);
 
@@ -236,6 +246,7 @@ namespace H265Enc {
         static mfxStatus TaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
         static mfxStatus TaskCompleteProc(void *pState, void *pParam, mfxStatus taskRes);
 
+        void PrepareToEncodeNewTask(H265EncodeTaskInputParams *inputParam); // accept frame and find frame for lookahead
         void PrepareToEncode(H265EncodeTaskInputParams *inputParam); // build dependency graph for all parallel frames
         void EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam); // build dependency graph for one frames
         mfxStatus SyncOnFrameCompletion(H265EncodeTaskInputParams *inputParam, Frame *frame);
@@ -243,6 +254,8 @@ namespace H265Enc {
         void OnLookaheadStarting(); // no threas safety. some preparation work in single thread mode!
         void OnLookaheadCompletion(); // no threas safety. some post work in single thread mode!
     };
+
+    template <class PixType> void CopyAndPad(const mfxFrameSurface1 &src, FrameData &dst, Ipp32u fourcc);
 };
 
 

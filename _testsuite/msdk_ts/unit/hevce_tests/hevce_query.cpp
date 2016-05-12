@@ -340,7 +340,7 @@ TEST_F(QueryTest, Mode1_Main) {
     EXPECT_EQ(0, output.extCodingOption2.MaxFrameSize);
     EXPECT_EQ(0, output.extCodingOption2.MaxSliceSize);
     EXPECT_EQ(0, output.extCodingOption2.BitrateLimit);
-    EXPECT_EQ(0, output.extCodingOption2.MBBRC);
+    EXPECT_EQ(1, output.extCodingOption2.MBBRC);
     EXPECT_EQ(0, output.extCodingOption2.ExtBRC);
     EXPECT_EQ(0, output.extCodingOption2.LookAheadDepth);
     EXPECT_EQ(0, output.extCodingOption2.Trellis);
@@ -3213,3 +3213,23 @@ TEST_F(QueryTest, Conflicts_BPyramid_and_DeltaQpMode) {
     }
 }
 
+TEST_F(QueryTest, Conflicts_MBBRC_and_GopRefDist) {
+    input.extCodingOption2.MBBRC    = ON;
+    input.videoParam.mfx.GopRefDist = 8;
+    ASSERT_EQ(MFX_ERR_NONE, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
+
+    input.extCodingOption2.MBBRC    = ON;
+    input.videoParam.mfx.GopRefDist = 1;
+    ASSERT_EQ(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
+    ASSERT_EQ(OFF, output.extCodingOption2.MBBRC);
+    
+    input.extCodingOption2.MBBRC    = UNK;
+    input.videoParam.mfx.GopRefDist = 8;
+    ASSERT_EQ(MFX_ERR_NONE, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
+    ASSERT_EQ(UNK, output.extCodingOption2.MBBRC);
+
+    input.extCodingOption2.MBBRC    = UNK;
+    input.videoParam.mfx.GopRefDist = 1;
+    ASSERT_EQ(MFX_ERR_NONE, MFXVideoENCODEH265::Query(nullptr, &input.videoParam, &output.videoParam));
+    ASSERT_EQ(UNK, output.extCodingOption2.MBBRC);
+}

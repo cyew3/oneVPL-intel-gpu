@@ -63,7 +63,7 @@ protected:
     MFXVideoENCODEH265 encoder;
     ParamSet input;
     mfxEncodeCtrl ctrl;
-    mfxFrameSurface1 surfaces[1];
+    mfxFrameSurface1 surfaces[/*1*/77];
     mfxFrameSurface1 *reordered;
     mfxBitstream bitstream;
     MFX_ENTRY_POINT entryPoint;
@@ -72,7 +72,7 @@ protected:
     mfxExtBuffer *runtimeExtBufs[2];
 
     Ipp8u bsBuf[8 * 1024];
-    Ipp8u lumaBuf[32 * 32];
+    __ALIGN16 Ipp8u lumaBuf[/*32 * 32*/64*64];
     Ipp8u chromaBuf[16 * 16];
 };
 
@@ -91,8 +91,22 @@ TEST_F(EncodedOrderTest, RunTimeParamValidation) {
         ctrl = goodCtrl;
     }
     { SCOPED_TRACE("Test valid case");
-        EXPECT_CALL(core, IncreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
-        EXPECT_EQ(MFX_ERR_NONE, encoder.EncodeFrameCheck(&ctrl, surfaces, &bitstream, &reordered, nullptr, &entryPoint));
+        mfxStatus sts = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+        mfxFrameSurface1 *surf = surfaces;
+        while (sts == MFX_ERR_MORE_DATA_RUN_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0])) {
+            EXPECT_CALL(core, IncreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
+            sts = encoder.EncodeFrameCheck(&ctrl, surf++, &bitstream, &reordered, nullptr, &entryPoint);
+            if (sts == MFX_ERR_MORE_DATA_RUN_TASK) {
+                EXPECT_CALL(core, DecreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
+                ASSERT_EQ(MFX_ERR_NONE, entryPoint.pRoutine(entryPoint.pState, entryPoint.pParam, 0, 0));
+                ASSERT_EQ(MFX_ERR_NONE, entryPoint.pCompleteProc(entryPoint.pState, entryPoint.pParam, MFX_ERR_NONE));
+            }
+        }
+        ASSERT_EQ(MFX_ERR_NONE, sts);
+
+        EXPECT_CALL(core, DecreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
+        ASSERT_EQ(MFX_ERR_NONE, entryPoint.pRoutine(entryPoint.pState, entryPoint.pParam, 0, 0));
+        ASSERT_EQ(MFX_ERR_NONE, entryPoint.pCompleteProc(entryPoint.pState, entryPoint.pParam, MFX_ERR_NONE));
     }
 }
 
@@ -125,7 +139,13 @@ TEST_F(EncodedOrderTest, RunTimeParamValidationLaExt) {
         ctrl = goodCtrl;
     }
     { SCOPED_TRACE("Test valid case");
-        EXPECT_CALL(core, IncreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
-        EXPECT_EQ(MFX_ERR_NONE, encoder.EncodeFrameCheck(&ctrl, surfaces, &bitstream, &reordered, nullptr, &entryPoint));
+
+        mfxStatus sts = (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK;
+        mfxFrameSurface1 *surf = surfaces;
+        while (sts == MFX_ERR_MORE_DATA_RUN_TASK && surf < surfaces + sizeof(surfaces) / sizeof(surfaces[0])) {
+            EXPECT_CALL(core, IncreaseReference(_)).WillOnce(Return(MFX_ERR_NONE));
+            sts = encoder.EncodeFrameCheck(&ctrl, surf++, &bitstream, &reordered, nullptr, &entryPoint);
+        }
+        ASSERT_EQ(MFX_ERR_NONE, sts);
     }
 }

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -134,40 +134,6 @@ struct H265MV
     mfxI16  mvy;
 };
 
-//struct H265CUData
-//{
-//    H265MV mv[2];
-//    H265MV mvd[2];
-//
-//    uint1 depth;
-//    uint1 size;
-//    uint1 partSize;
-//    uint1 predMode;
-//    uint1 trIdx;
-//    int1 qp;
-//    uint1 cbf[3];
-//    uint1 intraLumaDir;
-//    uint1 intraChromaDir;
-//    uint1 interDir;
-//    uint1 mergeIdx;
-//    int1 mvpIdx[2];
-//
-//    int1 refIdx[2];
-//
-//    uint1 transformSkipFlag[3];
-//    union {
-//        struct {
-//            uint1 mergeFlag : 1;
-//            uint1 ipcmFlag : 1;
-//            uint1 transquantBypassFlag : 1;
-//            uint1 skippedFlag : 1;
-//        } flags;
-//        uint1 _flags;
-//    };
-//
-//    uint1 reserved[2];
-//};
-
 struct H265CUData
 {
     H265MV mv[2];
@@ -184,20 +150,18 @@ struct H265CUData
     mfxU8 size;
     mfxU8 partSize;
     mfxU8 mergeIdx;
-    mfxI8 mvpIdx[2];
 
-    mfxU8 transformSkipFlag[3];
     union {
         struct {
             mfxU8 mergeFlag : 1;
             mfxU8 ipcmFlag : 1;
             mfxU8 transquantBypassFlag : 1;
             mfxU8 skippedFlag : 1;
+            mfxU8 mvpIdx0 : 1;
+            mfxU8 mvpIdx1 : 1;
         } flags;
         mfxU8 _flags;
     };
-
-    Ipp8u reserved[2];
 };
 
 struct AddrNode

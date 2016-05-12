@@ -701,7 +701,7 @@ Ipp32s H265FrameEncoder::WriteBitstreamHeaderSet(mfxBitstream *mfxBS, Ipp32s bs_
         overheadBytes += m_bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
     }
 
-    if (m_frame->m_isIdrPic) {
+    if (m_frame->m_picCodeType == MFX_FRAMETYPE_I) {
         PutVPS(&m_bs[bs_main_id], m_topEnc.m_vps, m_topEnc.m_profile_level);
         m_bs[bs_main_id].WriteTrailingBits();
         nal.nal_unit_type = NAL_VPS;
@@ -716,7 +716,9 @@ Ipp32s H265FrameEncoder::WriteBitstreamHeaderSet(mfxBitstream *mfxBS, Ipp32s bs_
         m_bs[bs_main_id].WriteTrailingBits();
         nal.nal_unit_type = NAL_PPS;
         overheadBytes += m_bs[bs_main_id].WriteNAL(mfxBS, 0, &nal);
+    }
 
+    if (m_frame->m_isIdrPic) {
         if (m_videoParam.writePicTiming || m_videoParam.writeBufPeriod) {
             PutActiveParameterSets(&m_bs[bs_main_id], m_topEnc.m_seiAps);
             nal.nal_unit_type = NAL_UT_PREFIX_SEI;

@@ -42,7 +42,7 @@ public:
     Ipp32s count;
     Ipp32s  *satd8  [MEMOIZE_NUMCAND];
     H265MV  mv[MEMOIZE_NUMCAND][2];
-    Ipp32s  refIdx[MEMOIZE_NUMCAND][2];
+    Ipp8s  refIdx[MEMOIZE_NUMCAND][2];
     Ipp32s  list[MEMOIZE_NUMCAND];
     PixType *predBuf [MEMOIZE_NUMCAND];
     void    Init() { count = 0; }
@@ -126,19 +126,18 @@ public:
     Ipp8u size;
     Ipp8u partSize;
     Ipp8u mergeIdx;
-    Ipp8s mvpIdx[2];
 
-    Ipp8u transformSkipFlag[3];
     union {
         struct {
             Ipp8u mergeFlag : 1;
             Ipp8u ipcmFlag : 1;
             Ipp8u transquantBypassFlag : 1;
             Ipp8u skippedFlag : 1;
+            mfxU8 mvpIdx0 : 1;
+            mfxU8 mvpIdx1 : 1;
         } flags;
         Ipp8u _flags;
     };
-	Ipp8u reserved[2];
 };
 
 typedef struct {
@@ -200,33 +199,33 @@ public:
     Ipp32u          m_ctbPelX;           ///< CU position in a pixel (X)
     Ipp32u          m_ctbPelY;           ///< CU position in a pixel (Y)
     Ipp32u          m_numPartition;     ///< total number of minimum partitions in a CU
-    __ALIGN32 CoeffsType    m_residualsY[MAX_CU_SIZE * MAX_CU_SIZE];
-    __ALIGN32 CoeffsType    m_residualsU[MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
-    __ALIGN32 CoeffsType    m_residualsV[MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
-    __ALIGN32 PixType       m_predIntraAll[35*32*32];
-    __ALIGN32 PixType       m_srcTr[32*32]; // transposed src block
+    __ALIGN64 CoeffsType    m_residualsY[MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN64 CoeffsType    m_residualsU[MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
+    __ALIGN64 CoeffsType    m_residualsV[MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
+    __ALIGN64 PixType       m_predIntraAll[35*32*32];
+    __ALIGN64 PixType       m_srcTr[32*32]; // transposed src block
 
     // working/final coeffs
-    __ALIGN32 CoeffsType    *m_coeffWorkY;//[MAX_CU_SIZE * MAX_CU_SIZE];
-    __ALIGN32 CoeffsType    *m_coeffWorkU;//[MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
-    __ALIGN32 CoeffsType    *m_coeffWorkV;//[MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
+    CoeffsType    *m_coeffWorkY;//[MAX_CU_SIZE * MAX_CU_SIZE];
+    CoeffsType    *m_coeffWorkU;//[MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
+    CoeffsType    *m_coeffWorkV;//[MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
     // temporarily best coeffs for lower depths
-    __ALIGN32 CoeffsType    m_coeffStoredY[5+1][MAX_CU_SIZE * MAX_CU_SIZE];     // (+1 for Intra_NxN)
-    __ALIGN32 CoeffsType    m_coeffStoredU[5+1][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV]; // (+1 for Intra Chroma, temp until code is cleaned up)
-    __ALIGN32 CoeffsType    m_coeffStoredV[5+1][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV]; // (+1 for Intra Chroma, temp until code is cleaned up)
+    __ALIGN64 CoeffsType    m_coeffStoredY[5+1][MAX_CU_SIZE * MAX_CU_SIZE];     // (+1 for Intra_NxN)
+    __ALIGN64 CoeffsType    m_coeffStoredU[5+1][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV]; // (+1 for Intra Chroma, temp until code is cleaned up)
+    __ALIGN64 CoeffsType    m_coeffStoredV[5+1][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV]; // (+1 for Intra Chroma, temp until code is cleaned up)
     // inter reconstruct pixels
-    __ALIGN32 PixType       m_recStoredY[5+1][MAX_CU_SIZE * MAX_CU_SIZE];       // (+1 for Intra_NxN)
-    __ALIGN32 PixType       m_recStoredC[5+1][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV * 2];   // (+1 for Intra Chroma, temp until code is cleaned up)
-    __ALIGN32 PixType       m_interRecWorkY[MAX_CU_SIZE * MAX_CU_SIZE];
-    __ALIGN32 PixType       m_interRecWorkC[MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
+    __ALIGN64 PixType       m_recStoredY[5+1][MAX_CU_SIZE * MAX_CU_SIZE];       // (+1 for Intra_NxN)
+    __ALIGN64 PixType       m_recStoredC[5+1][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV * 2];   // (+1 for Intra Chroma, temp until code is cleaned up)
+    __ALIGN64 PixType       m_interRecWorkY[MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN64 PixType       m_interRecWorkC[MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
 #ifdef AMT_ALT_ENCODE
     // inter prediction pixels
-    __ALIGN32 PixType       m_interPredBufsY[5][2][MAX_CU_SIZE * MAX_CU_SIZE];
-    __ALIGN32 PixType       m_interPredBufsC[5][2][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV * 2];
+    __ALIGN64 PixType       m_interPredBufsY[5][2][MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN64 PixType       m_interPredBufsC[5][2][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV * 2];
     // inter residual
-    __ALIGN32 CoeffsType    m_interResidBufsY[5][2][MAX_CU_SIZE * MAX_CU_SIZE];
-    __ALIGN32 CoeffsType    m_interResidBufsU[5][2][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
-    __ALIGN32 CoeffsType    m_interResidBufsV[5][2][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
+    __ALIGN64 CoeffsType    m_interResidBufsY[5][2][MAX_CU_SIZE * MAX_CU_SIZE];
+    __ALIGN64 CoeffsType    m_interResidBufsU[5][2][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
+    __ALIGN64 CoeffsType    m_interResidBufsV[5][2][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
 #else
     // inter prediction pixels
     __ALIGN32 PixType       m_interPredBufsY[2][MAX_CU_SIZE * MAX_CU_SIZE];
@@ -236,9 +235,6 @@ public:
     __ALIGN32 CoeffsType    m_interResidBufsU[2][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
     __ALIGN32 CoeffsType    m_interResidBufsV[2][MAX_CU_SIZE * MAX_CU_SIZE / CHROMA_SIZE_DIV];
 #endif
-
-    // buffer contains the result of 1-ref interpolation between 2 PredInterUni calls
-    __ALIGN32 Ipp16s    m_interpBuf[MAX_CU_SIZE*MAX_CU_SIZE];
 
     PixType    *m_interPredY;
     PixType    *m_interPredC;
@@ -259,7 +255,7 @@ public:
     CoeffsType *m_interResidBestV;
 
     // stored CABAC contexts for each CU level (temp best)
-    CABAC_CONTEXT_H265  m_ctxStored[5+1][NUM_CABAC_CONTEXT]; // (+1 for Intra_NxN)
+    __ALIGN64 CABAC_CONTEXT_H265 m_ctxStored[5+1][(NUM_CABAC_CONTEXT+63)&~63]; // (+1 for Intra_NxN)
 
     CostType m_costStored[5+1]; // stored RD costs (+1 for Intra_NxN)
     CostType m_costCurr;        // current RD cost
@@ -339,10 +335,10 @@ public:
     Ipp8u m_adaptMinDepth;      // min CU depth from collocated CUs
     Ipp8u m_projMinDepth;      // min CU depth from root CU proj
     Ipp8u m_adaptMaxDepth;      // max CU depth from Projected CUs
-    Ipp32s HorMax;              // MV common limits in CU
-    Ipp32s HorMin;
-    Ipp32s VerMax;
-    Ipp32s VerMin;
+    Ipp16s HorMax;              // MV common limits in CU
+    Ipp16s HorMin;
+    Ipp16s VerMax;
+    Ipp16s VerMin;
     costStat *m_costStat;
 
     SaoEstimator m_saoEst;
@@ -355,17 +351,108 @@ public:
     bool    m_bIntraCandInBuf;
     Ipp32s  m_IntraCandMaxSatd;
 
-#ifdef MEMOIZE_SUBPEL
-    __ALIGN32 Ipp16s  m_predBufHi3[MAX_NUM_REF_IDX][4][4][(MAX_CU_SIZE+MEMOIZE_SUBPEL_EXT_W) * (MAX_CU_SIZE+MEMOIZE_SUBPEL_EXT_H)];
-    __ALIGN32 PixType m_predBuf3  [MAX_NUM_REF_IDX][4][4][(MAX_CU_SIZE+MEMOIZE_SUBPEL_EXT_W) * (MAX_CU_SIZE+MEMOIZE_SUBPEL_EXT_H)];
-    __ALIGN32 Ipp16s  m_predBufHi2[MAX_NUM_REF_IDX][4][4][((MAX_CU_SIZE>>1)+MEMOIZE_SUBPEL_EXT_W) * ((MAX_CU_SIZE>>1)+MEMOIZE_SUBPEL_EXT_H)];
-    __ALIGN32 PixType m_predBuf2  [MAX_NUM_REF_IDX][4][4][((MAX_CU_SIZE>>1)+MEMOIZE_SUBPEL_EXT_W) * ((MAX_CU_SIZE>>1)+MEMOIZE_SUBPEL_EXT_H)];
-    __ALIGN32 Ipp16s  m_predBufHi1[MAX_NUM_REF_IDX][4][4][((MAX_CU_SIZE>>2)+MEMOIZE_SUBPEL_EXT_W) * ((MAX_CU_SIZE>>2)+MEMOIZE_SUBPEL_EXT_H)];
-    __ALIGN32 PixType m_predBuf1  [MAX_NUM_REF_IDX][4][4][((MAX_CU_SIZE>>2)+MEMOIZE_SUBPEL_EXT_W) * ((MAX_CU_SIZE>>2)+MEMOIZE_SUBPEL_EXT_H)];
-    __ALIGN32 Ipp16s  m_predBufHi0[MAX_NUM_REF_IDX][4][4][((MAX_CU_SIZE>>3)+MEMOIZE_SUBPEL_EXT_W) * ((MAX_CU_SIZE>>3)+MEMOIZE_SUBPEL_EXT_H)];
-    __ALIGN32 PixType m_predBuf0  [MAX_NUM_REF_IDX][4][4][((MAX_CU_SIZE>>3)+MEMOIZE_SUBPEL_EXT_W) * ((MAX_CU_SIZE>>3)+MEMOIZE_SUBPEL_EXT_H)];
+    union {
+        struct {
+            __ALIGN64 Ipp16s srcScanOrder[32*32];
+            __ALIGN64 Ipp16u qlevels[32*32];
+            Ipp8u antialiasing0;
+            __ALIGN64 Ipp64s zeroCosts[32*32];
+            Ipp8u antialiasing1;
+            __ALIGN64 Ipp64f cost_nz_level[32*32];
+            Ipp8u antialiasing2;
+            __ALIGN64 Ipp64f cost_zero_level[32*32];
+            Ipp8u antialiasing3;
+            __ALIGN64 Ipp64f cost_sig[32*32];
+            Ipp8u antialiasing4;
+            __ALIGN64 Ipp64f cost_coeff_group_sig[64];
+            __ALIGN64 Ipp8u  sig_coeff_group_flag[64];
+            // sbh
+            __ALIGN64 Ipp8u  sbh_possible[64];
+            __ALIGN64 Ipp32s rate_inc_up[32*32];
+            Ipp8u antialiasing5;
+            __ALIGN64 Ipp32s rate_inc_down[32*32];
+            Ipp8u antialiasing6;
+            __ALIGN64 Ipp32s sig_rate_delta[32*32];
+            Ipp8u antialiasing7;
+            __ALIGN64 Ipp32s delta_u[32*32];
+            Ipp8u antialiasing8;
+        } rdoq;
 
-    ALIGN_DECL(32) PixType m_gaccAmvpPredBuf[3][MAX_CU_SIZE*MAX_CU_SIZE];
+        struct {
+            __ALIGN64 Ipp16s nzcoeffs[32*32];
+        } fastParametricCoeffCostEstimator;
+
+        struct {
+            __ALIGN64 Ipp32s delta_u[32*32];
+        } quantFwdTuSbh;
+
+        Ipp8u antialiasing9;
+        struct {
+            __ALIGN64 PixType reconU[64*64];
+            Ipp8u antialiasing10;
+            __ALIGN64 PixType reconV[64*64];
+            Ipp8u antialiasing11;
+            __ALIGN64 PixType originU[64*64];
+            Ipp8u antialiasing12;
+            __ALIGN64 PixType originV[64*64];
+            Ipp8u antialiasing13;
+        } sao;
+
+        struct {
+            __ALIGN64 Ipp16s  temp[32*32];
+            __ALIGN64 __m128i buffr[32*4];
+        } dct;
+
+        struct {
+            struct {
+                __ALIGN64 Ipp16s tmpPels[80*72];
+                __ALIGN64 PixType subpel[80*66];
+            } meSubPelBatched;
+
+            union {
+                struct {
+                    __ALIGN64 Ipp16s tmpBuf[64*72];
+                } meInterpolate;
+                struct {
+                    __ALIGN64 Ipp16s tmpBuf[88*88];
+                } meInterpolateSave;
+            };
+
+            struct {
+                __ALIGN64 Ipp16s tmpBuf[64*64+64*16];
+            } interpWithAvg;
+
+            struct {
+                __ALIGN64 Ipp16s tmpBuf[64*72];
+                __ALIGN64 Ipp16s interpBuf[64*64]; // buffer contains the result of 1-ref interpolation between 2 PredInterUni calls
+            } predInterUni;
+
+            struct {
+                __ALIGN64 PixType predBuf[64*64];
+                Ipp8u antialiasing17;
+            } matchingMetric;
+
+            struct {
+                __ALIGN64 Ipp16s predBufHi[2*64*64];
+            } matchingMetricPuCombine;
+        } interp;
+
+        Ipp8u antialiasing19;
+
+    } m_scratchPad;
+
+
+#ifdef MEMOIZE_SUBPEL
+    __ALIGN64 Ipp16s  m_predBufHi3[MAX_NUM_REF_IDX][4][4][(MAX_CU_SIZE+MEMOIZE_SUBPEL_EXT_W) * (MAX_CU_SIZE+MEMOIZE_SUBPEL_EXT_H)];
+    __ALIGN64 PixType m_predBuf3  [MAX_NUM_REF_IDX][4][4][(MAX_CU_SIZE+MEMOIZE_SUBPEL_EXT_W) * (MAX_CU_SIZE+MEMOIZE_SUBPEL_EXT_H)];
+    __ALIGN64 Ipp16s  m_predBufHi2[MAX_NUM_REF_IDX][4][4][((MAX_CU_SIZE>>1)+MEMOIZE_SUBPEL_EXT_W) * ((MAX_CU_SIZE>>1)+MEMOIZE_SUBPEL_EXT_H)];
+    __ALIGN64 PixType m_predBuf2  [MAX_NUM_REF_IDX][4][4][((MAX_CU_SIZE>>1)+MEMOIZE_SUBPEL_EXT_W) * ((MAX_CU_SIZE>>1)+MEMOIZE_SUBPEL_EXT_H)];
+    __ALIGN64 Ipp16s  m_predBufHi1[MAX_NUM_REF_IDX][4][4][((MAX_CU_SIZE>>2)+MEMOIZE_SUBPEL_EXT_W) * ((MAX_CU_SIZE>>2)+MEMOIZE_SUBPEL_EXT_H)];
+    __ALIGN64 PixType m_predBuf1  [MAX_NUM_REF_IDX][4][4][((MAX_CU_SIZE>>2)+MEMOIZE_SUBPEL_EXT_W) * ((MAX_CU_SIZE>>2)+MEMOIZE_SUBPEL_EXT_H)];
+    __ALIGN64 Ipp16s  m_predBufHi0[MAX_NUM_REF_IDX][4][4][((MAX_CU_SIZE>>3)+MEMOIZE_SUBPEL_EXT_W) * ((MAX_CU_SIZE>>3)+MEMOIZE_SUBPEL_EXT_H)];
+    __ALIGN64 PixType m_predBuf0  [MAX_NUM_REF_IDX][4][4][((MAX_CU_SIZE>>3)+MEMOIZE_SUBPEL_EXT_W) * ((MAX_CU_SIZE>>3)+MEMOIZE_SUBPEL_EXT_H)];
+
+    __ALIGN64 PixType m_gaccAmvpPredBuf[3][MAX_CU_SIZE*MAX_CU_SIZE];
     PixType *m_gaccAmvpPred[3];
     Ipp32s   m_gaccAmvpPredPitch[3];
 
@@ -379,7 +466,7 @@ public:
 
 #define INTERP_BUF_SZ 16 // must be power of 2, need min 10 bufs for effectiveness -NG
     struct interp_store {
-        __ALIGN32 Ipp16s predBufY[MAX_CU_SIZE*MAX_CU_SIZE];
+        __ALIGN64 Ipp16s predBufY[MAX_CU_SIZE*MAX_CU_SIZE];
         Ipp8s refIdx;
         H265MV mv;
     } m_interpBufBi[INTERP_BUF_SZ];
@@ -391,7 +478,7 @@ public:
     Ipp32s m_satd8CandBuf1[MEMOIZE_NUMCAND][((MAX_CU_SIZE>>3)>>2) *((MAX_CU_SIZE>>3)>>2)];
     Ipp32s m_satd8CandBuf2[MEMOIZE_NUMCAND][((MAX_CU_SIZE>>3)>>1) *((MAX_CU_SIZE>>3)>>1)];
     Ipp32s m_satd8CandBuf3[MEMOIZE_NUMCAND][((MAX_CU_SIZE>>3)   ) *((MAX_CU_SIZE>>3)   )];
-    __ALIGN32 PixType m_predBufCand3  [MEMOIZE_NUMCAND][(MAX_CU_SIZE) * (MAX_CU_SIZE)];
+    __ALIGN64 PixType m_predBufCand3  [MEMOIZE_NUMCAND][(MAX_CU_SIZE) * (MAX_CU_SIZE)];
     __ALIGN32 PixType m_predBufCand2  [MEMOIZE_NUMCAND][(MAX_CU_SIZE>>1) * (MAX_CU_SIZE>>1)];
     __ALIGN32 PixType m_predBufCand1  [MEMOIZE_NUMCAND][(MAX_CU_SIZE>>2) * (MAX_CU_SIZE>>2)];
     __ALIGN32 PixType m_predBufCand0  [MEMOIZE_NUMCAND][(MAX_CU_SIZE>>3) * (MAX_CU_SIZE>>3)];
@@ -402,9 +489,6 @@ public:
 
     inline bool  IsIntra(Ipp32u partIdx)
     { return m_data[partIdx].predMode == MODE_INTRA; }
-
-    inline Ipp8u GetTransformSkip(Ipp32u idx,EnumTextType type)
-    { return m_data[idx].transformSkipFlag[h265_type2idx[type]];}
 
     inline Ipp8u GetCbf(Ipp32u idx, EnumTextType type, Ipp32u trDepth )
     { return (Ipp8u)( ( m_data[idx].cbf[h265_type2idx[type]] >> trDepth ) & 0x1 ); }
@@ -470,6 +554,11 @@ public:
     bool CheckIdenticalMotion(const Ipp8s refIdx[2], const H265MV mvs[2]) const;
 
     Ipp32s ClipMV(H265MV &rcMv) const; // returns 1 if changed, otherwise 0
+    inline void ClipMV_NR(H265MV& rcMv)
+    {
+        rcMv.mvx = Saturate(HorMin, HorMax, rcMv.mvx);
+        rcMv.mvy = Saturate(VerMin, VerMax, rcMv.mvy);
+    }
 
     H265CUData *GetQpMinCuLeft(Ipp32u &uiLPartUnitIdx, Ipp32u uiCurrAbsIdxInLCU,
                                bool bEnforceSliceRestriction = true,
@@ -512,6 +601,8 @@ public:
                       Ipp32u absTuPartIdx, Ipp32u depth, Ipp32u width, Ipp32u trIdx,
                       Ipp8u& codeDqp, Ipp8u rd_mode = RD_CU_ALL);
 
+    void PutLumaTu(H265BsFake *bs, Ipp32u offsetLuma, Ipp32s absPartIdx, Ipp32u depth, Ipp32u width, Ipp32u trIdx);
+
     template <class H265Bs>
     void EncodeSao(H265Bs *bs, Ipp32s absPartIdx, Ipp32s depth, Ipp8u rdMode,
                    SaoCtuParam &saoBlkParam, bool leftMergeAvail, bool aboveMergeAvail);
@@ -545,7 +636,7 @@ public:
     template <EnumTextType PLANE_TYPE>
     void PredInterUni(Ipp32s puX, Ipp32s puY, Ipp32s puW, Ipp32s puH, Ipp32s listIdx,
                       const Ipp8s refIdx[2], const H265MV mvs[2], PixType *dst, Ipp32s dstPitch,
-                      Ipp32s isBiPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage, Ipp32s isFast);
+                      Ipp32s isBiPred, MFX_HEVC_PP::EnumAddAverageType eAddAverage);
     template <EnumTextType PLANE_TYPE>
     void InterPredCu(Ipp32s absPartIdx, Ipp8u depth, PixType *dst, Ipp32s pitchDst);
 
@@ -578,9 +669,9 @@ public:
 
     void QuantInvTu(const CoeffsType *coeff, CoeffsType *resid, Ipp32s width, Ipp32s isLuma);
 
-    void QuantFwdTu(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width, Ipp32s isLuma, Ipp32s isIntra);
+    Ipp8u QuantFwdTu(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width, Ipp32s isLuma, Ipp32s isIntra); // returns num nz coeffs
 
-    void QuantFwdTuBase(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width, Ipp32s isLuma);
+    Ipp8u QuantFwdTuBase(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width, Ipp32s isLuma); // returns num nz coeffs
 
     void Deblock();
 
@@ -607,8 +698,6 @@ public:
                      Ipp8u qp);
 
     void FillSubPartIntraLumaDir(Ipp32s absPartIdx, Ipp8u depthCu, Ipp8u trDepth, Ipp8u lumaDir);
-
-    void CopySubPartTo(H265CUData *dataCopy, Ipp32s absPartIdx, Ipp8u depthCu, Ipp8u trDepth);
 
     void CalcCostLuma(Ipp32s absPartIdx, Ipp8u depth, Ipp8u trDepth, CostOpt costOpt, IntraPredOpt intraPredOpt);
 
@@ -655,8 +744,6 @@ public:
     Ipp32s MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx);
 
     Ipp32s PuCost(H265MEInfo *meInfo);
-
-    bool CheckGpuIntraCost(Ipp32s absPartIdx, Ipp32s depth) const;
 
 #ifdef AMT_INT_ME_SEED
     void MeIntPel(const H265MEInfo *meInfo, const AmvpInfo *predInfo, const FrameData *ref,
@@ -715,10 +802,8 @@ public:
 
     void TuMaxSplitInter(Ipp32s absPartIdx, Ipp8u trIdxMax);
 
-    void DetailsXY(H265MEInfo *meInfo) const;
-
     void MeInterpolate(const H265MEInfo* meInfo, const H265MV *MV, PixType *in_pSrc,
-                       Ipp32s in_SrcPitch, PixType *buf, Ipp32s buf_pitch, Ipp32s isFast) const;
+                       Ipp32s in_SrcPitch, PixType *buf, Ipp32s buf_pitch) const;
 
     void MeInterpolateCombine(const H265MEInfo* meInfo, const H265MV *MV, PixType *in_pSrc,
                        Ipp32s in_SrcPitch, Ipp16s *bufHi, Ipp32s buf_pitch) const;
@@ -734,8 +819,6 @@ public:
     Ipp32s MatchingMetricPuMem(const PixType *src, const H265MEInfo *meInfo, const H265MV *mv, 
                             const FrameData *refPic, Ipp32s useHadamard, Ipp32s refIdxMem, Ipp32s size, 
                             Ipp32s& hadFoundSize);
-    Ipp32s MatchingMetricPuMemSubpelUse(const PixType *src, const H265MEInfo *meInfo, const H265MV *mv,
-                                         const FrameData *refPic, Ipp32s useHadamard, Ipp32s refIdxMem, Ipp32s size);
 
     Ipp32s tuHadSave(const PixType* src, Ipp32s pitchSrc, const PixType* rec, Ipp32s pitchRec,
              Ipp32s width, Ipp32s height, Ipp32s *satd, Ipp32s memPitch);
@@ -822,11 +905,7 @@ public:
     Ipp32s MatchingMetricBipredPu(const PixType *src, const H265MEInfo *meInfo, const Ipp8s refIdx[2],
                                   const H265MV mvs[2], Ipp32s useHadamard);
 
-    Ipp32s MvCost1RefLog(H265MV mv, const AmvpInfo *predInfo) const;
-
-    Ipp32s MvCost1RefLog(Ipp16s mvx, Ipp16s mvy, const AmvpInfo *predInfo) const;
-
-    void InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTemp, Ipp32s cuAddr,
+    void InitCu(H265VideoParam *_par, H265CUData *_data, H265CUData *_dataTemp, Ipp32s ctbRow, Ipp32s ctbCol,
                 H265BsFake *_bsf, H265Slice *cslice, ThreadingTaskSpecifier stage,
                 costStat* _costStat, const Frame* frame, CoeffsType *m_coeffWork);
 
@@ -895,7 +974,6 @@ private:
     //void FillZero(Ipp32s absPartIdx, Ipp8u depth);
 };
 
-
 inline Ipp32u GetCtxQtCbfLuma(Ipp32u trDepth) { return !trDepth; }
 inline Ipp32u GetCtxQtCbfChroma(Ipp32u trDepth) { return trDepth; }
 inline Ipp32u GetCtxQtCbf(EnumTextType type, Ipp32u trDepth) { return type == TEXT_LUMA ? GetCtxQtCbfLuma(trDepth) : GetCtxQtCbfChroma(trDepth); }
@@ -907,10 +985,9 @@ template <class H265Bs>
 void CodeSaoCtbParam(H265Bs *bs, SaoCtuParam &saoBlkParam, bool *sliceEnabled, bool leftMergeAvail,
                      bool aboveMergeAvail, bool onlyEstMergeInfo);
 
-Ipp32s tuHad(const Ipp8u *src, Ipp32s pitch_src, const Ipp8u *rec, Ipp32s pitch_rec,
-             Ipp32s width, Ipp32s height);
-Ipp32s tuHad(const Ipp16u *src, Ipp32s pitch_src, const Ipp16u *rec, Ipp32s pitch_rec,
-             Ipp32s width, Ipp32s height);
+Ipp32s tuHad(const Ipp8u *src, Ipp32s pitch_src, const Ipp8u *rec, Ipp32s pitch_rec, Ipp32s width, Ipp32s height);
+Ipp32s tuHad(const Ipp16u *src, Ipp32s pitch_src, const Ipp16u *rec, Ipp32s pitch_rec, Ipp32s width, Ipp32s height);
+template <class T> Ipp32s tuHadNxN(const T *src, Ipp32s pitch_src, const T *rec, Ipp32s pitch_rec, Ipp32s size);
 
 Ipp32u GetQuadtreeTuLog2MinSizeInCu(const H265VideoParam *par, Ipp32u log2CbSize,
                                     Ipp8u partSize, Ipp8u predMode);

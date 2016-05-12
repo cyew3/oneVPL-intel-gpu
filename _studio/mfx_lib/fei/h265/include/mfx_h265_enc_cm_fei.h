@@ -41,7 +41,6 @@ class H265CmCtx {
 private:
     /* internal helper functions */
     void RunVmeKernel(CmEvent **lastEvent, CmSurface2DUP **dist, CmSurface2DUP **mv, mfxFEIH265InputSurface *picBufInput, mfxFEIH265ReconSurface *picBufRef);
-    void ConvertBitDepth(void *inPtr, mfxU32 inBits, mfxU32 inPitch, void *outPtr, mfxU32 outBits);
     mfxStatus CopyInputFrameToGPU(CmEvent **lastEvent, mfxFEIH265Input *in);
     mfxStatus CopyReconFrameToGPU(CmEvent **lastEvent, mfxFEIH265Input *in);
 
@@ -96,6 +95,7 @@ private:
     mfxU32 numRefFrames;
     mfxU32 numIntraModes;
     mfxU32 fourcc;
+    mfxU32 bppShift;
     mfxU32 targetUsage;
     mfxU32 enableChromaSao;
     mfxU32 enableInterp;

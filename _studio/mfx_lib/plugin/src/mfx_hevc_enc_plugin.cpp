@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_hevc_enc_plugin.h
 
@@ -52,7 +52,7 @@ MFXHEVCEncoderPlugin::MFXHEVCEncoderPlugin(bool CreateByDispatcher)
     memset(&m_PluginParam, 0, sizeof(mfxPluginParam));
 
     m_PluginParam.CodecId = MFX_CODEC_HEVC;
-    m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
+    m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_PARALLEL;
     m_PluginParam.MaxThreadNum = vm_sys_info_get_cpu_num();
     m_PluginParam.APIVersion.Major = MFX_VERSION_MAJOR;
     m_PluginParam.APIVersion.Minor = MFX_VERSION_MINOR;

@@ -26,30 +26,23 @@
 
 namespace MFX_HEVC_PP
 {
-
-    void H265_FASTCALL MAKE_NAME(h265_QuantFwd_16s)(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift)
+    Ipp8u H265_FASTCALL MAKE_NAME(h265_QuantFwd_16s)(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scale, int offset, int shift)
     {
-        Ipp32s sign;
-        Ipp32s aval;
-        Ipp32s qval;
-
+        Ipp32s cbf = 0;
 #ifdef __INTEL_COMPILER
 #pragma ivdep
 #pragma vector always
 #endif
-
-        for (Ipp32s i = 0; i < len; i++)
-        {
-            sign = pSrc[i] >> 15;
-
-            aval = abs((Ipp32s)pSrc[i]);        // remove sign
-            qval = (aval * scale + offset) >> shift;
-            qval = (qval ^ sign) - sign;        // restore sign
-
+        for (Ipp32s i = 0; i < len; i++) {
+            Ipp32s sign = pSrc[i] >> 15;
+            Ipp32s aval = abs((Ipp32s)pSrc[i]); // remove sign
+            Ipp32s qval = (aval * scale + offset) >> shift;
+            qval = (qval ^ sign) - sign; // restore sign
+            cbf |= qval;
             pDst[i] = (Ipp16s)Saturate(-32768, 32767, qval);
         }        
-
-    } // void h265_QuantFwd_16s(const Ipp16s* pSrc, Ipp16s* pDst, int len, int scaleLevel, int scaleOffset, int scale)
+        return (Ipp8u)!!cbf;
+    }
 
 
     Ipp32s H265_FASTCALL MAKE_NAME(h265_QuantFwd_SBH_16s)(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scale, int offset, int shift)
@@ -77,15 +70,18 @@ namespace MFX_HEVC_PP
 
     } // Ipp32s h265_QuantFwd_SBH_16s(const Ipp16s* pSrc, Ipp16s* pDst, Ipp32s*  pDelta, int len, int scaleLevel, int scaleOffset, int scale)
 
-    void H265_FASTCALL MAKE_NAME(h265_Quant_zCost_16s)(const Ipp16s* pSrc, Ipp32u* qLevels, Ipp64s* zlCosts, Ipp32s len, Ipp32s qScale, Ipp32s qoffset, Ipp32s qbits, Ipp32s rdScale0)
+    Ipp64s H265_FASTCALL MAKE_NAME(h265_Quant_zCost_16s)(const Ipp16s* pSrc, Ipp16u* qLevels, Ipp64s* zlCosts, Ipp32s len, Ipp32s qScale, Ipp32s qoffset, Ipp32s qbits, Ipp32s rdScale0)
     {
         Ipp32s i, alvl;
+        Ipp64s totZlCost = 0;
         for (i = 0; i < len; i ++) 
         {
             alvl          = abs( pSrc[ i ] );
-            qLevels[ i ]  = ( alvl*qScale + qoffset )>>qbits;
+            qLevels[ i ]  = (Ipp16u)(( alvl*qScale + qoffset )>>qbits);
             zlCosts[ i ]  = (Ipp64s)(alvl * alvl) * rdScale0;
+            totZlCost += zlCosts[ i ];
         }
+        return totZlCost;
     }
 
 } // end namespace MFX_HEVC_PP

@@ -97,7 +97,7 @@ template <typename PixType, class H265Bs>
 static
 void h265_code_mvp_idx (H265Bs *bs, H265CU<PixType>* pCU, Ipp32s abs_part_idx, EnumRefPicList ref_list )
 {
-    Ipp32s symbol = pCU->m_data[abs_part_idx].mvpIdx[ref_list];
+    Ipp32s symbol = ref_list ? pCU->m_data[abs_part_idx].flags.mvpIdx1 : pCU->m_data[abs_part_idx].flags.mvpIdx0;
     Ipp32s num = MAX_NUM_AMVP_CANDS;
 
     h265_write_unary_max_symbol(bs, symbol, CTX(bs,MVP_IDX_HEVC), 1, num-1);
@@ -479,7 +479,10 @@ void h265_code_delta_qp(H265Bs *bs, H265CU<PixType>* pCU, Ipp32s abs_part_idx, I
     Ipp32s dqp  = pCU->m_data[abs_part_idx].qp - pCU->GetRefQp( abs_part_idx );
 
     Ipp32s qp_bd_offset_y = 6 * (bitdepth - 8);
-    dqp = (dqp + 78 + qp_bd_offset_y + (qp_bd_offset_y/2)) % (52 + qp_bd_offset_y) - 26 - (qp_bd_offset_y/2);
+    dqp = dqp + 78 + qp_bd_offset_y + qp_bd_offset_y / 2;
+    while (dqp >= 52 + qp_bd_offset_y)
+        dqp -= 52 + qp_bd_offset_y;
+    dqp -= 26 + qp_bd_offset_y/2;
 
     Ipp32u abs_dqp = ABS(dqp);
     Ipp32u tu_value = MIN((Ipp32u)abs_dqp, CU_DQP_TU_CMAX);
@@ -516,7 +519,7 @@ void h265_code_transform_skip_flags(H265Bs *bs, H265CU<PixType>* pCU, Ipp32s abs
         width == 4)
     {
         bs->EncodeSingleBin_CABAC( CTX(bs,TRANSFORMSKIP_FLAG_HEVC) +
-            (type ? TEXT_CHROMA: TEXT_LUMA), pCU->GetTransformSkip(abs_part_idx,type));
+            (type ? TEXT_CHROMA: TEXT_LUMA), 0/*pCU->GetTransformSkip(abs_part_idx,type)*/);
     }
 }
 
@@ -531,9 +534,13 @@ static Ipp32s h265_count_nonzero_coeffs(CoeffsType* coeff, Ipp32u size)
 {
     __m128i zero = _mm_setzero_si128();
     __m128i cnt = _mm_set1_epi16(size>>3);
-    for (Ipp32u i = 0; i < size; i += 8) {
-        __m128i coefs = _mm_load_si128((__m128i*)(coeff+i));
-        __m128i z = _mm_cmpeq_epi16(coefs, zero);
+    __m128i coefs, z;
+    for (Ipp32u i = 0; i < size; i += 16) {
+        coefs = _mm_load_si128((__m128i*)(coeff+i));
+        z = _mm_cmpeq_epi16(coefs, zero);
+        cnt = _mm_add_epi16(cnt, z);
+        coefs = _mm_load_si128((__m128i*)(coeff+i+8));
+        z = _mm_cmpeq_epi16(coefs, zero);
         cnt = _mm_add_epi16(cnt, z);
     }
     cnt = _mm_hadd_epi16(cnt, cnt);
@@ -710,22 +717,42 @@ static Ipp32s log2_by2(Ipp32u v)
     return log2(v*v);
 }
 
-static Ipp32s FastParametricCoeffCostEstimator(CoeffsType *x, Ipp32u n, Ipp32s num_sig, Ipp32s qp, bool isIntra)
+inline void H265_FASTCALL Rast2Scan4x4(const Ipp16s *src, Ipp32s pitch, Ipp16s *dst)
 {
-    Ipp32s b, d, z;
+    __m128i a,b,c,d,e,f;
+    a = _mm_loadl_epi64((__m128i*)(src+0*pitch));
+    b = _mm_loadl_epi64((__m128i*)(src+1*pitch));
+    c = _mm_loadl_epi64((__m128i*)(src+2*pitch));
+    d = _mm_loadl_epi64((__m128i*)(src+3*pitch));
+    e = _mm_unpacklo_epi16(b, c);
+    f = _mm_unpacklo_epi16(a, e);
+    f = _mm_insert_epi16(f, src[3*pitch], 6);
+    f = _mm_shufflehi_epi16(f, _MM_SHUFFLE(3,2,0,1));
+    _mm_store_si128((__m128i*)dst, f);
+    e = _mm_unpackhi_epi64(e, e);
+    e = _mm_unpacklo_epi16(e, d);
+    e = _mm_shufflelo_epi16(e, _MM_SHUFFLE(2,3,1,0));
+    e = _mm_insert_epi16(e, src[3], 1);
+    _mm_store_si128((__m128i*)dst+1, e);
+}
+
+static Ipp32s FastParametricCoeffCostEstimator(CoeffsType *x, Ipp32u n, Ipp32s num_sig, Ipp32s qp, bool isIntra, Ipp16s *nzcoeffs)
+{
+    CoeffsType d;
+    Ipp32s z;
     Ipp32s c=0, zero_run=0;
     Ipp32u i=0;
     const Ipp32s incVlc[] = {0,4,8,12,24,48,32768};      // maximum vlc = 6!
-    Ipp32s iscancoeff[MAX_CU_SIZE*MAX_CU_SIZE];
+    CoeffsType *iscancoeff = nzcoeffs;
     Ipp32s levels=0;
     Ipp32s vlcnum=0;
     Ipp32s u=0, v=0;
     Ipp32u N= n*n;
-    const char (*scan)[2];
-    if(n==32)       scan = SCAN32X32;
-    else if(n==16)  scan = SCAN16X16;
-    else if(n==8)   scan = SCAN8X8;
-    else            scan = SCAN4X4;
+    const unsigned short *scan;
+    if(n==32)       scan = h265_sig_last_scan[2][4];
+    else if(n==16)  scan = h265_sig_last_scan[2][3];
+    else if(n==8)   scan = h265_sig_last_scan[2][2];
+    else            scan = h265_sig_last_scan[2][1];
 
     const Ipp32s EffciencyParameter[4] = {200, 196, 192, 188};
     Ipp32s ctx0 = 0;
@@ -738,9 +765,7 @@ static Ipp32s FastParametricCoeffCostEstimator(CoeffsType *x, Ipp32u n, Ipp32s n
     for (i=0; i<N; i++) 
     {
         /* # bits required for vlc coding gen lap dist */ 
-        v=scan[i][0];
-        u=scan[i][1];
-        d = x[u*n+v];
+        d = x[scan[i]];
 
         if (!d) {
             zero_run++;
@@ -787,7 +812,8 @@ void H265CU<PixType>::CodeCoeffNxN(H265Bs *bs, H265CU<PixType>* pCU, CoeffsType*
 
     if(!bs->isReal() && m_par->FastCoeffCost && !m_isRdoq) {
         // A radical approach, est coeff cost & match efficiency. (suboptimal only for higher TUs)
-        Ipp32s est_bits=FastParametricCoeffCostEstimator(coeffs, width, num_sig, pCU->m_data[abs_part_idx].qp, pCU->m_data[abs_part_idx].predMode == MODE_INTRA);
+        Ipp32s est_bits=FastParametricCoeffCostEstimator(coeffs, width, num_sig, pCU->m_data[abs_part_idx].qp,
+            pCU->m_data[abs_part_idx].predMode == MODE_INTRA, m_scratchPad.fastParametricCoeffCostEstimator.nzcoeffs);
         bs->m_base.m_bitOffset += est_bits;
         return;
     }
@@ -808,13 +834,13 @@ void H265CU<PixType>::CodeCoeffNxN(H265Bs *bs, H265CU<PixType>* pCU, CoeffsType*
 
     const Ipp16u *scan = h265_sig_last_scan[scan_idx - 1][log2_block_size - 1];
 
-    Ipp32u sig_coeff_group_flag[MLS_GRP_NUM];
+    Ipp8u sig_coeff_group_flag[MLS_GRP_NUM];
     const Ipp32u shift = MLS_CG_SIZE >> 1;
     const Ipp32u num_blk_side = width >> shift;
     const Ipp32u log2_num_blk_side = log2_block_size - shift;
     const Ipp32u mask_num_blk_side_x = num_blk_side - 1;
     const Ipp32u mask_num_blk_side_y = mask_num_blk_side_x << log2_num_blk_side;
-    memset(sig_coeff_group_flag, 0, sizeof(Ipp32u) << (log2_num_blk_side * 2));
+    memset(sig_coeff_group_flag, 0, sizeof(sig_coeff_group_flag[0]) << (log2_num_blk_side * 2));
 
     // Find position of last coefficient
     Ipp32s scan_pos_last = -1;
@@ -1063,13 +1089,57 @@ void h265_encode_qp(H265Bs *bs, H265CU* pCU, Ipp32s qp_bd_offset_y, Ipp32s abs_p
     }
 }
 #endif
+
+template <typename PixType>
+void H265CU<PixType>::PutLumaTu(H265BsFake *bs, Ipp32u offset_luma, Ipp32s abs_part_idx,
+                                Ipp32u depth, Ipp32u width, Ipp32u tr_idx)
+{
+    const Ipp32u Log2TrafoSize = m_par->Log2MaxCUSize - depth;
+    Ipp32u part_num_mask = (4 << ( (m_par->MaxCUDepth - depth) * 2 )) - 1;
+
+    if (Log2TrafoSize == m_par->QuadtreeTULog2MinSize)
+        ;
+    else if (Log2TrafoSize == H265Enc::GetQuadtreeTuLog2MinSizeInCu(
+            m_par, m_par->Log2MaxCUSize - m_data[abs_part_idx].depth,
+            m_data[abs_part_idx].partSize, m_data[abs_part_idx].predMode))
+        ;
+    else {
+        assert( Log2TrafoSize > H265Enc::GetQuadtreeTuLog2MinSizeInCu(m_par, m_par->Log2MaxCUSize - m_data[abs_part_idx].depth,
+            m_data[abs_part_idx].partSize, m_data[abs_part_idx].predMode) );
+        bs->EncodeSingleBin_CABAC(CTX(bs,TRANS_SUBDIV_FLAG_HEVC) + 5 - Log2TrafoSize, 0);
+    }
+
+    const Ipp32u tr_depth_cur = depth - m_data[abs_part_idx].depth;
+    const bool first_cbf_of_cu = tr_depth_cur == 0;
+    if (first_cbf_of_cu) {
+        bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) + NUM_QT_CBF_CTX + GetCtxQtCbfChroma(tr_depth_cur), 0);
+        if (m_par->chroma422)
+            bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) + NUM_QT_CBF_CTX + GetCtxQtCbfChroma(tr_depth_cur), 0);
+        bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) + NUM_QT_CBF_CTX + GetCtxQtCbfChroma(tr_depth_cur), 0);
+        if (m_par->chroma422)
+            bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) + NUM_QT_CBF_CTX + GetCtxQtCbfChroma(tr_depth_cur), 0);
+    }
+
+    if (m_data[abs_part_idx].predMode != MODE_INTRA && depth == m_data[abs_part_idx].depth) {
+        assert(GetCbf(abs_part_idx, TEXT_LUMA, 0));
+    } else {
+        bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) + GetCtxQtCbfLuma(m_data[abs_part_idx].trIdx), 1);
+    }
+
+    if (m_par->UseDQP) // dQP: only for LCU once
+        h265_code_delta_qp(bs, this, abs_part_idx, m_par->bitDepthLuma);
+
+    CodeCoeffNxN(bs, this, m_coeffWorkY + offset_luma, abs_part_idx, width, TEXT_LUMA);
+}
+
+
 template <typename PixType>
 template <class H265Bs>
 void H265CU<PixType>::PutTransform(H265Bs* bs,Ipp32u offset_luma, Ipp32u offset_chroma,
-                                Ipp32s abs_part_idx, Ipp32u abs_tu_part_idx,
-                                Ipp32u depth, Ipp32u width,
-                                Ipp32u tr_idx, Ipp8u& code_dqp,
-                                Ipp8u rd_mode )
+                                   Ipp32s abs_part_idx, Ipp32u abs_tu_part_idx,
+                                   Ipp32u depth, Ipp32u width,
+                                   Ipp32u tr_idx, Ipp8u& code_dqp,
+                                   Ipp8u rd_mode )
 {
     const Ipp32u subdiv = (Ipp8u)(m_data[abs_part_idx].trIdx + m_data[abs_part_idx].depth) > depth;
     const Ipp32u Log2TrafoSize = m_par->Log2MaxCUSize - depth;
@@ -1304,6 +1374,7 @@ void H265CU<PixType>::EncodeCoeff(H265Bs* bs, Ipp32s abs_part_idx, Ipp32u depth,
 
     PutTransform(bs, luma_offset, chroma_offset, abs_part_idx, abs_part_idx, depth, width, 0, code_dqp, rd_mode);
 }
+
 
 static
 Ipp32u h265_PU_offset[8] = { 0, 8, 4, 4, 2, 10, 1, 5};
@@ -1804,6 +1875,8 @@ template void H265CU<Ipp16u>::CodeIntradirLumaAng(H265BsReal *bs, Ipp32s absPart
 template void H265CU<Ipp16u>::CodeIntradirLumaAng(H265BsFake *bs, Ipp32s absPartIdx, Ipp8u multiple);
 template CostType H265CU<Ipp8u>::GetIntraChromaModeCost(Ipp32s absPartIdx);
 template CostType H265CU<Ipp16u>::GetIntraChromaModeCost(Ipp32s absPartIdx);
+template void H265CU<Ipp8u>::PutLumaTu(H265BsFake *bs, Ipp32u offsetLuma, Ipp32s absPartIdx, Ipp32u depth, Ipp32u width, Ipp32u trIdx);
+template void H265CU<Ipp16u>::PutLumaTu(H265BsFake *bs, Ipp32u offsetLuma, Ipp32s absPartIdx, Ipp32u depth, Ipp32u width, Ipp32u trIdx);
 
 } // namespace
 

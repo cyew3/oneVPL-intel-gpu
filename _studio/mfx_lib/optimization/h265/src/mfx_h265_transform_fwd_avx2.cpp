@@ -389,10 +389,10 @@ ALIGN_DECL(32) static const int c25[8] = {  25,  25,  25,  25,  25,  25,  25,  2
 ALIGN_DECL(32) static const int c09[8] = {   9,   9,   9,   9,   9,   9,   9,   9 };
 
 template <int SHIFT_FRW16_1ST>
-static void h265_DCT16x16Fwd_16s_Kernel(const short *H265_RESTRICT src, Ipp32s srcStride, short *H265_RESTRICT dst)
+static void h265_DCT16x16Fwd_16s_Kernel(const short *H265_RESTRICT src, Ipp32s srcStride, short *H265_RESTRICT dst, Ipp16s *temp)
 {
     int i;
-    ALIGN_DECL(32) short tmp[16 * 16];
+    short *tmp = temp;
     short *H265_RESTRICT p_tmp;
 
     __m256i ymm0, ymm1, ymm2, ymm3, ymm4, ymm6, ymm7, round1, round2, round2m;
@@ -722,12 +722,12 @@ static void h265_DCT16x16Fwd_16s_Kernel(const short *H265_RESTRICT src, Ipp32s s
     }
 }
 
-void H265_FASTCALL MAKE_NAME(h265_DCT16x16Fwd_16s)(const short *H265_RESTRICT src, Ipp32s srcStride, short *H265_RESTRICT dst, Ipp32u bitDepth)
+void H265_FASTCALL MAKE_NAME(h265_DCT16x16Fwd_16s)(const short *H265_RESTRICT src, Ipp32s srcStride, short *H265_RESTRICT dst, Ipp32u bitDepth, Ipp16s *temp)
 {
     switch (bitDepth) {
-    case  8: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 0>(src, srcStride, dst);   break;
-    case  9: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 1>(src, srcStride, dst);   break;
-    case 10: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 2>(src, srcStride, dst);   break;
+    case  8: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 0>(src, srcStride, dst, temp);   break;
+    case  9: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 1>(src, srcStride, dst, temp);   break;
+    case 10: h265_DCT16x16Fwd_16s_Kernel<SHIFT_FRW16_1ST_BASE + 2>(src, srcStride, dst, temp);   break;
     }
 }
 

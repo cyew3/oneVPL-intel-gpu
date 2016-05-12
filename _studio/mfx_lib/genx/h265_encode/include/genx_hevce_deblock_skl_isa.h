@@ -9,5 +9,5 @@
 
 #ifndef __genx_hevce_deblock_skl__
 #define __genx_hevce_deblock_skl__
-extern const unsigned char genx_hevce_deblock_skl[53684];
+extern const unsigned char genx_hevce_deblock_skl[54966];
 #endif

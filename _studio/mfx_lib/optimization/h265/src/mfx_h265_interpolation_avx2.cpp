@@ -240,7 +240,7 @@ static void t_InterpLuma_s8_d16_H_AVX2(const unsigned char* pSrc, unsigned int s
             }
 
             /* store 16 16-bit words */
-            _mm256_storeu_si256((__m256i *)(pDst + col), ymm0);
+            _mm256_store_si256((__m256i *)(pDst + col), ymm0);
         }
         pSrc += srcPitch;
         pDst += dstPitch;
@@ -525,7 +525,7 @@ static void t_InterpChroma_s8_d16_H_AVX2(const unsigned char* pSrc, unsigned int
             }
 
             /* store 16 16-bit words */
-            _mm256_storeu_si256((__m256i *)(pDst + col), ymm0);
+            _mm256_store_si256((__m256i *)(pDst + col), ymm0);
         }
         pSrc += srcPitch;
         pDst += dstPitch;
@@ -1120,8 +1120,8 @@ static void t_InterpLuma_s8_d16_V_AVX2(const unsigned char* pSrc, unsigned int s
             }
 
             // store 32 16-bit values
-            _mm256_storeu_si256((__m256i*)(pD +  0), t0);
-            _mm256_storeu_si256((__m256i*)(pD + 16), u0);
+            _mm256_store_si256((__m256i*)(pD +  0), t0);
+            _mm256_store_si256((__m256i*)(pD + 16), u0);
 
             // shift rows
             y0 = y1;
@@ -1182,7 +1182,7 @@ static void t_InterpLuma_s8_d16_V_AVX2(const unsigned char* pSrc, unsigned int s
             }
 
             // store 16 16-bit values
-            _mm256_storeu_si256((__m256i*)pD, t0);
+            _mm256_store_si256((__m256i*)pD, t0);
 
             // shift rows
             y0 = y1;
@@ -1594,8 +1594,8 @@ static void t_InterpChroma_s8_d16_V_AVX2(const unsigned char* pSrc, unsigned int
                 ymm4 = _mm256_srai_epi16(ymm4, shift);
             }
 
-            _mm256_storeu_si256((__m256i*)(pDst + 0*dstPitch), ymm0);
-            _mm256_storeu_si256((__m256i*)(pDst + 1*dstPitch), ymm4);
+            _mm256_store_si256((__m256i*)(pDst + 0*dstPitch), ymm0);
+            _mm256_store_si256((__m256i*)(pDst + 1*dstPitch), ymm4);
 
             /* shift row registers (1->0, 2->1, etc.) */
             ymm0 = ymm1;
@@ -1813,7 +1813,7 @@ static void t_InterpLuma_s16_d16_V_AVX2(const short* pSrc, unsigned int srcPitch
             // store 16 16-bit values
             t0 = _mm256_packs_epi32(t0, u0);
             t0 = _mm256_permute4x64_epi64(t0, _MM_SHUFFLE(3,1,2,0));
-            _mm256_storeu_si256((__m256i*)pD, t0);
+            _mm256_store_si256((__m256i*)pD, t0);
 
             // shift rows
             y0 = y1;
@@ -2444,8 +2444,8 @@ static void t_AverageMode(short *pSrc, unsigned int srcPitch, void *vpAvg, unsig
     int col;
     unsigned char *pAvgC;
     short *pAvgS;
-    __m128i xmm0, xmm1, xmm7;
-    __m256i ymm0, ymm1, ymm7;
+    __m128i xmm0, xmm1, xmm2, xmm7;
+    __m256i ymm0, ymm1, ymm2, ymm3, ymm7;
 
     _mm256_zeroupper();
 
@@ -2455,7 +2455,89 @@ static void t_AverageMode(short *pSrc, unsigned int srcPitch, void *vpAvg, unsig
         pAvgS = (short *)vpAvg;
 
     do {
-        if (widthMul == 16) {
+        if (widthMul == 64) {
+            /* multiple of 16 */
+            ymm7 = _mm256_set1_epi16(1 << 6);
+            for (col = 0; col < 64; col += 32) {
+                /* load 16 16-bit pixels from source */
+                ymm0 = _mm256_loadu_si256((__m256i *)(pSrc + col));
+                ymm1 = _mm256_loadu_si256((__m256i *)(pSrc + col + 16));
+
+                if (avgBytes == 1) {
+                    /* load 16 8-bit pixels from avg buffer, zero extend to 16-bit, normalize fraction bits */
+                    xmm0 = _mm_loadu_si128((__m128i *)(pAvgC + col));
+                    xmm1 = _mm_loadu_si128((__m128i *)(pAvgC + col + 16));
+                    ymm2 = _mm256_cvtepu8_epi16(xmm0);
+                    ymm3 = _mm256_cvtepu8_epi16(xmm1);
+                    ymm2 = _mm256_slli_epi16(ymm2, 6);
+                    ymm3 = _mm256_slli_epi16(ymm3, 6);
+
+                    ymm2 = _mm256_adds_epi16(ymm2, ymm0);
+                    ymm3 = _mm256_adds_epi16(ymm3, ymm1);
+                    ymm0 = _mm256_adds_epi16(ymm7, ymm2);
+                    ymm1 = _mm256_adds_epi16(ymm7, ymm3);
+                    ymm0 = _mm256_srai_epi16(ymm0, 7);
+                    ymm1 = _mm256_srai_epi16(ymm1, 7);
+                } else if (avgBytes == 2) {
+                    /* load 16 16-bit pixels from from avg buffer */
+                    ymm2 = _mm256_loadu_si256((__m256i *)(pAvgS + col));
+                    ymm3 = _mm256_loadu_si256((__m256i *)(pAvgS + col + 16));
+
+                    ymm2 = _mm256_adds_epi16(ymm2, ymm0);
+                    ymm3 = _mm256_adds_epi16(ymm3, ymm1);
+                    ymm0 = _mm256_adds_epi16(ymm7, ymm2);
+                    ymm1 = _mm256_adds_epi16(ymm7, ymm3);
+                    ymm0 = _mm256_srai_epi16(ymm0, 7);
+                    ymm1 = _mm256_srai_epi16(ymm1, 7);
+                }
+                
+                ymm0 = _mm256_packus_epi16(ymm0, ymm1);
+                ymm0 = _mm256_permute4x64_epi64(ymm0, 0xD8);
+                _mm_store_si128((__m128i*)(pDst + col),      _mm256_castsi256_si128(ymm0));
+                _mm_store_si128((__m128i*)(pDst + col + 16), _mm256_extracti128_si256(ymm0, 1));
+            }
+
+        } else if (widthMul == 32) {
+            /* multiple of 16 */
+            ymm7 = _mm256_set1_epi16(1 << 6);
+            /* load 16 16-bit pixels from source */
+            ymm0 = _mm256_loadu_si256((__m256i *)(pSrc));
+            ymm1 = _mm256_loadu_si256((__m256i *)(pSrc + 16));
+
+            if (avgBytes == 1) {
+                /* load 16 8-bit pixels from avg buffer, zero extend to 16-bit, normalize fraction bits */
+                xmm0 = _mm_loadu_si128((__m128i *)(pAvgC));
+                xmm1 = _mm_loadu_si128((__m128i *)(pAvgC + 16));
+                ymm2 = _mm256_cvtepu8_epi16(xmm0);
+                ymm3 = _mm256_cvtepu8_epi16(xmm1);
+                ymm2 = _mm256_slli_epi16(ymm2, 6);
+                ymm3 = _mm256_slli_epi16(ymm3, 6);
+
+                ymm2 = _mm256_adds_epi16(ymm2, ymm0);
+                ymm3 = _mm256_adds_epi16(ymm3, ymm1);
+                ymm0 = _mm256_adds_epi16(ymm7, ymm2);
+                ymm1 = _mm256_adds_epi16(ymm7, ymm3);
+                ymm0 = _mm256_srai_epi16(ymm0, 7);
+                ymm1 = _mm256_srai_epi16(ymm1, 7);
+            } else if (avgBytes == 2) {
+                /* load 16 16-bit pixels from from avg buffer */
+                ymm2 = _mm256_loadu_si256((__m256i *)(pAvgS));
+                ymm3 = _mm256_loadu_si256((__m256i *)(pAvgS + 16));
+
+                ymm2 = _mm256_adds_epi16(ymm2, ymm0);
+                ymm3 = _mm256_adds_epi16(ymm3, ymm1);
+                ymm0 = _mm256_adds_epi16(ymm7, ymm2);
+                ymm1 = _mm256_adds_epi16(ymm7, ymm3);
+                ymm0 = _mm256_srai_epi16(ymm0, 7);
+                ymm1 = _mm256_srai_epi16(ymm1, 7);
+            }
+                
+            ymm0 = _mm256_packus_epi16(ymm0, ymm1);
+            ymm0 = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            _mm_store_si128((__m128i*)(pDst),      _mm256_castsi256_si128(ymm0));
+            _mm_store_si128((__m128i*)(pDst + 16), _mm256_extracti128_si256(ymm0, 1));
+
+        } else if (widthMul == 16) {
             /* multiple of 16 */
             ymm7 = _mm256_set1_epi16(1 << 6);
             for (col = 0; col < width; col += widthMul) {
@@ -2539,7 +2621,15 @@ static void t_AverageMode(short *pSrc, unsigned int srcPitch, void *vpAvg, unsig
 /* mode: AVERAGE_NO, just clip/pack 16-bit output to 8-bit */
 void MAKE_NAME(h265_AverageModeN)(INTERP_AVG_NONE_PARAMETERS_LIST)
 {
-    if ( (width & 0x0f) == 0 ) {
+    if ( (width & 0x3f) == 0 ) {
+        /* very fast path - multiple of 16 */
+        t_AverageMode<64, 0>(pSrc, srcPitch, 0, 0, pDst, dstPitch, width, height);
+        return;
+    } else if ( (width & 0x1f) == 0 ) {
+        /* very fast path - multiple of 16 */
+        t_AverageMode<32, 0>(pSrc, srcPitch, 0, 0, pDst, dstPitch, width, height);
+        return;
+    } else if ( (width & 0x0f) == 0 ) {
         /* very fast path - multiple of 16 */
         t_AverageMode<16, 0>(pSrc, srcPitch, 0, 0, pDst, dstPitch, width, height);
         return;
@@ -2569,7 +2659,15 @@ void MAKE_NAME(h265_AverageModeN)(INTERP_AVG_NONE_PARAMETERS_LIST)
 /* mode: AVERAGE_FROM_PIC, load 8-bit pixels, extend to 16-bit, add to current output, clip/pack 16-bit to 8-bit */
 void MAKE_NAME(h265_AverageModeP)(INTERP_AVG_PIC_PARAMETERS_LIST)
 {
-    if ( (width & 0x0f) == 0 ) {
+    if ( (width & 0x3f) == 0 ) {
+        /* very fast path - multiple of 16 */
+        t_AverageMode<64, sizeof(unsigned char)>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height);
+        return;
+    } else if ( (width & 0x1f) == 0 ) {
+        /* very fast path - multiple of 16 */
+        t_AverageMode<32, sizeof(unsigned char)>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height);
+        return;
+    } else if ( (width & 0x0f) == 0 ) {
         /* very fast path - multiple of 16 */
         t_AverageMode<16, sizeof(unsigned char)>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height);
         return;
@@ -2600,7 +2698,15 @@ void MAKE_NAME(h265_AverageModeP)(INTERP_AVG_PIC_PARAMETERS_LIST)
 /* mode: AVERAGE_FROM_BUF, load 16-bit pixels, add to current output, clip/pack 16-bit to 8-bit */
 void MAKE_NAME(h265_AverageModeB)(INTERP_AVG_BUF_PARAMETERS_LIST)
 {
-    if ( (width & 0x0f) == 0 ) {
+    if ( (width & 0x3f) == 0 ) {
+        /* very fast path - multiple of 16 */
+        t_AverageMode<64, sizeof(short)>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height);
+        return;
+    } else if ( (width & 0x1f) == 0 ) {
+        /* very fast path - multiple of 16 */
+        t_AverageMode<32, sizeof(short)>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height);
+        return;
+    } else if ( (width & 0x0f) == 0 ) {
         /* very fast path - multiple of 16 */
         t_AverageMode<16, sizeof(short)>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height);
         return;
@@ -2640,7 +2746,7 @@ static void t_AverageMode_U16_Kernel(short *pSrc, unsigned int srcPitch, unsigne
 
     _mm256_zeroupper();
 
-    if (widthMul == 16) {
+    if (widthMul >= 16) {
         ymm4 = _mm256_setzero_si256();                   /* min */
         ymm5 = _mm256_set1_epi16((1 << bitDepth) - 1);   /* max */
         ymm7 = _mm256_set1_epi16(1 << (shift - 1));      /* round */
@@ -2651,7 +2757,55 @@ static void t_AverageMode_U16_Kernel(short *pSrc, unsigned int srcPitch, unsigne
     }
 
     do {
-        if (widthMul == 16) {
+        if (widthMul == 64) {
+            /* multiple of 64 */
+            for (col = 0; col < 64; col += 16) {
+                /* load 16 16-bit pixels from source */
+                ymm0 = _mm256_loadu_si256((__m256i *)(pSrc + col));
+
+                if (avgMode == 1) {
+                    /* mode P: load 16 16-bit pixels from avg buffer, normalize and add */
+                    ymm1 = _mm256_loadu_si256((__m256i *)(pAvg + col));
+                    ymm1 = _mm256_slli_epi16(ymm1, shift - 1);
+                    ymm1 = _mm256_adds_epi16(ymm1, ymm0);
+                    ymm0 = _mm256_adds_epi16(ymm7, ymm1);
+                    ymm0 = _mm256_srai_epi16(ymm0, shift);
+                } else if (avgMode == 2) {
+                    /* mode B: load 16 16-bit pixels from from avg buffer */
+                    ymm1 = _mm256_loadu_si256((__m256i *)(pAvg + col));
+                    ymm1 = _mm256_adds_epi16(ymm1, ymm0);
+                    ymm0 = _mm256_adds_epi16(ymm7, ymm1);
+                    ymm0 = _mm256_srai_epi16(ymm0, shift);
+                }
+                ymm0 = _mm256_max_epi16(ymm0, ymm4); 
+                ymm0 = _mm256_min_epi16(ymm0, ymm5);
+                _mm256_store_si256((__m256i*)(pDst + col), ymm0);
+            }
+        } else if (widthMul == 32) {
+            /* multiple of 32 */
+            for (col = 0; col < 32; col += 16) {
+                /* load 16 16-bit pixels from source */
+                ymm0 = _mm256_loadu_si256((__m256i *)(pSrc + col));
+
+                if (avgMode == 1) {
+                    /* mode P: load 16 16-bit pixels from avg buffer, normalize and add */
+                    ymm1 = _mm256_loadu_si256((__m256i *)(pAvg + col));
+                    ymm1 = _mm256_slli_epi16(ymm1, shift - 1);
+                    ymm1 = _mm256_adds_epi16(ymm1, ymm0);
+                    ymm0 = _mm256_adds_epi16(ymm7, ymm1);
+                    ymm0 = _mm256_srai_epi16(ymm0, shift);
+                } else if (avgMode == 2) {
+                    /* mode B: load 16 16-bit pixels from from avg buffer */
+                    ymm1 = _mm256_loadu_si256((__m256i *)(pAvg + col));
+                    ymm1 = _mm256_adds_epi16(ymm1, ymm0);
+                    ymm0 = _mm256_adds_epi16(ymm7, ymm1);
+                    ymm0 = _mm256_srai_epi16(ymm0, shift);
+                }
+                ymm0 = _mm256_max_epi16(ymm0, ymm4); 
+                ymm0 = _mm256_min_epi16(ymm0, ymm5);
+                _mm256_store_si256((__m256i*)(pDst + col), ymm0);
+            }
+        } else if (widthMul == 16) {
             /* multiple of 16 */
             for (col = 0; col < width; col += widthMul) {
                 /* load 16 16-bit pixels from source */
@@ -2673,7 +2827,7 @@ static void t_AverageMode_U16_Kernel(short *pSrc, unsigned int srcPitch, unsigne
                 }
                 ymm0 = _mm256_max_epi16(ymm0, ymm4); 
                 ymm0 = _mm256_min_epi16(ymm0, ymm5);
-                _mm256_storeu_si256((__m256i*)(pDst + col), ymm0);
+                _mm256_store_si256((__m256i*)(pDst + col), ymm0);
             }
         } else {
             /* multiple of 8 or less */
@@ -2742,7 +2896,15 @@ static void t_AverageMode_U16(short *pSrc, unsigned int srcPitch, unsigned short
 /* mode: AVERAGE_NO, just clip/pack 16-bit output to [0, 2^bitDepth) */
 void MAKE_NAME(h265_AverageModeN_U16)(INTERP_AVG_NONE_PARAMETERS_LIST_U16)
 {
-    if ( (width & 0x0f) == 0 ) {
+    if ( (width & 0x3f) == 0 ) {
+        /* very fast path - multiple of 64 */
+        t_AverageMode_U16<64, 0>(pSrc, srcPitch, 0, 0, pDst, dstPitch, width, height, bit_depth);
+        return;
+    } else if ( (width & 0x1f) == 0 ) {
+        /* very fast path - multiple of 32 */
+        t_AverageMode_U16<32, 0>(pSrc, srcPitch, 0, 0, pDst, dstPitch, width, height, bit_depth);
+        return;
+    } else if ( (width & 0x0f) == 0 ) {
         /* very fast path - multiple of 16 */
         t_AverageMode_U16<16, 0>(pSrc, srcPitch, 0, 0, pDst, dstPitch, width, height, bit_depth);
         return;
@@ -2772,7 +2934,15 @@ void MAKE_NAME(h265_AverageModeN_U16)(INTERP_AVG_NONE_PARAMETERS_LIST_U16)
 /* mode: AVERAGE_FROM_PIC, load 8-bit pixels, extend to 16-bit, add to current output, clip/pack 16-bit to 8-bit */
 void MAKE_NAME(h265_AverageModeP_U16)(INTERP_AVG_PIC_PARAMETERS_LIST_U16)
 {
-    if ( (width & 0x0f) == 0 ) {
+    if ( (width & 0x3f) == 0 ) {
+        /* very fast path - multiple of 64 */
+        t_AverageMode_U16<64, 1>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
+        return;
+    } else if ( (width & 0x1f) == 0 ) {
+        /* very fast path - multiple of 32 */
+        t_AverageMode_U16<32, 1>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
+        return;
+    } else if ( (width & 0x0f) == 0 ) {
         /* very fast path - multiple of 16 */
         t_AverageMode_U16<16, 1>(pSrc, srcPitch, pAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
         return;
@@ -2803,7 +2973,15 @@ void MAKE_NAME(h265_AverageModeP_U16)(INTERP_AVG_PIC_PARAMETERS_LIST_U16)
 /* mode: AVERAGE_FROM_BUF, load 16-bit pixels, add to current output, clip/pack 16-bit to 8-bit */
 void MAKE_NAME(h265_AverageModeB_U16)(INTERP_AVG_BUF_PARAMETERS_LIST_U16)
 {
-    if ( (width & 0x0f) == 0 ) {
+    if ( (width & 0x3f) == 0 ) {
+        /* very fast path - multiple of 64 */
+        t_AverageMode_U16<64, 2>(pSrc, srcPitch, (unsigned short *)pAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
+        return;
+    } else if ( (width & 0x1f) == 0 ) {
+        /* very fast path - multiple of 32 */
+        t_AverageMode_U16<32, 2>(pSrc, srcPitch, (unsigned short *)pAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
+        return;
+    } else if ( (width & 0x0f) == 0 ) {
         /* very fast path - multiple of 16 */
         t_AverageMode_U16<16, 2>(pSrc, srcPitch, (unsigned short *)pAvg, avgPitch, pDst, dstPitch, width, height, bit_depth);
         return;

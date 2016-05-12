@@ -224,6 +224,8 @@ namespace H265Enc {
 
         Segment *m_tiles;//start/end adress
         Ipp16u *m_tile_ids;
+        Ipp16u *m_tile_row_ids;
+        Ipp16u *m_tile_col_ids;
         Ipp16u tileColStart[CodecLimits::MAX_NUM_TILE_COLS];
         Ipp16u tileRowStart[CodecLimits::MAX_NUM_TILE_ROWS];
         Ipp16u tileColWidth[CodecLimits::MAX_NUM_TILE_COLS];
@@ -330,7 +332,8 @@ namespace H265Enc {
     //void SetAllLambda(H265VideoParam const & videoParam, H265Slice *slice, int qp, const Frame* currentFrame, bool isHiCmplxGop = false, bool isMidCmplxGop = false);
     Ipp64f h265_calc_split_threshold(Ipp32s tabIndex, Ipp32s isNotCu, Ipp32s isNotI, Ipp32s log2width, Ipp32s strength, Ipp32s QP);
     void ApplyDeltaQp(Frame* frame, const H265VideoParam & par, Ipp8u useBrc = 0);
-    void AddTaskDependency(ThreadingTask *downstream, ThreadingTask *upstream, ObjectPool<ThreadingTask> *ttHubPool = NULL);
+    void AddTaskDependency(ThreadingTask *downstream, ThreadingTask *upstream, ObjectPool<ThreadingTask> *ttHubPool = NULL, bool threaded = false);
+    void AddTaskDependencyThreaded(ThreadingTask *downstream, ThreadingTask *upstream, ObjectPool<ThreadingTask> *ttHubPool = NULL);
 
     void ApplyRoiDeltaQp(Frame* frame, const H265VideoParam & par);
     bool SliceLambdaMultiplier(Ipp64f &rd_lambda_slice, H265VideoParam const & videoParam, Ipp8u slice_type, const Frame *currFrame, bool isHiCmplxGop, bool isMidCmplxGop);

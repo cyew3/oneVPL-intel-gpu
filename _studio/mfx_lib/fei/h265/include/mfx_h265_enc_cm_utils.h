@@ -9,6 +9,8 @@
 #ifndef _MFX_H265_ENC_CM_UTILS_H
 #define _MFX_H265_ENC_CM_UTILS_H
 
+#pragma warning(disable: 4100; disable: 4505)
+
 #include "cm_def.h"
 #include "cm_vm.h"
 
@@ -685,6 +687,7 @@ template <> inline
 {
     kernel->SetKernelArg(index, sizeof(SurfaceIndex), &GetIndex(arg));
 }
+
 template <> inline
     void SetKernelArgLast<vector<SurfaceIndex, 1> >(CmKernel * kernel, vector<SurfaceIndex, 1> const & arg, unsigned int index)
 {
