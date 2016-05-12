@@ -36,7 +36,8 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("Options: \n"));
     msdk_printf(MSDK_STRING("   [-i::h264|mpeg2|vc1] - set input encoded file and decoder type\n"));
     msdk_printf(MSDK_STRING("   [-nv12] - input is in NV12 color format, if not specified YUV420 is expected\n"));
-    msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom field first, if not specified progressive is expected\n"));
+    msdk_printf(MSDK_STRING("   [-tff|bff|mixed] - input stream is interlaced, top|bottom field first, if not specified progressive is expected.\n"));
+    msdk_printf(MSDK_STRING("                    -mixed means that picture structre should be obtained from the input stream\n"));
     msdk_printf(MSDK_STRING("   [-single_field_processing] - single-field coding mode, one call for each field, tff/bff option required\n"));
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
     msdk_printf(MSDK_STRING("   [-nobref] - do not use B-pyramid (by default the decision is made by library)\n"));
@@ -288,6 +289,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bff")))
         {
             pParams->nPicStruct = MFX_PICSTRUCT_FIELD_BFF;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mixed")))
+        {
+            pParams->nPicStruct = MFX_PICSTRUCT_UNKNOWN;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-single_field_processing")))
         {
@@ -788,9 +793,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         pParams->ColorFormat = MFX_FOURCC_YV12;
     }
 
-    if (pParams->nPicStruct == MFX_PICSTRUCT_UNKNOWN)
+    if (pParams->nPicStruct == MFX_PICSTRUCT_UNKNOWN
+        && (!pParams->bDECODE || pParams->bENCPAK || pParams->bOnlyPAK || pParams->bOnlyENC || pParams->bDynamicRC))
     {
-        pParams->nPicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+        if (bAlrShownHelp)
+            msdk_printf(MSDK_STRING("\nERROR: Sample does not support this combination of options with -unk mode!\n"));
+        else
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Sample does not support this combination of options with -unk mode!"));
+        return MFX_ERR_UNSUPPORTED;
     }
 
     if (pParams->SearchWindow > 8)
@@ -1051,7 +1061,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     if (0 == pParams->numRef)
         pParams->numRef = 1;
 
-    if ((pParams->nPicStruct == MFX_PICSTRUCT_FIELD_TFF || pParams->nPicStruct == MFX_PICSTRUCT_FIELD_BFF) && pParams->numRef == 1){
+    if (pParams->nPicStruct != MFX_PICSTRUCT_PROGRESSIVE && pParams->numRef == 1){
         msdk_printf(MSDK_STRING("\nWARNING: minimal number of references on interlaced content is 2!\n"));
         msdk_printf(MSDK_STRING("           Current number of references extended.\n"));
 
@@ -1074,7 +1084,7 @@ int main(int argc, char *argv[])
 
     Params.CodecId  = MFX_CODEC_AVC; //only AVC is supported
     Params.DecodeId = 0; //default (invalid) value
-    Params.nPicStruct = MFX_PICSTRUCT_UNKNOWN;
+    Params.nPicStruct = MFX_PICSTRUCT_PROGRESSIVE;
     Params.nNumFrames = 0; //unlimited
     Params.nTimeout   = 0; //unlimited
     Params.refDist = 1; //only I frames
