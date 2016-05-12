@@ -260,6 +260,13 @@ protected:
     mfxU16 m_numMB;
     mfxU16 m_numMBpreenc; // number of MBs in input for PreEnc surfaces
 
+    mfxU16 m_numMBp;      // is needed for mixed picstructs
+    mfxU16 m_numMBpPreenc;// is needed for mixed picstructs
+
+    // DRC workflow
+    mfxU16 m_numMB_drc;
+    bool m_bDRCReset;
+
     MFXVideoSession m_mfxSession;
     MFXVideoSession m_preenc_mfxSession;
     MFXVideoSession* m_pPreencSession;
@@ -362,7 +369,8 @@ protected:
     virtual mfxStatus SynchronizeFirstTask();
 
     virtual mfxStatus GetOneFrame(mfxFrameSurface1* & pSurf);
-    virtual mfxStatus ResizeFrame(mfxU32 frameNum, bool &insertIDR,size_t &rctime, iTask* &eTask, sTask *pCurrentTask);
+    virtual mfxStatus ResizeFrame(mfxU32 frameNum, bool &insertIDR, size_t &rctime, iTask* &eTask, sTask *pCurrentTask);
+    virtual mfxStatus ResetExtBufMBnum(bufSet* bufs, mfxU16 new_numMB);
 
     virtual mfxStatus PreProcessOneFrame(mfxFrameSurface1* & pSurf);
     virtual mfxStatus PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, bool is_buffered, bool &cont);
@@ -454,7 +462,6 @@ mfxExtBuffer * getBufById(setElem* bufSet, mfxU32 id, mfxU32 fieldId);
 PairU8 ExtendFrameType(mfxU32 type);
 mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 counter, bool & ref);
 
-mfxStatus ResetExtBufMBnum(bufSet* bufs);
 mfxStatus repackPreenc2Enc(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf);
 mfxStatus repackPreenc2EncExOneMB(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB[2], mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 refIdx[2], mfxU32 predIdx, mfxI16 *tmpBuf);
 mfxI16 get16Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1);
