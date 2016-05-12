@@ -347,10 +347,10 @@ public :
   CRawVideoReader();
   virtual ~CRawVideoReader();
 
-  virtual void    Close() override;
-  virtual mfxStatus  Init(sInputParams *pParams) override;
-  virtual mfxStatus  LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInfo, mfxU32 bayerType) override;
-  virtual void  SetStartFileNumber(mfxI32) override;
+  virtual void    Close();
+  virtual mfxStatus  Init(sInputParams *pParams);
+  virtual mfxStatus  LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInfo, mfxU32 bayerType);
+  virtual void  SetStartFileNumber(mfxI32);
 
 protected:
   mfxStatus  LoadNextFrameSingle    (mfxFrameData* pData, mfxFrameInfo* pInfo, mfxU32 bayerType);
@@ -375,10 +375,10 @@ public :
     CARGB16VideoReader(): m_fSrc(0), m_bSingleFileMode(false) {};
     virtual ~CARGB16VideoReader();
 
-    void       Close() override;
-    mfxStatus  Init(sInputParams *pParams) override;
-    mfxStatus  LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInfo, mfxU32 type) override;
-    void       SetStartFileNumber(mfxI32 fileNum) override
+    void       Close();
+    mfxStatus  Init(sInputParams *pParams);
+    mfxStatus  LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInfo, mfxU32 type);
+    void       SetStartFileNumber(mfxI32 fileNum)
     {
         m_FileNum = fileNum;
     }
