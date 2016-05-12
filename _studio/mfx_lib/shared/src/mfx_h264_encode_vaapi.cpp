@@ -1737,7 +1737,7 @@ mfxStatus VAAPIEncoder::Execute(
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FEI config");
         /*Input FEI Ext buffer sequence for BFF is: bff tff bff tff
          * So, MSDK need to swap feiFieldId values to get correct buffer */
-        if (MFX_PICSTRUCT_FIELD_BFF == m_videoParam.mfx.FrameInfo.PicStruct)
+        if (MFX_PICSTRUCT_FIELD_BFF == task.GetPicStructForEncode())
         {
             if (1 == feiFieldId)
                 feiFieldId = 0;
@@ -1745,7 +1745,7 @@ mfxStatus VAAPIEncoder::Execute(
                 feiFieldId = 1;
         }
 
-        if (MFX_PICSTRUCT_PROGRESSIVE != m_videoParam.mfx.FrameInfo.PicStruct)
+        if (MFX_PICSTRUCT_PROGRESSIVE != task.GetPicStructForEncode())
             idxRecon = idxRecon *2;
 
         //find ext buffers
@@ -2788,6 +2788,7 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
     ExtVASurface const & curFeedback)
 {
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK) || defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIEncoder::QueryStatusFEI");
     VAStatus vaSts = VA_STATUS_SUCCESS;
     VABufferID vaFeiMBStatId    = curFeedback.mbstat;
     VABufferID vaFeiMBCODEOutId = curFeedback.mbcode;
@@ -2799,7 +2800,7 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
 
     /*Input FEI Ext buffer sequence for BFF is: bff tff bff tff
      * So, MSDK need to swap feiFieldId values to get correct buffer */
-    if (MFX_PICSTRUCT_FIELD_BFF == m_videoParam.mfx.FrameInfo.PicStruct)
+    if (MFX_PICSTRUCT_FIELD_BFF == task.GetPicStructForEncode())
     {
         if (1 == feiFieldId)
             feiFieldId = 0;

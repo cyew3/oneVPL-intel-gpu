@@ -194,19 +194,82 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
 
+    /* we alway takes into account interlaced case */
+    mfxU32 numStatBuffers = 2* rawSurf.size();
+    m_statOutId.resize(numStatBuffers);
+    m_statPairs.resize(numStatBuffers);
+    for (mfxU32 i = 0; i < numStatBuffers; i++ )
+        m_statPairs[i].first = m_statPairs[i].second = m_statOutId[i] = VA_INVALID_ID;
+
+    /* Statistics buffers allocate & used always.
+     * Buffers allocated once for whole stream processing.
+     * Statistics buffer delete at the end of processing, by Close() method
+     * Actually this is obligation to attach statistics buffers for I- frame/field
+     * For P- frame/field only one MVout buffer maybe attached */
+    mfxU32 currNumMbsW = (m_videoParam.mfx.FrameInfo.Width+15)/16;
+    mfxU32 currNumMbsH = (m_videoParam.mfx.FrameInfo.Height+15)/16;
+    mfxU32 currNumMbs = currNumMbsW * currNumMbsH;
+    for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
+    {
+        m_statPairs[2*i].first = m_reconQueue[i].surface;
+        m_statPairs[2*i + 1].first = m_reconQueue[i].surface;
+        /* buffer for frame/ top field. Again, this buffer for frame of for field
+         * this buffer is always frame sized */
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                m_vaContextEncode,
+                (VABufferType)VAStatsStatisticsBufferTypeIntel,
+                sizeof (VAStatsStatistics16x16Intel) * currNumMbs,
+                1,
+                NULL,
+                &m_statOutId[2*i]);
+        if (VA_STATUS_SUCCESS == vaSts)
+            m_statPairs[2*i].second = m_statOutId[2*i];
+        else
+            m_statPairs[2*i].second = VA_INVALID_ID;
+
+        /* buffer for bottom field only
+         * * this buffer is always half frame sized
+         *  */
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                m_vaContextEncode,
+                (VABufferType)VAStatsStatisticsBotFieldBufferTypeIntel,
+                sizeof (VAStatsStatistics16x16Intel) * currNumMbs/2,
+                1,
+                NULL,
+                &m_statOutId[2*i + 1]);
+        if (VA_STATUS_SUCCESS == vaSts)
+            m_statPairs[2*i + 1].second = m_statOutId[2*i + 1];
+        else
+            m_statPairs[2*i + 1].second = VA_INVALID_ID;
+    } // for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
+
+    /* 2 MV buffers allocated per instance, even for progressive case
+     * NOTE: buffers always full sized even for interlaced case!!!
+     * This is WA for GPU hang for Mixed Picstructed */
     m_statMVId.resize(2);
     for (mfxU32 i = 0; i < 2; i++ )
         m_statMVId[i] = VA_INVALID_ID;
 
-    mfxU32 numStatBuffers = rawSurf.size();
-    if (MFX_PICSTRUCT_PROGRESSIVE != m_videoParam.mfx.FrameInfo.PicStruct)
-        numStatBuffers = 2*numStatBuffers;
+    vaSts = vaCreateBuffer(m_vaDisplay,
+            m_vaContextEncode,
+            (VABufferType)VAStatsMotionVectorBufferTypeIntel,
+            //sizeof (VAMotionVectorIntel)*mvsOut->NumMBAlloc * 16, //16 MV per MB
+            sizeof (VAMotionVectorIntel)* currNumMbs * 16,
+            1,
+            NULL, //should be mapped later
+            &m_statMVId[0]);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    m_statOutId.resize(numStatBuffers);
-    m_statPairs.resize(numStatBuffers);
+    vaSts = vaCreateBuffer(m_vaDisplay,
+            m_vaContextEncode,
+            (VABufferType)VAStatsMotionVectorBufferTypeIntel,
+            //sizeof (VAMotionVectorIntel)*mvsOut->NumMBAlloc * 16, //16 MV per MB
+            sizeof (VAMotionVectorIntel)* currNumMbs * 16,
+            1,
+            NULL, //should be mapped later
+            &m_statMVId[1]);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    for (mfxU32 i = 0; i < numStatBuffers; i++ )
-        m_statPairs[i].first = m_statPairs[i].second = m_statOutId[i] = VA_INVALID_ID;
 
     Zero(m_sps);
     Zero(m_pps);
@@ -270,7 +333,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         PreAllocatedVector const & sei)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FEI::PreENC::Execute");
-    mdprintf(stderr, "VAAPIPREENCEncoder::Execute\n");
+    mdprintf(stderr, "\nVAAPIPREENCEncoder::Execute\n");
 
     mfxU32 surfInputIndexInList = 0;
     mfxU32 surfPastIndexInList = 0;
@@ -300,7 +363,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
 
     /*Input FEI Ext buffer sequence for BFF is: bff tff bff tff
      * So, MSDK need to swap feiFieldId values to get correct buffer */
-    if (MFX_PICSTRUCT_FIELD_BFF == m_videoParam.mfx.FrameInfo.PicStruct)
+    if (MFX_PICSTRUCT_FIELD_BFF == task.GetPicStructForEncode())
     {
         if (1 == feiFieldId)
             feiFieldId = 0;
@@ -404,75 +467,6 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         mdprintf(stderr, "Qp bufId=%d\n", qpid);
     }
 
-    /* Statistics buffers allocate below if required.
-     * Buffers allocated onec for whole stream processing.
-     * Statistics buffer delete at the end of processing, by Close() method  */
-    if ((!m_statParams.disable_statistics_output) && (VA_INVALID_ID == m_statOutId[0]))
-    {
-        mfxU32 numStatBuffers = m_reconQueue.size();
-        if (MFX_PICSTRUCT_PROGRESSIVE != m_videoParam.mfx.FrameInfo.PicStruct)
-            numStatBuffers = 2*numStatBuffers;
-
-        /* check size*/
-        if (numStatBuffers != m_statOutId.size())
-        {
-            m_statOutId.resize(numStatBuffers);
-            m_statPairs.resize(numStatBuffers);
-        }
-
-        if (MFX_PICSTRUCT_PROGRESSIVE == m_videoParam.mfx.FrameInfo.PicStruct)
-        {
-            for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
-            {
-                m_statPairs[i].first = m_reconQueue[i].surface;
-                vaSts = vaCreateBuffer(m_vaDisplay,
-                        m_vaContextEncode,
-                        (VABufferType)VAStatsStatisticsBufferTypeIntel,
-                        sizeof (VAStatsStatistics16x16Intel) * mbstatOut->NumMBAlloc,
-                        1,
-                        NULL,
-                        &m_statOutId[i]);
-                if (VA_STATUS_SUCCESS == vaSts)
-                    m_statPairs[i].second = m_statOutId[i];
-                else
-                    m_statPairs[i].second = VA_INVALID_ID;
-            }
-        }
-        else // interlaced case 2 surface, but two buffers
-        {
-            for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
-            {
-                m_statPairs[2*i].first = m_reconQueue[i].surface;
-                m_statPairs[2*i + 1].first = m_reconQueue[i].surface;
-                /* buffer for top field */
-                vaSts = vaCreateBuffer(m_vaDisplay,
-                        m_vaContextEncode,
-                        (VABufferType)VAStatsStatisticsBufferTypeIntel,
-                        sizeof (VAStatsStatistics16x16Intel) * mbstatOut->NumMBAlloc,
-                        1,
-                        NULL,
-                        &m_statOutId[2*i]);
-                if (VA_STATUS_SUCCESS == vaSts)
-                    m_statPairs[2*i].second = m_statOutId[2*i];
-                else
-                    m_statPairs[2*i].second = VA_INVALID_ID;
-
-                /* buffer for bottom field */
-                vaSts = vaCreateBuffer(m_vaDisplay,
-                        m_vaContextEncode,
-                        (VABufferType)VAStatsStatisticsBotFieldBufferTypeIntel,
-                        sizeof (VAStatsStatistics16x16Intel) * mbstatOut->NumMBAlloc,
-                        1,
-                        NULL,
-                        &m_statOutId[2*i + 1]);
-                if (VA_STATUS_SUCCESS == vaSts)
-                    m_statPairs[2*i + 1].second = m_statOutId[2*i + 1];
-                else
-                    m_statPairs[2*i + 1].second = VA_INVALID_ID;
-            } // for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
-        } // else // interlaced case 2 surface, but two buffers
-    } // if ((!m_statParams.disable_statistics_output) && (VA_INVALID_ID == m_statOutId[0]))
-
     /* PreEnc support only 1 forward and 1 backward reference */
     /*
      * (AL): I have decided to save previous implementation of passing reference
@@ -529,13 +523,13 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
             return mfxSts;
         l0surfs->picture_id = *(VASurfaceID*)handle;
         surfPastIndexInList = GetSurfaceIndexFromList(m_reconQueue,l0surfs->picture_id);
-        if ((MFX_PICTYPE_TOPFIELD == feiCtrl->RefPictureType[0]) && (task.m_fieldPicFlag))
+        if (MFX_PICTYPE_TOPFIELD == feiCtrl->RefPictureType[0])
             l0surfs->flags = VA_PICTURE_FEI_TOP_FIELD;
-        else if ((MFX_PICTYPE_BOTTOMFIELD == feiCtrl->RefPictureType[0]) && (task.m_fieldPicFlag))
+        else if (MFX_PICTYPE_BOTTOMFIELD == feiCtrl->RefPictureType[0])
             l0surfs->flags = VA_PICTURE_FEI_BOTTOM_FIELD;
-        else if ((MFX_PICTYPE_FRAME == feiCtrl->RefPictureType[0]) && (!task.m_fieldPicFlag))
+        else if (MFX_PICTYPE_FRAME == feiCtrl->RefPictureType[0])
             l0surfs->flags = VA_PICTURE_FEI_PROGRESSIVE;
-        else // This is disallowed to mix, surface types should be on Init() and within runtime
+        else
             return MFX_ERR_INVALID_VIDEO_PARAM;
         if (IsOn(feiCtrl->DownsampleReference[0]))
             l0surfs->flags |= VA_PICTURE_FEI_CONTENT_UPDATED;
@@ -588,13 +582,13 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         if (MFX_ERR_NONE != mfxSts)
             return mfxSts;
         l1surfs->picture_id = *(VASurfaceID*)handle;
-        if ((MFX_PICTYPE_TOPFIELD == feiCtrl->RefPictureType[1]) && (task.m_fieldPicFlag))
+        if (MFX_PICTYPE_TOPFIELD == feiCtrl->RefPictureType[1])
             l1surfs->flags = VA_PICTURE_FEI_TOP_FIELD;
-        else if ((MFX_PICTYPE_BOTTOMFIELD == feiCtrl->RefPictureType[1]) && (task.m_fieldPicFlag))
+        else if (MFX_PICTYPE_BOTTOMFIELD == feiCtrl->RefPictureType[1])
             l1surfs->flags = VA_PICTURE_FEI_BOTTOM_FIELD;
-        else if ((MFX_PICTYPE_FRAME == feiCtrl->RefPictureType[1]) && (!task.m_fieldPicFlag))
+        else if (MFX_PICTYPE_FRAME == feiCtrl->RefPictureType[1])
             l1surfs->flags = VA_PICTURE_FEI_PROGRESSIVE;
-        else // This is disallowed to mix, surface types should be on Init() and within runtime
+        else
             return MFX_ERR_INVALID_VIDEO_PARAM;
         if (IsOn(feiCtrl->DownsampleReference[1]))
             l1surfs->flags |= VA_PICTURE_FEI_CONTENT_UPDATED;
@@ -606,32 +600,28 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     {
         m_statParams.disable_mv_output = 1;
     }
-    if ((!m_statParams.disable_mv_output) && (VA_INVALID_ID == m_statMVId[feiFieldId]))
+
+    if (!m_statParams.disable_mv_output)
     {
-        vaSts = vaCreateBuffer(m_vaDisplay,
-                m_vaContextEncode,
-                (VABufferType)VAStatsMotionVectorBufferTypeIntel,
-                sizeof (VAMotionVectorIntel)*mvsOut->NumMBAlloc * 16, //16 MV per MB
-                1,
-                NULL, //should be mapped later
-                &m_statMVId[feiFieldId]);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         outBuffers[numOutBufs++] = m_statMVId[feiFieldId];
         mdprintf(stderr, "MV bufId=%d\n", m_statMVId[feiFieldId]);
         configBuffers[buffersCount++] = m_statMVId[feiFieldId];
     }
-
-    /* To attach statistic buffers if required */
-    if (!m_statParams.disable_statistics_output)
+    /*Actually this is obligation to attach statistics buffers for I- frame/field
+    * For P- frame/field only one MVout buffer maybe attached
+    *  */
+    //if (!m_statParams.disable_statistics_output)
     {
         surfInputIndexInList = GetSurfaceIndexFromList(m_reconQueue,*inputSurface);
-        if (MFX_PICSTRUCT_PROGRESSIVE != m_videoParam.mfx.FrameInfo.PicStruct)
-            surfInputIndexInList = 2*surfInputIndexInList;
+        /* Important!
+         * We always have queue: {frame/top field, bottom buffer} ...!
+         * So, attach buffers accordingly */
+        surfInputIndexInList = 2*surfInputIndexInList;
         outBuffers[numOutBufs++] = m_statOutId[surfInputIndexInList];
         mdprintf(stderr, "m_statOutId[%u]=%d\n", surfInputIndexInList, m_statOutId[surfInputIndexInList]);
         configBuffers[buffersCount++] = m_statOutId[surfInputIndexInList];
-        /*In interlaced case we always need to attached both buffer, for firts and for second field */
-        if (MFX_PICSTRUCT_PROGRESSIVE != m_videoParam.mfx.FrameInfo.PicStruct)
+        /*In interlaced case we always need to attached both buffer, for first and for second field */
+        if (MFX_PICSTRUCT_PROGRESSIVE != task.GetPicStructForEncode())
         {
             outBuffers[numOutBufs++] = m_statOutId[surfInputIndexInList + 1];
             mdprintf(stderr, "m_statOutId[%u]=%d\n", surfInputIndexInList + 1 , m_statOutId[surfInputIndexInList + 1]);
@@ -664,7 +654,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     m_statParams.outputs = &outBuffers[0]; //bufIDs for outputs
 
 //#if 0
-    mdprintf(stderr, "\n**** stat params:\n");
+    mdprintf(stderr, "Stat params:\n");
     mdprintf(stderr, "input {pic_id = %d, flag = %d}\n", m_statParams.input.picture_id, m_statParams.input.flags);
     mdprintf(stderr, "num_past_references=%d\n", m_statParams.num_past_references);
     for (unsigned int ii = 0; ii < m_statParams.num_past_references; ii++)
@@ -773,7 +763,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
          * {top bot}, {top bot}, {top bot}
          *  So, we have to correct behavior for BFF case
          * */
-        if (MFX_PICSTRUCT_FIELD_BFF == m_videoParam.mfx.FrameInfo.PicStruct)
+        if (MFX_PICSTRUCT_FIELD_BFF == task.GetPicStructForEncode())
         {
             if (0 == feiFieldId) // bottom field from BFF sequent
                 currentFeedback.mbstat = m_statOutId[surfInputIndexInList + 1];
@@ -817,7 +807,7 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
     mfxU32 feiFieldId = fieldId;
     /*Input FEI Ext buffer sequence for BFF is: bff tff bff tff
      * So, MSDK need to swap feiFieldId values to get correct buffer */
-    if (MFX_PICSTRUCT_FIELD_BFF == m_videoParam.mfx.FrameInfo.PicStruct)
+    if (MFX_PICSTRUCT_FIELD_BFF == task.GetPicStructForEncode())
     {
         if (1 == feiFieldId)
             feiFieldId = 0;
@@ -902,9 +892,6 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
                     vaUnmapBuffer(m_vaDisplay, statMVid);
                 }
-
-                MFX_DESTROY_VABUFFER(statMVid, m_vaDisplay);
-                m_statMVId[feiFieldId] = VA_INVALID_ID;
             }
 
             if (feiCtrl && !feiCtrl->DisableStatisticsOutput && mbstatOut)
@@ -1193,7 +1180,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 
     /*Input FEI Ext buffer sequence for BFF is: bff tff bff tff
      * So, MSDK need to swap feiFieldId values to get correct buffer */
-    if (MFX_PICSTRUCT_FIELD_BFF == m_videoParam.mfx.FrameInfo.PicStruct)
+    if (MFX_PICSTRUCT_FIELD_BFF == task.GetPicStructForEncode())
     {
         if (1 == feiFieldId)
             feiFieldId = 0;
@@ -2195,7 +2182,7 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
 
     /*Input FEI Ext buffer sequence for BFF is: bff tff bff tff
      * So, MSDK need to swap feiFieldId values to get correct buffer */
-    if (MFX_PICSTRUCT_FIELD_BFF == m_videoParam.mfx.FrameInfo.PicStruct)
+    if (MFX_PICSTRUCT_FIELD_BFF == task.GetPicStructForEncode())
     {
         if (1 == feiFieldId)
             feiFieldId = 0;
@@ -2604,7 +2591,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
     /*Input FEI Ext buffer sequence for BFF is: bff tff bff tff
      * So, MSDK need to swap feiFieldId values to get correct buffer */
-    if (MFX_PICSTRUCT_FIELD_BFF == m_videoParam.mfx.FrameInfo.PicStruct)
+    if (MFX_PICSTRUCT_FIELD_BFF == task.GetPicStructForEncode())
     {
         if (1 == feiFieldId)
             feiFieldId = 0;
@@ -3606,7 +3593,7 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
 
     /*Input FEI Ext buffer sequence for BFF is: bff tff bff tff
      * So, MSDK need to swap feiFieldId values to get correct buffer */
-    if (MFX_PICSTRUCT_FIELD_BFF == m_videoParam.mfx.FrameInfo.PicStruct)
+    if (MFX_PICSTRUCT_FIELD_BFF == task.GetPicStructForEncode())
     {
         if (1 == feiFieldId)
             feiFieldId = 0;
