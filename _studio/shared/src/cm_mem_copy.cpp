@@ -627,7 +627,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorNV12GPUtoCPU(   CmSurface2D* pSurface,
     SurfaceIndex    *pSurf2DIndexCM     = NULL;
     CmThreadSpace   *pTS                = NULL;
     CmTask          *pGPUCopyTask       = NULL;
-    CmEvent         *pInternalEvent     = (CmEvent*)-1;
+    CmEvent         *pInternalEvent     = NULL;
 
     UINT            threadWidth             = 0;
     UINT            threadHeight            = 0;
@@ -806,7 +806,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorNV12CPUtoGPU(   CmSurface2D* pSurface,
     SurfaceIndex    *pSurf2DIndexCM     = NULL;
     CmThreadSpace   *pTS                = NULL;
     CmTask          *pGPUCopyTask       = NULL;
-    CmEvent         *pInternalEvent     = (CmEvent*)-1;
+    CmEvent         *pInternalEvent     = NULL;
 
     UINT            threadWidth             = 0;
     UINT            threadHeight            = 0;
@@ -1825,7 +1825,7 @@ mfxStatus CmCopyWrapper::CopyMirrorVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPi
     return EnqueueCopyMirrorNV12GPUtoCPU(pCmSurface2D,pDst,roi.width,roi.height,dstPitch,dstUVOffset,format,0,e);
 
 }
-mfxStatus CmCopyWrapper::CopyMirrorSystemToVideoMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi, mfxU32 format)
+mfxStatus CmCopyWrapper::CopyMirrorSystemToVideoMemory(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi, mfxU32 format)
 {
     CmEvent* e = (CmEvent*)-1;//NULL;
     mfxU32 width  = roi.width;
@@ -1834,9 +1834,9 @@ mfxStatus CmCopyWrapper::CopyMirrorSystemToVideoMemory(mfxU8 *pDst, mfxU32 dstPi
     // create or find already associated cm surface 2d
     CmSurface2D *pCmSurface2D;
 
-    pCmSurface2D = CreateCmSurface2D(pSrc, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
+    pCmSurface2D = CreateCmSurface2D(pDst, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
-    return EnqueueCopyMirrorNV12CPUtoGPU(pCmSurface2D,pDst,roi.width,roi.height,dstPitch,dstUVOffset,format,0,e);
+    return EnqueueCopyMirrorNV12CPUtoGPU(pCmSurface2D,pSrc,roi.width,roi.height,srcPitch,srcUVOffset,format,0,e);
 
 }
 mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(void *pDst, void *pSrc, IppiSize roi)

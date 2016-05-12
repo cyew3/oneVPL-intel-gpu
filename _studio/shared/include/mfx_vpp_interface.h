@@ -57,9 +57,6 @@
 
 namespace MfxHwVideoProcessing
 {
-
-    //#define VPP_MIRRORING
-
     const mfxU32 g_TABLE_SUPPORTED_FOURCC [] =
     {
         MFX_FOURCC_NV12      ,
@@ -382,6 +379,7 @@ namespace MfxHwVideoProcessing
                ,scalingMode(MFX_SCALING_MODE_DEFAULT)
                ,bEOS(false)
                ,mirroring(0)
+               ,mirroringPosition(0)
                ,scene(VPP_SCENE_NO_CHANGE)
             {
                    memset(&targetSurface, 0, sizeof(mfxDrvSurface));
@@ -481,6 +479,7 @@ namespace MfxHwVideoProcessing
         std::vector<SignalInfo> VideoSignalInfo; // Video signal info for each frame in a single run
 
         int        mirroring;
+        int        mirroringPosition;
 
         vppScene    scene;     // Keep information about scene change
     };

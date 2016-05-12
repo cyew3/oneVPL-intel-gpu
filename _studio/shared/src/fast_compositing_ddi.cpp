@@ -654,9 +654,7 @@ mfxStatus FastCompositingDDI::QueryCapabilities(mfxVppCaps& caps)
 
     caps.uRotation  = 0; // FastComposing DDI doesn't support rotation.
 
-#ifdef VPP_MIRRORING
     caps.uMirroring = 1; // Mirroring supported thru special CM copy kernel
-#endif
 
     if(TRUE == m_caps.sPrimaryVideoCaps.bAdvancedDI)
     {

@@ -6,7 +6,7 @@ This software is supplied under the terms of a license agreement or nondisclosur
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
 
-Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
 
 File Name: d3d11_video_processor.h
 
@@ -31,9 +31,7 @@ File Name: d3d11_video_processor.h
 #include "mfxdefs.h"
 #include "mfx_vpp_interface.h"
 
-#ifdef VPP_MIRRORING
- #include <d3d11_1.h> // VideoProcessorSetStreamMirror
-#endif
+//#include <d3d11_1.h> - VideoProcessorSetStreamMirror
 
 #include <set>
 #include <algorithm>

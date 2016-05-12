@@ -2224,18 +2224,17 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             angle);
     }
 
-#ifdef VPP_MIRRORING
-    switch(pParams->mirroring)
-    {
-    case MFX_MIRRORING_VERTICAL:
-        (reinterpret_cast<ID3D11VideoContext1 *>(m_pVideoContext))->VideoProcessorSetStreamMirror(m_pVideoProcessor, 0, TRUE, FALSE, TRUE);
-        break;
-    case MFX_MIRRORING_HORIZONTAL:
-    default:
-        (reinterpret_cast<ID3D11VideoContext1 *>(m_pVideoContext))->VideoProcessorSetStreamMirror(m_pVideoProcessor, 0, TRUE, TRUE, FALSE);
-        break;
-    }
-#endif
+
+    //switch(pParams->mirroring)
+    //{
+    //case MFX_MIRRORING_VERTICAL:
+    //    (reinterpret_cast<ID3D11VideoContext1 *>(m_pVideoContext))->VideoProcessorSetStreamMirror(m_pVideoProcessor, 0, TRUE, FALSE, TRUE);
+    //    break;
+    //case MFX_MIRRORING_HORIZONTAL:
+    //default:
+    //    (reinterpret_cast<ID3D11VideoContext1 *>(m_pVideoContext))->VideoProcessorSetStreamMirror(m_pVideoProcessor, 0, TRUE, TRUE, FALSE);
+    //    break;
+    //}
 
     // [5] Detail
     if (pParams->detailFactor > 0)
@@ -2908,9 +2907,7 @@ mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)
     caps.uMaxWidth = 16352;
     caps.uMaxHeight = 16352;
 
-#ifdef VPP_MIRRORING
     caps.uMirroring = 1; // Mirroring supported thru special CM copy kernel
-#endif
 
     if( TRUE == m_vpreCaps.bFieldWeavingControl )
     {

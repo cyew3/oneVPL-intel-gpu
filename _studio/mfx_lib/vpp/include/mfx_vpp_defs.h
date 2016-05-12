@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //                     defines for (SW)VPP processing
@@ -164,6 +164,13 @@ typedef struct
     mfxU16  Height;
 
 } Surface1_32f;
+
+typedef enum
+{
+    MIRROR_INPUT   = 0x0001,
+    MIRROR_OUTPUT  = 0x0002,
+    MIRROR_WO_EXEC = 0x0004
+} MirroringPositions;
 
 #endif // __MFX_VPP_DEFS_H
 #endif // MFX_ENABLE_VPP
