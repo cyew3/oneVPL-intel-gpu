@@ -708,7 +708,8 @@ mfxStatus MFXCamera_Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest
     if (asyncDepth == 0)
         asyncDepth = MFX_CAMERA_DEFAULT_ASYNCDEPTH;
 
-    mfxStatus sts = CheckIOPattern(par,par,1);
+    mfxVideoParam tmpPar = *par;
+    mfxStatus sts = CheckIOPattern(par,&tmpPar,1);
     in->Info = par->vpp.In;
     in->NumFrameMin = 1;
     in->NumFrameSuggested = in->NumFrameMin + asyncDepth - 1;
@@ -1518,8 +1519,8 @@ mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFram
             surface_out->Data.R = surface_out->Data.B + 2;
             surface_out->Data.A = surface_out->Data.B + 3;
         }
-        else
-        { // ARGB16
+        else if (surface_out->Info.FourCC == MFX_FOURCC_ARGB16)
+        { // ARGB16. Why do we update pointers here? W/a for some canon problem?
             surface_out->Data.U16 = surface_out->Data.V16 + 1;
             surface_out->Data.Y16 = surface_out->Data.V16 + 2;
             surface_out->Data.A = (mfxU8 *)(surface_out->Data.V16 + 3);
