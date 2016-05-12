@@ -605,7 +605,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     {
         if (!pParams->scrWidth || !pParams->scrHeight)
         {
-            msdk_printf(MSDK_STRING("error: for screen capture, width and height must be specified manually (-w and -h)"));
+            msdk_printf(MSDK_STRING("error: for screen capture, width and height must be specified manually (-scr:w and -scr:h)"));
             return MFX_ERR_UNSUPPORTED;
         }
     }
