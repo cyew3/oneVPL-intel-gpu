@@ -13,6 +13,8 @@
 #include "mfxplugin++.h"
 #include "umc_mutex.h"
 #include "mfxla.h"
+#include "mfxpcp.h"
+#include "mfxwidi.h"
 
 #define DEBUG_REC_FRAMES_INFO 0   // dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
 #ifdef DEBUG_REC_FRAMES_INFO
@@ -72,6 +74,14 @@ inline mfxU32 CeilLog2  (mfxU32 x)           { mfxU32 l = 0; while(x > (1U<<l)) 
 inline mfxU32 CeilDiv   (mfxU32 x, mfxU32 y) { return (x + y - 1) / y; }
 inline mfxU64 CeilDiv   (mfxU64 x, mfxU64 y) { return (x + y - 1) / y; }
 inline mfxU32 Ceil      (mfxF64 x)           { return (mfxU32)(.999 + x); }
+inline mfxU64 SwapEndian(mfxU64 val)
+{
+    return
+        ((val << 56) & 0xff00000000000000) | ((val << 40) & 0x00ff000000000000) |
+        ((val << 24) & 0x0000ff0000000000) | ((val <<  8) & 0x000000ff00000000) |
+        ((val >>  8) & 0x00000000ff000000) | ((val >> 24) & 0x0000000000ff0000) |
+        ((val >> 40) & 0x000000000000ff00) | ((val >> 56) & 0x00000000000000ff);
+}
 
 enum
 {
@@ -221,6 +231,7 @@ typedef struct _Task : DpbFrame
     mfxFrameSurface1*   m_surf_real;
     mfxEncodeCtrl       m_ctrl;
     Slice               m_sh;
+    mfxAES128CipherCounter m_aes_counter;
 
     mfxU32 m_idxBs;
 
@@ -291,7 +302,9 @@ namespace ExtBuffer
      MFX_EXTBUFF_ENCODER_RESET_OPTION,\
      MFX_EXTBUFF_CODING_OPTION_VPS,\
      MFX_EXTBUFF_VIDEO_SIGNAL_INFO,\
-     MFX_EXTBUFF_LOOKAHEAD_STAT
+     MFX_EXTBUFF_LOOKAHEAD_STAT,\
+     MFX_EXTBUFF_PAVP_OPTION,\
+     MFX_EXTBUFF_ENCODER_WIDI_USAGE
     ;
 
     template<class T> struct ExtBufferMap {};
@@ -316,6 +329,8 @@ namespace ExtBuffer
         EXTBUF(mfxExtEncoderCapability,     MFX_EXTBUFF_ENCODER_CAPABILITY);
         EXTBUF(mfxExtLAFrameStatistics,     MFX_EXTBUFF_LOOKAHEAD_STAT);
         EXTBUF(mfxExtIntGPUHang,            MFX_EXTBUFF_GPU_HANG);
+        EXTBUF(mfxExtPAVPOption,            MFX_EXTBUFF_PAVP_OPTION);
+        EXTBUF(mfxExtAVCEncoderWiDiUsage,   MFX_EXTBUFF_ENCODER_WIDI_USAGE);
     #undef EXTBUF
 
     #define _CopyPar(dst, src, PAR) dst.PAR = src.PAR;
@@ -595,7 +610,8 @@ public:
         mfxExtAvcTemporalLayers     AVCTL;
         mfxExtDumpFiles             DumpFiles;
         mfxExtVideoSignalInfo       VSI;
-        mfxExtBuffer *              m_extParam[10];
+        mfxExtPAVPOption            PAVP;
+        mfxExtBuffer *              m_extParam[11];
     } m_ext;
 
     mfxU32 BufferSizeInKB;
@@ -607,6 +623,7 @@ public:
     mfxU32 LCUSize;
     bool   InsertHRDInfo;
     bool   RawRef;
+    bool   WiDi;
 
     MfxVideoParam();
     MfxVideoParam(MfxVideoParam const & par);
@@ -813,6 +830,14 @@ IntraRefreshState GetIntraRefreshState(
 mfxU8 GetNumReorderFrames(
     mfxU32 BFrameRate, 
     bool BPyramid);
+
+bool Increment(
+    mfxAES128CipherCounter & aesCounter,
+    mfxExtPAVPOption const & extPavp);
+
+void Decrement(
+    mfxAES128CipherCounter & aesCounter,
+    mfxExtPAVPOption const & extPavp);
 
 #if DEBUG_REC_FRAMES_INFO
     inline vm_file * OpenFile(vm_char const * name, vm_char const * mode)

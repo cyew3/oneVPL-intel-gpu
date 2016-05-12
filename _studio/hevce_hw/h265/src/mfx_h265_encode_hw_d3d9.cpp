@@ -386,6 +386,7 @@ D3D9Encoder::D3D9Encoder()
     : m_core(0)
     , m_auxDevice(0)
     , m_infoQueried(false)
+    , m_widi(false)
 {
     Zero(m_caps);
 }
@@ -465,6 +466,10 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
 
 mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
 {
+    const mfxExtPAVPOption& PAVP = par.m_ext.PAVP;
+
+    m_widi = par.WiDi;
+
 #ifndef HEADER_PACKING_TEST
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
@@ -475,8 +480,19 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
 
     ENCODE_CREATEDEVICE encodeCreateDevice = {};
     encodeCreateDevice.pVideoDesc     = &desc;
-    encodeCreateDevice.CodingFunction = ENCODE_ENC_PAK;
+    encodeCreateDevice.CodingFunction = m_widi ? (ENCODE_ENC_PAK | ENCODE_WIDI) : ENCODE_ENC_PAK;
     encodeCreateDevice.EncryptionMode = DXVA_NoEncrypt;
+
+    D3DAES_CTR_IV        initialCounter = { PAVP.CipherCounter.IV, PAVP.CipherCounter.Count };
+    PAVP_ENCRYPTION_MODE encryptionMode = { PAVP.EncryptionType,   PAVP.CounterType         };
+
+    if (par.Protected == MFX_PROTECTION_PAVP || par.Protected == MFX_PROTECTION_GPUCP_PAVP)
+    {
+        encodeCreateDevice.EncryptionMode        = DXVA2_INTEL_PAVP;
+        encodeCreateDevice.CounterAutoIncrement  = PAVP.CounterIncrement;
+        encodeCreateDevice.pInitialCipherCounter = &initialCounter;
+        encodeCreateDevice.pPavpEncryptionMode   = &encryptionMode;
+    }
 
     HRESULT hr = m_auxDevice->Execute(AUXDEV_CREATE_ACCEL_SERVICE, m_guid, encodeCreateDevice);
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
@@ -804,6 +820,13 @@ mfxStatus D3D9Encoder::QueryStatus(Task & task)
     case ENCODE_OK:
         Trace(*feedback, 0);
         task.m_bsDataLength = feedback->bitstreamSize;
+
+        if (m_widi /*&& m_caps.HWCounterAutoIncrementSupport*/)
+        {
+            task.m_aes_counter.Count = feedback->aes_counter.Counter;
+            task.m_aes_counter.IV    = feedback->aes_counter.IV;
+        }
+
         m_feedbackCached.Remove(task.m_statusReportNumber);
         return MFX_ERR_NONE;
 

@@ -196,7 +196,7 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
         }
     }
 
-    request.Type        = MFX_MEMTYPE_D3D_INT;
+    request.Type        = m_vpar.Protected ? (MFX_MEMTYPE_D3D_INT | MFX_MEMTYPE_PROTECTED) : MFX_MEMTYPE_D3D_INT;
     request.NumFrameMin = MaxRec(m_vpar);
     
     if(request.Info.FourCC == MFX_FOURCC_RGB4)
@@ -225,8 +225,10 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
 
     m_task.Reset(MaxTask(m_vpar));
 
-
     Fill(m_lastTask, IDX_INVALID);
+
+    m_aesCounter = m_lastTask.m_aes_counter = m_vpar.m_ext.PAVP.CipherCounter;
+    Decrement(m_lastTask.m_aes_counter, m_vpar.m_ext.PAVP);
 
     m_NumberOfSlicesForOpt = m_vpar.mfx.NumSlice;
     ZeroParams();
@@ -320,7 +322,7 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         Zero(out->mfx);
 
         out->IOPattern             = 1;
-        //out->Protected             = 1;
+        out->Protected             = 1;
         out->AsyncDepth            = 1;
         //out->mfx.CodecId           = 1;
         //out->mfx.LowPower          = 1;
@@ -653,6 +655,7 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     MFX_CHECK_NULL_PTR1(bs);
 
     MFX_CHECK_STS(m_runtimeErr);
+
     if (surface)
     {
         MFX_CHECK((surface->Data.Y == 0) == (surface->Data.UV == 0), MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -660,14 +663,19 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
         //MFX_CHECK(surface->Info.Width  >=  m_vpar.mfx.FrameInfo.Width, MFX_ERR_INVALID_VIDEO_PARAM);
         //MFX_CHECK(surface->Info.Height >=  m_vpar.mfx.FrameInfo.Height, MFX_ERR_INVALID_VIDEO_PARAM);
     }
+
     if (m_vpar.Protected == 0)
     {
-        mfxU32 bufferSizeInKB =  m_vpar.BufferSizeInKB;
-
         MFX_CHECK(bs->DataOffset <= bs->MaxLength, MFX_ERR_UNDEFINED_BEHAVIOR);
-        MFX_CHECK(bs->DataOffset + bs->DataLength + bufferSizeInKB * 1000u <= bs->MaxLength,
-            MFX_ERR_NOT_ENOUGH_BUFFER);
+        MFX_CHECK(bs->DataOffset + bs->DataLength + m_vpar.BufferSizeInKB * 1000u <= bs->MaxLength, MFX_ERR_NOT_ENOUGH_BUFFER);
         MFX_CHECK_NULL_PTR1(bs->Data);
+    }
+    else
+    {
+        mfxEncryptedData* ed = bs->EncryptedData;
+        MFX_CHECK(ed->DataOffset <= ed->MaxLength, MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(ed->DataOffset + ed->DataLength + m_vpar.BufferSizeInKB * 1000u <= ed->MaxLength, MFX_ERR_NOT_ENOUGH_BUFFER);
+        MFX_CHECK_NULL_PTR1(ed->Data);
     }
 
     if (surface)
@@ -725,7 +733,11 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
             sts = MFX_ERR_MORE_DATA_SUBMIT_TASK;
             task->m_bs = 0;       
         }
-     } 
+    }
+
+    if (sts >= 0 && Increment(m_aesCounter, m_vpar.m_ext.PAVP))
+        sts = MFX_WRN_OUT_OF_RANGE;
+
     return sts;
 }
 mfxStatus Plugin::PrepareTask(Task& input_task)
@@ -807,6 +819,7 @@ mfxStatus Plugin::PrepareTask(Task& input_task)
         m_lastTask = *task; 
         m_task.Submit(task);
     }
+
     return sts;
 }
 
@@ -879,20 +892,35 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
             mfxU32 bytesAvailable = bs->MaxLength - bs->DataOffset - bs->DataLength;
             mfxU32 bytes2copy     = taskForQuery->m_bsDataLength;
             mfxI32 dpbOutputDelay = taskForQuery->m_fo +  GetNumReorderFrames(m_vpar.mfx.GopRefDist-1,m_vpar.isBPyramid()) - taskForQuery->m_eo;
+            mfxU8* bsData         = bs->Data + bs->DataOffset + bs->DataLength;
+            mfxU32* pDataLength   = &bs->DataLength;
+
+            if (m_vpar.Protected)
+            {
+                mfxEncryptedData* ed = bs->EncryptedData;
+                MFX_CHECK(bs->EncryptedData, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+                bytesAvailable = ed->MaxLength - ed->DataOffset - ed->DataLength;
+                bsData         = ed->Data + ed->DataOffset + ed->DataLength;
+                pDataLength    = &ed->DataLength;
+                bytes2copy     = Align(bytes2copy, 16);
+
+                ed->CipherCounter = taskForQuery->m_aes_counter;
+            }
 
             MFX_CHECK(bytesAvailable >= bytes2copy, MFX_ERR_NOT_ENOUGH_BUFFER);
 
             sts = fa.Lock(fa.pthis, taskForQuery->m_midBs, &codedFrame);
             MFX_CHECK(codedFrame.Y, MFX_ERR_LOCK_MEMORY);
 
-            memcpy_s(bs->Data + bs->DataOffset + bs->DataLength, bytes2copy, codedFrame.Y, bytes2copy);
+            memcpy_s(bsData, bytes2copy, codedFrame.Y, bytes2copy);
 
             sts = fa.Unlock(fa.pthis, taskForQuery->m_midBs, &codedFrame);
             MFX_CHECK_STS(sts);
 
-            bs->DataLength += bytes2copy;
+            *pDataLength += bytes2copy;
 
-            if (!m_hrd.Enabled())
+            if (!m_hrd.Enabled() && !m_vpar.Protected)
             {
                 ENCODE_PACKEDHEADER_DATA* pSEI = m_ddi->PackHeader(*taskForQuery, SUFFIX_SEI_NUT);
 
@@ -911,8 +939,7 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
             m_hrd.Update(bytes2copy * 8, *taskForQuery);
 
             bs->TimeStamp       = taskForQuery->m_surf->Data.TimeStamp;
-            
-            bs->DecodeTimeStamp = CalcDTSFromPTS(this->m_vpar.mfx.FrameInfo, (mfxU16)dpbOutputDelay, bs->TimeStamp);;
+            bs->DecodeTimeStamp = CalcDTSFromPTS(this->m_vpar.mfx.FrameInfo, (mfxU16)dpbOutputDelay, bs->TimeStamp);
             bs->PicStruct       = MFX_PICSTRUCT_PROGRESSIVE;
             bs->FrameType       = taskForQuery->m_frameType;
             if (m_brc)

@@ -465,6 +465,7 @@ MfxVideoParam::MfxVideoParam()
     , LCUSize         (DEFAULT_LCU_SIZE)
     , InsertHRDInfo   (false)
     , RawRef          (false)
+    , WiDi            (false)
 {
     Zero(*(mfxVideoParam*)this);
     Zero(NumRefLX);
@@ -482,15 +483,15 @@ MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
 }
 
 MfxVideoParam::MfxVideoParam(mfxVideoParam const & par)
-        : BufferSizeInKB  (0)
-        , InitialDelayInKB(0)
-        , TargetKbps      (0)
-        , MaxKbps         (0)
-        , LTRInterval     (0)
-        , LCUSize         (DEFAULT_LCU_SIZE)
-        , InsertHRDInfo   (false)
-        , RawRef          (false)
-
+    : BufferSizeInKB  (0)
+    , InitialDelayInKB(0)
+    , TargetKbps      (0)
+    , MaxKbps         (0)
+    , LTRInterval     (0)
+    , LCUSize         (DEFAULT_LCU_SIZE)
+    , InsertHRDInfo   (false)
+    , RawRef          (false)
+    , WiDi            (false)
 {
     Zero(*(mfxVideoParam*)this);
     Zero(NumRefLX);
@@ -560,6 +561,9 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     ExtBuffer::Construct(par, m_ext.AVCTL, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.DumpFiles, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.VSI, m_ext.m_extParam, base.NumExtParam);
+    ExtBuffer::Construct(par, m_ext.PAVP, m_ext.m_extParam, base.NumExtParam);
+
+    WiDi = !!((mfxExtAVCEncoderWiDiUsage*)ExtBuffer::Get(par));
 }
 
 mfxStatus MfxVideoParam::FillPar(mfxVideoParam& par, bool query)
@@ -2821,7 +2825,10 @@ void ConfigureTask(
     task.m_statusReportNumber = prevTask.m_statusReportNumber + 1;
     task.m_statusReportNumber = (task.m_statusReportNumber == 0) ? 1 : task.m_statusReportNumber;
 
+    task.m_aes_counter = prevTask.m_aes_counter;
+    Increment(task.m_aes_counter, par.m_ext.PAVP);
 }
+
 mfxI64 CalcDTSFromPTS(
     mfxFrameInfo const & info,
     mfxU16               dpbOutputDelay,
@@ -2834,6 +2841,41 @@ mfxI64 CalcDTSFromPTS(
     }
 
     return MFX_TIMESTAMP_UNKNOWN;
+}
+
+bool Increment(
+    mfxAES128CipherCounter & aesCounter,
+    mfxExtPAVPOption const & extPavp)
+{
+    bool wrapped = false;
+
+    if (extPavp.EncryptionType == MFX_PAVP_AES128_CTR)
+    {
+        mfxU64 tmp = SwapEndian(aesCounter.Count) + extPavp.CounterIncrement;
+
+        if (extPavp.CounterType == MFX_PAVP_CTR_TYPE_A)
+            tmp &= 0xffffffff;
+
+        wrapped = (tmp < extPavp.CounterIncrement);
+        aesCounter.Count = SwapEndian(tmp);
+    }
+
+    return wrapped;
+}
+
+void Decrement(
+    mfxAES128CipherCounter & aesCounter,
+    mfxExtPAVPOption const & extPavp)
+{
+    if (extPavp.EncryptionType == MFX_PAVP_AES128_CTR)
+    {
+        mfxU64 tmp = SwapEndian(aesCounter.Count) - extPavp.CounterIncrement;
+
+        if (extPavp.CounterType == MFX_PAVP_CTR_TYPE_A)
+            tmp &= 0xffffffff;
+
+        aesCounter.Count = SwapEndian(tmp);
+    }
 }
 
 #if DEBUG_REC_FRAMES_INFO

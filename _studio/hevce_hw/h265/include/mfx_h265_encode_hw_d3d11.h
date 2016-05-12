@@ -88,6 +88,8 @@ private:
     ENCODE_ENC_CTRL_CAPS                        m_capsQuery;
     ENCODE_ENC_CTRL_CAPS                        m_capsGet;
     bool                                        m_infoQueried;
+    bool                                        m_pavp;
+    bool                                        m_widi;
 
     ENCODE_SET_SEQUENCE_PARAMETERS_HEVC         m_sps;
     ENCODE_SET_PICTURE_PARAMETERS_HEVC          m_pps;

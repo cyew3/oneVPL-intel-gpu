@@ -930,7 +930,42 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     changed += CheckMax(par.mfx.GopRefDist, caps.SliceIPOnly ? 1 : (par.mfx.GopPicSize ? par.mfx.GopPicSize - 1 : 0xFFFF));
 
-    unsupported += CheckOption(par.Protected, 0);
+    unsupported += CheckOption(par.Protected
+        , (mfxU16)MFX_PROTECTION_PAVP
+        , (mfxU16)MFX_PROTECTION_GPUCP_PAVP
+        , 0);
+
+    if (par.Protected)
+    {
+        mfxExtPAVPOption& PAVP = par.m_ext.PAVP;
+
+        unsupported += CheckOption(PAVP.EncryptionType
+            , (mfxU16)MFX_PAVP_AES128_CTR
+            , (mfxU16)MFX_PAVP_AES128_CBC
+            , 0);
+
+        unsupported += CheckOption(PAVP.CounterType
+            , (mfxU16)MFX_PAVP_CTR_TYPE_A
+            , (mfxU16)MFX_PAVP_CTR_TYPE_B
+            , (mfxU16)MFX_PAVP_CTR_TYPE_C
+            , 0);
+
+        if (PAVP.CounterType == MFX_PAVP_CTR_TYPE_A && PAVP.CipherCounter.Count)
+        {
+            changed += CheckRangeDflt(PAVP.CipherCounter.Count
+                , 0x0000000100000000
+                , 0xffffffff00000000
+                , 0xffffffff00000000);
+        }
+
+        if (PAVP.CounterIncrement)
+        {
+            changed += CheckRangeDflt(PAVP.CounterIncrement
+                , 0x0C000
+                , 0xC0000
+                , 0x0C000);
+        }
+    }
 
     changed += CheckOption(par.IOPattern
         , (mfxU32)MFX_IOPATTERN_IN_VIDEO_MEMORY
@@ -1543,6 +1578,21 @@ void SetDefaults(
 
     if (!CO3.NumRefActiveBRefL1)
         CO3.NumRefActiveBRefL1 = par.NumRefLX[1];
+
+    if (   par.Protected == MFX_PROTECTION_PAVP
+        || par.Protected == MFX_PROTECTION_GPUCP_PAVP)
+    {
+        mfxExtPAVPOption& PAVP = par.m_ext.PAVP;
+
+        if (!PAVP.EncryptionType)
+            PAVP.EncryptionType = MFX_PAVP_AES128_CTR;
+
+        if (!PAVP.CounterType)
+            PAVP.CounterType = MFX_PAVP_CTR_TYPE_A;
+
+        if (!PAVP.CounterIncrement)
+            PAVP.CounterIncrement = 0xC000;
+    }
 }
 
 } //namespace MfxHwH265Encode

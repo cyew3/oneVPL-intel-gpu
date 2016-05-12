@@ -19,6 +19,8 @@ namespace MfxHwH265Encode
 D3D11Encoder::D3D11Encoder()
     : m_core(0)
     , m_infoQueried(false)
+    , m_pavp(false)
+    , m_widi(false)
 {
 }
 
@@ -105,8 +107,8 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
         desc.OutputFormat = DXGI_FORMAT_NV12;
         desc.Guid         = m_guid; 
 
-        config.ConfigDecoderSpecific         = ENCODE_ENC_PAK;  
-        config.guidConfigBitstreamEncryption = DXVA_NoEncrypt;
+        config.ConfigDecoderSpecific         = m_widi ? (ENCODE_ENC_PAK | ENCODE_WIDI) : ENCODE_ENC_PAK;  
+        config.guidConfigBitstreamEncryption = m_pavp ? DXVA2_INTEL_PAVP : DXVA_NoEncrypt;
 
         hr = m_vdevice->CreateVideoDecoder(&desc, &config, &m_vdecoder);
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
@@ -136,6 +138,35 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
 
     HRESULT hr;
     D3D11_VIDEO_DECODER_EXTENSION ext = {};
+
+    if (   m_pavp != (par.Protected == MFX_PROTECTION_PAVP || par.Protected == MFX_PROTECTION_GPUCP_PAVP)
+        || m_widi != par.WiDi)
+    {
+        // Have to create new device
+
+        m_widi = par.WiDi;
+        m_pavp = (par.Protected == MFX_PROTECTION_PAVP || par.Protected == MFX_PROTECTION_GPUCP_PAVP);
+
+        mfxStatus sts = CreateAuxilliaryDevice(m_core, m_guid, par.mfx.FrameInfo.Width, par.mfx.FrameInfo.Height);
+        MFX_CHECK_STS(sts);
+
+        if (m_pavp)
+        {
+            const mfxExtPAVPOption& PAVP = par.m_ext.PAVP;
+
+            D3D11_AES_CTR_IV      initialCounter = { PAVP.CipherCounter.IV, PAVP.CipherCounter.Count };
+            PAVP_ENCRYPTION_MODE  encryptionMode = { PAVP.EncryptionType,   PAVP.CounterType         };
+            ENCODE_ENCRYPTION_SET encryptSet     = { PAVP.CounterIncrement, &initialCounter, &encryptionMode};
+
+            D3D11_VIDEO_DECODER_EXTENSION encryptParam = {};
+            encryptParam.Function = ENCODE_ENCRYPTION_SET_ID;
+            encryptParam.pPrivateInputData     = &encryptSet;
+            encryptParam.PrivateInputDataSize  = sizeof(ENCODE_ENCRYPTION_SET);
+
+            hr = m_vcontext->DecoderExtension(m_vdecoder, &encryptParam);
+            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+        }
+    }
 
     ext.Function = ENCODE_ENC_CTRL_CAPS_ID;
     ext.pPrivateOutputData = &m_capsQuery;
@@ -542,6 +573,13 @@ mfxStatus D3D11Encoder::QueryStatus(Task & task)
     {
     case ENCODE_OK:
         task.m_bsDataLength = feedback->bitstreamSize;
+
+        if (m_widi /*&& m_caps.HWCounterAutoIncrementSupport*/)
+        {
+            task.m_aes_counter.Count = feedback->aes_counter.Counter;
+            task.m_aes_counter.IV    = feedback->aes_counter.IV;
+        }
+
         m_feedbackCached.Remove(task.m_statusReportNumber);
         return MFX_ERR_NONE;
 

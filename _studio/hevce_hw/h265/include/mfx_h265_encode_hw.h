@@ -128,7 +128,8 @@ protected:
     mfxU16                          m_NumberOfSlicesForOpt;
     bool                            m_bInit;
     mfxStatus                       m_runtimeErr;
-    BrcIface*                       m_brc; 
+    BrcIface*                       m_brc;
+    mfxAES128CipherCounter          m_aesCounter;
 };
 
 } //MfxHwH265Encode
