@@ -244,7 +244,20 @@ mfxStatus D3D11CameraProcessor::AsyncRoutine(AsyncParams *pParam)
     if ( pParam->Caps.bForwardGammaCorrection )
     {
         m_executeParams[surfInIndex].bCameraGammaCorrection = true;
-        for(int i = 0; i < 64; i++)
+       /* FCG params for first point must be 0 and for the last point must be 65535 
+        * If they are not, driver returns INVALIDARGS error
+        */
+        m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[0].PixelValue                 = 0;
+        m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[0].BlueChannelCorrectedValue  = 0;
+        m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[0].GreenChannelCorrectedValue = 0;
+        m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[0].RedChannelCorrectedValue   = 0;
+
+        m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[63].PixelValue                 = 65535;
+        m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[63].BlueChannelCorrectedValue  = 65535;
+        m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[63].GreenChannelCorrectedValue = 65535;
+        m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[63].RedChannelCorrectedValue   = 65535;
+
+        for(int i = 1; i < 63; i++)
         {
             m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[i].PixelValue = pParam->GammaParams.Segment[i].Pixel                 << shift;
             m_executeParams[surfInIndex].CameraForwardGammaCorrection.Segment[i].BlueChannelCorrectedValue  = pParam->GammaParams.Segment[i].Blue  << shift;
