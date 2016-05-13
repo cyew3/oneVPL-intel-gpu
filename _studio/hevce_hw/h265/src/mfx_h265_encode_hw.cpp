@@ -791,8 +791,8 @@ mfxStatus Plugin::PrepareTask(Task& input_task)
         task->m_idxRaw = (mfxU8)FindFreeResourceIndex(m_raw);
         task->m_idxRec = (mfxU8)FindFreeResourceIndex(m_rec);
         task->m_idxBs  = (mfxU8)FindFreeResourceIndex(m_bs);
-        MFX_CHECK(task->m_idxBs  != IDX_INVALID, MFX_ERR_UNDEFINED_BEHAVIOR);
-        MFX_CHECK(task->m_idxRec != IDX_INVALID, MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(task->m_idxBs  != IDX_INVALID, MFX_ERR_NONE);
+        MFX_CHECK(task->m_idxRec != IDX_INVALID, MFX_ERR_NONE);
 
 
         task->m_midRaw = AcquireResource(m_raw, task->m_idxRaw);
