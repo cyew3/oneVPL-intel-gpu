@@ -824,11 +824,8 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
     sts = PrepareTask(*inputTask); 
     MFX_CHECK_STS(sts);    
 
-    while (Task* taskForExecute = m_task.GetTaskForSubmit())
+    while (Task* taskForExecute = m_task.GetTaskForSubmit(true))
     {
-        if (!taskForExecute->m_surf)
-            break;
-
         if ((taskForExecute->m_insertHeaders & INSERT_BPSEI) && m_task.GetTaskForQuery())
             break; // sync is needed
 

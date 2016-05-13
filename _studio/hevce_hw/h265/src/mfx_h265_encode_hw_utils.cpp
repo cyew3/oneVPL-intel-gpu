@@ -2057,12 +2057,15 @@ void TaskManager::Submit(Task* pTask)
         }
     }
 }
-Task* TaskManager::GetTaskForSubmit()
+Task* TaskManager::GetTaskForSubmit(bool bRealTask)
 {
     UMC::AutomaticUMCMutex guard(m_listMutex);
-    if (m_encoding.size() > 0)
+    for (TaskList::iterator it = m_encoding.begin(); it != m_encoding.end(); it ++)
     {
-        return &(*m_encoding.begin());
+        if (it->m_surf || (!bRealTask))
+        {
+            return &*it;
+        }
     }
     return 0;
 }

@@ -686,7 +686,7 @@ public:
     Task* New       ();
     Task* Reorder   (MfxVideoParam const & par, DpbArray const & dpb, bool flush);
     void  Submit    (Task* task);
-    Task* GetTaskForSubmit();
+    Task* GetTaskForSubmit(bool bRealTask = false);
     void  SubmitForQuery(Task* task);
     bool  isSubmittedForQuery(Task* task);
     Task* GetTaskForQuery();
