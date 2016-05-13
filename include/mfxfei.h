@@ -62,7 +62,7 @@ typedef struct {
     mfxU16    PictureType; /* Input picture type*/
     mfxU16    DownsampleInput;
 
-    mfxU16    RefPictureType[2]; /* reference picture type, 0 -L0, 1 - L1*/
+    mfxU16    RefPictureType[2]; /* reference picture type, 0 -L0, 1 - L1 */
     mfxU16    DownsampleReference[2];
     mfxFrameSurface1 *RefFrame[2];
     mfxU16    reserved[28];
@@ -81,12 +81,12 @@ typedef struct {
 typedef struct {
     mfxExtBuffer    Header;
     mfxU32  reserved[13];
-    mfxU32  NumQPAlloc; /* size of allocated memory in number of QPs value*/
+    mfxU32  NumQPAlloc; /* size of allocated memory in number of QPs value */
 
     mfxU8    *QP;
 } mfxExtFeiEncQP;
 
-//1 PreENC output
+/* 1 PreENC output */
 /* Layout is exactly the same as mfxExtFeiEncMVs, this buffer may be removed in future */
 typedef struct {
     mfxExtBuffer    Header;
@@ -125,7 +125,7 @@ typedef struct {
     } *MB;
 } mfxExtFeiPreEncMBStat;
 
-//1  ENC_PAK input
+/* 1  ENC_PAK input */
 typedef struct {
     mfxExtBuffer    Header;
 
@@ -189,7 +189,7 @@ typedef struct {
 } mfxExtFeiEncMBCtrl;
 
 
-//1 ENC_PAK output
+/* 1 ENC_PAK output */
 /* Buffer holds 32 MVs per MB. MVs are located in zigzag scan order.
 Number in diagram below shows location of MV in memory.
 For example, MV for right top 4x4 sub block is stored in 5-th element of the array.
@@ -233,12 +233,12 @@ enum {
 };
 
 typedef struct {
-    /* dword 0-3 */
+    /* dword 0-2 */
     mfxU32    Header;  /* MFX_PAK_OBJECT_HEADER */
     mfxU32    MVDataLength;
     mfxU32    MVDataOffset;
 
-    //dword 3
+    /* dword 3 */
     mfxU32    InterMbMode         : 2;
     mfxU32    MBSkipFlag          : 1;
     mfxU32    Reserved00          : 1;
@@ -255,16 +255,16 @@ typedef struct {
     mfxU32    DcBlockCodedYFlag   : 1;
     mfxU32    Reserved03          :12;
 
-    //dword 4
+    /* dword 4 */
     mfxU8     HorzOrigin;
     mfxU8     VertOrigin;
     mfxU16    CbpY;
 
-    //dword 5
+    /* dword 5 */
     mfxU16    CbpCb;
     mfxU16    CbpCr;
 
-    //dword 6
+    /* dword 6 */
     mfxU32    QpPrimeY               : 8;
     mfxU32    Reserved30             :17;
     mfxU32    MbSkipConvDisable      : 1;
@@ -273,27 +273,27 @@ typedef struct {
     mfxU32    Direct8x8Pattern       : 4;
 
     union {
-        struct {// Intra MBs
-            //dword 7,8
+        struct {/* Intra MBs */
+            /* dword 7-8 */
             mfxU16   LumaIntraPredModes[4];
 
-            //dword 9
+            /* dword 9 */
             mfxU32   ChromaIntraPredMode : 2;
             mfxU32   IntraPredAvailFlags : 6;
             mfxU32   Reserved60          : 24;
         } IntraMB;
-        struct {// Inter MBs
-            //dword 7
+        struct {/* Inter MBs */
+            /*dword 7 */
             mfxU8    SubMbShapes;
             mfxU8    SubMbPredModes;
             mfxU16   Reserved40;
 
-            //dword 8, 9
+            /* dword 8-9 */
             mfxU8    RefIdx[2][4]; /* first index is 0 for L0 and 1 for L1 */
         } InterMB;
     };
 
-    //dword 10
+    /* dword 10 */
     mfxU16    Reserved70;
     mfxU8     TargetSizeInWord;
     mfxU8     MaxSizeInWord;
@@ -311,14 +311,14 @@ typedef struct {
 
 typedef struct {
     mfxExtBuffer    Header;
-    mfxU32      MaxFrameSize; //in bytes
-    mfxU32      NumPasses;    //up to 8
-    mfxU8       DeltaQP[8];   //list of delta QPs, only positive values
+    mfxU32      MaxFrameSize; /* in bytes */
+    mfxU32      NumPasses;    /* up to 8 */
+    mfxU8       DeltaQP[8];   /* list of delta QPs, only positive values */
 } mfxExtFeiRepackCtrl;
 
-//1 decode stream out
+/* 1 decode stream out */
 typedef struct {
-    //dword 0
+    /* dword 0 */
     mfxU32    InterMbMode         : 2;
     mfxU32    MBSkipFlag          : 1;
     mfxU32    Reserved00          : 1;
@@ -335,11 +335,11 @@ typedef struct {
     mfxU32    DcBlockCodedYFlag   : 1;
     mfxU32    Reserved03          :12;
 
-    //dword 1
+    /* dword 1 */
     mfxU16     HorzOrigin;
     mfxU16     VertOrigin;
 
-    //dword 2
+    /* dword 2 */
     mfxU32    CbpY                :16;
     mfxU32    CbpCb               : 4;
     mfxU32    CbpCr               : 4;
@@ -347,7 +347,7 @@ typedef struct {
     mfxU32    IsLastMB            : 1;
     mfxU32    ConcealMB           : 1;
 
-    //dword 3
+    /* dword 3 */
     mfxU32    QpPrimeY            : 7;
     mfxU32    Reserved30          : 1;
     mfxU32    Reserved31          : 8;
@@ -355,33 +355,33 @@ typedef struct {
     mfxU32    Reserved32          : 3;
     mfxU32    Direct8x8Pattern    : 4;
 
-    //dword 4,5,6
+    /* dword 4-6 */
     union {
-        struct {// Intra MBs
-            //dword 4,5
+        struct {/* Intra MBs */
+            /* dword 4-5 */
             mfxU16   LumaIntraPredModes[4];
 
-            //dword 6
+            /* dword 6 */
             mfxU32   ChromaIntraPredMode : 2;
             mfxU32   IntraPredAvailFlags : 6;
             mfxU32   Reserved60          : 24;
         } IntraMB;
 
-        struct {// Inter MBs
-            //dword 4
+        struct {/* Inter MBs */
+            /* dword 4 */
             mfxU8    SubMbShapes;
             mfxU8    SubMbPredModes;
             mfxU16   Reserved40;
 
-            //dword 5,6
+            /* dword 5-6 */
             mfxU8    RefIdx[2][4]; /* first index is 0 for L0 and 1 for L1 */
         } InterMB;
     };
 
-    //dword 7
+    /* dword 7 */
     mfxU32     Reserved70;
 
-    //dword 8-15
+    /* dword 8-15 */
     mfxI16Pair MV[4][2]; /* L0 - 0, L1 - 1 */
 }mfxFeiDecStreamOutMBCtrl;
 
@@ -395,7 +395,7 @@ typedef struct {
     mfxFeiDecStreamOutMBCtrl *MB;
 } mfxExtFeiDecStreamOut;
 
-//1 SPS, PPS, slice header
+/* 1 SPS, PPS, Slice Header */
 typedef struct {
     mfxExtBuffer    Header;
 
@@ -481,7 +481,7 @@ typedef struct {
 } mfxExtFeiCodingOption;
 
 
-//1 functions
+/* 1 functions */
 typedef enum {
     MFX_FEI_FUNCTION_PREENC     =1,
     MFX_FEI_FUNCTION_ENCODE     =2,
@@ -499,8 +499,9 @@ enum {
     MFX_EXTBUFF_FEI_PREENC_MB      = MFX_MAKEFOURCC('F','P','M','B'),
     MFX_EXTBUFF_FEI_ENC_CTRL       = MFX_MAKEFOURCC('F','E','C','T'),
     MFX_EXTBUFF_FEI_ENC_MV_PRED    = MFX_MAKEFOURCC('F','E','M','P'),
-    MFX_EXTBUFF_FEI_ENC_MB         = MFX_MAKEFOURCC('F','E','M','B'),
+    MFX_EXTBUFF_FEI_ENC_QP         = MFX_MAKEFOURCC('F','E','Q','P'),
     MFX_EXTBUFF_FEI_ENC_MV         = MFX_MAKEFOURCC('F','E','M','V'),
+    MFX_EXTBUFF_FEI_ENC_MB         = MFX_MAKEFOURCC('F','E','M','B'),
     MFX_EXTBUFF_FEI_ENC_MB_STAT    = MFX_MAKEFOURCC('F','E','S','T'),
     MFX_EXTBUFF_FEI_PAK_CTRL       = MFX_MAKEFOURCC('F','K','C','T'),
     MFX_EXTBUFF_FEI_SPS            = MFX_MAKEFOURCC('F','S','P','S'),
@@ -521,7 +522,7 @@ typedef struct {
 
 
 #ifdef __cplusplus
-} // extern "C"
+} /* extern "C" */
 #endif /* __cplusplus */
 
 
