@@ -511,7 +511,7 @@ VAAPIVideoCORE::AllocFrames(
         } else
         {
             // external allocator
-            if (m_bSetExtFrameAlloc)
+            if (m_bSetExtFrameAlloc && request->Info.FourCC != MFX_FOURCC_P8)
             {
                 // Default allocator should be used if D3D manager is not set and internal D3D buffers are required
                 if (!m_Display && request->Type & MFX_MEMTYPE_INTERNAL_FRAME)
@@ -565,7 +565,7 @@ VAAPIVideoCORE::AllocFrames(
             }
             else
             {
-                // Default Allocator is used for internal memory allocation only
+                // Default Allocator is used for internal memory allocation and all coded buffers allocation since 16.5
                 if (request->Type & MFX_MEMTYPE_EXTERNAL_FRAME)
                     return MFX_ERR_MEMORY_ALLOC;
 
@@ -1584,7 +1584,7 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID /*guid*/,
     {
         if (MFX_CODEC_JPEG != par->mfx.CodecId &&
             MFX_CODEC_HEVC != par->mfx.CodecId &&
-	    (par->mfx.FrameInfo.Width > 4096 || par->mfx.FrameInfo.Height > 4096))
+        (par->mfx.FrameInfo.Width > 4096 || par->mfx.FrameInfo.Height > 4096))
             return MFX_WRN_PARTIAL_ACCELERATION;
     }
 

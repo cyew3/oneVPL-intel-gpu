@@ -979,6 +979,14 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     // driver may suggest too small buffer for bitstream
     request.Info.Width  = IPP_MAX(request.Info.Width,  m_video.mfx.FrameInfo.Width);
     request.Info.Height = IPP_MAX(request.Info.Height, m_video.mfx.FrameInfo.Height * 3 / 2);
+    
+    // workaround for high bitrates on small resolutions,
+    // as driver do not respect coded buffer size we have to provide buffer large enough
+    if (m_hrd.GetMaxFrameSize(0) > static_cast<mfxU32>(request.Info.Width * request.Info.Height))
+    {
+        request.Info.Height = AlignValue<mfxU16>(static_cast<mfxU16>(m_hrd.GetMaxFrameSize(0) / request.Info.Width), 16);
+    }
+
     m_maxBsSize = request.Info.Width * request.Info.Height;
 
     m_NumSlices = m_video.mfx.FrameInfo.Height / 16;
@@ -3275,7 +3283,7 @@ mfxStatus ImplementationAvc::UpdateBitstream(
     mfxU32    fid)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ImplementationAvc::UpdateBitstream");
-    mfxFrameData bitstream = { 0 };
+    mfxFrameData bitstream = {};
 
     mfxU32 fieldNumInStreamOrder = (task.GetFirstField() != fid);
 
@@ -3355,9 +3363,21 @@ mfxStatus ImplementationAvc::UpdateBitstream(
         }
     }
 
+    // Avoid segfaults on very high bitrates
+    if (bsSizeToCopy > m_maxBsSize)
+    {
+        // bsSizeToCopy = m_maxBsSize;
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Too big bitstream surface unlock (bitstream)");
+        MFX_LTRACE_S(MFX_TRACE_LEVEL_INTERNAL, task.m_FrameName);
+        lock.Unlock();
+        return Error(MFX_ERR_DEVICE_FAILED);
+    }
+
     // Copy compressed picture from d3d surface to buffer in system memory
     if (bsSizeToCopy)
+    {
         FastCopyBufferVid2Sys(bsData, bitstream.Y, bsSizeToCopy);
+    }
 
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Surface unlock (bitstream)");

@@ -1937,9 +1937,11 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
                 (void **)(&codedBufferSegment));
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         }
-        bitstreamSize = codedBufferSegment->size;
-        //pBitstream->DataLength = codedBufferSegment->size;
-        //task.m_bsDataLength[fieldId] = codedBufferSegment->size;
+        // m_codedbufISize same as m_codedbufPBSize, we should not read more than allocated
+        if (codedBufferSegment->size > m_codedbufISize)
+            sts = MFX_ERR_DEVICE_FAILED;
+        else
+            bitstreamSize = codedBufferSegment->size;
 
         if (codedBufferSegment->status & VA_CODED_BUF_STATUS_BAD_BITSTREAM)
             sts = MFX_ERR_GPU_HANG;

@@ -120,8 +120,8 @@ namespace MfxHwMpeg2Encode
         VAEncSliceParameterBufferMPEG2      m_sliceParam[MAX_SLICES];
         VABufferID                          m_sliceParamBufferId[MAX_SLICES];  /* Slice level parameter, multil slices */
         int                                 m_numSliceGroups;
-        int                                 m_codedbufISize;
-        int                                 m_codedbufPBSize;
+        mfxU32                              m_codedbufISize;
+        mfxU32                              m_codedbufPBSize;
 
         VAEncMiscParameterBuffer           *m_pMiscParamsFps;
         VAEncMiscParameterBuffer           *m_pMiscParamsPrivate;
