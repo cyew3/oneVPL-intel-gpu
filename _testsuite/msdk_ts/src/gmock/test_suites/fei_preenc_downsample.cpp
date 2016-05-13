@@ -313,7 +313,7 @@ int TestSuite::RunTest(unsigned int id)
     // Initialize memory allocator
     g_tsStatus.check(m_pFrameAllocator->Init(m_pmfxAllocatorParams));
 
-    mfxU32 BaseAllocID = *((mfxU32*) (&m_session));
+    mfxU32 BaseAllocID = (mfxU64)&m_session & 0xffffffff;
     m_par.AllocId = BaseAllocID;
 
     m_request.NumFrameMin = NumOfAlloc;

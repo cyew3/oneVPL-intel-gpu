@@ -533,10 +533,14 @@ STRUCT(mfxExtFeiEncMVPredictors,
     FIELD_T(mfxU32, NumMBAlloc)
 )
 
+STRUCT(mfxExtFeiEncMV_MB,
+    FIELD_S(mfxI16Pair, MV)
+)
+
 STRUCT(mfxExtFeiEncMV,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU32, NumMBAlloc)
-    FIELD_S(mfxI16Pair, MB)
+    FIELD_T(mfxExtFeiEncMV_MB*, MB)
 )
 
 STRUCT(mfxExtFeiEncMBCtrl,
@@ -572,7 +576,7 @@ STRUCT(mfxExtCamWhiteBalance,
     FIELD_T(mfxF64,       G0      )
     FIELD_T(mfxF64,       B       )
     FIELD_T(mfxF64,       G1      )
-    FIELD_T(mfxU32*,      reserved)
+    FIELD_T(mfxU32,       reserved) /* Fixed size array */
 )
 STRUCT(mfxExtCamHotPixelRemoval,
     FIELD_S(mfxExtBuffer, Header)
@@ -589,7 +593,7 @@ STRUCT(mfxExtCamBlackLevelCorrection,
     FIELD_T(mfxU16,       G0       )
     FIELD_T(mfxU16,       B        )
     FIELD_T(mfxU16,       G1       )
-    FIELD_T(mfxU32*,      reserved )
+    FIELD_T(mfxU32,       reserved ) /* Fixed size array */
 )
 STRUCT(mfxCamVignetteCorrectionParam,
     FIELD_S(mfxCamVignetteCorrectionElement, R )
@@ -786,7 +790,7 @@ STRUCT(mfxExtMoveRect_Entry,
 STRUCT(mfxExtMoveRect,
     FIELD_S(mfxExtBuffer,          Header )
     FIELD_T(mfxI16,                NumRect)
-    FIELD_S(mfxExtDirtyRect_Entry, Rect   )
+    FIELD_S(mfxExtMoveRect_Entry,  Rect   )
 )
 
 STRUCT(mfxExtMVCSeqDesc,

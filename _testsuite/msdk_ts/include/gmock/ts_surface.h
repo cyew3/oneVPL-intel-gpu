@@ -16,20 +16,24 @@ Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 class tsFrameAbstract
 {
 private:
-    mfxU8 m_t;
+    union {
+        mfxU8 t8;
+        mfxU16 t16;
+    } m_t;
+
 public:
     virtual ~tsFrameAbstract() { }
 
-    virtual mfxU8& Y(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_t;};
-    virtual mfxU8& U(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_t;};
-    virtual mfxU8& V(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_t;};
-    virtual mfxU8& R(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_t;};
-    virtual mfxU8& G(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_t;};
-    virtual mfxU8& B(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_t;};
-    virtual mfxU8& A(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_t;};
-    virtual mfxU16& Y16(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return (mfxU16&) m_t;};
-    virtual mfxU16& U16(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return (mfxU16&) m_t;};
-    virtual mfxU16& V16(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return (mfxU16&) m_t;};
+    virtual mfxU8& Y(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_t.t8;};
+    virtual mfxU8& U(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_t.t8;};
+    virtual mfxU8& V(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_t.t8;};
+    virtual mfxU8& R(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_t.t8;};
+    virtual mfxU8& G(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_t.t8;};
+    virtual mfxU8& B(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_t.t8;};
+    virtual mfxU8& A(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return m_t.t8;};
+    virtual mfxU16& Y16(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return (mfxU16&) m_t.t16;};
+    virtual mfxU16& U16(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return (mfxU16&) m_t.t16;};
+    virtual mfxU16& V16(mfxU32 w, mfxU32 h) {g_tsStatus.check(MFX_ERR_UNDEFINED_BEHAVIOR); return (mfxU16&) m_t.t16;};
     virtual bool isYUV() {return false;};
     virtual bool isYUV16() {return false;};
     virtual bool isRGB() {return false;};

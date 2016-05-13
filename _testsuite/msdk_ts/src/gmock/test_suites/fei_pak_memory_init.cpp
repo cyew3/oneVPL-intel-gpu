@@ -100,7 +100,7 @@ namespace fei_pak_memory_init
         mfxFrameAllocRequest pak_request;
         MSDK_ZERO_MEMORY(pak_request);
         MSDK_MEMCPY_VAR(pak_request.Info, &(m_pPar->mfx.FrameInfo), sizeof(mfxFrameInfo));
-        pak_request.AllocId = *((mfxU32*) &(m_session));
+        pak_request.AllocId = (mfxU64)&m_session & 0xffffffff;
         pak_request.Type = tc.set_par.type;
         pak_request.NumFrameMin = tc.set_par.num_frame_min;
         pak_request.NumFrameSuggested = tc.set_par.num_frame_suggested;
@@ -127,7 +127,7 @@ namespace fei_pak_memory_init
 
         m_par.NumExtParam = 1;
         m_par.ExtParam    = buf;
-        m_par.AllocId     = *((mfxU32*) &(m_session));
+        m_par.AllocId     = (mfxU64)&m_session & 0xffffffff;
 
         /*******************Alloc() and Init() test**********************/
         g_tsStatus.expect(tc.sts_alloc);
