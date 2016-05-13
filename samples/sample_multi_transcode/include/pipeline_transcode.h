@@ -335,6 +335,9 @@ namespace TranscodingSample
         SafetySurfaceBuffer(SafetySurfaceBuffer *pNext);
         virtual ~SafetySurfaceBuffer();
 
+        mfxU32            GetLength();
+        void              WaitForSurfaceRelease();
+        void              WaitForSurfaceInsertion();
         void              AddSurface(ExtendedSurface Surf);
         mfxStatus         GetSurface(ExtendedSurface &Surf);
         mfxStatus         ReleaseSurface(mfxFrameSurface1* pSurf);
@@ -347,6 +350,8 @@ namespace TranscodingSample
         MSDKMutex                 m_mutex;
         std::list<SurfaceDescriptor>       m_SList;
         bool m_IsBufferingAllowed;
+        MSDKEvent* pRelEvent;
+        MSDKEvent* pInsEvent;
     private:
         DISALLOW_COPY_AND_ASSIGN(SafetySurfaceBuffer);
     };
@@ -461,6 +466,7 @@ namespace TranscodingSample
         void      FreePreEncAuxPool();
 
         mfxFrameSurface1* GetFreeSurface(bool isDec);
+        mfxU32 GetFreeSurfacesCount(bool isDec);
         PreEncAuxBuffer*  GetFreePreEncAuxBuffer();
         void SetSurfaceAuxIDR(ExtendedSurface& extSurface, PreEncAuxBuffer* encAuxCtrl, bool bInsertIDR);
 
@@ -598,6 +604,7 @@ namespace TranscodingSample
         CTranscodingPipeline  *m_pParentPipeline;
 
         mfxFrameAllocRequest   m_Request;
+        mfxU16                 additionalSurfacesNum;
         bool                   m_bIsInit;
 
         mfxU32          m_NumFramesForReset;

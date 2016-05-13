@@ -136,6 +136,7 @@ CTranscodingPipeline::CTranscodingPipeline():
     MSDK_ZERO_MEMORY(m_mfxEncResponse);
 
     MSDK_ZERO_MEMORY(m_Request);
+    additionalSurfacesNum=0;
 
     MSDK_ZERO_MEMORY(m_VppDoNotUse);
     MSDK_ZERO_MEMORY(m_MVCSeqDesc);
@@ -876,6 +877,13 @@ mfxStatus CTranscodingPipeline::Decode()
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         }
 
+
+        // Do not exceed buffer length (it should be not longer than AsyncDepth after adding newly processed surface)
+        while(pNextBuffer->GetLength()>=m_AsyncDepth)
+        {
+            pNextBuffer->WaitForSurfaceRelease();
+        }
+
         // add surfaces in queue for all sinks
         pNextBuffer->AddSurface(PreEncExtSurface);
         /* one of key parts for N_to_1 mode:
@@ -887,6 +895,22 @@ mfxStatus CTranscodingPipeline::Decode()
             {
                 pNextBuffer = pNextBuffer->m_pNext;
                 pNextBuffer->AddSurface(PreEncExtSurface);
+            }
+        }
+
+        // We need to synchronize oldest stored surface if we've already stored enough surfaces in buffer (buffer length >= AsyncDepth)
+        // Because we have to wait for decoder to finish processing and free some internally used surfaces
+        //mfxU32 len = pNextBuffer->GetLength();
+        if(pNextBuffer->GetLength()>=m_AsyncDepth)
+        {
+            ExtendedSurface frontSurface;
+            pNextBuffer->GetSurface(frontSurface);
+
+            if(frontSurface.Syncp)
+            {
+                sts = m_pmfxSession->SyncOperation(frontSurface.Syncp, MSDK_WAIT_INTERVAL);
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                frontSurface.Syncp=NULL;
             }
         }
 
@@ -950,7 +974,9 @@ mfxStatus CTranscodingPipeline::Encode()
             {
                 // Getting next frame
                 while (MFX_ERR_MORE_SURFACE == curBuffer->GetSurface(DecExtSurface))
-                    MSDK_SLEEP(TIME_TO_SLEEP);
+                {
+                    curBuffer->WaitForSurfaceInsertion();
+                }
             }
 
             // if session is not joined and it is not parent - synchronize
@@ -2399,6 +2425,10 @@ mfxStatus CTranscodingPipeline::AllocFrames()
                 mark_alloc++;
             }
 
+            // Add additionnaly requested frames
+            DecOut.NumFrameMin+=additionalSurfacesNum;
+            DecOut.NumFrameSuggested+=additionalSurfacesNum;
+
             sts = AllocFrames(&DecOut, true);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
             sts = CorrectPreEncAuxPool((VPPOut.NumFrameSuggested ? VPPOut.NumFrameSuggested : DecOut.NumFrameSuggested) + m_AsyncDepth);
@@ -2526,6 +2556,9 @@ void CTranscodingPipeline::CorrectNumberOfAllocatedFrames(mfxFrameAllocRequest  
     {
         m_Request.NumFrameSuggested = std::max(m_Request.NumFrameSuggested,pNewReq->NumFrameSuggested);
     }
+
+    // For each child session we should add one additional surface to cover non-syncronous work of decoding and encoding sessions
+    additionalSurfacesNum++;
 
     m_Request.NumFrameMin = m_Request.NumFrameSuggested;
     m_Request.Type = m_Request.Type | pNewReq-> Type;
@@ -3026,8 +3059,24 @@ mfxFrameSurface1* CTranscodingPipeline::GetFreeSurface(bool isDec)
         if (!workArray[i]->Data.Locked)
             return workArray[i];
     }
+
     return NULL;
 } // mfxFrameSurface1* CTranscodingPipeline::GetFreeSurface(bool isDec)
+
+mfxU32 CTranscodingPipeline::GetFreeSurfacesCount(bool isDec)
+{
+    SurfPointersArray& workArray = isDec ? m_pSurfaceDecPool : m_pSurfaceEncPool;
+    mfxU32 count=0;
+    for (mfxU32 i = 0; i < workArray.size(); i++)
+    {
+        if (!workArray[i]->Data.Locked)
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
 
 PreEncAuxBuffer*  CTranscodingPipeline::GetFreePreEncAuxBuffer()
 {
@@ -3213,11 +3262,44 @@ SafetySurfaceBuffer::SafetySurfaceBuffer(SafetySurfaceBuffer *pNext)
     :m_pNext(pNext),
      m_IsBufferingAllowed(true)
 {
+    mfxStatus sts=MFX_ERR_NONE;
+    pRelEvent = new MSDKEvent(sts,false,false);
+    if(sts !=MFX_ERR_NONE)
+    {
+        msdk_printf(MSDK_STRING("Cannot create event (for release) for surfaces buffer\n"));
+    }
+
+    pInsEvent = new MSDKEvent(sts,false,false);
+    if(sts !=MFX_ERR_NONE)
+    {
+        msdk_printf(MSDK_STRING("Cannot create event (for insertion) for surfaces buffer\n"));
+    }
+
 } // SafetySurfaceBuffer::SafetySurfaceBuffer
 
 SafetySurfaceBuffer::~SafetySurfaceBuffer()
 {
+    delete pRelEvent;
+    delete pInsEvent;
 } //SafetySurfaceBuffer::~SafetySurfaceBuffer()
+
+mfxU32 SafetySurfaceBuffer::GetLength()
+{
+    AutomaticMutex guard(m_mutex);
+    return (mfxU32)m_SList.size();
+}
+
+void SafetySurfaceBuffer::WaitForSurfaceRelease()
+{
+    pRelEvent->Reset();
+    pRelEvent->Wait();
+}
+
+void SafetySurfaceBuffer::WaitForSurfaceInsertion()
+{
+    pInsEvent->Reset();
+    pInsEvent->Wait();
+}
 
 void SafetySurfaceBuffer::AddSurface(ExtendedSurface Surf)
 {
@@ -3236,6 +3318,7 @@ void SafetySurfaceBuffer::AddSurface(ExtendedSurface Surf)
         }
 
         m_SList.push_back(sDescriptor);
+        pInsEvent->Signal();
     }
 
 } // SafetySurfaceBuffer::AddSurface(mfxFrameSurface1 *pSurf)
@@ -3274,7 +3357,10 @@ mfxStatus SafetySurfaceBuffer::ReleaseSurface(mfxFrameSurface1* pSurf)
             if (it->ExtSurface.pSurface)
                 DecreaseReference(&it->ExtSurface.pSurface->Data);
             if (0 == it->Locked)
+            {
                 m_SList.erase(it);
+                pRelEvent->Signal();
+            }
             return MFX_ERR_NONE;
         }
     }
