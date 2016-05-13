@@ -1754,8 +1754,10 @@ mfxStatus VAAPIEncoder::Execute(
         mfxExtFeiEncMVPredictors* mvpred = GetExtBuffer(task.m_ctrl, feiFieldId);
         mfxExtFeiEncFrameCtrl* frameCtrl = GetExtBuffer(task.m_ctrl, feiFieldId);
         mfxExtFeiEncQP* mbqp = GetExtBuffer(task.m_ctrl, feiFieldId);
+        mfxExtFeiRepackCtrl*  rePakCtrl = GetExtBuffer(task.m_ctrl, feiFieldId);
+        /* mfxExtFeiSliceHeader buffer belongs to legacy encoder,
+         * so on  we have to use fieldId */
         mfxExtFeiSliceHeader*  extFeiSlice = GetExtBuffer(task.m_ctrl, fieldId);
-        mfxExtFeiRepackCtrl*  rePakCtrl = GetExtBuffer(task.m_ctrl, fieldId);
         /* Output buffers passed via mfxBitstream structure*/
         mfxExtFeiEncMBStat* mbstat = NULL;
         mfxExtFeiEncMV* mvout = NULL;
