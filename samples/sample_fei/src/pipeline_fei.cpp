@@ -1964,7 +1964,7 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                     numExtInParams++;
                     numExtInParamsI++;
 
-                    qps[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_QP;
+                    qps[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_QP;
                     qps[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncQP);
                     qps[fieldId].NumQPAlloc = numMB;
                     qps[fieldId].QP = new mfxU8[numMB];
@@ -2415,7 +2415,7 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                     numExtInParams++;
                     numExtInParamsI++;
 
-                    feiEncMbQp[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_QP;
+                    feiEncMbQp[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_QP;
                     feiEncMbQp[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncQP);
                     feiEncMbQp[fieldId].NumQPAlloc = numMB;
                     feiEncMbQp[fieldId].QP = new mfxU8[numMB];
@@ -3743,7 +3743,7 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
             }
             break;
 
-        case MFX_EXTBUFF_FEI_PREENC_QP:
+        case MFX_EXTBUFF_FEI_ENC_QP:
             if (pPerMbQP)
             {
                 pMbQP = (mfxExtFeiEncQP*)(eTask->in.ExtParam[i]);
@@ -4079,7 +4079,7 @@ mfxStatus CEncodingPipeline::InitEncPakFrameParams(iTask* eTask)
             }
             break;
 
-        case MFX_EXTBUFF_FEI_PREENC_QP:
+        case MFX_EXTBUFF_FEI_ENC_QP:
             if (pPerMbQP)
             {
                 pMbQP = (mfxExtFeiEncQP*)(eTask->in.ExtParam[i]);
@@ -4167,7 +4167,7 @@ mfxStatus CEncodingPipeline::InitEncodeFrameParams(mfxFrameSurface1* encodeSurfa
             }
             break;
 
-        case MFX_EXTBUFF_FEI_PREENC_QP:
+        case MFX_EXTBUFF_FEI_ENC_QP:
             if (pPerMbQP){
                 if (m_encpakParams.nPicStruct == MFX_PICSTRUCT_UNKNOWN && encodeSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE && !!mbQPID)
                     continue;
@@ -4657,7 +4657,7 @@ mfxStatus CEncodingPipeline::ResetExtBufMBnum(bufSet* freeSet, mfxU16 new_numMB)
             pMbEncCtrl->NumMBAlloc = new_numMB;
             break;
 
-        case MFX_EXTBUFF_FEI_PREENC_QP:
+        case MFX_EXTBUFF_FEI_ENC_QP:
             pMbQP = (mfxExtFeiEncQP*)(bufsIn.ExtParam[i]);
             pMbQP->NumQPAlloc = new_numMB;
             break;
@@ -4920,7 +4920,7 @@ mfxStatus CEncodingPipeline::FreeBuffers(std::list<bufSet*> bufs)
             }
             break;
 
-            case MFX_EXTBUFF_FEI_PREENC_QP:
+            case MFX_EXTBUFF_FEI_ENC_QP:
             {
                 mfxExtFeiEncQP* qps = (mfxExtFeiEncQP*)((*it)->PB_bufs.in.ExtParam[i]);
                 for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++){
