@@ -119,6 +119,7 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -priority     Use priority for join sessions. 0 - Low, 1 - Normal, 2 - High. Normal by default\n"));
     msdk_printf(MSDK_STRING("  -threads num  Number of session internal threads to create\n"));
     msdk_printf(MSDK_STRING("  -n            Number of frames to transcode \n"));
+    msdk_printf(MSDK_STRING("  -ext_allocator    Force usage of external allocators\n"));
     msdk_printf(MSDK_STRING("  -sys          Force usage of external system allocator\n"));
     msdk_printf(MSDK_STRING("  -fps <frames per second>\n"));
     msdk_printf(MSDK_STRING("                Transcoding frame rate limit\n"));
