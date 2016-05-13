@@ -211,7 +211,7 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiEncFrameCtrl,      MFX_EXTBUFF_FEI_ENC_CTRL             );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiEncMVPredictors,   MFX_EXTBUFF_FEI_ENC_MV_PRED          );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiEncMBCtrl,         MFX_EXTBUFF_FEI_ENC_MB               );
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiEncQP,             MFX_EXTBUFF_FEI_PREENC_QP            );
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiEncQP,             MFX_EXTBUFF_FEI_ENC_QP               );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiSPS,               MFX_EXTBUFF_FEI_SPS                  );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiPPS,               MFX_EXTBUFF_FEI_PPS                  );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiSliceHeader,       MFX_EXTBUFF_FEI_SLICE                );

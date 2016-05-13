@@ -185,7 +185,7 @@ public:
                             i += numFields;
                         }
                         break;
-                    case MFX_EXTBUFF_FEI_PREENC_QP:
+                    case MFX_EXTBUFF_FEI_ENC_QP:
                         {
                             mfxExtFeiEncQP* feiEncMbQp = (mfxExtFeiEncQP*)((*it)->ExtParam[i]);
                             for (int fieldId = 0; fieldId < numFields; fieldId++) {
@@ -282,7 +282,7 @@ public:
                     feiEncMbQp = new mfxExtFeiEncQP[numField];
                     memset(feiEncMbQp, 0, numField * sizeof(mfxExtFeiEncQP));
                 }
-                feiEncMbQp[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_QP;
+                feiEncMbQp[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_QP;
                 feiEncMbQp[fieldId].Header.BufferSz = sizeof (mfxExtFeiEncQP);
                 feiEncMbQp[fieldId].NumQPAlloc = numMB;
                 feiEncMbQp[fieldId].QP = new mfxU8[numMB];

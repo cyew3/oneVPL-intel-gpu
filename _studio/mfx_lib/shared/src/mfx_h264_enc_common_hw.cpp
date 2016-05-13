@@ -1434,7 +1434,7 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_FEI_ENC_MB
         || id == MFX_EXTBUFF_FEI_ENC_MV_PRED
         || id == MFX_EXTBUFF_FEI_ENC_CTRL
-        || id == MFX_EXTBUFF_FEI_PREENC_QP
+        || id == MFX_EXTBUFF_FEI_ENC_QP
         || id == MFX_EXTBUFF_FEI_SLICE
 
 #endif
