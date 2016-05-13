@@ -182,7 +182,11 @@ enum DisplayPictureStruct_H265 {
     DPS_TOP_BOTTOM_TOP_H265,
     DPS_BOTTOM_TOP_BOTTOM_H265,
     DPS_FRAME_DOUBLING_H265,
-    DPS_FRAME_TRIPLING_H265
+    DPS_FRAME_TRIPLING_H265,
+    DPS_TOP_BOTTOM_PREV_H265, // 9 - Top field paired with previous bottom field in output order
+    DPS_BOTTOM_TOP_PREV_H265, //10 - Bottom field paired with previous top field in output order
+    DPS_TOP_BOTTOM_NEXT_H265, //11 - Top field paired with next bottom field in output order
+    DPS_BOTTOM_TOP_NEXT_H265, //12 - Bottom field paired with next top field in output order
 };
 
 typedef Ipp8u PlaneY;

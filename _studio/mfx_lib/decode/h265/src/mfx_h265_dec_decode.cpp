@@ -14,8 +14,10 @@
 
 #include "mfx_common.h"
 #include "mfx_common_decode_int.h"
+
 #include "umc_h265_mfx_supplier.h"
 #include "umc_h265_frame_list.h"
+
 #include "vm_sys_info.h"
 
 #ifdef MFX_VA
@@ -24,7 +26,8 @@
 #include "umc_va_dxva2_protected.h"
 #endif
 
-static inline mfxU32 CalculateAsyncDepth(eMFXPlatform platform, mfxVideoParam *par)
+inline
+mfxU32 CalculateAsyncDepth(eMFXPlatform platform, mfxVideoParam *par)
 {
     mfxU32 asyncDepth = par->AsyncDepth;
     if (!asyncDepth)
@@ -35,7 +38,8 @@ static inline mfxU32 CalculateAsyncDepth(eMFXPlatform platform, mfxVideoParam *p
     return asyncDepth;
 }
 
-static inline mfxU32 CalculateNumThread(mfxVideoParam *par, eMFXPlatform platform)
+inline
+mfxU32 CalculateNumThread(mfxVideoParam *par, eMFXPlatform platform)
 {
     mfxU32 numThread = (MFX_PLATFORM_SOFTWARE == platform) ? vm_sys_info_get_cpu_num() : 1;
     if (!par->AsyncDepth)
@@ -44,15 +48,60 @@ static inline mfxU32 CalculateNumThread(mfxVideoParam *par, eMFXPlatform platfor
     return IPP_MIN(par->AsyncDepth, numThread);
 }
 
-static inline void mfx_memcpy(void * dst, size_t dstLen, void * src, size_t len)
+inline
+void mfx_memcpy(void * dst, size_t dstLen, void * src, size_t len)
 {
     memcpy_s(dst, dstLen, src, len);
 }
 
-inline bool IsNeedToUseHWBuffering(eMFXHWType type)
+inline
+bool IsNeedToUseHWBuffering(eMFXHWType type)
 {
     type;return false;
     //return (type != MFX_HW_LAKE); // eagle lake has own workaround!
+}
+
+inline
+mfxU16 UMC2MFX_PicStruct(int dps, bool extended)
+{
+    switch (dps)
+    {
+        case UMC_HEVC_DECODER::DPS_FRAME_H265:
+            return MFX_PICSTRUCT_PROGRESSIVE;
+
+        case UMC_HEVC_DECODER::DPS_TOP_H265:
+            return MFX_PICSTRUCT_FIELD_TOP;
+        case UMC_HEVC_DECODER::DPS_BOTTOM_H265:
+            return MFX_PICSTRUCT_FIELD_BOTTOM;
+
+        case UMC_HEVC_DECODER::DPS_TOP_BOTTOM_H265:
+            return MFX_PICSTRUCT_PROGRESSIVE | (extended ? MFX_PICSTRUCT_FIELD_TFF: 0);
+        case UMC_HEVC_DECODER::DPS_BOTTOM_TOP_H265:
+            return MFX_PICSTRUCT_PROGRESSIVE | (extended ? MFX_PICSTRUCT_FIELD_BFF: 0);
+
+        case UMC_HEVC_DECODER::DPS_TOP_BOTTOM_TOP_H265:
+            return MFX_PICSTRUCT_PROGRESSIVE | (extended ? MFX_PICSTRUCT_FIELD_REPEATED | MFX_PICSTRUCT_FIELD_TFF: 0);
+        case UMC_HEVC_DECODER::DPS_BOTTOM_TOP_BOTTOM_H265:
+            return MFX_PICSTRUCT_PROGRESSIVE | (extended ? MFX_PICSTRUCT_FIELD_REPEATED | MFX_PICSTRUCT_FIELD_BFF: 0);
+
+        case UMC_HEVC_DECODER::DPS_FRAME_DOUBLING_H265:
+            return MFX_PICSTRUCT_PROGRESSIVE | (extended ? MFX_PICSTRUCT_FRAME_DOUBLING : 0);
+        case UMC_HEVC_DECODER::DPS_FRAME_TRIPLING_H265:
+            return MFX_PICSTRUCT_PROGRESSIVE | (extended ? MFX_PICSTRUCT_FRAME_TRIPLING : 0);
+
+        case DPS_TOP_BOTTOM_PREV_H265:
+            return MFX_PICSTRUCT_FIELD_TOP | (extended ? MFX_PICSTRUCT_FIELD_PAIRED_PREV : 0);
+        case DPS_BOTTOM_TOP_PREV_H265:
+            return MFX_PICSTRUCT_FIELD_BOTTOM | (extended ? MFX_PICSTRUCT_FIELD_PAIRED_PREV : 0);
+
+        case DPS_TOP_BOTTOM_NEXT_H265:
+            return MFX_PICSTRUCT_FIELD_TOP | (extended ? MFX_PICSTRUCT_FIELD_PAIRED_NEXT : 0);
+        case DPS_BOTTOM_TOP_NEXT_H265:
+            return MFX_PICSTRUCT_FIELD_BOTTOM | (extended ? MFX_PICSTRUCT_FIELD_PAIRED_NEXT : 0);
+
+        default:
+            return MFX_PICSTRUCT_UNKNOWN;
+    }
 }
 
 struct ThreadTaskInfo
@@ -1236,7 +1285,8 @@ void VideoDECODEH265::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
         break;
     }
 
-    surface_out->Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+    surface_out->Info.PicStruct =
+        UMC2MFX_PicStruct(pFrame->m_DisplayPictureStruct_H265, !!m_vPar.mfx.ExtendedPicStruct);
 
     surface_out->Data.TimeStamp = GetMfxTimeStamp(pFrame->m_dFrameTime);
     surface_out->Data.FrameOrder = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
