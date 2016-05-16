@@ -2652,8 +2652,14 @@ Status PackerVA::QueryStreamOut(H264DecoderFrame* pFrame)
     if (!so)
         return UMC_ERR_FAILED;
 
-    Ipp32s const size =
-        pFrame->GetTotalMBs() * sizeof(mfxFeiDecStreamOutMBCtrl);
+    VM_ASSERT(!( pFrame->GetTotalMBs() < 0));
+    Ipp32u const count = pFrame->GetTotalMBs();
+
+    if (so->NumMBAlloc < count)
+        return UMC_ERR_FAILED;
+
+    Ipp32u const size =
+        count * sizeof(mfxFeiDecStreamOutMBCtrl);
 
     //top field
     Ipp32s const top = pFrame->GetNumberByParity(0);
