@@ -353,28 +353,35 @@ tsSurfaceWriter::~tsSurfaceWriter()
 mfxStatus tsSurfaceWriter::ProcessSurface(mfxFrameSurface1& s)
 {
     mfxU32 pitch = (s.Data.PitchHigh << 16) + s.Data.PitchLow;
+    size_t count = s.Info.CropW;
 
     if(s.Info.FourCC == MFX_FOURCC_NV12)
     {
         for(mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i ++)
         {
-            fwrite(s.Data.Y + pitch * i + s.Info.CropX, 1, s.Info.CropW, m_file);
+            if (fwrite(s.Data.Y + pitch * i + s.Info.CropX, 1, count, m_file)
+                != count)
+                return MFX_ERR_UNKNOWN;
         }
-    
+
         for(mfxU16 i = (s.Info.CropY / 2); i < ((s.Info.CropH + s.Info.CropY) / 2); i ++)
         {
-            fwrite(s.Data.UV + pitch * i + s.Info.CropX, 1, s.Info.CropW, m_file);
+            if (fwrite(s.Data.UV + pitch * i + s.Info.CropX, 1, count, m_file)
+                != count)
+                return MFX_ERR_UNKNOWN;
         }
     }
     else if(s.Info.FourCC == MFX_FOURCC_RGB4)
     {
+        count *= 4;
         mfxU8* ptr = 0;
         ptr = TS_MIN( TS_MIN(s.Data.R, s.Data.G), s.Data.B );
         ptr = ptr + s.Info.CropX + s.Info.CropY * pitch;
 
         for(mfxU32 i = s.Info.CropY; i < s.Info.CropH; i++) 
         {
-            fwrite(ptr + i * pitch, 1, 4*s.Info.CropW, m_file);
+            if (fwrite(ptr + i * pitch, 1, count, m_file) != count)
+                return MFX_ERR_UNKNOWN;
         }
     }
     else
