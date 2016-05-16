@@ -234,14 +234,17 @@ void ownToMfxFrameInfo( sOwnFrameInfo* in, mfxFrameInfo* out )
     //out->CropH  = out->Height;
     //out->FourCC = in->FourCC;
 
-    out->Width  = in->nWidth;
-    out->Height = in->nHeight;
-    out->CropX  = in->CropX;
-    out->CropY  = in->CropY;
-    out->CropW  = (in->CropW == NOT_INIT_VALUE) ? in->nWidth : in->CropW;
-    out->CropH  = (in->CropH == NOT_INIT_VALUE) ? in->nHeight : in->CropH;
-    out->FourCC = in->FourCC;
-    out->PicStruct = in->PicStruct;
+    out->Width          = in->nWidth;
+    out->Height         = in->nHeight;
+    out->CropX          = in->CropX;
+    out->CropY          = in->CropY;
+    out->CropW          = (in->CropW == NOT_INIT_VALUE) ? in->nWidth : in->CropW;
+    out->CropH          = (in->CropH == NOT_INIT_VALUE) ? in->nHeight : in->CropH;
+    out->FourCC         = in->FourCC;
+    out->PicStruct      = in->PicStruct;
+    out->BitDepthLuma   = in->BitDepthLuma;
+    out->BitDepthChroma = in->BitDepthChroma;
+
     ConvertFrameRate(in->dFrameRate, &out->FrameRateExtN, &out->FrameRateExtD);
 
     return;
@@ -295,7 +298,7 @@ int main(int argc, msdk_char *argv[])
     //mfxU16              argbSurfaceIndex = 0xffff;
 
     /* default parameters */
-    sOwnFrameInfo             defaultOwnFrameInfo         = { 0, 352, 288, 0, 0, 352, 288, MFX_FOURCC_NV12, MFX_PICSTRUCT_PROGRESSIVE, 30.0 };
+    sOwnFrameInfo             defaultOwnFrameInfo         = { 0, 0, 0, 352, 288, 0, 0, 352, 288, MFX_FOURCC_NV12, MFX_PICSTRUCT_PROGRESSIVE, 30.0 };
     sDIParam                  defaultDIParam              = { 0, 0, 0, VPP_FILTER_DISABLED };
     sProcAmpParam             defaultProcAmpParam         = { 0.0, 1.0, 1.0, 0.0, VPP_FILTER_DISABLED };
     sDetailParam              defaultDetailParam          = { 1,  VPP_FILTER_DISABLED };

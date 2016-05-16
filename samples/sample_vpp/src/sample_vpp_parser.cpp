@@ -54,37 +54,41 @@ msdk_printf(MSDK_STRING("   [-p GUID]           - use VPP plug-in with specified
 msdk_printf(MSDK_STRING("   [-extapi]           - use RunFrameVPPAsyncEx instead of RunFrameVPPAsync. Need for PTIR.\n\n"));
 msdk_printf(MSDK_STRING("   [-gpu_copy]         - Specify GPU copy mode. This option triggers using of InitEX instead of Init.\n\n"));
 
-msdk_printf(MSDK_STRING("   [-sw   width]     - width  of src video (def: 352)\n"));
-msdk_printf(MSDK_STRING("   [-sh   height]    - height of src video (def: 288)\n"));
-msdk_printf(MSDK_STRING("   [-scrX  x]        - cropX  of src video (def: 0)\n"));
-msdk_printf(MSDK_STRING("   [-scrY  y]        - cropY  of src video (def: 0)\n"));
-msdk_printf(MSDK_STRING("   [-scrW  w]        - cropW  of src video (def: width)\n"));
-msdk_printf(MSDK_STRING("   [-scrH  h]        - cropH  of src video (def: height)\n"));
-msdk_printf(MSDK_STRING("   [-sf   frameRate] - frame rate of src video (def: 30.0)\n"));
-msdk_printf(MSDK_STRING("   [-scc  format]    - format (FourCC) of src video (def: nv12. support nv12|yv12|yuy2|rgb3|rgb4|imc3|yuv400|yuv411|yuv422h|yuv422v|yuv444|uyvy)\n"));
-msdk_printf(MSDK_STRING("   [-sbitshift 0|1]  - shift data to right or keep it the same way as in Microsoft's P010\n"));
+msdk_printf(MSDK_STRING("   [-sw   width]               - width  of src video (def: 352)\n"));
+msdk_printf(MSDK_STRING("   [-sh   height]              - height of src video (def: 288)\n"));
+msdk_printf(MSDK_STRING("   [-scrX  x]                  - cropX  of src video (def: 0)\n"));
+msdk_printf(MSDK_STRING("   [-scrY  y]                  - cropY  of src video (def: 0)\n"));
+msdk_printf(MSDK_STRING("   [-scrW  w]                  - cropW  of src video (def: width)\n"));
+msdk_printf(MSDK_STRING("   [-scrH  h]                  - cropH  of src video (def: height)\n"));
+msdk_printf(MSDK_STRING("   [-sf   frameRate]           - frame rate of src video (def: 30.0)\n"));
+msdk_printf(MSDK_STRING("   [-scc  format]              - format (FourCC) of src video (def: nv12. support nv12|yv12|yuy2|rgb3|rgb4|imc3|yuv400|yuv411|yuv422h|yuv422v|yuv444|uyvy)\n"));
+msdk_printf(MSDK_STRING("   [-sbitshift 0|1]            - shift data to right or keep it the same way as in Microsoft's P010\n"));
+msdk_printf(MSDK_STRING("   [-sbitdepthluma value]      - shift luma channel to right to \"16 - value\" bytes\n"));
+msdk_printf(MSDK_STRING("   [-sbitdepthchroma value]    - shift chroma channel to right to \"16 - value\" bytes\n"));
 
-msdk_printf(MSDK_STRING("   [-spic value]     - picture structure of src video\n"));
-msdk_printf(MSDK_STRING("                        0 - interlaced top    field first\n"));
-msdk_printf(MSDK_STRING("                        2 - interlaced bottom field first\n"));
-msdk_printf(MSDK_STRING("                        1 - progressive (default)\n"));
-msdk_printf(MSDK_STRING("                       -1 - unknown\n\n"));
+msdk_printf(MSDK_STRING("   [-spic value]               - picture structure of src video\n"));
+msdk_printf(MSDK_STRING("                                 0 - interlaced top    field first\n"));
+msdk_printf(MSDK_STRING("                                 2 - interlaced bottom field first\n"));
+msdk_printf(MSDK_STRING("                                 1 - progressive (default)\n"));
+msdk_printf(MSDK_STRING("                                -1 - unknown\n\n"));
 
-msdk_printf(MSDK_STRING("   [-dw  width]      - width  of dst video (def: 352)\n"));
-msdk_printf(MSDK_STRING("   [-dh  height]     - height of dst video (def: 288)\n"));
-msdk_printf(MSDK_STRING("   [-dcrX  x]        - cropX  of dst video (def: 0)\n"));
-msdk_printf(MSDK_STRING("   [-dcrY  y]        - cropY  of dst video (def: 0)\n"));
-msdk_printf(MSDK_STRING("   [-dcrW  w]        - cropW  of dst video (def: width)\n"));
-msdk_printf(MSDK_STRING("   [-dcrH  h]        - cropH  of dst video (def: height)\n"));
-msdk_printf(MSDK_STRING("   [-df  frameRate]  - frame rate of dst video (def: 30.0)\n"));
-msdk_printf(MSDK_STRING("   [-dcc format]     - format (FourCC) of dst video (def: nv12. support nv12|yuy2|rgb4|yv12)\n"));
-msdk_printf(MSDK_STRING("   [-dbitshift 0|1]  - shift data to right or keep it the same way as in Microsoft's P010\n"));
+msdk_printf(MSDK_STRING("   [-dw  width]                - width  of dst video (def: 352)\n"));
+msdk_printf(MSDK_STRING("   [-dh  height]               - height of dst video (def: 288)\n"));
+msdk_printf(MSDK_STRING("   [-dcrX  x]                  - cropX  of dst video (def: 0)\n"));
+msdk_printf(MSDK_STRING("   [-dcrY  y]                  - cropY  of dst video (def: 0)\n"));
+msdk_printf(MSDK_STRING("   [-dcrW  w]                  - cropW  of dst video (def: width)\n"));
+msdk_printf(MSDK_STRING("   [-dcrH  h]                  - cropH  of dst video (def: height)\n"));
+msdk_printf(MSDK_STRING("   [-df  frameRate]            - frame rate of dst video (def: 30.0)\n"));
+msdk_printf(MSDK_STRING("   [-dcc format]               - format (FourCC) of dst video (def: nv12. support nv12|yuy2|rgb4|yv12)\n"));
+msdk_printf(MSDK_STRING("   [-dbitshift 0|1]            - shift data to right or keep it the same way as in Microsoft's P010\n"));
+msdk_printf(MSDK_STRING("   [-dbitdepthluma value]      - shift luma channel to left to \"16 - value\" bytes\n"));
+msdk_printf(MSDK_STRING("   [-dbitdepthchroma value]    - shift chroma channel to left to \"16 - value\" bytes\n"));
 
-msdk_printf(MSDK_STRING("   [-dpic value]     - picture structure of dst video\n"));
-msdk_printf(MSDK_STRING("                        0 - interlaced top    field first\n"));
-msdk_printf(MSDK_STRING("                        2 - interlaced bottom field first\n"));
-msdk_printf(MSDK_STRING("                        1 - progressive (default)\n"));
-msdk_printf(MSDK_STRING("                       -1 - unknown\n\n"));
+msdk_printf(MSDK_STRING("   [-dpic value]               - picture structure of dst video\n"));
+msdk_printf(MSDK_STRING("                                 0 - interlaced top    field first\n"));
+msdk_printf(MSDK_STRING("                                 2 - interlaced bottom field first\n"));
+msdk_printf(MSDK_STRING("                                 1 - progressive (default)\n"));
+msdk_printf(MSDK_STRING("                                -1 - unknown\n\n"));
 
 msdk_printf(MSDK_STRING("   Video Composition\n"));
 msdk_printf(MSDK_STRING("   [-composite parameters_file] - composite several input files in one output. The syntax of the parameters file is:\n"));    msdk_printf(MSDK_STRING("                                  stream=<video file name>\n"));
@@ -1216,11 +1220,35 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 i++;
                 msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->frameInfoOut[0].Shift);
             }
+            else if(0 == msdk_strcmp(strInput[i], MSDK_STRING("-dbitdepthluma")))
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->frameInfoOut[0].BitDepthLuma);
+            }
+            else if(0 == msdk_strcmp(strInput[i], MSDK_STRING("-dbitdepthchroma")))
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->frameInfoOut[0].BitDepthChroma);
+            }
             else if(0 == msdk_strcmp(strInput[i], MSDK_STRING("-sbitshift")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
                 msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->frameInfoIn[0].Shift);
+            }
+            else if(0 == msdk_strcmp(strInput[i], MSDK_STRING("-sbitdepthluma")))
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->frameInfoIn[0].BitDepthLuma);
+            }
+            else if(0 == msdk_strcmp(strInput[i], MSDK_STRING("-sbitdepthchroma")))
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->frameInfoIn[0].BitDepthChroma);
             }
             else if( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-iopattern")) )
             {

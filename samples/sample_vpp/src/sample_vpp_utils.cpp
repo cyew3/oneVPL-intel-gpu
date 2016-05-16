@@ -312,6 +312,8 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams, mfxU32 
 
     /* input data */
     pParams->vpp.In.Shift           = pInParams->frameInfoIn[paramID].Shift;
+    pParams->vpp.In.BitDepthLuma    = pInParams->frameInfoIn[paramID].BitDepthLuma;
+    pParams->vpp.In.BitDepthChroma  = pInParams->frameInfoIn[paramID].BitDepthChroma;
     pParams->vpp.In.FourCC          = pInParams->frameInfoIn[paramID].FourCC;
     pParams->vpp.In.ChromaFormat    = MFX_CHROMAFORMAT_YUV420;
 
@@ -356,6 +358,8 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams, mfxU32 
 
     /* output data */
     pParams->vpp.Out.Shift           = pInParams->frameInfoOut[paramID].Shift;
+    pParams->vpp.Out.BitDepthLuma    = pInParams->frameInfoOut[paramID].BitDepthLuma;
+    pParams->vpp.Out.BitDepthChroma  = pInParams->frameInfoOut[paramID].BitDepthChroma;
     pParams->vpp.Out.FourCC          = pInParams->frameInfoOut[paramID].FourCC;
     pParams->vpp.Out.ChromaFormat    = MFX_CHROMAFORMAT_YUV420;
 

@@ -98,6 +98,8 @@ enum
 typedef struct _ownFrameInfo
 {
     mfxU16  Shift;
+    mfxU16  BitDepthLuma;
+    mfxU16  BitDepthChroma;
     mfxU16  nWidth;
     mfxU16  nHeight;
     // ROI
