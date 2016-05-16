@@ -249,7 +249,7 @@ namespace UMC
         // Save some info used for StreamOut [RefIdx] remapping
         if (m_streamOutBuffer->RemapRefs())
         {
-            Ipp32s const index = m_streamOutBuffer->GetIndex();
+            //Ipp32s const index = m_streamOutBuffer->GetIndex();
             //use [PicParams] buffer to fetch reference frames
             VACompBuffer* buffer;
             GetCompBuffer(VAPictureParameterBufferType, reinterpret_cast<UMCVACompBuffer**>(&buffer), 0, -1);

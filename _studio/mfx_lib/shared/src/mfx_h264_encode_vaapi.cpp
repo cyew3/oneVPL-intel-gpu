@@ -2840,7 +2840,7 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
                         mbs, sizeof (VAEncFEIDistortionBufferH264Intel) * mbstat->NumMBAlloc);
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
-            vaUnmapBuffer(m_vaDisplay, vaFeiMBStatId);
+            vaSts = vaUnmapBuffer(m_vaDisplay, vaFeiMBStatId);
         }
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         //MFX_DESTROY_VABUFFER(vaFeiMBStatId, m_vaDisplay);
@@ -2864,7 +2864,7 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
                        mvs, sizeof (VAMotionVectorIntel) * 16 * mvout->NumMBAlloc);
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
-            vaUnmapBuffer(m_vaDisplay, vaFeiMVOutId);
+            vaSts = vaUnmapBuffer(m_vaDisplay, vaFeiMVOutId);
         }
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         //MFX_DESTROY_VABUFFER(vaFeiMVOutId, m_vaDisplay);
@@ -2887,7 +2887,7 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
                          mbcs, sizeof (VAEncFEIModeBufferH264Intel) * mbcodeout->NumMBAlloc);
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
-            vaUnmapBuffer(m_vaDisplay, vaFeiMBCODEOutId);
+            vaSts = vaUnmapBuffer(m_vaDisplay, vaFeiMBCODEOutId);
         }
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         //MFX_DESTROY_VABUFFER(vaFeiMBCODEOutId, m_vaDisplay);
