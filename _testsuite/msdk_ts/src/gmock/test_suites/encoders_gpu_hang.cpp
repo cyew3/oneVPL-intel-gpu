@@ -62,7 +62,10 @@ int test(mfxU32 codecId, mfxU32 version)
             if (enc.EncodeFrameAsync() == MFX_ERR_NONE)
             {
                 if (version == 0)
-                    system("echo 1 > /sys/kernel/debug/dri/0/i915_wedged");
+                {
+                    int unused_ = system("echo 1 > /sys/kernel/debug/dri/0/i915_wedged");
+                    unused_;
+                }
                 else
                 {
                     if (sp.size() == 2)
