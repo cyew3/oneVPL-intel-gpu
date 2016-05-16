@@ -36,7 +36,10 @@ namespace fei_encode_ext_coding_option
 class TestSuite : public tsBitstreamProcessor, public tsParserAVC2, public tsVideoEncoder
 {
 public:
-    TestSuite() : tsVideoEncoder(MFX_FEI_FUNCTION_ENCODE, MFX_CODEC_AVC, true), tsParserAVC2()
+    TestSuite()
+        : tsBitstreamProcessor()
+        , tsParserAVC2()
+        , tsVideoEncoder(MFX_FEI_FUNCTION_ENCODE, MFX_CODEC_AVC, true)
     {
        m_bs_processor = this;
     }
