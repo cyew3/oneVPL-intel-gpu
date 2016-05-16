@@ -6,9 +6,8 @@ agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
 Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
-File Name: .h
-
 \* ****************************************************************************** */
+
 #include "mfx_pipeline_defs.h"
 #include "mfx_pipeline_transcode.h"
 #include "mfx_encode_decode_quality.h"
@@ -106,36 +105,36 @@ File Name: .h
 //////////////////////////////////////////////////////////////////////////
 
 MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
-: MFXDecPipeline(pFactory)
-, m_applyBitrateParams(&MFXTranscodingPipeline::ApplyBitrateParams, this)
-, m_applyJpegParams(&MFXTranscodingPipeline::ApplyJpegParams, this)
-, m_extCodingOptions(new mfxExtCodingOption())
-, m_extCodingOptions2(new mfxExtCodingOption2())
-, m_extCodingOptions3(new mfxExtCodingOption3())
-, m_extCodingOptionsDDI(new mfxExtCodingOptionDDI())
-, m_extCodingOptionsQuantMatrix(new mfxExtCodingOptionQuantMatrix())
-, m_extDumpFiles(new mfxExtDumpFiles())
-, m_extVideoSignalInfo(new mfxExtVideoSignalInfo())
-, m_extCodingOptionsHEVC(new mfxExtCodingOptionHEVC())
-, m_extHEVCTiles(new mfxExtHEVCTiles())
-, m_extHEVCParam(new mfxExtHEVCParam())
-, m_extVP8CodingOptions(new mfxExtVP8CodingOption())
-, m_extEncoderRoi(new mfxExtEncoderROI())
-, m_extDirtyRect(new mfxExtDirtyRect())
-, m_extMoveRect(new mfxExtMoveRect())
-, m_extCodingOptionsSPSPPS(new mfxExtCodingOptionSPSPPS())
-, m_extAvcTemporalLayers(new mfxExtAvcTemporalLayers())
-, m_extEncoderCapability(new mfxExtEncoderCapability())
-, m_extEncoderReset(new mfxExtEncoderResetOption())
-, m_pEncoder()
-, m_bCreateDecode()
-, m_svcSeq(new mfxExtSVCSeqDesc())
-, m_svcSeqDeserial(VM_STRING(""), *m_svcSeq.get(), m_filesForDependency)
-, m_svcRateCtrl(new mfxExtSVCRateControl())
-, m_svcRateCtrlDeserial(VM_STRING(""), *m_svcRateCtrl.get())
-, m_EncParams()
-, m_QuantMatrix(VM_STRING(""),*m_extCodingOptionsQuantMatrix.get())
-, m_ExtBuffers(new MFXExtBufferVector())
+    : MFXDecPipeline(pFactory)
+    , m_extCodingOptions(new mfxExtCodingOption())
+    , m_extCodingOptions2(new mfxExtCodingOption2())
+    , m_extCodingOptions3(new mfxExtCodingOption3())
+    , m_extCodingOptionsDDI(new mfxExtCodingOptionDDI())
+    , m_extCodingOptionsQuantMatrix(new mfxExtCodingOptionQuantMatrix())
+    , m_extDumpFiles(new mfxExtDumpFiles())
+    , m_extVideoSignalInfo(new mfxExtVideoSignalInfo())
+    , m_extCodingOptionsHEVC(new mfxExtCodingOptionHEVC())
+    , m_extHEVCTiles(new mfxExtHEVCTiles())
+    , m_extHEVCParam(new mfxExtHEVCParam())
+    , m_extVP8CodingOptions(new mfxExtVP8CodingOption())
+    , m_extEncoderRoi(new mfxExtEncoderROI())
+    , m_extDirtyRect(new mfxExtDirtyRect())
+    , m_extMoveRect(new mfxExtMoveRect())
+    , m_extCodingOptionsSPSPPS(new mfxExtCodingOptionSPSPPS())
+    , m_extAvcTemporalLayers(new mfxExtAvcTemporalLayers())
+    , m_svcSeq(new mfxExtSVCSeqDesc())
+    , m_svcSeqDeserial(VM_STRING(""), *m_svcSeq.get(), m_filesForDependency)
+    , m_svcRateCtrl(new mfxExtSVCRateControl())
+    , m_svcRateCtrlDeserial(VM_STRING(""), *m_svcRateCtrl.get())
+    , m_QuantMatrix(VM_STRING(""),*m_extCodingOptionsQuantMatrix.get())
+    , m_extEncoderCapability(new mfxExtEncoderCapability())
+    , m_extEncoderReset(new mfxExtEncoderResetOption())
+    , m_EncParams()
+    , m_ExtBuffers(new MFXExtBufferVector())
+    , m_bCreateDecode()
+    , m_applyBitrateParams(&MFXTranscodingPipeline::ApplyBitrateParams, this)
+    , m_applyJpegParams(&MFXTranscodingPipeline::ApplyJpegParams, this)
+    , m_pEncoder()
 {
     mfxVideoParam *pMFXParams = &m_EncParams;
 

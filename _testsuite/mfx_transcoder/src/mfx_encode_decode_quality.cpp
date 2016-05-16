@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #include "mfx_pipeline_defs.h"
@@ -20,10 +20,10 @@ Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
 EncodeDecodeQuality::EncodeDecodeQuality( ComponentParams &refParams
                                         , mfxStatus *status
                                         , std::auto_ptr<IVideoEncode>& pEncode)
-: MFXEncodeWRAPPER(refParams, status, pEncode)
-, m_pAllocator()
-, m_bInitialized()
-, m_ppMfxSurface()
+    : MFXEncodeWRAPPER(refParams, status, pEncode)
+    , m_ppMfxSurface()
+    , m_pAllocator()
+    , m_bInitialized()
 {
     ZERO_MEMORY(m_mfxDec);
     ZERO_MEMORY(m_inBits);

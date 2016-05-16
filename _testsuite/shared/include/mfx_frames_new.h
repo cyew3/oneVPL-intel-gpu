@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //     GOP reorder buffer and waiting list implementation
@@ -80,15 +80,15 @@
     class MFXGOP_
     {
     public:
-        MFXGOP_():
-          m_maxB(0),
-          m_pInFrames(0),
-          m_numBuffB(0),
-          m_iCurr(0),
-          m_pOutFrames(0),
-          m_FrameType(0),
-          m_FrameType2(0)
-          {};
+        MFXGOP_()
+            : m_maxB(0)
+            , m_pInFrames(0)
+            , m_pOutFrames(0)
+            , m_FrameType(0)
+            , m_FrameType2(0)
+            , m_numBuffB(0)
+            , m_iCurr(0)
+        {};
 
         virtual ~MFXGOP_()
         {
@@ -430,14 +430,14 @@
     class MFXWaitingList
     {
     public:
-        MFXWaitingList():
-            m_maxN(0),
-            m_pFrame(0),
-            m_curIndex(0),
-            m_nFrames(0),
-            m_FrameType(0),
-            m_FrameType2(0)
-            {};
+        MFXWaitingList()
+            : m_maxN(0)
+            , m_pFrame(0)
+            , m_FrameType(0)
+            , m_FrameType2(0)
+            , m_curIndex(0)
+            , m_nFrames(0)
+        {};
         ~MFXWaitingList()
         {Close();}
         void Close()

@@ -4,9 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
-
-File Name: .h
+Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -16,8 +14,8 @@ File Name: .h
 
 LatencyEncode::LatencyEncode(bool bAggregateStat, IStringPrinter * pPrinter, ITime * pTime, std::auto_ptr<IVideoEncode>& pTarget)
     : InterfaceProxy<IVideoEncode>(pTarget)
-    , m_pPrinter(pPrinter)
     , m_pTime(pTime)
+    , m_pPrinter(pPrinter)
     , m_bAggregateStat(bAggregateStat)
     , m_lastAssignedPts((mfxU64)-1)
 {
