@@ -4,9 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2011 Intel Corporation. All Rights Reserved.
-
-File Name: .h
+Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -25,10 +23,12 @@ namespace
             return MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
         }else{
             if( GopPicSize == 1 ) //Only I frames
+            {
                 if (IdrInterval == 0)
                     return MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
                 else
                     return MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF;
+            }
 
             mfxU32 frameInGOP = pos;
             if (GopPicSize > 0)
@@ -281,7 +281,7 @@ mfxStatus MFXH264FrameReorderer::DataPerView::ReorderFrame(const mfxVideoParam &
         mfxU8 type = GetFrameTypeH264(m_frameOrder, par);
 
         if ((type & MFX_FRAMETYPE_IDR) ||
-            (type & MFX_FRAMETYPE_I) && (m_gopOptFlag & MFX_GOP_CLOSED))
+            ((type & MFX_FRAMETYPE_I) && (m_gopOptFlag & MFX_GOP_CLOSED)))
             m_frameOrderIdr = m_frameOrder;
 
         /* !!! commented to follow current H264 ENCODE reordering (which seems wrong)
