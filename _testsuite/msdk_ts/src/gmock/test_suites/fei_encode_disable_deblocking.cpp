@@ -213,7 +213,7 @@ public:
             fei_encode_ctrl[field].ColocatedMbDistortion  = 0;
             fei_encode_ctrl[field].RefHeight              = 32;
             fei_encode_ctrl[field].RefWidth               = 32;
-            fei_encode_ctrl[field].SearchWindow           = 0;
+            fei_encode_ctrl[field].SearchWindow           = 5;
         }
 
         return MFX_ERR_NONE;

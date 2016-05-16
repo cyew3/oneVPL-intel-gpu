@@ -165,7 +165,7 @@ public:
                 feiEncCtrl[fieldId].MBSizeCtrl = 0;
                 feiEncCtrl[fieldId].RefHeight = 32;
                 feiEncCtrl[fieldId].RefWidth = 32;
-                feiEncCtrl[fieldId].SearchWindow = 0;
+                feiEncCtrl[fieldId].SearchWindow = 5;
 
                 // put the buffer in in_buffs
                 in_buffs.push_back((mfxExtBuffer *)&feiEncCtrl[fieldId]);
