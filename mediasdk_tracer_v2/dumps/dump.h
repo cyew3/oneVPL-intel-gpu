@@ -326,7 +326,6 @@ public:
                         case  MFX_EXTBUFF_FEI_PREENC_MV_PRED:
                             str += dump(name, *((mfxExtFeiPreEncMVPredictors*)_struct.ExtParam[i])) + "\n";
                             break;
-                        case  MFX_EXTBUFF_FEI_PREENC_QP:
                         case  MFX_EXTBUFF_FEI_ENC_QP:
                             str += dump(name, *((mfxExtFeiEncQP*)_struct.ExtParam[i])) + "\n";
                             break;
