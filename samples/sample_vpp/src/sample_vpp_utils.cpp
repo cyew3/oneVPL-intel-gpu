@@ -540,7 +540,7 @@ mfxStatus InitMemoryAllocator(
 
     if(isHWLib && isExtVideoMem)
     {
-        if(pInParams->ImpLib & MFX_IMPL_VIA_D3D9)
+        if((pInParams->ImpLib & IMPL_VIA_MASK) == MFX_IMPL_VIA_D3D9)
         {
 #ifdef D3D_SURFACES_SUPPORT
             // prepare device manager
@@ -561,7 +561,7 @@ mfxStatus InitMemoryAllocator(
             pAllocator->pAllocatorParams = pd3dAllocParams;
 #endif
         }
-        else if(pInParams->ImpLib & MFX_IMPL_VIA_D3D9)
+        else if((pInParams->ImpLib & IMPL_VIA_MASK) == MFX_IMPL_VIA_D3D11)
         {
 #ifdef MFX_D3D11_SUPPORT
             pAllocator->pDevice = new CD3D11Device();
@@ -582,7 +582,7 @@ mfxStatus InitMemoryAllocator(
             pAllocator->pAllocatorParams = pd3d11AllocParams;
 #endif
         }
-        else if (pInParams->ImpLib & MFX_IMPL_VIA_VAAPI)
+        else if ((pInParams->ImpLib & IMPL_VIA_MASK) == MFX_IMPL_VIA_VAAPI)
         {
 #ifdef LIBVA_SUPPORT
             pAllocator->pDevice = CreateVAAPIDevice();

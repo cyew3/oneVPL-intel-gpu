@@ -67,6 +67,8 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 // it allows to remove final error message due to EOF
 #define IOSTREAM_MSDK_CHECK_NOT_EQUAL(P, X, ERR)          {if ((X) != (P)) {return ERR;}}
 
+
+#define IMPL_VIA_MASK 0xF00
 /* ************************************************************************* */
 
 enum
