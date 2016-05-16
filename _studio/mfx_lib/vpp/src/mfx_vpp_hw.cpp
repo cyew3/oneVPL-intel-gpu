@@ -2180,6 +2180,9 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
                 inputVidSurf.Info = surfQueue[i].pSurf->Info;
                 inputVidSurf.Data.MemId = m_internalVidSurf[VPP_IN].mids[ resIdx ];
 
+                if (MFX_FOURCC_P010 == inputVidSurf.Info.FourCC && 0 == inputVidSurf.Info.Shift)
+                    inputVidSurf.Info.Shift = 1; // internal memory`s shift should be configured to 1 to call CopyShift CM kernel
+
                 mfxStatus sts = m_pCore->DoFastCopyWrapper(
                     &inputVidSurf,
                     MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET,
@@ -2268,6 +2271,9 @@ mfxStatus VideoVPPHW::PostWorkOutSurface(ExtSurface & output)
         mfxFrameSurface1 d3dSurf;
         d3dSurf.Info = output.pSurf->Info;
         d3dSurf.Data.MemId = m_internalVidSurf[VPP_OUT].mids[ output.resIdx ];
+
+        if (MFX_FOURCC_P010 == d3dSurf.Info.FourCC && 0 == d3dSurf.Info.Shift)
+            d3dSurf.Info.Shift = 1; // internal memory`s shift should be configured to 1 to call CopyShift CM kernel
 
         mfxStatus sts = m_pCore->DoFastCopyWrapper(
             output.pSurf,
@@ -3019,29 +3025,58 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
         } // switch
     }
 
-    /* 2. Check size */
+    /* 2. p010 video memory should be shifted (msdn) */
+    if (MFX_FOURCC_P010 == par->vpp.In.FourCC  && 0 == par->vpp.In.Shift  && par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY)
+        sts = (MFX_ERR_INVALID_VIDEO_PARAM < sts) ? MFX_ERR_INVALID_VIDEO_PARAM : sts;
+
+    if (MFX_FOURCC_P010 == par->vpp.Out.FourCC && 0 == par->vpp.Out.Shift && par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+        sts = (MFX_ERR_INVALID_VIDEO_PARAM < sts) ? MFX_ERR_INVALID_VIDEO_PARAM : sts;
+
+    /* 3. BitDepthLuma and BitDepthChroma should be configured for p010 format */
+    if (MFX_FOURCC_P010 == par->vpp.In.FourCC)
+    {
+        if (0 == par->vpp.In.BitDepthLuma)
+        {
+            par->vpp.In.BitDepthLuma = 10;
+            sts = (MFX_ERR_NONE == sts) ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : sts;
+        }
+        if (0 == par->vpp.In.BitDepthChroma)
+        {
+            par->vpp.In.BitDepthChroma = 10;
+            sts = (MFX_ERR_NONE == sts) ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : sts;
+        }
+    }
+
+    if (MFX_FOURCC_P010 == par->vpp.Out.FourCC)
+    {
+        if (0 == par->vpp.Out.BitDepthLuma)
+        {
+            par->vpp.Out.BitDepthLuma = 10;
+            sts = (MFX_ERR_NONE == sts) ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : sts;
+        }
+        if (0 == par->vpp.Out.BitDepthChroma)
+        {
+            par->vpp.Out.BitDepthChroma = 10;
+            sts = (MFX_ERR_NONE == sts) ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : sts;
+        }
+    }
+
+    /* 3. Check size */
     if (par->vpp.In.Width > caps->uMaxWidth  || par->vpp.In.Height  > caps->uMaxHeight ||
         par->vpp.Out.Width > caps->uMaxWidth || par->vpp.Out.Height > caps->uMaxHeight)
     {
         sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
     }
 
-    /* 3. Check fourcc */
+    /* 4. Check fourcc */
     if ( !(caps->mFormatSupport[par->vpp.In.FourCC] & MFX_FORMAT_SUPPORT_INPUT) || !(caps->mFormatSupport[par->vpp.Out.FourCC] & MFX_FORMAT_SUPPORT_OUTPUT) )
         sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
 
-    /* 4. p010 should be shifted (msdn) */
-    if (MFX_FOURCC_P010 == par->vpp.In.FourCC && 0 == par->vpp.In.Shift)
-        sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
-
-    if (MFX_FOURCC_P010 == par->vpp.Out.FourCC && 0 == par->vpp.Out.Shift)
-        sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
-
-    /* 4. HSD 8159506 */
+    /* 5. HSD 8159506 */
     if (MFX_FOURCC_YV12 == par->vpp.In.FourCC && MFX_HW_BDW < core->GetHWType() && (par->vpp.In.Width > 6144 || par->vpp.In.Height > 6144))
         sts = (MFX_ERR_NONE == sts) ? MFX_WRN_PARTIAL_ACCELERATION : sts;
 
-    /* 5. Check unsupported filters on RGB */
+    /* 6. Check unsupported filters on RGB */
     if( par->vpp.In.FourCC == MFX_FOURCC_RGB4)
     {
         std::vector<mfxU32> pipelineList;
