@@ -49,50 +49,6 @@ set( sources.plus "" )
 set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MFX_ROOTDIR}/mfx_lib/plugin/libmfxsw_plugin.map" )
 
-# foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/src )
-
-#   list( APPEND sources
-#     ${prefix}/mfx_check_hardware_support.cpp
-#     ${prefix}/mfx_common_int.cpp
-#     ${prefix}/mfx_common_decode_int.cpp
-#     ${prefix}/libmfxsw.cpp
-#     ${prefix}/libmfxsw_async.cpp
-#     ${prefix}/libmfxsw_query.cpp
-#     ${prefix}/libmfxsw_session.cpp
-#     ${prefix}/mfx_session.cpp
-#     ${prefix}/mfx_enc_common.cpp
-#   )
-
-# endforeach()
-
-# foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
-#   list( APPEND sources
-#     ${prefix}/cm_mem_copy.cpp
-#     ${prefix}/fast_copy.cpp
-#     ${prefix}/libmfx_allocator.cpp
-#     ${prefix}/libmfx_allocator_vaapi.cpp
-#     ${prefix}/libmfx_core.cpp
-#     ${prefix}/libmfx_core_factory.cpp
-#     ${prefix}/libmfx_core_hw.cpp
-#     ${prefix}/libmfx_core_vaapi.cpp
-#     ${prefix}/mfx_umc_alloc_wrapper.cpp
-#   )
-# endforeach()
-# list( APPEND sources
-#   ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/cmrt_cross_platform/src/cmrt_cross_platform.cpp
-# )
-
-# foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/scheduler/src )
-#   list( APPEND sources
-#     ${prefix}/mfx_scheduler_core.cpp
-#     ${prefix}/mfx_scheduler_core_iunknown.cpp
-#     ${prefix}/mfx_scheduler_core_ischeduler.cpp
-#     ${prefix}/mfx_scheduler_core_task.cpp
-#     ${prefix}/mfx_scheduler_core_task_management.cpp
-#     ${prefix}/mfx_scheduler_core_thread.cpp
-#   )
-# endforeach()
-
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/h265/include )
 
 foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/h265/src )
