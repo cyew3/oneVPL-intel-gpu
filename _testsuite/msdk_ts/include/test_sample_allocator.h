@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #pragma once
 
 #include "base_allocator.h"
@@ -87,8 +97,11 @@ public:
 
     bool get_hdl(mfxHandleType& type, mfxHDL& hdl)
     {
-        if(!this->hdl)
+        if(!this->hdl) {
+            hdl = 0;
+            type = static_cast<mfxHandleType>(0);
             return false;
+        }
         type = hdl_t;
         hdl = this->hdl;
         return true;
