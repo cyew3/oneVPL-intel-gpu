@@ -386,17 +386,18 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
     m_mfxEncParams.mfx.FrameInfo.PicStruct    = pInParams->nPicStruct;
 
-    if (pInParams->bDynamicRC)
+    if (m_bNeedDRC)
     {
-       m_bNeedDRC = true;
-       m_drcDftW = pInParams->nDRCdefautW;
-       m_drcDftH = pInParams->nDRCdefautH;
-       size_t whsize = pInParams->nDrcWidth.size();
-       m_drcWidth.reserve(whsize);
-       m_drcHeight.reserve(whsize);
-       m_drcStart = pInParams->nDrcStart;
-       m_drcWidth = pInParams->nDrcWidth;
-       m_drcHeight = pInParams->nDrcHeight;
+        m_drcStart = pInParams->nDrcStart;
+        m_drcDftW = pInParams->nDRCdefautW;
+        m_drcDftH = pInParams->nDRCdefautH;
+
+        size_t whsize = pInParams->nDrcWidth.size();
+        m_drcWidth.reserve(whsize);
+        m_drcHeight.reserve(whsize);
+
+        m_drcWidth  = pInParams->nDrcWidth;
+        m_drcHeight = pInParams->nDrcHeight;
     }
 
     // set frame size and crops
@@ -1287,9 +1288,11 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
 
     mfxStatus sts = MFX_ERR_NONE;
-    bool bVPPneeded = pParams->nWidth != pParams->nDstWidth ||
-        pParams->nHeight != pParams->nDstHeight ||
-        m_bNeedDRC;
+    m_bNeedDRC = pParams->bDynamicRC;
+
+    bool bVPPneeded = pParams->nWidth  != pParams->nDstWidth  ||
+                      pParams->nHeight != pParams->nDstHeight ||
+                      m_bNeedDRC;
 
     m_refDist = pParams->refDist > 0 ? pParams->refDist : 1;
     m_gopSize = pParams->gopSize > 0 ? pParams->gopSize : 1;
@@ -2684,13 +2687,12 @@ mfxStatus CEncodingPipeline::Run()
 
     m_widthMB  = MSDK_ALIGN16(wdt);
     m_heightMB = m_isField ? MSDK_ALIGN32(hgt) : MSDK_ALIGN16(hgt);
-    m_numMB = (m_widthMB * m_heightMB) >> 8;
+
+    m_numMBp = m_numMB = (m_widthMB * m_heightMB) >> 8;
 
     m_widthMB  >>= 4;
-
-    m_numMBp = m_numMB;
-
     m_heightMB >>= m_isField ? 5 : 4;
+
     m_numMB /= (mfxU16)m_numOfFields;
     m_numMB_drc = m_numMB;
 
@@ -4445,7 +4447,7 @@ mfxStatus CEncodingPipeline::DropPREENCoutput(iTask* eTask)
             if (mvout){
                 if (ExtractFrameType(*eTask, mvsId) & MFX_FRAMETYPE_I)
                 {                                                   // IP pair
-                    for (int k = 0; k < numMB; k++){        // in progressive case Ext buffer for I frame is detached
+                    for (mfxU32 k = 0; k < numMB; k++){             // in progressive case Ext buffer for I frame is detached
                         SAFE_FWRITE(m_tmpMBpreenc, sizeof(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB), 1, mvout, MFX_ERR_MORE_DATA);
                     }
                 }
