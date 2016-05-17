@@ -51,7 +51,7 @@ void OutputRegistrator::UnRegister(mfxHDL handle)
     CommitData(handle, 0, 0);
 }
 
-mfxU32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
+mfxI32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
 {
     if (m_syncOpt == SYNC_OPT_PER_WRITE)
     {
@@ -101,7 +101,8 @@ mfxU32 OutputRegistrator::CommitData(mfxHDL handle, void* ptr, mfxU32 len)
     mfxU32 intHdl = (mfxU32)((mfxU64)handle - 0xff000000);
     if (m_fdOut[intHdl - 1] && ptr)
     {
-        vm_file_write(ptr, 1, len, m_fdOut[intHdl - 1]);
+        if (vm_file_write(ptr, 1, len, m_fdOut[intHdl - 1]) != len)
+            return -1;
         //flushfilebuffers is very slow for mapped memory, decided not to use that
         //fflush((FILE*)m_fdOut[intHdl - 1]->fd);
     }

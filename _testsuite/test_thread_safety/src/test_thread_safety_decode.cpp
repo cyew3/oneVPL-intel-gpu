@@ -110,11 +110,13 @@ mfxStatus OutputYuvTester::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl 
     {
         if (m_video.mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
         {
-            outReg->CommitData(m_handle, ptr, surface->Info.CropW * 2);
+            if (outReg->CommitData(m_handle, ptr, surface->Info.CropW * 2) < 0)
+                return MFX_ERR_UNKNOWN;
         }
         else
         {
-            outReg->CommitData(m_handle, ptr, surface->Info.CropW);
+            if (outReg->CommitData(m_handle, ptr, surface->Info.CropW) < 0)
+                return MFX_ERR_UNKNOWN;
         }
     }
 
@@ -125,13 +127,15 @@ mfxStatus OutputYuvTester::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl 
 
         for (mfxI32 i = 0; i < (surface->Info.CropH + 1) / 2; i++, ptr += surface->Data.Pitch / 2)
         {
-            outReg->CommitData(m_handle, ptr, (surface->Info.CropW + 1) / 2);
+            if (outReg->CommitData(m_handle, ptr, (surface->Info.CropW + 1) / 2) < 0)
+                return MFX_ERR_UNKNOWN;
         }
 
         ptr = surface->Data.V + nCropXYOffset;
         for (mfxI32 i = 0; i < (surface->Info.CropH + 1) / 2; i++, ptr += surface->Data.Pitch / 2)
         {
-            outReg->CommitData(m_handle, ptr, (surface->Info.CropW + 1) / 2);
+            if (outReg->CommitData(m_handle, ptr, (surface->Info.CropW + 1) / 2) < 0)
+                return MFX_ERR_UNKNOWN;
         }
     }
     else if (m_video.mfx.FrameInfo.FourCC == MFX_FOURCC_NV12)
@@ -150,7 +154,8 @@ mfxStatus OutputYuvTester::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl 
                 buf[j] = surface->Data.UV[i * surface->Data.Pitch + 2 * j + nCropXYOffset];
             }
 
-            outReg->CommitData(m_handle, buf, (surface->Info.CropW + 1) / 2);
+            if (outReg->CommitData(m_handle, buf, (surface->Info.CropW + 1) / 2) < 0)
+                return MFX_ERR_UNKNOWN;
         }
 
         for (mfxI32 i = 0; i < (surface->Info.CropH + 1) / 2; i++)
@@ -160,7 +165,8 @@ mfxStatus OutputYuvTester::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl 
                 buf[j] = surface->Data.UV[i * surface->Data.Pitch + 2 * j + 1 + nCropXYOffset];
             }
 
-            outReg->CommitData(m_handle, buf, (surface->Info.CropW + 1) / 2);
+            if (outReg->CommitData(m_handle, buf, (surface->Info.CropW + 1) / 2) < 0)
+                return MFX_ERR_UNKNOWN;
         }
     }
     else if (m_video.mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
@@ -170,7 +176,8 @@ mfxStatus OutputYuvTester::RenderFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl 
         for (mfxI32 i = 0; i < (surface->Info.CropH + 1) / 2; i++)
         {
             memcpy(buf, surface->Data.UV + i*surface->Data.Pitch, surface->Info.CropW * 2);
-            outReg->CommitData(m_handle, buf, surface->Info.CropW * 2);
+            if (outReg->CommitData(m_handle, buf, surface->Info.CropW * 2) < 0)
+                return MFX_ERR_UNKNOWN;
         }
 
         delete [] buf;
