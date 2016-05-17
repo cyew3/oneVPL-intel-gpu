@@ -2763,7 +2763,7 @@ mfxStatus CEncodingPipeline::Run()
             if (NULL != m_ctr)
             {
                 bool isField = !!m_isField;
-                if (m_encpakParams.nPicStruct == MFX_PICSTRUCT_UNKNOWN && pSurf != NULL)
+                if (m_encpakParams.nPicStruct == MFX_PICSTRUCT_UNKNOWN)
                     isField = !(pSurf->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE);
 
                 m_ctr->FrameType = !isField ? (MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF) :
@@ -2781,7 +2781,7 @@ mfxStatus CEncodingPipeline::Run()
 
         if (m_encpakParams.nPicStruct == MFX_PICSTRUCT_FIELD_BFF)
             std::swap(m_frameType[0], m_frameType[1]);
-        else if (m_encpakParams.nPicStruct == MFX_PICSTRUCT_UNKNOWN && pSurf != NULL)
+        else if (m_encpakParams.nPicStruct == MFX_PICSTRUCT_UNKNOWN)
         {
             if ((pSurf->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF) && !(pSurf->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE))
                 std::swap(m_frameType[0], m_frameType[1]);
