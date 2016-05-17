@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 File Name: test_thread_safety_h264_decode.cpp
 
@@ -32,7 +32,7 @@ mfxStatus DecodePipelineForTestThreadSafety::CreateRender()
     mfxStatus sts = MFX_ERR_NONE;
     if (m_inParams.outFrameInfo.FourCC == MFX_FOURCC_UNKNOWN)
     {
-        m_inParams.outFrameInfo.FourCC = m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422 ?  MFX_FOURCC_YV16 : MFX_FOURCC_YV12;
+        m_inParams.outFrameInfo.FourCC = m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422 ? (mfxU32)MFX_FOURCC_YV16 : MFX_FOURCC_YV12;
         m_inParams.outFrameInfo.BitDepthLuma = 8;
         m_inParams.outFrameInfo.BitDepthChroma = 8;
         if (m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
