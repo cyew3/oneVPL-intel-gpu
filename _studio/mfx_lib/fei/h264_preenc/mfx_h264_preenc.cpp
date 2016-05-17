@@ -534,10 +534,21 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
     task.m_fid[0]       = task.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF;
     task.m_fid[1]       = task.m_fieldPicFlag - task.m_fid[0];
 
-        if (task.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF)
-            std::swap(task.m_type.top, task.m_type.bot);
+    /* We need to match picture types...
+     * (1): If Init() was for "MFX_PICSTRUCT_UNKNOWN", all Picture types is allowed
+     * (2): Else allowed only picture type which was on Init() stage
+     *  */
+    mfxU16 picStructTask = task.GetPicStructForEncode();
+    mfxU16 picStructInit = m_video.mfx.FrameInfo.PicStruct;
+    if (! ((MFX_PICSTRUCT_UNKNOWN == picStructInit) || (picStructInit == picStructTask)) )
+    {
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    }
 
-        m_core->IncreaseReference(&input->InSurface->Data);
+    if (task.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF)
+        std::swap(task.m_type.top, task.m_type.bot);
+
+    m_core->IncreaseReference(&input->InSurface->Data);
 
     pEntryPoints[0].pState = this;
     pEntryPoints[0].pParam = &m_incoming.front();

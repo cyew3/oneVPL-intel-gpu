@@ -206,70 +206,180 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
      * Statistics buffer delete at the end of processing, by Close() method
      * Actually this is obligation to attach statistics buffers for I- frame/field
      * For P- frame/field only one MVout buffer maybe attached */
-    mfxU32 currNumMbsW = (m_videoParam.mfx.FrameInfo.Width+15)/16;
-    mfxU32 currNumMbsH = (m_videoParam.mfx.FrameInfo.Height+15)/16;
+    mfxU32 currNumMbsW = (m_videoParam.mfx.FrameInfo.Width + 15)/16;
+    mfxU32 currNumMbsH = (m_videoParam.mfx.FrameInfo.Height + 15)/16;
+    /* "31" - to take into account field case */
+    if (MFX_PICSTRUCT_PROGRESSIVE != m_videoParam.mfx.FrameInfo.PicStruct)
+        currNumMbsH = (m_videoParam.mfx.FrameInfo.Height + 31)/16;
     mfxU32 currNumMbs = currNumMbsW * currNumMbsH;
-    for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
+
+    if (MFX_PICSTRUCT_UNKNOWN == m_videoParam.mfx.FrameInfo.PicStruct)
     {
-        m_statPairs[2*i].first = m_reconQueue[i].surface;
-        m_statPairs[2*i + 1].first = m_reconQueue[i].surface;
-        /* buffer for frame/ top field. Again, this buffer for frame of for field
-         * this buffer is always frame sized */
-        vaSts = vaCreateBuffer(m_vaDisplay,
-                m_vaContextEncode,
-                (VABufferType)VAStatsStatisticsBufferTypeIntel,
-                sizeof (VAStatsStatistics16x16Intel) * currNumMbs,
-                1,
-                NULL,
-                &m_statOutId[2*i]);
-        if (VA_STATUS_SUCCESS == vaSts)
-            m_statPairs[2*i].second = m_statOutId[2*i];
-        else
-            m_statPairs[2*i].second = VA_INVALID_ID;
+        for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
+        {
+            m_statPairs[2*i].first = m_reconQueue[i].surface;
+            m_statPairs[2*i + 1].first = m_reconQueue[i].surface;
+            /* buffer for frame/ top field. Again, this buffer for frame of for field
+             * this buffer is always frame sized */
+            vaSts = vaCreateBuffer(m_vaDisplay,
+                    m_vaContextEncode,
+                    (VABufferType)VAStatsStatisticsBufferTypeIntel,
+                    sizeof (VAStatsStatistics16x16Intel) * currNumMbs,
+                    1,
+                    NULL,
+                    &m_statOutId[2*i]);
+            if (VA_STATUS_SUCCESS == vaSts)
+                m_statPairs[2*i].second = m_statOutId[2*i];
+            else
+                m_statPairs[2*i].second = VA_INVALID_ID;
 
-        /* buffer for bottom field only
-         * * this buffer is always half frame sized
-         *  */
+            /* buffer for bottom field only
+             * * this buffer is always half frame sized
+             *  */
+            vaSts = vaCreateBuffer(m_vaDisplay,
+                    m_vaContextEncode,
+                    (VABufferType)VAStatsStatisticsBotFieldBufferTypeIntel,
+                    sizeof (VAStatsStatistics16x16Intel) * currNumMbs/2,
+                    1,
+                    NULL,
+                    &m_statOutId[2*i + 1]);
+            if (VA_STATUS_SUCCESS == vaSts)
+                m_statPairs[2*i + 1].second = m_statOutId[2*i + 1];
+            else
+                m_statPairs[2*i + 1].second = VA_INVALID_ID;
+        } // for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
+
+        /* 2 MV buffers allocated per instance, even for progressive case
+         * NOTE: buffers always full sized even for interlaced case!!!
+         * This is WA for GPU hang for Mixed Picstructed */
+        m_statMVId.resize(2);
+        for (mfxU32 i = 0; i < 2; i++ )
+            m_statMVId[i] = VA_INVALID_ID;
+
         vaSts = vaCreateBuffer(m_vaDisplay,
                 m_vaContextEncode,
-                (VABufferType)VAStatsStatisticsBotFieldBufferTypeIntel,
-                sizeof (VAStatsStatistics16x16Intel) * currNumMbs/2,
+                (VABufferType)VAStatsMotionVectorBufferTypeIntel,
+                //sizeof (VAMotionVectorIntel)*mvsOut->NumMBAlloc * 16, //16 MV per MB
+                sizeof (VAMotionVectorIntel)* currNumMbs * 16,
                 1,
-                NULL,
-                &m_statOutId[2*i + 1]);
-        if (VA_STATUS_SUCCESS == vaSts)
-            m_statPairs[2*i + 1].second = m_statOutId[2*i + 1];
-        else
+                NULL, //should be mapped later
+                &m_statMVId[0]);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                m_vaContextEncode,
+                (VABufferType)VAStatsMotionVectorBufferTypeIntel,
+                //sizeof (VAMotionVectorIntel)*mvsOut->NumMBAlloc * 16, //16 MV per MB
+                sizeof (VAMotionVectorIntel)* currNumMbs * 16,
+                1,
+                NULL, //should be mapped later
+                &m_statMVId[1]);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    }
+    if (MFX_PICSTRUCT_PROGRESSIVE == m_videoParam.mfx.FrameInfo.PicStruct)
+    {
+        for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
+        {
+            m_statPairs[2*i].first = m_reconQueue[i].surface;
+            m_statPairs[2*i + 1].first = m_reconQueue[i].surface;
+            /* buffer for frame */
+            vaSts = vaCreateBuffer(m_vaDisplay,
+                    m_vaContextEncode,
+                    (VABufferType)VAStatsStatisticsBufferTypeIntel,
+                    sizeof (VAStatsStatistics16x16Intel) * currNumMbs,
+                    1,
+                    NULL,
+                    &m_statOutId[2*i]);
+            if (VA_STATUS_SUCCESS == vaSts)
+                m_statPairs[2*i].second = m_statOutId[2*i];
+            else
+                m_statPairs[2*i].second = VA_INVALID_ID;
+
             m_statPairs[2*i + 1].second = VA_INVALID_ID;
-    } // for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
+        } // for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
 
-    /* 2 MV buffers allocated per instance, even for progressive case
-     * NOTE: buffers always full sized even for interlaced case!!!
-     * This is WA for GPU hang for Mixed Picstructed */
-    m_statMVId.resize(2);
-    for (mfxU32 i = 0; i < 2; i++ )
-        m_statMVId[i] = VA_INVALID_ID;
+        /* One MV buffer for all */
+        m_statMVId.resize(2);
+        m_statMVId[0] = VA_INVALID_ID;
+        m_statMVId[1] = VA_INVALID_ID;
 
-    vaSts = vaCreateBuffer(m_vaDisplay,
-            m_vaContextEncode,
-            (VABufferType)VAStatsMotionVectorBufferTypeIntel,
-            //sizeof (VAMotionVectorIntel)*mvsOut->NumMBAlloc * 16, //16 MV per MB
-            sizeof (VAMotionVectorIntel)* currNumMbs * 16,
-            1,
-            NULL, //should be mapped later
-            &m_statMVId[0]);
-    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                m_vaContextEncode,
+                (VABufferType)VAStatsMotionVectorBufferTypeIntel,
+                //sizeof (VAMotionVectorIntel)*mvsOut->NumMBAlloc * 16, //16 MV per MB
+                sizeof (VAMotionVectorIntel)* currNumMbs * 16,
+                1,
+                NULL, //should be mapped later
+                &m_statMVId[0]);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    vaSts = vaCreateBuffer(m_vaDisplay,
-            m_vaContextEncode,
-            (VABufferType)VAStatsMotionVectorBufferTypeIntel,
-            //sizeof (VAMotionVectorIntel)*mvsOut->NumMBAlloc * 16, //16 MV per MB
-            sizeof (VAMotionVectorIntel)* currNumMbs * 16,
-            1,
-            NULL, //should be mapped later
-            &m_statMVId[1]);
-    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        m_statMVId[1] = VA_INVALID_ID;
+    }
 
+    if ((MFX_PICSTRUCT_FIELD_TFF == m_videoParam.mfx.FrameInfo.PicStruct) ||
+        (MFX_PICSTRUCT_FIELD_BFF == m_videoParam.mfx.FrameInfo.PicStruct) )
+    {
+        for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
+        {
+            m_statPairs[2*i].first = m_reconQueue[i].surface;
+            m_statPairs[2*i + 1].first = m_reconQueue[i].surface;
+            /* buffer for frame/ top field. Again, this buffer for frame of for field
+             * this buffer is always frame sized */
+            vaSts = vaCreateBuffer(m_vaDisplay,
+                    m_vaContextEncode,
+                    (VABufferType)VAStatsStatisticsBufferTypeIntel,
+                    sizeof (VAStatsStatistics16x16Intel) * currNumMbs/2,
+                    1,
+                    NULL,
+                    &m_statOutId[2*i]);
+            if (VA_STATUS_SUCCESS == vaSts)
+                m_statPairs[2*i].second = m_statOutId[2*i];
+            else
+                m_statPairs[2*i].second = VA_INVALID_ID;
+
+            /* buffer for bottom field only
+             * * this buffer is always half frame sized
+             *  */
+            vaSts = vaCreateBuffer(m_vaDisplay,
+                    m_vaContextEncode,
+                    (VABufferType)VAStatsStatisticsBotFieldBufferTypeIntel,
+                    sizeof (VAStatsStatistics16x16Intel) * currNumMbs/2,
+                    1,
+                    NULL,
+                    &m_statOutId[2*i + 1]);
+            if (VA_STATUS_SUCCESS == vaSts)
+                m_statPairs[2*i + 1].second = m_statOutId[2*i + 1];
+            else
+                m_statPairs[2*i + 1].second = VA_INVALID_ID;
+        } // for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
+
+        /* 2 MV buffers allocated per instance, even for progressive case
+         * NOTE: buffers always full sized even for interlaced case!!!
+         * This is WA for GPU hang for Mixed Picstructed */
+        m_statMVId.resize(2);
+        for (mfxU32 i = 0; i < 2; i++ )
+            m_statMVId[i] = VA_INVALID_ID;
+
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                m_vaContextEncode,
+                (VABufferType)VAStatsMotionVectorBufferTypeIntel,
+                //sizeof (VAMotionVectorIntel)*mvsOut->NumMBAlloc * 16, //16 MV per MB
+                sizeof (VAMotionVectorIntel)* (currNumMbs/2) * 16,
+                1,
+                NULL, //should be mapped later
+                &m_statMVId[0]);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+        vaSts = vaCreateBuffer(m_vaDisplay,
+                m_vaContextEncode,
+                (VABufferType)VAStatsMotionVectorBufferTypeIntel,
+                //sizeof (VAMotionVectorIntel)*mvsOut->NumMBAlloc * 16, //16 MV per MB
+                sizeof (VAMotionVectorIntel)* (currNumMbs/2) * 16,
+                1,
+                NULL, //should be mapped later
+                &m_statMVId[1]);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    }
 
     Zero(m_sps);
     Zero(m_pps);
@@ -354,6 +464,17 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     //preENC control
     VABufferID mvPredid = VA_INVALID_ID;
     VABufferID qpid = VA_INVALID_ID;
+
+    /* This is additional check in Execute,"Sync()" portion.
+     * First done is RunFrameVmeENCCheck() function
+     * */
+    mfxU16 picStructTask = task.GetPicStructForEncode();
+    mfxU16 picStructInit = m_videoParam.mfx.FrameInfo.PicStruct;
+    if (! ((MFX_PICSTRUCT_UNKNOWN == picStructInit) || (picStructInit == picStructTask)) )
+    {
+        mfxSts = MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+        return mfxSts;
+    }
 
     /* Condition != NULL checked on VideoENC_PREENC::RunFrameVmeENCCheck */
     mfxENCInput* in = (mfxENCInput*)task.m_userData[0];
