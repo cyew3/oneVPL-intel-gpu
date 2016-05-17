@@ -2676,10 +2676,7 @@ mfxStatus CEncodingPipeline::Run()
         mfxU16 heightMB = m_isField ? MSDK_ALIGN32(m_mfxDSParams.vpp.Out.Height) : MSDK_ALIGN16(m_mfxDSParams.vpp.Out.Height);
         m_numMBpreenc = (m_widthMBpreenc * heightMB) >> 8;
 
-        if (m_encpakParams.nPicStruct == MFX_PICSTRUCT_UNKNOWN)
-        {
-            m_numMBpPreenc = m_numMBpreenc;
-        }
+        m_numMBpPreenc = m_numMBpreenc;
 
         m_numMBpreenc /= (mfxU16)m_numOfFields;
 
