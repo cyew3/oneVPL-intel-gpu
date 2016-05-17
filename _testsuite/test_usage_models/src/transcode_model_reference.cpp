@@ -366,7 +366,7 @@ mfxStatus TranscodeModelReference::InitMFXComponents( void )
 } // mfxStatus TranscodeModelReference::InitMFXComponents( void )
     
 
-mfxStatus TranscodeModelReference::InitMFXSessions( SessionMode mode, std::map<msdk_char*, mfxIMPL> impl)
+mfxStatus TranscodeModelReference::InitMFXSessions( SessionMode mode, std::map<const msdk_char*, mfxIMPL> impl)
 {
     mfxStatus sts = MFX_ERR_UNDEFINED_BEHAVIOR;            
  

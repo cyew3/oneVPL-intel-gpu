@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2016 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __TRANSCODE_MODEL_REFERENCE_H__
@@ -33,7 +33,7 @@ protected:
     mfxStatus ConfigMFXComponents( AppParam& params );
     mfxStatus InitMFXComponents( void );
 
-    mfxStatus InitMFXSessions( SessionMode mode, std::map<msdk_char*, mfxIMPL> impl );
+    mfxStatus InitMFXSessions( SessionMode mode, std::map<const msdk_char*, mfxIMPL> impl );
     mfxStatus CloseMFXSessions( SessionMode mode );
     mfxStatus SetAllocatorMFXSessions( mfxU16 IOPattern );
 

@@ -16,11 +16,11 @@
   #endif
 #endif
 
-mfxU32 String2VideoFormat( msdk_char* arg );
-msdk_char* VideoFormat2String( mfxU32 FourCC );
-mfxU16 String2IOPattern( msdk_char* strInput );
-msdk_char* IOPattern2String(mfxU16 IOPattern);
-msdk_char* ImpLibrary2String(mfxIMPL impl);
+mfxU32 String2VideoFormat( const msdk_char* arg );
+const msdk_char* VideoFormat2String( mfxU32 FourCC );
+mfxU16 String2IOPattern( const msdk_char* strInput );
+const msdk_char* IOPattern2String(mfxU16 IOPattern);
+const msdk_char* ImpLibrary2String(mfxIMPL impl);
 void PrintDllInfo( void );
 
 void CommandLine::PrintUsage(const msdk_char* app)
@@ -60,7 +60,7 @@ void CommandLine::PrintUsage(const msdk_char* app)
     
 } // void CommandLine::PrintUsage(const msdk_char* app)
 
-CommandLine::CommandLine(int argc, msdk_char *argv[])
+CommandLine::CommandLine(int argc, const msdk_char *argv[])
     :  m_srcVideoFormat(0)
     ,  m_dstVideoFormat(0)
     ,  m_width(0)
@@ -363,7 +363,7 @@ void CommandLine::PrintInfo( void )
 } // void CommandLine::PrintInfo( void )
 
 
-mfxU32 String2VideoFormat( msdk_char* arg )
+mfxU32 String2VideoFormat( const msdk_char* arg )
 {
     mfxU32 format = MFX_FOURCC_NV12;//default
 
@@ -385,9 +385,9 @@ mfxU32 String2VideoFormat( msdk_char* arg )
 } // mfxU32 Str2FourCC( msdk_char* strInput )
 
 
-msdk_char* VideoFormat2String( mfxU32 FourCC )
+const msdk_char* VideoFormat2String( mfxU32 FourCC )
 {
-  msdk_char* strFourCC = MSDK_STRING("h264");//default
+  const msdk_char* strFourCC = MSDK_STRING("h264");//default
 
   switch ( FourCC )
   {
@@ -410,10 +410,10 @@ msdk_char* VideoFormat2String( mfxU32 FourCC )
 
   return strFourCC;
 
-} // msdk_char* VideoFormat2String( mfxU32 FourCC )
+} // const msdk_char* VideoFormat2String( mfxU32 FourCC )
 
 
-msdk_char* ImpLibrary2String(mfxIMPL impl)
+const msdk_char* ImpLibrary2String(mfxIMPL impl)
 {
     switch(impl)
     {
@@ -483,7 +483,7 @@ void PrintDllInfo( void )
 } // void PrintDllInfo( void )
 
 
-mfxU16 String2IOPattern( msdk_char* strInput )
+mfxU16 String2IOPattern( const msdk_char* strInput )
 {
     mfxU16 IOPattern = 0;
 
@@ -516,7 +516,7 @@ mfxU16 String2IOPattern( msdk_char* strInput )
 } // mfxU16 String2IOPattern( msdk_char* strInput )
 
 
-msdk_char* IOPattern2String(mfxU16 IOPattern)
+const msdk_char* IOPattern2String(mfxU16 IOPattern)
 {
     switch(IOPattern)
     {

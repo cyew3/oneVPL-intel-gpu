@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2016 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -16,7 +16,7 @@ class CommandLine
 public:
     static void PrintUsage(const msdk_char* app);    
 
-    CommandLine(int argc, msdk_char *argv[]);
+    CommandLine(int argc, const msdk_char *argv[]);
     bool IsValid() const { return m_valid; }
 
     void GetParam( AppParam& param );
@@ -42,10 +42,10 @@ private:
 
     mfxU16 m_NumSlice;
 
-    msdk_char* m_pSrcFileName;
-    msdk_char* m_pDstFileName;
+    const msdk_char* m_pSrcFileName;
+    const msdk_char* m_pDstFileName;
 
-    std::map<msdk_char*, mfxIMPL> m_impLib;    
+    std::map<const msdk_char*, mfxIMPL> m_impLib;
 
     mfxU16 m_IOPattern; // DEC->(SYS/D3D frames)->VPP->(SYS/D3D frames)->ENC
 
