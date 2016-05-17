@@ -131,7 +131,13 @@ public:
     tsTrace& operator << (const mfxFrameData& p);
     tsTrace& operator << (mfxStatus& p);
     tsTrace& operator << (BSErr& p);
-    tsTrace& operator<<(const mfxExtFeiEncMV& p);
+    tsTrace& operator << (const mfxStatus& p){
+        return operator<<(const_cast<mfxStatus&>(p));
+    }
+    tsTrace& operator << (const BSErr& p){
+        return operator<<(const_cast<BSErr&>(p));
+    }
+    tsTrace& operator << (const mfxExtFeiEncMV& p);
 
     template<typename T> tsTrace& operator << (T& p) { (tsAutoTrace&)*this << p; return *this; }
     template<typename T> tsTrace& operator << (T* p) { (tsAutoTrace&)*this << p; return *this; }

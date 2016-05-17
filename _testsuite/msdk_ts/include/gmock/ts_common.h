@@ -105,9 +105,9 @@ extern tsConfig     g_tsConfig;
 #define DEC_PADDING() g_tsLog.dec_offset();
 #define TRACE_FUNCN(n, name, p1, p2, p3, p4, p5, p6, p7)\
     g_tsLog << "---------------------------------START-----------------------------------------\n";\
-    g_tsLog << "CALL: " << #name << "\n";\
-    INC_PADDING();\
     if(g_tsTrace){\
+        g_tsLog << "CALL: " << #name << "\n";\
+        INC_PADDING();\
         if((n) > 0) g_tsLog << g_tsLog.m_off << #p1 " = " << p1 << "\n";\
         if((n) > 1) g_tsLog << g_tsLog.m_off << #p2 " = " << p2 << "\n";\
         if((n) > 2) g_tsLog << g_tsLog.m_off << #p3 " = " << p3 << "\n";\
@@ -115,6 +115,7 @@ extern tsConfig     g_tsConfig;
         if((n) > 4) g_tsLog << g_tsLog.m_off << #p5 " = " << p5 << "\n";\
         if((n) > 5) g_tsLog << g_tsLog.m_off << #p6 " = " << p6 << "\n";\
         if((n) > 8) g_tsLog << g_tsLog.m_off << #p7 " = " << p6 << "\n";\
+        DEC_PADDING();\
     }\
     g_tsLog << "CALL: " << #name << "(";\
     if((n) > 0) g_tsLog << #p1;\
@@ -124,8 +125,7 @@ extern tsConfig     g_tsConfig;
     if((n) > 4) g_tsLog << ", " << #p5;\
     if((n) > 5) g_tsLog << ", " << #p6;\
     if((n) > 6) g_tsLog << ", " << #p7;\
-    g_tsLog << ");" << "\n";\
-    DEC_PADDING();
+    g_tsLog << ");" << "\n";
 #define TRACE_FUNC6(name, p1, p2, p3, p4, p5, p6) TRACE_FUNCN(6, name, p1, p2, p3, p4, p5, p6, 0)
 #define TRACE_FUNC5(name, p1, p2, p3, p4, p5) TRACE_FUNCN(5, name, p1, p2, p3, p4, p5, 0, 0)
 #define TRACE_FUNC4(name, p1, p2, p3, p4) TRACE_FUNCN(4, name, p1, p2, p3, p4, 0, 0, 0)
@@ -165,4 +165,5 @@ void GetBufferIdSz(const std::string& name, mfxU32& bufId, mfxU32& bufSz);
 
 void SetParam(void* base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value);
 void SetParam(tsExtBufType<mfxVideoParam>* base,  const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value);
+
 
