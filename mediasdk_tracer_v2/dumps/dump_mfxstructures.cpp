@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -174,6 +174,20 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD(ContentInfo);
     DUMP_FIELD(PRefType);
     DUMP_FIELD(FadeDetection);
+    DUMP_FIELD(DeblockingAlphaTcOffset);
+    DUMP_FIELD(DeblockingBetaOffset);
+    DUMP_FIELD(GPB);
+    DUMP_FIELD(MaxFrameSizeI);
+    DUMP_FIELD(MaxFrameSizeP);
+    DUMP_FIELD_RESERVED(reserved1);
+    DUMP_FIELD(EnableQPOffset);
+    DUMP_FIELD_RESERVED(QPOffset);
+    DUMP_FIELD(NumRefActiveP);
+    DUMP_FIELD(NumRefActivePRef);
+    DUMP_FIELD(NumRefActiveBL0);
+    DUMP_FIELD(NumRefActiveBL1);
+    DUMP_FIELD(NumRefActiveBRefL0);
+    DUMP_FIELD(NumRefActiveBRefL1);
     DUMP_FIELD_RESERVED(reserved);
     return str;
 }
@@ -359,6 +373,7 @@ std::string DumpContext::dump(const std::string structName, const mfxInfoMFX &mf
     str += structName + ".TimeStampCalc=" + ToString(mfx.TimeStampCalc) + "\n";
     str += structName + ".SliceGroupsPresent=" + ToString(mfx.SliceGroupsPresent) + "\n";
     str += structName + ".MaxDecFrameBuffering=" + ToString(mfx.MaxDecFrameBuffering) + "\n";
+    str += structName + ".EnableReallocRequest=" + ToString(mfx.EnableReallocRequest) + "\n";
     str += structName + ".reserved2[]=" + DUMP_RESERVED_ARRAY(mfx.reserved2) + "\n";
     str += structName + ".JPEGChromaFormat=" + ToString(mfx.JPEGChromaFormat) + "\n";
     str += structName + ".Rotation=" + ToString(mfx.Rotation) + "\n";
@@ -384,6 +399,7 @@ std::string DumpContext::dump(const std::string structName, const mfxInfoVPP &vp
 std::string DumpContext::dump(const std::string structName, const mfxPayload &payload)
 {
     std::string str;
+    str += structName + ".CtrlFlags=" + ToString(payload.CtrlFlags) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(payload.reserved) + "\n";
     str += structName + ".Data=" + ToString(payload.Data) + "\n";
     str += structName + ".NumBit=" + ToString(payload.NumBit) + "\n";
@@ -703,6 +719,36 @@ std::string DumpContext::dump(const std::string structName, const mfxExtAVCRefLi
     return str;
 }
 
+std::string DumpContext::dump(const std::string structName, const mfxExtVPPMirroring &ExtVPPMirroring)
+{
+    std::string str;
+    str += dump(structName + ".Header", ExtVPPMirroring.Header) + "\n";
+    str += structName + ".Type=" + ToString(ExtVPPMirroring.Type) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtVPPMirroring.reserved) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtMVOverPicBoundaries &ExtMVOverPicBoundaries)
+{
+    std::string str;
+    str += dump(structName + ".Header", ExtMVOverPicBoundaries.Header) + "\n";
+    str += structName + ".StickTop=" + ToString(ExtMVOverPicBoundaries.StickTop) + "\n";
+    str += structName + ".StickBottom=" + ToString(ExtMVOverPicBoundaries.StickBottom) + "\n";
+    str += structName + ".StickLeft=" + ToString(ExtMVOverPicBoundaries.StickLeft) + "\n";
+    str += structName + ".StickRight=" + ToString(ExtMVOverPicBoundaries.StickRight) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtMVOverPicBoundaries.reserved) + "\n";
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtVPPColorFill &ExtVPPColorFill)
+{
+    std::string str;
+    str += dump(structName + ".Header", ExtVPPColorFill.Header) + "\n";
+    str += structName + ".Enable=" + ToString(ExtVPPColorFill.Enable) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtVPPColorFill.reserved) + "\n";
+    return str;
+}
+
 //mfxjpeg
 std::string DumpContext::dump(const std::string structName, const mfxExtJPEGQuantTables &ExtJPEGQuantTables)
 {
@@ -955,6 +1001,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtVPPVideo
     str += structName + ".Out.TransferMatrix=" + ToString(ExtVPPVideoSignalInfo.Out.TransferMatrix) + "\n";
     str += structName + ".Out.NominalRange=" + ToString(ExtVPPVideoSignalInfo.Out.NominalRange) + "\n";
     str += structName + ".Out.reserved2[]=" + DUMP_RESERVED_ARRAY(ExtVPPVideoSignalInfo.Out.reserved2) + "\n";
+    str += structName + ".TransferMatrix=" + ToString(ExtVPPVideoSignalInfo.TransferMatrix) + "\n";
+    str += structName + ".NominalRange=" + ToString(ExtVPPVideoSignalInfo.NominalRange) + "\n";
+    str += structName + ".reserved3[]=" + DUMP_RESERVED_ARRAY(ExtVPPVideoSignalInfo.reserved3) + "\n";
     return str;
 }
 

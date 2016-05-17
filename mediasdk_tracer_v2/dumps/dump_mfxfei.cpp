@@ -534,6 +534,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiParam
 
     str += dump(structName + ".Header", _struct.Header) + "\n";
     DUMP_FIELD(Func);
+    DUMP_FIELD(SingleFieldProcessing);
     DUMP_FIELD_RESERVED(reserved);
 
     return str;

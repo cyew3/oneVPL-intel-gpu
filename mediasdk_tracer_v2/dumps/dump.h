@@ -383,6 +383,15 @@ public:
                         case MFX_EXTBUFF_FEI_REPACK_CTRL:
                             str += dump(name, *((mfxExtFeiRepackCtrl*)_struct.ExtParam[i])) + "\n";
                             break;
+                        case MFX_EXTBUFF_VPP_MIRRORING:
+                            str += dump(name, *((mfxExtVPPMirroring*)_struct.ExtParam[i])) + "\n";
+                            break;
+                        case MFX_EXTBUFF_MV_OVER_PIC_BOUNDARIES:
+                            str += dump(name, *((mfxExtMVOverPicBoundaries*)_struct.ExtParam[i])) + "\n";
+                            break;
+                        case MFX_EXTBUFF_VPP_COLORFILL:
+                            str += dump(name, *((mfxExtVPPColorFill*)_struct.ExtParam[i])) + "\n";
+                            break;
                         default:
                             str += dump(name, *(_struct.ExtParam[i])) + "\n";
                             break;
@@ -480,6 +489,10 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtVPPRotation);
     DEFINE_DUMP_FUNCTION(mfxExtEncodedSlicesInfo);
     DEFINE_DUMP_FUNCTION(mfxExtVPPScaling);
+    DEFINE_DUMP_FUNCTION(mfxExtVPPMirroring);
+    DEFINE_DUMP_FUNCTION(mfxExtMVOverPicBoundaries);
+    DEFINE_DUMP_FUNCTION(mfxExtVPPColorFill);
+
 
     //mfxsession
     DEFINE_DUMP_FUNCTION(mfxSession);

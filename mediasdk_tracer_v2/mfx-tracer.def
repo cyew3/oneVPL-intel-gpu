@@ -65,6 +65,12 @@ EXPORTS
     MFXVideoPAK_Reset;
     MFXVideoPAK_Close;
     MFXVideoPAK_ProcessFrameAsync;
-    
+
     MFXInitEx;
     MFXDoWork;
+
+    MFXVideoENC_GetVideoParam;
+    MFXVideoPAK_GetVideoParam;
+    MFXVideoCORE_QueryPlatform;
+    MFXVideoUSER_GetPlugin;
+
