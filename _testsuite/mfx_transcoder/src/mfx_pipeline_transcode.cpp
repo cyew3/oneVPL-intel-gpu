@@ -89,7 +89,7 @@ Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 {\
     int offset = (int)((mfxU8*)ptr - (mfxU8*)&m_EncParams);\
     int size   = convert_type_nbits((mfxU8)type) >> 3;\
-    if (offset + size <= sizeof(m_EncParams)){\
+    if (offset + size <= (int)sizeof(m_EncParams)){\
     ippsSet_8u(0xFF, (mfxU8*)&m_EncParamsMask + offset, size);}\
 }
 
@@ -427,8 +427,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         {VM_STRING("-yuvdump"), OPT_BOOL, {&m_bYuvDumpMode}, VM_STRING("used by mfx_transcoder team only")}
     };
 
-    int i;
-    for (i = 0; i < sizeof(options)/sizeof(options[0]); i++)
+    for (size_t i = 0; i < sizeof(options)/sizeof(options[0]); i++)
     {
         m_pOptions.push_back(options[i]);
     }
@@ -2200,7 +2199,7 @@ vm_char * MFXTranscodingPipeline::GetLastErrString()
         {PE_NO_TARGET_CODEC, VM_STRING("No encoding format specified")},
     };
 
-    for (int i=0; i < sizeof(errDetails)/sizeof(errDetails[0]); i++)
+    for (size_t i=0; i < sizeof(errDetails)/sizeof(errDetails[0]); i++)
     {
         if (errDetails[i].err == PipelineGetLastErr())
         {
