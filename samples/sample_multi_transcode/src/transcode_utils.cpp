@@ -163,7 +163,9 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("Pipeline description (vpp options):\n"));
     msdk_printf(MSDK_STRING("  -deinterlace             Forces VPP to deinterlace input stream\n"));
     msdk_printf(MSDK_STRING("  -deinterlace::ADI        Forces VPP to deinterlace input stream using ADI algorithm\n"));
+    msdk_printf(MSDK_STRING("  -deinterlace::ADI_SCD    Forces VPP to deinterlace input stream using ADI_SCD algorithm\n"));
     msdk_printf(MSDK_STRING("  -deinterlace::ADI_NO_REF Forces VPP to deinterlace input stream using ADI no ref algorithm\n"));
+    msdk_printf(MSDK_STRING("  -deinterlace::BOB        Forces VPP to deinterlace input stream using BOB algorithm\n"));
     msdk_printf(MSDK_STRING("  -detail <level>          Enables detail (edge enhancement) filter with provided level(0..100)\n"));
     msdk_printf(MSDK_STRING("  -denoise <level>         Enables denoise filter with provided level (0..100)\n"));
     msdk_printf(MSDK_STRING("  -FRC::PT      Enables FRC filter with Preserve Timestamp algorithm\n"));
