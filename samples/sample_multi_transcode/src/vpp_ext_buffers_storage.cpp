@@ -167,6 +167,18 @@ mfxStatus CVPPExtBuffersStorage::ParseCmdLine(msdk_char *argv[],mfxU32 argc,mfxU
         params->DeinterlacingMode=MFX_DEINTERLACING_ADVANCED;
         return MFX_ERR_NONE;
     }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-deinterlace::ADI_SCD")))
+    {
+        params->bEnableDeinterlacing = true;
+        params->DeinterlacingMode=MFX_DEINTERLACING_ADVANCED_SCD;
+        return MFX_ERR_NONE;
+    }
+    else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-deinterlace::BOB")))
+    {
+        params->bEnableDeinterlacing = true;
+        params->DeinterlacingMode=MFX_DEINTERLACING_BOB;
+        return MFX_ERR_NONE;
+    }
     else if (0 == msdk_strcmp(argv[index], MSDK_STRING("-deinterlace::ADI_NO_REF")))
     {
         params->bEnableDeinterlacing = true;
