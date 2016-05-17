@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "test_usage_models_cmdline.h"
@@ -60,26 +60,25 @@ void CommandLine::PrintUsage(const msdk_char* app)
     
 } // void CommandLine::PrintUsage(const msdk_char* app)
 
-
 CommandLine::CommandLine(int argc, msdk_char *argv[])
-:  m_srcVideoFormat(0)
-,  m_dstVideoFormat(0)
-,  m_width(0)
-,  m_height(0)
-,  m_bitRate(0)
-,  m_frameRate(0) //AYA_DEBUG
-,  m_targetUsage(0)    
-,  m_asyncDepth(0)
-,  m_usageModel(0)
-,  m_framesCount(0)
-,  m_pSrcFileName(0)
-,  m_pDstFileName(0)
-,  m_NumSlice(0)
+    :  m_srcVideoFormat(0)
+    ,  m_dstVideoFormat(0)
+    ,  m_width(0)
+    ,  m_height(0)
+    ,  m_bitRate(0)
+    ,  m_frameRate(0) //AYA_DEBUG
+    ,  m_targetUsage(0)
+    ,  m_asyncDepth(0)
+    ,  m_usageModel(0)
+    ,  m_framesCount(0)
+    ,  m_NumSlice(0)
+    ,  m_pSrcFileName(0)
+    ,  m_pDstFileName(0)
 
-//,  m_impLib(MFX_IMPL_HARDWARE)
+    //,  m_impLib(MFX_IMPL_HARDWARE)
 
-,  m_IOPattern( MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY )
-,  m_valid(false)
+    ,  m_IOPattern( MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY )
+    ,  m_valid(false)
 {
     const int DEFAULT_HW_IMPL =
 #if defined(_WIN32)

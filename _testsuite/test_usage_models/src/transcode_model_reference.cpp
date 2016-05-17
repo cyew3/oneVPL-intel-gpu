@@ -70,15 +70,15 @@ mfxStatus GetFrameAllocRequest(MFXComponent* pComp, mfxVideoParam* pParam, mfxFr
 /* ******************************************************************** */
 
 TranscodeModelReference::TranscodeModelReference(AppParam& param)
-: m_bsReader( param.pSrcFileName )
-, m_bsWriter( param.pDstFileName )
-, m_allocator()
-, m_sessionMode(DECVPPENC_SESSION)
-, m_framesCount(0)
-, m_bInited(false)
-, m_bVPPEnable(false)
+    : m_bsReader( param.pSrcFileName )
+    , m_bsWriter( param.pDstFileName )
+    , m_allocator()
+    , m_bInited(false)
+    , m_bVPPEnable(false)
+    , m_framesCount(0)
+    , m_sessionMode(DECVPPENC_SESSION)
 // other parameters inited in function
-{   
+{
 
 } // TranscodeModelReference::TranscodeModelReference(AppParam& param)
 
