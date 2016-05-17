@@ -2143,18 +2143,16 @@ mfxStatus MFXTranscodingPipeline::ReleasePipeline()
     return MFX_ERR_NONE;
 }
 
-
-
-void      MFXTranscodingPipeline::PrintCommonHelp()
+void MFXTranscodingPipeline::PrintCommonHelp()
 {
+    vm_char unsupported[] = VM_STRING("unsupported option");
     vm_char *argv[1], **_argv = argv;
     mfxI32 argc = 1;
-    argv[0] = VM_STRING("unsupported option");
+    argv[0] = unsupported;
 
     m_OptProc.SetPrint(true);
     ProcessCommand(_argv, argc, false);
     m_OptProc.SetPrint(false);
-
 }
 
 int MFXTranscodingPipeline::PrintHelp()
