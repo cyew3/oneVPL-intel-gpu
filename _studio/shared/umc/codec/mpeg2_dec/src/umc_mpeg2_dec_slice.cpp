@@ -500,6 +500,16 @@ mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure ==
     if( video->slice_vertical_position > PictureHeader[task_num].max_slice_vert_pos)
     {
         video->slice_vertical_position = PictureHeader[task_num].max_slice_vert_pos;
+
+#ifdef UMC_VA_DXVA
+        if(pack_w.pSliceInfo > pack_w.pSliceInfoBuffer)
+            pack_w.pSliceInfo[-1].dwSliceBitsInBuffer += bytes_remain*8;
+#endif
+#ifdef UMC_VA_LINUX
+        if(pack_l.pSliceInfo > pack_l.pSliceInfoBuffer)
+            pack_l.pSliceInfo[-1].slice_data_size += bytes_remain;
+#endif
+
         isCorrupted = true;
         return UMC_WRN_INVALID_STREAM;
     }
