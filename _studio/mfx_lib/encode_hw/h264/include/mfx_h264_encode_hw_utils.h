@@ -2023,7 +2023,6 @@ namespace MfxHwH264Encode
         eMFXVAType  m_currentVaType;
         bool        m_useWAForHighBitrates;  // FIXME: w/a for SNB issue with HRD at high bitrates
         bool        m_isENCPAK;
-        DdiTask     m_lastFeiTask;
         bool        m_isWiDi;
         bool        m_resetBRC;
 

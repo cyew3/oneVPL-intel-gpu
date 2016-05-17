@@ -2668,7 +2668,6 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             if ((MFX_CODINGOPTION_ON == extFeiParams->SingleFieldProcessing)&& (0 == m_fieldCounter))
             {
                 m_fieldCounter = 1;
-                m_lastFeiTask = *task;
 
                 task->m_bsDataLength[0] = task->m_bsDataLength[1] = 0;
 
@@ -2933,9 +2932,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
          (MFX_CODINGOPTION_ON== extFeiParams->SingleFieldProcessing) &&
          (1 == m_fieldCounter) )
     {
-        std::list<DdiTask>  tempTaskList;
-        tempTaskList.push_back(m_lastFeiTask);
-        DdiTaskIter task = FindFrameToWaitEncode(tempTaskList.begin(), tempTaskList.end());
+        DdiTaskIter task = FindFrameToWaitEncode(m_encoding.begin(), m_encoding.end());
         mfxU32 f = 1; // coding second field
         PrepareSeiMessageBuffer(m_video, *task, task->m_fid[f], m_sei);
 
