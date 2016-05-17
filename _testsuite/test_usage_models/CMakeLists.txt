@@ -20,4 +20,5 @@ list( APPEND LIBS
     dl
     pthread
 )
+set( defs "${WARNING_FLAGS}" )
 make_executable( shortname universal )
