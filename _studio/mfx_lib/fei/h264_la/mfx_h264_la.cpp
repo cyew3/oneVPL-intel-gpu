@@ -74,6 +74,14 @@ static mfxStatus InitEncoderParameters(mfxVideoParam *par_in, mfxVideoParam *par
     par_enc->mfx.FrameInfo = par_in->mfx.FrameInfo;  
     par_enc->mfx.TargetKbps = 1000; // formal
 
+    if (par_enc->IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+    {
+        mfxExtOpaqueSurfaceAlloc *pOpaqIn  = (mfxExtOpaqueSurfaceAlloc *) GetExtBuffer(par_in->ExtParam, par_in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+        mfxExtOpaqueSurfaceAlloc *pOpaqEnc = (mfxExtOpaqueSurfaceAlloc *) GetExtBuffer(par_enc->ExtParam, par_enc->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+        MFX_CHECK_NULL_PTR2(pOpaqIn, pOpaqEnc);
+        pOpaqEnc->In.Type = pOpaqIn->In.Type;
+        pOpaqEnc->In.NumSurface = 255; // formal
+    }
     return MFX_ERR_NONE;
 }
 static bool bReference(mfxU16 frameType)
@@ -382,9 +390,10 @@ static void InitHWCaps(tagENCODE_CAPS &hwCaps)
 
 mfxStatus VideoENC_LA::Init(mfxVideoParam *par)
 {
-    mfxVideoParam           par_enc = {};
-    mfxExtCodingOptionDDI   ddi_opt = { {MFX_EXTBUFF_DDI, 0}};
-    mfxExtBuffer*           pExtParam[1] = {(mfxExtBuffer*)&ddi_opt};
+    mfxVideoParam            par_enc = {};
+    mfxExtCodingOptionDDI    ddi_opt = { {MFX_EXTBUFF_DDI, 0}};
+    mfxExtOpaqueSurfaceAlloc opaq_opt = { {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, 0}};
+    mfxExtBuffer*           pExtParam[2] = {(mfxExtBuffer*)&ddi_opt, (mfxExtBuffer*)&opaq_opt};
     mfxStatus sts = MFX_ERR_NONE;
     bool bPyramid = false;
     
@@ -1151,7 +1160,7 @@ mfxStatus CopyRawSurfaceToVideoMemory(  VideoCORE &  core,
         d3dSurf.MemId =  src_sys->Data.MemId;    
     }
     
-    if (video.IOPattern != MFX_IOPATTERN_IN_OPAQUE_MEMORY) 
+    if (video.IOPattern != MFX_IOPATTERN_IN_OPAQUE_MEMORY && video.IOPattern != MFX_IOPATTERN_IN_SYSTEM_MEMORY) 
        MFX_CHECK_STS(core.GetExternalFrameHDL(d3dSurf.MemId, &handle))
     else
        MFX_CHECK_STS(core.GetFrameHDL(d3dSurf.MemId, &handle));
