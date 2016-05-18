@@ -1,3 +1,12 @@
+/* /////////////////////////////////////////////////////////////////////////////
+//
+//                  INTEL CORPORATION PROPRIETARY INFORMATION
+//     This software is supplied under the terms of a license agreement or
+//     nondisclosure agreement with Intel Corporation and may not be copied
+//     or disclosed except in accordance with the terms of that agreement.
+//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+//
+*/
 #pragma once
 
 #include "ts_trace.h"
@@ -34,6 +43,9 @@ typedef enum func_list {
 
     //Encoder
     EncodeFrameSubmit,
+
+    //Enc
+    EncFrameSubmit,
 
     //Decoder
     DecodeHeader,
@@ -222,6 +234,78 @@ public:
     mfxStatus EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface,
             mfxBitstream *bs, mfxThreadTask *task) {
         m_calls.push_back(APIfuncs::EncodeFrameSubmit);
+        return MFX_ERR_NONE;
+    }
+};
+
+class FakeEnc: public MFXEncPlugin {
+public:
+    std::vector<mfxU32> m_calls;
+
+    FakeEnc() {
+    }
+    virtual ~FakeEnc() {
+    }
+
+    //common func
+    mfxStatus Init(mfxVideoParam*) {
+        m_calls.push_back(APIfuncs::Init);
+        return MFX_ERR_NONE;
+    }
+    mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in,
+            mfxFrameAllocRequest *out) {
+        m_calls.push_back(APIfuncs::QueryIOSurf);
+        return MFX_ERR_NONE;
+    }
+    mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out) {
+        m_calls.push_back(APIfuncs::Query);
+        return MFX_ERR_NONE;
+    }
+    mfxStatus Reset(mfxVideoParam *par) {
+        m_calls.push_back(APIfuncs::Reset);
+        return MFX_ERR_NONE;
+    }
+    mfxStatus Close() {
+        m_calls.push_back(APIfuncs::Close);
+        return MFX_ERR_NONE;
+    }
+    mfxStatus PluginInit(mfxCoreInterface *core) {
+        m_calls.push_back(APIfuncs::PluginInit);
+        return MFX_ERR_NONE;
+    }
+    mfxStatus PluginClose() {
+        m_calls.push_back(APIfuncs::PluginClose);
+        return MFX_ERR_NONE;
+    }
+    mfxStatus GetVideoParam(mfxVideoParam *par) {
+        m_calls.push_back(APIfuncs::GetVideoParam);
+        return MFX_ERR_NONE;
+    }
+    mfxStatus GetPluginParam(mfxPluginParam *par) {
+        m_calls.push_back(APIfuncs::GetPluginParam);
+        return MFX_ERR_NONE;
+    }
+    mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a) {
+        m_calls.push_back(APIfuncs::Execute);
+        return MFX_ERR_NONE;
+    }
+    mfxStatus FreeResources(mfxThreadTask task, mfxStatus sts) {
+        m_calls.push_back(APIfuncs::FreeResources);
+        return MFX_ERR_NONE;
+    }
+    mfxStatus SetAuxParams(void*, int) {
+        m_calls.push_back(APIfuncs::SetAuxParams);
+        return MFX_ERR_NONE;
+    }
+    void Release() {
+        m_calls.push_back(APIfuncs::Release);
+        return;
+    }
+
+    //Enc
+    mfxStatus EncFrameSubmit(mfxENCInput *in, mfxENCOutput *out, mfxThreadTask *task)
+    {
+        m_calls.push_back(APIfuncs::EncFrameSubmit);
         return MFX_ERR_NONE;
     }
 };

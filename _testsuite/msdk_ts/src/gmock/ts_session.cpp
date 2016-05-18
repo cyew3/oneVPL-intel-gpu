@@ -10,7 +10,7 @@ Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 
 #include "ts_session.h"
 
-tsSession::tsSession(mfxIMPL impl, mfxVersion version) 
+tsSession::tsSession(mfxIMPL impl, mfxVersion version)
     : m_initialized(false)
     , m_sw_fallback(false)
     , m_is_handle_set(false)
@@ -25,7 +25,7 @@ tsSession::tsSession(mfxIMPL impl, mfxVersion version)
 {
 }
 
-tsSession::~tsSession() 
+tsSession::~tsSession()
 {
     if(m_initialized)
     {
@@ -41,7 +41,7 @@ tsSession::~tsSession()
 
 mfxStatus tsSession::MFXInit()
 {
-    return MFXInit(m_impl, m_pVersion, m_pSession); 
+    return MFXInit(m_impl, m_pVersion, m_pSession);
 }
 
 mfxStatus tsSession::MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
@@ -75,10 +75,10 @@ mfxStatus tsSession::MFXInit(mfxIMPL impl, mfxVersion *ver, mfxSession *session)
 
     return g_tsStatus.get();
 }
- 
+
 mfxStatus tsSession::MFXClose()
 {
-    return MFXClose(m_session); 
+    return MFXClose(m_session);
 }
 
 mfxStatus tsSession::MFXClose(mfxSession session)
@@ -134,6 +134,13 @@ mfxStatus tsSession::SetHandle(mfxSession session, mfxHandleType type, mfxHDL ha
     TRACE_FUNC3(MFXVideoCORE_SetHandle, session, type, handle);
     g_tsStatus.check( MFXVideoCORE_SetHandle(session, type, handle) );
     m_is_handle_set = (g_tsStatus.get() >= 0);
+    return g_tsStatus.get();
+}
+
+mfxStatus tsSession::GetPlugin(mfxSession session, mfxU32 type, mfxPlugin *plugin)
+{
+    TRACE_FUNC3(MFXVideoUSER_GetPlugin, session, type, plugin);
+    g_tsStatus.check(MFXVideoUSER_GetPlugin(session, type, plugin));
     return g_tsStatus.get();
 }
 

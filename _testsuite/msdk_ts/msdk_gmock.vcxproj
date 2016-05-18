@@ -258,6 +258,7 @@
     <ClCompile Include="src\gmock\test_suites\fei_encode_encode_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_mbqp.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_field_coding.cpp" />
+    <ClCompile Include="src\gmock\test_suites\get_plugin.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevc10d_shift.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_close.cpp" />
@@ -338,7 +339,6 @@
     <ClCompile Include="src\gmock\test_suites\vpp_getvideoparam.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_rotate.cpp" />
-    <ClCompile Include="src\gmock\test_suites\plugin_load_unload.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8d_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_query_io_surf.cpp" />

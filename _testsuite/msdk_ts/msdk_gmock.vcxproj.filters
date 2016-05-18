@@ -157,9 +157,6 @@
     <ClCompile Include="src\gmock\ts_vpp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\plugin_load_unload.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevcd_res_change.cpp">
       <Filter>Source Files\test_suites\hevcd</Filter>
     </ClCompile>
@@ -618,6 +615,9 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\mpeg2e_user_data.cpp">
       <Filter>Source Files\test_suites\mpeg2e</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\get_plugin.cpp">
+      <Filter>Source Files\test_suites</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
