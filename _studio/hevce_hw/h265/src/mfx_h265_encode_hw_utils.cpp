@@ -668,7 +668,7 @@ void MfxVideoParam::SyncVideoToCalculableParam()
 
     BufferSizeInKB = mfx.BufferSizeInKB * multiplier;
     LTRInterval    = 0;
-    LCUSize        = DEFAULT_LCU_SIZE;
+    //LCUSize        = DEFAULT_LCU_SIZE;
 
     if (mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {
@@ -1440,6 +1440,9 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_pps.constrained_intra_pred_flag           = 0;
     m_pps.transform_skip_enabled_flag           = 0;
     m_pps.cu_qp_delta_enabled_flag              = (mfx.RateControlMethod == MFX_RATECONTROL_CQP || mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT) ? 0 : 1;
+
+    if (m_ext.CO2.MaxSliceSize)
+        m_pps.cu_qp_delta_enabled_flag = 1;
 
     m_pps.cb_qp_offset                          = 0;
     m_pps.cr_qp_offset                          = 0;

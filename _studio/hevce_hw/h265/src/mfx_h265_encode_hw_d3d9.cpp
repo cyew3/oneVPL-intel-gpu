@@ -147,9 +147,12 @@ void FillSpsBuffer(
     sps.LocalSearch      = 0;
     sps.EarlySkip        = 0;
     sps.MBBRC            = IsOn(par.m_ext.CO2.MBBRC);
-    sps.ParallelBRC      =  (par.mfx.GopRefDist > 1) && (par.mfx.GopRefDist <= 8) && par.isBPyramid(); //WA:  Parallel BRC is switched on in sync & async mode (quality drop in noParallelBRC in driver)
 
-    sps.SliceSizeControl = 0;
+    //WA:  Parallel BRC is switched on in sync & async mode (quality drop in noParallelBRC in driver)
+    sps.ParallelBRC = (par.mfx.GopRefDist > 1) && (par.mfx.GopRefDist <= 8) && par.isBPyramid() && !IsOn(par.mfx.LowPower);
+
+    if (par.m_ext.CO2.MaxSliceSize)
+        sps.SliceSizeControl = 1;
 
     sps.UserMaxFrameSize = 0;
 
@@ -275,6 +278,8 @@ void FillPpsBuffer(
     pps.bUseRawPicForRef           = 0;
     pps.NumSlices                  = par.mfx.NumSlice;
 
+    pps.bEnableSliceLevelReport    = !!par.m_ext.CO2.MaxSliceSize;
+
         // Max/Min QP settings for BRC
 
     /*if (par.mfx.FrameInfo.Height <= 576 &&
@@ -323,36 +328,40 @@ void FillPpsBuffer(
     pps.StatusReportFeedbackNumber = task.m_statusReportNumber;
 }
 
-void CachedFeedback::Reset(mfxU32 cacheSize)
+void CachedFeedback::Reset(mfxU32 cacheSize, mfxU32 feedbackSize)
 {
-    Feedback init = {};
-    init.bStatus = ENCODE_NOTAVAILABLE;
+    m_cache.Reset(cacheSize, feedbackSize);
 
-    m_cache.resize(cacheSize, init);
+    for (size_t i = 0; i < m_cache.size(); i++)
+        m_cache[i].bStatus = ENCODE_NOTAVAILABLE;
 }
 
 mfxStatus CachedFeedback::Update(const FeedbackStorage& update)
 {
     for (size_t i = 0; i < update.size(); i++)
     {
-        if (update[i].bStatus != ENCODE_NOTAVAILABLE)
+        const ENCODE_QUERY_STATUS_PARAMS & u = update[i];
+
+        if (u.bStatus != ENCODE_NOTAVAILABLE)
         {
-            Feedback* cache = 0;
+            size_t cache = m_cache.size();
 
             for (size_t j = 0; j < m_cache.size(); j++)
             {
-                if (m_cache[j].StatusReportFeedbackNumber == update[i].StatusReportFeedbackNumber)
+                ENCODE_QUERY_STATUS_PARAMS & c = m_cache[j];
+
+                if (c.StatusReportFeedbackNumber == u.StatusReportFeedbackNumber)
                 {
-                    cache = &m_cache[j];
+                    cache = j;
                     break;
                 }
-                else if (cache == 0 && m_cache[j].bStatus == ENCODE_NOTAVAILABLE)
+                else if (cache == m_cache.size() && c.bStatus == ENCODE_NOTAVAILABLE)
                 {
-                    cache = &m_cache[j];
+                    cache = j;
                 }
             }
-            MFX_CHECK( cache != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
-            *cache = update[i];
+            MFX_CHECK(cache != m_cache.size(), MFX_ERR_UNDEFINED_BEHAVIOR);
+            m_cache.copy(cache, update, i);
         }
     }
     return MFX_ERR_NONE;
@@ -517,6 +526,8 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
     DDIHeaderPacker::Reset(par);
     m_cbd.resize(MAX_DDI_BUFFERS + MaxPackedHeaders());
 
+    m_maxSlices = CeilDiv(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.LCUSize) * CeilDiv(par.m_ext.HEVCParam.PicWidthInLumaSamples, par.LCUSize);
+
     return MFX_ERR_NONE;
 }
 
@@ -632,8 +643,9 @@ mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT ty
     if (type == D3DDDIFMT_INTELENCODE_BITSTREAMDATA)
     {
         // Reserve space for feedback reports.
-        m_feedbackUpdate.resize(response.NumFrameActual);
-        m_feedbackCached.Reset(response.NumFrameActual);
+        mfxU32 feedbackSize = FeedbackSize(m_caps.SliceLevelReportSupport ? QUERY_STATUS_PARAM_SLICE : QUERY_STATUS_PARAM_FRAME, m_maxSlices);
+        m_feedbackUpdate.Reset(response.NumFrameActual, feedbackSize);
+        m_feedbackCached.Reset(response.NumFrameActual, feedbackSize);
     }
 
     return MFX_ERR_NONE;
@@ -785,27 +797,42 @@ mfxStatus D3D9Encoder::QueryStatus(Task & task)
     // first check cache.
     const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_statusReportNumber);
 
-    ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr;
-    feedbackDescr.SizeOfStatusParamStruct = sizeof(m_feedbackUpdate[0]);
-    feedbackDescr.StatusParamType = QUERY_STATUS_PARAM_FRAME;
-
     // if task is not in cache then query its status
     if (feedback == 0 || feedback->bStatus != ENCODE_OK)
     {
-        try
+        ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr = {};
+        feedbackDescr.StatusParamType = (m_caps.SliceLevelReportSupport && m_pps.bEnableSliceLevelReport) ? QUERY_STATUS_PARAM_SLICE : QUERY_STATUS_PARAM_FRAME;
+
+        for (;;)
         {
-            HRESULT hr = m_auxDevice->Execute(
-                ENCODE_QUERY_STATUS_ID,
-                (void *)&feedbackDescr,
-                sizeof(feedbackDescr),
-                &m_feedbackUpdate[0],
-                (mfxU32)m_feedbackUpdate.size() * sizeof(m_feedbackUpdate[0]));
+            HRESULT hr;
+            feedbackDescr.SizeOfStatusParamStruct = FeedbackSize((ENCODE_QUERY_STATUS_PARAM_TYPE)feedbackDescr.StatusParamType, m_maxSlices);
+
+            m_feedbackUpdate.Reset(m_feedbackUpdate.size(), feedbackDescr.SizeOfStatusParamStruct);
+
+            try
+            {
+                hr = m_auxDevice->Execute(
+                    ENCODE_QUERY_STATUS_ID,
+                    (void *)&feedbackDescr,
+                    sizeof(feedbackDescr),
+                    &m_feedbackUpdate[0],
+                    (mfxU32)m_feedbackUpdate.size() * m_feedbackUpdate.feedback_size());
+            }
+            catch (...)
+            {
+                return MFX_ERR_DEVICE_FAILED;
+            }
+
+            if (hr == E_INVALIDARG && feedbackDescr.StatusParamType == QUERY_STATUS_PARAM_SLICE)
+            {
+                feedbackDescr.StatusParamType = QUERY_STATUS_PARAM_FRAME;
+                continue;
+            }
+
             MFX_CHECK(hr != D3DERR_WASSTILLDRAWING, MFX_WRN_DEVICE_BUSY);
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-        }
-        catch (...)
-        {
-            return MFX_ERR_DEVICE_FAILED;
+            break;
         }
 
         // Put all with ENCODE_OK into cache.
@@ -825,6 +852,23 @@ mfxStatus D3D9Encoder::QueryStatus(Task & task)
         {
             task.m_aes_counter.Count = feedback->aes_counter.Counter;
             task.m_aes_counter.IV    = feedback->aes_counter.IV;
+        }
+
+        {
+            mfxExtEncodedSlicesInfo* pESI = ExtBuffer::Get(task.m_ctrl);
+
+            if (pESI)
+            {
+                pESI->NumEncodedSlice     = feedback->NumberSlices;
+                pESI->NumSliceNonCopliant = feedback->NumSliceNonCompliant;
+                pESI->SliceSizeOverflow   = feedback->SliceSizeOverflow;
+
+                if (pESI->NumSliceSizeAlloc && pESI->SliceSize && m_caps.SliceLevelReportSupport)
+                {
+                    mfxU16* pSize = (mfxU16*)((mfxU8*)feedback + sizeof(ENCODE_QUERY_STATUS_PARAMS) + sizeof(UINT) * 4);
+                    CopyN(pESI->SliceSize, pSize, Min(feedback->NumberSlices, pESI->NumSliceSizeAlloc));
+                }
+            }
         }
 
         m_feedbackCached.Remove(task.m_statusReportNumber);

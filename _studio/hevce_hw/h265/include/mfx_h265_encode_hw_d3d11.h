@@ -90,6 +90,7 @@ private:
     bool                                        m_infoQueried;
     bool                                        m_pavp;
     bool                                        m_widi;
+    mfxU32                                      m_maxSlices;
 
     ENCODE_SET_SEQUENCE_PARAMETERS_HEVC         m_sps;
     ENCODE_SET_PICTURE_PARAMETERS_HEVC          m_pps;
@@ -99,7 +100,7 @@ private:
     std::vector<ENCODE_COMPBUFFERDESC>          m_cbd;
     std::vector<mfxHDLPair>                     m_reconQueue;
     std::vector<mfxHDLPair>                     m_bsQueue;
-    std::vector<ENCODE_QUERY_STATUS_PARAMS>     m_feedbackUpdate;
+    FeedbackStorage                             m_feedbackUpdate;
     CachedFeedback                              m_feedbackCached;
 };
 

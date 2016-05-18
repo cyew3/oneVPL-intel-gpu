@@ -49,6 +49,10 @@ template<class T, class U> inline void Copy(T & dst, U const & src)
     STATIC_ASSERT(sizeof(T) == sizeof(U), copy_objects_of_different_size);
     memcpy_s(&dst, sizeof(dst), &src, sizeof(dst));
 }
+template<class T> inline void CopyN(T* dst, const T* src, size_t N)
+{
+    memcpy_s(dst, sizeof(T) * N, src, sizeof(T) * N);
+}
 template<class T> inline T Abs  (T x)               { return (x > 0 ? x : -x); }
 template<class T> inline T Min  (T x, T y)          { return MFX_MIN(x, y); }
 template<class T> inline T Max  (T x, T y)          { return MFX_MAX(x, y); }
@@ -99,6 +103,9 @@ enum
 
     HW_SURF_ALIGN_W     = 16,
     HW_SURF_ALIGN_H     = 16,
+    
+    HW_SURF_ALIGN_VDENC_W = 32,
+    HW_SURF_ALIGN_VDENC_H = HW_SURF_ALIGN_H,
 
     CODED_PIC_ALIGN_W   = 16,
     CODED_PIC_ALIGN_H   = 16,
@@ -331,6 +338,7 @@ namespace ExtBuffer
         EXTBUF(mfxExtIntGPUHang,            MFX_EXTBUFF_GPU_HANG);
         EXTBUF(mfxExtPAVPOption,            MFX_EXTBUFF_PAVP_OPTION);
         EXTBUF(mfxExtAVCEncoderWiDiUsage,   MFX_EXTBUFF_ENCODER_WIDI_USAGE);
+        EXTBUF(mfxExtEncodedSlicesInfo,     MFX_EXTBUFF_ENCODED_SLICES_INFO);
     #undef EXTBUF
 
     #define _CopyPar(dst, src, PAR) dst.PAR = src.PAR;
@@ -372,7 +380,7 @@ namespace ExtBuffer
         _CopyPar1(DisableDeblockingIdc);
 
         _CopyPar1(RepeatPPS);
-
+        _CopyPar1(MaxSliceSize);
     }
 
     inline void  CopySupportedParams(mfxExtCodingOption3& buf_dst, mfxExtCodingOption3& buf_src)
@@ -380,6 +388,7 @@ namespace ExtBuffer
         _CopyPar1(PRefType);
         _CopyPar1(IntRefCycleDist);
         _CopyPar1(EnableQPOffset);
+        _CopyPar1(GPB);
         Copy(buf_dst.QPOffset, buf_src.QPOffset);
     }
 

@@ -325,7 +325,7 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         out->Protected             = 1;
         out->AsyncDepth            = 1;
         //out->mfx.CodecId           = 1;
-        //out->mfx.LowPower          = 1;
+        out->mfx.LowPower          = 1;
         out->mfx.CodecLevel        = 1;
         out->mfx.CodecProfile      = 1;
         out->mfx.TargetUsage       = 1;
@@ -942,6 +942,13 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
             bs->DecodeTimeStamp = CalcDTSFromPTS(this->m_vpar.mfx.FrameInfo, (mfxU16)dpbOutputDelay, bs->TimeStamp);
             bs->PicStruct       = MFX_PICSTRUCT_PROGRESSIVE;
             bs->FrameType       = taskForQuery->m_frameType;
+
+            if (taskForQuery->m_ldb)
+            {
+                bs->FrameType &= ~MFX_FRAMETYPE_B;
+                bs->FrameType |=  MFX_FRAMETYPE_P;
+            }
+
             if (m_brc)
                 m_brc->PostPackFrame(m_vpar,*taskForQuery, taskForQuery->m_bsDataLength*8,0,0);
         }

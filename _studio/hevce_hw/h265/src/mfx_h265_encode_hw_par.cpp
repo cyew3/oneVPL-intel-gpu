@@ -861,38 +861,49 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     mfxU32 maxBuf  = 0xFFFFFFFF;
     mfxU16 maxDPB  = 16;
     mfxU16 maxQP   = 51;
+    mfxU16 surfAlignW = HW_SURF_ALIGN_W;
+    mfxU16 surfAlignH = HW_SURF_ALIGN_H;
 
     mfxExtCodingOption2& CO2 = par.m_ext.CO2;
     mfxExtCodingOption3& CO3 = par.m_ext.CO3;
 
-    if (par.mfx.FrameInfo.BitDepthLuma > 8)
+    changed += CheckTriStateOption(par.mfx.LowPower);
+
+    if (par.mfx.FrameInfo.BitDepthLuma > 8 && !IsOn(par.mfx.LowPower))
         maxQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
+
+    if (IsOn(par.mfx.LowPower))
+    {
+        surfAlignW = HW_SURF_ALIGN_VDENC_W;
+        surfAlignH = HW_SURF_ALIGN_VDENC_H;
+    }
 
     changed +=  par.CheckExtBufferParam();
 
     if (par.mfx.CodecLevel)
     {
-        maxFR = GetMaxFrByLevel(par);
-        maxBR = GetMaxKbpsByLevel(par);
+        maxFR  = GetMaxFrByLevel(par);
+        maxBR  = GetMaxKbpsByLevel(par);
         maxBuf = GetMaxCpbInKBByLevel(par);
         maxDPB = (mfxU16)GetMaxDpbSizeByLevel(par);
     }
+
     if ((!par.mfx.FrameInfo.Width) ||
         (!par.mfx.FrameInfo.Height))
     {
         return MFX_ERR_UNSUPPORTED;
     }
+
     if (bInit)
     {
-        unsupported     += CheckMin(par.mfx.FrameInfo.Width,  Align(par.mfx.FrameInfo.Width, HW_SURF_ALIGN_W));
-        unsupported     += CheckMin(par.mfx.FrameInfo.Height, Align(par.mfx.FrameInfo.Height,HW_SURF_ALIGN_H));
+        unsupported += CheckMin(par.mfx.FrameInfo.Width,  Align(par.mfx.FrameInfo.Width,  surfAlignW));
+        unsupported += CheckMin(par.mfx.FrameInfo.Height, Align(par.mfx.FrameInfo.Height, surfAlignH));
     }
     else
     {
-        changed     += CheckMin(par.mfx.FrameInfo.Width, Align(par.mfx.FrameInfo.Width,  HW_SURF_ALIGN_W));
-        changed     += CheckMin(par.mfx.FrameInfo.Height, Align(par.mfx.FrameInfo.Height,HW_SURF_ALIGN_H));
+        changed += CheckMin(par.mfx.FrameInfo.Width,  Align(par.mfx.FrameInfo.Width,  surfAlignW));
+        changed += CheckMin(par.mfx.FrameInfo.Height, Align(par.mfx.FrameInfo.Height, surfAlignH));
     }
-
 
     unsupported += CheckMax(par.mfx.FrameInfo.Width, caps.MaxPicWidth);
     unsupported += CheckMax(par.mfx.FrameInfo.Height, caps.MaxPicHeight);
@@ -901,18 +912,21 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     incompatible += CheckMax(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.mfx.FrameInfo.Height);
     changed      += CheckMin(par.m_ext.HEVCParam.PicWidthInLumaSamples, Align(par.m_ext.HEVCParam.PicWidthInLumaSamples, CODED_PIC_ALIGN_W));
     changed      += CheckMin(par.m_ext.HEVCParam.PicHeightInLumaSamples, Align(par.m_ext.HEVCParam.PicHeightInLumaSamples, CODED_PIC_ALIGN_H));
+
     if(par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN || par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP)
     {
         unsupported += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 8, 0);
         unsupported += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 8, 0);
     }
+
     if(par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10)
     {
         unsupported += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 10, 0);
         unsupported += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 10, 0);
         par.mfx.FrameInfo.Shift = 1;
     }
-    if (   caps.TileSupport == 0
+
+    if (   (caps.TileSupport == 0 || IsOn(par.mfx.LowPower))
         && (par.m_ext.HEVCTiles.NumTileColumns > 1 || par.m_ext.HEVCTiles.NumTileRows > 1))
     {
         par.m_ext.HEVCTiles.NumTileColumns = 1;
@@ -928,7 +942,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if (par.mfx.TargetUsage && caps.TUSupport)
         changed += CheckTU(caps.TUSupport, par.mfx.TargetUsage);
 
-    changed += CheckMax(par.mfx.GopRefDist, caps.SliceIPOnly ? 1 : (par.mfx.GopPicSize ? par.mfx.GopPicSize - 1 : 0xFFFF));
+    changed += CheckMax(par.mfx.GopRefDist, (caps.SliceIPOnly || IsOn(par.mfx.LowPower)) ? 1 : (par.mfx.GopPicSize ? par.mfx.GopPicSize - 1 : 0xFFFF));
 
     unsupported += CheckOption(par.Protected
         , (mfxU16)MFX_PROTECTION_PAVP
@@ -1246,6 +1260,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if (CheckOption(par.m_ext.VSI.VideoFullRange, 0))                     changed +=1;
     if (CheckOption(par.m_ext.VSI.ColourDescriptionPresent, 0))           changed +=1;
 
+    changed += CheckOption(CO3.GPB, (mfxU16)MFX_CODINGOPTION_UNKNOWN, (mfxU16)MFX_CODINGOPTION_ON);
     changed += CheckTriStateOption(par.m_ext.CO.AUDelimiter);
     changed += CheckTriStateOption(CO2.RepeatPPS);
     changed += CheckTriStateOption(CO3.EnableQPOffset);
@@ -1258,6 +1273,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         CO3.EnableQPOffset = MFX_CODINGOPTION_OFF;
         changed ++;
     }
+
+    if (caps.SliceByteSizeCtrl == 0)
+        unsupported += CheckOption(CO2.MaxSliceSize, 0);
 
     if (IsOn(CO3.EnableQPOffset))
     {
@@ -1300,6 +1318,11 @@ void SetDefaults(
 
     mfxExtCodingOption2& CO2 = par.m_ext.CO2;
     mfxExtCodingOption3& CO3 = par.m_ext.CO3;
+
+    if (!par.mfx.LowPower)
+        par.mfx.LowPower = MFX_CODINGOPTION_OFF;
+
+    par.LCUSize = IsOn(par.mfx.LowPower) ? 64 : DEFAULT_LCU_SIZE;
 
     if (par.mfx.CodecLevel)
     {
@@ -1371,7 +1394,7 @@ void SetDefaults(
     if (!par.mfx.FrameInfo.BitDepthChroma)
         par.mfx.FrameInfo.BitDepthChroma = par.mfx.FrameInfo.BitDepthLuma;
 
-    if (par.mfx.FrameInfo.BitDepthLuma > 8)
+    if (par.mfx.FrameInfo.BitDepthLuma > 8 && !IsOn(par.mfx.LowPower))
     {
         rawBits = rawBits / 8 * par.mfx.FrameInfo.BitDepthLuma;
         maxQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
@@ -1542,6 +1565,9 @@ void SetDefaults(
 
     if (!par.m_ext.CO2.RepeatPPS)
         par.m_ext.CO2.RepeatPPS = MFX_CODINGOPTION_OFF;
+
+    if (!CO3.GPB)
+        CO3.GPB = MFX_CODINGOPTION_ON;
 
     if (!CO3.EnableQPOffset)
     {

@@ -65,13 +65,56 @@ void FillSliceBuffer(
     ENCODE_SET_PICTURE_PARAMETERS_HEVC const & /*pps*/,
     std::vector<ENCODE_SET_SLICE_HEADER_HEVC> & slice);
 
+inline mfxU32 FeedbackSize(ENCODE_QUERY_STATUS_PARAM_TYPE func, mfxU32 maxSlices)
+{
+    if (func == QUERY_STATUS_PARAM_FRAME)
+        return sizeof(ENCODE_QUERY_STATUS_PARAMS);
+    if (func == QUERY_STATUS_PARAM_SLICE)
+        return sizeof(ENCODE_QUERY_STATUS_PARAMS) + sizeof(UINT) * 4 + sizeof(USHORT) * maxSlices;
+    assert(!"unknown query function");
+    return sizeof(ENCODE_QUERY_STATUS_PARAMS);
+}
+
+class FeedbackStorage
+{
+public:
+    void Reset(size_t cacheSize, mfxU32 feedbackSize)
+    {
+        m_size = feedbackSize;
+        m_buf.resize(m_size * cacheSize);
+    }
+
+    inline ENCODE_QUERY_STATUS_PARAMS& operator[] (size_t i) const
+    {
+        return *(ENCODE_QUERY_STATUS_PARAMS*)&m_buf[i * m_size];
+    }
+
+    inline size_t size() const
+    {
+        return (m_buf.size() / m_size);
+    }
+
+    inline void copy(size_t dstIdx, FeedbackStorage const & src, size_t srcIdx)
+    {
+        CopyN(&m_buf[dstIdx * m_size], &src.m_buf[srcIdx * src.m_size], Min(m_size, src.m_size));
+    }
+
+    inline mfxU32 feedback_size()
+    {
+        return m_size;
+    }
+
+private:
+    std::vector<mfxU8> m_buf;
+    mfxU32 m_size;
+};
+
 class CachedFeedback
 {
 public:
     typedef ENCODE_QUERY_STATUS_PARAMS Feedback;
-    typedef std::vector<Feedback> FeedbackStorage;
 
-    void Reset(mfxU32 cacheSize);
+    void Reset(mfxU32 cacheSize, mfxU32 feedbackSize = sizeof(Feedback));
 
     mfxStatus Update(FeedbackStorage const & update);
 
@@ -151,6 +194,7 @@ private:
     ENCODE_ENC_CTRL_CAPS m_capsGet;
     bool                 m_infoQueried;
     bool                 m_widi;
+    mfxU32               m_maxSlices;
 
     ENCODE_SET_SEQUENCE_PARAMETERS_HEVC         m_sps;
     ENCODE_SET_PICTURE_PARAMETERS_HEVC          m_pps;
@@ -158,7 +202,7 @@ private:
     std::vector<ENCODE_COMP_BUFFER_INFO>        m_compBufInfo;
     std::vector<D3DDDIFORMAT>                   m_uncompBufInfo;
     std::vector<ENCODE_COMPBUFFERDESC>          m_cbd;
-    std::vector<ENCODE_QUERY_STATUS_PARAMS> m_feedbackUpdate;
+    FeedbackStorage                             m_feedbackUpdate;
     CachedFeedback                              m_feedbackCached;
 };
 

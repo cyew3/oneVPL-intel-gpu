@@ -20,24 +20,49 @@
 namespace MfxHwH265Encode
 {
 
+const GUID GuidTable[2][2][3] = 
+{
+    // LowPower = OFF
+    {
+        // BitDepthLuma = 8
+        {
+            /*420*/ DXVA2_Intel_Encode_HEVC_Main,
+            /*422*/ DXVA2_Intel_Encode_HEVC_Main444, // ???
+            /*444*/ DXVA2_Intel_Encode_HEVC_Main444
+        },
+        // BitDepthLuma = 10
+        {
+            /*420*/ DXVA2_Intel_Encode_HEVC_Main10,
+            /*422*/ DXVA2_Intel_Encode_HEVC_Main422_10,
+            /*444*/ DXVA2_Intel_Encode_HEVC_Main444_10
+        }
+    },
+    // LowPower = ON
+    {
+        // BitDepthLuma = 8
+        {
+            /*420*/ DXVA2_Intel_LowpowerEncode_HEVC_Main,
+            /*422*/ DXVA2_Intel_LowpowerEncode_HEVC_Main444, // ???
+            /*444*/ DXVA2_Intel_LowpowerEncode_HEVC_Main444
+        },
+        // BitDepthLuma = 10
+        {
+            /*420*/ DXVA2_Intel_LowpowerEncode_HEVC_Main10,
+            /*422*/ DXVA2_Intel_LowpowerEncode_HEVC_Main422_10,
+            /*444*/ DXVA2_Intel_LowpowerEncode_HEVC_Main444_10
+        }
+    }
+};
+
 GUID GetGUID(MfxVideoParam const & par)
 {
     bool is10bit =
         (   par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10
-        || par.mfx.FrameInfo.BitDepthLuma == 10
-        || par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010);
+         || par.mfx.FrameInfo.BitDepthLuma == 10
+         || par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010);
+    mfxU16 cfId = Clip3<mfxU16>(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, par.mfx.FrameInfo.ChromaFormat) - MFX_CHROMAFORMAT_YUV420;
 
-    if (par.mfx.LowPower == MFX_CODINGOPTION_ON)
-    {
-        if (is10bit)
-            return DXVA2_Intel_LowpowerEncode_HEVC_Main10;
-        return DXVA2_Intel_LowpowerEncode_HEVC_Main;
-    }
-
-    if (is10bit)
-        return DXVA2_Intel_Encode_HEVC_Main10;
-
-    return DXVA2_Intel_Encode_HEVC_Main;
+    return GuidTable[IsOn(par.mfx.LowPower)][is10bit] [cfId];
 }
 
 DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core)

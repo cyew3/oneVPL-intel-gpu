@@ -188,6 +188,8 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
 
     DDIHeaderPacker::Reset(par);
     m_cbd.resize(MAX_DDI_BUFFERS + MaxPackedHeaders());
+    
+    m_maxSlices = CeilDiv(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.LCUSize) * CeilDiv(par.m_ext.HEVCParam.PicWidthInLumaSamples, par.LCUSize);
 
     return MFX_ERR_NONE;
 }
@@ -363,8 +365,10 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
 
     if (type == D3DDDIFMT_INTELENCODE_BITSTREAMDATA)
     {
-        m_feedbackUpdate.resize(response.NumFrameActual);
-        m_feedbackCached.Reset(response.NumFrameActual);
+        // Reserve space for feedback reports.
+        mfxU32 feedbackSize = FeedbackSize(m_caps.SliceLevelReportSupport ? QUERY_STATUS_PARAM_SLICE : QUERY_STATUS_PARAM_FRAME, m_maxSlices);
+        m_feedbackUpdate.Reset(response.NumFrameActual, feedbackSize);
+        m_feedbackCached.Reset(response.NumFrameActual, feedbackSize);
     }
 
     return MFX_ERR_NONE;
@@ -535,31 +539,45 @@ mfxStatus D3D11Encoder::QueryStatus(Task & task)
     // first check cache.
     const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_statusReportNumber);
 
-    ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr;
-    feedbackDescr.SizeOfStatusParamStruct = sizeof(m_feedbackUpdate[0]);
-    feedbackDescr.StatusParamType = QUERY_STATUS_PARAM_FRAME;
-
     // if task is not in cache then query its status
     if (feedback == 0 || feedback->bStatus != ENCODE_OK)
     {
-        try
+        ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr = {};
+        feedbackDescr.StatusParamType = (m_caps.SliceLevelReportSupport && m_pps.bEnableSliceLevelReport) ? QUERY_STATUS_PARAM_SLICE : QUERY_STATUS_PARAM_FRAME;
+
+        for (;;)
         {
-            D3D11_VIDEO_DECODER_EXTENSION ext = {};
+            HRESULT hr;
+            feedbackDescr.SizeOfStatusParamStruct = FeedbackSize((ENCODE_QUERY_STATUS_PARAM_TYPE)feedbackDescr.StatusParamType, m_maxSlices);
 
-            ext.Function              = ENCODE_QUERY_STATUS_ID;
-            ext.pPrivateInputData     = &feedbackDescr;
-            ext.PrivateInputDataSize  = sizeof(feedbackDescr);
-            ext.pPrivateOutputData    = &m_feedbackUpdate[0];
-            ext.PrivateOutputDataSize = mfxU32(m_feedbackUpdate.size() * sizeof(m_feedbackUpdate[0]));
+            m_feedbackUpdate.Reset(m_feedbackUpdate.size(), feedbackDescr.SizeOfStatusParamStruct);
 
-            HRESULT hRes = m_vcontext->DecoderExtension(m_vdecoder, &ext);
+            try
+            {
+                D3D11_VIDEO_DECODER_EXTENSION ext = {};
 
-            MFX_CHECK(hRes != D3DERR_WASSTILLDRAWING, MFX_WRN_DEVICE_BUSY);
-            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
-        }
-        catch (...)
-        {
-            return MFX_ERR_DEVICE_FAILED;
+                ext.Function              = ENCODE_QUERY_STATUS_ID;
+                ext.pPrivateInputData     = &feedbackDescr;
+                ext.PrivateInputDataSize  = sizeof(feedbackDescr);
+                ext.pPrivateOutputData    = &m_feedbackUpdate[0];
+                ext.PrivateOutputDataSize = mfxU32(m_feedbackUpdate.size() * m_feedbackUpdate.feedback_size());
+
+                hr = m_vcontext->DecoderExtension(m_vdecoder, &ext);
+            }
+            catch (...)
+            {
+                return MFX_ERR_DEVICE_FAILED;
+            }
+
+            if (hr == E_INVALIDARG && feedbackDescr.StatusParamType == QUERY_STATUS_PARAM_SLICE)
+            {
+                feedbackDescr.StatusParamType = QUERY_STATUS_PARAM_FRAME;
+                continue;
+            }
+
+            MFX_CHECK(hr != D3DERR_WASSTILLDRAWING, MFX_WRN_DEVICE_BUSY);
+            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+            break;
         }
 
         // Put all with ENCODE_OK into cache.
@@ -578,6 +596,23 @@ mfxStatus D3D11Encoder::QueryStatus(Task & task)
         {
             task.m_aes_counter.Count = feedback->aes_counter.Counter;
             task.m_aes_counter.IV    = feedback->aes_counter.IV;
+        }
+
+        {
+            mfxExtEncodedSlicesInfo* pESI = ExtBuffer::Get(task.m_ctrl);
+
+            if (pESI)
+            {
+                pESI->NumEncodedSlice     = feedback->NumberSlices;
+                pESI->NumSliceNonCopliant = feedback->NumSliceNonCompliant;
+                pESI->SliceSizeOverflow   = feedback->SliceSizeOverflow;
+
+                if (pESI->NumSliceSizeAlloc && pESI->SliceSize && m_caps.SliceLevelReportSupport)
+                {
+                    mfxU16* pSize = (mfxU16*)((mfxU8*)feedback + sizeof(ENCODE_QUERY_STATUS_PARAMS) + sizeof(UINT) * 4);
+                    CopyN(pESI->SliceSize, pSize, Min(feedback->NumberSlices, pESI->NumSliceSizeAlloc));
+                }
+            }
         }
 
         m_feedbackCached.Remove(task.m_statusReportNumber);
