@@ -35,8 +35,6 @@ using namespace MfxVP9Decode;
 
 typedef struct
 {
-    mfxU16                           Version;
-    UMC_VP9_DECODER::VP9_FRAME_TYPE  FrameType;
     mfxU16                           ShowFrame;
     mfxU16                           Width;
     mfxU16                           Height;
@@ -104,8 +102,6 @@ class VideoDECODEVP9: public VideoDECODE
 
         static mfxStatus QueryIOSurfInternal(eMFXPlatform platform, mfxVideoParam *pPar, mfxFrameAllocRequest *pRequest);
         mfxStatus ConstructFrame(mfxBitstream *in, mfxBitstream *out, IVF_FRAME_VP9 & frame);
-
-        mfxStatus PreDecodeFrame(mfxBitstream *p_bs, mfxFrameSurface1 *p_surface);
 
         bool IsSameVideoParam(mfxVideoParam *pNewPar, mfxVideoParam *pOldPar);
 

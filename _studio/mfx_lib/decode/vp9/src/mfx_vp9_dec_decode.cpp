@@ -197,6 +197,7 @@ mfxStatus VideoDECODEVP9::Init(mfxVideoParam *params)
     // allocate memory
     memset(&m_request, 0, sizeof(m_request));
     memset(&m_response, 0, sizeof(m_response));
+    memset(&m_frameInfo, 0, sizeof(m_frameInfo));
 
     sts = QueryIOSurfInternal(m_platform, &m_vInitPar, &m_request);
     MFX_CHECK_STS(sts);
@@ -721,79 +722,105 @@ mfxStatus VideoDECODEVP9::ReadFrameInfo(mfxU8 *pData, mfxU32 size, VP9BaseFrameI
         for (mfxU32 i = 0; i < frameCount; ++i)
         {
             const mfxU32 frameSize = frameSizes[i];
+            VP9Bitstream bsReader(pData, frameSize);
 
-            VP9Bitstream bs(pData, frameSize);
-
-            if (VP9_FRAME_MARKER != bs.GetBits(2))
+            if (VP9_FRAME_MARKER != bsReader.GetBits(2))
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-            out->Version = (mfxU16)bs.GetBit();
-            if (out->Version > 1)
+            mfxU32 profile = 0;
+            profile = bsReader.GetBit();
+            profile |= bsReader.GetBit() << 1;
+            if (profile > 2)
+                profile += bsReader.GetBit();
+            if (profile >= 4)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-            bs.GetBit(); // skip unused version bit
+            bsReader.GetBit(); // show_existing_frame
 
-            bs.GetBit(); // show_existing_frame
+            VP9_FRAME_TYPE frameType = (VP9_FRAME_TYPE) bsReader.GetBit();
+            out->ShowFrame = bsReader.GetBit();
+            mfxU32 errorResilientMode = bsReader.GetBit();
 
-            out->FrameType = (VP9_FRAME_TYPE) bs.GetBit();
-
-            out->ShowFrame = (mfxU16)bs.GetBit();
-
-            bs.GetBit(); // error_resilient_mode
-
-            if (KEY_FRAME == out->FrameType)
+            mfxU32 bit_depth = 8;
+            if (KEY_FRAME == frameType)
             {
-                if (0x49 != bs.GetBits(8) || 0x83 != bs.GetBits(8) || 0x42 != bs.GetBits(8))
+                if (!CheckSyncCode(&bsReader))
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-                COLOR_SPACE colorSpace = (COLOR_SPACE) bs.GetBits(3);
-                if (SRGB != colorSpace)
+                if (profile >= 2)
                 {
-                    bs.GetBit();
-                    if (1 == out->Version)
-                        bs.GetBits(3);
+                    bit_depth = bsReader.GetBit() ? 12 : 10;
+                }
+
+                if (SRGB != (COLOR_SPACE)bsReader.GetBits(3)) // color_space
+                {
+                    bsReader.GetBit();
+                    if (1 == profile || 3 == profile)
+                        bsReader.GetBits(3);
                 }
                 else
                 {
-                    if (1 == out->Version)
-                        bs.GetBit();
+                    if (1 == profile || 3 == profile)
+                        bsReader.GetBit();
                     else
-                        return MFX_ERR_UNDEFINED_BEHAVIOR;
+                    {
+                        pData += frameSize;
+                        continue;
+                    }
                 }
+
+                out->Width = (mfxU16)bsReader.GetBits(16) + 1;
+                out->Height = (mfxU16)bsReader.GetBits(16) + 1;
+            }
+            else
+            {
+                mfxU32 intraOnly = out->ShowFrame ? 0 : bsReader.GetBit();
+                if (!intraOnly)
+                {
+
+                    pData += frameSize;
+                    continue;
+                }
+                else
+                {
+                    // need to read info from refs frames
+                }
+
+                if (!errorResilientMode)
+                    bsReader.GetBits(2);
+
+                if (!CheckSyncCode(&bsReader))
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+                if (profile >= 2)
+                    bit_depth = bsReader.GetBit() ? 12 : 10;
+
+                if (profile > 0)
+                {
+                    if (SRGB != (COLOR_SPACE)bsReader.GetBits(3)) // color_space
+                    {
+                        bsReader.GetBit();
+                        if (1 == profile || 3 == profile)
+                            bsReader.GetBits(3);
+                    }
+                    else
+                    {
+                        if (1 == profile || 3 == profile)
+                            bsReader.GetBit();
+                        else
+                        {
+                            pData += frameSize;
+                            continue;
+                        }
+                    }
+                }
+
+                bsReader.GetBits(NUM_REF_FRAMES);
+
+                out->Width = (mfxU16)bsReader.GetBits(16) + 1;
+                out->Height = (mfxU16)bsReader.GetBits(16) + 1;
             }
             pData += frameSize;
-        }
-    }
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus VideoDECODEVP9::PreDecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work)
-{
-    vpx_codec_stream_info_t si;
-    memset(&si, 0, sizeof(vpx_codec_stream_info_t));
-    si.sz = sizeof(vpx_codec_stream_info_t);
-    mfxI32 vpx_sts = vpx_codec_peek_stream_info(vpx_codec_vp9_dx(), bs->Data + bs->DataOffset, bs->DataLength, &si);
-    CHECK_VPX_STATUS(vpx_sts);
-
-    mfxFrameSurface1 *p_surface = surface_work;
-
-    if (true == m_is_opaque_memory)
-    {
-        p_surface = m_core->GetOpaqSurface(surface_work->Data.MemId, true);
-    }
-
-    if (si.w && si.h)
-    {
-        p_surface->Info.CropW = (mfxU16)si.w;
-        p_surface->Info.CropH = (mfxU16)si.h;
-
-        si.w = (si.w + 15) & ~0x0f;
-        si.h = (si.h + 15) & ~0x0f;
-
-        if (m_vInitPar.mfx.FrameInfo.Width < si.w && m_vInitPar.mfx.FrameInfo.Height < si.h)
-        {
-            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
         }
     }
 
@@ -906,14 +933,28 @@ mfxStatus VideoDECODEVP9::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *s
         return MFX_ERR_MORE_DATA;
     }
 
-    memset(&m_frameInfo, 0, sizeof(m_frameInfo));
     sts = ReadFrameInfo(bs->Data + bs->DataOffset, bs->DataLength, &m_frameInfo);
     MFX_CHECK_STS(sts);
 
     if (bs)
     {
-        sts = PreDecodeFrame(bs, surface_work);
-        MFX_CHECK_STS(sts);
+        mfxFrameSurface1 *p_surface = surface_work;
+        if (true == m_is_opaque_memory)
+        {
+            p_surface = m_core->GetOpaqSurface(surface_work->Data.MemId, true);
+        }
+
+        p_surface->Info.CropW = m_frameInfo.Width;
+        p_surface->Info.CropH = m_frameInfo.Height;
+
+        mfxU16 Width = (m_frameInfo.Width + 15) & ~0x0f;
+        mfxU16 Height = (m_frameInfo.Height + 15) & ~0x0f;
+
+        if (   m_vInitPar.mfx.FrameInfo.Width < Width
+            && m_vInitPar.mfx.FrameInfo.Height < Height)
+        {
+            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+        }
     }
 
     IVF_FRAME_VP9 frame;
