@@ -289,6 +289,36 @@ void VATaskSupplier::InitFrameCounter(H264DecoderFrame * pFrame, const H264Slice
     TaskSupplier::InitFrameCounter(pFrame, pSlice);
 }
 
+Status VATaskSupplier::AddSource(MediaData * pSource)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VATaskSupplier::AddSource");
+
+    if (!pSource)
+        return MFXTaskSupplier::AddSource(pSource);
+
+    Ipp32u const flags = pSource->GetFlags();
+    if (flags & MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME)
+        return MFXTaskSupplier::AddSource(pSource);
+
+    if (m_currentView == INVALID_VIEW_ID)
+        return MFXTaskSupplier::AddSource(pSource);
+
+    ViewItem &view = GetView(m_currentView);
+    H264DBPList *pDPB = view.GetDPBList(0);
+
+    //check if we have free frame
+    if (pDPB->countAllFrames() < view.maxDecFrameBuffering + m_DPBSizeEx ||
+        pDPB->IsDisposableExist())
+        return MFXTaskSupplier::AddSource(pSource);
+
+    H264DecoderFrame* completed = 0;
+    Status umcRes = CompleteDecodedFrames(&completed);
+    if (umcRes != UMC_OK)
+        return pSource || !completed ? umcRes : UMC_OK;
+
+    return UMC_WRN_INFO_NOT_READY;
+}
+
 Status VATaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, ColorFormat color_format)
 {
     VideoDataInfo info;

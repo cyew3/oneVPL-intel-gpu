@@ -3721,15 +3721,6 @@ void TaskSupplier::PreventDPBFullness()
     }
 }
 
-int GetCountZ(H264DecoderFrame* frame)
-{
-    int count = 0;
-    for (; frame; frame = frame->future(), ++count)
-        ;
-
-    return count;
-}
-
 Status TaskSupplier::CompleteDecodedFrames(H264DecoderFrame ** decoded)
 {
     H264DecoderFrame* completed = 0;

@@ -52,6 +52,8 @@ protected:
 
     virtual void CreateTaskBroker();
 
+    Status AddSource(MediaData*);
+
     virtual Status AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, ColorFormat chroma_format_idc);
 
     virtual void InitFrameCounter(H264DecoderFrame * pFrame, const H264Slice *pSlice);
