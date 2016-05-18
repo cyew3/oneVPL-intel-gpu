@@ -1254,7 +1254,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
             }
 #endif
 #ifdef LIBVA_SUPPORT
-            else if( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-vaapi")) )
+            else if( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-vaapi")) || 0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d")) )
             {
                 pParams->IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY;
                 pParams->ImpLib |= MFX_IMPL_VIA_VAAPI;
