@@ -527,10 +527,8 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                {
                    pParams->nDrcWidth[0] = pParams->nDstWidth;
                }
-               pParams->MaxDrcWidth = pParams->nDstWidth > pParams->MaxDrcWidth? pParams->nDstWidth : pParams->MaxDrcWidth;
-               pParams->MaxDrcWidth = pParams->MaxDrcWidth >  pParams->nWidth ?pParams->MaxDrcWidth : pParams->nWidth;
-               pParams->nDstWidth = pParams->MaxDrcWidth;
 
+               pParams->nDstWidth = pParams->MaxDrcWidth = IPP_MAX(IPP_MAX(pParams->nDstWidth, pParams->MaxDrcWidth), pParams->nWidth);
             }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dsth")))
@@ -546,13 +544,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                {
                   pParams->nDrcHeight.push_back(pParams->nDstHeight);
                }
-               else if (!bParseDRC && pParams->nDRCdefautH ==  pParams->nHeight)
+               else if (!bParseDRC && pParams->nDRCdefautH == pParams->nHeight)
                {
                    pParams->nDrcHeight[0]= pParams->nDstHeight;
                }
-               pParams->MaxDrcHeight = pParams->nDstHeight > pParams->MaxDrcHeight? pParams->nDstHeight :pParams->MaxDrcHeight;
-               pParams->MaxDrcHeight = pParams->MaxDrcHeight >  pParams->nHeight ?pParams->MaxDrcHeight : pParams->nHeight;
-               pParams->nDstHeight = pParams->MaxDrcHeight;
+               pParams->nDstHeight = pParams->MaxDrcHeight = IPP_MAX(IPP_MAX(pParams->nDstHeight, pParams->MaxDrcHeight), pParams->nHeight);
             }
 
         }
@@ -774,13 +770,18 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (0 == pParams->nWidth || 0 == pParams->nHeight)
+    if ((0 == pParams->nWidth || 0 == pParams->nHeight) && !pParams->bDECODE)
     {
         if (bAlrShownHelp)
             msdk_printf(MSDK_STRING("\nERROR: -w, -h must be specified\n"));
         else
             PrintHelp(strInput[0], MSDK_STRING("ERROR: -w, -h must be specified"));
         return MFX_ERR_UNSUPPORTED;
+    }
+
+    if ((pParams->nWidth || pParams->nHeight || pParams->nPicStruct != MFX_PICSTRUCT_UNKNOWN) && pParams->bDECODE)
+    {
+        msdk_printf(MSDK_STRING("\nWARNING: input width, height, picstruct will be taken from input stream\n"));
     }
 
     if (pParams->dFrameRate <= 0)

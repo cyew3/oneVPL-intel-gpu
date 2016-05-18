@@ -381,10 +381,33 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
     }
 
-    // frame info parameters
-    m_mfxEncParams.mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
-    m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-    m_mfxEncParams.mfx.FrameInfo.PicStruct    = pInParams->nPicStruct;
+    if (pInParams->bDECODE && !m_bVPPneeded)
+    {
+        // in case of decoder without VPP copy FrameInfo from decoder
+        MSDK_MEMCPY_VAR(m_mfxEncParams.mfx.FrameInfo, &m_mfxDecParams.mfx.FrameInfo, sizeof(mfxFrameInfo));
+        m_mfxEncParams.mfx.FrameInfo.PicStruct = pInParams->nPicStruct; // to support mixed picstructs
+        pInParams->nWidth  = pInParams->nDstWidth  = m_mfxEncParams.mfx.FrameInfo.CropW;
+        pInParams->nHeight = pInParams->nDstHeight = m_mfxEncParams.mfx.FrameInfo.CropH;
+    }
+    else
+    {
+        // frame info parameters
+        m_mfxEncParams.mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
+        m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        m_mfxEncParams.mfx.FrameInfo.PicStruct    = pInParams->nPicStruct;
+
+        // set frame size and crops
+        // width must be a multiple of 16
+        // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
+        m_mfxEncParams.mfx.FrameInfo.Width  = MSDK_ALIGN16(pInParams->nDstWidth);
+        m_mfxEncParams.mfx.FrameInfo.Height = (MFX_PICSTRUCT_PROGRESSIVE == m_mfxEncParams.mfx.FrameInfo.PicStruct) ?
+            MSDK_ALIGN16(pInParams->nDstHeight) : MSDK_ALIGN32(pInParams->nDstHeight);
+
+        m_mfxEncParams.mfx.FrameInfo.CropX = 0;
+        m_mfxEncParams.mfx.FrameInfo.CropY = 0;
+        m_mfxEncParams.mfx.FrameInfo.CropW = pInParams->nDstWidth;
+        m_mfxEncParams.mfx.FrameInfo.CropH = pInParams->nDstHeight;
+    }
 
     if (m_bNeedDRC)
     {
@@ -400,17 +423,6 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_drcHeight = pInParams->nDrcHeight;
     }
 
-    // set frame size and crops
-    // width must be a multiple of 16
-    // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
-    m_mfxEncParams.mfx.FrameInfo.Width  = MSDK_ALIGN16(pInParams->nDstWidth);
-    m_mfxEncParams.mfx.FrameInfo.Height = (MFX_PICSTRUCT_PROGRESSIVE == m_mfxEncParams.mfx.FrameInfo.PicStruct)?
-        MSDK_ALIGN16(pInParams->nDstHeight) : MSDK_ALIGN32(pInParams->nDstHeight);
-
-    m_mfxEncParams.mfx.FrameInfo.CropX = 0;
-    m_mfxEncParams.mfx.FrameInfo.CropY = 0;
-    m_mfxEncParams.mfx.FrameInfo.CropW = pInParams->nDstWidth;
-    m_mfxEncParams.mfx.FrameInfo.CropH = pInParams->nDstHeight;
     m_mfxEncParams.AsyncDepth      = 1; //current limitation
     m_mfxEncParams.mfx.GopRefDist  = pInParams->refDist > 0 ? pInParams->refDist : 1;
     m_mfxEncParams.mfx.GopPicSize  = pInParams->gopSize > 0 ? pInParams->gopSize : 1;
@@ -512,28 +524,43 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
         m_mfxVppParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     }
 
-    // input frame info
-    m_mfxVppParams.vpp.In.FourCC = MFX_FOURCC_NV12;
-    m_mfxVppParams.vpp.In.PicStruct = pInParams->nPicStruct;;
-    sts = ConvertFrameRate(pInParams->dFrameRate, &m_mfxVppParams.vpp.In.FrameRateExtN, &m_mfxVppParams.vpp.In.FrameRateExtD);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    if (pInParams->bDECODE)
+    {
+        MSDK_MEMCPY_VAR(m_mfxVppParams.vpp.In, &m_mfxVppParams.vpp.In, sizeof(mfxFrameInfo));
+        m_mfxVppParams.vpp.In.PicStruct = pInParams->nPicStruct; // to support mixed picstructs
+        pInParams->nWidth  = m_mfxVppParams.vpp.In.CropW;
+        pInParams->nHeight = m_mfxVppParams.vpp.In.CropH;
+    }
+    else
+    {
+        // input frame info
+        m_mfxVppParams.vpp.In.FourCC    = MFX_FOURCC_NV12;
+        m_mfxVppParams.vpp.In.PicStruct = pInParams->nPicStruct;
+        sts = ConvertFrameRate(pInParams->dFrameRate, &m_mfxVppParams.vpp.In.FrameRateExtN, &m_mfxVppParams.vpp.In.FrameRateExtD);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    // width must be a multiple of 16
-    // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
-    m_mfxVppParams.vpp.In.Width = MSDK_ALIGN16(pInParams->nWidth);
-    m_mfxVppParams.vpp.In.Height = (MFX_PICSTRUCT_PROGRESSIVE == m_mfxVppParams.vpp.In.PicStruct) ?
-        MSDK_ALIGN16(pInParams->nHeight) : MSDK_ALIGN32(pInParams->nHeight);
+        // width must be a multiple of 16
+        // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
+        m_mfxVppParams.vpp.In.Width  = MSDK_ALIGN16(pInParams->nWidth);
+        m_mfxVppParams.vpp.In.Height = (MFX_PICSTRUCT_PROGRESSIVE == m_mfxVppParams.vpp.In.PicStruct) ?
+            MSDK_ALIGN16(pInParams->nHeight) : MSDK_ALIGN32(pInParams->nHeight);
 
-    // set crops in input mfxFrameInfo for correct work of file reader
-    // VPP itself ignores crops at initialization
-    m_mfxVppParams.vpp.In.CropW = pInParams->nWidth;
-    m_mfxVppParams.vpp.In.CropH = pInParams->nHeight;
+        // set crops in input mfxFrameInfo for correct work of file reader
+        // VPP itself ignores crops at initialization
+        m_mfxVppParams.vpp.In.CropX = m_mfxVppParams.vpp.In.CropY = 0;
+        m_mfxVppParams.vpp.In.CropW = pInParams->nWidth;
+        m_mfxVppParams.vpp.In.CropH = pInParams->nHeight;
+    }
 
     // fill output frame info
     MSDK_MEMCPY_VAR(m_mfxVppParams.vpp.Out, &m_mfxVppParams.vpp.In, sizeof(mfxFrameInfo));
 
     // only resizing is supported
-    m_mfxVppParams.vpp.Out.Width = MSDK_ALIGN16(pInParams->nDstWidth);
+    m_mfxVppParams.vpp.Out.CropX = m_mfxVppParams.vpp.Out.CropY = 0;
+    m_mfxVppParams.vpp.Out.CropW = pInParams->nDstWidth;
+    m_mfxVppParams.vpp.Out.CropH = pInParams->nDstHeight;
+
+    m_mfxVppParams.vpp.Out.Width  = MSDK_ALIGN16(pInParams->nDstWidth);
     m_mfxVppParams.vpp.Out.Height = (MFX_PICSTRUCT_PROGRESSIVE == m_mfxVppParams.vpp.Out.PicStruct) ?
         MSDK_ALIGN16(pInParams->nDstHeight) : MSDK_ALIGN32(pInParams->nDstHeight);
 
@@ -547,7 +574,7 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
     m_VppDoNotUse.AlgList[3] = MFX_EXTBUFF_VPP_PROCAMP;        // turn off processing amplified (on by default)
     m_VppExtParams.push_back((mfxExtBuffer *)&m_VppDoNotUse);
 
-    m_mfxVppParams.ExtParam = &m_VppExtParams[0]; // vector is stored linearly in memory
+    m_mfxVppParams.ExtParam    = &m_VppExtParams[0]; // vector is stored linearly in memory
     m_mfxVppParams.NumExtParam = (mfxU16)m_VppExtParams.size();
 
     m_mfxVppParams.AsyncDepth = 1; //current limitation
@@ -763,19 +790,12 @@ mfxStatus CEncodingPipeline::AllocFrames()
     {
         sts = m_pmfxDECODE->QueryIOSurf(&m_mfxDecParams, &DecRequest);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        m_decodePoolSize       = DecRequest.NumFrameSuggested;
-        DecRequest.NumFrameMin = m_decodePoolSize;
+        DecRequest.NumFrameMin = m_decodePoolSize = DecRequest.NumFrameSuggested;
 
         if (!m_pmfxVPP)
         {
             // in case of Decode and absence of VPP we use the same surface pool for the entire pipeline
-            nEncSurfNum += m_mfxEncParams.mfx.NumRefFrame + 1;
-            if (DecRequest.NumFrameSuggested <= nEncSurfNum)
-                DecRequest.NumFrameMin = DecRequest.NumFrameSuggested = nEncSurfNum;
-            else
-                DecRequest.NumFrameMin = DecRequest.NumFrameSuggested = m_decodePoolSize + nEncSurfNum;
-            //if ((m_pmfxENC) || (m_pmfxPAK)) // plus reconstructed frames for PAK
-            //    DecRequest.NumFrameMin = DecRequest.NumFrameSuggested = DecRequest.NumFrameSuggested + m_mfxEncParams.mfx.GopRefDist * 2 + m_mfxEncParams.AsyncDepth;
+            DecRequest.NumFrameMin = DecRequest.NumFrameSuggested = m_decodePoolSize + nEncSurfNum;
         }
         MSDK_MEMCPY_VAR(DecRequest.Info, &(m_mfxDecParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
 
@@ -824,6 +844,11 @@ mfxStatus CEncodingPipeline::AllocFrames()
         // alloc frames for encoder
         sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &EncRequest, &m_EncResponse);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+        // prepare mfxFrameSurface1 array for encoder
+        m_pEncSurfaces.PoolSize = m_EncResponse.NumFrameActual;
+        sts = FillSurfacePool(m_pEncSurfaces.SurfacesPool, &m_EncResponse, &(m_mfxEncParams.mfx.FrameInfo));
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
     /* ENC use input source surfaces only & does not need real reconstructed surfaces.
@@ -845,14 +870,6 @@ mfxStatus CEncodingPipeline::AllocFrames()
 
         m_pReconSurfaces.PoolSize = m_ReconResponse.NumFrameActual;
         sts = FillSurfacePool(m_pReconSurfaces.SurfacesPool, &m_ReconResponse, &(m_mfxEncParams.mfx.FrameInfo));
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-    }
-
-    if (!m_pmfxDECODE || m_pmfxVPP)
-    {
-        // prepare mfxFrameSurface1 array for encoder
-        m_pEncSurfaces.PoolSize = m_EncResponse.NumFrameActual;
-        sts = FillSurfacePool(m_pEncSurfaces.SurfacesPool, &m_EncResponse, &(m_mfxEncParams.mfx.FrameInfo));
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
@@ -1146,6 +1163,7 @@ CEncodingPipeline::CEncodingPipeline()
     m_drcDftH             = 0;
     m_numMB_drc           = 0;
     m_bDRCReset           = false;
+    m_bVPPneeded          = false;
 
     m_pExtBufDecodeStreamout = NULL;
 
@@ -1155,11 +1173,11 @@ CEncodingPipeline::CEncodingPipeline()
     m_pDSSurfaces    = {};
     m_pReconSurfaces = {};
 
-    m_pDecSurfaces.LastPicked   = -1; // to pick from 0 surface
-    m_pEncSurfaces.LastPicked   = -1;
-    m_pVppSurfaces.LastPicked   = -1;
-    m_pDSSurfaces.LastPicked    = -1;
-    m_pReconSurfaces.LastPicked = -1;
+    m_pDecSurfaces.LastPicked   = (mfxU16)-1; // to pick from 0 surface
+    m_pEncSurfaces.LastPicked   = (mfxU16)-1;
+    m_pVppSurfaces.LastPicked   = (mfxU16)-1;
+    m_pDSSurfaces.LastPicked    = (mfxU16)-1;
+    m_pReconSurfaces.LastPicked = (mfxU16)-1;
 
 
     MSDK_ZERO_ARRAY(m_numOfRefs[0], 2);
@@ -1290,9 +1308,9 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     mfxStatus sts = MFX_ERR_NONE;
     m_bNeedDRC = pParams->bDynamicRC;
 
-    bool bVPPneeded = pParams->nWidth  != pParams->nDstWidth  ||
-                      pParams->nHeight != pParams->nDstHeight ||
-                      m_bNeedDRC;
+    m_bVPPneeded = pParams->nWidth  != pParams->nDstWidth  ||
+                   pParams->nHeight != pParams->nDstHeight ||
+                   m_bNeedDRC;
 
     m_refDist = pParams->refDist > 0 ? pParams->refDist : 1;
     m_gopSize = pParams->gopSize > 0 ? pParams->gopSize : 1;
@@ -1333,7 +1351,8 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     if (MFX_ERR_NONE != sts)
         sts = m_mfxSession.Init((impl & (!MFX_IMPL_HARDWARE_ANY)) | MFX_IMPL_HARDWARE, NULL);
 
-    if (pParams->bPREENC && (pParams->bENCPAK || pParams->bOnlyENC || (pParams->preencDSstrength && bVPPneeded))){
+    if (pParams->bPREENC && (pParams->bENCPAK || pParams->bOnlyENC || (pParams->preencDSstrength && m_bVPPneeded)))
+    {
         sts = m_preenc_mfxSession.Init(impl, NULL);
         m_bSeparatePreENCSession = true;
         m_pPreencSession = &m_preenc_mfxSession;
@@ -1350,13 +1369,6 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     // set memory type
     m_memType = pParams->memType;
 
-    sts = InitMfxEncParams(pParams);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    // create and init frame allocator
-    sts = CreateAllocator();
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
     if (pParams->bDECODE)
     {
         // create decoder
@@ -1367,8 +1379,15 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
+    sts = InitMfxEncParams(pParams);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    // create and init frame allocator
+    sts = CreateAllocator();
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
     // create preprocessor if resizing was requested from command line
-    if (bVPPneeded)
+    if (m_bVPPneeded)
     {
         m_pmfxVPP = new MFXVideoVPP(m_mfxSession);
         MSDK_CHECK_POINTER(m_pmfxVPP, MFX_ERR_MEMORY_ALLOC);
@@ -1854,7 +1873,7 @@ mfxStatus CEncodingPipeline::InitInterfaces()
             m_pExtBufDecodeStreamout->Header.BufferSz = sizeof(mfxExtFeiDecStreamOut);
             m_pExtBufDecodeStreamout->PicStruct   = m_mfxEncParams.mfx.FrameInfo.PicStruct;
             m_pExtBufDecodeStreamout->RemapRefIdx = MFX_CODINGOPTION_ON; /* turn on refIdx remapping in library */
-            m_pExtBufDecodeStreamout->NumMBAlloc  = m_numMB * m_numOfFields; /* streamout uses one buffer to store info about both fields */
+            m_pExtBufDecodeStreamout->NumMBAlloc  = (m_mfxDecParams.mfx.FrameInfo.Width * m_mfxDecParams.mfx.FrameInfo.Height) >> 8; /* streamout uses one buffer to store info about both fields */
 
             m_pExtBufDecodeStreamout->MB = new mfxFeiDecStreamOutMBCtrl[m_pExtBufDecodeStreamout->NumMBAlloc];
             MSDK_CHECK_POINTER(m_pExtBufDecodeStreamout->MB, MFX_ERR_MEMORY_ALLOC);
