@@ -461,7 +461,8 @@ protected:
     mfxU8  m_isField;
     mfxU16 m_frameIdrCounter;
    //for Dynamic Resolution Change
-    bool m_bNeedDRC;//True if Dynamic Resolution Change requied
+    bool m_bNeedDRC;   //True if Dynamic Resolution Change requied
+    bool m_bVPPneeded; //True if we have VPP in pipeline
     std::vector<mfxU32> m_drcStart;
     std::vector<mfxU16> m_drcWidth;
     std::vector<mfxU16> m_drcHeight;
