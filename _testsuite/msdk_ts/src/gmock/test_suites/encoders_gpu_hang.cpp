@@ -129,19 +129,11 @@ int test(mfxU32 codecId, mfxU32 version)
     return 0;
 }
 
-int AVCTest     (unsigned int) { return test(MFX_CODEC_AVC, 0); }
-int MPEG2Test   (unsigned int) { return test(MFX_CODEC_MPEG2, 0); }
-int HEVCTest    (unsigned int) { return test(MFX_CODEC_HEVC, 0); }
-int AVCTest1    (unsigned int) { return test(MFX_CODEC_AVC, 1); }
-int MPEG2Test1  (unsigned int) { return test(MFX_CODEC_MPEG2, 1); }
-int HEVCTest1   (unsigned int) { return test(MFX_CODEC_HEVC, 1); }
+int AVCTest    (unsigned int) { return test(MFX_CODEC_AVC, 1); }
+int MPEG2Test  (unsigned int) { return test(MFX_CODEC_MPEG2, 1); }
+int HEVCTest   (unsigned int) { return test(MFX_CODEC_HEVC, 1); }
 
-// any% pass-rate is acceptable
-TS_REG_TEST_SUITE(avce_gpu_hang, AVCTest, 10);
-//TS_REG_TEST_SUITE(mpeg2e_gpu_hang, MPEG2Test, 1);
-TS_REG_TEST_SUITE(hevce_gpu_hang, HEVCTest, 10);
-
-TS_REG_TEST_SUITE(hevce_gpu_hang1, HEVCTest1, 1);
-TS_REG_TEST_SUITE(avce_gpu_hang1, AVCTest1, 1);
-TS_REG_TEST_SUITE(mpeg2e_gpu_hang1, MPEG2Test1, 1);
+TS_REG_TEST_SUITE(hevce_gpu_hang, HEVCTest, 1);
+TS_REG_TEST_SUITE(avce_gpu_hang, AVCTest, 1);
+TS_REG_TEST_SUITE(mpeg2e_gpu_hang, MPEG2Test, 1);
 }
