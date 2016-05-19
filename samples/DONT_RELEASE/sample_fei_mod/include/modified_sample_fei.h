@@ -15,8 +15,8 @@ Copyright(c) 2005-2016 Intel Corporation. All Rights Reserved.
 #include "mfxfei.h"
 #include "pipeline_fei.h"
 
-mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask, std::list<iTask*> *pTaskList);
-mfxStatus RepackStremoutMB2PakMB(mfxFeiDecStreamOutMBCtrl* dsoMB, mfxFeiPakMBCtrl* pakMB);
+mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask, mfxU8 QP, std::list<iTask*> *pTaskList);
+mfxStatus RepackStremoutMB2PakMB(mfxFeiDecStreamOutMBCtrl* dsoMB, mfxFeiPakMBCtrl* pakMB, mfxU8 QP);
 mfxStatus RepackStreamoutMV(mfxFeiDecStreamOutMBCtrl* dsoMB, mfxExtFeiEncMV::mfxExtFeiEncMVMB* encMB);
 void checkMBs(mfxFeiPakMBCtrl* encMB, mfxFeiPakMBCtrl* in_encMB);
 
