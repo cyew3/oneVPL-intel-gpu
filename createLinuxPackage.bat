@@ -50,7 +50,8 @@ xcopy %2\libsample_rotate_plugin.so %1\samples\_bin\x64\*
 xcopy /S %3\*.pdf %1\samples\
 move "%1\samples\Media_Samples_Guide.pdf" "%1\Media_Samples_Guide.pdf"
 xcopy %3\..\..\redist.txt %1\
-copy /Y "%3\..\..\..\..\release\EULAs\Master EULA for Intel Sw Development Products September 2015.pdf" "%1\Samples EULA.pdf"
+xcopy %3\..\..\README %1\
+#copy /Y "%3\..\..\..\..\release\EULAs\Master EULA for Intel Sw Development Products September 2015.pdf" "%1\Samples EULA.pdf"
 xcopy %3\..\..\third_party_programs.txt %1\
 xcopy %3\..\..\site_license_materials.txt %1\
 xcopy %3\..\..\README %1\Samples\*
