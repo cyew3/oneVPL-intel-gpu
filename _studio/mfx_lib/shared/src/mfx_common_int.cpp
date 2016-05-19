@@ -15,7 +15,7 @@
 #include <stdexcept>
 #include <string>
 
-#if defined(_WIN32) || defined(_WIN64) 
+#if defined(_WIN32) || defined(_WIN64)
 #include <DXGI.h>
 #endif
 
@@ -64,7 +64,7 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
     case MFX_FOURCC_P010:
     case MFX_FOURCC_NV16:
     case MFX_FOURCC_P210:
-#if defined(_WIN32) || defined(_WIN64) 
+#if defined(_WIN32) || defined(_WIN64)
     case DXGI_FORMAT_AYUV:
 #endif
         break;
@@ -165,7 +165,7 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
     switch (codecId)
     {
     case MFX_CODEC_JPEG:
-        if (info->ChromaFormat != MFX_CHROMAFORMAT_YUV420 && info->ChromaFormat != MFX_CHROMAFORMAT_YUV444 && 
+        if (info->ChromaFormat != MFX_CHROMAFORMAT_YUV420 && info->ChromaFormat != MFX_CHROMAFORMAT_YUV444 &&
             info->ChromaFormat != MFX_CHROMAFORMAT_YUV400 && info->ChromaFormat != MFX_CHROMAFORMAT_YUV422H)
             return MFX_ERR_INVALID_VIDEO_PARAM;
         break;
@@ -228,7 +228,7 @@ mfxStatus CheckAudioParamEncoders(mfxAudioParam *in)
     return MFX_ERR_NONE;
 }
 
-  
+
 mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
 {
     if (!in)
@@ -278,7 +278,7 @@ mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocat
     mfxStatus sts = CheckVideoParamCommon(in, type);
     if (sts < MFX_ERR_NONE)
         return sts;
-    
+
     if (!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
@@ -465,7 +465,7 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
             if (pitch > 0x3FFFF)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             break;
-#if defined(_WIN32) || defined(_WIN64) 
+#if defined(_WIN32) || defined(_WIN64)
         case DXGI_FORMAT_AYUV:
             if (!surface->Data.A || !surface->Data.R || !surface->Data.G || !surface->Data.B)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -489,7 +489,8 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam* par)
                                                                MFX_EXTBUFF_SVC_SEQ_DESC,
                                                                MFX_EXTBUFF_SVC_TARGET_LAYER,
                                                                MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK,
-                                                               MFX_EXTBUFF_FEI_PARAM};
+                                                               MFX_EXTBUFF_FEI_PARAM,
+                                                               MFX_EXTBUFF_DEC_VIDEO_PROCESSING};
 
     static const mfxU32 g_decoderSupportedExtBuffersHEVC[]  = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
                                                                MFX_EXTBUFF_HEVC_PARAM,
