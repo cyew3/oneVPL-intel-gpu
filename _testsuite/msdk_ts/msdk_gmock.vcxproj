@@ -279,6 +279,7 @@
     <ClCompile Include="src\gmock\test_suites\hevce_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_spspps_get.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_query.cpp" />
+    <ClCompile Include="src\gmock\test_suites\hevce_co2_disable_deblocking.cpp" />
     <ClCompile Include="src\gmock\test_suites\jpegd_res_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\lookahead_1N.cpp" />
     <ClCompile Include="src\gmock\test_suites\mjpegd_corruption.cpp" />
