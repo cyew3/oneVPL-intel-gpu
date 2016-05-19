@@ -157,6 +157,7 @@ mfxStatus VMEBrc::SetFrameVMEData(const mfxExtLAFrameStatistics *pLaOut, mfxU32 
 
 mfxU8 SelectQp(mfxF64 erate[52], mfxF64 budget, mfxU8 minQP)
 {
+    minQP = (minQP !=0) ? minQP : 1; //KW
     for (mfxU8 qp = minQP; qp < 52; qp++)
         if (erate[qp] < budget)
             return (erate[qp - 1] + erate[qp] < 2 * budget) ? qp - 1 : qp;
