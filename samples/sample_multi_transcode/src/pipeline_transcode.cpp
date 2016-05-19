@@ -2173,10 +2173,27 @@ mfxStatus CTranscodingPipeline::AddLaStreams(mfxU16 width, mfxU16 height)
         /* if input streams in NV12 format background color should be in YUV format too
         * The same for RGB4 input, background color should be in ARGB format
         * */
-        /* back color in YUV */
-        m_VppCompParams.Y = 0x10;
-        m_VppCompParams.U = 0x80;
-        m_VppCompParams.V = 0x80;
+
+        switch(pInParams->EncoderFourCC)
+        {
+        case MFX_FOURCC_RGB4:
+            /* back color in RGB */
+            m_VppCompParams.R = 0x00;
+            m_VppCompParams.G = 0x00;
+            m_VppCompParams.B = 0x00;
+            break;
+        case MFX_FOURCC_NV12:
+        case MFX_FOURCC_P010:
+        case MFX_FOURCC_NV16:
+        case MFX_FOURCC_P210:
+        case MFX_FOURCC_YUY2:
+        default:
+            /* back color in YUV */
+            m_VppCompParams.Y = 0x10;
+            m_VppCompParams.U = 0x80;
+            m_VppCompParams.V = 0x80;
+            break;
+        }
 
         MSDK_CHECK_POINTER(pInParams->pVppCompDstRects,MFX_ERR_NULL_PTR);
         for (mfxU32 i = 0; i < pInParams->numSurf4Comp; i++)
