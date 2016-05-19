@@ -91,6 +91,7 @@ function( configure_build_variant_linux target variant )
   endif( )
   set( link_flags_list "-Wl,--no-undefined,-z,relro,-z,now,-z,noexecstack")
   append_property( ${ARGV0} LINK_FLAGS "${link_flags_list} ${MFX_LDFLAGS} -fstack-protector" )
+  message( STATUS "Libva located at: ${PKG_LIBVA_LIBRARY_DIRS}" )
 
   if( ARGV1 MATCHES hw AND Linux )
     append_property( ${ARGV0} COMPILE_FLAGS "-DMFX_VA" )
@@ -133,6 +134,9 @@ function( configure_build_variant_linux target variant )
     # compiler where to find the LIBVA headers, especially if LIBVA is installed
     # in a custom location.
     append_property( ${ARGV0} COMPILE_FLAGS "${PKG_LIBVA_CFLAGS}" )
+    foreach(libpath ${PKG_LIBVA_LIBRARY_DIRS} )
+     append_property( ${ARGV0} LINK_FLAGS "-L${libpath}" )
+    endforeach()
 
   endif( )
 endfunction( )
