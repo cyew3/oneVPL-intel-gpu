@@ -985,6 +985,11 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     if (m_hrd.GetMaxFrameSize(0) > static_cast<mfxU32>(request.Info.Width * request.Info.Height))
     {
         request.Info.Height = AlignValue<mfxU16>(static_cast<mfxU16>(m_hrd.GetMaxFrameSize(0) / request.Info.Width), 16);
+        if (MFX_HW_D3D9 == m_core->GetVAType()) // D3D9 do not like surfaces with too big height
+        {
+            request.Info.Height = IPP_MIN(request.Info.Height, 4096);
+            request.Info.Width = AlignValue<mfxU16>(static_cast<mfxU16>(m_hrd.GetMaxFrameSize(0) / request.Info.Height), 16);
+        }
     }
 
     m_maxBsSize = request.Info.Width * request.Info.Height;
