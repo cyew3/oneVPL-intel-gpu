@@ -17,7 +17,7 @@ static mfxU32 mv_data_length_offset = 0;
 static const int mb_type_remap[26] = {0, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 25};
 static const int intra_16x16[26]   = {2,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  2};
 
-mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask, std::list<iTask*> *pTaskList)
+mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask, mfxU8 QP, std::list<iTask*> *pTaskList)
 {
     MSDK_CHECK_POINTER(eTask,                  MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(eTask->inPAK.InSurface, MFX_ERR_NULL_PTR);
@@ -57,7 +57,7 @@ mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask, std::list<iTa
             (m_pExtBufDecodeStreamout->MB + fieldId*feiEncMBCode->NumMBAlloc + i)->IsLastMB = (i == (feiEncMBCode->NumMBAlloc-1));
 
             /* NOTE: streamout holds data for both fields in MB array (first NumMBAlloc for first field data, second NumMBAlloc for second field) */
-            sts = RepackStremoutMB2PakMB(m_pExtBufDecodeStreamout->MB + fieldId*feiEncMBCode->NumMBAlloc + i, feiEncMBCode->MB + i);
+            sts = RepackStremoutMB2PakMB(m_pExtBufDecodeStreamout->MB + fieldId*feiEncMBCode->NumMBAlloc + i, feiEncMBCode->MB + i, QP);
             MSDK_BREAK_ON_ERROR(sts);
 
             sts = RepackStreamoutMV(m_pExtBufDecodeStreamout->MB + fieldId*feiEncMBCode->NumMBAlloc + i, feiEncMV->MB + i);
@@ -69,7 +69,7 @@ mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask, std::list<iTa
     return sts;
 }
 
-inline mfxStatus RepackStremoutMB2PakMB(mfxFeiDecStreamOutMBCtrl* dsoMB, mfxFeiPakMBCtrl* pakMB)
+inline mfxStatus RepackStremoutMB2PakMB(mfxFeiDecStreamOutMBCtrl* dsoMB, mfxFeiPakMBCtrl* pakMB, mfxU8 QP)
 {
     MSDK_CHECK_POINTER(dsoMB, MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(pakMB, MFX_ERR_NULL_PTR);
@@ -98,7 +98,7 @@ inline mfxStatus RepackStremoutMB2PakMB(mfxFeiDecStreamOutMBCtrl* dsoMB, mfxFeiP
     pakMB->CbpY                = 0xffff;//dsoMB->CbpY;
     pakMB->CbpCb               = 0xf;//dsoMB->CbpCb;
     pakMB->CbpCr               = 0xf;//dsoMB->CbpCr;
-    pakMB->QpPrimeY            = dsoMB->QpPrimeY;
+    pakMB->QpPrimeY            = QP;//dsoMB->QpPrimeY;
     pakMB->IsLastMB            = dsoMB->IsLastMB;
     pakMB->Direct8x8Pattern    = 0;//dsoMB->Direct8x8Pattern;
     pakMB->MbSkipConvDisable   = 0;
