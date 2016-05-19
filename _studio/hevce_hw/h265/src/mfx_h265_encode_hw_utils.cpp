@@ -1482,14 +1482,10 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     }
 
     m_pps.loop_filter_across_slices_enabled_flag      = 0;
-    m_pps.deblocking_filter_control_present_flag      = 0;
 
-    if (m_ext.CO2.DisableDeblockingIdc)
-    {
-        m_pps.deblocking_filter_control_present_flag  = 1;
-        m_pps.deblocking_filter_disabled_flag = 1;
-        m_pps.deblocking_filter_override_enabled_flag = 0;
-    }
+    m_pps.deblocking_filter_control_present_flag  = 1;
+    m_pps.deblocking_filter_disabled_flag = m_ext.CO2.DisableDeblockingIdc!=0 ? 1:0;
+    m_pps.deblocking_filter_override_enabled_flag = m_ext.CO2.DisableDeblockingIdc!=0 ? 0:1; // to disable deblocking per frame
 
     m_pps.scaling_list_data_present_flag              = 0;
     m_pps.lists_modification_present_flag             = 1;
@@ -1595,6 +1591,7 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
     bool  isP   = !!(task.m_frameType & MFX_FRAMETYPE_P);
     bool  isB   = !!(task.m_frameType & MFX_FRAMETYPE_B);
 
+    mfxExtCodingOption2 *ext2 = ExtBuffer::Get(task.m_ctrl);
     Zero(s);
 
     s.first_slice_segment_in_pic_flag = 1;
@@ -1820,11 +1817,15 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
      s.deblocking_filter_disabled_flag = m_pps.deblocking_filter_disabled_flag; //  needed for DDI
      s.beta_offset_div2     = m_pps.beta_offset_div2; //  needed for DDI
      s.tc_offset_div2       = m_pps.tc_offset_div2;   //  needed for DDI
+     s.deblocking_filter_override_flag = 0;
 
-    if (m_pps.deblocking_filter_override_enabled_flag)
-        s.deblocking_filter_override_flag = 0;
-
-    assert(0 == s.deblocking_filter_override_flag);
+     if ( ext2 && ext2->DisableDeblockingIdc && (!m_pps.deblocking_filter_disabled_flag))
+     {
+        s.deblocking_filter_disabled_flag  = 1; 
+        s.beta_offset_div2 = 0; 
+        s.tc_offset_div2 = 0;
+        s.deblocking_filter_override_flag = 1;         
+     }
 
     s.loop_filter_across_slices_enabled_flag = 0;
 
