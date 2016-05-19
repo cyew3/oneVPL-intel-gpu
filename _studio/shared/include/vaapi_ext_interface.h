@@ -336,7 +336,7 @@ typedef struct _VAEncMiscParameterVP8SegmentMapParams
 #define VAEncMiscParameterTypeFEIFrameControlIntel 1001
 #endif //0
 
-#define VAStatsStatisticsBotFieldBufferTypeIntel  999
+#define VAStatsStatisticsBotFieldBufferTypeIntel  1011
 
 
 // move above definition to va_private.h file
