@@ -2222,7 +2222,7 @@ mfxStatus CTranscodingPipeline::AllocFrames(mfxFrameAllocRequest *pRequest, bool
     mfxU16 i;
 
     nSurfNum = pRequest->NumFrameMin = pRequest->NumFrameSuggested;
-    msdk_printf(MSDK_STRING("Pipeline surfaces number: %d\n"),nSurfNum);
+    msdk_printf(MSDK_STRING("Pipeline surfaces number (%s): %d\n"), isDecAlloc ? MSDK_STRING("DecPool") : MSDK_STRING("EncPool"),nSurfNum);
 
     mfxFrameAllocResponse *pResponse = isDecAlloc ? &m_mfxDecResponse : &m_mfxEncResponse;
 
@@ -2317,6 +2317,10 @@ mfxStatus CTranscodingPipeline::AllocFrames()
     sts = CalculateNumberOfReqFrames(DecOut,VPPOut);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+    // Add additionnaly requested frames
+    m_Request.NumFrameMin+=additionalSurfacesNum;
+    m_Request.NumFrameSuggested+=additionalSurfacesNum;
+
     if (VPPOut.NumFrameSuggested)
     {
         if (bAddFrames)
@@ -2352,6 +2356,7 @@ mfxStatus CTranscodingPipeline::AllocFrames()
         sts = AllocFrames(&VPPOut, false);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
+
     if (DecOut.NumFrameSuggested)
     {
         if (bAddFrames)
