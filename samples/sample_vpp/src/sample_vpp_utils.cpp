@@ -540,9 +540,8 @@ mfxStatus InitMemoryAllocator(
     pAllocator->pMfxAllocator =  new GeneralAllocator;
 
     bool isHWLib       = (MFX_IMPL_HARDWARE & pInParams->ImpLib) ? true : false;
-    bool isExtVideoMem = (pInParams->IOPattern != (MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY)) ? true : false;
 
-    if(isHWLib && isExtVideoMem)
+    if(isHWLib)
     {
         if((pInParams->ImpLib & IMPL_VIA_MASK) == MFX_IMPL_VIA_D3D9)
         {
