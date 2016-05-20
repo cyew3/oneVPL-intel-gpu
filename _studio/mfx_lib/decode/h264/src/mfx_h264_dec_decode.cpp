@@ -1418,10 +1418,7 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
                 sts = MFX_ERR_GPU_HANG;
             }
 #endif
-            if (!IS_PROTECTION_WIDEVINE(m_vPar.Protected) || umcRes != UMC::UMC_NTF_NEW_RESOLUTION)
-            {
-                src.Save(bs);
-            }
+            src.Save(bs);
 
             if (sts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
                 return sts;

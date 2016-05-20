@@ -1166,6 +1166,7 @@ Status WidevineTaskSupplier::AddOneFrame(MediaData * pSource)
 
     DecryptParametersWrapper decryptParams;
     void* bsDataPointer = pSource ? pSource->GetDataPointer() : 0;
+    Ipp32s size = pSource ? (Ipp32s)pSource->GetDataSize() : 0;
 
     {
         Status sts = DecryptWidevineHeaders(pSource, &decryptParams);
@@ -1201,6 +1202,9 @@ Status WidevineTaskSupplier::AddOneFrame(MediaData * pSource)
         umsRes = ParseWidevineSPSPPS(&decryptParams);
         if (umsRes != UMC_OK)
         {
+            if (umsRes == UMC_NTF_NEW_RESOLUTION)
+                pSource->MoveDataPointer(-size);
+
             return umsRes;
         }
 
