@@ -1,3 +1,15 @@
+/* ////////////////////////////////////////////////////////////////////////////// */
+/*
+//
+//              INTEL CORPORATION PROPRIETARY INFORMATION
+//  This software is supplied under the terms of a license  agreement or
+//  nondisclosure agreement with Intel Corporation and may not be copied
+//  or disclosed except in  accordance  with the terms of that agreement.
+//        Copyright (c) 2016 Intel Corporation. All Rights Reserved.
+//
+//
+*/
+
 #include "ts_vpp.h"
 #include "ts_struct.h"
 
@@ -68,6 +80,7 @@ enum SHORT_STS
 {
     UNSUP   = MFX_ERR_UNSUPPORTED,
     INVALID = MFX_ERR_INVALID_VIDEO_PARAM,
+    ERR_INI = MFX_ERR_NOT_INITIALIZED,
     ERR_INC = MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
     OK      = MFX_ERR_NONE,
 };
@@ -75,10 +88,8 @@ enum SHORT_STS
 const TestSuite::tc_struct TestSuite::test_case[] = 
 {
            //Query,  QueryIO,  Init,    Reset
-    {/* 0*/ {UNSUP,  INVALID, INVALID, INVALID}, SET_ALLOCATOR,    {{&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}, 
-                                                                    {&tsStruct::mfxVideoParam.vpp.Out.FourCC,  MFX_FOURCC_ARGB16}}},
-    {/* 1*/ {UNSUP,  INVALID, INVALID, INVALID}, SET_ALLOCATOR,    {{&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}},
-    {/* 2*/ {UNSUP,  INVALID, INVALID, INVALID}, SET_ALLOCATOR,    {{&tsStruct::mfxVideoParam.IOPattern,  MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}},
+    {/*00*/ { UNSUP, INVALID, INVALID, ERR_INI }, SET_ALLOCATOR, { &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY } },
+    {/*01*/ { UNSUP, INVALID, INVALID, ERR_INI }, SET_ALLOCATOR, { &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY } },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -125,9 +136,7 @@ int TestSuite::RunTest(unsigned int id)
     }
 
     mfxVideoParam par_copy;
-    mfxVideoParam par_default;
-    memcpy(&par_copy,    m_pPar, sizeof(mfxVideoParam));
-    memcpy(&par_default, m_pPar, sizeof(mfxVideoParam));
+    memcpy(&par_copy, m_pPar, sizeof(mfxVideoParam));
 
     //Query mode 2, Different (in,out)
     g_tsStatus.expect((mfxStatus) tc.exp_sts[QUERY]);
@@ -165,19 +174,8 @@ int TestSuite::RunTest(unsigned int id)
     Init(m_session, m_pPar);
     EXPECT_EQ(0, memcmp(m_pPar, &par_copy,sizeof(mfxVideoParam))) << "Failed.: Input structure must not be changed";
 
-    if(0 > tc.exp_sts[INIT])
-    {
-        g_tsStatus.expect(MFX_ERR_NOT_INITIALIZED);
-        Reset();
-    }
-
-    memcpy(m_pPar, &par_default, sizeof(mfxVideoParam));
-    Init(m_session, m_pPar);
-
-    memcpy(m_pPar, &par_copy, sizeof(mfxVideoParam));
-    g_tsStatus.expect((mfxStatus) tc.exp_sts[RESET]);
-    Reset(m_session, m_pPar);
-    EXPECT_EQ(0, memcmp(m_pPar, &par_copy,sizeof(mfxVideoParam))) << "Failed.: Input structure must not be changed";
+    g_tsStatus.expect((mfxStatus)tc.exp_sts[RESET]);
+    Reset();
 
     TS_END;
     return 0;
