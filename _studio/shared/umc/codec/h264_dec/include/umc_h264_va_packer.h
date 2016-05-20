@@ -118,7 +118,7 @@ protected:
 
     void CheckData(); //check correctness of encrypted data
 
-    void PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s firstSlice, Ipp32s count);
+    virtual void PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s firstSlice, Ipp32s count);
 
     void PackPicParamsMVC(const H264DecoderFrameInfo * pSliceInfo, DXVA_PicParams_H264_MVC* pMVCPicParams_H264);
     void PackPicParamsMVC(const H264DecoderFrameInfo * pSliceInfo, DXVA_Intel_PicParams_MVC* pMVCPicParams_H264);
