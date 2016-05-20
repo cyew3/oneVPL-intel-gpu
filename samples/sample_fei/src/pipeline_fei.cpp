@@ -381,7 +381,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
     }
 
-    if (pInParams->bDECODE && !m_bVPPneeded)
+    if (pInParams->bDECODE && !(m_bVPPneeded || pInParams->preencDSstrength))
     {
         // in case of decoder without VPP copy FrameInfo from decoder
         MSDK_MEMCPY_VAR(m_mfxEncParams.mfx.FrameInfo, &m_mfxDecParams.mfx.FrameInfo, sizeof(mfxFrameInfo));
@@ -526,10 +526,10 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
 
     if (pInParams->bDECODE)
     {
-        MSDK_MEMCPY_VAR(m_mfxVppParams.vpp.In, &m_mfxVppParams.vpp.In, sizeof(mfxFrameInfo));
+        MSDK_MEMCPY_VAR(m_mfxVppParams.vpp.In, &m_mfxDecParams.mfx.FrameInfo, sizeof(mfxFrameInfo));
         m_mfxVppParams.vpp.In.PicStruct = pInParams->nPicStruct; // to support mixed picstructs
-        pInParams->nWidth  = m_mfxVppParams.vpp.In.CropW;
-        pInParams->nHeight = m_mfxVppParams.vpp.In.CropH;
+        pInParams->nWidth  = m_mfxVppParams.vpp.Out.CropW;
+        pInParams->nHeight = m_mfxVppParams.vpp.Out.CropH;
     }
     else
     {
