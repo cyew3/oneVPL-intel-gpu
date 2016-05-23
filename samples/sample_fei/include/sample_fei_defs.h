@@ -33,7 +33,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #define IPP_MAX( a, b ) ( ((a) > (b)) ? (a) : (b) )
 #define IPP_MIN( a, b ) ( ((a) < (b)) ? (a) : (b) )
 
-#define MaxFeiEncMVPNum    4
+const mfxU32 MaxFeiEncMVPNum = 4;
 
 #define MSDK_ZERO_ARRAY(VAR, NUM) {memset(VAR, 0, sizeof(VAR[0])*NUM);}
 #define SAFE_RELEASE_EXT_BUFSET(SET) {if (SET){ SET->vacant = true; SET = NULL;}}
