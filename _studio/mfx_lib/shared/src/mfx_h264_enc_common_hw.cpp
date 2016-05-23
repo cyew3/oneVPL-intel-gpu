@@ -1845,6 +1845,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     mfxExtDirtyRect  *         extDirtyRect = GetExtBuffer(par);
     mfxExtMoveRect *           extMoveRect  = GetExtBuffer(par);
     mfxExtPredWeightTable *    extPwt       = GetExtBuffer(par);
+    mfxExtFeiParam *           feiParam     = GetExtBuffer(par);
+    bool isENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
 
     // check hw capabilities
     if (par.mfx.FrameInfo.Width  > hwCaps.MaxPicWidth ||
@@ -2040,6 +2042,15 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
         par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
     }
+    if ((isENCPAK) && (MFX_RATECONTROL_CQP != par.mfx.RateControlMethod))
+        unsupported = true;
+
+    if ((isENCPAK) && !(
+            (MFX_CODINGOPTION_UNKNOWN == feiParam->SingleFieldProcessing) ||
+            (MFX_CODINGOPTION_ON == feiParam->SingleFieldProcessing) ||
+            (MFX_CODINGOPTION_OFF == feiParam->SingleFieldProcessing)) )
+        unsupported = true;
+
     if(MFX_HW_VAAPI == vaType &&
        par.mfx.RateControlMethod != 0 &&
        par.mfx.RateControlMethod != MFX_RATECONTROL_CBR &&
