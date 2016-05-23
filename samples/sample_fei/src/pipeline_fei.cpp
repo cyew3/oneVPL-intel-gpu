@@ -3100,7 +3100,7 @@ mfxU16 CEncodingPipeline::GetFreeSurface_FirstNew(ExtSurfPool & SurfacesPool)
         {
             for (mfxU16 j = ((mfxU16)(SurfacesPool.LastPicked + 1)) % SurfacesPool.PoolSize, n_watched = 0;
                 n_watched < SurfacesPool.PoolSize;
-                j = (++j) % SurfacesPool.PoolSize, ++n_watched)
+                ++j, j %= SurfacesPool.PoolSize, ++n_watched)
             {
                 if (0 == SurfacesPool.SurfacesPool[j].Data.Locked)
                 {
