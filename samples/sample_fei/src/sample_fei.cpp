@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2015, Intel Corporation
+Copyright (c) 2005-2016, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -21,7 +21,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 mfxStatus CheckOptions(sInputParams* pParams);
 mfxStatus CheckDRCParams(sInputParams* pParams);
 
-void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
+void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 {
     msdk_printf(MSDK_STRING("AVC FEI Encoding Sample Version %s\n\n"), MSDK_SAMPLE_VERSION);
 
@@ -143,7 +143,7 @@ void PrintHelp(msdk_char *strAppName, msdk_char *strErrorMessage)
 
 mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* pParams)
 {
-    msdk_char* strArgument = MSDK_STRING("");
+    const msdk_char* strArgument = MSDK_STRING("");
     msdk_char* stopCharacter;
 
     bool bRefWSizeSpecified = false, bAlrShownHelp = false, bHeaderValSpecified = false,

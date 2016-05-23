@@ -139,7 +139,7 @@ struct sInputParams
     msdk_char strSrcFile[MSDK_MAX_FILENAME_LEN];
 
     std::vector<msdk_char*> srcFileBuff;
-    std::vector<msdk_char*> dstFileBuff;
+    std::vector<const msdk_char*> dstFileBuff;
     std::vector<mfxU16> nDrcWidth;//Dynamic Resolution Change Picture Width,specified if DRC requied
     std::vector<mfxU16> nDrcHeight;//Dynamic Resolution Change Picture Height,specified if DRC requied
     std::vector<mfxU32> nDrcStart; //Start Frame No. of Dynamic Resolution Change,specified if DRC requied
