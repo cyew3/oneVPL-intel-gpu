@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2012 - 2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012 - 2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -258,14 +258,14 @@ namespace H265Enc {
         Ipp32u row_first;
         Ipp32u row_last;
         Ipp8u  rd_opt_flag;
-        Ipp64f rd_lambda_slice;
-        Ipp64f rd_lambda_inter_slice;
-        Ipp64f rd_lambda_inter_mv_slice;
+        CostType rd_lambda_slice;
+        CostType rd_lambda_inter_slice;
+        CostType rd_lambda_inter_mv_slice;
 
         // kolya
         // to match HM's lambda in HAD search
-        Ipp64f rd_lambda_sqrt_slice;
-        Ipp64f ChromaDistWeight_slice;
+        CostType rd_lambda_sqrt_slice;
+        CostType ChromaDistWeight_slice;
 
         EnumIntraAngMode sliceIntraAngMode;
     };

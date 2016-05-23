@@ -77,7 +77,7 @@ namespace H265Enc {
         Ipp8u SplitThresholdStrengthTUIntra;
         Ipp8u SplitThresholdStrengthCUInter;
         Ipp8u SplitThresholdTabIndex;       //0 d3efault (2), 1 - usuallu TU1-3, 2 - TU4-6, 3 fro TU7
-        Ipp64f SplitThresholdMultiplier;
+        CostType SplitThresholdMultiplier;
         Ipp8u num_cand_0[4][8];
         Ipp8u num_cand_1[8];
         Ipp8u num_cand_2[8];
@@ -105,7 +105,7 @@ namespace H265Enc {
         Ipp8u  CmInterpFlag;    // GPU hpel interpolation for every recon
 
         Ipp8u  DeltaQpMode;      // 0 - disable, 0x1 = CAQ, 0x2 = CAL, 0x4 = PAQ
-        Ipp64f LambdaCorrection;
+        CostType LambdaCorrection;
         Ipp32s RateControlDepth; // rate control depth: how many analyzed future frames are required for BRC
         Ipp8u  SceneCut;         // Enable Scene Change Detection and insert IDR frame
         Ipp8u  AnalyzeCmplx;     // analyze frame complexity (for BRC)
@@ -182,10 +182,10 @@ namespace H265Enc {
         Ipp32u PicWidthInMinCbs;
         Ipp32u PicHeightInMinCbs;
         Ipp8u  AMPAcc[MAX_CU_DEPTH];
-        Ipp64f cu_split_threshold_cu_sentinel[6*8][2][MAX_TOTAL_DEPTH]; // zero-filled sentinel for those who unintentionally uses qp<0 as index to cu_split_threshold_cu (up to 16bit profiles)
-        Ipp64f cu_split_threshold_cu[52][2][MAX_TOTAL_DEPTH];
-        Ipp64f cu_split_threshold_tu_sentinel[6*8][2][MAX_TOTAL_DEPTH]; // zero-filled sentinel for those who unintentionally uses qp<0 as index to cu_split_threshold_tu (up to 16bit profiles)
-        Ipp64f cu_split_threshold_tu[52][2][MAX_TOTAL_DEPTH];
+        CostType cu_split_threshold_cu_sentinel[6*8][2][MAX_TOTAL_DEPTH]; // zero-filled sentinel for those who unintentionally uses qp<0 as index to cu_split_threshold_cu (up to 16bit profiles)
+        CostType cu_split_threshold_cu[52][2][MAX_TOTAL_DEPTH];
+        CostType cu_split_threshold_tu_sentinel[6*8][2][MAX_TOTAL_DEPTH]; // zero-filled sentinel for those who unintentionally uses qp<0 as index to cu_split_threshold_tu (up to 16bit profiles)
+        CostType cu_split_threshold_tu[52][2][MAX_TOTAL_DEPTH];
 
         // QP control
         Ipp8u UseDQP;
@@ -331,14 +331,14 @@ namespace H265Enc {
     };
 
     //void SetAllLambda(H265VideoParam const & videoParam, H265Slice *slice, int qp, const Frame* currentFrame, bool isHiCmplxGop = false, bool isMidCmplxGop = false);
-    Ipp64f h265_calc_split_threshold(Ipp32s tabIndex, Ipp32s isNotCu, Ipp32s isNotI, Ipp32s log2width, Ipp32s strength, Ipp32s QP);
+    CostType h265_calc_split_threshold(Ipp32s tabIndex, Ipp32s isNotCu, Ipp32s isNotI, Ipp32s log2width, Ipp32s strength, Ipp32s QP);
     void ApplyDeltaQp(Frame* frame, const H265VideoParam & par, Ipp8u useBrc = 0);
     void AddTaskDependency(ThreadingTask *downstream, ThreadingTask *upstream, ObjectPool<ThreadingTask> *ttHubPool = NULL, bool threaded = false);
     void AddTaskDependencyThreaded(ThreadingTask *downstream, ThreadingTask *upstream, ObjectPool<ThreadingTask> *ttHubPool = NULL);
 
     void ApplyRoiDeltaQp(Frame* frame, const H265VideoParam & par);
-    bool SliceLambdaMultiplier(Ipp64f &rd_lambda_slice, H265VideoParam const & videoParam, Ipp8u slice_type, const Frame *currFrame, bool isHiCmplxGop, bool isMidCmplxGop);
-    void SetSliceLambda(H265VideoParam const & videoParam, H265Slice *slice, Ipp32s qp, const Frame *currFrame, Ipp64f lambdaMult, bool extraMult);
+    bool SliceLambdaMultiplier(CostType &rd_lambda_slice, H265VideoParam const & videoParam, Ipp8u slice_type, const Frame *currFrame, bool isHiCmplxGop, bool isMidCmplxGop);
+    void SetSliceLambda(H265VideoParam const & videoParam, H265Slice *slice, Ipp32s qp, const Frame *currFrame, CostType lambdaMult, bool extraMult);
 
     class H265BsReal;
     void PutVPS(H265BsReal *bs, const H265VidParameterSet &vps, const H265ProfileLevelSet &profileLevel);

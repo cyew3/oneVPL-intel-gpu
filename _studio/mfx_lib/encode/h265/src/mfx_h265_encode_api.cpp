@@ -1212,7 +1212,7 @@ namespace {
                 else if (mfx.NumThread >=  8) optHevc.FramesInParallel = 3;
                 else if (mfx.NumThread >=  4) optHevc.FramesInParallel = 2;
                 else                          optHevc.FramesInParallel = 1;
-#ifdef AMT_VQ_TU
+
                 Ipp32s size = defaultOptHevc.Log2MaxCUSize;
                 Ipp32f wppEff = MIN((mfx.FrameInfo.Height + (1 << size) - 1) >> size,
                                     (mfx.FrameInfo.Width  + (1 << size) - 1) >> (size + 1) ) / 2.75;
@@ -1221,7 +1221,6 @@ namespace {
                 Ipp32f frameMult = MAX(1.0, MIN((Ipp32f)mfx.NumThread / (Ipp32f)wppEff, 4.0));
                 if (mfx.NumThread >= 4)
                     optHevc.FramesInParallel = MIN((optHevc.FramesInParallel * frameMult + 0.5), 16);
-#endif
             }
         }
 

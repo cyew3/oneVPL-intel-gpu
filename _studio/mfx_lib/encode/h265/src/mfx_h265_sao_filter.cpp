@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2013 - 2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013 - 2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -43,15 +43,15 @@ Ipp64s GetDistortion( int typeIdx, int typeAuxInfo, int* quantOffset,  MFX_HEVC_
 
 
 // try on each offset from [0, inputOffset]
-inline int GetBestOffset( int typeIdx, int classIdx, Ipp64f lambda, int inputOffset, 
+inline int GetBestOffset( int typeIdx, int classIdx, Ipp32f lambda, int inputOffset, 
                           Ipp64s count, Ipp64s diffSum, int shift, int offsetTh,
-                          Ipp64f* bestCost = NULL, Ipp64s* bestDist = NULL)
+                          Ipp32f* bestCost = NULL, Ipp64s* bestDist = NULL)
 {
     int iterOffset = inputOffset > 0 ? 7 : -7;
     int outputOffset = 0;
     int testOffset;
     Ipp64s tempDist, tempRate;
-    Ipp64f cost, minCost;
+    Ipp32f cost, minCost;
     const int deltaRate = (typeIdx == SAO_TYPE_BO) ? 2 : 1;
     
     minCost = lambda * 256;
@@ -63,7 +63,7 @@ inline int GetBestOffset( int typeIdx, int classIdx, Ipp64f lambda, int inputOff
      
         testOffset  = iterOffset;
         tempDist    = EstimateDeltaDist( count, testOffset, diffSum, shift);
-        cost    = (Ipp64f)tempDist + lambda * (Ipp64f) (tempRate << 8);
+        cost    = (Ipp32f)tempDist + lambda * (Ipp32f) (tempRate << 8);
 
         if (cost < minCost) {
             minCost = cost;
@@ -80,7 +80,7 @@ inline int GetBestOffset( int typeIdx, int classIdx, Ipp64f lambda, int inputOff
 static int tab_numSaoClass[] = {NUM_SAO_EO_CLASSES, NUM_SAO_EO_CLASSES, NUM_SAO_EO_CLASSES, NUM_SAO_EO_CLASSES, NUM_SAO_BO_CLASSES};
 
 void GetQuantOffsets( int typeIdx,  MFX_HEVC_PP::SaoCtuStatistics& statData, int* quantOffsets, int& typeAuxInfo,
-                      Ipp64f lambda, int bitDepth, int saoMaxOffsetQval, int shift)
+                      Ipp32f lambda, int bitDepth, int saoMaxOffsetQval, int shift)
 {
     memset(quantOffsets, 0, sizeof(int)*MAX_NUM_SAO_CLASSES);
     
@@ -93,7 +93,7 @@ void GetQuantOffsets( int typeIdx,  MFX_HEVC_PP::SaoCtuStatistics& statData, int
             continue; //offset will be zero
         }
 
-        Ipp64f meanDiff = (Ipp64f)(statData.diff[classIdx] << (bitDepth - 8)) / (Ipp64f)(statData.count[classIdx]);
+        Ipp32f meanDiff = (Ipp32f)(statData.diff[classIdx] << (bitDepth - 8)) / (Ipp32f)(statData.count[classIdx]);
 
         int offset;
         if (bitDepth > 8) {
@@ -109,7 +109,7 @@ void GetQuantOffsets( int typeIdx,  MFX_HEVC_PP::SaoCtuStatistics& statData, int
     
     // try on to improve a 'native' offset
     if (SAO_TYPE_BO == typeIdx) {
-        Ipp64f cost[NUM_SAO_BO_CLASSES];
+        Ipp32f cost[NUM_SAO_BO_CLASSES];
         for (int classIdx = 0; classIdx < NUM_SAO_BO_CLASSES; classIdx++) {
             cost[classIdx] = lambda;
             if (quantOffsets[classIdx] != 0 ) {
@@ -119,7 +119,7 @@ void GetQuantOffsets( int typeIdx,  MFX_HEVC_PP::SaoCtuStatistics& statData, int
             }
         }
         
-        Ipp64f minCost = MAX_DOUBLE, bandCost;
+        Ipp32f minCost = IPP_MAXABS_32F, bandCost;
         int band, startBand = 0;
         for (band = 0; band < (NUM_SAO_BO_CLASSES - 4 + 1); band++) {
             bandCost  = cost[band  ] + cost[band+1] + cost[band+2] + cost[band+3];
@@ -204,7 +204,7 @@ void SaoEstimator::GetBestSao_RdoCost(bool* sliceEnabled, SaoCtuParam* mergeList
     m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_CUR], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
     const Ipp32s shift = 2 * (m_bitDepth - 8);
-    Ipp64f cost = 0.0;
+    Ipp32f cost = 0.0;
     Ipp64s dist[NUM_SAO_COMPONENTS] = {0};
     Ipp64s modeDist[NUM_SAO_COMPONENTS] = {0};
     SaoOffsetParam testOffset[NUM_SAO_COMPONENTS];
@@ -219,7 +219,7 @@ void SaoEstimator::GetBestSao_RdoCost(bool* sliceEnabled, SaoCtuParam* mergeList
     m_bsf->Reset();
     CodeSaoCtbOffsetParam(m_bsf, SAO_Y, bestParam[SAO_Y], sliceEnabled[SAO_Y]);
     m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
-    Ipp64f minCost = m_labmda[SAO_Y] * m_bsf->GetNumBits();
+    Ipp32f minCost = m_labmda[SAO_Y] * m_bsf->GetNumBits();
 
     if (sliceEnabled[SAO_Y]) {
         for (Ipp32s type_idx = 0; type_idx < m_numSaoModes; type_idx++) {
@@ -251,7 +251,7 @@ void SaoEstimator::GetBestSao_RdoCost(bool* sliceEnabled, SaoCtuParam* mergeList
     m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_MID], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
 
-    Ipp64f chromaLambda = m_labmda[SAO_Cb];
+    Ipp32f chromaLambda = m_labmda[SAO_Cb];
     if ( sliceEnabled[SAO_Cb] ) {
         VM_ASSERT(m_labmda[SAO_Cb] == m_labmda[SAO_Cr]);
         VM_ASSERT(sliceEnabled[SAO_Cb] == sliceEnabled[SAO_Cr]);
@@ -301,7 +301,7 @@ void SaoEstimator::GetBestSao_RdoCost(bool* sliceEnabled, SaoCtuParam* mergeList
     
     m_bsf->CtxSave(m_ctxSAO[SAO_CABACSTATE_BLK_TEMP], tab_ctxIdxOffset[SAO_MERGE_FLAG_HEVC], 2);
 
-    Ipp64f bestCost = modeDist[SAO_Y] / m_labmda[SAO_Y] + (modeDist[SAO_Cb]+ modeDist[SAO_Cr])/chromaLambda + m_bsf->GetNumBits();
+    Ipp32f bestCost = modeDist[SAO_Y] / m_labmda[SAO_Y] + (modeDist[SAO_Cb]+ modeDist[SAO_Cr])/chromaLambda + m_bsf->GetNumBits();
 
 #if defined(SAO_MODE_MERGE_ENABLED)
     int compCount = sliceEnabled[SAO_Cb] ? 3 : 1;
@@ -457,7 +457,7 @@ void SaoEstimator::GetBestSao_BitCost(bool* sliceEnabled, SaoCtuParam* mergeList
     SaoCtuParam &bestParam = *codedParam;
 
     const Ipp32s shift = 2 * (m_bitDepth - 8);
-    Ipp64f cost = 0.0;
+    Ipp32f cost = 0.0;
     Ipp64s dist[NUM_SAO_COMPONENTS] = {0};
     Ipp64s modeDist[NUM_SAO_COMPONENTS] = {0};
     SaoOffsetParam testOffset[NUM_SAO_COMPONENTS];
@@ -469,7 +469,7 @@ void SaoEstimator::GetBestSao_BitCost(bool* sliceEnabled, SaoCtuParam* mergeList
     
     bitCost = CodeSaoCtbOffsetParam_BitCost(SAO_Y, bestParam[SAO_Y], sliceEnabled[SAO_Y]);
     
-    Ipp64f minCost = m_labmda[SAO_Y] * bitCost;
+    Ipp32f minCost = m_labmda[SAO_Y] * bitCost;
 
     if (sliceEnabled[SAO_Y]) {
         for (Ipp32s type_idx = 0; type_idx < m_numSaoModes; type_idx++) {
@@ -494,7 +494,7 @@ void SaoEstimator::GetBestSao_BitCost(bool* sliceEnabled, SaoCtuParam* mergeList
         }
     }
 
-    Ipp64f chromaLambda = m_labmda[SAO_Cb];
+    Ipp32f chromaLambda = m_labmda[SAO_Cb];
     if ( sliceEnabled[SAO_Cb] ) {
         VM_ASSERT(m_labmda[SAO_Cb] == m_labmda[SAO_Cr]);
         VM_ASSERT(sliceEnabled[SAO_Cb] == sliceEnabled[SAO_Cr]);
@@ -536,7 +536,7 @@ void SaoEstimator::GetBestSao_BitCost(bool* sliceEnabled, SaoCtuParam* mergeList
     
     bitCost = CodeSaoCtbParam_BitCost(bestParam, sliceEnabled, (mergeList[SAO_MERGE_LEFT]!= NULL), (mergeList[SAO_MERGE_ABOVE]!= NULL), false);
 
-    Ipp64f bestCost = modeDist[SAO_Y] / m_labmda[SAO_Y] + (modeDist[SAO_Cb]+ modeDist[SAO_Cr])/chromaLambda + bitCost;
+    Ipp32f bestCost = modeDist[SAO_Y] / m_labmda[SAO_Y] + (modeDist[SAO_Cb]+ modeDist[SAO_Cr])/chromaLambda + bitCost;
 
 #if defined(SAO_MODE_MERGE_ENABLED)
     SaoCtuParam testParam;
@@ -982,11 +982,8 @@ void H265CU<PixType>::EstimateSao(H265BsReal* bs, SaoCtuParam* saoParam)
 {
     m_saoEst.m_bitDepth = m_par->bitDepthLuma;// need to fix in case of chroma != luma bitDepth
     m_saoEst.m_saoMaxOffsetQVal = (1<<(MIN(m_saoEst.m_bitDepth,10)-5))-1;
-#ifndef AMT_SAO_MIN
-    m_saoEst.m_numSaoModes = (m_par->saoOpt == SAO_OPT_ALL_MODES) ? NUM_SAO_BASE_TYPES : NUM_SAO_BASE_TYPES - 1;
-#else
+
     m_saoEst.m_numSaoModes = (m_par->saoOpt == SAO_OPT_ALL_MODES) ? NUM_SAO_BASE_TYPES : ((m_par->saoOpt == SAO_OPT_FAST_MODES_ONLY)? NUM_SAO_BASE_TYPES - 1: 1);
-#endif
 
     MFX_HEVC_PP::CTBBorders borders = {0};
     borders.m_left = (-1 == m_leftAddr)  ? 0 : (m_par->m_slice_ids[m_ctbAddr] == m_par->m_slice_ids[m_leftAddr]  && m_leftSameTile) ? 1 : 0;

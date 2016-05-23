@@ -137,7 +137,7 @@ namespace H265Enc {
     typedef Ipp32f thres_tab[2][4][2];
 
     //static
-    Ipp64f h265_calc_split_threshold(Ipp32s tabIndex, Ipp32s isNotCu, Ipp32s isNotI, Ipp32s log2width, Ipp32s strength, Ipp32s QP)
+    CostType h265_calc_split_threshold(Ipp32s tabIndex, Ipp32s isNotCu, Ipp32s isNotI, Ipp32s log2width, Ipp32s strength, Ipp32s QP)
     {
         thres_tab *h265_split_thresholds_tab;
 
@@ -173,8 +173,8 @@ namespace H265Enc {
             }
         }
 
-        double a = h265_split_thresholds_tab[strength - 1][isNotI][log2width - 3][0];
-        double b = h265_split_thresholds_tab[strength - 1][isNotI][log2width - 3][1];
+        CostType a = h265_split_thresholds_tab[strength - 1][isNotI][log2width - 3][0];
+        CostType b = h265_split_thresholds_tab[strength - 1][isNotI][log2width - 3][1];
         return a * exp(b * QP);
     }
 
@@ -504,9 +504,8 @@ void H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice, Frame *frame)
         slice->num_entry_point_offsets = m_videoParam.NumTiles - 1;
     }
     if(!m_videoParam.SAOFlag
-#ifdef AMT_SAO_MIN
         || (m_videoParam.saoSubOpt==3 && m_videoParam.BiPyramidLayers > 1 && frame->m_pyramidLayer == m_videoParam.BiPyramidLayers - 1)
-#endif
+
             ) {
         slice->slice_sao_luma_flag = false;
         slice->slice_sao_chroma_flag = false;
@@ -527,77 +526,7 @@ void H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice, Frame *frame)
 
 namespace H265Enc {
 
-//    void SetAllLambda(H265VideoParam const & videoParam, H265Slice *slice, Ipp32s qp, const Frame *currFrame, bool isHiCmplxGop, bool isMidCmplxGop)
-//    {
-//        {
-//            slice->rd_opt_flag = 1;
-//            slice->rd_lambda_slice = 1;
-//            if (slice->rd_opt_flag) {
-////                slice->rd_lambda_slice = pow(2.0, (qp - 12) * (1.0 / 3.0)) * (1.0 / 256.0);
-//                slice->rd_lambda_slice = h265_lambda[qp + 48] * (1.0 / 256.0);
-//                switch (slice->slice_type) {
-//                case P_SLICE:
-//                    if (videoParam.BiPyramidLayers > 1 && OPT_LAMBDA_PYRAMID) {
-//                        slice->rd_lambda_slice *= (currFrame->m_biFramesInMiniGop == 15)
-//                            ? (videoParam.longGop)
-//                            ? tab_rdLambdaBPyramid5LongGop[0]
-//                        : tab_rdLambdaBPyramid5[0]
-//                        : tab_rdLambdaBPyramid4[0];
-//                    }
-//                    else {
-//                        Ipp32s pgopIndex = (currFrame->m_frameOrder - currFrame->m_frameOrderOfLastIntra) % videoParam.PGopPicSize;
-//                        slice->rd_lambda_slice *= (videoParam.PGopPicSize == 1 || pgopIndex) ? 0.4624 : 0.578;
-//                        if (pgopIndex)
-//                            slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.0);
-//                    }
-//                    break;
-//                case B_SLICE:
-//                    if (videoParam.BiPyramidLayers > 1 && OPT_LAMBDA_PYRAMID) {
-//                        Ipp8u layer = currFrame->m_pyramidLayer;
-//                        if (videoParam.DeltaQpMode > 1) {
-//                            if (isHiCmplxGop)
-//                                slice->rd_lambda_slice *= tab_rdLambdaBPyramid_HiCmplx[layer];
-//                            else if (isMidCmplxGop)
-//                                slice->rd_lambda_slice *= tab_rdLambdaBPyramid_MidCmplx[layer];
-//                            else
-//                                slice->rd_lambda_slice *= tab_rdLambdaBPyramid_LoCmplx[layer];
-//                        }
-//                        else 
-//                        {
-//                            slice->rd_lambda_slice *= (currFrame->m_biFramesInMiniGop == 15)
-//                                ? (videoParam.longGop)
-//                                ? tab_rdLambdaBPyramid5LongGop[layer]
-//                            : tab_rdLambdaBPyramid5[layer]
-//                            : tab_rdLambdaBPyramid4[layer];
-//                        }
-//                        if (layer > 0)
-//                            slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.0);
-//                    }
-//                    else {
-//                        slice->rd_lambda_slice *= 0.4624;
-//                        slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.0);
-//                    }
-//                    break;
-//                case I_SLICE:
-//                default:
-//                    slice->rd_lambda_slice *= 0.57;
-//                    if (videoParam.GopRefDist > 1)
-//                        slice->rd_lambda_slice *= (1 - MIN(0.5, 0.05 * (videoParam.GopRefDist - 1)));
-//                }
-//            }
-//
-//            slice->rd_lambda_inter_slice = slice->rd_lambda_slice;
-//            slice->rd_lambda_inter_mv_slice = slice->rd_lambda_inter_slice;
-//
-//            slice->rd_lambda_sqrt_slice = sqrt(slice->rd_lambda_slice * 256);
-//            //no chroma QP offset (from PPS) is implemented yet
-//            Ipp32s qpc = GetChromaQP(qp, 0, videoParam.chromaFormatIdc, 8); // just scaled qPi
-////            slice->ChromaDistWeight_slice = pow(2.0, (qp - qpc) / 3.0);
-//            slice->ChromaDistWeight_slice = h265_lambda[qp - qpc + 60];
-//        }
-//    } //
-
-    bool SliceLambdaMultiplier(Ipp64f &rd_lambda_slice, H265VideoParam const & videoParam, Ipp8u slice_type, const Frame *currFrame, bool isHiCmplxGop, bool isMidCmplxGop)
+    bool SliceLambdaMultiplier(CostType &rd_lambda_slice, H265VideoParam const & videoParam, Ipp8u slice_type, const Frame *currFrame, bool isHiCmplxGop, bool isMidCmplxGop)
     {
         bool mult = false;
         switch (slice_type) {
@@ -614,7 +543,7 @@ namespace H265Enc {
             }
             else {
                 Ipp32s pgopIndex = (currFrame->m_frameOrder - currFrame->m_frameOrderOfLastIntra) % videoParam.PGopPicSize;
-                rd_lambda_slice = (videoParam.PGopPicSize == 1 || pgopIndex) ? 0.4624 : 0.578;
+                rd_lambda_slice = (videoParam.PGopPicSize == 1 || pgopIndex) ? 0.4624f : 0.578f;
                 mult = !!pgopIndex;
                 if (!pgopIndex && (videoParam.DeltaQpMode&AMT_DQP_CAQ)) {
                     rd_lambda_slice*=videoParam.LambdaCorrection;
@@ -646,15 +575,15 @@ namespace H265Enc {
                 }
             }
             else {
-                rd_lambda_slice = 0.4624;
+                rd_lambda_slice = 0.4624f;
                 mult = true;
             }
             break;
         case I_SLICE:
         default:
-            rd_lambda_slice = 0.57;
+            rd_lambda_slice = 0.57f;
             if (videoParam.GopRefDist > 1)
-                rd_lambda_slice *= (1 - MIN(0.5, 0.05 * (videoParam.GopRefDist - 1)));
+                rd_lambda_slice *= (1 - MIN(0.5f, 0.05f * (videoParam.GopRefDist - 1)));
             if (videoParam.DeltaQpMode&AMT_DQP_CAQ) {
                 rd_lambda_slice*=videoParam.LambdaCorrection;
             }
@@ -663,12 +592,12 @@ namespace H265Enc {
     }
 
 
-    void SetSliceLambda(H265VideoParam const & videoParam, H265Slice *slice, Ipp32s qp, const Frame *currFrame, Ipp64f lambdaMult, bool extraMult)
+    void SetSliceLambda(H265VideoParam const & videoParam, H265Slice *slice, Ipp32s qp, const Frame *currFrame, CostType lambdaMult, bool extraMult)
     {
         slice->rd_opt_flag = 1;
-        slice->rd_lambda_slice = h265_lambda[qp + 48] * (1.0 / 256.0) * lambdaMult;
+        slice->rd_lambda_slice = h265_lambda[qp + 48] * (1.0 / 256.f) * lambdaMult;
         if (extraMult)
-            slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.0);
+            slice->rd_lambda_slice *= Saturate(2, 4, (qp - 12) / 6.f);
 
         slice->rd_lambda_inter_slice = slice->rd_lambda_slice;
         slice->rd_lambda_inter_mv_slice = slice->rd_lambda_inter_slice;
@@ -676,12 +605,12 @@ namespace H265Enc {
         slice->rd_lambda_sqrt_slice = sqrt(slice->rd_lambda_slice * 256);
         //no chroma QP offset (from PPS) is implemented yet
         if(!videoParam.rdoqChromaFlag && (videoParam.DeltaQpMode&AMT_DQP_CAQ)) {
-            Ipp32s qpCaq = (int)((4.2005*log(slice->rd_lambda_slice * 256.0)+13.7122)+0.5); // est
+            Ipp32s qpCaq = (int)((4.2005f*log(slice->rd_lambda_slice * 256.f)+13.7122f)+0.5f); // est
             Ipp32s qpcCaq = GetChromaQP(qpCaq, 0, videoParam.chromaFormatIdc, 8); // just scaled qPi
             Ipp32f qpcCorr = qpCaq - qpcCaq;
             Ipp32f qpcDiff = IPP_MAX(0,GetChromaQP(qp, 0, videoParam.chromaFormatIdc, 8) - qpcCaq); // just scaled qPi
-            qpcCorr -= (qpcDiff/2.0);
-            slice->ChromaDistWeight_slice = pow(2.0, qpcCorr / 3.0);
+            qpcCorr -= (qpcDiff/2.f);
+            slice->ChromaDistWeight_slice = pow(2.f, qpcCorr / 3.f);
         } else 
         {
             Ipp32s qpc = GetChromaQP(qp, 0, videoParam.chromaFormatIdc, 8); // just scaled qPi
@@ -714,7 +643,7 @@ namespace H265Enc {
             }
         }
 
-        Ipp64f rd_lamba_multiplier;
+        CostType rd_lamba_multiplier;
         bool extraMult = SliceLambdaMultiplier(rd_lamba_multiplier, par, frame->m_slices[0].slice_type, frame, 0, 0);
 
         Ipp32s numQpValues = 52 + (par.bitDepthLuma - 8)*6;
@@ -1307,7 +1236,6 @@ namespace {
                     }
                 }
 
-#ifdef AMT_REF_SCALABLE
                 if (par.BiPyramidLayers == 4) {
                     // list is already sorted by m_pyramidLayer (ascending)
                     Ipp32s refLayerLimit = par.refLayerLimit[currFrame.m_pyramidLayer];
@@ -1318,7 +1246,6 @@ namespace {
                         }
                     }
                 }
-#endif // AMT_REF_SCALABLE
             }
         }
     }
@@ -1384,7 +1311,6 @@ void H265Encoder::CreateRefPicList(Frame *in, H265ShortTermRefPicSet *rps)
         currFrame->m_refPicList[1].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxP[1]);
     }
     else if (currFrame->m_picCodeType == MFX_FRAMETYPE_B) {
-#ifdef AMT_REF_SCALABLE
         if(m_videoParam.NumRefLayers>2 && m_videoParam.MaxRefIdxB[0]>1) {
             Ipp32s refCount=0, refWindow=0;
             for(Ipp32s j=0;j<numStBefore;j++) {
@@ -1396,7 +1322,6 @@ void H265Encoder::CreateRefPicList(Frame *in, H265ShortTermRefPicSet *rps)
             currFrame->m_refPicList[0].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, IPP_MAX(refWindow+1, m_videoParam.MaxRefIdxB[0]));
             currFrame->m_refPicList[1].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[1]);
         } else
-#endif
         {
         currFrame->m_refPicList[0].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[0]);
         currFrame->m_refPicList[1].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[1]);
@@ -2100,21 +2025,17 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
         //cu_ithread->FillZero(0, 0);
         {
             bool interUpdate = false;
-#ifdef AMT_ALT_ENCODE
+
             if(!cu_ithread->m_isRdoq) {
                 cu_ithread->m_isRdoq = true;
                 m_bsf[bsf_id].CtxRestore(m_frame->m_doPostProc ? context_array_save : m_bs[bs_id].m_base.context_array);
                 interUpdate = cu_ithread->EncAndRecLuma(0, 0, 0, NULL);
             }
-#endif
 
-#ifdef AMT_CHROMA_GUIDED_INTER
+
             if(cu_ithread->UpdateChromaRec() || !cu_ithread->HaveChromaRec())
                 cu_ithread->EncAndRecChromaUpdate(0, 0, 0, interUpdate);
-#else
-            if (!cu_ithread->HaveChromaRec())
-                cu_ithread->EncAndRecChroma(0, 0, 0, NULL, INTRA_PRED_CALC);
-#endif
+
         }
         if (pars->UseDQP)
             cu_ithread->UpdateCuQp();
@@ -2191,17 +2112,13 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
 
         bool isRef = m_frame->m_isRef;
         bool doSao = m_topEnc.m_sps.sample_adaptive_offset_enabled_flag;
-#ifdef AMT_SAO_MIN
+
         if(doSao && !m_frame->m_slices[curr_slice_id].slice_sao_luma_flag && !m_frame->m_slices[curr_slice_id].slice_sao_chroma_flag)
             doSao = false;
-#endif
+
         bool doDbl = pars->deblockingFlag;
-#ifdef AMT_SAO_MIN
         // subopt sao works (cpu only)
         if (doDbl && (isRef || (doSao && pars->saoSubOpt!=2) || pars->doDumpRecon)) {
-#else
-        if (doDbl && (isRef || doSao || pars->doDumpRecon)) {
-#endif
             if (!pars->enableCmPostProc) {
                 cu_ithread->Deblock();
             }

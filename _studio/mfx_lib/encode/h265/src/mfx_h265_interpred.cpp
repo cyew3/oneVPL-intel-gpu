@@ -277,7 +277,6 @@ void H265CU<Ipp16u>::InterPredCu<TEXT_LUMA>(Ipp32s absPartIdx, Ipp8u depth, Ipp1
 template
 void H265CU<Ipp16u>::InterPredCu<TEXT_CHROMA>(Ipp32s absPartIdx, Ipp8u depth, Ipp16u *dst, Ipp32s dstPitch);
 
-#ifdef MEMOIZE_SUBPEL
 template <typename PixType>
 void H265CU<PixType>::MeInterpolateSave(const H265MEInfo* me_info, const H265MV *MV, PixType *src,
                                     Ipp32s srcPitch, PixType *dst, Ipp32s dstPitch, PixType *hdst, Ipp16s *dstHi, Ipp16s *hdstHi) const
@@ -327,7 +326,7 @@ void H265CU<PixType>::MeInterpolateSave(const H265MEInfo* me_info, const H265MV 
     }
     return;
 }
-#endif
+
 
 
 template <typename PixType>

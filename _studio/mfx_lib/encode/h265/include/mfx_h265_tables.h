@@ -31,7 +31,7 @@ extern const Ipp8u h265_chroma422IntraAngleMappingTable[NUM_INTRA_MODE];
 
 extern const Ipp8u h265_pgop_layers[PGOP_PIC_SIZE];
 
-extern const Ipp64f h265_lambda[100];
+extern const CostType h265_lambda[100];
 
 extern const float h265_reci_1to116[16];
 

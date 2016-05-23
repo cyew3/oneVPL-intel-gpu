@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2013 - 2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2013 - 2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -129,7 +129,7 @@ public:
     Ipp32s   m_saoMaxOffsetQVal;
     MFX_HEVC_PP::SaoCtuStatistics m_statData[NUM_SAO_COMPONENTS][NUM_SAO_BASE_TYPES];
     Ipp8u    m_ctxSAO[NUM_SAO_CABACSTATE_MARKERS][NUM_CABAC_CONTEXT];
-    Ipp64f   m_labmda[NUM_SAO_COMPONENTS];
+    Ipp32f   m_labmda[NUM_SAO_COMPONENTS];
     H265BsFake *m_bsf;
 };
 

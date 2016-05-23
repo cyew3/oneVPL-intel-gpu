@@ -42,60 +42,11 @@
 #include "mfx_ext_buffers.h"
 
 
-//Optimization with Intelligent Content and RD Analysis (ICRA)
-#define AMT_INT_ME_TRANSITION
-
-#define MEMOIZE_SUBPEL
-#ifdef MEMOIZE_SUBPEL
 #define MEMOIZE_SUBPEL_EXT_W (8+8)
 #define MEMOIZE_SUBPEL_EXT_H (8+2)
-//#define MEMOIZE_SUBPEL_TEST
-#define MEMOIZE_BIPRED_HI_SAVE
-//#define MEMOIZE_BIPRED_TEST
 
 #define MEMOIZE_NUMCAND MAX_NUM_MERGE_CANDS
-//#define MEMOIZE_CAND_TEST
-#define MEMOIZE_SUBPEL_RECON
-#define AMT_INT_ME_SEED
-#define AMT_FAST_SUBPEL_SEARCH
-#define AMT_FAST_SUBPEL_SEED
-#ifndef MFX_VA
-#define AMT_ALT_FAST_SKIP
-#else
-#define AMT_ALT_FAST_SKIP
-#endif
-#endif
 
-#define AMT_THRESHOLDS
-#define AMT_ALT_ENCODE
-#ifdef AMT_ALT_ENCODE
-#define AMT_ALT_ENCODE_OPT
-#define AMT_ADAPTIVE_INTRA_DEPTH
-#endif
-#define AMT_SAO_MIN
-
-#define AMT_ADAPTIVE_TU_DEPTH
-#define AMT_FIX_CHROMA_SKIP
-
-#ifndef MFX_VA
-#define AMT_VQ_TUNE
-#define AMT_REF_SCALABLE
-#else
-#define AMT_VQ_TUNE
-#define AMT_ADAPTIVE_INTER_DEPTH
-#define AMT_REF_SCALABLE
-#endif
-
-#ifdef AMT_VQ_TUNE
-#if defined(AMT_ADAPTIVE_TU_DEPTH) && defined(AMT_ALT_ENCODE)
-#define AMT_ADAPTIVE_INTER_DEPTH
-#endif
-#define AMT_CHROMA_GUIDED_INTER
-#if defined(AMT_ADAPTIVE_INTRA_DEPTH)
-#define AMT_ADAPTIVE_INTER_MIN_DEPTH
-#endif
-#define AMT_VQ_TU
-#endif
 
 namespace H265Enc {
 
@@ -269,8 +220,9 @@ enum {
 
 
 typedef Ipp16s CoeffsType;
-typedef Ipp64f CostType;
-#define COST_MAX DBL_MAX
+typedef Ipp32f CostType;
+//#define COST_MAX DBL_MAX
+#define COST_MAX IPP_MAXABS_32F
 
 
 #define PGOP_PIC_SIZE 4

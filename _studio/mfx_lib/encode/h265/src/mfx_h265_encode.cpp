@@ -233,7 +233,7 @@ static void TaskLogDump()
         return val;
     }
 
-    const Ipp64f tab_defaultLambdaCorrIP[8]   = {1.0, 1.06, 1.09, 1.13, 1.17, 1.25, 1.27, 1.28};
+    const CostType tab_defaultLambdaCorrIP[8]   = {1.0, 1.06, 1.09, 1.13, 1.17, 1.25, 1.27, 1.28};
 
     void ConvertToInternalParam(H265VideoParam &intParam, const mfxVideoParam &mfxParam)
     {
@@ -1869,11 +1869,11 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
             // adjust PP: replace complete postproc by deblock only
             {
                 bool doSao = m_sps.sample_adaptive_offset_enabled_flag;
-#ifdef AMT_SAO_MIN
+
                 int curr_slice_id = 0; // issue in case of per slice SAO switch on/off supported
                 if(doSao && !frame->m_slices[curr_slice_id].slice_sao_luma_flag && !frame->m_slices[curr_slice_id].slice_sao_chroma_flag)
                     doSao = false;
-#endif
+
                 if (!doSao) {
                     frame->m_ttWaitGpuPostProc.feiOp = frame->m_ttSubmitGpuPostProc.feiOp = MFX_FEI_H265_OP_DEBLOCK;
                 }
@@ -1898,7 +1898,7 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
     for (Ipp8u i = 0; i < m_videoParam.NumSlices; i++) {
         (currSlices + i)->slice_qp_delta = frame->m_sliceQpY - m_pps.init_qp;
 //        SetAllLambda(m_videoParam, (currSlices + i), frame->m_sliceQpY, frame);
-        Ipp64f rd_lamba_multiplier;
+        CostType rd_lamba_multiplier;
         bool extraMult = SliceLambdaMultiplier(rd_lamba_multiplier, m_videoParam,  (currSlices + i)->slice_type, frame, 0, 0);
         SetSliceLambda(m_videoParam, currSlices + i, frame->m_sliceQpY, frame, rd_lamba_multiplier, extraMult);
     }
@@ -2063,6 +2063,8 @@ mfxStatus H265Encoder::SyncOnFrameCompletion(H265EncodeTaskInputParams *inputPar
                 H265Bs_SetState(&frameEnc->m_bs[bs_main_id], pbs0, bitOffset0);
                 overheadBytes = overheadBytes0;
 
+                while (m_threadingTaskRunning > 1) thread_sleep(0);
+
                 if (m_videoParam.enableCmFlag) {
                     vm_mutex_lock(&m_feiCritSect);
                     m_pauseFeiThread = 1;
@@ -2074,7 +2076,6 @@ mfxStatus H265Encoder::SyncOnFrameCompletion(H265EncodeTaskInputParams *inputPar
                     m_feiWaitTasks.resize(0);
                 }
 
-                while (m_threadingTaskRunning > 1) thread_sleep(0);
                 m_pendingTasks.resize(0);
                 m_encodeQueue.splice(m_encodeQueue.begin(), m_outputQueue);
                 m_ttHubPool.ReleaseAll();
