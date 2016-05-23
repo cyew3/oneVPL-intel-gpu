@@ -1340,7 +1340,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     sts = m_mfxSession.Init(impl, NULL);
 
     mfxSession akaSession = m_mfxSession.operator mfxSession() ;
-    m_BaseAllocID = *((mfxU32*) &(akaSession) );
+    m_BaseAllocID = (mfxU64)&akaSession & 0xffffffff;
     m_EncPakReconAllocID = m_BaseAllocID + 1;
 
     // MSDK API version may not support multiple adapters - then try initialize on the default
