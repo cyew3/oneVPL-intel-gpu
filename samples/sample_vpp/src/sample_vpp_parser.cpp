@@ -195,7 +195,6 @@ msdk_printf(MSDK_STRING("   [-mirror (mode)]      - mirror image using specified
 msdk_printf(MSDK_STRING("   [-n frames] - number of frames to VPP process\n\n"));
 
 msdk_printf(MSDK_STRING("   [-iopattern IN/OUT surface type] -  IN/OUT surface type: sys_to_sys, sys_to_d3d, d3d_to_sys, d3d_to_d3d    (def: sys_to_sys)\n"));
-msdk_printf(MSDK_STRING("   [-sptr frame type] -  inpur or output allocated frames with predefined pointers. in - input surfaces, out - out surfaces, all input/output  (def: all frames with MemIDs)\n"));
 msdk_printf(MSDK_STRING("   [-async n] - maximum number of asynchronious tasks. def: -async 1 \n"));
 msdk_printf(MSDK_STRING("   [-perf_opt n m] - n: number of prefetech frames. m : number of passes. In performance mode app preallocates bufer and load first n frames,  def: no performace 1 \n"));
 msdk_printf(MSDK_STRING("   [-pts_check] - checking of time stampls. Default is OFF \n"));
@@ -1288,17 +1287,6 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 pParams->ImpLib |= MFX_IMPL_VIA_VAAPI;
             }
 #endif
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-sptr")) )
-            {
-                VAL_CHECK(1 + i == nArgNum);
-                i++;
-                if (0 == msdk_strcmp(strInput[i], MSDK_STRING("in")) )
-                    pParams->sptr = INPUT_PTR;
-                else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("out")) )
-                    pParams->sptr = OUTPUT_PTR;
-                else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("all")) )
-                    pParams->sptr = ALL_PTR;
-            }
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-async")) )
             {
                 VAL_CHECK(1 + i == nArgNum);
@@ -1459,18 +1447,6 @@ return MFX_ERR_NONE;
 
 bool CheckInputParams(msdk_char* strInput[], sInputParams* pParams )
 {
-    if ((pParams->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) &&
-        (pParams->sptr & INPUT_PTR))
-    {
-        vppPrintHelp(strInput[0], MSDK_STRING("Incompatible parameters: [IOpattern and sptr]\n"));
-        return false;
-    }
-    if ((pParams->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) &&
-        (pParams->sptr & OUTPUT_PTR))
-    {
-        vppPrintHelp(strInput[0], MSDK_STRING("Incompatible parameters: [IOpattern and sptr]\n"));
-        return false;
-    }
     if (0 == pParams->asyncNum)
     {
         vppPrintHelp(strInput[0], MSDK_STRING("Incompatible parameters: [ayncronous number must exceed 0]\n"));

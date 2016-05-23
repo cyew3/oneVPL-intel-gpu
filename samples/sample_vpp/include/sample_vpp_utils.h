@@ -87,14 +87,6 @@ enum
 
 //#define BACKWARD_COMPATIBILITY
 
-enum
-{
-    NO_PTR      = 0,
-    INPUT_PTR   = 1,
-    OUTPUT_PTR  = 2,
-    ALL_PTR     = 3
-};
-
 typedef struct _ownFrameInfo
 {
     mfxU16  Shift;
@@ -166,7 +158,6 @@ struct sInputParams
     //bool   bd3dAlloc;
     mfxU16   IOPattern;
     mfxIMPL  ImpLib;
-    mfxU32   sptr;
     mfxU16   asyncNum;
     mfxU32   vaType;
 

@@ -99,7 +99,6 @@ static
 #else
         MFX_IMPL_VIA_D3D9;
 #endif
-    pParams->sptr         = NO_PTR;
     pParams->asyncNum     = 1;
     pParams->bPerf       = false;
     pParams->isOutput     = false;

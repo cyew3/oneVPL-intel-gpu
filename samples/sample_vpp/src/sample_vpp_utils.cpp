@@ -115,24 +115,6 @@ const msdk_char* IOpattern2Str( mfxU32 IOpattern)
     }
 }
 
-static const
-    msdk_char* sptr2Str( mfxU32 sptr)
-{
-    switch ( sptr)
-    {
-    case NO_PTR:
-        return MSDK_STRING("MemID is used for in and out");
-    case INPUT_PTR:
-        return MSDK_STRING("Ptr is used for in, MemID for out");
-    case OUTPUT_PTR:
-        return MSDK_STRING("Ptr is used for out, MemID for in");
-    case ALL_PTR:
-        return MSDK_STRING("Ptr is used for in and out");
-    default:
-        return MSDK_STRING("Not defined");
-    }
-}
-
 /* ******************************************************************* */
 
 //static
@@ -212,7 +194,6 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
     msdk_printf(MSDK_STRING("\n"));
 
     msdk_printf(MSDK_STRING("IOpattern type               \t%s\n"), IOpattern2Str( pParams->IOPattern ));
-    msdk_printf(MSDK_STRING("Pointers and MemID settings  \t%s\n"), sptr2Str( pParams->sptr ));
     msdk_printf(MSDK_STRING("Number of asynchronious tasks\t%d\n"), pParams->asyncNum);
     if ( pParams->bInitEx )
     {
@@ -477,8 +458,7 @@ mfxStatus InitSurfaces(
     sMemoryAllocator* pAllocator,
     mfxFrameAllocRequest* pRequest,
     bool isInput,
-    int streamIndex,
-    bool isPtr)
+    int streamIndex)
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxU16    nFrames, i;
@@ -497,17 +477,8 @@ mfxStatus InitSurfaces(
         memset(&(pSurfaces[i]), 0, sizeof(mfxFrameSurface1));
         pSurfaces[i].Info = pRequest->Info;
 
-        if( !isPtr )
-        {
-            pSurfaces[i].Data.MemId = response.mids[i];
-        }
-        else
-        {
-            sts = pAllocator->pMfxAllocator->Lock(pAllocator->pMfxAllocator->pthis,
-                response.mids[i],
-                &(pSurfaces[i].Data));
-            MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { msdk_printf(MSDK_STRING("Failed to lock frames\n"));  WipeMemoryAllocator(pAllocator);});
-        }
+        pSurfaces[i].Data.MemId = response.mids[i];
+
     }
 
     return sts;
@@ -534,8 +505,6 @@ mfxStatus InitMemoryAllocator(
 
     // VppRequest[0] for input frames request, VppRequest[1] for output frames request
     MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
-    bool isInPtr = (pInParams->sptr & INPUT_PTR)?true:false;
-    bool isOutPtr = (pInParams->sptr & OUTPUT_PTR)?true:false;
 
     pAllocator->pMfxAllocator =  new GeneralAllocator;
 
@@ -653,7 +622,7 @@ mfxStatus InitMemoryAllocator(
     // Modify frame info as well
     if(pInParams->compositionParam.mode != VPP_FILTER_ENABLED_CONFIGURED)
     {
-        sts = InitSurfaces(pAllocator, &(request[VPP_IN]),true,0,isInPtr);
+        sts = InitSurfaces(pAllocator, &(request[VPP_IN]),true,0);
         MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
     }
     else
@@ -663,13 +632,13 @@ mfxStatus InitMemoryAllocator(
             ownToMfxFrameInfo(&pInParams->inFrameInfo[i],&request[VPP_IN].Info);
             request[VPP_IN].NumFrameSuggested = 1;
             request[VPP_IN].NumFrameMin = request[VPP_IN].NumFrameSuggested;
-            sts = InitSurfaces(pAllocator, &(request[VPP_IN]),true,i,isInPtr);
+            sts = InitSurfaces(pAllocator, &(request[VPP_IN]),true,i);
             MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
         }
     }
 
     // [OUT]
-    sts = InitSurfaces(pAllocator, &(request[VPP_OUT]), false,0,isOutPtr);
+    sts = InitSurfaces(pAllocator, &(request[VPP_OUT]), false,0);
     MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
 
     return MFX_ERR_NONE;
