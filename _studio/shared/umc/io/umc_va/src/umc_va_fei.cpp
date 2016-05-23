@@ -19,7 +19,7 @@
 #include "mfx_trace.h"
 
 #include <algorithm>
-
+#include <climits>
 #define UMC_VA_DECODE_STREAM_OUT_ENABLE  2
 
 namespace UMC
@@ -181,14 +181,20 @@ namespace UMC
                     Ipp32u const* map = &slice_refs[offset];
                     for (int k = 0; k < 4; ++k)
                     {
-                        //NOTE: we still have no info about ref. filed use hardcoded zero
+                        //NOTE: we still have no info about ref. field, use hardcoded zero
                         Ipp32u const field = 0;
 
-                        //NOTE: while GFX spec describe Store ID as bits 4:1 forms the index
-                        //we see that all 4:0 bits do this
-                        Ipp32u const idx   = (mb->InterMB.RefIdx[j][k] & 0x1f);
+                        //Ad Hoc: not active references is reported as zero
+                        if (!(mb->InterMB.RefIdx[j][k] & 0x80))
+                            mb->InterMB.RefIdx[j][k] = UCHAR_MAX;
+                        else
+                        {
+                            //NOTE: while GFX spec describe Store ID as bits 4:1 forms the index
+                            //we see that all 4:0 bits do this
+                            Ipp32u const idx   = (mb->InterMB.RefIdx[j][k] & 0x1f);
 
-                        mb->InterMB.RefIdx[j][k] =  map[count * field + idx];
+                            mb->InterMB.RefIdx[j][k] =  map[count * field + idx];
+                        }
                     }
                 }
             }
