@@ -880,9 +880,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (pParams->NumRefActiveBL1 > MaxNumActiveRefBL1   && pParams->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE ||
-        pParams->NumRefActiveBL1 > MaxNumActiveRefBL1_i && pParams->nPicStruct == MFX_PICSTRUCT_FIELD_TFF   ||
-        pParams->NumRefActiveBL1 > MaxNumActiveRefBL1_i && pParams->nPicStruct == MFX_PICSTRUCT_FIELD_BFF)
+    if ((pParams->NumRefActiveBL1 > MaxNumActiveRefBL1   && pParams->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE) ||
+        (pParams->NumRefActiveBL1 > MaxNumActiveRefBL1_i && pParams->nPicStruct == MFX_PICSTRUCT_FIELD_TFF)   ||
+        (pParams->NumRefActiveBL1 > MaxNumActiveRefBL1_i && pParams->nPicStruct == MFX_PICSTRUCT_FIELD_BFF))
     {
         if (bAlrShownHelp)
             msdk_printf(MSDK_STRING("\nERROR: Unsupported number of B frame forward references (1 is maximum (2 for interlaced))\n"));
