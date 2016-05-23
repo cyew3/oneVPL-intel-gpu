@@ -380,6 +380,9 @@ mfxStatus CopyRawSurfaceToVideoMemory(
         mfxFrameSurface1 surfSrc = { {}, video.mfx.FrameInfo, sysSurf };
         mfxFrameSurface1 surfDst = { {}, video.mfx.FrameInfo, d3dSurf };
 
+        if (surfDst.Info.FourCC == MFX_FOURCC_P010)
+            surfDst.Info.Shift = 1; // convert to native shift in core.CopyFrame() if required
+
         if (!sysSurf.Y)
         {
             sts = fa.Lock(fa.pthis, sysSurf.MemId, &surfSrc.Data);

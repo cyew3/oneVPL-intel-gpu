@@ -514,7 +514,7 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
     hr = m_auxDevice->Execute(ENCODE_ENC_CTRL_GET_ID, (void *)0, m_capsGet);
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 #else
-
+    PAVP;
 #endif
 
     FillSpsBuffer(par, m_caps, m_sps);
@@ -759,8 +759,9 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
                 fb.bitstreamSize += sz;
             }
         }
-        m_feedbackCached.Update( CachedFeedback::FeedbackStorage(1, fb) );
 
+        m_feedbackUpdate[0] = fb;
+        m_feedbackCached.Update(m_feedbackUpdate);
 #else
         HANDLE handle;
         HRESULT hr = m_auxDevice->BeginFrame((IDirect3DSurface9 *)surface, 0);

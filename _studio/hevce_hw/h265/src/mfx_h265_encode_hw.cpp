@@ -198,11 +198,11 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
 
     request.Type        = m_vpar.Protected ? (MFX_MEMTYPE_D3D_INT | MFX_MEMTYPE_PROTECTED) : MFX_MEMTYPE_D3D_INT;
     request.NumFrameMin = MaxRec(m_vpar);
-    
+
     if(request.Info.FourCC == MFX_FOURCC_RGB4)
     {
         //in case of ARGB input we need NV12 reconstruct allocation
-        request.Info.FourCC = MFX_FOURCC_NV12;
+        request.Info.FourCC = (m_vpar.mfx.FrameInfo.BitDepthLuma == 10) ? MFX_FOURCC_P010 : MFX_FOURCC_NV12;
         request.Info.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
     }
     sts = m_rec.Alloc(&m_core, request, false);
@@ -512,7 +512,7 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
 
 
     MFX_CHECK(
-        parNew.mfx.CodecProfile           != MFX_CODEC_HEVC
+           parNew.mfx.CodecId                == MFX_CODEC_HEVC
         && m_vpar.AsyncDepth                 == parNew.AsyncDepth
         && m_vpar.mfx.GopRefDist             >= parNew.mfx.GopRefDist
         //&& m_vpar.mfx.NumSlice               >= parNew.mfx.NumSlice
@@ -622,29 +622,6 @@ mfxStatus Plugin::GetVideoParam(mfxVideoParam *par)
     sts = m_vpar.FillPar(*par);
     return sts;
 }
-
-struct LessInc
-{
-    mfxU32* m_cnt;
-    mfxU32  m_ref;
-
-    LessInc(mfxU32 ref, mfxU32* cnt)
-    {
-        m_ref = ref;
-        m_cnt = cnt;
-    }
-
-   inline bool operator() (mfxU32 l)
-    {
-        if (l < m_ref)
-        {
-            if (m_cnt)
-                (*m_cnt)++;
-            return true;
-        }
-        return false;
-    }
-};
 
 mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxThreadTask *thread_task)
 {
@@ -799,13 +776,11 @@ mfxStatus Plugin::PrepareTask(Task& input_task)
 
     if (task->m_surf)
     {
-
         task->m_idxRaw = (mfxU8)FindFreeResourceIndex(m_raw);
         task->m_idxRec = (mfxU8)FindFreeResourceIndex(m_rec);
         task->m_idxBs  = (mfxU8)FindFreeResourceIndex(m_bs);
         MFX_CHECK(task->m_idxBs  != IDX_INVALID, MFX_ERR_NONE);
         MFX_CHECK(task->m_idxRec != IDX_INVALID, MFX_ERR_NONE);
-
 
         task->m_midRaw = AcquireResource(m_raw, task->m_idxRaw);
         task->m_midRec = AcquireResource(m_rec, task->m_idxRec);

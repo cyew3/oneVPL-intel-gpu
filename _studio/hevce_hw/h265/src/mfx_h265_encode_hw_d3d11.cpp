@@ -498,7 +498,9 @@ mfxStatus D3D11Encoder::Execute(Task const & task, mfxHDL surface)
                 fb.bitstreamSize += sz;
             }
         }
-        m_feedbackCached.Update( CachedFeedback::FeedbackStorage(1, fb) );
+
+        m_feedbackUpdate[0] = fb;
+        m_feedbackCached.Update(m_feedbackUpdate);
 
 #else
         HRESULT hr;

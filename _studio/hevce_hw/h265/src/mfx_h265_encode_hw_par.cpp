@@ -851,6 +851,12 @@ void InheritDefaultValues(
     // InheritOption(parInit.mfx.FrameInfo.ChromaFormat,   parReset.mfx.FrameInfo.ChromaFormat);
 }
 
+inline bool isInVideoMem(MfxVideoParam const & par)
+{
+    return (par.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
+        || ((par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY) && (par.m_ext.Opaque.In.Type == MFX_IOPATTERN_IN_VIDEO_MEMORY));
+}
+
 mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, bool bInit = false)
 {
     mfxU32 unsupported = 0, changed = 0, incompatible = 0;
@@ -1076,6 +1082,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         }
     }
 #endif
+
+    if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 && isInVideoMem(par))
+        changed += CheckMin(par.mfx.FrameInfo.Shift, 1);
 
     if (par.mfx.FrameInfo.FrameRateExtN && par.mfx.FrameInfo.FrameRateExtD) // FR <= 300
     {
