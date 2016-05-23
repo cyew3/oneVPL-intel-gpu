@@ -1163,11 +1163,11 @@ CEncodingPipeline::CEncodingPipeline()
 
     m_pExtBufDecodeStreamout = NULL;
 
-    m_pDecSurfaces   = {};
-    m_pEncSurfaces   = {};
-    m_pVppSurfaces   = {};
-    m_pDSSurfaces    = {};
-    m_pReconSurfaces = {};
+    MSDK_ZERO_MEMORY(m_pDecSurfaces);
+    MSDK_ZERO_MEMORY(m_pEncSurfaces);
+    MSDK_ZERO_MEMORY(m_pVppSurfaces);
+    MSDK_ZERO_MEMORY(m_pDSSurfaces);
+    MSDK_ZERO_MEMORY(m_pReconSurfaces);
 
     m_pDecSurfaces.LastPicked   = (mfxU16)-1; // to pick from 0 surface
     m_pEncSurfaces.LastPicked   = (mfxU16)-1;
@@ -1178,8 +1178,6 @@ CEncodingPipeline::CEncodingPipeline()
 
     MSDK_ZERO_ARRAY(m_numOfRefs[0], 2);
     MSDK_ZERO_ARRAY(m_numOfRefs[1], 2);
-
-    m_ref_info = {};
 
     MSDK_ZERO_MEMORY(m_mfxBS);
 
@@ -3224,7 +3222,29 @@ iTask* CEncodingPipeline::CreateAndInitTask()
 {
     iTask* eTask = new iTask;
     MSDK_CHECK_POINTER(eTask, NULL);
-    *eTask = {};
+
+    eTask->EncSyncP = NULL;
+    eTask->m_list0[0].Fill(0);
+    eTask->m_list0[1].Fill(0);
+    eTask->m_list1[0].Fill(0);
+    eTask->m_list1[1].Fill(0);
+    eTask->m_frameOrderIdrInDisplayOrder = 0;
+    eTask->m_frameOrderIdr = 0;
+    eTask->m_frameOrderI = 0;
+    eTask->m_initSizeList0[0] = 0;
+    eTask->m_initSizeList0[1] = 0;
+    eTask->m_initSizeList1[0] = 0;
+    eTask->m_initSizeList1[1] = 0;
+    eTask->m_viewIdx = 0;
+    eTask->m_picNum.top = 0;
+    eTask->m_picNum.bot = 0;
+    eTask->m_frameNum = 0;
+    eTask->m_frameNumWrap = 0;
+    eTask->m_tid = 0;
+    eTask->m_tidx = 0;
+    eTask->m_longTermPicNum.top = 0;
+    eTask->m_longTermPicNum.bot = 0;
+    eTask->prevTask = NULL;
 
     eTask->m_fieldPicFlag = m_isField;
     eTask->PicStruct = m_mfxEncParams.mfx.FrameInfo.PicStruct;
