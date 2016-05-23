@@ -3282,7 +3282,7 @@ iTask* CEncodingPipeline::ConfigureTask(iTask* task, bool is_buffered)
     if (m_encpakParams.nPicStruct == MFX_PICSTRUCT_UNKNOWN)
     {
         // we need to init the task on per frame basis
-        eTask->PicStruct = (task->in.InSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? MFX_PICSTRUCT_PROGRESSIVE : task->in.InSurface->Info.PicStruct;
+        eTask->PicStruct = (eTask->in.InSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? MFX_PICSTRUCT_PROGRESSIVE : eTask->in.InSurface->Info.PicStruct;
         eTask->m_fieldPicFlag = !(eTask->PicStruct & MFX_PICSTRUCT_PROGRESSIVE);
         if (!eTask->m_fieldPicFlag)
         {
@@ -5204,31 +5204,34 @@ mfxStatus CEncodingPipeline::PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
     mfxStatus sts = MFX_ERR_NONE;
     cont = false;
 
-    pSurf->Data.Locked++;
-    eTask->in.InSurface = pSurf;
-
-    if (m_encpakParams.preencDSstrength)
+    if (!is_buffered)
     {
-        MFX_ITT_TASK("DownsampleInput");
-        // PREENC needs to be performed on downscaled surface
-        // For simplicity, let's just replace the original surface
-        eTask->fullResSurface = eTask->in.InSurface;
+        pSurf->Data.Locked++;
+        eTask->in.InSurface = pSurf;
 
-        // find/wait for a free output surface
-        ExtendedSurface VppExtSurface = { 0 };
-        mfxU16 nVPPSurfIdx = GetFreeSurfaceFEI(m_pDSSurfaces);
-        MSDK_CHECK_ERROR(nVPPSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
-        VppExtSurface.pSurface = &m_pDSSurfaces.SurfacesPool[nVPPSurfIdx];
-        MSDK_CHECK_POINTER(VppExtSurface.pSurface, MFX_ERR_MEMORY_ALLOC);
+        if (m_encpakParams.preencDSstrength)
+        {
+            MFX_ITT_TASK("DownsampleInput");
+            // PREENC needs to be performed on downscaled surface
+            // For simplicity, let's just replace the original surface
+            eTask->fullResSurface = eTask->in.InSurface;
 
-        // make sure picture structure has the initial value
-        // surfaces are reused and VPP may change this parameter in certain configurations
-        VppExtSurface.pSurface->Info.PicStruct = m_mfxEncParams.mfx.FrameInfo.PicStruct;
+            // find/wait for a free output surface
+            ExtendedSurface VppExtSurface = { 0 };
+            mfxU16 nVPPSurfIdx = GetFreeSurfaceFEI(m_pDSSurfaces);
+            MSDK_CHECK_ERROR(nVPPSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
+            VppExtSurface.pSurface = &m_pDSSurfaces.SurfacesPool[nVPPSurfIdx];
+            MSDK_CHECK_POINTER(VppExtSurface.pSurface, MFX_ERR_MEMORY_ALLOC);
 
-        sts = VPPOneFrame(m_pmfxDS, m_pPreencSession, eTask->fullResSurface, &VppExtSurface);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        eTask->in.InSurface = VppExtSurface.pSurface;
-        eTask->in.InSurface->Data.Locked++;
+            // make sure picture structure has the initial value
+            // surfaces are reused and VPP may change this parameter in certain configurations
+            VppExtSurface.pSurface->Info.PicStruct = m_mfxEncParams.mfx.FrameInfo.PicStruct;
+
+            sts = VPPOneFrame(m_pmfxDS, m_pPreencSession, eTask->fullResSurface, &VppExtSurface);
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            eTask->in.InSurface = VppExtSurface.pSurface;
+            eTask->in.InSurface->Data.Locked++;
+        }
     }
 
     eTask = ConfigureTask(eTask, is_buffered);
@@ -6038,7 +6041,7 @@ void CEncodingPipeline::PrintInfo()
     if (!m_pmfxDECODE)
         msdk_printf(MSDK_STRING("\nInput file format\t%s\n"), ColorFormatToStr(m_FileReader.m_ColorFormat));
     else
-        msdk_printf(MSDK_STRING("\nInput  video: %s\n"), CodecIdToStr(m_mfxDecParams.mfx.CodecId).c_str());
+        msdk_printf(MSDK_STRING("\nInput  video\t\t%s\n"), CodecIdToStr(m_mfxDecParams.mfx.CodecId).c_str());
     msdk_printf(MSDK_STRING("Output video\t\t%s\n"), CodecIdToStr(m_mfxEncParams.mfx.CodecId).c_str());
 
     mfxFrameInfo SrcPicInfo = (m_pmfxVPP || m_pmfxDS) ? m_mfxVppParams.vpp.In : m_mfxEncParams.vpp.In;
