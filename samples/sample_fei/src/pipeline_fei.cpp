@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2015, Intel Corporation
+Copyright (c) 2005-2016, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -5664,7 +5664,7 @@ mfxStatus CEncodingPipeline::EncodeOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
 
     mfxFrameSurface1* encodeSurface = create_task ? (m_encpakParams.preencDSstrength ? eTask->fullResSurface : eTask->in.InSurface) : pSurf;
     PairU8 frameType = create_task ? eTask->m_type : m_frameType;
-    if (m_mfxEncParams.mfx.EncodedOrder || !m_mfxEncParams.mfx.EncodedOrder && !is_buffered) // no need to do this for buffered frames in display order
+    if (m_mfxEncParams.mfx.EncodedOrder || (!m_mfxEncParams.mfx.EncodedOrder && !is_buffered)) // no need to do this for buffered frames in display order
     {
         sts = InitEncodeFrameParams(encodeSurface, pCurrentTask, frameType, is_buffered);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
