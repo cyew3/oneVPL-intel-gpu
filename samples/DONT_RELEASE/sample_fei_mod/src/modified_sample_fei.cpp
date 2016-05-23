@@ -327,7 +327,7 @@ mfxStatus ResetDirect (struct iTask * task, std::list<iTask*> *pTaskList)
 
             mfxI16Pair mvSkip[2];
             mfxU8 refSkip[2];
-            mfxU8 canSkip; // true if MV==skipMV ref==0 and 16x16 (==directMV and 8x8 for B)
+            mfxU8 canSkip = 0; // true if MV==skipMV ref==0 and 16x16 (==directMV and 8x8 for B)
             mfxU8 canSkipSb[4]; // true if MV==directMV for 8x8 block
             mfxI16Pair mvDirect[2][16]; // [list][raster sb]
             mfxU8 refDirect[2][16];
