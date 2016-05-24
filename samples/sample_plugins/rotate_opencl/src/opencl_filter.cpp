@@ -358,7 +358,10 @@ std::string getPathToExe()
 #else
     char id[module_length];
     sprintf(id, "/proc/%d/exe", getpid());
-    readlink(id, module_name, module_length-1);
+    ssize_t count = readlink(id, module_name, module_length-1);
+    if (count == -1)
+        return std::string("");
+    module_name[count] = '\0';
 #endif
 
     std::string exePath(module_name);
