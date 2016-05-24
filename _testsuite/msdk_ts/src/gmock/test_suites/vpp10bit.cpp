@@ -1,3 +1,15 @@
+/* ////////////////////////////////////////////////////////////////////////////// */
+/*
+//
+//              INTEL CORPORATION PROPRIETARY INFORMATION
+//  This software is supplied under the terms of a license  agreement or
+//  nondisclosure agreement with Intel Corporation and may not be copied
+//  or disclosed except in  accordance  with the terms of that agreement.
+//        Copyright (c) 2016 Intel Corporation. All Rights Reserved.
+//
+//
+*/
+
 #include "ts_vpp.h"
 #include "ts_struct.h"
 #include "mfxstructures.h"
@@ -47,17 +59,17 @@ const TestSuite::tc_struct TestSuite::test_case[] =
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*01*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*01*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*02*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*02*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*03*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*03*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
@@ -101,21 +113,21 @@ const TestSuite::tc_struct TestSuite::test_case[] =
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*09*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*09*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*10*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*10*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*11*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*11*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
@@ -169,21 +181,21 @@ const TestSuite::tc_struct TestSuite::test_case[] =
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*17*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*17*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*18*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*18*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*19*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*19*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
@@ -230,50 +242,64 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P010->A2RGB10, Shift = 0->Shift = 0, 720x480->720x480
-    {/*24*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*24*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*25*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*25*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*26*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*26*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
+    },
+    {/*27*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
+    },
+    {/*28*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*27*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*29*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
 
     // P010->A2RGB10, Shift = 1->Shift = 1, 720x480->720x480
-    {/*28*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*30*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*29*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*31*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*30*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*32*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*31*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*33*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
@@ -281,29 +307,85 @@ const TestSuite::tc_struct TestSuite::test_case[] =
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
 
+    // P010->A2RGB10, Shift = 1->Shift = 1, 720x480->720x480
+    {/*34*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
+    },
+    {/*35*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
+    },
+    {/*36*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
+    },
+    {/*37*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
+    },
+
     // P010->A2RGB10, Shift = 0->Shift = 0, 720x480->1440x960
-    {/*32*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*38*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*33*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*39*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*34*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*40*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
+    },
+    {/*41*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
+    },
+    {/*42*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*35*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*43*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
@@ -312,37 +394,45 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P010->A2RGB10, Shift = 1->Shift = 1, 720x480->1440x960
-    {/*36*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*44*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*37*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*45*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*38*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*46*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*39*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*47*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
@@ -350,28 +440,46 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P010->A2RGB10, Shift = 0->Shift = 0, 720x480->368x240
-    {/*40*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*48*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*41*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*49*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*42*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*50*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
+    },
+    {/*51*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
+    },
+    {/*52*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*43*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*53*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
@@ -380,37 +488,45 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P010->A2RGB10, Shift = 1->Shift = 1, 720x480->368x240
-    {/*44*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*54*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*45*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*55*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*46*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*56*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*47*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*57*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
@@ -418,80 +534,120 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P010->NV12, Shift = 0->Shift = 0, 720x480->720x480
-    {/*48*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*58*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*49*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*59*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*50*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*60*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
+    },
+    {/*61*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
+    },
+    {/*62*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*51*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*63*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
 
     // P010->NV12, Shift = 1->Shift = 1, 720x480->720x480
-    {/*52*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*64*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*53*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*65*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*54*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*66*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*55*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*67*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
 
     // P010->NV12, Shift = 0->Shift = 0, 720x480->1440x960
-    {/*56*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*68*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*57*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*69*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*58*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*70*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
+    },
+    {/*71*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
+    },
+    {/*72*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*59*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*73*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
@@ -500,37 +656,45 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P010->NV12, Shift = 1->Shift = 1, 720x480->1440x960
-    {/*60*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*74*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*61*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*75*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*62*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*76*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*63*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*77*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 960},
@@ -538,28 +702,46 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P010->NV12, Shift = 0->Shift = 0, 720x480->368x240
-    {/*64*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*78*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*65*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*79*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*66*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*80*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
+    },
+    {/*81*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
+    },
+    {/*82*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*67*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*83*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
@@ -568,37 +750,45 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P010->NV12, Shift = 1->Shift = 1, 720x480->368x240
-    {/*68*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*84*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*69*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*85*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*70*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*86*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*71*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+    {/*87*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P010},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma, 10},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
@@ -606,14 +796,14 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P210->P210, Shift = 0->Shift = 0, 720x480->720x480
-    {/*72*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*88*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P210},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_P210},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
 
     // P210->P210, Shift = 1->Shift = 1, 720x480->720x480
-    {/*73*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*89*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P210},
@@ -622,7 +812,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P210->P210, Shift = 0->Shift = 0, 720x480->1440x960
-    {/*74*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*90*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P210},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_P210},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
@@ -631,7 +821,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P210->P210, Shift = 1->Shift = 1, 720x480->1440x960
-    {/*75*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*91*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P210},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_P210},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
@@ -642,7 +832,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P210->P210, Shift = 0->Shift = 0, 720x480->368x240
-    {/*76*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*92*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P210},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_P210},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
@@ -651,7 +841,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P210->P210, Shift = 1->Shift = 1, 720x480->368x240
-    {/*77*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*93*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P210},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_P210},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
@@ -662,14 +852,14 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P210->A2RGB10, Shift = 0->Shift = 0, 720x480->720x480
-    {/*78*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*94*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P210},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
 
     // P210->A2RGB10, Shift = 1->Shift = 1, 720x480->720x480
-    {/*79*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*95*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P210},
@@ -678,7 +868,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P210->A2RGB10, Shift = 0->Shift = 0, 720x480->1440x960
-    {/*80*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*96*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P210},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
@@ -687,7 +877,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P210->A2RGB10, Shift = 1->Shift = 1, 720x480->1440x960
-    {/*81*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*97*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P210},
@@ -698,7 +888,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P210->A2RGB10, Shift = 0->Shift = 0, 720x480->368x240
-    {/*82*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*98*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P210},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_A2RGB10},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
@@ -707,7 +897,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P210->A2RGB10, Shift = 1->Shift = 1, 720x480->368x240
-    {/*83*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*99*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P210},
@@ -718,14 +908,14 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P210->NV12, Shift = 0->Shift = 0, 720x480->720x480
-    {/*84*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*100*/MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P210},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
 
     // P210->NV12, Shift = 1->Shift = 1, 720x480->720x480
-    {/*85*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*101*/MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P210},
@@ -734,7 +924,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P210->NV12, Shift = 0->Shift = 0, 720x480->1440x960
-    {/*86*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*102*/MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P210},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 1440},
@@ -743,7 +933,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P210->NV12, Shift = 1->Shift = 1, 720x480->1440x960
-    {/*87*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*103*/MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P210},
@@ -754,7 +944,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P210->NV12, Shift = 0->Shift = 0, 720x480->368x240
-    {/*88*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*104*/MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P210},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_NV12},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Width, 368},
@@ -763,7 +953,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // P210->NV12, Shift = 1->Shift = 1, 720x480->368x240
-    {/*89*/ MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
+    {/*105*/MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_P210},
