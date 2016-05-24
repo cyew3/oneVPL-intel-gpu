@@ -96,9 +96,10 @@ namespace UMC
         //layout: [ |L0 top|L0 bot|I||L1 top|L1 bot|I| ]
         slice_refs.resize((count * 2 + 1) * 2, 0);
 
+        //loop in descending order to force using low indices when we have duplicates in RefList
         //L0
         Ipp32u* map = &slice_refs[0];
-        for (Ipp32u i = 0; i <= sp->num_ref_idx_l0_active_minus1; ++i)
+        for (Ipp32s i = sp->num_ref_idx_l0_active_minus1; i >= 0; --i)
         {
             VAPictureH264 const& pic = sp->RefPicList0[i];
             Ipp32u const idx =
@@ -113,7 +114,7 @@ namespace UMC
 
         //L1
         map = &slice_refs[count * 2 + 1];
-        for (Ipp32u i = 0; i <= sp->num_ref_idx_l1_active_minus1; ++i)
+        for (Ipp32s i = sp->num_ref_idx_l1_active_minus1; i >= 0; --i)
         {
             VAPictureH264 const& pic = sp->RefPicList1[i];
             Ipp32u const idx =
