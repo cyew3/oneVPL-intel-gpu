@@ -36,7 +36,7 @@ else
     msdk_printf(MSDK_STRING("Intel(R) Media SDK VPP Sample\n"));
 }
 
-msdk_printf(MSDK_STRING("Usage1: %s [Options] -i InputFile -o OutputFile\n"), strAppName);
+msdk_printf(MSDK_STRING("Usage: %s [Options] -i InputFile -o OutputFile\n"), strAppName);
 
 msdk_printf(MSDK_STRING("Options: \n"));
 msdk_printf(MSDK_STRING("   [-lib  type]        - type of used library. sw, hw (def: sw)\n\n"));
@@ -1011,7 +1011,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 {
                     if (ParseCompositionParfile(strInput[i+1], pParams) != MFX_ERR_NONE)
                     {
-                        vppPrintHelp(strInput[0], MSDK_STRING("Incorrect parfile for -composite"));
+                        vppPrintHelp(strInput[0], MSDK_STRING("Parfile for -composite has invalid data or cannot be opened\n"));
                         return MFX_ERR_UNSUPPORTED;
                     }
                     pParams->compositionParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
@@ -1548,6 +1548,12 @@ mfxStatus ParseCompositionParfile(const msdk_char* parFileName, sInputParams* pP
                 fourcc[i] = value.at(i);
             fourcc[len_size-1]=0;
             pParams->inFrameInfo[nStreamInd].FourCC = Str2FourCC(fourcc);
+
+            if(!pParams->inFrameInfo[nStreamInd].FourCC)
+            {
+                msdk_printf(MSDK_STRING("Invalid fourcc parameter in par file: %s\n"),fourcc);
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+            }
         }
         else if (key.compare("picstruct") == 0)
         {

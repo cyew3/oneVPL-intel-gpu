@@ -340,6 +340,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
 
     if (DXGI_FORMAT_UNKNOWN == colorFormat)
     {
+       msdk_printf(MSDK_STRING("D3D11 Allocator: invalid fourcc is provided (%#X), exitting\n"),request->Info.FourCC);
        return MFX_ERR_UNSUPPORTED;
     }
 

@@ -272,7 +272,10 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAl
     D3DFORMAT format = ConvertMfxFourccToD3dFormat(request->Info.FourCC);
 
     if (format == D3DFMT_UNKNOWN)
+    {
+        msdk_printf(MSDK_STRING("D3D Allocator: invalid fourcc is provided (%#X), exitting\n"),request->Info.FourCC);
         return MFX_ERR_UNSUPPORTED;
+    }
 
     DWORD   target;
 

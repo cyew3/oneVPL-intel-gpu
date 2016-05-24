@@ -152,6 +152,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                        (VA_FOURCC_ARGB != va_fourcc) &&
                        (VA_FOURCC_P208 != va_fourcc)))
     {
+        msdk_printf(MSDK_STRING("VAAPI Allocator: invalid fourcc is provided (%#X), exitting\n"),va_fourcc);
         return MFX_ERR_MEMORY_ALLOC;
     }
     if (!surfaces_num)
