@@ -454,8 +454,10 @@ mfxStatus VAAPIEncoder::QueryStatus(DdiTask & task)
 
                     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 }
-
-                MFX_CHECK_WITH_ASSERT(codedBufferSegment->size < (m_width * m_height * 3 / 2), MFX_ERR_DEVICE_FAILED);
+//
+// TODO: Commented check is not correct for 422 and 444 (RGB) encodings, need rework
+//
+//                MFX_CHECK_WITH_ASSERT(codedBufferSegment->size < (m_width * m_height * 3 / 2), MFX_ERR_DEVICE_FAILED);
                 task.m_bsDataLength = codedBufferSegment->size;
 
                 {
