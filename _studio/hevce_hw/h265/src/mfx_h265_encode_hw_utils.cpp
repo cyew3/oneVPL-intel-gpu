@@ -2398,7 +2398,7 @@ void ConstructRPL(
             mfxU8 idx = GetDPBIdxByFO(DPB, (mfxI32)pExtLists->RefPicList1[i].FrameOrder);
 
             if (idx < MAX_DPB_SIZE)
-                RPL[0][l1 ++] = idx;
+                RPL[1][l1 ++] = idx;
 
             if (l1 == par.NumRefLX[1])
                 break;
