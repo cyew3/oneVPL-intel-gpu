@@ -1363,6 +1363,7 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
             out->vpp.In.FourCC != MFX_FOURCC_YUY2 &&
             out->vpp.In.FourCC != MFX_FOURCC_RGB4 && 
             out->vpp.In.FourCC != MFX_FOURCC_P010 &&
+            out->vpp.In.FourCC != MFX_FOURCC_UYVY &&
             out->vpp.In.FourCC != MFX_FOURCC_P210)
         {
             if( out->vpp.In.FourCC )
