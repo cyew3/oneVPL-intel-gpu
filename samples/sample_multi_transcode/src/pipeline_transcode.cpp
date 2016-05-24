@@ -2368,7 +2368,7 @@ mfxStatus CTranscodingPipeline::AllocFrames()
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 #ifdef LIBVA_SUPPORT
-        if ((m_nVPPCompEnable == VppCompOnly) || (m_nVPPCompEnable == VppCompOnlyEncode) &&
+        if (((m_nVPPCompEnable == VppCompOnly) || (m_nVPPCompEnable == VppCompOnlyEncode)) &&
             ((m_libvaBackend == MFX_LIBVA_DRM_MODESET) ||
 #if defined(X11_DRI3_SUPPORT)
             (m_libvaBackend == MFX_LIBVA_X11) ||
