@@ -1,10 +1,19 @@
+/////////////////////////////////////////////////////////////////////////////
+////
+////                  INTEL CORPORATION PROPRIETARY INFORMATION
+////     This software is supplied under the terms of a license agreement or
+////     nondisclosure agreement with Intel Corporation and may not be copied
+////     or disclosed except in accordance with the terms of that agreement.
+////          Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+////
+
 #pragma once
 
 #include "ts_session.h"
 #include "ts_ext_buffers.h"
 #include "ts_surface.h"
 
-class tsVideoEncoder : public tsSession, public tsSurfacePool
+class tsVideoEncoder : virtual public tsSession, virtual public tsSurfacePool
 {
 public:
     bool                        m_default;

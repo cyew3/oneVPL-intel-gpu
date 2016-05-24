@@ -15,7 +15,7 @@ Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 #include "ts_surface.h"
 #include <map>
 
-class tsVideoDecoder : public tsSession, public tsSurfacePool
+class tsVideoDecoder : virtual public tsSession, virtual public tsSurfacePool
 {
 public:
     bool                        m_default;
@@ -72,7 +72,7 @@ public:
     mfxStatus DecodeHeader(mfxSession session, mfxBitstream *bs, mfxVideoParam *par);
 
     mfxStatus DecodeFrameAsync();
-    mfxStatus DecodeFrameAsync(mfxSession session, mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp);
+    virtual mfxStatus DecodeFrameAsync(mfxSession session, mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp);
 
     mfxStatus SyncOperation();
     mfxStatus SyncOperation(mfxSyncPoint syncp);
