@@ -978,18 +978,25 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         request.NumFrameMin *= 2; // 2 bitstream surfaces per frame
     // driver may suggest too small buffer for bitstream
     request.Info.Width  = IPP_MAX(request.Info.Width,  m_video.mfx.FrameInfo.Width);
-    request.Info.Height = IPP_MAX(request.Info.Height, m_video.mfx.FrameInfo.Height * 3 / 2);
+    if(MFX_RATECONTROL_CQP == m_video.mfx.RateControlMethod)
+        request.Info.Height = IPP_MAX(request.Info.Height, m_video.mfx.FrameInfo.Height * 3);
+    else
+        request.Info.Height = IPP_MAX(request.Info.Height, m_video.mfx.FrameInfo.Height * 3 / 2);
+
     
     // workaround for high bitrates on small resolutions,
     // as driver do not respect coded buffer size we have to provide buffer large enough
-    if (m_hrd.GetMaxFrameSize(0) > static_cast<mfxU32>(request.Info.Width * request.Info.Height))
+    if(MFX_RATECONTROL_CQP != m_video.mfx.RateControlMethod)
     {
-        request.Info.Height = AlignValue<mfxU16>(static_cast<mfxU16>(m_hrd.GetMaxFrameSize(0) / request.Info.Width), 16);
-        if (MFX_HW_D3D9 == m_core->GetVAType()) // D3D9 do not like surfaces with too big height
-        {
-            request.Info.Height = IPP_MIN(request.Info.Height, 4096);
-            request.Info.Width = AlignValue<mfxU16>(static_cast<mfxU16>(m_hrd.GetMaxFrameSize(0) / request.Info.Height), 16);
-        }
+        const mfxU32 hrdBufSize = m_video.calcParam.bufferSizeInKB * 1000;
+        if (hrdBufSize > static_cast<mfxU32>(request.Info.Width * request.Info.Height))
+            request.Info.Height = AlignValue<mfxU16>(static_cast<mfxU16>(hrdBufSize / request.Info.Width), 16);
+    }
+    if (MFX_HW_D3D9 == m_core->GetVAType()) // D3D9 do not like surfaces with too big height
+    {
+        const mfxU32 curBufSize = request.Info.Height * request.Info.Width;
+        request.Info.Height = IPP_MIN(request.Info.Height, 4096);
+        request.Info.Width = AlignValue<mfxU16>(static_cast<mfxU16>(curBufSize / request.Info.Height), 16);
     }
 
     m_maxBsSize = request.Info.Width * request.Info.Height;
