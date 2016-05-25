@@ -1596,23 +1596,17 @@ void SetDefaults(
     if (IsOff(CO3.EnableQPOffset))
         Zero(CO3.QPOffset);
 
-    if (!CO3.NumRefActiveP)
-        CO3.NumRefActiveP = par.NumRefLX[0];
+    for (mfxU16 i = 0; i < 8; i++)
+    {
+        if (!CO3.NumRefActiveP[i])
+            CO3.NumRefActiveP[i] = par.NumRefLX[0];
 
-    if (!CO3.NumRefActivePRef)
-        CO3.NumRefActivePRef = par.NumRefLX[0];
+        if (!CO3.NumRefActiveBL0[i])
+            CO3.NumRefActiveBL0[i] = par.NumRefLX[0];
 
-    if (!CO3.NumRefActiveBL0)
-        CO3.NumRefActiveBL0 = par.NumRefLX[0];
-
-    if (!CO3.NumRefActiveBL1)
-        CO3.NumRefActiveBL1 = par.NumRefLX[1];
-
-    if (!CO3.NumRefActiveBRefL0)
-        CO3.NumRefActiveBRefL0 = par.NumRefLX[0];
-
-    if (!CO3.NumRefActiveBRefL1)
-        CO3.NumRefActiveBRefL1 = par.NumRefLX[1];
+        if (!CO3.NumRefActiveBL1[i])
+            CO3.NumRefActiveBL1[i] = par.NumRefLX[1];
+    }
 
     if (   par.Protected == MFX_PROTECTION_PAVP
         || par.Protected == MFX_PROTECTION_GPUCP_PAVP)

@@ -234,7 +234,7 @@ mfxStatus TestSuite::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
         }
         else if (CO3.EnableQPOffset == MFX_CODINGOPTION_ON)
         {
-            mfxI32 maxIdx = BPyr ? m_tc->pattern_size : CO3.NumRefActivePRef;
+            mfxI32 maxIdx = BPyr ? m_tc->pattern_size : CO3.NumRefActiveP[0];
             mfxI32 idx = (abs(AU.pic->PicOrderCntVal - m_anchorPOC) - BPyr) % maxIdx;
             mfxU16 layer = m_tc->pattern[idx];
             EXPECT_EQ(QPX + CO3.QPOffset[layer], QP) << " (layer = " << layer << ")";

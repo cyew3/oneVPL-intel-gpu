@@ -4645,10 +4645,10 @@ void MfxHwH264Encode::SetDefaults(
          * */
         if (isENCPAK)
         {
-            if (0 == extOpt3->NumRefActiveP)
+            if (0 == extOpt3->NumRefActiveP[0])
                 extDdi->NumActiveRefP = 4;
             else
-                extDdi->NumActiveRefP = extOpt3->NumRefActiveP;
+                extDdi->NumActiveRefP = extOpt3->NumRefActiveP[0];
         }
     }
 
@@ -4662,10 +4662,10 @@ void MfxHwH264Encode::SetDefaults(
              * */
             if (isENCPAK)
             {
-                if (0 == extOpt3->NumRefActiveBL0)
+                if (0 == extOpt3->NumRefActiveBL0[0])
                     extDdi->NumActiveRefBL0 = 4;
                 else
-                    extDdi->NumActiveRefBL0 = extOpt3->NumRefActiveBL0;
+                    extDdi->NumActiveRefBL0 = extOpt3->NumRefActiveBL0[0];
             }
         } /* if (extDdi->NumActiveRefBL0 == 0) */
 
@@ -4675,12 +4675,12 @@ void MfxHwH264Encode::SetDefaults(
             /* Additional for FEI ENCODE: we can use 2 L1 references */
             if (isENCPAK)
             {
-                if (0 == extOpt3->NumRefActiveBL1)
+                if (0 == extOpt3->NumRefActiveBL1[0])
                     extDdi->NumActiveRefBL1 = 1;
                 else
-                    extDdi->NumActiveRefBL1 = extOpt3->NumRefActiveBL1;
+                    extDdi->NumActiveRefBL1 = extOpt3->NumRefActiveBL1[0];
                 /* And additional condition for interlaced case */
-                if ((0 == extOpt3->NumRefActiveBL1) &&
+                if ((0 == extOpt3->NumRefActiveBL1[0]) &&
                       ( (MFX_PICSTRUCT_FIELD_TFF == par.mfx.FrameInfo.PicStruct) ||
                         (MFX_PICSTRUCT_FIELD_BFF == par.mfx.FrameInfo.PicStruct)) )
                     extDdi->NumActiveRefBL1 = 2;

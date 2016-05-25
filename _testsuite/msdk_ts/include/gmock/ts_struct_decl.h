@@ -677,11 +677,8 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16      , EnableQPOffset                )
     FIELD_T(mfxI16      , QPOffset                      )
     FIELD_T(mfxU16      , NumRefActiveP                 )
-    FIELD_T(mfxU16      , NumRefActivePRef              )
     FIELD_T(mfxU16      , NumRefActiveBL0               )
     FIELD_T(mfxU16      , NumRefActiveBL1               )
-    FIELD_T(mfxU16      , NumRefActiveBRefL0            )
-    FIELD_T(mfxU16      , NumRefActiveBRefL1            )
 )
 
 STRUCT(mfxExtLAControl,
