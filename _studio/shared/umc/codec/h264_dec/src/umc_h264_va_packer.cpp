@@ -41,7 +41,8 @@ enum ChoppingStatus
 {
     CHOPPING_NONE = 0,
     CHOPPING_SPLIT_SLICE_DATA = 1,
-    CHOPPING_SPLIT_SLICES = 2
+    CHOPPING_SPLIT_SLICES = 2,
+    CHOPPING_SKIP_SLICE,
 };
 
 Packer::Packer(VideoAccelerator * va, TaskSupplier * supplier)
@@ -2168,6 +2169,41 @@ void PackerVA::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSli
     picParamBuf->SetDataSize(sizeof(VAPictureParameterBufferH264));
 }
 
+
+//returns both NAL unit size (in bytes) and bit offset from start to actual slice data
+inline
+Ipp8u* GetSliceStat(H264Slice* slice, Ipp32u* size, Ipp32u* offset)
+{
+    VM_ASSERT(slice);
+    VM_ASSERT(size);
+
+    H264Bitstream* bs = slice->GetBitStream();
+    VM_ASSERT(bs);
+
+    Ipp8u* base;   //ptr to first byte of start code
+    bs->GetOrg(reinterpret_cast<Ipp32u**>(&base), size);
+
+    if (offset)
+    {
+        Ipp8u* ptr;    //ptr to slice data
+        Ipp32u position;
+        bs->GetState(reinterpret_cast<Ipp32u**>(&ptr), &position);
+
+        VM_ASSERT(base != ptr &&
+                  !"slice header should be already parsed here"
+        );
+
+        //GetState returns internal offset (bits left) but we need consumed bits
+        position = 31 - position;
+        //bit from start code to slice data
+        position += 8 * (ptr - base);
+
+        *offset = position;
+    }
+
+    return base;
+}
+
 void PackerVA::CreateSliceParamBuffer(H264DecoderFrameInfo * pSliceInfo)
 {
     Ipp32s count = pSliceInfo->GetSliceCount();
@@ -2185,22 +2221,18 @@ void PackerVA::CreateSliceDataBuffer(H264DecoderFrameInfo * pSliceInfo)
 {
     Ipp32s count = pSliceInfo->GetSliceCount();
 
-    Ipp32s size = 0;
-    Ipp32s AlignedNalUnitSize = 0;
-
+    Ipp32u size = 0;
     for (Ipp32s i = 0; i < count; i++)
     {
-        H264Slice  * pSlice = pSliceInfo->GetSlice(i);
+        H264Slice* pSlice = pSliceInfo->GetSlice(i);
+        Ipp32u NalUnitSize;
+        GetSliceStat(pSlice, &NalUnitSize, 0);
 
-        Ipp8u *pNalUnit; //ptr to first byte of start code
-        Ipp32u NalUnitSize; // size of NAL unit in byte
-        H264Bitstream *pBitstream = pSlice->GetBitStream();
-
-        pBitstream->GetOrg((Ipp32u**)&pNalUnit, &NalUnitSize);
         size += NalUnitSize;
     }
 
-    AlignedNalUnitSize = align_value<Ipp32s>(size, 128);
+    Ipp32u const AlignedNalUnitSize
+        = align_value<Ipp32u>(size, 128);
 
     UMCVACompBuffer* compBuf;
     m_va->GetCompBuffer(VASliceDataBufferType, &compBuf, AlignedNalUnitSize);
@@ -2238,12 +2270,13 @@ Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chop
         memset(pSlice_H264, 0, sizeof(VASliceParameterBufferH264Base));
     }
 
-    Ipp8u *pNalUnit; //ptr to first byte of start code
-    Ipp32u NalUnitSize; // size of NAL unit in byte
-    H264Bitstream *pBitstream = pSlice->GetBitStream();
+    Ipp32u NalUnitSize, SliceDataOffset;
+    Ipp8u* pNalUnit = GetSliceStat(pSlice, &NalUnitSize, &SliceDataOffset);
+    if (SliceDataOffset >= NalUnitSize * 8)
+        //no slice data, skipping
+        return CHOPPING_SKIP_SLICE;
 
-    pBitstream->GetOrg((Ipp32u**)&pNalUnit, &NalUnitSize);
-
+    H264Bitstream* pBitstream = pSlice->GetBitStream();
     if (chopping == CHOPPING_SPLIT_SLICE_DATA)
     {
         NalUnitSize = pBitstream->BytesLeft();
@@ -2279,25 +2312,9 @@ Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chop
     memset(pVAAPI_BitStreamBuffer + NalUnitSize, 0, AlignedNalUnitSize - NalUnitSize);
 
     if (!m_va->IsLongSliceControl())
-    {
         return partial_data;
-    }
 
-    Ipp8u *pSliceData; //ptr to slice data
-    Ipp32u SliceDataOffset; //offset to first bit of slice data from first bit of slice header minus all 0x03
-    pBitstream->GetState((Ipp32u**)&pSliceData, &SliceDataOffset); //it is supposed that slice header was already parsed
-
-    SliceDataOffset = 31 - SliceDataOffset;
-    pSliceData += SliceDataOffset/8;
-    SliceDataOffset = (Ipp32u)(SliceDataOffset%8 + 8 * (pSliceData - pNalUnit)); //from start code to slice data
-
-    Ipp32s k = 0;
-    for(Ipp8u *ptr = pNalUnit; ptr < pSliceData; ptr++)
-        if(ptr[0]==0 && ptr[1]==0 && ptr[2]==3)
-            k++;
-
-    k = 0;
-    pSlice_H264->slice_data_bit_offset = (unsigned short)(SliceDataOffset - 8*k);
+    pSlice_H264->slice_data_bit_offset = (unsigned short)SliceDataOffset;
 
     pSlice_H264->first_mb_in_slice = (unsigned short)(pSlice->GetSliceHeader()->first_mb_in_slice >> pSlice->GetSliceHeader()->MbaffFrameFlag);
     pSlice_H264->slice_type = (unsigned char)pSliceHeader->slice_type;
@@ -2567,63 +2584,60 @@ void PackerVA::EndFrame()
 
 void PackerVA::PackAU(const H264DecoderFrame *pFrame, Ipp32s isTop)
 {
-    H264DecoderFrameInfo * sliceInfo = const_cast<H264DecoderFrameInfo *>(pFrame->GetAU(isTop));
-    Ipp32s count_all = sliceInfo->GetSliceCount();
+    H264DecoderFrameInfo* sliceInfo =
+        const_cast<H264DecoderFrameInfo *>(pFrame->GetAU(isTop));
 
+    Ipp32u const count_all = sliceInfo->GetSliceCount();
     if (!m_va || !count_all)
         return;
 
-    Ipp32s first_slice = 0;
-
-    Ipp32s numSlicesOfPrevField = isTop ? pFrame->GetAU(0)->GetSliceCount() : 0;
-
+    Ipp32u first_slice = 0;
     H264Slice* slice = sliceInfo->GetSlice(first_slice);
 
-    const H264ScalingPicParams * scaling = &slice->GetPicParam()->scaling[NAL_UT_CODED_SLICE_EXTENSION == slice->GetSliceHeader()->nal_unit_type ? 1 : 0];
+    NAL_Unit_Type const type = slice->GetSliceHeader()->nal_unit_type;
+    H264ScalingPicParams const* scaling =
+        &slice->GetPicParam()->scaling[type == NAL_UT_CODED_SLICE_EXTENSION ? 1 : 0];
     PackQmatrix(scaling);
 
     Ipp32s chopping = CHOPPING_NONE;
 
-    for ( ; count_all; )
+    for ( ; first_slice < count_all; )
     {
         PackPicParams(sliceInfo, slice);
 
         CreateSliceParamBuffer(sliceInfo);
         CreateSliceDataBuffer(sliceInfo);
 
-        Ipp32u partial_count = count_all;
-
-        for (Ipp32u i = 0; i < partial_count; i++)
+        Ipp32u n = 0, count = 0;
+        for (; n < count_all; ++n)
         {
             // put slice header
-            H264Slice *pSlice = sliceInfo->GetSlice(first_slice + i);
-            chopping = PackSliceParams(pSlice, i, chopping, numSlicesOfPrevField);
-            if (chopping != CHOPPING_NONE)
+            H264Slice *pSlice = sliceInfo->GetSlice(first_slice + n);
+            chopping = PackSliceParams(pSlice, n, chopping, 0 /* ignored */);
+            if (chopping != CHOPPING_SKIP_SLICE)
             {
-                partial_count = i;
-                break;
+                ++count;
+
+                if (chopping != CHOPPING_NONE)
+                    break;
             }
         }
 
-        Ipp32u passedSliceNum = chopping == CHOPPING_SPLIT_SLICE_DATA ? partial_count + 1 : partial_count;
+        first_slice += n;
+
         UMCVACompBuffer *sliceParamBuf;
         m_va->GetCompBuffer(VASliceParameterBufferType, &sliceParamBuf);
         if (!sliceParamBuf)
             throw h264_exception(UMC_ERR_FAILED);
 
-        sliceParamBuf->SetNumOfItem(passedSliceNum);
+        sliceParamBuf->SetNumOfItem(count);
 
         if (m_va->GetVideoProcessingVA())
-        {
             PackProcessingInfo(sliceInfo);
-        }
 
         Status sts = m_va->Execute();
         if (sts != UMC_OK)
             throw h264_exception(sts);
-
-        first_slice += partial_count;
-        count_all -= partial_count;
     }
 }
 
