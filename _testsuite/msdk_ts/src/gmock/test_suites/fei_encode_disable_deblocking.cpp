@@ -415,7 +415,7 @@ int TestSuite::RunTest(unsigned int id)
                 fei_encode_ctrl[field].ColocatedMbDistortion = 0;
                 fei_encode_ctrl[field].RefHeight = 32;
                 fei_encode_ctrl[field].RefWidth = 32;
-                fei_encode_ctrl[field].SearchWindow = 0;
+                fei_encode_ctrl[field].SearchWindow = 5;
             }
         }
         for (mfxU32 f = 0; f < num_fields; f++)

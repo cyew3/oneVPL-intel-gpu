@@ -644,6 +644,10 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
             return mfxSts;
         l0surfs->picture_id = *(VASurfaceID*)handle;
         surfPastIndexInList = GetSurfaceIndexFromList(m_reconQueue,l0surfs->picture_id);
+        /* Important!
+         * We always have queue: {frame/top field, bottom buffer} ...!
+         * So, attach buffers accordingly */
+        surfPastIndexInList = 2*surfPastIndexInList;
         if (MFX_PICTYPE_TOPFIELD == feiCtrl->RefPictureType[0])
             l0surfs->flags = VA_PICTURE_FEI_TOP_FIELD;
         else if (MFX_PICTYPE_BOTTOMFIELD == feiCtrl->RefPictureType[0])
@@ -699,7 +703,12 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         mfxHDL handle;
         VAPictureFEI* l1surfs = &future_ref;
         mfxSts = m_core->GetExternalFrameHDL(feiCtrl->RefFrame[1]->Data.MemId, &handle);
+        l1surfs->picture_id = *(VASurfaceID*)handle;
         surfFutureIndexInList = GetSurfaceIndexFromList(m_reconQueue,l1surfs->picture_id);
+        /* Important!
+         * We always have queue: {frame/top field, bottom buffer} ...!
+         * So, attach buffers accordingly */
+        surfFutureIndexInList = 2*surfFutureIndexInList;
         if (MFX_ERR_NONE != mfxSts)
             return mfxSts;
         l1surfs->picture_id = *(VASurfaceID*)handle;
