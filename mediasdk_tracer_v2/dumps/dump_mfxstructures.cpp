@@ -182,12 +182,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD_RESERVED(reserved1);
     DUMP_FIELD(EnableQPOffset);
     DUMP_FIELD_RESERVED(QPOffset);
-    DUMP_FIELD(NumRefActiveP);
-    DUMP_FIELD(NumRefActivePRef);
-    DUMP_FIELD(NumRefActiveBL0);
-    DUMP_FIELD(NumRefActiveBL1);
-    DUMP_FIELD(NumRefActiveBRefL0);
-    DUMP_FIELD(NumRefActiveBRefL1);
+    DUMP_FIELD_RESERVED(NumRefActiveP);
+    DUMP_FIELD_RESERVED(NumRefActiveBL0);
+    DUMP_FIELD_RESERVED(NumRefActiveBL1);
     DUMP_FIELD_RESERVED(reserved);
     return str;
 }
