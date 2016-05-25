@@ -31,6 +31,9 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "plugin_loader.h"
 
+// let's use std::max instead
+#undef max
+
 using namespace TranscodingSample;
 
 mfxU32 MFX_STDCALL TranscodingSample::ThranscodeRoutine(void   *pObj)
@@ -2539,7 +2542,7 @@ void CTranscodingPipeline::CorrectNumberOfAllocatedFrames(mfxFrameAllocRequest  
     }
     else
     {
-        m_Request.NumFrameSuggested = max(m_Request.NumFrameSuggested,pNewReq->NumFrameSuggested);
+        m_Request.NumFrameSuggested = std::max(m_Request.NumFrameSuggested,pNewReq->NumFrameSuggested);
     }
 
     // For each child session we should add one additional surface to cover non-syncronous work of decoding and encoding sessions
