@@ -446,13 +446,9 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
 
     // configure P/B reference number
     {
-        m_CodingOption3.NumRefActiveP      = pInParams->bNRefPSpecified   ? pInParams->NumRefActiveP   : MaxNumActiveRefP;
-        m_CodingOption3.NumRefActivePRef   = pInParams->bNRefPSpecified   ? pInParams->NumRefActiveP   : MaxNumActiveRefP;
-        m_CodingOption3.NumRefActiveBL0    = pInParams->bNRefBL0Specified ? pInParams->NumRefActiveBL0 : MaxNumActiveRefBL0;
-        m_CodingOption3.NumRefActiveBRefL0 = pInParams->bNRefBL0Specified ? pInParams->NumRefActiveBL0 : MaxNumActiveRefBL0;
-        m_CodingOption3.NumRefActiveBL1    = pInParams->bNRefBL1Specified ? pInParams->NumRefActiveBL1 :
-            (pInParams->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE ? MaxNumActiveRefBL1 : MaxNumActiveRefBL1_i);
-        m_CodingOption3.NumRefActiveBRefL1 = pInParams->bNRefBL1Specified ? pInParams->NumRefActiveBL1 :
+        m_CodingOption3.NumRefActiveP[0]      = pInParams->bNRefPSpecified   ? pInParams->NumRefActiveP   : MaxNumActiveRefP;
+        m_CodingOption3.NumRefActiveBL0[0]    = pInParams->bNRefBL0Specified ? pInParams->NumRefActiveBL0 : MaxNumActiveRefBL0;
+        m_CodingOption3.NumRefActiveBL1[0]    = pInParams->bNRefBL1Specified ? pInParams->NumRefActiveBL1 :
             (pInParams->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE ? MaxNumActiveRefBL1 : MaxNumActiveRefBL1_i);
 
         /* values stored in m_CodingOption3 required to fill encoding task for PREENC/ENC/PAK*/
@@ -3264,9 +3260,9 @@ iTask* CEncodingPipeline::CreateAndInitTask()
     eTask->m_nalRefIdc[m_ffid] = eTask->m_reference[m_ffid];
     eTask->m_nalRefIdc[m_sfid] = eTask->m_reference[m_sfid];
 
-    eTask->NumRefActiveP   = m_CodingOption3.NumRefActiveP;
-    eTask->NumRefActiveBL0 = m_CodingOption3.NumRefActiveBL0;
-    eTask->NumRefActiveBL1 = m_CodingOption3.NumRefActiveBL1;
+    eTask->NumRefActiveP   = m_CodingOption3.NumRefActiveP[0];
+    eTask->NumRefActiveBL0 = m_CodingOption3.NumRefActiveBL0[0];
+    eTask->NumRefActiveBL1 = m_CodingOption3.NumRefActiveBL1[0];
 
     return eTask;
 }
