@@ -2079,6 +2079,16 @@ mfxStatus VideoDECODEMPEG2::UpdateCurrVideoParams(mfxFrameSurface1 *surface_work
         sts = MFX_WRN_VIDEO_PARAM_CHANGED;
     }
 
+    if (m_isSWImpl)
+    {
+        pSurface->Info.CropW = m_vPar.mfx.FrameInfo.CropW;
+        pSurface->Info.CropH = m_vPar.mfx.FrameInfo.CropH;
+        pSurface->Info.CropX = m_vPar.mfx.FrameInfo.CropX;
+        pSurface->Info.CropY = m_vPar.mfx.FrameInfo.CropY;
+        pSurface->Info.AspectRatioH = m_vPar.mfx.FrameInfo.AspectRatioH;
+        pSurface->Info.AspectRatioW = m_vPar.mfx.FrameInfo.AspectRatioW;
+    }
+
     UpdateMfxVideoParam(m_vPar, sh, ph);
     UpdateMfxFrameParam(m_fPar, sh, ph);
 
