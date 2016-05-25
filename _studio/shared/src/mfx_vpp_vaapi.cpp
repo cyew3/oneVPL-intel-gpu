@@ -1935,7 +1935,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
 
     for( refIdx = 0; refIdx < SampleCount; refIdx++ )
     {
-        mfxDrvSurface* pRefSurf = &(pParams->pRefSurfaces[refIdx]);
+        mfxDrvSurface* pRefSurf = &(pParams->targetSurface);
 
         //VASurfaceID* srf_1 = (VASurfaceID*)(pRefSurf->hdl.first);
         //m_pipelineParam[refIdx].surface = *srf_1;
