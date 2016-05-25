@@ -174,7 +174,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
             i++;
-            msdk_opt_read(strInput[i], pParams->strSrcFile);
+
+            if (msdk_strlen(strInput[i]) < sizeof(pParams->strSrcFile)){
+                msdk_opt_read(strInput[i], pParams->strSrcFile);
+            }
+            else{
+                PrintHelp(strInput[0], MSDK_STRING("ERROR: Too long input filename (limit is 1023 characters)!"));
+                return MFX_ERR_UNSUPPORTED;
+            }
 
             switch (pParams->DecodeId)
             {
