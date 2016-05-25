@@ -259,67 +259,67 @@ mfxU32 Str2FourCC( msdk_char* strInput )
 {
     mfxU32 fourcc = 0;//default
 
-    if ( 0 == msdk_strcmp(strInput, MSDK_STRING("yv12")) )
+    if ( 0 == msdk_stricmp(strInput, MSDK_STRING("yv12")) )
     {
         fourcc = MFX_FOURCC_YV12;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("rgb3")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("rgb3")) )
     {
         fourcc = MFX_FOURCC_RGB3;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("rgb4")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("rgb4")) )
     {
         fourcc = MFX_FOURCC_RGB4;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("yuy2")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("yuy2")) )
     {
         fourcc = MFX_FOURCC_YUY2;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("nv12")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("nv12")) )
     {
         fourcc = MFX_FOURCC_NV12;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("imc3")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("imc3")) )
     {
         fourcc = MFX_FOURCC_IMC3;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("yuv400")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("yuv400")) )
     {
         fourcc = MFX_FOURCC_YUV400;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("yuv411")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("yuv411")) )
     {
         fourcc = MFX_FOURCC_YUV411;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("yuv422h")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("yuv422h")) )
     {
         fourcc = MFX_FOURCC_YUV422H;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("yuv422v")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("yuv422v")) )
     {
         fourcc = MFX_FOURCC_YUV422V;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("yuv444")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("yuv444")) )
     {
         fourcc = MFX_FOURCC_YUV444;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("p010")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("p010")) )
     {
         fourcc = MFX_FOURCC_P010;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("p210")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("p210")) )
     {
         fourcc = MFX_FOURCC_P210;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("nv16")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("nv16")) )
     {
         fourcc = MFX_FOURCC_NV16;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("a2rgb10")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("a2rgb10")) )
     {
         fourcc = MFX_FOURCC_A2RGB10;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("uyvy")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("uyvy")) )
     {
         fourcc = MFX_FOURCC_UYVY;
     }

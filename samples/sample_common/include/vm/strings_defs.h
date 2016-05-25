@@ -46,6 +46,7 @@ typedef TCHAR msdk_char;
 #define msdk_vprintf  _vtprintf
 #define msdk_strlen   _tcslen
 #define msdk_strcmp   _tcscmp
+#define msdk_stricmp  _tcsicmp
 #define msdk_strncmp  _tcsnicmp
 #define msdk_strstr   _tcsstr
 #define msdk_atoi     _ttoi
@@ -87,6 +88,7 @@ typedef char msdk_char;
 #define msdk_fprintf  fprintf
 #define msdk_strlen   strlen
 #define msdk_strcmp   strcmp
+#define msdk_stricmp  strcasecmp
 #define msdk_strncmp  strncmp
 #define msdk_strstr   strstr
 #define msdk_atoi     atoi
