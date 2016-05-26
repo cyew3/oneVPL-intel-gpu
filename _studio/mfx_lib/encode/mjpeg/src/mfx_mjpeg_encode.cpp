@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -2016,6 +2016,10 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
         {
             if ((surface->Info.FourCC == MFX_FOURCC_YV12 && (surface->Data.U || surface->Data.V)) ||
                 (surface->Info.FourCC == MFX_FOURCC_NV12 && surface->Data.UV))
+            {
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
+            if ((surface->Data.MemId) && (m_isOpaque))
             {
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
