@@ -136,11 +136,14 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -b <Kbits per second>\n"));
     msdk_printf(MSDK_STRING("                Encoded bit rate, valid for H.264, MPEG2 and MVC encoders\n"));
     msdk_printf(MSDK_STRING("  -f <frames per second>\n"));
-    msdk_printf(MSDK_STRING("                Video frame rate for the whole pipeline, overwrites input stream's framerate is taken\n"));
+    msdk_printf(MSDK_STRING("                Video frame rate for the FRC and deinterlace options\n"));
     msdk_printf(MSDK_STRING("  -fe <frames per second>\n"));
-    msdk_printf(MSDK_STRING("                Video frame rate for the output of the pipeline.\n"));
-    msdk_printf(MSDK_STRING("                It affects VPP output (if VPP is enabled) or/and encoder framerate.\n"));
-    msdk_printf(MSDK_STRING("                If this option is omitted, -f sets both input and output framerate.\n"));
+    msdk_printf(MSDK_STRING("                Video frame rate for the FRC and deinterlace options (deprecated, will be removed in next versions).\n"));
+    msdk_printf(MSDK_STRING("  -override_decoder_framerate <framerate> \n"));
+    msdk_printf(MSDK_STRING("                Forces decoder output framerate to be set to provided value (overwriting actual framerate from decoder)\n"));
+    msdk_printf(MSDK_STRING("  -override_encoder_framerate <framerate> \n"));
+    msdk_printf(MSDK_STRING("                Overwrites framerate of stream going into encoder input with provided value (this option does not enable FRC, it just ovewrites framerate value)\n"));
+
     msdk_printf(MSDK_STRING("  -u 1|4|7      Target usage: quality (1), balanced (4) or speed (7); valid for H.264, MPEG2 and MVC encoders. Default is balanced\n"));
     msdk_printf(MSDK_STRING("  -q <quality>  Quality parameter for JPEG encoder; in range [1,100], 100 is the best quality\n"));
     msdk_printf(MSDK_STRING("  -l numSlices  Number of slices for encoder; default value 0 \n"));
@@ -732,7 +735,21 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.dFrameRate))
+            // Temporary check for giving priority to -fe option
+            if(!InputParams.dVPPOutFramerate)
+            {
+                if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.dVPPOutFramerate))
+                {
+                    PrintError(MSDK_STRING("FrameRate \"%s\" is invalid"), argv[i]);
+                    return MFX_ERR_UNSUPPORTED;
+                }
+            }
+        }
+        else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-fe")))
+        {
+            VAL_CHECK(i+1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.dVPPOutFramerate))
             {
                 PrintError(MSDK_STRING("FrameRate \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
@@ -1201,11 +1218,21 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             InputParams.decoderPluginParams = ParsePluginParameter(argv[i + 1]);
             i++;
         }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-fe")))
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-override_decoder_framerate")))
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
             i++;
-            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.dEncoderFrameRate))
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.dDecoderFrameRateOverride))
+            {
+                PrintError(MSDK_STRING("-n \"%s\" is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-override_encoder_framerate")))
+        {
+            VAL_CHECK(i+1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.dEncoderFrameRateOverride))
             {
                 PrintError(MSDK_STRING("-n \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
@@ -1396,9 +1423,15 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if(InputParams.dEncoderFrameRate && InputParams.bEnableExtLA)
+    if((!InputParams.FRCAlgorithm && !InputParams.DeinterlacingMode) && InputParams.dVPPOutFramerate)
     {
-        PrintError(MSDK_STRING("-la_ext and -fe options cannot be used together\n"));
+        msdk_printf(MSDK_STRING("-f option is ignored, it can be used with FRC or deinterlace options only. \n"));
+        InputParams.dVPPOutFramerate=0;
+    }
+
+    if(InputParams.FRCAlgorithm && InputParams.bEnableExtLA)
+    {
+        PrintError(MSDK_STRING("-la_ext and FRC options cannot be used together\n"));
         return MFX_ERR_UNSUPPORTED;
     }
 

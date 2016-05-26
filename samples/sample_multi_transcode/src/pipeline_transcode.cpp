@@ -1851,10 +1851,10 @@ mfxStatus CTranscodingPipeline::InitDecMfxParams(sInputParams *pInParams)
         m_mfxDecParams.mfx.FrameInfo.PicStruct = m_pmfxBS->PicStruct;
     }
 
-    // if frame rate specified by user set it for decoder and the whole pipeline
-    if (pInParams->dFrameRate)
+    // if frame rate specified by user set it for decoder output
+    if (pInParams->dDecoderFrameRateOverride)
     {
-        ConvertFrameRate(pInParams->dFrameRate, &m_mfxDecParams.mfx.FrameInfo.FrameRateExtN, &m_mfxDecParams.mfx.FrameInfo.FrameRateExtD);
+        ConvertFrameRate(pInParams->dDecoderFrameRateOverride, &m_mfxDecParams.mfx.FrameInfo.FrameRateExtN, &m_mfxDecParams.mfx.FrameInfo.FrameRateExtD);
     }
     // if frame rate not specified and input stream header doesn't contain valid values use default (30.0)
     else if (!(m_mfxDecParams.mfx.FrameInfo.FrameRateExtN * m_mfxDecParams.mfx.FrameInfo.FrameRateExtD))
@@ -1925,10 +1925,13 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
 
     // calculate default bitrate based on resolution and framerate
 
-    // set framerate if specified
-    if (pInParams->dEncoderFrameRate)
+    if (pInParams->dEncoderFrameRateOverride)
     {
-        ConvertFrameRate(pInParams->dEncoderFrameRate, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtN, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtD);
+        ConvertFrameRate(pInParams->dEncoderFrameRateOverride, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtN, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtD);
+    }
+    else if(pInParams->dVPPOutFramerate)
+    {
+        ConvertFrameRate(pInParams->dVPPOutFramerate, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtN, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtD);
     }
 
     MSDK_CHECK_ERROR(m_mfxEncParams.mfx.FrameInfo.FrameRateExtN * m_mfxEncParams.mfx.FrameInfo.FrameRateExtD,
@@ -2281,9 +2284,9 @@ mfxStatus CTranscodingPipeline::AddLaStreams(mfxU16 width, mfxU16 height)
     }
 
     // Framerate conversion
-    if(pInParams->dEncoderFrameRate)
+    if(pInParams->dVPPOutFramerate)
     {
-        ConvertFrameRate(pInParams->dEncoderFrameRate, &m_mfxVppParams.vpp.Out.FrameRateExtN, &m_mfxVppParams.vpp.Out.FrameRateExtD);
+        ConvertFrameRate(pInParams->dVPPOutFramerate, &m_mfxVppParams.vpp.Out.FrameRateExtN, &m_mfxVppParams.vpp.Out.FrameRateExtD);
     }
 
     if (pInParams->nDstHeight)

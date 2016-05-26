@@ -122,8 +122,9 @@ namespace TranscodingSample
 
         // specific encode parameters
         mfxU16 nTargetUsage;
-        mfxF64 dFrameRate;
-        mfxF64 dEncoderFrameRate;
+        mfxF64 dDecoderFrameRateOverride;
+        mfxF64 dEncoderFrameRateOverride;
+        mfxF64 dVPPOutFramerate;
         mfxU32 nBitRate;
         mfxU16 nQuality; // quality parameter for JPEG encoder
         mfxU16 nDstWidth;  // destination picture width, specified if resizing required
