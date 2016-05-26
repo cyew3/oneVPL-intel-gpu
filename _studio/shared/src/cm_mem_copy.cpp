@@ -259,7 +259,10 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
         else //Last one event, need keep or destroy it
         {
             hr = pInternalEvent->WaitForTaskFinished();
-            CHECK_CM_HR(hr);
+            if(hr == CM_EXCEED_MAX_TIMEOUT)
+                return MFX_ERR_GPU_HANG;
+            else
+                CHECK_CM_HR(hr);
             hr = m_pCmQueue->DestroyEvent(pInternalEvent);
             CHECK_CM_HR(hr);
         }
@@ -442,7 +445,10 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBCPUtoGPU(   CmSurface2D* pSurface,
         else //Last one event, need keep or destroy it
         {
             hr = pInternalEvent->WaitForTaskFinished();
-            CHECK_CM_HR(hr);
+            if(hr == CM_EXCEED_MAX_TIMEOUT)
+                return MFX_ERR_GPU_HANG;
+            else
+                CHECK_CM_HR(hr);
             hr = m_pCmQueue->DestroyEvent(pInternalEvent);
             CHECK_CM_HR(hr);
         }
@@ -521,7 +527,11 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoGPU(   CmSurface2D* pSurfaceIn,
     CHECK_CM_HR(hr);
 
     hr = pInternalEvent->WaitForTaskFinished();
-    CHECK_CM_HR(hr);
+    
+    if(hr == CM_EXCEED_MAX_TIMEOUT)
+        return MFX_ERR_GPU_HANG;
+    else
+        CHECK_CM_HR(hr);
     hr = m_pCmQueue->DestroyEvent(pInternalEvent);
     CHECK_CM_HR(hr);
     
@@ -597,7 +607,11 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorGPUtoGPU(   CmSurface2D* pSurfaceIn,
     CHECK_CM_HR(hr);
 
     hr = pInternalEvent->WaitForTaskFinished();
-    CHECK_CM_HR(hr);
+
+    if(hr == CM_EXCEED_MAX_TIMEOUT)
+        return MFX_ERR_GPU_HANG;
+    else
+        CHECK_CM_HR(hr);
     hr = m_pCmQueue->DestroyEvent(pInternalEvent);
     CHECK_CM_HR(hr);
     
@@ -773,8 +787,10 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorNV12GPUtoCPU(   CmSurface2D* pSurface,
         else //Last one event, need keep or destroy it
         {
             pInternalEvent->WaitForTaskFinished();
-
-            CHECK_CM_HR(hr);
+            if(hr == CM_EXCEED_MAX_TIMEOUT)
+                return MFX_ERR_GPU_HANG;
+            else
+                CHECK_CM_HR(hr);
             hr = m_pCmQueue->DestroyEvent(pInternalEvent);
             CHECK_CM_HR(hr);
         }
@@ -950,8 +966,10 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorNV12CPUtoGPU(   CmSurface2D* pSurface,
         else //Last one event, need keep or destroy it
         {
             pInternalEvent->WaitForTaskFinished();
-
-            CHECK_CM_HR(hr);
+            if(hr == CM_EXCEED_MAX_TIMEOUT)
+                return MFX_ERR_GPU_HANG;
+            else
+                CHECK_CM_HR(hr);
             hr = m_pCmQueue->DestroyEvent(pInternalEvent);
             CHECK_CM_HR(hr);
         }
@@ -1313,13 +1331,15 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftP010CPUtoGPU(   CmSurface2D* pSurface,
         else //Last one event, need keep or destroy it
         {
             hr = pInternalEvent->WaitForTaskFinished();
-            CHECK_CM_HR(hr);
+            if(hr == CM_EXCEED_MAX_TIMEOUT)
+                return MFX_ERR_GPU_HANG;
+            else
+                CHECK_CM_HR(hr);
             hr = m_pCmQueue->DestroyEvent(pInternalEvent);
             CHECK_CM_HR(hr);
         }
 
     }
-
     return MFX_ERR_NONE;
 }
 mfxStatus CmCopyWrapper::Initialize(eMFXHWType hwtype)
@@ -1723,7 +1743,13 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch,
     if (CM_SUCCESS == cmSts )
     {
         return status;
-    }else{
+    }
+    else if(cmSts == CM_EXCEED_MAX_TIMEOUT)
+    {
+        status = MFX_ERR_GPU_HANG;
+    }
+    else
+    {
         status = MFX_ERR_DEVICE_FAILED;
     }
     //if(e) m_pCmQueue->DestroyEvent(e);
@@ -1790,6 +1816,10 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch
     if (CM_SUCCESS == cmSts)
     {
         return status;
+    }
+    else if(cmSts == CM_EXCEED_MAX_TIMEOUT)
+    {
+        status = MFX_ERR_GPU_HANG;
     }else{
         status = MFX_ERR_DEVICE_FAILED;
     }
@@ -1864,7 +1894,13 @@ mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(void *pDst, void *pSrc, IppiS
     if (CM_SUCCESS == cmSts)
     {
         return status;
-    }else{
+    }
+    else if(cmSts == CM_EXCEED_MAX_TIMEOUT)
+    {
+        status = MFX_ERR_GPU_HANG;
+    }
+    else
+    {
         status = MFX_ERR_DEVICE_FAILED;
     }
 
