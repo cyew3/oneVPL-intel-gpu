@@ -818,8 +818,20 @@ mfxStatus VAAPIEncoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
         assert(!"unknown buffer type");
     }
     
-    m_codedbufISize = pExecuteBuffers->m_sps.FrameWidth*pExecuteBuffers->m_sps.FrameHeight*3/2;
-    m_codedbufPBSize =  pExecuteBuffers->m_sps.FrameWidth*pExecuteBuffers->m_sps.FrameHeight*3/2;
+    if(MFX_RATECONTROL_CQP == pExecuteBuffers->m_sps.RateControlMethod)
+    {
+        m_codedbufISize = pExecuteBuffers->m_sps.FrameWidth*pExecuteBuffers->m_sps.FrameHeight*4;
+        m_codedbufPBSize =  pExecuteBuffers->m_sps.FrameWidth*pExecuteBuffers->m_sps.FrameHeight*4;
+    }
+    else
+    {
+        const mfxU32 rawFrameSize = pExecuteBuffers->m_sps.FrameWidth*pExecuteBuffers->m_sps.FrameHeight*3/2;
+        const mfxU32 vbvSize = pExecuteBuffers->m_sps.vbv_buffer_size * 1000;
+        if(vbvSize > rawFrameSize)
+            m_codedbufISize = m_codedbufPBSize = vbvSize;
+        else
+            m_codedbufISize = m_codedbufPBSize = rawFrameSize;
+    }
 
     // request linear buffer
     pRequest->Info.FourCC = MFX_FOURCC_P8;
