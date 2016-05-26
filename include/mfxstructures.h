@@ -670,7 +670,9 @@ typedef struct {
     mfxU16      NumRefActiveBL0[8];
     mfxU16      NumRefActiveBL1[8];
 
-    mfxU16      reserved[179];
+    mfxU16      ConstrainedIntraPredFlag;  /* tri-state option */
+
+    mfxU16      reserved[178];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
