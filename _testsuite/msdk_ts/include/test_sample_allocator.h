@@ -169,6 +169,7 @@ public:
     virtual mfxStatus SetHandle(mfxHandleType type, mfxHDL hdl) { return MFX_ERR_UNSUPPORTED; }
     virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc) { return MFX_ERR_UNSUPPORTED; }
     virtual void      UpdateTitle(double fps) {}
+    virtual void SetMondelloInput(bool /*isMondelloInputEnabled*/) { }
     virtual void Close(){}
 
 private:
