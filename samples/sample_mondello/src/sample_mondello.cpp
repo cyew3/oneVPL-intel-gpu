@@ -606,6 +606,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     };
 
+    if (!pParams->dstFileBuff.empty() && pParams->isMondelloRender)
+    {
+        PrintHelp(strInput[0], MSDK_STRING("Only one mode is supported - Encoding or Rendering"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
     if (pParams->dstFileBuff.empty() && !pParams->isMondelloRender)
     {
         PrintHelp(strInput[0], MSDK_STRING("Destination file name not found"));

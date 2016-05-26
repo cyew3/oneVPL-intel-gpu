@@ -518,7 +518,7 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
     if (!m_isMondelloInputEnabled)
         m_mfxVppParams.vpp.In.FourCC    = MFX_FOURCC_NV12;
 
-    m_mfxVppParams.vpp.In.PicStruct = pInParams->nPicStruct;;
+    m_mfxVppParams.vpp.In.PicStruct = pInParams->nPicStruct;
     ConvertFrameRate(pInParams->dFrameRate, &m_mfxVppParams.vpp.In.FrameRateExtN, &m_mfxVppParams.vpp.In.FrameRateExtD);
 
     // width must be a multiple of 16
@@ -1206,6 +1206,9 @@ void CEncodingPipeline::InitMondelloPipeline(sInputParams *pParams)
             count = m_EncResponse.NumFrameActual;
             pSurf = &m_pEncSurfaces[0];
         }
+
+        if (m_hwdev)
+            m_hwdev->SetMondelloInput(m_isMondelloInputEnabled);
 
         MondelloPipeline.Init(pParams->nWidth,
             pParams->nHeight,

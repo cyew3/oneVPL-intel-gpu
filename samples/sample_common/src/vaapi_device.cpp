@@ -362,7 +362,12 @@ mfxStatus CVAAPIDeviceWayland::RenderFrame(mfxFrameSurface1 * pSurface, mfxFrame
         drm_format = WL_DRM_FORMAT_NV12;
     } else if(pSurface->Info.FourCC == MFX_FOURCC_RGB4)
     {
-        drm_format = WL_DRM_FORMAT_XBGR8888;
+        drm_format = WL_DRM_FORMAT_ARGB8888;
+
+        if (m_isMondelloInputEnabled)
+        {
+            drm_format = WL_DRM_FORMAT_XBGR8888;
+        }
     }
 
     offsets[0] = memId->m_image.offsets[0];

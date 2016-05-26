@@ -54,6 +54,7 @@ public:
 
     virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc);
     virtual void      UpdateTitle(double fps) { }
+    virtual void      SetMondelloInput(bool isMondelloInputEnabled) { }
 
     inline drmRenderer* getRenderer() { return m_rndr; }
 protected:
@@ -88,6 +89,7 @@ public:
 
     virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc);
     virtual void      UpdateTitle(double fps) { }
+    virtual void      SetMondelloInput(bool isMondelloInputEnabled) { }
 
 protected:
     mfxHDL m_window;
@@ -143,6 +145,11 @@ public:
     virtual mfxStatus RenderFrame(mfxFrameSurface1 * pSurface, mfxFrameAllocator * pmfxAlloc);
     virtual void UpdateTitle(double fps) { }
 
+    virtual void SetMondelloInput(bool isMondelloInputEnabled)
+    {
+        m_isMondelloInputEnabled = isMondelloInputEnabled;
+    }
+
 protected:
     DRMLibVA m_DRMLibVA;
     MfxLoader::VA_WaylandClientProxy  m_WaylandClient;
@@ -152,6 +159,8 @@ private:
     mfxU32 m_nRenderWinY;
     mfxU32 m_nRenderWinW;
     mfxU32 m_nRenderWinH;
+
+    bool m_isMondelloInputEnabled;
 
     // no copies allowed
     CVAAPIDeviceWayland(const CVAAPIDeviceWayland &);
