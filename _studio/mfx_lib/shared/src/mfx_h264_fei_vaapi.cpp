@@ -175,10 +175,6 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
             &m_vaConfig); //don't configure stat attribs
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    std::vector<VASurfaceID> rawSurf;
-    for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
-        rawSurf.push_back(m_reconQueue[i].surface);
-
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateContext");
         // Encoder create
@@ -188,14 +184,14 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
             m_width,
             m_height,
             VA_PROGRESSIVE,
-            Begin(rawSurf),
-            rawSurf.size(),
+            NULL,
+            0,
             &m_vaContextEncode);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
 
     /* we alway takes into account interlaced case */
-    mfxU32 numStatBuffers = 2* rawSurf.size();
+    mfxU32 numStatBuffers = 2* m_reconQueue.size();
     m_statOutId.resize(numStatBuffers);
     m_statPairs.resize(numStatBuffers);
     for (mfxU32 i = 0; i < numStatBuffers; i++ )
@@ -1689,8 +1685,8 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         vaFeiFrameControl->multi_pred_l1 = frameCtrl->MultiPredL1;
         vaFeiFrameControl->mv_predictor = vaFeiMVPredId;
         vaFeiFrameControl->mv_predictor_enable = frameCtrl->MVPredictor;
-        vaFeiFrameControl->num_mv_predictors_l0 = frameCtrl->NumMVPredictors[0];
-        vaFeiFrameControl->num_mv_predictors_l1 = frameCtrl->NumMVPredictors[1];
+        vaFeiFrameControl->num_mv_predictors_l0 = frameCtrl->MVPredictor ? frameCtrl->NumMVPredictors[0] : 0;
+        vaFeiFrameControl->num_mv_predictors_l1 = frameCtrl->MVPredictor ? frameCtrl->NumMVPredictors[1] : 0;
         vaFeiFrameControl->ref_height = frameCtrl->RefHeight;
         vaFeiFrameControl->ref_width = frameCtrl->RefWidth;
         vaFeiFrameControl->repartition_check_enable = frameCtrl->RepartitionCheckEnable;
