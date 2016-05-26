@@ -217,7 +217,29 @@ const mfx_device_item listLegalDevIDs[] = {
     { 0x0A87, MFX_HW_BXT},
     { 0x1A84, MFX_HW_BXT}, //BXT-PRO?
     { 0x5A84, MFX_HW_BXT}, //BXT-P 18EU
-    { 0x5A85, MFX_HW_BXT}  //BXT-P 12EU
+    { 0x5A85, MFX_HW_BXT}, //BXT-P 12EU
+
+    /* CNL */
+    /* SImulation */
+    { 0x0A00, MFX_HW_CNL},
+    { 0x0A01, MFX_HW_CNL},
+    { 0x0A02, MFX_HW_CNL},
+    { 0x0A05, MFX_HW_CNL},
+    { 0x0A08, MFX_HW_CNL},
+
+    { 0x5A40, MFX_HW_CNL},
+    { 0x5A42, MFX_HW_CNL},
+    { 0x5A45, MFX_HW_CNL},
+    { 0x5A4A, MFX_HW_CNL},
+    { 0x5A4D, MFX_HW_CNL},
+    { 0x5A50, MFX_HW_CNL},
+    { 0x5A51, MFX_HW_CNL},
+    { 0x5A52, MFX_HW_CNL},
+    { 0x5A54, MFX_HW_CNL},
+    { 0x5A55, MFX_HW_CNL},
+    { 0x5A5A, MFX_HW_CNL},
+    { 0x5A60, MFX_HW_CNL},
+    { 0x5A62, MFX_HW_CNL}
 };
 
 /* END: IOCTLs definitions */
