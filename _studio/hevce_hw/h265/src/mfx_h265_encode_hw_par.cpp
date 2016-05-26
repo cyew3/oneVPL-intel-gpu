@@ -1105,6 +1105,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     changed += CheckMax(par.mfx.NumRefFrame, maxDPB);
 
+    if (par.mfx.NumRefFrame)
+        maxDPB = par.mfx.NumRefFrame;
+
     changed += CheckMax(par.m_ext.DDI.NumActiveRefBL0, caps.MaxNum_Reference0);
     changed += CheckMax(par.m_ext.DDI.NumActiveRefBL1, caps.MaxNum_Reference1);
 
@@ -1292,6 +1295,13 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
         for (mfxI16 i = 0; i < 8; i++)
             changed += CheckRange(CO3.QPOffset[i], 1 - QPX, maxQP - QPX);
+    }
+
+    for (mfxU16 i = 0; i < 8; i++)
+    {
+        changed += CheckMax(CO3.NumRefActiveP[i],   Min<mfxU16>(maxDPB, caps.MaxNum_Reference0));
+        changed += CheckMax(CO3.NumRefActiveBL0[i], Min<mfxU16>(maxDPB, caps.MaxNum_Reference0));
+        changed += CheckMax(CO3.NumRefActiveBL1[i], Min<mfxU16>(maxDPB-1, caps.MaxNum_Reference1));
     }
 
     sts = CheckProfile(par);
@@ -1596,16 +1606,18 @@ void SetDefaults(
     if (IsOff(CO3.EnableQPOffset))
         Zero(CO3.QPOffset);
 
-    for (mfxU16 i = 0; i < 8; i++)
+    for (mfxU16 i = 0, bl0 = 0; i < 8; i++)
     {
         if (!CO3.NumRefActiveP[i])
-            CO3.NumRefActiveP[i] = par.NumRefLX[0];
+            CO3.NumRefActiveP[i] = i ? CO3.NumRefActiveP[i - 1] : par.NumRefLX[0];
 
         if (!CO3.NumRefActiveBL0[i])
-            CO3.NumRefActiveBL0[i] = par.NumRefLX[0];
+            CO3.NumRefActiveBL0[i] = bl0 ? CO3.NumRefActiveBL0[i-1] : CO3.NumRefActiveP[i];
+        else
+            bl0 ++;
 
         if (!CO3.NumRefActiveBL1[i])
-            CO3.NumRefActiveBL1[i] = par.NumRefLX[1];
+            CO3.NumRefActiveBL1[i] = i ? CO3.NumRefActiveBL1[i - 1] : par.NumRefLX[1];
     }
 
     if (   par.Protected == MFX_PROTECTION_PAVP

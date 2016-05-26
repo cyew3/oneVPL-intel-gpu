@@ -200,6 +200,11 @@ void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
     SERIALIZE_INT(PRefType);
     SERIALIZE_INT(FadeDetection);
     SERIALIZE_INT(GPB);
+    SERIALIZE_INT(EnableQPOffset);
+    SERIALIZE_POD_ARRAY(QPOffset, 8);
+    SERIALIZE_POD_ARRAY(NumRefActiveP, 8);
+    SERIALIZE_POD_ARRAY(NumRefActiveBL0, 8);
+    SERIALIZE_POD_ARRAY(NumRefActiveBL1, 8);
 }
 
 void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
@@ -360,6 +365,10 @@ void MFXStructureRef <mfxExtVP8CodingOption>::ConstructValues() const
 
 void MFXStructureRef <mfxFrameInfo>::ConstructValues () const
 {
+    SERIALIZE_INT(BitDepthLuma);
+    SERIALIZE_INT(BitDepthChroma);
+    SERIALIZE_INT(Shift);
+
     SERIALIZE_INT(FrameId.TemporalId);
     SERIALIZE_INT(FrameId.PriorityId);
     if (!(m_flags & Formater::SVC))
@@ -385,9 +394,8 @@ void MFXStructureRef <mfxFrameInfo>::ConstructValues () const
     SERIALIZE_INT(AspectRatioW);
     SERIALIZE_INT(AspectRatioH);
     SERIALIZE_INT(PicStruct);
-    SERIALIZE_INT(BitDepthLuma);
-    SERIALIZE_INT(BitDepthChroma);
-    
+    SERIALIZE_INT(ChromaFormat);
+
     m_values_map[VM_STRING("ChromaFormat")] = GetMFXChromaString(m_pStruct->ChromaFormat);
 }
 

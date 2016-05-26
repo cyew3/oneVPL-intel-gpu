@@ -75,6 +75,22 @@ mfxU32 GetBiFrameLocation(mfxU32 i, mfxU32 num, bool &ref, mfxU32 &level)
     return GetEncodingOrder(i, 0, num, level, 0 ,ref);
 }
 
+mfxU8 PLayer(
+    mfxU32                order, // (task.m_poc - prevTask.m_lastIPoc)
+    MfxVideoParam const & par)
+{
+    const mfxU8 PPyrLayer[4] = {0,2,1,2};
+
+    if (par.isLowDelay())
+    {
+        mfxU32 RSPIndex = order % par.NumRefLX[0];
+        RSPIndex = RSPIndex % (sizeof(PPyrLayer)/sizeof(PPyrLayer[0]));
+        return Min<mfxU8>(7, PPyrLayer[RSPIndex]);
+    }
+
+    return 0;
+}
+
 template <class T> mfxU32 BPyrReorder(std::vector<T> brefs)
 {   
     mfxU32 num = (mfxU32)brefs.size();
@@ -1217,6 +1233,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     assert(0 == m_sps.pcm_enabled_flag);
 
     {
+        mfxExtCodingOption3& CO3 = m_ext.CO3;
         mfxU32 MaxPocLsb = (1<<(m_sps.log2_max_pic_order_cnt_lsb_minus4+4));
         std::list<FakeTask> frames;
         std::list<FakeTask>::iterator cur;
@@ -1229,6 +1246,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
         STRPS rps;
         mfxI32 STDist = Min<mfxI32>(mfx.GopPicSize, 128);
         bool moreLTR = !!LTRInterval;
+        mfxI32 lastIPoc = 0;
 
         Fill(dpb, IDX_INVALID);
 
@@ -1261,6 +1279,19 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
 
             if (!(cur->m_frameType & MFX_FRAMETYPE_I) && cur->m_poc < STDist)
             {
+                if (cur->m_frameType & MFX_FRAMETYPE_B)
+                {
+                    mfxI32 layer = isBPyramid() ? Clip3<mfxI32>(0, 7, cur->m_level - 1) : 0;
+                    nRef[0] = (mfxU8)CO3.NumRefActiveBL0[layer];
+                    nRef[1] = (mfxU8)CO3.NumRefActiveBL1[layer];
+                }
+                else
+                {
+                    mfxI32 layer = PLayer(cur->m_poc - lastIPoc, *this);
+                    nRef[0] = (mfxU8)CO3.NumRefActiveP[layer];
+                    nRef[1] = (mfxU8)Min(CO3.NumRefActiveP[layer], NumRefLX[1]);
+                }
+
                 ConstructRPL(*this, dpb, !!(cur->m_frameType & MFX_FRAMETYPE_B), cur->m_poc, cur->m_tid, rpl, nRef);
 
                 Zero(rps);
@@ -1273,6 +1304,8 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
                 else
                     it->N ++;
             }
+            else
+                lastIPoc = cur->m_poc;
 
             if (cur->m_frameType & MFX_FRAMETYPE_REF)
             {
@@ -2370,11 +2403,12 @@ void ConstructRPL(
     mfxExtAVCRefLists * pExtLists,
     mfxExtAVCRefListCtrl * pLCtrl)
 {
+    mfxU8 NumRefLX[2] = {numRefActive[0], numRefActive[1]};
     mfxU8& l0 = numRefActive[0];
     mfxU8& l1 = numRefActive[1];
     mfxU8 LTR[MAX_DPB_SIZE] = {};
     mfxU8 nLTR = 0;
-    mfxU8 NumStRefL0 = (mfxU8)(par.NumRefLX[0]);
+    mfxU8 NumStRefL0 = (mfxU8)(NumRefLX[0]);
 
     l0 = l1 = 0;
 
@@ -2388,7 +2422,7 @@ void ConstructRPL(
             {
                 RPL[0][l0 ++] = idx;
 
-                if (l0 == par.NumRefLX[0])
+                if (l0 == NumRefLX[0])
                     break;
             }
         }
@@ -2400,7 +2434,7 @@ void ConstructRPL(
             if (idx < MAX_DPB_SIZE)
                 RPL[1][l1 ++] = idx;
 
-            if (l1 == par.NumRefLX[1])
+            if (l1 == NumRefLX[1])
                 break;
         }
     }
@@ -2448,6 +2482,7 @@ void ConstructRPL(
                     {
                         mfxI32 i;
 
+                        // !!! par.NumRefLX[0] used here as distance between "strong" STR, not NumRefActive for current frame
                         for (i = 0; (i < l0) && (((DPB[RPL[0][0]].m_poc - DPB[RPL[0][i]].m_poc) % par.NumRefLX[0]) == 0) ; i++);
 
                         Remove(RPL[0], (i >= l0 - 1) ? 0 : i);
@@ -2460,11 +2495,11 @@ void ConstructRPL(
                     l0 = NumStRefL0;
                 }
             }
-            if (l1 > par.NumRefLX[1])
+            if (l1 > NumRefLX[1])
             {
                 MFX_SORT_COMMON(RPL[1], numRefActive[1], Abs(DPB[RPL[1][_i]].m_poc - poc) > Abs(DPB[RPL[1][_j]].m_poc - poc));
-                Remove(RPL[1], par.NumRefLX[1], l1 - par.NumRefLX[1]);
-                l1 = (mfxU8)par.NumRefLX[1];
+                Remove(RPL[1], NumRefLX[1], l1 - NumRefLX[1]);
+                l1 = (mfxU8)NumRefLX[1];
             }
 
             // reorder STRs to POC descending order
@@ -2479,7 +2514,7 @@ void ConstructRPL(
                 Insert(RPL[0], !!l0, LTR[0]);
                 l0++;
 
-                for (mfxU16 i = 1; i < nLTR && l0 < par.NumRefLX[0]; i++, l0++)
+                for (mfxU16 i = 1; i < nLTR && l0 < NumRefLX[0]; i++, l0++)
                     Insert(RPL[0], l0, LTR[i]);
             }
         }
@@ -2489,7 +2524,7 @@ void ConstructRPL(
 
     if (pLCtrl)
     {
-        mfxU16 MaxRef[2] = { par.NumRefLX[0], par.NumRefLX[1] };
+        mfxU16 MaxRef[2] = { NumRefLX[0], NumRefLX[1] };
         mfxU16 pref[2] = {};
 
         if (pLCtrl->NumRefIdxL0Active)
@@ -2560,9 +2595,9 @@ void ConstructRPL(
 
     if (!isB)
     {
-        for (mfxU16 i = 0; i < Min<mfxU16>(l0, par.NumRefLX[1]); i ++)
+        for (mfxU16 i = 0; i < Min<mfxU16>(l0, NumRefLX[1]); i ++)
             RPL[1][l1++] = RPL[0][i];
-        //for (mfxI16 i = l0 - 1; i >= 0 && l1 < par.NumRefLX[1]; i --)
+        //for (mfxI16 i = l0 - 1; i >= 0 && l1 < NumRefLX[1]; i --)
         //    RPL[1][l1++] = RPL[0][i];
     }
 }
@@ -2679,7 +2714,6 @@ IntraRefreshState GetIntraRefreshState(
     return state;
 }
 
-
 void ConfigureTask(
     Task &                task,
     Task const &          prevTask,
@@ -2691,7 +2725,7 @@ void ConfigureTask(
     const bool isB    = !!(task.m_frameType & MFX_FRAMETYPE_B);
     const bool isIDR  = !!(task.m_frameType & MFX_FRAMETYPE_IDR);
     const mfxU8 maxQP = mfxU8(51 + 6 * (par.mfx.FrameInfo.BitDepthLuma - 8));
-    const mfxU8 PPyrLayer[4] = {0,2,1,2};
+    const mfxExtCodingOption3& CO3 = par.m_ext.CO3;
 
     mfxExtDPB*              pDPBReport = task.m_bs ? (mfxExtDPB*)ExtBuffer::Get(*task.m_bs) : 0;
     mfxExtAVCRefLists*      pExtLists = ExtBuffer::Get(task.m_ctrl);
@@ -2744,11 +2778,7 @@ void ConfigureTask(
             // encode P as GPB
             task.m_qpY = (mfxU8)par.mfx.QPP;
             if (par.isLowDelay())
-            {
-                mfxU32 RSPIndex = (task.m_poc - prevTask.m_lastIPoc) % par.NumRefLX[0];
-                RSPIndex = RSPIndex % (sizeof(PPyrLayer)/sizeof(PPyrLayer[0]));
-                task.m_qpY = (mfxU8)Clip3<mfxI32>(1, maxQP, par.m_ext.CO3.QPOffset[Min<mfxU32>(7, PPyrLayer[RSPIndex])] + task.m_qpY);
-            }
+                task.m_qpY = (mfxU8)Clip3<mfxI32>(1, maxQP, par.m_ext.CO3.QPOffset[PLayer(task.m_poc - prevTask.m_lastIPoc, par)] + task.m_qpY);
          }
         else
         {
@@ -2780,6 +2810,19 @@ void ConfigureTask(
     //construct ref lists
     Zero(task.m_numRefActive);
     Fill(task.m_refPicList, IDX_INVALID);
+
+    if (isB)
+    {
+        mfxI32 layer = par.isBPyramid() ? Clip3<mfxI32>(0, 7, task.m_level - 1) : 0;
+        task.m_numRefActive[0] = (mfxU8)CO3.NumRefActiveBL0[layer];
+        task.m_numRefActive[1] = (mfxU8)CO3.NumRefActiveBL1[layer];
+    }
+    if (isP)
+    {
+        mfxI32 layer = PLayer(task.m_poc - prevTask.m_lastIPoc, par);
+        task.m_numRefActive[0] = (mfxU8)CO3.NumRefActiveP[layer];
+        task.m_numRefActive[1] = (mfxU8)Min(CO3.NumRefActiveP[layer], par.NumRefLX[1]);
+    }
 
     if (!isI)
     {

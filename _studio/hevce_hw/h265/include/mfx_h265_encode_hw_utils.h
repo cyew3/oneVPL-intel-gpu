@@ -343,7 +343,8 @@ namespace ExtBuffer
 
     #define _CopyPar(dst, src, PAR) dst.PAR = src.PAR;
     #define _CopyPar1(PAR) _CopyPar(buf_dst, buf_src, PAR);
-    #define  _NO_CHECK()  buf_dst = buf_src;
+    #define _CopyStruct1(PAR) Copy(buf_dst.PAR, buf_src.PAR);
+    #define _NO_CHECK()  buf_dst = buf_src;
 
     template <class T> void CopySupportedParams(T& buf_dst, T& buf_src)
     {
@@ -389,7 +390,10 @@ namespace ExtBuffer
         _CopyPar1(IntRefCycleDist);
         _CopyPar1(EnableQPOffset);
         _CopyPar1(GPB);
-        Copy(buf_dst.QPOffset, buf_src.QPOffset);
+        _CopyStruct1(QPOffset);
+        _CopyStruct1(NumRefActiveP);
+        _CopyStruct1(NumRefActiveBL0);
+        _CopyStruct1(NumRefActiveBL1);
     }
 
     inline void  CopySupportedParams(mfxExtCodingOptionDDI& buf_dst, mfxExtCodingOptionDDI& buf_src)
@@ -403,6 +407,7 @@ namespace ExtBuffer
     }
     #undef _CopyPar
     #undef _CopyPar1
+    #undef _CopyStruct1
     #undef _NO_CHECK
 
     template<class T> void Init(T& buf)

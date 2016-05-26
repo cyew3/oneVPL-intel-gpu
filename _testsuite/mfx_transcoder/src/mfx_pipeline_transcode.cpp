@@ -363,6 +363,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION3(PRefType,                   OPT_UINT_16,   "control usage of P frames as reference in AVC encoder in low delay mode: 0 - undef, 1 - simple, 2 - P ref pyramid"),
         HANDLE_EXT_OPTION3(FadeDetection,              OPT_TRI_STATE, "on|off"),
         HANDLE_EXT_OPTION3(GPB,                        OPT_TRI_STATE, "Generalized P/B"),
+        HANDLE_EXT_OPTION3(EnableQPOffset,             OPT_TRI_STATE, ""),
 
         // mfxExtCodingOptionDDI
         HANDLE_DDI_OPTION(IntraPredCostType,       OPT_UINT_16,    "1=SAD, 2=SSD, 4=SATD_HADAMARD, 8=SATD_HARR"),
@@ -1266,6 +1267,51 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             m_inParams.useEncOrderParFile = true;
             m_EncParams.mfx.EncodedOrder = 1;
             m_inParams.EncodedOrder = 1;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-QPOffset"), VM_STRING("QP offset per pyramid layer (8 layers max)"), OPT_SPECIAL, VM_STRING("int[1..8]")))
+        {
+            MFX_CHECK(1 + argv < argvEnd);
+
+            m_extCodingOptions3->EnableQPOffset = MFX_CODINGOPTION_ON;
+            
+            for (mfxU8 i = 0; i < 8 && argv+1 < argvEnd && argv[1][0] != VM_STRING('-'); i ++)
+            {
+                argv ++;
+                MFX_PARSE_INT(m_extCodingOptions3->QPOffset[i], argv[0]);
+            }
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-NumRefActiveP"), VM_STRING("max number of active references per P-pyramid layer"), OPT_SPECIAL,
+            VM_STRING("uint[1..8]")))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+
+            for (mfxU8 i = 0; i < 8 && argv+1 < argvEnd && argv[1][0] != VM_STRING('-'); i ++)
+            {
+                argv ++;
+                MFX_PARSE_INT(m_extCodingOptions3->NumRefActiveP[i], argv[0]);
+            }
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-NumRefActiveBL0"), VM_STRING("max number of active references in L0 per B-pyramid layer"), OPT_SPECIAL,
+            VM_STRING("uint[1..8]")))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+
+            for (mfxU8 i = 0; i < 8 && argv+1 < argvEnd && argv[1][0] != VM_STRING('-'); i ++)
+            {
+                argv ++;
+                MFX_PARSE_INT(m_extCodingOptions3->NumRefActiveBL0[i], argv[0]);
+            }
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-NumRefActiveBL1"), VM_STRING("max number of active references in L1 per B-pyramid layer"), OPT_SPECIAL,
+            VM_STRING("uint[1..8]")))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+
+            for (mfxU8 i = 0; i < 8 && argv+1 < argvEnd && argv[1][0] != VM_STRING('-'); i ++)
+            {
+                argv ++;
+                MFX_PARSE_INT(m_extCodingOptions3->NumRefActiveBL1[i], argv[0]);
+            }
         }
         else if (MFX_ERR_UNSUPPORTED == (mfxres = ProcessOption(argv, argvEnd)))
         {
