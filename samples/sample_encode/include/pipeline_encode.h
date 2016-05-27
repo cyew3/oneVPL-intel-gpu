@@ -72,6 +72,7 @@ struct sInputParams
     mfxU16 nWidth; // source picture width
     mfxU16 nHeight; // source picture height
     mfxF64 dFrameRate;
+    mfxU32 nNumFrames;
     mfxU16 nBitRate;
     mfxU16 MVC_flags;
     mfxU16 nGopPicSize;
@@ -220,6 +221,8 @@ protected:
     mfxFrameAllocResponse m_VppResponse;  // memory allocation response for vpp
 
     mfxU32 m_nNumView;
+
+    mfxU32 m_nFramesToProcess; // number of frames to process
 
     // for disabling VPP algorithms
     mfxExtVPPDoNotUse m_VppDoNotUse;
