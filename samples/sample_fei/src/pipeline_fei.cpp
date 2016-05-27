@@ -4170,7 +4170,7 @@ mfxStatus CEncodingPipeline::InitEncPakFrameParams(iTask* eTask)
         case MFX_EXTBUFF_FEI_ENC_CTRL:
 
             feiEncCtrl = (mfxExtFeiEncFrameCtrl*)(eTask->in.ExtParam[i]);
-            feiEncCtrl->MVPredictor = (ExtractFrameType(*eTask, encCtrlId) & MFX_FRAMETYPE_I) ? 0 : (m_encpakParams.mvinFile != NULL) || m_encpakParams.bPREENC;
+            feiEncCtrl->MVPredictor = (ExtractFrameType(*eTask, encCtrlId) & MFX_FRAMETYPE_I) ? 0 : ((m_encpakParams.mvinFile != NULL) || m_encpakParams.bPREENC);
 
             // adjust ref window size if search window is 0
             if (m_encpakParams.SearchWindow == 0 && m_pmfxENC)
@@ -4186,6 +4186,10 @@ mfxStatus CEncodingPipeline::InitEncPakFrameParams(iTask* eTask)
                     feiEncCtrl->RefWidth  = m_encpakParams.RefWidth;
                 }
             }
+
+            feiEncCtrl->NumMVPredictors[0] = feiEncCtrl->MVPredictor * m_numOfRefs[encCtrlId][0]; // driver requires these fields to be zero in case of feiEncCtrl->MVPredictor == false
+            feiEncCtrl->NumMVPredictors[1] = feiEncCtrl->MVPredictor * m_numOfRefs[encCtrlId][1]; // but MSDK lib will adjust them to zero if application doesn't
+
             encCtrlId++;
             break;
 
@@ -4313,8 +4317,8 @@ mfxStatus CEncodingPipeline::InitEncodeFrameParams(mfxFrameSurface1* encodeSurfa
             feiEncCtrl->MVPredictor = (!(frameType[feiEncCtrlId] & MFX_FRAMETYPE_I) && (m_encpakParams.mvinFile != NULL || m_encpakParams.bPREENC)) ? 1 : 0;
 
             // Need to set the number to actual ref number for each field
-            feiEncCtrl->NumMVPredictors[0] = m_numOfRefs[fieldId][0];
-            feiEncCtrl->NumMVPredictors[1] = m_numOfRefs[fieldId][1];
+            feiEncCtrl->NumMVPredictors[0] = feiEncCtrl->MVPredictor * m_numOfRefs[fieldId][0]; // driver requires these fields to be zero in case of feiEncCtrl->MVPredictor == false
+            feiEncCtrl->NumMVPredictors[1] = feiEncCtrl->MVPredictor * m_numOfRefs[fieldId][1]; // but MSDK lib will adjust them to zero if application doesn't
             fieldId++;
 
             feiEncCtrlId = 1 - feiEncCtrlId; // set to sfid
