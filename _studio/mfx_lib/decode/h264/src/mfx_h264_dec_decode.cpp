@@ -1631,11 +1631,12 @@ void VideoDECODEH264::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
     {
         mfxExtDecVideoProcessing * videoProcessing = (mfxExtDecVideoProcessing *)GetExtendedBuffer(m_vFirstPar.ExtParam, m_vFirstPar.NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);
         VM_ASSERT(videoProcessing);
-
-        surface_out->Info.CropH = videoProcessing->Out.CropH;
-        surface_out->Info.CropW = videoProcessing->Out.CropW;
-        surface_out->Info.CropX = videoProcessing->Out.CropX;
-        surface_out->Info.CropY = videoProcessing->Out.CropY;
+        if (videoProcessing) {
+            surface_out->Info.CropH = videoProcessing->Out.CropH;
+            surface_out->Info.CropW = videoProcessing->Out.CropW;
+            surface_out->Info.CropX = videoProcessing->Out.CropX;
+            surface_out->Info.CropY = videoProcessing->Out.CropY;
+        }
     }
 
     bool isShouldUpdate = !(m_vFirstPar.mfx.FrameInfo.AspectRatioH || m_vFirstPar.mfx.FrameInfo.AspectRatioW);
