@@ -1320,7 +1320,6 @@ mfxStatus VideoENC_LA::SubmitFrameLA(mfxFrameSurface1 *pInSurface)
             
 
             task->m_event = m_cmCtx->RunVme(*task, 26);
-
             m_LAAsyncContext.numInputFrames++;
             {
                 UMC::AutomaticUMCMutex guard(m_listMutex);                
@@ -1343,7 +1342,9 @@ mfxStatus VideoENC_LA::QueryFrameLA(mfxENCOutput *output)
 
     if (out_t)
     {
-        MFX_CHECK_STS(GetNativeSurface(*m_core, m_video,out_t, &out));
+        mfxStatus sts = GetNativeSurface(*m_core, m_video,out_t, &out);
+        if(sts != MFX_ERR_NONE)
+            return sts;
     }
 
     //if (out)
@@ -1370,7 +1371,9 @@ mfxStatus VideoENC_LA::QueryFrameLA(mfxENCOutput *output)
         currDDILATask = m_VMETasks.front();       
         
 
-        MFX_CHECK(m_cmCtx->QueryVme(*task, task->m_event),MFX_TASK_BUSY);
+        mfxStatus sts = m_cmCtx->QueryVme(*task, task->m_event);
+        if(sts != MFX_ERR_NONE)
+            return sts;
         m_VMETasks.pop_front();
      
 
@@ -1939,16 +1942,16 @@ CmEvent * CmContextLA::RunVme(sLADdiTask const & task,
     }
     return e;
 }
-bool CmContextLA::QueryVme(sLADdiTask const & task,
+mfxStatus CmContextLA::QueryVme(sLADdiTask const & task,
                            CmEvent *       e)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "QueryVme");
 
-    CM_STATUS status = CM_STATUS_QUEUED;
-    if (e->GetStatus(status) != CM_SUCCESS)
+    INT status = e->WaitForTaskFinished();
+    if (status == CM_EXCEED_MAX_TIMEOUT)
+        return MFX_ERR_GPU_HANG;
+    else if(status != CM_SUCCESS)
         throw MfxHwH264Encode::CmRuntimeError();
-    if (status != CM_STATUS_FINISHED)
-        return false;
 
     MfxHwH264Encode::SVCPAKObject * cmMb = (MfxHwH264Encode::SVCPAKObject *)task.m_cmMbSys;
     MfxHwH264Encode::VmeData *      cur  = task.m_Curr.VmeData;
@@ -2024,7 +2027,7 @@ bool CmContextLA::QueryVme(sLADdiTask const & task,
     }
     }
 
-    return true;
+    return MFX_ERR_NONE;
 }
 
 

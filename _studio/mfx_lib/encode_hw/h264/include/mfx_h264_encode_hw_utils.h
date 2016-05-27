@@ -1910,7 +1910,7 @@ namespace MfxHwH264Encode
         void SubmitLookahead(
             DdiTask & task);
 
-        bool QueryLookahead(
+        mfxStatus QueryLookahead(
             DdiTask & task);
 
         mfxStatus QueryStatus(

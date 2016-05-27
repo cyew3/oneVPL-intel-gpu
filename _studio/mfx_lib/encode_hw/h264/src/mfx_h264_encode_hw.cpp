@@ -2468,10 +2468,13 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_WAIT_LA)
     {
+        mfxStatus sts = MFX_ERR_NONE;
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Avc::WAIT_LA");
         if (bIntRateControlLA(m_video.mfx.RateControlMethod))
-            if (!QueryLookahead(m_lookaheadStarted.front()))
-                return MFX_TASK_BUSY;
+            sts = QueryLookahead(m_lookaheadStarted.front());
+        
+        if(sts != MFX_ERR_NONE)
+            return sts;
 
         //printf("\rLA_SYNCED     do=%4d eo=%4d type=%d\n", m_lookaheadStarted.front().m_frameOrder, m_lookaheadStarted.front().m_encOrder, m_lookaheadStarted.front().m_type[0]); fflush(stdout);
         OnLookaheadQueried();
@@ -2494,11 +2497,12 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_WAIT_HIST)
     {
         DdiTask & task = m_histWait.front();
-
+        mfxStatus sts = MFX_ERR_NONE;
         if (IsOn(extOpt3.FadeDetection) && m_cmCtx.get() && m_cmCtx->isHistogramSupported())
-            if (!m_cmCtx->QueryHistogram(task.m_event))
-                return MFX_TASK_BUSY;
-
+            sts = m_cmCtx->QueryHistogram(task.m_event);
+        
+        if(sts != MFX_ERR_NONE)
+            return sts;
         CalcPredWeightTable(task, m_caps.MaxNum_WeightedPredL0, m_caps.MaxNum_WeightedPredL1);
 
         OnHistogramQueried();
@@ -3219,7 +3223,7 @@ void ImplementationAvc::SubmitLookahead(
 }
 
 
-bool ImplementationAvc::QueryLookahead(
+mfxStatus ImplementationAvc::QueryLookahead(
     DdiTask & task)
 {
     return m_cmCtx->QueryVme(task, task.m_event);

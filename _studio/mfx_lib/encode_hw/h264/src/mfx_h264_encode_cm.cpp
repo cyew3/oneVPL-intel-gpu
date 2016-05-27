@@ -929,20 +929,15 @@ CmEvent * CmContext::RunHistogram(
     return e;
 }
 
-bool CmContext::QueryHistogram(CmEvent * e)
+mfxStatus CmContext::QueryHistogram(CmEvent * e)
 {
-    CM_STATUS status = CM_STATUS_QUEUED;
-    if (e->GetStatus(status) != CM_SUCCESS)
+    INT status = e->WaitForTaskFinished();
+    if (status == CM_EXCEED_MAX_TIMEOUT)
+        return MFX_ERR_GPU_HANG;
+    else if(status != CM_SUCCESS)
         throw CmRuntimeError();
-    if (status != CM_STATUS_FINISHED)
-        return false;
-
-    //UINT64 time = 0;
-    //if (e->GetExecutionTime(time) != CM_SUCCESS)
-    //    throw CmRuntimeError();
-    //fprintf(stderr, "Hist ET: %d\n", (mfxU32)time); fflush(stderr);
-
-    return true;
+    
+    return MFX_ERR_NONE;
 }
 
 CmEvent * CmContext::EnqueueKernel(
@@ -1029,17 +1024,17 @@ CmEvent * CmContext::RunVme(
     return e;
 }
 
-bool CmContext::QueryVme(
+mfxStatus CmContext::QueryVme(
     DdiTask const & task,
     CmEvent *       e)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "QueryVme");
 
-    CM_STATUS status = CM_STATUS_QUEUED;
-    if (e->GetStatus(status) != CM_SUCCESS)
+    INT status = e->WaitForTaskFinished();
+    if (status == CM_EXCEED_MAX_TIMEOUT)
+        return MFX_ERR_GPU_HANG;
+    else if(status != CM_SUCCESS)
         throw CmRuntimeError();
-    if (status != CM_STATUS_FINISHED)
-        return false;
 
     SVCPAKObject * cmMb = (SVCPAKObject *)task.m_cmMbSys;
     VmeData *      cur  = task.m_vmeData;
@@ -1108,7 +1103,7 @@ bool CmContext::QueryVme(
         }
     }
 
-    return true;
+    return MFX_ERR_NONE;
 }
 
 #ifdef USE_DOWN_SAMPLE_KERNELS

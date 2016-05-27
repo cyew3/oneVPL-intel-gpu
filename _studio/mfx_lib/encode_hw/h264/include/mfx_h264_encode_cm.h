@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -300,7 +300,7 @@ public:
         DdiTask const & task,
         mfxU32          qp);
 
-    bool QueryVme(
+    mfxStatus  QueryVme(
         DdiTask const & task,
         CmEvent *       e);
 
@@ -311,7 +311,7 @@ public:
         mfxU16 OffsetX,
         mfxU16 OffsetY);
 
-    bool QueryHistogram(
+    mfxStatus QueryHistogram(
         CmEvent * e);
 
     bool isHistogramSupported() { return m_programHist != 0; }
@@ -345,19 +345,19 @@ public:
     CmEvent* DownSample4XAsync(CmSurface2D* surfOrig, CmSurface2D* surf4X);
 #endif
 
-    int DestroyEvent( CmEvent*& e ){
+    mfxStatus DestroyEvent( CmEvent*& e ){
+        mfxStatus status = MFX_ERR_NONE;
         if(m_queue) { 
             if (e) {
-                //e->WaitForTaskFinished();
-                CM_STATUS status = CM_STATUS_QUEUED;
-                while (status != CM_STATUS_FINISHED) {
-                    if (e->GetStatus(status) != CM_SUCCESS)
+                INT sts = e->WaitForTaskFinished();
+                    if (sts == CM_EXCEED_MAX_TIMEOUT)
+                        status = MFX_ERR_GPU_HANG;
+                    else if(sts != CM_SUCCESS)
                         throw CmRuntimeError();
-                }
             }
-            return m_queue->DestroyEvent(e);
+            m_queue->DestroyEvent(e);
         }
-        else return 0;
+        return status;
     } 
 
 protected:

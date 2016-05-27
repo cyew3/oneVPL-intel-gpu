@@ -2453,16 +2453,13 @@ int RunGpu(
     res = queue->Enqueue(task, e, threadSpace);
 
     // wait result here!!!
-    CM_STATUS sts;
+    INT sts;
     mfxStatus status = MFX_ERR_NONE;
     if (CM_SUCCESS == res && e)
     {
-        e->GetStatus(sts);
-
-        while (sts != CM_STATUS_FINISHED)
-        {
-            e->GetStatus(sts);
-        }
+        sts = e->WaitForTaskFinished();
+        if(sts == CM_EXCEED_MAX_TIMEOUT)
+            status = MFX_ERR_GPU_HANG;
     } else {
         status = MFX_ERR_DEVICE_FAILED;
     }
