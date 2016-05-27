@@ -2239,10 +2239,14 @@ void InitDPB(
     {
         Fill(task.m_dpb[TASK_DPB_ACTIVE], IDX_INVALID);
 
-        mfxU8 idx = GetDPBIdxByPoc(prevTask.m_dpb[TASK_DPB_AFTER], task.m_lastIPoc);
+        // TODO: add mode to disable this check
+        for (mfxU8 i = 0, j = 0; !isDpbEnd(prevTask.m_dpb[TASK_DPB_AFTER], i); i++)
+        {
+            const DpbFrame& ref = prevTask.m_dpb[TASK_DPB_AFTER][i];
 
-        if (idx < MAX_DPB_SIZE)
-            task.m_dpb[TASK_DPB_ACTIVE][0] = prevTask.m_dpb[TASK_DPB_AFTER][idx];
+            if (ref.m_poc == task.m_lastIPoc || ref.m_ltr)
+                task.m_dpb[TASK_DPB_ACTIVE][j++] = ref;
+        }
     }
     else
     {
@@ -2643,8 +2647,21 @@ mfxU8 GetSHNUT(Task const & task)
 
     if (isIDR)
         return IDR_W_RADL;
+
     if (isI)
+    {
+        //TODO: add mode with TRAIL_R only
+        const DpbArray& DPB = task.m_dpb[TASK_DPB_AFTER];
+        for (mfxU16 i = 0; !isDpbEnd(DPB, i); i++)
+        {
+            if (DPB[i].m_ltr && DPB[i].m_idxRec != task.m_idxRec)
+            {
+                //following frames may refer to prev. GOP
+                return TRAIL_R;
+            }
+        }
         return CRA_NUT;
+    }
 
     if (task.m_tid > 0)
     {
