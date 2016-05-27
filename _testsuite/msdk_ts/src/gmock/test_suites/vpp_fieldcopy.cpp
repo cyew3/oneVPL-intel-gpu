@@ -149,6 +149,11 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFX_PAR, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
         {MFX_PAR, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
     },
+    {/*15*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_EXTBUFF_VPP_FIELD_PROCESSING, {
+        {MFX_PAR, &tsStruct::mfxExtVPPFieldProcessing.Mode, MFX_VPP_COPY_FRAME},
+        {MFX_PAR, &tsStruct::mfxExtVPPFieldProcessing.InField, MFX_PICTYPE_BOTTOMFIELD},
+        {MFX_PAR, &tsStruct::mfxExtVPPFieldProcessing.OutField, MFX_PICTYPE_BOTTOMFIELD}}
+    },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -261,8 +266,6 @@ int TestSuite::RunTest(unsigned int id)
             }
         }
 
-        delete[] vpp_du->AlgList;
-        vpp_du->AlgList = 0;
         delete[] vpp_du2->AlgList;
         vpp_du2->AlgList = 0;
     }
@@ -271,6 +274,12 @@ int TestSuite::RunTest(unsigned int id)
     {
         AllocSurfaces();
         ProcessFrames(10);
+    }
+    
+    if (tc.mode != 0)
+    {
+        delete[] vpp_du->AlgList;
+        vpp_du->AlgList = 0;
     }
 
     TS_END;
