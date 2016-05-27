@@ -74,7 +74,7 @@ private:
                 if(c.field)
                     tsStruct::set(*base, *c.field, c.par[0]);
                 else
-                    *base = (void*)c.par;
+                    *((mfxU32*)base) = c.par[0];
             }
         }
     }
