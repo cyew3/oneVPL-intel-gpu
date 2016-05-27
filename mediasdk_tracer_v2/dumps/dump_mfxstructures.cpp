@@ -245,7 +245,7 @@ std::string DumpContext::dump(const std::string structName, const mfxFrameAllocR
     else
         str += structName + ".mids=" + "NULL" + "\n";
     str += structName + ".NumFrameActual=" + ToString(frameAllocResponse.NumFrameActual) + "\n";
-    str += structName + ".reserved2=" + ToString(frameAllocResponse.reserved2) + "\n";
+    str += structName + ".MemType=" + ToString(frameAllocResponse.MemType) + "\n";
     return str;
 }
 

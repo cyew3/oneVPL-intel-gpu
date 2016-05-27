@@ -908,7 +908,7 @@ typedef struct {
     mfxU32      reserved[3];
     mfxMemId    *mids;      /* the array allocated by application */
     mfxU16      NumFrameActual;
-    mfxU16      reserved2;
+    mfxU16      MemType;
 } mfxFrameAllocResponse;
 
 /* FrameType */
