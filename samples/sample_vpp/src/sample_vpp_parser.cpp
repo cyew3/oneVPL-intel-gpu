@@ -1645,6 +1645,14 @@ mfxStatus ParseCompositionParfile(const msdk_char* parFileName, sInputParams* pP
     }
     pParams->numStreams = nStreamInd + 1;
 
+    for(int i=0;i<pParams->numStreams;i++)
+    {
+        if(!pParams->inFrameInfo[i].FourCC)
+        {
+            msdk_printf(MSDK_STRING("Fourcc parameter of stream %d in par file is invalid or missing.\n"),i);
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+    }
     return sts;
 }
 
