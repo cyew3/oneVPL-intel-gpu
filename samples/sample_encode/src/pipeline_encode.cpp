@@ -946,6 +946,8 @@ CEncodingPipeline::CEncodingPipeline()
     MSDK_ZERO_MEMORY(m_VppResponse);
 
     isV4L2InputEnabled = false;
+
+    m_nFramesToProcess = 0;
 }
 
 CEncodingPipeline::~CEncodingPipeline()
@@ -1187,6 +1189,8 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 
     InitV4L2Pipeline(pParams);
 
+    m_nFramesToProcess = pParams->nNumFrames;
+
     return MFX_ERR_NONE;
 }
 
@@ -1407,6 +1411,8 @@ mfxStatus CEncodingPipeline::Run()
     // we will change this value between 0 and 1 in case of MVC
     mfxU16 currViewNum = 0;
 
+    mfxU32 nFramesProcessed = 0;
+
     sts = MFX_ERR_NONE;
 
 #if defined (ENABLE_V4L2_SUPPORT)
@@ -1419,6 +1425,11 @@ mfxStatus CEncodingPipeline::Run()
     // main loop, preprocessing and encoding
     while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts)
     {
+        if ((m_nFramesToProcess != 0) && (nFramesProcessed == m_nFramesToProcess))
+        {
+            break;
+        }
+
 #if defined (ENABLE_V4L2_SUPPORT)
         if (v4l2Pipeline.GetV4L2TerminationSignal() && isV4L2InputEnabled)
         {
@@ -1554,6 +1565,8 @@ mfxStatus CEncodingPipeline::Run()
                 break;
             }
         }
+
+        nFramesProcessed++;
     }
 
     // means that the input file has ended, need to go to buffering loops

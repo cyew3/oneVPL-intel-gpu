@@ -72,6 +72,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-nobref] -  do not use B-pyramid (by default the decision is made by library)\n"));
     msdk_printf(MSDK_STRING("   [-idr_interval size] - idr interval, default 0 means every I is an IDR, 1 means every other I frame is an IDR etc\n"));
     msdk_printf(MSDK_STRING("   [-f frameRate] - video frame rate (frames per second)\n"));
+    msdk_printf(MSDK_STRING("   [-n number] - number of frames to process\n"));
     msdk_printf(MSDK_STRING("   [-b bitRate] - encoded bit rate (Kbits per second), valid for H.264, H.265, MPEG2 and MVC encoders \n"));
     msdk_printf(MSDK_STRING("   [-u speed|quality|balanced] - target usage, valid for H.264, H.265, MPEG2 and MVC encoders\n"));
     msdk_printf(MSDK_STRING("   [-q quality] - mandatory quality parameter for JPEG encoder. In range [1,100]. 100 is the best quality. \n"));
@@ -150,6 +151,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     // default implementation
     pParams->bUseHWLib = true;
     pParams->isV4L2InputEnabled = false;
+    pParams->nNumFrames = 0;
 #if defined (ENABLE_V4L2_SUPPORT)
     pParams->MipiPort = -1;
     pParams->MipiMode = NONE;
@@ -482,6 +484,18 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-f' expects an argument\n"));
+                }
+                break;
+            case MSDK_CHAR('n'):
+                if (++i < nArgNum) {
+                    if (MFX_ERR_NONE != msdk_opt_read(strInput[i], pParams->nNumFrames))
+                    {
+                        PrintHelp(strInput[0], MSDK_STRING("Number of frames to process is invalid"));
+                        return MFX_ERR_UNSUPPORTED;
+                    }
+                }
+                else {
+                    msdk_printf(MSDK_STRING("error: option '-n' expects an argument\n"));
                 }
                 break;
             case MSDK_CHAR('b'):
