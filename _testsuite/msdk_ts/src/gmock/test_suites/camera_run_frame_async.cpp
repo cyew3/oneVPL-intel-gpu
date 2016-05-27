@@ -258,7 +258,7 @@ private:
                     std::cout << "  Set field " << c.field->name << " to " << c.par[0] << "\n";
                 }
                 else
-                    *base = (void*)c.par;
+                    *((mfxU32*)base) = c.par[0];
             }
         }
     }
