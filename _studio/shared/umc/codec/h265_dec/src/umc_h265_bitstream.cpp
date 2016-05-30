@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -1683,34 +1683,33 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
             offsetLenMinus1 = GetVLCElementU();
             if (offsetLenMinus1 > 31)
                 throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-        }
-
-        entryPointOffset = new Ipp32u[sliceHdr->num_entry_point_offsets];
-        for (Ipp32u idx = 0; idx < sliceHdr->num_entry_point_offsets; idx++)
-        {
-            entryPointOffset[idx] = GetBits(offsetLenMinus1 + 1) + 1;
-        }
-
-        if (pps->tiles_enabled_flag)
-        {
-            pSlice->allocateTileLocation(sliceHdr->num_entry_point_offsets + 1);
-
-            unsigned prevPos = 0;
-            pSlice->m_tileByteLocation[0] = 0;
-            for (int idx=1; idx < pSlice->getTileLocationCount() ; idx++)
+            entryPointOffset = new Ipp32u[sliceHdr->num_entry_point_offsets];
+            for (Ipp32u idx = 0; idx < sliceHdr->num_entry_point_offsets; idx++)
             {
-                pSlice->m_tileByteLocation[idx] = prevPos + entryPointOffset[idx - 1];
-                prevPos += entryPointOffset[ idx - 1 ];
+                entryPointOffset[idx] = GetBits(offsetLenMinus1 + 1) + 1;
             }
-        }
-        else if (pps->entropy_coding_sync_enabled_flag)
-        {
-            // we don't use wpp offsets
-        }
 
-        if (entryPointOffset)
-        {
-            delete[] entryPointOffset;
+            if (pps->tiles_enabled_flag)
+            {
+                pSlice->allocateTileLocation(sliceHdr->num_entry_point_offsets + 1);
+
+                unsigned prevPos = 0;
+                pSlice->m_tileByteLocation[0] = 0;
+                for (int idx = 1; idx < pSlice->getTileLocationCount(); idx++)
+                {
+                    pSlice->m_tileByteLocation[idx] = prevPos + entryPointOffset[idx - 1];
+                    prevPos += entryPointOffset[idx - 1];
+                }
+            }
+            else if (pps->entropy_coding_sync_enabled_flag)
+            {
+                // we don't use wpp offsets
+            }
+
+            if (entryPointOffset)
+            {
+                delete[] entryPointOffset;
+            }
         }
     }
     else
