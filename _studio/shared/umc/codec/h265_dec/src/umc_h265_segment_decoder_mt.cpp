@@ -272,7 +272,9 @@ void H265SegmentDecoderMultiThreaded::RestoreErrorRect(H265Task * task)
 
         if (!refFrame)
         {
-            refFrame = m_pTaskBroker->m_pTaskSupplier->GetDPBList()->FindClosest(pCurrentFrame);
+            H265DBPList *dbpList = m_pTaskBroker->m_pTaskSupplier->GetDPBList();
+            if (dbpList)
+                refFrame = dbpList->FindClosest(pCurrentFrame);
         }
 
         CreateReconstructor();
