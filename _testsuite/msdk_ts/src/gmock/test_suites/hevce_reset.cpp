@@ -63,8 +63,10 @@ namespace hevce_reset
             FOURCC,
             PIC_STRUCT,
             XY,
+            PROTECTED,
             CHANGE,
             WRONG,
+            INVALID,
             NONE
         };
 
@@ -306,22 +308,29 @@ namespace hevce_reset
 
         },
         //Protected
-        {/* 31*/ MFX_ERR_UNSUPPORTED, MFX_ERR_UNSUPPORTED, NONE, NONE, 1,
+        {/* 31*/ MFX_ERR_UNSUPPORTED, MFX_ERR_NONE, PROTECTED, NONE, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.Protected, 1 }
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_PAVP }
             }
 
         },
-        {/* 32*/ MFX_ERR_UNSUPPORTED, MFX_ERR_UNSUPPORTED, NONE, NONE, 1,
+        {/* 32*/ MFX_ERR_UNSUPPORTED, MFX_ERR_NONE, PROTECTED, NONE, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.Protected, 2 }
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_PAVP }
+            }
+
+        },
+        {/* 33*/ MFX_ERR_UNSUPPORTED, MFX_ERR_UNSUPPORTED, PROTECTED, INVALID, 1,
+            { "forBehaviorTest/foster_720x576.yuv", "" },
+            {
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.Protected, 0xfff }
             }
 
         },
         //Frame Rate
-        {/* 33*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, FRAMERATE, CHANGE, 1,
+        {/* 34*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, FRAMERATE, CHANGE, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 60 },
@@ -329,7 +338,7 @@ namespace hevce_reset
             }
 
         },
-        {/* 34*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, FRAMERATE, WRONG, 1,
+        {/* 35*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, FRAMERATE, WRONG, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN,350 },
@@ -338,7 +347,7 @@ namespace hevce_reset
 
         },
         //FourCC
-        {/* 35*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, FOURCC, WRONG, 1,
+        {/* 36*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, FOURCC, WRONG, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12 },
@@ -346,7 +355,7 @@ namespace hevce_reset
 
         },
         // PicStruct
-        {/* 36*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, PIC_STRUCT, CHANGE, 1,
+        {/* 37*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, PIC_STRUCT, CHANGE, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 255 },
@@ -354,56 +363,56 @@ namespace hevce_reset
 
         },
         // Ext Buffer
-        {/* 37*/ MFX_ERR_NONE, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_CODING_OPTION_SPSPPS, 1,
+        {/* 38*/ MFX_ERR_NONE, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_CODING_OPTION_SPSPPS, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
-        {/* 38*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_VIDEO_SIGNAL_INFO, 1,
+        {/* 39*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_VIDEO_SIGNAL_INFO, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
-        {/* 39*/ MFX_ERR_NONE, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_CODING_OPTION, 1,
+        {/* 40*/ MFX_ERR_NONE, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_CODING_OPTION, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
-        {/* 40*/ MFX_ERR_NONE, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_CODING_OPTION2, 1,
+        {/* 41*/ MFX_ERR_NONE, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_CODING_OPTION2, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
-        {/* 41*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_VPP_DOUSE, 1,
+        {/* 42*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_VPP_DOUSE, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
-        {/* 42*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_VPP_AUXDATA, 1,
+        {/* 43*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_VPP_AUXDATA, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
-        {/* 43*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_AVC_REFLIST_CTRL, 1,
+        {/* 44*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_AVC_REFLIST_CTRL, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
-        {/* 44*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION, 1,
+        {/* 45*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
-        {/* 45*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_PICTURE_TIMING_SEI, 1,
+        {/* 46*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_PICTURE_TIMING_SEI, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
-        {/* 46*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_ENCODER_CAPABILITY, 1,
+        {/* 47*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_ENCODER_CAPABILITY, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
-        {/* 47*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_ENCODER_RESET_OPTION, 1,
+        {/* 48*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_ENCODER_RESET_OPTION, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
-        {/* 48*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NULL_PTR, EXT_BUFF, NONE, 1,
+        {/* 49*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NULL_PTR, EXT_BUFF, NONE, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
         //not wait finish encoding
-        {/* 49*/ MFX_ERR_NONE, MFX_ERR_NONE, NOT_SYNC, NONE, 1,
+        {/* 50*/ MFX_ERR_NONE, MFX_ERR_NONE, NOT_SYNC, NONE, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
@@ -462,9 +471,11 @@ namespace hevce_reset
             m_is_handle_set = (g_tsStatus.get() >= 0);
         }
 
-        if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
+        if ((0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))) ||
+            (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_GACC.Data, sizeof(MFX_PLUGINID_HEVCE_GACC.Data))))
         {
-            if (g_tsHWtype < MFX_HW_SKL) // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
+            if ((g_tsHWtype < MFX_HW_SKL) &&
+               (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))) // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
             {
                 g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
                 g_tsLog << "WARNING: Unsupported HW Platform!\n";
@@ -529,13 +540,6 @@ namespace hevce_reset
 
         }
 
-        if (tc.stream[1] != "")
-        {
-            reader = new tsRawReader(stream1, m_pPar->mfx.FrameInfo);
-            m_filler = reader;
-        }
-
-
         for (mfxU32 i = 0; i < tc.repeat; i++)
         {
             g_tsStatus.expect(sts);
@@ -553,6 +557,27 @@ namespace hevce_reset
 
             if (tc.stream[0] != "" || tc.stream[1] != "")
             {
+                if (tc.type == PROTECTED)
+                {
+                    mfxEncryptedData ed;
+                    ed.DataLength = m_bitstream.DataLength;
+                    ed.DataOffset = m_bitstream.DataOffset;
+                    ed.MaxLength = m_bitstream.MaxLength;
+                    ed.Data = m_bitstream.Data;
+                    m_bitstream.EncryptedData = &ed;
+                }
+
+                if (tc.stream[1] != "")
+                {
+                    reader = new tsRawReader(stream1, m_pPar->mfx.FrameInfo);
+                    m_filler = reader;
+                }
+                else if (tc.stream[0] != "")
+                {
+                    reader = new tsRawReader(stream0, m_pPar->mfx.FrameInfo);
+                    m_filler = reader;
+                }
+
                 EncodeFrames(1);
             }
             Close();

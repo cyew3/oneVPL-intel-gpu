@@ -50,6 +50,8 @@ private:
         IO_PATTERN,
         FRAME_RATE,
         PIC_STRUCT,
+        PROTECTED,
+        INVALID,
         NONE
     };
 
@@ -350,7 +352,9 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     //got opt flag
     {/*67*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopOptFlag, 2 } },
     //protected
-    {/*68*/ MFX_ERR_UNSUPPORTED, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, 1 } },
+    {/*68*/ MFX_ERR_NONE, PROTECTED, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_PAVP } },
+    {/*69*/ MFX_ERR_NONE, PROTECTED, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_PAVP } },
+    {/*70*/ MFX_ERR_UNSUPPORTED, PROTECTED, INVALID, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, 0xfff } },
 
 
 };
@@ -367,6 +371,7 @@ int TestSuite::RunTest(unsigned int id)
     mfxExtBuffer* buff_in = NULL;
     mfxExtBuffer* buff_out = NULL;
     mfxStatus sts;
+
 
     // set defoult parameters
     m_pParOut = new mfxVideoParam;
@@ -494,6 +499,11 @@ int TestSuite::RunTest(unsigned int id)
         {
             g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
         }
+    }
+    else
+    {
+        if (tc.type == PROTECTED)
+            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
     }
 
     if (tc.type == IN_PAR_NULL)
