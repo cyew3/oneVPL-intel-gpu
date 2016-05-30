@@ -53,6 +53,8 @@ namespace hevce_init
             FRAME_RATE,
             PIC_STRUCT,
             SLICE,
+            CHROMA_FORMAT,
+            INVALID,
             NONE
         };
 
@@ -313,7 +315,7 @@ namespace hevce_init
             }
         },
         //chroma format
-        {/*29*/ MFX_ERR_UNSUPPORTED, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, 255 } },
+        {/*29*/ MFX_ERR_UNSUPPORTED, CHROMA_FORMAT, INVALID, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_RESERVED1 } },
         //num slice
         {/*30*/ MFX_ERR_INVALID_VIDEO_PARAM, SLICE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 65535 } },
         //frame rate
@@ -359,7 +361,7 @@ namespace hevce_init
         //API mfxExtHEVCParam, for HW plugin only
         //in current version PicWidthInLumaSamples/PicHeightInLumaSamples should be aligned on 16 due to hw limitation
         //after this limitation removed, expected status for case #60/#61 would be updated
-        {/*60*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+        {/*60*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088 },
@@ -387,8 +389,10 @@ namespace hevce_init
         },
         {/*63*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
             {
-                { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicWidthInLumaSamples, 0xff00 },
-                { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 0xff00 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088 },
+                { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicWidthInLumaSamples, 1920 + 10 },
+                { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 1088 + 10 },
             }
         },
         {/*64*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
@@ -461,15 +465,15 @@ namespace hevce_init
         TS_START;
         const tc_struct& tc = test_case[id];
 
+
         mfxHDL hdl;
         mfxHandleType type;
         mfxExtBuffer* buff_in = NULL;
         mfxExtBuffer* buff_out = NULL;
         mfxStatus sts;
 
-
-
         MFXInit();
+
         if (tc.type != NOT_LOAD_PLUGIN)
             Load();
         else
@@ -607,6 +611,10 @@ namespace hevce_init
             {
                 m_par.mfx.FrameInfo.Width = ((m_par.mfx.FrameInfo.Width + 32 - 1) & ~(32 - 1));
                 m_par.mfx.FrameInfo.Height = ((m_par.mfx.FrameInfo.Height + 32 - 1) & ~(32 - 1));
+            }
+            if ((tc.type == CHROMA_FORMAT) && (tc.sub_type == INVALID) && (g_tsImpl & MFX_IMPL_VIA_D3D11))
+            {
+                sts = MFX_ERR_DEVICE_FAILED;
             }
 
 
