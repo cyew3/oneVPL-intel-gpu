@@ -181,6 +181,9 @@
     <ClCompile Include="src\gmock\test_suites\hevcd_query_io_surf.cpp">
       <Filter>Source Files\test_suites\hevcd</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevcd_corruption.cpp">
+      <Filter>Source Files\test_suites\hevcd</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vp8e_encode_frame_async.cpp">
       <Filter>Source Files\test_suites\vp8e</Filter>
     </ClCompile>
