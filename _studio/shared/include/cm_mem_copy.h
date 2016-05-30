@@ -138,6 +138,7 @@ public:
 
 
     mfxStatus CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi);
+    mfxStatus CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi);
 
     mfxStatus CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi);
 
@@ -153,6 +154,15 @@ public:
     mfxStatus CopyMirrorVideoToVideoMemory(void *pDst, void *pSrc, IppiSize roi, mfxU32 format);
     
     mfxStatus ReleaseCmSurfaces(void);
+    mfxStatus EnqueueCopyNV12GPUtoCPU(   CmSurface2D* pSurface,
+                                    unsigned char* pSysMem,
+                                    int width,
+                                    int height,
+                                    const UINT widthStride, 
+                                    const UINT heightStride,
+                                    mfxU32 format, 
+                                    const UINT option,
+                                    CmEvent* & pEvent );
     mfxStatus EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
                                     unsigned char* pSysMem,
                                     int width,
@@ -259,7 +269,7 @@ protected:
                                     std::map<void *, CmSurface2D *> & tableCmRelations,
                                     std::map<CmSurface2D *, SurfaceIndex *> & tableCmIndex);
 
-    CmBufferUP  * CreateUpBuffer(mfxU8 *pDst, mfxU32 memSize, 
+    SurfaceIndex  * CreateUpBuffer(mfxU8 *pDst, mfxU32 memSize, 
                                  std::map<mfxU8 *, CmBufferUP *> & tableSysRelations,
                                  std::map<CmBufferUP *,  SurfaceIndex *> & tableSysIndex);
 
