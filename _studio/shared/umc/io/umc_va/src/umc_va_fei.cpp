@@ -58,10 +58,8 @@ namespace UMC
     {
         VM_ASSERT(m_remap_refs);
 
-        m_flags = pp->CurrPic.flags;
-
         //we do x2 for interlaced content during SPS parsing, scale it down here
-        m_max_allowed_mbs_in_slice =
+        m_allowed_max_mbs_in_slice =
             (pp->picture_width_in_mbs_minus1 + 1) * ((pp->picture_height_in_mbs_minus1 + 1) >> pp->pic_fields.bits.field_pic_flag);
 
         Ipp32s const count = sizeof(m_references) / sizeof(m_references[0]);
@@ -153,7 +151,7 @@ namespace UMC
             
             Ipp16u const first_mb_in_slice = (*f).first;
             Ipp32s const mb_per_slice_count =
-                ((n != l ? (*n).first : m_max_allowed_mbs_in_slice)) - first_mb_in_slice;
+                ((n != l ? (*n).first : m_allowed_max_mbs_in_slice)) - first_mb_in_slice;
 
             mb_processed += mb_per_slice_count;
             if (mb_processed > mb_total)
@@ -184,30 +182,17 @@ namespace UMC
                     Ipp32u const* map = &slice_refs[offset];
                     for (int k = 0; k < 4; ++k)
                     {
+                        //NOTE: we still have no info about ref. field, use hardcoded zero
+                        Ipp32u const field = 0;
+
                         //Ad Hoc: not active references is reported as zero
                         if (!(mb->InterMB.RefIdx[j][k] & 0x80))
                             mb->InterMB.RefIdx[j][k] = UCHAR_MAX;
                         else
                         {
-                            //NOTE: while GFX spec describes Store ID as bits 4:1 forms the index
+                            //NOTE: while GFX spec describe Store ID as bits 4:1 forms the index
                             //we see that all 4:0 bits do this
-                            Ipp32u idx = (mb->InterMB.RefIdx[j][k] & 0x1f);
-
-                            Ipp32u field = 0;
-
-                            //NOTE: due HW limitation for field polarity
-                            //we use driver's WA - Frame Store ID > MaxDPB / 2  means the bottom field
-                            if (m_flags & (VA_PICTURE_H264_BOTTOM_FIELD | VA_PICTURE_H264_TOP_FIELD))
-                            {
-                                Ipp32s const max_allowed_dpb =
-                                    (sizeof(m_references) / sizeof(m_references[0])) / 2;
-
-                                if (idx >= max_allowed_dpb)
-                                {
-                                    field = 1;
-                                    idx  -= max_allowed_dpb;
-                                }
-                            }
+                            Ipp32u const idx   = (mb->InterMB.RefIdx[j][k] & 0x1f);
 
                             mb->InterMB.RefIdx[j][k] =  map[count * field + idx];
                         }
@@ -293,18 +278,7 @@ namespace UMC
                 = reinterpret_cast<VASliceParameterBufferH264*>(buffer->GetPtr());
 
             for (VASliceParameterBufferH264 const* sp_end = sp + slice_count; sp != sp_end; ++sp)
-            {
-                //sanity check for interlaced content -
-                //currently HW has restriction - no field polarity info om MB level
-                //use driver's WA with following constrains - max supported DPB size = 8
-                Ipp16u const flags = m_streamOutBuffer->GetFlags();
-                if ((flags & (VA_PICTURE_H264_BOTTOM_FIELD | VA_PICTURE_H264_TOP_FIELD)) &&
-                    (sp->num_ref_idx_l0_active_minus1 + 1 > 8 ||
-                     sp->num_ref_idx_l1_active_minus1 + 1 > 8))
-                    return UMC_ERR_UNSUPPORTED;
-
                 m_streamOutBuffer->FillSliceReferences(sp);
-            }
         }
 
         Status sts = LinuxVideoAccelerator::Execute();

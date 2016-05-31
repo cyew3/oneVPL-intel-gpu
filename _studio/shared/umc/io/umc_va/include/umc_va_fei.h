@@ -30,8 +30,7 @@ namespace UMC
         VAStreamOutBuffer()
             : m_remap_refs(false)
             , m_field(0)
-            , m_flags(0)
-            , m_max_allowed_mbs_in_slice(0)
+            , m_allowed_max_mbs_in_slice(0)
         {}
 
         void RemapRefs(bool remap)
@@ -43,8 +42,6 @@ namespace UMC
         { m_field = field; }
         Ipp32s GetField() const
         { return m_field; }
-        Ipp16u GetFlags() const
-        { return m_flags; }
 
         void FillPicReferences(VAPictureParameterBufferH264 const*);
         void FillSliceReferences(VASliceParameterBufferH264 const*);
@@ -55,9 +52,8 @@ namespace UMC
 
         bool           m_remap_refs;
         Ipp32s         m_field;
-        Ipp16u         m_flags;
 
-        Ipp16u         m_max_allowed_mbs_in_slice;
+        Ipp16u         m_allowed_max_mbs_in_slice;
         Ipp32u         m_references[16];
 
         //map [Slice::first_mb_in_slice] onto its Ref. lists
