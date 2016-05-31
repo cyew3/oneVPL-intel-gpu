@@ -141,7 +141,7 @@ public:
     mfxStatus CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi);
 
     mfxStatus CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi);
-
+    mfxStatus CopySystemToVideoMemory(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi);
     mfxStatus CopyVideoToVideoMemoryAPI(void *pDst, void *pSrc, IppiSize roi);
     
     mfxStatus CopySwapVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi, mfxU32 format);
@@ -232,6 +232,15 @@ public:
                                     mfxU32 format, 
                                     const UINT option,
                                     int bitshift,
+                                    CmEvent* & pEvent );
+    mfxStatus EnqueueCopyNV12CPUtoGPU(   CmSurface2D* pSurface,
+                                    unsigned char* pSysMem,
+                                    int width,
+                                    int height,
+                                    const UINT widthStride, 
+                                    const UINT heightStride,
+                                    mfxU32 format, 
+                                    const UINT option,
                                     CmEvent* & pEvent );
 protected:
 

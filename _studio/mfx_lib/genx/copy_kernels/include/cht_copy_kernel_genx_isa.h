@@ -9,5 +9,5 @@
 
 #ifndef __cht_copy_kernel_genx__
 #define __cht_copy_kernel_genx__
-extern const unsigned char cht_copy_kernel_genx[345281];
+extern const unsigned char cht_copy_kernel_genx[345345];
 #endif
