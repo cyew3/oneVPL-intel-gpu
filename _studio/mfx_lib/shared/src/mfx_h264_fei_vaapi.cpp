@@ -510,7 +510,13 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     if (feiCtrl != NULL)
     {
         m_statParams.adaptive_search = feiCtrl->AdaptiveSearch;
-        m_statParams.disable_statistics_output = (mbstatOut == NULL) || feiCtrl->DisableStatisticsOutput;
+        //m_statParams.disable_statistics_output = (mbstatOut == NULL) || feiCtrl->DisableStatisticsOutput;
+        /* There is a limitation from driver for now:
+         * MSDK need to provide stat buffers for I- frame.
+         * MSDK always attach statistic buffer for PreEnc right now
+         * (But does not copy buffer to user if it is not required)
+         * */
+        m_statParams.disable_statistics_output = 0;
         m_statParams.disable_mv_output = (mvsOut == NULL) || feiCtrl->DisableMVOutput;
         m_statParams.mb_qp = (feiQP == NULL) && feiCtrl->MBQp;
         m_statParams.mv_predictor_ctrl = (feiMVPred != NULL) ? feiCtrl->MVPredictor : 0;
@@ -1024,7 +1030,7 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
                 }
             }
 
-            if (feiCtrl && !feiCtrl->DisableStatisticsOutput && mbstatOut)
+            if (VA_INVALID_ID != statOUTid)
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MBstat");
                 {
@@ -1034,10 +1040,13 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
                             statOUTid,
                             (void **) (&mbstat));
                 }
-
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-                memcpy_s(mbstatOut->MB, sizeof (mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB) * mbstatOut->NumMBAlloc,
+                /* MSDK copy data back only if application requested statistic */
+                if (feiCtrl && !feiCtrl->DisableStatisticsOutput && mbstatOut)
+                {
+                    memcpy_s(mbstatOut->MB, sizeof (mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB) * mbstatOut->NumMBAlloc,
                         mbstat, sizeof (VAStatsStatistics16x16Intel) * mbstatOut->NumMBAlloc);
+                }
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
                     vaUnmapBuffer(m_vaDisplay, statOUTid);
