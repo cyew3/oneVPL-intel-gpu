@@ -70,7 +70,7 @@ mfxU16 gamma_point[64] =
 
 mfxU16 gamma_correct[64] =
 {
-    4,   4,  20,  37,  56,  75,  96, 117, 128, 140, 150, 161, 171, 180, 198, 207,
+    0,   4,  20,  37,  56,  75,  96, 117, 128, 140, 150, 161, 171, 180, 198, 207,
     216, 224, 232, 240, 249, 258, 268, 283, 298, 310, 329, 344, 359, 374, 389, 404,
     420, 435, 451, 466, 482, 498, 515, 531, 548, 565, 582, 599, 617, 635, 653, 671,
     690, 729, 749, 769, 790, 811, 832, 854, 876, 899, 922, 945, 969, 994, 1019,1019
@@ -935,6 +935,15 @@ mfxStatus CCameraPipeline::Init(sInputParams *pParams)
     else if ( pParams->accelType == D3D11 && pParams->memTypeOut == VIDEO)
     {
         m_memTypeOut = D3D11_MEMORY;
+    }
+
+    if ( pParams->accelType == D3D9 && pParams->memTypeIn == VIDEO)
+    {
+            m_memTypeIn  = D3D9_MEMORY;
+    }
+    else if ( pParams->accelType == D3D11 && pParams->memTypeIn == VIDEO)
+    {
+        m_memTypeIn = D3D11_MEMORY;
     }
 
     // API version
