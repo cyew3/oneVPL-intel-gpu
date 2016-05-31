@@ -1846,7 +1846,10 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     mfxExtMoveRect *           extMoveRect  = GetExtBuffer(par);
     mfxExtPredWeightTable *    extPwt       = GetExtBuffer(par);
     mfxExtFeiParam *           feiParam     = GetExtBuffer(par);
-    bool isENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
+    bool isENCPAK = feiParam && (MFX_FEI_FUNCTION_ENCODE == feiParam->Func);
+
+    if (feiParam && (MFX_FEI_FUNCTION_ENCODE != feiParam->Func))
+        unsupported = true;
 
     // check hw capabilities
     if (par.mfx.FrameInfo.Width  > hwCaps.MaxPicWidth ||
@@ -2143,13 +2146,21 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 
+    /* max allowed combination */
+    if (par.mfx.FrameInfo.PicStruct > (MFX_PICSTRUCT_PART1|MFX_PICSTRUCT_PART2))
+    { /* */
+        unsupported = true;
+        par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+    }
+
     if (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART2)
     { // repeat/double/triple flags are for EncodeFrameAsync
         changed = true;
         par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_UNKNOWN;
     }
 
-    if (mfxU16 picStructPart1 = par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART1)
+    mfxU16 picStructPart1 = par.mfx.FrameInfo.PicStruct;
+    if (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART1)
     {
         if (picStructPart1 & (picStructPart1 - 1))
         { // more then one flag set
@@ -2179,14 +2190,14 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 
     // driver doesn't support resolution 16xH
-    if (par.mfx.FrameInfo.Width == 16)
+    if ((0 == par.mfx.FrameInfo.Width) || (par.mfx.FrameInfo.Width == 16))
     {
         unsupported = true;
         par.mfx.FrameInfo.Width = 0;
     }
 
     // driver doesn't support resolution Wx16
-    if (par.mfx.FrameInfo.Height == 16)
+    if ((0 == par.mfx.FrameInfo.Height) || (par.mfx.FrameInfo.Height == 16))
     {
         unsupported = true;
         par.mfx.FrameInfo.Height = 0;
