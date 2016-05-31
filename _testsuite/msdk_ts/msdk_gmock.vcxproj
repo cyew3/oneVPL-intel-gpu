@@ -274,6 +274,7 @@
     <ClCompile Include="src\gmock\test_suites\hevce_level_profile.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_pic_timing.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_pts_dts.cpp" />
+    <ClCompile Include="src\gmock\test_suites\hevce_p_pyramid.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_qp_offset.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_reset.cpp" />
