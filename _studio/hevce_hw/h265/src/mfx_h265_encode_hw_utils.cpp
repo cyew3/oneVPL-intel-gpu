@@ -1897,12 +1897,12 @@ void HRD::Init(const SPS &sps, mfxU32 InitialDelayInKB)
 
     m_cpbSize90k          = mfxU32(90000. * cpbSize / m_bitrate);
     m_initCpbRemovalDelay = mfxU32(90000. * 8000. * InitialDelayInKB / m_bitrate);
-    m_clockTick           = (mfxF64)vui.num_units_in_tick / vui.time_scale;
+    m_clockTick           = (mfxF64)vui.num_units_in_tick * 90000 / vui.time_scale;
 
     m_prevAuCpbRemovalDelayMinus1 = -1;
     m_prevAuCpbRemovalDelayMsb    = 0;
-    m_prevAuFinalArrivalTime      = 0.;
-    m_prevBpAuNominalRemovalTime  = m_initCpbRemovalDelay / 90000;
+    m_prevAuFinalArrivalTime      = 0;
+    m_prevBpAuNominalRemovalTime  = m_initCpbRemovalDelay;
     m_prevBpEncOrder              = 0;
 }
 
@@ -1914,8 +1914,9 @@ void HRD::Reset(SPS const & sps)
     if (m_bIsHrdRequired == false)
         return;
 
-    m_bitrate  = (cpb0.bit_rate_value_minus1 + 1) << (6 + hrd.bit_rate_scale);
-    m_cpbSize90k = mfxU32(mfxF64((cpb0.cpb_size_value_minus1 + 1) << (4 + hrd.cpb_size_scale)) / m_bitrate * 90000.);
+    mfxU32 cpbSize  = (cpb0.cpb_size_value_minus1 + 1) << (4 + hrd.cpb_size_scale);
+    m_bitrate       = (cpb0.bit_rate_value_minus1 + 1) << (6 + hrd.bit_rate_scale);
+    m_cpbSize90k    = mfxU32(90000. * cpbSize / m_bitrate);
 }
 
 void HRD::Update(mfxU32 sizeInbits, const Task &pic)
@@ -1945,10 +1946,10 @@ void HRD::Update(mfxU32 sizeInbits, const Task &pic)
         // (D-2)
         mfxU32 auCpbRemovalDelayValMinus1 = auCpbRemovalDelayMsb + auCpbRemovalDelayMinus1;
         // (C-10, C-11)
-        auNominalRemovalTime = m_prevBpAuNominalRemovalTime + m_clockTick * (auCpbRemovalDelayValMinus1 + 1.);
+        auNominalRemovalTime = m_prevBpAuNominalRemovalTime + m_clockTick * (auCpbRemovalDelayValMinus1 + 1);
     }
     else // (C-9)
-        auNominalRemovalTime = m_initCpbRemovalDelay / 90000;
+        auNominalRemovalTime = m_initCpbRemovalDelay;
 
     // (C-3)
     mfxF64 initArrivalTime = m_prevAuFinalArrivalTime;
@@ -1957,14 +1958,14 @@ void HRD::Update(mfxU32 sizeInbits, const Task &pic)
     {
         mfxF64 initArrivalEarliestTime = (bufferingPeriodPic)
             // (C-7)
-            ? auNominalRemovalTime - m_initCpbRemovalDelay / 90000.
+            ? auNominalRemovalTime - m_initCpbRemovalDelay
             // (C-6)
-            : auNominalRemovalTime - m_cpbSize90k / 90000.;
+            : auNominalRemovalTime - m_cpbSize90k;
         // (C-4)
-        initArrivalTime = Max(m_prevAuFinalArrivalTime, initArrivalEarliestTime);
+        initArrivalTime = Max(m_prevAuFinalArrivalTime, initArrivalEarliestTime * m_bitrate);
     }
     // (C-8)
-    mfxF64 auFinalArrivalTime = initArrivalTime + (mfxF64)sizeInbits / m_bitrate;
+    mfxF64 auFinalArrivalTime = initArrivalTime + (mfxF64)sizeInbits * 90000;
 
     m_prevAuFinalArrivalTime = auFinalArrivalTime;
 
@@ -1974,9 +1975,9 @@ void HRD::Update(mfxU32 sizeInbits, const Task &pic)
         m_prevBpEncOrder = pic.m_eo;
     }
     
-    /*printf ("\ninitArrivalTime = %f\nauFinalArrivalTime = %f\nauNominalRemovalTime = %f\n",
-        initArrivalTime, auFinalArrivalTime, auNominalRemovalTime);
-    fflush(stdout);*/
+    /*fprintf (stderr, "FO: %d\ninitArrivalTime = %f\nauFinalArrivalTime = %f\nauNominalRemovalTime = %f\n",
+        pic.m_fo, initArrivalTime / 90000 / m_bitrate, auFinalArrivalTime / 90000 / m_bitrate, auNominalRemovalTime / 90000);
+    fflush(stderr);*/
 }
 
 mfxU32 HRD::GetInitCpbRemovalDelay(const Task &pic)
@@ -1995,10 +1996,10 @@ mfxU32 HRD::GetInitCpbRemovalDelay(const Task &pic)
         // (D-2)
         mfxU32 auCpbRemovalDelayValMinus1 = auCpbRemovalDelayMsb + auCpbRemovalDelayMinus1;
         // (C-10, C-11)
-        auNominalRemovalTime = m_prevBpAuNominalRemovalTime + m_clockTick * (auCpbRemovalDelayValMinus1 + 1.);
+        auNominalRemovalTime = m_prevBpAuNominalRemovalTime + m_clockTick * (auCpbRemovalDelayValMinus1 + 1);
 
         // (C-17)
-        mfxF64 deltaTime90k = 90000 * (auNominalRemovalTime - m_prevAuFinalArrivalTime);
+        mfxF64 deltaTime90k = auNominalRemovalTime - m_prevAuFinalArrivalTime / m_bitrate;
 
         m_initCpbRemovalDelay = m_cbrFlag
             // (C-19)
