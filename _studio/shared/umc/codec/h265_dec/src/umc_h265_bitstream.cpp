@@ -1706,10 +1706,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
                 // we don't use wpp offsets
             }
 
-            if (entryPointOffset)
-            {
-                delete[] entryPointOffset;
-            }
+            delete[] entryPointOffset;
         }
     }
     else
