@@ -172,7 +172,9 @@ public:
 
     virtual mfxStatus Close()
     {
-        m_InSurfacePool->Free(m_core);
+        if (m_systemMemIn)
+            m_InSurfacePool->Free(m_core);
+
         m_OutSurfacePool->Free(m_core);
         if (m_executeParams )
             delete [] m_executeParams;
@@ -258,6 +260,7 @@ private:
     D3D11FrameAllocResponse                          *m_InSurfacePool;
     D3D11FrameAllocResponse                          *m_OutSurfacePool;
     bool                                             m_systemMemOut;
+    bool                                             m_systemMemIn;
     bool                                             m_paddedInput;
     CameraParams                                     m_CameraParams;
     UMC::Mutex                                       m_guard;

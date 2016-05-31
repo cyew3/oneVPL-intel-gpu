@@ -427,6 +427,8 @@ mfxStatus D3D11CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 
     mfxHDLPair hdl;
     mfxStatus sts;
     mfxMemId memIdIn;
+    bool     bExternal = false;
+
     {
         // Request surface from internal pool
         UMC::AutomaticUMCMutex guard(m_guard);
@@ -441,6 +443,7 @@ mfxStatus D3D11CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 
 #endif
         }
     }
+
     mfxFrameSurface1 InSurf = {0};
     mfxFrameSurface1 appInputSurface = *surf;
 
@@ -450,25 +453,36 @@ mfxStatus D3D11CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 
     InSurf.Info.Height = m_height;
     InSurf.Info.FourCC =  m_params.vpp.In.FourCC == MFX_FOURCC_R16 ? BayerToFourCC(m_CameraParams.Caps.BayerPatternType) : m_params.vpp.In.FourCC;
 
-    if ( m_paddedInput && appInputSurface.Info.CropX == 0 && appInputSurface.Info.CropY == 0 )
+    if (m_systemMemIn)
     {
-        // Special case: input is marked as padded, but crops do not reflect that
-        mfxU32 shift = (8*appInputSurface.Data.Pitch + 8*2);
-        appInputSurface.Data.Y += shift;
+        if ( m_paddedInput && appInputSurface.Info.CropX == 0 && appInputSurface.Info.CropY == 0 )
+        {
+            // Special case: input is marked as padded, but crops do not reflect that
+            mfxU32 shift = (8*appInputSurface.Data.Pitch + 8*2);
+            appInputSurface.Data.Y += shift;
+        }
+
+        appInputSurface.Data.Y += appInputSurface.Data.Pitch*appInputSurface.Info.CropY + (appInputSurface.Info.CropX<<1);
+
+        // [1] Copy from system mem to the internal video frame
+        sts = m_core->DoFastCopyWrapper(&InSurf,
+                                        MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET,
+                                        &appInputSurface,
+                                        MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY);
+        MFX_CHECK_STS(sts);
+
+        // [2] Get surface handle
+        sts = m_core->GetFrameHDL(memIdIn, (mfxHDL *)&hdl);
+        MFX_CHECK_STS(sts);
     }
-
-    appInputSurface.Data.Y += appInputSurface.Data.Pitch*appInputSurface.Info.CropY + (appInputSurface.Info.CropX<<1);
-
-    // [1] Copy from system mem to the internal video frame
-    sts = m_core->DoFastCopyWrapper(&InSurf,
-                                    MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET,
-                                    &appInputSurface,
-                                    MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY);
-    MFX_CHECK_STS(sts);
-
-    // [2] Get surface handle
-    sts = m_core->GetFrameHDL(memIdIn, (mfxHDL *)&hdl);
-    MFX_CHECK_STS(sts);
+    else
+    {
+        memIdIn = surf->Data.MemId; 
+        // [1] Get external surface handle
+        sts = m_core->GetExternalFrameHDL(memIdIn, (mfxHDL *)&hdl);
+        MFX_CHECK_STS(sts);
+        bExternal = true;
+    }
 
     // [3] Register surfaece. Not needed really for DX11
     sts = m_ddi->Register(&hdl, 1, TRUE);
@@ -476,7 +490,7 @@ mfxStatus D3D11CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 
 
     // [4] Fill in Drv surfaces
     DrvSurf->hdl       = static_cast<mfxHDLPair>(hdl);
-    DrvSurf->bExternal = false;
+    DrvSurf->bExternal = bExternal;
     DrvSurf->frameInfo = InSurf.Info;
     DrvSurf->frameInfo.Width  = m_width;
     DrvSurf->frameInfo.Height = m_height;

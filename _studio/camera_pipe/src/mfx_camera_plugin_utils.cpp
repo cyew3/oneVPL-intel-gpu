@@ -689,7 +689,15 @@ mfxStatus MfxCameraPlugin::CheckIOPattern(mfxVideoParam *in, mfxVideoParam *out,
         out->IOPattern = 0;
         return error_status;
    }
-   if(in->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_OPAQUE_MEMORY))
+
+   if(in->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY && in->vpp.In.FourCC != MFX_FOURCC_ARGB16 && in->vpp.In.FourCC != MFX_FOURCC_ABGR16)
+   {
+       // Video input is supported for 16bit RGB 
+       out->IOPattern = 0;
+       return error_status;
+   }
+
+   if(in->IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
    {
         out->IOPattern = 0;
         return error_status;

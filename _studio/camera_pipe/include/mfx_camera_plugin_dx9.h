@@ -841,10 +841,11 @@ public:
 
         m_ddi.release();
 
-        for (int i = 0; i < m_inputSurf.size(); i++)
-        {
-            m_inputSurf[i].Release();
-        }
+        if (m_systemMemIn)
+            for (int i = 0; i < m_inputSurf.size(); i++)
+            {
+                m_inputSurf[i].Release();
+            }
 
         m_inputSurf.resize(0);
 
@@ -913,6 +914,7 @@ private:
     }
 
     bool                                             m_systemMemOut;
+    bool                                             m_systemMemIn;
     bool                                             m_paddedInput;
     CameraParams                                     m_CameraParams;
     UMC::Mutex                                       m_guard;

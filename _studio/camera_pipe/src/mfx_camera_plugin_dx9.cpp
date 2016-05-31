@@ -1551,10 +1551,15 @@ mfxStatus D3D9CameraProcessor::Init(CameraParams *CameraParams)
         m_inFormat = D3DFMT_A16B16G16R16;
     }
 
-    for(int i = 0; i < m_AsyncDepth; i++)
+    m_systemMemIn = false;
+    if ( CameraParams->par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY )
     {
-        m_inputSurf[i].surf = m_ddi->SurfaceCreate(m_width, m_height, m_inFormat, MFX_MEMTYPE_FROM_VPPIN);
-        MFX_CHECK_NULL_PTR1(m_inputSurf[i].surf);
+        m_systemMemIn = true;
+        for(int i = 0; i < m_AsyncDepth; i++)
+        {
+            m_inputSurf[i].surf = m_ddi->SurfaceCreate(m_width, m_height, m_inFormat, MFX_MEMTYPE_FROM_VPPIN);
+            MFX_CHECK_NULL_PTR1(m_inputSurf[i].surf);
+        }
     }
 
     m_systemMemOut = false;
@@ -1903,7 +1908,11 @@ mfxStatus D3D9CameraProcessor::PreWorkOutSurface(mfxFrameSurface1 *surf, mfxU32 
 mfxStatus D3D9CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 *poolIndex, MfxHwVideoProcessing::mfxDrvSurface *drvSurf)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    int input_index = m_AsyncDepth;
+    mfxHDLPair hdl;
+    mfxMemId  memIdIn = (mfxMemId)1;
+    bool      bExternal = true;
+    int       input_index = m_AsyncDepth;
+    mfxFrameSurface1 InSurf = {0};
 
     // Request surface from internal pool
     while(input_index == m_AsyncDepth )
@@ -1911,12 +1920,12 @@ mfxStatus D3D9CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 *
         {
             UMC::AutomaticUMCMutex guard(m_guard);
             for ( int i = 0; i < m_AsyncDepth; i++)
-                if ( m_inputSurf[i].locked == false )
-                {
-                    input_index = i;
-                    m_inputSurf[i].locked = true;
-                    break;
-                }
+            if ( m_inputSurf[i].locked == false )
+            {
+                input_index = i;
+                m_inputSurf[i].locked = true;
+                break;
+            }
         }
         if(input_index == m_AsyncDepth ) 
         {
@@ -1930,40 +1939,53 @@ mfxStatus D3D9CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 *
         }
     }
     *poolIndex = input_index;
-    mfxFrameSurface1 InSurf = {0};
-    mfxFrameSurface1 appInputSurface = *surf;
-    
+
     InSurf.Info        = surf->Info;
     InSurf.Info.Width  = m_width;
     InSurf.Info.Height = m_height;
     InSurf.Info.FourCC = m_inFormat;
-
-    // [1] Copy from system mem to the internal video frame
-    IppiSize roi = {m_width, m_height};
-    mfxI64 verticalPitch = m_height;
-
-    if ( m_paddedInput && appInputSurface.Info.CropX == 0 && appInputSurface.Info.CropY == 0 )
+    
+    if ( m_systemMemOut )
     {
-        // Special case: input is marked as padded, but crops do not reflect that
-        mfxU32 shift = (8*appInputSurface.Data.Pitch + 8*2);
-        appInputSurface.Data.Y += shift;
-    }
+        hdl.first = m_inputSurf[*poolIndex].surf;
+        bExternal = false;
+        mfxFrameSurface1 appInputSurface = *surf;
+        // [1] Copy from system mem to the internal video frame
+        IppiSize roi = {m_width, m_height};
+        mfxI64 verticalPitch = m_height;
 
-    appInputSurface.Data.Y += appInputSurface.Data.Pitch*appInputSurface.Info.CropY + appInputSurface.Info.CropX*2;
-    // [1] Copy from system mem to the internal video frame
-    if (appInputSurface.Info.FourCC == MFX_FOURCC_ARGB16)
-        sts = m_pCmCopy.get()->CopySwapSystemToVideoMemory(m_inputSurf[*poolIndex].surf, 0, IPP_MIN(IPP_MIN(appInputSurface.Data.R,appInputSurface.Data.G),appInputSurface.Data.B), surf->Data.Pitch, (mfxU32)m_height, roi, MFX_FOURCC_ABGR16);
-    else if (appInputSurface.Info.FourCC == MFX_FOURCC_ABGR16)
-        sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(m_inputSurf[*poolIndex].surf, 0, IPP_MIN(IPP_MIN(appInputSurface.Data.R,appInputSurface.Data.G),appInputSurface.Data.B), surf->Data.Pitch, (mfxU32)m_height, roi);
+        if ( m_paddedInput && appInputSurface.Info.CropX == 0 && appInputSurface.Info.CropY == 0 )
+        {
+            // Special case: input is marked as padded, but crops do not reflect that
+            mfxU32 shift = (8*appInputSurface.Data.Pitch + 8*2);
+            appInputSurface.Data.Y += shift;
+        }
+
+        appInputSurface.Data.Y += appInputSurface.Data.Pitch*appInputSurface.Info.CropY + appInputSurface.Info.CropX*2;
+        // [1] Copy from system mem to the internal video frame
+        if (appInputSurface.Info.FourCC == MFX_FOURCC_ARGB16)
+            sts = m_pCmCopy.get()->CopySwapSystemToVideoMemory(m_inputSurf[*poolIndex].surf, 0, IPP_MIN(IPP_MIN(appInputSurface.Data.R,appInputSurface.Data.G),appInputSurface.Data.B), surf->Data.Pitch, (mfxU32)m_height, roi, MFX_FOURCC_ABGR16);
+        else if (appInputSurface.Info.FourCC == MFX_FOURCC_ABGR16)
+            sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(m_inputSurf[*poolIndex].surf, 0, IPP_MIN(IPP_MIN(appInputSurface.Data.R,appInputSurface.Data.G),appInputSurface.Data.B), surf->Data.Pitch, (mfxU32)m_height, roi);
+        else
+            sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(m_inputSurf[*poolIndex].surf, 0, appInputSurface.Data.Y, surf->Data.Pitch, (mfxU32)verticalPitch, roi);
+        MFX_CHECK_STS(sts);
+    }
     else
-        sts = m_pCmCopy.get()->CopySystemToVideoMemoryAPI(m_inputSurf[*poolIndex].surf, 0, appInputSurface.Data.Y, surf->Data.Pitch, (mfxU32)verticalPitch, roi);
-    MFX_CHECK_STS(sts);
+    {
+        memIdIn = surf->Data.MemId; 
+        // [1] Get external surface handle
+        sts = m_core->GetExternalFrameHDL(memIdIn, (mfxHDL *)&hdl);
+        MFX_CHECK_STS(sts);
+        bExternal = true;
+    }
 
     // Fill in Drv surfaces
     InSurf.Info       = surf->Info;
     InSurf.Info.FourCC = m_inFormat;
-    drvSurf->hdl.first = m_inputSurf[*poolIndex].surf;
-    drvSurf->bExternal = false;
+    drvSurf->memId     = memIdIn;
+    drvSurf->hdl       = static_cast<mfxHDLPair>(hdl);
+    drvSurf->bExternal = bExternal;
     drvSurf->frameInfo = InSurf.Info;
     drvSurf->frameInfo.Width  = m_width;
     drvSurf->frameInfo.Height = m_height;
