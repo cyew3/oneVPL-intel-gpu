@@ -54,7 +54,7 @@ static
 static
     void WipeMemoryAllocator(sMemoryAllocator* pAllocator);
 
-void ownToMfxFrameInfo( sOwnFrameInfo* in, mfxFrameInfo* out);
+void ownToMfxFrameInfo( sOwnFrameInfo* in, mfxFrameInfo* out, bool copyCropParams=false);
 
 /* ******************************************************************* */
 
@@ -609,8 +609,11 @@ mfxStatus InitMemoryAllocator(
     sts = pAllocator->pMfxAllocator->Init(pAllocator->pAllocatorParams);
     MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
 
-    sts = pProcessor->pmfxVPP->Query(pParams, pParams);
+    mfxVideoParam outParams;
+    MSDK_ZERO_MEMORY(outParams);
+    sts = pProcessor->pmfxVPP->Query(pParams, &outParams);
     MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
+    *pParams=outParams;
 
     sts = pProcessor->pmfxVPP->QueryIOSurf(pParams, request);
     MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
@@ -629,7 +632,7 @@ mfxStatus InitMemoryAllocator(
     {
         for(int i=0;i<pInParams->numStreams;i++)
         {
-            ownToMfxFrameInfo(&pInParams->inFrameInfo[i],&request[VPP_IN].Info);
+            ownToMfxFrameInfo(&pInParams->inFrameInfo[i],&request[VPP_IN].Info,true);
             request[VPP_IN].NumFrameSuggested = 1;
             request[VPP_IN].NumFrameMin = request[VPP_IN].NumFrameSuggested;
             sts = InitSurfaces(pAllocator, &(request[VPP_IN]),true,i);

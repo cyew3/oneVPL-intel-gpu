@@ -193,13 +193,14 @@ mfxStatus OutputProcessFrame(
 
         pProcessedSurface = Resources.pSurfStore->m_SyncPoints.front().second.pSurface;
 
-        DecreaseReference(&pProcessedSurface->Data);
-
         GeneralWriter* writer = (1 == Resources.dstFileWritersN) ? &Resources.pDstFileWriters[0] : &Resources.pDstFileWriters[paramID];
         sts = writer->PutNextFrame(
             Resources.pAllocator,
             pOutFrameInfo,
             pProcessedSurface);
+
+        DecreaseReference(&pProcessedSurface->Data);
+
         if(sts)
             msdk_printf(MSDK_STRING("Failed to write frame to disk\n"));
         MSDK_CHECK_NOT_EQUAL(sts, MFX_ERR_NONE, MFX_ERR_ABORTED);
@@ -223,22 +224,26 @@ mfxStatus OutputProcessFrame(
 } // mfxStatus OutputProcessFrame(
 
 
-void ownToMfxFrameInfo( sOwnFrameInfo* in, mfxFrameInfo* out )
+void ownToMfxFrameInfo( sOwnFrameInfo* in, mfxFrameInfo* out, bool copyCropParams=false)
 {
-    //out->Width  = in->nWidth;
-    //out->Height = in->nHeight;
-    //out->CropX  = 0;
-    //out->CropY  = 0;
-    //out->CropW  = out->Width;
-    //out->CropH  = out->Height;
-    //out->FourCC = in->FourCC;
-
     out->Width          = in->nWidth;
     out->Height         = in->nHeight;
-    out->CropX          = in->CropX;
-    out->CropY          = in->CropY;
-    out->CropW          = (in->CropW == NOT_INIT_VALUE) ? in->nWidth : in->CropW;
-    out->CropH          = (in->CropH == NOT_INIT_VALUE) ? in->nHeight : in->CropH;
+
+    if(copyCropParams)
+    {
+        out->CropX          = in->CropX;
+        out->CropY          = in->CropY;
+        out->CropW          = (in->CropW == NOT_INIT_VALUE) ? in->nWidth : in->CropW;
+        out->CropH          = (in->CropH == NOT_INIT_VALUE) ? in->nHeight : in->CropH;
+    }
+    else
+    {
+        out->CropX          = 0;
+        out->CropY          = 0;
+        out->CropW          = in->nWidth;
+        out->CropH          = in->nHeight;
+    }
+
     out->FourCC         = in->FourCC;
     out->PicStruct      = in->PicStruct;
     out->BitDepthLuma   = in->BitDepthLuma;
@@ -248,7 +253,7 @@ void ownToMfxFrameInfo( sOwnFrameInfo* in, mfxFrameInfo* out )
 
     return;
 
-} // void ownToMfxFrameInfo( sOwnFrameInfo* in, mfxFrameInfo* out )
+}
 
 
 #if defined(_WIN32) || defined(_WIN64)
