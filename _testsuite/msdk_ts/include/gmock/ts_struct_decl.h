@@ -822,3 +822,10 @@ STRUCT(mfxExtHEVCParam,
     FIELD_T(mfxU16       , PicHeightInLumaSamples)
     FIELD_T(mfxU64       , GeneralConstraintFlags)
 )
+
+STRUCT(mfxExtHEVCRegion,
+    FIELD_S(mfxExtBuffer, Header )
+    FIELD_T(mfxU32      , RegionId)
+    FIELD_T(mfxU16      , RegionType)
+    FIELD_T(mfxU16      , RegionEncoding)
+)

@@ -29,6 +29,7 @@ namespace hevce_init
         {
             MFX_PAR,
             MFX_EXT_HEVCPARAM,
+            MFX_EXT_HEVCREGION,
             EXT_BUFF,
             RATE_CONTROL,
             SESSION_NULL,
@@ -184,6 +185,15 @@ namespace hevce_init
                                            (*buff)->BufferSz = sizeof(mfxExtHEVCParam);
                                            printf("buffer created\n");
                                            break;
+            }
+            case MFX_EXTBUFF_HEVC_REGION:
+            {
+                                            (*buff) = (mfxExtBuffer*)(new mfxExtHEVCRegion());
+                                            (*buff_out) = (mfxExtBuffer*)(new mfxExtHEVCRegion());
+                                            memset((*buff), 0, sizeof(mfxExtHEVCRegion));
+                                            (*buff)->BufferId = MFX_EXTBUFF_HEVC_REGION;
+                                            (*buff)->BufferSz = sizeof(mfxExtHEVCRegion);
+                                            break;
             }
             case NONE:
             {
@@ -399,13 +409,49 @@ namespace hevce_init
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.GeneralConstraintFlags, MFX_HEVC_CONSTR_REXT_MAX_12BIT },
             }
         },
-
-
-
-
-
-
-
+        {/*67*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
+            {
+                {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionId, 0},
+                {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionType, MFX_HEVC_REGION_SLICE},
+                {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionEncoding, MFX_HEVC_REGION_ENCODING_ON}
+            },
+        },
+        {/*68*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
+            {
+                {MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 2}, //multi slices
+                {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionId, 1},
+                {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionType, MFX_HEVC_REGION_SLICE},
+                {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionEncoding, MFX_HEVC_REGION_ENCODING_ON}
+            },
+        },
+        {/*69*/ MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
+            {
+                {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionId, 0},
+                {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionType, 1}, //unsupported type
+                {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionEncoding, MFX_HEVC_REGION_ENCODING_ON}
+            },
+        },
+        {/*70*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
+            {
+                {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionId, 1}, //>= slice_num
+                {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionType, MFX_HEVC_REGION_SLICE},
+                {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionEncoding, MFX_HEVC_REGION_ENCODING_ON}
+            },
+        },
+        {/*71*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
+            {
+                {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionId, 0},
+                {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionType, MFX_HEVC_REGION_SLICE},
+                {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionEncoding, 2} //invalid parameter
+            },
+        },
+        {/*72*/ MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
+            {
+                {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionId, 1}, //>= slice_num
+                {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionType, 1}, //unsupported type
+                {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionEncoding, MFX_HEVC_REGION_ENCODING_OFF}
+            },
+        }
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
@@ -466,6 +512,11 @@ namespace hevce_init
                 SETPARS((mfxExtHEVCParam *)buff_in, MFX_EXT_HEVCPARAM);
                 SETPARS((mfxExtHEVCParam *)buff_out, MFX_EXT_HEVCPARAM);
             }
+
+            if (tc.sub_type == MFX_EXTBUFF_HEVC_REGION) {
+                SETPARS((mfxExtHEVCRegion *)buff_in, MFX_EXT_HEVCREGION);
+                SETPARS((mfxExtHEVCRegion *)buff_out, MFX_EXT_HEVCREGION);
+            }
         }
 
         sts = tc.sts;
@@ -512,6 +563,8 @@ namespace hevce_init
                     sts = MFX_ERR_NONE;
                 else if (tc.sub_type == MFX_EXTBUFF_HEVC_PARAM)
                     sts = tc.sts;
+                else if (tc.sub_type == MFX_EXTBUFF_HEVC_REGION)
+                    sts = MFX_ERR_UNSUPPORTED;
                 else if (tc.sub_type == NONE)
                     sts = MFX_ERR_NULL_PTR;
                 else
