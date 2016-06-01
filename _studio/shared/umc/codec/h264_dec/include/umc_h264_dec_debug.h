@@ -16,7 +16,7 @@
 
 #include "umc_h264_dec_defs_dec.h"
 
-#define ENABLE_TRACE
+//#define ENABLE_TRACE
 
 namespace UMC
 {

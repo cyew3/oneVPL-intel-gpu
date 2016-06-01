@@ -293,9 +293,6 @@ Status VATaskSupplier::AddSource(MediaData * pSource)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VATaskSupplier::AddSource");
 
-    #if 0
-    return MFXTaskSupplier::AddSource(pSource);
-    #else
     if (!pSource)
         return MFXTaskSupplier::AddSource(pSource);
 
@@ -310,12 +307,13 @@ Status VATaskSupplier::AddSource(MediaData * pSource)
     if (view.pCurFrame && view.pCurFrame->m_PictureStructureForDec < FRM_STRUCTURE)
     {
         H264Slice* pFirstFrameSlice = view.pCurFrame->GetAU(0)->GetSlice(0);
+        //we need to check only for first slice
         if (pFirstFrameSlice)
             return MFXTaskSupplier::AddSource(pSource);
     }
 
     H264DBPList* pDPB = view.GetDPBList(0);
-    VM_ASSERT(pDPB && !"DPB pointer should be valid here");
+    VM_ASSERT(pDPB && "DPB pointer should be valid here");
     if (!pDPB)
         return UMC_ERR_FAILED;
 
@@ -324,15 +322,12 @@ Status VATaskSupplier::AddSource(MediaData * pSource)
         pDPB->IsDisposableExist())
         return MFXTaskSupplier::AddSource(pSource);
 
-    pDPB->DebugPrint();
-
     H264DecoderFrame* completed = 0;
     Status umcRes = CompleteDecodedFrames(&completed);
     if (umcRes != UMC_OK)
         return pSource || !completed ? umcRes : UMC_OK;
 
     return UMC_WRN_INFO_NOT_READY;
-    #endif
 }
 
 Status VATaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, ColorFormat color_format)
