@@ -601,6 +601,7 @@ private:
 class MfxVideoParam : public mfxVideoParam, public TemporalLayers
 {
 public:
+    mfxPlatform m_platform;
     VPS m_vps;
     SPS m_sps;
     PPS m_pps;

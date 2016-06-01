@@ -130,6 +130,9 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Plugin::InitImpl");
     mfxStatus sts = MFX_ERR_NONE, qsts = MFX_ERR_NONE;
 
+    sts = m_core.QueryPlatform(&m_vpar.m_platform);
+    MFX_CHECK_STS(sts);
+
     m_ddi.reset( CreatePlatformH265Encoder(&m_core) );
     MFX_CHECK(m_ddi.get(), MFX_ERR_UNSUPPORTED);
 
@@ -393,6 +396,10 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
              sts = CheckHeaders(tmp, caps);
              MFX_CHECK_STS(sts);
         }
+
+        sts = m_core.QueryPlatform(&tmp.m_platform);
+        MFX_CHECK_STS(sts);
+
         sts = CheckVideoParam(tmp, caps);
 
         tmp.FillPar(*out, true);
@@ -495,6 +502,7 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
     sts = LoadSPSPPS(parNew, pSPSPPS);
     MFX_CHECK_STS(sts);
 
+    Copy(parNew.m_platform, m_vpar.m_platform);
     InheritDefaultValues(m_vpar, parNew);
     parNew.SyncVideoToCalculableParam();
 

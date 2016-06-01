@@ -488,6 +488,7 @@ MfxVideoParam::MfxVideoParam()
 {
     Zero(*(mfxVideoParam*)this);
     Zero(NumRefLX);
+    Zero(m_platform);
 }
 
 MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
@@ -497,6 +498,7 @@ MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
      Copy(m_vps, par.m_vps);
      Copy(m_sps, par.m_sps);
      Copy(m_pps, par.m_pps);
+     Copy(m_platform, par.m_platform);
 
      CopyCalcParams(par);
 }
@@ -514,6 +516,7 @@ MfxVideoParam::MfxVideoParam(mfxVideoParam const & par)
 {
     Zero(*(mfxVideoParam*)this);
     Zero(NumRefLX);
+    Zero(m_platform);
     Construct(par);
     SyncVideoToCalculableParam();
 }
@@ -2810,7 +2813,7 @@ void ConfigureTask(
 
         task.m_qpY -= 6 * par.m_sps.bit_depth_luma_minus8;
 
-        if (IsOn(par.mfx.LowPower) && task.m_qpY < 0)
+        if ((IsOn(par.mfx.LowPower) || par.m_platform.CodeName == MFX_PLATFORM_KABYLAKE) && task.m_qpY < 0)
             task.m_qpY = 0;
      }
      else if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT)
