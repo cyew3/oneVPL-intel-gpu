@@ -49,6 +49,8 @@ File Name: exports.cpp
 extern int main(int argc,  char **, bool bUsePrefix);
 
 static const size_t MAX_FIXED_KEY_LENGTH = 32;
+static const size_t MAX_FIXED_DIR_LENGTH = 256;
+
 
 SDK_ANALYZER_EXPORT(void) msdk_analyzer_dll()
 {
@@ -152,7 +154,7 @@ DWORD Reg(HKEY key, TCHAR* dll_name, TCHAR* analyzer_key, TCHAR* install_dir, TC
         }
 
 
-   size_t length = strnlen_s(install_dir, MAX_FIXED_KEY_LENGTH) + strnlen_s(dll_name, MAX_FIXED_KEY_LENGTH);
+   size_t length = strnlen_s(install_dir, MAX_FIXED_DIR_LENGTH) + strnlen_s(dll_name, MAX_FIXED_KEY_LENGTH);
    TCHAR *sdk_analyzer_path = new TCHAR[length + 3];
    strcpy_s(sdk_analyzer_path, (length + 3), install_dir);
    strcat_s(sdk_analyzer_path, (length + 3), dll_name);
