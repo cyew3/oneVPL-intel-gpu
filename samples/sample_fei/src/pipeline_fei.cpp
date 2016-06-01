@@ -579,7 +579,12 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
     {
         m_mfxDSParams = m_mfxVppParams;
 
-        m_mfxDSParams.vpp.Out.Width = MSDK_ALIGN16(pInParams->nDstWidth / pInParams->preencDSstrength);
+        if (m_pmfxVPP)
+        {
+            MSDK_MEMCPY_VAR(m_mfxDSParams.vpp.In, &m_mfxVppParams.vpp.Out, sizeof(mfxFrameInfo));
+        }
+
+        m_mfxDSParams.vpp.Out.Width  = MSDK_ALIGN16(pInParams->nDstWidth / pInParams->preencDSstrength);
         m_mfxDSParams.vpp.Out.Height = (MFX_PICSTRUCT_PROGRESSIVE == m_mfxDSParams.vpp.Out.PicStruct) ?
             MSDK_ALIGN16(pInParams->nDstHeight / pInParams->preencDSstrength) : MSDK_ALIGN32(pInParams->nDstHeight / pInParams->preencDSstrength);
         m_mfxDSParams.vpp.Out.CropW = m_mfxDSParams.vpp.Out.Width;
@@ -1945,7 +1950,8 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                 preENCCtr[fieldId].PictureType             = GetCurPicType(fieldId);
                 preENCCtr[fieldId].RefPictureType[0]       = preENCCtr[fieldId].PictureType;
                 preENCCtr[fieldId].RefPictureType[1]       = preENCCtr[fieldId].PictureType;
-                preENCCtr[fieldId].DownsampleReference[0]  = MFX_CODINGOPTION_OFF; // in sample_fei preenc works only in encoded order
+                preENCCtr[fieldId].DownsampleInput         = MFX_CODINGOPTION_ON;  // Default is ON
+                preENCCtr[fieldId].DownsampleReference[0]  = MFX_CODINGOPTION_OFF; // In sample_fei preenc works only in encoded order
                 preENCCtr[fieldId].DownsampleReference[1]  = MFX_CODINGOPTION_OFF; // so all references would be already downsampled
                 preENCCtr[fieldId].DisableMVOutput         = m_disableMVoutPreENC;
                 preENCCtr[fieldId].DisableStatisticsOutput = m_disableMBStatPreENC;
