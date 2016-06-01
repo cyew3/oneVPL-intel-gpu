@@ -60,6 +60,7 @@ namespace msdk_analyzer
             }
             catch
             {
+                MessageBox.Show("ERROR: Install error", "ERROR");
                 globalLock.Dispose();
             }
             try
@@ -73,7 +74,7 @@ namespace msdk_analyzer
                                         , Path.GetDirectoryName(Application.ExecutablePath));
                 if (sts == 0)
                 {
-                    MessageBox.Show("ERROR: install error", "ERROR");
+                    MessageBox.Show("ERROR: Install error", "ERROR");
 
                 }
                 else
@@ -83,6 +84,11 @@ namespace msdk_analyzer
                 }
                 MsdkAnalyzerCpp.uninstall();
                 GC.KeepAlive(globalLock);//prevent releasing by GC if application uses long time
+            }
+            catch
+            {
+                MessageBox.Show("ERROR: Install error", "ERROR");
+                globalLock.Dispose();
             }
             finally
             {
