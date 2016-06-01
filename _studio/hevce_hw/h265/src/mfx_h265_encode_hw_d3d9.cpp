@@ -256,7 +256,7 @@ void FillPpsBuffer(
     //pps.no_output_of_prior_pics_flag          = ;
     //pps.XbEnableRollingIntraRefreshX
 
-    pps.QpY = (mfxU8)(par.m_pps.init_qp_minus26 + 26);
+    pps.QpY = mfxI8(par.m_pps.init_qp_minus26 + 26);
 
     pps.diff_cu_qp_delta_depth  = (mfxU8)par.m_pps.diff_cu_qp_delta_depth;
     pps.pps_cb_qp_offset        = (mfxU8)par.m_pps.cb_qp_offset;

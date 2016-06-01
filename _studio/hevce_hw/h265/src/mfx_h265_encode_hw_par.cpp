@@ -866,6 +866,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     mfxU32 maxBR   = 0xFFFFFFFF;
     mfxU32 maxBuf  = 0xFFFFFFFF;
     mfxU16 maxDPB  = 16;
+    mfxU16 minQP   = 1;
     mfxU16 maxQP   = 51;
     mfxU16 surfAlignW = HW_SURF_ALIGN_W;
     mfxU16 surfAlignH = HW_SURF_ALIGN_H;
@@ -875,8 +876,13 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     changed += CheckTriStateOption(par.mfx.LowPower);
 
-    if (par.mfx.FrameInfo.BitDepthLuma > 8 && !IsOn(par.mfx.LowPower))
+    if (par.mfx.FrameInfo.BitDepthLuma > 8)
+    {
         maxQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
+
+        if (IsOn(par.mfx.LowPower))
+            minQP = 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
+    }
 
     if (IsOn(par.mfx.LowPower))
     {
@@ -1131,9 +1137,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
     {
-        changed += CheckRangeDflt(par.mfx.QPI, 1, maxQP, 0);
-        changed += CheckRangeDflt(par.mfx.QPP, 1, maxQP, 0);
-        changed += CheckRangeDflt(par.mfx.QPB, 1, maxQP, 0);
+        changed += CheckRangeDflt(par.mfx.QPI, minQP, maxQP, 0);
+        changed += CheckRangeDflt(par.mfx.QPP, minQP, maxQP, 0);
+        changed += CheckRangeDflt(par.mfx.QPB, minQP, maxQP, 0);
     }
 
     if (par.BufferSizeInKB != 0)
@@ -1294,7 +1300,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         mfxI16 QPX = (par.mfx.GopRefDist == 1) ? par.mfx.QPP : par.mfx.QPB;
 
         for (mfxI16 i = 0; i < 8; i++)
-            changed += CheckRange(CO3.QPOffset[i], 1 - QPX, maxQP - QPX);
+            changed += CheckRange(CO3.QPOffset[i], minQP - QPX, maxQP - QPX);
     }
 
     for (mfxU16 i = 0; i < 8; i++)
@@ -1334,6 +1340,7 @@ void SetDefaults(
     mfxU32 maxBuf  = 0xFFFFFFFF;
     mfxU16 maxDPB  = 16;
     mfxU16 maxQP   = 51;
+    mfxU16 minQP   = 1;
 
     mfxExtCodingOption2& CO2 = par.m_ext.CO2;
     mfxExtCodingOption3& CO3 = par.m_ext.CO3;
@@ -1413,10 +1420,13 @@ void SetDefaults(
     if (!par.mfx.FrameInfo.BitDepthChroma)
         par.mfx.FrameInfo.BitDepthChroma = par.mfx.FrameInfo.BitDepthLuma;
 
-    if (par.mfx.FrameInfo.BitDepthLuma > 8 && !IsOn(par.mfx.LowPower))
+    if (par.mfx.FrameInfo.BitDepthLuma > 8)
     {
         rawBits = rawBits / 8 * par.mfx.FrameInfo.BitDepthLuma;
         maxQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
+
+        if (IsOn(par.mfx.LowPower))
+            minQP = 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
     }
 
     if (!par.mfx.RateControlMethod)
@@ -1597,7 +1607,7 @@ void SetDefaults(
             mfxI16 QPX = (par.mfx.GopRefDist == 1) ? par.mfx.QPP : par.mfx.QPB;
 
             for (mfxI16 i = 0; i < 8; i++)
-                CO3.QPOffset[i] = Clip3<mfxI16>(1 - QPX, maxQP - QPX, i + (par.mfx.GopRefDist > 1));
+                CO3.QPOffset[i] = Clip3<mfxI16>(minQP - QPX, maxQP - QPX, i + (par.mfx.GopRefDist > 1));
         }
         else
             CO3.EnableQPOffset = MFX_CODINGOPTION_OFF;

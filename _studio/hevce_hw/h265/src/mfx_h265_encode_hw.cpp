@@ -789,7 +789,7 @@ mfxStatus Plugin::PrepareTask(Task& input_task)
         MFX_CHECK(task->m_midRec && task->m_midBs, MFX_ERR_UNDEFINED_BEHAVIOR);  
 
         if (m_brc)
-          task->m_qpY = (mfxU8)m_brc->GetQP(m_vpar,*task);
+          task->m_qpY = (mfxI8)m_brc->GetQP(m_vpar,*task);
 
         ConfigureTask(*task, m_lastTask, m_vpar, m_baseLayerOrder);
         m_lastTask = *task; 

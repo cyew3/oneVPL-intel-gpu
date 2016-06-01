@@ -248,7 +248,7 @@ typedef struct _Task : DpbFrame
     mfxU16 m_frameType;
     mfxU16 m_insertHeaders;
     mfxU8  m_shNUT;
-    mfxU8  m_qpY;
+    mfxI8  m_qpY;
     mfxI32 m_lastIPoc;
 
     mfxU32 m_statusReportNumber;

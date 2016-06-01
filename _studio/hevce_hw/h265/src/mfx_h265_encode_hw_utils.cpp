@@ -1487,6 +1487,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     if (mfx.RateControlMethod == MFX_RATECONTROL_CQP)
     {
         m_pps.init_qp_minus26 = (mfx.GopRefDist == 1 ? mfx.QPP : mfx.QPB) - 26;
+        m_pps.init_qp_minus26 -= 6 * m_sps.bit_depth_luma_minus8;
         // m_pps.cb_qp_offset = -1;
         // m_pps.cr_qp_offset = -1;
     }
@@ -2787,25 +2788,30 @@ void ConfigureTask(
         // set coding type and QP
         if (isB)
         {
-            task.m_qpY = (mfxU8)par.mfx.QPB;
+            task.m_qpY = (mfxI8)par.mfx.QPB;
             if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP && par.isBPyramid())                // m_level starts from 1
-                task.m_qpY = (mfxU8)Clip3<mfxI32>(1, maxQP, par.m_ext.CO3.QPOffset[Clip3<mfxI32>(0, 7, task.m_level - 1)] + task.m_qpY); 
+                task.m_qpY = (mfxI8)Clip3<mfxI32>(1, maxQP, par.m_ext.CO3.QPOffset[Clip3<mfxI32>(0, 7, task.m_level - 1)] + task.m_qpY); 
         }
         else if (isP)
         {
             // encode P as GPB
-            task.m_qpY = (mfxU8)par.mfx.QPP;
+            task.m_qpY = (mfxI8)par.mfx.QPP;
             if (par.isLowDelay())
-                task.m_qpY = (mfxU8)Clip3<mfxI32>(1, maxQP, par.m_ext.CO3.QPOffset[PLayer(task.m_poc - prevTask.m_lastIPoc, par)] + task.m_qpY);
+                task.m_qpY = (mfxI8)Clip3<mfxI32>(1, maxQP, par.m_ext.CO3.QPOffset[PLayer(task.m_poc - prevTask.m_lastIPoc, par)] + task.m_qpY);
          }
         else
         {
             assert(task.m_frameType & MFX_FRAMETYPE_I);
-            task.m_qpY = (mfxU8)par.mfx.QPI;
+            task.m_qpY = (mfxI8)par.mfx.QPI;
         }
 
         if (task.m_ctrl.QP)
-            task.m_qpY = (mfxU8)task.m_ctrl.QP;
+            task.m_qpY = (mfxI8)task.m_ctrl.QP;
+
+        task.m_qpY -= 6 * par.m_sps.bit_depth_luma_minus8;
+
+        if (IsOn(par.mfx.LowPower) && task.m_qpY < 0)
+            task.m_qpY = 0;
      }
      else if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT)
         task.m_qpY = 0;
