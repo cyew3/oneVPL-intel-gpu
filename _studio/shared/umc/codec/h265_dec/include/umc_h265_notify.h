@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -46,13 +46,21 @@ protected:
 template <typename Object>
 class notifier0 : public notifier_base
 {
+
 public:
+
     typedef void (Object::*Function)();
 
-    notifier0(Object* object, Function function)
-        : object_(object)
-        , function_(function)
+    notifier0(Function function)
+        : function_(function)
     {
+        Reset(0);
+    }
+
+    notifier0(Object* object, Function function)
+        : function_(function)
+    {
+        Reset(object);
     }
 
     ~notifier0()
@@ -60,8 +68,14 @@ public:
         Notify();
     }
 
+    void Reset(Object* object)
+    {
+        object_ = object;
+        m_isNeedNotification = !!object_;
+    }
+
     // Call callback function
-    virtual void Notify()
+    void Notify()
     {
         if (m_isNeedNotification)
         {
@@ -71,6 +85,7 @@ public:
     }
 
 private:
+
     Object* object_;
     Function function_;
 };

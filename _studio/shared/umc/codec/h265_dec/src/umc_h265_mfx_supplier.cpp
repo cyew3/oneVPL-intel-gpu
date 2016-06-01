@@ -662,10 +662,14 @@ UMC::Status HeadersAnalyzer::DecodeHeader(UMC::MediaData * data, mfxBitstream *b
 
     m_lastSlice = 0;
 
+    H265SeqParamSet* first_sps = 0;
+    notifier0<H265SeqParamSet> sps_guard(&H265Slice::DecrementReference);
+
     UMC::Status umcRes = UMC::UMC_ERR_NOT_ENOUGH_DATA;
     for ( ; data->GetDataSize() > 3; )
     {
         m_supplier->GetNalUnitSplitter()->MoveToStartCode(data); // move data pointer to start code
+
         if (!m_isSPSFound) // move point to first start code
         {
             bs->DataOffset = (mfxU32)((mfxU8*)data->GetDataPointer() - (mfxU8*)data->GetBufferPointer());
@@ -680,8 +684,17 @@ UMC::Status HeadersAnalyzer::DecodeHeader(UMC::MediaData * data, mfxBitstream *b
         if (umcRes != UMC::UMC_OK)
             break;
 
+        if (!first_sps && m_isSPSFound)
+        {
+            first_sps = m_supplier->GetHeaders()->m_SeqParams.GetCurrentHeader();
+            VM_ASSERT(first_sps && "Current SPS should be valid when [m_isSPSFound]");
+
+            first_sps->IncrementReference();
+            sps_guard.Reset(first_sps);
+        }
+
         if (IsEnough())
-            return UMC::UMC_OK;
+            break;
     }
 
     if (umcRes == UMC::UMC_ERR_SYNC) // move pointer
@@ -702,7 +715,13 @@ UMC::Status HeadersAnalyzer::DecodeHeader(UMC::MediaData * data, mfxBitstream *b
     }
 
     if (IsEnough())
+    {
+        H265SeqParamSet* last_sps = m_supplier->GetHeaders()->m_SeqParams.GetCurrentHeader();
+        if (first_sps && first_sps != last_sps)
+            m_supplier->GetHeaders()->m_SeqParams.AddHeader(first_sps);
+
         return UMC::UMC_OK;
+    }
 
     return UMC::UMC_ERR_NOT_ENOUGH_DATA;
 }
