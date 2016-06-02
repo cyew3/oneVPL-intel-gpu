@@ -1848,9 +1848,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     mfxExtFeiParam *           feiParam     = GetExtBuffer(par);
     bool isENCPAK = feiParam && (MFX_FEI_FUNCTION_ENCODE == feiParam->Func);
 
-    if (feiParam && (MFX_FEI_FUNCTION_ENCODE != feiParam->Func))
-        unsupported = true;
-
     // check hw capabilities
     if (par.mfx.FrameInfo.Width  > hwCaps.MaxPicWidth ||
         par.mfx.FrameInfo.Height > hwCaps.MaxPicHeight)
