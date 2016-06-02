@@ -2112,8 +2112,10 @@ mfxStatus VideoDECODEMPEG2::RestoreDecoder(Ipp32s frame_buffer_num, UMC::FrameMe
     if (mem_id_to_unlock >= 0 && mem_id_to_unlock < DPB)
         m_FrameAllocator->DecreaseReference(mem_id_to_unlock);
 
-    if (task_num_to_unlock >= 0 && task_num_to_unlock < 2*DPB)
+    if (task_num_to_unlock >= 0 && task_num_to_unlock < 2*DPB) {
+        UMC::AutomaticUMCMutex guard(m_guard);
         m_implUmc.UnLockTask(task_num_to_unlock);
+    }
 
 #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
     if (end_frame)
@@ -2345,9 +2347,13 @@ mfxStatus VideoDECODEMPEG2::CompleteTasks(void *pParam)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEMPEG2::CompleteTasks");
     MParam *parameters = (MParam *)pParam;
+
+    UMC::AutomaticUMCMutex guard(m_guard);
+
     THREAD_DEBUG_PRINTF(
         "(THREAD %x) CompleteTasks: task %x number, task num %d, curr thr idx %d, compl thr %d\n",
         GetCurrentThreadId(), pParam, parameters->task_num, parameters->m_curr_thread_idx, parameters->m_thread_completed)
+
 
     Ipp32s display_index = parameters->display_index;
 
@@ -2650,8 +2656,10 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
     m_found_SH = false;
     m_frame_constructed = true;
 
-    if (!(dec_field_count & 1))
+    if (!(dec_field_count & 1)) {
+        UMC::AutomaticUMCMutex guard(m_guard);
         m_task_num = m_implUmc.FindFreeTask();
+    }
 
     if (-1 == m_task_num)
     {
