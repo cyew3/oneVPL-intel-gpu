@@ -90,7 +90,7 @@ mfxStatus TestSuite::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
         else
             EXPECT_EQ(QPX, QP);
 
-        EXPECT_EQ(TS_MIN(CO3.NumRefActiveP[layer], m_dpb.size()), S.num_ref_idx_l0_active_minus1+1);
+        EXPECT_EQ(TS_MIN(CO3.NumRefActiveP[layer], m_dpb.size()), (size_t)S.num_ref_idx_l0_active_minus1+1);
 
         std::list<DPBPic> L0(m_dpb);
         
