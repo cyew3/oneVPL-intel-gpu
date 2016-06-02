@@ -413,11 +413,16 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
     }
 
+    // frame info parameters
+    m_mfxEncParams.mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
+    m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+    m_mfxEncParams.mfx.FrameInfo.PicStruct    = pInParams->nPicStruct;
+
+    // In case of JPEG there's fine tuning of ColorFormat and Chrome format
     if (MFX_CODEC_JPEG == pInParams->CodecId)
     {
         // frame info parameters
         m_mfxEncParams.mfx.FrameInfo.FourCC       = pInParams->ColorFormat;
-        m_mfxEncParams.mfx.FrameInfo.PicStruct    = pInParams->nPicStruct;
         if (MFX_FOURCC_RGB4 == pInParams->ColorFormat)
         {
             m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
@@ -426,13 +431,6 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         {
             m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
         }
-    }
-    else
-    {
-        // frame info parameters
-        m_mfxEncParams.mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
-        m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-        m_mfxEncParams.mfx.FrameInfo.PicStruct    = pInParams->nPicStruct;
     }
 
     // set frame size and crops
