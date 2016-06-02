@@ -836,6 +836,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyNV12GPUtoCPU(   CmSurface2D* pSurface,
     UINT            stride_in_dwords        = 0;
     UINT            height_stride_in_rows   = heightStride;
     UINT            AddedShiftLeftOffset    = 0;
+    UINT            bit_per_pixel           = (format==MFX_FOURCC_P010)?2:1;
     size_t          pLinearAddress          = (size_t)pSysMem;
     size_t          pLinearAddressAligned   = 0;
     CmKernel        *m_pCmKernel            = 0;
@@ -865,7 +866,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyNV12GPUtoCPU(   CmSurface2D* pSurface,
     {
         return MFX_ERR_NULL_PTR;
     }
-    width_byte                      = width;
+    width_byte                      = width*bit_per_pixel;
 
    //Align the width regarding stride
    if(stride_in_bytes == 0)
@@ -1182,6 +1183,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyNV12CPUtoGPU(CmSurface2D* pSurface,
     UINT            stride_in_bytes         = widthStride;
     UINT            stride_in_dwords        = 0;
     UINT            height_stride_in_rows   = heightStride;
+    UINT            bit_per_pixel           = (format==MFX_FOURCC_P010)?2:1;
     UINT            AddedShiftLeftOffset    = 0;
     size_t          pLinearAddress          = (size_t)pSysMem;
     size_t          pLinearAddressAligned   = 0;
@@ -1210,7 +1212,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyNV12CPUtoGPU(CmSurface2D* pSurface,
     {
         return MFX_ERR_NULL_PTR;
     }
-    width_byte                      = width;
+    width_byte                      = width*bit_per_pixel;
     
     //Align the width regarding stride
     if(stride_in_bytes == 0)
@@ -2085,9 +2087,9 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemoryAPI(void *pDst, mfxU32 dstPitch,
     //m_pCmDevice->DestroySurface(pCmSurface2D);
     return status;
 }
-mfxStatus CmCopyWrapper::CopySystemToVideoMemory(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi)
+mfxStatus CmCopyWrapper::CopySystemToVideoMemory(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi, mfxU32 format)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CmCopyWrapper::CopySystemToVideoMemoryAPI");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CmCopyWrapper::CopySystemToVideoMemory");
     cmStatus cmSts = 0;
 
     CmEvent* e = (CmEvent*)(-1);//NULL;
@@ -2102,7 +2104,7 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemory(void *pDst, mfxU32 dstPitch, mf
     pCmSurface2D = CreateCmSurface2D(pDst, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
 
-    status = EnqueueCopyNV12CPUtoGPU(pCmSurface2D,pSrc,roi.width,roi.height,srcPitch,srcUVOffset,0,0,e);
+    status = EnqueueCopyNV12CPUtoGPU(pCmSurface2D,pSrc,roi.width,roi.height,srcPitch,srcUVOffset,format,0,e);
     if (status == MFX_ERR_GPU_HANG || status == MFX_ERR_NONE)
     {
         return status;
@@ -2126,6 +2128,7 @@ mfxStatus CmCopyWrapper::CopySystemToVideoMemory(void *pDst, mfxU32 dstPitch, mf
 }
 mfxStatus CmCopyWrapper::CopySwapSystemToVideoMemory(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi, mfxU32 format)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CmCopyWrapper::ARGBSwapSystemToVideo");
     CmEvent* e = (CmEvent*)(-1);//NULL;
     mfxU32 width  = roi.width;
     mfxU32 height = roi.height;
@@ -2140,6 +2143,7 @@ mfxStatus CmCopyWrapper::CopySwapSystemToVideoMemory(void *pDst, mfxU32 dstPitch
 }
 mfxStatus CmCopyWrapper::CopyShiftSystemToVideoMemory(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi, mfxU32 bitshift)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CmCopyWrapper::ShiftSystemToVideo");
     CmEvent* e = (CmEvent*)(-1);//NULL;
     mfxU32 width  = roi.width;
     mfxU32 height = roi.height;
@@ -2155,6 +2159,7 @@ mfxStatus CmCopyWrapper::CopyShiftSystemToVideoMemory(void *pDst, mfxU32 dstPitc
 
 mfxStatus CmCopyWrapper::CopyShiftVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi, mfxU32 bitshift)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CmCopyWrapper::ShiftVideoToSystem");
     CmEvent* e = (CmEvent*)(-1);//NULL;
     mfxU32 width  = roi.width;
     mfxU32 height = roi.height;
@@ -2194,9 +2199,9 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemoryAPI(mfxU8 *pDst, mfxU32 dstPitch
 
     return status;
 }
-mfxStatus CmCopyWrapper::CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi)
+mfxStatus CmCopyWrapper::CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi, mfxU32 format)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CmCopyWrapper::CopyVideoToSystemMemoryAPI");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CmCopyWrapper::CopyVideoToSystemMemory");
     cmStatus cmSts = 0;
     CmEvent* e = (CmEvent*)-1;//NULL;
     mfxStatus status = MFX_ERR_NONE;
@@ -2206,7 +2211,7 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, m
     
     pCmSurface2D = CreateCmSurface2D(pSrc, width, height, false, m_tableCmRelations2, m_tableCmIndex2);
     CHECK_CM_NULL_PTR(pCmSurface2D, MFX_ERR_DEVICE_FAILED);
-    status = EnqueueCopyNV12GPUtoCPU(pCmSurface2D, pDst, roi.width, roi.height, dstPitch, dstUVOffset, 0, 0, e);
+    status = EnqueueCopyNV12GPUtoCPU(pCmSurface2D, pDst, roi.width, roi.height, dstPitch, dstUVOffset, format, 0, e);
     if (status == MFX_ERR_GPU_HANG || status == MFX_ERR_NONE)
     {
         return status;
@@ -2232,6 +2237,7 @@ mfxStatus CmCopyWrapper::CopyVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, m
 }
 mfxStatus CmCopyWrapper::CopySwapVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi, mfxU32 format)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CmCopyWrapper::ARGBSwapVideoToSystem");
     CmEvent* e = (CmEvent*)-1;//NULL;
     mfxU32 width  = roi.width;
     mfxU32 height = roi.height;
@@ -2246,6 +2252,7 @@ mfxStatus CmCopyWrapper::CopySwapVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitc
 }
 mfxStatus CmCopyWrapper::CopyMirrorVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPitch, mfxU32 dstUVOffset, void *pSrc, mfxU32 srcPitch, IppiSize roi, mfxU32 format)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CmCopyWrapper::MirrorVideoToSystem");
     CmEvent* e = (CmEvent*)-1;//NULL;
     mfxU32 width  = roi.width;
     mfxU32 height = roi.height;
@@ -2260,6 +2267,7 @@ mfxStatus CmCopyWrapper::CopyMirrorVideoToSystemMemory(mfxU8 *pDst, mfxU32 dstPi
 }
 mfxStatus CmCopyWrapper::CopyMirrorSystemToVideoMemory(void *pDst, mfxU32 dstPitch, mfxU8 *pSrc, mfxU32 srcPitch, mfxU32 srcUVOffset, IppiSize roi, mfxU32 format)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CmCopyWrapper::MirrorSystemToVideo");
     CmEvent* e = (CmEvent*)-1;//NULL;
     mfxU32 width  = roi.width;
     mfxU32 height = roi.height;
@@ -2311,6 +2319,7 @@ mfxStatus CmCopyWrapper::CopyVideoToVideoMemoryAPI(void *pDst, void *pSrc, IppiS
 }
 mfxStatus CmCopyWrapper::CopySwapVideoToVideoMemory(void *pDst, void *pSrc, IppiSize roi, mfxU32 format)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CmCopyWrapper::ARGBSwapVideoToVideo");
     CmEvent* e = NULL;
 
     mfxU32 width  = roi.width;
@@ -2329,6 +2338,7 @@ mfxStatus CmCopyWrapper::CopySwapVideoToVideoMemory(void *pDst, void *pSrc, Ippi
 }
 mfxStatus CmCopyWrapper::CopyMirrorVideoToVideoMemory(void *pDst, void *pSrc, IppiSize roi, mfxU32 format)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CmCopyWrapper::MirrorVideoToVideo");
     CmEvent* e = NULL;
 
     mfxU32 width  = roi.width;
