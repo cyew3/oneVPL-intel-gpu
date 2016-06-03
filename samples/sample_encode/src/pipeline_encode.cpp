@@ -421,15 +421,15 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     // In case of JPEG there's fine tuning of ColorFormat and Chrome format
     if (MFX_CODEC_JPEG == pInParams->CodecId)
     {
-        // frame info parameters
-        m_mfxEncParams.mfx.FrameInfo.FourCC       = pInParams->ColorFormat;
         if (MFX_FOURCC_RGB4 == pInParams->ColorFormat)
         {
             m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_mfxEncParams.mfx.FrameInfo.FourCC       = MFX_FOURCC_RGB4;
         }
         else if (MFX_FOURCC_YUY2 == pInParams->ColorFormat)
         {
             m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_mfxEncParams.mfx.FrameInfo.FourCC       = MFX_FOURCC_YUY2;
         }
     }
 
