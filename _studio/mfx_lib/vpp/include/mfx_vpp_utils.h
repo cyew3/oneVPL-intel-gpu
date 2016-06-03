@@ -39,6 +39,13 @@ bool IsFrameRatesCorrespondMode30i60p(
     mfxU32  outFrameRateExtN, 
     mfxU32  outFrameRateExtD);
 
+// check if frame rates correspond Weave DI algorithm, e.g. input framerate is twice bigger than output's.
+bool IsFrameRatesCorrespondWeaving(
+    mfxU32  inFrameRateExtN,
+    mfxU32  inFrameRateExtD,
+    mfxU32  outFrameRateExtN,
+    mfxU32  outFrameRateExtD);
+
 // PicStruct processing
 PicStructMode GetPicStructMode(mfxU16 inPicStruct, mfxU16 outPicStruct);
 mfxStatus CheckInputPicStruct( mfxU16 inPicStruct );

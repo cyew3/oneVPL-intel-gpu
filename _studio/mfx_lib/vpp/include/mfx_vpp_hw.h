@@ -253,6 +253,7 @@ namespace MfxHwVideoProcessing
     struct Config
     {
         bool   m_bMode30i60pEnable;
+        bool   m_bWeave;
         bool   m_bPassThroughEnable;
         bool   m_bRefFrameEnable;
 
@@ -277,6 +278,7 @@ namespace MfxHwVideoProcessing
             m_EOS = false;
             m_actualNumber = 0;
             m_indxOutTimeStamp = 0;
+            m_fieldWeaving = false;
 
             m_pSubResource = NULL;
             
@@ -332,6 +334,9 @@ namespace MfxHwVideoProcessing
         {
             mfxU32 numFramesToRemove = m_inputFramesOrFieldPerCycle - IPP_MIN(m_inputFramesOrFieldPerCycle, m_bkwdRefCountRequired - m_bkwdRefCount);
 
+            if (m_fieldWeaving)
+                numFramesToRemove = 2;
+
             return numFramesToRemove;
         }
 
@@ -361,6 +366,7 @@ namespace MfxHwVideoProcessing
         mfxU32 m_actualNumber;
         mfxU32 m_indxOutTimeStamp;
         bool   m_EOS;
+        bool   m_fieldWeaving;
 
         std::vector<ReleaseResource*> m_subTaskQueue;
         ReleaseResource*              m_pSubResource;

@@ -975,6 +975,13 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
                 break;
             }
 
+            case (mfxU32)MFX_EXTBUFF_VPP_DI_WEAVE:
+            {
+                inputFramesCount[filterIndex]  = MFXVideoVPPDeinterlace::GetInFramesCountExt() << 1;
+                outputFramesCount[filterIndex] = MFXVideoVPPDeinterlace::GetOutFramesCountExt();
+                break;
+            }
+
             case (mfxU32)MFX_EXTBUFF_VPP_CSC:
             case (mfxU32)MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
             case (mfxU32)MFX_EXTBUFF_VPP_CSC_OUT_A2RGB10:

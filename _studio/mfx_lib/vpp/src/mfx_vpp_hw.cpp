@@ -445,6 +445,8 @@ mfxStatus ResMngr::Init(
         //m_core                 = core;
     }
 
+    m_fieldWeaving = config.m_bWeave;
+
     m_core                 = core;
 
     return MFX_ERR_NONE;
@@ -487,6 +489,8 @@ mfxStatus ResMngr::DoAdvGfx(
     else // new task
     {
         m_fwdRefCount = m_fwdRefCountRequired;
+
+        m_bkwdRefCount = m_bkwdRefCountRequired;
 
         if(input)
         {
@@ -1715,8 +1719,8 @@ mfxStatus  VideoVPPHW::Init(
     }
 
     // count of internal resources based on async_depth
-    m_config.m_surfCount[VPP_OUT] = (mfxU16)(m_config.m_surfCount[VPP_OUT] + m_asyncDepth);
-    m_config.m_surfCount[VPP_IN]  = (mfxU16)(m_config.m_surfCount[VPP_IN]  + m_asyncDepth);
+    m_config.m_surfCount[VPP_OUT] = (mfxU16)(m_config.m_surfCount[VPP_OUT] * m_asyncDepth + 1);
+    m_config.m_surfCount[VPP_IN]  = (mfxU16)(m_config.m_surfCount[VPP_IN]  * m_asyncDepth + 1);
 
     //-----------------------------------------------------
     // [3] Opaque pre-work:: moved to high level
@@ -3013,7 +3017,8 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
                 extDI->Mode != MFX_DEINTERLACING_ADVANCED_SCD &&
 #endif
                 extDI->Mode != MFX_DEINTERLACING_ADVANCED_NOREF &&
-                extDI->Mode != MFX_DEINTERLACING_BOB)
+                extDI->Mode != MFX_DEINTERLACING_BOB &&
+                extDI->Mode != MFX_DEINTERLACING_FIELD_WEAVING)
             {
                 sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
             }
@@ -3162,7 +3167,8 @@ mfxI32 GetDeinterlaceMode( const mfxVideoParam& videoParam, const mfxVppCaps& ca
                 extDI->Mode != MFX_DEINTERLACING_ADVANCED_SCD &&
 #endif
                 extDI->Mode != MFX_DEINTERLACING_ADVANCED_NOREF &&
-                extDI->Mode != MFX_DEINTERLACING_BOB)
+                extDI->Mode != MFX_DEINTERLACING_BOB &&
+                extDI->Mode != MFX_DEINTERLACING_FIELD_WEAVING)
             {
                 return 0;
             }
@@ -3177,6 +3183,9 @@ mfxI32 GetDeinterlaceMode( const mfxVideoParam& videoParam, const mfxVppCaps& ca
                 deinterlacingMode = extDI->Mode;
 
             if ((MFX_DEINTERLACING_BOB == extDI->Mode) && (caps.uSimpleDI) )
+                deinterlacingMode = extDI->Mode;
+
+            if ((MFX_DEINTERLACING_FIELD_WEAVING == extDI->Mode) && (caps.uFieldWeavingControl))
                 deinterlacingMode = extDI->Mode;
             /**/
             break;
@@ -3296,6 +3305,40 @@ mfxStatus ConfigureExecuteParams(
                     bIsFilterSkipped = true;
                 }
 
+
+                break;
+            }
+
+            case MFX_EXTBUFF_VPP_DI_WEAVE:
+            {
+                /* this function also take into account is DI ext buffer present or does not */
+                executeParams.iDeinterlacingAlgorithm = GetDeinterlaceMode( videoParam, caps );
+                if (0 == executeParams.iDeinterlacingAlgorithm)
+                {
+                    /* Tragically case,
+                     * Something wrong. User requested DI but MSDK can't do it */
+                    return MFX_ERR_UNKNOWN;
+                }
+
+                config.m_bWeave = true;
+                executeParams.bFieldWeaving = true;
+                if(MFX_DEINTERLACING_FIELD_WEAVING == executeParams.iDeinterlacingAlgorithm)
+                {
+                    // use motion adaptive ADI with reference frame (quality)
+                    config.m_bRefFrameEnable = true;
+                    config.m_extConfig.customRateData.fwdRefCount  = 0;
+                    config.m_extConfig.customRateData.bkwdRefCount = 1; /* ref frame */
+                    config.m_extConfig.customRateData.inputFramesOrFieldPerCycle= 1;
+                    config.m_extConfig.customRateData.outputIndexCountPerCycle  = 1;
+                    config.m_surfCount[VPP_IN]   = IPP_MAX(2, config.m_surfCount[VPP_IN]);
+                    config.m_surfCount[VPP_OUT]  = IPP_MAX(1, config.m_surfCount[VPP_OUT]);
+                    config.m_extConfig.mode = IS_REFERENCES;
+                }
+                else
+                {
+                    executeParams.iDeinterlacingAlgorithm = 0;
+                    bIsFilterSkipped = true;
+                }
 
                 break;
             }

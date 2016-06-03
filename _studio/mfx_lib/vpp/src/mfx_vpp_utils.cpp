@@ -687,6 +687,37 @@ bool IsFrameRatesCorrespondDI(mfxU32  inFrameRateExtN,  mfxU32  inFrameRateExtD,
 
 } // bool IsFrameRatesCorrespondDI(...)
 
+bool IsFrameRatesCorrespondWeaving(mfxU32  inFrameRateExtN,  mfxU32  inFrameRateExtD,
+                                   mfxU32  outFrameRateExtN, mfxU32  outFrameRateExtD)
+{
+    const mfxU32 RATIO_FOR_SINGLE_FIELD_PROCESSED = 1;
+    const mfxU32 RATIO_FOR_BOTH_FIELDS_PROCESSED  = 2;
+
+    // convert to internal mfx frame rates range
+    mfxF64 inFrameRate  = CalculateUMCFramerate(inFrameRateExtN,  inFrameRateExtD);
+    mfxF64 outFrameRate = CalculateUMCFramerate(outFrameRateExtN, outFrameRateExtD);
+
+    CalculateMFXFramerate(inFrameRate,  &inFrameRateExtN,  &inFrameRateExtD);
+    CalculateMFXFramerate(outFrameRate, &outFrameRateExtN, &outFrameRateExtD);
+
+    if( inFrameRateExtD != outFrameRateExtD )
+    {
+        return false;
+    }
+
+    mfxU32 residue = inFrameRateExtN % outFrameRateExtN;
+    mfxU32 ratio   = inFrameRateExtN / outFrameRateExtN;
+
+    if( (inFrameRateExtD == outFrameRateExtD) && (0 == residue) &&
+        ( (RATIO_FOR_SINGLE_FIELD_PROCESSED == ratio) || ( RATIO_FOR_BOTH_FIELDS_PROCESSED == ratio) ) )
+    {
+        return true;
+    }
+
+    return false;
+
+} // bool IsFrameRatesCorrespondModeWeaving(...)
+
 bool IsFrameRatesCorrespondMode30i60p(mfxU32  inFrameRateExtN,  mfxU32  inFrameRateExtD,
                                  mfxU32  outFrameRateExtN, mfxU32  outFrameRateExtD)
 {
@@ -865,6 +896,13 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
             case (mfxU32)MFX_EXTBUFF_VPP_DI_30i60p:
             {
                 sprintf_s(cStr, sizeof(cStr), "%s \n", "ADV DI");
+                OutputDebugStringA(cStr);
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_DI_WEAVE:
+            {
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "WEAVE DI");
                 OutputDebugStringA(cStr);
                 break;
             }
@@ -1050,6 +1088,12 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 break;
             }
 
+            case (mfxU32)MFX_EXTBUFF_VPP_DI_WEAVE:
+            {
+                fprintf(stderr, "WEAVE DI\n");
+                break;
+            }
+
             case (mfxU32)MFX_EXTBUFF_VPP_ITC:
             {
                 fprintf(stderr, "ITC \n");
@@ -1197,6 +1241,11 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
         newList[index] = MFX_EXTBUFF_VPP_DI;
         index++;
     }
+    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DI_WEAVE ) )
+    {
+        newList[index] = MFX_EXTBUFF_VPP_DI_WEAVE;
+        index++;
+    }
     if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DI_30i60p ) )
     {
         newList[index] = MFX_EXTBUFF_VPP_DI_30i60p;
@@ -1209,6 +1258,7 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
     }
     if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DEINTERLACING ) &&
       ! IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DI_30i60p     ) &&
+      ! IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DI_WEAVE      ) &&
       ! IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DI            ))
     {
         newList[index] = MFX_EXTBUFF_VPP_DEINTERLACING;
@@ -1549,7 +1599,8 @@ mfxStatus GetPipelineList(
                 extDI->Mode == MFX_DEINTERLACING_ADVANCED_SCD ||
 #endif
                 extDI->Mode == MFX_DEINTERLACING_BOB ||
-                extDI->Mode == MFX_DEINTERLACING_ADVANCED_NOREF)
+                extDI->Mode == MFX_DEINTERLACING_ADVANCED_NOREF ||
+                extDI->Mode == MFX_DEINTERLACING_FIELD_WEAVING)
             {
                 /* DI Ext buffer present
                  * and DI type is correct
@@ -1596,6 +1647,18 @@ mfxStatus GetPipelineList(
 
     }
 
+    /* Weaving DI part. Can be enabled thru ext buffer only, there is no dinamic enabling based on
+     * input/output pic type
+     */
+    if (MFX_DEINTERLACING_FIELD_WEAVING == deinterlacingMode &&  IsFrameRatesCorrespondWeaving(par->In.FrameRateExtN,
+                                                                 par->In.FrameRateExtD,
+                                                                 par->Out.FrameRateExtN,
+                                                                 par->Out.FrameRateExtD))
+    {
+        pipelineList.push_back(MFX_EXTBUFF_VPP_DI_WEAVE);
+    }
+
+
     /* ********************************************************************** */
     /* 2. optional filters, enabled by default, disabled by DO_NOT_USE        */
     /* ********************************************************************** */
@@ -1613,6 +1676,7 @@ mfxStatus GetPipelineList(
     /* [Core Frame Rate Conversion] FILTER */
     /* must be used AFTER [Deinterlace] FILTER !!! due to SW performance specific */
     if( !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DI_30i60p ) &&
+        !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_DI_WEAVE ) &&
         !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_ITC ) )
     {
         if( IsFilterFound( pExtList, extCount, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION ) ||

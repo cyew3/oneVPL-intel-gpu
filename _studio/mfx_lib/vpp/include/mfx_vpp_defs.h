@@ -97,6 +97,7 @@ enum {
     MFX_EXTBUFF_VPP_RESIZE       =   MFX_MAKEFOURCC('R','S','Z','F'),
     MFX_EXTBUFF_VPP_DI           =   MFX_MAKEFOURCC('S','D','I','F'),//STANDARD DEINTERLACE FILTER (60i->30p)
     MFX_EXTBUFF_VPP_DI_30i60p    =   MFX_MAKEFOURCC('F','D','I','F'),//FULL PTS DEINTERLACE FILTER (60i->60p)
+    MFX_EXTBUFF_VPP_DI_WEAVE     =   MFX_MAKEFOURCC('F','D','I','W'),//WEAVE DEINTERLACE FILTER (60i->30p)
     MFX_EXTBUFF_VPP_ITC          =   MFX_MAKEFOURCC('I','T','C','F'), //INV TELECINE FILTER
 
     // MSDK 2013 requires [NV12, RGB4] as output.SW algorithm designed for NV12 only.
