@@ -1012,6 +1012,20 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         if (hrdBufSize > static_cast<mfxU32>(request.Info.Width * request.Info.Height))
             request.Info.Height = AlignValue<mfxU16>(static_cast<mfxU16>(hrdBufSize / request.Info.Width), 16);
     }
+
+    //limit bs size to 4095*nMBs + slice_hdr_size * nSlice
+    {
+        const mfxU32 SLICE_BUFFER_SIZE  = 2048; //from HeaderPacker
+        const mfxU32 MAX_MB_SIZE  = 512; //4095 bits in bytes
+
+        const mfxU32 nMBs = (m_video.mfx.FrameInfo.Width * m_video.mfx.FrameInfo.Height) / 256;
+        const mfxU32 maxNumSlices = IPP_MAX(GetMaxNumSlices(m_video), 1);
+        const mfxU32 maxBufSize = MAX_MB_SIZE * nMBs + SLICE_BUFFER_SIZE * maxNumSlices;
+
+        if (maxBufSize < static_cast<mfxU32>(request.Info.Width * request.Info.Height))
+            request.Info.Height = AlignValue<mfxU16>(static_cast<mfxU16>(maxBufSize / request.Info.Width), 16);
+    }
+
     if (MFX_HW_D3D9 == m_core->GetVAType()) // D3D9 do not like surfaces with too big height
     {
         const mfxU32 curBufSize = request.Info.Height * request.Info.Width;
