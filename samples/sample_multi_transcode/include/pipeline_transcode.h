@@ -465,7 +465,7 @@ namespace TranscodingSample
 
         void      FreePreEncAuxPool();
 
-        mfxFrameSurface1* GetFreeSurface(bool isDec);
+        mfxFrameSurface1* GetFreeSurface(bool isDec, mfxU64 timeout);
         mfxU32 GetFreeSurfacesCount(bool isDec);
         PreEncAuxBuffer*  GetFreePreEncAuxBuffer();
         void SetSurfaceAuxIDR(ExtendedSurface& extSurface, PreEncAuxBuffer* encAuxCtrl, bool bInsertIDR);

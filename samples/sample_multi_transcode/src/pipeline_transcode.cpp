@@ -478,7 +478,6 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
     mfxStatus sts = MFX_ERR_MORE_SURFACE;
     mfxFrameSurface1    *pmfxSurface = NULL;
     pExtSurface->pSurface = NULL;
-    mfxU32 i = 0;
 
     //--- Time measurements
     if (statisticsWindowSize)
@@ -500,20 +499,8 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
         }
         else if (MFX_ERR_MORE_SURFACE == sts)
         {
-            // find new working surface
-            for (i = 0; i < MSDK_SURFACE_WAIT_INTERVAL; i += TIME_TO_SLEEP)
-            {
-                pmfxSurface = GetFreeSurface(true);
-                if (pmfxSurface)
-                {
-                    break;
-                }
-                else
-                {
-                    MSDK_SLEEP(TIME_TO_SLEEP);
-                }
-            }
-
+            // Find new working surface
+            pmfxSurface = GetFreeSurface(true, MSDK_SURFACE_WAIT_INTERVAL);
             MSDK_CHECK_POINTER_SAFE(pmfxSurface, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free surfaces in decoder pool (during long period)\n"))); // return an error if a free surface wasn't found
         }
 
@@ -539,7 +526,6 @@ mfxStatus CTranscodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
     MFX_ITT_TASK("DecodeLastFrame");
     mfxFrameSurface1    *pmfxSurface = NULL;
     mfxStatus sts = MFX_ERR_MORE_SURFACE;
-    mfxU32 i = 0;
 
     //--- Time measurements
     if (statisticsWindowSize)
@@ -557,18 +543,7 @@ mfxStatus CTranscodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
         }
 
         // find new working surface
-        for (i = 0; i < MSDK_SURFACE_WAIT_INTERVAL; i += TIME_TO_SLEEP)
-        {
-            pmfxSurface = GetFreeSurface(true);
-            if (pmfxSurface)
-            {
-                break;
-            }
-            else
-            {
-                MSDK_SLEEP(TIME_TO_SLEEP);
-            }
-        }
+        pmfxSurface = GetFreeSurface(true, MSDK_SURFACE_WAIT_INTERVAL);
 
         MSDK_CHECK_POINTER_SAFE(pmfxSurface, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free surfaces in decoder pool (during long period)\n"))); // return an error if a free surface wasn't found
         sts = m_pmfxDEC->DecodeFrameAsync(NULL, pmfxSurface, &pExtSurface->pSurface, &pExtSurface->Syncp);
@@ -582,20 +557,7 @@ mfxStatus CTranscodingPipeline::VPPOneFrame(ExtendedSurface *pSurfaceIn, Extende
     MSDK_CHECK_POINTER(pExtSurface,  MFX_ERR_NULL_PTR);
     mfxFrameSurface1 *pmfxSurface = NULL;
     // find/wait for a free working surface
-    for (mfxU32 i = 0; i < MSDK_SURFACE_WAIT_INTERVAL; i += TIME_TO_SLEEP)
-    {
-        pmfxSurface= GetFreeSurface(false);
-
-        if (pmfxSurface)
-        {
-            break;
-        }
-        else
-        {
-            MSDK_SLEEP(TIME_TO_SLEEP);
-        }
-    }
-
+    pmfxSurface = GetFreeSurface(false, MSDK_SURFACE_WAIT_INTERVAL);
     MSDK_CHECK_POINTER_SAFE(pmfxSurface, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free surfaces for VPP in encoder pool (during long period)\n"))); // return an error if a free surface wasn't found
 
     // make sure picture structure has the initial value
@@ -3068,17 +3030,35 @@ mfxStatus CTranscodingPipeline::CompleteInit()
 
     return sts;
 } // mfxStatus CTranscodingPipeline::CompleteInit()
-mfxFrameSurface1* CTranscodingPipeline::GetFreeSurface(bool isDec)
+mfxFrameSurface1* CTranscodingPipeline::GetFreeSurface(bool isDec, mfxU64 timeout)
 {
-    SurfPointersArray & workArray = isDec ? m_pSurfaceDecPool : m_pSurfaceEncPool;
+    mfxFrameSurface1* pSurf = NULL;
 
-    for (mfxU32 i = 0; i < workArray.size(); i++)
+    CTimer t;
+    t.Start();
+    do
     {
-        if (!workArray[i]->Data.Locked)
-            return workArray[i];
-    }
+        SurfPointersArray & workArray = isDec ? m_pSurfaceDecPool : m_pSurfaceEncPool;
 
-    return NULL;
+        for (mfxU32 i = 0; i < workArray.size(); i++)
+        {
+            if (!workArray[i]->Data.Locked)
+            {
+                pSurf = workArray[i];
+                break;
+            }
+        }
+        if (pSurf)
+        {
+            break;
+        }
+        else
+        {
+            MSDK_SLEEP(TIME_TO_SLEEP);
+        }
+    } while ( t.GetTime() < timeout / 1000 );
+
+    return pSurf;
 } // mfxFrameSurface1* CTranscodingPipeline::GetFreeSurface(bool isDec)
 
 mfxU32 CTranscodingPipeline::GetFreeSurfacesCount(bool isDec)
