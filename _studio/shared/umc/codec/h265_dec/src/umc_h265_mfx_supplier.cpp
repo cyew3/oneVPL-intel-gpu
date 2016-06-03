@@ -328,7 +328,7 @@ UMC::Status MFXTaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
         Ipp32u temporal_id;
 
         bitStream.GetNALUnitType(nal_unit_type, temporal_id);
-        nalUnit->MoveDataPointer(1); // nal_unit_type - 8 bits
+        nalUnit->MoveDataPointer(2); // skip[ [NAL unit header = 16 bits]
 
         do
         {
@@ -347,7 +347,7 @@ UMC::Status MFXTaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
                 if (m_SEIPayLoads.payLoadType == SEI_RESERVED)
                     continue;
 
-                //m_Headers.m_SEIParams.AddHeader(&m_SEIPayLoads);
+                m_Headers.m_SEIParams.AddHeader(&m_SEIPayLoads);
             }
 
             size_t decoded2 = bitStream.BytesDecoded();
@@ -368,7 +368,12 @@ UMC::Status MFXTaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
 
                 nalUnit1.SetBufferPointer((Ipp8u*)nalUnit->GetDataPointer(), nal_u_size);
                 nalUnit1.SetDataSize(nal_u_size);
-            
+                nalUnit1.SetExData(nalUnit->GetExData());
+
+                Ipp64f start, stop;
+                nalUnit->GetTime(start, stop);
+                nalUnit1.SetTime(start, stop);
+
                 nalUnit->MoveDataPointer((Ipp32s)nal_u_size);
             
                 m_sei_messages->AddMessage(&nalUnit1, m_SEIPayLoads.payLoadType);

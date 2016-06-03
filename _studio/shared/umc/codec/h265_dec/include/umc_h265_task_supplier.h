@@ -106,18 +106,23 @@ public:
     struct SEI_Message
     {
         H265DecoderFrame * frame;
-        size_t  msg_size;
-        size_t  offset;
-        Ipp8u*  data;
-        Ipp64f  timestamp;
-        SEI_TYPE type;
-        Ipp32s  isUsed;
+
+        size_t      size;
+        size_t      offset;
+        Ipp8u*      data;
+
+        Ipp32s      nal_type;
+        Ipp64f      timestamp;
+        SEI_TYPE    type;
+
+        Ipp32s      isUsed;
 
         SEI_Message()
             : frame(0)
-            , msg_size(0)
+            , size(0)
             , offset(0)
             , data(0)
+            , nal_type(NAL_UT_INVALID)
             , timestamp(0)
             , type(SEI_RESERVED)
             , isUsed(0)

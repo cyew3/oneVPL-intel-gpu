@@ -418,12 +418,13 @@ const SEI_Storer_H265::SEI_Message * SEI_Storer_H265::GetPayloadMessage()
 // Put a new SEI message to the storage
 SEI_Storer_H265::SEI_Message* SEI_Storer_H265::AddMessage(UMC::MediaDataEx *nalUnit, SEI_TYPE type)
 {
-    size_t sz = nalUnit->GetDataSize();
+    size_t const size
+        = nalUnit->GetDataSize();
 
-    if (sz > (m_data.size() >> 2))
+    if (size > (m_data.size() >> 2))
         return 0;
 
-    if (m_offset + sz > m_data.size())
+    if (m_offset + size > m_data.size())
     {
         m_offset = 0;
     }
@@ -436,8 +437,8 @@ SEI_Storer_H265::SEI_Message* SEI_Storer_H265::AddMessage(UMC::MediaDataEx *nalU
 
         SEI_Message & mmsg = m_payloads[i];
 
-        if ((m_offset + sz > mmsg.offset) &&
-            (m_offset < mmsg.offset + mmsg.msg_size))
+        if ((m_offset + size > mmsg.offset) &&
+            (m_offset < mmsg.offset + mmsg.size))
         {
             m_payloads[i].isUsed = 0;
             return 0;
@@ -463,16 +464,21 @@ SEI_Storer_H265::SEI_Message* SEI_Storer_H265::AddMessage(UMC::MediaDataEx *nalU
         freeSlot = m_payloads.size() - 1;
     }
 
-    m_payloads[freeSlot].offset = m_offset;
-    m_payloads[freeSlot].timestamp = 0;
-    m_payloads[freeSlot].frame = 0;
+    m_payloads[freeSlot].frame     = 0;
+    m_payloads[freeSlot].offset    = m_offset;
+    m_payloads[freeSlot].size      = size;
+    m_payloads[freeSlot].data      = &m_data[m_offset];
+
+    if (nalUnit->GetExData())
+        m_payloads[freeSlot].nal_type = nalUnit->GetExData()->values[0];
+
+    m_payloads[freeSlot].type      = type;
+
     m_payloads[freeSlot].isUsed = 1;
-    m_payloads[freeSlot].data = &(m_data.front()) + m_offset;
-    m_payloads[freeSlot].type = type;
 
-    MFX_INTERNAL_CPY(&m_data[m_offset], (Ipp8u*)nalUnit->GetDataPointer(), (Ipp32u)sz);
+    MFX_INTERNAL_CPY(m_payloads[freeSlot].data, (Ipp8u*)nalUnit->GetDataPointer(), m_payloads[freeSlot].size);
 
-    m_offset += sz;
+    m_offset += size;
     return &m_payloads[freeSlot];
 }
 
@@ -1776,10 +1782,8 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource)
                 break;
 
             case NAL_UT_SEI:
-                DecodeSEI(nalUnit);
-                break;
-
             case NAL_UT_SEI_SUFFIX:
+                DecodeSEI(nalUnit);
                 break;
 
             case NAL_UT_VPS:

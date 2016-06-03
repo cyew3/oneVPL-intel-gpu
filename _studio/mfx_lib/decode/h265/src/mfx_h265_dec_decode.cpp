@@ -1362,13 +1362,16 @@ mfxStatus VideoDECODEH265::GetPayload( mfxU64 *ts, mfxPayload *payload )
 
     if (msg)
     {
-        if (payload->BufSize < msg->msg_size)
+        if (payload->BufSize < msg->size)
             return MFX_ERR_NOT_ENOUGH_BUFFER;
 
         *ts = GetMfxTimeStamp(msg->timestamp);
-        mfx_memcpy(payload->Data, msg->msg_size, msg->data, msg->msg_size);
 
-        payload->NumBit = (mfxU32)(msg->msg_size * 8);
+        mfx_memcpy(payload->Data, payload->BufSize, msg->data, msg->size);
+
+        payload->CtrlFlags =
+            msg->nal_type == NAL_UT_SEI_SUFFIX ? MFX_PAYLOAD_CTRL_SUFFIX : 0;
+        payload->NumBit = (mfxU32)(msg->size * 8);
         payload->Type = (mfxU16)msg->type;
     }
     else
