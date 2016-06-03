@@ -401,10 +401,16 @@ mfxStatus tsVideoDecoder::SyncOperation(mfxSession session,  mfxSyncPoint syncp,
     return tsSession::SyncOperation(session, syncp, wait);
 }
 
+mfxStatus tsVideoDecoder::GetPayload(mfxU64 *ts, mfxPayload *payload)
+{
+    return GetPayload(m_session, ts, payload);
+}
+
 mfxStatus tsVideoDecoder::GetPayload(mfxSession session, mfxU64 *ts, mfxPayload *payload)
 {
     TRACE_FUNC3(MFXVideoDECODE_GetPayload, session, ts, payload);
     g_tsStatus.check( MFXVideoDECODE_GetPayload(session, ts, payload) );
+    TS_TRACE(payload);
 
     return g_tsStatus.get();
 }
