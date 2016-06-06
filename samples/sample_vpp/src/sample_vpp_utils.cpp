@@ -609,11 +609,8 @@ mfxStatus InitMemoryAllocator(
     sts = pAllocator->pMfxAllocator->Init(pAllocator->pAllocatorParams);
     MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
 
-    mfxVideoParam outParams;
-    MSDK_ZERO_MEMORY(outParams);
-    sts = pProcessor->pmfxVPP->Query(pParams, &outParams);
+    sts = pProcessor->pmfxVPP->Query(pParams, pParams);
     MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMemoryAllocator(pAllocator));
-    *pParams=outParams;
 
     sts = pProcessor->pmfxVPP->QueryIOSurf(pParams, request);
     MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
