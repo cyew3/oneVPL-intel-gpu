@@ -413,6 +413,11 @@ mfxStatus ImplementationAvc::Query(
         else if (checkSts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
             checkSts = MFX_ERR_UNSUPPORTED;
 
+        /* FEI ENCODE additional check for input parameters */
+        mfxExtFeiParam* feiParam = GetExtBuffer(*in);
+        if ((NULL != feiParam) && (MFX_FEI_FUNCTION_ENCODE != feiParam->Func))
+            checkSts = MFX_ERR_UNSUPPORTED;
+
         out->IOPattern  = tmp.IOPattern;
         out->Protected  = tmp.Protected;
         out->AsyncDepth = tmp.AsyncDepth;
@@ -723,8 +728,11 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     mfxStatus sts = CheckExtBufferId(*par);
     MFX_CHECK_STS(sts);
 
+    /* feiParam buffer attached by application */
     mfxExtFeiParam* feiParam = (mfxExtFeiParam*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_FEI_PARAM);
     m_isENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
+    if ((NULL != feiParam) && (feiParam->Func != MFX_FEI_FUNCTION_ENCODE))
+            return MFX_ERR_INVALID_VIDEO_PARAM;
 
     m_video = *par;
     /* FEI works with CQP only */
