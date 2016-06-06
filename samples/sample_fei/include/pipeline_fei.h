@@ -257,7 +257,7 @@ public:
     virtual mfxStatus Init(sInputParams *pParams);
     virtual mfxStatus Run();
     virtual void Close();
-    virtual mfxStatus ResetMFXComponents(sInputParams* pParams);
+    virtual mfxStatus ResetMFXComponents(sInputParams* pParams, bool realloc_frames);
     virtual mfxStatus ResetDevice();
 
     virtual void  PrintInfo();
@@ -362,7 +362,7 @@ protected:
     virtual mfxStatus InitMfxVppParams(sInputParams *pParams);
 
     virtual mfxStatus InitFileWriters(sInputParams *pParams);
-    virtual mfxStatus ResetIOFiles(sInputParams & pParams);
+    virtual mfxStatus ResetIOFiles(const sInputParams & pParams);
     virtual void FreeFileWriters();
     virtual mfxStatus InitFileWriter(CSmplBitstreamWriter **ppWriter, const msdk_char *filename);
 
@@ -377,6 +377,7 @@ protected:
     virtual void DeleteFrames();
 
     virtual mfxStatus ReleaseResources();
+    virtual mfxStatus UnlockResources();
 
     virtual mfxStatus AllocateSufficientBuffer(mfxBitstream* pBS);
     virtual mfxStatus UpdateVideoParams();
@@ -391,7 +392,7 @@ protected:
     virtual mfxStatus ResizeFrame(mfxU32 frameNum, bool &insertIDR, size_t &rctime, iTask* &eTask, sTask *pCurrentTask);
     virtual mfxStatus ResetExtBufMBnum(bufSet* bufs, mfxU16 new_numMB);
 
-    virtual mfxStatus PreProcessOneFrame(mfxFrameSurface1* & pSurf);
+    virtual mfxStatus PreProcessOneFrame(mfxFrameSurface1* & pSurf, bool &cont);
     virtual mfxStatus PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, bool is_buffered, bool &cont);
     virtual mfxStatus ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs[2][2]);
     virtual mfxStatus EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
@@ -402,6 +403,8 @@ protected:
     virtual mfxStatus DecodeLastFrame(ExtendedSurface *pOutSurf);
 
     virtual mfxStatus VPPOneFrame(MFXVideoVPP* VPPobj, MFXVideoSession* session, mfxFrameSurface1 *pSurfaceIn, ExtendedSurface *pExtSurface);
+
+    virtual mfxStatus doGPUHangRecovery();
 
     virtual mfxU16 GetFreeSurfaceFEI(ExtSurfPool & SurfacesPool);
     mfxU16 GetFreeSurface_FirstNew(ExtSurfPool & SurfacesPool);

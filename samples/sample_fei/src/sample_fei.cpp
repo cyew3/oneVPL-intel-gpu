@@ -486,13 +486,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             i++;
             pParams->bPreencPredSpecified_l0 = true;
-            pParams->PreencMVPredictors[0] = (bool)msdk_strtol(strInput[i], &stopCharacter, 10);
+            pParams->PreencMVPredictors[0] = !!msdk_strtol(strInput[i], &stopCharacter, 10);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-preenc_mvpredictors_l1")))
         {
             i++;
             pParams->bPreencPredSpecified_l1 = true;
-            pParams->PreencMVPredictors[1] = (bool)msdk_strtol(strInput[i], &stopCharacter, 10);
+            pParams->PreencMVPredictors[1] = !!msdk_strtol(strInput[i], &stopCharacter, 10);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dblk_idc")))
         {
@@ -800,9 +800,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if ((pParams->nWidth || pParams->nHeight || pParams->nPicStruct != MFX_PICSTRUCT_UNKNOWN) && pParams->bDECODE)
+    if ((pParams->nWidth || pParams->nHeight) && pParams->bDECODE)
     {
-        msdk_printf(MSDK_STRING("\nWARNING: input width, height, picstruct will be taken from input stream\n"));
+        msdk_printf(MSDK_STRING("\nWARNING: input width and height will be taken from input stream (-w -h settings ignored)\n"));
     }
 
     if (pParams->dFrameRate <= 0)
@@ -1238,7 +1238,7 @@ int main(int argc, char *argv[])
             sts = pPipeline->ResetDevice();
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
 
-            sts = pPipeline->ResetMFXComponents(&Params);
+            sts = pPipeline->ResetMFXComponents(&Params, true);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
             continue;
         }
