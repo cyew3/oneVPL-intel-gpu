@@ -2320,15 +2320,12 @@ mfxStatus VAAPIEncoder::Execute(
 /*
  * Limit frame size by application/user level
  */
-    if (m_userMaxFrameSize != task.m_maxFrameSize)
-    {
-        m_userMaxFrameSize = (UINT)task.m_maxFrameSize;
-//        if (task.m_frameOrder)
-//            m_sps.bResetBRC = true;
-        MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetMaxFrameSize(m_userMaxFrameSize, m_vaDisplay,
-                                                              m_vaContextEncode, m_maxFrameSizeId), MFX_ERR_DEVICE_FAILED);
-        configBuffers[buffersCount++] = m_maxFrameSizeId;
-    }
+    m_userMaxFrameSize = (UINT)task.m_maxFrameSize;
+//    if (task.m_frameOrder)
+//        m_sps.bResetBRC = true;
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetMaxFrameSize(m_userMaxFrameSize, m_vaDisplay,
+                                                          m_vaContextEncode, m_maxFrameSizeId), MFX_ERR_DEVICE_FAILED);
+    configBuffers[buffersCount++] = m_maxFrameSizeId;
 #endif
 
 #ifdef TRELLIS_QUANTIZATION_SUPPORT
