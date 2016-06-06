@@ -3829,8 +3829,19 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
             else
                 preENCCtr->DownsampleInput = MFX_CODINGOPTION_ON; // the default is ON too
 
-            if (m_enableMVpredPreENC){
-                preENCCtr->MVPredictor = (0x02 * (!!preENCCtr->RefPictureType[1])) | (0x01 * (!!preENCCtr->RefPictureType[0]));
+            if (m_enableMVpredPreENC)
+            {
+                preENCCtr->MVPredictor = 0;
+
+                if (m_encpakParams.bPreencPredSpecified_l0)
+                    preENCCtr->MVPredictor |= (0x01 * m_encpakParams.PreencMVPredictors[0]);
+                else
+                    preENCCtr->MVPredictor |= (0x01 * (!!preENCCtr->RefFrame[0]));
+
+                if (m_encpakParams.bPreencPredSpecified_l1)
+                    preENCCtr->MVPredictor |= (0x02 * m_encpakParams.PreencMVPredictors[1]);
+                else
+                    preENCCtr->MVPredictor |= (0x02 * (!!preENCCtr->RefFrame[1]));
             }
 
             if (m_encpakParams.nPicStruct == MFX_PICSTRUCT_UNKNOWN)

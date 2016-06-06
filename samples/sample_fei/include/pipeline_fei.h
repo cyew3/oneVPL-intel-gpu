@@ -118,6 +118,7 @@ struct sInputParams
     mfxU16 IntraSAD;
     mfxU16 InterSAD;
     mfxU16 NumMVPredictors[2];  // number of [0] - L0 predictors, [1] - L1 predictors
+    bool PreencMVPredictors[2]; // use PREENC predictor [0] - L0, [1] - L1
     mfxU16 GopOptFlag;          // STRICT | CLOSED, default is OPEN GOP
     mfxU16 CodecProfile;
     mfxU16 CodecLevel;
@@ -168,6 +169,8 @@ struct sInputParams
     bool bRepackPreencMV;
     bool bNPredSpecified_l0;
     bool bNPredSpecified_l1;
+    bool bPreencPredSpecified_l0;
+    bool bPreencPredSpecified_l1;
     bool bFieldProcessingMode;
     bool bPerfMode;
     bool bDynamicRC;

@@ -101,6 +101,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-adjust_distortion] - if enabled adds a cost adjustment to distortion, default is RAW distortion (ENC, ENCODE)\n"));
     msdk_printf(MSDK_STRING("   [-n_mvpredictors_l0 num] - number of MV predictors for l0 list, up to 4 is supported (default is 1) (ENC, ENCODE)\n"));
     msdk_printf(MSDK_STRING("   [-n_mvpredictors_l1 num] - number of MV predictors for l1 list, up to 4 is supported (default is 0) (ENC, ENCODE)\n"));
+    msdk_printf(MSDK_STRING("   [-preenc_mvpredictors_l0 bit] - enable/disable l0 predictor (default is to use if l0 reference exists) (PREENC only)\n"));
+    msdk_printf(MSDK_STRING("   [-preenc_mvpredictors_l1 bit] - enable/disable l1 predictor (default is to use if l1 reference exists) (PREENC only)\n"));
     msdk_printf(MSDK_STRING("   [-colocated_mb_distortion] - provides the distortion between the current and the co-located MB. It has performance impact (ENC, ENCODE)\n"));
     msdk_printf(MSDK_STRING("                                do not use it, unless it is necessary\n"));
     msdk_printf(MSDK_STRING("   [-dblk_idc value] - value of DisableDeblockingIdc (default is 0), in range [0,2]\n"));
@@ -479,6 +481,18 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             i++;
             pParams->bNPredSpecified_l1 = true;
             pParams->NumMVPredictors[1] = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-preenc_mvpredictors_l0")))
+        {
+            i++;
+            pParams->bPreencPredSpecified_l0 = true;
+            pParams->PreencMVPredictors[0] = (bool)msdk_strtol(strInput[i], &stopCharacter, 10);
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-preenc_mvpredictors_l1")))
+        {
+            i++;
+            pParams->bPreencPredSpecified_l1 = true;
+            pParams->PreencMVPredictors[1] = (bool)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dblk_idc")))
         {
@@ -1128,6 +1142,8 @@ int main(int argc, char *argv[])
     Params.bNRefBL1Specified  = false;
     Params.bNPredSpecified_l0 = false;
     Params.bNPredSpecified_l1 = false;
+    Params.bPreencPredSpecified_l0 = false;
+    Params.bPreencPredSpecified_l1 = false;
     Params.preencDSstrength = 0;
     Params.EncodedOrder    = false;
     Params.DecodedOrder    = false;
@@ -1174,6 +1190,8 @@ int main(int argc, char *argv[])
     Params.InterSAD        = 0x02; // Haar transform
     Params.NumMVPredictors[0] = 1;
     Params.NumMVPredictors[1] = 0;
+    Params.PreencMVPredictors[0] = true;
+    Params.PreencMVPredictors[1] = true;
     Params.GopOptFlag      = 0;
     Params.CodecProfile    = 0;
     Params.CodecLevel      = 0;
