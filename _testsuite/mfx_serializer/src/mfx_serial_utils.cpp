@@ -296,7 +296,7 @@ std::string mfxCodeToStringAll(CodeStringTable *table, int table_size, int code)
 int StringAllTomfxCode(CodeStringTable *table, int table_size, std::string str)
 {
     std::vector<std::string> values;
-    mfxU32 start = 0, end = 0;
+    size_t start = 0, end = 0;
     while ((end = str.find("|", start)) != std::string::npos)
     {
         values.push_back(str.substr(start, end - start));
@@ -441,7 +441,7 @@ std::string GetMFXImplString(mfxIMPL impl)
 
 mfxIMPL GetMFXImplCode(std::string impl)
 {
-    mfxU32 start = 0, end = 0;
+    size_t start = 0, end = 0;
     std::vector<std::string> values;
     while ((end = impl.find("|", start)) != std::string::npos)
     {
@@ -506,7 +506,7 @@ std::string UploadSerialiedStructures(std::string file_name)
     FILE* pFILE = { 0 };
     mfxU32 fsize = 0;
 
-    pFILE = fopen(file_name.c_str(), "r");
+    pFILE = fopen(file_name.c_str(), "rb");
     if (!pFILE) return std::string();
 
     std::string output;
