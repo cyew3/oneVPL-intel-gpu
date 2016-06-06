@@ -112,8 +112,6 @@ namespace hevce_frame_qp
         TS_START;
 
         const tc_struct& tc = test_case[id];
-        mfxHDL hdl;
-        mfxHandleType type;
 
         MFXInit();
         Load();
