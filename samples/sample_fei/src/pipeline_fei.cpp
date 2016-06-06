@@ -1124,6 +1124,21 @@ mfxStatus CEncodingPipeline::ReleaseResources()
     return sts;
 }
 
+mfxStatus CEncodingPipeline::UnlockResources()
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    sts = ClearTasks();
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    sts = ResetRefInfo();
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    MSDK_SAFE_DELETE(m_last_task);
+
+    return sts;
+}
+
 void CEncodingPipeline::DeleteHWDevice()
 {
     MSDK_SAFE_DELETE(m_hwdev);
@@ -1261,7 +1276,7 @@ mfxStatus CEncodingPipeline::InitFileWriters(sInputParams *pParams)
     return sts;
 }
 
-mfxStatus CEncodingPipeline::ResetIOFiles(sInputParams & pParams)
+mfxStatus CEncodingPipeline::ResetIOFiles(const sInputParams & pParams)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -1440,7 +1455,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 
     m_nAsyncDepth = 1; // this number can be tuned for better performance
 
-    sts = ResetMFXComponents(pParams);
+    sts = ResetMFXComponents(pParams, true);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     return MFX_ERR_NONE;
@@ -1503,7 +1518,7 @@ void CEncodingPipeline::FreeFileWriters()
     MSDK_SAFE_DELETE(m_FileWriters.second);
 }
 
-mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
+mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams, bool realloc_frames)
 {
     MSDK_CHECK_POINTER(pParams, MFX_ERR_NULL_PTR);
 
@@ -1530,7 +1545,28 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
-    if(m_pmfxENCODE)
+    if (m_pmfxPREENC)
+    {
+        sts = m_pmfxPREENC->Close();
+        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_INITIALIZED);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
+
+    if (m_pmfxENC)
+    {
+        sts = m_pmfxENC->Close();
+        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_INITIALIZED);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
+
+    if (m_pmfxPAK)
+    {
+        sts = m_pmfxPAK->Close();
+        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_INITIALIZED);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
+
+    if (m_pmfxENCODE)
     {
         sts = m_pmfxENCODE->Close();
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_INITIALIZED);
@@ -1538,13 +1574,15 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
     }
 
     // free allocated frames
-    DeleteFrames();
+    if (realloc_frames)
+    {
+        DeleteFrames();
+
+        sts = AllocFrames();
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
 
     m_TaskPool.Close();
-
-    sts = AllocFrames();
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
 
     // Init decode
     if (m_pmfxDECODE)
@@ -2763,7 +2801,8 @@ mfxStatus CEncodingPipeline::Run()
         }
 
         sts = GetOneFrame(pSurf);
-        if (sts == MFX_ERR_MORE_DATA && m_encpakParams.nTimeout) // new cycle in loop mode
+        if ((sts == MFX_ERR_MORE_DATA && m_encpakParams.nTimeout) || // New cycle in loop mode
+            (sts == MFX_ERR_GPU_HANG))                               // New cycle if GPU Recovered
         {
             sts = MFX_ERR_NONE;
             continue;
@@ -2828,8 +2867,12 @@ mfxStatus CEncodingPipeline::Run()
         if (m_pmfxVPP)
         {
             // pre-process a frame
-            sts = PreProcessOneFrame(pSurf);
+            bool need_to_continue = false;
+            sts = PreProcessOneFrame(pSurf, need_to_continue);
             MSDK_BREAK_ON_ERROR(sts);
+
+            if (need_to_continue)
+                continue;
         }
 
         if (m_encpakParams.bPREENC)
@@ -3023,6 +3066,11 @@ mfxStatus CEncodingPipeline::GetOneFrame(mfxFrameSurface1* & pSurf)
             sts = DecodeLastFrame(&DecExtSurface);
         }
 
+        if (sts == MFX_ERR_GPU_HANG)
+        {
+            return sts;
+        }
+
         if (sts == MFX_ERR_MORE_DATA)
         {
             if (m_encpakParams.nTimeout)
@@ -3043,6 +3091,13 @@ mfxStatus CEncodingPipeline::GetOneFrame(mfxFrameSurface1* & pSurf)
         for (;;)
         {
             sts = m_mfxSession.SyncOperation(DecExtSurface.Syncp, MSDK_WAIT_INTERVAL);
+
+            if (sts == MFX_ERR_GPU_HANG)
+            {
+                sts = doGPUHangRecovery();
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                return MFX_ERR_GPU_HANG;
+            }
 
             if (MFX_ERR_NONE < sts && !DecExtSurface.Syncp) // repeat the call if warning and no output
             {
@@ -3833,12 +3888,12 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
             {
                 preENCCtr->MVPredictor = 0;
 
-                if (m_encpakParams.bPreencPredSpecified_l0)
+                if (m_encpakParams.bPreencPredSpecified_l0 && !(type & MFX_FRAMETYPE_I))
                     preENCCtr->MVPredictor |= (0x01 * m_encpakParams.PreencMVPredictors[0]);
                 else
                     preENCCtr->MVPredictor |= (0x01 * (!!preENCCtr->RefFrame[0]));
 
-                if (m_encpakParams.bPreencPredSpecified_l1)
+                if (m_encpakParams.bPreencPredSpecified_l1 && !(type & MFX_FRAMETYPE_I))
                     preENCCtr->MVPredictor |= (0x02 * m_encpakParams.PreencMVPredictors[1]);
                 else
                     preENCCtr->MVPredictor |= (0x02 * (!!preENCCtr->RefFrame[1]));
@@ -5278,6 +5333,11 @@ mfxStatus CEncodingPipeline::PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
     }
 
     sts = ProcessMultiPreenc(eTask, m_numOfRefs);
+    if (sts == MFX_ERR_GPU_HANG)
+    {
+        cont = true;
+        return MFX_ERR_NONE;
+    }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // Pass MVP to encode,encpak
@@ -5362,17 +5422,43 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
         for (;;)
         {
             sts = m_pmfxPREENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
+            if (sts == MFX_ERR_GPU_HANG)
+            {
+                sts = doGPUHangRecovery();
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                return MFX_ERR_GPU_HANG;
+            }
             MSDK_BREAK_ON_ERROR(sts);
+
             /*PRE-ENC is running in separate session */
             sts = m_pPreencSession->SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
+            if (sts == MFX_ERR_GPU_HANG)
+            {
+                sts = doGPUHangRecovery();
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                return MFX_ERR_GPU_HANG;
+            }
             MSDK_BREAK_ON_ERROR(sts);
             mdprintf(stderr, "preenc synced : %d\n", sts);
             if (m_encpakParams.bFieldProcessingMode)
             {
                 sts = m_pmfxPREENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
+                if (sts == MFX_ERR_GPU_HANG)
+                {
+                    sts = doGPUHangRecovery();
+                    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                    return MFX_ERR_GPU_HANG;
+                }
                 MSDK_BREAK_ON_ERROR(sts);
+
                 /*PRE-ENC is running in separate session */
                 sts = m_pPreencSession->SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
+                if (sts == MFX_ERR_GPU_HANG)
+                {
+                    sts = doGPUHangRecovery();
+                    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                    return MFX_ERR_GPU_HANG;
+                }
                 MSDK_BREAK_ON_ERROR(sts);
                 mdprintf(stderr, "preenc synced : %d\n", sts);
             }
@@ -5595,8 +5681,23 @@ mfxStatus CEncodingPipeline::EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
         if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyENC))
         {
             sts = m_pmfxENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
+            if (sts == MFX_ERR_GPU_HANG)
+            {
+                sts = doGPUHangRecovery();
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                cont = true;
+                return MFX_ERR_NONE;
+            }
             MSDK_BREAK_ON_ERROR(sts);
+
             sts = m_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
+            if (sts == MFX_ERR_GPU_HANG)
+            {
+                sts = doGPUHangRecovery();
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                cont = true;
+                return MFX_ERR_NONE;
+            }
             MSDK_BREAK_ON_ERROR(sts);
             mdprintf(stderr, "synced : %d\n", sts);
         }
@@ -5612,8 +5713,23 @@ mfxStatus CEncodingPipeline::EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
         if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyPAK))
         {
             sts = m_pmfxPAK->ProcessFrameAsync(&eTask->inPAK, &eTask->outPAK, &eTask->EncSyncP);
+            if (sts == MFX_ERR_GPU_HANG)
+            {
+                sts = doGPUHangRecovery();
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                cont = true;
+                return MFX_ERR_NONE;
+            }
             MSDK_BREAK_ON_ERROR(sts);
+
             sts = m_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
+            if (sts == MFX_ERR_GPU_HANG)
+            {
+                sts = doGPUHangRecovery();
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                cont = true;
+                return MFX_ERR_NONE;
+            }
             MSDK_BREAK_ON_ERROR(sts);
             mdprintf(stderr, "synced : %d\n", sts);
         }
@@ -5623,16 +5739,46 @@ mfxStatus CEncodingPipeline::EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
             if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyENC))
             {
                 sts = m_pmfxENC->ProcessFrameAsync(&eTask->in, &eTask->out, &eTask->EncSyncP);
+                if (sts == MFX_ERR_GPU_HANG)
+                {
+                    sts = doGPUHangRecovery();
+                    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                    cont = true;
+                    return MFX_ERR_NONE;
+                }
                 MSDK_BREAK_ON_ERROR(sts);
+
                 sts = m_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
+                if (sts == MFX_ERR_GPU_HANG)
+                {
+                    sts = doGPUHangRecovery();
+                    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                    cont = true;
+                    return MFX_ERR_NONE;
+                }
                 MSDK_BREAK_ON_ERROR(sts);
                 mdprintf(stderr, "synced : %d\n", sts);
             }
             if ((m_encpakParams.bENCPAK) || (m_encpakParams.bOnlyPAK))
             {
                 sts = m_pmfxPAK->ProcessFrameAsync(&eTask->inPAK, &eTask->outPAK, &eTask->EncSyncP);
+                if (sts == MFX_ERR_GPU_HANG)
+                {
+                    sts = doGPUHangRecovery();
+                    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                    cont = true;
+                    return MFX_ERR_NONE;
+                }
                 MSDK_BREAK_ON_ERROR(sts);
+
                 sts = m_mfxSession.SyncOperation(eTask->EncSyncP, MSDK_WAIT_INTERVAL);
+                if (sts == MFX_ERR_GPU_HANG)
+                {
+                    sts = doGPUHangRecovery();
+                    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                    cont = true;
+                    return MFX_ERR_NONE;
+                }
                 MSDK_BREAK_ON_ERROR(sts);
                 mdprintf(stderr, "synced : %d\n", sts);
             }
@@ -5716,6 +5862,13 @@ mfxStatus CEncodingPipeline::EncodeOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
 
         MSDK_ZERO_MEMORY(pCurrentTask->EncSyncP);
         sts = m_pmfxENCODE->EncodeFrameAsync(m_ctr, encodeSurface, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+        if (sts == MFX_ERR_GPU_HANG)
+        {
+            sts = doGPUHangRecovery();
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            cont = true;
+            return MFX_ERR_NONE;
+        }
 
         fieldProcessingCounter++;
 
@@ -5729,6 +5882,11 @@ mfxStatus CEncodingPipeline::EncodeOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
         {
             sts = MFX_ERR_NONE; // ignore warnings if output is available
             sts = SyncOneEncodeFrame(pCurrentTask, eTask, fieldProcessingCounter);
+            if (sts == MFX_ERR_GPU_HANG)
+            {
+                cont = true;
+                return MFX_ERR_NONE;
+            }
             MSDK_BREAK_ON_ERROR(sts);
 
             if ((MFX_CODINGOPTION_ON == m_encpakInit.SingleFieldProcessing) &&
@@ -5750,6 +5908,11 @@ mfxStatus CEncodingPipeline::EncodeOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
             if (pCurrentTask->EncSyncP)
             {
                 sts = SyncOneEncodeFrame(pCurrentTask, eTask, fieldProcessingCounter);
+                if (sts == MFX_ERR_GPU_HANG)
+                {
+                    cont = true;
+                    return MFX_ERR_NONE;
+                }
                 MSDK_BREAK_ON_ERROR(sts);
 
                 if ((MFX_CODINGOPTION_ON == m_encpakInit.SingleFieldProcessing) &&
@@ -5769,6 +5932,12 @@ mfxStatus CEncodingPipeline::SyncOneEncodeFrame(sTask* pCurrentTask, iTask* eTas
     MSDK_CHECK_POINTER(pCurrentTask, MFX_ERR_NULL_PTR);
 
     mfxStatus sts = m_mfxSession.SyncOperation(pCurrentTask->EncSyncP, MSDK_WAIT_INTERVAL);
+    if (sts == MFX_ERR_GPU_HANG)
+    {
+        sts = doGPUHangRecovery();
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        return MFX_ERR_GPU_HANG;
+    }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     if (MFX_CODINGOPTION_ON == m_encpakInit.SingleFieldProcessing)
@@ -5828,6 +5997,12 @@ mfxStatus CEncodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
         }
 
         sts = m_pmfxDECODE->DecodeFrameAsync(&m_mfxBS, pDecSurf, &pExtSurface->pSurface, &pExtSurface->Syncp);
+        if (sts == MFX_ERR_GPU_HANG)
+        {
+            sts = doGPUHangRecovery();
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            return MFX_ERR_GPU_HANG;
+        }
 
         if (!sts)
         {
@@ -5868,11 +6043,17 @@ mfxStatus CEncodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
         MSDK_CHECK_POINTER(pDecSurf, MFX_ERR_MEMORY_ALLOC); // return an error if a free surface wasn't found
 
         sts = m_pmfxDECODE->DecodeFrameAsync(NULL, pDecSurf, &pExtSurface->pSurface, &pExtSurface->Syncp);
+        if (sts == MFX_ERR_GPU_HANG)
+        {
+            sts = doGPUHangRecovery();
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            return MFX_ERR_GPU_HANG;
+        }
     }
     return sts;
 }
 
-mfxStatus CEncodingPipeline::PreProcessOneFrame(mfxFrameSurface1* & pSurf)
+mfxStatus CEncodingPipeline::PreProcessOneFrame(mfxFrameSurface1* & pSurf, bool &cont)
 {
     MFX_ITT_TASK("VPPOneFrame");
     MSDK_CHECK_POINTER(pSurf, MFX_ERR_NULL_PTR);
@@ -5900,6 +6081,11 @@ mfxStatus CEncodingPipeline::PreProcessOneFrame(mfxFrameSurface1* & pSurf)
     }
 
     sts = VPPOneFrame(m_pmfxVPP, &m_mfxSession, pSurf, &VppExtSurface);
+    if (sts == MFX_ERR_GPU_HANG)
+    {
+        cont = true;
+        return MFX_ERR_NONE;
+    }
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     pSurf = VppExtSurface.pSurface;
@@ -5915,6 +6101,12 @@ mfxStatus CEncodingPipeline::VPPOneFrame(MFXVideoVPP* VPPobj, MFXVideoSession* s
     for (;;)
     {
         sts = VPPobj->RunFrameVPPAsync(pSurfaceIn, pExtSurface->pSurface, NULL, &pExtSurface->Syncp);
+        if (sts == MFX_ERR_GPU_HANG)
+        {
+            sts = doGPUHangRecovery();
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            return MFX_ERR_GPU_HANG;
+        }
 
         if (!pExtSurface->Syncp)
         {
@@ -5930,6 +6122,12 @@ mfxStatus CEncodingPipeline::VPPOneFrame(MFXVideoVPP* VPPobj, MFXVideoSession* s
     for (;;)
     {
         sts = session->SyncOperation(pExtSurface->Syncp, MSDK_WAIT_INTERVAL);
+        if (sts == MFX_ERR_GPU_HANG)
+        {
+            sts = doGPUHangRecovery();
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            return MFX_ERR_GPU_HANG;
+        }
 
         if (!pExtSurface->Syncp)
         {
@@ -6018,6 +6216,32 @@ mfxStatus CEncodingPipeline::ResizeFrame(mfxU32 m_frameCount, bool &m_insertIDR,
         sts = UpdateVideoParams();
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
+    return sts;
+}
+
+/* GPU Hang Recovery */
+
+mfxStatus CEncodingPipeline::doGPUHangRecovery()
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    sts = ResetMFXComponents(&m_encpakParams, false);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    sts = ResetIOFiles(m_encpakParams);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    sts = UnlockResources();
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    if (m_encpakParams.bDECODE)
+    {
+        m_mfxBS.DataLength = 0;
+        m_mfxBS.DataOffset = 0;
+    }
+
+    m_frameCount = 0;
+
     return sts;
 }
 
