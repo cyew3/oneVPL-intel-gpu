@@ -1945,7 +1945,7 @@ mfxStatus D3D9CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 *
     InSurf.Info.Height = m_height;
     InSurf.Info.FourCC = m_inFormat;
     
-    if ( m_systemMemOut )
+    if ( m_systemMemIn )
     {
         hdl.first = m_inputSurf[*poolIndex].surf;
         bExternal = false;
