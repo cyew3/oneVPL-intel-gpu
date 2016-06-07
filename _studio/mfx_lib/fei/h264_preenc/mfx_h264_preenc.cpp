@@ -197,7 +197,452 @@ mfxStatus GetOpaqSurface(
     }
     return sts;
 }
+
+bool CheckTriStateOptionPreEnc(mfxU16 & opt)
+{
+    if (opt != MFX_CODINGOPTION_UNKNOWN &&
+        opt != MFX_CODINGOPTION_ON &&
+        opt != MFX_CODINGOPTION_OFF)
+    {
+        opt = MFX_CODINGOPTION_UNKNOWN;
+        return false;
+    }
+
+    return true;
 }
+
+mfxStatus CheckVideoParamQueryLikePreEnc(
+    MfxVideoParam &     par,
+    ENCODE_CAPS const & hwCaps,
+    eMFXHWType          platform,
+    eMFXVAType          vaType)
+{
+    bool unsupported(false);
+    bool changed(false);
+    bool warning(false);
+
+    mfxExtFeiParam *           feiParam     = GetExtBuffer(par);
+    bool isPREENC = feiParam && (MFX_FEI_FUNCTION_PREENC == feiParam->Func);
+
+    // check hw capabilities
+    if (par.mfx.FrameInfo.Width  > hwCaps.MaxPicWidth ||
+        par.mfx.FrameInfo.Height > hwCaps.MaxPicHeight)
+        return Error(MFX_ERR_UNSUPPORTED);
+
+    if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART1 )!= MFX_PICSTRUCT_PROGRESSIVE && hwCaps.NoInterlacedField){
+        if(par.mfx.LowPower == MFX_CODINGOPTION_ON)
+        {
+            par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+            changed = true;
+        }
+        else
+            return Error(MFX_WRN_PARTIAL_ACCELERATION);
+    }
+
+    if (hwCaps.MaxNum_TemporalLayer != 0 &&
+        hwCaps.MaxNum_TemporalLayer < par.calcParam.numTemporalLayer)
+        return Error(MFX_WRN_PARTIAL_ACCELERATION);
+
+    if (!CheckTriStateOptionPreEnc(par.mfx.LowPower))
+        changed = true;
+
+    if (IsOn(par.mfx.LowPower))
+    {
+        unsupported = true;
+        par.mfx.LowPower = 0;
+    }
+
+    if (par.IOPattern != 0)
+    {
+        if ((par.IOPattern & MFX_IOPATTERN_IN_MASK) != par.IOPattern)
+        {
+            changed = true;
+            par.IOPattern &= MFX_IOPATTERN_IN_MASK;
+        }
+
+        if (par.IOPattern != MFX_IOPATTERN_IN_VIDEO_MEMORY)
+        {
+            changed = true;
+            par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+        }
+    }
+
+    if (par.mfx.GopPicSize > 0 &&
+        par.mfx.GopRefDist > 0 &&
+        par.mfx.GopRefDist > par.mfx.GopPicSize)
+    {
+        changed = true;
+        par.mfx.GopRefDist = par.mfx.GopPicSize - 1;
+    }
+
+    if (par.mfx.GopRefDist > 1)
+    {
+        if (IsAvcBaseProfile(par.mfx.CodecProfile) ||
+            par.mfx.CodecProfile == MFX_PROFILE_AVC_CONSTRAINED_HIGH)
+        {
+            changed = true;
+            par.mfx.GopRefDist = 1;
+        }
+    }
+
+    /* max allowed combination */
+    if (par.mfx.FrameInfo.PicStruct > (MFX_PICSTRUCT_PART1|MFX_PICSTRUCT_PART2))
+    { /* */
+        unsupported = true;
+        par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+    }
+
+    if (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART2)
+    { // repeat/double/triple flags are for EncodeFrameAsync
+        changed = true;
+        par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+    }
+
+    mfxU16 picStructPart1 = par.mfx.FrameInfo.PicStruct;
+    if (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART1)
+    {
+        if (picStructPart1 & (picStructPart1 - 1))
+        { // more then one flag set
+            changed = true;
+            par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+        }
+    }
+
+    if (par.mfx.FrameInfo.Width & 15)
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.Width = 0;
+    }
+
+    if (par.mfx.FrameInfo.Height & 15)
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.Height = 0;
+    }
+
+    if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0 &&
+        (par.mfx.FrameInfo.Height & 31) != 0)
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.PicStruct = 0;
+        par.mfx.FrameInfo.Height = 0;
+    }
+
+    // driver doesn't support resolution 16xH
+    if (par.mfx.FrameInfo.Width == 16)
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.Width = 0;
+    }
+
+    // driver doesn't support resolution Wx16
+    if (par.mfx.FrameInfo.Height == 16)
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.Height = 0;
+    }
+
+    if (par.mfx.FrameInfo.Width > 0)
+    {
+        if (par.mfx.FrameInfo.CropX > par.mfx.FrameInfo.Width)
+        {
+            unsupported = true;
+            par.mfx.FrameInfo.CropX = 0;
+        }
+
+        if (par.mfx.FrameInfo.CropX + par.mfx.FrameInfo.CropW > par.mfx.FrameInfo.Width)
+        {
+            unsupported = true;
+            par.mfx.FrameInfo.CropW = par.mfx.FrameInfo.Width - par.mfx.FrameInfo.CropX;
+        }
+    }
+
+    if (par.mfx.FrameInfo.Height > 0)
+    {
+        if (par.mfx.FrameInfo.CropY > par.mfx.FrameInfo.Height)
+        {
+            unsupported = true;
+            par.mfx.FrameInfo.CropY = 0;
+        }
+
+        if (par.mfx.FrameInfo.CropY + par.mfx.FrameInfo.CropH > par.mfx.FrameInfo.Height)
+        {
+            unsupported = true;
+            par.mfx.FrameInfo.CropH = par.mfx.FrameInfo.Height - par.mfx.FrameInfo.CropY;
+        }
+    }
+
+    if (CorrectCropping(par) != MFX_ERR_NONE)
+    { // cropping read from sps header always has correct alignment
+        changed = true;
+    }
+
+    if (par.mfx.FrameInfo.ChromaFormat != 0 &&
+        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 &&
+        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422 &&
+        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
+    {
+        changed = true;
+        par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+    }
+
+    if (par.mfx.FrameInfo.FourCC != 0 &&
+        par.mfx.FrameInfo.FourCC != MFX_FOURCC_NV12)
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.FourCC = 0;
+    }
+
+    if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 &&
+        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 &&
+        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_MONOCHROME)
+    {
+        changed = true;
+        par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+    }
+
+    if (hwCaps.Color420Only &&
+        (par.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422 ||
+         par.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV444))
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.ChromaFormat = 0;
+    }
+
+    if ((isPREENC) && !(
+            (MFX_CODINGOPTION_UNKNOWN == feiParam->SingleFieldProcessing) ||
+            (MFX_CODINGOPTION_ON == feiParam->SingleFieldProcessing) ||
+            (MFX_CODINGOPTION_OFF == feiParam->SingleFieldProcessing)) )
+        unsupported = true;
+
+    return unsupported
+        ? MFX_ERR_UNSUPPORTED
+        : (changed || warning)
+            ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM
+            : MFX_ERR_NONE;
+}
+
+mfxStatus CheckVideoParamPreEncInit(
+    MfxVideoParam &     par,
+    ENCODE_CAPS const & hwCaps,
+    eMFXHWType          platform,
+    eMFXVAType          vaType)
+{
+    bool unsupported(false);
+    bool changed(false);
+    bool warning(false);
+
+    mfxExtFeiParam *           feiParam     = GetExtBuffer(par);
+    bool isPREENC = feiParam && (MFX_FEI_FUNCTION_PREENC == feiParam->Func);
+
+    if (feiParam && (MFX_FEI_FUNCTION_PREENC != feiParam->Func))
+        unsupported = true;
+
+    // check hw capabilities
+    if (par.mfx.FrameInfo.Width  > hwCaps.MaxPicWidth ||
+        par.mfx.FrameInfo.Height > hwCaps.MaxPicHeight)
+        return Error(MFX_ERR_UNSUPPORTED);
+
+    if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART1 )!= MFX_PICSTRUCT_PROGRESSIVE && hwCaps.NoInterlacedField){
+        if(par.mfx.LowPower == MFX_CODINGOPTION_ON)
+        {
+            par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+            changed = true;
+        }
+        else
+            return Error(MFX_WRN_PARTIAL_ACCELERATION);
+    }
+
+    if (hwCaps.MaxNum_TemporalLayer != 0 &&
+        hwCaps.MaxNum_TemporalLayer < par.calcParam.numTemporalLayer)
+        return Error(MFX_WRN_PARTIAL_ACCELERATION);
+
+    if (!CheckTriStateOptionPreEnc(par.mfx.LowPower))
+        changed = true;
+
+    if (IsOn(par.mfx.LowPower))
+    {
+        unsupported = true;
+        par.mfx.LowPower = 0;
+    }
+
+    if (par.IOPattern != 0)
+    {
+        if (par.IOPattern != MFX_IOPATTERN_IN_VIDEO_MEMORY)
+        {
+            unsupported = true;
+        }
+    }
+
+    if (par.mfx.GopPicSize > 0 &&
+        par.mfx.GopRefDist > 0 &&
+        par.mfx.GopRefDist > par.mfx.GopPicSize)
+    {
+        changed = true;
+        par.mfx.GopRefDist = par.mfx.GopPicSize - 1;
+    }
+
+    if (par.mfx.GopRefDist > 1)
+    {
+        if (IsAvcBaseProfile(par.mfx.CodecProfile) ||
+            par.mfx.CodecProfile == MFX_PROFILE_AVC_CONSTRAINED_HIGH)
+        {
+            changed = true;
+            par.mfx.GopRefDist = 1;
+        }
+    }
+
+    /* max allowed combination */
+    if (par.mfx.FrameInfo.PicStruct > (MFX_PICSTRUCT_PART1|MFX_PICSTRUCT_PART2))
+    { /* */
+        unsupported = true;
+        par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+    }
+
+    if (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART2)
+    { // repeat/double/triple flags are for EncodeFrameAsync
+        changed = true;
+        par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+    }
+
+    mfxU16 picStructPart1 = par.mfx.FrameInfo.PicStruct;
+    if (par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PART1)
+    {
+        if (picStructPart1 & (picStructPart1 - 1))
+        { // more then one flag set
+            changed = true;
+            par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+        }
+    }
+
+    if (par.mfx.FrameInfo.Width & 15)
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.Width = 0;
+    }
+
+    if (par.mfx.FrameInfo.Height & 15)
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.Height = 0;
+    }
+
+    if ((par.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0 &&
+        (par.mfx.FrameInfo.Height & 31) != 0)
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.PicStruct = 0;
+        par.mfx.FrameInfo.Height = 0;
+    }
+
+    // driver doesn't support resolution 16xH
+    if ((0 == par.mfx.FrameInfo.Width) || (par.mfx.FrameInfo.Width == 16))
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.Width = 0;
+    }
+
+    // driver doesn't support resolution Wx16
+    if ((0 == par.mfx.FrameInfo.Height) || (par.mfx.FrameInfo.Height == 16))
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.Height = 0;
+    }
+
+    if (par.mfx.FrameInfo.Width > 0)
+    {
+        if (par.mfx.FrameInfo.CropX > par.mfx.FrameInfo.Width)
+        {
+            unsupported = true;
+            par.mfx.FrameInfo.CropX = 0;
+        }
+
+        if (par.mfx.FrameInfo.CropX + par.mfx.FrameInfo.CropW > par.mfx.FrameInfo.Width)
+        {
+            unsupported = true;
+            par.mfx.FrameInfo.CropW = par.mfx.FrameInfo.Width - par.mfx.FrameInfo.CropX;
+        }
+    }
+
+    if (par.mfx.FrameInfo.Height > 0)
+    {
+        if (par.mfx.FrameInfo.CropY > par.mfx.FrameInfo.Height)
+        {
+            unsupported = true;
+            par.mfx.FrameInfo.CropY = 0;
+        }
+
+        if (par.mfx.FrameInfo.CropY + par.mfx.FrameInfo.CropH > par.mfx.FrameInfo.Height)
+        {
+            unsupported = true;
+            par.mfx.FrameInfo.CropH = par.mfx.FrameInfo.Height - par.mfx.FrameInfo.CropY;
+        }
+    }
+
+    if (CorrectCropping(par) != MFX_ERR_NONE)
+    { // cropping read from sps header always has correct alignment
+        changed = true;
+    }
+
+    if (par.mfx.FrameInfo.ChromaFormat != 0 &&
+        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 &&
+        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422 &&
+        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
+    {
+        changed = true;
+        par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+    }
+
+    if (par.mfx.FrameInfo.FourCC != 0 &&
+        par.mfx.FrameInfo.FourCC != MFX_FOURCC_NV12)
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.FourCC = 0;
+    }
+
+    if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 &&
+        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 &&
+        par.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_MONOCHROME)
+    {
+        changed = true;
+        par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+    }
+
+    if (hwCaps.Color420Only &&
+        (par.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422 ||
+         par.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV444))
+    {
+        unsupported = true;
+        par.mfx.FrameInfo.ChromaFormat = 0;
+    }
+
+//    if (par.mfx.NumRefFrame == 0)
+//    {
+//        changed = true;
+//        par.mfx.NumRefFrame = 1;
+//    }
+
+//    if ((par.AsyncDepth == 0) || (par.AsyncDepth > 1))
+//    {
+//        /* Supported only Async 1 */
+//        changed = true;
+//        par.AsyncDepth = 1;
+//    }
+
+    if ((isPREENC) && !(
+            (MFX_CODINGOPTION_UNKNOWN == feiParam->SingleFieldProcessing) ||
+            (MFX_CODINGOPTION_ON == feiParam->SingleFieldProcessing) ||
+            (MFX_CODINGOPTION_OFF == feiParam->SingleFieldProcessing)) )
+        unsupported = true;
+
+    return unsupported
+        ? MFX_ERR_UNSUPPORTED
+        : (changed || warning)
+            ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM
+            : MFX_ERR_NONE;
+}
+
+} ////
 
 bool bEnc_PREENC(mfxVideoParam *par)
 {
@@ -326,9 +771,72 @@ mfxStatus VideoENC_PREENC::QueryStatus(DdiTask& task)
 }
 
 
-mfxStatus VideoENC_PREENC::Query(VideoCORE*, mfxVideoParam *in, mfxVideoParam *out)
+mfxStatus VideoENC_PREENC::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoParam *out)
 {
-    return MFX_ERR_NONE;
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoENC_PREENC::Query");
+    MFX_CHECK_NULL_PTR1(core);
+    MFX_CHECK_NULL_PTR1(out);
+    mfxStatus sts = MFX_ERR_NONE;
+    ENCODE_CAPS hwCaps = { };
+
+    if (NULL == in)
+    {
+        Zero(out->mfx);
+
+        out->IOPattern             = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+        out->AsyncDepth            = 1;
+        out->mfx.NumRefFrame       = 1;
+        out->mfx.NumThread         = 1;
+        out->mfx.EncodedOrder      = 1;
+        out->mfx.FrameInfo.FourCC        = 1;
+        out->mfx.FrameInfo.Width         = 1;
+        out->mfx.FrameInfo.Height        = 1;
+        out->mfx.FrameInfo.CropX         = 1;
+        out->mfx.FrameInfo.CropY         = 1;
+        out->mfx.FrameInfo.CropW         = 1;
+        out->mfx.FrameInfo.CropH         = 1;
+        out->mfx.FrameInfo.FrameRateExtN = 1;
+        out->mfx.FrameInfo.FrameRateExtD = 1;
+        out->mfx.FrameInfo.AspectRatioW  = 1;
+        out->mfx.FrameInfo.AspectRatioH  = 1;
+        out->mfx.FrameInfo.ChromaFormat  = 1;
+        out->mfx.FrameInfo.PicStruct     = 1;
+
+        return MFX_ERR_NONE;
+    }
+
+    MfxVideoParam tmp = *in; // deep copy, to cteare all ext buffers
+
+    std::auto_ptr<DriverEncoder> ddi;
+    ddi.reset( new MfxHwH264Encode::VAAPIFEIPREENCEncoder );
+    if (ddi.get() == 0)
+        return MFX_WRN_PARTIAL_ACCELERATION;
+
+    sts = ddi->CreateAuxilliaryDevice(
+        core,
+        DXVA2_Intel_Encode_AVC,
+        GetFrameWidth(tmp),
+        GetFrameHeight(tmp));
+    if (sts != MFX_ERR_NONE)
+        return MFX_WRN_PARTIAL_ACCELERATION;
+
+    sts = ddi->QueryEncodeCaps(hwCaps);
+    if (sts != MFX_ERR_NONE)
+        return MFX_WRN_PARTIAL_ACCELERATION;
+
+    mfxStatus checkSts = CheckVideoParamQueryLikePreEnc(tmp, hwCaps, core->GetHWType(), core->GetVAType());
+
+    if (checkSts == MFX_WRN_PARTIAL_ACCELERATION)
+        return MFX_WRN_PARTIAL_ACCELERATION;
+    else if (checkSts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
+        checkSts = MFX_ERR_UNSUPPORTED;
+
+    out->IOPattern  = tmp.IOPattern;
+    out->AsyncDepth = tmp.AsyncDepth;
+    out->mfx = tmp.mfx;
+
+    /**/
+    return checkSts;
 } // mfxStatus VideoENC_PREENC::Query(VideoCORE*, mfxVideoParam *in, mfxVideoParam *out)
 
 mfxStatus VideoENC_PREENC::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrameAllocRequest *request)
@@ -394,6 +902,9 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
     m_video = *par;
     //add ext buffers from par to m_video
 
+    /* Check W & H*/
+    MFX_CHECK((par->mfx.FrameInfo.Width > 0 && par->mfx.FrameInfo.Height > 0), MFX_ERR_INVALID_VIDEO_PARAM);
+
     m_ddi.reset( new MfxHwH264Encode::VAAPIFEIPREENCEncoder );
     if (m_ddi.get() == 0)
         return MFX_WRN_PARTIAL_ACCELERATION;
@@ -409,6 +920,22 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
     sts = m_ddi->QueryEncodeCaps(m_caps);
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
+
+    mfxStatus checkStatus = CheckVideoParamPreEncInit(m_video, m_caps, m_currentPlatform, m_currentVaType);
+    switch (checkStatus)
+    {
+    case MFX_ERR_UNSUPPORTED:
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    case MFX_ERR_INVALID_VIDEO_PARAM:
+    case MFX_WRN_PARTIAL_ACCELERATION:
+    case MFX_ERR_INCOMPATIBLE_VIDEO_PARAM:
+        return sts;
+    case MFX_WRN_INCOMPATIBLE_VIDEO_PARAM:
+        sts = checkStatus;
+        break;
+    default:
+        break;
+    }
 
     const mfxExtFeiParam* params = GetExtBuffer(m_video);
     if (NULL == params)
@@ -428,10 +955,16 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
     mfxFrameAllocRequest request = { };
     request.Info = m_video.mfx.FrameInfo;
     request.Type = MFX_MEMTYPE_FROM_ENC | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
-    request.NumFrameMin = m_video.mfx.GopRefDist*2;
+    /* WA for Beh test
+     * But code will be re-worked in future */
+    request.NumFrameMin = 1;
+    if ((m_video.mfx.GopRefDist > 0) && (m_video.mfx.GopRefDist < 16))
+        request.NumFrameMin = m_video.mfx.GopRefDist*2;
+
     request.NumFrameSuggested = request.NumFrameMin + m_video.AsyncDepth;
     request.AllocId = par->AllocId;
-
+    /* TODO:
+     * Actually MSDK since drv build 54073 does not need to Alloc surcae here*/
     sts = m_core->AllocFrames(&request, &m_raw);
     //sts = m_raw.Alloc(m_core, request);
     MFX_CHECK_STS(sts);
@@ -448,14 +981,11 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
             ? MFX_IOPATTERN_IN_SYSTEM_MEMORY
             : MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
-    // This call does not need for a while
-    //mfxStatus checkStatus = MfxHwH264Encode::CheckVideoParam(m_video, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType);
-
     m_free.resize(m_video.AsyncDepth);
     m_incoming.clear();
 
     m_bInit = true;
-    return sts;
+    return checkStatus;
 } 
 mfxStatus VideoENC_PREENC::Reset(mfxVideoParam *par)
 {
