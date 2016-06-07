@@ -1490,6 +1490,9 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
         // FRC, IS and similar enhancement algorithms
         // special "interface" to signal on application level about support/unsupport ones
         //-------------------------------------------------
+        bool bCorrectionEnable = true;
+        mfxStatus localSts = CheckPlatformLimitations(core, *out, bCorrectionEnable);
+        //-------------------------------------------------
 
         if(MFX_PLATFORM_HARDWARE == core->GetPlatformType() )
         {
@@ -1497,22 +1500,28 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
             mfxStatus sts = VideoVPPHW::Query(core, out);
 
             // Statuses returned by Init differ in several cases from Query
-            if (MFX_ERR_INVALID_VIDEO_PARAM == sts)
+            if (MFX_ERR_INVALID_VIDEO_PARAM == sts || MFX_ERR_UNSUPPORTED == sts)
             {
-                sts = MFX_ERR_UNSUPPORTED;
+                return MFX_ERR_UNSUPPORTED;
             }
             if (MFX_ERR_NONE != sts && IS_PROTECTION_ANY(out->Protected))
             {
                 out->Protected = 0;
-                sts = MFX_ERR_UNSUPPORTED;
+                return MFX_ERR_UNSUPPORTED;
             }
 
-            return sts;
+            if(MFX_ERR_NONE == sts)
+            {
+                return localSts;
+            }
+            else
+            {
+                return MFX_WRN_PARTIAL_ACCELERATION;
+            }
         }
         else
         {
-            mfxStatus sts = CheckPlatformLimitations(core, *out, true);
-            return sts;
+            return localSts;
         }
     }//else
 } // mfxStatus VideoVPPSW::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out)
