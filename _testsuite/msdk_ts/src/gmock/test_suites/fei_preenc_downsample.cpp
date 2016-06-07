@@ -240,7 +240,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                     {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 240}}},
     /***  Check whether there is a hang when calling preenc with 2 unprocessed by preenc references and with downsampleReference = false ***/
     {/*07*/ MFX_ERR_NONE, OUT_ALL|DS_CTRL_REF_FRAME_2_ON, "YUV/foreman_352x288_300.yuv", {}},
-    {/*08*/ MFX_ERR_DEVICE_FAILED, OUT_ALL|DS_CTRL_REF_FRAME_2_OFF, "YUV/foreman_352x288_300.yuv", {}},
+    {/*08*/ MFX_ERR_NONE, OUT_ALL|DS_CTRL_REF_FRAME_2_OFF, "YUV/foreman_352x288_300.yuv", {}},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
