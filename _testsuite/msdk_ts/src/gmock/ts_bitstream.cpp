@@ -9,6 +9,7 @@ Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 \* ****************************************************************************** */
 
 #include "ts_bitstream.h"
+#include "bs_parser.h"
 
 tsReader::tsReader(mfxBitstream bs)
     : mfxBitstream(bs)
@@ -61,6 +62,7 @@ mfxStatus tsReader::SeekToStart()
 
 mfxBitstream* tsBitstreamProcessor::ProcessBitstream(mfxBitstream& bs)
 {
+    TRACE_FUNC1(tsSurfaceProcessor::ProcessBitstream, bs);
     if(ProcessBitstream(bs, 1))
     {
         return 0;
@@ -208,6 +210,78 @@ mfxStatus tsBitstreamReaderIVF::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrame
     return MFX_ERR_NONE;
 }
 
+mfxStatus tsSplitterHEVCES::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
+{
+    using namespace BS_HEVC;
+    mfxStatus sts = MFX_ERR_NONE;
+    mfxU8 *p, *e;
+    bool pic = false;
+
+    if (!m_eos)
+    {
+        sts = tsBitstreamReader::ProcessBitstream(m_intBS, 1);
+
+        if (sts)
+            return sts;
+    }
+
+    bs = m_intBS;
+
+    p = m_intBS.Data + m_intBS.DataOffset;
+    e = m_intBS.Data + m_intBS.DataOffset + m_intBS.DataLength;
+
+    for (p += 2, e -= 4; p < e; p++)
+    {
+        if (p[0] == 1 && p[-1] == 0 && p[-2] == 0)
+        {
+            mfxU16 nut = ((p[1] >> 1) & 0x03ff);
+            bool   fss = !!(p[3] & 0x80);
+            bool   slice = (nut <= CRA_NUT) && ((nut < RSV_VCL_N10) || (nut > RSV_VCL_R15));
+
+            if (!pic)
+            {
+                pic = slice && fss;
+            }
+            else if (!(  (slice && !fss)
+                      || (nut == SUFFIX_SEI_NUT)
+                      || (nut == FD_NUT)
+                      || (nut == EOS_NUT)
+                      || (nut == EOB_NUT)
+                      || ((nut >= RSV_NVCL45) && (nut <= RSV_NVCL47))
+                      || ((nut >= UNSPEC56)   && (nut <= UNSPEC63))))
+            {
+                m_intBS.DataOffset = mfxU32(p - 2 - m_intBS.Data);
+
+                if (m_intBS.DataOffset && p[-3] == 0)
+                    m_intBS.DataOffset--;
+
+                m_intBS.DataLength -= (m_intBS.DataOffset- bs.DataOffset );
+
+                break;
+            }
+        }
+    }
+
+    if (!pic)
+    {
+        bs.DataLength = 0;
+
+        if (m_eos)
+            return MFX_ERR_MORE_DATA;
+        return MFX_ERR_NOT_ENOUGH_BUFFER;
+    }
+
+    if (p >= e)
+    {
+        m_intBS.DataOffset = m_intBS.DataLength;
+        m_intBS.DataLength = 0;
+    }
+
+    bs.DataLength = m_intBS.DataOffset - bs.DataOffset;
+    bs.DataFlag   = MFX_BITSTREAM_COMPLETE_FRAME;
+
+    return MFX_ERR_NONE;
+}
 
 tsBitstreamCRC32::tsBitstreamCRC32(mfxBitstream bs, mfxU32 buf_size)
     : m_crc(0)

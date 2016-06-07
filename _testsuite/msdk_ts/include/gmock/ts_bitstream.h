@@ -76,6 +76,28 @@ public:
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
 };
 
+class tsSplitterHEVCES : public tsBitstreamReader
+{
+public:
+    mfxBitstream m_intBS; //internal bitstream buffer (not AU-aligned)
+
+    tsSplitterHEVCES(const char* fname, mfxU32 buf_size)
+        : tsBitstreamReader(fname, buf_size)
+    {
+        memset(&m_intBS, 0, sizeof(m_intBS));
+    }
+
+    tsSplitterHEVCES(mfxBitstream bs, mfxU32 buf_size)
+        : tsBitstreamReader(bs, buf_size)
+    {
+        memset(&m_intBS, 0, sizeof(m_intBS));
+    }
+
+    virtual ~tsSplitterHEVCES(){}
+
+    mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
+};
+
 class tsBitstreamCRC32 : public tsBitstreamProcessor
 {
     Ipp32u m_crc;

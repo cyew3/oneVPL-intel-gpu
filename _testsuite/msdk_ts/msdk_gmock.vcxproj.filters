@@ -631,5 +631,8 @@
     <ClCompile Include="src\gmock\test_suites\hevcd_get_payload.cpp">
       <Filter>Source Files\test_suites\hevcd</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevcd_low_latency.cpp">
+      <Filter>Source Files\test_suites\hevcd</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
