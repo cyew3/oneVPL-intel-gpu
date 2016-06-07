@@ -3598,7 +3598,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         unsupported = true;
     }
     if((extOpt2->IntRefType == 2) &&
-        (platform <= MFX_HW_BDW))
+        (platform < MFX_HW_BDW))
     {
         extOpt2->IntRefType = 0;
         unsupported = true;
