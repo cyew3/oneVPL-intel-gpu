@@ -876,7 +876,10 @@ mfxStatus CTranscodingPipeline::Decode()
         // Do not exceed buffer length (it should be not longer than AsyncDepth after adding newly processed surface)
         while(pNextBuffer->GetLength()>=m_AsyncDepth)
         {
-            pNextBuffer->WaitForSurfaceRelease();
+            if (MFX_ERR_NONE != pNextBuffer->WaitForSurfaceRelease(MSDK_SURFACE_WAIT_INTERVAL)) {
+                msdk_printf(MSDK_STRING("ERROR: timed out waiting surface release by downstream component\n"));
+                return MFX_ERR_NOT_FOUND;
+            }
         }
 
         // add surfaces in queue for all sinks
@@ -970,7 +973,10 @@ mfxStatus CTranscodingPipeline::Encode()
                 // Getting next frame
                 while (MFX_ERR_MORE_SURFACE == curBuffer->GetSurface(DecExtSurface))
                 {
-                    curBuffer->WaitForSurfaceInsertion();
+                    if (MFX_ERR_NONE != curBuffer->WaitForSurfaceInsertion(MSDK_SURFACE_WAIT_INTERVAL)) {
+                        msdk_printf(MSDK_STRING("ERROR: timed out waiting surface from upstream component\n"));
+                        return MFX_ERR_NOT_FOUND;
+                    }
                 }
             }
 
@@ -3270,16 +3276,14 @@ mfxU32 SafetySurfaceBuffer::GetLength()
     return (mfxU32)m_SList.size();
 }
 
-void SafetySurfaceBuffer::WaitForSurfaceRelease()
+mfxStatus SafetySurfaceBuffer::WaitForSurfaceRelease(mfxU32 msec)
 {
-    pRelEvent->Reset();
-    pRelEvent->Wait();
+    return pRelEvent->TimedWait(msec);
 }
 
-void SafetySurfaceBuffer::WaitForSurfaceInsertion()
+mfxStatus SafetySurfaceBuffer::WaitForSurfaceInsertion(mfxU32 msec)
 {
-    pInsEvent->Reset();
-    pInsEvent->Wait();
+    return pInsEvent->TimedWait(msec);
 }
 
 void SafetySurfaceBuffer::AddSurface(ExtendedSurface Surf)

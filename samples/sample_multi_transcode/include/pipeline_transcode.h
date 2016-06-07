@@ -334,8 +334,8 @@ namespace TranscodingSample
         virtual ~SafetySurfaceBuffer();
 
         mfxU32            GetLength();
-        void              WaitForSurfaceRelease();
-        void              WaitForSurfaceInsertion();
+        mfxStatus         WaitForSurfaceRelease(mfxU32 msec);
+        mfxStatus         WaitForSurfaceInsertion(mfxU32 msec);
         void              AddSurface(ExtendedSurface Surf);
         mfxStatus         GetSurface(ExtendedSurface &Surf);
         mfxStatus         ReleaseSurface(mfxFrameSurface1* pSurf);
