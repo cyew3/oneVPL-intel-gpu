@@ -832,6 +832,8 @@ mfxStatus VAAPIEncoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
         else
             m_codedbufISize = m_codedbufPBSize = rawFrameSize;
     }
+    
+    pRequest->Info.Width = m_codedbufISize / pRequest->Info.Height / 3 * 2;
 
     // request linear buffer
     pRequest->Info.FourCC = MFX_FOURCC_P8;
@@ -1822,7 +1824,6 @@ mfxStatus VAAPIEncoder::FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers)
     return sts;
 
 } // mfxStatus VAAPIEncoder::FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers)
-
 
 mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBitstream* pBitstream, Encryption *pEncrypt)
 {
