@@ -1153,8 +1153,10 @@ mfxU16 GetFreeSurface(mfxFrameSurface1* pSurfacesPool, mfxU16 nPoolSize)
 
     mfxU16 idx = MSDK_INVALID_SURF_IDX;
 
+    CTimer t;
+    t.Start();
     //wait if there's no free surface
-    for (mfxU32 i = 0; i < MSDK_SURFACE_WAIT_INTERVAL; i += SleepInterval)
+    do
     {
         idx = GetFreeSurfaceIndex(pSurfacesPool, nPoolSize);
 
@@ -1166,7 +1168,7 @@ mfxU16 GetFreeSurface(mfxFrameSurface1* pSurfacesPool, mfxU16 nPoolSize)
         {
             MSDK_SLEEP(SleepInterval);
         }
-    }
+    } while ( t.GetTime() < MSDK_SURFACE_WAIT_INTERVAL / 1000 );
 
     if(idx==MSDK_INVALID_SURF_IDX)
     {
@@ -1174,22 +1176,6 @@ mfxU16 GetFreeSurface(mfxFrameSurface1* pSurfacesPool, mfxU16 nPoolSize)
     }
 
     return idx;
-}
-
-mfxU16 GetFreeSurfaceIndex(mfxFrameSurface1* pSurfacesPool, mfxU16 nPoolSize, mfxU16 step)
-{
-    if (pSurfacesPool)
-    {
-        for (mfxU16 i = 0; i < nPoolSize; i = (mfxU16)(i + step), pSurfacesPool += step)
-        {
-            if (0 == pSurfacesPool[0].Data.Locked)
-            {
-                return i;
-            }
-        }
-    }
-
-    return MSDK_INVALID_SURF_IDX;
 }
 
 mfxStatus InitMfxBitstream(mfxBitstream* pBitstream, mfxU32 nSize)
