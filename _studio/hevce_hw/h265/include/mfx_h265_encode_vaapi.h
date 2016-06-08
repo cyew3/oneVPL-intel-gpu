@@ -156,7 +156,7 @@ mfxStatus SetFrameRate(
 
         virtual
         mfxStatus Reset(
-            MfxVideoParam const & par);
+            MfxVideoParam const & par, bool bBRCReset);
 
         virtual
         mfxStatus Register(
@@ -223,8 +223,5 @@ mfxStatus SetFrameRate(
 
         UMC::Mutex m_guard;
         HeaderPacker m_headerPacker;
-
-        VAEncMiscParameterRateControl  m_vaBrcPar;
-        VAEncMiscParameterFrameRate    m_vaFrameRate;
     };
 }

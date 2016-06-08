@@ -907,17 +907,14 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     return MFX_ERR_NONE;
 }
 
-mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par)
+mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par, bool bResetBRC)
 {
     m_videoParam = par;
 
     FillSps(par, m_sps);
-    VAEncMiscParameterRateControl oldBrcPar = m_vaBrcPar;
-    VAEncMiscParameterFrameRate oldFrameRate = m_vaFrameRate;
-    bool isBrcResetRequired = !Equal(m_vaBrcPar, oldBrcPar) || !Equal(m_vaFrameRate, oldFrameRate);
 
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetHRD(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_HRD, 1)), MFX_ERR_DEVICE_FAILED);
-    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRateControl(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_RateParam, 1), isBrcResetRequired), MFX_ERR_DEVICE_FAILED);
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetRateControl(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_RateParam, 1), bResetBRC), MFX_ERR_DEVICE_FAILED);
 
 #ifdef PARALLEL_BRC_support
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetBRCParallel(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_BRCParallel, 1)), MFX_ERR_DEVICE_FAILED);

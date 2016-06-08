@@ -194,11 +194,9 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D11Encoder::Reset(MfxVideoParam const & par)
+mfxStatus D3D11Encoder::Reset(MfxVideoParam const & par, bool bResetBRC)
 {
     MFX_CHECK_WITH_ASSERT(m_vdecoder, MFX_ERR_NOT_INITIALIZED);
-
-    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC prevSPS = m_sps;
 
     Zero(m_sps);
     Zero(m_pps);
@@ -211,7 +209,7 @@ mfxStatus D3D11Encoder::Reset(MfxVideoParam const & par)
     DDIHeaderPacker::Reset(par);
     m_cbd.resize(MAX_DDI_BUFFERS + MaxPackedHeaders());
 
-    m_sps.bResetBRC = !Equal(m_sps, prevSPS);
+    m_sps.bResetBRC = bResetBRC;
 
     return MFX_ERR_NONE;
 }

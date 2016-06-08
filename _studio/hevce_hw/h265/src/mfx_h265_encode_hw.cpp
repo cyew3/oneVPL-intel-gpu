@@ -584,9 +584,23 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
     if (isIdrRequired && pResetOpt && IsOff(pResetOpt->StartNewSequence))
         return MFX_ERR_INVALID_VIDEO_PARAM; // Reset can't change parameters w/o IDR. Report an error
 
-    bool brcReset =
-        m_vpar.TargetKbps != parNew.TargetKbps ||
-        m_vpar.MaxKbps    != parNew.MaxKbps;
+    bool brcReset = false;
+
+    if (m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_CBR || 
+        m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_VBR || 
+        m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
+    {
+        if ( m_vpar.TargetKbps != parNew.TargetKbps||
+             m_vpar.BufferSizeInKB != parNew.BufferSizeInKB ||
+             m_vpar.InitialDelayInKB != parNew.InitialDelayInKB||
+             m_vpar.mfx.FrameInfo.FrameRateExtN != parNew.mfx.FrameInfo.FrameRateExtN ||
+             m_vpar.mfx.FrameInfo.FrameRateExtD != parNew.mfx.FrameInfo.FrameRateExtD)              
+             brcReset = true;   
+    }
+    if (m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
+    {
+        if (m_vpar.MaxKbps != parNew.MaxKbps)  brcReset = true;
+    }
 
     if (brcReset &&
         m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
@@ -597,6 +611,7 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
 
     if (isIdrRequired || (pResetOpt && IsOn(pResetOpt->StartNewSequence)))
     {
+        brcReset = true;
 #if DEBUG_REC_FRAMES_INFO
         mfxExtDumpFiles * extDump = &m_vpar.m_ext.DumpFiles;
         if (vm_file * file = OpenFile(extDump->ReconFilename, _T("wb")))
@@ -612,7 +627,7 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
     m_vpar = parNew;
 
     m_hrd.Reset(m_vpar.m_sps);
-    m_ddi->Reset(m_vpar);
+    m_ddi->Reset(m_vpar, brcReset);
 
     if (m_brc)
     {

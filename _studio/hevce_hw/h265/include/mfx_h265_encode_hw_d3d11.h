@@ -38,7 +38,7 @@ public:
 
     virtual
     mfxStatus Reset(
-        MfxVideoParam const & par);
+        MfxVideoParam const & par, bool bResetBRC);
 
     virtual
     mfxStatus Register(
