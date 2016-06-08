@@ -770,6 +770,11 @@ void WipeResources(sAppResources* pResources)
         pResources->pDstFileWriters = 0;
     }
 
+    if(pResources->compositeConfig.InputStream)
+    {
+        delete[] pResources->compositeConfig.InputStream;
+    }
+
     WipeConfigParam( pResources );
 
 } // void WipeResources(sAppResources* pResources)
