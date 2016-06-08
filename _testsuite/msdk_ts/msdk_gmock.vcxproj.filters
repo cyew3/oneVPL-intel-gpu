@@ -634,5 +634,8 @@
     <ClCompile Include="src\gmock\test_suites\hevcd_low_latency.cpp">
       <Filter>Source Files\test_suites\hevcd</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\gpu_hang_transcoding.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

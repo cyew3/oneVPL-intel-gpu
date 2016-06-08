@@ -19,36 +19,13 @@ typedef struct {
 namespace gpu_hang_transcoding
 {
 
-mfxFrameSurface1* GetSurface(tsVideoDecoder *dec, bool syncSurfaceFromDecoder)
-{
-    if(!dec->m_surf_out.size())
-        g_tsStatus.check(MFX_ERR_UNKNOWN);
-
-    mfxSyncPoint syncp = dec->m_surf_out.begin()->first;
-    mfxFrameSurface1* pS = dec->m_surf_out[syncp];
-    if (syncSurfaceFromDecoder)
-    {
-        mfxStatus res = dec->SyncOperation(dec->m_session, syncp, MFX_INFINITE);
-        if (res < 0)
-            g_tsStatus.check();
-    }
-    else
-        dec->m_surf_out.erase(syncp);
-
-    if(pS && pS->Data.Locked)
-    {
-        pS->Data.Locked--;
-    }
-
-    return pS;
-}
-
 class tsTranscoder: public tsVideoDecoder, public tsVideoEncoder
 {
 public:
     tsTranscoder(mfxU32 decoderCodecId, mfxU32 encoderCodecId, mfxU32 frame_to_hang):
         tsSession(), tsVideoDecoder(decoderCodecId), tsVideoEncoder(encoderCodecId),
-        m_frames_submitted(0), m_frame_to_hang(frame_to_hang)
+        m_frames_submitted(0), m_frame_to_hang(frame_to_hang), m_expect_gpu_hang_from_dec_frame_async(false),
+        m_expect_gpu_hang_from_dec_syncop(false), m_hang_triggered(false)
     {
         m_trigger.AddExtBuffer(MFX_EXTBUFF_GPU_HANG, sizeof(mfxExtIntGPUHang));
     }
@@ -68,6 +45,9 @@ public:
 
         if (m_frames_submitted == m_frame_to_hang)
         {
+            if (sts >= 0 || sts == MFX_ERR_MORE_SURFACE)
+                m_hang_triggered = true;
+
             surface_work->Data.NumExtParam = 0;
             surface_work->Data.ExtParam    = NULL;
         }
@@ -77,7 +57,50 @@ public:
     tsExtBufType<mfxFrameData> m_trigger;
     mfxU32 m_frames_submitted;
     mfxU32 m_frame_to_hang;
+    bool   m_expect_gpu_hang_from_dec_frame_async;
+    bool   m_expect_gpu_hang_from_dec_syncop;
+    bool   m_hang_triggered;
 };
+
+mfxFrameSurface1* GetSurface(tsVideoDecoder *dec, bool syncSurfaceFromDecoder)
+{
+    tsTranscoder *tr = dynamic_cast<tsTranscoder*> (dec);
+    if (tr == NULL)
+    {
+        ADD_FAILURE() << "Dynamic casting to tsTranscoder* failed";
+        throw tsFAIL;
+    }
+
+    if(dec->m_surf_out.size() == 0)
+    {
+        ADD_FAILURE() << "No frame to synchronize";
+        throw tsFAIL;
+    }
+
+    mfxSyncPoint syncp = dec->m_surf_out.begin()->first;
+    mfxFrameSurface1* pS = dec->m_surf_out[syncp];
+    if (syncSurfaceFromDecoder)
+    {
+        mfxStatus res = dec->SyncOperation(dec->m_session, syncp, MFX_INFINITE);
+        if (res < 0)
+            g_tsStatus.check();
+
+        if (tr->m_hang_triggered)
+        {
+            tr->m_hang_triggered = false;
+            tr->m_expect_gpu_hang_from_dec_frame_async = true;
+        }
+    }
+    else
+        dec->m_surf_out.erase(syncp);
+
+    if(pS && pS->Data.Locked)
+    {
+        pS->Data.Locked--;
+    }
+
+    return pS;
+}
 
 int gpu_hang_transcoding_test(mfxU32 decoderCodecId, mfxU32 encoderCodecId, const char* streamName)
 {
@@ -94,15 +117,15 @@ int gpu_hang_transcoding_test(mfxU32 decoderCodecId, mfxU32 encoderCodecId, cons
     tsBitstreamReader reader(streamNameFull, 100000);
     tsVideoDecoder *dec = static_cast<tsVideoDecoder*>(&transcoder);
     tsVideoEncoder *enc = static_cast<tsVideoEncoder*>(&transcoder);
-    //tsBitstreamWriter writer("gpu_hang.mpg");
     dec->m_bs_processor = &reader;
-    //enc->m_bs_processor = &writer;
-
     dec->DecodeHeader();
-    enc->m_par.mfx.FrameInfo.CropW  = dec->m_par.mfx.FrameInfo.CropW;
-    enc->m_par.mfx.FrameInfo.CropH  = dec->m_par.mfx.FrameInfo.CropH;
-    enc->m_par.mfx.FrameInfo.Width  = dec->m_par.mfx.FrameInfo.Width  = (dec->m_par.mfx.FrameInfo.Width  + 31) & ~0x1f;
-    enc->m_par.mfx.FrameInfo.Height = dec->m_par.mfx.FrameInfo.Height = (dec->m_par.mfx.FrameInfo.Height + 31) & ~0x1f;
+
+    enc->m_par.mfx.FrameInfo = dec->m_par.mfx.FrameInfo;
+    enc->m_par.mfx.FrameInfo.FrameRateExtN = 30;
+    enc->m_par.mfx.FrameInfo.FrameRateExtD = 1;
+    enc->Query();
+    dec->m_par.mfx.FrameInfo.Width  = enc->m_par.mfx.FrameInfo.Width;
+    dec->m_par.mfx.FrameInfo.Height = enc->m_par.mfx.FrameInfo.Height;
 
     dec->QueryIOSurf();
     enc->QueryIOSurf();
@@ -120,22 +143,29 @@ int gpu_hang_transcoding_test(mfxU32 decoderCodecId, mfxU32 encoderCodecId, cons
 
     mfxU32 decoded = 0, encoded = 0;
     mfxU32 submitted = 0;
-    mfxStatus res = MFX_ERR_NONE;
-    dec->m_par.AsyncDepth = enc->m_par.AsyncDepth = 1;
+    mfxStatus decFrameAsyncStatus = MFX_ERR_NONE;
 
     while(true)
     {
         g_tsLog << decoded << " FRAMES DECODED\n";
         g_tsLog << encoded << " FRAMES ENCODED\n";
 
-        res = dec->DecodeFrameAsync();
-        if (res == MFX_ERR_GPU_HANG)
+        g_tsStatus.m_status = decFrameAsyncStatus; // g_tsStatus treated as previous result from DecFrameAsync in dec->DecodeFrameAsync() call below
+        decFrameAsyncStatus = dec->DecodeFrameAsync();
+        if (decFrameAsyncStatus == MFX_WRN_DEVICE_BUSY)
         {
-            g_tsLog << "GPU hang reported";
-            return 0;
+            ADD_FAILURE() << "Not expected MFX_WRN_DEVICE_BUSY from decoder";
+            throw tsFAIL;
         }
 
-        if(MFX_ERR_MORE_DATA == res)
+        if (transcoder.m_expect_gpu_hang_from_dec_frame_async)
+        {
+            g_tsStatus.expect(MFX_ERR_GPU_HANG);
+            g_tsStatus.check();
+            throw tsOK;
+        }
+
+        if(MFX_ERR_MORE_DATA == decFrameAsyncStatus)
         {
             if(dec->m_pBitstream)
                 continue;
@@ -146,9 +176,10 @@ int gpu_hang_transcoding_test(mfxU32 decoderCodecId, mfxU32 encoderCodecId, cons
                 mfxFrameSurface1* decodedSurface = NULL;
                 if (dec->m_surf_out.size())
                 {
-                    decodedSurface = GetSurface(dec, false);
+                    decodedSurface = GetSurface(dec, true);
                     decoded++;
                 }
+
                 enc->EncodeFrameAsync(enc->m_session, decodedSurface ? enc->m_pCtrl : 0, decodedSurface, enc->m_pBitstream, enc->m_pSyncPoint);
                 if (MFX_ERR_MORE_DATA == g_tsStatus.get())
                 {
@@ -159,45 +190,54 @@ int gpu_hang_transcoding_test(mfxU32 decoderCodecId, mfxU32 encoderCodecId, cons
                 }
 
                 g_tsStatus.check();
-                mfxSyncPoint sp = enc->m_syncpoint;
                 enc->SyncOperation();
-                if (g_tsStatus.get() == MFX_ERR_GPU_HANG)
+
+                if (transcoder.m_expect_gpu_hang_from_dec_syncop)
                 {
-                    g_tsLog << "GPU hang reported";
-                    return 0;
+                    g_tsStatus.expect(MFX_ERR_GPU_HANG);
+                    g_tsStatus.check();
+                    throw tsOK;
                 }
-                g_tsStatus.check();
+                else
+                    g_tsStatus.check();
+
+                enc->m_bitstream.DataOffset = 0;
+                enc->m_bitstream.DataLength = 0;
                 encoded++;
             }
             break;
         }
 
-        if(res < 0 && res != MFX_ERR_MORE_SURFACE) g_tsStatus.check();
+        if(decFrameAsyncStatus < 0 && decFrameAsyncStatus != MFX_ERR_MORE_SURFACE) g_tsStatus.check();
 
         transcoder.m_frames_submitted++;
 
-        if(MFX_ERR_MORE_SURFACE == res || (res > 0 && *dec->m_pSyncPoint == NULL))
+        if(MFX_ERR_MORE_SURFACE == decFrameAsyncStatus || (decFrameAsyncStatus > 0 && *dec->m_pSyncPoint == NULL))
             continue;
 
 //      if(++submitted >= async)
         {
             while(dec->m_surf_out.size())
             {
-                mfxFrameSurface1* decodedSurface = GetSurface(dec, false);
+                mfxFrameSurface1* decodedSurface = GetSurface(dec, true);
                 decoded++;
                 enc->EncodeFrameAsync(enc->m_session, decodedSurface ? enc->m_pCtrl : 0, decodedSurface, enc->m_pBitstream, enc->m_pSyncPoint);
                 if(MFX_ERR_MORE_DATA == g_tsStatus.get())
                     continue;
 
                 g_tsStatus.check();
-                mfxSyncPoint sp = enc->m_syncpoint;
                 enc->SyncOperation();
-                if (g_tsStatus.get() == MFX_ERR_GPU_HANG)
+                if (transcoder.m_expect_gpu_hang_from_dec_syncop)
                 {
-                    g_tsLog << "GPU hang reported";
-                    return 0;
+                    g_tsStatus.expect(MFX_ERR_GPU_HANG);
+                    g_tsStatus.check();
+                    throw tsOK;
                 }
-                g_tsStatus.check();
+                else
+                    g_tsStatus.check();
+
+                enc->m_bitstream.DataOffset = 0;
+                enc->m_bitstream.DataLength = 0;
                 encoded++;
             }
             submitted = 0;
@@ -207,8 +247,8 @@ int gpu_hang_transcoding_test(mfxU32 decoderCodecId, mfxU32 encoderCodecId, cons
     g_tsLog << decoded << " FRAMES DECODED\n";
     g_tsLog << encoded << " FRAMES ENCODED\n";
 
-    g_tsLog << "ERROR: GPU hang not reported\n";
-    return 1;
+    ADD_FAILURE() << "ERROR: GPU hang not reported";
+    throw tsFAIL;
 
     TS_END;
 }
