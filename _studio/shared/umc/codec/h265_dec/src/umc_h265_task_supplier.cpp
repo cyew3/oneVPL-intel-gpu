@@ -1793,7 +1793,8 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource)
                     UMC::Status umsRes = DecodeHeaders(nalUnit);
                     if (umsRes != UMC::UMC_OK)
                     {
-                        if (umsRes == UMC::UMC_NTF_NEW_RESOLUTION)
+                        if (umsRes == UMC::UMC_NTF_NEW_RESOLUTION ||
+                            umsRes == UMC::UMC_ERR_INVALID_STREAM)
                         {
                             Ipp32s nalIndex = pMediaDataEx->index;
                             Ipp32s size = pMediaDataEx->offsets[nalIndex + 1] - pMediaDataEx->offsets[nalIndex];
