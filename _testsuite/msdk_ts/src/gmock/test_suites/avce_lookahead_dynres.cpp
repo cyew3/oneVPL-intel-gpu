@@ -1,3 +1,13 @@
+/*//////////////////////////////////////////////////////////////////////////////
+//
+//                  INTEL CORPORATION PROPRIETARY INFORMATION
+//     This software is supplied under the terms of a license agreement or
+//     nondisclosure agreement with Intel Corporation and may not be copied
+//     or disclosed except in accordance with the terms of that agreement.
+//          Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+//
+*/
+
 #include "ts_encoder.h"
 #include "ts_struct.h"
 
@@ -61,7 +71,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 496},
        },
     },
-    {/*3*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+    {/*3*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088},
@@ -97,7 +107,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {RESET, &tsStruct::mfxVideoParam.mfx.TargetKbps, 750000},
        },
     },
-    {/*6*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+    {/*6*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920},
         {MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088},
@@ -155,7 +165,11 @@ int TestSuite::RunTest(unsigned int id)
     SetFrameAllocator();
     AllocSurfaces();
 
-    g_tsStatus.expect(MFX_ERR_NONE);
+
+    if(MFX_LOOKAHEAD_DS_4x == cod2->LookAheadDS)
+        g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+    else
+        g_tsStatus.expect(MFX_ERR_NONE);
     Init(m_session, &m_par);
 
     SetFrameAllocator();
