@@ -308,14 +308,26 @@ namespace hevce_reset
 
         },
         //Protected
-        {/* 31*/ MFX_ERR_UNSUPPORTED, MFX_ERR_NONE, PROTECTED, NONE, 1,
+        {/* 31*/ MFX_ERR_UNSUPPORTED,
+#if (defined(LINUX32) || defined(LINUX64))
+                                      MFX_ERR_UNSUPPORTED
+#else
+                                      MFX_ERR_NONE
+#endif
+                                                         , PROTECTED, NONE, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_PAVP }
             }
 
         },
-        {/* 32*/ MFX_ERR_UNSUPPORTED, MFX_ERR_NONE, PROTECTED, NONE, 1,
+        {/* 32*/ MFX_ERR_UNSUPPORTED,
+#if (defined(LINUX32) || defined(LINUX64))
+                                      MFX_ERR_UNSUPPORTED
+#else
+                                      MFX_ERR_NONE
+#endif
+                                                         , PROTECTED, NONE, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_PAVP }
@@ -456,19 +468,21 @@ namespace hevce_reset
                 );
         }
 
-        if ((tc.type != HANDLE_NOT_SET) &&
-            !((m_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY) || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)) &&
-            (!m_pVAHandle)
-           )
+        if ((tc.type != HANDLE_NOT_SET) && !(m_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY))
         {
             if (m_pVAHandle)
+            {
                 SetAllocator(m_pVAHandle, true);
-                            m_pFrameAllocator = GetAllocator();
-            SetFrameAllocator();
-            m_pVAHandle = m_pFrameAllocator;
-            m_pVAHandle->get_hdl(type, hdl);
-            SetHandle(m_session, type, hdl);
-            m_is_handle_set = (g_tsStatus.get() >= 0);
+                m_pFrameAllocator = GetAllocator();
+                SetFrameAllocator();
+            }
+            else
+            {
+                m_pFrameAllocator = GetAllocator();
+                SetFrameAllocator();
+                m_pFrameAllocator->get_hdl(type, hdl);
+                SetHandle(m_session, type, hdl);
+            }
         }
 
         if ((0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))) ||
@@ -512,6 +526,9 @@ namespace hevce_reset
                 if (tc.stream[0] != "")
                 {
                     // Encode 1 frame
+                    if (m_filler)
+                        m_filler->m_max = 1;
+
                     int encoded = 0;
                     while (encoded < 1)
                     {
@@ -578,7 +595,10 @@ namespace hevce_reset
                     m_filler = reader;
                 }
 
-                EncodeFrames(1);
+                if (m_filler)
+                    m_filler->m_max = 1;
+
+                EncodeFrames(1, true);
             }
             Close();
         }
