@@ -1524,8 +1524,8 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_pps.loop_filter_across_slices_enabled_flag      = 0;
 
     m_pps.deblocking_filter_control_present_flag  = 1;
-    m_pps.deblocking_filter_disabled_flag = m_ext.CO2.DisableDeblockingIdc!=0 ? 1:0;
-    m_pps.deblocking_filter_override_enabled_flag = m_ext.CO2.DisableDeblockingIdc!=0 ? 0:1; // to disable deblocking per frame
+    m_pps.deblocking_filter_disabled_flag = !!m_ext.CO2.DisableDeblockingIdc;
+    m_pps.deblocking_filter_override_enabled_flag = 1; // to disable deblocking per frame
 
     m_pps.scaling_list_data_present_flag              = 0;
     m_pps.lists_modification_present_flag             = 1;
@@ -1859,12 +1859,16 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
      s.tc_offset_div2       = m_pps.tc_offset_div2;   //  needed for DDI
      s.deblocking_filter_override_flag = 0;
 
-     if ( ext2 && ext2->DisableDeblockingIdc && (!m_pps.deblocking_filter_disabled_flag))
+     if ( ext2 && ext2->DisableDeblockingIdc != m_ext.CO2.DisableDeblockingIdc && m_pps.deblocking_filter_override_enabled_flag)
      {
-        s.deblocking_filter_disabled_flag  = 1; 
-        s.beta_offset_div2 = 0; 
-        s.tc_offset_div2 = 0;
-        s.deblocking_filter_override_flag = 1;         
+        s.deblocking_filter_disabled_flag = !!ext2->DisableDeblockingIdc;
+        s.deblocking_filter_override_flag = (s.deblocking_filter_disabled_flag != m_pps.deblocking_filter_disabled_flag);
+
+        if (s.deblocking_filter_override_flag)
+        {
+            s.beta_offset_div2 = 0; 
+            s.tc_offset_div2 = 0;       
+        }
      }
 
     s.loop_filter_across_slices_enabled_flag = 0;
@@ -2015,7 +2019,7 @@ mfxU32 HRD::GetInitCpbRemovalDelay(const Task &pic)
     return (mfxU32)m_initCpbRemovalDelay;
 }
 
-void TaskManager::Reset(mfxU32 numTask)
+void TaskManager::Reset(mfxU32 numTask, mfxU16 resetHeaders)
 {
     if (numTask)
     {
@@ -2029,6 +2033,7 @@ void TaskManager::Reset(mfxU32 numTask)
         while (!m_querying.empty())
             vm_time_sleep(1);
     }
+    m_resetHeaders = resetHeaders;
 }
 
 Task* TaskManager::New()
@@ -2079,7 +2084,7 @@ Task* TaskManager::Reorder(
         }
         end++;    
     }
-    TaskList::iterator top   = MfxHwH265Encode::Reorder(par, dpb, begin, end, flush);
+    TaskList::iterator top = MfxHwH265Encode::Reorder(par, dpb, begin, end, flush);
 
     if (top == end)
     {
@@ -2087,6 +2092,12 @@ Task* TaskManager::Reorder(
             return &*end; //formal task without surface
         else 
             return 0;
+    }
+
+    if (m_resetHeaders)
+    {
+        top->m_insertHeaders |= m_resetHeaders;
+        m_resetHeaders = 0;
     }
 
     return &*top;
@@ -2860,9 +2871,7 @@ void ConfigureTask(
     task.m_codingType = GetCodingType(task);
 
     if (isIDR)
-        task.m_insertHeaders = (INSERT_VPS | INSERT_SPS | INSERT_PPS);
-    else
-        task.m_insertHeaders = 0;
+        task.m_insertHeaders |= (INSERT_VPS | INSERT_SPS | INSERT_PPS);
 
     if (needCpbRemovalDelay && par.m_sps.vui.hrd_parameters_present_flag )
         task.m_insertHeaders |= INSERT_BPSEI;

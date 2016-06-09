@@ -818,7 +818,9 @@ void InheritDefaultValues(
     InheritOption(extOpt2Init->MBBRC,      extOpt2Reset->MBBRC);
     InheritOption(extOpt2Init->BRefType,   extOpt2Reset->BRefType);
     InheritOption(extOpt2Init->NumMbPerSlice,   extOpt2Reset->NumMbPerSlice);
-    InheritOption(extOpt2Init->DisableDeblockingIdc,  extOpt2Reset->DisableDeblockingIdc);
+
+    //DisableDeblockingIdc=0 is valid value, reset 1 -> 0 possible
+    //InheritOption(extOpt2Init->DisableDeblockingIdc,  extOpt2Reset->DisableDeblockingIdc);
 
     mfxExtCodingOption3 const * extOpt3Init  = &parInit.m_ext.CO3;
     mfxExtCodingOption3 *       extOpt3Reset = &parReset.m_ext.CO3;
@@ -957,8 +959,10 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     changed += CheckMax(par.mfx.GopRefDist, (caps.SliceIPOnly || IsOn(par.mfx.LowPower)) ? 1 : (par.mfx.GopPicSize ? par.mfx.GopPicSize - 1 : 0xFFFF));
 
     unsupported += CheckOption(par.Protected
+#ifndef MFX_VA_LINUX
         , (mfxU16)MFX_PROTECTION_PAVP
         , (mfxU16)MFX_PROTECTION_GPUCP_PAVP
+#endif
         , 0);
 
     if (par.Protected)

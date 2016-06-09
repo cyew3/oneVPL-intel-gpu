@@ -606,6 +606,9 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
 #endif
     }
 
+    if (!Equal(m_vpar.m_pps, parNew.m_pps))
+        m_task.Reset(0, (mfxU16)INSERT_PPS);
+
     m_vpar = parNew;
 
     m_hrd.Reset(m_vpar.m_sps);

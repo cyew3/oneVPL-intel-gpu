@@ -714,7 +714,7 @@ class TaskManager
 {
 public:
 
-    void  Reset     (mfxU32 numTask = 0);
+    void  Reset     (mfxU32 numTask = 0, mfxU16 resetHeaders = 0);
     Task* New       ();
     Task* Reorder   (MfxVideoParam const & par, DpbArray const & dpb, bool flush);
     void  Submit    (Task* task);
@@ -732,6 +732,7 @@ private:
     TaskList   m_encoding;
     TaskList   m_querying;
     UMC::Mutex m_listMutex;
+    mfxU16     m_resetHeaders;
 };
 
 class FrameLocker : public mfxFrameData
