@@ -2378,7 +2378,7 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
             // THREADING_ITASK_WORKING -> THREADING_ITASK_INI
             Ipp32s taskStage = vm_interlocked_cas32(&inputParam->m_taskStage, THREADING_ITASK_INI, THREADING_ITASK_WORKING); 
             vm_mutex_unlock(&th->m_prepCritSect);
-            return MFX_TASK_WORKING;
+            return MFX_TASK_BUSY;
         }
 #if TASK_LOG_ENABLE
         inputParam->task_log_idx = TaskLogStart(NULL, inputParam->m_taskID);
