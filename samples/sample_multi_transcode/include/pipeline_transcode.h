@@ -604,7 +604,6 @@ namespace TranscodingSample
         CTranscodingPipeline  *m_pParentPipeline;
 
         mfxFrameAllocRequest   m_Request;
-        mfxU16                 additionalSurfacesNum;
         bool                   m_bIsInit;
 
         mfxU32          m_NumFramesForReset;
