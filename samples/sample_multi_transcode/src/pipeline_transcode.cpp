@@ -136,7 +136,6 @@ CTranscodingPipeline::CTranscodingPipeline():
     MSDK_ZERO_MEMORY(m_mfxEncResponse);
 
     MSDK_ZERO_MEMORY(m_Request);
-    additionalSurfacesNum=0;
 
     MSDK_ZERO_MEMORY(m_VppDoNotUse);
     MSDK_ZERO_MEMORY(m_MVCSeqDesc);
@@ -2352,10 +2351,6 @@ mfxStatus CTranscodingPipeline::AllocFrames()
     sts = CalculateNumberOfReqFrames(DecOut,VPPOut);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    // Add additionnaly requested frames
-    m_Request.NumFrameMin+=additionalSurfacesNum;
-    m_Request.NumFrameSuggested+=additionalSurfacesNum;
-
     if (VPPOut.NumFrameSuggested)
     {
         if (bAddFrames)
@@ -2550,9 +2545,6 @@ void CTranscodingPipeline::CorrectNumberOfAllocatedFrames(mfxFrameAllocRequest  
     {
         m_Request.NumFrameSuggested = std::max(m_Request.NumFrameSuggested,pNewReq->NumFrameSuggested);
     }
-
-    // For each child session we should add one additional surface to cover non-syncronous work of decoding and encoding sessions
-    additionalSurfacesNum++;
 
     m_Request.NumFrameMin = m_Request.NumFrameSuggested;
     m_Request.Type = m_Request.Type | pNewReq->Type;
