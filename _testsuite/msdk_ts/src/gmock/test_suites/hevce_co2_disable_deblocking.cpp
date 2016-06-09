@@ -119,7 +119,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     /*00*/{MFX_ERR_NONE, 0, {}},
     /*01*/{MFX_ERR_NONE, QUERY, {}},
     /*02*/{MFX_ERR_NONE, QUERY, {EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 1 } },
-    /*03*/{MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, QUERY, {EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 2}},
+    /*03*/{MFX_ERR_NONE, QUERY, {EXT_COD2, &tsStruct::mfxExtCodingOption2.DisableDeblockingIdc, 2}},
     /*04*/{MFX_ERR_NONE, RUNTIME_ONLY, {}},
     /*05*/{MFX_ERR_NONE, EVERY_OTHER, {}},
     /*06*/{MFX_ERR_NONE, RUNTIME_ONLY|EVERY_OTHER, {}},
@@ -177,19 +177,13 @@ public:
 
                 Bs8u expected = bs.TimeStamp == FEATURE_ENABLED ? m_expected : 0;
                 Bs8u real = 0; //deblocking filter is enabled by default.
-                if (au.nalu[i]->slice->pps->deblocking_filter_control_present_flag) {
-                    if (au.nalu[i]->slice->pps->deblocking_filter_override_enabled_flag) {
-                        if (au.nalu[i]->slice->deblocking_filter_override_flag) {
-                            real = au.nalu[i]->slice->deblocking_filter_disabled_flag;
-                        } else {
-                            real = au.nalu[i]->slice->pps->deblocking_filter_disabled_flag;
-                        }
-                    } else {
-                        real = au.nalu[i]->slice->pps->deblocking_filter_disabled_flag;
-                    }
-                } else {
-                    real = 0;
-                }
+                auto& s = *au.nalu[i]->slice;
+
+                if (s.deblocking_filter_override_flag)
+                    real = s.deblocking_filter_disabled_flag;
+                else if (s.pps->deblocking_filter_control_present_flag)
+                    real = s.pps->deblocking_filter_disabled_flag;
+
                 if (real != expected)
                 {
                     g_tsLog << "ERROR: deblocking_filter_disabled flag in encoded stream is not as expected.\n"
@@ -224,7 +218,7 @@ int TestSuite::RunTest(unsigned int id)
         mfxExtCodingOption2& cod2 = m_par;
         cod2.DisableDeblockingIdc = 1;
         SETPARS(&cod2, EXT_COD2);
-        bs.m_expected = cod2.DisableDeblockingIdc;
+        bs.m_expected = !!cod2.DisableDeblockingIdc;
     }
 
     SETPARS(m_pPar, MFX_PAR);
@@ -273,7 +267,7 @@ int TestSuite::RunTest(unsigned int id)
                 mfxExtCodingOption2& cod2 = m_par;
                 cod2.DisableDeblockingIdc = 1;
                 SETPARS(&cod2, EXT_COD2);
-                bs.m_expected = cod2.DisableDeblockingIdc;
+                bs.m_expected = !!cod2.DisableDeblockingIdc;
             }
             Reset();
             m_max = 2;
