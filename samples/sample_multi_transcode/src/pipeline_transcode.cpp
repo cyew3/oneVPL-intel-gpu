@@ -2414,10 +2414,6 @@ mfxStatus CTranscodingPipeline::AllocFrames()
                 mark_alloc++;
             }
 
-            // Add additionnaly requested frames
-            DecOut.NumFrameMin+=additionalSurfacesNum;
-            DecOut.NumFrameSuggested+=additionalSurfacesNum;
-
             sts = AllocFrames(&DecOut, true);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
             sts = CorrectPreEncAuxPool((VPPOut.NumFrameSuggested ? VPPOut.NumFrameSuggested : DecOut.NumFrameSuggested) + m_AsyncDepth);
