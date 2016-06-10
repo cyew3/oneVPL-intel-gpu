@@ -151,24 +151,25 @@ mfxU16 GetMfxPicStruct(mfxU32 progressiveSequence, mfxU32 progressiveFrame, mfxU
         }
     }
 
-    if (repeatFirstField)
-    {
-        if (0 == progressiveSequence)
+    if (progressiveSequence == 1 || progressiveFrame == 1)
+        if (repeatFirstField)
         {
-            picStruct |= MFX_PICSTRUCT_FIELD_REPEATED;
-        }
-        else // progressive sequence
-        {
-            if (topFieldFirst)
+            if (0 == progressiveSequence)
             {
-                picStruct |= MFX_PICSTRUCT_FRAME_TRIPLING;
+                picStruct |= MFX_PICSTRUCT_FIELD_REPEATED;
             }
-            else
+            else // progressive sequence
             {
-                picStruct |= MFX_PICSTRUCT_FRAME_DOUBLING;
+                if (topFieldFirst)
+                {
+                    picStruct |= MFX_PICSTRUCT_FRAME_TRIPLING;
+                }
+                else
+                {
+                    picStruct |= MFX_PICSTRUCT_FRAME_DOUBLING;
+                }
             }
         }
-    }
 
     if (0 == extendedPicStruct)
     {
