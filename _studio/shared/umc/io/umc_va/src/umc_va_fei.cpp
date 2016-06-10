@@ -20,7 +20,10 @@
 
 #include <algorithm>
 #include <climits>
+
 #define UMC_VA_DECODE_STREAM_OUT_ENABLE  2
+
+//#define UMC_VA_STREAMOUT_DEBUG
 
 namespace UMC
 {
@@ -44,10 +47,33 @@ namespace UMC
             l.first < r.first;
     }
 
-    inline
-    Ipp32u map_slice_ref(Ipp32u const* refs, Ipp32u count, Ipp32u frame)
+    struct find_ref_frame
     {
-        Ipp32u const* r = std::find(refs, refs + count, frame);
+        static const unsigned int PICTURE_REF_TERM_MASK =
+            VA_PICTURE_H264_SHORT_TERM_REFERENCE | VA_PICTURE_H264_LONG_TERM_REFERENCE;
+
+        unsigned int index;
+        unsigned int flags;
+
+        find_ref_frame(VAPictureH264 const& p)
+            : index(p.frame_idx)
+            , flags(p.flags & PICTURE_REF_TERM_MASK)
+        {}
+
+        bool operator()(VAPictureH264 const& t) const
+        {
+            //LT & ST can have the same indices, we should distinct them
+            return
+                index == t.frame_idx &&
+                flags == (t.flags & PICTURE_REF_TERM_MASK);
+        }
+    };
+
+    inline
+    Ipp32u map_slice_ref(VAPictureH264 const* refs, Ipp32u count, VAPictureH264 const& pic)
+    {
+       VAPictureH264 const* r =
+            std::find_if(refs, refs + count, find_ref_frame(pic));
 
         //use count * 2 (top + bottom) to signal 'not found'
         return
@@ -62,14 +88,26 @@ namespace UMC
         m_allowed_max_mbs_in_slice =
             (pp->picture_width_in_mbs_minus1 + 1) * ((pp->picture_height_in_mbs_minus1 + 1) >> pp->pic_fields.bits.field_pic_flag);
 
-        Ipp32s const count = sizeof(m_references) / sizeof(m_references[0]);
+        Ipp32u const count = sizeof(m_references) / sizeof(m_references[0]);
+        std::copy(pp->ReferenceFrames, pp->ReferenceFrames + count, m_references);
+
+#ifdef UMC_VA_STREAMOUT_DEBUG
+        printf("\n----id: %04d poc: %04d/%04d flags: %x ----\n", pp->CurrPic.frame_idx, pp->CurrPic.TopFieldOrderCnt, pp->CurrPic.BottomFieldOrderCnt, pp->CurrPic.flags);
         for (Ipp32u i = 0; i < count; ++i)
-            m_references[i] = pp->ReferenceFrames[i].frame_idx;
+             printf("\t#%02d id: %04d poc: %04d/%04d flags: %x\n",
+                    i, pp->ReferenceFrames[i].frame_idx,
+                    pp->ReferenceFrames[i].TopFieldOrderCnt, pp->ReferenceFrames[i].BottomFieldOrderCnt, pp->ReferenceFrames[i].flags
+             );
+#endif
     }
 
     void VAStreamOutBuffer::FillSliceReferences(VASliceParameterBufferH264 const* sp)
     {
         VM_ASSERT(m_remap_refs);
+
+#ifdef UMC_VA_STREAMOUT_DEBUG
+        printf("\n----slice type: %x first_mb_in_slice: %04d\n", sp->slice_type, sp->first_mb_in_slice);
+#endif
 
         //NOTE: we keep [slice_map] sorted implicitly
         slice_map::iterator s =
@@ -103,11 +141,23 @@ namespace UMC
         {
             VAPictureH264 const& pic = sp->RefPicList0[i];
             Ipp32u const idx =
-                map_slice_ref(m_references, count, pic.frame_idx);
+                map_slice_ref(m_references, count, pic);
 
             Ipp32u const bottom = !!(pic.flags & VA_PICTURE_H264_BOTTOM_FIELD);
             map[idx + count * bottom] = i;
         }
+
+#ifdef UMC_VA_STREAMOUT_DEBUG
+        for (Ipp32s i = 0; i <= sp->num_ref_idx_l0_active_minus1; ++i)
+            printf("\t#%02d id: %04d poc: %04d/%04d flags: %x\n",
+                    i, sp->RefPicList0[i].frame_idx,
+                    sp->RefPicList0[i].TopFieldOrderCnt, sp->RefPicList0[i].BottomFieldOrderCnt, sp->RefPicList0[i].flags
+            );
+
+        for (Ipp32u i = 0; i < count * 2 + 1; ++i)
+            printf("%02d ", map[i]);
+        printf("\n");
+#endif
 
         if ((sp->slice_type % 5) != 1)
             return;
@@ -118,11 +168,23 @@ namespace UMC
         {
             VAPictureH264 const& pic = sp->RefPicList1[i];
             Ipp32u const idx =
-                map_slice_ref(m_references, count, pic.frame_idx);
+                map_slice_ref(m_references, count, pic);
 
             Ipp32u const bottom = !!(pic.flags & VA_PICTURE_H264_BOTTOM_FIELD);
             map[idx + count * bottom] = i;
         }
+
+#ifdef UMC_VA_STREAMOUT_DEBUG
+        for (Ipp32s i = 0; i <= sp->num_ref_idx_l1_active_minus1; ++i)
+            printf("\t#%02d id: %04d poc: %04d/%04d flags: %x\n",
+                    i, sp->RefPicList1[i].frame_idx,
+                    sp->RefPicList1[i].TopFieldOrderCnt, sp->RefPicList1[i].BottomFieldOrderCnt, sp->RefPicList1[i].flags
+            );
+
+        for (Ipp32u i = 0; i < count * 2 + 1; ++i)
+            printf("%02d ", map[i]);
+        printf("\n");
+#endif
     }
 
     void VAStreamOutBuffer::RemapReferences(void* data, Ipp32s size)

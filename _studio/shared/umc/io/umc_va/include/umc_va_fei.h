@@ -54,7 +54,7 @@ namespace UMC
         Ipp32s         m_field;
 
         Ipp16u         m_allowed_max_mbs_in_slice;
-        Ipp32u         m_references[16];
+        VAPictureH264  m_references[16];
 
         //map [Slice::first_mb_in_slice] onto its Ref. lists
         typedef std::list<std::pair<Ipp16u, std::vector<Ipp32u> > > slice_map;
