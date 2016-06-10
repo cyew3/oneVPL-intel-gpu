@@ -258,6 +258,7 @@
     <ClCompile Include="src\gmock\test_suites\fei_encode_encode_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_mbqp.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_field_coding.cpp" />
+    <ClCompile Include="src\gmock\test_suites\fei_encode_gpu_hang.cpp" />
     <ClCompile Include="src\gmock\test_suites\get_plugin.cpp" />
     <ClCompile Include="src\gmock\test_suites\gpu_hang_transcoding.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevc10d_shift.cpp" />
