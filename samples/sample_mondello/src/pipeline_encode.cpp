@@ -1225,6 +1225,7 @@ void CEncodingPipeline::InitMondelloPipeline(sInputParams *pParams)
             struct vaapiMemId *vaapi = (struct vaapiMemId *)pSurf->Data.MemId;
             buffers[i].dmafd = vaapi->m_buffer_info.handle;
             buffers[i].index = i;
+            buffers[i].flags = 0;
         }
 
         MondelloPipeline.MondelloSetup();
@@ -1456,8 +1457,9 @@ mfxStatus CEncodingPipeline::Run()
             {
                 if (m_isMondelloInputEnabled)
                     nVppSurfIdx = MondelloPipeline.GetOffQ();
+                else
+                    nVppSurfIdx = GetFreeSurface(m_pVppSurfaces, m_VppResponse.NumFrameActual);
 
-                nVppSurfIdx = GetFreeSurface(m_pVppSurfaces, m_VppResponse.NumFrameActual);
                 MSDK_CHECK_ERROR(nVppSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
 
                 pSurf = &m_pVppSurfaces[nVppSurfIdx];
