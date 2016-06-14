@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -18,7 +18,6 @@
 #include <vector>
 #include <assert.h>
 #include <va/va.h>
-#include <va/va_enc.h>
 #include <va/va_enc_jpeg.h>
 #include "umc_mutex.h"
 

@@ -21,7 +21,6 @@
 
 #include "mfx_h264_encode_struct_vaapi.h"
 #include <va/va.h>
-#include <va/va_enc.h>
 #include <va/va_enc_mpeg2.h>
 #include "vaapi_ext_interface.h"
 

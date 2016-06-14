@@ -16,7 +16,6 @@
 #if defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined(MFX_VA_LINUX)
 
 #include <va/va.h>
-#include <va/va_enc.h>
 #include <va/va_enc_h264.h>
 #include "mfxfei.h"
 #include "libmfx_core_vaapi.h"

@@ -341,8 +341,6 @@ typedef struct _VAEncMiscParameterVP8SegmentMapParams
 
 // move above definition to va_private.h file
 
-#include <va/va_enc.h>
-
 //// change in va_enc_h264.h
 //typedef struct _VAEncQpBufferH264 {
 //    /*

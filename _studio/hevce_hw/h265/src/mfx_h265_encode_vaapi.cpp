@@ -10,7 +10,6 @@
 #include "mfx_common.h"
 
 #include <va/va.h>
-#include <va/va_enc.h>
 #include <va/va_enc_hevc.h>
 
 #include "libmfx_core_vaapi.h"

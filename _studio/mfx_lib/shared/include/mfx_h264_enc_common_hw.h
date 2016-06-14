@@ -35,7 +35,6 @@
 
 #if defined(MFX_VA_LINUX)
 #include <va/va.h>
-#include <va/va_enc.h>
 #include <va/va_enc_h264.h>
 #endif
 

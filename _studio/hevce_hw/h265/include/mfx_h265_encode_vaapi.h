@@ -14,7 +14,6 @@
 #include "umc_mutex.h"
 
 #include <va/va.h>
-#include <va/va_enc.h>
 #include <va/va_enc_hevc.h>
 #include "vaapi_ext_interface.h"
 
