@@ -8,4 +8,7 @@ list( APPEND LIBS_NOVARIANT sample_common )
 
 set(DEPENDENCIES libmfx dl pthread)
 make_executable( shortname none )
+
+install( TARGETS ${target} RUNTIME DESTINATION ${MFX_SAMPLES_INSTALL_BIN_DIR} )
+
 endif(0)
