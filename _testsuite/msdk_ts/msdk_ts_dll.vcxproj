@@ -218,6 +218,7 @@
     <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\thread.cpp" />
     <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\thread_linux.cpp" />
     <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\thread_windows.cpp" />
+    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\time.cpp" />
     <ClCompile Include="src\debug_output.cpp" />
     <ClCompile Include="src\dll_main.cpp" />
     <ClCompile Include="src\msdk_ts.cpp" />
