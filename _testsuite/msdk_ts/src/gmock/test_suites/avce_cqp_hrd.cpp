@@ -642,18 +642,21 @@ public:
                 return MFX_ERR_ABORTED;
             }
             mfxU32 value_m1 = *(au.NALU[i].SPS->vui->hrd->bit_rate_value_minus1);
-            mfxU32 scale = au.NALU[i].SPS->vui->hrd->bit_rate_scale;
-            mfxU32 BitRate = (value_m1 + 1) * (1 << (6 + scale));
-            mfxU32 expectedBitrate = m_cbrFlag ? TARGET_KBPS * 1000 : MAX_KBPS * 1000;
+            mfxU32 scale = au.NALU[i].SPS->vui->hrd->bit_rate_scale + 6;
+            mfxU32 BitRate = (value_m1 + 1) << scale;
+            mfxU32 expectedBitrate = m_cbrFlag ?
+                ((TARGET_KBPS * 1000) >> scale) << scale :
+                ((MAX_KBPS * 1000) >> scale) << scale;
             if (BitRate != expectedBitrate)
             {
                 g_tsLog << "ERROR: Value of BitRate is incorrect";
                 return MFX_ERR_ABORTED;
             }
             value_m1 = *(au.NALU[i].SPS->vui->hrd->cpb_size_value_minus1);
-            scale = au.NALU[i].SPS->vui->hrd->cpb_size_scale;
-            mfxU32 CpbSize = (value_m1 + 1) * (1 << (4 + scale));
-            if (CpbSize != BUFFER_SIZE_IN_KB * 8000)
+            scale = au.NALU[i].SPS->vui->hrd->cpb_size_scale + 4;
+            mfxU32 CpbSize = (value_m1 + 1) << scale;
+            mfxU32 expectedCpbSize = ((BUFFER_SIZE_IN_KB * 8000) >> scale) << scale;
+            if (CpbSize != expectedCpbSize)
             {
                 g_tsLog << "ERROR: Value of CpbSize is incorrect";
                 return MFX_ERR_ABORTED;
