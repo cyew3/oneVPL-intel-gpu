@@ -1022,7 +1022,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         const mfxU32 maxNumSlices = IPP_MAX(GetMaxNumSlices(m_video), 1);
         const mfxU32 maxBufSize = MAX_MB_SIZE * nMBs + SLICE_BUFFER_SIZE * maxNumSlices;
 
-        if (maxBufSize < static_cast<mfxU32>(request.Info.Width * request.Info.Height))
+        if (maxBufSize > static_cast<mfxU32>(request.Info.Width * request.Info.Height))
             request.Info.Height = AlignValue<mfxU16>(static_cast<mfxU16>(maxBufSize / request.Info.Width), 16);
     }
 
