@@ -1207,13 +1207,7 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
     //}
     else if( MFX_EXTBUFF_VPP_SCENE_ANALYSIS == filterName )
     {
-        if (false == bLinuxAndIVB_HSW_BDW)
-            sts = MFXVideoVPPProcAmp::Query( pHint );
-        else
-        {
-            // This filter is not supported in Linux
-            sts = MFX_WRN_FILTER_SKIPPED;
-        }
+        sts = MFX_ERR_UNSUPPORTED;
     }
     else if( MFX_EXTBUFF_VPP_COMPOSITE == filterName )
     {

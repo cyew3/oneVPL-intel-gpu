@@ -3048,6 +3048,12 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
                     sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
                     continue; // stop working with ExtParam[i]
                 }
+
+                if(MFX_EXTBUFF_VPP_SCENE_ANALYSIS == extDoUse->AlgList[algIdx])
+                {
+                    sts = GetWorstSts(sts, MFX_ERR_INVALID_VIDEO_PARAM);
+                    continue; // stop working with ExtParam[i]
+                }
             }
             break;
         } //case MFX_EXTBUFF_VPP_DOUSE
@@ -3574,21 +3580,6 @@ mfxStatus ConfigureExecuteParams(
                 {
                     bIsFilterSkipped = true;
                 }
-
-                break;
-            }
-
-            case MFX_EXTBUFF_VPP_SCENE_ANALYSIS:
-            {
-                // no SW Fall Back
-                /*if(caps.uSceneChangeDetection)
-                {
-                    executeParams.bSceneDetectionEnable = true;
-                }
-                else
-                {
-                    bIsPartialAccel = true;
-                }*/
 
                 break;
             }
