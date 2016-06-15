@@ -2071,8 +2071,10 @@ mfxStatus H265Encoder::SyncOnFrameCompletion(H265EncodeTaskInputParams *inputPar
                     vm_mutex_unlock(&m_feiCritSect);
                     while (m_feiThreadRunning) thread_sleep(0);
                     m_feiSubmitTasks.resize(0);
-                    for (std::deque<ThreadingTask *>::iterator i = m_feiWaitTasks.begin(); i != m_feiWaitTasks.end(); ++i)
+                    for (std::deque<ThreadingTask *>::iterator i = m_feiWaitTasks.begin(); i != m_feiWaitTasks.end(); ++i) {
+                        H265FEI_SyncOperation(m_fei, (*i)->syncpoint, 0xFFFFFFFF);
                         H265FEI_DestroySavedSyncPoint(m_fei, (*i)->syncpoint);
+                    }
                     m_feiWaitTasks.resize(0);
                 }
 
