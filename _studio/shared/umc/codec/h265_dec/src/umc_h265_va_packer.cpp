@@ -28,6 +28,7 @@
 
 #ifdef UMC_VA_LINUX
 #include "umc_va_linux_protected.h"
+#include "mfx_ext_buffers.h"
 #endif
 
 using namespace UMC;
@@ -281,7 +282,7 @@ void PackerDXVA2::GetSliceVABuffers(
     }
 }
 
-void PackerDXVA2::BeginFrame()
+void PackerDXVA2::BeginFrame(H265DecoderFrame*)
 {
     m_statusReportFeedbackCounter++;
 }
@@ -1882,8 +1883,36 @@ void PackerVA::PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplie
         throw h265_exception(s);
 }
 
-void PackerVA::BeginFrame()
+void PackerVA::BeginFrame(H265DecoderFrame* frame)
 {
+    FrameData* fd = frame->GetFrameData();
+    VM_ASSERT(fd);
+
+    FrameData::FrameAuxInfo* aux = fd->GetAuxInfo(MFX_EXTBUFF_GPU_HANG);
+    if (aux)
+    {
+        VM_ASSERT(aux->type == MFX_EXTBUFF_GPU_HANG);
+
+        mfxExtIntGPUHang* ht = reinterpret_cast<mfxExtIntGPUHang*>(aux->ptr);
+        VM_ASSERT(ht && "Buffer pointer should be valid here");
+        if (!ht)
+            throw h265_exception(UMC::UMC_ERR_FAILED);
+
+        //clear trigger to ensure GPU hang fired only once for this frame
+        fd->ClearAuxInfo(aux->type);
+
+        UMCVACompBuffer* buffer = NULL;
+        m_va->GetCompBuffer(VATriggerCodecHangBufferType, &buffer, sizeof(unsigned int));
+        if (buffer)
+        {
+            unsigned int* trigger =
+                reinterpret_cast<unsigned int*>(buffer->GetPtr());
+            if (!trigger)
+                throw h265_exception(UMC::UMC_ERR_FAILED);
+
+            *trigger = 1;
+        }
+    }
 }
 
 void PackerVA::EndFrame()

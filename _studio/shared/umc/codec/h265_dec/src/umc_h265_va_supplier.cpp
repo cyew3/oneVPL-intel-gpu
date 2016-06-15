@@ -26,6 +26,10 @@
 
 #include "umc_h265_debug.h"
 
+#include "mfx_umc_alloc_wrapper.h"
+#include "mfx_common_int.h"
+#include "mfx_ext_buffers.h"
+
 namespace UMC_HEVC_DECODER
 {
 
@@ -143,6 +147,22 @@ UMC::Status VATaskSupplier::AllocateFrameData(H265DecoderFrame * pFrame, IppiSiz
 
     UMC::FrameData frmData;
     frmData.Init(&info, frmMID, m_pFrameAllocator);
+
+    mfx_UMC_FrameAllocator* mfx_alloc =
+        DynamicCast<mfx_UMC_FrameAllocator>(m_pFrameAllocator);
+    if (mfx_alloc)
+    {
+        mfxFrameSurface1* surface =
+            mfx_alloc->GetSurfaceByIndex(frmMID);
+        if (!surface)
+            throw h265_exception(UMC::UMC_ERR_ALLOC);
+
+        mfxExtBuffer* extbuf =
+            GetExtendedBuffer(surface->Data.ExtParam, surface->Data.NumExtParam, MFX_EXTBUFF_GPU_HANG);
+        if (extbuf)
+            frmData.SetAuxInfo(extbuf, extbuf->BufferSz, extbuf->BufferId);
+    }
+
     pFrame->allocate(&frmData, &info);
 
     pFrame->m_index = frmMID;

@@ -70,7 +70,7 @@ void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
         VM_ASSERT(m_Packer.get());
     }
 
-    m_Packer->BeginFrame();
+    m_Packer->BeginFrame(pFrame);
     m_Packer->PackAU(pFrame, m_pTaskSupplier);
     m_Packer->EndFrame();
 }

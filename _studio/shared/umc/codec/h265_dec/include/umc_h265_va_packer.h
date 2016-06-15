@@ -43,7 +43,7 @@ public:
     virtual UMC::Status GetStatusReport(void * pStatusReport, size_t size) = 0;
     virtual UMC::Status SyncTask(Ipp32s index, void * error) = 0;
 
-    virtual void BeginFrame() = 0;
+    virtual void BeginFrame(H265DecoderFrame*) = 0;
     virtual void EndFrame() = 0;
 
     virtual void PackAU(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 * supplier) = 0;
@@ -72,7 +72,7 @@ public:
     virtual UMC::Status GetStatusReport(void * pStatusReport, size_t size);
     virtual UMC::Status SyncTask(Ipp32s /*index*/, void * /*error*/) { return UMC::UMC_ERR_UNSUPPORTED; }
 
-    virtual void BeginFrame();
+    virtual void BeginFrame(H265DecoderFrame*);
     virtual void EndFrame();
 
     virtual void PackQmatrix(const H265Slice *pSlice);
@@ -143,7 +143,7 @@ public:
 
     virtual bool PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice);
 
-    virtual void BeginFrame();
+    virtual void BeginFrame(H265DecoderFrame*);
     virtual void EndFrame();
 
     virtual void PackAU(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 * supplier);
