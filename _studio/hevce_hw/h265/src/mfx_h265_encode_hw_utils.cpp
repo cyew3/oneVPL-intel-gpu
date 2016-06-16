@@ -2484,7 +2484,7 @@ void ConstructRPL(
             // reorder STRs to POC descending order
             for (mfxU8 lx = 0; lx < 2; lx++)
                 MFX_SORT_COMMON(RPL[lx], numRefActive[lx],
-                    DPB[RPL[lx][_i]].m_poc < DPB[RPL[lx][_j]].m_poc);
+                    Abs(DPB[RPL[lx][_i]].m_poc - poc) > Abs(DPB[RPL[lx][_j]].m_poc-poc));
 
             while (nLTR)
                 RPL[0][l0++] = LTR[--nLTR];
