@@ -183,9 +183,6 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
                     au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MINOR);
                     break;
             }
-
-        if (sts != UMC::UMC_OK)
-            throw h265_exception(sts);
     }
 
     SwitchCurrentAU();
