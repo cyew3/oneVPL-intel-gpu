@@ -2918,18 +2918,7 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
 
         if(pTask->pAuxData)
         {
-            if( MFX_EXTBUFF_VPP_VARIANCE_REPORT == pTask->pAuxData->Header.BufferId)
-            {
-                mfxExtVppReport* pExtReport = (mfxExtVppReport*)pTask->pAuxData;
-
-                assert(variance.size() <= 11);
-
-                for(mfxU32 i = 0; i < variance.size(); i++)
-                {
-                    pExtReport->Variances[i] = variance[i];
-                }
-            }
-            else if( MFX_EXTBUFF_VPP_AUXDATA == pTask->pAuxData->Header.BufferId)
+            if( MFX_EXTBUFF_VPP_AUXDATA == pTask->pAuxData->Header.BufferId)
             {
                 pTask->pAuxData->PicStruct = EstimatePicStruct(
                     &variance[0],
@@ -3052,6 +3041,12 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
                     */
                     //sts = MFX_ERR_INVALID_VIDEO_PARAM;
                     //continue; // stop working with ExtParam[i]
+                }
+
+                if(MFX_EXTBUFF_VPP_VARIANCE_REPORT == extDoUse->AlgList[algIdx])
+                {
+                    sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
+                    continue; // stop working with ExtParam[i]
                 }
             }
             break;
@@ -3748,27 +3743,6 @@ mfxStatus ConfigureExecuteParams(
                 break;
             }
 #endif
-
-            case MFX_EXTBUFF_VPP_VARIANCE_REPORT:
-            {
-                if(caps.uVariance)
-                {
-                    // aya: experimental!!! FRC/ITC/60i60p should be disbaled
-                    config.m_surfCount[VPP_IN]  = IPP_MAX(2, config.m_surfCount[VPP_IN]);
-                    config.m_surfCount[VPP_OUT] = IPP_MAX(1, config.m_surfCount[VPP_OUT]);
-
-                    config.m_extConfig.mode = VARIANCE_REPORT;
-                    config.m_extConfig.customRateData.bkwdRefCount = 1;//caps.iNumBackwardSamples;
-                    config.m_extConfig.customRateData.fwdRefCount  = 0;//caps.iNumForwardSamples;
-                    config.m_extConfig.customRateData.inputFramesOrFieldPerCycle= 1;
-                    config.m_extConfig.customRateData.outputIndexCountPerCycle  = 1;//
-
-                    executeParams.bVarianceEnable = true;
-                }
-                // no SW Fall Back
-
-                break;
-            }
 
             case MFX_EXTBUFF_VPP_COMPOSITE:
             {
