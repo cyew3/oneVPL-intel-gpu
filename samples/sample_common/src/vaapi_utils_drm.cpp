@@ -388,14 +388,12 @@ bool drmRenderer::setupConnection(drmModeRes *resource, drmModeConnector* connec
             // check whether this CRTC works with the encoder
             if (!(encoder->possible_crtcs & (1 << j))) continue;
 
-            if (m_crtcID >= 0) {
-              m_encoderID = connector->encoders[i];
-              m_crtcIndex = j;
-              m_crtcID = resource->crtcs[j];
-              ret = true;
-              msdk_printf(MSDK_STRING("drmrender: found crtc with global search\n"));
-              break;
-            }
+            m_encoderID = connector->encoders[i];
+            m_crtcIndex = j;
+            m_crtcID = resource->crtcs[j];
+            ret = true;
+            msdk_printf(MSDK_STRING("drmrender: found crtc with global search\n"));
+            break;
           }
           m_drmlib.drmModeFreeEncoder(encoder);
           if (ret) break;
