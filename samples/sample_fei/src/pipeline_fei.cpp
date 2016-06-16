@@ -4591,7 +4591,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    mfxU32 nPred_actual = 0;
+    mfxU32 nOfPredPairs = 0;
     mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB ** bestDistortionPredMB[MaxFeiEncMVPNum];
     mfxU32 *refIdx[MaxFeiEncMVPNum];
 
@@ -4602,7 +4602,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[
         MSDK_ZERO_ARRAY(refIdx, MaxFeiEncMVPNum);
 
         mfxU32 nPred_actual[2] = { IPP_MIN(numMVP[fieldId][0], MaxFeiEncMVPNum), IPP_MIN(numMVP[fieldId][1], MaxFeiEncMVPNum) }; //adjust n of passed pred
-        mfxU32 nOfPredPairs = IPP_MAX(nPred_actual[0], nPred_actual[1]);
+        nOfPredPairs = IPP_MAX(nPred_actual[0], nPred_actual[1]);
         if (nOfPredPairs == 0 || (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_I))
             continue; // I-field
 
@@ -4670,7 +4670,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[
     } // for (mfxU32 fieldId = 0; fieldId < m_numOfFields; fieldId++)
 
     /* do this if we breaked on error */
-    for (mfxU32 j = 0; j < nPred_actual; j++)
+    for (mfxU32 j = 0; j < nOfPredPairs; j++)
     {
         MSDK_SAFE_DELETE_ARRAY(bestDistortionPredMB[j]);
         MSDK_SAFE_DELETE_ARRAY(refIdx[j]);
@@ -4696,7 +4696,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 num
     bufSet*                   set = NULL;
 
     mfxU32 *refIdx[MaxFeiEncMVPNum];
-    mfxU32 nPred_actual = 0;
+    mfxU32 nOfPredPairs = 0;
 
     mfxU32 numOfFields = eTask->m_fieldPicFlag ? 2 : 1;
     for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++)
@@ -4704,7 +4704,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 num
         MSDK_ZERO_ARRAY(refIdx, MaxFeiEncMVPNum);
 
         mfxU32 nPred_actual[2] = { IPP_MIN(numMVP[fieldId][0], MaxFeiEncMVPNum), IPP_MIN(numMVP[fieldId][1], MaxFeiEncMVPNum) }; //adjust n of passed pred
-        mfxU32 nOfPredPairs = IPP_MAX(nPred_actual[0], nPred_actual[1]);
+        nOfPredPairs = IPP_MAX(nPred_actual[0], nPred_actual[1]);
         if (nOfPredPairs == 0 || (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_I))
             continue; // I-field
 
@@ -4804,7 +4804,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 num
 
     /* do this if we breaked on error */
     MSDK_SAFE_DELETE_ARRAY(mvs);
-    for (mfxU32 j = 0; j < nPred_actual; j++)
+    for (mfxU32 j = 0; j < nOfPredPairs; j++)
     {
         MSDK_SAFE_DELETE_ARRAY(refIdx[j]);
     }
