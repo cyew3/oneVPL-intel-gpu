@@ -2795,8 +2795,11 @@ template <class PixType> void H265Enc::CopyAndPad(const mfxFrameSurface1 &src, F
     Ipp32s paddingL = dst.padding;
     Ipp32s paddingR = dst.padding;
     Ipp32s paddingH = dst.padding;
-    if (dst.m_handle)
-        paddingR = dst.pitch_luma_pix - dst.width - AlignValue(dst.padding, 64);
+    Ipp32s bppShift = sizeof(PixType) == 1 ? 0 : 1;
+    if (dst.m_handle) {
+        paddingL = AlignValue(dst.padding << bppShift, 64) >> bppShift;
+        paddingR = dst.pitch_luma_pix - dst.width - paddingL;
+    }
 
     Ipp32s heightC = dst.height;
     if (fourcc == MFX_FOURCC_NV12 || fourcc == MFX_FOURCC_P010)

@@ -21,6 +21,7 @@ using namespace H265Enc::MfxEnumShortAliases;
 
 namespace H265Enc {
     template <class PixType> void CopyAndPad(const mfxFrameSurface1 &src, FrameData &dst, Ipp32u fourcc);
+    template <class T> void PadRect(T *plane, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth, Ipp32s padL, Ipp32s padR, Ipp32s padh);
 };
 
 template<class T> inline T AlignValue(T value, mfxU32 alignment)
@@ -133,8 +134,8 @@ namespace PaddingTest {
                         std::generate(scratchPadRef.begin(), scratchPadRef.end(), rand);
                         std::copy(scratchPadRef.begin(), scratchPadRef.end(), scratchPadTst.begin());
 
-                        H265Enc::PadRect(ytst, pitchL, widthL, heightL, x*64, y*64, w*64, h*64, padwL, padhL);
-                        H265Enc::PadRect((DoublePixT *)uvtst, pitchC/2, widthC/2, heightC, x*ctuwC, y*ctuhC, w*ctuwC, h*ctuhC, padwC/2, padhC);
+                        H265Enc::PadRect(ytst, pitchL, widthL, heightL, x*64, y*64, w*64, h*64, padwL, padwL, padhL);
+                        H265Enc::PadRect((DoublePixT *)uvtst, pitchC/2, widthC/2, heightC, x*ctuwC, y*ctuhC, w*ctuwC, h*ctuhC, padwC/2, padwC/2, padhC);
 
                         ReferencePadding(yref, pitchL, widthL, heightL, x*64, y*64, w*64, h*64, padwL, padwL, padhL);
                         ReferencePadding((DoublePixT *)uvref, pitchC/2, widthC/2, heightC, x*ctuwC, y*ctuhC, w*ctuwC, h*ctuhC, padwC/2, padwC/2, padhC);

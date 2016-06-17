@@ -385,7 +385,7 @@ namespace H265Enc {
     void ippsSet(Ipp16u value, Ipp16u *dst, Ipp32s len) { (void)ippsSet_16s((Ipp16s)value, (Ipp16s*)dst, len); };
     void ippsSet(Ipp32u value, Ipp32u *dst, Ipp32s len) { (void)ippsSet_32s((Ipp32s)value, (Ipp32s*)dst, len); };
 
-    template <class T> void PadRect(T *plane, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth, Ipp32s padw, Ipp32s padh)
+    template <class T> void PadRect(T *plane, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth, Ipp32s padL, Ipp32s padR, Ipp32s padh)
     {
         rectx = Saturate(0, width - 1, rectx);
         recty = Saturate(0, height - 1, recty);
@@ -393,15 +393,15 @@ namespace H265Enc {
         recth = Saturate(1, height - recty, recth);
 
         if (rectx == 0) {
-            rectx -= padw;
-            rectw += padw;
+            rectx -= padL;
+            rectw += padL;
             for (Ipp32s y = recty; y < recty + recth; y++)
-                ippsSet(plane[y * pitch], plane + y * pitch - padw, padw);
+                ippsSet(plane[y * pitch], plane + y * pitch - padL, padL);
         }
         if (rectx + rectw == width) {
-            rectw += padw;
+            rectw += padR;
             for (Ipp32s y = recty; y < recty + recth; y++)
-                ippsSet(plane[y * pitch + width - 1], plane + y * pitch + width, padw);
+                ippsSet(plane[y * pitch + width - 1], plane + y * pitch + width, padR);
         }
         if (recty == 0)
             for (Ipp32s j = 1; j <= padh; j++)
@@ -410,29 +410,33 @@ namespace H265Enc {
             for (Ipp32s j = 1; j <= padh; j++)
                 ippsCopy(plane + (height - 1) * pitch + rectx, plane + (height - 1 + j) * pitch + rectx, rectw);
     }
-    template void PadRect<Ipp8u>(Ipp8u *plane, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth, Ipp32s padw, Ipp32s padh);
-    template void PadRect<Ipp16u>(Ipp16u *plane, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth, Ipp32s padw, Ipp32s padh);
-    template void PadRect<Ipp32u>(Ipp32u *plane, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth, Ipp32s padw, Ipp32s padh);
+    template void PadRect<Ipp8u>(Ipp8u *plane, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth,  Ipp32s padL, Ipp32s padR, Ipp32s padh);
+    template void PadRect<Ipp16u>(Ipp16u *plane, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth, Ipp32s padL, Ipp32s padR, Ipp32s padh);
+    template void PadRect<Ipp32u>(Ipp32u *plane, Ipp32s pitch, Ipp32s width, Ipp32s height, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth, Ipp32s padL, Ipp32s padR, Ipp32s padh);
 
     void PadRectLuma(const FrameData &fdata, Ipp32s fourcc, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth)
     {
         // work-around for 8x and 16x downsampling on gpu
         // currently DS kernel expect right border is padded up to pitch
-        Ipp32s paddingW = fdata.padding;
-        if (fdata.m_handle)
-            paddingW = fdata.pitch_luma_pix - fdata.width - AlignValue(fdata.padding, 64);
+        Ipp32s paddingL = fdata.padding;
+        Ipp32s paddingR = fdata.padding;
+        Ipp32s bppShift = ((fourcc == P010) || (fourcc == P210)) ? 1 : 0;
+        if (fdata.m_handle) {
+            paddingR = fdata.pitch_luma_pix - fdata.width - (AlignValue(fdata.padding << bppShift, 64) >> bppShift);
+            paddingL = AlignValue(fdata.padding << bppShift, 64) >> bppShift;
+        }
 
         (fourcc == NV12 || fourcc == NV16)
-            ? PadRect((Ipp8u *)fdata.y, fdata.pitch_luma_pix, fdata.width, fdata.height, rectx, recty, rectw, recth, paddingW, fdata.padding)
-            : PadRect((Ipp16u*)fdata.y, fdata.pitch_luma_pix, fdata.width, fdata.height, rectx, recty, rectw, recth, paddingW, fdata.padding);
+            ? PadRect((Ipp8u *)fdata.y, fdata.pitch_luma_pix, fdata.width, fdata.height, rectx, recty, rectw, recth, paddingL,paddingR, fdata.padding)
+            : PadRect((Ipp16u*)fdata.y, fdata.pitch_luma_pix, fdata.width, fdata.height, rectx, recty, rectw, recth, paddingL, paddingR, fdata.padding);
     }
 
     void PadRectChroma(const FrameData &fdata, Ipp32s fourcc, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth)
     {
         Ipp32s shiftH = (fourcc == NV12 || fourcc == P010 ) ? 1 : 0;
         (fourcc == NV12 || fourcc == NV16)
-            ? PadRect((Ipp16u *)fdata.uv, fdata.pitch_chroma_pix/2, fdata.width/2, fdata.height>>shiftH, rectx/2, recty>>shiftH, rectw/2, recth>>shiftH, fdata.padding/2, fdata.padding>>shiftH)
-            : PadRect((Ipp32u *)fdata.uv, fdata.pitch_chroma_pix/2, fdata.width/2, fdata.height>>shiftH, rectx/2, recty>>shiftH, rectw/2, recth>>shiftH, fdata.padding/2, fdata.padding>>shiftH);
+            ? PadRect((Ipp16u *)fdata.uv, fdata.pitch_chroma_pix/2, fdata.width/2, fdata.height>>shiftH, rectx/2, recty>>shiftH, rectw/2, recth>>shiftH, fdata.padding/2, fdata.padding/2, fdata.padding>>shiftH)
+            : PadRect((Ipp32u *)fdata.uv, fdata.pitch_chroma_pix/2, fdata.width/2, fdata.height>>shiftH, rectx/2, recty>>shiftH, rectw/2, recth>>shiftH, fdata.padding/2, fdata.padding/2, fdata.padding>>shiftH);
     }
 
     void PadRectLumaAndChroma(const FrameData &fdata, Ipp32s fourcc, Ipp32s rectx, Ipp32s recty, Ipp32s rectw, Ipp32s recth)
