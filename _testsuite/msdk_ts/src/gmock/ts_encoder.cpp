@@ -384,7 +384,7 @@ mfxStatus tsVideoEncoder::SyncOperation(mfxSyncPoint syncp)
     
     if (m_default && m_bs_processor && g_tsStatus.get() == MFX_ERR_NONE)
     {
-        g_tsStatus.check(m_bs_processor->ProcessBitstream(m_bitstream, nFrames));
+        g_tsStatus.check(m_bs_processor->ProcessBitstream(m_pBitstream ? *m_pBitstream : m_bitstream, nFrames));
         TS_CHECK_MFX;
     }
 

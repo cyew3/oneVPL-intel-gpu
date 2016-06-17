@@ -47,7 +47,7 @@ public:
     mfxStatus LockSurface   (mfxFrameSurface1& s);
     mfxStatus UnlockSurface (mfxFrameSurface1& s);
 
-    mfxFrameSurface1* GetSurface();
+    virtual mfxFrameSurface1* GetSurface();
 
     mfxFrameSurface1* GetSurface(mfxU32 ind);
 };

@@ -206,6 +206,7 @@
     <ClInclude Include="include\gmock\ts_struct_decl.h" />
     <ClInclude Include="include\gmock\ts_surface.h" />
     <ClInclude Include="include\gmock\ts_trace.h" />
+    <ClInclude Include="include\gmock\ts_transcoder.h" />
     <ClInclude Include="include\gmock\ts_vpp.h" />
     <ClInclude Include="include\test_sample_allocator.h" />
   </ItemGroup>
@@ -327,6 +328,7 @@
     <ClCompile Include="src\gmock\test_suites\screen_capture_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\test_suites\slice_size_reporting.cpp" />
     <ClCompile Include="src\gmock\test_suites\threading_mfxinitex.cpp" />
+    <ClCompile Include="src\gmock\test_suites\trans_opaque.cpp" />
     <ClCompile Include="src\gmock\test_suites\vc1d_res_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp10_fourcc.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp10bit.cpp" />
@@ -378,6 +380,7 @@
     <ClCompile Include="src\gmock\ts_struct.cpp" />
     <ClCompile Include="src\gmock\ts_surface.cpp" />
     <ClCompile Include="src\gmock\ts_trace.cpp" />
+    <ClCompile Include="src\gmock\ts_transcoder.cpp" />
     <ClCompile Include="src\gmock\ts_vpp.cpp" />
     <ClCompile Include="src\test_sample_allocator.cpp" />
   </ItemGroup>

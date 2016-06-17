@@ -35,6 +35,7 @@ list(APPEND sources
    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_preenc.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_enc.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_pak.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_transcoder.cpp
 )
 
 file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/test_suites/*.cpp" )

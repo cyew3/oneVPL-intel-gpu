@@ -116,6 +116,9 @@
     <ClInclude Include="include\gmock\ts_pak.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\gmock\ts_transcoder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\test_sample_allocator.cpp">
@@ -648,6 +651,12 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevcd_bs_data_flag.cpp">
       <Filter>Source Files\test_suites\hevcd</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\ts_transcoder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\trans_opaque.cpp">
+      <Filter>Source Files\test_suites</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
