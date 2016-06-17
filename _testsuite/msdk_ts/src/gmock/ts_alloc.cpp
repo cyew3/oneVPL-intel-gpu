@@ -121,24 +121,27 @@ mfxStatus tsSurfacePool::AllocSurfaces(mfxFrameAllocRequest request, bool direct
     {
         UseDefaultAllocator(isSW);
     }
-
     TRACE_FUNC3(m_allocator->AllocFrame, m_allocator, pRequest, &m_response);
-    g_tsStatus.check( m_allocator->AllocFrame(m_allocator, pRequest, &m_response) );
+    mfxStatus allocSts = m_allocator->AllocFrame(m_allocator, pRequest, &m_response);
+    g_tsStatus.check(allocSts);
     TS_CHECK_MFX;
 
-    for(mfxU16 i = 0; i < m_response.NumFrameActual; i++)
+    if (allocSts >= MFX_ERR_NONE)
     {
-        if(m_response.mids)
+        for(mfxU16 i = 0; i < m_response.NumFrameActual; i++)
         {
-            s.Data.Y = 0;
-            s.Data.MemId = m_response.mids[i];
-            if(direct_pointers && isSW)
+            if(m_response.mids)
             {
-                LockSurface(s);
-                s.Data.MemId = 0;
+                s.Data.Y = 0;
+                s.Data.MemId = m_response.mids[i];
+                if(direct_pointers && isSW)
+                {
+                    LockSurface(s);
+                    s.Data.MemId = 0;
+                }
             }
+            m_pool.push_back(s);
         }
-        m_pool.push_back(s);
     }
 
     return g_tsStatus.get();
