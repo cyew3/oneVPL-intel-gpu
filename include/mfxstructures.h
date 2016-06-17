@@ -766,7 +766,8 @@ enum {
     MFX_EXTBUFF_HEVC_TEMPORAL_LAYERS       = MFX_EXTBUFF_AVC_TEMPORAL_LAYERS,
     MFX_EXTBUFF_VPP_MIRRORING              = MFX_MAKEFOURCC('M','I','R','R'),
     MFX_EXTBUFF_MV_OVER_PIC_BOUNDARIES     = MFX_MAKEFOURCC('M','V','P','B'),
-    MFX_EXTBUFF_VPP_COLORFILL              = MFX_MAKEFOURCC('V','C','L','F')
+    MFX_EXTBUFF_VPP_COLORFILL              = MFX_MAKEFOURCC('V','C','L','F'),
+    MFX_EXTBUFF_VPP_COLOR_CONVERSION       = MFX_MAKEFOURCC('V','C','S','C')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1641,6 +1642,23 @@ typedef struct {
     mfxU16 Enable;        /* tri-state option */
     mfxU16 reserved[11];
 } mfxExtVPPColorFill;
+
+/* ChromaSiting */
+enum {
+    MFX_CHROMA_SITING_UNKNOWN             = 0x0000,
+    MFX_CHROMA_SITING_VERTICAL_TOP        = 0x0001, /* Chroma samples are co-sited vertically on the top with the luma samples. */
+    MFX_CHROMA_SITING_VERTICAL_CENTER     = 0x0002, /* Chroma samples are not co-sited vertically with the luma samples. */
+    MFX_CHROMA_SITING_VERTICAL_BOTTOM     = 0x0004, /* Chroma samples are co-sited vertically on the bottom with the luma samples. */
+    MFX_CHROMA_SITING_HORIZONTAL_LEFT     = 0x0010, /* Chroma samples are co-sited horizontally on the left with the luma samples. */
+    MFX_CHROMA_SITING_HORIZONTAL_CENTER   = 0x0020  /* Chroma samples are not co-sited horizontally with the luma samples. */
+};
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16 ChromaSiting;
+    mfxU16 reserved[27];
+} mfxExtColorConversion;
 
 #ifdef __cplusplus
 } // extern "C"
