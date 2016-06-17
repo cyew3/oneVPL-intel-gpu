@@ -1830,7 +1830,6 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIEncoder::FillBSBuffer");
 
     mfxStatus sts = MFX_ERR_NONE;
-    mfxFrameData Frame = {};
     
     //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Enc QueryStatus");
     VAStatus vaSts;
@@ -1911,15 +1910,6 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
         return MFX_ERR_DEVICE_FAILED;
     }
 
-
-
-    Frame.MemId = m_allocResponseBS.mids[nBitstream];
-    sts = m_core->LockFrame(Frame.MemId, &Frame);
-    MFX_CHECK_STS(sts);
-    if (!Frame.Y)
-        return MFX_ERR_NULL_PTR;
-
-
 #ifdef PAVP_SUPPORT
     if (pEncrypt->m_bEncryptionMode)
     {
@@ -1963,12 +1953,6 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
 
         MFX_CHECK_STS(sts);
 
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
-            vaSts = vaUnmapBuffer( m_vaDisplay, codedBuffer );
-            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-        }
-
         // remove task
         m_feedback.erase( m_feedback.begin() + indxSurf );
 
@@ -1977,8 +1961,9 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
         IppiSize roi = {(mfxI32)bitstreamSize, 1};
 
         IppStatus ret = ippStsNoErr;
+        mfxU8 *pData = (mfxU8*)codedBufferSegment->buf;
 
-        ret = ippiCopyManaged_8u_C1R(Frame.Y, bitstreamSize,
+        ret = ippiCopyManaged_8u_C1R(pData, bitstreamSize,
             pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset, 
             bitstreamSize,
             roi, IPP_NONTEMPORAL_LOAD);
@@ -1987,11 +1972,13 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
 
         //memcpy(pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset, Frame.Y, queryStatus.bitstreamSize);
         pBitstream->DataLength += bitstreamSize;
+
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
+            vaSts = vaUnmapBuffer( m_vaDisplay, codedBuffer );
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        }
     }
-
-
-    sts = m_core->UnlockFrame(Frame.MemId);
-    MFX_CHECK_STS(sts);
 
     return sts;
 } // mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBitstream* pBitstream, Encryption *pEncrypt)
