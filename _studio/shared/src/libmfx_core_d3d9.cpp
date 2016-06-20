@@ -1636,8 +1636,10 @@ void* D3D9VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
                 m_pCmCopy.reset();
                 return NULL;
             }else{
-                if(!m_pCmCopy.get()->Initialize())
+                if(MFX_ERR_NONE != m_pCmCopy.get()->Initialize())
                     return NULL;
+                else
+                    m_bCmCopy = true;
             }
         }
         return (void*)m_pCmCopy.get();

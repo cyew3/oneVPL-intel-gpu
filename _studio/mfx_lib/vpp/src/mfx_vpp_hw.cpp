@@ -1830,7 +1830,7 @@ mfxStatus  VideoVPPHW::Init(
     if (m_executeParams.mirroring && !m_pCmCopy)
     {
         m_pCmCopy = QueryCoreInterface<CmCopyWrapper>(m_pCore, MFXICORECMCOPYWRAPPER_GUID);
-        if ( m_pCmCopy)
+        if ( m_pCmCopy )
         {
             sts = m_pCmCopy->Initialize();
             MFX_CHECK_STS(sts);
@@ -3492,7 +3492,10 @@ mfxStatus ConfigureExecuteParams(
 
                             switch (videoParam.IOPattern)
                             {
-                            case MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY:
+                            case MFX_IOPATTERN_IN_VIDEO_MEMORY  | MFX_IOPATTERN_OUT_VIDEO_MEMORY:
+                            case MFX_IOPATTERN_IN_VIDEO_MEMORY  | MFX_IOPATTERN_OUT_OPAQUE_MEMORY:
+                            case MFX_IOPATTERN_IN_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY:
+                            case MFX_IOPATTERN_IN_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_OPAQUE_MEMORY:
                                 executeParams.mirroringPosition = MIRROR_WO_EXEC;
 
                                 if (videoParam.vpp.In.Width != videoParam.vpp.Out.Width || videoParam.vpp.In.Height != videoParam.vpp.Out.Height)
@@ -3503,17 +3506,20 @@ mfxStatus ConfigureExecuteParams(
 
                                 break;
                             case MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY:
+                            case MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_OPAQUE_MEMORY:
                                 executeParams.mirroringPosition = MIRROR_INPUT;
                                 break;
-                            case MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY:
+                            case MFX_IOPATTERN_IN_VIDEO_MEMORY  | MFX_IOPATTERN_OUT_SYSTEM_MEMORY:
+                            case MFX_IOPATTERN_IN_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY:
                                 executeParams.mirroringPosition = MIRROR_OUTPUT;
                                 break;
                             case MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY:
-                            default:
                                 executeParams.mirroringPosition = (videoParam.vpp.In.Width * videoParam.vpp.In.Height < videoParam.vpp.Out.Width * videoParam.vpp.Out.Height)
                                                                 ? MIRROR_INPUT
                                                                 : MIRROR_OUTPUT;
                                 break;
+                            default:
+                                return MFX_ERR_INVALID_VIDEO_PARAM;
                             }
                         }
                     }
