@@ -352,8 +352,20 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     //got opt flag
     {/*67*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopOptFlag, 2 } },
     //protected
-    {/*68*/ MFX_ERR_NONE, PROTECTED, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_PAVP } },
-    {/*69*/ MFX_ERR_NONE, PROTECTED, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_PAVP } },
+    {/*68*/
+#if (defined(LINUX32) || defined(LINUX64))
+            MFX_ERR_UNSUPPORTED,
+#else
+            MFX_ERR_NONE,
+#endif
+                          PROTECTED, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_PAVP } },
+    {/*69*/
+#if (defined(LINUX32) || defined(LINUX64))
+        MFX_ERR_UNSUPPORTED,
+#else
+        MFX_ERR_NONE,
+#endif
+                       PROTECTED, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_PAVP } },
     {/*70*/ MFX_ERR_UNSUPPORTED, PROTECTED, INVALID, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, 0xfff } },
 
 
@@ -385,10 +397,13 @@ int TestSuite::RunTest(unsigned int id)
 
     if (!GetAllocator())
     {
-        UseDefaultAllocator(
-            (m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
-            || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
-            );
+        if (m_pVAHandle)
+            SetAllocator(m_pVAHandle, true);
+        else
+            UseDefaultAllocator(
+                (m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+                || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
+                );
     }
 
     if ((tc.type == SET_ALLOCK) && (tc.sub_type != AFTER)
@@ -398,10 +413,12 @@ int TestSuite::RunTest(unsigned int id)
     {
         m_pFrameAllocator = GetAllocator();
         SetFrameAllocator();
-        m_pVAHandle = m_pFrameAllocator;
-        m_pVAHandle->get_hdl(type, hdl);
-        SetHandle(m_session, type, hdl);
-        m_is_handle_set = (g_tsStatus.get() >= 0);
+
+        if (!m_is_handle_set)
+        {
+            m_pFrameAllocator->get_hdl(type, hdl);
+            SetHandle(m_session, type, hdl);
+        }
     }
 
     if (tc.type == EXT_BUFF)
@@ -536,12 +553,12 @@ int TestSuite::RunTest(unsigned int id)
     {
         m_pFrameAllocator = GetAllocator();
         SetFrameAllocator();
-        m_pVAHandle = m_pFrameAllocator;
-        m_pVAHandle->get_hdl(type, hdl);
-        if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
-            g_tsStatus.expect(MFX_ERR_UNDEFINED_BEHAVIOR);
-        SetHandle(m_session, type, hdl);
-        m_is_handle_set = (g_tsStatus.get() >= 0);
+
+        if (!m_is_handle_set)
+        {
+            m_pFrameAllocator->get_hdl(type, hdl);
+            SetHandle(m_session, type, hdl);
+        }
     }
 
     TS_END;

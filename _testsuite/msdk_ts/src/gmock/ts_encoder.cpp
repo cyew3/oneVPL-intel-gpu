@@ -132,7 +132,10 @@ mfxStatus tsVideoEncoder::Init()
         {
             if(!GetAllocator())
             {
-                UseDefaultAllocator(false);
+                if (m_pVAHandle)
+                    SetAllocator(m_pVAHandle, true);
+                else
+                    UseDefaultAllocator(false);
             }
             m_pFrameAllocator = GetAllocator();
             SetFrameAllocator();TS_CHECK_MFX;
