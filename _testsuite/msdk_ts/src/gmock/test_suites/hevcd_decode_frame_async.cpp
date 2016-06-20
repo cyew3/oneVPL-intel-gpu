@@ -94,7 +94,8 @@ private:
                 if(c.field)
                     tsStruct::set(*base, *c.field, c.par[0]);
                 else
-                    *((mfxU32*)base) = c.par[0];
+                    //no way to have persistent pointers here, the only valid value is NULL
+                    *base = NULL;
             }
         }
     }
@@ -195,6 +196,7 @@ int TestSuite::RunTest(unsigned int id)
         if (expected == MFX_ERR_LOCK_MEMORY)
             expected = MFX_ERR_ABORTED;
     }
+
     apply_par(tc, INIT);
 
     Init();
