@@ -1509,6 +1509,10 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
                 out->Protected = 0;
                 return MFX_ERR_UNSUPPORTED;
             }
+            if (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts || MFX_WRN_FILTER_SKIPPED == sts)
+            {
+                return sts;
+            }
 
             if(MFX_ERR_NONE == sts)
             {
