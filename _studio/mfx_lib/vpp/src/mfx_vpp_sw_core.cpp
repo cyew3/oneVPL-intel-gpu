@@ -1236,7 +1236,7 @@ mfxStatus VideoVPPSW::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *
                                 {
                                     mfxU32 filterIdx = GetFilterIndex( extDoNotUseIn->AlgList, extDoNotUseIn->NumAlg, in->ExtParam[extParIdx]->BufferId );
                                     extDoNotUseIn->AlgList[filterIdx] = 0;
-                                    mfxSts = MFX_ERR_UNSUPPORTED;
+                                    mfxSts = MFX_ERR_UNDEFINED_BEHAVIOR;
                                     continue; // stop working with ExtParam[i]
                                 }
                             }
