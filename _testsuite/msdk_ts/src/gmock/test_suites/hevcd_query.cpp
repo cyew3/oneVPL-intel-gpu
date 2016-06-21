@@ -74,7 +74,8 @@ private:
                 if(c.field)
                     tsStruct::set(*base, *c.field, c.par[0]);
                 else
-                    *((mfxU32*)base) = c.par[0];
+                    //no way to have persistent pointers here, the only valid value is NULL
+                    *base = NULL;
             }
         }
     }
