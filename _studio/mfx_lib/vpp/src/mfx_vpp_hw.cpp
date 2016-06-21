@@ -1393,6 +1393,7 @@ VideoVPPHW::VideoVPPHW(IOMode mode, VideoCORE *core)
 
     m_config.m_bRefFrameEnable = false;
     m_config.m_bMode30i60pEnable = false;
+    m_config.m_bWeave = false;
     m_config.m_extConfig.mode  = FRC_DISABLED;
     m_config.m_bPassThroughEnable = false;
     m_config.m_surfCount[VPP_IN]   = 1;
