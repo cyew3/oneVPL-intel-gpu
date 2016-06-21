@@ -23,7 +23,7 @@ class tsTranscoder: public tsVideoDecoder, public tsVideoEncoder
 {
 public:
     tsTranscoder(mfxU32 decoderCodecId, mfxU32 encoderCodecId, mfxU32 frame_to_hang):
-        tsSession(), tsVideoDecoder(decoderCodecId), tsVideoEncoder(encoderCodecId),
+        tsSession(MFX_IMPL_HARDWARE), tsVideoDecoder(decoderCodecId), tsVideoEncoder(encoderCodecId),
         m_frames_submitted(0), m_frame_to_hang(frame_to_hang), m_expect_gpu_hang_from_dec_frame_async(false),
         m_expect_gpu_hang_from_dec_syncop(false), m_hang_triggered(false)
     {
@@ -33,6 +33,12 @@ public:
 
     virtual mfxStatus DecodeFrameAsync(mfxSession session, mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp)
     {
+        if (m_hang_triggered)
+        {
+            m_hang_triggered = false;
+            m_expect_gpu_hang_from_dec_frame_async = true;
+        }
+
         if (m_frames_submitted == m_frame_to_hang)
         {
             surface_work->Data.NumExtParam = m_trigger.NumExtParam;
@@ -84,12 +90,6 @@ mfxFrameSurface1* GetSurface(tsVideoDecoder *dec, bool syncSurfaceFromDecoder)
         mfxStatus res = dec->SyncOperation(dec->m_session, syncp, MFX_INFINITE);
         if (res < 0)
             g_tsStatus.check();
-
-        if (tr->m_hang_triggered)
-        {
-            tr->m_hang_triggered = false;
-            tr->m_expect_gpu_hang_from_dec_frame_async = true;
-        }
     }
     else
         dec->m_surf_out.erase(syncp);
@@ -113,6 +113,10 @@ int gpu_hang_transcoding_test(mfxU32 decoderCodecId, mfxU32 encoderCodecId, cons
 
     mfxU32 frame_to_hung = 0;
     tsTranscoder transcoder(decoderCodecId, encoderCodecId, frame_to_hung);
+    transcoder.MFXInit();
+    transcoder.SetAllocator(transcoder.m_pVAHandle, true);
+    transcoder.m_pFrameAllocator = transcoder.m_pVAHandle;
+    transcoder.SetFrameAllocator();
 
     tsBitstreamReader reader(streamNameFull, 100000);
     tsVideoDecoder *dec = static_cast<tsVideoDecoder*>(&transcoder);
@@ -120,6 +124,8 @@ int gpu_hang_transcoding_test(mfxU32 decoderCodecId, mfxU32 encoderCodecId, cons
     dec->m_bs_processor = &reader;
     dec->DecodeHeader();
 
+    dec->m_par.IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
+    enc->m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
     enc->m_par.mfx.FrameInfo = dec->m_par.mfx.FrameInfo;
     enc->m_par.mfx.FrameInfo.FrameRateExtN = 30;
     enc->m_par.mfx.FrameInfo.FrameRateExtD = 1;
@@ -254,7 +260,7 @@ int gpu_hang_transcoding_test(mfxU32 decoderCodecId, mfxU32 encoderCodecId, cons
 }
 
 int mpeg2_to_mpeg2 (unsigned int) { return gpu_hang_transcoding_test(MFX_CODEC_MPEG2, MFX_CODEC_MPEG2, "forBehaviorTest/customer_issues/mpeg2_43-169_trim1.mpg"); }
-int avc_to_avc     (unsigned int) { return gpu_hang_transcoding_test(MFX_CODEC_AVC  , MFX_CODEC_AVC  , "conformance/h264/baseline_ext/aud_mw_e.264"); }
+int avc_to_avc     (unsigned int) { return gpu_hang_transcoding_test(MFX_CODEC_AVC  , MFX_CODEC_AVC  , "conformance/h264/bluesky.h264"); }
 
 TS_REG_TEST_SUITE(gpu_hang_transcoding_mpeg2_to_mpeg2, mpeg2_to_mpeg2, 1);
 TS_REG_TEST_SUITE(gpu_hang_transcoding_avc_to_avc    , avc_to_avc,     1);

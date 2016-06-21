@@ -271,7 +271,7 @@ bool tsStatus::check()
 {
     if (m_disable)
     {
-        g_tsLog << "CHECK STATUS(disabled): " << m_status << "\n";
+        g_tsLog << "CHECK STATUS(disabled, expected " << m_expected << "): " << m_status << "\n";
         if (m_disable == 1)
             m_disable = 0;
         return m_failed = false;

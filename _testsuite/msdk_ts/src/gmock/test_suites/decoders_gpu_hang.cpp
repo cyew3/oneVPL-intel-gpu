@@ -23,18 +23,22 @@ class decoder
     : public tsVideoDecoder
 {
 
-    mfxU32                     m_frame;
+    mfxU32                     m_frames_submitted;
+    mfxU32                     m_frames_synced;
     mfxU32                     m_frame_to_hang;
+    bool                       m_check_sync_operation;
 
     tsExtBufType<mfxFrameData> m_trigger;
     std::vector<mfxSyncPoint>  m_sync_points;
 
 public:
 
-    decoder(mfxU32 codec, mfxU32 frame_to_hang)
+    decoder(mfxU32 codec, mfxU32 frame_to_hang, bool check_sync_operation)
         : tsVideoDecoder(codec)
-        , m_frame(0)
+        , m_frames_submitted(0)
+        , m_frames_synced(0)
         , m_frame_to_hang(frame_to_hang)
+        , m_check_sync_operation(check_sync_operation)
     {
         m_trigger.AddExtBuffer(MFX_EXTBUFF_GPU_HANG, sizeof(mfxExtIntGPUHang));
     }
@@ -55,25 +59,36 @@ public:
         mfxU32 submitted = 0;
         for (;;)
         {
-            mfxStatus expected =
-                m_frame > m_frame_to_hang ? MFX_ERR_GPU_HANG : MFX_ERR_NONE;
-            g_tsStatus.expect(expected);
-
             mfxStatus sts = DecodeFrameAsync();
+            if (m_frames_submitted > m_frame_to_hang && sts == MFX_ERR_GPU_HANG)
+            {
+                g_tsStatus.expect(MFX_ERR_NONE);
+                throw tsOK;
+            }
+            else if(m_frames_synced > m_frame_to_hang)
+            {
+                g_tsStatus.expect(MFX_ERR_GPU_HANG);
+                g_tsStatus.check();
+                g_tsStatus.expect(MFX_ERR_NONE);
+                throw tsOK;
+            }
 
-            if (sts == MFX_ERR_MORE_DATA ||
-                sts == MFX_ERR_MORE_SURFACE)
-                continue;
+            if(MFX_ERR_MORE_DATA == sts)
+            {
+                if(m_pBitstream)
+                    continue;
+                else
+                    break; // no retrieval of cached frames needed in test
+            }
 
-            g_tsStatus.check();
-            if (expected == MFX_ERR_GPU_HANG)
-                break;
+            if(sts != MFX_ERR_MORE_SURFACE && sts < MFX_ERR_NONE)
+                 g_tsStatus.check(); // test will finish here, not expected status
 
-            if (!*m_pSyncPoint)
+            ++m_frames_submitted;
+            if (sts != MFX_ERR_NONE || *m_pSyncPoint == nullptr)
                 continue;
 
             m_sync_points.push_back(*m_pSyncPoint);
-            ++m_frame;
 
             if(++submitted >= m_pPar->AsyncDepth)
             {
@@ -82,7 +97,9 @@ public:
             }
         }
 
-        g_tsLog << m_frame << " FRAMES DECODED\n";
+        g_tsLog << m_frames_synced << " FRAMES DECODED\n";
+        ADD_FAILURE() << "GPU hang not reported";
+        throw tsFAIL;
     }
 
 private:
@@ -109,18 +126,18 @@ private:
 
     mfxStatus DecodeFrameAsync(mfxSession session, mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp)
     {
-        if (m_frame == m_frame_to_hang)
+        if (m_frames_submitted == m_frame_to_hang)
         {
             surface_work->Data.NumExtParam = m_trigger.NumExtParam;
             surface_work->Data.ExtParam    = m_trigger.ExtParam;
 
-            g_tsLog << "Frame #" << m_frame << " - Fire GPU hang trigger\n";
+            g_tsLog << "Frame #" << m_frames_submitted << " - Fire GPU hang trigger\n";
         }
 
         mfxStatus sts =
             tsVideoDecoder::DecodeFrameAsync(session, bs, surface_work, surface_out, syncp);
 
-        if (m_frame == m_frame_to_hang)
+        if (m_frames_submitted == m_frame_to_hang)
         {
             //clear GPU hang trigger to avoid subsequently triggers
             surface_work->Data.NumExtParam = 0;
@@ -136,9 +153,29 @@ private:
     {
         while (!m_sync_points.empty())
         {
+            if (m_frames_synced >= m_frame_to_hang)
+            {
+                g_tsStatus.expect(MFX_ERR_GPU_HANG);
+                g_tsStatus.disable_next_check();
+            }
             SyncOperation(m_sync_points.back());
+
+            if (m_frames_synced >= m_frame_to_hang)
+            {
+                if (m_check_sync_operation)
+                {
+                    g_tsStatus.check();
+                    g_tsStatus.expect(MFX_ERR_NONE);
+                    throw tsOK;
+                }
+                else
+                {
+                    g_tsStatus.disable_next_check();
+                    g_tsStatus.check();
+                }
+            }
             m_sync_points.pop_back();
-            g_tsStatus.check();
+            ++m_frames_synced;
         }
     }
 };
@@ -163,6 +200,7 @@ public:
 
         mfxU16      async;
         mfxU32      frame_to_hang;
+        bool        call_sync_operation;
     };
 
     static const tc_struct test_case[];
@@ -182,7 +220,7 @@ int TestSuite<N>::RunTest(unsigned int id)
     char const* name = g_tsStreamPool.Get(tc.name);
     g_tsStreamPool.Reg();
 
-    decoder dec(tc.codec, tc.frame_to_hang);
+    decoder dec(tc.codec, tc.frame_to_hang, tc.call_sync_operation);
     dec.MFXInit();
     dec.m_pPar->IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
     dec.m_pPar->AsyncDepth = tc.async;
@@ -208,19 +246,22 @@ enum
 template <>
 TestSuite<AVC_TEST_SUITE>::tc_struct const TestSuite<AVC_TEST_SUITE>::test_case[] =
 {
-    /* 0 - AVC  .DecodeFrameAsync */ { MFX_CODEC_AVC, "conformance/h264/bluesky.h264", 1, 5 },
+    /* 0 - AVC  .DecodeFrameAsync */ { MFX_CODEC_AVC, "conformance/h264/bluesky.h264", 1, 5, false },
+    /* 1 - AVC  .DecodeFrameAsync */ { MFX_CODEC_AVC, "conformance/h264/bluesky.h264", 1, 5, true  }
 };
 
 template <>
 TestSuite<HEVC_TEST_SUITE>::tc_struct const TestSuite<HEVC_TEST_SUITE>::test_case[] =
 {
-    /* 0 - HEVC .DecodeFrameAsync */ { MFX_CODEC_HEVC, "conformance/hevc/itu/WP_A_Toshiba_3.bit", 1, 5 }
+    /* 0 - HEVC .DecodeFrameAsync */ { MFX_CODEC_HEVC, "conformance/hevc/itu/WP_A_Toshiba_3.bit", 1, 5, false },
+    /* 1 - HEVC .DecodeFrameAsync */ { MFX_CODEC_HEVC, "conformance/hevc/itu/WP_A_Toshiba_3.bit", 1, 5, true }
 };
 
 template <>
 TestSuite<MPEG2_TEST_SUITE>::tc_struct const TestSuite<MPEG2_TEST_SUITE>::test_case[] =
 {
-    /* 0 - MPEG2 .DecodeFrameAsync */ { MFX_CODEC_MPEG2, "conformance/mpeg2/ibm-bw.BITS", 1, 5 }
+    /* 0 - MPEG2 .DecodeFrameAsync */ { MFX_CODEC_MPEG2, "conformance/mpeg2/ibm-bw.BITS", 1, 5, false },
+    /* 1 - MPEG2 .DecodeFrameAsync */ { MFX_CODEC_MPEG2, "conformance/mpeg2/ibm-bw.BITS", 1, 5, true }
 };
 
 TS_REG_TEST_SUITE(avcd_gpu_hang,   TestSuite<AVC_TEST_SUITE>::RunTest,   TestSuite<AVC_TEST_SUITE>::n_cases);

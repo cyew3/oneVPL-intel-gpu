@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_vpp.h"
 #include "ts_struct.h"
 #include "mfxstructures.h"
@@ -1291,8 +1301,9 @@ int TestSuite::RunTest(unsigned int id)
               sts_reset_1 = tc.sts_reset_1,
               sts_reset_2 = tc.sts_reset_2;
 
-    if (g_tsOSFamily == MFX_OS_FAMILY_LINUX && m_par.ExtParam[0]->BufferId == MFX_EXTBUFF_VPP_IMAGE_STABILIZATION)
-        sts_init = sts_reset_1 = sts_reset_2 = MFX_WRN_FILTER_SKIPPED;
+    if (g_tsOSFamily == MFX_OS_FAMILY_LINUX)
+        if (m_par.ExtParam && m_par.ExtParam[0]->BufferId == MFX_EXTBUFF_VPP_IMAGE_STABILIZATION)
+            sts_init = sts_reset_1 = sts_reset_2 = MFX_WRN_FILTER_SKIPPED;
 
     g_tsStatus.expect(sts_init);
     Init(m_session, m_pPar);

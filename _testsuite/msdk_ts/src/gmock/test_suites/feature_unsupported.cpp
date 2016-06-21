@@ -199,7 +199,6 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/**/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_QVBR     , true}, set_brc_params },
     {/**/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {&RateCtrlMthd, MFX_RATECONTROL_VME      , true}, set_brc_params },
 
-//API 1.17
     //API 1.17
         //MFX_FOURCC_ABGR16
     {/**/ DECODE|ENCODE, MFX_CODEC_AVC,   E_UNSPRT, E_INVLID, {&mfxFourCC, MFX_FOURCC_ABGR16, true}, set_chromaformat_mfx },
@@ -216,7 +215,6 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         //MFX_FOURCC_UYVY
     {/**/ DECODE|ENCODE, MFX_CODEC_AVC,   E_UNSPRT, E_INVLID, {&mfxFourCC, MFX_FOURCC_UYVY, true}, set_chromaformat_mfx },
     {/**/ DECODE|ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {&mfxFourCC, MFX_FOURCC_UYVY, true}, set_chromaformat_mfx },
-    {/**/ VPP,           0,               E_UNSPRT, E_INVLID, { {&inFourCC, MFX_FOURCC_UYVY, true}, {&outFourCC, MFX_FOURCC_UYVY, true} }, set_chromaformat_vpp },
     {/**/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, {&tsStruct::mfxExtCodingOption3.FadeDetection, MFX_CODINGOPTION_ON, true }, },
     //{/**/ ENCODE, MFX_CODEC_MPEG2, E_UNSPRT, E_INVLID, { {&tsStruct::mfxExtCodingOptionVPS.VPSId,      0xFF },
     //                                                       {&tsStruct::mfxExtCodingOptionVPS.VPSBuffer,  (mfxU64) &g_StringsOfBuffers },
