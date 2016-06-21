@@ -42,6 +42,7 @@ Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 // mpeg2
 #if 1 // ENABLED
 #define MFX_ENABLE_MPEG2_VIDEO_DECODE
+#define MFX_ENABLE_HW_ONLY_MPEG2_DECODER
 //#define MFX_ENABLE_MPEG2_VIDEO_BSD
 //#define MFX_ENABLE_MPEG2_VIDEO_DEC
 #define MFX_ENABLE_MPEG2_VIDEO_ENCODE
