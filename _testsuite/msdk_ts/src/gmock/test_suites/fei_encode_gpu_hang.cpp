@@ -41,7 +41,7 @@ int test(mfxU32 codecId)
 {
     TS_START;
 
-    tsVideoEncoder enc(MFX_FEI_FUNCTION_ENC, codecId);
+    tsVideoEncoder enc(MFX_FEI_FUNCTION_ENCODE, codecId);
     enc.m_pPar->AsyncDepth = 1; //limitation for FEI (from sample_fei)
     enc.m_pPar->mfx.RateControlMethod = MFX_RATECONTROL_CQP;
     enc.m_pPar->IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
