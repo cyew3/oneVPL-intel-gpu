@@ -79,12 +79,14 @@ UMC::Status H265_DXVA_SegmentDecoder::ProcessSegment(void)
 {
     H265Task Task(m_iNumber);
 
-    if (m_pTaskBroker->GetNextTask(&Task))
+    try
     {
+        if (!m_pTaskBroker->GetNextTask(&Task))
+             return UMC::UMC_ERR_NOT_ENOUGH_DATA;
     }
-    else
+    catch (h265_exception const& e)
     {
-        return UMC::UMC_ERR_NOT_ENOUGH_DATA;
+        return e.GetStatus();
     }
 
     return UMC::UMC_OK;
@@ -183,6 +185,9 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
                     au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MINOR);
                     break;
             }
+
+        if (sts != UMC::UMC_OK)
+            throw h265_exception(sts);
     }
 
     SwitchCurrentAU();

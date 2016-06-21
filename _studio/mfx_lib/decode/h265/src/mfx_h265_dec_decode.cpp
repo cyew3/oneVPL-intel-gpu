@@ -1324,7 +1324,14 @@ mfxStatus VideoDECODEH265::DecodeFrame(mfxFrameSurface1 *surface_out, H265Decode
         }
     }
 
-    Ipp32s error = pFrame->GetError();
+    Ipp32s const error = pFrame->GetError();
+    if (error & UMC::ERROR_FRAME_DEVICE_FAILURE)
+    {
+        if (error == UMC::UMC_ERR_GPU_HANG)
+            return MFX_ERR_GPU_HANG;
+        else
+            return MFX_ERR_DEVICE_FAILED;
+    }
 
     surface_out->Data.Corrupted = 0;
     if (error & UMC::ERROR_FRAME_MINOR)
