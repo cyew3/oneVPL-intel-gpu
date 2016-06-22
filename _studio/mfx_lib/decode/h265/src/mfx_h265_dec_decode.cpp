@@ -1324,29 +1324,34 @@ mfxStatus VideoDECODEH265::DecodeFrame(mfxFrameSurface1 *surface_out, H265Decode
         }
     }
 
-    Ipp32s error = pFrame->GetError();
-
     surface_out->Data.Corrupted = 0;
-    if (error & UMC::ERROR_FRAME_MINOR)
-        surface_out->Data.Corrupted |= MFX_CORRUPTION_MINOR;
+    Ipp32s const error = pFrame->GetError();
 
-    if (error & UMC::ERROR_FRAME_MAJOR)
+    if (error & UMC::ERROR_FRAME_DEVICE_FAILURE)
         surface_out->Data.Corrupted |= MFX_CORRUPTION_MAJOR;
+    else
+    {
+        if (error & UMC::ERROR_FRAME_MINOR)
+	    surface_out->Data.Corrupted |= MFX_CORRUPTION_MINOR;
 
-    if (error & UMC::ERROR_FRAME_REFERENCE_FRAME)
-        surface_out->Data.Corrupted |= MFX_CORRUPTION_REFERENCE_FRAME;
+        if (error & UMC::ERROR_FRAME_MAJOR)
+            surface_out->Data.Corrupted |= MFX_CORRUPTION_MAJOR;
 
-    if (error & UMC::ERROR_FRAME_DPB)
-        surface_out->Data.Corrupted |= MFX_CORRUPTION_REFERENCE_LIST;
+        if (error & UMC::ERROR_FRAME_REFERENCE_FRAME)
+            surface_out->Data.Corrupted |= MFX_CORRUPTION_REFERENCE_FRAME;
 
-    if (error & UMC::ERROR_FRAME_RECOVERY)
-        surface_out->Data.Corrupted |= MFX_CORRUPTION_MAJOR;
+        if (error & UMC::ERROR_FRAME_DPB)
+            surface_out->Data.Corrupted |= MFX_CORRUPTION_REFERENCE_LIST;
 
-    if (error & UMC::ERROR_FRAME_TOP_FIELD_ABSENT)
-        surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_TOP_FIELD;
+        if (error & UMC::ERROR_FRAME_RECOVERY)
+            surface_out->Data.Corrupted |= MFX_CORRUPTION_MAJOR;
 
-    if (error & UMC::ERROR_FRAME_BOTTOM_FIELD_ABSENT)
-        surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_BOTTOM_FIELD;
+        if (error & UMC::ERROR_FRAME_TOP_FIELD_ABSENT)
+            surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_TOP_FIELD;
+
+        if (error & UMC::ERROR_FRAME_BOTTOM_FIELD_ABSENT)
+            surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_BOTTOM_FIELD;
+    }
 
     mfxStatus sts = m_FrameAllocator->PrepareToOutput(surface_out, index, &m_vPar, m_isOpaq);
 
