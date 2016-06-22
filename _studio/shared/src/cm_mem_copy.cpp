@@ -1913,14 +1913,21 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
 
 mfxStatus CmCopyWrapper::ReleaseCmSurfaces(void)
 {
-    std::map<void *, CmSurface2D *>::iterator itSrc;
-
-    for (itSrc = m_tableCmRelations2.begin() ; itSrc != m_tableCmRelations2.end(); itSrc++)
+    if (!m_tableCmRelations2.empty())
     {
-        CmSurface2D *temp = itSrc->second;
+        std::map<void *, CmSurface2D *>::iterator itSrc;
+        CmSurface2D *temp = NULL;
+
+        for (itSrc = m_tableCmRelations2.end(), itSrc--; itSrc != m_tableCmRelations2.begin(); itSrc--)
+        {
+            temp = itSrc->second;
+            m_pCmDevice->DestroySurface(temp);
+        }
+        temp = itSrc->second;
         m_pCmDevice->DestroySurface(temp);
+
+        m_tableCmRelations2.clear();
     }
-    m_tableCmRelations2.clear();
     std::map<mfxU8 *, CmBufferUP *>::iterator itSysSrc;
     for (itSysSrc = m_tableSysRelations2.begin() ; itSysSrc != m_tableSysRelations2.end(); itSysSrc++)
     {
