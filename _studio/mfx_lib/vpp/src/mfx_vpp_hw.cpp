@@ -490,7 +490,8 @@ mfxStatus ResMngr::DoAdvGfx(
     {
         m_fwdRefCount = m_fwdRefCountRequired;
 
-        m_bkwdRefCount = m_bkwdRefCountRequired;
+        if (m_fieldWeaving)
+            m_bkwdRefCount = m_bkwdRefCountRequired;
 
         if(input)
         {
