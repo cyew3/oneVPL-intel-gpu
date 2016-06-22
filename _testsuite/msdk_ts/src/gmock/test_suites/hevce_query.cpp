@@ -557,6 +557,9 @@ int TestSuite::RunTest(unsigned int id)
         if (!m_is_handle_set)
         {
             m_pFrameAllocator->get_hdl(type, hdl);
+
+            if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
+                g_tsStatus.expect(MFX_ERR_UNDEFINED_BEHAVIOR); // device was created by Core in Query() to get HW caps
             SetHandle(m_session, type, hdl);
         }
     }
