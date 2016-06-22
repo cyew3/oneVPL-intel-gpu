@@ -1071,6 +1071,14 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
                 FillVideoParam(&m_vPar, true);
             }
 
+            if (umcRes == UMC::UMC_OK && bs->TimeStamp != mfxU64(MFX_TIMESTAMP_UNKNOWN))
+            {
+	        //crutch: signal that we use given org. PTS for the first frame
+                //and should not spread it onto subsequent frames in case
+                //we consume several frames from bitstream
+                src.SetTime(-2.);
+            }
+
             if (umcRes == UMC::UMC_WRN_REPOSITION_INPROGRESS)
             {
                 if (!m_isFirstRun)

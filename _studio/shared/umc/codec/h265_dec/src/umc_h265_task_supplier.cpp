@@ -1418,6 +1418,12 @@ void TaskSupplier_H265::PostProcessDisplayFrame(H265DecoderFrame *pFrame)
     {
         view.localFrameTime = pFrame->m_dFrameTime;
     }
+    else if (pFrame->m_dFrameTime == -2.0)
+    {
+        //mark frame time as invallid to signal that we can't calc.
+        //timestamp in case we have org. PTS only for several frames
+        pFrame->m_dFrameTime = -1.;
+    }
     else
     {
         pFrame->m_dFrameTime = view.localFrameTime;
@@ -1457,7 +1463,6 @@ H265DecoderFrame *TaskSupplier_H265::GetFrameToDisplayInternal(bool force)
     {
         return view.pDPB->findOldestDisplayable(view.dpbSize);
     }
-
 
     for (;;)
     {
