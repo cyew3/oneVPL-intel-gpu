@@ -95,6 +95,12 @@ mfxStatus D3D11CameraProcessor::Init(CameraParams *CameraParams)
     sts = m_InSurfacePool->AllocateSurfaces(m_core, request);
     MFX_CHECK_STS( sts );
 
+    m_systemMemIn = false;
+    if ( CameraParams->par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY )
+    {
+        m_systemMemIn = true;
+    }
+
     m_systemMemOut = false;
     if ( CameraParams->par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY )
     {
