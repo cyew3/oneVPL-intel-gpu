@@ -19,6 +19,31 @@
 namespace decoders_gpu_hang
 {
 
+class verifier
+    : public tsSurfaceProcessor
+{
+
+    mfxU32                     m_frame_to_hang;
+
+public:
+
+    verifier(int frame_to_hang)
+        : m_frame_to_hang(frame_to_hang)
+    {}
+
+    mfxStatus ProcessSurface(mfxFrameSurface1& s)
+    {
+        if (m_cur - 1 != m_frame_to_hang)
+            return MFX_ERR_NONE;
+
+        EXPECT_EQ(s.Data.Corrupted, MFX_CORRUPTION_MAJOR);
+        g_tsStatus.disable_next_check();
+
+        return
+            s.Data.Corrupted == MFX_CORRUPTION_MAJOR ? MFX_ERR_NONE : MFX_ERR_UNKNOWN;
+    }
+};
+
 class decoder
     : public tsVideoDecoder
 {
@@ -220,13 +245,31 @@ int TestSuite<N>::RunTest(unsigned int id)
     char const* name = g_tsStreamPool.Get(tc.name);
     g_tsStreamPool.Reg();
 
-    decoder dec(tc.codec, tc.frame_to_hang, tc.call_sync_operation);
+    //TODO: remove Data.Corrupted flag validation when
+    //error reporting from [SyncOperation] will be fixed (see VCSD100026464)
+    //-----------------------------------------//
+    bool check_sync_op = tc.call_sync_operation;
+    tsSurfaceProcessor* p = 0;
+
+    verifier v(tc.frame_to_hang);
+    if (tc.codec == MFX_CODEC_HEVC &&
+        tc.call_sync_operation)
+    {
+        check_sync_op = false;
+        p = &v;
+    }
+    //-----------------------------------------//
+
+    decoder dec(tc.codec, tc.frame_to_hang, check_sync_op);
+
     dec.MFXInit();
     dec.m_pPar->IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
     dec.m_pPar->AsyncDepth = tc.async;
 
     tsBitstreamReader reader(name, 100000);
     dec.m_bs_processor = &reader;
+
+    dec.m_surf_processor = p;
 
     dec.init();
     dec.run();
