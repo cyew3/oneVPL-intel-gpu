@@ -57,6 +57,10 @@ public:
             surface_work->Data.NumExtParam = 0;
             surface_work->Data.ExtParam    = NULL;
         }
+
+        if (m_hang_triggered)
+            m_expect_gpu_hang_from_dec_syncop = true;
+
         return sts;
     }
 
@@ -87,9 +91,10 @@ mfxFrameSurface1* GetSurface(tsVideoDecoder *dec, bool syncSurfaceFromDecoder)
     mfxFrameSurface1* pS = dec->m_surf_out[syncp];
     if (syncSurfaceFromDecoder)
     {
-        mfxStatus res = dec->SyncOperation(dec->m_session, syncp, MFX_INFINITE);
-        if (res < 0)
-            g_tsStatus.check();
+        if (tr->m_expect_gpu_hang_from_dec_syncop)
+            g_tsStatus.expect(MFX_ERR_GPU_HANG);
+
+        dec->SyncOperation(dec->m_session, syncp, MFX_INFINITE);
     }
     else
         dec->m_surf_out.erase(syncp);
