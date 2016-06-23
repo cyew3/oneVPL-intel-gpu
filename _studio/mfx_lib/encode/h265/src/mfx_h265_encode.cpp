@@ -2323,9 +2323,15 @@ void H265Encoder::PrepareToEncode(H265EncodeTaskInputParams *inputParam)
                 if ((tframe->m_isRef || m_videoParam.enableCmPostProc && m_videoParam.doDumpRecon && tframe->m_doPostProc)) {
                     if (tframe->m_isRef && m_videoParam.enableCmPostProc && tframe->m_doPostProc) {
                         AddTaskDependencyThreaded(&inputParam->m_ttComplete, &tframe->m_ttPadRecon); // COMPLETE <- PAD_RECON
+                        if (m_videoParam.picStruct != PROGR && f == 0 && inputParam->m_targetFrame[1]) {
+                            AddTaskDependencyThreaded(&inputParam->m_targetFrame[1]->m_ttEncComplete, &tframe->m_ttPadRecon); // ENC_COMPLETE[1] <- PAD_RECON
+                        }
                     }
                     else {
                         AddTaskDependencyThreaded(&inputParam->m_ttComplete, &tframe->m_ttWaitGpuCopyRec); // COMPLETE <- GPU_WAIT_COPY_REC
+                        if (m_videoParam.picStruct != PROGR && f == 0 && inputParam->m_targetFrame[1]) {
+                            AddTaskDependencyThreaded(&inputParam->m_targetFrame[1]->m_ttEncComplete, &tframe->m_ttWaitGpuCopyRec); // ENC_COMPLETE[1] <- GPU_WAIT_COPY_REC
+                        }
                     }
                 }
             }

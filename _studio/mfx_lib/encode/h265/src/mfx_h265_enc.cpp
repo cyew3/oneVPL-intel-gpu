@@ -2230,12 +2230,11 @@ void H265Enc::AddTaskDependency(ThreadingTask *downstream, ThreadingTask *upstre
     assert(downstream->finished == 0);
 
 #ifdef DEBUG_NTM
-    char after_all_changes_need_to_rethink_this_part[-1];
+//    char after_all_changes_need_to_rethink_this_part[-1];
     // if dep num exceeded
-    assert(downstream->numUpstreamDependencies < MAX_NUM_DEPENDENCIES);
-    // if try to add dependency on already finished task
-    assert(upstream->finished == 0);
-    downstream->upstreamDependencies[downstream->numUpstreamDependencies] = upstream;
+//    assert(downstream->numUpstreamDependencies < MAX_NUM_DEPENDENCIES);
+    if (downstream->numUpstreamDependencies < MAX_NUM_DEPENDENCIES)
+        downstream->upstreamDependencies[downstream->numUpstreamDependencies] = upstream;
 #endif
 
     if (ttHubPool && upstream->numDownstreamDependencies == MAX_NUM_DEPENDENCIES) {
