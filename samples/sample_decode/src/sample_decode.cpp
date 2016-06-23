@@ -91,7 +91,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
 #endif
 #if defined(LIBVA_DRM_SUPPORT)
     msdk_printf(MSDK_STRING("   [-rdrm]                   - render decoded data in a thru DRM frame buffer\n"));
-    msdk_printf(MSDK_STRING("   [-window x y w h]\n"));
+    msdk_printf(MSDK_STRING("   [-window x y w h]         - set render window position and size\n"));
 #endif
     msdk_printf(MSDK_STRING("   [-low_latency]            - configures decoder for low latency mode (supported only for H.264 and JPEG codec)\n"));
     msdk_printf(MSDK_STRING("   [-calc_latency]           - calculates latency during decoding and prints log (supported only for H.264 and JPEG codec)\n"));
