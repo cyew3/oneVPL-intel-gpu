@@ -558,6 +558,8 @@ namespace MfxHwH264Encode
 
         void SyncCalculableToVideoParam();
 
+        void AlignCalcWithBRCParamMultiplier();
+
         void ApplyDefaultsToMvcSeqDesc();
 
     protected:

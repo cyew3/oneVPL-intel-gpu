@@ -3511,6 +3511,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 
     par.SyncCalculableToVideoParam();
+    par.AlignCalcWithBRCParamMultiplier();
 
     if (par.calcParam.numTemporalLayer > 0 && par.mfx.EncodedOrder != 0)
     {
@@ -5394,6 +5395,7 @@ void MfxHwH264Encode::SetDefaults(
     }
 
     par.SyncCalculableToVideoParam();
+    par.AlignCalcWithBRCParamMultiplier();
 }
 
 mfxStatus MfxHwH264Encode::CheckPayloads(
@@ -6460,7 +6462,17 @@ void MfxVideoParam::SyncCalculableToVideoParam()
         m_extOpt3.WinBRCMaxAvgKbps = mfxU16((calcParam.WinBRCMaxAvgKbps + mfx.BRCParamMultiplier - 1)         / mfx.BRCParamMultiplier);
 }
 
+void MfxVideoParam::AlignCalcWithBRCParamMultiplier()
+{
+    if(!mfx.BRCParamMultiplier)
+        return;
 
+    calcParam.bufferSizeInKB   = mfx.BufferSizeInKB   * mfx.BRCParamMultiplier;
+    calcParam.initialDelayInKB = mfx.InitialDelayInKB * mfx.BRCParamMultiplier;
+    calcParam.targetKbps       = mfx.TargetKbps       * mfx.BRCParamMultiplier;
+    calcParam.maxKbps          = mfx.MaxKbps          * mfx.BRCParamMultiplier;
+    calcParam.WinBRCMaxAvgKbps = m_extOpt3.WinBRCMaxAvgKbps * mfx.BRCParamMultiplier;
+}
 
 void MfxVideoParam::Construct(mfxVideoParam const & par)
 {
