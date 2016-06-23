@@ -2724,8 +2724,7 @@ void CmContext::Setup(
         m_program = ReadProgram(m_device, genx_hsw_camerapipe, SizeOf(genx_hsw_camerapipe));
     else if(m_platform == MFX_HW_BDW || m_platform == MFX_HW_CHV)
         m_program = ReadProgram(m_device, genx_bdw_camerapipe, SizeOf(genx_bdw_camerapipe));
-    else if(m_platform == MFX_HW_SCL)
-        m_program = ReadProgram(m_device, genx_skl_camerapipe, SizeOf(genx_skl_camerapipe));
+
 
     // Valid for HSW/BDW
     // Need to add caps checking

@@ -662,7 +662,7 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         m_platform = m_core->GetHWType();
 
 #if defined (_WIN32) || defined (_WIN64)
-        if (MFX_HW_SCL== m_platform)
+        if (MFX_HW_SCL<= m_platform)
         {
             if (in->vpp.In.CropW > 8160 && MFX_FOURCC_ARGB16 == in->vpp.Out.FourCC)
             {
@@ -677,11 +677,11 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             sts = CMCameraProcessor::Query(in, out);
         }
 #if defined (_WIN32) || defined (_WIN64)
-        else if (MFX_HW_SCL== m_platform && MFX_HW_D3D11 == m_core->GetVAType())
+        else if (MFX_HW_SCL<= m_platform && MFX_HW_D3D11 == m_core->GetVAType())
         {
             sts = D3D11CameraProcessor::Query(in, out);
         }
-        else if (MFX_HW_SCL== m_platform && MFX_HW_D3D9 == m_core->GetVAType())
+        else if (MFX_HW_SCL<= m_platform && MFX_HW_D3D9 == m_core->GetVAType())
         {
             sts = D3D9CameraProcessor::Query(in, out);
         }
@@ -1258,11 +1258,11 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
         m_CameraProcessor = new CMCameraProcessor();
     }
 #if defined (_WIN32) || defined (_WIN64)
-    else if (MFX_HW_SCL== m_platform && MFX_HW_D3D11 == m_core->GetVAType())
+    else if (MFX_HW_SCL<= m_platform && MFX_HW_D3D11 == m_core->GetVAType())
     {
         m_CameraProcessor = new D3D11CameraProcessor();
     }
-    else if (MFX_HW_SCL== m_platform && MFX_HW_D3D9 == m_core->GetVAType())
+    else if (MFX_HW_SCL<= m_platform && MFX_HW_D3D9 == m_core->GetVAType())
     {
         m_CameraProcessor = new D3D9CameraProcessor();
     }
