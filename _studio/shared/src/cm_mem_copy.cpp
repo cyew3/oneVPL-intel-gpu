@@ -1916,15 +1916,42 @@ mfxStatus CmCopyWrapper::ReleaseCmSurfaces(void)
     if (!m_tableCmRelations2.empty())
     {
         std::map<void *, CmSurface2D *>::iterator itSrc;
+        std::map<void *, CmSurface2D *>::iterator firstSrc;
         CmSurface2D *temp = NULL;
+        CmSurface2D *first_surf = NULL;
+        SurfaceIndex* index = NULL;
+        cmStatus cmSts = 0;
+        mfxU32 min_index;
 
-        for (itSrc = m_tableCmRelations2.end(), itSrc--; itSrc != m_tableCmRelations2.begin(); itSrc--)
+        cmSts = (m_tableCmRelations2.begin()->second)->GetIndex(index);
+        if(CM_SUCCESS != cmSts)
+            return MFX_ERR_DEVICE_FAILED;
+        min_index = index->get_data();
+        firstSrc = m_tableCmRelations2.begin();
+
+        for (itSrc = m_tableCmRelations2.begin(), itSrc++; itSrc != m_tableCmRelations2.end(); itSrc++)
+        {
+            cmSts = (itSrc->second)->GetIndex(index);
+            if(CM_SUCCESS != cmSts)
+                return MFX_ERR_DEVICE_FAILED;
+
+            if ((index) && (index->get_data() < min_index))
+            {
+                firstSrc = itSrc;
+                min_index = index->get_data();
+            }
+        }
+        first_surf = firstSrc->second;
+        m_tableCmRelations2.erase(firstSrc);
+
+        for (itSrc = m_tableCmRelations2.begin(); itSrc != m_tableCmRelations2.end(); itSrc++)
         {
             temp = itSrc->second;
             m_pCmDevice->DestroySurface(temp);
         }
-        temp = itSrc->second;
-        m_pCmDevice->DestroySurface(temp);
+
+        if (first_surf)
+            m_pCmDevice->DestroySurface(first_surf);
 
         m_tableCmRelations2.clear();
     }
