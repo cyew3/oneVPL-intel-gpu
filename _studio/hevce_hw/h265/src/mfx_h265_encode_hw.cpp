@@ -886,6 +886,12 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
 
         MFX_CHECK_STS(sts);
 
+        mfxExtDPB*  pDPBReport = (mfxExtDPB*)ExtBuffer::Get(*bs) ;
+
+        if (pDPBReport)
+            ReportDPB(taskForQuery->m_dpb[TASK_DPB_AFTER], *pDPBReport);
+
+
         //update bitstream
         if (taskForQuery->m_bsDataLength)
         {

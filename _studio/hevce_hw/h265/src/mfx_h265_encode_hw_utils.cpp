@@ -2760,7 +2760,6 @@ void ConfigureTask(
     const mfxU8 maxQP = mfxU8(51 + 6 * (par.mfx.FrameInfo.BitDepthLuma - 8));
     const mfxExtCodingOption3& CO3 = par.m_ext.CO3;
 
-    mfxExtDPB*              pDPBReport = task.m_bs ? (mfxExtDPB*)ExtBuffer::Get(*task.m_bs) : 0;
     mfxExtAVCRefLists*      pExtLists = ExtBuffer::Get(task.m_ctrl);
     mfxExtAVCRefListCtrl*   pExtListCtrl = ExtBuffer::Get(task.m_ctrl);
 
@@ -2902,8 +2901,6 @@ void ConfigureTask(
             task.m_ltr |= isLTR(task.m_dpb[TASK_DPB_AFTER], par.LTRInterval, task.m_poc);
     }
 
-    if (pDPBReport)
-        ReportDPB(task.m_dpb[TASK_DPB_AFTER], *pDPBReport);
 
     task.m_shNUT = GetSHNUT(task);
 

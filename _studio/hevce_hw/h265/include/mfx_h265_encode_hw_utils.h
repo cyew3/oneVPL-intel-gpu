@@ -855,6 +855,8 @@ void Decrement(
     mfxAES128CipherCounter & aesCounter,
     mfxExtPAVPOption const & extPavp);
 
+void ReportDPB(DpbArray const & DPB, mfxExtDPB& report);
+
 #if DEBUG_REC_FRAMES_INFO
     inline vm_file * OpenFile(vm_char const * name, vm_char const * mode)
     {
