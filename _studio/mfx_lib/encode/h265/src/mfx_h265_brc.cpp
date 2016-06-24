@@ -963,10 +963,11 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
 
         Ipp32s layer = (frames[0]->m_picCodeType == MFX_FRAMETYPE_I ? 0 : (frames[0]->m_picCodeType == MFX_FRAMETYPE_P ? 1 : 1 + IPP_MAX(1, frames[0]->m_pyramidLayer)));
 
-        if (frames[0]->m_encOrder == 0) {
-            if (avCmplx > 6)
-                mQstepScale0 = mQstepScale = mQstepScale0 * avCmplx / 6;
-        }
+        //commented out since it affected certain clips (eg. bbc)
+        //if (frames[0]->m_encOrder == 0) {
+        //    if (avCmplx > 6)
+        //        mQstepScale0 = mQstepScale = mQstepScale0 * avCmplx / 6;
+        //}
 
         if (prCmplx) {
             r = fabs(avCmplx / prCmplx - 1);
