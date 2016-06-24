@@ -1110,8 +1110,8 @@ mfxStatus CEncodingPipeline::ReleaseResources()
 
     MSDK_SAFE_DELETE(m_ctr);
     MSDK_SAFE_DELETE(m_tmpMBpreenc);
-    MSDK_SAFE_DELETE(m_tmpForMedian);
-    MSDK_SAFE_DELETE(m_tmpForReading);
+    MSDK_SAFE_DELETE_ARRAY(m_tmpForMedian);
+    MSDK_SAFE_DELETE_ARRAY(m_tmpForReading);
     MSDK_SAFE_DELETE(m_tmpMBenc);
     MSDK_SAFE_DELETE(m_last_task);
 
