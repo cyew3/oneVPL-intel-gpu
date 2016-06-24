@@ -335,15 +335,20 @@ std::string GetCodecIdString(mfxU32 id) {
 std::string GetIOPattern(mfxU32 io) {
 
     std::basic_stringstream<char> stream;
-    std::string name = "UNKNOWN";
+    std::string name;
     for (unsigned int i = 0; i < (sizeof(tbl_iopattern) / sizeof(tbl_iopattern[0])); i++)
     {
-        if (tbl_iopattern[i].id == static_cast<int>(io))
+        if (tbl_iopattern[i].id & static_cast<int>(io))
         {
-            name = tbl_iopattern[i].str;
-            break;
+            name += tbl_iopattern[i].str;
+            name += "; ";
         }
 
+    }
+    if (!name.length())
+    {
+        name = "UNKNOWN";
+        name += "(" + ToString(io) + ")";
     }
     stream<<name;
     return stream.str();
