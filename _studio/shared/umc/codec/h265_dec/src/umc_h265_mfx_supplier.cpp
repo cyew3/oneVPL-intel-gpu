@@ -403,11 +403,6 @@ bool MFX_Utility::IsNeedPartialAcceleration_H265(mfxVideoParam * par, eMFXHWType
     if (par->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 && par->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV400)
         return true;
 
-    //current HW impl. doesn't support 8 bit for main10
-    if (par->mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 &&
-       (par->mfx.FrameInfo.BitDepthLuma != 10 || par->mfx.FrameInfo.BitDepthChroma != 10))
-       return true;
-
     if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P210 || par->mfx.FrameInfo.FourCC == MFX_FOURCC_NV16)
         return true;
 
@@ -474,9 +469,6 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo * frameInfo)
     switch (codecProfile)
     {
     case MFX_PROFILE_HEVC_MAIN10:
-        fourcc = MFX_FOURCC_P010;
-        break;
-
     case MFX_PROFILE_HEVC_REXT:
         if (frameInfo->BitDepthLuma > 8 || frameInfo->BitDepthChroma > 8)
         {
