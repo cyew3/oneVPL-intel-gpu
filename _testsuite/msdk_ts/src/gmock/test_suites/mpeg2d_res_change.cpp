@@ -132,7 +132,6 @@ public:
                 UVDifferes = true;
         }
 
-        /* https://jira01.devtools.intel.com/browse/MQ-507 */
         EXPECT_FALSE(YDifferes || UVDifferes)
             << "ERROR: Surface #"<< frame <<" decoded by resolution-changed session is not b2b with surface decoded by verification session!!!\n";
 
@@ -170,7 +169,7 @@ private:
         memset(&bs, 0, sizeof(bs));
         reader.ProcessBitstream(bs, 1);
 
-        mfxStatus sts = MFXInit(MFX_IMPL_AUTO_ANY, 0, &m_ses);
+        mfxStatus sts = MFXInit(g_tsImpl, &g_tsVersion, &m_ses);
         EXPECT_EQ_THROW(MFX_ERR_NONE, sts, "ERROR: Failed to Init MFX session of a verification instance of a decoder\n");
 
         sts = SetVAHandle();
@@ -280,7 +279,9 @@ private:
 
             return 0;
         }
-        return surf_out;
+
+        ADD_FAILURE() << "Surf_out is not null but MFXVideoDECODE_DecodeFrameAsync returned " << sts << ". Surf_out should be not null only with MFX_ERR_NONE status";
+        throw tsFAIL;
     }
 
     mfxFrameSurface1* GetFreeSurf()
