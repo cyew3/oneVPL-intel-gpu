@@ -2689,6 +2689,8 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         ((imfxFPMode - 1) != (mfxU32)FRAME2FRAME)) /* And we don't do copy frame to frame lets call our FieldCopy*/
     /* And remember our previous line imfxFPMode++;*/
     {
+        pTask->skipQueryStatus = true; // skip query status since we do not submit any tasks to driver in this mode
+
         sts = PreWorkOutSurface(pTask->output);
         MFX_CHECK_STS(sts);
 
@@ -2901,7 +2903,7 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
 
     mfxU32 currentTaskIdx = pTask->taskIndex;
 
-    if (0 == pHwVpp->m_executeParams.iFieldProcessingMode && ! pHwVpp->m_executeParams.mirroring) {
+    if (! pTask->skipQueryStatus && ! pHwVpp->m_executeParams.mirroring) {
         sts = (*pHwVpp->m_ddi)->QueryTaskStatus(currentTaskIdx);
         MFX_CHECK_STS(sts);
     }

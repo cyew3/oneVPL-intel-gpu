@@ -218,6 +218,7 @@ namespace MfxHwVideoProcessing
             , bEOS(false)
             , taskIndex(0)
             , frameNumber(0)
+            , skipQueryStatus(false)
             , pAuxData(NULL)
             , pSubResource(NULL)
         {}
@@ -234,6 +235,8 @@ namespace MfxHwVideoProcessing
 
         mfxU32 taskIndex;
         mfxU32 frameNumber;
+
+        bool   skipQueryStatus;
 
         mfxExtVppAuxData *pAuxData;
 
