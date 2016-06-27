@@ -485,6 +485,8 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
         inputStatistics.StartTimeMeasurement();
     }
 
+    CTimer DevBusyTimer;
+    DevBusyTimer.Start();
     while (MFX_ERR_MORE_DATA == sts || MFX_ERR_MORE_SURFACE == sts || MFX_ERR_NONE < sts)
     {
         if (MFX_WRN_DEVICE_BUSY == sts)
@@ -504,6 +506,13 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
         }
 
         sts = m_pmfxDEC->DecodeFrameAsync(m_pmfxBS, pmfxSurface, &pExtSurface->pSurface, &pExtSurface->Syncp);
+
+        if ( (MFX_WRN_DEVICE_BUSY == sts) &&
+             (DevBusyTimer.GetTime() > MSDK_DEVICE_FREE_WAIT_INTERVAL/1000) )
+        {
+            msdk_printf(MSDK_STRING("ERROR: Decoder device busy (during long period)\n"));
+            return MFX_ERR_DEVICE_FAILED;
+        }
 
         if (sts==MFX_ERR_NONE)
         {
@@ -533,6 +542,8 @@ mfxStatus CTranscodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
         inputStatistics.StartTimeMeasurement();
     }
 
+    CTimer DevBusyTimer;
+    DevBusyTimer.Start();
     // retrieve the buffered decoded frames
     while (MFX_ERR_MORE_SURFACE == sts || MFX_WRN_DEVICE_BUSY == sts)
     {
@@ -546,6 +557,13 @@ mfxStatus CTranscodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
 
         MSDK_CHECK_POINTER_SAFE(pmfxSurface, MFX_ERR_MEMORY_ALLOC, msdk_printf(MSDK_STRING("ERROR: No free surfaces in decoder pool (during long period)\n"))); // return an error if a free surface wasn't found
         sts = m_pmfxDEC->DecodeFrameAsync(NULL, pmfxSurface, &pExtSurface->pSurface, &pExtSurface->Syncp);
+
+        if ( (MFX_WRN_DEVICE_BUSY == sts) &&
+             (DevBusyTimer.GetTime() > MSDK_DEVICE_FREE_WAIT_INTERVAL/1000) )
+        {
+            msdk_printf(MSDK_STRING("ERROR: Decoder device busy (during long period)\n"));
+            return MFX_ERR_DEVICE_FAILED;
+        }
     }
     return sts;
 }
