@@ -346,6 +346,7 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params,  H265VideoParam &video, Ipp
         mMinQp = -1;
     }
 
+    mSceneNum = 0;
     mIsInit = true;
 
     return status;
@@ -1550,7 +1551,10 @@ mfxBRCStatus H265BRC::PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, Frame
 
 
             if (layer == 1) { // 08/04/16
-                if (sliceQpY < pFrame->m_refQp) {
+                Ipp32s refQp = -1;
+                if (pFrame->m_refPicList[0].m_refFramesCount > 0)
+                    refQp = pFrame->m_refPicList[0].m_refFrames[0]->m_sliceQpY;
+                if (sliceQpY < refQp) {
                     mPrevCmplxIP = pFrame->m_stats[mLowres]->m_avgIntraSatd;
                     mPrevQstepIP = qstep;
                     mPrevBitsIP = bitsEncoded;

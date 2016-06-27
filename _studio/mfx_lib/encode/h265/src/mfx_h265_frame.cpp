@@ -583,6 +583,16 @@ namespace H265Enc {
         m_forceTryIntra = 0;
         m_sliceQpY    = 0;
 
+        m_avCmplx      = 0.0;
+        m_CmplxQstep   = 0.0;
+        m_qpBase       = 0;
+        m_totAvComplx  = 0.0;
+        m_totComplxCnt = 0;
+        m_complxSum    = 0.0;
+        m_predBits     = 0;
+        m_cmplx        = 0.0;
+        m_refQp        = -1;
+
         if (m_stats[0]) {
             m_stats[0]->ResetAvgMetrics();
         }
