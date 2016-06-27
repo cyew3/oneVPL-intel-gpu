@@ -1124,7 +1124,7 @@ void H265Encoder::ConfigureInputFrame(Frame* frame, bool bEncOrder, bool bEncCtr
                     break;
                 }
             }
-            frame->m_miniGopCount = miniGopCountOfAnchor - (frame->m_picCodeType == MFX_FRAMETYPE_B);
+            frame->m_miniGopCount = miniGopCountOfAnchor + !(frame->m_picCodeType == MFX_FRAMETYPE_B);
         }
 
         frame->m_biFramesInMiniGop = m_LastbiFramesInMiniGop;

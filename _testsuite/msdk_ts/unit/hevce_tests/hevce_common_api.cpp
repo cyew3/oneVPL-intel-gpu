@@ -24,6 +24,7 @@ ParamSet::ParamSet()
     extCodingOption2      = MakeExtBuffer<mfxExtCodingOption2>();
     extCodingOption3      = MakeExtBuffer<mfxExtCodingOption3>();
     extEncoderROI         = MakeExtBuffer<mfxExtEncoderROI>();
+    extHevcRegion.RegionEncoding = MFX_HEVC_REGION_ENCODING_OFF;
     Zero(videoParam);
     assert(sizeof(extBuffers) / sizeof(extBuffers[0]) >= 9+1); // plus one for unknown extbuffer test
     videoParam.ExtParam = extBuffers;

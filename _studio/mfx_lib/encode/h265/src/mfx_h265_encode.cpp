@@ -3500,7 +3500,7 @@ void Hrd::Update(Ipp32u sizeInbits, const Frame &pic)
             // (C-7)
             ? auNominalRemovalTime - initCpbRemovalDelay / 90000.0
             // (C-6)
-            : auNominalRemovalTime - cpbSize90k / 90000.0;
+            : auNominalRemovalTime - (Ipp32u)cpbSize90k / 90000.0;
         // (C-4)
         initArrivalTime = MAX(prevAuFinalArrivalTime, initArrivalEarliestTime);
     }
