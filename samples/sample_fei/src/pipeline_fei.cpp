@@ -5022,7 +5022,8 @@ inline mfxI16 get16Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI
         return 0;
     }
 
-    std::sort(tmpBuf, tmpBuf + 16);
+    std::nth_element(tmpBuf, tmpBuf + 7, tmpBuf + 16);
+    std::nth_element(tmpBuf, tmpBuf + 8, tmpBuf + 16);
     return (tmpBuf[7] + tmpBuf[8]) / 2;
 }
 
