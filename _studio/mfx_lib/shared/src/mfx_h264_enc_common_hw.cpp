@@ -6438,7 +6438,7 @@ void MfxVideoParam::SyncCalculableToVideoParam()
     mfx.BRCParamMultiplier = mfxU16((maxVal32 + 0x10000) / 0x10000);
     if (calcParam.cqpHrdMode == 0 || calcParam.bufferSizeInKB)
     {
-        mfx.BufferSizeInKB     = mfxU16((calcParam.bufferSizeInKB + mfx.BRCParamMultiplier - 1) / mfx.BRCParamMultiplier);
+        mfx.BufferSizeInKB     = mfxU16(calcParam.bufferSizeInKB / mfx.BRCParamMultiplier);
     }
 
     if (mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
@@ -6448,18 +6448,18 @@ void MfxVideoParam::SyncCalculableToVideoParam()
         mfx.RateControlMethod == MFX_RATECONTROL_QVBR ||
         (bRateControlLA(mfx.RateControlMethod) && (mfx.RateControlMethod != MFX_RATECONTROL_LA_ICQ)))
     {
-        mfx.TargetKbps = mfxU16((calcParam.targetKbps + mfx.BRCParamMultiplier - 1) / mfx.BRCParamMultiplier);
+        mfx.TargetKbps = mfxU16(calcParam.targetKbps / mfx.BRCParamMultiplier);
 
         if (mfx.RateControlMethod != MFX_RATECONTROL_AVBR)
         {
-            mfx.InitialDelayInKB = mfxU16((calcParam.initialDelayInKB + mfx.BRCParamMultiplier - 1) / mfx.BRCParamMultiplier);
-            mfx.MaxKbps          = mfxU16((calcParam.maxKbps + mfx.BRCParamMultiplier - 1)         / mfx.BRCParamMultiplier);
+            mfx.InitialDelayInKB = mfxU16(calcParam.initialDelayInKB / mfx.BRCParamMultiplier);
+            mfx.MaxKbps          = mfxU16(calcParam.maxKbps / mfx.BRCParamMultiplier);
         }
     }
     if (mfx.RateControlMethod == MFX_RATECONTROL_LA ||
         mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD ||
         mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
-        m_extOpt3.WinBRCMaxAvgKbps = mfxU16((calcParam.WinBRCMaxAvgKbps + mfx.BRCParamMultiplier - 1)         / mfx.BRCParamMultiplier);
+        m_extOpt3.WinBRCMaxAvgKbps = mfxU16(calcParam.WinBRCMaxAvgKbps / mfx.BRCParamMultiplier);
 }
 
 void MfxVideoParam::AlignCalcWithBRCParamMultiplier()
