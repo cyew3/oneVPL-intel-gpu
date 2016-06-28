@@ -167,27 +167,27 @@ static mfxU32 Str2FourCC( msdk_char* strInput )
 {
     mfxU32 fourcc = MFX_FOURCC_YV12;//default
 
-    if ( 0 == msdk_strcmp(strInput, MSDK_STRING("yv12")) )
+    if ( 0 == msdk_stricmp(strInput, MSDK_STRING("yv12")) )
     {
         fourcc = MFX_FOURCC_YV12;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("rgb3")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("rgb3")) )
     {
         fourcc = MFX_FOURCC_RGB3;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("rgb4")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("rgb4")) )
     {
         fourcc = MFX_FOURCC_RGB4;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("yuy2")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("yuy2")) )
     {
         fourcc = MFX_FOURCC_YUY2;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("uyvy")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("uyvy")) )
     {
         fourcc = MFX_FOURCC_UYVY;
     }
-    else if ( 0 == msdk_strcmp(strInput, MSDK_STRING("nv12")) )
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("nv12")) )
     {
         fourcc = MFX_FOURCC_NV12;
     }
@@ -455,12 +455,12 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 i++;
                 msdk_opt_read(strInput[i], pParams->inFrameInfo[VPP_IN].dFrameRate);
             }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dw")) )
+            else if (0 == msdk_stricmp(strInput[i], MSDK_STRING("-dw")) )
             {
                 i++;
                 msdk_opt_read(strInput[i], pParams->outFrameInfo.nWidth);
             }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dh")))
+            else if (0 == msdk_stricmp(strInput[i], MSDK_STRING("-dh")))
             {
                 i++;
                 msdk_opt_read(strInput[i], pParams->outFrameInfo.nHeight);
