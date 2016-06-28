@@ -155,6 +155,8 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
     if (!mfxCore || !params)
         return UMC::UMC_ERR_NULL_PTR;
 
+    m_IOPattern = params->IOPattern;
+
     if (!isUseExternalFrames && (!request || !response))
         return UMC::UMC_ERR_NULL_PTR;
 
@@ -604,10 +606,12 @@ mfxStatus mfx_UMC_FrameAllocator::SetCurrentMFXSurface(mfxFrameSurface1 *surf, b
     if ((surf->Info.BitDepthChroma ? surf->Info.BitDepthChroma : 8) != (m_surface.Info.BitDepthChroma ? m_surface.Info.BitDepthChroma : 8))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if (surf->Info.FourCC == MFX_FOURCC_P010 || surf->Info.FourCC == MFX_FOURCC_P210)
+    if ((surf->Info.FourCC == MFX_FOURCC_P010 ||
+        surf->Info.FourCC == MFX_FOURCC_P210) &&
+        (m_IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) &&
+        surf->Info.Shift != 1)
     {
-        if ((surf->Info.Shift == 0) != m_isSWDecode)
-            return MFX_ERR_INVALID_VIDEO_PARAM;
+        return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
     mfxExtBuffer* extbuf = 

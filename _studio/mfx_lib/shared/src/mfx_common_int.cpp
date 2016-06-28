@@ -181,7 +181,9 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
         break;
     }
 
-    if (info->FourCC == MFX_FOURCC_P010 || info->FourCC == MFX_FOURCC_P210)
+    if (codecId != MFX_CODEC_HEVC && 
+       (info->FourCC == MFX_FOURCC_P010 ||
+        info->FourCC == MFX_FOURCC_P210))
     {
         if (info->Shift != (isHW ? 1 : 0))
             return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -205,10 +207,6 @@ mfxStatus CheckAudioParamCommon(mfxAudioParam *in)
 
     return MFX_ERR_NONE;
 }
-
-
-
-
 
 mfxStatus CheckAudioParamDecoders(mfxAudioParam *in)
 {
@@ -269,6 +267,13 @@ mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
 
     if (!in->IOPattern)
         return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if ((in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210) &&
+        (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) &&
+         in->mfx.FrameInfo.Shift != 1)
+    {
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
 
     return MFX_ERR_NONE;
 }
