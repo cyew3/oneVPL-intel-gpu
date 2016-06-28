@@ -473,7 +473,7 @@ mfxStatus vppParseResetPar(msdk_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, 
                 i++;
                 msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->frameInfoIn.back().nWidth);
             }
-            else if ( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-dw")) )
+            else if ( 0 == msdk_stricmp(strInput[i], MSDK_STRING("-dw")) )
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
@@ -485,7 +485,7 @@ mfxStatus vppParseResetPar(msdk_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, 
                 i++;
                 msdk_sscanf(strInput[i], MSDK_STRING("%hd"), &pParams->frameInfoIn.back().nHeight);
             }
-            else if ( 0 == msdk_strcmp(strInput[i], MSDK_STRING("-dh")) )
+            else if ( 0 == msdk_stricmp(strInput[i], MSDK_STRING("-dh")) )
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
@@ -854,13 +854,13 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 i++;
                 msdk_sscanf(strInput[i], MSDK_STRING("%lf"), &pParams->frameInfoIn[0].dFrameRate);
             }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dw")) )
+            else if (0 == msdk_stricmp(strInput[i], MSDK_STRING("-dw")) )
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
                 msdk_sscanf(strInput[i], MSDK_STRING("%hu"), &pParams->frameInfoOut[0].nWidth);
             }
-            else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dh")))
+            else if (0 == msdk_stricmp(strInput[i], MSDK_STRING("-dh")))
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
