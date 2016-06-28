@@ -238,9 +238,11 @@ mfxStatus CTranscodingPipeline::DecodePreInit(sInputParams *pParams)
             }
             else
             {
+                bool isDefaultPlugin = false;
                 if (AreGuidsEqual(pParams->decoderPluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
                 {
                     pParams->decoderPluginParams.pluginGuid = msdkGetPluginUID(pParams->libType, MSDK_VDECODE, pParams->DecodeId);
+                    isDefaultPlugin=true;
                 }
                 if (!AreGuidsEqual(pParams->decoderPluginParams.pluginGuid, MSDK_PLUGINGUID_NULL))
                 {
@@ -249,7 +251,9 @@ mfxStatus CTranscodingPipeline::DecodePreInit(sInputParams *pParams)
                 }
                 if(sts==MFX_ERR_UNSUPPORTED)
                 {
-                    msdk_printf(MSDK_STRING("Default plugin cannot be loaded (possibly you have to define plugin explicitly)\n"));
+                    msdk_printf(isDefaultPlugin ?
+                        MSDK_STRING("Default plugin cannot be loaded (possibly you have to define plugin explicitly)\n")
+                        : MSDK_STRING("Explicitly specified plugin cannot be loaded.\n"));
                 }
             }
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
