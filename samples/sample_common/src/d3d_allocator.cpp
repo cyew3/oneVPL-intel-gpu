@@ -74,6 +74,8 @@ D3DFrameAllocator::D3DFrameAllocator()
 D3DFrameAllocator::~D3DFrameAllocator()
 {
     Close();
+    for (unsigned i = 0; i < m_midsAllocated.size(); i++)
+        MSDK_SAFE_FREE(m_midsAllocated[i]);
 }
 
 mfxStatus D3DFrameAllocator::Init(mfxAllocatorParams *pParams)
@@ -264,11 +266,10 @@ mfxStatus D3DFrameAllocator::ReleaseResponse(mfxFrameAllocResponse *response)
             if (response->mids[i]) {
                 mfxHDLPair *dxMids = (mfxHDLPair*)response->mids[i];
                 static_cast<IDirect3DSurface9*>(dxMids->first)->Release();
+                MSDK_SAFE_FREE(dxMids);
             }
         }
-        MSDK_SAFE_FREE(response->mids[0]);
     }
-    MSDK_SAFE_FREE(response->mids);
 
     return sts;
 }
@@ -330,13 +331,15 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAl
         videoService = m_decoderService;
     }
 
-    mfxHDLPair *dxMids = NULL, **dxMidPtrs = NULL;
-    dxMids = (mfxHDLPair*)calloc(request->NumFrameSuggested, sizeof(mfxHDLPair));
-    dxMidPtrs = (mfxHDLPair**)calloc(request->NumFrameSuggested, sizeof(mfxHDLPair*));
+    mfxHDLPair **dxMidPtrs = (mfxHDLPair**)calloc(request->NumFrameSuggested, sizeof(mfxHDLPair*));
 
-    if (!dxMids || !dxMidPtrs) {
-        MSDK_SAFE_FREE(dxMids);
-        MSDK_SAFE_FREE(dxMidPtrs);
+    for (int i = 0; i < request->NumFrameSuggested; i++)
+    {
+        dxMidPtrs[i] = (mfxHDLPair*)calloc(1, sizeof(mfxHDLPair));
+    }
+
+    if (!dxMidPtrs) {
+        DeallocateMids(dxMidPtrs, request->NumFrameSuggested);
         return MFX_ERR_MEMORY_ALLOC;
     }
 
@@ -346,36 +349,41 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAl
     if (request->Type & MFX_MEMTYPE_EXTERNAL_FRAME) {
         for (int i = 0; i < request->NumFrameSuggested; i++) {
             hr = videoService->CreateSurface(request->Info.Width, request->Info.Height, 0,  format,
-                D3DPOOL_DEFAULT, m_surfaceUsage, target, (IDirect3DSurface9**)&dxMids[i].first, &dxMids[i].second);
+                D3DPOOL_DEFAULT, m_surfaceUsage, target, (IDirect3DSurface9**)&dxMidPtrs[i]->first, &dxMidPtrs[i]->second);
             if (FAILED(hr)) {
                 ReleaseResponse(response);
-                MSDK_SAFE_FREE(dxMids);
                 return MFX_ERR_MEMORY_ALLOC;
             }
-            dxMidPtrs[i] = &dxMids[i];
         }
     } else {
         safe_array<IDirect3DSurface9*> dxSrf(new IDirect3DSurface9*[request->NumFrameSuggested]);
         if (!dxSrf.get())
         {
-            MSDK_SAFE_FREE(dxMids);
+            DeallocateMids(dxMidPtrs, request->NumFrameSuggested);
             return MFX_ERR_MEMORY_ALLOC;
         }
         hr = videoService->CreateSurface(request->Info.Width, request->Info.Height, request->NumFrameSuggested - 1,  format,
                                             D3DPOOL_DEFAULT, m_surfaceUsage, target, dxSrf.get(), NULL);
         if (FAILED(hr))
         {
-            MSDK_SAFE_FREE(dxMids);
+            DeallocateMids(dxMidPtrs, request->NumFrameSuggested);
             return MFX_ERR_MEMORY_ALLOC;
         }
 
-
         for (int i = 0; i < request->NumFrameSuggested; i++) {
-            dxMids[i].first = dxSrf.get()[i];
-            dxMidPtrs[i] = &dxMids[i];
+            dxMidPtrs[i]->first = dxSrf.get()[i];
         }
     }
+    m_midsAllocated.push_back(dxMidPtrs);
     return MFX_ERR_NONE;
 }
 
+void D3DFrameAllocator::DeallocateMids(mfxHDLPair** pair, int n)
+{
+    for (int i = 0; i < n; i++)
+    {
+        MSDK_SAFE_FREE(pair[i]);
+    }
+    MSDK_SAFE_FREE(pair);
+}
 #endif // #if defined(_WIN32) || defined(_WIN64)
