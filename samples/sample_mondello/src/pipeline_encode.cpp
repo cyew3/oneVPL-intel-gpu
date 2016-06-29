@@ -392,6 +392,10 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_mfxEncParams.mfx.TargetKbps = pInParams->nBitRate; // in Kbps
     }
     m_mfxEncParams.mfx.NumSlice = pInParams->nNumSlice;
+
+    if (m_isMondelloInterlaced)
+        pInParams->dFrameRate = 30;
+
     ConvertFrameRate(pInParams->dFrameRate, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtN, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtD);
     m_mfxEncParams.mfx.EncodedOrder            = 0; // binary flag, 0 signals encoder to take frames in display order
 
@@ -410,6 +414,9 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     m_mfxEncParams.mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
     m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
     m_mfxEncParams.mfx.FrameInfo.PicStruct    = pInParams->nPicStruct;
+
+    if (m_isMondelloInterlaced)
+        m_mfxEncParams.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
 
     if (m_isMondelloRender)
     {
@@ -519,6 +526,13 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
         m_mfxVppParams.vpp.In.FourCC    = MFX_FOURCC_NV12;
 
     m_mfxVppParams.vpp.In.PicStruct = pInParams->nPicStruct;
+
+    if (m_isMondelloInterlaced)
+    {
+        pInParams->dFrameRate = 60;
+        m_mfxVppParams.vpp.In.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
+    }
+
     ConvertFrameRate(pInParams->dFrameRate, &m_mfxVppParams.vpp.In.FrameRateExtN, &m_mfxVppParams.vpp.In.FrameRateExtD);
 
     // width must be a multiple of 16
@@ -551,6 +565,12 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
     // configure and attach external parameters
     AllocAndInitVppDoNotUse();
     m_VppExtParams.push_back((mfxExtBuffer *)&m_VppDoNotUse);
+
+    if (m_isMondelloInterlaced)
+    {
+        m_VppDeinterlacing.Mode = MFX_DEINTERLACING_FIELD_WEAVING;
+        m_VppExtParams.push_back((mfxExtBuffer*)&m_VppDeinterlacing);
+    }
 
     if (MVC_ENABLED & pInParams->MVC_flags)
         m_VppExtParams.push_back((mfxExtBuffer *)&m_MVCSeqDesc);
@@ -918,6 +938,10 @@ CEncodingPipeline::CEncodingPipeline()
     m_VppDoNotUse.Header.BufferId = MFX_EXTBUFF_VPP_DONOTUSE;
     m_VppDoNotUse.Header.BufferSz = sizeof(m_VppDoNotUse);
 
+    MSDK_ZERO_MEMORY(m_VppDeinterlacing);
+    m_VppDeinterlacing.Header.BufferId = MFX_EXTBUFF_VPP_DEINTERLACING;
+    m_VppDeinterlacing.Header.BufferSz = sizeof(m_VppDeinterlacing);
+
     MSDK_ZERO_MEMORY(m_CodingOption);
     m_CodingOption.Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
     m_CodingOption.Header.BufferSz = sizeof(m_CodingOption);
@@ -942,6 +966,7 @@ CEncodingPipeline::CEncodingPipeline()
 
     m_isMondelloInputEnabled = false;
     m_isMondelloRender = false;
+    m_isMondelloInterlaced = false;
 }
 
 CEncodingPipeline::~CEncodingPipeline()
@@ -1037,6 +1062,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 
     m_isMondelloInputEnabled = pParams->isMondelloInputEnabled;
     m_isMondelloRender = pParams->isMondelloRender;
+    m_isMondelloInterlaced = pParams->isInterlaced;
 
     if (!m_isMondelloInputEnabled)
     {
@@ -1207,8 +1233,13 @@ void CEncodingPipeline::InitMondelloPipeline(sInputParams *pParams)
             pSurf = &m_pEncSurfaces[0];
         }
 
-        if (m_hwdev)
+        //  This scenario is to handle specifically for RGB-8888 mondello input. When this
+        //  happens we will need to set WL_DRM_FORMAT_XBGR8888 format (RGB4) on wayland.
+        if (m_hwdev && pParams->MondelloFormat == RGB4)
             m_hwdev->SetMondelloInput(m_isMondelloInputEnabled);
+
+        if (m_isMondelloInterlaced)
+            pParams->nHeight =  pParams->nHeight * 2;
 
         MondelloPipeline.Init(pParams->nWidth,
             pParams->nHeight,

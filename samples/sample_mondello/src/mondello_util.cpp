@@ -21,6 +21,7 @@
 #include "libcamhal/api/ICamera.h"
 #include "vaapi_utils.h"
 #include <time.h>
+#define MAX_BUFFER_COUNT 10
 #define FPS_TIME_INTERVAL 2
 #define FPS_BUF_COUNT_START 10
 using namespace icamera;
@@ -137,6 +138,7 @@ int MondelloDevice::ConvertToV4L2FourCC()
 {
     switch (m_mondelloFormat)
     {
+        case YUY2:  return V4L2_PIX_FMT_YUYV;
         case UYVY:  return V4L2_PIX_FMT_UYVY;
         case RGB4:  return V4L2_PIX_FMT_XBGR32;
 
@@ -214,6 +216,12 @@ void MondelloDevice::MondelloSetup()
 {
     int i, ret;
 
+    /* libcamhal only request for 10 buffers, QBUF operation will fail if
+     * we acceed more than that buffer size
+     */
+    if (m_num_buffers > MAX_BUFFER_COUNT)
+       m_num_buffers = MAX_BUFFER_COUNT;
+
     for (i = 0, CurBuffers = buffers; i < m_num_buffers; i++, CurBuffers++)
     {
         CurBuffers->s = m_streams[0];
@@ -248,6 +256,7 @@ int ConvertToMFXFourCC(enum MondelloPixelFormat MondelloFormat)
 {
     switch (MondelloFormat)
     {
+        case YUY2:  return MFX_FOURCC_YUY2;
         case UYVY:  return MFX_FOURCC_UYVY;
         case RGB4:  return MFX_FOURCC_RGB4;
         case NO_FORMAT:

@@ -39,7 +39,7 @@
 
 enum MondelloPixelFormat
 {
-    NO_FORMAT = 0, UYVY, RGB4
+    NO_FORMAT = 0, YUY2, UYVY, RGB4
 };
 
 extern camera_buffer_t *buffers;

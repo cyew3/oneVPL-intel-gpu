@@ -110,14 +110,15 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("Example: %s h264|mpeg2|mvc -i InputYUVFile -o OutputEncodedFile -w width -h height -angle 180 -g 300 -r 1 \n"), strAppName);
 #endif
     msdk_printf(MSDK_STRING("   [-uyvy]            - Input Raw format types V4L2 Encode\n"));
+    msdk_printf(MSDK_STRING("   [-yuy2]            - Mondello input format\n"));
     msdk_printf(MSDK_STRING("   [-rgb4]            - Mondello input format\n"));
     msdk_printf(MSDK_STRING("   [-i::mondello]     - To enable Mondello option\n"));
     msdk_printf(MSDK_STRING("   [-dcc format]      - Format (FourCC) of dst video (support nv12|rgb4)\n"));
     msdk_printf(MSDK_STRING("   [-rwld]            - Render to Wayland\n"));
     msdk_printf(MSDK_STRING("   [-I]               - To enable Interlace option\n"));
     msdk_printf(MSDK_STRING("   [-fps]             - Print out fps\n"));
-    msdk_printf(MSDK_STRING("Example: %s h264 -uyvy|rgb4 -i::mondello -w width -h height -rwld -dcc rgb4|nv12\n"), strAppName);
-    msdk_printf(MSDK_STRING("Example: %s h264 -uyvy|rgb4 -i::mondello -w width -h height -o OutputEncodedFile\n"), strAppName);
+    msdk_printf(MSDK_STRING("Example: %s h264 -uyvy|yuy2|rgb4 -i::mondello -w width -h height -rwld -dcc rgb4|nv12\n"), strAppName);
+    msdk_printf(MSDK_STRING("Example: %s h264 -uyvy|yuy2|rgb4 -i::mondello -w width -h height -o OutputEncodedFile\n"), strAppName);
     msdk_printf(MSDK_STRING("   [-viewoutput] - instruct the MVC encoder to output each view in separate bitstream buffer. Depending on the number of -o options behaves as follows:\n"));
     msdk_printf(MSDK_STRING("                   1: two views are encoded in single file\n"));
     msdk_printf(MSDK_STRING("                   2: two views are encoded in separate files\n"));
@@ -373,6 +374,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_FILE;
         }
         MOD_ENC_PARSE_INPUT
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-yuy2")))
+        {
+            pParams->MondelloFormat = YUY2;
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-uyvy")))
         {
             pParams->MondelloFormat = UYVY;
@@ -691,6 +696,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     if (pParams->nDstHeight == 0)
     {
         pParams->nDstHeight = pParams->nHeight;
+    }
+
+    // for the case of mondello interlaced input
+    if (pParams->isInterlaced)
+    {
+        pParams->nHeight = pParams->nHeight / 2;
     }
 
     // calculate default bitrate based on the resolution (a parameter for encoder, so Dst resolution is used)

@@ -222,6 +222,8 @@ protected:
 
     // for disabling VPP algorithms
     mfxExtVPPDoNotUse m_VppDoNotUse;
+    // for VPP weaving
+    mfxExtVPPDeinterlacing  m_VppDeinterlacing;
     // for MVC encoder and VPP configuration
     mfxExtMVCSeqDesc m_MVCSeqDesc;
     mfxExtCodingOption m_CodingOption;
@@ -242,6 +244,7 @@ protected:
 
     bool m_isMondelloInputEnabled;
     bool m_isMondelloRender;
+    bool m_isMondelloInterlaced;
 
     CTimeStatistics m_statOverall;
     CTimeStatistics m_statFile;
