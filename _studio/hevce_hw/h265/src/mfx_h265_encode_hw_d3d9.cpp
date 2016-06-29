@@ -154,7 +154,7 @@ void FillSpsBuffer(
     if (par.m_ext.CO2.MaxSliceSize)
         sps.SliceSizeControl = 1;
 
-    sps.UserMaxFrameSize = 0;
+    sps.UserMaxFrameSize = par.m_ext.CO2.MaxFrameSize;
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
     {
@@ -464,6 +464,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     HRESULT hr = auxDevice->Execute(AUXDEV_QUERY_ACCEL_CAPS, guid, m_caps);
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
+    
     m_guid      = guid;
     m_width     = width;
     m_height    = height;

@@ -151,6 +151,10 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     sts = m_ddi->QueryEncodeCaps(m_caps);
     MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_DEVICE_FAILED);
 
+#ifndef MAX_SLICE_SIZE_SUPPORT
+    m_caps.UserMaxFrameSizeSupport  = 0; // temporal: disable  MaxFrameSize feature
+#endif
+
     mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(*par);
 
     sts = LoadSPSPPS(m_vpar, pSPSPPS);
@@ -594,7 +598,8 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
              m_vpar.BufferSizeInKB != parNew.BufferSizeInKB ||
              m_vpar.InitialDelayInKB != parNew.InitialDelayInKB||
              m_vpar.mfx.FrameInfo.FrameRateExtN != parNew.mfx.FrameInfo.FrameRateExtN ||
-             m_vpar.mfx.FrameInfo.FrameRateExtD != parNew.mfx.FrameInfo.FrameRateExtD)              
+             m_vpar.mfx.FrameInfo.FrameRateExtD != parNew.mfx.FrameInfo.FrameRateExtD ||
+             m_vpar.m_ext.CO2.MaxFrameSize != parNew.m_ext.CO2.MaxFrameSize)              
              brcReset = true;   
     }
     if (m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_VBR)

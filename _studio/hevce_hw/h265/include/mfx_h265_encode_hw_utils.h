@@ -34,6 +34,7 @@
 #define MFX_SORT(_AR, _SZ, _OP) MFX_SORT_COMMON(_AR, _SZ, _AR[_i] _OP _AR[_j])
 #define MFX_SORT_STRUCT(_AR, _SZ, _M, _OP) MFX_SORT_COMMON(_AR, _SZ, _AR[_i]._M _OP _AR[_j]._M)
 
+//#define MAX_SLICE_SIZE_SUPPORT
 
 namespace MfxHwH265Encode
 {
@@ -374,6 +375,7 @@ namespace ExtBuffer
         _CopyPar1(IntRefType);
         _CopyPar1(IntRefCycleSize);
         _CopyPar1(IntRefQPDelta);
+        _CopyPar1(MaxFrameSize);
 
         _CopyPar1(MBBRC);
         _CopyPar1(BRefType);

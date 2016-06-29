@@ -49,6 +49,7 @@ public:
         , VABID_BRCParallel
         , VABID_FrameRate
         , VABID_QualityLevel
+        , VABID_MaxFrameSize
         , VABID_TriggerCodecHang
 
         , VABID_PACKED_AUD_H

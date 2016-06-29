@@ -396,6 +396,41 @@ mfxStatus SetQualityLevelParams(
 
     return MFX_ERR_NONE;
 }
+static mfxStatus SetMaxFrameSize(
+    const UINT   userMaxFrameSize,
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
+    VABufferID & frameSizeBuf_id)
+{
+    VAEncMiscParameterBuffer             *misc_param;
+    VAEncMiscParameterBufferMaxFrameSize *p_maxFrameSize;
+
+    if ( frameSizeBuf_id != VA_INVALID_ID)
+    {
+        vaDestroyBuffer(vaDisplay, frameSizeBuf_id);
+    }
+
+    VAStatus vaSts = vaCreateBuffer(vaDisplay,
+                   vaContextEncode,
+                   VAEncMiscParameterBufferType,
+                   sizeof(VAEncMiscParameterBuffer) + sizeof(VAEncMiscParameterBufferMaxFrameSize),
+                   1,
+                   NULL,
+                   &frameSizeBuf_id);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    vaSts = vaMapBuffer(vaDisplay, frameSizeBuf_id, (void **)&misc_param);
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    misc_param->type = VAEncMiscParameterTypeMaxFrameSize;
+    p_maxFrameSize = (VAEncMiscParameterBufferMaxFrameSize *)misc_param->data;
+
+    p_maxFrameSize->max_frame_size = userMaxFrameSize*8;    // in bits for libva
+
+    vaUnmapBuffer(vaDisplay, frameSizeBuf_id);
+
+    return MFX_ERR_NONE;
+}
 
 void FillConstPartOfPps(
     MfxVideoParam const & par,
@@ -897,7 +932,9 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
 #endif
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetFrameRate(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_FrameRate, 1)), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetQualityLevelParams(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_QualityLevel, 1)), MFX_ERR_DEVICE_FAILED);
-
+#ifdef MAX_SLICE_SIZE_SUPPORT
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetMaxFrameSize(par.m_ext.CO2.MaxFrameSize, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_MaxFrameSize, 1)), MFX_ERR_DEVICE_FAILED);
+#endif
     FillConstPartOfPps(par, m_pps);
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
 
@@ -920,6 +957,10 @@ mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par, bool bResetBRC)
 #endif
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetFrameRate(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_FrameRate, 1)), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetQualityLevelParams(par, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_QualityLevel, 1)), MFX_ERR_DEVICE_FAILED);
+
+#ifdef MAX_SLICE_SIZE_SUPPORT
+    MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetMaxFrameSize(par.m_ext.CO2.MaxFrameSize, m_vaDisplay, m_vaContextEncode, VABufferNew(VABID_MaxFrameSize, 1)), MFX_ERR_DEVICE_FAILED);
+#endif
 
     FillConstPartOfPps(par, m_pps);
     FillSliceBuffer(par, m_sps, m_pps, m_slice);

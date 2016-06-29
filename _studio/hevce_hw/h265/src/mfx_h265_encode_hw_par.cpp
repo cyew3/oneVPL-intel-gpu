@@ -818,6 +818,7 @@ void InheritDefaultValues(
     InheritOption(extOpt2Init->MBBRC,      extOpt2Reset->MBBRC);
     InheritOption(extOpt2Init->BRefType,   extOpt2Reset->BRefType);
     InheritOption(extOpt2Init->NumMbPerSlice,   extOpt2Reset->NumMbPerSlice);
+    InheritOption(extOpt2Init->MaxFrameSize,   extOpt2Reset->MaxFrameSize);
 
     //DisableDeblockingIdc=0 is valid value, reset 1 -> 0 possible
     //InheritOption(extOpt2Init->DisableDeblockingIdc,  extOpt2Reset->DisableDeblockingIdc);
@@ -1254,6 +1255,25 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         par.m_ext.CO2.IntRefType = 0;
         par.m_ext.CO2.IntRefCycleSize = 0;
         changed +=1;
+    }
+   
+    if (((caps.UserMaxFrameSizeSupport == 0) || (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR)) && par.m_ext.CO2.MaxFrameSize)
+    {
+        par.m_ext.CO2.MaxFrameSize = 0;
+        changed+=1;
+    }
+
+
+    if (par.m_ext.CO2.MaxFrameSize != 0 &&
+                par.mfx.FrameInfo.FrameRateExtN != 0 && par.mfx.FrameInfo.FrameRateExtD != 0)
+    {
+        mfxF64 frameRate = mfxF64(par.mfx.FrameInfo.FrameRateExtN) / par.mfx.FrameInfo.FrameRateExtD;
+        mfxU32 avgFrameSizeInBytes = mfxU32(par.TargetKbps * 1000 / frameRate / 8);
+        if (par.m_ext.CO2.MaxFrameSize < avgFrameSizeInBytes)
+        {
+            changed+=1;
+            par.m_ext.CO2.MaxFrameSize = avgFrameSizeInBytes;
+        }
     }
 
     if (par.m_ext.CO3.IntRefCycleDist != 0 &&
