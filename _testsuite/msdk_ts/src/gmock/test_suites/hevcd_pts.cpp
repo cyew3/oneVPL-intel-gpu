@@ -17,8 +17,8 @@ namespace hevcd_pts
 const mfxU32 n_frames = 30;
 enum
 {
-    SMALL = 20,
-    NONE = 1000
+    SMALL =   20 * 1000,
+    NONE  = 1000 * 1000,
 };
 
 struct tc_struct
@@ -32,96 +32,79 @@ struct tc_struct
 
 class Reader : public tsBitstreamReader
 {
+
 public:
-    std::map<mfxU64, mfxU64> pts_by_offset;
-    std::map<mfxU64, mfxU64>::iterator m_it;
-    mfxU64 m_pos;
-    mfxU64 m_pts;
-    mfxU64 m_buff_size;
+
+    typedef
+        std::vector<std::pair<mfxU64, mfxU64> > pts_by_offset_type;
+
+    pts_by_offset_type m_pts_by_offset;
+    mfxU64             m_pos;
 
     Reader(const tc_struct& tc)
-        : tsBitstreamReader(g_tsStreamPool.Get(tc.stream), tc.bufSz * 1000)
+        : tsBitstreamReader(g_tsStreamPool.Get(tc.stream), tc.bufSz)
         , m_pos(0)
-        , m_pts(tc.pts[0])
-        , m_buff_size(tc.bufSz)
     {
         tsParserHEVC p;
-        std::map<mfxU64, mfxU64> offset_by_poc;
-        std::map<mfxU64, mfxU64>::iterator it;
-        mfxU64 inc = 0;
-        mfxU64 max = 0;
-
         p.open(g_tsStreamPool.Get(tc.stream));
 
-        while(auto pH = p.Parse())
+        std::map<mfxU64, mfxU64> offset_by_poc;
+        mfxI64 inc = 0;
+        mfxI64 max = -1;
+
+        while (auto pH = p.Parse())
         {
             if(pH->pic->PicOrderCntVal == 0)
-                inc += max;
+                inc += max + 1;
 
             offset_by_poc[pH->pic->PicOrderCntVal + inc] = pH->pic->slice[0]->StartOffset;
             max = TS_MAX(pH->pic->PicOrderCntVal + inc, max);
         }
 
-        for(it = offset_by_poc.begin(), inc = 0; it != offset_by_poc.end(); it++, inc++)
+        std::map<mfxU64, mfxU64>::iterator it;
+        for (it = offset_by_poc.begin(), inc = 0; it != offset_by_poc.end(); it++, inc++)
         {
-            pts_by_offset[it->second] = (inc < n_frames) ? tc.pts[inc] : -1;
+            auto pts = tc.pts[inc];
+
+            //hold vector sorted by offsets
+            auto i = std::lower_bound(std::begin(m_pts_by_offset), std::end(m_pts_by_offset), it->second,
+                [](std::pair<mfxU64, mfxU64> const& p, mfxU64 v) { return p.first < v; }
+            );
+            m_pts_by_offset.emplace(i, it->second, (inc < n_frames) ? pts : -1);
         }
-        m_it = pts_by_offset.begin();
     }
+
     ~Reader() {};
 
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     {
-        if(pts_by_offset.empty())
+        if (m_pts_by_offset.empty())
             return MFX_ERR_MORE_DATA;
 
         mfxStatus sts = MFX_ERR_NONE;
-        std::map<mfxU64, mfxU64>::iterator curr = pts_by_offset.begin();
         m_pos -= bs.DataLength;
 
-        if(!m_eos)
+        if (!m_eos)
         {
             sts = tsBitstreamReader::ProcessBitstream(bs, nFrames);
         }
 
         if (m_pos)
         {
-            if (m_buff_size == NONE)
-            {
-                std::map<mfxU64, mfxU64>::iterator it = pts_by_offset.begin();
-                while (it->first <= m_pos)
-                {
-                    it++;
-                    if (it == pts_by_offset.end()) break;
+            auto start = std::begin(m_pts_by_offset);
+            //first of all erase all processed units
+            auto i = std::lower_bound(start, std::end(m_pts_by_offset), m_pos,
+                [](std::pair<mfxU64, mfxU64> const& p, mfxU64 v) { return p.first < v; }
+            );
+            if (i != start)
+                m_pts_by_offset.erase(start, i);
 
-                    if (curr->second > it->second)
-                    {
-                        curr = it;
-                    }
-                }
-                bs.TimeStamp = curr->second;
-                pts_by_offset.erase(curr);
-            }
-            else
-            {
-                mfxU64 last = curr->first;
-                curr++;
-                mfxU64 next = curr->first;
-
-                if (!(last < m_pos && next <= (m_pos + bs.DataLength)))
-                {
-                    curr--;
-                    bs.TimeStamp = curr->second;
-                }
-                else
-                {
-                    bs.TimeStamp = curr->second;
-                    curr--;
-                    pts_by_offset.erase(curr);
-                }
-            }
+            assert(!m_pts_by_offset.empty());
+            i = std::begin(m_pts_by_offset);
+            bs.TimeStamp = i->second;
 
         }
+
         m_pos += bs.DataLength;
 
         return sts;
@@ -139,9 +122,9 @@ public:
 
     mfxStatus ProcessSurface(mfxFrameSurface1& s)
     {
-        if(m_tc.pts[m_cur-1] != -1)
+        if (m_tc.pts[m_cur - 1] != -1)
         {
-            EXPECT_EQ(m_tc.pts[m_cur-1], (mfxI64)s.Data.TimeStamp);
+            EXPECT_EQ(m_tc.pts[m_cur - 1], (mfxI64)s.Data.TimeStamp);
             EXPECT_EQ(MFX_FRAMEDATA_ORIGINAL_TIMESTAMP, s.Data.DataFlag);
         }
         else
@@ -158,6 +141,7 @@ public:
             EXPECT_EQ(pts_expected - d, (mfxI64)s.Data.TimeStamp);
             EXPECT_EQ(0, s.Data.DataFlag);
         }
+
         m_prev_pts = s.Data.TimeStamp;
 
         return MFX_ERR_NONE;
@@ -177,54 +161,70 @@ public:
 
 const tc_struct TestSuite::test_case[] =
 {
-    {/* 0*/
+    { /* 0 */
         "/conformance/hevc/itu/DELTAQP_A_BRCM_4.bit",
         30000, 1000,
         NONE,
+        {     0,  3600,  7200,     0, 14400, 18000, 21600, 25200,  28800,  32400,
+          36000, 39600, 43200, 46800, 50400, 54000, 57600, 61200,  64800,  68400,
+          72000, 75600, 79200, 82800, 86400, 90000, 93600, 97200, 100800, 104400 }
+    },
+    { /* 1 */
+        "/conformance/hevc/itu/DELTAQP_A_BRCM_4.bit",
+        30000, 1001,
+        NONE,
+        { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+          -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+          -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 }
+    },
+    { /* 2 */
+        "/conformance/hevc/itu/DELTAQP_A_BRCM_4.bit",
+        60000, 1001,
+        NONE,
+        { 100000, -1, -1, 100000, -1, -1,   -1, -1, -1, -1,
+              -1, -1, -1,     -1,  0, -1,   -1, -1, -1, -1,
+              -1, -1, -1,     -1, -1, -1, 1000, -1, -1, -1, }
+    },
+    { /* 3 */
+        "/conformance/hevc/itu/DELTAQP_A_BRCM_4.bit",
+        30000, 1000,
+        SMALL,
+        {     0,  3600,  7200,     0, 14400, 18000, 21600, 25200,  28800,  32400,
+          36000, 39600, 43200, 46800, 50400, 54000, 57600, 61200,  64800,  68400,
+          72000, 75600, 79200, 82800, 86400, 90000, 93600, 97200, 100800, 104400 }
+    },
+    { /* 4 */
+        "/conformance/hevc/itu/DELTAQP_A_BRCM_4.bit",
+        30000, 1001,
+        SMALL,
+        { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+          -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+          -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 }
+    },
+    { /* 5 */
+        "/conformance/hevc/itu/DELTAQP_A_BRCM_4.bit",
+        60000, 1001,
+        SMALL,
+        { 100000, -1, -1, -1, -1, -1,   -1, -1, -1, -1,
+              -1, -1, -1, -1,  0, -1,   -1, -1, -1, -1,
+              -1, -1, -1, -1, -1, -1, 1000, -1, -1, -1 }
+    },
+    { /* 6 */
+        "/conformance/hevc/itu/DELTAQP_A_BRCM_4.bit",
+        30000, 1000,
+        230651 - 39 + 5, //start of farme #0 minus SPS header + next unit start code
         {     0,  3600,  7200, 10800, 14400, 18000, 21600, 25200,  28800,  32400,
           36000, 39600, 43200, 46800, 50400, 54000, 57600, 61200,  64800,  68400,
           72000, 75600, 79200, 82800, 86400, 90000, 93600, 97200, 100800, 104400 }
     },
-    {/* 1*/
-        "/conformance/hevc/itu/DELTAQP_A_BRCM_4.bit",
-        30000, 1001,
-        NONE,
-        {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 }
-    },
-    {/* 2*/
+    { /* 7 */
         "/conformance/hevc/itu/DELTAQP_A_BRCM_4.bit",
         60000, 1001,
-        NONE,
-        {100000, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-         -1, -1, -1, -1, 0, -1, -1, -1, -1, -1,
-         -1, -1, -1, -1, -1, -1, 1000, -1, -1, -1, }
-    },
-    {/* 3*/
-        "/conformance/hevc/itu/DELTAQP_A_BRCM_4.bit",
-        30000, 1000,
-        SMALL,
-        {     0,  3600,  7200, 10800, 14400, 18000, 21600, 25200,  28800,  32400,
-          36000, 39600, 43200, 46800, 50400, 54000, 57600, 61200,  64800,  68400,
-          72000, 75600, 79200, 82800, 86400, 90000, 93600, 97200, 100800, 104400 }
-    },
-    {/* 4*/
-        "/conformance/hevc/itu/DELTAQP_A_BRCM_4.bit",
-        30000, 1001,
-        SMALL,
-        {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, }
-    },
-    {/* 5*/
-        "/conformance/hevc/itu/DELTAQP_A_BRCM_4.bit",
-        60000, 1001,
-        SMALL,
-        {100000, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-         -1, -1, -1, -1, 0, -1, -1, -1, -1, -1,
-         -1, -1, -1, -1, -1, -1, 1000, -1, -1, -1,}
-    },
+        230651 - 39 + 5, //start of farme #0 minus SPS header + next unit start code
+        { 100000, -1, -1, -1, -1, -1,   -1, -1, -1, -1,
+              -1, -1, -1, -1,  0, -1,   -1, -1, -1, -1,
+              -1, -1, -1, -1, -1, -1, 1000, -1, -1, -1 }
+    }
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(tc_struct);

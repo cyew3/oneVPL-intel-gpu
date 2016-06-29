@@ -1458,7 +1458,6 @@ H265DecoderFrame *TaskSupplier_H265::GetFrameToDisplayInternal(bool force)
         return view.pDPB->findOldestDisplayable(view.dpbSize);
     }
 
-
     for (;;)
     {
     // show oldest frame
