@@ -151,10 +151,6 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     sts = m_ddi->QueryEncodeCaps(m_caps);
     MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_DEVICE_FAILED);
 
-#ifndef MAX_SLICE_SIZE_SUPPORT
-    m_caps.UserMaxFrameSizeSupport  = 0; // temporal: disable  MaxFrameSize feature
-#endif
-
     mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(*par);
 
     sts = LoadSPSPPS(m_vpar, pSPSPPS);
