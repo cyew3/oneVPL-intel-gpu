@@ -2376,11 +2376,11 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
     H265EncodeTaskInputParams *inputParam = (H265EncodeTaskInputParams*)pParam;
     mfxStatus sts = MFX_ERR_NONE;
 
-    // this operation doesn't affect condVar condition, so don't use mutex
+    // this operation doesn't affect m_condVar condition, so don't use mutex m_critSect
     // THREADING_ITASK_INI -> THREADING_ITASK_WORKING
     Ipp32s taskStage = vm_interlocked_cas32(&inputParam->m_taskStage, THREADING_ITASK_WORKING, THREADING_ITASK_INI); 
 
-    if (0 == taskStage) {
+    if (THREADING_ITASK_INI == taskStage) {
         vm_mutex_lock(&th->m_prepCritSect);
         if (inputParam->m_taskID != th->m_taskEncodeCount) {
             // THREADING_ITASK_WORKING -> THREADING_ITASK_INI
@@ -2413,6 +2413,8 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
             vm_cond_signal(&th->m_condVar);
     }
 
+    if (inputParam->m_taskID > th->m_taskEncodeCount)
+        return MFX_TASK_BUSY;
 
     // global thread count control
     Ipp32u newThreadCount = vm_interlocked_inc32(&th->m_threadCount);
@@ -2550,6 +2552,8 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
                 break;
             case TT_COMPLETE:
                 {
+                    // TT_COMPLETE shouldn't have dependent tasks
+                    assert(task->numDownstreamDependencies == 0);
                     vm_mutex_lock(&th->m_prepCritSect);
 
                     H265EncodeTaskInputParams *taskInProgress = th->m_inputTaskInProgress;
@@ -2582,6 +2586,9 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
                     vm_mutex_unlock(&th->m_critSect);
                     vm_mutex_unlock(&th->m_prepCritSect);
                     vm_cond_broadcast(&th->m_condVar);
+
+                    vm_interlocked_dec32(&th->m_threadingTaskRunning);
+                    continue;
                 }
                 break;
             default:
