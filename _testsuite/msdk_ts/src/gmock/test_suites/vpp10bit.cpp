@@ -984,11 +984,30 @@ int TestSuite::RunTest(unsigned int id)
         sts_query = MFX_WRN_PARTIAL_ACCELERATION;
         sts_init  = MFX_WRN_PARTIAL_ACCELERATION;
     }
+    else
+    {
+        if (g_tsHWtype >= MFX_HW_KBL && m_par.vpp.Out.FourCC == MFX_FOURCC_P010
+            && sts_query == MFX_WRN_PARTIAL_ACCELERATION
+            && sts_init  == MFX_WRN_PARTIAL_ACCELERATION)
+        {
+            // KBL on Windows supports p010 output
+            if (!m_par.vpp.Out.BitDepthLuma || !m_par.vpp.Out.BitDepthChroma)
+            {
+                sts_query = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                sts_init  = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+            }
+            else
+            {
+                sts_query = MFX_ERR_NONE;
+                sts_init  = MFX_ERR_NONE;
+            }
+        }
+    }
 
     if (g_tsImpl == MFX_IMPL_SOFTWARE)
     {
         sts_query = MFX_ERR_NONE;
-        sts_init = MFX_ERR_NONE;
+        sts_init  = MFX_ERR_NONE;
     }
 
     if (m_par.vpp.In.FourCC == MFX_FOURCC_P210)
