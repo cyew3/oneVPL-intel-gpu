@@ -3792,9 +3792,9 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
     MSDK_CHECK_POINTER(eTask->preenc_bufs, MFX_ERR_NULL_PTR);
     mfxU32 numOfFields = eTask->m_fieldPicFlag ? 2 : 1;
 
-    if (m_encpakParams.nPicStruct == MFX_PICSTRUCT_UNKNOWN && eTask->m_fieldPicFlag)
+    if (m_encpakParams.nPicStruct == MFX_PICSTRUCT_UNKNOWN)
     {
-        mfxStatus sts = ResetExtBufMBnum(eTask->preenc_bufs, m_numMB);
+        mfxStatus sts = ResetExtBufMBnum(eTask->preenc_bufs, eTask->m_fieldPicFlag ? m_numMB : m_numMBp);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
@@ -4300,8 +4300,8 @@ mfxStatus CEncodingPipeline::InitEncodeFrameParams(mfxFrameSurface1* encodeSurfa
 
     if (m_bNeedDRC && m_bDRCReset)
         sts = ResetExtBufMBnum(freeSet, m_numMB_drc);
-    else if (m_encpakParams.nPicStruct == MFX_PICSTRUCT_UNKNOWN && !(encodeSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE))
-        sts = ResetExtBufMBnum(freeSet, m_numMB);
+    else if (m_encpakParams.nPicStruct == MFX_PICSTRUCT_UNKNOWN)
+        sts = ResetExtBufMBnum(freeSet, (encodeSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? m_numMBp : m_numMB);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     pCurrentTask->bufs.push_back(std::pair<bufSet*, mfxFrameSurface1*>(freeSet, encodeSurface));
@@ -4821,15 +4821,15 @@ mfxStatus CEncodingPipeline::ResetExtBufMBnum(bufSet* freeSet, mfxU16 new_numMB)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    mfxExtFeiPreEncMVPredictors* mvPreds = NULL;
-    mfxExtFeiEncMV*           mvBuf      = NULL;
-    mfxExtFeiEncMBStat*       mbstatBuf  = NULL;
-    mfxExtFeiPakMBCtrl*       mbcodeBuf  = NULL;
-    mfxExtFeiEncQP*           pMbQP      = NULL;
-    mfxExtFeiEncMBCtrl*       pMbEncCtrl = NULL;
-    mfxExtFeiEncMVPredictors* pMvPredBuf = NULL;
-    mfxExtFeiPreEncMV*        mvs = NULL;
-    mfxExtFeiPreEncMBStat*    mbdata = NULL;
+    mfxExtFeiPreEncMVPredictors* mvPreds    = NULL;
+    mfxExtFeiEncMV*              mvBuf      = NULL;
+    mfxExtFeiEncMBStat*          mbstatBuf  = NULL;
+    mfxExtFeiPakMBCtrl*          mbcodeBuf  = NULL;
+    mfxExtFeiEncQP*              pMbQP      = NULL;
+    mfxExtFeiEncMBCtrl*          pMbEncCtrl = NULL;
+    mfxExtFeiEncMVPredictors*    pMvPredBuf = NULL;
+    mfxExtFeiPreEncMV*           mvs        = NULL;
+    mfxExtFeiPreEncMBStat*       mbdata     = NULL;
 
     setElem &bufsIn = freeSet->PB_bufs.in;
     for (mfxU16 i = 0; i < bufsIn.NumExtParam; i++)
