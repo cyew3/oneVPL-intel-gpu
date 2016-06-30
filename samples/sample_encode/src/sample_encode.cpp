@@ -691,6 +691,12 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
+    if (!pParams->nQuality && (MFX_CODEC_JPEG == pParams->CodecId))
+    {
+        PrintHelp(strInput[0], MSDK_STRING("-q must be specified for JPEG encoder"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
     // set default values for optional parameters that were not set or were set incorrectly
     mfxU32 nviews = (mfxU32)pParams->srcFileBuff.size();
     if ((nviews <= 1) || (nviews > 2))
