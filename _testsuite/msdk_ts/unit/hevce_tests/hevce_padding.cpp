@@ -154,6 +154,7 @@ namespace PaddingTest {
         typedef typename TestTraits<fourcc>::DoublePixT DoublePixT;
         Ipp32s chromaHeightDiv = TestTraits<fourcc>::ChromaHeightDiv;
         Ipp32u chromaFormat = TestTraits<fourcc>::ChromaFormat;
+        Ipp32s bpp = sizeof(PixT);
         Ipp32s ctuwC = 32;
         Ipp32s ctuhC = 64 / chromaHeightDiv;
         Ipp32s bitDepth = TestTraits<fourcc>::BitDepth;
@@ -167,14 +168,16 @@ namespace PaddingTest {
         Ipp32s padChromaL = Padding;
         Ipp32s padChromaR = Padding;
         Ipp32s padChromaH = Padding / chromaHeightDiv;
-        Ipp32s pitchL = AlignValue(widthL + AlignValue(padLumaL, 64) + padLumaR, 64);
-        Ipp32s pitchC = AlignValue(widthC + AlignValue(padChromaL, 64) + padChromaR, 64);
+        Ipp32s pitchL = AlignValue(widthL + AlignValue(padLumaL*bpp, 64)/bpp + padLumaR, 64);
+        Ipp32s pitchC = AlignValue(widthC + AlignValue(padChromaL*bpp, 64)/bpp + padChromaR, 64);
         Ipp32s lumaSize = pitchL * (heightL + 2 * padLumaH);
         Ipp32s chromaSize = pitchC * (heightC + 2 * padChromaH);
 
         if (gacc) {
-            padLumaR = pitchL - widthL - AlignValue(padLumaL, 64);
-            padChromaR = pitchC - widthC - AlignValue(padChromaL, 64);
+            padLumaL = AlignValue(padLumaL*bpp, 64)/bpp;
+            padLumaR = pitchL - widthL - padLumaL;
+            padChromaL = AlignValue(padChromaL*bpp, 64)/bpp;
+            padChromaR = pitchC - widthC - padChromaL;
         }
 
         std::vector<PixT> scratchPadRef(lumaSize + chromaSize + 2*16);

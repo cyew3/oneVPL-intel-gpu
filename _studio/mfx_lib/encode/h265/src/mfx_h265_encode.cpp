@@ -2702,12 +2702,29 @@ inline void FillVer(Ipp8u *p, Ipp32s pitchInBytes, Ipp32s h, __m128i line)
         _mm_store_si128((__m128i*)p, line);
 }
 
+inline void FillVer8(Ipp8u *p, Ipp32s pitchInBytes, Ipp32s h, Ipp64u line)
+{
+    for (Ipp32s y = 0; y < h; y++, p += pitchInBytes)
+        *(Ipp64u*)p = line;
+}
+
 template <class T> inline void FillHor(T *p, Ipp32s w, T val)
 {
     Ipp8u *p8 = (Ipp8u *)p;
     w *= sizeof(T);
     __m128i value = set1(val);
     for (Ipp32s x = 0; x < w; x += 16, p8 += 16)
+        _mm_store_si128((__m128i*)p8, value); 
+}
+
+template <class T> inline void FillHor8(T *p, Ipp32s w, T val)
+{
+    Ipp8u *p8 = (Ipp8u *)p;
+    w *= sizeof(T);
+    __m128i value = set1(val);
+    _mm_storel_epi64((__m128i*)p8, value);
+    p8 += 8;
+    for (Ipp32s x = 8; x < w; x += 16, p8 += 16)
         _mm_store_si128((__m128i*)p8, value); 
 }
 
@@ -2719,6 +2736,18 @@ template <class T> inline void FillCorner(T *p, Ipp32s pitchInBytes, Ipp32s w, I
     for (Ipp32s y = 0; y < h; y++, p8 += pitchInBytes)
         for (Ipp32s x = 0; x < w; x += 16)
             _mm_store_si128((__m128i*)(p8+x), value);
+}
+
+template <class T> inline void FillCorner8(T *p, Ipp32s pitchInBytes, Ipp32s w, Ipp32s h, T val)
+{
+    Ipp8u *p8 = (Ipp8u *)p;
+    w *= sizeof(T);
+    __m128i value = set1(val);
+    for (Ipp32s y = 0; y < h; y++, p8 += pitchInBytes) {
+        _mm_storel_epi64((__m128i*)p8, value);
+        for (Ipp32s x = 8; x < w; x += 16)
+            _mm_store_si128((__m128i*)(p8+x), value);
+    }
 }
 
 template <class PixType>
@@ -2751,10 +2780,11 @@ void CopyPlane(const PixType *src, Ipp32s pitchSrc, PixType *dst, Ipp32s pitchDs
     }
 }
 
-template <class PixType> void CopyAndPadPlane(
+template <int widthInBytesMul, class PixType> void CopyAndPadPlane(
     const PixType *src, Ipp32s pitchSrc, PixType *dst, Ipp32s pitchDst,
     Ipp32s width, Ipp32s height, Ipp32s padL, Ipp32s padR, Ipp32s padV)
 {
+    assert(widthInBytesMul == 16 || widthInBytesMul == 8);
     assert((size_t(dst) & 63) == 0);
     assert((size_t(src) & 15) == 0);
     assert((pitchDst*sizeof(PixType) & 63) == 0);
@@ -2762,6 +2792,7 @@ template <class PixType> void CopyAndPadPlane(
     assert((width*sizeof(PixType) & 7) == 0);
     assert((padL*sizeof(PixType) & 15) == 0);
     assert((padR*sizeof(PixType) & 7) == 0);
+    assert((padR*sizeof(PixType) & 7) == (width*sizeof(PixType) & 7));
 
     Ipp32s widthB = width * sizeof(PixType);
     Ipp32s pitchSrcB = pitchSrc * sizeof(PixType);
@@ -2771,34 +2802,64 @@ template <class PixType> void CopyAndPadPlane(
     Ipp8u *srcB = (Ipp8u *)src;
     // top left corner
     FillCorner(dst - padL - pitchDst * padV, pitchDstB, padL, padV + 1, src[0]);
-    // top border
     dstB = (Ipp8u *)dst;
     srcB = (Ipp8u *)src;
-    for (Ipp32s x = 0; x < widthB; x += 16)
-        FillVer(dstB + x - pitchDstB * padV, pitchDstB, padV + 1, _mm_load_si128((__m128i*)(srcB+x)));
-    // top right corner
-    FillCorner(dst + width - pitchDst * padV, pitchDstB, padR, padV + 1, src[width - 1]);
+    if (widthInBytesMul == 16) {
+        // top border
+        for (Ipp32s x = 0; x < widthB; x += 16)
+            FillVer(dstB + x - pitchDstB * padV, pitchDstB, padV + 1, _mm_load_si128((__m128i*)(srcB+x)));
+        // top right corner
+        FillCorner(dst + width - pitchDst * padV, pitchDstB, padR, padV + 1, src[width - 1]);
+    } else {
+        // top border
+        Ipp32s x = 0;
+        for (; x < (widthB & ~15); x += 16)
+            FillVer(dstB + x - pitchDstB * padV, pitchDstB, padV + 1, _mm_load_si128((__m128i*)(srcB+x)));
+        FillVer8(dstB + x - pitchDstB * padV, pitchDstB, padV + 1, *(Ipp64u*)(srcB+x));
+        // top right corner
+        FillCorner8(dst + width - pitchDst * padV, pitchDstB, padR, padV + 1, src[width - 1]);
+    }
 
     srcB += pitchSrcB;
     dstB += pitchDstB;
     for (Ipp32s y = 1; y < height - 1; y++, srcB += pitchSrcB, dstB += pitchDstB) {
         // left border
         FillHor((PixType*)dstB - padL, padL, ((PixType*)srcB)[0]);
-        // center part
-        for (Ipp32s x = 0; x < widthB; x += 16)
-            _mm_store_si128((__m128i*)(dstB+x), _mm_load_si128((__m128i*)(srcB+x)));
-        // right border
-        FillHor((PixType*)dstB + width, padR, ((PixType*)srcB)[width-1]);
+        if (widthInBytesMul == 16) {
+            // center part
+            for (Ipp32s x = 0; x < widthB; x += 16)
+                _mm_store_si128((__m128i*)(dstB+x), _mm_load_si128((__m128i*)(srcB+x)));
+            // right border
+            FillHor((PixType*)dstB + width, padR, ((PixType*)srcB)[width-1]);
+        } else {
+            // center part
+            Ipp32s x = 0;
+            for (; x < (widthB & ~15); x += 16)
+                _mm_store_si128((__m128i*)(dstB+x), _mm_load_si128((__m128i*)(srcB+x)));
+            *(Ipp64u*)(dstB+x) = *(Ipp64u*)(srcB+x);
+            // right border
+            FillHor8((PixType*)dstB + width, padR, ((PixType*)srcB)[width-1]);
+        }
     }
 
     
     // bottom left corner
     FillCorner((PixType*)dstB - padL, pitchDstB, padL, padV + 1, ((PixType*)srcB)[0]);
-    // bottom border
-    for (Ipp32s x = 0; x < widthB; x += 16)
-        FillVer(dstB + x, pitchDstB, padV + 1, _mm_load_si128((__m128i*)(srcB + x)));
-    // bottom right corner
-    FillCorner((PixType*)dstB + width, pitchDstB, padR, padV + 1, ((PixType*)srcB)[width-1]);
+    if (widthInBytesMul == 16) {
+        // bottom border
+        for (Ipp32s x = 0; x < widthB; x += 16)
+            FillVer(dstB + x, pitchDstB, padV + 1, _mm_load_si128((__m128i*)(srcB + x)));
+        // bottom right corner
+        FillCorner((PixType*)dstB + width, pitchDstB, padR, padV + 1, ((PixType*)srcB)[width-1]);
+    } else {
+        // bottom border
+        Ipp32s x = 0;
+        for (; x < (widthB & ~15); x += 16)
+            FillVer(dstB + x, pitchDstB, padV + 1, _mm_load_si128((__m128i*)(srcB + x)));
+        FillVer8(dstB + x, pitchDstB, padV + 1, *(Ipp64u*)(srcB + x));
+        // bottom right corner
+        FillCorner8((PixType*)dstB + width, pitchDstB, padR, padV + 1, ((PixType*)srcB)[width-1]);
+    }
 }
 
 template <class PixType> void H265Enc::CopyAndPad(const mfxFrameSurface1 &src, FrameData &dst, Ipp32u fourcc)
@@ -2820,14 +2881,17 @@ template <class PixType> void H265Enc::CopyAndPad(const mfxFrameSurface1 &src, F
 
     Ipp32s srcPitch = src.Data.Pitch;
     if (sizeof(PixType) == 1) {
-        CopyAndPadPlane((Ipp8u*)src.Data.Y, srcPitch, (Ipp8u*)dst.y, dst.pitch_luma_pix,
-                        dst.width, dst.height, paddingL, paddingR, paddingH);
+        ((dst.width & 15)
+            ? CopyAndPadPlane<8,Ipp8u>
+            : CopyAndPadPlane<16,Ipp8u>)(
+                (Ipp8u*)src.Data.Y, srcPitch, (Ipp8u*)dst.y, dst.pitch_luma_pix,
+                dst.width, dst.height, paddingL, paddingR, paddingH);
         CopyPlane((Ipp16u*)src.Data.UV, srcPitch>>1, (Ipp16u*)dst.uv, dst.pitch_chroma_pix>>1,
                     dst.width>>1, heightC);
     } else {
         srcPitch >>= 1;
-        CopyAndPadPlane((Ipp16u*)src.Data.Y, srcPitch, (Ipp16u*)dst.y, dst.pitch_luma_pix,
-                        dst.width, dst.height, paddingL, paddingR, paddingH);
+        CopyAndPadPlane<16>((Ipp16u*)src.Data.Y, srcPitch, (Ipp16u*)dst.y, dst.pitch_luma_pix,
+                            dst.width, dst.height, paddingL, paddingR, paddingH);
         CopyPlane((Ipp32u*)src.Data.UV, srcPitch>>1, (Ipp32u*)dst.uv, dst.pitch_chroma_pix>>1,
                     dst.width>>1, heightC);
     }

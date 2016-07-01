@@ -18,8 +18,7 @@
 #undef min
 #undef max
 
-#define PRINT_TICKS
-//#undef PRINT_TICKS
+static bool printTicks = getenv("HEVCE_TESTS_PRINT_TICKS");
 
 namespace utils {
 
@@ -95,7 +94,6 @@ namespace utils {
                 block[c] = dist(randEngine);
     }
 
-#ifdef PRINT_TICKS
     template <typename Func, typename... Args> mfxI64 GetMinTicks(int number, Func func, Args&&... args)
     {
         mfxI64 fastest = std::numeric_limits<mfxI64>::max();
@@ -108,9 +106,7 @@ namespace utils {
         }
         return fastest;
     }
-#endif // PRINT_TICKS
 };
-
 
 TEST(optimization, SAD_avx2) {
     const int pitch = 1920;
@@ -148,9 +144,7 @@ TEST(optimization, SAD_avx2) {
         {64,16}, {64,32}, {64,48}, {64,64}
     };
 
-#ifdef PRINT_TICKS
-    //for (auto wh: dims) 
-    {
+    if (printTicks) {
         // [8x8]
         Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::SAD_8x8_avx2, src.get(), refSpecial.get(), pitch);
         Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::SAD_8x8_px, src.get(), refSpecial.get(), pitch);
@@ -187,7 +181,6 @@ TEST(optimization, SAD_avx2) {
         ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SAD_MxN_16s_px, (const Ipp16s*)src_10b.get(), pitch, (const Ipp16s*)refSpecial_10b.get(), 64, 64);
         printf("64x64  10bit speedup = %lld / %lld = %.2f\n", ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
     }
-#endif // PRINT_TICKS
 
     EXPECT_EQ(MFX_HEVC_PP::SAD_4x4_avx2  (src.get(), refSpecial.get(), pitch), MFX_HEVC_PP::SAD_4x4_px  (src.get(), refSpecial.get(), pitch));
     EXPECT_EQ(MFX_HEVC_PP::SAD_4x8_avx2  (src.get(), refSpecial.get(), pitch), MFX_HEVC_PP::SAD_4x8_px  (src.get(), refSpecial.get(), pitch));
@@ -426,17 +419,17 @@ TEST(optimization, SSE_avx2) {
         {64,16}, {64,32}, {64,48}, {64,64}
     };
 
-#ifdef PRINT_TICKS
-    for (auto wh: dims) {
-        Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_avx2<Ipp8u>, src1.get(), pitch1, src2.get(), pitch2, wh[0], wh[1], shift_08b);
-        Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_px<Ipp8u>,   src1.get(), pitch1, src2.get(), pitch2, wh[0], wh[1], shift_08b);
-        printf("%2dx%2d  8bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+    if (printTicks) {
+        for (auto wh: dims) {
+            Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_avx2<Ipp8u>, src1.get(), pitch1, src2.get(), pitch2, wh[0], wh[1], shift_08b);
+            Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_px<Ipp8u>,   src1.get(), pitch1, src2.get(), pitch2, wh[0], wh[1], shift_08b);
+            printf("%2dx%2d  8bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
 
-        ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_avx2<Ipp16u>, src1_10b.get(), pitch1, src2_10b.get(), pitch2, wh[0], wh[1], shift_10b);
-        ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_px<Ipp16u>,   src1_10b.get(), pitch1, src2_10b.get(), pitch2, wh[0], wh[1], shift_10b);
-        printf("%2dx%2d 10bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+            ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_avx2<Ipp16u>, src1_10b.get(), pitch1, src2_10b.get(), pitch2, wh[0], wh[1], shift_10b);
+            ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_px<Ipp16u>,   src1_10b.get(), pitch1, src2_10b.get(), pitch2, wh[0], wh[1], shift_10b);
+            printf("%2dx%2d 10bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+        }
     }
-#endif // PRINT_TICKS
 
     //EXPECT_LE(utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_avx2<Ipp8u>, src1.get(), pitch1, src2.get(), pitch2, 16, 16),
     //          utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SSE_px<Ipp8u>,   src1.get(), pitch1, src2.get(), pitch2, 16, 16));
@@ -494,20 +487,17 @@ TEST(optimization, DiffNv12_avx2) {
         {64, 16}, {64, 32}, {64, 48}, {64, 64}
     };
 
-#ifdef PRINT_TICKS
-    for (auto wh: dims) {
-        Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffNv12_avx2<Ipp8u>, src.get(), pitchSrc, pred.get(), pitchPred, diff1Tst.get(), wh[0], diff2Tst.get(), wh[0], wh[0], wh[1]);
-        Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffNv12_px<Ipp8u>,   src.get(), pitchSrc, pred.get(), pitchPred, diff1Tst.get(), wh[0], diff2Ref.get(), wh[0], wh[0], wh[1]);
-        printf("%2dx%2d  8bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+    if (printTicks) {
+        for (auto wh: dims) {
+            Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffNv12_avx2<Ipp8u>, src.get(), pitchSrc, pred.get(), pitchPred, diff1Tst.get(), wh[0], diff2Tst.get(), wh[0], wh[0], wh[1]);
+            Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffNv12_px<Ipp8u>,   src.get(), pitchSrc, pred.get(), pitchPred, diff1Tst.get(), wh[0], diff2Ref.get(), wh[0], wh[0], wh[1]);
+            printf("%2dx%2d  8bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
 
-        ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffNv12_avx2<Ipp16u>, src_10b.get(), pitchSrc, pred_10b.get(), pitchPred, diff1Tst.get(), wh[0], diff2Tst.get(), wh[0], wh[0], wh[1]);
-        ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffNv12_px<Ipp16u>,   src_10b.get(), pitchSrc, pred_10b.get(), pitchPred, diff1Ref.get(), wh[0], diff2Ref.get(), wh[0], wh[0], wh[1]);
-        printf("%2dx%2d 10bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+            ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffNv12_avx2<Ipp16u>, src_10b.get(), pitchSrc, pred_10b.get(), pitchPred, diff1Tst.get(), wh[0], diff2Tst.get(), wh[0], wh[0], wh[1]);
+            ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffNv12_px<Ipp16u>,   src_10b.get(), pitchSrc, pred_10b.get(), pitchPred, diff1Ref.get(), wh[0], diff2Ref.get(), wh[0], wh[0], wh[1]);
+            printf("%2dx%2d 10bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+        }
     }
-#endif //PRINT_TICKS
-
-    //EXPECT_LE(utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffNv12_avx2<Ipp8u>, src.get(), pitchSrc, pred.get(), pitchPred, diff1Tst.get(), 16, diff2Tst.get(), 16, 32, 16),
-    //          utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffNv12_px<Ipp8u>,   src.get(), pitchSrc, pred.get(), pitchPred, diff1Ref.get(), 16, diff2Ref.get(), 16, 32, 16));
 
     for (auto wh: dims) {
         std::ostringstream buf;
@@ -550,17 +540,17 @@ TEST(optimization, Diff_avx2) {
     utils::InitRandomBlock(rand, src_10b.get(), pitchSrc, pitchSrc, maxSize, 0, 1023);
     utils::InitRandomBlock(rand, pred_10b.get(), pitchPred, pitchPred, maxSize, 0, 1023);
 
-#ifdef PRINT_TICKS
-    for (Ipp32s size = 4; size <= 64; size <<= 1) {
-        Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_Diff_avx2<Ipp8u>, src.get(), pitchSrc, pred.get(), pitchPred, diff_px.get(),   maxSize, size);
-        Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_Diff_px<Ipp8u>,   src.get(), pitchSrc, pred.get(), pitchPred, diff_avx2.get(), maxSize, size);
-        printf("%2dx%-2d  8bit speedup = %lld / %lld = %.2f\n", size, size, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+    if (printTicks) {
+        for (Ipp32s size = 4; size <= 64; size <<= 1) {
+            Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_Diff_avx2<Ipp8u>, src.get(), pitchSrc, pred.get(), pitchPred, diff_px.get(),   maxSize, size);
+            Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_Diff_px<Ipp8u>,   src.get(), pitchSrc, pred.get(), pitchPred, diff_avx2.get(), maxSize, size);
+            printf("%2dx%-2d  8bit speedup = %lld / %lld = %.2f\n", size, size, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
 
-        ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_Diff_avx2<Ipp16u>, src_10b.get(), pitchSrc, pred_10b.get(), pitchPred, diff_px.get(),   maxSize, size);
-        ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_Diff_px<Ipp16u>,   src_10b.get(), pitchSrc, pred_10b.get(), pitchPred, diff_avx2.get(), maxSize, size);
-        printf("%2dx%-2d 10bit speedup = %lld / %lld = %.2f\n", size, size, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+            ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_Diff_avx2<Ipp16u>, src_10b.get(), pitchSrc, pred_10b.get(), pitchPred, diff_px.get(),   maxSize, size);
+            ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_Diff_px<Ipp16u>,   src_10b.get(), pitchSrc, pred_10b.get(), pitchPred, diff_avx2.get(), maxSize, size);
+            printf("%2dx%-2d 10bit speedup = %lld / %lld = %.2f\n", size, size, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+        }
     }
-#endif //PRINT_TICKS
 
     memset(diff_px.get(), 0, sizeof(short) * maxSize * maxSize);
     memset(diff_avx2.get(), 0, sizeof(short) * maxSize * maxSize);
@@ -612,18 +602,18 @@ TEST(optimization, AddClipNv12UV_avx2) {
         ASSERT_EQ(0, memcmp(dst_avx2.get(), dst_px.get(), sizeof(Ipp8u) * pitch * maxsize*2));
     }
 
-#ifdef PRINT_TICKS
-    for (Ipp32s size = 4; size <= 64; size<<=1) {
-        Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_AddClipNv12UV_8u_avx2, dst_avx2.get(), pitch, pred.get(), pitch, residU.get(), residV.get(), pitch, size);
-        Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_AddClipNv12UV_8u_px,   dst_px.get(),   pitch, pred.get(), pitch, residU.get(), residV.get(), pitch, size);
-        printf("%2dx%-2d speedup = %lld / %lld = %.2f\n", size, size,  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+    if (printTicks) {
+        for (Ipp32s size = 4; size <= 64; size<<=1) {
+            Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_AddClipNv12UV_8u_avx2, dst_avx2.get(), pitch, pred.get(), pitch, residU.get(), residV.get(), pitch, size);
+            Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_AddClipNv12UV_8u_px,   dst_px.get(),   pitch, pred.get(), pitch, residU.get(), residV.get(), pitch, size);
+            printf("%2dx%-2d speedup = %lld / %lld = %.2f\n", size, size,  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+        }
+        for (Ipp32s size = 4; size <= 64; size<<=1) {
+            Ipp64u ticksSse  = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_AddClipNv12UV_8u_sse,  dst_avx2.get(), pitch, pred.get(), pitch, residU.get(), residV.get(), pitch, size);
+            Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_AddClipNv12UV_8u_px,   dst_px.get(),   pitch, pred.get(), pitch, residU.get(), residV.get(), pitch, size);
+            printf("%2dx%-2d SSE speedup = %lld / %lld = %.2f\n", size, size,  ticksPx, ticksSse, (double)ticksPx / ticksSse);
+        }
     }
-    for (Ipp32s size = 4; size <= 64; size<<=1) {
-        Ipp64u ticksSse  = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_AddClipNv12UV_8u_sse,  dst_avx2.get(), pitch, pred.get(), pitch, residU.get(), residV.get(), pitch, size);
-        Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_AddClipNv12UV_8u_px,   dst_px.get(),   pitch, pred.get(), pitch, residU.get(), residV.get(), pitch, size);
-        printf("%2dx%-2d SSE speedup = %lld / %lld = %.2f\n", size, size,  ticksPx, ticksSse, (double)ticksPx / ticksSse);
-    }
-#endif //PRINT_TICKS
 }
 
 
@@ -653,17 +643,17 @@ TEST(optimization, SplitChromaCtb_avx2) {
         {64, 64}
     };
 
-#ifdef PRINT_TICKS
-    for (auto wh: dims) {
-        Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SplitChromaCtb_avx2<Ipp8u>, nv12.get(), pitchSrc, uTst.get(), wh[0], vTst.get(), wh[0], wh[0], wh[1]);
-        Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SplitChromaCtb_px<Ipp8u>,   nv12.get(), pitchSrc, uRef.get(), wh[0], vRef.get(), wh[0], wh[0], wh[1]);
-        printf("%2dx%2d  8bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+    if (printTicks) {
+        for (auto wh: dims) {
+            Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SplitChromaCtb_avx2<Ipp8u>, nv12.get(), pitchSrc, uTst.get(), wh[0], vTst.get(), wh[0], wh[0], wh[1]);
+            Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SplitChromaCtb_px<Ipp8u>,   nv12.get(), pitchSrc, uRef.get(), wh[0], vRef.get(), wh[0], wh[0], wh[1]);
+            printf("%2dx%2d  8bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
 
-        ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SplitChromaCtb_avx2<Ipp16u>, nv12_10b.get(), pitchSrc, uTst_10b.get(), wh[0], vTst_10b.get(), wh[0], wh[0], wh[1]);
-        ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SplitChromaCtb_px<Ipp16u>,   nv12_10b.get(), pitchSrc, uRef_10b.get(), wh[0], vRef_10b.get(), wh[0], wh[0], wh[1]);
-        printf("%2dx%2d 10bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+            ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SplitChromaCtb_avx2<Ipp16u>, nv12_10b.get(), pitchSrc, uTst_10b.get(), wh[0], vTst_10b.get(), wh[0], wh[0], wh[1]);
+            ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_SplitChromaCtb_px<Ipp16u>,   nv12_10b.get(), pitchSrc, uRef_10b.get(), wh[0], vRef_10b.get(), wh[0], wh[0], wh[1]);
+            printf("%2dx%2d 10bit speedup = %lld / %lld = %.2f\n", wh[0], wh[1],  ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+        }
     }
-#endif //PRINT_TICKS
 
     for (auto wh: dims) {
         std::ostringstream buf;
@@ -2365,11 +2355,11 @@ TEST(optimization, PredictIntra_Planar_ChromaNV12_avx2) {
                 MFX_HEVC_PP::h265_PredictIntra_Planar_ChromaNV12_8u_avx2(predPel8, dst8_avx2.get(), dstPitch, blkSize);
                 ASSERT_EQ(0, memcmp(dst8_px.get(), dst8_avx2.get(), sizeof(Ipp8u) * blkSize * dstPitch));
 
-#ifdef PRINT_TICKS
-                Ipp64s tpx = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_PredictIntra_Planar_ChromaNV12_8u_px, predPel8, dst8_px.get(),   dstPitch, blkSize);
-                Ipp64s tavx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_PredictIntra_Planar_ChromaNV12_8u_avx2, predPel8, dst8_avx2.get(), dstPitch, blkSize);
-                printf("%d-bit %2d*%-2d %d vs %d\n", bitDepth, blkSize, blkSize, (Ipp32s)tpx, (Ipp32s)tavx2);
-#endif // PRINT_TICKS
+                if (printTicks) {
+                    Ipp64s tpx = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_PredictIntra_Planar_ChromaNV12_8u_px, predPel8, dst8_px.get(),   dstPitch, blkSize);
+                    Ipp64s tavx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_PredictIntra_Planar_ChromaNV12_8u_avx2, predPel8, dst8_avx2.get(), dstPitch, blkSize);
+                    printf("%d-bit %2d*%-2d %d vs %d\n", bitDepth, blkSize, blkSize, (Ipp32s)tpx, (Ipp32s)tavx2);
+                }
             } else {
                 utils::InitRandomBlock(rand, predPel16, 4*maxSize+1, 4*maxSize+1, 1, 0, (1 << bitDepth) - 1);
                 MFX_HEVC_PP::h265_PredictIntra_Planar_ChromaNV12_16u(predPel16, dst16_px.get(),   dstPitch, blkSize);
@@ -2418,13 +2408,13 @@ TEST(optimization, QuantInv_avx2) {
                 MFX_HEVC_PP::h265_QuantInv_16s_avx2(src.get(), dst_avx2.get(), numCoeffs, scale, offset, shift);
                 ASSERT_EQ(0, memcmp(dst_px.get(), dst_avx2.get(), sizeof(Ipp16s) * dstSize * dstPitch));
 
-#ifdef PRINT_TICKS
-                if (qp == 30 && bitDepth == 8) {
-                    Ipp64s tpx = utils::GetMinTicks(1000000, MFX_HEVC_PP::h265_QuantInv_16s_px, src.get(), dst_px.get(), numCoeffs, scale, offset, shift);
-                    Ipp64s tavx2 = utils::GetMinTicks(1000000, MFX_HEVC_PP::h265_QuantInv_16s_avx2, src.get(), dst_avx2.get(), numCoeffs, scale, offset, shift);
-                    printf("%d %d %d\n", 1 << log2TrSize, (Ipp32s)tpx, (Ipp32s)tavx2);
+                if (printTicks) {
+                    if (qp == 30 && bitDepth == 8) {
+                        Ipp64s tpx = utils::GetMinTicks(1000000, MFX_HEVC_PP::h265_QuantInv_16s_px, src.get(), dst_px.get(), numCoeffs, scale, offset, shift);
+                        Ipp64s tavx2 = utils::GetMinTicks(1000000, MFX_HEVC_PP::h265_QuantInv_16s_avx2, src.get(), dst_avx2.get(), numCoeffs, scale, offset, shift);
+                        printf("%d %d %d\n", 1 << log2TrSize, (Ipp32s)tpx, (Ipp32s)tavx2);
+                    }
                 }
-#endif // PRINT_TICKS
             }
         }
     }
@@ -2462,13 +2452,13 @@ TEST(optimization, QuantFwd_sse4) {
                     ASSERT_EQ(cbfPx, cbfSse4);
                     ASSERT_EQ(0, memcmp(dst_px.get(), dst_sse4.get(), sizeof(Ipp16s) * dstSize * dstPitch));
 
-#ifdef PRINT_TICKS
-                    if (qp == 30 && bitDepth == 8 && isIntra == 0) {
-                        Ipp64s tpx = utils::GetMinTicks(1000000, MFX_HEVC_PP::h265_QuantFwd_16s_px, src.get(), dst_px.get(), numCoeffs, scaleLevel, scaleOffset, scale);
-                        Ipp64s tsse4 = utils::GetMinTicks(1000000, MFX_HEVC_PP::h265_QuantFwd_16s_sse, src.get(), dst_sse4.get(), numCoeffs, scaleLevel, scaleOffset, scale);
-                        printf("%d %d %d\n", 1 << log2TrSize, (Ipp32s)tpx, (Ipp32s)tsse4);
+                    if (printTicks) {
+                        if (qp == 30 && bitDepth == 8 && isIntra == 0) {
+                            Ipp64s tpx = utils::GetMinTicks(1000000, MFX_HEVC_PP::h265_QuantFwd_16s_px, src.get(), dst_px.get(), numCoeffs, scaleLevel, scaleOffset, scale);
+                            Ipp64s tsse4 = utils::GetMinTicks(1000000, MFX_HEVC_PP::h265_QuantFwd_16s_sse, src.get(), dst_sse4.get(), numCoeffs, scaleLevel, scaleOffset, scale);
+                            printf("%d %d %d\n", 1 << log2TrSize, (Ipp32s)tpx, (Ipp32s)tsse4);
+                        }
                     }
-#endif // PRINT_TICKS
                 }
             }
         }
@@ -2507,13 +2497,13 @@ TEST(optimization, QuantFwd_avx2) {
                     ASSERT_EQ(cbfPx, cbfAvx2);
                     ASSERT_EQ(0, memcmp(dst_px.get(), dst_avx2.get(), sizeof(Ipp16s) * dstSize * dstPitch));
 
-#ifdef PRINT_TICKS
-                    if (qp == 30 && bitDepth == 8 && isIntra == 0) {
-                        Ipp64s tpx = utils::GetMinTicks(1000000, MFX_HEVC_PP::h265_QuantFwd_16s_px, src.get(), dst_px.get(), numCoeffs, scaleLevel, scaleOffset, scale);
-                        Ipp64s tavx2 = utils::GetMinTicks(1000000, MFX_HEVC_PP::h265_QuantFwd_16s_avx2, src.get(), dst_avx2.get(), numCoeffs, scaleLevel, scaleOffset, scale);
-                        printf("%d %d %d\n", 1 << log2TrSize, (Ipp32s)tpx, (Ipp32s)tavx2);
+                    if (printTicks) {
+                        if (qp == 30 && bitDepth == 8 && isIntra == 0) {
+                            Ipp64s tpx = utils::GetMinTicks(1000000, MFX_HEVC_PP::h265_QuantFwd_16s_px, src.get(), dst_px.get(), numCoeffs, scaleLevel, scaleOffset, scale);
+                            Ipp64s tavx2 = utils::GetMinTicks(1000000, MFX_HEVC_PP::h265_QuantFwd_16s_avx2, src.get(), dst_avx2.get(), numCoeffs, scaleLevel, scaleOffset, scale);
+                            printf("%d %d %d\n", 1 << log2TrSize, (Ipp32s)tpx, (Ipp32s)tavx2);
+                        }
                     }
-#endif // PRINT_TICKS
                 }
             }
         }
@@ -2553,13 +2543,13 @@ TEST(optimization, Quant_zCost_sse4) {
                 ASSERT_EQ(0, memcmp(dstCoefs_px.get(), dstCoefs_sse4.get(), sizeof(Ipp16u) * maxsize * maxsize));
                 ASSERT_EQ(0, memcmp(dstCosts_px.get(), dstCosts_sse4.get(), sizeof(Ipp64s) * maxsize * maxsize));
 
-#ifdef PRINT_TICKS
-                if (qp == 30 && bitDepth == 8) {
-                    Ipp64s tpx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Quant_zCost_16s_px,  src.get(), dstCoefs_px.get(),   dstCosts_px.get(),   numCoeffs, scale, qshift, qbits, numCoeffs << 1);
-                    Ipp64s tsse4 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Quant_zCost_16s_sse, src.get(), dstCoefs_sse4.get(), dstCosts_sse4.get(), numCoeffs, scale, qshift, qbits, numCoeffs << 1);
-                    printf("%2d*%-2d: %d %d\n", 1<<log2TrSize, 1<<log2TrSize, (Ipp32s)tpx, (Ipp32s)tsse4);
+                if (printTicks) {
+                    if (qp == 30 && bitDepth == 8) {
+                        Ipp64s tpx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Quant_zCost_16s_px,  src.get(), dstCoefs_px.get(),   dstCosts_px.get(),   numCoeffs, scale, qshift, qbits, numCoeffs << 1);
+                        Ipp64s tsse4 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Quant_zCost_16s_sse, src.get(), dstCoefs_sse4.get(), dstCosts_sse4.get(), numCoeffs, scale, qshift, qbits, numCoeffs << 1);
+                        printf("%2d*%-2d: %d %d\n", 1<<log2TrSize, 1<<log2TrSize, (Ipp32s)tpx, (Ipp32s)tsse4);
+                    }
                 }
-#endif // PRINT_TICKS
             }
         }
     }
@@ -2598,13 +2588,13 @@ TEST(optimization, Quant_zCost_avx2) {
                 ASSERT_EQ(0, memcmp(dstCoefs_px.get(), dstCoefs_avx2.get(), sizeof(Ipp16u) * maxsize * maxsize));
                 ASSERT_EQ(0, memcmp(dstCosts_px.get(), dstCosts_avx2.get(), sizeof(Ipp64s) * maxsize * maxsize));
 
-#ifdef PRINT_TICKS
-                if (qp == 30 && bitDepth == 8) {
-                    Ipp64s tpx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Quant_zCost_16s_px,   src.get(), dstCoefs_px.get(),   dstCosts_px.get(),   numCoeffs, scale, qshift, qbits, numCoeffs << 1);
-                    Ipp64s tavx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Quant_zCost_16s_avx2, src.get(), dstCoefs_avx2.get(), dstCosts_avx2.get(), numCoeffs, scale, qshift, qbits, numCoeffs << 1);
-                    printf("%2d*%-2d: %d %d\n", 1<<log2TrSize, 1<<log2TrSize, (Ipp32s)tpx, (Ipp32s)tavx2);
+                if (printTicks) {
+                    if (qp == 30 && bitDepth == 8) {
+                        Ipp64s tpx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Quant_zCost_16s_px,   src.get(), dstCoefs_px.get(),   dstCosts_px.get(),   numCoeffs, scale, qshift, qbits, numCoeffs << 1);
+                        Ipp64s tavx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Quant_zCost_16s_avx2, src.get(), dstCoefs_avx2.get(), dstCosts_avx2.get(), numCoeffs, scale, qshift, qbits, numCoeffs << 1);
+                        printf("%2d*%-2d: %d %d\n", 1<<log2TrSize, 1<<log2TrSize, (Ipp32s)tpx, (Ipp32s)tavx2);
+                    }
                 }
-#endif // PRINT_TICKS
             }
         }
     }
@@ -2630,12 +2620,12 @@ TEST(optimization, ComputeRsCs_avx2) {
     MFX_HEVC_PP::h265_ComputeRsCs_8u_avx2  (src, pitch, rs_avx2, cs_avx2, 16, cusize, cusize);
     ASSERT_EQ(0, memcmp(rs_px, rs_avx2, sizeof(rs_px)));
     ASSERT_EQ(0, memcmp(cs_px, cs_avx2, sizeof(cs_px)));
-#ifdef PRINT_TICKS
-    Ipp64s tpx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_ComputeRsCs_px<Ipp8u>, src, pitch, rs_px,   cs_px,   16, cusize, cusize);
-    Ipp64s tsse  = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_ComputeRsCs_8u_sse,    src, pitch, rs_avx2, cs_avx2, 16, cusize, cusize);
-    Ipp64s tavx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_ComputeRsCs_8u_avx2,   src, pitch, rs_avx2, cs_avx2, 16, cusize, cusize);
-    printf("%d %d %d\n", (Ipp32s)tpx, (Ipp32s)tsse, (Ipp32s)tavx2);
-#endif // PRINT_TICKS
+    if (printTicks) {
+        Ipp64s tpx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_ComputeRsCs_px<Ipp8u>, src, pitch, rs_px,   cs_px,   16, cusize, cusize);
+        Ipp64s tsse  = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_ComputeRsCs_8u_sse,    src, pitch, rs_avx2, cs_avx2, 16, cusize, cusize);
+        Ipp64s tavx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_ComputeRsCs_8u_avx2,   src, pitch, rs_avx2, cs_avx2, 16, cusize, cusize);
+        printf("%d %d %d\n", (Ipp32s)tpx, (Ipp32s)tsse, (Ipp32s)tavx2);
+    }
 }
 
 
@@ -2675,18 +2665,18 @@ TEST(optimization, DiffDc_avx2) {
         //}
     }
 
-#ifdef PRINT_TICKS
-    for (Ipp32s size = 8; size <= 32; size<<=1) {
-        Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffDc_px<Ipp8u>,   src8.get(), pitch, pred8.get(), pitch, size);
-        Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffDc_avx2<Ipp8u>, src8.get(), pitch, pred8.get(), pitch, size);
-        printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", size, size, 8, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+    if (printTicks) {
+        for (Ipp32s size = 8; size <= 32; size<<=1) {
+            Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffDc_px<Ipp8u>,   src8.get(), pitch, pred8.get(), pitch, size);
+            Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffDc_avx2<Ipp8u>, src8.get(), pitch, pred8.get(), pitch, size);
+            printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", size, size, 8, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+        }
+        //for (Ipp32s size = 8; size <= 32; size<<=1) {
+        //    Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffDc_px<Ipp16u>,   src16.get(), pitch, pred16.get(), pitch, size);
+        //    Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffDc_avx2<Ipp16u>, src16.get(), pitch, pred16.get(), pitch, size);
+        //    printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", size, size, 10, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+        //}
     }
-    //for (Ipp32s size = 8; size <= 32; size<<=1) {
-    //    Ipp64u ticksPx   = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffDc_px<Ipp16u>,   src16.get(), pitch, pred16.get(), pitch, size);
-    //    Ipp64u ticksAvx2 = utils::GetMinTicks(10000, MFX_HEVC_PP::h265_DiffDc_avx2<Ipp16u>, src16.get(), pitch, pred16.get(), pitch, size);
-    //    printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", size, size, 10, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
-    //}
-#endif //PRINT_TICKS
 }
 
 TEST(optimization, Average_avx2) {
@@ -2746,20 +2736,20 @@ TEST(optimization, Average_avx2) {
         ASSERT_EQ(0, memcmp(dstavx2_10.get(), dstpx_10.get(), sizeof(Ipp16u) * pitch * maxsize));
     }
 
-#ifdef PRINT_TICKS
-    for (auto wh: dims) {
-        Ipp32s width = wh[0], height = wh[1];
-        Ipp64u ticksPx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Average_px  <Ipp8u>, src0_8.get(), pitch, src1_8.get(), pitch, dstpx_8.get(),   pitch, width, height);
-        Ipp64u ticksAvx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Average_avx2<Ipp8u>, src0_8.get(), pitch, src1_8.get(), pitch, dstavx2_8.get(), pitch, width, height);
-        printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", width, height, 8, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+    if (printTicks) {
+        for (auto wh: dims) {
+            Ipp32s width = wh[0], height = wh[1];
+            Ipp64u ticksPx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Average_px  <Ipp8u>, src0_8.get(), pitch, src1_8.get(), pitch, dstpx_8.get(),   pitch, width, height);
+            Ipp64u ticksAvx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Average_avx2<Ipp8u>, src0_8.get(), pitch, src1_8.get(), pitch, dstavx2_8.get(), pitch, width, height);
+            printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", width, height, 8, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+        }
+        for (auto wh: dims) {
+            Ipp32s width = wh[0], height = wh[1];
+            Ipp64u ticksPx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Average_px  <Ipp16u>, src0_10.get(), pitch, src1_10.get(), pitch, dstpx_10.get(),   pitch, width, height);
+            Ipp64u ticksAvx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Average_avx2<Ipp16u>, src0_10.get(), pitch, src1_10.get(), pitch, dstavx2_10.get(), pitch, width, height);
+            printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", width, height, 10, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+        }
     }
-    for (auto wh: dims) {
-        Ipp32s width = wh[0], height = wh[1];
-        Ipp64u ticksPx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Average_px  <Ipp16u>, src0_10.get(), pitch, src1_10.get(), pitch, dstpx_10.get(),   pitch, width, height);
-        Ipp64u ticksAvx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_Average_avx2<Ipp16u>, src0_10.get(), pitch, src1_10.get(), pitch, dstavx2_10.get(), pitch, width, height);
-        printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", width, height, 10, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
-    }
-#endif //PRINT_TICKS
 }
 
 
@@ -2815,25 +2805,23 @@ TEST(optimization, AverageModeN_avx2) {
         ASSERT_EQ(0, memcmp(dst16_avx2.get(), dst16_px.get(), sizeof(Ipp16u) * pitch * maxsize));
     }
 
-#ifdef PRINT_TICKS
-    {
-    Ipp32s dims[][2] = { // {width,height}
-        {4,4}, {8,8}, {16,16}, {32,32}, {64,64}
-    };
-    for (auto wh: dims) {
-        Ipp32s width = wh[0], height = wh[1];
-        Ipp64u ticksPx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeN_px,   src0.get(), pitch, dst8_px.get(),   pitch, width, height);
-        Ipp64u ticksAvx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeN_avx2, src0.get(), pitch, dst8_avx2.get(), pitch, width, height);
-        printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", width, height, 8, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+    if (printTicks) {
+        Ipp32s dims[][2] = { // {width,height}
+            {4,4}, {8,8}, {16,16}, {32,32}, {64,64}
+        };
+        for (auto wh: dims) {
+            Ipp32s width = wh[0], height = wh[1];
+            Ipp64u ticksPx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeN_px,   src0.get(), pitch, dst8_px.get(),   pitch, width, height);
+            Ipp64u ticksAvx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeN_avx2, src0.get(), pitch, dst8_avx2.get(), pitch, width, height);
+            printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", width, height, 8, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+        }
+        for (auto wh: dims) {
+            Ipp32s width = wh[0], height = wh[1];
+            Ipp64u ticksPx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeN_U16_px,   src0.get(), pitch, dst16_px.get(),   pitch, width, height, 10);
+            Ipp64u ticksAvx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeN_U16_avx2, src0.get(), pitch, dst16_avx2.get(), pitch, width, height, 10);
+            printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", width, height, 10, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+        }
     }
-    for (auto wh: dims) {
-        Ipp32s width = wh[0], height = wh[1];
-        Ipp64u ticksPx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeN_U16_px,   src0.get(), pitch, dst16_px.get(),   pitch, width, height, 10);
-        Ipp64u ticksAvx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeN_U16_avx2, src0.get(), pitch, dst16_avx2.get(), pitch, width, height, 10);
-        printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", width, height, 10, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
-    }
-    }
-#endif //PRINT_TICKS
 }
 
 
@@ -2892,25 +2880,23 @@ TEST(optimization, AverageModeB_avx2) {
         ASSERT_EQ(0, memcmp(dst16_avx2.get(), dst16_px.get(), sizeof(Ipp16u) * pitch * maxsize));
     }
 
-#ifdef PRINT_TICKS
-    {
-    Ipp32s dims[][2] = { // {width,height}
-        {4,4}, {8,8}, {16,16}, {32,32}, {64,64}
-    };
-    for (auto wh: dims) {
-        Ipp32s width = wh[0], height = wh[1];
-        Ipp64u ticksPx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeB_px,   src0.get(), pitch, src1.get(), pitch, dst8_px.get(),   pitch, width, height);
-        Ipp64u ticksAvx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeB_avx2, src0.get(), pitch, src1.get(), pitch, dst8_avx2.get(), pitch, width, height);
-        printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", width, height, 8, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+    if (printTicks) {
+        Ipp32s dims[][2] = { // {width,height}
+            {4,4}, {8,8}, {16,16}, {32,32}, {64,64}
+        };
+        for (auto wh: dims) {
+            Ipp32s width = wh[0], height = wh[1];
+            Ipp64u ticksPx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeB_px,   src0.get(), pitch, src1.get(), pitch, dst8_px.get(),   pitch, width, height);
+            Ipp64u ticksAvx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeB_avx2, src0.get(), pitch, src1.get(), pitch, dst8_avx2.get(), pitch, width, height);
+            printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", width, height, 8, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+        }
+        for (auto wh: dims) {
+            Ipp32s width = wh[0], height = wh[1];
+            Ipp64u ticksPx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeB_U16_px,   src0.get(), pitch, src1.get(), pitch, dst16_px.get(),   pitch, width, height, 10);
+            Ipp64u ticksAvx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeB_U16_avx2, src0.get(), pitch, src1.get(), pitch, dst16_avx2.get(), pitch, width, height, 10);
+            printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", width, height, 10, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+        }
     }
-    for (auto wh: dims) {
-        Ipp32s width = wh[0], height = wh[1];
-        Ipp64u ticksPx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeB_U16_px,   src0.get(), pitch, src1.get(), pitch, dst16_px.get(),   pitch, width, height, 10);
-        Ipp64u ticksAvx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeB_U16_avx2, src0.get(), pitch, src1.get(), pitch, dst16_avx2.get(), pitch, width, height, 10);
-        printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", width, height, 10, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
-    }
-    }
-#endif //PRINT_TICKS
 }
 
 
@@ -2970,25 +2956,23 @@ TEST(optimization, AverageModeP_avx2) {
         ASSERT_EQ(0, memcmp(dst16_avx2.get(), dst16_px.get(), sizeof(Ipp16u) * pitch * maxsize));
     }
 
-#ifdef PRINT_TICKS
-    {
-    Ipp32s dims[][2] = { // {width,height}
-        {4,4}, {8,8}, {16,16}, {32,32}, {64,64}
-    };
-    for (auto wh: dims) {
-        Ipp32s width = wh[0], height = wh[1];
-        Ipp64u ticksPx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeP_px,   src0.get(), pitch, src1_8.get(), pitch, dst8_px.get(),   pitch, width, height);
-        Ipp64u ticksAvx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeP_avx2, src0.get(), pitch, src1_8.get(), pitch, dst8_avx2.get(), pitch, width, height);
-        printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", width, height, 8, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+    if (printTicks) {
+        Ipp32s dims[][2] = { // {width,height}
+            {4,4}, {8,8}, {16,16}, {32,32}, {64,64}
+        };
+        for (auto wh: dims) {
+            Ipp32s width = wh[0], height = wh[1];
+            Ipp64u ticksPx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeP_px,   src0.get(), pitch, src1_8.get(), pitch, dst8_px.get(),   pitch, width, height);
+            Ipp64u ticksAvx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeP_avx2, src0.get(), pitch, src1_8.get(), pitch, dst8_avx2.get(), pitch, width, height);
+            printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", width, height, 8, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+        }
+        for (auto wh: dims) {
+            Ipp32s width = wh[0], height = wh[1];
+            Ipp64u ticksPx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeP_U16_px,   src0.get(), pitch, src1_16.get(), pitch, dst16_px.get(),   pitch, width, height, 10);
+            Ipp64u ticksAvx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeP_U16_avx2, src0.get(), pitch, src1_16.get(), pitch, dst16_avx2.get(), pitch, width, height, 10);
+            printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", width, height, 10, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
+        }
     }
-    for (auto wh: dims) {
-        Ipp32s width = wh[0], height = wh[1];
-        Ipp64u ticksPx   = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeP_U16_px,   src0.get(), pitch, src1_16.get(), pitch, dst16_px.get(),   pitch, width, height, 10);
-        Ipp64u ticksAvx2 = utils::GetMinTicks(100000, MFX_HEVC_PP::h265_AverageModeP_U16_avx2, src0.get(), pitch, src1_16.get(), pitch, dst16_avx2.get(), pitch, width, height, 10);
-        printf("%2dx%-2d %2dbits speedup = %lld / %lld = %.2f\n", width, height, 10, ticksPx, ticksAvx2, (double)ticksPx / ticksAvx2);
-    }
-    }
-#endif //PRINT_TICKS
 }
 
 
@@ -3323,13 +3307,13 @@ TEST(optimization, Rast2Scan) {
         }
     }
 
-#ifdef PRINT_TICKS
-    for (Ipp32s scan_idx = 1; scan_idx <= 3; scan_idx++) {
-        for (Ipp32s log2_tr_size = 2; log2_tr_size <= 5; log2_tr_size++) {
-            Ipp64s tpx = utils::GetMinTicks(100000, Rast2Scan_px, src.get(), dst_ref.get(), scan_idx, log2_tr_size);
-            Ipp64s tavx2 = utils::GetMinTicks(100000, Rast2Scan, src.get(), dst_opt.get(), scan_idx, log2_tr_size);
-            printf("%d/%d %d %d\n", scan_idx, log2_tr_size, (Ipp32s)tpx, (Ipp32s)tavx2);
+    if (printTicks) {
+        for (Ipp32s scan_idx = 1; scan_idx <= 3; scan_idx++) {
+            for (Ipp32s log2_tr_size = 2; log2_tr_size <= 5; log2_tr_size++) {
+                Ipp64s tpx = utils::GetMinTicks(100000, Rast2Scan_px, src.get(), dst_ref.get(), scan_idx, log2_tr_size);
+                Ipp64s tavx2 = utils::GetMinTicks(100000, Rast2Scan, src.get(), dst_opt.get(), scan_idx, log2_tr_size);
+                printf("%d/%d %d %d\n", scan_idx, log2_tr_size, (Ipp32s)tpx, (Ipp32s)tavx2);
+            }
         }
     }
-#endif // PRINT_TICKS
 }
