@@ -83,11 +83,12 @@ namespace hevce_frame_qp
                 auto& AU = ParseOrDie();
                 auto& S = AU.pic->slice[0]->slice[0];
 
-                mfxI16 QP  = S.slice_qp_delta + S.pps->init_qp_minus26 + 26;
-
-                EXPECT_EQ(qp[bs.TimeStamp], QP) << "ERROR: Frame's QP is not equal to mfxEncodeCtrl's per frame QP\n";
-
-                encoded++;
+                if (bs.TimeStamp < framesToEncode)
+                {
+                    mfxI16 QP  = S.slice_qp_delta + S.pps->init_qp_minus26 + 26;
+                    EXPECT_EQ(qp[bs.TimeStamp], QP) << "ERROR: Frame's QP is not equal to mfxEncodeCtrl's per frame QP\n";
+                    encoded++;
+                }
             }
 
             bs.DataLength = 0;
