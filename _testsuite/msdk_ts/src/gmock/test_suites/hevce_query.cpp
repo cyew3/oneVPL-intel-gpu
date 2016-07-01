@@ -511,6 +511,8 @@ int TestSuite::RunTest(unsigned int id)
     }
     else if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_GACC.Data, sizeof(MFX_PLUGINID_HEVCE_GACC.Data)))
     {
+        if (tc.type == PROTECTED)
+            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
         // GACC: supported only TU = {4,5,6,7}
         if ((tc.set_par[0].v < 4) && (tc.type == TARGET_USAGE))
         {

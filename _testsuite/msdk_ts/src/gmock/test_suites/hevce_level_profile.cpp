@@ -231,14 +231,16 @@ private:
         }
         case NULL_GOPREFDIST:
         {
-                    m_par.mfx.FrameInfo.Width = (((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8)) + 32 - 1) & ~(32 - 1)) + 32;
+                    m_par.mfx.FrameInfo.Width = TS_MIN((((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f), 4096);
                     m_par.mfx.FrameInfo.Height = ((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f);
+                    m_par.mfx.FrameInfo.FrameRateExtN = MaxLumaSr / MaxLumaPs;
+                    m_par.mfx.FrameInfo.FrameRateExtD = 1;
                     m_par.mfx.GopRefDist = 0;
                     break;
         }
         case NULL_FR:
         {
-                    m_par.mfx.FrameInfo.Width = (((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8)) + 32 - 1) & ~(32 - 1)) + 32;
+                    m_par.mfx.FrameInfo.Width = TS_MIN((((mfxU16)(sqrt((mfxF32)MaxLumaPs * 8))) & ~0x1f), 4096);
                     m_par.mfx.FrameInfo.Height = ((MaxLumaPs / m_par.mfx.FrameInfo.Width) & ~0x1f);
                     m_par.mfx.FrameInfo.FrameRateExtN = 0;
                     m_par.mfx.FrameInfo.FrameRateExtD = 0;
