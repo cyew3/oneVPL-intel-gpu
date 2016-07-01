@@ -20,6 +20,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include <math.h>
 #include "vm/strings_defs.h"
 #include "sample_vpp_frc_adv.h"
+#include <algorithm>
 
 static const mfxU32 MFX_TIME_STAMP_FREQUENCY = 90000; // will go to mfxdefs.h
 

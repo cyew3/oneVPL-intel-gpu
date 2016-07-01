@@ -40,6 +40,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #endif
 
 #include "general_allocator.h"
+#include <algorithm>
 
 
 #define MFX_CHECK_STS(sts) {if (MFX_ERR_NONE != sts) return sts;}

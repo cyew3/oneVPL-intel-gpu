@@ -19,6 +19,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "mfx_samples_config.h"
 #include "sample_defs.h"
+#include <algorithm>
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <tchar.h>
