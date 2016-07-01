@@ -149,7 +149,7 @@ mfxStatus CD3D9Device::FillD3DPP(mfxHDL hWindow, mfxU16 nViews, D3DPRESENT_PARAM
 
     D3DPP.Flags                      = D3DPRESENTFLAG_VIDEO;
     D3DPP.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
-    D3DPP.PresentationInterval       = D3DPRESENT_INTERVAL_ONE; // note that this setting leads to an implicit timeBeginPeriod call
+    D3DPP.PresentationInterval       = D3DPRESENT_INTERVAL_IMMEDIATE; // note that this setting leads to an implicit timeBeginPeriod call
     D3DPP.BackBufferCount            = 1;
     D3DPP.BackBufferFormat           = (m_bIsA2rgb10) ? D3DFMT_A2R10G10B10 : D3DFMT_X8R8G8B8;
 
