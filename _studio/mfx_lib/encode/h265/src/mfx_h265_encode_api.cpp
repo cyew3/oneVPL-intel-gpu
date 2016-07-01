@@ -54,14 +54,14 @@ namespace {
     bool AllMandatedParamsPresent(const mfxVideoParam *par)
     {
         mfxExtHEVCRegion *region = GetExtBuffer(*par);
-        bool checkRegion = (region && region->RegionEncoding == MFX_HEVC_REGION_ENCODING_ON && par->mfx.NumSlice == 0) ? false : true;
+        if (region && region->RegionEncoding == MFX_HEVC_REGION_ENCODING_ON && region->RegionId > 0 && par->mfx.NumSlice == 0)
+            return false;
 
         return par->IOPattern &&
             par->mfx.FrameInfo.Width && par->mfx.FrameInfo.Height &&
             par->mfx.FrameInfo.FourCC && par->mfx.FrameInfo.ChromaFormat &&
             par->mfx.FrameInfo.FrameRateExtN && par->mfx.FrameInfo.FrameRateExtD &&
-            (par->mfx.RateControlMethod == CQP || par->mfx.TargetKbps) &&
-            checkRegion;
+            (par->mfx.RateControlMethod == CQP || par->mfx.TargetKbps);
     }
 
     template <class T> mfxExtBuffer MakeExtBufferHeader()
