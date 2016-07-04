@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="libmfx"
 	ProjectGUID="{9E7B3527-11AA-46BA-A82F-C58761F9B56F}"
 	RootNamespace="libmfx"
@@ -49,6 +49,7 @@
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;MFX_VA"
 				ExceptionHandling="2"
 				RuntimeLibrary="1"
+				ProgramDataBaseFileName="$(OutDir)\lib\$(TargetName)_vc80.pdb"
 				WarningLevel="4"
 				DebugInformationFormat="3"
 			/>
@@ -113,6 +114,7 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
+				ProgramDataBaseFileName="$(OutDir)\lib\$(TargetName)_vc80.pdb"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
@@ -179,6 +181,7 @@
 				ExceptionHandling="2"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="true"
+				ProgramDataBaseFileName="$(OutDir)\lib\$(TargetName)_vc80.pdb"
 				WarningLevel="4"
 				DebugInformationFormat="3"
 			/>
@@ -247,6 +250,7 @@
 				ExceptionHandling="2"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="true"
+				ProgramDataBaseFileName="$(OutDir)\lib\$(TargetName)_vc80.pdb"
 				WarningLevel="4"
 				DebugInformationFormat="3"
 			/>
@@ -313,6 +317,7 @@
 				ExceptionHandling="2"
 				RuntimeLibrary="2"
 				BufferSecurityCheck="true"
+				ProgramDataBaseFileName="$(OutDir)\lib\$(TargetName)_vc80.pdb"
 				WarningLevel="4"
 				DebugInformationFormat="3"
 			/>
@@ -379,6 +384,7 @@
 				ExceptionHandling="2"
 				RuntimeLibrary="2"
 				BufferSecurityCheck="true"
+				ProgramDataBaseFileName="$(OutDir)\lib\$(TargetName)_vc80.pdb"
 				WarningLevel="4"
 				DebugInformationFormat="3"
 			/>
