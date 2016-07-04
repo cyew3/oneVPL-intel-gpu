@@ -183,7 +183,7 @@ mfxU32 CompareOutputFiles(vm_file** fdOut, vm_file* fdRef, mfxU32 numThread)
         const mfxU32 BUF_SIZE = 1024;
         mfxU8 buf0[BUF_SIZE];
         mfxU8 buf1[BUF_SIZE];
-        for (mfxI32 off = 0; off < fileLen; off += BUF_SIZE)
+        for (mfxI64 off = 0; off < fileLen; off += BUF_SIZE)
         {
             size_t toRead = IPP_MIN(BUF_SIZE, fileLen - off);
             if (vm_file_fread(buf0, 1, toRead, fdOut[0]) != toRead)
