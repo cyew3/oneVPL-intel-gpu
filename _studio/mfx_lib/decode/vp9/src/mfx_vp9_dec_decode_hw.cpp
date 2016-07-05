@@ -213,7 +213,7 @@ mfxStatus VideoDECODEVP9_HW::Reset(mfxVideoParam *par)
     }
 
     m_in_framerate = (mfxF64) m_vInitPar.mfx.FrameInfo.FrameRateExtD / m_vInitPar.mfx.FrameInfo.FrameRateExtN;
-    
+
     if (!CheckHardwareSupport(m_core, par))
         return MFX_ERR_UNSUPPORTED;
 
@@ -553,7 +553,7 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
         sts = decoder.m_FrameAllocator->PrepareToOutput(data.surface_work, data.copyFromFrame, 0, false);
         MFX_CHECK_STS(sts);
         decoder.m_FrameAllocator->SetDoNotNeedToCopyFlag(false);
-        
+
         if (data.currFrameId != -1)
            decoder.m_FrameAllocator->DecreaseReference(data.currFrameId);
 
@@ -568,7 +568,7 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
     if (status != UMC::UMC_OK)
     {
         mfxStatus CriticalErrorStatus = (status == UMC::UMC_ERR_GPU_HANG) ? MFX_ERR_GPU_HANG : MFX_ERR_DEVICE_FAILED;
-        SetCriticalErrorOccured(CriticalErrorStatus);
+        decoder.SetCriticalErrorOccured(CriticalErrorStatus);
         return CriticalErrorStatus;
     }
 
