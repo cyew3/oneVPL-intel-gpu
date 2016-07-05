@@ -16,6 +16,7 @@ Copyright(c) 2005-2016 Intel Corporation. All Rights Reserved.
 static mfxU32 mv_data_length_offset = 0;
 static const int mb_type_remap[26] = {0, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 25};
 static const int intra_16x16[26]   = {2,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  2};
+static const int inter_mb_mode[1+22] = {-1, 0,  0,  0,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  3};
 
 mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask, mfxU8 QP, std::list<iTask*> *pTaskList)
 {
@@ -133,12 +134,7 @@ inline mfxStatus RepackStremoutMB2PakMB(mfxFeiDecStreamOutMBCtrl* dsoMB, mfxFeiP
     else
     {
         pakMB->InterMB.SubMbShapes = 0;
-//        for (int i=0; i<2; ++i) // this operation gives error!!!
-//            // assume DSO SubMbPredModes filled per subMb, not per prediction unit
-//            for (int j=0; j<4; ++j) {
-//                if (((pakMB->InterMB.SubMbPredModes>>2*j)&3) == (1-i)) // 0 for 1 and 1 for 0 means direction is unused
-//                    pakMB->InterMB.RefIdx[i][j] = 255;
-//            }
+        pakMB->InterMbMode = inter_mb_mode[dsoMB->MbType];
     }
 
     pakMB->TargetSizeInWord = 0xff;
@@ -261,7 +257,74 @@ void RefPrediction(mfxI32 uMB, mfxI32 wmb, mfxI32 uMBx, mfxI32 uMBy,
     refs[1] = MIN(MIN(ref[1][0], ref[1][1]), ref[1][2]);
 }
 
+#ifdef DUMP_MB_DSO
 
+void StartDumpMB(const msdk_char* fname, int frameNum, int newFile)
+{
+    FILE *f;
+    MSDK_FOPEN(f, fname, newFile ? MSDK_CHAR("wt") : MSDK_CHAR("at"));
+    if (!f) return;
+
+    msdk_fprintf(f, MSDK_CHAR("\n=== FRAME:%3d ===\n"), frameNum);
+    fclose(f);
+}
+
+void DumpMB(const msdk_char* fname, struct iTask* task, int uMB)
+{
+    //const mfxExtFeiEncFrameCtrl* encCtrl = (mfxExtFeiEncFrameCtrl*)GetExtBuffer(task->in.ExtParam, task->in.NumExtParam, MFX_EXTBUFF_FEI_ENC_CTRL);
+    //const mfxExtFeiEncMVPredictors* mvPreds = (mfxExtFeiEncMVPredictors*)GetExtBuffer(task->in.ExtParam, task->in.NumExtParam, MFX_EXTBUFF_FEI_ENC_MV_PRED);
+    //const mfxExtFeiEncMBCtrl* mbCtrl = (mfxExtFeiEncMBCtrl*)GetExtBuffer(task->in.ExtParam, task->in.NumExtParam, MFX_EXTBUFF_FEI_ENC_MB);
+    //const mfxExtFeiSPS* sps = (mfxExtFeiSPS*)GetExtBuffer(task->in.ExtParam, task->in.NumExtParam, MFX_EXTBUFF_FEI_SPS);
+    //const mfxExtFeiPPS* pps = (mfxExtFeiPPS*)GetExtBuffer(task->in.ExtParam, task->in.NumExtParam, MFX_EXTBUFF_FEI_PPS);
+    //const mfxExtFeiSliceHeader* sliceHeader = (mfxExtFeiSliceHeader*)GetExtBuffer(task->in.ExtParam, task->in.NumExtParam, MFX_EXTBUFF_FEI_SLICE);
+    //const mfxExtFeiEncQP* qps = (mfxExtFeiEncQP*)GetExtBuffer(task->in.ExtParam, task->in.NumExtParam, MFX_EXTBUFF_FEI_PREENC_QP);
+
+    //const mfxExtFeiEncMBStat* mbdata = (mfxExtFeiEncMBStat*)GetExtBuffer(task->out.ExtParam, task->out.NumExtParam, MFX_EXTBUFF_FEI_ENC_MB_STAT);
+    const mfxExtFeiEncMV* mvs = ( mfxExtFeiEncMV*)GetExtBuffer(task->inPAK.ExtParam, task->inPAK.NumExtParam, MFX_EXTBUFF_FEI_ENC_MV);
+    const mfxExtFeiPakMBCtrl* mbCode = (mfxExtFeiPakMBCtrl*)GetExtBuffer(task->inPAK.ExtParam, task->inPAK.NumExtParam, MFX_EXTBUFF_FEI_PAK_CTRL);
+
+    FILE *f;
+    MSDK_FOPEN(f, fname, MSDK_CHAR("at"));
+    if (!f) return;
+
+    msdk_fprintf(f, MSDK_CHAR("\nMB:%3d  intra:%d\n"), uMB, mbCode->MB[uMB].IntraMbFlag);
+    msdk_fprintf(f, MSDK_CHAR("      MbType:%2d 8x8:%d\n"), mbCode->MB[uMB].MbType, mbCode->MB[uMB].Transform8x8Flag);
+    msdk_fprintf(f, MSDK_CHAR(" DCCoded:%d%d%d cbp:%x %x %x\n"), mbCode->MB[uMB].DcBlockCodedYFlag, mbCode->MB[uMB].DcBlockCodedCrFlag, mbCode->MB[uMB].DcBlockCodedCbFlag,
+            mbCode->MB[uMB].CbpY, mbCode->MB[uMB].CbpCr, mbCode->MB[uMB].CbpCb);
+    msdk_fprintf(f, MSDK_CHAR(" QP:%2d MbSkipConvDisable:%d EnableCoefficientClamp:%x\n"), mbCode->MB[uMB].QpPrimeY, mbCode->MB[uMB].MbSkipConvDisable, mbCode->MB[uMB].EnableCoefficientClamp);
+
+    if(mbCode->MB[uMB].IntraMbFlag) {
+        msdk_fprintf(f, MSDK_CHAR(" IntraMbMode:%d skip:%d direct:%x\n"), mbCode->MB[uMB].IntraMbMode, mbCode->MB[uMB].MBSkipFlag, mbCode->MB[uMB].Direct8x8Pattern);
+        msdk_fprintf(f, MSDK_CHAR(" LumaIntraPredModes: %4x %4x %4x %4x   Chroma: %x\n"), mbCode->MB[uMB].IntraMB.LumaIntraPredModes[0], mbCode->MB[uMB].IntraMB.LumaIntraPredModes[1],
+                mbCode->MB[uMB].IntraMB.LumaIntraPredModes[2], mbCode->MB[uMB].IntraMB.LumaIntraPredModes[3], mbCode->MB[uMB].IntraMB.ChromaIntraPredMode);
+        int flags = mbCode->MB[uMB].IntraMB.IntraPredAvailFlags;
+        msdk_fprintf(f, MSDK_CHAR(" IntraPredAvailable: %c %c %c (%2x)\n"), (flags&1)?'D':'-', (flags&4)?'B':'-', (flags&2)?'C':'-', flags);
+        msdk_fprintf(f, MSDK_CHAR("                   : %c\n"), (flags&16)?'A':'-');
+
+        msdk_fprintf(f, MSDK_CHAR("    reserved:[%d%d%d %3x] %5x %6x\n"), mbCode->MB[uMB].Reserved00, mbCode->MB[uMB].Reserved01, mbCode->MB[uMB].Reserved02, mbCode->MB[uMB].Reserved03,
+                mbCode->MB[uMB].Reserved30, mbCode->MB[uMB].IntraMB.Reserved60);
+    } else {
+        msdk_fprintf(f, MSDK_CHAR(" InterMbMode:%d skip:%d direct:%x\n"), mbCode->MB[uMB].InterMbMode, mbCode->MB[uMB].MBSkipFlag, mbCode->MB[uMB].Direct8x8Pattern);
+        for (int bl=0; bl<4; bl++) {
+            msdk_fprintf(f, MSDK_CHAR(" %d: shape:%d pmode:%d ref:(%d %d)\n"), bl,
+                    (mbCode->MB[uMB].InterMB.SubMbShapes>>(bl*2))&3, (mbCode->MB[uMB].InterMB.SubMbPredModes>>(bl*2))&3,
+                    (mfxI8)mbCode->MB[uMB].InterMB.RefIdx[0][bl], (mfxI8)mbCode->MB[uMB].InterMB.RefIdx[1][bl]);
+            for(int sb=0; sb<4; sb++)
+                msdk_fprintf(f, MSDK_CHAR("  (%3d %3d)  (%3d %3d)\n"), mvs->MB[uMB].MV[bl*4+sb][0].x, mvs->MB[uMB].MV[bl*4+sb][0].y,
+                        mvs->MB[uMB].MV[bl*4+sb][1].x, mvs->MB[uMB].MV[bl*4+sb][1].y);
+
+        }
+        msdk_fprintf(f, MSDK_CHAR("    reserved:[%d%d%d %3x] %5x %4x\n"), mbCode->MB[uMB].Reserved00, mbCode->MB[uMB].Reserved01, mbCode->MB[uMB].Reserved02, mbCode->MB[uMB].Reserved03,
+                mbCode->MB[uMB].Reserved30, mbCode->MB[uMB].InterMB.Reserved40);
+    }
+    int n = sizeof(mbCode->MB[uMB].reserved2)/sizeof(mbCode->MB[uMB].reserved2[0]);
+    msdk_fprintf(f, MSDK_CHAR("    reserved2[%d]:"), n);
+    for (int i=0; i<n; i++) msdk_fprintf(f, MSDK_CHAR(" 0x%8.8x"), mbCode->MB[uMB].reserved2[i]);
+    msdk_fprintf(f, MSDK_CHAR("\n"));
+
+    fclose(f);
+}
+#endif //DUMP_MB_DSO
 
 // pTaskList for CEncodingPipeline::m_inputTasks;
 mfxStatus ResetDirect (struct iTask * task, std::list<iTask*> *pTaskList)
@@ -304,7 +367,6 @@ mfxStatus ResetDirect (struct iTask * task, std::list<iTask*> *pTaskList)
             // find iTask of L1[0]
             struct iTask * reftask = 0;
             for(std::list<iTask*>::iterator it = pTaskList->begin(); it != pTaskList->end(); ++it) {
-                //if ((*it)->outPAK.OutSurface->Data.FrameOrder != refSurface->Data.FrameOrder)
                 if ((*it)->outPAK.OutSurface != refSurface)
                     continue;
                 reftask = *it;
@@ -317,10 +379,6 @@ mfxStatus ResetDirect (struct iTask * task, std::list<iTask*> *pTaskList)
             }
         }
         if (slice >= sliceHeader->NumSlice) return MFX_ERR_INVALID_VIDEO_PARAM;
-        if (!B_SLICE(sliceHeader->Slice[slice].SliceType)) continue;
-
-        //AvcRefine::MBParams *mbs = &refine->mbs[uMB];
-        //memset(mbs, 0, sizeof(*mbs)); // will be filled in RefineAfterPak()
 
         // Inter prediction
         if (mbCode->MB[uMB].IntraMbFlag == 0) {
@@ -337,28 +395,10 @@ mfxStatus ResetDirect (struct iTask * task, std::list<iTask*> *pTaskList)
             mvSkip[0] = mvSkip[1] = zeroMv;
             refSkip[0] = 0;
             refSkip[1] = P_SLICE(sliceHeader->Slice[slice].SliceType) ? 255 :0;
-// no need unless fixed
-//            if (B_SLICE(sliceHeader->Slice[slice].SliceType) /*&& !mbCode->MB[uMB].IntraMbFlag*/) { // expand SubMbPredModes
-//                int newsmodes = smodes;
-//                switch (mbCode->MB[uMB].InterMbMode) {
-//                    case 0:
-//                        newsmodes = (smodes&3)*0x55;
-//                        break;
-//                    case 1:
-//                        newsmodes = (smodes&0x3)*0x5 + (smodes&0xC)*0x14;
-//                        break; //unexpected order!!!
-//                    case 2:
-//                        newsmodes = (smodes&15)*0x11;
-//                        break;
-//                    default: break;
-//                }
-//                if (smodes != newsmodes)
-//                    smodes = newsmodes; // place for breakpoint
-//            }
             // fill unused refidx unless fixed
             for (int sb=0; sb<4; sb++) {
                 mfxI32 modes = (smodes >> sb*2) & 3;
-                if (modes == 0) mbCode->MB[uMB].InterMB.RefIdx[1][sb] = 255;
+                if (modes == 0) mbCode->MB[uMB].InterMB.RefIdx[1][sb] = (P_SLICE(sliceHeader->Slice[slice].SliceType)) ? 0 : 255;
                 else if (modes == 1) mbCode->MB[uMB].InterMB.RefIdx[0][sb] = 255;
             }
 
@@ -375,7 +415,6 @@ mfxStatus ResetDirect (struct iTask * task, std::list<iTask*> *pTaskList)
                         mvs->MB[uMB].MV[0][0].x == mvSkip[0].x && mvs->MB[uMB].MV[0][0].y == mvSkip[0].y);
                 }
             } else { // B-slice
-//continue;
                 RefPrediction(uMB, wmb, uMBx, uMBy, mbCode, refSkip);
                 if (refSkip[0] < 32) MVPrediction(uMB, wmb, uMBx, uMBy, 0, refSkip[0], mvs, mbCode, &mvSkip[0]);
                 if (refSkip[1] < 32) MVPrediction(uMB, wmb, uMBx, uMBy, 1, refSkip[1], mvs, mbCode, &mvSkip[1]);
@@ -390,17 +429,15 @@ mfxStatus ResetDirect (struct iTask * task, std::list<iTask*> *pTaskList)
                         mfxI32 bl = (ypos + (sb&2))*4 + (sb&1)*2 + xpos; // raster 4x4 block
                         mfxI32 sbColz = rasterToZ[sbDirect[sps->Direct8x8InferenceFlag][bl]];
 
-
-                        //H264EncoderFrame* frm = refine->refList[1][0];
-
                         if (!noRefs && refmbCode && !refmbCode->MB[uMB].IntraMbFlag && refmvs /*&& is_l1_pic_short_term*/) // no long term
                         {
+                            mfxU8 pmodesCol = (refmbCode->MB[uMB].InterMB.SubMbPredModes >> (sb*2)) & 3;
                             mfxU8 ref_col = refmbCode->MB[uMB].InterMB.RefIdx[0][sb];
                             const mfxI16Pair *mv_col;
-                            if (ref_col <= 32)
+                            if (pmodesCol != 1 && ref_col <= 32)
                                 mv_col = &refmvs->MB[uMB].MV[sbColz][0];
                             else {
-                                ref_col = refmbCode->MB[uMB].InterMB.RefIdx[1][sb];
+                                ref_col = (pmodesCol == 1) ? refmbCode->MB[uMB].InterMB.RefIdx[1][sb] : 255;
                                 mv_col = &refmvs->MB[uMB].MV[sbColz][1];
                             }
                             if (ref_col == 0 &&
@@ -460,15 +497,15 @@ mfxStatus ResetDirect (struct iTask * task, std::list<iTask*> *pTaskList)
             // TODO: try recombination, at least after sub-shapes changed to 0, better to count coded MV
             if (mb.InterMbMode != 0 && mb.Direct8x8Pattern != 15) {
                 mfxU32 newmode = mb.InterMbMode;
-                int difx0 = (mb.InterMB.RefIdx[0][0] != mb.InterMB.RefIdx[0][1]) || (mv.MV[0][0].x != mv.MV[4][0].x) ||  (mv.MV[0][0].y != mv.MV[4][0].y);
-                int dify0 = (mb.InterMB.RefIdx[0][0] != mb.InterMB.RefIdx[0][2]) || (mv.MV[0][0].x != mv.MV[8][0].x) ||  (mv.MV[0][0].y != mv.MV[8][0].y);
-                int difx1 = (mb.InterMB.RefIdx[0][2] != mb.InterMB.RefIdx[0][3]) || (mv.MV[8][0].x != mv.MV[12][0].x) ||  (mv.MV[8][0].y != mv.MV[12][0].y);
-                int dify1 = (mb.InterMB.RefIdx[0][1] != mb.InterMB.RefIdx[0][3]) || (mv.MV[4][0].x != mv.MV[12][0].x) ||  (mv.MV[4][0].y != mv.MV[12][0].y);
+                bool difx0 = (mb.InterMB.RefIdx[0][0] != mb.InterMB.RefIdx[0][1]) || (mv.MV[0][0].x != mv.MV[4][0].x)  ||  (mv.MV[0][0].y != mv.MV[4][0].y);
+                bool dify0 = (mb.InterMB.RefIdx[0][0] != mb.InterMB.RefIdx[0][2]) || (mv.MV[0][0].x != mv.MV[8][0].x)  ||  (mv.MV[0][0].y != mv.MV[8][0].y);
+                bool difx1 = (mb.InterMB.RefIdx[0][2] != mb.InterMB.RefIdx[0][3]) || (mv.MV[8][0].x != mv.MV[12][0].x) ||  (mv.MV[8][0].y != mv.MV[12][0].y);
+                bool dify1 = (mb.InterMB.RefIdx[0][1] != mb.InterMB.RefIdx[0][3]) || (mv.MV[4][0].x != mv.MV[12][0].x) ||  (mv.MV[4][0].y != mv.MV[12][0].y);
                 if (B_SLICE(sliceHeader->Slice[slice].SliceType)) {
-                    difx0 |= (mb.InterMB.RefIdx[1][0] != mb.InterMB.RefIdx[1][1]) || (mv.MV[0][1].x != mv.MV[4][1].x) ||  (mv.MV[0][1].y != mv.MV[4][1].y);
-                    dify0 |= (mb.InterMB.RefIdx[1][0] != mb.InterMB.RefIdx[1][2]) || (mv.MV[0][1].x != mv.MV[8][1].x) ||  (mv.MV[0][1].y != mv.MV[8][1].y);
-                    difx1 |= (mb.InterMB.RefIdx[1][2] != mb.InterMB.RefIdx[1][3]) || (mv.MV[8][1].x != mv.MV[12][1].x) ||  (mv.MV[8][1].y != mv.MV[12][1].y);
-                    dify1 |= (mb.InterMB.RefIdx[1][1] != mb.InterMB.RefIdx[1][3]) || (mv.MV[4][1].x != mv.MV[12][1].x) ||  (mv.MV[4][1].y != mv.MV[12][1].y);
+                    difx0 = difx0 || (mb.InterMB.RefIdx[1][0] != mb.InterMB.RefIdx[1][1]) || (mv.MV[0][1].x != mv.MV[4][1].x)  ||  (mv.MV[0][1].y != mv.MV[4][1].y);
+                    dify0 = dify0 || (mb.InterMB.RefIdx[1][0] != mb.InterMB.RefIdx[1][2]) || (mv.MV[0][1].x != mv.MV[8][1].x)  ||  (mv.MV[0][1].y != mv.MV[8][1].y);
+                    difx1 = difx1 || (mb.InterMB.RefIdx[1][2] != mb.InterMB.RefIdx[1][3]) || (mv.MV[8][1].x != mv.MV[12][1].x) ||  (mv.MV[8][1].y != mv.MV[12][1].y);
+                    dify1 = dify1 || (mb.InterMB.RefIdx[1][1] != mb.InterMB.RefIdx[1][3]) || (mv.MV[4][1].x != mv.MV[12][1].x) ||  (mv.MV[4][1].y != mv.MV[12][1].y);
                 }
                 if (!difx0 && !difx1)
                     if (!dify0 && !dify1) newmode = 0; //16x16
@@ -492,10 +529,24 @@ mfxStatus ResetDirect (struct iTask * task, std::list<iTask*> *pTaskList)
                     }
                 }
             }
-
         } // inter
 
     } // MB loop
+
+#ifdef DUMP_MB_DSO
+
+#define DUMPOUT MSDK_STRING("/home/dumpfilename.txt")
+
+    int num = task->in.InSurface->Data.FrameOrder;
+    if (num == 2) {
+    StartDumpMB(DUMPOUT, num, 1);
+        DumpMB(DUMPOUT, task, 2365);
+        DumpMB(DUMPOUT, task, 2366);
+        DumpMB(DUMPOUT, task, 2367);
+        DumpMB(DUMPOUT, task, 2485);
+        DumpMB(DUMPOUT, task, 2486);
+    }
+#endif //DUMP_MB_DSO
 
     return MFX_ERR_NONE;
 }
