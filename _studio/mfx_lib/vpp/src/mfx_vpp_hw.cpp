@@ -2043,12 +2043,12 @@ mfxStatus VideoVPPHW::VppFrameCheck(
     DdiTask *pTask = NULL;
 
 #ifdef MFX_VA_LINUX
-    // W/a for odd crops which may cause Linux 16.5 driver hang.
-    if(input && ((input->Info.CropW  & 1) || (input->Info.CropH  & 1))){
+    // W/a for 1-pixel crops which cause Linux 16.5 driver hang.
+    if(input && ((input->Info.CropW == 1) || (input->Info.CropH == 1))){
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    if(output && ((output->Info.CropW  & 1) || (output->Info.CropH  & 1))){
+    if(output && ((output->Info.CropW == 1) || (output->Info.CropH == 1))){
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 #endif
@@ -2982,11 +2982,11 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
     mfxStatus sts = MFX_ERR_NONE;
 
 #ifdef MFX_VA_LINUX
-    // W/a for odd crops which may cause Linux 16.5 driver hang.
-    if((par->vpp.In.CropW  & 1) ||
-       (par->vpp.In.CropH  & 1) ||
-       (par->vpp.Out.CropW & 1) ||
-       (par->vpp.Out.CropH & 1)){
+    // W/a for 1-pixel crops which cause Linux 16.5 driver hang.
+    if((par->vpp.In.CropW  == 1) ||
+       (par->vpp.In.CropH  == 1) ||
+       (par->vpp.Out.CropW == 1) ||
+       (par->vpp.Out.CropH == 1)){
         sts = GetWorstSts(sts, MFX_ERR_INVALID_VIDEO_PARAM);
     }
 #endif
