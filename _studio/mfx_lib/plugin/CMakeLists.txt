@@ -10,6 +10,8 @@ set(H264LA_ENCODER_GUID    "588f1185d47b42968dea377bb5d0dcb4")
 set(H265FEI_ENCODER_GUID   "87e0e80207375240852515cf4a5edde6")
 set(VP8_DECODER_HW_GUID    "f622394d8d87452f878c51f2fc9b4131")
 set(VP8_DECODER_SW_GUID    "bca276ec7a854a598c30e0dc5748f1f6")
+set(VP9_DECODER_HW_GUID    "a922394d8d87452f878c51f2fc9b4131")
+set(VP9_DECODER_SW_GUID    "a9a276ec7a854a598c30e0dc5748f1f6")
 # =============================================================================
 
 mfx_include_dirs( )
@@ -42,7 +44,7 @@ foreach( dir ${umc_dirs} )
 endforeach( )
 
 list( APPEND vdecs
-  h264 mpeg2 vc1 mjpeg vp8
+  h264 mpeg2 vc1 mjpeg vp8 vp9
   )
 
 list( APPEND vencs
@@ -60,8 +62,8 @@ foreach( dec ${vdecs} )
 endforeach( )
 
 foreach( enc ${vencs} )
-  list( APPEND vdirs 
-    enc/${enc} encode/${enc} pak/${enc}          
+  list( APPEND vdirs
+    enc/${enc} encode/${enc} pak/${enc}
     )
 
   list( APPEND vdirs_hw
@@ -220,13 +222,13 @@ foreach( variant ${hevcd_variants} )
     ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
     dl )
-  
+
   if( variant MATCHES hw )
     set( hw_defs "-DMFX_VA -DVA_HEVC_DECODER" )
     list( APPEND LIBS
       umc_va_elk_hw )
   endif()
-  
+
   set( defs "-DAS_HEVCD_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs} ${hw_defs}" )
   if( variant MATCHES hw)
     set( defs "${defs} ${WARNING_FLAGS}" )
@@ -343,7 +345,7 @@ foreach( variant ${hevce_variants} )
     gen_plugins_cfg("HEVC_Encoder_SW" ${HEVC_ENCODER_SW_GUID} ${plugin_name} "02" "HEVC" "not_eval")
   endif()
   make_library( ${plugin_name} ${variant} shared)
- 
+
   set( defs "-DAS_HEVCE_PLUGIN -DHEVCE_EVALUATION -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs}" )
   if(${variant} MATCHES hw)
     gen_plugins_cfg("HEVC_Encoder_GACC" ${HEVC_ENCODER_GACC_GUID} ${eval_plugin_name} "02" "HEVC" "eval")
@@ -409,7 +411,7 @@ foreach( prefix ${MSDK_LIB_ROOT}/encode_hw/h264/src )
     ${prefix}/mfx_h264_encode_cm.cpp
     ${prefix}/mfx_h264_encode_hw_utils.cpp
     ${prefix}/mfx_h264_encode_hw_utils_new.cpp
-    ${prefix}/mfx_h264_encode_hw.cpp    
+    ${prefix}/mfx_h264_encode_hw.cpp
   )
 endforeach()
 
@@ -484,7 +486,7 @@ foreach( variant hw )
     pthread
     dl
     )
-  
+
   set( defs "-DAS_H264LA_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${H264LA_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${h264la_version_defs}" )
   set( defs "${defs} ${WARNING_FLAGS}" )
   gen_plugins_cfg("H264la_Encoder" ${H264LA_ENCODER_GUID} ${plugin_name} "04" "AVC")
@@ -704,10 +706,138 @@ foreach( variant sw hw )
 
   endif()
 
-  
   list( APPEND LIBS
     vpx
     color_space_converter_sw
+    media_buffers
+    umc_io
+    umc
+    vm
+    vm_plus
+    ${ITT_LIBS}
+    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+    pthread
+    dl
+    )
+
+  set( defs "${defs} ${WARNING_FLAGS}" )
+  make_library( ${plugin_name} ${variant} shared)
+
+  install( TARGETS ${plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
+
+endforeach()
+
+set( defs "" )
+
+# =============================================================================
+# VP9
+# =============================================================================
+set (VP9_PRODUCT_NAME "Intel(R) Media Server Studio 2017 - SDK VP9 Pack")
+set (sw_VP9_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - SDK VP9 Software Decode Plug-in")
+set (hw_VP9_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - SDK VP9 Hardware Decode Plug-in")
+
+  if( NOT DEFINED ENV{MFX_VP9_VERSION} )
+    set( vp9_version 0.0.000.0000 )
+  else( )
+    set( vp9_version $ENV{MFX_VP9_VERSION} )
+  endif( )
+
+  if( Linux OR Darwin )
+    execute_process(
+      COMMAND echo
+      COMMAND cut -f 1 -d.
+      COMMAND date "+.%-y.%-m.%-d"
+      OUTPUT_VARIABLE cur_date
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+    string( SUBSTRING ${vp9_version} 0 1 ver )
+
+    set(vp9_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${vp9_version}\"\\\"")
+  endif( )
+
+
+
+set( sources "" )
+set( sources.plus "" )
+
+list( APPEND sources ${plugin_common_sources} )
+
+include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
+include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/libvpx/libvpx )
+
+include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp9_dec/include )
+
+list( APPEND sources ${MSDK_LIB_ROOT}/shared/src/libmfxsw_decode.cpp )
+
+set( USE_STRICT_NAME TRUE )
+set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )
+
+set( sources.plus "" )
+list( APPEND sources.plus
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_vp9_dec_plugin.cpp
+)
+
+foreach( variant sw hw )
+
+  if( __ARCH MATCHES intel64 )
+    set( plugin_name mfx_vp9d_${variant}64 )
+  else()
+    set( plugin_name mfx_vp9d_${variant}32 )
+  endif()
+  if( __CONFIG MATCHES debug )
+    set( plugin_name ${plugin_name}_d )
+  endif()
+
+  set (description_name ${${variant}_VP9_DECODER_DESCRIPTION})
+  set( LIBS "" )
+
+  if(${variant} MATCHES hw)
+
+    list( APPEND LIBS
+      va
+      umc_va_elk_hw
+    )
+
+    list( APPEND sources
+      ${MSDK_LIB_ROOT}/decode/vp9/src/mfx_vp9_dec_decode.cpp
+      ${MSDK_LIB_ROOT}/decode/vp9/src/mfx_vp9_dec_decode_hw.cpp
+      ${MSDK_LIB_ROOT}/decode/vp9/src/mfx_vp9_dec_decode_utils.cpp
+    )
+
+    list( APPEND sources
+      ${MSDK_STUDIO_ROOT}/shared/umc/io/umc_va/src/umc_va_linux.cpp
+    )
+
+    list( APPEND sources
+      ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp9_dec/src/umc_vp9_bitstream.cpp
+      ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp9_dec/src/umc_vp9_utils.cpp
+      ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp9_dec/src/umc_vp9_va_packer.cpp
+    )
+
+    set( defs "-DAS_VP9D_PLUGIN -DUMC_ENABLE_VP9_VIDEO_DECODER -DMFX_VA -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP9_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp9_version_defs}")
+
+    gen_plugins_cfg("VP9_Decoder_HW" ${VP9_DECODER_HW_GUID} ${plugin_name} "01" "VP9")
+
+  else()
+
+    list( APPEND sources
+      ${MSDK_LIB_ROOT}/decode/vp9/src/mfx_vp9_dec_decode.cpp
+      ${MSDK_LIB_ROOT}/decode/vp9/src/mfx_vp9_dec_decode_utils.cpp
+    )
+
+    list( APPEND sources
+      ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp9_dec/src/umc_vp9_bitstream.cpp
+      ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp9_dec/src/umc_vp9_utils.cpp
+    )
+
+    set( defs "-DAS_VP9D_PLUGIN -DUMC_ENABLE_VP9_VIDEO_DECODER -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP9_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp9_version_defs}")
+
+    gen_plugins_cfg("VP9_Decoder_SW" ${VP9_DECODER_SW_GUID} ${plugin_name} "01" "VP9")
+
+  endif()
+
+  list( APPEND LIBS
+    vpx
     media_buffers
     umc_io
     umc

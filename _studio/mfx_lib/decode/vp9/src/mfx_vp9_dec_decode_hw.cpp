@@ -68,13 +68,13 @@ VideoDECODEVP9_HW::VideoDECODEVP9_HW(VideoCORE *p_core, mfxStatus *sts)
     : m_isInit(false),
       m_core(p_core),
       m_platform(MFX_PLATFORM_HARDWARE),
+      m_adaptiveMode(false),
+      m_index(0),
       m_va(NULL),
       m_baseQIndex(0),
       m_y_dc_delta_q(0),
       m_uv_dc_delta_q(0),
-      m_uv_ac_delta_q(0),
-      m_index(0),
-      m_adaptiveMode(false)
+      m_uv_ac_delta_q(0)
 {
     memset(&m_frameInfo.ref_frame_map, -1, sizeof(m_frameInfo.ref_frame_map)); // TODO: move to another place
     ResetFrameInfo();
@@ -782,7 +782,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
         sts = GetOutputSurface(surface_out, surface_work, m_frameInfo.currFrame);
         MFX_CHECK_STS(sts);
 
-        (*surface_out)->Data.TimeStamp = bs->TimeStamp != MFX_TIMESTAMP_UNKNOWN? bs->TimeStamp : GetMfxTimeStamp(m_frameOrder * m_in_framerate);
+        (*surface_out)->Data.TimeStamp = bs->TimeStamp != static_cast<mfxU64>(MFX_TIMESTAMP_UNKNOWN) ? bs->TimeStamp : GetMfxTimeStamp(m_frameOrder * m_in_framerate);
         (*surface_out)->Data.Corrupted = 0;
         (*surface_out)->Data.FrameOrder = m_frameOrder;
         (*surface_out)->Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
