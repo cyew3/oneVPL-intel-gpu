@@ -2042,6 +2042,17 @@ mfxStatus VideoVPPHW::VppFrameCheck(
 
     DdiTask *pTask = NULL;
 
+#ifdef MFX_VA_LINUX
+    // W/a for odd crops which may cause Linux 16.5 driver hang.
+    if(input && ((input->Info.CropW  & 1) || (input->Info.CropH  & 1))){
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
+    if(output && ((output->Info.CropW  & 1) || (output->Info.CropH  & 1))){
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+#endif
+
     sts = m_taskMngr.AssignTask(input, output, aux, pTask, intSts);
     MFX_CHECK_STS(sts);
 
@@ -2969,6 +2980,16 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
     MFX_CHECK_NULL_PTR3(par, caps, core);
 
     mfxStatus sts = MFX_ERR_NONE;
+
+#ifdef MFX_VA_LINUX
+    // W/a for odd crops which may cause Linux 16.5 driver hang.
+    if((par->vpp.In.CropW  & 1) ||
+       (par->vpp.In.CropH  & 1) ||
+       (par->vpp.Out.CropW & 1) ||
+       (par->vpp.Out.CropH & 1)){
+        sts = GetWorstSts(sts, MFX_ERR_INVALID_VIDEO_PARAM);
+    }
+#endif
 
     /* 1. Check ext param */
     for (mfxU32 i = 0; i < par->NumExtParam; i++)
