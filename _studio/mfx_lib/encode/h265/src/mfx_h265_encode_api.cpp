@@ -1759,7 +1759,9 @@ mfxStatus MFXVideoENCODEH265::EncodeFrameCheck(
 
     if (ctrl) {
         if (!m_mfxParam.mfx.EncodedOrder && ctrl->FrameType != MFX_FRAMETYPE_UNKNOWN)
-            if ((ctrl->FrameType & 0xff) != (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR))
+            if ((ctrl->FrameType & 0xff) != (MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_I) &&
+                (ctrl->FrameType & 0xff) != (MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_I) &&
+                (ctrl->FrameType & 0xff) !=  MFX_FRAMETYPE_IDR)
                 return MFX_ERR_INVALID_VIDEO_PARAM;
         if (ctrl->Payload) {
             for (Ipp32s i = 0; i < ctrl->NumPayload; i++) {
