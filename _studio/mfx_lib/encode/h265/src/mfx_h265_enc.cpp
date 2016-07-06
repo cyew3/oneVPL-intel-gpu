@@ -2416,17 +2416,16 @@ void H265FrameEncoder::SetEncodeFrame_GpuPostProc(Frame* frame, std::deque<Threa
                     }
 
                     if (frame->m_slices[0].sliceIntraAngMode == INTRA_ANG_MODE_GRADIENT)
-                        AddTaskDependency(task_enc, &frame->m_ttWaitGpuIntra, &m_topEnc.m_ttHubPool); // ENCODE_CTU(0,0) <- GPU_INTRA
+                        AddTaskDependencyThreaded(task_enc, &frame->m_ttWaitGpuIntra, &m_topEnc.m_ttHubPool); // ENCODE_CTU(0,0) <- GPU_INTRA
+
                     for (Ipp32s i = 0; i < frame->m_numRefUnique; i++)
-                        AddTaskDependency(task_enc, &frame->m_ttWaitGpuMe[i], &m_topEnc.m_ttHubPool); // ENCODE_CTU(0,0) <- GPU_ME(allrefs)
+                        AddTaskDependencyThreaded(task_enc, &frame->m_ttWaitGpuMe[i], &m_topEnc.m_ttHubPool); // ENCODE_CTU(0,0) <- GPU_ME(allrefs)
 
                     if (m_videoParam.CmBirefineFlag && frame->m_slices[0].slice_type == B_SLICE)
-                        AddTaskDependency(task_enc, &frame->m_ttWaitGpuBiref, &m_topEnc.m_ttHubPool); // ENCODE_CTU(0,0) <- GPU_BIREF
+                        AddTaskDependencyThreaded(task_enc, &frame->m_ttWaitGpuBiref, &m_topEnc.m_ttHubPool); // ENCODE_CTU(0,0) <- GPU_BIREF
 
-                    if (m_videoParam.enableCmPostProc && m_frame->m_doPostProc) {
-                        // (potential issue here if SW_PP work without wavefront) and we need add dep for each task_pp
-                        AddTaskDependency(task_pp, &frame->m_ttWaitGpuPostProc, &m_topEnc.m_ttHubPool); // PP_CTU(0,0) <- GPU_PP
-                    }
+                    if (m_videoParam.enableCmPostProc && m_frame->m_doPostProc)
+                        AddTaskDependencyThreaded(task_pp, &frame->m_ttWaitGpuPostProc, &m_topEnc.m_ttHubPool); // PP_CTU(0,0) <- GPU_PP
 
                 }
             }

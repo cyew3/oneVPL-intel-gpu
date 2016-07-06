@@ -1757,14 +1757,14 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
             for (Ipp32s i = 0; i < 4; i++)
                 if (!frame->m_feiIntraAngModes[i])
                    frame->m_feiIntraAngModes[i] = m_feiAngModesPool[i].Allocate();
-            AddTaskDependency(&frame->m_ttSubmitGpuIntra, &frame->m_ttSubmitGpuCopySrc); // GPU_SUBMIT_INTRA <- GPU_SUBMIT_COPY_SRC
+            AddTaskDependencyThreaded(&frame->m_ttSubmitGpuIntra, &frame->m_ttSubmitGpuCopySrc); // GPU_SUBMIT_INTRA <- GPU_SUBMIT_COPY_SRC
 
             frame->m_ttWaitGpuIntra.numDownstreamDependencies = 0;
             frame->m_ttWaitGpuIntra.numUpstreamDependencies = 0;
             frame->m_ttWaitGpuIntra.finished = 0;
             frame->m_ttWaitGpuIntra.poc = frame->m_frameOrder;
             frame->m_ttWaitGpuIntra.syncpoint = NULL;
-            AddTaskDependency(&frame->m_ttWaitGpuIntra, &frame->m_ttSubmitGpuIntra); // GPU_WAIT_INTRA <- GPU_SUBMIT_INTRA
+            AddTaskDependencyThreaded(&frame->m_ttWaitGpuIntra, &frame->m_ttSubmitGpuIntra); // GPU_WAIT_INTRA <- GPU_SUBMIT_INTRA
         }
 
         for (Ipp32s i = 0; i < 2; i++) {
@@ -1794,8 +1794,8 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
                 frame->m_ttWaitGpuMe[uniqRefIdx].syncpoint = NULL;
                 frame->m_ttWaitGpuMe[uniqRefIdx].poc = frame->m_frameOrder;
 
-                AddTaskDependency(&frame->m_ttSubmitGpuMe[uniqRefIdx], &frame->m_ttSubmitGpuCopySrc); // GPU_SUBMIT_HME <- GPU_SUBMIT_COPY_SRC
-                AddTaskDependency(&frame->m_ttWaitGpuMe[uniqRefIdx], &frame->m_ttSubmitGpuMe[uniqRefIdx]); // GPU_WAIT_ME16 <- GPU_SUBMIT_ME16
+                AddTaskDependencyThreaded(&frame->m_ttSubmitGpuMe[uniqRefIdx], &frame->m_ttSubmitGpuCopySrc); // GPU_SUBMIT_HME <- GPU_SUBMIT_COPY_SRC
+                AddTaskDependencyThreaded(&frame->m_ttWaitGpuMe[uniqRefIdx], &frame->m_ttSubmitGpuMe[uniqRefIdx]); // GPU_WAIT_ME16 <- GPU_SUBMIT_ME16
             }
         }
 
@@ -1813,15 +1813,15 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
                     frame->m_feiBirefData[blksize] = m_feiBirefDataPool[blksize].Allocate();
             }
 
-            AddTaskDependency(&frame->m_ttSubmitGpuBiref, &frame->m_ttSubmitGpuMe[frame->m_mapListRefUnique[0][0]]); // GPU_SUBMIT_BIREF <- GPU_SUBMIT_ME L0 ref0
-            AddTaskDependency(&frame->m_ttSubmitGpuBiref, &frame->m_ttSubmitGpuMe[frame->m_mapListRefUnique[1][0]]); // GPU_SUBMIT_BIREF <- GPU_SUBMIT_ME L1 ref0
+            AddTaskDependencyThreaded(&frame->m_ttSubmitGpuBiref, &frame->m_ttSubmitGpuMe[frame->m_mapListRefUnique[0][0]]); // GPU_SUBMIT_BIREF <- GPU_SUBMIT_ME L0 ref0
+            AddTaskDependencyThreaded(&frame->m_ttSubmitGpuBiref, &frame->m_ttSubmitGpuMe[frame->m_mapListRefUnique[1][0]]); // GPU_SUBMIT_BIREF <- GPU_SUBMIT_ME L1 ref0
 
             frame->m_ttWaitGpuBiref.numDownstreamDependencies = 0;
             frame->m_ttWaitGpuBiref.numUpstreamDependencies = 0;
             frame->m_ttWaitGpuBiref.finished = 0;
             frame->m_ttWaitGpuBiref.syncpoint = NULL;
             frame->m_ttWaitGpuBiref.poc = frame->m_frameOrder;
-            AddTaskDependency(&frame->m_ttWaitGpuBiref, &frame->m_ttSubmitGpuBiref); // GPU_WAIT_BIREF <- GPU_SUBMIT_BIREF
+            AddTaskDependencyThreaded(&frame->m_ttWaitGpuBiref, &frame->m_ttSubmitGpuBiref); // GPU_WAIT_BIREF <- GPU_SUBMIT_BIREF
         }
 
         if (frame->m_isRef || m_videoParam.enableCmPostProc && m_videoParam.doDumpRecon && frame->m_doPostProc) { // need for dump_rec
@@ -1835,14 +1835,14 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
             frame->m_ttWaitGpuCopyRec.finished = 0;
             frame->m_ttWaitGpuCopyRec.poc = frame->m_frameOrder;
             frame->m_ttWaitGpuCopyRec.syncpoint = NULL;
-            AddTaskDependency(&frame->m_ttWaitGpuCopyRec, &frame->m_ttSubmitGpuCopyRec); // GPU_WAIT_COPY_REC <- GPU_SUBMIT_COPY_REC
+            AddTaskDependencyThreaded(&frame->m_ttWaitGpuCopyRec, &frame->m_ttSubmitGpuCopyRec); // GPU_WAIT_COPY_REC <- GPU_SUBMIT_COPY_REC
 
             if (frame->m_isRef && m_videoParam.enableCmPostProc && frame->m_doPostProc) {
                 frame->m_ttPadRecon.numDownstreamDependencies = 0;
                 frame->m_ttPadRecon.numUpstreamDependencies = 0;
                 frame->m_ttPadRecon.finished = 0;
                 frame->m_ttPadRecon.poc = frame->m_frameOrder;
-                AddTaskDependency(&frame->m_ttPadRecon, &frame->m_ttWaitGpuCopyRec); // PAD_RECON <- GPU_WAIT_COPY_REC
+                AddTaskDependencyThreaded(&frame->m_ttPadRecon, &frame->m_ttWaitGpuCopyRec); // PAD_RECON <- GPU_WAIT_COPY_REC
             }
 
         }
@@ -1861,10 +1861,10 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
             frame->m_ttWaitGpuPostProc.finished = 0;
             frame->m_ttWaitGpuPostProc.syncpoint = NULL;
             frame->m_ttWaitGpuPostProc.poc = frame->m_frameOrder;
-            AddTaskDependency(&frame->m_ttWaitGpuPostProc, &frame->m_ttSubmitGpuPostProc); // GPU_WAIT_PP <- GPU_SUBMIT_PP
+            AddTaskDependencyThreaded(&frame->m_ttWaitGpuPostProc, &frame->m_ttSubmitGpuPostProc); // GPU_WAIT_PP <- GPU_SUBMIT_PP
 
             if (frame->m_isRef || m_videoParam.doDumpRecon)
-                AddTaskDependency(&frame->m_ttSubmitGpuCopyRec, &frame->m_ttSubmitGpuPostProc); // GPU_SUBMIT_COPY_REC <- GPU_SUBMIT_PP
+                AddTaskDependencyThreaded(&frame->m_ttSubmitGpuCopyRec, &frame->m_ttSubmitGpuPostProc); // GPU_SUBMIT_COPY_REC <- GPU_SUBMIT_PP
 
             // adjust PP: replace complete postproc by deblock only
             {
@@ -2268,14 +2268,14 @@ void H265Encoder::PrepareToEncode(H265EncodeTaskInputParams *inputParam)
 
     if (inputParam->m_newFrame[0] && !inputParam->m_newFrame[0]->m_ttInitNewFrame.finished) {
         inputParam->m_newFrame[0]->m_ttInitNewFrame.InitNewFrame(inputParam->m_newFrame[0], inputParam->surface, inputParam->m_newFrame[0]->m_frameOrder);
-        AddTaskDependency(&inputParam->m_ttComplete, &inputParam->m_newFrame[0]->m_ttInitNewFrame); // COMPLETE <- INIT_NEW_FRAME
+        AddTaskDependencyThreaded(&inputParam->m_ttComplete, &inputParam->m_newFrame[0]->m_ttInitNewFrame); // COMPLETE <- INIT_NEW_FRAME
     }
 
     if (inputParam->m_newFrame[1] && !inputParam->m_newFrame[1]->m_ttInitNewFrame.finished) {
         inputParam->m_newFrame[1]->m_ttInitNewFrame.InitNewFrame(inputParam->m_newFrame[1], inputParam->surface, inputParam->m_newFrame[1]->m_frameOrder);
-        AddTaskDependency(&inputParam->m_ttComplete, &inputParam->m_newFrame[1]->m_ttInitNewFrame); // COMPLETE <- INIT_NEW_FRAME
+        AddTaskDependencyThreaded(&inputParam->m_ttComplete, &inputParam->m_newFrame[1]->m_ttInitNewFrame); // COMPLETE <- INIT_NEW_FRAME
         if (!inputParam->m_newFrame[0]->m_ttInitNewFrame.finished) {
-            AddTaskDependency(&inputParam->m_newFrame[1]->m_ttInitNewFrame, &inputParam->m_newFrame[0]->m_ttInitNewFrame); 
+            AddTaskDependencyThreaded(&inputParam->m_newFrame[1]->m_ttInitNewFrame, &inputParam->m_newFrame[0]->m_ttInitNewFrame); 
         }
     }
 
@@ -2285,13 +2285,13 @@ void H265Encoder::PrepareToEncode(H265EncodeTaskInputParams *inputParam)
         //assert(m_videoParam.picStruct == PROGR && "unsupported in field mode");
         if (m_la->ConfigureLookaheadFrame(m_laFrame[0], 0) == 1) {
             isLookaheadConfigured = true;
-            AddTaskDependency(&inputParam->m_ttComplete, &m_laFrame[0]->m_ttLookahead.back()); // COMPLETE <- TT_PREENC_END
+            AddTaskDependencyThreaded(&inputParam->m_ttComplete, &m_laFrame[0]->m_ttLookahead.back()); // COMPLETE <- TT_PREENC_END
             AddTaskDependencyThreaded(&m_laFrame[0]->m_ttLookahead.front(), &m_laFrame[0]->m_ttInitNewFrame); // TT_PREENC_START <- INIT_NEW_FRAME
         }
         if (m_videoParam.picStruct != PROGR) {
             m_la->ConfigureLookaheadFrame(m_laFrame[1], 1);
             if (m_laFrame[1])
-                //AddTaskDependency(&m_la->m_ttLookahead.front(), &m_laFrame[1]->m_ttInitNewFrame); // TT_PREENC_START <- INIT_NEW_FRAME
+                //AddTaskDependencyThreaded(&m_la->m_ttLookahead.front(), &m_laFrame[1]->m_ttInitNewFrame); // TT_PREENC_START <- INIT_NEW_FRAME
                 AddTaskDependencyThreaded(&m_laFrame[0]->m_ttLookahead.front(), &m_laFrame[1]->m_ttInitNewFrame); // TT_PREENC_START <- INIT_NEW_FRAME
         }
     }
@@ -2303,12 +2303,12 @@ void H265Encoder::PrepareToEncode(H265EncodeTaskInputParams *inputParam)
         inputParam->m_targetFrame[0] = *m_outputQueue.begin();
         inputParam->m_ttComplete.poc = inputParam->m_targetFrame[0]->m_frameOrder;        
         if (!inputParam->m_targetFrame[0]->m_ttEncComplete.finished) // second field recode case - first field is already encoded
-            AddTaskDependency(&inputParam->m_ttComplete, &inputParam->m_targetFrame[0]->m_ttEncComplete); // COMPLETE <- ENC_COMPLETE[0]
+            AddTaskDependencyThreaded(&inputParam->m_ttComplete, &inputParam->m_targetFrame[0]->m_ttEncComplete); // COMPLETE <- ENC_COMPLETE[0]
         if (m_videoParam.picStruct != PROGR) {
             inputParam->m_targetFrame[1] = *++m_outputQueue.begin();
-            AddTaskDependency(&inputParam->m_ttComplete, &inputParam->m_targetFrame[1]->m_ttEncComplete); // COMPLETE <- ENC_COMPLETE[1]            
+            AddTaskDependencyThreaded(&inputParam->m_ttComplete, &inputParam->m_targetFrame[1]->m_ttEncComplete); // COMPLETE <- ENC_COMPLETE[1]            
             if (!inputParam->m_targetFrame[0]->m_ttEncComplete.finished) // second field recode case - first field is already encoded
-                AddTaskDependency(&inputParam->m_targetFrame[1]->m_ttEncComplete, &inputParam->m_targetFrame[0]->m_ttEncComplete); // ENC_COMPLETE[1] <- ENC_COMPLETE[0]
+                AddTaskDependencyThreaded(&inputParam->m_targetFrame[1]->m_ttEncComplete, &inputParam->m_targetFrame[0]->m_ttEncComplete); // ENC_COMPLETE[1] <- ENC_COMPLETE[0]
         }
     } else {
         assert(inputParam->m_targetFrame[0] == NULL);
