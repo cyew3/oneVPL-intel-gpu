@@ -34,8 +34,6 @@ set( sources.plus "" )
 list( APPEND sources ${plugin_common_sources} )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/scheduler/include )
-include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/vp8_libvpx )
-
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/vp8e_plugin/include )
 
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/../mfx_lib/shared/src/mfx_enc_common.cpp )
@@ -88,7 +86,6 @@ foreach( variant hw )
   set( defs "-DAS_VP8E_PLUGIN -DMFX_VA -DMFX_ENABLE_VP8_VIDEO_ENCODE_HW -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP8_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp8_version_defs}")
 
   list( APPEND LIBS
-    vpx
     color_space_converter_sw
     umc
     vm

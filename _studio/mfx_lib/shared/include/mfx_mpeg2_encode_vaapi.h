@@ -29,7 +29,7 @@
 
 #include "mfx_mpeg2_enc_common_hw.h"
 #include "mfx_mpeg2_encode_interface.h"
-#include "umc_muxer.h"
+#include "umc_mutex.h"
 
 
 namespace MfxHwMpeg2Encode

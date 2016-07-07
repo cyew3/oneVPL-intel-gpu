@@ -16,9 +16,6 @@
 #define _MFX_VP9_DECODE_UTILS_H_
 
 #include <assert.h>
-#include "umc_frame_constructor.h"
-#include "umc_frame_allocator.h"
-
 #include "umc_vp9_dec_defs.h"
 
 namespace UMC_VP9_DECODER
