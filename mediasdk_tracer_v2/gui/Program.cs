@@ -60,7 +60,6 @@ namespace msdk_analyzer
             }
             catch
             {
-                MessageBox.Show("ERROR: Install error", "ERROR");
                 globalLock.Dispose();
             }
             try
