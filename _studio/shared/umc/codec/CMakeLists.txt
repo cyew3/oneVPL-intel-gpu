@@ -69,26 +69,6 @@ set( defs "" )
 
 # =============================================================================
 
-if( NOT MFX_LIB_ONLY )
-
-  set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN -DAS_H264LA_PLUGIN" )
-  set( sources "" )
-  file( GLOB_RECURSE srcs "h265_dec/*.c" "h265_dec/*.cpp" )
-  list( APPEND sources ${srcs}) 
-  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/h265_dec/include )
-
-  set( defs "${defs} ${WARNING_FLAGS}" )
-
-  foreach( variant sw hw )
-    make_library( umc_h265 ${variant} static )
-  endforeach( )
-
-endif()
-
-set( defs "" )
-
-# =============================================================================
-
 set( sources "" )
 foreach( dir ${dirs_splmux} )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
