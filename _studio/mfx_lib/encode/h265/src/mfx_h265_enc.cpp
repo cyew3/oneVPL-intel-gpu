@@ -1045,8 +1045,11 @@ void H265Encoder::ConfigureInputFrame(Frame* frame, bool bEncOrder, bool bEncCtr
     frame->m_frameOrderOfLastIdr = m_frameOrderOfLastIdr;
     frame->m_frameOrderOfLastIntra = m_frameOrderOfLastIntra;
     frame->m_frameOrderOfLastAnchor = m_frameOrderOfLastAnchor;
-    frame->m_poc = frame->m_frameOrder - frame->m_frameOrderOfLastIdr;
-    frame->m_isIdrPic = false;
+
+    if (bEncOrder || !bEncCtrl) {
+        frame->m_poc = frame->m_frameOrder - frame->m_frameOrderOfLastIdr;
+        frame->m_isIdrPic = false;
+    }
 
     if (!bEncOrder && !bEncCtrl) {
         Ipp32s idrDist = m_videoParam.GopPicSize * m_videoParam.IdrInterval;
