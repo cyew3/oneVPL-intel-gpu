@@ -176,7 +176,7 @@ mfxStatus CCameraD3DRender::RenderFrame(mfxFrameSurface1 *pSurface, mfxFrameAllo
     //EnableDwmQueuing();
 
     mfxStatus sts = m_hwdev->RenderFrame(pSurface, pmfxAlloc);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_hwdev->RenderFrame failed");
 
     if (NULL != m_sWindowParams.lpWindowName)
     {

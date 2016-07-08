@@ -227,7 +227,7 @@ mfxStatus MockEncoderPlugin::Init(mfxVideoParam *mfxParam)
     {
         sts = m_mfxCore.MapOpaqueSurface(pluginOpaqueAlloc->Out.NumSurface,
             pluginOpaqueAlloc->Out.Type, pluginOpaqueAlloc->Out.Surfaces);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
+        MSDK_CHECK_STATUS(sts, "m_mfxCore.MapOpaqueSurface failed");
     }
 
     m_MaxNumTasks = m_VideoParam.AsyncDepth;
@@ -275,7 +275,7 @@ mfxStatus MockEncoderPlugin::Close()
     {
         sts = m_mfxCore.UnmapOpaqueSurface(pluginOpaqueAlloc->Out.NumSurface,
             pluginOpaqueAlloc->Out.Type, pluginOpaqueAlloc->Out.Surfaces);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, MFX_ERR_MEMORY_ALLOC);
+        MSDK_CHECK_STATUS(sts, "m_mfxCore.UnmapOpaqueSurface failed");
     }
 
     m_Tasks.clear();

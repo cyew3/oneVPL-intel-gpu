@@ -76,7 +76,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 
     // check correctness of input parameters
     sts = VerifyCrossSessionsOptions();
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "VerifyCrossSessionsOptions failed");
 
 #if defined(_WIN32) || defined(_WIN64)
     if (m_eDevType == MFX_HANDLE_D3D9_DEVICE_MANAGER)
@@ -95,9 +95,9 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         {
             sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber() );
         }
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_hwdev->Init failed");
         sts = m_hwdev->GetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&hdl);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_hwdev->GetHandle failed");
         // set Device Manager to external dx9 allocator
         D3DAllocatorParams *pD3DParams = dynamic_cast<D3DAllocatorParams*>(m_pAllocParam.get());
         pD3DParams->pManager =(IDirect3DDeviceManager9*)hdl;
@@ -120,9 +120,9 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         {
             sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber() );
         }
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_hwdev->Init failed");
         sts = m_hwdev->GetHandle(MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&hdl);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_hwdev->GetHandle failed");
         // set Device to external dx11 allocator
         D3D11AllocatorParams *pD3D11Params = dynamic_cast<D3D11AllocatorParams*>(m_pAllocParam.get());
         pD3D11Params->pDevice =(ID3D11Device*)hdl;
@@ -160,14 +160,14 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             else if (params.libvaBackend == MFX_LIBVA_WAYLAND) {
                 VADisplay va_dpy = NULL;
                 sts = m_hwdev->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL *)&va_dpy);
-                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                MSDK_CHECK_STATUS(sts, "m_hwdev->GetHandle failed");
                 hdl = pVAAPIParams->m_dpy =(VADisplay)va_dpy;
 
                 mfxHDL whdl = NULL;
                 mfxHandleType hdlw_t = (mfxHandleType)HANDLE_WAYLAND_DRIVER;
                 Wayland *wld;
                 sts = m_hwdev->GetHandle(hdlw_t, &whdl);
-                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                MSDK_CHECK_STATUS(sts, "m_hwdev->GetHandle failed");
                 wld = (Wayland*)whdl;
                 wld->SetRenderWinPos(params.nRenderWinX, params.nRenderWinY);
                 wld->SetPerfMode(params.bPerfMode);
@@ -187,9 +187,9 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber());
         }
         if (libvaBackend != MFX_LIBVA_WAYLAND) {
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_hwdev->Init failed");
         sts = m_hwdev->GetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL*)&hdl);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_hwdev->GetHandle failed");
         // set Device to external vaapi allocator
         pVAAPIParams->m_dpy =(VADisplay)hdl;
     }
@@ -202,7 +202,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 
     // each pair of source and sink has own safety buffer
     sts = CreateSafetyBuffers();
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "CreateSafetyBuffers failed");
 
     /* One more hint. Example you have 3 dec + 1 enc sessions
     * (enc means vpp_comp call invoked. m_InputParamsArray.size() is 4.
@@ -226,7 +226,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     {
         GeneralAllocator* pAllocator = new GeneralAllocator;
         sts = pAllocator->Init(m_pAllocParam.get());
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "pAllocator->Init failed");
         m_pAllocArray.push_back(pAllocator);
 
         std::auto_ptr<ThreadTranscodeContext> pThreadPipeline(new ThreadTranscodeContext);
@@ -253,7 +253,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
             }
             pSinkPipeline = pThreadPipeline->pPipeline.get();
             sts = m_pExtBSProcArray.back()->Init(m_InputParamsArray[i].strSrcFile, NULL);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            MSDK_CHECK_STATUS(sts, "m_pExtBSProcArray.back failed");
         }
         else if (Source == m_InputParamsArray[i].eMode)
         {
@@ -269,12 +269,12 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                 BufCounter++;
             }
             sts = m_pExtBSProcArray.back()->Init(NULL, m_InputParamsArray[i].strDstFile);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            MSDK_CHECK_STATUS(sts, "m_pExtBSProcArray.back failed");
         }
         else
         {
             sts = m_pExtBSProcArray.back()->Init(m_InputParamsArray[i].strSrcFile, m_InputParamsArray[i].strDstFile);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            MSDK_CHECK_STATUS(sts, "m_pExtBSProcArray.back failed");
             pBuffer = NULL;
         }
 
@@ -304,7 +304,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
                                                     m_pExtBSProcArray.back());
         }
 
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "pThreadPipeline->pPipeline->Init failed");
 
         if (!pParentPipeline && m_InputParamsArray[i].bIsJoin)
             pParentPipeline = pThreadPipeline->pPipeline.get();
@@ -317,7 +317,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
 
         mfxVersion ver = {{0, 0}};
         sts = m_pSessionArray[i]->pPipeline->QueryMFXVersion(&ver);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_pSessionArray[i]->pPipeline->QueryMFXVersion failed");
 
         PrintInfo(i, &m_InputParamsArray[i], &ver);
     }
@@ -325,7 +325,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     for (i = 0; i < m_InputParamsArray.size(); i++)
     {
         sts = m_pSessionArray[i]->pPipeline->CompleteInit();
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_pSessionArray[i]->pPipeline->CompleteInit failed");
 
         if (m_pSessionArray[i]->pPipeline->GetJoiningFlag())
             msdk_printf(MSDK_STRING("Session %d was joined with other sessions\n"), i);
@@ -692,14 +692,14 @@ int main(int argc, char *argv[])
     sts = transcode.Init(argc, argv);
     fflush(stdout);
     fflush(stderr);
-    MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
+    MSDK_CHECK_STATUS(sts, "transcode.Init failed");
 
     transcode.Run();
 
     sts = transcode.ProcessResult();
     fflush(stdout);
     fflush(stderr);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
+    MSDK_CHECK_STATUS(sts, "transcode.ProcessResult failed");
 
     return 0;
 }

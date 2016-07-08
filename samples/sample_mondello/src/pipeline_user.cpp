@@ -57,7 +57,7 @@ mfxStatus CUserPipeline::AllocFrames()
     MSDK_ZERO_MEMORY(EncRequest);
 
     sts = m_pmfxENC->QueryIOSurf(&m_mfxEncParams, &EncRequest);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_pmfxENC->QueryIOSurf failed");
 
     if (EncRequest.NumFrameSuggested < m_mfxEncParams.AsyncDepth)
         return MFX_ERR_MEMORY_ALLOC;
@@ -89,11 +89,11 @@ mfxStatus CUserPipeline::AllocFrames()
 
     // alloc frames for encoder input
     sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &EncRequest, &m_EncResponse);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Alloc failed");
 
     // alloc frames for rotate input
     sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &(RotateRequest), &m_PluginResponse);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Alloc failed");
 
     // prepare mfxFrameSurface1 array for components
     m_pEncSurfaces = new mfxFrameSurface1 [nEncSurfNum];
@@ -113,7 +113,7 @@ mfxStatus CUserPipeline::AllocFrames()
         else
         {
             sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, m_EncResponse.mids[i], &(m_pEncSurfaces[i].Data));
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Lock failed");
         }
     }
 
@@ -129,7 +129,7 @@ mfxStatus CUserPipeline::AllocFrames()
         else
         {
             sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, m_PluginResponse.mids[i], &(m_pPluginSurfaces[i].Data));
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Lock failed");
         }
     }
 
@@ -178,14 +178,14 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
                             pParams->ColorFormat,
                             pParams->numViews,
                             pParams->srcFileBuff);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_FileReader.Init failed");
 
     // set memory type
     m_memType = pParams->memType;
 
     // prepare output file writer
     sts = InitFileWriters(pParams);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "InitFileWriters failed");
 
     mfxIMPL impl = pParams->bUseHWLib ? MFX_IMPL_HARDWARE : MFX_IMPL_SOFTWARE;
 
@@ -203,10 +203,10 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
 
     // create a session for the second vpp and encode
     sts = m_mfxSession.Init(impl, &min_version);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_mfxSession.Init failed");
 
     sts = MFXQueryVersion(m_mfxSession , &version); // get real API version of the loaded library
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "MFXQueryVersion failed");
 
     if (CheckVersion(&version, MSDK_FEATURE_PLUGIN_API)) {
        // we check if codec is distributed as a mediasdk plugin and load it if yes
@@ -234,28 +234,28 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
     MSDK_CHECK_POINTER(m_pmfxENC, MFX_ERR_MEMORY_ALLOC);
 
     sts = InitMfxEncParams(pParams);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "InitMfxEncParams failed");
 
     sts = InitRotateParam(pParams);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "InitRotateParam failed");
 
     // create and init frame allocator
     sts = CreateAllocator();
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "CreateAllocator failed");
 
     sts = ResetMFXComponents(pParams);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "ResetMFXComponents failed");
     // register plugin callbacks in Media SDK
     mfxPlugin plg = make_mfx_plugin_adapter(m_pusrPlugin);
     sts = MFXVideoUSER_Register(m_mfxSession, 0, &plg);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "MFXVideoUSER_Register failed");
 
     // need to call Init after registration because mfxCore interface is needed
     sts = m_pusrPlugin->Init(&m_pluginVideoParams);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_pusrPlugin->Init failed");
 
     sts = m_pusrPlugin->SetAuxParams(&m_RotateParams, sizeof(m_RotateParams));
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_pusrPlugin->SetAuxParams failed");
 
     return MFX_ERR_NONE;
 }
@@ -283,7 +283,7 @@ mfxStatus CUserPipeline::ResetMFXComponents(sInputParams* pParams)
 
     sts = m_pmfxENC->Close();
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_INITIALIZED);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_pmfxENC->Close failed");
 
     // free allocated frames
     DeleteFrames();
@@ -291,14 +291,14 @@ mfxStatus CUserPipeline::ResetMFXComponents(sInputParams* pParams)
     m_TaskPool.Close();
 
     sts = AllocFrames();
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "AllocFrames failed");
 
     sts = m_pmfxENC->Init(&m_mfxEncParams);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_pmfxENC->Init failed");
 
     mfxU32 nEncodedDataBufferSize = m_mfxEncParams.mfx.FrameInfo.Width * m_mfxEncParams.mfx.FrameInfo.Height * 4;
     sts = m_TaskPool.Init(&m_mfxSession, m_FileWriters.first, m_mfxEncParams.AsyncDepth, nEncodedDataBufferSize, m_FileWriters.second);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_TaskPool.Init failed");
 
     return MFX_ERR_NONE;
 }
@@ -393,7 +393,7 @@ mfxStatus CUserPipeline::Run()
             else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts)
             {
                 sts = AllocateSufficientBuffer(&pCurrentTask->mfxBS);
-                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                MSDK_CHECK_STATUS(sts, "AllocateSufficientBuffer failed");
             }
             else
             {
@@ -405,7 +405,7 @@ mfxStatus CUserPipeline::Run()
     // means that the input file has ended, need to go to buffering loops
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
     // exit in case of other errors
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "Unexpected error!!");
 
     // rotate plugin doesn't buffer frames
     // loop to get buffered frames from encoder
@@ -432,7 +432,7 @@ mfxStatus CUserPipeline::Run()
             else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts)
             {
                 sts = AllocateSufficientBuffer(&pCurrentTask->mfxBS);
-                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                MSDK_CHECK_STATUS(sts, "AllocateSufficientBuffer failed");
             }
             else
             {
@@ -446,7 +446,7 @@ mfxStatus CUserPipeline::Run()
     // indicates that there are no more buffered frames
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
     // exit in case of other errors
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_pmfxENC->EncodeFrameAsync failed");
 
     // synchronize all tasks that are left in task pool
     while (MFX_ERR_NONE == sts)
@@ -458,7 +458,7 @@ mfxStatus CUserPipeline::Run()
     // EncodeFrameAsync and SyncOperation don't return this status
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_FOUND);
     // report any errors that occurred in asynchronous part
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_TaskPool.SynchronizeFirstTask failed");
     m_statOverall.StopTimeMeasurement();
     return sts;
 }

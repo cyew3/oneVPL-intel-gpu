@@ -103,7 +103,7 @@ mfxStatus CEncTaskPool::Init(MFXVideoSession* pmfxSession, CSmplBitstreamWriter*
         {
             sts = m_pTasks[i+0].Init(nBufferSize, pWriter);
             sts = m_pTasks[i+1].Init(nBufferSize, pOtherWriter);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            MSDK_CHECK_STATUS(sts, "m_pTasks[i+1].Init failed");
         }
     }
     else
@@ -111,7 +111,7 @@ mfxStatus CEncTaskPool::Init(MFXVideoSession* pmfxSession, CSmplBitstreamWriter*
         for (mfxU32 i = 0; i < m_nPoolSize; i++)
         {
             sts = m_pTasks[i].Init(nBufferSize, pWriter);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            MSDK_CHECK_STATUS(sts, "m_pTasks[i].Init failed");
         }
     }
 
@@ -136,10 +136,10 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask()
             m_statFile.StartTimeMeasurement();
             sts = m_pTasks[m_nTaskBufferStart].WriteBitstream();
             m_statFile.StopTimeMeasurement();
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            MSDK_CHECK_STATUS(sts, "m_pTasks[m_nTaskBufferStart].WriteBitstream failed");
 
             sts = m_pTasks[m_nTaskBufferStart].Reset();
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            MSDK_CHECK_STATUS(sts, "m_pTasks[m_nTaskBufferStart].Reset failed");
 
             // move task buffer start to the next executing task
             // the first transform frame to the right with non zero sync point
@@ -252,10 +252,10 @@ mfxStatus sTask::Init(mfxU32 nBufferSize, CSmplBitstreamWriter *pwriter)
     pWriter = pwriter;
 
     mfxStatus sts = Reset();
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "Reset failed");
 
     sts = InitMfxBitstream(&mfxBS, nBufferSize);
-    MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMfxBitstream(&mfxBS));
+    MSDK_CHECK_STATUS_SAFE(sts, "InitMfxBitstream failed", WipeMfxBitstream(&mfxBS));
 
     return sts;
 }
@@ -601,7 +601,7 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
         NULL,
         0,
         MSDKAdapter::GetNumber(GetFirstSession()));
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_hwdev->Init failed");
 
 #elif LIBVA_SUPPORT
     m_hwdev = CreateVAAPIDevice(m_libvaBackend);
@@ -610,7 +610,7 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
         return MFX_ERR_MEMORY_ALLOC;
     }
     sts = m_hwdev->Init(NULL, int(m_isMondelloRender), MSDKAdapter::GetNumber(GetFirstSession()));
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_hwdev->Init failed");
 #endif
 
 #if defined(LIBVA_WAYLAND_SUPPORT)
@@ -620,7 +620,7 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
         mfxHandleType hdlw_t = (mfxHandleType)HANDLE_WAYLAND_DRIVER;
 
         sts = m_hwdev->GetHandle(hdlw_t, &hdl);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_hwdev->GetHandle failed");
 
         Wayland *wld;
         wld = (Wayland*)hdl;
@@ -661,7 +661,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
     // 1 extra surface at input allows to get 1 extra output.
 
     sts = GetFirstEncoder()->QueryIOSurf(&m_mfxEncParams, &EncRequest);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "GetFirstEncoder failed");
 
     if (EncRequest.NumFrameSuggested < m_mfxEncParams.AsyncDepth)
         return MFX_ERR_MEMORY_ALLOC;
@@ -673,7 +673,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
     {
         // VppRequest[0] for input frames request, VppRequest[1] for output frames request
         sts = m_pmfxVPP->QueryIOSurf(&m_mfxVppParams, VppRequest);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_pmfxVPP->QueryIOSurf failed");
 
         // The number of surfaces for vpp input - so that vpp can work at async depth = m_nAsyncDepth
         nVppSurfNum = VppRequest[0].NumFrameSuggested;
@@ -694,7 +694,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
 
     // alloc frames for encoder
     sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &EncRequest, &m_EncResponse);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Alloc failed");
 
     // alloc frames for vpp if vpp is enabled
     if (m_pmfxVPP)
@@ -706,7 +706,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
             VppRequest[0].Type |= MFX_MEMTYPE_EXPORT_FRAME;
 
         sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &(VppRequest[0]), &m_VppResponse);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Alloc failed");
     }
 
     // prepare mfxFrameSurface1 array for encoder
@@ -726,7 +726,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
         {
             // get YUV pointers
             sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, m_EncResponse.mids[i], &(m_pEncSurfaces[i].Data));
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Lock failed");
         }
     }
 
@@ -748,7 +748,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
             else
             {
                 sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, m_VppResponse.mids[i], &(m_pVppSurfaces[i].Data));
-                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Lock failed");
             }
         }
     }
@@ -764,7 +764,7 @@ mfxStatus CEncodingPipeline::CreateAllocator()
     {
 #if D3D_SURFACES_SUPPORT
         sts = CreateHWDevice();
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "CreateHWDevice failed");
 
         mfxHDL hdl = NULL;
         mfxHandleType hdl_t =
@@ -774,7 +774,7 @@ mfxStatus CEncodingPipeline::CreateAllocator()
             MFX_HANDLE_D3D9_DEVICE_MANAGER;
 
         sts = m_hwdev->GetHandle(hdl_t, &hdl);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_hwdev->GetHandle failed");
 
         // handle is needed for HW library only
         mfxIMPL impl = 0;
@@ -782,7 +782,7 @@ mfxStatus CEncodingPipeline::CreateAllocator()
         if (impl != MFX_IMPL_SOFTWARE)
         {
             sts = m_mfxSession.SetHandle(hdl_t, hdl);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            MSDK_CHECK_STATUS(sts, "m_mfxSession.SetHandle failed");
         }
 
         // create D3D allocator
@@ -815,13 +815,13 @@ mfxStatus CEncodingPipeline::CreateAllocator()
         thus we demonstrate "external allocator" usage model.
         Call SetAllocator to pass allocator to Media SDK */
         sts = m_mfxSession.SetFrameAllocator(m_pMFXAllocator);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_mfxSession.SetFrameAllocator failed");
 
         m_bExternalAlloc = true;
 #endif
 #ifdef LIBVA_SUPPORT
         sts = CreateHWDevice();
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "CreateHWDevice failed");
         /* It's possible to skip failed result here and switch to SW implementation,
         but we don't process this way */
 
@@ -829,7 +829,7 @@ mfxStatus CEncodingPipeline::CreateAllocator()
         sts = m_hwdev->GetHandle(MFX_HANDLE_VA_DISPLAY, &hdl);
         // provide device manager to MediaSDK
         sts = m_mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, hdl);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_mfxSession.SetHandle failed");
 
         // create VAAPI allocator
         m_pMFXAllocator = new vaapiFrameAllocator;
@@ -845,7 +845,7 @@ mfxStatus CEncodingPipeline::CreateAllocator()
         thus we demonstrate "external allocator" usage model.
         Call SetAllocator to pass allocator to mediasdk */
         sts = m_mfxSession.SetFrameAllocator(m_pMFXAllocator);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_mfxSession.SetFrameAllocator failed");
 
         m_bExternalAlloc = true;
 #endif
@@ -860,13 +860,13 @@ mfxStatus CEncodingPipeline::CreateAllocator()
         if(MFX_IMPL_HARDWARE == MFX_IMPL_BASETYPE(impl))
         {
             sts = CreateHWDevice();
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            MSDK_CHECK_STATUS(sts, "CreateHWDevice failed");
 
             mfxHDL hdl = NULL;
             sts = m_hwdev->GetHandle(MFX_HANDLE_VA_DISPLAY, &hdl);
             // provide device manager to MediaSDK
             sts = m_mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, hdl);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            MSDK_CHECK_STATUS(sts, "m_mfxSession.SetHandle failed");
         }
 #endif
 
@@ -881,7 +881,7 @@ mfxStatus CEncodingPipeline::CreateAllocator()
 
     // initialize memory allocator
     sts = m_pMFXAllocator->Init(m_pmfxAllocatorParams);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Init failed");
 
     return MFX_ERR_NONE;
 }
@@ -987,7 +987,7 @@ mfxStatus CEncodingPipeline::InitFileWriter(CSmplBitstreamWriter **ppWriter, con
     *ppWriter = new CSmplBitstreamWriter;
     MSDK_CHECK_POINTER(*ppWriter, MFX_ERR_MEMORY_ALLOC);
     mfxStatus sts = (*ppWriter)->Init(filename);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, " failed");
 
     return sts;
 }
@@ -1004,7 +1004,7 @@ mfxStatus CEncodingPipeline::InitFileWriters(sInputParams *pParams)
     if ( (MVC_VIEWOUTPUT & pParams->MVC_flags) && (pParams->dstFileBuff.size() <= 1))
     {
         sts = InitFileWriter(&m_FileWriters.first, pParams->dstFileBuff[0]);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "InitFileWriter failed");
 
         m_FileWriters.second = m_FileWriters.first;
     }
@@ -1012,10 +1012,10 @@ mfxStatus CEncodingPipeline::InitFileWriters(sInputParams *pParams)
     else if ( (MVC_VIEWOUTPUT & pParams->MVC_flags) && (pParams->dstFileBuff.size() <= 2))
     {
         sts = InitFileWriter(&m_FileWriters.first, pParams->dstFileBuff[0]);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "InitFileWriter failed");
 
         sts = InitFileWriter(&m_FileWriters.second, pParams->dstFileBuff[1]);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "InitFileWriter failed");
     }
     // ViewOutput mode: 3 bitstreams - 2 separate & 1 merged
     else if ( (MVC_VIEWOUTPUT & pParams->MVC_flags) && (pParams->dstFileBuff.size() <= 3))
@@ -1025,17 +1025,17 @@ mfxStatus CEncodingPipeline::InitFileWriters(sInputParams *pParams)
         // init first duplicate writer
         MSDK_CHECK_POINTER(first.get(), MFX_ERR_MEMORY_ALLOC);
         sts = first->Init(pParams->dstFileBuff[0]);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "first->Init failed");
         sts = first->InitDuplicate(pParams->dstFileBuff[2]);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "first->InitDuplicate failed");
 
         // init second duplicate writer
         std::auto_ptr<CSmplBitstreamDuplicateWriter> second(new CSmplBitstreamDuplicateWriter);
         MSDK_CHECK_POINTER(second.get(), MFX_ERR_MEMORY_ALLOC);
         sts = second->Init(pParams->dstFileBuff[1]);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "second->Init failed");
         sts = second->JoinDuplicate(first.get());
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "second->JoinDuplicate failed");
 
         m_FileWriters.first = first.release();
         m_FileWriters.second = second.release();
@@ -1044,7 +1044,7 @@ mfxStatus CEncodingPipeline::InitFileWriters(sInputParams *pParams)
     else
     {
         sts = InitFileWriter(&m_FileWriters.first, pParams->dstFileBuff[0]);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "InitFileWriter failed");
     }
 
     return sts;
@@ -1071,7 +1071,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
             pParams->ColorFormat,
             pParams->numViews,
             pParams->srcFileBuff);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_FileReader.Init failed");
     }
 
     m_MVCflags = pParams->MVC_flags;
@@ -1079,7 +1079,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     if (!m_isMondelloRender)
     {
         sts = InitFileWriters(pParams);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "InitFileWriters failed");
     }
 
     mfxInitParam initPar;
@@ -1115,10 +1115,10 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
         sts = m_mfxSession.InitEx(initPar);
     }
 
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_mfxSession.InitEx failed");
 
     sts = MFXQueryVersion(m_mfxSession , &version); // get real API version of the loaded library
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "MFXQueryVersion failed");
 
     if ((pParams->MVC_flags & MVC_ENABLED) != 0 && !CheckVersion(&version, MSDK_FEATURE_MVC)) {
         msdk_printf(MSDK_STRING("error: MVC is not supported in the %d.%d API version\n"),
@@ -1173,7 +1173,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
                 msdk_printf(MSDK_STRING("Default plugin cannot be loaded (possibly you have to define plugin explicitly)\n"));
             }
         }
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "PluginLoad failed");
     }
 
     // set memory type
@@ -1181,19 +1181,19 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 
     // create and init frame allocator
     sts = CreateAllocator();
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "CreateAllocator failed");
 
     sts = InitMfxEncParams(pParams);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "InitMfxEncParams failed");
 
     sts = InitMfxVppParams(pParams);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "InitMfxVppParams failed");
 
     // MVC specific options
     if (MVC_ENABLED & m_MVCflags)
     {
         sts = AllocAndInitMVCSeqDesc();
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "AllocAndInitMVCSeqDesc failed");
     }
 
     // create encoder
@@ -1211,7 +1211,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     }
 
     sts = ResetMFXComponents(pParams);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "ResetMFXComponents failed");
 
     InitMondelloPipeline(pParams);
 
@@ -1345,13 +1345,13 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
 
     sts = m_pmfxENC->Close();
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_INITIALIZED);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_pmfxENC->Close failed");
 
     if (m_pmfxVPP)
     {
         sts = m_pmfxVPP->Close();
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_INITIALIZED);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_pmfxVPP->Close failed");
     }
 
     // free allocated frames
@@ -1360,7 +1360,7 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
     m_TaskPool.Close();
 
     sts = AllocFrames();
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "AllocFrames failed");
 
     if (!m_isMondelloRender)
     {
@@ -1372,7 +1372,7 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
         }
     }
 
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_pmfxENC->Init failed");
 
     if (m_pmfxVPP)
     {
@@ -1382,14 +1382,14 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
             msdk_printf(MSDK_STRING("WARNING: partial acceleration\n"));
             MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
         }
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_pmfxVPP->Init failed");
     }
 
     if (!m_isMondelloRender)
     {
         mfxU32 nEncodedDataBufferSize = m_mfxEncParams.mfx.FrameInfo.Width * m_mfxEncParams.mfx.FrameInfo.Height * 4;
         sts = m_TaskPool.Init(&m_mfxSession, m_FileWriters.first, m_mfxEncParams.AsyncDepth, nEncodedDataBufferSize, m_FileWriters.second);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_TaskPool.Init failed");
     }
 
     return MFX_ERR_NONE;
@@ -1405,11 +1405,11 @@ mfxStatus CEncodingPipeline::AllocateSufficientBuffer(mfxBitstream* pBS)
 
     // find out the required buffer size
     mfxStatus sts = GetFirstEncoder()->GetVideoParam(&par);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "GetFirstEncoder failed");
 
     // reallocate bigger buffer for output
     sts = ExtendMfxBitstream(pBS, par.mfx.BufferSizeInKB * 1000);
-    MSDK_CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, WipeMfxBitstream(pBS));
+    MSDK_CHECK_STATUS_SAFE(sts, "ExtendMfxBitstream failed", WipeMfxBitstream(pBS));
 
     return MFX_ERR_NONE;
 }
@@ -1422,7 +1422,7 @@ mfxStatus CEncodingPipeline::GetFreeTask(sTask **ppTask)
     if (MFX_ERR_NOT_FOUND == sts)
     {
         sts = m_TaskPool.SynchronizeFirstTask();
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_TaskPool.SynchronizeFirstTask failed");
 
         // try again
         sts = m_TaskPool.GetFreeTask(ppTask);
@@ -1603,7 +1603,7 @@ mfxStatus CEncodingPipeline::Run()
             else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts)
             {
                 sts = AllocateSufficientBuffer(&pCurrentTask->mfxBS);
-                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                MSDK_CHECK_STATUS(sts, "AllocateSufficientBuffer failed");
             }
             else
             {
@@ -1617,7 +1617,7 @@ mfxStatus CEncodingPipeline::Run()
     // means that the input file has ended, need to go to buffering loops
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
     // exit in case of other errors
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "Unexpected error!!");
 
     if (m_isMondelloRender)
         return sts;
@@ -1688,7 +1688,7 @@ mfxStatus CEncodingPipeline::Run()
                 else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts)
                 {
                     sts = AllocateSufficientBuffer(&pCurrentTask->mfxBS);
-                    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                    MSDK_CHECK_STATUS(sts, "AllocateSufficientBuffer failed");
                 }
                 else
                 {
@@ -1703,7 +1703,7 @@ mfxStatus CEncodingPipeline::Run()
         // indicates that there are no more buffered frames
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
         // exit in case of other errors
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "m_pmfxENC->EncodeFrameAsync failed");
     }
 
     // loop to get buffered frames from encoder
@@ -1730,7 +1730,7 @@ mfxStatus CEncodingPipeline::Run()
             else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts)
             {
                 sts = AllocateSufficientBuffer(&pCurrentTask->mfxBS);
-                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+                MSDK_CHECK_STATUS(sts, "AllocateSufficientBuffer failed");
             }
             else
             {
@@ -1746,7 +1746,7 @@ mfxStatus CEncodingPipeline::Run()
     // indicates that there are no more buffered frames
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
     // exit in case of other errors
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_pmfxENC->EncodeFrameAsync failed");
 
     // synchronize all tasks that are left in task pool
     while (MFX_ERR_NONE == sts)
@@ -1758,7 +1758,7 @@ mfxStatus CEncodingPipeline::Run()
     // EncodeFrameAsync and SyncOperation don't return this status
     MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_FOUND);
     // report any errors that occurred in asynchronous part
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "m_TaskPool.SynchronizeFirstTask failed");
     m_statOverall.StopTimeMeasurement();
     return sts;
 }

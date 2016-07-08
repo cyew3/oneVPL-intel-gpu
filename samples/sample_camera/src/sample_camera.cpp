@@ -622,7 +622,7 @@ int main(int argc, char *argv[])
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
 
     sts = Pipeline.Init(&Params);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
+    MSDK_CHECK_STATUS(sts, "Pipeline.Init failed");
 
     // print stream info
     Pipeline.PrintInfo();
@@ -723,7 +723,7 @@ int main(int argc, char *argv[])
     //Pipeline.Close();
 
     if(MFX_ERR_ABORTED != sts)
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
+        MSDK_CHECK_STATUS(sts, "Unexpected error!!");
 
     msdk_printf(MSDK_STRING("\nCamera pipe finished\n"));
 

@@ -483,9 +483,7 @@ mfxStatus CmdProcessor::ParseParFile(FILE *parFile)
             continue;
 
         sts = TokenizeLine(pCur, currPos);
-//        if (MFX_ERR_NONE != sts)
-//            PrintError(MSDK_STRING("Error in par file parameters at line %d"), lineIndex);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "TokenizeLine failed");
         currPos = 0;
         lineIndex++;
     }
@@ -1164,7 +1162,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
     if (skipped < argc)
     {
         sts = VerifyAndCorrectInputParams(InputParams);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        MSDK_CHECK_STATUS(sts, "VerifyAndCorrectInputParams failed");
         m_SessionArray.push_back(InputParams);
     }
 

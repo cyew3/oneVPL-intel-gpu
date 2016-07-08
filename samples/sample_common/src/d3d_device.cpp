@@ -205,7 +205,7 @@ mfxStatus CD3D9Device::Init(
 
     ZeroMemory(&m_D3DPP, sizeof(m_D3DPP));
     sts = FillD3DPP(hWindow, nViews, m_D3DPP);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    MSDK_CHECK_STATUS(sts, "FillD3DPP failed");
 
     hr = m_pD3D9->CreateDeviceEx(
         nAdapterNum,

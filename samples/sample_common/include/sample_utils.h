@@ -690,7 +690,7 @@ template<typename T>
     }
 
 mfxStatus StrFormatToCodecFormatFourCC(msdk_char* strInput, mfxU32 &codecFormat);
-
+msdk_string StatusToString(mfxStatus sts);
 mfxI32 getMonitorType(msdk_char* str);
 
 void WaitForDeviceToBecomeFree(MFXVideoSession& session, mfxSyncPoint& syncPoint,mfxStatus& currentStatus);

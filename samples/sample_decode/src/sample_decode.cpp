@@ -660,7 +660,7 @@ int main(int argc, char *argv[])
         Pipeline.SetMultiView();
 
     sts = Pipeline.Init(&Params);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
+    MSDK_CHECK_STATUS(sts, "Pipeline.Init failed");
 
     // print stream info
     Pipeline.PrintInfo();
@@ -681,16 +681,16 @@ int main(int argc, char *argv[])
             {
                 msdk_printf(MSDK_STRING("\nERROR: Hardware device was lost or returned unexpected error. Recovering...\n"));
                 sts = Pipeline.ResetDevice();
-                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
+                MSDK_CHECK_STATUS(sts, "Pipeline.ResetDevice failed");
             }
 
             sts = Pipeline.ResetDecoder(&Params);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
+            MSDK_CHECK_STATUS(sts, "Pipeline.ResetDecoder failed");
             continue;
         }
         else
         {
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
+            MSDK_CHECK_STATUS(sts, "Pipeline.RunDecoding failed");
             break;
         }
     }
