@@ -834,7 +834,8 @@ namespace MFX_HEVC_PP
         const void* in_pSrc2 = NULL,
         int    in_Src2Pitch = 0) // in samples
     {
-        ALIGN_DECL(16) short tmpBuf[64*64];
+        //ALIGN_DECL(16) short tmpBuf[64*64];
+        ALIGN_DECL(16) short tmpBuf[80*64]; // hack due to Interp_WithAvg expects pitch = 80
 
         Ipp32s accum_pitch = ((interp_type == MFX_HEVC_PP::INTERP_HOR) ? (plane_type == UMC_HEVC_DECODER::TEXT_CHROMA ? 2 : 1) : in_SrcPitch);
 
