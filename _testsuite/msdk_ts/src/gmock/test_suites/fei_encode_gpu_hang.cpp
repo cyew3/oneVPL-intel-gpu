@@ -133,7 +133,7 @@ int test(mfxU32 codecId)
         } while (hang_detected && !sp.empty());
     }
 
-    EXPECT_TRUE(hang_detected);
+    EXPECT_TRUE(hang_detected) << "ERROR: GPU Hang was not triggered by 'HANG' Extended buffer\n";
 
     if (hang_detected)
     {
