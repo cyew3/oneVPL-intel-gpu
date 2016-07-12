@@ -1963,6 +1963,9 @@ mfxStatus CmCopyWrapper::ReleaseCmSurfaces(void)
     }
     m_tableSysRelations2.clear();
 
+    m_tableCmIndex2.clear();
+    m_tableSysIndex2.clear();
+
     return MFX_ERR_NONE;
 }
 mfxStatus CmCopyWrapper::Release(void)
