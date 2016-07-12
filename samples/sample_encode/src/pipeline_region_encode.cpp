@@ -449,9 +449,11 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
 
 void CRegionEncodingPipeline::Close()
 {
-    if (m_FileWriters.first) {
-        msdk_printf(MSDK_STRING("Frame number: %u   \r"), m_FileWriters.first->m_nProcessedFramesNum / m_resources.GetSize());
-        msdk_printf(MSDK_STRING("\nEncode fps: %.2lf\n"), (m_FileWriters.first->m_nProcessedFramesNum / m_resources.GetSize())/(m_timeAll/(double)time_get_frequency()));
+    if (m_FileWriters.first)
+    {
+        mfxU32 frameNum = m_resources.GetSize() ? m_FileWriters.first->m_nProcessedFramesNum / m_resources.GetSize() : 0;
+        msdk_printf(MSDK_STRING("Frame number: %u   \r"), frameNum);
+        msdk_printf(MSDK_STRING("\nEncode fps: %.2lf\n"), m_timeAll ? frameNum*((double)time_get_frequency())/m_timeAll : 0);
     }
 
     MSDK_SAFE_DELETE(m_pmfxVPP);
