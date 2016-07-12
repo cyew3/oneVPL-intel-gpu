@@ -599,7 +599,7 @@ mfxStatus CRegionEncodingPipeline::Run()
         for (int regId = 0; regId < m_resources.GetSize(); regId++)
         {
             // get a pointer to a free task (bit stream and sync point for encoder)
-            sts = m_resources.GetFreeTask(regId,&pCurrentTask);
+            sts = m_resources.GetFreeTask(regId, &pCurrentTask);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
             for (;;)
@@ -654,7 +654,7 @@ mfxStatus CRegionEncodingPipeline::Run()
         for (int regId = 0; regId < m_resources.GetSize(); regId++)
         {
             // get a free task (bit stream and sync point for encoder)
-            sts = m_resources[regId].TaskPool.GetFreeTask(&pCurrentTask);
+            sts = m_resources.GetFreeTask(regId, &pCurrentTask);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
             for (;;)
