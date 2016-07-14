@@ -930,6 +930,7 @@ mfxStatus mfx_UMC_FrameAllocator::PrepareToOutput(mfxFrameSurface1 *surface_work
         return MFX_ERR_UNSUPPORTED;
     }
     m_surface.Info.FourCC = surface_work->Info.FourCC;
+    m_surface.Info.Shift = m_IsUseExternalFrames ? m_extSurfaces[index].FrameSurface->Info.Shift : m_frameData[index].first.Info.Shift;
     sts = m_pCore->DoFastCopyWrapper(surface_work,
                                      dstMemType,
                                      &m_surface,
