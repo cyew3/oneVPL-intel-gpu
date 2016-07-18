@@ -106,6 +106,7 @@ protected:
 
     mfxStatus PrepareTask( Task& task);
     mfxStatus FreeTask(Task& task);
+    mfxStatus WaitForQueringTask(Task& task);
 
     std::auto_ptr<DriverEncoder>    m_ddi;
     MFXCoreInterface                m_core;
@@ -114,6 +115,7 @@ protected:
     ENCODE_CAPS_HEVC                m_caps;
 
     MfxFrameAllocResponse           m_raw;
+    MfxFrameAllocResponse           m_rawSkip;
     MfxFrameAllocResponse           m_rec;
     MfxFrameAllocResponse           m_bs;
 

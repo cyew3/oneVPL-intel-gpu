@@ -106,7 +106,7 @@ void FillSpsBuffer(
     sps.GopOptFlag          = mfxU8(par.mfx.GopOptFlag);
 
     sps.TargetUsage         = mfxU8(par.mfx.TargetUsage);
-    sps.RateControlMethod   = mfxU8(par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT ? MFX_RATECONTROL_CQP:par.mfx.RateControlMethod) ;
+    sps.RateControlMethod   = mfxU8(par.isSWBRC() ? MFX_RATECONTROL_CQP:par.mfx.RateControlMethod) ;
     if(par.mfx.FrameInfo.Height <= 576 &&
         par.mfx.FrameInfo.Width <= 736 &&
         par.mfx.RateControlMethod == MFX_RATECONTROL_CQP &&

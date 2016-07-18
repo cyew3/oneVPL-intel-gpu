@@ -122,22 +122,22 @@ public: // temporary for debugging and dumping
     mfxF64 sumxx;
 };
 
-typedef Ipp32s mfxBRCStatus;
+typedef mfxI32 mfxBRCStatus;
 
 
 class BrcIface
 {
 public:
     virtual ~BrcIface() {};
-    virtual mfxStatus Init(MfxVideoParam &video, Ipp32s enableRecode = 1) = 0;
-    virtual mfxStatus Reset(MfxVideoParam &video, Ipp32s enableRecode = 1) = 0;
+    virtual mfxStatus Init(MfxVideoParam &video, mfxI32 enableRecode = 1) = 0;
+    virtual mfxStatus Reset(MfxVideoParam &video, mfxI32 enableRecode = 1) = 0;
     virtual mfxStatus Close() = 0;
     virtual void PreEnc(mfxU32 frameType, std::vector<VmeData *> const & vmeData, mfxU32 encOrder) = 0;    
-    virtual Ipp32s GetQP(MfxVideoParam &video, Task &task)=0;
-    virtual mfxStatus SetQP(Ipp32s qp, mfxU16 frameType) = 0;
-    virtual mfxBRCStatus   PostPackFrame(MfxVideoParam &video, Task &task, Ipp32s bitsEncodedFrame, Ipp32s overheadBits, Ipp32s recode = 0) =0;
+    virtual mfxI32 GetQP(MfxVideoParam &video, Task &task)=0;
+    virtual mfxStatus SetQP(mfxI32 qp, mfxU16 frameType, bool bLowDelay) = 0;
+    virtual mfxBRCStatus   PostPackFrame(MfxVideoParam &video, Task &task, mfxI32 bitsEncodedFrame, mfxI32 overheadBits, mfxI32 recode = 0) =0;
     virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32 , mfxU32 ) = 0;
-    virtual void GetMinMaxFrameSize(Ipp32s *minFrameSizeInBits, Ipp32s *maxFrameSizeInBits) = 0;
+    virtual void GetMinMaxFrameSize(mfxI32 *minFrameSizeInBits, mfxI32 *maxFrameSizeInBits) = 0;
     virtual bool IsVMEBRC() = 0;
 
 };
@@ -149,20 +149,20 @@ class VMEBrc : public BrcIface
 public:
     virtual ~VMEBrc() { Close(); }
 
-    mfxStatus Init( MfxVideoParam &video, Ipp32s enableRecode = 1);
-    mfxStatus Reset(MfxVideoParam &video, Ipp32s enableRecode = 1) 
+    mfxStatus Init( MfxVideoParam &video, mfxI32 enableRecode = 1);
+    mfxStatus Reset(MfxVideoParam &video, mfxI32 enableRecode = 1) 
     { 
         return  Init( video, enableRecode);
     }
 
     mfxStatus Close() {  return MFX_ERR_NONE;}
         
-    Ipp32s GetQP(MfxVideoParam &video, Task &task);
-    mfxStatus SetQP(Ipp32s /* qp */, mfxU16 /* frameType */) { return MFX_ERR_NONE;  }
+    mfxI32 GetQP(MfxVideoParam &video, Task &task);
+    mfxStatus SetQP(mfxI32 /* qp */, mfxU16 /* frameType */,  bool /*bLowDelay*/) { return MFX_ERR_NONE;  }
 
     void PreEnc(mfxU32 frameType, std::vector<VmeData *> const & vmeData, mfxU32 encOrder);
 
-    mfxBRCStatus   PostPackFrame(MfxVideoParam &video, Task &task, Ipp32s bitsEncodedFrame, Ipp32s overheadBits, Ipp32s recode = 0)
+    mfxBRCStatus   PostPackFrame(MfxVideoParam &video, Task &task, mfxI32 bitsEncodedFrame, mfxI32 overheadBits, mfxI32 recode = 0)
     {
         recode;
         overheadBits;
@@ -172,8 +172,8 @@ public:
     }
     bool IsVMEBRC()  {return true;}
     mfxU32          Report(mfxU32 frameType, mfxU32 dataLength, mfxU32 userDataLength, mfxU32 repack, mfxU32 picOrder, mfxU32 maxFrameSize, mfxU32 qp); 
-    mfxStatus       SetFrameVMEData(const mfxExtLAFrameStatistics *, Ipp32u widthMB, Ipp32u heightMB );
-    void            GetMinMaxFrameSize(Ipp32s *minFrameSizeInBits, Ipp32s *maxFrameSizeInBits) {*minFrameSizeInBits = 0; *maxFrameSizeInBits = 0;}
+    mfxStatus       SetFrameVMEData(const mfxExtLAFrameStatistics *, mfxU32 widthMB, mfxU32 heightMB );
+    void            GetMinMaxFrameSize(mfxI32 *minFrameSizeInBits, mfxI32 *maxFrameSizeInBits) {*minFrameSizeInBits = 0; *maxFrameSizeInBits = 0;}
         
 
 public:
@@ -210,6 +210,123 @@ protected:
     Regression<20>   m_rateCoeffHistory[52];
     UMC::Mutex    m_mutex;
 
+};
+
+enum eMfxBRCRecode
+{
+    MFX_BRC_RECODE_NONE           = 0,
+    MFX_BRC_RECODE_QP             = 1,
+    MFX_BRC_RECODE_PANIC          = 2,
+    MFX_BRC_RECODE_EXT_QP         = 3,
+    MFX_BRC_RECODE_EXT_PANIC      = 4,
+    MFX_BRC_EXT_FRAMESKIP         = 16
+};
+
+struct HRDState
+{
+    mfxF64 bufFullness;
+    mfxF64 prevBufFullness;
+    mfxI32 frameNum;
+    mfxI32 minFrameSize;
+    mfxI32 maxFrameSize;
+    mfxI32 underflowQuant;
+    mfxI32 overflowQuant;
+};
+struct BRCParams
+{
+    mfxU16 rateControlMethod;
+    mfxU32 bufferSizeInBytes;
+    mfxU32 initialDelayInBytes;
+    mfxU32 targetKbps;
+    mfxU32 maxKbps;
+    mfxF64 frameRate;
+    mfxU16 width;
+    mfxU16 height;
+    mfxU16 chromaFormat;
+    mfxU16 bitDepthLuma;
+    mfxF64 inputBitsPerFrame;
+};
+
+class H265BRC : public BrcIface
+{
+
+public:
+
+    H265BRC()
+    {
+        m_IsInit = false;
+        memset(&m_par, 0, sizeof(m_par));
+        memset(&m_hrdState, 0, sizeof(m_hrdState));
+        ResetParams();
+    }
+    virtual ~H265BRC()
+    {
+        Close();
+    }
+
+
+
+
+    virtual mfxStatus   Init(MfxVideoParam &video, mfxI32 enableRecode = 1);
+    virtual mfxStatus   Close();
+    virtual mfxStatus   Reset(MfxVideoParam &video, mfxI32 enableRecode = 1);
+    virtual mfxBRCStatus PostPackFrame(MfxVideoParam &video, Task &task, mfxI32 bitsEncodedFrame, mfxI32 overheadBits, mfxI32 recode = 0);
+    virtual mfxI32      GetQP(MfxVideoParam &video, Task &task);
+    virtual mfxStatus   SetQP(mfxI32 qp, Ipp16u frameType, bool bLowDelay);
+    virtual mfxStatus   GetInitialCPBRemovalDelay(mfxU32 *initial_cpb_removal_delay, mfxI32 recode = 0);
+    virtual void        GetMinMaxFrameSize(mfxI32 *minFrameSizeInBits, mfxI32 *maxFrameSizeInBits);
+
+
+    virtual void        PreEnc(mfxU32 /* frameType */, std::vector<VmeData *> const & /* vmeData */, mfxU32 /* encOrder */) {}
+    virtual mfxStatus SetFrameVMEData(const mfxExtLAFrameStatistics*, mfxU32 , mfxU32 )
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+    virtual bool IsVMEBRC()  {return false;}
+
+protected:
+
+    bool   m_IsInit;
+
+    BRCParams m_par;
+    HRDState  m_hrdState;
+
+    mfxI32  mQuantI, mQuantP, mQuantB, mQuantMax, mQuantMin, mQuantPrev, mQuantOffset, mQPprev;
+    mfxI32  mMinQp;
+    mfxI32  mMaxQp;
+
+    mfxI64  mBF, mBFsaved;
+    mfxI32  mBitsDesiredFrame;
+    Ipp16u  mQuantUpdated;
+    mfxU32  mRecodedFrame_encOrder;
+    bool    m_bRecodeFrame;
+    mfxU32  mPicType;
+
+    mfxI32 mRecode;
+    mfxI64  mBitsEncodedTotal, mBitsDesiredTotal;
+    mfxI32  mQp;
+    mfxI32  mRCfap, mRCqap, mRCbap, mRCq;
+    mfxF64  mRCqa, mRCfa, mRCqa0;
+    mfxF64  mRCfa_short;
+    mfxI32  mQuantRecoded;
+    mfxI32  mQuantIprev, mQuantPprev, mQuantBprev;
+    mfxI32  mBitsEncoded;
+    mfxI32  mSceneChange;
+    mfxI32  mBitsEncodedP, mBitsEncodedPrev;
+    mfxI32  mPoc, mSChPoc;
+
+    void   ResetParams();
+    mfxU32 GetInitQP();
+    mfxBRCStatus UpdateAndCheckHRD(mfxI32 frameBits, mfxF64 inputBitsPerFrame, mfxI32 recode);
+    void  SetParamsForRecoding (mfxI32 encOrder);
+
+    mfxBRCStatus UpdateQuant(mfxI32 bEncoded, mfxI32 totalPicBits, mfxI32 layer = 0, mfxI32 recode = 0);
+    mfxBRCStatus UpdateQuantHRD(mfxI32 bEncoded, mfxBRCStatus sts, mfxI32 overheadBits = 0, mfxI32 layer = 0, mfxI32 recode = 0);
+    mfxStatus   SetParams(MfxVideoParam &video);
+
+
+    mfxStatus InitHRD();
+ 
 };
 }
 #endif

@@ -16,6 +16,7 @@
 #include <list>
 #include <assert.h>
 #include "mfx_common_int.h"
+#include <ippi.h>
 namespace MfxHwH265Encode
 {
 
@@ -245,7 +246,10 @@ mfxStatus MfxFrameAllocResponse::Alloc(
         return MFX_ERR_MEMORY_ALLOC;
 
     m_locked.resize(req.NumFrameMin, 0);
-    if (m_locked.size() > 0) memset(&m_locked[0], 0, sizeof(m_locked[0]) * m_locked.size());
+    std::fill(m_locked.begin(), m_locked.end(), 0);
+
+    m_flag.resize(req.NumFrameMin, 0);
+    std::fill(m_flag.begin(), m_flag.end(), 0);
 
     m_core = core;
     m_numFrameActualReturnedByAllocFrames = NumFrameActual;
@@ -270,12 +274,14 @@ mfxU32 MfxFrameAllocResponse::FindFreeResourceIndex(mfxFrameSurface1* external_s
             if (m_mids[i] == external_surf->Data.MemId)
             {
                 m_locked[i] = 0;
+                m_flag[i]=0;
                 return i;
             }
         }
 
         m_mids.push_back(external_surf->Data.MemId);
         m_locked.push_back(0);
+        m_flag.push_back(0);
 
         mids = &m_mids[0];
 
@@ -295,9 +301,36 @@ mfxU32 MfxFrameAllocResponse::Lock(mfxU32 idx)
     return ++m_locked[idx];
 }
 
+void MfxFrameAllocResponse::ClearFlag(mfxU32 idx)
+{
+   assert (idx < m_flag.size());
+   if (idx < m_flag.size())
+   {
+        m_flag[idx] = 0;
+   } 
+}
+void MfxFrameAllocResponse::SetFlag(mfxU32 idx, mfxU32 flag)
+{
+   assert (idx < m_flag.size());
+   if (idx < m_flag.size())
+   {
+        m_flag[idx] |= flag;
+   } 
+}
+mfxU32 MfxFrameAllocResponse::GetFlag (mfxU32 idx)
+{
+   assert (idx < m_flag.size());
+   if (idx < m_flag.size())
+   {
+        return m_flag[idx];
+   } 
+   return 0;
+}
+
 void MfxFrameAllocResponse::Unlock()
 {
     std::fill(m_locked.begin(), m_locked.end(), 0);
+    std::fill(m_flag.begin(), m_flag.end(), 0);
 }
 
 mfxU32 MfxFrameAllocResponse::Unlock(mfxU32 idx)
@@ -330,6 +363,7 @@ mfxMemId AcquireResource(
     if (index > pool.NumFrameActual)
         return 0;
     pool.Lock(index);
+    pool.ClearFlag(index);
     return pool.mids[index];
 }
 
@@ -365,7 +399,12 @@ mfxStatus GetNativeHandleToRawSurface(
         sts = fa.GetHDL(fa.pthis, task.m_midRaw, &nativeHandle);
     else if (   video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY
              || video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-        sts = core.GetFrameHandle(&surface->Data, &nativeHandle);
+    {
+        if (task.m_midRaw == NULL)
+            sts = core.GetFrameHandle(&surface->Data, &nativeHandle);
+        else
+            sts = fa.GetHDL(fa.pthis, task.m_midRaw, &nativeHandle);
+    }
     else
         return (MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -2129,6 +2168,21 @@ Task* TaskManager::GetTaskForSubmit(bool bRealTask)
     }
     return 0;
 }
+mfxStatus TaskManager::PutTasksForRecode(Task* pTask)
+{
+    UMC::AutomaticUMCMutex guard(m_listMutex);
+
+    TaskList::iterator it_from = m_querying.begin();
+    TaskList::iterator it_where =m_encoding.begin();
+
+    for (;it_from != m_querying.end() && pTask != &*it_from; it_from ++);
+    MFX_CHECK(it_from != m_querying.end(), MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    for (;it_where != m_encoding.end() && (it_where->m_stage & FRAME_SUBMITTED)!=0; it_where ++);
+
+    m_encoding.splice(it_where, m_querying, it_from);
+    return MFX_ERR_NONE;
+}
 void TaskManager::SubmitForQuery(Task* pTask)
 {
     UMC::AutomaticUMCMutex guard(m_listMutex);
@@ -2959,6 +3013,84 @@ void Decrement(
 
         aesCounter.Count = SwapEndian(tmp);
     }
+}
+
+bool IsFrameToSkip(Task&  task, MfxFrameAllocResponse & poolRec, bool bSWBRC)
+{
+    if (task.m_bSkipped)
+        return true;
+
+    if ((task.m_frameType & MFX_FRAMETYPE_B) && (!task.m_ldb) && bSWBRC)
+    {
+        mfxU8 ind =  task.m_refPicList[1][0];
+        if (ind < 15)
+        {
+            return poolRec.GetFlag(task.m_dpb[0][ind].m_idxRec)!=0;
+        }
+    }
+    return false;
+}
+
+mfxStatus CodeAsSkipFrame(     MFXCoreInterface &            core,
+                               MfxVideoParam const &  video,
+                               Task&       task,
+                               MfxFrameAllocResponse & poolSkip,
+                               MfxFrameAllocResponse & poolRec)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    if (task.m_midRaw == NULL)
+    {
+
+        task.m_idxRaw = (mfxU8)FindFreeResourceIndex(poolSkip);
+        task.m_midRaw = AcquireResource(poolSkip, task.m_idxRaw);
+        MFX_CHECK_NULL_PTR1(task.m_midRaw);
+    }
+    if (task.m_frameType & MFX_FRAMETYPE_I)
+    {
+        IppiSize roiSize = {video.mfx.FrameInfo.Width, video.mfx.FrameInfo.Height};
+        
+        FrameLocker lock1(&core, task.m_midRaw);  
+        ippiSet_8u_C1R(0, lock1.Y, lock1.Pitch,roiSize);
+
+        switch (video.mfx.FrameInfo.FourCC)
+        {
+            case MFX_FOURCC_NV12:
+                roiSize.height >>= 1;
+                ippiSet_8u_C1R(0, lock1.UV, lock1.Pitch,roiSize);
+                break;
+            case MFX_FOURCC_YV12:
+                roiSize.width >>= 1;
+                roiSize.height >>= 1;
+                ippiSet_8u_C1R(0, lock1.U, lock1.Pitch>>1,roiSize);
+                ippiSet_8u_C1R(0, lock1.V, lock1.Pitch>>1,roiSize);
+                break;
+            default:
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+    }
+    else 
+    {
+        mfxU8 ind = task.m_refPicList[0][0] ;
+        MFX_CHECK(ind < 15, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+        DpbFrame& refFrame = task.m_dpb[0][ind];
+        FrameLocker lock_dst(&core, task.m_midRaw); 
+        FrameLocker lock_src(&core, refFrame.m_midRec); 
+
+        mfxFrameSurface1 surfSrc = { {0,}, video.mfx.FrameInfo, lock_src };
+        mfxFrameSurface1 surfDst = { {0,}, video.mfx.FrameInfo, lock_dst };
+        
+        sts = core.CopyFrame(&surfDst, &surfSrc);
+        MFX_CHECK_STS(sts);
+
+        //poolRec.SetFlag(refFrame.m_idxRec, 1);
+       
+    }
+    poolRec.SetFlag(task.m_idxRec, 1);
+
+
+    return sts;
 }
 
 #if DEBUG_REC_FRAMES_INFO

@@ -1296,6 +1296,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         par.m_ext.CO3.IntRefCycleDist = 0;
         changed +=1;
     }
+    changed += CheckOption(par.m_ext.CO2.SkipFrame, (mfxU16) 0 , (mfxU16) MFX_SKIPFRAME_INSERT_DUMMY, (mfxU16) MFX_SKIPFRAME_INSERT_NOTHING );
 
     if (CheckRangeDflt(par.m_ext.VSI.VideoFormat,             0,   8, 5)) changed +=1;
     if (CheckRangeDflt(par.m_ext.VSI.ColourPrimaries,         0, 255, 2)) changed +=1;

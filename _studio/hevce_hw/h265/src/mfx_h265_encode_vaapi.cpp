@@ -122,8 +122,11 @@ void VABuffersHandler::VABuffersDestroyPool(mfxU32 pool)
 }
 
 
-mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
+mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl, bool bSWBRC)
 {
+    if (bSWBRC)
+        return VA_RC_CQP;
+
     switch (rateControl)
     {
         case MFX_RATECONTROL_CQP:  return VA_RC_CQP;
@@ -877,7 +880,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     if ((attrib[0].value & VA_RT_FORMAT_YUV420) == 0)
         return MFX_ERR_DEVICE_FAILED;
 
-    mfxU8 vaRCType = ConvertRateControlMFX2VAAPI(par.mfx.RateControlMethod);
+    mfxU8 vaRCType = ConvertRateControlMFX2VAAPI(par.mfx.RateControlMethod, par.isSWBRC());
 
     if ((attrib[1].value & vaRCType) == 0)
         return MFX_ERR_DEVICE_FAILED;

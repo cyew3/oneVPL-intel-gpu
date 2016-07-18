@@ -184,6 +184,9 @@ public:
 
     mfxU32 FindFreeResourceIndex(mfxFrameSurface1* external_surf = 0);
 
+    void   ClearFlag  (mfxU32 idx);
+    void   SetFlag    (mfxU32 idx, mfxU32 flag);
+    mfxU32 GetFlag    (mfxU32 idx);
     mfxFrameInfo               m_info;
 
 private:
@@ -196,6 +199,7 @@ private:
     std::vector<mfxFrameAllocResponse> m_responseQueue;
     std::vector<mfxMemId>              m_mids;
     std::vector<mfxU32>                m_locked;
+    std::vector<mfxU32>                m_flag;
     bool m_isExternal;
 };
 
@@ -254,6 +258,7 @@ typedef struct _Task : DpbFrame
 
     mfxU32 m_statusReportNumber;
     mfxU32 m_bsDataLength;
+    mfxU32 m_minFrameSize;
 
     DpbArray m_dpb[TASK_DPB_NUM];
 
@@ -267,7 +272,9 @@ typedef struct _Task : DpbFrame
     mfxU32 m_dpb_output_delay;
 
     mfxU32 m_stage;
+    mfxU32 m_recode;
     IntraRefreshState m_IRState;
+    bool m_bSkipped;
 }Task;
 
 enum
@@ -384,6 +391,7 @@ namespace ExtBuffer
 
         _CopyPar1(RepeatPPS);
         _CopyPar1(MaxSliceSize);
+        _CopyPar1(ExtBRC);
     }
 
     inline void  CopySupportedParams(mfxExtCodingOption3& buf_dst, mfxExtCodingOption3& buf_src)
@@ -664,6 +672,7 @@ public:
     bool isBPyramid() const { return m_ext.CO2.BRefType == MFX_B_REF_PYRAMID; }
     bool isLowDelay() const { return ((m_ext.CO3.PRefType == MFX_P_REF_PYRAMID) && !isTL()); }
     bool isTL()       const { return NumTL() > 1; }
+    bool isSWBRC()    const {return  (m_ext.CO2.ExtBRC && (mfx.RateControlMethod == MFX_RATECONTROL_CBR || mfx.RateControlMethod == MFX_RATECONTROL_VBR))|| mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT ;}
 
 private:
     void Construct(mfxVideoParam const & par);
@@ -727,6 +736,7 @@ public:
     void  Ready     (Task* task);
     void  SkipTask  (Task* task);
     Task* GetNewTask();
+    mfxStatus PutTasksForRecode(Task* pTask);
 
 private:
     TaskList   m_free;
@@ -858,6 +868,17 @@ void Decrement(
     mfxExtPAVPOption const & extPavp);
 
 void ReportDPB(DpbArray const & DPB, mfxExtDPB& report);
+bool IsFrameToSkip(
+    Task&  task, 
+    MfxFrameAllocResponse & poolRec,
+    bool bSWBRC);
+
+mfxStatus CodeAsSkipFrame(     
+    MFXCoreInterface &            core,                               
+    MfxVideoParam const &  video,
+    Task&       task,
+    MfxFrameAllocResponse & poolSkip,
+    MfxFrameAllocResponse & poolRec);
 
 #if DEBUG_REC_FRAMES_INFO
     inline vm_file * OpenFile(vm_char const * name, vm_char const * mode)
