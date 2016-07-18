@@ -245,6 +245,7 @@
     <ClCompile Include="src\umc_h264_au_splitter.cpp" />
     <ClCompile Include="src\umc_h264_dec_bitstream.cpp" />
     <ClCompile Include="src\umc_h264_dec_bitstream_cabac.cpp" />
+    <ClCompile Include="src\umc_h264_dec_bitstream_headers.cpp" />
     <ClCompile Include="src\umc_h264_dec_conversion.cpp" />
     <ClCompile Include="src\umc_h264_dec_debug.cpp" />
     <ClCompile Include="src\umc_h264_dec_defs_yuv.cpp" />
@@ -262,6 +263,7 @@
     <ClCompile Include="src\umc_h264_heap.cpp" />
     <ClCompile Include="src\umc_h264_log.cpp" />
     <ClCompile Include="src\umc_h264_mfx_supplier.cpp" />
+    <ClCompile Include="src\umc_h264_mfx_sw_supplier.cpp" />
     <ClCompile Include="src\umc_h264_nal_spl.cpp" />
     <ClCompile Include="src\umc_h264_segment_decoder.cpp" />
     <ClCompile Include="src\umc_h264_segment_decoder_cabac_mt.cpp" />
@@ -282,6 +284,7 @@
     <ClCompile Include="src\umc_h264_segment_store.cpp" />
     <ClCompile Include="src\umc_h264_slice_decoding.cpp" />
     <ClCompile Include="src\umc_h264_task_broker.cpp" />
+    <ClCompile Include="src\umc_h264_task_broker_mt.cpp" />
     <ClCompile Include="src\umc_h264_task_supplier.cpp" />
     <ClCompile Include="src\umc_h264_va_packer.cpp" />
     <ClCompile Include="src\umc_h264_va_supplier.cpp" />
@@ -292,6 +295,7 @@
   <ItemGroup>
     <ClInclude Include="include\umc_h264_au_splitter.h" />
     <ClInclude Include="include\umc_h264_bitstream.h" />
+    <ClInclude Include="include\umc_h264_bitstream_headers.h" />
     <ClInclude Include="include\umc_h264_bitstream_inlines.h" />
     <ClInclude Include="include\umc_h264_dec.h" />
     <ClInclude Include="include\umc_h264_dec_coeff_token_map.h" />
@@ -315,17 +319,20 @@
     <ClInclude Include="include\umc_h264_heap.h" />
     <ClInclude Include="include\umc_h264_log.h" />
     <ClInclude Include="include\umc_h264_mfx_supplier.h" />
+    <ClInclude Include="include\umc_h264_mfx_sw_supplier.h" />
     <ClInclude Include="include\umc_h264_nal_spl.h" />
     <ClInclude Include="include\umc_h264_notify.h" />
     <ClInclude Include="include\umc_h264_reconstruct_templates.h" />
     <ClInclude Include="include\umc_h264_redual_decoder_templates.h" />
     <ClInclude Include="include\umc_h264_sd_inlines.h" />
     <ClInclude Include="include\umc_h264_segment_decoder.h" />
+    <ClInclude Include="include\umc_h264_segment_decoder_base.h" />
     <ClInclude Include="include\umc_h264_segment_decoder_dxva.h" />
     <ClInclude Include="include\umc_h264_segment_decoder_mt.h" />
     <ClInclude Include="include\umc_h264_segment_decoder_templates.h" />
     <ClInclude Include="include\umc_h264_slice_decoding.h" />
     <ClInclude Include="include\umc_h264_task_broker.h" />
+    <ClInclude Include="include\umc_h264_task_broker_mt.h" />
     <ClInclude Include="include\umc_h264_task_supplier.h" />
     <ClInclude Include="include\umc_h264_timing.h" />
     <ClInclude Include="include\umc_h264_va_packer.h" />

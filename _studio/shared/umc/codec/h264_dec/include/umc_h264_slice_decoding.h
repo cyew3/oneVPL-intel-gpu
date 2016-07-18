@@ -257,11 +257,6 @@ public:
     // Check top field slice
     bool IsBottomField() const {return !IsTopField();}
 
-    bool IsAuxiliary() const
-    {
-        return m_SliceHeader.is_auxiliary;
-    }
-
     // Check slice organization
     bool IsSliceGroups(void) const {return (1 < m_pPicParamSet->num_slice_groups);};
     // Do we require to do deblocking through slice boundaries

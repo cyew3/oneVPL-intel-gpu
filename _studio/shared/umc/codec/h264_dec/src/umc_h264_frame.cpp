@@ -360,20 +360,6 @@ void H264DecoderFrame::Free()
         Reset();
 }
 
-void H264DecoderFrame::CopyPlanes(H264DecoderFrame *pRefFrame)
-{
-    if (pRefFrame->m_pYPlane)
-    {
-        CopyPlane(pRefFrame->m_pYPlane, pRefFrame->m_pitch_luma, m_pYPlane, m_pitch_luma, m_lumaSize);
-        CopyPlane(pRefFrame->m_pUPlane, pRefFrame->m_pitch_chroma, m_pUPlane, m_pitch_chroma, m_chromaSize);
-        CopyPlane(pRefFrame->m_pVPlane, pRefFrame->m_pitch_chroma, m_pVPlane, m_pitch_chroma, m_chromaSize);
-    }
-    else
-    {
-        DefaultFill(2, false);
-    }
-}
-
 void H264DecoderFrame::DefaultFill(Ipp32s fields_mask, bool isChromaOnly, Ipp8u defaultValue)
 {
     try
@@ -569,63 +555,11 @@ void H264DecoderFrame::UpdateLongTermPicNum(Ipp32s CurrPicStruct)
 //////////////////////////////////////////////////////////////////////////////
 H264DecoderFrameExtension::H264DecoderFrameExtension(MemoryAllocator *pMemoryAllocator, H264_Heap_Objects * pObjHeap)
     : H264DecoderFrame(pMemoryAllocator, pObjHeap)
-    , m_pAuxiliaryFrame(0)
 {
-    is_auxiliary_frame = false;
-    primary_picture = 0;
 }
 
 H264DecoderFrameExtension::~H264DecoderFrameExtension()
 {
-    delete m_pAuxiliaryFrame;
-}
-
-H264DecoderFrame * H264DecoderFrameExtension::GetAuxiliaryFrame()
-{
-    return m_pAuxiliaryFrame;
-}
-
-void H264DecoderFrameExtension::AllocateAuxiliary()
-{
-    if (m_pAuxiliaryFrame)
-        return;
-
-    m_pAuxiliaryFrame = new H264DecoderFrame(m_pMemoryAllocator, m_pObjHeap);
-
-    if (!m_pAuxiliaryFrame)
-    {
-        throw h264_exception(UMC_ERR_ALLOC);
-    }
-
-    m_pAuxiliaryFrame->primary_picture = this;
-    m_pAuxiliaryFrame->is_auxiliary_frame = true;
-}
-
-void H264DecoderFrameExtension::FillInfoToAuxiliary()
-{
-    if (!m_pAuxiliaryFrame)
-        return;
-
-    m_pAuxiliaryFrame->m_bIDRFlag = m_bIDRFlag;
-    m_pAuxiliaryFrame->m_PicNum[0] = m_PicNum[0];
-    m_pAuxiliaryFrame->m_PicNum[1] = m_PicNum[1];
-    m_pAuxiliaryFrame->m_LongTermPicNum[0] = m_LongTermPicNum[0];
-    m_pAuxiliaryFrame->m_LongTermPicNum[1] = m_LongTermPicNum[1];
-    m_pAuxiliaryFrame->m_FrameNum = m_FrameNum;
-    m_pAuxiliaryFrame->m_FrameNumWrap = m_FrameNumWrap;
-    m_pAuxiliaryFrame->m_LongTermFrameIdx = m_LongTermFrameIdx;
-    m_pAuxiliaryFrame->m_RefPicListResetCount[0] = m_RefPicListResetCount[0];
-    m_pAuxiliaryFrame->m_RefPicListResetCount[1] = m_RefPicListResetCount[1];
-    m_pAuxiliaryFrame->m_PicOrderCnt[0] = m_PicOrderCnt[0];
-    m_pAuxiliaryFrame->m_PicOrderCnt[1] = m_PicOrderCnt[1];
-    m_pAuxiliaryFrame->m_isShortTermRef[0] = m_isShortTermRef[0];
-    m_pAuxiliaryFrame->m_isShortTermRef[1] = m_isShortTermRef[1];
-    m_pAuxiliaryFrame->m_isLongTermRef[0] = m_isLongTermRef[0];
-    m_pAuxiliaryFrame->m_isLongTermRef[1] = m_isLongTermRef[1];
-    m_pAuxiliaryFrame->m_dFrameTime = m_dFrameTime;
-
-    m_pAuxiliaryFrame->setPrevious(UMC::GetAuxiliaryFrame(m_pPreviousFrame));
-    m_pAuxiliaryFrame->setFuture(UMC::GetAuxiliaryFrame(m_pFutureFrame));
 }
 
 } // end namespace UMC

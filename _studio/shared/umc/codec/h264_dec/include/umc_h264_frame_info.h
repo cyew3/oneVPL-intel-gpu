@@ -75,11 +75,6 @@ public:
     {
     }
 
-    bool IsAuxiliary() const
-    {
-        return m_pSliceQueue.size() && m_pSliceQueue[0]->IsAuxiliary();
-    }
-
     bool IsSliceGroups() const
     {
         return m_IsSliceGroups;

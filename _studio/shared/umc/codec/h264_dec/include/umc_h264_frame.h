@@ -132,8 +132,6 @@ class H264DecoderFrame
     // be used as previous frame num.
 
     bool post_procces_complete;
-    bool is_auxiliary_frame;
-    H264DecoderFrame * primary_picture;
 
     Ipp32s m_iNumberOfSlices;
     Ipp32s m_iResourceNumber;
@@ -499,12 +497,6 @@ public:
 
     void deallocateParsedFrameData();
 
-    bool IsAuxiliaryFrame() const
-    {
-        return is_auxiliary_frame;
-    }
-
-    void CopyPlanes(H264DecoderFrame *pRefFrame);
     void DefaultFill(Ipp32s field, bool isChromaOnly, Ipp8u defaultValue = 128);
 
     Ipp32s GetError() const
@@ -541,28 +533,8 @@ public:
     H264DecoderFrameExtension(MemoryAllocator *pMemoryAllocator, H264_Heap_Objects * pObjHeap);
 
     virtual ~H264DecoderFrameExtension();
-
-    H264DecoderFrame * GetAuxiliaryFrame();
-
-    void AllocateAuxiliary();
-
-    void FillInfoToAuxiliary();
-
-private:
-
-    H264DecoderFrame * m_pAuxiliaryFrame;
 };
 
-inline H264DecoderFrame * GetAuxiliaryFrame(H264DecoderFrame * frame)
-{
-    if (frame)
-    {
-        H264DecoderFrameExtension * fr = DynamicCast<H264DecoderFrameExtension>(frame);
-        return fr ? fr->GetAuxiliaryFrame() : 0;
-    }
-
-    return 0;
-}
 
 inline bool isAlmostDisposable(H264DecoderFrame * pTmp)
 {

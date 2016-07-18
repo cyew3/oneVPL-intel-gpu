@@ -485,7 +485,6 @@ protected:
 class TaskSupplier : public Skipping, public AU_Splitter, public SVC_Extension, public DecReferencePictureMarking, public DPBOutput,
         public ErrorStatus
 {
-    friend class TaskBroker;
     friend class TaskBrokerSingleThreadDXVA;
 
 public:
@@ -514,6 +513,8 @@ public:
     {
         m_pMemoryAllocator = pMemoryAllocator;
     }
+
+    MemoryAllocator * GetMemoryAllocator() const { return m_pMemoryAllocator; };
 
     void SetFrameAllocator(FrameAllocator *pFrameAllocator)
     {
@@ -566,11 +567,11 @@ public:
 
     // Initialize MB ordering for the picture using slice groups as
     // defined in the picture parameter set.
-    void SetMBMap(const H264Slice * slice, H264DecoderFrame *frame, LocalResources * localRes);
+    virtual void SetMBMap(const H264Slice * slice, H264DecoderFrame *frame, LocalResources * localRes);
 
 protected:
 
-    virtual void CreateTaskBroker();
+    virtual void CreateTaskBroker() = 0;
 
     void AddSliceToFrame(H264DecoderFrame *pFrame, H264Slice *pSlice);
 
@@ -611,7 +612,6 @@ protected:
 
     H264DecoderFrame *AllocateNewFrame(const H264Slice *pSlice);
     Status InitializeLayers(H264DecoderFrame * pFrame, Ipp32s field);
-    Status AllocateDataForFrameSVC(H264DecoderFrame * pFrame, H264Slice *pSlice);
 
     Status InitializeLayers(AccessUnit *accessUnit, H264DecoderFrame * pFrame, Ipp32s field);
     void ApplyPayloadsToFrame(H264DecoderFrame * frame, H264Slice *slice, SeiPayloadArray * payloads);

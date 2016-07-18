@@ -253,11 +253,6 @@ H264DecoderFrame * MFXTaskSupplier::GetFreeFrame(const H264Slice *pSlice)
     pFrame->SetFrameExistFlag(true);
     pFrame->IncrementReference();
 
-    if (GetAuxiliaryFrame(pFrame))
-    {
-        GetAuxiliaryFrame(pFrame)->Reset();
-    }
-
     if (view.pCurFrame == pFrame)
         view.pCurFrame = 0;
 

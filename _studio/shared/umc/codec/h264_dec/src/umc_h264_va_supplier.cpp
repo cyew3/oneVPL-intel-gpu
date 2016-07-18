@@ -181,11 +181,6 @@ H264DecoderFrame *VATaskSupplier::GetFreeFrame(const H264Slice * pSlice)
     pFrame->SetFrameExistFlag(true);
     pFrame->IncrementReference();
 
-    if (GetAuxiliaryFrame(pFrame))
-    {
-        GetAuxiliaryFrame(pFrame)->Reset();
-    }
-
     m_UIDFrameCounter++;
     pFrame->m_UID = m_UIDFrameCounter;
 
@@ -265,17 +260,7 @@ Status VATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
     }
 
     DecodePicture(pFrame, field);
-
-    bool is_auxiliary_exist = slicesInfo->GetAnySlice()->GetSeqParamEx() &&
-        (slicesInfo->GetAnySlice()->GetSeqParamEx()->aux_format_idc != 0);
-
-    if (is_auxiliary_exist)
-    {
-        if (!pFrame->IsAuxiliaryFrame())
-            DBPUpdate(pFrame, field);
-    }
-    else
-        DBPUpdate(pFrame, field);
+    DBPUpdate(pFrame, field);
 
     pFrame->MoveToNotifiersChain(m_DefaultNotifyChain);
 

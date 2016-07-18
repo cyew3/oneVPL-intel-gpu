@@ -65,11 +65,6 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
     H264RefListInfo rli;
     H264DecoderFrame *(pLastInList[2]) = {NULL, NULL};
 
-    if (m_SliceHeader.is_auxiliary)
-    {
-        pHead = GetAuxiliaryFrame(pHead);
-    }
-
     VM_ASSERT(m_pCurrentFrame);
 
     pRefPicList0 = m_pCurrentFrame->GetRefPicList(m_iNumber, 0)->m_RefPicList;

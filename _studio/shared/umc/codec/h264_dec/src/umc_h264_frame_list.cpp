@@ -991,11 +991,6 @@ void H264DBPList::InitPSliceRefPicList(H264Slice *slice, H264DecoderFrame **pRef
 
     VM_ASSERT(pRefPicList);
 
-    if (slice->GetSliceHeader()->is_auxiliary)
-    {
-        pHead = GetAuxiliaryFrame(pHead);
-    }
-
     NumFramesInList = 0;
 
     if (!bIsFieldSlice)
@@ -1167,11 +1162,6 @@ void H264DBPList::InitBSliceRefPicLists(H264Slice *slice, H264DecoderFrame **pRe
     H264DecoderFrame *LTRefPicList[MAX_NUM_REF_FRAMES];    // temp storage for long-term ordered list
     Ipp32s LongTermPicNum;
     bool bError = false;
-
-    if (slice->GetSliceHeader()->is_auxiliary)
-    {
-        pHead = GetAuxiliaryFrame(pHead);
-    }
 
     for (i=0; i<(Ipp32s)MAX_NUM_REF_FRAMES; i++)
     {

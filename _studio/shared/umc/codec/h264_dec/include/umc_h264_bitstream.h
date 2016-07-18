@@ -20,6 +20,7 @@
 #include "umc_h264_dec_defs_dec.h"
 #include "umc_h264_dec_tables.h"
 #include "umc_h264_dec_internal_cabac.h"
+#include "umc_h264_bitstream_headers.h"
 
 #define h264Peek1Bit(current_data, offset) \
     ((current_data[0] >> (offset)) & 1)
@@ -174,112 +175,6 @@ typedef struct CABAC_CONTEXT
 } CABAC_CONTEXT;
 
 #pragma pack()
-
-class H264BaseBitstream
-{
-public:
-
-    H264BaseBitstream();
-    H264BaseBitstream(Ipp8u * const pb, const Ipp32u maxsize);
-    virtual ~H264BaseBitstream();
-
-    // Reset the bitstream with new data pointer
-    void Reset(Ipp8u * const pb, const Ipp32u maxsize);
-    void Reset(Ipp8u * const pb, Ipp32s offset, const Ipp32u maxsize);
-
-    inline Ipp32u GetBits(const Ipp32u nbits);
-
-    // Read one VLC Ipp32s or Ipp32u value from bitstream
-    inline Ipp32s GetVLCElement(bool bIsSigned);
-
-    // Reads one bit from the buffer.
-    inline Ipp8u Get1Bit();
-
-    inline bool IsBSLeft(size_t sizeToRead = 0);
-    inline void CheckBSLeft(size_t sizeToRead = 0);
-
-    // Check amount of data
-    bool More_RBSP_Data();
-
-    inline size_t BytesDecoded();
-
-    inline size_t BitsDecoded();
-
-    inline size_t BytesLeft();
-
-protected:
-
-    Ipp32u *m_pbs;                                              // (Ipp32u *) pointer to the current position of the buffer.
-    Ipp32s m_bitOffset;                                         // (Ipp32s) the bit position (0 to 31) in the dword pointed by m_pbs.
-    Ipp32u *m_pbsBase;                                          // (Ipp32u *) pointer to the first byte of the buffer.
-    Ipp32u m_maxBsSize;                                         // (Ipp32u) maximum buffer size in bytes.
-
-};
-
-class H264HeadersBitstream : public H264BaseBitstream
-{
-public:
-
-    H264HeadersBitstream();
-    H264HeadersBitstream(Ipp8u * const pb, const Ipp32u maxsize);
-
-
-    // Decode sequence parameter set
-    Status GetSequenceParamSet(H264SeqParamSet *sps);
-    Status GetSequenceParamSetSvcExt(H264SeqParamSetSVCExtension *pSPSSvcExt);
-    Status GetSequenceParamSetSvcVuiExt(H264SeqParamSetSVCExtension *pSPSSvcExt);
-
-    // Decode sequence parameter set extension
-    Status GetSequenceParamSetExtension(H264SeqParamSetExtension *sps_ex);
-    // Decode sequence param set MVC extension
-    Status GetSequenceParamSetMvcExt(H264SeqParamSetMVCExtension *pSPSMvcExt);
-
-    // Decoding picture's parameter set functions
-    Status GetPictureParamSetPart1(H264PicParamSet *pps);
-    Status GetPictureParamSetPart2(H264PicParamSet *pps);
-
-    // Decode NAL unit prefix
-    Status GetNalUnitPrefix(H264NalExtension *pExt, Ipp32u NALRef_idc);
-
-    // Decode NAL unit extension parameters
-    Status GetNalUnitExtension(H264NalExtension *pExt);
-
-    // Decoding slice header functions
-    Status GetSliceHeaderPart1(H264SliceHeader *pSliceHeader);
-    Status GetSliceHeaderPart2(H264SliceHeader *pSliceHeader,
-                               const H264PicParamSet *pps,
-                               const H264SeqParamSet *sps);
-    Status GetSliceHeaderPart3(H264SliceHeader *pSliceHeader,
-                               PredWeightTable *pPredWeight_L0,
-                               PredWeightTable *pPredWeight_L1,
-                               RefPicListReorderInfo *pReorderInfo_L0,
-                               RefPicListReorderInfo *pReorderInfo_L1,
-                               AdaptiveMarkingInfo *pAdaptiveMarkingInfo,
-                               AdaptiveMarkingInfo *pBaseAdaptiveMarkingInfo,
-                               const H264PicParamSet *pps,
-                               const H264SeqParamSet *sps,
-                               const H264SeqParamSetSVCExtension *spsSvcExt);
-    Status GetSliceHeaderPart4(H264SliceHeader *hdr,
-                                const H264SeqParamSetSVCExtension *spsSvcExt); // from slice header in
-                                                                               // scalable extension NAL unit
-
-
-protected:
-
-    Status DecRefBasePicMarking(AdaptiveMarkingInfo *pAdaptiveMarkingInfo,
-        Ipp8u &adaptive_ref_pic_marking_mode_flag);
-
-    Status DecRefPicMarking(H264SliceHeader *hdr, AdaptiveMarkingInfo *pAdaptiveMarkingInfo);
-
-    void GetScalingList4x4(H264ScalingList4x4 *scl, Ipp8u *def, Ipp8u *scl_type);
-    void GetScalingList8x8(H264ScalingList8x8 *scl, Ipp8u *def, Ipp8u *scl_type);
-
-    Status GetVUIParam(H264SeqParamSet *sps, H264VUI *vui);
-    Status GetHRDParam(H264SeqParamSet *sps, H264VUI *vui);
-
-    Status GetPredWeightTable(H264SliceHeader *hdr, const H264SeqParamSet *sps,
-        PredWeightTable *pPredWeight_L0, PredWeightTable *pPredWeight_L1);
-};
 
 class H264Bitstream  : public H264HeadersBitstream
 {
@@ -791,36 +686,6 @@ public:
     } // void H264Bitstream::ResidualChromaDCBlock_CABAC(const Ipp32u *ctxIdxBase,
 };
 #pragma warning(default: 4127)
-
-
-void SetDefaultScalingLists(H264SeqParamSet * sps);
-
-inline
-void FillFlatScalingList4x4(H264ScalingList4x4 *scl)
-{
-    for (Ipp32s i=0;i<16;i++)
-        scl->ScalingListCoeffs[i] = 16;
-}
-
-inline void FillFlatScalingList8x8(H264ScalingList8x8 *scl)
-{
-    for (Ipp32s i=0;i<64;i++)
-        scl->ScalingListCoeffs[i] = 16;
-}
-
-inline void FillScalingList4x4(H264ScalingList4x4 *scl_dst, const Ipp8u *coefs_src)
-{
-    for (Ipp32s i=0;i<16;i++)
-        scl_dst->ScalingListCoeffs[i] = coefs_src[i];
-}
-
-inline void FillScalingList8x8(H264ScalingList8x8 *scl_dst, const Ipp8u *coefs_src)
-{
-    for (Ipp32s i=0;i<64;i++)
-        scl_dst->ScalingListCoeffs[i] = coefs_src[i];
-}
-
-Status InitializePictureParamSet(H264PicParamSet *pps, const H264SeqParamSet *sps, bool isExtension);
 
 } // namespace UMC
 

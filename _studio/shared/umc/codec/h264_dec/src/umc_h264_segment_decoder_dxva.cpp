@@ -111,13 +111,6 @@ bool TaskBrokerSingleThreadDXVA::PrepareFrame(H264DecoderFrame * pFrame)
     if (pFrame->prepared[0] && pFrame->prepared[1])
         return true;
 
-    /*H264DecoderFrame * resourceHolder = m_pTaskSupplier->IsBusyByFrame(pFrame->m_iResourceNumber);
-    if (resourceHolder && resourceHolder != pFrame)
-        return false;
-
-    if (!m_pTaskSupplier->LockFrameResource(pFrame))
-        return false;*/
-
     if (!pFrame->prepared[0] &&
         (pFrame->GetAU(0)->GetStatus() == H264DecoderFrameInfo::STATUS_FILLED || pFrame->GetAU(0)->GetStatus() == H264DecoderFrameInfo::STATUS_STARTED))
     {
@@ -130,7 +123,6 @@ bool TaskBrokerSingleThreadDXVA::PrepareFrame(H264DecoderFrame * pFrame)
         pFrame->prepared[1] = true;
     }
 
-    // m_pTaskSupplier->SetMBMap(pFrame);
     return true;
 }
 

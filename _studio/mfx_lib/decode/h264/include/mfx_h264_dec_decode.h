@@ -33,6 +33,7 @@
 namespace UMC
 {
     class MFXTaskSupplier;
+    class MFX_SW_TaskSupplier;
     class VATaskSupplier;
     class WidevineTaskSupplier;
     class H264DecoderFrame;
@@ -42,7 +43,7 @@ namespace UMC
 #if defined (MFX_VA)
 typedef UMC::VATaskSupplier  MFX_AVC_Decoder;
 #else
-typedef UMC::MFXTaskSupplier MFX_AVC_Decoder;
+typedef UMC::MFX_SW_TaskSupplier MFX_AVC_Decoder;
 #endif
 
 class VideoDECODE;

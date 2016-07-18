@@ -15,6 +15,7 @@
 #define __UMC_H264_SEGMENT_DECODER_H
 
 #include "umc_h264_dec.h"
+#include "umc_h264_segment_decoder_base.h"
 #include "umc_h264_slice_decoding.h"
 #include "umc_h264_dec_tables.h"
 
@@ -36,42 +37,9 @@ struct DeblockingParameters;
 struct DeblockingParametersMBAFF;
 class TaskBroker;
 
-
-class H264SegmentDecoderBase
-{
-public:
-    H264SegmentDecoderBase(TaskBroker * pTaskBroker)
-        : m_iNumber(0)
-        , m_pTaskBroker(pTaskBroker)
-    {
-    }
-
-    virtual ~H264SegmentDecoderBase()
-    {
-    }
-
-    virtual UMC::Status Init(Ipp32s iNumber)
-    {
-        m_iNumber = iNumber;
-        return UMC::UMC_OK;
-    }
-
-    // Decode slice's segment
-    virtual UMC::Status ProcessSegment(void) = 0;
-
-    virtual void RestoreErrorRect(Ipp32s , Ipp32s , H264Slice * )
-    {
-    }
-
-protected:
-    Ipp32s m_iNumber;                                           // (Ipp32s) ordinal number of decoder
-    TaskBroker * m_pTaskBroker;
-};
-
 //
 // Class to incapsulate functions, implementing common decoding functional.
 //
-
 struct Context
 {
     ReferenceFlags *(m_pFields[2]);

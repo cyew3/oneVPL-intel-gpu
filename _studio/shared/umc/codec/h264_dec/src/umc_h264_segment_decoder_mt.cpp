@@ -83,9 +83,8 @@ void H264SegmentDecoderMultiThreaded::StartProcessingSegment(H264Task &Task)
     m_bNeedToCheckMBSliceEdges = m_pSlice->NeedToCheckSliceEdges();
     m_mbinfo = m_pSlice->GetMBInfo();
 
-    bit_depth_luma = m_pCurrentFrame->IsAuxiliaryFrame() ? m_pSlice->GetSeqParamEx()->bit_depth_aux :
-                                            m_pSeqParamSet->bit_depth_luma;
-    bit_depth_chroma = m_pCurrentFrame->IsAuxiliaryFrame() ? 8 : m_pSeqParamSet->bit_depth_chroma;
+    bit_depth_luma = m_pSeqParamSet->bit_depth_luma;
+    bit_depth_chroma = m_pSeqParamSet->bit_depth_chroma;
 
     m_MVDistortion[0] = 0;
     m_MVDistortion[1] = 0;
@@ -312,9 +311,8 @@ void H264SegmentDecoderMultiThreaded::RestoreErrorRect(Ipp32s startMb, Ipp32s en
         }
 
         m_pCurrentFrame = pCurrentFrame;
-        bit_depth_luma = m_pCurrentFrame->IsAuxiliaryFrame() ? m_pSlice->GetSeqParamEx()->bit_depth_aux :
-                                                m_pSeqParamSet->bit_depth_luma;
-        bit_depth_chroma = m_pCurrentFrame->IsAuxiliaryFrame() ? 8 : m_pSeqParamSet->bit_depth_chroma;
+        bit_depth_luma = m_pSeqParamSet->bit_depth_luma;
+        bit_depth_chroma = m_pSeqParamSet->bit_depth_chroma;
         m_SD = CreateSegmentDecoder();
 
         mb_height = m_pSlice->GetMBHeight();
