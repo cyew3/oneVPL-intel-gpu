@@ -709,12 +709,6 @@ mfxStatus MfxCameraPlugin::CheckIOPattern(mfxVideoParam *in, mfxVideoParam *out,
         return error_status;
    }
 
-   if(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY && in->vpp.In.FourCC == MFX_FOURCC_ARGB16)
-   {
-        out->IOPattern = 0;
-        return error_status;
-   }
-
    if(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
    {
         out->IOPattern = 0;
