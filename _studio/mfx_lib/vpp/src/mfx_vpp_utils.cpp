@@ -932,7 +932,7 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
 
             case (mfxU32)MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
             {
-                sprintf_s(cStr, sizeof(cStr), "%s \n", "CSC_YUY2");
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "CSC_RGB4");
                 OutputDebugStringA(cStr);
                 break;
             }
@@ -1123,7 +1123,7 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
 
             case (mfxU32)MFX_EXTBUFF_VPP_CSC_OUT_RGB4:
             {
-                fprintf(stderr,"%s \n", "CSC_YUY2");
+                fprintf(stderr,"%s \n", "CSC_RGB4");
                 break;
             }
 
