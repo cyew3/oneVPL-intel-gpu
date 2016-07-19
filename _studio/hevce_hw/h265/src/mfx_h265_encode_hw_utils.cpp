@@ -578,6 +578,7 @@ void MfxVideoParam::CopyCalcParams(MfxVideoParam const & par)
 
 MfxVideoParam& MfxVideoParam::operator=(MfxVideoParam const & par)
 {
+
     Construct(par);
     CopyCalcParams(par);
     
@@ -3049,24 +3050,25 @@ mfxStatus CodeAsSkipFrame(     MFXCoreInterface &            core,
     if (task.m_frameType & MFX_FRAMETYPE_I)
     {
         IppiSize roiSize = {video.mfx.FrameInfo.Width, video.mfx.FrameInfo.Height};
-        
-        FrameLocker lock1(&core, task.m_midRaw);  
-        ippiSet_8u_C1R(0, lock1.Y, lock1.Pitch,roiSize);
+        FrameLocker lock1(&core, task.m_midRaw); 
 
         switch (video.mfx.FrameInfo.FourCC)
         {
-            case MFX_FOURCC_NV12:
-                roiSize.height >>= 1;
-                ippiSet_8u_C1R(0, lock1.UV, lock1.Pitch,roiSize);
-                break;
-            case MFX_FOURCC_YV12:
-                roiSize.width >>= 1;
-                roiSize.height >>= 1;
-                ippiSet_8u_C1R(0, lock1.U, lock1.Pitch>>1,roiSize);
-                ippiSet_8u_C1R(0, lock1.V, lock1.Pitch>>1,roiSize);
-                break;
-            default:
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
+        case MFX_FOURCC_NV12:             
+            ippiSet_8u_C1R(0, lock1.Y, lock1.Pitch,roiSize);
+            roiSize.height >>= 1;
+            ippiSet_8u_C1R(0, lock1.UV, lock1.Pitch,roiSize);
+            break;
+
+        case MFX_FOURCC_P010:
+            roiSize.width <<= 1;
+            ippiSet_8u_C1R(0, lock1.Y, lock1.Pitch,roiSize);
+            roiSize.height >>= 1;
+            ippiSet_8u_C1R(0, lock1.UV, lock1.Pitch,roiSize);
+            break;
+
+        default:
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
     }
     else 

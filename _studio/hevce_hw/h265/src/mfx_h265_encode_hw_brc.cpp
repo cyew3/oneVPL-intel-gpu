@@ -489,7 +489,7 @@ mfxStatus H265BRC::SetParams( MfxVideoParam &par)
     m_par.targetKbps = ((par.TargetKbps >> (3 + MFX_H265_BITRATE_SCALE)) << (3 + MFX_H265_BITRATE_SCALE));;
     m_par.maxKbps = ((par.MaxKbps >> (3 + MFX_H265_BITRATE_SCALE)) << (3 + MFX_H265_BITRATE_SCALE));
 
-    MFX_CHECK (par.mfx.FrameInfo.FrameRateExtD != 0 || par.mfx.FrameInfo.FrameRateExtN != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK (par.mfx.FrameInfo.FrameRateExtD != 0 && par.mfx.FrameInfo.FrameRateExtN != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     m_par.frameRate = (mfxF64)par.mfx.FrameInfo.FrameRateExtN / (mfxF64)par.mfx.FrameInfo.FrameRateExtD;
     m_par.width = par.mfx.FrameInfo.Width;
