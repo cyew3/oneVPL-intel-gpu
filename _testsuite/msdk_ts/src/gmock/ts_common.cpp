@@ -203,7 +203,8 @@ void MFXVideoTest::SetUp()
         }
         if (platform.find("_ssw_") != std::string::npos)
         {
-                g_tsIsSSW = true;
+            g_tsIsSSW = true;
+            g_tsImpl = MFX_IMPL_SOFTWARE;
         }
         else if(platform.find("_sw_") != std::string::npos)
         {
