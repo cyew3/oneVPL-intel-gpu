@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_check_hardware_support.cpp
 
@@ -50,8 +50,10 @@ enum
     SNB_ID0            = 0x02a42
 };
 
-typedef enum {
-    IGFX_UNKNOWN = 0,
+enum PRODUCT_FAMILY
+{
+    IGFX_UNKNOWN       = 0,
+
     IGFX_GRANTSDALE_G,
     IGFX_ALVISO_G,
     IGFX_LAKEPORT_G,
@@ -64,7 +66,7 @@ typedef enum {
     IGFX_EAGLELAKE_G,
     IGFX_IRONLAKE_G,
     IGFX_GT,
-    IGFX_IVYBRIDGE,    
+    IGFX_IVYBRIDGE,
     IGFX_HASWELL,
     IGFX_VALLEYVIEW,
     IGFX_BROADWELL,
@@ -73,13 +75,21 @@ typedef enum {
     IGFX_KABYLAKE,
     IGFX_WILLOWVIEW,
     IGFX_BROXTON, 
-    IGFX_GEMINILAKE,    
+    IGFX_GEMINILAKE,
+    IGFX_GLENVIEW,
+    IGFX_GOLDWATERLAKE,
     IGFX_CANNONLAKE,
-    IGFX_GENNEXT,
+    IGFX_CNX_G,
+    IGFX_ICELAKE,
+    IGFX_ICELAKE_LP,
+
     IGFX_SOFIA_LTE1 = 1001,
     IGFX_SOFIA_LTE2 = 1002,
+
+    IGFX_GENNEXT               = 0x7ffffffe,
+
     PRODUCT_FAMILY_FORCE_ULONG = 0x7fffffff
-} PRODUCT_FAMILY;
+};
 
 } // namespace
 
@@ -114,7 +124,10 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_CNL;
     case IGFX_GT:
         return MFX_HW_IVB; // sandybridge
-
+    case IGFX_ICELAKE:
+        return MFX_HW_ICL;
+    case IGFX_ICELAKE_LP:
+        return MFX_HW_ICL_LP;
     case IGFX_SOFIA_LTE1:
     case IGFX_SOFIA_LTE2:
       return MFX_HW_SOFIA;

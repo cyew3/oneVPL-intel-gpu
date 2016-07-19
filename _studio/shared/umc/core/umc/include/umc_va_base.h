@@ -225,7 +225,10 @@ enum VideoAccelerationHW
 
     VA_HW_CNL       = 0x120000,
 
-    VA_HW_SOFIA     = 0x130000
+    VA_HW_SOFIA     = 0x130000,
+
+    VA_HW_ICL       = 0x140000,
+    VA_HW_ICL_LP    = VA_HW_ICL + 1,
 };
 
 class VideoData;
