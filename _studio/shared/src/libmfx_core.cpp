@@ -39,14 +39,66 @@ using namespace std;
 //
 
 FUNCTION_IMPL(CORE, SetBufferAllocator, (mfxSession session, mfxBufferAllocator *allocator), (allocator))
-    FUNCTION_IMPL(CORE, SetFrameAllocator, (mfxSession session, mfxFrameAllocator *allocator), (allocator))
-    FUNCTION_IMPL(CORE, SetHandle, (mfxSession session, mfxHandleType type, mfxHDL hdl), (type, hdl))
-    FUNCTION_IMPL(CORE, GetHandle, (mfxSession session, mfxHandleType type, mfxHDL *hdl), (type, hdl))
-    FUNCTION_IMPL(CORE, QueryPlatform, (mfxSession session, mfxPlatform* platform), (platform))
+FUNCTION_IMPL(CORE, SetFrameAllocator, (mfxSession session, mfxFrameAllocator *allocator), (allocator))
+FUNCTION_IMPL(CORE, SetHandle, (mfxSession session, mfxHandleType type, mfxHDL hdl), (type, hdl))
+FUNCTION_IMPL(CORE, GetHandle, (mfxSession session, mfxHandleType type, mfxHDL *hdl), (type, hdl))
 
 #define MFX_CHECK_HDL(hdl) {if (!hdl) MFX_RETURN(MFX_ERR_INVALID_HANDLE);}
 
-    mfxStatus CommonCORE::AllocBuffer(mfxU32 nbytes, mfxU16 type, mfxHDL *mid)
+mfxStatus MFXVideoCORE_QueryPlatform(mfxSession session, mfxPlatform* platform)
+{
+    mfxStatus mfxRes;
+    try
+    {
+        if (0 == session)
+        {
+            mfxRes = MFX_ERR_INVALID_HANDLE;
+        }
+        /* the absent components caused many issues in application.
+        check the pointer to avoid extra exceptions */
+        else if (0 == session->m_pCORE.get())
+        {
+            mfxRes = MFX_ERR_NOT_INITIALIZED;
+        }
+        else
+        {
+            /* call the codec's method */
+            IVideoCore_API_1_19 * pInt = QueryCoreInterface<IVideoCore_API_1_19>(session->m_pCORE.get(), MFXICORE_API_1_19_GUID);
+            if (pInt)
+            {
+                mfxRes = pInt->QueryPlatform(platform);
+            }
+            else
+            {
+                mfxRes = MFX_ERR_UNSUPPORTED;
+                memset(platform, 0, sizeof(mfxPlatform));
+            }
+        }
+    }
+    /* handle error(s) */
+    catch (MFX_CORE_CATCH_TYPE)
+    {
+        /* set the default error value */
+        mfxRes = MFX_ERR_NULL_PTR;
+        if (0 == session)
+        {
+            mfxRes = MFX_ERR_INVALID_HANDLE;
+        }
+        else if (0 == session->m_pCORE.get())
+        {
+            mfxRes = MFX_ERR_NOT_INITIALIZED;
+        }
+    }
+    return mfxRes;
+}
+
+
+mfxStatus CommonCORE::API_1_19_Adapter::QueryPlatform(mfxPlatform* platform)
+{
+    return m_core->QueryPlatform(platform);
+}
+
+mfxStatus CommonCORE::AllocBuffer(mfxU32 nbytes, mfxU16 type, mfxHDL *mid)
 {
     UMC::AutomaticUMCMutex guard(m_guard);
     return (*m_bufferAllocator.bufferAllocator.Alloc)(m_bufferAllocator.bufferAllocator.pthis,nbytes, type, mid);
@@ -661,7 +713,8 @@ CommonCORE::CommonCORE(const mfxU32 numThreadsAvailable, const mfxSession sessio
     m_bFastCopy(0),
     m_bUseExtManager(false),
     m_bIsOpaqMode(false),
-    m_CoreId(0)
+    m_CoreId(0),
+    m_API_1_19(this)
 {
     m_bufferAllocator.bufferAllocator.pthis = &m_bufferAllocator;
     CheckTimingLog();
@@ -2172,6 +2225,11 @@ void* CommonCORE::QueryCoreInterface(const MFX_GUID &guid)
     
     if (MFXIEXTERNALLOC_GUID == guid && m_bSetExtFrameAlloc)
         return &m_FrameAllocator.frameAllocator;
+
+    if (MFXICORE_API_1_19_GUID == guid)
+    {
+        return &m_API_1_19;
+    }
 
     return NULL;
 }

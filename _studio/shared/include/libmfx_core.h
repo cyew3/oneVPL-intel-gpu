@@ -55,8 +55,6 @@ public:
     virtual mfxStatus SetBufferAllocator(mfxBufferAllocator *allocator);
     virtual mfxStatus SetFrameAllocator(mfxFrameAllocator *allocator);
 
-    virtual mfxStatus QueryPlatform(mfxPlatform* platform);
-
     // Utility functions for memory access
     virtual mfxStatus  AllocBuffer(mfxU32 nbytes, mfxU16 type, mfxMemId *mid);
     virtual mfxStatus  LockBuffer(mfxMemId mid, mfxU8 **ptr);
@@ -154,7 +152,7 @@ public:
 
     virtual mfxU16 GetAutoAsyncDepth();
 
-    virtual bool IsCompatibleForOpaq() {return true;};
+    virtual bool IsCompatibleForOpaq() {return true;};  
 
     // keep frame response structure dwscribing plug-in memory surfaces
     void AddPluginAllocResponse(mfxFrameAllocResponse& response);
@@ -162,7 +160,8 @@ public:
     // get response which corresponds required conditions: same mids and number
     mfxFrameAllocResponse* GetPluginAllocResponse(mfxFrameAllocResponse& temp_response);
 
-
+    // non-virtual QueryPlatform, as we should not change vtable
+    mfxStatus QueryPlatform(mfxPlatform* platform);
 
 protected:
     
@@ -206,6 +205,18 @@ protected:
         s_ptr(s_ptr&);
         void operator =(s_ptr &);
     };
+
+    class API_1_19_Adapter : public IVideoCore_API_1_19
+    {
+    public:
+        API_1_19_Adapter(CommonCORE * core) : m_core(core) {}
+        virtual mfxStatus QueryPlatform(mfxPlatform* platform);
+
+    private:
+        CommonCORE *m_core;
+    };
+
+
     virtual mfxStatus          DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
     mfxFrameAllocator*         GetAllocatorAndMid(mfxMemId& mid);
     mfxBaseWideFrameAllocator* GetAllocatorByReq(mfxU16 type) const;
@@ -299,6 +310,8 @@ protected:
     EncodeHWCaps  m_encode_mbprocrate;
 
     std::vector<mfxFrameAllocResponse> m_PlugInMids;
+
+    API_1_19_Adapter m_API_1_19;
 
 private:
     // Forbid the assignment operator

@@ -201,7 +201,6 @@ public:
     virtual mfxStatus SetHandle(mfxHandleType type, mfxHDL handle) = 0;
     virtual mfxStatus SetBufferAllocator(mfxBufferAllocator *allocator) = 0;
     virtual mfxStatus SetFrameAllocator(mfxFrameAllocator *allocator) = 0;
-    virtual mfxStatus QueryPlatform(mfxPlatform* platform) = 0;
 
     // Internal interface only
     // Utility functions for memory access
@@ -297,6 +296,16 @@ public:
 
     virtual bool IsCompatibleForOpaq() = 0;
 };
+
+
+// Core extension should be obtained using MFXICORE_API_1_19_GUID
+class IVideoCore_API_1_19
+{
+public:
+    virtual ~IVideoCore_API_1_19() {}
+    virtual mfxStatus QueryPlatform(mfxPlatform* platform) = 0;
+};
+
 
 class VideoBRC
 {

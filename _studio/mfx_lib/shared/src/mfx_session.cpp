@@ -374,7 +374,16 @@ mfxStatus mfxCOREQueryPlatform(mfxHDL pthis, mfxPlatform *platform)
 
     try
     {
-        mfxRes = pCore->QueryPlatform(platform);
+        IVideoCore_API_1_19 * pInt = QueryCoreInterface<IVideoCore_API_1_19>(pCore, MFXICORE_API_1_19_GUID);
+        if (pInt)
+        {
+            mfxRes = pInt->QueryPlatform(platform);
+        }
+        else
+        {
+            mfxRes = MFX_ERR_UNSUPPORTED;
+            memset(platform, 0, sizeof(mfxPlatform));
+        }
     }
     catch (MFX_CORE_CATCH_TYPE)
     {
