@@ -3360,8 +3360,6 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
     } else if (task.feiOp == MFX_FEI_H265_OP_GPU_COPY_REF) {
         in.copyArgs.surfSys = task.frame->m_recon->m_handle;
         in.copyArgs.surfVid = task.frame->m_feiRecon->m_handle;
-        if (m_videoParam.enableCmPostProc == 0)
-            in.FEIOp = MFX_FEI_H265_OP_GPU_COPY_SRC;
 
     } else if (task.feiOp == MFX_FEI_H265_OP_INTRA_MODE) {
         in.meArgs.surfSrc = task.frame->m_feiOrigin->m_handle;
@@ -3383,19 +3381,11 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
     } else if (task.feiOp == MFX_FEI_H265_OP_BIREFINE) {
         Frame *ref0 = task.frame->m_refPicList[0].m_refFrames[0];
         Frame *ref1 = task.frame->m_refPicList[1].m_refFrames[0];
-        //in.FEIFrameIn.PicOrder = task.frame->m_frameOrder;
-        //in.FEIFrameIn.EncOrder = task.frame->m_encOrder;
         in.birefArgs.surfSrc = task.frame->m_feiOrigin->m_handle;
-        //in.FEIFrameRef.PicOrder = ref0->m_frameOrder;
-        //in.FEIFrameRef.EncOrder = ref0->m_encOrder;
         in.birefArgs.surfRef0 = ref0->m_feiRecon->m_handle;
         in.birefArgs.surfRef1 = ref1->m_feiRecon->m_handle;
 
         mfxFEIOptParamsBiref optParam = {};
-        //optParam.FEIFrameRefBi.PicOrder = ref1->m_frameOrder;
-        //optParam.FEIFrameRefBi.EncOrder = ref1->m_encOrder;
-        //optParam.FEIFrameRefBi.surfIn = ref1->m_feiRecon->m_handle;
-
         Ipp32s uniqRefIdx0 = task.frame->m_mapListRefUnique[0][0];
         Ipp32s uniqRefIdx1 = task.frame->m_mapListRefUnique[1][0];
         for (Ipp32s blksize = 2; blksize < 4; blksize++) {

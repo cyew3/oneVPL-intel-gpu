@@ -240,10 +240,12 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params,  H265VideoParam &video, Ipp
         mTotalDeviation = 0;
 
         mNumLayers = video.PGopPicSize > 1 ?  2 : video.BiPyramidLayers + 1;
+        if (video.GopRefDist > 1 && video.BiPyramidLayers == 1)
+            mNumLayers = 3; // in case of BiPyramid is off there are 3 layers for BRC: I, P, and other Bs
 
         if (mRCMode == MFX_RATECONTROL_AVBR) {
-            memset((void*)mEstCoeff, 0, mNumLayers*sizeof(Ipp64f));
-            memset((void*)mEstCnt, 0, mNumLayers*sizeof(Ipp64f));
+            Zero(mEstCoeff);
+            Zero(mEstCnt);
         }
         mTotAvComplx = 0;
         mTotComplxCnt = 0;
@@ -260,11 +262,11 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params,  H265VideoParam &video, Ipp
         mQstepBase = -1;
         
         if (mRCMode != MFX_RATECONTROL_AVBR) {
-            memset(mPrevCmplxLayer, 0,  mNumLayers*sizeof(Ipp64f));
-            memset(mPrevQstepLayer, 0,  mNumLayers*sizeof(Ipp64f));
-            memset(mPrevBitsLayer, 0,  mNumLayers*sizeof(Ipp32s));
+            Zero(mPrevCmplxLayer);
+            Zero(mPrevQstepLayer);
+            Zero(mPrevBitsLayer);
         }
-        memset(mPrevQpLayer, 0,  mNumLayers*sizeof(Ipp32s));
+        Zero(mPrevQpLayer);
 
         mPrevBitsIP = -1;
         mPrevCmplxIP = -1;
@@ -294,6 +296,7 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params,  H265VideoParam &video, Ipp
             sum += layerShare;
             layerShare *= 2*layerRatio;
         }
+        Zero(mLayerTarget);
         Ipp64f targetMiniGop = mBitsDesiredFrame * video.GopRefDist;
         mLayerTarget[1] = targetMiniGop / sum;
         mLayerTarget[0] = mLayerTarget[1] * 3;
@@ -340,12 +343,12 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params,  H265VideoParam &video, Ipp
         mSChPoc = 0;
         mSceneChange = 0;
         mBitsEncodedPrev = mBitsDesiredFrame;
-        mPicType = MFX_FRAMETYPE_I;
 
         mMaxQp = 999;
         mMinQp = -1;
     }
 
+    mPicType = MFX_FRAMETYPE_I;
     mSceneNum = 0;
     mIsInit = true;
 

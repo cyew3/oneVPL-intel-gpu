@@ -527,34 +527,34 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     kernelPrepareSrc.AddKernel(device, programPrepareSrc, prepareSrcName,
         width16x / 4, height16x, CM_NONE_DEPENDENCY);
 
-    if (fourcc == MFX_FOURCC_NV12) {
+    if (fourcc == MFX_FOURCC_NV12)
         kernelPrepareRef.AddKernel(device, programPrepareSrc, "PrepareRefNv12",
             width16x / 4, height16x, CM_NONE_DEPENDENCY);
-        
-        if (enableInterp) {
-            if (interpBlocksW > CM_MAX_THREADSPACE_WIDTH) {
-                mfxU32 nW = (interpBlocksW / 2 > CM_MAX_THREADSPACE_WIDTH) ? 3 : 2;
-                mfxU32 nH = (interpBlocksH > CM_MAX_THREADSPACE_HEIGHT) ? 2 : 1;
-                mfxU32 wStep = interpBlocksW / nW;
-                mfxU32 hStep = interpBlocksH / nH;
-                for (mfxU32 j = 1; j < nH; j++) {
-                    for (mfxU32 i = 1; i < nW; i++) {
-                        kernelPrepareRef.AddKernel(device, programInterpolateFrame, "InterpolateFrameMerge",
-                            wStep, hStep, CM_NONE_DEPENDENCY, true);
-                    }
+    else
+        kernelPrepareRef.AddKernel(device, programPrepareSrc, prepareSrcName,
+            width16x / 4, height16x, CM_NONE_DEPENDENCY);
+
+    if (enableInterp) {
+        if (interpBlocksW > CM_MAX_THREADSPACE_WIDTH) {
+            mfxU32 nW = (interpBlocksW / 2 > CM_MAX_THREADSPACE_WIDTH) ? 3 : 2;
+            mfxU32 nH = (interpBlocksH > CM_MAX_THREADSPACE_HEIGHT) ? 2 : 1;
+            mfxU32 wStep = interpBlocksW / nW;
+            mfxU32 hStep = interpBlocksH / nH;
+            for (mfxU32 j = 1; j < nH; j++) {
+                for (mfxU32 i = 1; i < nW; i++)
                     kernelPrepareRef.AddKernel(device, programInterpolateFrame, "InterpolateFrameMerge",
-                        (interpBlocksW - wStep * (nW - 1)), hStep, CM_NONE_DEPENDENCY);
-                }
-                for (mfxU32 i = 1; i < nW; i++) {
-                    kernelPrepareRef.AddKernel(device, programInterpolateFrame, "InterpolateFrameMerge",
-                        wStep, (interpBlocksH - hStep * (nH - 1)), CM_NONE_DEPENDENCY);
-                }
+                        wStep, hStep, CM_NONE_DEPENDENCY, true);
                 kernelPrepareRef.AddKernel(device, programInterpolateFrame, "InterpolateFrameMerge",
-                    (interpBlocksW - wStep * (nW - 1)), (interpBlocksH - hStep * (nH - 1)), CM_NONE_DEPENDENCY);
-            } else {
-                kernelPrepareRef.AddKernel(device, programInterpolateFrame, "InterpolateFrameMerge",
-                    interpBlocksW, interpBlocksH, CM_NONE_DEPENDENCY);
+                    (interpBlocksW - wStep * (nW - 1)), hStep, CM_NONE_DEPENDENCY);
             }
+            for (mfxU32 i = 1; i < nW; i++)
+                kernelPrepareRef.AddKernel(device, programInterpolateFrame, "InterpolateFrameMerge",
+                    wStep, (interpBlocksH - hStep * (nH - 1)), CM_NONE_DEPENDENCY);
+            kernelPrepareRef.AddKernel(device, programInterpolateFrame, "InterpolateFrameMerge",
+                (interpBlocksW - wStep * (nW - 1)), (interpBlocksH - hStep * (nH - 1)), CM_NONE_DEPENDENCY);
+        } else {
+            kernelPrepareRef.AddKernel(device, programInterpolateFrame, "InterpolateFrameMerge",
+                interpBlocksW, interpBlocksH, CM_NONE_DEPENDENCY, true);
         }
     }
 
@@ -710,40 +710,39 @@ mfxStatus H265CmCtx::CopyReconFrameToGPU(CmEvent **lastEvent, mfxFEIH265Input *i
     CmSurface2DUP *inCh = ((mfxFEIH265Surface *)in->copyArgs.surfSys)->sUp.chroma;
     mfxFEIH265ReconSurface *surf = &((mfxFEIH265Surface *)in->copyArgs.surfVid)->sRec;
     CmSurface2D *dummy = surf->bufOrigNv12;
-    if (fourcc == MFX_FOURCC_NV12) {
+    if (fourcc == MFX_FOURCC_NV12)
         SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
-        if (enableInterp) {
-            // coupling of interp
-            if (interpBlocksW > CM_MAX_THREADSPACE_WIDTH) {
-                mfxU32 nW = (interpBlocksW / 2 > CM_MAX_THREADSPACE_WIDTH) ? 3 : 2;
-                mfxU32 nH = (interpBlocksH > CM_MAX_THREADSPACE_HEIGHT) ? 2 : 1;
-                mfxU32 wStep = interpBlocksW / nW;
-                mfxU32 hStep = interpBlocksH / nH;
-                mfxU32 iker = 1;
-                for (mfxU32 j = 0; j < nH - 1; j++) {
-                    for (mfxU32 i = 0; i < nW - 1; i++) {
-                        SetKernelArg(kernelPrepareRef.m_kernel[iker++], surf->bufOrigNv12, surf->bufInterpMerged, i * wStep, j * hStep);
-                    }
-                    SetKernelArg(kernelPrepareRef.m_kernel[iker++], surf->bufOrigNv12, surf->bufInterpMerged, (nW - 1) * wStep, j * hStep);
-                }
-                for (mfxU32 i = 0; i < nW - 1; i++) {
-                        SetKernelArg(kernelPrepareRef.m_kernel[iker++], surf->bufOrigNv12, surf->bufInterpMerged, i * wStep, (nH - 1) * hStep);
-                }
-                SetKernelArg(kernelPrepareRef.m_kernel[iker++], surf->bufOrigNv12, surf->bufInterpMerged, (nW - 1) * wStep, (nH - 1) * hStep);
-            } else {
-                SetKernelArg(kernelPrepareRef.m_kernel[1], surf->bufOrigNv12, surf->bufInterpMerged, 0, 0);
-            }
-        }
-
-    } else if (fourcc == MFX_FOURCC_NV16)
-        SetKernelArg(kernelPrepareSrc.m_kernel[0], inLu, inCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
+    else if (fourcc == MFX_FOURCC_NV16)
+        SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
     else if (fourcc == MFX_FOURCC_P010)
-        SetKernelArg(kernelPrepareSrc.m_kernel[0], inLu, inCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, dummy, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
+        SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, dummy, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
     else if (fourcc == MFX_FOURCC_P210)
-        SetKernelArg(kernelPrepareSrc.m_kernel[0], inLu, inCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, dummy, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
+        SetKernelArg(kernelPrepareRef.m_kernel[0], inLu, inCh, AlignValue(padding<<bppShift,64)>>bppShift, AlignValue(paddingChroma<<bppShift,64)>>bppShift, dummy, dummy, surf->bufOrigNv12, surf->bufDown2x, surf->bufDown4x, surf->bufDown8x, surf->bufDown16x);
 
-    (fourcc == MFX_FOURCC_NV12 ? kernelPrepareRef : kernelPrepareSrc).Enqueue(queue, *lastEvent);
+    if (enableInterp) {
+        // coupling of interp
+        if (interpBlocksW > CM_MAX_THREADSPACE_WIDTH) {
+            mfxU32 nW = (interpBlocksW / 2 > CM_MAX_THREADSPACE_WIDTH) ? 3 : 2;
+            mfxU32 nH = (interpBlocksH > CM_MAX_THREADSPACE_HEIGHT) ? 2 : 1;
+            mfxU32 wStep = interpBlocksW / nW;
+            mfxU32 hStep = interpBlocksH / nH;
+            mfxU32 iker = 1;
+            for (mfxU32 j = 0; j < nH - 1; j++) {
+                for (mfxU32 i = 0; i < nW - 1; i++) {
+                    SetKernelArg(kernelPrepareRef.m_kernel[iker++], surf->bufOrigNv12, surf->bufInterpMerged, i * wStep, j * hStep);
+                }
+                SetKernelArg(kernelPrepareRef.m_kernel[iker++], surf->bufOrigNv12, surf->bufInterpMerged, (nW - 1) * wStep, j * hStep);
+            }
+            for (mfxU32 i = 0; i < nW - 1; i++) {
+                    SetKernelArg(kernelPrepareRef.m_kernel[iker++], surf->bufOrigNv12, surf->bufInterpMerged, i * wStep, (nH - 1) * hStep);
+            }
+            SetKernelArg(kernelPrepareRef.m_kernel[iker++], surf->bufOrigNv12, surf->bufInterpMerged, (nW - 1) * wStep, (nH - 1) * hStep);
+        } else {
+            SetKernelArg(kernelPrepareRef.m_kernel[1], surf->bufOrigNv12, surf->bufInterpMerged, 0, 0);
+        }
+    }
 
+    kernelPrepareRef.Enqueue(queue, *lastEvent);
     return MFX_ERR_NONE;
 }
 
