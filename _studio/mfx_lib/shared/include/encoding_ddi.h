@@ -21,7 +21,6 @@
 #define DXVADDI_VIDEODESC   DXVA2_VideoDesc
 #include "encoder_ddi.hpp"
 #define NEW_STATUS_REPORTING_DDI_0915
-#define LOWPOWERENCODE_AVC
 //#pragma pack(push, 4)
 
 static const mfxU32 NUM_MV_PER_MB = 2 * 16;
@@ -90,11 +89,9 @@ static const GUID DXVA2_Intel_Fast_Compositing_Device =
 static const GUID DXVA2_INTEL_PAVP = 
 { 0x07460004,0x7533, 0x4e1a, { 0xbd, 0xe3, 0xff, 0x20, 0x6b, 0xf5, 0xce, 0x47 } };
 
-#if defined(LOWPOWERENCODE_AVC)
 // {1424D4DC-7CF5-4BB1-9CD7-B63717A72A6B}
 static const GUID DXVA2_INTEL_LOWPOWERENCODE_AVC = 
 {0x1424d4dc, 0x7cf5, 0x4bb1, { 0x9c, 0xd7, 0xb6, 0x37, 0x17, 0xa7, 0x2a, 0x6b} };
-#endif
 
 // GUIDs from DDI for HEVC Encoder spec 0.88
 static const GUID DXVA2_Intel_Encode_HEVC_Main =

@@ -1044,13 +1044,11 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 #endif
 
     VAEntrypoint entrypoint = VAEntrypointEncSlice;
-#ifdef MFX_VA_ANDROID
     if ((MSDK_Private_Guid_Encode_AVC_LowPower_Query == guid) ||
         (DXVA2_INTEL_LOWPOWERENCODE_AVC == guid))
     {
         entrypoint = VAEntrypointEncSliceLP;
     }
-#endif
     VAStatus vaSts = vaGetConfigAttributes(m_vaDisplay,
                           ConvertProfileTypeMFX2VAAPI(m_videoParam.mfx.CodecProfile),
                           entrypoint,

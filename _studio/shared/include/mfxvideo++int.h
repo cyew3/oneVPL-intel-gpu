@@ -110,6 +110,10 @@ static const GUID DXVA_Intel_Decode_Elementary_Stream_AVC =
 static const GUID DXVA_Intel_Decode_Elementary_Stream_HEVC =
 { 0x7cfaffb, 0x5a2e, 0x4b99, { 0xb6, 0x2a, 0xe4, 0xca, 0x53, 0xb6, 0xd5, 0xaa } };
 
+// {1424D4DC-7CF5-4BB1-9CD7-B63717A72A6B}
+static const GUID DXVA2_INTEL_LOWPOWERENCODE_AVC =
+{0x1424d4dc, 0x7cf5, 0x4bb1, { 0x9c, 0xd7, 0xb6, 0x37, 0x17, 0xa7, 0x2a, 0x6b} };
+
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
