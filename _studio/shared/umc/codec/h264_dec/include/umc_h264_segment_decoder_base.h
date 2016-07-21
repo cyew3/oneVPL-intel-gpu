@@ -15,14 +15,11 @@
 #define __UMC_H264_SEGMENT_DECODER_BASE_H
 
 #include "umc_h264_dec.h"
-#include "umc_h264_slice_decoding.h"
-#include "umc_h264_frame.h"
-
-using namespace UMC_H264_DECODER;
 
 namespace UMC
 {
 
+class H264Slice;
 class TaskBroker;
 
 class H264SegmentDecoderBase

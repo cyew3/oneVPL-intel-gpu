@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -18,10 +18,10 @@
 
 namespace UMC
 {
-
+class H264Task;
 class SegmentDecoderHPBase;
 
-STRUCT_DECLSPEC_ALIGN class H264SegmentDecoderMultiThreaded : public H264SegmentDecoder
+class H264SegmentDecoderMultiThreaded : public H264SegmentDecoder
 {
 public:
     // Default constructor
@@ -50,6 +50,8 @@ public:
     }
 
     virtual Status ProcessSlice(Ipp32s iCurMBNumber, Ipp32s &iMBToProcess);
+
+    virtual Status ProcessTask(H264Task *task);
 
     virtual void RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H264Slice * pSlice);
 

@@ -451,7 +451,11 @@ void H264DBPList::removeAllRef()
             pCurr->SetisShortTermRef(false, 0);
             pCurr->SetisShortTermRef(false, 1);
 
-            OnSlideWindow(pCurr);
+            if (!pCurr->IsFrameExist())
+            {
+                pCurr->setWasOutputted();
+                pCurr->setWasDisplayed();
+            }
         }
 
         pCurr = pCurr->future();
@@ -701,7 +705,11 @@ H264DecoderFrame * H264DBPList::freeOldLongTermRef(Ipp32s  MaxLongTermFrameIdx)
             pCurr->SetisLongTermRef(false, 0);
             pCurr->SetisLongTermRef(false, 1);
 
-            OnSlideWindow(pCurr);
+            if (!pCurr->IsFrameExist())
+            {
+                pCurr->setWasOutputted();
+                pCurr->setWasDisplayed();
+            }
         }
 
         pCurr = pCurr->future();

@@ -167,14 +167,14 @@ class Headers;
 #define NUM_COEF_ABS_LEVEL_CTX         5
 
 // Declare CABAC context type
-#pragma pack(1)
+#pragma pack(push, 1)
 typedef struct CABAC_CONTEXT
 {
     Ipp8u pStateIdxAndVal;                                      // (Ipp8u) probability state index and value of most probable symbol
 
 } CABAC_CONTEXT;
 
-#pragma pack()
+#pragma pack(pop)
 
 class H264Bitstream  : public H264HeadersBitstream
 {
@@ -184,20 +184,11 @@ public:
     H264Bitstream(Ipp8u * const pb, const Ipp32u maxsize);
     virtual ~H264Bitstream(void);
 
-    // Align bitstream pointer to the right
-    inline void AlignPointerRight();
-
-    // Get type of current NAL
-    Status GetNALUnitType(NAL_Unit_Type &nal_unit_type,
-                          Ipp32u &nal_ref_idc);
-
-    Status GetAccessUnitDelimiter(Ipp32u &PicCodType);
-
-    Status ReadFillerData();
-    void RollbackCurrentNALU();
-
-    // Parse SEI message
-    Ipp32s ParseSEI(const Headers & headers, H264SEIPayLoad *spl);
+    H264Bitstream& operator=(const H264HeadersBitstream& value)
+    {
+        *((H264HeadersBitstream*)this) = value;
+        return *this;
+    }
 
     template <typename Coeffs> inline
     void GetCAVLCInfoLuma(Ipp32u uVLCSelect, // N, obtained from num coeffs of above/left blocks
@@ -267,32 +258,16 @@ public:
             throw h264_exception(UMC_ERR_INVALID_STREAM);
     } // void GetCAVLCInfoChroma2(Ipp16s &sNumCoeff,
 
-    void GetOrg(Ipp32u **pbs, Ipp32u *size);
-    void GetState(Ipp32u **pbs, Ipp32u *bitOffset);
-    void SetState(Ipp32u *pbs, Ipp32u bitOffset);
-
     inline void Drop1Bit();
     inline Ipp32u Peek1Bit();
 
-    // Searches for a code with known number of bits.
-    bool SearchBits(const Ipp32u nbits,
-                    const Ipp32u code,
-                    const Ipp32u lookahead);
     bool NextBit();
-
-    // Set current decoding position
-    void SetDecodedBytes(size_t);
 
     inline size_t GetAllBitsCount()
     {
         return m_maxBsSize;
     }
 
-    inline
-    size_t BytesDecodedRoundOff()
-    {
-        return static_cast<size_t>((Ipp8u*)m_pbs - (Ipp8u*)m_pbsBase);
-    }
 
     //
     // CABAC decoding function(s)

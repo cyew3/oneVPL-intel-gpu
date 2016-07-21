@@ -19,7 +19,7 @@
 #ifndef UMC_RESTRICTED_CODE_VA
 
 #include <memory>
-#include "umc_h264_segment_decoder_mt.h"
+#include "umc_h264_segment_decoder_base.h"
 #include "umc_h264_task_broker.h"
 #include "umc_h264_va_packer.h"
 #include "umc_h264_frame_info.h"

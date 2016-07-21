@@ -24,7 +24,18 @@ class MFX_SW_TaskSupplier : public MFXTaskSupplier
 public:
 
     virtual void CreateTaskBroker();
+    virtual H264Slice * CreateSlice();
     virtual void SetMBMap(const H264Slice * slice, H264DecoderFrame *frame, LocalResources * localRes);
+
+    virtual bool ProcessNonPairedField(H264DecoderFrame * pFrame);
+
+    virtual void AddFakeReferenceFrame(H264Slice * pSlice);
+
+    virtual H264DecoderFrame * GetFreeFrame(const H264Slice *pSlice = NULL);
+
+    virtual Status AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, ColorFormat color_format);
+
+    virtual void OnFullFrame(H264DecoderFrame * pFrame);
 
 private:
 

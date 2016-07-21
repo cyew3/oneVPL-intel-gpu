@@ -21,7 +21,6 @@ namespace UMC
 
 H264Slice::H264Slice(MemoryAllocator *pMemoryAllocator)
     : m_pSeqParamSet(0)
-    , m_coeffsBuffers(0)
     , m_bInited(false)
     , m_pMemoryAllocator(pMemoryAllocator)
 {
@@ -77,15 +76,12 @@ void H264Slice::ZeroedMembers()
     m_pSeqParamSetEx = 0;
     m_pSeqParamSetMvcEx = 0;
     m_pSeqParamSetSvcEx = 0;
-    m_mbinfo = 0;
 
     m_iMBWidth = -1;
     m_iMBHeight = -1;
 
     m_pCurrentFrame = 0;
 
-    m_DistScaleFactorAFF = 0;
-    m_DistScaleFactorMVAFF = 0;
     memset(&m_AdaptiveMarkingInfo, 0, sizeof(m_AdaptiveMarkingInfo));
 
     m_bInited = false;
@@ -94,15 +90,8 @@ void H264Slice::ZeroedMembers()
 
 void H264Slice::Release()
 {
-    if (GetCoeffsBuffers())
-        m_coeffsBuffers->Reset();
-
-    m_pObjHeap->FreeObject(m_DistScaleFactorAFF);
-    m_pObjHeap->FreeObject(m_DistScaleFactorMVAFF);
-
     Reset();
-
-} // void H264Slice::Release(void)
+}
 
 Ipp32s H264Slice::RetrievePicParamSetNumber()
 {
@@ -133,18 +122,8 @@ Ipp32s H264Slice::RetrievePicParamSetNumber()
     return m_SliceHeader.pic_parameter_set_id;
 }
 
-H264CoeffsBuffer *H264Slice::GetCoeffsBuffers() const
-{
-    return m_coeffsBuffers;
-}
-
 void H264Slice::FreeResources()
 {
-    if (!GetCoeffsBuffers())
-        return;
-
-    m_coeffsBuffers->DecrementReference();
-    m_coeffsBuffers = 0;
 }
 
 bool H264Slice::Reset(H264NalExtension *pNalExt)
@@ -179,41 +158,13 @@ bool H264Slice::Reset(H264NalExtension *pNalExt)
         return false;
 
     // reset all internal variables
-    m_iCurMBToDec = m_iFirstMB;
-    m_iCurMBToRec = m_iFirstMB;
-    m_iCurMBToDeb = m_iFirstMB;
-
-    m_bInProcess = false;
-    m_bDecVacant = 1;
-    m_bRecVacant = 1;
-    m_bDebVacant = 1;
     m_bFirstDebThreadedCall = true;
     m_bError = false;
-
-    m_MVsDistortion = 0;
-
-    // reset through-decoding variables
-    m_nMBSkipCount = 0;
-    m_nQuantPrev = m_pPicParamSet->pic_init_qp +
-                   m_SliceHeader.slice_qp_delta;
-    m_prev_dquant = 0;
-    m_field_index = iFieldIndex;
-
-    if (IsSliceGroups())
-        m_bNeedToCheckMBSliceEdges = true;
-    else
-        m_bNeedToCheckMBSliceEdges = (0 == m_SliceHeader.first_mb_in_slice) ? (false) : (true);
 
     // set conditional flags
     m_bDecoded = false;
     m_bPrevDeblocked = false;
     m_bDeblocked = (m_SliceHeader.disable_deblocking_filter_idc == DEBLOCK_FILTER_OFF);
-
-    if (m_bDeblocked)
-    {
-        m_bDebVacant = 0;
-        m_iCurMBToDeb = m_iMaxMB;
-    }
 
     // frame is not associated yet
     m_pCurrentFrame = NULL;
@@ -257,8 +208,7 @@ void H264Slice::SetSeqSVCParam(const H264SeqParamSetSVCExtension * sps)
 void H264Slice::SetSliceNumber(Ipp32s iSliceNumber)
 {
     m_iNumber = iSliceNumber;
-
-} // void H264Slice::SetSliceNumber(Ipp32s iSliceNumber)
+}
 
 AdaptiveMarkingInfo * H264Slice::GetAdaptiveMarkingInfo()
 {
@@ -374,51 +324,6 @@ bool H264Slice::DecodeSliceHeader(H264NalExtension *pNalExt)
 
     return (UMC_OK == umcRes);
 
-} // bool H264Slice::DecodeSliceHeader(bool bFullInitialization)
-
-void H264Slice::InitializeContexts()
-{
-    if (!m_isInitialized && m_pPicParamSet->entropy_coding_mode)
-    {
-        // reset CABAC engine
-        m_BitStream.InitializeDecodingEngine_CABAC();
-        if (INTRASLICE == m_SliceHeader.slice_type)
-        {
-            m_BitStream.InitializeContextVariablesIntra_CABAC(m_pPicParamSet->pic_init_qp +
-                                                              m_SliceHeader.slice_qp_delta);
-        }
-        else
-        {
-            m_BitStream.InitializeContextVariablesInter_CABAC(m_pPicParamSet->pic_init_qp +
-                                                              GetSliceHeader()->slice_qp_delta,
-                                                              GetSliceHeader()->cabac_init_idc);
-        }
-    }
-
-    m_isInitialized = true;
-}
-
-bool H264Slice::GetDeblockingCondition(void) const
-{
-    // there is no deblocking
-    if (DEBLOCK_FILTER_OFF == GetSliceHeader()->disable_deblocking_filter_idc)
-        return false;
-
-    // no filtering edges of this slice
-    if (DEBLOCK_FILTER_ON_NO_SLICE_EDGES == GetSliceHeader()->disable_deblocking_filter_idc || m_bPrevDeblocked)
-    {
-        if (false == IsSliceGroups())
-            return true;
-    }
-
-    return false;
-
-} // bool H264Slice::GetDeblockingCondition(void)
-
-void H264Slice::CompleteDecoding()
-{
-    //if (m_bDecoded)//  && m_bDeblocked) - we do not need to wait deblocking because FreeResources frees coeff buffer
-        FreeResources();
 }
 
 } // namespace UMC

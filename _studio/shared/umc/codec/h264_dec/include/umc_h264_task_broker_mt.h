@@ -15,11 +15,51 @@
 #define __UMC_H264_TASK_BROKER_MT_H
 
 #include "umc_h264_task_broker.h"
+#include "umc_h264_dec_structures.h"
 
 namespace UMC
 {
+class H264SliceEx;
 class TaskSupplier;
-class H264DecoderFrameList;
+
+class H264Task
+{
+public:
+    // Default constructor
+    H264Task(Ipp32s iThreadNumber)
+        : m_iThreadNumber(iThreadNumber)
+    {
+        m_pSlice = 0;
+
+        m_pBuffer = 0;
+        m_WrittenSize = 0;
+
+        m_iFirstMB = -1;
+        m_iMaxMB = -1;
+        m_iMBToProcess = -1;
+        m_iTaskID = 0;
+        m_bDone = false;
+        m_bError = false;
+        m_mvsDistortion = 0;
+        m_taskPreparingGuard = 0;
+    }
+
+    CoeffsPtrCommon m_pBuffer;                                  // (Ipp16s *) pointer to working buffer
+    size_t          m_WrittenSize;
+
+    H264SliceEx *m_pSlice;                                        // (H264Slice *) pointer to owning slice
+    H264DecoderFrameInfo * m_pSlicesInfo;
+    AutomaticUMCMutex    * m_taskPreparingGuard;
+
+    Ipp32s m_mvsDistortion;
+    Ipp32s m_iThreadNumber;                                     // (Ipp32s) owning thread number
+    Ipp32s m_iFirstMB;                                          // (Ipp32s) first MB in slice
+    Ipp32s m_iMaxMB;                                            // (Ipp32s) maximum MB number in owning slice
+    Ipp32s m_iMBToProcess;                                      // (Ipp32s) number of MB to processing
+    Ipp32s m_iTaskID;                                           // (Ipp32s) task identificator
+    bool m_bDone;                                               // (bool) task was done
+    bool m_bError;                                              // (bool) there is a error
+};
 
 /****************************************************************************************************/
 // Resources
@@ -112,7 +152,7 @@ protected:
 
     virtual void CompleteFrame(H264DecoderFrame * frame);
 
-    void InitTask(H264DecoderFrameInfo * info, H264Task *pTask, H264Slice *pSlice);
+    void InitTask(H264DecoderFrameInfo * info, H264Task *pTask, H264SliceEx *pSlice);
     bool GetPreparationTask(H264DecoderFrameInfo * info);
 
     bool GetNextSlice(H264DecoderFrameInfo * info, H264Task *pTask);
@@ -142,9 +182,9 @@ public:
 
 private:
 
-    bool WrapDecodingTask(H264DecoderFrameInfo * info, H264Task *pTask, H264Slice *pSlice);
-    bool WrapReconstructTask(H264DecoderFrameInfo * info, H264Task *pTask, H264Slice *pSlice);
-    bool WrapDecRecTask(H264DecoderFrameInfo * info, H264Task *pTask, H264Slice *pSlice);
+    bool WrapDecodingTask(H264DecoderFrameInfo * info, H264Task *pTask, H264SliceEx *pSlice);
+    bool WrapReconstructTask(H264DecoderFrameInfo * info, H264Task *pTask, H264SliceEx *pSlice);
+    bool WrapDecRecTask(H264DecoderFrameInfo * info, H264Task *pTask, H264SliceEx *pSlice);
 
     bool GetDecRecTask(H264DecoderFrameInfo * info, H264Task *pTask);
     bool GetDecodingTask(H264DecoderFrameInfo * info, H264Task *pTask);

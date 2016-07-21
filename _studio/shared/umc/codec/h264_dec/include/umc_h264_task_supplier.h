@@ -25,7 +25,7 @@
 #include "umc_h264_frame_info.h"
 #include "umc_h264_frame_list.h"
 
-#include "umc_h264_segment_decoder_mt.h"
+#include "umc_h264_segment_decoder_base.h"
 #include "umc_h264_headers.h"
 
 #include "umc_frame_allocator.h"
@@ -522,7 +522,6 @@ public:
     }
 
     virtual H264DecoderFrame *GetFrameToDisplayInternal(bool force);
-    Status  SetParams(BaseCodecParams* params);
 
     Status GetUserData(MediaData * pUD);
 
@@ -559,6 +558,7 @@ public:
     }
 
     virtual H264Slice * DecodeSliceHeader(MediaDataEx *nalUnit);
+    virtual H264Slice * CreateSlice();
 
     H264_Heap_Objects * GetObjHeap()
     {
@@ -585,7 +585,7 @@ protected:
     Status AddSlice(H264Slice * pSlice, bool force);
     virtual Status CompleteFrame(H264DecoderFrame * pFrame, Ipp32s m_field_index);
     virtual void OnFullFrame(H264DecoderFrame * pFrame);
-    virtual bool ProcessNonPairedField(H264DecoderFrame * pFrame);
+    virtual bool ProcessNonPairedField(H264DecoderFrame * pFrame) = 0;
 
     void DBPUpdate(H264DecoderFrame * pFrame, Ipp32s field);
 
@@ -593,7 +593,7 @@ protected:
 
     virtual Status AddOneFrame(MediaData * pSource);
 
-    virtual Status AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, ColorFormat color_format);
+    virtual Status AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, ColorFormat color_format) = 0;
 
     virtual Status DecodeHeaders(MediaDataEx *nalUnit);
     virtual Status DecodeSEI(MediaDataEx *nalUnit);
@@ -601,7 +601,7 @@ protected:
     Status ProcessFrameNumGap(H264Slice *slice, Ipp32s field, Ipp32s did, Ipp32s maxDid);
 
     // Obtain free frame from queue
-    virtual H264DecoderFrame *GetFreeFrame(const H264Slice *pSlice = NULL);
+    virtual H264DecoderFrame *GetFreeFrame(const H264Slice *pSlice = NULL) = 0;
 
     Status CompleteDecodedFrames(H264DecoderFrame ** decoded);
 
@@ -611,7 +611,6 @@ protected:
     void PreventDPBFullness();
 
     H264DecoderFrame *AllocateNewFrame(const H264Slice *pSlice);
-    Status InitializeLayers(H264DecoderFrame * pFrame, Ipp32s field);
 
     Status InitializeLayers(AccessUnit *accessUnit, H264DecoderFrame * pFrame, Ipp32s field);
     void ApplyPayloadsToFrame(H264DecoderFrame * frame, H264Slice *slice, SeiPayloadArray * payloads);
@@ -635,16 +634,11 @@ protected:
     bool              m_WaitForIDR;
 
     Ipp32u            m_DPBSizeEx;
-    Ipp32s            m_TrickModeSpeed;
     Ipp32s            m_frameOrder;
 
     TaskBroker * m_pTaskBroker;
 
     VideoDecoderParams     m_initializationParams;
-    VideoData              m_LastNonCropDecodedFrame;
-    BaseCodec              *m_pPostProcessing;
-
-    NotifiersChain          m_DefaultNotifyChain;
 
     Ipp32s m_UIDFrameCounter;
 

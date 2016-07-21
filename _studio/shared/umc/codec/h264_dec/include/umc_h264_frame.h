@@ -14,9 +14,7 @@
 #ifndef __UMC_H264_FRAME_H__
 #define __UMC_H264_FRAME_H__
 
-#include <stdlib.h>
 #include "umc_h264_dec_defs_yuv.h"
-#include "umc_h264_notify.h"
 #include "umc_h264_slice_decoding.h"
 
 namespace UMC
@@ -113,8 +111,6 @@ class H264DecoderFrame
     H264DecoderFrame *m_pPreviousFrame;
     H264DecoderFrame *m_pFutureFrame;
 
-    NotifiersChain   m_NotifiersChain;
-
     H264SEIPayLoad m_UserData;
 
     Ipp64f           m_dFrameTime;
@@ -158,18 +154,7 @@ class H264DecoderFrame
     bool             m_isLongTermRef[2];
     bool             m_isInterViewRef[2];
 
-    H264DecoderGlobalMacroblocksDescriptor m_mbinfo; //Global MB Data
-
     bool             m_bIDRFlag;
-
-    Ipp8u                 *m_pParsedFrameDataNew;
-    // This points to a huge, monolithic buffer that contains data
-    // derived from parsing the current frame.  It contains motion
-    // vectors,  MB info, reference indices, and slice info for the
-    // current frame, among other things. When B slices are used it
-    // contains L0 and L1 motion vectors and reference indices.
-
-    IppiSize           m_paddedParsedFrameDataSize;
 
     bool IsFullFrame() const;
     void SetFullFrame(bool isFull);
@@ -191,11 +176,10 @@ class H264DecoderFrame
     typedef std::list<RefCounter *>  ReferenceList;
     ReferenceList m_references;
 
-
     void FreeReferenceFrames();
 
     void Reset();
-    void FreeResources();
+    virtual void FreeResources();
 
     H264DecoderFrame( const H264DecoderFrame &s );                 // no copy CTR
     H264DecoderFrame & operator=(const H264DecoderFrame &s );
@@ -216,16 +200,6 @@ public:
     bool IsSkipped() const
     {
         return m_Flags.isSkipped != 0;
-    }
-
-    NotifiersChain * GetNotifiersChain()
-    {
-        return &m_NotifiersChain;
-    }
-
-    void MoveToNotifiersChain(NotifiersChain & notify)
-    {
-        m_NotifiersChain.MoveNotifiers(&notify);
     }
 
     bool IsDecoded() const;
@@ -489,16 +463,6 @@ public:
     //////////////////////////////////////////////////////////////////////////////
     H264DecoderRefPicList* GetRefPicList(Ipp32s sliceNumber, Ipp32s list);
 
-    Status allocateParsedFrameData();
-    // Reallocate m_pParsedFrameData, if necessary, and initialize the
-    // various pointers that point into it.
-
-    size_t GetFrameDataSize(const IppiSize &lumaSize);
-
-    void deallocateParsedFrameData();
-
-    void DefaultFill(Ipp32s field, bool isChromaOnly, Ipp8u defaultValue = 128);
-
     Ipp32s GetError() const
     {
         return m_ErrorType;
@@ -520,21 +484,8 @@ public:
 protected:
     // Declare memory management tools
     MemoryAllocator *m_pMemoryAllocator;
-    MemID m_midParsedFrameDataNew;
-
     H264_Heap_Objects * m_pObjHeap;
 };
-
-class H264DecoderFrameExtension : public H264DecoderFrame
-{
-    DYNAMIC_CAST_DECL(H264DecoderFrameExtension, H264DecoderFrame)
-
-public:
-    H264DecoderFrameExtension(MemoryAllocator *pMemoryAllocator, H264_Heap_Objects * pObjHeap);
-
-    virtual ~H264DecoderFrameExtension();
-};
-
 
 inline bool isAlmostDisposable(H264DecoderFrame * pTmp)
 {

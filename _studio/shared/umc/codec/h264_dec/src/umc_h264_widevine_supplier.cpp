@@ -17,6 +17,7 @@
 
 #include "umc_va_dxva2_protected.h"
 #include "umc_va_linux_protected.h"
+#include "umc_h264_notify.h"
 
 namespace UMC
 {
@@ -245,7 +246,7 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
     ViewItem *view = GetViewCount() ? &GetViewByNumber(BASE_VIEW) : 0;
     Status umcRes = UMC_OK;
 
-    H264Bitstream bitStream;
+    H264HeadersBitstream bitStream;
 
     try
     {
@@ -320,11 +321,6 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
                 {
                     view->SetDPBSize(&sps, m_level_idc);
                     temp->vui.max_dec_frame_buffering = (Ipp8u)view->maxDecFrameBuffering;
-
-                    if (m_TrickModeSpeed != 1)
-                    {
-                        view->maxDecFrameBuffering = 0;
-                    }
                 }
 
                 //m_pNALSplitter->SetSuggestedSize(CalculateSuggestedSize(&sps));
@@ -876,7 +872,7 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
             return 0;
 
         // reset all internal variables
-        pSlice->m_iCurMBToDec = pSlice->m_iFirstMB;
+        /*pSlice->m_iCurMBToDec = pSlice->m_iFirstMB;
         pSlice->m_iCurMBToRec = pSlice->m_iFirstMB;
         pSlice->m_iCurMBToDeb = pSlice->m_iFirstMB;
 
@@ -899,18 +895,18 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
         if (pSlice->IsSliceGroups())
             pSlice->m_bNeedToCheckMBSliceEdges = true;
         else
-            pSlice->m_bNeedToCheckMBSliceEdges = (0 == pSlice->m_SliceHeader.first_mb_in_slice) ? (false) : (true);
+            pSlice->m_bNeedToCheckMBSliceEdges = (0 == pSlice->m_SliceHeader.first_mb_in_slice) ? (false) : (true);*/
 
         // set conditional flags
         pSlice->m_bDecoded = false;
         pSlice->m_bPrevDeblocked = false;
         pSlice->m_bDeblocked = (pSlice->m_SliceHeader.disable_deblocking_filter_idc == DEBLOCK_FILTER_OFF);
 
-        if (pSlice->m_bDeblocked)
+        /*if (pSlice->m_bDeblocked)
         {
             pSlice->m_bDebVacant = 0;
             pSlice->m_iCurMBToDeb = pSlice->m_iMaxMB;
-        }
+        }*/
 
         // frame is not associated yet
         pSlice->m_pCurrentFrame = NULL;
@@ -1095,12 +1091,6 @@ Status WidevineTaskSupplier::AddSource(DecryptParametersWrapper* pDecryptParams)
         {
             if (CompleteDecodedFrames(0) == UMC_OK)
                 return UMC_WRN_INFO_NOT_READY;
-
-            if (!m_DefaultNotifyChain.IsEmpty())
-            {
-                m_DefaultNotifyChain.Notify();
-                return UMC_WRN_INFO_NOT_READY;
-            }
 
             if (GetFrameToDisplayInternal(true))
                 return UMC_ERR_NOT_ENOUGH_BUFFER;

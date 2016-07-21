@@ -640,6 +640,7 @@ VideoDecoder *CreateAsynchronousVideoDecoder(VideoDecoder *pDecoder);
 #endif //__cplusplus
 
 #include "ippdefs.h"
+#include "ipps.h"
 #define MFX_INTERNAL_CPY(dst, src, size) ippsCopy_8u((const Ipp8u *)(src), (Ipp8u *)(dst), (int)size)
 
 /******************************************************************************/

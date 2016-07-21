@@ -17,50 +17,12 @@
 #include <list>
 #include "umc_h264_dec_defs_dec.h"
 #include "umc_h264_dec.h"
-#include "umc_h264_bitstream.h"
+#include "umc_h264_bitstream_headers.h"
 #include "umc_automatic_mutex.h"
-#include "umc_event.h"
-
 #include "umc_h264_heap.h"
 
 namespace UMC
 {
-class H264DBPList;
-class H264DecoderFrameList;
-
-// Slice decoding constant
-enum
-{
-    MINIMUM_NUMBER_OF_ROWS      = 4,
-    MAXIMUM_NUMBER_OF_ROWS      = 8,
-    MB_BUFFER_SIZE              = 480,
-    NUMBER_OF_PIECES            = 8,
-    NUMBER_OF_DEBLOCKERS        = 2
-};
-
-// Task ID enumerator
-enum
-{
-    // whole slice is processed
-    TASK_PROCESS                = 0,
-    // piece of slice is decoded
-    TASK_DEC,
-    // piece of future frame's slice is decoded
-    TASK_REC,
-    // whole slice is deblocked
-    TASK_DEB_SLICE,
-    // piece of slice is deblocked
-    TASK_DEB,
-    // piece of slice is deblocked by several threads
-    TASK_DEB_THREADED,
-    // whole frame is deblocked (when there is the slice groups)
-    TASK_DEB_FRAME,
-    // whole frame is deblocked (when there is the slice groups)
-    TASK_DEB_FRAME_THREADED,
-    // //whole frame is deblocked (when there is the slice groups)
-    TASK_DEC_REC
-};
-
 struct H264RefListInfo
 {
     Ipp32s m_iNumShortEntriesInList;
@@ -79,73 +41,7 @@ struct H264RefListInfo
     }
 };
 
-typedef Ipp16s FactorArrayValue;
-
-struct FactorArray
-{
-    FactorArrayValue values[MAX_NUM_REF_FRAMES][MAX_NUM_REF_FRAMES];
-};
-
-struct FactorArrayMV
-{
-    FactorArrayValue values[MAX_NUM_REF_FRAMES];
-};
-
-struct FactorArrayAFF
-{
-    FactorArrayValue values[MAX_NUM_REF_FRAMES][2][2][2][MAX_NUM_REF_FRAMES];
-};
-
-struct FactorArrayMVAFF
-{
-    FactorArrayValue values[2][2][2][MAX_NUM_REF_FRAMES];
-};
-
-class H264Task;
 class H264MemoryPiece;
-
-class H264DecoderFrameInfo;
-
-#if 0
-class H264ThreadedDeblockingTools
-{
-public:
-    // Default constructor
-    H264ThreadedDeblockingTools(void);
-    // Destructor
-    virtual ~H264ThreadedDeblockingTools(void);
-
-    // Initialize tools
-    bool Init(Ipp32s iConsumerNumber);
-    // Reset tools when threaded deblocking is started
-    void Reset(Ipp32s iFirstMB, Ipp32s iMaxMB, Ipp32s iDebUnit, Ipp32s iMBWidth);
-
-    // Get next task
-    bool GetMBToProcess(H264Task *pTask);
-    // Set deblocked macroblocks
-    void SetProcessedMB(H264Task *pTask);
-    // Ask current segment deblocking finish
-    bool IsDeblockingDone(void);
-
-protected:
-    // Release object
-    void Release(void);
-
-    // Get next task for currect thread
-    bool GetMB(Ipp32s iThreadNumber, Ipp32s &iFirstMB, Ipp32s &iMBToProcess);
-    // Set deblocked macroblocks for current thread
-    void SetMB(Ipp32s iThreadNumber, Ipp32s iFirstMB, Ipp32s iMBToProcess);
-
-    Ipp32s m_iConsumerNumber;                                   // (Ipp32s) number of consumers
-    H264Array<Ipp32s> m_iCurMBToDeb;                            // (H264Array<Ipp32s>) array of current MB number to de-blocking
-    Ipp32s m_iMaxMB;                                            // (Ipp32s) maximum MB number in slice
-    Ipp32s m_iDebUnit;                                          // (Ipp32s) minimal unit of deblocking process
-    Ipp32s m_iMBWidth;                                          // (Ipp32s) width of MB row
-
-    H264Array<bool> m_bThreadWorking;                           // (H264Array<bool>) array of "thread does threaded deblocking" flag for threaded version
-};
-#endif
-
 class H264DecoderFrame;
 class H264DecoderFrameInfo;
 
@@ -171,13 +67,12 @@ public:
     ~H264Slice(void);
 
     // Set slice source data
-    bool Reset(H264NalExtension *pNalExt);
+    virtual bool Reset(H264NalExtension *pNalExt);
     // Set current slice number
     void SetSliceNumber(Ipp32s iSliceNumber);
 
-    void FreeResources();
+    virtual void FreeResources();
 
-    void InitializeContexts();
 
     Ipp32s RetrievePicParamSetNumber();
 
@@ -189,7 +84,7 @@ public:
     const H264SliceHeader *GetSliceHeader(void) const {return &m_SliceHeader;}
     H264SliceHeader *GetSliceHeader(void) {return &m_SliceHeader;}
     // Obtain bit stream object
-    H264Bitstream *GetBitStream(void){return &m_BitStream;}
+    H264HeadersBitstream *GetBitStream(void){return &m_BitStream;}
     // Obtain prediction weigth table
     const PredWeightTable *GetPredWeigthTable(Ipp32s iNum) const {return m_PredWeight[iNum & 1];}
     // Obtain first MB number
@@ -229,26 +124,11 @@ public:
 
     // Obtain slice number
     Ipp32s GetSliceNum(void) const {return m_iNumber;}
-    // Obtain owning slice field index
-    Ipp32s GetFieldIndex(void) const {return m_field_index;}
-    // Need to check slice edges
-    bool NeedToCheckSliceEdges(void) const {return m_bNeedToCheckMBSliceEdges;}
-    // Do we can doing deblocking
-    bool GetDeblockingCondition(void) const;
-    // Obtain scale factor arrays
-    FactorArray *GetDistScaleFactor(void){return &m_DistScaleFactor;}
-    FactorArrayMV *GetDistScaleFactorMV(void){return &m_DistScaleFactorMV;}
-    FactorArrayAFF *GetDistScaleFactorAFF(void){return m_DistScaleFactorAFF;}
-    FactorArrayMVAFF *GetDistScaleFactorMVAFF(void){return m_DistScaleFactorMVAFF;}
     // Obtain maximum of macroblock
     Ipp32s GetMaxMB(void) const {return m_iMaxMB;}
     void SetMaxMB(Ipp32s x) {m_iMaxMB = x;}
 
     Ipp32s GetMBCount() const { return m_iMaxMB - m_iFirstMB;}
-    // Obtain local MB information
-    H264DecoderLocalMacroblockDescriptor &GetMBInfo(void){return *m_mbinfo;}
-    // Obtain pointer to MB intra types
-    IntraType *GetMBIntraTypes(void){return m_pMBIntraTypes;}
 
     // Check field slice
     bool IsField() const {return m_SliceHeader.field_pic_flag != 0;}
@@ -263,22 +143,14 @@ public:
     bool DeblockThroughBoundaries(void) const {return (DEBLOCK_FILTER_ON_NO_SLICE_EDGES != m_SliceHeader.disable_deblocking_filter_idc);};
 
     // Update reference list
-    Status UpdateReferenceList(ViewList &views,
+    virtual Status UpdateReferenceList(ViewList &views,
         Ipp32s dIdIndex);
 
     //
     // Segment decoding mode's variables
     //
 
-    // Obtain decoding state variables
-    void GetStateVariables(Ipp32s &iMBSkipFlag,  Ipp32s &iQuantPrev, Ipp32s &iPrevDQuant);
-    // Save decoding state variables
-    void SetStateVariables(Ipp32s iMBSkipCount, Ipp32s iQuantPrev, Ipp32s iPrevDQuant);
-
     AdaptiveMarkingInfo * GetAdaptiveMarkingInfo();
-
-    void InitDistScaleFactor(Ipp32s NumL0RefActive, Ipp32s NumL1RefActive,
-        H264DecoderFrame **pRefPicList0, H264DecoderFrame **pRefPicList1, ReferenceFlags *pFields0, ReferenceFlags *pFields1);
 
     bool IsError() const {return m_bError;}
 
@@ -300,9 +172,9 @@ public:  // DEBUG !!!! should remove dependence
 
     void Reset();
 
-    void Release();
+    virtual void Release();
 
-    void ZeroedMembers();
+    virtual void ZeroedMembers();
 
     // Decode slice header
     bool DecodeSliceHeader(H264NalExtension *pNalExt);
@@ -315,14 +187,9 @@ public:  // DEBUG !!!! should remove dependence
     RefPicListReorderInfo ReorderInfoL1;                        // (RefPicListReorderInfo) reference list 1 info
 
     H264SliceHeader m_SliceHeader;                              // (H264SliceHeader) slice header
-    H264Bitstream m_BitStream;                                  // (H264Bitstream) slice bit stream
+    H264HeadersBitstream m_BitStream;                           // (H264Bitstream) slice bit stream
 
     PredWeightTable m_PredWeight[2][MAX_NUM_REF_FRAMES];        // (PredWeightTable []) prediction weight table
-
-    FactorArray     m_DistScaleFactor;
-    FactorArrayMV   m_DistScaleFactorMV;
-    FactorArrayAFF  *m_DistScaleFactorAFF;                      // [curmb field],[ref1field],[ref0field]
-    FactorArrayMVAFF *m_DistScaleFactorMVAFF;                   // [curmb field],[ref1field],[ref0field]
 
     const H264PicParamSet* m_pPicParamSet;                      // (H264PicParamSet *) pointer to array of picture parameters sets
     const H264SeqParamSet* m_pSeqParamSet;                      // (H264SeqParamSet *) pointer to array of sequence parameters sets
@@ -331,8 +198,6 @@ public:  // DEBUG !!!! should remove dependence
     const H264SeqParamSetSVCExtension* m_pSeqParamSetSvcEx;
 
     H264DecoderFrame *m_pCurrentFrame;        // (H264DecoderFrame *) pointer to destination frame
-    H264DecoderLocalMacroblockDescriptor *m_mbinfo;             // (H264DecoderLocalMacroblockDescriptor*) current frame MB information
-    IntraType *m_pMBIntraTypes;                                 // (IntraType *) array of macroblock intra types
 
     Ipp32s m_iMBWidth;                                          // (Ipp32s) width in macroblock units
     Ipp32s m_iMBHeight;                                         // (Ipp32s) height in macroblock units
@@ -345,14 +210,6 @@ public:  // DEBUG !!!! should remove dependence
 
     Ipp32s m_iAvailableMB;                                      // (Ipp32s) available number of macroblocks (used in "unknown mode")
 
-    Ipp32s m_iCurMBToDec;                                       // (Ipp32s) current MB number to decode
-    Ipp32s m_iCurMBToRec;                                       // (Ipp32s) current MB number to reconstruct
-    Ipp32s m_iCurMBToDeb;                                       // (Ipp32s *) current MB number to de-blocking
-
-    bool m_bInProcess;                                          // (bool) slice is under whole decoding
-    Ipp32s m_bDecVacant;                                        // (Ipp32s) decoding is vacant
-    Ipp32s m_bRecVacant;                                        // (Ipp32s) reconstruct is vacant
-    Ipp32s m_bDebVacant;                                        // (Ipp32s) de-blocking is vacant
     bool m_bFirstDebThreadedCall;                               // (bool) "first threaded deblocking call" flag
     bool m_bPermanentTurnOffDeblocking;                         // (bool) "disable deblocking" flag
     bool m_bError;                                              // (bool) there is an error in decoding
@@ -360,25 +217,8 @@ public:  // DEBUG !!!! should remove dependence
 
     Ipp16u m_WidevineStatusReportNumber;
 
-    Ipp32s m_MVsDistortion;
-
     AdaptiveMarkingInfo     m_AdaptiveMarkingInfo;
     AdaptiveMarkingInfo     m_BaseAdaptiveMarkingInfo;
-
-#if 0
-    H264ThreadedDeblockingTools m_DebTools;                     // (H264ThreadedDeblockingTools) threaded deblocking tools
-#endif
-
-    H264CoeffsBuffer *GetCoeffsBuffers() const;
-
-    H264CoeffsBuffer   *m_coeffsBuffers;
-
-    // through-decoding variable(s)
-    Ipp32s m_nMBSkipCount;                                      // (Ipp32u) current count of skipped macro blocks
-    Ipp32s m_nQuantPrev;                                        // (Ipp32u) quantize value of previous macro block
-    Ipp32s m_prev_dquant;
-    Ipp32s m_field_index;                                       // (Ipp32s) current field index
-    bool m_bNeedToCheckMBSliceEdges;                            // (bool) need to check inter-slice boundaries
 
     bool m_bDecoded;                                            // (bool) "slice has been decoded" flag
     bool m_bPrevDeblocked;                                      // (bool) "previous slice has been deblocked" flag
@@ -389,27 +229,7 @@ public:  // DEBUG !!!! should remove dependence
     MemoryAllocator *m_pMemoryAllocator;                        // (MemoryAllocator *) pointer to memory allocation tool
 
     H264_Heap_Objects           *m_pObjHeap;
-
-    static FactorArrayAFF m_StaticFactorArrayAFF;
 };
-
-inline
-void H264Slice::GetStateVariables(Ipp32s &iMBSkipFlag, Ipp32s &iQuantPrev, Ipp32s &iPrevDQuant)
-{
-    iMBSkipFlag = m_nMBSkipCount;
-    iQuantPrev = m_nQuantPrev;
-    iPrevDQuant = m_prev_dquant;
-
-} // void H264Slice::GetStateVariables(Ipp32s &iMBSkipFlag, Ipp32s &iQuantPrev, bool &bSkipNextFDF, Ipp32s &iPrevDQuant)
-
-inline
-void H264Slice::SetStateVariables(Ipp32s iMBSkipFlag, Ipp32s iQuantPrev, Ipp32s iPrevDQuant)
-{
-    m_nMBSkipCount = iMBSkipFlag;
-    m_nQuantPrev = iQuantPrev;
-    m_prev_dquant = iPrevDQuant;
-
-} // void H264Slice::SetStateVariables(Ipp32s iMBSkipFlag, Ipp32s iQuantPrev, bool bSkipNextFDF, Ipp32s iPrevDQuant)
 
 inline
 bool IsPictureTheSame(H264Slice *pSliceOne, H264Slice *pSliceTwo)
@@ -479,51 +299,6 @@ bool IsPictureTheSame(H264Slice *pSliceOne, H264Slice *pSliceTwo)
 
 } // bool IsPictureTheSame(H264SliceHeader *pOne, H264SliceHeader *pTwo)
 
-// Declaration of internal class(es)
-class H264SegmentDecoder;
-class H264SegmentDecoderMultiThreaded;
-
-class H264Task
-{
-public:
-    // Default constructor
-    H264Task(Ipp32s iThreadNumber)
-        : m_iThreadNumber(iThreadNumber)
-    {
-        m_pSlice = 0;
-
-        pFunction = 0;
-        m_pBuffer = 0;
-        m_WrittenSize = 0;
-
-        m_iFirstMB = -1;
-        m_iMaxMB = -1;
-        m_iMBToProcess = -1;
-        m_iTaskID = 0;
-        m_bDone = false;
-        m_bError = false;
-        m_mvsDistortion = 0;
-        m_taskPreparingGuard = 0;
-    }
-
-    Status (H264SegmentDecoderMultiThreaded::*pFunction)(Ipp32s nCurMBNumber, Ipp32s &nMaxMBNumber); // (Status (*) (Ipp32s, Ipp32s &)) pointer to working function
-
-    CoeffsPtrCommon m_pBuffer;                                  // (Ipp16s *) pointer to working buffer
-    size_t          m_WrittenSize;
-
-    H264Slice *m_pSlice;                                        // (H264Slice *) pointer to owning slice
-    H264DecoderFrameInfo * m_pSlicesInfo;
-    AutomaticUMCMutex    * m_taskPreparingGuard;
-
-    Ipp32s m_mvsDistortion;
-    Ipp32s m_iThreadNumber;                                     // (Ipp32s) owning thread number
-    Ipp32s m_iFirstMB;                                          // (Ipp32s) first MB in slice
-    Ipp32s m_iMaxMB;                                            // (Ipp32s) maximum MB number in owning slice
-    Ipp32s m_iMBToProcess;                                      // (Ipp32s) number of MB to processing
-    Ipp32s m_iTaskID;                                           // (Ipp32s) task identificator
-    bool m_bDone;                                               // (bool) task was done
-    bool m_bError;                                              // (bool) there is a error
-};
 
 // Declare function to swapping memory
 extern void SwapMemoryAndRemovePreventingBytes(void *pDst, size_t &nDstSize, void *pSrc, size_t nSrcSize);

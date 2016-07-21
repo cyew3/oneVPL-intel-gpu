@@ -18,11 +18,9 @@
 #include "umc_h264_mfx_supplier.h"
 #include "mfx_h264_dispatcher.h"
 
-#ifndef UMC_RESTRICTED_CODE_MFX
-
 #include "umc_h264_frame_list.h"
 #include "umc_h264_nal_spl.h"
-#include "umc_h264_bitstream.h"
+#include "umc_h264_bitstream_headers.h"
 
 #include "umc_h264_dec_defs_dec.h"
 #include "umc_h264_dec_mfx.h"
@@ -137,8 +135,6 @@ Status MFXTaskSupplier::Init(VideoDecoderParams *init)
     m_pMemoryAllocator = init->lpMemoryAllocator;
     m_DPBSizeEx = 0;
 
-    m_TrickModeSpeed = 1;
-
     m_sei_messages = new SEI_Storer();
     m_sei_messages->Init();
 
@@ -169,7 +165,7 @@ Status MFXTaskSupplier::Init(VideoDecoderParams *init)
         break;
     }
 
-    AU_Splitter::Init(init);
+    AU_Splitter::Init();
     DPBOutput::Reset(m_iThreadNum != 1);
 
     // create slice decoder(s)
@@ -209,57 +205,6 @@ void MFXTaskSupplier::Reset()
 
     if (m_pTaskBroker)
         m_pTaskBroker->Init(m_iThreadNum);
-}
-
-H264DecoderFrame * MFXTaskSupplier::GetFreeFrame(const H264Slice *pSlice)
-{
-    AutomaticUMCMutex guard(m_mGuard);
-    Ipp32u view_id = pSlice ? pSlice->GetSliceHeader()->nal_ext.mvc.view_id : 0;
-    ViewItem &view = GetView(view_id);
-    H264DecoderFrame *pFrame = 0;
-
-    H264DBPList *pDPB = view.GetDPBList(0);
-
-    // Traverse list for next disposable frame
-    //if (m_pDecodedFramesList->countAllFrames() >= m_dpbSize + m_DPBSizeEx)
-    pFrame = pDPB->GetDisposable();
-
-    VM_ASSERT(!pFrame || pFrame->GetRefCounter() == 0);
-
-    // Did we find one?
-    if (NULL == pFrame)
-    {
-        if (pDPB->countAllFrames() >= view.maxDecFrameBuffering + m_DPBSizeEx)
-        {
-            return 0;
-        }
-
-        // Didn't find one. Let's try to insert a new one
-        pFrame = new H264DecoderFrameExtension(m_pMemoryAllocator, &m_ObjHeap);
-        if (NULL == pFrame)
-            return 0;
-
-        pDPB->append(pFrame);
-    }
-
-    DecReferencePictureMarking::Remove(pFrame);
-    pFrame->Reset();
-
-    // Set current as not displayable (yet) and not outputted. Will be
-    // updated to displayable after successful decode.
-    pFrame->unsetWasOutputted();
-    pFrame->unSetisDisplayable();
-    pFrame->SetSkipped(false);
-    pFrame->SetFrameExistFlag(true);
-    pFrame->IncrementReference();
-
-    if (view.pCurFrame == pFrame)
-        view.pCurFrame = 0;
-
-    m_UIDFrameCounter++;
-    pFrame->m_UID = m_UIDFrameCounter;
-
-    return pFrame;
 }
 
 bool MFXTaskSupplier::CheckDecoding(bool should_additional_check, H264DecoderFrame * outputFrame)
@@ -334,8 +279,6 @@ bool MFXTaskSupplier::ProcessNonPairedField(H264DecoderFrame * pFrame)
         pFrame->setPicNum(pSlice->GetSliceHeader()->frame_num*2 + 1, 1);
 
         Ipp32s isBottom = pSlice->IsBottomField() ? 0 : 1;
-        pFrame->DefaultFill(isBottom, false);
-
         pFrame->SetErrorFlagged(isBottom ? ERROR_FRAME_BOTTOM_FIELD_ABSENT : ERROR_FRAME_TOP_FIELD_ABSENT);
         return true;
     }
@@ -446,7 +389,7 @@ Status MFXTaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
 
 Status MFXTaskSupplier::DecodeSEI(MediaDataEx *nalUnit)
 {
-    H264Bitstream bitStream;
+    H264HeadersBitstream bitStream;
 
     try
     {
@@ -1977,5 +1920,4 @@ bool MFX_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType type)
     return true;
 }
 
-#endif // UMC_RESTRICTED_CODE_MFX
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

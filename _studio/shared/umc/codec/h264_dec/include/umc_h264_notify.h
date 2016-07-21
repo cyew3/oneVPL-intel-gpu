@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -178,78 +178,6 @@ private:
     Function function_;
     Param1 param1_;
     Param2 param2_;
-};
-
-class NotifiersChain : public notifier_base
-{
-public:
-    NotifiersChain(H264_Heap_Objects * pObjHeap)
-        : m_pObjHeap(pObjHeap)
-    {
-    }
-
-    void Reset()
-    {
-        ChainType::iterator end = m_chain.end();
-        ChainType::iterator iter = m_chain.begin();
-        for (; iter != end; ++iter)
-        {
-            notifier_base *tmp1 = *iter;
-            m_pObjHeap->Free(tmp1);
-        }
-
-        m_chain.clear();
-    }
-
-    void Abort()
-    {
-        m_chain.clear();
-    }
-
-    virtual ~NotifiersChain()
-    {
-        Reset();
-    }
-
-    bool IsEmpty() const
-    {
-        return m_chain.empty();
-    }
-
-    void AddNotifier(notifier_base * nt)
-    {
-        m_chain.push_back(nt);
-    }
-
-    void MoveNotifiers(NotifiersChain * chain)
-    {
-        m_chain.splice(m_chain.end(), chain->m_chain);
-    }
-
-    virtual void Notify()
-    {
-        ChainType::iterator end = m_chain.end();
-        ChainType::iterator iter = m_chain.begin();
-        for (; iter != end; ++iter)
-        {
-            notifier_base *tmp1 = *iter;
-            tmp1->Notify();
-            m_pObjHeap->Free(tmp1);
-        }
-
-        m_chain.clear();
-    }
-
-    H264_Heap_Objects * GetObjHeap()
-    {
-        return m_pObjHeap;
-    }
-
-private:
-    typedef std::list<notifier_base *> ChainType;
-    ChainType m_chain;
-
-    H264_Heap_Objects * m_pObjHeap;
 };
 
 } // namespace UMC

@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -156,56 +156,6 @@ protected:
 
     MediaDataEx m_MediaData;
     MediaDataEx::_MediaDataEx m_MediaDataEx;
-};
-
-size_t BuildNALUnit(MediaDataEx * , Ipp8u * , Ipp32s lengthSize);
-
-class NALUnitSplitterMP4 : public NALUnitSplitter
-{
-public:
-    NALUnitSplitterMP4();
-
-    virtual void Init();
-
-    virtual void Reset();
-
-    virtual MediaDataEx * GetNalUnits(MediaData * in);
-
-    virtual Ipp32s CheckNalUnitType(MediaData * pSource);
-
-private:
-    void ReadHeader(MediaData * pSource);
-
-    typedef struct AVCRecord
-    {
-        AVCRecord()
-        {
-            configurationVersion = 1;
-            lengthSizeMinusOne = 1;
-            numOfSequenceParameterSets = 0;
-            numOfPictureParameterSets = 0;
-        }
-
-        Ipp8u configurationVersion;
-        Ipp8u AVCProfileIndication;
-        Ipp8u profile_compatibility;
-        Ipp8u AVCLevelIndication;
-        Ipp8u lengthSizeMinusOne;
-        Ipp8u numOfSequenceParameterSets;
-        Ipp8u numOfPictureParameterSets;
-
-    } AVCRecord;
-
-    enum
-    {
-        D_START_CODE_LENGHT = 4,
-        D_BYTES_FOR_HEADER_LENGHT = 2
-    };
-
-    AVCRecord avcRecord;
-    bool m_isHeaderReaded;
-
-    friend size_t UMC::BuildNALUnit(MediaDataEx *, Ipp8u *, Ipp32s );
 };
 
 } // namespace UMC

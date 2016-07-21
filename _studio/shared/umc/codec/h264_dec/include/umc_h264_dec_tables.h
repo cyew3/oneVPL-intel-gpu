@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -15,11 +15,6 @@
 #define __UMC_H264_DEC_TABLES_H__
 
 #include "ippdefs.h"
-
-namespace UMC
-{
-    struct H264DecoderMotionVector;
-}
 
 namespace UMC_H264_DECODER
 {
@@ -33,9 +28,7 @@ extern const Ipp32u yoff8[4];
 
 //////////////////////////////////////////////////////////
 // scan matrices
-extern const Ipp32s mp_scan4x4[2][16];
 extern const Ipp32s hp_scan4x4[2][4][16];
-extern const Ipp32s hp_scan8x8[2][64];
 extern const Ipp32s hp_membership[2][64];
 
 extern const Ipp32s hp_CtxIdxInc_sig_coeff_flag[2][63];
@@ -80,11 +73,6 @@ extern const Ipp8u default_inter_scaling_list4x4[16];
 extern const Ipp8u default_intra_scaling_list8x8[64];
 extern const Ipp8u default_inter_scaling_list8x8[64];
 
-extern const Ipp32s pre_norm_adjust_index4x4[16];
-extern const Ipp32s pre_norm_adjust4x4[6][3];
-extern const Ipp32s pre_norm_adjust8x8[6][6];
-extern const Ipp32s pre_norm_adjust_index8x8[64];
-
 extern const Ipp8s ClipQPTable[52*3];
 
 extern const Ipp32u num_blocks[];
@@ -122,9 +110,6 @@ extern const Ipp16u SAspectRatio[17][2];
 extern const Ipp32u SubWidthC[4];
 extern const Ipp32u SubHeightC[4];
 
-extern const Ipp32u bits_data[];
-
-extern const UMC::H264DecoderMotionVector zeroVector;
 } // namespace UMC
 
 using namespace UMC_H264_DECODER;

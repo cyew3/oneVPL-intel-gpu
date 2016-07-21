@@ -13,14 +13,196 @@
 
 #include "umc_h264_dec.h"
 #include "umc_h264_bitstream_headers.h"
+#include "umc_h264_headers.h"
 #include <limits.h>
 
 #define SCLFLAT16     0
 #define SCLDEFAULT    1
 #define SCLREDEFINED  2
 
+#define ippiNextBits(current_data, bp, nbits, data) \
+{ \
+    Ipp32u x; \
+ \
+    VM_ASSERT((nbits) > 0 && (nbits) <= 32); \
+    VM_ASSERT(nbits >= 0 && nbits <= 31); \
+ \
+    Ipp32s offset = bp - (nbits); \
+ \
+    if (offset >= 0) \
+    { \
+        x = current_data[0] >> (offset + 1); \
+    } \
+    else \
+    { \
+        offset += 32; \
+ \
+        x = current_data[1] >> (offset); \
+        x >>= 1; \
+        x += current_data[0] << (31 - offset); \
+    } \
+ \
+    VM_ASSERT(offset >= 0 && offset <= 31); \
+ \
+    (data) = x & bits_data[nbits]; \
+}
+
 namespace UMC
 {
+static const Ipp32s pre_norm_adjust_index4x4[16] =
+{// 0 1 2 3
+    0,2,0,2,//0
+    2,1,2,1,//1
+    0,2,0,2,//2
+    2,1,2,1 //3
+};
+
+static const Ipp32s pre_norm_adjust4x4[6][3] =
+{
+    {10,16,13},
+    {11,18,14},
+    {13,20,16},
+    {14,23,18},
+    {16,25,20},
+    {18,29,23}
+};
+
+static const Ipp32s pre_norm_adjust8x8[6][6] =
+{
+    {20, 18, 32, 19, 25, 24},
+    {22, 19, 35, 21, 28, 26},
+    {26, 23, 42, 24, 33, 31},
+    {28, 25, 45, 26, 35, 33},
+    {32, 28, 51, 30, 40, 38},
+    {36, 32, 58, 34, 46, 43}
+};
+
+static const Ipp32s pre_norm_adjust_index8x8[64] =
+{// 0 1 2 3 4 5 6 7
+    0,3,4,3,0,3,4,3,//0
+    3,1,5,1,3,1,5,1,//1
+    4,5,2,5,4,5,2,5,//2
+    3,1,5,1,3,1,5,1,//3
+    0,3,4,3,0,3,4,3,//4
+    3,1,5,1,3,1,5,1,//5
+    4,5,2,5,4,5,2,5,//6
+    3,1,5,1,3,1,5,1 //7
+};
+
+const
+Ipp32s mp_scan4x4[2][16] =
+{
+    {
+        0,  1,  4,  8,
+        5,  2,  3,  6,
+        9,  12, 13, 10,
+        7,  11, 14, 15
+    },
+    {
+        0,  4,  1,  8,
+        12, 5,  9,  13,
+        2,  6,  10, 14,
+        3,  7,  11, 15
+    }
+};
+
+const Ipp32s hp_scan8x8[2][64] =
+{
+    //8x8 zigzag scan
+    {
+        0, 1, 8,16, 9, 2, 3,10,
+        17,24,32,25,18,11, 4, 5,
+        12,19,26,33,40,48,41,34,
+        27,20,13, 6, 7,14,21,28,
+        35,42,49,56,57,50,43,36,
+        29,22,15,23,30,37,44,51,
+        58,59,52,45,38,31,39,46,
+        53,60,61,54,47,55,62,63
+    },
+//8x8 field scan
+    {
+        0, 8,16, 1, 9,24,32,17,
+        2,25,40,48,56,33,10, 3,
+        18,41,49,57,26,11, 4,19,
+        34,42,50,58,27,12, 5,20,
+        35,43,51,59,28,13, 6,21,
+        36,44,52,60,29,14,22,37,
+        45,53,61,30, 7,15,38,46,
+        54,62,23,31,39,47,55,63
+    }
+};
+
+const Ipp32u bits_data[] =
+{
+    (((Ipp32u)0x01 << (0)) - 1),
+    (((Ipp32u)0x01 << (1)) - 1),
+    (((Ipp32u)0x01 << (2)) - 1),
+    (((Ipp32u)0x01 << (3)) - 1),
+    (((Ipp32u)0x01 << (4)) - 1),
+    (((Ipp32u)0x01 << (5)) - 1),
+    (((Ipp32u)0x01 << (6)) - 1),
+    (((Ipp32u)0x01 << (7)) - 1),
+    (((Ipp32u)0x01 << (8)) - 1),
+    (((Ipp32u)0x01 << (9)) - 1),
+    (((Ipp32u)0x01 << (10)) - 1),
+    (((Ipp32u)0x01 << (11)) - 1),
+    (((Ipp32u)0x01 << (12)) - 1),
+    (((Ipp32u)0x01 << (13)) - 1),
+    (((Ipp32u)0x01 << (14)) - 1),
+    (((Ipp32u)0x01 << (15)) - 1),
+    (((Ipp32u)0x01 << (16)) - 1),
+    (((Ipp32u)0x01 << (17)) - 1),
+    (((Ipp32u)0x01 << (18)) - 1),
+    (((Ipp32u)0x01 << (19)) - 1),
+    (((Ipp32u)0x01 << (20)) - 1),
+    (((Ipp32u)0x01 << (21)) - 1),
+    (((Ipp32u)0x01 << (22)) - 1),
+    (((Ipp32u)0x01 << (23)) - 1),
+    (((Ipp32u)0x01 << (24)) - 1),
+    (((Ipp32u)0x01 << (25)) - 1),
+    (((Ipp32u)0x01 << (26)) - 1),
+    (((Ipp32u)0x01 << (27)) - 1),
+    (((Ipp32u)0x01 << (28)) - 1),
+    (((Ipp32u)0x01 << (29)) - 1),
+    (((Ipp32u)0x01 << (30)) - 1),
+    (((Ipp32u)0x01 << (31)) - 1),
+    ((Ipp32u)0xFFFFFFFF),
+};
+
+const Ipp16u SAspectRatio[17][2] =
+{
+    { 0,  0}, { 1,  1}, {12, 11}, {10, 11}, {16, 11}, {40, 33}, { 24, 11},
+    {20, 11}, {32, 11}, {80, 33}, {18, 11}, {15, 11}, {64, 33}, {160, 99},
+    {4,   3}, {3,   2}, {2,   1}
+};
+
+const Ipp32u SubWidthC[4]  = { 1, 2, 2, 1 };
+const Ipp32u SubHeightC[4] = { 1, 2, 1, 1 };
+
+const Ipp8u default_intra_scaling_list4x4[16]=
+{
+     6, 13, 20, 28, 13, 20, 28, 32, 20, 28, 32, 37, 28, 32, 37, 42
+};
+const Ipp8u default_inter_scaling_list4x4[16]=
+{
+    10, 14, 20, 24, 14, 20, 24, 27, 20, 24, 27, 30, 24, 27, 30, 34
+};
+
+const Ipp8u default_intra_scaling_list8x8[64]=
+{
+     6, 10, 13, 16, 18, 23, 25, 27, 10, 11, 16, 18, 23, 25, 27, 29,
+    13, 16, 18, 23, 25, 27, 29, 31, 16, 18, 23, 25, 27, 29, 31, 33,
+    18, 23, 25, 27, 29, 31, 33, 36, 23, 25, 27, 29, 31, 33, 36, 38,
+    25, 27, 29, 31, 33, 36, 38, 40, 27, 29, 31, 33, 36, 38, 40, 42
+};
+const Ipp8u default_inter_scaling_list8x8[64]=
+{
+     9, 13, 15, 17, 19, 21, 22, 24, 13, 13, 17, 19, 21, 22, 24, 25,
+    15, 17, 19, 21, 22, 24, 25, 27, 17, 19, 21, 22, 24, 25, 27, 28,
+    19, 21, 22, 24, 25, 27, 28, 30, 21, 22, 24, 25, 27, 28, 30, 32,
+    22, 24, 25, 27, 28, 30, 32, 33, 24, 25, 27, 28, 30, 32, 33, 35
+};
+
 H264BaseBitstream::H264BaseBitstream()
 {
     Reset(0, 0);
@@ -105,6 +287,31 @@ bool H264BaseBitstream::More_RBSP_Data()
 
     return false;
 }
+
+void H264BaseBitstream::GetOrg(Ipp32u **pbs, Ipp32u *size)
+{
+    *pbs  = m_pbsBase;
+    *size = m_maxBsSize;
+}
+
+void H264BaseBitstream::GetState(Ipp32u** pbs,Ipp32u* bitOffset)
+{
+    *pbs       = m_pbs;
+    *bitOffset = m_bitOffset;
+}
+
+void H264BaseBitstream::SetState(Ipp32u* pbs,Ipp32u bitOffset)
+{
+    m_pbs = pbs;
+    m_bitOffset = bitOffset;
+}
+
+void H264BaseBitstream::SetDecodedBytes(size_t nBytes)
+{
+    m_pbs = m_pbsBase + (nBytes / 4);
+    m_bitOffset = 31 - ((Ipp32s) ((nBytes % sizeof(Ipp32u)) * 8));
+}
+
 
 H264HeadersBitstream::H264HeadersBitstream()
     : H264BaseBitstream()
@@ -2090,6 +2297,585 @@ void H264HeadersBitstream::GetScalingList8x8(H264ScalingList8x8 *scl, Ipp8u *def
     return;
 
 }
+
+Status H264HeadersBitstream::GetNALUnitType(NAL_Unit_Type &nal_unit_type, Ipp32u &nal_ref_idc)
+{
+    Ipp32u code;
+
+    ippiGetBits8(m_pbs, m_bitOffset, code);
+
+    nal_ref_idc = (Ipp32u) ((code & NAL_STORAGE_IDC_BITS)>>5);
+    nal_unit_type = (NAL_Unit_Type) (code & NAL_UNITTYPE_BITS);
+    return UMC_OK;
+
+}
+
+const H264SeqParamSet *GetSeqParams(const Headers & headers, Ipp32s seq_parameter_set_id)
+{
+    if (seq_parameter_set_id == -1)
+        return 0;
+
+    const H264SeqParamSet *csps = headers.m_SeqParams.GetHeader(seq_parameter_set_id);
+    if (csps)
+        return csps;
+
+    csps = headers.m_SeqParamsMvcExt.GetHeader(seq_parameter_set_id);
+    if (csps)
+        return csps;
+
+    csps = headers.m_SeqParamsSvcExt.GetHeader(seq_parameter_set_id);
+    if (csps)
+        return csps;
+
+    return 0;
+}
+
+Ipp32s H264HeadersBitstream::ParseSEI(const Headers & headers, H264SEIPayLoad *spl)
+{
+    Ipp32s current_sps = headers.m_SeqParams.GetCurrentID();
+    return sei_message(headers, current_sps, spl);
+}
+
+Ipp32s H264HeadersBitstream::sei_message(const Headers & headers, Ipp32s current_sps, H264SEIPayLoad *spl)
+{
+    Ipp32u code;
+    Ipp32s payloadType = 0;
+
+    ippiNextBits(m_pbs, m_bitOffset, 8, code);
+    while (code  ==  0xFF)
+    {
+        /* fixed-pattern bit string using 8 bits written equal to 0xFF */
+        ippiGetNBits(m_pbs, m_bitOffset, 8, code);
+        payloadType += 255;
+        ippiNextBits(m_pbs, m_bitOffset, 8, code);
+    }
+
+    Ipp32s last_payload_type_byte;    //Ipp32u integer using 8 bits
+    ippiGetNBits(m_pbs, m_bitOffset, 8, last_payload_type_byte);
+
+    payloadType += last_payload_type_byte;
+
+    Ipp32s payloadSize = 0;
+
+    ippiNextBits(m_pbs, m_bitOffset, 8, code);
+    while( code  ==  0xFF )
+    {
+        /* fixed-pattern bit string using 8 bits written equal to 0xFF */
+        ippiGetNBits(m_pbs, m_bitOffset, 8, code);
+        payloadSize += 255;
+        ippiNextBits(m_pbs, m_bitOffset, 8, code);
+    }
+
+    Ipp32s last_payload_size_byte;    //Ipp32u integer using 8 bits
+
+    ippiGetNBits(m_pbs, m_bitOffset, 8, last_payload_size_byte);
+    payloadSize += last_payload_size_byte;
+    spl->Reset();
+    spl->payLoadSize = payloadSize;
+
+    if (payloadType < 0 || payloadType > SEI_RESERVED)
+        payloadType = SEI_RESERVED;
+
+    spl->payLoadType = (SEI_TYPE)payloadType;
+
+    if (spl->payLoadSize > BytesLeft())
+    {
+        throw h264_exception(UMC_ERR_INVALID_STREAM);
+    }
+
+    Ipp32u * pbs;
+    Ipp32u bitOffsetU;
+    Ipp32s bitOffset;
+
+    GetState(&pbs, &bitOffsetU);
+    bitOffset = bitOffsetU;
+
+    CheckBSLeft(spl->payLoadSize);
+
+    spl->isValid = 1;
+    Ipp32s ret = sei_payload(headers, current_sps, spl);
+
+    for (Ipp32u i = 0; i < spl->payLoadSize; i++)
+    {
+        ippiSkipNBits(pbs, bitOffset, 8);
+    }
+
+    SetState(pbs, bitOffset);
+    return ret;
+}
+
+Ipp32s H264HeadersBitstream::sei_payload(const Headers & headers, Ipp32s current_sps,H264SEIPayLoad *spl)
+{
+    Ipp32u payloadType =spl->payLoadType;
+    switch( payloadType)
+    {
+    case SEI_BUFFERING_PERIOD_TYPE:
+        buffering_period(headers, current_sps,spl);
+        break;
+    case SEI_PIC_TIMING_TYPE:
+        pic_timing(headers,current_sps,spl);
+        break;
+    case SEI_DEC_REF_PIC_MARKING_TYPE:
+        dec_ref_pic_marking_repetition(headers,current_sps,spl);
+        break;
+
+    case SEI_USER_DATA_REGISTERED_TYPE:
+        user_data_registered_itu_t_t35(spl);
+        break;
+    case SEI_RECOVERY_POINT_TYPE:
+        recovery_point(spl);
+        break;
+
+    case SEI_SCALABILITY_INFO:
+        scalability_info(spl);
+        break;
+    case SEI_SCALABLE_NESTING:
+    case SEI_USER_DATA_UNREGISTERED_TYPE:
+    case SEI_PAN_SCAN_RECT_TYPE:
+    case SEI_FILLER_TYPE:
+    case SEI_SPARE_PIC_TYPE:
+    case SEI_SCENE_INFO_TYPE:
+    case SEI_SUB_SEQ_INFO_TYPE:
+    case SEI_SUB_SEQ_LAYER_TYPE:
+    case SEI_SUB_SEQ_TYPE:
+    case SEI_FULL_FRAME_FREEZE_TYPE:
+    case SEI_FULL_FRAME_FREEZE_RELEASE_TYPE:
+    case SEI_FULL_FRAME_SNAPSHOT_TYPE:
+    case SEI_PROGRESSIVE_REF_SEGMENT_START_TYPE:
+    case SEI_PROGRESSIVE_REF_SEGMENT_END_TYPE:
+    case SEI_MOTION_CONSTRAINED_SG_SET_TYPE:
+    default:
+        unparsed_sei_message(spl);
+        break;
+    }
+
+    return current_sps;
+}
+
+Ipp32s H264HeadersBitstream::buffering_period(const Headers & headers, Ipp32s , H264SEIPayLoad *spl)
+{
+    Ipp32s seq_parameter_set_id = (Ipp8u) GetVLCElement(false);
+    const H264SeqParamSet *csps = GetSeqParams(headers, seq_parameter_set_id);
+    H264SEIPayLoad::SEIMessages::BufferingPeriod &bps = spl->SEI_messages.buffering_period;
+
+    // touch unreferenced parameters
+    if (!csps)
+    {
+        throw h264_exception(UMC_ERR_INVALID_STREAM);
+    }
+
+    if (csps->vui.nal_hrd_parameters_present_flag)
+    {
+        if (csps->vui.cpb_cnt >= 32)
+            throw h264_exception(UMC_ERR_INVALID_STREAM);
+
+        for(Ipp32s i=0; i < csps->vui.cpb_cnt; i++)
+        {
+            bps.initial_cpb_removal_delay[0][i] = GetBits(csps->vui.initial_cpb_removal_delay_length);
+            bps.initial_cpb_removal_delay_offset[0][i] = GetBits(csps->vui.initial_cpb_removal_delay_length);
+        }
+    }
+
+    if (csps->vui.vcl_hrd_parameters_present_flag)
+    {
+        if (csps->vui.cpb_cnt >= 32)
+            throw h264_exception(UMC_ERR_INVALID_STREAM);
+
+        for(Ipp32s i=0; i < csps->vui.cpb_cnt; i++)
+        {
+            bps.initial_cpb_removal_delay[1][i] = GetBits(csps->vui.cpb_removal_delay_length);
+            bps.initial_cpb_removal_delay_offset[1][i] = GetBits(csps->vui.cpb_removal_delay_length);
+        }
+    }
+
+    AlignPointerRight();
+    return seq_parameter_set_id;
+}
+
+Ipp32s H264HeadersBitstream::pic_timing(const Headers & headers, Ipp32s current_sps, H264SEIPayLoad *spl)
+{
+    if (current_sps == -1)
+        throw h264_exception(UMC_ERR_INVALID_STREAM);
+
+    const Ipp8u NumClockTS[]={1,1,1,2,2,3,3,2,3};
+    const H264SeqParamSet *csps = GetSeqParams(headers, current_sps);
+    H264SEIPayLoad::SEIMessages::PicTiming &pts = spl->SEI_messages.pic_timing;
+
+    if (!csps)
+        throw h264_exception(UMC_ERR_INVALID_STREAM);
+
+    if (csps->vui.nal_hrd_parameters_present_flag || csps->vui.vcl_hrd_parameters_present_flag)
+    {
+        pts.cbp_removal_delay = GetBits(csps->vui.cpb_removal_delay_length);
+        pts.dpb_output_delay = GetBits(csps->vui.dpb_output_delay_length);
+    }
+    else
+    {
+        pts.cbp_removal_delay = INVALID_DPB_OUTPUT_DELAY;
+        pts.dpb_output_delay = INVALID_DPB_OUTPUT_DELAY;
+    }
+
+    if (csps->vui.pic_struct_present_flag)
+    {
+        Ipp8u picStruct = (Ipp8u)GetBits(4);
+
+        if (picStruct > 8)
+            return UMC_ERR_INVALID_STREAM;
+
+        pts.pic_struct = (DisplayPictureStruct)picStruct;
+
+        for (Ipp32s i = 0; i < NumClockTS[pts.pic_struct]; i++)
+        {
+            pts.clock_timestamp_flag[i] = (Ipp8u)Get1Bit();
+            if (pts.clock_timestamp_flag[i])
+            {
+                pts.clock_timestamps[i].ct_type = (Ipp8u)GetBits(2);
+                pts.clock_timestamps[i].nunit_field_based_flag = (Ipp8u)Get1Bit();
+                pts.clock_timestamps[i].counting_type = (Ipp8u)GetBits(5);
+                pts.clock_timestamps[i].full_timestamp_flag = (Ipp8u)Get1Bit();
+                pts.clock_timestamps[i].discontinuity_flag = (Ipp8u)Get1Bit();
+                pts.clock_timestamps[i].cnt_dropped_flag = (Ipp8u)Get1Bit();
+                pts.clock_timestamps[i].n_frames = (Ipp8u)GetBits(8);
+
+                if (pts.clock_timestamps[i].full_timestamp_flag)
+                {
+                    pts.clock_timestamps[i].seconds_value = (Ipp8u)GetBits(6);
+                    pts.clock_timestamps[i].minutes_value = (Ipp8u)GetBits(6);
+                    pts.clock_timestamps[i].hours_value = (Ipp8u)GetBits(5);
+                }
+                else
+                {
+                    if (Get1Bit())
+                    {
+                        pts.clock_timestamps[i].seconds_value = (Ipp8u)GetBits(6);
+                        if (Get1Bit())
+                        {
+                            pts.clock_timestamps[i].minutes_value = (Ipp8u)GetBits(6);
+                            if (Get1Bit())
+                            {
+                                pts.clock_timestamps[i].hours_value = (Ipp8u)GetBits(5);
+                            }
+                        }
+                    }
+                }
+
+                if (csps->vui.time_offset_length > 0)
+                    pts.clock_timestamps[i].time_offset = (Ipp8u)GetBits(csps->vui.time_offset_length);
+            }
+        }
+    }
+
+    AlignPointerRight();
+    return current_sps;
+}
+
+void H264HeadersBitstream::user_data_registered_itu_t_t35(H264SEIPayLoad *spl)
+{
+    H264SEIPayLoad::SEIMessages::UserDataRegistered * user_data = &(spl->SEI_messages.user_data_registered);
+    Ipp32u code;
+    ippiGetBits8(m_pbs, m_bitOffset, code);
+    user_data->itu_t_t35_country_code = (Ipp8u)code;
+
+    Ipp32u i = 1;
+
+    user_data->itu_t_t35_country_code_extension_byte = 0;
+    if (user_data->itu_t_t35_country_code == 0xff)
+    {
+        ippiGetBits8(m_pbs, m_bitOffset, code);
+        user_data->itu_t_t35_country_code_extension_byte = (Ipp8u)code;
+        i++;
+    }
+
+    spl->user_data.resize(spl->payLoadSize + 1);
+
+    for(Ipp32s k = 0; i < spl->payLoadSize; i++, k++)
+    {
+        ippiGetBits8(m_pbs, m_bitOffset, code);
+        spl->user_data[k] = (Ipp8u) code;
+    }
+}
+
+void H264HeadersBitstream::recovery_point(H264SEIPayLoad *spl)
+{
+    H264SEIPayLoad::SEIMessages::RecoveryPoint * recPoint = &(spl->SEI_messages.recovery_point);
+
+    recPoint->recovery_frame_cnt = (Ipp8u)GetVLCElement(false);
+
+    recPoint->exact_match_flag = (Ipp8u)Get1Bit();
+    recPoint->broken_link_flag = (Ipp8u)Get1Bit();
+    recPoint->changing_slice_group_idc = (Ipp8u)GetBits(2);
+
+    if (recPoint->changing_slice_group_idc > 2)
+    {
+        spl->isValid = 0;
+    }
+}
+
+Ipp32s H264HeadersBitstream::dec_ref_pic_marking_repetition(const Headers & headers, Ipp32s current_sps, H264SEIPayLoad *spl)
+{
+    if (current_sps == -1)
+        throw h264_exception(UMC_ERR_INVALID_STREAM);
+
+    const H264SeqParamSet *csps = GetSeqParams(headers, current_sps);
+    if (!csps)
+        throw h264_exception(UMC_ERR_INVALID_STREAM);
+
+    spl->SEI_messages.dec_ref_pic_marking_repetition.original_idr_flag = (Ipp8u)Get1Bit();
+    spl->SEI_messages.dec_ref_pic_marking_repetition.original_frame_num = (Ipp8u)GetVLCElement(false);
+
+    if (!csps->frame_mbs_only_flag)
+    {
+        spl->SEI_messages.dec_ref_pic_marking_repetition.original_field_pic_flag = (Ipp8u)Get1Bit();
+
+        if (spl->SEI_messages.dec_ref_pic_marking_repetition.original_field_pic_flag)
+        {
+            spl->SEI_messages.dec_ref_pic_marking_repetition.original_bottom_field_flag = (Ipp8u)Get1Bit();
+        }
+    }
+
+    H264SliceHeader hdr;
+    memset(&hdr, 0, sizeof(H264SliceHeader));
+
+    hdr.IdrPicFlag = spl->SEI_messages.dec_ref_pic_marking_repetition.original_idr_flag;
+
+    Status sts = DecRefPicMarking(&hdr, &spl->SEI_messages.dec_ref_pic_marking_repetition.adaptiveMarkingInfo);
+    if (sts != UMC_OK)
+        throw h264_exception(UMC_ERR_INVALID_STREAM);
+
+    spl->SEI_messages.dec_ref_pic_marking_repetition.long_term_reference_flag = hdr.long_term_reference_flag;
+    return current_sps;
+}
+
+void H264HeadersBitstream::unparsed_sei_message(H264SEIPayLoad *spl)
+{
+    for(Ipp32u i = 0; i < spl->payLoadSize; i++)
+        ippiSkipNBits(m_pbs, m_bitOffset, 8)
+    AlignPointerRight();
+}
+
+#pragma warning(disable : 4189)
+void H264HeadersBitstream::scalability_info(H264SEIPayLoad *spl)
+{
+    spl->SEI_messages.scalability_info.temporal_id_nesting_flag = (Ipp8u)Get1Bit();
+    spl->SEI_messages.scalability_info.priority_layer_info_present_flag = (Ipp8u)Get1Bit();
+    spl->SEI_messages.scalability_info.priority_id_setting_flag = (Ipp8u)Get1Bit();
+
+    spl->SEI_messages.scalability_info.num_layers = GetVLCElement(false) + 1;
+
+    if (spl->SEI_messages.scalability_info.num_layers > 1024)
+        throw h264_exception(UMC_ERR_INVALID_STREAM);
+
+    spl->user_data.resize(sizeof(scalability_layer_info) * spl->SEI_messages.scalability_info.num_layers);
+    scalability_layer_info * layers = (scalability_layer_info *) (&spl->user_data[0]);
+
+    for (Ipp32u i = 0; i < spl->SEI_messages.scalability_info.num_layers; i++)
+    {
+        layers[i].layer_id = GetVLCElement(false);
+        layers[i].priority_id = (Ipp8u)GetBits(6);
+        layers[i].discardable_flag = (Ipp8u)Get1Bit();
+        layers[i].dependency_id = (Ipp8u)GetBits(3);
+        layers[i].quality_id = (Ipp8u)GetBits(4);
+        layers[i].temporal_id = (Ipp8u)GetBits(3);
+
+        Ipp8u   sub_pic_layer_flag = (Ipp8u)Get1Bit();  // Need to check
+        Ipp8u   sub_region_layer_flag = (Ipp8u)Get1Bit(); // Need to check
+
+        //if (sub_pic_layer_flag && !sub_region_layer_flag)
+          //  throw h264_exception(UMC_ERR_INVALID_STREAM);
+
+        Ipp8u   iroi_division_info_present_flag = (Ipp8u)Get1Bit(); // Need to check
+
+        //if (sub_pic_layer_flag && iroi_division_info_present_flag)
+          //  throw h264_exception(UMC_ERR_INVALID_STREAM);
+
+        Ipp8u   profile_level_info_present_flag = (Ipp8u)Get1Bit();
+        Ipp8u   bitrate_info_present_flag = (Ipp8u)Get1Bit();
+        Ipp8u   frm_rate_info_present_flag = (Ipp8u)Get1Bit();
+        Ipp8u   frm_size_info_present_flag = (Ipp8u)Get1Bit();
+        Ipp8u   layer_dependency_info_present_flag = (Ipp8u)Get1Bit();
+        Ipp8u   parameter_sets_info_present_flag = (Ipp8u)Get1Bit();
+        Ipp8u   bitstream_restriction_info_present_flag = (Ipp8u)Get1Bit();
+        Ipp8u   exact_inter_layer_pred_flag = (Ipp8u)Get1Bit();
+
+        if (sub_pic_layer_flag || iroi_division_info_present_flag)
+        {
+            Ipp8u   exact_sample_value_match_flag = (Ipp8u)Get1Bit();
+        }
+
+        Ipp8u   layer_conversion_flag = (Ipp8u)Get1Bit();
+        Ipp8u   layer_output_flag = (Ipp8u)Get1Bit();
+
+        if (profile_level_info_present_flag)
+        {
+            Ipp32u   layer_profile_level_idc = (Ipp8u)GetBits(24);
+        }
+
+        if (bitrate_info_present_flag)
+        {
+            Ipp32u  avg_bitrate = GetBits(16);
+            Ipp32u  max_bitrate_layer = GetBits(16);
+            Ipp32u  max_bitrate_layer_representation = GetBits(16);
+            Ipp32u  max_bitrate_calc_window = GetBits(16);
+        }
+
+        if (frm_rate_info_present_flag)
+        {
+            layers[i].constant_frm_rate_idc = GetBits(2);
+            layers[i].avg_frm_rate = GetBits(16);
+        }
+
+        if (frm_size_info_present_flag || iroi_division_info_present_flag)
+        {
+            layers[i].frm_width_in_mbs = GetVLCElement(false) + 1;
+            layers[i].frm_height_in_mbs = GetVLCElement(false) + 1;
+        }
+
+        if (sub_region_layer_flag)
+        {
+            Ipp32u base_region_layer_id = GetVLCElement(false);
+            Ipp8u dynamic_rect_flag = (Ipp8u)Get1Bit();
+            if (!dynamic_rect_flag)
+            {
+                Ipp32u horizontal_offset = GetBits(16);
+                Ipp32u vertical_offset = GetBits(16);
+                Ipp32u region_width = GetBits(16);
+                Ipp32u region_height = GetBits(16);
+            }
+        }
+
+        if(sub_pic_layer_flag)
+        {
+            Ipp32u roi_id = GetVLCElement(false);
+        }
+
+        if (iroi_division_info_present_flag)
+        {
+            Ipp8u iroi_grid_flag = (Ipp8u)Get1Bit();
+            if (iroi_grid_flag)
+            {
+                Ipp32u grid_width_in_mbs_minus1 = GetVLCElement(false);
+                Ipp32u grid_height_in_mbs_minus1 = GetVLCElement(false);
+            } else {
+                Ipp32s num_rois_minus1 = GetVLCElement(false);
+                Ipp32s FrmSizeInMbs = layers[i].frm_height_in_mbs * layers[i].frm_width_in_mbs;
+
+                if (num_rois_minus1 < 0 || num_rois_minus1 > FrmSizeInMbs)
+                    throw h264_exception(UMC_ERR_INVALID_STREAM);
+                for (Ipp32s j = 0; j <= num_rois_minus1; j++)
+                {
+                    Ipp32u first_mb_in_roi = GetVLCElement(false);
+                    Ipp32u roi_width_in_mbs_minus1 = GetVLCElement(false);
+                    Ipp32u roi_height_in_mbs_minus1 = GetVLCElement(false);
+                }
+            }
+        }
+
+        if (layer_dependency_info_present_flag)
+        {
+            layers[i].num_directly_dependent_layers = GetVLCElement(false);
+
+            if (layers[i].num_directly_dependent_layers > 255)
+                throw h264_exception(UMC_ERR_INVALID_STREAM);
+
+            for(Ipp32u j = 0; j < layers[i].num_directly_dependent_layers; j++)
+            {
+                layers[i].directly_dependent_layer_id_delta_minus1[j] = GetVLCElement(false);
+            }
+        }
+        else
+        {
+            layers[i].layer_dependency_info_src_layer_id_delta = GetVLCElement(false);
+        }
+
+        if (parameter_sets_info_present_flag)
+        {
+            Ipp32s num_seq_parameter_set_minus1 = GetVLCElement(false);
+            if (num_seq_parameter_set_minus1 < 0 || num_seq_parameter_set_minus1 > 32)
+                throw h264_exception(UMC_ERR_INVALID_STREAM);
+
+            for(Ipp32s j = 0; j <= num_seq_parameter_set_minus1; j++ )
+                Ipp32u seq_parameter_set_id_delta = GetVLCElement(false);
+
+            Ipp32s num_subset_seq_parameter_set_minus1 = GetVLCElement(false);
+            if (num_subset_seq_parameter_set_minus1 < 0 || num_subset_seq_parameter_set_minus1 > 32)
+                throw h264_exception(UMC_ERR_INVALID_STREAM);
+
+            for(Ipp32s j = 0; j <= num_subset_seq_parameter_set_minus1; j++ )
+                Ipp32u subset_seq_parameter_set_id_delta = GetVLCElement(false);
+
+            Ipp32s num_pic_parameter_set_minus1 = GetVLCElement(false);
+            if (num_pic_parameter_set_minus1 < 0 || num_pic_parameter_set_minus1 > 255)
+                throw h264_exception(UMC_ERR_INVALID_STREAM);
+
+            for(Ipp32s j = 0; j <= num_pic_parameter_set_minus1; j++)
+                Ipp32u pic_parameter_set_id_delta = GetVLCElement(false);
+        }
+        else
+        {
+            Ipp32u parameter_sets_info_src_layer_id_delta = GetVLCElement(false);
+        }
+
+        if (bitstream_restriction_info_present_flag)
+        {
+            Ipp8u motion_vectors_over_pic_boundaries_flag = (Ipp8u)Get1Bit();
+            Ipp32u max_bytes_per_pic_denom = GetVLCElement(false);
+            Ipp32u max_bits_per_mb_denom = GetVLCElement(false);
+            Ipp32u log2_max_mv_length_horizontal = GetVLCElement(false);
+            Ipp32u log2_max_mv_length_vertical = GetVLCElement(false);
+            Ipp32u num_reorder_frames = GetVLCElement(false);
+            Ipp32u max_dec_frame_buffering = GetVLCElement(false);
+        }
+
+        if (layer_conversion_flag)
+        {
+            Ipp32u conversion_type_idc = GetVLCElement(false);
+            for(Ipp32u j = 0; j < 2; j++)
+            {
+                Ipp8u rewriting_info_flag = (Ipp8u)Get1Bit();
+                if (rewriting_info_flag)
+                {
+                    Ipp32u rewriting_profile_level_idc = GetBits(24);
+                    Ipp32u rewriting_avg_bitrate = GetBits(16);
+                    Ipp32u rewriting_max_bitrate = GetBits(16);
+                }
+            }
+        }
+    } // for 0..num_layers
+
+    if (spl->SEI_messages.scalability_info.priority_layer_info_present_flag)
+    {
+        Ipp32u pr_num_dId_minus1 = GetVLCElement(false);
+        for(Ipp32u i = 0; i <= pr_num_dId_minus1; i++)
+        {
+            Ipp32u pr_dependency_id = GetBits(3);
+            Ipp32s pr_num_minus1 = GetVLCElement(false);
+
+            if (pr_num_minus1 < 0 || pr_num_minus1 > 63)
+                throw h264_exception(UMC_ERR_INVALID_STREAM);
+
+            for(Ipp32s j = 0; j <= pr_num_minus1; j++)
+            {
+                Ipp32u pr_id = GetVLCElement(false);
+                Ipp32u pr_profile_level_idc = GetBits(24);
+                Ipp32u pr_avg_bitrate = GetBits(16);
+                Ipp32u pr_max_bitrate = GetBits(16);
+            }
+        }
+    }
+
+    if (spl->SEI_messages.scalability_info.priority_id_setting_flag)
+    {
+        std::vector<char> priority_id_setting_uri; // it is string
+        Ipp32u PriorityIdSettingUriIdx = 0;
+        do
+        {
+            priority_id_setting_uri.push_back(1);
+            priority_id_setting_uri[PriorityIdSettingUriIdx] = (Ipp8u)GetBits(8);
+        } while (priority_id_setting_uri[PriorityIdSettingUriIdx++] != 0);
+    }
+}
+
+#pragma warning(default : 4189)
 
 void SetDefaultScalingLists(H264SeqParamSet * sps)
 {

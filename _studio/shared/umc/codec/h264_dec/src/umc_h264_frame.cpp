@@ -11,17 +11,10 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_H264_VIDEO_DECODER)
 
-#include <ippi.h>
 #include <algorithm>
 #include "umc_h264_frame.h"
 #include "umc_h264_task_supplier.h"
-
-#include "umc_h264_log.h"
-#include "umc_h264_dec_ippwrap.h"
-
 #include "umc_h264_dec_debug.h"
-
-#define NON_LAYER_FRAME
 
 namespace UMC
 {
@@ -44,7 +37,6 @@ H264DecoderFrame::H264DecoderFrame(MemoryAllocator *pMemoryAllocator, H264_Heap_
     , m_pSlicesInfoBottom(0)
     , m_pPreviousFrame(0)
     , m_pFutureFrame(0)
-    , m_NotifiersChain(pObjHeap)
     , m_dFrameTime(-1.0)
     , m_isOriginalPTS(false)
     , m_dpb_output_delay(INVALID_DPB_OUTPUT_DELAY)
@@ -71,10 +63,6 @@ H264DecoderFrame::H264DecoderFrame(MemoryAllocator *pMemoryAllocator, H264_Heap_
 
     // set memory managment tools
     m_pMemoryAllocator = pMemoryAllocator;
-    m_midParsedFrameDataNew = 0;
-    m_pParsedFrameDataNew = 0;
-    m_paddedParsedFrameDataSize.width = 0;
-    m_paddedParsedFrameDataSize.height = 0;
 
     ResetRefCounter();
 
@@ -117,7 +105,6 @@ H264DecoderFrame::~H264DecoderFrame()
     m_pFutureFrame = 0;
     Reset();
     deallocate();
-    deallocateParsedFrameData();
 }
 
 void H264DecoderFrame::AddReference(RefCounter * reference)
@@ -194,7 +181,6 @@ void H264DecoderFrame::Reset()
     m_IsFrameExist = false;
     m_iNumberOfSlices = 0;
 
-    m_NotifiersChain.Reset();
     m_UserData.Reset();
 
     m_ErrorType = 0;
@@ -232,18 +218,12 @@ bool H264DecoderFrame::IsDecoded() const
 
 void H264DecoderFrame::FreeResources()
 {
-    GetNotifiersChain()->Notify();
     FreeReferenceFrames();
 
     if (m_pSlicesInfo && IsDecoded())
     {
         m_pSlicesInfo->Free();
         m_pSlicesInfoBottom->Free();
-    }
-
-    if (GetRefCounter() == 0 && !isShortTermRef() && !isLongTermRef())
-    {
-        deallocateParsedFrameData();
     }
 }
 
@@ -263,10 +243,6 @@ void H264DecoderFrame::UpdateErrorWithRefFrameStatus()
 
 void H264DecoderFrame::OnDecodingCompleted()
 {
-#ifdef ENABLE_LOGGING
-    if (GetLogging())
-        GetLogging()->LogFrame(this);
-#endif
     UpdateErrorWithRefFrameStatus();
 
     SetisDisplayable();
@@ -360,115 +336,6 @@ void H264DecoderFrame::Free()
         Reset();
 }
 
-void H264DecoderFrame::DefaultFill(Ipp32s fields_mask, bool isChromaOnly, Ipp8u defaultValue)
-{
-    try
-    {
-        IppiSize roi;
-
-        Ipp32s field_factor = fields_mask == 2 ? 0 : 1;
-        Ipp32s field = field_factor ? fields_mask : 0;
-
-        if (!isChromaOnly)
-        {
-            roi = m_lumaSize;
-            roi.height >>= field_factor;
-
-            if (m_pYPlane)
-                SetPlane(defaultValue, m_pYPlane + field*pitch_luma(),
-                    pitch_luma() << field_factor, roi);
-        }
-
-        roi = m_chromaSize;
-        roi.height >>= field_factor;
-
-        if (m_pUVPlane) // NV12
-        {
-            roi.width *= 2;
-            SetPlane(defaultValue, m_pUVPlane + field*pitch_chroma(), pitch_chroma() << field_factor, roi);
-        }
-        else
-        {
-            if (m_pUPlane)
-                SetPlane(defaultValue, m_pUPlane + field*pitch_chroma(), pitch_chroma() << field_factor, roi);
-            if (m_pVPlane)
-                SetPlane(defaultValue, m_pVPlane + field*pitch_chroma(), pitch_chroma() << field_factor, roi);
-        }
-    } catch(...)
-    {
-        // nothing to do
-        //VM_ASSERT(false);
-    }
-}
-
-void H264DecoderFrame::deallocateParsedFrameData()
-{
-    // new structure(s) hold pointer
-    if (m_pParsedFrameDataNew)
-    {
-        // Free the old buffer.
-        m_pObjHeap->Free(m_pParsedFrameDataNew);
-
-        m_midParsedFrameDataNew = 0;
-        m_pParsedFrameDataNew = 0;
-
-        m_mbinfo.MV[0] = 0;
-        m_mbinfo.MV[1] = 0;
-        m_mbinfo.mbs = 0;
-    }
-
-    m_paddedParsedFrameDataSize.width = 0;
-    m_paddedParsedFrameDataSize.height = 0;
-}    // deallocateParsedFrameData
-
-size_t H264DecoderFrame::GetFrameDataSize(const IppiSize &lumaSize)
-{
-    size_t nMBCount = (lumaSize.width >> 4) * (lumaSize.height >> 4) + 2;
-
-    // allocate buffer
-    size_t nMemSize = (sizeof(H264DecoderMacroblockMVs) +
-                       sizeof(H264DecoderMacroblockMVs) +
-                       sizeof(H264DecoderMacroblockGlobalInfo)) * nMBCount + 16 * 5;
-
-    return nMemSize;
-}
-
-Status H264DecoderFrame::allocateParsedFrameData()
-{
-    Status      umcRes = UMC_OK;
-
-    // If our buffer and internal pointers are already set up for this
-    // image size, then there's nothing more to do.
-
-    if (!m_pParsedFrameDataNew || m_paddedParsedFrameDataSize.width != m_lumaSize.width ||
-        m_paddedParsedFrameDataSize.height != m_lumaSize.height)
-    {
-        if (m_pParsedFrameDataNew)
-        {
-            deallocateParsedFrameData();
-        }
-
-        // allocate new MB structure(s)
-        size_t nMBCount = (m_lumaSize.width >> 4) * (m_lumaSize.height >> 4) + 2;
-
-        // allocate buffer
-        size_t nMemSize = GetFrameDataSize(m_lumaSize);
-
-        m_pParsedFrameDataNew = m_pObjHeap->Allocate<Ipp8u>(nMemSize);
-
-        // set pointer(s)
-        m_mbinfo.MV[0] = align_pointer<H264DecoderMacroblockMVs *> (m_pParsedFrameDataNew, ALIGN_VALUE);
-        m_mbinfo.MV[1] = align_pointer<H264DecoderMacroblockMVs *> (m_mbinfo.MV[0]+ nMBCount, ALIGN_VALUE);
-        m_mbinfo.mbs = align_pointer<H264DecoderMacroblockGlobalInfo *> (m_mbinfo.MV[1] + nMBCount, ALIGN_VALUE);
-
-        m_paddedParsedFrameDataSize.width = m_lumaSize.width;
-        m_paddedParsedFrameDataSize.height = m_lumaSize.height;
-    }
-
-    return umcRes;
-
-} // H264DecoderFrame::allocateParsedFrameData(const IppiSize &size)
-
 H264DecoderRefPicList* H264DecoderFrame::GetRefPicList(Ipp32s sliceNumber, Ipp32s list)
 {
     H264DecoderRefPicList *pList;
@@ -547,20 +414,6 @@ void H264DecoderFrame::UpdateLongTermPicNum(Ipp32s CurrPicStruct)
         }
     }
 }    // updateLongTermPicNum
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-//  H264DecoderFrameExtension class implementation
-//////////////////////////////////////////////////////////////////////////////
-H264DecoderFrameExtension::H264DecoderFrameExtension(MemoryAllocator *pMemoryAllocator, H264_Heap_Objects * pObjHeap)
-    : H264DecoderFrame(pMemoryAllocator, pObjHeap)
-{
-}
-
-H264DecoderFrameExtension::~H264DecoderFrameExtension()
-{
-}
 
 } // end namespace UMC
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

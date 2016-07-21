@@ -15,10 +15,8 @@
 #define __UMC_H264_HEADERS_H
 
 #include "umc_h264_dec_defs_dec.h"
-#include "umc_media_data_ex.h"
 #include "umc_h264_heap.h"
 #include "umc_h264_slice_decoding.h"
-#include "umc_h264_frame_info.h"
 
 namespace UMC
 {

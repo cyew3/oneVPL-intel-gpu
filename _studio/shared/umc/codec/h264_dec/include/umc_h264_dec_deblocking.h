@@ -77,7 +77,7 @@ Ipp32u EXTERNAL_BLOCK_MASK[NUMBER_OF_DIRECTION][2][4];
 extern
 Ipp32u INTERNAL_BLOCKS_MASK[NUMBER_OF_DIRECTION][12];
 
-#pragma pack(16)
+#pragma pack(push, 16)
 
 // turn off "non-virtual destructor" remark
 #pragma warning(disable : 444)
@@ -116,7 +116,7 @@ typedef struct DeblockingParametersMBAFF : public DeblockingParameters
 // restore "non-virtual destructor" remark
 #pragma warning(default : 444)
 
-#pragma pack()
+#pragma pack(pop)
 
 } // namespace UMC
 

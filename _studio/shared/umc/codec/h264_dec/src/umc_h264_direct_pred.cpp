@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -101,19 +101,16 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
         __assume_aligned(pBwdMV, 16);
 #endif // __ICL
 
-    /*H264DecoderMotionVector * first_mv_fwd_all = &(pFwdMV[0]);
-    H264DecoderMotionVector * first_mv_bwd_all = &(pBwdMV[0]);
-    Ipp8s *first_refL0_all = &pRefIndexL0[0];
-    Ipp8s *first_refL1_all = &pRefIndexL1[0];*/
+    H264DecoderFrameEx *firstRefBackFrame = (H264DecoderFrameEx *)m_pRefPicList[1][0];
 
     Ipp32s temp = 0;
     Ipp32s scale;
-    Ipp32s MBCol = GetColocatedLocation(m_pRefPicList[1][0], GetReferenceField(m_pFields[1], 0), temp, &scale);
+    Ipp32s MBCol = GetColocatedLocation(firstRefBackFrame, GetReferenceField(m_pFields[1], 0), temp, &scale);
     bool isAll4x4RealSame1[4];
     bool isAll8x8RealSame = false;
     bool isAll8x8RealSame1 = false;
 
-    switch(m_pRefPicList[1][0]->m_mbinfo.mbs[MBCol].mbtype)
+    switch(firstRefBackFrame->m_mbinfo.mbs[MBCol].mbtype)
     {
     case MBTYPE_INTER_16x8:
     case MBTYPE_INTER_8x16:
@@ -207,11 +204,11 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
         Ipp32s sboffset = subblock_block_mapping[sb];
 
         Ipp32s scaleValue;
-        Ipp32s MBColumn = GetColocatedLocation(m_pRefPicList[1][0], GetReferenceField(m_pFields[1], 0), sboffset, &scaleValue);
+        Ipp32s MBColumn = GetColocatedLocation(firstRefBackFrame, GetReferenceField(m_pFields[1], 0), sboffset, &scaleValue);
 
         bool isAll4x4RealSame = isAll4x4RealSame1[sb];
 
-        bool bRefMBIsInter = IS_INTER_MBTYPE(m_pRefPicList[1][0]->m_mbinfo.mbs[MBColumn].mbtype);
+        bool bRefMBIsInter = IS_INTER_MBTYPE(firstRefBackFrame->m_mbinfo.mbs[MBColumn].mbtype);
 
         m_cur_mb.GlobalMacroblockInfo->sbtype[sb] = SBTYPE_8x8;
         m_cur_mb.LocalMacroblockInfo->sbdir[sb] = D_DIR_DIRECT;
@@ -271,7 +268,7 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
             }
             else
             {
-                Ipp32s sbtype = m_pRefPicList[1][0]->m_mbinfo.mbs[MBColumn].sbtype[sb];
+                Ipp32s sbtype = firstRefBackFrame->m_mbinfo.mbs[MBColumn].sbtype[sb];
 
                 switch (sbtype)
                 {

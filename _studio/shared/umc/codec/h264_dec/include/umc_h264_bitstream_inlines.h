@@ -119,14 +119,6 @@ inline void PRINT_CABAC_VALUES(int, int)
 }
 
 inline
-void H264Bitstream::AlignPointerRight(void)
-{
-    ippiAlignBSPointerRight(m_pbs, m_bitOffset);
-
-} // void H264Bitstream::AlignPointerRight(void)
-
-
-inline
 Ipp32u H264Bitstream::Peek1Bit()
 {
     return h264Peek1Bit(m_pbs, m_bitOffset);
@@ -168,7 +160,7 @@ bool H264Bitstream::NextBit()
     }
     return false;
 
-} // H264Bitstream::SearchBits()
+}
 
 inline
 Ipp32u H264Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)

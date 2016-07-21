@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -1066,10 +1066,11 @@ void H264SegmentDecoder::GetDirectTemporalMV(Ipp32s MBCol,
     const RefIndexType *pRefRefIndexL1;
     H264DecoderFrame **pRefRefPicList;
 
+    H264DecoderFrameEx *firstRefBackFrame = (H264DecoderFrameEx *)m_pRefPicList[1][0];
     // Set pointers to colocated list 0 ref index and MV
-    pRefRefIndexL0 = GetReferenceIndexPtr(&m_pRefPicList[1][0]->m_mbinfo, 0, MBCol, ipos);
-    pRefMVL0 = &GetMV(&m_pRefPicList[1][0]->m_mbinfo, 0, MBCol, 0);
-    Ipp16u uRefSliceNum=m_pRefPicList[1][0]->m_mbinfo.mbs[MBCol].slice_id;
+    pRefRefIndexL0 = GetReferenceIndexPtr(&firstRefBackFrame->m_mbinfo, 0, MBCol, ipos);
+    pRefMVL0 = &GetMV(&firstRefBackFrame->m_mbinfo, 0, MBCol, 0);
+    Ipp16u uRefSliceNum=firstRefBackFrame->m_mbinfo.mbs[MBCol].slice_id;
 
     VM_ASSERT(pRefRefIndexL0);
     VM_ASSERT(pRefMVL0);
@@ -1083,15 +1084,15 @@ void H264SegmentDecoder::GetDirectTemporalMV(Ipp32s MBCol,
         RefIndexL0 = *pRefRefIndexL0;
 
         // Get pointer to ref pic list 0 of colocated
-        pRefRefPicList = m_pRefPicList[1][0]->GetRefPicList(uRefSliceNum, 0)->m_RefPicList;
+        pRefRefPicList = firstRefBackFrame->GetRefPicList(uRefSliceNum, 0)->m_RefPicList;
     }
     else
     {
         // Use Ref L1
 
         // Set pointers to colocated list 1 ref index and MV
-        pRefRefIndexL1 = GetReferenceIndexPtr(&m_pRefPicList[1][0]->m_mbinfo, 1, MBCol, ipos);
-        pRefMVL1 = &GetMV(&m_pRefPicList[1][0]->m_mbinfo, 1, MBCol, 0);
+        pRefRefIndexL1 = GetReferenceIndexPtr(&firstRefBackFrame->m_mbinfo, 1, MBCol, ipos);
+        pRefMVL1 = &GetMV(&firstRefBackFrame->m_mbinfo, 1, MBCol, 0);
         VM_ASSERT(pRefRefIndexL1);
         VM_ASSERT(pRefMVL1);
         RefIndexL0 = *pRefRefIndexL1;
@@ -1100,13 +1101,13 @@ void H264SegmentDecoder::GetDirectTemporalMV(Ipp32s MBCol,
         MVL0 = pRefMVL1;
 
         // Get pointer to ref pic list 1 of colocated
-        pRefRefPicList = m_pRefPicList[1][0]->GetRefPicList(uRefSliceNum, 1)->m_RefPicList;
+        pRefRefPicList = firstRefBackFrame->GetRefPicList(uRefSliceNum, 1)->m_RefPicList;
 
     }
-    if (m_pRefPicList[1][0]->m_PictureStructureForDec==AFRM_STRUCTURE)
+    if (firstRefBackFrame->m_PictureStructureForDec==AFRM_STRUCTURE)
     {
         VM_ASSERT(0);//can't happen
-        AdjustIndex((MBCol & 1), GetMBFieldDecodingFlag(m_pRefPicList[1][0]->m_mbinfo.mbs[MBCol]), RefIndexL0);
+        AdjustIndex((MBCol & 1), GetMBFieldDecodingFlag(firstRefBackFrame->m_mbinfo.mbs[MBCol]), RefIndexL0);
     }
 
     if (!pRefRefPicList[RefIndexL0])
@@ -1144,10 +1145,12 @@ void H264SegmentDecoder::GetDirectTemporalMVFLD(Ipp32s MBCol,
     const RefIndexType *pRefRefIndexL0;
     const RefIndexType *pRefRefIndexL1;
     H264DecoderFrame **pRefRefPicList;
+    
+    H264DecoderFrameEx *firstRefBackFrame = (H264DecoderFrameEx *)m_pRefPicList[1][0];
     // Set pointers to colocated list 0 ref index and MV
-    pRefRefIndexL0 = GetReferenceIndexPtr(&m_pRefPicList[1][0]->m_mbinfo, 0, MBCol, ipos);
-    pRefMVL0 = &GetMV(&m_pRefPicList[1][0]->m_mbinfo, 0, MBCol, 0);
-    Ipp32s uRefSliceNum = m_pRefPicList[1][0]->m_mbinfo.mbs[MBCol].slice_id;
+    pRefRefIndexL0 = GetReferenceIndexPtr(&firstRefBackFrame->m_mbinfo, 0, MBCol, ipos);
+    pRefMVL0 = &GetMV(&firstRefBackFrame->m_mbinfo, 0, MBCol, 0);
+    Ipp32s uRefSliceNum = firstRefBackFrame->m_mbinfo.mbs[MBCol].slice_id;
     ReferenceFlags *pRefFields;
     VM_ASSERT(pRefRefIndexL0);
     VM_ASSERT(pRefMVL0);
@@ -1161,16 +1164,16 @@ void H264SegmentDecoder::GetDirectTemporalMVFLD(Ipp32s MBCol,
         RefIndexL0 = *pRefRefIndexL0;
 
         // Get pointer to ref pic list 0 of colocated
-        pRefRefPicList = m_pRefPicList[1][0]->GetRefPicList(uRefSliceNum, 0)->m_RefPicList;
-        pRefFields = m_pRefPicList[1][0]->GetRefPicList(uRefSliceNum, 0)->m_Flags;
+        pRefRefPicList = firstRefBackFrame->GetRefPicList(uRefSliceNum, 0)->m_RefPicList;
+        pRefFields = firstRefBackFrame->GetRefPicList(uRefSliceNum, 0)->m_Flags;
     }
     else
     {
         // Use Ref L1
 
         // Set pointers to colocated list 1 ref index and MV
-        pRefRefIndexL1 = GetReferenceIndexPtr(&m_pRefPicList[1][0]->m_mbinfo, 1, MBCol, ipos);
-        pRefMVL1 = &GetMV(&m_pRefPicList[1][0]->m_mbinfo, 1, MBCol, 0);
+        pRefRefIndexL1 = GetReferenceIndexPtr(&firstRefBackFrame->m_mbinfo, 1, MBCol, ipos);
+        pRefMVL1 = &GetMV(&firstRefBackFrame->m_mbinfo, 1, MBCol, 0);
         VM_ASSERT(pRefRefIndexL1);
         VM_ASSERT(pRefMVL1);
         RefIndexL0 = *pRefRefIndexL1;
@@ -1179,8 +1182,8 @@ void H264SegmentDecoder::GetDirectTemporalMVFLD(Ipp32s MBCol,
         MVL0 = pRefMVL1;
 
         // Get pointer to ref pic list 1 of colocated
-        pRefRefPicList = m_pRefPicList[1][0]->GetRefPicList(uRefSliceNum, 1)->m_RefPicList;
-        pRefFields = m_pRefPicList[1][0]->GetRefPicList(uRefSliceNum, 1)->m_Flags;
+        pRefRefPicList = firstRefBackFrame->GetRefPicList(uRefSliceNum, 1)->m_RefPicList;
+        pRefFields = firstRefBackFrame->GetRefPicList(uRefSliceNum, 1)->m_Flags;
     }
 
     // Translate the reference index of the colocated to current
@@ -1188,14 +1191,14 @@ void H264SegmentDecoder::GetDirectTemporalMVFLD(Ipp32s MBCol,
     // LongTermPicNum as id criteria.
     Ipp32s num_ref;
     Ipp32s force_value;
-    if (m_pRefPicList[1][0]->m_PictureStructureForDec == FRM_STRUCTURE)
+    if (firstRefBackFrame->m_PictureStructureForDec == FRM_STRUCTURE)
     {
         num_ref = m_field_index;
         force_value = 1;
     }
-    else if (m_pRefPicList[1][0]->m_PictureStructureForDec == AFRM_STRUCTURE)
+    else if (firstRefBackFrame->m_PictureStructureForDec == AFRM_STRUCTURE)
     {
-        if (GetMBFieldDecodingFlag(m_pRefPicList[1][0]->m_mbinfo.mbs[MBCol]))
+        if (GetMBFieldDecodingFlag(firstRefBackFrame->m_mbinfo.mbs[MBCol]))
         {
             Ipp32s field_selector = RefIndexL0&1;
             RefIndexL0>>=1;
@@ -1250,11 +1253,13 @@ void H264SegmentDecoder::GetDirectTemporalMVMBAFF(Ipp32s MBCol,
     const RefIndexType *pRefRefIndexL0;
     const RefIndexType *pRefRefIndexL1;
     H264DecoderFrame **pRefRefPicList;
+
+    H264DecoderFrameEx *firstRefBackFrame = (H264DecoderFrameEx *)m_pRefPicList[1][0];
     // Set pointers to colocated list 0 ref index and MV
-    pRefRefIndexL0 = GetReferenceIndexPtr(&m_pRefPicList[1][0]->m_mbinfo, 0, MBCol, ipos);
-    pRefMVL0 = &GetMV(&m_pRefPicList[1][0]->m_mbinfo, 0, MBCol, 0);
-    Ipp16u uRefSliceNum=m_pRefPicList[1][0]->m_mbinfo.mbs[MBCol].slice_id;
-    Ipp32u scale_idx=GetMBFieldDecodingFlag(m_pRefPicList[1][0]->m_mbinfo.mbs[MBCol]);
+    pRefRefIndexL0 = GetReferenceIndexPtr(&firstRefBackFrame->m_mbinfo, 0, MBCol, ipos);
+    pRefMVL0 = &GetMV(&firstRefBackFrame->m_mbinfo, 0, MBCol, 0);
+    Ipp16u uRefSliceNum=firstRefBackFrame->m_mbinfo.mbs[MBCol].slice_id;
+    Ipp32u scale_idx=GetMBFieldDecodingFlag(firstRefBackFrame->m_mbinfo.mbs[MBCol]);
     Ipp32u back_scale_idx=pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
     Ipp32u field_selector = 0;
     ReferenceFlags *pFields;
@@ -1271,17 +1276,17 @@ void H264SegmentDecoder::GetDirectTemporalMVMBAFF(Ipp32s MBCol,
         MVL0 = pRefMVL0;
 
         // Get pointer to ref pic list 0 of colocated
-        pRefRefPicList = m_pRefPicList[1][0]->GetRefPicList(uRefSliceNum, 0)->m_RefPicList;
-        pFields = m_pRefPicList[1][0]->GetRefPicList(uRefSliceNum, 0)->m_Flags;
+        pRefRefPicList = firstRefBackFrame->GetRefPicList(uRefSliceNum, 0)->m_RefPicList;
+        pFields = firstRefBackFrame->GetRefPicList(uRefSliceNum, 0)->m_Flags;
     }
     else
     {
         // Use Ref L1
 
         // Set pointers to colocated list 1 ref index and MV
-        pRefRefIndexL1 = GetReferenceIndexPtr(&m_pRefPicList[1][0]->m_mbinfo, 1, MBCol, ipos);
-        pRefMVL1 = &GetMV(&m_pRefPicList[1][0]->m_mbinfo, 1, MBCol, 0);
-        pFields = m_pRefPicList[1][0]->GetRefPicList(uRefSliceNum, 1)->m_Flags;
+        pRefRefIndexL1 = GetReferenceIndexPtr(&firstRefBackFrame->m_mbinfo, 1, MBCol, ipos);
+        pRefMVL1 = &GetMV(&firstRefBackFrame->m_mbinfo, 1, MBCol, 0);
+        pFields = firstRefBackFrame->GetRefPicList(uRefSliceNum, 1)->m_Flags;
         VM_ASSERT(pRefRefIndexL1);
         VM_ASSERT(pRefMVL1);
         RefIndexL0 = *pRefRefIndexL1;
@@ -1290,18 +1295,18 @@ void H264SegmentDecoder::GetDirectTemporalMVMBAFF(Ipp32s MBCol,
         MVL0 = pRefMVL1;
 
         // Get pointer to ref pic list 1 of colocated
-        pRefRefPicList = m_pRefPicList[1][0]->GetRefPicList(uRefSliceNum, 1)->m_RefPicList;
+        pRefRefPicList = firstRefBackFrame->GetRefPicList(uRefSliceNum, 1)->m_RefPicList;
     }
 
-    if (m_pRefPicList[1][0]->m_PictureStructureForDec == AFRM_STRUCTURE)
+    if (firstRefBackFrame->m_PictureStructureForDec == AFRM_STRUCTURE)
     {
-        AdjustIndex((MBCol & 1), GetMBFieldDecodingFlag(m_pRefPicList[1][0]->m_mbinfo.mbs[MBCol]), RefIndexL0);
+        AdjustIndex((MBCol & 1), GetMBFieldDecodingFlag(firstRefBackFrame->m_mbinfo.mbs[MBCol]), RefIndexL0);
         field_selector = RefIndexL0&scale_idx;
         RefIndexL0>>=scale_idx;
     }
-    else if (m_pRefPicList[1][0]->m_PictureStructureForDec < FRM_STRUCTURE)
+    else if (firstRefBackFrame->m_PictureStructureForDec < FRM_STRUCTURE)
     {
-        Ipp8s ref1field = (MBCol >= m_pRefPicList[1][0]->totalMBs);
+        Ipp8s ref1field = (MBCol >= firstRefBackFrame->totalMBs);
         field_selector = (ref1field != GetReferenceField(pFields, RefIndexL0));
     }
 
@@ -1311,7 +1316,7 @@ void H264SegmentDecoder::GetDirectTemporalMVMBAFF(Ipp32s MBCol,
         return;
     }
 
-    VM_ASSERT(m_pRefPicList[1][0]->m_PictureStructureForDec != FRM_STRUCTURE);
+    VM_ASSERT(firstRefBackFrame->m_PictureStructureForDec != FRM_STRUCTURE);
 
     Ipp32s index = pRefRefPicList[RefIndexL0]->m_index;
 
@@ -1373,7 +1378,8 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal_8x8Inference()
     // (16 vectors) or an 8x8 block (4 vectors)
 
     // When bRefMBIsInter is false, set the MV to zero.
-    if (!m_pRefPicList[1][0])
+    H264DecoderFrameEx *firstRefBackFrame = (H264DecoderFrameEx *)m_pRefPicList[1][0];
+    if (!firstRefBackFrame)
     {
         for (int sb = 0; sb<4; sb++)
         {
@@ -1442,8 +1448,8 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal_8x8Inference()
         }
         Ipp32s MBCol;
         Ipp32s scale;
-        MBCol = GetColocatedLocation(m_pRefPicList[1][0], GetReferenceField(m_pFields[1], 0), ref_mvoffset, &scale);
-        bool bRefMBIsInter = IS_INTER_MBTYPE(m_pRefPicList[1][0]->m_mbinfo.mbs[MBCol].mbtype);
+        MBCol = GetColocatedLocation(firstRefBackFrame, GetReferenceField(m_pFields[1], 0), ref_mvoffset, &scale);
+        bool bRefMBIsInter = IS_INTER_MBTYPE(firstRefBackFrame->m_mbinfo.mbs[MBCol].mbtype);
         RefIndexL1 = 0;
         if (bRefMBIsInter)
         {

@@ -62,25 +62,6 @@ public:
 
 static TableInitializer tableInitializer;
 
-void H264Bitstream::GetOrg(Ipp32u **pbs, Ipp32u *size)
-{
-    *pbs       = m_pbsBase;
-    *size      = m_maxBsSize;
-}
-
-void H264Bitstream::GetState(Ipp32u** pbs,Ipp32u* bitOffset)
-{
-    *pbs       = m_pbs;
-    *bitOffset = m_bitOffset;
-
-} // H264Bitstream::GetState()
-
-void H264Bitstream::SetState(Ipp32u* pbs,Ipp32u bitOffset)
-{
-    m_pbs = pbs;
-    m_bitOffset = bitOffset;
-
-} // H264Bitstream::GetState()
 
 H264Bitstream::H264Bitstream(Ipp8u * const pb, const Ipp32u maxsize)
      : H264HeadersBitstream(pb, maxsize)
@@ -345,88 +326,6 @@ Status H264Bitstream::InitTables(void)
     return UMC_OK;
 
 } // Status H264Bitstream::InitTables(void)
-
-void H264Bitstream::RollbackCurrentNALU()
-{
-    ippiUngetBits32(m_pbs,m_bitOffset);
-}
-
-// ---------------------------------------------------------------------------
-//  H264Bitstream::GetNALUnitType()
-//    Bitstream position is expected to be at the start of a NAL unit.
-//    Read and return NAL unit type and NAL storage idc.
-// ---------------------------------------------------------------------------
-Status H264Bitstream::GetNALUnitType(NAL_Unit_Type &nal_unit_type, Ipp32u &nal_ref_idc)
-{
-    Ipp32u code;
-
-    ippiGetBits8(m_pbs, m_bitOffset, code);
-
-    nal_ref_idc = (Ipp32u) ((code & NAL_STORAGE_IDC_BITS)>>5);
-    nal_unit_type = (NAL_Unit_Type) (code & NAL_UNITTYPE_BITS);
-    return UMC_OK;
-
-} // Status H264Bitstream::GetNALUnitType(NAL_Unit_Type &nal_unit_type, Ipp32u &nal_ref_idc)
-
-// ---------------------------------------------------------------------------
-//  H264Bitstream::GetAccessUnitDelimiter()
-//    Read optional access unit delimiter from bitstream.
-// ---------------------------------------------------------------------------
-Status H264Bitstream::GetAccessUnitDelimiter(Ipp32u &PicCodType)
-{
-    PicCodType = GetBits(3);
-    return UMC_OK;
-}    // GetAccessUnitDelimiter
-
-// ---------------------------------------------------------------------------
-//  H264Bitstream::ReadFillerData()
-//    Filler data RBSP, read and discard all bytes == 0xff
-// ---------------------------------------------------------------------------
-Status H264Bitstream::ReadFillerData()
-{
-    while (SearchBits(8, 0xff, 0));
-    return UMC_OK;
-}    // SkipFillerData
-
-
-// ---------------------------------------------------------------------------
-//        H264Bitstream::SearchBits()
-//        Searches for a code with known number of bits.  Bitstream state,
-//        pointer and bit offset, will be updated if code found.
-//        nbits        : number of bits in the code
-//        code        : code to search for
-//        lookahead    : maximum number of bits to parse for the code
-// ---------------------------------------------------------------------------
-bool H264Bitstream::SearchBits(const Ipp32u nbits, const Ipp32u code, const Ipp32u lookahead)
-{
-    if (nbits >= sizeof(GetBitsMask)/sizeof(GetBitsMask[0]))
-        return false;
-
-    Ipp32u w;
-    Ipp32u n = nbits;
-    Ipp32u* pbs;
-    Ipp32s offset;
-
-    pbs    = m_pbs;
-    offset = m_bitOffset;
-
-    ippiGetNBits(m_pbs, m_bitOffset, n, w)
-
-    for (n = 0; w != code && n < lookahead; n ++)
-    {
-        w = ((w << 1) & GetBitsMask[nbits]) | Get1Bit();
-    }
-
-    if (w == code)
-        return true;
-    else
-    {
-        m_pbs        = pbs;
-        m_bitOffset = offset;
-        return false;
-    }
-
-} // H264Bitstream::SearchBits()
 
 inline
 Ipp32u H264Bitstream::DecodeSingleBinOnes_CABAC(Ipp32u ctxIdx,
@@ -825,12 +724,6 @@ Ipp32s H264Bitstream::DecodeSingleSignedLevel_CABAC(Ipp32u ctxIdxOffset)
 
 } //Ipp32s H264Bitstream::DecodeSingleSignedLevel_CABAC(Ipp32s ctxIdxOffset)
 
-void H264Bitstream::SetDecodedBytes(size_t nBytes)
-{
-    m_pbs = m_pbsBase + (nBytes / 4);
-    m_bitOffset = 31 - ((Ipp32s) ((nBytes % sizeof(Ipp32u)) * 8));
-} // void H264Bitstream::SetDecodedBytes(size_t nBytes)
-
 } // namespace UMC
 
 #define IPP_NOERROR_RET()  return ippStsNoErr
@@ -842,14 +735,14 @@ void H264Bitstream::SetDecodedBytes(size_t nBytes)
 #define IPP_BAD_PTR1_RET( ptr )\
             IPP_BADARG_RET( NULL==(ptr), ippStsNullPtrErr )
 
-STRUCT_DECLSPEC_ALIGN static const Ipp32u vlc_inc[] = {0,3,6,12,24,48,96};
+static const Ipp32u vlc_inc[] = {0,3,6,12,24,48,96};
 
 typedef struct{
     Ipp16s bits;
     Ipp16s offsets;
 }  BitsAndOffsets;
 
-STRUCT_DECLSPEC_ALIGN static BitsAndOffsets bitsAndOffsets[7][16] = /*[level][numZeros]*/
+static BitsAndOffsets bitsAndOffsets[7][16] = /*[level][numZeros]*/
 {
 /*         0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15        */
     /*0*/    {{0, 1}, {0, 1},  {0, 1},  {0, 1},  {0, 1},   {0, 1},   {0, 1},   {0, 1},   {0, 1},   {0, 1},   {0, 1},   {0, 1},   {0, 1},   {0, 1},   {4, 8},   {12, 16}, },
@@ -872,7 +765,7 @@ typedef struct{
 
 } qq;
 
-STRUCT_DECLSPEC_ALIGN static Ipp32s sadd[7]={15,0,0,0,0,0,0};
+static Ipp32s sadd[7]={15,0,0,0,0,0,0};
 
 
 inline
@@ -982,7 +875,7 @@ void _GetBlockCoeffs_CAVLC(Ipp32u ** const & ppBitStream,
 
 } /* static void _GetBlockCoeffs_CAVLC(Ipp32u **pbs, */
 
-STRUCT_DECLSPEC_ALIGN static Ipp8s trailing_ones[8][3] =
+static Ipp8s trailing_ones[8][3] =
 {
     {1, 1, 1},    // 0, 0, 0
     {1, 1, -1},   // 0, 0, 1
@@ -994,7 +887,7 @@ STRUCT_DECLSPEC_ALIGN static Ipp8s trailing_ones[8][3] =
     {-1, -1, -1}, // 1, 1, 1
 };
 
-STRUCT_DECLSPEC_ALIGN static Ipp8s trailing_ones1[8][3] =
+static Ipp8s trailing_ones1[8][3] =
 {
     {1, 1, 1},    // 0, 0, 0
     {-1, 1, 1},   // 0, 0, 1

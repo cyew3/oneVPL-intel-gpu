@@ -16,10 +16,10 @@
 #include "umc_h264_va_supplier.h"
 #include "umc_h264_frame_list.h"
 #include "umc_h264_nal_spl.h"
-#include "umc_h264_bitstream.h"
+#include "umc_h264_bitstream_headers.h"
 
 #include "umc_h264_dec_defs_dec.h"
-#include "umc_h264_segment_decoder_mt.h"
+#include "umc_h264_segment_decoder_base.h"
 
 #include "umc_h264_task_broker.h"
 #include "umc_structures.h"
@@ -157,7 +157,7 @@ H264DecoderFrame *VATaskSupplier::GetFreeFrame(const H264Slice * pSlice)
         }
 
         // Didn't find one. Let's try to insert a new one
-        pFrame = new H264DecoderFrameExtension(m_pMemoryAllocator, &m_ObjHeap);
+        pFrame = new H264DecoderFrame(m_pMemoryAllocator, &m_ObjHeap);
         if (NULL == pFrame)
             return 0;
 
@@ -208,10 +208,6 @@ Status VATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
     if (slicesInfo->GetStatus() > H264DecoderFrameInfo::STATUS_NOT_FILLED)
         return UMC_OK;
 
-    Status umsRes = InitializeLayers(pFrame, field);
-    if (umsRes != UMC_OK)
-        return umsRes;
-
     DEBUG_PRINT((VM_STRING("Complete frame POC - (%d,%d) type - %d, picStruct - %d, field - %d, count - %d, m_uid - %d, IDR - %d, viewId - %d\n"),
         pFrame->m_PicOrderCnt[0], pFrame->m_PicOrderCnt[1],
         pFrame->m_FrameType,
@@ -261,8 +257,6 @@ Status VATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
 
     DecodePicture(pFrame, field);
     DBPUpdate(pFrame, field);
-
-    pFrame->MoveToNotifiersChain(m_DefaultNotifyChain);
 
     slicesInfo->SetStatus(H264DecoderFrameInfo::STATUS_FILLED);
 

@@ -23,8 +23,6 @@
 
 #include "umc_h264_headers.h"
 
-#include "umc_frame_allocator.h"
-
 namespace UMC
 {
 class NALUnitSplitter;
@@ -150,7 +148,7 @@ public:
     AU_Splitter(H264_Heap_Objects *objectHeap);
     virtual ~AU_Splitter();
 
-    void Init(VideoDecoderParams *init);
+    void Init();
     void Close();
 
     void Reset();

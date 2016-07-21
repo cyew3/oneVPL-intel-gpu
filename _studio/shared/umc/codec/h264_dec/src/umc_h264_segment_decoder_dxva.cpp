@@ -73,15 +73,14 @@ void H264_DXVA_SegmentDecoder::PackAllHeaders(H264DecoderFrame * pFrame, Ipp32s 
 
 Status H264_DXVA_SegmentDecoder::ProcessSegment(void)
 {
-    H264Task Task(m_iNumber);
     try{
-    if (m_pTaskBroker->GetNextTask(&Task))
-    {
-    }
-    else
-    {
-        return UMC_ERR_NOT_ENOUGH_DATA;
-    }
+        if (m_pTaskBroker->GetNextTask(0))
+        {
+        }
+        else
+        {
+            return UMC_ERR_NOT_ENOUGH_DATA;
+        }
     }catch(h264_exception ex){
         return ex.GetStatus();
     }
@@ -171,6 +170,8 @@ enum
 
 bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
 {
+    AutomaticUMCMutex guard(m_mGuard);
+
     if (!m_useDXVAStatusReporting)
         return false;
 

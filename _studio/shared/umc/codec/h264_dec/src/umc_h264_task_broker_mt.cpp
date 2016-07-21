@@ -11,13 +11,14 @@
 #if defined (UMC_ENABLE_H264_VIDEO_DECODER)
 
 #include <cstdarg>
-#include "umc_h264_task_broker_mt.h"
-#include "umc_h264_heap.h"
 #include "umc_h264_task_supplier.h"
-#include "umc_h264_frame_list.h"
+#include "umc_h264_task_broker_mt.h"
+#include "umc_h264_slice_ex.h"
 
 #include "umc_h264_dec_debug.h"
 #include "mfx_trace.h"
+
+#include "umc_h264_frame_ex.h"
 
 //#define ECHO_DEB
 //#define VM_DEBUG
@@ -245,7 +246,7 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
 {
     AutomaticUMCMutex guard(m_mGuard);
 
-    H264Slice *pSlice = pTask->m_pSlice;
+    H264SliceEx *pSlice = pTask->m_pSlice;
     H264DecoderFrameInfo * info = pTask->m_pSlicesInfo;
 
 #if defined(ECHO)
@@ -349,7 +350,7 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
         // frame is deblocked
         for (Ipp32s i = 0; i < sliceCount; i += 1)
         {
-            H264Slice *pTemp = m_FirstAU->GetSlice(i);
+            H264SliceEx *pTemp = (H264SliceEx *)m_FirstAU->GetSlice(i);
 
             pTemp->m_bDebVacant = 1;
             pTemp->m_bInProcess = false;
@@ -402,8 +403,8 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
                     Ipp32s pos = info->GetPositionByNumber(pSlice->GetSliceNum());
                     if (pos >= 0)
                     {
-                        H264Slice * pNextSlice = info->GetSlice(++pos);
-                        for (; pNextSlice; pNextSlice = info->GetSlice(++pos))
+                        H264SliceEx * pNextSlice = (H264SliceEx *)info->GetSlice(++pos);
+                        for (; pNextSlice; pNextSlice = (H264SliceEx *)info->GetSlice(++pos))
                         {
                            info->m_iDecMBReady = pNextSlice->m_iCurMBToDec;
                            if (pNextSlice->m_iCurMBToDec < pNextSlice->m_iMaxMB)
@@ -456,7 +457,7 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
                     Ipp32s pos = info->GetPositionByNumber(pSlice->GetSliceNum());
                     if (pos >= 0)
                     {
-                        H264Slice * pNextSlice = info->GetSlice(pos + 1);
+                        H264SliceEx * pNextSlice = (H264SliceEx *)info->GetSlice(pos + 1);
                         if (pNextSlice)
                         {
                             if (pNextSlice->m_bDeblocked)
@@ -528,15 +529,15 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
                 {
                     Ipp32s pos = info->GetPositionByNumber(pSlice->GetSliceNum());
                     VM_ASSERT(pos >= 0);
-                    H264Slice * pNextSlice = info->GetSlice(pos + 1);
+                    H264SliceEx * pNextSlice = (H264SliceEx *)info->GetSlice(pos + 1);
                     if (pNextSlice)
                     {
                         if (isReadyIncreaseDec)
                         {
                             Ipp32s pos1 = pos;
-                            H264Slice * pTmpSlice = info->GetSlice(++pos1);
+                            H264SliceEx * pTmpSlice = (H264SliceEx *)info->GetSlice(++pos1);
 
-                            for (; pTmpSlice; pTmpSlice = info->GetSlice(++pos1))
+                            for (; pTmpSlice; pTmpSlice = (H264SliceEx *)info->GetSlice(++pos1))
                             {
                                info->m_iDecMBReady = pTmpSlice->m_iCurMBToDec;
                                if (pTmpSlice->m_iCurMBToDec < pTmpSlice->m_iMaxMB)
@@ -599,7 +600,7 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
                     if (isReadyIncrease)
                     {
                         VM_ASSERT(pos >= 0);
-                        H264Slice * pNextSlice = info->GetSlice(pos + 1);
+                        H264SliceEx * pNextSlice = (H264SliceEx *)info->GetSlice(pos + 1);
                         if (pNextSlice)
                         {
                             if (pNextSlice->m_bDeblocked)
@@ -663,6 +664,8 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
 // Get next working task
 bool TaskBrokerSingleThread::GetNextTaskInternal(H264Task *pTask)
 {
+    AutomaticUMCMutex guard(m_mGuard);
+
     while (false == m_IsShouldQuit)
     {
         if (m_FirstAU)
@@ -724,9 +727,9 @@ bool TaskBrokerSingleThread::PrepareFrame(H264DecoderFrame * pFrame)
 
 bool TaskBrokerSingleThread::GetPreparationTask(H264DecoderFrameInfo * info)
 {
-    H264DecoderFrame * pFrame = info->m_pFrame;
+    H264DecoderFrameEx * pFrame = DynamicCast<H264DecoderFrameEx>(info->m_pFrame);
 
-    if (info->m_prepared)
+    if (!pFrame || info->m_prepared)
         return false;
 
     if (info != pFrame->GetAU(0) && pFrame->GetAU(0)->m_prepared != 2)
@@ -761,7 +764,7 @@ bool TaskBrokerSingleThread::GetPreparationTask(H264DecoderFrameInfo * info)
             Ipp32s sliceCount = slicesInfo->GetSliceCount();
             for (Ipp32s i = 0; i < sliceCount; i++)
             {
-                H264Slice * pSlice = slicesInfo->GetSlice(i);
+                H264SliceEx * pSlice = (H264SliceEx *)slicesInfo->GetSlice(i);
                 pSlice->InitializeContexts();
                 pSlice->m_mbinfo = &m_localResourses.GetMBInfo(pFrame->m_iResourceNumber);
                 pSlice->m_pMBIntraTypes = m_localResourses.GetIntraTypes(pFrame->m_iResourceNumber);
@@ -799,7 +802,7 @@ bool TaskBrokerSingleThread::GetPreparationTask(H264DecoderFrameInfo * info)
             Ipp32s sliceCount = info->GetSliceCount();
             for (Ipp32s i = 0; i < sliceCount; i++)
             {
-                H264Slice * pSlice = info->GetSlice(i);
+                H264SliceEx * pSlice = (H264SliceEx *)info->GetSlice(i);
                 pSlice->InitializeContexts();
                 pSlice->m_mbinfo = &m_localResourses.GetMBInfo(pFrame->m_iResourceNumber);
                 pSlice->m_pMBIntraTypes = m_localResourses.GetIntraTypes(pFrame->m_iResourceNumber);
@@ -823,7 +826,7 @@ bool TaskBrokerSingleThread::GetPreparationTask(H264DecoderFrameInfo * info)
         Ipp32s sliceCount = info->GetSliceCount();
         for (Ipp32s i = 0; i < sliceCount; i++)
         {
-            H264Slice * pSlice = info->GetSlice(i);
+            H264SliceEx * pSlice = (H264SliceEx *)info->GetSlice(i);
             pSlice->m_bInProcess = false;
             pSlice->m_bDecVacant = 0;
             pSlice->m_bRecVacant = 0;
@@ -883,7 +886,7 @@ bool TaskBrokerSingleThread::GetNextSlice(H264DecoderFrameInfo * info, H264Task 
     return false;
 }
 
-void TaskBrokerSingleThread::InitTask(H264DecoderFrameInfo * info, H264Task *pTask, H264Slice *pSlice)
+void TaskBrokerSingleThread::InitTask(H264DecoderFrameInfo * info, H264Task *pTask, H264SliceEx *pSlice)
 {
     pTask->m_bDone = false;
     pTask->m_bError = false;
@@ -895,7 +898,6 @@ void TaskBrokerSingleThread::InitTask(H264DecoderFrameInfo * info, H264Task *pTa
 bool TaskBrokerSingleThread::GetNextSliceToDecoding(H264DecoderFrameInfo * info, H264Task *pTask)
 {
     // this is guarded function, safe to touch any variable
-
     Ipp32s i;
     bool bDoDeblocking;
 
@@ -919,7 +921,7 @@ bool TaskBrokerSingleThread::GetNextSliceToDecoding(H264DecoderFrameInfo * info,
     Ipp32s sliceCount = info->GetSliceCount();
     for (; i < sliceCount; i += 1)
     {
-        H264Slice *pSlice = info->GetSlice(i);
+        H264SliceEx *pSlice = (H264SliceEx *)info->GetSlice(i);
 
         if ((false == pSlice->m_bInProcess) &&
             (false == pSlice->m_bDecoded))
@@ -929,7 +931,6 @@ bool TaskBrokerSingleThread::GetNextSliceToDecoding(H264DecoderFrameInfo * info,
             pTask->m_iMBToProcess = IPP_MIN(pSlice->m_iMaxMB - pSlice->m_iFirstMB, pSlice->m_iAvailableMB);
             pTask->m_iTaskID = TASK_PROCESS;
             pTask->m_pBuffer = NULL;
-            pTask->pFunction = &H264SegmentDecoderMultiThreaded::ProcessSlice;
             // we can do deblocking only on independent slices or
             // when all previous slices are deblocked
             if (DEBLOCK_FILTER_ON != pSlice->GetSliceHeader()->disable_deblocking_filter_idc)
@@ -964,7 +965,7 @@ bool TaskBrokerSingleThread::GetNextSliceToDeblocking(H264DecoderFrameInfo * inf
         bool isError = false;
         for (Ipp32s i = 0; i < sliceCount; i += 1)
         {
-            H264Slice *pSlice = info->GetSlice(i);
+            H264SliceEx *pSlice = (H264SliceEx *)info->GetSlice(i);
 
             if (pSlice->m_bInProcess || !pSlice->m_bDecoded)
                 return false;
@@ -988,7 +989,7 @@ bool TaskBrokerSingleThread::GetNextSliceToDeblocking(H264DecoderFrameInfo * inf
         if (bNothingToDo)
             return false;
 
-        H264Slice *pSlice = info->GetSlice(sliceCount - 1);
+        H264SliceEx *pSlice = (H264SliceEx *)info->GetSlice(sliceCount - 1);
         pSlice->m_bInProcess = true;
         pSlice->m_bDebVacant = 0;
         InitTask(info, pTask, pSlice);
@@ -1001,7 +1002,6 @@ bool TaskBrokerSingleThread::GetNextSliceToDeblocking(H264DecoderFrameInfo * inf
 
         pTask->m_iTaskID = TASK_DEB_FRAME;
         pTask->m_pBuffer = 0;
-        pTask->pFunction = &H264SegmentDecoderMultiThreaded::DeblockSegmentTask;
 
 #ifdef ECHO_DEB
         DEBUG_PRINT((VM_STRING("(%d) (%d) (m_viewId - %d) frame deb - % 4d to % 4d\n"), pTask->m_iThreadNumber, pSlice->m_pCurrentFrame->m_PicOrderCnt[0],
@@ -1017,7 +1017,7 @@ bool TaskBrokerSingleThread::GetNextSliceToDeblocking(H264DecoderFrameInfo * inf
 
         for (i = 0; i < sliceCount; i += 1)
         {
-            H264Slice *pSlice = info->GetSlice(i);
+            H264SliceEx *pSlice = (H264SliceEx *)info->GetSlice(i);
 
             // we can do deblocking only on vacant slices
             if ((false == pSlice->m_bInProcess) &&
@@ -1034,7 +1034,6 @@ bool TaskBrokerSingleThread::GetNextSliceToDeblocking(H264DecoderFrameInfo * inf
                     pTask->m_iMBToProcess = pSlice->m_iMaxMB - pSlice->m_iFirstMB;
                     pTask->m_iTaskID = TASK_DEB_SLICE;
                     pTask->m_pBuffer = NULL;
-                    pTask->pFunction = &H264SegmentDecoderMultiThreaded::DeblockSegmentTask;
 
                     pSlice->m_bPrevDeblocked = true;
                     pSlice->m_bInProcess = true;
@@ -1101,6 +1100,15 @@ bool TaskBrokerTwoThread::GetNextTaskInternal(H264Task *pTask)
     CStarter start(pTask->m_iThreadNumber);
 #endif // TIME
 
+    AutomaticUMCMutex guard(m_mGuard);
+
+    if (m_IsShouldQuit)
+    {
+        return false;
+    }
+
+    pTask->m_taskPreparingGuard = &guard;
+
     while (false == m_IsShouldQuit)
     {
         if (m_FirstAU)
@@ -1121,7 +1129,7 @@ bool TaskBrokerTwoThread::GetNextTaskInternal(H264Task *pTask)
     return false;
 }
 
-bool TaskBrokerTwoThread::WrapDecodingTask(H264DecoderFrameInfo * info, H264Task *pTask, H264Slice *pSlice)
+bool TaskBrokerTwoThread::WrapDecodingTask(H264DecoderFrameInfo * info, H264Task *pTask, H264SliceEx *pSlice)
 {
     VM_ASSERT(pSlice);
 
@@ -1155,7 +1163,6 @@ bool TaskBrokerTwoThread::WrapDecodingTask(H264DecoderFrameInfo * info, H264Task
         pTask->m_iMBToProcess = IPP_MIN(pTask->m_iMBToProcess, pSlice->m_iAvailableMB);
         pTask->m_iTaskID = TASK_DEC;
         pTask->m_pBuffer = (UMC::CoeffsPtrCommon)pSlice->GetCoeffsBuffers()->LockInputBuffer();
-        pTask->pFunction = &H264SegmentDecoderMultiThreaded::DecodeSegment;
 
 #ifdef ECHO
         DEBUG_PRINT((VM_STRING("(%d) (%d) (viewId - %d) (%d) dec - % 4d to % 4d\n"), pTask->m_iThreadNumber,
@@ -1169,7 +1176,7 @@ bool TaskBrokerTwoThread::WrapDecodingTask(H264DecoderFrameInfo * info, H264Task
 
 } // bool TaskBrokerTwoThread::WrapDecodingTask(H264Task *pTask, H264Slice *pSlice)
 
-bool TaskBrokerTwoThread::WrapReconstructTask(H264DecoderFrameInfo * info, H264Task *pTask, H264Slice *pSlice)
+bool TaskBrokerTwoThread::WrapReconstructTask(H264DecoderFrameInfo * info, H264Task *pTask, H264SliceEx *pSlice)
 {
     VM_ASSERT(pSlice);
     // this is guarded function, safe to touch any variable
@@ -1193,7 +1200,6 @@ bool TaskBrokerTwoThread::WrapReconstructTask(H264DecoderFrameInfo * info, H264T
         size_t size;
         pSlice->GetCoeffsBuffers()->LockOutputBuffer(pointer, size);
         pTask->m_pBuffer = ((UMC::CoeffsPtrCommon) pointer);
-        pTask->pFunction = &H264SegmentDecoderMultiThreaded::ReconstructSegment;
 
 #ifdef ECHO
         DEBUG_PRINT((VM_STRING("(%d) (%d) (viewId - %d)  (%d) rec - % 4d to % 4d\n"), pTask->m_iThreadNumber,
@@ -1207,7 +1213,7 @@ bool TaskBrokerTwoThread::WrapReconstructTask(H264DecoderFrameInfo * info, H264T
 
 } // bool TaskBrokerTwoThread::WrapReconstructTask(H264Task *pTaskm H264Slice *pSlice)
 
-bool TaskBrokerTwoThread::WrapDecRecTask(H264DecoderFrameInfo * info, H264Task *pTask, H264Slice *pSlice)
+bool TaskBrokerTwoThread::WrapDecRecTask(H264DecoderFrameInfo * info, H264Task *pTask, H264SliceEx *pSlice)
 {
     VM_ASSERT(pSlice);
     // this is guarded function, safe to touch any variable
@@ -1231,7 +1237,6 @@ bool TaskBrokerTwoThread::WrapDecRecTask(H264DecoderFrameInfo * info, H264Task *
 
         pTask->m_iTaskID = TASK_DEC_REC;
         pTask->m_pBuffer = 0;
-        pTask->pFunction = &H264SegmentDecoderMultiThreaded::DecRecSegment;
 
 #ifdef ECHO
         DEBUG_PRINT((VM_STRING("(%d) (%d) (viewId - %d) (%d) dec_rec - % 4d to % 4d\n"), pTask->m_iThreadNumber,
@@ -1271,7 +1276,7 @@ bool TaskBrokerTwoThread::GetDecodingTask(H264DecoderFrameInfo * info, H264Task 
     Ipp32s sliceCount = info->GetSliceCount();
     for (i = 0; i < sliceCount; i += 1)
     {
-        H264Slice *pSlice = info->GetSlice(i);
+        H264SliceEx *pSlice = (H264SliceEx *)info->GetSlice(i);
 
         if (pSlice->m_bDecVacant != 1)
             continue;
@@ -1316,7 +1321,7 @@ bool TaskBrokerTwoThread::GetReconstructTask(H264DecoderFrameInfo * info, H264Ta
     Ipp32s sliceCount = info->GetSliceCount();
     for (i = 0; i < sliceCount; i += 1)
     {
-        H264Slice *pSlice = info->GetSlice(i);
+        H264SliceEx *pSlice = (H264SliceEx *)info->GetSlice(i);
 
         if (pSlice->m_bRecVacant && !pSlice->GetCoeffsBuffers())
             break;
@@ -1355,7 +1360,7 @@ bool TaskBrokerTwoThread::GetDecRecTask(H264DecoderFrameInfo * info, H264Task *p
     Ipp32s sliceCount = info->GetSliceCount();
     for (i = 0; i < sliceCount; i += 1)
     {
-        H264Slice *pSlice = info->GetSlice(i);
+        H264SliceEx *pSlice = (H264SliceEx *)info->GetSlice(i);
 
         if (pSlice->m_bRecVacant != 1 || pSlice->m_bDecVacant != 1)
         {
@@ -1380,7 +1385,7 @@ bool TaskBrokerTwoThread::GetDeblockingTask(H264DecoderFrameInfo * info, H264Tas
     Ipp32s sliceCount = info->GetSliceCount();
     for (i = 0; i < sliceCount; i += 1)
     {
-        H264Slice *pSlice = info->GetSlice(i);
+        H264SliceEx *pSlice = (H264SliceEx *)info->GetSlice(i);
 
         Ipp32s iMBWidth = pSlice->GetMBRowWidth(); // DEBUG : always deblock two lines !!!
         Ipp32s iAvailableToDeblock;
@@ -1409,7 +1414,6 @@ bool TaskBrokerTwoThread::GetDeblockingTask(H264DecoderFrameInfo * info, H264Tas
             }
 
             pTask->m_iTaskID = TASK_DEB;
-            pTask->pFunction = &H264SegmentDecoderMultiThreaded::DeblockSegmentTask;
 
 #ifdef ECHO_DEB
             DEBUG_PRINT((VM_STRING("(%d) deb - % 4d to % 4d\n"), pTask->m_iThreadNumber,

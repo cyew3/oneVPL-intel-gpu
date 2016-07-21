@@ -14,8 +14,7 @@
 #include "umc_h264_segment_decoder_mt.h"
 #include "umc_h264_bitstream_inlines.h"
 #include "umc_h264_segment_decoder_templates.h"
-
-#include "umc_h264_task_broker.h"
+#include "umc_h264_task_broker_mt.h"
 #include "umc_h264_frame_info.h"
 
 #include "umc_h264_task_supplier.h"
@@ -60,7 +59,7 @@ Status H264SegmentDecoderMultiThreaded::Init(Ipp32s iNumber)
 void H264SegmentDecoderMultiThreaded::StartProcessingSegment(H264Task &Task)
 {
     m_pSlice = Task.m_pSlice;
-    m_pCurrentFrame = m_pSlice->GetCurrentFrame();
+    m_pCurrentFrame = m_pSlice->GetCurrentFrameEx();
     H264DecoderFrame *pCurrentFrame = m_pCurrentFrame;
 
     m_pSliceHeader = m_pSlice->GetSliceHeader();
@@ -69,7 +68,7 @@ void H264SegmentDecoderMultiThreaded::StartProcessingSegment(H264Task &Task)
     m_bError = Task.m_bError;
 
     // reset decoding variables
-    m_pBitStream = m_pSlice->GetBitStream();
+    m_pBitStream = &m_pSlice->m_SliceDataBitStream;
     mb_height = m_pSlice->GetMBHeight();
     mb_width = m_pSlice->GetMBWidth();
     m_pPicParamSet = m_pSlice->GetPicParam();
@@ -96,7 +95,7 @@ void H264SegmentDecoderMultiThreaded::StartProcessingSegment(H264Task &Task)
     m_gmbinfo = &(m_pCurrentFrame->m_mbinfo);
     if (m_pSlice->GetSliceHeader()->nal_ext.svc.quality_id)
     {
-        m_gmbinfo = &(m_pSlice->GetCurrentFrame()->m_mbinfo);
+        m_gmbinfo = &(m_pSlice->GetCurrentFrameEx()->m_mbinfo);
     }
 
     m_isSliceGroups = m_pSlice->IsSliceGroups();
@@ -210,7 +209,6 @@ Status H264SegmentDecoderMultiThreaded::ProcessSegment(void)
             Status umcRes = UMC_OK;
 
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "AVCDec_work");
-            VM_ASSERT(Task.pFunction);
 
             StartProcessingSegment(Task);
 
@@ -218,13 +216,7 @@ Status H264SegmentDecoderMultiThreaded::ProcessSegment(void)
             {
                 try // do decoding
                 {
-                    Ipp32s firstMB = Task.m_iFirstMB;
-                    if (m_field_index)
-                    {
-                        firstMB += mb_width*mb_height / 2;
-                    }
-
-                    umcRes = (this->*(Task.pFunction))(firstMB, Task.m_iMBToProcess);
+                    umcRes = ProcessTask(&Task);
 
                     if (UMC_ERR_END_OF_STREAM == umcRes)
                     {
@@ -280,6 +272,35 @@ Status H264SegmentDecoderMultiThreaded::ProcessSegment(void)
     return UMC_OK;
 } // Status H264SegmentDecoderMultiThreaded::ProcessSegment(void)
 
+Status H264SegmentDecoderMultiThreaded::ProcessTask(H264Task *task)
+{
+    Ipp32s firstMB = task->m_iFirstMB;
+    if (m_field_index)
+    {
+        firstMB += mb_width*mb_height / 2;
+    }
+
+    switch(task->m_iTaskID)
+    {
+    case TASK_PROCESS:
+        return ProcessSlice(firstMB, task->m_iMBToProcess);
+    case TASK_DEB_FRAME:
+        return DeblockSegmentTask(firstMB, task->m_iMBToProcess);
+    case TASK_DEB_SLICE:
+        return DeblockSegmentTask(firstMB, task->m_iMBToProcess);
+    case TASK_DEC:
+        return DecodeSegment(firstMB, task->m_iMBToProcess);
+    case TASK_REC:
+        return ReconstructSegment(firstMB, task->m_iMBToProcess);
+    case TASK_DEC_REC:
+        return DecRecSegment(firstMB, task->m_iMBToProcess);
+    case TASK_DEB:
+        return DeblockSegmentTask(firstMB, task->m_iMBToProcess);
+    }
+
+    return UMC_ERR_FAILED;
+}
+
 void H264SegmentDecoderMultiThreaded::RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H264Slice * pSlice)
 {
     if (startMb >= endMb || !pSlice || pSlice->IsSliceGroups())
@@ -287,14 +308,14 @@ void H264SegmentDecoderMultiThreaded::RestoreErrorRect(Ipp32s startMb, Ipp32s en
 
     AutomaticUMCMutex guard(m_mGuard);
 
-    m_pSlice = pSlice;
-    m_isSliceGroups = m_pSlice->IsSliceGroups();
-    m_pSeqParamSet = m_pSlice->GetSeqParam();
+    m_pSlice = (H264SliceEx *)pSlice;
+    m_isSliceGroups = pSlice->IsSliceGroups();
+    m_pSeqParamSet = pSlice->GetSeqParam();
     m_pPicParamSet = m_pSlice->GetPicParam();
 
     try
     {
-        H264DecoderFrame * pCurrentFrame = m_pSlice->GetCurrentFrame();
+        H264DecoderFrameEx * pCurrentFrame = m_pSlice->GetCurrentFrameEx();
 
         if (!pCurrentFrame || !pCurrentFrame->m_pYPlane)
         {
@@ -1193,7 +1214,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructDirectMotionVectorsSpatial(bool
         return;
     }
 
-    bool allColocatedSame = IsColocatedSame(m_pCurrentFrame->m_PictureStructureForDec, m_pRefPicList[1][0]->m_PictureStructureForDec);
+    H264DecoderFrameEx *firstRefBackFrame = (H264DecoderFrameEx *)m_pRefPicList[1][0];
+    bool allColocatedSame = IsColocatedSame(m_pCurrentFrame->m_PictureStructureForDec, firstRefBackFrame->m_PictureStructureForDec);
 
     // In loops below, set MV and RefIdx for all subblocks. Conditionally
     // change MV to 0,0 and RefIndex to 0 (doing so called UseZeroPred here).
@@ -1225,7 +1247,7 @@ void H264SegmentDecoderMultiThreaded::ReconstructDirectMotionVectorsSpatial(bool
     {
         sbColPartOffset[0] = 0;
         sbColPartOffset[2] = 12;
-        MBsCol[0] = GetColocatedLocation(m_pRefPicList[1][0], field, sbColPartOffset[0]);
+        MBsCol[0] = GetColocatedLocation(firstRefBackFrame, field, sbColPartOffset[0]);
         sbColPartOffset[1] = sbColPartOffset[0] + 3;
         sbColPartOffset[3] = sbColPartOffset[2] + 3;
     }
@@ -1233,22 +1255,22 @@ void H264SegmentDecoderMultiThreaded::ReconstructDirectMotionVectorsSpatial(bool
     {
         sbColPartOffset[0] = 0;
         sbColPartOffset[2] = 8;
-        MBsCol[0] = GetColocatedLocation(m_pRefPicList[1][0], field, sbColPartOffset[0]);
+        MBsCol[0] = GetColocatedLocation(firstRefBackFrame, field, sbColPartOffset[0]);
         sbColPartOffset[1] = sbColPartOffset[0] + 2;
         sbColPartOffset[3] = sbColPartOffset[2] + 2;
     }
 
     Ipp32u MBCol = MBsCol[0];
-    H264DecoderMotionVector *pRefMVL0 = m_pRefPicList[1][0]->m_mbinfo.MV[0][MBCol].MotionVectors;
-    H264DecoderMotionVector *pRefMVL1 = m_pRefPicList[1][0]->m_mbinfo.MV[1][MBCol].MotionVectors;
-    bool isInter = IS_INTER_MBTYPE(m_pRefPicList[1][0]->m_mbinfo.mbs[MBCol].mbtype);
-    RefIndexType * refIndexes = GetRefIdxs(&m_pRefPicList[1][0]->m_mbinfo, 0, MBCol);
+    H264DecoderMotionVector *pRefMVL0 = firstRefBackFrame->m_mbinfo.MV[0][MBCol].MotionVectors;
+    H264DecoderMotionVector *pRefMVL1 = firstRefBackFrame->m_mbinfo.MV[1][MBCol].MotionVectors;
+    bool isInter = IS_INTER_MBTYPE(firstRefBackFrame->m_mbinfo.mbs[MBCol].mbtype);
+    RefIndexType * refIndexes = GetRefIdxs(&firstRefBackFrame->m_mbinfo, 0, MBCol);
     bool isNeedToCheckMVSBase = isInter && bL1RefPicisShortTerm && ((RefIndexL0 != -1) || (RefIndexL1 != -1));
 
     bool isAll4x4RealSame1[4];
     if (allColocatedSame)
     {
-        switch(m_pRefPicList[1][0]->m_mbinfo.mbs[MBCol].mbtype)
+        switch(firstRefBackFrame->m_mbinfo.mbs[MBCol].mbtype)
         {
         case MBTYPE_INTER_16x8:
         case MBTYPE_INTER_8x16:
@@ -1286,7 +1308,7 @@ void H264SegmentDecoderMultiThreaded::ReconstructDirectMotionVectorsSpatial(bool
                 else
                 {
                     // use L1 colocated
-                    colocatedRefIndex = GetReferenceIndex(&m_pRefPicList[1][0]->m_mbinfo, 1, MBCol, 0);
+                    colocatedRefIndex = GetReferenceIndex(&firstRefBackFrame->m_mbinfo, 1, MBCol, 0);
                     pRefMV = pRefMVL1;
                 }
 
@@ -1324,7 +1346,7 @@ void H264SegmentDecoderMultiThreaded::ReconstructDirectMotionVectorsSpatial(bool
     else
     {
         MBsCol[1] = MBsCol[0];
-        MBsCol[2] = GetColocatedLocation(m_pRefPicList[1][0], field, sbColPartOffset[2]);
+        MBsCol[2] = GetColocatedLocation(firstRefBackFrame, field, sbColPartOffset[2]);
         MBsCol[3] = MBsCol[2];
         sbColPartOffset[3] = sbColPartOffset[2] + (m_IsUseDirect8x8Inference ? 3 : 2);
         isAll4x4RealSame1[0] = isAll4x4RealSame1[1] = isAll4x4RealSame1[2] = isAll4x4RealSame1[3] = true;
@@ -1344,11 +1366,11 @@ void H264SegmentDecoderMultiThreaded::ReconstructDirectMotionVectorsSpatial(bool
         if (!allColocatedSame)
         {
             MBCol = MBsCol[sb];
-            pRefMVL0 = m_pRefPicList[1][0]->m_mbinfo.MV[0][MBCol].MotionVectors;
-            pRefMVL1 = m_pRefPicList[1][0]->m_mbinfo.MV[1][MBCol].MotionVectors;
-            isInter = IS_INTER_MBTYPE(m_pRefPicList[1][0]->m_mbinfo.mbs[MBCol].mbtype);
+            pRefMVL0 = firstRefBackFrame->m_mbinfo.MV[0][MBCol].MotionVectors;
+            pRefMVL1 = firstRefBackFrame->m_mbinfo.MV[1][MBCol].MotionVectors;
+            isInter = IS_INTER_MBTYPE(firstRefBackFrame->m_mbinfo.mbs[MBCol].mbtype);
             isNeedToCheckMVSBase = isInter && bL1RefPicisShortTerm && ((RefIndexL0 != -1) || (RefIndexL1 != -1));
-            refIndexes = GetRefIdxs(&m_pRefPicList[1][0]->m_mbinfo, 0, MBCol);
+            refIndexes = GetRefIdxs(&firstRefBackFrame->m_mbinfo, 0, MBCol);
         }
 
         sbcolpartoffset = sbColPartOffset[sb];
@@ -1362,7 +1384,7 @@ void H264SegmentDecoderMultiThreaded::ReconstructDirectMotionVectorsSpatial(bool
         else
         {
             // use L1 colocated
-            colocatedRefIndex = GetReferenceIndex(&m_pRefPicList[1][0]->m_mbinfo, 1, MBCol, sbcolpartoffset);
+            colocatedRefIndex = GetReferenceIndex(&firstRefBackFrame->m_mbinfo, 1, MBCol, sbcolpartoffset);
             pRefMV = pRefMVL1;
         }
 
@@ -1375,11 +1397,11 @@ void H264SegmentDecoderMultiThreaded::ReconstructDirectMotionVectorsSpatial(bool
             if (!allColocatedSame)
             {
                 Ipp32s sbtype;
-                switch(m_pRefPicList[1][0]->m_mbinfo.mbs[MBCol].mbtype)
+                switch(firstRefBackFrame->m_mbinfo.mbs[MBCol].mbtype)
                 {
                 case MBTYPE_INTER_8x8:
                 case MBTYPE_INTER_8x8_REF0:
-                    sbtype = m_pRefPicList[1][0]->m_mbinfo.mbs[MBCol].sbtype[sb];
+                    sbtype = firstRefBackFrame->m_mbinfo.mbs[MBCol].sbtype[sb];
                     isAll4x4Same = (sbtype == SBTYPE_8x8);
                     break;
                 };
@@ -1465,10 +1487,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructDirectMotionVectorsSpatial(bool
         m_cur_mb.GlobalMacroblockInfo->mbtype = MBTYPE_INTER_8x8;
 
         if (allColocatedSame && isDirectMB &&
-            (m_pRefPicList[1][0]->m_mbinfo.mbs[MBCol].mbtype == MBTYPE_INTER_16x8 ||
-            m_pRefPicList[1][0]->m_mbinfo.mbs[MBCol].mbtype == MBTYPE_INTER_8x16))
+            (firstRefBackFrame->m_mbinfo.mbs[MBCol].mbtype == MBTYPE_INTER_16x8 ||
+            firstRefBackFrame->m_mbinfo.mbs[MBCol].mbtype == MBTYPE_INTER_8x16))
         {
-            m_cur_mb.GlobalMacroblockInfo->mbtype = m_pRefPicList[1][0]->m_mbinfo.mbs[MBCol].mbtype;
+            m_cur_mb.GlobalMacroblockInfo->mbtype = firstRefBackFrame->m_mbinfo.mbs[MBCol].mbtype;
             m_cur_mb.LocalMacroblockInfo->sbdir[1] = m_cur_mb.LocalMacroblockInfo->sbdir[3];
         }
     }

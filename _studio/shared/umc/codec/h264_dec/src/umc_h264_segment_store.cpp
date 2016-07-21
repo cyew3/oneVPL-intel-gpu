@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -13,9 +13,12 @@
 
 #include "umc_h264_dec_defs_dec.h"
 #include "umc_structures.h"
+#include "umc_h264_dec_structures.h"
 
 namespace UMC
 {
+
+const UMC::H264DecoderMotionVector zeroVector = {0, 0};
 
 H264DecoderLocalMacroblockDescriptor::H264DecoderLocalMacroblockDescriptor(void)
 {
@@ -92,6 +95,7 @@ bool H264DecoderLocalMacroblockDescriptor::Allocate(Ipp32s iMBCount, MemoryAlloc
     }
 
     // reset pointer(s)
+    const int ALIGN_VALUE = 16;
     MVDeltas[0] = align_pointer<H264DecoderMacroblockMVs *> (m_pAllocated, ALIGN_VALUE);
     MVDeltas[1] = align_pointer<H264DecoderMacroblockMVs *> (MVDeltas[0] + iMBCount, ALIGN_VALUE);
     MacroblockCoeffsInfo = align_pointer<H264DecoderMacroblockCoeffsInfo *> (MVDeltas[1] + iMBCount, ALIGN_VALUE);

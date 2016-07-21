@@ -16,10 +16,10 @@
 
 #include "umc_h264_dec.h"
 #include "umc_h264_segment_decoder_base.h"
-#include "umc_h264_slice_decoding.h"
+#include "umc_h264_slice_ex.h"
 #include "umc_h264_dec_tables.h"
 
-#include "umc_h264_frame.h"
+#include "umc_h264_frame_ex.h"
 
 #include "umc_h264_dec_deblocking.h"
 
@@ -99,13 +99,13 @@ struct Context
     const H264PicParamSet *m_pPicParamSet;                      // (const H264PicParamSet *) pointer to current picture parameters sets
     const H264SeqParamSet *m_pSeqParamSet;                      // (const H264SeqParamSet *) pointer to current sequence parameters sets
     const H264ScalingPicParams *m_pScalingPicParams;
-    H264DecoderFrame *m_pCurrentFrame;                          // (H264DecoderFrame *) pointer to frame being decoded
+    H264DecoderFrameEx *m_pCurrentFrame;                          // (H264DecoderFrame *) pointer to frame being decoded
     IntraType *m_pMBIntraTypes;                                 // (Ipp32u *) pointer to array of intra types
     const PredWeightTable *m_pPredWeight[2];                    // (PredWeightTable *) pointer to forward/backward (0/1) prediction table
 
 };
 
-STRUCT_DECLSPEC_ALIGN class H264SegmentDecoder : public H264SegmentDecoderBase, public Context
+class H264SegmentDecoder : public H264SegmentDecoderBase, public Context
 {
 public:
 
@@ -115,7 +115,7 @@ public:
 
     volatile bool m_bFrameDeblocking;                                    // (bool) frame deblocking flag
 
-    H264Slice *m_pSlice;                                        // (H264Slice *) current slice pointer
+    H264SliceEx *m_pSlice;                                        // (H264Slice *) current slice pointer
     const H264SliceHeader *m_pSliceHeader;                      // (H264SliceHeader *) current slice header
 
     Ipp16u m_BufferForBackwardPrediction[16 * 16 * 3 + DEFAULT_ALIGN_VALUE]; // allocated buffer for backward prediction
@@ -217,7 +217,7 @@ public:
     void DecodeMBQPDelta_CAVLC(void);
 
     // Get colocated location
-    Ipp32s GetColocatedLocation(H264DecoderFrame *pRefFrame, Ipp32s Field, Ipp32s &block, Ipp32s *scale = NULL);
+    Ipp32s GetColocatedLocation(H264DecoderFrameEx *pRefFrame, Ipp32s Field, Ipp32s &block, Ipp32s *scale = NULL);
     // Decode motion vectors
     void DecodeDirectMotionVectorsTemporal(bool is_direct_mb);
 

@@ -23,8 +23,9 @@
 
 namespace UMC
 {
+
 class TaskSupplier;
-class H264DecoderFrameList;
+class H264Task;
 
 /****************************************************************************************************/
 // TaskBroker

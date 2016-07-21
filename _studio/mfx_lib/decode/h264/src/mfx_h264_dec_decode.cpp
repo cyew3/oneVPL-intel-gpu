@@ -19,8 +19,6 @@
 #include "mfx_common.h"
 #include "mfx_common_decode_int.h"
 
-#include "umc_h264_mfx_sw_supplier.h"
-
 // debug
 #include "umc_h264_frame_list.h"
 #include "vm_sys_info.h"
@@ -31,6 +29,8 @@
 #include "umc_va_dxva2_protected.h"
 #include "umc_va_linux_protected.h"
 #include "umc_va_video_processing.h"
+#else
+#include "umc_h264_mfx_sw_supplier.h"
 #endif
 
 #if defined (MFX_VA_OSX)

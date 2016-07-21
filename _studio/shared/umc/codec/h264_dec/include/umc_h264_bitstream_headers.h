@@ -154,10 +154,18 @@ typedef struct BitStreamBackUp
 
 namespace UMC
 {
+extern const Ipp32u bits_data[];
+extern const Ipp32s mp_scan4x4[2][16];
+extern const Ipp32s hp_scan8x8[2][64];
+
+extern const Ipp16u SAspectRatio[17][2];
+
+extern const Ipp8u default_intra_scaling_list4x4[16];
+extern const Ipp8u default_inter_scaling_list4x4[16];
+extern const Ipp8u default_intra_scaling_list8x8[64];
+extern const Ipp8u default_inter_scaling_list8x8[64];
 
 class Headers;
-
-#pragma pack()
 
 class H264BaseBitstream
 {
@@ -186,10 +194,23 @@ public:
     bool More_RBSP_Data();
 
     inline size_t BytesDecoded();
-
     inline size_t BitsDecoded();
-
     inline size_t BytesLeft();
+
+    // Align bitstream pointer to the right
+    inline void AlignPointerRight();
+
+    void GetOrg(Ipp32u **pbs, Ipp32u *size);
+    void GetState(Ipp32u **pbs, Ipp32u *bitOffset);
+    void SetState(Ipp32u *pbs, Ipp32u bitOffset);
+
+    // Set current decoding position
+    void SetDecodedBytes(size_t);
+
+    size_t BytesDecodedRoundOff()
+    {
+        return static_cast<size_t>((Ipp8u*)m_pbs - (Ipp8u*)m_pbsBase);
+    }
 
 protected:
 
@@ -247,6 +268,19 @@ public:
                                 const H264SeqParamSetSVCExtension *spsSvcExt); // from slice header in
                                                                                // scalable extension NAL unit
 
+
+    Status GetNALUnitType(NAL_Unit_Type &nal_unit_type, Ipp32u &nal_ref_idc);
+    // SEI part
+    Ipp32s ParseSEI(const Headers & headers, H264SEIPayLoad *spl);
+    Ipp32s sei_message(const Headers & headers, Ipp32s current_sps, H264SEIPayLoad *spl);
+    Ipp32s sei_payload(const Headers & headers, Ipp32s current_sps,H264SEIPayLoad *spl);
+    Ipp32s buffering_period(const Headers & headers, Ipp32s , H264SEIPayLoad *spl);
+    Ipp32s pic_timing(const Headers & headers, Ipp32s current_sps, H264SEIPayLoad *spl);
+    void user_data_registered_itu_t_t35(H264SEIPayLoad *spl);
+    void recovery_point(H264SEIPayLoad *spl);
+    Ipp32s dec_ref_pic_marking_repetition(const Headers & headers, Ipp32s current_sps, H264SEIPayLoad *spl);
+    void unparsed_sei_message(H264SEIPayLoad *spl);
+    void scalability_info(H264SEIPayLoad *spl);
 
 protected:
 
@@ -421,6 +455,19 @@ inline size_t H264BaseBitstream::BitsDecoded()
 inline size_t H264BaseBitstream::BytesLeft()
 {
     return((Ipp32s)m_maxBsSize - (Ipp32s) BytesDecoded());
+}
+
+inline void H264BaseBitstream::AlignPointerRight()
+{
+    if ((m_bitOffset & 0x07) != 0x07)
+    {
+        m_bitOffset = (m_bitOffset | 0x07) - 8;
+        if (m_bitOffset == -1)
+        {
+            m_bitOffset = 31;
+            m_pbs++;
+        }
+    }
 }
 
 Status InitializePictureParamSet(H264PicParamSet *pps, const H264SeqParamSet *sps, bool isExtension);

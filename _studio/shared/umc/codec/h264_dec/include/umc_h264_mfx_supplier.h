@@ -14,17 +14,11 @@
 #ifndef __UMC_H264_MFX_SUPPLIER_H
 #define __UMC_H264_MFX_SUPPLIER_H
 
-//#define UMC_RESTRICTED_CODE_MFX
-
-#ifndef UMC_RESTRICTED_CODE_MFX
-
-#include "mfx_h264_ex_param_buf.h"
+//#include "mfx_h264_ex_param_buf.h"
 #include "umc_h264_task_supplier.h"
 #include "umc_media_data_ex.h"
-
 #include "umc_h264_task_broker.h"
 #include "mfxvideo++int.h"
-
 
 class VideoDECODEH264;
 
@@ -104,8 +98,6 @@ public:
 
 protected:
 
-    virtual H264DecoderFrame * GetFreeFrame(const H264Slice *pSlice = NULL);
-
     virtual Status DecodeSEI(MediaDataEx *nalUnit);
 
     virtual void AddFakeReferenceFrame(H264Slice * pSlice);
@@ -159,7 +151,6 @@ private:
 
 };
 
-#endif // UMC_RESTRICTED_CODE_MFX
 
 #endif // __UMC_H264_MFX_SUPPLIER_H
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

@@ -13,9 +13,16 @@
 
 #include "umc_h264_mfx_sw_supplier.h"
 #include "umc_h264_task_broker_mt.h"
+#include "umc_h264_segment_decoder_mt.h"
+#include "umc_h264_dec_ippwrap.h"
 
 namespace UMC
 {
+H264Slice * MFX_SW_TaskSupplier::CreateSlice()
+{
+    return m_ObjHeap.AllocateObject<H264SliceEx>();
+}
+
 void MFX_SW_TaskSupplier::CreateTaskBroker()
 {
     switch(m_iThreadNum)
@@ -281,6 +288,211 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
 
     delete[] mapUnitToSliceGroupMap;
     delete[] MbToSliceGroupMap;
+}
+
+void DefaultFill(H264DecoderFrame * frame, Ipp32s fields_mask, bool isChromaOnly, Ipp8u defaultValue = 128)
+{
+    try
+    {
+        IppiSize roi;
+
+        Ipp32s field_factor = fields_mask == 2 ? 0 : 1;
+        Ipp32s field = field_factor ? fields_mask : 0;
+
+        if (!isChromaOnly)
+        {
+            roi = frame->lumaSize();
+            roi.height >>= field_factor;
+
+            if (frame->m_pYPlane)
+                SetPlane(defaultValue, frame->m_pYPlane + field*frame->pitch_luma(),
+                    frame->pitch_luma() << field_factor, roi);
+        }
+
+        roi = frame->chromaSize();
+        roi.height >>= field_factor;
+
+        if (frame->m_pUVPlane) // NV12
+        {
+            roi.width *= 2;
+            SetPlane(defaultValue, frame->m_pUVPlane + field*frame->pitch_chroma(), frame->pitch_chroma() << field_factor, roi);
+        }
+        else
+        {
+            if (frame->m_pUPlane)
+                SetPlane(defaultValue, frame->m_pUPlane + field*frame->pitch_chroma(), frame->pitch_chroma() << field_factor, roi);
+            if (frame->m_pVPlane)
+                SetPlane(defaultValue, frame->m_pVPlane + field*frame->pitch_chroma(), frame->pitch_chroma() << field_factor, roi);
+        }
+    } catch(...)
+    {
+        // nothing to do
+        //VM_ASSERT(false);
+    }
+}
+
+bool MFX_SW_TaskSupplier::ProcessNonPairedField(H264DecoderFrame * pFrame)
+{
+    if (MFXTaskSupplier::ProcessNonPairedField(pFrame))
+    {
+        H264Slice * pSlice = pFrame->GetAU(0)->GetSlice(0);
+        Ipp32s isBottom = pSlice->IsBottomField() ? 0 : 1;
+        DefaultFill(pFrame, isBottom, false);
+        return true;
+    }
+
+    return false;
+}
+
+void MFX_SW_TaskSupplier::AddFakeReferenceFrame(H264Slice * pSlice)
+{
+    H264DecoderFrame *pFrame = GetFreeFrame(pSlice);
+    if (!pFrame)
+        return;
+
+    Status umcRes = InitFreeFrame(pFrame, pSlice);
+    if (umcRes != UMC_OK)
+    {
+        return;
+    }
+
+    umcRes = AllocateFrameData(pFrame, pFrame->lumaSize(), pFrame->m_bpp, pFrame->GetColorFormat());
+    if (umcRes != UMC_OK)
+    {
+        return;
+    }
+
+    Ipp32s frame_num = pSlice->GetSliceHeader()->frame_num;
+    if (pSlice->GetSliceHeader()->field_pic_flag == 0)
+    {
+        pFrame->setPicNum(frame_num, 0);
+    }
+    else
+    {
+        pFrame->setPicNum(frame_num*2+1, 0);
+        pFrame->setPicNum(frame_num*2+1, 1);
+    }
+
+    pFrame->SetisShortTermRef(true, 0);
+    pFrame->SetisShortTermRef(true, 1);
+
+    pFrame->SetSkipped(true);
+    pFrame->SetFrameExistFlag(false);
+    pFrame->SetisDisplayable();
+
+    DefaultFill(pFrame, 2, false);
+
+    H264SliceHeader* sliceHeader = pSlice->GetSliceHeader();
+    ViewItem &view = GetView(sliceHeader->nal_ext.mvc.view_id);
+
+    if (pSlice->GetSeqParam()->pic_order_cnt_type != 0)
+    {
+        Ipp32s tmp1 = sliceHeader->delta_pic_order_cnt[0];
+        Ipp32s tmp2 = sliceHeader->delta_pic_order_cnt[1];
+        sliceHeader->delta_pic_order_cnt[0] = sliceHeader->delta_pic_order_cnt[1] = 0;
+
+        view.GetPOCDecoder(0)->DecodePictureOrderCount(pSlice, frame_num);
+
+        sliceHeader->delta_pic_order_cnt[0] = tmp1;
+        sliceHeader->delta_pic_order_cnt[1] = tmp2;
+    }
+
+    view.GetPOCDecoder(0)->DecodePictureOrderCountFakeFrames(pFrame, sliceHeader);
+
+    // mark generated frame as short-term reference
+    {
+        // reset frame global data
+        H264DecoderMacroblockGlobalInfo *pMBInfo = ((H264DecoderFrameEx *)pFrame)->m_mbinfo.mbs;
+        memset(pMBInfo, 0, pFrame->totalMBs*sizeof(H264DecoderMacroblockGlobalInfo));
+    }
+}
+
+void MFX_SW_TaskSupplier::OnFullFrame(H264DecoderFrame * pFrame)
+{
+    //fill chroma planes in case of 4:0:0
+    if (pFrame->m_chroma_format == 0)
+    {
+        DefaultFill(pFrame, 2, true);
+    }
+
+    MFXTaskSupplier::OnFullFrame(pFrame);
+}
+
+H264DecoderFrame * MFX_SW_TaskSupplier::GetFreeFrame(const H264Slice *pSlice)
+{
+    AutomaticUMCMutex guard(m_mGuard);
+    Ipp32u view_id = pSlice ? pSlice->GetSliceHeader()->nal_ext.mvc.view_id : 0;
+    ViewItem &view = GetView(view_id);
+    H264DecoderFrame *pFrame = 0;
+
+    H264DBPList *pDPB = view.GetDPBList(0);
+
+    // Traverse list for next disposable frame
+    //if (m_pDecodedFramesList->countAllFrames() >= m_dpbSize + m_DPBSizeEx)
+    pFrame = pDPB->GetDisposable();
+
+    VM_ASSERT(!pFrame || pFrame->GetRefCounter() == 0);
+
+    // Did we find one?
+    if (NULL == pFrame)
+    {
+        if (pDPB->countAllFrames() >= view.maxDecFrameBuffering + m_DPBSizeEx)
+        {
+            return 0;
+        }
+
+        // Didn't find one. Let's try to insert a new one
+        pFrame = new H264DecoderFrameEx(m_pMemoryAllocator, &m_ObjHeap);
+        if (NULL == pFrame)
+            return 0;
+
+        pDPB->append(pFrame);
+    }
+
+    DecReferencePictureMarking::Remove(pFrame);
+    pFrame->Reset();
+
+    // Set current as not displayable (yet) and not outputted. Will be
+    // updated to displayable after successful decode.
+    pFrame->unsetWasOutputted();
+    pFrame->unSetisDisplayable();
+    pFrame->SetSkipped(false);
+    pFrame->SetFrameExistFlag(true);
+    pFrame->IncrementReference();
+
+    if (view.pCurFrame == pFrame)
+        view.pCurFrame = 0;
+
+    m_UIDFrameCounter++;
+    pFrame->m_UID = m_UIDFrameCounter;
+
+    return pFrame;
+}
+
+
+Status MFX_SW_TaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, ColorFormat color_format)
+{
+    VideoDataInfo info;
+    info.Init(dimensions.width, dimensions.height, color_format, bit_depth);
+
+    FrameMemID frmMID;
+    Status sts = m_pFrameAllocator->Alloc(&frmMID, &info, 0);
+
+    if (sts != UMC_OK)
+    {
+        throw h264_exception(UMC_ERR_ALLOC);
+    }
+
+    const FrameData *frmData = m_pFrameAllocator->Lock(frmMID);
+
+    if (!frmData)
+        throw h264_exception(UMC_ERR_LOCK);
+
+    pFrame->allocate(frmData, &info);
+    pFrame->m_index = frmMID;
+
+    Status umcRes = ((H264DecoderFrameEx *)pFrame)->allocateParsedFrameData();
+    return umcRes;
 }
 
 }

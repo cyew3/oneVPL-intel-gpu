@@ -12,32 +12,8 @@
 #if defined (UMC_ENABLE_H264_VIDEO_DECODER)
 
 #include "umc_h264_dec_debug.h"
-#include "umc_h264_timing.h"
+//#include "umc_h264_timing.h"
 #include <cstdarg>
-
-// #define __EXCEPTION_HANDLER_
-
-#ifdef __EXCEPTION_HANDLER_
-
-#include <eh.h>
-class ExceptionHandlerInitializer
-{
-public:
-
-    ExceptionHandlerInitializer()
-    {
-        _set_se_translator(ExceptionHandlerInitializer::trans_func);
-    }
-
-    static void trans_func(unsigned int , EXCEPTION_POINTERS* )
-    {
-        __asm int 3;
-        throw UMC::h264_exception(UMC::UMC_ERR_INVALID_STREAM);
-    }
-};
-
-static ExceptionHandlerInitializer exceptionHandler;
-#endif // __EXCEPTION_HANDLER_
 
 namespace UMC
 {

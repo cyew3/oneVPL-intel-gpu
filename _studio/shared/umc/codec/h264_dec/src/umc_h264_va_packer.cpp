@@ -1140,7 +1140,7 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
 
     Ipp8u *pNalUnit; //ptr to first byte of start code
     Ipp32u NalUnitSize; // size of NAL unit in byte
-    H264Bitstream *pBitstream = pSlice->GetBitStream();
+    H264HeadersBitstream *pBitstream = pSlice->GetBitStream();
 
     pBitstream->GetOrg((Ipp32u**)&pNalUnit, &NalUnitSize);
 
@@ -2177,7 +2177,7 @@ Ipp8u* GetSliceStat(H264Slice* slice, Ipp32u* size, Ipp32u* offset)
     VM_ASSERT(slice);
     VM_ASSERT(size);
 
-    H264Bitstream* bs = slice->GetBitStream();
+    H264HeadersBitstream* bs = slice->GetBitStream();
     VM_ASSERT(bs);
 
     Ipp8u* base;   //ptr to first byte of start code
@@ -2276,7 +2276,7 @@ Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chop
         //no slice data, skipping
         return CHOPPING_SKIP_SLICE;
 
-    H264Bitstream* pBitstream = pSlice->GetBitStream();
+    H264HeadersBitstream* pBitstream = pSlice->GetBitStream();
     if (chopping == CHOPPING_SPLIT_SLICE_DATA)
     {
         NalUnitSize = pBitstream->BytesLeft();

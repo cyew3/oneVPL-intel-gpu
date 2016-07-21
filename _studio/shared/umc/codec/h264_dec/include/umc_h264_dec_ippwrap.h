@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -19,6 +19,7 @@
 #include "vm_debug.h"
 #include "umc_h264_dec_defs_dec.h"
 #include "mfx_h264_dispatcher.h"
+#include "umc_h264_dec_structures.h"
 
 #if defined(LINUX) && defined(__GNUC__)
 #pragma GCC diagnostic push

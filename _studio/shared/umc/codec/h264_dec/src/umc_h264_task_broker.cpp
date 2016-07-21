@@ -417,18 +417,7 @@ bool TaskBroker::IsFrameCompleted(H264DecoderFrame * pFrame)
 
 bool TaskBroker::GetNextTask(H264Task *pTask)
 {
-    AutomaticUMCMutex guard(m_mGuard);
-
-    // check error(s)
-    if (/*!m_FirstAU ||*/ m_IsShouldQuit)
-    {
-        return false;
-    }
-
-    pTask->m_taskPreparingGuard = &guard;
-
-    bool res = GetNextTaskInternal(pTask);
-    return res;
+    return GetNextTaskInternal(pTask);
 } // bool TaskBroker::GetNextTask(H264Task *pTask)
 
 void TaskBroker::AddPerformedTask(H264Task *)

@@ -513,19 +513,11 @@ AU_Splitter::~AU_Splitter()
     Close();
 }
 
-void AU_Splitter::Init(VideoDecoderParams *init)
+void AU_Splitter::Init()
 {
     Close();
 
-    if (init->info.stream_subtype == AVC1_VIDEO)
-    {
-        m_pNALSplitter.reset(new NALUnitSplitterMP4());
-    }
-    else
-    {
-        m_pNALSplitter.reset(new NALUnitSplitter());
-    }
-
+    m_pNALSplitter.reset(new NALUnitSplitter());
     m_pNALSplitter->Init();
 }
 
