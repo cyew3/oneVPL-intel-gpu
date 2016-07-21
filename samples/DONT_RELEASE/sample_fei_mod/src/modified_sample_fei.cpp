@@ -17,6 +17,14 @@ static mfxU32 mv_data_length_offset = 0;
 static const int mb_type_remap[26] = {0, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22, 23, 24, 25};
 static const int intra_16x16[26]   = {2,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  2};
 static const int inter_mb_mode[1+22] = {-1, 0,  0,  0,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  3};
+static const mfxU8 sub_mb_type[1+22][4] = {
+    {0xff,},   {0,0,0,0}, {1,1,1,1}, {2,2,2,2}, // 0-3
+    {0,0,0,0}, {0,0,0,0}, {1,1,1,1}, {1,1,1,1}, // 4-7
+    {0,0,1,1}, {0,1,0,1}, {1,1,0,0}, {1,0,1,0}, // 8-11
+    {0,0,2,2}, {0,2,0,2}, {1,1,2,2}, {1,2,1,2}, // 12-15
+    {2,2,0,0}, {2,0,2,0}, {2,2,1,1}, {2,1,2,1}, // 16-19
+    {2,2,2,2}, {2,2,2,2}, {0xff,}               // 20-22
+};
 
 mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask, mfxU8 QP, iTaskPool *pTaskList)
 {
@@ -326,6 +334,11 @@ void DumpMB(const msdk_char* fname, struct iTask* task, int uMB)
 }
 #endif //DUMP_MB_DSO
 
+// Unlike ENC, SubMbPredModes from StreamOut are populated for all 4 8x8 blocks - uses all 8 bits.
+// It is more convenient for our computations, and we used while inside current frame.
+// PAK considers it as not populated, so we pack values in the end of the loop to have 1 per prediction partition.
+// SubMbPredModes from reference frames are packed (not populated), so there are additional code for directMV computation
+
 // pTaskList for CEncodingPipeline::m_inputTasks;
 mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
 {
@@ -426,13 +439,16 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
 
                         if (!noRefs && refmbCode && !refmbCode->MB[uMB].IntraMbFlag && refmvs /*&& is_l1_pic_short_term*/) // no long term
                         {
-                            mfxU8 pmodesCol = (refmbCode->MB[uMB].InterMB.SubMbPredModes >> (sb*2)) & 3;
-                            mfxU8 ref_col = refmbCode->MB[uMB].InterMB.RefIdx[0][sb];
+                            mfxU8 pmodesCol = (refmbCode->MB[uMB].MbType == 22) ?
+                                ((refmbCode->MB[uMB].InterMB.SubMbPredModes >> (sb*2)) & 3) :
+                                sub_mb_type[refmbCode->MB[uMB].MbType][sb];
+                            mfxU8 ref_col = 255;
                             const mfxI16Pair *mv_col;
-                            if (pmodesCol != 1 && ref_col <= 32)
+                            if (pmodesCol != 1) { // L0 or Bi
+                                ref_col = refmbCode->MB[uMB].InterMB.RefIdx[0][sb];
                                 mv_col = &refmvs->MB[uMB].MV[sbColz][0];
-                            else {
-                                ref_col = (pmodesCol == 1) ? refmbCode->MB[uMB].InterMB.RefIdx[1][sb] : 255;
+                            } else {
+                                ref_col = refmbCode->MB[uMB].InterMB.RefIdx[1][sb];
                                 mv_col = &refmvs->MB[uMB].MV[sbColz][1];
                             }
                             if (ref_col == 0 &&
@@ -527,6 +543,33 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
         } // inter
 
     } // MB loop
+
+    // restore SubMbPredModes from populated (DSO) to packed (PAK)
+    if (mbCode && sliceHeader)
+    for (mfxI32 uMB = 0, uMBy = 0, slice = -1, nextSliceMB = 0; uMBy < hmb; uMBy++) for (mfxI32 uMBx = 0; uMBx < wmb; uMBx++, uMB++) {
+        while (nextSliceMB <= uMB && slice+1 < sliceHeader->NumSlice) {
+            slice++;
+            nextSliceMB = sliceHeader->Slice[slice].MBAaddress + sliceHeader->Slice[slice].NumMBs;
+        }
+        if (B_SLICE(sliceHeader->Slice[slice].SliceType))
+        if (!mbCode->MB[uMB].IntraMbFlag) {
+            int smodes = mbCode->MB[uMB].InterMB.SubMbPredModes, newsmodes = smodes;
+            switch (mbCode->MB[uMB].InterMbMode) {
+                case 0:
+                    newsmodes = smodes&3;
+                    break;
+                case 1:
+                    newsmodes = (smodes>>2)&15;
+                    break;
+                case 2:
+                    newsmodes = smodes&15;
+                    break;
+                default: break;
+            }
+            if (smodes != newsmodes)
+                mbCode->MB[uMB].InterMB.SubMbPredModes = (mfxU8)newsmodes;
+        }
+    }
 
 #ifdef DUMP_MB_DSO
 
