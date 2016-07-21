@@ -536,6 +536,21 @@ mfxStatus MFXVideoDECODE_DecodeFrameAsync(mfxSession session, mfxBitstream *bs, 
             task.pSrc[0] = *surface_out;
 #endif
             task.pDst[0] = *surface_out;
+            // this is wa to remove external task dependency for HEVC SW decode plugin. 
+            // need only because SW HEVC decode is pseudo
+            {
+                mfxPlugin plugin;
+                mfxPluginParam par;
+                if (session->m_plgDec.get())
+                {
+                    session->m_plgDec.get()->GetPlugin(plugin);
+                    MFX_CHECK_STS(plugin.GetPluginParam(plugin.pthis, &par));
+                    if (!memcmp(&MFX_PLUGINID_HEVCD_SW, &par.PluginUID, sizeof(MFX_PLUGINID_HEVCD_SW)))
+                    {
+                        task.pDst[0] = 0;
+                    }
+                }
+            }
 
 #ifdef MFX_TRACE_ENABLE
             task.nParentId = MFX_AUTO_TRACE_GETID();
