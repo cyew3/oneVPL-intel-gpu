@@ -20,8 +20,6 @@ Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
     #define MFX_ENABLE_H265_VIDEO_DECODE
 #endif
-//#define MFX_ENABLE_H264_VIDEO_BSD
-//#define MFX_ENABLE_H264_VIDEO_DEC
 
 //#define MFX_ENABLE_H264_VIDEO_ENCODE
 #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
@@ -42,8 +40,6 @@ Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 // mpeg2
 #if 0 // ENABLED
 #define MFX_ENABLE_MPEG2_VIDEO_DECODE
-//#define MFX_ENABLE_MPEG2_VIDEO_BSD
-//#define MFX_ENABLE_MPEG2_VIDEO_DEC
 #define MFX_ENABLE_MPEG2_VIDEO_ENCODE
 #define MFX_ENABLE_MPEG2_VIDEO_PAK
 #define MFX_ENABLE_MPEG2_VIDEO_ENC
@@ -54,8 +50,6 @@ Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 //// vc1
 #if 0 // ENABLED
 #define MFX_ENABLE_VC1_VIDEO_DECODE
-//#define MFX_ENABLE_VC1_VIDEO_BSD
-//#define MFX_ENABLE_VC1_VIDEO_DEC
 //#define MFX_ENABLE_VC1_VIDEO_BRC
 //
 //#define MFX_ENABLE_VC1_VIDEO_ENCODE

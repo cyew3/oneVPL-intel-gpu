@@ -115,10 +115,8 @@ foreach( variant sw hw )
     umc_io
     umc_va_elk_hw
     brc
-    bsd
     cmrt_cross_platform_hw
     decode_${variant}
-    dec
     encode
     encode_hw
     enc
@@ -292,8 +290,6 @@ foreach( variant sw )
     encode
     pak
     brc
-    bsd
-    dec
     decode_${variant}
     vpp_${variant}
     cmrt_cross_platform_hw

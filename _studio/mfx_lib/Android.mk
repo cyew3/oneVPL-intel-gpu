@@ -10,8 +10,6 @@ MFX_LOCAL_ENCODERS = h265 h264 mpeg2 vc1 mjpeg mvc svc vp8
 # Setting subdirectories to march thru
 MFX_LOCAL_DIRS = \
     $(addprefix brc/, $(MFX_LOCAL_DECODERS)) \
-    $(addprefix bsd/, $(MFX_LOCAL_DECODERS)) \
-    $(addprefix dec/, $(MFX_LOCAL_DECODERS)) \
     $(addprefix enc/, $(MFX_LOCAL_ENCODERS)) \
     $(addprefix encode/, $(MFX_LOCAL_ENCODERS)) \
     $(addprefix pak/, $(MFX_LOCAL_ENCODERS)) \

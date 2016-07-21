@@ -53,7 +53,7 @@ list( APPEND vencs
 
 foreach( dec ${vdecs} )
   list( APPEND vdirs
-    brc/${dec} bsd/${dec} dec/${dec}
+    brc/${dec}
     )
 
   list( APPEND vdirs_impl

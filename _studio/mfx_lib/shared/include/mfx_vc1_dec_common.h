@@ -11,7 +11,7 @@
 #include "mfx_common.h"
 
 
-#if defined (MFX_ENABLE_VC1_VIDEO_BSD) || defined (MFX_ENABLE_VC1_VIDEO_DEC) || defined (MFX_ENABLE_VC1_VIDEO_DECODE)
+#if defined (MFX_ENABLE_VC1_VIDEO_DECODE)
 
 #ifndef _MFX_VC1_DEC_COMMON_H_
 #define _MFX_VC1_DEC_COMMON_H_
@@ -58,11 +58,6 @@ namespace MFXVC1DecCommon
     {
         return (T)(value | (((1<<count) - 1)&in) << offset);
     };
-// PRO VODE
-#if defined (MFX_ENABLE_VC1_VIDEO_BSD) || defined (MFX_ENABLE_VC1_VIDEO_DEC)
-    inline mfxU32 GetWordResOffset(mfxMbCode* pMbCode) { return (pMbCode->VC1.MbDataOffset << (pMbCode->VC1.MbDataOffsetUnit -1));}
-#endif 
-
 
     mfxStatus ConvertMfxToCodecParams(mfxVideoParam *par, UMC::BaseCodecParams* pVideoParams);
     mfxStatus ParseSeqHeader(mfxBitstream *bs, mfxVideoParam *par, mfxExtVideoSignalInfo *pVideoSignal, mfxExtCodingOptionSPSPPS *pSPS);

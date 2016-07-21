@@ -414,55 +414,6 @@ public:
 
 };
 
-class VideoBSD {
-public:
-    // Destructor
-    virtual ~VideoBSD(void) {}
-
-    virtual mfxStatus Reset(mfxVideoParam *par)=0;
-    virtual mfxStatus Close(void)=0;
-
-    virtual mfxStatus GetVideoParam(mfxVideoParam *par)=0;
-    virtual mfxStatus GetFrameParam(mfxFrameParam *par)=0;
-    virtual mfxStatus GetSliceParam(mfxSliceParam *par)=0;
-
-    virtual mfxStatus RunVideoParam(mfxBitstream *bs, mfxVideoParam *par)=0;
-    virtual mfxStatus RunFrameParam(mfxBitstream *bs, mfxFrameParam *par)=0;
-    virtual mfxStatus RunSliceParam(mfxBitstream *bs, mfxSliceParam *par)=0;
-
-    virtual mfxStatus RunSliceBSD(mfxFrameCUC *cuc)=0;
-    virtual mfxStatus RunSliceMFX(mfxFrameCUC *cuc)=0;
-    virtual mfxStatus RunFrameBSD(mfxFrameCUC *cuc)=0;
-    virtual mfxStatus RunFrameMFX(mfxFrameCUC *cuc)=0;
-    virtual mfxStatus ExtractUserData(mfxBitstream *bs,mfxU8 *ud,mfxU32 *sz,mfxU64 *ts)=0;
-};
-
-class VideoDEC {
-public:
-    // Destructor
-    virtual ~VideoDEC(void) {}
-
-    virtual mfxStatus Init(mfxVideoParam *par)=0;
-    virtual mfxStatus Reset(mfxVideoParam *par)=0;
-    virtual mfxStatus Close(void)=0;
-
-    virtual mfxStatus GetVideoParam(mfxVideoParam *par)=0;
-    virtual mfxStatus GetFrameParam(mfxFrameParam *par)=0;
-    virtual mfxStatus GetSliceParam(mfxSliceParam *par)=0;
-
-    virtual mfxStatus RunFrameFullDEC(mfxFrameCUC *cuc)=0;
-    virtual mfxStatus RunFramePredDEC(mfxFrameCUC *cuc)=0;
-    virtual mfxStatus RunFrameIQT(mfxFrameCUC *cuc, mfxU8 scan)=0;
-    virtual mfxStatus GetFrameRecon(mfxFrameCUC *cuc)=0;
-    virtual mfxStatus RunFrameILDB(mfxFrameCUC *cuc)=0;
-
-    virtual mfxStatus RunSliceFullDEC(mfxFrameCUC *cuc)=0;
-    virtual mfxStatus RunSlicePredDEC(mfxFrameCUC *cuc)=0;
-    virtual mfxStatus RunSliceIQT(mfxFrameCUC *cuc, mfxU8 scan)=0;
-    virtual mfxStatus GetSliceRecon(mfxFrameCUC *cuc)=0;
-    virtual mfxStatus RunSliceILDB(mfxFrameCUC *cuc)=0;
-};
-
 // mfxEncodeInternalParams
 typedef enum
 {

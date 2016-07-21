@@ -764,11 +764,6 @@
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\mpeg2_dec\mpeg2_dec_hw.vcxproj">
       <Project>{bce6a27b-e76f-49f0-ab57-3ef578d948c7}</Project>
-      <Private>false</Private>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>true</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\shared\umc\codec\mpeg2_enc\mpeg2_enc.vcxproj">
       <Project>{3c2e1e62-5cde-4d3c-9705-900b5a187198}</Project>
@@ -866,14 +861,6 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
-    <ProjectReference Include="bsd\bsd.vcxproj">
-      <Project>{34cab135-86fd-4e5d-83b8-f8834dba56eb}</Project>
-      <Private>false</Private>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>true</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-    </ProjectReference>
     <ProjectReference Include="cmrt_cross_platform\cmrt_cross_platform.vcxproj">
       <Project>{811626eb-8608-4cac-abee-cd99daec38c4}</Project>
       <Private>false</Private>
@@ -884,14 +871,6 @@
     </ProjectReference>
     <ProjectReference Include="decode\decode_hw.vcxproj">
       <Project>{bd4d6c31-4c13-44d9-8c6f-9d5aeaf830f4}</Project>
-      <Private>false</Private>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>true</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-    </ProjectReference>
-    <ProjectReference Include="dec\dec.vcxproj">
-      <Project>{523209c2-8b6b-419b-9d5a-4441850a2039}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

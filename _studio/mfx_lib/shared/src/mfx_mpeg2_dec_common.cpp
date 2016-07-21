@@ -11,7 +11,7 @@ File Name: mfx_mpeg2_dec_common.cpp
 \* ****************************************************************************** */
 
 #include "mfx_common.h"
-#if defined MFX_ENABLE_MPEG2_VIDEO_BSD || defined MFX_ENABLE_MPEG2_VIDEO_DEC || defined MFX_ENABLE_MPEG2_VIDEO_DECODE
+#if defined MFX_ENABLE_MPEG2_VIDEO_DECODE
 
 #include "mfx_mpeg2_dec_common.h"
 #include "mfx_enc_common.h"

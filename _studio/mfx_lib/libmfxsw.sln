@@ -1,8 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.30723.0
-MinimumVisualStudioVersion = 10.0.40219.1
+# Visual Studio 2012
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UMC", "UMC", "{03F908B1-B331-4B8C-9CCC-D88FAAC81551}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfxsw", "libmfxsw.vcxproj", "{D719372D-BA13-4730-AFF6-1994B26EFF6C}"
@@ -58,8 +56,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jpeg_dec", "..\shared\umc\codec\jpeg_dec\jpeg_dec.vcxproj", "{28FE5058-8F0D-4C9C-9065-EA43F2285858}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jpeg_enc", "..\shared\umc\codec\jpeg_enc\jpeg_enc.vcxproj", "{FE112B8F-036E-4679-B07E-4F6F73C6C3B9}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bsd", "bsd\bsd.vcxproj", "{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{73648CAF-96E3-476E-B87A-9846762C427F}"
 	ProjectSection(SolutionItems) = preProject
@@ -632,26 +628,6 @@ Global
 		{FE112B8F-036E-4679-B07E-4F6F73C6C3B9}.Release|Win32.Build.0 = Release|Win32
 		{FE112B8F-036E-4679-B07E-4F6F73C6C3B9}.Release|x64.ActiveCfg = Release|x64
 		{FE112B8F-036E-4679-B07E-4F6F73C6C3B9}.Release|x64.Build.0 = Release|x64
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Debug_THM|Win32.ActiveCfg = Debug_THM|Win32
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Debug_THM|Win32.Build.0 = Debug_THM|Win32
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Debug_THM|x64.ActiveCfg = Debug_THM|x64
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Debug_THM|x64.Build.0 = Debug_THM|x64
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Debug|Win32.ActiveCfg = Debug|Win32
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Debug|Win32.Build.0 = Debug|Win32
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Debug|x64.ActiveCfg = Debug|x64
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Debug|x64.Build.0 = Debug|x64
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Release_Intel|Win32.ActiveCfg = Release|Win32
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Release_Intel|Win32.Build.0 = Release|Win32
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Release_Intel|x64.ActiveCfg = Release|x64
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Release_Intel|x64.Build.0 = Release|x64
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Release_THM|Win32.ActiveCfg = Release_THM|Win32
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Release_THM|Win32.Build.0 = Release_THM|Win32
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Release_THM|x64.ActiveCfg = Release|x64
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Release_THM|x64.Build.0 = Release|x64
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Release|Win32.ActiveCfg = Release|Win32
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Release|Win32.Build.0 = Release|Win32
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Release|x64.ActiveCfg = Release|x64
-		{34CAB135-86FD-4E5D-83B8-F8834DBA56EB}.Release|x64.Build.0 = Release|x64
 		{C37D7375-76CD-400B-A030-4624B1012E08}.Debug_THM|Win32.ActiveCfg = Debug|Win32
 		{C37D7375-76CD-400B-A030-4624B1012E08}.Debug_THM|Win32.Build.0 = Debug|Win32
 		{C37D7375-76CD-400B-A030-4624B1012E08}.Debug_THM|x64.ActiveCfg = Debug|x64
