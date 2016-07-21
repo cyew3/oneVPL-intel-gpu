@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2012-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2012-2016 Intel Corporation. All Rights Reserved.
 
 File Name: libmf_core_vdaapi.cpp
 
@@ -126,6 +126,10 @@ void* VDAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
     else if( MFXICOREVDAAPI_GUID == guid )
     {
         return (void*) m_pAdapter.get();
+    }
+    else if (MFXICORE_API_1_19_GUID == guid)
+    {
+        return &m_API_1_19;
     }
     else
     {

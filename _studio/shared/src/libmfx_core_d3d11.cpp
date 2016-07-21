@@ -615,6 +615,10 @@ void* D3D11VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
     }
     else if (MFXIEXTERNALLOC_GUID == guid && m_bSetExtFrameAlloc)
         return &m_FrameAllocator.frameAllocator;
+    else if (MFXICORE_API_1_19_GUID == guid)
+    {
+        return &m_API_1_19;
+    }
 
     return NULL;
 }
