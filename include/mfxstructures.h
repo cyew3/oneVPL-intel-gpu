@@ -115,7 +115,9 @@ enum {
     MFX_FOURCC_R16          = MFX_MAKEFOURCC('R','1','6','U'),
     MFX_FOURCC_AYUV         = MFX_MAKEFOURCC('A','Y','U','V'),   /* YUV 4:4:4, AYUV in that order, A channel is 8 MSBs */
     MFX_FOURCC_AYUV_RGB4    = MFX_MAKEFOURCC('A','V','U','Y'),   /* ARGB in that order, A channel is 8 MSBs stored in AYUV surface*/
-    MFX_FOURCC_UYVY         = MFX_MAKEFOURCC('U','Y','V','Y')
+    MFX_FOURCC_UYVY         = MFX_MAKEFOURCC('U','Y','V','Y'),
+    MFX_FOURCC_Y210         = MFX_MAKEFOURCC('Y','2','1','0'),
+    MFX_FOURCC_Y410         = MFX_MAKEFOURCC('Y','4','1','0')
 };
 
 /* PicStruct */
@@ -172,6 +174,24 @@ enum {
     MFX_CORRUPTION_REFERENCE_LIST  = 0x0020
 };
 
+#pragma pack(push, 4)
+typedef struct
+{
+    mfxU32 U : 10;
+    mfxU32 Y : 10;
+    mfxU32 V : 10;
+    mfxU32 A :  2;
+} mfxY410;
+
+typedef struct
+{
+    mfxU32 B : 10;
+    mfxU32 G : 10;
+    mfxU32 R : 10;
+    mfxU32 A :  2;
+} mfxA2RGB10;
+#pragma pack(pop)
+
 /* Frame Data Info */
 typedef struct {
     union {
@@ -207,12 +227,14 @@ typedef struct {
         mfxU8   *U;
         mfxU16  *U16;
         mfxU8   *G;
+        mfxY410 *Y410;          /* for Y410 format (merged AVYU) */
     };
     union {
         mfxU8   *Cr;
         mfxU8   *V;
         mfxU16  *V16;
         mfxU8   *B;
+        mfxA2RGB10 *A2RGB10;    /* for A2RGB10 format (merged ARGB) */
     };
     mfxU8       *A;
     mfxMemId    MemId;
