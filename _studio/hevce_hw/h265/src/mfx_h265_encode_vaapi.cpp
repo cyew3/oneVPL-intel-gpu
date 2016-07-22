@@ -1446,12 +1446,7 @@ mfxStatus VAAPIEncoder::QueryStatus(Task & task)
                     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 }
 
-                // safety check for potentially too big coded buffer returned by driver
-                // driver potentially could corrupt some memory at this point
-                if (codedBufferSegment->size > (m_width * m_height * 3 / 2))
-                    sts = MFX_ERR_DEVICE_FAILED;
-
-                task.m_bsDataLength = codedBufferSegment->size;
+                 task.m_bsDataLength = codedBufferSegment->size;
 
                 if (codedBufferSegment->status & VA_CODED_BUF_STATUS_BAD_BITSTREAM)
                     sts = MFX_ERR_GPU_HANG;

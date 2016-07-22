@@ -91,7 +91,35 @@ mfxU16 MaxBs(MfxVideoParam const & par)
 {
     return par.AsyncDepth + ((par.AsyncDepth > 1)? 1: 0); // added buffered task between submit into ddi and query
 }
+mfxU32 GetBsSize(mfxFrameInfo& info)
+{
+    return info.Width* info.Height;
+}
+mfxU32 GetMinBsSize(MfxVideoParam const & par)
+{
+    mfxU32 size = par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height;
 
+    mfxF64 k = 2.0;
+    if (par.mfx.FrameInfo.BitDepthLuma == 10)
+        k = k + 0.3;
+    if (par.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422)
+        k = k + 0.5;
+    else if (par.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV444)
+        k = k + 1.5;
+
+    size = (mfxU32)(k*size);
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR && !par.isSWBRC() && 
+        par.mfx.FrameInfo.FrameRateExtD!= 0)
+    {
+        mfxU32 avg_size =  par.TargetKbps * 1000 * par.mfx.FrameInfo.FrameRateExtN / (par.mfx.FrameInfo.FrameRateExtD * 8);
+        if (size < 2*avg_size)
+            size = 2*avg_size;
+    }
+
+    return size;
+
+}
 mfxU16 MaxTask(MfxVideoParam const & par)
 {
     return par.AsyncDepth + par.mfx.GopRefDist - 1 + ((par.AsyncDepth > 1)? 1: 0); 
@@ -230,6 +258,12 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
 
     request.Type        = MFX_MEMTYPE_D3D_INT;
     request.NumFrameMin = MaxBs(m_vpar);
+
+    if (GetBsSize(request.Info) < GetMinBsSize(m_vpar))
+    {
+        MFX_CHECK(request.Info.Width != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
+        request.Info.Height = (mfxU16)CeilDiv(GetMinBsSize(m_vpar), request.Info.Width);    
+    }
 
     sts = m_bs.Alloc(&m_core, request, false);
     MFX_CHECK_STS(sts);
@@ -904,6 +938,9 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
         sts = m_ddi->QueryStatus(*taskForQuery);
         if (sts == MFX_WRN_DEVICE_BUSY)
             return MFX_TASK_BUSY;
+
+        if (taskForQuery->m_bsDataLength > GetBsSize(m_bs.m_info))
+            sts = MFX_ERR_DEVICE_FAILED; //possible memory corruption in driver
 
         if (sts < 0)
             m_runtimeErr = sts;
