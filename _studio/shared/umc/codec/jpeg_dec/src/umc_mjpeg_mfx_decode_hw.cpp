@@ -5,23 +5,22 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2015 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MJPEG_VIDEO_DECODER)
+
+#include "umc_mjpeg_mfx_decode_hw.h"
+
+#if defined(UMC_VA)
+
 #include <string.h>
 #include "vm_debug.h"
-#include "umc_video_data.h"
-#include "umc_mjpeg_mfx_decode_hw.h"
 #include "membuffin.h"
-
-#include "umc_va_base.h"
-#ifdef UMC_VA_DXVA
-#include "umc_va_dxva2.h"
-#endif
+#include <algorithm>
 
 namespace UMC
 {
@@ -37,60 +36,33 @@ MJPEGVideoDecoderMFX_HW::~MJPEGVideoDecoderMFX_HW(void)
 
 Status MJPEGVideoDecoderMFX_HW::Init(BaseCodecParams* lpInit)
 {
-    UMC::Status status;
-    Ipp32u i, numThreads;
-
-    VideoDecoderParams* pDecoderParams;
-
-    pDecoderParams = DynamicCast<VideoDecoderParams>(lpInit);
+    VideoDecoderParams* pDecoderParams = DynamicCast<VideoDecoderParams>(lpInit);
 
     if(0 == pDecoderParams)
         return UMC_ERR_NULL_PTR;
 
-    status = Close();
+    Status status = Close();
     if(UMC_OK != status)
         return UMC_ERR_INIT;
 
     m_DecoderParams  = *pDecoderParams;
 
     m_IsInit       = true;
-    //m_firstFrame   = true;
     m_interleaved  = false;
-    m_frameNo      = 0;
-    m_frame        = 0;
+    m_interleavedScan = false;
     m_frameSampling = 0;
     m_statusReportFeedbackCounter = 1;
     m_fourCC       = 0;
 
-    m_pMemoryAllocator = pDecoderParams->lpMemoryAllocator;
     m_va = pDecoderParams->pVideoAccelerator;
 
-    // allocate the JPEG decoders
-    numThreads = JPEG_MAX_THREADS_HW;
-    if ((m_DecoderParams.numThreads) &&
-        (numThreads > (Ipp32u) m_DecoderParams.numThreads))
+    m_decoder.reset(new CJPEGDecoderBase());
+    if (NULL == m_decoder.get())
     {
-        numThreads = m_DecoderParams.numThreads;
+        return UMC_ERR_ALLOC;
     }
-    for (i = 0; i < numThreads; i += 1)
-    {
-        m_dec[i].reset(new CJPEGDecoder());
-        if (NULL == m_dec[i].get())
-        {
-            return UMC_ERR_ALLOC;
-        }
-    }
-    m_numDec = numThreads;
 
-    VM_ASSERT(m_pMemoryAllocator);
-
-    m_local_delta_frame_time = 1.0/30;
-    m_local_frame_time       = 0;
-
-    if (pDecoderParams->info.framerate)
-    {
-        m_local_delta_frame_time = 1 / pDecoderParams->info.framerate;
-    }
+    m_decBase = m_decoder.get();
 
     return UMC_OK;
 } // MJPEGVideoDecoderMFX_HW::Init()
@@ -106,7 +78,7 @@ Status MJPEGVideoDecoderMFX_HW::Reset(void)
         m_submittedTaskIndex.clear();
     }
 
-    return MJPEGVideoDecoderMFX::Reset();
+    return MJPEGVideoDecoderBaseMFX::Reset();
 } // MJPEGVideoDecoderMFX_HW::Reset()
 
 Status MJPEGVideoDecoderMFX_HW::Close(void)
@@ -119,7 +91,7 @@ Status MJPEGVideoDecoderMFX_HW::Close(void)
         m_submittedTaskIndex.clear();
     }
 
-    return MJPEGVideoDecoderMFX::Close();
+    return MJPEGVideoDecoderBaseMFX::Close();
 } // MJPEGVideoDecoderMFX_HW::Close()
 
 Status MJPEGVideoDecoderMFX_HW::AllocateFrame()
@@ -263,14 +235,15 @@ Status MJPEGVideoDecoderMFX_HW::_DecodeHeader(CBaseStreamInput* in, Ipp32s* cnt)
     if (!m_IsInit)
         return UMC_ERR_NOT_INITIALIZED;
 
-    jerr = m_dec[0]->SetSource(in);
+    jerr = m_decBase->SetSource(in);
     if(JPEG_OK != jerr)
         return UMC_ERR_FAILED;
 
     IppiSize size = {0};
 
-    jerr = m_dec[0]->ReadHeader(
-        &size.width, &size.height, &m_frameChannels, &m_color, &sampling, &m_framePrecision);
+    Ipp32s frameChannels, framePrecision;
+    jerr = m_decBase->ReadHeader(
+        &size.width, &size.height, &frameChannels, &m_color, &sampling, &framePrecision);
 
     if(JPEG_ERR_BUFF == jerr)
         return UMC_ERR_NOT_ENOUGH_DATA;
@@ -282,12 +255,12 @@ Status MJPEGVideoDecoderMFX_HW::_DecodeHeader(CBaseStreamInput* in, Ipp32s* cnt)
 
     if ((m_frameSampling != (int)sampling) || (m_frameDims.width && sizeHaveChanged))
     {
-        in->Seek(-m_dec[0]->GetNumDecodedBytes(),UIC_SEEK_CUR);
+        in->Seek(-m_decBase->GetNumDecodedBytes(),UIC_SEEK_CUR);
         *cnt = 0;
-        return UMC_ERR_NOT_ENOUGH_DATA;//UMC_WRN_INVALID_STREAM;
+        return UMC_ERR_NOT_ENOUGH_DATA;
     }
 
-    *cnt = m_dec[0]->GetNumDecodedBytes();
+    *cnt = m_decBase->GetNumDecodedBytes();
     return UMC_OK;
 }
 
@@ -317,7 +290,7 @@ Status MJPEGVideoDecoderMFX_HW::_DecodeField(MediaDataEx* in)
         return status;
     }
 
-    in->MoveDataPointer(m_dec[0]->GetNumDecodedBytes());
+    in->MoveDataPointer(m_decBase->GetNumDecodedBytes());
 
     return status;
 } // MJPEGVideoDecoderMFX_HW::_DecodeField(MediaDataEx* in)
@@ -325,46 +298,46 @@ Status MJPEGVideoDecoderMFX_HW::_DecodeField(MediaDataEx* in)
 Status MJPEGVideoDecoderMFX_HW::DefaultInitializationHuffmantables()
 {    // VD [23.08.2010] - use default huffman tables if not presented in stream
     JERRCODE jerr;
-    if(m_dec[0]->m_dctbl[0].IsEmpty())
+    if(m_decBase->m_dctbl[0].IsEmpty())
     {
-        jerr = m_dec[0]->m_dctbl[0].Create();
+        jerr = m_decBase->m_dctbl[0].Create();
         if(JPEG_OK != jerr)
             return UMC_ERR_FAILED;
 
-        jerr = m_dec[0]->m_dctbl[0].Init(0,0,(Ipp8u*)&DefaultLuminanceDCBits[0],(Ipp8u*)&DefaultLuminanceDCValues[0]);
+        jerr = m_decBase->m_dctbl[0].Init(0,0,(Ipp8u*)&DefaultLuminanceDCBits[0],(Ipp8u*)&DefaultLuminanceDCValues[0]);
         if(JPEG_OK != jerr)
             return UMC_ERR_FAILED;
     }
 
-    if(m_dec[0]->m_dctbl[1].IsEmpty())
+    if(m_decBase->m_dctbl[1].IsEmpty())
     {
-        jerr = m_dec[0]->m_dctbl[1].Create();
+        jerr = m_decBase->m_dctbl[1].Create();
         if(JPEG_OK != jerr)
             return UMC_ERR_FAILED;
 
-        jerr = m_dec[0]->m_dctbl[1].Init(1,0,(Ipp8u*)&DefaultChrominanceDCBits[0],(Ipp8u*)&DefaultChrominanceDCValues[0]);
+        jerr = m_decBase->m_dctbl[1].Init(1,0,(Ipp8u*)&DefaultChrominanceDCBits[0],(Ipp8u*)&DefaultChrominanceDCValues[0]);
         if(JPEG_OK != jerr)
             return UMC_ERR_FAILED;
     }
 
-    if(m_dec[0]->m_actbl[0].IsEmpty())
+    if(m_decBase->m_actbl[0].IsEmpty())
     {
-        jerr = m_dec[0]->m_actbl[0].Create();
+        jerr = m_decBase->m_actbl[0].Create();
         if(JPEG_OK != jerr)
             return UMC_ERR_FAILED;
 
-        jerr = m_dec[0]->m_actbl[0].Init(0,1,(Ipp8u*)&DefaultLuminanceACBits[0],(Ipp8u*)&DefaultLuminanceACValues[0]);
+        jerr = m_decBase->m_actbl[0].Init(0,1,(Ipp8u*)&DefaultLuminanceACBits[0],(Ipp8u*)&DefaultLuminanceACValues[0]);
         if(JPEG_OK != jerr)
             return UMC_ERR_FAILED;
     }
 
-    if(m_dec[0]->m_actbl[1].IsEmpty())
+    if(m_decBase->m_actbl[1].IsEmpty())
     {
-        jerr = m_dec[0]->m_actbl[1].Create();
+        jerr = m_decBase->m_actbl[1].Create();
         if(JPEG_OK != jerr)
             return UMC_ERR_FAILED;
 
-        jerr = m_dec[0]->m_actbl[1].Init(1,1,(Ipp8u*)&DefaultChrominanceACBits[0],(Ipp8u*)&DefaultChrominanceACValues[0]);
+        jerr = m_decBase->m_actbl[1].Init(1,1,(Ipp8u*)&DefaultChrominanceACBits[0],(Ipp8u*)&DefaultChrominanceACValues[0]);
         if(JPEG_OK != jerr)
             return UMC_ERR_FAILED;
     }
@@ -403,8 +376,8 @@ Status MJPEGVideoDecoderMFX_HW::GetFrameHW(MediaDataEx* in)
     /////////////////////////////////////////////////////////////////////////////////////////
 
     buffersForUpdate = (1 << 5) - 1;
-    m_dec[0]->m_num_scans = GetNumScans(in);
-    m_dec[0]->m_curr_scan = &m_dec[0]->m_scans[0];
+    m_decBase->m_num_scans = GetNumScans(in);
+    m_decBase->m_curr_scan = &m_decBase->m_scans[0];
 
     for (Ipp32u i = 0; i < pAuxData->count; i += 1)
     {
@@ -443,11 +416,11 @@ Status MJPEGVideoDecoderMFX_HW::GetFrameHW(MediaDataEx* in)
             CMemBuffInput stream;
             stream.Open((Ipp8u*)in->GetDataPointer() + pAuxData->offsets[i] + 2, (Ipp32s)in->GetDataSize() - pAuxData->offsets[i] - 2);
 
-            jerr = m_dec[0]->SetSource(&stream);
+            jerr = m_decBase->SetSource(&stream);
             if(JPEG_OK != jerr)
                 return UMC_ERR_FAILED;
 
-            jerr = m_dec[0]->ParseSOS(JO_READ_HEADER);
+            jerr = m_decBase->ParseSOS(JO_READ_HEADER);
             if(JPEG_OK != jerr)
             {
                 if (JPEG_ERR_BUFF == jerr)
@@ -458,37 +431,40 @@ Status MJPEGVideoDecoderMFX_HW::GetFrameHW(MediaDataEx* in)
 
             buffersForUpdate |= 1 << 4;
 
-            scanParams.NumComponents        = (Ipp16u)m_dec[0]->m_curr_scan->ncomps;
-            scanParams.RestartInterval      = (Ipp16u)m_dec[0]->m_curr_scan->jpeg_restart_interval;
-            scanParams.MCUCount             = (Ipp32u)(m_dec[0]->m_curr_scan->numxMCU * m_dec[0]->m_curr_scan->numyMCU);
+            scanParams.NumComponents        = (Ipp16u)m_decBase->m_curr_scan->ncomps;
+            scanParams.RestartInterval      = (Ipp16u)m_decBase->m_curr_scan->jpeg_restart_interval;
+            scanParams.MCUCount             = (Ipp32u)(m_decBase->m_curr_scan->numxMCU * m_decBase->m_curr_scan->numyMCU);
             scanParams.ScanHoriPosition     = 0;
             scanParams.ScanVertPosition     = 0;
-            scanParams.DataOffset           = (Ipp32u)(pAuxData->offsets[i] + m_dec[0]->GetSOSLen() + 2); // 2 is marker length
-            scanParams.DataLength           = (Ipp32u)(chunkSize - m_dec[0]->GetSOSLen() - 2);
+            scanParams.DataOffset           = (Ipp32u)(pAuxData->offsets[i] + m_decBase->GetSOSLen() + 2); // 2 is marker length
+            scanParams.DataLength           = (Ipp32u)(chunkSize - m_decBase->GetSOSLen() - 2);
 
-            for(int j = 0; j < m_dec[0]->m_curr_scan->ncomps; j += 1)
+            for(int j = 0; j < m_decBase->m_curr_scan->ncomps; j += 1)
             {
-                scanParams.ComponentSelector[j] = (Ipp8u)m_dec[0]->m_ccomp[m_dec[0]->m_curr_comp_no + 1 - m_dec[0]->m_curr_scan->ncomps + j].m_id;
-                scanParams.DcHuffTblSelector[j] = (Ipp8u)m_dec[0]->m_ccomp[m_dec[0]->m_curr_comp_no + 1 - m_dec[0]->m_curr_scan->ncomps + j].m_dc_selector;
-                scanParams.AcHuffTblSelector[j] = (Ipp8u)m_dec[0]->m_ccomp[m_dec[0]->m_curr_comp_no + 1 - m_dec[0]->m_curr_scan->ncomps + j].m_ac_selector;
+                scanParams.ComponentSelector[j] = (Ipp8u)m_decBase->m_ccomp[m_decBase->m_curr_comp_no + 1 - m_decBase->m_curr_scan->ncomps + j].m_id;
+                scanParams.DcHuffTblSelector[j] = (Ipp8u)m_decBase->m_ccomp[m_decBase->m_curr_comp_no + 1 - m_decBase->m_curr_scan->ncomps + j].m_dc_selector;
+                scanParams.AcHuffTblSelector[j] = (Ipp8u)m_decBase->m_ccomp[m_decBase->m_curr_comp_no + 1 - m_decBase->m_curr_scan->ncomps + j].m_ac_selector;
             }
 
             sts = PackHeaders(in, &scanParams, &buffersForUpdate);
             if (sts != UMC_OK)
                 return sts;
 
-            m_dec[0]->m_curr_scan = &m_dec[0]->m_scans[m_dec[0]->m_curr_scan->scan_no + 1];
+            if (m_decBase->m_curr_scan->scan_no >= 2) // m_scans has 3 elements only
+                m_decBase->m_curr_scan->scan_no = 0;
+
+            m_decBase->m_curr_scan = &m_decBase->m_scans[m_decBase->m_curr_scan->scan_no + 1];
         }
         else if (JM_DRI == marker)
         {
             CMemBuffInput stream;
             stream.Open((Ipp8u*)in->GetDataPointer() + pAuxData->offsets[i] + 2, (Ipp32s)in->GetDataSize() - pAuxData->offsets[i] - 2);
 
-            jerr = m_dec[0]->SetSource(&stream);
+            jerr = m_decBase->SetSource(&stream);
             if(JPEG_OK != jerr)
                 return UMC_ERR_FAILED;
 
-            jerr = m_dec[0]->ParseDRI();
+            jerr = m_decBase->ParseDRI();
             if(JPEG_OK != jerr)
             {
                 if (JPEG_ERR_BUFF == jerr)
@@ -502,11 +478,11 @@ Status MJPEGVideoDecoderMFX_HW::GetFrameHW(MediaDataEx* in)
             CMemBuffInput stream;
             stream.Open((Ipp8u*)in->GetDataPointer() + pAuxData->offsets[i] + 2, (Ipp32s)in->GetDataSize() - pAuxData->offsets[i] - 2);
 
-            jerr = m_dec[0]->SetSource(&stream);
+            jerr = m_decBase->SetSource(&stream);
             if(JPEG_OK != jerr)
                 return UMC_ERR_FAILED;
 
-            jerr = m_dec[0]->ParseDQT();
+            jerr = m_decBase->ParseDQT();
             if(JPEG_OK != jerr)
             {
                 if (JPEG_ERR_BUFF == jerr)
@@ -522,11 +498,11 @@ Status MJPEGVideoDecoderMFX_HW::GetFrameHW(MediaDataEx* in)
             CMemBuffInput stream;
             stream.Open((Ipp8u*)in->GetDataPointer() + pAuxData->offsets[i] + 2, (Ipp32s)in->GetDataSize() - pAuxData->offsets[i] - 2);
 
-            jerr = m_dec[0]->SetSource(&stream);
+            jerr = m_decBase->SetSource(&stream);
             if(JPEG_OK != jerr)
                 return UMC_ERR_FAILED;
 
-            jerr = m_dec[0]->ParseDHT();
+            jerr = m_decBase->ParseDHT();
             if(JPEG_OK != jerr)
             {
                 if (JPEG_ERR_BUFF == jerr)
@@ -590,11 +566,11 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
         if(!picParams)
             return UMC_ERR_DEVICE_FAILED;
 
-        picParams->FrameWidth                = (USHORT)m_dec[0]->m_jpeg_width;
-        picParams->FrameHeight               = (USHORT)m_dec[0]->m_jpeg_height;
-        picParams->NumCompInFrame            = (USHORT)m_dec[0]->m_jpeg_ncomp; // TODO: change for multi-scan images
+        picParams->FrameWidth                = (USHORT)m_decBase->m_jpeg_width;
+        picParams->FrameHeight               = (USHORT)m_decBase->m_jpeg_height;
+        picParams->NumCompInFrame            = (USHORT)m_decBase->m_jpeg_ncomp; // TODO: change for multi-scan images
         picParams->ChromaType                = (UCHAR)GetChromaType();
-        picParams->TotalScans                = (USHORT)m_dec[0]->m_num_scans;
+        picParams->TotalScans                = (USHORT)m_decBase->m_num_scans;
                 
         switch(m_rotation)
         {
@@ -612,10 +588,10 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
             break;
         }
 
-        for (Ipp32s i = 0; i < m_dec[0]->m_jpeg_ncomp; i++)
+        for (Ipp32s i = 0; i < m_decBase->m_jpeg_ncomp; i++)
         {
-            picParams->ComponentIdentifier[i] = (UCHAR)m_dec[0]->m_ccomp[i].m_id;
-            picParams->QuantTableSelector[i]  = (UCHAR)m_dec[0]->m_ccomp[i].m_q_selector;
+            picParams->ComponentIdentifier[i] = (UCHAR)m_decBase->m_ccomp[i].m_id;
+            picParams->QuantTableSelector[i]  = (UCHAR)m_decBase->m_ccomp[i].m_q_selector;
         }
 
         picParams->InterleavedData = (picParams->TotalScans == 1) ? 1 : 0;
@@ -635,22 +611,22 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
         *buffersForUpdate -= 1 << 1;
         for (Ipp32s i = 0; i < MAX_QUANT_TABLES; i++)
         {
-            if (!m_dec[0]->m_qntbl[i].m_initialized)
+            if (!m_decBase->m_qntbl[i].m_initialized)
                 continue;
 
             JPEG_DECODE_QM_TABLE *quantTable = (JPEG_DECODE_QM_TABLE*)m_va->GetCompBuffer(D3DDDIFMT_INTEL_JPEGDECODE_QUANTDATA, &compBuf);
             if(!quantTable)
                 return UMC_ERR_DEVICE_FAILED;
 
-            quantTable->TableIndex = (UCHAR)m_dec[0]->m_qntbl[i].m_id;
-            quantTable->Precision  = (UCHAR)m_dec[0]->m_qntbl[i].m_precision;
+            quantTable->TableIndex = (UCHAR)m_decBase->m_qntbl[i].m_id;
+            quantTable->Precision  = (UCHAR)m_decBase->m_qntbl[i].m_precision;
 
-            if (m_dec[0]->m_qntbl[i].m_precision) // should be always zero for 8-bit quantization tables
+            if (m_decBase->m_qntbl[i].m_precision) // should be always zero for 8-bit quantization tables
             {
                 return UMC_ERR_FAILED;
             }
 
-            ippsCopy_8u(m_dec[0]->m_qntbl[i].m_raw8u, quantTable->Qm, DCTSIZE2);
+            ippsCopy_8u(m_decBase->m_qntbl[i].m_raw8u, quantTable->Qm, DCTSIZE2);
 
             /*Ipp16u* invQuantTable = m_dec->m_qntbl[i];
             for (Ipp32s k = 0; k < DCTSIZE2; k++)
@@ -676,17 +652,17 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
 
         for (Ipp32s i = 0; i < MAX_HUFF_TABLES; i++)
         {
-            if(m_dec[0]->m_dctbl[i].IsValid())
+            if(m_decBase->m_dctbl[i].IsValid())
             {
                 JPEG_DECODE_HUFFMAN_TABLE *huffmanTables = (JPEG_DECODE_HUFFMAN_TABLE*)m_va->GetCompBuffer(D3DDDIFMT_INTEL_JPEGDECODE_HUFFTBLDATA, &compBuf);
                 if(!huffmanTables)
                     return UMC_ERR_DEVICE_FAILED;
 
-                huffmanTables->TableClass = (UCHAR)m_dec[0]->m_dctbl[i].m_hclass;
-                huffmanTables->TableIndex = (UCHAR)m_dec[0]->m_dctbl[i].m_id;
+                huffmanTables->TableClass = (UCHAR)m_decBase->m_dctbl[i].m_hclass;
+                huffmanTables->TableIndex = (UCHAR)m_decBase->m_dctbl[i].m_id;
 
-                ippsCopy_8u(m_dec[0]->m_dctbl[i].GetBits(),   huffmanTables->BITS,    sizeof(huffmanTables->BITS));
-                ippsCopy_8u(m_dec[0]->m_dctbl[i].GetValues(), huffmanTables->HUFFVAL, sizeof(huffmanTables->HUFFVAL));
+                ippsCopy_8u(m_decBase->m_dctbl[i].GetBits(),   huffmanTables->BITS,    sizeof(huffmanTables->BITS));
+                ippsCopy_8u(m_decBase->m_dctbl[i].GetValues(), huffmanTables->HUFFVAL, sizeof(huffmanTables->HUFFVAL));
                 compBuf->SetDataSize(sizeof(JPEG_DECODE_HUFFMAN_TABLE));
 
                 sts = m_va->Execute();
@@ -694,17 +670,17 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
                     return sts;
             }
 
-            if(m_dec[0]->m_actbl[i].IsValid())
+            if(m_decBase->m_actbl[i].IsValid())
             {
                 JPEG_DECODE_HUFFMAN_TABLE *huffmanTables = (JPEG_DECODE_HUFFMAN_TABLE*)m_va->GetCompBuffer(D3DDDIFMT_INTEL_JPEGDECODE_HUFFTBLDATA, &compBuf);
                 if(!huffmanTables)
                     return UMC_ERR_DEVICE_FAILED;
 
-                huffmanTables->TableClass = (UCHAR)m_dec[0]->m_actbl[i].m_hclass;
-                huffmanTables->TableIndex = (UCHAR)m_dec[0]->m_actbl[i].m_id;
+                huffmanTables->TableClass = (UCHAR)m_decBase->m_actbl[i].m_hclass;
+                huffmanTables->TableIndex = (UCHAR)m_decBase->m_actbl[i].m_id;
 
-                ippsCopy_8u(m_dec[0]->m_actbl[i].GetBits(),   huffmanTables->BITS,    sizeof(huffmanTables->BITS));
-                ippsCopy_8u(m_dec[0]->m_actbl[i].GetValues(), huffmanTables->HUFFVAL, sizeof(huffmanTables->HUFFVAL));
+                ippsCopy_8u(m_decBase->m_actbl[i].GetBits(),   huffmanTables->BITS,    sizeof(huffmanTables->BITS));
+                ippsCopy_8u(m_decBase->m_actbl[i].GetValues(), huffmanTables->HUFFVAL, sizeof(huffmanTables->HUFFVAL));
                 compBuf->SetDataSize(sizeof(JPEG_DECODE_HUFFMAN_TABLE));
 
                 sts = m_va->Execute();
@@ -722,7 +698,7 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
         if(!bistreamData)
             return UMC_ERR_DEVICE_FAILED;
 
-        if (m_dec[0]->m_curr_scan->scan_no == m_dec[0]->m_num_scans-1)
+        if (m_decBase->m_curr_scan->scan_no == m_decBase->m_num_scans-1)
         {
             if (m_va->m_HWPlatform != VA_HW_SOFIA)
             {
@@ -832,7 +808,7 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
         if(!bistreamData)
             return UMC_ERR_DEVICE_FAILED;
 
-        if ((m_dec[0]->m_curr_scan->scan_no == m_dec[0]->m_num_scans-1) && (m_va->m_HWPlatform == VA_HW_SOFIA))
+        if ((m_decBase->m_curr_scan->scan_no == m_decBase->m_num_scans-1) && (m_va->m_HWPlatform == VA_HW_SOFIA))
         {
             if (bitstreamTile <= (Ipp32u)compBuf->GetBufferSize())
             {
@@ -902,9 +878,9 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
                                                                             sizeof(VAPictureParameterBufferJPEGBaseline));
         if(!picParams)
             return UMC_ERR_DEVICE_FAILED;
-        picParams->picture_width  = (Ipp16u)m_dec[0]->m_jpeg_width;
-        picParams->picture_height = (Ipp16u)m_dec[0]->m_jpeg_height;
-        picParams->num_components = (Ipp8u) m_dec[0]->m_jpeg_ncomp;
+        picParams->picture_width  = (Ipp16u)m_decBase->m_jpeg_width;
+        picParams->picture_height = (Ipp16u)m_decBase->m_jpeg_height;
+        picParams->num_components = (Ipp8u) m_decBase->m_jpeg_ncomp;
         picParams->color_space    = 0;
         switch(m_rotation)
         {
@@ -921,12 +897,12 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
             picParams->rotation = VA_ROTATION_270;
             break;
         }
-        for (Ipp32s i = 0; i < m_dec[0]->m_jpeg_ncomp; i++)
+        for (Ipp32s i = 0; i < m_decBase->m_jpeg_ncomp; i++)
         {
-            picParams->components[i].component_id             = (Ipp8u)m_dec[0]->m_ccomp[i].m_id;
-            picParams->components[i].quantiser_table_selector = (Ipp8u)m_dec[0]->m_ccomp[i].m_q_selector;
-            picParams->components[i].h_sampling_factor        = m_dec[0]->m_ccomp[i].m_hsampling;
-            picParams->components[i].v_sampling_factor        = m_dec[0]->m_ccomp[i].m_vsampling;
+            picParams->components[i].component_id             = (Ipp8u)m_decBase->m_ccomp[i].m_id;
+            picParams->components[i].quantiser_table_selector = (Ipp8u)m_decBase->m_ccomp[i].m_q_selector;
+            picParams->components[i].h_sampling_factor        = m_decBase->m_ccomp[i].m_hsampling;
+            picParams->components[i].v_sampling_factor        = m_decBase->m_ccomp[i].m_vsampling;
         }
         compBufPic->SetDataSize(sizeof(VAPictureParameterBufferJPEGBaseline));
     }
@@ -943,12 +919,12 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
                                                                        sizeof(VAIQMatrixBufferJPEGBaseline));
         for (Ipp32s i = 0; i < MAX_QUANT_TABLES; i++)
         {
-            if (!m_dec[0]->m_qntbl[i].m_initialized)
+            if (!m_decBase->m_qntbl[i].m_initialized)
                 continue;
             qmatrixParams->load_quantiser_table[i] = 1;
             for (Ipp32s j = 0; j < 64; j++)
             {
-                qmatrixParams->quantiser_table[i][j] = m_dec[0]->m_qntbl[i].m_raw8u[j];
+                qmatrixParams->quantiser_table[i][j] = m_decBase->m_qntbl[i].m_raw8u[j];
             }
         }
         compBufQM->SetDataSize(sizeof(VAIQMatrixBufferJPEGBaseline));
@@ -971,20 +947,20 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
             return UMC_ERR_DEVICE_FAILED;
         for (Ipp32s i = 0; i < 2; i++)
         {
-            if(m_dec[0]->m_dctbl[i].IsValid())
+            if(m_decBase->m_dctbl[i].IsValid())
             {
                 huffmanParams->load_huffman_table[i] = 1;
-                const Ipp8u *bits = m_dec[0]->m_dctbl[i].GetBits();
+                const Ipp8u *bits = m_decBase->m_dctbl[i].GetBits();
                 memcpy_s(huffmanParams->huffman_table[i].num_dc_codes, sizeof(huffmanParams->huffman_table[i].num_dc_codes), bits, 16);
-                bits = m_dec[0]->m_dctbl[i].GetValues();
+                bits = m_decBase->m_dctbl[i].GetValues();
                 memcpy_s(huffmanParams->huffman_table[i].dc_values, sizeof(huffmanParams->huffman_table[i].dc_values), bits, 12);
             }
-            if(m_dec[0]->m_actbl[i].IsValid())
+            if(m_decBase->m_actbl[i].IsValid())
             {
                 huffmanParams->load_huffman_table[i] = 1;
-                const Ipp8u *bits = m_dec[0]->m_actbl[i].GetBits();
+                const Ipp8u *bits = m_decBase->m_actbl[i].GetBits();
                 memcpy_s(huffmanParams->huffman_table[i].num_ac_codes, sizeof(huffmanParams->huffman_table[i].num_ac_codes), bits, 16);
-                bits = m_dec[0]->m_actbl[i].GetValues();
+                bits = m_decBase->m_actbl[i].GetValues();
                 memcpy_s(huffmanParams->huffman_table[i].ac_values, sizeof(huffmanParams->huffman_table[i].ac_values), bits, 162);
             }
             huffmanParams->huffman_table[i].pad[0] = 0;
@@ -1012,7 +988,7 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
         sliceParams->num_mcus                  = obtainedScanParams->MCUCount;
         sliceParams->slice_horizontal_position = obtainedScanParams->ScanHoriPosition;
         sliceParams->slice_vertical_position   = obtainedScanParams->ScanVertPosition;
-        for (Ipp32s i = 0; i < m_dec[0]->m_jpeg_ncomp; i++)
+        for (Ipp32s i = 0; i < m_decBase->m_jpeg_ncomp; i++)
         {
             sliceParams->components[i].component_selector = obtainedScanParams->ComponentSelector[i];
             sliceParams->components[i].dc_table_selector  = obtainedScanParams->DcHuffTblSelector[i];
@@ -1031,7 +1007,7 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
         if(!bistreamData)
             return UMC_ERR_DEVICE_FAILED;
 
-        if(m_dec[0]->m_num_scans == 1)
+        if(m_decBase->m_num_scans == 1)
         {
             memcpy_s(bistreamData, obtainedScanParams->DataLength, ptr + obtainedScanParams->DataOffset, obtainedScanParams->DataLength);
             shiftDataOffset = true;
@@ -1081,8 +1057,6 @@ Status MJPEGVideoDecoderMFX_HW::GetFrame(UMC::MediaDataEx *pSrcData,
     {
         return UMC_ERR_NULL_PTR;
     }
-
-    vm_debug_trace1(VM_DEBUG_NONE, __VM_STRING("MJPEG, frame: %d\n"), m_frameNo);
 
     // allocate frame
     Status sts = AllocateFrame();
@@ -1140,5 +1114,5 @@ ConvertInfo * MJPEGVideoDecoderMFX_HW::GetConvertInfo()
 } // end namespace UMC
 
 
-
+#endif // #if defined(UMC_VA)
 #endif // UMC_ENABLE_MJPEG_VIDEO_DECODER

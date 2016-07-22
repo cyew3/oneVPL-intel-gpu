@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2003-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -20,17 +20,13 @@
 
 #include "ippdefs.h"
 #include "ippcore.h"
-#include "ipps.h"
-#include "ippi.h"
-#include "ippcc.h"
-#include "ippj.h"
 #include "umc_structures.h"
 #include "umc_video_decoder.h"
 
 #include "umc_frame_data.h"
 #include "umc_frame_allocator.h"
 #include "jpegdec.h"
-
+#include "umc_mjpeg_mfx_decode_base.h"
 #include "umc_jpeg_frame_constructor.h"
 
 #include "mfxvideo++int.h"
@@ -44,20 +40,13 @@ class CJpegTaskBuffer;
 namespace UMC
 {
 
+    
 enum
 {
-    JPEG_MAX_THREADS_HW = 1,
     JPEG_MAX_THREADS = 4
 };
 
-typedef struct
-{
-    ChromaType colorFormat;
-    size_t UOffset;
-    size_t VOffset;
-} ConvertInfo;
-
-class MJPEGVideoDecoderMFX
+class MJPEGVideoDecoderMFX : public MJPEGVideoDecoderBaseMFX
 {
 public:
     // Default constructor
@@ -130,28 +119,15 @@ protected:
 
     Status _DecodeHeader(CBaseStreamInput* in, Ipp32s* nUsedBytes, const Ipp32u threadNum);
 
-    bool                    m_IsInit;
-    //bool                    m_firstFrame;
-    //bool                    m_firstField;
-    bool                    m_interleaved;
-    bool                    m_interleavedScan;
-    //bool                    m_needCloseFrame;
-    VideoDecoderParams      m_DecoderParams;
     Ipp32s                  m_frameNo;
 
-    MemID                   m_frameMID;
-    FrameData               m_frameData;
-    JCOLOR                  m_color;
     VideoData               m_internalFrame;
     bool                    m_needPostProcessing;
-    Ipp16u                  m_rotation;
 
 
     Ipp8u*                  m_frame;
-    IppiSize                m_frameDims;
     Ipp32s                  m_frameChannels;
     Ipp32s                  m_framePrecision;
-    int                     m_frameSampling;
 
     // JPEG decoders allocated
     std::auto_ptr<CJPEGDecoder> m_dec[JPEG_MAX_THREADS];
@@ -164,11 +140,7 @@ protected:
     Ipp64f                  m_local_frame_time;
     Ipp64f                  m_local_delta_frame_time;
 
-    MemoryAllocator*        m_pMemoryAllocator; // (MemoryAllocator*) pointer to memory allocator
     std::auto_ptr<BaseCodec>  m_PostProcessing; // (BaseCodec*) pointer to post processing
-
-    FrameAllocator *        m_frameAllocator;
-    VideoAccelerator *      m_va;
 };
 
 inline
@@ -177,99 +149,6 @@ mfxU32 MJPEGVideoDecoderMFX::NumDecodersAllocated(void) const
     return m_numDec;
 
 } // mfxU32 MJPEGVideoDecoderMFX::NumDecodersAllocated(void) const
-
-inline mfxU16 GetMFXChromaFormat(ChromaType type)
-{
-    mfxU16 chromaFormat = MFX_CHROMAFORMAT_MONOCHROME;
-    switch(type)
-    {
-    case CHROMA_TYPE_YUV400:
-        chromaFormat = MFX_CHROMAFORMAT_MONOCHROME;
-        break;
-    case CHROMA_TYPE_YUV420:
-        chromaFormat = MFX_CHROMAFORMAT_YUV420;
-        break;
-    case CHROMA_TYPE_YUV422H_2Y:
-        chromaFormat = MFX_CHROMAFORMAT_YUV422H;
-        break;
-    case CHROMA_TYPE_YUV444:
-    case CHROMA_TYPE_RGB:
-        chromaFormat = MFX_CHROMAFORMAT_YUV444;
-        break;
-    case CHROMA_TYPE_YUV411:
-        chromaFormat = MFX_CHROMAFORMAT_YUV411;
-        break;
-    case CHROMA_TYPE_YUV422V_2Y:
-        chromaFormat = MFX_CHROMAFORMAT_YUV422V;
-        break;
-    case CHROMA_TYPE_YUV422H_4Y:
-        chromaFormat = MFX_CHROMAFORMAT_YUV422H;
-        break;
-    case CHROMA_TYPE_YUV422V_4Y:
-        chromaFormat = MFX_CHROMAFORMAT_YUV422V;
-        break;
-    default:
-        VM_ASSERT(false);
-        break;
-    };
-
-    return chromaFormat;
-}
-
-inline mfxU16 GetMFXColorFormat(JCOLOR color)
-{
-    mfxU16 colorFormat = MFX_JPEG_COLORFORMAT_UNKNOWN;
-    switch(color)
-    {
-    case JC_UNKNOWN:
-        colorFormat = MFX_JPEG_COLORFORMAT_UNKNOWN;
-        break;
-    case JC_GRAY:
-        colorFormat = MFX_JPEG_COLORFORMAT_YCbCr;
-        break;
-    case JC_YCBCR:
-        colorFormat = MFX_JPEG_COLORFORMAT_YCbCr;
-        break;
-    case JC_RGB:
-        colorFormat = MFX_JPEG_COLORFORMAT_RGB;
-        break;
-    default:
-        VM_ASSERT(false);
-        break;
-    };
-
-    return colorFormat;
-}
-
-inline JCOLOR GetUMCColorType(Ipp16u chromaFormat, Ipp16u colorFormat)
-{
-    JCOLOR color = JC_UNKNOWN;
-
-    switch(colorFormat)
-    {
-    case MFX_JPEG_COLORFORMAT_UNKNOWN:
-        color = JC_UNKNOWN;
-        break;
-    case MFX_JPEG_COLORFORMAT_YCbCr:
-        if(chromaFormat == MFX_CHROMAFORMAT_MONOCHROME)
-        {
-            color = JC_GRAY;
-        }
-        else
-        {
-            color = JC_YCBCR;
-        }
-        break;
-    case MFX_JPEG_COLORFORMAT_RGB:
-        color = JC_RGB;
-        break;
-    default:
-        VM_ASSERT(false);
-        break;
-    };
-
-    return color;
-}
 
 } // end namespace UMC
 

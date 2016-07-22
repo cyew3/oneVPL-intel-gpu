@@ -34,12 +34,10 @@ MJPEGVideoDecoderMFX::MJPEGVideoDecoderMFX(void)
     //m_needCloseFrame = false;
     m_needPostProcessing = false;
     m_rotation    = 0;
-    m_frameMID    = 0;
     m_frameNo     = 0;
     m_frame       = 0;
     m_frameSampling = 0;
 
-    m_va = 0;
     m_frameAllocator = 0;
 
     m_numDec = 0;
@@ -81,9 +79,6 @@ Status MJPEGVideoDecoderMFX::Init(BaseCodecParams* lpInit)
     m_needPostProcessing = false;
     m_rotation     = 0;
 
-    m_pMemoryAllocator = pDecoderParams->lpMemoryAllocator;
-    m_va = pDecoderParams->pVideoAccelerator;
-
     // allocate the JPEG decoders
     numThreads = JPEG_MAX_THREADS;
     if ((m_DecoderParams.numThreads) &&
@@ -101,7 +96,7 @@ Status MJPEGVideoDecoderMFX::Init(BaseCodecParams* lpInit)
     }
     m_numDec = numThreads;
 
-    VM_ASSERT(m_pMemoryAllocator);
+    m_decBase = m_dec[0].get();
 
     m_local_delta_frame_time = 1.0/30;
     m_local_frame_time       = 0;
@@ -118,13 +113,6 @@ Status MJPEGVideoDecoderMFX::Init(BaseCodecParams* lpInit)
 Status MJPEGVideoDecoderMFX::Reset(void)
 {
     Ipp32u i;
-    if(0 != m_frameMID)
-    {
-        m_pMemoryAllocator->Unlock(m_frameMID);
-        m_pMemoryAllocator->Free(m_frameMID);
-        m_frameMID = 0;
-    }
-
     m_IsInit       = true;
     //m_firstFrame   = true;
     m_frameNo      = 0;
@@ -154,13 +142,6 @@ Status MJPEGVideoDecoderMFX::Reset(void)
 Status MJPEGVideoDecoderMFX::Close(void)
 {
     Ipp32u i;
-    if(0 != m_frameMID)
-    {
-        m_pMemoryAllocator->Unlock(m_frameMID);
-        m_pMemoryAllocator->Free(m_frameMID);
-        m_frameMID = 0;
-    }
-
     m_IsInit       = false;
     //m_firstFrame   = false;
     //m_firstField   = false;
@@ -173,7 +154,6 @@ Status MJPEGVideoDecoderMFX::Close(void)
     m_frameSampling = 0;
     m_rotation     = 0;
 
-    m_va = 0;
     m_local_frame_time = 0;
 
     m_frameData.Close();

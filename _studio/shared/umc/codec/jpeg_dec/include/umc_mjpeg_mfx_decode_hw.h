@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
+//        Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -15,15 +15,13 @@
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MJPEG_VIDEO_DECODER)
-#include "ippdefs.h"
-#include "ippcore.h"
-#include "ipps.h"
-#include "ippi.h"
-#include "ippcc.h"
-#include "ippj.h"
-#include "umc_structures.h"
-#include "umc_mjpeg_mfx_decode.h"
+
 #include "umc_va_base.h"
+
+#if defined(UMC_VA)
+
+#include "umc_mjpeg_mfx_decode_base.h"
+#include <set>
 
 #ifdef UMC_VA_DXVA
 #include "umc_va_dxva2.h"
@@ -32,12 +30,6 @@
 #if defined(UMC_VA_LINUX)
  #include <va/va_dec_jpeg.h>
 #endif
-#include <set>
-#include <algorithm>
-
-// internal JPEG decoder object forward declaration
-class CBaseStreamInput;
-class CJPEGDecoder;
 
 namespace UMC
 {
@@ -65,7 +57,7 @@ typedef struct tagJPEG_DECODE_QUERY_STATUS
 } JPEG_DECODE_QUERY_STATUS;
 #endif
 
-class MJPEGVideoDecoderMFX_HW : public MJPEGVideoDecoderMFX
+class MJPEGVideoDecoderMFX_HW : public MJPEGVideoDecoderBaseMFX
 {
 public:
     // Default constructor
@@ -108,9 +100,8 @@ protected:
 
     virtual Status _DecodeField(MediaDataEx* in);
 
-#if defined(UMC_VA)
+
     Status PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PARAMETER* obtainedScanParams, Ipp8u* buffersForUpdate);
-#endif
 
     Status GetFrameHW(MediaDataEx* in);
     Status DefaultInitializationHuffmantables();
@@ -126,10 +117,11 @@ protected:
     std::set<mfxU32> m_submittedTaskIndex;
     std::set<mfxU32> m_cachedReadyTaskIndex;
     std::set<mfxU32> m_cachedCorruptedTaskIndex;
+    VideoAccelerator *      m_va;
 };
 
 } // end namespace UMC
 
-
+#endif //#if defined(UMC_VA)
 #endif // UMC_ENABLE_MJPEG_VIDEO_DECODER
 #endif //__UMC_MJPEG_VIDEO_DECODER_MFX_DECODE_HW_H

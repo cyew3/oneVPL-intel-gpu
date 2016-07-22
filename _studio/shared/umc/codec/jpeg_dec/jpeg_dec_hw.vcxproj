@@ -37,19 +37,20 @@
   <ItemGroup>
     <ClInclude Include="include\dechtbl.h" />
     <ClInclude Include="include\decqtbl.h" />
-    <ClInclude Include="include\jpegdec.h" />
-    <ClInclude Include="include\mfx_mjpeg_task.h" />
+    <ClInclude Include="include\jpegdec_base.h" />
     <ClInclude Include="include\umc_jpeg_frame_constructor.h" />
-    <ClInclude Include="include\umc_mjpeg_mfx_decode.h" />
+    <ClInclude Include="include\umc_mjpeg_mfx_decode_base.h" />
     <ClInclude Include="include\umc_mjpeg_mfx_decode_hw.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\dechtbl.cpp" />
     <ClCompile Include="src\decqtbl.cpp" />
     <ClCompile Include="src\jpegdec.cpp" />
+    <ClCompile Include="src\jpegdec_base.cpp" />
     <ClCompile Include="src\mfx_mjpeg_task.cpp" />
     <ClCompile Include="src\umc_jpeg_frame_constructor.cpp" />
     <ClCompile Include="src\umc_mjpeg_mfx_decode.cpp" />
+    <ClCompile Include="src\umc_mjpeg_mfx_decode_base.cpp" />
     <ClCompile Include="src\umc_mjpeg_mfx_decode_hw.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
