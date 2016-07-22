@@ -1037,7 +1037,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
 
     // mfxExtVPPImageStab
-    {/*80*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, RESET1, 0, 0, 0,
+    {/*80*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, RESET1, 0, 0, 0,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_UPSCALE},
 
@@ -1045,7 +1045,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET1, &tsStruct::mfxVideoParam.vpp.Out.Height, 576},
         }
     },
-    {/*81*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, RESET1, 0, 0, 0,
+    {/*81*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, RESET1, 0, 0, 0,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_UPSCALE},
 
@@ -1053,7 +1053,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET1, &tsStruct::mfxVideoParam.vpp.In.Height, 576},
         }
     },
-    {/*82*/ MFX_ERR_NONE, MFX_ERR_NONE, RESET2, 0, 0, 0,
+    {/*82*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESET2, 0, 0, 0,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_UPSCALE},
 
@@ -1068,7 +1068,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET2, &tsStruct::mfxVideoParam.vpp.Out.Height, 480},
         }
     },
-    {/*83*/ MFX_ERR_NONE, MFX_ERR_NONE, RESET2, 0, 0, 0,
+    {/*83*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESET2, 0, 0, 0,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_UPSCALE},
 
@@ -1083,7 +1083,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET2, &tsStruct::mfxVideoParam.vpp.Out.Height, 480},
         }
     },
-    {/*84*/ MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESET2, 0, 0, 0,
+    {/*84*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESET2, 0, 0, 0,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_UPSCALE},
 
@@ -1098,7 +1098,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET2, &tsStruct::mfxVideoParam.vpp.Out.Height, 576},
         }
     },
-    {/*85*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, RESET1, 5, 0, 0,
+    {/*85*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESET1, 5, 0, 0,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_UPSCALE},
 
@@ -1106,7 +1106,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET1, &tsStruct::mfxVideoParam.vpp.Out.Height, 576},
         }
     },
-    {/*86*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, RESET1, 5, 0, 0,
+    {/*86*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESET1, 5, 0, 0,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_UPSCALE},
 
@@ -1114,7 +1114,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET1, &tsStruct::mfxVideoParam.vpp.In.Height, 576},
         }
     },
-    {/*87*/ MFX_ERR_NONE, MFX_ERR_NONE, RESET2, 5, 5, 5,
+    {/*87*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESET2, 5, 5, 5,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_UPSCALE},
 
@@ -1129,7 +1129,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET2, &tsStruct::mfxVideoParam.vpp.Out.Height, 480},
         }
     },
-    {/*88*/ MFX_ERR_NONE, MFX_ERR_NONE, RESET2, 5, 5, 5,
+    {/*88*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESET2, 5, 5, 5,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_UPSCALE},
 
@@ -1144,7 +1144,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET2, &tsStruct::mfxVideoParam.vpp.Out.Height, 480},
         }
     },
-    {/*89*/ MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESET2, 5, 5, 0,
+    {/*89*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESET2, 5, 5, 0,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_UPSCALE},
 
@@ -1160,7 +1160,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         }
     },
 
-    {/*90*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, RESET1, 0, 0, 0,
+    {/*90*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESET1, 0, 0, 0,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_BOXING},
 
@@ -1168,7 +1168,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET1, &tsStruct::mfxVideoParam.vpp.Out.Height, 576},
         }
     },
-    {/*91*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, RESET1, 0, 0, 0,
+    {/*91*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESET1, 0, 0, 0,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_BOXING},
 
@@ -1176,7 +1176,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET1, &tsStruct::mfxVideoParam.vpp.In.Height, 576},
         }
     },
-    {/*92*/ MFX_ERR_NONE, MFX_ERR_NONE, RESET2, 0, 0, 0,
+    {/*92*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESET2, 0, 0, 0,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_BOXING},
 
@@ -1191,7 +1191,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET2, &tsStruct::mfxVideoParam.vpp.Out.Height, 480},
         }
     },
-    {/*93*/ MFX_ERR_NONE, MFX_ERR_NONE, RESET2, 0, 0, 0,
+    {/*93*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESET2, 0, 0, 0,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_BOXING},
 
@@ -1206,7 +1206,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET2, &tsStruct::mfxVideoParam.vpp.Out.Height, 480},
         }
     },
-    {/*94*/ MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESET2, 0, 0, 0,
+    {/*94*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESET2, 0, 0, 0,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_BOXING},
 
@@ -1221,7 +1221,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET2, &tsStruct::mfxVideoParam.vpp.Out.Height, 576},
         }
     },
-    {/*95*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, RESET1, 5, 0, 0,
+    {/*95*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESET1, 5, 0, 0,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_BOXING},
 
@@ -1229,7 +1229,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET1, &tsStruct::mfxVideoParam.vpp.Out.Height, 576},
         }
     },
-    {/*96*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, RESET1, 5, 0, 0,
+    {/*96*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESET1, 5, 0, 0,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_BOXING},
 
@@ -1237,7 +1237,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET1, &tsStruct::mfxVideoParam.vpp.In.Height, 576},
         }
     },
-    {/*97*/ MFX_ERR_NONE, MFX_ERR_NONE, RESET2, 5, 5, 5,
+    {/*97*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESET2, 5, 5, 5,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_BOXING},
 
@@ -1252,7 +1252,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET2, &tsStruct::mfxVideoParam.vpp.Out.Height, 480},
         }
     },
-    {/*98*/ MFX_ERR_NONE, MFX_ERR_NONE, RESET2, 5, 5, 5,
+    {/*98*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESET2, 5, 5, 5,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_BOXING},
 
@@ -1267,7 +1267,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET2, &tsStruct::mfxVideoParam.vpp.Out.Height, 480},
         }
     },
-    {/*99*/ MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESET2, 5, 5, 0,
+    {/*99*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESET2, 5, 5, 0,
         {
             {MFX_PAR, &tsStruct::mfxExtVPPImageStab.Mode, MFX_IMAGESTAB_MODE_BOXING},
 
@@ -1303,7 +1303,7 @@ int TestSuite::RunTest(unsigned int id)
 
     if (g_tsOSFamily == MFX_OS_FAMILY_LINUX)
         if (m_par.ExtParam && m_par.ExtParam[0]->BufferId == MFX_EXTBUFF_VPP_IMAGE_STABILIZATION)
-            sts_init = sts_reset_1 = sts_reset_2 = MFX_WRN_FILTER_SKIPPED;
+            sts_init = /*sts_reset_1 = sts_reset_2 =*/ MFX_WRN_FILTER_SKIPPED;
 
     g_tsStatus.expect(sts_init);
     Init(m_session, m_pPar);
@@ -1345,9 +1345,11 @@ int TestSuite::RunTest(unsigned int id)
         surf->Info.Width = surf->Info.CropW = par_reset.vpp.Out.Width;
         surf->Info.Height = surf->Info.CropH = par_reset.vpp.Out.Height;
     }
-
-    g_tsStatus.expect(MFX_ERR_NONE);
-    ProcessFrames(tc.frames_reset_1);
+    if (0 <= g_tsStatus.m_status)
+    {
+        g_tsStatus.expect(MFX_ERR_NONE);
+        ProcessFrames(tc.frames_reset_1);
+    }
 
     if (tc.mode == RESET2)
     {
@@ -1376,8 +1378,11 @@ int TestSuite::RunTest(unsigned int id)
             surf->Info.Height = surf->Info.CropH = par_reset2.vpp.Out.Height;
         }
 
-        g_tsStatus.expect(MFX_ERR_NONE);
-        ProcessFrames(tc.frames_reset_2);
+        if (0 <= g_tsStatus.m_status)
+        {
+            g_tsStatus.expect(MFX_ERR_NONE);
+            ProcessFrames(tc.frames_reset_2);
+        }
     }
 
     g_tsStatus.expect(MFX_ERR_NONE);
