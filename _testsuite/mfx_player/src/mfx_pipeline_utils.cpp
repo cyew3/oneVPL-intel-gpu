@@ -1087,9 +1087,6 @@ mfxStatus myMFXInitEx(const vm_char *pMFXLibraryPath, mfxInitParam par, mfxSessi
     {
         if (MFX_ERR_NONE == mfxRes)
         {
-            mfxInitParam par;
-
-            memset(&par, 0, sizeof(mfxInitParam));
             // try to load the selected DLL using default DLL search mechanism
             mfxRes = pHandle->LoadSelectedDLL(path,
                                      myimplTypes[curImplIdx].implType,
