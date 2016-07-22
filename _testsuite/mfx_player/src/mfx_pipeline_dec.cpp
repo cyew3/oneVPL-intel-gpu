@@ -880,9 +880,11 @@ mfxStatus MFXDecPipeline::CreateCore()
         if ( m_inParams.bInitEx )
         {
             mfxInitParam params;
+            MFX_ZERO_MEM(params);
             params.ExternalThreads = 0;
             params.GPUCopy         = m_inParams.nGpuCopyMode;
             params.Implementation  = m_components[eDEC].m_libType;
+            params.ExtParam        = 0;
             params.NumExtParam     = 0;
             params.Version.Major   = MFX_VERSION_MAJOR;
             params.Version.Minor   = MFX_VERSION_MINOR;
@@ -2414,7 +2416,7 @@ mfxStatus MFXDecPipeline::CreateDeviceManager()
         if (NULL == va_dpy)
         {
             ComponentParams &cparams = m_components[eDEC].m_bufType == MFX_BUF_HW ? m_components[eDEC] : m_components[eREN];
-	    m_pHWDevice.reset(CreateVAAPIDevice(MFX_LIBVA_DRM));
+            m_pHWDevice.reset(CreateVAAPIDevice(MFX_LIBVA_DRM));
             if (m_pHWDevice.get())
             {
                 MFX_CHECK_STS(m_pHWDevice->Init(0, NULL, !m_inParams.bFullscreen, 0, 1, NULL));
