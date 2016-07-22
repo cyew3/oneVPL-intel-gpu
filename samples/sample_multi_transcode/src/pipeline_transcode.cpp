@@ -28,6 +28,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "sample_utils.h"
 #include "mfx_vpp_plugin.h"
 #include "mfx_itt_trace.h"
+#include <algorithm>
 
 #include "plugin_loader.h"
 

@@ -489,7 +489,7 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
             {
                 if (m_InputParamsArray[j].MaxFrameNumber != MFX_INFINITE)
                 {
-                    msdk_printf(MSDK_STRING("\"-timeout\" option isn't compatible wiht \"-n\". \"-n\" will be ignored.\n"));
+                    msdk_printf(MSDK_STRING("\"-timeout\" option isn't compatible with \"-n\". \"-n\" will be ignored.\n"));
                     for (mfxU32 j = 0; j < m_InputParamsArray.size(); j++)
                         m_InputParamsArray[j].MaxFrameNumber = MFX_INFINITE;
                 }

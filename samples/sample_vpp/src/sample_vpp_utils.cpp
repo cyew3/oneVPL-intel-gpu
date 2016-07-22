@@ -889,9 +889,6 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_MSDK_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
         }
-
-        int i = 0;
-        i;
     }
     else if(pInfo->FourCC == MFX_FOURCC_YUV411)
     {
