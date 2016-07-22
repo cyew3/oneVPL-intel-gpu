@@ -28,7 +28,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
         msdk_printf(MSDK_STRING("Error: %s\n"), strErrorMessage);
     }
 
-    msdk_printf(MSDK_STRING("Usage: %s [Options] -p PathToCameraPlugin -i InputFileNameBase -o OutputFileNameBase [numberOfFilesToDump]\n"), strAppName);
+    msdk_printf(MSDK_STRING("Usage: %s [Options] -i InputFileNameBase -o OutputFileNameBase [numberOfFilesToDump]\n"), strAppName);
     msdk_printf(MSDK_STRING("Options: \n"));
     msdk_printf(MSDK_STRING("   [-plugin_version ver]                                - define camera plugin version\n"));
     msdk_printf(MSDK_STRING("   [-a asyncDepth] / [-asyncDepth asyncDepth]          - set async depth, default %d \n"), CAM_SAMPLE_ASYNC_DEPTH);
