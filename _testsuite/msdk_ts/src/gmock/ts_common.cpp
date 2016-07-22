@@ -197,7 +197,10 @@ void MFXVideoTest::SetUp()
             if (platform[1] == '1' && platform[2] == '0')
                 g_tsWinVersion = MFX_WIN_VER_W10;
         }
-        else if (platform[0] == 'c')
+        /* For Linux we have to common names
+         * (1): c7.2_bdw_64_server and variants
+         * (2): yocto_bxt_64_server */
+        else if ((platform[0] == 'c') || (platform[0] == 'y'))
         {
             g_tsOSFamily = MFX_OS_FAMILY_LINUX;
         }
