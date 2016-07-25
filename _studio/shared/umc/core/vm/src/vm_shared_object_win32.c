@@ -40,8 +40,8 @@ vm_so_handle vm_so_load(const vm_char *so_file_name)
         {
             if (ERROR_SUCCESS == RegQueryValueEx(hkey, _T("DriverStorePath"), 0, NULL, (LPBYTE)path, &size ))
                 {
-                    wcscat(path, _T("\\"));
-                    wcscat(path, so_file_name);
+                    wcscat_s(path, MAX_PATH, _T("\\"));
+                    wcscat_s(path, MAX_PATH, so_file_name);
                     handle = ((vm_so_handle)LoadLibraryExW(path, NULL, 0));
                 }
         }
