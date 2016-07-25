@@ -565,9 +565,9 @@ namespace H265Enc {
                 {
                     rd_lambda_slice = (currFrame->m_biFramesInMiniGop == 15)
                         ? (videoParam.longGop)
-                        ? tab_rdLambdaBPyramid5LongGop[layer]
-                    : tab_rdLambdaBPyramid5[layer]
-                    : tab_rdLambdaBPyramid4[layer];
+                            ? tab_rdLambdaBPyramid5LongGop[layer]
+                            : tab_rdLambdaBPyramid5[layer]
+                        : tab_rdLambdaBPyramid4[layer];
                 }
                 mult = !!layer;
                 if (!layer && (videoParam.DeltaQpMode&AMT_DQP_CAQ)) {

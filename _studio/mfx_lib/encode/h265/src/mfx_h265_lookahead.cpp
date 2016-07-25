@@ -2297,6 +2297,8 @@ int GetCalqDeltaQp(Frame* frame, const H265VideoParam & par, Ipp32s ctb_addr, Ip
     } else {
         picClass = frame->m_pyramidLayer+1;
     }
+    if (picClass > 4)
+        picClass = 4;
 
     static int pQPi[5][4] = {{22,27,32,37}, {23,28,33,38}, {24,29,34,39}, {25,30,35,40}, {26,31,36,41}};
     Ipp32s qpClass = 0;
