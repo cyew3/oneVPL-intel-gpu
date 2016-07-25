@@ -2846,8 +2846,10 @@ void ImplementationMvc::PatchTask(MvcTask const & mvcTask, DdiTask & curTask, mf
             ArrayU8x33 const &    otherList1 = otherTask.m_list1[fieldId];
 
             // insert first reference frame from list0 of each view
-            // for interlaced encoding don't insert references from views with lower viewIdx
-            if (otherList0.Size() > 0 && ((curTask.GetPicStructForEncode() & MFX_PICSTRUCT_PROGRESSIVE) || (v >= viewIdx)))
+            // for interlaced encoding don't insert references from views with lower viewIdx,
+            // also can't insert references from views with bigger viewIdx, because it may cause call inaccessible frame,
+            // so inserts references from only current viewIdx
+            if (otherList0.Size() > 0 && ((curTask.GetPicStructForEncode() & MFX_PICSTRUCT_PROGRESSIVE) || (v == viewIdx)))
             {
                 if (std::find_if(curDpb.Begin(), curDpb.End(), FindByPocAndViewIdx(otherDpb[otherList0[0] & 0x7f])) == curDpb.End())
                 {
