@@ -112,7 +112,7 @@ mfxU32 GetMinBsSize(MfxVideoParam const & par)
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR && !par.isSWBRC() && 
         par.mfx.FrameInfo.FrameRateExtD!= 0)
     {
-        mfxU32 avg_size =  par.TargetKbps * 1000 * par.mfx.FrameInfo.FrameRateExtN / (par.mfx.FrameInfo.FrameRateExtD * 8);
+        mfxU32 avg_size =  par.TargetKbps * 1000 * par.mfx.FrameInfo.FrameRateExtD / (par.mfx.FrameInfo.FrameRateExtN * 8);
         if (size < 2*avg_size)
             size = 2*avg_size;
     }
