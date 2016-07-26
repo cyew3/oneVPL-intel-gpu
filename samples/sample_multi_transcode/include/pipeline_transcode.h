@@ -47,6 +47,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxjpeg.h"
 #include "mfxla.h"
 #include "mfxvp8.h"
+#include "mfxvp9.h"
 
 #include "hw_device.h"
 #include "plugin_loader.h"

@@ -29,6 +29,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxcommon.h"
 #include "mfxjpeg.h"
 #include "mfxvp8.h"
+#include "mfxvp9.h"
 
 #pragma warning( disable : 4748 )
 
@@ -660,7 +661,11 @@ mfxStatus CIVFFrameReader::Init(const msdk_char *strFileName)
 
     // check header
     MSDK_CHECK_NOT_EQUAL(MFX_MAKEFOURCC('D','K','I','F'), m_hdr.dkif, MFX_ERR_UNSUPPORTED);
-    MSDK_CHECK_NOT_EQUAL(MFX_MAKEFOURCC('V','P','8','0'), m_hdr.codec_FourCC, MFX_ERR_UNSUPPORTED);
+    if ((m_hdr.codec_FourCC != MFX_MAKEFOURCC('V','P','8','0')) &&
+        (m_hdr.codec_FourCC != MFX_MAKEFOURCC('V','P','9','0')))
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
 
     return MFX_ERR_NONE;
 }
@@ -1889,6 +1894,7 @@ bool IsDecodeCodecSupported(mfxU32 codecFormat)
         case CODEC_MVC:
         case MFX_CODEC_JPEG:
         case MFX_CODEC_VP8:
+        case MFX_CODEC_VP9:
         case MFX_CODEC_CAPTURE:
         break;
     default:
@@ -1923,6 +1929,7 @@ bool IsPluginCodecSupported(mfxU32 codecFormat)
         case MFX_CODEC_MPEG2:
         case MFX_CODEC_VC1:
         case MFX_CODEC_VP8:
+        case MFX_CODEC_VP9:
         case MFX_CODEC_CAPTURE:
         break;
     default:
@@ -1968,6 +1975,10 @@ mfxStatus StrFormatToCodecFormatFourCC(msdk_char* strInput, mfxU32 &codecFormat)
         else if (0 == msdk_strcmp(strInput, MSDK_STRING("vp8")))
         {
             codecFormat = MFX_CODEC_VP8;
+        }
+        else if (0 == msdk_strcmp(strInput, MSDK_STRING("vp9")))
+        {
+            codecFormat = MFX_CODEC_VP9;
         }
         else if (0 == msdk_strcmp(strInput, MSDK_STRING("capture")))
         {

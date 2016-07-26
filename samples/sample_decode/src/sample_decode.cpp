@@ -627,7 +627,8 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         MFX_CODEC_VC1     != pParams->videoType &&
         MFX_CODEC_JPEG    != pParams->videoType &&
         MFX_CODEC_CAPTURE != pParams->videoType &&
-        CODEC_VP8         != pParams->videoType)
+        MFX_CODEC_VP8     != pParams->videoType &&
+        MFX_CODEC_VP9     != pParams->videoType)
     {
         PrintHelp(strInput[0], MSDK_STRING("Unknown codec"));
         return MFX_ERR_UNSUPPORTED;

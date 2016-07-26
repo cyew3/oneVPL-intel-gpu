@@ -156,7 +156,8 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
             m_bIsCompleteFrame = true;
             m_bPrintLatency = pParams->bCalLat;
             break;
-        case CODEC_VP8:
+        case MFX_CODEC_VP8:
+        case MFX_CODEC_VP9:
             m_FileReader.reset(new CIVFFrameReader());
             m_bIsCompleteFrame = true;
             m_bPrintLatency = pParams->bCalLat;
@@ -169,7 +170,8 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     {
         switch (pParams->videoType)
         {
-        case CODEC_VP8:
+        case MFX_CODEC_VP8:
+        case MFX_CODEC_VP9:
             m_FileReader.reset(new CIVFFrameReader());
             break;
         default:
@@ -326,7 +328,7 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     // prepare bit stream
     if (MFX_CODEC_CAPTURE != pParams->videoType)
     {
-        sts = InitMfxBitstream(&m_mfxBS, 1024 * 1024);
+        sts = InitMfxBitstream(&m_mfxBS, 8 * 1024 * 1024);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
@@ -341,7 +343,8 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
         if (pParams->pluginParams.type == MFX_PLUGINLOAD_TYPE_FILE && msdk_strnlen(pParams->pluginParams.strPluginPath,sizeof(pParams->pluginParams.strPluginPath)))
         {
             m_pUserModule.reset(new MFXVideoUSER(m_mfxSession));
-            if (pParams->videoType == CODEC_VP8 || pParams->videoType == MFX_CODEC_HEVC)
+            if (pParams->videoType == MFX_CODEC_HEVC || pParams->videoType == MFX_CODEC_VP8 ||
+                pParams->videoType == MFX_CODEC_VP9)
             {
                 m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1, pParams->pluginParams.strPluginPath, (mfxU32)msdk_strnlen(pParams->pluginParams.strPluginPath,sizeof(pParams->pluginParams.strPluginPath))));
             }
