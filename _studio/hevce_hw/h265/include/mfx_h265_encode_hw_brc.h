@@ -237,8 +237,8 @@ struct BRCParams
     mfxU16 rateControlMethod;
     mfxU32 bufferSizeInBytes;
     mfxU32 initialDelayInBytes;
-    mfxU32 targetKbps;
-    mfxU32 maxKbps;
+    mfxU32 targetbps;
+    mfxU32 maxbps;
     mfxF64 frameRate;
     mfxU16 width;
     mfxU16 height;

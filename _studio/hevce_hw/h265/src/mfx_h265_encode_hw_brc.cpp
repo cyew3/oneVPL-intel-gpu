@@ -469,7 +469,7 @@ mfxU32 H265BRC::GetInitQP()
   fs = fs * m_par.bitDepthLuma / 8;
   
  
-  mfxF64 qstep = pow(1.5 * fs * m_par.frameRate / (m_par.targetKbps*1000), 0.8);
+  mfxF64 qstep = pow(1.5 * fs * m_par.frameRate / (m_par.targetbps), 0.8);
  
   mfxI32 q = Qstep2QP(qstep, mQuantOffset) + mQuantOffset;
 
@@ -486,8 +486,8 @@ mfxStatus H265BRC::SetParams( MfxVideoParam &par)
     m_par.bufferSizeInBytes  = ((par.BufferSizeInKB*1000) >> (1 + MFX_H265_CPBSIZE_SCALE)) << (1 + MFX_H265_CPBSIZE_SCALE);
     m_par.initialDelayInBytes =((par.InitialDelayInKB*1000) >> (1 + MFX_H265_CPBSIZE_SCALE)) << (1 + MFX_H265_CPBSIZE_SCALE);
 
-    m_par.targetKbps = ((par.TargetKbps >> (3 + MFX_H265_BITRATE_SCALE)) << (3 + MFX_H265_BITRATE_SCALE));;
-    m_par.maxKbps = ((par.MaxKbps >> (3 + MFX_H265_BITRATE_SCALE)) << (3 + MFX_H265_BITRATE_SCALE));
+    m_par.targetbps = (((par.TargetKbps*1000) >> (6 + MFX_H265_BITRATE_SCALE)) << (6 + MFX_H265_BITRATE_SCALE));
+    m_par.maxbps =    (((par.MaxKbps*1000) >> (6 + MFX_H265_BITRATE_SCALE)) << (6 + MFX_H265_BITRATE_SCALE));
 
     MFX_CHECK (par.mfx.FrameInfo.FrameRateExtD != 0 && par.mfx.FrameInfo.FrameRateExtN != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -497,7 +497,7 @@ mfxStatus H265BRC::SetParams( MfxVideoParam &par)
     m_par.chromaFormat = par.mfx.FrameInfo.ChromaFormat;
     m_par.bitDepthLuma = par.mfx.FrameInfo.BitDepthLuma;
 
-    m_par.inputBitsPerFrame = m_par.maxKbps*1000 / m_par.frameRate;
+    m_par.inputBitsPerFrame = m_par.maxbps / m_par.frameRate;
  
     return MFX_ERR_NONE;
 }
@@ -517,7 +517,7 @@ mfxStatus H265BRC::Init( MfxVideoParam &par, mfxI32 enableRecode)
     mBF = (mfxI64) m_par.initialDelayInBytes;
     mBFsaved = mBF;
 
-    mBitsDesiredFrame = (mfxI32)(m_par.targetKbps*1000 / m_par.frameRate);
+    mBitsDesiredFrame = (mfxI32)(m_par.targetbps / m_par.frameRate);
     
     MFX_CHECK(mBitsDesiredFrame > 10, MFX_ERR_INVALID_VIDEO_PARAM);
 
@@ -605,7 +605,15 @@ static const mfxF64 minQstep = QSTEP[1];
 static const mfxF64 maxQstepChange = pow(2, 0.5);
 static const mfxF64 predCoef = 1000000. / (1920 * 1080);
 
+mfxU16 GetFrameType(Task &task)
+{
+    if (task.m_frameType & MFX_FRAMETYPE_I)
+        return MFX_FRAMETYPE_I;
+    if ((task.m_frameType & MFX_FRAMETYPE_B) && !task.m_ldb)
+        return MFX_FRAMETYPE_B;
 
+    return MFX_FRAMETYPE_P;
+}
 
 mfxI32 H265BRC::GetQP(MfxVideoParam &video, Task &task)
 {
@@ -615,10 +623,11 @@ mfxI32 H265BRC::GetQP(MfxVideoParam &video, Task &task)
     if (task.m_eo == mRecodedFrame_encOrder && m_bRecodeFrame)
         qp = mQuantRecoded;
     else {
+        mfxU16 type = GetFrameType(task);
 
-        if (task.m_frameType & MFX_FRAMETYPE_I) 
+        if (type == MFX_FRAMETYPE_I) 
             qp = mQuantI;
-        else if ((task.m_frameType &  MFX_FRAMETYPE_P) || task.m_ldb) 
+        else if (type == MFX_FRAMETYPE_P) 
             qp = mQuantP;
         else { 
             if (video.isBPyramid()) {
@@ -737,13 +746,15 @@ mfxBRCStatus H265BRC::PostPackFrame(MfxVideoParam & /* par */, Task &task, mfxI3
     mfxF64 e2pe;
     mfxI32 qp, qpprev;
     mfxU32 prevFrameType = mPicType;
-    mfxU32 picType = task.m_frameType;
+    mfxU32 picType = GetFrameType(task);
     mfxI32 qpY = task.m_qpY;
 
     mPoc = task.m_poc;
     qpY += mQuantOffset;
 
-    mfxI32 layer = ((picType & MFX_FRAMETYPE_I) ? 0 : ((picType & MFX_FRAMETYPE_P) || task.m_ldb ?  1 : 1 + IPP_MAX(1, task.m_level))); // should be 0 for I, 1 for P, etc. !!!
+
+
+    mfxI32 layer = ((picType == MFX_FRAMETYPE_I) ? 0 : ((picType == MFX_FRAMETYPE_P) ?  1 : 1 + IPP_MAX(1, task.m_level))); // should be 0 for I, 1 for P, etc. !!!
     mfxF64 qstep = QP2Qstep(qpY, mQuantOffset);
 
     if (!repack && mQuantUpdated <= 0) { // BRC reported buffer over/underflow but the application ignored it
@@ -797,7 +808,7 @@ mfxBRCStatus H265BRC::PostPackFrame(MfxVideoParam & /* par */, Task &task, mfxI3
             maxqp = IPP_MIN(maxqp, m_hrdState.overflowQuant - 1);
         }
 
-        if (bitsEncoded >  maxFrameSize && qp < maxqp) {
+        if (bitsEncoded >  maxFrameSize && qp < maxqp && !(picType & MFX_FRAMETYPE_I)) {
             mfxF64 targetSizeScaled = maxFrameSize * 0.8;
             mfxF64 qstepnew = qstep * pow(bitsEncoded / targetSizeScaled, 0.9);
             mfxI32 qpnew = Qstep2QP(qstepnew, mQuantOffset);
@@ -902,7 +913,7 @@ mfxBRCStatus H265BRC::PostPackFrame(MfxVideoParam & /* par */, Task &task, mfxI3
        
         m_hrdState.underflowQuant = 0;
         m_hrdState.overflowQuant = 999;
-        mBF += (mfxI64)(m_par.maxKbps*1000/(m_par.frameRate*8));
+        mBF += (mfxI64)(m_par.maxbps/(m_par.frameRate*8));
         mBF -= ((mfxI64)totalFrameBits >> 3);
         if ((MFX_RATECONTROL_VBR == m_par.rateControlMethod) && (mBF > (mfxI64) m_par.bufferSizeInBytes ))
             mBF = (mfxI64)m_par.bufferSizeInBytes;
@@ -966,7 +977,7 @@ mfxBRCStatus H265BRC::UpdateQuant(mfxI32 bitEncoded, mfxI32 totalPicBits, mfxI32
     //if (mParams.HRDBufferSizeBytes > 0) {
     if (m_par.rateControlMethod == MFX_RATECONTROL_VBR) {
         mfxI64 targetFullness = IPP_MIN(m_par.initialDelayInBytes << 3, (mfxU32)buffSizeInBits / 2);
-        mfxI64 minTargetFullness = IPP_MIN(mfxU32(buffSizeInBits / 2), m_par.targetKbps*1000 * 2); // half bufsize or 2 sec
+        mfxI64 minTargetFullness = IPP_MIN(mfxU32(buffSizeInBits / 2), m_par.targetbps * 2); // half bufsize or 2 sec
         if (targetFullness < minTargetFullness)
             targetFullness = minTargetFullness;
         mfxI64 bufferDeviation = targetFullness - (mfxI64)m_hrdState.bufFullness;
@@ -1113,13 +1124,13 @@ mfxStatus H265BRC::GetInitialCPBRemovalDelay(mfxU32 *initial_cpb_removal_delay, 
     }
 
     temp1_u64 = (mfxU64)mBF * 90000;
-    temp2_u64 = (mfxU64)m_par.maxKbps*1000/8 ;
+    temp2_u64 = (mfxU64)m_par.maxbps/8 ;
     cpb_rem_del_u64 = temp1_u64 / temp2_u64;
     cpb_rem_del_u32 = (mfxU32)cpb_rem_del_u64;
 
     if (MFX_RATECONTROL_VBR == m_par.rateControlMethod) {
         mBF = temp2_u64 * cpb_rem_del_u32 / 90000;
-        temp1_u64 = (mfxU64)cpb_rem_del_u32 * m_par.maxKbps*1000/8;
+        temp1_u64 = (mfxU64)cpb_rem_del_u32 * m_par.maxbps/8;
         mfxU32 dec_buf_ful = (mfxU32)(temp1_u64 / (90000/8));
         if (recode)
             m_hrdState.prevBufFullness = (mfxF64)dec_buf_ful;
