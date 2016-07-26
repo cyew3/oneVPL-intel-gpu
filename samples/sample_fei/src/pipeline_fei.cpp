@@ -57,13 +57,13 @@ static FILE* pPerMbQP        = NULL;
 static FILE* decodeStreamout = NULL;
 static FILE* pRepackCtrl     = NULL;
 
-CEncTaskPool::CEncTaskPool()
+CEncTaskPool::CEncTaskPool():
+    m_pTasks(NULL),
+    m_pmfxSession(NULL),
+    m_nTaskBufferStart(0),
+    m_nPoolSize(0),
+    m_nFieldId(NOT_IN_SINGLE_FIELD_MODE)
 {
-    m_pTasks            = NULL;
-    m_pmfxSession       = NULL;
-    m_nTaskBufferStart  = 0;
-    m_nPoolSize         = 0;
-    m_nFieldId          = NOT_IN_SINGLE_FIELD_MODE;
 }
 
 CEncTaskPool::~CEncTaskPool()
@@ -385,7 +385,15 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     {
         // in case of decoder without VPP copy FrameInfo from decoder
         MSDK_MEMCPY_VAR(m_mfxEncParams.mfx.FrameInfo, &m_mfxDecParams.mfx.FrameInfo, sizeof(mfxFrameInfo));
-        m_mfxEncParams.mfx.FrameInfo.PicStruct = pInParams->nPicStruct; // to support mixed picstructs
+
+        if (pInParams->nPicStruct & MFX_PICSTRUCT_UNKNOWN)
+        {
+            m_mfxEncParams.mfx.FrameInfo.PicStruct = pInParams->nPicStruct;
+        }
+        else
+        {
+            pInParams->nPicStruct = m_mfxEncParams.mfx.FrameInfo.PicStruct;
+        }
         pInParams->nWidth  = pInParams->nDstWidth  = m_mfxEncParams.mfx.FrameInfo.CropW;
         pInParams->nHeight = pInParams->nDstHeight = m_mfxEncParams.mfx.FrameInfo.CropH;
     }
@@ -523,7 +531,11 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
     if (pInParams->bDECODE)
     {
         MSDK_MEMCPY_VAR(m_mfxVppParams.vpp.In, &m_mfxDecParams.mfx.FrameInfo, sizeof(mfxFrameInfo));
-        m_mfxVppParams.vpp.In.PicStruct = pInParams->nPicStruct; // to support mixed picstructs
+
+        if (pInParams->nPicStruct & MFX_PICSTRUCT_UNKNOWN)
+        {
+            m_mfxVppParams.vpp.In.PicStruct = pInParams->nPicStruct;
+        }
         pInParams->nWidth  = m_mfxVppParams.vpp.Out.CropW;
         pInParams->nHeight = m_mfxVppParams.vpp.Out.CropH;
     }
@@ -1153,47 +1165,71 @@ void CEncodingPipeline::DeleteAllocator()
     DeleteHWDevice();
 }
 
-CEncodingPipeline::CEncodingPipeline()
+CEncodingPipeline::CEncodingPipeline():
+
+    m_pmfxDECODE(NULL),
+    m_pmfxVPP(NULL),
+    m_pmfxDS(NULL),
+    m_pmfxPREENC(NULL),
+    m_pmfxENC(NULL),
+    m_pmfxPAK(NULL),
+    m_pmfxENCODE(NULL),
+    m_pMFXAllocator(NULL),
+    m_pmfxAllocatorParams(NULL),
+    m_memType(D3D9_MEMORY), //only hw memory is supported
+    m_bExternalAlloc(false),
+    m_nAsyncDepth(0),
+    m_LastDecSyncPoint(0),
+    m_tmpForMedian(NULL),
+    m_tmpForReading(NULL),
+    m_tmpMBpreenc(NULL),
+    m_tmpMBenc(NULL),
+    m_ctr(NULL),
+    m_last_task(NULL),
+    m_bNeedDRC(false),
+    m_drcDftW(0),
+    m_drcDftH(0),
+    m_numMB_drc(0),
+    m_bDRCReset(false),
+    m_bVPPneeded(false),
+    m_pExtBufDecodeStreamout(NULL),
+
+#if D3D_SURFACES_SUPPORT
+    m_hwdev(NULL),
+#endif
+
+    m_FileWriters(std::pair<CSmplBitstreamWriter *, CSmplBitstreamWriter *>(NULL, NULL)),
+
+    m_bEndOfFile(false),
+    m_insertIDR(false),
+    m_twoEncoders(false),
+    m_disableMVoutPreENC(false),
+    m_disableMBStatPreENC(false),
+    m_enableMVpredPreENC(false),
+
+    m_log2frameNumMax(8),
+    m_numOfFields(1), // default is progressive case
+    m_isField(false),
+    m_bSeparatePreENCSession(false),
+
+    m_frameCount(0),
+    m_frameOrderIdrInDisplayOrder(0),
+    m_frameType(PairU8((mfxU8)MFX_FRAMETYPE_UNKNOWN, (mfxU8)MFX_FRAMETYPE_UNKNOWN)),
+    m_frameIdrCounter(0xffff),
+
+    m_surfPoolStrategy(PREFER_FIRST_FREE)
 {
-    m_pmfxDECODE          = NULL;
-    m_pmfxVPP             = NULL;
-    m_pmfxDS              = NULL;
-    m_pmfxPREENC          = NULL;
-    m_pmfxENC             = NULL;
-    m_pmfxPAK             = NULL;
-    m_pmfxENCODE          = NULL;
-    m_pMFXAllocator       = NULL;
-    m_pmfxAllocatorParams = NULL;
-    m_memType             = D3D9_MEMORY; //only hw memory is supported
-    m_bExternalAlloc      = false;
-    m_nAsyncDepth         = 0;
-    m_LastDecSyncPoint    = 0;
-    m_tmpForMedian        = NULL;
-    m_tmpForReading       = NULL;
-    m_tmpMBpreenc         = NULL;
-    m_tmpMBenc            = NULL;
-    m_ctr                 = NULL;
-    m_last_task           = NULL;
-    m_bNeedDRC            = false;
-    m_drcDftW             = 0;
-    m_drcDftH             = 0;
-    m_numMB_drc           = 0;
-    m_bDRCReset           = false;
-    m_bVPPneeded          = false;
-
-    m_pExtBufDecodeStreamout = NULL;
-
     MSDK_ZERO_MEMORY(m_pDecSurfaces);
     MSDK_ZERO_MEMORY(m_pEncSurfaces);
     MSDK_ZERO_MEMORY(m_pVppSurfaces);
     MSDK_ZERO_MEMORY(m_pDSSurfaces);
     MSDK_ZERO_MEMORY(m_pReconSurfaces);
 
-    m_pDecSurfaces.LastPicked   = (mfxU16)-1; // to pick from 0 surface
-    m_pEncSurfaces.LastPicked   = (mfxU16)-1;
-    m_pVppSurfaces.LastPicked   = (mfxU16)-1;
-    m_pDSSurfaces.LastPicked    = (mfxU16)-1;
-    m_pReconSurfaces.LastPicked = (mfxU16)-1;
+    m_pDecSurfaces.LastPicked   = 0xffff; // to pick from 0 surface
+    m_pEncSurfaces.LastPicked   = 0xffff;
+    m_pVppSurfaces.LastPicked   = 0xffff;
+    m_pDSSurfaces.LastPicked    = 0xffff;
+    m_pReconSurfaces.LastPicked = 0xffff;
 
 
     MSDK_ZERO_ARRAY(m_numOfRefs[0], 2);
@@ -1215,32 +1251,9 @@ CEncodingPipeline::CEncodingPipeline()
     m_VppDoNotUse.Header.BufferId = MFX_EXTBUFF_VPP_DONOTUSE;
     m_VppDoNotUse.Header.BufferSz = sizeof(m_VppDoNotUse);
 
-#if D3D_SURFACES_SUPPORT
-    m_hwdev = NULL;
-#endif
-
     MSDK_ZERO_MEMORY(m_mfxEncParams);
     MSDK_ZERO_MEMORY(m_DecResponse);
     MSDK_ZERO_MEMORY(m_EncResponse);
-
-    m_bEndOfFile          = false;
-    m_insertIDR           = false;
-    m_twoEncoders         = false;
-    m_disableMVoutPreENC  = false;
-    m_disableMBStatPreENC = false;
-    m_enableMVpredPreENC  = false;
-
-    m_log2frameNumMax = 8;
-    m_numOfFields = 1; // default is progressive case
-    m_isField     = false;
-    m_bSeparatePreENCSession = false;
-
-    m_frameCount = 0;
-    m_frameOrderIdrInDisplayOrder = 0;
-    m_frameType = PairU8((mfxU8)MFX_FRAMETYPE_UNKNOWN, (mfxU8)MFX_FRAMETYPE_UNKNOWN);
-    m_frameIdrCounter = (mfxU16)(-1);
-
-    m_surfPoolStrategy = PREFER_FIRST_FREE;
 }
 
 CEncodingPipeline::~CEncodingPipeline()
@@ -1636,10 +1649,10 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams, bool real
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
             // PREENC will be performed on downscaled picture
-            preEncParams.mfx.FrameInfo.Width = m_mfxDSParams.vpp.Out.Width;
+            preEncParams.mfx.FrameInfo.Width  = m_mfxDSParams.vpp.Out.Width;
             preEncParams.mfx.FrameInfo.Height = m_mfxDSParams.vpp.Out.Height;
-            preEncParams.mfx.FrameInfo.CropW = m_mfxDSParams.vpp.Out.Width;
-            preEncParams.mfx.FrameInfo.CropH = m_mfxDSParams.vpp.Out.Height;
+            preEncParams.mfx.FrameInfo.CropW  = m_mfxDSParams.vpp.Out.Width;
+            preEncParams.mfx.FrameInfo.CropH  = m_mfxDSParams.vpp.Out.Height;
         }
 
         //Create extended buffer to Init FEI
@@ -2785,6 +2798,8 @@ mfxStatus CEncodingPipeline::Run()
                        (m_encpakParams.bOnlyENC) || (m_encpakParams.bOnlyPAK) ||
                        (m_encpakParams.bENCODE && m_encpakParams.EncodedOrder);
 
+    bool swap_fields = false;
+
     iTask* eTask = NULL; // encoding task
     time_t start = time(0);
     size_t rctime = 0;
@@ -2811,8 +2826,7 @@ mfxStatus CEncodingPipeline::Run()
 
         if (m_bNeedDRC)
         {
-           m_insertIDR  = false;
-           sts = ResizeFrame(m_frameCount, m_insertIDR, rctime, eTask, pCurrentTask);
+           sts = ResizeFrame(m_frameCount, rctime, eTask, pCurrentTask);
         }
 
         if (m_insertIDR)
@@ -2820,12 +2834,10 @@ mfxStatus CEncodingPipeline::Run()
             m_insertIDR = false;
             if (NULL != m_ctr)
             {
-                bool isField = !!m_isField;
-                if (m_encpakParams.nPicStruct == MFX_PICSTRUCT_UNKNOWN)
-                    isField = !(pSurf->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE);
+                bool isField = (m_encpakParams.nPicStruct != MFX_PICSTRUCT_UNKNOWN) ? !!m_isField : !(pSurf->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE);
 
-                m_ctr->FrameType = !isField ? (MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF) :
-                        (MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_xREF);
+                m_ctr->FrameType = isField ? (MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_xP | MFX_FRAMETYPE_xREF)
+                                           : (MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF);
             }
             m_frameType = PairU8((mfxU8)(MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF),
                                  (mfxU8)(MFX_FRAMETYPE_P                     | MFX_FRAMETYPE_REF));
@@ -2837,14 +2849,13 @@ mfxStatus CEncodingPipeline::Run()
             m_frameType = GetFrameType(m_frameCount - m_frameOrderIdrInDisplayOrder);
         }
 
-        if (m_encpakParams.nPicStruct == MFX_PICSTRUCT_FIELD_BFF)
-            std::swap(m_frameType[0], m_frameType[1]);
-        else if (m_encpakParams.nPicStruct == MFX_PICSTRUCT_UNKNOWN)
-        {
-            if ((pSurf->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF) && !(pSurf->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE))
-                std::swap(m_frameType[0], m_frameType[1]);
-        }
+        swap_fields = m_encpakParams.nPicStruct == MFX_PICSTRUCT_FIELD_BFF ||
+                    (m_encpakParams.nPicStruct == MFX_PICSTRUCT_UNKNOWN &&
+                      (pSurf->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF) &&
+                     !(pSurf->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE));
 
+        if (swap_fields)
+            std::swap(m_frameType[0], m_frameType[1]);
 
         if (m_frameType[m_ffid] & MFX_FRAMETYPE_IDR)
             m_frameOrderIdrInDisplayOrder = m_frameCount;
@@ -3289,7 +3300,7 @@ iTask* CEncodingPipeline::CreateAndInitTask()
     eTask->m_list0[1].Fill(0);
     eTask->m_list1[0].Fill(0);
     eTask->m_list1[1].Fill(0);
-    eTask->m_frameOrderIdrInDisplayOrder = 0;
+    //eTask->m_frameOrderIdrInDisplayOrder = 0;
     eTask->m_frameOrderIdr = 0;
     eTask->m_frameOrderI = 0;
     eTask->m_initSizeList0[0] = 0;
@@ -3332,14 +3343,11 @@ iTask* CEncodingPipeline::CreateAndInitTask()
         eTask->m_type[1] |= eTask->m_loc.refFrameFlag;
     }
 
-    eTask->m_reference[m_ffid] = !!(eTask->m_type[m_ffid] & MFX_FRAMETYPE_REF);
-    eTask->m_reference[m_sfid] = !!(eTask->m_type[m_sfid] & MFX_FRAMETYPE_REF);
+    eTask->m_nalRefIdc[m_ffid] = eTask->m_reference[m_ffid] = !!(eTask->m_type[m_ffid] & MFX_FRAMETYPE_REF);
+    eTask->m_nalRefIdc[m_sfid] = eTask->m_reference[m_sfid] = !!(eTask->m_type[m_sfid] & MFX_FRAMETYPE_REF);
 
     eTask->m_poc[0] = GetPoc(*eTask, TFIELD);
     eTask->m_poc[1] = GetPoc(*eTask, BFIELD);
-
-    eTask->m_nalRefIdc[m_ffid] = eTask->m_reference[m_ffid];
-    eTask->m_nalRefIdc[m_sfid] = eTask->m_reference[m_sfid];
 
     eTask->NumRefActiveP   = m_CodingOption3.NumRefActiveP[0];
     eTask->NumRefActiveBL0 = m_CodingOption3.NumRefActiveBL0[0];
@@ -5333,7 +5341,7 @@ mfxStatus CEncodingPipeline::PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
         return sts;
     }
 
-    sts = ProcessMultiPreenc(eTask, m_numOfRefs);
+    sts = ProcessMultiPreenc(eTask);
     if (sts == MFX_ERR_GPU_HANG)
     {
         cont = true;
@@ -5367,13 +5375,13 @@ mfxStatus CEncodingPipeline::PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSu
     return sts;
 }
 
-mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs[2][2])
+mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask)
 {
     MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
 
     mfxStatus sts = MFX_ERR_NONE;
-    MSDK_ZERO_ARRAY(num_of_refs[0], 2);
-    MSDK_ZERO_ARRAY(num_of_refs[1], 2);
+    MSDK_ZERO_ARRAY(m_numOfRefs[0], 2);
+    MSDK_ZERO_ARRAY(m_numOfRefs[1], 2);
     mfxU32 numOfFields = eTask->m_fieldPicFlag ? 2 : 1;
 
     // max possible candidates to L0 / L1
@@ -5407,8 +5415,8 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs
 
         for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++)
         {
-            if (refTask[fieldId][0]) { num_of_refs[fieldId][0]++; }
-            if (refTask[fieldId][1]) { num_of_refs[fieldId][1]++; }
+            if (refTask[fieldId][0]) { m_numOfRefs[fieldId][0]++; }
+            if (refTask[fieldId][1]) { m_numOfRefs[fieldId][1]++; }
         }
 
         sts = InitPreEncFrameParamsEx(eTask, refTask, ref_fid, isDownsamplingNeeded);
@@ -6151,13 +6159,14 @@ mfxStatus CEncodingPipeline::VPPOneFrame(MFXVideoVPP* VPPobj, MFXVideoSession* s
     return sts;
 }
 
-mfxStatus CEncodingPipeline::ResizeFrame(mfxU32 m_frameCount, bool &m_insertIDR, size_t &rctime, iTask* &eTask, sTask *pCurrentTask)
+mfxStatus CEncodingPipeline::ResizeFrame(mfxU32 m_frameCount, size_t &rctime, iTask* &eTask, sTask *pCurrentTask)
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxU32 RCStart     = 0;
     mfxU16 tmpRCWidth  = 0;
     mfxU16 tmpRCHeight = 0;
-    m_bDRCReset     = false;
+    m_bDRCReset        = false;
+    m_insertIDR        = false;
 
     if (m_drcStart.size() - rctime > 0)
     {

@@ -82,7 +82,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-pass_headers] - pass SPS, PPS and Slice headers to Media SDK instead of default one (ENC or/and PAK)\n"));
     msdk_printf(MSDK_STRING("   [-8x8stat] - set 8x8 block for statistic report, default is 16x16 (PREENC only)\n"));
     msdk_printf(MSDK_STRING("   [-search_window value] - specifies one of the predefined search path and window size. In range [1,8] (5 is default).\n"));
-    msdk_printf(MSDK_STRING("                            If non-zero value specified: -ref_window_w / _h, -len_sp, -max_len_sp are ignored\n"));
+    msdk_printf(MSDK_STRING("                            If non-zero value specified: -ref_window_w / _h, -len_sp are ignored\n"));
     msdk_printf(MSDK_STRING("   [-ref_window_w width] - width of search region (should be multiple of 4), maximum allowed search window w*h is 2048 for\n"));
     msdk_printf(MSDK_STRING("                            one direction and 1024 for bidirectional search\n"));
     msdk_printf(MSDK_STRING("   [-ref_window_h height] - height of search region (should be multiple of 4), maximum allowed is 32\n"));
@@ -114,7 +114,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-transform_8x8_mode_flag] - enables 8x8 transform, by default only 4x4 is used (used in PPS, pass_headers should be set)\n"));
     msdk_printf(MSDK_STRING("   [-dstw width]  - destination picture width, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-dsth height] - destination picture height, invokes VPP resizing\n"));
-    msdk_printf(MSDK_STRING("   [-perf] - switch on performance mode (no file operations, simplified predictors repacking)\n"));
+    msdk_printf(MSDK_STRING("   [-perf] - switch on performance mode (disabled file operations, simplified predictors repacking)\n"));
     msdk_printf(MSDK_STRING("   [-rawref] - use raw frames for reference instead of reconstructed frames (ENCODE only)\n"));
     msdk_printf(MSDK_STRING("   [-n_surf_input n] - specify number of surfaces that would be allocated for input frames\n"));
     msdk_printf(MSDK_STRING("   [-n_surf_recon n] - specify number of surfaces that would be allocated for reconstruct frames (ENC or/and PAK)\n"));
@@ -800,9 +800,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if ((pParams->nWidth || pParams->nHeight) && pParams->bDECODE)
+    if ((pParams->nWidth || pParams->nHeight || (pParams->nPicStruct != MFX_PICSTRUCT_UNKNOWN)) && pParams->bDECODE)
     {
-        msdk_printf(MSDK_STRING("\nWARNING: input width and height will be taken from input stream (-w -h settings ignored)\n"));
+        msdk_printf(MSDK_STRING("\nWARNING: input width, height and picstruct will be taken from input stream (-w -h -bff -tff settings ignored (but -mixed is valid))\n"));
     }
 
     if (pParams->dFrameRate <= 0)
@@ -831,9 +831,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         && (!pParams->bDECODE || pParams->bENCPAK || pParams->bOnlyPAK || pParams->bOnlyENC || pParams->bDynamicRC))
     {
         if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nERROR: Sample does not support this combination of options with -unk mode!\n"));
+            msdk_printf(MSDK_STRING("\nERROR: Sample does not support this combination of options in mixed picstructs mode!\n"));
         else
-            PrintHelp(strInput[0], MSDK_STRING("ERROR: Sample does not support this combination of options with -unk mode!"));
+            PrintHelp(strInput[0], MSDK_STRING("ERROR: Sample does not support this combination of options in mixed picstructs mode!"));
         return MFX_ERR_UNSUPPORTED;
     }
 

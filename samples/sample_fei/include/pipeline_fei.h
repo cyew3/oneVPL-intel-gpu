@@ -389,12 +389,12 @@ protected:
     virtual mfxStatus SynchronizeFirstTask();
 
     virtual mfxStatus GetOneFrame(mfxFrameSurface1* & pSurf);
-    virtual mfxStatus ResizeFrame(mfxU32 frameNum, bool &insertIDR, size_t &rctime, iTask* &eTask, sTask *pCurrentTask);
+    virtual mfxStatus ResizeFrame(mfxU32 frameNum, size_t &rctime, iTask* &eTask, sTask *pCurrentTask);
     virtual mfxStatus ResetExtBufMBnum(bufSet* bufs, mfxU16 new_numMB);
 
     virtual mfxStatus PreProcessOneFrame(mfxFrameSurface1* & pSurf, bool &cont);
     virtual mfxStatus PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, bool is_buffered, bool &cont);
-    virtual mfxStatus ProcessMultiPreenc(iTask* eTask, mfxU16 num_of_refs[2][2]);
+    virtual mfxStatus ProcessMultiPreenc(iTask* eTask);
     virtual mfxStatus EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
     virtual mfxStatus EncodeOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
     virtual mfxStatus SyncOneEncodeFrame(sTask* pCurrentTask, iTask* eTask, mfxU32 fieldProcessingCounter);

@@ -401,7 +401,7 @@ struct iTask
     mfxPAKOutput outPAK;
     BiFrameLocation m_loc;
     mfxSyncPoint EncSyncP;
-    mfxI32 encoded;
+    bool encoded;
     bufSet* bufs;
     bufSet* preenc_bufs;
     std::list<PreEncMVPInfo> preenc_mvp_info;
@@ -410,24 +410,24 @@ struct iTask
     mfxU16 PicStruct;
     mfxU16 BRefType;
 
-    mfxU16 NumRefActiveP;   // these values
-    mfxU16 NumRefActiveBL0; // are used for
+    mfxU16 NumRefActiveP;   // limits of active
+    mfxU16 NumRefActiveBL0; // references for
     mfxU16 NumRefActiveBL1; // reflists management
 
     //..............................reflist control............................................
-    ArrayDpbFrame   m_dpb[2];
-    ArrayDpbFrame   m_dpbPostEncoding; // dpb after encoding a frame (or 2 fields)
-    ArrayU8x33      m_list0[2];
-    ArrayU8x33      m_list1[2];
-    PairU8          m_type;
+    ArrayDpbFrame   m_dpb[2];          // DPB state before encoding first and second fields
+    ArrayDpbFrame   m_dpbPostEncoding; // DPB after encoding a frame (or 2 fields)
+    ArrayU8x33      m_list0[2];        // L0 list for first and second field
+    ArrayU8x33      m_list1[2];        // L1 list for first and second field
+    PairU8          m_type;            // type of first and second field
     mfxU8           m_fid[2];          // progressive fid=[0,0]; tff fid=[0,1]; bff fid=[1,0]
-    mfxU8           m_fieldPicFlag;
-    PairI32         m_poc;
+    mfxU8           m_fieldPicFlag;    // is interlaced frame
+    PairI32         m_poc;             // POC of first and second field
 
-    mfxU32  m_frameOrderIdrInDisplayOrder; // most recent idr frame in display order
-    mfxU32  m_frameOrderIdr;    // most recent idr frame in encoding order
-    mfxU32  m_frameOrderI;      // most recent i frame in encoding order
-    mfxU32  m_frameOrder;
+    //mfxU32  m_frameOrderIdrInDisplayOrder; // most recent idr frame in display order
+    mfxU32  m_frameOrderIdr;               // most recent idr frame in display order
+    mfxU32  m_frameOrderI;                 // most recent i frame in display order
+    mfxU32  m_frameOrder;                  // current frame order in display order
 
     ArrayRefListMod m_refPicList0Mod[2];
     ArrayRefListMod m_refPicList1Mod[2];
