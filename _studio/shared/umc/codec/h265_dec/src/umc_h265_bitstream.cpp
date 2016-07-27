@@ -1804,9 +1804,11 @@ UMC::Status H265Bitstream::GetNALUnitType(NalUnitType &nal_unit_type, Ipp32u &nu
     if (nuh_layer_id)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-    // nuh_temporal_id
-    nuh_temporal_id = GetBits(3) - 1;
+    Ipp32u const nuh_temporal_id_plus1 = GetBits(3);
+    if (!nuh_temporal_id_plus1)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
+    nuh_temporal_id = nuh_temporal_id_plus1 - 1;
     if (nuh_temporal_id)
     {
         VM_ASSERT( nal_unit_type != NAL_UT_CODED_SLICE_BLA_W_LP
