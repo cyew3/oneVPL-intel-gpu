@@ -1375,7 +1375,7 @@ void SetDefaults(
     if (!par.mfx.LowPower)
         par.mfx.LowPower = MFX_CODINGOPTION_OFF;
 
-    par.LCUSize = IsOn(par.mfx.LowPower) ? 64 : DEFAULT_LCU_SIZE;
+    par.LCUSize = IsOn(par.mfx.LowPower) ? 64 : DEFAULT_LCU_SIZE;   // should be checked w/ hwCaps.LCUSizeSupported if it is supported
 
     if (par.mfx.CodecLevel)
     {

@@ -158,6 +158,7 @@
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\cmrt\compiler\lib\x64;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(SolutionDir)6fadc791a0c2eb479ab6dcd5ea9da347\plugin_for_debug.cfg" "$(OutDir)plugin.cfg" /y</Command>
@@ -212,7 +213,7 @@
     <Link>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <AdditionalLibraryDirectories>$(MfxBuildDir)win_$(Platform)\lib;$(MfxIppLibraryDir);$(MEDIASDK_ROOT)\cmrt\compiler\lib\x64;$(MEDIASDK_ROOT)\cmrt\runtime\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
