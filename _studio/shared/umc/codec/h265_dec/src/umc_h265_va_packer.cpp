@@ -1698,17 +1698,23 @@ bool PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastS
 
     for(Ipp32s iDir = 0; iDir < 2; iDir++)
     {
-        size_t index = 0;
         const H265DecoderRefPicList::ReferenceInformation* pRefPicList = pCurrentFrame->GetRefPicList(pSlice->GetSliceNum(), iDir)->m_refPicList;
 
         EnumRefPicList eRefPicList = ( iDir == 1 ? REF_PIC_LIST_1 : REF_PIC_LIST_0 );
-        for (Ipp32s i = 0; i < pSlice->getNumRefIdx(eRefPicList); i++)
+        Ipp32s const num_active_ref = pSlice->getNumRefIdx(eRefPicList);
+        Ipp32s const max_num_ref =
+            sizeof(picParams->ReferenceFrames) / sizeof(picParams->ReferenceFrames[0]);
+
+        Ipp32s index = 0;
+        for (Ipp32s i = 0; i < num_active_ref; i++)
         {
             const H265DecoderRefPicList::ReferenceInformation &frameInfo = pRefPicList[i];
-            if (frameInfo.refFrame)
+            if (!frameInfo.refFrame)
+                break;
+            else
             {
                 bool isFound = false;
-                for (uint8_t j = 0; j < sizeof(picParams->ReferenceFrames)/sizeof(picParams->ReferenceFrames[0]); j++)
+                for (uint8_t j = 0; j < max_num_ref; j++)
                 {
                     //VASurfaceID
                     if (picParams->ReferenceFrames[j].picture_id == (VASurfaceID)m_va->GetSurfaceID(frameInfo.refFrame->m_index))
@@ -1719,14 +1725,33 @@ bool PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastS
                         break;
                     }
                 }
+
                 VM_ASSERT(isFound);
             }
-            else
-                break;
         }
 
-        for(;index < sizeof(sliceParams->RefPicList[0])/sizeof(sliceParams->RefPicList[0][0]); index++)
-            sliceParams->RefPicList[iDir][index] = 0xff;
+        for (Ipp32s i = index; i < max_num_ref; ++i)
+            sliceParams->RefPicList[iDir][i] = 0xff;
+
+        //GPU hang WA, see MDP-18041
+        //fill gaps between required active references and actual 'Before/After' references we have in DPB
+        //NOTE: try to use only 'Foll's
+        for (Ipp32s i = index; i < num_active_ref; ++i)
+        {
+            Ipp32s j = 0;
+            //try to find 'Foll' reference
+            for (; j < max_num_ref; ++j)
+                if (picParams->ReferenceFrames[j].flags == 0 && picParams->ReferenceFrames[j].picture_id != VA_INVALID_SURFACE)
+                    break;
+
+            if (j == max_num_ref)
+                //no 'Foll' reference found, can't do amymore
+                break;
+
+            //make 'Foll' to be 'Before/After' reference
+            picParams->ReferenceFrames[j].flags |=
+                eRefPicList == REF_PIC_LIST_0 ? VA_PICTURE_HEVC_RPS_ST_CURR_BEFORE : VA_PICTURE_HEVC_RPS_ST_CURR_AFTER;
+        }
     }
 
     sliceParams->LongSliceFlags.fields.LastSliceOfPic = isLastSlice ? 1 : 0;
