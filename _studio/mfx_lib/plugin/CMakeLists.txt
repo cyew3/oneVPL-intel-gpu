@@ -178,7 +178,9 @@ set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE
 
 set( hevcd_variants hw )
 if (ENABLE_HEVC)
-  set( hevcd_variants sw hw )
+  set( hevcd_variants
+       sw  ## open-source-cut-line
+       hw )
 endif()
 
 foreach( variant ${hevcd_variants} )
@@ -255,7 +257,9 @@ endforeach()
 
 set( hevce_variants "" )
 if (ENABLE_HEVC)
-  set( hevce_variants sw hw )
+  set( hevce_variants
+       sw  ## open-source-cut-line
+       hw )
 endif()
 set( defs "" )
 
@@ -395,7 +399,7 @@ foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
   list( APPEND sources
     ${prefix}/mfx_enc_common.cpp
     ${prefix}/mfx_brc_common.cpp
-    ${prefix}/mfx_ddi_enc_dump.cpp
+    ${prefix}/mfx_ddi_enc_dump.cpp  ## open-source-cut-line
     ${prefix}/mfx_h264_enc_common_hw.cpp
     ${prefix}/mfx_h264_encode_factory.cpp
     ${prefix}/mfx_h264_encode_vaapi.cpp
@@ -631,13 +635,14 @@ set( sources.plus "" )
 list( APPEND sources ${plugin_common_sources} )
 
 include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
-include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/vp8_libvpx )
 
+## open-source-cut-start
+include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/vp8_libvpx )
 include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp8_dec/include )
 
-list( APPEND sources ${MSDK_LIB_ROOT}/shared/src/libmfxsw_decode.cpp )
 list( APPEND sources ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp8_dec/src/vp8_tables.cpp )
-
+## open-source-cut-end
+list( APPEND sources ${MSDK_LIB_ROOT}/shared/src/libmfxsw_decode.cpp )
 
 set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )
@@ -649,7 +654,9 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
   )
 endforeach()
 
-foreach( variant sw hw )
+foreach( variant
+         sw  ## open-source-cut-line
+         hw )
 
   if( __ARCH MATCHES intel64 )
     set( plugin_name mfx_vp8d_${variant}64 )
@@ -673,7 +680,7 @@ foreach( variant sw hw )
     foreach( prefix ${MSDK_LIB_ROOT}/decode/vp8/src )
     list( APPEND sources
       ${prefix}/mfx_vp8_dec_decode_hw.cpp
-      ${prefix}/mfx_vp8_dec_decode.cpp
+      ${prefix}/mfx_vp8_dec_decode.cpp  ## open-source-cut-line
       ${prefix}/mfx_vp8_dec_decode_common.cpp
       ${prefix}/mfx_vp8_dec_decode_hw_vaapi.cpp
       ${prefix}/mfx_vp8_dec_decode_tables.cpp
@@ -689,9 +696,8 @@ foreach( variant sw hw )
     set( defs "-DAS_VP8D_PLUGIN -DUMC_ENABLE_VP8_VIDEO_DECODER -DMFX_VA -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP8_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp8_version_defs}")
 
     gen_plugins_cfg("VP8_Decoder_HW" ${VP8_DECODER_HW_GUID} ${plugin_name} "01" "VP8")
-
+## open-source-cut-start
   else()
-
     foreach( prefix ${MSDK_LIB_ROOT}/decode/vp8/src )
     list( APPEND sources
       ${prefix}/mfx_vp8_dec_decode.cpp
@@ -703,11 +709,11 @@ foreach( variant sw hw )
     set( defs "-DAS_VP8D_PLUGIN -DUMC_ENABLE_VP8_VIDEO_DECODER -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP8_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp8_version_defs}")
 
     gen_plugins_cfg("VP8_Decoder_SW" ${VP8_DECODER_SW_GUID} ${plugin_name} "01" "VP8")
-
+## open-source-cut-end
   endif()
 
   list( APPEND LIBS
-    vpx
+    vpx  ## open-source-cut-line
     color_space_converter_sw
     media_buffers
     umc_io
@@ -763,7 +769,7 @@ set( sources.plus "" )
 list( APPEND sources ${plugin_common_sources} )
 
 include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
-include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/libvpx/libvpx )
+include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/libvpx/libvpx )  ## open-source-cut-line
 
 include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp9_dec/include )
 
@@ -777,7 +783,9 @@ list( APPEND sources.plus
   ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_vp9_dec_plugin.cpp
 )
 
-foreach( variant sw hw )
+foreach( variant
+         sw  ## open-source-cut-line
+         hw )
 
   if( __ARCH MATCHES intel64 )
     set( plugin_name mfx_vp9d_${variant}64 )
@@ -817,7 +825,7 @@ foreach( variant sw hw )
     set( defs "-DAS_VP9D_PLUGIN -DUMC_ENABLE_VP9_VIDEO_DECODER -DMFX_VA -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP9_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp9_version_defs}")
 
     gen_plugins_cfg("VP9_Decoder_HW" ${VP9_DECODER_HW_GUID} ${plugin_name} "01" "VP9")
-
+## open-source-cut-start
   else()
 
     list( APPEND sources
@@ -833,11 +841,11 @@ foreach( variant sw hw )
     set( defs "-DAS_VP9D_PLUGIN -DUMC_ENABLE_VP9_VIDEO_DECODER -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP9_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp9_version_defs}")
 
     gen_plugins_cfg("VP9_Decoder_SW" ${VP9_DECODER_SW_GUID} ${plugin_name} "01" "VP9")
-
+## open-source-cut-end
   endif()
 
   list( APPEND LIBS
-    vpx
+    vpx  ## open-source-cut-line
     media_buffers
     umc_io
     umc
