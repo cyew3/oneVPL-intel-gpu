@@ -1547,8 +1547,8 @@ void SetDefaults(
 
     if (!par.mfx.GopRefDist)
     {
-        if (par.isTL() || hwCaps.SliceIPOnly || !par.NumRefLX[1] || par.mfx.GopPicSize < 3 || par.mfx.NumRefFrame == 1)
-            par.mfx.GopRefDist = 1;
+        if (par.isTL() || hwCaps.SliceIPOnly || IsOn(par.mfx.LowPower) || !par.NumRefLX[1] || par.mfx.GopPicSize < 3 || par.mfx.NumRefFrame == 1)
+            par.mfx.GopRefDist = 1; // in case of correct SliceIPOnly using of IsOn(par.mfx.LowPower) is not necessary
         else
             par.mfx.GopRefDist = Min<mfxU16>(par.mfx.GopPicSize - 1, (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT) ? 8 : 4);
     }
@@ -1579,11 +1579,17 @@ void SetDefaults(
     {
         while (par.NumRefLX[0] + par.NumRefLX[1] > par.mfx.NumRefFrame)
         {
-            if (   par.mfx.GopRefDist == 1 && par.NumRefLX[1] == 1
-                && par.NumRefLX[0] + par.NumRefLX[1] == par.mfx.NumRefFrame + 1)
-                break;
+            if (IsOn(par.mfx.LowPower) && (par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)) {  // identical reference lists are required
+                if (par.mfx.GopRefDist == 1 &&
+                    par.NumRefLX[0] == par.mfx.NumRefFrame && par.NumRefLX[1] == par.mfx.NumRefFrame)
+                    break;
+            } else {
+                if (par.mfx.GopRefDist == 1 && par.NumRefLX[1] == 1
+                    && par.NumRefLX[0] + par.NumRefLX[1] == par.mfx.NumRefFrame + 1)
+                    break;
+            }
 
-            if (    par.NumRefLX[1] >= par.NumRefLX[0]
+            if (par.NumRefLX[1] >= par.NumRefLX[0]
                 && !(par.mfx.GopRefDist == 1 && par.NumRefLX[1] == 1))
                 par.NumRefLX[1] --;
             else
