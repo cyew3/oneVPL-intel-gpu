@@ -868,7 +868,8 @@ namespace MfxHwH264Encode
             , m_pid(0)
             , m_fillerSize(0, 0)
             , m_addRepackSize(0, 0)
-            , m_maxFrameSize(0)
+            , m_maxIFrameSize(0)
+            , m_maxPBFrameSize(0)
             , m_numMbPerSlice(0)
             , m_numSlice(0, 0)
             , m_numRoi(0)
@@ -1005,7 +1006,8 @@ namespace MfxHwH264Encode
 // MVC BD {
         PairU32 m_addRepackSize; // w/a for SNB/IVB: size of padding to compensate re-pack of AVC headers to MVC headers
 // MVC BD }
-        mfxU32  m_maxFrameSize;
+        mfxU32  m_maxIFrameSize;
+        mfxU32  m_maxPBFrameSize;
 
         mfxU16  m_numMbPerSlice;
         PairU16 m_numSlice;

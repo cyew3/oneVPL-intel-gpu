@@ -364,6 +364,8 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION3(FadeDetection,              OPT_TRI_STATE, "on|off"),
         HANDLE_EXT_OPTION3(GPB,                        OPT_TRI_STATE, "Generalized P/B"),
         HANDLE_EXT_OPTION3(EnableQPOffset,             OPT_TRI_STATE, ""),
+        HANDLE_EXT_OPTION3(MaxFrameSizeI,              OPT_UINT_32,   ""),
+        HANDLE_EXT_OPTION3(MaxFrameSizeP,              OPT_UINT_32,   ""),
 
         // mfxExtCodingOptionDDI
         HANDLE_DDI_OPTION(IntraPredCostType,       OPT_UINT_16,    "1=SAD, 2=SSD, 4=SATD_HADAMARD, 8=SATD_HARR"),
@@ -882,6 +884,70 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 return MFX_ERR_UNKNOWN;
 
             pExt->MaxFrameSize = val;
+            m_ExtBuffers.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-MaxFrameSizeI"), VM_STRING("")))
+        {
+            mfxU32 val;
+            //file name that will be used for input after reseting encoder
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            mfxExtCodingOption3 *pExt = NULL;
+
+            if (0 != val)
+            {
+                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
+                if (!ppExt)
+                {
+                    pExt = new mfxExtCodingOption3();
+
+                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
+                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
+                }
+                else
+                {
+                    pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
+                }
+            }
+            else
+                return MFX_ERR_UNKNOWN;
+
+            pExt->MaxFrameSizeI = val;
+            m_ExtBuffers.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-MaxFrameSizeP"), VM_STRING("")))
+        {
+            mfxU32 val;
+            //file name that will be used for input after reseting encoder
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            mfxExtCodingOption3 *pExt = NULL;
+
+            if (0 != val)
+            {
+                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION3);
+                if (!ppExt)
+                {
+                    pExt = new mfxExtCodingOption3();
+
+                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
+                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption3);
+                }
+                else
+                {
+                    pExt = reinterpret_cast<mfxExtCodingOption3 *>(ppExt->get());
+                }
+            }
+            else
+                return MFX_ERR_UNKNOWN;
+
+            pExt->MaxFrameSizeP = val;
             m_ExtBuffers.get()->push_back(pExt);
 
             argv++;

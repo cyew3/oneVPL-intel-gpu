@@ -3023,15 +3023,20 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
                 }
             }
 
-            if (extOpt2->MaxFrameSize != 0 &&
+            if (((extOpt2->MaxFrameSize != 0) || (extOpt3->MaxFrameSizeI != 0) || (extOpt3->MaxFrameSizeP != 0)) &&
                 par.mfx.FrameInfo.FrameRateExtN != 0 && par.mfx.FrameInfo.FrameRateExtD != 0)
             {
                 mfxF64 frameRate = mfxF64(par.mfx.FrameInfo.FrameRateExtN) / par.mfx.FrameInfo.FrameRateExtD;
                 mfxU32 avgFrameSizeInBytes = mfxU32(par.calcParam.targetKbps * 1000 / frameRate / 8);
-                if (extOpt2->MaxFrameSize < avgFrameSizeInBytes)
+                if ((extOpt2->MaxFrameSize < avgFrameSizeInBytes) && (extOpt2->MaxFrameSize != 0))
                 {
                     changed = true;
                     extOpt2->MaxFrameSize = avgFrameSizeInBytes;
+                }
+                if ((extOpt3->MaxFrameSizeI < avgFrameSizeInBytes) && (extOpt3->MaxFrameSizeI != 0))
+                {
+                    changed = true;
+                    extOpt3->MaxFrameSizeI = avgFrameSizeInBytes;
                 }
             }
         }
@@ -3291,6 +3296,19 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 
+    if (extOpt3->MaxFrameSizeI != 0)
+    {
+        if (extOpt2->MaxFrameSize != 0)
+        {
+            extOpt2->MaxFrameSize = extOpt3->MaxFrameSizeI;
+            changed = true;
+        }
+    }
+    else if (extOpt3->MaxFrameSizeP != 0)
+    {
+        unsupported = true;
+    }
+
     if (par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
     {
         if (par.mfx.CodecLevel != 0 && par.mfx.CodecLevel < MFX_LEVEL_AVC_21)
@@ -3499,9 +3517,11 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 
-    if (hwCaps.UserMaxFrameSizeSupport == 0 && extOpt2->MaxFrameSize)
+    if (hwCaps.UserMaxFrameSizeSupport == 0 && ((extOpt2->MaxFrameSize) || (extOpt3->MaxFrameSizeI) ||(extOpt3->MaxFrameSizeP)))
     {
         extOpt2->MaxFrameSize = 0;
+        extOpt3->MaxFrameSizeI = 0;
+        extOpt3->MaxFrameSizeP = 0;
         changed = true;
     }
 

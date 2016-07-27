@@ -2317,7 +2317,7 @@ mfxStatus VAAPIEncoder::Execute(
 /*
  * Limit frame size by application/user level
  */
-    m_userMaxFrameSize = (UINT)task.m_maxFrameSize;
+    m_userMaxFrameSize = (UINT)task.m_maxIFrameSize;
 //    if (task.m_frameOrder)
 //        m_sps.bResetBRC = true;
     MFX_CHECK_WITH_ASSERT(MFX_ERR_NONE == SetMaxFrameSize(m_userMaxFrameSize, m_vaDisplay,

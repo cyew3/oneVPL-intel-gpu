@@ -913,9 +913,8 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_H264
         UINT sFlags;
     };
 
-    UINT    UserMaxFrameSize;
-    USHORT  Reserved3;//AVBRAccuracy;
-    USHORT  Reserved4;//AVBRConvergence;
+    UINT    UserMaxIFrameSize;
+    UINT    UserMaxPBFrameSize;
     USHORT  ICQQualityFactor;
     ENCODE_ARGB_COLOR ARGBInputColor;
     ENCODE_SCENARIO ScenarioInfo;

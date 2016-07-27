@@ -177,7 +177,8 @@ mfxStatus D3D11Encoder::Reset(
     mfxU32 oldTargetBitrate = m_sps.TargetBitRate;
     mfxU32 oldMaxBitrate    = m_sps.MaxBitRate;
     mfxU32 oldFrameRate    = m_sps.FramesPer100Sec;
-    mfxU32 oldMaxFS = m_sps.UserMaxFrameSize;
+    mfxU32 oldMaxIFS = m_sps.UserMaxIFrameSize;
+    mfxU32 oldMaxPBFS = m_sps.UserMaxPBFrameSize;
 
     mfxExtCodingOption2 const * extCO2 = GetExtBuffer(par);
 
@@ -192,7 +193,8 @@ mfxStatus D3D11Encoder::Reset(
         m_sps.TargetBitRate != oldTargetBitrate ||
         m_sps.MaxBitRate    != oldMaxBitrate ||
         m_sps.FramesPer100Sec != oldFrameRate ||
-        m_sps.UserMaxFrameSize != oldMaxFS;
+        m_sps.UserMaxIFrameSize != oldMaxIFS ||
+        m_sps.UserMaxPBFrameSize != oldMaxPBFS;
 
     mfxU16 maxNumSlices = GetMaxNumSlices(par);
     m_slice.resize(maxNumSlices);
@@ -432,11 +434,16 @@ mfxStatus D3D11Encoder::Execute(
         m_pps.seq_parameter_set_id = m_sps.seq_parameter_set_id;
     }
 
-    if (m_sps.UserMaxFrameSize != task.m_maxFrameSize)
+    if (m_sps.UserMaxIFrameSize != task.m_maxIFrameSize)
     {
-        m_sps.UserMaxFrameSize = (UINT)task.m_maxFrameSize;
+        m_sps.UserMaxIFrameSize = (UINT)task.m_maxIFrameSize;
         if (task.m_frameOrder)
             m_sps.bResetBRC = true;
+    }
+
+    if (m_sps.UserMaxPBFrameSize != task.m_maxPBFrameSize)
+    {
+        m_sps.UserMaxPBFrameSize = (UINT)task.m_maxPBFrameSize;
     }
 
     if (task.m_resetBRC && (task.m_type[fieldId] & MFX_FRAMETYPE_IDR))

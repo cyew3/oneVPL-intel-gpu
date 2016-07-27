@@ -201,6 +201,8 @@ void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
     SERIALIZE_INT(FadeDetection);
     SERIALIZE_INT(GPB);
     SERIALIZE_INT(EnableQPOffset);
+    SERIALIZE_INT(MaxFrameSizeI);
+    SERIALIZE_INT(MaxFrameSizeP);
     SERIALIZE_POD_ARRAY(QPOffset, 8);
     SERIALIZE_POD_ARRAY(NumRefActiveP, 8);
     SERIALIZE_POD_ARRAY(NumRefActiveBL0, 8);

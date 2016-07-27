@@ -96,7 +96,8 @@ void MfxHwH264Encode::FillSpsBuffer(
     sps.Trellis                                 = extOpt2->Trellis;
     sps.MBBRC                                   = IsOn(extOpt2->MBBRC) ? 1 : IsOff(extOpt2->MBBRC) ? 2 : 0;
     sps.EnableSliceLevelRateCtrl                = (extOpt2->MaxSliceSize)?1:0;
-    sps.UserMaxFrameSize                        = extOpt2->MaxFrameSize;
+    sps.UserMaxIFrameSize                       = extOpt3.MaxFrameSizeI ? extOpt3.MaxFrameSizeI : extOpt2->MaxFrameSize;
+    sps.UserMaxPBFrameSize                      = extOpt3.MaxFrameSizeP;
     //Removed AVBR support for this
     //sps.AVBRAccuracy                            = par.mfx.Accuracy;
     //sps.AVBRConvergence                         = par.mfx.Convergence * 100;
@@ -1190,7 +1191,8 @@ mfxStatus D3D9Encoder::Reset(
     mfxU32 oldTargetBitrate = m_sps.TargetBitRate;
     mfxU32 oldMaxBitrate    = m_sps.MaxBitRate;
     mfxU32 oldFrameRate    = m_sps.FramesPer100Sec;
-    mfxU32 oldMaxFS = m_sps.UserMaxFrameSize;
+    mfxU32 oldMaxIFS = m_sps.UserMaxIFrameSize;
+    mfxU32 oldMaxPBFS = m_sps.UserMaxPBFrameSize;
 
     if (extCO2)
         m_skipMode = extCO2->SkipFrame;
@@ -1207,7 +1209,8 @@ mfxStatus D3D9Encoder::Reset(
         m_sps.TargetBitRate != oldTargetBitrate ||
         m_sps.MaxBitRate    != oldMaxBitrate ||
         m_sps.FramesPer100Sec != oldFrameRate ||
-        m_sps.UserMaxFrameSize != oldMaxFS;
+        m_sps.UserMaxIFrameSize != oldMaxIFS ||
+        m_sps.UserMaxPBFrameSize != oldMaxPBFS;
 
     mfxU16 maxNumSlices = GetMaxNumSlices(par);
     m_slice.resize(maxNumSlices);
@@ -1396,11 +1399,16 @@ mfxStatus D3D9Encoder::Execute(
 
     m_sps.bNoAccelerationSPSInsertion = !task.m_insertSps[fieldId];
 
-    if (m_sps.UserMaxFrameSize != task.m_maxFrameSize)
+    if (m_sps.UserMaxIFrameSize != task.m_maxIFrameSize)
     {
-        m_sps.UserMaxFrameSize = (UINT)task.m_maxFrameSize;
+        m_sps.UserMaxIFrameSize = (UINT)task.m_maxIFrameSize;
         if (task.m_frameOrder)
             m_sps.bResetBRC = true;
+    }
+
+    if (m_sps.UserMaxPBFrameSize != task.m_maxPBFrameSize)
+    {
+        m_sps.UserMaxPBFrameSize = (UINT)task.m_maxPBFrameSize;
     }
 
     if (task.m_resetBRC && (task.m_type[fieldId] & MFX_FRAMETYPE_IDR))
@@ -2027,7 +2035,8 @@ namespace
         DUMP_STRUCT_MEMBER_NO_OFFSET(sps, MBBRC);
         DUMP_STRUCT_MEMBER_NO_OFFSET(sps, Reserved1);
         DUMP_STRUCT_MEMBER_OFFSET(sps, sFlags);
-        DUMP_STRUCT_MEMBER_OFFSET(sps, UserMaxFrameSize);
+        DUMP_STRUCT_MEMBER_OFFSET(sps, UserMaxIFrameSize);
+        DUMP_STRUCT_MEMBER_OFFSET(sps, UserMaxPBFrameSize);
 //        DUMP_STRUCT_MEMBER_OFFSET(sps, AVBRAccuracy);
 //        DUMP_STRUCT_MEMBER_OFFSET(sps, AVBRConvergence);
         printf("\n");
