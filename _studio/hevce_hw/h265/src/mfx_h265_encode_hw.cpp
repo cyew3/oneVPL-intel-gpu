@@ -629,6 +629,9 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
     if (isIdrRequired && pResetOpt && IsOff(pResetOpt->StartNewSequence))
         return MFX_ERR_INVALID_VIDEO_PARAM; // Reset can't change parameters w/o IDR. Report an error
 
+    isIdrRequired = isIdrRequired || (pResetOpt && IsOn(pResetOpt->StartNewSequence));
+
+
     bool brcReset = false;
 
     if (m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_CBR || 
@@ -653,9 +656,9 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
     // waiting for submitted in driver tasks
-    MFX_CHECK_STS(WaitingForAsyncTasks(isIdrRequired || (pResetOpt && IsOn(pResetOpt->StartNewSequence))));
+    MFX_CHECK_STS(WaitingForAsyncTasks(isIdrRequired));
 
-    if (isIdrRequired || (pResetOpt && IsOn(pResetOpt->StartNewSequence)))
+    if (isIdrRequired)
     {
         brcReset = true;
 #if DEBUG_REC_FRAMES_INFO
@@ -673,14 +676,25 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
     m_vpar = parNew;
 
     m_hrd.Reset(m_vpar.m_sps);
-    m_ddi->Reset(m_vpar, brcReset);
 
-    if (m_brc)
+    if (m_brc && brcReset )
     {
-        sts = m_brc->Reset(m_vpar);
-        MFX_CHECK_STS(sts);
+        if (isIdrRequired)
+        {
+            m_brc->Close();
+            sts = m_brc->Init(m_vpar);
+            MFX_CHECK_STS(sts);
+            m_hrd.Init(m_vpar.m_sps, m_vpar.InitialDelayInKB);
+        }
+        else
+        {
+            sts = m_brc->Reset(m_vpar);
+            MFX_CHECK_STS(sts);        
+        }
+        brcReset = false;
     }
 
+    m_ddi->Reset(m_vpar, brcReset);
 
     return sts;
 }

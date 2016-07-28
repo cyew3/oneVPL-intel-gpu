@@ -816,6 +816,8 @@ void InheritDefaultValues(
     InheritOption(extOpt2Init->IntRefCycleSize, extOpt2Reset->IntRefCycleSize);
     InheritOption(extOpt2Init->IntRefQPDelta,   extOpt2Reset->IntRefQPDelta);
     InheritOption(extOpt2Init->MBBRC,      extOpt2Reset->MBBRC);
+    InheritOption(extOpt2Init->ExtBRC,      extOpt2Reset->ExtBRC);
+
     InheritOption(extOpt2Init->BRefType,   extOpt2Reset->BRefType);
     InheritOption(extOpt2Init->NumMbPerSlice,   extOpt2Reset->NumMbPerSlice);
     InheritOption(extOpt2Init->MaxFrameSize,   extOpt2Reset->MaxFrameSize);
@@ -1040,7 +1042,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     changed += CheckTriStateOption(par.m_ext.CO2.MBBRC);
 
-    if (caps.MBBRCSupport == 0 || par.mfx.RateControlMethod == MFX_RATECONTROL_CQP ||par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
+    if (caps.MBBRCSupport == 0 || par.mfx.RateControlMethod == MFX_RATECONTROL_CQP ||par.isSWBRC())
         changed += CheckOption(par.m_ext.CO2.MBBRC, (mfxU32)MFX_CODINGOPTION_OFF, 0);
     else 
         changed += CheckOption(par.m_ext.CO2.MBBRC, (mfxU32)MFX_CODINGOPTION_ON, 0);
@@ -1502,7 +1504,7 @@ void SetDefaults(
         if (!par.InitialDelayInKB)
             par.InitialDelayInKB = par.BufferSizeInKB / 2;
         if (par.m_ext.CO2.MBBRC == MFX_CODINGOPTION_UNKNOWN)
-            par.m_ext.CO2.MBBRC = (mfxU16)(par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT? MFX_CODINGOPTION_OFF: MFX_CODINGOPTION_ON);
+            par.m_ext.CO2.MBBRC = (mfxU16)(par.isSWBRC()? MFX_CODINGOPTION_OFF: MFX_CODINGOPTION_ON);
     }
     else if(par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
     {

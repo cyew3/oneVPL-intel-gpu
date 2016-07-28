@@ -449,6 +449,9 @@ mfxStatus H265BRC::InitHRD()
     m_hrdState.underflowQuant = 0;
     m_hrdState.overflowQuant = 999;
     m_hrdState.frameNum = 0;
+
+    m_hrdState.minFrameSize = 0;
+    m_hrdState.maxFrameSize = 0;
     
     return MFX_ERR_NONE;
 }
@@ -587,9 +590,17 @@ mfxStatus H265BRC::Init( MfxVideoParam &par, mfxI32 enableRecode)
 }
 
 
-mfxStatus H265BRC::Reset(MfxVideoParam &par, mfxI32 enableRecode)
+mfxStatus H265BRC::Reset(MfxVideoParam &par, mfxI32 )
 {
-   return Init( par, enableRecode);
+    mfxStatus sts = MFX_ERR_NONE;
+
+    sts = SetParams(par);
+    MFX_CHECK_STS(sts);
+
+    mBitsDesiredFrame = (mfxI32)(m_par.targetbps / m_par.frameRate);    
+    MFX_CHECK(mBitsDesiredFrame > 10, MFX_ERR_INVALID_VIDEO_PARAM);
+
+    return sts;
 }
 
 #define BRC_QSTEP_COMPL_EXPONENT 0.4
