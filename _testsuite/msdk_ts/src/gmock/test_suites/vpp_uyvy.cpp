@@ -272,9 +272,10 @@ int TestSuite::RunTest(unsigned int id)
 
     g_tsStatus.expect((g_tsOSFamily == MFX_OS_FAMILY_WINDOWS) ? MFX_ERR_INVALID_VIDEO_PARAM : tc.sts);
     if (tc.mode == IMAGE_STAB)
+    {
         g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
-
-    g_tsStatus.expect((g_tsOSFamily == MFX_OS_FAMILY_LINUX) ? MFX_WRN_FILTER_SKIPPED : tc.sts);
+        g_tsStatus.expect((g_tsOSFamily == MFX_OS_FAMILY_LINUX) ? MFX_WRN_FILTER_SKIPPED : tc.sts);
+    }
 
     Init(m_session, m_pPar);
 
