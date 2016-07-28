@@ -481,6 +481,12 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);
     }
 
+    // configure GBP for HEVC
+    if ((pInParams->CodecId == MFX_CODEC_HEVC) && pInParams->nGPB)
+    {
+        m_CodingOption3.GPB = pInParams->nGPB;
+        m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption3);
+    }
 
     // In case of HEVC when height and/or width divided with 8 but not divided with 16
     // add extended parameter to increase performance
@@ -928,6 +934,10 @@ CEncodingPipeline::CEncodingPipeline()
     MSDK_ZERO_MEMORY(m_CodingOption2);
     m_CodingOption2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
     m_CodingOption2.Header.BufferSz = sizeof(m_CodingOption2);
+
+    MSDK_ZERO_MEMORY(m_CodingOption3);
+    m_CodingOption3.Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
+    m_CodingOption3.Header.BufferSz = sizeof(m_CodingOption3);
 
     MSDK_ZERO_MEMORY(m_ExtHEVCParam);
     m_ExtHEVCParam.Header.BufferId = MFX_EXTBUFF_HEVC_PARAM;

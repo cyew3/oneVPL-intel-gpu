@@ -113,6 +113,8 @@ struct sInputParams
     mfxU16 nQPP;
     mfxU16 nQPB;
 
+    mfxU16 nGPB;
+
     bool enableQSVFF;
 
     mfxU16 nNumSlice;
@@ -223,7 +225,6 @@ protected:
     mfxFrameAllocResponse m_VppResponse;  // memory allocation response for vpp
 
     mfxU32 m_nNumView;
-
     mfxU32 m_nFramesToProcess; // number of frames to process
 
     // for disabling VPP algorithms
@@ -235,6 +236,7 @@ protected:
     mfxExtCodingOption2 m_CodingOption2;
     // HEVC
     mfxExtHEVCParam m_ExtHEVCParam;
+    mfxExtCodingOption3 m_CodingOption3;
 
     // external parameters for each component are stored in a vector
     std::vector<mfxExtBuffer*> m_VppExtParams;

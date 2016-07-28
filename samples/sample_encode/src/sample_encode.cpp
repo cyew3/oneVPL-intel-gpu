@@ -98,6 +98,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-qpp]                   - constant quantizer for P frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
     msdk_printf(MSDK_STRING("   [-qpb]                   - constant quantizer for B frames (if bitrace control method is CQP). In range [1,51]. 0 by default, i.e.no limitations on QP.\n"));
     msdk_printf(MSDK_STRING("   [-qsv-ff]       Enable QSV-FF mode\n"));
+    msdk_printf(MSDK_STRING("   [-gpb:<on,off>]          - Turn this option OFF to make HEVC encoder use regular P-frames instead of GPB\n"));
     msdk_printf(MSDK_STRING("   [-num_slice]             - number of slices in each video frame. 0 by default.\n"));
     msdk_printf(MSDK_STRING("                              If num_slice equals zero, the encoder may choose any slice partitioning allowed by the codec standard.\n"));
     msdk_printf(MSDK_STRING("   [-mss]                   - maximum slice size in bytes. Supported only with -hw and h264 codec. This option is not compatible with -num_slice option.\n"));
@@ -356,6 +357,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("Quantizer for B frames is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gpb:on")))
+        {
+            pParams->nGPB = MFX_CODINGOPTION_ON;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gpb:off")))
+        {
+            pParams->nGPB = MFX_CODINGOPTION_OFF;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-qsv-ff")))
         {
