@@ -14,9 +14,7 @@
 #ifndef __UMC_H264_DEC_H__
 #define __UMC_H264_DEC_H__
 
-//#include <memory>
 #include "umc_video_decoder.h"
-//#include "umc_media_buffer.h"
 
 namespace UMC
 {

@@ -11,6 +11,7 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_H264_VIDEO_DECODER)
 
+#include "mfx_h264_dispatcher.h"
 #include "umc_h264_mfx_sw_supplier.h"
 #include "umc_h264_task_broker_mt.h"
 #include "umc_h264_segment_decoder_mt.h"
@@ -18,6 +19,12 @@
 
 namespace UMC
 {
+
+MFX_SW_TaskSupplier::MFX_SW_TaskSupplier()
+{
+    MFX_H264_PP::GetH264Dispatcher();
+}
+    
 H264Slice * MFX_SW_TaskSupplier::CreateSlice()
 {
     return m_ObjHeap.AllocateObject<H264SliceEx>();
@@ -292,42 +299,35 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
 
 void DefaultFill(H264DecoderFrame * frame, Ipp32s fields_mask, bool isChromaOnly, Ipp8u defaultValue = 128)
 {
-    try
+    IppiSize roi;
+
+    Ipp32s field_factor = fields_mask == 2 ? 0 : 1;
+    Ipp32s field = field_factor ? fields_mask : 0;
+
+    if (!isChromaOnly)
     {
-        IppiSize roi;
-
-        Ipp32s field_factor = fields_mask == 2 ? 0 : 1;
-        Ipp32s field = field_factor ? fields_mask : 0;
-
-        if (!isChromaOnly)
-        {
-            roi = frame->lumaSize();
-            roi.height >>= field_factor;
-
-            if (frame->m_pYPlane)
-                SetPlane(defaultValue, frame->m_pYPlane + field*frame->pitch_luma(),
-                    frame->pitch_luma() << field_factor, roi);
-        }
-
-        roi = frame->chromaSize();
+        roi = frame->lumaSize();
         roi.height >>= field_factor;
 
-        if (frame->m_pUVPlane) // NV12
-        {
-            roi.width *= 2;
-            SetPlane(defaultValue, frame->m_pUVPlane + field*frame->pitch_chroma(), frame->pitch_chroma() << field_factor, roi);
-        }
-        else
-        {
-            if (frame->m_pUPlane)
-                SetPlane(defaultValue, frame->m_pUPlane + field*frame->pitch_chroma(), frame->pitch_chroma() << field_factor, roi);
-            if (frame->m_pVPlane)
-                SetPlane(defaultValue, frame->m_pVPlane + field*frame->pitch_chroma(), frame->pitch_chroma() << field_factor, roi);
-        }
-    } catch(...)
+        if (frame->m_pYPlane)
+            SetPlane(defaultValue, frame->m_pYPlane + field*frame->pitch_luma(),
+                frame->pitch_luma() << field_factor, roi);
+    }
+
+    roi = frame->chromaSize();
+    roi.height >>= field_factor;
+
+    if (frame->m_pUVPlane) // NV12
     {
-        // nothing to do
-        //VM_ASSERT(false);
+        roi.width *= 2;
+        SetPlane(defaultValue, frame->m_pUVPlane + field*frame->pitch_chroma(), frame->pitch_chroma() << field_factor, roi);
+    }
+    else
+    {
+        if (frame->m_pUPlane)
+            SetPlane(defaultValue, frame->m_pUPlane + field*frame->pitch_chroma(), frame->pitch_chroma() << field_factor, roi);
+        if (frame->m_pVPlane)
+            SetPlane(defaultValue, frame->m_pVPlane + field*frame->pitch_chroma(), frame->pitch_chroma() << field_factor, roi);
     }
 }
 

@@ -22,6 +22,7 @@ namespace UMC
 class MFX_SW_TaskSupplier : public MFXTaskSupplier
 {
 public:
+    MFX_SW_TaskSupplier();
 
     virtual void CreateTaskBroker();
     virtual H264Slice * CreateSlice();

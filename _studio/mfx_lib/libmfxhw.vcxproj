@@ -902,15 +902,6 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
-    <ProjectReference Include="optimization\h264\h264_dispatch.vcxproj">
-      <Project>{c37d7375-76cd-400b-a030-4624b1012e08}</Project>
-    </ProjectReference>
-    <ProjectReference Include="optimization\h264\h264_px.vcxproj">
-      <Project>{3b7a183a-c728-494f-a56e-6a993150d277}</Project>
-    </ProjectReference>
-    <ProjectReference Include="optimization\h264\h264_sse.vcxproj">
-      <Project>{e12ab7fb-4bb5-49ae-89be-e41f3bf8a000}</Project>
-    </ProjectReference>
     <ProjectReference Include="pak\pak.vcxproj">
       <Project>{5ea7d17f-aae3-49c8-b1c6-de3c36d26559}</Project>
       <Private>false</Private>

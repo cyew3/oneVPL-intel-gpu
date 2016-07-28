@@ -16,7 +16,6 @@
 #include "mfxfei.h"
 
 #include "umc_h264_mfx_supplier.h"
-#include "mfx_h264_dispatcher.h"
 
 #include "umc_h264_frame_list.h"
 #include "umc_h264_nal_spl.h"
@@ -114,7 +113,6 @@ RawHeader * RawHeaders::GetPPS()
 MFXTaskSupplier::MFXTaskSupplier()
     : TaskSupplier()
 {
-    MFX_H264_PP::GetH264Dispatcher();
     memset(&m_firstVideoParams, 0, sizeof(mfxVideoParam));
 }
 

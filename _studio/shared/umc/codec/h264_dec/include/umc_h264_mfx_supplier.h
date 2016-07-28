@@ -14,7 +14,6 @@
 #ifndef __UMC_H264_MFX_SUPPLIER_H
 #define __UMC_H264_MFX_SUPPLIER_H
 
-//#include "mfx_h264_ex_param_buf.h"
 #include "umc_h264_task_supplier.h"
 #include "umc_media_data_ex.h"
 #include "umc_h264_task_broker.h"

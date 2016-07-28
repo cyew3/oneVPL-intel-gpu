@@ -250,14 +250,14 @@ bool H264BaseBitstream::More_RBSP_Data()
         return false;
 
     // get top bit, it can be "rbsp stop" bit
-    ippiGetNBits(m_pbs, m_bitOffset, 1, code);
+    h264GetBits(m_pbs, m_bitOffset, 1, code);
 
     // get remain bits, which is less then byte
     tmp = (m_bitOffset + 1) % 8;
 
     if(tmp)
     {
-        ippiGetNBits(m_pbs, m_bitOffset, tmp, code);
+        h264GetBits(m_pbs, m_bitOffset, tmp, code);
         if ((code << (8 - tmp)) & 0x7f)    // most sig bit could be rbsp stop bit
         {
             m_pbs = ptr_state;
@@ -272,7 +272,7 @@ bool H264BaseBitstream::More_RBSP_Data()
     // run through remain bytes
     while (0 < remaining_bytes)
     {
-        ippiGetBits8(m_pbs, m_bitOffset, code);
+        h264GetBits(m_pbs, m_bitOffset, 8, code);
 
         if (code)
         {
@@ -2302,7 +2302,7 @@ Status H264HeadersBitstream::GetNALUnitType(NAL_Unit_Type &nal_unit_type, Ipp32u
 {
     Ipp32u code;
 
-    ippiGetBits8(m_pbs, m_bitOffset, code);
+    h264GetBits(m_pbs, m_bitOffset, 8, code);
 
     nal_ref_idc = (Ipp32u) ((code & NAL_STORAGE_IDC_BITS)>>5);
     nal_unit_type = (NAL_Unit_Type) (code & NAL_UNITTYPE_BITS);
@@ -2345,13 +2345,13 @@ Ipp32s H264HeadersBitstream::sei_message(const Headers & headers, Ipp32s current
     while (code  ==  0xFF)
     {
         /* fixed-pattern bit string using 8 bits written equal to 0xFF */
-        ippiGetNBits(m_pbs, m_bitOffset, 8, code);
+        h264GetBits(m_pbs, m_bitOffset, 8, code);
         payloadType += 255;
         ippiNextBits(m_pbs, m_bitOffset, 8, code);
     }
 
     Ipp32s last_payload_type_byte;    //Ipp32u integer using 8 bits
-    ippiGetNBits(m_pbs, m_bitOffset, 8, last_payload_type_byte);
+    h264GetBits(m_pbs, m_bitOffset, 8, last_payload_type_byte);
 
     payloadType += last_payload_type_byte;
 
@@ -2361,14 +2361,14 @@ Ipp32s H264HeadersBitstream::sei_message(const Headers & headers, Ipp32s current
     while( code  ==  0xFF )
     {
         /* fixed-pattern bit string using 8 bits written equal to 0xFF */
-        ippiGetNBits(m_pbs, m_bitOffset, 8, code);
+        h264GetBits(m_pbs, m_bitOffset, 8, code);
         payloadSize += 255;
         ippiNextBits(m_pbs, m_bitOffset, 8, code);
     }
 
     Ipp32s last_payload_size_byte;    //Ipp32u integer using 8 bits
 
-    ippiGetNBits(m_pbs, m_bitOffset, 8, last_payload_size_byte);
+    h264GetBits(m_pbs, m_bitOffset, 8, last_payload_size_byte);
     payloadSize += last_payload_size_byte;
     spl->Reset();
     spl->payLoadSize = payloadSize;
@@ -2397,7 +2397,7 @@ Ipp32s H264HeadersBitstream::sei_message(const Headers & headers, Ipp32s current
 
     for (Ipp32u i = 0; i < spl->payLoadSize; i++)
     {
-        ippiSkipNBits(pbs, bitOffset, 8);
+        SkipNBits(pbs, bitOffset, 8);
     }
 
     SetState(pbs, bitOffset);
@@ -2573,7 +2573,7 @@ void H264HeadersBitstream::user_data_registered_itu_t_t35(H264SEIPayLoad *spl)
 {
     H264SEIPayLoad::SEIMessages::UserDataRegistered * user_data = &(spl->SEI_messages.user_data_registered);
     Ipp32u code;
-    ippiGetBits8(m_pbs, m_bitOffset, code);
+    h264GetBits(m_pbs, m_bitOffset, 8, code);
     user_data->itu_t_t35_country_code = (Ipp8u)code;
 
     Ipp32u i = 1;
@@ -2581,7 +2581,7 @@ void H264HeadersBitstream::user_data_registered_itu_t_t35(H264SEIPayLoad *spl)
     user_data->itu_t_t35_country_code_extension_byte = 0;
     if (user_data->itu_t_t35_country_code == 0xff)
     {
-        ippiGetBits8(m_pbs, m_bitOffset, code);
+        h264GetBits(m_pbs, m_bitOffset, 8, code);
         user_data->itu_t_t35_country_code_extension_byte = (Ipp8u)code;
         i++;
     }
@@ -2590,7 +2590,7 @@ void H264HeadersBitstream::user_data_registered_itu_t_t35(H264SEIPayLoad *spl)
 
     for(Ipp32s k = 0; i < spl->payLoadSize; i++, k++)
     {
-        ippiGetBits8(m_pbs, m_bitOffset, code);
+        h264GetBits(m_pbs, m_bitOffset, 8, code);
         spl->user_data[k] = (Ipp8u) code;
     }
 }
@@ -2649,7 +2649,7 @@ Ipp32s H264HeadersBitstream::dec_ref_pic_marking_repetition(const Headers & head
 void H264HeadersBitstream::unparsed_sei_message(H264SEIPayLoad *spl)
 {
     for(Ipp32u i = 0; i < spl->payLoadSize; i++)
-        ippiSkipNBits(m_pbs, m_bitOffset, 8)
+        SkipNBits(m_pbs, m_bitOffset, 8)
     AlignPointerRight();
 }
 

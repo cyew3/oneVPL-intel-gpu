@@ -29,7 +29,6 @@
 namespace UMC
 {
 class TaskSupplier;
-class H264_DXVA_Driver_SegmentDecoder;
 
 class H264_DXVA_SegmentDecoderCommon : public H264SegmentDecoderBase
 {
