@@ -1297,6 +1297,35 @@ void VideoDECODEH265::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
     if (storer)
         storer->SetTimestamp(pFrame);
 
+    mfxExtDecodedFrameInfo* info = (mfxExtDecodedFrameInfo*)GetExtendedBuffer(surface_out->Data.ExtParam, surface_out->Data.NumExtParam, MFX_EXTBUFF_DECODED_FRAME_INFO);
+    if (info)
+    {
+        switch (pFrame->m_FrameType)
+        {
+            case UMC::I_PICTURE:
+                info->FrameType = MFX_FRAMETYPE_I;
+                if (pFrame->GetAU()->GetAnySlice()->GetSliceHeader()->IdrPicFlag)
+                    info->FrameType |= MFX_FRAMETYPE_IDR;
+
+                break;
+
+            case UMC::P_PICTURE:
+                info->FrameType = MFX_FRAMETYPE_P;
+                break;
+
+            case UMC::B_PICTURE:
+                info->FrameType = MFX_FRAMETYPE_B;
+                break;
+
+            default:
+                VM_ASSERT(!"Unknown frame type");
+                info->FrameType = MFX_FRAMETYPE_UNKNOWN;
+        }
+
+        if (pFrame->m_isUsedAsReference)
+            info->FrameType |= MFX_FRAMETYPE_REF;
+   }
+
 #ifdef MFX_ENABLE_WATERMARK
 //    m_watermark->Apply(surface_out->Data.Y, surface_out->Data.UV, surface_out->Data.Pitch, surface_out->Info.Width, surface_out->Info.Height);
 #endif
