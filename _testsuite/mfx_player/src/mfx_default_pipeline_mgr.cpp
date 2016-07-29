@@ -203,6 +203,14 @@ int MFXPipelineManager::Execute(IMFXPipelineConfig *pCfg)throw()
                         continue;
                     }
 
+                    if (MFX_ERR_GPU_HANG == sts)
+                    {
+                      vm_string_printf(VM_STRING("\nERROR: GPU hang occured, reseting pipeline ..."));
+                      GO_OR_QUIT(LightReset());
+                      vm_string_printf(VM_STRING("OK\n"));
+                      continue;
+                    }
+
                     if (MFX_ERR_MEMORY_ALLOC == sts)
                     {
                         bReduceMem = true;
