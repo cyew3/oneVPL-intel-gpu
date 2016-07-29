@@ -392,7 +392,7 @@ int main(int argc, msdk_char *argv[])
         Resources.numSrcFiles = Params.numStreams > MAX_INPUT_STREAMS ? MAX_INPUT_STREAMS : Params.numStreams;
         for (int i = 0; i < Resources.numSrcFiles; i++)
         {
-            ownToMfxFrameInfo( &(Params.inFrameInfo[i]), &(realFrameInfoIn[i]) );
+            ownToMfxFrameInfo( &(Params.inFrameInfo[i]), &(realFrameInfoIn[i]), true);
             // Set ptsMaker for the first stream only - it will store PTSes
             sts = yuvReaders[i].Init(Params.compositionParam.streamInfo[i].streamName,i==0 ? ptsMaker.get() : NULL);
             MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
