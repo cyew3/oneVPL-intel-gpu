@@ -12,199 +12,291 @@
 #if defined (UMC_ENABLE_MPEG2_VIDEO_DECODER)
 
 #include <vector>
-#include "umc_mpeg2_dec_base.h"
+#include "umc_mpeg2_dec_defs_sw.h"
+#include "umc_mpeg2_dec_sw.h"
+#include "umc_mpeg2_dec_tbl.h"
 
 #pragma warning(disable: 4244)
 
 using namespace UMC;
 
-#ifdef UMC_VA_DXVA
-Ipp32u DistToNextSlice(mfxEncryptedData *encryptedData, PAVP_COUNTER_TYPE counterMode)
+const Ipp32s ALIGN_VALUE  = 16;
+
+static void mp2_HuffmanTableFree(mp2_VLCTable *vlc)
 {
-    if(encryptedData->Next)
-    {
-        Ipp64u counter1 = encryptedData->CipherCounter.Count;
-        Ipp64u counter2 = encryptedData->Next->CipherCounter.Count;
-        Ipp64u zero = 0xffffffffffffffff;
-        if(counterMode == PAVP_COUNTER_TYPE_A)
-        {
-            counter1 = LITTLE_ENDIAN_SWAP32((DWORD)(counter1 >> 32));
-            counter2 = LITTLE_ENDIAN_SWAP32((DWORD)(counter2 >> 32));
-            zero = 0x00000000ffffffff;
-        }
-        else
-        {
-            counter1 = LITTLE_ENDIAN_SWAP64(counter1);
-            counter2 = LITTLE_ENDIAN_SWAP64(counter2);
-        }
-        if(counter2 < counter1)
-        {
-            return (Ipp32u)(counter2 +(zero - counter1))*16;
-        }
-        else
-        {
-            return (Ipp32u)(counter2 - counter1)*16;
-        }
+    if (vlc->table0) {
+        ippsFree(vlc->table0);
+        vlc->table0 = NULL;
     }
-    else
-    {
-          int alignedSize = encryptedData->DataLength + encryptedData->DataOffset;
-          if(alignedSize & 0xf)
-              alignedSize= alignedSize + (0x10 - (alignedSize & 0xf));
-          return alignedSize;
+    if (vlc->table1) {
+        ippsFree(vlc->table1);
+        vlc->table1 = NULL;
     }
 }
-//slice size with alignment
-Ipp32u SliceSize(mfxEncryptedData *first, PAVP_COUNTER_TYPE counterMode, 
-                 Ipp32u &overlap)
+
+static IppStatus mp2_HuffmanTableInitAlloc_HandleError(Ipp32s *buffer, Ipp16s *table0, Ipp16s *table1)
 {
-    mfxEncryptedData *temp = first;
-    int size = temp->DataLength + temp->DataOffset;
-    if(size & 0xf)
-      size= size + (0x10 - (size & 0xf));
-
-    int retSize = size - overlap;
-    if(temp->Next)
-    {
-        Ipp64u counter1 = temp->CipherCounter.Count;
-        Ipp64u counter2 = temp->Next->CipherCounter.Count;
-        Ipp64u zero = 0xffffffffffffffff;
-        if(counterMode == PAVP_COUNTER_TYPE_A)
-        {
-            counter1 = LITTLE_ENDIAN_SWAP32((DWORD)(counter1 >> 32));
-            counter2 = LITTLE_ENDIAN_SWAP32((DWORD)(counter2 >> 32));
-            zero = 0x00000000ffffffff;
-        }
-        else
-        {
-            counter1 = LITTLE_ENDIAN_SWAP64(counter1);
-            counter2 = LITTLE_ENDIAN_SWAP64(counter2);
-        }
-        Ipp64u endCounter = counter1 + size / 16;
-        if(endCounter >= counter2)
-        {
-          overlap = (Ipp32u)(endCounter - counter2)*16;
-        }
-        else
-        {
-          overlap = (Ipp32u)(endCounter + (zero- counter2))*16;
-        }
-    }
-    else
-    {
-        overlap=0;
-    }
-
-    return retSize;
+  if (buffer)
+    delete[] buffer;
+  if (table0)
+    ippsFree(table0);
+  if (table1)
+    ippsFree(table1);
+  return ippStsErr;
 }
 
-//check correctness of encrypted data
-Status CheckData(mfxEncryptedData *first, PAVP_COUNTER_TYPE counterMode)
+static IppStatus mp2_HuffmanTableInitAlloc(Ipp32s *tbl, Ipp32s bits_table0, mp2_VLCTable *vlc)
 {
-    mfxEncryptedData * temp = first;
-    for (; temp; )
-    {
-        if(temp->Next)
-        {
-            Ipp64u counter1 = temp->CipherCounter.Count;
-            Ipp64u counter2 = temp->Next->CipherCounter.Count;
-            Ipp64u zero = 0xffffffffffffffff;
-            if(counterMode == PAVP_COUNTER_TYPE_A)
-            {
-                counter1 = LITTLE_ENDIAN_SWAP32((DWORD)(counter1 >> 32));
-                counter2 = LITTLE_ENDIAN_SWAP32((DWORD)(counter2 >> 32));
-                zero = 0x00000000ffffffff;
-            }
-            else
-            {
-                counter1 = LITTLE_ENDIAN_SWAP64(counter1);
-                counter2 = LITTLE_ENDIAN_SWAP64(counter2);
-            }
-            //second slice offset starts after the first, there is no counter overall
-            if(counter1 <= counter2)
-            {
-                Ipp32u size = temp->DataLength + temp->DataOffset;
-                if(size & 0xf)
-                    size= size+(0x10 - (size & 0xf));
-                Ipp32u sizeCount = (Ipp32u)(counter2 - counter1) *16;
-                //if we have hole between slices
-                if(sizeCount > size)
-                    return UMC_ERR_INVALID_STREAM;
-                else //or overlap between slices is different in different buffers
-                    if(memcmp(temp->Data + sizeCount, temp->Next->Data, size - sizeCount))
-                        return UMC_ERR_INVALID_STREAM;
-            }
-            else //there is counter overall or second slice offset starts earlier then the first one
-            {
-                //length of the second slice offset in 16-bytes blocks
-                Ipp64u offsetCounter = (temp->Next->DataOffset + 15)/16;
-                // no counter2 overall
-                if(zero - counter2 > offsetCounter)
-                {
-                    Ipp32u size = temp->DataLength + temp->DataOffset;
-                    if(size & 0xf)
-                        size= size+(0x10 - (size & 0xf));
-                    Ipp64u counter3 = size / 16;
-                    // no zero during the first slice
-                    if(zero - counter1 >= counter3)
-                    {
-                        //second slice offset contains the first slice with offset
-                        if(counter2 + offsetCounter >= counter3)
-                        {
-                            temp->Next->Data += (Ipp32u)(counter1 - counter2) * 16;
-                            temp->Next->DataOffset -= (Ipp32u)(counter1 - counter2) * 16;
-                            temp->Next->CipherCounter = temp->CipherCounter;
-                            //overlap between slices is different in different buffers
-                            if (memcmp(temp->Data, temp->Next->Data, temp->DataOffset + temp->DataLength))
-                                return UMC_ERR_INVALID_STREAM;
-                        }
-                        else //overlap between slices data or hole between slices
-                        {
-                            return UMC_ERR_INVALID_STREAM;
-                        }
-                    }
-                    else
-                    {
-                        //size of data between counters
-                        Ipp32u sizeCount = (Ipp32u)(counter2 + (zero - counter1)) *16;
-                        //hole between slices
-                        if(sizeCount > size)
-                            return UMC_ERR_INVALID_STREAM;
-                        else //or overlap between slices is different in different buffers
-                            if(memcmp(temp->Data + sizeCount, temp->Next->Data, size - sizeCount))
-                                return UMC_ERR_INVALID_STREAM;
-                    }
-                }
-                else
-                {
-                    temp->Next->Data += (Ipp32u)(counter1 - counter2) * 16;
-                    temp->Next->DataOffset -= (Ipp32u)(counter1 - counter2) * 16;
-                    temp->Next->CipherCounter = temp->CipherCounter;
-                    //overlap between slices is different in different buffers
-                    if (memcmp(temp->Data, temp->Next->Data, temp->DataOffset + temp->DataLength))
-                        return UMC_ERR_INVALID_STREAM;
-                }
-            }
-        }
-        temp = temp->Next;
-    }
+  Ipp32s *ptbl;
+  Ipp16s bad_value = 0;
+  Ipp32s max_bits;
+  Ipp32s num_tbl;
+  Ipp32s i, j, k, m, n;
+  Ipp32s bits, code, value;
+  Ipp32s bits0, bits1;
+  Ipp32s min_value, max_value, spec_value;
+  Ipp32s min_code0, min_code1;
+  Ipp32s max_code0, max_code1;
+  Ipp32s prefix_code1 = -1;
+  Ipp32s bits_table1 = 0;
+  Ipp32s *buffer = NULL;
+  Ipp32s *codes;
+  Ipp32s *cbits;
+  Ipp32s *values;
+  Ipp16s *table0 = NULL;
+  Ipp16s *table1 = NULL;
 
-    return UMC_OK;
+  /* get number of entries (n) */
+  max_bits = *tbl++;
+  num_tbl = *tbl++;
+  for (i = 0; i < num_tbl; i++) {
+    *tbl++;
+  }
+  n = 0;
+  ptbl = tbl;
+  for (bits = 1; bits <= max_bits; bits++) {
+    m = *ptbl;
+    if (m < 0) break;
+    n += m;
+    ptbl += 2*m + 1;
+  }
+
+  /* alloc internal table */
+  buffer = new Ipp32s[3*n];
+  if (!buffer) return ippStsErr;
+  codes = buffer;
+  cbits = buffer + n;
+  values = buffer + 2*n;
+
+  /* read VLC to internal table */
+  min_value = 0x7fffffff;
+  max_value = 0;
+  spec_value = 0;
+  ptbl = tbl;
+  k = 0;
+  for (bits = 1; bits <= max_bits; bits++) {
+    if (*ptbl < 0) break;
+    m = *ptbl++;
+    for (i = 0; i < m; i++) {
+      code = *ptbl++;
+      value = *ptbl++;
+      code &= ((1 << bits) - 1);
+      if (value < min_value) min_value = value;
+      if (value > max_value) {
+        if (!spec_value && value >= 0xffff) {
+          spec_value = value;
+        } else {
+          max_value = value;
+        }
+      }
+#ifdef M2D_DEBUG
+      if (vlc_print) {
+        for (j = 0; j < bits; j++) {
+          printf("%c", (code & (1 << (bits - 1 - j))) ? '1' : '0');
+        }
+        for (j = bits; j < max_bits; j++) {
+          printf("%c", ' ');
+        }
+        printf("  -> %d", value);
+        printf("\n");
+      }
+#endif
+      codes[k] = code << (30 - bits);
+      cbits[k] = bits;
+      values[k] = value;
+      k++;
+    }
+  }
+#ifdef M2D_DEBUG
+  if (vlc_print) {
+    printf("Values: [%d, %d]", min_value, max_value);
+    if (spec_value) printf("   special value = %x\n", spec_value);
+    printf("\n");
+    printf("---------------------------\n");
+  }
+#endif
+
+  if (!bits_table0) {
+    bits_table0 = max_bits;
+    bits_table1 = 0;
+    vlc->threshold_table0 = 0;
+  }
+  bits0 = bits_table0;
+  //for (bits0 = 1; bits0 < max_bits; bits0++)
+  if (bits0 > 0 && bits0 < max_bits) {
+    min_code0 = min_code1 = 0x7fffffff;
+    max_code0 = max_code1 = 0;
+    for (i = 0; i < n; i++) {
+      code = codes[i];
+      bits = cbits[i];
+      if (bits <= bits0) {
+        if (code > max_code0) max_code0 = code;
+        if (code < min_code0) min_code0 = code;
+      } else {
+        if (code > max_code1) max_code1 = code;
+        if (code < min_code1) min_code1 = code;
+      }
+    }
+#ifdef M2D_DEBUG
+    if (vlc_print) {
+      printf("bits0 = %2d: table0 [0x%3x,0x%3x], table1 [0x%3x,0x%3x]",
+        bits0,
+        max_code0 >> (30 - max_bits),
+        min_code0 >> (30 - max_bits),
+        max_code1 >> (30 - max_bits),
+        min_code1 >> (30 - max_bits));
+    }
+#endif
+    if ((max_code0 < min_code1) || (max_code1 < min_code0)) {
+      for (j = 0; j < 29; j++) {
+        if ((min_code1 ^ max_code1) & (1 << (29 - j))) break;
+      }
+      bits1 = max_bits - j;
+      if (bits0 == bits_table0) {
+        bits_table1 = bits1;
+        prefix_code1 = min_code1 >> (30 - bits0);
+        vlc->threshold_table0 = min_code0 >> (30 - max_bits);
+      }
+#ifdef M2D_DEBUG
+      if (vlc_print) {
+        printf(" # Ok: Tables: %2d + %2d = %d bits", bits0, bits1, bits0 + bits1);
+      }
+#endif
+    }
+  }
+
+  if (bits_table0 > 0 && bits_table0 < max_bits && !bits_table1) {
+    if (buffer) delete[] buffer;
+    return ippStsErr;
+  }
+
+  bad_value = (Ipp16s)((bad_value << 8) | VLC_BAD);
+
+  table0 = ippsMalloc_16s(1 << bits_table0);
+  if (NULL == table0)
+    return mp2_HuffmanTableInitAlloc_HandleError(buffer, table0, table1);
+
+  ippsSet_16s(bad_value, table0, 1 << bits_table0);
+  if (bits_table1) {
+    table1 = ippsMalloc_16s(1 << bits_table1);
+    if (NULL == table1)
+      return mp2_HuffmanTableInitAlloc_HandleError(buffer, table0, table1);
+
+    ippsSet_16s(bad_value, table1, 1 << bits_table1);
+  }
+  for (i = 0; i < n; i++) {
+    code = codes[i];
+    bits = cbits[i];
+    value = values[i];
+    if (bits <= bits_table0) {
+      code = code >> (30 - bits_table0);
+      for (j = 0; j < (1 << (bits_table0 - bits)); j++) {
+        table0[code + j] = (Ipp16s)((value << 8) | bits);
+      }
+    } else if(table1){
+      code = code >> (30 - max_bits);
+      code = code & ((1 << bits_table1) - 1);
+      for (j = 0; j < (1 << (max_bits - bits)); j++) {
+        table1[code + j] = (Ipp16s)((value << 8) | bits);
+      }
+    }
+  }
+
+  if (bits_table1) { // fill VLC_NEXTTABLE
+    if (prefix_code1 == -1)
+      return mp2_HuffmanTableInitAlloc_HandleError(buffer, table0, table1);
+
+    bad_value = (Ipp16s)((bad_value &~ 255) | VLC_NEXTTABLE);
+    for (j = 0; j < (1 << ((bits_table0 - (max_bits - bits_table1)))); j++) {
+      table0[prefix_code1 + j] = bad_value;
+    }
+  }
+
+  vlc->max_bits = max_bits;
+  vlc->bits_table0 = bits_table0;
+  vlc->bits_table1 = bits_table1;
+  vlc->table0 = table0;
+  vlc->table1 = table1;
+
+  if (buffer) delete[] buffer;
+  return ippStsNoErr;
 }
 
-#endif //#ifdef UMC_VA_DXVA
+MPEG2VideoDecoderSW::MPEG2VideoDecoderSW()
+{
+    vlcMBAdressing.table0 = vlcMBAdressing.table1 = NULL;
 
-Status MPEG2VideoDecoderBase::DecodeSliceHeader(IppVideoContext *video, int task_num)
+    vlcMBType[0].table0 = vlcMBType[0].table1 = NULL;
+    vlcMBType[1].table0 = vlcMBType[1].table1 = NULL;
+    vlcMBType[2].table0 = vlcMBType[2].table1 = NULL;
+
+    vlcMBPattern.table0 = vlcMBPattern.table1 = NULL;
+    vlcMotionVector.table0 = vlcMotionVector.table1 = NULL;
+}
+
+MPEG2VideoDecoderSW::~MPEG2VideoDecoderSW()
+{
+}
+
+bool MPEG2VideoDecoderSW::InitTables()
+{
+    if (ippStsNoErr != mp2_HuffmanTableInitAlloc(MBAdressing, 5, &vlcMBAdressing))
+        return false;
+
+    if (ippStsNoErr != mp2_HuffmanTableInitAlloc(IMBType, 0, &vlcMBType[0]))
+        return false;
+
+    if (ippStsNoErr != mp2_HuffmanTableInitAlloc(PMBType, 0, &vlcMBType[1]))
+        return false;
+
+    if (ippStsNoErr != mp2_HuffmanTableInitAlloc(BMBType, 0, &vlcMBType[2]))
+        return false;
+
+    if (ippStsNoErr != mp2_HuffmanTableInitAlloc(MBPattern, 5, &vlcMBPattern))
+        return false;
+
+    if (ippStsNoErr != mp2_HuffmanTableInitAlloc(MotionVector, 5, &vlcMotionVector))
+        return false;
+
+    return MPEG2VideoDecoderBase::InitTables();
+}
+
+void MPEG2VideoDecoderSW::DeleteHuffmanTables()
+{
+    MPEG2VideoDecoderBase::DeleteHuffmanTables();
+    // release tables
+    mp2_HuffmanTableFree(&vlcMBAdressing);
+    mp2_HuffmanTableFree(&vlcMBType[0]);
+    mp2_HuffmanTableFree(&vlcMBType[1]);
+    mp2_HuffmanTableFree(&vlcMBType[2]);
+    mp2_HuffmanTableFree(&vlcMBPattern);
+    mp2_HuffmanTableFree(&vlcMotionVector);
+}
+
+Status MPEG2VideoDecoderSW::DecodeSliceHeader(IppVideoContext *video, int task_num)
 {
     Ipp32u extra_bit_slice;
     Ipp32u code;
-#if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
-    Ipp32s bytes_remain = 0;
-    Ipp32s bit_pos = 0;
-#if defined(UMC_VA_LINUX)
-    Ipp32u start_code;
-#endif
-#endif
     bool isCorrupted = false;
 
     if (!video)
@@ -213,270 +305,12 @@ Status MPEG2VideoDecoderBase::DecodeSliceHeader(IppVideoContext *video, int task
     }
 
     FIND_START_CODE(video->bs, code)
-#if defined(UMC_VA_LINUX)
-    start_code = code;
-#endif
 
     if(code == (Ipp32u)UMC_ERR_NOT_ENOUGH_DATA)
     {
-#if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
-        if (VA_VLD_W == pack_w.va_mode && false == pack_w.IsProtectedBS)
-        {
-            // update latest slice information
-            Ipp8u *start_ptr = GET_BYTE_PTR(video->bs);
-            Ipp8u *end_ptr = GET_END_PTR(video->bs);
-            Ipp8u *ptr = start_ptr;
-            Ipp32u count = 0;
-
-            // calculate number of bytes of slice data
-            while (ptr < end_ptr && (ptr[0] || ptr[1] || ptr[2] || ptr[3]))
-            {
-                ptr++;
-                count++;
-            }
-
-#if defined(UMC_VA_DXVA)
-            // update slice info structures (+ extra 10 bytes, this is @to do@)
-        if(pack_w.pSliceInfoBuffer < pack_w.pSliceInfo)
-            pack_w.pSliceInfo[-1].dwSliceBitsInBuffer = 8 * (count + 10);
-#elif defined(UMC_VA_LINUX)
-            // update slice info structures (+ extra 10 bytes, this is @to do@)
-            if(pack_w.pSliceInfoBuffer < pack_w.pSliceInfo)
-                pack_w.pSliceInfo[-1].slice_data_size = count + 10;
-            //fprintf(otl, "slice_data_size %x in DecodeSliceHeader(%d)\n", pack_w.pSliceInfo[-1].slice_data_size, __LINE__);
-#endif
-        }
-#endif
-
         SKIP_TO_END(video->bs);
-
         return UMC_ERR_NOT_ENOUGH_DATA;
     }
-
-#if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
-    if(pack_w.va_mode == VA_VLD_W || pack_w.is_analyzer) {
-        // start of slice code
-        bytes_remain = (Ipp32s)GET_REMAINED_BYTES(video->bs);
-        bit_pos = (Ipp32s)GET_BIT_OFFSET(video->bs);
-#ifdef UMC_VA_DXVA
-        if(pack_w.IsProtectedBS && pack_w.pSliceInfo == pack_w.pSliceInfoBuffer)
-        {
-            Status sts=CheckData(pack_w.curr_encryptedData,
-                (PAVP_COUNTER_TYPE)pack_w.m_va->GetProtectedVA()->GetCounterMode());
-                if(sts < 0)
-                    return sts;
-        }
-        if(pack_w.pSliceInfo > pack_w.pSliceInfoBuffer)
-        {
-             Ipp32s dsize = 0;
-             Ipp32u overlap = pack_w.overlap;
-             pack_w.pSliceInfo[-1].dwSliceBitsInBuffer -= bytes_remain*8;
-             if(!pack_w.IsProtectedBS)
-             {
-                dsize = pack_w.pSliceInfo[-1].dwSliceBitsInBuffer/8;
-                pack_w.bs_size = pack_w.pSliceInfo[-1].dwSliceDataLocation + dsize;
-             }
-             else
-             {
-                dsize = SliceSize(pack_w.curr_encryptedData,
-                     (PAVP_COUNTER_TYPE)(pack_w.m_va->GetProtectedVA())->GetCounterMode(),
-                     overlap);
-                overlap = overlap - pack_w.overlap;
-                pack_w.overlap += overlap;
-                 pack_w.bs_size += dsize;
-             }
-
-            if(pack_w.bs_size >= pack_w.bs_size_getting ||
-                (Ipp32s)((Ipp8u*)pack_w.pSliceInfo - (Ipp8u*)pack_w.pSliceInfoBuffer) >= (Ipp32s)(pack_w.slice_size_getting-sizeof(DXVA_SliceInfo)))
-            {
-                bool slice_split = false;
-                DXVA_SliceInfo s_info;
-                Ipp32s sz = 0, sz_align = 0;
-
-                memcpy_s(&s_info,sizeof(DXVA_SliceInfo),&pack_w.pSliceInfo[-1],sizeof(DXVA_SliceInfo));
-
-                pack_w.bs_size -= dsize;
-                pack_w.overlap -= overlap;
-
-                pack_w.pSliceInfo--;
-
-                if(pack_w.pSliceInfoBuffer < pack_w.pSliceInfo)
-                {
-                    if(pack_w.IsProtectedBS)
-                    {
-                        Ipp32s NumSlices = pack_w.pSliceInfo - pack_w.pSliceInfoBuffer;
-                        mfxEncryptedData *encryptedData = pack_w.curr_bs_encryptedData;
-                        pack_w.bs_size = pack_w.add_to_slice_start;//0;
-                        pack_w.overlap = 0;
-
-                        for (int i = 0; i < NumSlices; i++)
-                        {
-                            if (!encryptedData)
-                                return UMC_ERR_DEVICE_FAILED;
-                        pack_w.bs_size += SliceSize(encryptedData,
-                            (PAVP_COUNTER_TYPE)(pack_w.m_va->GetProtectedVA())->GetCounterMode(),
-                            pack_w.overlap);
-
-                            encryptedData = encryptedData->Next;
-                        }
-
-                        sz = sz_align = pack_w.bs_size;
-                        pack_w.is_bs_aligned_16 = true;
-
-                        if(pack_w.bs_size & 0xf)
-                        {
-                            sz_align = ((pack_w.bs_size >> 4) << 4) + 16;
-                            pack_w.bs_size = sz_align;
-                            pack_w.is_bs_aligned_16 = false;
-                        }
-
-                        if(!pack_w.is_bs_aligned_16)
-                        {
-                            std::vector<Ipp8u> buf(sz_align);
-                            NumSlices++;
-                            encryptedData = pack_w.curr_bs_encryptedData;
-                            Ipp8u *ptr = &buf[0];
-                        Ipp8u *pBuf=ptr;
-                            for (int i = 0; i < NumSlices; i++)
-                            {
-                                if (!encryptedData)
-                                    return UMC_ERR_DEVICE_FAILED;
-                            Ipp32u alignedSize = encryptedData->DataLength + encryptedData->DataOffset;
-                            if(alignedSize & 0xf)
-                                alignedSize = alignedSize+(0x10 - (alignedSize & 0xf));
-                                if(i < NumSlices - 1)
-                                {
-                                ippsCopy_8u(encryptedData->Data ,pBuf, alignedSize);
-                                Ipp32u diff = (Ipp32u)(ptr - pBuf);
-                                ptr += alignedSize - diff;
-                                Ipp64u counter1 = encryptedData->CipherCounter.Count;
-                                Ipp64u counter2 = encryptedData->Next->CipherCounter.Count;
-                                Ipp64u zero = 0xffffffffffffffff;
-                                if((pack_w.m_va->GetProtectedVA())->GetCounterMode() == PAVP_COUNTER_TYPE_A)
-                                {
-                                    counter1 = LITTLE_ENDIAN_SWAP32((DWORD)(counter1 >> 32));
-                                    counter2 = LITTLE_ENDIAN_SWAP32((DWORD)(counter2 >> 32));
-                                    zero = 0x00000000ffffffff;
-                                }
-                                else
-                                {
-                                    counter1 = LITTLE_ENDIAN_SWAP64(counter1);
-                                    counter2 = LITTLE_ENDIAN_SWAP64(counter2);
-                                }
-                                if(counter2 < counter1)
-                                {
-                                    (unsigned char*)pBuf += (Ipp32u)(counter2 +(zero - counter1))*16;
-                                }
-                                else
-                                {
-                                    (unsigned char*)pBuf += (Ipp32u)(counter2 - counter1)*16;
-                                }
-                            }
-                            else
-                            {
-                                ippsCopy_8u(encryptedData->Data,pBuf, sz_align - sz);
-                            }
-
-                                encryptedData = encryptedData->Next;
-                            }
-                            ptr = &buf[0] + sz_align - 16;
-                            ippsCopy_8u(pack_w.add_bytes,ptr, (sz - (sz_align - 16)));
-                        }
-                    }
-
-
-mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure == FRAME_PICTURE) ?
-                                        sequenceHeader.numMB[task_num] : sequenceHeader.numMB[task_num]/2;
-
-                    if(pack_w.SetBufferSize(numMB,PictureHeader[task_num].picture_coding_type)!= UMC_OK)
-                        return UMC_ERR_NOT_ENOUGH_BUFFER;
-
-                    Status umcRes = pack_w.SaveVLDParameters(&sequenceHeader,&PictureHeader[task_num],
-                        pack_w.pSliceStart,
-                        &frame_buffer,task_num,((m_ClipInfo.clip_info.height + 15) >> 4));
-
-                    if (UMC_OK != umcRes)
-                        return umcRes;
-
-                    umcRes = pack_w.m_va->Execute();
-                    if (UMC_OK != umcRes)
-                        return umcRes;
-
-                    pack_w.add_to_slice_start = 0;
-
-                    if(pack_w.IsProtectedBS)
-                    {
-                        if(!pack_w.is_bs_aligned_16)
-                        {
-                            pack_w.add_to_slice_start = sz - (sz_align - 16);
-                        }
-                    }
-                }//if(pack_w.pSliceInfoBuffer < pack_w.pSliceInfo)
-
-                pack_w.InitBuffers(0, 0);
-
-                memcpy_s(&pack_w.pSliceInfo[0],sizeof(DXVA_SliceInfo),&s_info,sizeof(DXVA_SliceInfo));
-                pack_w.pSliceStart += pack_w.pSliceInfo[0].dwSliceDataLocation;
-                pack_w.pSliceInfo[0].dwSliceDataLocation = 0;
-                if(!pack_w.IsProtectedBS)
-                {
-                    pack_w.bs_size = pack_w.pSliceInfo[0].dwSliceBitsInBuffer/8;
-                }
-                else
-                {
-                        pack_w.bs_size = pack_w.add_to_slice_start;
-                        pack_w.bs_size += SliceSize(pack_w.curr_encryptedData,
-                            (PAVP_COUNTER_TYPE)(pack_w.m_va->GetProtectedVA())->GetCounterMode(),
-                            pack_w.overlap);
-                }
-
-                if(pack_w.bs_size >= pack_w.bs_size_getting)
-                {
-                    slice_split = true;
-                    pack_w.pSliceInfo->dwSliceBitsInBuffer =
-                        (pack_w.bs_size_getting - 1)*8;
-                    pack_w.pSliceInfo->wBadSliceChopping = 1;
-                    pack_w.bs_size -= (pack_w.bs_size_getting - 1);
-                    s_info.dwSliceDataLocation = (pack_w.bs_size_getting - 1);
-                    s_info.dwSliceBitsInBuffer -= pack_w.pSliceInfo->dwSliceBitsInBuffer;
-                    pack_w.pSliceInfo++;
-                    goto mm;
-                }
-                else
-                {
-                    if(slice_split)
-                        pack_w.pSliceInfo->wBadSliceChopping = 2;
-                }
-
-                pack_w.pSliceInfo++;
-            }
-            if(pack_w.IsProtectedBS)
-                pack_w.curr_encryptedData = pack_w.curr_encryptedData->Next;
-        }
-        else
-        {
-            pack_w.pSliceStart = GET_START_PTR(Video[task_num][0]->bs)+bit_pos/8;
-            pack_w.bs_size = 0;
-            pack_w.overlap = 0;
-        }
-#elif defined UMC_VA_LINUX
-        if(pack_l.va_mode == VA_VLD_L) {
-            if(pack_l.pSliceInfo > pack_l.pSliceInfoBuffer)
-            {
-                pack_l.pSliceInfo[-1].slice_data_size -= bytes_remain;
-
-                pack_l.bs_size = pack_l.pSliceInfo[-1].slice_data_offset
-                               + pack_l.pSliceInfo[-1].slice_data_size;    //AO: added by me
-            }
-            else
-            {
-                pack_l.pSliceStart = GET_START_PTR(Video[task_num][0]->bs)+bit_pos/8;
-                pack_l.bs_size = 0;
-            }
-        }
-#endif
-    }
-#endif
 
     if(code == PICTURE_START_CODE ||
        code > 0x1AF)
@@ -500,16 +334,6 @@ mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure ==
     if( video->slice_vertical_position > PictureHeader[task_num].max_slice_vert_pos)
     {
         video->slice_vertical_position = PictureHeader[task_num].max_slice_vert_pos;
-
-#ifdef UMC_VA_DXVA
-        if(pack_w.pSliceInfo > pack_w.pSliceInfoBuffer)
-            pack_w.pSliceInfo[-1].dwSliceBitsInBuffer += bytes_remain*8;
-#endif
-#ifdef UMC_VA_LINUX
-        if(pack_l.pSliceInfo > pack_l.pSliceInfoBuffer)
-            pack_l.pSliceInfo[-1].slice_data_size += bytes_remain;
-#endif
-
         isCorrupted = true;
         return UMC_WRN_INVALID_STREAM;
     }
@@ -535,69 +359,6 @@ mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure ==
         extra_bit_slice = code & 1;
     }
 
-#if defined UMC_VA_DXVA
-    if(pack_w.va_mode == VA_VLD_W || pack_w.is_analyzer) {
-      if (GET_REMAINED_BYTES(video->bs) <= 0) 
-      {
-          isCorrupted = true;
-          return UMC_ERR_INVALID_STREAM;
-      }
-      pack_w.pSliceInfo->wMBbitOffset = (WORD)(GET_BIT_OFFSET(video->bs) - bit_pos);
-      pack_w.pSliceInfo->wVerticalPosition = (WORD)(video->slice_vertical_position - 1);
-
-      pack_w.pSliceInfo->dwSliceDataLocation = (DWORD)(GET_START_PTR(Video[task_num][0]->bs)+bit_pos/8-pack_w.pSliceStart);
-
-      pack_w.pSliceInfo->bStartCodeBitOffset = 0;
-      pack_w.pSliceInfo->wQuantizerScaleCode = (WORD)video->cur_q_scale;
-      pack_w.pSliceInfo->wBadSliceChopping = 0;
-#ifdef ELK
-      pack_w.pSliceInfo->wHorizontalPosition = 0;
-#else
-      pack_w.pSliceInfo->wHorizontalPosition = 1;
-#endif
-      pack_w.pSliceInfo->dwSliceBitsInBuffer = bytes_remain*8;
-      // assume slices are ordered
-#ifdef ELK
-      pack_w.pSliceInfo->wNumberMBsInSlice = (WORD)sequenceHeader.mb_width[task_num];
-#else
-      pack_w.pSliceInfo->wNumberMBsInSlice = 0;//sequenceHeader.mb_width;
-#endif
-
-      pack_w.pSliceInfo->bReservedBits = 0;
-      pack_w.pSliceInfo->wBadSliceChopping = 0;
-    }
-#elif defined UMC_VA_LINUX
-
-    if(pack_l.va_mode == VA_VLD_L) {
-    
-      if (GET_REMAINED_BYTES(video->bs) <= 0) {
-        return UMC_ERR_INVALID_STREAM;
-      }
-      pack_l.pSliceInfo->macroblock_offset = GET_BIT_OFFSET(video->bs) - bit_pos;
-      pack_l.pSliceInfo->slice_data_offset = GET_START_PTR(Video[task_num][0]->bs)+bit_pos/8-pack_l.pSliceStart;
-      pack_l.pSliceInfo->quantiser_scale_code = video->cur_q_scale;
-      pack_l.pSliceInfo->slice_data_size = bytes_remain;
-      pack_l.pSliceInfo->intra_slice_flag = PictureHeader[task_num].picture_coding_type == MPEG2_I_PICTURE;
-
-      if (video->stream_type != MPEG1_VIDEO)
-      {
-           const int field_pic = PictureHeader[task_num].picture_structure != FRAME_PICTURE;
-           pack_l.pSliceInfo->slice_vertical_position = (start_code - 0x00000101) << field_pic; //SLICE_MIN_START_CODE 0x00000101
-           if(BOTTOM_FIELD == PictureHeader[task_num].picture_structure)
-               ++pack_l.pSliceInfo->slice_vertical_position;
-
-           Ipp32u macroblock_address_increment=0;
-           DECODE_MB_INCREMENT(video->bs, macroblock_address_increment);
-           pack_w.pSliceInfo->slice_horizontal_position = macroblock_address_increment;
-      }
-      else
-          pack_l.pSliceInfo->slice_vertical_position = video->slice_vertical_position-1;
-
-      pack_l.pSliceInfo->slice_data_flag = VA_SLICE_DATA_FLAG_ALL;
-    }
-#endif
-
-
     if (video->stream_type != MPEG1_VIDEO)
     {
       video->cur_q_scale = q_scale[PictureHeader[task_num].q_scale_type][video->cur_q_scale];
@@ -618,28 +379,8 @@ mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure ==
     return UMC_OK;
 }
 
-Status MPEG2VideoDecoderBase::DecodeSlice(IppVideoContext  *video, int task_num)
+Status MPEG2VideoDecoderSW::DecodeSlice(IppVideoContext  *video, int task_num)
 {
-
-#if defined UMC_VA_DXVA
-    if (pack_w. m_va && pack_w.va_mode != VA_NO) 
-    {
-        if (video->stream_type == MPEG1_VIDEO) 
-        {
-            return UMC_ERR_UNSUPPORTED;
-        }
-
-        if (video->color_format != YUV420) 
-        {
-            return UMC_ERR_UNSUPPORTED;
-        }
-    }
-#elif defined UMC_VA_LINUX
-    if (pack_l.va_mode != VA_NO) {
-        return UMC_OK;
-    }
-#endif
-
     if (MPEG1_VIDEO == video->stream_type) 
     {
         return DecodeSlice_MPEG1(video, task_num);
@@ -697,6 +438,495 @@ Status MPEG2VideoDecoderBase::DecodeSlice(IppVideoContext  *video, int task_num)
     {
         return UMC_ERR_INVALID_STREAM;
     }
+}
+
+void MPEG2VideoDecoderSW::SetOutputPointers(MediaData *output, int task_num)
+{
+    VideoData *out_data = DynamicCast<VideoData, MediaData>(output);
+    Ipp32s curr_index = frame_buffer.curr_index[task_num];
+    Ipp32s pitch_l, pitch_c;
+
+    Ipp32u threadsNum = GetCurrThreadsNum(task_num);
+
+    if(frame_buffer.field_buffer_index[task_num] == 1)
+    {
+        if(curr_index < DPB_SIZE)
+            return;
+        frame_buffer.frame_p_c_n[curr_index].Y_comp_data = frame_buffer.frame_p_c_n[curr_index-DPB_SIZE].Y_comp_data;
+        frame_buffer.frame_p_c_n[curr_index].U_comp_data = frame_buffer.frame_p_c_n[curr_index-DPB_SIZE].U_comp_data;
+        frame_buffer.frame_p_c_n[curr_index].V_comp_data = frame_buffer.frame_p_c_n[curr_index-DPB_SIZE].V_comp_data;
+    //    frame_buffer.frame_p_c_n[curr_index].IsUserDataDecoded = false;
+     //   frame_buffer.frame_p_c_n[curr_index].us_data_size = 0;
+        pitch_l = frame_buffer.Y_comp_pitch;
+        pitch_c = frame_buffer.U_comp_pitch;
+
+        frame_buffer.frame_p_c_n[curr_index].isCorrupted = false;
+
+        for (Ipp32u i = 0; i < threadsNum; i += 1)
+        {
+            IppVideoContext* video = Video[task_num][i];
+
+            video->Y_comp_pitch = pitch_l;
+            video->U_comp_pitch = pitch_c;
+            video->V_comp_pitch = pitch_c;
+
+            video->Y_comp_height = out_data->GetHeight();
+
+            video->pic_size = sequenceHeader.mb_height[task_num]*16*pitch_l;
+
+            video->blkOffsets[0][0] = 0;
+            video->blkOffsets[0][1] = 8;
+            video->blkOffsets[0][2] = 8*pitch_l;
+            video->blkOffsets[0][3] = 8*pitch_l + 8;
+            video->blkOffsets[0][4] = 0;
+            video->blkOffsets[0][5] = 0;
+            video->blkOffsets[0][6] = 8*pitch_c;
+            video->blkOffsets[0][7] = 8*pitch_c;
+            video->blkOffsets[1][0] = 0;
+            video->blkOffsets[1][1] = 8;
+            video->blkOffsets[1][2] = pitch_l;
+            video->blkOffsets[1][3] = pitch_l + 8;
+            video->blkOffsets[1][4] = 0;
+            video->blkOffsets[1][5] = 0;
+            video->blkOffsets[1][6] = pitch_c;
+            video->blkOffsets[1][7] = pitch_c;
+            video->blkOffsets[2][0] = 0;
+            video->blkOffsets[2][1] = 8;
+            video->blkOffsets[2][2] = 16*pitch_l;
+            video->blkOffsets[2][3] = 16*pitch_l + 8;
+            video->blkOffsets[2][4] = 0;
+            video->blkOffsets[2][5] = 0;
+            video->blkOffsets[2][6] = 16*pitch_c;
+            video->blkOffsets[2][7] = 16*pitch_c;
+
+            video->blkPitches[0][0] = pitch_l;
+            video->blkPitches[0][1] = pitch_c;
+            video->blkPitches[1][0] = 2*pitch_l;
+            video->blkPitches[1][1] = pitch_c;
+            video->blkPitches[2][0] = 2*pitch_l;
+            video->blkPitches[2][1] = 2*pitch_c;
+        }
+
+        return;
+    }
+    else
+    {
+        if(curr_index >= DPB_SIZE)
+            return;
+        frame_buffer.frame_p_c_n[curr_index].Y_comp_data = (Ipp8u*)out_data->GetPlanePointer(0);
+        frame_buffer.frame_p_c_n[curr_index].U_comp_data = (Ipp8u*)out_data->GetPlanePointer(1);
+        frame_buffer.frame_p_c_n[curr_index].V_comp_data = (Ipp8u*)out_data->GetPlanePointer(2);
+      //  frame_buffer.frame_p_c_n[curr_index].IsUserDataDecoded = false;
+      //  frame_buffer.frame_p_c_n[curr_index].us_data_size = 0;
+        pitch_l = (Ipp32s)out_data->GetPlanePitch(0);
+        pitch_c = pitch_l >> 1;
+        frame_buffer.Y_comp_pitch = pitch_l;
+        frame_buffer.U_comp_pitch = pitch_c;
+        frame_buffer.V_comp_pitch = pitch_c;
+        frame_buffer.Y_comp_height = out_data->GetHeight();
+        Ipp32s l_size, c_size;
+        //frame_buffer.pic_size = (frame_buffer.Y_comp_pitch*frame_buffer.Y_comp_height*3)/2;
+        frame_buffer.pic_size = l_size = sequenceHeader.mb_height[task_num]*16*pitch_l;
+
+// ------------------------------------------------
+
+        for (Ipp32u i = 0; i < threadsNum; i += 1)
+        {
+            IppVideoContext* video = Video[task_num][i];
+
+            video->Y_comp_pitch = pitch_l;
+            video->U_comp_pitch = pitch_c;
+            video->V_comp_pitch = pitch_c;
+            video->Y_comp_height = out_data->GetHeight();
+
+            video->pic_size = sequenceHeader.mb_height[task_num]*16*pitch_l;
+        }
+// ------------------------------------------------
+
+        c_size = sequenceHeader.mb_height[task_num]*8*pitch_c;
+        if (m_ClipInfo.color_format == YUV422)
+            c_size *= 2;
+        else if(m_ClipInfo.color_format == YUV444)
+            c_size = l_size;
+
+        memset(frame_buffer.frame_p_c_n[curr_index].Y_comp_data,0,l_size);
+        memset(frame_buffer.frame_p_c_n[curr_index].U_comp_data,0,c_size);
+        memset(frame_buffer.frame_p_c_n[curr_index].V_comp_data,0,c_size);
+    }
+
+
+// ------------------------------------------------
+
+    for (Ipp32u i = 0; i < threadsNum; i += 1)
+    {
+        IppVideoContext* video = Video[task_num][i];
+
+        video->blkOffsets[0][0] = 0;
+        video->blkOffsets[0][1] = 8;
+        video->blkOffsets[0][2] = 8*pitch_l;
+        video->blkOffsets[0][3] = 8*pitch_l + 8;
+        video->blkOffsets[0][4] = 0;
+        video->blkOffsets[0][5] = 0;
+        video->blkOffsets[0][6] = 8*pitch_c;
+        video->blkOffsets[0][7] = 8*pitch_c;
+        video->blkOffsets[1][0] = 0;
+        video->blkOffsets[1][1] = 8;
+        video->blkOffsets[1][2] = pitch_l;
+        video->blkOffsets[1][3] = pitch_l + 8;
+        video->blkOffsets[1][4] = 0;
+        video->blkOffsets[1][5] = 0;
+        video->blkOffsets[1][6] = pitch_c;
+        video->blkOffsets[1][7] = pitch_c;
+        video->blkOffsets[2][0] = 0;
+        video->blkOffsets[2][1] = 8;
+        video->blkOffsets[2][2] = 16*pitch_l;
+        video->blkOffsets[2][3] = 16*pitch_l + 8;
+        video->blkOffsets[2][4] = 0;
+        video->blkOffsets[2][5] = 0;
+        video->blkOffsets[2][6] = 16*pitch_c;
+        video->blkOffsets[2][7] = 16*pitch_c;
+
+        video->blkPitches[0][0] = pitch_l;
+        video->blkPitches[0][1] = pitch_c;
+        video->blkPitches[1][0] = 2*pitch_l;
+        video->blkPitches[1][1] = pitch_c;
+        video->blkPitches[2][0] = 2*pitch_l;
+        video->blkPitches[2][1] = 2*pitch_c;
+    }
+}
+
+void MPEG2VideoDecoderSW::quant_matrix_extension(int task_num)
+{
+    Ipp32s i;
+    Ipp32u code;
+    IppVideoContext* video = Video[task_num][0];
+    Ipp32s load_intra_quantizer_matrix, load_non_intra_quantizer_matrix, load_chroma_intra_quantizer_matrix, load_chroma_non_intra_quantizer_matrix;
+    Ipp8u q_matrix[4][64];
+
+    GET_TO9BITS(video->bs, 4 ,code)
+    GET_1BIT(video->bs,load_intra_quantizer_matrix)
+    if(load_intra_quantizer_matrix)
+    {
+        for(i= 0; i < 64; i++) {
+            GET_BITS(video->bs, 8, code);
+            q_matrix[0][i] = (Ipp8u)code;
+        }
+        for (i = 0; i < m_nNumberOfThreads; i++) {
+          ippiDecodeIntraInit_MPEG2(q_matrix[0], IPPVC_LEAVE_SCAN_UNCHANGED, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec.decodeIntraSpec);
+        }
+        m_Spec.flag = IPPVC_LEAVE_SCAN_UNCHANGED;
+    }
+
+    GET_1BIT(video->bs,load_non_intra_quantizer_matrix)
+    if(load_non_intra_quantizer_matrix)
+    {
+        for(i= 0; i < 64; i++) {
+            GET_BITS(video->bs, 8, code);
+            q_matrix[1][i] = (Ipp8u)code;
+        }
+        for (i = 0; i < m_nNumberOfThreads; i++) {
+          ippiDecodeInterInit_MPEG2(q_matrix[1], IPPVC_LEAVE_SCAN_UNCHANGED, &m_Spec.decodeInterSpec);
+        }
+        m_Spec.flag = IPPVC_LEAVE_SCAN_UNCHANGED;
+    }
+
+    GET_1BIT(video->bs,load_chroma_intra_quantizer_matrix);
+    if(load_chroma_intra_quantizer_matrix && m_ClipInfo.color_format != YUV420)
+    {
+        for(i= 0; i < 64; i++) {
+            GET_TO9BITS(video->bs, 8, code);
+            q_matrix[2][i] = (Ipp8u)code;
+        }
+        for (i = 0; i < m_nNumberOfThreads; i++) {
+            ippiDecodeIntraInit_MPEG2(q_matrix[2], IPPVC_LEAVE_SCAN_UNCHANGED, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec.decodeIntraSpecChroma);
+        }
+        m_Spec.flag = IPPVC_LEAVE_SCAN_UNCHANGED;
+    }
+    else
+    {
+        for (i = 0; i < m_nNumberOfThreads; i++) {
+            m_Spec.decodeIntraSpecChroma = m_Spec.decodeIntraSpec;
+        }
+    }
+
+    GET_1BIT(video->bs,load_chroma_non_intra_quantizer_matrix);
+    if(load_chroma_non_intra_quantizer_matrix && m_ClipInfo.color_format != YUV420)
+    {
+        for(i= 0; i < 64; i++) {
+            GET_TO9BITS(video->bs, 8, code);
+            q_matrix[2][i] = (Ipp8u)code;
+        }
+        for (i = 0; i < m_nNumberOfThreads; i++) {
+            ippiDecodeInterInit_MPEG2(q_matrix[3], IPPVC_LEAVE_SCAN_UNCHANGED, &m_Spec.decodeInterSpecChroma);
+        }
+        m_Spec.flag = IPPVC_LEAVE_SCAN_UNCHANGED;
+    }
+    else
+    {
+        for (i = 0; i < m_nNumberOfThreads; i++) {
+            m_Spec.decodeInterSpecChroma = m_Spec.decodeInterSpec;
+        }
+    }
+
+} //void quant_matrix_extension()
+
+Status MPEG2VideoDecoderSW::ProcessRestFrame(int task_num)
+{
+    for (Ipp32s i = 0; i < m_nNumberOfThreads; i++)
+    {
+        int j;
+
+        //Intra
+        Video[task_num][i]->decodeIntraSpec.intraVLCFormat = m_Spec.decodeIntraSpec.intraVLCFormat;
+        Video[task_num][i]->decodeIntraSpec.intraShiftDC = m_Spec.decodeIntraSpec.intraShiftDC;
+
+        Video[task_num][i]->stream_type = m_ClipInfo.stream_type;
+        Video[task_num][i]->color_format = m_ClipInfo.color_format;
+        Video[task_num][i]->clip_info_width = m_ClipInfo.clip_info.width;
+        Video[task_num][i]->clip_info_height = m_ClipInfo.clip_info.height;
+
+        for (j = 0; j < 64; j++)
+            Video[task_num][i]->decodeIntraSpec._quantMatrix[j] = m_Spec.decodeIntraSpec._quantMatrix[j];
+
+        if (m_Spec.decodeIntraSpec.quantMatrix)
+        {
+            Video[task_num][i]->decodeIntraSpec.quantMatrix = Video[task_num][i]->decodeIntraSpec._quantMatrix;
+        }
+        else
+        {
+            Video[task_num][i]->decodeIntraSpec.quantMatrix = NULL;
+        }
+
+        Video[task_num][i]->decodeIntraSpec.scanMatrix = m_Spec.decodeIntraSpec.scanMatrix;
+
+        //IntraChroma
+        Video[task_num][i]->decodeIntraSpecChroma.intraVLCFormat = m_Spec.decodeIntraSpecChroma.intraVLCFormat;
+        Video[task_num][i]->decodeIntraSpecChroma.intraShiftDC = m_Spec.decodeIntraSpecChroma.intraShiftDC;
+
+        for (j = 0; j < 64; j++)
+            Video[task_num][i]->decodeIntraSpecChroma._quantMatrix[j] = m_Spec.decodeIntraSpecChroma._quantMatrix[j];
+
+        if (m_Spec.decodeIntraSpecChroma.quantMatrix)
+        {
+            Video[task_num][i]->decodeIntraSpecChroma.quantMatrix = Video[task_num][i]->decodeIntraSpecChroma._quantMatrix;
+        }
+        else
+        {
+            Video[task_num][i]->decodeIntraSpecChroma.quantMatrix = NULL;
+        }
+
+        Video[task_num][i]->decodeIntraSpecChroma.scanMatrix = m_Spec.decodeIntraSpecChroma.scanMatrix;
+
+        //Inter
+        for (j = 0; j < 64; j++)
+            Video[task_num][i]->decodeInterSpec._quantMatrix[j] = m_Spec.decodeInterSpec._quantMatrix[j];
+
+        if (m_Spec.decodeInterSpec.quantMatrix)
+        {
+            Video[task_num][i]->decodeInterSpec.quantMatrix = Video[task_num][i]->decodeInterSpec._quantMatrix;
+        }
+        else
+        {
+            Video[task_num][i]->decodeInterSpec.quantMatrix = NULL;
+        }
+
+        Video[task_num][i]->decodeInterSpec.scanMatrix = m_Spec.decodeInterSpec.scanMatrix;
+
+        //InterChroma
+        for (j = 0; j < 64; j++)
+            Video[task_num][i]->decodeInterSpecChroma._quantMatrix[j] = m_Spec.decodeInterSpecChroma._quantMatrix[j];
+
+        if (m_Spec.decodeInterSpecChroma.quantMatrix)
+        {
+            Video[task_num][i]->decodeInterSpecChroma.quantMatrix = Video[task_num][i]->decodeInterSpecChroma._quantMatrix;
+        }
+        else
+        {
+            Video[task_num][i]->decodeInterSpecChroma.quantMatrix = NULL;
+        }
+
+        Video[task_num][i]->decodeInterSpecChroma.scanMatrix = m_Spec.decodeInterSpecChroma.scanMatrix;
+
+    } // for
+
+    return MPEG2VideoDecoderBase::ProcessRestFrame(task_num);
+}
+
+void MPEG2VideoDecoderSW::OnDecodePicHeaderEx(int task_num)
+{
+    for (Ipp32s i = 0; i < m_nNumberOfThreads; i++) {
+        Ipp32s flag = PictureHeader[task_num].alternate_scan | IPPVC_LEAVE_QUANT_UNCHANGED;
+        ippiDecodeInterInit_MPEG2(NULL, flag, &m_Spec.decodeInterSpec);
+        m_Spec.decodeIntraSpec.intraVLCFormat = PictureHeader[task_num].intra_vlc_format;
+        m_Spec.decodeIntraSpec.intraShiftDC = PictureHeader[task_num].curr_intra_dc_multi;
+        ippiDecodeIntraInit_MPEG2(NULL, flag, m_Spec.decodeIntraSpec.intraVLCFormat, m_Spec.decodeIntraSpec.intraShiftDC, &m_Spec.decodeIntraSpec);
+
+        ippiDecodeInterInit_MPEG2(NULL, flag, &m_Spec.decodeInterSpecChroma);
+        ippiDecodeIntraInit_MPEG2(NULL, flag, m_Spec.decodeIntraSpec.intraVLCFormat, m_Spec.decodeIntraSpec.intraShiftDC, &m_Spec.decodeIntraSpecChroma);
+        m_Spec.flag = flag;
+    }
+}
+
+Status MPEG2VideoDecoderSW::UpdateFrameBuffer(int task_num, Ipp8u* iqm, Ipp8u*niqm)
+{
+      Ipp32s pitch_l, pitch_c;
+      Ipp32s height_l, height_c;
+      Ipp32s size_l, size_c;
+
+      if(frame_buffer.ptr_context_data &&
+        frame_buffer.allocated_mb_width == sequenceHeader.mb_width[task_num] &&
+        frame_buffer.allocated_mb_height == sequenceHeader.mb_height[task_num] &&
+        frame_buffer.allocated_cformat == m_ClipInfo.color_format)
+        return UMC_OK; // all is the same
+
+      pitch_l = align_value<Ipp32s>(sequenceHeader.mb_width[task_num]*16, ALIGN_VALUE);
+      height_l = align_value<Ipp32s>(sequenceHeader.mb_height[task_num]*16, ALIGN_VALUE);
+      size_l = height_l*pitch_l;
+      if (m_ClipInfo.color_format != YUV444) {
+
+        pitch_c = pitch_l >> 1;
+        height_c = height_l >> 1;
+        size_c = height_c*pitch_c;
+        if (m_ClipInfo.color_format == YUV422)
+          size_c *= 2;
+      } else {
+        pitch_c = pitch_l;
+        size_c = size_l;
+      }
+
+      frame_buffer.Y_comp_pitch = pitch_l;
+      frame_buffer.U_comp_pitch = pitch_c;
+      frame_buffer.V_comp_pitch = pitch_c;
+      frame_buffer.pic_size = size_l;
+
+      Ipp32u threadsNum = GetCurrThreadsNum(task_num);
+
+    for (Ipp32u i = 0; i < threadsNum; i += 1)
+    {
+        IppVideoContext* video = Video[task_num][i];
+
+        video->Y_comp_pitch = pitch_l;
+        video->U_comp_pitch = pitch_c;
+        video->V_comp_pitch = pitch_c;
+        video->pic_size = size_l;
+    }
+
+  for (Ipp32u i = 0; i < threadsNum; i += 1)
+    {
+      IppVideoContext* video = Video[task_num][i];
+
+      video->blkOffsets[0][0] = 0;
+      video->blkOffsets[0][1] = 8;
+      video->blkOffsets[0][2] = 8*pitch_l;
+      video->blkOffsets[0][3] = 8*pitch_l + 8;
+      video->blkOffsets[0][4] = 0;
+      video->blkOffsets[0][5] = 0;
+      video->blkOffsets[0][6] = 8*pitch_c;
+      video->blkOffsets[0][7] = 8*pitch_c;
+      video->blkOffsets[1][0] = 0;
+      video->blkOffsets[1][1] = 8;
+      video->blkOffsets[1][2] = pitch_l;
+      video->blkOffsets[1][3] = pitch_l + 8;
+      video->blkOffsets[1][4] = 0;
+      video->blkOffsets[1][5] = 0;
+      video->blkOffsets[1][6] = pitch_c;
+      video->blkOffsets[1][7] = pitch_c;
+      video->blkOffsets[2][0] = 0;
+      video->blkOffsets[2][1] = 8;
+      video->blkOffsets[2][2] = 16*pitch_l;
+      video->blkOffsets[2][3] = 16*pitch_l + 8;
+      video->blkOffsets[2][4] = 0;
+      video->blkOffsets[2][5] = 0;
+      video->blkOffsets[2][6] = 16*pitch_c;
+      video->blkOffsets[2][7] = 16*pitch_c;
+
+      video->blkPitches[0][0] = pitch_l;
+      video->blkPitches[0][1] = pitch_c;
+      video->blkPitches[1][0] = 2*pitch_l;
+      video->blkPitches[1][1] = pitch_c;
+      if (video->color_format != YUV420) video->blkPitches[1][1] = 2 * pitch_c;
+      video->blkPitches[2][0] = 2*pitch_l;
+      video->blkPitches[2][1] = 2*pitch_c;
+
+    }
+
+  if(frame_buffer.ptr_context_data &&
+    frame_buffer.allocated_mb_width >= sequenceHeader.mb_width[task_num] &&
+    frame_buffer.allocated_mb_height >= sequenceHeader.mb_height[task_num] &&
+    frame_buffer.allocated_cformat >= m_ClipInfo.color_format)
+    return UMC_OK; // use allocated before
+
+  frame_buffer.allocated_mb_width = sequenceHeader.mb_width[task_num];
+  frame_buffer.allocated_mb_height = sequenceHeader.mb_height[task_num];
+  frame_buffer.allocated_cformat = m_ClipInfo.color_format;
+
+#if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
+  if(pack_w.va_mode != VA_NO)
+  {
+      return UMC_OK;
+  }
+#endif
+
+  // Alloc frames
+
+  if(frame_buffer.mid_context_data != MID_INVALID)
+    m_pMemoryAllocator->Free(frame_buffer.mid_context_data);
+
+    Ipp32s flag_mpeg1 = (m_ClipInfo.stream_type == MPEG1_VIDEO) ? IPPVC_MPEG1_STREAM : 0;
+    ippiDecodeIntraInit_MPEG2(NULL, flag_mpeg1, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec.decodeIntraSpec);
+    ippiDecodeInterInit_MPEG2(NULL, flag_mpeg1, &m_Spec.decodeInterSpec);
+
+    m_Spec.decodeInterSpecChroma = m_Spec.decodeInterSpec;
+    m_Spec.decodeIntraSpecChroma = m_Spec.decodeIntraSpec;
+    m_Spec.flag = flag_mpeg1;
+
+    if (iqm)
+    {
+        ippiDecodeIntraInit_MPEG2(iqm, flag_mpeg1, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec.decodeIntraSpec);
+        m_Spec.decodeIntraSpecChroma = m_Spec.decodeIntraSpec;
+    }
+
+    if (niqm)
+    {
+        ippiDecodeInterInit_MPEG2(niqm, flag_mpeg1, &m_Spec.decodeInterSpec);
+        m_Spec.decodeInterSpecChroma = m_Spec.decodeInterSpec;
+    }
+
+    m_Spec.flag = flag_mpeg1;
+  
+    return UMC_OK;
+}
+
+Status MPEG2VideoDecoderSW::ThreadingSetup(Ipp32s maxThreads)
+{
+    memset(&m_Spec.decodeIntraSpec, 0, sizeof(IppiDecodeIntraSpec_MPEG2));
+    memset(&m_Spec.decodeInterSpec, 0, sizeof(IppiDecodeInterSpec_MPEG2));
+    ippiDecodeInterInit_MPEG2(NULL, IPPVC_MPEG1_STREAM, &m_Spec.decodeInterSpec);
+    m_Spec.decodeInterSpecChroma = m_Spec.decodeInterSpec;
+    m_Spec.decodeInterSpec.idxLastNonZero = 63;
+    m_Spec.decodeIntraSpec.intraVLCFormat = PictureHeader[0].intra_vlc_format;
+    m_Spec.decodeIntraSpec.intraShiftDC = PictureHeader[0].curr_intra_dc_multi;
+
+    Status sts = MPEG2VideoDecoderBase::ThreadingSetup(maxThreads);
+    if (sts != UMC_OK)
+        return sts;
+
+    for(int j = 0; j < 2*DPB_SIZE; j++)
+    {
+        for(int i = 0; i < m_nNumberOfThreads; i++)
+        {
+          // Intra&inter spec
+          memset(&Video[j][i]->decodeIntraSpec, 0, sizeof(IppiDecodeIntraSpec_MPEG2));
+          memset(&Video[j][i]->decodeInterSpec, 0, sizeof(IppiDecodeInterSpec_MPEG2));
+          ippiDecodeInterInit_MPEG2(NULL, IPPVC_MPEG1_STREAM, &Video[j][i]->decodeInterSpec);
+          Video[j][i]->decodeInterSpecChroma = Video[j][i]->decodeInterSpec;
+          Video[j][i]->decodeInterSpec.idxLastNonZero = 63;
+          Video[j][i]->decodeIntraSpec.intraVLCFormat = PictureHeader[0].intra_vlc_format;
+          Video[j][i]->decodeIntraSpec.intraShiftDC = PictureHeader[0].curr_intra_dc_multi;
+        }
+    }
+
+    return UMC_OK;
 }
 
 #endif // UMC_ENABLE_MPEG2_VIDEO_DECODER

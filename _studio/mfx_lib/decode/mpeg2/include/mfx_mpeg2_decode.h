@@ -17,20 +17,22 @@ File Name: mfx_mpeg2_decode.h
 typedef struct _DXVA_Status_VC1 *DXVA_Status_VC1;
 #endif
 
-//#include <deque>
 #include "mfx_common.h"
 #ifdef MFX_ENABLE_MPEG2_VIDEO_DECODE
 #include "mfxvideo++int.h"
 #include "mfx_mpeg2_dec_common.h"
 #include "umc_mpeg2_dec_base.h"
-#include "umc_data_pointers_copy.h"
-#include "umc_video_processing.h"
 #include "mfx_umc_alloc_wrapper.h"
 #include "mfxpcp.h"
 #include "mfx_task.h"
 #include "mfx_critical_error_handler.h"
 
+#include <memory>
 #include <list>
+
+#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+#include "umc_va_base.h"
+#endif
 
 //#define MFX_PROFILE_MPEG1 8
 #define DPB 10
@@ -104,143 +106,125 @@ typedef struct _MParam
 } MParam;
 
 
-class VideoDECODEMPEG2 : public VideoDECODE, public MfxCriticalErrorHandler
+class VideoDECODEMPEG2InternalBase : public MfxCriticalErrorHandler
 {
-
-    enum {
-    MPEG2_STATUS_REPORT_NUM = 512,
-};
-
 public:
-    static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
-    static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
-    static mfxStatus DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par);
+    VideoDECODEMPEG2InternalBase();
 
-    mfxStatus TaskRoutine(void *pParam);
-    mfxStatus CompleteTasks(void *pParam);
-    mfxStatus PerformStatusCheck(void *pParam);
+    virtual ~VideoDECODEMPEG2InternalBase();
 
-    VideoDECODEMPEG2(VideoCORE *core, mfxStatus *sts);
-    virtual ~VideoDECODEMPEG2();
+    virtual mfxStatus AllocFrames(mfxVideoParam *par);
+    static mfxStatus QueryIOSurfInternal(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
 
-    mfxStatus Init(mfxVideoParam *par);
     virtual mfxStatus Reset(mfxVideoParam *par);
+
+    virtual mfxStatus Init(mfxVideoParam *par, VideoCORE * core);
     virtual mfxStatus Close();
 
     virtual mfxStatus GetVideoParam(mfxVideoParam *par);
-    virtual mfxStatus GetFrameParam(mfxFrameParam *par);
-    virtual mfxStatus GetSliceParam(mfxSliceParam *par);
 
-    mfxStatus GetStatusReport(mfxFrameSurface1 *displaySurface, UMC::FrameMemID surface_id);
-    mfxStatus GetStatusReportByIndex(mfxFrameSurface1 *displaySurface, mfxU32 currIdx);
-    static mfxStatus CheckProtectionSettings(mfxVideoParam *input, mfxVideoParam *output, VideoCORE *core);
-    mfxFrameSurface1 *GetOriginalSurface(mfxFrameSurface1 *pSurface);
-    mfxStatus GetOutputSurface(mfxFrameSurface1 **surface_out, mfxFrameSurface1 *surface_work, UMC::FrameMemID index);
-
-    virtual mfxStatus DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out)
-        {bs; surface_work; surface_out;return MFX_ERR_NONE;};
-
-    virtual mfxStatus ConstructFrameImpl(mfxBitstream *in, mfxBitstream *out, mfxFrameSurface1 *surface_work);
-    virtual mfxStatus ConstructFrame(mfxBitstream *in, mfxBitstream *out, mfxFrameSurface1 *surface_work);
-
-    virtual mfxStatus GetDecodeStat(mfxDecodeStat *stat);
-    virtual mfxStatus DecodeFrameCheck(mfxBitstream *, mfxFrameSurface1 *, mfxFrameSurface1 **)
-    {
-        return MFX_ERR_NONE;
-    };
     virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs,
                                mfxFrameSurface1 *surface_work,
                                mfxFrameSurface1 **surface_out,
-                               MFX_ENTRY_POINT *pEntryPoint);
-  
-    mfxStatus CheckFrameData(const mfxFrameSurface1 *pSurface);
+                               MFX_ENTRY_POINT *pEntryPoint) = 0;
 
-    virtual mfxStatus GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts,mfxU16 bufsize);
-    virtual mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload);
-    virtual mfxStatus SetSkipMode(mfxSkipMode mode);
+    virtual mfxStatus TaskRoutine(void *pParam) = 0;
+
+    virtual mfxStatus ConstructFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work);
+    mfxStatus ConstructFrame(mfxBitstream *in, mfxBitstream *out, mfxFrameSurface1 *surface_work);
+    mfxStatus ConstructFrameImpl(mfxBitstream *in, mfxBitstream *out, mfxFrameSurface1 *surface_work);
+
+    mfxStatus GetOutputSurface(mfxFrameSurface1 **surface_out, mfxFrameSurface1 *surface_work, UMC::FrameMemID index);
+    mfxStatus SetOutputSurfaceParams(mfxFrameSurface1 *surface, int display_index);
+    mfxStatus SetSurfacePicStruct(mfxFrameSurface1 *surface, int display_index);
+    mfxStatus UpdateOutputSurfaceParamsFromWorkSurface(mfxFrameSurface1 *outputSurface, int display_index);
+    mfxFrameSurface1 *GetOriginalSurface(mfxFrameSurface1 *pSurface);
+    mfxStatus UpdateWorkSurfaceParams(int task_num);
+
+    virtual mfxStatus CompleteTasks(void *pParam) = 0;
+
+public:
+    Ipp32s display_frame_count;
+    Ipp32s cashed_frame_count;
+    Ipp32s skipped_frame_count;
+    Ipp32s dec_frame_count;
+    Ipp32s dec_field_count;
+    Ipp32s last_frame_count;
+
+    Ipp32s m_NumThreads;
+    Ipp32u maxNumFrameBuffered;
+
+    bool m_isFrameRateFromInit;
+    bool m_reset_done;
+    bool m_isDecodedOrder;
+
+    UMC::MediaData m_in[2*DPB];
+    mfxBitstream m_frame[NUM_FRAMES];
+    bool m_frame_in_use[NUM_FRAMES];
+
+    mfxF64 m_time[NUM_FRAMES];
+    UMC::FrameMemID mid[DPB];
+
+    UMC::Mutex m_guard;
+
+    Ipp32s m_InitW;
+    Ipp32s m_InitH;
+    Ipp32s m_InitPicStruct;
+
+    std::auto_ptr<UMC::MPEG2VideoDecoderBase> m_implUmc;
+
+    bool m_isSWBuf;
+    bool m_isOpaqueMemory;
+    mfxVideoParam m_vPar;
+    UMC::VideoDecoderParams m_vdPar;
+
+    mfx_UMC_FrameAllocator *m_FrameAllocator;
+    mfx_UMC_FrameAllocator_NV12    *m_FrameAllocator_nv12;
+
+    mfxFrameAllocRequest allocRequest;
+    mfxFrameAllocResponse allocResponse;
+    mfxFrameAllocResponse m_opaqueResponse;
 
 protected:
-    mfxStatus InternalReset(mfxVideoParam* par);
-    mfxStatus InternalResetUMC(mfxVideoParam* par, UMC::MediaData* data);
-    static mfxStatus QueryIOSurfInternal(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
-    static bool  IsHWSupported(VideoCORE *pCore, mfxVideoParam *par);
-    //mfxStatus LookHeader(VideoCORE *core, mfxBitstream* bs, mfxVideoParam* par, mfxFrameSurface1 *surface_work);
-
-    UMC::MPEG2VideoDecoderBase m_implUmc;
-    //UMC::DataPointersCopy m_PostProcessing;
-    UMC::VideoProcessing m_PostProcessing;
 
     VideoCORE *m_pCore;
 
-#ifdef UMC_VA_DXVA
-    DXVA_Status_VC1 m_pStatusReport[MPEG2_STATUS_REPORT_NUM];
-    std::list<DXVA_Status_VC1> m_pStatusList;
-#endif
+    bool m_resizing;
+    bool m_isSWDecoder;
 
-    mfx_UMC_FrameAllocator *m_FrameAllocator;
+    struct FcState
+    {
+        enum { NONE = 0, TOP = 1, BOT = 2, FRAME = 3 };
+        mfxU8 picStart : 1;
+        mfxU8 picHeader : 2;
+    } m_fcState;
 
-#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
-    mfx_UMC_FrameAllocator_D3D     *m_FrameAllocator_d3d;
-    mfx_UMC_FrameAllocator_NV12    *m_FrameAllocator_nv12;
-#else
-    mfx_UMC_FrameAllocator_NV12    *m_FrameAllocator_nv12;
-#endif
+    bool m_found_SH;
+    bool m_first_SH;
+    bool m_new_bs;
 
-    UMC::FrameMemID            mid[DPB];
-    UMC::FrameData *           m_FrameData[32];
-    mfxFrameAllocRequest allocRequest;
-    mfxFrameAllocResponse allocResponse;
+    Ipp8u m_last_bytes[NUM_REST_BYTES];
+    Ipp32s m_frame_curr;
+    Ipp32s m_frame_free;
+    bool m_frame_constructed;
+
     MParam m_task_param[2*DPB];
     Ipp32s m_task_num;
     Ipp32s m_prev_task_num;
-#if defined (ELK_WORKAROUND)
-    mfxFrameAllocResponse allocResponseAdd;
-#endif
+
     Ipp32s prev_index;
     Ipp32s next_index;
     Ipp32s curr_index;
     Ipp32s display_index;
     Ipp32s display_order;
-    Ipp32s dec_frame_count;
-    Ipp32s dec_field_count;
-    Ipp32s last_frame_count;
     Ipp64u last_timestamp;
     mfxF64 last_good_timestamp;
 
-    Ipp32s display_frame_count;
-    Ipp32s cashed_frame_count;
-    Ipp32s skipped_frame_count;
-
-    mfxVideoParam m_vPar;
-    mfxExtPAVPOption m_pavpOpt;
-
-    UMC::VideoDecoderParams m_vdPar;
-    mfxFrameParam m_fPar;
-    mfxSliceParam m_sPar;
-    UMC::VideoData m_out;
-    UMC::MediaData m_in[2*DPB];
-
-    mfxBitstream m_frame[NUM_FRAMES];
-    bool m_frame_in_use[NUM_FRAMES];
-    Ipp8u m_last_bytes[NUM_REST_BYTES];
-    Ipp32s m_frame_curr;
-    Ipp32s m_frame_free;
-    bool m_frame_constructed;
-    Ipp32s m_InitW;
-    Ipp32s m_InitH;
-    Ipp32s m_InitPicStruct;
     Ipp32s m_Protected;
-    bool m_found_SH;
-    bool m_first_SH;
-    bool m_new_bs;
-    bool m_isFrameRateFromInit;
-    mfxF64 m_time[NUM_FRAMES];
 
-    Ipp32s m_NumThreads;
-    Ipp32u maxNumFrameBuffered;
+    void ResetFcState(FcState& state) { state.picStart = state.picHeader = 0; }
+    mfxStatus UpdateCurrVideoParams(mfxFrameSurface1 *surface_work, int task_num);
 
-    mfxU16 m_extendedPicStruct;
-    UMC::Mutex m_guard;
     //get index to read input data:
     bool SetCurr_m_frame()
     {
@@ -265,19 +249,136 @@ protected:
         }
         return true;
     }
+};
 
-    //bool m_deferredInit;
+#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+namespace UMC
+{
+    class MPEG2VideoDecoderHW;
+};
+class VideoDECODEMPEG2Internal_HW : public VideoDECODEMPEG2InternalBase
+{
+public:
+    VideoDECODEMPEG2Internal_HW();
+
+    virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs,
+                               mfxFrameSurface1 *surface_work,
+                               mfxFrameSurface1 **surface_out,
+                               MFX_ENTRY_POINT *pEntryPoint);
+
+    virtual mfxStatus TaskRoutine(void *pParam);
+    virtual mfxStatus Init(mfxVideoParam *par, VideoCORE * core);
+    virtual mfxStatus Reset(mfxVideoParam *par);
+    virtual mfxStatus Close();
+
+    virtual mfxStatus CompleteTasks(void *pParam);
+
+    virtual mfxStatus GetVideoParam(mfxVideoParam *par);
+
+protected:
+
+#ifdef UMC_VA_DXVA
+    enum {
+        MPEG2_STATUS_REPORT_NUM = 512,
+    };
+
+    DXVA_Status_VC1 m_pStatusReport[MPEG2_STATUS_REPORT_NUM];
+    std::list<DXVA_Status_VC1> m_pStatusList;
+#endif
+
+    UMC::MPEG2VideoDecoderHW * m_implUmcHW;
+    mfxExtPAVPOption m_pavpOpt;
+
+    mfx_UMC_FrameAllocator_D3D     *m_FrameAllocator_d3d;
+
+    virtual mfxStatus ConstructFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work);
+    mfxStatus PerformStatusCheck(void *pParam);
+    mfxStatus GetStatusReport(mfxFrameSurface1 *displaySurface, UMC::FrameMemID surface_id);
+    mfxStatus GetStatusReportByIndex(mfxFrameSurface1 *displaySurface, mfxU32 currIdx);
+    virtual mfxStatus AllocFrames(mfxVideoParam *par);
+    mfxStatus RestoreDecoder(Ipp32s frame_buffer_num, UMC::FrameMemID mem_id_to_unlock, Ipp32s task_num_to_unlock, bool end_frame, bool remove_2frames, int decrease_dec_field_count);
+};
+
+#endif // #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+
+#if !defined(MFX_ENABLE_HW_ONLY_MPEG2_DECODER) || !defined (MFX_VA)
+namespace UMC
+{
+    class MPEG2VideoDecoderSW;
+};
+
+class VideoDECODEMPEG2Internal_SW : public VideoDECODEMPEG2InternalBase
+{
+public:
+    VideoDECODEMPEG2Internal_SW();
+
+    virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs,
+                               mfxFrameSurface1 *surface_work,
+                               mfxFrameSurface1 **surface_out,
+                               MFX_ENTRY_POINT *pEntryPoint);
+
+    virtual mfxStatus TaskRoutine(void *pParam);
+
+    virtual mfxStatus Init(mfxVideoParam *par, VideoCORE * core);
+    virtual mfxStatus Close();
+    virtual mfxStatus Reset(mfxVideoParam *par);
+
+    virtual mfxStatus CompleteTasks(void *pParam);
+
+protected:
+    UMC::VideoData m_out;
+    UMC::FrameData * m_FrameData[32];
+    UMC::MPEG2VideoDecoderSW * m_implUmcSW;
+};
+#endif
+
+class VideoDECODEMPEG2 : public VideoDECODE
+{
+
+public:
+    std::auto_ptr<VideoDECODEMPEG2InternalBase> internalImpl;
+    
+    static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
+    static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
+    static mfxStatus DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVideoParam *par);
+
+    VideoDECODEMPEG2(VideoCORE *core, mfxStatus *sts);
+    virtual ~VideoDECODEMPEG2();
+
+    mfxStatus Init(mfxVideoParam *par);
+    virtual mfxStatus Reset(mfxVideoParam *par);
+    virtual mfxStatus Close();
+
+    virtual mfxStatus GetVideoParam(mfxVideoParam *par);
+
+    static mfxStatus CheckProtectionSettings(mfxVideoParam *input, mfxVideoParam *output, VideoCORE *core);
+
+    virtual mfxStatus DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out)
+        {bs; surface_work; surface_out;return MFX_ERR_NONE;};
+
+
+    virtual mfxStatus GetDecodeStat(mfxDecodeStat *stat);
+    virtual mfxStatus DecodeFrameCheck(mfxBitstream *, mfxFrameSurface1 *, mfxFrameSurface1 **)
+    {
+        return MFX_ERR_NONE;
+    };
+    virtual mfxStatus DecodeFrameCheck(mfxBitstream *bs,
+                               mfxFrameSurface1 *surface_work,
+                               mfxFrameSurface1 **surface_out,
+                               MFX_ENTRY_POINT *pEntryPoint);
+  
+    mfxStatus CheckFrameData(const mfxFrameSurface1 *pSurface);
+
+    virtual mfxStatus GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts,mfxU16 bufsize);
+    virtual mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload);
+    virtual mfxStatus SetSkipMode(mfxSkipMode mode);
+
+protected:
+    VideoCORE *m_pCore;
+
     bool m_isInitialized;
-    bool m_isSWBuf;
-    bool m_reset_done;
-    bool m_resizing;
-    bool m_isShDecoded;
     bool m_isSWImpl;
-    bool m_isOpaqueMemory;
 
-    mfxFrameAllocResponse m_opaqueResponse;
-
-    bool m_isDecodedOrder;
 
     enum SkipLevel
     {
@@ -287,21 +388,6 @@ protected:
         SKIP_ALL
     };
     Ipp32s m_SkipLevel;
-
-    struct FcState
-    {
-        enum { NONE = 0, TOP = 1, BOT = 2, FRAME = 3 };
-        mfxU8 picStart : 1;
-        mfxU8 picHeader : 2;
-    } m_fcState;
-
-    void ResetFcState(FcState& state) { state.picStart = state.picHeader = 0; }
-    mfxStatus RestoreDecoder(Ipp32s frame_buffer_num, UMC::FrameMemID mem_id_to_unlock, Ipp32s task_num_to_unlock, bool end_frame, bool remove_2frames, int decrease_dec_field_count);
-    mfxStatus UpdateCurrVideoParams(mfxFrameSurface1 *surface_work, int task_num);
-    mfxStatus UpdateWorkSurfaceParams(int task_num);
-    mfxStatus UpdateOutputSurfaceParamsFromWorkSurface(mfxFrameSurface1 *outputSurface, int display_index);
-    mfxStatus SetSurfacePicStruct(mfxFrameSurface1 *surface, int task_num);
-    mfxStatus SetOutputSurfaceParams(mfxFrameSurface1 *surface, int task_num);
 };
 
 #pragma warning(default: 4324)

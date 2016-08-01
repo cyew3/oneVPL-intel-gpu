@@ -27,11 +27,12 @@ static const mfxI32 MFX_MPEG2_DECODE_ALIGNMENT = 16;
 #include "umc_va_dxva2.h"
 #endif
 
+#include "umc_mpeg2_dec_sw.h"
+#include "umc_mpeg2_dec_hw.h"
+
 //#if defined (MFX_VA_LINUX)
 //#include "umc_va_base.h"
 //#endif
-
-#undef ELK_WORKAROUND
 
 //#define _status_report_debug
 //#define _threading_deb
@@ -88,22 +89,22 @@ enum
     eGROUP = 0xb8
 };
 
-static bool IsStatusReportEnable(VideoCORE * core)
+bool IsHWSupported(VideoCORE *pCore, mfxVideoParam *par)
 {
-    core; // touch unreferenced parameter
-    UMC::VideoAccelerator *va;
-    core->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
-    
-    if (true == va->IsUseStatusReport())
+    if((par->mfx.CodecProfile == MFX_PROFILE_MPEG1 && pCore->GetPlatformType()== MFX_PLATFORM_HARDWARE))
     {
-        //eMFXHWType type = core->GetHWType();
-        //return (type == MFX_HW_SNB) || (type == MFX_HW_IVB) || (type == MFX_HW_HSW) || (type == MFX_HW_HSW_ULT) || (type == MFX_HW_VLV) || (type == MFX_HW_BDW) || (type == MFX_HW_SCL);
-        return true;
+        return false;
     }
 
-    return false;
-}
+#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+    if (MFX_ERR_NONE != pCore->IsGuidSupported(sDXVA2_ModeMPEG2_VLD, par))
+    {
+        return false;
+    }
+#endif
 
+    return true;
+}
 
 mfxU8 GetMfxCodecLevel(mfxI32 level)
 {
@@ -293,52 +294,6 @@ void UpdateMfxVideoParam(mfxVideoParam& vPar, const UMC::sSequenceHeader& sh, co
                                                    vPar.mfx.ExtendedPicStruct);
 }
 
-void UpdateMfxFrameParam(mfxFrameParam& fPar, const UMC::sSequenceHeader& sh, const UMC::sPictureHeader& ph)
-{
-    fPar.MPEG2.FrameType = GetMfxFrameType((mfxU8)ph.picture_coding_type, ph.picture_structure);
-
-    /* next code is incorrect and does not make sense
-    fPar.MPEG2.FrameWinMbMinus1 = (mfxU16)(sh.mb_width - 1); // should be (mfxU16)(*sh.mb_width - 1)
-    fPar.MPEG2.FrameHinMbMinus1 = (mfxU16)(sh.mb_height - 1); // should be (mfxU16)(*sh.mb_height - 1)
-    fPar.MPEG2.NumMb = (fPar.MPEG2.FrameWinMbMinus1 + 1) * (fPar.MPEG2.FrameHinMbMinus1 + 1);
-    */
-
-    fPar.MPEG2.SecondFieldFlag = 0;
-    fPar.MPEG2.FieldPicFlag = (ph.picture_structure != FRAME_PICTURE);
-    fPar.MPEG2.InterlacedFrameFlag = 0;
-    fPar.MPEG2.BottomFieldFlag = (ph.picture_structure == BOTTOM_FIELD);
-    fPar.MPEG2.ChromaFormatIdc = sh.chroma_format;
-    fPar.MPEG2.RefPicFlag = (ph.picture_coding_type != (UMC::MPEG2FrameType)UMC::B_PICTURE);
-    fPar.MPEG2.BackwardPredFlag = (ph.picture_coding_type == (UMC::MPEG2FrameType)UMC::B_PICTURE);
-    fPar.MPEG2.NoResidDiffs = 0;
-    fPar.MPEG2.BrokenLinkFlag = sh.broken_link;
-    fPar.MPEG2.CloseEntryFlag = sh.closed_gop;
-
-    fPar.MPEG2.NumRefFrame = GetMfxNumRefFrame((mfxU8)ph.picture_coding_type);
-    fPar.MPEG2.IntraPicFlag = (ph.picture_coding_type == (UMC::MPEG2FrameType)UMC::I_PICTURE);
-    fPar.MPEG2.TemporalReference = (mfxU16)ph.temporal_reference;
-    fPar.MPEG2.ProgressiveFrame = ph.progressive_frame;
-    fPar.MPEG2.Chroma420type = 0;
-    fPar.MPEG2.RepeatFirstField = ph.repeat_first_field;
-    fPar.MPEG2.AlternateScan = ph.alternate_scan;
-    fPar.MPEG2.IntraVLCformat = ph.intra_vlc_format;
-    fPar.MPEG2.QuantScaleType = ph.q_scale_type;
-    fPar.MPEG2.ConcealmentMVs = ph.concealment_motion_vectors;
-    fPar.MPEG2.FrameDCTprediction = ph.frame_pred_frame_dct;
-    fPar.MPEG2.TopFieldFirst = ph.top_field_first;
-    fPar.MPEG2.PicStructure = ph.picture_structure;
-    fPar.MPEG2.IntraDCprecision = ph.intra_dc_precision;
-
-    Ipp8u f_code_8u[4] = {
-        (Ipp8u)ph.f_code[0],
-        (Ipp8u)ph.f_code[1],
-        (Ipp8u)ph.f_code[2],
-        (Ipp8u)ph.f_code[3]
-    };
-
-    fPar.MPEG2.BitStreamFcodes = GetMfxBitStreamFcodes(f_code_8u);
-}
-
 UMC::ColorFormat GetUmcColorFormat(mfxU8 colorFormat)
 {
     switch (colorFormat)
@@ -350,7 +305,7 @@ UMC::ColorFormat GetUmcColorFormat(mfxU8 colorFormat)
     }
 }
 
-bool DARtoPAR(mfxI32 width, mfxI32 height, mfxI32 dar_h, mfxI32 dar_v,
+static bool DARtoPAR(mfxI32 width, mfxI32 height, mfxI32 dar_h, mfxI32 dar_v,
                 mfxI32 *par_h, mfxI32 *par_v)
 {
   if(0 == width || 0 == height) 
@@ -389,7 +344,7 @@ bool DARtoPAR(mfxI32 width, mfxI32 height, mfxI32 dar_h, mfxI32 dar_v,
 }
 
 
-bool CalcAspectRatio(mfxI32 dar_code, mfxI32 width, mfxI32 height,
+static bool CalcAspectRatio(mfxI32 dar_code, mfxI32 width, mfxI32 height,
                                               mfxI32* AspectRatioW, mfxI32* AspectRatioH)
 {
       bool ret = true;
@@ -415,80 +370,16 @@ bool CalcAspectRatio(mfxI32 dar_code, mfxI32 width, mfxI32 height,
 }
 
 VideoDECODEMPEG2::VideoDECODEMPEG2(VideoCORE* core, mfxStatus *sts)
-: VideoDECODE()
-, MfxCriticalErrorHandler()
-, m_implUmc()
-, m_pCore(core)
-, m_FrameAllocator(NULL)
-#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
-, m_FrameAllocator_d3d(NULL)
-#endif
-, m_FrameAllocator_nv12(NULL)
-, m_isInitialized(false)
-, m_isSWBuf(false)
-, m_isSWImpl(false)
+    : VideoDECODE()
+    , m_pCore(core)
+    , m_isInitialized(false)
+    , m_isSWImpl(false)
 {
-    int i;
-
-    for(i = 0; i < NUM_FRAMES; i++)
-    {
-        m_frame[i].Data = NULL;
-        m_frame_in_use[i] = false;
-    }
-    m_frame_curr = -1;
-    m_frame_free = -1;
-    m_frame_constructed = true;
-
     *sts = MFX_ERR_NONE;
     if (!m_pCore)
         *sts = MFX_ERR_NULL_PTR;
 
-    for(i = 0; i < DPB; i++)
-    {
-        mid[i] = -1;
-    }
-
-    prev_index      = -1;
-    curr_index      = -1;
-    next_index      = -1;
-    display_index   = -1;
-    display_order   =  0;
-    dec_frame_count = 0;
-    dec_field_count = 0;
-    last_frame_count = 0;
-    display_frame_count = 0;
-    cashed_frame_count = 0;
-    skipped_frame_count = 0;
-    last_timestamp   = 0;
-    last_good_timestamp = 0.0;
     m_SkipLevel = SKIP_NONE;
-    m_reset_done = false;
-    m_resizing = false;
-    m_InitW = 0;
-    m_InitH = 0;
-    m_InitPicStruct = 0;
-    m_extendedPicStruct = 0;
-
-#ifdef UMC_VA_DXVA
-    memset(m_pStatusReport, 0, sizeof(DXVA_Status_VC1) * MPEG2_STATUS_REPORT_NUM);
-#endif
-
-    m_found_SH = false;
-    m_first_SH = true;
-    m_new_bs   = true;
-
-    for(int i = 0; i < NUM_FRAMES; i++)
-        m_time[i] = (mfxF64)(-1);
-
-    m_isDecodedOrder = false;
-    m_isOpaqueMemory = false;
-    m_isFrameRateFromInit = false;
-    memset(&allocResponse, 0, sizeof(mfxFrameAllocResponse));
-    memset(&m_opaqueResponse, 0, sizeof(mfxFrameAllocResponse));
-#if (defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)) && defined (ELK_WORKAROUND)
-    memset(&allocResponseAdd, 0, sizeof(mfxFrameAllocResponse));
-#endif
-    memset(m_last_bytes,0,NUM_REST_BYTES);
 }
 
 VideoDECODEMPEG2::~VideoDECODEMPEG2()
@@ -503,26 +394,7 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam *par)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
-
-    maxNumFrameBuffered = NUM_FRAMES_BUFFERED;
-
-    m_frame_curr = -1;
-    m_frame_free = -1;
-    m_frame_constructed = true;
-    m_found_SH = false;
-    m_first_SH = true;
-    memset(m_last_bytes,0,NUM_REST_BYTES);
-    m_task_num = 0;
-    m_prev_task_num = -1;
-
     MFX_CHECK_NULL_PTR1(par);
-
-    // video conference mode
-    // async depth == 1 means no bufferezation
-    if (1 == par->AsyncDepth)
-    {
-        maxNumFrameBuffered = 1;
-    }
 
     mfxStatus mfxSts = MFX_ERR_NONE;
 
@@ -539,37 +411,7 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam *par)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    if (!(par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY |
-                            MFX_IOPATTERN_IN_SYSTEM_MEMORY |
-                            MFX_IOPATTERN_OUT_VIDEO_MEMORY|
-                            MFX_IOPATTERN_OUT_SYSTEM_MEMORY |
-                            MFX_IOPATTERN_IN_OPAQUE_MEMORY |
-                            MFX_IOPATTERN_OUT_OPAQUE_MEMORY)))
-    {
-       return MFX_ERR_INVALID_VIDEO_PARAM;
-    }
-
-    Ipp32u size = Ipp32u (par->mfx.FrameInfo.Width * par->mfx.FrameInfo.Height *3L/2);
-    Ipp32u MaxLength = 1024 * 500;
-
-    if (size > MaxLength)
-    {
-        MaxLength = size;
-    }
-
-    for (int i = 0; i < NUM_FRAMES; i++)
-    {
-        memset(&m_frame[i], 0, sizeof(mfxBitstream));
-        m_frame[i].MaxLength = MaxLength;
-        m_frame[i].Data = new mfxU8[MaxLength];
-        m_frame[i].DataLength = 0;
-        m_frame[i].DataOffset = 0;
-        m_frame_in_use[i] = false;
-    }
-
     mfxU16 IOPattern = par->IOPattern;
-
-    m_isDecodedOrder = (1 == par->mfx.DecodedOrder) ? true : false;
 
 #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
         
@@ -585,284 +427,37 @@ mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam *par)
 
         if(m_isSWImpl)
         {
-            m_FrameAllocator_nv12 = new mfx_UMC_FrameAllocator_NV12;
-            m_FrameAllocator = m_FrameAllocator_nv12;
+#ifndef MFX_ENABLE_HW_ONLY_MPEG2_DECODER
+            internalImpl.reset(new VideoDECODEMPEG2Internal_SW);
+#endif
         }
         else
         {
-            if (IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
-            {
-                m_FrameAllocator_d3d = new mfx_UMC_FrameAllocator_D3D;
-            }
-            else
-            {
-                m_FrameAllocator_d3d = new mfx_UMC_FrameAllocator_D3D;
-            }
-            m_FrameAllocator = m_FrameAllocator_d3d;
+            internalImpl.reset(new VideoDECODEMPEG2Internal_HW);
         }
+
         if(IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
-            m_isSWBuf = true;
+            internalImpl->m_isSWBuf = true;
 #else
         IOPattern |= MFX_IOPATTERN_IN_SYSTEM_MEMORY;
-        m_FrameAllocator_nv12 = new mfx_UMC_FrameAllocator_NV12;
-        m_FrameAllocator = m_FrameAllocator_nv12;
+        internalImpl.reset(new VideoDECODEMPEG2Internal_SW);
         m_isSWImpl = true;
 #endif
 
-    if(m_isSWImpl && par->Protected)
-    {
-        if (MFX_HW_UNKNOWN == type)
-        {
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-        }
+    mfxSts = internalImpl->Init(par, m_pCore);
+    if (mfxSts != MFX_ERR_NONE)
+        return mfxSts;
 
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-
-    if (IS_PROTECTION_ANY(par->Protected))
-    {
-        mfxExtPAVPOption * pavpOpt = (mfxExtPAVPOption*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
-        if (IS_PROTECTION_PAVP_ANY(par->Protected) && !pavpOpt)
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-        if (!IS_PROTECTION_PAVP_ANY(par->Protected) && pavpOpt)
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-
-        if (pavpOpt)
-            memcpy_s(&m_pavpOpt, sizeof(mfxExtPAVPOption), pavpOpt, sizeof(mfxExtPAVPOption));
-    }
-
-    // frames allocation
-    memset(&allocResponse, 0, sizeof(mfxFrameAllocResponse));
-
-    if (false == m_isSWImpl || (true == m_isSWImpl && ((IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) || IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)))
-    {
-        // positive condition means that decoder was configured as
-        //  a. as hardware implementation or
-        //  b. as software implementation with d3d9 output surfaces
-
-        mfxExtOpaqueSurfaceAlloc *pOpqExt = NULL;
-
-        QueryIOSurfInternal(m_pCore, par, &allocRequest);
-
-        //const mfxU16 NUM = allocRequest.NumFrameSuggested;
-        allocResponse.NumFrameActual = allocRequest.NumFrameSuggested;
-
-        if (true == m_isSWImpl)
-        {
-            // software decoder implementation
-            // output buffer is external d3d9 surfaces, so decoder should allocate internal system memory surfaces
-            allocRequest.Type = MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
-        }
-        else
-        {
-            // hardware decoder implementation
-            if (MFX_IOPATTERN_OUT_SYSTEM_MEMORY & IOPattern)
-            {
-                // output buffer is external system memory, so decoder should allocate d3d9 surfaces
-                allocRequest.Type = MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
-            }
-            else if (MFX_IOPATTERN_OUT_VIDEO_MEMORY & IOPattern)
-            {
-                // output buffer is external d3d9 surfaces, so decoder should request d3d9 surfaces from external allocator
-                allocRequest.Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET;
-                //m_FrameAllocator->SetExternalFramesResponse(&allocResponse);
-            }
-        }
-
-        if (MFX_IOPATTERN_OUT_OPAQUE_MEMORY & IOPattern) // opaque memory case
-        {
-            pOpqExt = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-
-            if (NULL != pOpqExt)
-            {
-                if (allocRequest.NumFrameMin > pOpqExt->Out.NumSurface)
-                {
-                    return MFX_ERR_INVALID_VIDEO_PARAM;
-                }
-
-                m_isOpaqueMemory = true;
-
-                // We shouldn't analyze MFX_MEMTYPE_FROM_DECODE
-                //if (MFX_MEMTYPE_FROM_DECODE & pOpqExt->Out.Type)
-                //{
-                    /*
-                    if (!(MFX_MEMTYPE_DXVA2_DECODER_TARGET & pOpqExt->Out.Type) && !(MFX_MEMTYPE_SYSTEM_MEMORY & pOpqExt->Out.Type))
-                    {
-                        return MFX_ERR_INVALID_VIDEO_PARAM;
-                    }
-
-                    if ((MFX_MEMTYPE_DXVA2_DECODER_TARGET & pOpqExt->Out.Type) && (MFX_MEMTYPE_SYSTEM_MEMORY & pOpqExt->Out.Type))
-                    {
-                        return MFX_ERR_INVALID_VIDEO_PARAM;
-                    }*/
-
-                if (true == m_isSWImpl)
-                {
-                    if (MFX_MEMTYPE_SYSTEM_MEMORY & pOpqExt->Out.Type)
-                    {
-                        {
-                            // map surfaces with opaque
-                            allocRequest.Type = (mfxU16)pOpqExt->Out.Type;
-                            allocRequest.NumFrameMin = allocRequest.NumFrameSuggested = (mfxU16)pOpqExt->Out.NumSurface;
-                        }
-                    }
-                    else
-                    {
-                        allocRequest.Type = MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_FROM_DECODE;
-                        allocRequest.Type |= MFX_MEMTYPE_DXVA2_DECODER_TARGET;
-                        allocRequest.NumFrameMin = allocRequest.NumFrameSuggested = (mfxU16)pOpqExt->Out.NumSurface;
-                    }
-                }
-                else
-                    allocRequest.NumFrameMin = allocRequest.NumFrameSuggested = (mfxU16)pOpqExt->Out.NumSurface;
-                
-                // We shouldn't analyze MFX_MEMTYPE_FROM_DECODE. Commented block below was the case when MFX_MEMTYPE_FROM_DECODE
-                // was not set
-                /* 
-                }
-                else
-                {
-                    mfxStatus sts;
-                    mfxFrameAllocRequest trequest = allocRequest;
-                    trequest.Type =  (mfxU16)pOpqExt->Out.Type;
-                    trequest.NumFrameMin = trequest.NumFrameSuggested = (mfxU16)pOpqExt->Out.NumSurface;
-
-                    sts = m_pCore->AllocFrames(&trequest, 
-                                               &m_opaqueResponse,
-                                               pOpqExt->In.Surfaces, 
-                                               pOpqExt->In.NumSurface);
-
-                    if (MFX_ERR_NONE != sts && MFX_ERR_UNSUPPORTED != sts)
-                    {
-                        // unsupported means that current Core couldn;t allocate the surfaces
-                        return sts;
-                    }
-                    
-                }
-                */
-            }
-        }
-
-        if (true == m_isOpaqueMemory && NULL != pOpqExt)
-        {
-            mfxSts  = m_pCore->AllocFrames(&allocRequest, 
-                                           &allocResponse, 
-                                           pOpqExt->Out.Surfaces, 
-                                           pOpqExt->Out.NumSurface);
-        }
-        else
-        {
-            bool isNeedCopy = ((MFX_IOPATTERN_OUT_SYSTEM_MEMORY & IOPattern) && (allocRequest.Type & MFX_MEMTYPE_INTERNAL_FRAME)) || ((MFX_IOPATTERN_OUT_VIDEO_MEMORY & IOPattern) && (m_isSWImpl));
-            allocRequest.AllocId = par->AllocId;
-#ifdef MFX_VA_WIN
-            allocRequest.Type |=MFX_MEMTYPE_SHARED_RESOURCE;
-#endif
-            mfxSts = m_pCore->AllocFrames(&allocRequest, &allocResponse, isNeedCopy);
-            if(mfxSts)
-                return MFX_ERR_INVALID_VIDEO_PARAM;
-        }
-
-        if (mfxSts != MFX_ERR_NONE && mfxSts != MFX_ERR_NOT_FOUND)
-        {
-            // second status means that external allocator was not found, it is ok
-            return mfxSts;
-        }
-
-        #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
-            if (false == m_isSWImpl)
-            {
-                // create directx video accelerator
-                mfxSts = m_pCore->CreateVA(par, &allocRequest, &allocResponse, m_FrameAllocator);
-                if(mfxSts)
-                    return MFX_ERR_INVALID_VIDEO_PARAM;
-            }
-        #endif
-
-        UMC::Status sts = UMC::UMC_OK;
-
-        // no need to save surface descriptors if all memory is d3d
-        if ((false == m_isSWImpl && (IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)) || (true == m_isSWImpl && (IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)))
-        {
-            sts = m_FrameAllocator->InitMfx(NULL, m_pCore, par, &allocRequest, &allocResponse, false, m_isSWImpl);
-        }
-        else
-        {
-             // means that memory is d3d9 surfaces
-            m_FrameAllocator->SetExternalFramesResponse(&allocResponse);
-            sts = m_FrameAllocator->InitMfx(NULL, m_pCore, par, &allocRequest, &allocResponse, true, m_isSWImpl);
-        }
-
-        if (UMC::UMC_OK != sts)
-        {
-            return MFX_ERR_MEMORY_ALLOC;
-        }
-    }
-    else
-    {
-        // positive condition means that decoder was configured as 
-        // software implementation with system external output memory
-        UMC::Status sts = m_FrameAllocator->InitMfx(NULL, m_pCore, par, &allocRequest, &allocResponse, true, m_isSWImpl);
-        
-        if (UMC::UMC_OK != sts)
-        {
-            return MFX_ERR_MEMORY_ALLOC;
-        }
-    }
-
-    m_extendedPicStruct = par->mfx.ExtendedPicStruct;
-
-    m_vdPar.info.framerate = 0;
-
-    m_InitW = par->mfx.FrameInfo.Width;
-    m_InitH = par->mfx.FrameInfo.Height;
-
-    mfxSts = InternalReset(par);
-    MFX_CHECK_STS(mfxSts);
-    
-    m_vdPar.numThreads = (mfxU16)(par->AsyncDepth ? par->AsyncDepth : m_pCore->GetAutoAsyncDepth());
-
-    if (m_pCore->GetPlatformType()== MFX_PLATFORM_HARDWARE)
-    {
-        if (true == m_isSWImpl)
-        {
-            m_vdPar.pVideoAccelerator = NULL;
-        }
-        else
-        {
-            m_vdPar.numThreads = 1;
-        }
-    }
-
-    m_implUmc.Close();
-
-    // save framerate value from init
-    mfxU32 frameRateD = par->mfx.FrameInfo.FrameRateExtD;
-    mfxU32 frameRateN = par->mfx.FrameInfo.FrameRateExtN;
-
-    m_vdPar.info.aspect_ratio_width = par->mfx.FrameInfo.AspectRatioW;
-    m_vdPar.info.aspect_ratio_height = par->mfx.FrameInfo.AspectRatioH;
-    
-    if (0 != frameRateD && 0 != frameRateN)
-    {
-        m_vdPar.info.framerate = (Ipp64f) frameRateN / frameRateD;
-        m_isFrameRateFromInit = true;
-    }
-
-    UMC::Status umcRes = m_implUmc.Init(&m_vdPar);
+    UMC::Status umcRes = internalImpl->m_implUmc->Init(&internalImpl->m_vdPar);
     MFX_CHECK_UMC_STS(umcRes);
     
-    umcRes = m_implUmc.GetInfo(&m_vdPar);
+    umcRes = internalImpl->m_implUmc->GetInfo(&internalImpl->m_vdPar);
     MFX_CHECK_UMC_STS(umcRes);
 
     if (MFX_PLATFORM_HARDWARE == m_pCore->GetPlatformType() && true == m_isSWImpl)
     {
         mfxSts = MFX_WRN_PARTIAL_ACCELERATION;
     }
-
-    m_out.Close();
-    m_out.SetAlignment(MFX_MPEG2_DECODE_ALIGNMENT);
-    umcRes = m_out.Init(m_vdPar.info.clip_info.width, m_vdPar.info.clip_info.height, m_vdPar.info.color_format);
-    MFX_CHECK_UMC_STS(umcRes);
 
     m_isInitialized = true;
 
@@ -874,105 +469,40 @@ mfxStatus VideoDECODEMPEG2::Reset(mfxVideoParam *par)
 {
     MFX_CHECK_NULL_PTR1(par);
 
-    if (par->AsyncDepth != m_vPar.AsyncDepth)
+    if (par->AsyncDepth != internalImpl->m_vPar.AsyncDepth)
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    if (MFX_PLATFORM_SOFTWARE == m_pCore->GetPlatformType() || m_isSWImpl)
+    eMFXHWType type = m_pCore->GetHWType();
+
+    mfxStatus mfxSts = CheckVideoParamDecoders(par, m_pCore->IsExternalFrameAllocator(), type);
+    if (MFX_ERR_NONE != mfxSts)
     {
-        for (mfxU32 i = 0; i < DPB; i++)
-        {
-            if(mid[i] >= 0) m_FrameAllocator->Unlock(mid[i]);
-        }
+        return MFX_ERR_INVALID_VIDEO_PARAM;
     }
-
-    for (mfxU32 i = 0; i < DPB; i++)
-    {
-        if (mid[i] >= 0)
-        {
-            m_FrameAllocator->DecreaseReference(mid[i]);
-        }
-    }
-
-    for (mfxU32 i = 0; i < DPB; i++)
-    {
-        mid[i] = -1;
-    }
-
-    prev_index      = -1;
-    curr_index      = -1;
-    next_index      = -1;
-    display_index   = -1;
-    display_order   =  0;
-    dec_frame_count = 0;
-    dec_field_count = 0;
-    display_frame_count = 0;
-    cashed_frame_count = 0;
-    skipped_frame_count = 0;
-    last_frame_count = 0;
-    last_timestamp   = 0;
-    m_SkipLevel = SKIP_NONE;
-
-    maxNumFrameBuffered = NUM_FRAMES_BUFFERED;
-
-    m_FrameAllocator->Reset();
-    m_reset_done = true;
-    m_resizing = false;
-
-    m_frame_curr = -1;
-    m_frame_free = -1;
-    m_frame_constructed = true;
-    m_found_SH = false;
-    m_first_SH = true;
-    m_new_bs   = true;
-
-    m_isFrameRateFromInit = false;
 
     mfxExtOpaqueSurfaceAlloc *pOpqExt = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-
-    if (NULL != pOpqExt)
+    if (pOpqExt)
     {
-        if (false == m_isOpaqueMemory)
+        if (false == internalImpl->m_isOpaqueMemory)
         {
             // decoder was not initialized with opaque extended buffer
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
         }
 
-        if (allocRequest.NumFrameMin != pOpqExt->Out.NumSurface)
+        if (internalImpl->allocRequest.NumFrameMin != pOpqExt->Out.NumSurface)
         {
             return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
         }
     }
 
-    m_task_num = 0;
-    m_prev_task_num = -1;
+    m_SkipLevel = SKIP_NONE;
 
-#ifdef UMC_VA_DXVA
-    memset(m_pStatusReport, 0, sizeof(DXVA_Status_VC1) * MPEG2_STATUS_REPORT_NUM);
-#endif
+    mfxSts = internalImpl->Reset(par);
+    MFX_CHECK_STS(mfxSts);
 
-    for (mfxU32 i = 0; i < NUM_FRAMES; i++)
-    {
-        m_frame[i].DataLength = 0;
-        m_frame[i].DataOffset = 0;
-        m_frame_in_use[i] = false;
-        m_time[i] = (mfxF64)(-1);
-    }
-
-    memset(m_last_bytes,0,NUM_REST_BYTES);
-
-    // use framerate value from init
-    mfxU32 frameRateD = par->mfx.FrameInfo.FrameRateExtD;
-    mfxU32 frameRateN = par->mfx.FrameInfo.FrameRateExtN;
-    
-    if (0 != frameRateD && 0 != frameRateN)
-    {
-        m_vdPar.info.framerate = (Ipp64f) frameRateN / frameRateD;
-    }
-
-    mfxStatus mfxRes = InternalReset(par);
-    MFX_CHECK_STS(mfxRes);
+    internalImpl->m_reset_done = true;
 
     if (m_isSWImpl && m_pCore->GetPlatformType() == MFX_PLATFORM_HARDWARE)
     {
@@ -984,85 +514,14 @@ mfxStatus VideoDECODEMPEG2::Reset(mfxVideoParam *par)
 
 mfxStatus VideoDECODEMPEG2::Close()
 {
-    mfxStatus mfxRes = MFX_ERR_NONE;
-    mfxU32 i;
-
     // immediately return, object is not initialized
     if (false == m_isInitialized)
     {
         return MFX_ERR_NONE;
     }
 
-    if (MFX_PLATFORM_SOFTWARE == m_pCore->GetPlatformType() || m_isSWImpl)
-    {
-        for(i = 0; i < DPB; i++)
-            if(mid[i] >= 0) m_FrameAllocator->Unlock(mid[i]);
-    }
-
-    for (i = 0; i < DPB; i++)
-        if(mid[i] >= 0)
-            m_FrameAllocator->DecreaseReference(mid[i]);
-
-    for (i = 0; i < DPB; i++)
-    {
-        mid[i] = -1;
-    }
-
-    m_implUmc.Close();
-    m_out.Close();
-
-    m_extendedPicStruct = 0;
-
-    for (mfxU32 i = 0; i < NUM_FRAMES; i++)
-    {
-        if(m_frame[i].Data) delete []m_frame[i].Data;
-        m_frame[i].Data = NULL;
-    }
-
-    if (0 < allocResponse.NumFrameActual)
-    {
-        mfxRes = m_pCore->FreeFrames(&allocResponse);
-        memset(&allocResponse, 0, sizeof(mfxFrameAllocResponse));
-
-    }
-
-    if (0 < m_opaqueResponse.NumFrameActual && true == m_isOpaqueMemory)
-    {
-        mfxRes = m_pCore->FreeFrames(&m_opaqueResponse);
-        memset(&m_opaqueResponse, 0, sizeof(mfxFrameAllocResponse));
-    }
-
-#if (defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)) && defined (ELK_WORKAROUND)
-    if(allocResponseAdd.NumFrameActual > 0)
-    {
-        mfxRes = m_pCore->FreeFrames(&allocResponseAdd);
-        memset(&allocResponseAdd, 0, sizeof(mfxFrameAllocResponse));
-    }
-#endif
-    if(m_FrameAllocator)
-        m_FrameAllocator->Close();
-
-    if(m_FrameAllocator_nv12)
-    {
-        delete m_FrameAllocator_nv12;
-        m_FrameAllocator_nv12 = NULL;
-    }
-#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
-    if(m_FrameAllocator_d3d)
-    {
-        delete m_FrameAllocator_d3d;
-        m_FrameAllocator_d3d = NULL;
-    }
-#endif
-
-    m_FrameAllocator = NULL;
-
-
-    MFX_CHECK_STS(mfxRes);
-
+    internalImpl->Close();
     m_isInitialized = false;
-    m_isOpaqueMemory = false;
-    m_isFrameRateFromInit = false;
 
     return MFX_ERR_NONE;
 }
@@ -1076,9 +535,9 @@ mfxStatus VideoDECODEMPEG2::GetDecodeStat(mfxDecodeStat *stat)
         return MFX_ERR_NOT_INITIALIZED;
     }
 
-    stat->NumFrame = display_frame_count;
-    stat->NumCachedFrame = cashed_frame_count;
-    stat->NumSkippedFrame = skipped_frame_count;
+    stat->NumFrame = internalImpl->display_frame_count;
+    stat->NumCachedFrame = internalImpl->cashed_frame_count;
+    stat->NumSkippedFrame = internalImpl->skipped_frame_count;
     
     return MFX_ERR_NONE;
 }
@@ -1089,7 +548,7 @@ mfxStatus VideoDECODEMPEG2::GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts, mfxU1
 
     UMC::Status umcSts = UMC::UMC_OK;
 
-    umcSts = m_implUmc.GetCCData(ud, sz, ts, bufsize);
+    umcSts = internalImpl->m_implUmc->GetCCData(ud, sz, ts, bufsize);
 
     if (UMC::UMC_OK == umcSts)
     {
@@ -1137,8 +596,6 @@ mfxStatus VideoDECODEMPEG2::GetPayload( mfxU64 *ts, mfxPayload *payload )
 
     return MFX_ERR_NONE;
 }
-
-#define MPEG2_SH_SIZE 34
 
 mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE *core, mfxBitstream* bs, mfxVideoParam* par)
 {
@@ -1423,24 +880,6 @@ mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE *core, mfxBitstream* bs, mfxV
     }
 
     return MFX_ERR_MORE_DATA;
-}
-
-bool VideoDECODEMPEG2:: IsHWSupported(VideoCORE *pCore, mfxVideoParam *par)
-{
-    if((par->mfx.CodecProfile == MFX_PROFILE_MPEG1 
-        && pCore->GetPlatformType()== MFX_PLATFORM_HARDWARE))
-    {
-        return false;
-    }
-
-#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
-    if (MFX_ERR_NONE != pCore->IsGuidSupported(sDXVA2_ModeMPEG2_VLD, par))
-    {
-        return false;
-    }
-#endif
-
-    return true;
 }
 
 mfxStatus VideoDECODEMPEG2::CheckProtectionSettings(mfxVideoParam *input, mfxVideoParam *output, VideoCORE *core)
@@ -1758,55 +1197,6 @@ mfxStatus VideoDECODEMPEG2::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
     return res;
 }
 
-mfxStatus VideoDECODEMPEG2::QueryIOSurfInternal(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
-{
-    if (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
-    {
-        request->Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
-    }
-    else if (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
-    {
-        request->Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
-    }
-    else // opaque memory case
-    {
-        if (MFX_PLATFORM_SOFTWARE == core->GetPlatformType())
-        {
-            request->Type = MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
-        }
-        else
-        {
-            request->Type = MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
-        }
-    }
-
-    if (MFX_PLATFORM_HARDWARE == core->GetPlatformType())
-    {
-        // check hardware restrictions
-        if (false == IsHWSupported(core, par))
-        {
-            //request->Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
-
-            if (par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-            {
-                request->Type = MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
-            }
-        }
-    }
-
-    memcpy_s(&(request->Info), sizeof(mfxFrameInfo), &(par->mfx.FrameInfo), sizeof(mfxFrameInfo));
-    
-    // output color format is NV12
-    request->Info.FourCC = MFX_FOURCC_NV12;
-
-    request->NumFrameMin = NUM_FRAMES_BUFFERED + 3;
-
-    request->NumFrameSuggested = request->NumFrameMin = request->NumFrameMin + (par->AsyncDepth ? par->AsyncDepth : core->GetAutoAsyncDepth());
-
-    return MFX_ERR_NONE;
-
-} // mfxStatus VideoDECODEMPEG2::QueryIOSurfInternal(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
-
 mfxStatus VideoDECODEMPEG2::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
     MFX_CHECK_NULL_PTR2(par, request);
@@ -1837,7 +1227,7 @@ mfxStatus VideoDECODEMPEG2::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfx
     }
 
     // call internal query io surface
-    mfxStatus sts = QueryIOSurfInternal(core, par, request);
+    mfxStatus sts = VideoDECODEMPEG2InternalBase::QueryIOSurfInternal(core, par, request);
     MFX_CHECK_STS(sts);
 
     // ?? TODO: what is about opaque memory
@@ -1877,60 +1267,7 @@ mfxStatus VideoDECODEMPEG2::GetVideoParam(mfxVideoParam *par)
         return MFX_ERR_NOT_INITIALIZED;
 
     MFX_CHECK_NULL_PTR1(par);
-
-    par->IOPattern = m_vPar.IOPattern;
-    par->mfx       = m_vPar.mfx;
-    par->Protected = m_vPar.Protected;
-    par->AsyncDepth = m_vPar.AsyncDepth;
-    par->mfx.FrameInfo.AspectRatioW = m_vPar.mfx.FrameInfo.AspectRatioW;
-    par->mfx.FrameInfo.AspectRatioH = m_vPar.mfx.FrameInfo.AspectRatioH;
-    par->mfx.FrameInfo.FrameRateExtD = m_vPar.mfx.FrameInfo.FrameRateExtD;
-    par->mfx.FrameInfo.FrameRateExtN = m_vPar.mfx.FrameInfo.FrameRateExtN;
-    
-    mfxExtPAVPOption * buffer = (mfxExtPAVPOption*)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
-    if (buffer)
-    {
-        if (!IS_PROTECTION_PAVP_ANY(m_vPar.Protected))
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-
-        memcpy_s(buffer, sizeof(mfxExtPAVPOption), &m_pavpOpt, sizeof(mfxExtPAVPOption));
-    }
-
-    // get sps/pps buffer
-    mfxExtCodingOptionSPSPPS *spspps = (mfxExtCodingOptionSPSPPS *) GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS);
-
-    if (NULL != spspps)
-        if (NULL != spspps->SPSBuffer)
-        {
-            UMC::Status sts = m_implUmc.GetSequenceHeaderMemoryMask(spspps->SPSBuffer, spspps->SPSBufSize);
-            if (UMC::UMC_OK != sts)
-                return ConvertUMCStatusToMfx(sts);
-        }
-    // get signal info buffer
-    mfxExtVideoSignalInfo *signal_info = (mfxExtVideoSignalInfo *) GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
-
-    if (NULL != signal_info)
-    {
-        m_implUmc.GetSignalInfoInformation(signal_info);
-    }
-    memcpy_s(par->reserved,sizeof(m_vPar.reserved),m_vPar.reserved,sizeof(m_vPar.reserved));
-    par->reserved2 = m_vPar.reserved2;
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus VideoDECODEMPEG2::GetFrameParam(mfxFrameParam *par)
-{
-    MFX_CHECK_NULL_PTR1(par);
-    *par = m_fPar;
-    return MFX_ERR_NONE;
-}
-
-mfxStatus VideoDECODEMPEG2::GetSliceParam(mfxSliceParam *par)
-{
-    MFX_CHECK_NULL_PTR1(par);
-    *par = m_sPar;
-    return MFX_ERR_NONE;
+    return internalImpl->GetVideoParam(par);
 }
 
 mfxStatus VideoDECODEMPEG2::SetSkipMode(mfxSkipMode mode)
@@ -1953,7 +1290,7 @@ mfxStatus VideoDECODEMPEG2::SetSkipMode(mfxSkipMode mode)
         if(m_SkipLevel < SKIP_ALL)
         {
             m_SkipLevel++;
-            m_implUmc.SetSkipMode(m_SkipLevel);
+            internalImpl->m_implUmc->SetSkipMode(m_SkipLevel);
         }
         else
         {
@@ -1964,7 +1301,7 @@ mfxStatus VideoDECODEMPEG2::SetSkipMode(mfxSkipMode mode)
         if(m_SkipLevel > SKIP_NONE)
         {
             m_SkipLevel--;
-            m_implUmc.SetSkipMode(m_SkipLevel);
+            internalImpl->m_implUmc->SetSkipMode(m_SkipLevel);
         }
         else
         {
@@ -1980,12 +1317,12 @@ mfxStatus VideoDECODEMPEG2::SetSkipMode(mfxSkipMode mode)
                 break;
             }
             m_SkipLevel = SKIP_NONE;
-            m_implUmc.SetSkipMode(m_SkipLevel);
+            internalImpl->m_implUmc->SetSkipMode(m_SkipLevel);
         }
         else
         {
-            Reset(&m_vPar);
-            m_implUmc.SetSkipMode(m_SkipLevel);
+            Reset(&internalImpl->m_vPar);
+            internalImpl->m_implUmc->SetSkipMode(m_SkipLevel);
         }
         break;
     default:
@@ -1995,475 +1332,25 @@ mfxStatus VideoDECODEMPEG2::SetSkipMode(mfxSkipMode mode)
     return ret;
 }
 
-mfxStatus VideoDECODEMPEG2::SetOutputSurfaceParams(mfxFrameSurface1 *surface, int display_index)
-{
-    MFX_CHECK_NULL_PTR1(surface);
-
-    surface->Data.TimeStamp = GetMfxTimeStamp(m_implUmc.GetCurrDecodedTime(display_index));
-    surface->Data.DataFlag = (mfxU16)((m_implUmc.isOriginalTimeStamp(display_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
-    SetSurfacePicStruct(surface, display_index);
-    UpdateOutputSurfaceParamsFromWorkSurface(surface, display_index);
-    SetSurfacePictureType(surface, display_index, &m_implUmc);
-    SetSurfaceTimeCode(surface, display_index, &m_implUmc);
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus VideoDECODEMPEG2::SetSurfacePicStruct(mfxFrameSurface1 *surface, int display_index)
-{
-    MFX_CHECK_NULL_PTR1(surface);
-
-    if (display_index < 0 || display_index >= 2*DPB)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-    const UMC::sPictureHeader& ph = m_implUmc.GetPictureHeader(display_index);
-    const UMC::sSequenceHeader& sh = m_implUmc.GetSequenceHeader();
-
-    surface->Info.PicStruct = GetMfxPicStruct(sh.progressive_sequence, ph.progressive_frame,
-                                              ph.top_field_first, ph.repeat_first_field, ph.picture_structure,
-                                              m_vPar.mfx.ExtendedPicStruct);
-    return MFX_ERR_NONE;
-}
-
-mfxStatus VideoDECODEMPEG2::UpdateWorkSurfaceParams(int task_num)
-{
-    mfxFrameSurface1 *pSurface = m_FrameAllocator->GetSurfaceByIndex(mid[task_num]);
-    MFX_CHECK_NULL_PTR1(pSurface);
-    pSurface->Info.CropW = m_vPar.mfx.FrameInfo.CropW;
-    pSurface->Info.CropH = m_vPar.mfx.FrameInfo.CropH;
-    pSurface->Info.CropX = m_vPar.mfx.FrameInfo.CropX;
-    pSurface->Info.CropY = m_vPar.mfx.FrameInfo.CropY;
-    pSurface->Info.AspectRatioH = m_vPar.mfx.FrameInfo.AspectRatioH;
-    pSurface->Info.AspectRatioW = m_vPar.mfx.FrameInfo.AspectRatioW;
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus VideoDECODEMPEG2::UpdateOutputSurfaceParamsFromWorkSurface(mfxFrameSurface1 *outputSurface, int display_index)
-{
-    if (!m_isSWBuf && !m_isOpaqueMemory)
-        return MFX_ERR_NONE;
-
-    mfxFrameSurface1 *internalSurface = m_FrameAllocator->GetSurfaceByIndex(mid[display_index]);
-    MFX_CHECK_NULL_PTR1(internalSurface);
-    outputSurface->Info.CropW = internalSurface->Info.CropW;
-    outputSurface->Info.CropH = internalSurface->Info.CropH;
-    outputSurface->Info.CropX = internalSurface->Info.CropX;
-    outputSurface->Info.CropY = internalSurface->Info.CropY;
-    outputSurface->Info.AspectRatioH = internalSurface->Info.AspectRatioH;
-    outputSurface->Info.AspectRatioW = internalSurface->Info.AspectRatioW;
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus VideoDECODEMPEG2::UpdateCurrVideoParams(mfxFrameSurface1 *surface_work, int task_num)
-{
-    mfxStatus sts = MFX_ERR_NONE;
-    mfxFrameSurface1 *pSurface = surface_work;
-
-    if (true == m_isOpaqueMemory)
-    {
-        pSurface = m_pCore->GetOpaqSurface(surface_work->Data.MemId, true);
-    }
-
-    if (dec_field_count & 1)
-    {
-        return MFX_ERR_NONE;
-    }
-
-    const UMC::sSequenceHeader& sh = m_implUmc.GetSequenceHeader();
-    const UMC::sPictureHeader& ph = m_implUmc.GetPictureHeader(task_num);
-
-    if (m_vPar.mfx.FrameInfo.AspectRatioH != 0 || m_vPar.mfx.FrameInfo.AspectRatioW != 0)
-        if(sh.aspect_ratio_w != m_vPar.mfx.FrameInfo.AspectRatioW || sh.aspect_ratio_h != m_vPar.mfx.FrameInfo.AspectRatioH)
-            sts = MFX_WRN_VIDEO_PARAM_CHANGED;
-
-    if (m_isFrameRateFromInit == false && ((Ipp32u)sh.frame_rate_extension_d != m_vPar.mfx.FrameInfo.FrameRateExtD || (Ipp32u)sh.frame_rate_extension_n != m_vPar.mfx.FrameInfo.FrameRateExtN))
-    {
-        sts = MFX_WRN_VIDEO_PARAM_CHANGED;
-    }
-
-    if (m_isSWImpl)
-    {
-        pSurface->Info.CropW = m_vPar.mfx.FrameInfo.CropW;
-        pSurface->Info.CropH = m_vPar.mfx.FrameInfo.CropH;
-        pSurface->Info.CropX = m_vPar.mfx.FrameInfo.CropX;
-        pSurface->Info.CropY = m_vPar.mfx.FrameInfo.CropY;
-        pSurface->Info.AspectRatioH = m_vPar.mfx.FrameInfo.AspectRatioH;
-        pSurface->Info.AspectRatioW = m_vPar.mfx.FrameInfo.AspectRatioW;
-    }
-
-    UpdateMfxVideoParam(m_vPar, sh, ph);
-    UpdateMfxFrameParam(m_fPar, sh, ph);
-
-    pSurface->Info.PicStruct = m_vPar.mfx.FrameInfo.PicStruct;    
-    pSurface->Info.FrameRateExtD = m_vPar.mfx.FrameInfo.FrameRateExtD;
-    pSurface->Info.FrameRateExtN = m_vPar.mfx.FrameInfo.FrameRateExtN;
-
-    return sts;
-}
-
-mfxStatus VideoDECODEMPEG2::RestoreDecoder(Ipp32s frame_buffer_num, UMC::FrameMemID mem_id_to_unlock, Ipp32s task_num_to_unlock, bool end_frame, bool remove_2frames, int decrease_dec_field_count)
-{
-    end_frame;
-    m_frame[frame_buffer_num].DataLength = 0;
-    m_frame[frame_buffer_num].DataOffset = 0;
-    m_frame_in_use[frame_buffer_num] = false;
-    
-    if (mem_id_to_unlock >= 0 && mem_id_to_unlock < DPB)
-        m_FrameAllocator->DecreaseReference(mem_id_to_unlock);
-
-    if (task_num_to_unlock >= 0 && task_num_to_unlock < 2*DPB) {
-        UMC::AutomaticUMCMutex guard(m_guard);
-        m_implUmc.UnLockTask(task_num_to_unlock);
-    }
-
-#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
-    if (end_frame)
-        m_implUmc.pack_w.m_va->EndFrame();
-#endif
-
-    if (remove_2frames)
-        m_implUmc.RestoreDecoderStateAndRemoveLastField();
-    else
-        m_implUmc.RestoreDecoderState();
-
-    dec_field_count -= decrease_dec_field_count;
-
-    return MFX_ERR_NONE;
-}
-
 static mfxStatus __CDECL MPEG2TaskRoutine(void *pState, void *pParam, mfxU32 /*threadNumber*/, mfxU32 /*callNumber*/)
 {
-    VideoDECODEMPEG2 *decoder = (VideoDECODEMPEG2*)pState;
+    VideoDECODEMPEG2InternalBase *decoder = (VideoDECODEMPEG2InternalBase*)pState;
 
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEMPEG2::TaskRoutine");
     mfxStatus sts = decoder->TaskRoutine(pParam);
     return sts;
 }
 
-mfxStatus VideoDECODEMPEG2::TaskRoutine(void *pParam)
-{
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEMPEG2::TaskRoutine");
-    MParam *parameters = (MParam *)pParam;
-
-    UMC::Status res;
-    Ipp32s th_idx;
-
-    if (false == parameters->IsSWImpl)
-    {
-        mfxStatus sts = PerformStatusCheck(pParam);
-        MFX_CHECK_STS(sts);
-
-        if (0 <= parameters->display_index && true == parameters->m_isSoftwareBuffer)
-        {
-            sts = parameters->m_FrameAllocator->PrepareToOutput(parameters->surface_out,
-                                                                parameters->mid[parameters->display_index],
-                                                                &parameters->m_vPar,
-                                                                m_isOpaqueMemory);
-
-            MFX_CHECK_STS(sts);
-        }
-
-        sts = CompleteTasks(pParam);
-        MFX_CHECK_STS(sts);
-
-        return MFX_TASK_DONE;
-    }
-
-    UMC::AutomaticUMCMutex guard(m_guard);
-
-    THREAD_DEBUG_PRINTF(
-        "(THREAD %x) task %x number, task num %d, curr thr idx %d, compl thr %d\n",
-        GetCurrentThreadId(), pParam, parameters->task_num, parameters->m_curr_thread_idx, parameters->m_thread_completed)
-
-    if (0 < parameters->last_frame_count && 0 == parameters->m_thread_completed)
-    {
-
-        Ipp32s display_index = parameters->display_index;
-
-        if (0 <= display_index)
-        {
-            m_implUmc.PostProcessUserData(display_index);
-
-            mfxStatus sts = parameters->m_FrameAllocator->PrepareToOutput(parameters->surface_work,parameters->mid[display_index],&parameters->m_vPar, m_isOpaqueMemory);
-
-            if (MFX_ERR_NONE > sts)
-            {
-                return sts;
-            }
-        }
-
-        parameters->m_thread_completed = parameters->NumThreads + 1;
-
-        THREAD_DEBUG_PRINTF("(THREAD %x): 0 < parameters->last_frame_count && 0 == parameters->m_thread_completed\n", GetCurrentThreadId())
-
-        return MFX_TASK_DONE;
-    }
-
-    parameters->m_curr_thread_idx++;
-
-    if (parameters->m_curr_thread_idx > parameters->NumThreads || parameters->m_thread_completed >= parameters->NumThreads)
-    {
-        /*THREAD_DEBUG_PRINTF(
-            "(THREAD %x): (parameters->m_curr_thread_idx || parameters->m_thread_completed) > parameters->NumThreads: %d || %d > %d\n",
-            GetCurrentThreadId(), parameters->m_curr_thread_idx, parameters->m_thread_completed, parameters->NumThreads)*/
-        THREAD_DEBUG_PRINTF("(THREAD %x): was waiting but done\n", GetCurrentThreadId())
-
-        return MFX_TASK_DONE;
-    }
-
-    th_idx = parameters->m_curr_thread_idx - 1;
-
-    THREAD_DEBUG_PRINTF("(THREAD %x): start decoding\n", GetCurrentThreadId())
-
-    // down mutex
-    guard.Unlock();
-
-    // decode slices
-    res = m_implUmc.DoDecodeSlices(th_idx, parameters->task_num);
-
-    // up mutex
-    guard.Lock();
-
-    THREAD_DEBUG_PRINTF("(THREAD %x): finish decoding\n", GetCurrentThreadId())
-
-    parameters->m_thread_completed++;
-
-    if (UMC::UMC_OK != res && UMC::UMC_ERR_NOT_ENOUGH_DATA != res && UMC::UMC_ERR_SYNC != res)
-    {
-        m_implUmc.SetCorruptionFlag(parameters->curr_index);
-
-        /*
-        parameters->m_frame[parameters->m_frame_curr].DataLength = 0;
-        parameters->m_frame[parameters->m_frame_curr].DataOffset = 0;
-        parameters->m_frame_in_use[parameters->m_frame_curr] = false;
-        parameters->m_thread_completed = parameters->NumThreads + 1;
-
-        m_implUmc.UnLockTask(parameters->task_num);
-
-        THREAD_DEBUG_PRINTF("(THREAD %x): UMC::UMC_OK != res && UMC::UMC_ERR_NOT_ENOUGH_DATA != res && UMC::UMC_ERR_SYNC != res\n", GetCurrentThreadId())
-
-        return MFX_TASK_DONE;
-        */
-    }
-
-    if (parameters->m_thread_completed == parameters->NumThreads)
-    {
-        Ipp32s display_index = parameters->display_index;
-
-        //res = m_implUmc.PostProcessFrame(display_index, parameters->task_num);
-
-        parameters->m_frame[parameters->m_frame_curr].DataLength = 0;
-        parameters->m_frame[parameters->m_frame_curr].DataOffset = 0;
-
-        if (0 <= display_index)
-        {
-            THREAD_DEBUG_PRINTF("(THREAD %x): dump frame\n", GetCurrentThreadId())
-
-            mfxStatus sts = parameters->m_FrameAllocator->PrepareToOutput(parameters->surface_out,
-                                                                          parameters->mid[display_index],
-                                                                          &parameters->m_vPar,
-                                                                          m_isOpaqueMemory);
-
-            if (MFX_ERR_NONE > sts)
-            {
-                m_implUmc.UnLockTask(parameters->task_num);
-                return sts;
-            }
-        }
-    }
-    else
-    {
-        THREAD_DEBUG_PRINTF("(THREAD %x): i'm working status\n", GetCurrentThreadId())
-        return MFX_TASK_WORKING;
-    }
-
-    THREAD_DEBUG_PRINTF("(THREAD %x): exit routine\n\n", GetCurrentThreadId())
-
-    return MFX_TASK_DONE;
-}
-
+#if !defined(MFX_ENABLE_HW_ONLY_MPEG2_DECODER) || !defined (MFX_VA)
 static mfxStatus __CDECL MPEG2CompleteTasks(void *pState, void *pParam, mfxStatus /*sts*/)
 {
-    VideoDECODEMPEG2 *decoder = (VideoDECODEMPEG2*)pState;
-
+    VideoDECODEMPEG2InternalBase *decoder = (VideoDECODEMPEG2InternalBase*)pState;
+    
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEMPEG2::CompleteTasks");
     mfxStatus sts = decoder->CompleteTasks(pParam);
     return sts;
 }
-
-mfxStatus VideoDECODEMPEG2::PerformStatusCheck(void *pParam)
-{
-    MFX_CHECK_NULL_PTR1(pParam);
-    MParam *parameters = (MParam *)pParam;
-    Ipp32s display_index = parameters->display_index;
-    if (display_index < 0)
-        return MFX_ERR_NONE;
-
-    if (!IsStatusReportEnable(m_pCore))
-        return MFX_ERR_NONE;
-
-    //parameters->surface_out->Data.Corrupted = 0;
-
-    mfxStatus sts = GetStatusReport(parameters->surface_out, parameters->mid[display_index]);
-
-    if (MFX_ERR_NONE != sts)
-    {
-        parameters->m_FrameAllocator->DecreaseReference(parameters->mid[display_index]);
-        parameters->m_frame_in_use[parameters->m_frame_curr] = false;
-
-        return sts;
-    }
-
-    mfxU16 isCorrupted = parameters->surface_out->Data.Corrupted;
-    mfxU32 frameType = m_implUmc.GetFrameType(display_index);
-    Ipp32s prev_index = m_implUmc.GetPrevDecodingIndex(display_index);
-
-    if (isCorrupted && I_PICTURE == frameType)
-        m_implUmc.SetCorruptionFlag(display_index);
-
-    switch (frameType)
-    {
-        case I_PICTURE:
-
-            if (isCorrupted)
-            {
-                parameters->surface_out->Data.Corrupted = MFX_CORRUPTION_MAJOR;
-            }
-
-            break;
-
-        default: // P_PICTURE
-
-            if (true == m_implUmc.GetCorruptionFlag(prev_index))
-            {
-                m_implUmc.SetCorruptionFlag(display_index);
-                parameters->surface_out->Data.Corrupted = MFX_CORRUPTION_REFERENCE_FRAME;
-            }
-    }
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus VideoDECODEMPEG2::CompleteTasks(void *pParam)
-{
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEMPEG2::CompleteTasks");
-    MParam *parameters = (MParam *)pParam;
-
-    UMC::AutomaticUMCMutex guard(m_guard);
-
-    THREAD_DEBUG_PRINTF(
-        "(THREAD %x) CompleteTasks: task %x number, task num %d, curr thr idx %d, compl thr %d\n",
-        GetCurrentThreadId(), pParam, parameters->task_num, parameters->m_curr_thread_idx, parameters->m_thread_completed)
-
-
-    Ipp32s display_index = parameters->display_index;
-
-    if (0 <= display_index)
-    {
-        THREAD_DEBUG_PRINTF("(THREAD %x) Dumping\n", GetCurrentThreadId())
-
-        if (false == parameters->IsSWImpl)
-        {
-            STATUS_REPORT_DEBUG_PRINTF("thread task idx %d, display address %x\n", parameters->task_num, parameters->surface_out)
-
-            if (B_PICTURE == m_implUmc.GetFrameType(display_index))
-            {
-                parameters->m_FrameAllocator->DecreaseReference(parameters->mid[display_index]);
-                parameters->mid[display_index] = -1;
-
-                m_implUmc.UnLockTask(display_index);
-            }
-            else // I or P
-            {
-                Ipp32s p_index = m_implUmc.GetPrevDecodingIndex(display_index);
-
-                if (true == m_isDecodedOrder && 0 <= p_index)
-                {
-                     p_index = m_implUmc.GetPrevDecodingIndex(p_index);
-
-                    if (0 <= p_index)
-                    {
-                        parameters->m_FrameAllocator->DecreaseReference(parameters->mid[p_index]);
-                        parameters->mid[p_index] = -1;
-
-                        m_implUmc.UnLockTask(p_index);
-                    }
-                }
-                else if (0 <= p_index)
-                {
-                    parameters->m_FrameAllocator->DecreaseReference(parameters->mid[p_index]);
-                    parameters->mid[p_index] = -1;
-
-                    m_implUmc.UnLockTask(p_index);
-                }
-            }
-        }
-        else
-        {
-            if (B_PICTURE == m_implUmc.GetFrameType(display_index))
-            {
-                parameters->m_FrameAllocator->Unlock(parameters->mid[display_index]);
-                parameters->m_FrameAllocator->DecreaseReference(parameters->mid[display_index]);
-                parameters->mid[display_index] = -1;
-
-                m_implUmc.UnLockTask(display_index);
-            }
-            else // I or P picture
-            {
-                bool isCorrupted = m_implUmc.GetCorruptionFlag(display_index);
-
-                mfxU32 frameType = m_implUmc.GetFrameType(display_index);
-                Ipp32s prev_index = m_implUmc.GetPrevDecodingIndex(display_index);
-                
-                parameters->surface_out->Data.Corrupted = 0;
-                
-                switch (frameType)
-                {
-                    case I_PICTURE:
-
-                        if (isCorrupted)
-                        {
-                            parameters->surface_out->Data.Corrupted = MFX_CORRUPTION_MAJOR;
-                        }
-
-                        break;
-                    
-                    default: // P_PICTURE
-
-                        if (P_PICTURE == m_implUmc.GetFrameType(prev_index))
-                        {
-                            //prev_index = m_implUmc.GetPrevDecodingIndex(prev_index);
-                        }
-
-                        if (true == m_implUmc.GetCorruptionFlag(prev_index))
-                        {
-                            m_implUmc.SetCorruptionFlag(display_index);
-                            parameters->surface_out->Data.Corrupted = MFX_CORRUPTION_REFERENCE_FRAME;
-                        }
-                }
-
-                if (0 <= prev_index && true == parameters->m_isDecodedOrder)
-                {
-                    prev_index = m_implUmc.GetPrevDecodingIndex(prev_index);
-                }
-
-                if (0 <= prev_index)
-                {
-                    parameters->m_FrameAllocator->Unlock(parameters->mid[prev_index]);
-                    parameters->m_FrameAllocator->DecreaseReference(parameters->mid[prev_index]);
-                    parameters->mid[prev_index] = -1;
-
-                    m_implUmc.UnLockTask(prev_index);
-                }
-            }
-        }
-    }
-
-    parameters->m_frame_in_use[parameters->m_frame_curr] = false;
-    STATUS_REPORT_DEBUG_PRINTF("m_frame_curr %d is %d\n", parameters->m_frame_curr, parameters->m_frame_in_use[parameters->m_frame_curr])
-
-    return MFX_TASK_DONE;
-}
+#endif
 
 mfxStatus VideoDECODEMPEG2::CheckFrameData(const mfxFrameSurface1 *pSurface)
 {
@@ -2474,8 +1361,8 @@ mfxStatus VideoDECODEMPEG2::CheckFrameData(const mfxFrameSurface1 *pSurface)
         return MFX_ERR_MORE_SURFACE;
     }
 
-    if (pSurface->Info.Width <  m_InitW ||
-        pSurface->Info.Height < m_InitH)
+    if (pSurface->Info.Width <  internalImpl->m_InitW ||
+        pSurface->Info.Height < internalImpl->m_InitH)
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -2543,8 +1430,8 @@ mfxStatus VideoDECODEMPEG2::CheckFrameData(const mfxFrameSurface1 *pSurface)
     }
 
 
-    if (pSurface->Info.Width >  m_InitW ||
-        pSurface->Info.Height > m_InitH)
+    if (pSurface->Info.Width >  internalImpl->m_InitW ||
+        pSurface->Info.Height > internalImpl->m_InitH)
     {
         //return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
@@ -2567,1213 +1454,27 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
         return MFX_ERR_NOT_INITIALIZED;
     }
 
-    if (NeedToReturnCriticalStatus(bs))
-        return ReturningCriticalStatus();
-
-    if (true == m_isOpaqueMemory)
+    if (true == internalImpl->m_isOpaqueMemory)
     {
         if (surface_work->Data.MemId || surface_work->Data.Y || surface_work->Data.R || surface_work->Data.A || surface_work->Data.UV) // opaq surface
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-        surface_work = GetOriginalSurface(surface_work);
+        surface_work = internalImpl->GetOriginalSurface(surface_work);
+    }
+
+    if (bs)
+    {
+        sts = CheckBitstream(bs);
+        MFX_CHECK_STS(sts);
     }
 
     sts = CheckFrameData(surface_work);
     MFX_CHECK_STS(sts);
 
-#ifdef MFX_VA_WIN
-    if (m_Protected && bs != NULL)
-    {
-        VM_ASSERT(m_implUmc.pack_w.m_va->GetProtectedVA());
-        if (!m_implUmc.pack_w.m_va->GetProtectedVA() || !(bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME))
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-        m_implUmc.pack_w.m_va->GetProtectedVA()->SetModes(&m_vPar);
-        m_implUmc.pack_w.m_va->GetProtectedVA()->SetBitstream(bs);
-
-        m_implUmc.pack_w.IsProtectedBS = true;
-        if (!bs->EncryptedData) m_implUmc.pack_w.IsProtectedBS = false;
-    }
-#endif
-
-    if (m_frame_constructed && bs != NULL)
-    {
-        if (!SetFree_m_frame())
-        {
-            return MFX_WRN_DEVICE_BUSY;
-        }
-
-        m_frame[m_frame_free].DataLength = 0;
-        m_frame[m_frame_free].DataOffset = 0;
-    }
-
-    m_frame_constructed = false;
-
-    if (NULL != bs)
-    {
-        sts = CheckBitstream(bs);
-        MFX_CHECK_STS(sts);
-
-        if (!bs->DataLength)
-        {
-            return MFX_ERR_MORE_DATA;
-        }
-
-        if (true == m_new_bs)
-        {
-            m_time[m_frame_free] = GetUmcTimeStamp(bs->TimeStamp);
-            m_time[m_frame_free] = (m_time[m_frame_free]==last_good_timestamp)?-1.0:m_time[m_frame_free];    
-        }
-
-        sts = ConstructFrame(bs, &m_frame[m_frame_free], surface_work);
-
-        if (MFX_ERR_NONE != sts)
-        {
-            m_frame_constructed = false;
-            surface_disp = NULL;
-            m_new_bs   = false;
-
-            return sts;
-        }
-
-        last_good_timestamp = m_time[m_frame_free] == -1.0?last_good_timestamp:m_time[m_frame_free];
-        m_frame_in_use[m_frame_free] = true;
-        m_new_bs = true;
-    }
-    else
-    {
-        m_time[m_frame_free] = (mfxF64)(-1);
-
-        if (0 < m_last_bytes[3])
-        {
-            Ipp8u *pData = m_frame[m_frame_free].Data + m_frame[m_frame_free].DataOffset + m_frame[m_frame_free].DataLength;
-            memcpy_s(pData, m_last_bytes[3], m_last_bytes, m_last_bytes[3]);
-
-            m_frame[m_frame_free].DataLength += m_last_bytes[3];
-            memset(m_last_bytes, 0, NUM_REST_BYTES);
-        }
-    }
-
-    m_found_SH = false;
-    m_frame_constructed = true;
-
-    if (!(dec_field_count & 1)) {
-        UMC::AutomaticUMCMutex guard(m_guard);
-        m_task_num = m_implUmc.FindFreeTask();
-    }
-
-    if (-1 == m_task_num)
-    {
-        return MFX_WRN_DEVICE_BUSY;
-    }
-
-    if (last_frame_count > 0)
-    {
-        if(m_implUmc.GetRetBufferLen() <= 0)
-            return MFX_ERR_MORE_DATA;
-    }
-
-    sts = m_FrameAllocator->SetCurrentMFXSurface(surface_work, m_isOpaqueMemory);
+    sts = internalImpl->ConstructFrame(bs, surface_work);
     MFX_CHECK_STS(sts);
-    if (m_FrameAllocator->FindFreeSurface() == -1)
-        return MFX_WRN_DEVICE_BUSY;
 
-    if (false == SetCurr_m_frame() && NULL != bs)
-    {
-        return MFX_WRN_DEVICE_BUSY;
-    }
-
-    m_isShDecoded = false;
-
-    if (MFX_PLATFORM_HARDWARE == m_pCore->GetPlatformType() && !m_isSWImpl)
-    {
-        int display_index = -1;
-
-        m_in[m_task_num].SetBufferPointer(m_frame[m_frame_curr].Data + m_frame[m_frame_curr].DataOffset,
-                                          m_frame[m_frame_curr].DataLength);
-
-        m_in[m_task_num].SetDataSize(m_frame[m_frame_curr].DataLength);
-        m_in[m_task_num].SetTime(m_time[m_frame_curr]);
-
-        UMC::Status umcRes = UMC::UMC_OK;
-
-        bool IsField = false;
-        bool IsSkipped = false;
-
-        if (8 < m_frame[m_frame_curr].DataLength)
-        {
-            m_implUmc.SaveDecoderState();
-            umcRes = m_implUmc.GetPictureHeader(&m_in[m_task_num], m_task_num, m_prev_task_num);
-
-            //VM_ASSERT( m_implUmc.PictureHeader[m_task_num].picture_coding_type != 3 || ( mid[ m_implUmc.frame_buffer.latest_next ] != -1 && mid[ m_implUmc.frame_buffer.latest_prev ] != -1 ));
-
-            IsField = !m_implUmc.IsFramePictureStructure(m_task_num);
-            if (m_task_num >= DPB && !IsField)
-            {
-                int decrease_dec_field_count = dec_field_count % 2 == 0 ? 0 : 1;
-                Ipp32s previous_field = m_task_num - DPB;
-                MFX_CHECK_STS(RestoreDecoder(m_frame_curr, mid[previous_field], previous_field, NO_END_FRAME, REMOVE_LAST_2_FRAMES, decrease_dec_field_count))
-                return MFX_ERR_MORE_DATA;
-            }
-
-            if (UMC::UMC_OK != umcRes)
-            {
-                MFX_CHECK_STS(RestoreDecoder(m_frame_curr, NO_SURFACE_TO_UNLOCK, NO_TASK_TO_UNLOCK, NO_END_FRAME, REMOVE_LAST_FRAME, 0))
-
-                IsSkipped = m_implUmc.IsFrameSkipped();
-
-                if (IsSkipped && !(dec_field_count & 1))
-                {
-                    skipped_frame_count += 1;
-                }
-
-                if (false == m_reset_done && NULL == bs)
-                {
-                    display_index = m_implUmc.GetDisplayIndex();
-
-                    if (0 > display_index)
-                    {
-                        umcRes = m_implUmc.GetPictureHeader(NULL, m_task_num, m_prev_task_num);
-                            
-                        if (UMC::UMC_ERR_INVALID_STREAM == umcRes)
-                        {
-                            return MFX_ERR_UNKNOWN;
-                        }
-
-                        display_index = m_implUmc.GetDisplayIndex();
-                    }
-
-                    if (0 <= display_index)
-                    {
-                        mfxStatus sts = GetOutputSurface(surface_disp, surface_work, mid[display_index]);
-                        if (sts < MFX_ERR_NONE)
-                            return sts;
-
-                        if (true == m_isDecodedOrder)
-                        {
-                            (*surface_disp)->Data.FrameOrder = 0xffffffff;
-                        }
-
-                        SetOutputSurfaceParams(*surface_disp, display_index);
-
-                        if (false == m_isDecodedOrder)
-                        {
-                            (*surface_disp)->Data.FrameOrder = display_frame_count;
-                        }
-
-                        display_frame_count++;
-
-                        if (true == m_isDecodedOrder)
-                        {
-                            (*surface_disp)->Data.FrameOrder = display_order;
-                            display_order++;
-                        }
-
-                        if ((true == IsField && !(dec_field_count & 1)) || false == IsField)
-                        {
-                            pEntryPoint->requiredNumThreads = m_NumThreads;
-                            pEntryPoint->pRoutine = &MPEG2TaskRoutine;
-                            pEntryPoint->pState = (void*)this;
-                            pEntryPoint->pRoutineName = (char*)"DecodeMPEG2";
-
-                            m_task_param[m_task_num].NumThreads = m_implUmc.GetCurrThreadsNum(m_task_num);
-                            m_task_param[m_task_num].m_frame_curr = m_frame_curr;
-                            m_task_param[m_task_num].m_isDecodedOrder = m_isDecodedOrder;
-                            m_task_param[m_task_num].curr_index = curr_index;
-                            m_task_param[m_task_num].prev_index = prev_index;
-                            m_task_param[m_task_num].next_index = next_index;
-                            m_task_param[m_task_num].surface_out = GetOriginalSurface(*surface_disp);
-                            m_task_param[m_task_num].surface_work = surface_work;
-                            m_task_param[m_task_num].display_index = display_index;
-                            m_task_param[m_task_num].m_FrameAllocator = m_FrameAllocator;
-                            m_task_param[m_task_num].mid = mid;
-                            m_task_param[m_task_num].in = &m_in[m_task_num];
-                            m_task_param[m_task_num].m_frame = m_frame;
-                            m_task_param[m_task_num].m_frame_in_use = m_frame_in_use;
-                            m_task_param[m_task_num].task_num = m_task_num;
-                            m_task_param[m_task_num].m_isSoftwareBuffer = m_isSWBuf;
-
-                            pEntryPoint->pParam = (void *)(&(m_task_param[m_task_num]));
-                        }
-
-                        return MFX_ERR_NONE;
-                    }
-                }
-
-                return MFX_ERR_MORE_DATA;
-            }
-
-            m_reset_done = false;
-
-            m_isShDecoded = m_implUmc.IsSHDecoded() && (dec_field_count > 0);
-
-            umcRes = m_implUmc.GetInfo(&m_vdPar);
-
-            sts = UpdateCurrVideoParams(surface_work, m_task_num);
-            if (sts != MFX_ERR_NONE && sts != MFX_WRN_VIDEO_PARAM_CHANGED)
-                return sts;
-
-            if (surface_work->Info.CropW > surface_work->Info.Width || surface_work->Info.CropH > surface_work->Info.Height)
-            {
-                return MFX_ERR_UNKNOWN;
-            }
-
-            if ((false == m_isDecodedOrder && maxNumFrameBuffered <= (Ipp32u)(m_implUmc.GetRetBufferLen())) ||
-                 true == m_isDecodedOrder)
-            {
-                display_index = m_implUmc.GetDisplayIndex();
-            }
-
-            if (false == IsField || (true == IsField && !(dec_field_count & 1)))
-            {
-                curr_index = m_task_num;
-                next_index = m_implUmc.GetNextDecodingIndex(curr_index);
-                prev_index = m_implUmc.GetPrevDecodingIndex(curr_index);
-
-                UMC::VideoDataInfo Info;
-
-                if (1 == m_implUmc.GetSequenceHeader().progressive_sequence)
-                {
-                    Info.Init(surface_work->Info.Width,
-                              (surface_work->Info.CropH + 15) & ~0x0f,
-                              m_vdPar.info.color_format);
-                }
-                else
-                {
-                    Info.Init(surface_work->Info.Width,
-                              surface_work->Info.Height,
-                              m_vdPar.info.color_format);
-                }
-
-                m_FrameAllocator->Alloc(&mid[curr_index], &Info, 0);
-
-                if (0 > mid[curr_index])
-                {
-                    return MFX_ERR_LOCK_MEMORY;
-                }
-
-                m_FrameAllocator->IncreaseReference(mid[curr_index]);
-
-#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
-                umcRes = m_implUmc.pack_w.m_va->BeginFrame(mid[curr_index]);
-
-                if (UMC::UMC_OK != umcRes)
-                {
-                    return MFX_ERR_DEVICE_FAILED;
-                }
-
-                m_implUmc.pack_w.va_index = mid[curr_index];
-#endif
-            }
-            else
-            {
-#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
-                umcRes = m_implUmc.pack_w.m_va->BeginFrame(mid[curr_index]);
-
-                if (UMC::UMC_OK != umcRes)
-                {
-                    return MFX_ERR_DEVICE_FAILED;
-                }
-
-                m_implUmc.pack_w.va_index = mid[curr_index];
-#endif
-            }
-
-            mfxStatus s = UpdateWorkSurfaceParams(curr_index);
-            MFX_CHECK_STS(s);
-
-            umcRes = m_implUmc.ProcessRestFrame(m_task_num);
-            if (UMC::UMC_OK != umcRes)
-            {
-                MFX_CHECK_STS(RestoreDecoder(m_frame_curr, mid[curr_index], NO_TASK_TO_UNLOCK, END_FRAME, REMOVE_LAST_FRAME, 0))
-                return MFX_ERR_MORE_DATA;
-            }
-
-            if (true == IsField)
-            {
-                dec_field_count++;
-            }
-            else
-            {
-                dec_field_count += 2;
-                cashed_frame_count++;
-            }
-
-            dec_frame_count++;
-
-            memset(&m_task_param[m_task_num],0,sizeof(MParam));
-            m_implUmc.LockTask(m_task_num);
-
-            umcRes = m_implUmc.DoDecodeSlices(0, m_task_num);
-
-            if (UMC::UMC_OK != umcRes &&
-                UMC::UMC_ERR_NOT_ENOUGH_DATA != umcRes &&
-                UMC::UMC_ERR_SYNC != umcRes)
-            {
-                MFX_CHECK_STS(RestoreDecoder(m_frame_curr, mid[curr_index], m_task_num, END_FRAME, REMOVE_LAST_FRAME, IsField?1:2))
-                return MFX_ERR_MORE_DATA;
-            }
-
-            umcRes = m_implUmc.PostProcessFrame(display_index, m_task_num);
-
-            if (umcRes != UMC::UMC_OK && umcRes != UMC::UMC_ERR_NOT_ENOUGH_DATA)
-            {
-                MFX_CHECK_STS(RestoreDecoder(m_frame_curr, mid[curr_index], m_task_num, END_FRAME, REMOVE_LAST_FRAME, IsField?1:2))
-                return MFX_ERR_MORE_DATA;
-            }
-
-            m_frame[m_frame_curr].DataLength = 0;
-            m_frame[m_frame_curr].DataOffset = 0;
-
-            m_prev_task_num = m_task_num;
-
-            if (true == IsField && (dec_field_count & 1))
-            {
-                if (DPB <= m_task_num)
-                {
-                    return MFX_ERR_UNDEFINED_BEHAVIOR;
-                }
-
-                m_task_num += DPB;
-            }
-
-            STATUS_REPORT_DEBUG_PRINTF("use task idx %d\n", m_task_num)
-           
-            if (0 <= display_index)
-            {
-                mfxStatus sts = GetOutputSurface(surface_disp, surface_work, mid[display_index]);
-                if (sts < MFX_ERR_NONE)
-                    return sts;
-            }
-
-            if ((true == IsField && !(dec_field_count & 1)) || false == IsField)
-            {
-                pEntryPoint->requiredNumThreads = m_NumThreads;
-                pEntryPoint->pRoutine = &MPEG2TaskRoutine;
-                pEntryPoint->pState = (void*)this;
-                pEntryPoint->pRoutineName = (char *)"DecodeMPEG2";
-
-                m_task_param[m_task_num].NumThreads = m_implUmc.GetCurrThreadsNum(m_task_num);
-                m_task_param[m_task_num].m_isDecodedOrder = m_isDecodedOrder;
-                m_task_param[m_task_num].m_frame_curr = m_frame_curr;
-
-                STATUS_REPORT_DEBUG_PRINTF("frame curr %d\n", m_frame_curr)
-
-                m_task_param[m_task_num].curr_index = curr_index;
-                m_task_param[m_task_num].prev_index = prev_index;
-                m_task_param[m_task_num].next_index = next_index;
-                m_task_param[m_task_num].surface_out = GetOriginalSurface(*surface_disp);
-                m_task_param[m_task_num].surface_work = surface_work;
-                m_task_param[m_task_num].display_index = display_index;
-                m_task_param[m_task_num].m_FrameAllocator = m_FrameAllocator;
-                m_task_param[m_task_num].mid = mid;
-                m_task_param[m_task_num].in = &m_in[m_task_num];
-                m_task_param[m_task_num].m_frame = m_frame;
-                m_task_param[m_task_num].m_frame_in_use = m_frame_in_use;
-                m_task_param[m_task_num].task_num = m_task_num;
-                m_task_param[m_task_num].m_isSoftwareBuffer = m_isSWBuf;
-                m_task_param[m_task_num].IsSWImpl = false;
-
-                pEntryPoint->pParam = (void *)(&(m_task_param[m_task_num]));
-            }
-            else
-            {
-                m_frame_in_use[m_frame_curr] = false;
-            }
-
-            if (0 <= display_index)
-            {
-                SetOutputSurfaceParams(*surface_disp, display_index);
-
-                if (false == m_isDecodedOrder)
-                {
-                    (*surface_disp)->Data.FrameOrder = display_frame_count;
-                }
-                else
-                {
-                    (*surface_disp)->Data.FrameOrder = 0xffffffff;
-                }
-
-                display_frame_count++;
-
-                if (true == m_isDecodedOrder)
-                {
-                    if (B_PICTURE == m_implUmc.GetFrameType(display_index))
-                    {
-                        (*surface_disp)->Data.FrameOrder = display_order;
-                        display_order++;
-                    }
-                    else // I or P
-                    {
-                        Ipp32s p_index = m_implUmc.GetPrevDecodingIndex(display_index);
-
-                        if (0 <= p_index)
-                        {
-                            mfxFrameSurface1 *pSurface;
-
-                            pSurface = m_FrameAllocator->GetSurface(mid[p_index], surface_work, &m_vPar);
-
-                            if (NULL == pSurface)
-                            {
-                                return MFX_ERR_UNDEFINED_BEHAVIOR;
-                            }
-
-                            pSurface->Data.FrameOrder = display_order;
-                            display_order++;
-                        }
-                    }
-                }
-
-                m_implUmc.PostProcessUserData(display_index);
-
-                return sts;
-
-            } // display_index >=0
-
-            if (true == m_isDecodedOrder)
-            {
-                return MFX_ERR_MORE_DATA;
-            }
-
-            return MFX_ERR_MORE_SURFACE;
-
-        }
-        else // if (8 >= m_frame[m_frame_curr].DataLength)
-        {
-            last_frame_count++;
-
-            umcRes = m_implUmc.GetPictureHeader(NULL,m_task_num,m_prev_task_num);
-            sts = UpdateCurrVideoParams(surface_work, m_task_num);
-
-            if (UMC::UMC_ERR_INVALID_STREAM == umcRes)
-            {
-                return MFX_ERR_UNKNOWN;
-            }
-
-            display_index = m_implUmc.GetDisplayIndex();
-
-            if (0 <= display_index)
-            {
-                if (false == m_isDecodedOrder && ((true == IsField && !(dec_field_count & 1)) || false == IsField))
-                {
-                    mfxStatus sts = GetOutputSurface(surface_disp, surface_work, mid[display_index]);
-                    if (sts < MFX_ERR_NONE)
-                        return sts;
-
-                    pEntryPoint->requiredNumThreads = m_NumThreads;
-                    pEntryPoint->pRoutine = &MPEG2TaskRoutine;
-                    pEntryPoint->pState = (void*)this;
-                    pEntryPoint->pRoutineName = (char *)"DecodeMPEG2";
-
-                    SetOutputSurfaceParams(*surface_disp, display_index);
-
-                    memset(&m_task_param[m_task_num],0,sizeof(MParam));
-                    m_implUmc.LockTask(m_task_num);
-
-                    m_task_param[m_task_num].NumThreads = m_implUmc.GetCurrThreadsNum(m_task_num);
-                    m_task_param[m_task_num].m_isDecodedOrder = m_isDecodedOrder;
-                    m_task_param[m_task_num].m_frame_curr = m_frame_curr;
-                    m_task_param[m_task_num].curr_index = curr_index;
-                    m_task_param[m_task_num].prev_index = prev_index;
-                    m_task_param[m_task_num].next_index = next_index;
-                    m_task_param[m_task_num].surface_out = GetOriginalSurface(*surface_disp);
-                    m_task_param[m_task_num].surface_work = surface_work;
-                    m_task_param[m_task_num].display_index = display_index;
-                    m_task_param[m_task_num].m_FrameAllocator = m_FrameAllocator;
-                    m_task_param[m_task_num].mid = mid;
-                    m_task_param[m_task_num].in = &m_in[m_task_num];
-                    m_task_param[m_task_num].m_frame = m_frame;
-                    m_task_param[m_task_num].m_frame_in_use = m_frame_in_use;
-                    m_task_param[m_task_num].task_num = m_task_num;
-                    m_task_param[m_task_num].m_isSoftwareBuffer = m_isSWBuf;
-
-                    pEntryPoint->pParam = (void *)(&(m_task_param[m_task_num]));
-
-                    m_prev_task_num = m_task_num;
-
-                    m_implUmc.PostProcessUserData(display_index);
-
-                    display_frame_count++;
-                    return sts;
-                }
-                else
-                {
-                    mfxFrameSurface1 *pSurface;
-                    pSurface = m_FrameAllocator->GetSurface(mid[display_index], surface_work, &m_vPar);
-
-                    if (NULL == pSurface)
-                    {
-                        return MFX_ERR_UNDEFINED_BEHAVIOR;
-                    }
-
-                    pSurface->Data.FrameOrder = display_order;
-                    pSurface->Data.TimeStamp = last_timestamp;
-
-                    return MFX_ERR_MORE_DATA;
-                }
-            }
-
-            return MFX_ERR_MORE_DATA;
-        }
-    }
-    else // software implementation
-    {
-        int display_index = -1;
-
-        m_in[m_task_num].SetBufferPointer(m_frame[m_frame_curr].Data + m_frame[m_frame_curr].DataOffset, m_frame[m_frame_curr].DataLength);
-        m_in[m_task_num].SetDataSize(m_frame[m_frame_curr].DataLength);
-        m_in[m_task_num].SetTime(m_time[m_frame_curr]);
-
-        UMC::Status res = UMC::UMC_OK;
-        bool isField = false;
-        bool isSkipped = false;
-
-        if (8 < m_frame[m_frame_curr].DataLength)
-        {
-            res = m_implUmc.GetPictureHeader(&m_in[m_task_num], m_task_num, m_prev_task_num);
-
-            if (UMC::UMC_ERR_INVALID_STREAM == res)
-            {
-                //return MFX_ERR_UNKNOWN;
-                //m_implUmc.SetCorruptionFlag(m_task_num);
-                res = 0;
-            }
-
-            if (UMC::UMC_OK != res)
-            {
-                if (false == m_reset_done)
-                {
-                    m_frame[m_frame_curr].DataLength = 0;
-                    m_frame[m_frame_curr].DataOffset = 0;
-                    m_frame_in_use[m_frame_curr] = false;
-
-                    isSkipped = m_implUmc.IsFrameSkipped();
-
-                    if (true == isSkipped && !(dec_field_count & 1))
-                    {
-                        skipped_frame_count++;
-                    }
-
-                    if (NULL == bs)
-                    {
-                        display_index = m_implUmc.GetDisplayIndex();
-                        
-                        if (0 > display_index)
-                        {
-                            res = m_implUmc.GetPictureHeader(NULL,m_task_num,m_prev_task_num);
-                            
-                            if (UMC::UMC_ERR_INVALID_STREAM == res)
-                            {
-                                return MFX_ERR_UNKNOWN;
-                            }
-
-                            display_index = m_implUmc.GetDisplayIndex();
-                        }
-                        if (0 <= display_index)
-                        {
-                            *surface_disp = m_FrameAllocator->GetSurface(mid[display_index], surface_work, &m_vPar);
-                            
-                            if (true == m_isDecodedOrder)
-                            {
-                                (*surface_disp)->Data.FrameOrder = 0xffffffff;
-                            }
-
-                            mfxStatus sts = m_FrameAllocator->PrepareToOutput(surface_work, mid[display_index], &m_vPar, m_isOpaqueMemory);
-                            MFX_CHECK_STS(sts);
-
-                            (*surface_disp)->Data.TimeStamp = GetMfxTimeStamp(m_implUmc.GetCurrDecodedTime(display_index));
-                            (*surface_disp)->Data.DataFlag = (mfxU16)((m_implUmc.isOriginalTimeStamp(display_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
-
-                            if (true == m_isDecodedOrder)
-                            {
-                                (*surface_disp)->Data.FrameOrder = display_order;
-                                display_order++;
-                            }
-                            else
-                            {
-                                (*surface_disp)->Data.FrameOrder = display_frame_count;
-                            }
-
-                            display_frame_count++;
-
-                            m_FrameAllocator->Unlock(mid[display_index]);
-                            m_FrameAllocator->DecreaseReference(mid[display_index]);
-                            mid[display_index] = -1;
-
-                            {
-                                UMC::AutomaticUMCMutex guard(m_guard);
-                                m_implUmc.UnLockTask(display_index);
-                            }
-
-                            pEntryPoint->requiredNumThreads = m_NumThreads;
-                            pEntryPoint->pRoutine = &MPEG2TaskRoutine;
-                            pEntryPoint->pState = (void*)this;
-                            pEntryPoint->pParam = (void *)(&(m_task_param[m_task_num]));
-                            pEntryPoint->pCompleteProc = &MPEG2CompleteTasks;
-                            pEntryPoint->pRoutineName = (char *)"DecodeMPEG2";
-
-                            m_implUmc.PostProcessUserData(display_index);
-
-                            return MFX_ERR_NONE;
-                        }
-                    }
-
-                    return MFX_ERR_MORE_DATA;
-                }
-                else
-                {
-                    m_frame[m_frame_curr].DataLength = 0;
-                    m_frame[m_frame_curr].DataOffset = 0;
-                    m_frame_in_use[m_frame_curr] = false;
-
-                    return MFX_ERR_MORE_SURFACE;
-                }
-            }
-
-            m_reset_done = false;
-
-            m_isShDecoded = m_implUmc.IsSHDecoded() && (dec_field_count > 0);
-
-            res = m_implUmc.GetInfo(&m_vdPar);
-
-            sts = UpdateCurrVideoParams(surface_work, m_task_num);
-
-            isField = !m_implUmc.IsFramePictureStructure(m_task_num);
-
-            if (m_task_num > DPB && !isField)
-            {
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            }
-
-            if ((false == isField || (true == isField && !(dec_field_count & 1))))
-            {
-                curr_index = m_task_num;
-                next_index = m_implUmc.GetNextDecodingIndex(curr_index);
-                prev_index = m_implUmc.GetPrevDecodingIndex(curr_index);
-
-                UMC::VideoDataInfo Info;
-                mfxFrameSurface1 *pSurface = surface_work;
-
-                if (1 == m_implUmc.GetSequenceHeader().progressive_sequence)
-                {
-                    Info.Init(pSurface->Info.Width,
-                             (pSurface->Info.CropH + 15) & ~0x0f,
-                              m_vdPar.info.color_format);
-                }
-                else
-                {
-                    Info.Init(pSurface->Info.Width,
-                              pSurface->Info.Height,
-                              m_vdPar.info.color_format);
-                }
-
-                m_FrameAllocator->Alloc(&mid[curr_index], &Info, 0);
-
-                if (0 > mid[curr_index])
-                {
-                    return MFX_ERR_LOCK_MEMORY;
-                }
-
-                m_FrameData[curr_index] = (UMC::FrameData *)m_FrameAllocator->Lock(mid[curr_index]);
-
-                if (NULL == m_FrameData[curr_index])
-                {
-                    return MFX_ERR_LOCK_MEMORY;
-                }
-
-                m_FrameAllocator->IncreaseReference(mid[curr_index]);
-
-                m_out.Close();
-                m_out.SetAlignment(MFX_MPEG2_DECODE_ALIGNMENT);
-
-                res = m_out.Init(pSurface->Info.Width, pSurface->Info.Height, m_vdPar.info.color_format);
-                MFX_CHECK_UMC_STS(res);
-
-                const UMC::FrameData::PlaneMemoryInfo *pInfo;
-
-                pInfo = m_FrameData[curr_index]->GetPlaneMemoryInfo(0);
-
-                m_out.SetPlanePointer(pInfo->m_planePtr, 0);
-                Ipp32s pitch = (Ipp32s)pInfo->m_pitch;
-                
-                pInfo = m_FrameData[curr_index]->GetPlaneMemoryInfo(1);
-                m_out.SetPlanePointer(pInfo->m_planePtr, 1);
-                
-                pInfo = m_FrameData[curr_index]->GetPlaneMemoryInfo(2);
-                
-                m_out.SetPlanePointer(pInfo->m_planePtr, 2);
-
-                m_out.SetPlanePitch(pitch, 0);
-                m_out.SetPlanePitch(pitch / 2, 1);
-                m_out.SetPlanePitch(pitch / 2, 2);
-            }
-
-            m_implUmc.SetOutputPointers(&m_out, m_task_num);
-
-            display_index = m_implUmc.GetDisplayIndex();
-
-            UMC::Status umcSts = m_implUmc.ProcessRestFrame(m_task_num);
-
-            if (umcSts == UMC::UMC_OK && display_index >= 0)
-            {
-                last_timestamp = GetMfxTimeStamp(m_implUmc.GetCurrDecodedTime(display_index));
-            }
-
-            if (true == isField)
-            {
-                dec_field_count++;
-            }
-            else
-            {
-                dec_field_count += 2;
-                cashed_frame_count++;
-            }
-
-            dec_frame_count++;
-
-            if (0 <= display_index)
-            {
-                mfxStatus sts = GetOutputSurface(surface_disp, surface_work, mid[display_index]);
-                if (sts < MFX_ERR_NONE)
-                    return sts;
-
-                if (true == m_isDecodedOrder)
-                {
-                    (*surface_disp)->Data.FrameOrder = 0xffffffff;
-
-                    if (m_implUmc.GetFrameType(display_index) == B_PICTURE)
-                    {
-                        (*surface_disp)->Data.FrameOrder = display_order;
-
-                        display_order++;
-                    }
-                    else //I or P
-                    {
-                        Ipp32s p_index = m_implUmc.GetPrevDecodingIndex(display_index);
-                        
-                        if (0 <= p_index)
-                        {
-                            mfxFrameSurface1 *pSurface;
-
-                            pSurface = m_FrameAllocator->GetSurface(mid[p_index], surface_work, &m_vPar);
-
-                            if (NULL == pSurface)
-                            {
-                                return MFX_ERR_UNDEFINED_BEHAVIOR;
-                            }
-
-                            pSurface->Data.FrameOrder = display_order;
-                            display_order++;
-                        }
-                    }
-                }
-                else
-                {
-                    if (!*surface_disp)
-                    {
-                        return MFX_ERR_UNKNOWN;
-                    }
-
-                    (*surface_disp)->Data.FrameOrder = display_frame_count;
-                }
-
-                display_frame_count++;
-            }
-
-            memset(&m_task_param[m_task_num],0,sizeof(MParam));
-
-            pEntryPoint->requiredNumThreads = m_NumThreads;
-            pEntryPoint->pRoutine = &MPEG2TaskRoutine;
-            pEntryPoint->pCompleteProc = &MPEG2CompleteTasks;
-            pEntryPoint->pState = (void*)this;
-            pEntryPoint->pRoutineName = (char *)"DecodeMPEG2";
-
-            m_task_param[m_task_num].m_thread_completed = 0;
-
-            m_task_param[m_task_num].IsSWImpl = true;
-
-            m_task_param[m_task_num].NumThreads = m_implUmc.GetCurrThreadsNum(m_task_num);
-            m_task_param[m_task_num].m_isDecodedOrder = m_isDecodedOrder;
-            m_task_param[m_task_num].m_frame_curr = m_frame_curr;
-            m_task_param[m_task_num].last_timestamp = last_timestamp;
-            m_task_param[m_task_num].curr_index = curr_index;
-            m_task_param[m_task_num].prev_index = prev_index;
-            m_task_param[m_task_num].next_index = next_index;
-            m_task_param[m_task_num].last_frame_count = last_frame_count;
-            m_task_param[m_task_num].surface_out = GetOriginalSurface(*surface_disp);
-            m_task_param[m_task_num].surface_work = surface_work;
-            m_task_param[m_task_num].display_index = display_index;
-            m_task_param[m_task_num].m_FrameAllocator = m_FrameAllocator;
-            m_task_param[m_task_num].mid = mid;
-            m_task_param[m_task_num].in = &m_in[m_task_num];
-            m_task_param[m_task_num].m_frame = m_frame;
-            m_task_param[m_task_num].m_frame_in_use = m_frame_in_use;
-            m_task_param[m_task_num].task_num = m_task_num;
-
-            memcpy_s(&(m_task_param[m_task_num].m_vPar.mfx.FrameInfo),sizeof(mfxFrameInfo),&m_vPar.mfx.FrameInfo,sizeof(mfxFrameInfo));
-
-            THREAD_DEBUG_PRINTF__HOLDING_MUTEX(m_guard, "task_num %d was added\n", m_task_param[m_task_num].task_num)
-
-            pEntryPoint->pParam = (void *)(&(m_task_param[m_task_num]));
-
-            if (NULL != *surface_disp)
-            {
-                (*surface_disp)->Data.TimeStamp = last_timestamp;
-                (*surface_disp)->Data.DataFlag = (mfxU16)((m_implUmc.isOriginalTimeStamp(display_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
-            }
-
-            m_implUmc.LockTask(m_task_num);
-
-            m_prev_task_num = m_task_num;
-
-            if (true == isField && (dec_field_count & 1))
-            {
-                if(m_task_num >= DPB)
-                {
-                    return MFX_ERR_UNDEFINED_BEHAVIOR;
-                }
-                
-                m_task_num += DPB;
-            }
-
-            if (0 <= display_index)
-            {
-                m_implUmc.PostProcessUserData(display_index);
-
-                return sts;
-            }
-
-            if (true == m_isDecodedOrder)
-            {
-                return MFX_ERR_MORE_DATA;
-            }
-
-            return MFX_ERR_MORE_SURFACE;
-        }
-        else
-        {
-            last_frame_count++;
-
-            res = m_implUmc.GetPictureHeader(NULL, m_task_num, m_prev_task_num);
-
-            if (UMC::UMC_ERR_INVALID_STREAM == res)
-            {
-                return MFX_ERR_UNKNOWN;
-            }
-
-            display_index = m_implUmc.GetDisplayIndex();
-            
-            if (0 <= display_index)
-            {
-                if (false == m_isDecodedOrder)
-                {
-                    last_timestamp = GetMfxTimeStamp(m_implUmc.GetCurrDecodedTime(display_index));
-                    mfxStatus sts = GetOutputSurface(surface_disp, surface_work, mid[display_index]);
-                    if (sts < MFX_ERR_NONE)
-                        return sts;
-
-                    (*surface_disp)->Data.TimeStamp = last_timestamp;
-                    memset(&m_task_param[m_task_num],0,sizeof(MParam));
-
-                    pEntryPoint->requiredNumThreads = m_NumThreads;
-                    pEntryPoint->pRoutine = &MPEG2TaskRoutine;
-                    pEntryPoint->pCompleteProc = &MPEG2CompleteTasks;
-                    pEntryPoint->pState = (void*)this;
-                    pEntryPoint->pRoutineName = (char *)"DecodeMPEG2";
-
-                    m_task_param[m_task_num].m_thread_completed = 0;
-                    m_task_param[m_task_num].IsSWImpl = true;
-                    m_task_param[m_task_num].NumThreads = m_implUmc.GetCurrThreadsNum(m_task_num);
-
-                    m_task_param[m_task_num].m_isDecodedOrder = m_isDecodedOrder;
-                    m_task_param[m_task_num].m_frame_curr = m_frame_curr;
-                    m_task_param[m_task_num].last_timestamp = last_timestamp;
-                    m_task_param[m_task_num].curr_index = curr_index;
-                    m_task_param[m_task_num].prev_index = prev_index;
-                    m_task_param[m_task_num].next_index = next_index;
-                    m_task_param[m_task_num].last_frame_count = last_frame_count;
-                    m_task_param[m_task_num].surface_out = GetOriginalSurface(*surface_disp);
-                    m_task_param[m_task_num].surface_work = surface_work;
-                    m_task_param[m_task_num].display_index = display_index;
-                    m_task_param[m_task_num].m_FrameAllocator = m_FrameAllocator;
-                    m_task_param[m_task_num].mid = mid;
-                    m_task_param[m_task_num].in = NULL;
-                    m_task_param[m_task_num].m_frame = m_frame;
-                    m_task_param[m_task_num].m_frame_in_use = m_frame_in_use;
-                    m_task_param[m_task_num].task_num = m_task_num;
-
-                    memcpy_s(&(m_task_param[m_task_num].m_vPar.mfx.FrameInfo), sizeof(mfxFrameInfo), &m_vPar.mfx.FrameInfo, sizeof(mfxFrameInfo));
-
-                    pEntryPoint->pParam = (void *)(&(m_task_param[m_task_num]));
-
-                    m_prev_task_num = m_task_num;
-
-                    m_implUmc.PostProcessUserData(display_index);
-
-                    (*surface_disp)->Data.TimeStamp = last_timestamp;
-
-                    return MFX_ERR_NONE;
-                }
-                else
-                {
-                    mfxFrameSurface1 *pSurface;
-                    pSurface = m_FrameAllocator->GetSurface(mid[display_index], surface_work, &m_vPar);
-                    
-                    if (NULL == pSurface)
-                    {
-                        return MFX_ERR_UNDEFINED_BEHAVIOR;
-                    }
-
-                    pSurface->Data.FrameOrder = display_order;
-                    pSurface->Data.TimeStamp = last_timestamp;
-
-                    return MFX_ERR_MORE_DATA;
-                }
-            }
-
-            return MFX_ERR_MORE_DATA;
-        }
-
-    } // end software part
-}
-
-
-mfxStatus VideoDECODEMPEG2::GetStatusReportByIndex(mfxFrameSurface1 *displaySurface, mfxU32 currIdx)
-{
-    displaySurface; currIdx;
-
-#ifdef MFX_VA_WIN
-
-    UMC::Status sts = UMC::UMC_OK;
-
-    DXVA_Status_VC1 currentTaskStatus = {};
-    bool isStatusExist = false;
-    
-    std::list<DXVA_Status_VC1>::iterator iterator;
-
-    STATUS_REPORT_DEBUG_PRINTF("Queried task index %d \n", currIdx)
-
-    // check if status is already cached
-    if (0 != m_pStatusList.size())
-    {
-        for (iterator = m_pStatusList.begin(); iterator != m_pStatusList.end(); iterator++)
-        {
-            if (currIdx == (*iterator).wDecodedPictureIndex)
-            {
-                isStatusExist = true;
-
-                currentTaskStatus = (*iterator);
-                m_pStatusList.erase(iterator);
-
-                break;
-            }
-        }
-    }
-
-    if (false == isStatusExist)
-    {
-        //TDR handling.
-        for(int i=0; i< MPEG2_STATUS_REPORT_NUM;i++){
-            m_pStatusReport[i].bStatus = 3;
-        }
-        // ask driver to provide tasks status
-        sts = m_implUmc.pack_w.GetStatusReport(m_pStatusReport);
-        MFX_CHECK_STS((mfxStatus)sts);
-
-        // cache statutes into buffer
-        for (mfxU32 i = 0; i < MPEG2_STATUS_REPORT_NUM; i += 1)
-        {
-            if (0 == m_pStatusReport[i].StatusReportFeedbackNumber)
-            {
-                break;
-            }
-
-            m_pStatusList.push_front(m_pStatusReport[i]);
-        }
-
-        // clear temp buffer
-        memset(m_pStatusReport, 0, sizeof(DXVA_Status_VC1) * MPEG2_STATUS_REPORT_NUM);
-
-        // find status
-        for (iterator = m_pStatusList.begin(); iterator != m_pStatusList.end(); iterator++)
-        {
-            if (currIdx == (*iterator).wDecodedPictureIndex)
-            {
-                currentTaskStatus = (*iterator);
-                break;
-            }
-        }
-
-        m_pStatusList.erase(iterator);
-    }
-
-    switch (currentTaskStatus.bStatus)
-    {
-        case STATUS_REPORT_MINOR_PROBLEM:
-        case STATUS_REPORT_OPERATION_SUCCEEDED:
-            break;
-
-        case STATUS_REPORT_SIGNIFICANT_PROBLEM:
-            displaySurface->Data.Corrupted = 1;
-            break;
-
-        case STATUS_REPORT_SEVERE_PROBLEM:
-        case STATUS_REPORT_SEVERE_PROBLEM_OTHER:
-            return MFX_ERR_DEVICE_FAILED;
-
-        default:
-            break;
-    }
-
-#endif
-
-    return MFX_ERR_NONE;
-}
-
-mfxFrameSurface1 *VideoDECODEMPEG2::GetOriginalSurface(mfxFrameSurface1 *pSurface)
-{
-    if (true == m_isOpaqueMemory)
-    {
-        return m_pCore->GetNativeSurface(pSurface);
-    }
-
-    return pSurface;
-}
-
-mfxStatus VideoDECODEMPEG2::GetOutputSurface(mfxFrameSurface1 **surface_out, mfxFrameSurface1 *surface_work, UMC::FrameMemID index)
-{
-    mfxFrameSurface1 *pNativeSurface =  m_FrameAllocator->GetSurface(index, surface_work, &m_vPar);
-    
-    if (pNativeSurface)
-    {
-        if(m_isOpaqueMemory)
-            *surface_out = m_pCore->GetOpaqSurface(pNativeSurface->Data.MemId);
-        else 
-            *surface_out = pNativeSurface;
-    }
-    else
-    {
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus VideoDECODEMPEG2::GetStatusReport(mfxFrameSurface1 *displaySurface, UMC::FrameMemID surface_id)
-{
-    displaySurface;surface_id;
-#ifdef MFX_VA_WIN
-    UMC::Status sts = UMC::UMC_OK;
-
-    DXVA_Status_VC1 currentTaskStatus = {};
-
-    STATUS_REPORT_DEBUG_PRINTF("status report count %d\n", m_pStatusList.size())
-
-    // check if status is already cached
-    if (0 != m_pStatusList.size())
-    {
-        currentTaskStatus = m_pStatusList.front(); 
-        m_pStatusList.pop_front();
-    }
-    else
-    {
-        //TDR handling.
-        for(int i=0; i< MPEG2_STATUS_REPORT_NUM;i++){
-            m_pStatusReport[i].bStatus = 3;
-        }
-        // ask driver to provide tasks status
-        sts = m_implUmc.pack_w.GetStatusReport(m_pStatusReport);
-
-        MFX_CHECK_STS((mfxStatus)sts);
-
-        // cache statutes into buffer
-        for (mfxU32 i = 0; i < 8; i += 1)
-        {
-            if (0 == m_pStatusReport[i].StatusReportFeedbackNumber)
-            {
-                break;
-            }
-
-            m_pStatusList.push_front(m_pStatusReport[i]);
-
-            STATUS_REPORT_DEBUG_PRINTF("Got status report %d\n", m_pStatusReport[i].wDecodedPictureIndex)
-        }
-
-        // clear temp buffer
-        memset(m_pStatusReport, 0, sizeof(DXVA_Status_VC1) * MPEG2_STATUS_REPORT_NUM);
-
-        if (0 == m_pStatusList.size())
-        {
-            // something wrong, but who is care
-            return MFX_ERR_NONE;
-        }
-
-        // get status report
-        currentTaskStatus = m_pStatusList.front();
-        m_pStatusList.pop_front();
-    }
-
-    STATUS_REPORT_DEBUG_PRINTF("wDecodedPictureIndex %d is ready\n", currentTaskStatus.wDecodedPictureIndex)
-
-    switch (currentTaskStatus.bStatus)
-    {
-        case STATUS_REPORT_OPERATION_SUCCEEDED:
-            break;
-        
-        case STATUS_REPORT_MINOR_PROBLEM:
-        case STATUS_REPORT_SIGNIFICANT_PROBLEM:
-            displaySurface->Data.Corrupted = 1;
-            break;
-
-        case STATUS_REPORT_SEVERE_PROBLEM:
-        case STATUS_REPORT_SEVERE_PROBLEM_OTHER:
-            displaySurface->Data.Corrupted = 2;
-            return MFX_ERR_DEVICE_FAILED;
-
-        default:
-            break;
-    }
-
-#endif
-
-#ifdef UMC_VA_LINUX
-    UMC::VideoAccelerator *va;
-    m_pCore->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
-
-    UMC::Status sts = UMC::UMC_OK;
-    mfxU16 surfCorruption = 0;
-
-#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
-
-    sts = va->SyncTask(surface_id, &surfCorruption);
-
-    STATUS_REPORT_DEBUG_PRINTF("index %d with corruption: %d (sts:%d)\n", surface_id, surfCorruption, sts)
-
-    if (sts != UMC::UMC_OK)
-    {
-        mfxStatus CriticalErrorStatus = (sts == UMC::UMC_ERR_GPU_HANG) ? MFX_ERR_GPU_HANG : MFX_ERR_DEVICE_FAILED;
-        SetCriticalErrorOccured(CriticalErrorStatus);
-        return CriticalErrorStatus;
-    }
-
-#else
-    VASurfaceStatus surfSts = VASurfaceSkipped;
-
-    sts = va->QueryTaskStatus(surface_id, &surfSts, &surfCorruption);
-
-    if (sts == UMC::UMC_ERR_GPU_HANG)
-        return MFX_ERR_GPU_HANG;
-
-    if (sts != UMC::UMC_OK)
-        return MFX_ERR_DEVICE_FAILED;
-
-#endif // #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
-
-    displaySurface->Data.Corrupted = surfCorruption;
-
-#endif // UMC_VA_LINUX
-
-    return MFX_ERR_NONE;
+    return internalImpl->DecodeFrameCheck(bs, surface_work, surface_disp, pEntryPoint);
 }
 
 inline bool IsMpeg2StartCode(const mfxU8* p)
@@ -3862,7 +1563,662 @@ mfxStatus CutUserData(mfxBitstream *in, mfxBitstream *out, const mfxU8 *tail)
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, mfxFrameSurface1 *surface_work)
+VideoDECODEMPEG2InternalBase::VideoDECODEMPEG2InternalBase()
+{
+    m_pCore = 0;
+    m_isSWBuf = false;
+    m_isSWDecoder = true;
+
+    for(int i = 0; i < DPB; i++)
+    {
+        mid[i] = -1;
+    }
+
+    for(int i = 0; i < NUM_FRAMES; i++)
+    {
+        m_frame[i].Data = NULL;
+        m_frame_in_use[i] = false;
+    }
+
+    m_FrameAllocator_nv12 = new mfx_UMC_FrameAllocator_NV12;
+    m_FrameAllocator = m_FrameAllocator_nv12;
+
+    m_isDecodedOrder = false;
+    m_reset_done = false;
+
+    m_isOpaqueMemory = false;
+    m_isFrameRateFromInit = false;
+
+    memset(&allocResponse, 0, sizeof(mfxFrameAllocResponse));
+    memset(&m_opaqueResponse, 0, sizeof(mfxFrameAllocResponse));
+
+    Reset(0);
+}
+
+VideoDECODEMPEG2InternalBase::~VideoDECODEMPEG2InternalBase()
+{
+}
+
+mfxStatus VideoDECODEMPEG2InternalBase::Reset(mfxVideoParam *par)
+{
+    for (mfxU32 i = 0; i < DPB; i++)
+    {
+        if (mid[i] >= 0)
+        {
+            m_FrameAllocator->DecreaseReference(mid[i]);
+            mid[i] = -1;
+        }
+    }
+
+    m_FrameAllocator->Reset();
+
+    prev_index      = -1;
+    curr_index      = -1;
+    next_index      = -1;
+    display_index   = -1;
+    display_order   =  0;
+    dec_frame_count = 0;
+    dec_field_count = 0;
+    last_frame_count = 0;
+    display_frame_count = 0;
+    cashed_frame_count = 0;
+    skipped_frame_count = 0;
+    last_timestamp   = 0;
+    last_good_timestamp = 0.0;
+
+    m_found_SH = false;
+    m_first_SH = true;
+    m_new_bs   = true;
+
+    ResetFcState(m_fcState);
+
+    m_task_num = 0;
+    m_prev_task_num = -1;
+
+    for(int i = 0; i < NUM_FRAMES; i++)
+    {
+        m_frame[i].DataLength = 0;
+        m_frame[i].DataOffset = 0;
+        m_frame_in_use[i] = false;
+        m_time[i] = (mfxF64)(-1);
+    }
+
+    m_frame_curr = -1;
+    m_frame_free = -1;
+    m_frame_constructed = true;
+
+    memset(m_last_bytes,0,NUM_REST_BYTES);
+
+    m_resizing = false;
+    m_InitPicStruct = 0;
+
+    m_vdPar.info.framerate = 0;
+
+    if (par)
+    {
+        m_vPar = *par;
+
+        m_vdPar.info.stream_type = UMC::MPEG2_VIDEO;
+        m_vdPar.info.clip_info.width = par->mfx.FrameInfo.Width;
+        m_vdPar.info.clip_info.height = par->mfx.FrameInfo.Height;
+
+        m_vdPar.info.aspect_ratio_width = par->mfx.FrameInfo.AspectRatioW;
+        m_vdPar.info.aspect_ratio_height = par->mfx.FrameInfo.AspectRatioH;
+    
+        mfxU32 frameRateD = par->mfx.FrameInfo.FrameRateExtD;
+        mfxU32 frameRateN = par->mfx.FrameInfo.FrameRateExtN;
+
+        if (0 != frameRateD && 0 != frameRateN)
+        {
+            m_vdPar.info.framerate = (Ipp64f) frameRateN / frameRateD;
+            m_isFrameRateFromInit = true;
+        }
+
+        m_vdPar.info.color_format = GetUmcColorFormat((mfxU8)par->mfx.FrameInfo.ChromaFormat);
+
+        if (UMC::NONE == m_vdPar.info.color_format)
+        {
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+
+        m_vdPar.lFlags |= par->mfx.DecodedOrder ? 0 : UMC::FLAG_VDEC_REORDER;
+        m_vdPar.lFlags |= UMC::FLAG_VDEC_EXTERNAL_SURFACE_USE;
+
+        switch(par->mfx.TimeStampCalc)
+        {
+            case MFX_TIMESTAMPCALC_TELECINE:
+                m_vdPar.lFlags |= UMC::FLAG_VDEC_TELECINE_PTS;
+                break;
+
+            case MFX_TIMESTAMPCALC_UNKNOWN:
+                break;
+
+            default:
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+
+        m_vdPar.numThreads = (mfxU16)(par->AsyncDepth ? par->AsyncDepth : m_pCore->GetAutoAsyncDepth());
+
+        if (m_InitH || m_InitW)
+        {
+            if (2048 < par->mfx.FrameInfo.Width || 2048 < par->mfx.FrameInfo.Height)
+            { 
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+            }
+
+            if (m_InitW < par->mfx.FrameInfo.Width || m_InitH < par->mfx.FrameInfo.Height)
+            { 
+                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+            }
+        }
+
+        m_isDecodedOrder = (1 == par->mfx.DecodedOrder) ? true : false;
+    }
+    else
+    {
+        m_InitW = 0;
+        m_InitH = 0;
+    }
+
+    if (m_implUmc.get())
+        m_implUmc->Reset();
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEMPEG2InternalBase::Close()
+{
+    m_implUmc->Close();
+
+    for (int i = 0; i < DPB; i++)
+        if(mid[i] >= 0)
+            m_FrameAllocator->DecreaseReference(mid[i]);
+
+    for (int i = 0; i < DPB; i++)
+    {
+        mid[i] = -1;
+    }
+
+    for (int i = 0; i < NUM_FRAMES; i++)
+    {
+        if(m_frame[i].Data) delete []m_frame[i].Data;
+        m_frame[i].Data = NULL;
+    }
+
+    if(m_FrameAllocator)
+        m_FrameAllocator->Close();
+
+    if(m_FrameAllocator_nv12)
+    {
+        delete m_FrameAllocator_nv12;
+        m_FrameAllocator_nv12 = 0;
+    }
+
+    m_FrameAllocator = 0;
+
+    mfxStatus mfxRes = MFX_ERR_NONE;
+
+    if (0 < allocResponse.NumFrameActual)
+    {
+        mfxRes = m_pCore->FreeFrames(&allocResponse);
+        memset(&allocResponse, 0, sizeof(mfxFrameAllocResponse));
+    }
+
+    if (0 < m_opaqueResponse.NumFrameActual && true == m_isOpaqueMemory)
+    {
+        mfxRes = m_pCore->FreeFrames(&m_opaqueResponse);
+        memset(&m_opaqueResponse, 0, sizeof(mfxFrameAllocResponse));
+    }
+
+    m_isOpaqueMemory = false;
+
+    return mfxRes;
+}
+
+mfxStatus VideoDECODEMPEG2InternalBase::Init(mfxVideoParam *par, VideoCORE * core)
+{
+    m_pCore = core;
+
+    m_implUmc->Close();
+
+    mfxStatus sts = AllocFrames(par);
+    MFX_CHECK_STS(sts);
+
+    Reset(par);
+
+    Ipp32u size = Ipp32u (par->mfx.FrameInfo.Width * par->mfx.FrameInfo.Height *3L/2);
+    Ipp32u MaxLength = 1024 * 500;
+
+    if (size > MaxLength)
+    {
+        MaxLength = size;
+    }
+
+    for (int i = 0; i < NUM_FRAMES; i++)
+    {
+        memset(&m_frame[i], 0, sizeof(mfxBitstream));
+        m_frame[i].MaxLength = MaxLength;
+        m_frame[i].Data = new mfxU8[MaxLength];
+        m_frame[i].DataLength = 0;
+        m_frame[i].DataOffset = 0;
+        m_frame_in_use[i] = false;
+    }
+
+    m_InitW = par->mfx.FrameInfo.Width;
+    m_InitH = par->mfx.FrameInfo.Height;
+
+    m_InitPicStruct = par->mfx.FrameInfo.PicStruct;
+    m_Protected = par->Protected;
+    m_isDecodedOrder = (1 == par->mfx.DecodedOrder) ? true : false;
+
+    maxNumFrameBuffered = NUM_FRAMES_BUFFERED;
+    // video conference mode
+    // async depth == 1 means no bufferezation
+    if (1 == par->AsyncDepth)
+    {
+        maxNumFrameBuffered = 1;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEMPEG2InternalBase::QueryIOSurfInternal(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
+{
+    if (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+    {
+        request->Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
+    }
+    else if (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+    {
+        request->Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
+    }
+    else // opaque memory case
+    {
+        if (MFX_PLATFORM_SOFTWARE == core->GetPlatformType())
+        {
+            request->Type = MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
+        }
+        else
+        {
+            request->Type = MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
+        }
+    }
+
+    if (MFX_PLATFORM_HARDWARE == core->GetPlatformType())
+    {
+        // check hardware restrictions
+        if (false == IsHWSupported(core, par))
+        {
+            //request->Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
+
+            if (par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+            {
+                request->Type = MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
+            }
+        }
+    }
+
+    memcpy_s(&(request->Info), sizeof(mfxFrameInfo), &(par->mfx.FrameInfo), sizeof(mfxFrameInfo));
+    
+    // output color format is NV12
+    request->Info.FourCC = MFX_FOURCC_NV12;
+    request->NumFrameMin = NUM_FRAMES_BUFFERED + 3;
+    request->NumFrameSuggested = request->NumFrameMin = request->NumFrameMin + (par->AsyncDepth ? par->AsyncDepth : core->GetAutoAsyncDepth());
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEMPEG2InternalBase::AllocFrames(mfxVideoParam *par)
+{
+    memset(&allocResponse, 0, sizeof(mfxFrameAllocResponse));
+
+    mfxU16 IOPattern = par->IOPattern;
+
+    // frames allocation
+    int useInternal = m_isSWDecoder ? (IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
+
+    if (IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+    {
+        mfxExtOpaqueSurfaceAlloc *pOpaqAlloc = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+        if (!pOpaqAlloc)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+
+        useInternal = m_isSWDecoder ? !(pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY) : (pOpaqAlloc->Out.Type & MFX_MEMTYPE_SYSTEM_MEMORY);
+    }
+
+    if (!m_isSWDecoder || useInternal || (IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
+    {
+        // positive condition means that decoder was configured as
+        //  a. as hardware implementation or
+        //  b. as software implementation with d3d9 output surfaces
+        QueryIOSurfInternal(m_pCore, par, &allocRequest);
+
+        //const mfxU16 NUM = allocRequest.NumFrameSuggested;
+        mfxExtOpaqueSurfaceAlloc *pOpqExt = 0;
+        if (MFX_IOPATTERN_OUT_OPAQUE_MEMORY & IOPattern) // opaque memory case
+        {
+            pOpqExt = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+            if (!pOpqExt || allocRequest.NumFrameMin > pOpqExt->Out.NumSurface)
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+
+            m_isOpaqueMemory = true;
+
+            if (m_isSWDecoder)
+            {
+                allocRequest.Type = (MFX_MEMTYPE_SYSTEM_MEMORY & pOpqExt->Out.Type) ? (mfxU16)pOpqExt->Out.Type :
+                    (mfxU16)(MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET);
+            }
+
+            allocRequest.NumFrameMin = allocRequest.NumFrameSuggested = (mfxU16)pOpqExt->Out.NumSurface;
+        }
+        else
+        {
+            allocRequest.Type = MFX_MEMTYPE_FROM_DECODE;
+            allocRequest.Type |= m_isSWDecoder ? MFX_MEMTYPE_SYSTEM_MEMORY : MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+            allocRequest.Type |= useInternal ? MFX_MEMTYPE_INTERNAL_FRAME : MFX_MEMTYPE_EXTERNAL_FRAME;
+        }
+
+        allocResponse.NumFrameActual = allocRequest.NumFrameSuggested;
+
+        mfxStatus mfxSts;
+        if (m_isOpaqueMemory)
+        {
+            mfxSts  = m_pCore->AllocFrames(&allocRequest, 
+                                           &allocResponse, 
+                                           pOpqExt->Out.Surfaces, 
+                                           pOpqExt->Out.NumSurface);
+        }
+        else
+        {
+            bool isNeedCopy = ((MFX_IOPATTERN_OUT_SYSTEM_MEMORY & IOPattern) && (allocRequest.Type & MFX_MEMTYPE_INTERNAL_FRAME)) ||
+                ((MFX_IOPATTERN_OUT_VIDEO_MEMORY & IOPattern) && (m_isSWDecoder));
+            allocRequest.AllocId = par->AllocId;
+#ifdef MFX_VA_WIN
+            allocRequest.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
+#endif
+            mfxSts = m_pCore->AllocFrames(&allocRequest, &allocResponse, isNeedCopy);
+            if(mfxSts)
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+
+        if (mfxSts != MFX_ERR_NONE && mfxSts != MFX_ERR_NOT_FOUND)
+        {
+            // second status means that external allocator was not found, it is ok
+            return mfxSts;
+        }
+
+        if (!useInternal)
+            m_FrameAllocator->SetExternalFramesResponse(&allocResponse);
+    }
+
+    UMC::Status sts = m_FrameAllocator->InitMfx(NULL, m_pCore, par, &allocRequest, &allocResponse, !useInternal, m_isSWDecoder);
+    if (UMC::UMC_OK != sts)
+    {
+        return MFX_ERR_MEMORY_ALLOC;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEMPEG2InternalBase::GetVideoParam(mfxVideoParam *par)
+{
+    par->IOPattern = m_vPar.IOPattern;
+    par->mfx       = m_vPar.mfx;
+    par->Protected = m_vPar.Protected;
+    par->AsyncDepth = m_vPar.AsyncDepth;
+    par->mfx.FrameInfo.AspectRatioW = m_vPar.mfx.FrameInfo.AspectRatioW;
+    par->mfx.FrameInfo.AspectRatioH = m_vPar.mfx.FrameInfo.AspectRatioH;
+    par->mfx.FrameInfo.FrameRateExtD = m_vPar.mfx.FrameInfo.FrameRateExtD;
+    par->mfx.FrameInfo.FrameRateExtN = m_vPar.mfx.FrameInfo.FrameRateExtN;
+
+    mfxExtCodingOptionSPSPPS *spspps = (mfxExtCodingOptionSPSPPS *) GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS);
+
+    if (spspps && spspps->SPSBuffer)
+    {
+        UMC::Status sts = m_implUmc->GetSequenceHeaderMemoryMask(spspps->SPSBuffer, spspps->SPSBufSize);
+        if (UMC::UMC_OK != sts)
+            return ConvertUMCStatusToMfx(sts);
+    }
+
+    // get signal info buffer
+    mfxExtVideoSignalInfo *signal_info = (mfxExtVideoSignalInfo *) GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
+    if (signal_info)
+    {
+        m_implUmc->GetSignalInfoInformation(signal_info);
+    }
+
+    memcpy_s(par->reserved,sizeof(m_vPar.reserved),m_vPar.reserved,sizeof(m_vPar.reserved));
+    par->reserved2 = m_vPar.reserved2;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEMPEG2InternalBase::UpdateWorkSurfaceParams(int task_num)
+{
+    mfxFrameSurface1 *pSurface = m_FrameAllocator->GetSurfaceByIndex(mid[task_num]);
+    MFX_CHECK_NULL_PTR1(pSurface);
+    pSurface->Info.CropW = m_vPar.mfx.FrameInfo.CropW;
+    pSurface->Info.CropH = m_vPar.mfx.FrameInfo.CropH;
+    pSurface->Info.CropX = m_vPar.mfx.FrameInfo.CropX;
+    pSurface->Info.CropY = m_vPar.mfx.FrameInfo.CropY;
+    pSurface->Info.AspectRatioH = m_vPar.mfx.FrameInfo.AspectRatioH;
+    pSurface->Info.AspectRatioW = m_vPar.mfx.FrameInfo.AspectRatioW;
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEMPEG2InternalBase::UpdateCurrVideoParams(mfxFrameSurface1 *surface_work, int task_num)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    mfxFrameSurface1 *pSurface = surface_work;
+
+    if (true == m_isOpaqueMemory)
+    {
+        pSurface = m_pCore->GetOpaqSurface(surface_work->Data.MemId, true);
+    }
+
+    if (dec_field_count & 1)
+    {
+        return MFX_ERR_NONE;
+    }
+
+    const UMC::sSequenceHeader& sh = m_implUmc->GetSequenceHeader();
+    const UMC::sPictureHeader& ph = m_implUmc->GetPictureHeader(task_num);
+
+    if (m_vPar.mfx.FrameInfo.AspectRatioH != 0 || m_vPar.mfx.FrameInfo.AspectRatioW != 0)
+        if(sh.aspect_ratio_w != m_vPar.mfx.FrameInfo.AspectRatioW || sh.aspect_ratio_h != m_vPar.mfx.FrameInfo.AspectRatioH)
+            sts = MFX_WRN_VIDEO_PARAM_CHANGED;
+
+    if (m_isFrameRateFromInit == false && ((Ipp32u)sh.frame_rate_extension_d != m_vPar.mfx.FrameInfo.FrameRateExtD || (Ipp32u)sh.frame_rate_extension_n != m_vPar.mfx.FrameInfo.FrameRateExtN))
+    {
+        sts = MFX_WRN_VIDEO_PARAM_CHANGED;
+    }
+
+    //if (m_isSWImpl)
+    {
+        pSurface->Info.CropW = m_vPar.mfx.FrameInfo.CropW;
+        pSurface->Info.CropH = m_vPar.mfx.FrameInfo.CropH;
+        pSurface->Info.CropX = m_vPar.mfx.FrameInfo.CropX;
+        pSurface->Info.CropY = m_vPar.mfx.FrameInfo.CropY;
+        pSurface->Info.AspectRatioH = m_vPar.mfx.FrameInfo.AspectRatioH;
+        pSurface->Info.AspectRatioW = m_vPar.mfx.FrameInfo.AspectRatioW;
+    }
+
+    UpdateMfxVideoParam(m_vPar, sh, ph);
+
+    pSurface->Info.PicStruct = m_vPar.mfx.FrameInfo.PicStruct;    
+    pSurface->Info.FrameRateExtD = m_vPar.mfx.FrameInfo.FrameRateExtD;
+    pSurface->Info.FrameRateExtN = m_vPar.mfx.FrameInfo.FrameRateExtN;
+
+    return sts;
+}
+
+mfxFrameSurface1 *VideoDECODEMPEG2InternalBase::GetOriginalSurface(mfxFrameSurface1 *pSurface)
+{
+    if (true == m_isOpaqueMemory)
+    {
+        return m_pCore->GetNativeSurface(pSurface);
+    }
+
+    return pSurface;
+}
+
+mfxStatus VideoDECODEMPEG2InternalBase::SetOutputSurfaceParams(mfxFrameSurface1 *surface, int display_index)
+{
+    MFX_CHECK_NULL_PTR1(surface);
+
+    surface->Data.TimeStamp = GetMfxTimeStamp(m_implUmc->GetCurrDecodedTime(display_index));
+    surface->Data.DataFlag = (mfxU16)((m_implUmc->isOriginalTimeStamp(display_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
+    SetSurfacePicStruct(surface, display_index);
+    UpdateOutputSurfaceParamsFromWorkSurface(surface, display_index);
+    SetSurfacePictureType(surface, display_index, m_implUmc.get());
+    SetSurfaceTimeCode(surface, display_index, m_implUmc.get());
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEMPEG2InternalBase::SetSurfacePicStruct(mfxFrameSurface1 *surface, int display_index)
+{
+    MFX_CHECK_NULL_PTR1(surface);
+
+    if (display_index < 0 || display_index >= 2*DPB)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    const UMC::sPictureHeader& ph = m_implUmc->GetPictureHeader(display_index);
+    const UMC::sSequenceHeader& sh = m_implUmc->GetSequenceHeader();
+
+    surface->Info.PicStruct = GetMfxPicStruct(sh.progressive_sequence, ph.progressive_frame,
+                                              ph.top_field_first, ph.repeat_first_field, ph.picture_structure,
+                                              m_vPar.mfx.ExtendedPicStruct);
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEMPEG2InternalBase::UpdateOutputSurfaceParamsFromWorkSurface(mfxFrameSurface1 *outputSurface, int display_index)
+{
+    if (!m_isSWBuf && !m_isOpaqueMemory)
+        return MFX_ERR_NONE;
+
+    mfxFrameSurface1 *internalSurface = m_FrameAllocator->GetSurfaceByIndex(mid[display_index]);
+    MFX_CHECK_NULL_PTR1(internalSurface);
+    outputSurface->Info.CropW = internalSurface->Info.CropW;
+    outputSurface->Info.CropH = internalSurface->Info.CropH;
+    outputSurface->Info.CropX = internalSurface->Info.CropX;
+    outputSurface->Info.CropY = internalSurface->Info.CropY;
+    outputSurface->Info.AspectRatioH = internalSurface->Info.AspectRatioH;
+    outputSurface->Info.AspectRatioW = internalSurface->Info.AspectRatioW;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEMPEG2InternalBase::GetOutputSurface(mfxFrameSurface1 **surface_out, mfxFrameSurface1 *surface_work, UMC::FrameMemID index)
+{
+    mfxFrameSurface1 *pNativeSurface =  m_FrameAllocator->GetSurface(index, surface_work, &m_vPar);
+    
+    if (pNativeSurface)
+    {
+        if (m_isOpaqueMemory)
+            *surface_out = m_pCore->GetOpaqSurface(pNativeSurface->Data.MemId);
+        else 
+            *surface_out = pNativeSurface;
+    }
+    else
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEMPEG2InternalBase::ConstructFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work)
+{
+    if (NeedToReturnCriticalStatus(bs))
+        return ReturningCriticalStatus();
+
+    if (m_frame_constructed && bs != NULL)
+    {
+        if (!SetFree_m_frame())
+        {
+            return MFX_WRN_DEVICE_BUSY;
+        }
+
+        m_frame[m_frame_free].DataLength = 0;
+        m_frame[m_frame_free].DataOffset = 0;
+    }
+
+    m_frame_constructed = false;
+
+    if (bs)
+    {
+        if (!bs->DataLength)
+        {
+            return MFX_ERR_MORE_DATA;
+        }
+
+        if (true == m_new_bs)
+        {
+            m_time[m_frame_free] = GetUmcTimeStamp(bs->TimeStamp);
+            m_time[m_frame_free] = (m_time[m_frame_free]==last_good_timestamp)?-1.0:m_time[m_frame_free];    
+        }
+
+        mfxStatus sts = ConstructFrame(bs, &m_frame[m_frame_free], surface_work);
+
+        if (MFX_ERR_NONE != sts)
+        {
+            m_frame_constructed = false;
+            m_new_bs   = false;
+            return sts;
+        }
+
+        last_good_timestamp = m_time[m_frame_free] == -1.0?last_good_timestamp:m_time[m_frame_free];
+        m_frame_in_use[m_frame_free] = true;
+        m_new_bs = true;
+    }
+    else
+    {
+        m_time[m_frame_free] = (mfxF64)(-1);
+
+        if (0 < m_last_bytes[3])
+        {
+            Ipp8u *pData = m_frame[m_frame_free].Data + m_frame[m_frame_free].DataOffset + m_frame[m_frame_free].DataLength;
+            memcpy_s(pData, m_last_bytes[3], m_last_bytes, m_last_bytes[3]);
+
+            m_frame[m_frame_free].DataLength += m_last_bytes[3];
+            memset(m_last_bytes, 0, NUM_REST_BYTES);
+        }
+    }
+
+    m_found_SH = false;
+    m_frame_constructed = true;
+
+    if (!(dec_field_count & 1)) {
+        UMC::AutomaticUMCMutex guard(m_guard);
+        m_task_num = m_implUmc->FindFreeTask();
+    }
+
+    if (-1 == m_task_num)
+    {
+        return MFX_WRN_DEVICE_BUSY;
+    }
+
+    if (last_frame_count > 0)
+    {
+        if(m_implUmc->GetRetBufferLen() <= 0)
+            return MFX_ERR_MORE_DATA;
+    }
+
+    if (false == SetCurr_m_frame() && bs)
+    {
+        return MFX_WRN_DEVICE_BUSY;
+    }
+
+    mfxStatus sts = m_FrameAllocator->SetCurrentMFXSurface(surface_work, m_isOpaqueMemory);
+    MFX_CHECK_STS(sts);
+    if (m_FrameAllocator->FindFreeSurface() == -1)
+        return MFX_WRN_DEVICE_BUSY;
+
+
+    return sts;
+}
+
+mfxStatus VideoDECODEMPEG2InternalBase::ConstructFrame(mfxBitstream *in, mfxBitstream *out, mfxFrameSurface1 *surface_work)
 {
     mfxStatus sts = MFX_ERR_NONE;
     do
@@ -3881,7 +2237,7 @@ mfxStatus VideoDECODEMPEG2::ConstructFrame(mfxBitstream *in, mfxBitstream *out, 
     return sts;
 }
 
-mfxStatus VideoDECODEMPEG2::ConstructFrameImpl(mfxBitstream *in, mfxBitstream *out, mfxFrameSurface1 *surface_work)
+mfxStatus VideoDECODEMPEG2InternalBase::ConstructFrameImpl(mfxBitstream *in, mfxBitstream *out, mfxFrameSurface1 *surface_work)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoDECODEMPEG2::ConstructFrameImpl");
     mfxStatus sts = MFX_ERR_NONE;
@@ -4234,113 +2590,93 @@ mfxStatus VideoDECODEMPEG2::ConstructFrameImpl(mfxBitstream *in, mfxBitstream *o
     }
 }
 
-mfxStatus VideoDECODEMPEG2::InternalResetUMC(mfxVideoParam* par, UMC::MediaData* data)
+#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+
+static bool IsStatusReportEnable(VideoCORE * core)
 {
-    //UMC::VideoDecoderParams vdPar;
-    m_vdPar.info.stream_type = data ? UMC::UNDEF_VIDEO : UMC::MPEG2_VIDEO;
-    m_vdPar.info.clip_info.width = par->mfx.FrameInfo.Width;
-    m_vdPar.info.clip_info.height = par->mfx.FrameInfo.Height;
-
-    mfxU32 frameRateD = par->mfx.FrameInfo.FrameRateExtD;
-    mfxU32 frameRateN = par->mfx.FrameInfo.FrameRateExtN;
-
-    if (0 != frameRateD && 0 != frameRateN)
+    core; // touch unreferenced parameter
+    UMC::VideoAccelerator *va;
+    core->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
+    
+    if (true == va->IsUseStatusReport())
     {
-        m_vdPar.info.framerate = (Ipp64f) par->mfx.FrameInfo.FrameRateExtD / par->mfx.FrameInfo.FrameRateExtN;
-    }
-    else
-    {
-        m_vdPar.info.framerate = 0;
+        //eMFXHWType type = core->GetHWType();
+        //return (type == MFX_HW_SNB) || (type == MFX_HW_IVB) || (type == MFX_HW_HSW) || (type == MFX_HW_HSW_ULT) || (type == MFX_HW_VLV) || (type == MFX_HW_BDW) || (type == MFX_HW_SCL);
+        return true;
     }
 
-    m_vdPar.info.color_format = GetUmcColorFormat((mfxU8)par->mfx.FrameInfo.ChromaFormat);
+    return false;
+}
 
-    if (UMC::NONE == m_vdPar.info.color_format)
+mfxStatus VideoDECODEMPEG2Internal_HW::ConstructFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work)
+{
+#ifdef MFX_VA_WIN
+    if (m_Protected && bs != NULL)
     {
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+        VM_ASSERT(m_implUmcHW->pack_w.m_va->GetProtectedVA());
+        if (!m_implUmcHW->pack_w.m_va->GetProtectedVA() || !(bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME))
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+        m_implUmcHW->pack_w.m_va->GetProtectedVA()->SetModes(&m_vPar);
+        m_implUmcHW->pack_w.m_va->GetProtectedVA()->SetBitstream(bs);
+
+        m_implUmcHW->pack_w.IsProtectedBS = true;
+        if (!bs->EncryptedData) m_implUmcHW->pack_w.IsProtectedBS = false;
+    }
+#endif
+
+    return VideoDECODEMPEG2InternalBase::ConstructFrame(bs, surface_work);
+}
+
+VideoDECODEMPEG2Internal_HW::VideoDECODEMPEG2Internal_HW()
+{
+    m_FrameAllocator_d3d = new mfx_UMC_FrameAllocator_D3D;
+    m_FrameAllocator = m_FrameAllocator_d3d;
+
+    m_isSWDecoder = false;
+
+#ifdef UMC_VA_DXVA
+    memset(m_pStatusReport, 0, sizeof(DXVA_Status_VC1) * MPEG2_STATUS_REPORT_NUM);
+#endif
+
+    m_implUmcHW = new UMC::MPEG2VideoDecoderHW();
+    m_implUmc.reset(m_implUmcHW);
+}
+
+mfxStatus VideoDECODEMPEG2Internal_HW::Init(mfxVideoParam *par, VideoCORE * core)
+{
+    mfxStatus sts = VideoDECODEMPEG2InternalBase::Init(par, core);
+    MFX_CHECK_STS(sts);
+
+    if (IS_PROTECTION_ANY(par->Protected))
+    {
+        mfxExtPAVPOption * pavpOpt = (mfxExtPAVPOption*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
+        if (IS_PROTECTION_PAVP_ANY(par->Protected) && !pavpOpt)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        if (!IS_PROTECTION_PAVP_ANY(par->Protected) && pavpOpt)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+
+        if (pavpOpt)
+            memcpy_s(&m_pavpOpt, sizeof(mfxExtPAVPOption), pavpOpt, sizeof(mfxExtPAVPOption));
     }
 
-    m_vdPar.lFlags |= par->mfx.DecodedOrder ? 0 : UMC::FLAG_VDEC_REORDER;
-    m_vdPar.lFlags |= UMC::FLAG_VDEC_EXTERNAL_SURFACE_USE;
-
-    switch(par->mfx.TimeStampCalc)
-    {
-          case MFX_TIMESTAMPCALC_TELECINE:
-                m_vdPar.lFlags |= UMC::FLAG_VDEC_TELECINE_PTS;
-                break;
-
-          case MFX_TIMESTAMPCALC_UNKNOWN:
-                break;
-
-          default:
-                return MFX_ERR_INVALID_VIDEO_PARAM;
-    }
-
-    UMC::VideoProcessingParams postProcessingParams;
-    postProcessingParams.m_DeinterlacingMethod = (UMC::DeinterlacingMethod)0;
-    postProcessingParams.InterpolationMethod = 1;
-    m_PostProcessing.SetParams(&postProcessingParams);
-
-    m_vdPar.pPostProcessing = &m_PostProcessing;
-    m_vdPar.numThreads = par->mfx.NumThread;
-    m_vdPar.m_pData = data ? data : 0;
-
-    m_pCore->GetVA((mfxHDL*)&m_vdPar.pVideoAccelerator, MFX_MEMTYPE_FROM_DECODE);
-
-    m_implUmc.Reset();
+    m_vdPar.numThreads = 1;
 
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoDECODEMPEG2::InternalReset(mfxVideoParam* par)
+mfxStatus VideoDECODEMPEG2Internal_HW::Reset(mfxVideoParam *par)
 {
-    mfxStatus mfxSts = MFX_ERR_NONE;
-    m_resizing = false;
+    mfxStatus sts = VideoDECODEMPEG2InternalBase::Reset(par);
+    MFX_CHECK_STS(sts);
 
-    eMFXHWType type = MFX_HW_UNKNOWN;
-#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
-    type = m_pCore->GetHWType();
+#ifdef UMC_VA_DXVA
+    memset(m_pStatusReport, 0, sizeof(DXVA_Status_VC1) * MPEG2_STATUS_REPORT_NUM);
 #endif
 
-    mfxSts = CheckVideoParamDecoders(par, m_pCore->IsExternalFrameAllocator(), type);
-    
-    if (MFX_ERR_NONE != mfxSts)
-    {
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-    }
+    m_NumThreads = 1;
 
-    if (!(par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY |
-                            MFX_IOPATTERN_IN_SYSTEM_MEMORY |
-                            MFX_IOPATTERN_OUT_VIDEO_MEMORY|
-                            MFX_IOPATTERN_OUT_SYSTEM_MEMORY |
-                            MFX_IOPATTERN_IN_OPAQUE_MEMORY |
-                            MFX_IOPATTERN_OUT_OPAQUE_MEMORY)))
-       return MFX_ERR_INVALID_VIDEO_PARAM;
-
-    if (m_isInitialized)
-    {
-        if (2048 < par->mfx.FrameInfo.Width || 2048 < par->mfx.FrameInfo.Height)
-        { 
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-        }
-
-        if (m_InitW < par->mfx.FrameInfo.Width || m_InitH < par->mfx.FrameInfo.Height)
-        { 
-            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-        }
-    }
-
-    mfxSts = InternalResetUMC(par, 0);
-    MFX_CHECK_STS(mfxSts);
-
-    //m_InitW = par->mfx.FrameInfo.Width;
-    //m_InitH = par->mfx.FrameInfo.Height;
-    m_InitPicStruct = par->mfx.FrameInfo.PicStruct;
-    m_Protected = par->Protected;
-
-    m_extendedPicStruct = par->mfx.ExtendedPicStruct;
-
-    if (IS_PROTECTION_PAVP_ANY(par->Protected))
+    if (par && IS_PROTECTION_PAVP_ANY(par->Protected))
     {
         mfxExtPAVPOption * pavpOpt = (mfxExtPAVPOption*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
         if (!pavpOpt)
@@ -4351,7 +2687,6 @@ mfxStatus VideoDECODEMPEG2::InternalReset(mfxVideoParam* par)
 #if defined (MFX_VA_WIN)
         if (IS_PROTECTION_PAVP_ANY(par->Protected))
         {
-
             if (m_vdPar.pVideoAccelerator->GetProtectedVA())
             {
                 if (m_vdPar.pVideoAccelerator->GetProtectedVA()->SetModes(par) != UMC::UMC_OK)
@@ -4366,22 +2701,1498 @@ mfxStatus VideoDECODEMPEG2::InternalReset(mfxVideoParam* par)
 #endif
     }
 
-    if (m_pCore->GetPlatformType() == MFX_PLATFORM_HARDWARE)
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEMPEG2Internal_HW::Close()
+{
+    mfxStatus sts = VideoDECODEMPEG2InternalBase::Close();
+    if (m_FrameAllocator_d3d)
     {
-        m_NumThreads = 1;
+        delete m_FrameAllocator_d3d;
+        m_FrameAllocator_d3d = 0;
     }
+
+    return sts;
+}
+
+mfxStatus VideoDECODEMPEG2Internal_HW::AllocFrames(mfxVideoParam *par)
+{
+    mfxStatus sts = VideoDECODEMPEG2InternalBase::AllocFrames(par);
+    MFX_CHECK_STS(sts);
+
+    // create directx video accelerator
+    if (m_pCore->CreateVA(par, &allocRequest, &allocResponse, m_FrameAllocator) != MFX_ERR_NONE)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    m_pCore->GetVA((mfxHDL*)&m_vdPar.pVideoAccelerator, MFX_MEMTYPE_FROM_DECODE);
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEMPEG2Internal_HW::GetVideoParam(mfxVideoParam *par)
+{
+    mfxExtPAVPOption * buffer = (mfxExtPAVPOption*)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
+    if (buffer)
+    {
+        if (!IS_PROTECTION_PAVP_ANY(m_vPar.Protected))
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+
+        memcpy_s(buffer, sizeof(mfxExtPAVPOption), &m_pavpOpt, sizeof(mfxExtPAVPOption));
+    }
+
+    return VideoDECODEMPEG2InternalBase::GetVideoParam(par);
+}
+
+
+mfxStatus VideoDECODEMPEG2Internal_HW::RestoreDecoder(Ipp32s frame_buffer_num, UMC::FrameMemID mem_id_to_unlock, Ipp32s task_num_to_unlock, bool end_frame, bool remove_2frames, int decrease_dec_field_count)
+{
+    end_frame;
+    m_frame[frame_buffer_num].DataLength = 0;
+    m_frame[frame_buffer_num].DataOffset = 0;
+    m_frame_in_use[frame_buffer_num] = false;
+    
+    if (mem_id_to_unlock >= 0 && mem_id_to_unlock < DPB)
+        m_FrameAllocator->DecreaseReference(mem_id_to_unlock);
+
+    if (task_num_to_unlock >= 0 && task_num_to_unlock < 2*DPB) {
+        UMC::AutomaticUMCMutex guard(m_guard);
+        m_implUmc->UnLockTask(task_num_to_unlock);
+    }
+
+#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+    if (end_frame)
+        m_implUmcHW->pack_w.m_va->EndFrame();
+#endif
+
+    if (remove_2frames)
+        m_implUmcHW->RestoreDecoderStateAndRemoveLastField();
     else
-    {
-        m_NumThreads = (mfxU16)(par->AsyncDepth ? par->AsyncDepth : (mfxU16)vm_sys_info_get_cpu_num());
-    }
+        m_implUmcHW->RestoreDecoderState();
 
-    ResetFcState(m_fcState);
-    m_vPar = *par;
-    memset(&m_fPar, 0, sizeof(m_fPar));
-
-    m_isDecodedOrder = false;
+    dec_field_count -= decrease_dec_field_count;
 
     return MFX_ERR_NONE;
 }
+
+mfxStatus VideoDECODEMPEG2Internal_HW::DecodeFrameCheck(mfxBitstream *bs,
+                               mfxFrameSurface1 *surface_work,
+                               mfxFrameSurface1 **surface_disp,
+                               MFX_ENTRY_POINT *pEntryPoint)
+{
+    int display_index = -1;
+
+    m_in[m_task_num].SetBufferPointer(m_frame[m_frame_curr].Data + m_frame[m_frame_curr].DataOffset,
+                                        m_frame[m_frame_curr].DataLength);
+
+    m_in[m_task_num].SetDataSize(m_frame[m_frame_curr].DataLength);
+    m_in[m_task_num].SetTime(m_time[m_frame_curr]);
+
+    UMC::Status umcRes = UMC::UMC_OK;
+
+    bool IsField = false;
+    bool IsSkipped = false;
+
+    if (8 < m_frame[m_frame_curr].DataLength)
+    {
+        m_implUmcHW->SaveDecoderState();
+        umcRes = m_implUmc->GetPictureHeader(&m_in[m_task_num], m_task_num, m_prev_task_num);
+
+        //VM_ASSERT( m_implUmc.PictureHeader[m_task_num].picture_coding_type != 3 || ( mid[ m_implUmc.frame_buffer.latest_next ] != -1 && mid[ m_implUmc.frame_buffer.latest_prev ] != -1 ));
+
+        IsField = !m_implUmc->IsFramePictureStructure(m_task_num);
+        if (m_task_num >= DPB && !IsField)
+        {
+            int decrease_dec_field_count = dec_field_count % 2 == 0 ? 0 : 1;
+            Ipp32s previous_field = m_task_num - DPB;
+            MFX_CHECK_STS(RestoreDecoder(m_frame_curr, mid[previous_field], previous_field, NO_END_FRAME, REMOVE_LAST_2_FRAMES, decrease_dec_field_count))
+            return MFX_ERR_MORE_DATA;
+        }
+
+        if (UMC::UMC_OK != umcRes)
+        {
+            MFX_CHECK_STS(RestoreDecoder(m_frame_curr, NO_SURFACE_TO_UNLOCK, NO_TASK_TO_UNLOCK, NO_END_FRAME, REMOVE_LAST_FRAME, 0))
+
+            IsSkipped = m_implUmc->IsFrameSkipped();
+
+            if (IsSkipped && !(dec_field_count & 1))
+            {
+                skipped_frame_count += 1;
+            }
+
+            if (false == m_reset_done && NULL == bs)
+            {
+                display_index = m_implUmc->GetDisplayIndex();
+
+                if (0 > display_index)
+                {
+                    umcRes = m_implUmc->GetPictureHeader(NULL, m_task_num, m_prev_task_num);
+                            
+                    if (UMC::UMC_ERR_INVALID_STREAM == umcRes)
+                    {
+                        return MFX_ERR_UNKNOWN;
+                    }
+
+                    display_index = m_implUmc->GetDisplayIndex();
+                }
+
+                if (0 <= display_index)
+                {
+                    mfxStatus sts = GetOutputSurface(surface_disp, surface_work, mid[display_index]);
+                    if (sts < MFX_ERR_NONE)
+                        return sts;
+
+                    if (true == m_isDecodedOrder)
+                    {
+                        (*surface_disp)->Data.FrameOrder = 0xffffffff;
+                    }
+
+                    SetOutputSurfaceParams(*surface_disp, display_index);
+
+                    if (false == m_isDecodedOrder)
+                    {
+                        (*surface_disp)->Data.FrameOrder = display_frame_count;
+                    }
+
+                    display_frame_count++;
+
+                    if (true == m_isDecodedOrder)
+                    {
+                        (*surface_disp)->Data.FrameOrder = display_order;
+                        display_order++;
+                    }
+
+                    if ((true == IsField && !(dec_field_count & 1)) || false == IsField)
+                    {
+                        pEntryPoint->requiredNumThreads = m_NumThreads;
+                        pEntryPoint->pRoutine = &MPEG2TaskRoutine;
+                        pEntryPoint->pState = (void*)this;
+                        pEntryPoint->pRoutineName = (char*)"DecodeMPEG2";
+
+                        m_task_param[m_task_num].NumThreads = m_implUmc->GetCurrThreadsNum(m_task_num);
+                        m_task_param[m_task_num].m_frame_curr = m_frame_curr;
+                        m_task_param[m_task_num].m_isDecodedOrder = m_isDecodedOrder;
+                        m_task_param[m_task_num].curr_index = curr_index;
+                        m_task_param[m_task_num].prev_index = prev_index;
+                        m_task_param[m_task_num].next_index = next_index;
+                        m_task_param[m_task_num].surface_out = GetOriginalSurface(*surface_disp);
+                        m_task_param[m_task_num].surface_work = surface_work;
+                        m_task_param[m_task_num].display_index = display_index;
+                        m_task_param[m_task_num].m_FrameAllocator = m_FrameAllocator;
+                        m_task_param[m_task_num].mid = mid;
+                        m_task_param[m_task_num].in = &m_in[m_task_num];
+                        m_task_param[m_task_num].m_frame = m_frame;
+                        m_task_param[m_task_num].m_frame_in_use = m_frame_in_use;
+                        m_task_param[m_task_num].task_num = m_task_num;
+                        m_task_param[m_task_num].m_isSoftwareBuffer = m_isSWBuf;
+
+                        pEntryPoint->pParam = (void *)(&(m_task_param[m_task_num]));
+                    }
+
+                    return MFX_ERR_NONE;
+                }
+            }
+
+            return MFX_ERR_MORE_DATA;
+        }
+
+        m_reset_done = false;
+
+        umcRes = m_implUmc->GetInfo(&m_vdPar);
+
+        mfxStatus sts = UpdateCurrVideoParams(surface_work, m_task_num);
+        if (sts != MFX_ERR_NONE && sts != MFX_WRN_VIDEO_PARAM_CHANGED)
+            return sts;
+
+        if (surface_work->Info.CropW > surface_work->Info.Width || surface_work->Info.CropH > surface_work->Info.Height)
+        {
+            return MFX_ERR_UNKNOWN;
+        }
+
+        if ((false == m_isDecodedOrder && maxNumFrameBuffered <= (Ipp32u)(m_implUmc->GetRetBufferLen())) ||
+                true == m_isDecodedOrder)
+        {
+            display_index = m_implUmc->GetDisplayIndex();
+        }
+
+        if (false == IsField || (true == IsField && !(dec_field_count & 1)))
+        {
+            curr_index = m_task_num;
+            next_index = m_implUmc->GetNextDecodingIndex(curr_index);
+            prev_index = m_implUmc->GetPrevDecodingIndex(curr_index);
+
+            UMC::VideoDataInfo Info;
+
+            if (1 == m_implUmc->GetSequenceHeader().progressive_sequence)
+            {
+                Info.Init(surface_work->Info.Width,
+                            (surface_work->Info.CropH + 15) & ~0x0f,
+                            m_vdPar.info.color_format);
+            }
+            else
+            {
+                Info.Init(surface_work->Info.Width,
+                            surface_work->Info.Height,
+                            m_vdPar.info.color_format);
+            }
+
+            m_FrameAllocator->Alloc(&mid[curr_index], &Info, 0);
+
+            if (0 > mid[curr_index])
+            {
+                return MFX_ERR_LOCK_MEMORY;
+            }
+
+            m_FrameAllocator->IncreaseReference(mid[curr_index]);
+
+#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+            umcRes = m_implUmcHW->pack_w.m_va->BeginFrame(mid[curr_index]);
+
+            if (UMC::UMC_OK != umcRes)
+            {
+                return MFX_ERR_DEVICE_FAILED;
+            }
+
+            m_implUmcHW->pack_w.va_index = mid[curr_index];
+#endif
+        }
+        else
+        {
+#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+            umcRes = m_implUmcHW->pack_w.m_va->BeginFrame(mid[curr_index]);
+
+            if (UMC::UMC_OK != umcRes)
+            {
+                return MFX_ERR_DEVICE_FAILED;
+            }
+
+            m_implUmcHW->pack_w.va_index = mid[curr_index];
+#endif
+        }
+
+        mfxStatus s = UpdateWorkSurfaceParams(curr_index);
+        MFX_CHECK_STS(s);
+
+        umcRes = m_implUmc->ProcessRestFrame(m_task_num);
+        if (UMC::UMC_OK != umcRes)
+        {
+            MFX_CHECK_STS(RestoreDecoder(m_frame_curr, mid[curr_index], NO_TASK_TO_UNLOCK, END_FRAME, REMOVE_LAST_FRAME, 0))
+            return MFX_ERR_MORE_DATA;
+        }
+
+        if (true == IsField)
+        {
+            dec_field_count++;
+        }
+        else
+        {
+            dec_field_count += 2;
+            cashed_frame_count++;
+        }
+
+        dec_frame_count++;
+
+        memset(&m_task_param[m_task_num],0,sizeof(MParam));
+        m_implUmc->LockTask(m_task_num);
+
+        umcRes = m_implUmc->DecodeSlices(0, m_task_num);
+
+        if (UMC::UMC_OK != umcRes &&
+            UMC::UMC_ERR_NOT_ENOUGH_DATA != umcRes &&
+            UMC::UMC_ERR_SYNC != umcRes)
+        {
+            MFX_CHECK_STS(RestoreDecoder(m_frame_curr, mid[curr_index], m_task_num, END_FRAME, REMOVE_LAST_FRAME, IsField?1:2))
+            return MFX_ERR_MORE_DATA;
+        }
+
+        umcRes = m_implUmcHW->PostProcessFrame(display_index, m_task_num);
+
+        if (umcRes != UMC::UMC_OK && umcRes != UMC::UMC_ERR_NOT_ENOUGH_DATA)
+        {
+            MFX_CHECK_STS(RestoreDecoder(m_frame_curr, mid[curr_index], m_task_num, END_FRAME, REMOVE_LAST_FRAME, IsField?1:2))
+            return MFX_ERR_MORE_DATA;
+        }
+
+        m_frame[m_frame_curr].DataLength = 0;
+        m_frame[m_frame_curr].DataOffset = 0;
+
+        m_prev_task_num = m_task_num;
+
+        if (true == IsField && (dec_field_count & 1))
+        {
+            if (DPB <= m_task_num)
+            {
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
+
+            m_task_num += DPB;
+        }
+
+        STATUS_REPORT_DEBUG_PRINTF("use task idx %d\n", m_task_num)
+           
+        if (0 <= display_index)
+        {
+            mfxStatus sts = GetOutputSurface(surface_disp, surface_work, mid[display_index]);
+            if (sts < MFX_ERR_NONE)
+                return sts;
+        }
+
+        if ((true == IsField && !(dec_field_count & 1)) || false == IsField)
+        {
+            pEntryPoint->requiredNumThreads = m_NumThreads;
+            pEntryPoint->pRoutine = &MPEG2TaskRoutine;
+            pEntryPoint->pState = (void*)this;
+            pEntryPoint->pRoutineName = (char *)"DecodeMPEG2";
+
+            m_task_param[m_task_num].NumThreads = m_implUmc->GetCurrThreadsNum(m_task_num);
+            m_task_param[m_task_num].m_isDecodedOrder = m_isDecodedOrder;
+            m_task_param[m_task_num].m_frame_curr = m_frame_curr;
+
+            STATUS_REPORT_DEBUG_PRINTF("frame curr %d\n", m_frame_curr)
+
+            m_task_param[m_task_num].curr_index = curr_index;
+            m_task_param[m_task_num].prev_index = prev_index;
+            m_task_param[m_task_num].next_index = next_index;
+            m_task_param[m_task_num].surface_out = GetOriginalSurface(*surface_disp);
+            m_task_param[m_task_num].surface_work = surface_work;
+            m_task_param[m_task_num].display_index = display_index;
+            m_task_param[m_task_num].m_FrameAllocator = m_FrameAllocator;
+            m_task_param[m_task_num].mid = mid;
+            m_task_param[m_task_num].in = &m_in[m_task_num];
+            m_task_param[m_task_num].m_frame = m_frame;
+            m_task_param[m_task_num].m_frame_in_use = m_frame_in_use;
+            m_task_param[m_task_num].task_num = m_task_num;
+            m_task_param[m_task_num].m_isSoftwareBuffer = m_isSWBuf;
+            m_task_param[m_task_num].IsSWImpl = false;
+
+            pEntryPoint->pParam = (void *)(&(m_task_param[m_task_num]));
+        }
+        else
+        {
+            m_frame_in_use[m_frame_curr] = false;
+        }
+
+        if (0 <= display_index)
+        {
+            SetOutputSurfaceParams(*surface_disp, display_index);
+
+            if (false == m_isDecodedOrder)
+            {
+                (*surface_disp)->Data.FrameOrder = display_frame_count;
+            }
+            else
+            {
+                (*surface_disp)->Data.FrameOrder = 0xffffffff;
+            }
+
+            display_frame_count++;
+
+            if (true == m_isDecodedOrder)
+            {
+                if (B_PICTURE == m_implUmc->GetFrameType(display_index))
+                {
+                    (*surface_disp)->Data.FrameOrder = display_order;
+                    display_order++;
+                }
+                else // I or P
+                {
+                    Ipp32s p_index = m_implUmc->GetPrevDecodingIndex(display_index);
+
+                    if (0 <= p_index)
+                    {
+                        mfxFrameSurface1 *pSurface;
+
+                        pSurface = m_FrameAllocator->GetSurface(mid[p_index], surface_work, &m_vPar);
+
+                        if (NULL == pSurface)
+                        {
+                            return MFX_ERR_UNDEFINED_BEHAVIOR;
+                        }
+
+                        pSurface->Data.FrameOrder = display_order;
+                        display_order++;
+                    }
+                }
+            }
+
+            m_implUmc->PostProcessUserData(display_index);
+
+            return sts;
+
+        } // display_index >=0
+
+        if (true == m_isDecodedOrder)
+        {
+            return MFX_ERR_MORE_DATA;
+        }
+
+        return MFX_ERR_MORE_SURFACE;
+
+    }
+    else // if (8 >= m_frame[m_frame_curr].DataLength)
+    {
+        last_frame_count++;
+
+        umcRes = m_implUmc->GetPictureHeader(NULL,m_task_num,m_prev_task_num);
+        UpdateCurrVideoParams(surface_work, m_task_num);
+
+        if (UMC::UMC_ERR_INVALID_STREAM == umcRes)
+        {
+            return MFX_ERR_UNKNOWN;
+        }
+
+        display_index = m_implUmc->GetDisplayIndex();
+
+        if (0 <= display_index)
+        {
+            if (false == m_isDecodedOrder && ((true == IsField && !(dec_field_count & 1)) || false == IsField))
+            {
+                mfxStatus sts = GetOutputSurface(surface_disp, surface_work, mid[display_index]);
+                if (sts < MFX_ERR_NONE)
+                    return sts;
+
+                pEntryPoint->requiredNumThreads = m_NumThreads;
+                pEntryPoint->pRoutine = &MPEG2TaskRoutine;
+                pEntryPoint->pState = (void*)this;
+                pEntryPoint->pRoutineName = (char *)"DecodeMPEG2";
+
+                SetOutputSurfaceParams(*surface_disp, display_index);
+
+                memset(&m_task_param[m_task_num],0,sizeof(MParam));
+                m_implUmc->LockTask(m_task_num);
+
+                m_task_param[m_task_num].NumThreads = m_implUmc->GetCurrThreadsNum(m_task_num);
+                m_task_param[m_task_num].m_isDecodedOrder = m_isDecodedOrder;
+                m_task_param[m_task_num].m_frame_curr = m_frame_curr;
+                m_task_param[m_task_num].curr_index = curr_index;
+                m_task_param[m_task_num].prev_index = prev_index;
+                m_task_param[m_task_num].next_index = next_index;
+                m_task_param[m_task_num].surface_out = GetOriginalSurface(*surface_disp);
+                m_task_param[m_task_num].surface_work = surface_work;
+                m_task_param[m_task_num].display_index = display_index;
+                m_task_param[m_task_num].m_FrameAllocator = m_FrameAllocator;
+                m_task_param[m_task_num].mid = mid;
+                m_task_param[m_task_num].in = &m_in[m_task_num];
+                m_task_param[m_task_num].m_frame = m_frame;
+                m_task_param[m_task_num].m_frame_in_use = m_frame_in_use;
+                m_task_param[m_task_num].task_num = m_task_num;
+                m_task_param[m_task_num].m_isSoftwareBuffer = m_isSWBuf;
+
+                pEntryPoint->pParam = (void *)(&(m_task_param[m_task_num]));
+
+                m_prev_task_num = m_task_num;
+
+                m_implUmc->PostProcessUserData(display_index);
+
+                display_frame_count++;
+                return sts;
+            }
+            else
+            {
+                mfxFrameSurface1 *pSurface;
+                pSurface = m_FrameAllocator->GetSurface(mid[display_index], surface_work, &m_vPar);
+
+                if (NULL == pSurface)
+                {
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
+                }
+
+                pSurface->Data.FrameOrder = display_order;
+                pSurface->Data.TimeStamp = last_timestamp;
+
+                return MFX_ERR_MORE_DATA;
+            }
+        }
+
+        return MFX_ERR_MORE_DATA;
+    }
+}
+
+mfxStatus VideoDECODEMPEG2Internal_HW::TaskRoutine(void *pParam)
+{
+    MParam *parameters = (MParam *)pParam;
+
+    mfxStatus sts = PerformStatusCheck(pParam);
+    MFX_CHECK_STS(sts);
+
+    if (0 <= parameters->display_index && true == parameters->m_isSoftwareBuffer)
+    {
+        sts = parameters->m_FrameAllocator->PrepareToOutput(parameters->surface_out,
+                                                            parameters->mid[parameters->display_index],
+                                                            &parameters->m_vPar,
+                                                            m_isOpaqueMemory);
+
+        MFX_CHECK_STS(sts);
+    }
+
+    sts = CompleteTasks(pParam);
+    MFX_CHECK_STS(sts);
+
+    return MFX_TASK_DONE;
+}
+
+mfxStatus VideoDECODEMPEG2Internal_HW::CompleteTasks(void *pParam)
+{
+    MParam *parameters = (MParam *)pParam;
+
+    UMC::AutomaticUMCMutex guard(m_guard);
+
+    THREAD_DEBUG_PRINTF(
+        "(THREAD %x) CompleteTasks: task %x number, task num %d, curr thr idx %d, compl thr %d\n",
+        GetCurrentThreadId(), pParam, parameters->task_num, parameters->m_curr_thread_idx, parameters->m_thread_completed)
+
+    Ipp32s display_index = parameters->display_index;
+
+    if (0 <= display_index)
+    {
+        THREAD_DEBUG_PRINTF("(THREAD %x) Dumping\n", GetCurrentThreadId())
+        STATUS_REPORT_DEBUG_PRINTF("thread task idx %d, display address %x\n", parameters->task_num, parameters->surface_out)
+
+        if (B_PICTURE == m_implUmc->GetFrameType(display_index))
+        {
+            parameters->m_FrameAllocator->DecreaseReference(parameters->mid[display_index]);
+            parameters->mid[display_index] = -1;
+
+            m_implUmc->UnLockTask(display_index);
+        }
+        else // I or P
+        {
+            Ipp32s p_index = m_implUmc->GetPrevDecodingIndex(display_index);
+
+            if (true == m_isDecodedOrder && 0 <= p_index)
+            {
+                    p_index = m_implUmc->GetPrevDecodingIndex(p_index);
+
+                if (0 <= p_index)
+                {
+                    parameters->m_FrameAllocator->DecreaseReference(parameters->mid[p_index]);
+                    parameters->mid[p_index] = -1;
+
+                    m_implUmc->UnLockTask(p_index);
+                }
+            }
+            else if (0 <= p_index)
+            {
+                parameters->m_FrameAllocator->DecreaseReference(parameters->mid[p_index]);
+                parameters->mid[p_index] = -1;
+
+                m_implUmc->UnLockTask(p_index);
+            }
+        }
+    }
+
+    parameters->m_frame_in_use[parameters->m_frame_curr] = false;
+    STATUS_REPORT_DEBUG_PRINTF("m_frame_curr %d is %d\n", parameters->m_frame_curr, parameters->m_frame_in_use[parameters->m_frame_curr])
+
+    return MFX_TASK_DONE;
+}
+
+mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReportByIndex(mfxFrameSurface1 *displaySurface, mfxU32 currIdx)
+{
+    displaySurface; currIdx;
+
+#ifdef MFX_VA_WIN
+
+    UMC::Status sts = UMC::UMC_OK;
+
+    DXVA_Status_VC1 currentTaskStatus = {};
+    bool isStatusExist = false;
+    
+    std::list<DXVA_Status_VC1>::iterator iterator;
+
+    STATUS_REPORT_DEBUG_PRINTF("Queried task index %d \n", currIdx)
+
+    // check if status is already cached
+    if (0 != m_pStatusList.size())
+    {
+        for (iterator = m_pStatusList.begin(); iterator != m_pStatusList.end(); iterator++)
+        {
+            if (currIdx == (*iterator).wDecodedPictureIndex)
+            {
+                isStatusExist = true;
+
+                currentTaskStatus = (*iterator);
+                m_pStatusList.erase(iterator);
+
+                break;
+            }
+        }
+    }
+
+    if (false == isStatusExist)
+    {
+        //TDR handling.
+        for(int i=0; i< MPEG2_STATUS_REPORT_NUM;i++){
+            m_pStatusReport[i].bStatus = 3;
+        }
+        // ask driver to provide tasks status
+        sts = m_implUmcHW->pack_w.GetStatusReport(m_pStatusReport);
+        MFX_CHECK_STS((mfxStatus)sts);
+
+        // cache statutes into buffer
+        for (mfxU32 i = 0; i < MPEG2_STATUS_REPORT_NUM; i += 1)
+        {
+            if (0 == m_pStatusReport[i].StatusReportFeedbackNumber)
+            {
+                break;
+            }
+
+            m_pStatusList.push_front(m_pStatusReport[i]);
+        }
+
+        // clear temp buffer
+        memset(m_pStatusReport, 0, sizeof(DXVA_Status_VC1) * MPEG2_STATUS_REPORT_NUM);
+
+        // find status
+        for (iterator = m_pStatusList.begin(); iterator != m_pStatusList.end(); iterator++)
+        {
+            if (currIdx == (*iterator).wDecodedPictureIndex)
+            {
+                currentTaskStatus = (*iterator);
+                break;
+            }
+        }
+
+        m_pStatusList.erase(iterator);
+    }
+
+    switch (currentTaskStatus.bStatus)
+    {
+        case STATUS_REPORT_MINOR_PROBLEM:
+        case STATUS_REPORT_OPERATION_SUCCEEDED:
+            break;
+
+        case STATUS_REPORT_SIGNIFICANT_PROBLEM:
+            displaySurface->Data.Corrupted = 1;
+            break;
+
+        case STATUS_REPORT_SEVERE_PROBLEM:
+        case STATUS_REPORT_SEVERE_PROBLEM_OTHER:
+            return MFX_ERR_DEVICE_FAILED;
+
+        default:
+            break;
+    }
+
+#endif
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReport(mfxFrameSurface1 *displaySurface, UMC::FrameMemID surface_id)
+{
+    displaySurface;surface_id;
+#ifdef MFX_VA_WIN
+    UMC::Status sts = UMC::UMC_OK;
+
+    DXVA_Status_VC1 currentTaskStatus = {};
+
+    STATUS_REPORT_DEBUG_PRINTF("status report count %d\n", m_pStatusList.size())
+
+    // check if status is already cached
+    if (0 != m_pStatusList.size())
+    {
+        currentTaskStatus = m_pStatusList.front(); 
+        m_pStatusList.pop_front();
+    }
+    else
+    {
+        //TDR handling.
+        for(int i=0; i< MPEG2_STATUS_REPORT_NUM;i++){
+            m_pStatusReport[i].bStatus = 3;
+        }
+        // ask driver to provide tasks status
+        sts = m_implUmcHW->pack_w.GetStatusReport(m_pStatusReport);
+
+        MFX_CHECK_STS((mfxStatus)sts);
+
+        // cache statutes into buffer
+        for (mfxU32 i = 0; i < 8; i += 1)
+        {
+            if (0 == m_pStatusReport[i].StatusReportFeedbackNumber)
+            {
+                break;
+            }
+
+            m_pStatusList.push_front(m_pStatusReport[i]);
+
+            STATUS_REPORT_DEBUG_PRINTF("Got status report %d\n", m_pStatusReport[i].wDecodedPictureIndex)
+        }
+
+        // clear temp buffer
+        memset(m_pStatusReport, 0, sizeof(DXVA_Status_VC1) * MPEG2_STATUS_REPORT_NUM);
+
+        if (0 == m_pStatusList.size())
+        {
+            // something wrong, but who is care
+            return MFX_ERR_NONE;
+        }
+
+        // get status report
+        currentTaskStatus = m_pStatusList.front();
+        m_pStatusList.pop_front();
+    }
+
+    STATUS_REPORT_DEBUG_PRINTF("wDecodedPictureIndex %d is ready\n", currentTaskStatus.wDecodedPictureIndex)
+
+    switch (currentTaskStatus.bStatus)
+    {
+        case STATUS_REPORT_OPERATION_SUCCEEDED:
+            break;
+        
+        case STATUS_REPORT_MINOR_PROBLEM:
+        case STATUS_REPORT_SIGNIFICANT_PROBLEM:
+            displaySurface->Data.Corrupted = 1;
+            break;
+
+        case STATUS_REPORT_SEVERE_PROBLEM:
+        case STATUS_REPORT_SEVERE_PROBLEM_OTHER:
+            displaySurface->Data.Corrupted = 2;
+            return MFX_ERR_DEVICE_FAILED;
+
+        default:
+            break;
+    }
+
+#endif
+
+#ifdef UMC_VA_LINUX
+    UMC::VideoAccelerator *va;
+    m_pCore->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
+
+    UMC::Status sts = UMC::UMC_OK;
+    mfxU16 surfCorruption = 0;
+
+#if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+
+    sts = va->SyncTask(surface_id, &surfCorruption);
+
+    STATUS_REPORT_DEBUG_PRINTF("index %d with corruption: %d (sts:%d)\n", surface_id, surfCorruption, sts)
+
+    if (sts != UMC::UMC_OK)
+    {
+        mfxStatus CriticalErrorStatus = (sts == UMC::UMC_ERR_GPU_HANG) ? MFX_ERR_GPU_HANG : MFX_ERR_DEVICE_FAILED;
+        SetCriticalErrorOccured(CriticalErrorStatus);
+        return CriticalErrorStatus;
+    }
+
+#else
+    VASurfaceStatus surfSts = VASurfaceSkipped;
+
+    sts = va->QueryTaskStatus(surface_id, &surfSts, &surfCorruption);
+
+    if (sts == UMC::UMC_ERR_GPU_HANG)
+        return MFX_ERR_GPU_HANG;
+
+    if (sts != UMC::UMC_OK)
+        return MFX_ERR_DEVICE_FAILED;
+
+#endif // #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
+
+    displaySurface->Data.Corrupted = surfCorruption;
+
+#endif // UMC_VA_LINUX
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEMPEG2Internal_HW::PerformStatusCheck(void *pParam)
+{
+    MFX_CHECK_NULL_PTR1(pParam);
+    MParam *parameters = (MParam *)pParam;
+    Ipp32s display_index = parameters->display_index;
+    if (display_index < 0)
+        return MFX_ERR_NONE;
+
+    if (!IsStatusReportEnable(m_pCore))
+        return MFX_ERR_NONE;
+
+    mfxStatus sts = GetStatusReport(parameters->surface_out, parameters->mid[display_index]);
+
+    if (MFX_ERR_NONE != sts)
+    {
+        parameters->m_FrameAllocator->DecreaseReference(parameters->mid[display_index]);
+        parameters->m_frame_in_use[parameters->m_frame_curr] = false;
+        return sts;
+    }
+
+    mfxU16 isCorrupted = parameters->surface_out->Data.Corrupted;
+    mfxU32 frameType = m_implUmc->GetFrameType(display_index);
+    Ipp32s prev_index = m_implUmc->GetPrevDecodingIndex(display_index);
+
+    if (isCorrupted && I_PICTURE == frameType)
+        m_implUmc->SetCorruptionFlag(display_index);
+
+    switch (frameType)
+    {
+        case I_PICTURE:
+
+            if (isCorrupted)
+            {
+                parameters->surface_out->Data.Corrupted = MFX_CORRUPTION_MAJOR;
+            }
+
+            break;
+
+        default: // P_PICTURE
+
+            if (true == m_implUmc->GetCorruptionFlag(prev_index))
+            {
+                m_implUmc->SetCorruptionFlag(display_index);
+                parameters->surface_out->Data.Corrupted = MFX_CORRUPTION_REFERENCE_FRAME;
+            }
+    }
+
+    return MFX_ERR_NONE;
+}
+#endif // #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+
+#if !defined(MFX_ENABLE_HW_ONLY_MPEG2_DECODER) || !defined (MFX_VA)
+VideoDECODEMPEG2Internal_SW::VideoDECODEMPEG2Internal_SW()
+{
+    m_implUmcSW = new UMC::MPEG2VideoDecoderSW();
+    m_implUmc.reset(m_implUmcSW);
+}
+
+mfxStatus VideoDECODEMPEG2Internal_SW::Init(mfxVideoParam *par, VideoCORE * core)
+{
+    mfxStatus sts = VideoDECODEMPEG2InternalBase::Init(par, core);
+    MFX_CHECK_STS(sts);
+
+    m_out.Close();
+    m_out.SetAlignment(MFX_MPEG2_DECODE_ALIGNMENT);
+    UMC::Status umcRes = m_out.Init(m_vdPar.info.clip_info.width, m_vdPar.info.clip_info.height, m_vdPar.info.color_format);
+    MFX_CHECK_UMC_STS(umcRes);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus VideoDECODEMPEG2Internal_SW::Close()
+{
+    m_implUmc->Close();
+
+    for(int i = 0; i < DPB; i++)
+        if(mid[i] >= 0) m_FrameAllocator->Unlock(mid[i]);
+
+    m_out.Close();
+    return VideoDECODEMPEG2InternalBase::Close();
+}
+
+mfxStatus VideoDECODEMPEG2Internal_SW::Reset(mfxVideoParam *par)
+{
+    for (mfxU32 i = 0; i < DPB; i++)
+    {
+        if(mid[i] >= 0) m_FrameAllocator->Unlock(mid[i]);
+    }
+
+    m_NumThreads = (mfxU16)(par->AsyncDepth ? par->AsyncDepth : (mfxU16)vm_sys_info_get_cpu_num());
+
+    return VideoDECODEMPEG2InternalBase::Reset(par);
+}
+
+mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
+                               mfxFrameSurface1 *surface_work,
+                               mfxFrameSurface1 **surface_disp,
+                               MFX_ENTRY_POINT *pEntryPoint)
+{
+    int display_index = -1;
+
+    m_in[m_task_num].SetBufferPointer(m_frame[m_frame_curr].Data + m_frame[m_frame_curr].DataOffset, m_frame[m_frame_curr].DataLength);
+    m_in[m_task_num].SetDataSize(m_frame[m_frame_curr].DataLength);
+    m_in[m_task_num].SetTime(m_time[m_frame_curr]);
+
+    UMC::Status res = UMC::UMC_OK;
+    bool isField = false;
+    bool isSkipped = false;
+
+    if (8 < m_frame[m_frame_curr].DataLength)
+    {
+        res = m_implUmc->GetPictureHeader(&m_in[m_task_num], m_task_num, m_prev_task_num);
+
+        if (UMC::UMC_ERR_INVALID_STREAM == res)
+        {
+            //return MFX_ERR_UNKNOWN;
+            //m_implUmc.SetCorruptionFlag(m_task_num);
+            res = 0;
+        }
+
+        if (UMC::UMC_OK != res)
+        {
+            if (false == m_reset_done)
+            {
+                m_frame[m_frame_curr].DataLength = 0;
+                m_frame[m_frame_curr].DataOffset = 0;
+                m_frame_in_use[m_frame_curr] = false;
+
+                isSkipped = m_implUmc->IsFrameSkipped();
+
+                if (true == isSkipped && !(dec_field_count & 1))
+                {
+                    skipped_frame_count++;
+                }
+
+                if (NULL == bs)
+                {
+                    display_index = m_implUmc->GetDisplayIndex();
+                        
+                    if (0 > display_index)
+                    {
+                        res = m_implUmc->GetPictureHeader(NULL,m_task_num,m_prev_task_num);
+                            
+                        if (UMC::UMC_ERR_INVALID_STREAM == res)
+                        {
+                            return MFX_ERR_UNKNOWN;
+                        }
+
+                        display_index = m_implUmc->GetDisplayIndex();
+                    }
+                    if (0 <= display_index)
+                    {
+                        *surface_disp = m_FrameAllocator->GetSurface(mid[display_index], surface_work, &m_vPar);
+                            
+                        if (true == m_isDecodedOrder)
+                        {
+                            (*surface_disp)->Data.FrameOrder = 0xffffffff;
+                        }
+
+                        mfxStatus sts = m_FrameAllocator->PrepareToOutput(surface_work, mid[display_index], &m_vPar, m_isOpaqueMemory);
+                        MFX_CHECK_STS(sts);
+
+                        (*surface_disp)->Data.TimeStamp = GetMfxTimeStamp(m_implUmc->GetCurrDecodedTime(display_index));
+                        (*surface_disp)->Data.DataFlag = (mfxU16)((m_implUmc->isOriginalTimeStamp(display_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
+
+                        if (true == m_isDecodedOrder)
+                        {
+                            (*surface_disp)->Data.FrameOrder = display_order;
+                            display_order++;
+                        }
+                        else
+                        {
+                            (*surface_disp)->Data.FrameOrder = display_frame_count;
+                        }
+
+                        display_frame_count++;
+
+                        m_FrameAllocator->Unlock(mid[display_index]);
+                        m_FrameAllocator->DecreaseReference(mid[display_index]);
+                        mid[display_index] = -1;
+
+                        {
+                            UMC::AutomaticUMCMutex guard(m_guard);
+                            m_implUmc->UnLockTask(display_index);
+                        }
+
+                        pEntryPoint->requiredNumThreads = m_NumThreads;
+                        pEntryPoint->pRoutine = &MPEG2TaskRoutine;
+                        pEntryPoint->pState = (void*)this;
+                        pEntryPoint->pParam = (void *)(&(m_task_param[m_task_num]));
+                        pEntryPoint->pCompleteProc = &MPEG2CompleteTasks;
+                        pEntryPoint->pRoutineName = (char *)"DecodeMPEG2";
+
+                        m_implUmc->PostProcessUserData(display_index);
+
+                        return MFX_ERR_NONE;
+                    }
+                }
+
+                return MFX_ERR_MORE_DATA;
+            }
+            else
+            {
+                m_frame[m_frame_curr].DataLength = 0;
+                m_frame[m_frame_curr].DataOffset = 0;
+                m_frame_in_use[m_frame_curr] = false;
+
+                return MFX_ERR_MORE_SURFACE;
+            }
+        }
+
+        m_reset_done = false;
+
+        res = m_implUmc->GetInfo(&m_vdPar);
+
+        mfxStatus sts = UpdateCurrVideoParams(surface_work, m_task_num);
+
+        isField = !m_implUmc->IsFramePictureStructure(m_task_num);
+
+        if (m_task_num > DPB && !isField)
+        {
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+
+        if ((false == isField || (true == isField && !(dec_field_count & 1))))
+        {
+            curr_index = m_task_num;
+            next_index = m_implUmc->GetNextDecodingIndex(curr_index);
+            prev_index = m_implUmc->GetPrevDecodingIndex(curr_index);
+
+            UMC::VideoDataInfo Info;
+            mfxFrameSurface1 *pSurface = surface_work;
+
+            if (1 == m_implUmc->GetSequenceHeader().progressive_sequence)
+            {
+                Info.Init(pSurface->Info.Width,
+                            (pSurface->Info.CropH + 15) & ~0x0f,
+                            m_vdPar.info.color_format);
+            }
+            else
+            {
+                Info.Init(pSurface->Info.Width,
+                            pSurface->Info.Height,
+                            m_vdPar.info.color_format);
+            }
+
+            m_FrameAllocator->Alloc(&mid[curr_index], &Info, 0);
+
+            if (0 > mid[curr_index])
+            {
+                return MFX_ERR_LOCK_MEMORY;
+            }
+
+            m_FrameData[curr_index] = (UMC::FrameData *)m_FrameAllocator->Lock(mid[curr_index]);
+
+            if (NULL == m_FrameData[curr_index])
+            {
+                return MFX_ERR_LOCK_MEMORY;
+            }
+
+            m_FrameAllocator->IncreaseReference(mid[curr_index]);
+
+            m_out.Close();
+            m_out.SetAlignment(MFX_MPEG2_DECODE_ALIGNMENT);
+
+            res = m_out.Init(pSurface->Info.Width, pSurface->Info.Height, m_vdPar.info.color_format);
+            MFX_CHECK_UMC_STS(res);
+
+            const UMC::FrameData::PlaneMemoryInfo *pInfo;
+
+            pInfo = m_FrameData[curr_index]->GetPlaneMemoryInfo(0);
+
+            m_out.SetPlanePointer(pInfo->m_planePtr, 0);
+            Ipp32s pitch = (Ipp32s)pInfo->m_pitch;
+                
+            pInfo = m_FrameData[curr_index]->GetPlaneMemoryInfo(1);
+            m_out.SetPlanePointer(pInfo->m_planePtr, 1);
+                
+            pInfo = m_FrameData[curr_index]->GetPlaneMemoryInfo(2);
+                
+            m_out.SetPlanePointer(pInfo->m_planePtr, 2);
+
+            m_out.SetPlanePitch(pitch, 0);
+            m_out.SetPlanePitch(pitch / 2, 1);
+            m_out.SetPlanePitch(pitch / 2, 2);
+        }
+
+        m_implUmcSW->SetOutputPointers(&m_out, m_task_num);
+
+        display_index = m_implUmc->GetDisplayIndex();
+
+        UMC::Status umcSts = m_implUmc->ProcessRestFrame(m_task_num);
+
+        if (umcSts == UMC::UMC_OK && display_index >= 0)
+        {
+            last_timestamp = GetMfxTimeStamp(m_implUmc->GetCurrDecodedTime(display_index));
+        }
+
+        if (true == isField)
+        {
+            dec_field_count++;
+        }
+        else
+        {
+            dec_field_count += 2;
+            cashed_frame_count++;
+        }
+
+        dec_frame_count++;
+
+        if (0 <= display_index)
+        {
+            mfxStatus sts = GetOutputSurface(surface_disp, surface_work, mid[display_index]);
+            if (sts < MFX_ERR_NONE)
+                return sts;
+
+            if (true == m_isDecodedOrder)
+            {
+                (*surface_disp)->Data.FrameOrder = 0xffffffff;
+
+                if (m_implUmc->GetFrameType(display_index) == B_PICTURE)
+                {
+                    (*surface_disp)->Data.FrameOrder = display_order;
+
+                    display_order++;
+                }
+                else //I or P
+                {
+                    Ipp32s p_index = m_implUmc->GetPrevDecodingIndex(display_index);
+                        
+                    if (0 <= p_index)
+                    {
+                        mfxFrameSurface1 *pSurface;
+
+                        pSurface = m_FrameAllocator->GetSurface(mid[p_index], surface_work, &m_vPar);
+
+                        if (NULL == pSurface)
+                        {
+                            return MFX_ERR_UNDEFINED_BEHAVIOR;
+                        }
+
+                        pSurface->Data.FrameOrder = display_order;
+                        display_order++;
+                    }
+                }
+            }
+            else
+            {
+                if (!*surface_disp)
+                {
+                    return MFX_ERR_UNKNOWN;
+                }
+
+                (*surface_disp)->Data.FrameOrder = display_frame_count;
+            }
+
+            display_frame_count++;
+        }
+
+        memset(&m_task_param[m_task_num],0,sizeof(MParam));
+
+        pEntryPoint->requiredNumThreads = m_NumThreads;
+        pEntryPoint->pRoutine = &MPEG2TaskRoutine;
+        pEntryPoint->pCompleteProc = &MPEG2CompleteTasks;
+        pEntryPoint->pState = (void*)this;
+        pEntryPoint->pRoutineName = (char *)"DecodeMPEG2";
+
+        m_task_param[m_task_num].m_thread_completed = 0;
+
+        m_task_param[m_task_num].IsSWImpl = true;
+
+        m_task_param[m_task_num].NumThreads = m_implUmc->GetCurrThreadsNum(m_task_num);
+        m_task_param[m_task_num].m_isDecodedOrder = m_isDecodedOrder;
+        m_task_param[m_task_num].m_frame_curr = m_frame_curr;
+        m_task_param[m_task_num].last_timestamp = last_timestamp;
+        m_task_param[m_task_num].curr_index = curr_index;
+        m_task_param[m_task_num].prev_index = prev_index;
+        m_task_param[m_task_num].next_index = next_index;
+        m_task_param[m_task_num].last_frame_count = last_frame_count;
+        m_task_param[m_task_num].surface_out = GetOriginalSurface(*surface_disp);
+        m_task_param[m_task_num].surface_work = surface_work;
+        m_task_param[m_task_num].display_index = display_index;
+        m_task_param[m_task_num].m_FrameAllocator = m_FrameAllocator;
+        m_task_param[m_task_num].mid = mid;
+        m_task_param[m_task_num].in = &m_in[m_task_num];
+        m_task_param[m_task_num].m_frame = m_frame;
+        m_task_param[m_task_num].m_frame_in_use = m_frame_in_use;
+        m_task_param[m_task_num].task_num = m_task_num;
+
+        memcpy_s(&(m_task_param[m_task_num].m_vPar.mfx.FrameInfo),sizeof(mfxFrameInfo),&m_vPar.mfx.FrameInfo,sizeof(mfxFrameInfo));
+
+        THREAD_DEBUG_PRINTF__HOLDING_MUTEX(m_guard, "task_num %d was added\n", m_task_param[m_task_num].task_num)
+
+        pEntryPoint->pParam = (void *)(&(m_task_param[m_task_num]));
+
+        if (NULL != *surface_disp)
+        {
+            (*surface_disp)->Data.TimeStamp = last_timestamp;
+            (*surface_disp)->Data.DataFlag = (mfxU16)((m_implUmc->isOriginalTimeStamp(display_index)) ? MFX_FRAMEDATA_ORIGINAL_TIMESTAMP : 0);
+        }
+
+        m_implUmc->LockTask(m_task_num);
+
+        m_prev_task_num = m_task_num;
+
+        if (true == isField && (dec_field_count & 1))
+        {
+            if(m_task_num >= DPB)
+            {
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
+                
+            m_task_num += DPB;
+        }
+
+        if (0 <= display_index)
+        {
+            m_implUmc->PostProcessUserData(display_index);
+
+            return sts;
+        }
+
+        if (true == m_isDecodedOrder)
+        {
+            return MFX_ERR_MORE_DATA;
+        }
+
+        return MFX_ERR_MORE_SURFACE;
+    }
+    else
+    {
+        last_frame_count++;
+
+        res = m_implUmc->GetPictureHeader(NULL, m_task_num, m_prev_task_num);
+
+        if (UMC::UMC_ERR_INVALID_STREAM == res)
+        {
+            return MFX_ERR_UNKNOWN;
+        }
+
+        display_index = m_implUmc->GetDisplayIndex();
+            
+        if (0 <= display_index)
+        {
+            if (false == m_isDecodedOrder)
+            {
+                last_timestamp = GetMfxTimeStamp(m_implUmc->GetCurrDecodedTime(display_index));
+                mfxStatus sts = GetOutputSurface(surface_disp, surface_work, mid[display_index]);
+                if (sts < MFX_ERR_NONE)
+                    return sts;
+
+                (*surface_disp)->Data.TimeStamp = last_timestamp;
+                memset(&m_task_param[m_task_num],0,sizeof(MParam));
+
+                pEntryPoint->requiredNumThreads = m_NumThreads;
+                pEntryPoint->pRoutine = &MPEG2TaskRoutine;
+                pEntryPoint->pCompleteProc = &MPEG2CompleteTasks;
+                pEntryPoint->pState = (void*)this;
+                pEntryPoint->pRoutineName = (char *)"DecodeMPEG2";
+
+                m_task_param[m_task_num].m_thread_completed = 0;
+                m_task_param[m_task_num].IsSWImpl = true;
+                m_task_param[m_task_num].NumThreads = m_implUmc->GetCurrThreadsNum(m_task_num);
+
+                m_task_param[m_task_num].m_isDecodedOrder = m_isDecodedOrder;
+                m_task_param[m_task_num].m_frame_curr = m_frame_curr;
+                m_task_param[m_task_num].last_timestamp = last_timestamp;
+                m_task_param[m_task_num].curr_index = curr_index;
+                m_task_param[m_task_num].prev_index = prev_index;
+                m_task_param[m_task_num].next_index = next_index;
+                m_task_param[m_task_num].last_frame_count = last_frame_count;
+                m_task_param[m_task_num].surface_out = GetOriginalSurface(*surface_disp);
+                m_task_param[m_task_num].surface_work = surface_work;
+                m_task_param[m_task_num].display_index = display_index;
+                m_task_param[m_task_num].m_FrameAllocator = m_FrameAllocator;
+                m_task_param[m_task_num].mid = mid;
+                m_task_param[m_task_num].in = NULL;
+                m_task_param[m_task_num].m_frame = m_frame;
+                m_task_param[m_task_num].m_frame_in_use = m_frame_in_use;
+                m_task_param[m_task_num].task_num = m_task_num;
+
+                memcpy_s(&(m_task_param[m_task_num].m_vPar.mfx.FrameInfo), sizeof(mfxFrameInfo), &m_vPar.mfx.FrameInfo, sizeof(mfxFrameInfo));
+
+                pEntryPoint->pParam = (void *)(&(m_task_param[m_task_num]));
+
+                m_prev_task_num = m_task_num;
+
+                m_implUmc->PostProcessUserData(display_index);
+
+                (*surface_disp)->Data.TimeStamp = last_timestamp;
+
+                return MFX_ERR_NONE;
+            }
+            else
+            {
+                mfxFrameSurface1 *pSurface;
+                pSurface = m_FrameAllocator->GetSurface(mid[display_index], surface_work, &m_vPar);
+                    
+                if (NULL == pSurface)
+                {
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
+                }
+
+                pSurface->Data.FrameOrder = display_order;
+                pSurface->Data.TimeStamp = last_timestamp;
+
+                return MFX_ERR_MORE_DATA;
+            }
+        }
+
+        return MFX_ERR_MORE_DATA;
+    }
+}
+
+mfxStatus VideoDECODEMPEG2Internal_SW::CompleteTasks(void *pParam)
+{
+    MParam *parameters = (MParam *)pParam;
+
+    UMC::AutomaticUMCMutex guard(m_guard);
+
+    THREAD_DEBUG_PRINTF(
+        "(THREAD %x) CompleteTasks: task %x number, task num %d, curr thr idx %d, compl thr %d\n",
+        GetCurrentThreadId(), pParam, parameters->task_num, parameters->m_curr_thread_idx, parameters->m_thread_completed)
+
+    Ipp32s display_index = parameters->display_index;
+
+    if (0 <= display_index)
+    {
+        THREAD_DEBUG_PRINTF("(THREAD %x) Dumping\n", GetCurrentThreadId())
+
+        if (B_PICTURE == m_implUmc->GetFrameType(display_index))
+        {
+            parameters->m_FrameAllocator->Unlock(parameters->mid[display_index]);
+            parameters->m_FrameAllocator->DecreaseReference(parameters->mid[display_index]);
+            parameters->mid[display_index] = -1;
+
+            m_implUmc->UnLockTask(display_index);
+        }
+        else // I or P picture
+        {
+            bool isCorrupted = m_implUmc->GetCorruptionFlag(display_index);
+
+            mfxU32 frameType = m_implUmc->GetFrameType(display_index);
+            Ipp32s prev_index = m_implUmc->GetPrevDecodingIndex(display_index);
+                
+            parameters->surface_out->Data.Corrupted = 0;
+                
+            switch (frameType)
+            {
+                case I_PICTURE:
+
+                    if (isCorrupted)
+                    {
+                        parameters->surface_out->Data.Corrupted = MFX_CORRUPTION_MAJOR;
+                    }
+
+                    break;
+                    
+                default: // P_PICTURE
+
+                    if (P_PICTURE == m_implUmc->GetFrameType(prev_index))
+                    {
+                        //prev_index = m_implUmc.GetPrevDecodingIndex(prev_index);
+                    }
+
+                    if (true == m_implUmc->GetCorruptionFlag(prev_index))
+                    {
+                        m_implUmc->SetCorruptionFlag(display_index);
+                        parameters->surface_out->Data.Corrupted = MFX_CORRUPTION_REFERENCE_FRAME;
+                    }
+            }
+
+            if (0 <= prev_index && true == parameters->m_isDecodedOrder)
+            {
+                prev_index = m_implUmc->GetPrevDecodingIndex(prev_index);
+            }
+
+            if (0 <= prev_index)
+            {
+                parameters->m_FrameAllocator->Unlock(parameters->mid[prev_index]);
+                parameters->m_FrameAllocator->DecreaseReference(parameters->mid[prev_index]);
+                parameters->mid[prev_index] = -1;
+
+                m_implUmc->UnLockTask(prev_index);
+            }
+        }
+    }
+
+    parameters->m_frame_in_use[parameters->m_frame_curr] = false;
+    STATUS_REPORT_DEBUG_PRINTF("m_frame_curr %d is %d\n", parameters->m_frame_curr, parameters->m_frame_in_use[parameters->m_frame_curr])
+
+    return MFX_TASK_DONE;
+}
+
+mfxStatus VideoDECODEMPEG2Internal_SW::TaskRoutine(void *pParam)
+{
+    MParam *parameters = (MParam *)pParam;
+
+    UMC::Status res;
+    Ipp32s th_idx;
+
+    UMC::AutomaticUMCMutex guard(m_guard);
+
+    THREAD_DEBUG_PRINTF(
+        "(THREAD %x) task %x number, task num %d, curr thr idx %d, compl thr %d\n",
+        GetCurrentThreadId(), pParam, parameters->task_num, parameters->m_curr_thread_idx, parameters->m_thread_completed)
+
+    if (0 < parameters->last_frame_count && 0 == parameters->m_thread_completed)
+    {
+
+        Ipp32s display_index = parameters->display_index;
+
+        if (0 <= display_index)
+        {
+            m_implUmc->PostProcessUserData(display_index);
+
+            mfxStatus sts = parameters->m_FrameAllocator->PrepareToOutput(parameters->surface_work,parameters->mid[display_index],&parameters->m_vPar, m_isOpaqueMemory);
+
+            if (MFX_ERR_NONE > sts)
+            {
+                return sts;
+            }
+        }
+
+        parameters->m_thread_completed = parameters->NumThreads + 1;
+
+        THREAD_DEBUG_PRINTF("(THREAD %x): 0 < parameters->last_frame_count && 0 == parameters->m_thread_completed\n", GetCurrentThreadId())
+
+        return MFX_TASK_DONE;
+    }
+
+    parameters->m_curr_thread_idx++;
+
+    if (parameters->m_curr_thread_idx > parameters->NumThreads || parameters->m_thread_completed >= parameters->NumThreads)
+    {
+        /*THREAD_DEBUG_PRINTF(
+            "(THREAD %x): (parameters->m_curr_thread_idx || parameters->m_thread_completed) > parameters->NumThreads: %d || %d > %d\n",
+            GetCurrentThreadId(), parameters->m_curr_thread_idx, parameters->m_thread_completed, parameters->NumThreads)*/
+        THREAD_DEBUG_PRINTF("(THREAD %x): was waiting but done\n", GetCurrentThreadId())
+
+        return MFX_TASK_DONE;
+    }
+
+    th_idx = parameters->m_curr_thread_idx - 1;
+
+    THREAD_DEBUG_PRINTF("(THREAD %x): start decoding\n", GetCurrentThreadId())
+
+    // down mutex
+    guard.Unlock();
+
+    // decode slices
+    res = m_implUmc->DecodeSlices(th_idx, parameters->task_num);
+
+    // up mutex
+    guard.Lock();
+
+    THREAD_DEBUG_PRINTF("(THREAD %x): finish decoding\n", GetCurrentThreadId())
+
+    parameters->m_thread_completed++;
+
+    if (UMC::UMC_OK != res && UMC::UMC_ERR_NOT_ENOUGH_DATA != res && UMC::UMC_ERR_SYNC != res)
+    {
+        m_implUmc->SetCorruptionFlag(parameters->curr_index);
+    }
+
+    if (parameters->m_thread_completed == parameters->NumThreads)
+    {
+        Ipp32s display_index = parameters->display_index;
+
+        parameters->m_frame[parameters->m_frame_curr].DataLength = 0;
+        parameters->m_frame[parameters->m_frame_curr].DataOffset = 0;
+
+        if (0 <= display_index)
+        {
+            THREAD_DEBUG_PRINTF("(THREAD %x): dump frame\n", GetCurrentThreadId())
+
+            mfxStatus sts = parameters->m_FrameAllocator->PrepareToOutput(parameters->surface_out,
+                                                                          parameters->mid[display_index],
+                                                                          &parameters->m_vPar,
+                                                                          m_isOpaqueMemory);
+
+            if (MFX_ERR_NONE > sts)
+            {
+                m_implUmc->UnLockTask(parameters->task_num);
+                return sts;
+            }
+        }
+    }
+    else
+    {
+        THREAD_DEBUG_PRINTF("(THREAD %x): i'm working status\n", GetCurrentThreadId())
+        return MFX_TASK_WORKING;
+    }
+
+    THREAD_DEBUG_PRINTF("(THREAD %x): exit routine\n\n", GetCurrentThreadId())
+
+    return MFX_TASK_DONE;
+}
+#endif
 
 #endif //MFX_ENABLE_MPEG2_VIDEO_DECODE

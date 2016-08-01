@@ -11,7 +11,8 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MPEG2_VIDEO_DECODER)
 
-#include "umc_mpeg2_dec_base.h"
+#include "umc_mpeg2_dec_defs_sw.h"
+#include "umc_mpeg2_dec_sw.h"
 
 #pragma warning(disable: 4244)
 
@@ -21,7 +22,7 @@ using namespace UMC;
     Ipp16s *c_mv     = &video->vector[2*(k)]; \
     Ipp16s *c_pmv    = &video->PMV[2*(k)];
 
-Status MPEG2VideoDecoderBase::update_mv(Ipp16s *pval, Ipp32s s, IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::update_mv(Ipp16s *pval, Ipp32s s, IppVideoContext *video, int task_num)
 {
   Ipp32s val = *pval;
   Ipp32s residual, mcode;
@@ -31,7 +32,7 @@ Status MPEG2VideoDecoderBase::update_mv(Ipp16s *pval, Ipp32s s, IppVideoContext 
   return UMC_OK;
 }
 
-Status MPEG2VideoDecoderBase::mv_decode(Ipp32s r, Ipp32s s, IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mv_decode(Ipp32s r, Ipp32s s, IppVideoContext *video, int task_num)
 {
     DECL_MV_DERIVED(2*r+s)
     Ipp32s residual, mcode;
@@ -64,7 +65,7 @@ Status MPEG2VideoDecoderBase::mv_decode(Ipp32s r, Ipp32s s, IppVideoContext *vid
     return UMC_OK;
 }
 
-Status MPEG2VideoDecoderBase::mv_decode_dp(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::mv_decode_dp(IppVideoContext *video, int task_num)
 {
   DECL_MV_DERIVED(0)
   Ipp32s residual, mcode;

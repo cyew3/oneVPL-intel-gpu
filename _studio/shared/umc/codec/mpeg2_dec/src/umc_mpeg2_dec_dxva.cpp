@@ -12,7 +12,7 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MPEG2_VIDEO_DECODER)
 
-#include "umc_mpeg2_dec_base.h"
+#include "umc_mpeg2_dec_hw.h"
 //#define OTLAD
 #ifdef OTLAD
 #include <stdio.h>
@@ -45,7 +45,6 @@ extern Ipp32u DistToNextSlice(mfxEncryptedData *encryptedData, PAVP_COUNTER_TYPE
 bool PackVA::SetVideoAccelerator(VideoAccelerator * va)
 {
     m_va = va;
-    is_analyzer = false;
     if (!m_va)
     {
         va_mode = UNKNOWN;
@@ -426,11 +425,6 @@ PackVA::SaveVLDParameters(
     pPictureParam->wBackwardRefPictureIndex = (WORD)((pict_type == MPEG2_B_PICTURE) ? frame_buffer->frame_p_c_n[frame_buffer->frame_p_c_n[frame_buffer->curr_index[task_num]].next_index].va_index : 0xffff);
     pPictureParam->bPicDeblocked = 0;
     pPictureParam->wDeblockedPictureIndex = 0;
-
-#ifdef UMC_STREAM_ANALYZER
-    if(is_analyzer)
-        PicAnalyzerData->dwPicDecOrder = pPictureParam->wDecodedPictureIndex;
-#endif
 
     pPictureParam->wPicWidthInMBminus1 = (WORD)(width_in_MBs - 1);
 

@@ -11,13 +11,14 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MPEG2_VIDEO_DECODER)
 
-#include "umc_mpeg2_dec_base.h"
+#include "umc_mpeg2_dec_defs_sw.h"
+#include "umc_mpeg2_dec_sw.h"
 
 #pragma warning(disable: 4244)
 
 using namespace UMC;
 
-Status MPEG2VideoDecoderBase::DecodeSlice_FrameI_420(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::DecodeSlice_FrameI_420(IppVideoContext *video, int task_num)
 {
     Ipp32s dct_type = 0;
 
@@ -174,9 +175,9 @@ Status MPEG2VideoDecoderBase::DecodeSlice_FrameI_420(IppVideoContext *video, int
     return UMC_OK;
 #endif
 
-} // Status MPEG2VideoDecoderBase::DecodeSlice_FrameI_420(IppVideoContext *video, int task_num)
+} // Status MPEG2VideoDecoderSW::DecodeSlice_FrameI_420(IppVideoContext *video, int task_num)
 
-Status MPEG2VideoDecoderBase::DecodeSlice_FramePB_420(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::DecodeSlice_FramePB_420(IppVideoContext *video, int task_num)
 {
     Ipp32s dct_type = 0;
     Ipp32s macroblock_type;
@@ -445,7 +446,7 @@ Status MPEG2VideoDecoderBase::DecodeSlice_FramePB_420(IppVideoContext *video, in
 
 }//DecodeSlice_FramePB_420
 
-Status MPEG2VideoDecoderBase::DecodeSlice_FieldPB_420(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::DecodeSlice_FieldPB_420(IppVideoContext *video, int task_num)
 {
   Ipp32s macroblock_type;
   Ipp32s macroblock_address_increment = 0;

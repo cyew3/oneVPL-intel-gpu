@@ -247,7 +247,6 @@
     <ClCompile Include="src\umc_mpeg2_dec_blk.cpp" />
     <ClCompile Include="src\umc_mpeg2_dec_defs.cpp" />
     <ClCompile Include="src\umc_mpeg2_dec_dxva.cpp" />
-    <ClCompile Include="src\umc_mpeg2_dec_dxva_sim.cpp" />
     <ClCompile Include="src\umc_mpeg2_dec_mb.cpp" />
     <ClCompile Include="src\umc_mpeg2_dec_mb422.cpp" />
     <ClCompile Include="src\umc_mpeg2_dec_mc.cpp" />
@@ -257,10 +256,11 @@
     <ClCompile Include="src\umc_mpeg2_dec_tbl.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\umc_mpeg2_dec.h" />
     <ClInclude Include="include\umc_mpeg2_dec_base.h" />
     <ClInclude Include="include\umc_mpeg2_dec_bstream.h" />
     <ClInclude Include="include\umc_mpeg2_dec_defs.h" />
+    <ClInclude Include="include\umc_mpeg2_dec_defs_sw.h" />
+    <ClInclude Include="include\umc_mpeg2_dec_sw.h" />
     <ClInclude Include="include\umc_mpeg2_dec_tbl.h" />
   </ItemGroup>
   <ItemGroup>

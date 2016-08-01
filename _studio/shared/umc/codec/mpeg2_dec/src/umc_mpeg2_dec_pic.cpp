@@ -32,19 +32,6 @@
 
 using namespace UMC;
 
-//extern Ipp8u default_intra_quantizer_matrix[64];
-static const Ipp8u default_intra_quantizer_matrix[64] =
-{
-     8, 16, 16, 19, 16, 19, 22, 22,
-    22, 22, 22, 22, 26, 24, 26, 27,
-    27, 27, 26, 26, 26, 26, 27, 27,
-    27, 29, 29, 29, 34, 34, 34, 29,
-    29, 29, 27, 27, 29, 29, 32, 32,
-    34, 34, 37, 38, 37, 35, 35, 34,
-    35, 38, 38, 40, 40, 40, 48, 48,
-    46, 46, 56, 56, 58, 69, 69, 83
-};
-
 // can decode all headers, except of slices
 // bitstream should point to next after header byte
 Status MPEG2VideoDecoderBase::DecodeHeader(Ipp32s startcode, IppVideoContext* video, int task_num)
@@ -204,18 +191,7 @@ Status MPEG2VideoDecoderBase::DecodeHeader(Ipp32s startcode, IppVideoContext* vi
               frame_buffer.field_buffer_index[task_num] = 0; // avoid field parity loss in resync
             }
 
-            for (i = 0; i < m_nNumberOfThreads; i++) {
-              Ipp32s flag = PictureHeader[task_num].alternate_scan | IPPVC_LEAVE_QUANT_UNCHANGED;
-              ippiDecodeInterInit_MPEG2(NULL, flag, &m_Spec.decodeInterSpec);
-              m_Spec.decodeIntraSpec.intraVLCFormat = PictureHeader[task_num].intra_vlc_format;
-              m_Spec.decodeIntraSpec.intraShiftDC = PictureHeader[task_num].curr_intra_dc_multi;
-              ippiDecodeIntraInit_MPEG2(NULL, flag, m_Spec.decodeIntraSpec.intraVLCFormat, m_Spec.decodeIntraSpec.intraShiftDC, &m_Spec.decodeIntraSpec);
-
-              ippiDecodeInterInit_MPEG2(NULL, flag, &m_Spec.decodeInterSpecChroma);
-              ippiDecodeIntraInit_MPEG2(NULL, flag, m_Spec.decodeIntraSpec.intraVLCFormat, m_Spec.decodeIntraSpec.intraShiftDC, &m_Spec.decodeIntraSpecChroma);
-              m_Spec.flag = flag;
-            }
-
+            OnDecodePicHeaderEx(task_num);
           }
           break;
         case PICTURE_SPARTIAL_SCALABLE_EXTENSION_ID:
@@ -231,87 +207,9 @@ Status MPEG2VideoDecoderBase::DecodeHeader(Ipp32s startcode, IppVideoContext* vi
       return (UMC_OK);
     case USER_DATA_START_CODE:
       {
-        //Ipp32s i;
-        //Ipp32s ATSC_identifier;
-        //SHOW_BITS_32(video->bs, ATSC_identifier)
-        ////Closed caption data
-        //if(ATSC_identifier == 0x47413934)
-        //{
-        //    //ATSC_identifier       32 bslbf = 0x47413934
-        //    SKIP_BITS_32(video->bs)
-        //    //user_data_type_code   8 uimsbf
-        //    GET_TO9BITS(video->bs, 8, code)
-
-        //    if (code == 0x03)
-        //    {
-        //        Ipp32s cc_count;
-        //        Ipp32s additional_data_flag;
-        //        //process_em_data_flag  1 bslbf
-        //        //process_cc_data_flag  1 bslbf
-        //        //additional_data_flag  1 bslbf
-        //        //cc_count              5 uimsbf
-        //        GET_TO9BITS(video->bs, 8, cc_count)
-        //        additional_data_flag = cc_count&0x20;
-        //        cc_count &= 0x1F;
-        //        //em_data               8 bslbf
-        //        GET_TO9BITS(video->bs, 8, code)
-
-        //        //TBD save and output DTV closed caption data
-        //        for (i = 0 ; i < cc_count ; i++ )
-        //        {
-        //            //marker_bits   5 1111 1
-        //            //cc_valid      1 bslbf
-        //            //cc_type       2 bslbf
-        //            GET_TO9BITS(video->bs, 8, code)
-        //            //cc_data_1     8 bslbf
-        //            GET_TO9BITS(video->bs, 8, code)
-        //            //cc_data_2     8 bslbf
-        //            GET_TO9BITS(video->bs, 8, code)
-        //        }
-
-        //        //marker_bits 8 1111 1111
-        //        GET_TO9BITS(video->bs, 8, code)
-        //        VM_ASSERT(code == 0xff);
-
-        //        if (additional_data_flag)
-        //        {
-        //            //additional_user_data 8
-        //            SHOW_BITS_LONG(video->bs,24,code)
-        //            while(code != 0x000001)
-        //            {
-        //                GET_TO9BITS(video->bs, 8, code)
-        //                SHOW_BITS_LONG(video->bs,24,code)
-        //            }
-        //        }
-        //    }
-        //    else
-        //    {
-        //        //ATSC_reserved_user_data 8
-        //        SHOW_BITS_LONG(video->bs,24,code)
-        //        while(code != 0x000001)
-        //        {
-        //            GET_TO9BITS(video->bs, 8, code)
-        //            SHOW_BITS_LONG(video->bs,24,code)
-        //        }
-        //    }
-        //}
-        //else
-        //m_IsUserDataPresent = true;
-        //if(m_pCCData /*&& gop_flag*/)
         {
             ReadCCData(task_num);
         }
-        /*
-        else
-        {
-            //other user info, skip it
-            SHOW_BITS_LONG(video->bs,24,code)
-            while(code != 0x000001)
-            {
-                GET_TO9BITS(video->bs, 8, code)
-                SHOW_BITS_LONG(video->bs,24,code)
-            }
-        }*/
       }
       return (UMC_OK);
     case PICTURE_START_CODE:
@@ -475,99 +373,17 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
         }
     }
 
-#if defined UMC_VA_DXVA
-    if(pack_w.va_mode == VA_VLD_W) {
-      pack_w.QmatrixData.bNewQmatrix[0] = pack_w.QmatrixData.bNewQmatrix[2] = 1;
-      if(load_intra_quantizer_matrix) {
-        for(i=0; i<64; i++) {
-          pack_w.QmatrixData.Qmatrix[0][i] =
-          pack_w.QmatrixData.Qmatrix[2][i] = iqm[i];
-        }
-      } else {
-        for(i=0; i<64; i++) {
-          pack_w.QmatrixData.Qmatrix[0][i] =
-          pack_w.QmatrixData.Qmatrix[2][i] = default_intra_quantizer_matrix[i];
-        }
-      }
-      pack_w.QmatrixData.bNewQmatrix[1] = pack_w.QmatrixData.bNewQmatrix[3] = 1;
-      if(load_non_intra_quantizer_matrix) {
-        for(i=0; i<64; i++) {
-          pack_w.QmatrixData.Qmatrix[1][i] =
-          pack_w.QmatrixData.Qmatrix[3][i] = niqm[i];
-        }
-      } else {
-        for(i=0; i<64; i++) {
-          pack_w.QmatrixData.Qmatrix[1][i] =
-          pack_w.QmatrixData.Qmatrix[3][i] = 16;
-        }
-      }
-    }
-
-#elif defined(UMC_VA_LINUX)
-
-    if(pack_l.va_mode == VA_VLD_L)
-    {
-      pack_l.QmatrixData.load_intra_quantiser_matrix              = 1;
-      pack_l.QmatrixData.load_non_intra_quantiser_matrix          = 1;
-      pack_l.QmatrixData.load_chroma_intra_quantiser_matrix       = 1;
-      pack_l.QmatrixData.load_chroma_non_intra_quantiser_matrix   = 1;
-      if(load_intra_quantizer_matrix)
-      {
-        for(i=0; i<64; i++)
-        {
-          pack_l.QmatrixData.intra_quantiser_matrix[i] = iqm[i];
-          pack_l.QmatrixData.chroma_intra_quantiser_matrix[i] = iqm[i];
-        }
-      }
-      else
-      {
-        for(i=0; i<64; i++)
-        {
-          pack_l.QmatrixData.intra_quantiser_matrix[i] = default_intra_quantizer_matrix[i];
-          pack_l.QmatrixData.chroma_intra_quantiser_matrix[i] = default_intra_quantizer_matrix[i];
-        }
-      }
-      if(load_non_intra_quantizer_matrix)
-      {
-        for(i=0; i<64; i++)
-        {
-            pack_l.QmatrixData.non_intra_quantiser_matrix[i] = niqm[i];
-            pack_l.QmatrixData.chroma_non_intra_quantiser_matrix[i] = niqm[i];
-        }
-      }
-      else
-      {
-        for(i=0; i<64; i++)
-        {
-          pack_l.QmatrixData.non_intra_quantiser_matrix[i] = 16;
-          pack_l.QmatrixData.chroma_non_intra_quantiser_matrix[i] = 16;
-        }
-      }
-    }
-#endif // UMC_VA_LINUX
-
     if (NULL != video)
     {
       // copy sps headers
       if (NULL != shMask.memMask)
       {
-#if defined(_WIN32) || defined(_WIN64)
-          _aligned_free(shMask.memMask);
-#else
           free(shMask.memMask);
-#endif
           shMask.memMask = NULL;
       }
 
-#if defined(_WIN32) || defined(_WIN64)
-        shMask.memMask = (Ipp8u *) _aligned_malloc(shMask.memSize, 16);
-#elif   defined(__APPLE__)
         shMask.memMask = (Ipp8u *) malloc(shMask.memSize);      
-#else
-        shMask.memMask = (Ipp8u *) memalign(16, shMask.memSize);
-#endif
         memset(shMask.memMask, 0, shMask.memSize);
-
         memcpy_s(shMask.memMask, shMask.memSize, video->bs_sequence_header_start, shMask.memSize);
     }
 
@@ -598,34 +414,13 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(IppVideoContext* video, int t
     }
     sequenceHeader.numMB[task_num] = sequenceHeader.mb_width[task_num]*sequenceHeader.mb_height[task_num];
 
-    if (UMC_OK != UpdateFrameBuffer(task_num)) { // create or update internal buffer
+    if (UMC_OK != UpdateFrameBuffer(task_num, load_intra_quantizer_matrix ? iqm : 0, load_non_intra_quantizer_matrix ? niqm : 0))
+    { // create or update internal buffer
       return (UMC_ERR_ALLOC);
     }
 
-    Ipp32s flag_mpeg1 = (m_ClipInfo.stream_type == MPEG1_VIDEO) ? IPPVC_MPEG1_STREAM : 0;
-      ippiDecodeIntraInit_MPEG2(NULL, flag_mpeg1, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec.decodeIntraSpec);
-      ippiDecodeInterInit_MPEG2(NULL, flag_mpeg1, &m_Spec.decodeInterSpec);
-
-      m_Spec.decodeInterSpecChroma = m_Spec.decodeInterSpec;
-      m_Spec.decodeIntraSpecChroma = m_Spec.decodeIntraSpec;
-      m_Spec.flag = flag_mpeg1;
-
     if (video != 0) {
       sequenceHeader.is_decoded = 1;
-
-      if(load_intra_quantizer_matrix)
-      {
-          ippiDecodeIntraInit_MPEG2(iqm, flag_mpeg1, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec.decodeIntraSpec);
-          m_Spec.decodeIntraSpecChroma = m_Spec.decodeIntraSpec;
-      }
-
-      if(load_non_intra_quantizer_matrix)
-      {
-          ippiDecodeInterInit_MPEG2(niqm, flag_mpeg1, &m_Spec.decodeInterSpec);
-          m_Spec.decodeInterSpecChroma = m_Spec.decodeInterSpec;
-      }
-
-      m_Spec.flag = flag_mpeg1;
 
       if (false == m_isFrameRateFromInit)
       {
@@ -922,14 +717,12 @@ void MPEG2VideoDecoderBase::CalculateFrameTime(Ipp64f in_time, Ipp64f * out_time
     {
         if (PictureHeader[task_num].picture_coding_type == MPEG2_B_PICTURE)
         {
-            sequenceHeader.stream_time += frame_buffer.frame_p_c_n [frame_buffer.curr_index[task_num]].duration
-                                          * (m_dPlaybackRate > 0 ? 1 : -1);
+            sequenceHeader.stream_time += frame_buffer.frame_p_c_n [frame_buffer.curr_index[task_num]].duration;
         }
         else if (index >= 0 && frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index >= 0)
         {
             // previous reference frame is returned
-            sequenceHeader.stream_time += frame_buffer.frame_p_c_n [frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index].duration
-                                          * (m_dPlaybackRate > 0 ? 1 : -1);
+            sequenceHeader.stream_time += frame_buffer.frame_p_c_n [frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index].duration;
         }
     }
 
@@ -959,49 +752,12 @@ Status MPEG2VideoDecoderBase::DecodeSlices(Ipp32s threadID, int task_num)
         {
             break;
         }
-#if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
-      pack_w.pSliceInfo++;
-#endif
     }
 
     return (umcRes);
 }
 
-
-Status MPEG2VideoDecoderBase::DecodePicture()
-{
-    return (UMC_OK);
-}
 //$$$$$!!!!!
-
-Status MPEG2VideoDecoderBase::SaveDecoderState()
-{
-    frameBuffer_backup_previous = frameBuffer_backup;
-    frameBuffer_backup = frame_buffer;
-    b_curr_number_backup = sequenceHeader.b_curr_number;
-    first_i_occure_backup = sequenceHeader.first_i_occure;
-    frame_count_backup = sequenceHeader.frame_count;
-    return UMC_OK;
-}
-
-Status MPEG2VideoDecoderBase::RestoreDecoderState()
-{
-    frame_buffer = frameBuffer_backup;
-    frameBuffer_backup = frameBuffer_backup_previous;
-    sequenceHeader.b_curr_number = b_curr_number_backup;
-    sequenceHeader.first_i_occure = first_i_occure_backup;
-    sequenceHeader.frame_count = frame_count_backup;
-    return UMC_OK;
-}
-
-Status MPEG2VideoDecoderBase::RestoreDecoderStateAndRemoveLastField()
-{
-    frame_buffer = frameBuffer_backup_previous;
-    sequenceHeader.b_curr_number = b_curr_number_backup;
-    sequenceHeader.first_i_occure = first_i_occure_backup;
-    sequenceHeader.frame_count = frame_count_backup;
-    return UMC_OK;
-}
 
 Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
 {
@@ -1057,9 +813,6 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
 
     if (PictureHeader[task_num].d_picture) 
         sequenceHeader.first_i_occure = 1; // no refs in this case
-
-    if(m_dPlaybackRate < 0 && m_dPlaybackRate > -4 && PictureHeader[task_num].picture_coding_type == MPEG2_I_PICTURE)
-        Reset();
 
     pPic->low_in_range[0] = pPic->low_in_range[1] =
     pPic->low_in_range[2] = pPic->low_in_range[3] = -16;
@@ -1329,10 +1082,6 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
         } 
 
         break;
-
-   // default:
-
-        //return (UMC_ERR_INVALID_STREAM);
     }
 
     switch (PictureHeader[task_num].picture_coding_type)
@@ -1358,146 +1107,10 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
         frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].isCorrupted = true;
     }
 
-#if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
-    if (pack_w.m_va)
-    {
-        pack_w.bNeedNewFrame = true;
-    }
-#endif
+    bNeedNewFrame = true;
 
     return (UMC_OK);
 }
-
-void MPEG2VideoDecoderBase::quant_matrix_extension(int task_num)
-{
-    Ipp32s i;
-    Ipp32u code;
-    IppVideoContext* video = Video[task_num][0];
-    Ipp32s load_intra_quantizer_matrix, load_non_intra_quantizer_matrix, load_chroma_intra_quantizer_matrix, load_chroma_non_intra_quantizer_matrix;
-    Ipp8u q_matrix[4][64];
-
-    GET_TO9BITS(video->bs, 4 ,code)
-    GET_1BIT(video->bs,load_intra_quantizer_matrix)
-    if(load_intra_quantizer_matrix)
-    {
-        for(i= 0; i < 64; i++) {
-            GET_BITS(video->bs, 8, code);
-            q_matrix[0][i] = (Ipp8u)code;
-        }
-        for (i = 0; i < m_nNumberOfThreads; i++) {
-          ippiDecodeIntraInit_MPEG2(q_matrix[0], IPPVC_LEAVE_SCAN_UNCHANGED, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec.decodeIntraSpec);
-        }
-        m_Spec.flag = IPPVC_LEAVE_SCAN_UNCHANGED;
-    }
-
-    GET_1BIT(video->bs,load_non_intra_quantizer_matrix)
-    if(load_non_intra_quantizer_matrix)
-    {
-        for(i= 0; i < 64; i++) {
-            GET_BITS(video->bs, 8, code);
-            q_matrix[1][i] = (Ipp8u)code;
-        }
-        for (i = 0; i < m_nNumberOfThreads; i++) {
-          ippiDecodeInterInit_MPEG2(q_matrix[1], IPPVC_LEAVE_SCAN_UNCHANGED, &m_Spec.decodeInterSpec);
-        }
-        m_Spec.flag = IPPVC_LEAVE_SCAN_UNCHANGED;
-    }
-
-    GET_1BIT(video->bs,load_chroma_intra_quantizer_matrix);
-    if(load_chroma_intra_quantizer_matrix && m_ClipInfo.color_format != YUV420)
-    {
-        for(i= 0; i < 64; i++) {
-            GET_TO9BITS(video->bs, 8, code);
-            q_matrix[2][i] = (Ipp8u)code;
-        }
-        for (i = 0; i < m_nNumberOfThreads; i++) {
-            ippiDecodeIntraInit_MPEG2(q_matrix[2], IPPVC_LEAVE_SCAN_UNCHANGED, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec.decodeIntraSpecChroma);
-        }
-        m_Spec.flag = IPPVC_LEAVE_SCAN_UNCHANGED;
-    }
-    else
-    {
-        for (i = 0; i < m_nNumberOfThreads; i++) {
-            m_Spec.decodeIntraSpecChroma = m_Spec.decodeIntraSpec;
-        }
-    }
-
-    GET_1BIT(video->bs,load_chroma_non_intra_quantizer_matrix);
-    if(load_chroma_non_intra_quantizer_matrix && m_ClipInfo.color_format != YUV420)
-    {
-        for(i= 0; i < 64; i++) {
-            GET_TO9BITS(video->bs, 8, code);
-            q_matrix[2][i] = (Ipp8u)code;
-        }
-        for (i = 0; i < m_nNumberOfThreads; i++) {
-            ippiDecodeInterInit_MPEG2(q_matrix[3], IPPVC_LEAVE_SCAN_UNCHANGED, &m_Spec.decodeInterSpecChroma);
-        }
-        m_Spec.flag = IPPVC_LEAVE_SCAN_UNCHANGED;
-    }
-    else
-    {
-        for (i = 0; i < m_nNumberOfThreads; i++) {
-            m_Spec.decodeInterSpecChroma = m_Spec.decodeInterSpec;
-        }
-    }
-#if defined UMC_VA_DXVA
-    if(pack_w.va_mode == VA_VLD_W) {
-      if(load_intra_quantizer_matrix) {
-        pack_w.QmatrixData.bNewQmatrix[0] = 1;
-        for(i=0; i<64; i++) {
-          pack_w.QmatrixData.Qmatrix[0][i] = q_matrix[0][i];
-        }
-      }
-      if(load_non_intra_quantizer_matrix) {
-        pack_w.QmatrixData.bNewQmatrix[1] = 1;
-        for(i=0; i<64; i++) {
-          pack_w.QmatrixData.Qmatrix[1][i] = q_matrix[1][i];
-        }
-      }
-      if(load_chroma_intra_quantizer_matrix) {
-        pack_w.QmatrixData.bNewQmatrix[2] = 1;
-        for(i=0; i<64; i++) {
-          pack_w.QmatrixData.Qmatrix[2][i] = q_matrix[2][i];
-        }
-      }
-      if(load_chroma_non_intra_quantizer_matrix) {
-        pack_w.QmatrixData.bNewQmatrix[3] = 1;
-        for(i=0; i<64; i++) {
-          pack_w.QmatrixData.Qmatrix[3][i] = q_matrix[3][i];
-        }
-      }
-    }
-#elif defined UMC_VA_LINUX
-    if(pack_l.va_mode == VA_VLD_L) {
-      if(load_intra_quantizer_matrix)
-      {
-          pack_l.QmatrixData.load_intra_quantiser_matrix              = load_intra_quantizer_matrix;
-          for(i=0; i<64; i++)
-              pack_l.QmatrixData.intra_quantiser_matrix[i] = q_matrix[0][i];
-      }
-      if(load_non_intra_quantizer_matrix)
-      {
-          pack_l.QmatrixData.load_non_intra_quantiser_matrix          = load_non_intra_quantizer_matrix;
-          for(i=0; i<64; i++)
-              pack_l.QmatrixData.non_intra_quantiser_matrix[i] = q_matrix[1][i];
-      }
-      if(load_chroma_intra_quantizer_matrix)
-      {
-          pack_l.QmatrixData.load_chroma_intra_quantiser_matrix       = load_chroma_intra_quantizer_matrix;
-          for(i=0; i<64; i++)
-              pack_l.QmatrixData.chroma_intra_quantiser_matrix[i] = q_matrix[2][i];
-      }
-      if(load_chroma_non_intra_quantizer_matrix)
-      {
-          pack_l.QmatrixData.load_chroma_non_intra_quantiser_matrix   = load_chroma_non_intra_quantizer_matrix;
-          for(i=0; i<64; i++)
-              pack_l.QmatrixData.chroma_non_intra_quantiser_matrix[i] = q_matrix[3][i];
-      }
-    }//if(va_mode == VA_VLD_L)
-#endif
-
-} //void quant_matrix_extension()
-
 
 void MPEG2VideoDecoderBase::copyright_extension(int task_num)
 {
@@ -1563,27 +1176,6 @@ void MPEG2VideoDecoderBase::picture_temporal_scalable_extension(int task_num)
 {
     IppVideoContext* video = Video[task_num][0];
     SKIP_BITS_LONG(video->bs, 27)
-}
-
-Status MPEG2VideoDecoderBase::GetUserData(MediaData* pCC)
-{
-    Status umcRes = UMC_OK;
-
-    if (m_ccCurrData.GetBufferSize())
-    {
-        m_pCCData->UnLockOutputBuffer(&m_ccCurrData);
-        m_ccCurrData.SetBufferPointer(0,0);
-    }
-
-    umcRes = m_pCCData->LockOutputBuffer(&m_ccCurrData);
-
-    if (UMC_OK == umcRes)
-    {
-        *pCC = m_ccCurrData;
-        m_ccCurrData.SetDataSize(0);
-    }
-
-    return (umcRes);
 }
 
 

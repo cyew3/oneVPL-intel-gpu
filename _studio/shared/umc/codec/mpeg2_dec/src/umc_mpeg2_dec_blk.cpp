@@ -11,7 +11,7 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MPEG2_VIDEO_DECODER)
 
-#include "umc_mpeg2_dec_defs.h"
+#include "umc_mpeg2_dec_defs_sw.h"
 
 static QUANT_MATRIX_TYPE Qmatrix[64] =
 {

@@ -11,7 +11,8 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MPEG2_VIDEO_DECODER)
 
-#include "umc_mpeg2_dec_base.h"
+#include "umc_mpeg2_dec_defs_sw.h"
+#include "umc_mpeg2_dec_sw.h"
 
 #pragma warning(disable: 4244)
 
@@ -30,7 +31,7 @@ using namespace UMC;
     return UMC_ERR_INVALID_STREAM;                                        \
   }
 
-Status MPEG2VideoDecoderBase::DecodeSlice_MPEG1(IppVideoContext *video, int task_num)
+Status MPEG2VideoDecoderSW::DecodeSlice_MPEG1(IppVideoContext *video, int task_num)
 {
   Ipp32s pitch_l = video->Y_comp_pitch;
   Ipp32s pitch_c = video->U_comp_pitch;
