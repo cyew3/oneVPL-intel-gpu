@@ -827,9 +827,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         pParams->ColorFormat = MFX_FOURCC_YV12;
     }
 
-    /* We should always provide headers for ENC and/or PAK */
-    pParams->bPassHeaders = pParams->bOnlyENC || pParams->bOnlyPAK || pParams->bENCPAK;
-
     if (pParams->nPicStruct == MFX_PICSTRUCT_UNKNOWN
         && (!pParams->bDECODE || pParams->bENCPAK || pParams->bOnlyPAK || pParams->bOnlyENC || pParams->bDynamicRC))
     {
@@ -1154,7 +1151,7 @@ int main(int argc, char *argv[])
     Params.FTEnable        = false;
     Params.AdaptiveSearch  = false;
     Params.DistortionType  = false;
-    Params.bPassHeaders    = false;
+    Params.bPassHeaders    = true;
     Params.RepartitionCheckEnable = false;
     Params.MultiPredL0 = false;
     Params.MultiPredL1 = false;
