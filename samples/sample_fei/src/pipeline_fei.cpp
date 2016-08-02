@@ -6154,6 +6154,8 @@ mfxStatus CEncodingPipeline::VPPOneFrame(MFXVideoVPP* VPPobj, MFXVideoSession* s
             sts = MFX_ERR_NONE; // ignore warnings if output is available
             break;
         }
+
+        MSDK_BREAK_ON_ERROR(sts);
     }
 
     return sts;
