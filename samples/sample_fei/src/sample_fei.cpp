@@ -1151,7 +1151,7 @@ int main(int argc, char *argv[])
     Params.FTEnable        = false;
     Params.AdaptiveSearch  = false;
     Params.DistortionType  = false;
-    Params.bPassHeaders    = true;
+    Params.bPassHeaders    = false;
     Params.RepartitionCheckEnable = false;
     Params.MultiPredL0 = false;
     Params.MultiPredL1 = false;
