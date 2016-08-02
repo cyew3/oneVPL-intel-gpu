@@ -291,7 +291,7 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     m_brc = CreateBrc(m_vpar);
     if (m_brc)
     {
-        sts = m_brc->Init(m_vpar);
+        sts = m_brc->Init(m_vpar, m_vpar.InsertHRDInfo);
         MFX_CHECK_STS(sts);
     }
 
@@ -684,7 +684,7 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
             m_brc->Close();
             sts = m_brc->Init(m_vpar);
             MFX_CHECK_STS(sts);
-            m_hrd.Init(m_vpar.m_sps, m_vpar.InitialDelayInKB);
+            m_hrd.Init(m_vpar.m_sps, m_vpar.InsertHRDInfo);
         }
         else
         {
@@ -1062,7 +1062,7 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
             if (taskForQuery->m_minFrameSize > bytes2copy)
             {
                 mfxU32 padding = taskForQuery->m_minFrameSize - bytes2copy;
-                MFX_CHECK(padding >= pSEI->DataLength, MFX_ERR_NOT_ENOUGH_BUFFER);
+                MFX_CHECK(bytesAvailable >= padding , MFX_ERR_NOT_ENOUGH_BUFFER);
                 memset(bs->Data + bs->DataOffset + bs->DataLength, 0, padding);
 
                 bs->DataLength += padding;
