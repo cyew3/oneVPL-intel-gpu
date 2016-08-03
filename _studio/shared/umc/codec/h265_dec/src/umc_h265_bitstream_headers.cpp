@@ -194,7 +194,7 @@ void H265HeadersBitstream::parseHrdParameters(H265HRD *hrd, Ipp8u cprms_present_
     {
         H265HrdSubLayerInfo * hrdSubLayerInfo = hrd->GetHRDSubLayerParam(i);
         hrdSubLayerInfo->fixed_pic_rate_general_flag = Get1Bit();
-        
+
         if (!hrdSubLayerInfo->fixed_pic_rate_general_flag)
         {
             hrdSubLayerInfo->fixed_pic_rate_within_cvs_flag = Get1Bit();
@@ -270,7 +270,7 @@ UMC::Status H265HeadersBitstream::GetVideoParamSet(H265VideoParamSet *pcVPS)
 
     if (pcVPS->vps_max_sub_layers == 1 && !pcVPS->vps_temporal_id_nesting_flag)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-    
+
     Ipp32u vps_reserved_ffff_16bits = GetBits(16);
     VM_ASSERT(vps_reserved_ffff_16bits == 0xffff);
     if (vps_reserved_ffff_16bits != 0xffff)
@@ -549,12 +549,12 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
     pcSPS->sps_video_parameter_set_id = GetBits(4);
 
     pcSPS->sps_max_sub_layers = GetBits(3) + 1;
-    
+
     if (pcSPS->sps_max_sub_layers > 7)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
     pcSPS->sps_temporal_id_nesting_flag = Get1Bit();
-    
+
     if (pcSPS->sps_max_sub_layers == 1)
     {
         // sps_temporal_id_nesting_flag must be 1 when sps_max_sub_layers_minus1 is 0
@@ -665,6 +665,9 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
     Ipp32u log2_diff_max_min_coding_block_size = GetVLCElementU();
+    if (log2_diff_max_min_coding_block_size > 3)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
     pcSPS->log2_max_luma_coding_block_size = log2_diff_max_min_coding_block_size + pcSPS->log2_min_luma_coding_block_size;
     pcSPS->MaxCUSize =  1 << pcSPS->log2_max_luma_coding_block_size;
 
@@ -686,7 +689,7 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
 
     if (pcSPS->max_transform_hierarchy_depth_inter > CtbLog2SizeY - pcSPS->log2_min_transform_block_size)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-    
+
     if (pcSPS->max_transform_hierarchy_depth_intra > CtbLog2SizeY - pcSPS->log2_min_transform_block_size)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
@@ -732,7 +735,7 @@ UMC::Status H265HeadersBitstream::GetSequenceParamSet(H265SeqParamSet *pcSPS)
 
         if (pcSPS->log2_max_pcm_luma_coding_block_size > IPP_MIN(CtbLog2SizeY, 5))
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-        
+
         pcSPS->pcm_loop_filter_disabled_flag = Get1Bit();
     }
 
@@ -1392,7 +1395,7 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
                             lt_idx_sps = GetBits(bitsForLtrpInSPS);
                         }
 
-                        pocLsbLt = sps->lt_ref_pic_poc_lsb_sps[lt_idx_sps];   
+                        pocLsbLt = sps->lt_ref_pic_poc_lsb_sps[lt_idx_sps];
                         rps->used_by_curr_pic_flag[j] = sps->used_by_curr_pic_lt_sps_flag[lt_idx_sps];
                     }
                     else
