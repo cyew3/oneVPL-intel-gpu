@@ -6241,8 +6241,10 @@ mfxStatus CEncodingPipeline::ResizeFrame(mfxU32 m_frameCount, size_t &rctime, iT
 
 mfxStatus CEncodingPipeline::doGPUHangRecovery()
 {
+    msdk_printf(MSDK_STRING("GPU Hang detected. Recovering...\n"));
     mfxStatus sts = MFX_ERR_NONE;
 
+    msdk_printf(MSDK_STRING("Recreation of pipeline...\n"));
     sts = ResetMFXComponents(&m_encpakParams, false);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -6260,6 +6262,7 @@ mfxStatus CEncodingPipeline::doGPUHangRecovery()
 
     m_frameCount = 0;
 
+    msdk_printf(MSDK_STRING("Pipeline successfully recovered\n"));
     return sts;
 }
 
