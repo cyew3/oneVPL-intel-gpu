@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -58,7 +58,7 @@ public:
     virtual mfxStatus Reset();
     virtual mfxStatus Compare(mfxFrameSurface1 * pIn1, mfxFrameSurface1 * pIn2);
     virtual mfxStatus GetLastCmpResult(double pResult[3]);
-    virtual mfxStatus GetOveralResult(double pResult[3]);
+    virtual mfxStatus GetOveralResult(double pResult[3], mfxU32 fourcc);
     virtual mfxStatus GetAverageResult(double pResult[3]);
     virtual mfxStatus GetMaxResult(mfxF64 pResult[3]);
     virtual mfxStatus GetMinResult(mfxF64 pResult[3]);
@@ -66,7 +66,7 @@ public:
     virtual vm_char*  GetMetricName();
 
 protected:
-    mfxF64 CalcPSNR(mfxF64 norm2, mfxI64 size);
+    mfxF64 CalcPSNR(mfxF64 norm2, mfxI64 size, mfxU32 fourcc);
 
     mfxF64 m_fpsnrAV[3];
     mfxF64 m_fpsnrBST[3];
@@ -88,7 +88,7 @@ public:
     virtual mfxStatus Reset();
     virtual mfxStatus Compare(mfxFrameSurface1 * pIn1, mfxFrameSurface1 * pIn2);
     virtual mfxStatus GetLastCmpResult(double pResult[3]);
-    virtual mfxStatus GetOveralResult (double pResult[3]);
+    virtual mfxStatus GetOveralResult (double pResult[3], mfxU32);
     virtual mfxStatus GetAverageResult(double pResult[3]);
     virtual mfxStatus GetMaxResult(mfxF64 pResult[3]);
     virtual mfxStatus GetMinResult(mfxF64 pResult[3]);
@@ -124,7 +124,7 @@ public:
     virtual mfxStatus Reset();
     virtual mfxStatus Compare(mfxFrameSurface1 * pIn1, mfxFrameSurface1 * pIn2);
     virtual mfxStatus GetLastCmpResult(double pResult[3]);
-    virtual mfxStatus GetOveralResult (double pResult[3]);
+    virtual mfxStatus GetOveralResult (double pResult[3], mfxU32);
     virtual mfxStatus GetAverageResult(double pResult[3]); 
     virtual mfxStatus GetMaxResult(mfxF64 pResult[3]);
     virtual mfxStatus GetMinResult(mfxF64 pResult[3]);

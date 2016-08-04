@@ -874,7 +874,7 @@ MFXMetricComparatorRender::~MFXMetricComparatorRender()
         vm_string_printf(VM_STRING("\n----BEST: %s%s Y = %.3f U = %.3f V = %.3f\n"), pMetricName, pMetricNumber, metricVal[0], metricVal[1], metricVal[2]);
         m_pComparators[i].first->GetMinResult(metricVal);
         vm_string_printf(VM_STRING("---WORST: %s%s Y = %.3f U = %.3f V = %.3f\n"), pMetricName, pMetricNumber, metricVal[0], metricVal[1], metricVal[2]);
-        m_pComparators[i].first->GetOveralResult(metricVal);
+        m_pComparators[i].first->GetOveralResult(metricVal, m_refsurface.Info.FourCC);
         vm_string_printf(VM_STRING("---TOTAL: %s%s Y = %.3f U = %.3f V = %.3f\n"), pMetricName, pMetricNumber, metricVal[0], metricVal[1], metricVal[2]);
         for (int j = 0; j < 3; j++){
             vm_string_printf(VM_STRING("<avg_metric=%c-%s%s> %.5f</avg_metric>\n"), planes[j], pMetricName, pMetricNumber, metricVal[j]);

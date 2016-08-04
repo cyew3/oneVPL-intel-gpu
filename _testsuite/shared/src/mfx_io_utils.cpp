@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2008-2011 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -109,7 +109,7 @@ mfxStatus CYUVReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInfo)
     mfxU32 w, h, i, pitch;
     mfxU8 *ptr, *ptr2;
 
-    if (pInfo->FourCC != MFX_FOURCC_YV12 && pInfo->FourCC != MFX_FOURCC_NV12)
+    if (pInfo->FourCC != MFX_FOURCC_YV12 && pInfo->FourCC != MFX_FOURCC_NV12 && pInfo->FourCC != MFX_FOURCC_P010)
         return MFX_ERR_UNSUPPORTED;
 
     if (pInfo->CropH > 0 && pInfo->CropW > 0) {
@@ -119,6 +119,8 @@ mfxStatus CYUVReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInfo)
         w = pInfo->Width;
         h = pInfo->Height;
     }
+
+    if (pInfo->FourCC == MFX_FOURCC_P010) w = w << 1;
 
     pitch = pData->PitchLow + ((mfxU32)pData->PitchHigh << 16);
     ptr = pData->Y + pInfo->CropX + pInfo->CropY*pitch;
@@ -133,13 +135,14 @@ mfxStatus CYUVReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInfo)
         }
     }
 
-    if (pInfo->FourCC == MFX_FOURCC_NV12) {
+    w >>= 1;
+    h >>= 1;
+
+    if (pInfo->FourCC == MFX_FOURCC_NV12 || pInfo->FourCC == MFX_FOURCC_P010) {
         mfxU8 buf[2048]; // maximum supported chroma width for nv12
         mfxU32 j;
-        w >>= 1;
-        h >>= 1;
-        pitch >>= 0;
-        ptr = pData->U + (pInfo->CropX) + (pInfo->CropY>>1)*pitch;
+
+        ptr = pData->UV + (pInfo->CropX) + (pInfo->CropY>>1)*pitch;
         if (w > 2048)
             return MFX_ERR_UNSUPPORTED;
         // load U
@@ -147,19 +150,24 @@ mfxStatus CYUVReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInfo)
             nBytesRead = RawRead(buf, w);
             CHECK_NOT_EQUAL(nBytesRead, w, ERROR_FILE_READ);
             for (j=0; j<w; j++)
-                ptr[i*pitch+j*2] = buf[j];
+            {
+                if (pInfo->FourCC == MFX_FOURCC_NV12) *((mfxU8* )ptr + i*pitch+j*2) = *((mfxU8* )buf + j);
+                if (pInfo->FourCC == MFX_FOURCC_P010) *((mfxU16*)ptr + i*pitch/2+j*2) = *((mfxU16*)buf + j);
+            }
         }
         // load V
         for (i=0; i<h; i++) {
             nBytesRead = RawRead(buf, w);
             CHECK_NOT_EQUAL(nBytesRead, w, ERROR_FILE_READ);
             for (j=0; j<w; j++)
-                ptr[i*pitch+j*2+1] = buf[j];
+            {
+                if (pInfo->FourCC == MFX_FOURCC_NV12) *((mfxU8* )ptr + i*pitch+j*2+1) = *((mfxU8* )buf + j);
+                if (pInfo->FourCC == MFX_FOURCC_P010) *((mfxU16*)ptr + i*pitch/2+j*2+1) = *((mfxU16*)buf + j);
+            }
+
         }
         return ERROR_NOERR;
     }
-    w >>= 1;
-    h >>= 1;
 
     mfxU32 cropX =  pInfo->CropX>>1;
     pitch >>= 1;

@@ -47,7 +47,7 @@ vm_char* MFXPsnrCalc::GetMetricName()
     return const_cast<vm_char*>(VM_STRING("PSNR"));
 }
 
-mfxF64 MFXPsnrCalc::CalcPSNR(mfxF64 norm2, mfxI64 size)
+mfxF64 MFXPsnrCalc::CalcPSNR(mfxF64 norm2, mfxI64 size, mfxU32 fourcc)
 {
     if(size == 0)
         return 0;
@@ -55,9 +55,19 @@ mfxF64 MFXPsnrCalc::CalcPSNR(mfxF64 norm2, mfxI64 size)
     if (!norm2)
         return 100;
 
-    return 10.0 * log10(((mfxF64) (255.0 * 255.0)) *
-        ((mfxF64) size) /
-        ((mfxF64) norm2));
+    switch (fourcc)
+    {
+    case MFX_FOURCC_NV12:
+        return 10.0 * log10(((mfxF64) (255.0 * 255.0)) *
+            ((mfxF64) size) /
+            ((mfxF64) norm2));
+    case MFX_FOURCC_P010:
+        return 10.0 * log10(((mfxF64) (1023.0 * 1023.0)) *
+            ((mfxF64) size) /
+            ((mfxF64) norm2));
+    default:
+        return 0.0;
+    }
 }
 
 
@@ -68,9 +78,9 @@ mfxStatus MFXPsnrCalc::GetLastCmpResult(double pResult[3])
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFXPsnrCalc::GetOveralResult(double pResult[3])
+mfxStatus MFXPsnrCalc::GetOveralResult(double pResult[3], mfxU32 fourcc)
 {
-    MFX_FOR(3, pResult[i] = CalcPSNR(m_fpsnrAV[i], m_nSize[i]));
+    MFX_FOR(3, pResult[i] = CalcPSNR(m_fpsnrAV[i], m_nSize[i], fourcc));
 
     return MFX_ERR_NONE;
 }
@@ -117,41 +127,65 @@ mfxStatus MFXPsnrCalc::Compare( mfxFrameSurface1 * pIn1
     mfxU8* data1 = pIn1->Data.Y + pIn1->Info.CropY * pitch1 + pIn1->Info.CropX;
     mfxU8* data2 = pIn2->Data.Y + pIn2->Info.CropY * pitch2 + pIn2->Info.CropX;
 
-    IppiSize     roi   = {pIn1->Info.CropW, pIn1->Info.CropH};
-
-    ippiNormDiff_L2_8u_C1R(data1, pitch1, data2, pitch2, roi, &m_fLastResults[0]);
-    m_fLastResults[0] *= m_fLastResults[0];
+    IppiSize roi = {pIn1->Info.CropW, pIn1->Info.CropH};
+    double mse = 0.0;
+    double delim = (MFX_FOURCC_P010 == pIn1->Info.FourCC && pIn1->Info.Shift) ? 64.0 : 1.0; // shifted format alighnment
 
     switch (pIn1->Info.FourCC)
     {
-        case MFX_FOURCC_NV12:
+    case MFX_FOURCC_NV12:
+        ippiNormDiff_L2_8u_C1R(data1, pitch1, data2, pitch2, roi, &mse);
+        m_fLastResults[0] += mse * mse;
+
+        roi.width  = 1;
+        roi.height = pIn1->Info.CropW >> 1;
+        data1 = pIn1->Data.UV + (pIn1->Info.CropY >> 1) * pitch1 + pIn1->Info.CropX;
+        data2 = pIn2->Data.UV + (pIn2->Info.CropY >> 1) * pitch2 + pIn2->Info.CropX;
+
+        for (int i = 0; i < pIn1->Info.CropH >> 1; i++)
         {
-            double psnr;
-            m_fLastResults[1] = 0.0;
-            roi.width  = 1;
-            roi.height = pIn1->Info.CropW >> 1;
-            data1 = pIn1->Data.UV + (pIn1->Info.CropY >> 1) * pitch1 + pIn1->Info.CropX;
-            data2 = pIn2->Data.UV + (pIn2->Info.CropY >> 1) * pitch2 + pIn2->Info.CropX;
-
-            for (int i = 0; i < pIn1->Info.CropH >> 1; i++)
-            {
-                ippiNormDiff_L2_8u_C1R( data1 + i * pitch1, 2, data2 + i * pitch2, 2, roi, &psnr);
-                m_fLastResults[1] += psnr * psnr;
-            }
-
-            m_fLastResults[2] = 0.0;
-
-            data1 = 1 + pIn1->Data.UV + (pIn1->Info.CropY >> 1) * pitch1 + pIn1->Info.CropX;
-            data2 = 1 + pIn2->Data.UV + (pIn2->Info.CropY >> 1) * pitch2 + pIn2->Info.CropX;
-
-            for (int i = 0; i < pIn1->Info.CropH >> 1; i++)
-            {
-                ippiNormDiff_L2_8u_C1R( data1 + i * pitch1, 2, data2 + i * pitch2, 2, roi, &psnr);
-                m_fLastResults[2] += psnr * psnr;
-            }
-
-            break;
+            ippiNormDiff_L2_8u_C1R( data1 + i * pitch1, 2, data2 + i * pitch2, 2, roi, &mse);
+            m_fLastResults[1] += mse * mse;
         }
+
+        data1 = 1 + pIn1->Data.UV + (pIn1->Info.CropY >> 1) * pitch1 + pIn1->Info.CropX;
+        data2 = 1 + pIn2->Data.UV + (pIn2->Info.CropY >> 1) * pitch2 + pIn2->Info.CropX;
+
+        for (int i = 0; i < pIn1->Info.CropH >> 1; i++)
+        {
+            ippiNormDiff_L2_8u_C1R( data1 + i * pitch1, 2, data2 + i * pitch2, 2, roi, &mse);
+            m_fLastResults[2] += mse * mse;
+        }
+
+        break;
+    case MFX_FOURCC_P010:
+        if (pIn1->Info.Shift) ippiLShiftC_16u_C1R((const mfxU16*)data2, pitch2, 6, (mfxU16*)data2, pitch2, roi);
+        ippiNormDiff_L2_16u_C1R((mfxU16*)data1, pitch1, (mfxU16*)data2, pitch2, roi, &mse);
+        m_fLastResults[0] += (mse / delim) * (mse / delim);
+
+        roi.width  = 1;
+        roi.height = pIn1->Info.CropW >> 1;
+        data1 = (mfxU8*)((mfxU16*)pIn1->Data.UV + (pIn1->Info.CropY >> 1) * pitch1 + pIn1->Info.CropX);
+        data2 = (mfxU8*)((mfxU16*)pIn2->Data.UV + (pIn2->Info.CropY >> 1) * pitch2 + pIn2->Info.CropX);
+
+        for (int i = 0; i < pIn1->Info.CropH >> 1; i++)
+        {
+            if (pIn1->Info.Shift) ippiLShiftC_16u_C1R((const mfxU16*)data2 + i * pitch2/2, 4, 6, (mfxU16*)data2 + i * pitch2/2, 4, roi);
+            ippiNormDiff_L2_16u_C1R( (mfxU16*)data1 + i * pitch1/2, 4, (mfxU16*)data2 + i * pitch2/2, 4, roi, &mse);
+            m_fLastResults[1] += (mse / delim) * (mse / delim);
+        }
+
+        data1 = (mfxU8*)(1 + (mfxU16*)pIn1->Data.UV + (pIn1->Info.CropY >> 1) * pitch1 + pIn1->Info.CropX);
+        data2 = (mfxU8*)(1 + (mfxU16*)pIn2->Data.UV + (pIn2->Info.CropY >> 1) * pitch2 + pIn2->Info.CropX);
+
+        for (int i = 0; i < pIn1->Info.CropH >> 1; i++)
+        {
+            if (pIn1->Info.Shift) ippiLShiftC_16u_C1R((const mfxU16*)data2 + i * pitch2/2, 4, 6, (mfxU16*)data2 + i * pitch2/2, 4, roi);
+            ippiNormDiff_L2_16u_C1R( (mfxU16*)data1 + i * pitch1/2, 4, (mfxU16*)data2 + i * pitch2/2, 4, roi, &mse);
+            m_fLastResults[2] += (mse / delim) * (mse / delim);
+        }
+
+        break;
     case MFX_FOURCC_YV12:
         break;
     default:
@@ -162,13 +196,13 @@ mfxStatus MFXPsnrCalc::Compare( mfxFrameSurface1 * pIn1
 
     for (int i = 0; i < 3; i++)
     {
-        mfxI32 imageSize = pIn1->Info.CropW * pIn1->Info.CropH;
+        mfxU64 imageSize = pIn1->Info.CropW * pIn1->Info.CropH;
         if (i != 0)
         {
             imageSize >>= 2;
         }
         m_nSize[i] += imageSize;
-        m_fLastResults[i] = CalcPSNR(m_fLastResults[i], imageSize);
+        m_fLastResults[i] = CalcPSNR(m_fLastResults[i], imageSize, pIn1->Info.FourCC);
     }
 
     m_nFrame++;
@@ -338,7 +372,7 @@ mfxStatus MFXSSIMCalc::GetAverageResult(double pResult[3])
     return MFX_ERR_UNSUPPORTED;
 }
 
-mfxStatus MFXSSIMCalc::GetOveralResult(double pResult[3])
+mfxStatus MFXSSIMCalc::GetOveralResult(double pResult[3], mfxU32)
 {
     if(m_nSize)
     {
@@ -523,7 +557,7 @@ mfxStatus MFXYUVDump::GetLastCmpResult(double * /*pResult[3]*/)
     return MFX_ERR_UNSUPPORTED;
 }
 
-mfxStatus MFXYUVDump::GetOveralResult(double * /*pResult[3]*/)
+mfxStatus MFXYUVDump::GetOveralResult(double * /*pResult[3]*/, mfxU32)
 {
     return MFX_ERR_UNSUPPORTED;
 }
