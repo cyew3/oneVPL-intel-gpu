@@ -1176,9 +1176,25 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 fprintf(stderr, "VPP_FIELD_PROCESSING \n");
                 break;
             }
-            case (mfxU32)MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
+            case (mfxU32)MFX_EXTBUFF_VPP_ROTATION:
             {
-                fprintf(stderr, "VPP_VIDEO_SIGNAL_INFO\n");
+                fprintf(stderr, "VPP_ROTATION\n");
+                break;
+            }
+            case (mfxU32)MFX_EXTBUFF_VPP_SCALING:
+            {
+                fprintf(stderr,"MFX_EXTBUFF_VPP_SCALING\n");
+                break;
+            }
+             case (mfxU32)MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
+            {
+                fprintf(stderr,"MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO\n");
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_MIRRORING:
+            {
+                fprintf(stderr,"MFX_EXTBUFF_VPP_MIRRORING\n");
                 break;
             }
             default:
