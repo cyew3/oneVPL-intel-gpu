@@ -1696,7 +1696,7 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
     m_components[eREN].m_params.AsyncDepth = ad;
     m_components[eREN].m_params.mfx.FrameInfo.ChromaFormat = info.ChromaFormat;
     m_components[eREN].m_params.mfx.FrameInfo.FourCC = info.FourCC;
-
+    m_components[eREN].m_params.mfx.FrameInfo.Shift = info.Shift;
     m_components[eREN].AssignExtBuffers();
 
     //buffersize provided by user and it shouldn't be overwritten by Query or GetVideoParam

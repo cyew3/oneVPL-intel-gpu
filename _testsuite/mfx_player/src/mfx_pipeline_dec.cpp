@@ -2201,6 +2201,7 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
     //TODO: prety uslees to have to very interconnected structures
     yuvDecParam.mfx.FrameInfo.FourCC = m_components[eDEC].m_params.mfx.FrameInfo.FourCC;
     yuvDecParam.mfx.FrameInfo.ChromaFormat = m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat;
+    yuvDecParam.mfx.FrameInfo.Shift = m_components[eDEC].m_params.mfx.FrameInfo.Shift;
 
     //TODO:
     //in case of yuv decoder we should generate viewids inside mvcdecoder

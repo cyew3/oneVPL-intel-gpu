@@ -43,6 +43,8 @@ MFXYUVDecoder::MFXYUVDecoder(IVideoSession* session,
     info.CropW         = infoIn.Width;
     info.CropH         = infoIn.Height;
 
+    info.Shift         = infoIn.Shift;
+
     info.FrameRateExtD = 1000;
     info.FrameRateExtN = (int)(dFramerate * 1000.0);
 
