@@ -1,3 +1,12 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
 #include "ts_decoder.h"
 
 namespace hevcd_query_io_surf
@@ -132,7 +141,7 @@ int TestSuite::RunTest(unsigned int id)
     auto& tc = test_case[id];
 
     MFXInit();
-    *(m_uid) = MFX_PLUGINID_HEVCD_SW;
+
     if(m_uid)
         Load();
 
