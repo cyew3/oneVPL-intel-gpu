@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <UseITT>false</UseITT>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(UseITT)'=='true'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MEDIASDK_ROOT)\mdp_msdk-contrib\itt\windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>MFX_TRACE_ENABLE_ITT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link Condition="'$(Platform)'=='Win32'">
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\mdp_msdk-contrib\itt\windows\lib32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libittnotify.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Link Condition="'$(Platform)'=='x64'">
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\mdp_msdk-contrib\itt\windows\lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libittnotify.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup />
+</Project>
