@@ -14,6 +14,7 @@ File Name: .h
 #include "mfx_mediasdk_spl_wrapper.h"
 #include "mfx_frame_constructor.h"
 #include "mfxvp8.h"
+#include "mfxvp9.h"
 
 mfxU32 TIME_STAMP_FREQUENCY = 90000;
 

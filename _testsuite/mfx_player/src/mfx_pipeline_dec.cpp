@@ -36,6 +36,8 @@ File Name: .h
 #include "mfxvp8.h"
 #endif
 
+#include "mfxvp9.h"
+
 #include "mfx_serializer.h"
 #include "mfx_view_ordered_render.h"
 #include "mfx_advance_decoder.h"

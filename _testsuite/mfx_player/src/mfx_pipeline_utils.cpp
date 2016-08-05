@@ -26,6 +26,7 @@ File Name: .h
 #endif
 
 #include "mfxvp8.h"
+#include "mfxvp9.h"
 
 typedef struct {
     int code;
@@ -49,6 +50,7 @@ static CodeStringTable StringsOfFourcc[] =
     { MFX_FOURCC_P010,               VM_STRING("P010") },
     { MFX_FOURCC_A2RGB10,            VM_STRING("A2RGB10") },
     { MFX_CODEC_VP8,                 VM_STRING("VP8")  },
+    { MFX_CODEC_VP9,                 VM_STRING("VP9")  },
     { MFX_FOURCC_R16,                VM_STRING("R16")  },
     { MFX_FOURCC_ARGB16,             VM_STRING("ARGB16")  },
     { MFX_FOURCC_NV16,               VM_STRING("NV16")  },

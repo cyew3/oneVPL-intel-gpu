@@ -228,15 +228,15 @@ void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
     SerializeWithInserter(VM_STRING("InterPredBlockSize"), m_pStruct->DDI.InterPredBlockSize);
 
     // MediaSDK parametrization
-    SERIALIZE_INT(BRCPrecision);          
-    SERIALIZE_INT(RefRaw);         
-    SERIALIZE_INT(ConstQP);        
-    SERIALIZE_INT(GlobalSearch);       
-    SERIALIZE_INT(LocalSearch);  
+    SERIALIZE_INT(BRCPrecision);
+    SERIALIZE_INT(RefRaw);
+    SERIALIZE_INT(ConstQP);
+    SERIALIZE_INT(GlobalSearch);
+    SERIALIZE_INT(LocalSearch);
 
     // threading options
-    SERIALIZE_INT(EarlySkip);     
-    SERIALIZE_INT(LaScaleFactor);     
+    SERIALIZE_INT(EarlySkip);
+    SERIALIZE_INT(LaScaleFactor);
     SERIALIZE_INT(LookAheadDependency);
     SERIALIZE_INT(Hme);
     SERIALIZE_INT(NumActiveRefP);
@@ -365,6 +365,38 @@ void MFXStructureRef <mfxExtVP8CodingOption>::ConstructValues() const
     SERIALIZE_INT(NumFramesForIVFHeader);
 }
 
+void MFXStructureRef<mfxSegmentParamVP9>::ConstructValues () const
+{
+    SERIALIZE_INT(ReferenceAndSkipCtrl);
+    SERIALIZE_INT(LoopFilterLevelDelta);
+    SERIALIZE_INT(QIndexDelta);
+    SERIALIZE_POD_ARRAY(reserved, 13);
+}
+
+void MFXStructureRef <mfxExtCodingOptionVP9>::ConstructValues() const
+{
+    SERIALIZE_INT(Version);
+    SERIALIZE_INT(SharpnessLevel);
+    SERIALIZE_INT(QIndexDeltaLumaDC);
+    SERIALIZE_INT(WriteIVFHeaders);
+    SERIALIZE_INT(NumFramesForIVF);
+    SERIALIZE_POD_ARRAY(LoopFilterRefDelta,4);
+    SERIALIZE_POD_ARRAY(LoopFilterModeDelta,2);
+    SERIALIZE_INT(QIndexDeltaLumaDC);
+    SERIALIZE_INT(QIndexDeltaChromaAC);
+    SERIALIZE_INT(QIndexDeltaChromaDC);
+
+    SERIALIZE_INT(Log2TileRows);
+    SERIALIZE_INT(Log2TileColumns);
+
+    SERIALIZE_INT(reserved1);
+    SERIALIZE_INT(EnableMultipleSegments);
+
+    SERIALIZE_STRUCTS_ARRAY(Segment, 8);
+
+    SERIALIZE_POD_ARRAY(reserved,106);
+}
+
 void MFXStructureRef <mfxFrameInfo>::ConstructValues () const
 {
     SERIALIZE_INT(BitDepthLuma);
@@ -457,7 +489,7 @@ void MFXStructureRef <mfxInfoMFX>::ConstructValues () const
             SERIALIZE_INT(DecodedOrder);
             SERIALIZE_INT(ExtendedPicStruct);
         }
-        
+
         if (m_flags & Formater::JPEG_DECODE)
         {
             SERIALIZE_INT(JPEGChromaFormat);
@@ -522,7 +554,7 @@ void MFXStructureRef <mfxInfoMFX>::ConstructValues () const
 
 void MFXStructureRef <FourCC>::ConstructValues () const
 {
-    vm_char sCodec[5] = 
+    vm_char sCodec[5] =
     {
         ((char*)&m_pStruct->m_id)[0],
         ((char*)&m_pStruct->m_id)[1],
@@ -530,7 +562,7 @@ void MFXStructureRef <FourCC>::ConstructValues () const
         ((char*)&m_pStruct->m_id)[3],
         0
     };
-    
+
     m_values_map[VM_STRING("")] = sCodec;
 }
 
@@ -552,7 +584,7 @@ bool MFXStructureRef<mfxVersion>::DeSerialize(const tstring & refStr, int *nPosi
 
     //read major and delimiter
     input_strm>>m_pStruct->Major>>delimiter;
-    
+
     if (!input_strm.good() || delimiter != VM_STRING('.'))
         return false;
 
@@ -560,13 +592,13 @@ bool MFXStructureRef<mfxVersion>::DeSerialize(const tstring & refStr, int *nPosi
     if (!(input_strm>>m_pStruct->Minor)) {
         return false;
     }
-    
+
     if (NULL != nPosition) {
         *nPosition =  (int)input_strm.tellg();
     }
-    
+
     delimiter = input_strm.peek();
-    
+
     if (!(input_strm.eof() || delimiter == VM_STRING(' ')))
         return false;
 
@@ -613,7 +645,7 @@ void MFXStructureRef<mfxExtAVCRefListCtrl>::ConstructValues () const
 {
     SERIALIZE_INT(NumRefIdxL0Active);
     SERIALIZE_INT(NumRefIdxL1Active);
-    
+
     //TODO: improve: it is possible to calc length automatically
     SerializeArrayOfPODs(VM_STRING("PreferredRefList"), (RefListFormater::RefListElement*)m_pStruct->PreferredRefList, MFX_ARRAY_SIZE(m_pStruct->PreferredRefList), RefListFormater());
     SerializeArrayOfPODs(VM_STRING("RejectedRefList"), (RefListFormater::RefListElement*)m_pStruct->RejectedRefList, MFX_ARRAY_SIZE(m_pStruct->RejectedRefList), RefListFormater());
@@ -710,7 +742,7 @@ bool MFXStructureRef <mfxExtAvcTemporalLayers>::DeSerialize(const tstring & refS
     //clearing attached structure firstly
     MFXExtBufferPtr<mfxExtAvcTemporalLayers> initHeader(m_pStruct);
     initHeader.release();
-    
+
     DESERIALIZE_INT(BaseLayerPID);
     for (mfxU32 i = 0; i < MFX_ARRAY_SIZE(m_pStruct->Layer); i++)
     {
@@ -746,7 +778,7 @@ bool MFXStructureRef <IppiRect>::DeSerialize(const tstring & refStr, int *nPosit
     {
         *nPosition = (int)input_strm.tellg();
     }
-    
+
     return true;
 }
 void MFXStructureRef <IppiRect>::ConstructValues () const
@@ -838,6 +870,10 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
         }
         case MFX_EXTBUFF_VP8_CODING_OPTION :{
             SerializeStruct(VM_STRING("VP8."), *(mfxExtVP8CodingOption*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_CODING_OPTION_VP9 :{
+            SerializeStruct(VM_STRING("VP9."), *(mfxExtCodingOptionVP9*)m_pStruct);
             break;
         }
         case MFX_EXTBUFF_MVC_SEQ_DESC : {
