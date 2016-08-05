@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -22,130 +22,6 @@ namespace UMC_HEVC_DECODER
 {
 
 const Ipp64u g_scaled256 = (Ipp64u)0x100 << (7+ CABAC_MAGIC_BITS);
-
-// Read N bits from 32-bit array
-#define _h265GetBits(current_data, offset, nbits, data) \
-{ \
-    Ipp32u x; \
- \
-    VM_ASSERT((nbits) > 0 && (nbits) <= 32); \
-    VM_ASSERT(offset >= 0 && offset <= 31); \
- \
-    offset -= (nbits); \
- \
-    if (offset >= 0) \
-    { \
-        x = current_data[0] >> (offset + 1); \
-    } \
-    else \
-    { \
-        offset += 32; \
- \
-        x = current_data[1] >> (offset); \
-        x >>= 1; \
-        x += current_data[0] << (31 - offset); \
-        current_data++; \
-    } \
- \
-    VM_ASSERT(offset >= 0 && offset <= 31); \
- \
-    (data) = x & bits_data[nbits]; \
-}
-
-// Skip N bits in 32-bit array
-#define ippiSkipNBits(current_data, offset, nbits) \
-{ \
-    /* check error(s) */ \
-    VM_ASSERT((nbits) > 0 && (nbits) <= 32); \
-    VM_ASSERT(offset >= 0 && offset <= 31); \
-    /* decrease number of available bits */ \
-    offset -= (nbits); \
-    /* normalize bitstream pointer */ \
-    if (0 > offset) \
-    { \
-        offset += 32; \
-        current_data++; \
-    } \
-    /* check error(s) again */ \
-    VM_ASSERT(offset >= 0 && offset <= 31); \
- }
-
-// Read 1 bit from 32-bit array
-#define ippiGetBits1(current_data, offset, data) \
-{ \
-    data = ((current_data[0] >> (offset)) & 1);  \
-    offset -= 1; \
-    if (offset < 0) \
-    { \
-        offset = 31; \
-        current_data += 1; \
-    } \
-}
-
-// Read 8 bits from 32-bit array
-#define ippiGetBits8( current_data, offset, data) \
-    _h265GetBits(current_data, offset, 8, data);
-
-// Read N bits from 32-bit array
-#define ippiGetNBits( current_data, offset, nbits, data) \
-    _h265GetBits(current_data, offset, nbits, data);
-
-// Return bitstream position pointers N bits back
-#define ippiUngetNBits(current_data, offset, nbits) \
-{ \
-    VM_ASSERT(offset >= 0 && offset <= 31); \
- \
-    offset += (nbits); \
-    if (offset > 31) \
-    { \
-        offset -= 32; \
-        current_data--; \
-    } \
- \
-    VM_ASSERT(offset >= 0 && offset <= 31); \
-}
-
-// Align bitstream position to byte boundary
-#define ippiAlignBSPointerRight(current_data, offset) \
-{ \
-    if ((offset & 0x07) != 0x07) \
-    { \
-        offset = (offset | 0x07) - 8; \
-        if (offset == -1) \
-        { \
-            offset = 31; \
-            current_data++; \
-        } \
-    } \
-}
-
-// Read N bits from 32-bit array
-#define ippiNextBits(current_data, bp, nbits, data) \
-{ \
-    Ipp32u x; \
- \
-    VM_ASSERT((nbits) > 0 && (nbits) <= 32); \
-    VM_ASSERT(nbits >= 0 && nbits <= 31); \
- \
-    Ipp32s offset = bp - (nbits); \
- \
-    if (offset >= 0) \
-    { \
-        x = current_data[0] >> (offset + 1); \
-    } \
-    else \
-    { \
-        offset += 32; \
- \
-        x = current_data[1] >> (offset); \
-        x >>= 1; \
-        x += current_data[0] << (31 - offset); \
-    } \
- \
-    VM_ASSERT(offset >= 0 && offset <= 31); \
- \
-    (data) = x & bits_data[nbits]; \
-}
 
 #if CABAC_MAGIC_BITS == 16
 #define RefreshCABACBits(codOffset, pBits, iBits) \
@@ -177,12 +53,6 @@ const Ipp64u g_scaled256 = (Ipp64u)0x100 << (7+ CABAC_MAGIC_BITS);
     iBits += 24; \
 }
 #endif
-
-// Align bitstream position to byte boundary
-inline void H265BaseBitstream::AlignPointerRight(void)
-{
-    ippiAlignBSPointerRight(m_pbs, m_bitOffset);
-}
 
 const Ipp32u c_RenormTable[32] =
 {
@@ -509,102 +379,6 @@ Ipp32u H265Bitstream::DecodeBypassBins_CABAC(Ipp32s numBins)
     return bins;
 }
 
-// Read N bits from bitstream array
-inline
-Ipp32u H265BaseBitstream::GetBits(const Ipp32u nbits)
-{
-    Ipp32u w, n = nbits;
-
-    ippiGetNBits(m_pbs, m_bitOffset, n, w);
-    return(w);
-}
-
-// Read N bits from bitstream array
-template <Ipp32u nbits>
-inline Ipp32u H265BaseBitstream::GetPredefinedBits()
-{
-    Ipp32u w, n = nbits;
-
-    ippiGetNBits(m_pbs, m_bitOffset, n, w);
-    return(w);
-}
-
-// Read variable length coded unsigned element
-inline Ipp32u H265BaseBitstream::GetVLCElementU()
-{
-    Ipp32s sval = 0;
-
-    IppStatus ippRes = ippiDecodeExpGolombOne_H264_1u32s(&m_pbs, &m_bitOffset, &sval, false);
-
-    if (ippStsNoErr > ippRes)
-        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-
-    return (Ipp32u)sval;
-}
-
-// Read variable length coded signed element
-inline Ipp32s H265BaseBitstream::GetVLCElementS()
-{
-    Ipp32s sval = 0;
-
-    IppStatus ippRes = ippiDecodeExpGolombOne_H264_1u32s(&m_pbs, &m_bitOffset, &sval, true);
-
-    if (ippStsNoErr > ippRes)
-        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-
-    return sval;
-}
-
-// Read one bit
-inline Ipp8u H265BaseBitstream::Get1Bit()
-{
-    Ipp32u w;
-
-    ippiGetBits1(m_pbs, m_bitOffset, w);
-    return (Ipp8u)w;
-
-} // H265Bitstream::Get1Bit()
-
-// Returns number of decoded bytes since last reset
-inline size_t H265BaseBitstream::BytesDecoded() const
-{
-    return static_cast<size_t>((Ipp8u*)m_pbs - (Ipp8u*)m_pbsBase) +
-            ((31 - m_bitOffset) >> 3);
-}
-
-// Returns number of decoded bits since last reset
-inline size_t H265BaseBitstream::BitsDecoded() const
-{
-    return static_cast<size_t>((Ipp8u*)m_pbs - (Ipp8u*)m_pbsBase) * 8 +
-        (31 - m_bitOffset);
-}
-
-// Returns number of bytes left in bitstream array
-inline size_t H265BaseBitstream::BytesLeft() const
-{
-    return (Ipp32s)m_maxBsSize - (Ipp32s) BytesDecoded();
-}
-
-// Returns number of bits needed for byte alignment
-inline unsigned H265BaseBitstream::getNumBitsUntilByteAligned() const
-{
-    return ((m_bitOffset + 1) % 8);
-}
-
-// Align bitstream to byte boundary
-inline void H265BaseBitstream::readOutTrailingBits()
-{
-    Get1Bit();
-    //VM_ASSERT(1 == uVal);
-
-    Ipp32u bits = getNumBitsUntilByteAligned();
-
-    if (bits)
-    {
-        GetBits(bits);
-        //VM_ASSERT(0 == uVal);
-    }
-}
 
 } // namespace UMC_HEVC_DECODER
 

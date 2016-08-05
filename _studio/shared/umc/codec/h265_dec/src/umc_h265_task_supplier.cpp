@@ -19,19 +19,20 @@
 #include "umc_h265_task_supplier.h"
 #include "umc_h265_frame_list.h"
 #include "umc_h265_nal_spl.h"
-#include "umc_h265_bitstream.h"
+#include "umc_h265_bitstream_headers.h"
 
 #include "umc_h265_dec_defs.h"
 #include "vm_sys_info.h"
-#include "umc_h265_segment_decoder_mt.h"
 
 #include "umc_h265_task_broker.h"
 
 #include "umc_structures.h"
-
 #include "umc_frame_data.h"
-
 #include "umc_h265_debug.h"
+
+#ifndef MFX_VA
+#include "umc_h265_segment_decoder_mt.h"
+#endif
 
 namespace UMC_HEVC_DECODER
 {
@@ -978,7 +979,7 @@ UMC::Status TaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
     if (m_Headers.m_SeqParams.GetCurrentID() == -1)
         return UMC::UMC_OK;
 
-    H265Bitstream bitStream;
+    H265HeadersBitstream bitStream;
 
     try
     {
@@ -1025,11 +1026,11 @@ UMC::Status TaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
 }
 
 // Decode video parameters set NAL unit
-UMC::Status TaskSupplier_H265::xDecodeVPS(H265Bitstream &bs)
+UMC::Status TaskSupplier_H265::xDecodeVPS(H265HeadersBitstream *bs)
 {
     H265VideoParamSet vps;
 
-    UMC::Status s = bs.GetVideoParamSet(&vps);
+    UMC::Status s = bs->GetVideoParamSet(&vps);
     if(s == UMC::UMC_OK)
         m_Headers.m_VideoParams.AddHeader(&vps);
 
@@ -1037,12 +1038,12 @@ UMC::Status TaskSupplier_H265::xDecodeVPS(H265Bitstream &bs)
 }
 
 // Decode sequence parameters set NAL unit
-UMC::Status TaskSupplier_H265::xDecodeSPS(H265Bitstream &bs)
+UMC::Status TaskSupplier_H265::xDecodeSPS(H265HeadersBitstream *bs)
 {
     H265SeqParamSet sps;
     sps.Reset();
 
-    UMC::Status s = bs.GetSequenceParamSet(&sps);
+    UMC::Status s = bs->GetSequenceParamSet(&sps);
     if(s != UMC::UMC_OK)
         return s;
 
@@ -1107,12 +1108,12 @@ UMC::Status TaskSupplier_H265::xDecodeSPS(H265Bitstream &bs)
 }
 
 // Decode picture parameters set NAL unit
-UMC::Status TaskSupplier_H265::xDecodePPS(H265Bitstream &bs)
+UMC::Status TaskSupplier_H265::xDecodePPS(H265HeadersBitstream * bs)
 {
     H265PicParamSet pps;
 
     pps.Reset();
-    UMC::Status s = bs.GetPictureParamSetFull(&pps);
+    UMC::Status s = bs->GetPictureParamSetFull(&pps);
     if(s != UMC::UMC_OK)
         return s;
 
@@ -1357,7 +1358,7 @@ UMC::Status TaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
     //ViewItem_H265 *view = GetView(BASE_VIEW);
     UMC::Status umcRes = UMC::UMC_OK;
 
-    H265Bitstream bitStream;
+    H265HeadersBitstream bitStream;
 
     try
     {
@@ -1381,13 +1382,13 @@ UMC::Status TaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
         switch(nal_unit_type)
         {
         case NAL_UT_VPS:
-            umcRes = xDecodeVPS(bitStream);
+            umcRes = xDecodeVPS(&bitStream);
             break;
         case NAL_UT_SPS:
-            umcRes = xDecodeSPS(bitStream);
+            umcRes = xDecodeSPS(&bitStream);
             break;
         case NAL_UT_PPS:
-            umcRes = xDecodePPS(bitStream);
+            umcRes = xDecodePPS(&bitStream);
             break;
         default:
             break;
@@ -2232,6 +2233,7 @@ void TaskSupplier_H265::AddFakeReferenceFrame(H265Slice *)
 #endif
 }
 
+#ifndef MFX_VA
 // Initialize array of POC deltas from current POC to reference frames in DPB
 void SetDeltaPocs(const H265DecoderFrameList * dpb, const H265DecoderFrame * frame)
 {
@@ -2254,6 +2256,7 @@ void SetDeltaPocs(const H265DecoderFrameList * dpb, const H265DecoderFrame * fra
         frame->getCD()->m_refFrameInfo[curr->m_index].flags = curr->isLongTermRef() ? COL_TU_LT_INTER : COL_TU_ST_INTER;
     }
 }
+#endif
 
 // Mark frame as full with slices
 void TaskSupplier_H265::OnFullFrame(H265DecoderFrame * pFrame)
@@ -2307,17 +2310,10 @@ void TaskSupplier_H265::CompleteFrame(H265DecoderFrame * pFrame)
         DEBUG_PRINT((VM_STRING("Skip frame ForCRAorBLA - %s\n"), GetFrameInfoString(pFrame)));
         return;
     }
-    else
-    {
-        if (IsShouldSkipDeblocking(pFrame))
-        {
-            pFrame->GetAU()->SkipDeblocking();
-            pFrame->GetAU()->SkipSAO();
-        }
-    }
 
     slicesInfo->EliminateASO();
 
+#ifndef MFX_VA
     if (slicesInfo->GetSlice(0)->GetFirstMB())
     {
         H265Task task(0);
@@ -2327,6 +2323,7 @@ void TaskSupplier_H265::CompleteFrame(H265DecoderFrame * pFrame)
         task.m_pSlicesInfo = slicesInfo;
         m_pSegmentDecoder[0]->RestoreErrorRect(&task);
     }
+#endif
 
     slicesInfo->SetStatus(H265DecoderFrameInfo::STATUS_FILLED);
 }
@@ -2406,7 +2403,11 @@ UMC::Status TaskSupplier_H265::AllocateFrameData(H265DecoderFrame * pFrame, Ippi
     pFrame->allocate(frmData, &info);
     pFrame->m_index = frmMID;
 
+#ifndef MFX_VA
     pFrame->allocateCodingData(pSeqParamSet, pPicParamSet);
+#else
+    pPicParamSet = pPicParamSet;
+#endif
 
     return UMC::UMC_OK;
 }
@@ -2475,11 +2476,13 @@ H265DecoderFrame * TaskSupplier_H265::AllocateNewFrame(const H265Slice *pSlice)
         pFrame->m_DisplayPictureStruct_H265 = DPS_FRAME_H265;
     }
 
+#ifndef MFX_VA
     //fill chroma planes in case of 4:0:0
     if (pFrame->m_chroma_format == 0)
     {
         pFrame->DefaultFill(true);
     }
+#endif
 
     InitFrameCounter(pFrame, pSlice);
     return pFrame;

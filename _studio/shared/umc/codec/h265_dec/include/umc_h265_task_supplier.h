@@ -22,12 +22,11 @@
 #include "umc_h265_frame_info.h"
 #include "umc_h265_frame_list.h"
 
-#include "umc_h265_segment_decoder_mt.h"
 #include "umc_h265_headers.h"
-
 #include "umc_frame_allocator.h"
 
 #include "umc_h265_au_splitter.h"
+#include "umc_h265_segment_decoder_base.h"
 
 #include "umc_va_base.h"
 
@@ -464,11 +463,11 @@ protected:
 
 private:
     // Decode video parameters set NAL unit
-    UMC::Status xDecodeVPS(H265Bitstream &);
+    UMC::Status xDecodeVPS(H265HeadersBitstream *);
     // Decode sequence parameters set NAL unit
-    UMC::Status xDecodeSPS(H265Bitstream &);
+    UMC::Status xDecodeSPS(H265HeadersBitstream *);
     // Decode picture parameters set NAL unit
-    UMC::Status xDecodePPS(H265Bitstream &);
+    UMC::Status xDecodePPS(H265HeadersBitstream *);
 
     TaskSupplier_H265 & operator = (TaskSupplier_H265 &)
     {

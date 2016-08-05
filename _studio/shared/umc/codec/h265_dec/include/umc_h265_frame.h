@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -19,13 +19,15 @@
 #include "umc_h265_yuv.h"
 #include "umc_h265_notify.h"
 #include "umc_h265_heap.h"
+
+#ifndef MFX_VA
 #include "umc_h265_frame_coding_data.h"
+#endif
 
 namespace UMC_HEVC_DECODER
 {
 class H265Slice;
 class H265DecoderFrameInfo;
-class H265FrameCodingData;
 class H265CodingUnit;
 
 // Struct containing list 0 and list 1 reference picture lists for one slice.
@@ -161,28 +163,6 @@ public:
     void FreeResources();
 
 public:
-    // FIXME: make coding data a member, not pointer
-    H265FrameCodingData *m_CodingData;
-
-    H265FrameCodingData* getCD() const {return m_CodingData;}
-
-    // Returns a CTB by its raster address
-    H265CodingUnit* getCU(Ipp32u CUaddr) const;
-
-    // Returns number of CTBs in frame
-    Ipp32u getNumCUsInFrame() const;
-    // Returns number of minimal partitions in CTB
-    Ipp32u getNumPartInCUSize() const;
-    // Returns number of CTBs in frame width
-    Ipp32u getFrameWidthInCU() const;
-    // Returns number of CTBs in frame height
-    Ipp32u getFrameHeightInCU() const;
-
-    Ipp32s*  m_cuOffsetY;
-    Ipp32s*  m_cuOffsetC;
-    Ipp32s*  m_buOffsetY;
-    Ipp32s*  m_buOffsetC;
-
     // Delete unneeded references and set flags after decoding is done
     void OnDecodingCompleted();
 
@@ -293,9 +273,6 @@ public:
         return &m_refPicList[sliceNumber].m_refPicList[list];
     }
 
-    // Fill frame planes with default values
-    void DefaultFill(bool isChromaOnly, Ipp8u defaultValue = 128);
-
     Ipp32s GetError() const
     {
         return m_ErrorType;
@@ -312,6 +289,32 @@ public:
     }
 
 
+#ifndef MFX_VA
+    // FIXME: make coding data a member, not pointer
+    H265FrameCodingData *m_CodingData;
+
+    H265FrameCodingData* getCD() const {return m_CodingData;}
+
+    // Returns a CTB by its raster address
+    H265CodingUnit* getCU(Ipp32u CUaddr) const;
+
+    // Returns number of CTBs in frame
+    Ipp32u getNumCUsInFrame() const;
+    // Returns number of minimal partitions in CTB
+    Ipp32u getNumPartInCUSize() const;
+    // Returns number of CTBs in frame width
+    Ipp32u getFrameWidthInCU() const;
+    // Returns number of CTBs in frame height
+    Ipp32u getFrameHeightInCU() const;
+
+    Ipp32s*  m_cuOffsetY;
+    Ipp32s*  m_cuOffsetC;
+    Ipp32s*  m_buOffsetY;
+    Ipp32s*  m_buOffsetC;
+
+    // Fill frame planes with default values
+    void DefaultFill(bool isChromaOnly, Ipp8u defaultValue = 128);
+
     // Allocate and initialize frame array of CTBs and SAO parameters
     void allocateCodingData(const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet);
     // Free array of CTBs
@@ -325,6 +328,7 @@ public:
     PlanePtrY GetLumaAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
     //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
     PlanePtrUV GetCbCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
+#endif
 
     void AddSlice(H265Slice * pSlice);
 

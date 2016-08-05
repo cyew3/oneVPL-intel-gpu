@@ -148,6 +148,27 @@ void H265SegmentDecoderMultiThreaded::EndProcessingSegment(H265Task &Task)
     m_pTaskBroker->AddPerformedTask(&Task);
 }
 
+UMC::Status H265SegmentDecoderMultiThreaded::ProcessTask(H265Task &task)
+{
+    switch(task.m_iTaskID)
+    {
+    case TASK_PROCESS_H265:
+        return ProcessSlice(task);
+    case TASK_DEB_H265:
+        return DeblockSegmentTask(task);
+    case TASK_SAO_H265:
+        return SAOFrameTask(task);
+    case TASK_DEC_REC_H265:
+        return DecRecSegment(task);
+    case TASK_REC_H265:
+        return ReconstructSegment(task);
+    case TASK_DEC_H265:
+        return DecodeSegment(task);
+    }
+
+    return UMC::UMC_ERR_FAILED;
+}
+
 // Initialize decoder and call task processing function
 UMC::Status H265SegmentDecoderMultiThreaded::ProcessSegment(void)
 {
@@ -163,13 +184,12 @@ UMC::Status H265SegmentDecoderMultiThreaded::ProcessSegment(void)
             UMC::Status umcRes = UMC::UMC_OK;
 
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "HEVCDec_work");
-            VM_ASSERT(task.pFunction);
 
             StartProcessingSegment(task);
 
             try // do decoding
             {
-                umcRes = (this->*(task.pFunction))(task);
+                umcRes = ProcessTask(task);
 
                 if (UMC::UMC_ERR_END_OF_STREAM == umcRes)
                 {

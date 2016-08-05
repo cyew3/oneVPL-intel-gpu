@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -19,7 +19,7 @@
 
 #include "umc_h265_dec_defs.h"
 #include "umc_h265_heap.h"
-#include "umc_h265_segment_decoder_mt.h"
+#include "umc_h265_segment_decoder_base.h"
 
 namespace UMC_HEVC_DECODER
 {
@@ -31,59 +31,7 @@ class TaskSupplier_H265;
 class DecodingContext;
 struct TileThreadingInfo;
 
-// Task ID enumerator
-enum
-{
-    TASK_PROCESS_H265  = 0, // whole slice is decoded and reconstructed
-    TASK_DEC_H265, // piece of slice is decoded
-    TASK_REC_H265, // piece of slice is reconstructed
-    TASK_DEB_H265, // piece of slice is deblocked
-    TASK_DEC_REC_H265, // piece of slice is decoded and reconstructed
-    TASK_SAO_H265  // piece of slice is saoed
-};
-
-// Asynchronous task descriptor class
-class H265Task
-{
-public:
-    // Default constructor
-    H265Task(Ipp32s iThreadNumber)
-        : m_iThreadNumber(iThreadNumber)
-    {
-        m_pSlice = 0;
-
-        pFunction = 0;
-        m_pBuffer = 0;
-        m_WrittenSize = 0;
-
-        m_iFirstMB = -1;
-        m_iMaxMB = -1;
-        m_iMBToProcess = -1;
-        m_iTaskID = 0;
-        m_bError = false;
-        m_taskPreparingGuard = 0;
-        m_context = 0;
-        m_threadingInfo = 0;
-    }
-
-    UMC::Status (H265SegmentDecoderMultiThreaded::*pFunction)(H265Task &task);
-
-    CoeffsPtr m_pBuffer;                                  // (Ipp16s *) pointer to working buffer
-    size_t          m_WrittenSize;
-
-    DecodingContext * m_context;
-    H265Slice *m_pSlice;                                        // (H265Slice *) pointer to owning slice
-    TileThreadingInfo * m_threadingInfo;
-    H265DecoderFrameInfo * m_pSlicesInfo;
-    UMC::AutomaticUMCMutex    * m_taskPreparingGuard;
-
-    Ipp32s m_iThreadNumber;                                     // (Ipp32s) owning thread number
-    Ipp32s m_iFirstMB;                                          // (Ipp32s) first MB in slice
-    Ipp32s m_iMaxMB;                                            // (Ipp32s) maximum MB number in owning slice
-    Ipp32s m_iMBToProcess;                                      // (Ipp32s) number of MB to processing
-    Ipp32s m_iTaskID;                                           // (Ipp32s) task identificator
-    bool m_bError;                                              // (bool) there is a error
-};
+class H265Task;
 
 // Decoder task scheduler class
 class TaskBroker_H265
@@ -139,12 +87,6 @@ protected:
         return false;
     }
 
-    // Initialize frame slice and tile start coordinates
-    bool GetPreparationTask(H265DecoderFrameInfo * info);
-
-    // Initialize task object with default values
-    void InitTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice);
-
     // Try to find an access unit which to decode next
     void InitAUs();
     // Find an access unit which has all slices found
@@ -169,6 +111,58 @@ protected:
 };
 
 #ifndef MFX_VA
+// Task ID enumerator
+enum
+{
+    TASK_PROCESS_H265  = 0, // whole slice is decoded and reconstructed
+    TASK_DEC_H265, // piece of slice is decoded
+    TASK_REC_H265, // piece of slice is reconstructed
+    TASK_DEB_H265, // piece of slice is deblocked
+    TASK_DEC_REC_H265, // piece of slice is decoded and reconstructed
+    TASK_SAO_H265  // piece of slice is saoed
+};
+
+
+// Asynchronous task descriptor class
+class H265Task
+{
+public:
+    // Default constructor
+    H265Task(Ipp32s iThreadNumber)
+        : m_iThreadNumber(iThreadNumber)
+    {
+        m_pSlice = 0;
+
+        m_pBuffer = 0;
+        m_WrittenSize = 0;
+
+        m_iFirstMB = -1;
+        m_iMaxMB = -1;
+        m_iMBToProcess = -1;
+        m_iTaskID = 0;
+        m_bError = false;
+        m_taskPreparingGuard = 0;
+        m_context = 0;
+        m_threadingInfo = 0;
+    }
+
+    CoeffsPtr m_pBuffer;                                  // (Ipp16s *) pointer to working buffer
+    size_t          m_WrittenSize;
+
+    DecodingContext * m_context;
+    H265Slice *m_pSlice;                                        // (H265Slice *) pointer to owning slice
+    TileThreadingInfo * m_threadingInfo;
+    H265DecoderFrameInfo * m_pSlicesInfo;
+    UMC::AutomaticUMCMutex    * m_taskPreparingGuard;
+
+    Ipp32s m_iThreadNumber;                                     // (Ipp32s) owning thread number
+    Ipp32s m_iFirstMB;                                          // (Ipp32s) first MB in slice
+    Ipp32s m_iMaxMB;                                            // (Ipp32s) maximum MB number in owning slice
+    Ipp32s m_iMBToProcess;                                      // (Ipp32s) number of MB to processing
+    Ipp32s m_iTaskID;                                           // (Ipp32s) task identificator
+    bool m_bError;                                              // (bool) there is a error
+};
+
 // Task broker which uses one thread only
 class TaskBrokerSingleThread_H265 : public TaskBroker_H265
 {
@@ -177,8 +171,15 @@ public:
 
     // Get next working task
     virtual bool GetNextTaskInternal(H265Task *pTask);
+    // Calculate frame state after a task has been finished
+    virtual void AddPerformedTask(H265Task *pTask);
+    // Returns whether enough bitstream data is evailable to start an asynchronous task
+    virtual bool IsEnoughForStartDecoding(bool force);
 
 protected:
+
+    // Initialize task object with default values
+    void InitTask(H265DecoderFrameInfo * info, H265Task *pTask, H265Slice *pSlice);
     // Tries to find a new slice to work on in specified access unit and initializes a task for it
     bool GetNextSlice(H265DecoderFrameInfo * info, H265Task *pTask);
     // Tries to find a portion of decoding+reconstruction work in the specified access unit and initializes a task object for it
@@ -189,6 +190,9 @@ protected:
 
     // Tries to find a portion of SAO filtering work in the specified access unit and initializes a task object for it
     bool GetSAOFrameTask(H265DecoderFrameInfo * info, H265Task *pTask);
+
+    // Initialize frame slice and tile start coordinates
+    bool GetPreparationTask(H265DecoderFrameInfo * info);
 };
 
 // Task broker which uses multiple threads

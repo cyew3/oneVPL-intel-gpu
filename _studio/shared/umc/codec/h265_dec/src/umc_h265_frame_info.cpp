@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -16,6 +16,8 @@
 
 namespace UMC_HEVC_DECODER
 {
+
+#ifndef MFX_VA
 // Initialize tiles and slices threading information
 void H265DecoderFrameInfo::FillTileInfo()
 {
@@ -70,12 +72,14 @@ void H265DecoderFrameInfo::FillTileInfo()
         }
     }
 }
+#endif
 
 bool H265DecoderFrameInfo::IsCompleted() const
 {
     if (GetStatus() == H265DecoderFrameInfo::STATUS_COMPLETED)
         return true;
 
+#ifndef MFX_VA
     if (!m_pFrame->getCD())
         return false;
 
@@ -87,6 +91,9 @@ bool H265DecoderFrameInfo::IsCompleted() const
     }
 
     return true;
+#else
+    return false;
+#endif
 }
 
 void H265DecoderFrameInfo::Reset()
@@ -94,9 +101,12 @@ void H265DecoderFrameInfo::Reset()
     Free();
 
     m_hasTiles = false;
+
+#ifndef MFX_VA
     memset(m_curCUToProcess, 0, sizeof(m_curCUToProcess));
     memset(m_processInProgress, 0, sizeof(m_processInProgress));
     m_tilesThreadingInfo.clear();
+#endif
 
     m_isNeedDeblocking = false;
     m_isNeedSAO = false;
@@ -149,33 +159,6 @@ void H265DecoderFrameInfo::RemoveSlice(Ipp32s num)
 
     m_SliceCount--;
     m_pSliceQueue[m_SliceCount] = pCurSlice;
-}
-
-void H265DecoderFrameInfo::SkipDeblocking()
-{
-    m_isNeedDeblocking = false;
-
-    for (Ipp32s i = 0; i < m_SliceCount; i ++)
-    {
-        H265Slice *pSlice = m_pSliceQueue[i];
-        pSlice->processInfo.m_curCUToProcess[DEB_PROCESS_ID] = pSlice->m_iMaxMB;
-        pSlice->GetSliceHeader()->slice_deblocking_filter_disabled_flag = true;
-    }
-
-    m_curCUToProcess[DEB_PROCESS_ID] = m_pFrame->getCD()->m_NumCUsInFrame;
-}
-
-void H265DecoderFrameInfo::SkipSAO()
-{
-    m_isNeedSAO = false;
-
-    for (Ipp32s i = 0; i < m_SliceCount; i ++)
-    {
-        H265Slice *pSlice = m_pSliceQueue[i];
-        pSlice->processInfo.m_curCUToProcess[SAO_PROCESS_ID] = pSlice->m_iMaxMB;
-    }
-
-    m_curCUToProcess[SAO_PROCESS_ID] = m_pFrame->getCD()->m_NumCUsInFrame;
 }
 
 void H265DecoderFrameInfo::EliminateASO()

@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -14,9 +14,11 @@
 #include <algorithm>
 #include "umc_h265_frame.h"
 #include "umc_h265_task_supplier.h"
-#include "umc_h265_ipplevel.h"
-
 #include "umc_h265_debug.h"
+
+#ifndef MFX_VA
+#include "umc_h265_ipplevel.h"
+#endif
 
 
 namespace UMC_HEVC_DECODER
@@ -33,17 +35,20 @@ H265DecoderFrame::H265DecoderFrame(UMC::MemoryAllocator *pMemoryAllocator, Heap_
     , post_procces_complete(false)
     , m_index(-1)
     , m_UID(-1)
-    , m_cuOffsetY(0)
-    , m_cuOffsetC(0)
-    , m_buOffsetY(0)
-    , m_buOffsetC(0)
     , m_pObjHeap(pObjHeap)
 {
     m_isShortTermRef = false;
     m_isLongTermRef = false;
     m_RefPicListResetCount = 0;
     m_PicOrderCnt = 0;
+
+#ifndef MFX_VA
+    m_cuOffsetY = 0;
+    m_cuOffsetC = 0;
+    m_buOffsetY = 0;
+    m_buOffsetC = 0;
     m_CodingData = NULL;
+#endif
     // set memory managment tools
     m_pMemoryAllocator = pMemoryAllocator;
 
@@ -76,7 +81,9 @@ H265DecoderFrame::~H265DecoderFrame()
     m_pFutureFrame = 0;
     Reset();
     deallocate();
+#ifndef MFX_VA
     deallocateCodingData();
+#endif
 }
 
 // Add target frame to the list of reference frames
@@ -275,6 +282,41 @@ void H265DecoderFrame::Free()
         Reset();
 }
 
+void H265DecoderFrame::AddSlice(H265Slice * pSlice)
+{
+    Ipp32s iSliceNumber = m_pSlicesInfo->GetSliceCount() + 1;
+
+    pSlice->SetSliceNumber(iSliceNumber);
+    pSlice->m_pCurrentFrame = this;
+    m_pSlicesInfo->AddSlice(pSlice);
+
+    m_refPicList.resize(pSlice->GetSliceNum() + 1);
+}
+
+bool H265DecoderFrame::CheckReferenceFrameError()
+{
+    Ipp32u checkedErrorMask = UMC::ERROR_FRAME_MINOR | UMC::ERROR_FRAME_MAJOR | UMC::ERROR_FRAME_REFERENCE_FRAME;
+    for (size_t i = 0; i < m_refPicList.size(); i ++)
+    {
+        H265DecoderRefPicList* list = &m_refPicList[i].m_refPicList[REF_PIC_LIST_0];
+        for (size_t k = 0; list->m_refPicList[k].refFrame; k++)
+        {
+            if (list->m_refPicList[k].refFrame->GetError() & checkedErrorMask)
+                return true;
+        }
+
+        list = &m_refPicList[i].m_refPicList[REF_PIC_LIST_1];
+        for (size_t k = 0; list->m_refPicList[k].refFrame; k++)
+        {
+            if (list->m_refPicList[k].refFrame->GetError() & checkedErrorMask)
+                return true;
+        }
+    }
+
+    return false;
+}
+
+#ifndef MFX_VA
 // Fill frame planes with default values
 void H265DecoderFrame::DefaultFill(bool isChromaOnly, Ipp8u defaultValue)
 {
@@ -393,40 +435,6 @@ void H265DecoderFrame::deallocateCodingData()
     m_cuOffsetY = 0;
 }
 
-void H265DecoderFrame::AddSlice(H265Slice * pSlice)
-{
-    Ipp32s iSliceNumber = m_pSlicesInfo->GetSliceCount() + 1;
-
-    pSlice->SetSliceNumber(iSliceNumber);
-    pSlice->m_pCurrentFrame = this;
-    m_pSlicesInfo->AddSlice(pSlice);
-
-    m_refPicList.resize(pSlice->GetSliceNum() + 1);
-}
-
-bool H265DecoderFrame::CheckReferenceFrameError()
-{
-    Ipp32u checkedErrorMask = UMC::ERROR_FRAME_MINOR | UMC::ERROR_FRAME_MAJOR | UMC::ERROR_FRAME_REFERENCE_FRAME;
-    for (size_t i = 0; i < m_refPicList.size(); i ++)
-    {
-        H265DecoderRefPicList* list = &m_refPicList[i].m_refPicList[REF_PIC_LIST_0];
-        for (size_t k = 0; list->m_refPicList[k].refFrame; k++)
-        {
-            if (list->m_refPicList[k].refFrame->GetError() & checkedErrorMask)
-                return true;
-        }
-
-        list = &m_refPicList[i].m_refPicList[REF_PIC_LIST_1];
-        for (size_t k = 0; list->m_refPicList[k].refFrame; k++)
-        {
-            if (list->m_refPicList[k].refFrame->GetError() & checkedErrorMask)
-                return true;
-        }
-    }
-
-    return false;
-}
-
 // Returns a CTB by its raster address
 H265CodingUnit* H265DecoderFrame::getCU(Ipp32u CUaddr) const 
 {
@@ -483,6 +491,7 @@ PlanePtrUV H265DecoderFrame::GetCbCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) con
     // Chroma offset is already multiplied to chroma pitch (double for NV12)
     return m_pUVPlane + m_cuOffsetC[CUAddr] + m_buOffsetC[getCD()->m_partitionInfo.m_zscanToRaster[AbsZorderIdx]];
 }
+#endif
 
 } // end namespace UMC_HEVC_DECODER
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

@@ -14,12 +14,11 @@
 
 #ifndef UMC_RESTRICTED_CODE_VA
 
-#include "umc_h265_bitstream.h"
+#include "umc_h265_bitstream_headers.h"
 #include "umc_h265_va_supplier.h"
 #include "umc_h265_frame_list.h"
 
 #include "umc_h265_dec_defs.h"
-#include "umc_h265_segment_decoder_mt.h"
 
 #include "umc_h265_task_broker.h"
 #include "umc_structures.h"

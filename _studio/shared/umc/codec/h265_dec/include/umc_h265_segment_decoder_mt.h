@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//    Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//    Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -36,6 +36,8 @@ public:
 
     // Initialize decoder and call task processing function
     virtual UMC::Status ProcessSegment(void);
+
+    virtual UMC::Status ProcessTask(H265Task &task);
 
     // Initialize CABAC context appropriately depending on where starting CTB is
     void InitializeDecoding(H265Task & task);

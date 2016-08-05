@@ -4,60 +4,59 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
-#include "umc_h265_bitstream.h"
-#include "umc_h265_bitstream_inlines.h"
+#include "umc_h265_bitstream_headers.h"
 #include "umc_h265_headers.h"
 
 namespace UMC_HEVC_DECODER
 {
 
 // Parse SEI message
-Ipp32s H265Bitstream::ParseSEI(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl)
+Ipp32s H265HeadersBitstream::ParseSEI(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl)
 {
     return sei_message(sps,current_sps,spl);
 }
 
 // Parse SEI message
-Ipp32s H265Bitstream::sei_message(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl)
+Ipp32s H265HeadersBitstream::sei_message(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl)
 {
     Ipp32u code;
     Ipp32s payloadType = 0;
 
-    ippiNextBits(m_pbs, m_bitOffset, 8, code);
+    PeakNextBits(m_pbs, m_bitOffset, 8, code);
     while (code  ==  0xFF)
     {
         /* fixed-pattern bit string using 8 bits written equal to 0xFF */
-        ippiGetNBits(m_pbs, m_bitOffset, 8, code);
+        GetNBits(m_pbs, m_bitOffset, 8, code);
         payloadType += 255;
-        ippiNextBits(m_pbs, m_bitOffset, 8, code);
+        PeakNextBits(m_pbs, m_bitOffset, 8, code);
     }
 
     Ipp32s last_payload_type_byte;    //Ipp32u integer using 8 bits
-    ippiGetNBits(m_pbs, m_bitOffset, 8, last_payload_type_byte);
+    GetNBits(m_pbs, m_bitOffset, 8, last_payload_type_byte);
 
     payloadType += last_payload_type_byte;
 
     Ipp32s payloadSize = 0;
 
-    ippiNextBits(m_pbs, m_bitOffset, 8, code);
+    PeakNextBits(m_pbs, m_bitOffset, 8, code);
     while( code  ==  0xFF )
     {
         /* fixed-pattern bit string using 8 bits written equal to 0xFF */
-        ippiGetNBits(m_pbs, m_bitOffset, 8, code);
+        GetNBits(m_pbs, m_bitOffset, 8, code);
         payloadSize += 255;
-        ippiNextBits(m_pbs, m_bitOffset, 8, code);
+        PeakNextBits(m_pbs, m_bitOffset, 8, code);
     }
 
     Ipp32s last_payload_size_byte;    //Ipp32u integer using 8 bits
 
-    ippiGetNBits(m_pbs, m_bitOffset, 8, last_payload_size_byte);
+    GetNBits(m_pbs, m_bitOffset, 8, last_payload_size_byte);
     payloadSize += last_payload_size_byte;
     spl->Reset();
     spl->payLoadSize = payloadSize;
@@ -83,7 +82,7 @@ Ipp32s H265Bitstream::sei_message(const HeaderSet<H265SeqParamSet> & sps, Ipp32s
 
     for (Ipp32u i = 0; i < spl->payLoadSize; i++)
     {
-        ippiSkipNBits(pbs, bitOffset, 8);
+        SkipNBits(pbs, bitOffset, 8);
     }
 
     SetState(pbs, bitOffset);
@@ -92,7 +91,7 @@ Ipp32s H265Bitstream::sei_message(const HeaderSet<H265SeqParamSet> & sps, Ipp32s
 }
 
 // Parse SEI payload data
-Ipp32s H265Bitstream::sei_payload(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl)
+Ipp32s H265HeadersBitstream::sei_payload(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl)
 {
     Ipp32u payloadType =spl->payLoadType;
     switch( payloadType)
@@ -107,7 +106,7 @@ Ipp32s H265Bitstream::sei_payload(const HeaderSet<H265SeqParamSet> & sps,Ipp32s 
 }
 
 // Parse pic timing SEI data
-Ipp32s H265Bitstream::pic_timing(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad * spl)
+Ipp32s H265HeadersBitstream::pic_timing(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad * spl)
 {
     const H265SeqParamSet *csps = sps.GetHeader(current_sps);
 
@@ -161,7 +160,7 @@ Ipp32s H265Bitstream::pic_timing(const HeaderSet<H265SeqParamSet> & sps, Ipp32s 
 }
 
 // Parse recovery point SEI data
-Ipp32s H265Bitstream::recovery_point(const HeaderSet<H265SeqParamSet> & , Ipp32s current_sps, H265SEIPayLoad *spl)
+Ipp32s H265HeadersBitstream::recovery_point(const HeaderSet<H265SeqParamSet> & , Ipp32s current_sps, H265SEIPayLoad *spl)
 {
     H265SEIPayLoad::SEIMessages::RecoveryPoint * recPoint = &(spl->SEI_messages.recovery_point);
 
@@ -174,10 +173,10 @@ Ipp32s H265Bitstream::recovery_point(const HeaderSet<H265SeqParamSet> & , Ipp32s
 }
 
 // Skip unrecognized SEI message payload
-Ipp32s H265Bitstream::reserved_sei_message(const HeaderSet<H265SeqParamSet> & , Ipp32s current_sps, H265SEIPayLoad *spl)
+Ipp32s H265HeadersBitstream::reserved_sei_message(const HeaderSet<H265SeqParamSet> & , Ipp32s current_sps, H265SEIPayLoad *spl)
 {
     for(Ipp32u i = 0; i < spl->payLoadSize; i++)
-        ippiSkipNBits(m_pbs, m_bitOffset, 8)
+        SkipNBits(m_pbs, m_bitOffset, 8)
     AlignPointerRight();
     return current_sps;
 }

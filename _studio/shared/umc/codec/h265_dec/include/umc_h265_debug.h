@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -21,10 +21,8 @@
 #include <windows.h>
 #endif
 
-//#define __EXCEPTION_HANDLER_
 //#define ENABLE_TRACE
 //#define TIME_COUNTER
-//#define ENABLE_STAT
 
 namespace UMC_HEVC_DECODER
 {
@@ -130,60 +128,6 @@ private:
         return (resolution) vm_time_get_tick();
 #endif // defined(_MSC_VER)
     }
-};
-#endif
-
-#ifdef __EXCEPTION_HANDLER_
-
-#include <eh.h>
-class ExceptionHandlerInitializer
-{
-public:
-
-    ExceptionHandlerInitializer()
-    {
-        _set_se_translator(ExceptionHandlerInitializer::trans_func);
-    }
-
-    void setTranslator()
-    {
-        _set_se_translator(ExceptionHandlerInitializer::trans_func);
-    }
-
-    static void trans_func(unsigned int , EXCEPTION_POINTERS* )
-    {
-        throw UMC_HEVC_DECODER::h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-    }
-};
-
-extern ExceptionHandlerInitializer exceptionHandler;
-
-#endif // __EXCEPTION_HANDLER_
-
-#ifdef ENABLE_STAT
-
-class H265DecoderFrame;
-class H265CodingUnit;
-struct H265SeqParamSet;
-
-class CUSStat
-{
-public:
-    CUSStat();
-    ~CUSStat();
-
-    void CalculateStat(H265DecoderFrame * frame);
-    void CalculateCU(H265CodingUnit* cu);
-
-    static CUSStat* GetCUStat();
-private:
-    void CalculateCURecur(H265CodingUnit* cu, Ipp32u absPartIdx, Ipp32u depth);
-    const H265SeqParamSet* m_sps;
-    Ipp32s bwForFrame;
-
-    Ipp32s numFrames;
-    Ipp64f bwForFrameAccum;
-    Ipp64f bwForFrameAccumGPerSec;
 };
 #endif
 

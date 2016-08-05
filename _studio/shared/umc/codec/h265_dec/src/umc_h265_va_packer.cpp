@@ -21,6 +21,8 @@
 #include "huc_based_drm_common.h"
 #endif
 
+#include "umc_h265_tables.h"
+
 #ifdef UMC_VA_DXVA
 #include "umc_va_base.h"
 #include "umc_va_dxva2_protected.h"
@@ -700,7 +702,7 @@ bool PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLastSlice)
     }
     else
     {
-        H265Bitstream *pBitstream = pSlice->GetBitStream();
+        H265HeadersBitstream *pBitstream = pSlice->GetBitStream();
 
         pBitstream->GetOrg((Ipp32u**)&rawDataPtr, &rawDataSize);
         GetSliceVABuffers(&pDXVASlice, headerSize, &pSliceData, rawDataSize + 3, isLastSlice ? 128 : 0);
@@ -1055,7 +1057,7 @@ bool MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool is
     Ipp32u  rawDataSize = 0;
     const void*  rawDataPtr = 0;
 
-    H265Bitstream *pBitstream = pSlice->GetBitStream();
+    H265HeadersBitstream *pBitstream = pSlice->GetBitStream();
     pBitstream->GetOrg((Ipp32u**)&rawDataPtr, &rawDataSize);
 
     UMCVACompBuffer *headVABffr = 0;
@@ -1625,7 +1627,7 @@ void PackerVA::CreateSliceDataBuffer(H265DecoderFrameInfo * sliceInfo)
 
         Ipp8u *pNalUnit; //ptr to first byte of start code
         Ipp32u NalUnitSize; // size of NAL unit in byte
-        H265Bitstream *pBitstream = pSlice->GetBitStream();
+        H265HeadersBitstream *pBitstream = pSlice->GetBitStream();
 
         pBitstream->GetOrg((Ipp32u**)&pNalUnit, &NalUnitSize);
         size += NalUnitSize + 3;

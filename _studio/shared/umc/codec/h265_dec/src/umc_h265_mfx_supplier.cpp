@@ -18,7 +18,7 @@
 
 #include "umc_h265_frame_list.h"
 #include "umc_h265_nal_spl.h"
-#include "umc_h265_bitstream.h"
+#include "umc_h265_bitstream_headers.h"
 
 #include "umc_h265_dec_defs.h"
 
@@ -309,7 +309,7 @@ UMC::Status MFXTaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
     if (m_Headers.m_SeqParams.GetCurrentID() == -1)
         return UMC::UMC_OK;
 
-    H265Bitstream bitStream;
+    H265HeadersBitstream bitStream;
 
     try
     {

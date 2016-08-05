@@ -38,6 +38,7 @@
     <ClCompile Include="src\umc_h265_au_splitter.cpp" />
     <ClCompile Include="src\umc_h265_bitstream.cpp" />
     <ClCompile Include="src\umc_h265_bitstream_cabac.cpp" />
+    <ClCompile Include="src\umc_h265_bitstream_headers.cpp" />
     <ClCompile Include="src\umc_h265_coding_unit.cpp" />
     <ClCompile Include="src\umc_h265_debug.cpp" />
     <ClCompile Include="src\umc_h265_frame.cpp" />

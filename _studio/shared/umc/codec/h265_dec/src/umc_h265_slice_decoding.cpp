@@ -13,7 +13,6 @@
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
 #include "umc_h265_slice_decoding.h"
-#include "umc_h265_segment_decoder_mt.h"
 #include "umc_h265_heap.h"
 #include "umc_h265_frame_info.h"
 #include "umc_h265_frame_list.h"
@@ -270,6 +269,7 @@ bool H265Slice::DecodeSliceHeader(PocDecoding * pocDecoding)
 
 } // bool H265Slice::DecodeSliceHeader(bool bFullInitialization)
 
+#ifndef MFX_VA
 // Initialize CABAC context depending on slice type
 void H265Slice::InitializeContexts()
 {
@@ -307,6 +307,7 @@ void H265Slice::InitializeContexts()
     m_BitStream.InitializeContextVariablesHEVC_CABAC(InitializationType,
         m_SliceHeader.SliceQP + m_SliceHeader.slice_qp_delta);
 }
+#endif
 
 // Returns number of used references in RPS
 int H265Slice::getNumRpsCurrTempList() const

@@ -20,6 +20,8 @@
 #include "umc_h265_prediction.h"
 #include "mfx_h265_optimization.h"
 
+#include "umc_h265_segment_decoder_base.h"
+
 using namespace MFX_HEVC_PP;
 
 namespace UMC_HEVC_DECODER
@@ -27,37 +29,6 @@ namespace UMC_HEVC_DECODER
 
 class H265Task;
 class TaskBroker_H265;
-
-class H265SegmentDecoderBase
-{
-public:
-    H265SegmentDecoderBase(TaskBroker_H265 * pTaskBroker)
-        : m_iNumber(0)
-        , m_pTaskBroker(pTaskBroker)
-    {
-    }
-
-    virtual ~H265SegmentDecoderBase()
-    {
-    }
-
-    virtual UMC::Status Init(Ipp32s iNumber)
-    {
-        m_iNumber = iNumber;
-        return UMC::UMC_OK;
-    }
-
-    // Decode slice's segment
-    virtual UMC::Status ProcessSegment(void) = 0;
-
-    virtual void RestoreErrorRect(H265Task *)
-    {
-    }
-
-protected:
-    Ipp32s m_iNumber;                                           // (Ipp32s) ordinal number of decoder
-    TaskBroker_H265 * m_pTaskBroker;
-};
 
 struct H265SliceHeader;
 struct H265FrameHLDNeighborsInfo;

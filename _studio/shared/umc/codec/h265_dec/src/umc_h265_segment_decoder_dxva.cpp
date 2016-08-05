@@ -77,9 +77,7 @@ void H265_DXVA_SegmentDecoder::PackAllHeaders(H265DecoderFrame * pFrame)
 
 UMC::Status H265_DXVA_SegmentDecoder::ProcessSegment(void)
 {
-    H265Task Task(m_iNumber);
-
-    if (m_pTaskBroker->GetNextTask(&Task))
+    if (m_pTaskBroker->GetNextTask(0))
     {
     }
     else
@@ -136,6 +134,14 @@ enum
 
 bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
 {
+    UMC::AutomaticUMCMutex guard(m_mGuard);
+
+    // check error(s)
+    if (m_IsShouldQuit)
+    {
+        return false;
+    }
+
     H265_DXVA_SegmentDecoder * dxva_sd = static_cast<H265_DXVA_SegmentDecoder *>(m_pTaskSupplier->m_pSegmentDecoder[0]);
 
     if (!dxva_sd->GetPacker())
@@ -252,7 +258,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
 
             bool wasFound = false;
             H265DecoderFrameInfo * au = m_FirstAU;
-            for (; au; au = au->GetNextAU())
+            //for (; au; au = au->GetNextAU())
             {
                 if (pStatusReport[i].current_picture.Index7Bits == au->m_pFrame->m_index)
                 {
@@ -276,10 +282,10 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
                     CompleteFrame(au->m_pFrame);
                     wasFound = true;
                     wasCompleted = true;
-                    break;
+                    //break;
                 }
 
-                break;
+                //break;
             }
 
             if (!wasFound)

@@ -13,6 +13,7 @@
 
 #include "umc_va_dxva2.h"
 #include "umc_va_linux.h"
+#include "umc_h265_tables.h"
 #include "umc_h265_widevine_decrypter.h"
 #include "umc_h265_widevine_slice_decoding.h"
 

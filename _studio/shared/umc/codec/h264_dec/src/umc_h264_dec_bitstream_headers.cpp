@@ -20,7 +20,7 @@
 #define SCLDEFAULT    1
 #define SCLREDEFINED  2
 
-#define ippiNextBits(current_data, bp, nbits, data) \
+#define PeakNextBits(current_data, bp, nbits, data) \
 { \
     Ipp32u x; \
  \
@@ -2341,13 +2341,13 @@ Ipp32s H264HeadersBitstream::sei_message(const Headers & headers, Ipp32s current
     Ipp32u code;
     Ipp32s payloadType = 0;
 
-    ippiNextBits(m_pbs, m_bitOffset, 8, code);
+    PeakNextBits(m_pbs, m_bitOffset, 8, code);
     while (code  ==  0xFF)
     {
         /* fixed-pattern bit string using 8 bits written equal to 0xFF */
         h264GetBits(m_pbs, m_bitOffset, 8, code);
         payloadType += 255;
-        ippiNextBits(m_pbs, m_bitOffset, 8, code);
+        PeakNextBits(m_pbs, m_bitOffset, 8, code);
     }
 
     Ipp32s last_payload_type_byte;    //Ipp32u integer using 8 bits
@@ -2357,13 +2357,13 @@ Ipp32s H264HeadersBitstream::sei_message(const Headers & headers, Ipp32s current
 
     Ipp32s payloadSize = 0;
 
-    ippiNextBits(m_pbs, m_bitOffset, 8, code);
+    PeakNextBits(m_pbs, m_bitOffset, 8, code);
     while( code  ==  0xFF )
     {
         /* fixed-pattern bit string using 8 bits written equal to 0xFF */
         h264GetBits(m_pbs, m_bitOffset, 8, code);
         payloadSize += 255;
-        ippiNextBits(m_pbs, m_bitOffset, 8, code);
+        PeakNextBits(m_pbs, m_bitOffset, 8, code);
     }
 
     Ipp32s last_payload_size_byte;    //Ipp32u integer using 8 bits

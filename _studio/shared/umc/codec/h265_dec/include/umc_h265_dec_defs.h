@@ -19,7 +19,6 @@
 
 #include "umc_memory_allocator.h"
 #include "umc_structures.h"
-
 #include "mfx_h265_optimization.h"
 
 namespace UMC_HEVC_DECODER
