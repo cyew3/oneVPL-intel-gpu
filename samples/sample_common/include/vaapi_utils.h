@@ -91,6 +91,14 @@ namespace MfxLoader
         typedef VAStatus (*vaAcquireBufferHandle_type)(VADisplay, VABufferID, VABufferInfo *);
         typedef VAStatus (*vaReleaseBufferHandle_type)(VADisplay, VABufferID);
 
+        typedef VAStatus (*vaCreateContext_type) (VADisplay, VAConfigID, int, int, int,
+                                                  VASurfaceID *, int, VAContextID *);
+        typedef VAStatus (*vaGetConfigAttributes_type) (VADisplay, VAProfile, VAEntrypoint,
+                                                        VAConfigAttrib *, int);
+        typedef VAStatus (*vaCreateConfig_type) (VADisplay, VAProfile, VAEntrypoint,
+                                                 VAConfigAttrib *, int, VAConfigID *);
+        typedef VAStatus (*vaDestroyContext_type) (VADisplay, VAContextID);
+
         VA_Proxy();
         ~VA_Proxy();
 
@@ -108,6 +116,10 @@ namespace MfxLoader
         const vaGetLibFunc_type      vaGetLibFunc;
         const vaAcquireBufferHandle_type vaAcquireBufferHandle;
         const vaReleaseBufferHandle_type vaReleaseBufferHandle;
+        const vaCreateContext_type       vaCreateContext;
+        const vaGetConfigAttributes_type vaGetConfigAttributes;
+        const vaCreateConfig_type        vaCreateConfig;
+        const vaDestroyContext_type      vaDestroyContext;
     };
 #endif
 

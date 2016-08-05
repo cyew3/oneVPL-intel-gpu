@@ -47,6 +47,7 @@ public:
 
 protected:
     Display* m_display;
+    VAContextID m_contextID;
     MfxLoader::XLib_Proxy   m_x11lib;
     MfxLoader::VA_X11Proxy  m_vax11lib;
 #if defined(X11_DRI3_SUPPORT)
