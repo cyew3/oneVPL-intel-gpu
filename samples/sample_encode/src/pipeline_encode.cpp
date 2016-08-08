@@ -379,7 +379,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     m_mfxEncParams.mfx.RateControlMethod       = pInParams->nRateControlMethod;
     m_mfxEncParams.mfx.GopRefDist = pInParams->nGopRefDist;
     m_mfxEncParams.mfx.GopPicSize = pInParams->nGopPicSize;
-    m_mfxEncParams.mfx.NumRefFrame = pInParams->nNumRefFrame > 0?pInParams->nNumRefFrame : 1;
+    m_mfxEncParams.mfx.NumRefFrame = pInParams->nNumRefFrame;
     m_mfxEncParams.mfx.IdrInterval = pInParams->nIdrInterval;
 
     if (m_mfxEncParams.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
