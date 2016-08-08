@@ -682,9 +682,9 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
         if (isIdrRequired)
         {
             m_brc->Close();
-            sts = m_brc->Init(m_vpar);
+            sts = m_brc->Init(m_vpar, m_vpar.InsertHRDInfo);
             MFX_CHECK_STS(sts);
-            m_hrd.Init(m_vpar.m_sps, m_vpar.InsertHRDInfo);
+            m_hrd.Init(m_vpar.m_sps, m_vpar.InitialDelayInKB);
         }
         else
         {
