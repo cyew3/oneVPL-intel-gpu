@@ -8,12 +8,12 @@ list( APPEND cdirs
   )
 mfx_include_dirs( )
 foreach( dir ${vdirs} )
-  include_directories( ${CMAKE_SOURCE_DIR}/mfx_lib/decode/${dir}/include )
+  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include )
 endforeach()
-include_directories( ${CMAKE_SOURCE_DIR}/mfx_lib/vpp/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../vpp/include )
 
 foreach( dir ${cdirs} )
-  include_directories( ${CMAKE_SOURCE_DIR}/shared/umc/codec/${dir}/include )
+  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/${dir}/include )
 endforeach( )
 
 set( defs "${WARNING_FLAGS}" )

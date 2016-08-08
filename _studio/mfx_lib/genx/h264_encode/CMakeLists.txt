@@ -2,7 +2,7 @@ set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 mfx_include_dirs( )
 foreach( dir ${vdirs} )
-  include_directories( ${CMAKE_SOURCE_DIR}/mfx_lib/genx/h264_encode/include )
+  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 endforeach()
 
 set( sources "" )

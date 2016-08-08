@@ -466,11 +466,11 @@ foreach( variant hw )
   set (description_name ${${variant}_H264LA_ENCODER_DESCRIPTION})
 
   list( APPEND sources
-    ${CMAKE_SOURCE_DIR}/shared/umc/codec/brc/src/umc_video_brc.cpp
-    ${CMAKE_SOURCE_DIR}/shared/umc/codec/brc/src/umc_h264_brc.cpp
-    ${CMAKE_SOURCE_DIR}/shared/umc/codec/brc/src/umc_brc.cpp
-    ${CMAKE_SOURCE_DIR}/shared/umc/codec/brc/src/umc_mpeg2_brc.cpp
-    ${CMAKE_SOURCE_DIR}/shared/umc/codec/brc/src/umc_svc_brc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/brc/src/umc_video_brc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/brc/src/umc_h264_brc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/brc/src/umc_brc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/brc/src/umc_mpeg2_brc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/brc/src/umc_svc_brc.cpp
   )
 
   set( LIBS "" )

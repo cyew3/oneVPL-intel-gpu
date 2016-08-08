@@ -22,7 +22,7 @@ list( APPEND cdirs
   aac_dec common aac_common mp3_common mp3_dec aac_enc  ## open-source-cut-line
   )
 foreach( dir ${cdirs} )
-  include_directories( ${CMAKE_SOURCE_DIR}/shared/umc/codec/${dir}/include )
+  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/codec/${dir}/include )
 endforeach( )
 
 # =============================================================================

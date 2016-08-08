@@ -1,7 +1,7 @@
 set( sources "" )
 mfx_include_dirs( )
 
-include_directories (${CMAKE_SOURCE_DIR}/shared/umc/io/media_buffers/include)
+include_directories (${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 file( GLOB_RECURSE sources "src/*.c" "src/*.cpp" )
 

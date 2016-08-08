@@ -4,9 +4,9 @@ list( APPEND cdirs
   jpeg_common
   )
 foreach( dir ${cdirs} )
-  include_directories( ${CMAKE_SOURCE_DIR}/shared/umc/codec/${dir}/include )
+  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../${dir}/include )
 endforeach( )
-include_directories (${CMAKE_SOURCE_DIR}/shared/umc/codec/jpeg_enc/include)
+include_directories (${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN -DAS_H264LA_PLUGIN ${WARNING_FLAGS}" )
 set( sources "" )

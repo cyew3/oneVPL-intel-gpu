@@ -5,9 +5,9 @@ list( APPEND vdirs
   )
 mfx_include_dirs( )
 foreach( dir ${vdirs} )
-  include_directories( ${CMAKE_SOURCE_DIR}/mfx_lib/enc/${dir}/include )
+  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include )
 endforeach()
-include_directories( ${CMAKE_SOURCE_DIR}/shared/umc/codec/mpeg2_enc/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/mpeg2_enc/include )
 
 set( defs "${WARNING_FLAGS}" )
 set( sources "" )

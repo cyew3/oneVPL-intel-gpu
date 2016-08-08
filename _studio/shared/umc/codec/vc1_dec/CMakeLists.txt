@@ -4,9 +4,9 @@ list( APPEND cdirs
   vc1_common color_space_converter
   )
 foreach( dir ${cdirs} )
-  include_directories( ${CMAKE_SOURCE_DIR}/shared/umc/codec/${dir}/include )
+  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../${dir}/include )
 endforeach( )
-include_directories (${CMAKE_SOURCE_DIR}/shared/umc/codec/vc1_dec/include)
+include_directories (${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 set( defs "-DAS_HEVCD_PLUGIN -DAS_HEVCE_PLUGIN -DAS_H264LA_PLUGIN ${WARNING_FLAGS}" )
 set( sources "" )
