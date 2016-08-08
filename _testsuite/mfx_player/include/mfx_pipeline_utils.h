@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2012 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -86,7 +86,7 @@ mfxF64           ConvertMFXTime2mfxF64(mfxU64 nTime);
 mfxU32           GetMinPlaneSize(mfxFrameInfo & info);
 
 //possible extension to the end of this enum
-#define MFX_FOURCC_PATTERN() "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010|a2rgb10|r16|argb16|nv16|p210"
+#define MFX_FOURCC_PATTERN() "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010|a2rgb10|r16|argb16|nv16|p210|y410"
 //gets and mediasdk fourcc & chroma format fields set from given fourcc index
 mfxStatus        GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &info);
 

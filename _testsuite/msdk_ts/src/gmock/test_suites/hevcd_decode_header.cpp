@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_decoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
@@ -380,6 +390,9 @@ int TestSuite::RunTest(unsigned int id)
 
         EXPECT_EQ((mfxU16)!sps.vui.field_seq_flag, m_par.mfx.FrameInfo.PicStruct);
         EXPECT_EQ(MFX_FOURCC_NV12, m_par.mfx.FrameInfo.FourCC);
+
+        EXPECT_EQ(sps.bit_depth_luma_minus8 + 8, m_par.mfx.FrameInfo.BitDepthLuma);
+        EXPECT_EQ(sps.bit_depth_chroma_minus8 + 8, m_par.mfx.FrameInfo.BitDepthChroma);
 
         if((mfxExtCodingOptionSPSPPS*)m_par)
         {

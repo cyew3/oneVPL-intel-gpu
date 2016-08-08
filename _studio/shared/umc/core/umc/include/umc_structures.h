@@ -374,6 +374,7 @@ namespace UMC
         YUV420  ,       // Planar Y, U, V (4:2:0)
         YUV422  ,       // Planar Y, U, V (4:2:2)
         YUV444  ,       // Planar Y, U, V (4:4:4)
+        AYUV    ,       // Packed A, Y, U, V (4:4:4:4) 8 bit
         YUV_VC1 ,       // Planar Y, U, V (4:2:0), VC1 codec specific
         Y411    ,       // Composite Y, U, V (4:1:1)
         Y41P    ,       // Composite Y, U, V (4:1:1)
@@ -392,6 +393,8 @@ namespace UMC
         P016    ,       // Planar YUV 4:2:0 16 bit
         P210    ,       // Planar YUV 4:2:2 10 bit
         P216    ,       // Planar YUV 4:2:2 16 bit
+        Y210    ,       // Packed YUV 4:2:2 10-bit.
+        Y216    ,       // Packed YUV 4:2:2 16-bit.
         Y410    ,       // Packed YUV 4:4:4 10-bit.
         Y416    ,       // Packed YUV 4:4:4 16-bit.
         D3D_SURFACE_DEC,// Pointer to D3D surface in decoder pool

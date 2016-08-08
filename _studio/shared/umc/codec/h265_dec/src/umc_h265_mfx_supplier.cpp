@@ -252,14 +252,6 @@ UMC::Status MFXTaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
     if (sts != UMC::UMC_OK)
         return sts;
 
-    H265SeqParamSet * currSPS = m_Headers.m_SeqParams.GetCurrentHeader();
-
-    if (currSPS)
-    {
-        if (currSPS->chroma_format_idc > 2)
-            throw h265_exception(UMC::UMC_ERR_UNSUPPORTED);
-    }
-
     {
         // save sps/pps
         Ipp32u nal_unit_type = nalUnit->GetExData()->values[0];
@@ -395,16 +387,32 @@ void MFXTaskSupplier_H265::AddFakeReferenceFrame(H265Slice * )
 }
 
 // Check HW capabilities
-bool MFX_Utility::IsNeedPartialAcceleration_H265(mfxVideoParam * par, eMFXHWType )
+bool MFX_Utility::IsNeedPartialAcceleration_H265(mfxVideoParam* par, eMFXHWType type)
 {
     if (!par)
         return false;
 
+#if !defined(MFX_VA_LINUX)
+    if (type < MFX_HW_SCL &&
+        par->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12)
+        return true;
+    else if (type < MFX_HW_ICL &&
+        par->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 &&
+        par->mfx.FrameInfo.FourCC != MFX_FOURCC_P010)
+        return true;
+    else if (par->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 &&
+        par->mfx.FrameInfo.FourCC != MFX_FOURCC_YUY2 &&
+        par->mfx.FrameInfo.FourCC != MFX_FOURCC_AYUV &&
+        par->mfx.FrameInfo.FourCC != MFX_FOURCC_P010 &&
+        par->mfx.FrameInfo.FourCC != MFX_FOURCC_Y410)
+        return true;
+#else
     if (par->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 && par->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV400)
         return true;
 
     if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P210 || par->mfx.FrameInfo.FourCC == MFX_FOURCC_NV16)
         return true;
+#endif
 
     return false;
 }
@@ -434,72 +442,163 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
 #if defined (MFX_VA)
     if (platform != MFX_PLATFORM_SOFTWARE)
     {
-        if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+        GUID guids[2] = {};
+        switch (par->mfx.FrameInfo.FourCC)
         {
-            if (MFX_ERR_NONE != core->IsGuidSupported(DXVA_ModeHEVC_VLD_Main10, par) &&
-                MFX_ERR_NONE != core->IsGuidSupported(DXVA_Intel_ModeHEVC_VLD_Main10Profile, par))
-            {
-                return MFX_PLATFORM_SOFTWARE;
-            }
-        }
-        else
-        {
-            if (IS_PROTECTION_WIDEVINE(par->Protected))
-            {
-                if (MFX_ERR_NONE != core->IsGuidSupported(DXVA_Intel_Decode_Elementary_Stream_HEVC, par))
+            case MFX_FOURCC_NV12:
+                if (IS_PROTECTION_WIDEVINE(par->Protected))
+                    guids[0] = DXVA_Intel_Decode_Elementary_Stream_HEVC;
+                else
                 {
-                    return MFX_PLATFORM_SOFTWARE;
+                    guids[0] = DXVA_ModeHEVC_VLD_Main;
+                    guids[1] = DXVA_Intel_ModeHEVC_VLD_MainProfile;
                 }
-            }
-            else if (MFX_ERR_NONE != core->IsGuidSupported(DXVA_Intel_ModeHEVC_VLD_MainProfile, par) &&
-                MFX_ERR_NONE != core->IsGuidSupported(DXVA_ModeHEVC_VLD_Main, par))
-            {
-                return MFX_PLATFORM_SOFTWARE;
-            }
+                break;
+
+            case MFX_FOURCC_P010:
+                guids[0] = DXVA_ModeHEVC_VLD_Main10;
+                guids[1] = DXVA_Intel_ModeHEVC_VLD_Main10Profile;
+                break;
+
+            case MFX_FOURCC_YUY2:
+            case MFX_FOURCC_Y210:
+                guids[0] = DXVA_Intel_ModeHEVC_VLD_Main422_10Profile;
+                break;
+
+            case MFX_FOURCC_AYUV:
+            case MFX_FOURCC_Y410:
+                guids[0] = DXVA_Intel_ModeHEVC_VLD_Main444_10Profile;
+                break;
         }
+
+        size_t i = 0;
+        for (; i < sizeof(guids) / sizeof(guids[0]); ++i)
+            if (core->IsGuidSupported(guids[i], par) == MFX_ERR_NONE)
+                break;
+
+        if (i == sizeof(guids) / sizeof(guids[0]))
+            return MFX_PLATFORM_SOFTWARE;
     }
 #endif
     return platform;
 #endif 
 }
 
-mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo * frameInfo)
+inline
+mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
 {
-    mfxU32 fourcc;
-    switch (codecProfile)
+    //map profile + chroma fmt + bit depth => fcc
+    //Main   - [4:2:0], [8] bit
+    //Main10 - [4:2:0], [8, 10] bit
+    //Extent - [4:2:0, 4:2:2, 4:4:4], [8, 10, 12, 16]
+
+    if (frameInfo->ChromaFormat < MFX_CHROMAFORMAT_YUV420 ||
+        frameInfo->ChromaFormat > MFX_CHROMAFORMAT_YUV444)
+        return 0;
+
+    if (frameInfo->BitDepthLuma < 8 ||
+        frameInfo->BitDepthLuma > 16)
+        return 0;
+
+    if (frameInfo->BitDepthLuma != frameInfo->BitDepthChroma)
+        return 0;
+
+    if (frameInfo->BitDepthLuma % 2)
+        return 0;
+
+    //map chroma fmt & bit depth onto fourcc (NOTE: we don't support bit depth above 10 bit and 4:4:4 chroma for 8 bit)
+    mfxU32 const map[][4] =
     {
-    case MFX_PROFILE_HEVC_MAIN10:
-    case MFX_PROFILE_HEVC_REXT:
-        if (frameInfo->BitDepthLuma > 8 || frameInfo->BitDepthChroma > 8)
-        {
-            fourcc = (frameInfo->ChromaFormat == MFX_CHROMAFORMAT_YUV422) ? MFX_FOURCC_P210 : MFX_FOURCC_P010;
-        }
-        else
-        {
-            fourcc = (frameInfo->ChromaFormat == MFX_CHROMAFORMAT_YUV422) ? MFX_FOURCC_NV16 : MFX_FOURCC_NV12;
-        }
-        break;
+        { MFX_FOURCC_NV12, MFX_FOURCC_P010, 0, 0 },
+        { MFX_FOURCC_YUY2, MFX_FOURCC_Y210, 0, 0 },
+        { MFX_FOURCC_AYUV, MFX_FOURCC_Y410, 0, 0 }
+    };
 
-    case MFX_PROFILE_HEVC_MAIN:
-    default:
-        fourcc = MFX_FOURCC_NV12;
-        break;
-    }
+    if (codecProfile == MFX_PROFILE_HEVC_MAIN &&
+        frameInfo->ChromaFormat != MFX_CHROMAFORMAT_YUV420 &&
+        frameInfo->BitDepthLuma != 8)
+        return 0;
+    else if (codecProfile == MFX_PROFILE_HEVC_MAIN10 &&
+            frameInfo->ChromaFormat != MFX_CHROMAFORMAT_YUV420 &&
+            frameInfo->BitDepthLuma !=  8 &&
+            frameInfo->BitDepthLuma != 10)
+        return 0;
 
-    return fourcc;
+    VM_ASSERT(
+        (frameInfo->ChromaFormat == MFX_CHROMAFORMAT_YUV420 ||
+         frameInfo->ChromaFormat == MFX_CHROMAFORMAT_YUV422 ||
+         frameInfo->ChromaFormat == MFX_CHROMAFORMAT_YUV444) &&
+        "Unsupported chroma format, should be validated before"
+    );
+
+    VM_ASSERT(
+        (frameInfo->BitDepthLuma ==  8 ||
+         frameInfo->BitDepthLuma == 10 ||
+         frameInfo->BitDepthLuma == 12 ||
+         frameInfo->BitDepthLuma == 16) &&
+        "Unsupported bit depth, should be validated before"
+    );
+
+    return
+        map[frameInfo->ChromaFormat - MFX_CHROMAFORMAT_YUV420][(frameInfo->BitDepthLuma - 8) / 2];
 }
 
-bool CheckFourcc(mfxU32 fourcc, mfxU16 codecProfile, mfxFrameInfo * frameInfo)
+inline
+bool CheckFourcc(mfxU32 fourcc, mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
 {
-    mfxU32 defaultFourcc = CalculateFourcc(codecProfile, frameInfo);
-    if (defaultFourcc == fourcc)
-        return true;
+    VM_ASSERT(frameInfo);
+    mfxFrameInfo fi = *frameInfo;
 
-    if (defaultFourcc == MFX_FOURCC_P010 && fourcc == MFX_FOURCC_NV12 && frameInfo->BitDepthLuma == 8 && frameInfo->BitDepthChroma == 8 && 
-        codecProfile == MFX_PROFILE_HEVC_MAIN10)
-        return true;
+    if (codecProfile == MFX_PROFILE_UNKNOWN)
+    {
+        //no profile defined, derive it from FOURCC
+        switch (fourcc)
+        {
+            case MFX_FOURCC_NV12:
+                codecProfile = MFX_PROFILE_HEVC_MAIN;
+                break;
 
-    return false;
+            case MFX_FOURCC_P010:
+                codecProfile = MFX_PROFILE_HEVC_MAIN10;
+                break;
+
+            case MFX_FOURCC_NV16:
+            case MFX_FOURCC_Y210:
+            case MFX_FOURCC_Y410:
+                codecProfile = MFX_PROFILE_HEVC_REXT;
+                break;
+
+            default:
+                return false;
+        }
+    }
+
+    if (!fi.BitDepthLuma)
+    {
+        //no depth defined, derive it from FOURCC
+        switch (fourcc)
+        {
+            case MFX_FOURCC_NV12:
+            case MFX_FOURCC_NV16:
+                fi.BitDepthLuma = 8;
+                break;
+
+            case MFX_FOURCC_P010:
+            case MFX_FOURCC_Y210:
+            case MFX_FOURCC_Y410:
+                fi.BitDepthLuma = 10;
+                break;
+
+            default:
+                return false;
+        }
+    }
+
+    if (!fi.BitDepthChroma)
+        fi.BitDepthChroma = fi.BitDepthLuma;
+
+    return
+        CalculateFourcc(codecProfile, &fi) == fourcc;
 }
 
 // Initialize mfxVideoParam structure based on decoded bitstream header values
@@ -870,7 +969,8 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
         if (MFX_PROFILE_UNKNOWN == in->mfx.CodecProfile ||
             MFX_PROFILE_HEVC_MAIN == in->mfx.CodecProfile ||
             MFX_PROFILE_HEVC_MAIN10 == in->mfx.CodecProfile ||
-            MFX_PROFILE_HEVC_MAINSP == in->mfx.CodecProfile)
+            MFX_PROFILE_HEVC_MAINSP == in->mfx.CodecProfile ||
+            MFX_PROFILE_HEVC_REXT == in->mfx.CodecProfile)
             out->mfx.CodecProfile = in->mfx.CodecProfile;
         else
         {
@@ -948,13 +1048,18 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
         if (in->mfx.FrameInfo.FourCC)
         {
             // mfxFrameInfo
-            if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+            if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 ||
+                in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 ||
+                in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 ||
+                in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410)
                 out->mfx.FrameInfo.FourCC = in->mfx.FrameInfo.FourCC;
             else
                 sts = MFX_ERR_UNSUPPORTED;
         }
 
-        if (in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV420)
+        if (in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV420 ||
+            in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422 ||
+            in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV444)
             out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
         else
             sts = MFX_ERR_UNSUPPORTED;
@@ -1029,7 +1134,16 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
             sts = MFX_ERR_UNSUPPORTED;
         }
 
-        if (!CheckFourcc(in->mfx.FrameInfo.FourCC, in->mfx.CodecProfile, &in->mfx.FrameInfo))
+        if (in->mfx.FrameInfo.BitDepthLuma &&
+            in->mfx.FrameInfo.BitDepthLuma != in->mfx.FrameInfo.BitDepthChroma)
+        {
+            out->mfx.FrameInfo.BitDepthLuma =
+            out->mfx.FrameInfo.BitDepthChroma = 0;
+            sts = MFX_ERR_UNSUPPORTED;
+        }
+
+        if (in->mfx.FrameInfo.FourCC &&
+            !CheckFourcc(in->mfx.FrameInfo.FourCC, in->mfx.CodecProfile, &in->mfx.FrameInfo))
         {
             out->mfx.FrameInfo.FourCC = 0;
             sts = MFX_ERR_UNSUPPORTED;
@@ -1281,28 +1395,39 @@ bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType t
         return false;
 #endif
 
-    if (in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 && in->mfx.FrameInfo.FourCC != MFX_FOURCC_P010 &&
-        in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV16 && in->mfx.FrameInfo.FourCC != MFX_FOURCC_P210)
+    if (in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 &&
+        in->mfx.FrameInfo.FourCC != MFX_FOURCC_YUY2 &&
+        in->mfx.FrameInfo.FourCC != MFX_FOURCC_AYUV &&
+        in->mfx.FrameInfo.FourCC != MFX_FOURCC_P010 &&
+        in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV16 &&
+        in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y210 &&
+        in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y410)
         return false;
 
     // both zero or not zero
     if ((in->mfx.FrameInfo.AspectRatioW || in->mfx.FrameInfo.AspectRatioH) && !(in->mfx.FrameInfo.AspectRatioW && in->mfx.FrameInfo.AspectRatioH))
         return false;
 
-    if (in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN && in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN10 && in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAINSP && in->mfx.CodecProfile != 4)
+    if (in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN &&
+        in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAIN10 &&
+        in->mfx.CodecProfile != MFX_PROFILE_HEVC_MAINSP &&
+        in->mfx.CodecProfile != MFX_PROFILE_HEVC_REXT)
+        return false;
+
+    if (in->mfx.FrameInfo.BitDepthLuma < 8 || in->mfx.FrameInfo.BitDepthLuma > 16)
+        return false;
+
+    if (in->mfx.FrameInfo.BitDepthChroma < 8 || in->mfx.FrameInfo.BitDepthChroma > 16)
         return false;
 
     if (!CheckFourcc(in->mfx.FrameInfo.FourCC, in->mfx.CodecProfile, &in->mfx.FrameInfo))
         return false;
 
-    if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210)
+    if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 ||
+        in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210 ||
+        in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 ||
+        in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410)
     {
-        if (in->mfx.FrameInfo.BitDepthLuma < 8 || in->mfx.FrameInfo.BitDepthLuma > 16)
-            return false;
-
-        if (in->mfx.FrameInfo.BitDepthChroma < 8 || in->mfx.FrameInfo.BitDepthChroma > 16)
-            return false;
-
         if (in->mfx.FrameInfo.Shift > 1)
             return false;
     }

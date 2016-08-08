@@ -131,33 +131,37 @@ enum VideoAccelerationProfile
     VA_VC1          = 0x0004,
     VA_JPEG         = 0x0005,
     VA_VP8          = 0x0006,
-    VA_H265            = 0x0007,
+    VA_H265         = 0x0007,
     VA_VP9          = 0x0008,
 
     // Entry points
-    VA_ENTRY_POINT  = 0xff00,
-    VA_SW           = 0x0100, // no acceleration
-    VA_MC           = 0x0200,
-    VA_IT           = 0x0300,
-    VA_VLD          = 0x0400,
-    VA_DEBLOCK      = 0x1000,
+    VA_ENTRY_POINT  = 0xfff00,
+    VA_SW           = 0x00100, // no acceleration
+    VA_MC           = 0x00200,
+    VA_IT           = 0x00300,
+    VA_VLD          = 0x00400,
+    VA_DEBLOCK      = 0x01000,
 
-    VA_PROFILE                  = 0xf000,
-    VA_PROFILE_SVC_HIGH         = 0x2000,
-    VA_PROFILE_SVC_BASELINE     = 0x3000,
-    VA_PROFILE_MVC              = 0x4000,
-    VA_PROFILE_MVC_MV           = 0x5000,
-    VA_PROFILE_MVC_STEREO       = 0x6000,
-    VA_PROFILE_MVC_STEREO_PROG  = 0x7000,
-    VA_PROFILE_INTEL            = 0x8000,
-    VA_PROFILE_10               = 0x9000,
-    VA_PROFILE_WIDEVINE         = 0xa000,
+    VA_PROFILE                  = 0xff000,
+    VA_PROFILE_SVC_HIGH         = 0x02000,
+    VA_PROFILE_SVC_BASELINE     = 0x03000,
+    VA_PROFILE_MVC              = 0x04000,
+    VA_PROFILE_MVC_MV           = 0x05000,
+    VA_PROFILE_MVC_STEREO       = 0x06000,
+    VA_PROFILE_MVC_STEREO_PROG  = 0x07000,
+    VA_PROFILE_INTEL            = 0x08000,
+    VA_PROFILE_WIDEVINE         = 0x09000,
+    VA_PROFILE_422              = 0x0a000,
+    VA_PROFILE_444              = 0x0b000,
+
+    //profile amendments
+    VA_PROFILE_10               = 0x10000,
 
     // configurations
-    VA_CONFIGURATION    = 0x00ff0000,
-    VA_LONG_SLICE_MODE  = 0x00010000,
-    VA_SHORT_SLICE_MODE = 0x00020000,
-    VA_ANY_SLICE_MODE   = 0x00030000,
+    VA_CONFIGURATION            = 0x0ff00000,
+    VA_LONG_SLICE_MODE          = 0x00100000,
+    VA_SHORT_SLICE_MODE         = 0x00200000,
+    VA_ANY_SLICE_MODE           = 0x00300000,
 
     VC1_MC          = VA_VC1 | VA_MC,
     MPEG2_IT        = VA_MPEG2 | VA_IT,
@@ -170,7 +174,6 @@ enum VideoAccelerationProfile
     VP8_VLD         = VA_VP8 | VA_VLD,
     HEVC_VLD        = VA_H265 | VA_VLD,
     VP9_VLD         = VA_VP9 | VA_VLD,
-    VP9_10_VLD      = VA_VP9 | VA_VLD | VA_PROFILE_10,
 
     H264_VLD_MVC            = VA_H264 | VA_VLD | VA_PROFILE_MVC,
     H264_VLD_SVC_BASELINE   = VA_H264 | VA_VLD | VA_PROFILE_SVC_BASELINE,
@@ -180,7 +183,17 @@ enum VideoAccelerationProfile
     H264_VLD_MVC_STEREO         = VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO,
     H264_VLD_MVC_STEREO_PROG    = VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO_PROG,
 
+    H265_VLD_422       = VA_H265 | VA_VLD | VA_PROFILE_422,
+    H265_VLD_444       = VA_H265 | VA_VLD | VA_PROFILE_444,
     H265_10_VLD        = VA_H265 | VA_VLD | VA_PROFILE_10,
+    H265_10_VLD_422    = VA_H265 | VA_VLD | VA_PROFILE_10 | VA_PROFILE_422,
+    H265_10_VLD_444    = VA_H265 | VA_VLD | VA_PROFILE_10 | VA_PROFILE_444,
+
+    VP9_VLD_422    = VA_VP9 | VA_VLD | VA_PROFILE_422,
+    VP9_VLD_444    = VA_VP9 | VA_VLD | VA_PROFILE_444,
+    VP9_10_VLD     = VA_VP9 | VA_VLD | VA_PROFILE_10,
+    VP9_10_VLD_422 = VA_VP9 | VA_VLD | VA_PROFILE_10 | VA_PROFILE_422,
+    VP9_10_VLD_444 = VA_VP9 | VA_VLD | VA_PROFILE_10 | VA_PROFILE_444,
 };
 
 #define MAX_BUFFER_TYPES    32

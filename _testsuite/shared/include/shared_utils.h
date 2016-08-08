@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2008-2011 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -85,7 +85,8 @@ enum
 {
     MFX_FOURCC_UNKNOWN      = MFX_MAKEFOURCC('0','0','0','0'),
     MFX_FOURCC_YUV420_16    = MFX_MAKEFOURCC('M','0','1','6'),   // planar merged YUV 420 16 bits
-    MFX_FOURCC_YUV422_16    = MFX_MAKEFOURCC('M','2','1','6'),   // planar merged YUV 420 16 bits
+    MFX_FOURCC_YUV422_16    = MFX_MAKEFOURCC('M','2','1','6'),   // planar merged YUV 422 16 bits
+    MFX_FOURCC_YUV444_16    = MFX_MAKEFOURCC('M','4','1','6'),   // planar merged YUV 444 16 bits
     MFX_FOURCC_YV16         = MFX_MAKEFOURCC('Y','V','1','6'),   // planar merged YUV 422 8 bits
 };
 

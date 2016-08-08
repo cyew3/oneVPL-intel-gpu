@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -131,6 +131,18 @@ void ConvertMFXParamsToUMC(mfxVideoParam *par, UMC::VideoStreamInfo *umcVideoPar
         break;
     case MFX_FOURCC_P010:
         umcVideoParams->color_format = UMC::P010;
+        break;
+    case MFX_FOURCC_P210:
+        umcVideoParams->color_format = UMC::P210;
+        break;
+    case MFX_FOURCC_Y210:
+        umcVideoParams->color_format = UMC::Y210;
+        break;
+    case MFX_FOURCC_Y410:
+        umcVideoParams->color_format = UMC::Y410;
+        break;
+    case MFX_FOURCC_AYUV:
+        umcVideoParams->color_format = UMC::YUV444A;
         break;
     case MFX_FOURCC_IMC3:
     case MFX_FOURCC_YUV400:

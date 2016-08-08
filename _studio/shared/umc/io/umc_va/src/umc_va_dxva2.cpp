@@ -394,7 +394,11 @@ static const GuidProfile guidProfiles[] =
     { VP9_VLD | VA_PROFILE_10,                    DXVA_ModeVP9_VLD_10bit_Profile2_private_copy},
 #endif
     { VP9_VLD,                                    DXVA_Intel_ModeVP9_Profile0_VLD },
+    //{ VP9_VLD_422,                                DXVA_Intel_ModeVP9_Profile1_YUV422_VLD },
+    { VP9_VLD_444,                                DXVA_Intel_ModeVP9_Profile1_YUV444_VLD },
     { VP9_VLD | VA_PROFILE_10,                    DXVA_Intel_ModeVP9_Profile2_10bit_VLD },
+    //{ VP9_10_VLD_422,                             DXVA_Intel_ModeVP9_Profile3_YUV422_10bit_VLD },
+    { VP9_10_VLD_444,                             DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD },
 
     { VA_H264 | VA_VLD | VA_PROFILE_SVC_HIGH,     sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_High },
     { VA_H264 | VA_VLD | VA_PROFILE_SVC_BASELINE, sDXVA_ModeH264_VLD_SVC_Scalable_Constrained_Baseline },
@@ -416,6 +420,11 @@ static const GuidProfile guidProfiles[] =
 
     { VA_H265 | VA_VLD | VA_PROFILE_10, DXVA_ModeHEVC_VLD_Main10  }, // MS
     { VA_H265 | VA_VLD | VA_PROFILE_10 | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_Main10Profile },
+
+    { H265_VLD_422 | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },
+    { H265_VLD_444 | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_Main444_10Profile },
+    { H265_10_VLD_422 | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },
+    { H265_10_VLD_444 | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_Main444_10Profile },
 
     { VA_H265 | VA_VLD | VA_PROFILE_WIDEVINE,   DXVA_Intel_Decode_Elementary_Stream_HEVC },
 
@@ -443,7 +452,7 @@ bool GuidProfile::isShortFormat(bool isHEVCGUID, Ipp32u configBitstreamRaw)
 {
     if (isHEVCGUID)
     {
-        if (2 == configBitstreamRaw)
+        if (2 == configBitstreamRaw || 3 == configBitstreamRaw)
         { // prefer long mode
             return false;
         }
@@ -464,8 +473,10 @@ bool GuidProfile::IsIntelCustomGUID(const GUID & guid)
     return
         guid == sDXVA2_Intel_ModeVC1_D_Super || 
         guid == sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT || guid == sDXVA_Intel_ModeH264_VLD_MVC || 
-        guid == DXVA_Intel_ModeHEVC_VLD_MainProfile || guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile ||
-        guid == DXVA_Intel_ModeVP9_Profile0_VLD || guid == DXVA_Intel_ModeVP9_Profile2_10bit_VLD
+        guid == DXVA_Intel_ModeHEVC_VLD_MainProfile       || guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile ||
+        guid == DXVA_Intel_ModeHEVC_VLD_Main422_10Profile || guid == DXVA_Intel_ModeHEVC_VLD_Main444_10Profile ||
+        guid == DXVA_Intel_ModeVP9_Profile0_VLD           || guid == DXVA_Intel_ModeVP9_Profile2_10bit_VLD ||
+        guid == DXVA_Intel_ModeVP9_Profile1_YUV444_VLD    || guid == DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD
         ;
 }
 

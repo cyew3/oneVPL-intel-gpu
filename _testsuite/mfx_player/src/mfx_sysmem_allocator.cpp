@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -140,7 +140,15 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->A = ptr->B + 3;
         ptr->PitchHigh = (mfxU16)((4 * (mfxU32)Width2) / (1 << 16));
         ptr->PitchLow  = (mfxU16)((4 * (mfxU32)Width2) % (1 << 16));
-        break; 
+        break;
+    case MFX_FOURCC_AYUV:
+        ptr->V = ptr->B;
+        ptr->U = ptr->V + 1;
+        ptr->Y = ptr->V + 2;
+        ptr->A = ptr->V + 3;
+        ptr->PitchHigh = (mfxU16)((4 * (mfxU32)Width2) / (1 << 16));
+        ptr->PitchLow = (mfxU16)((4 * (mfxU32)Width2) % (1 << 16));
+        break;
     case MFX_FOURCC_A2RGB10:        
         ptr->G = ptr->B + 1;
         ptr->R = ptr->B + 2;
@@ -158,6 +166,20 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->Y16 = ptr->V16 + 2; 
         ptr->A = (mfxU8*)(ptr->V16 + 3);
         ptr->Pitch = 8 * Width2;
+        break;
+    case MFX_FOURCC_Y210:
+    //case MFX_FOURCC_Y216:
+        ptr->Y16 = (mfxU16*)ptr->B;
+        ptr->U16 = ptr->U16 + 1;
+        ptr->V16 = ptr->U16 + 3;
+        ptr->Pitch = 2 * 2 * Width2;
+        break;
+    case MFX_FOURCC_Y410:
+        ptr->Y410 = (mfxY410 *) ptr->B;
+        ptr->Y = 0;
+        ptr->V = 0;
+        ptr->A = 0;
+        ptr->Pitch = 4 * Width2;
         break;
     default:
         return MFX_ERR_UNSUPPORTED;    
@@ -302,21 +324,25 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
         nbytes *= 2; // 16bits
         break;
     case MFX_FOURCC_P210:
+    case MFX_FOURCC_Y210:
+    //case MFX_FOURCC_Y216:
         nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
         nbytes *= 2; // 16bits
+        break;
+    case MFX_FOURCC_Y410:
+        nbytes = 4* Width2*Height2;
         break;
     case MFX_FOURCC_RGB3:
         nbytes = Width2*Height2 + Width2*Height2 + Width2*Height2;
         break;
     case MFX_FOURCC_RGB4:
+    case MFX_FOURCC_AYUV:
         nbytes = Width2*Height2 + Width2*Height2 + Width2*Height2 + Width2*Height2;
         break;
     case MFX_FOURCC_A2RGB10:
         nbytes = Width2*Height2*4; // 4 bytes per pixel
         break;
     case MFX_FOURCC_YUY2:
-        nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
-        break;
     case MFX_FOURCC_NV16:
         nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
         break;
@@ -324,6 +350,7 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
         nbytes = 2*Width2*Height2;
         break;
     case MFX_FOURCC_ARGB16:
+    //case MFX_FOURCC_Y416:
         nbytes = (Width2*Height2 + Width2*Height2 + Width2*Height2 + Width2*Height2) << 1;
         break;
       default:

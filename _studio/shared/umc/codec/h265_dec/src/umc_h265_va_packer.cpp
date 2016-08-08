@@ -365,16 +365,17 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
                         H265DecoderFrameInfo * pSliceInfo,
                         TaskSupplier_H265 *supplier)
 {
-    UMCVACompBuffer *compBuf;
-    DXVA_Intel_PicParams_HEVC *pPicParam = (DXVA_Intel_PicParams_HEVC*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf);
-    compBuf->SetDataSize(sizeof(DXVA_Intel_PicParams_HEVC));
-
-    memset(pPicParam, 0, sizeof(DXVA_Intel_PicParams_HEVC));
-
     H265Slice *pSlice = pSliceInfo->GetSlice(0);
     H265SliceHeader * sliceHeader = pSlice->GetSliceHeader();
     const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
     const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
+
+    UMCVACompBuffer *compBuf;
+    DXVA_Intel_PicParams_HEVC *pPicParam = (DXVA_Intel_PicParams_HEVC*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf);
+    Ipp32s const size =
+        pSeqParamSet->getPTL()->GetGeneralPTL()->profile_idc != H265_PROFILE_FREXT ? sizeof(DXVA_Intel_PicParams_HEVC) : sizeof(DXVA_Intel_PicParams_HEVC_Rext);
+    compBuf->SetDataSize(size);
+    memset(pPicParam, 0, size);
 
     //
     //
@@ -571,13 +572,39 @@ void PackerDXVA2::PackPicParams(const H265DecoderFrame *pCurrentFrame,
     pPicParam->RefBottomFieldFlag                           = 0;
 
     pPicParam->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
+
+    if (pSeqParamSet->getPTL()->GetGeneralPTL()->profile_idc != H265_PROFILE_FREXT)
+        return;
+
+    DXVA_Intel_PicParams_HEVC_Rext* pExtPicParam = (DXVA_Intel_PicParams_HEVC_Rext*)pPicParam;
+    pExtPicParam->PicRangeExtensionFlags.fields.transform_skip_rotation_enabled_flag    = pSeqParamSet->transform_skip_rotation_enabled_flag;
+    pExtPicParam->PicRangeExtensionFlags.fields.transform_skip_context_enabled_flag     = pSeqParamSet->transform_skip_context_enabled_flag;
+    pExtPicParam->PicRangeExtensionFlags.fields.implicit_rdpcm_enabled_flag             = pSeqParamSet->implicit_residual_dpcm_enabled_flag;
+    pExtPicParam->PicRangeExtensionFlags.fields.explicit_rdpcm_enabled_flag             = pSeqParamSet->explicit_residual_dpcm_enabled_flag;
+    pExtPicParam->PicRangeExtensionFlags.fields.extended_precision_processing_flag      = pSeqParamSet->extended_precision_processing_flag;
+    pExtPicParam->PicRangeExtensionFlags.fields.intra_smoothing_disabled_flag           = pSeqParamSet->intra_smoothing_disabled_flag;
+    pExtPicParam->PicRangeExtensionFlags.fields.high_precision_offsets_enabled_flag     = pSeqParamSet->high_precision_offsets_enabled_flag;
+    pExtPicParam->PicRangeExtensionFlags.fields.persistent_rice_adaptation_enabled_flag = pSeqParamSet->fast_rice_adaptation_enabled_flag;
+    pExtPicParam->PicRangeExtensionFlags.fields.cabac_bypass_alignment_enabled_flag     = pSeqParamSet->cabac_bypass_alignment_enabled_flag;
+
+    pExtPicParam->diff_cu_chroma_qp_offset_depth            = (UCHAR)pPicParamSet->diff_cu_chroma_qp_offset_depth;
+    pExtPicParam->chroma_qp_offset_list_len_minus1          = (UCHAR)pPicParamSet->chroma_qp_offset_list_len - 1;
+    pExtPicParam->log2_sao_offset_scale_luma                = (UCHAR)pPicParamSet->log2_sao_offset_scale_luma;
+    pExtPicParam->log2_sao_offset_scale_chroma              = (UCHAR)pPicParamSet->log2_sao_offset_scale_chroma;
+    pExtPicParam->log2_max_transform_skip_block_size_minus2 = (UCHAR)pPicParamSet->log2_max_transform_skip_block_size - 2;
+    for (Ipp32u i = 0; i < pPicParamSet->chroma_qp_offset_list_len; i++)
+    {
+        pExtPicParam->cb_qp_offset_list[i] = (CHAR)pPicParamSet->cb_qp_offset_list[i + 1];
+        pExtPicParam->cr_qp_offset_list[i] = (CHAR)pPicParamSet->cr_qp_offset_list[i + 1];
+    }
 }
 
 bool PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLastSlice)
 {
     static Ipp8u start_code_prefix[] = {0, 0, 1};
 
-    DXVA_Intel_Slice_HEVC_Long* pDXVASlice = 0;
+    //DXVA_Intel_Slice_HEVC_Long* pDXVASlice = 0;
+    DXVA_Intel_Slice_HEVC_Rext_Long* pDXVASlice = 0;
 
     void*   pSliceData = 0;
     Ipp32u  rawDataSize = 0;
@@ -587,11 +614,16 @@ bool PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLastSlice)
     bool isLong = m_va->IsLongSliceControl();
     if (isLong)
     {
-        headerSize = sizeof(DXVA_Intel_Slice_HEVC_Long);
+        const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
+        headerSize = 
+            pSeqParamSet->getPTL()->GetGeneralPTL()->profile_idc != H265_PROFILE_FREXT ? sizeof(DXVA_Intel_Slice_HEVC_Long) : sizeof(DXVA_Intel_Slice_HEVC_Rext_Long);
 
         pSlice->m_BitStream.GetOrg((Ipp32u**)&rawDataPtr, &rawDataSize);
 
-        GetSliceVABuffers(&pDXVASlice, headerSize, &pSliceData, rawDataSize + sizeof(start_code_prefix),  isLastSlice ? 128 : 0);
+        DXVA_Intel_Slice_HEVC_Long* pXSlice = 0;
+        GetSliceVABuffers(&pXSlice, headerSize, &pSliceData, rawDataSize + sizeof(start_code_prefix),  isLastSlice ? 128 : 0);
+        pDXVASlice =
+                reinterpret_cast<DXVA_Intel_Slice_HEVC_Rext_Long*>(pXSlice);
 
         const H265PicParamSet *pPicParamSet = pSlice->GetPicParam();
         const H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
@@ -677,35 +709,58 @@ bool PackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLastSlice)
 
                 if(eRefPicList == REF_PIC_LIST_0)
                 {
-                    pDXVASlice->luma_offset_l0[iRefIdx]       = (CHAR)wp[0].offset;
+                    pDXVASlice->luma_offset_l0[iRefIdx]       = (SHORT)wp[0].offset;
+                    //pDXVASlice->luma_offset_l0[iRefIdx]       = (CHAR)wp[0].offset;
+                    //pDXVASlice->luma_offset_l0_msb[iRefIdx]   = (CHAR)(wp[0].offset >> 8);
+                    
                     pDXVASlice->delta_luma_weight_l0[iRefIdx] = (CHAR)wp[0].delta_weight;
                     for(int chroma=0;chroma < 2;chroma++)
                     {
                         pDXVASlice->delta_chroma_weight_l0[iRefIdx][chroma] = (CHAR)wp[1 + chroma].delta_weight;
-                        pDXVASlice->ChromaOffsetL0        [iRefIdx][chroma] = (CHAR)wp[1 + chroma].offset;
+                        pDXVASlice->ChromaOffsetL0        [iRefIdx][chroma] = (SHORT)wp[1 + chroma].offset;
+                        //pDXVASlice->ChromaOffsetL0        [iRefIdx][chroma] = (CHAR)wp[1 + chroma].offset;
+                        //pDXVASlice->ChromaOffsetL0_msb    [iRefIdx][chroma] = (CHAR)(wp[1 + chroma].offset >> 8);
                     }
                 }
                 else
                 {
-                    pDXVASlice->luma_offset_l1[iRefIdx]       = (CHAR)wp[0].offset;
+                    pDXVASlice->luma_offset_l1[iRefIdx]       = (SHORT)wp[0].offset;
+                    //pDXVASlice->luma_offset_l1[iRefIdx]       = (CHAR)wp[0].offset;
+                    //pDXVASlice->luma_offset_l1_msb[iRefIdx]   = (CHAR)(wp[0].offset >> 8);
+
                     pDXVASlice->delta_luma_weight_l1[iRefIdx] = (CHAR)wp[0].delta_weight;
                     for(int chroma=0;chroma < 2;chroma++)
                     {
                         pDXVASlice->delta_chroma_weight_l1[iRefIdx][chroma] = (CHAR)wp[1 + chroma].delta_weight;
-                        pDXVASlice->ChromaOffsetL1        [iRefIdx][chroma] = (CHAR)wp[1 + chroma].offset;
+                        pDXVASlice->ChromaOffsetL1        [iRefIdx][chroma] = (SHORT)wp[1 + chroma].offset;
+                        //pDXVASlice->ChromaOffsetL1        [iRefIdx][chroma] = (CHAR)wp[1 + chroma].offset;
+                        //pDXVASlice->ChromaOffsetL1_msb    [iRefIdx][chroma] = (CHAR)(wp[1 + chroma].offset >> 8);
                     }
                 }
             }
         }
 
         pDXVASlice->five_minus_max_num_merge_cand = (UCHAR)(5 - pSlice->GetSliceHeader()->max_num_merge_cand);
+        //pDXVASlice->num_entry_point_offsets = (USHORT)pSlice->GetSliceHeader()->num_entry_point_offsets;
+
+        //if (pSeqParamSet->getPTL()->GetGeneralPTL()->profile_idc == H265_PROFILE_FREXT)
+        {
+            /*DXVA_Intel_Slice_HEVC_Rext_Long* pDXVARextSlice =
+                reinterpret_cast<DXVA_Intel_Slice_HEVC_Rext_Long*>(pDXVASlice);*/
+
+            /*pDXVARextSlice*/pDXVASlice->SliceRextFlags.fields.cu_chroma_qp_offset_enabled_flag = pSlice->GetSliceHeader()->cu_chroma_qp_offset_enabled_flag;
+        }
     }
     else
     {
         H265HeadersBitstream *pBitstream = pSlice->GetBitStream();
 
         pBitstream->GetOrg((Ipp32u**)&rawDataPtr, &rawDataSize);
-        GetSliceVABuffers(&pDXVASlice, headerSize, &pSliceData, rawDataSize + 3, isLastSlice ? 128 : 0);
+        //GetSliceVABuffers(&pDXVASlice, headerSize, &pSliceData, rawDataSize + 3, isLastSlice ? 128 : 0);
+        DXVA_Intel_Slice_HEVC_Long* pXSlice = 0;
+        GetSliceVABuffers(&pXSlice, headerSize, &pSliceData, rawDataSize + 3, isLastSlice ? 128 : 0);
+        pDXVASlice =
+                reinterpret_cast<DXVA_Intel_Slice_HEVC_Rext_Long*>(pXSlice);
     }
 
     // copy slice data to slice data buffer

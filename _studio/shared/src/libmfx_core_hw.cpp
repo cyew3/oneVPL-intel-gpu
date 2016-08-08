@@ -128,17 +128,45 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
         break;
     case MFX_CODEC_VP9:
         profile |= VA_VP9;
-        if (param->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+        switch (param->mfx.FrameInfo.FourCC)
         {
+        case MFX_FOURCC_YUY2:
+        case MFX_FOURCC_UYVY:
+            profile |= VA_PROFILE_422;
+            break;
+        case MFX_FOURCC_AYUV:
+            profile |= VA_PROFILE_444;
+            break;
+        case MFX_FOURCC_P010:
             profile |= VA_PROFILE_10;
+            break;
+        case MFX_FOURCC_Y210:
+            profile |= VA_PROFILE_10 | VA_PROFILE_422;
+            break;
+        case MFX_FOURCC_Y410:
+            profile |= VA_PROFILE_10 | VA_PROFILE_444;
+            break;
         }
         break;
     case MFX_CODEC_HEVC:
         profile |= VA_H265;
-
-        if (param->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+        switch (param->mfx.FrameInfo.FourCC)
         {
-            profile |= VA_PROFILE_10;
+            case MFX_FOURCC_P010:
+                profile |= VA_PROFILE_10;
+                break;
+            case MFX_FOURCC_YUY2:
+                profile |= VA_PROFILE_422;
+                break;
+            case MFX_FOURCC_AYUV:
+                profile |= VA_PROFILE_444;
+                break;
+            case MFX_FOURCC_Y210:
+                profile |= VA_PROFILE_10 | VA_PROFILE_422;
+                break;
+            case MFX_FOURCC_Y410:
+                profile |= VA_PROFILE_10 | VA_PROFILE_444;
+                break;
         }
         if (IS_PROTECTION_WIDEVINE(param->Protected))
         {

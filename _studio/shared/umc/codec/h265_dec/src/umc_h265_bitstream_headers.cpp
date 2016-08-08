@@ -1298,9 +1298,6 @@ void H265HeadersBitstream::decodeSlice(H265Slice *pSlice, const H265SeqParamSet 
             sliceHdr->pic_output_flag = 1;
         }
 
-        if (sps->chroma_format_idc > 2)
-            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-
         if (sps->separate_colour_plane_flag  ==  1)
         {
             sliceHdr->colour_plane_id = GetBits(2);

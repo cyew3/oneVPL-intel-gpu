@@ -1738,9 +1738,26 @@ mfxStatus MFXDecPipeline::CreateRender()
         m_inParams.outFrameInfo.FourCC = (m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422) ? static_cast<int>(MFX_FOURCC_YV16) : MFX_FOURCC_YV12;
         m_inParams.outFrameInfo.BitDepthLuma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma;
         m_inParams.outFrameInfo.BitDepthChroma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma;
-        if (m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P210)
+
+        if (m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV)
+            m_inParams.outFrameInfo.FourCC = MFX_FOURCC_AYUV;
+
+        if (m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P210 ||
+            m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y410)
         {
-            m_inParams.outFrameInfo.FourCC = m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422 ? MFX_FOURCC_YUV422_16 : MFX_FOURCC_YUV420_16;
+            switch (m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat)
+            {
+                case MFX_CHROMAFORMAT_YUV444:
+                    m_inParams.outFrameInfo.FourCC = MFX_FOURCC_YUV444_16;
+                    break;
+                case MFX_CHROMAFORMAT_YUV422:
+                    m_inParams.outFrameInfo.FourCC = MFX_FOURCC_YUV422_16;
+                    break;
+                case MFX_CHROMAFORMAT_YUV420:
+                default:
+                    m_inParams.outFrameInfo.FourCC = MFX_FOURCC_YUV420_16;
+                    break;
+            }
             m_inParams.outFrameInfo.BitDepthLuma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma;
             m_inParams.outFrameInfo.BitDepthChroma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma;
         }

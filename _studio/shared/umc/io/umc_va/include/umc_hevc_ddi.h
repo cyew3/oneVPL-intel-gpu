@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2006-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2006-2016 Intel Corporation. All Rights Reserved.
 */
 
 #ifndef __UMC_HEVC_DDI_H
@@ -165,6 +165,41 @@ typedef struct _DXVA_Intel_PicParams_HEVC
 
 } DXVA_Intel_PicParams_HEVC, *LPDXVA_Intel_PicParams_HEVC;
 
+typedef struct _DXVA_Intel_PicParams_HEVC_Rext
+{
+    DXVA_Intel_PicParams_HEVC  PicParamsMain;
+
+    union
+    {
+        struct
+        {
+            UINT32  transform_skip_rotation_enabled_flag    : 1;
+            UINT32  transform_skip_context_enabled_flag     : 1;
+            UINT32  implicit_rdpcm_enabled_flag             : 1;
+            UINT32  explicit_rdpcm_enabled_flag             : 1;
+            UINT32  extended_precision_processing_flag      : 1;
+            UINT32  intra_smoothing_disabled_flag           : 1;
+            UINT32  high_precision_offsets_enabled_flag     : 1;
+            UINT32  persistent_rice_adaptation_enabled_flag : 1;
+            UINT32  cabac_bypass_alignment_enabled_flag     : 1;
+            UINT32  cross_component_prediction_enabled_flag : 1;
+            UINT32  chroma_qp_offset_list_enabled_flag      : 1;
+            UINT32  BitDepthLuma16                          : 1; // [0]
+            UINT32  BitDepthChroma16                        : 1; // [0]
+            UINT32  ReservedBits5                           : 19;
+        } fields;
+
+        UINT        dwRangeExtensionPropertyFlags;
+    } PicRangeExtensionFlags;
+
+    UCHAR   diff_cu_chroma_qp_offset_depth;   // [0..3]
+    UCHAR   chroma_qp_offset_list_len_minus1; // [0..5]
+    UCHAR   log2_sao_offset_scale_luma;       // [0..6]
+    UCHAR   log2_sao_offset_scale_chroma;     // [0..6]
+    UCHAR   log2_max_transform_skip_block_size_minus2;
+    CHAR    cb_qp_offset_list[6];             // [-12..12]
+    CHAR    cr_qp_offset_list[6];             // [-12..12]
+} DXVA_Intel_PicParams_HEVC_Rext, *LPDXVA_Intel_PicParams_HEVC_Rext;
 
 /****************************************************************************/
 
@@ -228,6 +263,75 @@ typedef struct _DXVA_Intel_Slice_HEVC_Long
     USHORT  EntryOffsetToSubsetArray;              // [0..540]
 #endif
 } DXVA_Intel_Slice_HEVC_Long, *LPDXVA_Intel_Slice_HEVC_Long;
+
+typedef struct _DXVA_Intel_Slice_HEVC_Rext_Long
+{
+    UINT    BSNALunitDataLocation;
+    UINT    SliceBytesInBuffer;
+    USHORT  wBadSliceChopping;
+    USHORT  ReservedBits;
+    UINT    ByteOffsetToSliceData;
+    UINT    slice_segment_address;
+
+    DXVA_Intel_PicEntry_HEVC    RefPicList[2][15];
+
+    union
+    {
+        UINT    value;
+
+        struct
+        {
+            UINT    LastSliceOfPic                                  : 1;
+            UINT    dependent_slice_segment_flag                    : 1;
+            UINT    slice_type                                      : 2;
+            UINT    color_plane_id                                  : 2;
+            UINT    slice_sao_luma_flag                             : 1;
+            UINT    slice_sao_chroma_flag                           : 1;
+            UINT    mvd_l1_zero_flag                                : 1;
+            UINT    cabac_init_flag                                 : 1;
+            UINT    slice_temporal_mvp_enabled_flag                 : 1;
+            UINT    slice_deblocking_filter_disabled_flag           : 1;
+            UINT    collocated_from_l0_flag                         : 1;
+            UINT    slice_loop_filter_across_slices_enabled_flag    : 1;
+            UINT    reserved                                        : 18;
+        }
+        fields;
+    } LongSliceFlags;
+
+    UCHAR   collocated_ref_idx;
+    UCHAR   num_ref_idx_l0_active_minus1;
+    UCHAR   num_ref_idx_l1_active_minus1;
+    CHAR    slice_qp_delta;
+    CHAR    slice_cb_qp_offset;
+    CHAR    slice_cr_qp_offset;
+    CHAR    slice_beta_offset_div2;                // [-6..6]
+    CHAR    slice_tc_offset_div2;                    // [-6..6]
+    UCHAR   luma_log2_weight_denom;
+    UCHAR   delta_chroma_log2_weight_denom;
+    CHAR    delta_luma_weight_l0[15];
+    SHORT   luma_offset_l0[15];
+    CHAR    delta_chroma_weight_l0[15][2];
+    SHORT   ChromaOffsetL0[15][2];
+    CHAR    delta_luma_weight_l1[15];
+    SHORT   luma_offset_l1[15];
+    CHAR    delta_chroma_weight_l1[15][2];
+    SHORT   ChromaOffsetL1[15][2];
+    UCHAR   five_minus_max_num_merge_cand;
+
+    //USHORT  num_entry_point_offsets;               // [0..540]
+    //USHORT  EntryOffsetToSubsetArray;              // [0..540]
+
+    union
+    {
+        UINT    value;
+        struct
+        {
+            UINT    cu_chroma_qp_offset_enabled_flag : 1;
+            UINT    reserved                         : 31;
+        } fields;
+    } SliceRextFlags;
+
+} DXVA_Intel_Slice_HEVC_Rext_Long, *LPDXVA_Intel_Slice_HEVC_Rext_Long;
 
 typedef struct _DXVA_Intel_Slice_HEVC_Short
 {

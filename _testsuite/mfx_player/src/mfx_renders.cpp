@@ -292,9 +292,10 @@ mfxStatus MFXFileWriteRender::Init(mfxVideoParam *pInit, const vm_char *pFilenam
     if ( MFX_FOURCC_YV12 != m_VideoParams.mfx.FrameInfo.FourCC ||
         MFX_FOURCC_YUV420_16 != m_VideoParams.mfx.FrameInfo.FourCC ||
         MFX_FOURCC_YUV422_16 != m_VideoParams.mfx.FrameInfo.FourCC ||
+        MFX_FOURCC_YUV444_16 != m_VideoParams.mfx.FrameInfo.FourCC ||
         MFX_FOURCC_YV16 != m_VideoParams.mfx.FrameInfo.FourCC)
     {
-        if (m_nFourCC == 0 || m_nFourCC == MFX_FOURCC_YV12 || m_nFourCC == MFX_FOURCC_YUV420_16 || m_nFourCC == MFX_FOURCC_YV16 || m_nFourCC == MFX_FOURCC_YUV422_16)
+        if (m_nFourCC == 0 || m_nFourCC == MFX_FOURCC_YV12 || m_nFourCC == MFX_FOURCC_YUV420_16 || m_nFourCC == MFX_FOURCC_YV16 || m_nFourCC == MFX_FOURCC_YUV422_16 || m_nFourCC == MFX_FOURCC_YUV444_16)
         {
             if (!m_params.useHMstyle)
             {
@@ -318,7 +319,8 @@ mfxStatus MFXFileWriteRender::Init(mfxVideoParam *pInit, const vm_char *pFilenam
 
 mfxStatus MFXFileWriteRender::Close()
 {
-    delete [] m_yv12Surface.Data.Y;
+    mfxU8* ptr = IPP_MIN(IPP_MIN(m_yv12Surface.Data.Y, m_yv12Surface.Data.U), IPP_MIN(m_yv12Surface.Data.V, m_yv12Surface.Data.A));
+    delete [] ptr;
     MFX_ZERO_MEM(m_yv12Surface);
     m_nTimesClosed++;
     
@@ -462,11 +464,10 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             }
             break;
         }
+        case MFX_FOURCC_YUV444_16:
         case MFX_FOURCC_YUV422_16:
         case MFX_FOURCC_YUV420_16:
         {
-            mfxU8 isHalfHeight = m_nFourCC == MFX_FOURCC_YUV420_16 ? 1 : 0;
-
             m_Current.m_comp = VM_STRING('Y');
             m_Current.m_pixX = 0;
 
@@ -481,9 +482,11 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
                 WRITE(pData->Y + (crop_y * pitch + crop_x) + i*pitch, pInfo->CropW*2);
             }
 
+            mfxU8 isHalfHeight = m_nFourCC == MFX_FOURCC_YUV420_16 ? 1 : 0;
+            mfxU8 isHalfWidth  = m_nFourCC == MFX_FOURCC_YUV444_16 ? 0 : 1;
             if (!skipChroma)
             {
-                crop_x >>= 1;
+                crop_x >>= isHalfWidth;
                 crop_y >>= isHalfHeight;
 
                 mfxI32 height = 0;
@@ -491,15 +494,24 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
                     height = m_params.VpxDec16bFormat ? (pInfo->CropH + 1)/2 : pInfo->CropH/2; // For VP9 if resolution is odd, chroma on edges will be dumped, otherwise it is cut
                 else
                     height = pInfo->CropH;
-                mfxI32 width = m_params.VpxDec16bFormat ? (pInfo->CropW + 1)/2 : pInfo->CropW/2; // For VP9 if resolution is odd, chroma on edges will be dumped, otherwise it is cut
+                mfxI32 width = 0;
+                if (isHalfWidth)
+                {
+                    width = m_params.VpxDec16bFormat ? (pInfo->CropW + 1)/2 : pInfo->CropW/2; // For VP9 if resolution is odd, chroma on edges will be dumped, otherwise it is cut
+                    pitch /= 2;
+                }
+                else
+                {
+                    width = pInfo->CropW;
+                }
                 m_Current.m_comp = VM_STRING('U');
                 for (i = 0; i < height; i++)
                 {
                     m_Current.m_pixY = i;
                     if (m_params.VpxDec16bFormat)
-                        XOR31((mfxU16 *)(pData->U + (crop_y * pitch/2 + crop_x) + i*pitch/2), width);
+                        XOR31((mfxU16 *)(pData->U + (crop_y * pitch + crop_x) + i*pitch), width);
 
-                    WRITE(pData->U + (crop_y * pitch/2 + crop_x) + i*pitch/2, width*2);
+                    WRITE(pData->U + (crop_y * pitch + crop_x) + i*pitch, width*2);
                 }
                 m_Current.m_comp = VM_STRING('V');
                 for (i = 0; i < height; i++)
@@ -508,7 +520,7 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
                     if (m_params.VpxDec16bFormat)
                         XOR31((mfxU16 *)(pData->V + (crop_y * pitch/2 + crop_x) + i*pitch/2), width);
 
-                    WRITE(pData->V + (crop_y * pitch/2 + crop_x) + i*pitch/2, width*2);
+                    WRITE(pData->V + (crop_y * pitch + crop_x) + i*pitch, width*2);
                 }
             }
             break;
@@ -593,6 +605,7 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             break;
         }
         case MFX_FOURCC_RGB4:
+        case MFX_FOURCC_AYUV:
         {
             m_Current.m_comp = VM_STRING('R');
             m_Current.m_pixX = 0;
@@ -665,6 +678,32 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             {
                 m_Current.m_pixY = i;
                 WRITE(pData->UV + (pInfo->CropY * pitch / 2 + pInfo->CropX) + i * pitch, pInfo->CropW);
+            }
+            break;
+        }
+        case MFX_FOURCC_Y210:
+        //case MFX_FOURCC_Y216:
+        {
+            m_Current.m_comp = VM_STRING('Y');
+            m_Current.m_pixX = 0;
+            for (i = 0; i < pInfo->CropH; i++)
+            {
+                m_Current.m_pixY = i;
+                WRITE(pData->Y + (4*pInfo->CropY * pitch + 4*pInfo->CropX) + i * pitch, 4 * pInfo->CropW);
+            }
+            break;
+        }
+        case MFX_FOURCC_Y410:
+        {
+            m_Current.m_comp = VM_STRING('U');
+            m_Current.m_pixX = 0;
+            mfxU8* plane = pData->U + pInfo->CropX * 4;
+
+            for (i = 0; i <pInfo->CropH; i++)
+            {
+                m_Current.m_pixY = i;
+                MFX_CHECK_STS(PutData(plane, pInfo->CropW * 4));
+                plane += pitch;
             }
             break;
         }
@@ -1487,12 +1526,20 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
     }
 
     // color conversion
-    if (pSurfaceIn->Info.FourCC != MFX_FOURCC_NV12 && pSurfaceIn->Info.FourCC != MFX_FOURCC_P010 && pSurfaceIn->Info.FourCC != MFX_FOURCC_NV16 && pSurfaceIn->Info.FourCC != MFX_FOURCC_P210)
+    if (pSurfaceIn->Info.FourCC != MFX_FOURCC_NV12 && 
+        pSurfaceIn->Info.FourCC != MFX_FOURCC_P010 && 
+        pSurfaceIn->Info.FourCC != MFX_FOURCC_NV16 && 
+        pSurfaceIn->Info.FourCC != MFX_FOURCC_P210 && 
+        pSurfaceIn->Info.FourCC != MFX_FOURCC_Y410)
     {
         return pSurfaceIn;
     }
 
-    if (pSurfaceOut->Info.FourCC != MFX_FOURCC_YV12 && pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV420_16 && pSurfaceOut->Info.FourCC != MFX_FOURCC_YV16 && pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV422_16)
+    if (pSurfaceOut->Info.FourCC != MFX_FOURCC_YV12 && 
+        pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV420_16 && 
+        pSurfaceOut->Info.FourCC != MFX_FOURCC_YV16 && 
+        pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV422_16 && 
+        pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV444_16)
     {
         return pSurfaceIn;
     }
@@ -1589,6 +1636,44 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
 
         return pSurfaceOut;
     }
+    else if (pSurfaceOut->Info.FourCC == MFX_FOURCC_YUV444_16)
+    {
+        VM_ASSERT(pSurfaceIn->Info.FourCC == MFX_FOURCC_Y410);
+        //full unpack Y410 to YUV444_10b not using alpha
+#pragma pack(push, 1)
+        union Y410Pixel
+        {
+            mfxU32 force4bytes;
+            struct
+            {
+                mfxU32 u : 10;
+                mfxU32 y : 10;
+                mfxU32 v : 10;
+                mfxU32 a : 2;
+            } y410;
+        };
+#pragma pack(pop)
+
+        mfxU16* pDstY = pSurfaceOut->Data.Y16;
+        mfxU16* pDstU = pSurfaceOut->Data.U16;
+        mfxU16* pDstV = pSurfaceOut->Data.V16;
+
+        Y410Pixel* pSrc = (Y410Pixel*) pSurfaceIn->Data.U;
+
+        pitchOut = pitchOut / 2;
+        pitchIn = pitchIn / 4;
+
+        //Y
+        for (size_t i = 0; i < pSurfaceIn->Info.Height; i++)
+        {
+            for (size_t j = 0; j < pSurfaceIn->Info.Width; j++)
+            {
+                pDstY[i*pitchOut + j] = pSrc[i*pitchIn + j].y410.y;
+                pDstU[i*pitchOut + j] = pSrc[i*pitchIn + j].y410.u;
+                pDstV[i*pitchOut + j] = pSrc[i*pitchIn + j].y410.v;
+            }
+        }
+    }
     else if (pSurfaceOut->Info.FourCC == MFX_FOURCC_YV12)
     {
         VM_ASSERT(pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12);
@@ -1649,11 +1734,19 @@ mfxStatus       AllocSurface(mfxFrameInfo *pTargetInfo, mfxFrameSurface1* pSurfa
     
     pSurfaceOut->Data.PitchLow = pTargetInfo->Width;
 
-    mfxU8 halfHeight = pTargetInfo->ChromaFormat != MFX_CHROMAFORMAT_YUV422 ? 1 : 0;
-    mfxU32 bufSize = halfHeight ? (pSurfaceOut->Info.Height * pSurfaceOut->Data.PitchLow * 3 / 2) : (pSurfaceOut->Info.Height * pSurfaceOut->Data.PitchLow * 2);
+    mfxU8 halfHeight = pTargetInfo->ChromaFormat != MFX_CHROMAFORMAT_YUV422 &&
+                       pTargetInfo->ChromaFormat != MFX_CHROMAFORMAT_YUV444
+                            ? 1 : 0;
+    mfxU32 bufSize = 0;
+    if(pTargetInfo->ChromaFormat == MFX_CHROMAFORMAT_YUV444)
+        bufSize = pSurfaceOut->Info.Height * pSurfaceOut->Data.PitchLow * 3;
+    else
+        bufSize = halfHeight ? (pSurfaceOut->Info.Height * pSurfaceOut->Data.PitchLow * 3 / 2) : (pSurfaceOut->Info.Height * pSurfaceOut->Data.PitchLow * 2);
 
     if (pSurfaceOut->Info.FourCC != MFX_FOURCC_P010 && pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV420_16 &&
-        pSurfaceOut->Info.FourCC != MFX_FOURCC_P210 && pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV422_16)
+        pSurfaceOut->Info.FourCC != MFX_FOURCC_P210 && pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV422_16 &&
+        pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV444_16 &&
+        pSurfaceOut->Info.FourCC != MFX_FOURCC_Y410)
     {
         mfxU8 * pBuffer = new mfxU8[bufSize];
         MFX_CHECK_WITH_ERR(NULL != pBuffer, MFX_ERR_MEMORY_ALLOC);
@@ -1694,6 +1787,10 @@ mfxStatus       AllocSurface(mfxFrameInfo *pTargetInfo, mfxFrameSurface1* pSurfa
             case MFX_FOURCC_YUV420_16:
                 pSurfaceOut->Data.U16 = pBuffer + pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height;
                 pSurfaceOut->Data.V = (mfxU8*)(pSurfaceOut->Data.U16 + ((pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height) >> (1 + halfHeight)));
+                break;
+            case MFX_FOURCC_YUV444_16:
+                pSurfaceOut->Data.U16 = pBuffer + pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height;
+                pSurfaceOut->Data.V16 = pSurfaceOut->Data.U16 + pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height;
                 break;
         }
         pSurfaceOut->Data.PitchLow <<= 1;

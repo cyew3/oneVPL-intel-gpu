@@ -1285,7 +1285,10 @@ bool MFX_VP9_Utility::CheckVideoParam(mfxVideoParam *p_in, eMFXPlatform platform
         return false;
 
     if (p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 &&
-        p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_P010)
+        p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_AYUV &&
+        p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_P010 &&
+        //p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y210 &&
+        p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y410)
         return false;
 
     // both zero or not zero
@@ -1302,8 +1305,14 @@ bool MFX_VP9_Utility::CheckVideoParam(mfxVideoParam *p_in, eMFXPlatform platform
             return false;
     }
 
-    if (MFX_CHROMAFORMAT_YUV420 != p_in->mfx.FrameInfo.ChromaFormat)
+    switch (p_in->mfx.FrameInfo.ChromaFormat)
     {
+    case MFX_CHROMAFORMAT_YUV420:
+    case MFX_CHROMAFORMAT_YUV422:
+    case MFX_CHROMAFORMAT_YUV444:
+        break;
+
+    default:
         return false;
     }
 
@@ -1336,6 +1345,8 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVi
     mfxU32 profile = 0;
     mfxU16 width = 0;
     mfxU16 height = 0;
+    mfxU32 subsampling_x = 0;
+    mfxU32 subsampling_y = 0;
 
     mfxU32 bit_depth = 8;
     for (;;)
@@ -1372,9 +1383,18 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVi
 
             if (SRGB != (COLOR_SPACE)bsReader.GetBits(3)) // color_space
             {
-                bsReader.GetBit();
+                bsReader.GetBit(); // color_range
                 if (1 == profile || 3 == profile)
-                    bsReader.GetBits(3);
+                {
+                    subsampling_x = bsReader.GetBit();
+                    subsampling_y = bsReader.GetBit();
+                    bsReader.GetBit(); // reserved_zero
+                }
+                else
+                {
+                    subsampling_x = 1;
+                    subsampling_y = 1;
+                }
             }
             else
             {
@@ -1408,9 +1428,18 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVi
             {
                 if (SRGB != (COLOR_SPACE)bsReader.GetBits(3)) // color_space
                 {
-                    bsReader.GetBit();
+                    bsReader.GetBit(); // color_range
                     if (1 == profile || 3 == profile)
-                        bsReader.GetBits(3);
+                    {
+                        subsampling_x = bsReader.GetBit();
+                        subsampling_y = bsReader.GetBit();
+                        bsReader.GetBit(); // reserved_zero
+                    }
+                    else
+                    {
+                        subsampling_x = 1;
+                        subsampling_y = 1;
+                    }
                 }
                 else
                 {
@@ -1450,14 +1479,34 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVi
     params->mfx.FrameInfo.Width = (params->mfx.FrameInfo.CropW + 15) & ~0x0f;
     params->mfx.FrameInfo.Height = (params->mfx.FrameInfo.CropH + 15) & ~0x0f;
 
+    if (!subsampling_x && !subsampling_y)
+        params->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+    //else if (!subsampling_x && subsampling_y)
+    //    params->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV440;
+    else if (subsampling_x && !subsampling_y)
+        params->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+    else if (subsampling_x && subsampling_y)
+        params->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+
     switch (bit_depth)
     {
         case  8:
             params->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+            if (MFX_CHROMAFORMAT_YUV444 == params->mfx.FrameInfo.ChromaFormat)
+                params->mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+            else if (MFX_CHROMAFORMAT_YUV422 == params->mfx.FrameInfo.ChromaFormat)
+                params->mfx.FrameInfo.FourCC = MFX_FOURCC_YUY2;
+            else
+                params->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
             break;
 
         case 10:
-            params->mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
+            if(MFX_CHROMAFORMAT_YUV444 == params->mfx.FrameInfo.ChromaFormat)
+                params->mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
+            else if (MFX_CHROMAFORMAT_YUV422 == params->mfx.FrameInfo.ChromaFormat)
+                params->mfx.FrameInfo.FourCC = MFX_FOURCC_Y210;
+            else
+                params->mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
             params->mfx.FrameInfo.BitDepthLuma = 10;
             params->mfx.FrameInfo.BitDepthChroma = 10;
             break;
@@ -1468,8 +1517,6 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVi
             params->mfx.FrameInfo.FourCC = 0;
             break;
     }
-
-    params->mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 
     if (core->GetPlatformType() == MFX_PLATFORM_HARDWARE && params->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
         params->mfx.FrameInfo.Shift = 1;

@@ -163,7 +163,13 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
     m_pCore = mfxCore;
     m_IsUseExternalFrames = isUseExternalFrames;
 
-    Ipp32s bit_depth = (params->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || params->mfx.FrameInfo.FourCC == MFX_FOURCC_P210)? 10 : 8;
+    Ipp32s bit_depth;
+    if (params->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 ||
+        params->mfx.FrameInfo.FourCC == MFX_FOURCC_P210 ||
+        params->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410)
+        bit_depth = 10;
+    else
+        bit_depth = 8;
 
     UMC::ColorFormat color_format;
 
@@ -181,6 +187,12 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
     case MFX_FOURCC_P210:
         color_format = UMC::NV16;
         break;
+    case MFX_FOURCC_Y210:
+        color_format = UMC::Y210;
+        break;
+    case MFX_FOURCC_Y410:
+        color_format = UMC::Y410;
+        break;
     case MFX_FOURCC_RGB4:
         color_format = UMC::RGB32;
         break;
@@ -189,6 +201,9 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
         break;
     case MFX_FOURCC_YUY2:
         color_format = UMC::YUY2;
+        break;
+    case MFX_FOURCC_AYUV:
+        color_format = UMC::AYUV;
         break;
 #if defined (MFX_VA_WIN)
     case DXGI_FORMAT_AYUV:
@@ -359,8 +374,13 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
     case UMC::YUY2:
     case UMC::IMC3:
     case UMC::RGB32:
+    case UMC::AYUV:
     case UMC::YUV444:
     case UMC::YUV411:
+    case UMC::Y210:
+    case UMC::Y216:
+    case UMC::Y410:
+    case UMC::Y416:
         break;
     default:
         return UMC::UMC_ERR_UNSUPPORTED;
@@ -719,8 +739,10 @@ mfxI32 mfx_UMC_FrameAllocator::AddSurface(mfxFrameSurface1 *surface)
     case MFX_FOURCC_YV12:
     case MFX_FOURCC_YUY2:
     case MFX_FOURCC_RGB4:
+    case MFX_FOURCC_AYUV:
     case MFX_FOURCC_P010:
     case MFX_FOURCC_P210:
+    case MFX_FOURCC_Y410:
 #if defined (MFX_VA_WIN)
     case DXGI_FORMAT_AYUV:
 #endif

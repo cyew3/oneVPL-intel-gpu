@@ -1058,7 +1058,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
             sts = pCmCopy->CopyShiftVideoToSystemMemory(pDst->Data.Y, pDst->Data.Pitch,(mfxU32)verticalPitch,pSrc->Data.MemId, 0, roi, 16-pDst->Info.BitDepthLuma);
             MFX_CHECK_STS(sts);
         }
-        else if(m_bCmCopy == true && CM_ALIGNED(pDst->Data.Pitch) && (pDst->Info.FourCC == MFX_FOURCC_RGB4 || pDst->Info.FourCC == MFX_FOURCC_BGR4) && CM_ALIGNED(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B)) && roi.height <= 16352 && roi.width <= 16352){
+        else if(m_bCmCopy == true && CM_ALIGNED(pDst->Data.Pitch) && (pDst->Info.FourCC == MFX_FOURCC_RGB4 || pDst->Info.FourCC == MFX_FOURCC_BGR4 || pDst->Info.FourCC == MFX_FOURCC_AYUV) && CM_ALIGNED(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B)) && roi.height <= 16352 && roi.width <= 16352){
             sts = pCmCopy->CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch, (mfxU32)pSrc->Info.Height, pSrc->Data.MemId, 0, roi);
             MFX_CHECK_STS(sts);
         }
@@ -1174,8 +1174,34 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
                 }
                     break;
 
-                case MFX_FOURCC_RGB4:
+                case MFX_FOURCC_Y410:
+                {
+                    MFX_CHECK_NULL_PTR1(pDst->Data.Y410);
+
+                    mfxU8* ptrDst = (mfxU8*) pDst->Data.Y410;
+
+                    roi.width *= 4;
+
+                    sts = pFastCopy->Copy(ptrDst, dstPitch, (mfxU8 *)sLockRect.pBits, srcPitch, roi);
+                    MFX_CHECK_STS(sts);
+                }
+                    break;
+
                 case MFX_FOURCC_A2RGB10:
+                {
+                    MFX_CHECK_NULL_PTR1(pDst->Data.A2RGB10);
+
+                    mfxU8* ptrDst = (mfxU8*) pDst->Data.A2RGB10;
+
+                    roi.width *= 4;
+
+                    sts = pFastCopy->Copy(ptrDst, dstPitch, (mfxU8 *)sLockRect.pBits, srcPitch, roi);
+                    MFX_CHECK_STS(sts);
+                }
+                    break;
+
+                case MFX_FOURCC_AYUV:
+                case MFX_FOURCC_RGB4:
                 {
                     MFX_CHECK_NULL_PTR1(pDst->Data.R);
                     MFX_CHECK_NULL_PTR1(pDst->Data.G);

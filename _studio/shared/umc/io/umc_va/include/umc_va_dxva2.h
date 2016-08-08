@@ -83,6 +83,14 @@ DEFINE_GUID_(sDXVA_ModeH264_VLD_Stereo_Progressive_NoFGT,         0xd79be8da, 0x
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_MainProfile,  0x8c56eb1e, 0x2b47, 0x466f, 0x8d, 0x33, 0x7d, 0xbc, 0xd6, 0x3f, 0x3d, 0xf2);
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main10Profile, 0x75fc75f7, 0xc589, 0x4a07, 0xa2, 0x5b, 0x72, 0xe0, 0x3b, 0x03, 0x83, 0xb3);
 
+// {E484DCB8-CAC9-4859-99F5-5C0D45069089}
+DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main422_10Profile, 
+0xe484dcb8, 0xcac9, 0x4859, 0x99, 0xf5, 0x5c, 0xd, 0x45, 0x6, 0x90, 0x89);
+
+// {6A6A81BA-912A-485D-B57F-CCD2D37B8D94}
+DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main444_10Profile, 
+0x6a6a81ba, 0x912a, 0x485d, 0xb5, 0x7f, 0xcc, 0xd2, 0xd3, 0x7b, 0x8d, 0x94);
+
 struct GuidProfile
 {
     Ipp32s      profile;
@@ -203,6 +211,10 @@ bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
     case VP8_VLD:
     case VP9_VLD:
     case VP9_10_VLD:
+    case VP9_VLD_422:
+    case VP9_VLD_444:
+    case VP9_10_VLD_422:
+    case VP9_10_VLD_444:
         res = true;
         break;
     case MPEG2_VLD:
@@ -234,13 +246,17 @@ bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
         break;
 
     case H265_VLD:
+    case H265_VLD_422:
+    case H265_VLD_444:
     case H265_10_VLD:
+    case H265_10_VLD_422:
+    case H265_10_VLD_444:
         if (profile_flags & VA_LONG_SLICE_MODE)
-            res = (2 == config->ConfigBitstreamRaw);
+            res = (2 == config->ConfigBitstreamRaw || 3 == config->ConfigBitstreamRaw);
         else if (profile_flags & VA_SHORT_SLICE_MODE)
             res = (1 == config->ConfigBitstreamRaw);
         else
-            res = (1 == config->ConfigBitstreamRaw || 2 == config->ConfigBitstreamRaw);
+            res = (1 == config->ConfigBitstreamRaw || 2 == config->ConfigBitstreamRaw || 3 == config->ConfigBitstreamRaw);
         break;
 
     default:

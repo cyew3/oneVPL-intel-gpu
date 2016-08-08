@@ -319,7 +319,7 @@ namespace UMC_VP9_DECODER
             //4:4:4
             switch (info->bit_depth)
             {
-                case  8: return UMC::YUV444;
+                case  8: return UMC::AYUV;
                 case 10: return UMC::Y410;
                 case 12: return UMC::Y416;
                 default: return UMC::NONE;
