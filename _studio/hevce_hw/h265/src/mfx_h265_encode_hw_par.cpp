@@ -1550,7 +1550,7 @@ void SetDefaults(
         if (par.isTL() || hwCaps.SliceIPOnly || IsOn(par.mfx.LowPower) || !par.NumRefLX[1] || par.mfx.GopPicSize < 3 || par.mfx.NumRefFrame == 1)
             par.mfx.GopRefDist = 1; // in case of correct SliceIPOnly using of IsOn(par.mfx.LowPower) is not necessary
         else
-            par.mfx.GopRefDist = Min<mfxU16>(par.mfx.GopPicSize - 1, (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT) ? 8 : 4);
+            par.mfx.GopRefDist = Min<mfxU16>(par.mfx.GopPicSize - 1, (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP || par.isSWBRC()) ? 8 : 4);
     }
 
     if (par.m_ext.CO2.BRefType == MFX_B_REF_UNKNOWN)
