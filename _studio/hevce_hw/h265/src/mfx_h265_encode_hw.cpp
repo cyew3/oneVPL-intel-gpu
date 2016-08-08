@@ -934,6 +934,11 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
                taskForExecute->m_qpY = (mfxI8)m_brc->GetQP(m_vpar,*taskForExecute);
                taskForExecute->m_qpY = taskForExecute->m_qpY <51? taskForExecute->m_qpY : 51; //
                taskForExecute->m_sh.slice_qp_delta = mfxI8(taskForExecute->m_qpY - (m_vpar.m_pps.init_qp_minus26 + 26));
+
+               if (taskForExecute->m_recode && m_vpar.AsyncDepth > 1)
+               {
+                   taskForExecute->m_sh.temporal_mvp_enabled_flag = 0; // WA
+               }
             }
             sts = m_ddi->Execute(*taskForExecute, surfaceHDL.first);
             MFX_CHECK_STS(sts);
