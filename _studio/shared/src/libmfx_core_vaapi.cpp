@@ -204,6 +204,7 @@ const mfx_device_item listLegalDevIDs[] = {
     { 0x1927, MFX_HW_SCL }, // U-ULT, 2x3e, 550 (28W)
     { 0x192A, MFX_HW_SCL }, // Server, 2x3
     { 0x192B, MFX_HW_SCL }, // Halo 3e
+    { 0x192D, MFX_HW_SCL },
     /* GT4e*/
     { 0x1932, MFX_HW_SCL }, // DT
     { 0x193A, MFX_HW_SCL }, // SRV
