@@ -693,28 +693,39 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
         mfxU32 fieldParity = (m_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF) ? (1 - field) : field;
 
         mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBufferFEI(output, fieldParity);
+
+        if (!extFeiSliceInRintime) continue; /* cannot extract type for this field in runtime without SliceHeader */
+
+        mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(output, fieldParity);
         /*And runtime params has priority before iInit() params */
-        if ((NULL != extFeiSliceInRintime) && (0 == fieldParity))
+
+        bool is_reference_B_field  = extFeiPPSinRuntime && extFeiPPSinRuntime->ReferencePicFlag;
+        bool is_reference_IP_field = !extFeiPPSinRuntime || is_reference_B_field;
+        /* each I without PPS is IDR */
+        /* TODO: take this information from GOP structure, if no PPS provided */
+        bool is_IDR_field = !extFeiPPSinRuntime || (extFeiPPSinRuntime && extFeiPPSinRuntime->IDRPicFlag);
+
+        mfxU8 type = 0, reference_IP_flag = is_reference_IP_field ? MFX_FRAMETYPE_REF : 0,
+            reference_B_flag = is_reference_B_field ? MFX_FRAMETYPE_REF : 0,
+            IDR_flag = is_IDR_field ? MFX_FRAMETYPE_IDR : 0;
+
+        mfxU16 numL0Active = extFeiSliceInRintime->Slice[0].NumRefIdxL0Active,
+               numL1Active = extFeiSliceInRintime->Slice[0].NumRefIdxL1Active;
+
+        if ((numL0Active == 0) && (numL1Active == 0))
+            type = MFX_FRAMETYPE_I | reference_IP_flag | IDR_flag;
+        else if ((0 != numL0Active) && (0 == numL1Active))
+            type = MFX_FRAMETYPE_P | reference_IP_flag;
+        else if ((0 != numL0Active) || (0 != numL1Active))
+            type = MFX_FRAMETYPE_B | reference_B_flag;
+
+        if (fieldParity == 0)
         {
-            if (0 == extFeiSliceInRintime->Slice[0].NumRefIdxL0Active)
-                mtype_first_field = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR;
-            else if ((0 != extFeiSliceInRintime->Slice[0].NumRefIdxL0Active) &&
-                (0 == extFeiSliceInRintime->Slice[0].NumRefIdxL1Active) )
-                mtype_first_field = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
-            else if ((0 != extFeiSliceInRintime->Slice[0].NumRefIdxL0Active) ||
-                (0 != extFeiSliceInRintime->Slice[0].NumRefIdxL1Active) )
-                mtype_first_field = MFX_FRAMETYPE_B;
+            mtype_first_field  = type;
         }
-        if ((NULL != extFeiSliceInRintime) && (1 == fieldParity))
+        else
         {
-            if (0 == extFeiSliceInRintime->Slice[0].NumRefIdxL0Active)
-                mtype_second_field = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR;
-            else if ((0 != extFeiSliceInRintime->Slice[0].NumRefIdxL0Active) &&
-                (0 == extFeiSliceInRintime->Slice[0].NumRefIdxL1Active) )
-                mtype_second_field = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
-            else if ((0 != extFeiSliceInRintime->Slice[0].NumRefIdxL0Active) ||
-                (0 != extFeiSliceInRintime->Slice[0].NumRefIdxL1Active) )
-                mtype_second_field = MFX_FRAMETYPE_B;
+            mtype_second_field = type;
         }
     }
 
@@ -725,15 +736,16 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     m_free.front().m_type = Pair<mfxU8>(mtype_first_field, mtype_second_field);
 
     m_free.front().m_frameOrder = input->InSurface->Data.FrameOrder;
-    /* each I- is IDR */
-    if (!(mtype_first_field & MFX_FRAMETYPE_IDR))
-        m_free.front().m_insertSps[0] = m_free.front().m_insertSps[1] = 0;
-    else
+
+    bool first_field_is_IDR = mtype_first_field  & MFX_FRAMETYPE_IDR,
+        second_field_is_IDR = mtype_second_field & MFX_FRAMETYPE_IDR;
+
+    m_free.front().m_insertSps[0] = first_field_is_IDR;
+    m_free.front().m_insertSps[1] = second_field_is_IDR;
+
+    if (first_field_is_IDR || second_field_is_IDR)
     {
         m_free.front().m_frameOrderIdr = input->InSurface->Data.FrameOrder;
-        /* Need to insert SPS for IDR frame */
-        m_free.front().m_insertSps[0] = 1;
-        m_free.front().m_insertSps[1] = 0;
     }
 
     if ((mtype_first_field & MFX_FRAMETYPE_I) || (mtype_second_field & MFX_FRAMETYPE_I))

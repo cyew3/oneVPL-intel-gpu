@@ -712,7 +712,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         m_statParams.future_ref_stat_buf = &m_statOutId[surfFutureIndexInList];
     }
 
-    if ((0 == m_statParams.num_past_references) && (0 == m_statParams.disable_mv_output))
+    if ((0 == m_statParams.num_past_references) && (0 == m_statParams.num_future_references))
     {
         m_statParams.disable_mv_output = 1;
     }
@@ -1307,7 +1307,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     /* In buffers */
     const mfxEncodeCtrl& ctrl = task.m_ctrl;
     mfxExtFeiPPS *pDataPPS                 = GetExtBufferFEI(in,feiFieldId);
-    mfxExtFeiSPS *pDataSPS = GetExtBufferFEI(in,feiFieldId);
+    mfxExtFeiSPS *pDataSPS                 = GetExtBufferFEI(in,0);
     mfxExtFeiSliceHeader *pDataSliceHeader = GetExtBufferFEI(in,feiFieldId);
     mfxExtFeiEncMBCtrl* mbctrl             = GetExtBufferFEI(in,feiFieldId);
     mfxExtFeiEncMVPredictors* mvpred       = GetExtBufferFEI(in,feiFieldId);
@@ -1674,28 +1674,74 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 
     UpdatePPS(task, fieldId, m_pps, m_reconQueue);
 
+    /* The code below is to be refactored */
     /* to fill DPB in PPS List*/
+    /*
     if ((maxNumRefL0 > 0) && (task.m_type[fieldId] & MFX_FRAMETYPE_PB))
     {
+        mfxHDL handle;
+        mfxU16 indexFromPPSHeader;
+        VASurfaceID s;
+
         for (ref_counter_l0 = 0; ref_counter_l0 < maxNumRefL0; ref_counter_l0++)
         {
-            mfxHDL handle;
-            mfxU16 indexFromPPSHeader = 0;
-            indexFromPPSHeader = pDataPPS->ReferenceFrames[ref_counter_l0];
+           indexFromPPSHeader = pDataPPS->ReferenceFrames[ref_counter_l0];
+
             if (0xffff != indexFromPPSHeader)
             {
                 mfxSts = m_core->GetExternalFrameHDL(in->L0Surface[indexFromPPSHeader]->Data.MemId, &handle);
                 MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
-                VASurfaceID s = *(VASurfaceID*) handle; //id in the memory by ptr
+                s = *(VASurfaceID*) handle; //id in the memory by ptr
+                m_pps.ReferenceFrames[ref_counter_l0].picture_id = s;
+
+#if defined(_DEBUG)
                 if (m_pps.ReferenceFrames[ref_counter_l0].picture_id != s)
                 {
                     mdprintf(stderr, "!!!Warning picture_id from in->L0Surface[%u] = %u\n", ref_counter_l0, s);
                     mdprintf(stderr, "   But library's is m_pps.ReferenceFrames[%u].picture_id = %u\n", ref_counter_l0, m_pps.ReferenceFrames[ref_counter_l0].picture_id);
-                    m_pps.ReferenceFrames[ref_counter_l0].picture_id = s;
                 }
+#endif
             } // if (VA_INVALID_ID != indexFromPPSHeader)
         } // for (ref_counter_l0 = 0; ref_counter_l0 < maxNumRefL0; ref_counter_l0++)
-    }
+
+        for (; ref_counter_l0 < 32; ref_counter_l0++)
+        {
+            m_pps.ReferenceFrames[ref_counter_l0].picture_id = VA_INVALID_ID;
+        }
+    }*/
+    /*
+    if ((maxNumRefL1 > 0) && (task.m_type[fieldId] & MFX_FRAMETYPE_PB))
+    {
+        mfxHDL handle;
+        mfxU16 indexFromPPSHeader;
+        VASurfaceID s;
+
+        for (ref_counter_l1 = 0; ref_counter_l1 < maxNumRefL1; ref_counter_l1++)
+        {
+            indexFromPPSHeader = pDataPPS->ReferenceFrames[ref_counter_l1];
+
+            if (0xffff != indexFromPPSHeader)
+            {
+                mfxSts = m_core->GetExternalFrameHDL(in->L0Surface[indexFromPPSHeader]->Data.MemId, &handle);
+                MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
+                s = *(VASurfaceID*)handle; //id in the memory by ptr
+                //m_pps.ReferenceFrames[ref_counter_l1].picture_id = s;
+
+#if defined(_DEBUG)
+                if (m_pps.ReferenceFrames[ref_counter_l1].picture_id != s)
+                {
+                    mdprintf(stderr, "!!!Warning picure_id from in->L0Surface[%u] = %u\n", ref_counter_l1, s);
+                    mdprintf(stderr, "   But library's is m_pps.ReferenceFrames[%u].picture_id = %u\n", ref_counter_l1, m_pps.ReferenceFrames[ref_counter_l1].picture_id);
+                }
+#endif
+            } // if (VA_INVALID_ID != indexFromPPSHeader)
+        } // for (ref_counter_l1 = 0; ref_counter_l1 < maxNumRefL1; ref_counter_l1++)
+
+        for (; ref_counter_l1 < 32; ref_counter_l1++)
+        {
+            m_pps.ReferenceFrames[ref_counter_l1].picture_id = VA_INVALID_ID;
+        }
+    }*/
 
     /* Check application's provided data */
     if (NULL != pDataPPS)
@@ -2721,7 +2767,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     const mfxEncodeCtrl& ctrl = task.m_ctrl;
     /* input buffers */
     mfxExtFeiEncFrameCtrl* frameCtrl       = GetExtBufferFEI(out,feiFieldId);
-    mfxExtFeiSPS *pDataSPS = GetExtBufferFEI(out,feiFieldId);
+    mfxExtFeiSPS *pDataSPS                 = GetExtBufferFEI(out,0);
     mfxExtFeiPPS *pDataPPS                 = GetExtBufferFEI(out,feiFieldId);
     mfxExtFeiSliceHeader *pDataSliceHeader = GetExtBufferFEI(out,feiFieldId);
 
@@ -3073,28 +3119,74 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
     UpdatePPS(task, fieldId, m_pps, m_reconQueue);
 
+    /* The code below is to be refactored */
     /* to fill DPB in PPS List*/
+    /*
     if ((maxNumRefL0 > 0) && (task.m_type[fieldId] & MFX_FRAMETYPE_PB))
     {
+        VASurfaceID s;
+        mfxHDL handle;
+        mfxU16 indexFromPPSHeader = 0;
+
         for (ref_counter_l0 = 0; ref_counter_l0 < maxNumRefL0; ref_counter_l0++)
         {
-            mfxHDL handle;
-            mfxU16 indexFromPPSHeader = 0;
             indexFromPPSHeader = pDataPPS->ReferenceFrames[ref_counter_l0];
             if (0xffff != indexFromPPSHeader)
             {
                 mfxSts = m_core->GetExternalFrameHDL(in->L0Surface[indexFromPPSHeader]->Data.MemId, &handle);
                 MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
-                VASurfaceID s = *(VASurfaceID*) handle; //id in the memory by ptr
+
+                s = *(VASurfaceID*) handle; //id in the memory by ptr
+                m_pps.ReferenceFrames[ref_counter_l0].picture_id = s;
+
+#if defined(_DEBUG)
                 if (m_pps.ReferenceFrames[ref_counter_l0].picture_id != s)
                 {
                     mdprintf(stderr, "!!!Warning picture_id from in->L0Surface[%u] = %u\n", ref_counter_l0, s);
                     mdprintf(stderr, "   But library's is m_pps.ReferenceFrames[%u].picture_id = %u\n", ref_counter_l0, m_pps.ReferenceFrames[ref_counter_l0].picture_id);
-                    m_pps.ReferenceFrames[ref_counter_l0].picture_id = s;
                 }
+#endif
             } // if (VA_INVALID_ID != indexFromPPSHeader)
         } // for (ref_counter_l0 = 0; ref_counter_l0 < maxNumRefL0; ref_counter_l0++)
-    }
+
+        for (; ref_counter_l0 < 32; ref_counter_l0++)
+        {
+            m_pps.ReferenceFrames[ref_counter_l0].picture_id = VA_INVALID_ID;
+        }
+    }*/
+    /*
+    if ((maxNumRefL1 > 0) && (task.m_type[fieldId] & MFX_FRAMETYPE_PB))
+    {
+        mfxHDL handle;
+        mfxU16 indexFromPPSHeader;
+        VASurfaceID s;
+
+        for (ref_counter_l1 = 0; ref_counter_l1 < maxNumRefL1; ref_counter_l1++)
+        {
+            indexFromPPSHeader = pDataPPS->ReferenceFrames[ref_counter_l1];
+
+            if (0xffff != indexFromPPSHeader)
+            {
+                mfxSts = m_core->GetExternalFrameHDL(in->L0Surface[indexFromPPSHeader]->Data.MemId, &handle);
+                MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
+                s = *(VASurfaceID*)handle; //id in the memory by ptr
+                //m_pps.ReferenceFrames[ref_counter_l1].picture_id = s;
+
+#if defined(_DEBUG)
+                if (m_pps.ReferenceFrames[ref_counter_l1].picture_id != s)
+                {
+                    mdprintf(stderr, "!!!Warning picure_id from in->L0Surface[%u] = %u\n", ref_counter_l1, s);
+                    mdprintf(stderr, "   But library's is m_pps.ReferenceFrames[%u].picture_id = %u\n", ref_counter_l1, m_pps.ReferenceFrames[ref_counter_l1].picture_id);
+                }
+#endif
+            } // if (VA_INVALID_ID != indexFromPPSHeader)
+        } // for (ref_counter_l1 = 0; ref_counter_l1 < maxNumRefL1; ref_counter_l1++)
+
+        for (; ref_counter_l1 < 32; ref_counter_l1++)
+        {
+            m_pps.ReferenceFrames[ref_counter_l1].picture_id = VA_INVALID_ID;
+        }
+    }*/
 
     /* Check application's provided data */
     if (NULL != pDataPPS)
