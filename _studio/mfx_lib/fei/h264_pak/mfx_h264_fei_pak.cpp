@@ -79,7 +79,7 @@ static bool IsVideoParamExtBufferIdSupported(mfxU32 id)
         id == MFX_EXTBUFF_ENCODER_RESET_OPTION      ||
         id == MFX_EXTBUFF_ENCODER_CAPABILITY        ||
         id == MFX_EXTBUFF_ENCODER_WIDI_USAGE        ||
-        id == MFX_EXTBUFF_ENCODER_ROI ||
+        id == MFX_EXTBUFF_ENCODER_ROI               ||
         id == MFX_EXTBUFF_FEI_PARAM;
 }
 
@@ -149,6 +149,7 @@ static bool CheckExtenedBuffer(mfxVideoParam *par)
     }
     return true;
 }
+
 static
 mfxStatus GetNativeSurface(
     VideoCORE & core,
@@ -401,7 +402,9 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
         m_firstFieldDone = 0;
 
     if (0 == m_firstFieldDone)
+    {
         m_prevTask = task;
+    }
 
     return sts;
 }
@@ -462,7 +465,6 @@ mfxStatus VideoPAK_PAK::Query(DdiTask& task)
     ReleaseResource(m_rec, task.m_midRec);
 
     return MFX_ERR_NONE;
-
 }
 
 mfxStatus VideoPAK_PAK::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrameAllocRequest *request)
@@ -500,24 +502,22 @@ mfxStatus VideoPAK_PAK::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrameAll
     request->Info                = par->mfx.FrameInfo;
 #endif
     return MFX_ERR_NONE;
-} 
-
+}
 
 VideoPAK_PAK::VideoPAK_PAK(VideoCORE *core,  mfxStatus * sts)
-    : m_bInit( false )
-    , m_core( core )
+    : m_bInit(false)
+    , m_core(core)
     , m_prevTask()
-    ,m_singleFieldProcessingMode(0)
-    ,m_firstFieldDone(0)
+    , m_singleFieldProcessingMode(0)
+    , m_firstFieldDone(0)
 {
     *sts = MFX_ERR_NONE;
-} 
-
+}
 
 VideoPAK_PAK::~VideoPAK_PAK()
 {
     Close();
-} 
+}
 
 mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
 {
@@ -629,20 +629,19 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
 
     m_bInit = true;
     return sts;
-} 
+}
+
 mfxStatus VideoPAK_PAK::Reset(mfxVideoParam *par)
 {
     Close();
     return Init(par);
-} 
+}
 
 mfxStatus VideoPAK_PAK::GetVideoParam(mfxVideoParam *par)
 {
     MFX_CHECK(CheckExtenedBuffer(par), MFX_ERR_UNDEFINED_BEHAVIOR);
     return MFX_ERR_NONE;
 }
-
-
 
 mfxStatus VideoPAK_PAK::RunSeqHeader(mfxFrameCUC *cuc)
 {
@@ -755,7 +754,7 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
         m_free.front().m_frameOrderI = input->InSurface->Data.FrameOrder;
     }
 
-    /* By default insert PSS for each frame */
+    /* By default insert PPS for each frame */
     m_free.front().m_insertPps[0] = 1;
     m_free.front().m_insertPps[1] = 1;
     m_free.front().m_timeStamp = input->InSurface->Data.TimeStamp;
@@ -830,14 +829,14 @@ static mfxStatus CopyRawSurfaceToVideoMemory(  VideoCORE &  core,
     }
     else
     {
-        d3dSurf.MemId =  src_sys->Data.MemId;    
+        d3dSurf.MemId =  src_sys->Data.MemId;
     }
 
     if (video.IOPattern != MFX_IOPATTERN_IN_OPAQUE_MEMORY) 
        MFX_CHECK_STS(core.GetExternalFrameHDL(d3dSurf.MemId, &handle))
     else
        MFX_CHECK_STS(core.GetFrameHDL(d3dSurf.MemId, &handle));
-    
+
     return MFX_ERR_NONE;
 }
 
@@ -854,7 +853,7 @@ mfxStatus VideoPAK_PAK::Close(void)
     return MFX_ERR_NONE;
 } 
 
-#endif  
+#endif  // defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined(MFX_ENABLE_H264_VIDEO_FEI_PAK)
 #endif  // MFX_VA
 
 /* EOF */

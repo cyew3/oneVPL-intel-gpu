@@ -33,7 +33,7 @@
 #include "mfx_ext_buffers.h"
 
 //#if defined (MFX_VA_LINUX)
-    #include "mfx_h264_encode_vaapi.h"    
+    #include "mfx_h264_encode_vaapi.h"
 //#endif
 
 #if defined(_DEBUG)
@@ -47,7 +47,7 @@ using namespace MfxEncPREENC;
 namespace MfxEncPREENC{
 static mfxU16 GetGopSize(mfxVideoParam *par)
 {
-    return  par->mfx.GopPicSize == 0 ?  500 : par->mfx.GopPicSize ;
+    return  par->mfx.GopPicSize == 0 ? 500 : par->mfx.GopPicSize;
 }
 static mfxU16 GetRefDist(mfxVideoParam *par)
 {
@@ -79,7 +79,7 @@ static bool IsVideoParamExtBufferIdSupported(mfxU32 id)
         id == MFX_EXTBUFF_ENCODER_RESET_OPTION      ||
         id == MFX_EXTBUFF_ENCODER_CAPABILITY        ||
         id == MFX_EXTBUFF_ENCODER_WIDI_USAGE        ||
-        id == MFX_EXTBUFF_ENCODER_ROI ||
+        id == MFX_EXTBUFF_ENCODER_ROI               ||
         id == MFX_EXTBUFF_FEI_PARAM;
 }
 
@@ -874,24 +874,23 @@ mfxStatus VideoENC_PREENC::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrame
     request->Info                = par->mfx.FrameInfo;
 #endif
     return MFX_ERR_NONE;
-} 
+} // mfxStatus VideoENC_PREENC::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrameAllocRequest *request)
 
 
 VideoENC_PREENC::VideoENC_PREENC(VideoCORE *core,  mfxStatus * sts)
     : m_bInit( false )
     , m_core( core )
-    ,m_singleFieldProcessingMode(0)
-    ,m_firstFieldDone(0)
+    , m_singleFieldProcessingMode(0)
+    , m_firstFieldDone(0)
 {
     *sts = MFX_ERR_NONE;
-} 
+}
 
 
 VideoENC_PREENC::~VideoENC_PREENC()
 {
     Close();
-
-} 
+}
 
 mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
 {
@@ -964,7 +963,7 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
     request.NumFrameSuggested = request.NumFrameMin + m_video.AsyncDepth;
     request.AllocId = par->AllocId;
     /* TODO:
-     * Actually MSDK since drv build 54073 does not need to Alloc surcae here*/
+     * Actually MSDK since drv build 54073 does not need to Alloc surface here*/
     sts = m_core->AllocFrames(&request, &m_raw);
     //sts = m_raw.Alloc(m_core, request);
     MFX_CHECK_STS(sts);
@@ -986,21 +985,22 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
 
     m_bInit = true;
     return checkStatus;
-} 
+}
+
 mfxStatus VideoENC_PREENC::Reset(mfxVideoParam *par)
 {
     Close();
     return Init(par);
-} 
+}
 
 mfxStatus VideoENC_PREENC::GetVideoParam(mfxVideoParam *par)
 {
     MFX_CHECK(CheckExtenedBuffer(par), MFX_ERR_UNDEFINED_BEHAVIOR);
     return MFX_ERR_NONE;
-} 
+}
 
 mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
-                    mfxENCInput *input, 
+                    mfxENCInput *input,
                     mfxENCOutput *output,
                     MFX_ENTRY_POINT pEntryPoints[],
                     mfxU32 &numEntryPoints)
@@ -1044,8 +1044,8 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
     m_free.front().m_type = Pair<mfxU8>(mtype_first_field, mtype_second_field);
 
     m_free.front().m_extFrameTag = input->InSurface->Data.FrameOrder;
-    m_free.front().m_frameOrder = input->InSurface->Data.FrameOrder;
-    m_free.front().m_timeStamp = input->InSurface->Data.TimeStamp;
+    m_free.front().m_frameOrder  = input->InSurface->Data.FrameOrder;
+    m_free.front().m_timeStamp   = input->InSurface->Data.TimeStamp;
     m_free.front().m_userData.resize(2);
     m_free.front().m_userData[0] = input;
     m_free.front().m_userData[1] = output;
@@ -1080,18 +1080,18 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
 
     m_core->IncreaseReference(&input->InSurface->Data);
 
-    pEntryPoints[0].pState = this;
-    pEntryPoints[0].pParam = &m_incoming.front();
-    pEntryPoints[0].pCompleteProc = 0;
-    pEntryPoints[0].pGetSubTaskProc = 0;
+    pEntryPoints[0].pState               = this;
+    pEntryPoints[0].pParam               = &m_incoming.front();
+    pEntryPoints[0].pCompleteProc        = 0;
+    pEntryPoints[0].pGetSubTaskProc      = 0;
     pEntryPoints[0].pCompleteSubTaskProc = 0;
-    pEntryPoints[0].requiredNumThreads = 1;
-    pEntryPoints[0].pRoutineName = "AsyncRoutine";
-    pEntryPoints[0].pRoutine = AsyncRoutine;
+    pEntryPoints[0].requiredNumThreads   = 1;
+    pEntryPoints[0].pRoutineName         = "AsyncRoutine";
+    pEntryPoints[0].pRoutine             = AsyncRoutine;
     pEntryPoints[1] = pEntryPoints[0];
     pEntryPoints[1].pRoutineName = "Async Query";
-    pEntryPoints[1].pRoutine = AsyncQuery;
-    pEntryPoints[1].pParam = &m_incoming.front();
+    pEntryPoints[1].pRoutine     = AsyncQuery;
+    pEntryPoints[1].pParam       = &m_incoming.front();
 
     numEntryPoints = 2;
 
@@ -1126,7 +1126,7 @@ static mfxStatus CopyRawSurfaceToVideoMemory(  VideoCORE &  core,
     }
     else
     {
-        d3dSurf.MemId =  src_sys->Data.MemId;    
+        d3dSurf.MemId =  src_sys->Data.MemId;
     }
 
     if (video.IOPattern != MFX_IOPATTERN_IN_OPAQUE_MEMORY) 

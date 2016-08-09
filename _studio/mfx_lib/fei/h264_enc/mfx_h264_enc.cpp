@@ -79,7 +79,7 @@ static bool IsVideoParamExtBufferIdSupported(mfxU32 id)
         id == MFX_EXTBUFF_ENCODER_RESET_OPTION      ||
         id == MFX_EXTBUFF_ENCODER_CAPABILITY        ||
         id == MFX_EXTBUFF_ENCODER_WIDI_USAGE        ||
-        id == MFX_EXTBUFF_ENCODER_ROI ||
+        id == MFX_EXTBUFF_ENCODER_ROI               ||
         id == MFX_EXTBUFF_FEI_PARAM;
 }
 
@@ -284,7 +284,7 @@ mfxStatus VideoENC_ENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
     mfxExtCodingOption2 const *   extOpt2        = GetExtBuffer(m_video);
     mfxExtCodingOption2 const *   extOpt2Runtime = GetExtBuffer(task.m_ctrl);
     const mfxExtCodingOption2* extOpt2Cur = (extOpt2Runtime ? extOpt2Runtime : extOpt2);
-    mfxU32 fieldMaxCount = m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
+    mfxU32 fieldMaxCount = (m_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
     for (mfxU32 field = 0; field < fieldMaxCount; field++)
     {
         mfxU32 fieldParity = field;
@@ -301,9 +301,9 @@ mfxStatus VideoENC_ENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
         for (size_t i = 0; i < GetMaxNumSlices(m_video); i++)
         {
             /* default parameters */
-            mfxU8 disableDeblockingIdc = 0;
+            mfxU8 disableDeblockingIdc   = 0;
             mfxI8 sliceAlphaC0OffsetDiv2 = 0;
-            mfxI8 sliceBetaOffsetDiv2 = 0;
+            mfxI8 sliceBetaOffsetDiv2    = 0;
             if (NULL != extFeiSlice)
             {
                 if (NULL != extOpt2Cur)
@@ -399,7 +399,9 @@ mfxStatus VideoENC_ENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
         m_firstFieldDone = 0;
 
     if (0 == m_firstFieldDone)
+    {
         m_prevTask = task;
+    }
 
     return sts;
 }
@@ -492,25 +494,24 @@ mfxStatus VideoENC_ENC::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrameAll
     request->NumFrameSuggested   = request->NumFrameMin;
     request->Info                = par->mfx.FrameInfo;
     return MFX_ERR_NONE;
-} 
+}
 
 
 VideoENC_ENC::VideoENC_ENC(VideoCORE *core,  mfxStatus * sts)
-    : m_bInit( false )
-    , m_core( core )
+    : m_bInit(false)
+    , m_core(core)
     , m_prevTask()
-    ,m_singleFieldProcessingMode(0)
-    ,m_firstFieldDone(0)
+    , m_singleFieldProcessingMode(0)
+    , m_firstFieldDone(0)
 {
     *sts = MFX_ERR_NONE;
-} 
+}
 
 
 VideoENC_ENC::~VideoENC_ENC()
 {
     Close();
-
-} 
+}
 
 mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
 {
@@ -634,19 +635,19 @@ mfxStatus VideoENC_ENC::GetVideoParam(mfxVideoParam *par)
 }
 
 mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
-                    mfxENCInput *input, 
+                    mfxENCInput *input,
                     mfxENCOutput *output,
                     MFX_ENTRY_POINT pEntryPoints[],
                     mfxU32 &numEntryPoints)
 {
-    MFX_CHECK( m_bInit, MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(m_bInit, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     if ((NULL == input) || (NULL == output))
         return MFX_ERR_NULL_PTR;
 
     //set frame type
-    mfxU8 mtype_first_field = 0;
-    mfxU8 mtype_second_field = 0;
+    mfxU8 mtype_first_field = 0, mtype_second_field = 0;
+
     if ( ((0 == input->NumFrameL0)  && (0 == input->NumFrameL1)) ||
         (0 == input->InSurface->Data.FrameOrder))
         mtype_first_field = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR;
@@ -682,7 +683,7 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
 
     /* New way for Frame type definition */
     /* WA !!! */
-    mfxU32 fieldMaxCount = m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
+    mfxU32 fieldMaxCount = (m_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
     for (mfxU32 field = 0; field < fieldMaxCount; field++)
     {
         mfxU32 fieldParity = field;
@@ -742,8 +743,8 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
     m_free.front().m_type = Pair<mfxU8>(mtype_first_field, mtype_second_field);
 
     m_free.front().m_extFrameTag = input->InSurface->Data.FrameOrder;
-    m_free.front().m_frameOrder = input->InSurface->Data.FrameOrder;
-    m_free.front().m_timeStamp = input->InSurface->Data.TimeStamp;
+    m_free.front().m_frameOrder  = input->InSurface->Data.FrameOrder;
+    m_free.front().m_timeStamp   = input->InSurface->Data.TimeStamp;
     m_free.front().m_userData.resize(2);
     m_free.front().m_userData[0] = input;
     m_free.front().m_userData[1] = output;
@@ -812,7 +813,7 @@ static mfxStatus CopyRawSurfaceToVideoMemory(  VideoCORE &  core,
     }
     else
     {
-        d3dSurf.MemId =  src_sys->Data.MemId;    
+        d3dSurf.MemId =  src_sys->Data.MemId;
     }
 
     if (video.IOPattern != MFX_IOPATTERN_IN_OPAQUE_MEMORY) 
@@ -836,7 +837,7 @@ mfxStatus VideoENC_ENC::Close(void)
     return MFX_ERR_NONE;
 } 
 
-#endif  
+#endif  // if defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined(MFX_ENABLE_H264_VIDEO_FEI_ENC)
 #endif  // MFX_VA
 
 /* EOF */
