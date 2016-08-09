@@ -250,13 +250,11 @@
     <ClCompile Include="src\umc_mpeg2_dec_dxva.cpp" />
     <ClCompile Include="src\umc_mpeg2_dec_pic.cpp" />
     <ClCompile Include="src\umc_mpeg2_dec_slice_hw.cpp" />
-    <ClCompile Include="src\umc_mpeg2_dec_tbl.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\umc_mpeg2_dec_base.h" />
     <ClInclude Include="include\umc_mpeg2_dec_defs.h" />
     <ClInclude Include="include\umc_mpeg2_dec_hw.h" />
-    <ClInclude Include="include\umc_mpeg2_dec_tbl.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

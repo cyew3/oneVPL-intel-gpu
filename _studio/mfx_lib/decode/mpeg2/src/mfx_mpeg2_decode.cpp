@@ -13,8 +13,6 @@ File Name: mfx_mpeg2_decode.cpp
 #include "mfx_common.h"
 #ifdef MFX_ENABLE_MPEG2_VIDEO_DECODE
 
-static const mfxI32 MFX_MPEG2_DECODE_ALIGNMENT = 16;
-
 #include "mfx_common_decode_int.h"
 #include "mfx_mpeg2_decode.h"
 #include "mfx_mpeg2_dec_common.h"
@@ -27,12 +25,11 @@ static const mfxI32 MFX_MPEG2_DECODE_ALIGNMENT = 16;
 #include "umc_va_dxva2.h"
 #endif
 
+#if !defined(MFX_ENABLE_HW_ONLY_MPEG2_DECODER) || !defined (MFX_VA)
 #include "umc_mpeg2_dec_sw.h"
-#include "umc_mpeg2_dec_hw.h"
+#endif
 
-//#if defined (MFX_VA_LINUX)
-//#include "umc_va_base.h"
-//#endif
+#include "umc_mpeg2_dec_hw.h"
 
 //#define _status_report_debug
 //#define _threading_deb
@@ -3547,6 +3544,8 @@ mfxStatus VideoDECODEMPEG2Internal_HW::PerformStatusCheck(void *pParam)
 #endif // #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
 
 #if !defined(MFX_ENABLE_HW_ONLY_MPEG2_DECODER) || !defined (MFX_VA)
+static const mfxI32 MFX_MPEG2_DECODE_ALIGNMENT = 16;
+
 VideoDECODEMPEG2Internal_SW::VideoDECODEMPEG2Internal_SW()
 {
     m_implUmcSW = new UMC::MPEG2VideoDecoderSW();

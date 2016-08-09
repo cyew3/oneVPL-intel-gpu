@@ -20,8 +20,8 @@
 
 //VM headers
 #include "vm_debug.h"
-#include "vm_thread.h"
-#include "vm_event.h"
+//#include "vm_thread.h"
+//#include "vm_event.h"
 
 //UMC headers
 #include "umc_structures.h"

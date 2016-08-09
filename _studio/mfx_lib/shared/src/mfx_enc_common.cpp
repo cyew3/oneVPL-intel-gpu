@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          common encoders functionality
@@ -868,4 +868,44 @@ mfxStatus InputSurfaces::Close()
     memset(&m_response, 0, sizeof (mfxFrameAllocResponse)); 
 
     return MFX_ERR_NONE;
+}
+
+mfxStatus CheckExtVideoSignalInfo(mfxExtVideoSignalInfo * videoSignalInfo)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    if (videoSignalInfo->VideoFormat > 7)
+    {
+        videoSignalInfo->VideoFormat = 5; // unspecified video format
+        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+    if (videoSignalInfo->ColourDescriptionPresent > 1)
+    {
+        videoSignalInfo->ColourDescriptionPresent = 0;
+        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+    if (videoSignalInfo->ColourDescriptionPresent)
+    {
+        if (videoSignalInfo->ColourPrimaries > 255)
+        {
+            videoSignalInfo->ColourPrimaries = 2; // unspecified image characteristics
+            sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
+
+        if (videoSignalInfo->TransferCharacteristics > 255)
+        {
+            videoSignalInfo->TransferCharacteristics = 2; // unspecified image characteristics
+            sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
+
+        if (videoSignalInfo->MatrixCoefficients > 255)
+        {
+            videoSignalInfo->MatrixCoefficients = 2; // unspecified image characteristics
+            sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
+    }
+
+    return sts;
 }

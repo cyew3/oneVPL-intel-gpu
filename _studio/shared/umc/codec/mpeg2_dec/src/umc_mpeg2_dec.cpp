@@ -16,11 +16,9 @@
 #include "vm_sys_info.h"
 #include "vm_time.h"
 #include "umc_video_data.h"
-#include "umc_video_processing.h"
 #include "umc_memory_allocator.h"
 #include "umc_mpeg2_dec_base.h"
 #include "umc_mpeg2_dec.h"
-#include "umc_mpeg2_dec_tbl.h"
 
 #include "mfx_trace.h"
 #include "mfx_common_int.h"
@@ -256,14 +254,6 @@ bool MPEG2VideoDecoderBase::IsPictureToSkip(int task_num)
       }
     }
     else if(PictureHeader[task_num].picture_coding_type == MPEG2_B_PICTURE) {
-      /*
-      //fix for VCSD100019408. Don't skip B frame with no forward prediction
-      if(!sequenceHeader.first_p_occure &&
-        (!sequenceHeader.closed_gop || sequenceHeader.broken_link ))
-      {
-          return true;
-      }
-      //end of fix for VCSD100019408 */
       if(m_SkipLevel >= SKIP_B)
       {
           return true;

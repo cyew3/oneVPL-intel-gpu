@@ -13,7 +13,7 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
+#if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE) && defined (MFX_ENABLE_MPEG2_VIDEO_PAK)
 
 #include "mfx_enc_common.h"
 #include "mfx_mpeg2_encode_hybrid_hw.h"
@@ -833,4 +833,4 @@ namespace MPEG2EncoderHW
         return sts_ret;
     }
 }
-#endif // MFX_ENABLE_MPEG2_VIDEO_ENCODE
+#endif // MFX_ENABLE_MPEG2_VIDEO_ENCODE && MFX_ENABLE_MPEG2_VIDEO_PAK

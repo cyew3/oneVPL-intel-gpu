@@ -17,9 +17,6 @@
 
 #include "mfx_enc_common.h"
 #include "mfx_mpeg2_encode_utils_hw.h"
-#include "umc_mpeg2_video_encoder.h"
-#include "umc_mpeg2_enc.h"
-#include "umc_mpeg2_enc_defs.h"
 #include "mfx_brc_common.h"
 #include "mfx_mpeg2_enc_common.h"
 #include "umc_video_brc.h"

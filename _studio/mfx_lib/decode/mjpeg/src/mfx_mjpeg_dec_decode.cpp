@@ -13,8 +13,6 @@
 
 #if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE)
 
-#include "mfx_mjpeg_task.h"
-
 #if defined(_WIN32) || defined(_WIN64)
 #include <atlbase.h>
 #endif
@@ -23,14 +21,12 @@
 #include "mfx_common_decode_int.h"
 
 #ifdef ALLOW_SW_FALLBACK
+#include "mfx_mjpeg_task.h"
 #include "umc_mjpeg_mfx_decode.h"
 #include "mfx_thread_task.h"
 #endif
 
-#include "umc_data_pointers_copy.h"
 #include "umc_automatic_mutex.h"
-
-// debug
 #include "mfx_enc_common.h"
 
 #include "umc_jpeg_frame_constructor.h"

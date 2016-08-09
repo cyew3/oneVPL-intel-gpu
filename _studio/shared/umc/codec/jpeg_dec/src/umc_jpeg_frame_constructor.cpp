@@ -14,7 +14,7 @@
 #if defined (UMC_ENABLE_MJPEG_VIDEO_DECODER)
 
 #include "umc_jpeg_frame_constructor.h"
-#include "jpegdec.h"
+#include "jpegdec_base.h"
 
 namespace UMC
 {

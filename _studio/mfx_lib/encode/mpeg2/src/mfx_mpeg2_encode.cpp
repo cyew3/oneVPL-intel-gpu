@@ -190,46 +190,6 @@ static mfxStatus CheckExtendedBuffers (mfxVideoParam* par)
 #undef NUM_SUPPORTED_BUFFERS
 }
 
-mfxStatus CheckExtVideoSignalInfo(mfxExtVideoSignalInfo * videoSignalInfo)
-{
-    mfxStatus sts = MFX_ERR_NONE;
-
-    if (videoSignalInfo->VideoFormat > 7)
-    {
-        videoSignalInfo->VideoFormat = 5; // unspecified video format
-        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    }
-
-    if (videoSignalInfo->ColourDescriptionPresent > 1)
-    {
-        videoSignalInfo->ColourDescriptionPresent = 0;
-        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    }
-
-    if (videoSignalInfo->ColourDescriptionPresent)
-    {
-        if (videoSignalInfo->ColourPrimaries > 255)
-        {
-            videoSignalInfo->ColourPrimaries = 2; // unspecified image characteristics
-            sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-        }
-
-        if (videoSignalInfo->TransferCharacteristics > 255)
-        {
-            videoSignalInfo->TransferCharacteristics = 2; // unspecified image characteristics
-            sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-        }
-
-        if (videoSignalInfo->MatrixCoefficients > 255)
-        {
-            videoSignalInfo->MatrixCoefficients = 2; // unspecified image characteristics
-            sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-        }
-    }
-
-    return sts;
-}
-
 MFXVideoENCODEMPEG2::MFXVideoENCODEMPEG2(VideoCORE *core, mfxStatus *sts) : VideoENCODE(),m_InputSurfaces(core)
 {
   m_core = core;
