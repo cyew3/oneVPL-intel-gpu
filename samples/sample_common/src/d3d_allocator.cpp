@@ -332,15 +332,17 @@ mfxStatus D3DFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrameAl
     }
 
     mfxHDLPair **dxMidPtrs = (mfxHDLPair**)calloc(request->NumFrameSuggested, sizeof(mfxHDLPair*));
+    if (!dxMidPtrs)
+        return MFX_ERR_MEMORY_ALLOC;
 
     for (int i = 0; i < request->NumFrameSuggested; i++)
     {
         dxMidPtrs[i] = (mfxHDLPair*)calloc(1, sizeof(mfxHDLPair));
-    }
-
-    if (!dxMidPtrs) {
-        DeallocateMids(dxMidPtrs, request->NumFrameSuggested);
-        return MFX_ERR_MEMORY_ALLOC;
+        if (!dxMidPtrs[i])
+        {
+            DeallocateMids(dxMidPtrs, i);
+            return MFX_ERR_MEMORY_ALLOC;
+        }
     }
 
     response->mids = (mfxMemId*)dxMidPtrs;
