@@ -89,22 +89,18 @@ mfxStatus VAAPIFEIPREENCEncoder::Destroy()
 mfxStatus VAAPIFEIPREENCEncoder::CreateAccelerationService(MfxVideoParam const & par)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FEI::PreENC::CreateAccelerationService");
-    mfxStatus mfxSts = MFX_ERR_INVALID_VIDEO_PARAM;
     m_videoParam = par;
     m_codingFunction = 0; //Unknown function
-    bool isFEI = false;
+
     const mfxExtFeiParam* params = GetExtBuffer(par);
-    if (NULL == params)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-    else
+    if (params)
     {
-        isFEI = true;
         m_codingFunction = params->Func;
         if (MFX_FEI_FUNCTION_PREENC == m_codingFunction)
-            mfxSts = CreatePREENCAccelerationService(par);
+            return CreatePREENCAccelerationService(par);
     }
 
-    return mfxSts;
+    return MFX_ERR_INVALID_VIDEO_PARAM;
 } // mfxStatus VAAPIFEIPREENCEncoder::CreateAccelerationService(MfxVideoParam const & par)
 
 mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam const & par)
@@ -118,7 +114,6 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
 
     std::vector<VAEntrypoint> pEntrypoints(numEntrypoints);
 
-    bool bEncodeEnable = false;
     //entry point for preENC
     vaSts = vaQueryConfigEntrypoints(
             m_vaDisplay,
@@ -126,15 +121,17 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
             Begin(pEntrypoints),
             &numEntrypoints);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
     for (entrypointsIndx = 0; entrypointsIndx < numEntrypoints; entrypointsIndx++) {
         if (VAEntrypointStatisticsIntel == pEntrypoints[entrypointsIndx]) {
-            bEncodeEnable = true;
             break;
         }
     }
 
-    if (!bEncodeEnable)
+    if (entrypointsIndx == numEntrypoints)
+    {
         return MFX_ERR_DEVICE_FAILED;
+    }
 
     //check attributes of the configuration
     VAConfigAttrib attrib[2];
@@ -200,12 +197,13 @@ mfxStatus VAAPIFEIPREENCEncoder::CreatePREENCAccelerationService(MfxVideoParam c
      * Statistics buffer delete at the end of processing, by Close() method
      * Actually this is obligation to attach statistics buffers for I- frame/field
      * For P- frame/field only one MVout buffer maybe attached */
-    mfxU32 currNumMbsW = (m_videoParam.mfx.FrameInfo.Width + 15)/16;
-    mfxU32 currNumMbsH = (m_videoParam.mfx.FrameInfo.Height + 15)/16;
+
+    mfxU32 currNumMbsW = ((m_videoParam.mfx.FrameInfo.Width  + 15) >> 4) << 4;
+    mfxU32 currNumMbsH = ((m_videoParam.mfx.FrameInfo.Height + 15) >> 4) << 4;
     /* "31" - to take into account field case */
     if (MFX_PICSTRUCT_PROGRESSIVE != m_videoParam.mfx.FrameInfo.PicStruct)
-        currNumMbsH = (m_videoParam.mfx.FrameInfo.Height + 31)/16;
-    mfxU32 currNumMbs = currNumMbsW * currNumMbsH;
+        currNumMbsH = ((m_videoParam.mfx.FrameInfo.Height + 31) >> 5) << 5;
+    mfxU32 currNumMbs = (currNumMbsW * currNumMbsH) >> 8;
 
     if (MFX_PICSTRUCT_UNKNOWN == m_videoParam.mfx.FrameInfo.PicStruct)
     {
@@ -471,17 +469,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     mfxENCInput*  in  = (mfxENCInput* )task.m_userData[0];
     mfxENCOutput* out = (mfxENCOutput*)task.m_userData[1];
 
-    mfxU32 feiFieldId = fieldId;
-
-    /*Input FEI Ext buffer sequence for BFF is: bff tff bff tff
-     * So, MSDK need to swap feiFieldId values to get correct buffer */
-    if (MFX_PICSTRUCT_FIELD_BFF == task.GetPicStructForEncode())
-    {
-        if (1 == feiFieldId)
-            feiFieldId = 0;
-        else
-            feiFieldId = 1;
-    }
+    mfxU32 feiFieldId = (task.GetPicStructForEncode() & MFX_PICSTRUCT_FIELD_BFF) ? (1 - fieldId) : fieldId;
 
     //find output surfaces
     mfxExtFeiPreEncMV*     mvsOut    = GetExtBufferFEI(out, feiFieldId);
@@ -669,7 +657,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         for (int i = 0; i < in->NumFrameL1; i++)
         {
             mfxHDL handle;
-            m_core->GetExternalFrameHDL(in->L1Surface[i]->Data.MemId, &handle);
+            m_core->GetExternalFrameHDL(in->L0Surface[i]->Data.MemId, &handle);
             VASurfaceID* s = (VASurfaceID*) handle;
             l1surfs[i].picture_id = *s;
 
@@ -893,18 +881,14 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
             currentFeedback.mv = m_statMVId[feiFieldId];
         else
             currentFeedback.mv = VA_INVALID_ID;
-        currentFeedback.mbstat = m_statOutId[surfInputIndexInList + feiFieldId];
+
         /* we have following order in statistic buffers list in interlaced case:
          * {top bot}, {top bot}, {top bot}
          *  So, we have to correct behavior for BFF case
          * */
-        if (MFX_PICSTRUCT_FIELD_BFF == task.GetPicStructForEncode())
-        {
-            if (0 == feiFieldId) // bottom field from BFF sequent
-                currentFeedback.mbstat = m_statOutId[surfInputIndexInList + 1];
-            else if (1 == feiFieldId) //top field from BFF pattern
-                currentFeedback.mbstat = m_statOutId[surfInputIndexInList];
-        }
+        /* use fieldId instead of feiFieldId to guarantee that top fields buffer goes first in list */
+        currentFeedback.mbstat = m_statOutId[surfInputIndexInList + fieldId];
+
         m_statFeedbackCache.push_back(currentFeedback);
     }
 
@@ -932,23 +916,13 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
     mdprintf(stderr, "query_vaapi status: %d\n", task.m_frameOrder);
     //------------------------------------------
     // (1) mapping feedbackNumber -> surface & bs
-    bool isFound = false;
     VASurfaceID waitSurface = VA_INVALID_SURFACE;
     VABufferID statMVid     = VA_INVALID_ID;
     VABufferID statOUTid    = VA_INVALID_ID;
     mfxU32 indxSurf;
     mfxU32 numMB = 0;
 
-    mfxU32 feiFieldId = fieldId;
-    /*Input FEI Ext buffer sequence for BFF is: bff tff bff tff
-     * So, MSDK need to swap feiFieldId values to get correct buffer */
-    if (MFX_PICSTRUCT_FIELD_BFF == task.GetPicStructForEncode())
-    {
-        if (1 == feiFieldId)
-            feiFieldId = 0;
-        else
-            feiFieldId = 1;
-    }
+    mfxU32 feiFieldId = (task.GetPicStructForEncode() & MFX_PICSTRUCT_FIELD_BFF) ? (1 - fieldId) : fieldId;
 
     UMC::AutomaticUMCMutex guard(m_guard);
 
@@ -961,12 +935,12 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
             waitSurface = currentFeedback.surface;
             statMVid = currentFeedback.mv;
             statOUTid = currentFeedback.mbstat;
-            isFound = true;
             break;
         }
     }
 
-    if (!isFound) {
+    if (indxSurf == m_statFeedbackCache.size())
+    {
         return MFX_ERR_UNKNOWN;
     }
 
@@ -1119,23 +1093,14 @@ mfxStatus VAAPIFEIENCEncoder::CreateAccelerationService(MfxVideoParam const & pa
 
     //check for ext buffer for FEI
     m_codingFunction = 0; //Unknown function
-    if (par.NumExtParam > 0) {
-        bool isFEI = false;
-        for (int i = 0; i < par.NumExtParam; i++) {
-            if (par.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PARAM) {
-                isFEI = true;
-                const mfxExtFeiParam* params = (mfxExtFeiParam*) (par.ExtParam[i]);
-                m_codingFunction = params->Func;
-                break;
-            }
-        }
-        if (!isFEI)
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-    } else
-        return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if (m_codingFunction == MFX_FEI_FUNCTION_ENC)
-        return CreateENCAccelerationService(par);
+    const mfxExtFeiParam* params = GetExtBuffer(par);
+    if (params)
+    {
+        m_codingFunction = params->Func;
+        if (MFX_FEI_FUNCTION_ENC == m_codingFunction)
+            return CreateENCAccelerationService(par);
+    }
 
     return MFX_ERR_INVALID_VIDEO_PARAM;
 } // mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
@@ -1311,17 +1276,8 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 
     VASurfaceID *inputSurface = (VASurfaceID*) surface;
 
-    mfxU32 feiFieldId = fieldId;
+    mfxU32 feiFieldId = (MFX_PICSTRUCT_FIELD_BFF & task.GetPicStructForEncode()) ? (1 - fieldId) : fieldId;
 
-    /*Input FEI Ext buffer sequence for BFF is: bff tff bff tff
-     * So, MSDK need to swap feiFieldId values to get correct buffer */
-    if (MFX_PICSTRUCT_FIELD_BFF == task.GetPicStructForEncode())
-    {
-        if (1 == feiFieldId)
-            feiFieldId = 0;
-        else
-            feiFieldId = 1;
-    }
     std::vector<VABufferID> configBuffers(MAX_CONFIG_BUFFERS_COUNT + m_slice.size() * 2);
     std::fill(configBuffers.begin(), configBuffers.end(), VA_INVALID_ID);
 
@@ -1718,7 +1674,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 
     UpdatePPS(task, fieldId, m_pps, m_reconQueue);
 
-    /* to fill DPD in PPS List*/
+    /* to fill DPB in PPS List*/
     if ((maxNumRefL0 > 0) && (task.m_type[fieldId] & MFX_FRAMETYPE_PB))
     {
         for (ref_counter_l0 = 0; ref_counter_l0 < maxNumRefL0; ref_counter_l0++)
@@ -1744,24 +1700,28 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     /* Check application's provided data */
     if (NULL != pDataPPS)
     {
+
+#if defined(_DEBUG)
         if (m_pps.pic_fields.bits.idr_pic_flag != pDataPPS->IDRPicFlag)
         {
             mdprintf(stderr, "!!!Warning pDataPPS->IDRPicFlag = %u\n", pDataPPS->IDRPicFlag);
             mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.idr_pic_flag = %u\n", m_pps.pic_fields.bits.idr_pic_flag);
-            m_pps.pic_fields.bits.idr_pic_flag = pDataPPS->IDRPicFlag;
         }
         if (m_pps.pic_fields.bits.reference_pic_flag != pDataPPS->ReferencePicFlag)
         {
             mdprintf(stderr, "!!!Warning pDataPPS->ReferencePicFlag = %u\n", pDataPPS->ReferencePicFlag);
             mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.reference_pic_flag = %u\n", m_pps.pic_fields.bits.reference_pic_flag);
-            m_pps.pic_fields.bits.reference_pic_flag = pDataPPS->ReferencePicFlag;
         }
         if (m_pps.frame_num != pDataPPS->FrameNum)
         {
             mdprintf(stderr, "!!!Warning pDataPPS->FrameNum = %u\n", pDataPPS->FrameNum);
             mdprintf(stderr, "   But library's is m_pps.frame_num = %u\n", m_pps.frame_num);
-            m_pps.frame_num = pDataPPS->FrameNum;
         }
+#endif
+
+        m_pps.pic_fields.bits.idr_pic_flag       = pDataPPS->IDRPicFlag;
+        m_pps.pic_fields.bits.reference_pic_flag = pDataPPS->ReferencePicFlag;
+        m_pps.frame_num                          = pDataPPS->FrameNum;
     }
 
     /* ENC & PAK has issue with reconstruct surface.
@@ -1908,8 +1868,9 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     for (mfxU32 i = 0; i < numSlice; i++)
     {
         /* Small correction: legacy use 5,6,7 type values, but for FEI 0,1,2 */
-        m_slice[i].slice_type = m_slice[i].slice_type - 5;
-        if ( NULL != pDataSliceHeader )
+        m_slice[i].slice_type -= 5;
+
+        if (NULL != pDataSliceHeader )
         {
             mdprintf(stderr,"Library's generated Slice header (it will be changed now on external one) \n");
             mdprintf(stderr,"---->m_slice[%u].macroblock_address = %d\n", i, m_slice[i].macroblock_address);
@@ -1922,24 +1883,21 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
             mdprintf(stderr,"---->m_slice[%u].slice_alpha_c0_offset_div2 = %d\n", i, m_slice[i].slice_alpha_c0_offset_div2);
             mdprintf(stderr,"---->m_slice[%u].slice_beta_offset_div2 = %d\n", i, m_slice[i].slice_beta_offset_div2);
 
+#if defined(_DEBUG)
             if (m_slice[i].macroblock_address != pDataSliceHeader->Slice[i].MBAaddress)
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].MBAaddress = %u\n", i, pDataSliceHeader->Slice[i].MBAaddress);
                 mdprintf(stderr, "   But library's is m_slice[%u].macroblock_address = %u\n", i, m_slice[i].macroblock_address);
-                m_slice[i].macroblock_address = pDataSliceHeader->Slice[i].MBAaddress;
-
             }
             if (m_slice[i].num_macroblocks != pDataSliceHeader->Slice[i].NumMBs)
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].NumMBs = %u\n", i, pDataSliceHeader->Slice[i].NumMBs);
                 mdprintf(stderr, "   But library's is m_slice[%u].num_macroblocks = %u\n", i, m_slice[i].num_macroblocks);
-                m_slice[i].num_macroblocks = pDataSliceHeader->Slice[i].NumMBs;
             }
             if (m_slice[i].slice_type != pDataSliceHeader->Slice[i].SliceType)
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceType = %u\n", i, pDataSliceHeader->Slice[i].SliceType);
                 mdprintf(stderr, "   But library's is m_slice[%u].slice_type = %u\n", i, m_slice[i].slice_type);
-                m_slice[i].slice_type = pDataSliceHeader->Slice[i].SliceType;
             }
             if (pDataSliceHeader->Slice[i].PPSId != m_pps.pic_parameter_set_id)
             {
@@ -1951,40 +1909,45 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].IdrPicId = %u\n", i, pDataSliceHeader->Slice[i].IdrPicId);
                 mdprintf(stderr, "   But library's is m_slice[%u].idr_pic_id = %u\n", i, m_slice[i].idr_pic_id);
-                m_slice[i].idr_pic_id  = pDataSliceHeader->Slice[i].IdrPicId;
             }
             if (m_slice[i].cabac_init_idc != pDataSliceHeader->Slice[i].CabacInitIdc)
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].CabacInitIdc = %u\n", i, pDataSliceHeader->Slice[i].CabacInitIdc);
                 mdprintf(stderr, "   But library's is m_slice[%u].cabac_init_idc = %u\n", i, m_slice[i].cabac_init_idc);
-                m_slice[i].cabac_init_idc = pDataSliceHeader->Slice[i].CabacInitIdc;
             }
             if (m_slice[i].slice_qp_delta != pDataSliceHeader->Slice[i].SliceQPDelta)
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceQPDelta = %u\n", i, pDataSliceHeader->Slice[i].SliceQPDelta);
                 mdprintf(stderr, "   But library's is m_slice[%u].slice_qp_delta = %u\n", i, m_slice[i].slice_qp_delta);
-                m_slice[i].slice_qp_delta = pDataSliceHeader->Slice[i].SliceQPDelta;
             }
 
             if (m_slice[i].disable_deblocking_filter_idc != pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc)
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].DisableDeblockingFilterIdc = %u\n", i, pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc);
                 mdprintf(stderr, "   But library's is m_slice[%u].disable_deblocking_filter_idc = %u\n", i, m_slice[i].disable_deblocking_filter_idc);
-                m_slice[i].disable_deblocking_filter_idc = pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc;
             }
             if (m_slice[i].slice_alpha_c0_offset_div2 != pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2)
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceAlphaC0OffsetDiv2 = %u\n", i, pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2);
                 mdprintf(stderr, "   But library's is m_slice[%u].slice_alpha_c0_offset_div2 = %u\n", i, m_slice[i].slice_alpha_c0_offset_div2);
-                m_slice[i].slice_alpha_c0_offset_div2 = pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2;
             }
 
             if (m_slice[i].slice_beta_offset_div2 != pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2)
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceBetaOffsetDiv2 = %u\n", i, pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2);
                 mdprintf(stderr, "   But library's is m_slice[%u].slice_beta_offset_div2 = %u\n", i, m_slice[i].slice_beta_offset_div2);
-                m_slice[i].slice_beta_offset_div2 = pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2;
             }
+#endif
+
+            m_slice[i].macroblock_address            = pDataSliceHeader->Slice[i].MBAaddress;
+            m_slice[i].num_macroblocks               = pDataSliceHeader->Slice[i].NumMBs;
+            m_slice[i].slice_type                    = pDataSliceHeader->Slice[i].SliceType;
+            m_slice[i].idr_pic_id                    = pDataSliceHeader->Slice[i].IdrPicId;
+            m_slice[i].cabac_init_idc                = pDataSliceHeader->Slice[i].CabacInitIdc;
+            m_slice[i].slice_qp_delta                = pDataSliceHeader->Slice[i].SliceQPDelta;
+            m_slice[i].disable_deblocking_filter_idc = pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc;
+            m_slice[i].slice_alpha_c0_offset_div2    = pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2;
+            m_slice[i].slice_beta_offset_div2        = pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2;
 
             mdprintf(stderr,"Application's generated Slice header \n");
             mdprintf(stderr,"---->m_slice[%u].macroblock_address = %d\n", i, m_slice[i].macroblock_address);
@@ -2000,22 +1963,31 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 
         if ((m_slice[i].slice_type == SLICE_TYPE_P) || (m_slice[i].slice_type == SLICE_TYPE_B))
         {
+            VASurfaceID s;
+            mfxHDL handle;
+            mfxU16 indexFromSliceHeader = 0;
+
+            /* no need to update those limits for I-slices */
+            maxNumRefL0 = pDataSliceHeader->Slice[i].NumRefIdxL0Active;
+            maxNumRefL1 = pDataSliceHeader->Slice[i].NumRefIdxL1Active;
+            if ((maxNumRefL1 > 2) && (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE))
+                maxNumRefL1 = 2;
+
             for (ref_counter_l0 = 0; ref_counter_l0 < maxNumRefL0; ref_counter_l0++)
             {
-                mfxHDL handle;
-                mfxU16 indexFromSliceHeader = 0;
                 if (NULL != pDataSliceHeader)
                 {
                     indexFromSliceHeader = pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].Index;
                     mfxSts = m_core->GetExternalFrameHDL(in->L0Surface[indexFromSliceHeader]->Data.MemId, &handle);
                     MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
-                    VASurfaceID s = *(VASurfaceID*) handle; //id in the memory by ptr
+                    s = *(VASurfaceID*) handle; //id in the memory by ptr
+
+#if defined(_DEBUG)
                     if (m_slice[i].RefPicList0[ref_counter_l0].picture_id != s)
                     {
                         mdprintf(stderr, "!!!Warning picture_id from pDataSliceHeader->Slice[%u].RefL0[%u] = %u\n", i, ref_counter_l0, s);
                         mdprintf(stderr, "   But library's is m_slice[%u].RefPicList0[%u].picture_id = %u\n",
                                 i, ref_counter_l0, m_slice[i].RefPicList0[ref_counter_l0].picture_id);
-                        m_slice[i].RefPicList0[ref_counter_l0].picture_id = s;
                     }
                     if (m_slice[i].RefPicList0[ref_counter_l0].flags != pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].PictureType)
                     {
@@ -2023,29 +1995,37 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
                                 i, ref_counter_l0, pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].PictureType);
                         mdprintf(stderr, "   But library's is m_slice[%u].RefPicList0[%u].flag = %u\n",
                                 i, ref_counter_l0, m_slice[i].RefPicList0[ref_counter_l0].flags & 0x0f);
-                        m_slice[i].RefPicList0[ref_counter_l0].flags = pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].PictureType;
                     }
+#endif
+
+                    m_slice[i].RefPicList0[ref_counter_l0].picture_id = s;
+                    m_slice[i].RefPicList0[ref_counter_l0].flags = pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].PictureType;
                 }
             } /*for (ref_counter_l0 = 0; ref_counter_l0 < in->NumFrameL0; ref_counter_l0++)*/
             for ( ; ref_counter_l0 < 32; ref_counter_l0++)
             {
                 m_slice[i].RefPicList0[ref_counter_l0].picture_id = VA_INVALID_ID;
-                m_slice[i].RefPicList0[ref_counter_l0].flags = VA_PICTURE_H264_INVALID;
+                m_slice[i].RefPicList0[ref_counter_l0].flags      = VA_PICTURE_H264_INVALID;
             }
         }
+
         if (m_slice[i].slice_type == SLICE_TYPE_B)
         {
+            VASurfaceID s;
+            mfxHDL handle;
+            mfxU16 indexFromSliceHeader = 0;
+
             for (ref_counter_l1 = 0; ref_counter_l1 < maxNumRefL1; ref_counter_l1++)
             {
-                mfxHDL handle;
-                mfxU16 indexFromSliceHeader = 0;
                 if (NULL != pDataSliceHeader)
                 {
                     indexFromSliceHeader = pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].Index;
                     mfxSts = m_core->GetExternalFrameHDL(in->L0Surface[indexFromSliceHeader]->Data.MemId, &handle);
                     MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
                     //m_slice[i].RefPicList1[ref_counter_l1].picture_id = *(VASurfaceID*) handle;
-                    VASurfaceID s = *(VASurfaceID*) handle; //id in the memory by ptr
+                    s = *(VASurfaceID*) handle; //id in the memory by ptr
+
+#if defined(_DEBUG)
                     if (m_slice[i].RefPicList1[ref_counter_l1].picture_id != s)
                     {
                         //m_slice[i].RefPicList1[ref_counter_l1].picture_id = s;
@@ -2061,6 +2041,10 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
                         mdprintf(stderr, "   But library's is m_slice[%u].RefPicList1[%u].flag = %u\n",
                                 i, ref_counter_l1, m_slice[i].RefPicList1[ref_counter_l1].flags);
                     }
+#endif
+
+                    m_slice[i].RefPicList1[ref_counter_l1].picture_id = s;
+                    m_slice[i].RefPicList1[ref_counter_l1].flags = pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType;
                 }
             } /* for (ref_counter_l1 = 0; ref_counter_l1 < in->NumFrameL1; ref_counter_l1++) */
             for ( ; ref_counter_l1 < 32; ref_counter_l1++)
@@ -2311,24 +2295,13 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
     mdprintf(stderr, "query_vaapi status: %d\n", task.m_frameOrder);
     //------------------------------------------
     // (1) mapping feedbackNumber -> surface & bs
-    bool isFound = false;
     VASurfaceID waitSurface     = VA_INVALID_SURFACE;
     VABufferID vaFeiMBStatId    = VA_INVALID_ID;
     VABufferID vaFeiMBCODEOutId = VA_INVALID_ID;
     VABufferID vaFeiMVOutId     = VA_INVALID_ID;
     mfxU32 indxSurf;
 
-    mfxU32 feiFieldId = fieldId;
-
-    /*Input FEI Ext buffer sequence for BFF is: bff tff bff tff
-     * So, MSDK need to swap feiFieldId values to get correct buffer */
-    if (MFX_PICSTRUCT_FIELD_BFF == task.GetPicStructForEncode())
-    {
-        if (1 == feiFieldId)
-            feiFieldId = 0;
-        else
-            feiFieldId = 1;
-    }
+    mfxU32 feiFieldId = (MFX_PICSTRUCT_FIELD_BFF & task.GetPicStructForEncode()) ? (1 - fieldId) : fieldId;
 
     UMC::AutomaticUMCMutex guard(m_guard);
 
@@ -2342,13 +2315,12 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
             vaFeiMBStatId    = currentFeedback.mbstat;
             vaFeiMBCODEOutId = currentFeedback.mbcode;
             vaFeiMVOutId     = currentFeedback.mv;
-            isFound = true;
-
             break;
         }
     }
 
-    if (!isFound) {
+    if (indxSurf == m_statFeedbackCache.size())
+    {
         return MFX_ERR_UNKNOWN;
     }
 
@@ -2530,23 +2502,14 @@ mfxStatus VAAPIFEIPAKEncoder::CreateAccelerationService(MfxVideoParam const & pa
 
     //check for ext buffer for FEI
     m_codingFunction = 0; //Unknown function
-    if (par.NumExtParam > 0) {
-        bool isFEI = false;
-        for (int i = 0; i < par.NumExtParam; i++) {
-            if (par.ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PARAM) {
-                isFEI = true;
-                const mfxExtFeiParam* params = (mfxExtFeiParam*) (par.ExtParam[i]);
-                m_codingFunction = params->Func;
-                break;
-            }
-        }
-        if (!isFEI)
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-    } else
-        return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if (m_codingFunction == MFX_FEI_FUNCTION_PAK)
-        return CreatePAKAccelerationService(par);
+    const mfxExtFeiParam* params = GetExtBuffer(par);
+    if (params)
+    {
+        m_codingFunction = params->Func;
+        if (MFX_FEI_FUNCTION_PAK == m_codingFunction)
+            return CreatePAKAccelerationService(par);
+    }
 
     return MFX_ERR_INVALID_VIDEO_PARAM;
 } // mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
@@ -2724,17 +2687,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     //VASurfaceID *inputSurface = (VASurfaceID*) surface;
     VASurfaceID *inputSurface = NULL;
 
-    mfxU32 feiFieldId = fieldId;
-
-    /*Input FEI Ext buffer sequence for BFF is: bff tff bff tff
-     * So, MSDK need to swap feiFieldId values to get correct buffer */
-    if (MFX_PICSTRUCT_FIELD_BFF == task.GetPicStructForEncode())
-    {
-        if (1 == feiFieldId)
-            feiFieldId = 0;
-        else
-            feiFieldId = 1;
-    }
+    mfxU32 feiFieldId = (MFX_PICSTRUCT_FIELD_BFF & task.GetPicStructForEncode()) ? (1 - fieldId) : fieldId;
 
     mdprintf(stderr, "VAAPIFEIPAKEncoder::Execute\n");
 
@@ -3146,24 +3099,28 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     /* Check application's provided data */
     if (NULL != pDataPPS)
     {
+
+#if defined(_DEBUG)
         if (m_pps.pic_fields.bits.idr_pic_flag != pDataPPS->IDRPicFlag)
         {
             mdprintf(stderr, "!!!Warning pDataPPS->IDRPicFlag = %u\n", pDataPPS->IDRPicFlag);
             mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.idr_pic_flag = %u\n", m_pps.pic_fields.bits.idr_pic_flag);
-            m_pps.pic_fields.bits.idr_pic_flag = pDataPPS->IDRPicFlag;
         }
         if (m_pps.pic_fields.bits.reference_pic_flag != pDataPPS->ReferencePicFlag)
         {
             mdprintf(stderr, "!!!Warning pDataPPS->ReferencePicFlag = %u\n", pDataPPS->ReferencePicFlag);
             mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.reference_pic_flag = %u\n", m_pps.pic_fields.bits.reference_pic_flag);
-            m_pps.pic_fields.bits.reference_pic_flag = pDataPPS->ReferencePicFlag;
         }
         if (m_pps.frame_num != pDataPPS->FrameNum)
         {
             mdprintf(stderr, "!!!Warning pDataPPS->FrameNum = %u\n", pDataPPS->FrameNum);
             mdprintf(stderr, "   But library's is m_pps.frame_num = %u\n", m_pps.frame_num);
-            m_pps.frame_num = pDataPPS->FrameNum;
         }
+#endif
+
+        m_pps.pic_fields.bits.idr_pic_flag       = pDataPPS->IDRPicFlag;
+        m_pps.pic_fields.bits.reference_pic_flag = pDataPPS->ReferencePicFlag;
+        m_pps.frame_num                          = pDataPPS->FrameNum;
     }
 
     /* ENC & PAK has issue with reconstruct surface.
@@ -3312,7 +3269,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     for( mfxU32 i = 0; i < numSlice; i++)
     {
         /* Small correction: legacy use 5,6,7 type values, but for FEI 0,1,2 */
-        m_slice[i].slice_type = m_slice[i].slice_type - 5;
+        m_slice[i].slice_type -= 5;
 
         if (NULL != pDataSliceHeader)
         {
@@ -3327,23 +3284,21 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
             mdprintf(stderr,"---->m_slice[%u].slice_alpha_c0_offset_div2 = %d\n", i, m_slice[i].slice_alpha_c0_offset_div2);
             mdprintf(stderr,"---->m_slice[%u].slice_beta_offset_div2 = %d\n", i, m_slice[i].slice_beta_offset_div2);
 
+#if defined(_DEBUG)
             if (m_slice[i].macroblock_address != pDataSliceHeader->Slice[i].MBAaddress)
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].MBAaddress = %u\n", i, pDataSliceHeader->Slice[i].MBAaddress);
                 mdprintf(stderr, "   But library's is m_slice[%u].macroblock_address = %u\n", i, m_slice[i].macroblock_address);
-                m_slice[i].macroblock_address = pDataSliceHeader->Slice[i].MBAaddress;
             }
             if (m_slice[i].num_macroblocks != pDataSliceHeader->Slice[i].NumMBs)
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].NumMBs = %u\n", i, pDataSliceHeader->Slice[i].NumMBs);
                 mdprintf(stderr, "   But library's is m_slice[%u].num_macroblocks = %u\n", i, m_slice[i].num_macroblocks);
-                m_slice[i].num_macroblocks = pDataSliceHeader->Slice[i].NumMBs;
             }
             if (m_slice[i].slice_type != pDataSliceHeader->Slice[i].SliceType)
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceType = %u\n", i, pDataSliceHeader->Slice[i].SliceType);
                 mdprintf(stderr, "   But library's is m_slice[%u].slice_type = %u\n", i, m_slice[i].slice_type);
-                m_slice[i].slice_type = pDataSliceHeader->Slice[i].SliceType;
             }
             if (pDataSliceHeader->Slice[i].PPSId != m_pps.pic_parameter_set_id)
             {
@@ -3355,39 +3310,44 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].IdrPicId = %u\n", i, pDataSliceHeader->Slice[i].IdrPicId);
                 mdprintf(stderr, "   But library's is m_slice[%u].idr_pic_id = %u\n", i, m_slice[i].idr_pic_id);
-                m_slice[i].idr_pic_id  = pDataSliceHeader->Slice[i].IdrPicId;
             }
             if (m_slice[i].cabac_init_idc != pDataSliceHeader->Slice[i].CabacInitIdc)
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].CabacInitIdc = %u\n", i, pDataSliceHeader->Slice[i].CabacInitIdc);
                 mdprintf(stderr, "   But library's is m_slice[%u].cabac_init_idc = %u\n", i, m_slice[i].cabac_init_idc);
-                m_slice[i].cabac_init_idc = pDataSliceHeader->Slice[i].CabacInitIdc;
             }
             if (m_slice[i].slice_qp_delta != pDataSliceHeader->Slice[i].SliceQPDelta)
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceQPDelta = %u\n", i, pDataSliceHeader->Slice[i].SliceQPDelta);
                 mdprintf(stderr, "   But library's is m_slice[%u].slice_qp_delta = %u\n", i, m_slice[i].slice_qp_delta);
-                m_slice[i].slice_qp_delta = pDataSliceHeader->Slice[i].SliceQPDelta;
             }
 
             if (m_slice[i].disable_deblocking_filter_idc != pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc)
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].DisableDeblockingFilterIdc = %u\n", i, pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc);
                 mdprintf(stderr, "   But library's is m_slice[%u].disable_deblocking_filter_idc = %u\n", i, m_slice[i].disable_deblocking_filter_idc);
-                m_slice[i].disable_deblocking_filter_idc = pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc;
             }
             if (m_slice[i].slice_alpha_c0_offset_div2 != pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2)
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceAlphaC0OffsetDiv2 = %u\n", i, pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2);
                 mdprintf(stderr, "   But library's is m_slice[%u].slice_alpha_c0_offset_div2 = %u\n", i, m_slice[i].slice_alpha_c0_offset_div2);
-                m_slice[i].slice_alpha_c0_offset_div2 = pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2;
             }
             if (m_slice[i].slice_beta_offset_div2 != pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2)
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceBetaOffsetDiv2 = %u\n", i, pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2);
                 mdprintf(stderr, "   But library's is m_slice[%u].slice_beta_offset_div2 = %u\n", i, m_slice[i].slice_beta_offset_div2);
-                m_slice[i].slice_beta_offset_div2 = pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2;
             }
+#endif
+            m_slice[i].macroblock_address            = pDataSliceHeader->Slice[i].MBAaddress;
+            m_slice[i].num_macroblocks               = pDataSliceHeader->Slice[i].NumMBs;
+            m_slice[i].slice_type                    = pDataSliceHeader->Slice[i].SliceType;
+            m_slice[i].idr_pic_id                    = pDataSliceHeader->Slice[i].IdrPicId;
+            m_slice[i].cabac_init_idc                = pDataSliceHeader->Slice[i].CabacInitIdc;
+            m_slice[i].slice_qp_delta                = pDataSliceHeader->Slice[i].SliceQPDelta;
+            m_slice[i].disable_deblocking_filter_idc = pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc;
+            m_slice[i].slice_alpha_c0_offset_div2    = pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2;
+            m_slice[i].slice_beta_offset_div2        = pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2;
+
             mdprintf(stderr,"Application's generated Slice header \n");
             mdprintf(stderr,"---->m_slice[%u].macroblock_address = %d\n", i, m_slice[i].macroblock_address);
             mdprintf(stderr,"---->m_slice[%u].num_macroblocks = %d\n", i, m_slice[i].num_macroblocks);
@@ -3402,23 +3362,31 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
         if ((m_slice[i].slice_type == SLICE_TYPE_P) || (m_slice[i].slice_type == SLICE_TYPE_B))
         {
+            VASurfaceID s;
+            mfxHDL handle;
+            mfxU16 indexFromSliceHeader = 0;
+
+            /* no need to update those limits for I-slices */
+            maxNumRefL0 = pDataSliceHeader->Slice[i].NumRefIdxL0Active;
+            maxNumRefL1 = pDataSliceHeader->Slice[i].NumRefIdxL1Active;
+            if ((maxNumRefL1 > 2) && (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE))
+                maxNumRefL1 = 2;
+
             for (ref_counter_l0 = 0; ref_counter_l0 < maxNumRefL0; ref_counter_l0++)
             {
-                mfxHDL handle;
-                mfxU16 indexFromSliceHeader = 0;
                 if (NULL != pDataSliceHeader)
                 {
                     indexFromSliceHeader = pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].Index;
                     mfxSts = m_core->GetExternalFrameHDL(in->L0Surface[indexFromSliceHeader]->Data.MemId, &handle);
                     MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
-                    //m_slice[i].RefPicList0[ref_counter_l0].picture_id = *(VASurfaceID*) handle;
-                    VASurfaceID s = *(VASurfaceID*) handle; //id in the memory by ptr
+                    s = *(VASurfaceID*) handle; //id in the memory by ptr
+
+#if defined(_DEBUG)
                     if (m_slice[i].RefPicList0[ref_counter_l0].picture_id != s)
                     {
                         mdprintf(stderr, "!!!Warning picture_id from pDataSliceHeader->Slice[%u].RefL0[%u] = %u\n", i, ref_counter_l0, s);
                         mdprintf(stderr, "   But library's is m_slice[%u].RefPicList0[%u].picture_id = %u\n",
                                 i, ref_counter_l0, m_slice[i].RefPicList0[ref_counter_l0].picture_id);
-                        m_slice[i].RefPicList0[ref_counter_l0].picture_id = s;
                     }
                     if (m_slice[i].RefPicList0[ref_counter_l0].flags != pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].PictureType)
                     {
@@ -3427,29 +3395,36 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
                                 i, ref_counter_l0, pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].PictureType);
                         mdprintf(stderr, "   But library's is m_slice[%u].RefPicList0[%u].flag = %u\n",
                                 i, ref_counter_l0, m_slice[i].RefPicList0[ref_counter_l0].flags & 0x0f);
-                        m_slice[i].RefPicList0[ref_counter_l0].flags = pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].PictureType;
                     }
+#endif
+                    m_slice[i].RefPicList0[ref_counter_l0].picture_id = s;
+                    m_slice[i].RefPicList0[ref_counter_l0].flags = pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].PictureType;
                 }
             } /*for (ref_counter_l0 = 0; ref_counter_l0 < in->NumFrameL0; ref_counter_l0++)*/
             for ( ; ref_counter_l0 < 32; ref_counter_l0++)
             {
                 m_slice[i].RefPicList0[ref_counter_l0].picture_id = VA_INVALID_ID;
-                m_slice[i].RefPicList0[ref_counter_l0].flags = VA_PICTURE_H264_INVALID;
+                m_slice[i].RefPicList0[ref_counter_l0].flags      = VA_PICTURE_H264_INVALID;
             }
         } // if ((in->NumFrameL0) &&
+
         if (m_slice[i].slice_type == SLICE_TYPE_B)
         {
+            VASurfaceID s;
+            mfxHDL handle;
+            mfxU16 indexFromSliceHeader = 0;
+
             for (ref_counter_l1 = 0; ref_counter_l1 < maxNumRefL1; ref_counter_l1++)
             {
-                mfxHDL handle;
-                mfxU16 indexFromSliceHeader = 0;
                 if (NULL != pDataSliceHeader)
                 {
                     indexFromSliceHeader = pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].Index;
                     mfxSts = m_core->GetExternalFrameHDL(in->L0Surface[indexFromSliceHeader]->Data.MemId, &handle);
                     MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
                     //m_slice[i].RefPicList1[ref_counter_l1].picture_id = *(VASurfaceID*) handle;
-                    VASurfaceID s = *(VASurfaceID*) handle; //id in the memory by ptr
+                    s = *(VASurfaceID*) handle; //id in the memory by ptr
+
+#if defined(_DEBUG)
                     if (m_slice[i].RefPicList1[ref_counter_l1].picture_id != s)
                     {
                         //m_slice[i].RefPicList1[ref_counter_l1].picture_id = s;
@@ -3465,6 +3440,9 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
                         mdprintf(stderr, "   But library's is m_slice[%u].RefPicList1[%u].flag = %u\n",
                                 i, ref_counter_l1, m_slice[i].RefPicList1[ref_counter_l1].flags);
                     }
+#endif
+                    m_slice[i].RefPicList1[ref_counter_l1].picture_id = s;
+                    m_slice[i].RefPicList1[ref_counter_l1].flags = pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType;
                 }
             } /* for (ref_counter_l1 = 0; ref_counter_l1 < in->NumFrameL1; ref_counter_l1++) */
 
@@ -3728,24 +3706,13 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
     mdprintf(stderr, "query_vaapi status: %d\n", task.m_frameOrder);
     //------------------------------------------
     // (1) mapping feedbackNumber -> surface & bs
-    bool isFound = false;
     VASurfaceID waitSurface     = VA_INVALID_SURFACE;
     VABufferID vaFeiMBStatId    = VA_INVALID_ID;
     VABufferID vaFeiMBCODEOutId = VA_INVALID_ID;
     VABufferID vaFeiMVOutId     = VA_INVALID_ID;
     mfxU32 indxSurf;
 
-    mfxU32 feiFieldId = fieldId;
-
-    /*Input FEI Ext buffer sequence for BFF is: bff tff bff tff
-     * So, MSDK need to swap feiFieldId values to get correct buffer */
-    if (MFX_PICSTRUCT_FIELD_BFF == task.GetPicStructForEncode())
-    {
-        if (1 == feiFieldId)
-            feiFieldId = 0;
-        else
-            feiFieldId = 1;
-    }
+    mfxU32 feiFieldId = (MFX_PICSTRUCT_FIELD_BFF & task.GetPicStructForEncode()) ? (1 - fieldId) : fieldId;
 
     UMC::AutomaticUMCMutex guard(m_guard);
 
@@ -3758,13 +3725,12 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
             waitSurface      = currentFeedback.surface;
             vaFeiMBCODEOutId = currentFeedback.mbcode;
             vaFeiMVOutId     = currentFeedback.mv;
-            isFound = true;
-
             break;
         }
     }
 
-    if (!isFound) {
+    if (indxSurf == m_statFeedbackCache.size())
+    {
         return MFX_ERR_UNKNOWN;
     }
 

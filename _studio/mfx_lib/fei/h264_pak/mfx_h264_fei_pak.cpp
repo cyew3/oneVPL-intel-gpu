@@ -290,9 +290,7 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
     mfxU32 fieldMaxCount = m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
     for (mfxU32 field = 0; field < fieldMaxCount; field++)
     {
-        mfxU32 fieldParity = field;
-        if (m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF)
-            fieldParity = 1 - fieldParity;
+        mfxU32 fieldParity = (m_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF) ? (1 - field) : field;
 
         mfxExtFeiSliceHeader * extFeiSlice = GetExtBuffer(m_video, fieldParity);
         /* To change de-blocking params in runtime we need to take params from runtime control */
@@ -304,23 +302,26 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
         for (size_t i = 0; i < GetMaxNumSlices(m_video); i++)
         {
             /* default parameters */
-            mfxU8 disableDeblockingIdc = 0;
+            mfxU8 disableDeblockingIdc   = 0;
             mfxI8 sliceAlphaC0OffsetDiv2 = 0;
-            mfxI8 sliceBetaOffsetDiv2 = 0;
-            if (NULL != extFeiSlice)
-            {
-                if (NULL != extOpt2Cur)
-                    disableDeblockingIdc = (mfxU8) extOpt2Cur->DisableDeblockingIdc;
+            mfxI8 sliceBetaOffsetDiv2    = 0;
 
-                if (NULL != extFeiSlice->Slice)
-                {
-                    disableDeblockingIdc = (mfxU8) extFeiSlice->Slice[i].DisableDeblockingFilterIdc;
-                    if (disableDeblockingIdc > 2)
-                        disableDeblockingIdc = 0;
-                    sliceAlphaC0OffsetDiv2 = (mfxI8) extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2;
-                    sliceBetaOffsetDiv2 = (mfxI8) extFeiSlice->Slice[i].SliceBetaOffsetDiv2;
-                }
-            } // if (NULL != extFeiSlice)
+            if (NULL != extOpt2Cur)
+            {
+                disableDeblockingIdc = (mfxU8)extOpt2Cur->DisableDeblockingIdc;
+                if (disableDeblockingIdc > 2)
+                    disableDeblockingIdc = 0;
+            }
+
+            if (NULL != extFeiSlice && NULL != extFeiSlice->Slice)
+            {
+                disableDeblockingIdc = (mfxU8)extFeiSlice->Slice[i].DisableDeblockingFilterIdc;
+                if (disableDeblockingIdc > 2)
+                    disableDeblockingIdc = 0;
+                sliceAlphaC0OffsetDiv2 = (mfxI8)extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2;
+                sliceBetaOffsetDiv2    = (mfxI8)extFeiSlice->Slice[i].SliceBetaOffsetDiv2;
+            }
+
             /* Now put values */
             task.m_disableDeblockingIdc[field].push_back(disableDeblockingIdc);
             task.m_sliceAlphaC0OffsetDiv2[field].push_back(sliceAlphaC0OffsetDiv2);
@@ -377,15 +378,9 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
 
     MfxHwH264Encode::ConfigureTask(task, m_prevTask, m_video, false);
 
-    if ((MFX_CODINGOPTION_ON == m_singleFieldProcessingMode) && (0 == m_firstFieldDone))
+    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
     {
-        f_start = 0;
-        fieldCount = 0;
-    }
-    else if ((MFX_CODINGOPTION_ON == m_singleFieldProcessingMode) && (1 == m_firstFieldDone))
-    {
-        f_start = 1;
-        fieldCount = 1;
+        fieldCount = f_start = m_firstFieldDone; // 0 or 1
     }
 
     for (f = f_start; f <= fieldCount; f++)
@@ -396,10 +391,10 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
                  return Error(sts);
     }
 
-    if ((0 == m_firstFieldDone) && (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode))
-        m_firstFieldDone = 1;
-    else if ((1 == m_firstFieldDone) && (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode))
-        m_firstFieldDone = 0;
+    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
+    {
+        m_firstFieldDone = 1 - m_firstFieldDone;
+    }
 
     if (0 == m_firstFieldDone)
     {
@@ -427,15 +422,9 @@ mfxStatus VideoPAK_PAK::Query(DdiTask& task)
     mfxENCInput* in = (mfxENCInput*)task.m_userData[0];
     mfxExtFeiEncFrameCtrl* feiCtrl = GetExtBufferFEI(in, 0);
 
-    if ((MFX_CODINGOPTION_ON == m_singleFieldProcessingMode) && (1 == m_firstFieldDone))
+    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
     {
-        f_start = 0;
-        fieldCount = 0;
-    }
-    else if ((MFX_CODINGOPTION_ON == m_singleFieldProcessingMode) && (0 == m_firstFieldDone))
-    {
-        f_start = 1;
-        fieldCount = 1;
+        f_start = fieldCount = 1 - m_firstFieldDone;
     }
 
     for (f = f_start; f <= fieldCount; f++)
@@ -701,9 +690,7 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     mfxU32 fieldMaxCount = m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
     for (mfxU32 field = 0; field < fieldMaxCount; field++)
     {
-        mfxU32 fieldParity = field;
-        if (m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF)
-            fieldParity = 1 - fieldParity;
+        mfxU32 fieldParity = (m_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF) ? (1 - field) : field;
 
         mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBufferFEI(output, fieldParity);
         /*And runtime params has priority before iInit() params */
@@ -749,7 +736,7 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
         m_free.front().m_insertSps[1] = 0;
     }
 
-    if (mtype_first_field & MFX_FRAMETYPE_I)
+    if ((mtype_first_field & MFX_FRAMETYPE_I) || (mtype_second_field & MFX_FRAMETYPE_I))
     {
         m_free.front().m_frameOrderI = input->InSurface->Data.FrameOrder;
     }
