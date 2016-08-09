@@ -34,7 +34,7 @@
         x += current_data[0] << (31 - offset); \
         current_data++; \
     } \
-    (data) = x & ((((Ipp32u) 0x01) << (nbits)) - 1); \
+    (data) = x & bits_data[nbits]; \
 }
 
 #define h264UngetNBits(current_data, offset, nbits) \
