@@ -41,6 +41,7 @@ int MFXPipelineManager::Execute(IMFXPipelineConfig *pCfg)throw()
 
         mfxU32 nTimeout   = 0;
         mfxU32 nRepeat    = 0;
+        bool   bGPUHangRecovery = false;
         Timer  reliabilityTimer;
         vm_char  sTmp[256] = VM_STRING("");
 
@@ -51,7 +52,7 @@ int MFXPipelineManager::Execute(IMFXPipelineConfig *pCfg)throw()
             PipelineTrace((VM_STRING("Out of Memory. Can't Create Pipeline\n")));
             return 1;
         }
-        
+
         //attaching external synhronizer
         pPipeline->SetSyncro(pCfg->GetExternalSync());
 
@@ -59,7 +60,7 @@ int MFXPipelineManager::Execute(IMFXPipelineConfig *pCfg)throw()
         MFX_CHECK_STS(pPipeline->ReconstructInput(pCfg->GetArgv(), pCfg->GetArgc(), &ReconstrcutedArgs));
 
         PipelineTrace((VM_STRING("\n-----------------------------------------------------------------------------------------\n")));
-        
+
         PipelineTrace((VM_STRING("Command-line: ")));
         for (std::vector<tstring>::size_type i = 0; i < ReconstrcutedArgs.size(); i++)
         {
@@ -71,7 +72,7 @@ int MFXPipelineManager::Execute(IMFXPipelineConfig *pCfg)throw()
         PrintInfo(VM_STRING("ComputerName"), VM_STRING("%s"), sTmp);
         vm_sys_info_get_vga_card(sTmp);
         PrintInfo(VM_STRING("GraphicName"), VM_STRING("%s"), sTmp);
-        
+
         //print IPP info
         const IppLibraryVersion* ippVersion = ippiGetLibVersion();
         PrintInfo(VM_STRING("IPP"          ), VM_STRING("%hs"), ippVersion->Version);
@@ -80,7 +81,7 @@ int MFXPipelineManager::Execute(IMFXPipelineConfig *pCfg)throw()
         PrintInfo(VM_STRING("  Name"       ), VM_STRING("%hs"), ippVersion->Name);
         PrintInfo(VM_STRING("  Build date" ), VM_STRING("%hs"), ippVersion->BuildDate);
 
-    #if defined(_WIN32) || defined(_WIN64)    
+    #if defined(_WIN32) || defined(_WIN64)
         // Print current and boot time
         __INT64 boot_time = 0;
         SYSTEMTIME stime, btime;
@@ -88,7 +89,7 @@ int MFXPipelineManager::Execute(IMFXPipelineConfig *pCfg)throw()
         SystemTimeToFileTime(&stime, (FILETIME*)&boot_time);
         if (boot_time) boot_time -= 10000*GetTickCount();
         FileTimeToSystemTime((FILETIME*)&boot_time, &btime);
-        
+
         int up_time = (int)(GetTickCount() / 1000);
 
         PrintInfo(VM_STRING("Time"), DATETIME_FORMAT, stime.wYear, stime.wMonth, stime.wDay, stime.wHour, stime.wMinute, stime.wSecond);
@@ -139,6 +140,8 @@ int MFXPipelineManager::Execute(IMFXPipelineConfig *pCfg)throw()
 
         GO_OR_QUIT(GetMulTipleAndReliabilitySettings(nRepeat, nTimeout));
 
+        GO_OR_QUIT(GetGPUErrorHandlingSettings(bGPUHangRecovery));
+
         // nRepeat = 3;
         for (mfxU32 i = 0; i < nRepeat; i++)
         {
@@ -150,7 +153,7 @@ int MFXPipelineManager::Execute(IMFXPipelineConfig *pCfg)throw()
             {
                 PipelineTrace((VM_STRING("--------------%d / %.2f / %.2f sec--------------\n")
                     , i + 1
-                    , reliabilityTimer.OverallTiming() 
+                    , reliabilityTimer.OverallTiming()
                     , (double)nTimeout));
                 reliabilityTimer.Start();
             }
@@ -162,16 +165,16 @@ int MFXPipelineManager::Execute(IMFXPipelineConfig *pCfg)throw()
                 GO_OR_QUIT(SetOutFile(NULL));
                 GO_OR_QUIT(SetRefFile(pDst, 0));
             }
-            
-            mfxStatus sts        = MFX_ERR_MEMORY_ALLOC; 
+
+            mfxStatus sts        = MFX_ERR_MEMORY_ALLOC;
             bool      bReduceMem = false;
-            
+
             for (;MFX_ERR_MEMORY_ALLOC  == sts;)
             {
                 MFX_CLEAR_LASTERR();
 
                 while(bReduceMem || MFX_ERR_MEMORY_ALLOC == (sts = pPipeline->BuildPipeline()))
-                { 
+                {
                     MFX_CLEAR_LASTERR();
                     //reducing required memory
                     vm_string_printf(VM_STRING("\nERROR: Memory Allocating Error, trying to reduce memory usage\n"));
@@ -205,10 +208,15 @@ int MFXPipelineManager::Execute(IMFXPipelineConfig *pCfg)throw()
 
                     if (MFX_ERR_GPU_HANG == sts)
                     {
-                      vm_string_printf(VM_STRING("\nERROR: GPU hang occured, reseting pipeline ..."));
-                      GO_OR_QUIT(LightReset());
-                      vm_string_printf(VM_STRING("OK\n"));
-                      continue;
+                        if (bGPUHangRecovery)
+                        {
+                            vm_string_printf(VM_STRING("\nERROR: GPU hang occured, recreating pipeline\n"));
+                            GO_OR_QUIT(HeavyReset());
+                            vm_string_printf(VM_STRING("OK\n"));
+                            continue;
+                        }
+                        else
+                            vm_string_printf(VM_STRING("\nERROR: GPU hang occured\n"));
                     }
 
                     if (MFX_ERR_MEMORY_ALLOC == sts)

@@ -772,6 +772,31 @@ mfxStatus MFXDecPipeline::LightReset()
     return MFX_ERR_NONE;
 }
 
+mfxStatus MFXDecPipeline::HeavyReset()
+{
+    MFX_CHECK_STS(ReleaseMFXPart());
+    MFX_DELETE(m_pRender);
+
+    m_components[eDEC].m_SyncPoints.clear();
+    m_components[eVPP].m_SyncPoints.clear();
+
+    if(NULL != m_components[eDEC].m_pSession)
+        m_components[eDEC].m_pSession->Close();
+
+    MFX_CHECK_STS_SET_ERR(CreateCore(), PE_INIT_CORE);
+    TIME_PRINT(VM_STRING("CreateCore"));
+
+    m_nDecFrames = 0;
+    m_inParams.nFrames = m_inParams.nFramesAfterRecovery;
+
+    mfxFrameInfo info;
+    m_pSpl->SeekFrameOffset(0, info);
+
+    MFX_CHECK_STS(BuildMFXPart());
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus MFXDecPipeline::InitInputBs(bool &bExtended)
 {
     mfxU64 bs_size = m_components[eDEC].m_params.mfx.FrameInfo.Width  *
@@ -3096,7 +3121,17 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
             {
                 //should wait at list one frame here
                 sts = m_pYUVSource->SyncOperation(m_components[eDEC].m_SyncPoints.begin()->first, TimeoutVal<>::val());
+                if ((MFX_ERR_ABORTED == sts) && (m_components[eDEC].m_params.mfx.CodecId == MFX_CODEC_HEVC))
+                {
+                    // in case of GPU hang HEVCd plug-in may return ERR_ABORTED.
+                    // we shold ignore this and call DecodeFrameAsync to retrieve ERR_GPU_HANG.
+                    pDecodedSurface = m_components[eDEC].m_SyncPoints.begin()->second.pSurface;
+                    DecreaseReference(&pDecodedSurface->Data);
+                    m_components[eDEC].m_SyncPoints.pop_front();
 
+                    sts = MFX_ERR_NONE;
+                    break;
+                }
                 MFX_CHECK_STS(sts);
             }
 
@@ -4844,6 +4879,16 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
           {
               m_inParams.bVP9_DRC = true;
           }
+          else if (m_OptProc.Check(argv[0], VM_STRING("-gpu_hang_recovery"), VM_STRING("Enables recovery after GPU hang")))
+          {
+              m_inParams.bGPUHangRecovery = true;
+          }
+          else if (m_OptProc.Check(argv[0], VM_STRING("-NumberFramesAfterRecovery"), VM_STRING("number frames to process after GPU hang recovery"), OPT_UINT_32))
+          {
+              MFX_CHECK(1 + argv != argvEnd);
+              argv++;
+              MFX_PARSE_INT(m_inParams.nFramesAfterRecovery,argv[0]);
+          }
           else HANDLE_INT_OPTION(m_inParams.nDecoderSurfs, VM_STRING("-dec:surfs"), VM_STRING("specifies number of surfaces in decoder's pool"))
           else
           {
@@ -4915,6 +4960,12 @@ mfxStatus MFXDecPipeline::GetMulTipleAndReliabilitySettings(mfxU32 &nRepeat, mfx
 {
     nRepeat  = m_inParams.nRepeat;
     nTimeout = m_inParams.nTimeout;
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MFXDecPipeline::GetGPUErrorHandlingSettings(bool &bHeavyResetAllowed)
+{
+    bHeavyResetAllowed  = m_inParams.bGPUHangRecovery;
     return MFX_ERR_NONE;
 }
 

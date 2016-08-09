@@ -221,6 +221,9 @@ struct sCommandlineParams
 
   mfxU16        nGpuCopyMode;
 
+  bool          bGPUHangRecovery;
+  mfxU32        nFramesAfterRecovery;
+
 #ifdef PAVP_BUILD
   // protected
   mfxU16 Protected; //Protected in mfxVideoParam
@@ -326,9 +329,11 @@ public:
     virtual mfxStatus        ReleasePipeline();
     virtual mfxStatus        Play();
     virtual mfxStatus        LightReset();
+    virtual mfxStatus        HeavyReset();
     vm_char *                GetLastErrString();
     virtual int              PrintHelp();
     virtual mfxStatus        GetMulTipleAndReliabilitySettings(mfxU32 &nRepeat, mfxU32 &nTimeout);
+    virtual mfxStatus        GetGPUErrorHandlingSettings(bool &bHeavyResetAllowed);
     virtual mfxStatus        SetRefFile(const vm_char * pRefFile, mfxU32 nDelta);
     virtual mfxStatus        GetOutFile(vm_char * ppOutFile, int bufsize);
     virtual mfxStatus        SetOutFile(const vm_char * pOutFile);
