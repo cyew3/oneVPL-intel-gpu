@@ -3,7 +3,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_h265_encode_hw_ddi_trace.h"
@@ -87,29 +87,53 @@ DECL(ENCODE_COMPBUFFERDESC,
 
 #define FIELD_FORMAT "%-24s"
 DECL(ENCODE_CAPS_HEVC,
-    TRACE("%d", CodingLimitSet);
-    TRACE("%d", BitDepth8Only);
-    TRACE("%d", Color420Only);
-    TRACE("%d", SliceStructure);
-    TRACE("%d", SliceIPOnly);
-    TRACE("%d", NoWeightedPred);
-    TRACE("%d", NoMinorMVs);
-    TRACE("%d", RawReconRefToggle);
-    TRACE("%d", NoInterlacedField);
-    TRACE("%d", BRCReset);
-    TRACE("%d", RollingIntraRefresh);
-    TRACE("%d", UserMaxFrameSizeSupport);
-    TRACE("%d", FrameLevelRateCtrl);
-    TRACE("%d", SliceByteSizeCtrl);
-    TRACE("%d", VCMBitRateControl);
-    TRACE("%d", ParallelBRC);
-    TRACE("%d", TileSupport);
+    TRACE("%d", CodingLimitSet          );
+    TRACE("%d", BitDepth8Only           );
+    TRACE("%d", Color420Only            );
+    TRACE("%d", SliceStructure          );
+    TRACE("%d", SliceIPOnly             );
+    TRACE("%d", SliceIPBOnly            );
+    TRACE("%d", NoWeightedPred          );
+    TRACE("%d", NoMinorMVs              );
+    TRACE("%d", RawReconRefToggle       );
+    TRACE("%d", NoInterlacedField       );
+    TRACE("%d", BRCReset                );
+    TRACE("%d", RollingIntraRefresh     );
+    TRACE("%d", UserMaxFrameSizeSupport );
+    TRACE("%d", FrameLevelRateCtrl      );
+    TRACE("%d", SliceByteSizeCtrl       );
+    TRACE("%d", VCMBitRateControl       );
+    TRACE("%d", ParallelBRC             );
+    TRACE("%d", TileSupport             );
+    TRACE("%d", SkipFrame               );
+    TRACE("%d", MbQpDataSupport         );
+    TRACE("%d", SliceLevelWeightedPred  );
+    TRACE("%d", LumaWeightedPred        );
+    TRACE("%d", ChromaWeightedPred      );
+    TRACE("%d", QVBRBRCSupport          ); 
+    TRACE("%d", HMEOffsetSupport        );
+    TRACE("%d", YUV422ReconSupport      );
+    TRACE("%d", YUV444ReconSupport      );
+    TRACE("%d", RGBReconSupport         );
+    TRACE("%d", MaxEncodedBitDepth      );
+
     TRACE("%d", MaxPicWidth);
     TRACE("%d", MaxPicHeight);
     TRACE("%d", MaxNum_Reference0);
     TRACE("%d", MaxNum_Reference1);
     TRACE("%d", MBBRCSupport);
     TRACE("%d", TUSupport);
+
+    TRACE("%d", MaxNumOfROI               );
+    TRACE("%d", ROIBRCPriorityLevelSupport);
+
+    TRACE("%d", SliceLevelReportSupport   );
+    TRACE("%d", NumOfTileColumnsMinus1    );
+    TRACE("%d", IntraRefreshBlockUnitSize );
+    TRACE("%d", LCUSizeSupported          );
+
+    TRACE("%d", MaxNum_WeightedPredL0);
+    TRACE("%d", MaxNum_WeightedPredL1);
 )
 #undef FIELD_FORMAT
 
@@ -142,9 +166,9 @@ DECL(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC,
     TRACE("%d", SliceSizeControl );
     TRACE("%d", ReservedBits     );
     TRACE("%d", UserMaxFrameSize );
-    TRACE("%d", AVBRAccuracy     );
-    TRACE("%d", AVBRConvergence  );
-    TRACE("%d", CRFQualityFactor );
+    //TRACE("%d", AVBRAccuracy     );
+    //TRACE("%d", AVBRConvergence  );
+    //TRACE("%d", CRFQualityFactor );
 
     TRACE_ARRAY_ROW("%d", NumOfBInGop, 3);
 
@@ -213,7 +237,7 @@ DECL(ENCODE_SET_PICTURE_PARAMETERS_HEVC,
     TRACE("%d", bUseRawPicForRef                     );
     TRACE("%d", bEmulationByteInsertion              );
     TRACE("%d", BRCPrecision                         );
-    TRACE("%d", bScreenContent                       );
+    //TRACE("%d", bScreenContent                       );
     TRACE("%d", bEnableRollingIntraRefresh           );
     TRACE("%d", no_output_of_prior_pics_flag         );
 
@@ -272,7 +296,7 @@ DECL(ENCODE_SET_SLICE_HEADER_HEVC,
 
     TRACE("%d", MaxNumMergeCand);
     TRACE("%d", slice_id);
-    TRACE("%d", MaxSlizeSizeInBytes);
+    //TRACE("%d", MaxSlizeSizeInBytes);
     TRACE("%d", SliceQpDeltaBitOffset);
 )
 #undef FIELD_FORMAT

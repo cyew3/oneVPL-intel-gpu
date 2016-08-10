@@ -702,6 +702,27 @@ bool CheckTU(mfxU8 support, mfxU16& tu)
     return changed;
 }
 
+bool CheckLCUSize(mfxU32 LCUSizeSupported, mfxU32& LCUSize)
+{
+    /*
+    -    LCUSizeSupported - Supported LCU sizes, bit fields
+    0b001 : 16x16
+    0b010 : 32x32
+    0b100 : 64x64
+    */
+    assert(LCUSizeSupported > 0);
+
+    if ((LCUSize & (LCUSize - 1)) || LCUSize < 16)
+        LCUSize = 0;
+
+    if (LCUSize && ((1 << CeilLog2(LCUSize >> 4)) & LCUSizeSupported))
+        return false;
+
+    LCUSize = (1 << (CeilLog2(LCUSizeSupported + 1) + 3)); // set max supported
+
+    return true;
+}
+
 
  const mfxU16 AVBR_ACCURACY_MIN = 1;
  const mfxU16 AVBR_ACCURACY_MAX = 65535;
@@ -880,6 +901,8 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     mfxExtCodingOption3& CO3 = par.m_ext.CO3;
 
     changed += CheckTriStateOption(par.mfx.LowPower);
+
+    CheckLCUSize(caps.LCUSizeSupported ? caps.LCUSizeSupported : IsOn(par.mfx.LowPower) ? (64 >> 4) : (32 >> 4), par.LCUSize);
 
     if (par.mfx.FrameInfo.BitDepthLuma > 8)
     {
@@ -1377,7 +1400,7 @@ void SetDefaults(
     if (!par.mfx.LowPower)
         par.mfx.LowPower = MFX_CODINGOPTION_OFF;
 
-    par.LCUSize = IsOn(par.mfx.LowPower) ? 64 : DEFAULT_LCU_SIZE;   // should be checked w/ hwCaps.LCUSizeSupported if it is supported
+    CheckLCUSize(hwCaps.LCUSizeSupported ? hwCaps.LCUSizeSupported : IsOn(par.mfx.LowPower) ? (64 >> 4) : (32 >> 4), par.LCUSize);
 
     if (par.mfx.CodecLevel)
     {
