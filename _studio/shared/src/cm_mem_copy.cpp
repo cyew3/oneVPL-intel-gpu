@@ -1324,6 +1324,8 @@ mfxStatus CmCopyWrapper::EnqueueCopyNV12CPUtoGPU(CmSurface2D* pSurface,
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->DestroyThreadSpace(pTS);
         CHECK_CM_HR(hr);
+        hr = m_pCmDevice->DestroyKernel(m_pCmKernel);
+        CHECK_CM_HR(hr);
         pLinearAddress += sliceCopyBufferUPSize - AddedShiftLeftOffset;
         totalBufferUPSize -= sliceCopyBufferUPSize;
         copy_height_row -= slice_copy_height_row;
