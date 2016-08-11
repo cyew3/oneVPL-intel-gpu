@@ -1697,13 +1697,12 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition_VideoWall(mfxExecuteParams *
             m_pipelineParam[i].blend_state = &blend_state[i];
         }
 
-#ifndef LINUX_TARGET_PLATFORM_BSW
-        m_pipelineParam[i].pipeline_flags  |= VA_PROC_PIPELINE_FAST;
-#else
+#if defined(LINUX_TARGET_PLATFORM_BSW) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_BXTMIN)
         m_pipelineParam[i].pipeline_flags |= VA_PROC_PIPELINE_SUBPICTURES;
         m_pipelineParam[i].filter_flags   |= VA_FILTER_SCALING_HQ;
+#else
+        m_pipelineParam[i].pipeline_flags  |= VA_PROC_PIPELINE_FAST;
 #endif
-
         m_pipelineParam[i].filters      = 0;
         m_pipelineParam[i].num_filters  = 0;
 
@@ -2044,12 +2043,12 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         if (pParams->bComposite)
         {
             m_pipelineParam[refIdx].num_filters  = 0;
-#ifndef LINUX_TARGET_PLATFORM_BSW
-            m_pipelineParam[refIdx].pipeline_flags |= VA_PROC_PIPELINE_FAST;
-            //m_pipelineParam[refIdx].filter_flags    |= VA_FILTER_SCALING_FAST;
-#else
+#if defined(LINUX_TARGET_PLATFORM_BSW) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_BXTMIN)
             m_pipelineParam[refIdx].pipeline_flags |= VA_PROC_PIPELINE_SUBPICTURES;
-            m_pipelineParam[refIdx].filter_flags    |= VA_FILTER_SCALING_HQ;
+            m_pipelineParam[refIdx].filter_flags   |= VA_FILTER_SCALING_HQ;
+#else
+            m_pipelineParam[refIdx].pipeline_flags  |= VA_PROC_PIPELINE_FAST;
+            //m_pipelineParam[refIdx].filter_flags    |= VA_FILTER_SCALING_FAST;
 #endif
         }
 
