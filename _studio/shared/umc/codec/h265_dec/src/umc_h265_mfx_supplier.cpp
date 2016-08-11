@@ -492,8 +492,7 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
     //Main10 - [4:2:0], [8, 10] bit
     //Extent - [4:2:0, 4:2:2, 4:4:4], [8, 10, 12, 16]
 
-    if (frameInfo->ChromaFormat < MFX_CHROMAFORMAT_YUV420 ||
-        frameInfo->ChromaFormat > MFX_CHROMAFORMAT_YUV444)
+    if (frameInfo->ChromaFormat > MFX_CHROMAFORMAT_YUV444)
         return 0;
 
     if (frameInfo->BitDepthLuma < 8 ||
@@ -509,6 +508,7 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
     //map chroma fmt & bit depth onto fourcc (NOTE: we don't support bit depth above 10 bit and 4:4:4 chroma for 8 bit)
     mfxU32 const map[][4] =
     {
+        { MFX_FOURCC_NV12, MFX_FOURCC_P010, 0, 0 },
         { MFX_FOURCC_NV12, MFX_FOURCC_P010, 0, 0 },
         { MFX_FOURCC_YUY2, MFX_FOURCC_Y210, 0, 0 },
         { MFX_FOURCC_AYUV, MFX_FOURCC_Y410, 0, 0 }
@@ -540,7 +540,7 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
     );
 
     return
-        map[frameInfo->ChromaFormat - MFX_CHROMAFORMAT_YUV420][(frameInfo->BitDepthLuma - 8) / 2];
+        map[frameInfo->ChromaFormat][(frameInfo->BitDepthLuma - 8) / 2];
 }
 
 inline
