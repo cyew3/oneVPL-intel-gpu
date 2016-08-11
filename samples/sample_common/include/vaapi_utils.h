@@ -411,8 +411,8 @@ namespace MfxLoader
         typedef int (*_ZN7icamera15camera_hal_initEv_type)(void);
         /* int camera_hal_deinit(void) */
         typedef int (*_ZN7icamera17camera_hal_deinitEv_type)(void);
-        /* int camera_device_open(void) */
-        typedef int (*_ZN7icamera18camera_device_openEi_type)(int);
+        /* int camera_device_open(int camera_id, int vc_num = 0) */
+        typedef int (*_ZN7icamera18camera_device_openEii_type)(int, int);
         /* void camera_device_close(int camera_id) */
         typedef int (*_ZN7icamera19camera_device_closeEi_type)(int);
         /* int camera_device_stop(int camera_id); */
@@ -426,13 +426,14 @@ namespace MfxLoader
             (int, camera_info_t&);
         /* camera_device_config_streams(int camera_id, stream_config_t *stream_list) */
         typedef int (*_ZN7icamera28camera_device_config_streamsEiPNS_15stream_config_tE_type)
-             (int, stream_config_t *);
-        /* int camera_stream_qbuf(int camera_id, int stream_id, camera_buffer_t *buffer) */
-        typedef int (*_ZN7icamera18camera_stream_qbufEiiPNS_15camera_buffer_tE_type)
-             (int, int, camera_buffer_t*);
-        /* int camera_stream_dqbuf(int camera_id, int stream_id, camera_buffer_t **buffer) */
-        typedef int (*_ZN7icamera19camera_stream_dqbufEiiPPNS_15camera_buffer_tE_type)
-             (int, int, camera_buffer_t **);
+            (int, stream_config_t *);
+        /* int camera_stream_qbuf(int camera_id, int stream_id, camera_buffer_t *buffer)
+             int num_buffers = 1, const Parameters* settings = NULL); */
+        typedef int (*_ZN7icamera18camera_stream_qbufEiiPNS_15camera_buffer_tEiPKNS_10ParametersE_type)
+             (int, int, camera_buffer_t*, int, const Parameters*);
+        /* int camera_stream_dqbuf(int camera_id, int stream_id, camera_buffer_t **buffer, Parameters* settings = NULL) */
+        typedef int (*_ZN7icamera19camera_stream_dqbufEiiPPNS_15camera_buffer_tEPNS_10ParametersE_type)
+             (int, int, camera_buffer_t **, Parameters*);
 
     LibCamhalProxy();
     ~LibCamhalProxy();
@@ -440,15 +441,15 @@ namespace MfxLoader
 #define __DECLARE(name) const name ## _type name
     __DECLARE(_ZN7icamera15camera_hal_initEv);
     __DECLARE(_ZN7icamera17camera_hal_deinitEv);
-    __DECLARE(_ZN7icamera18camera_device_openEi);
+    __DECLARE(_ZN7icamera18camera_device_openEii);
     __DECLARE(_ZN7icamera19camera_device_closeEi);
     __DECLARE(_ZN7icamera19camera_device_startEi);
     __DECLARE(_ZN7icamera18camera_device_stopEi);
     __DECLARE(_ZN7icamera21get_number_of_camerasEv);
     __DECLARE(_ZN7icamera15get_camera_infoEiRNS_13camera_info_tE);
     __DECLARE(_ZN7icamera28camera_device_config_streamsEiPNS_15stream_config_tE);
-    __DECLARE(_ZN7icamera18camera_stream_qbufEiiPNS_15camera_buffer_tE);
-   __DECLARE(_ZN7icamera19camera_stream_dqbufEiiPPNS_15camera_buffer_tE);
+    __DECLARE(_ZN7icamera18camera_stream_qbufEiiPNS_15camera_buffer_tEiPKNS_10ParametersE);
+   __DECLARE(_ZN7icamera19camera_stream_dqbufEiiPPNS_15camera_buffer_tEPNS_10ParametersE);
 #undef __DECLARE
     };
 #endif

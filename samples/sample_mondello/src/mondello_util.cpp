@@ -193,7 +193,7 @@ void MondelloDevice::MondelloInit()
     m_device_id = GetCurrentCameraId();
 
     /* camera_device_open() */
-    ret = libcamhal._ZN7icamera18camera_device_openEi(m_device_id);
+    ret = libcamhal._ZN7icamera18camera_device_openEii(m_device_id, 0);
     if (ret < 0)
     {
         /* camera_hal_deinit() */
@@ -227,7 +227,7 @@ void MondelloDevice::MondelloSetup()
         CurBuffers->s = m_streams[0];
 
         /* camera_device_stream_qbuf() */
-        ret = libcamhal._ZN7icamera18camera_stream_qbufEiiPNS_15camera_buffer_tE(m_device_id, m_stream_id, CurBuffers);
+        ret = libcamhal._ZN7icamera18camera_stream_qbufEiiPNS_15camera_buffer_tEiPKNS_10ParametersE(m_device_id, m_stream_id, CurBuffers, m_num_buffers, NULL);
         BYE_ON(ret < 0, "qbuf failed: %s\n", ERRSTR);
     }
 }
@@ -338,8 +338,8 @@ void *PollingThread(void *data)
 
         /* camera_stream_dqbuf() */
         ret = Mondello->libcamhal.
-            _ZN7icamera19camera_stream_dqbufEiiPPNS_15camera_buffer_tE(
-            m_device_id, m_stream_id, &CurBuffers);
+            _ZN7icamera19camera_stream_dqbufEiiPPNS_15camera_buffer_tEPNS_10ParametersE(
+            m_device_id, m_stream_id, &CurBuffers, NULL);
 
         BYE_ON(ret < 0, "Mondello DQBUF failed: %s\n", ERRSTR);
 
@@ -352,8 +352,8 @@ void *PollingThread(void *data)
         {
             /* camera_stream_qbuf() */
             ret = Mondello->
-                libcamhal._ZN7icamera18camera_stream_qbufEiiPNS_15camera_buffer_tE(
-                m_device_id, m_stream_id, CurBuffers);
+                libcamhal._ZN7icamera18camera_stream_qbufEiiPNS_15camera_buffer_tEiPKNS_10ParametersE(
+                m_device_id, m_stream_id, CurBuffers, MAX_BUFFER_COUNT, NULL);
 
             BYE_ON(ret < 0, "Mondello QBUF failed: %s\n", ERRSTR);
         }
