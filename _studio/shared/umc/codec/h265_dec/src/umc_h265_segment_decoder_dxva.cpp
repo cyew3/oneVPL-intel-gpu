@@ -258,34 +258,28 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
 
             bool wasFound = false;
             H265DecoderFrameInfo * au = m_FirstAU;
-            //for (; au; au = au->GetNextAU())
+            if (au && pStatusReport[i].current_picture.Index7Bits == au->m_pFrame->m_index)
             {
-                if (pStatusReport[i].current_picture.Index7Bits == au->m_pFrame->m_index)
+                switch (pStatusReport[i].bStatus)
                 {
-                    switch (pStatusReport[i].bStatus)
-                    {
-                    case 1:
-                        au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MINOR);
-                        break;
-                    case 2:
-                        au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
-                        break;
-                    case 3:
-                        au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
-                        break;
-                    case 4:
-                        au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
-                        break;
-                    }
-
-                    au->SetStatus(H265DecoderFrameInfo::STATUS_COMPLETED);
-                    CompleteFrame(au->m_pFrame);
-                    wasFound = true;
-                    wasCompleted = true;
-                    //break;
+                case 1:
+                    au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MINOR);
+                    break;
+                case 2:
+                    au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
+                    break;
+                case 3:
+                    au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
+                    break;
+                case 4:
+                    au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
+                    break;
                 }
 
-                //break;
+                au->SetStatus(H265DecoderFrameInfo::STATUS_COMPLETED);
+                CompleteFrame(au->m_pFrame);
+                wasFound = true;
+                wasCompleted = true;
             }
 
             if (!wasFound)
