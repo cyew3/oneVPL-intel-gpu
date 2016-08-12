@@ -30,7 +30,7 @@
 #include "mfx_brc_common.h"
 #include "mfx_session.h"
 #include "mfx_tools.h"
-#include "umc_video_brc.h"
+#include "umc_h264_brc.h"
 #include "umc_svc_brc.h"
 #include "vm_thread.h"
 #include "vm_interlocked.h"
@@ -131,50 +131,6 @@ static mfxI32 simplify(mfxI32* pvar1, mfxI32 *pstep1, mfxI32 var2)
     *pvar1 = var1;
     *pstep1 = step1;
     return 1;
-}
-
-
-void mfxVideoInternalParam::SetCalcParams( mfxVideoParam *parMFX) {
-
-    mfxU32 mult = IPP_MAX( parMFX->mfx.BRCParamMultiplier, 1);
-
-    calcParam.TargetKbps = (mfxU32)parMFX->mfx.TargetKbps * (mfxU32)mult;
-    calcParam.MaxKbps = (mfxU32)parMFX->mfx.MaxKbps * (mfxU32)mult;
-    calcParam.BufferSizeInKB = (mfxU32)parMFX->mfx.BufferSizeInKB * (mfxU32)mult;
-    calcParam.InitialDelayInKB = (mfxU32)parMFX->mfx.InitialDelayInKB * (mfxU32)mult;
-}
-void mfxVideoInternalParam::GetCalcParams( mfxVideoParam *parMFX) {
-
-    mfxU32 maxVal = IPP_MAX( IPP_MAX( calcParam.TargetKbps, calcParam.MaxKbps), IPP_MAX( calcParam.BufferSizeInKB, calcParam.InitialDelayInKB));
-    mfxU32 mult = (maxVal + 0xffff) / 0x10000;
-
-    if (mult) {
-        parMFX->mfx.BRCParamMultiplier = mult;
-        parMFX->mfx.TargetKbps = calcParam.TargetKbps / mult;
-        parMFX->mfx.MaxKbps = calcParam.MaxKbps / mult;
-        parMFX->mfx.BufferSizeInKB = calcParam.BufferSizeInKB / mult;
-        parMFX->mfx.InitialDelayInKB = calcParam.InitialDelayInKB / mult;
-    }
-}
-
-mfxVideoInternalParam::mfxVideoInternalParam()
-{
-    memset(this, 0, sizeof(*this));
-}
-
-mfxVideoInternalParam::mfxVideoInternalParam(mfxVideoParam const & par)
-{
-    mfxVideoParam & base = *this;
-    base = par;
-    SetCalcParams( &base);
-}
-
-mfxVideoInternalParam& mfxVideoInternalParam::operator=(mfxVideoParam const & par)
-{
-    mfxVideoParam & base = *this;
-    base = par;
-    SetCalcParams( &base);
-    return *this;
 }
 
 #ifdef VM_SLICE_THREADING_H264
@@ -3091,7 +3047,7 @@ mfxStatus MFXVideoENCODEH264::Init(mfxVideoParam* par_in)
         brcParams.profile = videoParams.profile_idc;
         brcParams.level = videoParams.level_idc;
 
-        m_base.m_brc[0] = UMC::CreateBRC(UMC::BRC_H264);
+        m_base.m_brc[0] = new UMC::H264BRC;
         status = m_base.m_brc[0]->Init(&brcParams);
 
         if (m_ConstQP)
@@ -3757,7 +3713,8 @@ mfxStatus MFXVideoENCODEH264::Close()
     if (m_base.m_brc[0])
     {
       m_base.m_brc[0]->Close();
-      UMC::DeleteBRC(&m_base.m_brc[0]);
+      delete m_base.m_brc[0];
+      m_base.m_brc[0] = 0;
     }
 
     ////if (m_VideoParams_id){
@@ -4184,7 +4141,7 @@ mfxStatus MFXVideoENCODEH264::Reset(mfxVideoParam *par_in)
         if (m_base.m_brc[0]){
             m_base.m_brc[0]->Close();
         }else
-            m_base.m_brc[0] = UMC::CreateBRC(UMC::BRC_H264);
+            m_base.m_brc[0] = new UMC::H264BRC;
         status = m_base.m_brc[0]->Init(&brcParams);
         st = h264enc_ConvertStatus(status);
         MFX_CHECK_STS(st);
@@ -4192,7 +4149,7 @@ mfxStatus MFXVideoENCODEH264::Reset(mfxVideoParam *par_in)
         if (m_base.m_brc[0])
             status = m_base.m_brc[0]->Reset(&brcParams);
         else {
-            m_base.m_brc[0] = UMC::CreateBRC(UMC::BRC_H264);
+            m_base.m_brc[0] = new UMC::H264BRC;
             status = m_base.m_brc[0]->Init(&brcParams);
         }
         if (status == UMC_ERR_INVALID_PARAMS)
@@ -10920,7 +10877,7 @@ mfxStatus MFXVideoENCODEH264::InitSVCLayer(const mfxExtSVCRateControl* rc, mfxU1
                     }
                 }
                 if (!layer->m_brc[qid])
-                    layer->m_brc[qid] = UMC::CreateBRC(UMC::BRC_SVC);
+                    layer->m_brc[qid] = new UMC::SVCBRC;
 
 
                 status = layer->m_brc[qid]->Init(tempBrcParams, layer->enc->TempIdMax+1);
@@ -10971,7 +10928,7 @@ mfxStatus MFXVideoENCODEH264::InitSVCLayer(const mfxExtSVCRateControl* rc, mfxU1
                 brcParams.level = videoParams.level_idc;
 
                 if (!layer->m_brc[qid])
-                    layer->m_brc[qid] = UMC::CreateBRC(UMC::BRC_H264);
+                    layer->m_brc[qid] = new UMC::H264BRC;
 
                 status = layer->m_brc[qid]->Init(&brcParams);
                 layer->m_representationFrameSize[qid][0] = 0;
@@ -11657,7 +11614,8 @@ mfxStatus MFXVideoENCODEH264::CloseSVCLayer(h264Layer* layer)
         for (i = 0; i < layer->enc->QualityNum; i++) {
             if (layer->m_brc[i]) {
                 layer->m_brc[i]->Close();
-                UMC::DeleteBRC(&layer->m_brc[i]);
+                delete layer->m_brc[i];
+                layer->m_brc[i] = 0;
             }
         }
     }

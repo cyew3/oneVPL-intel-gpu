@@ -12,6 +12,7 @@
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
 #include "umc_h265_nal_spl.h"
+#include "mfx_common.h" //  for trace routines
 
 namespace UMC_HEVC_DECODER
 {

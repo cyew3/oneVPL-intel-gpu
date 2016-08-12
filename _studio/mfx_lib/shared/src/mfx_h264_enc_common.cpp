@@ -3256,5 +3256,48 @@ void SetDefaultParamForReset(mfxVideoParam& parNew, const mfxVideoParam& parOld)
     }
 }
 
+void mfxVideoInternalParam::SetCalcParams( mfxVideoParam *parMFX) {
+
+    mfxU32 mult = IPP_MAX( parMFX->mfx.BRCParamMultiplier, 1);
+
+    calcParam.TargetKbps = (mfxU32)parMFX->mfx.TargetKbps * (mfxU32)mult;
+    calcParam.MaxKbps = (mfxU32)parMFX->mfx.MaxKbps * (mfxU32)mult;
+    calcParam.BufferSizeInKB = (mfxU32)parMFX->mfx.BufferSizeInKB * (mfxU32)mult;
+    calcParam.InitialDelayInKB = (mfxU32)parMFX->mfx.InitialDelayInKB * (mfxU32)mult;
+}
+void mfxVideoInternalParam::GetCalcParams( mfxVideoParam *parMFX) {
+
+    mfxU32 maxVal = IPP_MAX( IPP_MAX( calcParam.TargetKbps, calcParam.MaxKbps), IPP_MAX( calcParam.BufferSizeInKB, calcParam.InitialDelayInKB));
+    mfxU32 mult = (maxVal + 0xffff) / 0x10000;
+
+    if (mult) {
+        parMFX->mfx.BRCParamMultiplier = (mfxU16)mult;
+        parMFX->mfx.TargetKbps = (mfxU16)(calcParam.TargetKbps / mult);
+        parMFX->mfx.MaxKbps = (mfxU16)(calcParam.MaxKbps / mult);
+        parMFX->mfx.BufferSizeInKB = (mfxU16)(calcParam.BufferSizeInKB / mult);
+        parMFX->mfx.InitialDelayInKB = (mfxU16)(calcParam.InitialDelayInKB / mult);
+    }
+}
+
+mfxVideoInternalParam::mfxVideoInternalParam()
+{
+    memset(this, 0, sizeof(*this));
+}
+
+mfxVideoInternalParam::mfxVideoInternalParam(mfxVideoParam const & par)
+{
+    mfxVideoParam & base = *this;
+    base = par;
+    SetCalcParams( &base);
+}
+
+mfxVideoInternalParam& mfxVideoInternalParam::operator=(mfxVideoParam const & par)
+{
+    mfxVideoParam & base = *this;
+    base = par;
+    SetCalcParams( &base);
+    return *this;
+}
+
 #endif // defined(MFX_ENABLE_H264_VIDEO_ENCODER_COMMON)
 

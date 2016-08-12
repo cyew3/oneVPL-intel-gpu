@@ -12,6 +12,7 @@
 */
 #include <math.h>
 #include "umc_mpeg2_brc.h"
+#include "umc_video_data.h"
 
 namespace UMC
 {

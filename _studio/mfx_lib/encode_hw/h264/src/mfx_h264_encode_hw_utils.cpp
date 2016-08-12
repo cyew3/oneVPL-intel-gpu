@@ -26,12 +26,12 @@
 
 #include <assert.h>
 #include "ippi.h"
-#include "ipps.h"
 #include "vm_time.h"
 #include "umc_automatic_mutex.h"
 #include "mfx_brc_common.h"
 #include "mfx_h264_encode_hw_utils.h"
 #include "libmfx_core.h"
+#include "umc_video_data.h"
 
 
 using namespace MfxHwH264Encode;

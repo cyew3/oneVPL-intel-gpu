@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -22,6 +22,32 @@ using namespace MFX_HEVC_PP;
 
 namespace UMC_HEVC_DECODER
 {
+
+// Fast memcpy inline function for small memory blocks like 4-32 bytes, used in interpolation
+static void inline H265_FORCEINLINE  small_memcpy( void* dst, const void* src, int len )
+{
+#if defined( __INTEL_COMPILER ) // || defined( __GNUC__ )  // TODO: check with GCC
+    // 128-bit loads/stores first with then REP MOVSB, aligning dst on 16-bit to avoid costly store splits
+    int peel = (0xf & (-(size_t)dst));
+    __asm__ ( "cld" );
+    if (peel) {
+        if (peel > len)
+            peel = len;
+        len -= peel;
+        __asm__ ( "rep movsb" : "+c" (peel), "+S" (src), "+D" (dst) :: "memory" );
+    }
+    while (len > 15) {
+        __m128i v_tmp;
+        __asm__ ( "movdqu (%[src_]), %%xmm0; movdqu %%xmm0, (%[dst_])" : : [src_] "S" (src), [dst_] "D" (dst) : "%xmm0", "memory" );
+        src = 16 + (const Ipp8u*)src; dst = 16 + (Ipp8u*)dst; len -= 16;
+    }
+    if (len > 0)
+        __asm__ ( "rep movsb" : "+c" (len), "+S" (src), "+D" (dst) :: "memory" );
+#else
+    MFX_INTERNAL_CPY(dst, src, len);
+#endif
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constructor / destructor / initialize
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

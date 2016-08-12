@@ -5,10 +5,10 @@ set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 mfx_include_dirs( )
 
 list( APPEND mdirs
-  scheduler vpp brc/mpeg2 enc/mpeg2 pak/mpeg2 brc/h264 encode/h264 encode/mpeg2 encode/mjpeg decode/vc1
-  decode/h264 decode/mpeg2 decode/mjpeg cmrt_cross_platform encode_hw/h264 encode_hw/mpeg2 enc_hw/mpeg2
-  encode_hw/mjpeg
-  audio_decode/aac audio_decode/mp3 audio_encode/aac  ## open-source-cut-line
+  scheduler vpp decode/vc1 encode_hw/mjpeg
+  decode/h264 decode/mpeg2 decode/mjpeg cmrt_cross_platform encode_hw/h264 encode_hw/mpeg2
+  encode/h264 enc/mpeg2 pak/mpeg2 enc_hw/mpeg2 encode/mpeg2 encode/mjpeg  ## open-source-cut-line
+  brc/h264 brc/mpeg2 audio_decode/aac audio_decode/mp3 audio_encode/aac  ## open-source-cut-line
   )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_preenc )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_pak )
@@ -18,8 +18,8 @@ foreach( dir ${mdirs} )
 endforeach( )
 
 list( APPEND cdirs
-  brc h264_enc vc1_dec mpeg2_enc vc1_common color_space_converter mpeg2_dec jpeg_enc
-  aac_dec common aac_common mp3_common mp3_dec aac_enc  ## open-source-cut-line
+  brc h264_enc vc1_dec vc1_common color_space_converter mpeg2_dec
+  mpeg2_enc jpeg_enc aac_dec common aac_common mp3_common mp3_dec aac_enc  ## open-source-cut-line
   )
 foreach( dir ${cdirs} )
   include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/codec/${dir}/include )
@@ -37,7 +37,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
   list( APPEND sources
     ${prefix}/libmfxsw.cpp
     ${prefix}/libmfxsw_async.cpp
-    ${prefix}/libmfxsw_brc.cpp
+    ${prefix}/libmfxsw_brc.cpp ## open-source-cut-line
     ${prefix}/libmfxsw_decode.cpp
     ${prefix}/libmfxsw_enc.cpp
     ${prefix}/libmfxsw_encode.cpp
@@ -103,33 +103,35 @@ foreach( variant
     h264_enc_sw
     jpeg_common
     jpeg_dec_${variant}
-    jpeg_enc
-    me  ## open-source-cut-line
     mpeg2_dec_${variant}
-    mpeg2_enc
     scene_analyzer
     vc1_common
     vc1_dec_${variant}
-    vc1_enc  ## open-source-cut-line
     umc
     vm
     vm_plus
-    media_buffers
     umc_io
     umc_va_elk_hw
-    brc
     cmrt_cross_platform_hw
     decode_${variant}
-    encode
     encode_hw
-    enc
     enc_hw
     h264_la
     genx_h264_encode_embeded
+## open-source-cut-start
+    media_buffers
+    encode
+    vc1_enc
+    brc
+    jpeg_enc
+    me
+    mpeg2_enc
+    enc
     h264_dispatcher
     h264_px
     h264_sse3
     pak
+## open-source-cut-end
     mfx_common
     mfx_common_${variant}
     vc1_shared

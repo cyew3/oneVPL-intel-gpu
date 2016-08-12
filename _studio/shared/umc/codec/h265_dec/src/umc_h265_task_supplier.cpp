@@ -34,6 +34,8 @@
 #include "umc_h265_segment_decoder_mt.h"
 #endif
 
+#include "mfx_common.h" //  for trace routines
+
 namespace UMC_HEVC_DECODER
 {
 

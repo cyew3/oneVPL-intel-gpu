@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -15,6 +15,7 @@
 #define __H265_TR_QUANT_H
 
 #include "umc_h265_dec_defs.h"
+#include "mfx_h265_optimization.h"
 
 namespace UMC_HEVC_DECODER
 {

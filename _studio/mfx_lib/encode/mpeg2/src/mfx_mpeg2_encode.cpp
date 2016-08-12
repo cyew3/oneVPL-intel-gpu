@@ -999,7 +999,7 @@ mfxStatus MFXVideoENCODEMPEG2::ResetImpl(mfxVideoParam *par_input)
 
         if (m_brc == NULL)
         {
-            m_brc = UMC::CreateBRC(UMC::BRC_MPEG2);
+            m_brc = new UMC::MPEG2BRC;
             ret = m_brc->Init(&brcParams);
             MFX_CHECK_UMC_STS (ret);
         }

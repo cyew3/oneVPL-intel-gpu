@@ -27,11 +27,11 @@ include_directories( ${MSDK_LIB_ROOT}/fei/h265/include )
 list( APPEND umc_dirs
   common
   brc scene_analyzer color_space_converter
-  mpeg2_dec mpeg2_enc
+  mpeg2_dec h264_dec h264_enc 
   vc1_common vc1_dec vc1_spl
-  h264_dec h264_enc
+  mpeg2_enc jpeg_enc            ## open-source-cut-line
   h265_dec
-  jpeg_common jpeg_dec jpeg_enc)
+  jpeg_common jpeg_dec )
 
 if ( ENABLE_HEVC )
   message( STATUS "Building HEVC with software libraries: SW Decoder & Encoder, GACC." )
@@ -52,9 +52,11 @@ list( APPEND vencs
   )
 
 foreach( dec ${vdecs} )
-  list( APPEND vdirs
+## open-source-cut-start
+  list( APPEND vdirs      
     brc/${dec}
     )
+## open-source-cut-end
 
   list( APPEND vdirs_impl
     decode/${dec}
@@ -62,14 +64,17 @@ foreach( dec ${vdecs} )
 endforeach( )
 
 foreach( enc ${vencs} )
+## open-source-cut-start
   list( APPEND vdirs
     enc/${enc} encode/${enc} pak/${enc}
     )
-
+## open-source-cut-end
   list( APPEND vdirs_hw
-    enc_hw/${enc} encode_hw/${enc}
+    enc_hw/${enc}        ## open-source-cut-line
+    encode_hw/${enc}
     )
 endforeach( )
+
 
 list( APPEND vdirs_impl vpp cmrt_cross_platform genx/h264_encode genx/h265_encode)
 
@@ -215,7 +220,7 @@ foreach( variant ${hevcd_variants} )
   endif()
 
   list( APPEND LIBS
-    media_buffers
+    media_buffers       ## open-source-cut-start
     umc_io
     umc
     vm
@@ -319,6 +324,7 @@ foreach( variant ${hevce_variants} )
   set( description_name ${${variant}_HEVC_ENCODER_DESCRIPTION} )
   set( LIBS "" )
   list( APPEND LIBS
+## open-source-cut-start
     hevc_pp_dispatcher
     hevc_pp_atom
     hevc_pp_avx2
@@ -326,6 +332,7 @@ foreach( variant ${hevce_variants} )
     hevc_pp_sse4
     hevc_pp_ssse3
     media_buffers
+## open-source-cut-end
     umc_io
     umc
     vm
@@ -476,10 +483,10 @@ foreach( variant hw )
   set( LIBS "" )
   list( APPEND LIBS
     h264_la
-    brc
+    brc				## open-source-cut-line
     color_space_converter_sw
     h264_enc_sw
-    media_buffers
+    media_buffers               ## open-source-cut-line
     umc_io
     umc_va_elk_hw
     umc
@@ -574,7 +581,7 @@ if( ENABLE_HEVC_FEI )
 
     set( LIBS "" )
     list( APPEND LIBS
-      media_buffers
+      media_buffers         ## open-source-cut-line
       umc_io
       umc
       vm
@@ -715,7 +722,7 @@ foreach( variant
   list( APPEND LIBS
     vpx  ## open-source-cut-line
     color_space_converter_sw
-    media_buffers
+    media_buffers      ## open-source-cut-line
     umc_io
     umc
     vm
@@ -846,7 +853,7 @@ foreach( variant
 
   list( APPEND LIBS
     vpx  ## open-source-cut-line
-    media_buffers
+    media_buffers   ## open-source-cut-line
     umc_io
     umc
     vm

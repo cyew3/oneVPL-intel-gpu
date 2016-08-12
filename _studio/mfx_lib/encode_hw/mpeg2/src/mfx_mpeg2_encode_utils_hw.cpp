@@ -19,7 +19,6 @@
 #include "mfx_mpeg2_encode_utils_hw.h"
 #include "mfx_brc_common.h"
 #include "mfx_mpeg2_enc_common.h"
-#include "umc_video_brc.h"
 #include "umc_mpeg2_brc.h"
 #include "mfx_task.h"
 #include "libmfx_core.h"
@@ -2069,7 +2068,7 @@ namespace MPEG2EncoderHW
 
             if (m_pBRC == NULL)
             {
-                m_pBRC = UMC::CreateBRC(UMC::BRC_MPEG2);
+                m_pBRC = new UMC::MPEG2BRC;
                 ret = m_pBRC->Init(&brcParams,m_pCore->GetHWType() < MFX_HW_HSW || m_pCore->GetHWType()==MFX_HW_VLV);
                 MFX_CHECK_UMC_STS (ret);
             }
@@ -2132,10 +2131,7 @@ namespace MPEG2EncoderHW
     }
     void MPEG2BRC_HW::Close ()
     {
-        if (m_pBRC)
-        {
-            UMC::DeleteBRC(&m_pBRC);
-        }
+        delete m_pBRC;
         m_pBRC = 0;
 
         m_bConstantQuant = 0;

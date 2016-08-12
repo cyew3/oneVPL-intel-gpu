@@ -643,6 +643,12 @@ VideoDecoder *CreateAsynchronousVideoDecoder(VideoDecoder *pDecoder);
 #include "ipps.h"
 #define MFX_INTERNAL_CPY(dst, src, size) ippsCopy_8u((const Ipp8u *)(src), (Ipp8u *)(dst), (int)size)
 
+#if defined(_WIN32) || defined(_WIN64)
+  #define ALIGN_DECL(X) __declspec(align(X))
+#else
+  #define ALIGN_DECL(X) __attribute__ ((aligned(X)))
+#endif
+
 /******************************************************************************/
 
 #endif // __UMC_DEFS_H__

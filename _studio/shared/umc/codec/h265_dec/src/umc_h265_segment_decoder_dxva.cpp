@@ -26,6 +26,8 @@
 
 #include "umc_h265_va_packer.h"
 
+#include "mfx_common.h" //  for trace routines
+
 #ifdef UMC_VA_DXVA
 #include "umc_va_base.h"
 #include "umc_va_dxva2_protected.h"

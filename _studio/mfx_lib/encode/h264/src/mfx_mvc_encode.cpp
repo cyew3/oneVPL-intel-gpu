@@ -30,7 +30,7 @@
 #include "mfx_brc_common.h"
 #include "mfx_session.h"
 #include "mfx_tools.h"
-#include "umc_video_brc.h"
+#include "umc_h264_brc.h"
 #include "vm_thread.h"
 #include "vm_interlocked.h"
 #include "mfx_ext_buffers.h"
@@ -2078,7 +2078,7 @@ mfxStatus MFXVideoENCODEMVC::InitMVCView(mfxVideoParam *par_in, mfxExtCodingOpti
         brcParams.profile = videoParams.profile_idc;
         brcParams.level = videoParams.level_idc;
 
-        view->m_brc = UMC::CreateBRC(UMC::BRC_H264);
+        view->m_brc = new UMC::H264BRC;
         status = view->m_brc->Init(&brcParams);
 
         if (m_ConstQP)
@@ -2816,7 +2816,8 @@ mfxStatus MFXVideoENCODEMVC::Close()
         if (m_views[i].m_brc)
         {
           m_views[i].m_brc->Close();
-          UMC::DeleteBRC(&m_views[i].m_brc);
+          delete m_views[i].m_brc;
+          m_views[i].m_brc = 0;
         }
 
         if (m_views[i].m_useAuxInput || m_views[i].m_useSysOpaq) {
@@ -3185,7 +3186,7 @@ mfxStatus MFXVideoENCODEMVC::Reset(mfxVideoParam * par_in)
             if (m_views[iii].m_brc){
                 m_views[iii].m_brc->Close();
             } else
-                m_views[iii].m_brc = UMC::CreateBRC(UMC::BRC_H264);
+                m_views[iii].m_brc = new UMC::H264BRC;
             status = m_views[iii].m_brc->Init(&brcParams);
             st = h264enc_ConvertStatus(status);
             MFX_CHECK_STS(st);
@@ -3193,7 +3194,7 @@ mfxStatus MFXVideoENCODEMVC::Reset(mfxVideoParam * par_in)
             if (m_views[iii].m_brc)
                 status = m_views[iii].m_brc->Reset(&brcParams);
             else {
-                m_views[iii].m_brc = UMC::CreateBRC(UMC::BRC_H264);
+                m_views[iii].m_brc = new UMC::H264BRC;
                 status = m_views[iii].m_brc->Init(&brcParams);
             }
             st = h264enc_ConvertStatus(status);

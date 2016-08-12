@@ -17,6 +17,8 @@
 #include "umc_h265_widevine_decrypter.h"
 #include "umc_h265_widevine_slice_decoding.h"
 
+#include "mfx_common.h" //  for trace routines
+
 namespace UMC_HEVC_DECODER
 {
 #ifdef UMC_VA_DXVA

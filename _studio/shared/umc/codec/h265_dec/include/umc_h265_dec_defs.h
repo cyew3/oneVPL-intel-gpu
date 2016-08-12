@@ -15,11 +15,7 @@
 #define __UMC_H265_DEC_DEFS_DEC_H__
 
 #include <vector>
-#include "ipps.h"
-
-#include "umc_memory_allocator.h"
 #include "umc_structures.h"
-#include "mfx_h265_optimization.h"
 
 namespace UMC_HEVC_DECODER
 {
@@ -1354,26 +1350,6 @@ inline T * h265_new_array_throw(Ipp32s size)
     return t;
 }
 
-// Allocate an object or throw exception
-template <typename T>
-inline T * h265_new_throw()
-{
-    T * t = new T();
-    if (!t)
-        throw h265_exception(UMC::UMC_ERR_ALLOC);
-    return t;
-}
-
-// Allocate an object or throw exception
-template <typename T, typename T1>
-inline T * h265_new_throw_1(T1 t1)
-{
-    T * t = new T(t1);
-    if (!t)
-        throw h265_exception(UMC::UMC_ERR_ALLOC);
-    return t;
-}
-
 enum
 {
     CHROMA_FORMAT_400       = 0,
@@ -1461,50 +1437,13 @@ inline size_t CalculateSuggestedSize(const H265SeqParamSet * sps)
     return 2*size;
 }
 
-// Fast memcpy inline function for small memory blocks like 4-32 bytes, used in interpolation
-static void inline H265_FORCEINLINE  small_memcpy( void* dst, const void* src, int len )
-{
-#if defined( __INTEL_COMPILER ) // || defined( __GNUC__ )  // TODO: check with GCC
-    // 128-bit loads/stores first with then REP MOVSB, aligning dst on 16-bit to avoid costly store splits
-    int peel = (0xf & (-(size_t)dst));
-    __asm__ ( "cld" );
-    if (peel) {
-        if (peel > len)
-            peel = len;
-        len -= peel;
-        __asm__ ( "rep movsb" : "+c" (peel), "+S" (src), "+D" (dst) :: "memory" );
-    }
-    while (len > 15) {
-        __m128i v_tmp;
-        __asm__ ( "movdqu (%[src_]), %%xmm0; movdqu %%xmm0, (%[dst_])" : : [src_] "S" (src), [dst_] "D" (dst) : "%xmm0", "memory" );
-        src = 16 + (const Ipp8u*)src; dst = 16 + (Ipp8u*)dst; len -= 16;
-    }
-    if (len > 0)
-        __asm__ ( "rep movsb" : "+c" (len), "+S" (src), "+D" (dst) :: "memory" );
-#else
-    MFX_INTERNAL_CPY(dst, src, len);
-#endif
-}
-
 // ML: OPT: significant overhead if not inlined (ICC does not honor implied 'inline' with -Qipo)
 // ML: OPT: TODO: Make sure compiler recognizes saturation idiom for vectorization when used
-#if 1
 #define Clip3( m_Min, m_Max, m_Value) ( (m_Value) < (m_Min) ? \
                                                   (m_Min) : \
                                                 ( (m_Value) > (m_Max) ? \
                                                               (m_Max) : \
                                                               (m_Value) ) )
-#else
-// ML: OPT: TODO: Not sure why the below template is not as good (fast) as the macro above
-template <class T>
-H265_FORCEINLINE
-T Clip3(const T& Min, const T& Max, T Value)
-{
-    Value = (Value < Min) ? Min : Value;
-    Value = (Value > Max) ? Max : Value;
-    return ( Value );
-    // return ( Value < Min ? Min : (Value > Max) ? Max : Value );
-#endif
 
 } // end namespace UMC_HEVC_DECODER
 

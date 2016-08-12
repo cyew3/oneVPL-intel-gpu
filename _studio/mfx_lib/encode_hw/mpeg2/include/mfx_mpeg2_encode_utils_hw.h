@@ -23,7 +23,6 @@
 #include "mfxvideopro++.h"
 #include "mfx_frames.h"
 #include "mfx_mpeg2_enc_common_hw.h"
-#include "mfx_mpeg2_enc_hw.h"
 #include "umc_mpeg2_brc.h"
 #include "mfx_brc_common.h"
 #include "umc_video_brc.h"

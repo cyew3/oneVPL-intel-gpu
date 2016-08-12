@@ -21,27 +21,6 @@
 namespace UMC
 {
 
-VideoBrc* CreateBRC(Ipp32u brcID)
-{
-  if (brcID == BRC_H264)
-    return new H264BRC;
-  if (brcID == BRC_MPEG2)
-    return new MPEG2BRC;
-  if (brcID == BRC_SVC)
-    return new SVCBRC;
-  else
-    return new CommonBRC;
-
-}
-
-void DeleteBRC(VideoBrc** brc)
-{
-  if (*brc) {
-    delete *brc;
-    *brc = NULL;
-  }
-}
-
 VideoBrcParams::VideoBrcParams()
 {
   BRCMode = BRC_CBR;
