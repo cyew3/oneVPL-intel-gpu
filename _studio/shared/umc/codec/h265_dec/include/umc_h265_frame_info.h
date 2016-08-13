@@ -78,6 +78,7 @@ public:
         const H265SliceHeader &sliceHeader = *(pSlice->GetSliceHeader());
 
         m_isIntraAU = m_isIntraAU && (sliceHeader.slice_type == I_SLICE);
+        m_IsIDR     = sliceHeader.IdrPicFlag != 0;
         m_hasDependentSliceSegments = m_hasDependentSliceSegments || sliceHeader.dependent_slice_segment_flag;
         m_isNeedDeblocking = m_isNeedDeblocking || (!sliceHeader.slice_deblocking_filter_disabled_flag);
         m_isNeedSAO = m_isNeedSAO || (sliceHeader.slice_sao_luma_flag || sliceHeader.slice_sao_chroma_flag);
@@ -200,6 +201,7 @@ public:
 
     H265DecoderFrame * m_pFrame;
     Ipp32s m_prepared;
+    bool m_IsIDR;
 
 private:
 

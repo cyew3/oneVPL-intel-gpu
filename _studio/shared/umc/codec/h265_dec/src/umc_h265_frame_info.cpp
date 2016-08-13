@@ -121,6 +121,7 @@ void H265DecoderFrameInfo::Reset()
 
     m_Status = STATUS_NONE;
     m_prepared = 0;
+    m_IsIDR = false;
 
     if (m_sps)
     {

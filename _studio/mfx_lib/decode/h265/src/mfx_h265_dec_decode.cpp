@@ -791,7 +791,7 @@ mfxStatus VideoDECODEH265::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
 
     if (par->mfx.MaxDecFrameBuffering && par->mfx.MaxDecFrameBuffering < dpbSize)
         dpbSize = par->mfx.MaxDecFrameBuffering;
-    
+
     mfxU32 numMin = dpbSize + 1 + asyncDepth;
     if (platform != MFX_PLATFORM_SOFTWARE && useDelayedDisplay) // equals if (m_useDelayedDisplay) - workaround
         numMin += NUMBER_OF_ADDITIONAL_FRAMES;
@@ -977,7 +977,6 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
     if (sts != MFX_ERR_NONE)
         return sts;
-
     UMC::Status umcRes = UMC::UMC_OK;
 
     *surface_out = 0;
@@ -1142,7 +1141,6 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
                 else
                     return sts;
             }
-
             umcRes = m_pH265VideoDecoder->RunDecoding();
 
             if (m_vInitPar.mfx.DecodedOrder)
@@ -1201,7 +1199,7 @@ void VideoDECODEH265::FillVideoParam(mfxVideoParamWrapper *par, bool full)
         return;
 
     MFX_Utility::FillVideoParam(m_pH265VideoDecoder.get(), par, full);
-    
+
     if (MFX_Utility::GetPlatform_H265(m_core, par) != MFX_PLATFORM_SOFTWARE)
     {
         if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
@@ -1248,7 +1246,7 @@ void VideoDECODEH265::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
     const UMC::FrameData * fd = pFrame->GetFrameData();
 
     *surf_out = m_FrameAllocator->GetSurface(fd->GetFrameMID(), surface_work, &m_vPar);
-    if(m_isOpaq) 
+    if(m_isOpaq)
        *surf_out = m_core->GetOpaqSurface((*surf_out)->Data.MemId);
     VM_ASSERT(*surf_out);
 
@@ -1304,7 +1302,7 @@ void VideoDECODEH265::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
         {
             case UMC::I_PICTURE:
                 info->FrameType = MFX_FRAMETYPE_I;
-                if (pFrame->GetAU()->GetAnySlice()->GetSliceHeader()->IdrPicFlag)
+                if (pFrame->GetAU()->m_IsIDR)
                     info->FrameType |= MFX_FRAMETYPE_IDR;
 
                 break;
