@@ -111,15 +111,20 @@ private:
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
     {
-        /*01*/ MFX_ERR_NONE, "conformance/hevc/self_coded/iceage_720x576_491.x265",
-        6,
+        /*01*/ MFX_ERR_NONE, "conformance/hevc/self_coded/stockholm_1280x720_604.x265",
+        11,
         {
             /* 0*/ MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF,
-            /* 1*/ MFX_FRAMETYPE_B,
-            /* 2*/ MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF,
+            /* 1*/ MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF,
+            /* 2*/ MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF,
             /* 3*/ MFX_FRAMETYPE_B,
             /* 4*/ MFX_FRAMETYPE_B,
-            /* 5*/ MFX_FRAMETYPE_B | MFX_FRAMETYPE_REF
+            /* 5*/ MFX_FRAMETYPE_B,
+            /* 6*/ MFX_FRAMETYPE_B | MFX_FRAMETYPE_REF,
+            /* 7*/ MFX_FRAMETYPE_B,
+            /* 8*/ MFX_FRAMETYPE_B,
+            /* 9*/ MFX_FRAMETYPE_B,
+            /* 10*/ MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF
        },
     }
 };
