@@ -714,4 +714,33 @@ void WaitForDeviceToBecomeFree(MFXVideoSession& session, mfxSyncPoint& syncPoint
 
 mfxU16 FourCCToChroma(mfxU32 fourCC);
 
+// class is used as custom exception
+class mfxError
+{
+public:
+    mfxError(mfxStatus status = MFX_ERR_UNKNOWN, std::string msg = "")
+        : m_Status(status),
+          m_msg(msg)
+    {
+    }
+
+    virtual ~mfxError()
+    {
+    }
+
+    mfxStatus GetStatus() const
+    {
+        return m_Status;
+    }
+
+    std::string GetMessage() const
+    {
+        return m_msg;
+    }
+
+private:
+    mfxStatus m_Status;
+    std::string m_msg;
+};
+
 #endif //__SAMPLE_UTILS_H__
