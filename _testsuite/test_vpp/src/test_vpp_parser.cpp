@@ -39,7 +39,7 @@ void vppPrintHelp(const vm_char *strAppName, const vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("   [-scrW  w]        - cropW  of src video (def: width)\n"));
     vm_string_printf(VM_STRING("   [-scrH  h]        - cropH  of src video (def: height)\n"));
     vm_string_printf(VM_STRING("   [-sf   frameRate] - frame rate of src video (def: 30.0)\n"));
-    vm_string_printf(VM_STRING("   [-scc  format]    - format (FourCC) of src video (def: nv12. support nv12|yv12|yuy2|rgb3|rgb4|imc3|yuv400|yuv411|yuv422h|yuv422v|yuv444|uyvy)\n"));
+    vm_string_printf(VM_STRING("   [-scc  format]    - format (FourCC) of src video (def: nv12. support nv12|yv12|yuy2|rgb3|rgb4|imc3|yuv400|yuv411|yuv422h|yuv422v|yuv444|uyvy|ayuv|y210|y410)\n"));
     vm_string_printf(VM_STRING("   [-sbitshift 0|1]  - shift data to right or keep it the same way as in Microsoft's P010\n"));
 
     vm_string_printf(VM_STRING("   [-spic value]     - picture structure of src video\n")); 
@@ -55,7 +55,7 @@ void vppPrintHelp(const vm_char *strAppName, const vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("   [-dcrW  w]        - cropW  of dst video (def: width)\n"));
     vm_string_printf(VM_STRING("   [-dcrH  h]        - cropH  of dst video (def: height)\n"));
     vm_string_printf(VM_STRING("   [-df  frameRate]  - frame rate of dst video (def: 30.0)\n"));
-    vm_string_printf(VM_STRING("   [-dcc format]     - format (FourCC) of dst video (def: nv12. support nv12|yuy2|rgb4|yv12)\n"));
+    vm_string_printf(VM_STRING("   [-dcc format]     - format (FourCC) of dst video (def: nv12. support nv12|yuy2|rgb4|yv12|ayuv|y210|y410)\n"));
     vm_string_printf(VM_STRING("   [-dbitshift 0|1]  - shift data to right or keep it the same way as in Microsoft's P010\n"));
 
     vm_string_printf(VM_STRING("   [-dpic value]     - picture structure of dst video\n")); 
@@ -246,6 +246,18 @@ mfxU32 Str2FourCC( vm_char* strInput )
     else if ( 0 == vm_string_strcmp(strInput, VM_STRING("uyvy")) )
     {
         fourcc = MFX_FOURCC_UYVY;
+    }
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("ayuv")) )
+    {
+        fourcc = MFX_FOURCC_AYUV;
+    }
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("y210")) )
+    {
+        fourcc = MFX_FOURCC_Y210;
+    }
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("y410")) )
+    {
+        fourcc = MFX_FOURCC_Y410;
     }
 
     return fourcc;

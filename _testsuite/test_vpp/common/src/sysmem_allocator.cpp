@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -138,6 +138,23 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->V = ptr->U + 2;
         ptr->Pitch = 2 * Width2;
         break;
+    case MFX_FOURCC_AYUV:
+        ptr->Y = ptr->B;
+        ptr->U = ptr->Y + 1;
+        ptr->V = ptr->Y + 2;
+        ptr->A = ptr->Y + 3;
+        ptr->Pitch = 4 * Width2;
+        break;
+    case MFX_FOURCC_Y210:
+        ptr->Y16 = (mfxU16 *)ptr->B;
+        ptr->U16 = ptr->Y16 + 1;
+        ptr->V16 = ptr->Y16 + 3;
+        ptr->Pitch = 2 * Width2;
+        break;
+    case MFX_FOURCC_Y410:
+        ptr->U = ptr->V = ptr->A = ptr->Y;
+        ptr->Pitch = 4 * Width2;
+        break;
     default:
         return MFX_ERR_UNSUPPORTED;
     }
@@ -211,6 +228,8 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
         break;
     case MFX_FOURCC_RGB4:
     case MFX_FOURCC_A2RGB10:
+    case MFX_FOURCC_AYUV:
+    case MFX_FOURCC_Y410:
         nbytes = Width2*Height2 + Width2*Height2 + Width2*Height2 + Width2*Height2;
         break;
     case MFX_FOURCC_YUY2:
@@ -221,6 +240,7 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
         nbytes = 3*Width2*Height2;
         break;
     case MFX_FOURCC_P210:
+    case MFX_FOURCC_Y210:
         nbytes = 4*Width2*Height2;
         break;
 

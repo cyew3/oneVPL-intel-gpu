@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -20,6 +20,9 @@ Copyright(c) 2008-2015 Intel Corporation. All Rights Reserved.
 #define D3DFMT_NV12 (D3DFORMAT)MAKEFOURCC('N','V','1','2')
 #define D3DFMT_YV12 (D3DFORMAT)MAKEFOURCC('Y','V','1','2')
 #define D3DFMT_P010 (D3DFORMAT)MAKEFOURCC('P','0','1','0')
+#define D3DFMT_AYUV (D3DFORMAT)MAKEFOURCC('A','Y','U','V')
+#define D3DFMT_Y210 (D3DFORMAT)MAKEFOURCC('Y','2','1','0')
+#define D3DFMT_Y410 (D3DFORMAT)MAKEFOURCC('Y','4','1','0')
 
 D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
 {
@@ -43,6 +46,12 @@ D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
         return D3DFMT_P8;
     case MFX_FOURCC_P010: // tmp !!! kta
         return D3DFMT_P010;
+    case MFX_FOURCC_AYUV:
+        return D3DFMT_AYUV;
+    case MFX_FOURCC_Y210:
+        return D3DFMT_Y210;
+    case MFX_FOURCC_Y410:
+        return D3DFMT_Y410;
     default:
         return D3DFMT_UNKNOWN;
     }
@@ -156,7 +165,10 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         desc.Format != D3DFMT_A8R8G8B8 &&
         desc.Format != D3DFMT_A8B8G8R8 &&
         desc.Format != D3DFMT_A2R10G10B10 &&
-        desc.Format != D3DFMT_P8)
+        desc.Format != D3DFMT_P8 &&
+        desc.Format != D3DFMT_AYUV &&
+        desc.Format != D3DFMT_Y210 &&
+        desc.Format != D3DFMT_Y410)
         return MFX_ERR_LOCK_MEMORY;
 
     D3DLOCKED_RECT locked;
@@ -224,6 +236,26 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->Y = (mfxU8 *)locked.pBits;
         ptr->U = 0;
         ptr->V = 0;
+        break;
+    case D3DFMT_AYUV:
+        ptr->Pitch = (mfxU16)locked.Pitch;
+        ptr->V = (mfxU8 *)locked.pBits;
+        ptr->U = ptr->V + 1;
+        ptr->Y = ptr->V + 2;
+        ptr->A = ptr->V + 3;
+        break;
+    case D3DFMT_Y210:
+        ptr->Pitch = (mfxU16)locked.Pitch;
+        ptr->Y16 = (mfxU16 *)locked.pBits;
+        ptr->U16 = ptr->Y16 + 1;
+        ptr->V16 = ptr->Y16 + 3;
+        break;
+    case D3DFMT_Y410:
+        ptr->Pitch = (mfxU16)locked.Pitch;
+        ptr->Y410 = (mfxY410 *)locked.pBits;
+        ptr->Y = 0;
+        ptr->V = 0;
+        ptr->A = 0;
         break;
     }
 
