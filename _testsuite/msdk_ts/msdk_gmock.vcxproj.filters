@@ -51,6 +51,9 @@
     <Filter Include="Source Files\test_suites\mpeg2e">
       <UniqueIdentifier>{f4d99549-2347-4ad0-a616-7e8ebbcd4e9e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\test_suites\vp9d">
+      <UniqueIdentifier>{bd92b363-250f-4ba3-b89a-4de9ac260a7a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\test_sample_allocator.h">
@@ -660,6 +663,9 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\trans_opaque.cpp">
       <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp9d_query_io_surf.cpp">
+      <Filter>Source Files\test_suites\vp9d</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
