@@ -36,6 +36,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #endif
 
 #include "plugin_loader.h"
+#include "sample_utils.h"
 
 #if defined (ENABLE_V4L2_SUPPORT)
 #include <pthread.h>
@@ -414,24 +415,9 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     }
 
     // frame info parameters
-    m_mfxEncParams.mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
-    m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+    m_mfxEncParams.mfx.FrameInfo.FourCC       = pInParams->EncodeFourCC;
+    m_mfxEncParams.mfx.FrameInfo.ChromaFormat = FourCCToChroma(pInParams->EncodeFourCC);
     m_mfxEncParams.mfx.FrameInfo.PicStruct    = pInParams->nPicStruct;
-
-    // In case of JPEG there's fine tuning of ColorFormat and Chrome format
-    if (MFX_CODEC_JPEG == pInParams->CodecId)
-    {
-        if (MFX_FOURCC_RGB4 == pInParams->ColorFormat)
-        {
-            m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            m_mfxEncParams.mfx.FrameInfo.FourCC       = MFX_FOURCC_RGB4;
-        }
-        else if (MFX_FOURCC_YUY2 == pInParams->ColorFormat)
-        {
-            m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
-            m_mfxEncParams.mfx.FrameInfo.FourCC       = MFX_FOURCC_YUY2;
-        }
-    }
 
     // set frame size and crops
     if(pInParams->CodecId==MFX_CODEC_HEVC && !memcmp(pInParams->pluginParams.pluginGuid.Data,MFX_PLUGINID_HEVCE_HW.Data,sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
@@ -533,16 +519,6 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
         m_mfxVppParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
     }
 
-    // input frame info
-#if defined (ENABLE_V4L2_SUPPORT)
-    if (isV4L2InputEnabled)
-    {
-        m_mfxVppParams.vpp.In.FourCC    = v4l2Pipeline.ConvertToMFXFourCC(pInParams->v4l2Format);
-    }
-#else
-    m_mfxVppParams.vpp.In.FourCC    = MFX_FOURCC_NV12;
-#endif
-
     m_mfxVppParams.vpp.In.PicStruct = pInParams->nPicStruct;;
     ConvertFrameRate(pInParams->dFrameRate, &m_mfxVppParams.vpp.In.FrameRateExtN, &m_mfxVppParams.vpp.In.FrameRateExtD);
 
@@ -559,11 +535,20 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(sInputParams *pInParams)
 
     // fill output frame info
     MSDK_MEMCPY_VAR(m_mfxVppParams.vpp.Out,&m_mfxVppParams.vpp.In, sizeof(mfxFrameInfo));
+    m_mfxVppParams.vpp.In.FourCC    = m_InputFourCC;
+    m_mfxVppParams.vpp.Out.FourCC    = pInParams->EncodeFourCC;
+    m_mfxVppParams.vpp.In.ChromaFormat =  FourCCToChroma(m_mfxVppParams.vpp.In.FourCC);
+    m_mfxVppParams.vpp.Out.ChromaFormat = FourCCToChroma(m_mfxVppParams.vpp.Out.FourCC);
 
+    // input frame info
 #if defined (ENABLE_V4L2_SUPPORT)
     if (isV4L2InputEnabled)
     {
+        m_mfxVppParams.vpp.In.FourCC = v4l2Pipeline.ConvertToMFXFourCC(pInParams->v4l2Format);
+        m_mfxVppParams.vpp.In.ChromaFormat = FourCCToChroma(m_mfxVppParams.vpp.In.FourCC);
+
         m_mfxVppParams.vpp.Out.FourCC    = MFX_FOURCC_NV12;
+        m_mfxVppParams.vpp.Out.ChromaFormat = FourCCToChroma(m_mfxVppParams.vpp.Out.FourCC);
     }
 #endif
 
@@ -685,7 +670,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
     if (m_pmfxVPP)
     {
         VppRequest[0].NumFrameSuggested = VppRequest[0].NumFrameMin = nVppSurfNum;
-        MSDK_MEMCPY_VAR(VppRequest[0].Info, &(m_mfxVppParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
+        MSDK_MEMCPY_VAR(VppRequest[0].Info, &(m_mfxVppParams.vpp.In), sizeof(mfxFrameInfo));
 
 #if defined (ENABLE_V4L2_SUPPORT)
         if (isV4L2InputEnabled)
@@ -913,6 +898,7 @@ CEncodingPipeline::CEncodingPipeline()
     m_bExternalAlloc = false;
     m_pEncSurfaces = NULL;
     m_pVppSurfaces = NULL;
+    m_InputFourCC = NULL;
 
     m_MVCflags = MVC_DISABLED;
     m_nNumView = 0;
@@ -1053,13 +1039,16 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     {
         // prepare input file reader
         sts = m_FileReader.Init(pParams->strSrcFile,
-            pParams->ColorFormat,
+            pParams->FileInputFourCC,
             pParams->numViews,
             pParams->srcFileBuff);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
     m_MVCflags = pParams->MVC_flags;
+
+    // FileReader can convert yv12->nv12 without vpp
+    m_InputFourCC = (pParams->FileInputFourCC == MFX_FOURCC_YV12) ? MFX_FOURCC_NV12 : pParams->FileInputFourCC;
 
     sts = InitFileWriters(pParams);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -1333,6 +1322,9 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
 
     sts = AllocFrames();
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    m_mfxEncParams.mfx.FrameInfo.FourCC       = m_mfxVppParams.vpp.Out.FourCC;
+    m_mfxEncParams.mfx.FrameInfo.ChromaFormat = m_mfxVppParams.vpp.Out.ChromaFormat;
 
     sts = m_pmfxENC->Init(&m_mfxEncParams);
     if (MFX_WRN_PARTIAL_ACCELERATION == sts)

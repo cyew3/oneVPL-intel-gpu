@@ -1448,20 +1448,3 @@ bool  CmdProcessor::GetNextSessionParams(TranscodingSample::sInputParams &InputP
 
 } //bool  CmdProcessor::GetNextSessionParams(TranscodingSample::sInputParams &InputParams)
 
-mfxU16 TranscodingSample::FourCCToChroma(mfxU32 fourCC)
-{
-    switch(fourCC)
-    {
-    case MFX_FOURCC_NV12:
-    case MFX_FOURCC_P010:
-        return MFX_CHROMAFORMAT_YUV420;
-    case MFX_FOURCC_NV16:
-    case MFX_FOURCC_P210:
-    case MFX_FOURCC_YUY2:
-        return MFX_CHROMAFORMAT_YUV422;
-    case MFX_FOURCC_RGB4:
-        return MFX_CHROMAFORMAT_YUV444;
-    }
-
-    return MFX_CHROMAFORMAT_YUV420;
-}

@@ -67,7 +67,8 @@ struct sInputParams
 {
     mfxU16 nTargetUsage;
     mfxU32 CodecId;
-    mfxU32 ColorFormat;
+    mfxU32 FileInputFourCC;
+    mfxU32 EncodeFourCC;
     mfxU16 nPicStruct;
     mfxU16 nWidth; // source picture width
     mfxU16 nHeight; // source picture height
@@ -210,6 +211,8 @@ protected:
     mfxVideoParam m_mfxVppParams;
 
     mfxU16 m_MVCflags; // MVC codec is in use
+
+    mfxU32 m_InputFourCC;
 
     std::auto_ptr<MFXVideoUSER> m_pUserModule;
     std::auto_ptr<MFXPlugin> m_pPlugin;

@@ -175,9 +175,10 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
 
     // prepare input file reader
     sts = m_FileReader.Init(pParams->strSrcFile,
-                            pParams->ColorFormat,
+                            pParams->FileInputFourCC,
                             pParams->numViews,
                             pParams->srcFileBuff);
+
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // set memory type

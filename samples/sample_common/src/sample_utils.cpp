@@ -21,6 +21,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include <math.h>
 #include <iostream>
+#include <algorithm>
 
 #include "vm/strings_defs.h"
 #include "time_statistics.h"
@@ -120,17 +121,25 @@ mfxStatus CSmplYUVReader::Init(const msdk_char *strFileName, const mfxU32 ColorF
         }
     }
 
-    //set init state to true in case of success
-    m_bInited = true;
+    mfxU32 fcc[] = {
+        MFX_FOURCC_NV12,
+        MFX_FOURCC_YV12,
+        MFX_FOURCC_YUY2,
+        MFX_FOURCC_RGB4,
+        MFX_FOURCC_BGR4,
+        MFX_FOURCC_P010
+    };
 
-    if (ColorFormat == MFX_FOURCC_NV12 || ColorFormat == MFX_FOURCC_YV12 || ColorFormat == MFX_FOURCC_YUY2 || ColorFormat == MFX_FOURCC_RGB4 || ColorFormat == MFX_FOURCC_BGR4)
-    {
-        m_ColorFormat = ColorFormat;
-    }
-    else
+    std::vector<mfxU32> vfcc(fcc, fcc+sizeof(fcc)/sizeof(fcc[0]));
+
+    if (std::find(vfcc.begin(), vfcc.end(), ColorFormat) == vfcc.end())
     {
         return MFX_ERR_UNSUPPORTED;
     }
+    m_ColorFormat = ColorFormat;
+
+    //set init state to true in case of success
+    m_bInited = true;
 
     return MFX_ERR_NONE;
 }
@@ -180,13 +189,6 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
 
     mfxU32 vid = pInfo.FrameId.ViewId;
 
-    // this reader supports only NV12 mfx surfaces for code transparency,
-    // other formats may be added if application requires such functionality
-    if (MFX_FOURCC_NV12 != pInfo.FourCC && MFX_FOURCC_YV12 != pInfo.FourCC && MFX_FOURCC_YUY2 != pInfo.FourCC && MFX_FOURCC_RGB4 != pInfo.FourCC && MFX_FOURCC_BGR4 != pInfo.FourCC)
-    {
-        return MFX_ERR_UNSUPPORTED;
-    }
-
     if (pInfo.CropH > 0 && pInfo.CropW > 0)
     {
         w = pInfo.CropW;
@@ -198,6 +200,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
         h = pInfo.Height;
     }
 
+    mfxU32 nBytesPerPixel = (pInfo.FourCC == MFX_FOURCC_P010) ? 2 : 1;
 
     if (MFX_FOURCC_YUY2 == pInfo.FourCC || MFX_FOURCC_RGB4 == pInfo.FourCC || MFX_FOURCC_BGR4 == pInfo.FourCC)
     {
@@ -251,7 +254,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
             return MFX_ERR_UNSUPPORTED;
         }
     }
-    else if (MFX_FOURCC_NV12 == pInfo.FourCC || MFX_FOURCC_YV12 == pInfo.FourCC)
+    else if (MFX_FOURCC_NV12 == pInfo.FourCC || MFX_FOURCC_YV12 == pInfo.FourCC || MFX_FOURCC_P010 == pInfo.FourCC)
     {
         pitch = pData.Pitch;
         ptr = pData.Y + pInfo.CropX + pInfo.CropY * pData.Pitch;
@@ -261,11 +264,11 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
         {
             if (!m_bIsMultiView)
             {
-                nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, w, m_fSource);
+                nBytesRead = (mfxU32)fread(ptr + i * pitch, nBytesPerPixel, w, m_fSource);
             }
             else
             {
-                nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, w, m_fSourceMVC[vid]);
+                nBytesRead = (mfxU32)fread(ptr + i * pitch, nBytesPerPixel, w, m_fSourceMVC[vid]);
             }
             if (w != nBytesRead)
             {
@@ -377,17 +380,18 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
             }
             break;
         case MFX_FOURCC_NV12:
+        case MFX_FOURCC_P010:
             h /= 2;
             ptr  = pData.UV + pInfo.CropX + (pInfo.CropY / 2) * pitch;
             for(i = 0; i < h; i++)
             {
                 if (!m_bIsMultiView)
                 {
-                    nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, w, m_fSource);
+                    nBytesRead = (mfxU32)fread(ptr + i * pitch, nBytesPerPixel, w, m_fSource);
                 }
                 else
                 {
-                    nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, w, m_fSourceMVC[vid]);
+                    nBytesRead = (mfxU32)fread(ptr + i * pitch, nBytesPerPixel, w, m_fSourceMVC[vid]);
                 }
                 if (w != nBytesRead)
                 {
@@ -1446,7 +1450,8 @@ const msdk_char* ColorFormatToStr(mfxU32 format)
         return MSDK_STRING("YUY2");
     case MFX_FOURCC_UYVY:
        return MSDK_STRING("UYVY");
-
+    case MFX_FOURCC_P010:
+       return MSDK_STRING("P010");
     default:
         return MSDK_STRING("unsupported");
     }
@@ -2201,4 +2206,23 @@ void WaitForDeviceToBecomeFree(MFXVideoSession& session, mfxSyncPoint& syncPoint
     } else {
         MSDK_SLEEP(DEVICE_WAIT_TIME);
     }
+}
+
+mfxU16 FourCCToChroma(mfxU32 fourCC)
+{
+    switch(fourCC)
+    {
+    case MFX_FOURCC_NV12:
+    case MFX_FOURCC_P010:
+        return MFX_CHROMAFORMAT_YUV420;
+    case MFX_FOURCC_NV16:
+    case MFX_FOURCC_P210:
+    case MFX_FOURCC_Y210:
+    case MFX_FOURCC_YUY2:
+        return MFX_CHROMAFORMAT_YUV422;
+    case MFX_FOURCC_RGB4:
+        return MFX_CHROMAFORMAT_YUV444;
+    }
+
+    return MFX_CHROMAFORMAT_YUV420;
 }

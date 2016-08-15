@@ -31,7 +31,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #define D3DFMT_NV12 (D3DFORMAT)MAKEFOURCC('N','V','1','2')
 #define D3DFMT_YV12 (D3DFORMAT)MAKEFOURCC('Y','V','1','2')
+#define D3DFMT_NV16 (D3DFORMAT)MAKEFOURCC('N','V','1','6')
 #define D3DFMT_P010 (D3DFORMAT)MAKEFOURCC('P','0','1','0')
+#define D3DFMT_P210 (D3DFORMAT)MAKEFOURCC('P','2','1','0')
+#define D3DFMT_Y210 (D3DFORMAT)MAKEFOURCC('Y','2','1','0')
 #define D3DFMT_IMC3 (D3DFORMAT)MAKEFOURCC('I','M','C','3')
 
 #define MFX_FOURCC_IMC3 (MFX_MAKEFOURCC('I','M','C','3')) // This line should be moved into mfxstructures.h in new API version
@@ -44,6 +47,8 @@ D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
         return D3DFMT_NV12;
     case MFX_FOURCC_YV12:
         return D3DFMT_YV12;
+    case MFX_FOURCC_NV16:
+        return D3DFMT_NV16;
     case MFX_FOURCC_YUY2:
         return D3DFMT_YUY2;
     case MFX_FOURCC_RGB3:
@@ -54,6 +59,10 @@ D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
         return D3DFMT_P8;
     case MFX_FOURCC_P010:
         return D3DFMT_P010;
+    case MFX_FOURCC_P210:
+        return D3DFMT_P210;
+    case MFX_FOURCC_Y210:
+        return D3DFMT_Y210;
     case MFX_FOURCC_A2RGB10:
         return D3DFMT_A2R10G10B10;
     case MFX_FOURCC_ABGR16:

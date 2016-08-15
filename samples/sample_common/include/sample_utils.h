@@ -695,4 +695,6 @@ mfxI32 getMonitorType(msdk_char* str);
 
 void WaitForDeviceToBecomeFree(MFXVideoSession& session, mfxSyncPoint& syncPoint,mfxStatus& currentStatus);
 
+mfxU16 FourCCToChroma(mfxU32 fourCC);
+
 #endif //__SAMPLE_UTILS_H__
