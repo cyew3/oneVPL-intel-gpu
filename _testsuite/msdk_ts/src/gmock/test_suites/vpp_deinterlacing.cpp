@@ -89,13 +89,17 @@ int TestSuite::RunTest(unsigned int id)
 
     SETPARS(&m_par, MFX_PAR);
 
+    mfxExtVPPDeinterlacing* extVPPDi = (mfxExtVPPDeinterlacing*)m_par.GetExtBuffer(MFX_EXTBUFF_VPP_DEINTERLACING);
     if (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS)
     {
-        mfxExtVPPDeinterlacing* extVPPDi = (mfxExtVPPDeinterlacing*)m_par.GetExtBuffer(MFX_EXTBUFF_VPP_DEINTERLACING);
-
-        if (extVPPDi->Mode == MFX_DEINTERLACING_ADVANCED_SCD)
+                if (extVPPDi->Mode == MFX_DEINTERLACING_ADVANCED_SCD)
             sts = MFX_ERR_UNSUPPORTED; // only linux supports SCD mode
     }
+    /* one more limitation for VPP SCD */
+    if ((MFX_OS_FAMILY_LINUX == g_tsOSFamily) &&
+        (MFX_HW_BXT == g_tsHWtype) &&
+        (extVPPDi->Mode == MFX_DEINTERLACING_ADVANCED_SCD))
+        sts = MFX_ERR_UNSUPPORTED; // only Linux for BDW & SKL supports SCD mode for now
 
     SetHandle();
 
