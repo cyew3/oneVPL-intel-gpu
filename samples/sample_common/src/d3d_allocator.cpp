@@ -155,10 +155,11 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
     switch ((DWORD)desc.Format)
     {
     case D3DFMT_NV12:
+    case D3DFMT_P010:
         ptr->Pitch = (mfxU16)locked.Pitch;
         ptr->Y = (mfxU8 *)locked.pBits;
         ptr->U = (mfxU8 *)locked.pBits + desc.Height * locked.Pitch;
-        ptr->V = ptr->U + 1;
+        ptr->V = (desc.Format == D3DFMT_P010) ? ptr->U + 2 : ptr->U + 1;
         break;
     case D3DFMT_YV12:
         ptr->Pitch = (mfxU16)locked.Pitch;
@@ -191,13 +192,6 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->Y = (mfxU8 *)locked.pBits;
         ptr->U = 0;
         ptr->V = 0;
-        break;
-    case D3DFMT_P010:
-        ptr->PitchHigh = (mfxU16)(locked.Pitch / (1 << 16));
-        ptr->PitchLow = (mfxU16)(locked.Pitch % (1 << 16));
-        ptr->Y = (mfxU8 *)locked.pBits;
-        ptr->U = (mfxU8 *)locked.pBits + desc.Height * locked.Pitch;
-        ptr->V = ptr->U + 1;
         break;
     case D3DFMT_A16B16G16R16:
         ptr->V16 = (mfxU16*)locked.pBits;

@@ -147,6 +147,7 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 DXGI_FORMAT_R16_UNORM != desc.Format &&
                 DXGI_FORMAT_R10G10B10A2_UNORM != desc.Format &&
                 DXGI_FORMAT_R16G16B16A16_UNORM != desc.Format &&
+                DXGI_FORMAT_P010 != desc.Format &&
                 DXGI_FORMAT_AYUV != desc.Format)
             {
                 return MFX_ERR_LOCK_MEMORY;
@@ -179,12 +180,12 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
 
     switch (desc.Format)
     {
+        case DXGI_FORMAT_P010:
         case DXGI_FORMAT_NV12:
             ptr->Pitch = (mfxU16)lockedRect.RowPitch;
             ptr->Y = (mfxU8 *)lockedRect.pData;
             ptr->U = (mfxU8 *)lockedRect.pData + desc.Height * lockedRect.RowPitch;
-            ptr->V = ptr->U + 1;
-
+            ptr->V = (desc.Format == DXGI_FORMAT_P010) ? ptr->U + 2 : ptr->U + 1;
             break;
 
         case DXGI_FORMAT_420_OPAQUE: // can be unsupported by standard ms guid
