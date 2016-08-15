@@ -319,8 +319,9 @@ mfxStatus MFXFileWriteRender::Init(mfxVideoParam *pInit, const vm_char *pFilenam
 
 mfxStatus MFXFileWriteRender::Close()
 {
-    mfxU8* ptr = IPP_MIN(IPP_MIN(m_yv12Surface.Data.Y, m_yv12Surface.Data.U), IPP_MIN(m_yv12Surface.Data.V, m_yv12Surface.Data.A));
-    delete [] ptr;
+    mfxU8* ptr = MFX_MIN_POINTER(MFX_MIN_POINTER(m_yv12Surface.Data.Y, m_yv12Surface.Data.U), MFX_MIN_POINTER(m_yv12Surface.Data.V, m_yv12Surface.Data.A));
+    if (ptr)
+        delete [] ptr;
     MFX_ZERO_MEM(m_yv12Surface);
     m_nTimesClosed++;
     

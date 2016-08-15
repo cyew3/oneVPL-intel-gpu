@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -575,7 +575,7 @@ if (m_OptProc.Check(argv[0], optname1, description, OPT_FILENAME)) \
     MFX_CHECK_AND_THROW(myoffsetof(struct_type1, member) == myoffsetof(struct_type2, member));\
     MFX_CHECK_AND_THROW(sizeofmem(struct_type1, member) == sizeofmem(struct_type2, member));
 
-
+#define MFX_MIN_POINTER( a, b ) ( ((a) < (b)) ? ((a == 0) ? (b) : (a)) : ((b == 0) ? (a) : (b)) )
 
 //TODO:fix includes
 #include "mfx_pipeline_types.h"
