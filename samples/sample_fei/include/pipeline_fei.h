@@ -210,6 +210,46 @@ struct sTask
     std::list<std::pair<bufSet*, mfxFrameSurface1*> > bufs;
 };
 
+struct MVP_elem
+{
+    MVP_elem(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB * MVMB, mfxU8 idx, mfxU16 dist)
+    {
+        preenc_MVMB = MVMB;
+        refIdx      = idx;
+        distortion  = dist;
+    };
+
+    MVP_elem()
+    {
+        preenc_MVMB = NULL;
+        refIdx      = 0xff;
+        distortion  = 0xffff;
+    };
+
+    mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB * preenc_MVMB;
+    mfxU8 refIdx;
+    mfxU16 distortion;
+};
+
+struct BestMVset
+{
+    BestMVset(mfxU16 num_pred[2][2])
+    {
+        bestL0.reserve((std::min)((std::max)(num_pred[0][0], num_pred[1][0]), MaxFeiEncMVPNum));
+        bestL1.reserve((std::min)((std::max)(num_pred[0][1], num_pred[1][1]), MaxFeiEncMVPNum));
+    };
+
+    void Clear()
+    {
+        bestL0.clear();
+        bestL1.clear();
+
+    };
+
+    std::vector<MVP_elem> bestL0;
+    std::vector<MVP_elem> bestL1;
+};
+
 class CEncTaskPool
 {
 public:
@@ -277,18 +317,15 @@ protected:
     mfxU16 m_widthMB;
     mfxU16 m_widthMBpreenc;
     mfxU16 m_numMB;
-    mfxU16 m_numMBpreenc; // number of MBs in input for PreEnc surfaces
+    mfxU16 m_numMBpreenc; // number of MBs in input for PreEnc surfaces (preenc may use downsampling, so m_numMBpreenc could be <= m_numMB)
 
-    mfxU16 m_numMBp;      // is needed for mixed picstructs
-    mfxU16 m_numMBpPreenc;// is needed for mixed picstructs
+    mfxU16 m_numMB_frame;      // is needed for mixed picstructs (holds numMB for progressive frame)
+    mfxU16 m_numMBpreenc_frame;// is needed for mixed picstructs (holds numMB for progressive frame)
 
-    // DRC workflow
-    mfxU16 m_numMB_drc;
-    bool m_bDRCReset;
-
-    MFXVideoSession m_mfxSession;
-    MFXVideoSession m_preenc_mfxSession;
+    MFXVideoSession  m_mfxSession;
+    MFXVideoSession  m_preenc_mfxSession;
     MFXVideoSession* m_pPreencSession;
+
     MFXVideoDECODE*  m_pmfxDECODE;
     MFXVideoVPP*     m_pmfxVPP;
     MFXVideoVPP*     m_pmfxDS;
@@ -310,6 +347,8 @@ protected:
     mfxAllocatorParams* m_pmfxAllocatorParams;
     MemType m_memType;
     bool m_bExternalAlloc; // use memory allocator as external for Media SDK
+
+    CHWDevice *m_hwdev;
 
     mfxSyncPoint   m_LastDecSyncPoint;
 
@@ -353,9 +392,43 @@ protected:
     std::list<bufSet*> m_preencBufs, m_encodeBufs;
     mfxStatus FreeBuffers(std::list<bufSet*> bufs);
 
-    CHWDevice *m_hwdev;
+    bool m_bEndOfFile;
+    bool m_insertIDR;
+    bool m_twoEncoders;
+    bool m_disableMVoutPreENC;
+    bool m_disableMBStatPreENC;
+    bool m_bSeparatePreENCSession;
+    bool m_enableMVpredPreENC;
+
+    mfxU16 m_maxQueueLength;
+    mfxU16 m_log2frameNumMax;
+    mfxU8  m_ffid, m_sfid; // holds parity of first / second field: 0 - top_field, 1 - bottom_field
+    mfxU32 m_frameCount, m_frameOrderIdrInDisplayOrder;
+    mfxU16 m_frameIdrCounter;
+    PairU8 m_frameType;
+    bool  m_isField;
+
+    // Dynamic Resolution Change workflow
+    mfxU16 m_numMB_drc;
+    bool m_bDRCReset;
+    bool m_bNeedDRC;   //True if Dynamic Resolution Change requied
+    bool m_bVPPneeded; //True if we have VPP in pipeline
+    std::vector<mfxU32> m_drcStart;
+    std::vector<mfxU16> m_drcWidth;
+    std::vector<mfxU16> m_drcHeight;
+    mfxU16 m_drcDftW;
+    mfxU16 m_drcDftH;
+
+    mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* m_tmpForReading, *m_tmpMBpreenc;
+    mfxExtFeiEncMV::mfxExtFeiEncMVMB*       m_tmpMBenc;
+    mfxI16 *m_tmpForMedian;
+
+    mfxU16 m_numOfRefs[2][2]; // [fieldId][L0L1]
+
+    SurfStrategy m_surfPoolStrategy;
 
     virtual mfxStatus InitInterfaces();
+    virtual mfxStatus FillPipelineParameters();
 
     virtual mfxStatus InitMfxEncParams(sInputParams *pParams);
     virtual mfxStatus InitMfxDecodeParams(sInputParams *pParams);
@@ -426,16 +499,16 @@ protected:
     std::list<iTask*>::iterator ReorderFrame(std::list<iTask*>& unencoded_queue);
     mfxU32 CountFutureRefs(mfxU32 frameOrder);
 
-    mfxStatus InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask[2][2], int ref_fid[2][2], bool isDownsamplingNeeded);
+    mfxStatus InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask[2][2], mfxU8 ref_fid[2][2], bool isDownsamplingNeeded);
     mfxStatus InitEncPakFrameParams(iTask* eTask);
     mfxStatus InitEncodeFrameParams(mfxFrameSurface1* encodeSurface, sTask* pCurrentTask, PairU8 frameType, bool is_buffered);
     mfxStatus ReadPAKdata(iTask* eTask);
     mfxStatus DropENCPAKoutput(iTask* eTask);
     mfxStatus DropPREENCoutput(iTask* eTask);
     mfxStatus DropDecodeStreamoutOutput(mfxFrameSurface1* pSurf);
-    mfxStatus PassPreEncMVPred2EncEx(iTask* eTask, mfxU16 numMVP[2][2]);
-    mfxStatus PassPreEncMVPred2EncExPerf(iTask* eTask, mfxU16 numMVP[2][2]);
-    mfxStatus repackDSPreenc2EncExMB(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB[2], mfxExtFeiEncMVPredictors *EncMVPred, mfxU32 MBnum, mfxU32 refIdx[2], mfxU32 predIdx);
+    mfxStatus PassPreEncMVPred2EncEx(iTask* eTask);
+    mfxStatus PassPreEncMVPred2EncExPerf(iTask* eTask);
+    void UpsampleMVP(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB * preenc_MVMB, mfxU32 MBindex_DS, mfxExtFeiEncMVPredictors* mvp, mfxU32 predIdx, mfxU8 refIdx, mfxU32 L0L1);
 
     /* ENC(PAK) reflists */
     mfxStatus FillRefInfo(iTask* eTask);
@@ -444,44 +517,11 @@ protected:
     mfxU32 GetNForward(iTask* eTask, mfxU32 fieldId);
 
     iTask* GetTaskByFrameOrder(mfxU32 frame_order);
-    mfxStatus GetRefTaskEx(iTask *eTask, mfxU32 l0_idx, mfxU32 l1_idx, int refIdx[2][2], int ref_fid[2][2], iTask *outRefTask[2][2]);
-    mfxStatus GetBestSetByDistortion(std::list<PreEncMVPInfo>& preenc_mvp_info,
-        mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB ** bestDistortionPredMBext[MaxFeiEncMVPNum], mfxU32 * refIdx[MaxFeiEncMVPNum],
-        mfxU32 nPred_actual[2], mfxU32 fieldId, mfxU32 MB_idx);
+    mfxStatus GetRefTaskEx(iTask *eTask, mfxU8 l0_idx, mfxU8 l1_idx, mfxU8 refIdx[2][2], mfxU8 ref_fid[2][2], iTask *outRefTask[2][2]);
+
+    mfxStatus GetBestSetsByDistortion(std::list<PreEncOutput>& preenc_output, BestMVset & BestSet, mfxU32 nPred[2], mfxU32 fieldId, mfxU32 MB_idx);
 
     void ShowDpbInfo(iTask *task, int frame_order);
-
-    bool m_bEndOfFile;
-    bool m_insertIDR;
-    bool m_twoEncoders;
-    bool m_disableMVoutPreENC;
-    bool m_disableMBStatPreENC;
-    bool m_bSeparatePreENCSession;
-    bool m_enableMVpredPreENC;
-
-    mfxU16 m_maxQueueLength;
-    mfxU16 m_log2frameNumMax;
-    mfxU8  m_ffid, m_sfid;
-    mfxU32 m_frameCount, m_frameOrderIdrInDisplayOrder;
-    PairU8 m_frameType;
-    mfxU8  m_isField;
-    mfxU16 m_frameIdrCounter;
-   //for Dynamic Resolution Change
-    bool m_bNeedDRC;   //True if Dynamic Resolution Change requied
-    bool m_bVPPneeded; //True if we have VPP in pipeline
-    std::vector<mfxU32> m_drcStart;
-    std::vector<mfxU16> m_drcWidth;
-    std::vector<mfxU16> m_drcHeight;
-    mfxU16 m_drcDftW;
-    mfxU16 m_drcDftH;
-
-    mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* m_tmpForReading, *m_tmpMBpreenc;
-    mfxExtFeiEncMV::mfxExtFeiEncMVMB*       m_tmpMBenc;
-    mfxI16 *m_tmpForMedian;
-
-    mfxU16 m_numOfRefs[2][2]; // [fieldId][L0L1]
-
-    SurfStrategy m_surfPoolStrategy;
 };
 
 bufSet* getFreeBufSet(std::list<bufSet*> bufs);
@@ -491,16 +531,10 @@ PairU8 ExtendFrameType(mfxU32 type);
 mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 counter, bool & ref);
 
 mfxStatus repackPreenc2Enc(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf);
-mfxStatus repackPreenc2EncExOneMB(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB[2], mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 refIdx[2], mfxU32 predIdx, mfxI16 *tmpBuf);
 mfxI16 get16Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1);
 mfxI16 get4Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1, int offset);
 
-bool compareL0Distortion(std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> frst,
-    std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> scnd);
-
-bool compareL1Distortion(std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> frst,
-    std::pair<std::pair<mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *, mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB *>, mfxU32*> scnd);
-
+inline bool compareDistortion(MVP_elem frst, MVP_elem scnd);
 const char* getFrameType(mfxU8 type);
 
 #endif // __PIPELINE_FEI_H__

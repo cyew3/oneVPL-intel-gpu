@@ -758,6 +758,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     {
         switch (pParams->preencDSstrength)
         {
+        case 1:
+            pParams->preencDSstrength = 0;
+            break;
         case 2:
         case 4:
         case 8:

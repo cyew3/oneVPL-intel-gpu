@@ -33,7 +33,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #define IPP_MAX( a, b ) ( ((a) > (b)) ? (a) : (b) )
 #define IPP_MIN( a, b ) ( ((a) < (b)) ? (a) : (b) )
 
-const mfxU32 MaxFeiEncMVPNum = 4;
+const mfxU16 MaxFeiEncMVPNum = 4;
 
 #define MSDK_ZERO_ARRAY(VAR, NUM) {memset(VAR, 0, sizeof(VAR[0])*NUM);}
 #define SAFE_RELEASE_EXT_BUFSET(SET) {if (SET){ SET->vacant = true; SET = NULL;}}
@@ -386,10 +386,10 @@ struct DecRefPicMarkingInfo
     ArrayU32x64 value;      // operation-dependent data, max 2 per operation
 };
 
-struct PreEncMVPInfo
+struct PreEncOutput
 {
-    bufSet* preenc_output_bufs;
-    mfxU32 refIdx[2][2]; // [fieldId][L0L1]
+    bufSet* output_bufs;
+    mfxU8 refIdx[2][2]; // [fieldId][L0L1]
 };
 
 //for PreEnc; Enc; Pak reordering
@@ -404,7 +404,7 @@ struct iTask
     bool encoded;
     bufSet* bufs;
     bufSet* preenc_bufs;
-    std::list<PreEncMVPInfo> preenc_mvp_info;
+    std::list<PreEncOutput> preenc_output;
     mfxFrameSurface1 *fullResSurface;
 
     mfxU16 PicStruct;
