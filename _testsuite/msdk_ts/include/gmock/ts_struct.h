@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #pragma once
 
 #include "ts_common.h"
@@ -50,7 +60,7 @@ inline mfxU64 get(void* base, const Field field) { mfxU64 value = 0; memcpy(&val
         Wrap_##name(mfxU32 base, mfxU32 size, std::string _name);\
         fields                                      \
     };                                              \
-    const Wrap_##name name(0, sizeof(::name), #name);
+    extern Wrap_##name const name;
 #define FIELD_T(type, name) Array<Field, (sizeof(((base_type*)0)->name)/sizeof(::type))> name;
 #define FIELD_S(type, name) Array<Wrap_##type, (sizeof(((base_type*)0)->name)/sizeof(::type))> name;
 

@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_struct.h"
 
 namespace tsStruct
@@ -33,7 +43,9 @@ void check_ne(void* base, Field field, mfxU64 expected)
     }
 }
 
-#define STRUCT(name, fields) Wrap_##name::Wrap_##name(mfxU32 base, mfxU32 size, std::string _name) : Field(base, size, _name) fields {}
+#define STRUCT(name, fields) Wrap_##name::Wrap_##name(mfxU32 base, mfxU32 size, std::string _name) : Field(base, size, _name) fields {} \
+    const Wrap_##name name(0, sizeof(::name), #name);
+
 #define FIELD_T(type, _name) , _name(offset + offsetof(base_type, _name), sizeof(::type), name + "::" + #_name)
 #define FIELD_S FIELD_T
 
