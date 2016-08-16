@@ -29,6 +29,8 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include <va/va_x11.h>
 #include <X11/Xlib.h>
+#undef Status
+
 #include "vaapi_allocator.h"
 #if defined(X11_DRI3_SUPPORT)
 #include <fcntl.h>
