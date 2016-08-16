@@ -1754,6 +1754,8 @@ mfxStatus CDecodingPipeline::RunDecoding()
                     if (m_diMode && m_pCurrentFreeVppSurface)
                         m_pCurrentFreeVppSurface->frame.Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
+                    // WA: RunFrameVPPAsync doesn't copy ViewId from input to output
+                    m_pCurrentFreeVppSurface->frame.Info.FrameId.ViewId = pOutSurface->Info.FrameId.ViewId;
                     sts = m_pmfxVPP->RunFrameVPPAsync(pOutSurface, &(m_pCurrentFreeVppSurface->frame), NULL, &(m_pCurrentFreeOutputSurface->syncp));
 
                     if (MFX_WRN_DEVICE_BUSY == sts) {
