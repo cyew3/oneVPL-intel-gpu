@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          ColorSpaceConversion Video Pre\Post Processing
@@ -32,6 +32,7 @@ public:
   static mfxU8 GetInFramesCountExt( void ) { return VPP_CSC_IN_NUM_FRAMES_REQUIRED; };
   static mfxU8 GetOutFramesCountExt(void) { return VPP_CSC_OUT_NUM_FRAMES_REQUIRED; };
 
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
   MFXVideoVPPColorSpaceConversion(VideoCORE *core, mfxStatus* sts);
   virtual ~MFXVideoVPPColorSpaceConversion();
 
@@ -61,7 +62,7 @@ protected:
     //mfxStatus PassThrough(mfxFrameSurface1 *in, mfxFrameSurface1 *out);
     mfxFrameData    m_yv12Data;
     bool            m_bAVX2;
-
+#endif
 };
 
 #endif // __MFX_COLOR_SPACE_CONVERSION_VPP_H

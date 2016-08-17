@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          SW Video Pre\Post Processing: multithreading part
@@ -23,7 +23,8 @@
 #include "mfx_vpp_service.h"
 #include "mfx_vpp_sw.h"
 
-mfxStatus VideoVPPSW::PreWork(mfxFrameSurface1* in, mfxFrameSurface1* out,
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
+mfxStatus VideoVPP_SW::PreWork(mfxFrameSurface1* in, mfxFrameSurface1* out,
                                 mfxFrameSurface1** pInSurf, mfxFrameSurface1** pOutSurf)
 {
     mfxStatus sts = MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -101,10 +102,10 @@ mfxStatus VideoVPPSW::PreWork(mfxFrameSurface1* in, mfxFrameSurface1* out,
 
     return sts;
 
-} // mfxStatus VideoVPPSW::PreWork(...)
+} // mfxStatus VideoVPPBase::PreWork(...)
 
 
-mfxStatus VideoVPPSW::PostWork(mfxFrameSurface1* in, mfxFrameSurface1* out,
+mfxStatus VideoVPP_SW::PostWork(mfxFrameSurface1* in, mfxFrameSurface1* out,
                                  mfxFrameSurface1* pInSurf, mfxFrameSurface1* pOutSurf,
                                  mfxStatus processingSts)
 {
@@ -182,9 +183,9 @@ mfxStatus VideoVPPSW::PostWork(mfxFrameSurface1* in, mfxFrameSurface1* out,
 
     return sts;
 
-} // mfxStatus VideoVPPSW::PostWork(...)
+} // mfxStatus VideoVPPBase::PostWork(...)
 
-mfxStatus VideoVPPSW::RunVPPTask(mfxFrameSurface1* in, mfxFrameSurface1* out, FilterVPP::InternalParam* pParam )
+mfxStatus VideoVPP_SW::RunVPPTask(mfxFrameSurface1* in, mfxFrameSurface1* out, FilterVPP::InternalParam* pParam )
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -278,15 +279,15 @@ mfxStatus VideoVPPSW::RunVPPTask(mfxFrameSurface1* in, mfxFrameSurface1* out, Fi
 
    return MFX_TASK_DONE;
 
-} // mfxStatus VideoVPPSW::RunVPPTask(...)
+} // mfxStatus VideoVPPBase::RunVPPTask(...)
 
 
 mfxStatus RunFrameVPPRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 {
     mfxStatus tskRes;
 
-    VideoVPPSW *pVPP = (VideoVPPSW *)pState;
-    VideoVPPSW::AsyncParams *pAsyncParams = (VideoVPPSW::AsyncParams *)pParam;
+    VideoVPP_SW *pVPP = (VideoVPP_SW *)pState;
+    VideoVPP_SW::AsyncParams *pAsyncParams = (VideoVPP_SW::AsyncParams *)pParam;
 
     FilterVPP::InternalParam internalParam;
     internalParam.aux = pAsyncParams->aux;
@@ -303,7 +304,7 @@ mfxStatus RunFrameVPPRoutine(void *pState, void *pParam, mfxU32 threadNumber, mf
 } // mfxStatus RunFrameVPPRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 
 
-mfxStatus VideoVPPSW::ResetTaskCounters()
+mfxStatus VideoVPP_SW::ResetTaskCounters()
 {
     m_threadModeVPP.preWorkIsStarted = 0;
     m_threadModeVPP.preWorkIsDone = 0;
@@ -317,21 +318,23 @@ mfxStatus VideoVPPSW::ResetTaskCounters()
 
     return MFX_TASK_DONE;
 
-} // mfxStatus VideoVPPSW::ResetTaskCounters()
+} // mfxStatus VideoVPPBase::ResetTaskCounters()
 
 
 mfxStatus CompleteFrameVPPRoutine(void *pState, void *pParam, mfxStatus taskRes)
 {
-    VideoVPPSW *pVPP = (VideoVPPSW *)pState;
+    VideoVPP_SW *pVPP = (VideoVPP_SW *)pState;
     taskRes = taskRes;
 
     if (pParam)
     {
-        delete (VideoVPPSW::AsyncParams *)pParam;   // NOT SAFE !!!
+        delete (VideoVPP_SW::AsyncParams *)pParam;   // NOT SAFE !!!
     }
 
     return pVPP->ResetTaskCounters();
 
 } // mfxStatus CompleteFrameVPPRoutine(void *pState, void *pParam, mfxStatus taskRes)
+#endif
+
 #endif // MFX_ENABLE_VPP
 /* EOF */

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          Analysis of Video Content
@@ -22,17 +22,17 @@
 
 #include "mfx_vpp_defs.h"
 #include "mfx_vpp_base.h"
-/* UMC */
-#include "umc_scene_analyzer.h"
-#include "umc_scene_analyzer_base.h"
 
 using namespace UMC;
 
 #define VPP_VA_IN_NUM_FRAMES_REQUIRED  (1)
 #define VPP_VA_OUT_NUM_FRAMES_REQUIRED (1)
 
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
+/* UMC */
+#include "umc_scene_analyzer.h"
+#include "umc_scene_analyzer_base.h"
 #include "umc_scene_analyzer_mb_func.h"
-
 
 // extension of UMC SceneAnalyser[Params]
 class VPPSceneAnalyzerParams: public SceneAnalyzerParams
@@ -87,7 +87,7 @@ public:
 
     IppiPoint m_pSliceMV[1024];
 };
-
+#endif
 //------------------------------------------------------------
 
 class MFXVideoVPPVideoAnalysis : public FilterVPP{
@@ -96,6 +96,7 @@ public:
   static mfxU8 GetInFramesCountExt( void ) { return VPP_VA_IN_NUM_FRAMES_REQUIRED; };
   static mfxU8 GetOutFramesCountExt(void) { return VPP_VA_OUT_NUM_FRAMES_REQUIRED; };
 
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
   MFXVideoVPPVideoAnalysis(VideoCORE *core, mfxStatus* sts);
   virtual ~MFXVideoVPPVideoAnalysis();
 
@@ -130,6 +131,7 @@ private:
 
   VPPSceneAnalyzer       m_analyser;
   VPPSceneAnalyzerParams m_analyserParams;
+#endif
 };
 
 #endif // __MFX_VIDEO_ANALYSIS_VPP_H

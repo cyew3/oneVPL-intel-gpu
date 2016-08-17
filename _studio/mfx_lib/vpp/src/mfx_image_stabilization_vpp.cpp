@@ -18,14 +18,42 @@
     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
+#include "mfx_image_stabilization_vpp.h"
+#include "mfx_vpp_utils.h"
+
+/* ******************************************************************** */
+/*                 implementation of Interface functions [Img Stab]     */
+/* ******************************************************************** */
+
+mfxStatus MFXVideoVPPImgStab::Query( mfxExtBuffer* pHint )
+{
+    if( NULL == pHint )
+    {
+        return MFX_ERR_NONE;
+    }
+
+    mfxExtVPPImageStab* pParam = (mfxExtVPPImageStab*)pHint;
+
+    if( MFX_IMAGESTAB_MODE_UPSCALE == pParam->Mode || 
+        MFX_IMAGESTAB_MODE_BOXING  == pParam->Mode)
+    {
+        return MFX_ERR_NONE;
+    }
+    else
+    {
+        return MFX_ERR_UNSUPPORTED;
+    } 
+
+} // static mfxStatus MFXVideoVPPDenoise::Query( mfxExtBuffer* pHint )
+
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
+
 #include <assert.h>
 #include <math.h>
 #include "ipps.h"
 #include "ippi.h"
 #include "ippcc.h"
 
-#include "mfx_vpp_utils.h"
-#include "mfx_image_stabilization_vpp.h"
 #include "videovme7_5io.h"
 #include "videovme.h"
 #include "mfx_common_int.h"
@@ -62,32 +90,6 @@ Ipp8u Interpolation(
     double y, 
     int luma, 
     int mode);
-
-/* ******************************************************************** */
-/*                 implementation of Interface functions [Img Stab]     */
-/* ******************************************************************** */
-
-mfxStatus MFXVideoVPPImgStab::Query( mfxExtBuffer* pHint )
-{
-    if( NULL == pHint )
-    {
-        return MFX_ERR_NONE;
-    }
-
-    mfxExtVPPImageStab* pParam = (mfxExtVPPImageStab*)pHint;
-
-    if( MFX_IMAGESTAB_MODE_UPSCALE == pParam->Mode || 
-        MFX_IMAGESTAB_MODE_BOXING  == pParam->Mode)
-    {
-        return MFX_ERR_NONE;
-    }
-    else
-    {
-        return MFX_ERR_UNSUPPORTED;
-    } 
-
-} // static mfxStatus MFXVideoVPPDenoise::Query( mfxExtBuffer* pHint )
-
 
 MFXVideoVPPImgStab::Config::Config(void)
 : m_sigma(PAR_SIGMA)
@@ -1562,5 +1564,6 @@ void MFXVideoVPPImgStab::VME_IS(
 
 } // void MFXVideoVPPImgStab::VME_IS(...)
 
+#endif // #if !defined (MFX_ENABLE_HW_ONLY_VPP)
 #endif // MFX_ENABLE_VPP
 /* EOF */

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012 - 2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012 - 2016 Intel Corporation. All Rights Reserved.
 //
 //
 //         Video Pre Processing (MVC implementation)
@@ -27,7 +27,7 @@ using namespace MfxVideoProcessing;
 
 mfxStatus ImplementationMvc::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
-    mfxStatus sts = VideoVPPSW::QueryIOSurf(core, par, request);
+    mfxStatus sts = VideoVPPBase::QueryIOSurf(core, par, request);
         
     // in case of multiview we should correct result
     if( MFX_ERR_NONE == sts || MFX_WRN_PARTIAL_ACCELERATION == sts )
@@ -67,7 +67,6 @@ ImplementationMvc::~ImplementationMvc()
     Close();
 
 } // ImplementationMvc::~ImplementationMvc()
-
 
 mfxStatus ImplementationMvc::Init(mfxVideoParam *par)
 {
@@ -109,14 +108,16 @@ mfxStatus ImplementationMvc::Init(mfxVideoParam *par)
             if(viewId >= 1024) return MFX_ERR_INVALID_VIDEO_PARAM;
         }
 
-        VideoVPPSW* pNewVPP = new VideoVPPSW(m_core, &mfxSts);
-        //MFX_CHECK_STS( mfxSts );
-        if( mfxSts != MFX_ERR_NONE )
+        VideoVPPBase* pNewVPP = CreateAndInitVPPImpl(par, m_core, &mfxSts);
+        if (mfxSts < MFX_ERR_NONE || !pNewVPP)
         {
-            delete pNewVPP;
-            pNewVPP = NULL;
-
             return mfxSts;
+        }
+
+        if (MFX_WRN_PARTIAL_ACCELERATION == mfxSts || MFX_WRN_FILTER_SKIPPED == mfxSts || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == mfxSts)
+        {
+            intSts = mfxSts;
+            mfxSts = MFX_ERR_NONE;
         }
 
         pair<mfxMultiViewVPP_Iterator, bool> insertSts = m_VPP.insert( make_pair(viewId, pNewVPP) );
@@ -124,15 +125,6 @@ mfxStatus ImplementationMvc::Init(mfxVideoParam *par)
         {
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
-
-        mfxSts = m_VPP[viewId]->Init( par );
-        if(MFX_WRN_PARTIAL_ACCELERATION == mfxSts || MFX_WRN_FILTER_SKIPPED == mfxSts || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == mfxSts)
-        {
-            intSts = mfxSts;
-            mfxSts = MFX_ERR_NONE;
-        }
-
-        MFX_CHECK_STS( mfxSts );
     }
 
     m_iteratorVPP = m_VPP.begin(); // save for EndOfStream processing

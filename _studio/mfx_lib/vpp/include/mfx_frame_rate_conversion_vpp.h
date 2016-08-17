@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          FrameRateConversion Video Pre\Post Processing
@@ -36,6 +36,7 @@ public:
     // this function is used by VPP Pipeline Query to correct application request
     static mfxStatus Query( mfxExtBuffer* pHint );
 
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
     MFXVideoVPPFrameRateConversion(VideoCORE *core, mfxStatus* sts);
     virtual ~MFXVideoVPPFrameRateConversion();
 
@@ -143,6 +144,7 @@ private:
 
     AdvancedFRCState m_advSyncState;
     AdvancedFRCState m_advProcessState;
+#endif
 };
 
 #endif // __MFX_FRAME_RATE_CONVERSION_VPP_H

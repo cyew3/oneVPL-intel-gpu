@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010-2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          PROCessing AMPlified algorithms of Video Pre\Post Processing
@@ -42,6 +42,58 @@ Saturation         0.0      10.0       0.01        1.0
 #define VPP_PROCAMP_SATURATION_MAX     10.0
 #define VPP_PROCAMP_SATURATION_MIN      0.0
 #define VPP_PROCAMP_SATURATION_DEFAULT  1.0
+
+/* ******************************************************************** */
+/*           implementation of VPP filter [ProcessingAmplified]         */
+/* ******************************************************************** */
+
+mfxStatus MFXVideoVPPProcAmp::Query( mfxExtBuffer* pHint )
+{
+    if( NULL == pHint )
+    {
+        return MFX_ERR_NONE;
+    }
+
+    mfxStatus sts = MFX_ERR_NONE;
+
+    mfxExtVPPProcAmp* pParam = (mfxExtVPPProcAmp*)pHint;
+
+    /* Brightness */
+    if( pParam->Brightness < VPP_PROCAMP_BRIGHTNESS_MIN ||
+        pParam->Brightness > VPP_PROCAMP_BRIGHTNESS_MAX )
+    {
+        VPP_RANGE_CLIP(pParam->Brightness, VPP_PROCAMP_BRIGHTNESS_MIN, VPP_PROCAMP_BRIGHTNESS_MAX);
+
+        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
+    /* Contrast */
+    if( pParam->Contrast < VPP_PROCAMP_CONTRAST_MIN || pParam->Contrast > VPP_PROCAMP_CONTRAST_MAX )
+    {
+        VPP_RANGE_CLIP(pParam->Contrast, VPP_PROCAMP_CONTRAST_MIN, VPP_PROCAMP_CONTRAST_MAX);
+
+        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
+    /* Hue */
+    if( pParam->Hue < VPP_PROCAMP_HUE_MIN || pParam->Hue > VPP_PROCAMP_HUE_MAX )
+    {
+        VPP_RANGE_CLIP(pParam->Hue, VPP_PROCAMP_HUE_MIN, VPP_PROCAMP_HUE_MAX);
+
+        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
+    /* Saturation */
+    if( pParam->Saturation < VPP_PROCAMP_SATURATION_MIN ||
+        pParam->Saturation > VPP_PROCAMP_SATURATION_MAX)
+    {
+        VPP_RANGE_CLIP(pParam->Saturation, VPP_PROCAMP_SATURATION_MIN, VPP_PROCAMP_SATURATION_MAX);
+
+        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+    return sts;
+
+} // static mfxStatus MFXVideoVPPProcAmp::Query( mfxExtBuffer* pHint )
+
+#if !defined(MFX_ENABLE_HW_ONLY_VPP)
 
 #define PI  3.14159265358979323846f
 
@@ -108,58 +160,6 @@ mfxStatus ProcampFiltering_YV12_8u(
                                int  par_uv_mid,
                                int  par_contrast_precision,
                                int  par_sincos_precision);
-
-/* ******************************************************************** */
-/*           implementation of VPP filter [ProcessingAmplified]         */
-/* ******************************************************************** */
-
-mfxStatus MFXVideoVPPProcAmp::Query( mfxExtBuffer* pHint )
-{
-    if( NULL == pHint )
-    {
-        return MFX_ERR_NONE;
-    }
-
-    mfxStatus sts = MFX_ERR_NONE;
-
-    mfxExtVPPProcAmp* pParam = (mfxExtVPPProcAmp*)pHint;
-
-    /* Brightness */
-    if( pParam->Brightness < VPP_PROCAMP_BRIGHTNESS_MIN ||
-        pParam->Brightness > VPP_PROCAMP_BRIGHTNESS_MAX )
-    {
-        VPP_RANGE_CLIP(pParam->Brightness, VPP_PROCAMP_BRIGHTNESS_MIN, VPP_PROCAMP_BRIGHTNESS_MAX);
-
-        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    }
-    /* Contrast */
-    if( pParam->Contrast < VPP_PROCAMP_CONTRAST_MIN || pParam->Contrast > VPP_PROCAMP_CONTRAST_MAX )
-    {
-        VPP_RANGE_CLIP(pParam->Contrast, VPP_PROCAMP_CONTRAST_MIN, VPP_PROCAMP_CONTRAST_MAX);
-
-        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    }
-    /* Hue */
-    if( pParam->Hue < VPP_PROCAMP_HUE_MIN || pParam->Hue > VPP_PROCAMP_HUE_MAX )
-    {
-        VPP_RANGE_CLIP(pParam->Hue, VPP_PROCAMP_HUE_MIN, VPP_PROCAMP_HUE_MAX);
-
-        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    }
-    /* Saturation */
-    if( pParam->Saturation < VPP_PROCAMP_SATURATION_MIN ||
-        pParam->Saturation > VPP_PROCAMP_SATURATION_MAX)
-    {
-        VPP_RANGE_CLIP(pParam->Saturation, VPP_PROCAMP_SATURATION_MIN, VPP_PROCAMP_SATURATION_MAX);
-
-        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    }
-
-    return sts;
-
-} // static mfxStatus MFXVideoVPPProcAmp::Query( mfxExtBuffer* pHint )
-
-#if !defined(MFX_ENABLE_HW_ONLY_VPP)
 
 MFXVideoVPPProcAmp::MFXVideoVPPProcAmp(VideoCORE *core, mfxStatus* sts) : FilterVPP()
 {

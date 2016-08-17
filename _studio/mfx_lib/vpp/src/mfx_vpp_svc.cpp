@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //         Video Pre Processing (SVC implementation)
@@ -28,7 +28,7 @@ using namespace MfxVideoProcessing;
 
 mfxStatus ImplementationSvc::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoParam *out)
 {
-    return VideoVPPSW::Query( core, in, out);
+    return VideoVPPBase::Query( core, in, out);
 
 } // mfxStatus ImplementationSvc::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoParam *out)
 
@@ -40,7 +40,7 @@ mfxStatus ImplementationSvc::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mf
     queryVideoParam.vpp.Out = queryVideoParam.vpp.In; //aya: it is right, exclude DI processing
     queryVideoParam.vpp.Out.PicStruct = par->vpp.Out.PicStruct;// aya: it is OK for DI
 
-    mfxStatus sts = VideoVPPSW::QueryIOSurf(core, &queryVideoParam, request);
+    mfxStatus sts = VideoVPPBase::QueryIOSurf(core, &queryVideoParam, request);
 
     return sts;
 
@@ -96,28 +96,25 @@ mfxStatus ImplementationSvc::Init(mfxVideoParam *par)
             continue;
         }
 
-        m_VPP[did].reset( new VideoVPPSW(m_core, &mfxSts) );
-
-        if( 0 == m_VPP[did].get())  
+        GetLayerParam(par, layerParam, did);
+        VideoVPPBase * vpp = CreateAndInitVPPImpl(&layerParam, m_core, &mfxSts);
+        if( 0 == vpp)
         {
             return MFX_ERR_DEVICE_FAILED;
         }
 
-        if(MFX_ERR_NONE != mfxSts)
+        if(MFX_ERR_NONE > mfxSts)
         {
             return mfxSts;
         }
-        
-        GetLayerParam(par, layerParam, did);
 
-        mfxSts = m_VPP[did]->Init( &layerParam );
-        if(MFX_WRN_PARTIAL_ACCELERATION == mfxSts)
+        if (MFX_WRN_PARTIAL_ACCELERATION == mfxSts || MFX_WRN_FILTER_SKIPPED == mfxSts || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == mfxSts)
         {
             intSts = mfxSts;
             mfxSts = MFX_ERR_NONE;
         }
 
-        MFX_CHECK_STS( mfxSts );
+        m_VPP[did].reset(vpp);
 
         // keep for Execute
         m_declaredDidList.push_back(did);

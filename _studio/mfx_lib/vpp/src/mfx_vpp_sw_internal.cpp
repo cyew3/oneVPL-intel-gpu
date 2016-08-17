@@ -44,6 +44,7 @@
 #include "mfx_gamut_compression_vpp.h"
 #include "mfx_image_stabilization_vpp.h"
 
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
 /* IPP */
 #include "ipps.h"
 #include "ippi.h"
@@ -65,7 +66,7 @@
 /*      implementation of SW VPP internal architecture                  */
 /* ******************************************************************** */
 
-mfxStatus VideoVPPSW::CheckProduceOutput(mfxFrameSurface1 *in, mfxFrameSurface1 *out )
+mfxStatus VideoVPP_SW::CheckProduceOutput(mfxFrameSurface1 *in, mfxFrameSurface1 *out )
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxU32 filterIndex, filterIndexStart;
@@ -155,9 +156,9 @@ mfxStatus VideoVPPSW::CheckProduceOutput(mfxFrameSurface1 *in, mfxFrameSurface1 
 
     return sts;
 
-} // mfxStatus VideoVPPSW::CheckProduceOutput(...)
+} // mfxStatus VideoVPPBase::CheckProduceOutput(...)
 
- bool VideoVPPSW::IsReadyOutput( mfxRequestType requestType )
+ bool VideoVPP_SW::IsReadyOutput( mfxRequestType requestType )
 {
     mfxU32 filterIndex;
 
@@ -171,9 +172,9 @@ mfxStatus VideoVPPSW::CheckProduceOutput(mfxFrameSurface1 *in, mfxFrameSurface1 
 
     return false;
 
-} //  bool VideoVPPSW::IsReadyOutput( mfxRequestType requestType )
+} //  bool VideoVPPBase::IsReadyOutput( mfxRequestType requestType )
 
- mfxU32  VideoVPPSW::GetFilterIndexStart( mfxRequestType requestType )
+ mfxU32  VideoVPP_SW::GetFilterIndexStart( mfxRequestType requestType )
  {
      mfxU32 filterIndex;
 
@@ -187,93 +188,9 @@ mfxStatus VideoVPPSW::CheckProduceOutput(mfxFrameSurface1 *in, mfxFrameSurface1 
 
      return 0;
 
- } //  mfxU32  VideoVPPSW::GetFilterIndexStart( mfxRequestType requestType )
-
- mfxStatus VideoVPPSW::PassThrough(mfxFrameInfo* In, mfxFrameInfo* Out, mfxU16 realOutPicStruct, bool bHWLib)
- {
-     mfxStatus sts;
-
-     // HW
-    if( bHWLib )
-    {
-        if( In ) // no delay
-        {
-            Out->AspectRatioH = In->AspectRatioH;
-            Out->AspectRatioW = In->AspectRatioW;
-            Out->PicStruct    = UpdatePicStruct( In->PicStruct, Out->PicStruct, m_bDynamicDeinterlace, sts );
-
-            m_errPrtctState.Deffered.AspectRatioH = Out->AspectRatioH;
-            m_errPrtctState.Deffered.AspectRatioW = Out->AspectRatioW;
-            m_errPrtctState.Deffered.PicStruct    = Out->PicStruct;
-
-            // not "pass through" process. Frame Rates from Init.
-            Out->FrameRateExtN = m_errPrtctState.Out.FrameRateExtN;
-            Out->FrameRateExtD = m_errPrtctState.Out.FrameRateExtD;
-
-            //return MFX_ERR_NONE;
-            return sts;
-        }
-        else
-        {
-            if ( MFX_PICSTRUCT_UNKNOWN == Out->PicStruct && m_bDynamicDeinterlace )
-            {
-                // Fix for case when app retrievs cached frames from ADI3->60 and output surf has unknown picstruct
-                Out->PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-            }
-            // in case of HW_VPP in==NULL means ERROR due to absence of delayed frames and should be processed before.
-            // here we return OK only
-            return MFX_ERR_NONE;
-        }
-    }
-
-    // SW
-     // SW wo DI
-     if( In && !m_bDynamicDeinterlace )
-     {
-        Out->AspectRatioH = In->AspectRatioH;
-        Out->AspectRatioW = In->AspectRatioW;
-        Out->PicStruct    = UpdatePicStruct( In->PicStruct, realOutPicStruct, m_bDynamicDeinterlace, sts );
-
-        m_errPrtctState.Deffered.AspectRatioH = Out->AspectRatioH;
-        m_errPrtctState.Deffered.AspectRatioW = Out->AspectRatioW;
-        m_errPrtctState.Deffered.PicStruct    = Out->PicStruct;
-
-        // not "pass through" process. Frame Rates from Init.
-        Out->FrameRateExtN = m_errPrtctState.Out.FrameRateExtN;
-        Out->FrameRateExtD = m_errPrtctState.Out.FrameRateExtD;
-
-        //return MFX_ERR_NONE;
-        return sts;
-     }
-
-     //SW + DI (ITC/FRC)
-     {
-         if( MFX_PICSTRUCT_UNKNOWN == realOutPicStruct )
-         {
-             sts = MFX_ERR_NONE;// nothing. SW_VPP updated outputPicStruct & AspectRatio
-         }
-         else if( (realOutPicStruct & MFX_PICSTRUCT_PROGRESSIVE) && (Out->PicStruct & MFX_PICSTRUCT_PROGRESSIVE) )
-         {
-             sts = MFX_ERR_NONE;//// nothing. SW_VPP updated outputPicStruct & AspectRatio
-         }
-         else // P->I, I->I
-         {
-            Out->PicStruct = realOutPicStruct;
-            sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-         }
-
-         // not "pass through" process. Frame Rates from Init.
-         Out->FrameRateExtN = m_errPrtctState.Out.FrameRateExtN;
-         Out->FrameRateExtD = m_errPrtctState.Out.FrameRateExtD;
-
-         return sts;
-     }
-
-     //return MFX_ERR_NONE;
-
- } //  mfxStatus VideoVPPSW::PassThrough(mfxFrameInfo* In, mfxFrameInfo* Out)
-
-mfxStatus VideoVPPSW::SetCrop(mfxFrameSurface1 *in, mfxFrameSurface1 *out)
+} //  mfxU32  VideoVPPBase::GetFilterIndexStart( mfxRequestType requestType )
+ 
+mfxStatus VideoVPP_SW::SetCrop(mfxFrameSurface1 *in, mfxFrameSurface1 *out)
 {
   mfxStatus mfxSts = MFX_ERR_NONE;
   mfxU32    connectIndex = 0;
@@ -330,9 +247,9 @@ mfxStatus VideoVPPSW::SetCrop(mfxFrameSurface1 *in, mfxFrameSurface1 *out)
 
   return mfxSts;
 
-} // mfxStatus VideoVPPSW::SetCrop(mfxFrameSurface1 *in, mfxFrameSurface1 *out)
+} // mfxStatus VideoVPPBase::SetCrop(mfxFrameSurface1 *in, mfxFrameSurface1 *out)
 
-mfxStatus VideoVPPSW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
+mfxStatus VideoVPP_SW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
 {
     In; Out;
 #if !defined(MFX_ENABLE_HW_ONLY_VPP)    
@@ -545,9 +462,9 @@ mfxStatus VideoVPPSW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
 #endif
     return MFX_ERR_NONE;
 
-} // mfxStatus VideoVPPSW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
+} // mfxStatus VideoVPPBase::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
 
-mfxStatus VideoVPPSW::DestroyPipeline( void )
+mfxStatus VideoVPP_SW::DestroyPipeline( void )
 {
     mfxU32 filterIndex;
 
@@ -563,9 +480,9 @@ mfxStatus VideoVPPSW::DestroyPipeline( void )
 
     return MFX_ERR_NONE;
 
-} // mfxStatus VideoVPPSW::DestroyPipeline( void )
+} // mfxStatus VideoVPPBase::DestroyPipeline( void )
 
-mfxStatus VideoVPPSW::CreateWorkBuffer( void )
+mfxStatus VideoVPP_SW::CreateWorkBuffer( void )
 {
     mfxU32 filterIndex;
     mfxU32 totalBufSize = 0, bufSize;
@@ -608,9 +525,9 @@ mfxStatus VideoVPPSW::CreateWorkBuffer( void )
 
     return sts;
 
-} // mfxStatus VideoVPPSW::CreateWorkBuffer( void )
+} // mfxStatus VideoVPPBase::CreateWorkBuffer( void )
 
-mfxStatus VideoVPPSW::DestroyWorkBuffer( void )
+mfxStatus VideoVPP_SW::DestroyWorkBuffer( void )
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -623,51 +540,16 @@ mfxStatus VideoVPPSW::DestroyWorkBuffer( void )
 
     return sts;
 
-} // mfxStatus VideoVPPSW::DestroyWorkBuffer( void )
+} // mfxStatus VideoVPPBase::DestroyWorkBuffer( void )
 
-mfxStatus VideoVPPSW::CheckIOPattern( mfxVideoParam* par )
-{
-  if (0 == par->IOPattern) // IOPattern is mandatory parameter
-  {
-      return MFX_ERR_INVALID_VIDEO_PARAM;
-  }
-
-  if (!m_core->IsExternalFrameAllocator() && (par->IOPattern & (MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY)))
-  {
-    return MFX_ERR_INVALID_VIDEO_PARAM;
-  }
-
-  if ((par->IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY) &&
-      (par->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY))
-  {
-    return MFX_ERR_INVALID_VIDEO_PARAM;
-  }
-
-
-  if ((par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) &&
-      (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
-  {
-    return MFX_ERR_INVALID_VIDEO_PARAM;
-  }
-
-  return MFX_ERR_NONE;
-
-} // mfxStatus VideoVPPSW::CheckIOPattern( mfxVideoParam* par )
-
-mfxU32 VideoVPPSW::GetNumUsedFilters()
-{
-  return ( (mfxU32)m_pipelineList.size() );
-
-} // mfxU32 VideoVPPSW::GetNumUsedFilters()
-
-mfxU32 VideoVPPSW::GetNumConnections()
+mfxU32 VideoVPP_SW::GetNumConnections()
 {
   return (mfxU32)(m_pipelineList.size() - 1);
 
-} // mfxU32 VideoVPPSW::GetNumConnections()
+} // mfxU32 VideoVPPBase::GetNumConnections()
 
 
-mfxStatus VideoVPPSW::CreateInternalSystemFramesPool( mfxVideoParam *par )
+mfxStatus VideoVPP_SW::CreateInternalSystemFramesPool( mfxVideoParam *par )
 {
   mfxFrameAllocRequest  request[2];
   mfxStatus sts;
@@ -721,9 +603,9 @@ mfxStatus VideoVPPSW::CreateInternalSystemFramesPool( mfxVideoParam *par )
 
   return MFX_ERR_NONE;
 
-} // mfxStatus VideoVPPSW::CreateInternalSystemFramesPool( mfxVideoParam *par )
+} // mfxStatus VideoVPPBase::CreateInternalSystemFramesPool( mfxVideoParam *par )
 
-mfxStatus VideoVPPSW::DestroyInternalSystemFramesPool( void )
+mfxStatus VideoVPP_SW::DestroyInternalSystemFramesPool( void )
 {
   if( m_bDoFastCopyFlag[VPP_IN] )
   {
@@ -747,10 +629,10 @@ mfxStatus VideoVPPSW::DestroyInternalSystemFramesPool( void )
 
   return MFX_ERR_NONE;
 
-} // mfxStatus VideoVPPSW::DestroyInternalSystemFramesPool( void )
+} // mfxStatus VideoVPPBase::DestroyInternalSystemFramesPool( void )
 
 
-mfxStatus VideoVPPSW::PreProcessOfInputSurface(mfxFrameSurface1 *in, mfxFrameSurface1** ppOut)
+mfxStatus VideoVPP_SW::PreProcessOfInputSurface(mfxFrameSurface1 *in, mfxFrameSurface1** ppOut)
 {
   mfxStatus sts;
 
@@ -790,10 +672,10 @@ mfxStatus VideoVPPSW::PreProcessOfInputSurface(mfxFrameSurface1 *in, mfxFrameSur
 
   return MFX_ERR_NONE;
 
-} // mfxStatus VideoVPPSW::PreProcessOfInputSurface(...)
+} // mfxStatus VideoVPPBase::PreProcessOfInputSurface(...)
 
 
-mfxStatus VideoVPPSW::PreProcessOfOutputSurface(mfxFrameSurface1 *out, mfxFrameSurface1** ppOut)
+mfxStatus VideoVPP_SW::PreProcessOfOutputSurface(mfxFrameSurface1 *out, mfxFrameSurface1** ppOut)
 {
   mfxStatus sts;
 
@@ -824,10 +706,10 @@ mfxStatus VideoVPPSW::PreProcessOfOutputSurface(mfxFrameSurface1 *out, mfxFrameS
 
   return MFX_ERR_NONE;
 
-} // mfxStatus VideoVPPSW::PreProcessOfOutputSurface(...)
+} // mfxStatus VideoVPPBase::PreProcessOfOutputSurface(...)
 
 
-mfxStatus VideoVPPSW::PostProcessOfOutputSurface(mfxFrameSurface1 *out, mfxFrameSurface1 *pOutSurf, mfxStatus processingSts)
+mfxStatus VideoVPP_SW::PostProcessOfOutputSurface(mfxFrameSurface1 *out, mfxFrameSurface1 *pOutSurf, mfxStatus processingSts)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -849,10 +731,10 @@ mfxStatus VideoVPPSW::PostProcessOfOutputSurface(mfxFrameSurface1 *out, mfxFrame
 
     return MFX_ERR_NONE;
 
-} // mfxStatus VideoVPPSW::PostProcessOfOutputSurface(
+} // mfxStatus VideoVPPBase::PostProcessOfOutputSurface(
 
 
-mfxStatus VideoVPPSW::CreateConnectionFramesPool( void )
+mfxStatus VideoVPP_SW::CreateConnectionFramesPool( void )
 {
   mfxStatus  sts;
   mfxU32     connectIndex, filterIndex;
@@ -878,10 +760,10 @@ mfxStatus VideoVPPSW::CreateConnectionFramesPool( void )
 
   return MFX_ERR_NONE;
 
-} // mfxStatus VideoVPPSW::CreateConnectionFramesPool( void )
+} // mfxStatus VideoVPPBase::CreateConnectionFramesPool( void )
 
 
-mfxStatus VideoVPPSW::DestroyConnectionFramesPool( void )
+mfxStatus VideoVPP_SW::DestroyConnectionFramesPool( void )
 {
   mfxU32 connectIndex;
 
@@ -892,7 +774,9 @@ mfxStatus VideoVPPSW::DestroyConnectionFramesPool( void )
 
   return MFX_ERR_NONE;
 
-} // mfxStatus VideoVPPSW::DestroyConnectionFramesPool( void )
+} // mfxStatus VideoVPPBase::DestroyConnectionFramesPool( void )
+
+#endif // #if !defined (MFX_ENABLE_HW_ONLY_VPP)
 
 //-----------------------------------------------------------------------------
 //            independent functions
@@ -1154,8 +1038,6 @@ mfxStatus GetCompositionEnabledStatus(mfxVideoParam* pParam )
 
 } // mfxStatus GetCompositionEnabledStatus(mfxVideoParam* pParam,
 
-
-
 mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint)
 {
     mfxStatus sts;
@@ -1243,9 +1125,6 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
     return sts;
 
 } // mmfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint)
-
-
-
 
 #endif // MFX_ENABLE_VPP
 /* EOF */

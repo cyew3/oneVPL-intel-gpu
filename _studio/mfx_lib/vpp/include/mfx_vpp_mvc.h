@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          Video Pre Processing( MVC wrapper)
@@ -39,7 +39,7 @@ namespace MfxVideoProcessing
 
         static mfxStatus Query(VideoCORE* core, mfxVideoParam *in, mfxVideoParam *out)
         {
-            return VideoVPPSW::Query( core, in, out);
+            return VideoVPPBase::Query( core, in, out);
         }
 
         static mfxStatus QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mfxFrameAllocRequest *request);
@@ -92,7 +92,7 @@ namespace MfxVideoProcessing
         bool       m_bMultiViewMode;
         VideoCORE* m_core;
 
-        typedef map<mfxU16, VideoVPPSW*> mfxMultiViewVPP;
+        typedef map<mfxU16, VideoVPPBase*> mfxMultiViewVPP;
         typedef mfxMultiViewVPP::iterator mfxMultiViewVPP_Iterator;
 
         mfxMultiViewVPP_Iterator m_iteratorVPP;

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          Video Pre Processing( SVC implementation)
@@ -93,7 +93,7 @@ namespace MfxVideoProcessing
         bool                      m_bInit;
         VideoCORE*                m_core;
         mfxExtSVCSeqDesc          m_svcDesc;
-        std::auto_ptr<VideoVPPSW> m_VPP[8];
+        std::auto_ptr<VideoVPPBase> m_VPP[8];
 
         std::vector<mfxU32>       m_declaredDidList;
         std::vector<mfxU32>       m_recievedDidList;

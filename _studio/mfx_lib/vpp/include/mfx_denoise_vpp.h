@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          DeNoise Video Pre\Post Processing
@@ -35,6 +35,7 @@ public:
   // this function is used by VPP Pipeline Query to correct application request
   static mfxStatus Query( mfxExtBuffer* pHint );
 
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
   MFXVideoVPPDenoise(VideoCORE *core, mfxStatus* sts);
   virtual ~MFXVideoVPPDenoise();
 
@@ -151,7 +152,7 @@ private:
 
    mfxU8* m_pHistoryWeight;
    mfxI32 m_historyStep;
-
+#endif
 };
 
 #endif // __MFX_DENOISE_VPP_H

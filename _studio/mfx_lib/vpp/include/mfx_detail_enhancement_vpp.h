@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          Detail Enhancement algorithm of Video Pre\Post Processing
@@ -34,6 +34,8 @@ public:
 
     // this function is used by VPP Pipeline Query to correct application request
     static mfxStatus Query( mfxExtBuffer* pHint );
+
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
 
     MFXVideoVPPDetailEnhancement(VideoCORE *core, mfxStatus* sts);
     virtual ~MFXVideoVPPDetailEnhancement();
@@ -93,7 +95,7 @@ private:
                                 Ipp8u* pSobel, int sobelPitch,
                                 Ipp8u* pDiff,  int diffPitch,
                                 IppiSize size);
-
+#endif
 };
 
 #endif // __MFX_DETAIL_ENHANCEMENT_VPP_H

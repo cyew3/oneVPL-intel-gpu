@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012 - 2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012 - 2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          Image Stabilization Video Pre\Post Processing
@@ -22,6 +22,7 @@
 
 #include "mfx_vpp_defs.h"
 #include "mfx_vpp_base.h"
+#include <vector>
 
 #define VPP_IS_IN_NUM_FRAMES_REQUIRED  (6+1)
 #define VPP_IS_OUT_NUM_FRAMES_REQUIRED (1)
@@ -38,6 +39,7 @@ public:
     // this function is used by VPP Pipeline Query to correct application request
     static mfxStatus Query( mfxExtBuffer* pHint );
 
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
     MFXVideoVPPImgStab(VideoCORE *core, mfxStatus* sts);
     virtual ~MFXVideoVPPImgStab();
 
@@ -227,6 +229,7 @@ private:
         Point tmpbk, 
         Point *tmpMV, 
         int *distortion);
+#endif
 };
 
 #endif // __MFX_IMAGE_STABILIZATION_VPP_H

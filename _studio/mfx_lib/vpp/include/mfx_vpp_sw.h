@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010 - 2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010 - 2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          Core Video Pre\Post Processing
@@ -35,30 +35,15 @@
 
 #include "mfx_vpp_hw.h"
 
-class VideoVPPSW
+class VideoVPPBase
 {
 public:
-
-  struct AsyncParams
-  {
-      mfxFrameSurface1 *surf_in;
-      mfxFrameSurface1 *surf_out;
-      mfxExtVppAuxData *aux;
-      mfxU16  inputPicStruct;
-      mfxU64  inputTimeStamp;
-  };
 
   static mfxStatus Query( VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
   static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);
   
-  VideoVPPSW(VideoCORE *core, mfxStatus* sts);
-  virtual ~VideoVPPSW();
-
-  // VideoVPP
-  virtual mfxStatus RunFrameVPP(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux);
-
-  mfxStatus RunVPPTask(mfxFrameSurface1 *in, mfxFrameSurface1 *out, FilterVPP::InternalParam *pParam );
-  mfxStatus ResetTaskCounters();
+  VideoVPPBase(VideoCORE *core, mfxStatus* sts);
+  virtual ~VideoVPPBase();
 
   // VideoBase methods
   virtual mfxStatus Reset(mfxVideoParam *par);
@@ -70,11 +55,12 @@ public:
   virtual mfxStatus VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux,
                                   MFX_ENTRY_POINT pEntryPoint[], mfxU32 &numEntryPoints);
 
-  virtual
-  mfxStatus VppFrameCheck(mfxFrameSurface1 *, mfxFrameSurface1 *)
+  virtual mfxStatus VppFrameCheck(mfxFrameSurface1 *, mfxFrameSurface1 *)
   {
       return MFX_ERR_UNSUPPORTED;
   }
+
+  virtual mfxStatus RunFrameVPP(mfxFrameSurface1* in, mfxFrameSurface1* out, mfxExtVppAuxData *aux) = 0;
 
   virtual mfxTaskThreadingPolicy GetThreadingPolicy(void);
 
@@ -95,24 +81,85 @@ protected:
 
   } sErrPrtctState;
 
+  virtual mfxStatus InternalInit(mfxVideoParam *par) = 0;
+
   // methods of sync part of VPP for check info/params
   mfxStatus CheckIOPattern( mfxVideoParam* par );
 
-  // method of sync part of VPP. before processing we must know about output
-  mfxStatus CheckProduceOutput(mfxFrameSurface1 *in, mfxFrameSurface1 *out );
+  static mfxStatus QueryCaps(VideoCORE * core, MfxHwVideoProcessing::mfxVppCaps& caps);
+  static mfxStatus CheckPlatformLimitations( VideoCORE* core, mfxVideoParam & param, bool bCorrectionEnable );
+  mfxU32    GetNumUsedFilters();
 
-  // check in/out compatibility of picture structs
-  bool      IsCompatiblePicStruct(mfxU16 inPicStruct, mfxU16 outPicStruct);
+  std::vector<mfxU32> m_pipelineList; // list like DO_USE but contains some internal filter names (ex RESIZE, DEINTERLACE etc) 
+
+  //
+  bool               m_bDynamicDeinterlace;
+
+  VideoCORE*  m_core;
+  mfxVPPStat  m_stat;
+
+  // protection state. Keeps Init/Reset params that allows checking that RunFrame params
+  // do not violate Init/Reset params
+  sErrPrtctState m_errPrtctState;
+
+  // State that keeps Init params. They are changed on Init only
+  sErrPrtctState m_InitState;
+
+  // opaque processing (MSDK_3.0)
+  bool                  m_bOpaqMode[2];
+  mfxFrameAllocRequest  m_requestOpaq[2];
+
+  //
+  // HW VPP Support
+  //
+  std::auto_ptr<MfxHwVideoProcessing::VideoVPPHW>     m_pHWVPP;
+};
+
+class VideoVPP_HW : public VideoVPPBase
+{
+public:
+    VideoVPP_HW(VideoCORE *core, mfxStatus* sts);
+
+    virtual mfxStatus InternalInit(mfxVideoParam *par);
+    virtual mfxStatus Close(void);
+    virtual mfxStatus Reset(mfxVideoParam *par);
+
+    virtual mfxStatus GetVideoParam(mfxVideoParam *par);
+
+    virtual mfxStatus VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux,
+                                    MFX_ENTRY_POINT pEntryPoints[], mfxU32 &numEntryPoints);
+
+    virtual mfxStatus RunFrameVPP(mfxFrameSurface1* in, mfxFrameSurface1* out, mfxExtVppAuxData *aux);
+
+    mfxStatus PassThrough(mfxFrameInfo* In, mfxFrameInfo* Out);
+};
+
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
+class VideoVPP_SW : public VideoVPPBase
+{
+public:
+    VideoVPP_SW(VideoCORE *core, mfxStatus* sts);
+
+    virtual mfxStatus InternalInit(mfxVideoParam *par);
+    virtual mfxStatus Close(void);
+    virtual mfxStatus Reset(mfxVideoParam *par);
+
+    virtual mfxStatus VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux,
+                                    MFX_ENTRY_POINT pEntryPoints[], mfxU32 &numEntryPoints);
 
   // request about readiness output any filter wo processing of input
   bool      IsReadyOutput( mfxRequestType requestType );
   mfxU32    GetFilterIndexStart( mfxRequestType requestType );
 
-  // pass through in according with Appendix A: Constraints of Configuration Parameters
-  mfxStatus PassThrough(mfxFrameInfo* In, mfxFrameInfo* Out, mfxU16 realOutPicStruct = MFX_PICSTRUCT_UNKNOWN, bool bHWLib = true);
+  mfxStatus PassThrough(mfxFrameInfo* In, mfxFrameInfo* Out, mfxU16 realOutPicStruct);
 
   // methods for crop processing
   mfxStatus SetCrop(mfxFrameSurface1 *in, mfxFrameSurface1 *out);
+
+  mfxU32    GetNumConnections();
+
+  // method of sync part of VPP. before processing we must know about output
+  mfxStatus CheckProduceOutput(mfxFrameSurface1 *in, mfxFrameSurface1 *out );
 
   // creation/destroy of pipeline
   mfxStatus CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out);
@@ -130,16 +177,6 @@ protected:
   mfxStatus CreateWorkBuffer( void );
   mfxStatus DestroyWorkBuffer( void );
 
-  mfxU32    GetNumUsedFilters();
-  mfxU32    GetNumConnections();
-
-  // should be called once for RunFrameVPP
-  mfxStatus PreWork(mfxFrameSurface1* in, mfxFrameSurface1* out,
-                    mfxFrameSurface1** pInSurf, mfxFrameSurface1** pOutSurf);
-  mfxStatus PostWork(mfxFrameSurface1* in, mfxFrameSurface1* out,
-                     mfxFrameSurface1* pInSurf, mfxFrameSurface1* pOutSurf,
-                     mfxStatus processingSts);
-
   // methods for pre/post processing of input surface (copy d3d to sys, lock etc)
   mfxStatus PreProcessOfInputSurface(mfxFrameSurface1 *in, mfxFrameSurface1** ppOut);
   mfxStatus PostProcessOfInputSurface();
@@ -148,46 +185,26 @@ protected:
   mfxStatus PreProcessOfOutputSurface(mfxFrameSurface1 *out, mfxFrameSurface1** ppOut);
   mfxStatus PostProcessOfOutputSurface(mfxFrameSurface1 *out, mfxFrameSurface1 *pOutSurf, mfxStatus sts);
 
-  static mfxStatus QueryCaps(VideoCORE * core, MfxHwVideoProcessing::mfxVppCaps& caps);
-  static mfxStatus CheckPlatformLimitations( VideoCORE* core, mfxVideoParam & param, bool bCorrectionEnable );
+  // should be called once for RunFrameVPP
+  mfxStatus PreWork(mfxFrameSurface1* in, mfxFrameSurface1* out,
+                    mfxFrameSurface1** pInSurf, mfxFrameSurface1** pOutSurf);
+  mfxStatus PostWork(mfxFrameSurface1* in, mfxFrameSurface1* out,
+                     mfxFrameSurface1* pInSurf, mfxFrameSurface1* pOutSurf,
+                     mfxStatus processingSts);
 
+  mfxStatus RunVPPTask(mfxFrameSurface1 *in, mfxFrameSurface1 *out, FilterVPP::InternalParam *pParam );
 
-  FilterVPP*          m_ppFilters[MAX_NUM_VPP_FILTERS];
-  std::vector<mfxU32> m_pipelineList; // list like DO_USE but contains some internal filter names (ex RESIZE, DEINTERLACE etc) 
+  mfxStatus ResetTaskCounters();
 
-  // frames pool for filter-to-filter connection
-  DynamicFramesPool m_connectionFramesPool[MAX_NUM_VPP_FILTERS-1];
+  // VideoVPP
+  virtual mfxStatus RunFrameVPP(mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux);
 
-  // frames pool for optimization work with video memory
-  DynamicFramesPool m_internalSystemFramesPool[2];
-  bool              m_bDoFastCopyFlag[2];
+    // frames pool for filter-to-filter connection
+    DynamicFramesPool m_connectionFramesPool[MAX_NUM_VPP_FILTERS-1];
 
-  DynamicFramesPool m_externalFramesPool[2];
+    FilterVPP*          m_ppFilters[MAX_NUM_VPP_FILTERS];
 
-  //
-  bool               m_bDynamicDeinterlace;
-
-  VideoCORE*  m_core;
-  mfxVPPStat  m_stat;
-
-  // protection state. Keeps Init/Reset params that allows checking that RunFrame params
-  // do not violate Init/Reset params
-  sErrPrtctState m_errPrtctState;
-
-  // State that keeps Init params. They are changed on Init only
-  sErrPrtctState m_InitState;
-
-  // internal VPP parameters
-  FilterVPP::InternalParam m_internalParam;
-
-  // work buffer is required by filters
-  mfxMemId      m_memIdWorkBuf;
-
-  // opaque processing (MSDK_3.0)
-  bool                  m_bOpaqMode[2];
-  mfxFrameAllocRequest  m_requestOpaq[2];
-
-struct MultiThreadModeVPP {
+    struct MultiThreadModeVPP {
       // used in Pre and Post work
       bool              bUseInput;
       mfxI32            preWorkIsStarted;
@@ -219,14 +236,34 @@ struct MultiThreadModeVPP {
 
   } m_threadModeVPP;
 
-  //
-  // HW VPP Support
-  //
-  std::auto_ptr<MfxHwVideoProcessing::VideoVPPHW>     m_pHWVPP;
+  // frames pool for optimization work with video memory
+  DynamicFramesPool m_internalSystemFramesPool[2];
+  bool              m_bDoFastCopyFlag[2];
+
+  DynamicFramesPool m_externalFramesPool[2];
+
+  // work buffer is required by filters
+  mfxMemId      m_memIdWorkBuf;
+
+  struct AsyncParams
+  {
+      mfxFrameSurface1 *surf_in;
+      mfxFrameSurface1 *surf_out;
+      mfxExtVppAuxData *aux;
+      mfxU16  inputPicStruct;
+      mfxU64  inputTimeStamp;
+  };
+
+  // internal VPP parameters
+  FilterVPP::InternalParam m_internalParam;
 };
+
+#endif
 
 mfxStatus RunFrameVPPRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
 mfxStatus CompleteFrameVPPRoutine(void *pState, void *pParam, mfxStatus taskRes);
+
+VideoVPPBase* CreateAndInitVPPImpl(mfxVideoParam *par, VideoCORE *core, mfxStatus *mfxSts);
 
 #endif // __MFX_VPP_SW_H
 

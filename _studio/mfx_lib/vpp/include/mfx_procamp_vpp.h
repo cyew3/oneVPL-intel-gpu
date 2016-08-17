@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          PROCessing AMPlified algorithms of Video Pre\Post Processing
@@ -35,6 +35,7 @@ public:
     // this function is used by VPP Pipeline Query to correct application request
     static mfxStatus Query( mfxExtBuffer* pHint );
 
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
     MFXVideoVPPProcAmp(VideoCORE *core, mfxStatus* sts);
     virtual ~MFXVideoVPPProcAmp();
 
@@ -78,7 +79,7 @@ private:
     bool      m_isFilterActive;
 
     void CalculateInternalParams( void );
-
+#endif
 };
 
 #endif // __MFX_PROCAMP_VPP_H

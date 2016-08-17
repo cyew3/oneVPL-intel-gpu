@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          ReSize Video Pre\Post Processing
@@ -32,6 +32,7 @@ public:
   static mfxU8 GetInFramesCountExt( void ) { return VPP_RS_IN_NUM_FRAMES_REQUIRED; };
   static mfxU8 GetOutFramesCountExt(void) { return VPP_RS_OUT_NUM_FRAMES_REQUIRED; };
 
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
   MFXVideoVPPResize(VideoCORE *core, mfxStatus* sts);
   virtual ~MFXVideoVPPResize();
 
@@ -63,7 +64,7 @@ private:
 
   /* work buffer is required by ippiResizeSqrPixel */
   mfxU8*        m_pWorkBuf;
-
+#endif
 };
 
 #endif // __MFX_RESIZE_VPP_H

@@ -21,6 +21,38 @@
 #include "mfx_vpp_utils.h"
 #include "mfx_denoise_vpp.h"
 
+/* ******************************************************************** */
+/*                 implementation of VPP filter [Denoise]               */
+/* ******************************************************************** */
+// this range are used by Query to correct application request
+#define PAR_NRF_STRENGTH_MIN                (0)
+#define PAR_NRF_STRENGTH_MAX                100 // real value is 63
+#define PAR_NRF_STRENGTH_DEFAULT            PAR_NRF_STRENGTH_MIN
+
+mfxStatus MFXVideoVPPDenoise::Query( mfxExtBuffer* pHint )
+{
+    if( NULL == pHint )
+    {
+        return MFX_ERR_NONE;
+    }
+
+    mfxStatus sts = MFX_ERR_NONE;
+
+    mfxExtVPPDenoise* pParam = (mfxExtVPPDenoise*)pHint;
+
+    if( pParam->DenoiseFactor > PAR_NRF_STRENGTH_MAX )
+    {
+        VPP_RANGE_CLIP(pParam->DenoiseFactor, PAR_NRF_STRENGTH_MIN, PAR_NRF_STRENGTH_MAX);
+
+        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+    return sts;
+
+} // static mfxStatus MFXVideoVPPDenoise::Query( mfxExtBuffer* pHint )
+
+#if !defined(MFX_ENABLE_HW_ONLY_VPP) // SW is disabled
+
 #include "ipps.h"
 #include "ippi.h"
 #include "ippcc.h"
@@ -72,11 +104,6 @@ printf("\n");                                       \
 #define PAR_NRF_BLOCK_SCM_THRESHOLD         (32)
 #define PAR_NRF_BLOCK_ASD_THRESHOLD         (32)
 
-// this range are used by Query to correct application request
-#define PAR_NRF_STRENGTH_MIN                (0)
-#define PAR_NRF_STRENGTH_MAX                100 // real value is 63
-#define PAR_NRF_STRENGTH_DEFAULT            PAR_NRF_STRENGTH_MIN
-
 // Spatial Denoise Definitions
 #define PAR_NRF_GAUSSIAN_THRESHOLD_MIN      (0)
 #define PAR_NRF_GAUSSIAN_THRESHOLD_MEDIUM   (4)
@@ -118,34 +145,6 @@ printf("\n");                                       \
 
 #define DENOISE_FACTOR_CONVERSION(x, low, high) \
     (low + ((x * (high - low)) / (float)(PAR_NRF_STRENGTH_MAX)) + 0.5)
-
-/* ******************************************************************** */
-/*                 implementation of VPP filter [Denoise]               */
-/* ******************************************************************** */
-
-mfxStatus MFXVideoVPPDenoise::Query( mfxExtBuffer* pHint )
-{
-    if( NULL == pHint )
-    {
-        return MFX_ERR_NONE;
-    }
-
-    mfxStatus sts = MFX_ERR_NONE;
-
-    mfxExtVPPDenoise* pParam = (mfxExtVPPDenoise*)pHint;
-
-    if( pParam->DenoiseFactor > PAR_NRF_STRENGTH_MAX )
-    {
-        VPP_RANGE_CLIP(pParam->DenoiseFactor, PAR_NRF_STRENGTH_MIN, PAR_NRF_STRENGTH_MAX);
-
-        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    }
-
-    return sts;
-
-} // static mfxStatus MFXVideoVPPDenoise::Query( mfxExtBuffer* pHint )
-
-#if !defined(MFX_ENABLE_HW_ONLY_VPP) // SW is disabled
 
 MFXVideoVPPDenoise::MFXVideoVPPDenoise(VideoCORE *core, mfxStatus* sts ) : FilterVPP()
 {

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010 - 2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010 - 2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          Detail Enhancement algorithm of Video Pre\Post Processing
@@ -26,13 +26,6 @@
 
 #define VPP_RANGE_CLIP(val, min_val, max_val)  IPP_MAX( IPP_MIN(max_val, val), min_val )
 
-//Detail Enhancement Filter (DEF) constants
-#define VPP_DETAIL_SOBEL_STRONG        8
-#define VPP_DETAIL_SOBEL_WEAK          1
-#define VPP_DETAIL_STRONG_WEIGHT       6
-#define VPP_DETAIL_REGULAR_WEIGHT      3
-#define VPP_DETAIL_WEAK_WEIGHT         2
-
 #define VPP_DETAIL_GAIN_MIN      (0)
 #define VPP_DETAIL_GAIN_MAX      (63)
 #define VPP_DETAIL_GAIN_MAX_REAL (63)
@@ -41,6 +34,41 @@
 // solution is realGain = CLIP(userGain, 0, 63)
 #define VPP_DETAIL_GAIN_MAX_USER_LEVEL (100)
 #define VPP_DETAIL_GAIN_DEFAULT VPP_DETAIL_GAIN_MIN
+
+/* ******************************************************************** */
+/*           implementation of VPP filter [DetailEnhancement]           */
+/* ******************************************************************** */
+
+mfxStatus MFXVideoVPPDetailEnhancement::Query( mfxExtBuffer* pHint )
+{
+    if( NULL == pHint )
+    {
+        return MFX_ERR_NONE;
+    }
+
+    mfxStatus sts = MFX_ERR_NONE;
+
+    mfxExtVPPDetail* pParam = (mfxExtVPPDetail*)pHint;
+
+    if( pParam->DetailFactor > VPP_DETAIL_GAIN_MAX_USER_LEVEL )
+    {
+        VPP_RANGE_CLIP(pParam->DetailFactor, VPP_DETAIL_GAIN_MIN, VPP_DETAIL_GAIN_MAX_USER_LEVEL);
+
+        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
+    return sts;
+
+} // mfxStatus MFXVideoVPPDetailEnhancement::Query( mfxExtBuffer* pHint )
+
+#if !defined(MFX_ENABLE_HW_ONLY_VPP) // SW ONLY
+
+//Detail Enhancement Filter (DEF) constants
+#define VPP_DETAIL_SOBEL_STRONG        8
+#define VPP_DETAIL_SOBEL_WEAK          1
+#define VPP_DETAIL_STRONG_WEIGHT       6
+#define VPP_DETAIL_REGULAR_WEIGHT      3
+#define VPP_DETAIL_WEAK_WEIGHT         2
 
 #define VPP_DETAIL_R3_C                ((59+2)>>2)
 #define VPP_DETAIL_R3_X                ((25+2)>>2)
@@ -76,34 +104,6 @@ int Calc3x3Laplacian(int    x,
                      Ipp8u* rowMinus1,
                      Ipp8u* curRow,
                      Ipp8u* rowPlus1);
-
-/* ******************************************************************** */
-/*           implementation of VPP filter [DetailEnhancement]           */
-/* ******************************************************************** */
-
-mfxStatus MFXVideoVPPDetailEnhancement::Query( mfxExtBuffer* pHint )
-{
-    if( NULL == pHint )
-    {
-        return MFX_ERR_NONE;
-    }
-
-    mfxStatus sts = MFX_ERR_NONE;
-
-    mfxExtVPPDetail* pParam = (mfxExtVPPDetail*)pHint;
-
-    if( pParam->DetailFactor > VPP_DETAIL_GAIN_MAX_USER_LEVEL )
-    {
-        VPP_RANGE_CLIP(pParam->DetailFactor, VPP_DETAIL_GAIN_MIN, VPP_DETAIL_GAIN_MAX_USER_LEVEL);
-
-        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    }
-
-    return sts;
-
-} // mfxStatus MFXVideoVPPDetailEnhancement::Query( mfxExtBuffer* pHint )
-
-#if !defined(MFX_ENABLE_HW_ONLY_VPP) // SW ONLY
 
 MFXVideoVPPDetailEnhancement::MFXVideoVPPDetailEnhancement(VideoCORE *core, mfxStatus* sts) : FilterVPP()
 {

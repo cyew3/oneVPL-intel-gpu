@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          GamutCompression Video Post Processing Filter
@@ -39,6 +39,7 @@ public:
   // this function is used by VPP Pipeline Query to correct application request
   static mfxStatus Query( mfxExtBuffer* pHint );
 
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
   MFXVideoVPPGamutCompression(VideoCORE *core, mfxStatus* sts);
   virtual ~MFXVideoVPPGamutCompression();
 
@@ -100,12 +101,15 @@ private:
 
     mfxStatus FixedHueCompression_NV12_32f( Surface1_32f* pDst );
     int HWDivision(int nom, int denom, int outBitPrec);
+#endif
 };
 
 
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
 // external configuration functions
 mfxStatus CreateDivTable(int* pTable);
 mfxStatus CreateColorTables(int* pLumaVertexTab, int* pSatVertexTab, int* pYUV2RGBTab, bool bBT601 );
+#endif 
 
 #endif // __MFX_GAMUT_COMPRESSION_VPP_H
 
