@@ -21,6 +21,7 @@ Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
 #endif
 #if defined(LIBVA_X11_SUPPORT)
 #include <va/va_x11.h>
+#undef Status
 #endif
 
 #include "sample_defs.h"

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2016 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -17,6 +17,8 @@ Copyright(c) 2013-2015 Intel Corporation. All Rights Reserved.
 #include <va/va_x11.h>
 #include <X11/Xlib.h>
 #include "vaapi_allocator.h"
+
+#undef Status
 
 #define VAAPI_GET_X_DISPLAY(_display) (Display*)(_display)
 #define VAAPI_GET_X_WINDOW(_window) (Window*)(_window)
