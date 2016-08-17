@@ -1855,6 +1855,7 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
             frame->m_ttSubmitGpuPostProc.numUpstreamDependencies = 0;
             frame->m_ttSubmitGpuPostProc.finished = 0;
             frame->m_ttSubmitGpuPostProc.poc = frame->m_frameOrder;
+            AddTaskDependencyThreaded(&frame->m_ttSubmitGpuPostProc, &frame->m_ttSubmitGpuCopySrc); // GPU_SUBMIT_PP <- GPU_SUBMIT_COPY_SRC
 
             frame->m_ttWaitGpuPostProc.numDownstreamDependencies = 0;
             frame->m_ttWaitGpuPostProc.numUpstreamDependencies = 0;
