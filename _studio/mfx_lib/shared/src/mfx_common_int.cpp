@@ -292,11 +292,20 @@ mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
     if (!in->IOPattern)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if ((in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210) &&
-        (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) &&
-         in->mfx.FrameInfo.Shift != 1)
+    //special case for HEVC as it specified in https://jira01.devtools.intel.com/browse/MDP-17396
+    if (in->mfx.CodecId == MFX_CODEC_HEVC &&
+       (in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210))
     {
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+        if (type == MFX_HW_UNKNOWN)
+        {
+            if (in->mfx.FrameInfo.Shift != 0)
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+        else
+        {
+            if ((in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && in->mfx.FrameInfo.Shift != 1)
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
     }
 
     return MFX_ERR_NONE;
