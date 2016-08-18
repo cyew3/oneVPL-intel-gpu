@@ -14,7 +14,7 @@
 #include "vm_file.h"
 #include "mfx_io_utils.h"
 #include "app_defs.h"
-
+#include <memory>
 
 #define MFX_TIME_STAMP_INVALID   (mfxU64)-1; 
 
@@ -139,30 +139,29 @@ mfxStatus CYUVReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInfo)
     h >>= 1;
 
     if (pInfo->FourCC == MFX_FOURCC_NV12 || pInfo->FourCC == MFX_FOURCC_P010) {
-        mfxU8 buf[2048]; // maximum supported chroma width for nv12
+        mfxU32 w_real = pInfo->FourCC == MFX_FOURCC_P010 ? w/2 : w;
+        std::auto_ptr<mfxU8> buf(new mfxU8[w]); // maximum supported chroma width for nv12
         mfxU32 j;
 
         ptr = pData->UV + (pInfo->CropX) + (pInfo->CropY>>1)*pitch;
-        if (w > 2048)
-            return MFX_ERR_UNSUPPORTED;
         // load U
         for (i=0; i<h; i++) {
-            nBytesRead = RawRead(buf, w);
+            nBytesRead = RawRead(buf.get(), w);
             CHECK_NOT_EQUAL(nBytesRead, w, ERROR_FILE_READ);
-            for (j=0; j<w; j++)
+            for (j=0; j<w_real; j++)
             {
-                if (pInfo->FourCC == MFX_FOURCC_NV12) *((mfxU8* )ptr + i*pitch+j*2) = *((mfxU8* )buf + j);
-                if (pInfo->FourCC == MFX_FOURCC_P010) *((mfxU16*)ptr + i*pitch/2+j*2) = *((mfxU16*)buf + j);
+                if (pInfo->FourCC == MFX_FOURCC_NV12) *((mfxU8* )ptr + i*pitch+j*2) = *((mfxU8* )buf.get() + j);
+                if (pInfo->FourCC == MFX_FOURCC_P010) *((mfxU16*)ptr + i*pitch/2 + j*2) = *((mfxU16*)buf.get() + j);
             }
         }
         // load V
         for (i=0; i<h; i++) {
-            nBytesRead = RawRead(buf, w);
+            nBytesRead = RawRead(buf.get(), w);
             CHECK_NOT_EQUAL(nBytesRead, w, ERROR_FILE_READ);
-            for (j=0; j<w; j++)
+            for (j=0; j<w_real; j++)
             {
-                if (pInfo->FourCC == MFX_FOURCC_NV12) *((mfxU8* )ptr + i*pitch+j*2+1) = *((mfxU8* )buf + j);
-                if (pInfo->FourCC == MFX_FOURCC_P010) *((mfxU16*)ptr + i*pitch/2+j*2+1) = *((mfxU16*)buf + j);
+                if (pInfo->FourCC == MFX_FOURCC_NV12) *((mfxU8* )ptr + i*pitch+j*2+1) = *((mfxU8* )buf.get() + j);
+                if (pInfo->FourCC == MFX_FOURCC_P010) *((mfxU16*)ptr + i*pitch/2+j*2+1) = *((mfxU16*)buf.get() + j);
             }
 
         }
