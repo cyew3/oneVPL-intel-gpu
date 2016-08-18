@@ -20,6 +20,8 @@ static const int inter_mb_mode[1+22] = {-1, 0,  0,  0,  1,  2,  1,  2,  1,  2,  
 
 mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask, mfxU8 QP, std::list<iTask*> *pTaskList)
 {
+    MFX_ITT_TASK("PakOneStreamoutFrame");
+
     MSDK_CHECK_POINTER(eTask,                  MFX_ERR_NULL_PTR);
     MSDK_CHECK_POINTER(eTask->inPAK.InSurface, MFX_ERR_NULL_PTR);
 

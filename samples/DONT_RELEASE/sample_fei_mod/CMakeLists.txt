@@ -12,5 +12,5 @@ file( GLOB_RECURSE sources "[^.]*.c" "[^.]*.cpp" "${CMAKE_SOURCE_DIR}/sample_fei
 
 list( APPEND LIBS_VARIANT sample_common )
 
-set(DEPENDENCIES libmfx dl pthread)
+set(DEPENDENCIES itt libmfx dl pthread)
 make_executable( shortname universal )
