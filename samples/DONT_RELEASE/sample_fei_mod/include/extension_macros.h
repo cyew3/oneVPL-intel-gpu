@@ -13,9 +13,9 @@ Copyright(c) 2005-2016 Intel Corporation. All Rights Reserved.
 #include "modified_sample_fei.h"
 #pragma warning( disable : 4702)
 
-#define MSDK_DEBUG if (m_encpakParams.bDECODESTREAMOUT && m_encpakParams.bOnlyPAK)\
+#define MSDK_DEBUG if (m_appCfg.bDECODESTREAMOUT && m_appCfg.bOnlyPAK)\
                    {\
-                     sts = PakOneStreamoutFrame(m_numOfFields, eTask, m_encpakParams.QP, &m_inputTasks);\
+                     sts = PakOneStreamoutFrame(m_numOfFields, eTask, m_appCfg.QP, &m_inputTasks);\
                      MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);\
                    }\
                    else

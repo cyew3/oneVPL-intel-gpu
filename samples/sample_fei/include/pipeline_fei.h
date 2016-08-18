@@ -79,7 +79,7 @@ enum MemType {
     D3D11_MEMORY  = 0x02,
 };
 
-struct sInputParams
+struct AppConfig
 {
     mfxU32 DecodeId; // type of input coded video
     mfxU32 CodecId;
@@ -294,10 +294,10 @@ public:
     CEncodingPipeline();
     virtual ~CEncodingPipeline();
 
-    virtual mfxStatus Init(sInputParams *pParams);
+    virtual mfxStatus Init(AppConfig *pConfig);
     virtual mfxStatus Run();
     virtual void Close();
-    virtual mfxStatus ResetMFXComponents(sInputParams* pParams, bool realloc_frames);
+    virtual mfxStatus ResetMFXComponents(AppConfig* pConfig, bool realloc_frames);
     virtual mfxStatus ResetDevice();
 
     virtual void  PrintInfo();
@@ -339,7 +339,7 @@ protected:
     mfxVideoParam m_mfxDecParams;
     mfxVideoParam m_mfxVppParams;
     mfxVideoParam m_mfxDSParams;
-    sInputParams  m_encpakParams;
+    AppConfig     m_appCfg;
 
     mfxBitstream m_mfxBS;  // contains encoded input data
 
@@ -430,12 +430,12 @@ protected:
     virtual mfxStatus InitInterfaces();
     virtual mfxStatus FillPipelineParameters();
 
-    virtual mfxStatus InitMfxEncParams(sInputParams *pParams);
-    virtual mfxStatus InitMfxDecodeParams(sInputParams *pParams);
-    virtual mfxStatus InitMfxVppParams(sInputParams *pParams);
+    virtual mfxStatus InitMfxEncParams(AppConfig *pConfig);
+    virtual mfxStatus InitMfxDecodeParams(AppConfig *pConfig);
+    virtual mfxStatus InitMfxVppParams(AppConfig *pConfig);
 
-    virtual mfxStatus InitFileWriters(sInputParams *pParams);
-    virtual mfxStatus ResetIOFiles(const sInputParams & pParams);
+    virtual mfxStatus InitFileWriters(AppConfig *pConfig);
+    virtual mfxStatus ResetIOFiles(const AppConfig & Config);
     virtual void FreeFileWriters();
     virtual mfxStatus InitFileWriter(CSmplBitstreamWriter **ppWriter, const msdk_char *filename);
 

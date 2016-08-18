@@ -167,8 +167,6 @@ inline mfxStatus RepackStreamoutMV(mfxFeiDecStreamOutMBCtrl* dsoMB, mfxExtFeiEnc
 #define P_SLICE(SliceType) ((SliceType) == 0 || (SliceType) == 5)
 #define B_SLICE(SliceType) ((SliceType) == 1 || (SliceType) == 6)
 
-#define MIN(a,b)    (((a) < (b)) ? (a) : (b))
-
 const mfxU8 rasterToZ[16] = {0,1,4,5,2,3,6,7, 8,9,12,13,10,11,14,15}; // the same for reverse
 
 const mfxU8 sbDirect[2][16] = {
@@ -220,8 +218,8 @@ void MVPrediction(mfxI32 uMB, mfxI32 wmb, mfxI32 uMBx, mfxI32 uMBy, mfxU8 list, 
         else if (!isRefDif[1]) *mvPred = *(mvn[1]);
         else *mvPred = *(mvn[2]);
     } else {
-        mvPred->x = MIN(mvn[0]->x, mvn[1]->x) ^ MIN(mvn[0]->x, mvn[2]->x) ^ MIN(mvn[2]->x, mvn[1]->x);
-        mvPred->y = MIN(mvn[0]->y, mvn[1]->y) ^ MIN(mvn[0]->y, mvn[2]->y) ^ MIN(mvn[2]->y, mvn[1]->y);
+        mvPred->x = (std::min)(mvn[0]->x, mvn[1]->x) ^ (std::min)(mvn[0]->x, mvn[2]->x) ^ (std::min)(mvn[2]->x, mvn[1]->x);
+        mvPred->y = (std::min)(mvn[0]->y, mvn[1]->y) ^ (std::min)(mvn[0]->y, mvn[2]->y) ^ (std::min)(mvn[2]->y, mvn[1]->y);
     }
 }
 
@@ -255,8 +253,8 @@ void RefPrediction(mfxI32 uMB, mfxI32 wmb, mfxI32 uMBx, mfxI32 uMBy,
             if (pmode == 2 || pmode == 1) ref[1][2] = mbCode->MB[uMB-wmb-1].InterMB.RefIdx[1][3];
         }
     }
-    refs[0] = MIN(MIN(ref[0][0], ref[0][1]), ref[0][2]);
-    refs[1] = MIN(MIN(ref[1][0], ref[1][1]), ref[1][2]);
+    refs[0] = (std::min)((std::min)(ref[0][0], ref[0][1]), ref[0][2]);
+    refs[1] = (std::min)((std::min)(ref[1][0], ref[1][1]), ref[1][2]);
 }
 
 #ifdef DUMP_MB_DSO
