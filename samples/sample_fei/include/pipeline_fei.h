@@ -71,6 +71,108 @@ enum {
 
 struct AppConfig
 {
+
+    AppConfig()
+        : DecodeId(0)            // Default (invalid) value
+        , CodecId(MFX_CODEC_AVC) // Only AVC is supported
+        , ColorFormat(MFX_FOURCC_YV12)
+        , nPicStruct(MFX_PICSTRUCT_PROGRESSIVE)
+        , nWidth(0)
+        , nHeight(0)
+        , dFrameRate(30.0)
+        , nNumFrames(0)          // Unlimited
+        , nTimeout(0)            // Unlimited
+        , refDist(1)             // Only I frames
+        , gopSize(1)             // Only I frames
+        , QP(26)
+        , numSlices(1)
+        , numRef(1)              // One ref by default
+        , NumRefActiveP(0)
+        , NumRefActiveBL0(0)
+        , NumRefActiveBL1(0)
+        , bRefType(MFX_B_REF_UNKNOWN) // Let MSDK library to decide wheather to use B-pyramid or not
+        , nIdrInterval(0xffff)        // Infinite IDR interval
+        , preencDSstrength(0)         // No Downsampling
+        , bDynamicRC(false)
+        , nResetStart(0)
+        , nDRCdefautW(0)
+        , nDRCdefautH(0)
+        , MaxDrcWidth(0)
+        , MaxDrcHeight(0)
+
+        , SearchWindow(5)             // 48x40 (48 SUs)
+        , LenSP(57)
+        , SearchPath(0)               // exhaustive (full search)
+        , RefWidth(32)
+        , RefHeight(32)
+        , SubMBPartMask(0x00)         // all enabled
+        , IntraPartMask(0x00)         // all enabled
+        , SubPelMode(0x03)            // quarter-pixel
+        , IntraSAD(0x02)              // Haar transform
+        , InterSAD(0x02)              // Haar transform
+        , GopOptFlag(0)               // None
+        , CodecProfile(MFX_PROFILE_AVC_HIGH)
+        , CodecLevel(MFX_LEVEL_AVC_41)
+        , Trellis(MFX_TRELLIS_UNKNOWN)
+        , DisableDeblockingIdc(0)
+        , SliceAlphaC0OffsetDiv2(0)
+        , SliceBetaOffsetDiv2(0)
+        , ChromaQPIndexOffset(0)
+        , SecondChromaQPIndexOffset(0)
+        , nDstWidth(0)
+        , nDstHeight(0)
+        , nInputSurf(0)
+        , nReconSurf(0)
+
+        , bUseHWmemory(true)          // only HW memory is supported (ENCODE supports SW memory)
+
+        , bDECODE(false)
+        , bENCODE(false)
+        , bENCPAK(false)
+        , bOnlyENC(false)
+        , bOnlyPAK(false)
+        , bPREENC(false)
+        , bDECODESTREAMOUT(false)
+        , EncodedOrder(false)
+        , DecodedOrder(false)
+        , bMBSize(false)
+        , bPassHeaders(false)
+        , Enable8x8Stat(false)
+        , AdaptiveSearch(false)
+        , FTEnable(false)
+        , RepartitionCheckEnable(false)
+        , MultiPredL0(false)
+        , MultiPredL1(false)
+        , DistortionType(false)
+        , ColocatedMbDistortion(false)
+        , ConstrainedIntraPredFlag(false)
+        , Transform8x8ModeFlag(false)
+        , bRepackPreencMV(false)
+        , bNPredSpecified_l0(false)
+        , bNPredSpecified_l1(false)
+        , bPreencPredSpecified_l0(false)
+        , bPreencPredSpecified_l1(false)
+        , bFieldProcessingMode(false)
+        , bPerfMode(false)
+        , bRawRef(false)
+        , bNRefPSpecified(false)
+        , bNRefBL0Specified(false)
+        , bNRefBL1Specified(false)
+        , mvinFile(NULL)
+        , mbctrinFile(NULL)
+        , mvoutFile(NULL)
+        , mbcodeoutFile(NULL)
+        , mbstatoutFile(NULL)
+        , mbQpFile(NULL)
+        , repackctrlFile(NULL)
+        , decodestreamoutFile(NULL)
+    {
+        NumMVPredictors[0] = 1;
+        NumMVPredictors[1] = 0;
+        PreencMVPredictors[0] = true;
+        PreencMVPredictors[1] = true;
+    };
+
     mfxU32 DecodeId; // type of input coded video
     mfxU32 CodecId;
     mfxU32 ColorFormat;
@@ -91,6 +193,7 @@ struct AppConfig
     mfxU16 bRefType;         // B-pyramid ON/OFF/UNKNOWN (default, let MSDK lib to decide)
     mfxU16 nIdrInterval;     // distance between IDR frames in GOPs
     mfxU8  preencDSstrength; // downsample input before passing to preenc (2/4/8x are supported)
+    bool   bDynamicRC;
     mfxU32 nResetStart;
     mfxU16 nDRCdefautW;
     mfxU16 nDRCdefautH;
@@ -103,8 +206,8 @@ struct AppConfig
     mfxU16 RefWidth;     // search window width
     mfxU16 RefHeight;    // search window height
     mfxU16 SubMBPartMask;
-    mfxU16 SubPelMode;
     mfxU16 IntraPartMask;
+    mfxU16 SubPelMode;
     mfxU16 IntraSAD;
     mfxU16 InterSAD;
     mfxU16 NumMVPredictors[2];  // number of [0] - L0 predictors, [1] - L1 predictors
@@ -163,7 +266,6 @@ struct AppConfig
     bool bPreencPredSpecified_l1;
     bool bFieldProcessingMode;
     bool bPerfMode;
-    bool bDynamicRC;
     bool bRawRef;
     bool bNRefPSpecified;
     bool bNRefBL0Specified;
@@ -202,19 +304,11 @@ struct sTask
 
 struct MVP_elem
 {
-    MVP_elem(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB * MVMB, mfxU8 idx, mfxU16 dist)
-    {
-        preenc_MVMB = MVMB;
-        refIdx      = idx;
-        distortion  = dist;
-    };
-
-    MVP_elem()
-    {
-        preenc_MVMB = NULL;
-        refIdx      = 0xff;
-        distortion  = 0xffff;
-    };
+    MVP_elem(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB * MVMB = NULL, mfxU8 idx = 0xff, mfxU16 dist = 0xffff)
+        : preenc_MVMB(MVMB)
+        , refIdx(idx)
+        , distortion(dist)
+    {}
 
     mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB * preenc_MVMB;
     mfxU8 refIdx;
@@ -227,14 +321,13 @@ struct BestMVset
     {
         bestL0.reserve((std::min)((std::max)(num_pred[0][0], num_pred[1][0]), MaxFeiEncMVPNum));
         bestL1.reserve((std::min)((std::max)(num_pred[0][1], num_pred[1][1]), MaxFeiEncMVPNum));
-    };
+    }
 
     void Clear()
     {
         bestL0.clear();
         bestL1.clear();
-
-    };
+    }
 
     std::vector<MVP_elem> bestL0;
     std::vector<MVP_elem> bestL1;
@@ -246,7 +339,7 @@ public:
     CEncTaskPool();
     virtual ~CEncTaskPool();
 
-    virtual mfxStatus Init(MFXVideoSession* pmfxSession, CSmplBitstreamWriter* pWriter, mfxU32 nPoolSize, mfxU32 nBufferSize, CSmplBitstreamWriter *pOtherWriter = NULL);
+    virtual mfxStatus Init(MFXVideoSession* pmfxSession, CSmplBitstreamWriter* pWriter, mfxU32 nPoolSize, mfxU32 nBufferSize);
     virtual mfxStatus GetFreeTask(sTask **ppTask);
     virtual mfxStatus SynchronizeFirstTask();
     virtual mfxStatus SetFieldToStore(mfxU32 fieldId);
@@ -272,12 +365,18 @@ enum SurfStrategy
 
 struct ExtSurfPool
 {
+    ExtSurfPool()
+        : SurfacesPool(NULL)
+        , LastPicked(0xffff)
+        , PoolSize(0)
+    {}
+
     mfxFrameSurface1* SurfacesPool;
     mfxU16 LastPicked;
     mfxU16 PoolSize;
 };
 
-/* This class implements a pipeline with 2 mfx components: vpp (video preprocessing) and encode */
+/* This class implements a FEI pipeline */
 class CEncodingPipeline
 {
 public:
@@ -295,10 +394,9 @@ public:
     virtual void  PrintInfo();
 
 protected:
-    std::pair<CSmplBitstreamWriter *,
-              CSmplBitstreamWriter *> m_FileWriters;
-    CSmplYUVReader m_FileReader;
-    CSmplBitstreamReader m_BSReader;
+    CSmplBitstreamWriter * m_FileWriter;
+    CSmplYUVReader         m_FileReader;
+    CSmplBitstreamReader   m_BSReader;
     CEncTaskPool m_TaskPool;
     mfxU16 m_nAsyncDepth; // depth of asynchronous pipeline, this number can be tuned to achieve better performance
     mfxU16 m_refDist;
@@ -396,7 +494,6 @@ protected:
     mfxU16 m_log2frameNumMax;
     mfxU8  m_ffid, m_sfid; // holds parity of first / second field: 0 - top_field, 1 - bottom_field
     mfxU32 m_frameCount, m_frameOrderIdrInDisplayOrder;
-    mfxU16 m_frameIdrCounter;
     PairU8 m_frameType;
     bool  m_isField;
 
@@ -426,10 +523,9 @@ protected:
     virtual mfxStatus InitMfxDecodeParams(AppConfig *pConfig);
     virtual mfxStatus InitMfxVppParams(AppConfig *pConfig);
 
-    virtual mfxStatus InitFileWriters(AppConfig *pConfig);
     virtual mfxStatus ResetIOFiles(const AppConfig & Config);
-    virtual void FreeFileWriters();
-    virtual mfxStatus InitFileWriter(CSmplBitstreamWriter **ppWriter, const msdk_char *filename);
+    virtual void FreeFileWriter();
+    virtual mfxStatus InitFileWriter(CSmplBitstreamWriter * & pWriter, const msdk_char *filename);
 
     virtual mfxStatus CreateAllocator();
     virtual void DeleteAllocator();

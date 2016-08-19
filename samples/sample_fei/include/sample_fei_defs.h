@@ -388,6 +388,21 @@ struct DecRefPicMarkingInfo
 
 struct PreEncOutput
 {
+    PreEncOutput()
+        : output_bufs(NULL)
+    {
+        refIdx[0][0] = refIdx[0][1] = refIdx[1][0] = refIdx[1][1] = 0;
+    }
+
+    PreEncOutput(bufSet* bufs, mfxU8 idx[2][2])
+        : output_bufs(bufs)
+    {
+        refIdx[0][0] = idx[0][0];
+        refIdx[0][1] = idx[0][1];
+        refIdx[1][0] = idx[1][0];
+        refIdx[1][1] = idx[1][1];
+    }
+
     bufSet* output_bufs;
     mfxU8 refIdx[2][2]; // [fieldId][L0L1]
 };
@@ -424,10 +439,10 @@ struct iTask
     mfxU8           m_fieldPicFlag;    // is interlaced frame
     PairI32         m_poc;             // POC of first and second field
 
-    //mfxU32  m_frameOrderIdrInDisplayOrder; // most recent idr frame in display order
-    mfxU32  m_frameOrderIdr;               // most recent idr frame in display order
-    mfxU32  m_frameOrderI;                 // most recent i frame in display order
-    mfxU32  m_frameOrder;                  // current frame order in display order
+    mfxU32  m_frameOrderIdr;           // most recent idr frame in display order
+    mfxU32  m_frameOrderI;             // most recent i frame in display order
+    mfxU32  m_frameOrder;              // current frame order in display order
+    mfxU16  m_frameIdrCounter;         // number of IDR frames encoded
 
     ArrayRefListMod m_refPicList0Mod[2];
     ArrayRefListMod m_refPicList1Mod[2];

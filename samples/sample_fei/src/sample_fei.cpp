@@ -1107,98 +1107,10 @@ int _tmain(int argc, msdk_char *argv[])
 int main(int argc, char *argv[])
 #endif
 {
-    AppConfig Config = {};   // input parameters from command line
+    AppConfig Config;   // input parameters from command line
     std::auto_ptr<CEncodingPipeline>  pPipeline;
 
     mfxStatus sts = MFX_ERR_NONE; // return value check
-
-    Config.CodecId  = MFX_CODEC_AVC; //only AVC is supported
-    Config.DecodeId = 0; //default (invalid) value
-    Config.nPicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-    Config.nNumFrames = 0; //unlimited
-    Config.nTimeout   = 0; //unlimited
-    Config.refDist = 1; //only I frames
-    Config.gopSize = 1; //only I frames
-    Config.numRef  = 1; //one ref by default
-    Config.nIdrInterval = 0xffff; //infinite
-    Config.NumRefActiveP   = 0;
-    Config.NumRefActiveBL0 = 0;
-    Config.NumRefActiveBL1 = 0;
-    Config.bDECODESTREAMOUT = false;
-    Config.bDECODE   = false;
-    Config.bENCODE   = false;
-    Config.bENCPAK   = false;
-    Config.bOnlyENC  = false;
-    Config.bOnlyPAK  = false;
-    Config.bPREENC   = false;
-    Config.bPerfMode = false;
-    Config.bRawRef   = false;
-    Config.bNRefPSpecified    = false;
-    Config.bNRefBL0Specified  = false;
-    Config.bNRefBL1Specified  = false;
-    Config.bNPredSpecified_l0 = false;
-    Config.bNPredSpecified_l1 = false;
-    Config.bPreencPredSpecified_l0 = false;
-    Config.bPreencPredSpecified_l1 = false;
-    Config.preencDSstrength = 0;
-    Config.EncodedOrder    = false;
-    Config.DecodedOrder    = false;
-    Config.Enable8x8Stat   = false;
-    Config.FTEnable        = false;
-    Config.AdaptiveSearch  = false;
-    Config.DistortionType  = false;
-    Config.bPassHeaders    = false;
-    Config.RepartitionCheckEnable = false;
-    Config.MultiPredL0 = false;
-    Config.MultiPredL1 = false;
-    Config.ColocatedMbDistortion    = false;
-    Config.ConstrainedIntraPredFlag = false;
-    Config.Transform8x8ModeFlag     = false;
-    Config.mvinFile       = NULL;
-    Config.mvoutFile      = NULL;
-    Config.mbctrinFile    = NULL;
-    Config.mbstatoutFile  = NULL;
-    Config.mbcodeoutFile  = NULL;
-    Config.mbQpFile       = NULL;
-    Config.repackctrlFile = NULL;
-    Config.decodestreamoutFile = NULL;
-    Config.bRepackPreencMV      = false;
-    Config.bFieldProcessingMode = false;
-    Config.bMBSize    = false;
-    Config.bDynamicRC = false;
-    Config.nResetStart  = 0;
-    Config.MaxDrcWidth  = 0;
-    Config.MaxDrcHeight = 0;
-    Config.nDRCdefautW  = 0;
-    Config.nDRCdefautH  = 0;
-    Config.bUseHWmemory = true;          //only HW memory is supported (ENCODE supports SW memory)
-    Config.bRefType = MFX_B_REF_UNKNOWN; //let MSDK library to decide wheather to use B-pyramid or not
-    Config.QP              = 26; //default qp value
-    Config.SearchWindow    = 5;  //48x40 (48 SUs)
-    Config.RefWidth        = 32;
-    Config.RefHeight       = 32;
-    Config.LenSP           = 57;
-    Config.SearchPath      = 0;    // exhaustive (full search)
-    Config.SubMBPartMask   = 0x00; // all enabled
-    Config.IntraPartMask   = 0x00; // all enabled
-    Config.SubPelMode      = 0x03; // quarter-pixel
-    Config.IntraSAD        = 0x02; // Haar transform
-    Config.InterSAD        = 0x02; // Haar transform
-    Config.NumMVPredictors[0] = 1;
-    Config.NumMVPredictors[1] = 0;
-    Config.PreencMVPredictors[0] = true;
-    Config.PreencMVPredictors[1] = true;
-    Config.GopOptFlag      = 0;
-    Config.CodecProfile    = 0;
-    Config.CodecLevel      = 0;
-    Config.Trellis         = 0;    // MFX_TRELLIS_UNKNOWN
-    Config.DisableDeblockingIdc   = 0;
-    Config.SliceAlphaC0OffsetDiv2 = 0;
-    Config.SliceBetaOffsetDiv2    = 0;
-    Config.ChromaQPIndexOffset       = 0;
-    Config.SecondChromaQPIndexOffset = 0;
-    Config.nInputSurf = 0;
-    Config.nReconSurf = 0;
 
     sts = ParseInputString(argv, (mfxU8)argc, &Config);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);

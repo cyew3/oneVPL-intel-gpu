@@ -29,9 +29,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 mfxU8 GetDefaultPicOrderCount(mfxVideoParam const & par)
 {
-    if (par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
-        return 0;
-    if (par.mfx.GopRefDist > 1)
+    if (par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE || par.mfx.GopRefDist > 1)
         return 0;
 
     return 2;
@@ -49,10 +47,10 @@ static FILE* pRepackCtrl     = NULL;
 
 CEncTaskPool::CEncTaskPool():
     m_pTasks(NULL),
-    m_pmfxSession(NULL),
-    m_nTaskBufferStart(0),
     m_nPoolSize(0),
-    m_nFieldId(NOT_IN_SINGLE_FIELD_MODE)
+    m_nTaskBufferStart(0),
+    m_nFieldId(NOT_IN_SINGLE_FIELD_MODE),
+    m_pmfxSession(NULL)
 {
 }
 
@@ -61,17 +59,13 @@ CEncTaskPool::~CEncTaskPool()
     Close();
 }
 
-mfxStatus CEncTaskPool::Init(MFXVideoSession* pmfxSession, CSmplBitstreamWriter* pWriter, mfxU32 nPoolSize, mfxU32 nBufferSize, CSmplBitstreamWriter *pOtherWriter)
+mfxStatus CEncTaskPool::Init(MFXVideoSession* pmfxSession, CSmplBitstreamWriter* pWriter, mfxU32 nPoolSize, mfxU32 nBufferSize)
 {
     MSDK_CHECK_POINTER(pmfxSession, MFX_ERR_NULL_PTR);
     //MSDK_CHECK_POINTER(pWriter, MFX_ERR_NULL_PTR);
 
     MSDK_CHECK_ERROR(nPoolSize,   0, MFX_ERR_UNDEFINED_BEHAVIOR);
     MSDK_CHECK_ERROR(nBufferSize, 0, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-    // nPoolSize must be even in case of 2 output bitstreams
-    if (pOtherWriter && (0 != nPoolSize % 2))
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     m_pmfxSession = pmfxSession;
     m_nPoolSize   = nPoolSize;
@@ -81,22 +75,10 @@ mfxStatus CEncTaskPool::Init(MFXVideoSession* pmfxSession, CSmplBitstreamWriter*
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    if (pOtherWriter) // 2 bitstreams on output
+    for (mfxU32 i = 0; i < m_nPoolSize; i++)
     {
-        for (mfxU32 i = 0; i < m_nPoolSize; i+=2)
-        {
-            sts = m_pTasks[i+0].Init(nBufferSize, pWriter);
-            sts = m_pTasks[i+1].Init(nBufferSize, pOtherWriter);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        }
-    }
-    else
-    {
-        for (mfxU32 i = 0; i < m_nPoolSize; i++)
-        {
-            sts = m_pTasks[i].Init(nBufferSize, pWriter);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        }
+        sts = m_pTasks[i].Init(nBufferSize, pWriter);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
     return MFX_ERR_NONE;
@@ -478,11 +460,11 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(AppConfig *pConfig)
 
                 m_encodeSliceHeader[fieldId].NumSlice =
                     m_encodeSliceHeader[fieldId].NumSliceAlloc = m_mfxEncParams.mfx.NumSlice;
-                m_encodeSliceHeader[fieldId].Slice = new mfxExtFeiSliceHeader::mfxSlice[m_mfxEncParams.mfx.NumSlice];
+                m_encodeSliceHeader[fieldId].Slice = new mfxExtFeiSliceHeader::mfxSlice[m_encodeSliceHeader[fieldId].NumSliceAlloc];
                 MSDK_CHECK_POINTER(m_encodeSliceHeader[fieldId].Slice, MFX_ERR_MEMORY_ALLOC);
-                MSDK_ZERO_ARRAY(m_encodeSliceHeader[fieldId].Slice, m_mfxEncParams.mfx.NumSlice);
+                MSDK_ZERO_ARRAY(m_encodeSliceHeader[fieldId].Slice, m_encodeSliceHeader[fieldId].NumSliceAlloc);
 
-                for (size_t sliceNum = 0; sliceNum < m_mfxEncParams.mfx.NumSlice; ++sliceNum)
+                for (size_t sliceNum = 0; sliceNum < m_encodeSliceHeader[fieldId].NumSliceAlloc; ++sliceNum)
                 {
                     m_encodeSliceHeader[fieldId].Slice[sliceNum].DisableDeblockingFilterIdc = pConfig->DisableDeblockingIdc;
                     m_encodeSliceHeader[fieldId].Slice[sliceNum].SliceAlphaC0OffsetDiv2     = pConfig->SliceAlphaC0OffsetDiv2;
@@ -1066,7 +1048,7 @@ void CEncodingPipeline::DeleteAllocator()
 }
 
 CEncodingPipeline::CEncodingPipeline():
-    m_FileWriters(std::pair<CSmplBitstreamWriter *, CSmplBitstreamWriter *>(NULL, NULL)),
+    m_FileWriter(NULL),
     m_nAsyncDepth(1),
     m_numOfFields(1), // default is progressive case
     m_pmfxDECODE(NULL),
@@ -1096,7 +1078,6 @@ CEncodingPipeline::CEncodingPipeline():
     m_log2frameNumMax(8),
     m_frameCount(0),
     m_frameOrderIdrInDisplayOrder(0),
-    m_frameIdrCounter(0xffff),
     m_frameType(PairU8((mfxU8)MFX_FRAMETYPE_UNKNOWN, (mfxU8)MFX_FRAMETYPE_UNKNOWN)),
     m_isField(false),
 
@@ -1119,19 +1100,10 @@ CEncodingPipeline::CEncodingPipeline():
     MSDK_ZERO_MEMORY(m_pDSSurfaces);
     MSDK_ZERO_MEMORY(m_pReconSurfaces);
 
-    m_pDecSurfaces.LastPicked   = 0xffff; // to pick from 0 surface
-    m_pEncSurfaces.LastPicked   = 0xffff;
-    m_pVppSurfaces.LastPicked   = 0xffff;
-    m_pDSSurfaces.LastPicked    = 0xffff;
-    m_pReconSurfaces.LastPicked = 0xffff;
-
-
     MSDK_ZERO_ARRAY(m_numOfRefs[0], 2);
     MSDK_ZERO_ARRAY(m_numOfRefs[1], 2);
 
     MSDK_ZERO_MEMORY(m_mfxBS);
-
-    m_FileWriters.first = m_FileWriters.second = NULL;
 
     MSDK_ZERO_MEMORY(m_CodingOption2);
     m_CodingOption2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
@@ -1155,30 +1127,13 @@ CEncodingPipeline::~CEncodingPipeline()
     Close();
 }
 
-mfxStatus CEncodingPipeline::InitFileWriter(CSmplBitstreamWriter **ppWriter, const msdk_char *filename)
+mfxStatus CEncodingPipeline::InitFileWriter(CSmplBitstreamWriter * & pWriter, const msdk_char *filename)
 {
-    MSDK_CHECK_ERROR(ppWriter, NULL, MFX_ERR_NULL_PTR);
-
-    MSDK_SAFE_DELETE(*ppWriter);
-    *ppWriter = new CSmplBitstreamWriter;
-    MSDK_CHECK_POINTER(*ppWriter, MFX_ERR_MEMORY_ALLOC);
-    mfxStatus sts = (*ppWriter)->Init(filename);
+    MSDK_SAFE_DELETE(pWriter);
+    pWriter = new CSmplBitstreamWriter;
+    MSDK_CHECK_POINTER(pWriter, MFX_ERR_MEMORY_ALLOC);
+    mfxStatus sts = (pWriter)->Init(filename);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    return sts;
-}
-
-mfxStatus CEncodingPipeline::InitFileWriters(AppConfig *pConfig)
-{
-    MSDK_CHECK_POINTER(pConfig, MFX_ERR_NULL_PTR);
-
-    mfxStatus sts = MFX_ERR_NONE;
-
-    // prepare output file writers
-    if ((pConfig->bENCODE) || (pConfig->bENCPAK) || (pConfig->bOnlyPAK)){ //need only for ENC+PAK, only ENC + only PAK, only PAK
-        sts = InitFileWriter(&m_FileWriters.first, pConfig->dstFileBuff[0]);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-    }
 
     return sts;
 }
@@ -1190,9 +1145,9 @@ mfxStatus CEncodingPipeline::ResetIOFiles(const AppConfig & Config)
     sts = ResetBuffers();
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    if (m_FileWriters.first) // no file writers for preenc
+    if (m_FileWriter) // no file writers for preenc
     {
-        sts = m_FileWriters.first->Init(Config.dstFileBuff[0]);
+        sts = m_FileWriter->Init(Config.dstFileBuff[0]);
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
@@ -1249,8 +1204,12 @@ mfxStatus CEncodingPipeline::Init(AppConfig *pConfig)
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
     }
 
-    sts = InitFileWriters(pConfig);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    // Init FileWriter for bitstream
+    if (pConfig->bENCODE || pConfig->bENCPAK || pConfig->bOnlyPAK)
+    {
+        sts = InitFileWriter(m_FileWriter, pConfig->dstFileBuff[0]);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
 
     // Section below initialize sessions and sets proper allocId for components
     m_bSeparatePreENCSession = pConfig->bPREENC && (pConfig->bENCPAK || pConfig->bOnlyENC || (pConfig->preencDSstrength && m_bVPPneeded));
@@ -1406,7 +1365,7 @@ mfxStatus CEncodingPipeline::FillPipelineParameters()
 
 void CEncodingPipeline::Close()
 {
-    if (m_FileWriters.first)
+    if (m_FileWriter)
         msdk_printf(MSDK_STRING("Frame number: %u\r"), m_frameCount);
 
     MSDK_SAFE_DELETE(m_pmfxDECODE);
@@ -1440,25 +1399,16 @@ void CEncodingPipeline::Close()
     DeleteAllocator();
 
     m_FileReader.Close();
-    FreeFileWriters();
+    FreeFileWriter();
 
     WipeMfxBitstream(&m_mfxBS);
 }
 
-void CEncodingPipeline::FreeFileWriters()
+void CEncodingPipeline::FreeFileWriter()
 {
-    if (m_FileWriters.second == m_FileWriters.first)
-    {
-        m_FileWriters.second = NULL; // second do not own the writer - just forget pointer
-    }
-
-    if (m_FileWriters.first)
-        m_FileWriters.first->Close();
-    MSDK_SAFE_DELETE(m_FileWriters.first);
-
-    if (m_FileWriters.second)
-        m_FileWriters.second->Close();
-    MSDK_SAFE_DELETE(m_FileWriters.second);
+    if (m_FileWriter)
+        m_FileWriter->Close();
+    MSDK_SAFE_DELETE(m_FileWriter);
 }
 
 mfxStatus CEncodingPipeline::ResetMFXComponents(AppConfig* pConfig, bool realloc_frames)
@@ -1668,7 +1618,7 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(AppConfig* pConfig, bool realloc
     }
 
     mfxU32 nEncodedDataBufferSize = m_mfxEncParams.mfx.FrameInfo.Width * m_mfxEncParams.mfx.FrameInfo.Height * 4;
-    sts = m_TaskPool.Init(&m_mfxSession, m_FileWriters.first, m_nAsyncDepth * 2, nEncodedDataBufferSize, m_FileWriters.second);
+    sts = m_TaskPool.Init(&m_mfxSession, m_FileWriter, m_nAsyncDepth * 2, nEncodedDataBufferSize);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     return MFX_ERR_NONE;
@@ -2344,15 +2294,15 @@ mfxStatus CEncodingPipeline::InitInterfaces()
 
                     feiSliceHeader[fieldId].NumSlice =
                         feiSliceHeader[fieldId].NumSliceAlloc = m_appCfg.numSlices;
-                    feiSliceHeader[fieldId].Slice = new mfxExtFeiSliceHeader::mfxSlice[m_appCfg.numSlices];
+                    feiSliceHeader[fieldId].Slice = new mfxExtFeiSliceHeader::mfxSlice[feiSliceHeader[fieldId].NumSliceAlloc];
                     MSDK_CHECK_POINTER(feiSliceHeader[fieldId].Slice, MFX_ERR_MEMORY_ALLOC);
-                    MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice, m_appCfg.numSlices);
+                    MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice, feiSliceHeader[fieldId].NumSliceAlloc);
 
                     // TODO: Implement real slice divider
                     // For now only one slice is supported
                     mfxU16 nMBrows = (m_heightMB + feiSliceHeader[fieldId].NumSlice - 1) / feiSliceHeader[fieldId].NumSlice,
                         nMBremain = m_heightMB;
-                    for (mfxU16 numSlice = 0; numSlice < feiSliceHeader[fieldId].NumSlice; numSlice++)
+                    for (mfxU16 numSlice = 0; numSlice < feiSliceHeader[fieldId].NumSliceAlloc; numSlice++)
                     {
                         feiSliceHeader[fieldId].Slice[numSlice].MBAaddress = numSlice*(nMBrows*m_widthMB);
                         feiSliceHeader[fieldId].Slice[numSlice].NumMBs     = MSDK_MIN(nMBrows, nMBremain)*m_widthMB;
@@ -2832,13 +2782,14 @@ mfxStatus CEncodingPipeline::Run()
     if (create_task)
     {
         mfxU32 numUnencoded = CountUnencodedFrames();
+
+        if (numUnencoded && !(m_mfxEncParams.mfx.GopOptFlag & MFX_GOP_STRICT)){
+            sts = ProcessLastB();
+            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+        }
+
         while (numUnencoded != 0)
         {
-            if (!(m_mfxEncParams.mfx.GopOptFlag & MFX_GOP_STRICT)){
-                sts = ProcessLastB();
-                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-            }
-
             // get a pointer to a free task (bit stream and sync point for encoder)
             sts = GetFreeTask(&pCurrentTask);
             MSDK_BREAK_ON_ERROR(sts);
@@ -3203,9 +3154,9 @@ iTask* CEncodingPipeline::CreateAndInitTask()
     eTask->m_list0[1].Fill(0);
     eTask->m_list1[0].Fill(0);
     eTask->m_list1[1].Fill(0);
-    //eTask->m_frameOrderIdrInDisplayOrder = 0;
-    eTask->m_frameOrderIdr = 0;
-    eTask->m_frameOrderI = 0;
+    eTask->m_frameOrderIdr   = 0;
+    eTask->m_frameOrderI     = 0;
+    eTask->m_frameIdrCounter = 0;
     eTask->m_initSizeList0[0] = 0;
     eTask->m_initSizeList0[1] = 0;
     eTask->m_initSizeList1[0] = 0;
@@ -3352,6 +3303,7 @@ mfxStatus CEncodingPipeline::CopyState(iTask* eTask)
 
     m_last_task->m_frameOrderIdr   = eTask->m_frameOrderIdr;
     m_last_task->m_frameOrderI     = eTask->m_frameOrderI;
+    m_last_task->m_frameIdrCounter = eTask->m_frameIdrCounter;
     m_last_task->m_nalRefIdc       = eTask->m_nalRefIdc;
     m_last_task->m_frameNum        = eTask->m_frameNum;
     m_last_task->m_type            = eTask->m_type;
@@ -3670,7 +3622,7 @@ inline mfxU16 CEncodingPipeline::GetCurPicType(mfxU32 fieldId)
         return MFX_PICTYPE_FRAME;
     else
     {
-        if (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF)
+        if (m_mfxEncParams.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_TFF)
             return (mfxU16)(fieldId ? MFX_PICTYPE_BOTTOMFIELD : MFX_PICTYPE_TOPFIELD);
         else
             return (mfxU16)(fieldId ? MFX_PICTYPE_TOPFIELD : MFX_PICTYPE_BOTTOMFIELD);
@@ -4023,7 +3975,7 @@ mfxStatus CEncodingPipeline::InitEncPakFrameParams(iTask* eTask)
 
                     feiPPS[fieldId].IDRPicFlag = (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_IDR) ? 1 : 0;
                     if (feiPPS[fieldId].IDRPicFlag)
-                        m_frameIdrCounter++;
+                        eTask->m_frameIdrCounter++;
                     feiPPS[fieldId].FrameNum   = eTask->m_frameNum;
 
                     memset(feiPPS[fieldId].ReferenceFrames, -1, 16*sizeof(mfxU16));
@@ -4034,14 +3986,14 @@ mfxStatus CEncodingPipeline::InitEncPakFrameParams(iTask* eTask)
                 {
                     MSDK_CHECK_POINTER(feiSliceHeader[fieldId].Slice, MFX_ERR_NULL_PTR);
 
-                    for (mfxU32 i = 0; i < feiSliceHeader[fieldId].NumSlice; i++)
+                    for (mfxU32 i = 0; i < feiSliceHeader[fieldId].NumSliceAlloc; i++)
                     {
                         MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL0, 32);
                         MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL1, 32);
                         feiSliceHeader[fieldId].Slice[i].SliceType = FEI_SLICETYPE_I;
                         feiSliceHeader[fieldId].Slice[i].NumRefIdxL0Active = 0;
                         feiSliceHeader[fieldId].Slice[i].NumRefIdxL1Active = 0;
-                        feiSliceHeader[fieldId].Slice[i].IdrPicId          = m_frameIdrCounter;
+                        feiSliceHeader[fieldId].Slice[i].IdrPicId          = eTask->m_frameIdrCounter;
                     }
                 }
             }
@@ -4067,7 +4019,7 @@ mfxStatus CEncodingPipeline::InitEncPakFrameParams(iTask* eTask)
                 {
                     MSDK_CHECK_POINTER(feiSliceHeader[fieldId].Slice, MFX_ERR_NULL_PTR);
 
-                    for (mfxU32 i = 0; i < feiSliceHeader[fieldId].NumSlice; i++)
+                    for (mfxU32 i = 0; i < feiSliceHeader[fieldId].NumSliceAlloc; i++)
                     {
                         MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL0, 32);
                         MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL1, 32);
@@ -4081,7 +4033,7 @@ mfxStatus CEncodingPipeline::InitEncPakFrameParams(iTask* eTask)
                         }
                         feiSliceHeader[fieldId].Slice[i].NumRefIdxL0Active = (mfxU16)m_ref_info.state[fieldId].l0_idx.size();
                         feiSliceHeader[fieldId].Slice[i].NumRefIdxL1Active = 0;
-                        feiSliceHeader[fieldId].Slice[i].IdrPicId          = m_frameIdrCounter;
+                        feiSliceHeader[fieldId].Slice[i].IdrPicId          = eTask->m_frameIdrCounter;
                     }
                 }
             }
@@ -4108,7 +4060,7 @@ mfxStatus CEncodingPipeline::InitEncPakFrameParams(iTask* eTask)
                 {
                     MSDK_CHECK_POINTER(feiSliceHeader[fieldId].Slice, MFX_ERR_NULL_PTR);
 
-                    for (mfxU32 i = 0; i < feiSliceHeader[fieldId].NumSlice; i++)
+                    for (mfxU32 i = 0; i < feiSliceHeader[fieldId].NumSliceAlloc; i++)
                     {
                         MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL0, 32);
                         MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL1, 32);
@@ -4128,7 +4080,7 @@ mfxStatus CEncodingPipeline::InitEncPakFrameParams(iTask* eTask)
                         }
                         feiSliceHeader[fieldId].Slice[i].NumRefIdxL0Active = (mfxU16)m_ref_info.state[fieldId].l0_idx.size();
                         feiSliceHeader[fieldId].Slice[i].NumRefIdxL1Active = (mfxU16)m_ref_info.state[fieldId].l1_idx.size();
-                        feiSliceHeader[fieldId].Slice[i].IdrPicId          = m_frameIdrCounter;
+                        feiSliceHeader[fieldId].Slice[i].IdrPicId          = eTask->m_frameIdrCounter;
                     }
                 } // if (feiSliceHeader)
             }
@@ -4488,8 +4440,8 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask)
 {
     MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
 
-    mfxExtFeiEncMVPredictors* mvp    = NULL;
-    bufSet*                   set    = getFreeBufSet(m_encodeBufs);
+    mfxExtFeiEncMVPredictors* mvp = NULL;
+    bufSet*                   set = getFreeBufSet(m_encodeBufs);
     MSDK_CHECK_POINTER(set, MFX_ERR_NULL_PTR);
 
     mfxStatus sts = MFX_ERR_NONE;
@@ -4502,6 +4454,8 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask)
 
     for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++)
     {
+        MSDK_BREAK_ON_ERROR(sts);
+
         mfxU32 nPred_actual[2] = { (std::min)(m_numOfRefs[fieldId][0], MaxFeiEncMVPNum), (std::min)(m_numOfRefs[fieldId][1], MaxFeiEncMVPNum) }; //adjust n of passed pred
         if (nPred_actual[0] + nPred_actual[1] == 0 || (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_I))
             continue; // I-field
@@ -4520,6 +4474,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask)
         {
             /* get best L0/L1 PreENC predictors for current MB in terms of distortions */
             sts = GetBestSetsByDistortion(eTask->preenc_output, BestSet, nPred_actual, fieldId, i);
+            MSDK_BREAK_ON_ERROR(sts);
 
             if (!m_appCfg.preencDSstrength)
             {
@@ -4635,10 +4590,9 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask)
 
     mfxU32 preencMBidx, MVrow, MVcolumn, preencMBMVidx;
 
-    mfxU32 j, nOfPredPairs = 0, numOfFields = eTask->m_fieldPicFlag ? 2 : 1;
+    mfxU32 i, j, nOfPredPairs = 0, numOfFields = eTask->m_fieldPicFlag ? 2 : 1;
 
     mfxU16 numMB = eTask->m_fieldPicFlag ? m_numMB : m_numMB_frame;
-
 
     for (mfxU32 fieldId = 0; fieldId < numOfFields; fieldId++)
     {
@@ -4662,7 +4616,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask)
             refIdx_v.push_back((*it).refIdx[fieldId]);
         }
 
-        for (mfxU32 i = 0; i < numMB; ++i) // get nPred_actual L0/L1 predictors for each MB
+        for (i = 0; i < numMB; ++i) // get nPred_actual L0/L1 predictors for each MB
         {
             for (j = 0; j < nOfPredPairs; ++j)
             {
@@ -4681,7 +4635,8 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask)
                     if (preencMBidx >= m_numMBpreenc)
                         continue;
 
-                    MVrow = i / m_widthMB % m_appCfg.preencDSstrength, MVcolumn = i % m_widthMB % m_appCfg.preencDSstrength;
+                    MVrow    = i / m_widthMB % m_appCfg.preencDSstrength;
+                    MVcolumn = i % m_widthMB % m_appCfg.preencDSstrength;
 
                     switch (m_appCfg.preencDSstrength)
                     {
@@ -5303,10 +5258,6 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask)
                 sts = MFX_ERR_NONE; // ignore warnings if output is available
                 break;
             }
-            else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts) {
-                //                sts = AllocateSufficientBuffer(&pCurrentTask->mfxBS);
-                //                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-            }
             else {
                 // get next surface and new task for 2nd bitstream in ViewOutput mode
                 MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_BITSTREAM);
@@ -5315,14 +5266,7 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask)
         }
 
         // Store PreEnc output
-        PreEncOutput result = {};
-        result.output_bufs = eTask->preenc_bufs;
-        result.refIdx[0][0] = preenc_ref_idx[0][0];
-        result.refIdx[0][1] = preenc_ref_idx[0][1];
-        result.refIdx[1][0] = preenc_ref_idx[1][0];
-        result.refIdx[1][1] = preenc_ref_idx[1][1];
-
-        eTask->preenc_output.push_back(result);
+        eTask->preenc_output.push_back(PreEncOutput(eTask->preenc_bufs, preenc_ref_idx));
 
         //drop output data to output file
         sts = DropPREENCoutput(eTask);
