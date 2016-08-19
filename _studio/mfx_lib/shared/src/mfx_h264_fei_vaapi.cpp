@@ -838,6 +838,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
     //------------------------------------------------------------------
     // Rendering
     //------------------------------------------------------------------
+    MFX_LTRACE_2(MFX_TRACE_LEVEL_HOTSPOTS, "A|PREENC|AVC|PACKET_START|", "%d|%d", m_vaContextEncode, task.m_frameNum);
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaBeginPicture");
         vaSts = vaBeginPicture(
@@ -865,7 +866,7 @@ mfxStatus VAAPIFEIPREENCEncoder::Execute(
         vaSts = vaEndPicture(m_vaDisplay, m_vaContextEncode);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
-
+    MFX_LTRACE_2(MFX_TRACE_LEVEL_HOTSPOTS, "A|PREENC|AVC|PACKET_END|", "%d|%d", m_vaContextEncode, task.m_frameNum);
     //------------------------------------------------------------------
     // PostStage
     //------------------------------------------------------------------
@@ -2251,6 +2252,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         }
     }
 #endif // #if (mdprintf == fprintf)
+    MFX_LTRACE_2(MFX_TRACE_LEVEL_HOTSPOTS, "A|ENC|AVC|PACKET_START|", "%d|%d", m_vaContextEncode, task.m_frameNum);
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaBeginPicture");
         vaSts = vaBeginPicture(
@@ -2294,7 +2296,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         vaSts = vaEndPicture(m_vaDisplay, m_vaContextEncode);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
-
+    MFX_LTRACE_2(MFX_TRACE_LEVEL_HOTSPOTS, "A|ENC|AVC|PACKET_END|", "%d|%d", m_vaContextEncode, task.m_frameNum);
     //------------------------------------------------------------------
     // PostStage
     //------------------------------------------------------------------
@@ -3706,6 +3708,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     }
 #endif // #if (mdprintf == fprintf)
 
+    MFX_LTRACE_2(MFX_TRACE_LEVEL_HOTSPOTS, "A|PAK|AVC|PACKET_START|", "%d|%d", m_vaContextEncode, task.m_frameNum);
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaBeginPicture");
         vaSts = vaBeginPicture(
@@ -3750,7 +3753,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         vaSts = vaEndPicture(m_vaDisplay, m_vaContextEncode);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
-
+    MFX_LTRACE_2(MFX_TRACE_LEVEL_HOTSPOTS, "A|PAK|AVC|PACKET_END|", "%d|%d", m_vaContextEncode, task.m_frameNum);
 
     //------------------------------------------------------------------
     // PostStage
