@@ -19,7 +19,7 @@ Field::Field(mfxU32 _offset, mfxU32 _size, std::string _name)
     , size  (_size  )
 {}
 
-void check_eq(void* base, Field field, mfxU64 expected)
+void check_eq(void* base, const Field& field, mfxU64 expected)
 {
     mfxU64 real = 0;
     memcpy(&real, (mfxU8*)base + field.offset, field.size);
@@ -31,7 +31,7 @@ void check_eq(void* base, Field field, mfxU64 expected)
     }
 }
 
-void check_ne(void* base, Field field, mfxU64 expected)
+void check_ne(void* base, const Field& field, mfxU64 expected)
 {
     mfxU64 real = 0;
     memcpy(&real, (mfxU8*)base + field.offset, field.size);

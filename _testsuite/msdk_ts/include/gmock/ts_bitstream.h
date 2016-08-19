@@ -20,7 +20,7 @@ private:
 public:
     tsReader(mfxBitstream bs);
     tsReader(const char* fname);
-    ~tsReader();
+    virtual ~tsReader();
 
     mfxU32 Read(mfxU8* dst, mfxU32 size);
     mfxStatus SeekToStart();

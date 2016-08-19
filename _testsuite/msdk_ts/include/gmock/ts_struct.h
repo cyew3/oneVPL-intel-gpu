@@ -24,6 +24,10 @@ public:
     std::string name;
     mfxU32      offset;
     mfxU32      size;
+
+private:
+    //Don't copy, use references or pointers
+    Field(const Field&);
 };
 
 template <class T, mfxU32 N> class Array : public T
@@ -45,10 +49,10 @@ public:
     inline operator const T&() const { return *this; }
 };
 
-void check_eq(void* base, Field field, mfxU64 expected);
-void check_ne(void* base, Field field, mfxU64 expected);
-inline void set(void* base, const Field field, mfxU64 value) { memcpy((mfxU8*)base + field.offset, &value, field.size); }
-inline mfxU64 get(void* base, const Field field) { mfxU64 value = 0; memcpy(&value, (mfxU8*)base + field.offset, field.size); return value; }
+void check_eq(void* base, const Field& field, mfxU64 expected);
+void check_ne(void* base, const Field& field, mfxU64 expected);
+inline void set(void* base, const Field& field, mfxU64 value) { memcpy((mfxU8*)base + field.offset, &value, field.size); }
+inline mfxU64 get(void* base, const Field& field) { mfxU64 value = 0; memcpy(&value, (mfxU8*)base + field.offset, field.size); return value; }
 
 #define STRUCT(name, fields)                        \
     class Wrap_##name : public Field                \

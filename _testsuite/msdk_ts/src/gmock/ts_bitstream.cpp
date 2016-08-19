@@ -25,6 +25,8 @@ tsReader::tsReader(const char* fname)
     m_file = fopen(fname, "rb");
 #pragma warning(default:4996)
     EXPECT_NE((void*) 0, m_file) << "ERROR: cannot open file `" << fname << "'\n";
+    if(0 == m_file)
+        throw tsFAIL;
 }
 
 tsReader::~tsReader()
