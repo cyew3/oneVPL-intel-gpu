@@ -117,6 +117,7 @@ enum {
     MFX_FOURCC_AYUV_RGB4    = MFX_MAKEFOURCC('A','V','U','Y'),   /* ARGB in that order, A channel is 8 MSBs stored in AYUV surface*/
     MFX_FOURCC_UYVY         = MFX_MAKEFOURCC('U','Y','V','Y'),
     MFX_FOURCC_Y210         = MFX_MAKEFOURCC('Y','2','1','0'),
+    MFX_FOURCC_Y216         = MFX_MAKEFOURCC('Y','2','1','6'),
     MFX_FOURCC_Y410         = MFX_MAKEFOURCC('Y','4','1','0')
 };
 
