@@ -23,18 +23,8 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "math.h"
 #include "mfx_itt_trace.h"
 
-#if D3D_SURFACES_SUPPORT
-#include "d3d_allocator.h"
-#include "d3d11_allocator.h"
-
-#include "d3d_device.h"
-#include "d3d11_device.h"
-#endif
-
-#ifdef LIBVA_SUPPORT
 #include "vaapi_allocator.h"
 #include "vaapi_device.h"
-#endif
 
 
 mfxU8 GetDefaultPicOrderCount(mfxVideoParam const & par)
@@ -372,7 +362,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(AppConfig *pConfig)
         m_mfxEncParams.mfx.QPI = m_mfxEncParams.mfx.QPP = m_mfxEncParams.mfx.QPB = pConfig->QP;
 
     // specify memory type
-    if (D3D9_MEMORY == pConfig->memType || D3D11_MEMORY == pConfig->memType)
+    if (m_bUseHWmemory)
     {
         m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
     }
@@ -519,7 +509,7 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(AppConfig *pConfig)
     mfxStatus sts = MFX_ERR_NONE;
 
     // specify memory type
-    if (D3D9_MEMORY == pConfig->memType || D3D11_MEMORY == pConfig->memType)
+    if (m_bUseHWmemory)
     {
         m_mfxVppParams.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY  | MFX_IOPATTERN_OUT_VIDEO_MEMORY;
     }
@@ -677,26 +667,7 @@ mfxStatus CEncodingPipeline::InitMfxDecodeParams(AppConfig *pConfig)
 mfxStatus CEncodingPipeline::CreateHWDevice()
 {
     mfxStatus sts = MFX_ERR_NONE;
-#if D3D_SURFACES_SUPPORT
-    POINT point = {0, 0};
-    HWND window = WindowFromPoint(point);
 
-#if MFX_D3D11_SUPPORT
-    if (D3D11_MEMORY == m_memType)
-        m_hwdev = new CD3D11Device();
-    else
-#endif // #if MFX_D3D11_SUPPORT
-        m_hwdev = new CD3D9Device();
-
-    MSDK_CHECK_POINTER(m_hwdev, MFX_ERR_MEMORY_ALLOC);
-
-    sts = m_hwdev->Init(
-        window,
-        0,
-        MSDKAdapter::GetNumber(m_mfxSession));
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-#elif LIBVA_SUPPORT
     m_hwdev = CreateVAAPIDevice();
     if (NULL == m_hwdev)
     {
@@ -704,13 +675,13 @@ mfxStatus CEncodingPipeline::CreateHWDevice()
     }
     sts = m_hwdev->Init(NULL, 0, MSDKAdapter::GetNumber(m_mfxSession));
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-#endif
+
     return sts;
 }
 
 mfxStatus CEncodingPipeline::ResetDevice()
 {
-    if (D3D9_MEMORY == m_memType || D3D11_MEMORY == m_memType)
+    if (m_bUseHWmemory)
     {
         return m_hwdev->Reset();
     }
@@ -920,76 +891,8 @@ mfxStatus CEncodingPipeline::CreateAllocator()
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    if (D3D9_MEMORY == m_memType || D3D11_MEMORY == m_memType)
+    if (m_bUseHWmemory)
     {
-#if D3D_SURFACES_SUPPORT
-        sts = CreateHWDevice();
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-        mfxHDL hdl = NULL;
-        mfxHandleType hdl_t =
-        #if MFX_D3D11_SUPPORT
-            D3D11_MEMORY == m_memType ? MFX_HANDLE_D3D11_DEVICE :
-        #endif // #if MFX_D3D11_SUPPORT
-            MFX_HANDLE_D3D9_DEVICE_MANAGER;
-
-        sts = m_hwdev->GetHandle(hdl_t, &hdl);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-        // handle is needed for HW library only
-        mfxIMPL impl = 0;
-        m_mfxSession.QueryIMPL(&impl);
-
-        if (impl != MFX_IMPL_SOFTWARE)
-        {
-            sts = m_mfxSession.SetHandle(hdl_t, hdl);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-            if (m_bSeparatePreENCSession){
-                sts = m_preenc_mfxSession.SetHandle(hdl_t, hdl);
-                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-            }
-        }
-
-        // create D3D allocator
-#if MFX_D3D11_SUPPORT
-        if (D3D11_MEMORY == m_memType)
-        {
-            m_pMFXAllocator = new D3D11FrameAllocator;
-            MSDK_CHECK_POINTER(m_pMFXAllocator, MFX_ERR_MEMORY_ALLOC);
-
-            D3D11AllocatorParams *pd3dAllocParams = new D3D11AllocatorParams;
-            MSDK_CHECK_POINTER(pd3dAllocParams, MFX_ERR_MEMORY_ALLOC);
-            pd3dAllocParams->pDevice = reinterpret_cast<ID3D11Device *>(hdl);
-
-            m_pmfxAllocatorParams = pd3dAllocParams;
-        }
-        else
-#endif // #if MFX_D3D11_SUPPORT
-        {
-            m_pMFXAllocator = new D3DFrameAllocator;
-            MSDK_CHECK_POINTER(m_pMFXAllocator, MFX_ERR_MEMORY_ALLOC);
-
-            D3DAllocatorParams *pd3dAllocParams = new D3DAllocatorParams;
-            MSDK_CHECK_POINTER(pd3dAllocParams, MFX_ERR_MEMORY_ALLOC);
-            pd3dAllocParams->pManager = reinterpret_cast<IDirect3DDeviceManager9 *>(hdl);
-
-            m_pmfxAllocatorParams = pd3dAllocParams;
-        }
-
-        /* In case of video memory we must provide MediaSDK with external allocator
-        thus we demonstrate "external allocator" usage model.
-        Call SetAllocator to pass allocator to Media SDK */
-        sts = m_mfxSession.SetFrameAllocator(m_pMFXAllocator);
-        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        if (m_bSeparatePreENCSession){
-            sts = m_preenc_mfxSession.SetFrameAllocator(m_pMFXAllocator);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-        }
-
-        m_bExternalAlloc = true;
-#endif
-#ifdef LIBVA_SUPPORT
         sts = CreateHWDevice();
         MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
         /* It's possible to skip failed result here and switch to SW implementation,
@@ -1026,11 +929,9 @@ mfxStatus CEncodingPipeline::CreateAllocator()
         }
 
         m_bExternalAlloc = true;
-#endif
     }
     else
     {
-#ifdef LIBVA_SUPPORT
         //in case of system memory allocator we also have to pass MFX_HANDLE_VA_DISPLAY to HW library
         mfxIMPL impl;
         m_mfxSession.QueryIMPL(&impl);
@@ -1051,7 +952,6 @@ mfxStatus CEncodingPipeline::CreateAllocator()
                 MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
             }
         }
-#endif
 
         // create system memory allocator
         m_pMFXAllocator = new SysMemFrameAllocator;
@@ -1179,7 +1079,7 @@ CEncodingPipeline::CEncodingPipeline():
     m_ctr(NULL),
     m_pMFXAllocator(NULL),
     m_pmfxAllocatorParams(NULL),
-    m_memType(D3D9_MEMORY), //only hw memory is supported
+    m_bUseHWmemory(true), //only HW memory is supported (ENCODE supports SW memory)
     m_bExternalAlloc(false),
     m_hwdev(NULL),
     m_LastDecSyncPoint(0),
@@ -1364,7 +1264,7 @@ mfxStatus CEncodingPipeline::Init(AppConfig *pConfig)
     m_EncPakReconAllocID = m_BaseAllocID + 1;
 
     // set memory type
-    m_memType = pConfig->memType;
+    m_bUseHWmemory = pConfig->bUseHWmemory;
 
     if (pConfig->bDECODE)
     {
@@ -6261,18 +6161,8 @@ void CEncodingPipeline::PrintInfo()
 
     msdk_printf(MSDK_STRING("\nFrame rate\t\t%.2f\n"), DstPicInfo.FrameRateExtN * 1.0 / DstPicInfo.FrameRateExtD);
 
-    const msdk_char* sMemType = m_memType == D3D9_MEMORY ? MSDK_STRING("d3d")
-        : (m_memType == D3D11_MEMORY ? MSDK_STRING("d3d11")
-        : MSDK_STRING("system"));
+    const msdk_char* sMemType = m_bUseHWmemory ? MSDK_STRING("hw") : MSDK_STRING("system");
     msdk_printf(MSDK_STRING("Memory type\t\t%s\n"), sMemType);
-
-    mfxIMPL impl;
-    m_mfxSession.QueryIMPL(&impl);
-
-    const msdk_char* sImpl = (MFX_IMPL_VIA_D3D11 == MFX_IMPL_VIA_MASK(impl)) ? MSDK_STRING("hw_d3d11")
-        : (MFX_IMPL_HARDWARE & impl) ? MSDK_STRING("hw")
-        : MSDK_STRING("sw");
-    msdk_printf(MSDK_STRING("Media SDK impl\t\t%s\n"), sImpl);
 
     mfxVersion ver;
     m_mfxSession.QueryVersion(&ver);

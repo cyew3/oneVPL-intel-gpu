@@ -26,10 +26,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include <mfxfei.h>
 
-#ifdef D3D_SURFACES_SUPPORT
-#pragma warning(disable : 4201)
-#endif
-
 #include "sample_utils.h"
 #include "base_allocator.h"
 
@@ -71,12 +67,6 @@ enum {
     MVC_DISABLED          = 0x0,
     MVC_ENABLED           = 0x1,
     MVC_VIEWOUTPUT        = 0x2,    // 2 output bitstreams
-};
-
-enum MemType {
-    SYSTEM_MEMORY = 0x00,
-    D3D9_MEMORY   = 0x01,
-    D3D11_MEMORY  = 0x02,
 };
 
 struct AppConfig
@@ -135,7 +125,7 @@ struct AppConfig
     mfxU16 nInputSurf;
     mfxU16 nReconSurf;
 
-    MemType memType;
+    bool   bUseHWmemory;
 
     msdk_char strSrcFile[MSDK_MAX_FILENAME_LEN];
 
@@ -347,7 +337,7 @@ protected:
 
     MFXFrameAllocator*  m_pMFXAllocator;
     mfxAllocatorParams* m_pmfxAllocatorParams;
-    MemType m_memType;
+    bool m_bUseHWmemory;   // indicates whether hardware or software memory used
     bool m_bExternalAlloc; // use memory allocator as external for Media SDK
 
     CHWDevice *m_hwdev;

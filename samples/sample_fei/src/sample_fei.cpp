@@ -368,19 +368,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
             i++;
             pConfig->Trellis = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
-#if D3D_SURFACES_SUPPORT
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d")))
-        {
-            pConfig->memType = D3D9_MEMORY;
-        }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-d3d11")))
-        {
-            pConfig->memType = D3D11_MEMORY;
-        }
-#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-sys")))
         {
-            pConfig->memType = SYSTEM_MEMORY;
+            pConfig->bUseHWmemory = false;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-pass_headers")))
         {
@@ -1181,7 +1171,7 @@ int main(int argc, char *argv[])
     Config.MaxDrcHeight = 0;
     Config.nDRCdefautW  = 0;
     Config.nDRCdefautH  = 0;
-    Config.memType  = D3D9_MEMORY; //only HW memory is supported (ENCODE supports SW memory)
+    Config.bUseHWmemory = true;          //only HW memory is supported (ENCODE supports SW memory)
     Config.bRefType = MFX_B_REF_UNKNOWN; //let MSDK library to decide wheather to use B-pyramid or not
     Config.QP              = 26; //default qp value
     Config.SearchWindow    = 5;  //48x40 (48 SUs)
@@ -1269,7 +1259,7 @@ mfxStatus CheckOptions(AppConfig* pConfig)
         sts = MFX_ERR_UNSUPPORTED;
     }
 
-    if (!pConfig->bENCODE && pConfig->memType == SYSTEM_MEMORY) {
+    if (!pConfig->bENCODE && !pConfig->bUseHWmemory) {
         fprintf(stderr, "ERROR: Only ENCODE supports SW memory\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
