@@ -298,6 +298,8 @@ public:
     virtual mfxStatus Run();
     virtual void Close();
     virtual mfxStatus ResetMFXComponents(AppConfig* pConfig, bool realloc_frames);
+    virtual mfxStatus InitSessions();
+    virtual mfxStatus ResetSessions();
     virtual mfxStatus ResetDevice();
 
     virtual void  PrintInfo();

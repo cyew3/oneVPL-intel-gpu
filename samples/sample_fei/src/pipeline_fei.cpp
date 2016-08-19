@@ -1352,40 +1352,16 @@ mfxStatus CEncodingPipeline::Init(AppConfig *pConfig)
     sts = InitFileWriters(pConfig);
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    // Init session
+    // Section below initialize sessions and sets proper allocId for components
+    m_bSeparatePreENCSession = pConfig->bPREENC && (pConfig->bENCPAK || pConfig->bOnlyENC || (pConfig->preencDSstrength && m_bVPPneeded));
+    m_pPreencSession = m_bSeparatePreENCSession ? &m_preenc_mfxSession : &m_mfxSession;
 
-    // try searching on all display adapters
-    mfxIMPL impl = MFX_IMPL_HARDWARE_ANY;
-
-    // if d3d11 surfaces are used ask the library to run acceleration through D3D11
-    // feature may be unsupported due to OS or MSDK API version
-    if (D3D11_MEMORY == pConfig->memType)
-        impl |= MFX_IMPL_VIA_D3D11;
-
-    sts = m_mfxSession.Init(impl, NULL);
+    sts = InitSessions();
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     mfxSession akaSession = m_mfxSession.operator mfxSession() ;
     m_BaseAllocID = (mfxU64)&akaSession & 0xffffffff;
     m_EncPakReconAllocID = m_BaseAllocID + 1;
-
-    // MSDK API version may not support multiple adapters - then try initialize on the default
-    if (MFX_ERR_NONE != sts)
-        sts = m_mfxSession.Init((impl & (!MFX_IMPL_HARDWARE_ANY)) | MFX_IMPL_HARDWARE, NULL);
-
-    if (pConfig->bPREENC && (pConfig->bENCPAK || pConfig->bOnlyENC || (pConfig->preencDSstrength && m_bVPPneeded)))
-    {
-        sts = m_preenc_mfxSession.Init(impl, NULL);
-        m_bSeparatePreENCSession = true;
-        m_pPreencSession = &m_preenc_mfxSession;
-
-        // MSDK API version may not support multiple adapters - then try initialize on the default
-        if (MFX_ERR_NONE != sts)
-           sts = m_preenc_mfxSession.Init((impl & (!MFX_IMPL_HARDWARE_ANY)) | MFX_IMPL_HARDWARE, NULL);
-    }
-    else
-        m_pPreencSession = &m_mfxSession;
-
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // set memory type
     m_memType = pConfig->memType;
@@ -1796,6 +1772,39 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(AppConfig* pConfig, bool realloc
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     return MFX_ERR_NONE;
+}
+
+mfxStatus CEncodingPipeline::InitSessions()
+{
+    mfxIMPL impl = MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_VAAPI;
+
+    mfxStatus sts = m_mfxSession.Init(impl, NULL);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    if (m_bSeparatePreENCSession)
+    {
+        sts = m_preenc_mfxSession.Init(impl, NULL);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
+
+    return sts;
+}
+
+mfxStatus CEncodingPipeline::ResetSessions()
+{
+    mfxStatus sts = m_mfxSession.Close();
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    if (m_bSeparatePreENCSession)
+    {
+        sts = m_preenc_mfxSession.Close();
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
+
+    sts = InitSessions();
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    return sts;
 }
 
 mfxStatus CEncodingPipeline::AllocateSufficientBuffer(mfxBitstream* pBS)
@@ -6156,6 +6165,9 @@ mfxStatus CEncodingPipeline::doGPUHangRecovery()
 
     msdk_printf(MSDK_STRING("Recreation of pipeline...\n"));
     sts = ResetMFXComponents(&m_appCfg, false);
+    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    sts = ResetSessions();
     MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     sts = ResetIOFiles(m_appCfg);
