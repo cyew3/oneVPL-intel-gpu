@@ -400,6 +400,7 @@ namespace MfxLoader
     };
 
 #endif // X11_DRI3_SUPPORT
+#endif
 
 #if defined (ENABLE_MONDELLO_SUPPORT)
     class LibCamhalProxy
@@ -450,11 +451,9 @@ namespace MfxLoader
     __DECLARE(_ZN7icamera15get_camera_infoEiRNS_13camera_info_tE);
     __DECLARE(_ZN7icamera28camera_device_config_streamsEiPNS_15stream_config_tE);
     __DECLARE(_ZN7icamera18camera_stream_qbufEiiPNS_15camera_buffer_tEiPKNS_10ParametersE);
-   __DECLARE(_ZN7icamera19camera_stream_dqbufEiiPPNS_15camera_buffer_tEPNS_10ParametersE);
+    __DECLARE(_ZN7icamera19camera_stream_dqbufEiiPPNS_15camera_buffer_tEPNS_10ParametersE);
 #undef __DECLARE
     };
-#endif
-
 #endif // ENABLE_MONDELLO_SUPPORT
 } // namespace MfxLoader
 
