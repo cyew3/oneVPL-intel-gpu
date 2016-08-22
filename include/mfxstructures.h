@@ -790,8 +790,7 @@ enum {
     MFX_EXTBUFF_VPP_MIRRORING              = MFX_MAKEFOURCC('M','I','R','R'),
     MFX_EXTBUFF_MV_OVER_PIC_BOUNDARIES     = MFX_MAKEFOURCC('M','V','P','B'),
     MFX_EXTBUFF_VPP_COLORFILL              = MFX_MAKEFOURCC('V','C','L','F'),
-    MFX_EXTBUFF_VPP_COLOR_CONVERSION       = MFX_MAKEFOURCC('V','C','S','C'),
-    MFX_EXTBUFF_BRC                        = MFX_MAKEFOURCC('E','B','R','C')
+    MFX_EXTBUFF_VPP_COLOR_CONVERSION       = MFX_MAKEFOURCC('V','C','S','C')
 };
 
 /* VPP Conf: Do not use certain algorithms  */
@@ -1683,69 +1682,6 @@ typedef struct {
     mfxU16 ChromaSiting;
     mfxU16 reserved[27];
 } mfxExtColorConversion;
-
-typedef struct {
-    mfxU32 reserved[25];
-    mfxU32 EncodedOrder;    // Frame number in a sequence of reordered frames starting from encoder Init()
-    mfxU32 DisplayOrder;    // Frame number in a sequence of frames in display order starting from last IDR
-    mfxU32 CodedFrameSize;  // Size of frame in bytes after encoding
-    mfxU16 FrameType;       // See FrameType enumerator
-    mfxU16 PyramidLayer;    // B-pyramid or P-pyramid layer, frame belongs to
-    mfxU16 NumRecode;       // Number of recodings performed for this frame
-    mfxU16 NumExtParam;
-    mfxExtBuffer** ExtParam;
-} mfxBRCFrameParam;
-
-typedef struct {
-    mfxI32 QpY;             // Frame-level Luma QP
-    mfxU32 reserved1[13];
-    mfxHDL reserved2;
-} mfxBRCFrameCtrl;
-
-/* BRCStatus */
-enum {
-    MFX_BRC_OK                = 0, // CodedFrameSize is acceptable, no further recoding/padding/skip required
-    MFX_BRC_BIG_FRAME         = 1, // Coded frame is to big, recoding required
-    MFX_BRC_SMALL_FRAME       = 2, // Coded frame is to small, recoding required
-    MFX_BRC_PANIC_BIG_FRAME   = 3, // Coded frame is to big, no further recoding possible - skip frame
-    MFX_BRC_PANIC_SMALL_FRAME = 4  // Coded frame is to small, no further recoding possible - required padding to MinFrameSize
-};
-
-typedef struct {
-    mfxU32 MinFrameSize;    // Size in bytes, coded frame must be padded to when Status = MFX_BRC_PANIC_SMALL_FRAME
-    mfxU16 Status;          // See BRCStatus enumerator
-    mfxU16 reserved[25];
-    mfxHDL reserved1;
-} mfxBRCFrameStatus;
-
-/* Structure contains set of callbacks to perform external bit-rate control.
-Can be attached to mfxVideoParam structure during encoder initialization.
-Turn mfxExtCodingOption2::ExtBRC option ON to make encoder use external BRC instead of native one. */
-typedef struct {
-    mfxExtBuffer Header;
-
-    mfxU32 reserved[14];
-    mfxHDL pthis; // Pointer to user-defined BRC instance. Will be passed to each mfxExtBRC callback.
-
-    // Initialize BRC. Will be invoked during encoder Init(). In - pthis, par.
-    mfxStatus (MFX_CDECL *Init)         (mfxHDL pthis, mfxVideoParam* par);
-
-    // Reset BRC. Will be invoked during encoder Reset(). In - pthis, par.
-    mfxStatus (MFX_CDECL *Reset)        (mfxHDL pthis, mfxVideoParam* par);
-
-    // Close BRC. Will be invoked during encoder Close(). In - pthis.
-    mfxStatus (MFX_CDECL *Close)        (mfxHDL pthis);
-
-    // Obtain from BRC controls required for frame encoding.
-    // Will be invoked BEFORE encoding of each frame. In - pthis, par; Out - ctrl.
-    mfxStatus (MFX_CDECL *GetFrameCtrl) (mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl);
-
-    // Update BRC state and return command to continue/recode frame/do padding/skip frame.
-    // Will be invoked AFTER encoding of each frame. In - pthis, par, ctrl; Out - status.
-    mfxStatus (MFX_CDECL *Update)       (mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl, mfxBRCFrameStatus* status);
-
-    mfxHDL reserved1[10];
-} mfxExtBRC;
 
 #ifdef __cplusplus
 } // extern "C"
