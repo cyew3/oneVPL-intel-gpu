@@ -136,7 +136,6 @@ struct AppConfig
         , EncodedOrder(false)
         , DecodedOrder(false)
         , bMBSize(false)
-        , bPassHeaders(false)
         , Enable8x8Stat(false)
         , AdaptiveSearch(false)
         , FTEnable(false)
@@ -210,9 +209,9 @@ struct AppConfig
     mfxU16 SubPelMode;
     mfxU16 IntraSAD;
     mfxU16 InterSAD;
-    mfxU16 NumMVPredictors[2];  // number of [0] - L0 predictors, [1] - L1 predictors
-    bool PreencMVPredictors[2]; // use PREENC predictor [0] - L0, [1] - L1
-    mfxU16 GopOptFlag;          // STRICT | CLOSED, default is OPEN GOP
+    mfxU16 NumMVPredictors[2];    // number of [0] - L0 predictors, [1] - L1 predictors
+    bool   PreencMVPredictors[2]; // use PREENC predictor [0] - L0, [1] - L1
+    mfxU16 GopOptFlag;            // STRICT | CLOSED, default is OPEN GOP
     mfxU16 CodecProfile;
     mfxU16 CodecLevel;
     mfxU16 Trellis;             // switch on trellis 2 - I | 4 - P | 8 - B, 1 - off, 0 - default
@@ -234,7 +233,7 @@ struct AppConfig
 
     std::vector<msdk_char*> srcFileBuff;
     std::vector<const msdk_char*> dstFileBuff;
-    std::vector<mfxU16> nDrcWidth;//Dynamic Resolution Change Picture Width,specified if DRC requied
+    std::vector<mfxU16> nDrcWidth; //Dynamic Resolution Change Picture Width,specified if DRC requied
     std::vector<mfxU16> nDrcHeight;//Dynamic Resolution Change Picture Height,specified if DRC requied
     std::vector<mfxU32> nDrcStart; //Start Frame No. of Dynamic Resolution Change,specified if DRC requied
 
@@ -248,7 +247,6 @@ struct AppConfig
     bool EncodedOrder;
     bool DecodedOrder;
     bool bMBSize;
-    bool bPassHeaders;
     bool Enable8x8Stat;
     bool AdaptiveSearch;
     bool FTEnable;

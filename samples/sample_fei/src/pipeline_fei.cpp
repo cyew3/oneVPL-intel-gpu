@@ -2138,7 +2138,7 @@ mfxStatus CEncodingPipeline::InitInterfaces()
             m_appCfg.SliceBetaOffsetDiv2) && !m_appCfg.bENCODE;
 
         /*SPS Header */
-        if (m_appCfg.bPassHeaders)
+        if (m_appCfg.bENCPAK || m_appCfg.bOnlyENC || m_appCfg.bOnlyPAK)
         {
             feiSPS = new mfxExtFeiSPS;
             MSDK_CHECK_POINTER(feiSPS, MFX_ERR_MEMORY_ALLOC);
@@ -2153,10 +2153,10 @@ mfxStatus CEncodingPipeline::InitInterfaces()
 
             feiSPS->ChromaFormatIdc  = m_mfxEncParams.mfx.FrameInfo.ChromaFormat;
             feiSPS->FrameMBsOnlyFlag = (m_mfxEncParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 0;
-            feiSPS->MBAdaptiveFrameFieldFlag = 0;
-            feiSPS->Direct8x8InferenceFlag   = 1;
-            feiSPS->Log2MaxFrameNum = 8;
-            feiSPS->PicOrderCntType = GetDefaultPicOrderCount(m_mfxEncParams);
+            feiSPS->MBAdaptiveFrameFieldFlag    = 0;
+            feiSPS->Direct8x8InferenceFlag      = 1;
+            feiSPS->Log2MaxFrameNum             = 8;
+            feiSPS->PicOrderCntType             = GetDefaultPicOrderCount(m_mfxEncParams);
             feiSPS->Log2MaxPicOrderCntLsb       = 4;
             feiSPS->DeltaPicOrderAlwaysZeroFlag = 1;
         }
@@ -2171,8 +2171,8 @@ mfxStatus CEncodingPipeline::InitInterfaces()
             MSDK_ZERO_MEMORY(*tmpForInit);
             tmpForInit->vacant = true;
 
-            numExtInParams   = m_appCfg.bPassHeaders ? 1 : 0; // count SPS header
-            numExtInParamsI  = m_appCfg.bPassHeaders ? 1 : 0; // count SPS header
+            numExtInParams   = (m_appCfg.bENCPAK || m_appCfg.bOnlyENC || m_appCfg.bOnlyPAK) ? 1 : 0; // count SPS header
+            numExtInParamsI  = (m_appCfg.bENCPAK || m_appCfg.bOnlyENC || m_appCfg.bOnlyPAK) ? 1 : 0; // count SPS header
             numExtOutParams  = 0;
             numExtOutParamsI = 0;
 
@@ -2227,7 +2227,7 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                 feiEncCtrl[fieldId].SearchWindow = m_appCfg.SearchWindow;
 
                 /* PPS Header */
-                if (m_appCfg.bPassHeaders)
+                if (m_appCfg.bENCPAK || m_appCfg.bOnlyENC || m_appCfg.bOnlyPAK)
                 {
                     if (fieldId == 0){
                         feiPPS = new mfxExtFeiPPS[m_numOfFields];
@@ -2279,7 +2279,7 @@ mfxStatus CEncodingPipeline::InitInterfaces()
                 }
 
                 /* Slice Header */
-                if (m_appCfg.bPassHeaders || nonDefDblk)
+                if (m_appCfg.bENCPAK || m_appCfg.bOnlyENC || m_appCfg.bOnlyPAK || nonDefDblk)
                 {
                     if (fieldId == 0){
                         feiSliceHeader = new mfxExtFeiSliceHeader[m_numOfFields];

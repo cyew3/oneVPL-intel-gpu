@@ -79,7 +79,6 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-repackctrl file] - file to input max encoded frame size,number of pass and delta qp for each frame(ENCODE only)\n "));
     msdk_printf(MSDK_STRING("   [-streamout file] - dump decode streamout structures\n"));
     msdk_printf(MSDK_STRING("   [-sys] - use system memory for surfaces (ENCODE only)\n"));
-    msdk_printf(MSDK_STRING("   [-pass_headers] - pass SPS, PPS and Slice headers to Media SDK instead of default one (ENC or/and PAK)\n"));
     msdk_printf(MSDK_STRING("   [-8x8stat] - set 8x8 block for statistic report, default is 16x16 (PREENC only)\n"));
     msdk_printf(MSDK_STRING("   [-search_window value] - specifies one of the predefined search path and window size. In range [1,8] (5 is default).\n"));
     msdk_printf(MSDK_STRING("                            If non-zero value specified: -ref_window_w / _h, -len_sp are ignored\n"));
@@ -148,8 +147,8 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
     const msdk_char* strArgument = MSDK_STRING("");
     msdk_char* stopCharacter;
 
-    bool bRefWSizeSpecified = false, bAlrShownHelp = false, bHeaderValSpecified = false,
-         bIDRintSet = false, bBRefSet = false, bParseDRC = false;
+    bool bRefWSizeSpecified = false, bAlrShownHelp = false,
+         bBRefSet = false, bParseDRC = false;
 
     if (1 == nArgNum)
     {
@@ -321,7 +320,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-idr_interval")))
         {
-            bIDRintSet = true;
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pConfig->nIdrInterval))
             {
                 PrintHelp(strInput[0], MSDK_STRING("ERROR: IdrInterval is invalid"));
@@ -371,10 +369,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-sys")))
         {
             pConfig->bUseHWmemory = false;
-        }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-pass_headers")))
-        {
-            pConfig->bPassHeaders = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-8x8stat")))
         {
@@ -503,23 +497,19 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         {
             i++;
             pConfig->ChromaQPIndexOffset = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
-            bHeaderValSpecified = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-s_chroma_qpi_offset")))
         {
             i++;
             pConfig->SecondChromaQPIndexOffset = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
-            bHeaderValSpecified = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-constrained_intra_pred_flag")))
         {
             pConfig->ConstrainedIntraPredFlag = true;
-            bHeaderValSpecified = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-transform_8x8_mode_flag")))
         {
             pConfig->Transform8x8ModeFlag = true;
-            bHeaderValSpecified = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dstw")))
         {
@@ -820,9 +810,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         pConfig->ColorFormat = MFX_FOURCC_YV12;
     }
 
-    /* We should always provide headers for ENC and/or PAK */
-    pConfig->bPassHeaders = pConfig->bOnlyENC || pConfig->bOnlyPAK || pConfig->bENCPAK;
-
     if (pConfig->nPicStruct == MFX_PICSTRUCT_UNKNOWN
         && (!pConfig->bDECODE || pConfig->bENCPAK || pConfig->bOnlyPAK || pConfig->bOnlyENC || pConfig->bDynamicRC))
     {
@@ -864,12 +851,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         default:
             break;
         }
-    }
-
-    if (pConfig->bPassHeaders && !(pConfig->bOnlyENC || pConfig->bOnlyPAK || pConfig->bENCPAK))
-    {
-        PrintHelp(strInput[0], MSDK_STRING("WARNING: -pass_headers supported only by ENC/PAK interfaces, this flag will be ignored"));
-        pConfig->bPassHeaders = false;
     }
 
     if (pConfig->NumRefActiveP > MaxNumActiveRefP)
@@ -1019,28 +1000,13 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if ((pConfig->bENCPAK || pConfig->bOnlyENC || pConfig->bOnlyPAK) && !pConfig->bPassHeaders && (pConfig->nIdrInterval || pConfig->bRefType != MFX_B_REF_OFF)){
-        if (bIDRintSet || bBRefSet){
-            msdk_printf(MSDK_STRING("\nWARNING: Specified B-pyramid/IDR-interval control(s) for ENC+PAK would be ignored!\n"));
-            msdk_printf(MSDK_STRING("           Please use them together with -pass_headers option\n"));
-        }
-
-        pConfig->bRefType = MFX_B_REF_OFF;
-        pConfig->nIdrInterval = 0;
+    /* temporary adjustment */
+    if ((pConfig->bENCPAK || pConfig->bOnlyENC || pConfig->bOnlyPAK) && pConfig->bRefType != MFX_B_REF_OFF)
+    {
+        if (!bBRefSet)   pConfig->bRefType = MFX_B_REF_OFF;
     }
 
-    if ((pConfig->bENCPAK || pConfig->bOnlyENC || pConfig->bOnlyPAK) /*&& (pConfig->nPicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF))*/ && !pConfig->bPassHeaders){
-        msdk_printf(MSDK_STRING("\nWARNING: ENCPAK uses SliceHeader to store references; -pass_headers flag forced.\n"));
-
-        pConfig->bPassHeaders = true;
-    }
-
-    if (bHeaderValSpecified && !pConfig->bPassHeaders){
-        msdk_printf(MSDK_STRING("\nWARNING: Specified SPS/PPS/Slice header parameters would be ignored!\n"));
-        msdk_printf(MSDK_STRING("           Please use them together with -pass_headers option\n"));
-    }
-
-    if (pConfig->bPassHeaders && (pConfig->ChromaQPIndexOffset > 12 || pConfig->ChromaQPIndexOffset < -12)){
+    if (pConfig->ChromaQPIndexOffset > 12 || pConfig->ChromaQPIndexOffset < -12){
         if (bAlrShownHelp)
             msdk_printf(MSDK_STRING("\nERROR: Unsupported ChromaQPIndexOffset value!\n"));
         else
@@ -1048,7 +1014,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (pConfig->bPassHeaders && (pConfig->SecondChromaQPIndexOffset > 12 || pConfig->SecondChromaQPIndexOffset < -12)){
+    if (pConfig->SecondChromaQPIndexOffset > 12 || pConfig->SecondChromaQPIndexOffset < -12){
         if (bAlrShownHelp)
             msdk_printf(MSDK_STRING("\nERROR: Unsupported SecondChromaQPIndexOffset value!\n"));
         else
