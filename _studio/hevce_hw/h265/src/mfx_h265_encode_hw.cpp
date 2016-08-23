@@ -913,7 +913,26 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
                 taskForExecute->m_initial_cpb_removal_delay = m_hrd.GetInitCpbRemovalDelay(*taskForExecute);
                 taskForExecute->m_initial_cpb_removal_offset = m_hrd.GetInitCpbRemovalDelayOffset();
                 m_prevBPEO = taskForExecute->m_eo;
+            }            
+            if (m_brc)
+            {
+               mfxI8 prevQP  = taskForExecute->m_qpY;
+               taskForExecute->m_qpY = (mfxI8)m_brc->GetQP(m_vpar,*taskForExecute);
+               taskForExecute->m_qpY = taskForExecute->m_qpY <51? taskForExecute->m_qpY : 51; //
+               taskForExecute->m_sh.slice_qp_delta = mfxI8(taskForExecute->m_qpY - (m_vpar.m_pps.init_qp_minus26 + 26));
+
+               if (taskForExecute->m_recode && prevQP == taskForExecute->m_qpY)
+               {
+                    taskForExecute->m_bSkipped = true;
+               }
+
+
+               if (taskForExecute->m_recode && m_vpar.AsyncDepth > 1)
+               {
+                   taskForExecute->m_sh.temporal_mvp_enabled_flag = 0; // WA
+               }
             }
+
             if (IsFrameToSkip(*taskForExecute,  m_rec, m_vpar.isSWBRC()))
             {
                 sts = CodeAsSkipFrame(m_core,m_vpar,*taskForExecute,m_rawSkip, m_rec); 
@@ -929,17 +948,6 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
                 MFX_CHECK_STS(sts);
             }
 #endif
-            if (m_brc)
-            {
-               taskForExecute->m_qpY = (mfxI8)m_brc->GetQP(m_vpar,*taskForExecute);
-               taskForExecute->m_qpY = taskForExecute->m_qpY <51? taskForExecute->m_qpY : 51; //
-               taskForExecute->m_sh.slice_qp_delta = mfxI8(taskForExecute->m_qpY - (m_vpar.m_pps.init_qp_minus26 + 26));
-
-               if (taskForExecute->m_recode && m_vpar.AsyncDepth > 1)
-               {
-                   taskForExecute->m_sh.temporal_mvp_enabled_flag = 0; // WA
-               }
-            }
             sts = m_ddi->Execute(*taskForExecute, surfaceHDL.first);
             MFX_CHECK_STS(sts);
         
@@ -978,7 +986,9 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
 
         if (m_brc)
         {
+            
             brcStatus = m_brc->PostPackFrame(m_vpar,*taskForQuery, (taskForQuery->m_bsDataLength + SEI_len)*8,0,taskForQuery->m_recode);
+            //printf("m_brc->PostPackFrame poc %d, qp %d, len %d, type %d, status %d\n", taskForQuery->m_poc,taskForQuery->m_qpY, taskForQuery->m_bsDataLength,taskForQuery->m_codingType, brcStatus);
             if (brcStatus != MFX_BRC_OK)
             {
                 MFX_CHECK(brcStatus != MFX_BRC_ERROR,  MFX_ERR_NOT_ENOUGH_BUFFER);

@@ -503,6 +503,8 @@ mfxStatus H265BRC::SetParams( MfxVideoParam &par)
     m_par.bitDepthLuma = par.mfx.FrameInfo.BitDepthLuma;
 
     m_par.inputBitsPerFrame = m_par.maxbps / m_par.frameRate;
+    m_par.gopPicSize = par.mfx.GopPicSize;
+    m_par.gopRefDist = par.mfx.GopRefDist;
  
     return MFX_ERR_NONE;
 }
@@ -749,6 +751,12 @@ void H265BRC::SetParamsForRecoding (mfxI32 encOrder)
     m_bRecodeFrame = true;
     mRecodedFrame_encOrder = encOrder;
 }
+ bool  H265BRC::isFrameBeforeIntra (mfxU32 order)
+ {
+     mfxI32 distance0 = m_par.gopPicSize*3/4;
+     mfxI32 distance1 = m_par.gopPicSize - m_par.gopRefDist*3;
+     return (order - mEOLastIntra) > (mfxU32)(IPP_MAX(distance0, distance1));
+ }
 
 
 mfxBRCStatus H265BRC::PostPackFrame(MfxVideoParam & /* par */, Task &task, mfxI32 totalFrameBits, mfxI32 overheadBits, mfxI32 repack)
@@ -765,10 +773,11 @@ mfxBRCStatus H265BRC::PostPackFrame(MfxVideoParam & /* par */, Task &task, mfxI3
     mPoc = task.m_poc;
     qpY += mQuantOffset;
 
-
-
     mfxI32 layer = ((picType == MFX_FRAMETYPE_I) ? 0 : ((picType == MFX_FRAMETYPE_P) ?  1 : 1 + IPP_MAX(1, task.m_level))); // should be 0 for I, 1 for P, etc. !!!
     mfxF64 qstep = QP2Qstep(qpY, mQuantOffset);
+
+    if (picType == MFX_FRAMETYPE_I)
+        mEOLastIntra = task.m_eo;
 
     if (!repack && mQuantUpdated <= 0) { // BRC reported buffer over/underflow but the application ignored it
         mQuantI = mQuantIprev;
@@ -824,7 +833,7 @@ mfxBRCStatus H265BRC::PostPackFrame(MfxVideoParam & /* par */, Task &task, mfxI3
             maxqp = IPP_MIN(maxqp, m_hrdState.overflowQuant - 1);
         }
 
-        if (bitsEncoded >  maxFrameSize && qp < maxqp && !(picType & MFX_FRAMETYPE_I)) {
+        if (bitsEncoded >  maxFrameSize && qp < maxqp ) {
             mfxF64 targetSizeScaled = maxFrameSize * 0.8;
             mfxF64 qstepnew = qstep * pow(bitsEncoded / targetSizeScaled, 0.9);
             mfxI32 qpnew = Qstep2QP(qstepnew, mQuantOffset);
@@ -862,6 +871,13 @@ mfxBRCStatus H265BRC::PostPackFrame(MfxVideoParam & /* par */, Task &task, mfxI3
                     return MFX_BRC_ERR_BIG_FRAME;
                 }
             }
+        }
+
+        if (bitsEncoded >  maxFrameSize && qp == maxqp && picType != MFX_FRAMETYPE_I && mRecode && (!task.m_bSkipped) && isFrameBeforeIntra(task.m_eo)) //skip frames before intra
+        {
+            SetParamsForRecoding(task.m_eo);
+            m_hrdState.frameNum--;
+            return MFX_BRC_ERR_BIG_FRAME|MFX_BRC_NOT_ENOUGH_BUFFER;
         }
 
         if (mRCfa_short > famax && (!repack) && qp < maxqp) {
@@ -972,6 +988,7 @@ void H265BRC::ResetParams()
     mSceneChange=0;
     mBitsEncodedP= mBitsEncodedPrev=0;
     mPoc= mSChPoc=0;
+    mEOLastIntra = 0;
 }
 mfxBRCStatus H265BRC::UpdateQuant(mfxI32 bitEncoded, mfxI32 totalPicBits, mfxI32 , mfxI32 recode)
 {

@@ -245,6 +245,9 @@ struct BRCParams
     mfxU16 chromaFormat;
     mfxU16 bitDepthLuma;
     mfxF64 inputBitsPerFrame;
+    mfxU16 gopPicSize;
+    mfxU16 gopRefDist;
+
 };
 
 class H265BRC : public BrcIface
@@ -314,6 +317,7 @@ protected:
     mfxI32  mSceneChange;
     mfxI32  mBitsEncodedP, mBitsEncodedPrev;
     mfxI32  mPoc, mSChPoc;
+    mfxU32  mEOLastIntra;
 
     void   ResetParams();
     mfxU32 GetInitQP();
@@ -323,6 +327,8 @@ protected:
     mfxBRCStatus UpdateQuant(mfxI32 bEncoded, mfxI32 totalPicBits, mfxI32 layer = 0, mfxI32 recode = 0);
     mfxBRCStatus UpdateQuantHRD(mfxI32 bEncoded, mfxBRCStatus sts, mfxI32 overheadBits = 0, mfxI32 layer = 0, mfxI32 recode = 0);
     mfxStatus   SetParams(MfxVideoParam &video);
+
+    bool        isFrameBeforeIntra (mfxU32 order);
 
 
     mfxStatus InitHRD();
