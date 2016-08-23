@@ -220,7 +220,7 @@ foreach( variant ${hevcd_variants} )
   endif()
 
   list( APPEND LIBS
-    media_buffers       ## open-source-cut-start
+    media_buffers       ## open-source-cut-line
     umc_io
     umc
     vm
