@@ -277,7 +277,9 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoCPU(   CmSurface2D* pSurface,
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->DestroyThreadSpace(pTS);
         CHECK_CM_HR(hr);
-        
+        hr = m_pCmDevice->DestroyKernel(m_pCmKernel);
+        CHECK_CM_HR(hr);
+
         pLinearAddress += sliceCopyBufferUPSize - AddedShiftLeftOffset;
         totalBufferUPSize -= sliceCopyBufferUPSize;
         copy_height_row -= slice_copy_height_row;
@@ -458,7 +460,9 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBCPUtoGPU(   CmSurface2D* pSurface,
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->DestroyThreadSpace(pTS);
         CHECK_CM_HR(hr);
-        
+        hr = m_pCmDevice->DestroyKernel(m_pCmKernel);
+        CHECK_CM_HR(hr);
+
         pLinearAddress += sliceCopyBufferUPSize - AddedShiftLeftOffset;
         totalBufferUPSize -= sliceCopyBufferUPSize;
         copy_height_row -= slice_copy_height_row;
@@ -551,6 +555,8 @@ mfxStatus CmCopyWrapper::EnqueueCopySwapRBGPUtoGPU(   CmSurface2D* pSurfaceIn,
     CHECK_CM_HR(hr);
     hr = m_pCmDevice->DestroyThreadSpace(pTS);
     CHECK_CM_HR(hr);
+    hr = m_pCmDevice->DestroyKernel(m_pCmKernel);
+    CHECK_CM_HR(hr);
 
     hr = pInternalEvent->WaitForTaskFinished();
     
@@ -630,6 +636,8 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorGPUtoGPU(   CmSurface2D* pSurfaceIn,
     hr = m_pCmDevice->DestroyTask(pGPUCopyTask);
     CHECK_CM_HR(hr);
     hr = m_pCmDevice->DestroyThreadSpace(pTS);
+    CHECK_CM_HR(hr);
+    hr = m_pCmDevice->DestroyKernel(m_pCmKernel);
     CHECK_CM_HR(hr);
 
     hr = pInternalEvent->WaitForTaskFinished();
@@ -796,7 +804,9 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorNV12GPUtoCPU(   CmSurface2D* pSurface,
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->DestroyThreadSpace(pTS);
         CHECK_CM_HR(hr);
-        
+        hr = m_pCmDevice->DestroyKernel(m_pCmKernel);
+        CHECK_CM_HR(hr);
+
         pLinearAddress += sliceCopyBufferUPSize - AddedShiftLeftOffset;
         totalBufferUPSize -= sliceCopyBufferUPSize;
         copy_height_row -= slice_copy_height_row;
@@ -972,6 +982,8 @@ mfxStatus CmCopyWrapper::EnqueueCopyNV12GPUtoCPU(   CmSurface2D* pSurface,
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->DestroyThreadSpace(pTS);
         CHECK_CM_HR(hr);
+        hr = m_pCmDevice->DestroyKernel(m_pCmKernel);
+        CHECK_CM_HR(hr);
         pLinearAddress += sliceCopyBufferUPSize - AddedShiftLeftOffset;
         totalBufferUPSize -= sliceCopyBufferUPSize;
         copy_height_row -= slice_copy_height_row;
@@ -1144,6 +1156,8 @@ mfxStatus CmCopyWrapper::EnqueueCopyMirrorNV12CPUtoGPU(CmSurface2D* pSurface,
         hr = m_pCmDevice->DestroyTask(pGPUCopyTask);
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->DestroyThreadSpace(pTS);
+        CHECK_CM_HR(hr);
+        hr = m_pCmDevice->DestroyKernel(m_pCmKernel);
         CHECK_CM_HR(hr);
         pLinearAddress += sliceCopyBufferUPSize - AddedShiftLeftOffset;
         totalBufferUPSize -= sliceCopyBufferUPSize;
@@ -1505,6 +1519,8 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftP010GPUtoCPU(   CmSurface2D* pSurface,
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->DestroyThreadSpace(pTS);
         CHECK_CM_HR(hr);
+        hr = m_pCmDevice->DestroyKernel(m_pCmKernel);
+        CHECK_CM_HR(hr);
         pLinearAddress += sliceCopyBufferUPSize - AddedShiftLeftOffset;
         totalBufferUPSize -= sliceCopyBufferUPSize;
         copy_height_row -= slice_copy_height_row;
@@ -1678,6 +1694,8 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftP010CPUtoGPU(   CmSurface2D* pSurface,
         hr = m_pCmDevice->DestroyTask(pGPUCopyTask);
         CHECK_CM_HR(hr);
         hr = m_pCmDevice->DestroyThreadSpace(pTS);
+        CHECK_CM_HR(hr);
+        hr = m_pCmDevice->DestroyKernel(m_pCmKernel);
         CHECK_CM_HR(hr);
 
         pLinearAddress += sliceCopyBufferUPSize - AddedShiftLeftOffset;
