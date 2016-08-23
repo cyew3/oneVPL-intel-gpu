@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -717,15 +717,17 @@ mfxStatus MFXVideoUSER_LoadByPath(mfxSession session, const mfxPluginUID *uid, m
 
 #ifdef _WIN32
     msdk_disp_char wPath[MAX_PLUGIN_PATH];
-    int res = ::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, len, wPath, MAX_PLUGIN_PATH);
+    int res = ::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, len<MAX_PLUGIN_PATH-1 ? len : MAX_PLUGIN_PATH-1, wPath, MAX_PLUGIN_PATH);
+    wPath[res]=0;
+
     if (!res)
     {
         DISPATCHER_LOG_ERROR((("MFXVideoUSER_LoadByPath: cant convert UTF-8 path to UTF-16\n")));
         return MFX_ERR_NOT_FOUND;
     }
-    msdk_disp_char_cpy_s(record.sPath, res < MAX_PLUGIN_PATH ? res : MAX_PLUGIN_PATH, wPath);
+    msdk_disp_char_cpy_s(record.sPath, MAX_PLUGIN_PATH, wPath);
 #else // Linux/Android 
-    msdk_disp_char_cpy_s(record.sPath, len < MAX_PLUGIN_PATH ? len : MAX_PLUGIN_PATH, path);
+    msdk_disp_char_cpy_s(record.sPath, MAX_PLUGIN_PATH, path);
 #endif
     
     record.PluginUID = *uid; 
