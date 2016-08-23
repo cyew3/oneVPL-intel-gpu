@@ -344,7 +344,7 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
         {
             m_pUserModule.reset(new MFXVideoUSER(m_mfxSession));
             if (pParams->videoType == MFX_CODEC_HEVC || pParams->videoType == MFX_CODEC_VP8 ||
-                pParams->videoType == MFX_CODEC_VP9)
+                pParams->videoType == MFX_CODEC_VP9 || pParams->videoType == MFX_CODEC_CAPTURE)
             {
                 m_pPlugin.reset(LoadPlugin(MFX_PLUGINTYPE_VIDEO_DECODE, m_mfxSession, pParams->pluginParams.pluginGuid, 1, pParams->pluginParams.strPluginPath, (mfxU32)msdk_strnlen(pParams->pluginParams.strPluginPath,sizeof(pParams->pluginParams.strPluginPath))));
             }

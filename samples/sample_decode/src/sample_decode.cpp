@@ -553,7 +553,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 if (++i < nArgNum) {
                    if (MFX_ERR_NONE == ConvertStringToGuid(strInput[i], pParams->pluginParams.pluginGuid))
                     {
-                        pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_GUID;
+                        if(pParams->pluginParams.type != MFX_PLUGINLOAD_TYPE_FILE)
+                        {
+                            pParams->pluginParams.type = MFX_PLUGINLOAD_TYPE_GUID;
+                        }
                     }
                     else
                     {
