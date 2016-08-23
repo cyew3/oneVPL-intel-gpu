@@ -829,3 +829,26 @@ STRUCT(mfxExtHEVCRegion,
     FIELD_T(mfxU16      , RegionType)
     FIELD_T(mfxU16      , RegionEncoding)
 )
+
+STRUCT(mfxExtCodingOptionVP9,
+    FIELD_S(mfxExtBuffer       , Header                )
+    FIELD_T(mfxU16             , Version               )
+    FIELD_T(mfxU16             , SharpnessLevel        )
+    FIELD_T(mfxU16             , WriteIVFHeaders       )
+    FIELD_T(mfxU32             , NumFramesForIVF       )
+    FIELD_T(mfxI16             , LoopFilterRefDelta    )
+    FIELD_T(mfxI16             , LoopFilterModeDelta   )
+    FIELD_T(mfxI16             , QIndexDeltaLumaDC     )
+    FIELD_T(mfxI16             , QIndexDeltaChromaAC   )
+    FIELD_T(mfxI16             , QIndexDeltaChromaDC   )
+    FIELD_T(mfxU16             , Log2TileRows          )
+    FIELD_T(mfxU16             , Log2TileColumns       )
+    FIELD_T(mfxU16             , EnableMultipleSegments)
+    //FIELD_S(mfxSegmentParamVP9 , Segment               )
+)
+
+STRUCT(mfxExtVP9DecodedFrameInfo,
+    FIELD_S(mfxExtBuffer, Header )
+    //FIELD_T(mfxU16      , DisplayWidth)
+    //FIELD_T(mfxU16      , DisplayHeight)
+)

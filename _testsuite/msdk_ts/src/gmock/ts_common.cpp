@@ -175,6 +175,59 @@ void set_brc_params(tsExtBufType<mfxVideoParam>* p)
     }
 }
 
+void set_chromaformat(mfxFrameInfo& frameinfo)
+{
+    const mfxU32& FourCC = frameinfo.FourCC;
+    mfxU16& ChromaFormat = frameinfo.ChromaFormat;
+
+    switch( FourCC ) {
+        case MFX_FOURCC_P8        :
+        case MFX_FOURCC_P8_TEXTURE:
+            ChromaFormat = 0;
+            break;
+        case MFX_FOURCC_NV12      :
+        case MFX_FOURCC_YV12      :
+
+        case MFX_FOURCC_P010      :
+            ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            break;
+        case MFX_FOURCC_NV16      :
+        case MFX_FOURCC_YUY2      :
+        case MFX_FOURCC_UYVY      :
+
+        case MFX_FOURCC_P210      :
+        case MFX_FOURCC_Y210      :
+            ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            break;
+        case MFX_FOURCC_AYUV      :
+
+        case MFX_FOURCC_Y410      :
+
+        case MFX_FOURCC_A2RGB10   :
+        case MFX_FOURCC_ARGB16    :
+        case MFX_FOURCC_ABGR16    :
+        case MFX_FOURCC_R16       :
+        case MFX_FOURCC_AYUV_RGB4 :
+        case MFX_FOURCC_RGB3      :
+        case MFX_FOURCC_RGB4      :
+        case MFX_FOURCC_BGR4      :
+            ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            break;
+        default:
+            ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            break;
+    }
+}
+void set_chromaformat_mfx(tsExtBufType<mfxVideoParam>* p)
+{
+    return set_chromaformat(p->mfx.FrameInfo);
+}
+void set_chromaformat_vpp(tsExtBufType<mfxVideoParam>* p)
+{
+    set_chromaformat(p->vpp.In);
+    return set_chromaformat(p->vpp.Out);
+}
+
 void MFXVideoTest::SetUp()
 {
     std::string platform = ENV("TS_PLATFORM", "auto");
@@ -327,19 +380,28 @@ void SetParam(void* base, const std::string name, const mfxU32 offset, const mfx
     memcpy((mfxU8*)base + offset, &value, size);
 }
 
-void SetParam(tsExtBufType<mfxVideoParam>* base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value)
+template <typename T>
+void SetParam(tsExtBufType<T>& base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value)
 {
-    void* ptr = base;
-    if(name.find("mfxVideoParam") == std::string::npos)
+    assert(!name.empty() );
+    void* ptr = &base;
+
+    if( (typeid(T) == typeid(mfxVideoParam) && ( name.find("mfxVideoParam") == std::string::npos) ) || 
+        (typeid(T) == typeid(mfxBitstream)  && ( name.find("mfxBitstream")  == std::string::npos) ) || 
+        (typeid(T) == typeid(mfxEncodeCtrl) && ( name.find("mfxEncodeCtrl") == std::string::npos) ) ||
+        (typeid(T) == typeid(mfxInitParam) &&  ( name.find("mfxInitParam") == std::string::npos) ) )
     {
         mfxU32 bufId = 0, bufSz = 0;
         GetBufferIdSz(name, bufId, bufSz);
-        ptr = base->GetExtBuffer(bufId);
+        ptr = base.GetExtBuffer(bufId);
         if(!ptr)
         {
-            base->AddExtBuffer(bufId, bufSz);
-            ptr = base->GetExtBuffer(bufId);
+            base.AddExtBuffer(bufId, bufSz);
+            ptr = base.GetExtBuffer(bufId);
         }
     }
     memcpy((mfxU8*)ptr + offset, &value, size);
 }
+
+template void SetParam(tsExtBufType<mfxVideoParam>& base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value);
+template void SetParam(tsExtBufType<mfxInitParam>& base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value);

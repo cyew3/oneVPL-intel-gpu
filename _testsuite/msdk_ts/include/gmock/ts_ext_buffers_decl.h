@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 EXTBUF(mfxExtCodingOption           , MFX_EXTBUFF_CODING_OPTION             )
 EXTBUF(mfxExtCodingOptionSPSPPS     , MFX_EXTBUFF_CODING_OPTION_SPSPPS      )
 EXTBUF(mfxExtVPPDoNotUse            , MFX_EXTBUFF_VPP_DONOTUSE              )
@@ -69,3 +79,6 @@ EXTBUF(mfxExtMBDisableSkipMap       , MFX_EXTBUFF_MB_DISABLE_SKIP_MAP)
 EXTBUF(mfxExtScreenCaptureParam     , MFX_EXTBUFF_SCREEN_CAPTURE_PARAM      )
 EXTBUF(mfxExtDirtyRect              , MFX_EXTBUFF_DIRTY_RECTANGLES          )
 EXTBUF(mfxExtMoveRect               , MFX_EXTBUFF_MOVING_RECTANGLES         )
+
+EXTBUF(mfxExtCodingOptionVP9        , MFX_EXTBUFF_CODING_OPTION_VP9         )
+EXTBUF(mfxExtVP9DecodedFrameInfo    , MFX_EXTBUFF_VP9_DECODED_FRAME_INFO    )

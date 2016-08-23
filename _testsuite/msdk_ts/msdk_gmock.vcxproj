@@ -355,6 +355,7 @@
     <ClCompile Include="src\gmock\test_suites\vpp_rotate.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8d_init.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vp9d.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8e_encode_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8e_get_video_param.cpp" />

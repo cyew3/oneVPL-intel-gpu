@@ -74,4 +74,30 @@ inline mfxU64 get(void* base, const Field& field) { mfxU64 value = 0; memcpy(&va
 #undef FIELD_T
 #undef FIELD_S
 
+template <typename T, typename TFP>
+void SetParamIfStage(tsExtBufType<T>& base, const TFP& fpair, const mfxU32 stage = 0)
+{
+    if(fpair.stage == stage)
+        return SetParam(base, fpair.f->name, fpair.f->offset, fpair.f->size, fpair.v);
+    else
+        return;
+}
+
+template <typename T, typename TB>
+void SetPars(tsExtBufType<TB>& base, const T& tc, const mfxU32 stage = 0)
+{
+    const size_t npars = sizeof(tc.set_par) / sizeof(tc.set_par[0]);
+    for(size_t i = 0; i < npars; ++i)
+    {
+        SetParamIfStage(base, tc.set_par[i], stage);
+    }
+}
+
+template <typename T, typename TB>
+void SetPars(const tsExtBufType<TB>*& base, const T& tc, const mfxU32 stage = 0)
+{
+    assert(0 != base);
+    if(base)    return SetPars(*base, tc, stage);
+}
+
 };

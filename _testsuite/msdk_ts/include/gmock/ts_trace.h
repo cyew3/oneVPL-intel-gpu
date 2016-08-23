@@ -12,6 +12,7 @@ Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 
 #include "mfxvideo.h"
 #include "mfxvp8.h"
+#include "mfxvp9.h"
 #include "mfxmvc.h"
 #include "mfxjpeg.h"
 #include "mfxpcp.h"

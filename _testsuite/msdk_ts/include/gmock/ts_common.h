@@ -91,15 +91,19 @@ extern tsConfig     g_tsConfig;
     _TS_REG_TEST_SUITE(name, routine, n_cases, false)\
     _TS_REG_TEST_SUITE(query_streams_##name, routine, n_cases, true)
 
-#define _TS_REG_TEST_SUITE_CLASS(name, q_mode)\
+#define _TS_REG_TEST_SUITE_CLASS(name, routine, n_cases, q_mode)\
     class name : public MFXVideoTest{};\
-    TEST_P(name,) { g_tsStreamPool.Init(q_mode); TestSuite ts; if(ts.RunTest(GetParam())) {ADD_FAILURE();} g_tsStreamPool.Close(); }\
+    TEST_P(name,) { g_tsStreamPool.Init(q_mode); TestSuite ts; if(ts.routine(GetParam())) {ADD_FAILURE();} g_tsStreamPool.Close(); }\
     INSTANTIATE_TEST_CASE_P(, name, ::testing::Range<unsigned int>(0, TestSuite::n_cases));
 
 #define QUERY_STREAMS(name)  query_streams_##name
+
+#define TS_REG_TEST_SUITE_CLASS_ROUTINE(name, routine, n_cases)\
+    _TS_REG_TEST_SUITE_CLASS(name, routine, n_cases, false)\
+    _TS_REG_TEST_SUITE_CLASS(QUERY_STREAMS(name), routine, n_cases, true)
+
 #define TS_REG_TEST_SUITE_CLASS(name)\
-    _TS_REG_TEST_SUITE_CLASS(name, false)\
-    _TS_REG_TEST_SUITE_CLASS(QUERY_STREAMS(name), true)
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(name, RunTest, n_cases)
 
 #define INC_PADDING() g_tsLog.inc_offset();
 #define DEC_PADDING() g_tsLog.dec_offset();
@@ -156,7 +160,11 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 }
 
 std::string ENV(const char* name, const char* def);
+
 void set_brc_params(tsExtBufType<mfxVideoParam>* p);
+void set_chromaformat(mfxFrameInfo& frameinfo);
+void set_chromaformat_mfx(tsExtBufType<mfxVideoParam>* p);
+void set_chromaformat_vpp(tsExtBufType<mfxVideoParam>* p);
 
 bool operator == (const mfxFrameInfo&, const mfxFrameInfo&);
 bool operator == (const mfxFrameData&, const mfxFrameData&);
@@ -164,6 +172,12 @@ bool operator == (const mfxFrameData&, const mfxFrameData&);
 void GetBufferIdSz(const std::string& name, mfxU32& bufId, mfxU32& bufSz);
 
 void SetParam(void* base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value);
-void SetParam(tsExtBufType<mfxVideoParam>* base,  const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value);
 
-
+template <typename T>
+void SetParam(tsExtBufType<T> *base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value)
+{
+    assert(0 != base);
+    if(base)    return SetParam(*base, name, offset, size, value);
+}
+template <typename T>
+void SetParam(tsExtBufType<T>& base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value);

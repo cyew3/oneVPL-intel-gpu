@@ -628,6 +628,9 @@
     <ClCompile Include="src\gmock\test_suites\query_platform.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp9d.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\slice_size_reporting.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>

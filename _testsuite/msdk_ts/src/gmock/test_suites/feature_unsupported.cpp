@@ -54,65 +54,6 @@ void GetBufferIdSz(const std::string& name, mfxU32& bufId, mfxU32& bufSz)
 
 typedef void (*callback)(tsExtBufType<mfxVideoParam>*);
 
-void set_chromaformat(mfxFrameInfo& frameinfo)
-{
-    const mfxU32& FourCC = frameinfo.FourCC;
-    mfxU16& ChromaFormat = frameinfo.ChromaFormat;
-
-    switch( FourCC ) {
-        case MFX_FOURCC_NV12      :
-        case MFX_FOURCC_YV12      :
-            ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            break;
-        case MFX_FOURCC_NV16      :
-        case MFX_FOURCC_YUY2      :
-            ChromaFormat = MFX_CHROMAFORMAT_YUV422;
-            break;
-        case MFX_FOURCC_RGB3      :
-        case MFX_FOURCC_RGB4      :
-            ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            break;
-        case MFX_FOURCC_P8        :
-        case MFX_FOURCC_P8_TEXTURE:
-            ChromaFormat = 0;
-            break;
-        case MFX_FOURCC_P010      :
-            ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            break;
-        case MFX_FOURCC_P210      :
-            ChromaFormat = MFX_CHROMAFORMAT_YUV422;
-            break;
-        case MFX_FOURCC_BGR4      :
-            ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            break;
-        case MFX_FOURCC_A2RGB10   :
-        case MFX_FOURCC_ARGB16    :
-        case MFX_FOURCC_ABGR16    :
-        case MFX_FOURCC_R16       :
-        case MFX_FOURCC_AYUV      :
-        case MFX_FOURCC_AYUV_RGB4 :
-            ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            break;
-        case MFX_FOURCC_UYVY      :
-            ChromaFormat = MFX_CHROMAFORMAT_YUV422;
-            break;
-        default:
-            ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            break;
-    }
-}
-
-void set_chromaformat_mfx(tsExtBufType<mfxVideoParam>* p)
-{
-    return set_chromaformat(p->mfx.FrameInfo);
-}
-
-void set_chromaformat_vpp(tsExtBufType<mfxVideoParam>* p)
-{
-    set_chromaformat(p->vpp.In);
-    return set_chromaformat(p->vpp.Out);
-}
-
 class TestSuite : public tsSession
 {
 public:
