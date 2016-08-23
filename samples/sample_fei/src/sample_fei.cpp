@@ -1092,7 +1092,7 @@ int main(int argc, char *argv[])
     MSDK_CHECK_POINTER(pPipeline.get(), MFX_ERR_MEMORY_ALLOC);
 
     sts = pPipeline->Init(&Config);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
+    MSDK_CHECK_STATUS(sts, "pPipeline->Init failed");
 
     pPipeline->PrintInfo();
 
@@ -1110,15 +1110,16 @@ int main(int argc, char *argv[])
         {
             msdk_printf(MSDK_STRING("\nERROR: Hardware device was lost or returned an unexpected error. Recovering...\n"));
             sts = pPipeline->ResetDevice();
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
+            MSDK_CHECK_STATUS(sts, "pPipeline->ResetDevice failed");
 
             sts = pPipeline->ResetMFXComponents(&Config, true);
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
+            MSDK_CHECK_STATUS(sts, "pPipeline->ResetMFXComponents failed");
+
             continue;
         }
         else
         {
-            MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, 1);
+            MSDK_CHECK_STATUS(sts, "pPipeline->Run failed");
             break;
         }
     }
