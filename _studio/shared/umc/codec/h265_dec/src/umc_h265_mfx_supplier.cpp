@@ -499,9 +499,6 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
         frameInfo->BitDepthLuma > 16)
         return 0;
 
-    if (frameInfo->BitDepthLuma != frameInfo->BitDepthChroma)
-        return 0;
-
     if (frameInfo->BitDepthLuma % 2)
         return 0;
 
