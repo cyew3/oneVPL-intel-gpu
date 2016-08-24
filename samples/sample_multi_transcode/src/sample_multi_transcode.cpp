@@ -377,84 +377,53 @@ void Launcher::Run()
 mfxStatus Launcher::ProcessResult()
 {
     FILE* pPerfFile = m_parser.GetPerformanceFile();
-    msdk_printf(MSDK_STRING("\nCommon transcoding time is  %.2f sec \n"), GetTime(m_StartTime));
+
+    msdk_stringstream ssTranscodingTime;
+    ssTranscodingTime << std::endl << MSDK_STRING("Common transcoding time is ") << GetTime(m_StartTime) << MSDK_STRING(" sec") << std::endl;
 
     m_parser.PrintParFileName();
 
+    msdk_printf(ssTranscodingTime.str().c_str());
     if (pPerfFile)
     {
-        msdk_fprintf(pPerfFile, MSDK_STRING("Common transcoding time is  %.2f sec \n"), GetTime(m_StartTime));
+        msdk_fprintf(pPerfFile, ssTranscodingTime.str().c_str());
     }
 
-    // get result
-    bool SuccessTranscode = true;
-    mfxU32 i;
-    for (i = 0; i < m_pSessionArray.size(); i++)
+    mfxStatus FinalSts = MFX_ERR_NONE;
+    msdk_printf(MSDK_STRING("-------------------------------------------------------------------------------\n"));
+    for (int i = 0; i < m_pSessionArray.size(); i++)
     {
-        mfxStatus sts = m_pSessionArray[i]->transcodingSts;
-        if (MFX_ERR_NONE != sts)
-        {
-            SuccessTranscode = false;
-            msdk_printf(MSDK_STRING("MFX session %d transcoding FAILED:\nProcessing time: %.2f sec \nNumber of processed frames: %d\n"),
-                i,
-                m_pSessionArray[i]->working_time,
-                m_pSessionArray[i]->numTransFrames);
-            if (pPerfFile)
-            {
-                msdk_fprintf(pPerfFile, MSDK_STRING("MFX session %d transcoding FAILED:\nProcessing time: %.2f sec \nNumber of processed frames: %d\n"),
-                    i,
-                    m_pSessionArray[i]->working_time,
-                    m_pSessionArray[i]->numTransFrames);
-            }
+        mfxStatus _sts = m_pSessionArray[i]->transcodingSts;
 
-        }
-        else
-        {
-            msdk_printf(MSDK_STRING("MFX session %d transcoding PASSED:\nProcessing time: %.2f sec \nNumber of processed frames: %d\n"),
-                i,
-                m_pSessionArray[i]->working_time,
-                m_pSessionArray[i]->numTransFrames);
-            if (pPerfFile)
-            {
-                msdk_fprintf(pPerfFile, MSDK_STRING("MFX session %d transcoding PASSED:\nProcessing time: %.2f sec \nNumber of processed frames: %d\n"),
-                    i,
-                    m_pSessionArray[i]->working_time,
-                    m_pSessionArray[i]->numTransFrames);
-            }
-        }
+        if (!FinalSts)
+            FinalSts = _sts;
 
+        msdk_string SessionStsStr = _sts ? msdk_string(MSDK_STRING("FAILED"))
+            : msdk_string((MSDK_STRING("PASSED")));
+
+        msdk_stringstream ss;
+        ss << MSDK_STRING("*** session ") << i << MSDK_STRING(" ") << SessionStsStr <<MSDK_STRING(" (") << StatusToString(_sts) << MSDK_STRING(") ")
+            << m_pSessionArray[i]->working_time << MSDK_STRING(" sec, ") << m_pSessionArray[i]->numTransFrames << MSDK_STRING(" frames") << std::endl
+            << (_sts ? m_parser.GetLine(i) : msdk_string()) << std::endl << std::endl;
+
+        msdk_printf(ss.str().c_str());
         if (pPerfFile)
         {
-            if (Native == m_InputParamsArray[i].eMode || Sink == m_InputParamsArray[i].eMode)
-            {
-                msdk_fprintf(pPerfFile, MSDK_STRING("Input stream: %s\n"), m_InputParamsArray[i].strSrcFile);
-            }
-            else
-                msdk_fprintf(pPerfFile, MSDK_STRING("Input stream: from parent session\n"));
-            msdk_fprintf(pPerfFile, MSDK_STRING("\n"));
+            msdk_fprintf(pPerfFile, ss.str().c_str());
         }
 
-
     }
+    msdk_printf(MSDK_STRING("-------------------------------------------------------------------------------\n"));
 
-    if (SuccessTranscode)
+    msdk_stringstream ssTest;
+    ssTest << std::endl << MSDK_STRING("The test ") << (FinalSts ? msdk_string(MSDK_STRING("FAILED")) : msdk_string(MSDK_STRING("PASSED"))) << std::endl;
+
+    msdk_printf(ssTest.str().c_str());
+    if (pPerfFile)
     {
-        msdk_printf(MSDK_STRING("\nThe test PASSED\n"));
-        if (pPerfFile)
-        {
-            msdk_fprintf(pPerfFile, MSDK_STRING("\nThe test PASSED\n"));
-        }
-        return MFX_ERR_NONE;
+        msdk_fprintf(pPerfFile, ssTest.str().c_str());
     }
-    else
-    {
-        msdk_printf(MSDK_STRING("\nThe test FAILED\n"));
-        if (pPerfFile)
-        {
-            msdk_fprintf(pPerfFile, MSDK_STRING("\nThe test FAILED\n"));
-        }
-        return MFX_ERR_UNKNOWN;
-    }
+    return FinalSts;
 } // mfxStatus Launcher::ProcessResult()
 
 mfxStatus Launcher::VerifyCrossSessionsOptions()

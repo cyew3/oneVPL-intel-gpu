@@ -302,6 +302,13 @@ void CmdProcessor::PrintParFileName()
     }
 }
 
+msdk_string CmdProcessor::GetLine(int n)
+{
+    if (m_lines.size() > n)
+        return m_lines[n];
+    return msdk_string();
+}
+
 mfxStatus CmdProcessor::ParseCmdLine(int argc, msdk_char *argv[])
 {
     FILE *parFile = NULL;
@@ -484,6 +491,9 @@ mfxStatus CmdProcessor::ParseParFile(FILE *parFile)
 
         sts = TokenizeLine(pCur, currPos);
         MSDK_CHECK_STATUS(sts, "TokenizeLine failed");
+
+        // save original cmd line for debug purposes
+        m_lines.push_back(msdk_string(pCur, currPos));
         currPos = 0;
         lineIndex++;
     }
@@ -538,8 +548,13 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxStatus stsExtBuf = MFX_ERR_NONE;
-    mfxU32 i, j;
     mfxU32 skipped = 0;
+
+    // save original cmd line for debug purpose
+    msdk_stringstream cmd;
+    for (mfxU32 i = 0; i <argc; i++)
+        cmd <<argv[i] << MSDK_STRING(" ");
+    m_lines.push_back(cmd.str());
 
     TranscodingSample::sInputParams InputParams;
     if (m_nTimeout)
@@ -563,7 +578,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
     InputParams.bUseOpaqueMemory = true;
     InputParams.eModeExt = Native;
 
-    for (i = 0; i < argc; i++)
+    for (mfxU32 i = 0; i < argc; i++)
     {
         // process multi-character options
         if ( (0 == msdk_strncmp(MSDK_STRING("-i::"), argv[i], msdk_strlen(MSDK_STRING("-i::"))))
@@ -903,7 +918,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 InputParams.eModeExt = VppCompOnly;
 
             bool bOpaqueFlagChanged = false;
-            for (j = 0; j < m_SessionArray.size(); j++)
+            for (mfxU32 j = 0; j < m_SessionArray.size(); j++)
             {
                 if (m_SessionArray[j].bUseOpaqueMemory)
                 {
