@@ -519,7 +519,7 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
                 {
                     m_Current.m_pixY = i;
                     if (m_params.VpxDec16bFormat)
-                        XOR31((mfxU16 *)(pData->V + (crop_y * pitch/2 + crop_x) + i*pitch/2), width);
+                        XOR31((mfxU16 *)(pData->V + (crop_y * pitch + crop_x) + i*pitch), width);
 
                     WRITE(pData->V + (crop_y * pitch + crop_x) + i*pitch, width*2);
                 }
