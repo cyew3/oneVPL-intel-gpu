@@ -1954,7 +1954,8 @@ void MfxHwH264Encode::ConfigureTask(
     }
     else
     {
-        task.m_maxIFrameSize = task.m_maxPBFrameSize = extOpt2Runtime ? extOpt2Runtime->MaxFrameSize : extOpt2.MaxFrameSize;
+        task.m_maxIFrameSize = extOpt2Runtime ? extOpt2Runtime->MaxFrameSize : extOpt2.MaxFrameSize;
+        task.m_maxPBFrameSize = 0;
     }
 
     task.m_numMbPerSlice = extOpt2.NumMbPerSlice;
