@@ -24,7 +24,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 void UpdateDpbFrames(iTask& task, mfxU32 field, mfxU32 frameNumMax);
 void InitRefPicList(iTask& task, mfxU32 field);
-void ModifyRefPicLists(mfxVideoParam & video, iTask& task, mfxU32 field);
-void MarkDecodedRefPictures(mfxVideoParam & video, iTask & task, mfxU32 field);
+void ModifyRefPicLists(mfxU16 GopOptFlag, iTask& task, mfxU32 field);
+void MarkDecodedRefPictures(mfxU16 NumRefFrame, iTask & task, mfxU32 field);
 
 #endif // __REF_LISTS_MANAGEMENT_FEI_H__

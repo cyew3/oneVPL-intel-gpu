@@ -18,7 +18,7 @@ static const int mb_type_remap[26] = {0, 21, 22, 23, 24, 21, 22, 23, 24, 21, 22,
 static const int intra_16x16[26]   = {2,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  0,  1,  2,  3,  2};
 static const int inter_mb_mode[1+22] = {-1, 0,  0,  0,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  3};
 
-mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask, mfxU8 QP, std::list<iTask*> *pTaskList)
+mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask, mfxU8 QP, iTaskPool *pTaskList)
 {
     MFX_ITT_TASK("PakOneStreamoutFrame");
 
@@ -327,7 +327,7 @@ void DumpMB(const msdk_char* fname, struct iTask* task, int uMB)
 #endif //DUMP_MB_DSO
 
 // pTaskList for CEncodingPipeline::m_inputTasks;
-mfxStatus ResetDirect (struct iTask * task, std::list<iTask*> *pTaskList)
+mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
 {
     if (!task || !pTaskList)
         return MFX_ERR_NULL_PTR;
@@ -335,7 +335,7 @@ mfxStatus ResetDirect (struct iTask * task, std::list<iTask*> *pTaskList)
         return MFX_ERR_NULL_PTR;
     mfxFrameInfo* fi = &task->in.InSurface->Info;
 
-    mfxI32 wmb = (fi->Width+15)>>4;
+    mfxI32 wmb = (fi->Width +15)>>4;
     mfxI32 hmb = (fi->Height+15)>>4;
 
     const mfxExtFeiSPS* sps = (mfxExtFeiSPS*)GetExtBuffer(task->outPAK.ExtParam, task->outPAK.NumExtParam, MFX_EXTBUFF_FEI_SPS);
@@ -365,15 +365,10 @@ mfxStatus ResetDirect (struct iTask * task, std::list<iTask*> *pTaskList)
             mfxFrameSurface1 *refSurface = task->inPAK.L0Surface[fidx];
 
             // find iTask of L1[0]
-            struct iTask * reftask = 0;
-            for(std::list<iTask*>::iterator it = pTaskList->begin(); it != pTaskList->end(); ++it) {
-                if ((*it)->outPAK.OutSurface != refSurface)
-                    continue;
-                reftask = *it;
-                break;
-            }
+            iTask * reftask = pTaskList->GetTaskByPAKOutputSurface(refSurface);
+
             if (reftask) {
-                refmvs = ( mfxExtFeiEncMV*)GetExtBuffer(reftask->inPAK.ExtParam, reftask->inPAK.NumExtParam, MFX_EXTBUFF_FEI_ENC_MV);
+                refmvs    = (mfxExtFeiEncMV*)GetExtBuffer(reftask->inPAK.ExtParam, reftask->inPAK.NumExtParam, MFX_EXTBUFF_FEI_ENC_MV);
                 refmbCode = (mfxExtFeiPakMBCtrl*)GetExtBuffer(reftask->inPAK.ExtParam, reftask->inPAK.NumExtParam, MFX_EXTBUFF_FEI_PAK_CTRL);
                 //if (!refmbCode && !refmvs) return MFX_ERR_INVALID_VIDEO_PARAM; // need it?
             }

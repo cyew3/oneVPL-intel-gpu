@@ -207,9 +207,9 @@ void InitRefPicList(
 
 
 void ModifyRefPicLists(
-    mfxVideoParam & video,
-    iTask&                task,
-    mfxU32                fieldId)
+    mfxU16    GopOptFlag,
+    iTask&    task,
+    mfxU32    fieldId)
 {
     ArrayDpbFrame const & dpb = task.m_dpb[fieldId];
     ArrayU8x33 &          list0 = task.m_list0[fieldId];
@@ -223,7 +223,7 @@ void ModifyRefPicLists(
     bool isField = (task.PicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF)) != 0;
     bool isIPFieldPair = (task.m_type[ffid] & MFX_FRAMETYPE_I) && (task.m_type[!ffid] & MFX_FRAMETYPE_P);
 
-    if ((video.mfx.GopOptFlag & MFX_GOP_CLOSED) || (task.m_frameOrderI < task.m_frameOrder))
+    if ((GopOptFlag & MFX_GOP_CLOSED) || (task.m_frameOrderI < task.m_frameOrder))
     {
         // remove references to pictures prior to first I frame in decoding order
         // if gop is closed do it for all frames in gop
@@ -318,14 +318,14 @@ void ModifyRefPicLists(
 }
 
 void MarkDecodedRefPictures(
-    mfxVideoParam &       video,
-    iTask &               task,
-    mfxU32                fid)
+    mfxU16    NumRefFrame,
+    iTask &   task,
+    mfxU32    fid)
 {
     // declare shorter names
     ArrayDpbFrame const &  initDpb = task.m_dpb[fid];
     ArrayDpbFrame &        currDpb = (fid == task.m_fid[1]) ? task.m_dpbPostEncoding : task.m_dpb[!fid];
-    mfxU32                 type = task.m_type[fid];
+    mfxU32                 type    = task.m_type[fid];
     DecRefPicMarkingInfo & marking = task.m_decRefPicMrk[fid];
 
     // marking commands will be applied to dpbPostEncoding
@@ -357,7 +357,7 @@ void MarkDecodedRefPictures(
         {
 
             {
-                if (currDpb.Size() == video.mfx.NumRefFrame)
+                if (currDpb.Size() == NumRefFrame)
                 {
                     DpbFrame * toRemove = std::min_element(currDpb.Begin(), currDpb.End(), OrderByFrameNumWrap);
                     DpbFrame * toRemoveDefault = toRemove;

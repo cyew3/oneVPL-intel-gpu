@@ -20,19 +20,27 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #ifndef __PIPELINE_FEI_H__
 #define __PIPELINE_FEI_H__
 
-#include "sample_defs.h"
-#include "sample_fei_defs.h"
-#include "hw_device.h"
-
 #include <mfxfei.h>
+
+#include "refListsManagement_fei.h"
+#include "sample_defs.h"
 
 #include "sample_utils.h"
 #include "base_allocator.h"
+
+#include "vaapi_allocator.h"
+#include "vaapi_device.h"
+
+#include "hw_device.h"
 
 #include "mfxmvc.h"
 #include "mfxvideo.h"
 #include "mfxvideo++.h"
 
+#include "sysmem_allocator.h"
+#include "mfx_itt_trace.h"
+
+#include "math.h"
 #include <vector>
 #include <memory>
 #include <algorithm>
@@ -293,6 +301,7 @@ struct sTask
 
     sTask();
     mfxStatus WriteBitstream();
+    static mfxStatus WriteBitstream(CSmplBitstreamWriter *pWriter, mfxBitstream* mfxBS);
     mfxStatus Reset();
     mfxStatus Init(mfxU32 nBufferSize, CSmplBitstreamWriter *pWriter = NULL);
     mfxStatus Close();
@@ -309,7 +318,7 @@ struct MVP_elem
     {}
 
     mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB * preenc_MVMB;
-    mfxU8 refIdx;
+    mfxU8  refIdx;
     mfxU16 distortion;
 };
 
@@ -363,15 +372,96 @@ enum SurfStrategy
 
 struct ExtSurfPool
 {
+    mfxFrameSurface1* SurfacesPool;
+    mfxU16            LastPicked;
+    mfxU16            PoolSize;
+    SurfStrategy      Strategy;
+
     ExtSurfPool()
         : SurfacesPool(NULL)
         , LastPicked(0xffff)
         , PoolSize(0)
+        , Strategy(PREFER_FIRST_FREE)
     {}
 
-    mfxFrameSurface1* SurfacesPool;
-    mfxU16 LastPicked;
-    mfxU16 PoolSize;
+    ~ExtSurfPool()
+    {
+        DeleteFrames();
+    }
+
+    void DeleteFrames()
+    {
+        MSDK_SAFE_DELETE_ARRAY(SurfacesPool);
+        PoolSize   = 0;
+        LastPicked = 0xffff;
+    }
+
+    mfxFrameSurface1* GetFreeSurface_FEI()
+    {
+        mfxU16 idx;
+
+        switch (Strategy)
+        {
+        case PREFER_NEW:
+            idx = GetFreeSurface_FirstNew();
+            break;
+
+        case PREFER_FIRST_FREE:
+        default:
+            idx = GetFreeSurface(SurfacesPool, PoolSize);
+            break;
+        }
+
+        return (idx != MSDK_INVALID_SURF_IDX) ? SurfacesPool + idx : NULL;
+    }
+
+    mfxU16 GetFreeSurface_FirstNew()
+    {
+        mfxU32 SleepInterval = 10; // milliseconds
+
+        mfxU16 idx = MSDK_INVALID_SURF_IDX;
+
+        //wait if there's no free surface
+        for (mfxU32 i = 0; i < MSDK_SURFACE_WAIT_INTERVAL; i += SleepInterval)
+        {
+            // watch through the buffer for unlocked surface, start with last picked one
+            if (SurfacesPool)
+            {
+                for (mfxU16 j = ((mfxU16)(LastPicked + 1)) % PoolSize, n_watched = 0;
+                    n_watched < PoolSize;
+                    ++j, j %= PoolSize, ++n_watched)
+                {
+                    if (0 == SurfacesPool[j].Data.Locked)
+                    {
+                        LastPicked = j;
+                        mdprintf(stderr, "\n\n Picking surface %u\n\n", j);
+                        return j;
+                    }
+                }
+            }
+            else
+            {
+                msdk_printf(MSDK_STRING("ERROR: Surface Pool is NULL\n"));
+                return MSDK_INVALID_SURF_IDX;
+            }
+
+            if (MSDK_INVALID_SURF_IDX != idx)
+            {
+                break;
+            }
+            else
+            {
+                MSDK_SLEEP(SleepInterval);
+            }
+        }
+
+        if (idx == MSDK_INVALID_SURF_IDX)
+        {
+            msdk_printf(MSDK_STRING("ERROR: No free surfaces in pool (during long period)\n"));
+        }
+
+        return idx;
+    }
 };
 
 /* This class implements a FEI pipeline */
@@ -472,8 +562,9 @@ protected:
     std::vector<mfxExtBuffer*> m_EncExtParams;
     std::vector<mfxExtBuffer*> m_VppExtParams;
 
-    std::list<iTask*> m_inputTasks; //used in PreENC, ENC, PAK, ENCODE (in EncodedOrder)
-    iTask* m_last_task;
+    iTaskPool m_inputTasks; //used in PreENC, ENC, PAK, ENCODE (in EncodedOrder)
+
+    iTaskParams m_taskInitializationParams; // holds all necessery data for task initializing
 
     RefInfo m_ref_info;
 
@@ -482,7 +573,6 @@ protected:
 
     bool m_bEndOfFile;
     bool m_insertIDR;
-    bool m_twoEncoders;
     bool m_disableMVoutPreENC;
     bool m_disableMBStatPreENC;
     bool m_bSeparatePreENCSession;
@@ -493,7 +583,7 @@ protected:
     mfxU8  m_ffid, m_sfid; // holds parity of first / second field: 0 - top_field, 1 - bottom_field
     mfxU32 m_frameCount, m_frameOrderIdrInDisplayOrder;
     PairU8 m_frameType;
-    bool  m_isField;
+    bool   m_isField;
 
     // Dynamic Resolution Change workflow
     mfxU16 m_numMB_drc;
@@ -536,27 +626,25 @@ protected:
     virtual void DeleteFrames();
 
     virtual mfxStatus ReleaseResources();
-    virtual mfxStatus UnlockResources();
 
     virtual mfxStatus AllocateSufficientBuffer(mfxBitstream* pBS);
     virtual mfxStatus UpdateVideoParams();
 
     virtual mfxStatus GetFreeTask(sTask **ppTask);
     virtual PairU8 GetFrameType(mfxU32 pos);
-    BiFrameLocation GetBiFrameLocation(mfxU32 frameOrder);
 
     virtual mfxStatus SynchronizeFirstTask();
 
     virtual mfxStatus GetOneFrame(mfxFrameSurface1* & pSurf);
-    virtual mfxStatus ResizeFrame(mfxU32 frameNum, size_t &rctime, iTask* &eTask, sTask *pCurrentTask);
+    virtual mfxStatus ResizeFrame(mfxU32 frameNum, size_t &rctime);
     virtual mfxStatus ResetExtBufMBnum(bufSet* bufs, mfxU16 new_numMB);
 
-    virtual mfxStatus PreProcessOneFrame(mfxFrameSurface1* & pSurf, bool &cont);
-    virtual mfxStatus PreencOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, bool is_buffered, bool &cont);
+    virtual mfxStatus PreProcessOneFrame(mfxFrameSurface1* & pSurf);
+    virtual mfxStatus PreencOneFrame(iTask* eTask);
     virtual mfxStatus ProcessMultiPreenc(iTask* eTask);
-    virtual mfxStatus EncPakOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
-    virtual mfxStatus EncodeOneFrame(iTask* &eTask, mfxFrameSurface1* pSurf, sTask* pCurrentTask, bool is_buffered, bool &cont);
-    virtual mfxStatus SyncOneEncodeFrame(sTask* pCurrentTask, iTask* eTask, mfxU32 fieldProcessingCounter);
+    virtual mfxStatus EncPakOneFrame(iTask* eTask);
+    virtual mfxStatus EncodeOneFrame(iTask* eTask, mfxFrameSurface1* pSurf);
+    virtual mfxStatus SyncOneEncodeFrame(sTask* pCurrentTask, mfxU32 fieldProcessingCounter);
 
     virtual mfxStatus DecodeOneFrame(ExtendedSurface *pOutSurf);
     virtual mfxStatus DecodeLastFrame(ExtendedSurface *pOutSurf);
@@ -565,29 +653,13 @@ protected:
 
     virtual mfxStatus doGPUHangRecovery();
 
-    virtual mfxU16 GetFreeSurfaceFEI(ExtSurfPool & SurfacesPool);
-    mfxU16 GetFreeSurface_FirstNew(ExtSurfPool & SurfacesPool);
-
-    iTask* CreateAndInitTask();
-    iTask* FindFrameToEncode(bool buffered_frames);
-    iTask* ConfigureTask(iTask* eTask, bool is_buffered);
-    mfxStatus UpdateTaskQueue(iTask* eTask);
-    mfxStatus CopyState(iTask* eTask);
-    mfxStatus RemoveOneTask();
-    mfxStatus ReleasePreencMVPinfo(iTask* eTask);
-    mfxStatus ClearTasks();
     mfxStatus ClearDecoderBuffers();
     mfxStatus ResetBuffers();
-    mfxStatus ProcessLastB();
-    mfxU32 CountUnencodedFrames();
     mfxU16 GetCurPicType(mfxU32 fieldId);
-
-    std::list<iTask*>::iterator ReorderFrame(std::list<iTask*>& unencoded_queue);
-    mfxU32 CountFutureRefs(mfxU32 frameOrder);
 
     mfxStatus InitPreEncFrameParamsEx(iTask* eTask, iTask* refTask[2][2], mfxU8 ref_fid[2][2], bool isDownsamplingNeeded);
     mfxStatus InitEncPakFrameParams(iTask* eTask);
-    mfxStatus InitEncodeFrameParams(mfxFrameSurface1* encodeSurface, sTask* pCurrentTask, PairU8 frameType, bool is_buffered);
+    mfxStatus InitEncodeFrameParams(mfxFrameSurface1* encodeSurface, sTask* pCurrentTask, PairU8 frameType, iTask* eTask);
     mfxStatus ReadPAKdata(iTask* eTask);
     mfxStatus DropENCPAKoutput(iTask* eTask);
     mfxStatus DropPREENCoutput(iTask* eTask);
@@ -598,23 +670,16 @@ protected:
 
     /* ENC(PAK) reflists */
     mfxStatus FillRefInfo(iTask* eTask);
-    mfxStatus ResetRefInfo();
-    mfxU32 GetNBackward(iTask* eTask, mfxU32 fieldId);
-    mfxU32 GetNForward(iTask* eTask, mfxU32 fieldId);
 
-    iTask* GetTaskByFrameOrder(mfxU32 frame_order);
     mfxStatus GetRefTaskEx(iTask *eTask, mfxU8 l0_idx, mfxU8 l1_idx, mfxU8 refIdx[2][2], mfxU8 ref_fid[2][2], iTask *outRefTask[2][2]);
 
     mfxStatus GetBestSetsByDistortion(std::list<PreEncOutput>& preenc_output, BestMVset & BestSet, mfxU32 nPred[2], mfxU32 fieldId, mfxU32 MB_idx);
-
-    void ShowDpbInfo(iTask *task, int frame_order);
 };
 
 bufSet* getFreeBufSet(std::list<bufSet*> bufs);
 mfxExtBuffer * getBufById(setElem* bufSet, mfxU32 id, mfxU32 fieldId);
 
 PairU8 ExtendFrameType(mfxU32 type);
-mfxU32 GetEncodingOrder(mfxU32 displayOrder, mfxU32 begin, mfxU32 end, mfxU32 counter, bool & ref);
 
 mfxStatus repackPreenc2Enc(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB *preencMVoutMB, mfxExtFeiEncMVPredictors::mfxExtFeiEncMVPredictorsMB *EncMVPredMB, mfxU32 NumMB, mfxI16 *tmpBuf);
 mfxI16 get16Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1);
