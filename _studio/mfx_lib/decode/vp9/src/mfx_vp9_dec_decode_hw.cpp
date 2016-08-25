@@ -379,7 +379,7 @@ mfxStatus VideoDECODEVP9_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
 
     MFX_CHECK_NULL_PTR3(p_core, p_video_param, p_request);
 
-    mfxVideoParam p_params = *p_video_param;
+    const mfxVideoParam p_params = *p_video_param;
 
     if (!(p_params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(p_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
     {
@@ -393,6 +393,7 @@ mfxStatus VideoDECODEVP9_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_vid
 
     if (p_params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
     {
+        p_request->Info = p_params.mfx.FrameInfo;
         p_request->NumFrameMin = 1;
         p_request->NumFrameSuggested = p_request->NumFrameMin + (p_params.AsyncDepth ? p_params.AsyncDepth : MFX_AUTO_ASYNC_DEPTH_VALUE);
         p_request->Type = MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE;
