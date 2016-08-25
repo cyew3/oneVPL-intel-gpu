@@ -57,6 +57,7 @@ public:
     mfxVideoParamWrapper m_vPar;
 
     VideoDECODEMJPEGBase();
+    virtual ~VideoDECODEMJPEGBase(){};
 
     virtual mfxStatus Init(mfxVideoParam *decPar, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxFrameAllocRequest *request_internal, bool isUseExternalFrames, VideoCORE *core) = 0;
     virtual mfxStatus ReserveUMCDecoder(UMC::MJPEGVideoDecoderBaseMFX* &pMJPEGVideoDecoder, mfxFrameSurface1 *surf, bool isOpaq) = 0;
