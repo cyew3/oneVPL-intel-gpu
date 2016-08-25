@@ -24,11 +24,6 @@
 
 using namespace UMC;
 
-namespace UMC
-{
-    BaseCodec *CreateColorSpaceConversion() { return (new ColorSpaceConversion); }
-}
-
 template <class T> inline
 void SwapValues(T &one, T& two)
 {

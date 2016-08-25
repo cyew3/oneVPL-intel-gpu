@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -15,15 +15,11 @@
 #ifdef UMC_VA_DXVA
 
 #include "umc_d3d_video_processing.h"
+#include "umc_color_space_conversion.h"
 #include "umc_video_data.h"
 #include "umc_defs.h"
 
 using namespace UMC;
-
-namespace UMC
-{
-    BaseCodec *CreateD3DVideoProcessing() { return (new D3DVideoProcessing); }
-}
 
 #define CHECK_HRESULT(hr) \
 { \
@@ -197,7 +193,7 @@ Status D3DVideoProcessing::GetFrame(MediaData *in, MediaData *out)
         // Copy data (or color conversion)
         if (!m_pColorConverter)
         {
-            m_pColorConverter = CreateColorSpaceConversion();
+            m_pColorConverter = new ColorSpaceConversion;
             if (!m_pColorConverter) umcRes = UMC_ERR_ALLOC;
         }
         if (UMC_SUCCEEDED(umcRes))

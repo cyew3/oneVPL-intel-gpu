@@ -564,78 +564,10 @@
 
 #ifdef __cplusplus
 
-// forward declarations
 namespace UMC
 {
-class Splitter;
-class BaseCodec;
-class VideoDecoder;
-class VideoEncoder;
-class AudioCodec;
-class Muxer;
-class MediaBuffer;
 
-// create instance of particular component
-// should be deleted via delete operator
-
-Splitter *CreateMPEG2Splitter();
-Splitter *CreateMPEG2SplitterNT();
-Splitter *CreateMPEG4Splitter();
-Splitter *CreateAVISplitter();
-Splitter *CreateVC1Splitter();
-Splitter *CreateASFSplitter();
-
-VideoDecoder *CreateMPEG2Decoder();
-VideoDecoder *CreateMPEG4Decoder();
-VideoDecoder *CreateH261Decoder();
-VideoDecoder *CreateH263Decoder();
-VideoDecoder *CreateH264Decoder();
-VideoDecoder *CreateVC1Decoder();
-VideoDecoder *CreateDVDecoder();
-VideoDecoder *CreateDV50Decoder();
-VideoDecoder *CreateDV100Decoder();
-
-BaseCodec *CreateVideoProcessing(); // full video processing
-BaseCodec *CreateD3DVideoProcessing();
-BaseCodec *CreateDeinterlacing();
-BaseCodec *CreateColorSpaceConversion();
-BaseCodec *CreateVideoResizing();
-
-VideoEncoder *CreateMPEG2Encoder();
-VideoEncoder *CreateMPEG4Encoder();
-VideoEncoder *CreateH261Encoder();
-VideoEncoder *CreateH263Encoder();
-VideoEncoder *CreateH264Encoder();
-VideoEncoder *CreateVC1Encoder();
-VideoEncoder *CreateDVEncoder();
-VideoEncoder *CreateDV50Encoder();
-VideoEncoder *CreateDV100Encoder();
-
-AudioCodec *CreateAACDecoder();
-AudioCodec *CreateAACEncoder();
-AudioCodec *CreateMP3Decoder();
-AudioCodec *CreateMP3Encoder();
-AudioCodec *CreateAC3Decoder();
-AudioCodec *CreatePCMDecoder();
-
-// version without floating point operations
-AudioCodec *CreateAACDecoderInt();
-AudioCodec *CreateAACEncoderInt();
-AudioCodec *CreateMP3DecoderInt();
-AudioCodec *CreateMP3EncoderInt();
-
-Muxer *CreateMPEG2Muxer();
-Muxer *CreateMPEG4Muxer();
-Muxer *CreateAVIMuxer();
-
-MediaBuffer *CreateLinearBuffer();
-MediaBuffer *CreateSampleBuffer();
-MediaBuffer *CreateVideoBuffer();
-
-// Convert decoder to asynchronous decoder.
-VideoDecoder *CreateAsynchronousVideoDecoder(VideoDecoder *pDecoder);
-
-} // namespace UMC
+};
 
 #endif //__cplusplus
 

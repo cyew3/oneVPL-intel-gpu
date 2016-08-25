@@ -23,7 +23,6 @@
 #include "vm_types.h"
 #include "umc_vc1_dec_task_store.h"
 #include "umc_vc1_dec_task.h"
-#include "umc_color_space_conversion.h"
 #include "mfx_trace.h"
 
 #include "umc_memory_allocator.h"

@@ -5,9 +5,9 @@ set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 mfx_include_dirs( )
 
 list( APPEND mdirs
-  scheduler vpp decode/vc1 encode_hw/mjpeg
+  scheduler vpp encode_hw/mjpeg
   decode/h264 decode/mpeg2 decode/mjpeg cmrt_cross_platform encode_hw/h264 encode_hw/mpeg2
-  encode/h264 enc/mpeg2 pak/mpeg2 enc_hw/mpeg2 encode/mpeg2 encode/mjpeg  ## open-source-cut-line
+  decode/vc1 encode/h264 enc/mpeg2 pak/mpeg2 enc_hw/mpeg2 encode/mpeg2 encode/mjpeg  ## open-source-cut-line
   brc/h264 brc/mpeg2 audio_decode/aac audio_decode/mp3 audio_encode/aac  ## open-source-cut-line
   )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_preenc )
@@ -18,8 +18,9 @@ foreach( dir ${mdirs} )
 endforeach( )
 
 list( APPEND cdirs
-  brc h264_enc vc1_dec vc1_common color_space_converter mpeg2_dec
-  mpeg2_enc jpeg_enc aac_dec common aac_common mp3_common mp3_dec aac_enc  ## open-source-cut-line
+  brc h264_enc mpeg2_dec
+  color_space_converter mpeg2_enc jpeg_enc vc1_dec vc1_common  ## open-source-cut-line
+  aac_dec common aac_common mp3_common mp3_dec aac_enc  ## open-source-cut-line
   )
 foreach( dir ${cdirs} )
   include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/codec/${dir}/include )
@@ -53,7 +54,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/shared/src )
     ${prefix}/mfx_brc_common.cpp
     ${prefix}/mfx_h264_enc_common.cpp
     ${prefix}/mfx_mpeg2_dec_common.cpp
-    ${prefix}/mfx_vc1_dec_common.cpp
+    ${prefix}/mfx_vc1_dec_common.cpp    ## open-source-cut-line
     #=================
   )
 endforeach()
@@ -98,15 +99,11 @@ foreach( variant
   list( APPEND LIBS
     mfx_trace_hw
     bitrate_control
-    color_space_converter_${variant}
     h264_dec_${variant}
     h264_enc_sw
     jpeg_common
     jpeg_dec_${variant}
     mpeg2_dec_${variant}
-    scene_analyzer
-    vc1_common
-    vc1_dec_${variant}
     umc
     vm
     vm_plus
@@ -119,6 +116,10 @@ foreach( variant
     h264_la
     genx_h264_encode_embeded
 ## open-source-cut-start
+    vc1_common
+    vc1_dec_${variant}
+    scene_analyzer
+    color_space_converter_${variant}
     media_buffers
     encode
     vc1_enc
@@ -131,10 +132,10 @@ foreach( variant
     h264_px
     h264_sse3
     pak
+    vc1_shared
 ## open-source-cut-end
     mfx_common
     mfx_common_${variant}
-    vc1_shared
     vpp_${variant}
     h264_preenc
     h264_enc

@@ -7,6 +7,7 @@ list( APPEND dirs_splmux
   mpeg4_spl  
   spl_common
   vc1_spl
+  vc1_common
   )
 
 list( APPEND adirs
@@ -26,6 +27,7 @@ list( APPEND dirs
   mpeg4_spl
   spl_common
   vc1_spl
+  vc1_common
   )
 
 # =============================================================================

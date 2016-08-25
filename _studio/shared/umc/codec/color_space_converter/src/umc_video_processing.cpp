@@ -13,18 +13,17 @@
 
 #include "umc_video_resizing.h"
 #include "umc_deinterlacing.h"
+#ifdef UMC_VA_DXVA
 #include "umc_d3d_video_processing.h"
+#endif
+#include "umc_color_space_conversion.h"
+#include "umc_deinterlacing.h"
 
 using namespace UMC;
 
 namespace UMC
 {
   BaseCodec *createVideoProcessing()
-  {
-    return (new VideoProcessing);
-  }
-
-  BaseCodec *CreateVideoProcessing()
   {
     return (new VideoProcessing);
   }
@@ -41,7 +40,7 @@ VideoProcessing::VideoProcessing()
 #ifndef UMC_RESTRICTED_CODE_VA
 #ifdef UMC_VA_DXVA
   iD3DProcessing = numFilters++;
-  pFilter[iD3DProcessing] = CreateD3DVideoProcessing();
+  pFilter[iD3DProcessing] = new D3DVideoProcessing;
 #endif
 #endif
   iDeinterlacing = numFilters++;
@@ -49,12 +48,12 @@ VideoProcessing::VideoProcessing()
   iColorConv = numFilters++;
   iResizing = numFilters++;
   // create filters
-  pFilter[iDeinterlacing] = CreateDeinterlacing();
-  pFilter[iColorConv0] = CreateColorSpaceConversion(); // first color conversion
+  pFilter[iDeinterlacing] = new Deinterlacing;
+  pFilter[iColorConv0] = new ColorSpaceConversion; // first color conversion
   pFilter[iColorConv] = pFilter[iColorConv0]; // second color conversion
 
 #if defined (UMC_ENABLE_VPP_RESIZE)
-  pFilter[iResizing] = CreateVideoResizing();
+  pFilter[iResizing] = new VideoResizing;
 #endif
 }
 

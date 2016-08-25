@@ -26,10 +26,10 @@ include_directories( ${MSDK_LIB_ROOT}/fei/h265/include )
 
 list( APPEND umc_dirs
   common
-  brc scene_analyzer color_space_converter
+  brc scene_analyzer
   mpeg2_dec h264_dec h264_enc 
-  vc1_common vc1_dec vc1_spl
-  mpeg2_enc jpeg_enc            ## open-source-cut-line
+  vc1_common vc1_dec vc1_spl                       ## open-source-cut-line
+  mpeg2_enc jpeg_enc color_space_converter         ## open-source-cut-line
   h265_dec
   jpeg_common jpeg_dec )
 
@@ -44,11 +44,12 @@ foreach( dir ${umc_dirs} )
 endforeach( )
 
 list( APPEND vdecs
-  h264 mpeg2 vc1 mjpeg vp8 vp9
+  h264 mpeg2 mjpeg vp8 vp9
+  vc1                       ## open-source-cut-line
   )
 
 list( APPEND vencs
-  h264 mpeg2 vc1 mjpeg mvc svc
+  h264 mpeg2 mjpeg mvc svc
   )
 
 foreach( dec ${vdecs} )
@@ -206,8 +207,8 @@ foreach( variant ${hevcd_variants} )
   set( LIBS "" )
 
   list( APPEND LIBS
-    umc_h265_${variant}
-    color_space_converter_sw )
+      color_space_converter_sw  ## open-source-cut-line
+      umc_h265_${variant} )
 
   if( variant MATCHES sw )
     list( APPEND LIBS
@@ -484,7 +485,7 @@ foreach( variant hw )
   list( APPEND LIBS
     h264_la
     brc				## open-source-cut-line
-    color_space_converter_sw
+    color_space_converter_sw    ## open-source-cut-line
     h264_enc_sw
     media_buffers               ## open-source-cut-line
     umc_io
@@ -721,7 +722,7 @@ foreach( variant
 
   list( APPEND LIBS
     vpx  ## open-source-cut-line
-    color_space_converter_sw
+    color_space_converter_sw  ## open-source-cut-line
     media_buffers      ## open-source-cut-line
     umc_io
     umc

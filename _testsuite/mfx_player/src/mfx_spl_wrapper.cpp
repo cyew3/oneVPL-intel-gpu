@@ -19,8 +19,7 @@ File Name: .h
 
 #include "umc_splitter.h"
 #include "umc_avi_splitter.h"
-#include "umc_demuxer.h"
-#include "umc_avi_splitter.h"
+#include "umc_threaded_demuxer.h"
 #include "umc_ivf_splitter.h"
 #include "umc_file_reader.h"
 #include "umc_corruption_reader.h"
@@ -30,6 +29,13 @@ File Name: .h
 #include "mfxvp9.h"
 
 using namespace UMC;
+
+namespace UMC
+{
+    Splitter *CreateVC1Splitter();
+    Splitter *CreateASFSplitter();
+    Splitter *CreateMPEG4Splitter();
+}
 
 #undef  UMC_CALL
 #define UMC_CALL(FUNC)\
@@ -100,7 +106,7 @@ mfxStatus UMCSplWrapper::Init(const vm_char *strFileName)
         
         MFX_CHECK_WITH_ERR(iMpegSplitterParams = new MpegSplitterParams(), MFX_ERR_MEMORY_ALLOC);
         MFX_CHECK_WITH_ERR(iMpegSplitterParams->m_mediaData = new MediaDataEx(), MFX_ERR_MEMORY_ALLOC);
-        MFX_CHECK_WITH_ERR(m_pSplitter         = CreateMPEG2Splitter(), MFX_ERR_MEMORY_ALLOC);
+        MFX_CHECK_WITH_ERR(m_pSplitter         = new UMC::ThreadedDemuxer(), MFX_ERR_MEMORY_ALLOC);
         MFX_CHECK_WITH_ERR(m_pConstructor      = new MFXFrameConstructor(), MFX_ERR_MEMORY_ALLOC);
 
         m_pInputData        = iMpegSplitterParams->m_mediaData;
@@ -110,7 +116,7 @@ mfxStatus UMCSplWrapper::Init(const vm_char *strFileName)
     case AVI_STREAM:
         MFX_CHECK_WITH_ERR(m_pInputData     = new MediaDataEx, MFX_ERR_MEMORY_ALLOC);
         MFX_CHECK_WITH_ERR(m_pInitParams    = new SplitterParams(), MFX_ERR_MEMORY_ALLOC);
-        MFX_CHECK_WITH_ERR(m_pSplitter      = CreateAVISplitter(), MFX_ERR_MEMORY_ALLOC);
+        MFX_CHECK_WITH_ERR(m_pSplitter      = new UMC::AVISplitter(), MFX_ERR_MEMORY_ALLOC);
         MFX_CHECK_WITH_ERR(m_pConstructor   = new MFXFrameConstructor(), MFX_ERR_MEMORY_ALLOC);
         break;
 

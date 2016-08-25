@@ -27,10 +27,7 @@
 #include "vm_file.h"
 
 #if defined (MFX_VA)
-#include "umc_d3d_video_processing.h"
-
 #include "mfx_vpp_jpeg_d3d9.h"
-
 #endif
 
 mfx_UMC_MemAllocator::mfx_UMC_MemAllocator():m_pCore(NULL)
