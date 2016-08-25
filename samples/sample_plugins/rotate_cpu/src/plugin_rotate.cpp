@@ -401,11 +401,9 @@ mfxStatus Processor::Init(mfxFrameSurface1 *frame_in, mfxFrameSurface1 *frame_ou
 mfxStatus Processor::LockFrame(mfxFrameSurface1 *frame)
 {
     MSDK_CHECK_POINTER(frame, MFX_ERR_NULL_PTR);
-    //double lock impossible
-    if (frame->Data.Y != 0 && frame->Data.MemId !=0)
-        return MFX_ERR_UNSUPPORTED;
+
     //no allocator used, no need to do lock
-    if (frame->Data.Y != 0)
+    if (frame->Data.Y != 0 && !frame->Data.MemId)
         return MFX_ERR_NONE;
     //lock required
     MSDK_CHECK_POINTER(m_pAlloc, MFX_ERR_NULL_PTR);
