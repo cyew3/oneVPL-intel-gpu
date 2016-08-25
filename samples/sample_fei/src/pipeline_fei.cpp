@@ -353,7 +353,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(AppConfig *pConfig)
         m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
     }
 
-    if (pConfig->bDECODE && !(m_bVPPneeded || pConfig->preencDSstrength))
+    if (pConfig->bDECODE && !m_bVPPneeded)
     {
         // in case of decoder without VPP copy FrameInfo from decoder
         MSDK_MEMCPY_VAR(m_mfxEncParams.mfx.FrameInfo, &m_mfxDecParams.mfx.FrameInfo, sizeof(mfxFrameInfo));
