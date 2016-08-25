@@ -81,6 +81,11 @@ private:
     }
 };
 
+inline bool is_skylake_only(mfxVideoParam* par)
+{
+    return par->mfx.FrameInfo.ChromaFormat > 1;
+}
+
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
     {/* 0*/ MFX_ERR_NONE, },
@@ -174,7 +179,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*32*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_HEVC_REXT} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV422} },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_NV16} } }
+          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_YUY2} } }
     },
     {/*33*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_HEVC_REXT} },
@@ -205,7 +210,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV422} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {8} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {8} },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_NV16} } }
+          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_YUY2} } }
     },
     {/*38*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_HEVC_REXT} },
@@ -233,7 +238,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
     {/*42*/ MFX_ERR_NONE,
         { { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV422} },
-          { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_NV16} } }
+          { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_YUY2} } }
     },
     {/*43*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV422} },
@@ -268,6 +273,14 @@ int TestSuite::RunTest(unsigned int id)
     }
 
     g_tsStatus.expect(tc.sts);
+    if ((g_tsImpl == MFX_IMPL_HARDWARE) && m_pPar && is_skylake_only(m_pPar) && (g_tsHWtype < MFX_HW_ICL))
+    {
+        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+        auto sts = MFXVideoDECODE_Query(m_session, m_pPar, m_pParOut);
+        g_tsLog<<"WARNING: Unsupported HW Platform!\n";
+        g_tsStatus.check(sts);
+        return 0;
+    }
     Query(m_session, m_pPar, m_pParOut);
 
     for(mfxU32 i = 0; i < max_num_ctrl; i ++)

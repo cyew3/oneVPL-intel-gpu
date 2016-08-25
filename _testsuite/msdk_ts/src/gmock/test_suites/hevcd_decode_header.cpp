@@ -252,32 +252,35 @@ void TestSuite::repackFieldSeq(mfxU32 fs)
     repackNALU(nalu);
 }
 
-const char TestSuite::path[] = "conformance/hevc/itu/";
+const char TestSuite::path[] = "conformance/hevc/";
 
 #define EXT_BUF(eb) tsExtBufTypeToId<eb>::id, sizeof(eb)
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
-    {/* 0*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin",},
-    {/* 1*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {ATTACH_EXT_BUF, 0, {2, EXT_BUF(mfxExtCodingOptionSPSPPS), EXT_BUF(mfxExtVideoSignalInfo)}, {}, {}}},
-    {/* 2*/ MFX_ERR_NONE,  "DBLK_A_SONY_3.bit",},
-    {/* 3*/ MFX_ERR_NONE,  "DBLK_A_SONY_3.bit", {ATTACH_EXT_BUF, 0, {2, EXT_BUF(mfxExtCodingOptionSPSPPS), EXT_BUF(mfxExtVideoSignalInfo)}, {}, {}}},
+    {/* 0*/ MFX_ERR_NONE,  "itu/HRD_A_Fujitsu_3.bin",},
+    {/* 1*/ MFX_ERR_NONE,  "itu/HRD_A_Fujitsu_3.bin", {ATTACH_EXT_BUF, 0, {2, EXT_BUF(mfxExtCodingOptionSPSPPS), EXT_BUF(mfxExtVideoSignalInfo)}, {}, {}}},
+    {/* 2*/ MFX_ERR_NONE,  "itu/DBLK_A_SONY_3.bit",},
+    {/* 3*/ MFX_ERR_NONE,  "itu/DBLK_A_SONY_3.bit", {ATTACH_EXT_BUF, 0, {2, EXT_BUF(mfxExtCodingOptionSPSPPS), EXT_BUF(mfxExtVideoSignalInfo)}, {}, {}}},
     {/* 4*/ MFX_ERR_INVALID_HANDLE, "", {CLOSE}},
     {/* 5*/ MFX_ERR_NULL_PTR, "", {CHANGE_PAR}},
     {/* 6*/ MFX_ERR_NULL_PTR, "", {CHANGE_BS}},
-    {/* 7*/ MFX_ERR_MORE_DATA, "HRD_A_Fujitsu_3.bin", {CHANGE_BS, &tsStruct::mfxBitstream.DataLength, {16} }},
-    {/* 8*/ MFX_ERR_UNDEFINED_BEHAVIOR, "HRD_A_Fujitsu_3.bin", {CHANGE_BS, &tsStruct::mfxBitstream.DataLength, {max_bs_size + 1} }},
-    {/* 9*/ MFX_ERR_UNDEFINED_BEHAVIOR, "HRD_A_Fujitsu_3.bin", {CHANGE_BS, &tsStruct::mfxBitstream.DataOffset, {max_bs_size + 1} }},
-    {/*10*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {REPACK_CROPS_CW, 0, {2, 4, 5, 3}}},
-    {/*11*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {REPACK_CROPS_DW, 0, {5, 2, 7, 16}}},
-    {/*12*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", { REPACK_CROPS_DW, 0, { 0, 0, 16, 16}}},
-    {/*13*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", { REPACK_CROPS_DW, 0, { 48, 48, 0, 0}}},
-    {/*14*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {{REPACK_CROPS_CW, 0, {2, 4, 5, 3}}, {REPACK_CROPS_DW, 0, {5, 2, 7, 16}} }},
-    {/*15*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {REPACK_AR, 0, {13}}},
-    {/*16*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {REPACK_AR, 0, {255, 4, 3}}},
-    {/*17*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {REPACK_AR, 0, {255, 16, 9}}},
-    {/*18*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {{REPACK_VSI, 0, {4,1,1,3,3,3}}, {ATTACH_EXT_BUF, 0, {1, EXT_BUF(mfxExtVideoSignalInfo)}}}},
-    {/*19*/ MFX_ERR_NONE,  "HRD_A_Fujitsu_3.bin", {REPACK_FS, 0, {1}}},
+    {/* 7*/ MFX_ERR_MORE_DATA, "itu/HRD_A_Fujitsu_3.bin", {CHANGE_BS, &tsStruct::mfxBitstream.DataLength, {16} }},
+    {/* 8*/ MFX_ERR_UNDEFINED_BEHAVIOR, "itu/HRD_A_Fujitsu_3.bin", {CHANGE_BS, &tsStruct::mfxBitstream.DataLength, {max_bs_size + 1} }},
+    {/* 9*/ MFX_ERR_UNDEFINED_BEHAVIOR, "itu/HRD_A_Fujitsu_3.bin", {CHANGE_BS, &tsStruct::mfxBitstream.DataOffset, {max_bs_size + 1} }},
+    {/*10*/ MFX_ERR_NONE,  "itu/HRD_A_Fujitsu_3.bin", {REPACK_CROPS_CW, 0, {2, 4, 5, 3}}},
+    {/*11*/ MFX_ERR_NONE,  "itu/HRD_A_Fujitsu_3.bin", {REPACK_CROPS_DW, 0, {5, 2, 7, 16}}},
+    {/*12*/ MFX_ERR_NONE,  "itu/HRD_A_Fujitsu_3.bin", { REPACK_CROPS_DW, 0, { 0, 0, 16, 16}}},
+    {/*13*/ MFX_ERR_NONE,  "itu/HRD_A_Fujitsu_3.bin", { REPACK_CROPS_DW, 0, { 48, 48, 0, 0}}},
+    {/*14*/ MFX_ERR_NONE,  "itu/HRD_A_Fujitsu_3.bin", {{REPACK_CROPS_CW, 0, {2, 4, 5, 3}}, {REPACK_CROPS_DW, 0, {5, 2, 7, 16}} }},
+    {/*15*/ MFX_ERR_NONE,  "itu/HRD_A_Fujitsu_3.bin", {REPACK_AR, 0, {13}}},
+    {/*16*/ MFX_ERR_NONE,  "itu/HRD_A_Fujitsu_3.bin", {REPACK_AR, 0, {255, 4, 3}}},
+    {/*17*/ MFX_ERR_NONE,  "itu/HRD_A_Fujitsu_3.bin", {REPACK_AR, 0, {255, 16, 9}}},
+    {/*18*/ MFX_ERR_NONE,  "itu/HRD_A_Fujitsu_3.bin", {{REPACK_VSI, 0, {4,1,1,3,3,3}}, {ATTACH_EXT_BUF, 0, {1, EXT_BUF(mfxExtVideoSignalInfo)}}}},
+    {/*19*/ MFX_ERR_NONE,  "itu/HRD_A_Fujitsu_3.bin", {REPACK_FS, 0, {1}}},
+    {/*20*/ MFX_ERR_NONE,  "422format/inter_422_8.bin",},
+    {/*21*/ MFX_ERR_NONE,  "10bit/DBLK_A_MAIN10_VIXS_3.bit",},
+    {/*22*/ MFX_ERR_NONE,  "10bit/GENERAL_10b_422_RExt_Sony_1.bit",},
 };
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
@@ -389,11 +392,58 @@ int TestSuite::RunTest(unsigned int id)
             , m_par.mfx.FrameInfo.CropH);
 
         EXPECT_EQ((mfxU16)!sps.vui.field_seq_flag, m_par.mfx.FrameInfo.PicStruct);
-        EXPECT_EQ(MFX_FOURCC_NV12, m_par.mfx.FrameInfo.FourCC);
 
         EXPECT_EQ(sps.bit_depth_luma_minus8 + 8, m_par.mfx.FrameInfo.BitDepthLuma);
         EXPECT_EQ(sps.bit_depth_chroma_minus8 + 8, m_par.mfx.FrameInfo.BitDepthChroma);
 
+        if (m_par.mfx.FrameInfo.ChromaFormat == 1)
+        {
+            if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
+            {
+                EXPECT_EQ(MFX_FOURCC_NV12, m_par.mfx.FrameInfo.FourCC);
+            }
+            else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
+            {
+                EXPECT_EQ(MFX_FOURCC_P010, m_par.mfx.FrameInfo.FourCC);
+            }
+            else
+            {
+                ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = " 
+                    << m_par.mfx.FrameInfo.ChromaFormat;
+            }
+        }
+        else if (m_par.mfx.FrameInfo.ChromaFormat == 2)
+        {
+            if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
+            {
+                EXPECT_EQ(MFX_FOURCC_YUY2, m_par.mfx.FrameInfo.FourCC);
+            }
+            else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
+            {
+                EXPECT_EQ(MFX_FOURCC_Y216, m_par.mfx.FrameInfo.FourCC);
+            }
+            else
+            {
+                ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = " 
+                    << m_par.mfx.FrameInfo.ChromaFormat;
+            }
+        }
+        else if (m_par.mfx.FrameInfo.ChromaFormat == 3)
+        {
+            if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
+            {
+                EXPECT_EQ(MFX_FOURCC_AYUV, m_par.mfx.FrameInfo.FourCC);
+            }
+            else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
+            {
+                EXPECT_EQ(MFX_FOURCC_Y410, m_par.mfx.FrameInfo.FourCC);
+            }
+            else
+            {
+                ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = " 
+                    << m_par.mfx.FrameInfo.ChromaFormat;
+            }
+        }
         if((mfxExtCodingOptionSPSPPS*)m_par)
         {
             mfxExtCodingOptionSPSPPS& ecoSP = m_par;
