@@ -1197,7 +1197,7 @@ mfxStatus D3D11SvcEncoder::CreateAccelerationService(
                 mfxU32 ppsid = d * m_numql * m_numtl + q * m_numtl + t;
                 mfxU32 tid   = extSvc->DependencyLayer[did].TemporalId[t]; // BUILD DX11 FIX
                 //::FillSpsBuffer(par, m_sps[d], d); // BUILD DX11 FIX
-                ::FillSpsBuffer(par, m_sps[ppsid], did, q, tid); // BUILD DX11 FIX
+                MFX_CHECK_STS(::FillSpsBuffer(par, m_sps[ppsid], did, q, tid)); // BUILD DX11 FIX
                 //::FillConstPartOfPpsBuffer(par, m_sps[d], m_pps[ppsid], d, q, t, ppsid); // BUILD DX11 FIX
                 ::FillConstPartOfPpsBuffer(par, m_pps[ppsid], did, q, tid); // BUILD DX11 FIX
             }

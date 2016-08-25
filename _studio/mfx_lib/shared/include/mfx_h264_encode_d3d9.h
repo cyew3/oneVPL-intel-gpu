@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -27,6 +27,7 @@
 #include "mfx_h264_enc_common_hw.h"
 #include "mfx_h264_encode_interface.h"
 
+#define IDX_NOT_FOUND 0xffffffff
 
 namespace MfxHwH264Encode
 {
@@ -124,7 +125,7 @@ namespace MfxHwH264Encode
         std::vector<ENCODE_SET_SLICE_HEADER_H264> & slice);
 
 
-    void FillSpsBuffer(
+    mfxStatus FillSpsBuffer(
         MfxVideoParam const &                par,
         ENCODE_SET_SEQUENCE_PARAMETERS_SVC & sps,
         mfxU32                               did,

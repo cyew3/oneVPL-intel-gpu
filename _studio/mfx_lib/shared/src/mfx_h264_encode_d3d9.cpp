@@ -573,7 +573,8 @@ namespace
                 extRc.Layer[i].QualityId    == qid &&
                 extRc.Layer[i].TemporalId   == tid)
                 return i;
-        return 0xffffffff;
+        assert(!"index not found");
+        return IDX_NOT_FOUND;
     };
 
     mfxU8 * PackSliceNalUnitPrefix(
@@ -620,7 +621,7 @@ namespace
 };
 
 
-void MfxHwH264Encode::FillSpsBuffer(
+mfxStatus MfxHwH264Encode::FillSpsBuffer(
     MfxVideoParam const &                par,
     ENCODE_SET_SEQUENCE_PARAMETERS_SVC & sps,
     mfxU32                               did,
@@ -633,6 +634,8 @@ void MfxHwH264Encode::FillSpsBuffer(
     mfxExtSVCRateControl const *  extRc  = GetExtBuffer(par);
 
     mfxU32 rcIdx = FindLayerBrcParam(*extRc, did, qid, tid);
+    if (rcIdx == IDX_NOT_FOUND)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
 
     Zero(sps);
 
@@ -701,6 +704,8 @@ void MfxHwH264Encode::FillSpsBuffer(
     sps.time_scale        = extSps->vui.timeScale;;
     sps.num_units_in_tick = extSps->vui.numUnitsInTick;
     sps.cpb_cnt_minus1    = extSps->vui.nalHrdParameters.cpbCntMinus1;
+
+    return MFX_ERR_NONE;
 }
 
 
@@ -1849,7 +1854,7 @@ mfxStatus D3D9SvcEncoder::CreateAccelerationService(MfxVideoParam const & par)
                 mfxU32 tid   = extSvc->DependencyLayer[did].TemporalId[t];
                 mfxU32 ppsid = GetPpsId(par, d, qid, t);
 
-                FillSpsBuffer(par, m_sps[ppsid], did, qid, tid);
+                MFX_CHECK_STS(FillSpsBuffer(par, m_sps[ppsid], did, qid, tid));
                 FillConstPartOfPpsBuffer(par, m_pps[ppsid], did, qid, tid);
             }
         }
