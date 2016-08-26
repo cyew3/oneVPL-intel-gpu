@@ -784,9 +784,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if ((pConfig->nWidth || pConfig->nHeight || (pConfig->nPicStruct != MFX_PICSTRUCT_UNKNOWN)) && pConfig->bDECODE)
+    if ((pConfig->nWidth || pConfig->nHeight) && pConfig->bDECODE)
     {
-        msdk_printf(MSDK_STRING("\nWARNING: input width, height and picstruct will be taken from input stream (-w -h -bff -tff settings ignored (but -mixed is valid))\n"));
+        msdk_printf(MSDK_STRING("\nWARNING: input width, height and picstruct will be taken from input stream (-w -h settings ignored)\n"));
     }
 
     if (pConfig->dFrameRate <= 0)

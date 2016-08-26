@@ -637,7 +637,7 @@ protected:
 
     virtual mfxStatus GetOneFrame(mfxFrameSurface1* & pSurf);
     virtual mfxStatus ResizeFrame(mfxU32 frameNum, size_t &rctime);
-    virtual mfxStatus ResetExtBufMBnum(bufSet* bufs, mfxU16 new_numMB);
+    virtual mfxStatus ResetExtBufMBnum(bufSet* bufs, mfxU16 new_numMB, bool both_fields);
 
     virtual mfxStatus PreProcessOneFrame(mfxFrameSurface1* & pSurf);
     virtual mfxStatus PreencOneFrame(iTask* eTask);

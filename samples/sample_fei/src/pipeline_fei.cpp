@@ -357,15 +357,8 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(AppConfig *pConfig)
     {
         // in case of decoder without VPP copy FrameInfo from decoder
         MSDK_MEMCPY_VAR(m_mfxEncParams.mfx.FrameInfo, &m_mfxDecParams.mfx.FrameInfo, sizeof(mfxFrameInfo));
+        m_mfxEncParams.mfx.FrameInfo.PicStruct = pConfig->nPicStruct;
 
-        if (pConfig->nPicStruct & MFX_PICSTRUCT_UNKNOWN)
-        {
-            m_mfxEncParams.mfx.FrameInfo.PicStruct = pConfig->nPicStruct;
-        }
-        else
-        {
-            pConfig->nPicStruct = m_mfxEncParams.mfx.FrameInfo.PicStruct;
-        }
         pConfig->nWidth  = pConfig->nDstWidth  = m_mfxEncParams.mfx.FrameInfo.CropW;
         pConfig->nHeight = pConfig->nDstHeight = m_mfxEncParams.mfx.FrameInfo.CropH;
     }
@@ -503,11 +496,8 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(AppConfig *pConfig)
     if (pConfig->bDECODE)
     {
         MSDK_MEMCPY_VAR(m_mfxVppParams.vpp.In, &m_mfxDecParams.mfx.FrameInfo, sizeof(mfxFrameInfo));
+        m_mfxVppParams.vpp.In.PicStruct = pConfig->nPicStruct;
 
-        if (pConfig->nPicStruct & MFX_PICSTRUCT_UNKNOWN)
-        {
-            m_mfxVppParams.vpp.In.PicStruct = pConfig->nPicStruct;
-        }
         pConfig->nWidth  = m_mfxVppParams.vpp.Out.CropW;
         pConfig->nHeight = m_mfxVppParams.vpp.Out.CropH;
     }
@@ -3096,7 +3086,7 @@ mfxStatus CEncodingPipeline::InitPreEncFrameParamsEx(iTask* eTask, iTask* refTas
 
     if (m_appCfg.nPicStruct == MFX_PICSTRUCT_UNKNOWN)
     {
-        mfxStatus sts = ResetExtBufMBnum(eTask->preenc_bufs, eTask->m_fieldPicFlag ? m_numMB : m_numMB_frame);
+        mfxStatus sts = ResetExtBufMBnum(eTask->preenc_bufs, eTask->m_fieldPicFlag ? m_numMB : m_numMB_frame, false);
         MSDK_CHECK_STATUS(sts, "ResetExtBufMBnum failed");
     }
 
@@ -3597,9 +3587,9 @@ mfxStatus CEncodingPipeline::InitEncodeFrameParams(mfxFrameSurface1* encodeSurfa
     MSDK_CHECK_POINTER(freeSet, MFX_ERR_NULL_PTR);
 
     if (m_bNeedDRC && m_bDRCReset)
-        sts = ResetExtBufMBnum(freeSet, m_numMB_drc);
+        sts = ResetExtBufMBnum(freeSet, m_numMB_drc, true);
     else if (m_appCfg.nPicStruct == MFX_PICSTRUCT_UNKNOWN)
-        sts = ResetExtBufMBnum(freeSet, (encodeSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? m_numMB_frame: m_numMB);
+        sts = ResetExtBufMBnum(freeSet, (encodeSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? m_numMB_frame: m_numMB, false);
     MSDK_CHECK_STATUS(sts, "ResetExtBufMBnum failed");
 
     /* In case of ENCODE in DisplayOrder mode, sTask perform ext buffers management, otherwise iTask does it */
@@ -4126,7 +4116,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask)
     return sts;
 }
 
-mfxStatus CEncodingPipeline::ResetExtBufMBnum(bufSet* freeSet, mfxU16 new_numMB)
+mfxStatus CEncodingPipeline::ResetExtBufMBnum(bufSet* freeSet, mfxU16 new_numMB, bool both_fields)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -4140,8 +4130,10 @@ mfxStatus CEncodingPipeline::ResetExtBufMBnum(bufSet* freeSet, mfxU16 new_numMB)
     mfxExtFeiPreEncMV*           mvs        = NULL;
     mfxExtFeiPreEncMBStat*       mbdata     = NULL;
 
+    mfxU16 increment = both_fields ? 1 : m_numOfFields;
+
     setElem &bufsIn = freeSet->PB_bufs.in;
-    for (mfxU16 i = 0; i < bufsIn.NumExtParam; i++)
+    for (mfxU16 i = 0; i < bufsIn.NumExtParam; i += increment)
     {
         switch (bufsIn.ExtParam[i]->BufferId)
         {
@@ -4168,7 +4160,7 @@ mfxStatus CEncodingPipeline::ResetExtBufMBnum(bufSet* freeSet, mfxU16 new_numMB)
     }
 
     setElem &bufsOut = freeSet->PB_bufs.out;
-    for (mfxU16 i = 0; i < bufsOut.NumExtParam; i++)
+    for (mfxU16 i = 0; i < bufsOut.NumExtParam; i += increment)
     {
         switch (bufsOut.ExtParam[i]->BufferId)
         {
@@ -5174,7 +5166,7 @@ mfxStatus CEncodingPipeline::PreProcessOneFrame(mfxFrameSurface1* & pSurf)
 
     // make sure picture structure has the initial value
     // surfaces are reused and VPP may change this parameter in certain configurations
-    VppExtSurface.pSurface->Info.PicStruct = m_mfxEncParams.mfx.FrameInfo.PicStruct;
+    VppExtSurface.pSurface->Info.PicStruct = (m_appCfg.nPicStruct == MFX_PICSTRUCT_UNKNOWN) ? pSurf->Info.PicStruct : m_mfxEncParams.mfx.FrameInfo.PicStruct;
 
     if (m_bNeedDRC)
     {
