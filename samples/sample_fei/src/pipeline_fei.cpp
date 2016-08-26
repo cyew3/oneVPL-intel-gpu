@@ -4591,11 +4591,8 @@ mfxStatus CEncodingPipeline::ProcessMultiPreenc(iTask* eTask)
     mfxU32 total_l0 = (ExtractFrameType(*eTask, eTask->m_fieldPicFlag) & MFX_FRAMETYPE_P) ? ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_IDR) ? 1 : eTask->NumRefActiveP) : ((ExtractFrameType(*eTask) & MFX_FRAMETYPE_I) ? 1 : eTask->NumRefActiveBL0);
     mfxU32 total_l1 = (ExtractFrameType(*eTask) & MFX_FRAMETYPE_B) ? eTask->NumRefActiveBL1 : 1; // just one iteration here for non-B
 
-    mfxU32 adj_l0 = (std::max)(1U, m_appCfg.bNPredSpecified_l0 ? m_appCfg.NumMVPredictors[0] : numOfFields*m_mfxEncParams.mfx.NumRefFrame);
-    mfxU32 adj_l1 = (std::max)(1U, m_appCfg.bNPredSpecified_l1 ? m_appCfg.NumMVPredictors[1] : numOfFields*m_mfxEncParams.mfx.NumRefFrame);
-
-    total_l0 = (std::min)(total_l0, adj_l0); // adjust to
-    total_l1 = (std::min)(total_l1, adj_l1); // user input
+    total_l0 = (std::min)(total_l0, numOfFields*m_mfxEncParams.mfx.NumRefFrame); // adjust to maximal
+    total_l1 = (std::min)(total_l1, numOfFields*m_mfxEncParams.mfx.NumRefFrame); // number of references
 
     mfxU8 preenc_ref_idx[2][2]; // indexes means [fieldId][L0L1]
     mfxU8 ref_fid[2][2];
