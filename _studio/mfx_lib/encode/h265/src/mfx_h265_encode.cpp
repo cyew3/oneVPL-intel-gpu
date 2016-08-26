@@ -776,7 +776,8 @@ static void TaskLogDump()
 namespace H265Enc {
     struct H265EncodeTaskInputParams
     {
-        mfxEncodeCtrl    *ctrl;
+        mfxEncodeCtrl    ctrl_;
+        mfxEncodeCtrl    *ctrl; // ctrl==NULL || &ctrl_
         mfxFrameSurface1 *surface;
         mfxBitstream     *bs;
         Frame            *m_targetFrame[2];  // this frame has to be encoded completely. it is our expected output.
@@ -1631,17 +1632,21 @@ Frame *H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, 
                 m_frameOrderOfLastIntra = m_frameOrderOfLastIntraB;
                 m_frameOrderOfLastAnchor = m_frameOrderOfLastAnchorB;
             }
-        } else if (/*displayOrder && */ctrl && ((ctrl->FrameType&MFX_FRAMETYPE_IDR) || (ctrl->FrameType&MFX_FRAMETYPE_I))) {
-            inputFrame->m_picCodeType = ctrl->FrameType;
-            if (inputFrame->m_picCodeType & MFX_FRAMETYPE_IDR) {
-                inputFrame->m_picCodeType = MFX_FRAMETYPE_I;
-                inputFrame->m_isIdrPic = true;
-                inputFrame->m_poc = 0;
-                inputFrame->m_isRef = 1;
-            } else if (inputFrame->m_picCodeType & MFX_FRAMETYPE_REF) {
-                inputFrame->m_picCodeType &= ~MFX_FRAMETYPE_REF;
-                inputFrame->m_isRef = 1;
+        } else if (/*displayOrder && */ctrl) {
+            
+            if ((ctrl->FrameType&MFX_FRAMETYPE_IDR) || (ctrl->FrameType&MFX_FRAMETYPE_I)) {
+                inputFrame->m_picCodeType = ctrl->FrameType;
+                if (inputFrame->m_picCodeType & MFX_FRAMETYPE_IDR) {
+                    inputFrame->m_picCodeType = MFX_FRAMETYPE_I;
+                    inputFrame->m_isIdrPic = true;
+                    inputFrame->m_poc = 0;
+                    inputFrame->m_isRef = 1;
+                } else if (inputFrame->m_picCodeType & MFX_FRAMETYPE_REF) {
+                    inputFrame->m_picCodeType &= ~MFX_FRAMETYPE_REF;
+                    inputFrame->m_isRef = 1;
+                }
             }
+
             if (ctrl->QP > 0 && ctrl->QP < 52)
                 inputFrame->m_sliceQpY = ctrl->QP;
         }
@@ -1994,7 +1999,12 @@ mfxStatus H265Encoder::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *s
     // MFX_ERR_MORE_DATA_RUN_TASK means that frame will be buffered and will be encoded later.
     // Output bitstream isn't required for this task. it is marker for TaskRoutine() and TaskComplete()
     m_pTaskInputParams->bs = (status == (mfxStatus)MFX_ERR_MORE_DATA_RUN_TASK) ? 0 : bs;
-    m_pTaskInputParams->ctrl = ctrl;
+    Zero(m_pTaskInputParams->ctrl_);
+    m_pTaskInputParams->ctrl = NULL;
+    if (ctrl) {
+        m_pTaskInputParams->ctrl_ = *ctrl;
+        m_pTaskInputParams->ctrl = &m_pTaskInputParams->ctrl_;
+    }
     m_pTaskInputParams->surface = surface;
     m_pTaskInputParams->m_targetFrame[0] = NULL;
     m_pTaskInputParams->m_targetFrame[1] = NULL;
