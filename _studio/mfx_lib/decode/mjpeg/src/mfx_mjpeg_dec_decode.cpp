@@ -842,12 +842,9 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
 
         // update the bytes used in bitstream
         src.Save(bs);
-        if (NULL == pSrcData)
+        if (!pSrcData)
         {
-            //if (MFX_PLATFORM_SOFTWARE != m_platform)
-            {
-                decoder->ReleaseReservedTask();
-            }
+            decoder->ReleaseReservedTask();
             return MFX_ERR_MORE_DATA;
         }
 
@@ -861,8 +858,6 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
         }
     // make sure, that we collected BOTH fields
     } while (picToCollect > numPic);
-
-    decoder->PushTask();
 
     // check if skipping is enabled
     m_skipCount += m_skipRate;
@@ -1470,7 +1465,7 @@ mfxFrameSurface1 *VideoDECODEMJPEG::GetOriginalSurface(mfxFrameSurface1 *surface
 VideoDECODEMJPEGBase::VideoDECODEMJPEGBase()
 {
      memset(&m_stat, 0, sizeof(m_stat));
- }
+}
 
 mfxStatus VideoDECODEMJPEGBase::GetVideoParam(mfxVideoParam *par, UMC::MJPEGVideoDecoderBaseMFX * mjpegDecoder)
 {
@@ -1505,6 +1500,7 @@ VideoDECODEMJPEGBase_HW::VideoDECODEMJPEGBase_HW()
     m_pMJPEGVideoDecoder.reset(new UMC::MJPEGVideoDecoderMFX_HW()); // HW
     m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D);
     m_va = 0;
+    m_dst = 0;
     m_numPic = 0;
     m_pCc    = NULL;
     m_needVpp = false;
@@ -2349,7 +2345,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::ReserveUMCDecoder(UMC::MJPEGVideoDecoderBaseM
     {
         int picToCollect = (MFX_PICSTRUCT_PROGRESSIVE == m_vPar.mfx.FrameInfo.PicStruct) ?
                        (1) : (2);
-
+        delete[] m_dst;
         m_dst = new UMC::FrameData[picToCollect];
     }
 
@@ -2362,6 +2358,7 @@ void VideoDECODEMJPEGBase_HW::ReleaseReservedTask()
     if (m_numPic == 0)
     {
         delete[] m_dst;
+        m_dst = 0;
         m_numPic = 0;
     }
 }
@@ -2396,6 +2393,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::AddPicture(UMC::MediaDataEx *pSrcData, mfxU32
     if (umcRes != UMC::UMC_OK)
     {
         delete[] m_dst;
+        m_dst = 0;
         return ConvertUMCStatusToMfx(umcRes);
     }
 
@@ -2409,6 +2407,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::AddPicture(UMC::MediaDataEx *pSrcData, mfxU32
         if (m_numPic == 0)
         {
             delete[] m_dst;
+            m_dst = 0;
         }
 
         sts = MFX_ERR_MORE_DATA;
@@ -2418,6 +2417,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::AddPicture(UMC::MediaDataEx *pSrcData, mfxU32
         if (umcRes != UMC::UMC_OK)
         {
             delete[] m_dst;
+            m_dst = 0;
             sts = ConvertUMCStatusToMfx(umcRes);
         }
     }
@@ -2433,21 +2433,22 @@ mfxStatus VideoDECODEMJPEGBase_HW::AddPicture(UMC::MediaDataEx *pSrcData, mfxU32
 
 mfxStatus VideoDECODEMJPEGBase_HW::AllocateFrameData(UMC::FrameData *&data)
 {
-    data = m_dst;
-    return MFX_ERR_NONE;
-}
-
-void VideoDECODEMJPEGBase_HW::PushTask()
-{
     UMC::AutomaticUMCMutex guard(m_guard);
     m_dsts.push_back(m_dst);
+    data = m_dst;
+    m_dst = 0;
     m_numPic = 0;
+    return MFX_ERR_NONE;
 }
 
 mfxStatus VideoDECODEMJPEGBase_HW::FillEntryPoint(MFX_ENTRY_POINT *pEntryPoint, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out) 
 {
     mfxU16 taskId = 0;
 
+    if (m_dsts.empty())
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    UMC::FrameData *dst = m_dsts.back();
     if (m_needVpp)
     {
         UMC::ConvertInfo * convertInfo = m_pMJPEGVideoDecoder->GetConvertInfo();
@@ -2459,7 +2460,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::FillEntryPoint(MFX_ENTRY_POINT *pEntryPoint, 
         ((mfx_UMC_FrameAllocator_D3D_Converter *)m_FrameAllocator.get())->SetJPEGInfo(&info);
 
         // decoding is ready. prepare to output:
-        mfxStatus mfxSts = ((mfx_UMC_FrameAllocator_D3D_Converter *)m_FrameAllocator.get())->StartPreparingToOutput(surface_out, m_dst, &m_vPar, &m_pCc, &taskId, m_isOpaq);
+        mfxStatus mfxSts = ((mfx_UMC_FrameAllocator_D3D_Converter *)m_FrameAllocator.get())->StartPreparingToOutput(surface_out, dst, &m_vPar, &m_pCc, &taskId, m_isOpaq);
         if (mfxSts < MFX_ERR_NONE)
         {
             return mfxSts;
@@ -2473,7 +2474,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::FillEntryPoint(MFX_ENTRY_POINT *pEntryPoint, 
     info->vppTaskID = (mfxU32)taskId;
     info->needCheckVppStatus = m_needVpp;
     info->numDecodeTasksToCheck = MFX_PICSTRUCT_PROGRESSIVE == m_vPar.mfx.FrameInfo.PicStruct ? 1 : 2;
-    info->dst = m_dst;
+    info->dst = dst;
 
     pEntryPoint->requiredNumThreads = m_vPar.mfx.NumThread;
     pEntryPoint->pParam = info;
@@ -2604,6 +2605,7 @@ mfxStatus VideoDECODEMJPEGBase_SW::ReserveUMCDecoder(UMC::MJPEGVideoDecoderBaseM
         return sts;
 
     pMJPEGVideoDecoder = m_freeTasks.front()->m_pMJPEGVideoDecoder.get();
+    //pMJPEGVideoDecoder->Reset();
     return MFX_ERR_NONE;
 }
 
@@ -2611,10 +2613,6 @@ void VideoDECODEMJPEGBase_SW::ReleaseReservedTask()
 {
     if (!m_freeTasks.empty())
         m_freeTasks.front()->Reset();
-}
-
-void VideoDECODEMJPEGBase_SW::PushTask()
-{
 }
 
 mfxStatus VideoDECODEMJPEGBase_SW::AddPicture(UMC::MediaDataEx *pSrcData, mfxU32 & numPic)

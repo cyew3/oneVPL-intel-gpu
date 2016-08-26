@@ -67,7 +67,6 @@ public:
     virtual mfxStatus CompleteTask(void *pParam, mfxStatus taskRes) = 0;
     virtual void ReleaseReservedTask() = 0;
     virtual mfxStatus AddPicture(UMC::MediaDataEx *pSrcData, mfxU32 & numPic) = 0;
-    virtual void PushTask() = 0;
     virtual mfxStatus AllocateFrameData(UMC::FrameData *&data) = 0;
     virtual mfxStatus FillEntryPoint(MFX_ENTRY_POINT *pEntryPoint, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out) = 0;
 
@@ -102,7 +101,6 @@ public:
     virtual mfxStatus ReserveUMCDecoder(UMC::MJPEGVideoDecoderBaseMFX* &pMJPEGVideoDecoder, mfxFrameSurface1 *surf, bool isOpaq);
     virtual void ReleaseReservedTask();
     virtual mfxStatus AddPicture(UMC::MediaDataEx *pSrcData, mfxU32 & numPic);
-    virtual void PushTask();
     virtual mfxStatus AllocateFrameData(UMC::FrameData *&data);
     virtual mfxStatus FillEntryPoint(MFX_ENTRY_POINT *pEntryPoint, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out);
 
@@ -154,7 +152,6 @@ public:
     virtual mfxStatus ReserveUMCDecoder(UMC::MJPEGVideoDecoderBaseMFX* &pMJPEGVideoDecoder, mfxFrameSurface1 *surf, bool isOpaq);
     virtual void ReleaseReservedTask();
     virtual mfxStatus AddPicture(UMC::MediaDataEx *pSrcData, mfxU32 & numPic);
-    virtual void PushTask();
     virtual mfxStatus AllocateFrameData(UMC::FrameData *&data);
     virtual mfxStatus FillEntryPoint(MFX_ENTRY_POINT *pEntryPoint, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out);
 
