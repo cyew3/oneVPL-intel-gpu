@@ -1411,10 +1411,10 @@ bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType t
         in->mfx.CodecProfile != MFX_PROFILE_HEVC_REXT)
         return false;
 
-    if (in->mfx.FrameInfo.BitDepthLuma < 8 || in->mfx.FrameInfo.BitDepthLuma > 16)
+    if ((in->mfx.FrameInfo.BitDepthLuma) && (in->mfx.FrameInfo.BitDepthLuma < 8 || in->mfx.FrameInfo.BitDepthLuma > 16))
         return false;
 
-    if (in->mfx.FrameInfo.BitDepthChroma < 8 || in->mfx.FrameInfo.BitDepthChroma > 16)
+    if ((in->mfx.FrameInfo.BitDepthChroma) && (in->mfx.FrameInfo.BitDepthChroma < 8 || in->mfx.FrameInfo.BitDepthChroma > 16))
         return false;
 
     if (!CheckFourcc(in->mfx.FrameInfo.FourCC, in->mfx.CodecProfile, &in->mfx.FrameInfo))
