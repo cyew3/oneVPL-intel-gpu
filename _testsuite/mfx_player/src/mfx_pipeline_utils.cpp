@@ -54,6 +54,7 @@ static CodeStringTable StringsOfFourcc[] =
     { MFX_FOURCC_NV16,               VM_STRING("NV16")  },
     { MFX_FOURCC_P210,               VM_STRING("P210")  },
     { MFX_FOURCC_Y210,               VM_STRING("Y210")  },
+    { MFX_FOURCC_Y216,               VM_STRING("Y216")  },
     { MFX_FOURCC_Y410,               VM_STRING("Y410")  },
     { MFX_FOURCC_AYUV,               VM_STRING("AYUV")  },
 };
@@ -740,7 +741,7 @@ mfxF64 ConvertMFXTime2mfxF64(mfxU64 nTime)
 
 mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &info)
 {
-    static const char valid_pattern [] = "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010|a2rgb10|r16|argb16|nv16|p210|y410|i444";
+    static const char valid_pattern [] = "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010|a2rgb10|r16|argb16|nv16|p210|y410|y210|y216|i444";
 
     //if external pattern changed parsing need to be updated
     MFX_CHECK(!std::string(MFX_FOURCC_PATTERN()).compare(valid_pattern));
@@ -851,6 +852,18 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
             break;
         }
         case 18:
+        {
+            info.FourCC = MFX_FOURCC_Y210;
+            info.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            break;
+        }
+        case 19:
+        {
+            info.FourCC = MFX_FOURCC_Y216;
+            info.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            break;
+        }
+        case 20:
         {
             info.FourCC = MFX_FOURCC_YUV444_8;
             info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;

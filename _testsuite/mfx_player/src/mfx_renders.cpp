@@ -691,7 +691,7 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             break;
         }
         case MFX_FOURCC_Y210:
-        //case MFX_FOURCC_Y216:
+        case MFX_FOURCC_Y216:
         {
             m_Current.m_comp = VM_STRING('Y');
             m_Current.m_pixX = 0;
@@ -1535,10 +1535,12 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
     }
 
     // color conversion
-    if (pSurfaceIn->Info.FourCC != MFX_FOURCC_NV12 && 
-        pSurfaceIn->Info.FourCC != MFX_FOURCC_P010 && 
-        pSurfaceIn->Info.FourCC != MFX_FOURCC_NV16 && 
-        pSurfaceIn->Info.FourCC != MFX_FOURCC_P210 && 
+    if (pSurfaceIn->Info.FourCC != MFX_FOURCC_NV12 &&
+        pSurfaceIn->Info.FourCC != MFX_FOURCC_P010 &&
+        pSurfaceIn->Info.FourCC != MFX_FOURCC_NV16 &&
+        pSurfaceIn->Info.FourCC != MFX_FOURCC_P210 &&
+        pSurfaceIn->Info.FourCC != MFX_FOURCC_Y210 &&
+        pSurfaceIn->Info.FourCC != MFX_FOURCC_Y216 &&
         pSurfaceIn->Info.FourCC != MFX_FOURCC_Y410 &&
         pSurfaceIn->Info.FourCC != MFX_FOURCC_AYUV)
     {
@@ -1621,29 +1623,63 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
     }
     else if (pSurfaceOut->Info.FourCC == MFX_FOURCC_YUV422_16)
     {
-        mfxU32 originalBDLuma = pSurfaceIn->Info.BitDepthLuma ? pSurfaceIn->Info.BitDepthLuma : 8;
-        mfxU32 originalBDChroma = pSurfaceIn->Info.BitDepthChroma ? pSurfaceIn->Info.BitDepthChroma : 8;
-
-        mfxU32 finalBitDepth = params->use10bitOutput ? 10 : IPP_MAX(originalBDLuma, originalBDChroma);
-        if (!params->useSameBitDepthForComponents)
-            finalBitDepth = originalBDLuma;
-
-        mfxI32 shift = pSurfaceIn->Info.Shift ? (16 - finalBitDepth) : originalBDLuma - finalBitDepth;
-
         if (pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12)
-            VM_ASSERT(false);//copyPlane<mfxU8, mfxU16>(pSurfaceIn->Data.Y, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.Y, pSurfaceOut->Data.Pitch, pSurfaceIn->Info.Height, pSurfaceIn->Info.Width, shift);
+            VM_ASSERT(false);
+        else if (pSurfaceIn->Info.FourCC == MFX_FOURCC_Y210 ||
+                 pSurfaceIn->Info.FourCC == MFX_FOURCC_Y216)
+        {
+#pragma pack(push, 1)
+            struct Y216Pixel
+            {
+                mfxU16 y0, u, y1, v;
+            };
+#pragma pack(pop)
+
+            mfxU16* pDstY = pSurfaceOut->Data.Y16;
+            mfxU16* pDstU = pSurfaceOut->Data.U16;
+            mfxU16* pDstV = pSurfaceOut->Data.V16;
+
+            pitchOut /= 2;
+            pitchIn /= 2;
+
+            //NOTE: currect [Fulsim] implementation supports only Y216 fourcc (at least for h.265)
+            //but actually writes Y210 w/ shift
+            //TODO: change this when correct Y216 will be supported
+            for (size_t i = 0; i < pSurfaceIn->Info.Height; i++)
+            {
+                Y216Pixel const* pSrc
+                    = (Y216Pixel*)(pSurfaceIn->Data.Y16 + pitchIn * i);
+
+                for (size_t j = 0; j < pSurfaceIn->Info.Width; j += 2)
+                {
+                    pDstY[i * pitchOut + j + 0] = pSrc->y0 >> 6;
+                    pDstY[i * pitchOut + j + 1] = pSrc->y1 >> 6;
+
+                    pDstU[i * pitchOut / 2 + j / 2] = pSrc->u >> 6;
+                    pDstV[i * pitchOut / 2 + j / 2] = pSrc->v >> 6;
+
+                    ++pSrc;
+                }
+            }
+        }
         else
+        {
+            mfxU32 originalBDLuma = pSurfaceIn->Info.BitDepthLuma ? pSurfaceIn->Info.BitDepthLuma : 8;
+            mfxU32 originalBDChroma = pSurfaceIn->Info.BitDepthChroma ? pSurfaceIn->Info.BitDepthChroma : 8;
+
+            mfxU32 finalBitDepth = params->use10bitOutput ? 10 : IPP_MAX(originalBDLuma, originalBDChroma);
+            if (!params->useSameBitDepthForComponents)
+                finalBitDepth = originalBDLuma;
+
+            mfxI32 shift = pSurfaceIn->Info.Shift ? (16 - finalBitDepth) : originalBDLuma - finalBitDepth;
             copyPlane<mfxU16, mfxU16>(pSurfaceIn->Data.Y, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.Y, pSurfaceOut->Data.Pitch, pSurfaceIn->Info.Height, pSurfaceIn->Info.Width, shift);
 
-        if (!params->useSameBitDepthForComponents)
-            finalBitDepth = originalBDChroma;
+            if (!params->useSameBitDepthForComponents)
+                finalBitDepth = originalBDChroma;
 
-        shift = pSurfaceIn->Info.Shift ? (16 - finalBitDepth) : originalBDChroma - finalBitDepth;
-
-        if (pSurfaceIn->Info.FourCC == MFX_FOURCC_NV12)
-            VM_ASSERT(false);//copyChromaPlane<mfxU8, mfxU16>(pSurfaceIn->Data.UV, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.U, pSurfaceOut->Data.V, pSurfaceOut->Data.Pitch >> 1, pSurfaceIn->Info.Height / 2, pSurfaceIn->Info.Width / 2, shift);
-        else
+            shift = pSurfaceIn->Info.Shift ? (16 - finalBitDepth) : originalBDChroma - finalBitDepth;
             copyChromaPlane<mfxU16, mfxU16>(pSurfaceIn->Data.UV, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.U, pSurfaceOut->Data.V, pSurfaceOut->Data.Pitch >> 1, pSurfaceIn->Info.Height, pSurfaceIn->Info.Width / 2, shift);
+        }
 
         return pSurfaceOut;
     }

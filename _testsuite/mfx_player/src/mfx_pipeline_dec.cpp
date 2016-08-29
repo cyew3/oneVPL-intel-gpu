@@ -1768,6 +1768,7 @@ mfxStatus MFXDecPipeline::CreateRender()
             m_inParams.outFrameInfo.FourCC = MFX_FOURCC_AYUV;
 
         if (m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P210 ||
+            m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 || m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y216 ||
             m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y410)
         {
             switch (m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat)
