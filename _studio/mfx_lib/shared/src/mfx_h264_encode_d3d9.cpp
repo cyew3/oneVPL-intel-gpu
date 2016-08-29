@@ -1018,6 +1018,12 @@ D3D9Encoder::D3D9Encoder()
 , m_numSkipFrames(0)
 , m_sizeSkipFrames(0)
 , m_skipMode(0)
+, m_sps()
+, m_vui()
+, m_pps()
+, m_caps()
+, m_capsQuery()
+, m_capsGet()
 {
 }
 
@@ -1786,6 +1792,9 @@ D3D9SvcEncoder::D3D9SvcEncoder()
 : m_core(0)
 , m_infoQueried(false)
 , m_forcedCodingFunction(0)
+, m_caps()
+, m_capsQuery()
+, m_capsGet()
 {
 }
 

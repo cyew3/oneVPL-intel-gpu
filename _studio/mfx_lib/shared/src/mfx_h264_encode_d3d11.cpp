@@ -65,6 +65,12 @@ D3D11Encoder::D3D11Encoder()
 , m_numSkipFrames(0)
 , m_sizeSkipFrames(0)
 , m_skipMode(0)
+, m_sps()
+, m_vui()
+, m_pps()
+, m_caps()
+, m_capsQuery()
+, m_capsGet()
 {
 }
 
@@ -1129,6 +1135,9 @@ D3D11SvcEncoder::D3D11SvcEncoder()
 , m_infoQueried(false)
 , m_pVDOView(0)
 , m_forcedCodingFunction(0)
+, m_caps()
+, m_packedSpsPps()
+, m_packedPps()
 {
 }
 
