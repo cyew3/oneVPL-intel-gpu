@@ -46,11 +46,11 @@ mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask, mfxU8 QP, iTa
         mv_data_length_offset = 0;
 
         /* get mfxExtFeiPakMBCtrl buffer */
-        feiEncMBCode = (mfxExtFeiPakMBCtrl*)getBufById(&eTask->bufs->PB_bufs.out, MFX_EXTBUFF_FEI_PAK_CTRL, fieldId);
+        feiEncMBCode = reinterpret_cast<mfxExtFeiPakMBCtrl*>(eTask->bufs->PB_bufs.out.getBufById(MFX_EXTBUFF_FEI_PAK_CTRL, fieldId));
         MSDK_CHECK_POINTER(feiEncMBCode, MFX_ERR_NULL_PTR);
 
         /* get mfxExtFeiEncMV buffer */
-        feiEncMV = (mfxExtFeiEncMV*)getBufById(&eTask->bufs->PB_bufs.out, MFX_EXTBUFF_FEI_ENC_MV, fieldId);
+        feiEncMV = reinterpret_cast<mfxExtFeiEncMV*>(eTask->bufs->PB_bufs.out.getBufById(MFX_EXTBUFF_FEI_ENC_MV, fieldId));
         MSDK_CHECK_POINTER(feiEncMV, MFX_ERR_NULL_PTR);
 
         /* repack streamout output to PAK input */

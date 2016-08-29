@@ -20,7 +20,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #ifndef __REF_LISTS_MANAGEMENT_FEI_H__
 #define __REF_LISTS_MANAGEMENT_FEI_H__
 
-#include "sample_fei_defs.h"
+#include "encoding_task.h"
 
 void UpdateDpbFrames(iTask& task, mfxU32 field, mfxU32 frameNumMax);
 void InitRefPicList(iTask& task, mfxU32 field);

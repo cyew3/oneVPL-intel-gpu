@@ -1835,8 +1835,6 @@ mfxStatus CEncodingPipeline::InitInterfaces()
 
             tmpForInit = new bufSet;
             MSDK_CHECK_POINTER(tmpForInit, MFX_ERR_MEMORY_ALLOC);
-            MSDK_ZERO_MEMORY(*tmpForInit);
-            tmpForInit->vacant = true;
 
             for (fieldId = 0; fieldId < m_numOfFields; fieldId++)
             {
@@ -2115,8 +2113,6 @@ mfxStatus CEncodingPipeline::InitInterfaces()
         {
             tmpForInit = new bufSet;
             MSDK_CHECK_POINTER(tmpForInit, MFX_ERR_MEMORY_ALLOC);
-            MSDK_ZERO_MEMORY(*tmpForInit);
-            tmpForInit->vacant = true;
 
             numExtInParams   = (m_appCfg.bENCPAK || m_appCfg.bOnlyENC || m_appCfg.bOnlyPAK) ? 1 : 0; // count SPS header
             numExtInParamsI  = (m_appCfg.bENCPAK || m_appCfg.bOnlyENC || m_appCfg.bOnlyPAK) ? 1 : 0; // count SPS header
@@ -3905,7 +3901,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncEx(iTask* eTask)
             continue; // I-field
 
         // MVP is predictors Ext Buffer
-        mvp = reinterpret_cast<mfxExtFeiEncMVPredictors*>(getBufById(&set->PB_bufs.in, MFX_EXTBUFF_FEI_ENC_MV_PRED, fieldId));
+        mvp = reinterpret_cast<mfxExtFeiEncMVPredictors*>(set->PB_bufs.in.getBufById(MFX_EXTBUFF_FEI_ENC_MV_PRED, fieldId));
         if (mvp == NULL){
             sts = MFX_ERR_NULL_PTR;
             break;
@@ -4046,7 +4042,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask)
         mvs_v.clear();
         refIdx_v.clear();
 
-        mvp = reinterpret_cast<mfxExtFeiEncMVPredictors*>(getBufById(&set->PB_bufs.in, MFX_EXTBUFF_FEI_ENC_MV_PRED, fieldId));
+        mvp = reinterpret_cast<mfxExtFeiEncMVPredictors*>(set->PB_bufs.in.getBufById(MFX_EXTBUFF_FEI_ENC_MV_PRED, fieldId));
         if (mvp == NULL){
             sts = MFX_ERR_NULL_PTR;
             break;
@@ -4055,7 +4051,7 @@ mfxStatus CEncodingPipeline::PassPreEncMVPred2EncExPerf(iTask* eTask)
         j = 0;
         for (std::list<PreEncOutput>::iterator it = eTask->preenc_output.begin(); j < nOfPredPairs; ++it, ++j)
         {
-            mvs_v.push_back(reinterpret_cast<mfxExtFeiPreEncMV*>(getBufById(&(*it).output_bufs->PB_bufs.out, MFX_EXTBUFF_FEI_PREENC_MV, fieldId)));
+            mvs_v.push_back(reinterpret_cast<mfxExtFeiPreEncMV*>((*it).output_bufs->PB_bufs.out.getBufById(MFX_EXTBUFF_FEI_PREENC_MV, fieldId)));
             refIdx_v.push_back((*it).refIdx[fieldId]);
         }
 
@@ -4284,20 +4280,6 @@ bufSet* getFreeBufSet(std::list<bufSet*> bufs)
         {
             (*it)->vacant = false;
             return (*it);
-        }
-    }
-
-    return NULL;
-}
-
-mfxExtBuffer * getBufById(setElem* bufSet, mfxU32 id, mfxU32 fieldId)
-{
-    MSDK_CHECK_POINTER(bufSet, NULL);
-    for (mfxU16 i = 0; i < bufSet->NumExtParam - fieldId; i++)
-    {
-        if (bufSet->ExtParam[i]->BufferId == id)
-        {
-            return (bufSet->ExtParam[i + fieldId]->BufferId == id) ? bufSet->ExtParam[i + fieldId] : NULL;
         }
     }
 
@@ -4802,10 +4784,10 @@ mfxStatus CEncodingPipeline::GetBestSetsByDistortion(std::list<PreEncOutput>& pr
 
     for (std::list<PreEncOutput>::iterator it = preenc_output.begin(); it != preenc_output.end(); ++it)
     {
-        mvs = reinterpret_cast<mfxExtFeiPreEncMV*> (getBufById(&(*it).output_bufs->PB_bufs.out, MFX_EXTBUFF_FEI_PREENC_MV, fieldId));
+        mvs = reinterpret_cast<mfxExtFeiPreEncMV*> ((*it).output_bufs->PB_bufs.out.getBufById(MFX_EXTBUFF_FEI_PREENC_MV, fieldId));
         MSDK_CHECK_POINTER(mvs, MFX_ERR_NULL_PTR);
 
-        mbdata = reinterpret_cast<mfxExtFeiPreEncMBStat*> (getBufById(&(*it).output_bufs->PB_bufs.out, MFX_EXTBUFF_FEI_PREENC_MB, fieldId));
+        mbdata = reinterpret_cast<mfxExtFeiPreEncMBStat*> ((*it).output_bufs->PB_bufs.out.getBufById(MFX_EXTBUFF_FEI_PREENC_MB, fieldId));
         MSDK_CHECK_POINTER(mbdata, MFX_ERR_NULL_PTR);
 
         /* Store all necessary info about current reference MB: pointer to MVs; reference index; distortion*/
@@ -5344,96 +5326,7 @@ mfxStatus CEncodingPipeline::doGPUHangRecovery()
     return sts;
 }
 
-iTask* iTaskPool::GetTaskToEncode(bool buffered_frames_processing)
-{
-    iTask* task = GetReorderedTask(buffered_frames_processing);
-
-    if (!task) return NULL;
-
-    //...........................reflist management........................................
-    task->prevTask = last_encoded_task;
-
-    task->m_frameOrderIdr = (ExtractFrameType(*task) & MFX_FRAMETYPE_IDR) ? task->m_frameOrder : (task->prevTask ? task->prevTask->m_frameOrderIdr : 0);
-    task->m_frameOrderI = (ExtractFrameType(*task) & MFX_FRAMETYPE_I) ? task->m_frameOrder : (task->prevTask ? task->prevTask->m_frameOrderI : 0);
-    mfxU8  frameNumIncrement = (task->prevTask && (ExtractFrameType(*(task->prevTask)) & MFX_FRAMETYPE_REF || task->prevTask->m_nalRefIdc[0])) ? 1 : 0;
-    task->m_frameNum = (task->prevTask && !(ExtractFrameType(*task) & MFX_FRAMETYPE_IDR)) ? mfxU16((task->prevTask->m_frameNum + frameNumIncrement) % (1 << log2frameNumMax)) : 0;
-
-    task->m_frameIdrCounter = task->prevTask ? ((ExtractFrameType(*task->prevTask) & MFX_FRAMETYPE_IDR) && task->prevTask->m_frameOrder ? task->prevTask->m_frameIdrCounter + 1 : task->prevTask->m_frameIdrCounter) : 0;
-
-    task->m_picNum[1] = task->m_picNum[0] = task->m_frameNum * (task->m_fieldPicFlag + 1) + task->m_fieldPicFlag;
-
-    task->m_dpb[task->m_fid[0]] = task->prevTask ? task->prevTask->m_dpbPostEncoding : ArrayDpbFrame();
-    UpdateDpbFrames(*task, task->m_fid[0], 1 << log2frameNumMax);
-    InitRefPicList(*task, task->m_fid[0]);
-    ModifyRefPicLists(GopOptFlag, *task, task->m_fid[0]);
-    MarkDecodedRefPictures(NumRefFrame, *task, task->m_fid[0]);
-    if (task->m_fieldPicFlag)
-    {
-        UpdateDpbFrames(*task, task->m_fid[1], 1 << log2frameNumMax);
-        InitRefPicList(*task, task->m_fid[1]);
-        ModifyRefPicLists(GopOptFlag, *task, task->m_fid[1]);
-
-        // mark second field of last added frame short-term ref
-        task->m_dpbPostEncoding = task->m_dpb[task->m_fid[1]];
-        if (task->m_reference[task->m_fid[1]])
-            task->m_dpbPostEncoding.Back().m_refPicFlag[task->m_fid[1]] = 1;
-    }
-
-    task_in_process = task;
-    ShowDpbInfo(task, task->m_frameOrder);
-    return task;
-}
-
 /* Info printing */
-
-const char* getFrameType(mfxU8 type)
-{
-    switch (type & MFX_FRAMETYPE_IPB) {
-        case MFX_FRAMETYPE_I:
-            if (type & MFX_FRAMETYPE_IDR) {
-                return "IDR";
-            } else {
-                return "I";
-            }
-        case MFX_FRAMETYPE_P:
-            return "P";
-        case MFX_FRAMETYPE_B:
-            if (type & MFX_FRAMETYPE_REF) {
-                return "B-ref";
-            } else {
-                return "B";
-            }
-        default:
-            return "?";
-    }
-}
-
-void ShowDpbInfo(iTask *task, int frame_order)
-{
-    mdprintf(stderr, "\n\n--------------Show DPB Info of frame %d-------\n", frame_order);
-    mfxU32 numOfFields = task->m_fieldPicFlag ? 2 : 1;
-    for (mfxU32 j = 0; j < numOfFields; j++) {
-        mdprintf(stderr, "\t[%d]: List dpb frame of frame %d in (frame_order, frame_num, POC):\n\t\tDPB:", j, task->m_frameOrder);
-        for (mfxU32 i = 0; i < task->m_dpb[task->m_fid[j]].Size(); i++) {
-            DpbFrame & ref = task->m_dpb[task->m_fid[j]][i];
-            mdprintf(stderr, "(%d, %d, %d) ", ref.m_frameOrder, ref.m_frameNum, ref.m_poc[j]);
-        }
-        mdprintf(stderr, "\n\t\tL0: ");
-        for (mfxU32 i = 0; i < task->m_list0[task->m_fid[j]].Size(); i++) {
-            mdprintf(stderr, "%d ", task->m_list0[task->m_fid[j]][i]);
-        }
-        mdprintf(stderr, "\n\t\tL1: ");
-        for (mfxU32 i = 0; i < task->m_list1[task->m_fid[j]].Size(); i++) {
-            mdprintf(stderr, "%d ", task->m_list1[task->m_fid[j]][i]);
-        }
-        //mdprintf(stderr, "\n\t\tm_dpbPostEncoding: ");
-        //for (mfxU32 i = 0; i < task->m_dpbPostEncoding.Size(); i++) {
-        //    DpbFrame & ref = task->m_dpbPostEncoding[i];
-        //    mdprintf(stderr, "(%d, %d, %d) ", ref.m_frameOrder, ref.m_frameNum, ref.m_poc[j]);
-        //}
-        mdprintf(stderr, "\n-------------------------------------------\n");
-    }
-}
 
 void CEncodingPipeline::PrintInfo()
 {

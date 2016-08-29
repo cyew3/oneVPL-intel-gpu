@@ -20,9 +20,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #ifndef __PIPELINE_FEI_H__
 #define __PIPELINE_FEI_H__
 
-#include <mfxfei.h>
-
-#include "refListsManagement_fei.h"
+#include "encoding_task_pool.h"
 #include "sample_defs.h"
 
 #include "sample_utils.h"
@@ -33,17 +31,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "hw_device.h"
 
-#include "mfxmvc.h"
-#include "mfxvideo.h"
-#include "mfxvideo++.h"
-
 #include "sysmem_allocator.h"
 #include "mfx_itt_trace.h"
 
 #include "math.h"
-#include <vector>
-#include <memory>
-#include <algorithm>
 #include <ctime>
 
 // Extensions for internal use, normally these macros are blank
@@ -53,29 +44,12 @@ or https://software.intel.com/en-us/media-client-solutions-support.
     #define MSDK_DEBUG
 #endif
 
-#define MFX_FRAMETYPE_IPB (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P | MFX_FRAMETYPE_B)
-#define MFX_FRAMETYPE_IP  (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P                  )
-#define MFX_FRAMETYPE_PB  (                  MFX_FRAMETYPE_P | MFX_FRAMETYPE_B)
-
 #define NOT_IN_SINGLE_FIELD_MODE 4
 
 #define MaxNumActiveRefP      4
 #define MaxNumActiveRefBL0    4
 #define MaxNumActiveRefBL1    1
 #define MaxNumActiveRefBL1_i  2
-
-
-#if _DEBUG
-    #define mdprintf fprintf
-#else
-    #define mdprintf(...)
-#endif
-
-enum {
-    MVC_DISABLED          = 0x0,
-    MVC_ENABLED           = 0x1,
-    MVC_VIEWOUTPUT        = 0x2,    // 2 output bitstreams
-};
 
 struct AppConfig
 {
@@ -490,7 +464,7 @@ protected:
     mfxU16 m_refDist;
     mfxU16 m_decodePoolSize;
     mfxU16 m_gopSize;
-    mfxU32 m_numOfFields;
+    mfxU16 m_numOfFields;
     mfxU16 m_heightMB;
     mfxU16 m_widthMB;
     mfxU16 m_widthMBpreenc;
@@ -677,7 +651,6 @@ protected:
 };
 
 bufSet* getFreeBufSet(std::list<bufSet*> bufs);
-mfxExtBuffer * getBufById(setElem* bufSet, mfxU32 id, mfxU32 fieldId);
 
 PairU8 ExtendFrameType(mfxU32 type);
 
@@ -686,6 +659,5 @@ mfxI16 get16Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmp
 mfxI16 get4Median(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB* preencMB, mfxI16* tmpBuf, int xy, int L0L1, int offset);
 
 inline bool compareDistortion(MVP_elem frst, MVP_elem scnd);
-const char* getFrameType(mfxU8 type);
 
 #endif // __PIPELINE_FEI_H__
