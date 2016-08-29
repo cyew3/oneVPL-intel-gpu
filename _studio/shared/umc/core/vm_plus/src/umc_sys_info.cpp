@@ -33,6 +33,17 @@ namespace UMC
 static void GetCpuUseTime(vm_char*, vm_tick* process_use, vm_tick* total_use);
 
 SysInfo::SysInfo(vm_char *pProcessName)
+    :user_time(0),
+     total_time(0),
+     user_time_start(0),
+     total_time_start(0),
+     last_cpuusage(0),
+     max_cpuusage(0),
+     avg_cpuusage(0),
+     m_FuncGetMemUsage(0),
+     m_MemoryMax(0),
+     m_MemorySum(0),
+     m_MemoryCount(0)
 {
     memset(&m_sSystemInfo,0,sizeof(sSystemInfo));
     if (!pProcessName)

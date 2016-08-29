@@ -513,8 +513,11 @@ mfxStatus mfxDefaultAllocatorD3D11::FreeFramesHW(mfxHDL pthis, mfxFrameAllocResp
 mfxDefaultAllocatorD3D11::mfxWideHWFrameAllocator::mfxWideHWFrameAllocator(mfxU16 type,
                                                                            ID3D11Device *pD11Device,
                                                                            ID3D11DeviceContext  *pD11DeviceContext):mfxBaseWideFrameAllocator(type),
+                                                                                                                    m_StagingSrfPool(0),
                                                                                                                     m_pD11Device(pD11Device),
-                                                                                                                    m_pD11DeviceContext(pD11DeviceContext)
+                                                                                                                    m_pD11DeviceContext(pD11DeviceContext),
+                                                                                                                    m_NumSurface(0),
+                                                                                                                    isBufferKeeper(false)
 {
     frameAllocator.Alloc =  &mfxDefaultAllocatorD3D11::AllocFramesHW;
     frameAllocator.Lock =   &mfxDefaultAllocatorD3D11::LockFrameHW;

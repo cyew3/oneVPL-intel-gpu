@@ -171,7 +171,6 @@ private:
     eMFXHWType                           m_HWType;
 
     IDirect3DSurface9 *m_pSystemMemorySurface;
-    AuxiliaryDevice                      *m_pEncodeAuxDevice;
 
     bool m_bCmCopy;
     bool m_bCmCopySwap;

@@ -235,10 +235,11 @@ namespace mfxDefaultAllocatorD3D11
     class mfxWideHWFrameAllocator : public  mfxBaseWideFrameAllocator
     {
     public:
-        std::vector<ID3D11Texture2D*> m_SrfPool; // array of pointers
-        ID3D11Texture2D* m_StagingSrfPool;
         mfxWideHWFrameAllocator(mfxU16 type, ID3D11Device *pD11Device, ID3D11DeviceContext *pD11DeviceContext);
         virtual ~mfxWideHWFrameAllocator(void){};
+
+        std::vector<ID3D11Texture2D*> m_SrfPool; // array of pointers
+        ID3D11Texture2D* m_StagingSrfPool;
 
         //we are sure that Device & Context already queryied
         ID3D11Device            *m_pD11Device;
@@ -248,6 +249,9 @@ namespace mfxDefaultAllocatorD3D11
 
         bool isBufferKeeper;
 
+    private:
+        mfxWideHWFrameAllocator(const mfxWideHWFrameAllocator &);
+        void operator=(const mfxWideHWFrameAllocator &);
     };
 
 }

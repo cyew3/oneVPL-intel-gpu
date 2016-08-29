@@ -565,7 +565,7 @@ namespace UMC
     {
         sAudioStreamInfo()
         : channels(0), sample_frequency(0), bitrate(0), bitPerSample(0), duration(0.0), stream_type(UNDEF_AUDIO)
-        , stream_subtype(UNDEF_AUDIO_SUBTYPE), channel_mask(0), streamPID(0), is_protected(false), header(0)
+        , stream_subtype(UNDEF_AUDIO_SUBTYPE), iProfile(0), iLevel(0), channel_mask(0), streamPID(0), is_protected(false), header(0)
         {
         }
 

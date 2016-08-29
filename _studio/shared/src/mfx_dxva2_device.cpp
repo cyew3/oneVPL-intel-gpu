@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_dxva2_device.cpp
 
@@ -240,10 +240,9 @@ bool DXGI1Device::Init(const mfxU32 adapterNum)
 DXVA2Device::DXVA2Device(void)
 {
     m_numAdapters = 0;
-
     m_vendorID = 0;
     m_deviceID = 0;
-
+    m_driverVersion = 0;
 } // DXVA2Device::DXVA2Device(void)
 
 DXVA2Device::~DXVA2Device(void)
@@ -255,10 +254,9 @@ DXVA2Device::~DXVA2Device(void)
 void DXVA2Device::Close(void)
 {
     m_numAdapters = 0;
-
     m_vendorID = 0;
     m_deviceID = 0;
-
+    m_driverVersion = 0;
 } // void DXVA2Device::Close(void)
 
 bool DXVA2Device::InitDXGI1(const mfxU32 adapterNum)

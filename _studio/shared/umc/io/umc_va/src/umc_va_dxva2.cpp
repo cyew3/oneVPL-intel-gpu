@@ -81,6 +81,7 @@ DXVA2Accelerator::DXVA2Accelerator():
     m_bIsExtManager(false)
 {
     memset(&m_videoDesc, 0, sizeof(m_videoDesc));
+    memset(&m_Config, 0, sizeof(m_Config));
 }
 
 //////////////////////////////////////////////////////////////

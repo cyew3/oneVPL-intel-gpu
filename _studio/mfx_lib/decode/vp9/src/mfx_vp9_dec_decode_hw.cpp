@@ -70,14 +70,23 @@ VideoDECODEVP9_HW::VideoDECODEVP9_HW(VideoCORE *p_core, mfxStatus *sts)
     : m_isInit(false),
       m_core(p_core),
       m_platform(MFX_PLATFORM_HARDWARE),
+      m_num_output_frames(0),
+      m_in_framerate(0),
+      m_frameOrder(0),
+      m_statusReportFeedbackNumber(0),
       m_adaptiveMode(false),
       m_index(0),
+      m_response(),
+      m_stat(),
       m_va(NULL),
+      m_firstSizes(),
+      m_bs(),
       m_baseQIndex(0),
       m_y_dc_delta_q(0),
       m_uv_dc_delta_q(0),
       m_uv_ac_delta_q(0)
 {
+    memset(&m_sizesOfRefFrame, 0, sizeof(m_sizesOfRefFrame));
     memset(&m_frameInfo.ref_frame_map, -1, sizeof(m_frameInfo.ref_frame_map)); // TODO: move to another place
     ResetFrameInfo();
 
