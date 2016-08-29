@@ -33,7 +33,6 @@ namespace
     {
     private:
         mfxSession _session;
-        mfxU32 _type;
         std::auto_ptr<VideoCodecUSER> *_ptr;
         bool _isNeedEnc;
         bool _isNeedCodec;
