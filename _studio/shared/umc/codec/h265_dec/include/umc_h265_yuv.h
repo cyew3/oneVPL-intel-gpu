@@ -76,9 +76,6 @@ protected:
     // we allocated space for the data.
     Ipp8u                 *m_pAllocatedBuffer;
 
-    // This is the size with which m_pAllocatedBuffer was allocated.
-    Ipp32u                 m_allocatedSize;
-
     IppiSize            m_lumaSize;
     IppiSize            m_chromaSize;
 
