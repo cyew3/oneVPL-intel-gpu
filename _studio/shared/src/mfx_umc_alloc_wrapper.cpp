@@ -128,7 +128,8 @@ mfx_UMC_FrameAllocator::mfx_UMC_FrameAllocator()
       m_doNotNeedToCopy(false),
       m_pCore(0),
       m_externalFramesResponse(0),
-      m_isSWDecode(false)
+      m_isSWDecode(false),
+      m_IOPattern(0)
 {
 }
 
