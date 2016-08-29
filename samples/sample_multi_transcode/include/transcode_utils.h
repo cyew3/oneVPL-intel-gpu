@@ -103,7 +103,7 @@ namespace TranscodingSample
         bool GetNextSessionParams(TranscodingSample::sInputParams &InputParams);
         FILE*     GetPerformanceFile() {return m_PerfFILE;};
         void      PrintParFileName();
-        msdk_string GetLine(int n);
+        msdk_string GetLine(mfxU32 n);
     protected:
         mfxStatus ParseParFile(FILE* file);
         mfxStatus TokenizeLine(msdk_char *pLine, mfxU32 length);

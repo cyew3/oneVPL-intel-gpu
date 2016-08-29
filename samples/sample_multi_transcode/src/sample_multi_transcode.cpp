@@ -391,7 +391,7 @@ mfxStatus Launcher::ProcessResult()
 
     mfxStatus FinalSts = MFX_ERR_NONE;
     msdk_printf(MSDK_STRING("-------------------------------------------------------------------------------\n"));
-    for (int i = 0; i < m_pSessionArray.size(); i++)
+    for (mfxU32 i = 0; i < m_pSessionArray.size(); i++)
     {
         mfxStatus _sts = m_pSessionArray[i]->transcodingSts;
 

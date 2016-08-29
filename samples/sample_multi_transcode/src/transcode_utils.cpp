@@ -302,7 +302,7 @@ void CmdProcessor::PrintParFileName()
     }
 }
 
-msdk_string CmdProcessor::GetLine(int n)
+msdk_string CmdProcessor::GetLine(mfxU32 n)
 {
     if (m_lines.size() > n)
         return m_lines[n];
