@@ -1719,6 +1719,11 @@ HeaderPacker::HeaderPacker()
     : m_par(0)
     , m_bs(m_bs_ssh, sizeof(m_bs_ssh))
 {
+    m_sz_vps = 0;
+    m_sz_sps = 0;
+    m_sz_pps = 0;
+    m_sz_ssh = 0;
+
     for (mfxU8 i = 0; i < 3; i ++)
     {
         BitstreamWriter bs(m_bs_aud[i], AUD_BS_SIZE);
