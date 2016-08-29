@@ -592,7 +592,7 @@ mfxStatus D3D11Encoder::QueryStatus(Task & task)
     case ENCODE_OK:
         task.m_bsDataLength = feedback->bitstreamSize;
 
-        if (m_widi /*&& m_caps.HWCounterAutoIncrementSupport*/)
+        if (m_widi && m_caps.HWCounterAutoIncrementSupport)
         {
             task.m_aes_counter.Count = feedback->aes_counter.Counter;
             task.m_aes_counter.IV    = feedback->aes_counter.IV;

@@ -85,7 +85,7 @@ DECL(ENCODE_COMPBUFFERDESC,
 )
 #undef FIELD_FORMAT
 
-#define FIELD_FORMAT "%-24s"
+#define FIELD_FORMAT "%-32s"
 DECL(ENCODE_CAPS_HEVC,
     TRACE("%d", CodingLimitSet          );
     TRACE("%d", BitDepth8Only           );
@@ -126,11 +126,17 @@ DECL(ENCODE_CAPS_HEVC,
 
     TRACE("%d", MaxNumOfROI               );
     TRACE("%d", ROIBRCPriorityLevelSupport);
+    TRACE("%d", ROIBlockSize              );
 
-    TRACE("%d", SliceLevelReportSupport   );
-    TRACE("%d", NumOfTileColumnsMinus1    );
-    TRACE("%d", IntraRefreshBlockUnitSize );
-    TRACE("%d", LCUSizeSupported          );
+    TRACE("%d", SliceLevelReportSupport      );
+    TRACE("%d", MaxNumOfTileColumnsMinus1    );
+    TRACE("%d", IntraRefreshBlockUnitSize    );
+    TRACE("%d", LCUSizeSupported             );
+    TRACE("%d", MaxNumDeltaQP                );
+    TRACE("%d", DirtyRectSupport             );
+    TRACE("%d", MoveRectSupport              );
+    TRACE("%d", FrameSizeToleranceSupport    );
+    TRACE("%d", HWCounterAutoIncrementSupport);
 
     TRACE("%d", MaxNum_WeightedPredL0);
     TRACE("%d", MaxNum_WeightedPredL1);
@@ -218,28 +224,29 @@ DECL(ENCODE_SET_PICTURE_PARAMETERS_HEVC,
     TRACE("%d", CodingType);
     TRACE("%d", NumSlices);
 
-    TRACE("%d", tiles_enabled_flag                   );
-    TRACE("%d", entropy_coding_sync_enabled_flag     );
-    TRACE("%d", sign_data_hiding_flag                );
-    TRACE("%d", constrained_intra_pred_flag          );
-    TRACE("%d", transform_skip_enabled_flag          );
-    TRACE("%d", transquant_bypass_enabled_flag       );
-    TRACE("%d", cu_qp_delta_enabled_flag             );
-    TRACE("%d", weighted_pred_flag                   );
-    TRACE("%d", weighted_bipred_flag                 );
-    TRACE("%d", bEnableGPUWeightedPrediction         );
-    TRACE("%d", loop_filter_across_slices_flag       );
-    TRACE("%d", loop_filter_across_tiles_flag        );
-    TRACE("%d", scaling_list_data_present_flag       );
-    TRACE("%d", dependent_slice_segments_enabled_flag);
-    TRACE("%d", bLastPicInSeq                        );
-    TRACE("%d", bLastPicInStream                     );
-    TRACE("%d", bUseRawPicForRef                     );
-    TRACE("%d", bEmulationByteInsertion              );
-    TRACE("%d", BRCPrecision                         );
-    //TRACE("%d", bScreenContent                       );
-    TRACE("%d", bEnableRollingIntraRefresh           );
-    TRACE("%d", no_output_of_prior_pics_flag         );
+    TRACE("%d", tiles_enabled_flag                      );
+    TRACE("%d", entropy_coding_sync_enabled_flag        );
+    TRACE("%d", sign_data_hiding_flag                   );
+    TRACE("%d", constrained_intra_pred_flag             );
+    TRACE("%d", transform_skip_enabled_flag             );
+    TRACE("%d", transquant_bypass_enabled_flag          );
+    TRACE("%d", cu_qp_delta_enabled_flag                );
+    TRACE("%d", weighted_pred_flag                      );
+    TRACE("%d", weighted_bipred_flag                    );
+    TRACE("%d", loop_filter_across_slices_flag          );
+    TRACE("%d", loop_filter_across_tiles_flag           );
+    TRACE("%d", scaling_list_data_present_flag          );
+    TRACE("%d", dependent_slice_segments_enabled_flag   );
+    TRACE("%d", bLastPicInSeq                           );
+    TRACE("%d", bLastPicInStream                        );
+    TRACE("%d", bUseRawPicForRef                        );
+    TRACE("%d", bEmulationByteInsertion                 );
+    TRACE("%d", BRCPrecision                            );
+    TRACE("%d", bEnableSliceLevelReport                 );
+    TRACE("%d", bEnableRollingIntraRefresh              );
+    TRACE("%d", no_output_of_prior_pics_flag            );
+    TRACE("%d", bEnableGPUWeightedPrediction            );
+    TRACE("%d", DisplayFormatSwizzle                    );
 
     TRACE("%d", QpY);
     TRACE("%d", diff_cu_qp_delta_depth);
@@ -260,6 +267,83 @@ DECL(ENCODE_SET_PICTURE_PARAMETERS_HEVC,
 
     TRACE("%d", slice_pic_parameter_set_id);
     TRACE("%d", nal_unit_type);
+    TRACE("%d", MaxSliceSizeInBytes);
+
+    TRACE("%d", NumROI);
+    for (mfxU32 i = 0; i < b.NumROI; i ++)
+    {
+        TRACE("%d", ROI[i].Roi.Top);
+        TRACE("%d", ROI[i].Roi.Bottom);
+        TRACE("%d", ROI[i].Roi.Left);
+        TRACE("%d", ROI[i].Roi.Right);
+        TRACE("%d", ROI[i].PriorityLevelOrDQp);
+    }
+    
+    TRACE("%d", MaxDeltaQp);
+    TRACE("%d", MinDeltaQp);
+
+//#if (HEVCE_DDI_VERSION >= 960)
+//    TRACE("%d", NumDeltaQpForNonRectROI);
+//    TRACE_ARRAY_ROW("%d", NonRectROIDeltaQpList, 16);
+//#endif
+    
+    TRACE("%d", SkipFrameFlag);
+    TRACE("%d", NumSkipFrames);
+    TRACE("%d", SizeSkipFrames);
+    
+    TRACE("%d", BRCMaxQp);
+    TRACE("%d", BRCMinQp);
+
+    TRACE("%d", bEnableHMEOffset);
+    if (b.bEnableHMEOffset)
+    {
+        TRACE_ARRAY_ROW("%d", HMEOffset[ 0], 2);
+        TRACE_ARRAY_ROW("%d", HMEOffset[ 1], 2);
+        TRACE_ARRAY_ROW("%d", HMEOffset[ 2], 2);
+        TRACE_ARRAY_ROW("%d", HMEOffset[ 3], 2);
+        TRACE_ARRAY_ROW("%d", HMEOffset[ 4], 2);
+        TRACE_ARRAY_ROW("%d", HMEOffset[ 5], 2);
+        TRACE_ARRAY_ROW("%d", HMEOffset[ 6], 2);
+        TRACE_ARRAY_ROW("%d", HMEOffset[ 7], 2);
+        TRACE_ARRAY_ROW("%d", HMEOffset[ 8], 2);
+        TRACE_ARRAY_ROW("%d", HMEOffset[ 9], 2);
+        TRACE_ARRAY_ROW("%d", HMEOffset[10], 2);
+        TRACE_ARRAY_ROW("%d", HMEOffset[11], 2);
+        TRACE_ARRAY_ROW("%d", HMEOffset[12], 2);
+        TRACE_ARRAY_ROW("%d", HMEOffset[13], 2);
+        TRACE_ARRAY_ROW("%d", HMEOffset[14], 2);
+        TRACE_ARRAY_ROW("%d", HMEOffset[15], 2);
+    }
+
+    TRACE("%d", NumDirtyRects);
+    if (b.NumDirtyRects)
+    {
+        for (mfxU32 i = 0; i < b.NumDirtyRects; i ++)
+        {
+            TRACE("%d", pDirtyRect[i].Top);
+            TRACE("%d", pDirtyRect[i].Bottom);
+            TRACE("%d", pDirtyRect[i].Left);
+            TRACE("%d", pDirtyRect[i].Right);
+        }
+    }
+    
+    TRACE("%d", NumMoveRects);
+    if (b.NumMoveRects)
+    {
+        for (mfxU32 i = 0; i < b.NumMoveRects; i ++)
+        {
+            TRACE("%d", pMoveRect[i].SourcePointX);
+            TRACE("%d", pMoveRect[i].SourcePointY);
+            TRACE("%d", pMoveRect[i].DestTop);
+            TRACE("%d", pMoveRect[i].DestBot);
+            TRACE("%d", pMoveRect[i].DestLeft);
+            TRACE("%d", pMoveRect[i].DestRight);
+        }
+    }
+
+//#if (HEVCE_DDI_VERSION >= 960)
+//    TRACE("%d", InputType);
+//#endif
 )
 #undef FIELD_FORMAT
 

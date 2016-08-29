@@ -326,6 +326,15 @@ void FillPpsBuffer(
         pps.QpDeltaForInsertedIntra = mfxU8(task.m_IRState.IntRefQPDelta);
     }
     pps.StatusReportFeedbackNumber = task.m_statusReportNumber;
+
+#if (HEVCE_DDI_VERSION >= 960)
+    mfxExtAVCEncoderWiDiUsage* extWiDi = ExtBuffer::Get(task.m_ctrl);
+
+    if (extWiDi)
+        pps.InputType = eType_DRM_SECURE;
+    else
+        pps.InputType = eType_DRM_NONE;
+#endif
 }
 
 void CachedFeedback::Reset(mfxU32 cacheSize, mfxU32 feedbackSize)
@@ -848,7 +857,7 @@ mfxStatus D3D9Encoder::QueryStatus(Task & task)
         Trace(*feedback, 0);
         task.m_bsDataLength = feedback->bitstreamSize;
 
-        if (m_widi /*&& m_caps.HWCounterAutoIncrementSupport*/)
+        if (m_widi && m_caps.HWCounterAutoIncrementSupport)
         {
             task.m_aes_counter.Count = feedback->aes_counter.Counter;
             task.m_aes_counter.IV    = feedback->aes_counter.IV;

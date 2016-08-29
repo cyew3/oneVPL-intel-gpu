@@ -20,6 +20,7 @@
 
 //#define HEADER_PACKING_TEST
 //#define DDI_TRACE
+#define HEVCE_DDI_VERSION 947
 
 #define D3DDDIFMT_NV12 (D3DDDIFORMAT)(MFX_MAKEFOURCC('N', 'V', '1', '2'))
 #define D3DDDIFMT_YU12 (D3DDDIFORMAT)(MFX_MAKEFOURCC('Y', 'U', '1', '2'))
@@ -94,7 +95,6 @@ typedef struct tagENCODE_CAPS_HEVC
         UINT CodingLimits;
     };
 
-    //USHORT reserved;
     UINT    MaxPicWidth;
     UINT    MaxPicHeight;
     UCHAR   MaxNum_Reference0;
@@ -106,7 +106,7 @@ typedef struct tagENCODE_CAPS_HEVC
         struct {
             UCHAR    MaxNumOfROI                    : 5; // [0..16]
             UCHAR    ROIBRCPriorityLevelSupport     : 1;
-            UCHAR                                   : 2;
+            UCHAR    ROIBlockSize                   : 2;
         };
         UCHAR    ROICaps;
     };
@@ -114,10 +114,15 @@ typedef struct tagENCODE_CAPS_HEVC
     union {
         struct {
             UINT    SliceLevelReportSupport         : 1;
-            UINT    NumOfTileColumnsMinus1          : 4;
+            UINT    MaxNumOfTileColumnsMinus1       : 4;
             UINT    IntraRefreshBlockUnitSize       : 2;
             UINT    LCUSizeSupported                : 3;
-            UINT                                    : 22; // For future expansion
+            UINT    MaxNumDeltaQP                   : 4;
+            UINT    DirtyRectSupport                : 1;
+            UINT    MoveRectSupport                 : 1;
+            UINT    FrameSizeToleranceSupport       : 1;
+            UINT    HWCounterAutoIncrementSupport   : 2;
+            UINT                                    : 13; // For future expansion
         };
         UINT    CodingLimits2;
     };
@@ -273,6 +278,39 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
     CHAR    QpDeltaForInsertedIntra;
     UINT    StatusReportFeedbackNumber;
 
+#if (HEVCE_DDI_VERSION >= 960)
+    // following parameters are valid for CNL+ only
+    UCHAR   slice_pic_parameter_set_id; // [0..63]
+    UCHAR   nal_unit_type;              // [0..63]
+    UINT    MaxSliceSizeInBytes;
+
+    UCHAR       NumROI;                    // [0..16]
+    ENCODE_ROI  ROI[16];
+    CHAR        MaxDeltaQp;                 // [-51..51]
+    CHAR        MinDeltaQp;                 // [-51..51]
+    UCHAR       NumDeltaQpForNonRectROI;    // [0..15]
+    CHAR        NonRectROIDeltaQpList[16];
+
+    // Skip Frames
+    UCHAR       SkipFrameFlag;
+    UCHAR       NumSkipFrames;
+    UINT        SizeSkipFrames;
+
+    // Max/Min QP settings for BRC
+    UCHAR       BRCMaxQp;
+    UCHAR       BRCMinQp;
+
+    // HME Offset
+    UCHAR       bEnableHMEOffset;
+    SHORT       HMEOffset[15][2];
+
+    USHORT      NumDirtyRects;
+    ENCODE_RECT *pDirtyRect;
+    USHORT      NumMoveRects;
+    MOVE_RECT   *pMoveRect;
+
+    ENCODE_INPUT_TYPE    InputType;
+#else
     // following parameters are for VDEnc only
     UCHAR   slice_pic_parameter_set_id; // [0..63]
     UCHAR   nal_unit_type;              // [0..63]
@@ -300,7 +338,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
     ENCODE_RECT  *pDirtyRect;
     UCHAR        NumMoveRects;
     MOVE_RECT    *pMoveRect;
-
+#endif
 } ENCODE_SET_PICTURE_PARAMETERS_HEVC;
 
 typedef struct tagENCODE_SET_SLICE_HEADER_HEVC
