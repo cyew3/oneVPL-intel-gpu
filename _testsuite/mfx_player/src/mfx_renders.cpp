@@ -1542,7 +1542,8 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
         pSurfaceIn->Info.FourCC != MFX_FOURCC_Y210 &&
         pSurfaceIn->Info.FourCC != MFX_FOURCC_Y216 &&
         pSurfaceIn->Info.FourCC != MFX_FOURCC_Y410 &&
-        pSurfaceIn->Info.FourCC != MFX_FOURCC_AYUV)
+        pSurfaceIn->Info.FourCC != MFX_FOURCC_AYUV &&
+        pSurfaceIn->Info.FourCC != MFX_FOURCC_YUY2)
     {
         return pSurfaceIn;
     }
@@ -1736,10 +1737,43 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
     }
     else if (pSurfaceOut->Info.FourCC == MFX_FOURCC_YV16)
     {
-        VM_ASSERT(pSurfaceIn->Info.FourCC == MFX_FOURCC_NV16);
+        if (pSurfaceIn->Info.FourCC != MFX_FOURCC_YUY2)
+        {
+            VM_ASSERT(pSurfaceIn->Info.FourCC == MFX_FOURCC_NV16);
 
-        copyPlane<mfxU8, mfxU8>(pSurfaceIn->Data.Y, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.Y, pSurfaceOut->Data.Pitch, pSurfaceIn->Info.Height, pSurfaceIn->Info.Width, 0);
-        copyChromaPlane<mfxU8, mfxU8>(pSurfaceIn->Data.UV, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.U, pSurfaceOut->Data.V, pSurfaceOut->Data.Pitch >> 1, pSurfaceIn->Info.Height, pSurfaceIn->Info.Width / 2, 0);
+            copyPlane<mfxU8, mfxU8>(pSurfaceIn->Data.Y, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.Y, pSurfaceOut->Data.Pitch, pSurfaceIn->Info.Height, pSurfaceIn->Info.Width, 0);
+            copyChromaPlane<mfxU8, mfxU8>(pSurfaceIn->Data.UV, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.U, pSurfaceOut->Data.V, pSurfaceOut->Data.Pitch >> 1, pSurfaceIn->Info.Height, pSurfaceIn->Info.Width / 2, 0);
+        }
+        else
+        {
+#pragma pack(push, 1)
+            struct YUY2Pixel
+            {
+                mfxU8 y0, u, y1, v;
+            };
+#pragma pack(pop)
+
+            mfxU8* pDstY = pSurfaceOut->Data.Y;
+            mfxU8* pDstU = pSurfaceOut->Data.U;
+            mfxU8* pDstV = pSurfaceOut->Data.V;
+
+            for (size_t i = 0; i < pSurfaceIn->Info.Height; i++)
+            {
+                YUY2Pixel const* pSrc
+                    = reinterpret_cast<YUY2Pixel const*>(pSurfaceIn->Data.Y + pitchIn * i);
+
+                for (size_t j = 0; j < pSurfaceIn->Info.Width; j += 2)
+                {
+                    pDstY[i * pitchOut + j + 0] = pSrc->y0;
+                    pDstY[i * pitchOut + j + 1] = pSrc->y1;
+
+                    pDstU[i * pitchOut / 2 + j / 2] = pSrc->u;
+                    pDstV[i * pitchOut / 2 + j / 2] = pSrc->v;
+
+                    ++pSrc;
+                }
+            }
+        }
     }
     else if (pSurfaceOut->Info.FourCC == MFX_FOURCC_YUV444_8)
     {
