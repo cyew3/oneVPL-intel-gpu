@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_screen_capture_ddi.h
 
@@ -109,7 +109,7 @@ enum DirtyRectMode{
 class Capturer
 {
 public:
-    CaptureMode Mode;
+    const CaptureMode Mode;
 
     virtual ~Capturer(){}
 
@@ -137,6 +137,12 @@ public:
     virtual
     mfxStatus QueryStatus(std::list<DESKTOP_QUERY_STATUS_PARAMS>& StatusList) = 0;
 
+protected:
+    Capturer(const CaptureMode _mode) : Mode(_mode) {}
+
+private: // prohobit copy constructor and assignment operator
+    Capturer(const Capturer&);
+    Capturer& operator=(const Capturer&);
 };
 
 class DirtyRectFilter

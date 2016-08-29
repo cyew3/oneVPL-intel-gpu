@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_screen_capture_d3d9.cpp
 
@@ -21,16 +21,17 @@ namespace MfxCapture
 #endif
 
 SW_D3D9_Capturer::SW_D3D9_Capturer(mfxCoreInterface* _core)
-    :m_pmfxCore(_core),
-    m_bOwnDevice(false),
-    m_bResize(false),
-    m_width (0),
-    m_height(0),
-    m_CropW (0),
-    m_CropH (0),
-    m_DisplayIndex(0)
+    : Capturer(SW_D3D9),
+      m_pmfxCore(_core),
+      m_bOwnDevice(false),
+      m_bResize(false),
+      m_width (0),
+      m_height(0),
+      m_CropW (0),
+      m_CropH (0),
+      m_DisplayIndex(0)
 {
-    Mode = SW_D3D9;
+    m_hDirectXHandle = 0;
     memset(&m_core_par, 0, sizeof(m_core_par));
     m_pResizeBuffer = 0;
 }
