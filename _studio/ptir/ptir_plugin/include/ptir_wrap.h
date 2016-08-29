@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 
 File Name: ptir_vpp_plugin.h
 
@@ -45,9 +45,9 @@ public:
         FreeFrames();
     }
     virtual mfxStatus SetDevice(CmDeviceEx* _pCMdevice);
-    virtual void* SetMap(std::map<CmSurface2D*,mfxFrameSurface1*>* _CmToMfxSurfmap);
-    virtual void* SetFrmBuffer(Frame *_frmBuffer[LASTFRAME]);
-    virtual void* SetFrmType(const mfxU16& _in, const mfxU16& _out);
+    virtual void SetMap(std::map<CmSurface2D*,mfxFrameSurface1*>* _CmToMfxSurfmap);
+    virtual void SetFrmBuffer(Frame *_frmBuffer[LASTFRAME]);
+    virtual void SetFrmType(const mfxU16& _in, const mfxU16& _out);
     virtual CmSurface2D* GetWorkSurfaceCM();
     virtual mfxFrameSurface1* GetWorkSurfaceMfx();
     virtual mfxStatus AddCPUPtirOutSurf(mfxU8* buffer, mfxFrameSurface1* surface);

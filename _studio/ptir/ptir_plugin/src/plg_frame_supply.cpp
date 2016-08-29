@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 
 File Name: plg_frame_supply.cpp
 
@@ -12,22 +12,29 @@ File Name: plg_frame_supply.cpp
 
 #include "ptir_wrap.h"
 
-frameSupplier::frameSupplier(std::vector<mfxFrameSurface1*>* _inSurfs, std::vector<mfxFrameSurface1*>* _workSurfs, 
-    std::vector<mfxFrameSurface1*>* _outSurfs, std::map<CmSurface2D*,mfxFrameSurface1*>* _CmToMfxSurfmap,
-    CmDeviceEx* _pCMdevice, mfxCoreInterface* _mfxCore, mfxU16 _IOPattern, bool _isD3D11, UMC::Mutex& _guard)
-    : m_guard(_guard)
+frameSupplier::frameSupplier(std::vector<mfxFrameSurface1*>* _inSurfs,
+                             std::vector<mfxFrameSurface1*>* _workSurfs,
+                             std::vector<mfxFrameSurface1*>* _outSurfs, 
+                             std::map<CmSurface2D*,mfxFrameSurface1*>* _CmToMfxSurfmap,
+                             CmDeviceEx* _pCMdevice, 
+                             mfxCoreInterface* _mfxCore, 
+                             mfxU16 _IOPattern, 
+                             bool _isD3D11, 
+                             UMC::Mutex& _guard)
+    : pCMdevice(_pCMdevice),
+      m_pCmQueue(0),
+      mfxCoreIfce(_mfxCore),
+      inSurfs  (_inSurfs),
+      workSurfs(_workSurfs),
+      outSurfs (_outSurfs),
+      CmToMfxSurfmap(_CmToMfxSurfmap),
+      frmBuffer(0),
+      IOPattern(_IOPattern),
+      opqFrTypeIn(0),
+      opqFrTypeOut(0),
+      isD3D11(_isD3D11),
+      m_guard(_guard)
 {
-    inSurfs        = _inSurfs;
-    workSurfs      = _workSurfs;
-    outSurfs       = _outSurfs;
-    CmToMfxSurfmap = _CmToMfxSurfmap;
-    pCMdevice      = _pCMdevice;
-    mfxCoreIfce    = _mfxCore;
-    IOPattern      = _IOPattern;
-    isD3D11        = _isD3D11;
-    frmBuffer      = 0;
-    opqFrTypeIn    = 0;
-    opqFrTypeOut   = 0;
 }
 mfxStatus frameSupplier::SetDevice(CmDeviceEx* _pCMdevice)
 {
@@ -40,23 +47,23 @@ mfxStatus frameSupplier::SetDevice(CmDeviceEx* _pCMdevice)
     else
         return MFX_ERR_DEVICE_FAILED;
 }
-void* frameSupplier::SetMap(std::map<CmSurface2D*,mfxFrameSurface1*>* _CmToMfxSurfmap)
+void frameSupplier::SetMap(std::map<CmSurface2D*,mfxFrameSurface1*>* _CmToMfxSurfmap)
 {
     CmToMfxSurfmap = _CmToMfxSurfmap;
-    return 0;
+    return;
 }
 
-void* frameSupplier::SetFrmBuffer(Frame *_frmBuffer[LASTFRAME])
+void frameSupplier::SetFrmBuffer(Frame *_frmBuffer[LASTFRAME])
 {
     frmBuffer = _frmBuffer;
-    return 0;
+    return;
 }
 
-void* frameSupplier::SetFrmType(const mfxU16& _in, const mfxU16& _out)
+void frameSupplier::SetFrmType(const mfxU16& _in, const mfxU16& _out)
 {
     opqFrTypeIn    = _in;
     opqFrTypeOut   = _out;
-    return 0;
+    return;
 }
 
 CmSurface2D* frameSupplier::GetWorkSurfaceCM()
