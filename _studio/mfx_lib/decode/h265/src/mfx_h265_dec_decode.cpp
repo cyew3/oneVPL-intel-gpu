@@ -140,6 +140,8 @@ VideoDECODEH265::VideoDECODEH265(VideoCORE *core, mfxStatus * sts)
 #endif
 {
     memset(&m_stat, 0, sizeof(m_stat));
+    memset(&m_response, 0, sizeof(m_response));
+    memset(&m_response_alien, 0, sizeof(m_response_alien));
 
     if (sts)
     {
