@@ -102,12 +102,6 @@ namespace H265Enc {
         Ipp32s m_sceneCut;
         Ipp64s m_metric;// special metric per frame for sceneCut based on +10 frames lookahead 
         
-        /*std::vector<Ipp32f> m_fcs;
-        std::vector<Ipp32f> m_frs;
-        Ipp32f   m_AFD;
-        Ipp32f   m_RsCsDiff;
-        Ipp32f   m_MVdiffVal;*/
-
         void ResetAvgMetrics()
         {
             m_frameRs = 0.0;
@@ -118,16 +112,20 @@ namespace H265Enc {
             avgTSC = 0.0;
             m_avgBestSatd = 0.f;
             m_avgIntraSatd = 0.f;
+            m_avgInterSatd = 0.f;
             m_intraRatio = 0.f;
             m_sceneCut = 0;
-            m_metric    = 0;
-            /*m_AFD       = 0.f;
-            m_RsCsDiff  = 0.f;
-            m_MVdiffVal = 0.f;*/
+            m_metric = 0;
+            m_pitchRsCs4 = 0;
         }
 
         struct AllocInfo { Ipp32s width, height; };
-		Statistics() { Zero(m_rs); Zero(m_cs); };
+        Statistics()
+        {
+            ResetAvgMetrics();
+            Zero(m_rs);
+            Zero(m_cs);
+        };
         void Create(const AllocInfo &allocInfo);
         ~Statistics() { Destroy(); }
         void Destroy();
@@ -170,7 +168,11 @@ namespace H265Enc {
         Ipp32s pitch_chroma_pix;
         Ipp32s pitch_chroma_bytes;
 
-        FrameData() : y(), uv(), m_handle(), mem(), m_fei() {}
+        FrameData() : y(), uv(), m_handle(), width(0), height(0), padding(0),
+            pitch_luma_pix(0), pitch_luma_bytes(0), pitch_chroma_pix(0), pitch_chroma_bytes(0),
+            mem(), m_fei()
+        {}
+
         ~FrameData() { Destroy(); }
 
         struct AllocInfo {
@@ -436,7 +438,7 @@ namespace H265Enc {
     template <class T> class ObjectPool
     {
     public:
-        ObjectPool() {}
+        ObjectPool() : m_allocInfo() {}
         ~ObjectPool() { Destroy(); }
 
         void Destroy() {

@@ -869,7 +869,10 @@ H265FrameEncoder::H265FrameEncoder(H265Encoder& topEnc)
     , m_context_array_wpp_enc(NULL)
     , m_context_array_wpp(NULL)
     , m_costStat(NULL)
+    , m_coeffWork(0)
     , m_frame(NULL)
+    , data_temp_size(0)
+    , m_numTasksPerCu(0)
 {
 }
 

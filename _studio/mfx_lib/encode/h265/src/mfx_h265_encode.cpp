@@ -807,6 +807,48 @@ H265Encoder::H265Encoder(MFXCoreInterface1 &core)
     vm_cond_set_invalid(&m_feiCondVar);
     vm_mutex_set_invalid(&m_feiCritSect);
     Zero(m_stat);
+    Zero(m_profile_level);
+    Zero(m_sps);
+    Zero(m_pps);
+    Zero(m_videoParam);
+    Zero(m_seiAps);
+
+    m_tile_col_ids = NULL;
+    m_tile_row_ids = NULL;
+    m_tile_ids = NULL;
+    m_tiles = NULL;
+    m_slices = NULL;
+    m_slice_ids = NULL;
+    m_cu = NULL;
+    m_cmDevice = NULL;
+    data_temp = NULL;
+    m_bsf = NULL;
+
+    m_frameOrderOfLastAnchor = 0;
+    m_frameOrderOfLastAnchorB = 0;
+    m_frameOrderOfLastIdr = 0;
+    m_frameOrderOfLastIntraB = 0;
+    m_frameOrderOfLastIdrB = 0;
+    m_frameOrderOfLastIntra = 0;
+    m_lastEncOrder = 0;
+    m_profileIndex = 0;
+    m_frameOrder = 0;
+    m_miniGopCount = 0;
+    m_frameCountBufferedSync = 0;
+    m_frameCountSync = 0;
+    m_LastbiFramesInMiniGop = 0;
+    m_lastTimeStamp = 0;
+    m_spsBufSize = 0;
+    m_ppsBufSize = 0;
+    m_useSysOpaq = false;
+    m_useVideoOpaq = false;
+    m_isOpaque = false;
+    m_sceneOrder = 0;
+    m_inputTaskInProgress = 0;
+
+    m_pauseFeiThread = 0;
+    m_stopFeiThread = 0;
+    
 #if TASK_LOG_ENABLE
     taskLog = NULL;
 #endif

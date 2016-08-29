@@ -168,16 +168,18 @@ public:
         kernelBiRefine(),
         kernelDeblock(),
         kernelFullPostProc(),
-
         width(),
         height(),
+        sourceHeight(0),
+        sourceWidth(0),
+        heightChroma(0),
+        widthChroma(0),
         numRefFrames(),
         numIntraModes(),
         fourcc(), 
         targetUsage(),
         enableChromaSao(),
         enableInterp(),
-
         width32(),
         height32(),
         width2x(),
@@ -193,8 +195,13 @@ public:
         interpBlocksW(),
         interpBlocksH(),
         numRefBufs(),
-        vmeMode()
-    { }
+        vmeMode(),
+        paddingChroma(0),
+        padding(0),
+        bppShift(0),
+        rectParts(0)
+    { 
+    }
 
     ~H265CmCtx() { }
 };

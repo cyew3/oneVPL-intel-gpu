@@ -537,6 +537,15 @@ namespace H265Enc {
         cu_data = NULL;
         m_stats[0] = m_stats[1] = NULL;
         m_sceneStats = NULL;
+        m_doPostProc = 0;
+        m_bdLumaFlag = 0;
+        m_bdChromaFlag = 0;
+        m_chromaFormatIdc = 0;
+        m_bitDepthLuma = 0;
+        m_bitDepthChroma = 0;
+
+        m_numRefUnique = 0;
+        m_threadingTasks = NULL;
 
         mem = NULL;
     }
@@ -556,11 +565,17 @@ namespace H265Enc {
         m_pyramidLayer = 0;
         m_miniGopCount = 0;
         m_biFramesInMiniGop = 0;
+        m_numPocTotalCurr = 0;
+        m_ceilLog2NumPocTotalCurr = 0;
+        m_numThreadingTasks = 0;
+
+        m_frameType = MFX_FRAMETYPE_UNKNOWN;
         m_frameOrder = 0;
         m_frameOrderOfLastIdr = 0;
         m_frameOrderOfLastIntra = 0;
         m_frameOrderOfLastIntraInEncOrder = 0;
         m_frameOrderOfLastAnchor = 0;
+
         m_poc = 0;
         m_encOrder = 0;
         m_isShortTermRef = 0;

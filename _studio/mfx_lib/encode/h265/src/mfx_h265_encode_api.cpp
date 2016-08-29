@@ -1525,6 +1525,7 @@ MFXVideoENCODEH265::MFXVideoENCODEH265(MFXCoreInterface1 *core, mfxStatus *sts)
 {
     if (sts)
         *sts = MFX_ERR_NONE;
+    Zero(m_mfxParam);
 }
 
 
