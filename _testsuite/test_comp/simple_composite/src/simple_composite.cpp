@@ -224,7 +224,8 @@ enum ColorFormat
 {
     kYV12 = 0,
     kNV12 = 1,
-    kRGB4 = 2
+    kRGB4 = 2,
+    kAYUV = 3
 };
 
 class ColorMap
@@ -237,6 +238,7 @@ public:
         map_.insert(make_pair("YV12", kYV12));
         map_.insert(make_pair("NV12", kNV12));
         map_.insert(make_pair("RGB4", kRGB4));
+        map_.insert(make_pair("AYUV", kAYUV));
     }
 public:
     ColorFormat Get(const string &str) const
@@ -381,8 +383,8 @@ void PrintHelp(ostream &out)
     out << "Mandatory args: " << endl;
     out << "-par <filename> path to the parameters file" << endl;
     out << "-o <filename>" << endl;
-    out << "-scc <NV12 | YV12 | RGB4> (default: NV12 - source color format)" << endl;
-    out << "-dcc <NV12 | YV12 | RGB4> (default: NV12 - dest color format)" << endl;
+    out << "-scc <NV12 | YV12 | RGB4 | AYUV> (default: NV12 - source color format)" << endl;
+    out << "-dcc <NV12 | YV12 | RGB4 | AYUV> (default: NV12 - dest color format)" << endl;
     out << "-reset_par <filename> path to the parameters file" << endl;
     out << "-reset_start index if the start frame for reset" << endl;
     out << "-d3d11 flag enables MFX_IMPL_VIA_D3D11 implementation"<< endl;
@@ -448,7 +450,7 @@ public:
         m_Arguments = pa;
         m_pVPPSurfacesIn = 0;
 
-        if (m_Arguments->dcc == kNV12 || m_Arguments->dcc == kYV12)
+        if (m_Arguments->dcc == kNV12 || m_Arguments->dcc == kYV12 || m_Arguments->dcc == kAYUV)
         {
             m_Color.Y = 16;
             m_Color.U = 128;
@@ -580,8 +582,8 @@ public:
         mfxU8* surfaceBuffersIn[MAX_INPUT_STREAMS] = {0}; // 1 primary stream + max 63 substreams
         mfxU8  bitsPerPixel = 12;  // NV12 format is a 12 bits per pixel format
 
-        /* IF RGB4 case */
-        if ((m_Arguments->scc == kRGB4) || (m_Arguments->dcc == kRGB4))
+        /* IF RGB4/AYUV case */
+        if (m_Arguments->scc == kRGB4 || m_Arguments->dcc == kRGB4 || m_Arguments->scc == kAYUV || m_Arguments->dcc == kAYUV)
             bitsPerPixel = 32;
 
         for (int i = 0; i < m_nVPPSurfNumIn; i++)
@@ -608,7 +610,7 @@ public:
                 m_pVPPSurfacesIn[i]->Data.V = m_pVPPSurfacesIn[i]->Data.U + 1;
                 m_pVPPSurfacesIn[i]->Data.Pitch = width;
             }
-            else /* IF RGB4 case */
+            else /* IF RGB4/AYUV case */
             {
                 m_pVPPSurfacesIn[i]->Data.B = m_pVPPSurfacesIn[i]->Data.Y;
                 m_pVPPSurfacesIn[i]->Data.G = m_pVPPSurfacesIn[i]->Data.B + 1;
@@ -620,7 +622,7 @@ public:
 
 
         // Allocate surfaces for VPP: Out
-        mfxU16 width = (mfxU16)MSDK_ALIGN32(m_VPPParams.vpp.Out.Width);
+        mfxU16 width  = (mfxU16)MSDK_ALIGN32(m_VPPParams.vpp.Out.Width);
         mfxU16 height = (mfxU16)MSDK_ALIGN32(m_VPPParams.vpp.Out.Height);
         mfxU32 surfaceSize = width * height * bitsPerPixel / 8;
         m_surfaceBuffersOut = (mfxU8 *)new mfxU8[surfaceSize * m_nVPPSurfNumOut];
@@ -708,13 +710,12 @@ protected:
             m_VPPComp.InputStream[i].DstY = atoi(m_Params[i]["dsty"].c_str());
             m_VPPComp.InputStream[i].DstW = atoi(m_Params[i]["dstw"].c_str());
             m_VPPComp.InputStream[i].DstH = atoi(m_Params[i]["dsth"].c_str());
-            m_VPPComp.InputStream[i].GlobalAlpha         = atoi(m_Params[i]["GlobalAlpha"].c_str()) ;
-            m_VPPComp.InputStream[i].GlobalAlphaEnable   = atoi(m_Params[i]["GlobalAlphaEnable"].c_str());
-            m_VPPComp.InputStream[i].PixelAlphaEnable    = atoi(m_Params[i]["PixelAlphaEnable"].c_str()) ;
-
-            m_VPPComp.InputStream[i].LumaKeyEnable = atoi(m_Params[i]["LumaKeyEnable"].c_str()) ;
-            m_VPPComp.InputStream[i].LumaKeyMin    = atoi(m_Params[i]["LumaKeyMin"].c_str()) ;
-            m_VPPComp.InputStream[i].LumaKeyMax    = atoi(m_Params[i]["LumaKeyMax"].c_str()) ;
+            m_VPPComp.InputStream[i].GlobalAlpha         = (mfxU16)atoi(m_Params[i]["GlobalAlpha"].c_str()) ;
+            m_VPPComp.InputStream[i].GlobalAlphaEnable   = (mfxU16)atoi(m_Params[i]["GlobalAlphaEnable"].c_str());
+            m_VPPComp.InputStream[i].PixelAlphaEnable    = (mfxU16)atoi(m_Params[i]["PixelAlphaEnable"].c_str()) ;
+            m_VPPComp.InputStream[i].LumaKeyEnable       = (mfxU16)atoi(m_Params[i]["LumaKeyEnable"].c_str()) ;
+            m_VPPComp.InputStream[i].LumaKeyMin          = (mfxU16)atoi(m_Params[i]["LumaKeyMin"].c_str()) ;
+            m_VPPComp.InputStream[i].LumaKeyMax          = (mfxU16)atoi(m_Params[i]["LumaKeyMax"].c_str()) ;
             cout << "Set " << i << "->" << m_VPPComp.InputStream[i].DstX << ":" << m_VPPComp.InputStream[i].DstY << ":" << m_VPPComp.InputStream[i].DstW  << ":" << m_VPPComp.InputStream[i].DstH << ":" << endl;
             cout << " Alpha Blending Params:" << endl;
             cout << "  GlobalAlphaEnable="    << m_VPPComp.InputStream[i].GlobalAlphaEnable << endl;
@@ -744,6 +745,11 @@ protected:
             m_VPPParams.vpp.In.FourCC         = MFX_FOURCC_YV12;
             m_VPPParams.vpp.In.ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
         }
+        else if (m_Arguments->scc == kAYUV)
+        {
+            m_VPPParams.vpp.In.FourCC         = MFX_FOURCC_AYUV;
+            m_VPPParams.vpp.In.ChromaFormat   = MFX_CHROMAFORMAT_YUV444;
+        }
         else
         {
             m_VPPParams.vpp.In.FourCC         = MFX_FOURCC_RGB4;
@@ -760,8 +766,8 @@ protected:
         // width must be a multiple of 16
         // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
         // Resolution of surface
-        m_VPPParams.vpp.In.Width  = m_Arguments->maxWidth;
-        m_VPPParams.vpp.In.Height = m_Arguments->maxHeight;
+        m_VPPParams.vpp.In.Width          = (mfxU16) m_Arguments->maxWidth;
+        m_VPPParams.vpp.In.Height         = (mfxU16) m_Arguments->maxHeight;
 
         // Output data
         if (m_Arguments->dcc == kNV12)
@@ -769,14 +775,19 @@ protected:
             m_VPPParams.vpp.Out.FourCC         = MFX_FOURCC_NV12;
             m_VPPParams.vpp.Out.ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
         }
+        else if (m_Arguments->dcc == kAYUV)
+        {
+            m_VPPParams.vpp.Out.FourCC         = MFX_FOURCC_AYUV;
+            m_VPPParams.vpp.Out.ChromaFormat   = MFX_CHROMAFORMAT_YUV444;
+        }
         else /*RGB case*/
         {
             m_VPPParams.vpp.Out.FourCC         = MFX_FOURCC_RGB4;
         }
         m_VPPParams.vpp.Out.CropX         = 0;
         m_VPPParams.vpp.Out.CropY         = 0;
-        m_VPPParams.vpp.Out.CropW         = m_Arguments->maxWidth;
-        m_VPPParams.vpp.Out.CropH         = m_Arguments->maxHeight;
+        m_VPPParams.vpp.Out.CropW         = (mfxU16) m_Arguments->maxWidth;
+        m_VPPParams.vpp.Out.CropH         = (mfxU16) m_Arguments->maxHeight;
         m_VPPParams.vpp.Out.PicStruct     = MFX_PICSTRUCT_PROGRESSIVE;
         m_VPPParams.vpp.Out.FrameRateExtN = 30;
         m_VPPParams.vpp.Out.FrameRateExtD = 1;
@@ -784,25 +795,27 @@ protected:
         // height must be a multiple of 16 in case of frame picture and a multiple of 32 in case of field picture
         if (m_Arguments->dW != 0)
         {
-            m_VPPParams.vpp.Out.CropW = m_Arguments->dW;
-            m_VPPParams.vpp.Out.Width = MSDK_ALIGN16(m_Arguments->dW);
+            m_VPPParams.vpp.Out.CropW = (mfxU16) m_Arguments->dW;
+            m_VPPParams.vpp.Out.Width = (mfxU16) MSDK_ALIGN16(m_Arguments->dW);
         }
         else
         {
             cout << "Warning: Destination Width is not specified!"  << endl;
             cout << "Destination Width will be set to maximal width :" << m_Arguments->maxWidth << endl;
-            m_VPPParams.vpp.Out.Width  = m_Arguments->dW = m_Arguments->maxWidth;
+            m_Arguments->dW = m_Arguments->maxWidth;
+            m_VPPParams.vpp.Out.Width = (mfxU16) m_Arguments->dW;
         }
         if (m_Arguments->dH != 0)
         {
-            m_VPPParams.vpp.Out.CropH = m_Arguments->dH;
-            m_VPPParams.vpp.Out.Height = MSDK_ALIGN16(m_Arguments->dH);
+            m_VPPParams.vpp.Out.CropH  = (mfxU16) m_Arguments->dH;
+            m_VPPParams.vpp.Out.Height = (mfxU16) MSDK_ALIGN16(m_Arguments->dH);
         }
         else
         {
             cout << "Warning: Destination Height is not specified!"  << endl;
             cout << "Destination Height will be set to maximal height :" << m_Arguments->maxHeight << endl;
-            m_VPPParams.vpp.Out.Height = m_Arguments->dH = m_Arguments->maxHeight;
+            m_Arguments->dH = m_Arguments->maxHeight;
+            m_VPPParams.vpp.Out.Height = (mfxU16) m_Arguments->dH;
         }
 
         m_VPPParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
@@ -812,7 +825,6 @@ protected:
 
     mfxStatus ParseParFile(string par_file)
     {
-        int       i = 0;
         string    line;
         ifstream par(par_file);
 
@@ -827,7 +839,11 @@ protected:
             if ( key.compare("stream") == 0 || key.compare("primarystream") == 0){
                 if (value.find("background") != string::npos)
                 {
-                    if (!sscanf(value.c_str(), "background(%d,%d,%d)", reinterpret_cast<int*>(&m_Color.Y), reinterpret_cast<int*>(&m_Color.U), reinterpret_cast<int*>(&m_Color.V)))
+#if defined(WIN32) || defined(WIN64)
+                    if (!sscanf_s(value.c_str(), "background(%hu,%hu,%hu)", &m_Color.Y, &m_Color.U, &m_Color.V))
+#else
+                    if (!sscanf(value.c_str(), "background(%hu,%hu,%hu)", &m_Color.Y, &m_Color.U, &m_Color.V))
+#endif
                     {
                         m_Color.Y = 16;
                         m_Color.U = 128;
@@ -847,6 +863,11 @@ protected:
                     {
                         m_Streams[m_nStreams].FourCC         = MFX_FOURCC_YV12;
                         m_Streams[m_nStreams].ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
+                    }
+                    else if (m_Arguments->scc == kAYUV)
+                    {
+                        m_Streams[m_nStreams].FourCC         = MFX_FOURCC_AYUV;
+                        m_Streams[m_nStreams].ChromaFormat   = MFX_CHROMAFORMAT_YUV444;
                     }
                     else
                     {
@@ -871,8 +892,8 @@ protected:
                                          (mfxU16) MSDK_ALIGN32(atoi(params["height"].c_str()));
 
                     // We need to save real sizes for correct reading from input files
-                    m_RealWidths[m_nStreams] = atoi(params["width"].c_str());
-                    m_RealHeights[m_nStreams] = atoi(params["height"].c_str());
+                    m_RealWidths[m_nStreams]  = (mfxU16) atoi(params["width"].c_str());
+                    m_RealHeights[m_nStreams] = (mfxU16) atoi(params["height"].c_str());
 
                     /* Update maximal Width & Height */
                     if (m_Arguments->maxWidth < m_Streams[m_nStreams].Width)
@@ -904,7 +925,7 @@ protected:
     }
 
 private:
-    int                 m_nStreams;
+    mfxU16              m_nStreams;
     map<string, string> m_Params[MAX_INPUT_STREAMS];
     FILE               *m_Files[MAX_INPUT_STREAMS];
     mfxFrameInfo        m_Streams[MAX_INPUT_STREAMS];
@@ -1262,7 +1283,7 @@ int main(int argc, char *argv[])
     QueryPerformanceCounter(&tStart);
 #endif
 
-    int nSurfIdxIn = 0, nSurfIdxOut = 0;
+    mfxU16 nSurfIdxIn = 0, nSurfIdxOut = 0;
     mfxSyncPoint syncp;
     mfxU32 nFrame = 0, nSource = 0;
     bool bMultipleOut = false;
@@ -1274,7 +1295,7 @@ int main(int argc, char *argv[])
     {
         if (!bMultipleOut)
         {
-            nSurfIdxIn = GetFreeSurfaceIndex(pVPPSurfacesIn, nVPPSurfNumIn); // Find free input frame surface
+            nSurfIdxIn = (mfxU16)GetFreeSurfaceIndex(pVPPSurfacesIn, nVPPSurfNumIn); // Find free input frame surface
             if (MFX_ERR_NOT_FOUND == nSurfIdxIn)
                 return MFX_ERR_MEMORY_ALLOC;
 
@@ -1286,7 +1307,7 @@ int main(int argc, char *argv[])
 
         bMultipleOut = false;
 
-        nSurfIdxOut = GetFreeSurfaceIndex(pVPPSurfacesOut, nVPPSurfNumOut); // Find free output frame surface
+        nSurfIdxOut = (mfxU16)GetFreeSurfaceIndex(pVPPSurfacesOut, nVPPSurfNumOut); // Find free output frame surface
         if (MFX_ERR_NOT_FOUND == nSurfIdxOut)
             return MFX_ERR_MEMORY_ALLOC;
 
@@ -1331,7 +1352,7 @@ int main(int argc, char *argv[])
     //
     while (MFX_ERR_NONE <= sts)
     {
-        nSurfIdxOut = GetFreeSurfaceIndex(pVPPSurfacesOut, nVPPSurfNumOut); // Find free frame surface
+        nSurfIdxOut = (mfxU16)GetFreeSurfaceIndex(pVPPSurfacesOut, nVPPSurfNumOut); // Find free frame surface
         if (MFX_ERR_NOT_FOUND == nSurfIdxOut)
             return MFX_ERR_MEMORY_ALLOC;
 
@@ -1393,7 +1414,7 @@ int main(int argc, char *argv[])
         {
             if (!bMultipleOut)
             {
-                nSurfIdxIn = GetFreeSurfaceIndex(pVPPSurfacesIn, nVPPSurfNumIn); // Find free input frame surface
+                nSurfIdxIn = (mfxU16)GetFreeSurfaceIndex(pVPPSurfacesIn, nVPPSurfNumIn); // Find free input frame surface
                 if (MFX_ERR_NOT_FOUND == nSurfIdxIn)
                     return MFX_ERR_MEMORY_ALLOC;
 
@@ -1406,7 +1427,7 @@ int main(int argc, char *argv[])
 
             bMultipleOut = false;
 
-            nSurfIdxOut = GetFreeSurfaceIndex(pVPPSurfacesOut, nVPPSurfNumOut); // Find free output frame surface
+            nSurfIdxOut = (mfxU16)GetFreeSurfaceIndex(pVPPSurfacesOut, nVPPSurfNumOut); // Find free output frame surface
             if (MFX_ERR_NOT_FOUND == nSurfIdxOut)
                 return MFX_ERR_MEMORY_ALLOC;
 
@@ -1449,7 +1470,7 @@ int main(int argc, char *argv[])
         //
         while (MFX_ERR_NONE <= sts)
         {
-            nSurfIdxOut = GetFreeSurfaceIndex(pVPPSurfacesOut, nVPPSurfNumOut); // Find free frame surface
+            nSurfIdxOut = (mfxU16)GetFreeSurfaceIndex(pVPPSurfacesOut, nVPPSurfNumOut); // Find free frame surface
             if (MFX_ERR_NOT_FOUND == nSurfIdxOut)
                 return MFX_ERR_MEMORY_ALLOC;
 

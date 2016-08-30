@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2013 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2005-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "common_utils.h"
@@ -45,8 +45,8 @@ mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, mfxU16 width, 
     w = width;
     h = height;
 
-    /* IF we have RGB4 input*/
-    if (pInfo->FourCC == MFX_FOURCC_RGB4)
+    /* IF we have RGB4/AYUV input*/
+    if (pInfo->FourCC == MFX_FOURCC_RGB4 || pInfo->FourCC == MFX_FOURCC_AYUV)
     {
         ptr = TESTCOMP_MIN( TESTCOMP_MIN(pSurface->Data.R, pSurface->Data.G), pSurface->Data.B );
         //ptr = ptr + pInfo->CropX + pInfo->CropY * pData->Pitch;
@@ -179,8 +179,8 @@ mfxStatus WriteRawFrame(mfxFrameSurface1 *pSurface, FILE* fSink)
     mfxU32 i, j, h, w;
     mfxStatus sts = MFX_ERR_NONE;
 
-    /* IF we have RGB4 output*/
-    if (pInfo->FourCC == MFX_FOURCC_RGB4)
+    /* IF we have RGB4/AYUV output*/
+    if (pInfo->FourCC == MFX_FOURCC_RGB4 || pInfo->FourCC == MFX_FOURCC_AYUV)
     {
         h = pInfo->CropH;
         w = pInfo->CropW;
