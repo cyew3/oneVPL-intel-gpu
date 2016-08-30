@@ -1043,6 +1043,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     mfxU32      height,
     bool        isTemporal)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::CreateAuxilliaryDevice");
     m_core = core;
 
     // Case of MVC dependent view doesn't require special processing for DX9. Just create AVC encoding device for dep. view.
@@ -1096,8 +1097,10 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
         encodeCreateDevice.pVideoDesc = &desc;
         encodeCreateDevice.CodingFunction = m_forcedCodingFunction ? m_forcedCodingFunction : ENCODE_ENC_PAK;
         encodeCreateDevice.EncryptionMode = DXVA_NoEncrypt;
-
-        hr = m_auxDevice->Execute(AUXDEV_CREATE_ACCEL_SERVICE, m_guid, encodeCreateDevice);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DXVA2 Execute");
+            hr = m_auxDevice->Execute(AUXDEV_CREATE_ACCEL_SERVICE, m_guid, encodeCreateDevice);
+        }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
     }
     // WA end
@@ -1106,6 +1109,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
 
 mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::CreateAccelerationService");
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
     mfxExtPAVPOption const * extPavp = GetExtBuffer(par);
@@ -1374,6 +1378,7 @@ mfxStatus D3D9Encoder::Execute(
     mfxU32                     fieldId,
     PreAllocatedVector const & sei)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::Execute");
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
     ENCODE_PACKEDHEADER_DATA packedSei = { 0 };
@@ -1639,7 +1644,10 @@ mfxStatus D3D9Encoder::Execute(
 
             //DumpExecuteBuffers(encodeExecuteParams, DXVA2_Intel_Encode_AVC);
 
-            hr = m_auxDevice->Execute(ENCODE_ENC_PAK_ID, encodeExecuteParams, (void *)0);
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "Execute");
+                hr = m_auxDevice->Execute(ENCODE_ENC_PAK_ID, encodeExecuteParams, (void *)0);
+            }
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
     
             HANDLE handle;
@@ -1695,7 +1703,7 @@ mfxStatus D3D9Encoder::QueryStatus(
     DdiTask & task,
     mfxU32    fieldId)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "QueryStatus");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::QueryStatus");
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
     // After SNB once reported ENCODE_OK for a certain feedbackNumber
@@ -1720,17 +1728,21 @@ mfxStatus D3D9Encoder::QueryStatus(
     {
         try
         {
-            HRESULT hr = m_auxDevice->Execute(
-                ENCODE_QUERY_STATUS_ID,
+            HRESULT hr = 0;
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "Execute");
+                hr = m_auxDevice->Execute(
+                    ENCODE_QUERY_STATUS_ID,
 #ifdef NEW_STATUS_REPORTING_DDI_0915
-                (void *)&feedbackDescr,
-                sizeof(feedbackDescr),
+                    (void *)&feedbackDescr,
+                    sizeof(feedbackDescr),
 #else // NEW_STATUS_REPORTING_DDI_0915
-                (void *)0,
-                0,
+                    (void *)0,
+                    0,
 #endif // NEW_STATUS_REPORTING_DDI_0915
-                &m_feedbackUpdate[0],
-                (mfxU32)m_feedbackUpdate.size() * sizeof(m_feedbackUpdate[0]));
+                    &m_feedbackUpdate[0],
+                    (mfxU32)m_feedbackUpdate.size() * sizeof(m_feedbackUpdate[0]));
+            }
             MFX_CHECK(hr != D3DERR_WASSTILLDRAWING, MFX_WRN_DEVICE_BUSY);
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         }
@@ -2849,6 +2861,7 @@ mfxStatus D3D9SvcEncoder::Execute(
     mfxU32                     fieldId,
     PreAllocatedVector const & sei)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9SvcEncoder::Execute");
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
     sei;
@@ -3041,7 +3054,7 @@ mfxStatus D3D9SvcEncoder::QueryStatus(
     DdiTask & task,
     mfxU32    fieldId)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "QueryStatus");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9SvcEncoder::QueryStatus");
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
     // After SNB once reported ENCODE_OK for a certain feedbackNumber

@@ -1569,6 +1569,7 @@ mfxStatus MfxHwH264Encode::CheckWidthAndHeight(MfxVideoParam const & par)
 mfxStatus MfxHwH264Encode::CopySpsPpsToVideoParam(
     MfxVideoParam & par)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MfxHwH264Encode::CopySpsPpsToVideoParam");
     mfxExtCodingOptionSPSPPS * extBits = GetExtBuffer(par);
 
     bool changed = false;
@@ -1613,6 +1614,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
     eMFXHWType          platform,
     eMFXVAType          vaType)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MfxHwH264Encode::CheckVideoParam");
     mfxStatus checkSts = MFX_ERR_NONE;
 
     mfxExtCodingOptionSPSPPS * extBits = GetExtBuffer(par);

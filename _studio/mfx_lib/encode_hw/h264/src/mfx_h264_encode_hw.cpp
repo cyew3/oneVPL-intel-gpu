@@ -180,6 +180,7 @@ VideoENCODE * CreateMFXHWVideoENCODEH264(
 
 mfxStatus MFXHWVideoENCODEH264::Init(mfxVideoParam * par)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXHWVideoENCODEH264::Init");
     if (m_impl.get() != 0)
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -725,6 +726,7 @@ void ImplementationAvc::DestroyDanglingCmResources()
 
 mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ImplementationAvc::Init");
     mfxStatus sts = CheckExtBufferId(*par);
     MFX_CHECK_STS(sts);
 
@@ -893,7 +895,10 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 #endif
         request.NumFrameMin = mfxU16(CalcNumSurfRaw(m_video));
 
-        sts = m_raw.Alloc(m_core, request, true);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MfxFrameAllocResponse Alloc");
+            sts = m_raw.Alloc(m_core, request, true);
+        }
         MFX_CHECK_STS(sts);
     }
     else if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
@@ -901,7 +906,10 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         request.Type        = extOpaq->In.Type;
         request.NumFrameMin = extOpaq->In.NumSurface;
 
-        sts = m_opaqHren.Alloc(m_core, request, extOpaq->In.Surfaces, extOpaq->In.NumSurface);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MfxFrameAllocResponse Alloc");
+            sts = m_opaqHren.Alloc(m_core, request, extOpaq->In.Surfaces, extOpaq->In.NumSurface);
+        }
         MFX_CHECK_STS(sts);
 
         if (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
@@ -911,7 +919,10 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
             request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
 #endif
             request.NumFrameMin = extOpaq->In.NumSurface;
-            sts = m_raw.Alloc(m_core, request, true);
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MfxFrameAllocResponse Alloc");
+                sts = m_raw.Alloc(m_core, request, true);
+            }
         }
     }
     mfxExtCodingOption3 & extOpt3 = GetExtBufferRef(m_video);
@@ -920,7 +931,10 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     {
         request.Type        = MFX_MEMTYPE_D3D_INT;
         request.NumFrameMin =  mfxU16(m_video.AsyncDepth) ;
-        sts = m_rawSkip.Alloc(m_core, request, true);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MfxFrameAllocResponse Alloc");
+            sts = m_rawSkip.Alloc(m_core, request, true);
+        }
         MFX_CHECK_STS(sts);
     }
 
@@ -979,7 +993,10 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         request.Info.Width  = IPP_MAX(request.Info.Width,  m_video.mfx.FrameInfo.Width/16);
         request.Info.Height = IPP_MAX(request.Info.Height, m_video.mfx.FrameInfo.Height/16);
 
-        sts = m_mbqp.Alloc(m_core, request, false);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MfxFrameAllocResponse Alloc");
+            sts = m_mbqp.Alloc(m_core, request, false);
+        }
         MFX_CHECK_STS(sts);
 
         sts = m_ddi->Register(m_mbqp, D3DDDIFMT_INTELENCODE_MBQPDATA);
@@ -1148,16 +1165,17 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     sts = m_ddi->Register(m_bit, D3DDDIFMT_INTELENCODE_BITSTREAMDATA);
     MFX_CHECK_STS(sts);
-
-    m_free.resize(m_emulatorForSyncPart.GetTotalGreediness() + m_video.AsyncDepth - 1);
-    m_incoming.clear();
-    m_reordering.clear();
-    m_lookaheadStarted.clear();
-    m_lookaheadFinished.clear();
-    m_histRun.clear();
-    m_histWait.clear();
-    m_encoding.clear();
-
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "cleanup");
+        m_free.resize(m_emulatorForSyncPart.GetTotalGreediness() + m_video.AsyncDepth - 1);
+        m_incoming.clear();
+        m_reordering.clear();
+        m_lookaheadStarted.clear();
+        m_lookaheadFinished.clear();
+        m_histRun.clear();
+        m_histWait.clear();
+        m_encoding.clear();
+    }
     m_fieldCounter   = 0;
     m_1stFieldStatus = MFX_ERR_NONE;
     m_frameOrder     = 0;
@@ -1173,7 +1191,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     // initialization of parameters for Intra refresh
     if (extOpt2->IntRefType)
-    {
+    {        
         mfxU16 refreshDimension = extOpt2->IntRefType == HORIZ_REFRESH ? m_video.mfx.FrameInfo.Height >> 4 : m_video.mfx.FrameInfo.Width >> 4;
         m_intraStripeWidthInMBs = (refreshDimension + extOpt2->IntRefCycleSize - 1) / extOpt2->IntRefCycleSize;
         m_baseLayerOrderStartIntraRefresh = 0;
@@ -1192,7 +1210,10 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     const size_t MAX_SEI_SIZE    = 10 * 1024;
     const size_t MAX_FILLER_SIZE = m_video.mfx.FrameInfo.Width * m_video.mfx.FrameInfo.Height;
-    m_sei.Alloc(mfxU32(MAX_SEI_SIZE + MAX_FILLER_SIZE));
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Preallocated Vector Alloc");
+        m_sei.Alloc(mfxU32(MAX_SEI_SIZE + MAX_FILLER_SIZE));
+    }
 
 #if USE_AGOP
     m_agopCurrentLen = 0;
@@ -1206,6 +1227,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     if (m_isENCPAK)
     {
+
         // In case of FEI ENCPAK only stream level control is supported
         // for slice header parameters. The application must provide exactly the same
         // number for slices to the number of slices specified during initialization
@@ -2015,6 +2037,7 @@ void ImplementationAvc::OnEncodingSubmitted(DdiTaskIter task)
 
 void ImplementationAvc::OnEncodingQueried(DdiTaskIter task)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ImplementationAvc::OnEncodingQueried");
     m_stagesToGo &= ~AsyncRoutineEmulator::STG_BIT_WAIT_ENCODE;
 
     mfxExtCodingOption2 const & extOpt2 = GetExtBufferRef(m_video);
@@ -2092,6 +2115,7 @@ namespace
         DdiTask &   task,
         mfxU32      fid)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CountLeadingFF");
         mfxFrameData bitstream = { 0 };
 
         task.m_numLeadingFF[fid] = 0;
@@ -2207,6 +2231,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_ACCEPT_FRAME)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Avc::STG_BIT_ACCEPT_FRAME");
         DdiTask & newTask = m_incoming.front();
 
         if (m_isWiDi && m_resetBRC)
@@ -2509,6 +2534,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_START_HIST)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Avc::STG_BIT_START_HIST");
         if (IsOn(extOpt3.FadeDetection) && m_cmCtx.get() && m_cmCtx->isHistogramSupported())
         {
             DdiTask & task = m_histRun.front();
@@ -2523,6 +2549,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
     if (m_stagesToGo & AsyncRoutineEmulator::STG_BIT_WAIT_HIST)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Avc::STG_BIT_WAIT_HIST");
         DdiTask & task = m_histWait.front();
         mfxStatus sts = MFX_ERR_NONE;
         if (IsOn(extOpt3.FadeDetection) && m_cmCtx.get() && m_cmCtx->isHistogramSupported())
@@ -3261,6 +3288,7 @@ mfxStatus ImplementationAvc::QueryStatus(
     DdiTask & task,
     mfxU32    fid)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ImplementationAvc::QueryStatus");
     if (task.m_bsDataLength[fid] == 0)
     {
         mfxStatus sts = m_ddi->QueryStatus(task, fid);

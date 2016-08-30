@@ -91,6 +91,7 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
     mfxU32      height,
     bool        isTemporal)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::CreateAuxilliaryDevice");
     MFX_CHECK_NULL_PTR1(core);
 
     D3D11Interface* pD3d11 = QueryCoreInterface<D3D11Interface>(core);
@@ -114,6 +115,7 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
 
 mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::CreateAccelerationService");
     D3D11_VIDEO_DECODER_EXTENSION decoderExtParam = {};
     HRESULT hRes;
     mfxExtCodingOption2 const * extCO2 = GetExtBuffer(par);
@@ -412,7 +414,8 @@ mfxStatus D3D11Encoder::Execute(
     DdiTask const &            task,
     mfxU32                     fieldId,
     PreAllocatedVector const & sei)
-{    
+{   
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Execute");
     ENCODE_PACKEDHEADER_DATA packedSei = { 0 };
 
     HRESULT hr = S_OK;
@@ -664,12 +667,16 @@ mfxStatus D3D11Encoder::Execute(
         decoderExtParams.ppResourceList        = &resourceList[0];
 
         //printf("before:\n");
-
-        hr = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "Execute");
+            hr = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
+        }
         CHECK_HRES(hr);
 
-
-        hr = m_pVideoContext->DecoderEndFrame(m_pDecoder);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "EndFrame");
+            hr = m_pVideoContext->DecoderEndFrame(m_pDecoder);
+        }
         CHECK_HRES(hr);
     }
     else
@@ -719,6 +726,7 @@ mfxStatus D3D11Encoder::QueryStatus(
     DdiTask & task,
     mfxU32    fieldId)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::QueryStatus");
     // After SNB once reported ENCODE_OK for a certain feedbackNumber
     // it will keep reporting ENCODE_NOTAVAILABLE for same feedbackNumber.
     // As we won't get all bitstreams we need to cache all other statuses. 
@@ -759,8 +767,11 @@ mfxStatus D3D11Encoder::QueryStatus(
             decoderExtParams.PrivateOutputDataSize = mfxU32(m_feedbackUpdate.size() * sizeof(m_feedbackUpdate[0]));
             decoderExtParams.ResourceCount         = 0;
             decoderExtParams.ppResourceList        = 0;
-
-            HRESULT hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
+            HRESULT hRes = 0;
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "ENCODE_QUERY_STATUS_ID");
+                hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
+            }
 
             MFX_CHECK(hRes != D3DERR_WASSTILLDRAWING, MFX_WRN_DEVICE_BUSY);
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
@@ -897,6 +908,7 @@ mfxStatus D3D11Encoder::Init(
     mfxU32      height,
     mfxExtPAVPOption const * extPavp)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Init");
     MFX_CHECK_NULL_PTR2(pVideoDevice, pVideoContext);
 
     m_pVideoDevice  = pVideoDevice;
@@ -1004,8 +1016,10 @@ mfxStatus D3D11Encoder::Init(
             video_config.ConfigDecoderSpecific = m_forcedCodingFunction ? m_forcedCodingFunction : ENCODE_ENC_PAK;  
             video_config.guidConfigBitstreamEncryption = (extPavp) ? DXVA2_INTEL_PAVP : DXVA_NoEncrypt;
 
-
-            hRes  = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateVideoDecoder");
+                hRes  = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
+            }
             CHECK_HRES(hRes);
             if (bUseDecoderInCore)
                 *pVideoDecoder = m_pDecoder;
@@ -1028,7 +1042,10 @@ mfxStatus D3D11Encoder::Init(
         encryptParam.ResourceCount         = 0;
         encryptParam.ppResourceList        = 0;
 
-        hRes = DecoderExtension(m_pVideoContext, m_pDecoder, encryptParam);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "ENCRYPTION");
+            hRes = DecoderExtension(m_pVideoContext, m_pDecoder, encryptParam);
+        }
         CHECK_HRES(hRes);
     }
 #if 1
@@ -1160,6 +1177,7 @@ mfxStatus D3D11SvcEncoder::CreateAuxilliaryDevice(
     mfxU32      height,
     bool        isTemporal)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11SvcEncoder::CreateAuxilliaryDevice");
     MFX_CHECK_NULL_PTR1(core);
 
     D3D11Interface* pD3d11 = QueryCoreInterface<D3D11Interface>(core);
@@ -1180,6 +1198,7 @@ mfxStatus D3D11SvcEncoder::CreateAuxilliaryDevice(
 mfxStatus D3D11SvcEncoder::CreateAccelerationService(
     MfxVideoParam const & par)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11SvcEncoder::CreateAccelerationService");
     mfxExtSpsHeader *  extSps = GetExtBuffer(par);
     mfxExtPpsHeader *  extPps = GetExtBuffer(par);
     mfxExtSVCSeqDesc * extSvc = GetExtBuffer(par);
@@ -1616,6 +1635,7 @@ mfxStatus D3D11SvcEncoder::QueryStatus(
     DdiTask & task,
     mfxU32    fieldId)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11SvcEncoder::QueryStatus");
     // After SNB once reported ENCODE_OK for a certain feedbackNumber
     // it will keep reporting ENCODE_NOTAVAILABLE for same feedbackNumber.
     // As we won't get all bitstreams we need to cache all other statuses. 
@@ -1648,8 +1668,11 @@ mfxStatus D3D11SvcEncoder::QueryStatus(
             decoderExtParams.PrivateOutputDataSize = mfxU32(m_feedbackUpdate.size() * sizeof(m_feedbackUpdate[0]));
             decoderExtParams.ResourceCount         = 0;
             decoderExtParams.ppResourceList        = 0;
-
-            HRESULT hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
+            HRESULT hRes = 0;
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "QUERY");
+                hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
+            }
 
             MFX_CHECK(hRes != D3DERR_WASSTILLDRAWING, MFX_WRN_DEVICE_BUSY);
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
@@ -1702,6 +1725,7 @@ mfxStatus D3D11SvcEncoder::Init(
     mfxU32               width,
     mfxU32               height)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11SvcEncoder::Init");
     MFX_CHECK_NULL_PTR2(pVideoDevice, pVideoContext);
 
     m_pVideoDevice  = pVideoDevice;
@@ -1784,8 +1808,10 @@ mfxStatus D3D11SvcEncoder::Init(
     decoderExtParam.PrivateOutputDataSize = sizeof(ENCODE_CAPS);
     decoderExtParam.ResourceCount = 0;
     decoderExtParam.ppResourceList = 0;
-
-    hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "QUERY_ACCEL_CAPS_ID");
+        hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParam);
+    }
     CHECK_HRES(hRes);
 #endif
 
