@@ -57,6 +57,7 @@ D3D11VideoCORE::~D3D11VideoCORE()
 
 mfxStatus D3D11VideoCORE::InternalInit()
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE::InternalInit");
     if (m_HWType != MFX_HW_UNKNOWN)
         return MFX_ERR_NONE;
 
@@ -86,6 +87,7 @@ eMFXHWType D3D11VideoCORE::GetHWType()
 
 mfxStatus D3D11VideoCORE::GetIntelDataPrivateReport(const GUID guid, mfxVideoParam *par, D3D11_VIDEO_DECODER_CONFIG & config)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE::GetIntelDataPrivateReport");
     mfxStatus mfxRes = InternalCreateDevice();
     MFX_CHECK_STS(mfxRes);
 
@@ -100,20 +102,27 @@ mfxStatus D3D11VideoCORE::GetIntelDataPrivateReport(const GUID guid, mfxVideoPar
     {
         video_desc.SampleWidth = 640;
     }
-     
+
     if (!video_desc.SampleHeight)
     {
         video_desc.SampleHeight = 480;
     }
-
-    mfxU32 cDecoderProfiles = m_pD11VideoDevice->GetVideoDecoderProfileCount();
+    mfxU32 cDecoderProfiles = 0;
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderProfileCount");
+        cDecoderProfiles = m_pD11VideoDevice->GetVideoDecoderProfileCount();
+    }
     bool isRequestedGuidPresent = false;
     bool isIntelGuidPresent = false;
 
     for (mfxU32 i = 0; i < cDecoderProfiles; i++)
     {
         GUID decoderGuid;
-        HRESULT hr = m_pD11VideoDevice->GetVideoDecoderProfile(i, &decoderGuid);
+        HRESULT hr;
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderProfile");
+            hr = m_pD11VideoDevice->GetVideoDecoderProfile(i, &decoderGuid);
+        }
         if (FAILED(hr))
         {
             continue;
@@ -133,20 +142,27 @@ mfxStatus D3D11VideoCORE::GetIntelDataPrivateReport(const GUID guid, mfxVideoPar
         return MFX_WRN_PARTIAL_ACCELERATION;
 
     mfxU32  count = 0;
-    HRESULT hr = m_pD11VideoDevice->GetVideoDecoderConfigCount(&video_desc, &count);
+    HRESULT hr;
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderConfigCount");
+        hr = m_pD11VideoDevice->GetVideoDecoderConfigCount(&video_desc, &count);
+    }
     if (FAILED(hr))
         return MFX_WRN_PARTIAL_ACCELERATION;
 
     for (mfxU32 i = 0; i < count; i++)
     {
-        hr = m_pD11VideoDevice->GetVideoDecoderConfig(&video_desc, i, &video_config);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderConfig");
+            hr = m_pD11VideoDevice->GetVideoDecoderConfig(&video_desc, i, &video_config);
+        }
         if (FAILED(hr))
             return MFX_WRN_PARTIAL_ACCELERATION;
 
         if (video_config.guidConfigBitstreamEncryption == guid)
         {
             memcpy_s(&config, sizeof(config), &video_config, sizeof(D3D11_VIDEO_DECODER_CONFIG));
-            
+
             if (guid == DXVA2_Intel_Encode_AVC && video_config.ConfigSpatialResid8 != INTEL_AVC_ENCODE_DDI_VERSION)
             {
                 return MFX_WRN_PARTIAL_ACCELERATION;
@@ -173,6 +189,7 @@ mfxStatus D3D11VideoCORE::GetIntelDataPrivateReport(const GUID guid, mfxVideoPar
 
 mfxStatus D3D11VideoCORE::IsGuidSupported(const GUID guid, mfxVideoParam *par, bool isEncode)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE::IsGuidSupported");
     if (!par)
         return MFX_WRN_PARTIAL_ACCELERATION;
 
@@ -234,6 +251,7 @@ mfxStatus D3D11VideoCORE::InitializeDevice(bool isTemporal)
 
 mfxStatus D3D11VideoCORE::InternalCreateDevice()
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE::InternalCreateDevice");
     if (m_pD11Device)
         return MFX_ERR_NONE;
 
@@ -304,6 +322,7 @@ mfxStatus D3D11VideoCORE::InternalCreateDevice()
 mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
                                       mfxFrameAllocResponse *response, bool isNeedCopy)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE::AllocFrames");
     UMC::AutomaticUMCMutex guard(m_guard);
     try
     {
@@ -478,6 +497,7 @@ mfxStatus D3D11VideoCORE::DefaultAllocFrames(mfxFrameAllocRequest *request, mfxF
 
 mfxStatus D3D11VideoCORE::CreateVA(mfxVideoParam *param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, UMC::FrameAllocator *allocator)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE::CreateVA");
     mfxStatus sts = MFX_ERR_NONE;
     param; request;
 
@@ -630,6 +650,7 @@ void* D3D11VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
 
 mfxStatus D3D11VideoCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemType, mfxFrameSurface1 *pSrc, mfxU16 srcMemType)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE::DoFastCopyWrapper");
     mfxStatus sts;
 
     mfxHDLPair srcHandle, dstHandle;

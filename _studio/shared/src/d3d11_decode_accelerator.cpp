@@ -47,6 +47,7 @@ MFXD3D11Accelerator::MFXD3D11Accelerator(ID3D11VideoDevice  *pVideoDevice,
 
 mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mfxVideoParam *param, UMC::FrameAllocator *allocator)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXD3D11Accelerator::CreateVideoAccelerator");
     D3D11_VIDEO_DECODER_DESC video_desc;
     m_allocator = allocator;
     if (!m_allocator)
@@ -69,8 +70,11 @@ mfxStatus MFXD3D11Accelerator::CreateVideoAccelerator(mfxU32 hwProfile, const mf
     MFX_CHECK_STS(sts);
 
     m_DecoderGuid = video_desc.Guid;
-
-    HRESULT hres  = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
+    HRESULT hres;
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateVideoDecoder");
+        hres  = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
+    }
     if (FAILED(hres))
         return MFX_ERR_DEVICE_FAILED;
 
@@ -86,6 +90,7 @@ mfxStatus MFXD3D11Accelerator::GetSuitVideoDecoderConfig(const mfxVideoParam    
                                                          D3D11_VIDEO_DECODER_DESC *video_desc,  
                                                          D3D11_VIDEO_DECODER_CONFIG     *pConfig) 
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXD3D11Accelerator::GetSuitVideoDecoderConfig");
     param;
 
     for (mfxU32 k = 0; k < GuidProfile::GetGuidProfileSize(); k++)
@@ -96,7 +101,11 @@ mfxStatus MFXD3D11Accelerator::GetSuitVideoDecoderConfig(const mfxVideoParam    
         video_desc->Guid = GuidProfile::GetGuidProfile(k)->guid;
 
         mfxU32  count;
-        HRESULT hr = m_pVideoDevice->GetVideoDecoderConfigCount(video_desc, &count);
+        HRESULT hr;
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderConfigCount");
+            hr = m_pVideoDevice->GetVideoDecoderConfigCount(video_desc, &count);
+        }
         if (FAILED(hr)) // guid can be absent. It is ok
             continue;
 
@@ -105,7 +114,10 @@ mfxStatus MFXD3D11Accelerator::GetSuitVideoDecoderConfig(const mfxVideoParam    
         mfxI32 idxConfig = -1;
         for (mfxU32 i = 0; i < count; i++)
         {
-            hr = m_pVideoDevice->GetVideoDecoderConfig(video_desc, i, pConfig);
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderConfig");
+                hr = m_pVideoDevice->GetVideoDecoderConfig(video_desc, i, pConfig);
+            }
             if (FAILED(hr))
                 continue;
 
@@ -132,7 +144,10 @@ mfxStatus MFXD3D11Accelerator::GetSuitVideoDecoderConfig(const mfxVideoParam    
 
         if (idxConfig != -1)
         {
-            hr = m_pVideoDevice->GetVideoDecoderConfig(video_desc, idxConfig, pConfig);
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderConfig");
+                hr = m_pVideoDevice->GetVideoDecoderConfig(video_desc, idxConfig, pConfig);
+            }
             if (FAILED(hr))
                 return MFX_ERR_DEVICE_FAILED;
 
@@ -349,8 +364,10 @@ Status MFXD3D11Accelerator::ExecuteStatusReportBuffer(void * buffer, Ipp32s size
     dec_ext.PrivateOutputDataSize = size;
     dec_ext.ppResourceList = 0;
 
-
-    hr = m_pVideoContext->DecoderExtension(m_pDecoder, &dec_ext);
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "VIDEO_DECODER_EXTENSION");
+        hr = m_pVideoContext->DecoderExtension(m_pDecoder, &dec_ext);
+    }
 
     if (FAILED(hr))
         return UMC::UMC_ERR_DEVICE_FAILED;

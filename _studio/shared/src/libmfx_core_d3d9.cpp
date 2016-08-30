@@ -44,6 +44,7 @@ mfxStatus CreateD3DDevice(IDirect3D9        **pD3D,
                           mfxU16            width,
                           mfxU16            height)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CreateD3DDevice");
     D3DPRESENT_PARAMETERS d3dpp;
     memset(&d3dpp, 0, sizeof(D3DPRESENT_PARAMETERS));
 
@@ -66,38 +67,50 @@ mfxStatus CreateD3DDevice(IDirect3D9        **pD3D,
         IDirect3D9Ex *pD3DEx = NULL;
         IDirect3DDevice9Ex  *pDirect3DDeviceEx = NULL;
 
-        Direct3DCreate9Ex(D3D_SDK_VERSION, &pD3DEx);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "Direct3DCreate9Ex");
+            Direct3DCreate9Ex(D3D_SDK_VERSION, &pD3DEx);
+        }
         if(NULL == pD3DEx)
             return MFX_ERR_DEVICE_FAILED;
 
         // let try to create DeviceEx ahead of regular Device
         // for details - see MSDN
-        hres = pD3DEx->CreateDeviceEx(
-            adapterNum,
-            D3DDEVTYPE_HAL,
-            0,
-            D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED,
-            &d3dpp,
-            NULL,
-            &pDirect3DDeviceEx);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateDeviceEx");
+            hres = pD3DEx->CreateDeviceEx(
+                adapterNum,
+                D3DDEVTYPE_HAL,
+                0,
+                D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED,
+                &d3dpp,
+                NULL,
+                &pDirect3DDeviceEx);
+        }
 
         if (S_OK!=hres)
         {
             pD3DEx->Release();
 
             //1 create DX device
-            *pD3D = Direct3DCreate9(D3D_SDK_VERSION);
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "Direct3DCreate9");
+                *pD3D = Direct3DCreate9(D3D_SDK_VERSION);
+            }
             if (0 == *pD3D)
                 return MFX_ERR_DEVICE_FAILED;
 
             // let try to create regulare device
-            hres = (*pD3D)->CreateDevice(
-                adapterNum,
-                D3DDEVTYPE_HAL,
-                0,
-                D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED,
-                &d3dpp,
-                pDirect3DDevice);
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateDevice");
+                hres = (*pD3D)->CreateDevice(
+                    adapterNum,
+                    D3DDEVTYPE_HAL,
+                    0,
+                    D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED,
+                    &d3dpp,
+                    pDirect3DDevice);
+            }
 
             if (S_OK!=hres)
             {
@@ -119,6 +132,7 @@ mfxStatus CreateD3DDevice(IDirect3D9        **pD3D,
 
 mfxStatus D3D9VideoCORE::GetIntelDataPrivateReport(const GUID guid, DXVA2_ConfigPictureDecode & config)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9VideoCORE::GetIntelDataPrivateReport");
     if (!m_pDirectXVideoService)
     {
         mfxStatus sts = InitializeService(true);
@@ -129,6 +143,7 @@ mfxStatus D3D9VideoCORE::GetIntelDataPrivateReport(const GUID guid, DXVA2_Config
     mfxU32 cDecoderGuids = 0;
     GUID   *pDecoderGuids = 0;
     HRESULT hr = m_pDirectXVideoService->GetDecoderDeviceGuids(&cDecoderGuids, &pDecoderGuids);
+    
     if (FAILED(hr))
         return MFX_WRN_PARTIAL_ACCELERATION;
 
@@ -160,10 +175,11 @@ mfxStatus D3D9VideoCORE::GetIntelDataPrivateReport(const GUID guid, DXVA2_Config
     DXVA2_VideoDesc VideoDesc = {0};
 
     hr = m_pDirectXVideoService->GetDecoderConfigurations(DXVADDI_Intel_Decode_PrivateData_Report,
-                                            &VideoDesc,
-                                            NULL,
-                                            &cConfigurations,
-                                            &pConfig);
+        &VideoDesc,
+        NULL,
+        &cConfigurations,
+        &pConfig);
+
     if (FAILED(hr) || pConfig == 0)
     {
         return MFX_WRN_PARTIAL_ACCELERATION;
@@ -208,6 +224,7 @@ mfxStatus D3D9VideoCORE::GetIntelDataPrivateReport(const GUID guid, DXVA2_Config
 
 mfxStatus D3D9VideoCORE::IsGuidSupported(const GUID guid, mfxVideoParam *par, bool isEncoder)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9VideoCORE::IsGuidSupported");
     if (!par)
         return MFX_WRN_PARTIAL_ACCELERATION;
     mfxStatus sts = MFX_ERR_NONE;
@@ -275,6 +292,7 @@ eMFXHWType D3D9VideoCORE::GetHWType()
 
 mfxStatus D3D9VideoCORE::InternalInit()
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9VideoCORE::InternalInit");
     if (m_HWType != MFX_HW_UNKNOWN)
         return MFX_ERR_NONE;
 
@@ -416,6 +434,7 @@ mfxStatus D3D9VideoCORE::SetHandle(mfxHandleType type, mfxHDL hdl)
 mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
                                    mfxFrameAllocResponse *response, bool isNeedCopy)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9VideoCORE::AllocFrames");
     UMC::AutomaticUMCMutex guard(m_guard);
     try
     {
@@ -433,6 +452,7 @@ mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
 
         if (!m_bFastCopy)
         {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Init");
             // initialize fast copy
             m_pFastCopy.reset(new FastCopy());
             m_pFastCopy.get()->Initialize();
@@ -446,6 +466,7 @@ mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
 
         if (!m_bCmCopy && m_bCmCopyAllowed && isNeedCopy)
         {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "GetCmDevice");
             m_pCmCopy.reset(new CmCopyWrapper);
             if (!m_pCmCopy.get()->GetCmDevice<IDirect3DDeviceManager9>(m_pDirect3DDeviceManager)){
                 //!!!! WA: CM restricts multiple CmDevice creation from different device managers.
@@ -590,6 +611,7 @@ mfxStatus D3D9VideoCORE::DefaultAllocFrames(mfxFrameAllocRequest *request, mfxFr
 
 mfxStatus D3D9VideoCORE::CreateVA(mfxVideoParam * param, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, UMC::FrameAllocator *allocator)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9VideoCORE::CreateVA");
     if(!param || !request || !response)
         return MFX_ERR_NULL_PTR;
     if (!(request->Type & MFX_MEMTYPE_FROM_DECODE) ||
@@ -636,6 +658,7 @@ mfxStatus D3D9VideoCORE::ProcessRenderTargets(mfxFrameAllocRequest *request, mfx
 
 mfxStatus D3D9VideoCORE::InitializeService(bool isTemporalCall)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9VideoCORE::InitializeService");
     HRESULT hr = S_OK;
 
     if (!m_hdl && m_pDirect3DDeviceManager && !isTemporalCall)
@@ -680,6 +703,7 @@ mfxStatus D3D9VideoCORE::InitializeService(bool isTemporalCall)
 
 mfxStatus D3D9VideoCORE::GetD3DService(mfxU16 , mfxU16 , IDirectXVideoDecoderService **ppVideoService, bool isTemporal)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9VideoCORE::GetD3DService");
     mfxStatus sts = InternalInit();
     if (sts != MFX_ERR_NONE)
         return sts;
@@ -696,6 +720,7 @@ mfxStatus D3D9VideoCORE::GetD3DService(mfxU16 , mfxU16 , IDirectXVideoDecoderSer
 
 mfxStatus D3D9VideoCORE::CreateVideoAccelerator(mfxVideoParam * param, int NumOfRenderTarget, IDirect3DSurface9 **RenderTargets, UMC::FrameAllocator *allocator)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9VideoCORE::CreateVA");
     mfxStatus sts = MFX_ERR_NONE;
     m_pVA.reset(new DXVA2Accelerator);
 
@@ -749,7 +774,10 @@ mfxStatus D3D9VideoCORE::CreateVideoAccelerator(mfxVideoParam * param, int NumOf
     else
         m_DXVA2DecodeHandle = NULL;
 
-    m_pVA->GetVideoDecoder(&m_D3DDecodeHandle);
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "GetVideoDecoder");
+        m_pVA->GetVideoDecoder(&m_D3DDecodeHandle);
+    }
 
     return sts;
 }
@@ -804,6 +832,7 @@ mfxStatus D3D9VideoCORE::OnDeblockingInWinRegistry(mfxU32 codecId)
 
 mfxStatus D3D9VideoCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMemType, mfxFrameSurface1 *pSrc, mfxU16 srcMemType)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9VideoCORE::DoFastCopyWrapper");
     mfxStatus sts;
 
     mfxHDL srcHandle, dstHandle;
