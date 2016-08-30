@@ -61,7 +61,7 @@ namespace hevce_frame_qp
 
         mfxStatus ProcessSurface(mfxFrameSurface1& s)
         {
-            if (frames < framesToEncode)
+            //if (frames < framesToEncode)
             {
                 m_pCtrl->QP = 1 + rand() % 50;
                 qp.push_back(m_pCtrl->QP);
