@@ -1198,7 +1198,7 @@ mfxStatus CEncodingPipeline::Init(AppConfig *pConfig)
     sts = InitSessions();
     MSDK_CHECK_STATUS(sts, "InitSessions failed");
 
-    mfxSession akaSession = m_mfxSession.operator mfxSession() ;
+    mfxSession akaSession = m_mfxSession.operator mfxSession();
     m_BaseAllocID = (mfxU64)&akaSession & 0xffffffff;
     m_EncPakReconAllocID = m_BaseAllocID + 1;
 
@@ -1266,7 +1266,7 @@ mfxStatus CEncodingPipeline::Init(AppConfig *pConfig)
         MSDK_CHECK_POINTER(m_pmfxPAK, MFX_ERR_MEMORY_ALLOC);
     }
 
-    m_nAsyncDepth = 1; // this number can be tuned for better performance
+    m_nAsyncDepth = 1; // FEI works only in syncronyous mode
 
     sts = ResetMFXComponents(pConfig, true);
     MSDK_CHECK_STATUS(sts, "ResetMFXComponents failed");

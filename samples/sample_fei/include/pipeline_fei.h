@@ -23,7 +23,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "encoding_task_pool.h"
 #include "sample_defs.h"
 
-#include "sample_utils.h"
 #include "base_allocator.h"
 
 #include "vaapi_allocator.h"

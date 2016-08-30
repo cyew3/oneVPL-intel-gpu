@@ -24,6 +24,8 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxmvc.h"
 #include "mfxvideo.h"
 #include "mfxvideo++.h"
+#include "sample_utils.h"
+
 #include <algorithm>
 #include <memory>
 #include <cstring>
@@ -44,6 +46,12 @@ const mfxU16 MaxFeiEncMVPNum = 4;
 #define MFX_FRAMETYPE_IPB (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P | MFX_FRAMETYPE_B)
 #define MFX_FRAMETYPE_IP  (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P                  )
 #define MFX_FRAMETYPE_PB  (                  MFX_FRAMETYPE_P | MFX_FRAMETYPE_B)
+
+#if _DEBUG
+    #define mdprintf fprintf
+#else
+    #define mdprintf(...)
+#endif
 
 enum
 {
