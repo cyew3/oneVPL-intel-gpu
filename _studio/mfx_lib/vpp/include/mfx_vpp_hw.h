@@ -616,8 +616,7 @@ namespace MfxHwVideoProcessing
     {
     public:
    
-        TaskManager(void);   
-
+        TaskManager(void);
         ~TaskManager(void);
 
         mfxStatus Init(
@@ -719,7 +718,7 @@ namespace MfxHwVideoProcessing
     }; // class TaskManager  
 
 
-    class VideoVPPHW 
+    class VideoVPPHW
     {
     public:
 
@@ -731,14 +730,13 @@ namespace MfxHwVideoProcessing
             SYS_TO_SYS  = 0x8,
             ALL         = 0x10,
             MODES_MASK  = 0x1F
-
         };
 
         VideoVPPHW(IOMode, VideoCORE *core);
         virtual ~VideoVPPHW(void);
 
         mfxStatus Init(
-            mfxVideoParam *par, 
+            mfxVideoParam *par,
             bool isTemporal = false);
 
         mfxStatus GetVideoParams(mfxVideoParam *par) const;
@@ -769,10 +767,10 @@ namespace MfxHwVideoProcessing
         mfxStatus SyncTaskSubmission(DdiTask* pTask);
 
         mfxStatus VppFrameCheck(
-            mfxFrameSurface1 *input, 
+            mfxFrameSurface1 *input,
             mfxFrameSurface1 *output,
             mfxExtVppAuxData *aux,
-            MFX_ENTRY_POINT pEntryPoint[], 
+            MFX_ENTRY_POINT pEntryPoint[],
             mfxU32 &numEntryPoints);
 
         mfxStatus RunFrameVPP(mfxFrameSurface1 * /*in*/, mfxFrameSurface1 * /*out*/, mfxExtVppAuxData * /*aux*/) 
@@ -818,13 +816,9 @@ namespace MfxHwVideoProcessing
         WorkloadMode m_workloadMode;
 
         mfxU16 m_IOPattern;
-        IOMode m_ioMode;        
+        IOMode m_ioMode;
 
-        //bool   m_bIsOpaqueMemory[2];
-        //mfxFrameAllocResponse m_responseOpaq[2];
-        //mfxHDL *m_midsOpaq[2];
-
-        Config m_config;
+        Config        m_config;
         mfxVideoParam m_params;
         TaskManager   m_taskMngr;
 
