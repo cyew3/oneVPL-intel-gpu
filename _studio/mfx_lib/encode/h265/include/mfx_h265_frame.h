@@ -116,13 +116,13 @@ namespace H265Enc {
             m_intraRatio = 0.f;
             m_sceneCut = 0;
             m_metric = 0;
-            m_pitchRsCs4 = 0;
         }
 
         struct AllocInfo { Ipp32s width, height; };
         Statistics()
         {
             ResetAvgMetrics();
+            m_pitchRsCs4 = 0;
             Zero(m_rs);
             Zero(m_cs);
         };
