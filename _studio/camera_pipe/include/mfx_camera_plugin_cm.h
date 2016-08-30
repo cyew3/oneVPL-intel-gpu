@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014 Intel Corporation. All Rights Reserved.
+//        Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -175,8 +175,6 @@ void SetKernelArg(CmKernel * kernel, T0 const & arg0, T1 const & arg1, T2 const 
 class CmContext
 {
 public:
-    CmContext();
-
     CmContext(
         CameraParams const & video,
         CmDevice            *cmDevice,
@@ -419,8 +417,8 @@ private:
 
     mfxStatus ReleaseCmSurfaces(void);
 
-    CameraParams m_video;
-    mfxCameraCaps        m_caps;
+    CameraParams  m_video;
+    mfxCameraCaps m_caps;
 
     CmDevice *  m_device;
     CmQueue *   m_queue;

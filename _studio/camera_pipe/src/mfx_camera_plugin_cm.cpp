@@ -1473,48 +1473,79 @@ CmSurface2DUP * CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mf
 }
 
 
-CmContext::CmContext()
-: m_device(0)
-, m_queue(0)
-, m_program(0)
-{
-}
-
 CmContext::CmContext(
     CameraParams const & video,
     CmDevice *          cmDevice,
     mfxCameraCaps *     pCaps,
     eMFXHWType platform)
+: m_video()
+, m_caps()
+, m_device(NULL)
+, m_queue(NULL)
+, m_program(NULL)
+, m_platform(platform)
+, m_tableCmRelations()
+, m_tableCmIndex()
+, m_nTilesHor(0)
+, m_nTilesVer(0)
+, m_MaxNumOfThreadsPerGroup(0)
+, m_NumEuPerSubSlice(0)
+, TS_16x16(NULL)
+, TS_Slice_8x8(NULL)
+, TS_Slice_16x16_np(NULL)
+, TS_Slice_8x8_np(NULL)
+, TS_VignetteUpSample(NULL)
+, widthIn16(0)
+, heightIn16(0)
+, sliceWidthIn8(0)
+, sliceHeightIn8(0)
+, sliceWidthIn16_np(0)
+, sliceHeightIn16_np(0)
+, sliceWidthIn8_np(0)
+, sliceHeightIn8_np(0)
+, kernel_hotpixel(NULL)
+, kernel_denoise(NULL)
+, kernel_padding16bpp(NULL)
+, kernel_VignetteUpSample(NULL)
+, kernel_BayerCorrection(NULL)
+, kernel_whitebalance_manual(NULL)
+#if !ENABLE_SLM_GAMMA
+, kernel_PrepLUT(NULL)
+#endif
+, kernel_FwGamma(NULL)
+, kernel_FwGamma1(NULL)
+, kernel_ARGB(NULL)
+, CCM_Matrix(NULL)
+, m_ccm()
+, m_DenoiseRT(NULL)
+, m_DenoisePW(NULL)
+, m_DenoiseDWM(NULL)
 {
-    m_nTilesHor = video.tileNumHor;
-    m_nTilesVer = video.tileNumVer;
+    Zero(kernel_restore_green);
+    Zero(kernel_restore_blue_red);
+    Zero(kernel_sad);
+    Zero(kernel_decide_average);
+
+    Zero(task_Padding);
+    Zero(task_HP);
+    Zero(task_Denoise);
     Zero(task_VignetteUpSample);
     Zero(task_BayerCorrection);
-    Zero(task_Padding);
     Zero(task_GoodPixelCheck);
     Zero(task_RestoreGreen);
     Zero(task_RestoreBlueRed);
     Zero(task_SAD);
     Zero(task_DecideAvg);
-//  Zero(task_CheckConfidence);
-//  Zero(task_BadPixelCheck);
-    Zero(task_HP);
-    Zero(task_Denoise);
     Zero(task_3x3CCM);
     Zero(task_FwGamma);
     Zero(task_ARGB);
-    kernel_ARGB     = 0;
-    kernel_FwGamma  = 0;
-    kernel_FwGamma1 = 0;
-    kernel_BayerCorrection = 0;
-    kernel_VignetteUpSample = 0;
 
     m_DenoiseDWM = new unsigned short[25];
     m_DenoisePW  = new unsigned short[6];
     m_DenoiseRT  = new unsigned short[6];
-    m_platform = platform;
     Setup(video, cmDevice, pCaps);
 }
+
 
 void CmContext::CreateCameraKernels()
 {
