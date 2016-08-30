@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2013-2014 Intel Corporation.  All rights reserved.
+Copyright (C) 2013-2016 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -414,6 +414,7 @@ MFX::MFXPluginFactory::~MFXPluginFactory()
 MFX::MFXPluginFactory::MFXPluginFactory( mfxSession session ) 
 {
     mSession = session;
+    nPlugins = 0;
 }
 
 bool MFX::MFXPluginFactory::Destroy( const mfxPluginUID & uidToDestroy) 

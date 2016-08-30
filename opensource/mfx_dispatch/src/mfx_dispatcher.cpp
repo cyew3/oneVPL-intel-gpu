@@ -54,6 +54,8 @@ MFX_DISP_HANDLE::MFX_DISP_HANDLE(const mfxVersion requiredVersion) :
     dispVersion.Major = MFX_DISPATCHER_VERSION_MAJOR;
     dispVersion.Minor = MFX_DISPATCHER_VERSION_MINOR;
     session = (mfxSession) 0;
+    storageID = 0;
+    implInterface = MFX_IMPL_HARDWARE_ANY;
 
     hModule = (mfxModuleHandle) 0;
 
