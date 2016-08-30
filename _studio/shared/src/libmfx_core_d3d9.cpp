@@ -1514,6 +1514,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
             }
                 break;
 
+            case MFX_FOURCC_AYUV:
             case MFX_FOURCC_RGB4:
             {
                 MFX_CHECK_NULL_PTR1(pSrc->Data.R);
