@@ -548,7 +548,7 @@ mfxStatus CEncodingPipeline::InitMfxVppParams(AppConfig *pConfig)
     m_mfxVppParams.ExtParam    = &m_VppExtParams[0]; // vector is stored linearly in memory
     m_mfxVppParams.NumExtParam = (mfxU16)m_VppExtParams.size();
 
-    m_mfxVppParams.AsyncDepth = 1; //current limitation
+    m_mfxVppParams.AsyncDepth = 1;
 
     if (pConfig->preencDSstrength)
     {
@@ -574,7 +574,7 @@ mfxStatus CEncodingPipeline::InitMfxDecodeParams(AppConfig *pConfig)
     mfxStatus sts = MFX_ERR_NONE;
     MSDK_CHECK_POINTER(pConfig, MFX_ERR_NULL_PTR);
 
-    m_mfxDecParams.AsyncDepth = 1; //current limitation
+    m_mfxDecParams.AsyncDepth = 1;
 
     // set video type in parameters
     m_mfxDecParams.mfx.CodecId = pConfig->DecodeId;
@@ -2892,41 +2892,40 @@ mfxStatus CEncodingPipeline::GetOneFrame(mfxFrameSurface1* & pSurf)
             DecExtSurface.pSurface = NULL;
             return sts;
         }
-
         MSDK_CHECK_STATUS(sts, "Decode<One|Last>Frame failed");
 
-        for (;;)
-        {
-            sts = m_mfxSession.SyncOperation(DecExtSurface.Syncp, MSDK_WAIT_INTERVAL);
-
-            if (sts == MFX_ERR_GPU_HANG)
-            {
-                sts = doGPUHangRecovery();
-                MSDK_CHECK_STATUS(sts, "doGPUHangRecovery failed");
-                return MFX_ERR_GPU_HANG;
-            }
-
-            if (MFX_ERR_NONE < sts && !DecExtSurface.Syncp) // repeat the call if warning and no output
-            {
-                if (MFX_WRN_DEVICE_BUSY == sts){
-                    WaitForDeviceToBecomeFree(m_mfxSession, DecExtSurface.Syncp, sts); // wait if device is busy
-                }
-            }
-            else if (MFX_ERR_NONE <= sts && DecExtSurface.Syncp) {
-                sts = MFX_ERR_NONE; // ignore warnings if output is available
-                break;
-            }
-            else
-            {
-                MSDK_BREAK_ON_ERROR(sts);
-            }
-        }
-
-        MSDK_CHECK_STATUS(sts, "m_mfxSession.SyncOperation failed");
         pSurf = DecExtSurface.pSurface;
 
         if (m_appCfg.bDECODESTREAMOUT)
         {
+            for (;;)
+            {
+                sts = m_mfxSession.SyncOperation(DecExtSurface.Syncp, MSDK_WAIT_INTERVAL);
+
+                if (sts == MFX_ERR_GPU_HANG)
+                {
+                    sts = doGPUHangRecovery();
+                    MSDK_CHECK_STATUS(sts, "doGPUHangRecovery failed");
+                    return MFX_ERR_GPU_HANG;
+                }
+
+                if (MFX_ERR_NONE < sts && !DecExtSurface.Syncp) // repeat the call if warning and no output
+                {
+                    if (MFX_WRN_DEVICE_BUSY == sts){
+                        WaitForDeviceToBecomeFree(m_mfxSession, DecExtSurface.Syncp, sts); // wait if device is busy
+                    }
+                }
+                else if (MFX_ERR_NONE <= sts && DecExtSurface.Syncp) {
+                    sts = MFX_ERR_NONE; // ignore warnings if output is available
+                    break;
+                }
+                else
+                {
+                    MSDK_BREAK_ON_ERROR(sts);
+                }
+            }
+            MSDK_CHECK_STATUS(sts, "m_mfxSession.SyncOperation failed");
+
             sts = DropDecodeStreamoutOutput(pSurf);
             MSDK_CHECK_STATUS(sts, "DropDecodeStreamoutOutput failed");
         }
@@ -5193,32 +5192,6 @@ mfxStatus CEncodingPipeline::VPPOneFrame(MFXVideoVPP* VPPobj, MFXVideoSession* s
                 return sts;
         }
         break;
-    }
-
-    for (;;)
-    {
-        sts = session->SyncOperation(pExtSurface->Syncp, MSDK_WAIT_INTERVAL);
-        if (sts == MFX_ERR_GPU_HANG)
-        {
-            sts = doGPUHangRecovery();
-            MSDK_CHECK_STATUS(sts, "doGPUHangRecovery failed");
-            return MFX_ERR_GPU_HANG;
-        }
-
-        if (!pExtSurface->Syncp)
-        {
-            if (MFX_WRN_DEVICE_BUSY == sts){
-                WaitForDeviceToBecomeFree(*session, pExtSurface->Syncp, sts);
-            }
-            else
-                return sts;
-        }
-        else if (MFX_ERR_NONE <= sts) {
-            sts = MFX_ERR_NONE; // ignore warnings if output is available
-            break;
-        }
-
-        MSDK_BREAK_ON_ERROR(sts);
     }
 
     return sts;
