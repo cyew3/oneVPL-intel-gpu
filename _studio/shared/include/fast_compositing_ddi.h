@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -103,9 +103,6 @@ namespace MfxHwVideoProcessing
         // query advanced capabilities
         mfxStatus QueryCaps2(FASTCOMP_CAPS2& Caps2);
 
-        // query supported formats
-        //mfxStatus QueryFormatsCaps(FASTCOMP_SAMPLE_FORMATS **ppFormats);
-
         // query maximum recommended rate
         mfxStatus QueryFrcCaps(FASTCOMP_FRC_CAPS& frcCaps);
         mfxStatus QueryVarianceCaps(
@@ -135,14 +132,13 @@ namespace MfxHwVideoProcessing
 
         // second level private data
         BOOL m_bIsPresent;
-        //BOOL m_bIsRunning;
 
         FASTCOMP_MODE  m_iMode;
         FASTCOMP_CAPS  m_caps;
         FASTCOMP_CAPS2 m_caps2;
         FASTCOMP_FRC_CAPS m_frcCaps;
         FASTCOMP_VARIANCE_CAPS m_varianceCaps;
-        //FASTCOMP_SAMPLE_FORMATS m_Formats;//m_FormatsCaps
+
         std::map <mfxU32, mfxU32> m_formatSupport;
 
         std::vector<FASTCOMP_VideoSample> m_inputSamples;
@@ -157,23 +153,16 @@ namespace MfxHwVideoProcessing
         // ddi object
         AuxiliaryDevice *m_pAuxDevice;
 
-        class D3D9Frc
+        struct D3D9Frc
         {
-        public:
             mfxU32 m_inputIndx;
             mfxU32 m_outputIndx;
 
             mfxU32 m_inputFramesOrFieldsPerCycle;
             mfxU32 m_outputIndexCountPerCycle;
 
-            bool m_isInited;
-
-            //Init();
-            
+            bool   m_isInited;
         } m_frcState;
-
-        int m_depth;
-        int m_subpicCount;
     };
 
 }; // namespace
