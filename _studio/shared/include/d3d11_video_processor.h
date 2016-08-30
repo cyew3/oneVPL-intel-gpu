@@ -814,7 +814,7 @@ namespace MfxHwVideoProcessing
         ID3D11DeviceContext*                        m_pDeviceContext;
         ID3D11VideoContext*                         m_pVideoContext;
 
-        D3D11_VIDEO_PROCESSOR_CONTENT_DESC          m_videoProcessorDescr;
+        D3D11_VIDEO_PROCESSOR_CONTENT_DESC                 m_videoProcessorDescr;
         std::map<void *, D3D11_VIDEO_PROCESSOR_STREAM  *>  m_videoProcessorStreams;
         std::map<void *, ID3D11VideoProcessorInputView *>  m_videoProcessorInputViews;
         std::map<void *, ID3D11VideoProcessorOutputView*>  m_videoProcessorOutputViews;
@@ -842,7 +842,6 @@ namespace MfxHwVideoProcessing
         } m_iface;
         //---------------------------------------------
 
-        bool                                        m_isInterlacedScaling;
         std::set<mfxU32>                            m_cachedReadyTaskIndex;
         PREPROC_QUERYCAPS                           m_vpreCaps;
         PREPROC_QUERY_VARIANCE_CAPS                 m_varianceCaps;
@@ -866,7 +865,7 @@ namespace MfxHwVideoProcessing
                 , contrast(1.f)
                 , brightness(1.f)
             {   }
-        }   m_multiplier;
+        } m_multiplier;
 
         class Caps
         {
@@ -881,16 +880,17 @@ namespace MfxHwVideoProcessing
 
             Caps()
                 : m_procAmpEnable(false)
-                //, m_deinterlaceEnable(false)
+                , m_simpleDIEnable(false)
+                , m_advancedDIEnable(false)
                 , m_denoiseEnable(false)
                 , m_detailEnable(false)
                 , m_rotation(false)
                 , m_formatSupport()
             {   }
         } m_caps;
-        class D3D11Frc
+
+        struct D3D11Frc
         {
-        public:
             mfxU32 m_inputIndx;
             mfxU32 m_outputIndx;
 
@@ -898,9 +898,6 @@ namespace MfxHwVideoProcessing
             mfxU32 m_outputIndexCountPerCycle;
 
             bool m_isInited;
-
-            //Init();
-
         } m_frcState;
 
         vm_file*  m_file;

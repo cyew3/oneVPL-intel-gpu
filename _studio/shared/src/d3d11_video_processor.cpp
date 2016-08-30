@@ -211,31 +211,41 @@ mfxStatus D3D11VideoProcessor::DestroyDevice(void)
 
 
 D3D11VideoProcessor::D3D11VideoProcessor(void)
+:m_core(NULL)
+,m_pDevice(NULL)
+,m_pVideoDevice(NULL)
+,m_pDeviceContext(NULL)
+,m_pVideoContext(NULL)
+,m_videoProcessorStreams()
+,m_videoProcessorInputViews()
+,m_videoProcessorOutputViews()
+,m_pVideoProcessor(NULL)
+,m_pVideoProcessorEnum(NULL)
+,m_CameraSet(false)
+,m_pOutputResource(NULL)
+,m_pInputView()
+,m_pOutputView(NULL)
+,m_camera3DLUT17(NULL)
+,m_camera3DLUT33(NULL)
+,m_camera3DLUT65(NULL)
+,m_bCameraMode(false)
+,m_eventHandle(NULL)
+,m_bUseEventHandle(false)
+,m_cachedReadyTaskIndex()
+,m_customRateData()
+,m_mutex()
+,m_multiplier()
+,m_caps()
+,m_file(NULL)
 {
-    m_pVideoProcessor = NULL;
-    m_pVideoProcessorEnum = NULL;
-    m_CameraSet = false;
-    m_pDevice = NULL;
-    m_pVideoDevice = NULL;
-    m_pDeviceContext = NULL;
-    m_pVideoContext  = NULL;
-
-    m_pOutputResource = NULL;
-    m_pOutputView = NULL;
-
-    m_cameraFGC.pFGSegment = 0;
-    m_camera3DLUT17        = 0;
-    m_camera3DLUT33        = 0;
-    m_camera3DLUT65        = 0;
-
-    m_cachedReadyTaskIndex.clear();
-
-    m_file = 0;
-    m_core = 0;
-
-    m_bCameraMode = false;
-    m_eventHandle = 0;
-    m_bUseEventHandle = false;
+    memset(&m_videoProcessorDescr, 0, sizeof(D3D11_VIDEO_PROCESSOR_CONTENT_DESC));
+    memset(&m_cameraFGC, 0, sizeof(VPE_CP_FORWARD_GAMMA_PARAMS));
+    memset(&m_iface, 0, sizeof(m_iface));
+    memset(&m_vpreCaps, 0, sizeof(PREPROC_QUERYCAPS));
+    memset(&m_varianceCaps, 0, sizeof(PREPROC_QUERY_VARIANCE_CAPS));
+    memset(&m_cameraCaps, 0, sizeof(VPE_CP_CAPS));
+    memset(&m_video, 0, sizeof(mfxVideoParam));
+    memset(&m_frcState, 0, sizeof(mfxVideoParam));
 } // D3D11VideoProcessor::D3D11VideoProcessor(ID3D11VideoDevice  *pVideoDevice, ID3D11VideoContext *pVideoContext)
 
 
