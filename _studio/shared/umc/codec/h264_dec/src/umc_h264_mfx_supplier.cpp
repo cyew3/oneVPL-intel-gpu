@@ -541,6 +541,7 @@ bool MFX_Utility::IsNeedPartialAcceleration(mfxVideoParam * par, eMFXHWType )
 
 eMFXPlatform MFX_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFX_Utility::GetPlatform");
     eMFXPlatform platform = core->GetPlatformType();
 
     if (!par)
@@ -1156,6 +1157,7 @@ void CheckDimensions(T &info_in, T &info_out, mfxStatus & sts)
 
 mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMFXHWType type)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFX_Utility::Query");
     MFX_CHECK_NULL_PTR1(out);
     mfxStatus  sts = MFX_ERR_NONE;
 
