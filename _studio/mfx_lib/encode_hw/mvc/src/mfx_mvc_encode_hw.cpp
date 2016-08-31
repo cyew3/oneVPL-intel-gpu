@@ -955,6 +955,16 @@ mfxStatus ImplementationMvc::QueryIOSurf(
 
 ImplementationMvc::ImplementationMvc(VideoCORE * core)
     : m_core(core)
+    , m_video()
+    , m_videoInit()
+    , m_taskMan()
+    , m_ddiCaps()
+    , m_numEncs(0)
+    , m_spsSubsetSpsDiff(0)
+    , m_sei()
+    , m_currentPlatform()
+    , m_useWAForHighBitrates()
+    , m_inputFrameType(0)
 {
 }
 

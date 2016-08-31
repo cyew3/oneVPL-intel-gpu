@@ -359,7 +359,17 @@ mfxStatus ImplementationSvc::QueryIOSurf(
 ImplementationSvc::ImplementationSvc(VideoCORE * core)
 : m_core(core)
 , m_video()
+, m_videoInit()
+, m_hrd()
+, m_guid()
+, m_manager()
+, m_aesCounter()
 , m_maxBsSize(0)
+, m_layout()
+, m_caps()
+, m_deviceFailed()
+, m_inputFrameType()
+, m_sei()
 {
 }
 

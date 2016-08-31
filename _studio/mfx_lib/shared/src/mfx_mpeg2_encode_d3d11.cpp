@@ -77,6 +77,9 @@ D3D11Encoder::D3D11Encoder(VideoCORE* core)
 , m_pVDOView(NULL)
 , m_infoQueried(false)
 , m_bENC_PAK(false)
+, m_guid()
+, m_layout()
+, m_feedback()
 {
     memset (&m_allocResponseMB,0,sizeof(mfxFrameAllocResponse));
     memset (&m_caps,0,sizeof(ENCODE_CAPS));

@@ -635,9 +635,12 @@ namespace MfxHwH264Encode
         Reconstruct()
             : Surface()
             , m_yuv(0)
+            , m_frameOrderIdrInDisplayOrder(0)
             , m_frameOrderIdr(0)
             , m_frameOrderI(0)
             , m_frameOrder(0)
+            , m_baseLayerOrder(0)
+            , m_frameOrderStartLyncStructure(0)
             , m_frameNum(0)
             , m_frameNumWrap(0)
             , m_picNum(0, 0)
@@ -645,8 +648,10 @@ namespace MfxHwH264Encode
             , m_longTermPicNum(NO_INDEX_U8, NO_INDEX_U8)
             , m_reference(false, false)
             , m_picStruct((mfxU16)MFX_PICSTRUCT_PROGRESSIVE)
+            , m_extFrameTag(0)
             , m_tid(0)
-            ,m_panicMode(0)
+            , m_tidx(0)
+            , m_panicMode(0)
         {
         }
 

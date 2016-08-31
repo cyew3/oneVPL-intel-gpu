@@ -84,6 +84,7 @@ SysInfo::SysInfo(vm_char *pProcessName)
     CpuUsageRelease();
     ResetMemUsage();
     m_FuncGetMemUsage = NULL;
+    total_time_start = 0;
 } // SysInfo::SysInfo(void)
 
 SysInfo::~SysInfo(void)
