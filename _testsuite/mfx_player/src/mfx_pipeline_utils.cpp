@@ -16,6 +16,7 @@ File Name: .h
 #include "mfxjpeg.h"
 #include "vm_interlocked.h"
 #include "vm_file.h"
+#include "shared_utils.h"
 #include <iomanip>
 #include <limits>
 
@@ -739,7 +740,7 @@ mfxF64 ConvertMFXTime2mfxF64(mfxU64 nTime)
 
 mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &info)
 {
-    static const char valid_pattern [] = "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010|a2rgb10|r16|argb16|nv16|p210|y410";
+    static const char valid_pattern [] = "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010|a2rgb10|r16|argb16|nv16|p210|y410|i444";
 
     //if external pattern changed parsing need to be updated
     MFX_CHECK(!std::string(MFX_FOURCC_PATTERN()).compare(valid_pattern));
@@ -846,6 +847,12 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
         case 17:
         {
             info.FourCC = MFX_FOURCC_Y410;
+            info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            break;
+        }
+        case 18:
+        {
+            info.FourCC = MFX_FOURCC_YUV444_8;
             info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             break;
         }

@@ -88,6 +88,7 @@ enum
     MFX_FOURCC_YUV422_16    = MFX_MAKEFOURCC('M','2','1','6'),   // planar merged YUV 422 16 bits
     MFX_FOURCC_YUV444_16    = MFX_MAKEFOURCC('M','4','1','6'),   // planar merged YUV 444 16 bits
     MFX_FOURCC_YV16         = MFX_MAKEFOURCC('Y','V','1','6'),   // planar merged YUV 422 8 bits
+    MFX_FOURCC_YUV444_8     = MFX_MAKEFOURCC('I','4','4','4'),   // planar merged YUV 444 8 bits
 };
 
 struct sFrameEncoder

@@ -293,9 +293,12 @@ mfxStatus MFXFileWriteRender::Init(mfxVideoParam *pInit, const vm_char *pFilenam
         MFX_FOURCC_YUV420_16 != m_VideoParams.mfx.FrameInfo.FourCC ||
         MFX_FOURCC_YUV422_16 != m_VideoParams.mfx.FrameInfo.FourCC ||
         MFX_FOURCC_YUV444_16 != m_VideoParams.mfx.FrameInfo.FourCC ||
+        MFX_FOURCC_YUV444_8 != m_VideoParams.mfx.FrameInfo.FourCC ||
         MFX_FOURCC_YV16 != m_VideoParams.mfx.FrameInfo.FourCC)
     {
-        if (m_nFourCC == 0 || m_nFourCC == MFX_FOURCC_YV12 || m_nFourCC == MFX_FOURCC_YUV420_16 || m_nFourCC == MFX_FOURCC_YV16 || m_nFourCC == MFX_FOURCC_YUV422_16 || m_nFourCC == MFX_FOURCC_YUV444_16)
+        if (m_nFourCC == 0 || m_nFourCC == MFX_FOURCC_YV12 || m_nFourCC == MFX_FOURCC_YV16 ||
+            m_nFourCC == MFX_FOURCC_YUV420_16 ||  m_nFourCC == MFX_FOURCC_YUV422_16 || m_nFourCC == MFX_FOURCC_YUV444_16 ||
+            m_nFourCC == MFX_FOURCC_YUV444_8)
         {
             if (!m_params.useHMstyle)
             {
@@ -407,7 +410,7 @@ void XOR31(mfxU16 *data, size_t size);
 
 mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
 {
-    int i;
+    unsigned int i;
     mfxFrameInfo * pInfo = &pConvertedSurface->Info;
     mfxFrameData * pData = &pConvertedSurface->Data;
 
@@ -429,10 +432,12 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
 
     switch (m_nFourCC)
     {
-        case MFX_FOURCC_YV12:
-        case MFX_FOURCC_YV16:
+        case MFX_FOURCC_YV12: //actually it is i420 format not YV12
+        case MFX_FOURCC_YV16: //actually it is i422 format not YV16
+        case MFX_FOURCC_YUV444_8:
         {
             mfxU8 isHalfHeight = m_nFourCC == MFX_FOURCC_YV12 ? 1 : 0;
+            mfxU8 isHalfWidth  = m_nFourCC == MFX_FOURCC_YUV444_8 ? 0 : 1;
 
             m_Current.m_comp = VM_STRING('Y');
             m_Current.m_pixX = 0;
@@ -445,22 +450,25 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
 
             if (!skipChroma)
             {
-                crop_x >>= 1;
+                crop_x >>= isHalfWidth;
                 crop_y >>= isHalfHeight;
 
-                mfxI32 height = isHalfHeight ? ((pInfo->CropH + 1) >> 1) : pInfo->CropH;
+                mfxU32 height = isHalfHeight ? ((pInfo->CropH + 1) >> 1) : pInfo->CropH;
+                mfxU32 width = isHalfWidth ? ((pInfo->CropW + 1) >> 1) : pInfo->CropW;
+                if(isHalfWidth)
+                    pitch /= 2;
 
                 m_Current.m_comp = VM_STRING('U');
                 for (i = 0; i < height; i++)
                 {
                     m_Current.m_pixY = i;
-                    WRITE(pData->U + (crop_y * pitch/2 + crop_x) + i*pitch/2, (pInfo->CropW + 1) >> 1);
+                    WRITE(pData->U + (crop_y * pitch + crop_x) + i*pitch, width);
                 }
                 m_Current.m_comp = VM_STRING('V');
                 for (i = 0; i < height; i++)
                 {
                     m_Current.m_pixY = i;
-                    WRITE(pData->V + (crop_y * pitch/2 + crop_x) + i*pitch/2, (pInfo->CropW + 1) >> 1);
+                    WRITE(pData->V + (crop_y * pitch + crop_x) + i*pitch, width);
                 }
             }
             break;
@@ -490,12 +498,12 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
                 crop_x >>= isHalfWidth;
                 crop_y >>= isHalfHeight;
 
-                mfxI32 height = 0;
+                mfxU32 height = 0;
                 if (isHalfHeight)
                     height = m_params.VpxDec16bFormat ? (pInfo->CropH + 1)/2 : pInfo->CropH/2; // For VP9 if resolution is odd, chroma on edges will be dumped, otherwise it is cut
                 else
                     height = pInfo->CropH;
-                mfxI32 width = 0;
+                mfxU32 width = 0;
                 if (isHalfWidth)
                 {
                     width = m_params.VpxDec16bFormat ? (pInfo->CropW + 1)/2 : pInfo->CropW/2; // For VP9 if resolution is odd, chroma on edges will be dumped, otherwise it is cut
@@ -539,7 +547,7 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
             if (!skipChroma)
             {
                 m_Current.m_comp = VM_STRING('U');
-                for (i = 0; i < pInfo->CropH / 2; i++)
+                for (i = 0; i < (mfxU16) (pInfo->CropH / 2); i++)
                 {
                     m_Current.m_pixY = i;
                     WRITE(pData->UV + (pInfo->CropY * pitch / 2 + pInfo->CropX) + i * pitch, pInfo->CropW);
@@ -566,7 +574,7 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
                 m_Current.m_comp = VM_STRING('U');
 
                 crop_y >>= 1;
-                for (i = 0; i < pInfo->CropH / 2; i++)
+                for (i = 0; i < (mfxU16) (pInfo->CropH / 2); i++)
                 {
                     m_Current.m_pixY = i;
                     WRITE(pData->UV + (crop_y*pitch + crop_x) + i * pitch, pInfo->CropW * 2);
@@ -1531,14 +1539,16 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
         pSurfaceIn->Info.FourCC != MFX_FOURCC_P010 && 
         pSurfaceIn->Info.FourCC != MFX_FOURCC_NV16 && 
         pSurfaceIn->Info.FourCC != MFX_FOURCC_P210 && 
-        pSurfaceIn->Info.FourCC != MFX_FOURCC_Y410)
+        pSurfaceIn->Info.FourCC != MFX_FOURCC_Y410 &&
+        pSurfaceIn->Info.FourCC != MFX_FOURCC_AYUV)
     {
         return pSurfaceIn;
     }
 
     if (pSurfaceOut->Info.FourCC != MFX_FOURCC_YV12 && 
-        pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV420_16 && 
         pSurfaceOut->Info.FourCC != MFX_FOURCC_YV16 && 
+        pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV444_8 && 
+        pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV420_16 && 
         pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV422_16 && 
         pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV444_16)
     {
@@ -1695,6 +1705,20 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
         copyPlane<mfxU8, mfxU8>(pSurfaceIn->Data.Y, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.Y, pSurfaceOut->Data.Pitch, pSurfaceIn->Info.Height, pSurfaceIn->Info.Width, 0);
         copyChromaPlane<mfxU8, mfxU8>(pSurfaceIn->Data.UV, pSurfaceIn->Data.Pitch, pSurfaceOut->Data.U, pSurfaceOut->Data.V, pSurfaceOut->Data.Pitch >> 1, pSurfaceIn->Info.Height, pSurfaceIn->Info.Width / 2, 0);
     }
+    else if (pSurfaceOut->Info.FourCC == MFX_FOURCC_YUV444_8)
+    {
+        VM_ASSERT(pSurfaceIn->Info.FourCC == MFX_FOURCC_AYUV);
+
+        for (size_t i = 0; i < pSurfaceIn->Info.Height; i++)
+        {
+            for (size_t j = 0; j < pSurfaceIn->Info.Width; j++)
+            {
+                pDst[0][i*pitchOut + j] = pSurfaceIn->Data.Y[i*pitchIn + 4*j];
+                pDst[1][i*pitchOut + j] = pSurfaceIn->Data.U[i*pitchIn + 4*j];
+                pDst[2][i*pitchOut + j] = pSurfaceIn->Data.V[i*pitchIn + 4*j];
+            }
+        }
+    }
     else // IMC3
     {
         const Ipp8u *(pSrc[3]) = { pSurfaceIn->Data.Y, pSurfaceIn->Data.U, pSurfaceIn->Data.V, };
@@ -1744,9 +1768,8 @@ mfxStatus       AllocSurface(mfxFrameInfo *pTargetInfo, mfxFrameSurface1* pSurfa
     else
         bufSize = halfHeight ? (pSurfaceOut->Info.Height * pSurfaceOut->Data.PitchLow * 3 / 2) : (pSurfaceOut->Info.Height * pSurfaceOut->Data.PitchLow * 2);
 
-    if (pSurfaceOut->Info.FourCC != MFX_FOURCC_P010 && pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV420_16 &&
-        pSurfaceOut->Info.FourCC != MFX_FOURCC_P210 && pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV422_16 &&
-        pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV444_16 &&
+    if (pSurfaceOut->Info.FourCC != MFX_FOURCC_P010 && pSurfaceOut->Info.FourCC != MFX_FOURCC_P210 &&
+        pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV420_16 && pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV422_16 && pSurfaceOut->Info.FourCC != MFX_FOURCC_YUV444_16 &&
         pSurfaceOut->Info.FourCC != MFX_FOURCC_Y410)
     {
         mfxU8 * pBuffer = new mfxU8[bufSize];
@@ -1768,6 +1791,12 @@ mfxStatus       AllocSurface(mfxFrameInfo *pTargetInfo, mfxFrameSurface1* pSurfa
             {
                 pSurfaceOut->Data.U = pBuffer + pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height;
                 pSurfaceOut->Data.V = pSurfaceOut->Data.U + ((pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height) >> (1 + halfHeight));
+                break;
+            }
+            case MFX_FOURCC_YUV444_8: 
+            {
+                pSurfaceOut->Data.U = pBuffer + pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height;
+                pSurfaceOut->Data.V = pSurfaceOut->Data.U + pSurfaceOut->Data.PitchLow * pSurfaceOut->Info.Height;
                 break;
             }
         }
