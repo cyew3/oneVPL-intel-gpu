@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          H264 encoder: support of DXVA D3D11 driver
@@ -59,7 +59,11 @@ D3D11Encoder::D3D11Encoder()
 , m_pVideoContext(0)
 , m_pDecoder(0)
 , m_infoQueried(false)
+, m_guid(GUID_NULL)
+, m_width(0)
+, m_height(0)
 {
+    memset(&m_caps, 0, sizeof(m_caps));
 }
 
 D3D11Encoder::~D3D11Encoder()
@@ -527,6 +531,7 @@ mfxStatus D3D11Encoder::Init(
 #if 1
     // [3] Query the encoding device capabilities 
     D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
+    memset(&m_caps, 0, sizeof(m_caps));
     decoderExtParam.Function = 0x110; //ENCODE_QUERY_ACCEL_CAPS_ID = 0x110;
     decoderExtParam.pPrivateInputData = 0;
     decoderExtParam.PrivateInputDataSize = 0;

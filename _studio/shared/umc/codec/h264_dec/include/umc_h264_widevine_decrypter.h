@@ -76,6 +76,8 @@ public:
 
     WidevineDecrypter()
         : m_va(0)
+        , m_bitstreamSubmitted(false)
+        , m_PESPacketCounter(0)
     {
 #ifdef UMC_VA_DXVA
         m_pDummySurface = NULL;
