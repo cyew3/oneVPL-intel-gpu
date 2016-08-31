@@ -362,6 +362,10 @@ public:
     mfxU32    Get_frame_shot_Decision();
     mfxU32    Get_frame_last_in_scene();
 
+    void      SetParityTFF();    //Sets the detection to interlaced Top Field First mode, can be done on the fly
+    void      SetParityBFF();    //Sets the detection to interlaced Bottom Field First mode, can be done on the fly
+    void      SetProgressiveOp();//Sets the detection to progressive frame mode, can be done on the fly
+
 private:
     void   ShotDetect(imageData Data, imageData DataRef, ImDetails imageInfo, TSCstat *current, TSCstat *reference);
     void   SetInterlaceMode(mfxU32 interlaceMode);

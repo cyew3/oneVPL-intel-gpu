@@ -1741,6 +1741,21 @@ void SceneChangeDetector::SetInterlaceMode(mfxU32 interlaceMode)
     m_dataIn->currentField = m_dataIn->StartingField;
 }
 
+void SceneChangeDetector::SetParityTFF()
+{
+    SetInterlaceMode(topfieldfirst_frame);
+}
+
+void SceneChangeDetector::SetParityBFF()
+{
+    SetInterlaceMode(bottomfieldFirst_frame);
+}
+
+void SceneChangeDetector::SetProgressiveOp()
+{
+    SetInterlaceMode(progressive_frame);
+}
+
 void SceneChangeDetector::PutFrameInterlaced()
 {
     dataReady = RunFrame(m_dataIn->currentField);
