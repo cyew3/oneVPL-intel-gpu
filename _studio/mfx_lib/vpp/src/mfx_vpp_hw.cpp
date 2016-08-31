@@ -1403,9 +1403,13 @@ VideoVPPHW::VideoVPPHW(IOMode mode, VideoCORE *core)
 #if defined(MFX_VA)
 // cm devices
 ,m_pCmCopy(NULL)
+#if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
+,m_SCD()
+#endif
 ,m_pCmDevice(NULL)
 ,m_pCmProgram(NULL)
 ,m_pCmKernel(NULL)
+,m_pCmQueue(NULL)
 #endif
 {
     MemSetZero4mfxExecuteParams(&m_executeParams);

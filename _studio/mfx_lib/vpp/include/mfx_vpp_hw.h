@@ -277,6 +277,7 @@ namespace MfxHwVideoProcessing
             m_inputIndex  = 0;
             m_outputIndex = 0;
             m_bkwdRefCount = 0;
+            m_fwdRefCount = 0;
 
             m_EOS = false;
             m_actualNumber = 0;
@@ -391,7 +392,7 @@ namespace MfxHwVideoProcessing
     {
     public:
 
-        CpuFrc(void){}   
+        CpuFrc(void): m_frcMode(0) {}
 
          ~CpuFrc(void){}
 
