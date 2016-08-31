@@ -30,9 +30,13 @@ enum HWType
 
     MFX_HW_SKL       = 0x900000,
 
-    MFX_HW_BXT       = 0xb00000,
+    MFX_HW_BXT       = 0xa00000,
 
-    MFX_HW_KBL       = 0xa00000
+    MFX_HW_KBL       = 0xb00000,
+
+    MFX_HW_CNL       = 0xc00000,
+
+    MFX_HW_ICL       = 0xd00000,
 };
 
 enum OSFamily
