@@ -2896,7 +2896,7 @@ mfxStatus CEncodingPipeline::GetOneFrame(mfxFrameSurface1* & pSurf)
 
         pSurf = DecExtSurface.pSurface;
 
-        if (m_appCfg.bDECODESTREAMOUT)
+        if (m_appCfg.bDECODESTREAMOUT || m_appCfg.nPicStruct == MFX_PICSTRUCT_UNKNOWN)
         {
             for (;;)
             {
