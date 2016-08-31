@@ -344,6 +344,7 @@
     <ClCompile Include="src\gmock\test_suites\hevcd_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_res_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_corruption.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vpp_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_donotuse.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_res_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_video_signal_info.cpp" />
