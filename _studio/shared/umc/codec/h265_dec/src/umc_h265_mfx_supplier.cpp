@@ -1054,7 +1054,8 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
                 sts = MFX_ERR_UNSUPPORTED;
         }
 
-        if (in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV420 ||
+        if (in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV400 ||
+            in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV420 ||
             in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422 ||
             in->mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV444)
             out->mfx.FrameInfo.ChromaFormat = in->mfx.FrameInfo.ChromaFormat;
@@ -1454,7 +1455,10 @@ bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType t
         return false;
     }
 
-    if (in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 && in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422 && in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV400)
+    if (in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV400 &&
+        in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 &&
+        in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422 &&
+        in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
         return false;
 
     if (!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
