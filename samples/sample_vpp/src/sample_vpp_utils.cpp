@@ -94,6 +94,12 @@ static
         return MSDK_STRING("A2RGB10");
     case MFX_FOURCC_UYVY:
         return MSDK_STRING("UYVY");
+    case MFX_FOURCC_AYUV:
+        return MSDK_STRING("AYUV");
+    case MFX_FOURCC_Y210:
+        return MSDK_STRING("Y210");
+    case MFX_FOURCC_Y410:
+        return MSDK_STRING("Y410");
     default:
         return MSDK_STRING("Unknown");
     }
