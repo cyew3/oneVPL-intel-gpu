@@ -35,6 +35,7 @@ using namespace MfxHwVideoProcessing;
 
 VideoVPPBase* CreateAndInitVPPImpl(mfxVideoParam *par, VideoCORE *core, mfxStatus *mfxSts)
 {
+    bool bHWInitFailed = false;
     VideoVPPBase * vpp = 0;
     if( MFX_PLATFORM_HARDWARE == core->GetPlatformType())
     {
@@ -60,6 +61,7 @@ VideoVPPBase* CreateAndInitVPPImpl(mfxVideoParam *par, VideoCORE *core, mfxStatu
 
         delete vpp;
         vpp = 0;
+        bHWInitFailed = true;
     }
 
 #if !defined (MFX_ENABLE_HW_ONLY_VPP)
@@ -74,6 +76,8 @@ VideoVPPBase* CreateAndInitVPPImpl(mfxVideoParam *par, VideoCORE *core, mfxStatu
     if(MFX_WRN_PARTIAL_ACCELERATION == *mfxSts || MFX_WRN_FILTER_SKIPPED == *mfxSts || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == *mfxSts ||
         *mfxSts == MFX_ERR_NONE)
     {
+        if (bHWInitFailed && *mfxSts >= MFX_ERR_NONE)
+            *mfxSts = MFX_WRN_PARTIAL_ACCELERATION; // partial acceleration is the most important warning in this case
         return vpp;
     }
 
