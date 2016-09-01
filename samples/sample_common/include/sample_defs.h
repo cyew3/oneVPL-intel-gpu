@@ -108,7 +108,8 @@ enum LibVABackend
 
 #define MSDK_MAX_FILENAME_LEN 1024
 
-#define MSDK_PRINT_RET_MSG(ERR,MSG) {msdk_err<<std::endl<<"[ERROR], sts="<<StatusToString(ERR)<<"("<<ERR<<")"<<", "<<__FUNCTION__<<", "<<MSG<<" at "<<__FILE__<<":"<<__LINE__<<std::endl<<std::flush;}
+#define MSDK_PRINT_RET_MSG(ERR,MSG) {msdk_stringstream tmp;tmp<<std::endl<<"[ERROR], sts=" \
+    <<StatusToString(ERR)<<"("<<ERR<<")"<<", "<<__FUNCTION__<<", "<<MSG<<" at "<<__FILE__<<":"<<__LINE__<<std::endl;msdk_err<<tmp.str();}
 
 #define MSDK_TRACE_LEVEL(level, ERR) if (level <= msdk_trace_get_level()) {msdk_err<<NoFullPath(MSDK_STRING(__FILE__)) << MSDK_STRING(" :")<< __LINE__ <<MSDK_STRING(" [") \
     <<level<<MSDK_STRING("] ") << ERR << std::endl;}
