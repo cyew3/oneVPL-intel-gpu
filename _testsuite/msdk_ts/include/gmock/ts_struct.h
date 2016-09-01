@@ -77,7 +77,7 @@ inline mfxU64 get(void* base, const Field& field) { mfxU64 value = 0; memcpy(&va
 template <typename T, typename TFP>
 void SetParamIfStage(tsExtBufType<T>& base, const TFP& fpair, const mfxU32 stage = 0)
 {
-    if(fpair.stage == stage)
+    if(0 != fpair.f && fpair.stage == stage)
         return SetParam(base, fpair.f->name, fpair.f->offset, fpair.f->size, fpair.v);
     else
         return;
