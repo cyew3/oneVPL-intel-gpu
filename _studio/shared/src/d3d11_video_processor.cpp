@@ -245,7 +245,7 @@ D3D11VideoProcessor::D3D11VideoProcessor(void)
     memset(&m_varianceCaps, 0, sizeof(PREPROC_QUERY_VARIANCE_CAPS));
     memset(&m_cameraCaps, 0, sizeof(VPE_CP_CAPS));
     memset(&m_video, 0, sizeof(mfxVideoParam));
-    memset(&m_frcState, 0, sizeof(mfxVideoParam));
+    memset(&m_frcState, 0, sizeof(D3D11Frc));
 } // D3D11VideoProcessor::D3D11VideoProcessor(ID3D11VideoDevice  *pVideoDevice, ID3D11VideoContext *pVideoContext)
 
 
