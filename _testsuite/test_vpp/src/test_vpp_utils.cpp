@@ -75,6 +75,12 @@ const vm_char* FourCC2Str( mfxU32 FourCC )
         return VM_STRING("A2RGB10");
     case MFX_FOURCC_UYVY:
         return VM_STRING("UYVY");
+    case MFX_FOURCC_AYUV:
+        return VM_STRING("AYUV");
+    case MFX_FOURCC_Y210:
+        return VM_STRING("Y210");
+    case MFX_FOURCC_Y410:
+        return VM_STRING("Y410");
     default:
         return VM_STRING("Unknown");
     }
