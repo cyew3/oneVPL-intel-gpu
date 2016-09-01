@@ -116,11 +116,11 @@
     <ClCompile Include="src\vme\videovme.cpp">
       <Filter>Source Files\vme</Filter>
     </ClCompile>
-    <ClCompile Include="src\mfx_video_signal_conversion_vpp.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\mfx_shift_vpp.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mfx_video_signal_conversion_vpp.cpp">
+      <Filter>Source Files\filters</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -193,11 +193,11 @@
     <ClInclude Include="include\videovme7_5io.h">
       <Filter>Header Files\vme</Filter>
     </ClInclude>
-    <ClInclude Include="include\mfx_video_signal_conversion_vpp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\mfx_shift_vpp.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mfx_video_signal_conversion_vpp.h">
+      <Filter>Header Files\filters</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
