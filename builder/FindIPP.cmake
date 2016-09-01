@@ -27,9 +27,9 @@
 
 if (__ARCH MATCHES ia32)
   set( ipp_arch ${__ARCH})
-else( )
+else()
   set( ipp_arch em64t )
-endif( )
+endif()
 
 set( ipp_root $ENV{MEDIASDK_ROOT}/ipp )
 if( Windows )
@@ -38,7 +38,7 @@ elseif( Linux )
   set( ipp_root ${ipp_root}/linux/${ipp_arch} )
 elseif( Darwin )
   set( ipp_root ${ipp_root}/darwin/${ipp_arch} )
-endif( )
+endif()
 
 message( STATUS "Search IPP in ${ipp_root}" )
 
@@ -52,19 +52,19 @@ if(NOT IPP_INCLUDE MATCHES NOTFOUND)
 
     get_filename_component( IPP_LIBRARY_PATH ${IPP_LIBRARY} PATH )
     link_directories( ${IPP_LIBRARY_PATH} )
-  endif( )
-endif( )
+  endif()
+endif()
 
 if(NOT DEFINED IPP_FOUND)
   message( FATAL_ERROR "Intel(R) IPP was not found (required)! Set/check MEDIASDK_ROOT environment variable!" )
-else ( )
+else ()
   message( STATUS "Intel(R) IPP was found here $ENV{MEDIASDK_ROOT}" )
-endif( )
+endif()
 
 if( __IPP )
   if( Linux )
     append("-include ${ipp_root}/tools/staticlib/ipp_${__IPP}.h" CMAKE_C_FLAGS)
     append("-include ${ipp_root}/tools/staticlib/ipp_${__IPP}.h" CMAKE_CXX_FLAGS)
-  endif( )
-endif( )
+  endif()
+endif()
 

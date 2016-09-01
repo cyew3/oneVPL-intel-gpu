@@ -1,6 +1,6 @@
 ##******************************************************************************
 ##  Copyright(C) 2012 Intel Corporation. All Rights Reserved.
-##  
+##
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
 ##  Material remains  with Intel Corporation  or its suppliers or licensors. The
@@ -14,9 +14,9 @@
 ##  implication, inducement,  estoppel or  otherwise.  Any  license  under  such
 ##  intellectual  property  rights must  be express  and  approved  by  Intel in
 ##  writing.
-##  
+##
 ##  *Third Party trademarks are the property of their respective owners.
-##  
+##
 ##  Unless otherwise  agreed  by Intel  in writing, you may not remove  or alter
 ##  this  notice or  any other notice embedded  in Materials by Intel or Intel's
 ##  suppliers or licensors in any way.
@@ -32,9 +32,9 @@ elseif( Darwin )
 endif()
 if( __ARCH MATCHES ia32)
   set( os_arch "${os_arch}_ia32" )
-else( )
+else()
   set( os_arch "${os_arch}_x64" )
-endif( )
+endif()
 
 if( Linux OR Darwin )
   find_path( MFX_INCLUDE mfxdefs.h PATHS $ENV{MFX_HOME}/mdp_msdk-api/include )
@@ -44,29 +44,29 @@ if( Linux OR Darwin )
   include_directories( $ENV{MFX_HOME}/mdp_msdk-api/include )
   link_directories( $ENV{MFX_HOME}/lib/${os_arch} )
 
-else( )
+else()
   set( MFX_INCLUDE NOTFOUND )
   set( MFX_LIBRARY NOTFOUND )
 
-endif( )
+endif()
 
 if(NOT MFX_INCLUDE MATCHES NOTFOUND)
   set( MFX_FOUND TRUE )
   include_directories( ${MFX_INCLUDE} )
-endif( )
+endif()
 
 if(NOT DEFINED MFX_FOUND)
   message( FATAL_ERROR "Intel(R) Media SDK was not found (required)! Set/check MFX_HOME environment variable!")
-else ( )
+else ()
   message( STATUS "Intel(R) Media SDK was found here $ENV{MFX_HOME}")
-endif( )
+endif()
 
 if(NOT MFX_LIBRARY MATCHES NOTFOUND)
   get_filename_component(MFX_LIBRARY_PATH ${MFX_LIBRARY} PATH )
   link_directories( ${MFX_LIBRARY_PATH} )
-endif( )
+endif()
 
 if( Linux )
   set(MFX_LDFLAGS "-Wl,--default-symver" )
-endif( )
+endif()
 

@@ -1,6 +1,6 @@
 ##******************************************************************************
 ##  Copyright(C) 2012 Intel Corporation. All Rights Reserved.
-##  
+##
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
 ##  Material remains  with Intel Corporation  or its suppliers or licensors. The
@@ -14,9 +14,9 @@
 ##  implication, inducement,  estoppel or  otherwise.  Any  license  under  such
 ##  intellectual  property  rights must  be express  and  approved  by  Intel in
 ##  writing.
-##  
+##
 ##  *Third Party trademarks are the property of their respective owners.
-##  
+##
 ##  Unless otherwise  agreed  by Intel  in writing, you may not remove  or alter
 ##  this  notice or  any other notice embedded  in Materials by Intel or Intel's
 ##  suppliers or licensors in any way.
@@ -32,7 +32,7 @@
 function( check_variant variant configured )
   if( NOT ${ARGV0} MATCHES none|sw|hw|drm|x11 )
     message( FATAL_ERROR "bug: unknown build variant (${ARGV0}) specified" )
-  endif( )
+  endif()
 
   set( configured 0 )
 
@@ -41,9 +41,9 @@ function( check_variant variant configured )
   elseif( ${ARGV0} MATCHES sw )
     if( Linux )
       set( configured 0 )
-    else( )
+    else()
       set( configured 1 )
-    endif( )
+    endif()
   elseif( ${ARGV0} MATCHES hw AND Linux AND PKG_LIBVA_FOUND )
     set( configured 1 )
   elseif( ${ARGV0} MATCHES hw AND Darwin )
@@ -54,10 +54,10 @@ function( check_variant variant configured )
     set( configured 1 )
   elseif( ${ARGV0} MATCHES universal AND PKG_X11_FOUND AND PKG_LIBVA_FOUND AND PKG_LIBVA_X11_FOUND AND PKG_LIBDRM_FOUND AND PKG_LIBVA_DRM_FOUND )
     set( configured 1 )
-  endif( )
+  endif()
 
   set( ${ARGV1} ${configured} PARENT_SCOPE )
-endfunction( )
+endfunction()
 
 #
 # Usage: append_property( <target> <property_name> <property>)
@@ -67,10 +67,10 @@ function( append_property target property_name property )
   get_target_property( property ${ARGV0} ${ARGV1} )
   if( property MATCHES NOTFOUND)
     set( property "" )
-  endif( )
+  endif()
   string( REPLACE ";" " " property "${ARGV2} ${property}" )
   set_target_properties( ${ARGV0} PROPERTIES ${ARGV1} "${property}" )
-endfunction( )
+endfunction()
 
 #
 # Usage: configure_build_variant( <target> <variant> )
@@ -82,13 +82,13 @@ function( configure_build_variant target variant )
     configure_build_variant_linux( ${ARGV0} ${ARGV1} )
   elseif( Darwin )
     configure_build_variant_darwin( ${ARGV0} ${ARGV1} )
-  endif( )
-endfunction( )
+  endif()
+endfunction()
 
 function( configure_build_variant_linux target variant )
   if( NOT Linux )
-    return( ) # should not occur; just in case
-  endif( )
+    return() # should not occur; just in case
+  endif()
   set( link_flags_list "-Wl,--no-undefined,-z,relro,-z,now,-z,noexecstack")
   append_property( ${ARGV0} LINK_FLAGS "${link_flags_list} ${MFX_LDFLAGS} -fstack-protector" )
 #  message( STATUS "Libva located at: ${PKG_LIBVA_LIBRARY_DIRS}" )
@@ -138,13 +138,13 @@ function( configure_build_variant_linux target variant )
      append_property( ${ARGV0} LINK_FLAGS "-L${libpath}" )
     endforeach()
 
-  endif( )
-endfunction( )
+  endif()
+endfunction()
 
 function( configure_build_variant_darwin target variant )
   if( NOT Darwin)
-    return( ) # should not occur; just in case
-  endif( )
+    return() # should not occur; just in case
+  endif()
 
   if( ARGV1 MATCHES hw)
     list( APPEND darwin_includes
@@ -158,16 +158,16 @@ function( configure_build_variant_darwin target variant )
       )
 
     append_property( ${ARGV0} COMPILE_FLAGS "-DMFX_VA" )
-    
+
     foreach( item ${darwin_includes} )
       append_property( ${ARGV0} COMPILE_FLAGS "-I${item}" )
     endforeach()
     foreach( item ${darwin_frameworks} )
       append_property( ${ARGV0} LINK_FLAGS "-framework ${item}" )
     endforeach()
-  endif( )
+  endif()
 
-endfunction( )
+endfunction()
 
 if( Linux )
   find_package(PkgConfig REQUIRED)
@@ -179,5 +179,5 @@ if( Linux )
   pkg_check_modules(PKG_LIBVA_DRM libva-drm>=0.33)
   pkg_check_modules(PKG_X11 x11)
 
-endif( )
+endif()
 

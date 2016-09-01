@@ -1,6 +1,6 @@
 ##******************************************************************************
 ##  Copyright(C) 2015 Intel Corporation. All Rights Reserved.
-##  
+##
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
 ##  Material remains  with Intel Corporation  or its suppliers or licensors. The
@@ -14,9 +14,9 @@
 ##  implication, inducement,  estoppel or  otherwise.  Any  license  under  such
 ##  intellectual  property  rights must  be express  and  approved  by  Intel in
 ##  writing.
-##  
+##
 ##  *Third Party trademarks are the property of their respective owners.
-##  
+##
 ##  Unless otherwise  agreed  by Intel  in writing, you may not remove  or alter
 ##  this  notice or  any other notice embedded  in Materials by Intel or Intel's
 ##  suppliers or licensors in any way.
@@ -27,7 +27,7 @@
 message( STATUS "Global Configuration of Targets" )
 if(__TARGET_PLATFORM)
     add_definitions( -DLINUX_TARGET_PLATFORM -DLINUX_TARGET_PLATFORM_${__TARGET_PLATFORM} )
-endif( )
+endif()
 #
 set( T_ARCH "sse4.2" )
 #if( __TARGET_PLATFORM STREQUAL "BDW" )

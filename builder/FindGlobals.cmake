@@ -1,6 +1,6 @@
 ##******************************************************************************
 ##  Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
-##  
+##
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
 ##  Material remains  with Intel Corporation  or its suppliers or licensors. The
@@ -14,9 +14,9 @@
 ##  implication, inducement,  estoppel or  otherwise.  Any  license  under  such
 ##  intellectual  property  rights must  be express  and  approved  by  Intel in
 ##  writing.
-##  
+##
 ##  *Third Party trademarks are the property of their respective owners.
-##  
+##
 ##  Unless otherwise  agreed  by Intel  in writing, you may not remove  or alter
 ##  this  notice or  any other notice embedded  in Materials by Intel or Intel's
 ##  suppliers or licensors in any way.
@@ -33,19 +33,19 @@ set( CMAKE_INSTALL_RPATH "" )
 set( CMAKE_BUILD_WITH_INSTALL_RPATH TRUE )
 set( CMAKE_SKIP_BUILD_RPATH TRUE )
 
-collect_oses( )
-collect_arch( )
+collect_oses()
+collect_arch()
 
 if( Windows )
   message( FATAL_ERROR "Windows is not currently supported!" )
 
-else( )
+else()
 
   # If user did not override CMAKE_INSTALL_PREFIX, then set the default prefix
   # to /opt/intel/mediasdk instead of cmake's default
   if( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
     set( CMAKE_INSTALL_PREFIX /opt/intel/mediasdk CACHE PATH "Install Path Prefix" FORCE )
-  endif( )
+  endif()
   message( STATUS "CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}" )
 
   set( MFX_PLUGINS_DIR ${CMAKE_INSTALL_PREFIX}/plugins )
@@ -60,8 +60,8 @@ else( )
 
     if(__ARCH MATCHES intel64)
       add_definitions(-DLINUX64)
-    endif( )
-  endif( )
+    endif()
+  endif()
 
   if( Darwin )
     add_definitions(-DOSX)
@@ -69,14 +69,14 @@ else( )
 
     if(__ARCH MATCHES intel64)
       add_definitions(-DOSX64)
-    endif( )
-  endif( )
+    endif()
+  endif()
 
   if( NOT DEFINED ENV{MFX_VERSION} )
     set( version 0.0.000.0000 )
-  else( )
+  else()
     set( version $ENV{MFX_VERSION} )
-  endif( )
+  endif()
 
   if( Linux OR Darwin )
     execute_process(
@@ -90,10 +90,10 @@ else( )
 
     add_definitions( -DMFX_FILE_VERSION=\"${ver}${cur_date}\")
     add_definitions( -DMFX_PRODUCT_VERSION=\"${version}\" )
-  endif( )
+  endif()
 
   set(no_warnings "-Wno-deprecated-declarations -Wno-unknown-pragmas -Wno-unused")
-  
+
   set(CMAKE_C_FLAGS "-pipe -fPIC")
   set(CMAKE_CXX_FLAGS "-pipe -fPIC")
   set(CMAKE_C_FLAGS_DEBUG     "-O0 -Wall ${no_warnings}  -Wformat -Wformat-security -g -D_DEBUG" CACHE STRING "" FORCE)
@@ -112,22 +112,22 @@ else( )
 #    append("--sysroot=${CMAKE_FIND_ROOT_PATH} " CMAKE_CXX_FLAGS)
     append("--sysroot=${CMAKE_FIND_ROOT_PATH} " LINK_FLAGS)
   endif (DEFINED CMAKE_FIND_ROOT_PATH)
-  
+
   if(__ARCH MATCHES ia32)
     append("-m32 -g" CMAKE_C_FLAGS)
     append("-m32 -g" CMAKE_CXX_FLAGS)
     append("-m32 -g" LINK_FLAGS)
-  else ( )
+  else ()
     append("-m64 -g" CMAKE_C_FLAGS)
     append("-m64 -g" CMAKE_CXX_FLAGS)
     append("-m64 -g" LINK_FLAGS)
-  endif( )
+  endif()
 
   if(__ARCH MATCHES ia32)
     link_directories(/usr/lib)
     set(MFX_MODULES_DIR ${CMAKE_INSTALL_PREFIX}/lib)
-  else ( )
+  else ()
     link_directories(/usr/lib64)
     set(MFX_MODULES_DIR ${CMAKE_INSTALL_PREFIX}/lib64)
-  endif( )
-endif( )
+  endif()
+endif()

@@ -4,7 +4,7 @@ if(__ITT)
       set( arch "64" )
     elseif()
       set( arch "32" )
-    endif( )
+    endif()
 
     if(0)
       # NOTE: that's a placeholder. Currently VTune installation can't be used directly.
@@ -20,14 +20,14 @@ if(__ITT)
 
           link_directories( ${VTUNE_LIBRARY_PATH} )
 
-        endif( )
-      endif( )
+        endif()
+      endif()
 
       if(NOT DEFINED VTUNE_FOUND)
         message( FATAL_ERROR "ITT was not found! Set/check MFX_VTUNE_PATH environment variable!" )
-      else ( )
+      else ()
         message( STATUS "ITT was found here $ENV{MFX_VTUNE_PATH}" )
-      endif( )
+      endif()
     else()
       set( VTUNE_FOUND TRUE )
       message( STATUS "ITT was found here $ENV{MFX_HOME}/mdp_msdk-contrib/itt" )

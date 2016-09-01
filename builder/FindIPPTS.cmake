@@ -1,6 +1,6 @@
 ##******************************************************************************
 ##  Copyright(C) 2012 Intel Corporation. All Rights Reserved.
-##  
+##
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
 ##  Material remains  with Intel Corporation  or its suppliers or licensors. The
@@ -14,9 +14,9 @@
 ##  implication, inducement,  estoppel or  otherwise.  Any  license  under  such
 ##  intellectual  property  rights must  be express  and  approved  by  Intel in
 ##  writing.
-##  
+##
 ##  *Third Party trademarks are the property of their respective owners.
-##  
+##
 ##  Unless otherwise  agreed  by Intel  in writing, you may not remove  or alter
 ##  this  notice or  any other notice embedded  in Materials by Intel or Intel's
 ##  suppliers or licensors in any way.
@@ -27,9 +27,9 @@
 
 if (__ARCH MATCHES ia32)
   set( ipp_ts_arch 32 )
-else( )
+else()
   set( ipp_ts_arch em64t )
-endif( )
+endif()
 
 set( ipp_ts_root $ENV{MEDIASDK_ROOT}/tools/ts )
 if( Windows )
@@ -38,7 +38,7 @@ elseif( Linux )
   set( ipp_ts_lib ${ipp_ts_root}/lib/linux${ipp_ts_arch} )
 elseif( Darwin )
   set( ipp_ts_lib ${ipp_ts_root}/lib/darwin${ipp_arch} )
-endif( )
+endif()
 
 find_path( IPPTS_INCLUDE ts.h PATHS ${ipp_ts_root}/include )
 
@@ -46,8 +46,8 @@ if(NOT IPPTS_INCLUDE MATCHES NOTFOUND)
   set( IPPTS_FOUND TRUE)
   include_directories( ${IPPTS_INCLUDE} )
   link_directories( ${ipp_ts_lib} )
-endif( )
+endif()
 
 if(NOT DEFINED IPPTS_FOUND)
   message( STATUS "Intel(R) IPP TS was not found (optional)!" )
-endif( )
+endif()

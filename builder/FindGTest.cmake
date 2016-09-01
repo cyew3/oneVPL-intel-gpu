@@ -1,6 +1,6 @@
 ##******************************************************************************
 ##  Copyright(C) 2014 Intel Corporation. All Rights Reserved.
-##  
+##
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
 ##  Material remains  with Intel Corporation  or its suppliers or licensors. The
@@ -14,9 +14,9 @@
 ##  implication, inducement,  estoppel or  otherwise.  Any  license  under  such
 ##  intellectual  property  rights must  be express  and  approved  by  Intel in
 ##  writing.
-##  
+##
 ##  *Third Party trademarks are the property of their respective owners.
-##  
+##
 ##  Unless otherwise  agreed  by Intel  in writing, you may not remove  or alter
 ##  this  notice or  any other notice embedded  in Materials by Intel or Intel's
 ##  suppliers or licensors in any way.
@@ -39,13 +39,13 @@ if(NOT GTEST_INCLUDE MATCHES NOTFOUND)
 
     include_directories( "${GTEST_INCLUDE}" )
     link_directories( "${GTEST_LIB_DIR}" "${GTEST_MAIN_LIB_DIR}" )
-  endif( )
-endif( )
+  endif()
+endif()
 
 if(NOT DEFINED GTEST_FOUND)
   message( WARNING "Google tests libraries and headers were not found! Build GTest and install to /usr/local." )
-else ( )
+else ()
   message( STATUS "Google tests libraries were found in ${GTEST_LIB_DIR}" )
   message( STATUS "Google tests headers were found in ${GTEST_INCLUDE}" )
-endif( )
+endif()
 
