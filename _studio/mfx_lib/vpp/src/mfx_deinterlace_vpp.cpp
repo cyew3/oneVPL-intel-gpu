@@ -116,7 +116,8 @@ MFXVideoVPPDeinterlace::MFXVideoVPPDeinterlace(VideoCORE *core, mfxStatus* sts )
   m_diState.bSyncRefList[0]  = false;
   m_diState.bSyncRefList[1]  = false;
 
-  m_diState.numProcessedFrames= 0;
+  m_diState.numProcessedFrames = 0;
+  m_diState.prevTimeStamp      = 0;
 
   /* readiness state */
   // sync
