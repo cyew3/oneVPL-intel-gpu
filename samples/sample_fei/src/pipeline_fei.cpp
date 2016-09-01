@@ -787,7 +787,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
         MSDK_CHECK_STATUS(sts, "m_pmfxVPP->QueryIOSurf failed");
 
         VppRequest[0].NumFrameMin = VppRequest[0].NumFrameSuggested;
-        VppRequest[0].AllocId = m_BaseAllocID;
+        VppRequest[0].AllocId     = m_BaseAllocID;
 
         sts = m_pMFXAllocator->Alloc(m_pMFXAllocator->pthis, &(VppRequest[0]), &m_VppResponse);
         MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Alloc failed");
@@ -2926,8 +2926,11 @@ mfxStatus CEncodingPipeline::GetOneFrame(mfxFrameSurface1* & pSurf)
             }
             MSDK_CHECK_STATUS(sts, "m_mfxSession.SyncOperation failed");
 
-            sts = DropDecodeStreamoutOutput(pSurf);
-            MSDK_CHECK_STATUS(sts, "DropDecodeStreamoutOutput failed");
+            if (m_appCfg.bDECODESTREAMOUT)
+            {
+                sts = DropDecodeStreamoutOutput(pSurf);
+                MSDK_CHECK_STATUS(sts, "DropDecodeStreamoutOutput failed");
+            }
         }
 
     }
@@ -5148,12 +5151,12 @@ mfxStatus CEncodingPipeline::PreProcessOneFrame(mfxFrameSurface1* & pSurf)
 
     if (m_bNeedDRC)
     {
-        VppExtSurface.pSurface->Info.Width = m_mfxEncParams.mfx.FrameInfo.Width;
+        VppExtSurface.pSurface->Info.Width  = m_mfxEncParams.mfx.FrameInfo.Width;
         VppExtSurface.pSurface->Info.Height = m_mfxEncParams.mfx.FrameInfo.Height;
-        VppExtSurface.pSurface->Info.CropW = m_mfxEncParams.mfx.FrameInfo.CropW;
-        VppExtSurface.pSurface->Info.CropH = m_mfxEncParams.mfx.FrameInfo.CropH;
-        VppExtSurface.pSurface->Info.CropX = 0;
-        VppExtSurface.pSurface->Info.CropY = 0;
+        VppExtSurface.pSurface->Info.CropW  = m_mfxEncParams.mfx.FrameInfo.CropW;
+        VppExtSurface.pSurface->Info.CropH  = m_mfxEncParams.mfx.FrameInfo.CropH;
+        VppExtSurface.pSurface->Info.CropX  = 0;
+        VppExtSurface.pSurface->Info.CropY  = 0;
     }
 
     sts = VPPOneFrame(m_pmfxVPP, &m_mfxSession, pSurf, &VppExtSurface);
