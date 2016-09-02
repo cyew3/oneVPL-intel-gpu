@@ -542,6 +542,8 @@ Status MJPEGVideoDecoderMFX_HW::GetFrameHW(MediaDataEx* in)
     if (sts != UMC_OK)
         return sts;
     sts = m_va->EndFrame(NULL);
+    if (sts != UMC_OK)
+        return sts;
 #endif
 #endif
     return UMC_OK;
@@ -881,7 +883,13 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
         picParams->picture_width  = (Ipp16u)m_decBase->m_jpeg_width;
         picParams->picture_height = (Ipp16u)m_decBase->m_jpeg_height;
         picParams->num_components = (Ipp8u) m_decBase->m_jpeg_ncomp;
-        picParams->color_space    = 0;
+        if(m_decBase->m_jpeg_color == JC_RGB || m_decBase->m_jpeg_color == JC_RGBA) {
+            picParams->color_space    = 1;
+        } else if(m_decBase->m_jpeg_color == JC_BGR || m_decBase->m_jpeg_color == JC_BGRA) {
+            picParams->color_space    = 2;
+        } else {
+            picParams->color_space    = 0;
+        }
         switch(m_rotation)
         {
         case 0:

@@ -1045,6 +1045,40 @@ bool MFX_JPEG_Utility::IsNeedPartialAcceleration(VideoCORE * core, mfxVideoParam
     //    return true;
 
 #if defined (MFX_VA_LINUX)
+    // BXT SW fallback definition
+    if (core->GetHWType() == MFX_HW_BXT) {
+        if (par->mfx.InterleavedDec == MFX_SCANTYPE_NONINTERLEAVED) {
+            return true;
+        } else if (par->mfx.FrameInfo.Width>4096 || par->mfx.FrameInfo.Height>4096) {
+            return true;
+        } else {
+            switch (par->mfx.FrameInfo.FourCC) {
+                case MFX_FOURCC_NV12:
+                    if ( par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr &&
+                        (par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV420 || par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV422H || par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV422V)
+                       ) return false;
+                    else
+                        return true;
+/*
+                case MFX_FOURCC_YUY2:
+                case MFX_FOURCC_UYVY:
+                    if( par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr &&
+                       (par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV420 || par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV422H)
+                      ) return false;
+                    else
+                        return true;
+*/
+                case MFX_FOURCC_RGB4:
+                    if ((par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_RGB && par->mfx.JPEGChromaFormat != MFX_CHROMAFORMAT_YUV444) ||
+                        (par->mfx.JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr && par->mfx.JPEGChromaFormat == MFX_CHROMAFORMAT_YUV422V) )
+                        return true;
+                    else
+                        return false;
+                default:
+                    return true;
+            }
+        }
+    }
     // NV12 is supported on Linux HW at the moment
     if (par->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12 &&
         par->mfx.FrameInfo.FourCC != MFX_FOURCC_RGB4)
@@ -1759,10 +1793,12 @@ void VideoDECODEMJPEGBase_HW::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxIn
 
     if (info->JPEGColorFormat == MFX_JPEG_COLORFORMAT_UNKNOWN || info->JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr)
     {
+        if (hwType == MFX_HW_BXT) return;
+
         switch(info->JPEGChromaFormat)
         {
-#if defined (MFX_VA_WIN)
         case MFX_CHROMAFORMAT_MONOCHROME:
+#if defined (MFX_VA_WIN)
             if (hwType == MFX_HW_SOFIA &&
                 info->Rotation == MFX_ROTATION_0 &&
                 info->InterleavedDec == MFX_SCANTYPE_INTERLEAVED &&
@@ -2369,11 +2405,12 @@ mfxStatus VideoDECODEMJPEGBase_HW::AddPicture(UMC::MediaDataEx *pSrcData, mfxU32
 
     if (MFX_PICSTRUCT_FIELD_BFF == m_vPar.mfx.FrameInfo.PicStruct)
     {
-        // cheange field order in BFF case
+        // change field order in BFF case
         fieldPos ^= 1;
     }
 
     UMC::Status umcRes = UMC::UMC_OK;
+#ifndef MFX_ENABLE_MJPEG_ROTATE_VPP
     switch(m_vPar.mfx.Rotation)
     {
     case MFX_ROTATION_0:
@@ -2389,7 +2426,9 @@ mfxStatus VideoDECODEMJPEGBase_HW::AddPicture(UMC::MediaDataEx *pSrcData, mfxU32
         umcRes = m_pMJPEGVideoDecoder->SetRotation(270);
         break;
     }
-
+#else
+    umcRes = m_pMJPEGVideoDecoder->SetRotation(0);
+#endif
     if (umcRes != UMC::UMC_OK)
     {
         delete[] m_dst;
@@ -2695,10 +2734,10 @@ mfxStatus VideoDECODEMJPEGBase_SW::CheckTaskAvailability(mfxU32 maxTaskNumber)
         }
 
         // initialize the task
-        mfxStatus sts = pTask.get()->Initialize(umcVideoParams, 
-                                        m_FrameAllocator.get(), 
-                                        m_vPar.mfx.Rotation, 
-                                        m_vPar.mfx.JPEGChromaFormat, 
+        mfxStatus sts = pTask.get()->Initialize(umcVideoParams,
+                                        m_FrameAllocator.get(),
+                                        m_vPar.mfx.Rotation,
+                                        m_vPar.mfx.JPEGChromaFormat,
                                         m_vPar.mfx.JPEGColorFormat);
         if (MFX_ERR_NONE != sts)
         {
