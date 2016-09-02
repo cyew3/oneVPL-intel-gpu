@@ -849,7 +849,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
         verticalPitch = (verticalPitch % dstPitch)? 0 : verticalPitch / dstPitch;
         if (m_bCmCopy == true && CM_ALIGNED(pDst->Data.Pitch) && (pDst->Info.FourCC == MFX_FOURCC_NV12 || (pDst->Info.FourCC == MFX_FOURCC_P010 && pDst->Info.Shift == pSrc->Info.Shift)) && CM_ALIGNED(pDst->Data.Y) && CM_ALIGNED(pDst->Data.UV) && CM_SUPPORTED_COPY_SIZE(roi) && verticalPitch >= pDst->Info.Height && verticalPitch <= 16384)
         {
-            if(m_HWType >= MFX_HW_SCL)
+            if(m_HWType >= MFX_HW_SCL) 
                 sts = pCmCopy->CopyVideoToSystemMemory(pDst->Data.Y, pDst->Data.Pitch,(mfxU32)verticalPitch,((mfxHDLPair*)pSrc->Data.MemId)->first, 0, roi,pDst->Info.FourCC);
             else
                 sts = pCmCopy->CopyVideoToSystemMemoryAPI(pDst->Data.Y, pDst->Data.Pitch,(mfxU32)verticalPitch,((mfxHDLPair*)pSrc->Data.MemId)->first, 0, roi);
@@ -864,6 +864,8 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
         {
             if(pSrc->Info.FourCC == MFX_FOURCC_BGR4)
                 sts = pCmCopy->CopySwapVideoToSystemMemory(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch, (mfxU32)pSrc->Info.Height,((mfxHDLPair*)pSrc->Data.MemId)->first, 0, roi, MFX_FOURCC_BGR4);
+            else if(m_HWType >= MFX_HW_SCL)
+                sts = pCmCopy->CopyVideoToSystemMemory(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch,(mfxU32)verticalPitch,((mfxHDLPair*)pSrc->Data.MemId)->first, 0, roi,pDst->Info.FourCC);
             else
                 sts = pCmCopy->CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch, (mfxU32)pSrc->Info.Height,((mfxHDLPair*)pSrc->Data.MemId)->first, 0, roi);
             MFX_CHECK_STS(sts);
@@ -877,6 +879,8 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
         {
             if(pSrc->Info.FourCC == MFX_FOURCC_ABGR16)
                 sts = pCmCopy->CopySwapVideoToSystemMemory(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch, (mfxU32)pSrc->Info.Height,((mfxHDLPair*)pSrc->Data.MemId)->first, 0, roi, MFX_FOURCC_ABGR16);
+            else if(m_HWType >= MFX_HW_SCL)
+                sts = pCmCopy->CopyVideoToSystemMemory(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch,(mfxU32)verticalPitch,((mfxHDLPair*)pSrc->Data.MemId)->first, 0, roi,pDst->Info.FourCC);
             else
                 sts = pCmCopy->CopyVideoToSystemMemoryAPI(IPP_MIN(IPP_MIN(pDst->Data.R,pDst->Data.G),pDst->Data.B), pDst->Data.Pitch, (mfxU32)pSrc->Info.Height,((mfxHDLPair*)pSrc->Data.MemId)->first, 0, roi);
             MFX_CHECK_STS(sts);
@@ -1245,6 +1249,8 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
         else if(m_bCmCopy == true && CM_ALIGNED(pSrc->Data.Pitch) && pSrc->Info.FourCC == MFX_FOURCC_RGB4 && CM_ALIGNED(IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B)) && roi.height <= 16352 && roi.width <= 16352){
             if(pDst->Info.FourCC == MFX_FOURCC_BGR4)
                 sts = pCmCopy->CopySwapSystemToVideoMemory(((mfxHDLPair*)pDst->Data.MemId)->first, 0, IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B), pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi, MFX_FOURCC_BGR4);
+            else if(m_HWType >= MFX_HW_SCL)
+                sts = pCmCopy->CopySystemToVideoMemory(((mfxHDLPair*)pDst->Data.MemId)->first, 0, IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B), pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi, MFX_FOURCC_RGB4);
             else
                 sts = pCmCopy->CopySystemToVideoMemoryAPI(((mfxHDLPair*)pDst->Data.MemId)->first, 0, IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B), pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi);
             MFX_CHECK_STS(sts);
@@ -1253,6 +1259,8 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
         {
             if(pSrc->Info.FourCC == MFX_FOURCC_ABGR16)
                 sts = pCmCopy->CopySwapSystemToVideoMemory(((mfxHDLPair*)pDst->Data.MemId)->first, 0, IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B), pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi, MFX_FOURCC_ABGR16);
+            else if(m_HWType >= MFX_HW_SCL)
+                sts = pCmCopy->CopySystemToVideoMemory(((mfxHDLPair*)pDst->Data.MemId)->first, 0, IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B), pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi, MFX_FOURCC_ABGR16);
             else
                 sts = pCmCopy->CopySystemToVideoMemoryAPI(((mfxHDLPair*)pDst->Data.MemId)->first, 0, IPP_MIN(IPP_MIN(pSrc->Data.R,pSrc->Data.G),pSrc->Data.B), pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi);
             MFX_CHECK_STS(sts);
@@ -1263,7 +1271,10 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
             MFX_CHECK_STS(sts);
         }
         else if(m_bCmCopy == true && CM_ALIGNED(pSrc->Data.Pitch) && pSrc->Info.FourCC != MFX_FOURCC_YV12 && pSrc->Info.FourCC != MFX_FOURCC_NV12 && pSrc->Info.FourCC != MFX_FOURCC_P010 && CM_ALIGNED(pSrc->Data.Y) && CM_SUPPORTED_COPY_SIZE(roi)){
-            sts = pCmCopy->CopySystemToVideoMemoryAPI(((mfxHDLPair*)pDst->Data.MemId)->first, 0, pSrc->Data.Y, pSrc->Data.Pitch, (mfxU32)verticalPitch, roi);
+            if(pSrc->Info.FourCC == MFX_FOURCC_R16 && m_HWType >= MFX_HW_SCL)
+                sts = pCmCopy->CopySystemToVideoMemory(((mfxHDLPair*)pDst->Data.MemId)->first, 0, pSrc->Data.Y, pSrc->Data.Pitch, (mfxU32)pSrc->Info.Height, roi, MFX_FOURCC_R16);
+            else
+                sts = pCmCopy->CopySystemToVideoMemoryAPI(((mfxHDLPair*)pDst->Data.MemId)->first, 0, pSrc->Data.Y, pSrc->Data.Pitch, (mfxU32)verticalPitch, roi);
             MFX_CHECK_STS(sts);
         }
         else

@@ -2370,7 +2370,7 @@ surfaceCopy_writeswap_32x32(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int
     surfaceCopy_writeswap_32x8(INBUF_IDX, OUTBUF_IDX, width_dword, height, srcBuffer_ShiftLeftOffsetInBytes, horizOffset, vertOffset + SUB_BLOCK_HEIGHT * threadHeight * 2, pixel_size, dst2D_start_x, dst2D_start_y);
     surfaceCopy_writeswap_32x8(INBUF_IDX, OUTBUF_IDX, width_dword, height, srcBuffer_ShiftLeftOffsetInBytes, horizOffset, vertOffset + SUB_BLOCK_HEIGHT * threadHeight * 3, pixel_size, dst2D_start_x, dst2D_start_y);
 }
-/*
+
 //BufferUP-->Surface2D
 inline _GENX_  void  
 surfaceCopy_write_32x8(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width_dword, int height, int srcBuffer_ShiftLeftOffsetInBytes, int horizOffset, int vertOffset, int dst2D_start_x, int dst2D_start_y)
@@ -3190,7 +3190,7 @@ surfaceCopy_readswap_32x32(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int 
         surfaceCopy_readswap_32x8(INBUF_IDX, OUTBUF_IDX, width_dword, height, ShiftLeftOffsetInBytes, horizOffset, vertOffset + SUB_BLOCK_HEIGHT * threadHeight * i, width_in_dword_no_padding, height_no_padding, pixel_size, src2D_start_x, src2D_start_y);
     }
 }
-/*
+
 inline _GENX_  void   
 surfaceCopy_read_32x8(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, int width_dword, int height_stride_in_rows, int ShiftLeftOffsetInBytes, int horizOffset, int vertOffset, int width_in_dword_no_padding, int height_no_padding, int src2D_start_x, int src2D_start_y)
 {

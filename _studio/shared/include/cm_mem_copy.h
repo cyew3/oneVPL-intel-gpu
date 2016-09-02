@@ -172,6 +172,16 @@ public:
                                     mfxU32 format, 
                                     const UINT option,
                                     CmEvent* & pEvent );
+    mfxStatus EnqueueCopyGPUtoCPU(   CmSurface2D* pSurface,
+                                unsigned char* pSysMem,
+                                int width,
+                                int height,
+                                const UINT widthStride, 
+                                const UINT heightStride,
+                                mfxU32 format, 
+                                const UINT option,
+                                CmEvent* & pEvent );
+
     mfxStatus EnqueueCopySwapRBCPUtoGPU(   CmSurface2D* pSurface,
                                     unsigned char* pSysMem,
                                     int width,
@@ -181,6 +191,15 @@ public:
                                     mfxU32 format, 
                                     const UINT option,
                                     CmEvent* & pEvent );
+    mfxStatus EnqueueCopyCPUtoGPU(   CmSurface2D* pSurface,
+                                unsigned char* pSysMem,
+                                int width,
+                                int height,
+                                const UINT widthStride, 
+                                const UINT heightStride,
+                                mfxU32 format, 
+                                const UINT option,
+                                CmEvent* & pEvent );
     mfxStatus EnqueueCopySwapRBGPUtoGPU(   CmSurface2D* pSurfaceIn,
                                     CmSurface2D* pSurfaceOut,
                                     int width,
