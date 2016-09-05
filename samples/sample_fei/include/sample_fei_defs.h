@@ -21,16 +21,21 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #define __SAMPLE_FEI_DEFS_H__
 
 #include <mfxfei.h>
+#include "sample_defs.h"
 #include "mfxmvc.h"
 #include "mfxvideo.h"
 #include "mfxvideo++.h"
 #include "sample_utils.h"
+
+#include "base_allocator.h"
 
 #include <algorithm>
 #include <memory>
 #include <cstring>
 #include <list>
 #include <vector>
+#include <ctime>
+#include "math.h"
 
 const mfxU16 MaxFeiEncMVPNum = 4;
 
@@ -38,7 +43,8 @@ const mfxU16 MaxFeiEncMVPNum = 4;
 #define SAFE_RELEASE_EXT_BUFSET(SET) {if (SET){ SET->vacant = true; SET = NULL;}}
 #define SAFE_DEC_LOCKER(SURFACE){if (SURFACE && SURFACE->Data.Locked) {SURFACE->Data.Locked--;}}
 #define SAFE_UNLOCK(SURFACE){if (SURFACE) {SURFACE->Data.Locked = 0;}}
-#define SAFE_FCLOSE(FPTR, ERR){ if (FPTR && fclose(FPTR)) { return ERR; }}
+#define SAFE_FCLOSE_ERR(FPTR, ERR){ if (FPTR && fclose(FPTR)) { FPTR = NULL; return ERR; } else {FPTR = NULL;}}
+#define SAFE_FCLOSE(FPTR){ if (FPTR) { fclose(FPTR); FPTR = NULL; }}
 #define SAFE_FREAD(PTR, SZ, COUNT, FPTR, ERR) { if (FPTR && (fread(PTR, SZ, COUNT, FPTR) != COUNT)){ return ERR; }}
 #define SAFE_FWRITE(PTR, SZ, COUNT, FPTR, ERR) { if (FPTR && (fwrite(PTR, SZ, COUNT, FPTR) != COUNT)){ return ERR; }}
 #define SAFE_FSEEK(FPTR, OFFSET, ORIGIN, ERR) { if (FPTR && fseek(FPTR, OFFSET, ORIGIN)){ return ERR; }}
@@ -53,6 +59,11 @@ const mfxU16 MaxFeiEncMVPNum = 4;
     #define mdprintf(...)
 #endif
 
+#define MaxNumActiveRefP      4
+#define MaxNumActiveRefBL0    4
+#define MaxNumActiveRefBL1    1
+#define MaxNumActiveRefBL1_i  2
+
 enum
 {
     FEI_SLICETYPE_I = 2,
@@ -60,6 +71,7 @@ enum
     FEI_SLICETYPE_B = 1,
 };
 
+/*
 enum
 {
     RPLM_ST_PICNUM_SUB = 0,
@@ -68,7 +80,7 @@ enum
     RPLM_END           = 3,
     RPLM_INTERVIEW_SUB = 4,
     RPLM_INTERVIEW_ADD = 5,
-};
+};*/
 
 enum
 {
@@ -79,6 +91,344 @@ enum
     MMCO_SET_MAX_LT_IDX = 4,
     MMCO_ALL_TO_UNUSED  = 5,
     MMCO_CURR_TO_LT     = 6,
+};
+
+
+enum SurfStrategy
+{
+    PREFER_FIRST_FREE = 1,
+    PREFER_NEW
+};
+
+struct ExtSurfPool
+{
+    mfxFrameSurface1* SurfacesPool;
+    mfxU16            LastPicked;
+    mfxU16            PoolSize;
+    SurfStrategy      Strategy;
+
+    ExtSurfPool(SurfStrategy strategy = PREFER_FIRST_FREE)
+        : SurfacesPool(NULL)
+        , LastPicked(0xffff)
+        , PoolSize(0)
+        , Strategy(strategy)
+    {}
+
+    ~ExtSurfPool()
+    {
+        DeleteFrames();
+    }
+
+    void DeleteFrames()
+    {
+        MSDK_SAFE_DELETE_ARRAY(SurfacesPool);
+        PoolSize   = 0;
+        LastPicked = 0xffff;
+    }
+
+    mfxFrameSurface1* GetFreeSurface_FEI()
+    {
+        mfxU16 idx;
+
+        switch (Strategy)
+        {
+        case PREFER_NEW:
+            idx = GetFreeSurface_FirstNew();
+            break;
+
+        case PREFER_FIRST_FREE:
+        default:
+            idx = GetFreeSurface(SurfacesPool, PoolSize);
+            break;
+        }
+
+        return (idx != MSDK_INVALID_SURF_IDX) ? SurfacesPool + idx : NULL;
+    }
+
+    mfxU16 GetFreeSurface_FirstNew()
+    {
+        mfxU32 SleepInterval = 10; // milliseconds
+
+        //wait if there's no free surface
+        for (mfxU32 i = 0; i < MSDK_SURFACE_WAIT_INTERVAL; i += SleepInterval)
+        {
+            // watch through the buffer for unlocked surface, start with last picked one
+            if (SurfacesPool)
+            {
+                for (mfxU16 j = (mfxU16(LastPicked + 1)) % PoolSize, n_watched = 0;
+                    n_watched < PoolSize;
+                    ++j, j %= PoolSize, ++n_watched)
+                {
+                    if (0 == SurfacesPool[j].Data.Locked)
+                    {
+                        LastPicked = j;
+                        mdprintf(stderr, "\n\n Picking surface %u\n\n", j);
+                        return j;
+                    }
+                }
+            }
+            else
+            {
+                msdk_printf(MSDK_STRING("ERROR: Surface Pool is NULL\n"));
+                return MSDK_INVALID_SURF_IDX;
+            }
+
+            /* Sleep to wait for some surface to be unlocked */
+            MSDK_SLEEP(SleepInterval);
+        }
+
+        msdk_printf(MSDK_STRING("ERROR: No free surfaces in pool (during long period)\n"));
+
+        return MSDK_INVALID_SURF_IDX;
+    }
+};
+
+struct DRCblock
+{
+    explicit DRCblock(mfxU32 start = 0xffffffff, mfxU16 w = 0, mfxU16 h = 0)
+        : start_frame(start)
+        , target_w(w)
+        , target_h(h)
+    {}
+
+    mfxU32 start_frame;
+    mfxU16 target_w;
+    mfxU16 target_h;
+};
+
+/* Following structure used to store parameters for current application launch */
+struct AppConfig
+{
+
+    AppConfig()
+        : DecodeId(0)            // Default (invalid) value
+        , CodecId(MFX_CODEC_AVC) // Only AVC is supported
+        , ColorFormat(MFX_FOURCC_YV12)
+        , nPicStruct(MFX_PICSTRUCT_PROGRESSIVE)
+        , nWidth(0)
+        , nHeight(0)
+        , dFrameRate(30.0)
+        , nNumFrames(0)          // Unlimited
+        , nTimeout(0)            // Unlimited
+        , refDist(1)             // Only I frames
+        , gopSize(1)             // Only I frames
+        , QP(26)
+        , numSlices(1)
+        , numRef(1)              // One ref by default
+        , NumRefActiveP(0)
+        , NumRefActiveBL0(0)
+        , NumRefActiveBL1(0)
+        , bRefType(MFX_B_REF_UNKNOWN) // Let MSDK library to decide wheather to use B-pyramid or not
+        , nIdrInterval(0xffff)        // Infinite IDR interval
+        , preencDSstrength(0)         // No Downsampling
+        , bDynamicRC(false)
+        //, nResetStart(0)
+        //, nDRCdefautW(0)
+        //, nDRCdefautH(0)
+        //, MaxDrcWidth(0)
+        //, MaxDrcHeight(0)
+
+        , SearchWindow(5)             // 48x40 (48 SUs)
+        , LenSP(57)
+        , SearchPath(0)               // exhaustive (full search)
+        , RefWidth(32)
+        , RefHeight(32)
+        , SubMBPartMask(0x00)         // all enabled
+        , IntraPartMask(0x00)         // all enabled
+        , SubPelMode(0x03)            // quarter-pixel
+        , IntraSAD(0x02)              // Haar transform
+        , InterSAD(0x02)              // Haar transform
+        , GopOptFlag(0)               // None
+        , CodecProfile(MFX_PROFILE_AVC_HIGH)
+        , CodecLevel(MFX_LEVEL_AVC_41)
+        , Trellis(MFX_TRELLIS_UNKNOWN)
+        , DisableDeblockingIdc(0)
+        , SliceAlphaC0OffsetDiv2(0)
+        , SliceBetaOffsetDiv2(0)
+        , ChromaQPIndexOffset(0)
+        , SecondChromaQPIndexOffset(0)
+        , nDstWidth(0)
+        , nDstHeight(0)
+        , nInputSurf(0)
+        , nReconSurf(0)
+
+        , bUseHWmemory(true)          // only HW memory is supported (ENCODE supports SW memory)
+
+        , bDECODE(false)
+        , bENCODE(false)
+        , bENCPAK(false)
+        , bOnlyENC(false)
+        , bOnlyPAK(false)
+        , bPREENC(false)
+        , bDECODESTREAMOUT(false)
+        , EncodedOrder(false)
+        , DecodedOrder(false)
+        , bMBSize(false)
+        , Enable8x8Stat(false)
+        , AdaptiveSearch(false)
+        , FTEnable(false)
+        , RepartitionCheckEnable(false)
+        , MultiPredL0(false)
+        , MultiPredL1(false)
+        , DistortionType(false)
+        , ColocatedMbDistortion(false)
+        , ConstrainedIntraPredFlag(false)
+        , Transform8x8ModeFlag(false)
+        , bRepackPreencMV(false)
+        , bNPredSpecified_l0(false)
+        , bNPredSpecified_l1(false)
+        , bPreencPredSpecified_l0(false)
+        , bPreencPredSpecified_l1(false)
+        , bFieldProcessingMode(false)
+        , bPerfMode(false)
+        , bRawRef(false)
+        , bNRefPSpecified(false)
+        , bNRefBL0Specified(false)
+        , bNRefBL1Specified(false)
+        , mvinFile(NULL)
+        , mbctrinFile(NULL)
+        , mvoutFile(NULL)
+        , mbcodeoutFile(NULL)
+        , mbstatoutFile(NULL)
+        , mbQpFile(NULL)
+        , repackctrlFile(NULL)
+        , decodestreamoutFile(NULL)
+    {
+        NumMVPredictors[0] = 1;
+        NumMVPredictors[1] = 0;
+        PreencMVPredictors[0] = true;
+        PreencMVPredictors[1] = true;
+
+        MSDK_ZERO_MEMORY(PipelineCfg);
+    };
+
+    mfxU32 DecodeId; // type of input coded video
+    mfxU32 CodecId;
+    mfxU32 ColorFormat;
+    mfxU16 nPicStruct;
+    mfxU16 nWidth;  // source picture width
+    mfxU16 nHeight; // source picture height
+    mfxF64 dFrameRate;
+    mfxU32 nNumFrames;
+    mfxU32 nTimeout;
+    mfxU16 refDist; //number of frames to next I,P
+    mfxU16 gopSize; //number of frames to next I
+    mfxU8  QP;
+    mfxU16 numSlices;
+    mfxU16 numRef;           // number of reference frames (DPB size)
+    mfxU16 NumRefActiveP;    // maximal number of references for P frames
+    mfxU16 NumRefActiveBL0;  // maximal number of backward references for B frames
+    mfxU16 NumRefActiveBL1;  // maximal number of forward references for B frames
+    mfxU16 bRefType;         // B-pyramid ON/OFF/UNKNOWN (default, let MSDK lib to decide)
+    mfxU16 nIdrInterval;     // distance between IDR frames in GOPs
+    mfxU8  preencDSstrength; // downsample input before passing to preenc (2/4/8x are supported)
+    bool   bDynamicRC;
+    //mfxU32 nResetStart;
+    //mfxU16 nDRCdefautW;
+    //mfxU16 nDRCdefautH;
+    //mfxU16 MaxDrcWidth;
+    //mfxU16 MaxDrcHeight;
+
+    mfxU16 SearchWindow; // search window size and search path from predifined presets
+    mfxU16 LenSP;        // search path length
+    mfxU16 SearchPath;   // search path type
+    mfxU16 RefWidth;     // search window width
+    mfxU16 RefHeight;    // search window height
+    mfxU16 SubMBPartMask;
+    mfxU16 IntraPartMask;
+    mfxU16 SubPelMode;
+    mfxU16 IntraSAD;
+    mfxU16 InterSAD;
+    mfxU16 NumMVPredictors[2];    // number of [0] - L0 predictors, [1] - L1 predictors
+    bool   PreencMVPredictors[2]; // use PREENC predictor [0] - L0, [1] - L1
+    mfxU16 GopOptFlag;            // STRICT | CLOSED, default is OPEN GOP
+    mfxU16 CodecProfile;
+    mfxU16 CodecLevel;
+    mfxU16 Trellis;             // switch on trellis 2 - I | 4 - P | 8 - B, 1 - off, 0 - default
+    mfxU16 DisableDeblockingIdc;
+    mfxI16 SliceAlphaC0OffsetDiv2;
+    mfxI16 SliceBetaOffsetDiv2;
+    mfxI16 ChromaQPIndexOffset;
+    mfxI16 SecondChromaQPIndexOffset;
+
+    mfxU16 nDstWidth;  // destination picture width, specified if resizing required
+    mfxU16 nDstHeight; // destination picture height, specified if resizing required
+
+    mfxU16 nInputSurf;
+    mfxU16 nReconSurf;
+
+    bool   bUseHWmemory;
+
+    msdk_char strSrcFile[MSDK_MAX_FILENAME_LEN];
+
+    std::vector<msdk_char*> srcFileBuff;
+    std::vector<const msdk_char*> dstFileBuff;
+    std::vector<DRCblock> DRCqueue;
+    //std::vector<mfxU16> nDrcWidth; //Dynamic Resolution Change Picture Width,specified if DRC required
+    //std::vector<mfxU16> nDrcHeight;//Dynamic Resolution Change Picture Height,specified if DRC required
+    //std::vector<mfxU32> nDrcStart; //Start Frame No. of Dynamic Resolution Change,specified if DRC required
+
+    bool bDECODE;
+    bool bENCODE;
+    bool bENCPAK;
+    bool bOnlyENC;
+    bool bOnlyPAK;
+    bool bPREENC;
+    bool bDECODESTREAMOUT;
+    bool EncodedOrder;
+    bool DecodedOrder;
+    bool bMBSize;
+    bool Enable8x8Stat;
+    bool AdaptiveSearch;
+    bool FTEnable;
+    bool RepartitionCheckEnable;
+    bool MultiPredL0;
+    bool MultiPredL1;
+    bool DistortionType;
+    bool ColocatedMbDistortion;
+    bool ConstrainedIntraPredFlag;
+    bool Transform8x8ModeFlag;
+    bool bRepackPreencMV;
+    bool bNPredSpecified_l0;
+    bool bNPredSpecified_l1;
+    bool bPreencPredSpecified_l0;
+    bool bPreencPredSpecified_l1;
+    bool bFieldProcessingMode;
+    bool bPerfMode;
+    bool bRawRef;
+    bool bNRefPSpecified;
+    bool bNRefBL0Specified;
+    bool bNRefBL1Specified;
+    msdk_char* mvinFile;
+    msdk_char* mbctrinFile;
+    msdk_char* mvoutFile;
+    msdk_char* mbcodeoutFile;
+    msdk_char* mbstatoutFile;
+    msdk_char* mbQpFile;
+    msdk_char* repackctrlFile;
+    msdk_char* decodestreamoutFile;
+
+    struct{
+        mfxVideoParam* pEncodeVideoParam;
+        mfxVideoParam* pPreencVideoParam;
+        mfxVideoParam* pEncVideoParam;
+        mfxVideoParam* pPakVideoParam;
+        mfxVideoParam* pDecodeVideoParam;
+        mfxVideoParam* pVppVideoParam;
+        mfxVideoParam* pDownSampleVideoParam;
+
+        bool   mixedPicstructs; // Indicates whether stream contains mixed picstructs
+
+        bool   DRCresetPoint; // Resolution changes at current frame
+        mfxU32 numMB_drc_curr;
+        mfxU32 numMB_drc_max;
+        mfxU32 numMB_frame;
+        mfxU32 numMB_refPic;        // Number of MBs in reference frame or field (is equal to numMB_frame for progressive stream)
+        mfxU32 numMB_preenc_frame;  // This field could be different to numMB_frame if PreENC uses downsampling
+        mfxU32 numMB_preenc_refPic; // This field could be different to numMB_refPic if PreENC uses downsampling
+
+        mfxU16 numOfPredictors[2][2]; // Number of predictors; idexes means [fieldId][L0L1]
+    } PipelineCfg;
 };
 
 // B frame location struct for reordering

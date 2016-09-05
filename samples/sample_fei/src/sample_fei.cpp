@@ -514,45 +514,39 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dstw")))
         {
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pConfig->nDstWidth))
+            mfxU16 wdt;
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], wdt))
             {
                 PrintHelp(strInput[0], MSDK_STRING("ERROR: Destination picture Width is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
-            if (pConfig->bDynamicRC)
-            {
-               if (bParseDRC)
-               {
-                   pConfig->nDrcWidth.push_back(pConfig->nDstWidth);
-               }
-               else if (!bParseDRC && pConfig->nDRCdefautW == pConfig->nWidth)
-               {
-                   pConfig->nDrcWidth[0] = pConfig->nDstWidth;
-               }
 
-               pConfig->nDstWidth = pConfig->MaxDrcWidth = (std::max)((std::max)(pConfig->nDstWidth, pConfig->MaxDrcWidth), pConfig->nWidth);
+            if (pConfig->bDynamicRC && bParseDRC)
+            {
+                pConfig->DRCqueue.back().target_w = wdt;
+            }
+            else
+            {
+                pConfig->nDstWidth = wdt;
             }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dsth")))
         {
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pConfig->nDstHeight))
+            mfxU16 hgt;
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], hgt))
             {
-                PrintHelp(strInput[0], MSDK_STRING("ERROR: Destination picture Height is invalid"));
+                PrintHelp(strInput[0], MSDK_STRING("ERROR: Destination picture Width is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
-            if (pConfig->bDynamicRC)
-            {
-               if (bParseDRC)
-               {
-                  pConfig->nDrcHeight.push_back(pConfig->nDstHeight);
-               }
-               else if (!bParseDRC && pConfig->nDRCdefautH == pConfig->nHeight)
-               {
-                   pConfig->nDrcHeight[0]= pConfig->nDstHeight;
-               }
-               pConfig->nDstHeight = pConfig->MaxDrcHeight = (std::max)((std::max)(pConfig->nDstHeight, pConfig->MaxDrcHeight), pConfig->nHeight);
-            }
 
+            if (pConfig->bDynamicRC && bParseDRC)
+            {
+                pConfig->DRCqueue.back().target_h = hgt;
+            }
+            else
+            {
+                pConfig->nDstHeight = hgt;
+            }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-timeout")))
         {
@@ -568,40 +562,27 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-reset_start")))
         {
-            bParseDRC = true;
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pConfig->nResetStart))
+            if (bParseDRC)
             {
-                PrintHelp(strInput[0], MSDK_STRING("ERROR: Reset_start is invalid"));
+                PrintHelp(strInput[0], MSDK_STRING("ERROR: -reset_end of previous DRC block didn't found"));
                 return MFX_ERR_UNSUPPORTED;
             }
-             //for first -resetstart
-            if (!pConfig->bDynamicRC)
+
+            bParseDRC = true;
+            mfxU32 resetFrame;
+
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], resetFrame))
             {
-                if (pConfig->nDstWidth && pConfig->nDstHeight)
-                {
-                    pConfig->nDRCdefautW = pConfig->nDstWidth;
-                    pConfig->nDRCdefautH = pConfig->nDstHeight;
-                    pConfig->MaxDrcWidth = pConfig->nDstWidth;
-                    pConfig->MaxDrcHeight = pConfig->nDstHeight;
-                }
-                else if (pConfig->nWidth && pConfig->nHeight)
-                {
-                    pConfig->nDRCdefautW = pConfig->nWidth;
-                    pConfig->nDRCdefautH = pConfig->nHeight;
-                }
-                if (0 != pConfig->nResetStart)
-                {
-                   pConfig->nDrcStart.push_back(0);
-                   pConfig->nDrcWidth.push_back(pConfig->nDRCdefautW);
-                   pConfig->nDrcHeight.push_back(pConfig->nDRCdefautH);
-                }
-                pConfig->bDynamicRC = true;
+                PrintHelp(strInput[0], MSDK_STRING("ERROR: Reset start frame is invalid"));
+                return MFX_ERR_UNSUPPORTED;
             }
-            pConfig->nDrcStart.push_back(pConfig->nResetStart);
+
+            pConfig->bDynamicRC = true;
+            pConfig->DRCqueue.push_back(DRCblock(resetFrame));
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-reset_end")))
         {
-            if (!pConfig->bDynamicRC)
+            if (!(pConfig->bDynamicRC || bParseDRC))
             {
                 PrintHelp(strInput[0], MSDK_STRING("ERROR: Please Set -reset_start"));
                 return MFX_ERR_UNSUPPORTED;
@@ -1088,11 +1069,9 @@ int main(int argc, char *argv[])
     sts = CheckDRCParams(&Config);
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
 
-    pPipeline.reset(new CEncodingPipeline);
+    pPipeline.reset(new CEncodingPipeline(&Config));
 
-    MSDK_CHECK_POINTER(pPipeline.get(), MFX_ERR_MEMORY_ALLOC);
-
-    sts = pPipeline->Init(&Config);
+    sts = pPipeline->Init();
     MSDK_CHECK_STATUS(sts, "pPipeline->Init failed");
 
     pPipeline->PrintInfo();
@@ -1113,7 +1092,7 @@ int main(int argc, char *argv[])
             sts = pPipeline->ResetDevice();
             MSDK_CHECK_STATUS(sts, "pPipeline->ResetDevice failed");
 
-            sts = pPipeline->ResetMFXComponents(&Config, true);
+            sts = pPipeline->ResetMFXComponents(true);
             MSDK_CHECK_STATUS(sts, "pPipeline->ResetMFXComponents failed");
 
             continue;
@@ -1153,6 +1132,12 @@ mfxStatus CheckOptions(AppConfig* pConfig)
 
     return sts;
 }
+
+bool CompareFrameOrder(const DRCblock& left, const DRCblock& right)
+{
+    return left.start_frame < right.start_frame;
+}
+
 mfxStatus CheckDRCParams(AppConfig* pConfig)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -1165,26 +1150,39 @@ mfxStatus CheckDRCParams(AppConfig* pConfig)
         fprintf(stderr, "ERROR: Only ENCODE supports Dynamic Resolution Change\n");
         sts = MFX_ERR_UNSUPPORTED;
     }
-    if (pConfig->nDrcWidth.size() != pConfig->nDrcHeight.size())
+
+    for (mfxU32 i = 0; i < pConfig->DRCqueue.size(); ++i)
     {
-        fprintf(stderr, "ERROR: Please Check -dstw and -dsth\n");
-        sts = MFX_ERR_UNSUPPORTED;
+        if (!(pConfig->DRCqueue[i].target_w * pConfig->DRCqueue[i].target_w))
+        {
+            fprintf(stderr, "ERROR: Incomplete DRC parameters for frame %d\n", pConfig->DRCqueue[i].start_frame);
+            return MFX_ERR_UNSUPPORTED;
+        }
     }
 
-    if (pConfig->nDrcStart.size() != pConfig->nDrcWidth.size())
+    std::sort(pConfig->DRCqueue.begin(), pConfig->DRCqueue.end(), CompareFrameOrder/*[](DRCblock& left, DRCblock& right){ return left.start_frame > right.start_frame; }*/);
+
+    for (mfxU32 i = 0; i < pConfig->DRCqueue.size() - 1; ++i)
     {
-        fprintf(stderr, "ERROR: Please Check -reset_start/-reset_end and -dstw/-dsth\n");
-        sts = MFX_ERR_UNSUPPORTED;
+        if (pConfig->DRCqueue[i].start_frame == pConfig->DRCqueue[i + 1].start_frame)
+        {
+            fprintf(stderr, "ERROR: Incomplete DRC parameters, two identical resolution change points specified\n");
+            return MFX_ERR_UNSUPPORTED;
+        }
     }
 
-    for(size_t i=0;i < pConfig->nDrcStart.size();i++)
-    {
-       if (i > 0 && pConfig->nDrcStart[i] < pConfig->nDrcStart[i-1] + 2)
-       {
-          fprintf(stderr, "ERROR: Current -reset_start FrameNo. should be greater than the last -reset_start FrameNo.+1.\n");
-          sts = MFX_ERR_UNSUPPORTED;
-       }
+    mfxU32 max_num_mb = 0;
+    // In mixed picstructs case progressive frame holds maximum MBs
+    mfxU32 wdt, hgt, n_fields = (pConfig->nPicStruct & MFX_PICSTRUCT_PROGRESSIVE) || pConfig->nPicStruct == MFX_PICSTRUCT_UNKNOWN ? 1 : 2;
 
+    for (mfxU32 i = 0; i < pConfig->DRCqueue.size(); ++i)
+    {
+        wdt = MSDK_ALIGN16(pConfig->DRCqueue[i].target_w);
+        hgt = (n_fields == 1) ? MSDK_ALIGN16(pConfig->DRCqueue[i].target_h) : MSDK_ALIGN32(pConfig->DRCqueue[i].target_h);
+        max_num_mb = (std::max)(max_num_mb, ((wdt*hgt) >> 8) / n_fields);
     }
+
+    pConfig->PipelineCfg.numMB_drc_max = max_num_mb;
+
     return sts;
 }

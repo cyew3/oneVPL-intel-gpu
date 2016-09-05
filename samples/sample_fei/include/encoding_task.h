@@ -57,15 +57,317 @@ struct IObuffs
     setElem out;
 };
 
+/* This structure holds sets of input and output extended buffers
+   required for frame processing by one of the FEI interfaces */
+
 struct bufSet
 {
-    bufSet()
-        : vacant(true)
-    {}
-
     bool    vacant;
+    mfxU16  num_fields;
     IObuffs I_bufs;
     IObuffs PB_bufs;
+
+    bufSet(mfxU16 n_fields = 1)
+        : vacant(true)
+        , num_fields(n_fields)
+    {}
+
+    void ResetMBnum(mfxU32 new_numMB, bool both_fields)
+    {
+        mfxU16 increment = both_fields ? 1 : num_fields;
+
+        for (mfxU16 i = 0; i < PB_bufs.in.NumExtParam; i += increment)
+        {
+            switch (PB_bufs.in.ExtParam[i]->BufferId)
+            {
+                case MFX_EXTBUFF_FEI_PREENC_MV_PRED:
+                {
+                    mfxExtFeiPreEncMVPredictors* mvPreds = reinterpret_cast<mfxExtFeiPreEncMVPredictors*>(PB_bufs.in.ExtParam[i]);
+                    mvPreds->NumMBAlloc = new_numMB;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_ENC_MV_PRED:
+                {
+                    mfxExtFeiEncMVPredictors* pMvPredBuf = reinterpret_cast<mfxExtFeiEncMVPredictors*>(PB_bufs.in.ExtParam[i]);
+                    pMvPredBuf->NumMBAlloc = new_numMB;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_ENC_MB:
+                {
+                    mfxExtFeiEncMBCtrl* pMbEncCtrl = reinterpret_cast<mfxExtFeiEncMBCtrl*>(PB_bufs.in.ExtParam[i]);
+                    pMbEncCtrl->NumMBAlloc = new_numMB;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_ENC_QP:
+                {
+                    mfxExtFeiEncQP* pMbQP = reinterpret_cast<mfxExtFeiEncQP*>(PB_bufs.in.ExtParam[i]);
+                    pMbQP->NumQPAlloc = new_numMB;
+                }
+                break;
+            }
+        }
+
+        for (mfxU16 i = 0; i < PB_bufs.out.NumExtParam; i += increment)
+        {
+            switch (PB_bufs.out.ExtParam[i]->BufferId)
+            {
+                case MFX_EXTBUFF_FEI_PREENC_MV:
+                {
+                    mfxExtFeiPreEncMV* mvs = reinterpret_cast<mfxExtFeiPreEncMV*>(PB_bufs.out.ExtParam[i]);
+                    mvs->NumMBAlloc = new_numMB;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_PREENC_MB:
+                {
+                    mfxExtFeiPreEncMBStat* mbdata = reinterpret_cast<mfxExtFeiPreEncMBStat*>(PB_bufs.out.ExtParam[i]);
+                    mbdata->NumMBAlloc = new_numMB;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_ENC_MV:
+                {
+                    mfxExtFeiEncMV* mvBuf = reinterpret_cast<mfxExtFeiEncMV*>(PB_bufs.out.ExtParam[i]);
+                    mvBuf->NumMBAlloc = new_numMB;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_ENC_MB_STAT:
+                {
+                    mfxExtFeiEncMBStat* mbstatBuf = reinterpret_cast<mfxExtFeiEncMBStat*>(PB_bufs.out.ExtParam[i]);
+                    mbstatBuf->NumMBAlloc = new_numMB;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_PAK_CTRL:
+                {
+                    mfxExtFeiPakMBCtrl* mbcodeBuf = reinterpret_cast<mfxExtFeiPakMBCtrl*>(PB_bufs.out.ExtParam[i]);
+                    mbcodeBuf->NumMBAlloc = new_numMB;
+                }
+                break;
+            }
+        }
+    }
+};
+
+struct bufList
+{
+    std::list<bufSet*> buf_list;
+
+    mfxU16 num_of_fields;
+
+    bufList(mfxU16 n_fields = 1)
+        : num_of_fields(n_fields)
+    {}
+
+    ~bufList(){ Clear(); }
+
+    void AddSet(bufSet* set) { buf_list.push_back(set); }
+
+    void Clear()
+    {
+        for (std::list<bufSet*>::iterator it = buf_list.begin(); it != buf_list.end(); ++it)
+        {
+            if (*it)
+            {
+                (*it)->vacant = false;
+
+                for (int i = 0; i < (*it)->PB_bufs.in.NumExtParam; /*i++*/)
+                {
+                    switch ((*it)->PB_bufs.in.ExtParam[i]->BufferId)
+                    {
+                    case MFX_EXTBUFF_FEI_PREENC_CTRL:
+                    {
+                        mfxExtFeiPreEncCtrl* preENCCtr = reinterpret_cast<mfxExtFeiPreEncCtrl*>((*it)->PB_bufs.in.ExtParam[i]);
+                        MSDK_SAFE_DELETE_ARRAY(preENCCtr);
+                        i += num_of_fields;
+                    }
+                    break;
+
+                    case MFX_EXTBUFF_FEI_REPACK_CTRL:
+                    {
+                        mfxExtFeiRepackCtrl* feiRepack = reinterpret_cast<mfxExtFeiRepackCtrl*>((*it)->PB_bufs.in.ExtParam[i]);
+                        MSDK_SAFE_DELETE_ARRAY(feiRepack);
+                        i += num_of_fields;
+                    }
+                    break;
+
+                    case MFX_EXTBUFF_FEI_PREENC_MV_PRED:
+                    {
+                        mfxExtFeiPreEncMVPredictors* mvPreds = reinterpret_cast<mfxExtFeiPreEncMVPredictors*>((*it)->PB_bufs.in.ExtParam[i]);
+                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                            MSDK_SAFE_DELETE_ARRAY(mvPreds[fieldId].MB);
+                        }
+                        MSDK_SAFE_DELETE_ARRAY(mvPreds);
+                        i += num_of_fields;
+                    }
+                    break;
+
+                    case MFX_EXTBUFF_FEI_ENC_QP:
+                    {
+                        mfxExtFeiEncQP* qps = reinterpret_cast<mfxExtFeiEncQP*>((*it)->PB_bufs.in.ExtParam[i]);
+                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                            MSDK_SAFE_DELETE_ARRAY(qps[fieldId].QP);
+                        }
+                        MSDK_SAFE_DELETE_ARRAY(qps);
+                        i += num_of_fields;
+                    }
+                    break;
+
+                    case MFX_EXTBUFF_FEI_ENC_CTRL:
+                    {
+                        mfxExtFeiEncFrameCtrl* feiEncCtrl = reinterpret_cast<mfxExtFeiEncFrameCtrl*>((*it)->PB_bufs.in.ExtParam[i]);
+                        MSDK_SAFE_DELETE_ARRAY(feiEncCtrl);
+                        i += num_of_fields;
+                    }
+                    break;
+
+                    case MFX_EXTBUFF_FEI_SPS:
+                    {
+                        mfxExtFeiSPS* feiSPS = reinterpret_cast<mfxExtFeiSPS*>((*it)->PB_bufs.in.ExtParam[i]);
+                        MSDK_SAFE_DELETE(feiSPS);
+                        i++;
+                    }
+                    break;
+
+                    case MFX_EXTBUFF_FEI_PPS:
+                    {
+                        mfxExtFeiPPS* feiPPS = reinterpret_cast<mfxExtFeiPPS*>((*it)->PB_bufs.in.ExtParam[i]);
+                        MSDK_SAFE_DELETE_ARRAY(feiPPS);
+                        i += num_of_fields;
+                    }
+                    break;
+
+                    case MFX_EXTBUFF_FEI_SLICE:
+                    {
+                        mfxExtFeiSliceHeader* feiSliceHeader = reinterpret_cast<mfxExtFeiSliceHeader*>((*it)->PB_bufs.in.ExtParam[i]);
+                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                            MSDK_SAFE_DELETE_ARRAY(feiSliceHeader[fieldId].Slice);
+                        }
+                        MSDK_SAFE_DELETE_ARRAY(feiSliceHeader);
+                        i += num_of_fields;
+                    }
+                    break;
+
+                    case MFX_EXTBUFF_FEI_ENC_MV_PRED:
+                    {
+                        mfxExtFeiEncMVPredictors* feiEncMVPredictors = reinterpret_cast<mfxExtFeiEncMVPredictors*>((*it)->PB_bufs.in.ExtParam[i]);
+                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                            MSDK_SAFE_DELETE_ARRAY(feiEncMVPredictors[fieldId].MB);
+                        }
+                        MSDK_SAFE_DELETE_ARRAY(feiEncMVPredictors);
+                        i += num_of_fields;
+                    }
+                    break;
+
+                    case MFX_EXTBUFF_FEI_ENC_MB:
+                    {
+                        mfxExtFeiEncMBCtrl* feiEncMBCtrl = reinterpret_cast<mfxExtFeiEncMBCtrl*>((*it)->PB_bufs.in.ExtParam[i]);
+                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                            MSDK_SAFE_DELETE_ARRAY(feiEncMBCtrl[fieldId].MB);
+                        }
+                        MSDK_SAFE_DELETE_ARRAY(feiEncMBCtrl);
+                        i += num_of_fields;
+                    }
+                    break;
+
+                    default:
+                        ++i;
+                        break;
+                    } // switch ((*it)->PB_bufs.in.ExtParam[i]->BufferId)
+                } // for (int i = 0; i < (*it)->PB_bufs.in.NumExtParam; )
+
+                MSDK_SAFE_DELETE_ARRAY((*it)->PB_bufs.in.ExtParam);
+                MSDK_SAFE_DELETE_ARRAY((*it)->I_bufs.in.ExtParam);
+
+                for (int i = 0; i < (*it)->PB_bufs.out.NumExtParam; /*i++*/)
+                {
+                    switch ((*it)->PB_bufs.out.ExtParam[i]->BufferId)
+                    {
+                    case MFX_EXTBUFF_FEI_PREENC_MV:
+                    {
+                        mfxExtFeiPreEncMV* mvs = reinterpret_cast<mfxExtFeiPreEncMV*>((*it)->PB_bufs.out.ExtParam[i]);
+                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                            MSDK_SAFE_DELETE_ARRAY(mvs[fieldId].MB);
+                        }
+                        MSDK_SAFE_DELETE_ARRAY(mvs);
+                        i += num_of_fields;
+                    }
+                    break;
+
+                    case MFX_EXTBUFF_FEI_PREENC_MB:
+                    {
+                        mfxExtFeiPreEncMBStat* mbdata = reinterpret_cast<mfxExtFeiPreEncMBStat*>((*it)->PB_bufs.out.ExtParam[i]);
+                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                            MSDK_SAFE_DELETE_ARRAY(mbdata[fieldId].MB);
+                        }
+                        MSDK_SAFE_DELETE_ARRAY(mbdata);
+                        i += num_of_fields;
+                    }
+                    break;
+
+                    case MFX_EXTBUFF_FEI_ENC_MB_STAT:
+                    {
+                        mfxExtFeiEncMBStat* feiEncMbStat = reinterpret_cast<mfxExtFeiEncMBStat*>((*it)->PB_bufs.out.ExtParam[i]);
+                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                            MSDK_SAFE_DELETE_ARRAY(feiEncMbStat[fieldId].MB);
+                        }
+                        MSDK_SAFE_DELETE_ARRAY(feiEncMbStat);
+                        i += num_of_fields;
+                    }
+                    break;
+
+                    case MFX_EXTBUFF_FEI_ENC_MV:
+                    {
+                        mfxExtFeiEncMV* feiEncMV = reinterpret_cast<mfxExtFeiEncMV*>((*it)->PB_bufs.out.ExtParam[i]);
+                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                            MSDK_SAFE_DELETE_ARRAY(feiEncMV[fieldId].MB);
+                        }
+                        MSDK_SAFE_DELETE_ARRAY(feiEncMV);
+                        i += num_of_fields;
+                    }
+                    break;
+
+                    case MFX_EXTBUFF_FEI_PAK_CTRL:
+                    {
+                        mfxExtFeiPakMBCtrl* feiEncMBCode = reinterpret_cast<mfxExtFeiPakMBCtrl*>((*it)->PB_bufs.out.ExtParam[i]);
+                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                            MSDK_SAFE_DELETE_ARRAY(feiEncMBCode[fieldId].MB);
+                        }
+                        MSDK_SAFE_DELETE_ARRAY(feiEncMBCode);
+                        i += num_of_fields;
+                    }
+                    break;
+
+                    default:
+                        i++;
+                        break;
+                    } // switch ((*it)->PB_bufs.out.ExtParam[i]->BufferId)
+                } // for (int i = 0; i < (*it)->PB_bufs.out.NumExtParam; )
+
+                MSDK_SAFE_DELETE_ARRAY((*it)->PB_bufs.out.ExtParam);
+                MSDK_SAFE_DELETE_ARRAY((*it)->I_bufs.out.ExtParam);
+                MSDK_SAFE_DELETE(*it);
+            } // if (*it)
+        } // for (std::list<bufSet*>::iterator it = buf_list.begin(); it != buf_list.end(); ++it)
+
+        buf_list.clear();
+    }
+
+    bufSet* GetFreeSet()
+    {
+        for (std::list<bufSet*>::iterator it = buf_list.begin(); it != buf_list.end(); ++it){
+            if ((*it)->vacant)
+            {
+                (*it)->vacant = false;
+                return (*it);
+            }
+        }
+        return NULL;
+    }
 };
 
 struct PreEncOutput
@@ -104,7 +406,7 @@ struct iTaskParams
 
     mfxFrameSurface1 *InputSurf;
     mfxFrameSurface1 *ReconSurf;
-    mfxBitstream     *BitStream;
+    mfxFrameSurface1 *DSsurface;
 
     explicit iTaskParams()
         : PicStruct(MFX_PICSTRUCT_PROGRESSIVE)
@@ -119,7 +421,7 @@ struct iTaskParams
         , NumRefActiveBL1(0)
         , InputSurf(NULL)
         , ReconSurf(NULL)
-        , BitStream(NULL)
+        , DSsurface(NULL)
     {}
 };
 
@@ -127,8 +429,7 @@ struct iTaskParams
 struct iTask
 {
     explicit iTask(const iTaskParams & task_params)
-        : EncSyncP(NULL)
-        , encoded(false)
+        : encoded(false)
         , bufs(NULL)
         , preenc_bufs(NULL)
         , fullResSurface(NULL)
@@ -205,7 +506,22 @@ struct iTask
            outPAK.OutSurface = task_params.ReconSurf;
            outPAK.OutSurface->Data.Locked++;
 
-           outPAK.Bs = task_params.BitStream;
+           //outPAK.Bs = task_params.BitStream;
+        }
+
+        /* PreENC on downsampled surface */
+        if (task_params.DSsurface)
+        {
+            // PREENC needs to be performed on downscaled surface
+            // For simplicity, let's just replace the original surface
+            fullResSurface = in.InSurface;
+
+            in.InSurface = task_params.DSsurface;
+            in.InSurface->Data.Locked++;
+
+            // make sure picture structure has the initial value
+            // surfaces are reused and VPP may change this parameter in certain configurations
+            in.InSurface->Info.PicStruct = fullResSurface->Info.PicStruct & 0xf;
         }
     }
 
@@ -345,7 +661,6 @@ struct iTask
     mfxPAKInput  inPAK;
     mfxPAKOutput outPAK;
     BiFrameLocation m_loc;
-    mfxSyncPoint EncSyncP;
     bool encoded;
     bufSet* bufs;
     bufSet* preenc_bufs;

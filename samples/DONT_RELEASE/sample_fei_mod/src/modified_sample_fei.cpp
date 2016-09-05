@@ -54,8 +54,8 @@ mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask, mfxU8 QP, iTa
         MSDK_CHECK_POINTER(feiEncMV, MFX_ERR_NULL_PTR);
 
         /* repack streamout output to PAK input */
-        for (mfxU32 i = 0; i < feiEncMBCode->NumMBAlloc; i++){
-
+        for (mfxU32 i = 0; i < feiEncMBCode->NumMBAlloc; i++)
+        {
             /* temporary, this flag is not set at all by driver */
             (m_pExtBufDecodeStreamout->MB + fieldId*feiEncMBCode->NumMBAlloc + i)->IsLastMB = (i == (feiEncMBCode->NumMBAlloc-1));
 

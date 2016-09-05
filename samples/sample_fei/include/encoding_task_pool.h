@@ -223,7 +223,7 @@ public:
     {
         std::list<iTask*> unencoded_queue;
         for (std::list<iTask*>::iterator it = task_pool.begin(); it != task_pool.end(); ++it){
-            if ((*it)->encoded == 0){
+            if (!(*it)->encoded){
                 unencoded_queue.push_back(*it);
             }
         }

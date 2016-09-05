@@ -13,7 +13,7 @@ Copyright(c) 2005-2016 Intel Corporation. All Rights Reserved.
 
 #pragma once
 #include "mfxfei.h"
-#include "pipeline_fei.h"
+#include "encoding_task_pool.h"
 
 mfxStatus PakOneStreamoutFrame(mfxU32 m_numOfFields, iTask *eTask, mfxU8 QP, iTaskPool *pTaskList);
 mfxStatus RepackStremoutMB2PakMB(mfxFeiDecStreamOutMBCtrl* dsoMB, mfxFeiPakMBCtrl* pakMB, mfxU8 QP);
