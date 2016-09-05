@@ -125,24 +125,22 @@ VideoVPPBase* CreateAndInitVPPImpl(mfxVideoParam *par, VideoCORE *core, mfxStatu
 /* ******************************************************************** */
 
 VideoVPPBase::VideoVPPBase(VideoCORE *core, mfxStatus* sts )
+    : m_pipelineList()
+    , m_core(core)
+    , m_pHWVPP()
 {
     /* opaque processing */
     m_bOpaqMode[VPP_IN]  = false;
     m_bOpaqMode[VPP_OUT] = false;
 
-    m_requestOpaq[VPP_IN].NumFrameMin = m_requestOpaq[VPP_IN].NumFrameSuggested = 0;
-    m_requestOpaq[VPP_IN].Type = 0;
-
-    m_requestOpaq[VPP_OUT].NumFrameMin = m_requestOpaq[VPP_OUT].NumFrameSuggested = 0;
-    m_requestOpaq[VPP_OUT].Type = 0;
+    memset(&m_requestOpaq[VPP_IN], 0, sizeof(mfxFrameAllocRequest));
+    memset(&m_requestOpaq[VPP_OUT], 0, sizeof(mfxFrameAllocRequest));
 
     /* common */
-    m_core         = core;
-
-    m_stat.NumCachedFrame = 0;
-    m_stat.NumFrame       = 0;
-
     m_bDynamicDeinterlace = false;
+    memset(&m_stat, 0, sizeof(mfxVPPStat));
+    memset(&m_errPrtctState, 0, sizeof(sErrPrtctState));
+    memset(&m_InitState, 0, sizeof(sErrPrtctState));
 
     VPP_CLEAN;
 
@@ -1532,11 +1530,11 @@ mfxStatus VideoVPP_HW::RunFrameVPP(mfxFrameSurface1* , mfxFrameSurface1* , mfxEx
 #if !defined (MFX_ENABLE_HW_ONLY_VPP)
 VideoVPP_SW::VideoVPP_SW(VideoCORE *core, mfxStatus* sts)
     : VideoVPPBase(core, sts)
+    , m_threadModeVPP()
 {
     for(mfxU32  filterIndex = 0; filterIndex < MAX_NUM_VPP_FILTERS; filterIndex++ )
     {
         m_ppFilters[filterIndex]        = NULL;
-        //m_pipelineList[filterIndex] = NULL;
     }
 
     for(mfxU32  connectIndex = 0; connectIndex < MAX_NUM_CONNECTIONS; connectIndex++ )
@@ -1551,8 +1549,12 @@ VideoVPP_SW::VideoVPP_SW(VideoCORE *core, mfxStatus* sts)
     m_internalSystemFramesPool[VPP_OUT].Zero();
     m_bDoFastCopyFlag[VPP_OUT] = false;
 
-    //m_numUsedFilters = NULL;
+    m_externalFramesPool[VPP_IN].Zero();
+    m_externalFramesPool[VPP_OUT].Zero();
+
     m_memIdWorkBuf   = NULL;
+
+    memset(&m_internalParam, 0, sizeof(FilterVPP::InternalParam));
 }
 
 mfxStatus VideoVPP_SW::InternalInit(mfxVideoParam *par)
