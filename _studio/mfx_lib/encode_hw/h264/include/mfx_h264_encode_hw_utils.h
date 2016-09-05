@@ -151,6 +151,8 @@ namespace MfxHwH264Encode
         T bot;
 
         Pair()
+            : top()
+            , bot()
         {
         }
 
@@ -925,6 +927,7 @@ namespace MfxHwH264Encode
             , m_cmRawForHist(0)
             , m_cmHist(0)
             , m_cmHistSys(0)
+            , m_isENCPAK(false)
         {
             Zero(m_ctrl);
             Zero(m_internalListCtrl);
