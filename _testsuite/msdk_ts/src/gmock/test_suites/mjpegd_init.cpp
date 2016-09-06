@@ -241,14 +241,35 @@ int TestSuite::RunTest(unsigned int id)
             }
         }
 
-         if (tc.osa_num_mode == OSA_NUM_LESS)
-            ((mfxExtOpaqueSurfaceAlloc*)m_pPar)->Out.NumSurface = (m_request.NumFrameMin - 1);
-         if (tc.osa_num_mode == OSA_NUM_BIGGER)
-            ((mfxExtOpaqueSurfaceAlloc*)m_pPar)->Out.NumSurface = (m_request.NumFrameSuggested + 1);
-         if (tc.osa_type_mode == OSA_TYPE_SYSTEM)
-            ((mfxExtOpaqueSurfaceAlloc*)m_pPar)->Out.Type = MFX_MEMTYPE_SYSTEM_MEMORY|MFX_MEMTYPE_FROM_DECODE|MFX_MEMTYPE_OPAQUE_FRAME;
-         if (tc.osa_type_mode == OSA_TYPE_D3D)
-            ((mfxExtOpaqueSurfaceAlloc*)m_pPar)->Out.Type = m_request.Type;
+        mfxExtOpaqueSurfaceAlloc *extOpaq = ((mfxExtOpaqueSurfaceAlloc*)m_par.GetExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION));
+        if (extOpaq)
+        {
+            if (tc.osa_num_mode == OSA_NUM_LESS)
+            {
+                extOpaq->Out.NumSurface = (m_request.NumFrameMin - 1);
+            }
+            else if (tc.osa_num_mode == OSA_NUM_BIGGER)
+            {
+                extOpaq->Out.NumSurface = (m_request.NumFrameSuggested + 1);
+            }
+            else if (tc.osa_num_mode != OSA_NUM_VALID)
+            {
+                TS_FAIL_TEST("Filed. Unexpected OSA num!", MFX_ERR_ABORTED);
+            }
+            if (tc.osa_type_mode == OSA_TYPE_SYSTEM)
+            {
+                extOpaq->Out.Type = MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE | MFX_MEMTYPE_OPAQUE_FRAME;
+            }
+            else if (tc.osa_type_mode == OSA_TYPE_D3D)
+            {
+                extOpaq->Out.Type = m_request.Type;
+            }
+            else
+            {
+                TS_FAIL_TEST("Filed. Unexpected OSA type!", MFX_ERR_ABORTED);
+            }
+        }
+
     }
 
     if(tc.par_mode == PAR_ZERO)
