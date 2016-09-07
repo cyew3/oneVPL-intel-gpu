@@ -406,9 +406,6 @@
     <ClCompile Include="src\gmock\test_suites\avce_default_ref_lists.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\vpp_composition.cpp">
-      <Filter>Source Files\test_suites\vpp</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vpp_fieldcopy.cpp">
       <Filter>Source Files\test_suites\vpp</Filter>
     </ClCompile>
@@ -456,9 +453,6 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\fei_encode_advanced_ref_lists.cpp">
       <Filter>Source Files\test_suites\FEI</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\vpp10_fourcc.cpp">
-      <Filter>Source Files\test_suites\vpp</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\fei_encode_default_ref_lists.cpp">
       <Filter>Source Files\test_suites\FEI</Filter>
