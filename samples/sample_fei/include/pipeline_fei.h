@@ -622,7 +622,7 @@ protected:
     virtual mfxStatus DecodeOneFrame(ExtendedSurface *pOutSurf);
     virtual mfxStatus DecodeLastFrame(ExtendedSurface *pOutSurf);
 
-    virtual mfxStatus VPPOneFrame(MFXVideoVPP* VPPobj, MFXVideoSession* session, mfxFrameSurface1 *pSurfaceIn, ExtendedSurface *pExtSurface);
+    virtual mfxStatus VPPOneFrame(MFXVideoVPP* VPPobj, MFXVideoSession* session, mfxFrameSurface1 *pSurfaceIn, ExtendedSurface *pExtSurface, bool sync);
 
     virtual mfxStatus doGPUHangRecovery();
 

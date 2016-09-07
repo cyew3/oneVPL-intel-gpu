@@ -2896,7 +2896,9 @@ mfxStatus CEncodingPipeline::GetOneFrame(mfxFrameSurface1* & pSurf)
 
         pSurf = DecExtSurface.pSurface;
 
-        if (m_appCfg.bDECODESTREAMOUT || m_appCfg.nPicStruct == MFX_PICSTRUCT_UNKNOWN)
+        /* We have to sync before any FEI interface */
+        bool sync = m_appCfg.bDECODESTREAMOUT || m_appCfg.nPicStruct == MFX_PICSTRUCT_UNKNOWN || !!m_pmfxDS || !!m_pmfxVPP;
+        if (sync)
         {
             for (;;)
             {
@@ -4516,7 +4518,7 @@ mfxStatus CEncodingPipeline::PreencOneFrame(iTask* eTask)
         mfxU16 ps = (m_appCfg.nPicStruct == MFX_PICSTRUCT_UNKNOWN) ? (eTask->in.InSurface->Info.PicStruct & 0xf) : m_mfxEncParams.mfx.FrameInfo.PicStruct;
         VppExtSurface.pSurface->Info.PicStruct = ps;
 
-        sts = VPPOneFrame(m_pmfxDS, m_pPreencSession, eTask->fullResSurface, &VppExtSurface);
+        sts = VPPOneFrame(m_pmfxDS, m_pPreencSession, eTask->fullResSurface, &VppExtSurface, true);
         if (sts == MFX_ERR_GPU_HANG)
         {
             return MFX_ERR_GPU_HANG;
@@ -5151,7 +5153,7 @@ mfxStatus CEncodingPipeline::PreProcessOneFrame(mfxFrameSurface1* & pSurf)
         VppExtSurface.pSurface->Info.CropY  = 0;
     }
 
-    sts = VPPOneFrame(m_pmfxVPP, &m_mfxSession, pSurf, &VppExtSurface);
+    sts = VPPOneFrame(m_pmfxVPP, &m_mfxSession, pSurf, &VppExtSurface, !!m_pmfxDS);
     if (sts == MFX_ERR_GPU_HANG)
     {
         return MFX_ERR_GPU_HANG;
@@ -5163,7 +5165,7 @@ mfxStatus CEncodingPipeline::PreProcessOneFrame(mfxFrameSurface1* & pSurf)
     return sts;
 }
 
-mfxStatus CEncodingPipeline::VPPOneFrame(MFXVideoVPP* VPPobj, MFXVideoSession* session, mfxFrameSurface1 *pSurfaceIn, ExtendedSurface *pExtSurface)
+mfxStatus CEncodingPipeline::VPPOneFrame(MFXVideoVPP* VPPobj, MFXVideoSession* session, mfxFrameSurface1 *pSurfaceIn, ExtendedSurface *pExtSurface, bool sync)
 {
     MSDK_CHECK_POINTER(pExtSurface, MFX_ERR_NULL_PTR);
     mfxStatus sts = MFX_ERR_NONE;
@@ -5187,6 +5189,36 @@ mfxStatus CEncodingPipeline::VPPOneFrame(MFXVideoVPP* VPPobj, MFXVideoSession* s
                 return sts;
         }
         break;
+    }
+
+    /* We need to sync before any FEI interface */
+    if (sync)
+    {
+        for (;;)
+        {
+            sts = session->SyncOperation(pExtSurface->Syncp, MSDK_WAIT_INTERVAL);
+            if (sts == MFX_ERR_GPU_HANG)
+            {
+                sts = doGPUHangRecovery();
+                MSDK_CHECK_STATUS(sts, "doGPUHangRecovery failed");
+                return MFX_ERR_GPU_HANG;
+            }
+
+            if (!pExtSurface->Syncp)
+            {
+                if (MFX_WRN_DEVICE_BUSY == sts){
+                    WaitForDeviceToBecomeFree(*session, pExtSurface->Syncp, sts);
+                }
+                else
+                    return sts;
+            }
+            else if (MFX_ERR_NONE <= sts) {
+                sts = MFX_ERR_NONE; // ignore warnings if output is available
+                break;
+            }
+
+            MSDK_BREAK_ON_ERROR(sts);
+        }
     }
 
     return sts;
