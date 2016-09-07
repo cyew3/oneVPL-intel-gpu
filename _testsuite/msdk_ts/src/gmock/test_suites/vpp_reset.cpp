@@ -157,8 +157,32 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         },
         {}
     },
+    {/*10*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,    MFX_FOURCC_AYUV},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Height,    464},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Width,     704},
+        },
+        {}
+    },
+    {/*11*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,    MFX_FOURCC_Y210},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Height,    464},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Width,     704},
+        },
+        {}
+    },
+    {/*12*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,    MFX_FOURCC_Y410},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Height,    464},
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Width,     704},
+        },
+        {}
+    },
 #if !defined(_WIN32)
-    {/*10*/ MFX_ERR_NONE,
+    {/*13*/ MFX_ERR_NONE,
         {
             {INIT,  &tsStruct::mfxExtVPPFieldProcessing.Mode,     MFX_VPP_COPY_FRAME},
 
