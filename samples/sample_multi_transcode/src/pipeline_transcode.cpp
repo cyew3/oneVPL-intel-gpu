@@ -1046,6 +1046,25 @@ mfxStatus CTranscodingPipeline::Encode()
         if (m_nVPPCompEnable > 0)
             curBuffer->ReleaseSurface(DecExtSurface.pSurface);
 
+        // Do RenderFrame before Encode to improves on-screen performance
+        // Presentation packet would now precedes "ENC" packet within the EU
+        if ((m_nVPPCompEnable == VppCompOnly) || (m_nVPPCompEnable == VppCompOnlyEncode))
+        {
+            if(VppExtSurface.pSurface)
+            {
+                // Sync to ensure VPP is completed to avoid flicker
+                sts = m_pmfxSession->SyncOperation(VppExtSurface.Syncp, MSDK_WAIT_INTERVAL);
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+#if defined(_WIN32) || defined(_WIN64)
+                sts = m_hwdev4Rendering->RenderFrame(VppExtSurface.pSurface, m_pMFXAllocator);
+#else
+                sts = m_hwdev4Rendering->RenderFrame(VppExtSurface.pSurface, NULL);
+#endif
+                MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+            }
+        }
+
         curBuffer = m_pBuffer;
 
         pBS = m_pBSStore->GetNext();
@@ -1124,20 +1143,21 @@ mfxStatus CTranscodingPipeline::Encode()
                 ExtendedBS *pBitstreamEx_temp  = m_BSPool.front();
 
                 // get result coded stream
-                if(VppExtSurface.pSurface)
-                {
-                    if(m_nVPPCompEnable != VppCompOnlyEncode)
-                    {
-                        sts = m_pmfxSession->SyncOperation(VppExtSurface.Syncp, MSDK_WAIT_INTERVAL);
-                        MSDK_CHECK_STATUS(sts, "m_pmfxSession->SyncOperation failed");
-                    }
-#if defined(_WIN32) || defined(_WIN64)
-                    sts = m_hwdev4Rendering->RenderFrame(VppExtSurface.pSurface, m_pMFXAllocator);
-#else
-                    sts = m_hwdev4Rendering->RenderFrame(VppExtSurface.pSurface, NULL);
-#endif
-                    MSDK_CHECK_STATUS(sts, "m_hwdev4Rendering->RenderFrame failed");
-                }
+////Note! Better to do rendering before encode
+//                if(VppExtSurface.pSurface)
+//                {
+//                    if(m_nVPPCompEnable != VppCompOnlyEncode)
+//                    {
+//                        sts = m_pmfxSession->SyncOperation(VppExtSurface.Syncp, MSDK_WAIT_INTERVAL);
+//                        MSDK_CHECK_STATUS(sts, "m_pmfxSession->SyncOperation failed");
+//                    }
+//#if defined(_WIN32) || defined(_WIN64)
+//                    sts = m_hwdev4Rendering->RenderFrame(VppExtSurface.pSurface, m_pMFXAllocator);
+//#else
+//                    sts = m_hwdev4Rendering->RenderFrame(VppExtSurface.pSurface, NULL);
+//#endif
+//                    MSDK_CHECK_STATUS(sts, "m_hwdev4Rendering->RenderFrame failed");
+//                }
 
                 UnPreEncAuxBuffer(pBitstreamEx_temp->pCtrl);
 
