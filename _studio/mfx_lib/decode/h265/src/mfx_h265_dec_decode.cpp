@@ -702,6 +702,7 @@ mfxStatus VideoDECODEH265::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
 // MediaSDK DECODE_QueryIOSurf API function
 mfxStatus VideoDECODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEH265::QueryIOSurf");
     MFX_CHECK_NULL_PTR2(par, request);
 
     eMFXPlatform platform = MFX_Utility::GetPlatform_H265(core, par);
@@ -773,6 +774,7 @@ mfxStatus VideoDECODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
 // Actually calculate needed frames number
 mfxStatus VideoDECODEH265::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType type, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoDECODEH265::QueryIOSurfInternal");
     request->Info = par->mfx.FrameInfo;
 
     mfxU32 asyncDepth = CalculateAsyncDepth(platform, par);
@@ -840,6 +842,7 @@ mfxStatus VideoDECODEH265::GetDecodeStat(mfxDecodeStat *stat)
 // Decoder threads entry point
 static mfxStatus __CDECL HEVCDECODERoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 )
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "HEVCDECODERoutine");
     VideoDECODEH265 *decoder = (VideoDECODEH265 *)pState;
 
     mfxStatus sts = decoder->RunThread(pParam, threadNumber);
