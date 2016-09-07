@@ -962,6 +962,92 @@ const TestSuite::tc_struct TestSuite::test_case[] =
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Height, 240},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
+
+    // AYUV->AYUV
+    {/*106*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_AYUV},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_AYUV},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
+    },
+    {/*107*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_AYUV},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_AYUV},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
+    },
+    {/*108*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_AYUV},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_AYUV},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
+    },
+    {/*109*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_AYUV},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_AYUV},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
+    },
+
+    // Y210->Y210
+    {/*110*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_Y210},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y210},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
+    },
+    {/*111*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_Y210},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y210},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
+    },
+    {/*112*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_Y210},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y210},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
+    },
+    {/*113*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_Y210},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y210},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
+    },
+    {/*114*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_Y210},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y210},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
+    },
+    {/*115*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_Y210},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y210},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
+    },
+
+    // Y410->Y410
+    {/*116*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_Y410},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y410},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
+    },
+    {/*117*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_Y410},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y410},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
+    },
+    {/*118*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_Y410},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y410},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
+    },
+    {/*119*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_Y410},
+           {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y410},
+           {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
+    },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -1001,6 +1087,15 @@ int TestSuite::RunTest(unsigned int id)
                 sts_query = MFX_ERR_NONE;
                 sts_init  = MFX_ERR_NONE;
             }
+        }
+
+        if (g_tsHWtype < MFX_HW_CNL
+            && (m_par.vpp.In.FourCC == MFX_FOURCC_AYUV || m_par.vpp.Out.FourCC == MFX_FOURCC_AYUV
+            ||  m_par.vpp.In.FourCC == MFX_FOURCC_Y210 || m_par.vpp.Out.FourCC == MFX_FOURCC_Y210
+            ||  m_par.vpp.In.FourCC == MFX_FOURCC_Y410 || m_par.vpp.Out.FourCC == MFX_FOURCC_Y410))
+        {
+            sts_query = MFX_ERR_UNSUPPORTED;
+            sts_init  = MFX_ERR_INVALID_VIDEO_PARAM;
         }
     }
 
