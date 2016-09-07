@@ -3251,14 +3251,6 @@ mfxStatus CEncodingPipeline::InitEncPakFrameParams(iTask* eTask)
     mfxExtFeiSliceHeader*     feiSliceHeader   = NULL;
     mfxExtFeiEncFrameCtrl*    feiEncCtrl       = NULL;
 
-    if (m_appCfg.bPREENC)
-    {
-        MSDK_SAFE_DELETE_ARRAY(eTask->in.L0Surface);
-        MSDK_SAFE_DELETE_ARRAY(eTask->in.L1Surface);
-        MSDK_SAFE_DELETE_ARRAY(eTask->inPAK.L0Surface);
-        MSDK_SAFE_DELETE_ARRAY(eTask->inPAK.L1Surface);
-    }
-
     eTask->bufs = getFreeBufSet(m_encodeBufs);
     MSDK_CHECK_POINTER(eTask->bufs, MFX_ERR_NULL_PTR);
 
