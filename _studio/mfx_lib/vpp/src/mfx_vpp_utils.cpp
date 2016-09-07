@@ -2666,7 +2666,7 @@ void SignalPlatformCapabilities(
 // there are some special cases which couldn't be resolve by using capsList and pipelineList only
 // ex: FRC_Interpolation, RGB4 for HW etc
 mfxStatus CheckLimitationsSW(
-    const mfxVideoParam & param,
+    mfxVideoParam & param,
     const std::vector<mfxU32> & supportedDoUseList,
     bool bCorrectionEnable)
 {
@@ -2689,7 +2689,7 @@ mfxStatus CheckLimitationsSW(
             }
         }
     }
-    else if( IsFilterFound(pList, len, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION) && (MFX_FRCALGM_FRAME_INTERPOLATION == GetMFXFrcMode(param)) )
+    if( IsFilterFound(pList, len, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION) && (MFX_FRCALGM_FRAME_INTERPOLATION == GetMFXFrcMode(param)) )
     {
         // [2] Frame Interpolation isn't supported by SW yet, set to supported mode
         sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
@@ -2698,7 +2698,7 @@ mfxStatus CheckLimitationsSW(
             SetMFXFrcMode(param, MFX_FRCALGM_PRESERVE_TIMESTAMP);
         }
     }
-    else if( IsFilterFound(pList, len, MFX_EXTBUFF_VPP_DEINTERLACING) && GetDeinterlacingMode(param) )
+    if( IsFilterFound(pList, len, MFX_EXTBUFF_VPP_DEINTERLACING) && GetDeinterlacingMode(param) )
     {
         // [3] Deinterlacing mode isn't supported by SW yet, set to supported mode
         sts = MFX_ERR_UNSUPPORTED;
@@ -2707,7 +2707,7 @@ mfxStatus CheckLimitationsSW(
             SetDeinterlacingMode(param, 0);
         }
     }
-    else if( IsFilterFound(pList, len, MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO) )
+    if( IsFilterFound(pList, len, MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO) )
     {
         // [4] Video signal info isn't supported by SW yet, set to supported mode
         sts = MFX_ERR_UNSUPPORTED;
@@ -2716,82 +2716,27 @@ mfxStatus CheckLimitationsSW(
             SetSignalInfo(param, MFX_TRANSFERMATRIX_UNKNOWN, MFX_NOMINALRANGE_UNKNOWN);
         }
     }
-
-    return sts;
-
-} // mfxStatus CheckLimitationsSW(...)
-
-
-mfxStatus CheckLimitationsHW(
-    const mfxVideoParam & param,
-    const std::vector<mfxU32> & supportedDoUseList,
-//    const MfxHwVideoProcessing::mfxVppCaps & caps,
-    bool bCorrectionEnable)
-{
-    mfxU32  len   = (mfxU32)supportedDoUseList.size();
-    mfxU32* pList = (len > 0) ? (mfxU32*)&supportedDoUseList[0] : NULL;
-
-    mfxStatus sts = MFX_ERR_NONE;
-
-    // [0] in case of RGB4->RGB4 only resize is supported. (automatically, no actions here)
-
-    // [1] in case of input RGB4,  only resize/FRC/rotation is supported
-    if( param.vpp.In.FourCC == MFX_FOURCC_RGB4)
+    if (param.vpp.In.FourCC == MFX_FOURCC_AYUV || param.vpp.In.FourCC == MFX_FOURCC_Y210 || param.vpp.In.FourCC == MFX_FOURCC_Y410)
     {
-        if(len > (mfxU32)(IsFilterFound(pList, len, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION) + IsFilterFound(pList, len, MFX_EXTBUFF_VPP_ROTATION)))
+        // [5] Unsupported input fourcc
+        sts = MFX_ERR_UNSUPPORTED;
+        if(bCorrectionEnable)
         {
-            sts = MFX_WRN_FILTER_SKIPPED; // some unsupported filters were found
-            if(bCorrectionEnable)
-            {
-                std::vector <mfxU32> tmpZeroDoUseList; //zero
-                SignalPlatformCapabilities(param, tmpZeroDoUseList);
-            }
+            param.vpp.In.FourCC = 0;
         }
-        //else
-        //{
-        //    if( MFX_FRCALGM_FRAME_INTERPOLATION == GetMFXFrcMode(param) )
-        //    {
-        //        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-        //        if(bCorrectionEnable)
-        //        {
-        //            SetMFXFrcMode(param, MFX_FRCALGM_PRESERVE_TIMESTAMP);
-        //        }
-        //    }
-
-        //    if(bCorrectionEnable)
-        //    {
-        //        std::vector <mfxU32> tmpDoUseList1(1);
-        //        tmpDoUseList1[0] = MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION;
-        //        SignalPlatformCapabilities(param, tmpDoUseList1);
-        //    }
-        //}
     }
-    //// [2] FRC Interpolation limitations
-    //else if( IsFilterFound(pList, len, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION) && (MFX_FRCALGM_FRAME_INTERPOLATION == GetMFXFrcMode(param)) )
-    //{
-    //    if(param.vpp.In.FourCC != MFX_FOURCC_NV12)
-    //    {
-    //        sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    //        if(bCorrectionEnable)
-    //        {
-    //            SetMFXFrcMode(param, MFX_FRCALGM_PRESERVE_TIMESTAMP);
-    //            SignalPlatformCapabilities(param, supportedDoUseList);
-    //        }
-    //    }
-    //    else if( !IsFrcInterpolationEnable(param, caps) )
-    //    {
-    //        sts =  MFX_WRN_FILTER_SKIPPED;
-    //        if(bCorrectionEnable)
-    //        {
-    //            SetMFXFrcMode(param, MFX_FRCALGM_PRESERVE_TIMESTAMP);
-    //            SignalPlatformCapabilities(param, supportedDoUseList);
-    //        }
-    //    }
-    //}
+    if (param.vpp.Out.FourCC == MFX_FOURCC_AYUV || param.vpp.Out.FourCC == MFX_FOURCC_Y210 || param.vpp.Out.FourCC == MFX_FOURCC_Y410)
+    {
+        // [6] Unsupported output fourcc
+        sts = MFX_ERR_UNSUPPORTED;
+        if(bCorrectionEnable)
+        {
+            param.vpp.Out.FourCC = 0;
+        }
+    }
 
     return sts;
-
-} // mfxStatus CheckLimitationsHW(...)
+} // mfxStatus CheckLimitationsSW(...)
 
 
 void ExtractDoUseList(mfxU32* pSrcList, mfxU32 len, std::vector<mfxU32> & dstList)

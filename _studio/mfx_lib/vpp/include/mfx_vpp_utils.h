@@ -186,14 +186,8 @@ void SignalPlatformCapabilities(
     const std::vector<mfxU32> & supportedList);
 
 mfxStatus CheckLimitationsSW(
-    const mfxVideoParam & param, 
+    mfxVideoParam & param, 
     const std::vector<mfxU32> & supportedList, 
-    bool bCorrectionEnable);
-
-mfxStatus CheckLimitationsHW(
-    const mfxVideoParam & param, 
-    const std::vector<mfxU32> & supportedDoUseList,
-//    const MfxHwVideoProcessing::mfxVppCaps & caps,
     bool bCorrectionEnable);
 
 bool IsFrcInterpolationEnable(

@@ -140,6 +140,12 @@ class VideoVPP_SW : public VideoVPPBase
 public:
     VideoVPP_SW(VideoCORE *core, mfxStatus* sts);
 
+    static
+    mfxStatus Query(VideoCORE* core,mfxVideoParam *par);
+
+    static
+    mfxStatus QueryCaps(VideoCORE* core, MfxHwVideoProcessing::mfxVppCaps& caps);
+
     virtual mfxStatus InternalInit(mfxVideoParam *par);
     virtual mfxStatus Close(void);
     virtual mfxStatus Reset(mfxVideoParam *par);

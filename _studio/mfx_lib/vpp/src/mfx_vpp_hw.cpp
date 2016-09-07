@@ -1569,8 +1569,7 @@ mfxStatus VideoVPPHW::GetVideoParams(mfxVideoParam *par) const
 
 mfxStatus VideoVPPHW::Query(VideoCORE *core, mfxVideoParam *par)
 {
-    MFX_CHECK_NULL_PTR1(par);
-    MFX_CHECK_NULL_PTR1(core);
+    MFX_CHECK_NULL_PTR2(par, core);
 
     mfxStatus sts = MFX_ERR_NONE;
     VPPHWResMng *vpp_ddi = 0;

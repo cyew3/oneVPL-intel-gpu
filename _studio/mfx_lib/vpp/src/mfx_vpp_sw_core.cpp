@@ -53,8 +53,7 @@ VideoVPPBase* CreateAndInitVPPImpl(mfxVideoParam *par, VideoCORE *core, mfxStatu
             return 0;
         }
 
-        if(MFX_WRN_FILTER_SKIPPED == *mfxSts || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == *mfxSts ||
-            *mfxSts == MFX_ERR_NONE)
+        if(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == *mfxSts || MFX_WRN_FILTER_SKIPPED == *mfxSts || MFX_ERR_NONE == *mfxSts)
         {
             return vpp;
         }
@@ -612,26 +611,11 @@ mfxStatus VideoVPPBase::QueryCaps(VideoCORE * core, MfxHwVideoProcessing::mfxVpp
            return sts;
     }
 
-    caps.iNumBackwardSamples = 1; // fake
-    caps.iNumForwardSamples  = 1; // fake
-
-    caps.uAdvancedDI         = 1;
-    caps.uDenoiseFilter      = 1;
-    caps.uDetailFilter       = 1;
-    caps.uFieldWeavingControl= 0;
-    caps.uFrameRateConversion= 1; // "1" means general FRC is supported. "Interpolation" modes descibed by caps.frcCaps
-    caps.uDeinterlacing      = 1; // "1" means general deinterlacing is supported
-    caps.uVideoSignalInfo    = 1; // "1" means general VSI is supported
-    caps.uInverseTC          = 1;
-    caps.uIStabFilter        = 1;
-    caps.uMaxHeight          = 8096;
-    caps.uMaxWidth           = 8096;
-    caps.uProcampFilter      = 1;
-    caps.uSceneChangeDetection = 0;
-    caps.uSimpleDI           = 1;
-    caps.uVariance           = 0;
-    caps.uRotation           = 0;
-    caps.uScaling            = 0;
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
+    VideoVPP_SW::QueryCaps(core, caps);
+#else
+    return MFX_ERR_UNSUPPORTED;
+#endif
 
     if (MFX_PLATFORM_HARDWARE == core->GetPlatformType())
         return MFX_WRN_PARTIAL_ACCELERATION;
@@ -1165,42 +1149,59 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
         // special "interface" to signal on application level about support/unsupport ones
         //-------------------------------------------------
         bool bCorrectionEnable = true;
-        mfxStatus localSts = CheckPlatformLimitations(core, *out, bCorrectionEnable);
+        mfxSts = CheckPlatformLimitations(core, *out, bCorrectionEnable);
         //-------------------------------------------------
 
-        if(MFX_PLATFORM_HARDWARE == core->GetPlatformType() )
+        mfxStatus   hwQuerySts = MFX_ERR_NONE,
+                    swQuerySts = MFX_ERR_NONE;
+
+        if(MFX_PLATFORM_HARDWARE == core->GetPlatformType())
         {
             // HW VPP checking
-            mfxStatus sts = VideoVPPHW::Query(core, out);
+            hwQuerySts = VideoVPPHW::Query(core, out);
 
             // Statuses returned by Init differ in several cases from Query
-            if (MFX_ERR_INVALID_VIDEO_PARAM == sts || MFX_ERR_UNSUPPORTED == sts)
+            if (MFX_ERR_INVALID_VIDEO_PARAM == hwQuerySts || MFX_ERR_UNSUPPORTED == hwQuerySts)
             {
                 return MFX_ERR_UNSUPPORTED;
             }
-            if (MFX_ERR_NONE != sts && IS_PROTECTION_ANY(out->Protected))
+            if (MFX_ERR_NONE != hwQuerySts && IS_PROTECTION_ANY(out->Protected))
             {
                 out->Protected = 0;
                 return MFX_ERR_UNSUPPORTED;
             }
-            if (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts || MFX_WRN_FILTER_SKIPPED == sts)
+            if (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == hwQuerySts || MFX_WRN_FILTER_SKIPPED == hwQuerySts)
             {
-                return sts;
+                return hwQuerySts;
             }
 
-            if(MFX_ERR_NONE == sts)
+            if(MFX_ERR_NONE == hwQuerySts)
             {
-                return localSts;
+                return mfxSts;
             }
             else
             {
-                return MFX_WRN_PARTIAL_ACCELERATION;
+                hwQuerySts = MFX_WRN_PARTIAL_ACCELERATION;
             }
         }
-        else
+
+#if !defined (MFX_ENABLE_HW_ONLY_VPP)
+        swQuerySts = VideoVPP_SW::Query(core, out);
+
+        if (MFX_ERR_INVALID_VIDEO_PARAM == swQuerySts || MFX_ERR_UNSUPPORTED == swQuerySts)
         {
-            return localSts;
+            return MFX_ERR_UNSUPPORTED;
         }
+#else
+        MFX_CHECK_STS(MFX_ERR_UNSUPPORTED);
+#endif
+
+        if (hwQuerySts != MFX_ERR_NONE)
+            return hwQuerySts;
+        if (swQuerySts != MFX_ERR_NONE)
+            return swQuerySts;
+
+        return mfxSts;
     }//else
 } // mfxStatus VideoVPPBase::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out)
 
@@ -1344,11 +1345,7 @@ mfxStatus VideoVPPBase::CheckPlatformLimitations(
 
     if (MFX_PLATFORM_SOFTWARE == core->GetPlatformType() )
     {
-        sts = CheckLimitationsSW(param, supportedList, bCorrectionEnable);// this function could return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM and WRN_FILTER_SKIPPED
-    }
-    else
-    {
-        //sts = CheckLimitationsHW(param, supportedList, bCorrectionEnable);// this function could return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM and WRN_FILTER_SKIPPED
+        sts = CheckLimitationsSW(param, supportedList, bCorrectionEnable);
     }
 
     // check unsupported list if we need to reset ext buffer fields
@@ -1555,6 +1552,60 @@ VideoVPP_SW::VideoVPP_SW(VideoCORE *core, mfxStatus* sts)
     m_memIdWorkBuf   = NULL;
 
     memset(&m_internalParam, 0, sizeof(FilterVPP::InternalParam));
+}
+
+mfxStatus VideoVPP_SW::Query(VideoCORE* core, mfxVideoParam *par)
+{
+    MFX_CHECK_NULL_PTR2(par, core);
+
+    mfxStatus sts = MFX_ERR_NONE;
+
+    std::vector<mfxU32> capsList;
+
+    MfxHwVideoProcessing::mfxVppCaps caps;
+    VideoVPP_SW::QueryCaps(core, caps);
+    ConvertCaps2ListDoUse(caps, capsList);
+
+    std::vector<mfxU32> pipelineList;
+    sts = GetPipelineList(par, pipelineList, true);
+    MFX_CHECK_STS(sts);
+
+    std::vector<mfxU32> supportedList;
+    std::vector<mfxU32> unsupportedList;
+
+    // compare pipelineList and capsList
+    mfxStatus capsSts = GetCrossList(pipelineList, capsList, supportedList, unsupportedList);// this function could return WRN_FILTER_SKIPPED
+    sts = CheckLimitationsSW(*par, supportedList, true);
+
+    return (MFX_ERR_NONE == sts) ? capsSts : sts;
+}
+
+mfxStatus VideoVPP_SW::QueryCaps(VideoCORE* core, MfxHwVideoProcessing::mfxVppCaps& caps)
+{
+    MFX_CHECK_NULL_PTR1(core);
+
+    caps.iNumBackwardSamples = 1; // fake
+    caps.iNumForwardSamples  = 1; // fake
+
+    caps.uAdvancedDI         = 1;
+    caps.uDenoiseFilter      = 1;
+    caps.uDetailFilter       = 1;
+    caps.uFieldWeavingControl= 0;
+    caps.uFrameRateConversion= 1; // "1" means general FRC is supported. "Interpolation" modes descibed by caps.frcCaps
+    caps.uDeinterlacing      = 1; // "1" means general deinterlacing is supported
+    caps.uVideoSignalInfo    = 1; // "1" means general VSI is supported
+    caps.uInverseTC          = 1;
+    caps.uIStabFilter        = 1;
+    caps.uMaxHeight          = 8096;
+    caps.uMaxWidth           = 8096;
+    caps.uProcampFilter      = 1;
+    caps.uSceneChangeDetection = 0;
+    caps.uSimpleDI           = 1;
+    caps.uVariance           = 0;
+    caps.uRotation           = 0;
+    caps.uScaling            = 0;
+
+    return MFX_ERR_NONE;
 }
 
 mfxStatus VideoVPP_SW::InternalInit(mfxVideoParam *par)
