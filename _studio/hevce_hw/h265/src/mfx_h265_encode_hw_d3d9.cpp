@@ -414,6 +414,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     mfxU32      width,
     mfxU32      height)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::CreateAuxilliaryDevice");
     m_core = core;
 
 #ifdef HEADER_PACKING_TEST
@@ -479,6 +480,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
 
 mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::CreateAccelerationService");
     const mfxExtPAVPOption& PAVP = par.m_ext.PAVP;
 
     m_widi = par.WiDi;
@@ -507,15 +509,25 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
         encodeCreateDevice.pPavpEncryptionMode   = &encryptionMode;
     }
 
-    HRESULT hr = m_auxDevice->Execute(AUXDEV_CREATE_ACCEL_SERVICE, m_guid, encodeCreateDevice);
+    HRESULT hr;
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "AUXDEV_CREATE_ACCEL_SERVICE");
+        hr = m_auxDevice->Execute(AUXDEV_CREATE_ACCEL_SERVICE, m_guid, encodeCreateDevice);
+    }
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
     Zero(m_capsQuery);
-    hr = m_auxDevice->Execute(ENCODE_ENC_CTRL_CAPS_ID, (void *)0, m_capsQuery);
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ENCODE_ENC_CTRL_CAPS_ID");
+        hr = m_auxDevice->Execute(ENCODE_ENC_CTRL_CAPS_ID, (void *)0, m_capsQuery);
+    }
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
     Zero(m_capsGet);
-    hr = m_auxDevice->Execute(ENCODE_ENC_CTRL_GET_ID, (void *)0, m_capsGet);
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ENCODE_ENC_CTRL_GET_ID");
+        hr = m_auxDevice->Execute(ENCODE_ENC_CTRL_GET_ID, (void *)0, m_capsGet);
+    }
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 #else
     PAVP;
@@ -662,6 +674,7 @@ mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT ty
 
 mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::Execute");
 #ifndef HEADER_PACKING_TEST
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 #endif
@@ -766,13 +779,23 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
         m_feedbackCached.Update(m_feedbackUpdate);
 #else
         HANDLE handle;
-        HRESULT hr = m_auxDevice->BeginFrame((IDirect3DSurface9 *)surface, 0);
+        HRESULT hr;
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "BeginFrame");
+            hr = m_auxDevice->BeginFrame((IDirect3DSurface9 *)surface, 0);
+        }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
-        hr = m_auxDevice->Execute(ENCODE_ENC_PAK_ID, executeParams, (void *)0);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ENCODE_ENC_PAK_ID");
+            hr = m_auxDevice->Execute(ENCODE_ENC_PAK_ID, executeParams, (void *)0);
+        }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
-        m_auxDevice->EndFrame(&handle);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "EndFrame");
+            m_auxDevice->EndFrame(&handle);
+        }
 #endif
     }
     catch (...)
@@ -788,7 +811,7 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
 
 mfxStatus D3D9Encoder::QueryStatus(Task & task)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "QueryStatus");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::QueryStatus");
 #ifndef HEADER_PACKING_TEST
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 #endif

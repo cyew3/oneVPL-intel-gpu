@@ -35,6 +35,7 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
     mfxU32      width,
     mfxU32      height)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::CreateAuxilliaryDevice");
     m_core = core;
     mfxStatus sts = MFX_ERR_NONE;
     ID3D11Device* device;
@@ -70,14 +71,21 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
     {
         bool isFound = false;
 
-        UINT profileCount = m_vdevice->GetVideoDecoderProfileCount();
+        UINT profileCount;
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderProfileCount");
+            profileCount = m_vdevice->GetVideoDecoderProfileCount();
+        }
         assert( profileCount > 0 );
 
         for (UINT i = 0; i < profileCount; i ++)
         {  
             GUID profileGuid;
 
-            hr = m_vdevice->GetVideoDecoderProfile(i, &profileGuid);
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderProfile");
+                hr = m_vdevice->GetVideoDecoderProfile(i, &profileGuid);
+            }
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
             if (m_guid == profileGuid)
@@ -96,7 +104,10 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
         desc.OutputFormat = DXGI_FORMAT_NV12;
         desc.Guid         = m_guid; 
 
-        hr = m_vdevice->GetVideoDecoderConfigCount(&desc, &count);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderConfigCount");
+            hr = m_vdevice->GetVideoDecoderConfigCount(&desc, &count);
+        }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
     }
 
@@ -110,7 +121,10 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
         config.ConfigDecoderSpecific         = m_widi ? (ENCODE_ENC_PAK | ENCODE_WIDI) : ENCODE_ENC_PAK;  
         config.guidConfigBitstreamEncryption = m_pavp ? DXVA2_INTEL_PAVP : DXVA_NoEncrypt;
 
-        hr = m_vdevice->CreateVideoDecoder(&desc, &config, &m_vdecoder);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateVideoDecoder");
+            hr = m_vdevice->CreateVideoDecoder(&desc, &config, &m_vdecoder);
+        }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
     }
 
@@ -125,7 +139,10 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
         ext.ResourceCount = 0;
         ext.ppResourceList = 0;
 
-        hr = m_vcontext->DecoderExtension(m_vdecoder, &ext);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderExtension");
+            hr = m_vcontext->DecoderExtension(m_vdecoder, &ext);
+        }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
     }
 
@@ -134,6 +151,7 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
 
 mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::CreateAccelerationService");
     MFX_CHECK_WITH_ASSERT(m_vdecoder, MFX_ERR_NOT_INITIALIZED);
 
     HRESULT hr;
@@ -381,6 +399,7 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
 
 mfxStatus D3D11Encoder::Execute(Task const & task, mfxHDL surface)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Execute");
     MFX_CHECK_WITH_ASSERT(m_vdecoder, MFX_ERR_NOT_INITIALIZED);
 
     ENCODE_PACKEDHEADER_DATA * pPH = 0;
@@ -509,11 +528,15 @@ mfxStatus D3D11Encoder::Execute(Task const & task, mfxHDL surface)
         ext.PrivateInputDataSize  = sizeof(ENCODE_EXECUTE_PARAMS);
         ext.ResourceCount         = (UINT)resourceList.size(); 
         ext.ppResourceList        = &resourceList[0];
-        
-        hr = m_vcontext->DecoderExtension(m_vdecoder, &ext);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderExtension");
+            hr = m_vcontext->DecoderExtension(m_vdecoder, &ext);
+        }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-
-        hr = m_vcontext->DecoderEndFrame(m_vdecoder);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderEndFrame");
+            hr = m_vcontext->DecoderEndFrame(m_vdecoder);
+        }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 #endif
     }
@@ -530,6 +553,7 @@ mfxStatus D3D11Encoder::Execute(Task const & task, mfxHDL surface)
 
 mfxStatus D3D11Encoder::QueryStatus(Task & task)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::QueryStatus");
     MFX_CHECK_WITH_ASSERT(m_vdecoder, MFX_ERR_NOT_INITIALIZED);
 
     // After SNB once reported ENCODE_OK for a certain feedbackNumber
@@ -562,7 +586,10 @@ mfxStatus D3D11Encoder::QueryStatus(Task & task)
                 ext.pPrivateOutputData    = &m_feedbackUpdate[0];
                 ext.PrivateOutputDataSize = mfxU32(m_feedbackUpdate.size() * m_feedbackUpdate.feedback_size());
 
-                hr = m_vcontext->DecoderExtension(m_vdecoder, &ext);
+                {
+                    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "ENCODE_QUERY_STATUS_ID");
+                    hr = m_vcontext->DecoderExtension(m_vdecoder, &ext);
+                }
             }
             catch (...)
             {
