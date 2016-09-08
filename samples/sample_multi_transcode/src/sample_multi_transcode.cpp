@@ -404,7 +404,7 @@ mfxStatus Launcher::ProcessResult()
         msdk_stringstream ss;
         ss << MSDK_STRING("*** session ") << i << MSDK_STRING(" ") << SessionStsStr <<MSDK_STRING(" (") << StatusToString(_sts) << MSDK_STRING(") ")
             << m_pSessionArray[i]->working_time << MSDK_STRING(" sec, ") << m_pSessionArray[i]->numTransFrames << MSDK_STRING(" frames") << std::endl
-            << (_sts ? m_parser.GetLine(i) : msdk_string()) << std::endl << std::endl;
+            << m_parser.GetLine(i) << std::endl << std::endl;
 
         msdk_printf(ss.str().c_str());
         if (pPerfFile)
