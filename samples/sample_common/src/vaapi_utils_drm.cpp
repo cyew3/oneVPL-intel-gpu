@@ -290,6 +290,7 @@ drmRenderer::drmRenderer(int fd, mfxI32 monitorType)
   : m_fd(fd)
   , m_bufmgr(NULL)
   , m_overlay_wrn(true)
+  , m_pCurrentRenderTargetSurface(NULL)
 {
     bool res = false;
     uint32_t connectorType = getConnectorType(monitorType);
@@ -568,6 +569,15 @@ mfxStatus drmRenderer::render(mfxFrameSurface1 * pSurface)
         }
     }
     dropMaster();
+
+    /* Unlock previous Render Target Surface (if exists) */
+    if (NULL != m_pCurrentRenderTargetSurface)
+        m_pCurrentRenderTargetSurface->Data.Locked--;
+
+    /* new Render target */
+    m_pCurrentRenderTargetSurface = pSurface;
+    /* And lock it */
+    m_pCurrentRenderTargetSurface->Data.Locked++;
     return MFX_ERR_NONE;
 }
 
