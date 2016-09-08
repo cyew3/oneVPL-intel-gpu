@@ -263,7 +263,7 @@ mfxStatus D3D11VideoProcessor::Init(
                                     ID3D11VideoContext *pVideoContext,
                                     mfxVideoParam* par)
 {
-
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoProcessor::Init");
     mfxStatus sts = MFX_ERR_NONE;
 
     if (NULL == pVideoDevice || NULL == pVideoContext)
@@ -2138,6 +2138,7 @@ mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
 
 mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoProcessor::Execute");
 #ifdef DEBUG_DETAIL_INFO
     printf("\n\n---------- \n Submit Task::StatusID = %i \n----------\n\n", pParams->statusReportID);fflush(stderr);
 #endif
@@ -2631,11 +2632,14 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         ID3D11Resource*   pInputResource            = (ID3D11Resource *) (ID3D11Texture2D *)pParams->pRefSurfaces[refIdx].hdl.first;
         ID3D11VideoProcessorInputView** ppInputView = &(m_pInputView[refIdx]);
 
-        hRes = m_pVideoDevice->CreateVideoProcessorInputView(
-            pInputResource,
-            m_pVideoProcessorEnum,
-            &inputDesc,
-            ppInputView);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "CreateVideoProcessorInputView");
+            hRes = m_pVideoDevice->CreateVideoProcessorInputView(
+                pInputResource,
+                m_pVideoProcessorEnum,
+                &inputDesc,
+                ppInputView);
+        }
         if(FAILED(hRes))
         {
             SAFE_DELETE_ARRAY(videoProcessorStreams);
@@ -2749,6 +2753,7 @@ mfxStatus D3D11VideoProcessor::ExecuteBlt(
     D3D11_VIDEO_PROCESSOR_STREAM *pStreams,
     mfxU32 statusReportID)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoProcessor::ExecuteBlt");
     statusReportID;
 
     HRESULT hRes = S_OK;
@@ -2774,14 +2779,11 @@ mfxStatus D3D11VideoProcessor::ExecuteBlt(
         &m_pOutputView);
     CHECK_HRES(hRes);
 
-    {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "m_pVideoContext->VideoProcessorBlt()");
-        hRes = VideoProcessorBlt(
-            m_pOutputView,
-            statusReportID,
-            StreamCount,
-            pStreams);
-    }
+    hRes = VideoProcessorBlt(
+        m_pOutputView,
+        statusReportID,
+        StreamCount,
+        pStreams);
 
     CHECK_HRES(hRes);
 
@@ -2834,13 +2836,16 @@ HRESULT D3D11VideoProcessor::VideoProcessorBlt(
 #endif
     //-----------------------------------------------------
 
-    HRESULT hRes = m_pVideoContext->VideoProcessorBlt(
+    HRESULT hRes;
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "VideoProcessorBlt");
+        hRes = m_pVideoContext->VideoProcessorBlt(
             m_pVideoProcessor,
             pView,
             OutputFrame,
             StreamCount,
             pStreams);
-
+    }
 
     //-----------------------------------------------------
 #ifdef DEBUG_DETAIL_INFO
