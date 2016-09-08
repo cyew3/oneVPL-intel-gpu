@@ -79,6 +79,7 @@ D3D11Encoder::D3D11Encoder(VideoCORE* core)
 , m_bENC_PAK(false)
 , m_guid()
 , m_layout()
+, m_reconFrames()
 , m_feedback()
 {
     memset (&m_allocResponseMB,0,sizeof(mfxFrameAllocResponse));

@@ -26,9 +26,13 @@
 
 
 MJPEGEncodeTask::MJPEGEncodeTask(void)
+: auxInput()
 {
     m_initialDataLength = 0;
     encodedPieces = 0;
+    ctrl = NULL;
+    surface = NULL;
+    bs = NULL;
 
 } // MJPEGEncodeTask::MJPEGEncodeTask(void)
 
@@ -738,7 +742,13 @@ static mfxStatus CheckExtBuffers(mfxExtBuffer** ebuffers, mfxU32 nbuffers)
 
 } // static mfxStatus CheckExtBuffers(mfxExtBuffer** ebuffers, mfxU32 nbuffers)
 
-MFXVideoENCODEMJPEG::MFXVideoENCODEMJPEG(VideoCORE *core, mfxStatus *status) : VideoENCODE()
+MFXVideoENCODEMJPEG::MFXVideoENCODEMJPEG(VideoCORE *core, mfxStatus *status)
+: VideoENCODE()
+, m_response()
+, m_checkedJpegQT()
+, m_checkedJpegHT()
+, m_checkedOpaqAllocReq()
+
 {
     m_core          = core;
 

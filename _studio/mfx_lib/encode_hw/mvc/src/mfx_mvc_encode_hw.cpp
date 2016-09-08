@@ -525,7 +525,14 @@ namespace
 
 TaskManagerMvc::TaskManagerMvc()
 : m_core(0)
+, m_seqDesc()
+, m_numView(0)
+, m_numTask(0)
+, m_currentView(0)
+, m_baseCtrlFrameType(0)
+, m_stat()
 {
+    m_currentTask = NULL;
 }
 
 TaskManagerMvc::~TaskManagerMvc()
@@ -965,6 +972,7 @@ ImplementationMvc::ImplementationMvc(VideoCORE * core)
     , m_currentPlatform()
     , m_useWAForHighBitrates()
     , m_inputFrameType(0)
+    , m_bufferSizeModifier(0)
 {
 }
 
