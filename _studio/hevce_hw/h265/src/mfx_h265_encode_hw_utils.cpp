@@ -624,6 +624,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     ExtBuffer::Construct(par, m_ext.DumpFiles, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.VSI, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.PAVP, m_ext.m_extParam, base.NumExtParam);
+    ExtBuffer::Construct(par, m_ext.extBRC, m_ext.m_extParam, base.NumExtParam);
 
     WiDi = !!((mfxExtAVCEncoderWiDiUsage*)ExtBuffer::Get(par));
 }
@@ -654,6 +655,7 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
     ExtBuffer::Set(par, m_ext.AVCTL);
     ExtBuffer::Set(par, m_ext.DumpFiles);
     ExtBuffer::Set(par, m_ext.VSI);
+    ExtBuffer::Set(par, m_ext.extBRC);
 
 
     mfxExtCodingOptionSPSPPS * pSPSPPS = ExtBuffer::Get(par);
@@ -719,6 +721,7 @@ bool MfxVideoParam::CheckExtBufferParam()
     bUnsupported += ExtBuffer::CheckBufferParams(m_ext.AVCTL, true);
     bUnsupported += ExtBuffer::CheckBufferParams(m_ext.DumpFiles, true);
     bUnsupported += ExtBuffer::CheckBufferParams(m_ext.VSI, true);
+    bUnsupported += ExtBuffer::CheckBufferParams(m_ext.extBRC, true);
 
 
     return !!bUnsupported;

@@ -1070,6 +1070,12 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     else 
         changed += CheckOption(par.m_ext.CO2.MBBRC, (mfxU32)MFX_CODINGOPTION_ON, 0);
 
+    if (par.m_ext.extBRC.pthis!=0 && !(par.m_ext.CO2.ExtBRC && (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR)))
+    {
+        par.m_ext.extBRC.pthis = 0;
+        changed ++;    
+    }
+
     changed += CheckOption(par.mfx.FrameInfo.PicStruct, (mfxU16)MFX_PICSTRUCT_PROGRESSIVE, 0);
 
     if (par.m_ext.HEVCParam.PicWidthInLumaSamples > 0)

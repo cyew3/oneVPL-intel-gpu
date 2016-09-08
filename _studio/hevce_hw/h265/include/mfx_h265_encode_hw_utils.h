@@ -15,6 +15,7 @@
 #include "mfxla.h"
 #include "mfxpcp.h"
 #include "mfxwidi.h"
+#include "mfxbrc.h"
 
 #define DEBUG_REC_FRAMES_INFO 0   // dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
 #ifdef DEBUG_REC_FRAMES_INFO
@@ -319,7 +320,8 @@ namespace ExtBuffer
      MFX_EXTBUFF_VIDEO_SIGNAL_INFO,\
      MFX_EXTBUFF_LOOKAHEAD_STAT,\
      MFX_EXTBUFF_PAVP_OPTION,\
-     MFX_EXTBUFF_ENCODER_WIDI_USAGE
+     MFX_EXTBUFF_ENCODER_WIDI_USAGE, \
+     MFX_EXTBUFF_BRC
     ;
 
     template<class T> struct ExtBufferMap {};
@@ -347,6 +349,8 @@ namespace ExtBuffer
         EXTBUF(mfxExtPAVPOption,            MFX_EXTBUFF_PAVP_OPTION);
         EXTBUF(mfxExtAVCEncoderWiDiUsage,   MFX_EXTBUFF_ENCODER_WIDI_USAGE);
         EXTBUF(mfxExtEncodedSlicesInfo,     MFX_EXTBUFF_ENCODED_SLICES_INFO);
+        EXTBUF(mfxExtBRC,                   MFX_EXTBUFF_BRC);
+
     #undef EXTBUF
 
     #define _CopyPar(dst, src, PAR) dst.PAR = src.PAR;
@@ -636,6 +640,7 @@ public:
         mfxExtDumpFiles             DumpFiles;
         mfxExtVideoSignalInfo       VSI;
         mfxExtPAVPOption            PAVP;
+        mfxExtBRC                   extBRC;
         mfxExtBuffer *              m_extParam[11];
     } m_ext;
 
