@@ -66,7 +66,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   If codecid is jpeg, -q option is mandatory.)\n"));
     msdk_printf(MSDK_STRING("Options: \n"));
     MOD_ENC_PRINT_HELP;
-    msdk_printf(MSDK_STRING("   [-nv12|yuy2|p010] - input is in NV12 color format, if not specified YUV420 is expected. YUY2 are for JPEG encode only\n"));
+    msdk_printf(MSDK_STRING("   [-nv12|yuy2|p010] - input color format (by default YUV420 is expected). YUY2 is for JPEG encode only\n"));
     msdk_printf(MSDK_STRING("   [-ec::p010] - force P010 surfaces for encoder. Use for 10 bit HEVC encoding\n"));
     msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom fielf first, if not specified progressive is expected\n"));
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));

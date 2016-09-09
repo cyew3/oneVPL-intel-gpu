@@ -33,7 +33,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #endif
 #if defined(LIBVA_X11_SUPPORT)
 #include <va/va_x11.h>
-#undef Status
 #if defined(X11_DRI3_SUPPORT)
 #include <xcb/dri3.h>
 #include <xcb/present.h>

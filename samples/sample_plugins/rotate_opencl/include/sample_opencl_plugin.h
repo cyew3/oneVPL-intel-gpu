@@ -50,7 +50,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include <va/va_drm.h>
 #include <va/va_x11.h>
 #include <va/va_backend.h>
-#undef Status
 
 #define CL_USE_DEPRECATED_OPENCL_1_1_APIS 1
 #endif

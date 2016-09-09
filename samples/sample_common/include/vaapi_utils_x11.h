@@ -25,8 +25,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include <va/va_x11.h>
 #include "vaapi_utils.h"
 
-#undef Status
-
 class X11LibVA : public CLibVA
 {
 public:
