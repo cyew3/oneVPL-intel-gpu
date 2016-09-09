@@ -36,6 +36,7 @@ TaskManagerSvc::TaskManagerSvc()
 , m_currentLayerId(0)
 , m_stat()
 {
+    m_currentTask = NULL;
 }
 
 TaskManagerSvc::~TaskManagerSvc()
