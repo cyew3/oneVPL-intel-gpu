@@ -43,7 +43,7 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
         m_par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
         m_par.mfx.QPI = m_par.mfx.QPP = m_par.mfx.QPB = 26;
 
-        if (CodecId == MFX_CODEC_VP8)
+        if (CodecId == MFX_CODEC_VP8 || CodecId == MFX_CODEC_VP9)
             m_par.mfx.QPB = 0;
 
         m_par.mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
