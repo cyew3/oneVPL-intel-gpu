@@ -569,6 +569,7 @@ namespace MPEG2EncoderHW
 
     mfxStatus ControllerBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam *out, bool bAVBR_WA)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ControllerBase::Query");
 #ifdef PAVP_SUPPORT
         eMFXHWType type = core->GetHWType();
 #endif
@@ -1080,6 +1081,7 @@ namespace MPEG2EncoderHW
 
     mfxStatus ControllerBase::QueryIOSurf(VideoCORE * core, mfxVideoParam *par, mfxFrameAllocRequest *request)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ControllerBase::QueryIOSurf");
         mfxVideoParamEx_MPEG2 videoParamEx = {};
 
         MFX_CHECK_NULL_PTR1(par);
@@ -2008,6 +2010,7 @@ namespace MPEG2EncoderHW
     }
     mfxStatus MPEG2BRC_HW::Init(mfxVideoParam* par)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MPEG2BRC_HW::Init");
         mfxStatus   sts = MFX_ERR_NONE;
 
         m_bConstantQuant = (par->mfx.RateControlMethod == MFX_RATECONTROL_CQP)? 1:0;
@@ -2501,6 +2504,7 @@ namespace MPEG2EncoderHW
     }
     mfxStatus FrameStore::Init(bool bRawFrame, mfxU16 InputFrameType, bool bHW, mfxU32 mTasks, mfxFrameInfo* pFrameInfo, bool bProtected)
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FrameStore::Init");
         mfxStatus sts = MFX_ERR_NONE;
         mfxU32 numref = 0;
         mfxU32 numinput = 0;

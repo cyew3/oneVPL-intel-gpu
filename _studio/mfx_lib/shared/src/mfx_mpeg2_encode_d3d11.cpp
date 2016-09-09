@@ -297,6 +297,7 @@ mfxStatus D3D11Encoder::Init(
     ID3D11VideoContext *pVideoContext,
     ExecuteBuffers* pExecuteBuffers)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Init");
     MFX_CHECK_NULL_PTR2(pVideoDevice, pVideoContext);
 
     m_pVideoDevice  = pVideoDevice;
@@ -308,14 +309,21 @@ mfxStatus D3D11Encoder::Init(
     m_feedback.Reset();
 
     // [1] Query supported decode profiles
-    UINT profileCount = m_pVideoDevice->GetVideoDecoderProfileCount( );
+    UINT profileCount = 0;
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderProfileCount");
+        profileCount = m_pVideoDevice->GetVideoDecoderProfileCount( );
+    }
     assert( profileCount > 0 );
 
     bool isFound = false;    
     GUID profileGuid;
     for( UINT indxProfile = 0; indxProfile < profileCount; indxProfile++ )
     {
-        hRes = m_pVideoDevice->GetVideoDecoderProfile(indxProfile, &profileGuid);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderProfile");
+            hRes = m_pVideoDevice->GetVideoDecoderProfile(indxProfile, &profileGuid);
+        }
         CHECK_HRES(hRes);
         if( guid == profileGuid )
         {
@@ -339,7 +347,10 @@ mfxStatus D3D11Encoder::Init(
     D3D11_VIDEO_DECODER_CONFIG video_config = {0}; // aya:!!!!!!!!
     mfxU32 count;
 
-    hRes = m_pVideoDevice->GetVideoDecoderConfigCount(&video_desc, &count);
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderConfigCount");
+        hRes = m_pVideoDevice->GetVideoDecoderConfigCount(&video_desc, &count);
+    }
     CHECK_HRES(hRes);
 
     //for (int i = 0; i < count; i++)
@@ -371,7 +382,10 @@ mfxStatus D3D11Encoder::Init(
 #endif
     video_config.ConfigDecoderSpecific = (USHORT)func;//ENCODE_ENC_PAK;
 
-    hRes  = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateVideoDecoder");
+        hRes  = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pDecoder);
+    }
     CHECK_HRES(hRes);
 
 #if 1
@@ -405,7 +419,10 @@ mfxStatus D3D11Encoder::Init(
         encryptParam.ResourceCount         = 0;
         encryptParam.ppResourceList        = 0;
 
-        hRes = DecoderExtension(m_pVideoContext, m_pDecoder, encryptParam);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderExtension");
+            hRes = DecoderExtension(m_pVideoContext, m_pDecoder, encryptParam);
+        }
         CHECK_HRES(hRes);
     }
 #endif
@@ -833,6 +850,7 @@ mfxStatus D3D11Encoder::SetFrames (ExecuteBuffers* pExecuteBuffers)
 
 mfxStatus D3D11Encoder::Execute_ENC (ExecuteBuffers* pExecuteBuffers, mfxU8* , mfxU32 )
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Execute_ENC");
     pExecuteBuffers;
     //MFX::AutoTimer timer(__FUNCTION__);
 
@@ -851,6 +869,7 @@ mfxStatus D3D11Encoder::Execute(
     mfxU32 /*func*/,
     mfxU8* pUserData, mfxU32 userDataLen)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Execute");
     HRESULT hr = S_OK;
     mfxHDLPair* inputPair = &(pExecuteBuffers->m_pSurfacePair);
     ID3D11Resource*   pInputD3D11Res = static_cast<ID3D11Resource*>(inputPair->first);
@@ -1030,7 +1049,10 @@ mfxStatus D3D11Encoder::Execute(
     //    printf("%d ", m_pps.RefFrameList[i].Index7Bits);
     //printf("\n");
 
-    hr = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderExtension");
+        hr = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
+    }
 
     //printf("after:\n");
     //printf("Raw = %d\n", m_pps.CurrOriginalPic.Index7Bits);
@@ -1048,7 +1070,10 @@ mfxStatus D3D11Encoder::Execute(
 
     CHECK_HRES(hr);
 
-    hr = m_pVideoContext->DecoderEndFrame(m_pDecoder);
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderEndFrame");
+        hr = m_pVideoContext->DecoderEndFrame(m_pDecoder);
+    }
     CHECK_HRES(hr);   
 
     return MFX_ERR_NONE;
@@ -1073,6 +1098,7 @@ mfxStatus D3D11Encoder::Execute(
 
 mfxStatus D3D11Encoder::Execute_ENCODE (ExecuteBuffers* pExecuteBuffers, mfxU8* pUserData, mfxU32 userDataLen)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Execute_ENCODE");
     pExecuteBuffers;
     //MFX::AutoTimer timer(__FUNCTION__);
 
@@ -1088,6 +1114,7 @@ mfxStatus D3D11Encoder::Execute_ENCODE (ExecuteBuffers* pExecuteBuffers, mfxU8* 
 
 mfxStatus D3D11Encoder::Execute(ExecuteBuffers* pExecuteBuffers,mfxU8* pUserData, mfxU32 userDataLen)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Execute");
     mfxStatus sts = MFX_ERR_NONE;
 
     if( IsFullEncode() )
@@ -1223,6 +1250,7 @@ mfxStatus D3D11Encoder::FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers)
 
 mfxStatus D3D11Encoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBitstream* pBitstream, Encryption *pEncrypt)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::FillBSBuffer");
     MFX::AutoTimer timer("CopyBS");
     mfxStatus sts = MFX_ERR_NONE;
     mfxFrameData Frame = {0};
@@ -1252,8 +1280,11 @@ mfxStatus D3D11Encoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
         decoderExtParams.PrivateOutputDataSize = m_feedback.GetSize();
         decoderExtParams.ResourceCount         = 0;
         decoderExtParams.ppResourceList        = 0;
-
-        HRESULT hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
+        HRESULT hRes;
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ENCODE_QUERY_STATUS_ID");
+            hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
+        }
        
         MFX_CHECK(hRes != D3DERR_WASSTILLDRAWING, MFX_WRN_DEVICE_BUSY);
         MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);

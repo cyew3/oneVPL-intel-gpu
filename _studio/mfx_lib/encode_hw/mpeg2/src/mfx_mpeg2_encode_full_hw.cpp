@@ -140,6 +140,7 @@ mfxStatus FullEncode::QueryIOSurf(VideoCORE * core, mfxVideoParam *par, mfxFrame
 
 mfxStatus FullEncode::Init(mfxVideoParam *par)
 {
+   MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "FullEncode::Init");
     mfxStatus sts  = MFX_ERR_NONE;
     mfxStatus sts1 = MFX_ERR_NONE;
 
@@ -187,6 +188,7 @@ mfxStatus FullEncode::Reset(mfxVideoParam *par)
 
 mfxStatus FullEncode::ResetImpl()
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FullEncode::ResetImpl");
     mfxStatus sts = MFX_ERR_NONE;
     mfxVideoParamEx_MPEG2* paramsEx = m_pController->getVideoParamsEx();
 
