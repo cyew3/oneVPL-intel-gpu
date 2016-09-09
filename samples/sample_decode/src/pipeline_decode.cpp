@@ -1407,7 +1407,13 @@ mfxStatus CDecodingPipeline::DeliverOutput(mfxFrameSurface1* frame)
 #endif
             if (m_nMaxFps)
             {
-                MSDK_SLEEP((int)(1000.0/(double)m_nMaxFps));
+                //calculation of a time to sleep in order not to exceed a given fps
+                mfxF64 currentTime = (m_output_count) ? CTimer::ConvertToSeconds(m_tick_overall) : 0.0;
+                int time_to_sleep = (int)(1000 * ((double)m_output_count / m_nMaxFps - currentTime));
+                if (time_to_sleep > 0)
+                {
+                    MSDK_SLEEP(time_to_sleep);
+                }
             }
         }
     }
