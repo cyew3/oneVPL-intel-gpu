@@ -299,6 +299,11 @@ mfxStatus D3D9VideoCORE::InternalInit()
     if (platformFromDriver == 12) // 12 - IGFX_GT, sandybridge
         m_bCmCopyAllowed = false;
 
+    if ((m_HWType == MFX_HW_CNL) ||
+        (m_HWType == MFX_HW_ICL) ||
+        (m_HWType == MFX_HW_ICL_LP))
+        m_bCmCopyAllowed = false;   // !!! temporarily for pre-si
+
     return MFX_ERR_NONE;
 }
 

@@ -70,6 +70,11 @@ mfxStatus D3D11VideoCORE::InternalInit()
     //need to replace with specific D3D11 approach
     m_HWType = MFX::GetHardwareType(m_adapterNum, platformFromDriver);
 
+    if ((m_HWType == MFX_HW_CNL) ||
+        (m_HWType == MFX_HW_ICL) ||
+        (m_HWType == MFX_HW_ICL_LP))
+        m_bCmCopyAllowed = false;   // !!! temporarily for pre-si
+
     return MFX_ERR_NONE;
 }
 
