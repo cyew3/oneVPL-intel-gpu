@@ -281,6 +281,11 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*20*/ MFX_ERR_NONE,  "422format/inter_422_8.bin",},
     {/*21*/ MFX_ERR_NONE,  "10bit/DBLK_A_MAIN10_VIXS_3.bit",},
     {/*22*/ MFX_ERR_NONE,  "10bit/GENERAL_10b_422_RExt_Sony_1.bit",},
+    {/*23*/ MFX_ERR_NONE,  "10bit/GENERAL_10b_422_RExt_Sony_1.bit",},
+    {/*24*/ MFX_ERR_NONE,  "10bit/GENERAL_8b_444_RExt_Sony_1.bit",},
+    {/*25*/ MFX_ERR_NONE,  "10bit/GENERAL_10b_444_RExt_Sony_1.bit",},
+    {/*26*/ MFX_ERR_NONE,  "StressBitstreamEncode/rext444_10b/Stress_HEVC_Rext444_10bHT62_432x240_30fps_302_inter_stress_2.2.hevc",},
+    //{/*27*/ MFX_ERR_NONE,  "StressBitstreamEncode/rext444_10b/Stress_HEVC_Rext444_12bHT62_432x240_30fps_302_inter_stress_2.2.hevc",}, //444 12 bit handling not implemented yet
 };
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
@@ -370,6 +375,9 @@ int TestSuite::RunTest(unsigned int id)
 
         mfxU16 expected_width = (mfxU16)sps.pic_width_in_luma_samples;
         mfxU16 expected_height = (mfxU16)sps.pic_height_in_luma_samples;
+
+        expected_width = ( ( expected_width / 16 ) + ( (expected_width % 16) != 0 ) )* 16 ;
+        expected_height = ( ( expected_height / 16 ) + ( (expected_height % 16) != 0 ) )* 16;
 
         EXPECT_EQ((mfxU16)sps.ptl.general.profile_idc,  m_par.mfx.CodecProfile);
         EXPECT_EQ((mfxU16)sps.ptl.general.level_idc/3,  m_par.mfx.CodecLevel);
