@@ -114,7 +114,9 @@ void FillSpsBuffer(
     {
         sps.ContentInfo = eContent_NonVideoScreen;
     }
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR || par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
+    if (   par.mfx.RateControlMethod == MFX_RATECONTROL_VBR
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR
+        || par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
     {
         sps.MinBitRate      = 0;
         sps.TargetBitRate   = par.TargetKbps;
@@ -132,10 +134,6 @@ void FillSpsBuffer(
         sps.TargetBitRate   = par.TargetKbps;
 //        sps.AVBRAccuracy = par.mfx.Accuracy;
 //        sps.AVBRConvergence = par.mfx.Convergence;
-    }
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
-    {
-        sps.ICQQualityFactor = (mfxU8)par.mfx.ICQQuality;
     }
 
     sps.FramesPer100Sec = (mfxU16)(mfxU64(100) * par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD);
@@ -156,14 +154,10 @@ void FillSpsBuffer(
 
     sps.UserMaxFrameSize = par.m_ext.CO2.MaxFrameSize;
 
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
-    {
-//        sps.AVBRAccuracy    = par.mfx.Accuracy;
-//        sps.AVBRConvergence = par.mfx.Convergence;
-    }
-
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
         sps.ICQQualityFactor = (mfxU8)par.mfx.ICQQuality;
+    else if (par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
+        sps.ICQQualityFactor = (mfxU8)par.m_ext.CO3.QVBRQuality;
     else
         sps.ICQQualityFactor = 0;
 

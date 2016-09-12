@@ -408,6 +408,7 @@ namespace ExtBuffer
         _CopyStruct1(NumRefActiveP);
         _CopyStruct1(NumRefActiveBL0);
         _CopyStruct1(NumRefActiveBL1);
+        _CopyStruct1(QVBRQuality);
     }
 
     inline void  CopySupportedParams(mfxExtCodingOptionDDI& buf_dst, mfxExtCodingOptionDDI& buf_src)

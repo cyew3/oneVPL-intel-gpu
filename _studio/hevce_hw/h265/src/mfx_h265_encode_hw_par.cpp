@@ -678,6 +678,17 @@ bool CheckOption(T & opt, U0 deflt, U1 s0, U2 s1, U3 s2, U4 s3, U5 s4, U6 s5, U7
     }
     return false;
 }
+template <class T, class U0, class U1, class U2, class U3, class U4, class U5, class U6, class U7, class U8>
+bool CheckOption(T & opt, U0 deflt, U1 s0, U2 s1, U3 s2, U4 s3, U5 s4, U6 s5, U7 s6, U8 s7)
+{
+    if (opt == T(deflt)) return false;
+    if (CheckOption(opt, (T)s0, (T)s1, (T)s2, (T)s3, (T)s4, (T)s5, (T)s6, (T)s7))
+    {
+        opt = T(deflt);
+        return true;
+    }
+    return false;
+}
 #endif
 
 bool CheckTU(mfxU8 support, mfxU16& tu)
@@ -796,7 +807,6 @@ void InheritDefaultValues(
     }
 
 
-    InheritOption(parInit.mfx.FrameInfo.FourCC,         parReset.mfx.FrameInfo.FourCC);
     InheritOption(parInit.mfx.FrameInfo.FourCC,         parReset.mfx.FrameInfo.FourCC);
     InheritOption(parInit.mfx.FrameInfo.Width,          parReset.mfx.FrameInfo.Width);
     InheritOption(parInit.mfx.FrameInfo.Height,         parReset.mfx.FrameInfo.Height);
@@ -1049,10 +1059,14 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         , (mfxU32)MFX_RATECONTROL_ICQ
         , caps.VCMBitRateControl ? MFX_RATECONTROL_VCM : 0
 #endif
+        , caps.QVBRBRCSupport ? MFX_RATECONTROL_QVBR : 0
         );
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
         unsupported += CheckMax(par.mfx.ICQQuality, 51);
+
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
+        unsupported += CheckMax(CO3.QVBRQuality, 51);
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
     {
@@ -1153,7 +1167,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     changed += CheckMax(par.m_ext.DDI.NumActiveRefBL0, caps.MaxNum_Reference0);
     changed += CheckMax(par.m_ext.DDI.NumActiveRefBL1, caps.MaxNum_Reference1);
 
-    if (   (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR || par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
+    if (   (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR
+         || par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR
+         || par.mfx.RateControlMethod == MFX_RATECONTROL_VCM)
         && par.MaxKbps != 0
         && par.TargetKbps != 0
         && par.MaxKbps < par.TargetKbps)
@@ -1513,6 +1529,7 @@ void SetDefaults(
     }
     else if (   par.mfx.RateControlMethod == MFX_RATECONTROL_CBR
              || par.mfx.RateControlMethod == MFX_RATECONTROL_VBR
+             || par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR
              || par.mfx.RateControlMethod == MFX_RATECONTROL_VCM
              || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
     {
@@ -1545,6 +1562,9 @@ void SetDefaults(
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ && !par.mfx.ICQQuality)
         par.mfx.ICQQuality = 26;
+    
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR && !CO3.QVBRQuality)
+        CO3.QVBRQuality = 26;
 
     /*if (!par.mfx.GopOptFlag)
         par.mfx.GopOptFlag = MFX_GOP_CLOSED;*/
