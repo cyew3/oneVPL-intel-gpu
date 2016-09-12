@@ -642,7 +642,7 @@ public:
         mfxExtVideoSignalInfo       VSI;
         mfxExtPAVPOption            PAVP;
         mfxExtBRC                   extBRC;
-        mfxExtBuffer *              m_extParam[11];
+        mfxExtBuffer *              m_extParam[12];
     } m_ext;
 
     mfxU32 BufferSizeInKB;
