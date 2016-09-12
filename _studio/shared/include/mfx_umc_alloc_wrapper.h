@@ -16,8 +16,8 @@
 #include <vector>
 
 #include "mfx_common.h"
-#include "umc_default_memory_allocator.h"
-#include "umc_default_frame_allocator.h"
+#include "umc_memory_allocator.h"
+#include "umc_frame_allocator.h"
 #include "umc_frame_data.h"
 
 #include "mfxvideo++int.h"
@@ -27,9 +27,9 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // mfx_UMC_MemAllocator - buffer allocator
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-class mfx_UMC_MemAllocator : public UMC::DefaultMemoryAllocator
+class mfx_UMC_MemAllocator : public UMC::MemoryAllocator
 {
-    DYNAMIC_CAST_DECL(mfx_UMC_MemAllocator, DefaultMemoryAllocator)
+    DYNAMIC_CAST_DECL(mfx_UMC_MemAllocator, MemoryAllocator)
 
 public:
     mfx_UMC_MemAllocator(void);
@@ -181,6 +181,9 @@ protected:
 };
 
 #if !defined( AS_HEVCD_PLUGIN ) || defined (AS_VP8D_PLUGIN) // HEVC decode natively supportes NV12 format - no need to make conversion 
+
+#include "umc_default_frame_allocator.h"
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // mfx_UMC_FrameAllocator_NV12
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -446,55 +446,6 @@ namespace MPEG2EncoderHW
         }
     };
 
-    class FrameStoreHybrid
-    {
-    private:
-        VideoCORE*          m_pCore;
-        FrameStore*         m_pFrameStoreEnc;
-        FrameStore*         m_pFrameStorePak;
-        bool                m_bEncHW;
-        bool                m_bPakHW;
-    public:
-
-        FrameStoreHybrid(VideoCORE* pCore)
-        {
-            m_pCore = pCore;
-            m_pFrameStoreEnc = 0;
-            m_pFrameStorePak = 0;
-            m_bEncHW = m_bPakHW = 0;
-        }
-        ~FrameStoreHybrid()
-        {
-            Close();
-        }
-
-        inline mfxStatus Reset(bool bHWEnc, 
-            bool bHWPak, 
-            bool bRawFrame, 
-            mfxU16 InputFrameType, 
-            mfxU32 mTasks, 
-            mfxFrameInfo* pFrameInfo)
-        {
-            return Init(bHWEnc,bHWPak,bRawFrame,InputFrameType, mTasks, pFrameInfo);
-        }
-
-        mfxStatus Init(bool bHWEnc,
-            bool bHWPak,
-            bool bRawFrame,
-            mfxU16 InputFrameType,
-            mfxU32 mTasks,
-            mfxFrameInfo* pFrameInfo);
-
-        mfxStatus NextFrame(mfxFrameSurface1 *pInputFrame,
-            mfxU32 nFrame,
-            mfxU16 frameType,
-            mfxU32 intFlags,
-            FramesSet *pEncFrames,
-            FramesSet *pPakFrames);
-        mfxStatus Close();
-        mfxFrameAllocResponse* GetFrameAllocResponse(bool bHW);
-
-    };
     class EncodeFrameTask
     {
     public:
@@ -564,6 +515,57 @@ namespace MPEG2EncoderHW
             m_FrameParams.ExtraFlags = (mfxU16)(( bAddSH ? MFX_IFLAG_ADD_HEADER:0)| (bAddEOS ? MFX_IFLAG_ADD_EOS:0)); // those values are not declared
             return sts;
         }
+    };
+  
+#if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE) && defined (MFX_ENABLE_MPEG2_VIDEO_PAK)
+    class FrameStoreHybrid
+    {
+    private:
+        VideoCORE*          m_pCore;
+        FrameStore*         m_pFrameStoreEnc;
+        FrameStore*         m_pFrameStorePak;
+        bool                m_bEncHW;
+        bool                m_bPakHW;
+    public:
+
+        FrameStoreHybrid(VideoCORE* pCore)
+        {
+            m_pCore = pCore;
+            m_pFrameStoreEnc = 0;
+            m_pFrameStorePak = 0;
+            m_bEncHW = m_bPakHW = 0;
+        }
+        ~FrameStoreHybrid()
+        {
+            Close();
+        }
+
+        inline mfxStatus Reset(bool bHWEnc, 
+            bool bHWPak, 
+            bool bRawFrame, 
+            mfxU16 InputFrameType, 
+            mfxU32 mTasks, 
+            mfxFrameInfo* pFrameInfo)
+        {
+            return Init(bHWEnc,bHWPak,bRawFrame,InputFrameType, mTasks, pFrameInfo);
+        }
+
+        mfxStatus Init(bool bHWEnc,
+            bool bHWPak,
+            bool bRawFrame,
+            mfxU16 InputFrameType,
+            mfxU32 mTasks,
+            mfxFrameInfo* pFrameInfo);
+
+        mfxStatus NextFrame(mfxFrameSurface1 *pInputFrame,
+            mfxU32 nFrame,
+            mfxU16 frameType,
+            mfxU32 intFlags,
+            FramesSet *pEncFrames,
+            FramesSet *pPakFrames);
+        mfxStatus Close();
+        mfxFrameAllocResponse* GetFrameAllocResponse(bool bHW);
+
     };
 
     class EncodeFrameTaskHybrid
@@ -696,9 +698,7 @@ namespace MPEG2EncoderHW
         bool isNextField ();
     };
 
-
-
-  
+#endif
 }
 
 

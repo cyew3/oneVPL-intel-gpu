@@ -26,7 +26,7 @@
 #endif
 #include "vm_file.h"
 
-#if defined (MFX_VA)
+#if defined (MFX_ENABLE_MJPEG_VIDEO_DECODE) && defined (MFX_VA)
 #include "mfx_vpp_jpeg_d3d9.h"
 #endif
 

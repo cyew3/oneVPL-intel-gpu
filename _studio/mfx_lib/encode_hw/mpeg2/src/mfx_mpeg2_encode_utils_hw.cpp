@@ -2785,8 +2785,8 @@ namespace MPEG2EncoderHW
 
         return sts;   
     }    
-    
-    
+
+#if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE) && defined (MFX_ENABLE_MPEG2_VIDEO_PAK)
     mfxStatus EncodeFrameTaskHybrid::Close()
     {
         mfxStatus sts = MFX_ERR_NONE;
@@ -3117,7 +3117,6 @@ namespace MPEG2EncoderHW
         return sts;
     }
 
-
     mfxStatus FrameStoreHybrid::Init(bool bHWEnc, 
         bool    bHWPak, 
         bool    bRawFrame, 
@@ -3225,7 +3224,7 @@ namespace MPEG2EncoderHW
             return 0;            
         }
     }
-
+#endif // #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE) && defined (MFX_ENABLE_MPEG2_VIDEO_PAK)
 
 }
 
