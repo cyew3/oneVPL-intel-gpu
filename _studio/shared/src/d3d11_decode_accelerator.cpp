@@ -247,7 +247,10 @@ Status  MFXD3D11Accelerator::BeginFrame(Ipp32s index)
 
     if( SUCCEEDED( hr ) )
     {
-        hr = m_pVideoContext->DecoderBeginFrame(m_pDecoder, m_pVDOView, 0, NULL);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderBeginFrame");
+            hr = m_pVideoContext->DecoderBeginFrame(m_pDecoder, m_pVDOView, 0, NULL);
+        }
         if SUCCEEDED( hr )
             return UMC_OK;
     }
@@ -261,7 +264,10 @@ Status MFXD3D11Accelerator::EndFrame(void *handle)
 {
     HRESULT hr;
     handle;
-    hr = m_pVideoContext->DecoderEndFrame(m_pDecoder);
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderEndFrame");
+        hr = m_pVideoContext->DecoderEndFrame(m_pDecoder);
+    }
     if SUCCEEDED(hr)
     {
         //Sleep(100);
@@ -299,6 +305,7 @@ Status MFXD3D11Accelerator::ReleaseBuffer(Ipp32s type)
 
 Status MFXD3D11Accelerator::Execute()
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXD3D11Accelerator::Execute");
     D3D11_VIDEO_DECODER_BUFFER_DESC pSentBuffer[MAX_BUFFER_TYPES];
     int n = 0;
     HRESULT hr;
@@ -337,7 +344,10 @@ Status MFXD3D11Accelerator::Execute()
     
     {
         //MFX_AUTO_LTRACE_WITHID(MFX_TRACE_LEVEL_EXTCALL, "DXVA2_DecodeExecute");
-         hr = m_pVideoContext->SubmitDecoderBuffers(m_pDecoder, (UINT)m_bufferOrder.size(), pSentBuffer);
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "SubmitDecoderBuffers");
+            hr = m_pVideoContext->SubmitDecoderBuffers(m_pDecoder, (UINT)m_bufferOrder.size(), pSentBuffer);
+        }
 
     }
     m_bufferOrder.clear();
@@ -352,6 +362,7 @@ Status MFXD3D11Accelerator::Execute()
 
 Status MFXD3D11Accelerator::ExecuteStatusReportBuffer(void * buffer, Ipp32s size)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXD3D11Accelerator::ExecuteStatusReportBuffer");
     HRESULT hr;
     D3D11_VIDEO_DECODER_EXTENSION dec_ext;
     
@@ -365,7 +376,7 @@ Status MFXD3D11Accelerator::ExecuteStatusReportBuffer(void * buffer, Ipp32s size
     dec_ext.ppResourceList = 0;
 
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "VIDEO_DECODER_EXTENSION");
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "DecoderExtension");
         hr = m_pVideoContext->DecoderExtension(m_pDecoder, &dec_ext);
     }
 

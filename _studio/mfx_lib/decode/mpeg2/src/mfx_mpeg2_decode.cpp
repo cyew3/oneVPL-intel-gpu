@@ -386,6 +386,7 @@ VideoDECODEMPEG2::~VideoDECODEMPEG2()
 
 mfxStatus VideoDECODEMPEG2::Init(mfxVideoParam *par)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEMPEG2::Init");
     if (m_isInitialized)
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -511,6 +512,7 @@ mfxStatus VideoDECODEMPEG2::Reset(mfxVideoParam *par)
 
 mfxStatus VideoDECODEMPEG2::Close()
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEMPEG2::Close");
     // immediately return, object is not initialized
     if (false == m_isInitialized)
     {
@@ -969,6 +971,7 @@ mfxStatus VideoDECODEMPEG2::CheckProtectionSettings(mfxVideoParam *input, mfxVid
 
 mfxStatus VideoDECODEMPEG2::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEMPEG2::Query");
     // touch unreferenced parameter
     core = core;
 
@@ -1196,6 +1199,7 @@ mfxStatus VideoDECODEMPEG2::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoPa
 
 mfxStatus VideoDECODEMPEG2::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEMPEG2::QueryIOSurf");
     MFX_CHECK_NULL_PTR2(par, request);
 
     if (!(par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) &&
@@ -1351,6 +1355,7 @@ static mfxStatus __CDECL MPEG2CompleteTasks(void *pState, void *pParam, mfxStatu
 
 mfxStatus VideoDECODEMPEG2::CheckFrameData(const mfxFrameSurface1 *pSurface)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEMPEG2::CheckFrameData");
     MFX_CHECK_NULL_PTR1(pSurface);
     
     if (0 != pSurface->Data.Locked)
@@ -3206,11 +3211,12 @@ mfxStatus VideoDECODEMPEG2Internal_HW::DecodeFrameCheck(mfxBitstream *bs,
 
 mfxStatus VideoDECODEMPEG2Internal_HW::TaskRoutine(void *pParam)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoDECODEMPEG2Internal_HW::TaskRoutine");
     MParam *parameters = (MParam *)pParam;
 
     mfxStatus sts = PerformStatusCheck(pParam);
     MFX_CHECK_STS(sts);
-
+     
     if (0 <= parameters->display_index && true == parameters->m_isSoftwareBuffer)
     {
         sts = parameters->m_FrameAllocator->PrepareToOutput(parameters->surface_out,
@@ -3229,6 +3235,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::TaskRoutine(void *pParam)
 
 mfxStatus VideoDECODEMPEG2Internal_HW::CompleteTasks(void *pParam)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoDECODEMPEG2Internal_HW::CompleteTasks");
     MParam *parameters = (MParam *)pParam;
 
     UMC::AutomaticUMCMutex guard(m_guard);
@@ -3377,6 +3384,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReportByIndex(mfxFrameSurface1 *
 
 mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReport(mfxFrameSurface1 *displaySurface, UMC::FrameMemID surface_id)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoDECODEMPEG2Internal_HW::GetStatusReport");
     displaySurface;surface_id;
 #ifdef MFX_VA_WIN
     UMC::Status sts = UMC::UMC_OK;
@@ -3494,6 +3502,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReport(mfxFrameSurface1 *display
 
 mfxStatus VideoDECODEMPEG2Internal_HW::PerformStatusCheck(void *pParam)
 {
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoDECODEMPEG2Internal_HW::PerformStatusCheck");
     MFX_CHECK_NULL_PTR1(pParam);
     MParam *parameters = (MParam *)pParam;
     Ipp32s display_index = parameters->display_index;
