@@ -499,15 +499,12 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
         frameInfo->BitDepthLuma > 16)
         return 0;
 
-    if (frameInfo->BitDepthLuma % 2)
-        return 0;
-
-    //map chroma fmt & bit depth onto fourcc (NOTE: we don't support bit depth above 10 bit and 4:4:4 chroma for 8 bit)
+    //map chroma fmt & bit depth onto fourcc
     mfxU32 const map[][4] =
     {
         { MFX_FOURCC_NV12, MFX_FOURCC_P010, 0, 0 },
         { MFX_FOURCC_NV12, MFX_FOURCC_P010, 0, 0 },
-        { MFX_FOURCC_YUY2, MFX_FOURCC_Y210, 0, 0 },
+        { MFX_FOURCC_YUY2, MFX_FOURCC_Y216, 0, 0 },
         { MFX_FOURCC_AYUV, MFX_FOURCC_Y410, 0, 0 }
     };
 
@@ -528,16 +525,24 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
         "Unsupported chroma format, should be validated before"
     );
 
+    mfxU16 bit_depth =
+       IPP_MAX(frameInfo->BitDepthLuma, frameInfo->BitDepthChroma);
+
+    //align luma depth up to 2 (8-10-12 ...)
+    bit_depth = (bit_depth + 2 - 1) & ~(2 - 1);
+    if (bit_depth > 12)
+        bit_depth = 16;
+
     VM_ASSERT(
-        (frameInfo->BitDepthLuma ==  8 ||
-         frameInfo->BitDepthLuma == 10 ||
-         frameInfo->BitDepthLuma == 12 ||
-         frameInfo->BitDepthLuma == 16) &&
+        (bit_depth ==  8 ||
+         bit_depth == 10 ||
+         bit_depth == 12 ||
+         bit_depth == 16) &&
         "Unsupported bit depth, should be validated before"
     );
 
     return
-        map[frameInfo->ChromaFormat][(frameInfo->BitDepthLuma - 8) / 2];
+        map[frameInfo->ChromaFormat][(bit_depth - 8) / 2];
 }
 
 inline
