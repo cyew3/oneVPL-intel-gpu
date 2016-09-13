@@ -93,6 +93,8 @@ DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
         return DXGI_FORMAT_R10G10B10A2_UNORM;
     case MFX_FOURCC_Y210:
         return DXGI_FORMAT_Y210;
+    case MFX_FOURCC_Y216:
+        return DXGI_FORMAT_Y216;
     case MFX_FOURCC_Y410:
         return DXGI_FORMAT_Y410;
     }
@@ -133,6 +135,7 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
     case MFX_FOURCC_ABGR16:
     case MFX_FOURCC_A2RGB10:
     case MFX_FOURCC_Y210:
+    case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y410:
         break;
     default:
@@ -432,6 +435,13 @@ mfxStatus mfxDefaultAllocatorD3D11::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxF
         ptr->V = 0;
         ptr->A = 0;
         break;
+    case DXGI_FORMAT_Y210:
+    case DXGI_FORMAT_Y216:
+        ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
+        ptr->PitchLow = (mfxU16)(LockedRect.RowPitch % (1 << 16));
+        ptr->Y16 = (mfxU16*)LockedRect.pData;
+        ptr->U16 = ptr->Y16 + 1;
+        ptr->V16 = ptr->U16 + 3;
     default:
         return MFX_ERR_LOCK_MEMORY;
     }

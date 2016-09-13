@@ -32,6 +32,8 @@ File Name: libmfx_allocator_d3d9.cpp
 #define D3DFMT_YUV444   (D3DFORMAT)MAKEFOURCC('4','4','4','P')
 
 #define D3DFMT_Y410 (D3DFORMAT)MFX_FOURCC_Y410
+#define D3DFMT_Y210 (D3DFORMAT)MFX_FOURCC_Y210
+#define D3DFMT_Y216 (D3DFORMAT)MFX_FOURCC_Y216
 
 template<class T> inline
 T align_value(size_t nValue, size_t lAlignValue = DEFAULT_ALIGN_VALUE)
@@ -65,6 +67,7 @@ mfxStatus mfxDefaultAllocatorD3D9::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequ
     case MFX_FOURCC_P010:
     case MFX_FOURCC_A2RGB10:
     case MFX_FOURCC_Y210:
+    case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y410:
     case MFX_FOURCC_AYUV:
         break;
@@ -295,6 +298,13 @@ mfxStatus mfxDefaultAllocatorD3D9::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxFr
         ptr->U = 0;
         ptr->V = 0;
         ptr->A = 0;
+    case D3DFMT_Y210:
+    case D3DFMT_Y216:
+        ptr->PitchHigh = (mfxU16)(LockedRect.Pitch / (1 << 16));
+        ptr->PitchLow = (mfxU16)(LockedRect.Pitch % (1 << 16));
+        ptr->Y16 = (mfxU16*)LockedRect.pBits;
+        ptr->U16 = ptr->Y16 + 1;
+        ptr->V16 = ptr->U16 + 3;
     }
 
     return MFX_ERR_NONE;

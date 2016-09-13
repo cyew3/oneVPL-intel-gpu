@@ -66,6 +66,7 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
     case MFX_FOURCC_P210:
     case MFX_FOURCC_AYUV:
     case MFX_FOURCC_Y210:
+    case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y410:
 #if defined(_WIN32) || defined(_WIN64)
     case DXGI_FORMAT_AYUV:
@@ -82,6 +83,7 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
         case MFX_FOURCC_P010:
         case MFX_FOURCC_P210:
         case MFX_FOURCC_Y210:
+        case MFX_FOURCC_Y216:
         case MFX_FOURCC_Y410:
             break;
         default:
@@ -175,6 +177,7 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
             info->FourCC != MFX_FOURCC_AYUV &&
             info->FourCC != MFX_FOURCC_P010 &&
             info->FourCC != MFX_FOURCC_NV16 &&
+            info->FourCC != MFX_FOURCC_Y216 &&
             info->FourCC != MFX_FOURCC_Y210 &&
             info->FourCC != MFX_FOURCC_Y410)
             return MFX_ERR_INVALID_VIDEO_PARAM;

@@ -404,6 +404,7 @@ bool MFX_Utility::IsNeedPartialAcceleration_H265(mfxVideoParam* par, eMFXHWType 
         par->mfx.FrameInfo.FourCC != MFX_FOURCC_YUY2 &&
         par->mfx.FrameInfo.FourCC != MFX_FOURCC_AYUV &&
         par->mfx.FrameInfo.FourCC != MFX_FOURCC_P010 &&
+        par->mfx.FrameInfo.FourCC != MFX_FOURCC_Y216 &&
         par->mfx.FrameInfo.FourCC != MFX_FOURCC_Y410)
         return true;
 #else
@@ -499,13 +500,14 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
         frameInfo->BitDepthLuma > 16)
         return 0;
 
-    //map chroma fmt & bit depth onto fourcc
+    //map chroma fmt & bit depth onto fourcc (NOTE: we currently don't support bit depth above 10 bit)
     mfxU32 const map[][4] =
     {
-        { MFX_FOURCC_NV12, MFX_FOURCC_P010, 0, 0 },
-        { MFX_FOURCC_NV12, MFX_FOURCC_P010, 0, 0 },
-        { MFX_FOURCC_YUY2, MFX_FOURCC_Y216, 0, 0 },
-        { MFX_FOURCC_AYUV, MFX_FOURCC_Y410, 0, 0 }
+            /* 8 bit */      /* 10 bit */
+        { MFX_FOURCC_NV12, MFX_FOURCC_P010, 0, 0 }, //400
+        { MFX_FOURCC_NV12, MFX_FOURCC_P010, 0, 0 }, //420
+        { MFX_FOURCC_YUY2, MFX_FOURCC_Y216, 0, 0 }, //422
+        { MFX_FOURCC_AYUV, MFX_FOURCC_Y410, 0, 0 }  //444
     };
 
     if (codecProfile == MFX_PROFILE_HEVC_MAIN &&
@@ -588,6 +590,11 @@ bool CheckFourcc(mfxU32 fourcc, mfxU16 codecProfile, mfxFrameInfo const* frameIn
             case MFX_FOURCC_P010:
             case MFX_FOURCC_Y210:
             case MFX_FOURCC_Y410:
+                fi.BitDepthLuma = 10;
+                break;
+
+            case MFX_FOURCC_Y216:
+                //currently we support only 10b max
                 fi.BitDepthLuma = 10;
                 break;
 
@@ -1137,14 +1144,6 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
             sts = MFX_ERR_UNSUPPORTED;
         }
 
-        if (in->mfx.FrameInfo.BitDepthLuma &&
-            in->mfx.FrameInfo.BitDepthLuma != in->mfx.FrameInfo.BitDepthChroma)
-        {
-            out->mfx.FrameInfo.BitDepthLuma =
-            out->mfx.FrameInfo.BitDepthChroma = 0;
-            sts = MFX_ERR_UNSUPPORTED;
-        }
-
         if (in->mfx.FrameInfo.FourCC &&
             !CheckFourcc(in->mfx.FrameInfo.FourCC, in->mfx.CodecProfile, &in->mfx.FrameInfo))
         {
@@ -1429,6 +1428,7 @@ bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType t
     if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 ||
         in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210 ||
         in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 ||
+        in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216 ||
         in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410)
     {
         if (in->mfx.FrameInfo.Shift > 1)
