@@ -1045,8 +1045,8 @@ UMC::Status H265HeadersBitstream::GetPictureParamSetFull(H265PicParamSet  *pcPPS
     pcPPS->log2_parallel_merge_level = GetVLCElementU() + 2;
     pcPPS->slice_segment_header_extension_present_flag = Get1Bit();
 
-    Ipp8u pps_extension_present_flag = Get1Bit();
-    if (pps_extension_present_flag)
+    pcPPS->pps_range_extensions_flag = Get1Bit();
+    if (pcPPS->pps_range_extensions_flag)
     {
         Ipp8u pps_range_extensions_flag = Get1Bit();
         Ipp8u pps_extension_7bits = (Ipp8u)GetBits(7);

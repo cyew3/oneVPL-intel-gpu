@@ -1057,6 +1057,7 @@ struct H265PicParamSetBase
     Ipp8u   slice_segment_header_extension_present_flag;
 
     // pps range extension
+    Ipp8u  pps_range_extensions_flag;
     Ipp32u log2_max_transform_skip_block_size;
 
     Ipp8u cross_component_prediction_enabled_flag;
