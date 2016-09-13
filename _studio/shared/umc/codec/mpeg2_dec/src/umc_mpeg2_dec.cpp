@@ -35,7 +35,7 @@ using namespace UMC;
 
 static void ClearUserDataVector(sVideoFrameBuffer::UserDataVector & data)
 {
-    for (sVideoFrameBuffer::UserDataVector::iterator 
+    for (sVideoFrameBuffer::UserDataVector::iterator
             it = data.begin(), et = data.end(); it != et; ++it)
     {
         free(it->first);
@@ -67,7 +67,7 @@ bool MPEG2VideoDecoderBase::DeleteTables()
             ippsFree(Video[i]);
             Video[i] = NULL;
         }
-        
+
         ClearUserDataVector(frame_user_data_v[i]);
     }
     if(frame_buffer.ptr_context_data)
@@ -179,7 +179,7 @@ Status MPEG2VideoDecoderBase::Init(BaseCodecParams *pInit)
         frame_buffer.frame_p_c_n[i].frame_time = -1;
         frame_buffer.frame_p_c_n[i].duration = 0;
         frame_buffer.frame_p_c_n[i].IsUserDataDecoded = false;
-        frame_buffer.frame_p_c_n[i].us_data_size = 0;        
+        frame_buffer.frame_p_c_n[i].us_data_size = 0;
         ClearUserDataVector(frame_user_data_v[i]);
 
         frame_buffer.frame_p_c_n[i].va_index = -1;
@@ -283,7 +283,6 @@ Status MPEG2VideoDecoderBase::GetCCData(Ipp8u* ptr, Ipp32u *size, Ipp64u *time, 
         ippsCopy_8u((Ipp8u *)&m_user_ts_data.front().first, (Ipp8u *)time, (Ipp32u)m_user_ts_data.front().second);
     }
 
-    m_user_ts_data.erase(m_user_ts_data.begin());
 
     if (0 == m_user_data.size())
     {
@@ -299,6 +298,7 @@ Status MPEG2VideoDecoderBase::GetCCData(Ipp8u* ptr, Ipp32u *size, Ipp64u *time, 
 
     if (*size == 0 || p_user_data == NULL)
     {
+        m_user_ts_data.erase(m_user_ts_data.begin());
         m_user_data.erase(m_user_data.begin());
         *size = 0;
         *time = 0;
@@ -307,6 +307,8 @@ Status MPEG2VideoDecoderBase::GetCCData(Ipp8u* ptr, Ipp32u *size, Ipp64u *time, 
 
     if (bufsize < *size)
     {
+        *size *= 8;
+        *time = 0;
         return UMC_ERR_NOT_ENOUGH_BUFFER;
     }
 
@@ -315,6 +317,7 @@ Status MPEG2VideoDecoderBase::GetCCData(Ipp8u* ptr, Ipp32u *size, Ipp64u *time, 
 
     free(p_user_data);
 
+    m_user_ts_data.erase(m_user_ts_data.begin());
     m_user_data.erase(m_user_data.begin());
 
     return umcRes;
@@ -563,7 +566,7 @@ Status MPEG2VideoDecoderBase::PostProcessUserData(int display_index)
       MediaData ccData;
       {
           // TODO: implement payload limitation according to spec when it be ready. Currently ~10 seconds
-          if (m_user_data.size() >= 300) 
+          if (m_user_data.size() >= 300)
           {
               // assert(m_user_data.size() == m_user_ts_data.size());
               int items_to_discard = (int)m_user_data.size() - 300;
@@ -794,7 +797,7 @@ void MPEG2VideoDecoderBase::ReadCCData(int task_num)
       input_size = (Ipp32s)(GET_REMAINED_BYTES(video->bs));
       readptr = GET_BYTE_PTR(video->bs);
       FIND_START_CODE(video->bs, code);
-      
+
       if (code != UMC_ERR_NOT_ENOUGH_DATA)
       {
         input_size = (Ipp32s)(GET_BYTE_PTR(video->bs) - readptr);
@@ -809,7 +812,7 @@ void MPEG2VideoDecoderBase::ReadCCData(int task_num)
         }
         p[0] = 0; p[1] = 0; p[2] = 1; p[3] = 0xb2;
         ippsCopy_8u(readptr, p + 4, input_size);
-        
+
         frame_user_data_v[t_num].push_back(std::make_pair(p, input_size + 4));
 
         frame_buffer.frame_p_c_n[t_num].IsUserDataDecoded = true;
