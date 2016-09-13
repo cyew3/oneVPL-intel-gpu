@@ -341,10 +341,11 @@ protected:
  
 };
 #endif
-
+}
 
 #ifdef NEW_BRC
-
+namespace MfxHwH265EncodeBRC
+{
 class cBRCParams
 {
 public:
@@ -512,37 +513,38 @@ public:
     mfxStatus GetFrameCtrl (mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl);
     mfxStatus Update (mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl, mfxBRCFrameStatus* status);
 };
+}
 namespace HEVCExtBRC
 {
     inline mfxStatus Init  (mfxHDL pthis, mfxVideoParam* par)
     {
         MFX_CHECK_NULL_PTR1(pthis);
-        return ((ExtBRC*)pthis)->Init(par) ;    
+        return ((MfxHwH265EncodeBRC::ExtBRC*)pthis)->Init(par) ;    
     }
     inline mfxStatus Reset (mfxHDL pthis, mfxVideoParam* par)
     {
         MFX_CHECK_NULL_PTR1(pthis);
-        return ((ExtBRC*)pthis)->Reset(par) ;
+        return ((MfxHwH265EncodeBRC::ExtBRC*)pthis)->Reset(par) ;
     }
     inline mfxStatus Close (mfxHDL pthis)
     {
         MFX_CHECK_NULL_PTR1(pthis);
-        return ((ExtBRC*)pthis)->Close() ;    
+        return ((MfxHwH265EncodeBRC::ExtBRC*)pthis)->Close() ;    
     }
     inline mfxStatus GetFrameCtrl (mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl)
     {
        MFX_CHECK_NULL_PTR1(pthis);
-       return ((ExtBRC*)pthis)->GetFrameCtrl(par,ctrl) ;    
+       return ((MfxHwH265EncodeBRC::ExtBRC*)pthis)->GetFrameCtrl(par,ctrl) ;    
     }
     inline mfxStatus Update       (mfxHDL pthis, mfxBRCFrameParam* par, mfxBRCFrameCtrl* ctrl, mfxBRCFrameStatus* status)
     {
         MFX_CHECK_NULL_PTR1(pthis);
-        return ((ExtBRC*)pthis)->Update(par,ctrl, status) ;
+        return ((MfxHwH265EncodeBRC::ExtBRC*)pthis)->Update(par,ctrl, status) ;
     }
     inline mfxStatus Create(mfxExtBRC & m_BRC)
     {
         MFX_CHECK(m_BRC.pthis == NULL, MFX_ERR_UNDEFINED_BEHAVIOR);
-        m_BRC.pthis = new ExtBRC;
+        m_BRC.pthis = new MfxHwH265EncodeBRC::ExtBRC;
         m_BRC.Init = Init;
         m_BRC.Reset = Reset;
         m_BRC.Close = Close;
@@ -553,7 +555,7 @@ namespace HEVCExtBRC
     inline mfxStatus Destroy(mfxExtBRC & m_BRC)
     {
         MFX_CHECK(m_BRC.pthis == NULL, MFX_ERR_NONE);
-        delete (ExtBRC*)m_BRC.pthis;
+        delete (MfxHwH265EncodeBRC::ExtBRC*)m_BRC.pthis;
         m_BRC.Init = 0;
         m_BRC.Reset = 0;
         m_BRC.Close = 0;
@@ -563,8 +565,8 @@ namespace HEVCExtBRC
     }
 }
 
-
-
+namespace MfxHwH265Encode
+{
 class H265BRCNew : public BrcIface
 {
 
@@ -620,7 +622,9 @@ public:
         frame_par.CodedFrameSize = bitsEncodedFrame/8;  // Size of frame in bytes after encoding
 
 
-        m_pBRC->Update(m_pBRC->pthis,&frame_par, &frame_ctrl, &frame_sts);
+        mfxStatus sts = m_pBRC->Update(m_pBRC->pthis,&frame_par, &frame_ctrl, &frame_sts);
+        MFX_CHECK(sts == MFX_ERR_NONE, MFX_BRC_ERROR);
+
         m_minSize = frame_sts.MinFrameSize;
 
         switch (frame_sts.BRCStatus)
@@ -683,7 +687,7 @@ protected:
 
  
 };
+}
 
 #endif
-}
 #endif

@@ -1193,8 +1193,10 @@ void  H265BRC::GetMinMaxFrameSize(mfxI32 *minFrameSizeInBits, mfxI32 *maxFrameSi
 }
 #endif
 
-
+}
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+namespace MfxHwH265EncodeBRC
+{
 #ifdef NEW_BRC
 #define Saturate(min_val, max_val, val) IPP_MAX((min_val), IPP_MIN((max_val), (val)))
 #define BRC_SCENE_CHANGE_RATIO1 20.0
@@ -1573,6 +1575,7 @@ mfxStatus SetRecodeParams(mfxU16 brcStatus, mfxI32 qp, mfxI32 qp_new, mfxI32 min
             ctx.bPanic = 1;
          }
     }
+    //printf("recode %d , qp %d new %d, status %d\n", ctx.encOrder, qp, qp_new, status->BRCStatus);
     return MFX_ERR_NONE;
 }
 mfxI32 GetNewQPTotal(mfxF64 bo, mfxF64 dQP, mfxI32 minQP , mfxI32 maxQP, mfxI32 qp)
@@ -1638,8 +1641,11 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
         m_ctx.QuantMax = m_par.quantMax; 
         m_ctx.Quant = qpY;
 
-        if (m_ctx.SceneChange && m_ctx.poc > m_ctx.SChPoc + 1)
+
+        if (m_ctx.SceneChange && ( m_ctx.poc > m_ctx.SChPoc + 1 || m_ctx.poc == 0))
             m_ctx.SceneChange &= ~16;
+
+        //printf("m_ctx.SceneChange %d, m_ctx.poc %d, m_ctx.SChPoc, m_ctx.poc %d \n", m_ctx.SceneChange, m_ctx.poc, m_ctx.SChPoc, m_ctx.poc);
     }
     if (m_par.bHRDConformance)
     {
@@ -1718,7 +1724,7 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
             if (fAbShort > FAMax) 
             {
                 mfxI32 quant_new = GetNewQP(fAbShort, FAMax, quantMin , quantMax, quant ,m_par.quantOffset);
-               //printf("    recode 2-0: %d:  FAMax %f, fAbShort %f, quant_new %d\n",frame_par->EncodedOrder, FAMax, fAbShort, quant_new);
+                //printf("    recode 2-0: %d:  FAMax %f, fAbShort %f, quant_new %d\n",frame_par->EncodedOrder, FAMax, fAbShort, quant_new);
 
                 if (quant_new > quant) 
                 {
@@ -1740,10 +1746,13 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
         mfxI32 quant_new = m_ctx.Quant;
         if (brcSts == MFX_BRC_BIG_FRAME || brcSts == MFX_BRC_SMALL_FRAME)
         {
-            quant_new = GetNewQP(bitsEncoded, m_hrd.GetTargetSize(brcSts), m_ctx.QuantMin , m_ctx.QuantMax, qpY ,m_par.quantOffset);
+            quant_new = GetNewQP(bitsEncoded, m_hrd.GetTargetSize(brcSts), m_ctx.QuantMin , m_ctx.QuantMax,m_ctx.Quant,m_par.quantOffset);
         }
-        //printf("    recode hrd: %d, quant_new %d\n",frame_par->EncodedOrder, quant_new);
-
+        if (quant_new != m_ctx.Quant)
+        {
+           UpdateQPParams(quant_new ,picType, m_ctx, 0, m_ctx.QuantMin , m_ctx.QuantMax, layer);
+        }
+        //printf("    recode hrd: %d, quant_new %d, qpY %d, m_ctx.Quant %d, min %d max%d \n",frame_par->EncodedOrder, quant_new, qpY, m_ctx.Quant,m_ctx.QuantMin , m_ctx.QuantMax);
         SetRecodeParams(brcSts,m_ctx.Quant,quant_new, m_ctx.QuantMin , m_ctx.QuantMax, m_ctx, status);    
     }
     else 
