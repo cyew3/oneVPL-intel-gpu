@@ -1526,6 +1526,14 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     if (m_ext.CO2.MaxSliceSize)
         m_pps.cu_qp_delta_enabled_flag = 1;
 
+    if ((m_platform.CodeName == MFX_PLATFORM_CANNONLAKE) ||
+        (m_platform.CodeName == MFX_PLATFORM_ICELAKE))
+    {
+        m_pps.diff_cu_qp_delta_depth = 2;
+        if (mfx.LowPower)
+            m_pps.diff_cu_qp_delta_depth = 3;
+    }
+
     m_pps.cb_qp_offset                          = 0;
     m_pps.cr_qp_offset                          = 0;
     m_pps.slice_chroma_qp_offsets_present_flag  = 0;

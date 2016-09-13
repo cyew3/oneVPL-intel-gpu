@@ -48,8 +48,15 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
 
         m_par.mfx.FrameInfo.FourCC       = MFX_FOURCC_NV12;
         m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-        m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 720;
-        m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 480;
+        if ((g_tsHWtype == MFX_HW_CNL) || (g_tsHWtype == MFX_HW_ICL)) {
+            m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 176;
+            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+            if (g_tsConfig.lowpower == MFX_CODINGOPTION_ON)   // 32 bytes alignment for VDENC ????
+                m_par.mfx.FrameInfo.Width = (m_par.mfx.FrameInfo.Width + 31) & ~0x1F;
+        } else {
+            m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 720;
+            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 480;
+        }
         m_par.mfx.FrameInfo.FrameRateExtN = 30;
         m_par.mfx.FrameInfo.FrameRateExtD = 1;
         if(m_par.mfx.LowPower == MFX_CODINGOPTION_ON)

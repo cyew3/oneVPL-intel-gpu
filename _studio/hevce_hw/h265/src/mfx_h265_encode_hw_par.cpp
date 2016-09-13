@@ -1381,7 +1381,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     {
         changed += CheckMax(CO3.NumRefActiveP[i],   Min<mfxU16>(maxDPB, caps.MaxNum_Reference0));
         changed += CheckMax(CO3.NumRefActiveBL0[i], Min<mfxU16>(maxDPB, caps.MaxNum_Reference0));
-        changed += CheckMax(CO3.NumRefActiveBL1[i], Min<mfxU16>(maxDPB-1, caps.MaxNum_Reference1));
+        changed += CheckMax(CO3.NumRefActiveBL1[i], Min<mfxU16>(maxDPB, caps.MaxNum_Reference1));
     }
 
     sts = CheckProfile(par);
