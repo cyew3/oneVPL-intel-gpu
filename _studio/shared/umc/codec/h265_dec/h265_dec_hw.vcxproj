@@ -62,6 +62,7 @@
     <ClInclude Include="include\umc_h265_task_broker.h" />
     <ClInclude Include="include\umc_h265_task_supplier.h" />
     <ClInclude Include="include\umc_h265_va_packer.h" />
+    <ClInclude Include="include\umc_h265_va_packer_dxva.h" />
     <ClInclude Include="include\umc_h265_va_supplier.h" />
     <ClInclude Include="include\umc_h265_widevine_decrypter.h" />
     <ClInclude Include="include\umc_h265_widevine_slice_decoding.h" />
@@ -86,6 +87,10 @@
     <ClCompile Include="src\umc_h265_task_broker.cpp" />
     <ClCompile Include="src\umc_h265_task_supplier.cpp" />
     <ClCompile Include="src\umc_h265_va_packer.cpp" />
+    <ClCompile Include="src\umc_h265_va_packer_dxva.cpp" />
+    <ClCompile Include="src\umc_h265_va_packer_intel.cpp" />
+    <ClCompile Include="src\umc_h265_va_packer_ms.cpp" />
+    <ClCompile Include="src\umc_h265_va_packer_widevine.cpp" />
     <ClCompile Include="src\umc_h265_va_supplier.cpp" />
     <ClCompile Include="src\umc_h265_widevine_decrypter.cpp" />
     <ClCompile Include="src\umc_h265_widevine_slice_decoding.cpp" />

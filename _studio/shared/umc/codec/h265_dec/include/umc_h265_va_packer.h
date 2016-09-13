@@ -26,8 +26,118 @@
 #include <va/va_dec_hevc.h>
 #endif
 
+#include "umc_h265_tables.h"
+
 namespace UMC_HEVC_DECODER
 {
+
+enum
+{
+    NO_REFERENCE = 0,
+    SHORT_TERM_REFERENCE = 1,
+    LONG_TERM_REFERENCE = 2,
+    INTERVIEW_TERM_REFERENCE = 3
+};
+
+extern int const s_quantTSDefault4x4[16];
+extern int const s_quantIntraDefault8x8[64];
+extern int const s_quantInterDefault8x8[64];
+extern Ipp16u const* SL_tab_up_right[];
+
+inline
+int const* getDefaultScalingList(unsigned sizeId, unsigned listId)
+{
+    const int *src = 0;
+    switch (sizeId)
+    {
+    case SCALING_LIST_4x4:
+        src = (int*)g_quantTSDefault4x4;
+        break;
+    case SCALING_LIST_8x8:
+        src = (listId < 3) ? s_quantIntraDefault8x8 : s_quantInterDefault8x8;
+        break;
+    case SCALING_LIST_16x16:
+        src = (listId < 3) ? s_quantIntraDefault8x8 : s_quantInterDefault8x8;
+        break;
+    case SCALING_LIST_32x32:
+        src = (listId < 1) ? s_quantIntraDefault8x8 : s_quantInterDefault8x8;
+        break;
+    default:
+        VM_ASSERT(0);
+        src = NULL;
+        break;
+    }
+
+    return src;
+}
+
+template <int COUNT>
+inline
+void initQMatrix(const H265ScalingList *scalingList, int sizeId, unsigned char qm[6][COUNT], bool force_upright_scan = false)
+{
+    /*        n*m    listId
+        --------------------
+        Intra   Y       0
+        Intra   Cb      1
+        Intra   Cr      2
+        Inter   Y       3
+        Inter   Cb      4
+        Inter   Cr      5         */
+
+    Ipp16u const* scan = 0;
+    if (force_upright_scan)
+        scan = SL_tab_up_right[sizeId];
+
+    for (int n = 0; n < 6; n++)
+    {
+        const int *src = scalingList->getScalingListAddress(sizeId, n);
+        for (int i = 0; i < COUNT; i++)  // coef.
+        {
+            int const idx = scan ? scan[i] : i;
+            qm[n][i] = (unsigned char)src[idx];
+        }
+    }
+}
+
+template<int COUNT>
+inline
+void initQMatrix(const H265ScalingList *scalingList, int sizeId, unsigned char qm[3][2][COUNT])
+{
+    for(int comp=0 ; comp <= 2 ; comp++)    // Y Cb Cr
+    {
+        for(int n=0; n <= 1;n++)
+        {
+            int listId = comp + 3*n;
+            const int *src = scalingList->getScalingListAddress(sizeId, listId);
+            for(int i=0;i < COUNT;i++)  // coef.
+                qm[comp][n][i] = (unsigned char)src[i];
+        }
+    }
+}
+
+inline
+void initQMatrix(const H265ScalingList *scalingList, int sizeId, unsigned char qm[2][64], bool force_upright_scan = false)
+{
+    /*      n      m     listId
+        --------------------
+        Intra   Y       0
+        Inter   Y       1         */
+
+    Ipp16u const* scan = 0;
+    if (force_upright_scan)
+        scan = SL_tab_up_right[sizeId];
+
+    for(int n=0;n < 2;n++)  // Intra, Inter
+    {
+        const int *src = scalingList->getScalingListAddress(sizeId, n);
+
+        for (int i = 0; i < 64; i++)  // coef.
+        {
+            int const idx = scan ? scan[i] : i;
+            qm[n][i] = (unsigned char)src[idx];
+        }
+    }
+}
 
 class H265DecoderFrame;
 class H265DecoderFrameInfo;
@@ -61,69 +171,6 @@ public:
 protected:
     UMC::VideoAccelerator *m_va;
 };
-
-#ifdef UMC_VA_DXVA
-
-class PackerDXVA2 : public Packer
-{
-public:
-    PackerDXVA2(UMC::VideoAccelerator * va);
-
-    virtual UMC::Status GetStatusReport(void * pStatusReport, size_t size);
-    virtual UMC::Status SyncTask(Ipp32s /*index*/, void * /*error*/) { return UMC::UMC_ERR_UNSUPPORTED; }
-
-    virtual void BeginFrame(H265DecoderFrame*);
-    virtual void EndFrame();
-
-    virtual void PackQmatrix(const H265Slice *pSlice);
-
-    virtual void PackPicParams(const H265DecoderFrame *pCurrentFrame,
-                        H265DecoderFrameInfo * pSliceInfo,
-                        TaskSupplier_H265 * supplier);
-
-    virtual bool PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice);
-
-    virtual void PackAU(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 * supplier);
-
-    void GetSliceVABuffers(
-        DXVA_Intel_Slice_HEVC_Long **ppSliceHeader, Ipp32s headerSize,
-        void **ppSliceData, Ipp32s dataSize,
-        Ipp32s dataAlignment);
-
-protected:
-    Ipp32u              m_statusReportFeedbackCounter;
-    DXVA_Intel_PicEntry_HEVC  m_refFrameListCache[16];
-    int                 m_refFrameListCacheSize;
-};
-
-class MSPackerDXVA2 : public PackerDXVA2
-{
-public:
-    MSPackerDXVA2(UMC::VideoAccelerator * va);
-
-    virtual void PackQmatrix(const H265Slice *pSlice);
-
-    virtual void PackPicParams(const H265DecoderFrame *pCurrentFrame,
-                        H265DecoderFrameInfo * pSliceInfo,
-                        TaskSupplier_H265 * supplier);
-
-    virtual bool PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice);
-};
-
-class PackerDXVA2_Widevine: public PackerDXVA2
-{
-public:
-    PackerDXVA2_Widevine(UMC::VideoAccelerator * va);
-
-    virtual void PackPicParams(const H265DecoderFrame *pCurrentFrame,
-                        H265DecoderFrameInfo * pSliceInfo,
-                        TaskSupplier_H265 * supplier);
-
-    virtual void PackAU(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 * supplier);
-};
-
-#endif // UMC_VA_DXVA
-
 
 #if defined(UMC_VA_LINUX)
 
