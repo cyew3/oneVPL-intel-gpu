@@ -260,8 +260,8 @@ public:
 
         if (m_prev.size())
         {
-            pDst->SetBufferPointer(&(m_prev[3]), m_prev.size());
-            pDst->SetDataSize(m_prev.size());
+            pDst->SetBufferPointer(&(m_prev[3]), m_prev.size() - 3);
+            pDst->SetDataSize(m_prev.size() - 3);
             pDst->SetTime(m_pts);
             Ipp32s code = m_code;
             m_code = -1;
