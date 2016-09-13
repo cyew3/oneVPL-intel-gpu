@@ -387,6 +387,8 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
     m_SliceHeader.slice_temporal_mvp_enabled_flag                = slice->slice_temporal_mvp_enabled_flag;
     m_SliceHeader.max_num_merge_cand               = slice->max_num_merge_cand;
 
+    m_SliceHeader.cu_chroma_qp_offset_enabled_flag = slice->cu_chroma_qp_offset_enabled_flag;
+
     // Set the start of real slice, not slice segment
     m_SliceHeader.SliceCurStartCUAddr = slice->SliceCurStartCUAddr;
 
