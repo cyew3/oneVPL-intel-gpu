@@ -1757,7 +1757,9 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource)
                 continue;
             }
 
-            switch ((NalUnitType)pMediaDataEx->values[i])
+            NalUnitType nut =
+                static_cast<NalUnitType>(pMediaDataEx->values[i]);
+            switch (nut)
             {
             case NAL_UT_CODED_SLICE_RASL_N:
             case NAL_UT_CODED_SLICE_RADL_N:
@@ -1796,8 +1798,9 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource)
                     if (umsRes != UMC::UMC_OK)
                     {
                         if (umsRes == UMC::UMC_NTF_NEW_RESOLUTION ||
-                            umsRes == UMC::UMC_ERR_INVALID_STREAM)
+                            (nut == NAL_UT_SPS && umsRes == UMC::UMC_ERR_INVALID_STREAM))
                         {
+
                             Ipp32s nalIndex = pMediaDataEx->index;
                             Ipp32s size = pMediaDataEx->offsets[nalIndex + 1] - pMediaDataEx->offsets[nalIndex];
 
