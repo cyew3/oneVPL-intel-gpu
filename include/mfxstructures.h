@@ -700,8 +700,9 @@ typedef struct {
     mfxU16      NumRefActiveBL1[8];
 
     mfxU16      ConstrainedIntraPredFlag;  /* tri-state option */
+    mfxU16      TransformSkip;             /* tri-state option; HEVC transform_skip_enabled_flag */
 
-    mfxU16      reserved[178];
+    mfxU16      reserved[177];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
