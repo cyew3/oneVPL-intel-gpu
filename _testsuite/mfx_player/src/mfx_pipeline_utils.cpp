@@ -19,6 +19,7 @@ File Name: .h
 #include "shared_utils.h"
 #include <iomanip>
 #include <limits>
+#include <assert.h>
 
 #if defined(_WIN32) || defined(_WIN64)
     #include <DXGI.h>
@@ -746,7 +747,9 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
     static const char valid_pattern [] = "nv12( |:mono)|yv12( |:mono)|rgb24|rgb32|yuy2(:h|:v|:mono)|ayuv|p010|a2rgb10|r16|argb16|nv16|p210|y410|y210|y216|i444";
 
     //if external pattern changed parsing need to be updated
-    MFX_CHECK(!std::string(MFX_FOURCC_PATTERN()).compare(valid_pattern));
+    int const check = std::string(MFX_FOURCC_PATTERN()).compare(valid_pattern);
+    assert(!check && "Wrong FOURCC pattern, check MFX_FOURCC_PATTERN & valid_pattern");
+    MFX_CHECK(!check);
 
     info.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
     switch(idx_in_pattern)
