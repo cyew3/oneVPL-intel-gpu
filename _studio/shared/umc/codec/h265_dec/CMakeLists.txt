@@ -1,3 +1,5 @@
+if( NOT MFX_LIB_ONLY )
+
 mfx_include_dirs( )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
@@ -32,4 +34,7 @@ list(REMOVE_ITEM sources ${CMAKE_CURRENT_SOURCE_DIR}/src/umc_h265_segment_decode
 list(REMOVE_ITEM sources ${CMAKE_CURRENT_SOURCE_DIR}/src/umc_h265_tr_quant.cpp)
 
 make_library( umc_h265 hw static )
+
+endif()
+
 set( defs "" )
