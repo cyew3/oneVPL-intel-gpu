@@ -8,6 +8,7 @@
 //
 */
 
+#include <stdio.h>
 #include <cm.h>
 /*
 #include <genx_vme.h>
@@ -33,7 +34,7 @@ MbCopyFieLd(SurfaceIndex InSurfIndex, SurfaceIndex OutSurfIndex, int fieldMask)
         read_plane(InSurfIndex, GENX_SURFACE_Y_PLANE, ix, iy * 2, inMbY0);
         read_plane(InSurfIndex, GENX_SURFACE_Y_PLANE, ix, iy * 2 + 16, inMbY1);
         read_plane(InSurfIndex, GENX_SURFACE_UV_PLANE, ix, iy * 2, inMbUV);
-    
+
         switch (fieldMask)
         {
             case 0x6:  // TFF2FIELD
@@ -64,7 +65,7 @@ MbCopyFieLd(SurfaceIndex InSurfIndex, SurfaceIndex OutSurfIndex, int fieldMask)
         read_plane(OutSurfIndex, GENX_SURFACE_Y_PLANE, ix, iy * 2 + 16, outMbY1);
         read_plane(InSurfIndex, GENX_SURFACE_UV_PLANE, ix, iy / 2, inMbUV);
         read_plane(OutSurfIndex, GENX_SURFACE_UV_PLANE, ix, iy, outMbUV);
-    
+
         switch (fieldMask)
         {
             case 0x4:  // FIELD2TFF
@@ -92,7 +93,7 @@ MbCopyFieLd(SurfaceIndex InSurfIndex, SurfaceIndex OutSurfIndex, int fieldMask)
         read_plane(OutSurfIndex, GENX_SURFACE_Y_PLANE, ix, iy, outMbY);
         read_plane(InSurfIndex, GENX_SURFACE_UV_PLANE, ix, iy / 2, inMbUV);
         read_plane(OutSurfIndex, GENX_SURFACE_UV_PLANE, ix, iy / 2, outMbUV);
-    
+
         switch (fieldMask)
         {
             case 0x0:  // TFF2TFF

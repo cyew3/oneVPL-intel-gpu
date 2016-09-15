@@ -14,8 +14,9 @@
 #pragma warning(disable : 4201)
 #include "cm_rt.h"
 #pragma warning(pop)
+
 #include "../include/test_common.h"
-#include "../include/genx_fcopy_cmcode_isa.h"
+#include "../src/genx_fcopy_cmcode_isa.cpp"
 
 namespace {
     int RunGpu(const unsigned char *inData, unsigned char *outData, int fieldMask, CmDevice *device, CmKernel *kernel);
@@ -33,7 +34,7 @@ enum {
     BFF2FIELD = 0x7
 };
 
-char* fMaskStr[] = {
+const char* fMaskStr[] = {
     "TFF2TFF",
     "TFF2BFF",
     "BFF2TFF",
@@ -73,7 +74,6 @@ int TestFieldCopy()
     FILE *foi_black = fopen(YUV_NAME_B, "rb");
     if (!foi_black)
         return FAILED;
-    
 
     FILE *fout = fopen("out_1fr.yuv", "wb");
     if (!fout)
@@ -103,7 +103,7 @@ int TestFieldCopy()
     CHECK_CM_ERR(res);
 
     // initial output is black
-    
+
     int failed = 0;
     int outHeight = HEIGHT;
     printf("\n");
@@ -124,7 +124,7 @@ int TestFieldCopy()
         else
             printf("passed\n");
     }
-    
+
     device->DestroyKernel(kernel);
     device->DestroyProgram(program);
     ::DestroyCmDevice(device);
@@ -152,7 +152,7 @@ int RunGpu(const unsigned char *inData, unsigned char *outData, int fieldMask, C
     int outHeight = HEIGHT;
     if ((fieldMask == FIELD2TFF) || (fieldMask == FIELD2BFF))
         inHeight /= 2;
-    if ((fieldMask == BFF2FIELD) || (fieldMask == BFF2FIELD))
+    if ((fieldMask == BFF2FIELD) || (fieldMask == TFF2FIELD))
         outHeight /= 2;
 
     res = device->CreateSurface2D(WIDTH, inHeight, CM_SURFACE_FORMAT_NV12, input);

@@ -16,7 +16,7 @@ int TestFieldCopy();
 
 typedef int (*TestFuncPtr)();
 
-void RunTest(TestFuncPtr testFunc, char * kernelName)
+void RunTest(TestFuncPtr testFunc, const char * kernelName)
 {
     printf("%s... ", kernelName);
     try {
@@ -37,5 +37,4 @@ void RunTest(TestFuncPtr testFunc, char * kernelName)
 int main()
 {
     RunTest(TestFieldCopy, "TestFieldCopy");
-    system("pause");
 }
