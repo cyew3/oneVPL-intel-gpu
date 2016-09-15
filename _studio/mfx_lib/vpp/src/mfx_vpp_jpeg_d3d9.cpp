@@ -87,6 +87,10 @@ enum
 };
 
 VideoVppJpegD3D9::VideoVppJpegD3D9(VideoCORE *core, bool isD3DToSys, bool isOpaq)
+    : m_surfaces()
+    , m_guard()
+    , AssocIdx()
+    , m_ddi()
 {
     m_pCore = core;
     m_isD3DToSys = isD3DToSys;
@@ -97,6 +101,9 @@ VideoVppJpegD3D9::VideoVppJpegD3D9(VideoCORE *core, bool isD3DToSys, bool isOpaq
 #ifdef MFX_ENABLE_MJPEG_ROTATE_VPP
     m_rotation = 0;
 #endif
+
+    memset(&m_response, 0, sizeof(mfxFrameAllocResponse));
+
 } // VideoVppJpegD3D9::VideoVppJpegD3D9(VideoCORE *core)
 
 
