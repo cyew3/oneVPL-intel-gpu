@@ -80,6 +80,7 @@ inline GUID GetGuid(VP9MfxVideoParam const &par)
 
 mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 {
+    VP9_LOG("\n (VP9_LOG) Plugin::Query +");
     MFX_CHECK_NULL_PTR1(out);
 
     if (in == 0)
@@ -140,6 +141,7 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             }
         }
 
+        VP9_LOG("\n (VP9_LOG) Plugin::Query -");
         return sts;
     }
 }
@@ -177,6 +179,8 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxF
 
 mfxStatus Plugin::Init(mfxVideoParam *par)
 {
+    VP9_LOG("\n (VP9_LOG) Plugin::Init +");
+
     if (m_initialized == true)
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -225,7 +229,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_BITSTREAMDATA, reqOutBs, m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
     MFX_CHECK_STS(sts);
 
-    reqOutBs.NumFrameMin = reqOutBs.NumFrameSuggested = (mfxU16)CalcNumSurfRecon(m_video);
+    reqOutBs.NumFrameMin = reqOutBs.NumFrameSuggested = (mfxU16)CalcNumTasks(m_video);
 #if 0 // segmentation support is disabled
     sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_SEGMENTMAP, reqSegMap, m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
     if (sts == MFX_ERR_NONE && pExtOpt->EnableMultipleSegments == MFX_CODINGOPTION_ON)
@@ -256,6 +260,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
 
     m_initialized = true;
 
+    VP9_LOG("\n (VP9_LOG) Plugin::Init -");
     return checkSts;
 }
 
@@ -275,8 +280,8 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
         MFX_CHECK_NULL_PTR1(par);
         MFX_CHECK(par->IOPattern == m_video.IOPattern, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-        VP9MfxParam parBeforeReset = m_video;
-        VP9MfxParam parAfterReset = *par;
+        VP9MfxVideoParam parBeforeReset = m_video;
+        VP9MfxVideoParam parAfterReset = *par;
 
         {
             mfxExtCodingOptionVP9*       pExtOpt = GetExtBuffer(parAfterReset);
@@ -314,6 +319,8 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
 
 mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxThreadTask *task)
 {
+    VP9_LOG("\n (VP9_LOG) Frame ?? Plugin::EncodeFrameSubmit +");
+
     if (m_initialized == false)
     {
         return MFX_ERR_NOT_INITIALIZED;
@@ -342,6 +349,8 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
 
     *task = (mfxThreadTask*)pTask;
 
+    VP9_LOG("\n (VP9_LOG) Frame %d Plugin::EncodeFrameSubmit -", pTask->m_frameOrder);
+
     return checkSts;
 }
 
@@ -368,8 +377,7 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         mfxFrameSurface1    *pSurface=0;
         bool                bExternalSurface = true;
 
-        mfxHDL surfaceHDL = 0;
-        mfxHDL *pSurfaceHdl = (mfxHDL *)&surfaceHDL;
+        mfxHDLPair surfaceHDL = {};
 
         {
             UMC::AutomaticUMCMutex guard(m_taskMutex);
@@ -382,11 +390,11 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         sts = pTask->GetInputSurface(pSurface, bExternalSurface);
         MFX_CHECK_STS(sts);
 
-        sts = m_pmfxCore->FrameAllocator.GetHDL(m_pmfxCore->FrameAllocator.pthis, pSurface->Data.MemId, pSurfaceHdl);
+        sts = m_pmfxCore->FrameAllocator.GetHDL(m_pmfxCore->FrameAllocator.pthis, pSurface->Data.MemId, &surfaceHDL.first);
         MFX_CHECK_STS(sts);
+        MFX_CHECK(surfaceHDL.first != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-        MFX_CHECK(surfaceHDL != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
-        sts = m_ddi->Execute(*pTask, surfaceHDL);
+        sts = m_ddi->Execute(*pTask, surfaceHDL.first);
         MFX_CHECK_STS(sts);
 
         {
@@ -506,11 +514,15 @@ inline void UpdatePictureHeader(unsigned int frameLen, unsigned int frameNum, un
 mfxStatus Plugin::UpdateBitstream(
     Task & task)
 {
+    VP9_LOG("\n (VP9_LOG) Plugin::UpdateBitstream +");
+
     mfxFrameData bitstream = {};
 
     FrameLocker lock(m_pmfxCore, bitstream, task.m_pOutBs->pSurface->Data.MemId);
     if (bitstream.Y == 0)
+    {
         return MFX_ERR_LOCK_MEMORY;
+    }
 
     mfxU32   bsSizeToCopy  = task.m_bsDataLength;
     mfxU32   bsSizeAvail   = task.m_pBitsteam->MaxLength - task.m_pBitsteam->DataOffset - task.m_pBitsteam->DataLength;
@@ -546,6 +558,8 @@ mfxStatus Plugin::UpdateBitstream(
     task.m_pBitsteam->TimeStamp = task.m_timeStamp;
     task.m_pBitsteam->FrameType = mfxU16(task.m_frameParam.frameType == KEY_FRAME ? MFX_FRAMETYPE_I : MFX_FRAMETYPE_P);
     task.m_pBitsteam->PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+
+    VP9_LOG("\n (VP9_LOG) Plugin::UpdateBitstream -");
 
     return MFX_ERR_NONE;
 }

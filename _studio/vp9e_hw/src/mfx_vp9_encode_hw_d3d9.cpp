@@ -17,28 +17,6 @@
 namespace MfxHwVP9Encode
 {
 
-    DriverEncoder* CreatePlatformVp9Encoder(mfxCoreInterface* pCore)
-         {
-        if (pCore)
-            {
-            mfxCoreParam par = {};
-
-            if (pCore->GetCoreParam(pCore->pthis, &par))
-                return 0;
-
-                switch (par.Impl & 0xF00)
-                {
-                case MFX_IMPL_VIA_D3D9:
-                    return new D3D9Encoder;
-                /*case MFX_IMPL_VIA_D3D11: // no DX11 support so far
-                    return new D3D11Encoder;*/
-                default:
-                    return 0;
-                }
-            }
-            return 0;
-        };
-
 #if defined (MFX_VA_WIN)
 
 void FillSpsBuffer(
@@ -71,7 +49,8 @@ void FillSpsBuffer(
 void FillPpsBuffer(
     VP9MfxVideoParam const & par,
     Task const & task,
-    ENCODE_SET_PICTURE_PARAMETERS_VP9 & pps)
+    ENCODE_SET_PICTURE_PARAMETERS_VP9 & pps,
+    BitOffsets const &offsets)
 {
     Zero(pps);
 
@@ -163,6 +142,14 @@ void FillPpsBuffer(
     pps.log2_tile_rows    = framePar.log2TileRows;
 
     pps.StatusReportFeedbackNumber = task.m_frameOrder; // TODO: fix to unique value
+
+    pps.BitOffsetForLFLevel = offsets.BitOffsetForLFLevel;
+    pps.BitOffsetForLFModeDelta = offsets.BitOffsetForLFModeDelta;
+    pps.BitOffsetForLFRefDelta = offsets.BitOffsetForLFRefDelta;
+    pps.BitOffsetForQIndex = offsets.BitOffsetForQIndex;
+    pps.BitOffsetForFirstPartitionSize = offsets.BitOffsetForFirstPartitionSize;
+    pps.BitOffsetForSegmentation = offsets.BitOffsetForSegmentation;
+    pps.BitSizeForSegmentation = offsets.BitSizeForSegmentation;
 }
 
 void CachedFeedback::Reset(mfxU32 cacheSize)
@@ -322,7 +309,7 @@ mfxStatus D3D9Encoder::CreateAccelerationService(VP9MfxVideoParam const & par)
 
     FillSpsBuffer(par, m_caps, m_sps);
 
-    m_uncompressedHeaderBuf.resize(VP9_MAX_UNCOMPRESSED_HEADER_SIZE + MAX_IVF_HEADER_SIZE);
+    m_frameHeaderBuf.resize(VP9_MAX_UNCOMPRESSED_HEADER_SIZE + MAX_IVF_HEADER_SIZE);
     InitVp9SeqLevelParam(m_video, m_seqParam);
 
     VP9_LOG("\n (VP9_LOG) D3D9Encoder::CreateAccelerationService -");
@@ -432,16 +419,7 @@ mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT ty
     return MFX_ERR_NONE;
 } // mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 
-#define MAX_NUM_COMP_BUFFERS_VP9 5 // SPS, PPS, uncompressed header, segment map, per-segment parameters
-
-ENCODE_PACKEDHEADER_DATA MakePackedByteBuffer(mfxU8 * data, mfxU32 size)
-{
-    ENCODE_PACKEDHEADER_DATA desc = { 0 };
-    desc.pData                  = data;
-    desc.BufferSize             = size;
-    desc.DataLength             = size;
-    return desc;
-}
+#define MAX_NUM_COMP_BUFFERS_VP9 6 // SPS, PPS, bitstream, uncompressed header, segment map, per-segment parameters
 
 mfxStatus D3D9Encoder::Execute(
     Task const & task,
@@ -465,7 +443,15 @@ mfxStatus D3D9Encoder::Execute(
     compBufferDesc[bufCnt].pCompBuffer = &m_sps;
     bufCnt++;
 
-    FillPpsBuffer(m_video, task, m_pps);
+    // prepare frame header: write IVF and uncompressed header, calculate bit offsets
+    BitOffsets offsets;
+    mfxU8 * pBuf = &m_frameHeaderBuf[0];
+    Zero(m_frameHeaderBuf);
+
+    mfxU16 bytesWritten = PrepareFrameHeader(m_video, pBuf, (mfxU32)m_frameHeaderBuf.size(), task, m_seqParam, offsets);
+
+    // fill PPS DDI structure for current frame
+    FillPpsBuffer(m_video, task, m_pps, offsets);
 
     compBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3DDDIFMT_INTELENCODE_PPSDATA;
     compBufferDesc[bufCnt].DataSize = mfxU32(sizeof(m_pps));
@@ -478,51 +464,7 @@ mfxStatus D3D9Encoder::Execute(
     compBufferDesc[bufCnt].pCompBuffer = &bitstream;
     bufCnt++;
 
-    // writing IVF and uncompressed header
-    //vpx_write_bit_buffer localBuf;
-
-    Zero(m_uncompressedHeaderBuf);
-    mfxU8 * pBuff = &m_uncompressedHeaderBuf[0];
-    mfxU16 bytesWritten = 0;
-
-    mfxExtCodingOptionVP9 &opt = GetExtBufferRef(m_video);
-    if (opt.WriteIVFHeaders != MFX_CODINGOPTION_OFF)
-    {
-        if (InsertSeqHeader(task))
-        {
-            AddSeqHeader(m_video.mfx.FrameInfo.Width,
-                m_video.mfx.FrameInfo.Height,
-                m_video.mfx.FrameInfo.FrameRateExtN,
-                m_video.mfx.FrameInfo.FrameRateExtD,
-                opt.NumFramesForIVF,
-                pBuff);
-            bytesWritten += IVF_SEQ_HEADER_SIZE_BYTES;
-        }
-
-        AddPictureHeader(pBuff + bytesWritten);
-        bytesWritten += IVF_PIC_HEADER_SIZE_BYTES;
-    }
-
-    BitOffsets offsets;
-    mfxU16 uncompHeaderBitSize;
-    //write_uncompressed_header(&m_libvpxBasedVP9Param, &localBuf, offsets);
-    WriteUncompressedHeader(pBuff + bytesWritten,
-                            (mfxU32)m_uncompressedHeaderBuf.size() - bytesWritten,
-                            task,
-                            m_seqParam,
-                            offsets,
-                            uncompHeaderBitSize);
-
-    m_pps.BitOffsetForLFLevel            = offsets.BitOffsetForLFLevel + bytesWritten * 8;
-    m_pps.BitOffsetForLFModeDelta        = offsets.BitOffsetForLFModeDelta ? offsets.BitOffsetForLFModeDelta + bytesWritten * 8 : 0;
-    m_pps.BitOffsetForLFRefDelta         = offsets.BitOffsetForLFRefDelta ? offsets.BitOffsetForLFRefDelta+ bytesWritten * 8 : 0;
-    m_pps.BitOffsetForQIndex             = offsets.BitOffsetForQIndex + bytesWritten * 8;
-    m_pps.BitOffsetForFirstPartitionSize = offsets.BitOffsetForFirstPartitionSize + bytesWritten * 8;
-    m_pps.BitOffsetForSegmentation       = offsets.BitOffsetForSegmentation + bytesWritten * 8;
-    m_pps.BitSizeForSegmentation         = offsets.BitSizeForSegmentation;
-
-    bytesWritten += (uncompHeaderBitSize + 7) / 8;
-    m_descForFrameHeader = MakePackedByteBuffer(pBuff, bytesWritten);
+    m_descForFrameHeader = MakePackedByteBuffer(pBuf, bytesWritten);
 
     compBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA;
     compBufferDesc[bufCnt].DataSize = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));

@@ -795,6 +795,7 @@
     <ClCompile Include="..\..\shared\src\libmfx_core_hw.cpp" />
     <ClCompile Include="..\..\shared\src\mfx_dxva2_device.cpp" />
     <ClCompile Include="..\..\vp9e_hw\src\mfx_vp9_encode_hw.cpp" />
+    <ClCompile Include="..\..\vp9e_hw\src\mfx_vp9_encode_hw_d3d11.cpp" />
     <ClCompile Include="..\..\vp9e_hw\src\mfx_vp9_encode_hw_d3d9.cpp" />
     <ClCompile Include="..\..\vp9e_hw\src\mfx_vp9_encode_hw_ddi.cpp" />
     <ClCompile Include="..\..\vp9e_hw\src\mfx_vp9_encode_hw_par.cpp" />
@@ -884,6 +885,7 @@
     <ClInclude Include="..\..\shared\include\mfx_vpp_interface.h" />
     <ClInclude Include="..\..\vp9e_hw\include\mfx_platform_defs.h" />
     <ClInclude Include="..\..\vp9e_hw\include\mfx_vp9_encode_hw.h" />
+    <ClInclude Include="..\..\vp9e_hw\include\mfx_vp9_encode_hw_d3d11.h" />
     <ClInclude Include="..\..\vp9e_hw\include\mfx_vp9_encode_hw_d3d9.h" />
     <ClInclude Include="..\..\vp9e_hw\include\mfx_vp9_encode_hw_ddi.h" />
     <ClInclude Include="..\..\vp9e_hw\include\mfx_vp9_encode_hw_par.h" />

@@ -96,6 +96,7 @@ inline mfxStatus SetOrCopySupportedParams(mfxInfoMFX *pDst, mfxInfoMFX *pSrc = 0
     _SetOrCopyPar(FrameInfo.PicStruct);
     _SetOrCopyPar(FrameInfo.FourCC);
 
+    _SetOrCopyPar(LowPower);
     _SetOrCopyPar(CodecId);
     _SetOrCopyPar(CodecProfile);
     _SetOrCopyPar(TargetUsage);

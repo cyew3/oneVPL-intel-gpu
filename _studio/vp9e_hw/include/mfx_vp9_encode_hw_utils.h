@@ -829,8 +829,6 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
 #endif // segmentation support is disabled
                         )
         {
-            if (reqOutBs.NumFrameMin < m_ReconFrames.Num())
-                reqOutBs.NumFrameMin = (mfxU16)m_ReconFrames.Num();
             MFX_CHECK_STS(m_OutputBitstreams.Init(pCore, &reqOutBs,true));
 
 #if 0 // segmentation support is disabled
@@ -915,7 +913,9 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
                 pRawLocalFrame = m_LocalRawFrames.GetFreeFrame();
                 MFX_CHECK(pRawLocalFrame!= 0,MFX_WRN_DEVICE_BUSY);
             }
-            MFX_CHECK_STS(m_OutputBitstreams.GetFrame(pRecFrame->idInPool, pOutBs));
+            pOutBs = m_OutputBitstreams.GetFreeFrame();
+            MFX_CHECK(pOutBs != 0, MFX_WRN_DEVICE_BUSY);
+            /*MFX_CHECK_STS(m_OutputBitstreams.GetFrame(pRecFrame->idInPool, pOutBs));*/
 
 #if 0 // segmentation support is disabled
             if (m_bUseSegMap)

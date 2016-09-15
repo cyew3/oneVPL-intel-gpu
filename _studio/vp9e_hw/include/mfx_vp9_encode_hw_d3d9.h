@@ -498,7 +498,8 @@ void FillSpsBuffer(
 void FillPpsBuffer(
     VP9MfxVideoParam const & par,
     Task const & task,
-    ENCODE_SET_PICTURE_PARAMETERS_VP9 & pps);
+    ENCODE_SET_PICTURE_PARAMETERS_VP9 & pps,
+    BitOffsets const &offsets);
 
 class CachedFeedback
 {
@@ -590,7 +591,7 @@ private:
     std::vector<ENCODE_QUERY_STATUS_PARAMS>     m_feedbackUpdate;
     CachedFeedback                              m_feedbackCached;
 
-    std::vector<mfxU8> m_uncompressedHeaderBuf;
+    std::vector<mfxU8> m_frameHeaderBuf;
     ENCODE_PACKEDHEADER_DATA m_descForFrameHeader;
 
     VP9SeqLevelParam m_seqParam;

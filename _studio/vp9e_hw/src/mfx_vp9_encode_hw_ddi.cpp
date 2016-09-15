@@ -52,11 +52,6 @@ namespace MfxHwVP9Encode
 #define MI_BLOCK_SIZE_LOG2 (6 - MI_SIZE_LOG2)  // 64 = 2^6
 #define MI_BLOCK_SIZE (1 << MI_BLOCK_SIZE_LOG2)  // mi-units per max block
 
-    struct BitBuffer {
-        mfxU8 *pBuffer;
-        mfxU16 bitOffset;
-    };
-
     void WriteBit(BitBuffer &buf, mfxU8 bit)
     {
         const mfxU16 byteOffset = buf.bitOffset / CHAR_BIT;
@@ -139,22 +134,11 @@ namespace MfxHwVP9Encode
         }
     }
 
-    mfxStatus WriteUncompressedHeader(mfxU8 * pBuffer,
-                                      mfxU32 bufferSizeBytes,
-                                      Task const &task,
-                                      VP9SeqLevelParam const &seqPar,
-                                      BitOffsets &offsets,
-                                      mfxU16 &bitsWritten)
+    mfxU16 WriteUncompressedHeader(BitBuffer &localBuf,
+                                   Task const &task,
+                                   VP9SeqLevelParam const &seqPar,
+                                   BitOffsets &offsets)
     {
-        BitBuffer localBuf;
-        localBuf.pBuffer = pBuffer;
-        localBuf.bitOffset = 0;
-
-        if (bufferSizeBytes < VP9_MAX_UNCOMPRESSED_HEADER_SIZE)
-        {
-            return MFX_ERR_UNKNOWN;
-        }
-
         VP9FrameLevelParam const &framePar = task.m_frameParam;
 
         Zero(offsets);
@@ -372,10 +356,54 @@ namespace MfxHwVP9Encode
         // size of compressed header (unknown so far, will be written by driver/HuC)
         WriteLiteral(localBuf, 0, 16);
 
-        bitsWritten = localBuf.bitOffset;
-
-        return MFX_ERR_NONE;
+        return localBuf.bitOffset;
     };
+
+    mfxU16 PrepareFrameHeader(VP9MfxVideoParam const &par,
+        mfxU8 *pBuf,
+        mfxU32 bufferSizeBytes,
+        Task const& task,
+        VP9SeqLevelParam const &seqPar,
+        BitOffsets &offsets)
+    {
+        if (bufferSizeBytes < VP9_MAX_UNCOMPRESSED_HEADER_SIZE + MAX_IVF_HEADER_SIZE)
+        {
+            return 0; // zero size of header - indication that something went wrong
+        }
+
+        BitBuffer localBuf;
+        localBuf.pBuffer = pBuf;
+        localBuf.bitOffset = 0;
+
+        mfxExtCodingOptionVP9 &opt = GetExtBufferRef(par);
+        mfxU16 ivfHeaderSize = 0;
+
+        if (opt.WriteIVFHeaders != MFX_CODINGOPTION_OFF)
+        {
+            if (InsertSeqHeader(task))
+            {
+                AddSeqHeader(par.mfx.FrameInfo.Width,
+                    par.mfx.FrameInfo.Height,
+                    par.mfx.FrameInfo.FrameRateExtN,
+                    par.mfx.FrameInfo.FrameRateExtD,
+                    opt.NumFramesForIVF,
+                    localBuf.pBuffer);
+                ivfHeaderSize += IVF_SEQ_HEADER_SIZE_BYTES;
+            }
+
+            AddPictureHeader(localBuf.pBuffer + ivfHeaderSize);
+            ivfHeaderSize += IVF_PIC_HEADER_SIZE_BYTES;
+        }
+
+        localBuf.bitOffset += ivfHeaderSize * 8;
+
+        mfxU16 totalBitsWritten = WriteUncompressedHeader(localBuf,
+            task,
+            seqPar,
+            offsets);
+
+        return (totalBitsWritten + 7) / 8;
+    }
 } // MfxHwVP9Encode
 
 #endif // AS_VP9E_PLUGIN

@@ -245,12 +245,31 @@ typedef struct tagENCODE_CAPS_VP9
         memcpy(pBitstream, ivf_frame_header, sizeof (ivf_frame_header));
     };
 
-    mfxStatus WriteUncompressedHeader(mfxU8 * buffer,
-                                      mfxU32 bufferSizeBytes,
-                                      Task const& task,
-                                      VP9SeqLevelParam const &seqPar,
-                                      BitOffsets &offsets,
-                                      mfxU16 &bitsWritten);
+    inline ENCODE_PACKEDHEADER_DATA MakePackedByteBuffer(mfxU8 * data, mfxU32 size)
+    {
+        ENCODE_PACKEDHEADER_DATA desc = { 0 };
+        desc.pData = data;
+        desc.BufferSize = size;
+        desc.DataLength = size;
+        return desc;
+    }
+
+    struct BitBuffer {
+        mfxU8 *pBuffer;
+        mfxU16 bitOffset;
+    };
+
+    mfxU16 WriteUncompressedHeader(BitBuffer &buffer,
+                                   Task const &task,
+                                   VP9SeqLevelParam const &seqPar,
+                                   BitOffsets &offsets);
+
+    mfxU16 PrepareFrameHeader(VP9MfxVideoParam const &par,
+                              mfxU8 *pBuf,
+                              mfxU32 bufferSizeBytes,
+                              Task const& task,
+                              VP9SeqLevelParam const &seqPar,
+                              BitOffsets &offsets);
 } // MfxHwVP9Encode
 
 #endif // AS_VP9E_PLUGIN
