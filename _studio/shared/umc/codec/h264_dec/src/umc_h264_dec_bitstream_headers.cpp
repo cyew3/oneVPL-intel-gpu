@@ -795,7 +795,7 @@ Status H264HeadersBitstream::GetVUIParam(H264SeqParamSet *sps, H264VUI *vui)
 
 Status H264HeadersBitstream::GetHRDParam(H264SeqParamSet *, H264VUI *vui)
 {
-    Ipp32s cpb_cnt = (GetVLCElement(false)+1);
+    Ipp32u cpb_cnt = (Ipp32u) (GetVLCElement(false) + 1);
 
     if (cpb_cnt >= 32)
     {
