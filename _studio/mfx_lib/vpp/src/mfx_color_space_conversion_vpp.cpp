@@ -132,6 +132,9 @@ MFXVideoVPPColorSpaceConversion::MFXVideoVPPColorSpaceConversion(VideoCORE *core
 
   VPP_CLEAN;
 
+  memset(&m_yv12Data, 0, sizeof(mfxFrameData));
+  m_bAVX2 = false;
+
   *sts = MFX_ERR_NONE;
 
   return;
