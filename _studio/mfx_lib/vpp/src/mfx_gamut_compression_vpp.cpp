@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010-2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          GamutCompression Video Post Processing Filter
@@ -93,6 +93,17 @@ MFXVideoVPPGamutCompression::MFXVideoVPPGamutCompression(VideoCORE *core, mfxSta
     m_core = core;
 
     VPP_CLEAN;
+
+    memset(&m_frameYUV, 0, sizeof(Surface1_32f));
+    memset(&m_frameLCH, 0, sizeof(Surface1_32f));
+    memset(&m_frameCompressedYUV, 0, sizeof(Surface1_32f));
+    memset(&m_frameCompressedLCH, 0, sizeof(Surface1_32f));
+
+    memset(m_YUV2RGB, 0, sizeof(m_YUV2RGB));
+    memset(m_LumaVertex, 0, sizeof(m_LumaVertex));
+    memset(m_SatVertex, 0, sizeof(m_SatVertex));
+
+    memset(m_DivTable, 0, sizeof(m_DivTable));
 
     *sts = MFX_ERR_NONE;
 
