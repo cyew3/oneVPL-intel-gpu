@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
 
 *********************************************************************************
 
@@ -453,13 +453,14 @@ mfxTraceU32 MFXTrace_BeginTask(mfxTraceStaticHandle *static_handle,
                           const char *task_name, mfxTraceTaskHandle *task_handle,
                           const void *task_params)
 {
-    if (!MFXTrace_IsPrintableCategoryAndLevel(category, level)) return 0;
-
+    // store category and level to check for MFXTrace_IsPrintableCategoryAndLevel in MFXTrace_EndTask
     if (static_handle)
     {
         static_handle->category = category;
         static_handle->level    = level;
     }
+
+    if (!MFXTrace_IsPrintableCategoryAndLevel(category, level)) return 0;
 
     mfxTraceU32 sts = 0, res = 0;
     mfxTraceU32 i = 0;
@@ -487,13 +488,15 @@ mfxTraceU32 MFXTrace_EndTask(mfxTraceStaticHandle *static_handle,
     mfxTraceChar* category = NULL;
     mfxTraceLevel level = MFX_TRACE_LEVEL_DEFAULT;
 
-    if (!MFXTrace_IsPrintableCategoryAndLevel(category, level)) return 0;
-
+    // use category and level stored in MFXTrace_BeginTask values to check for MFXTrace_IsPrintableCategoryAndLevel
+    // preserve previous behaviour if static_handle is null that should never happend in normal usage model
     if (static_handle)
     {
         category = static_handle->category;
         level    = static_handle->level;
     }
+
+    if (!MFXTrace_IsPrintableCategoryAndLevel(category, level)) return 0;
 
     mfxTraceU32 sts = 0, res = 0;
     mfxTraceU32 i = 0;
