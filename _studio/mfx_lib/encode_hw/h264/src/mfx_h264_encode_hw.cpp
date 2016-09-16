@@ -1576,10 +1576,13 @@ mfxStatus ImplementationAvc::GetVideoParam(mfxVideoParam *par)
         }
     }
 
-    par->mfx = m_video.mfx;
-    par->Protected = m_video.Protected;
-    par->IOPattern = m_video.IOPattern;
-    par->AsyncDepth = m_video.AsyncDepth;
+    mfxExtBuffer ** ExtParam = par->ExtParam;
+    mfxU16    NumExtParam = par->NumExtParam;
+
+    MFX_INTERNAL_CPY(par, &(static_cast<mfxVideoParam &>(m_video)), sizeof(mfxVideoParam));
+
+    par->ExtParam    = ExtParam;
+    par->NumExtParam = NumExtParam;
 
     return MFX_ERR_NONE;
 }
