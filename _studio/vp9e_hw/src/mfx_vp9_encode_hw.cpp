@@ -89,12 +89,12 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxF
     out;
     MFX_CHECK_NULL_PTR2(par,in);
 
-    MFX_CHECK(CheckPattern(par->IOPattern), MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(CheckPattern(par->IOPattern), MFX_ERR_UNSUPPORTED);
     MFX_CHECK(CheckFrameSize(par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height),MFX_ERR_INVALID_VIDEO_PARAM);
 
     in->Type = mfxU16((par->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)? MFX_MEMTYPE_SYS_EXT:MFX_MEMTYPE_D3D_EXT) ;
 
-    in->NumFrameMin = par->AsyncDepth;
+    in->NumFrameMin = par->AsyncDepth ? par->AsyncDepth : GetDefaultAsyncDepth();
     in->NumFrameSuggested = in->NumFrameMin;
 
     in->Info = par->mfx.FrameInfo;
@@ -426,6 +426,8 @@ mfxStatus Plugin::Close()
         delete m_pTaskManager;
         m_pTaskManager = 0;
     }
+
+    m_initialized = false;
 
     return MFX_ERR_NONE;
 }

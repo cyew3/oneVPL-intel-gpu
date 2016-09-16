@@ -158,8 +158,8 @@ static mfxStatus CheckMFXParameters(mfxInfoMFX*  par)
         par->FrameInfo.Height = 0;
         bUnsupported = true;
     }
-    if (par->FrameInfo.CropW > par->FrameInfo.Width ||
-        par->FrameInfo.CropH > par->FrameInfo.Height)
+    if (par->FrameInfo.CropX + par->FrameInfo.CropW > par->FrameInfo.Width ||
+        par->FrameInfo.CropY + par->FrameInfo.CropH > par->FrameInfo.Height)
     {
         par->FrameInfo.CropW = 0;
         par->FrameInfo.CropH = 0;
@@ -192,12 +192,6 @@ static mfxStatus CheckMFXParameters(mfxInfoMFX*  par)
     if (par->FrameInfo.ChromaFormat > MFX_CHROMAFORMAT_YUV420)
     {
         par->FrameInfo.ChromaFormat = 0;
-        bChanged = true;
-    }
-    if (par->FrameInfo.CropX != 0 || par->FrameInfo.CropY != 0  )
-    {
-        par->FrameInfo.CropX = 0;
-        par->FrameInfo.CropY = 0;
         bChanged = true;
     }
     if (par->CodecProfile > MFX_PROFILE_VP9_0)
@@ -807,6 +801,7 @@ mfxStatus CheckEncodeFrameParam(
         checkSts = MFX_ERR_MORE_DATA;
     }
 
+    MFX_CHECK((mfxU64)bs->MaxLength > ((mfxU64)bs->DataOffset + (mfxU64)bs->DataLength), MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK(((mfxI32)bs->MaxLength - ((mfxI32)bs->DataOffset + (mfxI32)bs->DataLength) >= (mfxI32)video.mfx.BufferSizeInKB*1000), MFX_ERR_NOT_ENOUGH_BUFFER);
 
     if (ctrl)

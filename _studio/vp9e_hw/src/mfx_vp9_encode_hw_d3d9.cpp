@@ -762,7 +762,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     mfxStatus sts = pCore->GetHandle(pCore->pthis, MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&device);
 
     if (sts == MFX_ERR_NOT_FOUND)
-        sts = m_pmfxCore->CreateAccelerationDevice(m_pmfxCore, MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&device);
+        sts = m_pmfxCore->CreateAccelerationDevice(m_pmfxCore->pthis, MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&device);
 
     MFX_CHECK_STS(sts);
     MFX_CHECK(device, MFX_ERR_DEVICE_FAILED);

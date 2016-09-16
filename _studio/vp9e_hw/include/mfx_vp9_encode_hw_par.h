@@ -26,9 +26,10 @@ namespace MfxHwVP9Encode
 inline bool CheckPattern(mfxU32 inPattern)
 {
     inPattern = inPattern & MFX_IOPATTERN_IN_MASK;
-    return ( inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
+    return (inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY); // TODO: return correct check affter adding support of SYSTEM and OPAQUE memory at input
+    /*return ( inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
                 inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY ||
-                inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY);
+                inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY);*/
 }
 inline bool CheckFrameSize(mfxU32 Width, mfxU32 Height)
 {
