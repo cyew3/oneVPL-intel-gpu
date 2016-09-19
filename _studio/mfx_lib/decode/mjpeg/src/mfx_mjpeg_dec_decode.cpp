@@ -1793,8 +1793,9 @@ void VideoDECODEMJPEGBase_HW::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxIn
 
     if (info->JPEGColorFormat == MFX_JPEG_COLORFORMAT_UNKNOWN || info->JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr)
     {
-        if (hwType == MFX_HW_BXT) return;
-
+        #if defined (MFX_VA_LINUX)
+            if (hwType == MFX_HW_BXT) return;
+        #endif
         switch(info->JPEGChromaFormat)
         {
         case MFX_CHROMAFORMAT_MONOCHROME:
