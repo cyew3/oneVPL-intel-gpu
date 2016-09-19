@@ -70,7 +70,8 @@ public:
         MFXPAR2 = 2,
         COPAR   = 3,
         CO2PAR  = 4,
-        MFXCTRL = 5
+        MFXCTRL = 5,
+        MFXPAR_LOWPOWER = 6
     };
 
     enum
@@ -440,23 +441,27 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*84*/ MFX_ERR_NONE, BitstreamCheck, CQP_HRD_ENABLED | CBR, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 16},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 8},
-        {CO2PAR, &tsStruct::mfxExtCodingOption2.BRefType, 2}}},
+        {CO2PAR, &tsStruct::mfxExtCodingOption2.BRefType, 2},
+        {MFXPAR_LOWPOWER, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1}}},
     {/*85*/ MFX_ERR_NONE, BitstreamCheck, CQP_HRD_ENABLED | VBR, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 16},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 8},
         {CO2PAR, &tsStruct::mfxExtCodingOption2.BRefType, 2},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.MaxKbps,    MAX_KBPS}}},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, MAX_KBPS},
+        {MFXPAR_LOWPOWER, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1}}},
     {/*86*/ MFX_ERR_NONE, BitstreamCheck, CQP_HRD_ENABLED | CBR, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,  16},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist,  8},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 2},
-        {CO2PAR, &tsStruct::mfxExtCodingOption2.BRefType,  2}}},
+        {CO2PAR, &tsStruct::mfxExtCodingOption2.BRefType, 2},
+        {MFXPAR_LOWPOWER, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1}}},
     {/*87*/ MFX_ERR_NONE, BitstreamCheck, CQP_HRD_ENABLED | VBR, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,  16},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist,  8},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 2},
         {CO2PAR, &tsStruct::mfxExtCodingOption2.BRefType,  2},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.MaxKbps,     MAX_KBPS}}}
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, MAX_KBPS},
+        {MFXPAR_LOWPOWER, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1}}}
 };
 
 mfxStatus ValidateParameters(mfxVideoParam &par, mfxU32 controlFlags)
@@ -710,83 +715,95 @@ int TestSuite::RunTest(unsigned int id)
     {
         SETPARS(&co2, CO2PAR);
     }
+    if (m_par.mfx.LowPower == MFX_CODINGOPTION_ON)
+    {
+        SETPARS(m_pPar, MFXPAR_LOWPOWER);
+    }
 
     /*4) call tested function and validate output */
 
-    if(QueryFunc & tc.func)
+    if ((m_par.mfx.LowPower == MFX_CODINGOPTION_ON) && (m_par.mfx.GopRefDist > 1))
     {
-        g_tsStatus.expect(tc.sts);
-        Query();
-        g_tsStatus.check(ValidateParameters(*m_pParOut, tc.controlFlags));
+        g_tsLog << "WARNING: CASE WAS SKIPPED\n";
     }
-    else if (InitFunc & tc.func)
+    else
     {
-        g_tsStatus.expect(tc.sts);
-        Init();
-        GetVideoParam();
-        g_tsStatus.check(ValidateParameters(*m_pPar, tc.controlFlags));
-        Close();
-    }
-    else if (QueryIOSurfFunc & tc.func)
-    {
-        g_tsStatus.expect(tc.sts);
-        QueryIOSurf();
-    }
-    else if (ResetFunc & tc.func)
-    {
-        Init();
-        g_tsStatus.expect(tc.sts);
-        if (tc.controlFlags & CHECK_PARAM_CHANGE)
-        {
-            SETPARS(m_pPar, MFXPAR2);
-        }
-        Reset();
-        GetVideoParam();
-        g_tsStatus.check(ValidateParameters(*m_pPar, tc.controlFlags));
-        Close();
-    }
-    else if (EncodeFrameAsyncFunc & tc.func)
-    {
-        Init();
-        AllocSurfaces();
-        AllocBitstream();
 
-        if (tc.controlFlags & CHECK_ZERO_SURF)
+        if (QueryFunc & tc.func)
         {
-            m_pCtrl->QP = 26;
-            for (mfxI32 i = 0; i < m_par.mfx.GopRefDist + 1; i ++)
+            g_tsStatus.expect(tc.sts);
+            Query();
+            g_tsStatus.check(ValidateParameters(*m_pParOut, tc.controlFlags));
+        }
+        else if (InitFunc & tc.func)
+        {
+            g_tsStatus.expect(tc.sts);
+            Init();
+            GetVideoParam();
+            g_tsStatus.check(ValidateParameters(*m_pPar, tc.controlFlags));
+            Close();
+        }
+        else if (QueryIOSurfFunc & tc.func)
+        {
+            g_tsStatus.expect(tc.sts);
+            QueryIOSurf();
+        }
+        else if (ResetFunc & tc.func)
+        {
+            Init();
+            g_tsStatus.expect(tc.sts);
+            if (tc.controlFlags & CHECK_PARAM_CHANGE)
             {
-                EncodeFrameAsync(m_session, m_pCtrl, GetSurface(), m_pBitstream, m_pSyncPoint);
-                if (*m_pSyncPoint)
+                SETPARS(m_pPar, MFXPAR2);
+            }
+            Reset();
+            GetVideoParam();
+            g_tsStatus.check(ValidateParameters(*m_pPar, tc.controlFlags));
+            Close();
+        }
+        else if (EncodeFrameAsyncFunc & tc.func)
+        {
+            Init();
+            AllocSurfaces();
+            AllocBitstream();
+
+            if (tc.controlFlags & CHECK_ZERO_SURF)
+            {
+                m_pCtrl->QP = 26;
+                for (mfxI32 i = 0; i < m_par.mfx.GopRefDist + 1; i++)
                 {
-                    SyncOperation();
-                    m_pBitstream->DataOffset = 0;
-                    m_pBitstream->DataLength = 0;
+                    EncodeFrameAsync(m_session, m_pCtrl, GetSurface(), m_pBitstream, m_pSyncPoint);
+                    if (*m_pSyncPoint)
+                    {
+                        SyncOperation();
+                        m_pBitstream->DataOffset = 0;
+                        m_pBitstream->DataLength = 0;
+                    }
                 }
             }
+
+            SETPARS(m_pCtrl, MFXCTRL);
+            g_tsStatus.expect(tc.sts);
+            mfxFrameSurface1 * pSurf = (tc.controlFlags & CHECK_ZERO_SURF) ? 0 : GetSurface();
+            mfxEncodeCtrl * pCtrl = (tc.controlFlags & CHECK_ZERO_CTRL) ? 0 : m_pCtrl;
+            g_tsStatus.check(EncodeFrameAsync(m_session, pCtrl, pSurf, m_pBitstream, m_pSyncPoint));
+            Close();
         }
+        else if (BitstreamCheck & tc.func)
+        {
+            mfxU32 nframes = 30;
+            SetFrameAllocator();
 
-        SETPARS(m_pCtrl, MFXCTRL);
-        g_tsStatus.expect(tc.sts);
-        mfxFrameSurface1 * pSurf = (tc.controlFlags & CHECK_ZERO_SURF) ? 0 : GetSurface();
-        mfxEncodeCtrl * pCtrl = (tc.controlFlags & CHECK_ZERO_CTRL) ? 0 : m_pCtrl;
-        g_tsStatus.check(EncodeFrameAsync(m_session, pCtrl, pSurf, m_pBitstream, m_pSyncPoint));
-        Close();
-    }
-    else if  (BitstreamCheck & tc.func)
-    {
-        mfxU32 nframes = 30;
-        SetFrameAllocator();
+            SurfProc reader(g_tsStreamPool.Get("YUV/matrix_1920x1088_250.yuv"), m_par.mfx.FrameInfo, nframes, m_pCtrl);
+            g_tsStreamPool.Reg();
+            m_filler = &reader;
+            BsChecker bsChecker(tc.controlFlags);
+            m_bs_processor = &bsChecker;
 
-        SurfProc reader(g_tsStreamPool.Get("YUV/matrix_1920x1088_250.yuv"), m_par.mfx.FrameInfo, nframes, m_pCtrl);
-        g_tsStreamPool.Reg();
-        m_filler = &reader;
-        BsChecker bsChecker(tc.controlFlags);
-        m_bs_processor = &bsChecker;
-
-        Init();
-        EncodeFrames(nframes);
-        Close();
+            Init();
+            EncodeFrames(nframes);
+            Close();
+        }
     }
 
     TS_END;

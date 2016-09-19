@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_parser.h"
 
@@ -183,7 +193,10 @@ int test(unsigned int id)
     mfx.NumThread           = 0;
     mfx.TargetUsage         = 4;
     mfx.GopPicSize          = 24;
-    mfx.GopRefDist          = 3;
+    if (mfx.LowPower == MFX_CODINGOPTION_ON)
+        mfx.GopRefDist = 1;
+    else
+        mfx.GopRefDist = 3;
     mfx.GopOptFlag          = 1;
     mfx.IdrInterval         = 0;
     mfx.RateControlMethod   = MFX_RATECONTROL_VBR;

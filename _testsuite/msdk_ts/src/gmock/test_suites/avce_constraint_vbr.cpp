@@ -37,13 +37,14 @@ private:
 
     enum
     {
-        LA     = 0x000000001,
-        LA_HRD = 0x000000010,
+        LOWPOWER = 0x000000000,
+        LA       = 0x000000001,
+        LA_HRD   = 0x000000010,
 
-        SD_LOW  = 0x00000100,
-        SD_HIGH = 0x00001000,
-        HD_LOW  = 0x00010000,
-        HD_HIGH = 0x00100000,
+        SD_LOW   = 0x00000100,
+        SD_HIGH  = 0x00001000,
+        HD_LOW   = 0x00010000,
+        HD_HIGH  = 0x00100000,
 
         WINDOW =  0x01000000
     };
@@ -134,6 +135,9 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*53*/ MFX_ERR_UNSUPPORTED, SD_HIGH|WINDOW, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_AVBR}},
 #endif
     {/*54*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, SD_HIGH|WINDOW, {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP}},
+
+    //Low Power
+    {/*55*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, LOWPOWER, { MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_LA}},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -203,6 +207,16 @@ int TestSuite::RunTest(unsigned int id)
 
         m_par.mfx.TargetKbps = 6000;
         m_par.mfx.MaxKbps = 12000;
+    }
+    else // defoult
+    {
+        m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 720;
+        m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 576;
+        m_par.mfx.FrameInfo.FrameRateExtN = 30;
+        m_par.mfx.FrameInfo.FrameRateExtD = 1;
+
+        m_par.mfx.TargetKbps = 1300;
+        m_par.mfx.MaxKbps = 2000;
     }
 
     //m_par.AddExtBuffer(EXT_BUF_PAR(mfxExtCodingOption));
@@ -277,27 +291,40 @@ int TestSuite::RunTest(unsigned int id)
 //    SetHandle(m_session, type, hdl);
 
     ///////////////////////////////////////////////////////////////////////////
-    g_tsStatus.expect(tc.sts);
-
-    tsExtBufType<mfxVideoParam> out_par;
-    memcpy(&out_par, m_pPar, sizeof(mfxVideoParam));
-    mfxExtCodingOption& out_cod = out_par;
-    mfxExtCodingOption3& out_cod3 = out_par;m_par;
-    Query(m_session, m_pPar, &out_par);
-
-    g_tsStatus.expect(tc.sts);
-    if (tc.sts == MFX_ERR_UNSUPPORTED)
+    if ((tc.mode != LOWPOWER) && (m_par.mfx.LowPower == MFX_CODINGOPTION_ON))
     {
-        // Init can't return MFX_ERR_UNSUPPORTED
-        g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
+        g_tsLog << "WARNING: CASE WAS SKIPPED\n";
     }
-
-    /*if (tc.sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
+    else
     {
-        g_tsStatus.expect(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-    }*/
-    Init(m_session, m_pPar);
 
+        if ((tc.mode == LOWPOWER) && (m_par.mfx.LowPower != MFX_CODINGOPTION_ON))
+            g_tsStatus.expect(MFX_ERR_NONE);
+        else
+            g_tsStatus.expect(tc.sts);
+
+        tsExtBufType<mfxVideoParam> out_par;
+        memcpy(&out_par, m_pPar, sizeof(mfxVideoParam));
+        mfxExtCodingOption& out_cod = out_par;
+        mfxExtCodingOption3& out_cod3 = out_par; m_par;
+        Query(m_session, m_pPar, &out_par);
+
+        if ((tc.mode == LOWPOWER) && (m_par.mfx.LowPower != MFX_CODINGOPTION_ON))
+            g_tsStatus.expect(MFX_ERR_NONE);
+        else
+            g_tsStatus.expect(tc.sts);
+        if (tc.sts == MFX_ERR_UNSUPPORTED)
+        {
+            // Init can't return MFX_ERR_UNSUPPORTED
+            g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
+        }
+
+        /*if (tc.sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
+        {
+        g_tsStatus.expect(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        }*/
+        Init(m_session, m_pPar);
+    }
     TS_END;
     return 0;
 }

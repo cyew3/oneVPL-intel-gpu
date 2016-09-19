@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 
 namespace 
@@ -240,6 +250,9 @@ int test(unsigned int id)
 
     enc.MFXInit();
     //enc.m_par.AddExtBuffer(EXT_BUF_PAR(mfxExtEncoderROI));
+
+    if (enc.m_par.mfx.LowPower == MFX_CODINGOPTION_ON) // LowPower mode unsupported NumRoi > 3
+        tc.p3 = TS_MIN(3, tc.p3);
 
     InitPar par = {enc.m_session, &enc.m_par};
     

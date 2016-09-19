@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 /*
 Per-frame Deblocking disabling disable_deblocking_filter_idc in slice_header
 mfxExtCodingOption2::DisableDeblockingIdc = 0..2
@@ -208,54 +218,61 @@ int TestSuite::RunTest(unsigned int id)
 
     g_tsStatus.expect(tc.sts);
 
-    if (tc.mode & QUERY)
+    if ((m_par.mfx.LowPower == MFX_CODINGOPTION_ON) && (m_par.mfx.GopRefDist > 1))
     {
-        Query();
+        g_tsLog << "WARNING: CASE WAS SKIPPED\n";
     }
-
-    if (tc.sts == MFX_ERR_NONE)
+    else
     {
-        if (tc.mode & RESET_ON)
-        {
-            mode = 0;
-            m_par.ExtParam = 0;
-            m_par.NumExtParam = 0;
-        }
-        m_max = 2;
-        m_cur = 0;
-        EncodeFrames(2);
 
-        if (tc.mode & RESET_ON)
+        if (tc.mode & QUERY)
         {
-            mode = tc.mode;
-            if (!(tc.mode & RUNTIME_ONLY))
+            Query();
+        }
+
+        if (tc.sts == MFX_ERR_NONE)
+        {
+            if (tc.mode & RESET_ON)
             {
-                mfxExtCodingOption2& cod2 = m_par;
-                cod2.DisableDeblockingIdc = 1;
-                SETPARS(&cod2, EXT_COD2);
-                bs.m_expected = cod2.DisableDeblockingIdc;
+                mode = 0;
+                m_par.ExtParam = 0;
+                m_par.NumExtParam = 0;
             }
-            Reset();
             m_max = 2;
             m_cur = 0;
             EncodeFrames(2);
-        }
-        else if (tc.mode & RESET_OFF)
-        {
-            mode = 0;
-            if (!(tc.mode & RUNTIME_ONLY))
+
+            if (tc.mode & RESET_ON)
             {
-                mfxExtCodingOption2& cod2 = m_par;
-                cod2.DisableDeblockingIdc = 0;
-                bs.m_expected = 1;
+                mode = tc.mode;
+                if (!(tc.mode & RUNTIME_ONLY))
+                {
+                    mfxExtCodingOption2& cod2 = m_par;
+                    cod2.DisableDeblockingIdc = 1;
+                    SETPARS(&cod2, EXT_COD2);
+                    bs.m_expected = cod2.DisableDeblockingIdc;
+                }
+                Reset();
+                m_max = 2;
+                m_cur = 0;
+                EncodeFrames(2);
             }
-            Reset();
-            m_max = 4;
-            m_cur = 0;
-            EncodeFrames(4);
+            else if (tc.mode & RESET_OFF)
+            {
+                mode = 0;
+                if (!(tc.mode & RUNTIME_ONLY))
+                {
+                    mfxExtCodingOption2& cod2 = m_par;
+                    cod2.DisableDeblockingIdc = 0;
+                    bs.m_expected = 1;
+                }
+                Reset();
+                m_max = 4;
+                m_cur = 0;
+                EncodeFrames(4);
+            }
         }
     }
-
     TS_END;
     return err;
 }

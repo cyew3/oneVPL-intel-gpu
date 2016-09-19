@@ -993,17 +993,24 @@ int RunTest(unsigned int id)
         enc.m_filler = &sf;
         enc.m_bs_processor = &c;
 
-        if (enc.m_par.mfx.EncodedOrder)
+        if ((enc.m_par.mfx.LowPower == MFX_CODINGOPTION_ON) && ((enc.m_par.mfx.GopRefDist > 1) || (enc.m_par.mfx.FrameInfo.PicStruct != 1)))
         {
-            enc.QueryIOSurf();
-            enc.m_request.NumFrameMin = enc.m_request.NumFrameSuggested = 
-                enc.m_par.mfx.GopRefDist - 1 + enc.m_par.mfx.NumRefFrame + enc.m_par.AsyncDepth;
+            g_tsLog << "WARNING: CASE WAS SKIPPED\n";
         }
+        else
+        {
+            if (enc.m_par.mfx.EncodedOrder)
+            {
+                enc.QueryIOSurf();
+                enc.m_request.NumFrameMin = enc.m_request.NumFrameSuggested =
+                    enc.m_par.mfx.GopRefDist - 1 + enc.m_par.mfx.NumRefFrame + enc.m_par.AsyncDepth;
+            }
 
 
-        // for better navigation index of every case and subcase are printed in the log
-        g_tsLog << "--------------------> Case: " << conf.caseNum << " subcase: " << conf.subCaseNum << "\n";
-        enc.EncodeFrames(tc.nFrames);
+            // for better navigation index of every case and subcase are printed in the log
+            g_tsLog << "--------------------> Case: " << conf.caseNum << " subcase: " << conf.subCaseNum << "\n";
+            enc.EncodeFrames(tc.nFrames);
+        }
     }
 
     TS_END;

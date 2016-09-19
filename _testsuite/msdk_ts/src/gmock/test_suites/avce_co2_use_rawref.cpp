@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_struct.h"
 
@@ -54,7 +64,8 @@ private:
     enum
     {
         MFXPAR = 1,
-        EXT_COD2
+        EXT_COD2,
+        MFXPAR_LOWPOWER
     };
 
     enum
@@ -87,13 +98,16 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1}}},
     {/*01*/ MFX_ERR_NONE, INIT, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 3},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 10}}},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 10},
+        {MFXPAR_LOWPOWER, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1}}},
     {/*02*/ MFX_ERR_NONE, INIT, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 6},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 10}}},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 10},
+        {MFXPAR_LOWPOWER, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1}}},
     {/*03*/ MFX_ERR_NONE, RAND, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2},
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 4}}},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 4},
+        {MFXPAR_LOWPOWER, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1}}},
     {/*04*/ MFX_ERR_NONE, RAND, {
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 2},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR},
@@ -147,6 +161,9 @@ int TestSuite::RunTest(unsigned int id)
     m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 720;
     m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 576;
     SETPARS(m_pPar, MFXPAR);
+    if (m_par.mfx.LowPower == MFX_CODINGOPTION_ON)
+        SETPARS(m_pPar, MFXPAR_LOWPOWER);
+
 
     if (!(tc.mode & NO_INIT))
     {
@@ -166,43 +183,52 @@ int TestSuite::RunTest(unsigned int id)
     mfxU32 nf = 60;
     mfxVideoParam pars = {0};
     memcpy(&pars, m_pPar, sizeof(mfxVideoParam));
-    if (tc.mode & INIT)
+
+    if ((m_par.mfx.LowPower = MFX_CODINGOPTION_ON) && (m_par.mfx.GopRefDist > 1))
     {
-        Init();
+        g_tsLog << "WARNING: CASE WAS SKIPPED\n";
     }
-    if (tc.sts == MFX_ERR_NONE)
+    else
     {
-        EncodeFrames(nf);
 
-        if (tc.mode & NO_INIT)
+        if (tc.mode & INIT)
         {
-            Close();
-            Ipp32u crc = bs_crc.GetCRC();
-            memset(&m_bitstream, 0, sizeof(mfxBitstream));
-            m_pPar = &pars;
-            m_pPar->NumExtParam = 0;
-            m_pPar->ExtParam = 0;
-
-            mfxFrameInfo fi = {0};
-            fi.Width = 720;
-            fi.Height = 576;
-            fi.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            fi.FourCC = MFX_FOURCC_NV12;
-            tsRawReader reader(g_tsStreamPool.Get("YUV/iceage_720x576_491.yuv"), fi);
-            m_filler = &reader;
-
-            tsBitstreamCRC32 bs_cmp_crc;
-            m_bs_processor = &bs_cmp_crc;
-
-            Init(m_session, m_pPar);
-
+            Init();
+        }
+        if (tc.sts == MFX_ERR_NONE)
+        {
             EncodeFrames(nf);
 
-            Ipp32u cmp_crc = bs_cmp_crc.GetCRC();
-            if (crc != cmp_crc)
+            if (tc.mode & NO_INIT)
             {
-                g_tsLog << "ERROR: CO2::UseRawRef was enabled in runtime without initialization\n";
-                g_tsStatus.check(MFX_ERR_ABORTED);
+                Close();
+                Ipp32u crc = bs_crc.GetCRC();
+                memset(&m_bitstream, 0, sizeof(mfxBitstream));
+                m_pPar = &pars;
+                m_pPar->NumExtParam = 0;
+                m_pPar->ExtParam = 0;
+
+                mfxFrameInfo fi = { 0 };
+                fi.Width = 720;
+                fi.Height = 576;
+                fi.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+                fi.FourCC = MFX_FOURCC_NV12;
+                tsRawReader reader(g_tsStreamPool.Get("YUV/iceage_720x576_491.yuv"), fi);
+                m_filler = &reader;
+
+                tsBitstreamCRC32 bs_cmp_crc;
+                m_bs_processor = &bs_cmp_crc;
+
+                Init(m_session, m_pPar);
+
+                EncodeFrames(nf);
+
+                Ipp32u cmp_crc = bs_cmp_crc.GetCRC();
+                if (crc != cmp_crc)
+                {
+                    g_tsLog << "ERROR: CO2::UseRawRef was enabled in runtime without initialization\n";
+                    g_tsStatus.check(MFX_ERR_ABORTED);
+                }
             }
         }
     }

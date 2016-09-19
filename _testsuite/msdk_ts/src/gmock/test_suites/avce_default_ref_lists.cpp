@@ -488,12 +488,34 @@ tc_struct test_case[] =
 /* 11 */{MFX_PICSTRUCT_FIELD_BFF,         256,         8,       2,          0,    300 },
 };
 
+tc_struct test_case_lowpower[] =
+{
+//       PicStruct                 GopPicSize GopRefDist BRefType NumRefFrame nFrames
+/* 00 */{ MFX_PICSTRUCT_PROGRESSIVE, 0,       0,         0,       0,          300 },
+/* 01 */{ MFX_PICSTRUCT_PROGRESSIVE, 30,      0,         0,       0,          70 },
+/* 02 */{ MFX_PICSTRUCT_PROGRESSIVE, 256,     0,         0,       0,          300 },
+};
+
 int test(unsigned int id)
 {
-    TS_START;
+   
     tc_struct& tc = test_case[id];
-
     Test enc;
+
+    if (enc.m_par.mfx.LowPower == MFX_CODINGOPTION_ON)
+    {
+        if (id > 2)
+        {
+            g_tsLog << "WARNING: CASE WAS SKIPPED\n";
+            return 0;
+        }
+        else
+        {
+            tc = test_case_lowpower[id];
+        }
+    }
+    
+    TS_START;
     mfxExtCodingOption2& co2 = enc.m_par;
     mfxU32 nFrames = tc.nFrames;
 

@@ -165,22 +165,29 @@ int TestSuite::RunTest(unsigned int id)
     SetFrameAllocator();
     AllocSurfaces();
 
-
-    if(MFX_LOOKAHEAD_DS_4x == cod2->LookAheadDS)
-        g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+    if (m_par.mfx.LowPower == MFX_CODINGOPTION_ON)
+    {
+        g_tsLog << "WARNING: CASE WAS SKIPPED\n";
+        //behavior LowPower with LA_RATE_CONTROL checks in avce_constrains_vbr case 55.
+    }
     else
-        g_tsStatus.expect(MFX_ERR_NONE);
-    Init(m_session, &m_par);
+    {
 
-    SetFrameAllocator();
-    AllocBitstream((m_par.mfx.FrameInfo.Width*m_par.mfx.FrameInfo.Height) * 1920 * 1920 * 3);
-    EncodeFrames(3);
+        if (MFX_LOOKAHEAD_DS_4x == cod2->LookAheadDS)
+            g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+        else
+            g_tsStatus.expect(MFX_ERR_NONE);
+        Init(m_session, &m_par);
 
-    SETPARS(m_pPar, RESET);
+        SetFrameAllocator();
+        AllocBitstream((m_par.mfx.FrameInfo.Width*m_par.mfx.FrameInfo.Height) * 1920 * 1920 * 3);
+        EncodeFrames(3);
 
-    g_tsStatus.expect(tc.sts);
-    Reset(m_session, m_pPar);
+        SETPARS(m_pPar, RESET);
 
+        g_tsStatus.expect(tc.sts);
+        Reset(m_session, m_pPar);
+    }
     TS_END;
     return 0;
 }

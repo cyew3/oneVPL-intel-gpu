@@ -171,12 +171,19 @@ int TestSuite::RunTest(unsigned int id)
     SetFrameAllocator();
 
     ///////////////////////////////////////////////////////////////////////////
-    mfxU32 n = tc.nframes;
-    AllocBitstream((m_par.mfx.FrameInfo.Width*m_par.mfx.FrameInfo.Height) * 1024 * 1024 * n);
+    if ((m_par.mfx.LowPower == MFX_CODINGOPTION_ON) && (m_par.mfx.GopRefDist > 1))
+    {
+        g_tsLog << "WARNING: CASE WAS SKIPPED\n";
+    }
+    else
+    {
 
-    g_tsStatus.expect(tc.sts);
-    EncodeFrames(n);
+        mfxU32 n = tc.nframes;
+        AllocBitstream((m_par.mfx.FrameInfo.Width*m_par.mfx.FrameInfo.Height) * 1024 * 1024 * n);
 
+        g_tsStatus.expect(tc.sts);
+        EncodeFrames(n);
+    }
     TS_END;
     return 0;
 }

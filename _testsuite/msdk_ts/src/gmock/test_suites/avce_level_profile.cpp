@@ -629,9 +629,14 @@ int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
     const tc_struct& tc = test_case[id];
-
+    mfxStatus sts = tc.sts;
     //set mfxVideoParam
     SETPARS(m_pPar, MFX_PAR);
+    if ((m_par.mfx.LowPower == MFX_CODINGOPTION_ON) && (m_par.mfx.GopRefDist > 1) && (m_par.mfx.CodecProfile == MFX_PROFILE_AVC_BASELINE))
+    {
+        m_par.mfx.GopRefDist = 1;
+        sts = MFX_ERR_NONE;
+    }
     m_par.mfx.FrameInfo.Width  = MSDK_ALIGN16(m_par.mfx.FrameInfo.CropW);
     m_par.mfx.FrameInfo.Height = MSDK_ALIGN16(m_par.mfx.FrameInfo.CropH);
     //bitrate is specified, so use CBR
@@ -650,16 +655,24 @@ int TestSuite::RunTest(unsigned int id)
 
     mfxU32 nf = 60;
     MFXInit();
-    g_tsStatus.expect(tc.sts);
-    Init();
-    if (tc.sts == MFX_ERR_NONE) {
-        g_tsStatus.expect(tc.sts);
-        AllocBitstream();
-        EncodeFrames(nf);
+    g_tsStatus.expect(sts);
+    if ((m_par.mfx.LowPower == MFX_CODINGOPTION_ON) && ((m_par.mfx.GopRefDist > 1) || (m_par.mfx.FrameInfo.PicStruct != 1)))
+    {
+        g_tsLog << "WARNING: CASE WAS SKIPPED\n";
+    }
+    else
+    {
 
-        //ensure there are >=1 SPS in the stream.
-        EXPECT_GT(m_profile.size(), (size_t)0);
-        EXPECT_GT(m_level.size(), (size_t)0);
+        Init();
+        if (tc.sts == MFX_ERR_NONE) {
+            g_tsStatus.expect(tc.sts);
+            AllocBitstream();
+            EncodeFrames(nf);
+
+            //ensure there are >=1 SPS in the stream.
+            EXPECT_GT(m_profile.size(), (size_t)0);
+            EXPECT_GT(m_level.size(), (size_t)0);
+        }
     }
 
     TS_END;
