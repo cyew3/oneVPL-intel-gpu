@@ -676,5 +676,20 @@
     <ClCompile Include="src\gmock\test_suites\vp9e_init.cpp">
       <Filter>Source Files\test_suites\vp9e</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp9e_close.cpp">
+      <Filter>Source Files\test_suites\vp9e</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp9e_encode_frame_async.cpp">
+      <Filter>Source Files\test_suites\vp9e</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp9e_get_video_param.cpp">
+      <Filter>Source Files\test_suites\vp9e</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp9e_query.cpp">
+      <Filter>Source Files\test_suites\vp9e</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp9e_query_io_surf.cpp">
+      <Filter>Source Files\test_suites\vp9e</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
