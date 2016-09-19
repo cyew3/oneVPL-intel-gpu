@@ -109,6 +109,7 @@ protected:
     MFXPluginAdapter<MFXEncoderPlugin> m_adapter;
 
     bool m_initialized;
+    bool m_lowPower;
 };
 
 } // MfxHwVP9Encode

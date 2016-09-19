@@ -78,7 +78,8 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
     MFX_CHECK_NULL_PTR1(out);
 
     ENCODE_CAPS_VP9 caps = {};
-    MFX_CHECK(MFX_ERR_NONE == QueryHwCaps(m_pmfxCore, caps), MFX_ERR_UNSUPPORTED);
+    GUID guid = (m_video.mfx.LowPower != MFX_CODINGOPTION_OFF) ? DXVA2_Intel_LowpowerEncode_VP9_Profile0 : DXVA2_Intel_Encode_VP9_Profile0;
+    MFX_CHECK(MFX_ERR_NONE == QueryHwCaps(m_pmfxCore, caps, guid), MFX_ERR_UNSUPPORTED);
 
     return   (in == 0) ? SetSupportedParameters(out):
         CheckParameters(in,out);
@@ -125,11 +126,13 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
         MFX_CHECK(sts1 >=0, sts1);
     }
 
+    m_lowPower = (m_video.mfx.LowPower != MFX_CODINGOPTION_OFF) ? true : false;
+    GUID initGuid = m_lowPower ? DXVA2_Intel_LowpowerEncode_VP9_Profile0 : DXVA2_Intel_Encode_VP9_Profile0;
+
     m_ddi.reset(CreatePlatformVp9Encoder());
     MFX_CHECK(m_ddi.get() != 0, MFX_ERR_UNSUPPORTED);
 
-    sts = m_ddi->CreateAuxilliaryDevice(m_pmfxCore, DXVA2_Intel_LowpowerEncode_VP9_Profile0,
-    //sts = m_ddi->CreateAuxilliaryDevice(m_pmfxCore, DXVA2_Intel_Encode_VP9_Profile0,
+    sts = m_ddi->CreateAuxilliaryDevice(m_pmfxCore, initGuid,
         m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
     MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_UNSUPPORTED);
 
