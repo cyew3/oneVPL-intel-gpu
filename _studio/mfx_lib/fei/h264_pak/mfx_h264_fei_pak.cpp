@@ -630,15 +630,25 @@ mfxStatus VideoPAK_PAK::GetVideoParam(mfxVideoParam *par)
 {
     MFX_CHECK_NULL_PTR1(par);
 
-    if (par->ExtParam || par->NumExtParam != 0) {
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    for (mfxU32 i = 0; i < par->NumExtParam; i++)
+    {
+        if (mfxExtBuffer * buf = MfxEncPAK::GetExtBuffer(m_video.ExtParam, m_video.NumExtParam, par->ExtParam[i]->BufferId))
+        {
+            MFX_INTERNAL_CPY(par->ExtParam[i], buf, par->ExtParam[i]->BufferSz);
+        }
+        else
+        {
+            return MFX_ERR_UNSUPPORTED;
+        }
     }
 
-    par->mfx        = m_video.mfx;
-    par->Protected  = m_video.Protected;
-    par->IOPattern  = m_video.IOPattern;
-    par->AsyncDepth = m_video.AsyncDepth;
-    par->AllocId    = m_video.AllocId;
+    mfxExtBuffer ** ExtParam = par->ExtParam;
+    mfxU16    NumExtParam = par->NumExtParam;
+
+    MFX_INTERNAL_CPY(par, &(static_cast<mfxVideoParam &>(m_video)), sizeof(mfxVideoParam));
+
+    par->ExtParam    = ExtParam;
+    par->NumExtParam = NumExtParam;
 
     return MFX_ERR_NONE;
 }

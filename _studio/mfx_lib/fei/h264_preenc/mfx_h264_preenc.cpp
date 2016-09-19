@@ -940,16 +940,16 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
     mfxFrameAllocRequest request = { };
     request.Info = m_video.mfx.FrameInfo;
     request.Type = MFX_MEMTYPE_FROM_ENC | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
-    /* WA for Beh test
-     * But code will be re-worked in future */
+    // WA for Beh test
+    // But code will be re-worked in future
     request.NumFrameMin = 1;
     if ((m_video.mfx.GopRefDist > 0) && (m_video.mfx.GopRefDist < 16))
         request.NumFrameMin = m_video.mfx.GopRefDist*2;
 
     request.NumFrameSuggested = request.NumFrameMin + m_video.AsyncDepth;
     request.AllocId = par->AllocId;
-    /* TODO:
-     * Actually MSDK since drv build 54073 does not need to Alloc surface here*/
+    // TODO:
+    // Actually MSDK since drv build 54073 does not need to Alloc surface here
     sts = m_core->AllocFrames(&request, &m_raw);
     //sts = m_raw.Alloc(m_core, request);
     MFX_CHECK_STS(sts);
@@ -983,15 +983,25 @@ mfxStatus VideoENC_PREENC::GetVideoParam(mfxVideoParam *par)
 {
     MFX_CHECK_NULL_PTR1(par);
 
-    if (par->ExtParam || par->NumExtParam != 0) {
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    for (mfxU32 i = 0; i < par->NumExtParam; i++)
+    {
+        if (mfxExtBuffer * buf = MfxEncPREENC::GetExtBuffer(m_video.ExtParam, m_video.NumExtParam, par->ExtParam[i]->BufferId))
+        {
+            MFX_INTERNAL_CPY(par->ExtParam[i], buf, par->ExtParam[i]->BufferSz);
+        }
+        else
+        {
+            return MFX_ERR_UNSUPPORTED;
+        }
     }
 
-    par->mfx        = m_video.mfx;
-    par->Protected  = m_video.Protected;
-    par->IOPattern  = m_video.IOPattern;
-    par->AsyncDepth = m_video.AsyncDepth;
-    par->AllocId    = m_video.AllocId;
+    mfxExtBuffer ** ExtParam = par->ExtParam;
+    mfxU16    NumExtParam = par->NumExtParam;
+
+    MFX_INTERNAL_CPY(par, &(static_cast<mfxVideoParam &>(m_video)), sizeof(mfxVideoParam));
+
+    par->ExtParam    = ExtParam;
+    par->NumExtParam = NumExtParam;
 
     return MFX_ERR_NONE;
 }
