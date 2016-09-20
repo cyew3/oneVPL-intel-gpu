@@ -24,6 +24,7 @@
 ##******************************************************************************
 ##  Content: Intel(R) Media SDK Global Configuration of Targets Cmake module
 ##******************************************************************************
+
 message( STATUS "Global Configuration of Targets" )
 if(__TARGET_PLATFORM)
     add_definitions( -DLINUX_TARGET_PLATFORM -DLINUX_TARGET_PLATFORM_${__TARGET_PLATFORM} )
