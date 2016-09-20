@@ -105,9 +105,9 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("                Use greedy formula to calculate number of surfaces\n"));
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Pipeline description (general options):\n"));
-    msdk_printf(MSDK_STRING("  -i::h265|h264|mpeg2|vc1|mvc|jpeg|vp8|vp9 <file-name>\n"));
+    msdk_printf(MSDK_STRING("  -i::h265|h264|mpeg2|vc1|mvc|jpeg|vp9 <file-name>\n"));
     msdk_printf(MSDK_STRING("                Set input file and decoder type\n"));
-    msdk_printf(MSDK_STRING("  -o::h265|h264|mpeg2|mvc|jpeg|vp8|raw <file-name>\n"));
+    msdk_printf(MSDK_STRING("  -o::h265|h264|mpeg2|mvc|jpeg|raw <file-name>\n"));
     msdk_printf(MSDK_STRING("                Set output file and encoder type\n"));
     msdk_printf(MSDK_STRING("  -sw|-hw|-hw_d3d11\n"));
     msdk_printf(MSDK_STRING("                SDK implementation to use: \n"));
@@ -601,7 +601,6 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                     case MFX_CODEC_HEVC:
                     case MFX_CODEC_AVC:
                     case MFX_CODEC_VC1:
-                    case MFX_CODEC_VP8:
                     case MFX_CODEC_VP9:
                     case CODEC_MVC:
                     case MFX_CODEC_JPEG:
@@ -643,7 +642,6 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                     case MFX_CODEC_HEVC:
                     case MFX_CODEC_AVC:
                     case MFX_CODEC_JPEG:
-                    case MFX_CODEC_VP8:
                     case MFX_FOURCC_DUMP:
                         return MFX_ERR_UNSUPPORTED;
                 }
@@ -1271,8 +1269,7 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
 
     if (MFX_CODEC_JPEG != InputParams.EncodeId && MFX_CODEC_MPEG2 != InputParams.EncodeId &&
         MFX_CODEC_AVC != InputParams.EncodeId && MFX_CODEC_HEVC != InputParams.EncodeId &&
-        MFX_CODEC_VP8 != InputParams.EncodeId && MFX_CODEC_VP9 != InputParams.EncodeId &&
-        MFX_FOURCC_DUMP != InputParams.EncodeId &&
+        MFX_CODEC_VP9 != InputParams.EncodeId && MFX_FOURCC_DUMP != InputParams.EncodeId &&
         InputParams.eMode != Sink && InputParams.eModeExt != VppCompOnly)
     {
         PrintError(MSDK_STRING("Unknown encoder\n"));
@@ -1284,7 +1281,6 @@ mfxStatus CmdProcessor::VerifyAndCorrectInputParams(TranscodingSample::sInputPar
        MFX_CODEC_HEVC != InputParams.DecodeId &&
        MFX_CODEC_VC1 != InputParams.DecodeId &&
        MFX_CODEC_JPEG != InputParams.DecodeId &&
-       MFX_CODEC_VP8 != InputParams.DecodeId &&
        MFX_CODEC_VP9 != InputParams.DecodeId &&
        InputParams.eMode != Source)
     {

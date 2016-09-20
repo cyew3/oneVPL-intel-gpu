@@ -62,7 +62,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Supported codecs, <msdk-codecid>:\n"));
     msdk_printf(MSDK_STRING("   <codecid>=h264|mpeg2|vc1|mvc|jpeg - built-in Media SDK codecs\n"));
-    msdk_printf(MSDK_STRING("   <codecid>=h265|vp8                - in-box Media SDK plugins (may require separate downloading and installation)\n"));
+    msdk_printf(MSDK_STRING("   <codecid>=h265                - in-box Media SDK plugins (may require separate downloading and installation)\n"));
     msdk_printf(MSDK_STRING("   If codecid is jpeg, -q option is mandatory.)\n"));
     msdk_printf(MSDK_STRING("Options: \n"));
     MOD_ENC_PRINT_HELP;
@@ -672,7 +672,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     if (MFX_CODEC_MPEG2 != pParams->CodecId &&
         MFX_CODEC_AVC != pParams->CodecId &&
         MFX_CODEC_JPEG != pParams->CodecId &&
-        MFX_CODEC_VP8 != pParams->CodecId &&
         MFX_CODEC_HEVC != pParams->CodecId)
     {
         PrintHelp(strInput[0], MSDK_STRING("Unknown codec"));

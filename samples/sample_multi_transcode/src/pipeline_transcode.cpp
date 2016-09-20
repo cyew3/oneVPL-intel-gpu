@@ -232,7 +232,7 @@ mfxStatus CTranscodingPipeline::DecodePreInit(sInputParams *pParams)
         if (CheckVersion(&m_Version, MSDK_FEATURE_PLUGIN_API))
         {
             /* Here we actually define the following codec initialization scheme:
-            *  1. If plugin path or guid is specified: we load user-defined plugin (example: VP8 sample decoder plugin)
+            *  1. If plugin path or guid is specified: we load user-defined plugin (example: VP9 sample decoder plugin)
             *  2. If plugin path not specified:
             *    2.a) we check if codec is distributed as a mediasdk plugin and load it if yes
             *    2.b) if codec is not in the list of mediasdk plugins, we assume, that it is supported inside mediasdk library
