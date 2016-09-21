@@ -936,6 +936,7 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
     m_currentPlatform = m_core->GetHWType();
     m_currentVaType   = m_core->GetVAType();
 
+    /*
     // PRE-ENC works with surfaces which was passed in vaCreateContext() stage
     mfxFrameAllocRequest request = { };
     request.Info = m_video.mfx.FrameInfo;
@@ -956,6 +957,7 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
 
     sts = m_ddi->Register(m_raw, D3DDDIFMT_NV12);
     MFX_CHECK_STS(sts);
+    */
 
     sts = m_ddi->CreateAccelerationService(m_video);
     if (sts != MFX_ERR_NONE)

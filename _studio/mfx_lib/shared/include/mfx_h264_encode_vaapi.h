@@ -285,7 +285,7 @@ namespace MfxHwH264Encode
 
     //extend encoder to FEI interface
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
-    typedef std::pair<VASurfaceID, VABufferID> SurfaceAndBufferPair;
+    //typedef std::pair<VASurfaceID, VABufferID> SurfaceAndBufferPair;
 
     class VAAPIFEIPREENCEncoder : public VAAPIEncoder
     {
@@ -314,11 +314,11 @@ namespace MfxHwH264Encode
 
         std::vector<ExtVASurface> m_statFeedbackCache;
         std::vector<ExtVASurface> m_inputQueue;
-        std::vector <SurfaceAndBufferPair> m_statPairs;
+        //std::vector <SurfaceAndBufferPair> m_statPairs;
     };
 #endif
 
-#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENC)    
+#if defined(MFX_ENABLE_H264_VIDEO_FEI_ENC)
     class VAAPIFEIENCEncoder : public VAAPIEncoder
     {
     public:
