@@ -40,12 +40,12 @@ MbCopyFieLd(SurfaceIndex InSurfIndex, SurfaceIndex OutSurfIndex, int fieldMask)
             case 0x6:  // TFF2FIELD
                 outMbY.select<8,1,16,1>(0,0) = inMbY0.select<8,2,16,1>(0,0);
                 outMbY.select<8,1,16,1>(8,0) = inMbY1.select<8,2,16,1>(0,0);
-                outMbUV.select<8,2,16,1>(0,0) = inMbUV.select<8,2,16,1>(0,0);
+                outMbUV.select<8,1,16,1>(0,0) = inMbUV.select<8,2,16,1>(0,0);
                 break;
             case 0x7:  // BFF2FIELD
                 outMbY.select<8,1,16,1>(0,0) = inMbY0.select<8,2,16,1>(1,0);
                 outMbY.select<8,1,16,1>(8,0) = inMbY1.select<8,2,16,1>(1,0);
-                outMbUV.select<8,2,16,1>(0,0) = inMbUV.select<8,2,16,1>(1,0);
+                outMbUV.select<8,1,16,1>(0,0) = inMbUV.select<8,2,16,1>(1,0);
                 break;
             default:
                 return;
