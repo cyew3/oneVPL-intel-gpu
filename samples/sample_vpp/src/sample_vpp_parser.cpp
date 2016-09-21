@@ -56,6 +56,7 @@ void vppPrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-spic value]    - picture structure of src video\n"));
     msdk_printf(MSDK_STRING("                       0 = interlaced top    field first\n"));
     msdk_printf(MSDK_STRING("                       2 = interlaced bottom field first\n"));
+    msdk_printf(MSDK_STRING("                       3 = single field\n"));
     msdk_printf(MSDK_STRING("                       1 = progressive (default)\n\n"));
 
 
@@ -71,6 +72,7 @@ void vppPrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-dpic value]    - picture structure of dst video\n"));
     msdk_printf(MSDK_STRING("                       0 = interlaced top    field first\n"));
     msdk_printf(MSDK_STRING("                       2 = interlaced bottom field first\n"));
+    msdk_printf(MSDK_STRING("                       3 = single field\n"));
     msdk_printf(MSDK_STRING("                       1 = progressive (default)\n\n"));
 
 
@@ -197,7 +199,7 @@ static mfxU32 Str2FourCC( msdk_char* strInput )
 } // mfxU32 Str2FourCC( msdk_char* strInput )
 
 static
-mfxU8 GetPicStruct( mfxU8 picStruct )
+mfxU16 GetPicStruct( mfxU8 picStruct )
 {
     if ( 0 == picStruct )
     {
@@ -207,12 +209,16 @@ mfxU8 GetPicStruct( mfxU8 picStruct )
     {
         return MFX_PICSTRUCT_FIELD_BFF;
     }
+    else if( 3 == picStruct )
+    {
+        return MFX_PICSTRUCT_FIELD_SINGLE;
+    }
     else
     {
         return MFX_PICSTRUCT_PROGRESSIVE;
     }
 
-} // mfxU8 GetPicStruct( mfxU8 picStruct )
+} // mfxU16 GetPicStruct( mfxU8 picStruct )
 
 // trim from start
 static inline std::string &ltrim(std::string &s) {

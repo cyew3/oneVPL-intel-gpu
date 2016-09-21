@@ -93,6 +93,10 @@ PicStruct2Str( mfxU16  PicStruct )
   {
     return MSDK_STRING("progressive");
   }
+  else if (PicStruct & MFX_PICSTRUCT_FIELD_SINGLE)
+  {
+    return MSDK_STRING("field");
+  }
   else
   {
     return MSDK_STRING("interleave");
