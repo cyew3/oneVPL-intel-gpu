@@ -3,9 +3,13 @@ set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 set(HEVC_Encoder_HW_GUID "6fadc791a0c2eb479ab6dcd5ea9da347")
 
 # Plugin version info
-
-set (HEVCE_HW_PRODUCT_NAME "Intel(R) Media Server Studio 2017 - HEVC Decode and Encode")
-set (HEVCE_HW_DESCRIPTION "Intel(R) Media Server Studio 2017 - HEVC Hardware Encode Plug-in")
+if( __TARGET_PLATFORM STREQUAL "BXTMIN" OR __TARGET_PLATFORM STREQUAL "BXT" )
+  set (HEVCE_HW_PRODUCT_NAME "Intel(R) Media SDK 2017 for Embedded Linux")
+  set (HEVCE_HW_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - HEVC Hardware Encode Plug-in")
+else()
+  set (HEVCE_HW_PRODUCT_NAME "Intel(R) Media Server Studio 2017 - HEVC Decode and Encode")
+  set (HEVCE_HW_DESCRIPTION "Intel(R) Media Server Studio 2017 - HEVC Hardware Encode Plug-in")
+endif()
 
 if( NOT DEFINED ENV{MFX_HEVC_VERSION} )
   set( hevc_version 0.0.000.0000 )

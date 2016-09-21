@@ -47,14 +47,26 @@ void* g_hModule = NULL; // DLL handle received in DllMain
 // Copyright strings
 #if defined(mfxhw64_EXPORTS) || defined(mfxhw32_EXPORTS) || defined(mfxsw64_EXPORTS) || defined(mfxsw32_EXPORTS)
 
-const char* g_MfxProductName = "mediasdk_product_name: Intel(R) Media Server Studio 2016 - SDK for Linux*";
+#if defined(LINUX_TARGET_PLATFORM_BDW)
+const char* g_MfxProductName = "mediasdk_product_name: Intel(R) Media Server Studio 2017 - SDK for Linux*";
+#elif defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+const char* g_MfxProductName = "mediasdk_product_name: Intel(R) Media SDK 2017 for Embedded Linux";
+#else
+const char* g_MfxProductName = "mediasdk_product_name: Intel(R) Media Server Studio - SDK for Linux*";
+#endif
 const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2007-2016 Intel Corporation";
 const char* g_MfxFileVersion = "mediasdk_file_version: " MFX_FILE_VERSION;
 const char* g_MfxProductVersion = "mediasdk_product_version: " MFX_PRODUCT_VERSION;
 
 #endif // mfxhwXX_EXPORTS
 #if defined(mfxaudiosw64_EXPORTS) || defined(mfxaudiosw32_EXPORTS)
-const char* g_MfxProductName = "mediasdk_product_name: Intel(R) Media Server Studio 2016 - Audio for Linux*";
+#if defined(LINUX_TARGET_PLATFORM_BDW)
+const char* g_MfxProductName = "mediasdk_product_name: Intel(R) Media Server Studio 2017 - Audio for Linux*";
+#elif defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
+const char* g_MfxProductName = "mediasdk_product_name: Intel(R) Media SDK 2017 for Embedded Linux";
+#else
+const char* g_MfxProductName = "mediasdk_product_name: Intel(R) Media Server Studio - Audio for Linux*";
+#endif
 const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2014-2016 Intel Corporation";
 const char* g_MfxFileVersion = "mediasdk_file_version: " MFX_FILE_VERSION;
 const char* g_MfxProductVersion = "mediasdk_product_version: " MFX_PRODUCT_VERSION;

@@ -27,7 +27,7 @@ include_directories( ${MSDK_LIB_ROOT}/fei/h265/include )
 list( APPEND umc_dirs
   common
   brc scene_analyzer
-  mpeg2_dec h264_dec h264_enc 
+  mpeg2_dec h264_dec h264_enc
   vc1_common vc1_dec vc1_spl                       ## open-source-cut-line
   mpeg2_enc jpeg_enc color_space_converter         ## open-source-cut-line
   h265_dec
@@ -54,7 +54,7 @@ list( APPEND vencs
 
 foreach( dec ${vdecs} )
 ## open-source-cut-start
-  list( APPEND vdirs      
+  list( APPEND vdirs
     brc/${dec}
     )
 ## open-source-cut-end
@@ -141,11 +141,19 @@ else( )
   set( hevc_version $ENV{MFX_HEVC_VERSION} )
 endif( )
 
-set (HEVC_PRODUCT_NAME "Intel(R) Media Server Studio 2017 - HEVC Decode and Encode")
-set (sw_HEVC_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - HEVC Software Decode Plug-in")
-set (hw_HEVC_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - HEVC Hardware Decode Plug-in")
-set (sw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - HEVC Software Encode Plug-in")
-set (hw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - HEVC GPU Accelerated Encode Plug-in")
+if( __TARGET_PLATFORM STREQUAL "BXTMIN" OR __TARGET_PLATFORM STREQUAL "BXT" )
+  set (HEVC_PRODUCT_NAME "Intel(R) Media SDK 2017 for Embedded Linux")
+  set (sw_HEVC_DECODER_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - HEVC Software Decode Plug-in")
+  set (hw_HEVC_DECODER_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - HEVC Hardware Decode Plug-in")
+  set (sw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - HEVC Software Encode Plug-in")
+  set (hw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - HEVC GPU Accelerated Encode Plug-in")
+else()
+  set (HEVC_PRODUCT_NAME "Intel(R) Media Server Studio 2017 - HEVC Decode and Encode")
+  set (sw_HEVC_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - HEVC Software Decode Plug-in")
+  set (hw_HEVC_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - HEVC Hardware Decode Plug-in")
+  set (sw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - HEVC Software Encode Plug-in")
+  set (hw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - HEVC GPU Accelerated Encode Plug-in")
+endif()
 
   if( Linux OR Darwin )
     execute_process(
@@ -181,12 +189,16 @@ set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxsw_plugin.map" )
 
 # HEVC Decoder
-
-set( hevcd_variants hw )
-if (ENABLE_HEVC)
-  set( hevcd_variants
-       sw  ## open-source-cut-line
-       hw )
+if( __TARGET_PLATFORM STREQUAL "BXTMIN" )
+  message( STATUS "Disabling HEVCd HW libraries for BXTMIN." )
+  set( hevcd_variants "" )
+else()
+  set( hevcd_variants hw )
+  if (ENABLE_HEVC)
+    set( hevcd_variants
+        sw  ## open-source-cut-line
+        hw )
+  endif()
 endif()
 
 foreach( variant ${hevcd_variants} )
@@ -375,8 +387,13 @@ set( defs "" )
 # 1toN Lookahead
 # =============================================================================
 
-set (H264LA_PRODUCT_NAME "Intel(R) Media Server Studio 2017 - SDK Advanced AVC Encode Pack")
-set (hw_H264LA_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - SDK Advanced AVC Hardware Encode Plug-in")
+if( __TARGET_PLATFORM STREQUAL "BXTMIN" OR __TARGET_PLATFORM STREQUAL "BXT" )
+  set (H264LA_PRODUCT_NAME "Intel(R) Media SDK 2017 for Embedded Linux")
+  set (hw_H264LA_ENCODER_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - SDK Advanced AVC Hardware Encode Plug-in")
+else()
+  set (H264LA_PRODUCT_NAME "Intel(R) Media Server Studio 2017 - SDK Advanced AVC Encode Pack")
+  set (hw_H264LA_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - SDK Advanced AVC Hardware Encode Plug-in")
+endif()
 
   if( NOT DEFINED ENV{MFX_H264LA_VERSION} )
     set( h264la_version 0.0.000.0000 )
@@ -612,9 +629,15 @@ set( defs "" )
 # =============================================================================
 # VP8
 # =============================================================================
-set (VP8_PRODUCT_NAME "Intel(R) Media Server Studio 2017 - SDK VP8 Pack")
-set (sw_VP8_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - SDK VP8 Software Decode Plug-in")
-set (hw_VP8_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - SDK VP8 Hardware Decode Plug-in")
+if( __TARGET_PLATFORM STREQUAL "BXTMIN" OR __TARGET_PLATFORM STREQUAL "BXT" )
+  set (VP8_PRODUCT_NAME "Intel(R) Media SDK 2017 for Embedded Linux")
+  set (sw_VP8_DECODER_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - SDK VP8 Software Decode Plug-in")
+  set (hw_VP8_DECODER_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - SDK VP8 Hardware Decode Plug-in")
+else()
+  set (VP8_PRODUCT_NAME "Intel(R) Media Server Studio 2017 - SDK VP8 Pack")
+  set (sw_VP8_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - SDK VP8 Software Decode Plug-in")
+  set (hw_VP8_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - SDK VP8 Hardware Decode Plug-in")
+endif()
 
   if( NOT DEFINED ENV{MFX_VP8_VERSION} )
     set( vp8_version 0.0.000.0000 )
@@ -746,9 +769,15 @@ set( defs "" )
 # =============================================================================
 # VP9
 # =============================================================================
-set (VP9_PRODUCT_NAME "Intel(R) Media Server Studio 2017 - SDK VP9 Pack")
-set (sw_VP9_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - SDK VP9 Software Decode Plug-in")
-set (hw_VP9_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - SDK VP9 Hardware Decode Plug-in")
+if( __TARGET_PLATFORM STREQUAL "BXTMIN" OR __TARGET_PLATFORM STREQUAL "BXT" )
+  set (VP9_PRODUCT_NAME "Intel(R) Media SDK 2017 for Embedded Linux")
+  set (sw_VP9_DECODER_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - SDK VP9 Software Decode Plug-in")
+  set (hw_VP9_DECODER_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - SDK VP9 Hardware Decode Plug-in")
+else()
+  set (VP9_PRODUCT_NAME "Intel(R) Media Server Studio 2017 - SDK VP9 Pack")
+  set (sw_VP9_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - SDK VP9 Software Decode Plug-in")
+  set (hw_VP9_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2017 - SDK VP9 Hardware Decode Plug-in")
+endif()
 
   if( NOT DEFINED ENV{MFX_VP9_VERSION} )
     set( vp9_version 0.0.000.0000 )
