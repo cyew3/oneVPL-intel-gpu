@@ -83,6 +83,15 @@ void SetParamIfStage(tsExtBufType<T>& base, const TFP& fpair, const mfxU32 stage
         return;
 }
 
+template <typename TFP>
+void SetParamIfStage(::mfxFrameSurface1* base, const TFP& fpair, const mfxU32 stage = 0)
+{
+    if(0 != fpair.f && fpair.stage == stage && fpair.f->name.find("mfxFrameSurface1") != std::string::npos)
+        return SetParam((void*) base, fpair.f->name, fpair.f->offset, fpair.f->size, fpair.v);
+    else
+        return;
+}
+
 template <typename T, typename TB>
 void SetPars(tsExtBufType<TB>& base, const T& tc, const mfxU32 stage = 0)
 {
@@ -98,6 +107,17 @@ void SetPars(const tsExtBufType<TB>*& base, const T& tc, const mfxU32 stage = 0)
 {
     assert(0 != base);
     if(base)    return SetPars(*base, tc, stage);
+}
+
+template <typename T>
+void SetPars(::mfxFrameSurface1* base, const T& tc, const mfxU32 stage = 0)
+{
+    assert(0 != base);
+    const size_t npars = sizeof(tc.set_par) / sizeof(tc.set_par[0]);
+    for(size_t i = 0; i < npars; ++i)
+    {
+        SetParamIfStage(base, tc.set_par[i], stage);
+    }
 }
 
 };

@@ -400,6 +400,7 @@ void SetParam(tsExtBufType<T>& base, const std::string name, const mfxU32 offset
         ptr = base.GetExtBuffer(bufId);
         if(!ptr)
         {
+            assert(0 != bufSz);
             base.AddExtBuffer(bufId, bufSz);
             ptr = base.GetExtBuffer(bufId);
         }
@@ -408,4 +409,5 @@ void SetParam(tsExtBufType<T>& base, const std::string name, const mfxU32 offset
 }
 
 template void SetParam(tsExtBufType<mfxVideoParam>& base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value);
+template void SetParam(tsExtBufType<mfxBitstream>& base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value);
 template void SetParam(tsExtBufType<mfxInitParam>& base, const std::string name, const mfxU32 offset, const mfxU32 size, mfxU64 value);

@@ -336,6 +336,7 @@
     <ClCompile Include="src\gmock\test_suites\trans_opaque.cpp" />
     <ClCompile Include="src\gmock\test_suites\vc1d_bs_dataflag.cpp" />
     <ClCompile Include="src\gmock\test_suites\vc1d_res_change.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vp9d_decode_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9d_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_cqp.cpp" />
