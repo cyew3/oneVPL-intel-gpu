@@ -376,208 +376,6 @@ private:
     FeedbackStorage m_cache;
 }; // class CachedFeedback
 
-typedef enum {
-  KEY_FRAME = 0,
-  INTER_FRAME = 1,
-  FRAME_TYPES,
-} FRAME_TYPE;
-
-typedef enum {
-  INTRA_FRAME = 0,
-  LAST_FRAME = 1,
-  GOLDEN_FRAME = 2,
-  ALTREF_FRAME = 3,
-  MAX_REF_FRAMES = 4
-} MV_REFERENCE_FRAME;
-
-#define MAX_REF_LF_DELTAS 4
-#define MAX_MODE_LF_DELTAS 2
-#define SEG_LVL_MAX 4
-
-/*!\brief List of supported color spaces */
-typedef enum vpx_color_space {
-  VPX_CS_UNKNOWN = 0,   /**< Unknown */
-  VPX_CS_BT_601 = 1,    /**< BT.601 */
-  VPX_CS_BT_709 = 2,    /**< BT.709 */
-  VPX_CS_SMPTE_170 = 3, /**< SMPTE.170 */
-  VPX_CS_SMPTE_240 = 4, /**< SMPTE.240 */
-  VPX_CS_BT_2020 = 5,   /**< BT.2020 */
-  VPX_CS_RESERVED = 6,  /**< Reserved */
-  VPX_CS_SRGB = 7       /**< sRGB */
-} vpx_color_space_t;    /**< alias for enum vpx_color_space */
-
-typedef enum vpx_bit_depth {
-    VPX_BITS_8  =  8,  /**<  8 bits */
-    VPX_BITS_10 = 10,  /**< 10 bits */
-    VPX_BITS_12 = 12,  /**< 12 bits */
-} vpx_bit_depth_t;
-
-typedef uint8_t INTERP_FILTER;
-
-typedef enum BITSTREAM_PROFILE {
-  PROFILE_0,
-  PROFILE_1,
-  PROFILE_2,
-  PROFILE_3,
-  MAX_PROFILES
-} BITSTREAM_PROFILE;
-
-struct loopfilter {
-  int filter_level;
-  int last_filt_level;
-
-  int sharpness_level;
-  int last_sharpness_level;
-
-  uint8_t mode_ref_delta_enabled;
-  uint8_t mode_ref_delta_update;
-
-  // 0 = Intra, Last, GF, ARF
-  signed char ref_deltas[MAX_REF_LF_DELTAS];
-  signed char last_ref_deltas[MAX_REF_LF_DELTAS];
-
-  // 0 = ZERO_MV, MV
-  signed char mode_deltas[MAX_MODE_LF_DELTAS];
-  signed char last_mode_deltas[MAX_MODE_LF_DELTAS];
-};
-
-struct segmentation {
-  uint8_t enabled;
-  uint8_t update_map;
-  uint8_t update_data;
-  uint8_t abs_delta;
-  uint8_t temporal_update;
-
-  int16_t feature_data[MAX_SEGMENTS][SEG_LVL_MAX];
-  uint32_t feature_mask[MAX_SEGMENTS];
-  int aq_av_offset;
-};
-
-typedef int vpx_color_range_t;
-#define REF_FRAMES_LOG2 3
-#define REF_FRAMES (1 << REF_FRAMES_LOG2)
-#define SWITCHABLE 4 /* should be the last one */
-typedef struct VP9Common {
-  vpx_color_space_t color_space;
-  vpx_color_range_t color_range;
-  int width;
-  int height;
-  int render_width;
-  int render_height;
-  int last_width;
-  int last_height;
-
-  // TODO(jkoleszar): this implies chroma ss right now, but could vary per
-  // plane. Revisit as part of the future change to YV12_BUFFER_CONFIG to
-  // support additional planes.
-  int subsampling_x;
-  int subsampling_y;
-
-  int ref_frame_map[REF_FRAMES]; /* maps fb_idx to reference slot */
-
-  // Prepare ref_frame_map for the next frame.
-  // Only used in frame parallel decode.
-  int next_ref_frame_map[REF_FRAMES];
-
-  FRAME_TYPE frame_type;
-
-  int show_frame;
-  int last_show_frame;
-  int show_existing_frame;
-
-  // Flag signaling that the frame is encoded using only INTRA modes.
-  uint8_t intra_only;
-  uint8_t last_intra_only;
-
-  int allow_high_precision_mv;
-
-  // Flag signaling that the frame context should be reset to default values.
-  // 0 or 1 implies don't reset, 2 reset just the context specified in the
-  // frame header, 3 reset all contexts.
-  int reset_frame_context;
-
-  // MBs, mb_rows/cols is in 16-pixel units; mi_rows/cols is in
-  // MODE_INFO (8-pixel) units.
-  int MBs;
-  int mb_rows, mi_rows;
-  int mb_cols, mi_cols;
-  int mi_stride;
-
-  int base_qindex;
-  int y_dc_delta_q;
-  int uv_dc_delta_q;
-  int uv_ac_delta_q;
-  int16_t y_dequant[MAX_SEGMENTS][2];
-  int16_t uv_dequant[MAX_SEGMENTS][2];
-
-  // Whether to use previous frame's motion vectors for prediction.
-  int use_prev_frame_mvs;
-
-  INTERP_FILTER interp_filter;
-
-  int refresh_frame_context; /* Two state 0 = NO, 1 = YES */
-
-  int ref_frame_sign_bias[MAX_REF_FRAMES]; /* Two state 0, 1 */
-
-  struct loopfilter lf;
-  struct segmentation seg;
-
-  unsigned int frame_context_idx; /* Context to use/update */
-
-  BITSTREAM_PROFILE profile;
-
-  // VPX_BITS_8 in profile 0 or 1, VPX_BITS_10 or VPX_BITS_12 in profile 2 or 3.
-  vpx_bit_depth_t bit_depth;
-
-  int error_resilient_mode;
-  int frame_parallel_decoding_mode;
-
-  int log2_tile_cols, log2_tile_rows;
-  int byte_alignment;
-  int skip_loop_filter;
-} VP9_COMMON;
-typedef struct VP9_COMP {
-  VP9_COMMON common;
-
-  int scaled_ref_idx[MAX_REF_FRAMES];
-  int lst_fb_idx;
-  int gld_fb_idx;
-  int alt_fb_idx;
-
-  int refresh_last_frame;
-  int refresh_golden_frame;
-  int refresh_alt_ref_frame;
-
-  unsigned char refresh_frames_mask;
-
-  double framerate;
-
-  int interp_filter_selected[MAX_REF_FRAMES][SWITCHABLE];
-
-  int initial_width;
-  int initial_height;
-  int initial_mbs;  // Number of MBs in the full-size frame; to be used to
-                    // normalize the firstpass stats. This will differ from the
-                    // number of MBs in the current frame when the frame is
-                    // scaled.
-
-  int frame_flags;
-
-  int resize_pending;
-  int resize_state;
-  int external_resize;
-  int resize_scale_num;
-  int resize_scale_den;
-  int resize_avg_qp;
-  int resize_buffer_underflow;
-  int resize_count;
-
-  int use_skin_detection;
-
-  int target_level;
-
-} VP9_COMP;
-
 class D3D9Encoder : public DriverEncoder
 {
 public:
@@ -601,13 +399,6 @@ public:
     mfxStatus Reset(
         VP9MfxParam const & par);
 
-    // empty  for Lin
-    virtual
-    mfxStatus Register(
-        mfxMemId memId,
-        D3DDDIFORMAT type);
-
-    // 2 -> 1
     virtual
     mfxStatus Register(
         mfxFrameAllocResponse& response,
@@ -658,9 +449,9 @@ private:
     CachedFeedback                              m_feedbackCached;
 
     std::vector<mfxU8> m_uncompressedHeaderBuf;
-    VP9_COMP m_libvpxBasedVP9Param;
     ENCODE_PACKEDHEADER_DATA m_descForFrameHeader;
 
+    VP9SeqLevelParam m_seqParam;
 
     mfxU32 m_width;
     mfxU32 m_height;

@@ -16,517 +16,30 @@
 
 namespace MfxHwVP9Encode
 {
+
+    DriverEncoder* CreatePlatformVp9Encoder(mfxCoreInterface* pCore)
+         {
+        if (pCore)
+            {
+            mfxCoreParam par = {};
+
+            if (pCore->GetCoreParam(pCore->pthis, &par))
+                return 0;
+
+                switch (par.Impl & 0xF00)
+                {
+                case MFX_IMPL_VIA_D3D9:
+                    return new D3D9Encoder;
+                /*case MFX_IMPL_VIA_D3D11: // no DX11 support so far
+                    return new D3D11Encoder;*/
+                default:
+                    return 0;
+                }
+            }
+            return 0;
+        };
+
 #if defined (MFX_VA_WIN)
-
-DriverEncoder* CreatePlatformVp9Encoder()
-{
-    return new D3D9Encoder;
-}
-
-// temporal version of header packing
-#define vp9_zero(dest) memset(&(dest), 0, sizeof(dest))
-#define ALIGN_POWER_OF_TWO(value, n) \
-  (((value) + ((1 << (n)) - 1)) & ~((1 << (n)) - 1))
-
-#define MI_SIZE_LOG2 3
-#define MI_BLOCK_SIZE_LOG2 (6 - MI_SIZE_LOG2)  // 64 = 2^6
-#define MI_BLOCK_SIZE (1 << MI_BLOCK_SIZE_LOG2)  // mi-units per max block
-
-static int calc_mi_size(int len) {
-  // len is in mi units.
-  return len + MI_BLOCK_SIZE;
-}
-
-mfxStatus InitVp9VideoParam(VP9MfxParam const &video, VP9_COMP & libvpxVP9Par)
-{
-    VP9_COMP *const cpi = &libvpxVP9Par;
-    VP9_COMMON *const cm = &cpi->common;
-
-    vp9_zero(*cpi);
-
-    cm->profile                 =  PROFILE_0;
-    cm->bit_depth               =  VPX_BITS_8;
-    cm->color_space             =  VPX_CS_UNKNOWN;
-    cm->width                   = video.mfx.FrameInfo.Width;
-    cm->height                  = video.mfx.FrameInfo.Height;
-    cm->render_width           = cm->width;
-    cm->render_height          = cm->height;
-    cm->refresh_frame_context   = 1;
-    cm->reset_frame_context     = 0;
-    cm->subsampling_x           = 1; // 4:2:0 support
-    cm->subsampling_y           = 1;
-    cpi->initial_width = cm->width;
-    cpi->initial_height = cm->height;
-    cpi->refresh_last_frame = cpi->refresh_golden_frame = cpi->refresh_alt_ref_frame = 0;
-    cpi->refresh_frames_mask = 0;
-
-    const int aligned_width = ALIGN_POWER_OF_TWO(cm->width, MI_SIZE_LOG2);
-    const int aligned_height = ALIGN_POWER_OF_TWO(cm->height, MI_SIZE_LOG2);
-
-    cm->mi_cols = aligned_width >> MI_SIZE_LOG2;
-    cm->mi_rows = aligned_height >> MI_SIZE_LOG2;
-    cm->mi_stride = calc_mi_size(cm->mi_cols);
-
-    cm->mb_cols = (cm->mi_cols + 1) >> 1;
-    cm->mb_rows = (cm->mi_rows + 1) >> 1;
-    cm->MBs = cm->mb_rows * cm->mb_cols;
-
-    cpi->common.allow_high_precision_mv = 1;  // Default mv precision
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus SetNextFrame(sFrameParams const &frameParams, VP9_COMP & libvpxVP9Par)
-{
-    VP9_COMP    *const cpi = &libvpxVP9Par;
-    VP9_COMMON  *const cm = &cpi->common;
-
-    struct loopfilter *const lf = &cm->lf;
-    struct segmentation *const seg = &cm->seg;
-
-    cm->frame_type = (frameParams.bIntra) ? KEY_FRAME : INTER_FRAME;
-    cm->base_qindex = frameParams.QIndex;
-
-    cm->show_frame = 1;
-    cm->intra_only = 0;
-
-    cpi->refresh_last_frame = cpi->refresh_golden_frame = cpi->refresh_alt_ref_frame = 0;
-    cpi->refresh_frames_mask = 0;
-    for (mfxU8 i = 0; i < DPB_SIZE; i ++)
-    {
-        cpi->refresh_frames_mask |= (frameParams.refreshRefFrames[i] << i);
-    }
-
-    if (cm->frame_type == KEY_FRAME || cm->intra_only) {
-        //vp9_setup_past_independence(cm);
-
-        seg->enabled = 0;
-        seg->update_map = 0;
-        seg->update_data = 0;
-
-        //vp9_clearall_segfeatures(seg);
-        lf->mode_ref_delta_enabled = 0;
-        lf->mode_ref_delta_update = 0;
-        vp9_zero(lf->last_ref_deltas);
-        vp9_zero(lf->last_mode_deltas);
-
-        cm->error_resilient_mode = 0;
-        cm->frame_parallel_decoding_mode = 0;
-        if (cm->error_resilient_mode) {
-            cm->frame_parallel_decoding_mode = 1;
-            cm->reset_frame_context = 0;
-            cm->refresh_frame_context = 0;
-        } else if (cm->intra_only) {
-            cm->reset_frame_context = 2;
-        }
-
-        lf->ref_deltas[INTRA_FRAME] = frameParams.LFRefDelta[INTRA_FRAME];
-        lf->ref_deltas[LAST_FRAME] = frameParams.LFRefDelta[LAST_FRAME];
-        lf->ref_deltas[GOLDEN_FRAME] = frameParams.LFRefDelta[GOLDEN_FRAME];
-        lf->ref_deltas[ALTREF_FRAME] = frameParams.LFRefDelta[ALTREF_FRAME];
-
-        lf->mode_deltas[0] = frameParams.LFModeDelta[0];
-        lf->mode_deltas[1] = frameParams.LFModeDelta[1];;
-    } else {
-        cpi->lst_fb_idx = frameParams.refList[REF_LAST];
-        cpi->gld_fb_idx = frameParams.refList[REF_GOLD];
-        cpi->alt_fb_idx = frameParams.refList[REF_ALT];
-
-        lf->mode_ref_delta_enabled = 0;
-        lf->mode_ref_delta_update = 0;
-    }
-
-#if 0 // waiting for support in BSP
-    if (frameParams.NumSegments > 1)
-    {
-        seg->enabled = 1;
-        for (mfxU8 i = 0; i < frameParams.NumSegments; i ++)
-        {
-            if (frameParams.QIndexDeltaSeg[i])
-            {
-                vp9_enable_segfeature(seg, i, SEG_LVL_ALT_Q);
-                vp9_set_segdata(seg, i, SEG_LVL_ALT_Q, frameParams.QIndexDeltaSeg[i]);
-            }
-            if (frameParams.LFDeltaSeg[i])
-            {
-                vp9_enable_segfeature(seg, i, SEG_LVL_ALT_LF);
-                vp9_set_segdata(seg, i, SEG_LVL_ALT_LF, frameParams.LFDeltaSeg[i]);
-            }
-        }
-    }
-#endif
-
-    cm->y_dc_delta_q = 0;
-    cm->uv_dc_delta_q = 0;
-    cm->uv_ac_delta_q = 0;
-
-    lf->filter_level = frameParams.LFLevel;
-    lf->sharpness_level = cm->frame_type == KEY_FRAME ? 0 : 0;
-
-    return MFX_ERR_NONE;
-}
-
-struct vpx_write_bit_buffer {
-  uint8_t *bit_buffer;
-  size_t bit_offset;
-};
-
-// header packing from libvpx
-void vpx_wb_write_bit(struct vpx_write_bit_buffer *wb, int bit) {
-  const int off = (int)wb->bit_offset;
-  const int p = off / CHAR_BIT;
-  const int q = CHAR_BIT - 1 - off % CHAR_BIT;
-  if (q == CHAR_BIT - 1) {
-    wb->bit_buffer[p] = uint8_t(bit << q);
-  } else {
-    wb->bit_buffer[p] &= ~(1 << q);
-    wb->bit_buffer[p] |= bit << q;
-  }
-  wb->bit_offset = off + 1;
-}
-
-void vpx_wb_write_literal(struct vpx_write_bit_buffer *wb, int data, int bits) {
-  int bit;
-  for (bit = bits - 1; bit >= 0; bit--) vpx_wb_write_bit(wb, (data >> bit) & 1);
-}
-
-#define VP9_FRAME_MARKER 0x2
-
-static void write_profile(BITSTREAM_PROFILE profile,
-                          struct vpx_write_bit_buffer *wb) {
-  switch (profile) {
-    case PROFILE_0: vpx_wb_write_literal(wb, 0, 2); break;
-    case PROFILE_1: vpx_wb_write_literal(wb, 2, 2); break;
-    case PROFILE_2: vpx_wb_write_literal(wb, 1, 2); break;
-    case PROFILE_3: vpx_wb_write_literal(wb, 6, 3); break;
-    default: assert(0);
-  }
-}
-
-#define VP9_SYNC_CODE_0 0x49
-#define VP9_SYNC_CODE_1 0x83
-#define VP9_SYNC_CODE_2 0x42
-
-static void write_sync_code(struct vpx_write_bit_buffer *wb) {
-  vpx_wb_write_literal(wb, VP9_SYNC_CODE_0, 8);
-  vpx_wb_write_literal(wb, VP9_SYNC_CODE_1, 8);
-  vpx_wb_write_literal(wb, VP9_SYNC_CODE_2, 8);
-}
-
-static void write_bitdepth_colorspace_sampling(
-    VP9_COMMON *const cm, struct vpx_write_bit_buffer *wb) {
-  if (cm->profile >= PROFILE_2) {
-    assert(cm->bit_depth > VPX_BITS_8);
-    vpx_wb_write_bit(wb, cm->bit_depth == VPX_BITS_10 ? 0 : 1);
-  }
-  vpx_wb_write_literal(wb, cm->color_space, 3);
-  if (cm->color_space != VPX_CS_SRGB) {
-    // 0: [16, 235] (i.e. xvYCC), 1: [0, 255]
-    vpx_wb_write_bit(wb, cm->color_range);
-    if (cm->profile == PROFILE_1 || cm->profile == PROFILE_3) {
-      assert(cm->subsampling_x != 1 || cm->subsampling_y != 1);
-      vpx_wb_write_bit(wb, cm->subsampling_x);
-      vpx_wb_write_bit(wb, cm->subsampling_y);
-      vpx_wb_write_bit(wb, 0);  // unused
-    } else {
-      assert(cm->subsampling_x == 1 && cm->subsampling_y == 1);
-    }
-  } else {
-    assert(cm->profile == PROFILE_1 || cm->profile == PROFILE_3);
-    vpx_wb_write_bit(wb, 0);  // unused
-  }
-}
-
-static void write_render_size(const VP9_COMMON *cm,
-                              struct vpx_write_bit_buffer *wb) {
-  const int scaling_active =
-      cm->width != cm->render_width || cm->height != cm->render_height;
-  vpx_wb_write_bit(wb, scaling_active);
-  if (scaling_active) {
-    vpx_wb_write_literal(wb, cm->render_width - 1, 16);
-    vpx_wb_write_literal(wb, cm->render_height - 1, 16);
-  }
-}
-
-static void write_frame_size(const VP9_COMMON *cm,
-                             struct vpx_write_bit_buffer *wb) {
-  vpx_wb_write_literal(wb, cm->width - 1, 16);
-  vpx_wb_write_literal(wb, cm->height - 1, 16);
-
-  write_render_size(cm, wb);
-}
-
-#define INVALID_IDX -1  // Invalid buffer index.
-
-static int get_ref_frame_map_idx(const VP9_COMP *cpi,
-                                        MV_REFERENCE_FRAME ref_frame) {
-  if (ref_frame == LAST_FRAME) {
-    return cpi->lst_fb_idx;
-  } else if (ref_frame == GOLDEN_FRAME) {
-    return cpi->gld_fb_idx;
-  } else {
-    return cpi->alt_fb_idx;
-  }
-}
-
-/*static int get_ref_frame_buf_idx(const VP9_COMP *const cpi,
-                                        int ref_frame) {
-  const VP9_COMMON *const cm = &cpi->common;
-  const int map_idx = get_ref_frame_map_idx(cpi, (MV_REFERENCE_FRAME)ref_frame);
-  return (map_idx != INVALID_IDX) ? cm->ref_frame_map[map_idx] : INVALID_IDX;
-}*/
-
-static void write_frame_size_with_refs(VP9_COMP *cpi,
-                                       struct vpx_write_bit_buffer *wb) {
-  VP9_COMMON *const cm = &cpi->common;
-  int found = 0;
-
-  for (int ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
-
-    /*found = get_ref_frame_buf_idx(cpi, ref_frame) == INVALID_IDX ? 0 : 1;*/
-
-    vpx_wb_write_bit(wb, found);
-    if (found) {
-      break;
-    }
-  }
-
-  if (!found) {
-    vpx_wb_write_literal(wb, cm->width - 1, 16);
-    vpx_wb_write_literal(wb, cm->height - 1, 16);
-  }
-
-  write_render_size(cm, wb);
-}
-
-static void write_interp_filter(INTERP_FILTER filter,
-                                struct vpx_write_bit_buffer *wb) {
-  const int filter_to_literal[] = { 1, 0, 2, 3 };
-
-  vpx_wb_write_bit(wb, filter == SWITCHABLE);
-  if (filter != SWITCHABLE)
-    vpx_wb_write_literal(wb, filter_to_literal[filter], 2);
-}
-
-#define FRAME_CONTEXTS_LOG2 2
-#define FRAME_CONTEXTS (1 << FRAME_CONTEXTS_LOG2)
-
-static void encode_loopfilter(struct loopfilter *lf,
-                              struct vpx_write_bit_buffer *wb,
-                              mfxU16 &bitOffsetModeDelta,
-                              mfxU16 &bitOffsetRefDelta) {
-  int i;
-
-  // Encode the loop filter level and type
-  vpx_wb_write_literal(wb, lf->filter_level, 6);
-  vpx_wb_write_literal(wb, lf->sharpness_level, 3);
-
-  // Write out loop filter deltas applied at the MB level based on mode or
-  // ref frame (if they are enabled).
-  vpx_wb_write_bit(wb, lf->mode_ref_delta_enabled);
-
-  if (lf->mode_ref_delta_enabled) {
-    vpx_wb_write_bit(wb, lf->mode_ref_delta_update);
-    if (lf->mode_ref_delta_update) {
-        bitOffsetRefDelta = (mfxU16)wb->bit_offset;
-      for (i = 0; i < MAX_REF_LF_DELTAS; i++) {
-        const int delta = lf->ref_deltas[i];
-        const int changed = delta != lf->last_ref_deltas[i];
-        vpx_wb_write_bit(wb, changed);
-        if (changed) {
-          lf->last_ref_deltas[i] = (char)delta;
-          vpx_wb_write_literal(wb, abs(delta) & 0x3F, 6);
-          vpx_wb_write_bit(wb, delta < 0);
-        }
-      }
-
-      bitOffsetModeDelta = (mfxU16)wb->bit_offset;
-      for (i = 0; i < MAX_MODE_LF_DELTAS; i++) {
-        const int delta = lf->mode_deltas[i];
-        const int changed = delta != lf->last_mode_deltas[i];
-        vpx_wb_write_bit(wb, changed);
-        if (changed) {
-          lf->last_mode_deltas[i] = (char)delta;
-          vpx_wb_write_literal(wb, abs(delta) & 0x3F, 6);
-          vpx_wb_write_bit(wb, delta < 0);
-        }
-      }
-    }
-  }
-}
-
-#define QINDEX_BITS 8
-
-static void write_delta_q(struct vpx_write_bit_buffer *wb, int delta_q) {
-  if (delta_q != 0) {
-    vpx_wb_write_bit(wb, 1);
-    vpx_wb_write_literal(wb, abs(delta_q), 4);
-    vpx_wb_write_bit(wb, delta_q < 0);
-  } else {
-    vpx_wb_write_bit(wb, 0);
-  }
-}
-
-static void encode_quantization(const VP9_COMMON *const cm,
-                                struct vpx_write_bit_buffer *wb) {
-  vpx_wb_write_literal(wb, cm->base_qindex, QINDEX_BITS);
-  write_delta_q(wb, cm->y_dc_delta_q);
-  write_delta_q(wb, cm->uv_dc_delta_q);
-  write_delta_q(wb, cm->uv_ac_delta_q);
-}
-
-static void encode_segmentation(VP9_COMMON *cm, struct vpx_write_bit_buffer *wb) {
-    cm;
-    vpx_wb_write_bit(wb, 0);
-    return;
-}
-
-#define MAX_TILE_WIDTH_B64 64
-#define MIN_TILE_WIDTH_B64 4
-
-static int get_min_log2_tile_cols(const int sb64_cols) {
-  int min_log2 = 0;
-  while ((MAX_TILE_WIDTH_B64 << min_log2) < sb64_cols) ++min_log2;
-  return min_log2;
-}
-
-static int get_max_log2_tile_cols(const int sb64_cols) {
-  int max_log2 = 1;
-  while ((sb64_cols >> max_log2) >= MIN_TILE_WIDTH_B64) ++max_log2;
-  return max_log2 - 1;
-}
-
-#define MI_SIZE_LOG2 3
-#define MI_BLOCK_SIZE_LOG2 (6 - MI_SIZE_LOG2)  // 64 = 2^6
-#define MI_BLOCK_SIZE (1 << MI_BLOCK_SIZE_LOG2)  // mi-units per max block
-
-#define ALIGN_POWER_OF_TWO(value, n) \
-  (((value) + ((1 << (n)) - 1)) & ~((1 << (n)) - 1))
-
-static int mi_cols_aligned_to_sb(int n_mis) {
-  return ALIGN_POWER_OF_TWO(n_mis, MI_BLOCK_SIZE_LOG2);
-}
-
-void vp9_get_tile_n_bits(int mi_cols, int *min_log2_tile_cols,
-                         int *max_log2_tile_cols) {
-  const int sb64_cols = mi_cols_aligned_to_sb(mi_cols) >> MI_BLOCK_SIZE_LOG2;
-  *min_log2_tile_cols = get_min_log2_tile_cols(sb64_cols);
-  *max_log2_tile_cols = get_max_log2_tile_cols(sb64_cols);
-  assert(*min_log2_tile_cols <= *max_log2_tile_cols);
-}
-
-static void write_tile_info(const VP9_COMMON *const cm,
-                            struct vpx_write_bit_buffer *wb) {
-  int min_log2_tile_cols, max_log2_tile_cols, ones;
-  vp9_get_tile_n_bits(cm->mi_cols, &min_log2_tile_cols, &max_log2_tile_cols);
-
-  // columns
-  ones = cm->log2_tile_cols - min_log2_tile_cols;
-  while (ones--) vpx_wb_write_bit(wb, 1);
-
-  if (cm->log2_tile_cols < max_log2_tile_cols) vpx_wb_write_bit(wb, 0);
-
-  // rows
-  vpx_wb_write_bit(wb, cm->log2_tile_rows != 0);
-  if (cm->log2_tile_rows != 0) vpx_wb_write_bit(wb, cm->log2_tile_rows != 1);
-}
-
-struct BitOffsets
-{
-    mfxU16 BitOffsetForLFRefDelta;
-    mfxU16 BitOffsetForLFModeDelta;
-    mfxU16 BitOffsetForLFLevel;
-    mfxU16 BitOffsetForQIndex;
-    mfxU16 BitOffsetForFirstPartitionSize;
-    mfxU16 BitOffsetForSegmentation;
-    mfxU16 BitSizeForSegmentation;
-};
-
-static void write_uncompressed_header(VP9_COMP *cpi,
-                                      struct vpx_write_bit_buffer *wb,
-                                      BitOffsets &offsets) {
-  Zero(offsets);
-  VP9_COMMON *const cm = &cpi->common;
-  //MACROBLOCKD *const xd = &cpi->td.mb.e_mbd; // no segment info for now
-
-  vpx_wb_write_literal(wb, VP9_FRAME_MARKER, 2);
-
-  write_profile(cm->profile, wb);
-
-  vpx_wb_write_bit(wb, 0);  // show_existing_frame
-  vpx_wb_write_bit(wb, cm->frame_type);
-  vpx_wb_write_bit(wb, cm->show_frame);
-  vpx_wb_write_bit(wb, cm->error_resilient_mode);
-
-  if (cm->frame_type == KEY_FRAME) {
-    write_sync_code(wb);
-    write_bitdepth_colorspace_sampling(cm, wb);
-    write_frame_size(cm, wb);
-  } else {
-    // In spatial svc if it's not error_resilient_mode then we need to code all
-    // visible frames as invisible. But we need to keep the show_frame flag so
-    // that the publisher could know whether it is supposed to be visible.
-    // So we will code the show_frame flag as it is. Then code the intra_only
-    // bit here. This will make the bitstream incompatible. In the player we
-    // will change to show_frame flag to 0, then add an one byte frame with
-    // show_existing_frame flag which tells the decoder which frame we want to
-    // show.
-    if (!cm->show_frame) vpx_wb_write_bit(wb, cm->intra_only);
-
-    if (!cm->error_resilient_mode)
-      vpx_wb_write_literal(wb, cm->reset_frame_context, 2);
-
-    if (cm->intra_only) {
-      write_sync_code(wb);
-
-      // Note for profile 0, 420 8bpp is assumed.
-      if (cm->profile > PROFILE_0) {
-        write_bitdepth_colorspace_sampling(cm, wb);
-      }
-
-      vpx_wb_write_literal(wb, cpi->refresh_frames_mask, REF_FRAMES);
-      write_frame_size(cm, wb);
-    } else {
-      vpx_wb_write_literal(wb, cpi->refresh_frames_mask, REF_FRAMES);
-      for (int ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame = ref_frame) {
-        assert(get_ref_frame_map_idx(cpi, (MV_REFERENCE_FRAME)ref_frame) != INVALID_IDX);
-        vpx_wb_write_literal(wb, get_ref_frame_map_idx(cpi, (MV_REFERENCE_FRAME)ref_frame),
-                             REF_FRAMES_LOG2);
-        vpx_wb_write_bit(wb, cm->ref_frame_sign_bias[ref_frame]);
-      }
-
-      write_frame_size_with_refs(cpi, wb);
-
-      vpx_wb_write_bit(wb, cm->allow_high_precision_mv);
-
-      //fix_interp_filter(cm, cpi->td.counts);
-
-      write_interp_filter(cm->interp_filter, wb);
-    }
-  }
-
-  if (!cm->error_resilient_mode) {
-    vpx_wb_write_bit(wb, cm->refresh_frame_context);
-    vpx_wb_write_bit(wb, cm->frame_parallel_decoding_mode);
-  }
-
-  vpx_wb_write_literal(wb, cm->frame_context_idx, FRAME_CONTEXTS_LOG2);
-
-  offsets.BitOffsetForLFLevel = (mfxU16)wb->bit_offset;
-  encode_loopfilter(&cm->lf, wb, offsets.BitOffsetForLFModeDelta, offsets.BitOffsetForLFRefDelta);
-  offsets.BitOffsetForQIndex = (mfxU16)wb->bit_offset;
-  encode_quantization(cm, wb);
-  offsets.BitOffsetForSegmentation = (mfxU16)wb->bit_offset;;
-  encode_segmentation(cm, wb);
-  offsets.BitSizeForSegmentation = (mfxU16)wb->bit_offset - offsets.BitOffsetForSegmentation;
-
-  write_tile_info(cm, wb);
-
-  offsets.BitOffsetForFirstPartitionSize = (mfxU16)wb->bit_offset;
-  vpx_wb_write_literal(wb, 0, 16);
-}
-
-// header packing from libvpx
 
 void FillSpsBuffer(
     VP9MfxParam const & par,
@@ -560,13 +73,9 @@ void FillPpsBuffer(
     Task const & task,
     ENCODE_SET_PICTURE_PARAMETERS_VP9 & pps)
 {
-    // const part of pps structure
     Zero(pps);
 
-    pps.LumaACQIndex        = task.m_sFrameParams.QIndex;
-    pps.LumaDCQIndexDelta   = (CHAR)task.m_sFrameParams.QIndexDeltaLumaDC;
-    pps.ChromaACQIndexDelta = (CHAR)task.m_sFrameParams.QIndexDeltaChromaAC;
-    pps.ChromaDCQIndexDelta = (CHAR)task.m_sFrameParams.QIndexDeltaChromaDC;
+    VP9FrameLevelParam const &framePar = task.m_frameParam;
 
     //pps.MinLumaACQIndex = 0;
     //pps.MaxLumaACQIndex = 127;
@@ -594,7 +103,7 @@ void FillPpsBuffer(
     pps.RefFlags.fields.refresh_frame_flags = 0;
     for (mfxU8 i = 0; i < DPB_SIZE; i++)
     {
-        pps.RefFlags.fields.refresh_frame_flags |= (task.m_sFrameParams.refreshRefFrames[i] << i);
+        pps.RefFlags.fields.refresh_frame_flags |= (framePar.refreshRefFrames[i] << i);
     }
 
     if (task.m_pRecRefFrames[REF_LAST])
@@ -624,41 +133,34 @@ void FillPpsBuffer(
         refIdx ++;
     }
 
-    pps.PicFlags.fields.frame_type           = (task.m_sFrameParams.bIntra) ? 0 : 1;
-    pps.PicFlags.fields.show_frame           = 1;
-    pps.PicFlags.fields.error_resilient_mode = 0;
-    pps.PicFlags.fields.intra_only           = 0;
-    pps.PicFlags.fields.refresh_frame_context = 1;
-    pps.PicFlags.fields.allow_high_precision_mv = 1;
+    pps.PicFlags.fields.frame_type           = framePar.frameType;
+    pps.PicFlags.fields.show_frame           = framePar.showFarme;
+    pps.PicFlags.fields.error_resilient_mode = framePar.errorResilentMode;
+    pps.PicFlags.fields.intra_only           = framePar.intraOnly;
+    pps.PicFlags.fields.refresh_frame_context = framePar.refreshFrameContext;
+    pps.PicFlags.fields.allow_high_precision_mv = framePar.allowHighPrecisionMV;
     pps.PicFlags.fields.segmentation_enabled = 0; // segmentation isn't supported for now. TODO: enable segmentation
 
-    pps.LumaACQIndex         = task.m_sFrameParams.QIndex;
-    pps.LumaDCQIndexDelta   = (mfxI8)task.m_sFrameParams.QIndexDeltaLumaDC;
-    pps.ChromaACQIndexDelta = (mfxI8)task.m_sFrameParams.QIndexDeltaChromaAC;
-    pps.ChromaACQIndexDelta = (mfxI8)task.m_sFrameParams.QIndexDeltaChromaDC;
+    pps.LumaACQIndex        = framePar.baseQIndex;
+    pps.LumaDCQIndexDelta   = framePar.qIndexDeltaLumaDC;
+    pps.ChromaACQIndexDelta = framePar.qIndexDeltaChromaAC;
+    pps.ChromaACQIndexDelta = framePar.qIndexDeltaChromaDC;
 
-    pps.filter_level = task.m_sFrameParams.LFLevel;
-    pps.sharpness_level = task.m_sFrameParams.Sharpness;
+    pps.filter_level = framePar.lfLevel;
+    pps.sharpness_level = framePar.sharpness;
 
     for (mfxU16 i = 0; i < 4; i ++)
     {
-        pps.LFRefDelta[i] = (mfxI8)task.m_sFrameParams.LFRefDelta[i];
+        pps.LFRefDelta[i] = framePar.lfRefDelta[i];
     }
 
     for (mfxU16 i = 0; i < 2; i ++)
     {
-        pps.LFModeDelta[i] = (mfxI8)task.m_sFrameParams.LFRefDelta[i];
+        pps.LFModeDelta[i] = framePar.lfModeDelta[i];
     }
 
-    /*pps.BitOffsetForLFRefDelta         = 0;
-    pps.BitOffsetForLFModeDelta        = 4 * 4 + pps.BitOffsetForLFModeDelta;
-    pps.BitOffsetForLFLevel            = 4 * 2 + pps.BitOffsetForLFLevel;
-    pps.BitOffsetForQIndex             = 4 * 1 + pps.BitOffsetForQIndex;
-    pps.BitOffsetForFirstPartitionSize = 4 * 1 + pps.BitOffsetForFirstPartitionSize;
-    pps.BitOffsetForSegmentation       = 4 * 1 + pps.BitOffsetForSegmentation;*/
-
-    pps.log2_tile_columns   = 0; // no tiles support
-    pps.log2_tile_rows      = 0; // no tiles support
+    pps.log2_tile_columns = framePar.log2TileCols;
+    pps.log2_tile_rows    = framePar.log2TileRows;
 
     pps.StatusReportFeedbackNumber = task.m_frameOrder; // TODO: fix to unique value
 }
@@ -762,7 +264,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     mfxStatus sts = pCore->GetHandle(pCore->pthis, MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&device);
 
     if (sts == MFX_ERR_NOT_FOUND)
-        sts = m_pmfxCore->CreateAccelerationDevice(m_pmfxCore->pthis, MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&device);
+        sts = m_pmfxCore->CreateAccelerationDevice(pCore->pthis, MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&device);
 
     MFX_CHECK_STS(sts);
     MFX_CHECK(device, MFX_ERR_DEVICE_FAILED);
@@ -789,7 +291,6 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     return MFX_ERR_NONE;
 } // mfxStatus D3D9Encoder::CreateAuxilliaryDevice(VideoCORE* core, GUID guid, mfxU32 width, mfxU32 height)
 
-#define VP9_MAX_UNCOMPRESSED_HEADER_SIZE 1000
 
 mfxStatus D3D9Encoder::CreateAccelerationService(VP9MfxParam const & par)
 {
@@ -814,8 +315,8 @@ mfxStatus D3D9Encoder::CreateAccelerationService(VP9MfxParam const & par)
 
     FillSpsBuffer(par, m_caps, m_sps);
 
-    m_uncompressedHeaderBuf.resize(VP9_MAX_UNCOMPRESSED_HEADER_SIZE);
-    InitVp9VideoParam(m_video, m_libvpxBasedVP9Param);
+    m_uncompressedHeaderBuf.resize(VP9_MAX_UNCOMPRESSED_HEADER_SIZE + MAX_IVF_HEADER_SIZE);
+    InitVp9SeqLevelParam(m_video, m_seqParam);
 
     VP9_LOG("\n (VP9_LOG) D3D9Encoder::CreateAccelerationService -");
     return MFX_ERR_NONE;
@@ -924,17 +425,7 @@ mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT ty
     return MFX_ERR_NONE;
 } // mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 
-
-mfxStatus D3D9Encoder::Register(mfxMemId memId, D3DDDIFORMAT type)
-{
-    memId;
-    type;
-
-    return MFX_ERR_UNSUPPORTED;
-
-} // mfxStatus D3D9Encoder::Register(mfxMemId memId, D3DDDIFORMAT type)
-
-#define NUM_COMP_BUFFERS_VP9 5 // SPS, PPS,
+#define MAX_NUM_COMP_BUFFERS_VP9 5 // SPS, PPS, uncompressed header, segment map, per-segment parameters
 
 ENCODE_PACKEDHEADER_DATA MakePackedByteBuffer(mfxU8 * data, mfxU32 size)
 {
@@ -945,23 +436,6 @@ ENCODE_PACKEDHEADER_DATA MakePackedByteBuffer(mfxU8 * data, mfxU32 size)
     return desc;
 }
 
-inline void AddSeqHeader(unsigned int width,
-        unsigned int   height,
-        unsigned int   FrameRateN,
-        unsigned int   FrameRateD,
-        unsigned int   numFramesInFile,
-        unsigned char *pBitstream)
-{
-    mfxU32   ivf_file_header[8]  = {0x46494B44, 0x00200000, 0x30395056, width + (height << 16), FrameRateN, FrameRateD, numFramesInFile, 0x00000000};
-    memcpy(pBitstream, ivf_file_header, sizeof (ivf_file_header));
-};
-
-inline void AddPictureHeader(unsigned char *pBitstream)
-{
-    mfxU32 ivf_frame_header[3] = {0x00000000, 0x00000000, 0x00000000};
-    memcpy(pBitstream, ivf_frame_header, sizeof (ivf_frame_header));
-};
-
 mfxStatus D3D9Encoder::Execute(
     Task const & task,
     mfxHDL          surface)
@@ -969,7 +443,7 @@ mfxStatus D3D9Encoder::Execute(
     VP9_LOG("\n (VP9_LOG) D3D9Encoder::Execute +");
 
     std::vector<ENCODE_COMPBUFFERDESC> compBufferDesc;
-    compBufferDesc.resize(NUM_COMP_BUFFERS_VP9);
+    compBufferDesc.resize(MAX_NUM_COMP_BUFFERS_VP9);
 
     ENCODE_EXECUTE_PARAMS encodeExecuteParams = { 0 };
     encodeExecuteParams.NumCompBuffers                     = 0;
@@ -998,12 +472,11 @@ mfxStatus D3D9Encoder::Execute(
     bufCnt++;
 
     // writing IVF and uncompressed header
-    vpx_write_bit_buffer localBuf;
+    //vpx_write_bit_buffer localBuf;
 
-    SetNextFrame(task.m_sFrameParams, m_libvpxBasedVP9Param);
     Zero(m_uncompressedHeaderBuf);
-    localBuf.bit_buffer = &m_uncompressedHeaderBuf[0];
-    localBuf.bit_offset = 0;
+    mfxU8 * pBuff = &m_uncompressedHeaderBuf[0];
+    mfxU16 bytesWritten = 0;
 
     mfxExtCodingOptionVP9 *pOpt = GetExtBuffer(m_video);
     //if (pOpt->WriteIVFHeaders)
@@ -1015,27 +488,34 @@ mfxStatus D3D9Encoder::Execute(
                 m_video.mfx.FrameInfo.FrameRateExtN,
                 m_video.mfx.FrameInfo.FrameRateExtD,
                 pOpt->NumFramesForIVF,
-                localBuf.bit_buffer);
-            localBuf.bit_offset += IVF_SEQ_HEADER_SIZE_BYTES * 8;
+                pBuff);
+            bytesWritten += IVF_SEQ_HEADER_SIZE_BYTES;
         }
 
-        AddPictureHeader(localBuf.bit_buffer + localBuf.bit_offset);
-        localBuf.bit_offset += IVF_PIC_HEADER_SIZE_BYTES * 8;
+        AddPictureHeader(pBuff + bytesWritten);
+        bytesWritten += IVF_PIC_HEADER_SIZE_BYTES;
     }
 
     BitOffsets offsets;
-    write_uncompressed_header(&m_libvpxBasedVP9Param, &localBuf, offsets);
+    mfxU16 uncompHeaderBitSize;
+    //write_uncompressed_header(&m_libvpxBasedVP9Param, &localBuf, offsets);
+    WriteUncompressedHeader(pBuff + bytesWritten,
+                            (mfxU32)m_uncompressedHeaderBuf.size() - bytesWritten,
+                            task,
+                            m_seqParam,
+                            offsets,
+                            uncompHeaderBitSize);
 
-    m_pps.BitOffsetForLFLevel = offsets.BitOffsetForLFLevel;
-    m_pps.BitOffsetForLFModeDelta = offsets.BitOffsetForLFModeDelta;
-    m_pps.BitOffsetForLFRefDelta = offsets.BitOffsetForLFRefDelta;
-    m_pps.BitOffsetForQIndex = offsets.BitOffsetForQIndex;
-    m_pps.BitOffsetForFirstPartitionSize = offsets.BitOffsetForFirstPartitionSize;
-    m_pps.BitOffsetForSegmentation = offsets.BitOffsetForSegmentation;
-    m_pps.BitSizeForSegmentation = offsets.BitSizeForSegmentation;
+    m_pps.BitOffsetForLFLevel            = offsets.BitOffsetForLFLevel + bytesWritten * 8;
+    m_pps.BitOffsetForLFModeDelta        = offsets.BitOffsetForLFModeDelta ? offsets.BitOffsetForLFModeDelta + bytesWritten * 8 : 0;
+    m_pps.BitOffsetForLFRefDelta         = offsets.BitOffsetForLFRefDelta ? offsets.BitOffsetForLFRefDelta+ bytesWritten * 8 : 0;
+    m_pps.BitOffsetForQIndex             = offsets.BitOffsetForQIndex + bytesWritten * 8;
+    m_pps.BitOffsetForFirstPartitionSize = offsets.BitOffsetForFirstPartitionSize + bytesWritten * 8;
+    m_pps.BitOffsetForSegmentation       = offsets.BitOffsetForSegmentation + bytesWritten * 8;
+    m_pps.BitSizeForSegmentation         = offsets.BitSizeForSegmentation;
 
-    mfxU32 bytesWritten = mfxU32((localBuf.bit_offset + 7) / 8);
-    m_descForFrameHeader = MakePackedByteBuffer(localBuf.bit_buffer, bytesWritten);
+    bytesWritten += (uncompHeaderBitSize + 7) / 8;
+    m_descForFrameHeader = MakePackedByteBuffer(pBuff, bytesWritten);
 
     compBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA;
     compBufferDesc[bufCnt].DataSize = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));

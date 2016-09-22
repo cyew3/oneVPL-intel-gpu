@@ -129,7 +129,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     m_lowPower = (m_video.mfx.LowPower != MFX_CODINGOPTION_OFF) ? true : false;
     GUID initGuid = m_lowPower ? DXVA2_Intel_LowpowerEncode_VP9_Profile0 : DXVA2_Intel_Encode_VP9_Profile0;
 
-    m_ddi.reset(CreatePlatformVp9Encoder());
+    m_ddi.reset(CreatePlatformVp9Encoder(m_pmfxCore));
     MFX_CHECK(m_ddi.get() != 0, MFX_ERR_UNSUPPORTED);
 
     sts = m_ddi->CreateAuxilliaryDevice(m_pmfxCore, initGuid,
@@ -302,7 +302,7 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
             if (MFX_ERR_NONE != m_pTaskManager->CheckHybridDependencies(*pTask))
               return MFX_TASK_BUSY;
         }
-        sFrameParams        frameParams={0};
+        VP9FrameLevelParam   frameParams={0};
         mfxFrameSurface1    *pSurface=0;
         bool                bExternalSurface = true;
 
@@ -311,9 +311,9 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
 
         {
             UMC::AutomaticUMCMutex guard(m_taskMutex);
-            sts = SetFramesParams(m_video, pTask->m_ctrl.FrameType, pTask->m_frameOrder, &frameParams);
+            sts = SetFramesParams(m_video, pTask->m_ctrl.FrameType, pTask->m_frameOrder, frameParams);
             MFX_CHECK_STS(sts);
-            sts = m_pTaskManager->SubmitTask(&m_video, pTask, &frameParams);
+            sts = m_pTaskManager->SubmitTask(&m_video, pTask, frameParams);
             MFX_CHECK_STS(sts);
         }
 
@@ -349,46 +349,6 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         if ((sts = m_ddi->QueryStatus(*pTask) )== MFX_WRN_DEVICE_BUSY)
         {
             return MFX_TASK_WORKING;
-        }
-
-#if 0 // rest of hybrid-specific code
-        MFX_CHECK_STS(sts);
-        MFX_CHECK_STS(m_ddi->QueryMBLayout(mbdataLayout, mbcoeffLayout));
-#endif // rest of hybrid-specific code
-
-        {
-#if 0 // rest of hybrid-specific code
-            mfxFrameData mbData = { 0 };
-            mfxExtFrameSupplementalInfo frmInfo;
-            mfxExtBuffer *pfrmInfo = 0;
-            if (m_video.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
-            {
-                pfrmInfo = (mfxExtBuffer*)&frmInfo;
-                frmInfo.Header.BufferId = MFX_EXTBUFF_FRAME_SUPPLEMENTAL_INFO;
-                frmInfo.Header.BufferSz = sizeof(mfxExtFrameSupplementalInfo);
-
-                mbData.ExtParam = (mfxExtBuffer**)&pfrmInfo;
-                mbData.NumExtParam = 1;
-            }
-
-            if (m_video.mfx.RateControlMethod != MFX_RATECONTROL_CQP && frmInfo.Info)
-            {
-                sts = m_ddi->ParseBrcStatusUpdate(*pTask, frmInfo.Info);
-                MFX_CHECK_STS(sts);
-            }
-
-            sts = m_BSE->SetNextFrame(0, 0, pTask->m_sFrameParams,pTask->m_frameOrder);
-            MFX_CHECK_STS(sts);
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL_VTUNE, "VP9::Pack BS");
-
-            m_BSE->RunBSP(bInsertIVF,
-                    bInsertSH,
-                    pTask->m_pBitsteam,
-                    mbData.Y,
-                    pTask->ddi_frames.m_pMBCoeff_hw->pSurface->Data.Y,
-                    mbdataLayout,
-                    m_pmfxCore);
-#endif // rest of hybrid-specific code
         }
 
         {
@@ -493,7 +453,7 @@ mfxStatus Plugin::UpdateBitstream(
 
     // Update bitstream fields
     task.m_pBitsteam->TimeStamp = task.m_timeStamp;
-    task.m_pBitsteam->FrameType = mfxU16(task.m_sFrameParams.bIntra ? MFX_FRAMETYPE_I : MFX_FRAMETYPE_P);
+    task.m_pBitsteam->FrameType = mfxU16(task.m_frameParam.frameType == KEY_FRAME ? MFX_FRAMETYPE_I : MFX_FRAMETYPE_P);
     task.m_pBitsteam->PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
     return MFX_ERR_NONE;

@@ -110,7 +110,7 @@ typedef struct tagENCODE_CAPS_VP9
 
     mfxStatus QueryHwCaps(mfxCoreInterface * pCore, ENCODE_CAPS_VP9 & caps, GUID guid);
 
-    DriverEncoder* CreatePlatformVp9Encoder();
+    DriverEncoder* CreatePlatformVp9Encoder(mfxCoreInterface * pCore);
 
     class DriverEncoder
     {
@@ -163,6 +163,50 @@ typedef struct tagENCODE_CAPS_VP9
         virtual
         mfxStatus Destroy() = 0;
     };
+
+#define VP9_MAX_UNCOMPRESSED_HEADER_SIZE 1000
+#define SWITCHABLE 4 /* should be the last one */
+
+    enum {
+        LAST_FRAME   = 0,
+        GOLDEN_FRAME = 1,
+        ALTREF_FRAME = 2
+    };
+
+    struct BitOffsets
+    {
+        mfxU16 BitOffsetForLFRefDelta;
+        mfxU16 BitOffsetForLFModeDelta;
+        mfxU16 BitOffsetForLFLevel;
+        mfxU16 BitOffsetForQIndex;
+        mfxU16 BitOffsetForFirstPartitionSize;
+        mfxU16 BitOffsetForSegmentation;
+        mfxU16 BitSizeForSegmentation;
+    };
+
+    inline void AddSeqHeader(unsigned int width,
+        unsigned int   height,
+        unsigned int   FrameRateN,
+        unsigned int   FrameRateD,
+        unsigned int   numFramesInFile,
+        unsigned char *pBitstream)
+    {
+        mfxU32   ivf_file_header[8] = { 0x46494B44, 0x00200000, 0x30395056, width + (height << 16), FrameRateN, FrameRateD, numFramesInFile, 0x00000000 };
+        memcpy(pBitstream, ivf_file_header, sizeof (ivf_file_header));
+    };
+
+    inline void AddPictureHeader(unsigned char *pBitstream)
+    {
+        mfxU32 ivf_frame_header[3] = { 0x00000000, 0x00000000, 0x00000000 };
+        memcpy(pBitstream, ivf_frame_header, sizeof (ivf_frame_header));
+    };
+
+    mfxStatus WriteUncompressedHeader(mfxU8 * buffer,
+                                      mfxU32 bufferSizeBytes,
+                                      Task const& task,
+                                      VP9SeqLevelParam const &seqPar,
+                                      BitOffsets &offsets,
+                                      mfxU16 &bitsWritten);
 } // MfxHwVP9Encode
 
 #endif // AS_VP9E_PLUGIN

@@ -33,11 +33,21 @@ namespace MfxHwVP9Encode
 {
 
 #define ALIGN(x, align) (((x) + (align) - 1) & (~((align) - 1)))
+#define ALIGN_POWER_OF_TWO(value, n) \
+    (((value)+((1 << (n)) - 1)) & ~((1 << (n)) - 1))
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
-
 
 #define DPB_SIZE 8
 #define MAX_SEGMENTS 8
+#define REF_FRAMES_LOG2 3
+#define REF_FRAMES (1 << REF_FRAMES_LOG2)
+#define MAX_REF_LF_DELTAS 4
+#define MAX_MODE_LF_DELTAS 2
+#define SEG_LVL_MAX 4
+
+#define IVF_SEQ_HEADER_SIZE_BYTES 32
+#define IVF_PIC_HEADER_SIZE_BYTES 12
+#define MAX_IVF_HEADER_SIZE IVF_SEQ_HEADER_SIZE_BYTES + IVF_PIC_HEADER_SIZE_BYTES
 
 enum
 {
@@ -61,7 +71,7 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK =
         TASK_SUBMITTED,
         READY
     };
-    enum eRefFrames
+    enum
     {
         REF_LAST  = 0,
         REF_GOLD  = 1,
@@ -69,27 +79,91 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK =
         REF_TOTAL = 3
     };
 
-    typedef struct _sFrameParams
+    enum {
+        KEY_FRAME       = 0,
+        INTER_FRAME     = 1,
+        NUM_FRAME_TYPES
+    };
+
+    enum {
+        UNKNOWN_COLOR_SPACE = 0,
+        BT_601              = 1,
+        BT_709              = 2,
+        SMPTE_170           = 3,
+        SMPTE_240           = 4,
+        BT_2020             = 5,
+        RESERVED            = 6,
+        SRGB                = 7
+    };
+
+    enum {
+        BITDEPTH_8 = 8,
+        BITDEPTH_10 = 10,
+        BITDEPTH_12 = 12
+    };
+
+    enum {
+        PROFILE_0 = 0,
+        PROFILE_1 = 1,
+        PROFILE_2 = 2,
+        PROFILE_3 = 3,
+        MAX_PROFILES
+    };
+
+    struct VP9SeqLevelParam
     {
-        mfxU8    bIntra;
-        mfxU8    Sharpness; //[0,7]
+        mfxU8  profile;
+        mfxU8  bitDepth;;
+        mfxU8  colorSpace;
+        mfxU8  colorRange;
+        mfxU8  subsamplingX;
+        mfxU8  subsamplingY;
 
-        mfxU8    LFLevel;
-        mfxI8   LFRefDelta[4];
-        mfxI8   LFModeDelta[2];
-        mfxU8    QIndex;
-        mfxI8   QIndexDeltaLumaDC;
-        mfxI8   QIndexDeltaChromaAC;
-        mfxI8   QIndexDeltaChromaDC;
+        mfxU32 initialWidth;
+        mfxU32 initialHeight;
 
-        mfxU8    NumSegments;
-        mfxI8    QIndexDeltaSeg[MAX_SEGMENTS];
-        mfxI8    LFDeltaSeg[MAX_SEGMENTS];
+        mfxU8  frameParallelDecoding;
+    };
 
-        mfxU8    refList[REF_TOTAL]; // indexes of last, gold, alt refs for current frame
-        mfxU8    refreshRefFrames[DPB_SIZE]; // which reference frames are refreshed with current reconstructed frame
+    struct VP9FrameLevelParam
+    {
+        mfxU8  frameType;
+        mfxU8  baseQIndex;
+        mfxI8  qIndexDeltaLumaDC;
+        mfxI8  qIndexDeltaChromaAC;
+        mfxI8  qIndexDeltaChromaDC;
 
-    } sFrameParams;
+        mfxU32 width;
+        mfxU32 height;
+        mfxU32 renderWidth;
+        mfxU32 renderHeight;
+
+        mfxU8  refreshFrameContext;
+        mfxU8  resetFrameContext;
+        mfxU8  refList[REF_TOTAL]; // indexes of last, gold, alt refs for current frame
+        mfxU8  refBiases[REF_TOTAL];
+        mfxU8  refreshRefFrames[DPB_SIZE]; // which reference frames are refreshed with current reconstructed frame
+        mfxU16 modeInfoCols;
+        mfxU16 modeInfoRows;
+        mfxU8  allowHighPrecisionMV;
+
+        mfxU8  showFarme;
+        mfxU8  intraOnly;
+
+        mfxU8  lfLevel;
+        mfxI8  lfRefDelta[4];
+        mfxI8  lfModeDelta[2];
+        mfxU8  modeRefDeltaEnabled;
+        mfxU8  modeRefDeltaUpdate;
+
+        mfxU8  sharpness;
+        mfxU8  numSegments;
+        mfxU8  errorResilentMode;
+        mfxU8  interpFilter;
+        mfxU8  frameContextIdx;
+        mfxU8  log2TileCols;
+        mfxU8  log2TileRows;
+    };
 
     struct sFrameEx
     {
@@ -326,13 +400,15 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK =
     mfxStatus SetFramesParams(VP9MfxParam const &par,
                               mfxU16 forcedFrameType,
                               mfxU32 frameOrder,
-                              sFrameParams *pFrameParams);
+                              VP9FrameLevelParam &frameParam);
+
+    mfxStatus InitVp9SeqLevelParam(VP9MfxParam const &video, VP9SeqLevelParam &param);
 
     class Task;
     mfxStatus DecideOnRefListAndDPBRefresh(mfxVideoParam * par,
                                            Task *pTask,
                                            std::vector<sFrameEx*>&dpb,
-                                           sFrameParams *pFrameParams);
+                                           VP9FrameLevelParam &frameParam);
 
     class ExternalFrames
     {
@@ -407,7 +483,7 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK =
         mfxBitstream*     m_pBitsteam;
         mfxCoreInterface* m_pCore;
 
-        sFrameParams      m_sFrameParams;
+        VP9FrameLevelParam m_frameParam;
         sFrameEx*         m_pRecFrame;
         sFrameEx*         m_pRecRefFrames[3];
         sFrameEx*         m_pOutBs;
@@ -440,7 +516,7 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK =
               m_bsDataLength(0)
           {
               Zero(m_pRecRefFrames);
-              Zero(m_sFrameParams);
+              Zero(m_frameParam);
               Zero(m_ctrl);
           }
           virtual
@@ -459,7 +535,7 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK =
                               mfxBitstream *pBitsteam,
                               mfxU32        frameOrder);
           virtual
-          mfxStatus SubmitTask (sFrameEx*  pRecFrame, std::vector<sFrameEx*> &dpb, sFrameParams* pParams, sFrameEx* pRawLocalFrame, sFrameEx* pOutBs);
+          mfxStatus SubmitTask(sFrameEx*  pRecFrame, std::vector<sFrameEx*> &dpb, VP9FrameLevelParam &frameParam, sFrameEx* pRawLocalFrame, sFrameEx* pOutBs);
 
           inline mfxStatus CompleteTask ()
           {
@@ -668,11 +744,11 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK =
           }
 
           inline
-          mfxStatus UpdateDpb(sFrameParams *pParams, sFrameEx *pRecFrame)
+          mfxStatus UpdateDpb(VP9FrameLevelParam &frameParam, sFrameEx *pRecFrame)
           {
               for (mfxU8 i = 0; i < m_dpb.size(); i ++)
               {
-                  if (pParams->refreshRefFrames[i])
+                  if (frameParam.refreshRefFrames[i])
                   {
                       if (m_dpb[i])
                       {
@@ -806,7 +882,7 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK =
         }
 
         inline
-        mfxStatus SubmitTask(mfxVideoParam * par, Task*  pTask, sFrameParams *pParams)
+        mfxStatus SubmitTask(mfxVideoParam * par, Task*  pTask, VP9FrameLevelParam &frameParam)
         {
             sFrameEx* pRecFrame = 0;
             sFrameEx* pRawLocalFrame = 0;
@@ -835,14 +911,14 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK =
                 ddi_frames.m_pSegMap_hw = 0;
 #endif // segmentation support is disabled
 
-            sts = DecideOnRefListAndDPBRefresh(par, pTask, m_dpb, pParams);
+            sts = DecideOnRefListAndDPBRefresh(par, pTask, m_dpb, frameParam);
 
             sts = pTask->SubmitTask(pRecFrame,m_dpb,
-                                    pParams, pRawLocalFrame,
+                                    frameParam, pRawLocalFrame,
                                     pOutBs);
             MFX_CHECK_STS(sts);
 
-            UpdateDpb(pParams, pRecFrame);
+            UpdateDpb(frameParam, pRecFrame);
 
             return sts;
         }
@@ -893,9 +969,6 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK =
         }
 #endif // segmentation support is disabled
     };
-
-#define IVF_SEQ_HEADER_SIZE_BYTES 32
-#define IVF_PIC_HEADER_SIZE_BYTES 12
 
 inline bool InsertSeqHeader(Task const &task)
 {

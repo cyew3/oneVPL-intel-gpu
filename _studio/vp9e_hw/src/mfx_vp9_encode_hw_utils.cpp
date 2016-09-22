@@ -109,69 +109,75 @@ mfxU32 ModifyLoopFilterLevelQPBased(mfxU32 QP, mfxU32 loopFilterLevel)
     }
 }
 
-mfxStatus SetFramesParams(VP9MfxParam const &par,
-                          mfxU16 const forcedFrameType,
-                          mfxU32 frameOrder,
-                          sFrameParams *pFrameParams)
+mfxStatus InitVp9SeqLevelParam(VP9MfxParam const &video, VP9SeqLevelParam &param)
 {
-    memset(pFrameParams, 0, sizeof(sFrameParams));
-    pFrameParams->bIntra  = (frameOrder % par.mfx.GopPicSize) == 0 || (forcedFrameType & MFX_FRAMETYPE_I) ? true: false;
+    video;
+    Zero(param);
+
+    param.profile = PROFILE_0;
+    param.bitDepth = BITDEPTH_8;
+    param.colorSpace = UNKNOWN_COLOR_SPACE;
+    param.colorRange = 0; // BT.709-6
+    param.subsamplingX = 1;
+    param.subsamplingY = 1;
+
+    return MFX_ERR_NONE;
+};
+
+mfxStatus SetFramesParams(VP9MfxParam const &par,
+                          mfxU16 forcedFrameType,
+                          mfxU32 frameOrder,
+                          VP9FrameLevelParam &frameParam)
+{
+    Zero(frameParam);
+    frameParam.frameType = (mfxU8)((frameOrder % par.mfx.GopPicSize) == 0 || (forcedFrameType & MFX_FRAMETYPE_I) ? KEY_FRAME : INTER_FRAME);
 
     mfxExtCodingOptionVP9 *pOptVP9 = GetExtBuffer(par);
-    mfxExtEncoderROI      *pExtRoi = GetExtBuffer(par);
 
-    pFrameParams->QIndex = 0;
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
     {
-        pFrameParams->QIndex = mfxU8(pFrameParams->bIntra ? par.mfx.QPI : par.mfx.QPP);
+        frameParam.baseQIndex = mfxU8(frameParam.frameType == KEY_FRAME ? par.mfx.QPI : par.mfx.QPP);
     }
 
-    bool bDisableLoopFilter = false; // replacement for mfxExtVP9Tricks
-    if (bDisableLoopFilter == false)
+    frameParam.lfLevel   = (mfxU8)ModifyLoopFilterLevelQPBased(frameParam.baseQIndex, 0); // always 0 is passes since at the moment there is no LF level in MSDK API
+    frameParam.sharpness = (mfxU8)pOptVP9->SharpnessLevel;
+
+    frameParam.width  = frameParam.renderWidth = par.mfx.FrameInfo.Width;
+    frameParam.height = frameParam.renderHeight = par.mfx.FrameInfo.Height;
+
+    for (mfxU8 i = 0; i < 4; i ++)
     {
-        pFrameParams->LFLevel = (mfxU8)ModifyLoopFilterLevelQPBased(pFrameParams->QIndex, 0); // always 0 is passes since at the moment there is no LF level in MSDK API
-        pFrameParams->Sharpness = (mfxU8)pOptVP9->SharpnessLevel;
-
-        for (mfxU8 i = 0; i < 4; i ++)
-        {
-            pFrameParams->LFRefDelta[i] = (mfxI8)pOptVP9->LoopFilterRefDelta[i];
-        }
-
-        pFrameParams->LFModeDelta[0] = (mfxI8)pOptVP9->LoopFilterModeDelta[0];
-        pFrameParams->LFModeDelta[1] = (mfxI8)pOptVP9->LoopFilterModeDelta[1];
+        frameParam.lfRefDelta[i] = (mfxI8)pOptVP9->LoopFilterRefDelta[i];
     }
 
-    pFrameParams->QIndexDeltaLumaDC   = (mfxI8)pOptVP9->QIndexDeltaLumaDC;
-    pFrameParams->QIndexDeltaChromaAC = (mfxI8)pOptVP9->QIndexDeltaChromaAC;
-    pFrameParams->QIndexDeltaChromaDC = (mfxI8)pOptVP9->QIndexDeltaChromaDC;
+    frameParam.lfModeDelta[0] = (mfxI8)pOptVP9->LoopFilterModeDelta[0];
+    frameParam.lfModeDelta[1] = (mfxI8)pOptVP9->LoopFilterModeDelta[1];
 
-    if (pOptVP9->EnableMultipleSegments && pExtRoi->NumROI)
-    {
-        pFrameParams->NumSegments = mfxU8(IPP_MIN(pExtRoi->NumROI, MAX_SEGMENTS));
-        for (mfxU8 i = 0; i < pFrameParams->NumSegments; i ++)
-        {
-            mfxSegmentParamVP9 & segPar = pOptVP9->Segment[i];
-            if (pExtRoi->ROI[i].Priority)
-            {
-                pFrameParams->QIndexDeltaSeg[i] = (mfxI8)pExtRoi->ROI[i].Priority;
-            }
-            else
-            {
-                pFrameParams->QIndexDeltaSeg[i] = (mfxI8)segPar.QIndexDelta;
-            }
+    frameParam.qIndexDeltaLumaDC   = (mfxI8)pOptVP9->QIndexDeltaLumaDC;
+    frameParam.qIndexDeltaChromaAC = (mfxI8)pOptVP9->QIndexDeltaChromaAC;
+    frameParam.qIndexDeltaChromaDC = (mfxI8)pOptVP9->QIndexDeltaChromaDC;
 
-            pFrameParams->LFDeltaSeg[i] = (mfxI8)segPar.LoopFilterLevelDelta;
-        }
-    }
-    else
-    {
-        pFrameParams->NumSegments = 1;
-    }
+    frameParam.numSegments = 1; // TODO: add segmentation support
+
+    frameParam.showFarme = 1;
+    frameParam.intraOnly = 0;
+
+    frameParam.modeRefDeltaEnabled = 0; // TODO: add support of ref and mode LF deltas
+    frameParam.errorResilentMode = 0;
+    frameParam.resetFrameContext = 0;
+    frameParam.refreshFrameContext = 1;
+    frameParam.allowHighPrecisionMV = 1;
+
+    mfxU16 alignedWidth = ALIGN_POWER_OF_TWO(par.mfx.FrameInfo.Width, 3); // align to Mode Info block size (8 pixels)
+    mfxU16 alignedHeight = ALIGN_POWER_OF_TWO(par.mfx.FrameInfo.Height, 3); // align to Mode Info block size (8 pixels)
+
+    frameParam.modeInfoRows = alignedWidth >> 3;
+    frameParam.modeInfoCols = alignedHeight >> 3;
 
     return MFX_ERR_NONE;
 }
 
-mfxStatus DecideOnRefListAndDPBRefresh(mfxVideoParam * par, Task *pTask, std::vector<sFrameEx*>&dpb, sFrameParams *pFrameParams)
+mfxStatus DecideOnRefListAndDPBRefresh(mfxVideoParam * par, Task *pTask, std::vector<sFrameEx*>&dpb, VP9FrameLevelParam &frameParam)
 {
     dpb; par;
     bool bDisableMultiref = true; // replacement for mfxExtVP9Tricks
@@ -180,50 +186,52 @@ mfxStatus DecideOnRefListAndDPBRefresh(mfxVideoParam * par, Task *pTask, std::ve
 #if 0
         // idx 2 is dedicated to GOLD, idxs 0 and 1 are for LAST and ALT in round robin mode
         mfxU8 prevLastRefIdx = 1;
-        pFrameParams->refList[REF_GOLD] = 2;
-        pFrameParams->refList[REF_ALT] = prevLastRefIdx;
-        pFrameParams->refList[REF_LAST] = 1 - prevLastRefIdx;
-        prevLastRefIdx = pFrameParams->refList[REF_LAST];
+        frameParam.refList[REF_GOLD] = 2;
+        frameParam.refList[REF_ALT] = prevLastRefIdx;
+        frameParam.refList[REF_LAST] = 1 - prevLastRefIdx;
+        prevLastRefIdx = frameParam.refList[REF_LAST];
 #else
         mfxU8 frameCount = pTask->m_frameOrder % 8;
-        pFrameParams->refList[REF_ALT] = 0;
-        pFrameParams->refList[REF_GOLD] = pFrameParams->refList[REF_LAST] = frameCount;
+        frameParam.refList[REF_ALT] = 0;
+        frameParam.refList[REF_GOLD] = frameParam.refList[REF_LAST] = frameCount;
         if (frameCount)
         {
-            pFrameParams->refList[REF_LAST] = pFrameParams->refList[REF_GOLD] = frameCount - 1;
+            frameParam.refList[REF_LAST] = frameParam.refList[REF_GOLD] = frameCount - 1;
             if (frameCount > 1)
             {
-                pFrameParams->refList[REF_GOLD] = frameCount - 2;
+                frameParam.refList[REF_GOLD] = frameCount - 2;
             }
         }
 #endif
 
-        if (pFrameParams->bIntra)
+        if (frameParam.frameType == KEY_FRAME)
         {
-            memset(pFrameParams->refreshRefFrames, 1, DPB_SIZE);
+            memset(frameParam.refreshRefFrames, 1, DPB_SIZE);
         }
         else
         {
             /*if((pTask->m_frameOrder & 0x7) == 0)
             {
-                pFrameParams->refreshRefFrames[pFrameParams->refList[REF_GOLD]] = 1;
+                frameParam.refreshRefFrames[frameParam.refList[REF_GOLD]] = 1;
             }*/
-            pFrameParams->refreshRefFrames[frameCount] = 1;
+            frameParam.refreshRefFrames[frameCount] = 1;
         }
         frameCount = (frameCount + 1) % 8;
     }
     else
     {
         // single ref
-        pFrameParams->refList[REF_GOLD] = pFrameParams->refList[REF_ALT] = pFrameParams->refList[REF_LAST] = 0;
-        if (pFrameParams->bIntra)
+        frameParam.refList[REF_GOLD] = frameParam.refList[REF_ALT] = frameParam.refList[REF_LAST] = 0;
+        if (frameParam.frameType == KEY_FRAME)
         {
-            memset(pFrameParams->refreshRefFrames, 1, DPB_SIZE);
+            memset(frameParam.refreshRefFrames, 1, DPB_SIZE);
         }
         else
         {
-            pFrameParams->refreshRefFrames[0] = 1;
+            frameParam.refreshRefFrames[0] = 1;
         }
+
+        memset(&frameParam.refBiases[0], 0, REF_TOTAL);
     }
 
     return MFX_ERR_NONE;
@@ -514,8 +522,6 @@ mfxStatus Task::InitTask(   sFrameEx     *pRawFrame,
     m_pBitsteam     = pBitsteam;
     m_frameOrder    = frameOrder;
 
-    Zero(m_sFrameParams);
-
     MFX_CHECK_STS(LockSurface(m_pRawFrame,m_pCore));
 
     m_status = TASK_INITIALIZED;
@@ -523,15 +529,15 @@ mfxStatus Task::InitTask(   sFrameEx     *pRawFrame,
     return MFX_ERR_NONE;
 }
 
-mfxStatus Task::SubmitTask (sFrameEx*  pRecFrame, std::vector<sFrameEx*> &dpb, sFrameParams* pParams, sFrameEx* pRawLocalFrame, sFrameEx* pOutBs)
+mfxStatus Task::SubmitTask(sFrameEx*  pRecFrame, std::vector<sFrameEx*> &dpb, VP9FrameLevelParam &frameParam, sFrameEx* pRawLocalFrame, sFrameEx* pOutBs)
 {
     MFX_CHECK(m_status == TASK_INITIALIZED, MFX_ERR_UNDEFINED_BEHAVIOR);
-    MFX_CHECK_NULL_PTR2(pRecFrame, pParams);
+    MFX_CHECK_NULL_PTR1(pRecFrame);
     MFX_CHECK(isFreeSurface(pRecFrame),MFX_ERR_UNDEFINED_BEHAVIOR);
 
     //printf("Task::SubmitTask\n");
 
-    m_sFrameParams   = *pParams;
+    m_frameParam     = frameParam;
     m_pRecFrame      = pRecFrame;
     m_pRawLocalFrame = pRawLocalFrame;
     m_pOutBs         = pOutBs;
@@ -540,11 +546,11 @@ mfxStatus Task::SubmitTask (sFrameEx*  pRecFrame, std::vector<sFrameEx*> &dpb, s
 
     m_pRecFrame->pSurface->Data.FrameOrder = m_frameOrder;
 
-    if (!m_sFrameParams.bIntra)
+    if (m_frameParam.frameType != KEY_FRAME)
     {
-        mfxU8 idxLast = pParams->refList[REF_LAST];
-        mfxU8 idxGold = pParams->refList[REF_GOLD];
-        mfxU8 idxAlt  = pParams->refList[REF_ALT];
+        mfxU8 idxLast = frameParam.refList[REF_LAST];
+        mfxU8 idxGold = frameParam.refList[REF_GOLD];
+        mfxU8 idxAlt  = frameParam.refList[REF_ALT];
         m_pRecRefFrames[REF_LAST] = dpb[idxLast];
         m_pRecRefFrames[REF_GOLD] = dpb[idxGold] != dpb[idxLast] ? dpb[idxGold] : 0;
         m_pRecRefFrames[REF_ALT]  = dpb[idxAlt]  != dpb[idxLast] && dpb[idxAlt]  != dpb[idxGold] ? dpb[idxAlt] : 0;
@@ -568,7 +574,7 @@ mfxStatus Task::FreeTask()
     MFX_CHECK_STS(FreeSurface(m_pOutBs, m_pCore));
 
     m_pBitsteam     = 0;
-    Zero(m_sFrameParams);
+    Zero(m_frameParam);
     Zero(m_ctrl);
     m_status = TASK_FREE;
 
