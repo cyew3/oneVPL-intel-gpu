@@ -62,7 +62,7 @@ namespace UMC_VP9_DECODER
         Ipp32u GetBit()
         {
             if (m_pbs >= m_pbsBase + m_maxBsSize)
-                throw vp9_exception(UMC::UMC_ERR_NOT_ENOUGH_BUFFER);
+                throw vp9_exception(UMC::UMC_ERR_NOT_ENOUGH_DATA);
 
             Ipp32u const bit = (*m_pbs >> (7 - m_bitOffset)) & 1;
             if (++m_bitOffset == 8)

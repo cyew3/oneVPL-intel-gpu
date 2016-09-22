@@ -934,300 +934,307 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9DecoderFrame
     if (!in || !in->Data)
         return MFX_ERR_NULL_PTR;
 
-    mfxStatus sts = DecodeSuperFrame(in, info);
-    MFX_CHECK_STS(sts);
-    in = &m_bs;
-
-    VP9Bitstream bsReader(in->Data + in->DataOffset, in->DataOffset + in->DataLength);
-
-    if (VP9_FRAME_MARKER != bsReader.GetBits(2))
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-    info.profile = bsReader.GetBit();
-    info.profile |= bsReader.GetBit() << 1;
-    if (info.profile > 2)
-        info.profile += bsReader.GetBit();
-
-    if (info.profile >= 4)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-    info.show_existing_frame = bsReader.GetBit();
-    if (info.show_existing_frame)
+    try
     {
-        info.frame_to_show = bsReader.GetBits(3);
-        info.width = info.sizesOfRefFrame[info.frame_to_show].width;
-        info.height = info.sizesOfRefFrame[info.frame_to_show].height;
-        info.showFrame = 1;
-        return MFX_ERR_NONE;
-    }
+        mfxStatus sts = DecodeSuperFrame(in, info);
+        MFX_CHECK_STS(sts);
+        in = &m_bs;
 
-    info.frameType = (VP9_FRAME_TYPE) bsReader.GetBit();
-    info.showFrame = bsReader.GetBit();
-    info.errorResilientMode = bsReader.GetBit();
+        VP9Bitstream bsReader(in->Data + in->DataOffset, in->DataOffset + in->DataLength);
 
-    if (KEY_FRAME == info.frameType)
-    {
-        if (!CheckSyncCode(&bsReader))
+        if (VP9_FRAME_MARKER != bsReader.GetBits(2))
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-        try
-        { GetBitDepthAndColorSpace(&bsReader, &info); }
-        catch (vp9_exception const& e)
+        info.profile = bsReader.GetBit();
+        info.profile |= bsReader.GetBit() << 1;
+        if (info.profile > 2)
+            info.profile += bsReader.GetBit();
+
+        if (info.profile >= 4)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+        info.show_existing_frame = bsReader.GetBit();
+        if (info.show_existing_frame)
         {
-            UMC::Status status = e.GetStatus();
-            if (status != UMC::UMC_OK)
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            info.frame_to_show = bsReader.GetBits(3);
+            info.width = info.sizesOfRefFrame[info.frame_to_show].width;
+            info.height = info.sizesOfRefFrame[info.frame_to_show].height;
+            info.showFrame = 1;
+            return MFX_ERR_NONE;
         }
 
-        info.refreshFrameFlags = (1 << NUM_REF_FRAMES) - 1;
+        info.frameType = (VP9_FRAME_TYPE) bsReader.GetBit();
+        info.showFrame = bsReader.GetBit();
+        info.errorResilientMode = bsReader.GetBit();
 
-        for (mfxU8 i = 0; i < REFS_PER_FRAME; ++i)
-        {
-            info.activeRefIdx[i] = 0;
-        }
-
-        GetFrameSize(&bsReader, &info);
-    }
-    else
-    {
-        info.intraOnly = info.showFrame ? 0 : bsReader.GetBit();
-        info.resetFrameContext = info.errorResilientMode ? 0 : bsReader.GetBits(2);
-
-        if (info.intraOnly)
+        if (KEY_FRAME == info.frameType)
         {
             if (!CheckSyncCode(&bsReader))
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
 
             try
-            {
-                GetBitDepthAndColorSpace(&bsReader, &info);
-        
-                info.refreshFrameFlags = (mfxU8)bsReader.GetBits(NUM_REF_FRAMES);
-                GetFrameSize(&bsReader, &info);
-            }
+            { GetBitDepthAndColorSpace(&bsReader, &info); }
             catch (vp9_exception const& e)
             {
                 UMC::Status status = e.GetStatus();
                 if (status != UMC::UMC_OK)
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
-            
-        }
-        else
-        {
-            info.refreshFrameFlags = (mfxU8)bsReader.GetBits(NUM_REF_FRAMES);
+
+            info.refreshFrameFlags = (1 << NUM_REF_FRAMES) - 1;
 
             for (mfxU8 i = 0; i < REFS_PER_FRAME; ++i)
             {
-                const mfxI32 ref = bsReader.GetBits(REF_FRAMES_LOG2);
-                info.activeRefIdx[i] = ref;
-                info.refFrameSignBias[LAST_FRAME + i] = bsReader.GetBit();
+                info.activeRefIdx[i] = 0;
             }
 
-            GetFrameSizeWithRefs(&bsReader, &info);
-
-            info.allowHighPrecisionMv = bsReader.GetBit();
-
-            static const INTERP_FILTER literal2Filter[] =
-                { EIGHTTAP_SMOOTH, EIGHTTAP, EIGHTTAP_SHARP, BILINEAR };
-            info.interpFilter = bsReader.GetBit() ? SWITCHABLE : literal2Filter[bsReader.GetBits(2)];
-        }
-    }
-
-    if (!info.errorResilientMode)
-    {
-        info.refreshFrameContext = bsReader.GetBit();
-        info.frameParallelDecodingMode = bsReader.GetBit();
-    }
-    else
-    {
-        info.refreshFrameContext = 0;
-        info.frameParallelDecodingMode = 1;
-    }
-
-    // This flag will be overridden by the call to vp9_setup_past_independence
-    // below, forcing the use of context 0 for those frame types.
-    info.frameContextIdx = bsReader.GetBits(FRAME_CONTEXTS_LOG2);
-
-    if (info.frameType == KEY_FRAME || info.intraOnly || info.errorResilientMode)
-    {
-       SetupPastIndependence(info);
-    }
-
-    SetupLoopFilter(&bsReader, &info.lf);
-
-    //setup_quantization()
-    {
-        info.baseQIndex = bsReader.GetBits(QINDEX_BITS);
-        mfxI32 old_y_dc_delta_q = m_y_dc_delta_q;
-        mfxI32 old_uv_dc_delta_q = m_uv_dc_delta_q;
-        mfxI32 old_uv_ac_delta_q = m_uv_ac_delta_q;
-
-        if (bsReader.GetBit())
-        {
-            info.y_dc_delta_q = bsReader.GetBits(4);
-            info.y_dc_delta_q = bsReader.GetBit() ? -info.y_dc_delta_q : info.y_dc_delta_q;
+            GetFrameSize(&bsReader, &info);
         }
         else
-            info.y_dc_delta_q = 0;
-
-        if (bsReader.GetBit())
         {
-            info.uv_dc_delta_q = bsReader.GetBits(4);
-            info.uv_dc_delta_q = bsReader.GetBit() ? -info.uv_dc_delta_q : info.uv_dc_delta_q;
-        }
-        else
-            info.uv_dc_delta_q = 0;
+            info.intraOnly = info.showFrame ? 0 : bsReader.GetBit();
+            info.resetFrameContext = info.errorResilientMode ? 0 : bsReader.GetBits(2);
 
-        if (bsReader.GetBit())
-        {
-            info.uv_ac_delta_q = bsReader.GetBits(4);
-            info.uv_ac_delta_q = bsReader.GetBit() ? -info.uv_ac_delta_q : info.uv_ac_delta_q;
-        }
-        else
-            info.uv_ac_delta_q = 0;
-
-        m_y_dc_delta_q = info.y_dc_delta_q;
-        m_uv_dc_delta_q = info.uv_dc_delta_q;
-        m_uv_ac_delta_q = info.uv_ac_delta_q;
-
-        if (old_y_dc_delta_q  != info.y_dc_delta_q  ||
-            old_uv_dc_delta_q != info.uv_dc_delta_q ||
-            old_uv_ac_delta_q != info.uv_ac_delta_q ||
-            0 == m_frameOrder)
-        {
-            InitDequantizer(&info);
-        }
-
-        info.lossless = (0 == info.baseQIndex &&
-                         0 == info.y_dc_delta_q &&
-                         0 == info.uv_dc_delta_q &&
-                         0 == info.uv_ac_delta_q);
-    }
-
-    // setup_segmentation()
-    {
-        info.segmentation.updateMap = 0;
-        info.segmentation.updateData = 0;
-
-        info.segmentation.enabled = (mfxU8)bsReader.GetBit();
-        if (info.segmentation.enabled)
-        {
-            // Segmentation map update
-            info.segmentation.updateMap = (mfxU8)bsReader.GetBit();
-            if (info.segmentation.updateMap)
+            if (info.intraOnly)
             {
-                for (mfxU8 i = 0; i < VP9_NUM_OF_SEGMENT_TREE_PROBS; ++i)
-                    info.segmentation.treeProbs[i] = (mfxU8) (bsReader.GetBit() ? bsReader.GetBits(8) : VP9_MAX_PROB);
+                if (!CheckSyncCode(&bsReader))
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-                info.segmentation.temporalUpdate = (mfxU8)bsReader.GetBit();
-                if (info.segmentation.temporalUpdate)
+                try
                 {
-                    for (mfxU8 i = 0; i < VP9_NUM_OF_PREDICTION_PROBS; ++i)
-                        info.segmentation.predProbs[i] = (mfxU8) (bsReader.GetBit() ? bsReader.GetBits(8) : VP9_MAX_PROB);
+                    GetBitDepthAndColorSpace(&bsReader, &info);
+        
+                    info.refreshFrameFlags = (mfxU8)bsReader.GetBits(NUM_REF_FRAMES);
+                    GetFrameSize(&bsReader, &info);
                 }
-                else
+                catch (vp9_exception const& e)
                 {
-                    for (mfxU8 i = 0; i < VP9_NUM_OF_PREDICTION_PROBS; ++i)
-                        info.segmentation.predProbs[i] = VP9_MAX_PROB;
+                    UMC::Status status = e.GetStatus();
+                    if (status != UMC::UMC_OK)
+                        return MFX_ERR_UNDEFINED_BEHAVIOR;
                 }
-            }
-
-            info.segmentation.updateData = (mfxU8)bsReader.GetBit();
-            if (info.segmentation.updateData)
-            {
-                info.segmentation.absDelta = (mfxU8)bsReader.GetBit();
-
-                ClearAllSegFeatures(info.segmentation);
-
-                mfxI32 data = 0;
-                mfxU32 nBits = 0;
-                for (mfxU8 i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; ++i)
-                {
-                    for (mfxU8 j = 0; j < SEG_LVL_MAX; ++j)
-                    {
-                        data = 0;
-                        if (bsReader.GetBit()) // feature_enabled
-                        {
-                            EnableSegFeature(info.segmentation, i, (SEG_LVL_FEATURES) j);
-
-                            nBits = GetUnsignedBits(SEG_FEATURE_DATA_MAX[j]);
-                            data = bsReader.GetBits(nBits);
-                            data = data > SEG_FEATURE_DATA_MAX[j] ? SEG_FEATURE_DATA_MAX[j] : data;
-
-                            if (IsSegFeatureSigned( (SEG_LVL_FEATURES) j))
-                                data = bsReader.GetBit() ? -data : data;
-                        }
-
-                        SetSegData(info.segmentation, i, (SEG_LVL_FEATURES) j, data);
-                    }
-                }
-            }
-        }
-    }
-
-    // setup_tile_info()
-    {
-        const mfxI32 alignedWidth = ALIGN_POWER_OF_TWO(info.width, MI_SIZE_LOG2);
-        int minLog2TileColumns, maxLog2TileColumns, maxOnes;
-        mfxU32 miCols = alignedWidth >> MI_SIZE_LOG2;
-        GetTileNBits(miCols, minLog2TileColumns, maxLog2TileColumns);
-
-        maxOnes = maxLog2TileColumns - minLog2TileColumns;
-        info.log2TileColumns = minLog2TileColumns;
-        while (maxOnes-- && bsReader.GetBit())
-            info.log2TileColumns++;
-
-        info.log2TileRows = bsReader.GetBit();
-        if (info.log2TileRows)
-            info.log2TileRows += bsReader.GetBit();
-    }
-
-    info.firstPartitionSize = bsReader.GetBits(16);
-    if (0 == info.firstPartitionSize)
-        return MFX_ERR_UNSUPPORTED;
-
-    info.frameHeaderLength = Ipp32u(bsReader.BitsDecoded() / 8 + (bsReader.BitsDecoded() % 8 > 0));
-    info.frameDataSize = in->DataLength;
-
-    // vp9_loop_filter_frame_init()
-    if (info.lf.filterLevel)
-    {
-        const mfxI32 scale = 1 << (info.lf.filterLevel >> 5);
-
-        LoopFilterInfo & lf_info = info.lf_info;
-
-        for (mfxU8 segmentId = 0; segmentId < VP9_MAX_NUM_OF_SEGMENTS; ++segmentId)
-        {
-            mfxI32 segmentFilterLevel = info.lf.filterLevel;
-            if (IsSegFeatureActive(info.segmentation, segmentId, SEG_LVL_ALT_LF))
-            {
-                const mfxI32 data = GetSegData(info.segmentation, segmentId, SEG_LVL_ALT_LF);
-                segmentFilterLevel = clamp(info.segmentation.absDelta == SEGMENT_ABSDATA ? data : info.lf.filterLevel + data,
-                                           0,
-                                           MAX_LOOP_FILTER);
-            }
-
-            if (!info.lf.modeRefDeltaEnabled)
-            {
-                memset(lf_info.level[segmentId], segmentFilterLevel, sizeof(lf_info.level[segmentId]) );
+            
             }
             else
             {
-                const mfxI32 intra_lvl = segmentFilterLevel + info.lf.refDeltas[INTRA_FRAME] * scale;
-                lf_info.level[segmentId][INTRA_FRAME][0] = (mfxU8) clamp(intra_lvl, 0, MAX_LOOP_FILTER);
+                info.refreshFrameFlags = (mfxU8)bsReader.GetBits(NUM_REF_FRAMES);
 
-                for (mfxU8 ref = LAST_FRAME; ref < MAX_REF_FRAMES; ++ref)
+                for (mfxU8 i = 0; i < REFS_PER_FRAME; ++i)
                 {
-                    for (mfxU8 mode = 0; mode < MAX_MODE_LF_DELTAS; ++mode)
+                    const mfxI32 ref = bsReader.GetBits(REF_FRAMES_LOG2);
+                    info.activeRefIdx[i] = ref;
+                    info.refFrameSignBias[LAST_FRAME + i] = bsReader.GetBit();
+                }
+
+                GetFrameSizeWithRefs(&bsReader, &info);
+
+                info.allowHighPrecisionMv = bsReader.GetBit();
+
+                static const INTERP_FILTER literal2Filter[] =
+                    { EIGHTTAP_SMOOTH, EIGHTTAP, EIGHTTAP_SHARP, BILINEAR };
+                info.interpFilter = bsReader.GetBit() ? SWITCHABLE : literal2Filter[bsReader.GetBits(2)];
+            }
+        }
+
+        if (!info.errorResilientMode)
+        {
+            info.refreshFrameContext = bsReader.GetBit();
+            info.frameParallelDecodingMode = bsReader.GetBit();
+        }
+        else
+        {
+            info.refreshFrameContext = 0;
+            info.frameParallelDecodingMode = 1;
+        }
+
+        // This flag will be overridden by the call to vp9_setup_past_independence
+        // below, forcing the use of context 0 for those frame types.
+        info.frameContextIdx = bsReader.GetBits(FRAME_CONTEXTS_LOG2);
+
+        if (info.frameType == KEY_FRAME || info.intraOnly || info.errorResilientMode)
+        {
+           SetupPastIndependence(info);
+        }
+
+        SetupLoopFilter(&bsReader, &info.lf);
+
+        //setup_quantization()
+        {
+            info.baseQIndex = bsReader.GetBits(QINDEX_BITS);
+            mfxI32 old_y_dc_delta_q = m_y_dc_delta_q;
+            mfxI32 old_uv_dc_delta_q = m_uv_dc_delta_q;
+            mfxI32 old_uv_ac_delta_q = m_uv_ac_delta_q;
+
+            if (bsReader.GetBit())
+            {
+                info.y_dc_delta_q = bsReader.GetBits(4);
+                info.y_dc_delta_q = bsReader.GetBit() ? -info.y_dc_delta_q : info.y_dc_delta_q;
+            }
+            else
+                info.y_dc_delta_q = 0;
+
+            if (bsReader.GetBit())
+            {
+                info.uv_dc_delta_q = bsReader.GetBits(4);
+                info.uv_dc_delta_q = bsReader.GetBit() ? -info.uv_dc_delta_q : info.uv_dc_delta_q;
+            }
+            else
+                info.uv_dc_delta_q = 0;
+
+            if (bsReader.GetBit())
+            {
+                info.uv_ac_delta_q = bsReader.GetBits(4);
+                info.uv_ac_delta_q = bsReader.GetBit() ? -info.uv_ac_delta_q : info.uv_ac_delta_q;
+            }
+            else
+                info.uv_ac_delta_q = 0;
+
+            m_y_dc_delta_q = info.y_dc_delta_q;
+            m_uv_dc_delta_q = info.uv_dc_delta_q;
+            m_uv_ac_delta_q = info.uv_ac_delta_q;
+
+            if (old_y_dc_delta_q  != info.y_dc_delta_q  ||
+                old_uv_dc_delta_q != info.uv_dc_delta_q ||
+                old_uv_ac_delta_q != info.uv_ac_delta_q ||
+                0 == m_frameOrder)
+            {
+                InitDequantizer(&info);
+            }
+
+            info.lossless = (0 == info.baseQIndex &&
+                             0 == info.y_dc_delta_q &&
+                             0 == info.uv_dc_delta_q &&
+                             0 == info.uv_ac_delta_q);
+        }
+
+        // setup_segmentation()
+        {
+            info.segmentation.updateMap = 0;
+            info.segmentation.updateData = 0;
+
+            info.segmentation.enabled = (mfxU8)bsReader.GetBit();
+            if (info.segmentation.enabled)
+            {
+                // Segmentation map update
+                info.segmentation.updateMap = (mfxU8)bsReader.GetBit();
+                if (info.segmentation.updateMap)
+                {
+                    for (mfxU8 i = 0; i < VP9_NUM_OF_SEGMENT_TREE_PROBS; ++i)
+                        info.segmentation.treeProbs[i] = (mfxU8) (bsReader.GetBit() ? bsReader.GetBits(8) : VP9_MAX_PROB);
+
+                    info.segmentation.temporalUpdate = (mfxU8)bsReader.GetBit();
+                    if (info.segmentation.temporalUpdate)
                     {
-                        const mfxI32 inter_lvl = segmentFilterLevel + info.lf.refDeltas[ref] * scale
-                                                        + info.lf.modeDeltas[mode] * scale;
-                        lf_info.level[segmentId][ref][mode] = (mfxU8) clamp(inter_lvl, 0, MAX_LOOP_FILTER);
+                        for (mfxU8 i = 0; i < VP9_NUM_OF_PREDICTION_PROBS; ++i)
+                            info.segmentation.predProbs[i] = (mfxU8) (bsReader.GetBit() ? bsReader.GetBits(8) : VP9_MAX_PROB);
+                    }
+                    else
+                    {
+                        for (mfxU8 i = 0; i < VP9_NUM_OF_PREDICTION_PROBS; ++i)
+                            info.segmentation.predProbs[i] = VP9_MAX_PROB;
+                    }
+                }
+
+                info.segmentation.updateData = (mfxU8)bsReader.GetBit();
+                if (info.segmentation.updateData)
+                {
+                    info.segmentation.absDelta = (mfxU8)bsReader.GetBit();
+
+                    ClearAllSegFeatures(info.segmentation);
+
+                    mfxI32 data = 0;
+                    mfxU32 nBits = 0;
+                    for (mfxU8 i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; ++i)
+                    {
+                        for (mfxU8 j = 0; j < SEG_LVL_MAX; ++j)
+                        {
+                            data = 0;
+                            if (bsReader.GetBit()) // feature_enabled
+                            {
+                                EnableSegFeature(info.segmentation, i, (SEG_LVL_FEATURES) j);
+
+                                nBits = GetUnsignedBits(SEG_FEATURE_DATA_MAX[j]);
+                                data = bsReader.GetBits(nBits);
+                                data = data > SEG_FEATURE_DATA_MAX[j] ? SEG_FEATURE_DATA_MAX[j] : data;
+
+                                if (IsSegFeatureSigned( (SEG_LVL_FEATURES) j))
+                                    data = bsReader.GetBit() ? -data : data;
+                            }
+
+                            SetSegData(info.segmentation, i, (SEG_LVL_FEATURES) j, data);
+                        }
                     }
                 }
             }
         }
+
+        // setup_tile_info()
+        {
+            const mfxI32 alignedWidth = ALIGN_POWER_OF_TWO(info.width, MI_SIZE_LOG2);
+            int minLog2TileColumns, maxLog2TileColumns, maxOnes;
+            mfxU32 miCols = alignedWidth >> MI_SIZE_LOG2;
+            GetTileNBits(miCols, minLog2TileColumns, maxLog2TileColumns);
+
+            maxOnes = maxLog2TileColumns - minLog2TileColumns;
+            info.log2TileColumns = minLog2TileColumns;
+            while (maxOnes-- && bsReader.GetBit())
+                info.log2TileColumns++;
+
+            info.log2TileRows = bsReader.GetBit();
+            if (info.log2TileRows)
+                info.log2TileRows += bsReader.GetBit();
+        }
+
+        info.firstPartitionSize = bsReader.GetBits(16);
+        if (0 == info.firstPartitionSize)
+            return MFX_ERR_UNSUPPORTED;
+
+        info.frameHeaderLength = Ipp32u(bsReader.BitsDecoded() / 8 + (bsReader.BitsDecoded() % 8 > 0));
+        info.frameDataSize = in->DataLength;
+
+        // vp9_loop_filter_frame_init()
+        if (info.lf.filterLevel)
+        {
+            const mfxI32 scale = 1 << (info.lf.filterLevel >> 5);
+
+            LoopFilterInfo & lf_info = info.lf_info;
+
+            for (mfxU8 segmentId = 0; segmentId < VP9_MAX_NUM_OF_SEGMENTS; ++segmentId)
+            {
+                mfxI32 segmentFilterLevel = info.lf.filterLevel;
+                if (IsSegFeatureActive(info.segmentation, segmentId, SEG_LVL_ALT_LF))
+                {
+                    const mfxI32 data = GetSegData(info.segmentation, segmentId, SEG_LVL_ALT_LF);
+                    segmentFilterLevel = clamp(info.segmentation.absDelta == SEGMENT_ABSDATA ? data : info.lf.filterLevel + data,
+                                               0,
+                                               MAX_LOOP_FILTER);
+                }
+
+                if (!info.lf.modeRefDeltaEnabled)
+                {
+                    memset(lf_info.level[segmentId], segmentFilterLevel, sizeof(lf_info.level[segmentId]) );
+                }
+                else
+                {
+                    const mfxI32 intra_lvl = segmentFilterLevel + info.lf.refDeltas[INTRA_FRAME] * scale;
+                    lf_info.level[segmentId][INTRA_FRAME][0] = (mfxU8) clamp(intra_lvl, 0, MAX_LOOP_FILTER);
+
+                    for (mfxU8 ref = LAST_FRAME; ref < MAX_REF_FRAMES; ++ref)
+                    {
+                        for (mfxU8 mode = 0; mode < MAX_MODE_LF_DELTAS; ++mode)
+                        {
+                            const mfxI32 inter_lvl = segmentFilterLevel + info.lf.refDeltas[ref] * scale
+                                                            + info.lf.modeDeltas[mode] * scale;
+                            lf_info.level[segmentId][ref][mode] = (mfxU8) clamp(inter_lvl, 0, MAX_LOOP_FILTER);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    catch(const vp9_exception & ex)
+    {
+        return ConvertStatusUmc2Mfx(ex.GetStatus() );
     }
 
     return MFX_ERR_NONE;
