@@ -33,6 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "ts_encoder.h"
+#include "ts_fei_warning.h"
 
 namespace fei_encode_gpu_hang
 {
@@ -40,6 +41,8 @@ namespace fei_encode_gpu_hang
 int test(mfxU32 codecId)
 {
     TS_START;
+
+    CHECK_FEI_SUPPORT();
 
     tsVideoEncoder enc(MFX_FEI_FUNCTION_ENCODE, codecId);
     enc.m_pPar->AsyncDepth = 1; //limitation for FEI (from sample_fei)

@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ts_encoder.h"
 #include "ts_struct.h"
+#include "ts_fei_warning.h"
 
 namespace fei_encode_init
 {
@@ -290,6 +291,9 @@ const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(Test
 int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
+
+    CHECK_FEI_SUPPORT();
+
     const tc_struct& tc = test_case[id];
 
     if (!(tc.mode & NULL_SESSION))

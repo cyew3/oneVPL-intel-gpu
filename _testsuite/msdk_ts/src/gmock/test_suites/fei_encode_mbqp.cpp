@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ts_encoder.h"
 #include "ts_struct.h"
+#include "ts_fei_warning.h"
 
 /*
  * This test is for HSD7432080 - in FEI, stream encoded with
@@ -371,6 +372,9 @@ const int frameNumber = 30;
 int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
+
+    CHECK_FEI_SUPPORT();
+
     const tc_struct& tc = test_case[id];
     mode = tc.mode;
 

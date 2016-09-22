@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
+#include "ts_fei_warning.h"
 
 namespace fei_encode_advanced_ref_lists
 {
@@ -489,6 +490,9 @@ const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(Test
 int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
+
+    CHECK_FEI_SUPPORT();
+
     const tc_struct& tc = test_case[id];
 
     mfxU32 num_mb = mfxU32(m_par.mfx.FrameInfo.Width / 16) * mfxU32(m_par.mfx.FrameInfo.Height / 16);

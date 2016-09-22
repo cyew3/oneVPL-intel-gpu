@@ -9,6 +9,7 @@
 */
 #include "ts_preenc.h"
 #include "ts_struct.h"
+#include "ts_fei_warning.h"
 
 namespace fei_preenc_query_init
 {
@@ -273,6 +274,9 @@ private:
     int TestSuite::RunTest(unsigned int id)
     {
         TS_START;
+
+        CHECK_FEI_SUPPORT();
+
         const tc_struct& tc = test_case[id];
 
         if (!(tc.mode & NULL_SESSION))

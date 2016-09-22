@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
+#include "ts_fei_warning.h"
 
 /*
  * This test is for MQ-90, to implement the "check diff" test for single-field coding:
@@ -551,6 +552,9 @@ const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(Test
 int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
+
+    CHECK_FEI_SUPPORT();
+
     const tc_struct& tc = test_case[id];
     m_mode = tc.mode;
 

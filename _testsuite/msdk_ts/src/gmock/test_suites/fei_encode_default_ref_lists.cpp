@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ts_encoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
+#include "ts_fei_warning.h"
 #include <vector>
 #include <algorithm>
 
@@ -522,6 +523,9 @@ tc_struct test_case[] =
 int test(unsigned int id)
 {
     TS_START;
+
+    CHECK_FEI_SUPPORT();
+
     tc_struct& tc = test_case[id];
 
     Test enc;

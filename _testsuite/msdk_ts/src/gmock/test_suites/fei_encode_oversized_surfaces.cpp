@@ -10,6 +10,7 @@ Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
 
 #include "ts_encoder.h"
 #include "ts_struct.h"
+#include "ts_fei_warning.h"
 
 /*
  * This test is for VCSD100025510 - create tests on oversized surfaces
@@ -279,6 +280,9 @@ const int frameNumber = 30;
 int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
+
+    CHECK_FEI_SUPPORT();
+
     const tc_struct& tc = test_case[id];
 
     //set input parameters for mfxVideoParam
