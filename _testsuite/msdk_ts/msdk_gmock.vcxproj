@@ -229,13 +229,17 @@
     <ClCompile Include="src\gmock\test_suites\avce_co2_use_rawref.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_cqp_hrd.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_default_ref_lists.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_dts.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_inter_mbs.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_lookahead_dynres.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_maxframesize_ipb.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_max_bins_pcm.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_max_slice_size.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_mbext_brc.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_mbqp.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_mb_disable_skip_map.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_nummbperslice.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_qp_report.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_skipframes.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_skipframes_tektronix.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_start_new_sequence.cpp" />
