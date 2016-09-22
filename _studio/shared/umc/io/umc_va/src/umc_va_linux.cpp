@@ -79,18 +79,9 @@ VAEntrypoint umc_to_va_entrypoint(Ipp32u umc_entrypoint)
 
     switch (umc_entrypoint)
     {
-    case UMC::VA_MC:
-        va_entrypoint = VAEntrypointMoComp;
-        break;
-    case UMC::VA_IT:
-        va_entrypoint = VAEntrypointIDCT;
-        break;
     case UMC::VA_VLD:
     case UMC::VA_VLD | UMC::VA_PROFILE_10:
         va_entrypoint = VAEntrypointVLD;
-        break;
-    case UMC::VA_DEBLOCK:
-        va_entrypoint = VAEntrypointDeblocking;
         break;
     default:
         va_entrypoint = (VAEntrypoint)-1;
@@ -102,10 +93,10 @@ VAEntrypoint umc_to_va_entrypoint(Ipp32u umc_entrypoint)
 // profile priorities for codecs
 Ipp32u g_Profiles[] =
 {
-    UMC::MPEG2_VLD, UMC::MPEG2_IT,
+    UMC::MPEG2_VLD,
     UMC::H264_VLD,
     UMC::H265_VLD,
-    UMC::VC1_VLD, UMC::VC1_MC,
+    UMC::VC1_VLD,
     UMC::VP8_VLD,
     UMC::VP9_VLD,
     UMC::JPEG_VLD
@@ -115,11 +106,6 @@ Ipp32u g_Profiles[] =
 VAProfile g_Mpeg2Profiles[] =
 {
     VAProfileMPEG2Main, VAProfileMPEG2Simple
-};
-
-VAProfile g_Mpeg4Profiles[] =
-{
-    VAProfileMPEG4Main, VAProfileMPEG4AdvancedSimple, VAProfileMPEG4Simple
 };
 
 VAProfile g_H264Profiles[] =
@@ -136,7 +122,6 @@ VAProfile g_H26510BitsProfiles[] =
 {
     VAProfileHEVCMain10
 };
-
 
 VAProfile g_VC1Profiles[] =
 {
@@ -167,9 +152,6 @@ VAProfile get_next_va_profile(Ipp32u umc_codec, Ipp32u profile)
     case UMC::VA_MPEG2:
         if (profile < UMC_ARRAY_SIZE(g_Mpeg2Profiles)) va_profile = g_Mpeg2Profiles[profile];
         break;
-    case UMC::VA_MPEG4:
-        if (profile < UMC_ARRAY_SIZE(g_Mpeg4Profiles)) va_profile = g_Mpeg4Profiles[profile];
-        break;
     case UMC::VA_H264:
         if (profile < UMC_ARRAY_SIZE(g_H264Profiles)) va_profile = g_H264Profiles[profile];
         break;
@@ -196,45 +178,6 @@ VAProfile get_next_va_profile(Ipp32u umc_codec, Ipp32u profile)
         break;
     }
     return va_profile;
-}
-
-typedef struct _CodeStringTable
-{
-    Ipp32s   code;
-    const vm_char* string;
-} CodeStringTable;
-
-CodeStringTable g_BuffersNames[] =
-{
-    { VAPictureParameterBufferType,    VM_STRING("VAPictureParameterBufferType") },
-    { VAIQMatrixBufferType,            VM_STRING("VAIQMatrixBufferType") },
-    { VAHuffmanTableBufferType,        VM_STRING("VAHuffmanTableBufferType")},
-    { VABitPlaneBufferType,            VM_STRING("VABitPlaneBufferType") },
-    { VASliceGroupMapBufferType,       VM_STRING("VASliceGroupMapBufferType") },
-    { VASliceParameterBufferType,      VM_STRING("VASliceParameterBufferType") },
-    { VASliceDataBufferType,           VM_STRING("VASliceDataBufferType") },
-    { VAMacroblockParameterBufferType, VM_STRING("VAMacroblockParameterBufferType") },
-    { VAResidualDataBufferType,        VM_STRING("VAResidualDataBufferType") },
-    { VADeblockingParameterBufferType, VM_STRING("VADeblockingParameterBufferType") },
-    { VAImageBufferType,               VM_STRING("VAImageBufferType") }
-};
-
-const vm_char* umcCodeToString(CodeStringTable *table, Ipp32s table_size, Ipp32s code)
-{
-    Ipp32s i;
-    for (i = 0; i < table_size; i++)
-    {
-        if (table[i].code == code) return table[i].string;
-    }
-    return VM_STRING("Undefined");
-}
-
-#define UMC_VA_CODE_TO_STRING(table, code) \
-  umcCodeToString(table, sizeof(table)/sizeof(CodeStringTable), code)
-
-const vm_char* get_va_buffer_type(Ipp32s type)
-{
-    return UMC_VA_CODE_TO_STRING(g_BuffersNames, type);
 }
 
 namespace UMC
@@ -356,8 +299,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         // profile or stream type should be set
         if (UNKNOWN == (m_Profile & VA_CODEC))
         {
-            VideoAccelerationProfile va_codec = VideoType2VAProfile(pParams->m_pVideoStreamInfo->stream_type);
-            m_Profile = (VideoAccelerationProfile)(m_Profile | va_codec);
+            umcRes = UMC_ERR_INVALID_PARAMS;
         }
     }
     if ((UMC_OK == umcRes) && (UNKNOWN == m_Profile))
@@ -749,10 +691,6 @@ VACompBuffer* LinuxVideoAccelerator::GetCompBufferHW(Ipp32s type, Ipp32s size, I
                 va_size         = sizeof(VASliceParameterBufferMPEG2);
                 va_num_elements = size/sizeof(VASliceParameterBufferMPEG2);
                 break;
-            case UMC::VA_MPEG4:
-                va_size         = sizeof(VASliceParameterBufferMPEG4);
-                va_num_elements = size/sizeof(VASliceParameterBufferMPEG4);
-                break;
             case UMC::VA_H264:
                 if (m_bH264ShortSlice)
                 {
@@ -1012,10 +950,6 @@ void LinuxVideoAccelerator::SetTraceStrings(Ipp32u umc_codec)
     case UMC::VA_MPEG2:
         m_sDecodeTraceStart = "A|DECODE|MPEG2|PACKET_START|";
         m_sDecodeTraceEnd = "A|DECODE|MPEG2|PACKET_END|";
-        break;
-    case UMC::VA_MPEG4:
-        m_sDecodeTraceStart = "A|DECODE|MPEG4|PACKET_START|";
-        m_sDecodeTraceEnd = "A|DECODE|MPEG4|PACKET_END|";
         break;
     case UMC::VA_H264:
         m_sDecodeTraceStart = "A|DECODE|H264|PACKET_START|";

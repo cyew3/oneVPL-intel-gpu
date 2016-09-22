@@ -10,8 +10,6 @@
 #ifndef __UMC_VA_BASE_H__
 #define __UMC_VA_BASE_H__
 
-#ifndef UMC_RESTRICTED_CODE_VA
-
 #include <stdio.h>
 #include <vector>
 #include "vm_types.h"
@@ -53,15 +51,6 @@
 #endif
 
 #endif //  defined (MFX_VA) || defined (UMC_VA)
-
-#ifdef UMC_VA_SIMULATION
-    #define UMC_VA_DXVA
-#endif
-
-#ifdef UMC_STREAM_ANALYZER
-    #define UMC_VA_DXVA
-    #define UMC_VA_SIMULATION
-#endif
 
 #include "ipps.h"
 #include "vm_types.h"
@@ -126,7 +115,6 @@ enum VideoAccelerationProfile
     // Codecs
     VA_CODEC        = 0x00ff,
     VA_MPEG2        = 0x0001,
-    VA_MPEG4        = 0x0002,
     VA_H264         = 0x0003,
     VA_VC1          = 0x0004,
     VA_JPEG         = 0x0005,
@@ -136,11 +124,7 @@ enum VideoAccelerationProfile
 
     // Entry points
     VA_ENTRY_POINT  = 0xfff00,
-    VA_SW           = 0x00100, // no acceleration
-    VA_MC           = 0x00200,
-    VA_IT           = 0x00300,
     VA_VLD          = 0x00400,
-    VA_DEBLOCK      = 0x01000,
 
     VA_PROFILE                  = 0xff000,
     VA_PROFILE_SVC_HIGH         = 0x02000,
@@ -162,9 +146,6 @@ enum VideoAccelerationProfile
     VA_LONG_SLICE_MODE          = 0x00100000,
     VA_SHORT_SLICE_MODE         = 0x00200000,
     VA_ANY_SLICE_MODE           = 0x00300000,
-
-    VC1_MC          = VA_VC1 | VA_MC,
-    MPEG2_IT        = VA_MPEG2 | VA_IT,
 
     MPEG2_VLD       = VA_MPEG2 | VA_VLD,
     H264_VLD        = VA_H264 | VA_VLD,
@@ -206,10 +187,6 @@ enum VideoAccelerationPlatform
     VA_DXVA2     = 0x020000,
     VA_LINUX     = 0x030000,
     VA_SOFTWARE  = 0x040000,
-
-    // Flags
-    VA_SIMULATOR = 0x100000,
-    VA_ANALYZER  = 0x200000
 };
 
 enum VideoAccelerationHW
@@ -244,28 +221,9 @@ enum VideoAccelerationHW
     VA_HW_ICL_LP    = VA_HW_ICL + 1,
 };
 
-class VideoData;
 class UMCVACompBuffer;
-class VACompBuffer;
 class ProtectedVA;
 class VideoProcessingVA;
-
-// Convert codec type from enum VideoStreamType to enum VideoAccelerationProfile
-VideoAccelerationProfile VideoType2VAProfile(VideoStreamType video_type);
-const vm_char* GetVideoAccelerationString(VideoAccelerationProfile code);
-Status GetVideoAccelerationProfile(const vm_char *Name, VideoAccelerationProfile *Code);
-
-inline bool IsVaSvcProfile(Ipp32u profile)
-{
-    profile = profile & VA_PROFILE;
-    return (profile == VA_PROFILE_SVC_HIGH) || (profile == VA_PROFILE_SVC_BASELINE);
-}
-
-inline bool IsVaMvcProfile(Ipp32u profile)
-{
-    profile = profile & VA_PROFILE;
-    return (profile == VA_PROFILE_MVC) || (profile == VA_PROFILE_MVC_MV) || (profile == VA_PROFILE_MVC_STEREO) || (profile == VA_PROFILE_MVC_STEREO_PROG);
-}
 
 enum eUMC_DirectX_Status
 {
@@ -387,8 +345,6 @@ protected:
 
 class UMCVACompBuffer //: public MediaData
 {
-    friend class VACompBuffer;
-
 public:
     UMCVACompBuffer()
     {
@@ -443,5 +399,4 @@ protected:
 
 #pragma warning(default : 4201)
 
-#endif // UMC_RESTRICTED_CODE_VA
 #endif // __UMC_VA_BASE_H__

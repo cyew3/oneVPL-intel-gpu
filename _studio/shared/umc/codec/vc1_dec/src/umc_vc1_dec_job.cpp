@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, Jobs for thread model
@@ -298,19 +298,7 @@ VC1Status VC1TaskProcessorUMC::VC1Decoding (VC1Context* pContext, VC1Task* pTask
         {
             try // check decoding on MB level
             {
-#ifdef UMC_STREAM_ANALYZER
-                //reset all variables for a new MB
-                memset(pContext->m_pCurrMB->pMbAnalyzInfo,0,sizeof(ExtraMBAnalyzer));
-                IppiBitstream Bitsream;
-                Bitsream.pBitstream = pContext->m_bitstream.pBitstream;
-                Bitsream.bitOffset = pContext->m_bitstream.bitOffset;
-#endif
                 pCurrMBTable[pContext->m_picLayerHeader->PTYPE*3 + pContext->m_picLayerHeader->FCM](pContext);
-
-#ifdef UMC_STREAM_ANALYZER
-                pContext->m_pCurrMB->pMbAnalyzInfo->dwNumBitsMB += CalculateUsedBits(Bitsream,pContext->m_bitstream);
-#endif
-
             }
             catch (vc1_exception ex)
             {

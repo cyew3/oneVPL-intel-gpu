@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -138,7 +138,6 @@ Status PackVA::InitBuffers(int /*size_bs*/, int /*size_sl*/)
 Status
 PackVA::SetBufferSize(
     Ipp32s          numMB,
-    MPEG2FrameType  picture_coding_type,
     int             size_bs,
     int             size_sl)
 {
@@ -157,18 +156,7 @@ PackVA::SetBufferSize(
         CompBuf->FirstMb = 0;
         CompBuf->NumOfMB = numMB;
 
-        if(va_mode == VA_IT_W)
-        {
-            m_va->GetCompBuffer(DXVA_MACROBLOCK_CONTROL_BUFFER, &CompBuf);
-            Ipp32s size = (Ipp32s)((picture_coding_type == MPEG2_I_PICTURE) ?
-                numMB*sizeof(DXVA_MBctrl_I_OffHostIDCT_1) :
-                numMB*sizeof(DXVA_MBctrl_P_OffHostIDCT_1));
-            CompBuf->SetDataSize(size);
-
-            m_va->GetCompBuffer(DXVA_RESIDUAL_DIFFERENCE_BUFFER, &CompBuf);
-            CompBuf->SetDataSize((Ipp32s) (totalNumCoef*sizeof(DXVA_TCoefSingle)));
-        }
-        else if(va_mode == VA_VLD_W)
+        if(va_mode == VA_VLD_W)
         {
             CompBuf = NULL;
             m_va->GetCompBuffer(DXVA_INVERSE_QUANTIZATION_MATRIX_BUFFER, &CompBuf);
@@ -880,7 +868,6 @@ PackVA::SaveVLDParameters(
 Status
 PackVA::SetBufferSize(
     Ipp32s          numMB,
-    MPEG2FrameType  picture_coding_type,
     int             size_bs,    //ao: is local bs_size more precize?
     int             size_sl)
 {
@@ -898,25 +885,7 @@ PackVA::SetBufferSize(
             CompBuf->FirstMb = 0;
             CompBuf->NumOfMB = 0;
 
-            if (va_mode == VA_IT_W)
-            {
-                return UMC_ERR_UNSUPPORTED;
-#ifdef MPEG2_IT_SUPPORTED
-                m_va->GetCompBuffer(
-                    DXVA_MACROBLOCK_CONTROL_BUFFER,
-                    &CompBuf);
-                Ipp32s size = (Ipp32s)((picture_coding_type == MPEG2_I_PICTURE) ?
-                    numMB*sizeof(DXVA_MBctrl_I_OffHostIDCT_1) :
-                    numMB*sizeof(DXVA_MBctrl_P_OffHostIDCT_1));
-                CompBuf->SetDataSize(size);
-
-                m_va->GetCompBuffer(
-                    VAResidualDataBufferType,   //DXVA_RESIDUAL_DIFFERENCE_BUFFER,
-                    &CompBuf);
-                CompBuf->SetDataSize((Ipp32s) (totalNumCoef*sizeof(DXVA_TCoefSingle)));
-#endif
-            }
-            else if (va_mode == VA_VLD_W)
+            if (va_mode == VA_VLD_W)
             {
                 m_va->GetCompBuffer(
                     VAIQMatrixBufferType,   //DXVA_INVERSE_QUANTIZATION_MATRIX_BUFFER

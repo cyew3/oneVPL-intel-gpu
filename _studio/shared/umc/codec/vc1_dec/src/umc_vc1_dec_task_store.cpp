@@ -1449,41 +1449,34 @@ STATISTICS_END_TIME(m_timeStatistics->AddPerfomed_StartTime,
         {
             if (va)
             {
-                if ((va->m_Profile & VA_SW) == 0)
-                {
 #ifdef UMC_VA_DXVA
-
-                    Ipp8u* pBuf;
-                    if (va->IsIntelCustomGUID())
+                Ipp8u* pBuf;
+                if (va->IsIntelCustomGUID())
+                {
+                    if(va->GetProtectedVA())
                     {
-                        if(va->GetProtectedVA())
-                        {
-                            pBuf = m_pSHeap->s_alloc<VC1FrameDescriptorVA_Protected<VC1PackerDXVA_Protected>>();
-                            m_pDescriptorQueue[i] = new(pBuf) VC1FrameDescriptorVA_Protected<VC1PackerDXVA_Protected>(m_pMemoryAllocator,va);
-                        }
-                        else
-                        {
-                            pBuf = m_pSHeap->s_alloc<VC1FrameDescriptorVA_EagleLake<VC1PackerDXVA_EagleLake>>();
-                            m_pDescriptorQueue[i] = new(pBuf) VC1FrameDescriptorVA_EagleLake<VC1PackerDXVA_EagleLake>(m_pMemoryAllocator,va);
-                        }
+                        pBuf = m_pSHeap->s_alloc<VC1FrameDescriptorVA_Protected<VC1PackerDXVA_Protected>>();
+                        m_pDescriptorQueue[i] = new(pBuf) VC1FrameDescriptorVA_Protected<VC1PackerDXVA_Protected>(m_pMemoryAllocator,va);
                     }
                     else
                     {
-                        Ipp8u* pBuf;
-                        pBuf = m_pSHeap->s_alloc<VC1FrameDescriptorVA<VC1PackerDXVA>>();
-                        m_pDescriptorQueue[i] = new(pBuf) VC1FrameDescriptorVA<VC1PackerDXVA>(m_pMemoryAllocator,va);
+                        pBuf = m_pSHeap->s_alloc<VC1FrameDescriptorVA_EagleLake<VC1PackerDXVA_EagleLake>>();
+                        m_pDescriptorQueue[i] = new(pBuf) VC1FrameDescriptorVA_EagleLake<VC1PackerDXVA_EagleLake>(m_pMemoryAllocator,va);
                     }
+                }
+                else
+                {
+                    Ipp8u* pBuf;
+                    pBuf = m_pSHeap->s_alloc<VC1FrameDescriptorVA<VC1PackerDXVA>>();
+                    m_pDescriptorQueue[i] = new(pBuf) VC1FrameDescriptorVA<VC1PackerDXVA>(m_pMemoryAllocator,va);
+                }
 #endif
 
 #ifdef UMC_VA_LINUX
-                    Ipp8u* pBuf;
-                    pBuf = m_pSHeap->s_alloc<VC1FrameDescriptorVA_Linux<VC1PackerLVA> >();
-                    m_pDescriptorQueue[i] = new(pBuf) VC1FrameDescriptorVA_Linux<VC1PackerLVA>(m_pMemoryAllocator,va);
+                Ipp8u* pBuf;
+                pBuf = m_pSHeap->s_alloc<VC1FrameDescriptorVA_Linux<VC1PackerLVA> >();
+                m_pDescriptorQueue[i] = new(pBuf) VC1FrameDescriptorVA_Linux<VC1PackerLVA>(m_pMemoryAllocator,va);
 #endif
-                }
-                else
-                    m_pDescriptorQueue[i] = new VC1FrameDescriptor(m_pMemoryAllocator);
-
             }
             else
                 m_pDescriptorQueue[i] = new VC1FrameDescriptor(m_pMemoryAllocator);

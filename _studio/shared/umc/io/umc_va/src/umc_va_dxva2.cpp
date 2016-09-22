@@ -298,8 +298,6 @@ Status DXVA2Accelerator::Execute()
 
     //dumpFile(pBufferDesc, n*sizeof(DXVA2_DecodeBufferDesc), 0);
     //frame_n++;
-   
-    vm_trace_i(pExecuteParams->NumCompBuffers);
 
     HRESULT hr = E_FRAME_LOCKED;
     mfxU32 counter = 0;
@@ -384,7 +382,6 @@ static const GuidProfile guidProfiles[] =
 
     { H264_VLD,  sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT },
 
-    { VC1_MC,    sDXVA2_ModeVC1_MoComp },
     { VC1_VLD,   sDXVA2_Intel_ModeVC1_D_Super},
 
     { JPEG_VLD,  sDXVA2_Intel_IVB_ModeJPEG_VLD_NoFGT},

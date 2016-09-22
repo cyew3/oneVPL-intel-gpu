@@ -600,7 +600,7 @@ namespace UMC
             m_pPacker.SetVideoAccelerator(m_va);
 
             //need to think about DBL profile
-            if (m_va->m_Profile == VC1_VLD || m_va->m_Profile == VC1_MC)
+            if (m_va->m_Profile == VC1_VLD)
             {
                 Ipp32u buffSize =  (seqLayerHeader->heightMB*VC1_PIXEL_IN_LUMA + 128)*
                     (seqLayerHeader->widthMB*VC1_PIXEL_IN_LUMA + 128)+
@@ -683,9 +683,7 @@ namespace UMC
                         return false;
                     }
                 }
-                //m_pContext->m_picLayerHeader = (VC1PictureLayerHeader*)ippsMalloc_8u(sizeof(VC1PictureLayerHeader)*VC1_MAX_SLICE_NUM);
-                //if(!m_pContext->m_picLayerHeader)
-                //    return false;
+
                 m_pContext->m_InitPicLayer = m_pContext->m_picLayerHeader;
 
                 memset(m_pContext->m_picLayerHeader, 0, sizeof(VC1PictureLayerHeader)*VC1_MAX_SLICE_NUM);
@@ -708,80 +706,18 @@ namespace UMC
                     }
                 }
 
-
-                //m_pContext->m_pBitplane.m_databits = (Ipp8u*)ippsMalloc_8u(sizeof(Ipp8u)*seqLayerHeader->heightMB*
-                //    seqLayerHeader->widthMB*
-                //    VC1_MAX_BITPANE_CHUNCKS);
-                //if(NULL == m_pContext->m_pBitplane.m_databits)
-                //    return false;
-
                 memset(m_pContext->m_pBitplane.m_databits, 0,sizeof(Ipp8u)*seqLayerHeader->heightMB*
                     seqLayerHeader->widthMB*
                     VC1_MAX_BITPANE_CHUNCKS);
 
                 m_iSelfID = DescriporID;
             }
-#if defined (UMC_VA_DXVA)
-            if (m_va->m_Profile == VC1_MC)
-            {
-                // memory for diffs for each FrameDescriptor
-                {
-                    if(m_pMemoryAllocator->Alloc(&m_iDiffMemID, sizeof(Ipp16s)*m_pContext->m_seqLayerHeader.widthMB*m_pContext->m_seqLayerHeader.heightMB*8*8*6,
-                        UMC_ALLOC_PERSISTENT, 16) != UMC_OK )
-                    {
-                        return false;
-                    }
-                    m_pDiffMem = (Ipp16s*)m_pMemoryAllocator->Lock(m_iDiffMemID);
-                }
-
-                {
-                    if(m_pMemoryAllocator->Alloc(&m_iMBsMemID,
-                        sizeof(VC1MB)*m_pContext->m_seqLayerHeader.heightMB*m_pContext->m_seqLayerHeader.widthMB,
-                        UMC_ALLOC_PERSISTENT, 16) != UMC_OK )
-                    {
-                        return false;
-                    }
-                    m_pContext->m_MBs  = (VC1MB*)m_pMemoryAllocator->Lock(m_iMBsMemID);
-                }
-
-
-                //m_pContext->m_MBs = (VC1MB*)ippsMalloc_8u(sizeof(VC1MB)*
-                //    m_pContext->m_seqLayerHeader->heightMB*
-                //    m_pContext->m_seqLayerHeader->widthMB);
-                //if(NULL == m_pContext->m_MBs )
-                //{
-                //    return false;
-                //}
-
-                memset(m_pContext->m_MBs, 0, (sizeof(VC1MB)*seqLayerHeader->heightMB*seqLayerHeader->widthMB));
-
-
-                {
-                    if(m_pMemoryAllocator->Alloc(&m_iDCACParamsMemID,
-                        sizeof(VC1DCMBParam)*seqLayerHeader->MaxHeightMB*seqLayerHeader->MaxWidthMB,
-                        UMC_ALLOC_PERSISTENT, 16) != UMC_OK )
-                    {
-                        return false;
-                    }
-                    m_pContext->DCACParams  = (VC1DCMBParam*)m_pMemoryAllocator->Lock(m_iDCACParamsMemID);
-                }
-
-                //m_pContext->DCACParams = (VC1DCMBParam*)ippsMalloc_8u(sizeof(VC1DCMBParam)*seqLayerHeader->heightMB*seqLayerHeader->widthMB);
-                //if(m_pContext->DCACParams == NULL)
-                //{
-                //    return false;
-                //}
-                memset(m_pContext->DCACParams,0,sizeof(VC1DCMBParam)*seqLayerHeader->MaxHeightMB*seqLayerHeader->MaxWidthMB);
-                return true;
-            }
-#endif
             return true;
         }
 
         virtual void Release()
         {
-            if ((m_va->m_Profile == VC1_VLD)||
-                (m_va->m_Profile == VC1_MC))
+            if (m_va->m_Profile == VC1_VLD)
             {
                 if(m_pMemoryAllocator)
                 {
@@ -818,30 +754,6 @@ namespace UMC
                     m_pContext = NULL;
 
                 }
-
-                //if (m_pContext->m_InitPicLayer)
-                //{
-                //    ippsFree(m_pContext->m_InitPicLayer);
-                //    m_pContext->m_InitPicLayer = NULL;
-                //}
-
-                //if(m_pContext->m_pBitplane.m_databits)
-                //{
-                //    ippsFree(m_pContext->m_pBitplane.m_databits);
-                //    m_pContext->m_pBitplane.m_databits = NULL;
-
-                //}
-                //if (m_pContext->m_pBufferStart)
-                //{
-                //    ippsFree(m_pContext->m_pBufferStart);
-                //    m_pContext->m_pBufferStart = NULL;
-                //}
-                //if (m_pContext)
-                //{
-                //    ippsFree(m_pContext);
-                //    m_pContext = NULL;
-                //}
-
             }
         }
         void VC1PackSlices    (Ipp32u*  pOffsets,
@@ -913,8 +825,6 @@ namespace UMC
             if (m_pContext->m_seqLayerHeader.PROFILE != VC1_PROFILE_ADVANCED)
             {
                 Offset = (Ipp32u) (sizeof(Ipp32u)*(m_pContext->m_bitstream.pBitstream - m_pBufferStart)); // offset in words
-                //m_pPacker.VC1PackWholeSliceSM(m_pContext,Offset,m_pContext->m_FrameSize - VC1FHSIZE);
-                //m_pPacker.VC1PackPicParamsForOneSlice(m_pContext);
                 SliceSize = m_pContext->m_FrameSize - VC1FHSIZE;
 
                 {

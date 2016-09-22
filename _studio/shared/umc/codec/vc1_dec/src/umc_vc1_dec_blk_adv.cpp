@@ -613,12 +613,6 @@ VC1Status BLKLayer_Intra_Luma_Adv(VC1Context* pContext, Ipp32s blk_num, Ipp32u A
     STATISTICS_START_TIME(m_timeStatistics->decoding_Intra_StartTime);
 
 // need to calculate bits for residual data
-#ifdef UMC_STREAM_ANALYZER
-    IppiBitstream Bitsream;
-    Bitsream.pBitstream = pContext->m_bitstream.pBitstream;
-    Bitsream.bitOffset = pContext->m_bitstream.bitOffset;
-#endif
-
     ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
                                      &pContext->m_bitstream.bitOffset,
                                      &DCCOEF,
@@ -719,10 +713,6 @@ VC1Status BLKLayer_Intra_Luma_Adv(VC1Context* pContext, Ipp32s blk_num, Ipp32u A
                 }
 #endif
 
-#ifdef UMC_STREAM_ANALYZER
-    pContext->m_pCurrMB->pMbAnalyzInfo->dwNumBitsRes += CalculateUsedBits(Bitsream,pContext->m_bitstream);
-#endif
-
     return VC1_OK;
 }
 
@@ -743,12 +733,6 @@ VC1Status BLKLayer_Intra_Chroma_Adv(VC1Context* pContext, Ipp32s blk_num,Ipp32u 
     STATISTICS_START_TIME(m_timeStatistics->decoding_Intra_StartTime);
 
     // need to calculate bits for residual data
-#ifdef UMC_STREAM_ANALYZER
-    IppiBitstream Bitsream;
-    Bitsream.pBitstream = pContext->m_bitstream.pBitstream;
-    Bitsream.bitOffset = pContext->m_bitstream.bitOffset;
-#endif
-
     ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
                                      &pContext->m_bitstream.bitOffset,
                                      &DCCOEF,
@@ -845,11 +829,6 @@ STATISTICS_END_TIME(m_timeStatistics->decoding_Intra_StartTime,
                     }
                     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS, "\n");
                 }
-#endif
-
-#ifdef UMC_STREAM_ANALYZER
-    Ipp32u bit_shift = CalculateUsedBits(Bitsream,pContext->m_bitstream);
-    pContext->m_pCurrMB->pMbAnalyzInfo->dwNumBitsRes += bit_shift;
 #endif
 
     return VC1_OK;
@@ -997,12 +976,6 @@ VC1Status BLKLayer_Inter_Luma_Adv(VC1Context* pContext, Ipp32s blk_num)
     VC1PictureLayerHeader * picHeader = pContext->m_picLayerHeader;
 
     STATISTICS_START_TIME(m_timeStatistics->decoding_Inter_StartTime);
-
-#ifdef UMC_STREAM_ANALYZER
-    IppiBitstream Bitsream;
-    Bitsream.pBitstream = pContext->m_bitstream.pBitstream;
-    Bitsream.bitOffset = pContext->m_bitstream.bitOffset;
-#endif
 
     if(pContext->m_pCurrMB->m_cbpBits & (1<<(5-blk_num)))
     {
@@ -1180,11 +1153,6 @@ STATISTICS_END_TIME(m_timeStatistics->decoding_Inter_StartTime,
                 }
 #endif
 
-#ifdef UMC_STREAM_ANALYZER
-    Ipp32u bit_shift = CalculateUsedBits(Bitsream,pContext->m_bitstream);
-    pContext->m_pCurrMB->pMbAnalyzInfo->dwNumBitsRes += bit_shift;
-#endif
-
     return VC1_OK;
 }
 
@@ -1198,12 +1166,6 @@ VC1Status BLKLayer_Inter_Chroma_Adv(VC1Context* pContext, Ipp32s blk_num)
     VC1PictureLayerHeader * picHeader = pContext->m_picLayerHeader;
 
     STATISTICS_START_TIME(m_timeStatistics->decoding_Inter_StartTime);
-
-#ifdef UMC_STREAM_ANALYZER
-    IppiBitstream Bitsream;
-    Bitsream.pBitstream = pContext->m_bitstream.pBitstream;
-    Bitsream.bitOffset = pContext->m_bitstream.bitOffset;
-#endif
 
     if(pContext->m_pCurrMB->m_cbpBits & (1<<(5-blk_num)))
     {
@@ -1372,11 +1334,6 @@ STATISTICS_END_TIME(m_timeStatistics->decoding_Inter_StartTime,
                     }
                     VM_Debug::GetInstance(VC1DebugRoutine).vm_debug_frame(-1,VC1_COEFFS, "\n");
                 }
-#endif
-
-#ifdef UMC_STREAM_ANALYZER
-    Ipp32u bit_shift = CalculateUsedBits(Bitsream,pContext->m_bitstream);
-    pContext->m_pCurrMB->pMbAnalyzInfo->dwNumBitsRes += bit_shift;
 #endif
 
     return VC1_OK;

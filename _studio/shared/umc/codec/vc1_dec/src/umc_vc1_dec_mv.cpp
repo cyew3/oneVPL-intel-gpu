@@ -32,13 +32,6 @@ Ipp16u DecodeMVDiff(VC1Context* pContext,Ipp32s hpelfl,
     Ipp16u last_intra = 0;
     VC1PictureLayerHeader* picHeader = pContext->m_picLayerHeader;
 
-#ifdef UMC_STREAM_ANALYZER
-    IppiBitstream Bitsream;
-    Bitsream.pBitstream = pContext->m_bitstream.pBitstream;
-    Bitsream.bitOffset = pContext->m_bitstream.bitOffset;
-#endif
-
-
     ret = ippiDecodeHuffmanOne_1u32s(&pContext->m_bitstream.pBitstream,
                                      &pContext->m_bitstream.bitOffset,
                                      &data,
@@ -116,10 +109,6 @@ Ipp16u DecodeMVDiff(VC1Context* pContext,Ipp32s hpelfl,
 
     * pdmv_x = dmv_x;
     * pdmv_y = dmv_y;
-#ifdef UMC_STREAM_ANALYZER
-    pContext->m_pCurrMB->pMbAnalyzInfo->dwNumBitsMV += CalculateUsedBits(Bitsream,pContext->m_bitstream);
-#endif
-
     return last_intra;
 }
 

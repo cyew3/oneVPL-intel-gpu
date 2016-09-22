@@ -41,7 +41,6 @@
 
 
 #define VA_NO       UNKNOWN
-#define VA_IT_W     MPEG2_IT
 #define VA_VLD_W    MPEG2_VLD
 #define VA_VLD_L    MPEG2_VLD
 
@@ -74,7 +73,6 @@ public:
     Status InitBuffers(int size_bf = 0, int size_sl = 0);
     Status SetBufferSize(
         Ipp32s          numMB,
-        MPEG2FrameType  picture_coding_type,
         int             size_bs=0,
         int             size_sl=0);
     Status SaveVLDParameters(

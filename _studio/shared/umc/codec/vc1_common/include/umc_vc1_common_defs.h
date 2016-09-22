@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          VC-1 (VC1) decoder, Coded block pattern tables
@@ -809,18 +809,6 @@ typedef struct
     Ipp32s      MaxHeightMB;
 }VC1SingletonMB;
 
-#ifdef UMC_STREAM_ANALYZER
-   inline static Ipp32u CalculateUsedBits(IppiBitstream BitStartPos,IppiBitstream BitEndPos)
-   {
-       if (BitEndPos.pBitstream == BitStartPos.pBitstream)
-           return BitStartPos.bitOffset - BitEndPos.bitOffset;
-       else
-           // offset is value between [0,31]
-           return (BitEndPos.pBitstream - BitStartPos.pBitstream)*sizeof(Ipp32u)*8 - 1 -
-                   BitEndPos.bitOffset + BitStartPos.bitOffset;
-   }
-#endif
-
 typedef struct
 {
     Ipp32s      m_cbpBits;
@@ -857,10 +845,6 @@ typedef struct
     Ipp32s       InterpolsrcChromaUStep[2]; //forward/backward or top/bottom
     const Ipp8u* pInterpolChromaVSrc[2];    //forward/backward or top/bottom
     Ipp32s       InterpolsrcChromaVStep[2]; //forward/backward or top/bottom
-#ifdef UMC_STREAM_ANALYZER
-    ExtraMBAnalyzer* pMbAnalyzInfo;
-#endif
-
 }VC1MB;
 typedef struct
 {

@@ -149,13 +149,9 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
     else
         m_bIsReorder = false;
 
-
-    //Ipp32u mbWidth = (init->info.clip_info.width + 15)/VC1_PIXEL_IN_LUMA;
-    //Ipp32u mbHeight= (init->info.clip_info.height  + 15)/VC1_PIXEL_IN_LUMA;
-    
+   
     Ipp32u mbWidth = init->info.clip_info.width/VC1_PIXEL_IN_LUMA;
     Ipp32u mbHeight= init->info.clip_info.height/VC1_PIXEL_IN_LUMA;
-
 
     m_AllocBuffer = 2*(mbHeight*VC1_PIXEL_IN_LUMA)*(mbWidth*VC1_PIXEL_IN_LUMA);
 
@@ -163,8 +159,6 @@ Status VC1VideoDecoder::Init(BaseCodecParams *pInit)
 
 
 #ifndef UMC_RESTRICTED_CODE_VA
-   //if (init->lFlags & FLAG_VDEC_CHECK_ONLY)
-   //     return CheckLevelProfileOnly(init);
     //VA initializtion
     if (init->pVideoAccelerator)
     {
@@ -519,80 +513,34 @@ bool VC1VideoDecoder::InitVAEnvironment(Ipp32u frameSize)
                 }
             }
         }
+        return true;
     }
 
-#ifndef UMC_RESTRICTED_CODE_VA
-    else if (m_va->m_Profile & VA_SW)
+    if (!m_pContext->m_frmBuff.m_pFrames)
     {
-        //m_iMaxFramesInProcessing = m_iThreadDecoderNum + m_iThreadDecoderNum * VC1FRAMEPARALLELPAIR;//m_iMaxFramesInProcessing should be > 1
-
-        m_pContext->m_frmBuff.m_pFrames = new Frame[m_iMaxFramesInProcessing + VC1NUMREFFRAMES];
-
+        m_pHeap->s_new_one(&m_pContext->m_frmBuff.m_pFrames, m_SurfaceNum);
         if (!m_pContext->m_frmBuff.m_pFrames)
             return false;
-
-        m_iMaxFramesInProcessing = 2;
-        if (!m_pContext->m_frmBuff.m_pFrames[0].m_pAllocatedMemory )
-        {
-            if(m_pMemoryAllocator->Alloc(&m_iNewMemID, (m_iMaxFramesInProcessing + VC1NUMREFFRAMES)*frameSize, // 2 - references frames !!!!!
-                                         UMC_ALLOC_PERSISTENT,16) != UMC_OK )
-            {
-                Close();
-                return false;
-            }
-            m_pContext->m_frmBuff.m_pFrames[0].m_pAllocatedMemory = (Ipp8u*)m_pMemoryAllocator->Lock(m_iNewMemID);
-            if(m_pContext->m_frmBuff.m_pFrames[0].m_pAllocatedMemory == NULL)
-                return false;
-        }
     }
-    else if (m_va)
-    {
 
-        if (!m_pContext->m_frmBuff.m_pFrames)
-        {
-            m_pHeap->s_new_one(&m_pContext->m_frmBuff.m_pFrames, m_SurfaceNum);
-            if (!m_pContext->m_frmBuff.m_pFrames)
-                return false;
-        }
-
-        //if (!m_pContext->m_frmBuff.m_pFrames)
-        //    return false;
-
-        //if(m_pMemoryAllocator->Alloc(&m_iNewMemID, (VC1NUMREFFRAMES + 1)*frameSize, // need 4 buffers
-        //    UMC_ALLOC_PERSISTENT, 16) != UMC_OK )
-        //{
-        //    Close();
-        //    return false;
-        //}
-        //m_pContext->m_frmBuff.m_pFrames[0].m_pAllocatedMemory = (Ipp8u*)m_pMemoryAllocator->Lock(m_iNewMemID);
-        //if(m_pContext->m_frmBuff.m_pFrames[0].m_pAllocatedMemory == NULL)
-        //    return false;
-
-    }
-    if (m_va)
-    {
-        if ((m_va->m_Profile & VA_SW) == 0)
-        {
 #ifdef UMC_VA_DXVA
-            if (m_va->IsIntelCustomGUID())
-            {
-                if(m_va->GetProtectedVA())
-                    m_pSelfDecoder = new VC1VideoDecoderVA<VC1PackerDXVA_Protected>;
-                else
-                    m_pSelfDecoder = new VC1VideoDecoderVA<VC1PackerDXVA_EagleLake>;
-            }
-            else
-                m_pSelfDecoder = new VC1VideoDecoderVA<VC1PackerDXVA>;
+    if (m_va->IsIntelCustomGUID())
+    {
+        if(m_va->GetProtectedVA())
+            m_pSelfDecoder = new VC1VideoDecoderVA<VC1PackerDXVA_Protected>;
+        else
+            m_pSelfDecoder = new VC1VideoDecoderVA<VC1PackerDXVA_EagleLake>;
+    }
+    else
+        m_pSelfDecoder = new VC1VideoDecoderVA<VC1PackerDXVA>;
 #endif
 
 #ifdef UMC_VA_LINUX
-            m_pSelfDecoder = new VC1VideoDecoderVA<VC1PackerLVA>;
+    m_pSelfDecoder = new VC1VideoDecoderVA<VC1PackerLVA>;
 #endif
 
-            m_pSelfDecoder->SetVideoHardwareAccelerator(m_va);
-        }
-    }
-#endif
+    m_pSelfDecoder->SetVideoHardwareAccelerator(m_va);
+
     return true;
 }
 Status VC1VideoDecoder::InitSMProfile(VideoDecoderParams *init)

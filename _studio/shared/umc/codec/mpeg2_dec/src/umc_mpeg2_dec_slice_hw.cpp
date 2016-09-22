@@ -470,7 +470,7 @@ Status MPEG2VideoDecoderHW::DecodeSliceHeader(IppVideoContext *video, int task_n
 mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure == FRAME_PICTURE) ?
                                         sequenceHeader.numMB[task_num] : sequenceHeader.numMB[task_num]/2;
 
-                    if(pack_w.SetBufferSize(numMB,PictureHeader[task_num].picture_coding_type)!= UMC_OK)
+                    if(pack_w.SetBufferSize(numMB)!= UMC_OK)
                         return UMC_ERR_NOT_ENOUGH_BUFFER;
 
                     Status umcRes = pack_w.SaveVLDParameters(&sequenceHeader,&PictureHeader[task_num],
@@ -909,7 +909,6 @@ mm:
 
                     if (pack_w.SetBufferSize(
                         numMB,
-                        PictureHeader[task_num].picture_coding_type,
                         size_bs,
                         size_sl)!= UMC_OK)
                     {
@@ -1035,7 +1034,7 @@ mm:
                 ? sequenceHeader.numMB[task_num]
                 : sequenceHeader.numMB[task_num]/2;
 
-              if(pack_w.SetBufferSize(numMB,PictureHeader[task_num].picture_coding_type)!= UMC_OK)
+              if(pack_w.SetBufferSize(numMB)!= UMC_OK)
                   return UMC_ERR_NOT_ENOUGH_BUFFER;
 
               umcRes = pack_w.m_va->Execute();

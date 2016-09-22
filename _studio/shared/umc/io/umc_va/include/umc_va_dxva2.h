@@ -206,7 +206,6 @@ bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
     bool res = false;
     switch(profile)
     {
-    case VC1_MC:
     case JPEG_VLD:
     case VP8_VLD:
     case VP9_VLD:

@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2014 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 #include "vm_strings.h"
@@ -96,15 +96,6 @@ namespace UMC
     UMC_SAME_NAME(YVU9),
     UMC_SAME_NAME(D3D_SURFACE)
   };
-#if 1
-  static CodeStringTable StringsOfVideoAcceleration[] = {
-    UMC_SAME_NAME(UNKNOWN),
-    UMC_SAME_NAME(VC1_MC),
-    UMC_SAME_NAME(VC1_VLD),
-    UMC_SAME_NAME(MPEG2_VLD),
-    UMC_SAME_NAME(H264_VLD),
-  };
-#endif
   static CodeStringTable StringsOfAudioType[] = {
     { UMC::UNDEF_AUDIO,         VM_STRING("UNDEF") },
     { UMC::PCM_AUDIO,           VM_STRING("PCM") },
@@ -317,14 +308,6 @@ namespace UMC
   Status GetVideoRenderType(const vm_char *string, VideoRenderType *code)
   {
     UMC_STRING_TO_CODE(StringsOfVideoRenderType, string, code, VideoRenderType);
-  }
-  const vm_char* GetVideoAccelerationString(VideoAccelerationProfile code)
-  {
-    return UMC_CODE_TO_STRING(StringsOfVideoAcceleration, code);
-  }
-  Status GetVideoAccelerationProfile(const vm_char *string, VideoAccelerationProfile *code)
-  {
-    UMC_STRING_TO_CODE(StringsOfVideoAcceleration, string, code, VideoAccelerationProfile);
   }
 
 }; // namespace UMC

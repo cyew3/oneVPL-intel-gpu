@@ -1893,12 +1893,6 @@ void DecodeMVDiff_Adv(VC1Context* pContext,Ipp16s* pdmv_x, Ipp16s* pdmv_y)
                                        {0, 1, 3, 7, 15, 31, 63, 127, 255}};
     static const Ipp8u* curr_offset;
 
-#ifdef UMC_STREAM_ANALYZER
-    IppiBitstream Bitsream;
-    Bitsream.pBitstream = pContext->m_bitstream.pBitstream;
-    Bitsream.bitOffset = pContext->m_bitstream.bitOffset;
-#endif
-
     ret = ippiDecodeHuffmanOne_1u32s (
         &pContext->m_bitstream.pBitstream,
         &pContext->m_bitstream.bitOffset,
@@ -1971,10 +1965,6 @@ void DecodeMVDiff_Adv(VC1Context* pContext,Ipp16s* pdmv_x, Ipp16s* pdmv_y)
 
     *pdmv_x=dmv_x;
     *pdmv_y=dmv_y;
-
-#ifdef UMC_STREAM_ANALYZER
-    pContext->m_pCurrMB->pMbAnalyzInfo->dwNumBitsMV += CalculateUsedBits(Bitsream,pContext->m_bitstream);
-#endif
 }
 
 Ipp8u DecodeMVDiff_TwoReferenceField_Adv(VC1Context* pContext,
@@ -1995,12 +1985,6 @@ Ipp8u DecodeMVDiff_TwoReferenceField_Adv(VC1Context* pContext,
                                              {0, 1, 3, 7, 15, 31, 63, 127, 255}};
     static Ipp8u size_table[16]   = {0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7};
     Ipp8u* curr_offset;
-
-#ifdef UMC_STREAM_ANALYZER
-    IppiBitstream Bitsream;
-    Bitsream.pBitstream = pContext->m_bitstream.pBitstream;
-    Bitsream.bitOffset = pContext->m_bitstream.bitOffset;
-#endif
 
     ret = ippiDecodeHuffmanOne_1u32s (
         &pContext->m_bitstream.pBitstream,
@@ -2075,10 +2059,6 @@ Ipp8u DecodeMVDiff_TwoReferenceField_Adv(VC1Context* pContext,
 
     * pdmv_x = dmv_x;
     * pdmv_y = dmv_y;
-
-#ifdef UMC_STREAM_ANALYZER
-    pContext->m_pCurrMB->pMbAnalyzInfo->dwNumBitsMV += CalculateUsedBits(Bitsream,pContext->m_bitstream);
-#endif
 
     return predictor_flag;
 }
