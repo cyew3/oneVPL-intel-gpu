@@ -173,7 +173,9 @@ namespace MfxHwMpeg2Encode
         bool                                    m_bOutOfRangeMV;
         bool                                    m_bErrMBType;
         bool                                    m_bUseRawFrames;
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         bool                                    m_bTriggerGpuHang;
+#endif
         USHORT                                  m_GOPPictureSize;
         UCHAR                                   m_GOPRefDist;
         UCHAR                                   m_GOPOptFlag;

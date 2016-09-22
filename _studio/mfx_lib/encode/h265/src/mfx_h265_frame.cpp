@@ -445,6 +445,7 @@ namespace H265Enc {
         PadRectChroma(fdata, fourcc, rectx, recty, rectw, recth);
     }
 
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     void Dump(H265VideoParam *par, Frame* frame, FrameList & dpb )
     {
         if (!par->doDumpRecon)
@@ -521,6 +522,7 @@ namespace H265Enc {
 
         vm_file_fclose(f);
     }
+#endif
 
     void Frame::Destroy()
     {

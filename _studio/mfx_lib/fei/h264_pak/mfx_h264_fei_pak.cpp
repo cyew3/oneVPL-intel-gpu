@@ -66,7 +66,9 @@ static bool IsVideoParamExtBufferIdSupported(mfxU32 id)
         id == MFX_EXTBUFF_CODING_OPTION             ||
         id == MFX_EXTBUFF_CODING_OPTION_SPSPPS      ||
         id == MFX_EXTBUFF_DDI                       ||
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
         id == MFX_EXTBUFF_DUMP                      ||
+#endif
         id == MFX_EXTBUFF_PAVP_OPTION               ||
         id == MFX_EXTBUFF_MVC_SEQ_DESC              ||
         id == MFX_EXTBUFF_VIDEO_SIGNAL_INFO         ||

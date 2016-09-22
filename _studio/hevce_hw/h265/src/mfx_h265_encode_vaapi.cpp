@@ -1061,7 +1061,6 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
     mfxU32      i;
     mfxU32      packedDataSize = 0;
     VAStatus    vaSts;
-    unsigned int trigger_hang = 1;
 
     VABuffersDestroyPool(0);
     VABuffersDestroyPool(2);
@@ -1125,6 +1124,9 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
         }
     }
 
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
+    unsigned int trigger_hang = 1;
+
     if ((mfxExtIntGPUHang*)ExtBuffer::Get(task.m_ctrl))
     {
         vaSts = vaCreateBuffer(m_vaDisplay,
@@ -1136,7 +1138,7 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
                                &VABufferNew(VABID_TriggerCodecHang, 0));
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
-
+#endif
 
     {
         // AUD

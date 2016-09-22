@@ -176,7 +176,9 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMVCSeqDesc,           MFX_EXTBUFF_MVC_SEQ_DESC             );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMVCTargetViews,       MFX_EXTBUFF_MVC_TARGET_VIEWS         );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtPictureTimingSEI,     MFX_EXTBUFF_PICTURE_TIMING_SEI       );
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     BIND_EXTBUF_TYPE_TO_ID (mfxExtDumpFiles,            MFX_EXTBUFF_DUMP                     );
+#endif
     BIND_EXTBUF_TYPE_TO_ID (mfxExtSpsHeader,            MFX_EXTBUFF_SPS_HEADER               );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtSpsSvcHeader,         MFX_EXTBUFF_SPS_SVC_HEADER           );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtPpsHeader,            MFX_EXTBUFF_PPS_HEADER               );
@@ -193,9 +195,7 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderROI,           MFX_EXTBUFF_ENCODER_ROI              );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtLAFrameStatistics,    MFX_EXTBUFF_LOOKAHEAD_STAT           );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiParam,             MFX_EXTBUFF_FEI_PARAM                );
-#if defined (ADVANCED_REF)
     BIND_EXTBUF_TYPE_TO_ID (mfxExtAVCRefLists,          MFX_EXTBUFF_AVC_REFLISTS             );
-#endif
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption3,        MFX_EXTBUFF_CODING_OPTION3           );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtMBQP,                 MFX_EXTBUFF_MBQP                     );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtChromaLocInfo,        MFX_EXTBUFF_CHROMA_LOC_INFO          );
@@ -221,7 +221,9 @@ namespace MfxHwH264Encode
     BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiPreEncCtrl,        MFX_EXTBUFF_FEI_PREENC_CTRL          );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiPreEncMVPredictors,MFX_EXTBUFF_FEI_PREENC_MV_PRED       );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtFeiRepackCtrl,        MFX_EXTBUFF_FEI_REPACK_CTRL          );
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     BIND_EXTBUF_TYPE_TO_ID (mfxExtIntGPUHang,           MFX_EXTBUFF_GPU_HANG                 );
+#endif
 
 #undef BIND_EXTBUF_TYPE_TO_ID
 
@@ -592,9 +594,11 @@ namespace MfxHwH264Encode
         mfxExtDirtyRect             m_extDirtyRect;
         mfxExtMoveRect              m_extMoveRect;
 
-        // internal, not documented
         mfxExtCodingOptionDDI       m_extOptDdi;
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
+        // internal, not documented
         mfxExtDumpFiles             m_extDumpFiles;
+#endif
         mfxExtSpsHeader             m_extSps;
         mfxExtPpsHeader             m_extPps;
         mfxExtSpecialEncodingModes  m_extSpecModes;

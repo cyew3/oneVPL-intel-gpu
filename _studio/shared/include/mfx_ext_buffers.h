@@ -11,25 +11,19 @@
 #ifndef __MFX_EXT_BUFFERS_H__
 #define __MFX_EXT_BUFFERS_H__
 
-#define ADVANCED_REF
-
 #include "vm_strings.h"
+
+#define MFX_EXTBUFF_GPU_HANG_ENABLE
+#define MFX_UNDOCUMENTED_QUANT_MATRIX
+#define MFX_UNDOCUMENTED_DUMP_FILES
+#define MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
+#define MFX_UNDOCUMENTED_CO_DDI
 
 // internal(undocumented) handles for VideoCORE::SetHandle
 #define MFX_HANDLE_TIMING_LOG       ((mfxHandleType)1001)
 #define MFX_HANDLE_EXT_OPTIONS      ((mfxHandleType)1002)
 #define MFX_HANDLE_TIMING_SUMMARY   ((mfxHandleType)1003)
 #define MFX_HANDLE_TIMING_TAL       ((mfxHandleType)1004)
-
-// enum for MFX_HANDLE_EXT_OPTIONS
-enum eMFXExtOptions
-{
-    MFX_EXTOPTION_DEC_CUSTOM_GUID   = 0x0001,
-    MFX_EXTOPTION_DEC_STANDARD_GUID = 0x0002,
-    MFX_EXTOPTION_VPP_SW            = 0x0004,
-    MFX_EXTOPTION_VPP_BLT           = 0x0008,
-    MFX_EXTOPTION_VPP_FASTCOMP      = 0x0010,
-};
 
 #define MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK MFX_MAKEFOURCC('A','P','B','K')
 
@@ -93,7 +87,7 @@ typedef struct {
 
 } mfxExtCodingOptionDDI;
 
-
+#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
 #define MFX_EXTBUFF_QM MFX_MAKEFOURCC('E','X','Q','P')
 
 typedef struct {
@@ -107,15 +101,10 @@ typedef struct {
     mfxU8 ChromaIntraQM[64];
     mfxU8 ChromaInterQM[64];
 } mfxExtCodingOptionQuantMatrix;
+#endif // #ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
 
-enum
-{
-    MFX_MB_NOP = 0,
-    MFX_MB_WRITE_TEXT,
-    MFX_MB_WRITE_BIN,
-    MFX_MB_READ_BIN
-};
 
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
 #define MFX_EXTBUFF_DUMP MFX_MAKEFOURCC('D','U','M','P')
 enum
 {
@@ -125,15 +114,13 @@ enum
 typedef struct {
     mfxExtBuffer Header;
 
-    vm_char MBFilename[MFX_MAX_PATH];
-    mfxU32  MBFileOperation;
-
     vm_char ReconFilename[MFX_MAX_PATH];
     vm_char InputFramesFilename[MFX_MAX_PATH];
 
 } mfxExtDumpFiles;
+#endif // #ifdef MFX_UNDOCUMENTED_DUMP_FILES
 
-
+#ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
 // aya: should be moved on MSDK API level after discussion
 #define MFX_EXTBUFF_VPP_VARIANCE_REPORT MFX_MAKEFOURCC('V','R','P','F')
 
@@ -157,12 +144,12 @@ typedef struct {
     // variances 
     mfxU32          Variances[11];
 } mfxExtVppReport;
+#endif // #ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
+
 
 #define MFX_EXTBUFF_HEVCENC MFX_MAKEFOURCC('B','2','6','5')
 typedef struct {
     mfxExtBuffer Header;
-
-
 
     mfxU16      Log2MaxCUSize;
     mfxU16      MaxCUDepth;
@@ -256,17 +243,12 @@ typedef struct {
     mfxU16      reserved[36];       // 256 bytes total} mfxExtCodingOptionHEVC;
 } mfxExtCodingOptionHEVC;
 
-
-#if defined (ADVANCED_REF)
-
-#define MFX_EXTBUFF_AVC_REFLISTS MFX_MAKEFOURCC('R','L','T','S')
-
-
-#endif // ADVANCED_REF
-
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
 #define MFX_EXTBUFF_GPU_HANG MFX_MAKEFOURCC('H','A','N','G')
+
 typedef struct {
     mfxExtBuffer Header;
 } mfxExtIntGPUHang;
+#endif
 
 #endif // __MFX_EXT_BUFFERS_H__

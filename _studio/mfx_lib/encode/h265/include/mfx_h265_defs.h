@@ -717,7 +717,9 @@ namespace MfxEnumShortAliases {
     template<class T> struct Type2Id;
     template<> struct Type2Id<mfxExtOpaqueSurfaceAlloc> { enum { id = MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION }; };
     template<> struct Type2Id<mfxExtCodingOptionHEVC>   { enum { id = MFX_EXTBUFF_HEVCENC }; };
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     template<> struct Type2Id<mfxExtDumpFiles>          { enum { id = MFX_EXTBUFF_DUMP }; };
+#endif
     template<> struct Type2Id<mfxExtHEVCTiles>          { enum { id = MFX_EXTBUFF_HEVC_TILES }; };
     template<> struct Type2Id<mfxExtHEVCRegion>         { enum { id = MFX_EXTBUFF_HEVC_REGION }; };
     template<> struct Type2Id<mfxExtHEVCParam>          { enum { id = MFX_EXTBUFF_HEVC_PARAM }; };

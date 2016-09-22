@@ -443,6 +443,7 @@ mfxStatus VideoVPP_SW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
             }
 #endif
 
+#ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
             case (mfxU32)MFX_EXTBUFF_VPP_VARIANCE_REPORT://fake only!!!
             {
                 sts = MFX_ERR_NONE;
@@ -451,6 +452,7 @@ mfxStatus VideoVPP_SW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
 
                 break;
             }
+#endif
             default:
             {
                 sts = MFX_ERR_INVALID_VIDEO_PARAM;
@@ -937,6 +939,7 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
             }
 #endif
 
+#ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
             case (mfxU32)MFX_EXTBUFF_VPP_VARIANCE_REPORT:
             {
                 // aya: fake for SW compatibility
@@ -944,6 +947,7 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
                 outputFramesCount[filterIndex] = 1;
                 break;
             }
+#endif
 
             case (mfxU32)MFX_EXTBUFF_VPP_COMPOSITE:
             {

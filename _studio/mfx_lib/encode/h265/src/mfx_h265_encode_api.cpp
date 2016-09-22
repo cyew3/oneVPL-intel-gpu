@@ -628,7 +628,9 @@ namespace {
         mfxExtCodingOption *opt = GetExtBuffer(par);
         mfxExtCodingOption2 *opt2 = GetExtBuffer(par);
         mfxExtCodingOption3 *opt3 = GetExtBuffer(par);
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
         mfxExtDumpFiles *dumpFiles = GetExtBuffer(par);
+#endif
         mfxExtEncoderROI *roi = GetExtBuffer(par);
 
         // check pairs (error is expected behavior)
@@ -1118,6 +1120,7 @@ namespace {
         if ((mfx.GopOptFlag & MFX_GOP_STRICT) && opt2 && opt2->AdaptiveI)
             wrnIncompatible = !CheckEq(opt2->AdaptiveI, OFF);
 
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
         if (dumpFiles) {
             size_t MAXLEN = sizeof(dumpFiles->ReconFilename) / sizeof(dumpFiles->ReconFilename[0]);
             vm_char *pzero = std::find(dumpFiles->ReconFilename, dumpFiles->ReconFilename + MAXLEN, 0);
@@ -1129,6 +1132,7 @@ namespace {
             if (pzero == dumpFiles->InputFramesFilename + MAXLEN)
                 dumpFiles->InputFramesFilename[0] = 0, wrnIncompatible = true; // too long name
         }
+#endif
 
         if      (errInvalidParam) return MFX_ERR_INVALID_VIDEO_PARAM;
         else if (errUnsupported)  return MFX_ERR_UNSUPPORTED;
@@ -1834,7 +1838,9 @@ ExtBuffers::ExtBuffers()
     size_t count = 0;
     extParamAll[count++] = &extOpaq.Header;
     extParamAll[count++] = &extOptHevc.Header;
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     extParamAll[count++] = &extDumpFiles.Header;
+#endif
     extParamAll[count++] = &extTiles.Header;
     extParamAll[count++] = &extRegion.Header;
     extParamAll[count++] = &extHevcParam.Header;
@@ -1851,7 +1857,9 @@ void ExtBuffers::CleanUp()
 {
     InitExtBuffer(extOpaq);
     InitExtBuffer(extOptHevc);
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     InitExtBuffer(extDumpFiles);
+#endif
     InitExtBuffer(extTiles);
     InitExtBuffer(extRegion);
     InitExtBuffer(extHevcParam);

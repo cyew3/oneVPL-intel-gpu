@@ -134,8 +134,6 @@ public:
     virtual
     mfxStatus CopyFrameEx(mfxFrameSurface1 *pDst, mfxU16 dstMemType, mfxFrameSurface1 *pSrc, mfxU16 srcMemType) {return DoFastCopyWrapper(pDst, dstMemType, pSrc, srcMemType);}
 
-    mfxU32 m_ExtOptions; // 1=force Intel custom guid, 2=force standard decode guid, 4=force SW VPP, 8=force BLT VPP, 16=force FC VPP
-
     // just a WA for a while
     virtual mfxStatus IsGuidSupported(const GUID guid, mfxVideoParam *par, bool isEncoder = false) {guid; par; isEncoder;  return MFX_ERR_NONE;};
 

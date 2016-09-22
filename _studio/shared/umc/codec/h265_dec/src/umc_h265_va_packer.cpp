@@ -622,6 +622,7 @@ void PackerVA::PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplie
 
 void PackerVA::BeginFrame(H265DecoderFrame* frame)
 {
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     FrameData* fd = frame->GetFrameData();
     VM_ASSERT(fd);
 
@@ -650,6 +651,7 @@ void PackerVA::BeginFrame(H265DecoderFrame* frame)
             *trigger = 1;
         }
     }
+#endif
 }
 
 void PackerVA::EndFrame()

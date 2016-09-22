@@ -130,10 +130,11 @@ namespace MPEG2EncoderHW
              }
              m_pExecuteBuffers->m_SkipFrame = (mfxU8)pIntTask->m_sEncodeInternalParams.SkipFrame;
 
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
              m_pExecuteBuffers->m_bTriggerGpuHang =
                      !!GetExtBuffer(pIntTask->m_sEncodeInternalParams.ExtParam,
                                     pIntTask->m_sEncodeInternalParams.NumExtParam, MFX_EXTBUFF_GPU_HANG);
-
+#endif
              mfxStatus sts = MFX_ERR_NONE;
              sts = SubmitFrame(&pIntTask->m_FrameParams, &pIntTask->m_Frames, pUserData, userDataLen, qp);
              MFX_CHECK_STS (sts);

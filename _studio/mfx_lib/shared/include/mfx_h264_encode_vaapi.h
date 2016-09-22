@@ -222,7 +222,9 @@ namespace MfxHwH264Encode
         VABufferID m_roiBufferId;
         VABufferID m_ppsBufferId;
         VABufferID m_mbqpBufferId;
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         VABufferID m_triggerGpuHangBufferId;
+#endif
         VABufferID m_mbNoSkipBufferId;
         std::vector<VABufferID> m_sliceBufferId;
 

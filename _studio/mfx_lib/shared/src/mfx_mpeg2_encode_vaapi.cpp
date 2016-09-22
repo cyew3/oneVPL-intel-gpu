@@ -483,7 +483,9 @@ VAAPIEncoder::VAAPIEncoder(VideoCORE* core)
     , m_packedUserDataParamsId(VA_INVALID_ID)
     , m_packedUserDataId(VA_INVALID_ID)
     , m_mbqpBufferId(VA_INVALID_ID)
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     , m_triggerGpuHangBufferId(VA_INVALID_ID)
+#endif
     , m_vbvBufSize(0)
     , m_initFrameWidth(0)
     , m_initFrameHeight(0)
@@ -1452,6 +1454,7 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
     }
 
 
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     if (pExecuteBuffers->m_bTriggerGpuHang)
     {
         MFX_DESTROY_VABUFFER(m_triggerGpuHangBufferId, m_vaDisplay);
@@ -1466,6 +1469,7 @@ mfxStatus VAAPIEncoder::Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 funcId, 
 
         configBuffers[buffersCount++] = m_triggerGpuHangBufferId;
     }
+#endif
 
     //------------------------------------------------------------------
     // Rendering
@@ -1677,7 +1681,9 @@ mfxStatus VAAPIEncoder::Close()
     MFX_DESTROY_VABUFFER(m_packedUserDataId, m_vaDisplay);
 
     MFX_DESTROY_VABUFFER(m_mbqpBufferId, m_vaDisplay);
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     MFX_DESTROY_VABUFFER(m_triggerGpuHangBufferId, m_vaDisplay);
+#endif
 
     if (m_allocResponseMB.NumFrameActual != 0)
     {

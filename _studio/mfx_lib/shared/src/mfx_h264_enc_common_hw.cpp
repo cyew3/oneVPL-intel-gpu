@@ -1403,20 +1403,20 @@ bool MfxHwH264Encode::IsRunTimeOnlyExtBuffer(mfxU32 id)
 {
     return
            id == MFX_EXTBUFF_AVC_REFLIST_CTRL
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
+        || id == MFX_EXTBUFF_GPU_HANG
+#endif
         || id == MFX_EXTBUFF_ENCODED_FRAME_INFO
         || id == MFX_EXTBUFF_MBQP
         || id == MFX_EXTBUFF_MB_DISABLE_SKIP_MAP
-        || id == MFX_EXTBUFF_AVC_ENCODE_CTRL
-        || id == MFX_EXTBUFF_GPU_HANG;
+        || id == MFX_EXTBUFF_AVC_ENCODE_CTRL;
 }
 
 bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
 {
     return
           (id == MFX_EXTBUFF_AVC_REFLIST_CTRL
-#if defined (ADVANCED_REF)
         || id == MFX_EXTBUFF_AVC_REFLISTS
-#endif
         || id == MFX_EXTBUFF_ENCODED_FRAME_INFO
         || id == MFX_EXTBUFF_PICTURE_TIMING_SEI
         || id == MFX_EXTBUFF_CODING_OPTION2
@@ -1426,7 +1426,9 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(mfxU32 id)
         || id == MFX_EXTBUFF_ENCODER_WIDI_USAGE
         || id == MFX_EXTBUFF_AVC_ENCODE_CTRL
         || id == MFX_EXTBUFF_PRED_WEIGHT_TABLE
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         || id == MFX_EXTBUFF_GPU_HANG
+#endif
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
         || id == MFX_EXTBUFF_FEI_ENC_CTRL
         || id == MFX_EXTBUFF_FEI_ENC_MB
@@ -1446,8 +1448,12 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
     return
            (id == MFX_EXTBUFF_CODING_OPTION
         || id == MFX_EXTBUFF_CODING_OPTION_SPSPPS
+#ifdef MFX_UNDOCUMENTED_CO_DDI
         || id == MFX_EXTBUFF_DDI
+#endif
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
         || id == MFX_EXTBUFF_DUMP
+#endif
         || id == MFX_EXTBUFF_PAVP_OPTION
         || id == MFX_EXTBUFF_MVC_SEQ_DESC
         || id == MFX_EXTBUFF_VIDEO_SIGNAL_INFO
@@ -5540,11 +5546,9 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
     if (extRefListCtrl && extSpecModes->refDummyFramesForWiDi)
         checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM; // no DPB and ref list manipulations allowed for WA WiDi mode
 
-#if defined (ADVANCED_REF)
     mfxExtAVCRefLists const * extRefLists = GetExtBuffer(*ctrl);
     if (extRefLists && video.calcParam.numTemporalLayer > 0 && video.calcParam.lyncMode == 0)
         checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-#endif
 
     // check timestamp from mfxExtPictureTimingSEI
     mfxExtPictureTimingSEI const * extPt   = GetExtBuffer(*ctrl);
@@ -6278,9 +6282,12 @@ MfxVideoParam::MfxVideoParam()
     memset(&m_extSvcRateCtrl, 0, sizeof(m_extSvcRateCtrl));
     memset(&m_extEncResetOpt, 0, sizeof(m_extEncResetOpt));
 
-    // internal, not documented
     memset(&m_extOptDdi, 0, sizeof(m_extOptDdi));
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
+    // internal, not documented
     memset(&m_extDumpFiles, 0, sizeof(m_extDumpFiles));
+#endif
+
     memset(&m_extSps, 0, sizeof(m_extSps));
     memset(&m_extPps, 0, sizeof(m_extPps));
 
@@ -6528,7 +6535,9 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     CONSTRUCT_EXT_BUFFER(mfxExtSVCSeqDesc,           m_extSvcSeqDescr);
     CONSTRUCT_EXT_BUFFER(mfxExtSVCRateControl,       m_extSvcRateCtrl);
     CONSTRUCT_EXT_BUFFER(mfxExtCodingOptionDDI,      m_extOptDdi);
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     CONSTRUCT_EXT_BUFFER(mfxExtDumpFiles,            m_extDumpFiles);
+#endif
     CONSTRUCT_EXT_BUFFER(mfxExtSpsHeader,            m_extSps);
     CONSTRUCT_EXT_BUFFER(mfxExtPpsHeader,            m_extPps);
     CONSTRUCT_EXT_BUFFER(mfxExtCodingOption2,        m_extOpt2);

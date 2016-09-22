@@ -301,28 +301,37 @@ struct remove_const<const T>
 
 namespace ExtBuffer
 {
-    #define ExtBuffersArray \
-     MFX_EXTBUFF_HEVC_PARAM, \
-     MFX_EXTBUFF_HEVC_TILES, \
-     MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, \
-     MFX_EXTBUFF_DPB, \
-     MFX_EXTBUFF_AVC_REFLISTS, \
-     MFX_EXTBUFF_CODING_OPTION,\
-     MFX_EXTBUFF_CODING_OPTION2, \
-     MFX_EXTBUFF_CODING_OPTION3, \
-     MFX_EXTBUFF_DDI, \
-     MFX_EXTBUFF_CODING_OPTION_SPSPPS, \
-     MFX_EXTBUFF_AVC_REFLIST_CTRL, \
-     MFX_EXTBUFF_AVC_TEMPORAL_LAYERS, \
-     MFX_EXTBUFF_DUMP, \
-     MFX_EXTBUFF_ENCODER_RESET_OPTION,\
-     MFX_EXTBUFF_CODING_OPTION_VPS,\
-     MFX_EXTBUFF_VIDEO_SIGNAL_INFO,\
-     MFX_EXTBUFF_LOOKAHEAD_STAT,\
-     MFX_EXTBUFF_PAVP_OPTION,\
-     MFX_EXTBUFF_ENCODER_WIDI_USAGE, \
-     MFX_EXTBUFF_BRC
-    ;
+
+    template<typename T, int sz>
+    int size_of_array(T(&)[sz])
+    {
+        return sz;
+    }
+
+    const mfxU32 allowed_buffers[] = {
+         MFX_EXTBUFF_HEVC_PARAM,
+         MFX_EXTBUFF_HEVC_TILES,
+         MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
+         MFX_EXTBUFF_DPB,
+         MFX_EXTBUFF_AVC_REFLISTS,
+         MFX_EXTBUFF_CODING_OPTION,
+         MFX_EXTBUFF_CODING_OPTION2,
+         MFX_EXTBUFF_CODING_OPTION3,
+         MFX_EXTBUFF_DDI,
+         MFX_EXTBUFF_CODING_OPTION_SPSPPS,
+         MFX_EXTBUFF_AVC_REFLIST_CTRL,
+         MFX_EXTBUFF_AVC_TEMPORAL_LAYERS,
+    #ifdef MFX_UNDOCUMENTED_DUMP_FILES
+         MFX_EXTBUFF_DUMP,
+    #endif
+         MFX_EXTBUFF_ENCODER_RESET_OPTION,
+         MFX_EXTBUFF_CODING_OPTION_VPS,
+         MFX_EXTBUFF_VIDEO_SIGNAL_INFO,
+         MFX_EXTBUFF_LOOKAHEAD_STAT,
+         MFX_EXTBUFF_PAVP_OPTION,
+         MFX_EXTBUFF_ENCODER_WIDI_USAGE,
+         MFX_EXTBUFF_BRC
+    };
 
     template<class T> struct ExtBufferMap {};
 
@@ -339,13 +348,17 @@ namespace ExtBuffer
         EXTBUF(mfxExtCodingOptionSPSPPS,    MFX_EXTBUFF_CODING_OPTION_SPSPPS);
         EXTBUF(mfxExtAVCRefListCtrl,        MFX_EXTBUFF_AVC_REFLIST_CTRL);
         EXTBUF(mfxExtAvcTemporalLayers,     MFX_EXTBUFF_AVC_TEMPORAL_LAYERS);
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
         EXTBUF(mfxExtDumpFiles,             MFX_EXTBUFF_DUMP);
+#endif
         EXTBUF(mfxExtEncoderResetOption,    MFX_EXTBUFF_ENCODER_RESET_OPTION);
         EXTBUF(mfxExtCodingOptionVPS,       MFX_EXTBUFF_CODING_OPTION_VPS);
         EXTBUF(mfxExtVideoSignalInfo,       MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
         EXTBUF(mfxExtEncoderCapability,     MFX_EXTBUFF_ENCODER_CAPABILITY);
         EXTBUF(mfxExtLAFrameStatistics,     MFX_EXTBUFF_LOOKAHEAD_STAT);
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         EXTBUF(mfxExtIntGPUHang,            MFX_EXTBUFF_GPU_HANG);
+#endif
         EXTBUF(mfxExtPAVPOption,            MFX_EXTBUFF_PAVP_OPTION);
         EXTBUF(mfxExtAVCEncoderWiDiUsage,   MFX_EXTBUFF_ENCODER_WIDI_USAGE);
         EXTBUF(mfxExtEncodedSlicesInfo,     MFX_EXTBUFF_ENCODED_SLICES_INFO);
@@ -516,12 +529,13 @@ namespace ExtBuffer
     inline mfxStatus CheckBuffers(mfxVideoParam const & par)
     {
         // checked if all buffers are supported, not repeated
+        mfxU32 notDetected[sizeof(size_of_array(allowed_buffers))];
+        mfxU32 size = sizeof(size_of_array(allowed_buffers));
 
-        const mfxU32 allowed[] = { ExtBuffersArray };
-        mfxU32 notDetected[] = { ExtBuffersArray };
-        mfxU32 size = sizeof(allowed) / sizeof(mfxU32);
+        memcpy_s(notDetected, sizeof(notDetected), allowed_buffers, sizeof(allowed_buffers));
+
         if (par.NumExtParam)
-            return CheckBuffers(par, allowed, notDetected, size);
+            return CheckBuffers(par, allowed_buffers, notDetected, size);
         else
             return MFX_ERR_NONE;
 
@@ -529,15 +543,17 @@ namespace ExtBuffer
     inline mfxStatus CheckBuffers(mfxVideoParam const & par1, mfxVideoParam const & par2)
     {
         // checked if all buffers are supported, not repeated, identical set for both parfiles
-        const mfxU32 allowed[] = { ExtBuffersArray };
-        mfxU32 notDetected1[] = { ExtBuffersArray };
-        mfxU32 notDetected2[] = { ExtBuffersArray };
-        mfxU32 size = sizeof(allowed) / sizeof(mfxU32);
+        mfxU32 notDetected1[sizeof(size_of_array(allowed_buffers))];
+        mfxU32 notDetected2[sizeof(size_of_array(allowed_buffers))];
+        mfxU32 size = sizeof(size_of_array(allowed_buffers));
+
+        memcpy_s(notDetected1, sizeof(notDetected1), allowed_buffers, sizeof(allowed_buffers));
+        memcpy_s(notDetected2, sizeof(notDetected2), allowed_buffers, sizeof(allowed_buffers));
 
         if (par1.NumExtParam && par2.NumExtParam)
         {
-            MFX_CHECK_STS(CheckBuffers(par1, allowed, notDetected1, size));
-            MFX_CHECK_STS(CheckBuffers(par2, allowed, notDetected2, size));
+            MFX_CHECK_STS(CheckBuffers(par1, allowed_buffers, notDetected1, size));
+            MFX_CHECK_STS(CheckBuffers(par2, allowed_buffers, notDetected2, size));
         }
         else
         {
@@ -638,7 +654,9 @@ public:
         mfxExtCodingOption3         CO3;
         mfxExtCodingOptionDDI       DDI;
         mfxExtAvcTemporalLayers     AVCTL;
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
         mfxExtDumpFiles             DumpFiles;
+#endif
         mfxExtVideoSignalInfo       VSI;
         mfxExtPAVPOption            PAVP;
         mfxExtBRC                   extBRC;

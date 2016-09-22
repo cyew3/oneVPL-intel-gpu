@@ -480,8 +480,6 @@ namespace
             refPicList.Resize(numActiveRef);
     }
 
-#if defined (ADVANCED_REF)
-
     typedef struct {
         mfxU32      FrameOrder;
         mfxU16      PicStruct;
@@ -513,8 +511,6 @@ namespace
         if (numActiveRef > 0 && refPicList.Size() > numActiveRef)
             refPicList.Resize(numActiveRef);
     }
-#endif
-
 
     ArrayRefListMod CreateRefListMod(
         ArrayDpbFrame const & dpb,
@@ -714,7 +710,6 @@ namespace
             : extDdi->NumActiveRefBL0;
 
         mfxExtAVCRefListCtrl * ctrl = GetExtBuffer(task.m_ctrl);
-#if defined (ADVANCED_REF)
         if (advCtrl && isField)
         {
             // check ref list control structure for interlaced case
@@ -725,29 +720,22 @@ namespace
                 advCtrl = 0;
             }
         }
-#endif
+
         bool bCanApplyRefCtrl = video.calcParam.numTemporalLayer == 0 || video.mfx.GopRefDist == 1;
 
         // try to customize ref pic list using provided mfxExtAVCRefListCtrl
-        if ((ctrl
-#if defined (ADVANCED_REF)
-            || advCtrl
-#endif
-            ) && bCanApplyRefCtrl)
+        if ((ctrl || advCtrl) && bCanApplyRefCtrl)
         {
             ArrayU8x33 backupList0 = list0;
 
             if (task.m_type[fieldId] & MFX_FRAMETYPE_PB)
             {
-#if defined (ADVANCED_REF)
                 if (advCtrl) // advanced ref list control has priority
                 {
                     mfxU32 numActiveRefL0Final = advCtrl->NumRefIdxL0Active ? IPP_MIN(advCtrl->NumRefIdxL0Active,numActiveRefL0) : numActiveRefL0;
                     ReorderRefPicList(list0, dpb, (mfxRefPic*)(&advCtrl->RefPicList0[0]), numActiveRefL0Final);
                 }
                 else
-#endif // ADVANDEC_REF
-
                 {
                     mfxU32 numActiveRefL0Final = ctrl->NumRefIdxL0Active ? IPP_MIN(ctrl->NumRefIdxL0Active,numActiveRefL0) : numActiveRefL0;
                     ReorderRefPicList(list0, dpb, *ctrl, numActiveRefL0Final);
@@ -756,14 +744,12 @@ namespace
 
             if (task.m_type[fieldId] & MFX_FRAMETYPE_B)
             {
-#if defined (ADVANCED_REF)
                 if (advCtrl) // advanced ref list control has priority
                 {
                     numActiveRefL1 = advCtrl->NumRefIdxL1Active ? IPP_MIN(advCtrl->NumRefIdxL1Active,numMaxActiveRefL1) : numActiveRefL1;
                     ReorderRefPicList(list1, dpb, (mfxRefPic*)(&advCtrl->RefPicList1[0]), numActiveRefL1);
                 }
                 else
-#endif // ADVANCED_REF
                 {
                     numActiveRefL1 = ctrl->NumRefIdxL1Active ? IPP_MIN(ctrl->NumRefIdxL1Active,numMaxActiveRefL1) : numActiveRefL1;
                     ReorderRefPicList(list1, dpb, *ctrl, numActiveRefL1);
@@ -791,11 +777,7 @@ namespace
         }
 
         // form modified ref pic list using internal MSDK logic
-        if ((ctrl == 0
-#if defined (ADVANCED_REF)
-            && advCtrl == 0
-#endif
-            ) || bCanApplyRefCtrl == false)
+        if ((ctrl == 0 && advCtrl == 0) || bCanApplyRefCtrl == false)
         {
             // prepare ref list for P-field of I/P field pair
             // swap 1st and 2nd entries of L0 ref pic list to use I-field of I/P pair as reference for P-field

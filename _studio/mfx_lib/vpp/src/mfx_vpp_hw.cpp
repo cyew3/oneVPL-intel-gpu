@@ -3061,11 +3061,13 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
                     //continue; // stop working with ExtParam[i]
                 }
 
+#ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
                 if(MFX_EXTBUFF_VPP_VARIANCE_REPORT == extDoUse->AlgList[algIdx])
                 {
                     sts = GetWorstSts(sts, MFX_ERR_UNSUPPORTED);
                     continue; // stop working with ExtParam[i]
                 }
+#endif
 
                 if(MFX_EXTBUFF_VPP_SCENE_ANALYSIS == extDoUse->AlgList[algIdx])
                 {

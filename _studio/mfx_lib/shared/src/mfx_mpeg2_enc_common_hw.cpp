@@ -178,6 +178,7 @@ bool AesCounter::Increment()
 //  Execute Buffers
 //-------------------------------------------------------------
 
+#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
 #if defined(MFX_VA_WIN)
 static
 void SetQMParameters(const mfxExtCodingOptionQuantMatrix*  pMatrix, 
@@ -250,6 +251,7 @@ void SetQMParameters(const mfxExtCodingOptionQuantMatrix*  pMatrix,
 }
 
 #endif
+#endif // MFX_UNDOCUMENTED_QUANT_MATRIX
 
 mfxStatus ExecuteBuffers::Init(const mfxVideoParamEx_MPEG2* par, mfxU32 funcId, bool bAllowBRC)
 {
@@ -260,7 +262,9 @@ mfxStatus ExecuteBuffers::Init(const mfxVideoParamEx_MPEG2* par, mfxU32 funcId, 
     memset(&m_sps,  0, sizeof(m_sps));
     memset(&m_pps,  0, sizeof(m_pps));
 
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     m_bTriggerGpuHang = false;
+#endif
     m_bOutOfRangeMV = false;
     m_bErrMBType    = false;
     m_bUseRawFrames = par->bRawFrames;
@@ -421,8 +425,9 @@ mfxStatus ExecuteBuffers::Init(const mfxVideoParamEx_MPEG2* par, mfxU32 funcId, 
     InitFramesSet(0, 0, 0, 0, 0);
     
 
+#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
     SetQMParameters(&par->sQuantMatrix,m_quantMatrix);
-    
+#endif
 
     m_encrypt.Init(par, funcId);
 

@@ -244,7 +244,9 @@ static void TaskLogDump()
         const mfxExtHEVCRegion &region = GetExtBuffer(mfxParam);
         const mfxExtHEVCTiles &tiles = GetExtBuffer(mfxParam);
         const mfxExtHEVCParam &hevcParam = GetExtBuffer(mfxParam);
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
         mfxExtDumpFiles &dumpFiles = GetExtBuffer(mfxParam);
+#endif
         const mfxExtCodingOption &opt = GetExtBuffer(mfxParam);
         const mfxExtCodingOption2 &opt2 = GetExtBuffer(mfxParam);
         const mfxExtCodingOption3 &opt3 = GetExtBuffer(mfxParam);
@@ -608,6 +610,7 @@ static void TaskLogDump()
             tileRowStart += intParam.tileRowHeight[i];
         }
 
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
         intParam.doDumpRecon = (dumpFiles.ReconFilename[0] != 0);
         if (intParam.doDumpRecon)
             Copy(intParam.reconDumpFileName, dumpFiles.ReconFilename);
@@ -615,6 +618,7 @@ static void TaskLogDump()
         intParam.doDumpSource = (dumpFiles.InputFramesFilename[0] != 0);
         if (intParam.doDumpSource)
             Copy(intParam.sourceDumpFileName, dumpFiles.InputFramesFilename);
+#endif
 
         intParam.inputVideoMem = (mfxParam.IOPattern == VIDMEM) || (mfxParam.IOPattern == OPAQMEM && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY) == 0);
 
@@ -3002,6 +3006,7 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
     }
     m_core.DecreaseReference(&inExternal->Data); // do it here
 
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
     if (m_videoParam.doDumpSource && (m_videoParam.fourcc == MFX_FOURCC_NV12 || m_videoParam.fourcc == MFX_FOURCC_P010)) {
         if (vm_file *f = vm_file_fopen(m_videoParam.sourceDumpFileName, (out->m_frameOrder == 0) ? VM_STRING("wb") : VM_STRING("ab"))) {
             Ipp32s luSz = (m_videoParam.bitDepthLuma == 8) ? 1 : 2;
@@ -3023,6 +3028,7 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
             vm_file_fclose(f);
         }
     }
+#endif
 
         // attach lowres surface to frame
     if (m_la.get() && (m_videoParam.LowresFactor || m_videoParam.SceneCut))

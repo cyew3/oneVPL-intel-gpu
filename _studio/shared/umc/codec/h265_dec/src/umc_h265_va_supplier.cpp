@@ -156,10 +156,12 @@ UMC::Status VATaskSupplier::AllocateFrameData(H265DecoderFrame * pFrame, IppiSiz
         if (!surface)
             throw h265_exception(UMC::UMC_ERR_ALLOC);
 
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         mfxExtBuffer* extbuf =
             GetExtendedBuffer(surface->Data.ExtParam, surface->Data.NumExtParam, MFX_EXTBUFF_GPU_HANG);
         if (extbuf)
             frmData.SetAuxInfo(extbuf, extbuf->BufferSz, extbuf->BufferId);
+#endif
     }
 
     pFrame->allocate(&frmData, &info);

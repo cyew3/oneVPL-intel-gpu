@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          Mpeg encoder common
@@ -77,7 +77,9 @@
 #ifdef PAVP_SUPPORT
         mfxExtPAVPOption        sExtPAVPOption;
 #endif
+#ifdef MFX_UNDOCUMENTED_QUANT_MATRIX
         mfxExtCodingOptionQuantMatrix sQuantMatrix;
+#endif
 
         mfxExtVideoSignalInfo   videoSignalInfo;
         bool                    bAddDisplayExt;

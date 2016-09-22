@@ -641,27 +641,6 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             argv++;
             vm_string_strcpy(m_extDumpFiles->InputFramesFilename, argv[0]);
         }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-dump_mb"), VM_STRING("dump MB encode decisions into text file"), OPT_FILENAME))
-        {
-            MFX_CHECK(argv + 1 != argvEnd);
-            argv++;
-            vm_string_strcpy(m_extDumpFiles->MBFilename, argv[0]);
-            m_extDumpFiles->MBFileOperation = MFX_MB_WRITE_TEXT;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-write_mb"), VM_STRING("dump MB encode decisions into binary file"), OPT_FILENAME))
-        {
-            MFX_CHECK(argv + 1 != argvEnd);
-            argv++;
-            vm_string_strcpy(m_extDumpFiles->MBFilename, argv[0]);
-            m_extDumpFiles->MBFileOperation = MFX_MB_WRITE_BIN;
-        }
-        else if (m_OptProc.Check(argv[0], VM_STRING("-read_mb"), VM_STRING("get MB encode decisions from binary file"), OPT_FILENAME))
-        {
-            MFX_CHECK(argv + 1 != argvEnd);
-            argv++;
-            vm_string_strcpy(m_extDumpFiles->MBFilename, argv[0]);
-            m_extDumpFiles->MBFileOperation = MFX_MB_READ_BIN;
-        }
         else if (m_OptProc.Check(argv[0], VM_STRING("-c"), VM_STRING("set CAVLC/CBAC mode: 1=CAVLC, 0=CABAC"), OPT_INT_32))
         {
             MFX_CHECK(argv + 1 != argvEnd);

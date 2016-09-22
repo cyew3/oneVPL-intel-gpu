@@ -337,10 +337,11 @@ Status VATaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dim
         if (extbuf)
             frmData.SetAuxInfo(extbuf, extbuf->BufferSz, extbuf->BufferId);
 
-        extbuf = 
-            GetExtendedBuffer(surface->Data.ExtParam, surface->Data.NumExtParam, MFX_EXTBUFF_GPU_HANG);
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
+        extbuf = GetExtendedBuffer(surface->Data.ExtParam, surface->Data.NumExtParam, MFX_EXTBUFF_GPU_HANG);
         if (extbuf)
             frmData.SetAuxInfo(extbuf, extbuf->BufferSz, extbuf->BufferId);
+#endif
     }
 
     pFrame->allocate(&frmData, &info);

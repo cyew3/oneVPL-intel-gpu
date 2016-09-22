@@ -1377,34 +1377,24 @@ mfxStatus VideoVPP_HW::InternalInit(mfxVideoParam *par)
     pCommonCore = QueryCoreInterface<CommonCORE>(m_core, isFieldProcessing ? MFXICORECM_GUID : MFXIVideoCORE_GUID);
     MFX_CHECK(pCommonCore, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    // trying HW VPP
-    if (!((pCommonCore)->m_ExtOptions & MFX_EXTOPTION_VPP_SW))
-    {
-        VideoVPPHW::IOMode mode = VideoVPPHW::GetIOMode(par, m_requestOpaq);
+    VideoVPPHW::IOMode mode = VideoVPPHW::GetIOMode(par, m_requestOpaq);
 
-        m_pHWVPP.reset(new VideoVPPHW(mode, m_core));
+    m_pHWVPP.reset(new VideoVPPHW(mode, m_core));
 
-        if(isFieldProcessing) {
-            m_pHWVPP.get()->SetCmDevice(pCommonCore);
-        }
-        sts = m_pHWVPP.get()->Init(par); // OK or ERR only
-        if (MFX_WRN_FILTER_SKIPPED == sts)
-        {
-            // do not break execution, skip filter later
-            sts = MFX_ERR_NONE;
-        }
-        if (MFX_ERR_NONE != sts)
-        {
-            m_pHWVPP.reset(0);
-        }
-        MFX_CHECK_STS( sts );
-
-        //m_pHWVPP.get()->SetCmDevice(pCommonCore);
+    if(isFieldProcessing) {
+        m_pHWVPP.get()->SetCmDevice(pCommonCore);
     }
-    else
+    sts = m_pHWVPP.get()->Init(par); // OK or ERR only
+    if (MFX_WRN_FILTER_SKIPPED == sts)
     {
-        return MFX_ERR_UNSUPPORTED;
+        // do not break execution, skip filter later
+        sts = MFX_ERR_NONE;
     }
+    if (MFX_ERR_NONE != sts)
+    {
+        m_pHWVPP.reset(0);
+    }
+    MFX_CHECK_STS( sts );
 
     if ((MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY) != par->IOPattern && IS_PROTECTION_ANY(par->Protected))
     {

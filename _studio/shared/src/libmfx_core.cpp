@@ -699,7 +699,6 @@ mfxStatus CommonCORE::RegisterMids(mfxFrameAllocResponse *response, mfxU16 memTy
 }
 
 CommonCORE::CommonCORE(const mfxU32 numThreadsAvailable, const mfxSession session) :
-    m_ExtOptions(0),
     m_numThreadsAvailable(numThreadsAvailable),
     m_session(session),
     m_NumAllocators(0),
@@ -839,9 +838,6 @@ mfxStatus CommonCORE::SetHandle(mfxHandleType type, mfxHDL hdl)
         return (MFX::AutoTimer::Init((TCHAR*)hdl, 2) ? MFX_ERR_INVALID_HANDLE : MFX_ERR_NONE);
     case MFX_HANDLE_TIMING_TAL:
         return (MFX::AutoTimer::Init((TCHAR*)hdl, 3) ? MFX_ERR_INVALID_HANDLE : MFX_ERR_NONE);
-    case MFX_HANDLE_EXT_OPTIONS:
-        m_ExtOptions |= *(mfxU32*)hdl;
-        return MFX_ERR_NONE;
 #endif
 #endif // #if defined(_WIN32) || defined(_WIN64)
 #if defined(LINUX32) || defined(LINUX64) || defined(MFX_VA_LINUX)

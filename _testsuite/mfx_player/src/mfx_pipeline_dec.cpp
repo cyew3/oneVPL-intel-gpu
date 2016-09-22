@@ -3894,26 +3894,6 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
     {
         m_inParams.bCreateD3D = true;
     }
-    else if (m_OptProc.Check(argv[0], VM_STRING("-dec:custom"), VM_STRING("use Intel custom GUIDs for HW decoding")))
-    {
-        m_inParams.m_ExtOptions |= MFX_EXTOPTION_DEC_CUSTOM_GUID;
-    }
-    else if (m_OptProc.Check(argv[0], VM_STRING("-dec:standard"), VM_STRING("use standard GUIDs for HW decoding")))
-    {
-        m_inParams.m_ExtOptions |= MFX_EXTOPTION_DEC_STANDARD_GUID;
-    }
-    else if (m_OptProc.Check(argv[0], VM_STRING("-vpp:sw_strict"), VM_STRING("force VPP to SW version (even if libmfxhw library)")))
-    {
-        m_inParams.m_ExtOptions |= MFX_EXTOPTION_VPP_SW;
-    }
-    else if (m_OptProc.Check(argv[0], VM_STRING("-vpp:blt"), VM_STRING("force VPP to use BLT interface")))
-    {
-        m_inParams.m_ExtOptions |= MFX_EXTOPTION_VPP_BLT;
-    }
-    else if (m_OptProc.Check(argv[0], VM_STRING("-vpp:fastcomp"), VM_STRING("force VPP to use FastComposite interface")))
-    {
-        m_inParams.m_ExtOptions |= MFX_EXTOPTION_VPP_FASTCOMP;
-    }
     else if (m_OptProc.Check(argv[0], VM_STRING("-dec:noExtPicstruct"), VM_STRING("prevents decoder from generating extended picstruct codes")))
     {
         m_inParams.bNoExtPicstruct = true;

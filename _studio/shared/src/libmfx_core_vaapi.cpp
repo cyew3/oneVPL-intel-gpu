@@ -891,7 +891,7 @@ VAAPIVideoCORE::CreateVideoAccelerator(
     m_pVA.get()->m_Profile = (VideoAccelerationProfile)profile;
     m_pVA.get()->m_HWPlatform = ConvertMFXToUMCType(m_HWType);
 
-    st = m_pVA.get()->Init(&params); //, m_ExtOptions);
+    st = m_pVA.get()->Init(&params);
 
     if(UMC_OK != st)
     {

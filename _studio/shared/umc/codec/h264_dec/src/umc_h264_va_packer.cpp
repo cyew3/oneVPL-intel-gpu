@@ -2525,6 +2525,7 @@ void PackerVA::BeginFrame(H264DecoderFrame* pFrame, Ipp32s field)
     FrameData* fd = pFrame->GetFrameData();
     VM_ASSERT(fd);
 
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     FrameData::FrameAuxInfo* aux = fd->GetAuxInfo(MFX_EXTBUFF_GPU_HANG);
     if (aux)
     {
@@ -2550,6 +2551,7 @@ void PackerVA::BeginFrame(H264DecoderFrame* pFrame, Ipp32s field)
             *trigger = 1;
         }
     }
+#endif
 
     if (!m_enableStreamOut)
         return;

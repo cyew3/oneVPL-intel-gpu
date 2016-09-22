@@ -54,7 +54,9 @@ const mfxU32 g_TABLE_DO_USE [] =
     MFX_EXTBUFF_VPP_COMPOSITE,
     MFX_EXTBUFF_VPP_ROTATION,
     MFX_EXTBUFF_VPP_SCALING,
+#ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
     MFX_EXTBUFF_VPP_VARIANCE_REPORT,
+#endif
     MFX_EXTBUFF_VPP_DEINTERLACING,
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
     MFX_EXTBUFF_VPP_FIELD_PROCESSING,
@@ -974,12 +976,14 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
             }
 #endif
 
+#ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
             case (mfxU32)MFX_EXTBUFF_VPP_VARIANCE_REPORT:
             {
                 sprintf_s(cStr, sizeof(cStr), "%s \n", "VARIANCE_REP");
                 OutputDebugStringA(cStr);
                 break;
             }
+#endif
 
             case (mfxU32)MFX_EXTBUFF_VPP_COMPOSITE:
             {
@@ -1316,12 +1320,14 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
         index++;
     }
 
+#ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
     /* [VarianceRep] FILTER */
     if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_VARIANCE_REPORT ) )
     {
         newList[index] = MFX_EXTBUFF_VPP_VARIANCE_REPORT;
         index++;
     }
+#endif
 
     if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION ) )
     {

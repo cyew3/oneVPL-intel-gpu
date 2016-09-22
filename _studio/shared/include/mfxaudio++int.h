@@ -42,19 +42,6 @@ static int operator==(const GUID & guidOne, const GUID & guidOther)
 
 #endif
 
-#if defined(_WIN32) || defined(_WIN64)
-#undef MFX_DEBUG_TOOLS
-#define MFX_DEBUG_TOOLS
-
-#if defined(DEBUG) || defined(_DEBUG)
-#undef  MFX_DEBUG_TOOLS // to avoid redefinition
-#define MFX_DEBUG_TOOLS
-#endif
-#endif // #if defined(_WIN32) || defined(_WIN64)
-
-
-
-
 // This is the include file for Media SDK component development.
 enum eMFXAudioPlatform
 {
@@ -63,16 +50,9 @@ enum eMFXAudioPlatform
 };
 
 
-
-
-
-#ifdef MFX_DEBUG_TOOLS
 // commented since running behavior tests w/o catch is very annoying
 // #define MFX_CORE_CATCH_TYPE     int**** // to disable catch
 #define MFX_CORE_CATCH_TYPE     ...
-#else
-#define MFX_CORE_CATCH_TYPE     ...
-#endif
 
 // Forward declaration of used classes
 struct MFX_ENTRY_POINT;

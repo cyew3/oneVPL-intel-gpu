@@ -890,7 +890,9 @@ VAAPIEncoder::VAAPIEncoder()
 , m_roiBufferId(VA_INVALID_ID)
 , m_ppsBufferId(VA_INVALID_ID)
 , m_mbqpBufferId(VA_INVALID_ID)
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
 , m_triggerGpuHangBufferId(VA_INVALID_ID)
+#endif
 , m_mbNoSkipBufferId(VA_INVALID_ID)
 , m_packedAudHeaderBufferId(VA_INVALID_ID)
 , m_packedAudBufferId(VA_INVALID_ID)
@@ -2426,6 +2428,7 @@ mfxStatus VAAPIEncoder::Execute(
         }
     }
 
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     if ((mfxExtIntGPUHang*)GetExtBuffer(task.m_ctrl))
     {
         MFX_DESTROY_VABUFFER(m_triggerGpuHangBufferId, m_vaDisplay);
@@ -2440,6 +2443,7 @@ mfxStatus VAAPIEncoder::Execute(
 
         configBuffers[buffersCount++] = m_triggerGpuHangBufferId;
     }
+#endif
 
     if (ctrlOpt2)
     {
@@ -2921,7 +2925,9 @@ mfxStatus VAAPIEncoder::Destroy()
     MFX_DESTROY_VABUFFER(m_roiBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_ppsBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_mbqpBufferId, m_vaDisplay);
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
     MFX_DESTROY_VABUFFER(m_triggerGpuHangBufferId, m_vaDisplay);
+#endif
     MFX_DESTROY_VABUFFER(m_mbNoSkipBufferId, m_vaDisplay);
     for( mfxU32 i = 0; i < m_slice.size(); i++ )
     {
