@@ -403,12 +403,10 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
         sts = pProcessor->mfxSession.Init(impl, &version);
     else
     {
-        mfxInitParam initParams;
-        initParams.ExternalThreads = 0;
+        mfxInitParam initParams = {};
         initParams.GPUCopy         = pInParams->GPUCopyValue;
         initParams.Implementation  = impl;
         initParams.Version         = version;
-        initParams.NumExtParam     = 0;
         sts = pProcessor->mfxSession.InitEx(initParams);
     }
     CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to Init mfx session\n"));  WipeFrameProcessor(pProcessor);});
