@@ -1,12 +1,12 @@
-/*
-//
-//                  INTEL CORPORATION PROPRIETARY INFORMATION
-//     This software is supplied under the terms of a license agreement or
-//     nondisclosure agreement with Intel Corporation and may not be copied
-//     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
-//
-*/
+/*********************************************************************************
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
+
+**********************************************************************************/
 
 #if !defined (__MFX_SCHEDULER_CORE_TASK_H)
 #define __MFX_SCHEDULER_CORE_TASK_H
@@ -17,7 +17,7 @@
 #include <mfx_task.h>
 #include <mfx_scheduler_core_handle.h>
 
-#include <umc_event.h>
+#include <vm_cond.h>
 
 // forward declaration of used types
 struct MFX_SCHEDULER_TASK;
@@ -75,7 +75,7 @@ struct MFX_SCHEDULER_TASK : public mfxDependencyItem<MFX_TASK_NUM_DEPENDENCIES>
     // task state variables
 
     // Waiting 'until task is done' object
-    UMC::Event done;
+    vm_cond done;
     // Final status of the current job
     volatile
     mfxStatus opRes;
@@ -145,7 +145,7 @@ struct MFX_SCHEDULER_TASK : public mfxDependencyItem<MFX_TASK_NUM_DEPENDENCIES>
 protected:
     // Destructor is protected to avoid deletion the object by occasion.
     virtual
-    ~MFX_SCHEDULER_TASK(void) {}
+    ~MFX_SCHEDULER_TASK(void);
 
 private:
     // Constructor. Because scheduler's tasks is a limited resource,

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
 
 **********************************************************************************/
 
@@ -113,7 +113,7 @@ mfxStatus mfxSchedulerCore::GetTask(MFX_CALL_INFO &callInfo,
                                     mfxTaskHandle previousTask,
                                     const mfxU32 threadNum)
 {
-    UMC::AutomaticUMCMutex guard(m_guard);
+    UMC::AutomaticMutex guard(m_guard);
     int prevTaskPriority = -1;
     mfxU32 run;
     mfxU64 totalTimeSpent[MFX_PRIORITY_NUMBER], timeSpent[MFX_PRIORITY_NUMBER];
@@ -427,7 +427,7 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
 
     // enter the protected code section
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
+        UMC::AutomaticMutex guard(m_guard);
         MFX_SCHEDULER_TASK *pTask = m_ppTaskLookUpTable[pCallInfo->taskHandle.taskID];
         mfxU32 curTime;
 
@@ -565,7 +565,8 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
 
                 // save the status
                 pTask->opRes = pTask->curStatus;
-                pTask->done.Set();
+
+                vm_cond_broadcast(&pTask->done);
 
                 // update dependencies produced from the dependency table
                 //for (i = 0; i < MFX_TASK_NUM_DEPENDENCIES; i += 1)
@@ -589,11 +590,13 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
             {
                 mfxU32 i;
 
+
                 // reset jobID to avoid false waiting on complete tasks, which were reused
                 pTask->jobID = 0;
                 // save the status
                 pTask->opRes = MFX_ERR_NONE;
-                pTask->done.Set();
+
+                vm_cond_broadcast(&pTask->done);
 
                 // remove dependencies produced from the dependency table
                 for (i = 0; i < MFX_TASK_NUM_DEPENDENCIES; i += 1)

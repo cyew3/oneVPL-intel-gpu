@@ -103,6 +103,10 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
     }
 #endif // defined(MFX_SCHEDULER_LOG)
 
+    if (VM_OK != vm_mutex_init(&m_guard)) {
+        return MFX_ERR_MEMORY_ALLOC;
+    }
+
     // clean up the task look up table
     umcRes = m_ppTaskLookUpTable.Alloc(MFX_MAX_NUMBER_TASK);
     if (UMC::UMC_OK != umcRes)
@@ -409,45 +413,56 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
         {
             return MFX_WRN_IN_EXECUTION;
         }
+
+        // check error status
+        if ((MFX_ERR_NONE != pTask->opRes) &&
+            (pTask->jobID == handle.jobID))
+        {
+            return pTask->opRes;
+        }
+
+        // in all other cases task is complete
+        return MFX_ERR_NONE;
     }
     else
     {
-        // the handle is outdated,
-        // the previous task job is over and completed with successful status
-        // NOTE: it make sense to read task result and job ID the following order.
-        if ((MFX_ERR_NONE == pTask->opRes) ||
-            (pTask->jobID != handle.jobID))
-        {
-            return MFX_ERR_NONE;
-        }
-        // wait the result on the event
-        if (MFX_WRN_IN_EXECUTION == pTask->opRes)
-        {
-            UMC::Status res;
+        UMC::AutomaticMutex guard(m_guard);
+        vm_status res;
+        vm_tick start_tick = vm_time_get_tick(), end_tick;
+        mfxU32 spent_ms;
 
+        while ((pTask->jobID == handle.jobID) &&
+               (MFX_WRN_IN_EXECUTION == pTask->opRes)) {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_PRIVATE, "Scheduler::Wait");
             MFX_LTRACE_1(MFX_TRACE_LEVEL_SCHED, "^Depends^on", "%d", pTask->param.task.nParentId);
             MFX_LTRACE_I(MFX_TRACE_LEVEL_SCHED, timeToWait);
 
-            res = pTask->done.Wait(timeToWait);
-            if (UMC::UMC_ERR_TIMEOUT == res)
-            {
-                return MFX_WRN_IN_EXECUTION;
+            res = vm_cond_timedwait(&pTask->done, &m_guard, timeToWait);
+            if ((VM_OK == res) || (VM_TIMEOUT == res)) {
+                end_tick = vm_time_get_tick();
+
+                spent_ms = (mfxU32)((end_tick - start_tick)/m_vmtick_msec_frequency);
+                if (spent_ms >= timeToWait) {
+                  break;
+                }
+                timeToWait -= spent_ms;
+                start_tick = end_tick;
+            } else {
+                return MFX_ERR_UNKNOWN;
             }
         }
+
+        if (pTask->jobID == handle.jobID) {
+            return pTask->opRes;
+        } else {
+            /* Notes:
+             *  - task executes next job already, we _lost_ task status and can only assume that
+             *  everything was OK or FAILED, we will assume that task succeeded
+             */
+            return MFX_ERR_NONE;
+        }
     }
-
-    // check error status
-    if ((MFX_ERR_NONE != pTask->opRes) &&
-        (pTask->jobID == handle.jobID))
-    {
-        return pTask->opRes;
-    }
-
-    // in all other cases task is complete
-    return MFX_ERR_NONE;
-
-} // mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
+}
 
 
 mfxStatus mfxSchedulerCore::WaitForDependencyResolved(const void *pDependency)
@@ -467,7 +482,7 @@ mfxStatus mfxSchedulerCore::WaitForDependencyResolved(const void *pDependency)
 
     // find a handle to wait
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
+        UMC::AutomaticMutex guard(m_guard);
         mfxU32 curIdx;
 
         for (curIdx = 0; curIdx < m_numDependencies; curIdx += 1)
@@ -513,7 +528,7 @@ mfxStatus mfxSchedulerCore::WaitForTaskCompletion(const void *pOwner)
 
     // make sure that threads are running
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
+        UMC::AutomaticMutex guard(m_guard);
 
         ResetWaitingTasks(pOwner);
     }
@@ -528,7 +543,7 @@ mfxStatus mfxSchedulerCore::WaitForTaskCompletion(const void *pOwner)
         // make searching in a separate code block,
         // to avoid dead-locks with other threads.
         {
-            UMC::AutomaticUMCMutex guard(m_guard);
+            UMC::AutomaticMutex guard(m_guard);
             int priority;
 
             priority = MFX_PRIORITY_HIGH;
@@ -636,7 +651,7 @@ mfxStatus mfxSchedulerCore::Reset(void)
 
     // enter guarded section
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
+        UMC::AutomaticMutex guard(m_guard);
 
         // clean up the working queue
         ScrubCompletedTasks(true);
@@ -788,7 +803,7 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
 #if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
+        UMC::AutomaticMutex guard(m_guard);
         if (!m_pdx11event && !m_hwTaskDone.handle)
         {
             m_pdx11event = new DX11GlobalEvent(m_param.pCore);
@@ -826,7 +841,7 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
 
     // enter protected section
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
+        UMC::AutomaticMutex guard(m_guard);
         mfxStatus mfxRes;
         MFX_SCHEDULER_TASK *pTask, **ppTemp;
         mfxTaskHandle handle;
@@ -1010,7 +1025,7 @@ mfxStatus mfxSchedulerCore::DoWork()
 #if defined(MFX_EXTERNAL_THREADING)
 mfxU32 mfxSchedulerCore::AddThreadToPool(MFX_SCHEDULER_THREAD_CONTEXT * pContext)
 {
-    UMC::AutomaticUMCMutex guard(m_guard);
+    UMC::AutomaticMutex guard(m_guard);
 
     size_t thNumber = m_ppThreadCtx.Size();
     *(m_ppThreadCtx + thNumber) = pContext;
@@ -1024,7 +1039,7 @@ mfxU32 mfxSchedulerCore::AddThreadToPool(MFX_SCHEDULER_THREAD_CONTEXT * pContext
 
 void mfxSchedulerCore::RemoveThreadFromPool(MFX_SCHEDULER_THREAD_CONTEXT * pContext)
 {
-    UMC::AutomaticUMCMutex guard(m_guard);
+    UMC::AutomaticMutex guard(m_guard);
 
     if (!pContext)
     {

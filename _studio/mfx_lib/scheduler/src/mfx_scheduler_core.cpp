@@ -44,6 +44,8 @@ mfxSchedulerCore::mfxSchedulerCore(void) :
 #if !defined(MFX_EXTERNAL_THREADING)
     m_pThreadCtx = NULL;
 #endif
+    m_vmtick_msec_frequency = vm_time_get_frequency()/1000;
+    vm_mutex_set_invalid(&m_guard);
     vm_event_set_invalid(&m_hwTaskDone);
     vm_thread_set_invalid(&m_hwWakeUpThread);
 
@@ -237,7 +239,8 @@ void mfxSchedulerCore::Close(void)
     m_taskCounter = 0;
     m_jobCounter = 0;
 
-} // void mfxSchedulerCore::Close(void)
+    vm_mutex_destroy(&m_guard);
+}
 
 void mfxSchedulerCore::SetThreadsAffinityMask(void)
 {
@@ -444,11 +447,8 @@ mfxStatus mfxSchedulerCore::AllocateEmptyTask(void)
         // allocate one more task
         try
         {
-            UMC::Status umcRes;
-
             m_pFreeTasks = new MFX_SCHEDULER_TASK(m_taskCounter++, this);
-            umcRes = m_pFreeTasks->done.Init(1, 1);
-            if (UMC::UMC_OK != umcRes)
+            if (VM_OK != vm_cond_init(&m_pFreeTasks->done))
             {
                 m_taskCounter--;
                 delete m_pFreeTasks;
@@ -735,7 +735,7 @@ void mfxSchedulerCore::RegisterTaskDependencies(MFX_SCHEDULER_TASK  *pTask)
         // save the status
         m_pFreeTasks->curStatus = taskRes;
         m_pFreeTasks->opRes = taskRes;
-        m_pFreeTasks->done.Set();
+        vm_cond_broadcast(&m_pFreeTasks->done);
     }
 
 } // void mfxSchedulerCore::RegisterTaskDependencies(MFX_SCHEDULER_TASK  *pTask)

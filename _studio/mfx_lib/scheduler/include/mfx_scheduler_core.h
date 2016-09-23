@@ -19,7 +19,11 @@
 #include <mfx_task.h>
 
 // synchronization stuff
+#include <vm_cond.h>
+#include <vm_time.h>
+
 #include <umc_mutex.h>
+#include <umc_automatic_mutex.h>
 #include <umc_semaphore.h>
 #include <umc_event.h>
 #include <umc_array.h>
@@ -351,6 +355,8 @@ protected:
     // HW 'buffer done' event counter
     volatile
     mfxU64 m_hwEventCounter;
+    // Frequency for vm_tick to get msec
+    vm_tick m_vmtick_msec_frequency;
 
     // Working time statistic array
     MFX_THREADS_TIME m_workingTime[MFX_TIME_STAT_PARTS];
@@ -400,7 +406,7 @@ protected:
     //
 
     // Guard for task queues
-    UMC::Mutex m_guard;
+    vm_mutex m_guard;
     // array of task queues
     MFX_SCHEDULER_TASK *(m_pTasks[MFX_PRIORITY_NUMBER][MFX_TYPE_NUMBER]);
     // Number of assigned tasks for each kind of tasks

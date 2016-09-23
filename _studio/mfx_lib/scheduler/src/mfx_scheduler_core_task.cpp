@@ -1,12 +1,12 @@
-/*
-//
-//                  INTEL CORPORATION PROPRIETARY INFORMATION
-//     This software is supplied under the terms of a license agreement or
-//     nondisclosure agreement with Intel Corporation and may not be copied
-//     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
-//
-*/
+/*********************************************************************************
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
+
+**********************************************************************************/
 
 #include <mfx_scheduler_core_task.h>
 #include <mfx_scheduler_core.h>
@@ -17,22 +17,25 @@
 MFX_SCHEDULER_TASK::MFX_SCHEDULER_TASK(mfxU32 taskID, mfxSchedulerCore *pSchedulerCore) :
     taskID(taskID),
     jobID(0),
+    pNext(NULL),
     m_pSchedulerCore(pSchedulerCore)
 {
+    vm_cond_set_invalid(&done);
+
     // reset task parameters
     memset(&param, 0, sizeof(param));
+}
 
-    pNext = NULL;
-
-} // MFX_SCHEDULER_TASK::MFX_SCHEDULER_TASK(void)
+MFX_SCHEDULER_TASK::~MFX_SCHEDULER_TASK(void)
+{
+    vm_cond_destroy(&done);
+}
 
 mfxStatus MFX_SCHEDULER_TASK::Reset(void)
 {
     // reset task parameters
     memset(&param, 0, sizeof(param));
 
-    // reset waiting event and task results
-    done.Reset();
     opRes = MFX_WRN_IN_EXECUTION;
     curStatus = MFX_TASK_WORKING;
 
@@ -58,7 +61,7 @@ void MFX_SCHEDULER_TASK::OnDependencyResolved(mfxStatus result)
             opRes = MFX_ERR_ABORTED;
             curStatus = MFX_ERR_ABORTED;
         }
-        done.Set();
+        vm_cond_broadcast(&done);
 
         // release the current task resources
         ReleaseResources();

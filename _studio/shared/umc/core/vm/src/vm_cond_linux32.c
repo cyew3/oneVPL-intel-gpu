@@ -106,7 +106,7 @@ vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec)
     {
         struct timeval tval;
         struct timespec tspec;
-        Ipp32s i_res;
+        Ipp32s res;
         Ipp64u micro_sec;
 
         gettimeofday(&tval, NULL);
@@ -115,8 +115,11 @@ vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec)
         tspec.tv_sec = tval.tv_sec + (Ipp32u)(micro_sec / 1000000);
         tspec.tv_nsec = (Ipp32u)(micro_sec % 1000000) * 1000;
 
-        if (0 == pthread_cond_timedwait(&cond->handle, &mutex->handle, &tspec))
+        res = pthread_cond_timedwait(&cond->handle, &mutex->handle, &tspec);
+        if (0 == res)
             umc_res = VM_OK;
+        else if (ETIMEDOUT == res)
+            umc_res = VM_TIMEOUT;
         else
             umc_res = VM_OPERATION_FAILED;
     }
