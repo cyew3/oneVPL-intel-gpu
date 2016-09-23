@@ -2085,7 +2085,7 @@ mfxStatus CTranscodingPipeline::AddLaStreams(mfxU16 width, mfxU16 height)
             if (m_ExtLAControl.OutStream[i].Width  == width && m_ExtLAControl.OutStream[i].Height == height)
                 return MFX_ERR_NONE;
         }
-        if ((sizeof(m_ExtLAControl.OutStream) / sizeof(m_ExtLAControl.OutStream[0])) > num + 1)
+        if ((sizeof(m_ExtLAControl.OutStream) / sizeof(m_ExtLAControl.OutStream[0])) < (num + 1))
             return MFX_ERR_UNSUPPORTED;
 
         m_ExtLAControl.OutStream[num].Width  = width;
