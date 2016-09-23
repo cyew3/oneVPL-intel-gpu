@@ -71,6 +71,8 @@ public:
 
     mfxStatus EncodeFrames(mfxU32 n, bool check=false);
 
+    mfxStatus InitAndSetAllocator();
+
     mfxStatus Load() { m_loaded = (0 == tsSession::Load(m_session, m_uid, 1)); return g_tsStatus.get(); }
 };
 

@@ -474,3 +474,32 @@ mfxStatus tsVideoEncoder::EncodeFrames(mfxU32 n, bool check)
     
     return g_tsStatus.get();
 }
+
+mfxStatus tsVideoEncoder::InitAndSetAllocator()
+{
+    mfxHDL hdl;
+    mfxHandleType type;
+
+    if (!GetAllocator())
+    {
+        UseDefaultAllocator(
+            (m_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+            || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
+            );
+    }
+
+    //set handle
+    if (!((m_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+        || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
+        && (!m_pVAHandle))
+    {
+        m_pFrameAllocator = GetAllocator();
+        SetFrameAllocator();
+        m_pVAHandle = m_pFrameAllocator;
+        m_pVAHandle->get_hdl(type, hdl);
+        SetHandle(m_session, type, hdl);
+        m_is_handle_set = (g_tsStatus.get() >= 0);
+    }
+
+    return g_tsStatus.get();
+}
