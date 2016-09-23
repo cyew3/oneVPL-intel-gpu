@@ -207,6 +207,8 @@ void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
     SERIALIZE_POD_ARRAY(NumRefActiveP, 8);
     SERIALIZE_POD_ARRAY(NumRefActiveBL0, 8);
     SERIALIZE_POD_ARRAY(NumRefActiveBL1, 8);
+    SERIALIZE_INT(ConstrainedIntraPredFlag);
+    SERIALIZE_INT(TransformSkip);
 }
 
 void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const

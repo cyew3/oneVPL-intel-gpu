@@ -378,6 +378,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION3(EnableQPOffset,             OPT_TRI_STATE, ""),
         HANDLE_EXT_OPTION3(MaxFrameSizeI,              OPT_UINT_32,   ""),
         HANDLE_EXT_OPTION3(MaxFrameSizeP,              OPT_UINT_32,   ""),
+        HANDLE_EXT_OPTION3(TransformSkip,              OPT_TRI_STATE, "HEVC transform_skip_enabled_flag"),
 
         // mfxExtCodingOptionDDI
         HANDLE_DDI_OPTION(IntraPredCostType,       OPT_UINT_16,    "1=SAD, 2=SSD, 4=SATD_HADAMARD, 8=SATD_HARR"),

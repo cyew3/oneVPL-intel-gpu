@@ -1207,6 +1207,8 @@ void MfxVideoParam::SyncHeadersToMfxParam()
         m_ext.HEVCTiles.NumTileColumns = m_pps.num_tile_columns_minus1 + 1;
         m_ext.HEVCTiles.NumTileRows = m_pps.num_tile_rows_minus1 + 1;
     }
+
+    m_ext.CO3.TransformSkip = (m_pps.transform_skip_enabled_flag ? (mfxU16)MFX_CODINGOPTION_ON : (mfxU16)MFX_CODINGOPTION_OFF);
 }
 
 mfxU8 GetNumReorderFrames(mfxU32 BFrameRate, bool BPyramid){
@@ -1526,7 +1528,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_pps.num_ref_idx_l1_default_active_minus1  = 0;
     m_pps.init_qp_minus26                       = 0;
     m_pps.constrained_intra_pred_flag           = 0;
-    m_pps.transform_skip_enabled_flag           = 0;
+    m_pps.transform_skip_enabled_flag           = IsOn(m_ext.CO3.TransformSkip);
     m_pps.cu_qp_delta_enabled_flag              = (mfx.RateControlMethod == MFX_RATECONTROL_CQP || isSWBRC()) ? 0 : 1;
 
     if (m_ext.CO2.MaxSliceSize)

@@ -861,6 +861,7 @@ void InheritDefaultValues(
 
     InheritOption(extOpt3Init->IntRefCycleDist, extOpt3Reset->IntRefCycleDist);
     InheritOption(extOpt3Init->PRefType, extOpt3Reset->PRefType);
+    InheritOption(extOpt3Init->TransformSkip, extOpt3Reset->TransformSkip);
 
     if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_QVBR && parReset.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
     {
@@ -1384,6 +1385,14 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         changed += CheckMax(CO3.NumRefActiveBL1[i], Min<mfxU16>(maxDPB, caps.MaxNum_Reference1));
     }
 
+    changed += CheckTriStateOption(CO3.TransformSkip);
+
+    if (IsOn(CO3.TransformSkip) && par.m_platform.CodeName < MFX_PLATFORM_CANNONLAKE)
+    {
+        CO3.TransformSkip = 0;
+        changed++;
+    }
+
     sts = CheckProfile(par);
 
     if (sts >= MFX_ERR_NONE && par.mfx.CodecLevel > 0)
@@ -1728,6 +1737,9 @@ void SetDefaults(
         if (!PAVP.CounterIncrement)
             PAVP.CounterIncrement = 0xC000;
     }
+
+    if (!CO3.TransformSkip)
+        CO3.TransformSkip = MFX_CODINGOPTION_OFF;
 }
 
 } //namespace MfxHwH265Encode
