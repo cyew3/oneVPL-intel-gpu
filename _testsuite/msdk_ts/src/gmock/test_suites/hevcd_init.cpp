@@ -126,8 +126,15 @@ int TestSuite::RunTest(unsigned int id)
 
         if(tc.set_alloc)
         {
+            frame_allocator::AllocatorType alloc_type;
+            if (g_tsImpl == MFX_IMPL_SOFTWARE) {
+                alloc_type = frame_allocator::SOFTWARE;
+            } else if (g_tsImpl & MFX_IMPL_VIA_D3D11) {
+                alloc_type = frame_allocator::HARDWARE_DX11;
+            } else alloc_type = frame_allocator::HARDWARE;
+
             SetAllocator(
-            new frame_allocator((frame_allocator::AllocatorType)    (g_tsImpl == MFX_IMPL_SOFTWARE) ? frame_allocator::SOFTWARE : frame_allocator::HARDWARE,
+                new frame_allocator(alloc_type,
                                 (frame_allocator::AllocMode)        tc.alloc_mode,
                                 (frame_allocator::LockMode)         frame_allocator::ENABLE_ALL,
                                 (frame_allocator::OpaqueAllocMode)  frame_allocator::ALLOC_ERROR
