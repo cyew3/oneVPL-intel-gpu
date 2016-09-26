@@ -1661,7 +1661,7 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
             m_ctx.dQuantAb  = 1./m_ctx.Quant;
             m_ctx.SceneChange |= 16;
             m_ctx.SChPoc = frame_par->DisplayOrder;
-            printf("   m_ctx.SceneChange %d, order %d\n", m_ctx.SceneChange, frame_par->DisplayOrder);
+            //printf("   m_ctx.SceneChange %d, order %d\n", m_ctx.SceneChange, frame_par->DisplayOrder);
         }
 
     }
@@ -1728,7 +1728,7 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
             if (fAbShort > FAMax) 
             {
                 mfxI32 quant_new = GetNewQP(fAbShort, FAMax, quantMin , quantMax, quant ,m_par.quantOffset, 0.5);
-                printf("    recode 2-0: %d:  FAMax %f, fAbShort %f, quant_new %d\n",frame_par->EncodedOrder, FAMax, fAbShort, quant_new);
+                //printf("    recode 2-0: %d:  FAMax %f, fAbShort %f, quant_new %d\n",frame_par->EncodedOrder, FAMax, fAbShort, quant_new);
 
                 if (quant_new > quant) 
                 {
