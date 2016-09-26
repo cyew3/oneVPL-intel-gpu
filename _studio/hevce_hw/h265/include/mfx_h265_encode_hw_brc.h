@@ -376,6 +376,7 @@ public:
     // GOP params
     mfxU16 gopPicSize;
     mfxU16 gopRefDist;
+    bool   bPyr;
 
     //BRC accurancy params
     mfxF64 fAbPeriodLong;   // number on frames to calculate abberation from target frame 
@@ -407,6 +408,7 @@ public:
         bitDepthLuma(0),
         gopPicSize(0),
         gopRefDist(0),
+        bPyr(0),
         fAbPeriodLong(0),
         fAbPeriodShort(0),
         dqAbPeriod(0),
