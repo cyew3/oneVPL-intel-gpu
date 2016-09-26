@@ -724,5 +724,14 @@
     <ClCompile Include="src\gmock\test_suites\avcd_bs_dataflag.cpp">
       <Filter>Source Files\test_suites\avcd</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_composition.cpp">
+      <Filter>Source Files\test_suites\vpp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_deinterlac_inv_telec.cpp">
+      <Filter>Source Files\test_suites\vpp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_hw_wrn_filter_skipped.cpp">
+      <Filter>Source Files\test_suites\vpp</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
