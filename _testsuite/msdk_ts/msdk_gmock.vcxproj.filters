@@ -57,6 +57,12 @@
     <Filter Include="Source Files\test_suites\vp9e">
       <UniqueIdentifier>{637ce220-fc7d-4916-943e-f19b0534e4d0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\test_suites\mjpegd">
+      <UniqueIdentifier>{bc04e363-5482-441f-a44f-af3657e954b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\test_suites\vc1d">
+      <UniqueIdentifier>{e6baecb0-9772-4180-a21a-608b54edcd47}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\test_sample_allocator.h">
@@ -702,6 +708,18 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vp9e_cqp.cpp">
       <Filter>Source Files\test_suites\vp9e</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mpeg2d_bs_dataflag.cpp">
+      <Filter>Source Files\test_suites\mpeg2d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mjpegd_bs_dataflag.cpp">
+      <Filter>Source Files\test_suites\mjpegd</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vc1d_bs_dataflag.cpp">
+      <Filter>Source Files\test_suites\vc1d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avcd_bs_dataflag.cpp">
+      <Filter>Source Files\test_suites\avcd</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

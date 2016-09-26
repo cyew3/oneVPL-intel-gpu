@@ -210,6 +210,7 @@
     <ClInclude Include="include\test_sample_allocator.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\gmock\test_suites\avcd_bs_dataflag.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_corruption.cpp" />
     <ClCompile Include="src\gmock\test_suites\avcd_constraints.cpp" />
@@ -293,11 +294,13 @@
     <ClCompile Include="src\gmock\test_suites\hevce_co2_max_slice_size_in_ctu.cpp" />
     <ClCompile Include="src\gmock\test_suites\jpegd_res_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\lookahead_1N.cpp" />
+    <ClCompile Include="src\gmock\test_suites\mjpegd_bs_dataflag.cpp" />
     <ClCompile Include="src\gmock\test_suites\mjpegd_corruption.cpp" />
     <ClCompile Include="src\gmock\test_suites\mjpegd_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\mjpegd_payload.cpp" />
     <ClCompile Include="src\gmock\test_suites\mjpegd_tables.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2d_aspect_ratio_change.cpp" />
+    <ClCompile Include="src\gmock\test_suites\mpeg2d_bs_dataflag.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2d_corruption.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2d_no_i_frames.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2d_picturetype.cpp" />
@@ -331,6 +334,7 @@
     <ClCompile Include="src\gmock\test_suites\slice_size_reporting.cpp" />
     <ClCompile Include="src\gmock\test_suites\threading_mfxinitex.cpp" />
     <ClCompile Include="src\gmock\test_suites\trans_opaque.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vc1d_bs_dataflag.cpp" />
     <ClCompile Include="src\gmock\test_suites\vc1d_res_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9d_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_close.cpp" />
