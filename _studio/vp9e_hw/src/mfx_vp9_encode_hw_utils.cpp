@@ -546,7 +546,11 @@ mfxStatus Task::SubmitTask(sFrameEx*  pRecFrame, std::vector<sFrameEx*> &dpb, VP
 
     m_pRecFrame->pSurface->Data.FrameOrder = m_frameOrder;
 
-    if (m_frameParam.frameType != KEY_FRAME)
+    if (m_frameParam.frameType == KEY_FRAME)
+    {
+        m_pRecRefFrames[REF_LAST] = m_pRecRefFrames[REF_GOLD] = m_pRecRefFrames[REF_ALT] = 0;
+    }
+    else
     {
         mfxU8 idxLast = frameParam.refList[REF_LAST];
         mfxU8 idxGold = frameParam.refList[REF_GOLD];

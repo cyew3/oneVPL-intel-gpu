@@ -346,10 +346,12 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
               return MFX_TASK_BUSY;
         }
 
-        if ((sts = m_ddi->QueryStatus(*pTask) )== MFX_WRN_DEVICE_BUSY)
+        sts = m_ddi->QueryStatus(*pTask);
+        if (sts == MFX_WRN_DEVICE_BUSY)
         {
             return MFX_TASK_WORKING;
         }
+        MFX_CHECK_STS(sts);
 
         {
             UMC::AutomaticUMCMutex guard(m_taskMutex);

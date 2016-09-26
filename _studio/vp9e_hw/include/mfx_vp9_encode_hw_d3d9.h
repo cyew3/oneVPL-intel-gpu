@@ -209,6 +209,148 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_VP9
     UINT        SizeSkipFrames;
 
 } ENCODE_SET_PICTURE_PARAMETERS_VP9;
+#elif defined (DDI_FROM_MAINLINE_DRIVER)
+typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_VP9
+{
+    USHORT wMaxFrameWidth;
+    USHORT wMaxFrameHeight;
+    USHORT GopPicSize;
+    UCHAR  TargetUsage;
+    UCHAR  RateControlMethod;
+    UINT   TargetBitRate[8];    // One per temporal layer
+    UINT   MaxBitRate;
+    UINT   MinBitRate;
+    ULONG  InitVBVBufferFullnessInBit;
+    ULONG  VBVBufferSizeInBit;
+    ULONG  OptimalVBVBufferLevelInBit;
+    ULONG  UpperVBVBufferLevelThresholdInBit;
+    ULONG  LowerVBVBufferLevelThresholdInBit;
+
+    union
+    {
+        struct
+        {
+            UINT bResetBRC               : 1;
+            UINT bNoFrameHeaderInsertion : 1;
+            UINT bUseRawReconRef         : 1;
+            UINT MBBRC                   : 4;
+            UINT EnableDynamicScaling    : 1;
+            UINT SourceFormat            : 2;    //[0..3]
+            UINT SourceBitDepth          : 2;     //[0..3]
+            UINT EncodedFormat           : 2;     //[0..2]
+            UINT EncodedBitDepth         : 2;     //[0..2]
+            UINT DisplayFormatSwizzle    : 1;
+            UINT bReserved               : 15;
+        } fields;
+        UINT value;
+    } SeqFlags;
+
+    UINT      UserMaxFrameSize;
+    USHORT    reserved2;
+    USHORT    reserved3;
+    FRAMERATE FrameRate[8]; // One per temporal layer
+    UCHAR     NumTemporalLayersMinus1;
+    UCHAR     ICQQualityFactor;            // [0..255]
+
+    ENCODE_INPUT_COLORSPACE        InputColorSpace;
+    ENCODE_SCENARIO                ScenarioInfo;
+    ENCODE_CONTENT                ContentInfo;
+    ENCODE_FRAMESIZE_TOLERANCE         FrameSizeTolerance;
+
+} ENCODE_SET_SEQUENCE_PARAMETERS_VP9;
+
+typedef struct tagENCODE_SET_PICTURE_PARAMETERS_VP9
+{
+    USHORT              SrcFrameHeightMinus1;
+    USHORT              SrcFrameWidthMinus1;
+    USHORT              DstFrameHeightMinus1;
+    USHORT              DstFrameWidthMinus1;
+
+    UCHAR               CurrOriginalPic;
+    UCHAR               CurrReconstructedPic;
+    UCHAR               RefFrameList[8];
+
+    union
+    {
+        struct
+        {
+            UINT    frame_type                   : 1;
+            UINT    show_frame                   : 1;
+            UINT    error_resilient_mode         : 1;
+            UINT    intra_only                   : 1;
+            UINT    allow_high_precision_mv      : 1;
+            UINT    mcomp_filter_type            : 3;
+            UINT    frame_parallel_decoding_mode : 1;
+            UINT    segmentation_enabled         : 1;
+            UINT    segmentation_temporal_update : 1;
+            UINT    segmentation_update_map      : 1;
+            UINT    reset_frame_context          : 2;
+            UINT    refresh_frame_context        : 1;
+            UINT    frame_context_idx            : 2;
+            UINT    LosslessFlag                 : 1;
+            UINT    comp_prediction_mode         : 2;
+            UINT    super_frame                  : 1;
+            UINT    seg_id_block_size            : 2;
+            UINT    display_format_swizzle       : 1;
+
+            UINT    reserved                     : 8;
+        } fields;
+
+        UINT value;
+    } PicFlags;
+
+    union
+    {
+        struct
+        {
+            UINT    LastRefIdx                  : 3;
+            UINT    LastRefSignBias             : 1;
+            UINT    GoldenRefIdx                : 3;
+            UINT    GoldenRefSignBias           : 1;
+            UINT    AltRefIdx                   : 3;
+            UINT    AltRefSignBias              : 1;
+
+            UINT    ref_frame_ctrl_l0           : 3;
+            UINT    ref_frame_ctrl_l1           : 3;
+
+            UINT    refresh_frame_flags         : 8;
+            UINT    reserved2                   : 6;
+        } fields;
+
+        UINT value;
+    } RefFlags;
+
+    UCHAR           LumaACQIndex;
+    CHAR            LumaDCQIndexDelta;
+    CHAR            ChromaACQIndexDelta;
+    CHAR            ChromaDCQIndexDelta;
+
+    UCHAR           filter_level;
+    UCHAR           sharpness_level;
+
+    CHAR            LFRefDelta[4];
+    CHAR            LFModeDelta[2];
+
+    USHORT          BitOffsetForLFRefDelta;
+    USHORT          BitOffsetForLFModeDelta;
+    USHORT          BitOffsetForLFLevel;
+    USHORT          BitOffsetForQIndex;
+    USHORT          BitOffsetForFirstPartitionSize;
+    USHORT          BitOffsetForSegmentation;
+    USHORT          BitSizeForSegmentation;
+
+    UCHAR           log2_tile_rows;
+    UCHAR           log2_tile_columns;
+
+    UCHAR           temporal_id;
+
+    UINT            StatusReportFeedbackNumber;
+
+    // Skip Frames
+    UCHAR           SkipFrameFlag;      // [0..2]
+    UCHAR           NumSkipFrames;
+    UINT            SizeSkipFrames;
+} ENCODE_SET_PICTURE_PARAMETERS_VP9;
 #else
 // DDI v0.94
 typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_VP9

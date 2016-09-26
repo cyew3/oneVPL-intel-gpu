@@ -31,6 +31,7 @@ static const GUID DXVA2_Intel_Encode_VP9_10bit_Profile3 =
 { 0x24d19fca, 0xc5a2, 0x4b8e, { 0x9f, 0x93, 0xf8, 0xf6, 0xef, 0x15, 0xc8, 0x90 } };
 
 //#define DDI_VER_0960
+#define DDI_FROM_MAINLINE_DRIVER
 
 #ifdef DDI_VER_0960
 // DDI v0.960
@@ -72,6 +73,49 @@ typedef struct tagENCODE_CAPS_VP9
     };
     UINT    MaxPicWidth;
     UINT    MaxPicHeight;
+} ENCODE_CAPS_VP9;
+#elif defined (DDI_FROM_MAINLINE_DRIVER)
+typedef struct tagENCODE_CAPS_VP9
+{
+    union
+    {
+        struct
+        {
+            UINT    CodingLimitSet        : 1;
+            UINT    Color420Only          : 1;
+            UINT    SegmentationSupport   : 1;
+            UINT    FrameLevelRateCtrl    : 1;
+            UINT    BRCReset              : 1;
+            UINT    MBBRCSupport          : 1;
+            UINT    TemporalLayerRateCtrl : 3;
+            UINT    DynamicScaling        : 1;
+            UINT    TileSupport           : 1;
+            UINT    MaxLog2TileCols       : 1;
+            UINT    YUV422ReconSupport    : 1;
+            UINT    YUV444ReconSupport    : 1;
+            UINT    MaxEncodedBitDepth    : 2;
+        UINT                          :14;
+        };
+
+        UINT        CodingLimits;
+    };
+
+    union
+    {
+        struct
+        {
+            UCHAR   EncodeFunc            : 1; // CHV+
+            UCHAR   HybridPakFunc         : 1; // HSW/BDW hybrid ENC & PAK
+            UCHAR   EncFunc : 1; // BYT enc only mode
+        UCHAR: 6;
+        };
+
+        UCHAR       CodingFunction;
+    };
+
+    UINT            MaxPicWidth;
+    UINT            MaxPicHeight;
+
 } ENCODE_CAPS_VP9;
 #else
 // DDI v0.94
