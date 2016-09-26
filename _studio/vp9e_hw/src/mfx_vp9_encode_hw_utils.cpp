@@ -180,8 +180,8 @@ mfxStatus SetFramesParams(VP9MfxParam const &par,
 mfxStatus DecideOnRefListAndDPBRefresh(mfxVideoParam * par, Task *pTask, std::vector<sFrameEx*>&dpb, VP9FrameLevelParam &frameParam)
 {
     dpb; par;
-    bool bDisableMultiref = true; // replacement for mfxExtVP9Tricks
-    if (bDisableMultiref == false)
+    bool multiref = (par->mfx.NumRefFrame == 3);
+    if (multiref == true)
     {
 #if 0
         // idx 2 is dedicated to GOLD, idxs 0 and 1 are for LAST and ALT in round robin mode

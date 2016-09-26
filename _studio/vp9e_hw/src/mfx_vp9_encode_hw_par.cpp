@@ -309,9 +309,9 @@ static mfxStatus CheckMFXParameters(mfxInfoMFX*  par)
         par->NumSlice = 0;
         bChanged = true;
     }
-    if (par->NumRefFrame != 0)
+    if (par->NumRefFrame > 8)
     {
-        par->NumRefFrame = 0;
+        par->NumRefFrame = 8;
         bChanged = true;
     }
     if (bUnsupported)
@@ -488,6 +488,11 @@ static void SetDefaultMFXParameters(mfxInfoMFX*  par)
                                                            par->BRCParamMultiplier);
             }
         }
+    }
+
+    if (par->NumRefFrame == 0)
+    {
+        par->NumRefFrame = 1; // single ref by default for now. TODO: add multiref support.
     }
 }
 static void SetDefaultExCodingParameters(mfxExtCodingOptionVP9*  par, mfxExtEncoderROI * roi, mfxU16 /*tu*/, mfxU16 /*numTreads*/)

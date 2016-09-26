@@ -466,7 +466,7 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK =
 
     inline mfxU32 CalcNumSurfRecon(mfxVideoParam const & video)
     {
-        return /*3*/8 + CalcNumTasks(video); // only 3 reference frames are stored in DPB for now. Could be up to 8
+        return video.mfx.NumRefFrame + CalcNumTasks(video);
     }
     inline mfxU32 CalcNumMB(mfxVideoParam const & video)
     {
