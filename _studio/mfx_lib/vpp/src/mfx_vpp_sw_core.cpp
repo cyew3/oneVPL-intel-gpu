@@ -613,14 +613,14 @@ mfxStatus VideoVPPBase::QueryCaps(VideoCORE * core, MfxHwVideoProcessing::mfxVpp
 
 #if !defined (MFX_ENABLE_HW_ONLY_VPP)
     VideoVPP_SW::QueryCaps(core, caps);
-#else
-    return MFX_ERR_UNSUPPORTED;
-#endif
 
     if (MFX_PLATFORM_HARDWARE == core->GetPlatformType())
         return MFX_WRN_PARTIAL_ACCELERATION;
 
     return MFX_ERR_NONE;
+#else
+    return MFX_ERR_UNSUPPORTED;
+#endif
 
 } // mfxStatus VideoVPPBase::QueryCaps((VideoCORE * core, MfxHwVideoProcessing::mfxVppCaps& caps)
 
