@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -22,9 +22,20 @@ MFXMultiRender :: ~MFXMultiRender ()
 {
     //input render will be deleted as part of view array 
     if (!m_Renders.empty())
+    {
+        m_Renders.clear();
         m_pTarget.release();
-    
-    for_each(m_Renders.begin(), m_Renders.end(), deleter<MFXViewRender<_TView>*>());
+    }
+
+}
+
+mfxStatus MFXMultiRender::Close()
+{
+    for (_CollectionType::iterator it = m_Renders.begin(); it != m_Renders.end(); it++)
+    {
+        MFX_CHECK_STS((*it)->Close());
+    }
+    return MFX_ERR_NONE;
 }
 
 mfxStatus MFXMultiRender::RenderFrame( mfxFrameSurface1 *surface

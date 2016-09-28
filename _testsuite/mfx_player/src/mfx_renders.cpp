@@ -237,7 +237,8 @@ MFXFileWriteRender * MFXFileWriteRender::Clone()
     MFX_CHECK_WITH_ERR(MFX_ERR_NONE == pNew->SetAutoView(m_bAutoView), NULL);
     if (m_pFile.get())
     {
-        MFX_CHECK_WITH_ERR(MFX_ERR_NONE == pNew->SetDownStream(m_pFile->Clone()), NULL);
+        IFile *tmp = m_pFile.get();
+        MFX_CHECK_WITH_ERR(MFX_ERR_NONE == pNew->SetDownStream(tmp), NULL);
     }
     MFX_CHECK_WITH_ERR(MFX_ERR_NONE == pNew->Init(&m_VideoParams, m_OutputFileName.c_str()), NULL);
 
