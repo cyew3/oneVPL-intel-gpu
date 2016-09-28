@@ -911,7 +911,8 @@ void H265HeadersBitstream::parseVUI(H265SeqParamSet *pSPS)
     {
         pSPS->tiles_fixed_structure_flag = Get1Bit();
         pSPS->motion_vectors_over_pic_boundaries_flag = Get1Bit();
-        pSPS->min_spatial_segmentation_idc = GetBits(8);
+        pSPS->restricted_ref_pic_lists_flag = Get1Bit();
+        pSPS->min_spatial_segmentation_idc = GetVLCElementU();
         pSPS->max_bytes_per_pic_denom = GetVLCElementU();
         pSPS->max_bits_per_min_cu_denom = GetVLCElementU();
         pSPS->log2_max_mv_length_horizontal = GetVLCElementU();
