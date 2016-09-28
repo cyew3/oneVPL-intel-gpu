@@ -189,12 +189,11 @@ Ipp32s h265_quant_getSigCtxInc(Ipp32s pattern_sig_ctx,
 }
 
 template <typename PixType>
-void H265CU<PixType>::QuantInvTu(const CoeffsType *coeff, CoeffsType *resid, Ipp32s width, Ipp32s is_luma)
+void H265CU<PixType>::QuantInvTu(const CoeffsType *coeff, CoeffsType *resid, Ipp32s qp, Ipp32s width, Ipp32s is_luma)
 {
-    Ipp32s QP = (is_luma) ? m_lumaQp : m_chromaQp;
     Ipp32s log2TrSize = h265_log2m2[width] + 2;
     Ipp32s bitDepth = is_luma ? m_par->bitDepthLuma : m_par->bitDepthChroma;
-    h265_quant_inv(coeff, NULL, resid, log2TrSize, bitDepth, QP);
+    h265_quant_inv(coeff, NULL, resid, log2TrSize, bitDepth, qp);
 }
 
 
@@ -214,12 +213,12 @@ bool IsZero(const T *arr, Ipp32s size)
 }
 
 template <typename PixType>
-Ipp8u H265CU<PixType>::QuantFwdTu(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width,
-                                  Ipp32s isLuma, Ipp32s isIntra)
+Ipp8u H265CU<PixType>::QuantFwdTu(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s qp,
+                                  Ipp32s width, Ipp32s isLuma, Ipp32s isIntra)
 {
     Ipp32s isIntraSlice = (m_cslice->slice_type == I_SLICE);
     Ipp32s bitDepth = (isLuma) ? m_par->bitDepthLuma : m_par->bitDepthChroma;
-    Ipp32s QP = (isLuma) ? m_lumaQp : m_chromaQp;
+    Ipp32s QP = qp;
     Ipp32s log2TrSize = h265_log2m2[width] + 2;
 
     if (!((isLuma || m_par->rdoqChromaFlag) && m_isRdoq)) {
@@ -257,9 +256,9 @@ Ipp8u H265CU<PixType>::QuantFwdTu(CoeffsType *resid, CoeffsType *coeff, Ipp32s a
 }
 
 template <typename PixType>
-Ipp8u H265CU<PixType>::QuantFwdTuBase(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width, Ipp32s isLuma)
+Ipp8u H265CU<PixType>::QuantFwdTuBase(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s qp, Ipp32s width, Ipp32s isLuma)
 {
-    Ipp32s QP = (isLuma) ? m_lumaQp : m_chromaQp;
+    Ipp32s QP = qp;
     Ipp32s log2TrSize = h265_log2m2[width] + 2;
     Ipp32s isIntraSlice = (m_cslice->slice_type == I_SLICE);
     Ipp32s bitDepth = (isLuma) ? m_par->bitDepthLuma : m_par->bitDepthChroma;

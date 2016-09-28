@@ -176,7 +176,7 @@ typedef struct {
     mfxU16      IntraNumCand2_5;
     mfxU16      IntraNumCand2_6;
     mfxU16      WPP;
-    mfxU16      reserved0;
+    mfxU16      Log2MinCuQpDeltaSize; // 6-64x64; 5-32x32; 4-16x16 3-8x8
     mfxU16      PartModes;          // 0-default; 1-square only; 2-no AMP; 3-all
     mfxU16      CmIntraThreshold;   // threshold = CmIntraThreshold / 256.0
     mfxU16      TUSplitIntra;       // 0-default 1-always 2-never 3-for Intra frames only

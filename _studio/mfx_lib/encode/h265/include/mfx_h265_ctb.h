@@ -191,7 +191,7 @@ public:
     H265VideoParam *m_par;
 
     Ipp8s  m_sliceQpY;
-    Ipp8s* m_lcuQps;
+    const Ipp8s* m_lcuQps[4];
 
     Frame      *m_currFrame;
     Ipp32u          m_ctbAddr;           ///< CU address in a slice
@@ -319,8 +319,8 @@ public:
     CostType m_rdLambdaInterMv;
     CostType m_rdLambdaSqrt;
     CostType m_ChromaDistWeight;
-    Ipp32s m_lumaQp;
-    Ipp32s m_chromaQp;
+    //Ipp32s m_lumaQp;
+    //Ipp32s m_chromaQp;
 
     H265Slice *m_cslice;
     Ipp8u m_intraMinDepth;      // min CU depth from spatial analysis
@@ -561,9 +561,6 @@ public:
                                 bool enforceDependentSliceRestriction = true);
 
     Ipp8s GetRefQp(Ipp32u uiCurrAbsIdxInLCU);
-    void SetQpSubParts(int qp, int absPartIdx, int depth);
-    void SetQpSubCUs(int qp, int absPartIdx, int depth, bool &foundNonZeroCbf);
-    void CheckDeltaQp(void);
 
     void ConvertTransIdx(Ipp32u trIdx, Ipp32u &lumaTrMode, Ipp32u &chromaTrMode)  {
         lumaTrMode   = trIdx;
@@ -602,7 +599,7 @@ public:
     template <class H265Bs>
     void EncodeCU(H265Bs *bs, Ipp32s absPartIdx, Ipp32s depth, Ipp8u rdMode = 0);
 
-    void UpdateCuQp(void);
+    Ipp8s UpdateCuQp(Ipp32s absPartIdx, Ipp32s depth, Ipp8s lastCodedQp);
 
     template <class H265Bs>
     void EncodeCoeff(H265Bs *bs, Ipp32s absPartIdx, Ipp32u depth, Ipp32u width,
@@ -659,11 +656,11 @@ public:
     void EncAndRecChromaTu(Ipp32s absPartIdx, Ipp32s idx422, Ipp32s offset, Ipp32s width, CostType *cost,
                            IntraPredOpt pred_opt, Ipp8u costPredFlag);
 
-    void QuantInvTu(const CoeffsType *coeff, CoeffsType *resid, Ipp32s width, Ipp32s isLuma);
+    void QuantInvTu(const CoeffsType *coeff, CoeffsType *resid, Ipp32s qp, Ipp32s width, Ipp32s isLuma);
 
-    Ipp8u QuantFwdTu(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width, Ipp32s isLuma, Ipp32s isIntra); // returns num nz coeffs
+    Ipp8u QuantFwdTu(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s qp, Ipp32s width, Ipp32s isLuma, Ipp32s isIntra); // returns num nz coeffs
 
-    Ipp8u QuantFwdTuBase(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s width, Ipp32s isLuma); // returns num nz coeffs
+    Ipp8u QuantFwdTuBase(CoeffsType *resid, CoeffsType *coeff, Ipp32s absPartIdx, Ipp32s qp, Ipp32s width, Ipp32s isLuma); // returns num nz coeffs
 
     void Deblock();
 
@@ -685,9 +682,6 @@ public:
             
     void EstimateSao(H265BsReal* bs, SaoCtuParam* saoParam);
     void PackSao(H265BsReal* bs, SaoCtuParam* saoParam);
-
-    void FillSubPart(Ipp32s absPartIdx, Ipp8u depthCu, Ipp8u trIdx, Ipp8u partSize, Ipp8u lumaDir,
-                     Ipp8u qp);
 
     void FillSubPartIntraLumaDir(Ipp32s absPartIdx, Ipp8u depthCu, Ipp8u trDepth, Ipp8u lumaDir);
 
@@ -889,8 +883,8 @@ public:
     Ipp32s GetSpatioTemporalComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth);
     Ipp32s GetSpatioTemporalComplexity(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth, Ipp32s& scVal);
     Ipp32s GetSpatioTemporalComplexityColocated(Ipp32s absPartIdx, Ipp32s depth, Ipp32s partAddr, Ipp32s partDepth, FrameData *ref) const;
-    Ipp8u EncInterLumaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width);
-    void EncInterChromaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, Ipp8u *nz);
+    Ipp8u EncInterLumaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, Ipp8s qp);
+    void EncInterChromaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, Ipp8u *nz, Ipp8s qp);
     bool TuMaxSplitInterHasNonZeroCoeff(Ipp32u absPartIdx, Ipp8u trIdxMax);
     bool tryIntraICRA(Ipp32s absPartIdx, Ipp32s depth);
     bool tryIntraRD(Ipp32s absPartIdx, Ipp32s depth, IntraLumaMode *modes);
@@ -967,11 +961,8 @@ Ipp32u GetQuadtreeTuLog2MinSizeInCu(const H265VideoParam *par, Ipp32u log2CbSize
 void GetPartAddr(Ipp32s uPartIdx, Ipp32s partMode, Ipp32s m_NumPartition, Ipp32s &partAddr);
 
 
-template <class H265CuBase>
-Ipp32s GetLastValidPartIdx(H265CuBase* cu, Ipp32s absPartIdx);
-
-template <class H265CuBase>
-Ipp8s GetLastCodedQP(H265CuBase* cu, Ipp32s absPartIdx);
+template <class PixType>
+Ipp8s GetLastCodedQP(const H265CU<PixType>* cu, Ipp32s absPartIdx);
 
 Ipp32s GetLumaOffset(const H265VideoParam *par, Ipp32s absPartIdx, Ipp32s pitch);
 
@@ -979,7 +970,7 @@ Ipp32s GetChromaOffset(const H265VideoParam *par, Ipp32s absPartIdx, Ipp32s pitc
 
 void CopySubPartTo_(H265CUData *dst, const H265CUData *src, Ipp32s absPartIdx, Ipp32u numParts);
 
-void FillSubPartIntraCuModes_(H265CUData *data, Ipp32s numParts, Ipp8u cuWidth, Ipp8u cuDepth, Ipp8u partMode);
+void FillSubPartIntraCuModes_(H265CUData *data, Ipp32s numParts, Ipp8u cuWidth, Ipp8u cuDepth, Ipp8u partMode, Ipp8s qp);
 void FillSubPartIntraPartMode_(H265CUData *data, Ipp32s numParts, Ipp8u partMode);
 void FillSubPartCuQp_(H265CUData *data, Ipp32s numParts, Ipp8u qp);
 void FillSubPartIntraPredModeY_(H265CUData *data, Ipp32s numParts, Ipp8u mode);

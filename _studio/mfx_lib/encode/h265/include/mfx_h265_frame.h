@@ -338,7 +338,8 @@ namespace H265Enc {
         Ipp32s m_ceilLog2NumPocTotalCurr; // Ceil(Log2(NumPocTotalCurr))
 
         Ipp8s     m_sliceQpY;
-        std::vector<Ipp8s> m_lcuQps; // array for LCU QPs
+        std::vector<Ipp8s> m_lcuQps[4]; // array for LCU QPs
+        std::vector<Ipp8s> m_lastCodedQp;
         H265Slice m_dqpSlice[2*MAX_DQP+1];
 
         std::vector<H265Slice> m_roiSlice;

@@ -209,7 +209,7 @@ namespace {
     {
         for (Ipp32s i = 0; i < NUM_LEVELS; i++)
             if (tab_levelLimits[i].maxLumaPs >= lumaPs)
-                return tab_levelLimits[i].levelId;
+                return (Ipp16u)tab_levelLimits[i].levelId;
         return 0xff;
     }
 
@@ -217,15 +217,15 @@ namespace {
     {
         for (Ipp32s i = 0; i < NUM_LEVELS; i++)
             if (tab_levelLimits[i].maxLumaSr * (Ipp64u)frDenom >= lumaPs * (Ipp64u)frNom)
-                return tab_levelLimits[i].levelId;
+                return (Ipp16u)tab_levelLimits[i].levelId;
         return 0xff;
     }
 
     Ipp16u GetLevelIdx(Ipp32u codecLevel)
     {
         for (Ipp32s i = 0; i < NUM_LEVELS; i++)
-            if (tab_levelLimits[i].levelId == (codecLevel & 0xff))
-                return i;
+            if (tab_levelLimits[i].levelId == Ipp32s(codecLevel & 0xff))
+                return (Ipp16u)i;
         return NUM_LEVELS;
     }
 
@@ -243,7 +243,7 @@ namespace {
     {
         for (Ipp32s i = 0; i < NUM_LEVELS; i++)
             if (numRefFrame <= GetMaxDpbSize(lumaPs, i))
-                return tab_levelLimits[i].levelId;
+                return (Ipp16u)tab_levelLimits[i].levelId;
         return 0xff;
     }
 
@@ -251,7 +251,7 @@ namespace {
     {
         for (Ipp32s i = 0; i < NUM_LEVELS; i++)
             if (tab_levelLimits[i].maxSliceSegmentsPerPicture >= numSlice)
-                return tab_levelLimits[i].levelId;
+                return (Ipp16u)tab_levelLimits[i].levelId;
         return 0xff;
     }
 
@@ -259,7 +259,7 @@ namespace {
     {
         for (Ipp32s i = 0; i < NUM_LEVELS; i++)
             if (tab_levelLimits[i].maxTileRows >= numTileRows)
-                return tab_levelLimits[i].levelId;
+                return (Ipp16u)tab_levelLimits[i].levelId;
         return 0xff;
     }
 
@@ -267,7 +267,7 @@ namespace {
     {
         for (Ipp32s i = 0; i < NUM_LEVELS; i++)
             if (tab_levelLimits[i].maxTileCols >= numTileCols)
-                return tab_levelLimits[i].levelId;
+                return (Ipp16u)tab_levelLimits[i].levelId;
         return 0xff;
     }
 
@@ -290,7 +290,7 @@ namespace {
         for (Ipp32s i = 0; i < NUM_LEVELS; i++)
             for (Ipp32s t = 0; t <= 1; t++)
                 if (Ipp32u(tab_levelLimits[i].maxBr[t] * BrNalFactor / 1000) >= bitrate)
-                    return tab_levelLimits[i].levelId | (t << 8);
+                    return Ipp16u(tab_levelLimits[i].levelId | (t << 8));
         return 0xff;
     }
 
@@ -309,17 +309,17 @@ namespace {
         for (Ipp32s i = 0; i < NUM_LEVELS; i++)
             for (Ipp32s t = 0; t <= 1; t++)
                 if (Ipp32u(tab_levelLimits[i].maxCPB[t] * CpbNalFactor / 8000) >= bufferSizeInKB)
-                    return tab_levelLimits[i].levelId | (t << 8);
+                    return Ipp16u(tab_levelLimits[i].levelId | (t << 8));
         return 0xff;
     }
 
-    template <class T, class U> bool CheckEq(T &v, U to)       { return (v && v != static_cast<T>(to))  ? (v = 0,    false) : true; }
+    template <class T, class U> bool CheckEq(T &v, U to)       { return (v && v != static_cast<T>(to))  ? (v = 0, false) : true; }
     template <class T>          bool CheckEq(T &v, Ipp32u to)  { return CheckEq<T, Ipp32u>(v, to); }
-    template <class T>          bool CheckTriState(T &v)       { return (v && v != ON && v != OFF)      ? (v = 0,    false) : true; }
-    template <class T, class U> bool CheckMin(T &v, U minv)    { return (v && v < static_cast<T>(minv)) ? (v = 0,    false) : true; }
-    template <class T, class U> bool CheckMinSat(T &v, U minv) { return (v && v < static_cast<T>(minv)) ? (v = minv, false) : true; }
-    template <class T, class U> bool CheckMax(T &v, U maxv)    { return (v > static_cast<T>(maxv))      ? (v = 0,    false) : true; }
-    template <class T, class U> bool CheckMaxSat(T &v, U maxv) { return (v > static_cast<T>(maxv))      ? (v = maxv, false) : true; }
+    template <class T>          bool CheckTriState(T &v)       { return (v && v != ON && v != OFF)      ? (v = 0, false) : true; }
+    template <class T, class U> bool CheckMin(T &v, U minv)    { return (v && v < static_cast<T>(minv)) ? (v = 0, false) : true; }
+    template <class T, class U> bool CheckMinSat(T &v, U minv) { return (v && v < static_cast<T>(minv)) ? (v = static_cast<T>(minv), false) : true; }
+    template <class T, class U> bool CheckMax(T &v, U maxv)    { return (     v > static_cast<T>(maxv)) ? (v = 0, false) : true; }
+    template <class T, class U> bool CheckMaxSat(T &v, U maxv) { return (     v > static_cast<T>(maxv)) ? (v = static_cast<T>(maxv), false) : true; }
 
     template <class T, class U> bool CheckRange(T &v, U minv, U maxv)    { assert(minv <= maxv); return CheckMax(v, maxv)    && CheckMin(v, minv); }
     template <class T, class U> bool CheckRangeSat(T &v, U minv, U maxv) { assert(minv <= maxv); return CheckMaxSat(v, maxv) && CheckMinSat(v, minv); }
@@ -328,13 +328,13 @@ namespace {
     template <class T, class U, size_t N> bool CheckSet(T &v, U (&setv)[N])   { return (v && !IsIn(setv, v)) ? (v = 0, false) : true; }
 
     Ipp16u CheckMinLevel(Ipp16u &tierLevel, Ipp16u minLevel) {
-        if (Level(tierLevel) < minLevel) return tierLevel = (Tier(tierLevel) | minLevel), false; // bad, increased
+        if (Level(tierLevel) < minLevel) return tierLevel = Ipp16u(Tier(tierLevel) | minLevel), false; // bad, increased
         return true; // good
     }
 
     Ipp16u CheckMinTierLevel(Ipp16u &tierLevel, Ipp16u minTierLevel) {
         Ipp16u oldTierLevel = tierLevel;
-        tierLevel = MAX(Level(tierLevel), Level(minTierLevel)) | MAX(Tier(tierLevel), Tier(minTierLevel));
+        tierLevel = Ipp16u(MAX(Level(tierLevel), Level(minTierLevel)) | MAX(Tier(tierLevel), Tier(minTierLevel)));
         return oldTierLevel == tierLevel;
     }
 
@@ -433,6 +433,7 @@ namespace {
             ext->IntraNumCand2_5 = 1;
             ext->IntraNumCand2_6 = 1;
             ext->WPP = 1;
+            ext->Log2MinCuQpDeltaSize = 1;
             ext->PartModes = 1;
             ext->CmIntraThreshold = 0;
             ext->TUSplitIntra = 1;
@@ -749,6 +750,7 @@ namespace {
             wrnIncompatible = !CheckMax(optHevc->IntraNumCand2_4, 35);
             wrnIncompatible = !CheckMax(optHevc->IntraNumCand2_5, 35);
             wrnIncompatible = !CheckMax(optHevc->IntraNumCand2_6, 35);
+            wrnIncompatible = !CheckRangeSat(optHevc->Log2MinCuQpDeltaSize, 3, 6);
             wrnIncompatible = !CheckMax(optHevc->PartModes, 3);
             wrnIncompatible = !CheckMax(optHevc->TUSplitIntra, 3);
             wrnIncompatible = !CheckMax(optHevc->CUSplit, 2);
@@ -825,7 +827,7 @@ namespace {
         if (fi.ChromaFormat && fi.FourCC) // FourCC & ChromaFormat
             if (fi.ChromaFormat == YUV420 && fi.FourCC != NV12 && fi.FourCC != P010 ||
                 fi.ChromaFormat == YUV422 && fi.FourCC != NV16 && fi.FourCC != P210)
-                fi.ChromaFormat = fi.FourCC = 0, errUnsupported = true;
+                fi.ChromaFormat = 0, fi.FourCC = 0, errUnsupported = true;
 
         if (hevcParam && fi.Width) // PicWidthInLumaSamples <= Width
             errInvalidParam = !CheckMax(hevcParam->PicWidthInLumaSamples, fi.Width);
@@ -935,7 +937,7 @@ namespace {
 
         if (picWidth && picHeight && fi.FrameRateExtN && fi.FrameRateExtD) // W * H * FR <= MaxLumaSr[High6.2]
             if (picWidth * picHeight * (Ipp64u)fi.FrameRateExtN > (Ipp64u)fi.FrameRateExtD * tab_levelLimits[NUM_LEVELS-1].maxLumaSr)
-                picWidth = picHeight = fi.FrameRateExtN = fi.FrameRateExtD = 0, errUnsupported = true;
+                picWidth = picHeight = 0, fi.FrameRateExtN = fi.FrameRateExtD = 0, errUnsupported = true;
 
         if (picWidth && picHeight && fi.FrameRateExtN && fi.FrameRateExtD && mfx.CodecLevel) // W * H * FR <= MaxLumaSr[Level]
             wrnIncompatible = !CheckMinLevel(mfx.CodecLevel, GetMinLevelForLumaSr(picWidth * picHeight, fi.FrameRateExtN, fi.FrameRateExtD));
@@ -984,7 +986,7 @@ namespace {
         Ipp32u maxKbps          = MAX(1, mfx.BRCParamMultiplier) * mfx.MaxKbps;
         Ipp32u bufferSizeInKB   = MAX(1, mfx.BRCParamMultiplier) * mfx.BufferSizeInKB;
         Ipp32u initialDelayInKB = MAX(1, mfx.BRCParamMultiplier) * mfx.InitialDelayInKB;
-        const Ipp16u profile = mfx.CodecProfile ? mfx.CodecProfile : fi.FourCC ? GetProfile(fi.FourCC) : 0;
+        const Ipp16u profile = mfx.CodecProfile ? mfx.CodecProfile : Ipp16u(fi.FourCC ? GetProfile(fi.FourCC) : 0);
 
         // check targetKbps <= raw data rate
         if (mfx.RateControlMethod != CQP && picWidth && picHeight && fi.FourCC && fi.FrameRateExtN && fi.FrameRateExtD && targetKbps) {
@@ -1036,10 +1038,10 @@ namespace {
 
         // if any of brc parameters changed, find new BRCParamMultiplier (min possible)
         bool recalibrateBrcParamMultiplier =
-            (targetKbps       != MAX(1, mfx.BRCParamMultiplier) * mfx.TargetKbps)     ||
-            (maxKbps          != MAX(1, mfx.BRCParamMultiplier) * mfx.MaxKbps)        ||
-            (bufferSizeInKB   != MAX(1, mfx.BRCParamMultiplier) * mfx.BufferSizeInKB) ||
-            (initialDelayInKB != MAX(1, mfx.BRCParamMultiplier) * mfx.InitialDelayInKB);
+            (targetKbps       != MAX(1, (Ipp32u)mfx.BRCParamMultiplier) * mfx.TargetKbps)     ||
+            (maxKbps          != MAX(1, (Ipp32u)mfx.BRCParamMultiplier) * mfx.MaxKbps)        ||
+            (bufferSizeInKB   != MAX(1, (Ipp32u)mfx.BRCParamMultiplier) * mfx.BufferSizeInKB) ||
+            (initialDelayInKB != MAX(1, (Ipp32u)mfx.BRCParamMultiplier) * mfx.InitialDelayInKB);
         if (recalibrateBrcParamMultiplier) {
             assert(mfx.RateControlMethod != CQP);
             Ipp32u maxBrcValue = targetKbps;
@@ -1049,14 +1051,14 @@ namespace {
                 maxBrcValue = MAX(maxBrcValue, MAX(initialDelayInKB, bufferSizeInKB));
             mfx.BRCParamMultiplier = Ipp16u((maxBrcValue + 0x10000) / 0x10000);
             if (mfx.TargetKbps)
-                mfx.TargetKbps = targetKbps / mfx.BRCParamMultiplier;
+                mfx.TargetKbps = Ipp16u(targetKbps / mfx.BRCParamMultiplier);
             if (mfx.RateControlMethod == VBR && mfx.MaxKbps)
-                mfx.MaxKbps = maxKbps / mfx.BRCParamMultiplier;
+                mfx.MaxKbps = Ipp16u(maxKbps / mfx.BRCParamMultiplier);
             if (IsCbrOrVbr(mfx.RateControlMethod)) {
                 if (mfx.BufferSizeInKB)
-                    mfx.BufferSizeInKB = bufferSizeInKB / mfx.BRCParamMultiplier;
+                    mfx.BufferSizeInKB = Ipp16u(bufferSizeInKB / mfx.BRCParamMultiplier);
                 if (mfx.InitialDelayInKB)
-                    mfx.InitialDelayInKB = initialDelayInKB / mfx.BRCParamMultiplier;
+                    mfx.InitialDelayInKB = Ipp16u(initialDelayInKB / mfx.BRCParamMultiplier);
             }
         }
 
@@ -1143,8 +1145,6 @@ namespace {
 
     void SetDefaultValues(mfxVideoParam &par)
     {
-        Ipp32s corrected = 0; // some fields may be corrected
-
         mfxInfoMFX &mfx = par.mfx;
         mfxFrameInfo &fi = par.mfx.FrameInfo;
         mfxExtHEVCTiles &tiles = GetExtBuffer(par);
@@ -1168,7 +1168,7 @@ namespace {
         if (mfx.BRCParamMultiplier == 0)
             mfx.BRCParamMultiplier = 1;
         if (mfx.CodecProfile == 0)
-            mfx.CodecProfile = GetProfile(fi.FourCC);
+            mfx.CodecProfile = (Ipp16u)GetProfile(fi.FourCC);
         if (hevcParam.GeneralConstraintFlags == 0 && mfx.CodecProfile == REXT)
             hevcParam.GeneralConstraintFlags = MAIN_422_10;
         if (mfx.TargetUsage == 0)
@@ -1188,7 +1188,7 @@ namespace {
         if (tiles.NumTileColumns == 0)
             tiles.NumTileColumns = 1;
         if (optHevc.ForceNumThread == 0)
-            optHevc.ForceNumThread = mfx.NumThread ? mfx.NumThread : vm_sys_info_get_cpu_num();
+            optHevc.ForceNumThread = mfx.NumThread ? mfx.NumThread : (Ipp16u)vm_sys_info_get_cpu_num();
         if (mfx.NumThread == 0)
             mfx.NumThread = optHevc.ForceNumThread;
         if (optHevc.EnableCm == 0)
@@ -1223,17 +1223,15 @@ namespace {
 
                 Ipp32s size = defaultOptHevc.Log2MaxCUSize;
                 Ipp32f wppEff = MIN((mfx.FrameInfo.Height + (1 << size) - 1) >> size,
-                                    (mfx.FrameInfo.Width  + (1 << size) - 1) >> (size + 1) ) / 2.75;
-                //Ipp32f wppEff = MIN((mfx.FrameInfo.Height + (1 << size) - 1) >> size,
-                //                    (mfx.FrameInfo.Width  + (1 << size) - 1) >> size ) / 2.75;
-                Ipp32f frameMult = MAX(1.0, MIN((Ipp32f)mfx.NumThread / (Ipp32f)wppEff, 4.0));
+                                    (mfx.FrameInfo.Width  + (1 << size) - 1) >> (size + 1) ) / 2.75f;
+                Ipp32f frameMult = MAX(1.0f, MIN((Ipp32f)mfx.NumThread / (Ipp32f)wppEff, 4.0f));
                 if (mfx.NumThread >= 4)
-                    optHevc.FramesInParallel = MIN((optHevc.FramesInParallel * frameMult + 0.5), 16);
+                    optHevc.FramesInParallel = (Ipp16u)MIN((optHevc.FramesInParallel * frameMult + 0.5f), 16);
             }
         }
 
         if (optHevc.WPP == 0)
-            optHevc.WPP = (numTile > 1 || mfx.NumThread == 1) ? OFF : ON;
+            optHevc.WPP = Ipp16u((numTile > 1 || mfx.NumThread == 1) ? OFF : ON);
 
         if (mfx.NumRefFrame == 0) {
             Ipp16u level = mfx.CodecLevel ? mfx.CodecLevel : MFX_LEVEL_HEVC_62;
@@ -1244,7 +1242,7 @@ namespace {
             if (mfx.BufferSizeInKB == 0) {
                 Ipp16u level = mfx.CodecLevel ? mfx.CodecLevel : MFX_LEVEL_HEVC_62;
                 Ipp32s maxCpbInKB = MIN(0xffff, GetMaxCpbForLevel(mfx.CodecProfile, level) / 8000 / mfx.BRCParamMultiplier);
-                mfx.BufferSizeInKB = Saturate(1, maxCpbInKB, mfx.TargetKbps / 4); // 2 second buffer
+                mfx.BufferSizeInKB = (Ipp16u)Saturate(1, maxCpbInKB, mfx.TargetKbps / 4); // 2 second buffer
                 if (mfx.BufferSizeInKB < mfx.InitialDelayInKB)
                     mfx.BufferSizeInKB = mfx.InitialDelayInKB;
             }
@@ -1255,11 +1253,11 @@ namespace {
             if (mfx.RateControlMethod == VBR && mfx.MaxKbps == 0) {
                 Ipp16u level = mfx.CodecLevel ? mfx.CodecLevel : MFX_LEVEL_HEVC_62;
                 Ipp32s maxBrInKB = MIN(0xffff, GetMaxBrForLevel(mfx.CodecProfile, level) / 1000 / mfx.BRCParamMultiplier);
-                mfx.MaxKbps = MIN(maxBrInKB, mfx.TargetKbps * 3 / 2); // 150% of target rate
+                mfx.MaxKbps = (Ipp16u)MIN(maxBrInKB, mfx.TargetKbps * 3 / 2); // 150% of target rate
             }
         } else {
             if (mfx.BufferSizeInKB == 0)
-                mfx.BufferSizeInKB = Saturate(1, 0xffff, lumaPs * GetBpp(fi.FourCC) / 8000 / mfx.BRCParamMultiplier);
+                mfx.BufferSizeInKB = (Ipp16u)Saturate(1, 0xffff, lumaPs * GetBpp(fi.FourCC) / 8000 / mfx.BRCParamMultiplier);
             if (mfx.RateControlMethod == CQP) {
                 if (mfx.QPI == 0)
                     mfx.QPI = mfx.QPP ? (mfx.QPP - 1) : mfx.QPB ? (mfx.QPB - 1) : 30;
@@ -1311,6 +1309,8 @@ namespace {
             if (optHevc.Log2MaxCUSize == 6 && ((hevcParam.PicHeightInLumaSamples + 63) >> 6) < mfx.NumSlice)
                 optHevc.Log2MaxCUSize = 5;
         }
+        if (optHevc.Log2MinCuQpDeltaSize == 0)
+            optHevc.Log2MinCuQpDeltaSize = optHevc.Log2MaxCUSize;
         if (optHevc.MaxCUDepth == 0)
             optHevc.MaxCUDepth = defaultOptHevc.MaxCUDepth;
         if (optHevc.QuadtreeTULog2MaxSize == 0)
@@ -1511,7 +1511,7 @@ namespace {
     mfxFrameSurface1 *GetNativeSurface(MFXCoreInterface1 &core, mfxFrameSurface1 *input)
     {
         mfxFrameSurface1 *native = NULL;
-        mfxStatus sts = core.GetRealSurface(input, &native);
+        core.GetRealSurface(input, &native);
         if (native && input && native != input) { // input surface is opaque surface
             native->Data.FrameOrder = input->Data.FrameOrder;
             native->Data.TimeStamp = input->Data.TimeStamp;

@@ -46,7 +46,7 @@ using namespace H265Enc::MfxEnumShortAliases;
     tab_##mode##_IntraNumCand2_5[x],\
     tab_##mode##_IntraNumCand2_6[x],\
     tab_##mode##_WPP[x],\
-    tab_##mode##_reserved[x],\
+    tab_##mode##_Log2MinCuQpDeltaSize[x],\
     tab_##mode##_PartModes[x],\
     tab_##mode##_CmIntraThreshold[x],\
     tab_##mode##_TUSplitIntra[x],\
@@ -222,7 +222,7 @@ using namespace H265Enc::MfxEnumShortAliases;
 
     TU_OPT_SW  (DeltaQpMode,                    8,   8,   2,   2,   2,   2,   2);
     TU_OPT_GACC(DeltaQpMode,                    2,   2,   2,   2,   2,   2,   2);
-
+    TU_OPT_ALL (Log2MinCuQpDeltaSize,           6,   6,   6,   6,   6,   6,   6);
 
     //Intra RDO
     TU_OPT_SW  (IntraNumCand0_2,                1,   1,   1,   1,   1,   1,   1);

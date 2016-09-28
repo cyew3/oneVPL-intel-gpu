@@ -284,7 +284,7 @@ enum PredictionMode
 {
     MODE_INTER,           ///< inter-prediction mode
     MODE_INTRA,           ///< intra-prediction mode
-    MODE_NONE = 15
+    MODE_OUT_OF_PIC = 2
 };
 
 /// supported partition shape

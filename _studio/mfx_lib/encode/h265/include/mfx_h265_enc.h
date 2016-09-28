@@ -31,10 +31,10 @@ namespace H265Enc {
     };
 
     struct H265PriorityRoi {
-        Ipp16u  left;
-        Ipp16u  top;
-        Ipp16u  right;
-        Ipp16u  bottom;
+        Ipp32s  left;
+        Ipp32s  top;
+        Ipp32s  right;
+        Ipp32s  bottom;
         Ipp16s  priority;
     };
 
@@ -50,7 +50,7 @@ namespace H265Enc {
         Ipp8s  QPI;
         Ipp8s  QPP;
         Ipp8s  QPB;
-        Ipp8u  partModes;
+        Ipp16u partModes;
         Ipp8u  TMVPFlag;
         Ipp8u  encodedOrder;
 
@@ -104,26 +104,26 @@ namespace H265Enc {
         Ipp8u  CmBirefineFlag;  // GPU birefinement
         Ipp8u  CmInterpFlag;    // GPU hpel interpolation for every recon
 
-        Ipp8u  DeltaQpMode;      // 0 - disable, 0x1 = CAQ, 0x2 = CAL, 0x4 = PAQ
+        Ipp16u DeltaQpMode;      // 0 - disable, 0x1 = CAQ, 0x2 = CAL, 0x4 = PAQ
         CostType LambdaCorrection;
         Ipp32s RateControlDepth; // rate control depth: how many analyzed future frames are required for BRC
         Ipp8u  SceneCut;         // Enable Scene Change Detection and insert IDR frame
-        Ipp8u  AnalyzeCmplx;     // analyze frame complexity (for BRC)
-        Ipp8u  LowresFactor;     // > 0 means lookahead algorithms is applied on downscaled frames
+        Ipp16u AnalyzeCmplx;     // analyze frame complexity (for BRC)
+        Ipp16u LowresFactor;     // > 0 means lookahead algorithms is applied on downscaled frames
         Ipp8u  FullresMetrics;  // 0 use Lowres metrics, 1 means process LA with Lowres but compute final metrics on Fullres
 
-        Ipp8u  TryIntra;        // 0-default, 1-always, 2-Try intra based on spatio temporal content analysis in inter
-        Ipp8u  FastAMPSkipME;   // 0-default, 1-never, 2-Skip AMP ME of Large Partition when Skip is best
-        Ipp8u  FastAMPRD;       // 0-default, 1-never, 2-Adaptive Fast Decision 
-        Ipp8u  SkipMotionPartition;  // 0-default, 1-never, 2-Adaptive
-        Ipp8u  SkipCandRD;       // on: Do Full RD /off : do Fast decision 
-        Ipp8u  AdaptiveRefs;     // on: Adaptive Search for best ref
-        Ipp8u  NumRefFrameB;     // 0,1-default, 2+ Use Given
-        Ipp8u  NumRefLayers;
+        Ipp16u TryIntra;        // 0-default, 1-always, 2-Try intra based on spatio temporal content analysis in inter
+        Ipp16u FastAMPSkipME;   // 0-default, 1-never, 2-Skip AMP ME of Large Partition when Skip is best
+        Ipp16u FastAMPRD;       // 0-default, 1-never, 2-Adaptive Fast Decision 
+        Ipp16u SkipMotionPartition;  // 0-default, 1-never, 2-Adaptive
+        Ipp16u SkipCandRD;       // on: Do Full RD /off : do Fast decision 
+        Ipp16u AdaptiveRefs;     // on: Adaptive Search for best ref
+        Ipp16u NumRefFrameB;     // 0,1-default, 2+ Use Given
+        Ipp16u NumRefLayers;
         Ipp8u  refLayerLimit[4];
-        Ipp8u  IntraMinDepthSC;  // Spatial complexity for Intra min depth 1 [0-11] 0-default, 1-11 (1-Always, 11-Never)
-        Ipp8u  InterMinDepthSTC; // Spatio-Temporal complexity for Inter min depth 1 [0-4] 0-default, 1-6 (1-Always, 6-Never)
-        Ipp8u  MotionPartitionDepth; // MotionPartitionDepth depth [0-6] 0-default, 1-6 (1-Never, 6-Always)
+        Ipp16u IntraMinDepthSC;  // Spatial complexity for Intra min depth 1 [0-11] 0-default, 1-11 (1-Always, 11-Never)
+        Ipp16u InterMinDepthSTC; // Spatio-Temporal complexity for Inter min depth 1 [0-4] 0-default, 1-6 (1-Always, 6-Never)
+        Ipp16u MotionPartitionDepth; // MotionPartitionDepth depth [0-6] 0-default, 1-6 (1-Never, 6-Always)
         Ipp16u cmIntraThreshold; // 0-no theshold
         Ipp16u tuSplitIntra;     // 0-default; 1-always; 2-never; 3-for Intra frames only
         Ipp16u cuSplit;          // 0-default; 1-always; 2-check Skip cost first
@@ -141,7 +141,7 @@ namespace H265Enc {
         Ipp32u num_bs_subsets;
         Ipp8u IntraChromaRDO;   // 1-turns on syntax cost for chroma in Intra
         Ipp8u FastInterp;       // 1-turns on fast filters for ME
-        Ipp8u cpuFeature;       // 0-auto, 1-px, 2-sse4, 3-sse4atom, 4-ssse3, 5-avx2
+        Ipp16u cpuFeature;       // 0-auto, 1-px, 2-sse4, 3-sse4atom, 4-ssse3, 5-avx2
 
         Ipp32u fourcc;
         Ipp8u bitDepthLuma;
@@ -149,7 +149,7 @@ namespace H265Enc {
         Ipp8u bitDepthLumaShift;
         Ipp8u bitDepthChromaShift;
 
-        Ipp8u chromaFormatIdc;
+        Ipp16u chromaFormatIdc;
         Ipp8u chroma422;
         Ipp8u chromaShiftW;
         Ipp8u chromaShiftH;
@@ -189,7 +189,7 @@ namespace H265Enc {
 
         // QP control
         Ipp8u UseDQP;
-        Ipp32u MaxCuDQPDepth;
+        Ipp32s MaxCuDQPDepth;
         Ipp32u MinCuDQPSize; 
         Ipp32s m_maxDeltaQP;
 
@@ -282,6 +282,7 @@ namespace H265Enc {
 
     class H265FrameEncoder : public State
     {
+        void operator=(const H265FrameEncoder&);
     public:
         H265FrameEncoder(H265Encoder & topEnc);
         ~H265FrameEncoder() { Close(); };

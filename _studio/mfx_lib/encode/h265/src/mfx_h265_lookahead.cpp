@@ -1318,7 +1318,7 @@ void H265Enc::DetermineQpMap_IFrame(FrameIter curr, FrameIter end, H265VideoPara
     Frame* inFrame    = *curr;
 
     int wBlock = inFrame->m_origin->width/8;
-    int w4 = inFrame->m_origin->width/4;
+    int w4 = inFrame->m_stats[0]->m_pitchRsCs4;
 
     const int CU_SIZE = videoParam.MaxCUSize;
     int heightInTiles = videoParam.PicHeightInCtbs;
@@ -1451,7 +1451,7 @@ void H265Enc::DetermineQpMap_PFrame(FrameIter begin, FrameIter curr, FrameIter e
     int c8_width, c8_height;
     //int widthInRegionGrid = inFrame->m_origin->width / 16;
     int wBlock = inFrame->m_origin->width/8;
-    int w4 = inFrame->m_origin->width/4;
+    int w4 = inFrame->m_stats[0]->m_pitchRsCs4;
 
     const int CU_SIZE = videoParam.MaxCUSize;
     int heightInTiles = videoParam.PicHeightInCtbs;
@@ -1642,7 +1642,7 @@ void WriteDQpMap(Frame *inFrame, const H265VideoParam& param) {
     fprintf(fp, "%d %d \n", 1, inFrame->m_sliceQpY);
     for(row = 0; row<heightInTiles; row++) {
         for(col=0; col<widthInTiles; col++) {
-            int val = inFrame->m_lcuQps[row*widthInTiles+col];
+            int val = inFrame->m_lcuQps[0][row*widthInTiles+col];
             fprintf(fp, "%+d ", val);
         }
         fprintf(fp, "\n");
@@ -2289,7 +2289,7 @@ const Ipp32f LQ_K16[5][8] = {
 };
 
 
-int GetCalqDeltaQp(Frame* frame, const H265VideoParam & par, Ipp32s ctb_addr, Ipp32f sliceLambda, Ipp32f sliceQpY)
+void GetCalqDeltaQp(Frame* frame, const H265VideoParam & par, Ipp32s ctb_addr, Ipp32f sliceLambda, Ipp32f sliceQpY)
 {
     Ipp32s picClass = 0;
     if(frame->m_picCodeType == MFX_FRAMETYPE_I) {
@@ -2316,53 +2316,58 @@ int GetCalqDeltaQp(Frame* frame, const H265VideoParam & par, Ipp32s ctb_addr, Ip
 
     //TODO: replace by template call here
     // complex ops in Enqueue frame can cause severe threading eff loss -NG
-    Ipp32f rscs = 0;
-    if (picClass < 2) {
-        // calulate from 4x4 Rs/Cs
-        Ipp32s N = (col==par.PicWidthInCtbs-1)?(frame->m_origin->width-(par.PicWidthInCtbs-1)*par.MaxCUSize):par.MaxCUSize;
-        Ipp32s M = (row==par.PicHeightInCtbs-1)?(frame->m_origin->height-(par.PicHeightInCtbs-1)*par.MaxCUSize):par.MaxCUSize;
-        Ipp32s m4T = M/4;
-        Ipp32s n4T = N/4;
-        Ipp32s X4 = pelX/4;
-        Ipp32s Y4 = pelY/4;
-        Ipp32s w4 = frame->m_origin->width/4;
-        Ipp32s Rs=0,Cs=0;
-        for(Ipp32s i=0;i<m4T;i++) {
-            for(Ipp32s j=0;j<n4T;j++) {
-                Rs += frame->m_stats[0]->m_rs[0][(Y4+i)*w4+(X4+j)];
-                Cs += frame->m_stats[0]->m_cs[0][(Y4+i)*w4+(X4+j)];
+    for (Ipp32s depth = 0; depth < 4; depth++) {
+        Ipp32s log2BlkSize = par.Log2MaxCUSize - depth;
+        Ipp32s pitchRsCs = frame->m_stats[0]->m_pitchRsCs4 >> (log2BlkSize-2);
+        Ipp32s width = IPP_MIN(64, frame->m_origin->width-pelX);
+        Ipp32s height = IPP_MIN(64, frame->m_origin->height-pelY);
+        for (Ipp32s y = 0; y < height; y += (1<<log2BlkSize)) {
+            for (Ipp32s x = 0; x < width; x += (1<<log2BlkSize)) {
+                Ipp32s rscsClass = 0;
+                if (picClass < 2) {
+                    Ipp32s idx = ((pelY+y)>>log2BlkSize)*pitchRsCs + ((pelX+x)>>log2BlkSize);
+                    Ipp32s Rs2 = frame->m_stats[0]->m_rs[log2BlkSize-2][idx];
+                    Ipp32s Cs2 = frame->m_stats[0]->m_cs[log2BlkSize-2][idx];
+                    Ipp32s blkW = IPP_MIN(1<<log2BlkSize, width-x) >> 2;
+                    Ipp32s blkH = IPP_MIN(1<<log2BlkSize, height-y) >> 2;
+                    Rs2/=(blkW*blkH);
+                    Cs2/=(blkW*blkH);
+                    Ipp32f rscs = sqrt(Rs2 + Cs2);
+
+                    rscsClass = 7;
+                    for (Ipp32s i = 0; i < 8; i++) {
+                        if (rscs < CU_RSCS_TH[picClass][qpClass][i]*(Ipp32f)(1<<(par.bitDepthLumaShift))) {
+                            rscsClass = i;
+                            break;
+                        }
+                    }
+                }
+
+                Ipp32f dLambda = sliceLambda * 256.f;
+                Ipp32s gopSize = frame->m_biFramesInMiniGop + 1; // in fact m_biFramesInMiniGop==0 at this point
+                Ipp32f QP = 0.f;
+                if (16 == gopSize)
+                    QP = LQ_M16[picClass][rscsClass]*log( dLambda ) + LQ_K16[picClass][rscsClass];
+                else if(8 == gopSize)
+                    QP = LQ_M[picClass][rscsClass]*log( dLambda ) + LQ_K[picClass][rscsClass];
+                else // default case could be modified !!!
+                    QP = LQ_M[picClass][rscsClass]*log( dLambda ) + LQ_K[picClass][rscsClass];
+                QP -= sliceQpY;
+
+                Ipp32s calq = (QP>=0.0)?int(QP+0.5):int(QP-0.5);
+                Ipp32s totalDQP = calq;
+
+                if (par.DeltaQpMode&AMT_DQP_PAQ)
+                    totalDQP += frame->m_stats[0]->qp_mask[ctb_addr];
+
+                Ipp32s qpBlkIdx = ((pelY+y)>>log2BlkSize)*(par.PicWidthInCtbs<<(6-log2BlkSize)) + ((pelX+x)>>log2BlkSize);
+                Ipp32s lcuQp = frame->m_sliceQpY + totalDQP;
+                lcuQp = Saturate(0, 51, lcuQp);
+                frame->m_lcuQps[depth][qpBlkIdx] = (Ipp8s)lcuQp;
             }
         }
-        Rs/=(m4T*n4T);
-        Cs/=(m4T*n4T);
-        rscs = sqrt(Rs + Cs);
     }
-
-    Ipp32s rscsClass = 0;
-    {
-        Ipp32s k = 7;
-        for (Ipp32s i = 0; i < 8; i++) {
-            if (rscs < CU_RSCS_TH[picClass][qpClass][i]*(Ipp32f)(1<<(par.bitDepthLumaShift))) {
-                k = i;
-                break;
-            }
-        }
-        rscsClass = k;
-    }
-
-    Ipp32f dLambda = sliceLambda * 256.f;
-    Ipp32s gopSize = frame->m_biFramesInMiniGop + 1;
-    Ipp32f QP = 0.f;
-    if(16 == gopSize) {
-        QP = LQ_M16[picClass][rscsClass]*log( dLambda ) + LQ_K16[picClass][rscsClass];
-    } else if(8 == gopSize){
-        QP = LQ_M[picClass][rscsClass]*log( dLambda ) + LQ_K[picClass][rscsClass];
-    } else { // default case could be modified !!!
-        QP = LQ_M[picClass][rscsClass]*log( dLambda ) + LQ_K[picClass][rscsClass];
-    }
-    QP -= sliceQpY;
-    return (QP>=0.0)?int(QP+0.5):int(QP-0.5);
-} // 
+}
 
 
 void UpdateAllLambda(Frame* frame, const H265VideoParam& param)
@@ -2419,9 +2424,9 @@ void H265Enc::ApplyDeltaQp(Frame* frame, const H265VideoParam & par, Ipp8u useBr
             Ipp32s deltaQp = frame->m_stats[0]->qp_mask[ctb];
             //deltaQp = Saturate(-MAX_DQP, MAX_DQP, deltaQp);
 
-            Ipp32s lcuQp = frame->m_lcuQps[ctb] + deltaQp;
+            Ipp32s lcuQp = frame->m_lcuQps[0][ctb] + deltaQp;
             lcuQp = Saturate(0, 51, lcuQp);
-            frame->m_lcuQps[ctb] = (Ipp8s)lcuQp;
+            frame->m_lcuQps[0][ctb] = (Ipp8s)lcuQp;
         }
     }
     // recalc (align) CTB lambdas with CTB Qp
@@ -2433,22 +2438,7 @@ void H265Enc::ApplyDeltaQp(Frame* frame, const H265VideoParam & par, Ipp8u useBr
         Ipp32f baseQP = frame->m_sliceQpY;
         Ipp32f sliceLambda =  frame->m_dqpSlice[0].rd_lambda_slice;
         for (Ipp32s ctb_addr = 0; ctb_addr < numCtb; ctb_addr++) {
-            int calq = GetCalqDeltaQp(frame, par, ctb_addr, sliceLambda, baseQP);
-
-            Ipp32s totalDQP = calq;
-            /*
-            if(useBrc) {
-            if(par.cbrFlag) totalDQP = Saturate(-1, 1, totalDQP);  // CBR
-            else            totalDQP = Saturate(-2, 2, totalDQP);  // VBR
-            }
-            */
-            if (par.DeltaQpMode&AMT_DQP_PAQ) {
-                totalDQP += frame->m_stats[0]->qp_mask[ctb_addr];
-            }
-            //totalDQP = Saturate(-MAX_DQP, MAX_DQP, totalDQP);
-            Ipp32s lcuQp = frame->m_sliceQpY + totalDQP;
-            lcuQp = Saturate(0, 51, lcuQp);
-            frame->m_lcuQps[ctb_addr] = (Ipp8s)lcuQp;
+            GetCalqDeltaQp(frame, par, ctb_addr, sliceLambda, baseQP);
         }
     }
 
@@ -2460,14 +2450,14 @@ void H265Enc::ApplyDeltaQp(Frame* frame, const H265VideoParam & par, Ipp8u useBr
     Ipp32f corr0 = pow(2.0, (frame->m_sliceQpY-4)/6.0);
     Ipp32f denum = 0.0;
     for (Ipp32s ctb = 0; ctb < numCtb; ctb++) {
-    denum += pow(2.0, (frame->m_lcuQps[ctb] -4) / 6.0);
+    denum += pow(2.0, (frame->m_lcuQps[0][ctb] -4) / 6.0);
     }
     corr = 6.0 * log10( (numCtb * corr0) / denum) / log10(2.0);
     // final correction 
     for (Ipp32s ctb = 0; ctb < numCtb; ctb++) {
-    Ipp32s lcuQp = frame->m_lcuQps[ctb] + corr;
+    Ipp32s lcuQp = frame->m_lcuQps[0][ctb] + corr;
     lcuQp = Saturate(0, 51, lcuQp);
-    frame->m_lcuQps[ctb] = lcuQp;
+    frame->m_lcuQps[0][ctb] = lcuQp;
     }
     }
     */
@@ -2482,13 +2472,6 @@ Ipp32s rowsInRegion = useLowres ? m_lowresRowsInRegion : m_originRowsInRegion;
 #endif
 
 namespace {
-    __m128i LoadAndSum4(Ipp32s *p, Ipp32s pitch, Ipp32s x, Ipp32s y) {
-        return _mm_hadd_epi32(_mm_add_epi32(_mm_loadu_si128((__m128i *)(p+(x+0)+(y+0)*pitch)),
-                                            _mm_loadu_si128((__m128i *)(p+(x+0)+(y+1)*pitch))),
-                              _mm_add_epi32(_mm_loadu_si128((__m128i *)(p+(x+4)+(y+0)*pitch)),
-                                            _mm_loadu_si128((__m128i *)(p+(x+4)+(y+1)*pitch))));
-    }
-
     void SumUp(Ipp32s *out, Ipp32s pitchOut, const Ipp32s *in, Ipp32s pitchIn, Ipp32u Width, Ipp32u Height, Ipp32s shift) {
         for (Ipp32u y = 0; y < ((Height+(1<<shift)-1)>>shift); y++) {
             for (Ipp32u x = 0; x < ((Width+(1<<shift)-1)>>shift); x++)
@@ -2701,77 +2684,6 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
                     SumUp(cs16, pitchRsCs16, cs8,  pitchRsCs8,  m_videoParam.Width, m_videoParam.Height, 4);
                     SumUp(cs32, pitchRsCs32, cs16, pitchRsCs16, m_videoParam.Width, m_videoParam.Height, 5);
                     SumUp(cs64, pitchRsCs64, cs32, pitchRsCs32, m_videoParam.Width, m_videoParam.Height, 6);
-
-                    //for (Ipp32s y = 0; y < height4; y += 16) {
-                    //    for (Ipp32s x = 0; x < width4; x += 16) {
-                    //        __m128i sum8_0, sum8_1, sum8_2, sum8_3;
-                    //        __m128i sum16_0, sum16_1, sum16_2, sum16_3;
-                    //        __m128i sum32;
-                    //        sum8_0 = LoadAndSum4(rs4, pitchRsCs4, x+0, 0);
-                    //        sum8_1 = LoadAndSum4(rs4, pitchRsCs4, x+8, 0);
-                    //        sum8_2 = LoadAndSum4(rs4, pitchRsCs4, x+0, 2);
-                    //        sum8_3 = LoadAndSum4(rs4, pitchRsCs4, x+8, 2);
-                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+0*pitchRsCs8+0), _mm_srli_epi32(sum8_0, 2));
-                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+0*pitchRsCs8+4), _mm_srli_epi32(sum8_1, 2));
-                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+1*pitchRsCs8+0), _mm_srli_epi32(sum8_2, 2));
-                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+1*pitchRsCs8+4), _mm_srli_epi32(sum8_3, 2));
-
-                    //        sum16_0 = _mm_hadd_epi32(_mm_add_epi32(sum8_0, sum8_1), _mm_add_epi32(sum8_2, sum8_3));
-                    //        _mm_storeu_si128((__m128i *)(rs16+0*pitchRsCs16+(x>>2)), _mm_srli_epi32(sum16_0, 4));
-
-                    //        sum8_0 = LoadAndSum4(rs4, pitchRsCs4, x+0, 4);
-                    //        sum8_1 = LoadAndSum4(rs4, pitchRsCs4, x+8, 4);
-                    //        sum8_2 = LoadAndSum4(rs4, pitchRsCs4, x+0, 6);
-                    //        sum8_3 = LoadAndSum4(rs4, pitchRsCs4, x+8, 6);
-                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+2*pitchRsCs8+0), _mm_srli_epi32(sum8_0, 2));
-                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+2*pitchRsCs8+4), _mm_srli_epi32(sum8_1, 2));
-                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+3*pitchRsCs8+0), _mm_srli_epi32(sum8_2, 2));
-                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+3*pitchRsCs8+4), _mm_srli_epi32(sum8_3, 2));
-
-                    //        sum16_1 = _mm_hadd_epi32(_mm_add_epi32(sum8_0, sum8_1), _mm_add_epi32(sum8_2, sum8_3));
-                    //        _mm_storeu_si128((__m128i *)(rs16+1*pitchRsCs16+(x>>2)), _mm_srli_epi32(sum16_1, 4));
-
-                    //        sum8_0 = LoadAndSum4(rs4, pitchRsCs4, x+0, 8);
-                    //        sum8_1 = LoadAndSum4(rs4, pitchRsCs4, x+8, 8);
-                    //        sum8_2 = LoadAndSum4(rs4, pitchRsCs4, x+0, 10);
-                    //        sum8_3 = LoadAndSum4(rs4, pitchRsCs4, x+8, 10);
-                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+4*pitchRsCs8+0), _mm_srli_epi32(sum8_0, 2));
-                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+4*pitchRsCs8+4), _mm_srli_epi32(sum8_1, 2));
-                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+5*pitchRsCs8+0), _mm_srli_epi32(sum8_2, 2));
-                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+5*pitchRsCs8+4), _mm_srli_epi32(sum8_3, 2));
-
-                    //        sum16_2 = _mm_hadd_epi32(_mm_add_epi32(sum8_0, sum8_1), _mm_add_epi32(sum8_2, sum8_3));
-                    //        _mm_storeu_si128((__m128i *)(rs16+2*pitchRsCs16+(x>>2)), _mm_srli_epi32(sum16_2, 4));
-
-                    //        sum8_0 = LoadAndSum4(rs4, pitchRsCs4, x+0, 12);
-                    //        sum8_1 = LoadAndSum4(rs4, pitchRsCs4, x+8, 12);
-                    //        sum8_2 = LoadAndSum4(rs4, pitchRsCs4, x+0, 14);
-                    //        sum8_3 = LoadAndSum4(rs4, pitchRsCs4, x+8, 14);
-                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+6*pitchRsCs8+0), _mm_srli_epi32(sum8_0, 2));
-                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+6*pitchRsCs8+4), _mm_srli_epi32(sum8_1, 2));
-                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+7*pitchRsCs8+0), _mm_srli_epi32(sum8_2, 2));
-                    //        _mm_storeu_si128((__m128i *)(rs8+(x>>1)+7*pitchRsCs8+4), _mm_srli_epi32(sum8_3, 2));
-
-                    //        sum16_3 = _mm_hadd_epi32(_mm_add_epi32(sum8_0, sum8_1), _mm_add_epi32(sum8_2, sum8_3));
-                    //        _mm_storeu_si128((__m128i *)(rs16+3*pitchRsCs16+(x>>2)), _mm_srli_epi32(sum16_3, 4));
-
-                    //        sum32 = _mm_hadd_epi32(_mm_add_epi32(sum16_0, sum16_1), _mm_add_epi32(sum16_2, sum16_3));
-
-                    //        Ipp32s sum64 = (_mm_extract_epi32(sum32,0) + _mm_extract_epi32(sum32,1) + _mm_extract_epi32(sum32,2) + _mm_extract_epi32(sum32,3)) >> 8;
-                    //        *(Ipp64u *)(rs64+(x>>4)) = sum64;
-
-                    //        sum32 = _mm_srli_epi32(sum16_3, 6);
-                    //        *(Ipp64u *)(rs32+0*pitchRsCs16+(x>>3)) = _mm_extract_epi64(sum32, 0);
-                    //        *(Ipp64u *)(rs32+1*pitchRsCs16+(x>>3)) = _mm_extract_epi64(sum32, 1);
-
-                    //    }
-                    //    rs4  += 16*pitchRsCs4;
-                    //    rs8  += 8*pitchRsCs8;
-                    //    rs16 += 4*pitchRsCs16;
-                    //    rs32 += 2*pitchRsCs32;
-                    //    rs64 += 1*pitchRsCs64;
-                    //}
-
                 }
             }
             // syncpoint only (like accumulation & refCounter--), no real hard working here!!!

@@ -242,6 +242,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(IntraNumCand2_5,          OPT_UINT_16,    "1-35: 32x32 stage2"),
         HANDLE_HEVC_OPTION(IntraNumCand2_6,          OPT_UINT_16,    "1-35: 64x14 stage2"),
         HANDLE_HEVC_OPTION(WPP,                      OPT_TRI_STATE,  "Wavefront Parallel Processing"),
+        HANDLE_HEVC_OPTION(Log2MinCuQpDeltaSize,     OPT_UINT_16,    "6-64x64; 5-32x32; 4-16x16 3-8x8"),
         HANDLE_HEVC_OPTION(PartModes,                OPT_UINT_16,    "0-default; 1-square only; 2-no AMP; 3-all"),
         HANDLE_HEVC_OPTION(CmIntraThreshold,         OPT_UINT_16,    "threshold = CmIntraThreshold / 256.0"),
         HANDLE_HEVC_OPTION(TUSplitIntra,             OPT_UINT_16,    "0-default; 1-always; 2-never; 3-for Intra frames only"),

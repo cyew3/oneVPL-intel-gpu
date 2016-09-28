@@ -74,9 +74,9 @@ namespace H265Enc {
         mfxStatus Init(const mfxVideoParam &par);
         mfxStatus Reset(const mfxVideoParam &par);
 
-        const Ipp8u *GetVps(Ipp16u &size) const { size = m_vpsBufSize; return m_vpsBuf; }
-        const Ipp8u *GetSps(Ipp16u &size) const { size = m_spsBufSize; return m_spsBuf; }
-        const Ipp8u *GetPps(Ipp16u &size) const { size = m_ppsBufSize; return m_ppsBuf; }
+        const Ipp8u *GetVps(Ipp16u &size) const { assert(m_vpsBufSize<=0xffff); size = (Ipp16u)m_vpsBufSize; return m_vpsBuf; }
+        const Ipp8u *GetSps(Ipp16u &size) const { assert(m_spsBufSize<=0xffff); size = (Ipp16u)m_spsBufSize; return m_spsBuf; }
+        const Ipp8u *GetPps(Ipp16u &size) const { assert(m_ppsBufSize<=0xffff); size = (Ipp16u)m_ppsBufSize; return m_ppsBuf; }
 
         void GetEncodeStat(mfxEncodeStat &stat);
 
@@ -111,9 +111,9 @@ namespace H265Enc {
         Ipp8u m_vpsBuf[1024];
         Ipp8u m_spsBuf[1024];
         Ipp8u m_ppsBuf[1024];
-        Ipp16u m_vpsBufSize;
-        Ipp16u m_spsBufSize;
-        Ipp16u m_ppsBufSize;
+        Ipp32u m_vpsBufSize;
+        Ipp32u m_spsBufSize;
+        Ipp32u m_ppsBufSize;
 
         // input frame control counters
         Ipp32s m_profileIndex;

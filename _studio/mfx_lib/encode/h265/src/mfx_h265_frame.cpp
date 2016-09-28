@@ -287,7 +287,11 @@ namespace H265Enc {
     void Frame::Create(H265VideoParam *par)
     {
         Ipp32s numCtbs = par->PicWidthInCtbs * par->PicHeightInCtbs;
-        m_lcuQps.resize(numCtbs);
+        m_lcuQps[0].resize(numCtbs);
+        m_lcuQps[1].resize(numCtbs<<2);
+        m_lcuQps[2].resize(numCtbs<<4);
+        m_lcuQps[3].resize(numCtbs<<6);
+        m_lastCodedQp.resize(numCtbs);
         m_bitDepthLuma =  par->bitDepthLuma;
         m_bitDepthChroma = par->bitDepthChroma;
         m_bdLumaFlag = par->bitDepthLuma > 8;

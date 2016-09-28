@@ -345,102 +345,6 @@ Ipp32u H265CU<PixType>::GetCtxSplitFlag(Ipp32s absPartIdx, Ipp32u depth)
 }
 
 template <typename PixType>
-Ipp8s H265CU<PixType>::GetRefQp( Ipp32u currAbsIdxInLcu )
-{
-    if (m_par->MaxCuDQPDepth == 0) { // optimized special case
-        if (m_par->WPPFlag) { // WPP
-            if (m_ctbPelX > 0)
-                return m_ctbData[(m_ctbAddr << m_par->Log2NumPartInCU) - 1].qp;
-            else
-                return m_sliceQpY;
-        } else if (m_par->NumTiles == 1) { // no WPP
-            if (m_ctbAddr > (Ipp32u)m_cslice->slice_segment_address)
-                return m_ctbData[(m_ctbAddr << m_par->Log2NumPartInCU) - 1].qp;
-            else
-                return m_sliceQpY;
-        } else { // multi-tile
-            Ipp32s tileRow = m_par->m_tile_row_ids[m_ctbAddr];
-            Ipp32s tileCol = m_par->m_tile_col_ids[m_ctbAddr];
-            Ipp32u regionCtbRowFirst = m_par->tileRowStart[tileRow];
-            Ipp32u regionCtbColFirst = m_par->tileColStart[tileCol];
-
-            if ((m_ctbPelX >> m_par->Log2MaxCUSize) > regionCtbColFirst)
-                return m_ctbData[(m_ctbAddr << m_par->Log2NumPartInCU) - 1].qp;
-            else if ((m_ctbPelY >> m_par->Log2MaxCUSize) > regionCtbRowFirst)
-                return m_ctbData[((m_ctbAddr + m_par->tileColWidth[tileCol] - m_par->PicWidthInCtbs) << m_par->Log2NumPartInCU) - 1].qp;
-            else
-                return m_sliceQpY;
-        }
-    } else {
-        Ipp32u        lPartIdx, aPartIdx;
-        H265CUData* cULeft  = GetQpMinCuLeft ( lPartIdx, m_absIdxInLcu + currAbsIdxInLcu );
-        H265CUData* cUAbove = GetQpMinCuAbove( aPartIdx, m_absIdxInLcu + currAbsIdxInLcu );
-        return ((
-            (cULeft  ? cULeft[lPartIdx].qp : GetLastCodedQP(this, currAbsIdxInLcu)) +
-            (cUAbove ? cUAbove[aPartIdx].qp: GetLastCodedQP(this, currAbsIdxInLcu)) + 1) >> 1);
-    }
-}
-
-template <typename PixType>
-void H265CU<PixType>::SetQpSubCUs(int qp, int absPartIdx, int depth, bool &foundNonZeroCbf)
-{
-
-    if (!foundNonZeroCbf)
-    {
-        if(m_data[absPartIdx].depth > depth)
-        {
-            Ipp32u curPartNumb = m_par->NumPartInCU >> (depth << 1);
-            Ipp32u curPartNumQ = curPartNumb >> 2;
-            for (Ipp32u partUnitIdx = 0; partUnitIdx < 4; partUnitIdx++)
-            {
-                SetQpSubCUs(qp, absPartIdx + partUnitIdx * curPartNumQ, depth + 1, foundNonZeroCbf);
-            }
-        }
-        else
-        {
-            Ipp32u numParts = m_par->NumPartInCU >> (depth << 1);
-            if(m_data[absPartIdx].cbf[0] 
-            || m_data[absPartIdx].cbf[1] || m_data[absPartIdx].cbf[2]
-            || (m_par->chroma422 && (m_data[absPartIdx+(numParts>>1)].cbf[1] || m_data[absPartIdx+(numParts>>1)].cbf[2]))
-                )
-            {
-                foundNonZeroCbf = true;
-            }
-            else
-            {
-                SetQpSubParts(qp, absPartIdx, depth);
-            }
-        }
-    }
-}
-
-template <typename PixType>
-void H265CU<PixType>::SetQpSubParts(int qp, int absPartIdx, int depth)
-{
-    int partNum = m_par->NumPartInCU >> (depth << 1);
-
-    for (int idx = absPartIdx; idx < absPartIdx + partNum; idx++)
-    {
-        m_data[idx].qp = qp;
-    }
-}
-
-
-template <typename PixType>
-void H265CU<PixType>::CheckDeltaQp(void)
-{
-    int depth = m_data[0].depth;
-    
-    if( m_par->UseDQP && (m_par->MaxCUSize >> depth) >= m_par->MinCuDQPSize )
-    {
-        if( ! (m_data[0].cbf[0] & 0x1) && !(m_data[0].cbf[1] & 0x1) && !(m_data[0].cbf[2] & 0x1) )
-        {
-            SetQpSubParts(GetRefQp(0), 0, depth); // set QP to default QP
-        }
-    }
-}
-
-template <typename PixType>
 Ipp32u H265CU<PixType>::GetCoefScanIdx(Ipp32s absPartIdx, Ipp32u log2Width, Ipp32s isLuma, Ipp32s isIntra) const
 {
     Ipp32s ctxIdx;
@@ -978,122 +882,38 @@ H265CUData* H265CU<PixType>::GetQpMinCuAbove( Ipp32u& aPartUnitIdx, Ipp32u currA
     return m_data;
 }
 
-//-----------------------------------------------------------------------------
-// aya: temporal solution to provide GetLastValidPartIdx() and GetLastCodedQP()
-//-----------------------------------------------------------------------------
-class H265CUFake
-{
-public:
-    H265CUFake(
-        Ipp32u ctbAddr,
-        H265VideoParam*  par,
-        Ipp8s       sliceQpY,
-        H265CUData* data,
-        H265CUData* ctbData,
-        Ipp32u absIdxInLcu)
-    :m_ctbAddr(ctbAddr)
-    ,m_par(par)
-    ,m_sliceQpY(sliceQpY)
-    ,m_data(data)
-    ,m_ctbData(ctbData)
-    ,m_absIdxInLcu(absIdxInLcu)
-    {};
 
-    ~H265CUFake(){};
-
-    Ipp32u m_ctbAddr;
-    H265VideoParam*  m_par;
-    Ipp8s m_sliceQpY;
-    H265CUData* m_data;
-    H265CUData* m_ctbData;
-    Ipp32u m_absIdxInLcu;
-
-private:
-    // copy, etc
-};
-//---------------------------------------------------------
-
-template <class H265CuBase>
-Ipp32s GetLastValidPartIdx(H265CuBase* cu, Ipp32s iAbsPartIdx)
-{
-    Ipp32s iLastValidPartIdx = iAbsPartIdx - 1;
-
-    // kla
-    // MODE_NONE is NOWHERE set! Does it work as expected?
-
-    //while (iLastValidPartIdx >= 0 && cu->m_data[iLastValidPartIdx].predMode == MODE_NONE)
-    //{
-    //    int depth = cu->m_data[iLastValidPartIdx].depth;
-    //    //iLastValidPartIdx--;
-    //    iLastValidPartIdx -= cu->m_par->NumPartInCU >> (depth << 1);
-    //}
-
-    return iLastValidPartIdx;
-}
-
-template <class H265CuBase>
-Ipp8s GetLastCodedQP(H265CuBase* cu, Ipp32s absPartIdx )
+template <class PixType>
+Ipp8s GetLastCodedQP(const H265CU<PixType>* cu, Ipp32s absPartIdx)
 {
     Ipp32u uiQUPartIdxMask = ~((1 << ((cu->m_par->MaxCUDepth - cu->m_par->MaxCuDQPDepth) << 1)) - 1);
-    Ipp32s iLastValidPartIdx = GetLastValidPartIdx(cu, absPartIdx & uiQUPartIdxMask);
+    Ipp32s iLastValidPartIdx = (absPartIdx & uiQUPartIdxMask) - 1;
 
-    if (iLastValidPartIdx >= 0)
-    {
+    if (iLastValidPartIdx >= 0) {
         return cu->m_data[iLastValidPartIdx].qp;
-    }
-    else  /* assume TilesOrEntropyCodingSyncIdc == 0 */
-    {
-        if( cu->m_absIdxInLcu > 0 ) {
-            //H265CU tmpCtb;
-            //memset(&tmpCtb, 0, sizeof(H265CU));
-            //tmpCtb.m_ctbAddr = m_ctbAddr;
-            //tmpCtb.m_par = m_par;
-            //tmpCtb.m_data = m_ctbData + (m_ctbAddr << m_par->Log2NumPartInCU);
-            ////return GetLastCodedQP(m_absIdxInLcu );
-            //return tmpCtb.GetLastCodedQP(m_absIdxInLcu);
-
+    } else {
+        if (cu->m_absIdxInLcu > 0) {
             VM_ASSERT(!"NOT IMPLEMENTED");
             return 0;
         } else if (cu->m_ctbAddr > 0 && !(cu->m_par->WPPFlag && cu->m_ctbAddr % cu->m_par->PicWidthInCtbs == 0)) {
             
-            int curAddr = cu->m_ctbAddr;
-
+            Ipp32s curAddr = cu->m_ctbAddr;
             // slice segmentation
             Ipp8u sameSlice = cu->m_par->m_slice_ids[curAddr] == cu->m_par->m_slice_ids[curAddr-1];
-            if(cu->m_par->NumTiles == 1 && sameSlice) {
-               H265CUFake tmpCtb(
-                    cu->m_ctbAddr-1, 
-                    cu->m_par,
-                    cu->m_sliceQpY,
-                    cu->m_ctbData + ((cu->m_ctbAddr-1) << cu->m_par->Log2NumPartInCU),
-                    cu->m_ctbData,
-                    cu->m_absIdxInLcu);
-
-                Ipp8s qp = GetLastCodedQP(&tmpCtb, cu->m_par->NumPartInCU);
-                return qp;
-            }
+            if (cu->m_par->NumTiles == 1 && sameSlice)
+                return cu->m_currFrame->m_lastCodedQp[cu->m_ctbAddr - 1];
 
             // tile segmentation
             else if (cu->m_par->NumTiles > 1) {
                 Ipp32u tile_id = cu->m_par->m_tile_ids[curAddr];
                 if (curAddr != cu->m_par->m_tiles[tile_id].first_ctb_addr) {
-                    int prevCtbAddr = curAddr - 1;
+                    Ipp32s prevCtbAddr = curAddr - 1;
                     Ipp32s tile_col = cu->m_par->m_tile_col_ids[curAddr];
-                    int regionCtbColFirst = cu->m_par->tileColStart[tile_col];
-                    int currCtbCol = (curAddr % cu->m_par->PicWidthInCtbs);
-                    if (regionCtbColFirst == currCtbCol) {
+                    Ipp32s regionCtbColFirst = cu->m_par->tileColStart[tile_col];
+                    Ipp32s currCtbCol = (curAddr % cu->m_par->PicWidthInCtbs);
+                    if (regionCtbColFirst == currCtbCol)
                         prevCtbAddr = curAddr - cu->m_par->PicWidthInCtbs + cu->m_par->tileColWidth[tile_col] - 1;
-                    }
-                    H265CUFake tmpCtb(
-                        prevCtbAddr, 
-                        cu->m_par,
-                        cu->m_sliceQpY,
-                        cu->m_ctbData + ((prevCtbAddr) << cu->m_par->Log2NumPartInCU),
-                        cu->m_ctbData,
-                        cu->m_absIdxInLcu);
-
-                    Ipp8s qp = GetLastCodedQP(&tmpCtb, cu->m_par->NumPartInCU);
-                    return qp;
+                    return cu->m_currFrame->m_lastCodedQp[prevCtbAddr];
                 }
             }
         }
@@ -1101,39 +921,82 @@ Ipp8s GetLastCodedQP(H265CuBase* cu, Ipp32s absPartIdx )
 
     return cu->m_sliceQpY;
 }
+template Ipp8s GetLastCodedQP<Ipp8u>(const H265CU<Ipp8u>* cu, Ipp32s absPartIdx);
+template Ipp8s GetLastCodedQP<Ipp16u>(const H265CU<Ipp16u>* cu, Ipp32s absPartIdx);
 
 
 template <typename PixType>
-void H265CU<PixType>::UpdateCuQp(void)
+Ipp8s H265CU<PixType>::GetRefQp( Ipp32u currAbsIdxInLcu )
 {
-    int depth = 0;
-    if( (m_par->MaxCUSize >> depth) == m_par->MinCuDQPSize && m_par->UseDQP )
-    {
-        //printf("\n updateDQP \n");fflush(stderr);
+    if (m_par->MaxCuDQPDepth == 0) { // optimized special case
+        if (m_par->WPPFlag) { // WPP
+            if (m_ctbPelX > 0)
+                return m_ctbData[(m_ctbAddr << m_par->Log2NumPartInCU) - 1].qp;
+            else
+                return m_sliceQpY;
+        } else if (m_par->NumTiles == 1) { // no WPP
+            if (m_ctbAddr > (Ipp32u)m_cslice->slice_segment_address)
+                return m_ctbData[(m_ctbAddr << m_par->Log2NumPartInCU) - 1].qp;
+            else
+                return m_sliceQpY;
+        } else { // multi-tile
+            Ipp32s tileRow = m_par->m_tile_row_ids[m_ctbAddr];
+            Ipp32s tileCol = m_par->m_tile_col_ids[m_ctbAddr];
+            Ipp32u regionCtbRowFirst = m_par->tileRowStart[tileRow];
+            Ipp32u regionCtbColFirst = m_par->tileColStart[tileCol];
 
-        bool hasResidual = false;
-        for (Ipp32u blkIdx = 0; blkIdx < m_numPartition; blkIdx++)
-        {
-            if(m_data[blkIdx].cbf[0] || m_data[blkIdx].cbf[1] || m_data[blkIdx].cbf[2])
-            {
-                hasResidual = true;
-                break;
+            if ((m_ctbPelX >> m_par->Log2MaxCUSize) > regionCtbColFirst)
+                return m_ctbData[(m_ctbAddr << m_par->Log2NumPartInCU) - 1].qp;
+            else if ((m_ctbPelY >> m_par->Log2MaxCUSize) > regionCtbRowFirst)
+                return m_ctbData[((m_ctbAddr + m_par->tileColWidth[tileCol] - m_par->PicWidthInCtbs) << m_par->Log2NumPartInCU) - 1].qp;
+            else
+                return m_sliceQpY;
+        }
+    } else {
+        Ipp32u lPartIdx, aPartIdx;
+        H265CUData* cULeft  = GetQpMinCuLeft (lPartIdx, m_absIdxInLcu + currAbsIdxInLcu);
+        H265CUData* cUAbove = GetQpMinCuAbove(aPartIdx, m_absIdxInLcu + currAbsIdxInLcu);
+        return ((
+            (cULeft  ? cULeft[lPartIdx].qp : GetLastCodedQP(this, currAbsIdxInLcu)) +
+            (cUAbove ? cUAbove[aPartIdx].qp: GetLastCodedQP(this, currAbsIdxInLcu)) + 1) >> 1);
+    }
+}
+
+template <typename PixType>
+Ipp8s H265CU<PixType>::UpdateCuQp(Ipp32s absPartIdx, Ipp32s depth, Ipp8s lastCodedQp)
+{
+    const Ipp32s minDqpBlockNumParts = 1 << ((4 - m_par->MaxCuDQPDepth) << 1);
+    const Ipp32s dqpBlockMask = minDqpBlockNumParts - 1;
+    Ipp32s isCuQpDeltaCoded = 0;
+    Ipp32s i = 0;
+    while (i < (Ipp32s)m_numPartition) {
+        Ipp32s depth = m_data[i].depth;
+        Ipp32s numParts = m_numPartition >> (depth << 1);
+        if (m_data[i].predMode == MODE_OUT_OF_PIC) {
+            FillSubPartCuQp_(m_data + i, numParts, m_data[i-1].qp);
+        } else {
+            Ipp32s idx422 = m_par->chroma422 ? (numParts >> 1) : 0;
+            Ipp32s zeroCbf = IsZeroCbf(m_data + i, idx422);
+            if (zeroCbf && !isCuQpDeltaCoded) {
+                Ipp32s rasterIdx = h265_scan_z2r4[i & ~dqpBlockMask];
+                Ipp8s leftQp = lastCodedQp;
+                Ipp8s aboveQp = lastCodedQp;
+                if (rasterIdx & 0x0f) leftQp  = m_data[h265_scan_r2z4[rasterIdx-1 ]].qp;
+                if (rasterIdx & 0xf0) aboveQp = m_data[h265_scan_r2z4[rasterIdx-16]].qp;
+                Ipp8s refQp = (leftQp + aboveQp + 1) >> 1;
+                FillSubPartCuQp_(m_data + i, numParts, refQp);
+            } else {
+                isCuQpDeltaCoded = 1;
+                lastCodedQp = m_data[i].qp;
             }
         }
-
-        Ipp32u targetPartIdx;
-        targetPartIdx = 0;
-        if (hasResidual)
-        {
-            bool foundNonZeroCbf = false;
-            SetQpSubCUs(GetRefQp(targetPartIdx), 0, depth, foundNonZeroCbf);
-            VM_ASSERT(foundNonZeroCbf);
-        }
-        else
-        {
-            SetQpSubParts(GetRefQp(targetPartIdx), 0, depth); // set QP to default QP
+        i += numParts;
+        if ((i & dqpBlockMask) == 0) {
+            isCuQpDeltaCoded = 0;
+            lastCodedQp = m_data[i-1].qp;
         }
     }
+    return lastCodedQp;
 }
 
 //---------------------------------------------------------
@@ -1153,7 +1016,6 @@ void H265CU<PixType>::InitCu(
 {
     m_par = _par;
     m_sliceQpY = frame->m_sliceQpY;
-    m_lcuQps = (Ipp8s*)&frame->m_lcuQps[0];
 
     m_cslice = _cslice;
     m_costStat = _costStat;
@@ -1166,6 +1028,11 @@ void H265CU<PixType>::InitCu(
     m_ctbPelY = ctbRow * m_par->MaxCUSize;
     m_absIdxInLcu = 0;
     m_numPartition = m_par->NumPartInCU;
+
+    m_lcuQps[0] = frame->m_lcuQps[0].data();// + m_ctbAddr;
+    m_lcuQps[1] = frame->m_lcuQps[1].data();// + (m_ctbAddr<<2);
+    m_lcuQps[2] = frame->m_lcuQps[2].data();// + (m_ctbAddr<<4);
+    m_lcuQps[3] = frame->m_lcuQps[3].data();// + (m_ctbAddr<<6);
 
     m_currFrame = (Frame*)frame;
 
@@ -1212,11 +1079,7 @@ void H265CU<PixType>::InitCu(
         }
 
         // zero initialize
-        memset(m_data, 0, sizeof(*m_data));
-        m_data->qp = m_lcuQps[m_ctbAddr];
-        m_lumaQp = m_lcuQps[m_ctbAddr] + (m_par->bitDepthLuma - 8) * 6;
-        m_chromaQp = GetChromaQP(m_lcuQps[m_ctbAddr], 0, m_par->chromaFormatIdc, m_par->bitDepthChroma);
-        PropagateSubPart(m_data, m_par->NumPartInCU);
+        memset(m_data, 0, sizeof(*m_data) * m_par->NumPartInCU);
     }
 
     // Setting neighbor CU
@@ -1788,7 +1651,7 @@ void H265CU<PixType>::GetAdaptiveMinDepth(Ipp32s absPartIdx, Ipp32s depth)
     RefPicList *refLists = m_currFrame->m_refPicList;
     Ipp32s cuDataColOffset = (m_ctbAddr << m_par->Log2NumPartInCU);
 
-    Ipp8s qpCur = m_lcuQps[m_ctbAddr];
+    Ipp8s qpCur = m_lcuQps[0][m_ctbAddr];
     Ipp8s qpPrev = qpCur;
     Ipp32s xLimit = (m_par->Width  - m_ctbPelX) >> LOG2_MIN_TU_SIZE;
     Ipp32s yLimit = (m_par->Height - m_ctbPelY) >> LOG2_MIN_TU_SIZE;
@@ -1876,7 +1739,7 @@ void H265CU<PixType>::GetProjectedDepth(Ipp32s absPartIdx, Ipp32s depth, Ipp8u s
         Ipp32s minDepth1 = MAX_TOTAL_DEPTH;
         Ipp32s foundDepth0 = 0;
         Ipp32s foundDepth1 = 0;
-        Ipp8s qpCur = m_lcuQps[m_ctbAddr];
+        Ipp8s qpCur = dataBestInter->qp;
         Ipp8s qp0 = 52;
         Ipp8s qp1 = 52;
         RefPicList *refPicList = m_currFrame->m_refPicList;
@@ -1939,7 +1802,7 @@ void H265CU<PixType>::GetProjectedDepth(Ipp32s absPartIdx, Ipp32s depth, Ipp8u s
         Ipp32s maxDepth1 = 0;
         Ipp32s foundDepth0 = 0;
         Ipp32s foundDepth1 = 0;
-        Ipp8s qpCur = m_lcuQps[m_ctbAddr];
+        Ipp8s qpCur = dataBestInter->qp;
         Ipp8s qp0 = 0;
         Ipp8s qp1 = 0;
         RefPicList *refPicList = m_currFrame->m_refPicList;
@@ -1986,31 +1849,6 @@ void H265CU<PixType>::GetProjectedDepth(Ipp32s absPartIdx, Ipp32s depth, Ipp8u s
     }
 }
 
-template <typename PixType>
-void H265CU<PixType>::FillSubPart(Ipp32s absPartIdx, Ipp8u depthCu, Ipp8u trDepth,
-                         Ipp8u partSize, Ipp8u lumaDir, Ipp8u qp)
-{
-    Ipp8u size = (Ipp8u)(m_par->MaxCUSize >> depthCu);
-    Ipp32s depth = depthCu + trDepth;
-    Ipp32u numParts = ( m_par->NumPartInCU >> (depth<<1) );
-    Ipp32u i;
-
-// uncomment to hide false uninitialized memory read warning
-//    memset(data + absPartIdx, 0, num_parts * sizeof(m_data[0]));
-    for (i = absPartIdx; i < absPartIdx + numParts; i++) {
-        m_data[i].depth = depthCu;
-        m_data[i].size = size;
-        m_data[i].partSize = partSize;
-        m_data[i].predMode = MODE_INTRA;
-        m_data[i].qp = qp;
-
-        m_data[i].trIdx = trDepth;
-        m_data[i].intraLumaDir = lumaDir;
-        m_data[i].intraChromaDir = INTRA_DM_CHROMA;
-        m_data[i].cbf[0] = m_data[i].cbf[1] = m_data[i].cbf[2] = 0;
-        m_data[i].flags.skippedFlag = 0;
-    }
-}
 
 template <typename PixType>
 void H265CU<PixType>::FillSubPartIntraLumaDir(Ipp32s absPartIdx, Ipp8u depthCu, Ipp8u trDepth, Ipp8u lumaDir)
@@ -2021,12 +1859,13 @@ void H265CU<PixType>::FillSubPartIntraLumaDir(Ipp32s absPartIdx, Ipp8u depthCu, 
 }
 
 
-void FillSubPartIntraCuModes_(H265CUData *data, Ipp32s numParts, Ipp8u cuWidth, Ipp8u cuDepth, Ipp8u partMode)
+void FillSubPartIntraCuModes_(H265CUData *data, Ipp32s numParts, Ipp8u cuWidth, Ipp8u cuDepth, Ipp8u partMode, Ipp8s qp)
 {
     data->depth = cuDepth;
     data->size = cuWidth;
     data->partSize = partMode;
     data->predMode = MODE_INTRA;
+    data->qp = qp;
     data->cbf[0] = 0;
     data->cbf[1] = 0;
     data->cbf[2] = 0;
@@ -2243,7 +2082,7 @@ Ipp32s H265CU<PixType>::GetSpatioTemporalComplexity(Ipp32s absPartIdx, Ipp32s de
     else                         return 4; // VeryHigh
 }
 template <typename PixType>
-Ipp8u H265CU<PixType>::EncInterLumaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width)
+Ipp8u H265CU<PixType>::EncInterLumaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, Ipp8s qp)
 {
     Ipp32s PURasterIdx = h265_scan_z2r4[absPartIdx];
     Ipp32s PUStartRow = PURasterIdx >> 4;
@@ -2251,20 +2090,20 @@ Ipp8u H265CU<PixType>::EncInterLumaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offset
     Ipp16s *resid = m_interResidY + ((PUStartRow * MAX_CU_SIZE + PUStartColumn) << LOG2_MIN_TU_SIZE);
 
     TransformFwd(resid, MAX_CU_SIZE, m_residualsY+offset, width, m_par->bitDepthLuma, 0);
-    Ipp8u cbf = QuantFwdTuBase(m_residualsY+offset, m_coeffWorkY+offset, absPartIdx, width, 1);
+    Ipp8u cbf = QuantFwdTuBase(m_residualsY+offset, m_coeffWorkY+offset, absPartIdx, qp, width, 1);
     return cbf;
 }
 
 template <typename PixType>
-void H265CU<PixType>::EncInterChromaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, Ipp8u *nz)
+void H265CU<PixType>::EncInterChromaTuGetBaseCBF(Ipp32u absPartIdx, Ipp32s offset, Ipp32s width, Ipp8u *nz, Ipp8s qp)
 {
     Ipp32s offsetCh = GetChromaOffset1(m_par, absPartIdx, MAX_CU_SIZE >> m_par->chromaShiftW);
 
     TransformFwd(m_interResidU+offsetCh, MAX_CU_SIZE>>m_par->chromaShiftW, m_residualsU+offset, width, m_par->bitDepthChroma, 0);
-    nz[0] = QuantFwdTuBase(m_residualsU+offset, m_coeffWorkU+offset, absPartIdx, width, 0);
+    nz[0] = QuantFwdTuBase(m_residualsU+offset, m_coeffWorkU+offset, absPartIdx, qp, width, 0);
 
     TransformFwd(m_interResidV+offsetCh, MAX_CU_SIZE>>m_par->chromaShiftW, m_residualsV+offset, width, m_par->bitDepthChroma, 0);
-    nz[1] = QuantFwdTuBase(m_residualsV+offset, m_coeffWorkV+offset, absPartIdx, width, 0);
+    nz[1] = QuantFwdTuBase(m_residualsV+offset, m_coeffWorkV+offset, absPartIdx, qp, width, 0);
 }
 template <typename PixType>
 bool H265CU<PixType>::TuMaxSplitInterHasNonZeroCoeff(Ipp32u absPartIdx, Ipp8u trIdxMax)
@@ -2278,8 +2117,10 @@ bool H265CU<PixType>::TuMaxSplitInterHasNonZeroCoeff(Ipp32u absPartIdx, Ipp8u tr
     Ipp8u nzt[3];
 
     //for (Ipp32u i = 0; i < numParts; i++) m_data[absPartIdx + i].trIdx = trIdxMax;
+    Ipp8s qp = m_data[absPartIdx].qp + 6 * (m_par->bitDepthLuma - 8);
+
     for (Ipp32u pos = 0; pos < numParts; ) {
-        nzt[0] = EncInterLumaTuGetBaseCBF(absPartIdx + pos, (absPartIdx + pos)*16, width);
+        nzt[0] = EncInterLumaTuGetBaseCBF(absPartIdx + pos, (absPartIdx + pos)*16, width, qp);
         nz[0] |= nzt[0];
         pos += num_tr_parts;
         if(nz[0]) return true;
@@ -2291,8 +2132,9 @@ bool H265CU<PixType>::TuMaxSplitInterHasNonZeroCoeff(Ipp32u absPartIdx, Ipp8u tr
             num_tr_parts <<= 2;
             width <<= 1;
         }
+        qp = GetChromaQP(m_data[absPartIdx].qp, 0, m_par->chromaFormatIdc, m_par->bitDepthChroma);
         for (Ipp32u pos = 0; pos < numParts; ) {
-            EncInterChromaTuGetBaseCBF(absPartIdx + pos, ((absPartIdx + pos)*16)>>2, width>>1, &nzt[1]);
+            EncInterChromaTuGetBaseCBF(absPartIdx + pos, ((absPartIdx + pos)*16)>>2, width>>1, &nzt[1], qp);
             nz[1] |= nzt[1];
             nz[2] |= nzt[2];
             pos += num_tr_parts;
@@ -2580,6 +2422,7 @@ bool H265CU<PixType>::JoinCU(Ipp32s absPartIdx, Ipp32s depth)
     }
     if(skipped) {
         Ipp8u interDir = m_data[absPartIdx].interDir;
+        Ipp8s qp = m_data[absPartIdx].qp;
         memset(m_data + absPartIdx, 0, sizeof(H265CUData));
         m_data[absPartIdx].mergeIdx  = candBest;
         m_data[absPartIdx].interDir  = interDir;
@@ -2588,8 +2431,8 @@ bool H265CU<PixType>::JoinCU(Ipp32s absPartIdx, Ipp32s depth)
         m_data[absPartIdx].mv[0]     = mv[0];
         m_data[absPartIdx].mv[1]     = mv[1];
         m_data[absPartIdx].depth = depth;
+        m_data[absPartIdx].qp= qp;
         m_data[absPartIdx].size = (Ipp8u)(m_par->MaxCUSize >> depth);
-        m_data[absPartIdx].qp = m_lcuQps[m_ctbAddr];
         m_data[absPartIdx].flags.mergeFlag = 1;
         m_data[absPartIdx].flags.skippedFlag = 1;
         PropagateSubPart(m_data + absPartIdx, numParts*4);
@@ -2607,14 +2450,25 @@ CostType H265CU<PixType>::ModeDecision(Ipp32s absPartIdx, Ipp8u depth)
             setdQPFlag(true);
         std::fill_n(m_costStored, sizeof(m_costStored) / sizeof(m_costStored[0]), COST_MAX);
         m_costCurr = 0.f;
-        // setup CU QP - moved on InitCu stage
-        //FillSubPartCuQp_(m_data, m_par->NumPartInCU, m_lcuQps[m_ctbAddr]);
     }
 
     Ipp32u left = m_ctbPelX + ((h265_scan_z2r4[absPartIdx] & 15) << LOG2_MIN_TU_SIZE);
     Ipp32u top  = m_ctbPelY + ((h265_scan_z2r4[absPartIdx] >> 4) << LOG2_MIN_TU_SIZE);
-    if (left >= m_par->Width || top >= m_par->Height)
+    
+    H265CUData *data = m_data + absPartIdx;
+    Ipp32s dqpDepth = IPP_MIN(m_par->MaxCuDQPDepth, depth);
+    Ipp32s qpBlkIdx = (top >> (6 - dqpDepth)) * (m_par->PicWidthInCtbs << dqpDepth) + (left >> (6 - dqpDepth));
+    Ipp8s qp = m_lcuQps[dqpDepth][qpBlkIdx];
+    m_data[absPartIdx].qp = qp; // will be propagated thru current CU by CheckIntra() and/or MeCU()
+
+    if (left >= m_par->Width || top >= m_par->Height) {
+        assert(absPartIdx > 0); // entire LCU can't be out of picture
+        m_data[absPartIdx].predMode = MODE_OUT_OF_PIC;
+        m_data[absPartIdx].depth = depth;
+        m_data[absPartIdx].qp = m_data[absPartIdx - 1].qp;
+        PropagateSubPart(m_data + absPartIdx, m_numPartition >> (depth << 1));
         return CostType(0); // CU is out of picture
+    }
 
     // get split mode
     Ipp8u splitMode = SPLIT_NONE;
@@ -2680,7 +2534,6 @@ CostType H265CU<PixType>::ModeDecision(Ipp32s absPartIdx, Ipp8u depth)
     // try non-split INTER and INTRA
     if (splitMode != SPLIT_MUST) {
         if (m_cslice->slice_type != I_SLICE) {
-
             MeCu(absPartIdx, depth); // Inter modes are first to check for P and B slices
 
             LoadBestInterPredAndResid(absPartIdx, depth);
@@ -2881,7 +2734,7 @@ CostType H265CU<PixType>::ModeDecision(Ipp32s absPartIdx, Ipp8u depth)
 
 #ifdef DUMP_COSTS_CU
         if (splitMode != SPLIT_MUST && m_par->fp_cu) {
-            printCostStat(m_par->fp_cu, m_lcuQps[m_ctbAddr], m_cslice->slice_type != I_SLICE, m_par->MaxCUSize >> depth , costBestNonSplit, m_costCurr - costInitial);
+            printCostStat(m_par->fp_cu, m_lcuQps[0][m_ctbAddr], m_cslice->slice_type != I_SLICE, m_par->MaxCUSize >> depth , costBestNonSplit, m_costCurr - costInitial);
         }
 #endif
 
@@ -2977,7 +2830,7 @@ void H265CU<PixType>::CalcCostLuma(Ipp32s absPartIdx, Ipp8u depth, Ipp8u trDepth
 
 #ifdef DUMP_COSTS_TU
         if (splitMode != SPLIT_MUST) {
-            printCostStat(fp_tu, m_par->m_lcuQps[m_ctbAddr], 0, width,costBest,costSplit);
+            printCostStat(fp_tu, m_par->m_lcuQps[0][m_ctbAddr], 0, width,costBest,costSplit);
         }
 #endif
         // keep the best decision
@@ -7249,13 +7102,7 @@ void H265CU<PixType>::CheckSkipCandFullRD(const H265MEInfo *meInfo, const MergeP
     const PixType *srcC = m_uvSrc + GetChromaOffset(m_par, absPartIdx, m_pitchRecChroma);
     const PixType *predY = m_interPredY + GetLumaOffset(m_par, absPartIdx, MAX_CU_SIZE);
     const PixType *predC = m_interPredC + GetChromaOffset(m_par, absPartIdx, MAX_CU_SIZE << m_par->chromaShiftWInv);
-    // setup CU data
-    memset(dataCu, 0, sizeof(H265CUData));
-    dataCu->depth = depth;
-    dataCu->size = cuWidth;
-    dataCu->qp = m_lcuQps[m_ctbAddr];
-    dataCu->flags.mergeFlag = 1;
-    dataCu->flags.skippedFlag = 1;
+
     CostType bestCost = COST_MAX;
     Ipp32s candBest = -1;
 
@@ -7598,12 +7445,12 @@ bool H265CU<PixType>::CheckMerge2Nx2N(Ipp32s absPartIdx, Ipp8u depth)
     meInfo.width = (m_par->MaxCUSize >> depth);
     meInfo.height = (m_par->MaxCUSize >> depth);
 
-    // FRAME THREADING PATCH 
     Ipp32u numParts = m_par->NumPartInCU >> (2 * depth);
     Ipp32s idx422 = (m_par->chroma422 && (m_par->AnalyseFlags & HEVC_COST_CHROMA)) ? (numParts >> 1) : 0;
     H265CUData *dataCu = m_data + absPartIdx;
     Ipp8u cuWidth = (Ipp8u)(m_par->MaxCUSize >> depth);
-    Ipp8u qp = dataCu->qp;
+    Ipp8s qp = dataCu->qp;
+
     memset(dataCu, 0, sizeof(H265CUData));
     dataCu->depth = depth;
     dataCu->size = cuWidth;
@@ -9313,10 +9160,11 @@ void H265CU<PixType>::EncAndRecLumaTu(Ipp32s absPartIdx, Ipp32s offset, Ipp32s w
             TransformFwd(resid, MAX_CU_SIZE, m_residualsY+offset, width, m_par->bitDepthLuma, isIntra);
         }
 
-        cbf = QuantFwdTu(m_residualsY+offset, m_coeffWorkY+offset, absPartIdx, width, 1, isIntra);
+        Ipp8s qp = dataTu->qp + 6 * (m_par->bitDepthLuma - 8);
+        cbf = QuantFwdTu(m_residualsY+offset, m_coeffWorkY+offset, absPartIdx, qp, width, 1, isIntra);
 
         if (cbf) {
-            QuantInvTu(m_coeffWorkY+offset, m_residualsY+offset, width, 1);
+            QuantInvTu(m_coeffWorkY+offset, m_residualsY+offset, qp, width, 1);
             if (is_pred_transposed)
                 TransformInv(rec, pitch_rec, m_residualsY+offset, width, rec, pitch_rec, 1, isIntra, m_par->bitDepthLuma);
             else
@@ -9428,17 +9276,19 @@ void H265CU<PixType>::EncAndRecChromaTu(Ipp32s absPartIdx, Ipp32s idx422, Ipp32s
             pitchResidV = MAX_CU_SIZE >> m_par->chromaShiftW;
         }
 
+        Ipp8s qp = GetChromaQP(data->qp, 0, m_par->chromaFormatIdc, m_par->bitDepthChroma);
+
         TransformFwd(residU, pitchResidU, m_residualsU+offset, width, m_par->bitDepthChroma, 0);
-        cbf[0] = QuantFwdTu(m_residualsU+offset, m_coeffWorkU+offset, absPartIdx, width, 0, isIntra);
+        cbf[0] = QuantFwdTu(m_residualsU+offset, m_coeffWorkU+offset, absPartIdx, qp, width, 0, isIntra);
         if (cbf[0]) {
-            QuantInvTu(m_coeffWorkU+offset, m_residualsU+offset, width, 0);
+            QuantInvTu(m_coeffWorkU+offset, m_residualsU+offset, qp, width, 0);
             TransformInv(NULL, 0, m_residualsU+offset, width, m_residualsU+offset, width, 0, 0, m_par->bitDepthChroma); 
         }
 
         TransformFwd(residV, pitchResidV, m_residualsV+offset, width, m_par->bitDepthChroma, 0);
-        cbf[1] = QuantFwdTu(m_residualsV+offset, m_coeffWorkV+offset, absPartIdx, width, 0, isIntra);
+        cbf[1] = QuantFwdTu(m_residualsV+offset, m_coeffWorkV+offset, absPartIdx, qp, width, 0, isIntra);
         if (cbf[1]) {
-            QuantInvTu(m_coeffWorkV+offset, m_residualsV+offset, width, 0);
+            QuantInvTu(m_coeffWorkV+offset, m_residualsV+offset, qp, width, 0);
             TransformInv(NULL, 0, m_residualsV+offset, width, m_residualsV+offset, width, 0, 0, m_par->bitDepthChroma); 
         }
     }
@@ -11128,7 +10978,7 @@ void H265CU<PixType>::SetCuLambda(Frame* frame)
 template <typename PixType>
 void H265CU<PixType>::SetCuLambdaRoi(Frame* frame)
 {
-    Ipp32s indx = frame->m_lcuQps[m_ctbAddr] + (frame->m_bitDepthLuma - 8)*6;
+    Ipp32s indx = frame->m_lcuQps[0][m_ctbAddr] + (frame->m_bitDepthLuma - 8)*6;
     H265Slice* curSlice = &(frame->m_roiSlice[indx]);
     m_rdLambda = curSlice->rd_lambda_slice;
     m_rdLambdaSqrt = curSlice->rd_lambda_sqrt_slice;

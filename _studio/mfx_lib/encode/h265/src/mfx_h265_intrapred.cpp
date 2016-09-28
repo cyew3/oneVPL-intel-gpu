@@ -1139,7 +1139,10 @@ void H265CU<PixType>::CheckIntraLuma(Ipp32s absPartIdx, Ipp32s depth)
     // estimate bitcost of cu split flag and part mode
     Ipp32s cuWidth = m_par->MaxCUSize >> depth;
     Ipp32s numParts = m_par->NumPartInCU >> (2 * depth);
-    FillSubPartIntraCuModes_(m_data + absPartIdx, numParts, cuWidth, depth, PART_SIZE_2Nx2N);
+
+    Ipp8s qp = m_data[absPartIdx].qp;
+
+    FillSubPartIntraCuModes_(m_data + absPartIdx, numParts, cuWidth, depth, PART_SIZE_2Nx2N, qp);
     m_costCurr += GetCuModesCost(m_data, absPartIdx, depth);
 
     IntraLumaMode modes[35];
