@@ -229,6 +229,7 @@
     <ClCompile Include="src\gmock\test_suites\avce_co2_use_rawref.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_cqp_hrd.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_default_ref_lists.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_dynamic_intra_refresh.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_dts.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_inter_mbs.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_lookahead_dynres.cpp" />

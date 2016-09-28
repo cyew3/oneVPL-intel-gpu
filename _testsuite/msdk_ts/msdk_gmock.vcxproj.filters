@@ -706,6 +706,9 @@
     <ClCompile Include="src\gmock\test_suites\vp9e_goppattern.cpp">
       <Filter>Source Files\test_suites\vp9e</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_dynamic_intra_refresh.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vp9d_decode_frame_async.cpp">
       <Filter>Source Files\test_suites\vp9d</Filter>
     </ClCompile>
