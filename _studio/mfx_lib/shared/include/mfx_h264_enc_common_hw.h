@@ -786,7 +786,8 @@ namespace MfxHwH264Encode
 
     void InheritDefaultValues(
         MfxVideoParam const & parInit,
-        MfxVideoParam &       parReset);
+        MfxVideoParam &       parReset,
+        mfxVideoParam const * parResetIn = 0);
 
     mfxStatus CheckPayloads(
         mfxPayload const * const * payload,

@@ -1251,7 +1251,8 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
 mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
     MfxVideoParam & newPar,
-    bool & isIdrRequired)
+    bool & isIdrRequired,
+    mfxVideoParam const * newParIn)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -1277,7 +1278,7 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
     //set NumSliceI/P/B to Numslice if not set by new parameters.
     ResetNumSliceIPB(newPar);
 
-    InheritDefaultValues(m_video, newPar);
+    InheritDefaultValues(m_video, newPar, newParIn);
 
     mfxStatus checkStatus = CheckVideoParam(newPar, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType);
     if (checkStatus == MFX_WRN_PARTIAL_ACCELERATION)
@@ -1324,8 +1325,7 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
 
     isIdrRequired = isSpsChanged
         || (tempLayerIdx != 0 && changeLyncLayers)
-        || newPar.mfx.GopPicSize != m_video.mfx.GopPicSize
-        || extOpt2New->IntRefType != extOpt2Old->IntRefType;
+        || newPar.mfx.GopPicSize != m_video.mfx.GopPicSize;
 
     if (isIdrRequired && IsOff(extResetOpt->StartNewSequence))
         return MFX_ERR_INVALID_VIDEO_PARAM; // Reset can't change parameters w/o IDR. Report an error
@@ -1404,7 +1404,7 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
 
     bool isIdrRequired = false;
 
-    mfxStatus checkStatus = ProcessAndCheckNewParameters(newPar, isIdrRequired);
+    mfxStatus checkStatus = ProcessAndCheckNewParameters(newPar, isIdrRequired, par);
     if (checkStatus < MFX_ERR_NONE)
         return checkStatus;
 
@@ -1499,7 +1499,7 @@ mfxStatus ImplementationAvc::Reset(mfxVideoParam *par)
             m_frameOrderStartLyncStructure = m_frameOrder;
         }
 
-        if (extOpt2Old->IntRefType && extOpt2New->IntRefType && (extOpt2Old->IntRefType == extOpt2New->IntRefType))
+        if (extOpt2New->IntRefType)
         {
             mfxStatus sts = UpdateIntraRefreshWithoutIDR(
                 m_video,

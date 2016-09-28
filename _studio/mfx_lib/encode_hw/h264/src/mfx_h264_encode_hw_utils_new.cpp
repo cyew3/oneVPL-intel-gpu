@@ -1570,7 +1570,7 @@ IntraRefreshState MfxHwH264Encode::GetIntraRefreshState(
 
     mfxI32 frameOrderMinusOffset = frameOrderInGopDispOrder - offsetFromStartOfGop;
     if (frameOrderMinusOffset < 0)
-        return state; // too early to start regresh
+        return state; // too early to start refresh
 
     mfxU32 frameOrderInRefreshPeriod = frameOrderMinusOffset % refreshPeriod;
     if (frameOrderInRefreshPeriod >= extOpt2Init->IntRefCycleSize)
@@ -1614,22 +1614,82 @@ mfxStatus MfxHwH264Encode::UpdateIntraRefreshWithoutIDR(
     mfxExtCodingOption3 * extOpt3Old = GetExtBuffer(oldPar);
     mfxExtCodingOption3 * extOpt3New = GetExtBuffer(newPar);
 
-    if (extOpt3Old->IntRefCycleDist || extOpt3New->IntRefCycleDist)
-        return MFX_ERR_INVALID_VIDEO_PARAM; // for now dynamic IR change isn't supported when IntRefCycleDist is enabled
-
+    MFX_CHECK_WITH_ASSERT(extOpt2New->IntRefType && extOpt2New->IntRefCycleSize, MFX_ERR_UNDEFINED_BEHAVIOR);
     mfxU16 refreshDimension = extOpt2New->IntRefType == HORIZ_REFRESH ? newPar.mfx.FrameInfo.Height >> 4 : newPar.mfx.FrameInfo.Width >> 4;
-    mfxU16 oldStripeWidthInMBs = (refreshDimension + extOpt2Old->IntRefCycleSize - 1) / extOpt2Old->IntRefCycleSize;
     updatedStripeWidthInMBs = (refreshDimension + extOpt2New->IntRefCycleSize - 1) / extOpt2New->IntRefCycleSize;
-    mfxU16 updatedNumFramesWithoutRefresh = extOpt2New->IntRefCycleSize - (refreshDimension + updatedStripeWidthInMBs - 1) / updatedStripeWidthInMBs;
 
+    if (!extOpt2Old->IntRefType)
+    {
+        updatedStartFrame = baseLayerOrder - (extOpt3New->IntRefCycleDist ? extOpt3New->IntRefCycleDist : 1);
+        return MFX_ERR_NONE;
+    }
+
+    mfxU16 oldRefreshDimension = extOpt2Old->IntRefType == HORIZ_REFRESH ? newPar.mfx.FrameInfo.Height >> 4 : newPar.mfx.FrameInfo.Width >> 4;
+    mfxU16 oldStripeWidthInMBs = (oldRefreshDimension + extOpt2Old->IntRefCycleSize - 1) / extOpt2Old->IntRefCycleSize;
     IntraRefreshState oldIRState = MfxHwH264Encode::GetIntraRefreshState(
         oldPar,
         mfxU32(baseLayerOrder - oldStartFrame),
         0,
         oldStripeWidthInMBs);
 
-    mfxU16 newIRProgressInFrames = oldIRState.IntraLocation / updatedStripeWidthInMBs + updatedNumFramesWithoutRefresh + 1;
-    updatedStartFrame = baseLayerOrder - newIRProgressInFrames;
+    if (   extOpt2New->IntRefType != extOpt2Old->IntRefType
+        || (!oldIRState.IntraLocation && !oldIRState.firstFrameInCycle))
+    {
+        if (!extOpt3New->IntRefCycleDist)
+        {
+            updatedStartFrame = baseLayerOrder - 1;
+        }
+        else
+        {
+            mfxU16 oldIRProgressInFrames = extOpt3Old->IntRefCycleDist ? (baseLayerOrder % extOpt3Old->IntRefCycleDist) : 0;
+
+            if (!oldIRProgressInFrames || oldIRState.IntraLocation)
+            {
+                oldIRProgressInFrames += (mfxU16)(extOpt3Old->IntRefCycleDist < baseLayerOrder ? extOpt3Old->IntRefCycleDist : baseLayerOrder);
+            }
+
+            if (extOpt3New->IntRefCycleDist < oldIRProgressInFrames || !oldIRProgressInFrames)
+            {
+                updatedStartFrame = baseLayerOrder - extOpt3New->IntRefCycleDist;
+            }
+            else
+            {
+                updatedStartFrame = baseLayerOrder - oldIRProgressInFrames;
+            }
+        }
+    }
+    else if (extOpt3Old->IntRefCycleDist || extOpt3New->IntRefCycleDist)
+    {
+        if (oldIRState.IntraLocation)
+        {
+            updatedStartFrame = baseLayerOrder - ((oldIRState.IntraLocation + updatedStripeWidthInMBs - 1) / updatedStripeWidthInMBs);
+        }
+        else //if (oldIRState.firstFrameInCycle || !extOpt3New->IntRefCycleDist)
+        {
+            updatedStartFrame = baseLayerOrder;
+        }
+
+        if (   extOpt3New->IntRefCycleDist > extOpt3Old->IntRefCycleDist
+            && extOpt3Old->IntRefCycleDist > extOpt2Old->IntRefCycleSize)
+        {
+            updatedStartFrame += (extOpt3New->IntRefCycleDist - extOpt3Old->IntRefCycleDist);
+        }
+
+        if (extOpt3New->IntRefCycleDist)
+        {
+            updatedStartFrame = (updatedStartFrame % extOpt3New->IntRefCycleDist) - extOpt3New->IntRefCycleDist;
+        }
+        else
+        {
+            updatedStartFrame--;
+        }
+    }
+    else
+    {
+        mfxU16 updatedNumFramesWithoutRefresh = extOpt2New->IntRefCycleSize - (refreshDimension + updatedStripeWidthInMBs - 1) / updatedStripeWidthInMBs;
+        mfxU16 newIRProgressInFrames = oldIRState.IntraLocation / updatedStripeWidthInMBs + updatedNumFramesWithoutRefresh + 1;
+        updatedStartFrame = baseLayerOrder - newIRProgressInFrames;
+    }
 
     return MFX_ERR_NONE;
 }

@@ -4322,7 +4322,8 @@ mfxStatus MfxHwH264Encode::CheckAndFixMVCSeqDesc(mfxExtMVCSeqDesc * mvcSeqDesc, 
 
 void MfxHwH264Encode::InheritDefaultValues(
     MfxVideoParam const & parInit,
-    MfxVideoParam &       parReset)
+    MfxVideoParam &       parReset,
+    mfxVideoParam const * parResetIn)
 {
     InheritOption(parInit.AsyncDepth,             parReset.AsyncDepth);
     InheritOption(parInit.mfx.BRCParamMultiplier, parReset.mfx.BRCParamMultiplier);
@@ -4421,9 +4422,12 @@ void MfxHwH264Encode::InheritDefaultValues(
     mfxExtCodingOption2 const * extOpt2Init  = GetExtBuffer(parInit);
     mfxExtCodingOption2 *       extOpt2Reset = GetExtBuffer(parReset);
 
+    if (!parResetIn || !(mfxExtCodingOption2 const *)GetExtBuffer(*parResetIn)) //user should be able to disable IntraRefresh via Reset()
+    {
+        InheritOption(extOpt2Init->IntRefType,      extOpt2Reset->IntRefType);
+        InheritOption(extOpt2Init->IntRefCycleSize, extOpt2Reset->IntRefCycleSize);
+    }
     InheritOption(extOpt2Init->DisableVUI,      extOpt2Reset->DisableVUI);
-    InheritOption(extOpt2Init->IntRefType,      extOpt2Reset->IntRefType);
-    InheritOption(extOpt2Init->IntRefCycleSize, extOpt2Reset->IntRefCycleSize);
     InheritOption(extOpt2Init->SkipFrame,       extOpt2Reset->SkipFrame);
 
     mfxExtCodingOption3 const * extOpt3Init  = GetExtBuffer(parInit);
@@ -4432,7 +4436,10 @@ void MfxHwH264Encode::InheritDefaultValues(
     InheritOption(extOpt3Init->NumSliceI, extOpt3Reset->NumSliceI);
     InheritOption(extOpt3Init->NumSliceP, extOpt3Reset->NumSliceP);
     InheritOption(extOpt3Init->NumSliceB, extOpt3Reset->NumSliceB);
-    InheritOption(extOpt3Init->IntRefCycleDist, extOpt3Reset->IntRefCycleDist);
+    if (!parResetIn || !(mfxExtCodingOption3 const *)GetExtBuffer(*parResetIn))
+    {
+        InheritOption(extOpt3Init->IntRefCycleDist, extOpt3Reset->IntRefCycleDist);
+    }
 
     if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_QVBR && parReset.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
     {

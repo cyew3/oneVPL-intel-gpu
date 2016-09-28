@@ -1952,7 +1952,8 @@ namespace MfxHwH264Encode
 
         mfxStatus ProcessAndCheckNewParameters(
             MfxVideoParam & newPar,
-            bool & isIdrRequired);
+            bool & isIdrRequired,
+            mfxVideoParam const * newParIn = 0);
 
         void DestroyDanglingCmResources();
 
