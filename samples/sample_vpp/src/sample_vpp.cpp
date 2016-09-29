@@ -310,6 +310,7 @@ int main(int argc, char *argv[])
 
     // VPP processing
     bDoNotUpdateIn = false;
+
     if ( !Params.use_extapi )
     {
         sts = FrameProcessor.pmfxVPP->RunFrameVPPAsync( pInSurf[nInStreamInd], pOutSurf,

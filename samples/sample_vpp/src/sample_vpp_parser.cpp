@@ -57,7 +57,8 @@ void vppPrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("                       0 = interlaced top    field first\n"));
     msdk_printf(MSDK_STRING("                       2 = interlaced bottom field first\n"));
     msdk_printf(MSDK_STRING("                       3 = single field\n"));
-    msdk_printf(MSDK_STRING("                       1 = progressive (default)\n\n"));
+    msdk_printf(MSDK_STRING("                       1 = progressive (default)\n"));
+    msdk_printf(MSDK_STRING("                      -1 = unknown\n\n"));
 
 
     msdk_printf(MSDK_STRING("   [-dw  width]     - width  of dst video (def: 352)\n"));
@@ -73,7 +74,8 @@ void vppPrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("                       0 = interlaced top    field first\n"));
     msdk_printf(MSDK_STRING("                       2 = interlaced bottom field first\n"));
     msdk_printf(MSDK_STRING("                       3 = single field\n"));
-    msdk_printf(MSDK_STRING("                       1 = progressive (default)\n\n"));
+    msdk_printf(MSDK_STRING("                       1 = progressive (default)\n"));
+    msdk_printf(MSDK_STRING("                      -1 = unknown\n\n"));
 
 
     msdk_printf(MSDK_STRING("   Video Enhancement Algorithms\n"));
@@ -199,26 +201,24 @@ static mfxU32 Str2FourCC( msdk_char* strInput )
 } // mfxU32 Str2FourCC( msdk_char* strInput )
 
 static
-mfxU16 GetPicStruct( mfxU8 picStruct )
+mfxU16 GetPicStruct( mfxI8 picStruct )
 {
-    if ( 0 == picStruct )
+    switch (picStruct)
     {
-        return MFX_PICSTRUCT_FIELD_TFF;
+        case -1:
+            return MFX_PICSTRUCT_UNKNOWN;
+        case 0:
+            return MFX_PICSTRUCT_FIELD_TFF;
+        case 1:
+            return MFX_PICSTRUCT_PROGRESSIVE;
+        case 2:
+            return MFX_PICSTRUCT_FIELD_BFF;
+        case 3:
+            return MFX_PICSTRUCT_FIELD_SINGLE;
+        default:
+            return MFX_PICSTRUCT_PROGRESSIVE;
     }
-    else if( 2 == picStruct )
-    {
-        return MFX_PICSTRUCT_FIELD_BFF;
-    }
-    else if( 3 == picStruct )
-    {
-        return MFX_PICSTRUCT_FIELD_SINGLE;
-    }
-    else
-    {
-        return MFX_PICSTRUCT_PROGRESSIVE;
-    }
-
-} // mfxU16 GetPicStruct( mfxU8 picStruct )
+} // mfxU16 GetPicStruct( mfxI8 picStruct )
 
 // trim from start
 static inline std::string &ltrim(std::string &s) {

@@ -86,23 +86,29 @@ FourCC2Str( mfxU32 FourCC )
 
 /* ******************************************************************* */
 
-static const msdk_char*
-PicStruct2Str( mfxU16  PicStruct )
+static const
+msdk_char* PicStruct2Str( mfxU16  PicStruct )
 {
-  if (PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
-  {
-    return MSDK_STRING("progressive");
-  }
-  else if (PicStruct & MFX_PICSTRUCT_FIELD_SINGLE)
-  {
-    return MSDK_STRING("field");
-  }
-  else
-  {
-    return MSDK_STRING("interleave");
-  }
-
-} // msdk_char* PicStruct2Str( mfxU16  PicStruct )
+    switch (PicStruct)
+    {
+    case MFX_PICSTRUCT_PROGRESSIVE:
+        return MSDK_STRING("progressive");
+    case MFX_PICSTRUCT_FIELD_TFF:
+        return MSDK_STRING("interlace (TFF)");
+    case MFX_PICSTRUCT_FIELD_BFF:
+        return MSDK_STRING("interlace (BFF)");
+    case MFX_PICSTRUCT_FIELD_SINGLE:
+        return MSDK_STRING("single field");
+    case MFX_PICSTRUCT_FIELD_TOP:
+        return MSDK_STRING("single top field");
+    case MFX_PICSTRUCT_FIELD_BOTTOM:
+        return MSDK_STRING("single bottom field");
+    case MFX_PICSTRUCT_UNKNOWN:
+        return MSDK_STRING("unknown");
+    default:
+        return MSDK_STRING("interlace (no detail)");
+    }
+}
 
 /* ******************************************************************* */
 
