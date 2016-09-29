@@ -222,13 +222,15 @@ namespace vp9e_init
         else
             m_loaded = true;
 
-        SETPARS(m_pPar, MFX_PAR);
-
         // Currently only VIDEO_MEMORY is supported
         if(tc.type != MEMORY_TYPE)
         {
             m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
         }
+        m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 720;
+        m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 480;
+
+        SETPARS(m_pPar, MFX_PAR);
 
         if (!GetAllocator())
         {
