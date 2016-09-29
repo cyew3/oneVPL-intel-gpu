@@ -16,40 +16,36 @@
 namespace MfxHwVP9Encode
 {
 
-//---------------------------------------------------------
-// service class: VP9MfxParam
-//---------------------------------------------------------
-
-VP9MfxParam::VP9MfxParam()
+VP9MfxVideoParam::VP9MfxVideoParam()
 {
-    memset(this, 0, sizeof(*this));
+    Zero(*this);
 }
 
-VP9MfxParam::VP9MfxParam(VP9MfxParam const & par)
+VP9MfxVideoParam::VP9MfxVideoParam(VP9MfxVideoParam const & par)
 {
     Construct(par);
 }
 
-VP9MfxParam::VP9MfxParam(mfxVideoParam const & par)
+VP9MfxVideoParam::VP9MfxVideoParam(mfxVideoParam const & par)
 {
     Construct(par);
 }
 
-VP9MfxParam& VP9MfxParam::operator=(VP9MfxParam const & par)
+VP9MfxVideoParam& VP9MfxVideoParam::operator=(VP9MfxVideoParam const & par)
 {
     Construct(par);
 
     return *this;
 }
 
-VP9MfxParam& VP9MfxParam::operator=(mfxVideoParam const & par)
+VP9MfxVideoParam& VP9MfxVideoParam::operator=(mfxVideoParam const & par)
 {
     Construct(par);
 
     return *this;
 }
 
-void VP9MfxParam::Construct(mfxVideoParam const & par)
+void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
 {
     mfxVideoParam & base = *this;
     base = par;
@@ -58,7 +54,6 @@ void VP9MfxParam::Construct(mfxVideoParam const & par)
 
     InitExtBufHeader(m_extOpt);
     InitExtBufHeader(m_extOpaque);
-    InitExtBufHeader(m_extROI);
 
     if (mfxExtCodingOptionVP9 * opts = GetExtBuffer(par))
         m_extOpt = *opts;
@@ -66,19 +61,12 @@ void VP9MfxParam::Construct(mfxVideoParam const & par)
     if (mfxExtOpaqueSurfaceAlloc * opts = GetExtBuffer(par))
         m_extOpaque = *opts;
 
-    if (mfxExtEncoderROI * opts = GetExtBuffer(par))
-        m_extROI = *opts;
-
-    if (m_extOpt.EnableMultipleSegments == MFX_CODINGOPTION_UNKNOWN && m_extROI.NumROI)
-        m_extOpt.EnableMultipleSegments = MFX_CODINGOPTION_ON;
-
     m_extParam[0]  = &m_extOpt.Header;
     m_extParam[1]  = &m_extOpaque.Header;
-    m_extParam[2]  = &m_extROI.Header;
 
     ExtParam = m_extParam;
     NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);
-    assert(NumExtParam == 3);
+    assert(NumExtParam == NUM_OF_SUPPORTED_EXT_BUFFERS);
 }
 
 bool isVideoSurfInput(mfxVideoParam const & video)
@@ -109,7 +97,7 @@ mfxU32 ModifyLoopFilterLevelQPBased(mfxU32 QP, mfxU32 loopFilterLevel)
     }
 }
 
-mfxStatus InitVp9SeqLevelParam(VP9MfxParam const &video, VP9SeqLevelParam &param)
+mfxStatus InitVp9SeqLevelParam(VP9MfxVideoParam const &video, VP9SeqLevelParam &param)
 {
     video;
     Zero(param);
@@ -124,7 +112,7 @@ mfxStatus InitVp9SeqLevelParam(VP9MfxParam const &video, VP9SeqLevelParam &param
     return MFX_ERR_NONE;
 };
 
-mfxStatus SetFramesParams(VP9MfxParam const &par,
+mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
                           mfxU16 forcedFrameType,
                           mfxU32 frameOrder,
                           VP9FrameLevelParam &frameParam)
@@ -132,7 +120,7 @@ mfxStatus SetFramesParams(VP9MfxParam const &par,
     Zero(frameParam);
     frameParam.frameType = (mfxU8)((frameOrder % par.mfx.GopPicSize) == 0 || (forcedFrameType & MFX_FRAMETYPE_I) ? KEY_FRAME : INTER_FRAME);
 
-    mfxExtCodingOptionVP9 *pOptVP9 = GetExtBuffer(par);
+    mfxExtCodingOptionVP9 const &opt = GetExtBufferRef(par);
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
     {
@@ -140,22 +128,22 @@ mfxStatus SetFramesParams(VP9MfxParam const &par,
     }
 
     frameParam.lfLevel   = (mfxU8)ModifyLoopFilterLevelQPBased(frameParam.baseQIndex, 0); // always 0 is passes since at the moment there is no LF level in MSDK API
-    frameParam.sharpness = (mfxU8)pOptVP9->SharpnessLevel;
+    frameParam.sharpness = (mfxU8)opt.SharpnessLevel;
 
     frameParam.width  = frameParam.renderWidth = par.mfx.FrameInfo.Width;
     frameParam.height = frameParam.renderHeight = par.mfx.FrameInfo.Height;
 
     for (mfxU8 i = 0; i < 4; i ++)
     {
-        frameParam.lfRefDelta[i] = (mfxI8)pOptVP9->LoopFilterRefDelta[i];
+        frameParam.lfRefDelta[i] = (mfxI8)opt.LoopFilterRefDelta[i];
     }
 
-    frameParam.lfModeDelta[0] = (mfxI8)pOptVP9->LoopFilterModeDelta[0];
-    frameParam.lfModeDelta[1] = (mfxI8)pOptVP9->LoopFilterModeDelta[1];
+    frameParam.lfModeDelta[0] = (mfxI8)opt.LoopFilterModeDelta[0];
+    frameParam.lfModeDelta[1] = (mfxI8)opt.LoopFilterModeDelta[1];
 
-    frameParam.qIndexDeltaLumaDC   = (mfxI8)pOptVP9->QIndexDeltaLumaDC;
-    frameParam.qIndexDeltaChromaAC = (mfxI8)pOptVP9->QIndexDeltaChromaAC;
-    frameParam.qIndexDeltaChromaDC = (mfxI8)pOptVP9->QIndexDeltaChromaDC;
+    frameParam.qIndexDeltaLumaDC   = (mfxI8)opt.QIndexDeltaLumaDC;
+    frameParam.qIndexDeltaChromaAC = (mfxI8)opt.QIndexDeltaChromaAC;
+    frameParam.qIndexDeltaChromaDC = (mfxI8)opt.QIndexDeltaChromaDC;
 
     frameParam.numSegments = 1; // TODO: add segmentation support
 

@@ -170,11 +170,11 @@ typedef struct tagENCODE_CAPS_VP9
 
         virtual
         mfxStatus CreateAccelerationService(
-            VP9MfxParam const & par) = 0;
+            VP9MfxVideoParam const & par) = 0;
 
         virtual
         mfxStatus Reset(
-            VP9MfxParam const & par) = 0;
+            VP9MfxVideoParam const & par) = 0;
 
         virtual
         mfxStatus Register(

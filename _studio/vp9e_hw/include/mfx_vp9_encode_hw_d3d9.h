@@ -491,12 +491,12 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_VP9
 #endif
 
 void FillSpsBuffer(
-    VP9MfxParam const & par,
+    VP9MfxVideoParam const & par,
     ENCODE_CAPS_VP9 const & /*caps*/,
     ENCODE_SET_SEQUENCE_PARAMETERS_VP9 & sps);
 
 void FillPpsBuffer(
-    VP9MfxParam const & par,
+    VP9MfxVideoParam const & par,
     Task const & task,
     ENCODE_SET_PICTURE_PARAMETERS_VP9 & pps);
 
@@ -535,11 +535,11 @@ public:
 
     virtual
     mfxStatus CreateAccelerationService(
-        VP9MfxParam const & par);
+        VP9MfxVideoParam const & par);
 
     virtual
     mfxStatus Reset(
-        VP9MfxParam const & par);
+        VP9MfxVideoParam const & par);
 
     virtual
     mfxStatus Register(
@@ -582,7 +582,7 @@ private:
     GUID m_guid;
 
     mfxCoreInterface*  m_pmfxCore;
-    VP9MfxParam        m_video;
+    VP9MfxVideoParam        m_video;
     ENCODE_CAPS_VP9    m_caps;
 
     ENCODE_SET_SEQUENCE_PARAMETERS_VP9 m_sps;

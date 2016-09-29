@@ -23,47 +23,21 @@
 namespace MfxHwVP9Encode
 {
 
-inline bool CheckPattern(mfxU32 inPattern)
-{
-    inPattern = inPattern & MFX_IOPATTERN_IN_MASK;
-    return (inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY); // TODO: return correct check affter adding support of SYSTEM and OPAQUE memory at input
-    /*return ( inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-                inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY ||
-                inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY);*/
-}
-inline bool CheckFrameSize(mfxU32 Width, mfxU32 Height)
-{
-    return ( ((Width & 0x0f) == 0) && ((Height& 0x0f) == 0) &&
-                (Width > 0)  && (Width < 0x1FFF) &&
-                (Height > 0) && (Height < 0x1FFF));
-}
+mfxStatus CheckExtBufferHeaders(mfxVideoParam const &par, bool isRuntime = false);
+
+mfxStatus SetSupportedParameters(mfxVideoParam & par);
+
+mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps);
+
+mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps);
+
+mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps);
 
 mfxStatus CheckEncodeFrameParam(mfxVideoParam const & video,
                                 mfxEncodeCtrl       * ctrl,
                                 mfxFrameSurface1    * surface,
                                 mfxBitstream        * bs,
                                 bool                  isExternalFrameAllocator);
-
-mfxU16 GetDefaultAsyncDepth();
-
-/*function for init/reset*/
-mfxStatus CheckParametersAndSetDefault( mfxVideoParam*              pParamSrc,
-                                        mfxVideoParam*              pParamDst,
-                                        mfxExtCodingOptionVP9*      pExCodingVP8Dst,
-                                        mfxExtOpaqueSurfaceAlloc*   pOpaqAllocDst,
-                                        bool                        bExternalFrameAllocator,
-                                        bool                        bReset = false);
-
-/*functios for Query*/
-
-mfxStatus SetSupportedParameters(mfxVideoParam* par);
-
-mfxStatus CheckParameters(mfxVideoParam*   parSrc,
-                            mfxVideoParam*   parDst);
-
-mfxStatus CheckExtendedBuffers (mfxVideoParam* par);
-
-mfxStatus CheckVideoParam(mfxVideoParam const & par, ENCODE_CAPS_VP9 const &caps);
 
 } // MfxHwVP9Encode
 

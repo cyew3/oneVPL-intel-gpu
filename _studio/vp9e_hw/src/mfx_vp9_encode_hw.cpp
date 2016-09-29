@@ -36,10 +36,6 @@ Plugin::Plugin(bool CreateByDispatcher)
     m_PluginParam.Type = MFX_PLUGINTYPE_VIDEO_ENCODE;
     m_PluginParam.CodecId = MFX_CODEC_VP9;
     m_PluginParam.PluginVersion = 1;
-
-#if 0 // commented out from initial commit
-    memset(&m_mfxpar, 0, sizeof(mfxVideoParam));
-#endif // commented out from initial commit
 }
 
 mfxStatus Plugin::PluginInit(mfxCoreInterface * pCore)
@@ -73,32 +69,106 @@ mfxStatus Plugin::GetPluginParam(mfxPluginParam *par)
     return MFX_ERR_NONE;
 }
 
+inline GUID GetGuid(VP9MfxVideoParam const &par)
+{
+    return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
+    DXVA2_Intel_LowpowerEncode_VP9_Profile0 : DXVA2_Intel_Encode_VP9_Profile0;
+}
+
 mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 {
     MFX_CHECK_NULL_PTR1(out);
 
-    ENCODE_CAPS_VP9 caps = {};
-    GUID guid = (m_video.mfx.LowPower != MFX_CODINGOPTION_OFF) ? DXVA2_Intel_LowpowerEncode_VP9_Profile0 : DXVA2_Intel_Encode_VP9_Profile0;
-    MFX_CHECK(MFX_ERR_NONE == QueryHwCaps(m_pmfxCore, caps, guid), MFX_ERR_UNSUPPORTED);
+    if (in == 0)
+    {
+        return SetSupportedParameters(*out);
+    }
+    else
+    {
+        // check that [in] and [out] have same number of ext buffers
+        if (in->NumExtParam != out->NumExtParam || !in->ExtParam != !out->ExtParam)
+        {
+            return MFX_ERR_UNSUPPORTED;
+        }
 
-    return   (in == 0) ? SetSupportedParameters(out):
-        CheckParameters(in,out);
+        // check attached buffers (all are supported by encoder, no duplications, etc.)
+        MFX_CHECK_STS(CheckExtBufferHeaders(*in));
+        MFX_CHECK_STS(CheckExtBufferHeaders(*out));
+
+        VP9MfxVideoParam toValidate = *in;
+
+        // get HW caps from driver
+        ENCODE_CAPS_VP9 caps;
+        Zero(caps);
+        MFX_CHECK(MFX_ERR_NONE == QueryHwCaps(m_pmfxCore, caps, GetGuid(toValidate)), MFX_ERR_UNSUPPORTED);
+
+        // validate input parameters
+        mfxStatus sts = MFX_ERR_NONE;
+        sts = CheckParameters(toValidate, caps);
+
+        // copy validated parameters to [out]
+        out->mfx = toValidate.mfx;
+        out->AsyncDepth = toValidate.AsyncDepth;
+        out->IOPattern = toValidate.IOPattern;
+        out->Protected = toValidate.Protected;
+
+        // copy validated ext buffers
+        if (in->ExtParam && out->ExtParam)
+        {
+            for (mfxU8 i = 0; i < in->NumExtParam; i++)
+            {
+                mfxExtBuffer *pInBuf = in->ExtParam[i];
+                if (pInBuf)
+                {
+                    mfxExtBuffer *pOutBuf = GetExtendedBuffer(out->ExtParam, out->NumExtParam, pInBuf->BufferId);
+                    if (pOutBuf && (pOutBuf->BufferSz == pInBuf->BufferSz))
+                    {
+                        mfxExtBuffer *pCorrectedBuf = GetExtendedBuffer(toValidate.ExtParam, toValidate.NumExtParam, pInBuf->BufferId);
+                        MFX_CHECK_NULL_PTR1(pCorrectedBuf);
+                        memcpy_s(pOutBuf, pOutBuf->BufferSz, pCorrectedBuf, pCorrectedBuf->BufferSz);
+                    }
+                    else
+                    {
+                        // the buffer is present in [in] and absent in [out]
+                        // or buffer sizes are different in [in] and [out]
+                        return MFX_ERR_UNDEFINED_BEHAVIOR;
+                    }
+                }
+            }
+        }
+
+        return sts;
+    }
 }
 
 mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out)
 {
     out;
     MFX_CHECK_NULL_PTR2(par,in);
+    MFX_CHECK_STS(CheckExtBufferHeaders(*par));
 
-    MFX_CHECK(CheckPattern(par->IOPattern), MFX_ERR_UNSUPPORTED);
-    MFX_CHECK(CheckFrameSize(par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height),MFX_ERR_INVALID_VIDEO_PARAM);
+    mfxU32 inPattern = par->IOPattern & MFX_IOPATTERN_IN_MASK;
+    MFX_CHECK(inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY, MFX_ERR_INVALID_VIDEO_PARAM);
 
+    VP9MfxVideoParam toValidate = *par;
+
+    // get HW caps from driver
+    ENCODE_CAPS_VP9 caps;
+    Zero(caps);
+    MFX_CHECK(MFX_ERR_NONE == QueryHwCaps(m_pmfxCore, caps, GetGuid(toValidate)), MFX_ERR_UNSUPPORTED);
+
+    // get validated and properly initialized set of parameters
+    CheckParameters(toValidate, caps);
+    SetDefaults(toValidate, caps);
+
+    // fill mfxFrameAllocRequest
     in->Type = mfxU16((par->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)? MFX_MEMTYPE_SYS_EXT:MFX_MEMTYPE_D3D_EXT) ;
 
-    in->NumFrameMin = par->AsyncDepth ? par->AsyncDepth : GetDefaultAsyncDepth();
+    in->NumFrameMin = toValidate.AsyncDepth;
     in->NumFrameSuggested = in->NumFrameMin;
 
     in->Info = par->mfx.FrameInfo;
+
     return MFX_ERR_NONE;
 }
 
@@ -109,30 +179,20 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
+    MFX_CHECK_NULL_PTR1(par);
+    MFX_CHECK_STS(CheckExtBufferHeaders(*par));
+
     mfxStatus sts  = MFX_ERR_NONE;
-    mfxStatus sts1 = MFX_ERR_NONE; // to save warnings ater parameters checking
+    mfxStatus checkSts = MFX_ERR_NONE; // to save warnings ater parameters checking
 
     m_video = *par;
 
     m_pTaskManager = new TaskManagerVmePlusPak;
 
-    mfxExtCodingOptionVP9* pExtOpt    = GetExtBuffer(m_video);
-    {
-        mfxExtOpaqueSurfaceAlloc   * pExtOpaque = GetExtBuffer(m_video);
-
-        MFX_CHECK(CheckFrameSize(par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height),MFX_ERR_INVALID_VIDEO_PARAM);
-
-        sts1 = CheckParametersAndSetDefault(par,&m_video, pExtOpt, pExtOpaque, true ,false);
-        MFX_CHECK(sts1 >=0, sts1);
-    }
-
-    m_lowPower = (m_video.mfx.LowPower != MFX_CODINGOPTION_OFF) ? true : false;
-    GUID initGuid = m_lowPower ? DXVA2_Intel_LowpowerEncode_VP9_Profile0 : DXVA2_Intel_Encode_VP9_Profile0;
-
     m_ddi.reset(CreatePlatformVp9Encoder(m_pmfxCore));
     MFX_CHECK(m_ddi.get() != 0, MFX_ERR_UNSUPPORTED);
 
-    sts = m_ddi->CreateAuxilliaryDevice(m_pmfxCore, initGuid,
+    sts = m_ddi->CreateAuxilliaryDevice(m_pmfxCore, GetGuid(m_video),
         m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
     MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_UNSUPPORTED);
 
@@ -141,8 +201,8 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     if (sts != MFX_ERR_NONE)
         return MFX_ERR_UNSUPPORTED;
 
-    sts = CheckVideoParam(m_video, caps);
-    MFX_CHECK(sts>=0,sts);
+    checkSts = CheckParametersAndSetDefaults(m_video, caps);
+    MFX_CHECK(checkSts >= 0, checkSts);
 
     sts = m_ddi->CreateAccelerationService(m_video);
     MFX_CHECK_STS(sts);
@@ -152,7 +212,6 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     mfxFrameAllocRequest reqSegMap = {};
 #endif // segmentation support is disabled
 
-    // on Linux we should allocate recon surfaces first, and then create encoding context and use it for allocation of other buffers
     // initialize task manager, including allocation of recon surfaces chain
     sts = m_pTaskManager->Init(m_pmfxCore, &m_video, m_ddi->GetReconSurfFourCC());
     MFX_CHECK_STS(sts);
@@ -194,7 +253,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
 
     m_initialized = true;
 
-    return sts1;
+    return checkSts;
 }
 
 mfxStatus Plugin::Reset(mfxVideoParam *par)
@@ -405,7 +464,34 @@ mfxStatus Plugin::GetVideoParam(mfxVideoParam *par)
     }
 
     MFX_CHECK_NULL_PTR1(par);
-    return MfxHwVP9Encode::GetVideoParam(par, &m_video);
+    MFX_CHECK_STS(CheckExtBufferHeaders(*par));
+
+    par->AsyncDepth = m_video.AsyncDepth;
+    par->IOPattern = m_video.IOPattern;
+    par->Protected = m_video.Protected;
+
+    par->mfx = m_video.mfx;
+
+    for (mfxU8 i = 0; i < par->NumExtParam; i++)
+    {
+        mfxExtBuffer *pOutBuf = par->ExtParam[i];
+        if (pOutBuf == 0)
+        {
+            return MFX_ERR_NULL_PTR;
+        }
+        mfxExtBuffer *pLocalBuf = GetExtendedBuffer(m_video.ExtParam, m_video.NumExtParam, pOutBuf->BufferId);
+        if (pLocalBuf && (pOutBuf->BufferSz == pLocalBuf->BufferSz))
+        {
+            memcpy_s(pOutBuf, pOutBuf->BufferSz, pLocalBuf, pLocalBuf->BufferSz);
+        }
+        else
+        {
+            assert(!"Encoder doesn't have requested buffer or bufefr sizes are different!");
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+    }
+
+    return MFX_ERR_NONE;
 }
 
 inline void UpdatePictureHeader(unsigned int frameLen, unsigned int frameNum, unsigned char *pPictureHeader)

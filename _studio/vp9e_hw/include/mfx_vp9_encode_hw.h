@@ -93,11 +93,9 @@ protected:
     Plugin(bool CreateByDispatcher);
     virtual ~Plugin(){};
 
-    VP9MfxParam                                   m_video;
-    TaskManagerVmePlusPak                     *   m_pTaskManager;
+    VP9MfxVideoParam              m_video;
+    TaskManagerVmePlusPak        *m_pTaskManager;
     std::auto_ptr <DriverEncoder> m_ddi;
-    mfxVideoParam                                 m_mfxpar;
-
     UMC::Mutex m_taskMutex;
     bool       m_bStartIVFSequence;
     mfxU64     m_maxBsSize;
@@ -109,7 +107,6 @@ protected:
     MFXPluginAdapter<MFXEncoderPlugin> m_adapter;
 
     bool m_initialized;
-    bool m_lowPower;
 };
 
 } // MfxHwVP9Encode

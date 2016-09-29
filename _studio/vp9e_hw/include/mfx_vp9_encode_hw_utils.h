@@ -49,6 +49,9 @@ namespace MfxHwVP9Encode
 #define IVF_PIC_HEADER_SIZE_BYTES 12
 #define MAX_IVF_HEADER_SIZE IVF_SEQ_HEADER_SIZE_BYTES + IVF_PIC_HEADER_SIZE_BYTES
 
+#define MAX_Q_INDEX 255
+#define MAX_LF_LEVEL 63
+
 enum
 {
     MFX_MEMTYPE_D3D_INT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME,
@@ -198,24 +201,38 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK =
         return (pFrame->pSurface->Data.Locked == 0);
     }
 
-    /*------------------------ Utils------------------------------------------------------------------------*/
-
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
 #define STATIC_ASSERT(ASSERTION, MESSAGE) char MESSAGE[(ASSERTION) ? 1 : -1]; MESSAGE
 
     template<class T> inline void Zero(T & obj)                { memset(&obj, 0, sizeof(obj)); }
     template<class T> inline void Zero(std::vector<T> & vec)   { memset(&vec[0], 0, sizeof(T) * vec.size()); }
+    template<class T> inline void ZeroExtBuffer(T & obj)
+    {
+        mfxExtBuffer header = obj.Header;
+        memset(&obj, 0, sizeof(obj));
+        obj.Header = header;
+    }
+    template<class T, class U> inline void Copy(T & dst, U const & src)
+    {
+        STATIC_ASSERT(sizeof(T) == sizeof(U), copy_objects_of_different_size);
+        memcpy_s(&dst, sizeof(dst), &src, sizeof(dst));
+    }
 
-    /* copied from H.264 */
-    //-----------------------------------------------------
-    // Helper which checks number of allocated frames and auto-free.
-    //-----------------------------------------------------
+    inline bool IsOn(mfxU16 opt)
+    {
+        return opt == MFX_CODINGOPTION_ON;
+    }
+
+    inline bool IsOff(mfxU16 opt)
+    {
+        return opt == MFX_CODINGOPTION_OFF;
+    }
+
     template<class T> struct ExtBufTypeToId {};
 
 #define BIND_EXTBUF_TYPE_TO_ID(TYPE, ID) template<> struct ExtBufTypeToId<TYPE> { enum { id = ID }; }
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOptionVP9,  MFX_EXTBUFF_CODING_OPTION_VP9 );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtOpaqueSurfaceAlloc,MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-    BIND_EXTBUF_TYPE_TO_ID (mfxExtEncoderROI,MFX_EXTBUFF_ENCODER_ROI);
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)
@@ -223,43 +240,6 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK =
         Zero(extBuf);
         extBuf.Header.BufferId = ExtBufTypeToId<T>::id;
         extBuf.Header.BufferSz = sizeof(T);
-    }
-
-    template <> inline void InitExtBufHeader<mfxExtCodingOptionVP9>(mfxExtCodingOptionVP9 & extBuf)
-    {
-        Zero(extBuf);
-        extBuf.Header.BufferId = ExtBufTypeToId<mfxExtCodingOptionVP9>::id;
-        extBuf.Header.BufferSz = sizeof(mfxExtCodingOptionVP9);
-
-        // use defaults as in C-model
-        /*extBuf.LoopFilterRefDelta[0] = 1;
-        extBuf.LoopFilterRefDelta[1] = 0;
-        extBuf.LoopFilterRefDelta[2] = -1;
-        extBuf.LoopFilterRefDelta[3] = -1;*/
-    }
-
-
-    // temporal application of nonzero defaults to test ROI for VP9
-    // TODO: remove this when testing os finished
-    template <> inline void InitExtBufHeader<mfxExtEncoderROI>(mfxExtEncoderROI & extBuf)
-    {
-        Zero(extBuf);
-        extBuf.Header.BufferId = ExtBufTypeToId<mfxExtEncoderROI>::id;
-        extBuf.Header.BufferSz = sizeof(mfxExtEncoderROI);
-
-        // no default ROI
-        /*extBuf.NumROI = 2;
-        extBuf.ROI[0].Left     = 16;
-        extBuf.ROI[0].Right    = 128;
-        extBuf.ROI[0].Top      = 16;
-        extBuf.ROI[0].Bottom   = 128;
-        extBuf.ROI[0].Priority = 0;
-
-        extBuf.ROI[1].Left     = 64;
-        extBuf.ROI[1].Right    = 256;
-        extBuf.ROI[1].Top      = 64;
-        extBuf.ROI[1].Bottom   = 256;
-        extBuf.ROI[1].Priority = 0;*/
     }
 
     template <class T> struct GetPointedType {};
@@ -296,6 +276,36 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK =
     {
         return mfxExtBufferProxy(par.ExtParam, par.NumExtParam);
     }
+
+struct mfxExtBufferRefProxy{
+public:
+    template <typename T> operator T&()
+    {
+        mfxExtBuffer * p = GetExtBuffer(
+            m_extParam,
+            m_numExtParam,
+            ExtBufTypeToId<typename GetPointedType<T*>::Type>::id);
+        assert(p);
+        return *(reinterpret_cast<T*>(p));
+    }
+
+    template <typename T> friend mfxExtBufferRefProxy GetExtBufferRef(const T & par);
+
+protected:
+    mfxExtBufferRefProxy(mfxExtBuffer ** extParam, mfxU32 numExtParam)
+        : m_extParam(extParam)
+        , m_numExtParam(numExtParam)
+    {
+    }
+private:
+    mfxExtBuffer ** m_extParam;
+    mfxU32          m_numExtParam;
+};
+
+template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
+{
+    return mfxExtBufferRefProxy(par.ExtParam, par.NumExtParam);
+}
 
     class MfxFrameAllocResponse : public mfxFrameAllocResponse
     {
@@ -373,36 +383,36 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK =
         mfxU32             m_status;
     };
 
-    class VP9MfxParam : public mfxVideoParam
+#define NUM_OF_SUPPORTED_EXT_BUFFERS 2
+
+    class VP9MfxVideoParam : public mfxVideoParam
     {
     public:
-        VP9MfxParam();
-        VP9MfxParam(VP9MfxParam const &);
-        VP9MfxParam(mfxVideoParam const &);
+        VP9MfxVideoParam();
+        VP9MfxVideoParam(VP9MfxVideoParam const &);
+        VP9MfxVideoParam(mfxVideoParam const &);
 
-        VP9MfxParam & operator = (VP9MfxParam const &);
-        VP9MfxParam & operator = (mfxVideoParam const &);
+        VP9MfxVideoParam & operator = (VP9MfxVideoParam const &);
+        VP9MfxVideoParam & operator = (mfxVideoParam const &);
 
 
     protected:
         void Construct(mfxVideoParam const & par);
 
-
     private:
-        mfxExtBuffer *              m_extParam[3];
+        mfxExtBuffer *              m_extParam[NUM_OF_SUPPORTED_EXT_BUFFERS];
         mfxExtCodingOptionVP9       m_extOpt;
         mfxExtOpaqueSurfaceAlloc    m_extOpaque;
-        mfxExtEncoderROI            m_extROI;
     };
 
     mfxStatus GetVideoParam(mfxVideoParam * parDst, mfxVideoParam *videoSrc);
 
-    mfxStatus SetFramesParams(VP9MfxParam const &par,
+    mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
                               mfxU16 forcedFrameType,
                               mfxU32 frameOrder,
                               VP9FrameLevelParam &frameParam);
 
-    mfxStatus InitVp9SeqLevelParam(VP9MfxParam const &video, VP9SeqLevelParam &param);
+    mfxStatus InitVp9SeqLevelParam(VP9MfxVideoParam const &video, VP9SeqLevelParam &param);
 
     class Task;
     mfxStatus DecideOnRefListAndDPBRefresh(mfxVideoParam * par,
@@ -601,7 +611,7 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK =
     protected:
 
         mfxCoreInterface*       m_pCore;
-        VP9MfxParam      m_video;
+        VP9MfxVideoParam      m_video;
 
         bool    m_bHWFrames;
         bool    m_bHWInput;

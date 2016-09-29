@@ -42,7 +42,7 @@ namespace MfxHwVP9Encode
 #if defined (MFX_VA_WIN)
 
 void FillSpsBuffer(
-    VP9MfxParam const & par,
+    VP9MfxVideoParam const & par,
     ENCODE_CAPS_VP9 const & /*caps*/,
     ENCODE_SET_SEQUENCE_PARAMETERS_VP9 & sps)
 {
@@ -69,7 +69,7 @@ void FillSpsBuffer(
 }
 
 void FillPpsBuffer(
-    VP9MfxParam const & par,
+    VP9MfxVideoParam const & par,
     Task const & task,
     ENCODE_SET_PICTURE_PARAMETERS_VP9 & pps)
 {
@@ -292,7 +292,7 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
 } // mfxStatus D3D9Encoder::CreateAuxilliaryDevice(VideoCORE* core, GUID guid, mfxU32 width, mfxU32 height)
 
 
-mfxStatus D3D9Encoder::CreateAccelerationService(VP9MfxParam const & par)
+mfxStatus D3D9Encoder::CreateAccelerationService(VP9MfxVideoParam const & par)
 {
     VP9_LOG("\n (VP9_LOG) D3D9Encoder::CreateAccelerationService +");
 
@@ -323,7 +323,7 @@ mfxStatus D3D9Encoder::CreateAccelerationService(VP9MfxParam const & par)
 } // mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
 
 
-mfxStatus D3D9Encoder::Reset(VP9MfxParam const & par)
+mfxStatus D3D9Encoder::Reset(VP9MfxVideoParam const & par)
 {
     m_video = par;
 
@@ -478,8 +478,8 @@ mfxStatus D3D9Encoder::Execute(
     mfxU8 * pBuff = &m_uncompressedHeaderBuf[0];
     mfxU16 bytesWritten = 0;
 
-    mfxExtCodingOptionVP9 *pOpt = GetExtBuffer(m_video);
-    //if (pOpt->WriteIVFHeaders)
+    mfxExtCodingOptionVP9 &opt = GetExtBufferRef(m_video);
+    if (opt.WriteIVFHeaders != MFX_CODINGOPTION_OFF)
     {
         if (InsertSeqHeader(task))
         {
@@ -487,7 +487,7 @@ mfxStatus D3D9Encoder::Execute(
                 m_video.mfx.FrameInfo.Height,
                 m_video.mfx.FrameInfo.FrameRateExtN,
                 m_video.mfx.FrameInfo.FrameRateExtD,
-                pOpt->NumFramesForIVF,
+                opt.NumFramesForIVF,
                 pBuff);
             bytesWritten += IVF_SEQ_HEADER_SIZE_BYTES;
         }
