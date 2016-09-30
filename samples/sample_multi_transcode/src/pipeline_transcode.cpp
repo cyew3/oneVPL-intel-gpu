@@ -168,6 +168,7 @@ CTranscodingPipeline::CTranscodingPipeline():
         sizeof(mfxExtOpaqueSurfaceAlloc);
 
     m_VppCompParams.InputStream = NULL;
+    m_VppCompParams.NumInputStream = 0;
     m_CodingOption2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
     m_CodingOption2.Header.BufferSz = sizeof(m_CodingOption2);
 

@@ -613,7 +613,11 @@ mfxStatus InitMemoryAllocator(
     sts = pAllocator->pMfxAllocator->Init(pAllocator->pAllocatorParams);
     MSDK_CHECK_STATUS_SAFE(sts, "pAllocator->pMfxAllocator->Init failed", WipeMemoryAllocator(pAllocator));
 
-    sts = pProcessor->pmfxVPP->Query(pParams, pParams);
+    mfxVideoParam tmpParam={0};
+    tmpParam.ExtParam = pParams->ExtParam;
+    tmpParam.NumExtParam = pParams->NumExtParam;
+    sts = pProcessor->pmfxVPP->Query(pParams, &tmpParam);
+    *pParams=tmpParam;
     MSDK_CHECK_STATUS_SAFE(sts, "pProcessor->pmfxVPP->Query failed", WipeMemoryAllocator(pAllocator));
 
     sts = pProcessor->pmfxVPP->QueryIOSurf(pParams, request);
@@ -762,6 +766,7 @@ void WipeResources(sAppResources* pResources)
             pResources->pSrcFileReaders[i]->Close();
         }
     }
+    pResources->numSrcFiles=0;
 
     if (pResources->pDstFileWriters)
     {
@@ -771,12 +776,13 @@ void WipeResources(sAppResources* pResources)
         }
         delete[] pResources->pDstFileWriters;
         pResources->dstFileWritersN = 0;
-        pResources->pDstFileWriters = 0;
+        pResources->pDstFileWriters = NULL;
     }
 
     if(pResources->compositeConfig.InputStream)
     {
         delete[] pResources->compositeConfig.InputStream;
+        pResources->compositeConfig.InputStream=NULL;
     }
 
     WipeConfigParam( pResources );

@@ -383,10 +383,10 @@ mfxStatus Launcher::ProcessResult()
 
     m_parser.PrintParFileName();
 
-    msdk_printf(ssTranscodingTime.str().c_str());
+    msdk_printf(MSDK_STRING("%s"),ssTranscodingTime.str().c_str());
     if (pPerfFile)
     {
-        msdk_fprintf(pPerfFile, ssTranscodingTime.str().c_str());
+        msdk_fprintf(pPerfFile, MSDK_STRING("%s"), ssTranscodingTime.str().c_str());
     }
 
     mfxStatus FinalSts = MFX_ERR_NONE;
