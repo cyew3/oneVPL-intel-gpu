@@ -484,6 +484,7 @@ protected:
     CLibVA(int type)
       : m_type(type)
       , m_va_dpy(NULL)
+      , m_va_dpy_render(NULL)
     {}
     int m_type;
     VADisplay m_va_dpy;

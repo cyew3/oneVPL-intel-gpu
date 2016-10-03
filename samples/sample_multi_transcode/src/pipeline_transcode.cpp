@@ -148,6 +148,7 @@ CTranscodingPipeline::CTranscodingPipeline():
     MSDK_ZERO_MEMORY(m_ExtLAControl);
     MSDK_ZERO_MEMORY(m_CodingOption2);
     MSDK_ZERO_MEMORY(m_CodingOption3);
+    MSDK_ZERO_MEMORY(m_ExtHEVCParam);
 
     m_MVCSeqDesc.Header.BufferId = MFX_EXTBUFF_MVC_SEQ_DESC;
     m_MVCSeqDesc.Header.BufferSz = sizeof(mfxExtMVCSeqDesc);
@@ -179,6 +180,10 @@ CTranscodingPipeline::CTranscodingPipeline():
 
     inputStatistics.SetDirection((const msdk_char *)"Input");
     outputStatistics.SetDirection((const msdk_char *)"Output");
+
+    m_numEncoders = 0;
+    m_libvaBackend = 0;
+    statisticsWindowSize=0;
 } //CTranscodingPipeline::CTranscodingPipeline()
 
 CTranscodingPipeline::~CTranscodingPipeline()
