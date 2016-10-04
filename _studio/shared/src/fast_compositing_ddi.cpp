@@ -1034,12 +1034,21 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
         outInfo->FourCC == MFX_FOURCC_NV16 ||
         outInfo->FourCC == MFX_FOURCC_YUY2 ||
         outInfo->FourCC == MFX_FOURCC_P010 ||
-        outInfo->FourCC == MFX_FOURCC_P210)
+        outInfo->FourCC == MFX_FOURCC_P210 ||
+        outInfo->FourCC == MFX_FOURCC_AYUV )
     {
-        pBltParams->BackgroundColor.Alpha = ((pExecuteParams->iBackgroundColor >> 24) & 0xff) << 8;
-        pBltParams->BackgroundColor.Y     = ((pExecuteParams->iBackgroundColor >> 16) & 0xff) << 8;
-        pBltParams->BackgroundColor.Cb    = ((pExecuteParams->iBackgroundColor >>  8) & 0xff) << 8;
+        pBltParams->BackgroundColor.Alpha = ((pExecuteParams->iBackgroundColor >> 48) & 0xff) << 8;
+        pBltParams->BackgroundColor.Y     = ((pExecuteParams->iBackgroundColor >> 32) & 0xff) << 8;
+        pBltParams->BackgroundColor.Cb    = ((pExecuteParams->iBackgroundColor >> 16) & 0xff) << 8;
         pBltParams->BackgroundColor.Cr    = ((pExecuteParams->iBackgroundColor      ) & 0xff) << 8;
+    }
+    if (outInfo->FourCC == MFX_FOURCC_Y210 ||
+        outInfo->FourCC == MFX_FOURCC_Y410 )
+    {
+        pBltParams->BackgroundColor.Alpha = (pExecuteParams->iBackgroundColor >> 48) & 0xffff;
+        pBltParams->BackgroundColor.Y     = (pExecuteParams->iBackgroundColor >> 32) & 0xffff;
+        pBltParams->BackgroundColor.Cb    = (pExecuteParams->iBackgroundColor >> 16) & 0xffff;
+        pBltParams->BackgroundColor.Cr    = (pExecuteParams->iBackgroundColor      ) & 0xffff;
     }
     if (outInfo->FourCC == MFX_FOURCC_RGB3    ||
         outInfo->FourCC == MFX_FOURCC_RGB4    ||
@@ -1048,12 +1057,12 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
         outInfo->FourCC == MFX_FOURCC_ARGB16  ||
         outInfo->FourCC == MFX_FOURCC_R16)
     {
-        pBltParams->BackgroundColor.Alpha = ((pExecuteParams->iBackgroundColor >> 24) & 0xff) << 8;
+        pBltParams->BackgroundColor.Alpha = ((pExecuteParams->iBackgroundColor >> 48) & 0xff) << 8;
 
         USHORT R, G, B;
 
-        R = (pExecuteParams->iBackgroundColor >> 16) & 0xff;
-        G = (pExecuteParams->iBackgroundColor >>  8) & 0xff;
+        R = (pExecuteParams->iBackgroundColor >> 32) & 0xff;
+        G = (pExecuteParams->iBackgroundColor >> 16) & 0xff;
         B = (pExecuteParams->iBackgroundColor      ) & 0xff;
         
         pBltParams->BackgroundColor.Y  = (USHORT)(( 0x000041cb * R + 0x00008106 * G + 0x00001917 * B + 0x108000) >> 8);

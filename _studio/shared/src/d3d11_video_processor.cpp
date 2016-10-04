@@ -2671,14 +2671,25 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         outInfo->FourCC == MFX_FOURCC_NV16 ||
         outInfo->FourCC == MFX_FOURCC_YUY2 ||
         outInfo->FourCC == MFX_FOURCC_P010 ||
-        outInfo->FourCC == MFX_FOURCC_P210)
+        outInfo->FourCC == MFX_FOURCC_P210 ||
+        outInfo->FourCC == MFX_FOURCC_AYUV )
     {
         bYCbCr = TRUE;
 
-        Color.YCbCr.A  = ((pParams->iBackgroundColor >> 24) & 0xff) / 255.0f;
-        Color.YCbCr.Y  = ((pParams->iBackgroundColor >> 16) & 0xff) / 255.0f;
-        Color.YCbCr.Cb = ((pParams->iBackgroundColor >>  8) & 0xff) / 255.0f;
+        Color.YCbCr.A  = ((pParams->iBackgroundColor >> 48) & 0xff) / 255.0f;
+        Color.YCbCr.Y  = ((pParams->iBackgroundColor >> 32) & 0xff) / 255.0f;
+        Color.YCbCr.Cb = ((pParams->iBackgroundColor >> 16) & 0xff) / 255.0f;
         Color.YCbCr.Cr = ((pParams->iBackgroundColor      ) & 0xff) / 255.0f;
+    }
+    if (outInfo->FourCC == MFX_FOURCC_Y210 ||
+        outInfo->FourCC == MFX_FOURCC_Y410 )
+    {
+        bYCbCr = TRUE;
+
+        Color.YCbCr.A  = ((pParams->iBackgroundColor >> 48) & 0xffff) / 1023.0f;
+        Color.YCbCr.Y  = ((pParams->iBackgroundColor >> 32) & 0xffff) / 1023.0f;
+        Color.YCbCr.Cb = ((pParams->iBackgroundColor >> 16) & 0xffff) / 1023.0f;
+        Color.YCbCr.Cr = ((pParams->iBackgroundColor      ) & 0xffff) / 1023.0f;
     }
     if (outInfo->FourCC == MFX_FOURCC_RGB3    ||
         outInfo->FourCC == MFX_FOURCC_RGB4    ||
@@ -2689,9 +2700,9 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     {
         bYCbCr = FALSE;
 
-        Color.RGBA.A = ((pParams->iBackgroundColor >> 24) & 0xff) / 255.0f;
-        Color.RGBA.R = ((pParams->iBackgroundColor >> 16) & 0xff) / 255.0f;
-        Color.RGBA.G = ((pParams->iBackgroundColor >>  8) & 0xff) / 255.0f;
+        Color.RGBA.A = ((pParams->iBackgroundColor >> 48) & 0xff) / 255.0f;
+        Color.RGBA.R = ((pParams->iBackgroundColor >> 32) & 0xff) / 255.0f;
+        Color.RGBA.G = ((pParams->iBackgroundColor >> 16) & 0xff) / 255.0f;
         Color.RGBA.B = ((pParams->iBackgroundColor      ) & 0xff) / 255.0f;
     }
 

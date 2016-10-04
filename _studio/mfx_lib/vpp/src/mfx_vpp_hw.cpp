@@ -1500,8 +1500,8 @@ mfxStatus VideoVPPHW::GetVideoParams(mfxVideoParam *par) const
                 bufComp->InputStream[k].PixelAlphaEnable = m_executeParams.dstRects[k].PixelAlphaEnable;
             }
 
-            bufComp->R = (m_executeParams.iBackgroundColor >> 16 ) & 0xFF;
-            bufComp->G = (m_executeParams.iBackgroundColor >> 8  ) & 0xFF;
+            bufComp->R = (m_executeParams.iBackgroundColor >> 32 ) & 0xFF;
+            bufComp->G = (m_executeParams.iBackgroundColor >> 16 ) & 0xFF;
             bufComp->B = (m_executeParams.iBackgroundColor >> 0  ) & 0xFF;
         }
         else if (MFX_EXTBUFF_VPP_FIELD_PROCESSING == bufferId)
@@ -3387,13 +3387,19 @@ mfxStatus ConfigureExecuteParams(
         videoParam.vpp.Out.FourCC == MFX_FOURCC_NV16 ||
         videoParam.vpp.Out.FourCC == MFX_FOURCC_YUY2 ||
         videoParam.vpp.Out.FourCC == MFX_FOURCC_P010 ||
-        videoParam.vpp.Out.FourCC == MFX_FOURCC_P210)
+        videoParam.vpp.Out.FourCC == MFX_FOURCC_P210 ||
+        videoParam.vpp.Out.FourCC == MFX_FOURCC_AYUV )
     {
-        executeParams.iBackgroundColor = 0xff108080; // black in YUV interpretation
+        executeParams.iBackgroundColor = 0xff00100080008000; // black in 8-bit YUV interpretation
+    }
+    else if(videoParam.vpp.Out.FourCC == MFX_FOURCC_Y210 ||
+            videoParam.vpp.Out.FourCC == MFX_FOURCC_Y410)
+    {
+        executeParams.iBackgroundColor = 0xff03400000020002; // black in 10-bit YUV interpretation
     }
     else
     {
-        executeParams.iBackgroundColor = 0xff000000; // black in RGB interpretation
+        executeParams.iBackgroundColor = 0xffff000000000000; // black in RGB interpretation
     }
 
     //-----------------------------------------------------
@@ -3927,20 +3933,29 @@ mfxStatus ConfigureExecuteParams(
                         if (targetFourCC == MFX_FOURCC_NV12 ||
                             targetFourCC == MFX_FOURCC_YV12 ||
                             targetFourCC == MFX_FOURCC_NV16 ||
-                            targetFourCC == MFX_FOURCC_YUY2)
+                            targetFourCC == MFX_FOURCC_YUY2 ||
+                            targetFourCC == MFX_FOURCC_AYUV)
                         {
-                            executeParams.iBackgroundColor  = (0xff << 24)|
-                               (VPP_RANGE_CLIP(extComp->Y, 16, 235) << 16)|
-                               (VPP_RANGE_CLIP(extComp->U, 16, 240) <<  8)|
-                               (VPP_RANGE_CLIP(extComp->V, 16, 240) <<  0);
+                            executeParams.iBackgroundColor  = ((mfxU64)0xff << 48)|
+                               ((mfxU64)VPP_RANGE_CLIP(extComp->Y, 16, 235) << 32)|
+                               ((mfxU64)VPP_RANGE_CLIP(extComp->U, 16, 240) << 16)|
+                               ((mfxU64)VPP_RANGE_CLIP(extComp->V, 16, 240) <<  0);
+                        }
+                        if (targetFourCC == MFX_FOURCC_Y210 ||
+                            targetFourCC == MFX_FOURCC_Y410)
+                        {
+                            executeParams.iBackgroundColor  =         ((mfxU64)0xffff << 48)|
+                               ((mfxU64)VPP_RANGE_CLIP(extComp->Y, 64 << 6, 940 << 6) << 32)|
+                               ((mfxU64)VPP_RANGE_CLIP(extComp->U, 64 << 6, 960 << 6) << 16)|
+                               ((mfxU64)VPP_RANGE_CLIP(extComp->V, 64 << 6, 960 << 6) <<  0);
                         }
                         if (targetFourCC == MFX_FOURCC_RGB4 ||
                             targetFourCC == MFX_FOURCC_BGR4)
                         {
-                            executeParams.iBackgroundColor = (0xff << 24)|
-                               (VPP_RANGE_CLIP(extComp->R, 0, 255) << 16)|
-                               (VPP_RANGE_CLIP(extComp->G, 0, 255) <<  8)|
-                               (VPP_RANGE_CLIP(extComp->B, 0, 255) <<  0);
+                            executeParams.iBackgroundColor = ((mfxU64)0xff << 48)|
+                               ((mfxU64)VPP_RANGE_CLIP(extComp->R, 0, 255) << 32)|
+                               ((mfxU64)VPP_RANGE_CLIP(extComp->G, 0, 255) << 16)|
+                               ((mfxU64)VPP_RANGE_CLIP(extComp->B, 0, 255) <<  0);
                         }
                     }
                 }
@@ -4119,13 +4134,19 @@ mfxStatus ConfigureExecuteParams(
                         videoParam.vpp.Out.FourCC == MFX_FOURCC_NV16 ||
                         videoParam.vpp.Out.FourCC == MFX_FOURCC_YUY2 ||
                         videoParam.vpp.Out.FourCC == MFX_FOURCC_P010 ||
-                        videoParam.vpp.Out.FourCC == MFX_FOURCC_P210)
+                        videoParam.vpp.Out.FourCC == MFX_FOURCC_P210 ||
+                        videoParam.vpp.Out.FourCC == MFX_FOURCC_AYUV )
                     {
-                        executeParams.iBackgroundColor = 0xff108080; // black in YUV interpretation
+                        executeParams.iBackgroundColor = 0xff00100080008000; // black in 8-bit YUV interpretation
+                    }
+                    else if (videoParam.vpp.Out.FourCC == MFX_FOURCC_Y210 ||
+                             videoParam.vpp.Out.FourCC == MFX_FOURCC_Y410)
+                    {
+                        executeParams.iBackgroundColor = 0xff03400000020002; // black in 10-bit YUV interpretation
                     }
                     else
                     {
-                        executeParams.iBackgroundColor = 0xff000000; // black in RGB interpretation
+                        executeParams.iBackgroundColor = 0xffff000000000000; // black in RGB interpretation
                     }
                 }
                 else if (MFX_EXTBUFF_VPP_FIELD_PROCESSING == bufferId)

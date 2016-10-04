@@ -438,7 +438,7 @@ namespace MfxHwVideoProcessing
 
         bool           bComposite;
         std::vector<DstRect> dstRects;
-        mfxU32         iBackgroundColor;
+        mfxU64         iBackgroundColor;
 
         mfxU32         statusReportID;
 
