@@ -27,7 +27,7 @@ enum
     SA_STEP_ALIGN               = 64
 };
 
-SceneAnalyzerPicture::SceneAnalyzerPicture(void)
+SceneAnalyzerPicture::SceneAnalyzerPicture(void) :m_info()
 {
     memset(&m_pPic, 0, sizeof(m_pPic));
     m_picSize = 0;
@@ -38,7 +38,7 @@ SceneAnalyzerPicture::SceneAnalyzerPicture(void)
 
     m_pSliceInfo = (UMC_SCENE_INFO *) 0;
     m_numSliceInfo = 0;
-
+    m_colorFormat = NONE;
 } // SceneAnalyzerPicture::SceneAnalyzerPicture(void)
 
 SceneAnalyzerPicture::~SceneAnalyzerPicture(void)
@@ -254,6 +254,8 @@ SceneAnalyzerFrame::SceneAnalyzerFrame(void)
     m_workBuff.reset(0);
     m_srcSize.width  = m_dstSize.width  = 0;
     m_srcSize.height = m_dstSize.height = 0;
+
+    m_frameType = NONE_PICTURE;
 
 } // SceneAnalyzerFrame::SceneAnalyzerFrame(void)
 
