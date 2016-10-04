@@ -1635,6 +1635,27 @@ void CorrectionForGoPSize(VidRead *support, mfxU32 PdIndex) {
     support->lastSCdetectionDistance++;
 }
 
+BOOL SceneChangeDetector::CompareStats(mfxU8 current, mfxU8 reference, BOOL isInterlaced){
+    if(current > 2 || reference > 2 || current == reference) {
+        printf("SCD Error: Invalid stats comparison\n");
+        exit(-666);
+    }
+    mfxU8 comparison = 0;
+    comparison += abs(support->logic[current]->Rs - support->logic[reference]->Rs) < 0.075;
+    comparison += abs(support->logic[current]->Cs - support->logic[reference]->Cs) < 0.075;
+    comparison += abs(support->logic[current]->SC - support->logic[reference]->SC) < 0.075;
+    comparison += (!isInterlaced && support->logic[current]->TSCindex == 0) || isInterlaced;
+    if(comparison == 4)
+        return Same;
+    return Not_same;
+}
+
+BOOL SceneChangeDetector::FrameRepeatCheck(BOOL isInterlaced) {
+    mfxU8 reference = previous_frame_data;
+    if(isInterlaced)
+        reference = previous_previous_frame_data;
+    return(CompareStats(current_frame_data, reference, isInterlaced));
+}
 
 void SceneChangeDetector::processFrame() {
     support->logic[current_frame_data]->frameNum = videoData[Current_Frame]->frame_number;
@@ -1666,6 +1687,7 @@ void SceneChangeDetector::processFrame() {
         support->logic[current_frame_data]->pdist = support->PDistanceTable[(support->logic[current_frame_data]->TSCindex * NumSC) + support->logic[current_frame_data]->SCindex];
         /*------Shot Detection------*/
         ShotDetect(videoData[Current_Frame]->layer[0], videoData[Reference_Frame]->layer[0], m_dataIn->layer[0], support->logic[current_frame_data], support->logic[previous_frame_data]);
+        support->logic[current_frame_data]->repeatedFrame = FrameRepeatCheck(m_dataIn->interlaceMode != progressive_frame);
     }
     m_dataIn->processed_frames++;
     CorrectionForGoPSize(support, current_frame_data);
@@ -1677,9 +1699,10 @@ void SceneChangeDetector::GeneralBufferRotation() {
     videoData[0]  = videoData[1];
     videoData[1]  = videoTransfer;
     TSCstat        *metaTransfer;
-    metaTransfer  = support->logic[current_frame_data];
-    support->logic[current_frame_data] = support->logic[previous_frame_data];
-    support->logic[previous_frame_data] = metaTransfer;
+    metaTransfer  = support->logic[previous_previous_frame_data];
+    support->logic[previous_previous_frame_data] = support->logic[previous_frame_data];
+    support->logic[previous_frame_data]          = support->logic[current_frame_data];
+    support->logic[current_frame_data]           = metaTransfer;
 }
 
 BOOL SceneChangeDetector::ProcessField()
@@ -1705,6 +1728,13 @@ mfxU32 SceneChangeDetector::Get_frame_shot_Decision() {
 mfxU32 SceneChangeDetector::Get_frame_last_in_scene() {
     if(dataReady)
         return support->logic[current_frame_data]->lastFrameInShot;
+    else
+        return 0;
+}
+
+BOOL SceneChangeDetector::Query_is_frame_repeated() {
+    if(dataReady)
+        return support->logic[current_frame_data]->repeatedFrame;
     else
         return 0;
 }
@@ -1886,7 +1916,7 @@ void SceneChangeDetector::VidSample_dispose() {
 
 void SceneChangeDetector::VidRead_dispose() {
     if(support->logic != NULL) {
-        for(mfxI32 i = 0; i < 2; i++)
+        for(mfxI32 i = 0; i < TSCSTATBUFFER; i++)
             delete support->logic[i];
         delete[] support->logic;
     }
@@ -1901,7 +1931,7 @@ void SceneChangeDetector::IO_Setup() {
 }
 
 void TSCstat_Init(TSCstat **logic) {
-    for(int i = 0; i < 2; i++)
+    for(int i = 0; i < TSCSTATBUFFER; i++)
     {
         logic[i] = new TSCstat;
         logic[i]->AFD = 0.0;

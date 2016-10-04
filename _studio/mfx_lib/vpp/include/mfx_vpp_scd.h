@@ -53,7 +53,8 @@ Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 #define NABS(a)           (((a)<0)?(-(a)):(a))
 #define NAVG(a,b)         ((a+b)/2)
 
-#define Clamp(x)           ((x<0)?0:((x>255)?255:x))
+#define Clamp(x)          ((x<0)?0:((x>255)?255:x))
+#define TSCSTATBUFFER     3
 
 #define EXTRANEIGHBORS
 #define SAD_SEARCH_VSTEP 2  // 1=FS 2=FHS
@@ -67,6 +68,12 @@ enum cpuOptimizations
     CPU_NONE = 0,
     CPU_SSE4,
     CPU_AVX2
+};
+
+enum Simil
+{
+    Not_same,
+    Same
 };
 
 enum GoP_Sizes
@@ -112,7 +119,8 @@ enum FrameTypeScan
 enum BufferPosition
 {
     current_frame_data,
-    previous_frame_data
+    previous_frame_data,
+    previous_previous_frame_data
 };
 
 enum Layers
@@ -361,6 +369,7 @@ public:
     mfxU32    Get_frame_number();
     mfxU32    Get_frame_shot_Decision();
     mfxU32    Get_frame_last_in_scene();
+    BOOL      Query_is_frame_repeated();
 
     void      SetParityTFF();    //Sets the detection to interlaced Top Field First mode, can be done on the fly
     void      SetParityBFF();    //Sets the detection to interlaced Bottom Field First mode, can be done on the fly
@@ -407,6 +416,8 @@ private:
     void InitStruct();
     void VidRead_Init();
     void VidSample_Init();
+    BOOL CompareStats(mfxU8 current, mfxU8 reference, BOOL isInterlaced);
+    BOOL FrameRepeatCheck(BOOL isInterlaced);
     void processFrame();
     void GeneralBufferRotation();
     BOOL RunFrame(mfxU32 parity);
