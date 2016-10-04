@@ -311,6 +311,9 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
                                   && ((m_Profile & VA_CODEC) != UMC::VA_VP8)
 #else
                                   && ((m_Profile & VA_CODEC) != UMC::VA_MPEG2)
+                                  && ((m_Profile & VA_CODEC) != UMC::VA_VP8)
+                                  && ((m_Profile & VA_CODEC) != UMC::VA_JPEG)
+                                  && ((m_Profile & VA_CODEC) != UMC::VA_VC1)
 #endif
                                     );
 
