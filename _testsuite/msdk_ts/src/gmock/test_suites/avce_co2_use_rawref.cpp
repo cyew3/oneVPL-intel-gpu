@@ -140,8 +140,9 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.MaxKbps, 600},
         {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 4}}},
 
-    {/*09*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, INIT, {
-        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 1}}},
+    {/*09*/ MFX_ERR_NONE, INIT, {
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 1},
+        {MFXPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE}}},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);

@@ -58,8 +58,25 @@ typedef struct {
 
  mfxU16 GetMaxNumRefActivePL0(mfxU32 tu)
 {
-    mfxU16 const DEFAULT_BY_TU[] = { 0, 2, 2, 2, 2, 2, 1, 1 };
-    return DEFAULT_BY_TU[tu];
+    if (g_tsConfig.lowpower != MFX_CODINGOPTION_ON)
+    {
+        //if((info.Width < 3840 && info.Height < 2160) ||
+        //    (info.PicStruct != MFX_PICSTRUCT_PROGRESSIVE))
+        {
+            mfxU16 const DEFAULT_BY_TU[] = { 0, 8, 6, 4, 3, 2, 1, 1 };
+            return DEFAULT_BY_TU[tu];
+        }
+        //else //progressive >= 4K
+        //{
+        //    mfxU16 const DEFAULT_BY_TU[] = { 0, 4, 4, 4, 3, 2, 1, 1 };
+        //    return DEFAULT_BY_TU[tu];
+        //}
+    }
+    else
+    {
+        mfxU16 const DEFAULT_BY_TU[] = { 0, 3, 3, 2, 2, 2, 1, 1 };
+        return DEFAULT_BY_TU[tu];
+    }
 }
 
 mfxU16 GetMaxNumRefActiveBL0(mfxU32 tu)
@@ -70,7 +87,7 @@ mfxU16 GetMaxNumRefActiveBL0(mfxU32 tu)
 
 mfxU16 GetMaxNumRefActiveBL1(mfxU32 tu)
 {
-    mfxU16 const DEFAULT_BY_TU[] = { 1, 1, 1, 1, 1, 1, 1, 1 };
+    mfxU16 const DEFAULT_BY_TU[] = { 0, 1, 1, 1, 1, 1, 1, 1 };
     return DEFAULT_BY_TU[tu];
 }
 
@@ -97,7 +114,7 @@ mfxStatus CreateRefLists(mfxVideoParam& par, mfxU32 frameOrder, mfxU16 frameType
         if (!field)
         {
             // progressive encoding
-            refList.NumRefIdxL0Active = IPP_MIN(conf.reorderListL[0].numrRefIdxActive, IPP_MIN(maxSupportedL0Refs, dpbFrameOrders.size()));
+            refList.NumRefIdxL0Active = TS_MIN(conf.reorderListL[0].numrRefIdxActive, TS_MIN(maxSupportedL0Refs, (mfxU16)dpbFrameOrders.size()));
             if (conf.reorderListL[0].reorder < dpbFrameOrders.size())
             {
                 refList.RefPicList0[0].PicStruct = ps;
@@ -105,7 +122,7 @@ mfxStatus CreateRefLists(mfxVideoParam& par, mfxU32 frameOrder, mfxU16 frameType
             }
             if (isBFrame)
             {
-                refList.NumRefIdxL1Active = IPP_MIN(conf.reorderListL[1].numrRefIdxActive, IPP_MIN(maxSupportedL1Refs, dpbFrameOrders.size()));
+                refList.NumRefIdxL1Active = TS_MIN(conf.reorderListL[1].numrRefIdxActive, TS_MIN(maxSupportedL1Refs, (mfxU16)dpbFrameOrders.size()));
                 if (conf.reorderListL[1].reorder < dpbFrameOrders.size())
                 {
                     refList.RefPicList1[0].PicStruct = ps;
@@ -118,12 +135,12 @@ mfxStatus CreateRefLists(mfxVideoParam& par, mfxU32 frameOrder, mfxU16 frameType
             if (fieldOrder == 0)
             {
                 // first field in the pair
-                refList.NumRefIdxL0Active = IPP_MIN(conf.reorderListL[0].numrRefIdxActive, IPP_MIN(maxSupportedL0Refs, dpbFrameOrders.size() * 2));
+                refList.NumRefIdxL0Active = TS_MIN(conf.reorderListL[0].numrRefIdxActive, TS_MIN(maxSupportedL0Refs, (mfxU16)dpbFrameOrders.size() * 2));
             }
             else
             {
                 // second field in the pair
-                refList.NumRefIdxL0Active = IPP_MIN(conf.reorderListL[0].numrRefIdxActive, IPP_MIN(maxSupportedL0Refs, dpbFrameOrders.size() * 2 - 1));
+                refList.NumRefIdxL0Active = TS_MIN(conf.reorderListL[0].numrRefIdxActive, TS_MIN(maxSupportedL0Refs, (mfxU16)dpbFrameOrders.size() * 2 - 1));
             }
         }
     }
@@ -698,14 +715,23 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
                     s.num_ref_idx_l1_active_minus1 = s.pps_active->num_ref_idx_l1_default_active_minus1;
             }
 
+            mfxU16 maxSupportedL0Refs = !!(bs.FrameType & MFX_FRAMETYPE_B) ? GetMaxNumRefActiveBL0(m_par.mfx.TargetUsage) : GetMaxNumRefActivePL0(m_par.mfx.TargetUsage);
+            mfxU16 maxSupportedL1Refs = GetMaxNumRefActiveBL1(m_par.mfx.TargetUsage);
+
+            if (s.field_pic_flag)
+            {
+                maxSupportedL0Refs *= 2;
+                maxSupportedL1Refs *= 2;
+            }
+
             if (rl.NumRefIdxL0Active)
             {
-                EXPECT_EQ(rl.NumRefIdxL0Active, s.num_ref_idx_l0_active_minus1+1);
+                EXPECT_EQ(TS_MIN(maxSupportedL0Refs, rl.NumRefIdxL0Active), s.num_ref_idx_l0_active_minus1+1);
             }
 
             if (rl.NumRefIdxL1Active)
             {
-                EXPECT_EQ(rl.NumRefIdxL1Active, s.num_ref_idx_l1_active_minus1+1);
+                EXPECT_EQ(TS_MIN(maxSupportedL1Refs, rl.NumRefIdxL1Active), s.num_ref_idx_l1_active_minus1+1);
             }
 
 

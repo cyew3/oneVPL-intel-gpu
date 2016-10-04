@@ -254,6 +254,9 @@ int test(unsigned int id)
     if (enc.m_par.mfx.LowPower == MFX_CODINGOPTION_ON) // LowPower mode unsupported NumRoi > 3
         tc.p3 = TS_MIN(3, tc.p3);
 
+    enc.m_par.mfx.FrameInfo.Width  = enc.m_par.mfx.FrameInfo.CropW = 720;
+    enc.m_par.mfx.FrameInfo.Height = enc.m_par.mfx.FrameInfo.CropH = 480;
+
     InitPar par = {enc.m_session, &enc.m_par};
     
     g_tsStatus.expect(tc.sts);

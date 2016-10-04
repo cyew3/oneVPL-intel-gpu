@@ -110,6 +110,10 @@ private:
             mfxExtCodingOption2* co2 = (mfxExtCodingOption2*)m_par.ExtParam[0];
             s.Data.TimeStamp = co2->DisableDeblockingIdc ? FEATURE_ENABLED : 0;
         }
+        else
+        {
+            s.Data.TimeStamp = 0;
+        }
 
         n_frame++;
 
@@ -205,6 +209,7 @@ int TestSuite::RunTest(unsigned int id)
 
     BsDump bs;
     m_bs_processor = &bs;
+    m_par.AsyncDepth = 1;
 
     if (!(tc.mode & RUNTIME_ONLY) && !(tc.mode & RESET_ON))
     {

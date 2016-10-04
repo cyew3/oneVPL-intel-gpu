@@ -10,6 +10,35 @@
 
 #include "ts_encoder.h"
 
+void SkipDecision(mfxVideoParam& par)
+{
+    if (g_tsConfig.lowpower == MFX_CODINGOPTION_ON)
+    {
+        if (   par.mfx.GopRefDist > 1
+            || (par.mfx.FrameInfo.PicStruct & (MFX_PICSTRUCT_FIELD_BFF|MFX_PICSTRUCT_FIELD_TFF)))
+        {
+            g_tsStatus.disable();
+            throw tsSKIP;
+        }
+
+        if (par.mfx.CodecId == MFX_CODEC_AVC)
+        {
+            if (   par.mfx.RateControlMethod != 0
+                && par.mfx.RateControlMethod != MFX_RATECONTROL_CBR
+                && par.mfx.RateControlMethod != MFX_RATECONTROL_VBR
+                && par.mfx.RateControlMethod != MFX_RATECONTROL_AVBR
+                && par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR
+                && par.mfx.RateControlMethod != MFX_RATECONTROL_VCM
+                && par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
+                && g_tsStatus.m_expected <= MFX_ERR_NONE)
+            {
+                g_tsStatus.disable();
+                throw tsSKIP;
+            }
+        }
+    }
+}
+
 tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
     : m_default(useDefaults)
     , m_initialized(false)
@@ -36,6 +65,11 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
         m_par.mfx.LowPower = g_tsConfig.lowpower;
     }
 
+    if (m_par.mfx.LowPower == MFX_CODINGOPTION_ON)
+    {
+        m_par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+    }
+
     if(m_default)
     {
         //TODO: add codec specific
@@ -59,8 +93,10 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults)
         }
         m_par.mfx.FrameInfo.FrameRateExtN = 30;
         m_par.mfx.FrameInfo.FrameRateExtD = 1;
-        if(m_par.mfx.LowPower == MFX_CODINGOPTION_ON)
-            m_par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+
+        if (   (CodecId == MFX_CODEC_AVC || CodecId == MFX_CODEC_MPEG2)
+            && m_par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
+            m_par.mfx.FrameInfo.Height = (m_par.mfx.FrameInfo.Height + 31) & ~31;
     }
     m_uid = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_ENCODE, CodecId);
     m_loaded = !m_uid;
@@ -162,6 +198,10 @@ mfxStatus tsVideoEncoder::Init(mfxSession session, mfxVideoParam *par)
     if (par) memcpy(&orig_par, m_pPar, sizeof(mfxVideoParam));
 
     TRACE_FUNC2(MFXVideoENCODE_Init, session, par);
+    if (par)
+    {
+        SkipDecision(*par);
+    }
     g_tsStatus.check( MFXVideoENCODE_Init(session, par) );
 
     m_initialized = (g_tsStatus.get() >= 0);
@@ -220,6 +260,10 @@ mfxStatus tsVideoEncoder::Query()
 mfxStatus tsVideoEncoder::Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
 {
     TRACE_FUNC3(MFXVideoENCODE_Query, session, in, out);
+    if (in)
+    {
+        SkipDecision(*in);
+    }
     g_tsStatus.check( MFXVideoENCODE_Query(session, in, out) );
     TS_TRACE(out);
 
@@ -244,8 +288,11 @@ mfxStatus tsVideoEncoder::QueryIOSurf()
 
 mfxStatus tsVideoEncoder::QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
-        
     TRACE_FUNC3(MFXVideoENCODE_QueryIOSurf, session, par, request);
+    if (par)
+    {
+        SkipDecision(*par);
+    }
     g_tsStatus.check( MFXVideoENCODE_QueryIOSurf(session, par, request) );
     TS_TRACE(request);
 
@@ -260,6 +307,10 @@ mfxStatus tsVideoEncoder::Reset()
 mfxStatus tsVideoEncoder::Reset(mfxSession session, mfxVideoParam *par)
 {
     TRACE_FUNC2(MFXVideoENCODE_Reset, session, par);
+    if (par)
+    {
+        SkipDecision(*par);
+    }
     g_tsStatus.check( MFXVideoENCODE_Reset(session, par) );
 
     //m_frames_buffered = 0;

@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
@@ -165,7 +175,9 @@ int TestSuite::RunTest(unsigned int id)
     else
         g_tsStatus.expect(tc.sts);
 
-    m_par.mfx.FrameInfo.PicStruct = 1;
+    m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 720;
+    m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 480;
+    m_par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
     m_par.mfx.QPI = 0;
     m_par.mfx.QPP = 0;
     m_par.mfx.QPB = 0;

@@ -11,7 +11,10 @@ Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 #include "ts_encoder.h"
 #include "ts_parser.h"
 
-namespace
+
+//#define DEBUG_STREAM "avce_max_bins_pcm.264"
+
+namespace avce_max_bins_pcm
 {
 
 class SFiller : public tsSurfaceProcessor
@@ -58,12 +61,26 @@ public:
      return MFX_ERR_NONE;
  }
 
+using namespace BS_AVC2;
 
-class BitstreamChecker : public tsBitstreamProcessor, public tsParserH264AU
+class BitstreamChecker : public tsBitstreamProcessor, public tsParserAVC2
 {
 public:
+#ifdef DEBUG_STREAM
+    tsBitstreamWriter m_bsw;
+#endif
+
     BitstreamChecker()
-        : tsParserH264AU(BS_H264_INIT_MODE_CABAC)
+        : tsParserAVC2( INIT_MODE_PARSE_SD
+#if (!defined(LINUX32) && !defined(LINUX64))
+                       //use slice threading w/ auto-sync at new AU start
+                       //disable for linux due to issue in old gcc versions with std threads
+                       |INIT_MODE_MT_SD
+#endif
+                      )
+#ifdef DEBUG_STREAM
+    , m_bsw(DEBUG_STREAM)
+#endif
     {
         set_trace_level(0);
     }
@@ -82,8 +99,12 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
         SetBuffer(bs);
 
     bool check_max_bins = true;
+
+    //driver supports PCMs now
+#if 0
     if (g_tsImpl != MFX_IMPL_SOFTWARE)
         check_max_bins = false; // parse + dump info only
+#endif
 
     while(checked++ < nFrames)
     {
@@ -96,13 +117,16 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 
         UnitType& hdr = ParseOrDie();
 
-        for(UnitType::nalu_param* nalu = hdr.NALU; nalu < hdr.NALU + hdr.NumUnits; nalu ++)
+        for(Bs32u i = 0; i < hdr.NumUnits; i++)
         {
-            if(nalu->nal_unit_type != 1 && nalu->nal_unit_type != 5)
+            auto nalu = hdr.nalu[i];
+
+            if(    nalu->nal_unit_type != SLICE_IDR
+                && nalu->nal_unit_type != SLICE_NONIDR)
                 continue;
 
-            slice_header&   s   = *nalu->slice_hdr;
-            seq_param_set&  sps = *s.sps_active;
+            auto&   s  = *nalu->slice;
+            auto&  sps = *s.pps->sps;
 
             mfxU16 MbWidthC  = 16 / SubWidthC[sps.chroma_format_idc + sps.separate_colour_plane_flag];
             mfxU16 MbHeightC = 16 / SubHeightC[sps.chroma_format_idc + sps.separate_colour_plane_flag];
@@ -110,26 +134,27 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
             mfxU16 BitDepthC = 8 + sps.bit_depth_chroma_minus8;
 
             BinCountsInNALunits   += s.BinCount;
-            NumBytesInVclNALunits += nalu->NumBytesInNALunit - 3 - (nalu == hdr.NALU);
+            NumBytesInVclNALunits += nalu->NumBytesInNalUnit - 3 - (nalu == hdr.nalu[0]);
             RawMbBits = 256 * BitDepthY + 2 * MbWidthC * MbHeightC * BitDepthC;
             PicSizeInMbs = (sps.pic_width_in_mbs_minus1 + 1) * (( 2 - sps.frame_mbs_only_flag ) * (sps.pic_height_in_map_units_minus1 + 1) / ( 1 + s.field_pic_flag ));
 
-            g_tsLog << "Slice #" << nSlice++ << ": BinCount = " << s.BinCount << "; NumBytesInNALunit = " << nalu->NumBytesInNALunit << ";\n";
+            g_tsLog << "Slice #" << nSlice++ << ": BinCount = " << s.BinCount << "; NumBytesInNALunit = " << nalu->NumBytesInNalUnit << ";\n";
 
             if(sps.vui_parameters_present_flag && sps.vui->bitstream_restriction_flag)
             {
                 max_bits_per_mb_denom = sps.vui->max_bits_per_mb_denom;
             }
 
-            for(mfxU32 i = 0; i < s.NumMb; i++)
+            for(mfxU32 i = 0; i < s.NumMB; i++)
             {
-                macro_block& mb = s.mb[i];
+                auto& mb = s.mb[i];
+
                 if(sps.profile_idc == 100)
                 {
-                    if (mb.numBits > 128 + RawMbBits / max_bits_per_mb_denom) {
+                    if (mb.NumBits > 128 + RawMbBits / max_bits_per_mb_denom) {
                         if (check_max_bins) {
                             g_tsLog << "ERROR: ";
-                            EXPECT_LE( mb.numBits, 128 + RawMbBits / max_bits_per_mb_denom );
+                            EXPECT_LE( mb.NumBits, 128 + RawMbBits / max_bits_per_mb_denom );
                         } else {
                             g_tsLog << "ERROR_SKIPPED: ";
                         }
@@ -138,9 +163,9 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
                     }
                 } else
                 {
-                    if (mb.numBits > 3200) {
+                    if (mb.NumBits > 3200) {
                         if (check_max_bins) {
-                            EXPECT_LE( mb.numBits, 3200 );
+                            EXPECT_LE( mb.NumBits, 3200 );
                             g_tsLog << "ERROR: ";
                         } else {
                             g_tsLog << "ERROR_SKIPPED: ";
@@ -163,6 +188,11 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
                 <<  BinCountsInNALunits << " <= 32 * " << NumBytesInVclNALunits << " / 3 + (" << RawMbBits << "*" << PicSizeInMbs << ") / 32  : "
                 <<  BinCountsInNALunits << " <= " << (32 * NumBytesInVclNALunits / 3 + (RawMbBits*PicSizeInMbs) / 32) << "\n";
     }
+
+#ifdef DEBUG_STREAM
+    m_bsw.ProcessBitstream(bs, nFrames);
+#endif
+
     bs.DataLength = 0;
 
     return MFX_ERR_NONE;
@@ -193,10 +223,12 @@ int test(unsigned int id)
     mfx.NumThread           = 0;
     mfx.TargetUsage         = 4;
     mfx.GopPicSize          = 24;
+
     if (mfx.LowPower == MFX_CODINGOPTION_ON)
         mfx.GopRefDist = 1;
     else
         mfx.GopRefDist = 3;
+
     mfx.GopOptFlag          = 1;
     mfx.IdrInterval         = 0;
     mfx.RateControlMethod   = MFX_RATECONTROL_VBR;

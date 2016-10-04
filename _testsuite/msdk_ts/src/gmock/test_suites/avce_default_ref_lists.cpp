@@ -524,6 +524,7 @@ int test(unsigned int id)
     enc.m_par.mfx.GopRefDist = tc.GopRefDist;
     enc.m_par.mfx.GopPicSize = tc.GopPicSize;
     enc.m_max = nFrames;
+    enc.m_par.AsyncDepth = 1;
 
     //tsBitstreamWriter bw("out.264");
     //enc.m_bs_processor = &bw;

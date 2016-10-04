@@ -21,6 +21,7 @@
 typedef enum {
       tsOK = 0
     , tsFAIL
+    , tsSKIP
 } tsRes;
 
 typedef struct {
@@ -144,7 +145,15 @@ extern tsConfig     g_tsConfig;
 #define TS_MAX(x,y) ((x)>(y) ? (x) : (y))
 #define TS_MIN(x,y) ((x)<(y) ? (x) : (y))
 #define TS_START try {
-#define TS_END   } catch(tsRes r) { return r; }
+#define TS_END   } catch(tsRes r)                             \
+    {                                                         \
+        if (r == tsSKIP)                                      \
+        {                                                     \
+            g_tsLog << "[  SKIPPED ] test-case was skipped\n";\
+            return 0;                                         \
+        }                                                     \
+        return r;                                             \
+    }
 
 #define TS_HW_ALLOCATOR_TYPE (!!((g_tsImpl) & 0xF00) ? frame_allocator::HARDWARE_DX11 : frame_allocator::HARDWARE)
 

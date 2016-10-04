@@ -13,6 +13,8 @@ Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
 #include "ts_parser.h"
 #include <vector>
 
+//#define DEBUG_STREAM "avce_inter_mbs.264"
+
 namespace avce_inter_mbs
 {
 
@@ -235,13 +237,17 @@ class Test
     , public tsVideoEncoder
 {
 private:
-    //tsBitstreamWriter m_w;
+#ifdef DEBUG_STREAM
+    tsBitstreamWriter m_w;
+#endif
 public:
     Test()
         : tsBitstreamProcessor()
         , tsParserAVC2(INIT_MODE_PARSE_SD)
         , tsVideoEncoder(MFX_CODEC_AVC)
-        //, m_w("debug.264")
+#ifdef DEBUG_STREAM
+        , m_w(DEBUG_STREAM)
+#endif
     {
         m_bs_processor = this;
         //set_trace_level(TRACE_MB_TYPE|TRACE_SLICE);
@@ -278,7 +284,9 @@ public:
             }
         }
 
-        //m_w.ProcessBitstream(bs, 1);
+#ifdef DEBUG_STREAM
+        m_w.ProcessBitstream(bs, 1);
+#endif
         bs.DataLength = 0;
 
         return MFX_ERR_NONE;
@@ -319,6 +327,8 @@ int test(unsigned int id)
     enc.m_par.mfx.GopPicSize = tc.GopPicSize;
     enc.m_par.mfx.GopOptFlag = MFX_GOP_STRICT;
     enc.m_par.mfx.EncodedOrder = tc.EncodedOrder;
+    enc.m_par.mfx.FrameInfo.Width  = enc.m_par.mfx.FrameInfo.CropW = 720;
+    enc.m_par.mfx.FrameInfo.Height = enc.m_par.mfx.FrameInfo.CropH = 480;
 
     tsRawReader f(stream, enc.m_par.mfx.FrameInfo);
     enc.m_filler = &f;
