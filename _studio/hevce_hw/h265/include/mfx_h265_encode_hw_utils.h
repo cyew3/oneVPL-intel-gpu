@@ -302,11 +302,13 @@ struct remove_const<const T>
 namespace ExtBuffer
 {
 
-    template<typename T, int sz>
+    /*template<typename T, int sz>
     int size_of_array(T(&)[sz])
     {
         return sz;
-    }
+    }*/
+
+    #define SIZE_OF_ARRAY(ARR) (sizeof(ARR) / sizeof(ARR[0]))
 
     const mfxU32 allowed_buffers[] = {
          MFX_EXTBUFF_HEVC_PARAM,
@@ -530,8 +532,8 @@ namespace ExtBuffer
     inline mfxStatus CheckBuffers(mfxVideoParam const & par)
     {
         // checked if all buffers are supported, not repeated
-        mfxU32 notDetected[sizeof(size_of_array(allowed_buffers))];
-        mfxU32 size = sizeof(size_of_array(allowed_buffers));
+        mfxU32 notDetected[SIZE_OF_ARRAY(allowed_buffers)];
+        mfxU32 size = SIZE_OF_ARRAY(allowed_buffers);
 
         memcpy_s(notDetected, sizeof(notDetected), allowed_buffers, sizeof(allowed_buffers));
 
@@ -544,9 +546,9 @@ namespace ExtBuffer
     inline mfxStatus CheckBuffers(mfxVideoParam const & par1, mfxVideoParam const & par2)
     {
         // checked if all buffers are supported, not repeated, identical set for both parfiles
-        mfxU32 notDetected1[sizeof(size_of_array(allowed_buffers))];
-        mfxU32 notDetected2[sizeof(size_of_array(allowed_buffers))];
-        mfxU32 size = sizeof(size_of_array(allowed_buffers));
+        mfxU32 notDetected1[SIZE_OF_ARRAY(allowed_buffers)];
+        mfxU32 notDetected2[SIZE_OF_ARRAY(allowed_buffers)];
+        mfxU32 size = SIZE_OF_ARRAY(allowed_buffers);
 
         memcpy_s(notDetected1, sizeof(notDetected1), allowed_buffers, sizeof(allowed_buffers));
         memcpy_s(notDetected2, sizeof(notDetected2), allowed_buffers, sizeof(allowed_buffers));
