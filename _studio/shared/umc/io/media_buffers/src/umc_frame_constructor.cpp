@@ -618,6 +618,7 @@ FrameConstructor::FrameConstructor()
     m_iFirstInDecOrderIdx = 0;
     m_dRate = 1.0;
     m_bStopAtFrame = false;
+    m_bPureStream = false;
 
     m_LastFrame.SetBufferPointer(NULL, 0);
     m_LastFrame.SetAbsPos(0);
