@@ -31,54 +31,174 @@ static const Ipp64f ratetab[8]=
 //#pragma warning(disable:2259)
 #endif
 
+#if defined (WIN32)
+#pragma warning (push)
+#pragma warning (disable:4351)  // value initialization is intended and disabling this warning recommended by MS: https://msdn.microsoft.com/en-us/en-en/library/1ywe7hcy.aspx
+#endif
+
 MPEG2VideoEncoderBase::MPEG2VideoEncoderBase ()
-{
-  m_Inited = 0;
-  picture_structure = MPEG2_FRAME_PICTURE;
-  top_field_first = 0; // 1 when !progressive
-  repeat_first_field = 0;
-  vbv_delay   = 19887;
-  onlyIFrames = 0;
-  encodeInfo.lFlags = FLAG_VENC_REORDER;
-  frame_loader = NULL;
-  m_PTS = -1;
-  m_DTS = -1;
-  progressive_frame = 0;
-
-  m_bSH = false;
-  m_bEOS = false;
-  m_bBwdRef = false;
-
-  pMBInfo = 0;
-  threadsAllocated = 0;
-  threadSpec = NULL;
-  threads    = NULL;
-  vlcTableB15 = 0;
-  vlcTableB5c_e = 0;
-
-  quantiser_scale_value = -1;
-  intra_dc_precision = 0; // 8 bit
-  varThreshold = 0;
-  qscale[0]   = qscale[1]   = qscale[2]   = 0;
-  prqscale[0] = prqscale[1] = prqscale[2] = 0;
-  prsize[0]   = prsize[1]   = prsize[2]   = 0;
-
-  pMotionData = NULL;
-  MotionDataCount = 0;
+    : picture_coding_type()
+    , m_UserData()
+    , frame_history()
+    , frame_history_index()
+    , is_interlaced_queue()
+    , encodeInfo()
+    , frame_loader()
+    , brc()
+    , frames()
+    , YRefFrame()
+    , URefFrame()
+    , VRefFrame()
+    , YRecFrame()
+    , URecFrame()
+    , VRecFrame()
+    , Y_src()
+    , U_src()
+    , V_src()
+    , MBcountH()
+    , MBcountV()
+    , MBcount()
+    , YFramePitchSrc()
+    , UVFramePitchSrc()
+    , YFramePitchRef()
+    , UVFramePitchRef()
+    , YFramePitchRec()
+    , UVFramePitchRec()
+    , YFrameVSize()
+    , UVFrameVSize()
+    , YFrameSize()
+    , UVFrameSize()
+    , YUVFrameSize()
+    , aspectRatio_code()
+    , frame_rate_code()
+    , frame_rate_extension_n()
+    , frame_rate_extension_d()
+    , picture_structure(MPEG2_FRAME_PICTURE)
+    , progressive_frame()
+    , top_field_first()     // 1 when !progressive
+    , repeat_first_field()
+    , ipflag()
+    , temporal_reference()
+    , closed_gop()
+    , pMotionData()
+    , MotionDataCount()
+    , mp_f_code()
+    , curr_frame_dct()
+    , curr_frame_pred()
+    , curr_intra_vlc_format()
+    , curr_scan()
+    , intra_dc_precision()  // 8 bit
+    , vbv_delay(19887)
+    , rc_vbv_max()
+    , rc_vbv_min()
+    , rc_vbv_fullness()
+    , rc_delay()
+    , rc_ip_delay()
+    , rc_ave_frame_bits()
+    , qscale()
+    , prsize()
+    , prqscale()
+    , quantiser_scale_value(-1)
+    , q_scale_type()
+    , quantiser_scale_code()
+    , nLimitedMBMode()
+    , bQuantiserChanged()
+    , bSceneChanged()
+    , bExtendGOP()
+    , m_MinFrameSizeBits()
+    , m_MinFieldSizeBits()
+    , m_FirstGopSize()
+    , m_InputBitsPerFrame()
 #ifndef UMC_RESTRICTED_CODE_CME
 #ifdef M2_USE_CME
-  m_pME = 0;
-#endif // M2_USE_CME
-#endif // UMC_RESTRICTED_CODE_CME
-
+    , bMEdone()
+#endif 
+#endif 
+    , rc_weight()
+    , rc_tagsize()
+    , rc_dev()
+    , varThreshold()
+    , meanThreshold()
+    , sadThreshold()
+    , onlyIFrames()
+    , B_count()
+    , P_distance()
+    , GOP_count()
+    , m_GOP_Start()
+    , m_GOP_Start_tmp()
+    , m_FirstFrame()
+    , m_PTS(-1)
+    , m_DTS(-1)
+    , m_bSH()
+    , m_bEOS()
+    , m_bBwdRef()
+    , m_bSkippedMode()
+    , block_count()
+    , IntraQMatrix()
+    , NonIntraQMatrix()
+    , _InvIntraQMatrix()
+    , _InvNonIntraQMatrix()
+    , InvIntraQMatrix()
+    , InvNonIntraQMatrix()
+    , m_Inited()
+    , pMBInfo()
 #ifdef MPEG2_USE_DUAL_PRIME
-  dpflag = 0;
-  is_interlaced_queue = 0;
-  for(unsigned int i = 0; i < sizeof(frame_history)/sizeof(Ipp32s); i++)
-    frame_history[i] = 0;
-  frame_history_index = 0;
-#endif //MPEG2_USE_DUAL_PRIME
-  m_bSkippedMode = 0;
+    , dpflag()
+#endif
+#ifndef UMC_RESTRICTED_CODE_CME
+#ifdef M2_USE_CME
+    , m_pME()
+#endif
+#endif
+    , threadsAllocated()
+    , threadSpec()
+    , threads()
+    , vlcTableB5c_e()
+    , vlcTableB15()
+    , out_pointer()
+    , output_buffer_size()
+    , mEncodedSize()
+    , thread_buffer_size()
+    , block_offset_frm_src()
+    , block_offset_fld_src()
+    , block_offset_frm_ref()
+    , block_offset_fld_ref()
+    , block_offset_frm_rec()
+    , block_offset_fld_rec()
+    , frm_dct_step()
+    , fld_dct_step()
+    , frm_diff_off()
+    , fld_diff_off()
+    , func_getdiff_frame_c()
+    , func_getdiff_field_c()
+    , func_getdiff_frame_nv12_c()
+    , func_getdiff_field_nv12_c()
+    , func_getdiffB_frame_c()
+    , func_getdiffB_field_c()
+    , func_getdiffB_frame_nv12_c()
+    , func_getdiffB_field_nv12_c()
+    , func_mc_frame_c()
+    , func_mc_field_c()
+    , func_mcB_frame_c()
+    , func_mcB_field_c()
+    , func_mc_frame_nv12_c()
+    , func_mc_field_nv12_c()
+    , func_mcB_frame_nv12_c()
+    , func_mcB_field_nv12_c()
+    , BlkWidth_c()
+    , BlkStride_c()
+    , BlkHeight_c()
+    , chroma_fld_flag()
+    , curr_field()
+    , second_field()
+    , DC_Tbl()
+    , cpu_freq()
+    , motion_estimation_time()
+#ifdef MPEG2_ENC_DEBUG
+    , mpeg2_debug()
+#endif
+{
+  encodeInfo.lFlags = FLAG_VENC_REORDER;
 }
 
 MPEG2VideoEncoderBase::~MPEG2VideoEncoderBase ()
@@ -2095,3 +2215,6 @@ Status MPEG2VideoEncoderBase::ComputeTS(VideoData *in, MediaData *out)
 #endif // UMC_ENABLE_MPEG2_VIDEO_ENCODER
 
 
+#if defined (WIN32)
+#pragma warning (pop)
+#endif

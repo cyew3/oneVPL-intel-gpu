@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2002-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2002-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -455,7 +455,7 @@ protected:
     VideoDataBuffer*  buf_aux; // to be used if format mismatched and original frames are not stored
     VideoData*        curenc; // frame currently being encoded
 
-    Input() { frame_buffer = 0; frame_buffer_size=0; }
+    Input() : buf_B(), buf_aux(), curenc(), frame_buffer_size(), frame_buffer() { }
     Ipp32s           frame_buffer_size; // number of allocated frames in buffer
     VideoDataBuffer* frame_buffer;      // all reference frames pointers array
   } frames;
