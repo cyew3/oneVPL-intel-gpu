@@ -354,8 +354,7 @@ void PackerMS::PackPicParams(DXVA_PicParams_VP9* pp, VP9DecoderFrame const* info
                 (UCHAR)info->ref_frame_map[i];
             VM_ASSERT((r_idx & 0x7f) == r_idx);
 
-            pp->ref_frame_map[i].Index7Bits = r_idx;
-
+            pp->ref_frame_map[i].bPicEntry = r_idx;
             pp->ref_frame_coded_width[i]  = info->sizesOfRefFrame[i].width;
             pp->ref_frame_coded_height[i] = info->sizesOfRefFrame[i].height;
         }
@@ -372,7 +371,7 @@ void PackerMS::PackPicParams(DXVA_PicParams_VP9* pp, VP9DecoderFrame const* info
                 index = 0;
                 VM_ASSERT(false);
             }
-            pp->frame_refs[i].Index7Bits = pp->ref_frame_map[index].Index7Bits;
+            pp->frame_refs[i].bPicEntry = pp->ref_frame_map[index].bPicEntry;
         }
         pp->ref_frame_sign_bias[i + 1] = (UCHAR)info->refFrameSignBias[i + 1];
     }

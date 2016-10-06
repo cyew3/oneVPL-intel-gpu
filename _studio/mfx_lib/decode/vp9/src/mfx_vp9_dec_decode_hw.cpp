@@ -1153,11 +1153,22 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9DecoderFrame
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoDECODEVP9_HW::UpdateRefFrames(const mfxU8 refreshFrameFlags, VP9DecoderFrame & info)
+mfxStatus VideoDECODEVP9_HW::UpdateRefFrames(mfxU8 refreshFrameFlags, VP9DecoderFrame & info)
 {
     mfxI32 ref_index = 0;
+    mfxU8 r_mask = 0;
 
-    for (mfxU8 mask = refreshFrameFlags; mask; mask >>= 1)
+    /* For case of update ref frames at NOT Key Frame */
+    for (int i = 0; i < NUM_REF_FRAMES; ++i)
+    {
+        if (info.ref_frame_map[i] == (UMC::FrameMemID)-1)
+        {
+            r_mask |= 1;
+            r_mask <<= 1;
+        }
+    }
+
+    for (mfxU8 mask = refreshFrameFlags | r_mask; mask; mask >>= 1)
     {
         if (mask & 1)
         {
