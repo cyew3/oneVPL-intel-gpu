@@ -191,6 +191,7 @@
     <ClInclude Include="include\gmock\ts_decoder.h" />
     <ClInclude Include="include\gmock\ts_enc.h" />
     <ClInclude Include="include\gmock\ts_fei_warning.h" />
+    <ClInclude Include="include\gmock\ts_mvc_warning.h" />
     <ClInclude Include="include\gmock\ts_pak.h" />
     <ClInclude Include="include\gmock\ts_encoder.h" />
     <ClInclude Include="include\gmock\ts_ext_buffers.h" />
@@ -320,6 +321,7 @@
     <ClCompile Include="src\gmock\test_suites\mpeg2e_skipframes.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2e_aspectratio_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\mpeg2e_user_data.cpp" />
+    <ClCompile Include="src\gmock\test_suites\mvce_view_output.cpp" />
     <ClCompile Include="src\gmock\test_suites\platform_unsupported.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_preenc_query_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_init.cpp" />

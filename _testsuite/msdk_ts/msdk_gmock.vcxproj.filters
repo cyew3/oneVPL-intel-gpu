@@ -134,6 +134,9 @@
     <ClInclude Include="include\gmock\ts_fei_warning.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\gmock\ts_mvc_warning.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\test_sample_allocator.cpp">
@@ -762,6 +765,8 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vpp_multi_view.cpp">
       <Filter>Source Files\test_suites\vpp</Filter>
+    <ClCompile Include="src\gmock\test_suites\mvce_view_output.cpp">
+      <Filter>Source Files\test_suites</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
