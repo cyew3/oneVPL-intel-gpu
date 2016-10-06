@@ -80,7 +80,6 @@ public:
 
 protected:
     void Close();
-    bool m_bAllocated; // (bool) TrackParams was allocated in operator=
 
 private:
     // Declare private copy constructor to avoid accidental assignment
