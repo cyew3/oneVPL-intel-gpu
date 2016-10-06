@@ -43,6 +43,8 @@ LinearBuffer::LinearBuffer(void)
     m_lDummySize = 0;
     m_pSamples = NULL;
     m_pFreeSampleInfo = NULL;
+    m_lInputSize = 0;
+    m_lOutputSize = 0;
 
     m_bEndOfStream = false;
     m_bQuit = false;
@@ -107,6 +109,8 @@ Status LinearBuffer::Close(void)
     m_lDummySize = 0;
     m_pSamples = NULL;
     m_pFreeSampleInfo = NULL;
+    m_lInputSize = 0;
+    m_lOutputSize = 0;
 
     m_bEndOfStream = false;
     m_bQuit = false;
