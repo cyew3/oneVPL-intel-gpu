@@ -54,7 +54,8 @@ public:
         m_pDirect3DDeviceManager9(NULL),
         m_pDXVAVideoProcessorService(NULL),
         m_pDXVAVideoProcessor(NULL),
-        m_pColorConverter(0)
+        m_pColorConverter(NULL),
+        msBlitParams()
     {
         memset(&m_VideoDesc, 0, sizeof(m_VideoDesc));
     }
