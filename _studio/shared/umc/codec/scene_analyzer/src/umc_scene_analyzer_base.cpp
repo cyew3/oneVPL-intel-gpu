@@ -27,7 +27,8 @@ SceneAnalyzerParams::SceneAnalyzerParams(void)
 {
     m_maxGOPLength = 0;
     m_maxBLength = 0;
-
+    m_maxDelayTime = 0;
+    m_interlaceType = PROGRESSIVE;
 } // SceneAnalyzerParams::SceneAnalyzerParams(void)
 
 SceneAnalyzerParams::~SceneAnalyzerParams(void)
