@@ -1045,11 +1045,11 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         request.NumFrameMin *= 2; // 2 bitstream surfaces per frame
     // driver may suggest too small buffer for bitstream
     request.Info.Width  = IPP_MAX(request.Info.Width,  m_video.mfx.FrameInfo.Width);
-    if(MFX_RATECONTROL_CQP == m_video.mfx.RateControlMethod)
+    // Check for Video Conference scenario to reduce memory footprint
+    if (MFX_RATECONTROL_CQP == m_video.mfx.RateControlMethod && MFX_SCENARIO_VIDEO_CONFERENCE != extOpt3.ScenarioInfo)
         request.Info.Height = IPP_MAX(request.Info.Height, m_video.mfx.FrameInfo.Height * 3);
     else
         request.Info.Height = IPP_MAX(request.Info.Height, m_video.mfx.FrameInfo.Height * 3 / 2);
-
     
     // workaround for high bitrates on small resolutions,
     // as driver do not respect coded buffer size we have to provide buffer large enough
@@ -1061,6 +1061,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     }
 
     //limit bs size to 4095*nMBs + slice_hdr_size * nSlice
+    if (MFX_SCENARIO_VIDEO_CONFERENCE != extOpt3.ScenarioInfo)
     {
         const mfxU32 SLICE_BUFFER_SIZE  = 2048; //from HeaderPacker
         const mfxU32 MAX_MB_SIZE  = 512; //4095 bits in bytes
