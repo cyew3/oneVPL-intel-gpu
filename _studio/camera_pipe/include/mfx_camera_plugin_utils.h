@@ -460,7 +460,10 @@ struct AsyncParams
 class CameraProcessor
 {
 public:
-    CameraProcessor(): m_core(0) {};
+    CameraProcessor()
+        : m_core(0)
+        , m_params()
+    {};
     virtual ~CameraProcessor() {};
     virtual mfxStatus Init(mfxVideoParam *par) = 0;
     virtual mfxStatus Init(CameraParams  *pipeParams) = 0;
@@ -472,8 +475,6 @@ public:
 protected:
     virtual mfxStatus CheckIOPattern(mfxU16  IOPattern) = 0;
     VideoCORE*    m_core;
-    mfxU16        m_asyncDepth;
-    mfxU16        m_IOPattern;
     mfxVideoParam m_params;
 };
 
