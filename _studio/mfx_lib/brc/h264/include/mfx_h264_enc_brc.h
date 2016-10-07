@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          H.264 (AVC) encoder
@@ -69,13 +69,42 @@ class MFXVideoRcH264 : public VideoBRC
 public:
     static mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out);
 
-    MFXVideoRcH264(VideoCORE *core, mfxStatus *status): VideoBRC()
+    MFXVideoRcH264(VideoCORE *core, mfxStatus *status) : VideoBRC(), mHRD()
     {
         m_pMFXCore = core;
         m_pBRCBuffer = NULL;
         m_BRCID      = 0;
         *status = MFX_ERR_NONE;
         m_curPicInitQpMinus26 = NO_INIT_QP;
+        mQP = 0;
+        mBitsDesiredFrame = 0;
+        mQuantP = 0;
+        mQuantBprev = 0;
+        mQuantB = 0;
+        mRCfap = 0;
+        mRCqa = 0;
+        mRCfa = 0;
+        mQuantMax = 0;
+        mBitsDesiredTotal = 0;
+        mRCMode = 0;
+        mRCbap = 0;
+        mQuantPprev = 0;
+        mRCqap = 0;
+        mFramerate = 0;
+        mQuantIprev = 0;
+        mRCq = 0;
+        mRCqb = 0;
+        mQuantI = 0;
+        mBitrate = 0;
+        mQuantPrev = 0;
+        mQPprev = 0;
+        mBitsEncoded = 0;
+        mBitsEncodedTotal = 0;
+        mQuantOffset = 0;
+        mQuantUpdated = 0;
+        mBitDepth = 0;
+        mFrameType = 0;
+        mPrevDataLength = 0;
     }
     virtual ~MFXVideoRcH264(void);
     virtual mfxStatus Init(mfxVideoParam *par);
