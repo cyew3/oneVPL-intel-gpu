@@ -41,6 +41,7 @@ SampleBuffer::SampleBuffer(void)
     m_lFreeSize = 0;
     m_pbUsed = NULL;
     m_lUsedSize = 0;
+    m_lInputSize = 0;
     m_pSamples = NULL;
 
     m_bEndOfStream = false;
