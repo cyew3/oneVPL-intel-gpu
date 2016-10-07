@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2004-2010 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -35,6 +35,9 @@ VC1ThreadDecoder::VC1ThreadDecoder()
 
     m_bQuit = false;
     m_bStartDecoding = false;
+
+    m_Status = 0;
+    m_iNumber = 0;
 
 }
 VC1ThreadDecoder::~VC1ThreadDecoder(void)
