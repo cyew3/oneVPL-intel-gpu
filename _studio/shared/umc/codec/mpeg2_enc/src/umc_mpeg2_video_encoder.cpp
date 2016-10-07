@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2002-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2002-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -31,6 +31,7 @@ using namespace UMC;
 
 //constructor
 MPEG2VideoEncoder::MPEG2VideoEncoder()
+    : m_pBrc()
 {
   vm_debug_trace(VM_DEBUG_INFO, VM_STRING("MPEG2VideoEncoder::MPEG2VideoEncoder"));
   encoder = new MPEG2VideoEncoderBase;
