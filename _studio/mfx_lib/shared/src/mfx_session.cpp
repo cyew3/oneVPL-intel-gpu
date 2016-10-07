@@ -591,8 +591,17 @@ MFXIPtr<MFXISession_1_10> TryGetSession_1_10(mfxSession session)
 //  _mfxSession members
 //////////////////////////////////////////////////////////////////////////
 
-_mfxSession::_mfxSession(const mfxU32 adapterNum) :
-    m_adapterNum(adapterNum)
+_mfxSession::_mfxSession(const mfxU32 adapterNum)
+    : m_coreInt()
+    , m_currentPlatform()
+    , m_adapterNum(adapterNum)
+    , m_implInterface()
+    , m_pScheduler()
+    , m_priority()
+    , m_version()
+    , m_pOperatorCore()
+    , m_bIsHWENCSupport()
+    , m_bIsHWDECSupport()
 {
 #if defined (MFX_VA)
     m_currentPlatform = MFX_PLATFORM_HARDWARE;
@@ -601,9 +610,6 @@ _mfxSession::_mfxSession(const mfxU32 adapterNum) :
 #endif
 
     Clear();
-    m_bIsHWENCSupport = false;
-    m_version.Version = 0;
-
 } // _mfxSession::_mfxSession(const mfxU32 adapterNum) :
 
 _mfxSession::~_mfxSession(void)
