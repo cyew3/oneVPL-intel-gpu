@@ -867,11 +867,17 @@ struct Frame
             m_pV(NULL),
             RANGE_MAPY(-1),
             RANGE_MAPUV(-1),
+            pRANGE_MAPY(NULL),
             m_iYPitch(0),
             m_iUPitch(0),
             m_iVPitch(0),
             m_AllocatedMemorySize(0),
-            m_bIsExpanded(0)
+            m_bIsExpanded(0),
+            FCM(0),
+            TFF(0),
+            ICFieldMask(0),
+            isIC(0),
+            corrupted(0)
     {
     }
 
