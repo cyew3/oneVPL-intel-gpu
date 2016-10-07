@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2010-2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2010-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //     GOP reorder buffer and waiting list implementation
@@ -32,6 +32,7 @@
       vm_event                  m_new_frame_event;
 
       sExtTask1()
+          : m_inputInternalParams()
       {
           m_pInput_surface = 0;
           m_pBs = 0;
