@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2009-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //                     bitrate control, common
@@ -24,6 +24,16 @@ CommonBRC::CommonBRC()
   mGOPPicSize = 20;
   mGOPRefDist = 1;
   memset(&mHRD, 0, sizeof(mHRD));
+  N_B_frame = 0;
+  N_B = 0;
+  N_P = 0;
+  N_P_field = 0;
+  N_B_field = 0;
+  mQuantUpdated = 0;
+  mBitsDesiredFrame = 0;
+  N_P_frame = 0;
+  brc = NULL;
+  mFrameType = NONE_PICTURE;
 }
 
 CommonBRC::~CommonBRC()
