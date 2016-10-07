@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2004 - 2012 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2004 - 2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -355,7 +355,7 @@ Status H264EncoderParams::ReadParamFile(const vm_char *FileName)
 #endif // Klocwork doesn't accept scanf (scanf_s is required)
 }
 
-H264EncoderParams::H264EncoderParams()
+H264EncoderParams::H264EncoderParams() : rate_controls(), m_SeqParamSet(), m_PicParamSet()
 {
     key_frame_controls.method    = H264_KFCM_INTERVAL;
     key_frame_controls.interval  = 250; // for safety
@@ -428,6 +428,8 @@ H264EncoderParams::H264EncoderParams()
     m_ext_constraint_flags[5] = 0;
     reset_encoding_pipeline = true;
     is_resol_changed = true;
+    m_SeqParamSet.profile_idc = H264_MAIN_PROFILE;
+
 #if defined H264_LOG
     m_log = 0;
     *m_log_file = 0;
