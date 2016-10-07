@@ -27,6 +27,11 @@
 #include "mfx_utils.h"
 #include "vm_sys_info.h"
 
+#if defined (WIN32)
+#pragma warning (push)
+#pragma warning (disable:4351)  // value initialization is intended and disabling this warning recommended by MS: https://msdn.microsoft.com/en-us/en-en/library/1ywe7hcy.aspx
+#endif
+
 #ifdef MPEG2_PAK_THREADED
 
 mfxStatus ThreadedMPEG2PAK::PAKSlice()
@@ -52,6 +57,7 @@ mfxStatus ThreadedMPEG2PAK::PAKSlice()
 }
 #define N_SLICES_IN_TASK 2
 ThreadedMPEG2PAK::ThreadedMPEG2PAK(mfxI32 nSlices, mfxI32 nThreads, MFXVideoPAKMPEG2* pPAKMPEG2, mfxI32 nMBsInSlice, VideoCORE *pCore)
+    : m_pEncoder()
 {
     nThreads    = (nThreads>0)? nThreads: vm_sys_info_get_cpu_num();
     m_pCore        = pCore ;
@@ -320,19 +326,79 @@ static mfxExtBuffer* GetExtBuffer(mfxFrameCUC* cuc, mfxU32 id)
   return 0;
 }
 
-MFXVideoPAKMPEG2::MFXVideoPAKMPEG2(VideoCORE *core, mfxStatus *sts) : VideoPAK() {
-  m_core = core;
+MFXVideoPAKMPEG2::MFXVideoPAKMPEG2(VideoCORE *core, mfxStatus *sts) 
+    : VideoPAK()
+#ifdef MPEG2_PAK_THREADED
+    , pThreadedMPEG2PAK()
+#endif
+    , m_core(core)
+    , m_cuc()
+    , m_info()
+    , m_frame()
+    , m_slice()
+    , m_vsi()
+    , m_qm()
+    , _InvIntraQM()
+    , _InvInterQM()
+    , _InvIntraChromaQM()
+    , _InvInterChromaQM()
+    , InvIntraQM()
+    , InvInterQM()
+    , InvIntraChromaQM()
+    , InvInterChromaQM()
+    , _IntraQM()
+    , _InterQM()
+    , _IntraChromaQM()
+    , _InterChromaQM()
+    , IntraQM()
+    , InterQM()
+    , IntraChromaQM()
+    , InterChromaQM()
+    , vlcTableB5c_e()
+    , vlcTableB15()
+    , m_MotionData()
+    , picture_coding_type()
+    , m_DC_Tbl()
+    , framerate()
+    , m_block_count()
+    , src_block_offset_frm()
+    , src_block_offset_fld()
+    , out_block_offset_frm()
+    , out_block_offset_fld()
+    , frm_dct_step()
+    , fld_dct_step()
+    , frm_diff_off()
+    , fld_diff_off()
+    , func_getdiff_frame_c()
+    , func_getdiff_field_c()
+    , func_getdiff_frame_nv12_c()
+    , func_getdiff_field_nv12_c()
+    , func_getdiffB_frame_c()
+    , func_getdiffB_field_c()
+    , func_getdiffB_frame_nv12_c()
+    , func_getdiffB_field_nv12_c()
+    , func_mc_frame_c()
+    , func_mc_field_c()
+    , func_mcB_frame_c()
+    , func_mcB_field_c()
+    , func_mc_frame_nv12_c()
+    , func_mc_field_nv12_c()
+    , func_mcB_frame_nv12_c()
+    , func_mcB_field_nv12_c()
+    , BlkWidth_c()
+    , BlkHeight_c()
+    , chroma_fld_flag()
+    , m_LastFrameNumber()
+    , frUserData()
+#ifdef MPEG2_ENCODE_DEBUG_HW
+    , mpeg2_debug_PAK()
+#endif // MPEG2_ENCODE_DEBUG_HW
+{
   m_DC_Tbl[0] = mfx_mpeg2_Y_DC_Tbl;
   m_DC_Tbl[1] = mfx_mpeg2_Cr_DC_Tbl;
   m_DC_Tbl[2] = mfx_mpeg2_Cr_DC_Tbl;
   ippiCreateRLEncodeTable(mfx_mpeg2_Table15, &vlcTableB15);
   ippiCreateRLEncodeTable(mfx_mpeg2_dct_coeff_next_RL, &vlcTableB5c_e);
-  m_frame.CucId = 0;
-  m_slice.CucId = 0;
-
-#ifdef MPEG2_PAK_THREADED
-  pThreadedMPEG2PAK = 0;
-#endif
 
   *sts = (core ? MFX_ERR_NONE : MFX_ERR_NULL_PTR);
 }
@@ -2809,3 +2875,7 @@ mfxStatus MFXVideoPAKMPEG2::putQMatrices( int mode, bitBuffer* outbb )
 }
 
 #endif // MFX_ENABLE_MPEG2_VIDEO_ENCODER
+
+#if defined (WIN32)
+#pragma warning (pop)
+#endif
