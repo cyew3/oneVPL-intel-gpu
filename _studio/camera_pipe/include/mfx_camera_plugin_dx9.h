@@ -672,7 +672,20 @@ class DXVAHDVideoProcessor
     };
 
 public:
-    DXVAHDVideoProcessor()    
+    DXVAHDVideoProcessor()
+        : m_pD3Dmanager(NULL)
+        , m_pD3D(NULL)
+        , m_pD3DDevice(NULL)
+        , m_pD3DDeviceEx(NULL)
+        , m_pDXVADevice(NULL)
+        , m_pDXVAVideoProcessor(NULL)
+        , m_dxva_caps()
+        , m_videoDesc()
+        , m_vprepCaps()
+        , m_vprepVarianceCaps()
+        , m_pVPEGuids(NULL)
+        , m_cameraFGC()
+        , m_uiVPExtGuidCount(0)
     {
         m_cameraFGC.pSegment = new TForwardGammaSeg[64];
         m_bIsSet = false;
