@@ -121,11 +121,16 @@ VideoDECODEVP8::VideoDECODEVP8(VideoCORE *p_core, mfxStatus *p_sts)
     ,m_curr_display_index(0)
     ,m_num_output_frames(0)
     ,m_in_framerate(0)
+    ,m_response()
+    ,m_opaque_response()
+    ,m_request()
+    ,m_decode_stat()
     ,m_platform(MFX_PLATFORM_SOFTWARE)
+    ,m_bs()
     ,m_p_video_accelerator(0)
+    ,m_init_w(0)
+    ,m_init_h(0)
 {
-    memset(&m_bs.Data, 0, sizeof(m_bs.Data));
-
     vm_mutex_set_invalid(&m_mutex);
 
     // allocate vpx decoder
