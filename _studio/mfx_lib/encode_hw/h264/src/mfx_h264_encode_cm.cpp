@@ -489,7 +489,8 @@ SurfaceIndex * CreateVmeSurfaceG75(
 
 
 CmContext::CmContext()
-: m_device(0)
+: m_video()
+, m_device(0)
 , m_queue(0)
 , m_program(0)
 , m_programHist(0)
@@ -498,6 +499,14 @@ CmContext::CmContext()
     Flog = fopen("HmeLog.txt", "wb");
     FdsSurf = fopen("dsSurf.yuv", "wb");
 */
+    LaScaleFactor = 0;
+    m_kernelI = NULL;
+    heightLa = 0;
+    m_kernelP = NULL;
+    m_kernelHistFields = NULL;
+    m_kernelHistFrame = NULL;
+    m_kernelB = NULL;
+    widthLa = 0;
 }
 };
 
