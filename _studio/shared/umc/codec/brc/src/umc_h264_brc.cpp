@@ -21,6 +21,43 @@ namespace UMC
 H264BRC::H264BRC()
 {
   mIsInit = 0;
+  mRCqap = 0;
+  mRCqa = 0;
+  mRCbap = 0;
+  mBitsDesiredTotal = 0;
+  mQuantPprev = 0;
+  mRCqa0 = 0;
+  mQuantBprev = 0;
+  mRCfap = 0;
+  mBitDepth = 0;
+  mPoc = 0;
+  mMaxBitrate = 0;
+  mQuantIprev = 0;
+  mBFsaved = 0;
+  mBitsEncodedP = 0;
+  mSChPoc = 0;
+  mBitsEncodedTotal = 0;
+  mPictureFlags = 0;
+  mMaxBitsPerPic = 0;
+  mRCfa_short = 0;
+  mRCfa = 0;
+  mQuantOffset = 0;
+  mQuantMax = 0;
+  mQuantPrev = 0;
+  mQuantMin = 0;
+  mQuantP = 0;
+  mQuantB = 0;
+  mQuantI = 0;
+  mSceneChange = 0;
+  mPictureFlagsPrev = 0;
+  mBitsEncodedPrev = 0;
+  mRCq = 0;
+  mBitsEncoded = 0;
+  mQPprev = 0;
+  mRecode = 0;
+  mBF = 0;
+  mMaxBitsPerPicNot0 = 0;
+
 }
 
 H264BRC::~H264BRC()
