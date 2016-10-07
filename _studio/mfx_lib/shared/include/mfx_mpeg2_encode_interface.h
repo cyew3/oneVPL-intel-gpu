@@ -31,6 +31,12 @@
     #include <va/va_enc_mpeg2.h>
 #endif
 
+#if defined (WIN32)
+#pragma warning (push)
+#pragma warning (disable:4351)  // value initialization is intended and disabling this warning recommended by MS: https://msdn.microsoft.com/en-us/en-en/library/1ywe7hcy.aspx
+#endif
+
+
 namespace MfxHwMpeg2Encode
 {
 #ifdef PAVP_SUPPORT
@@ -104,29 +110,39 @@ namespace MfxHwMpeg2Encode
     struct ExecuteBuffers
     {
         ExecuteBuffers()
-            : m_pSlice(0)
-            , m_pMBs (0)
-            , m_mbqp_data(0)
-            , m_SkipFrame(0)
-            , m_pSurface(0)
-            // , m_pSurfacePair(0)
+            : m_caps()
+            , m_sps()
+            , m_pps()
+            , m_pSlice()
+            , m_pMBs()
+            , m_mbqp_data()
+            , m_VideoSignalInfo()
+            , m_SkipFrame()
+            , m_quantMatrix()
+            , m_pSurface()
+            , m_pSurfacePair()
             , m_idxMb(DWORD(-1))
-            , m_nSlices(0)
-            , m_nMBs(0)
-            , m_bAddSPS (0)
-            , m_bAddDisplayExt(false)
-            , m_bExternalCurrFrame(0)
-            , m_GOPPictureSize(0)
-            , m_GOPRefDist(0)
-            , m_GOPOptFlag(0)
+            , m_idxBs()
+            , m_nSlices()
+            , m_nMBs()
+            , m_bAddSPS()
+            , m_bAddDisplayExt()
+            , m_RecFrameMemID()
+            , m_RefFrameMemID()
+            , m_CurrFrameMemID()
+            , m_bExternalCurrFrame()
+            , m_bOutOfRangeMV()
+            , m_bErrMBType()
+            , m_bUseRawFrames()
+#if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
+            , m_bTriggerGpuHang()
+#endif
+            , m_GOPPictureSize()
+            , m_GOPRefDist()
+            , m_GOPOptFlag()
             , m_encrypt()
-            , m_fFrameRate(0)           
+            , m_fFrameRate()
         {
-            memset(&m_caps, 0, sizeof(m_caps));
-            memset(&m_sps,  0, sizeof(m_sps));
-            memset(&m_pps,  0, sizeof(m_pps));
-            memset(&m_VideoSignalInfo, 0, sizeof(m_VideoSignalInfo));
-            memset(&m_quantMatrix, 0, sizeof(m_quantMatrix));
         }
 
         mfxStatus Init (const mfxVideoParamEx_MPEG2* par, mfxU32 funcId, bool bAllowBRC = false);
@@ -214,6 +230,11 @@ namespace MfxHwMpeg2Encode
     DriverEncoder* CreatePlatformMpeg2Encoder( VideoCORE* core );    
     
 }; // namespace
+
+
+#if defined (WIN32)
+#pragma warning (pop)
+#endif
 
 #endif //#ifndef __MFX_MPEG2_ENCODE_INTERFACE__H
 #endif //(MFX_ENABLE_MPEG2_VIDEO_ENCODE) || defined(MFX_ENABLE_MPEG2_VIDEO_ENC)
