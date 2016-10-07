@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2009 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG2 ENC
@@ -22,6 +22,11 @@
 #include "ippvc.h"
 //#include "umc_mpeg2_enc_defs.h"
 #include "umc_mpeg2_newfunc.h"
+
+#if defined (WIN32)
+#pragma warning (push)
+#pragma warning (disable:4351)  // value initialization is intended and disabling this warning recommended by MS: https://msdn.microsoft.com/en-us/en-en/library/1ywe7hcy.aspx
+#endif
 
 enum MPEG2FrameType
 {
@@ -192,13 +197,61 @@ public:
   static mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out);
   static mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request);
 
-  MFXVideoENCMPEG2(VideoCORE *core, mfxStatus *sts) : VideoENC()
+  MFXVideoENCMPEG2(VideoCORE *core, mfxStatus *sts)
+      : VideoENC()
+      , needFrameUnlock()
+      , m_core(core)
+      , m_cuc()
+      , m_info()
+      , m_frame()
+      , m_slice()
+      , pMBInfo()
+      , pMBInfo0()
+      , allocatedMBInfo()
+      , mid_MBInfo()
+      , m_qm()
+      , _InvIntraQM()
+      , _InvInterQM()
+      , _InvIntraChromaQM()
+      , _InvInterChromaQM()
+      , InvIntraQM()
+      , InvInterQM()
+      , InvIntraChromaQM()
+      , InvInterChromaQM()
+      , _IntraQM()
+      , _InterQM()
+      , _IntraChromaQM()
+      , _InterChromaQM()
+      , IntraQM()
+      , InterQM()
+      , IntraChromaQM()
+      , InterChromaQM()
+      , picture_coding_type()
+      , m_block_count()
+      , block_offset_frm()
+      , block_offset_fld()
+      , frm_dct_step()
+      , fld_dct_step()
+      , frm_diff_off()
+      , fld_diff_off()
+      , func_getdiff_frame_c()
+      , func_getdiff_field_c()
+      , func_getdiffB_frame_c()
+      , func_getdiffB_field_c()
+      , func_mc_frame_c()
+      , func_mc_field_c()
+      , func_mcB_frame_c()
+      , func_mcB_field_c()
+      , BlkWidth_c()
+      , BlkHeight_c()
+      , chroma_fld_flag()
+      , m_me_alg_num()
+      , me_matrix_size()
+      , me_matrix_active_size()
+      , me_matrix_buff()
+      , me_matrix_id()
+      , mid_me_matrix()
   {
-    m_core = core;
-    m_frame.CucId = 0;
-    m_slice.CucId = 0;
-    allocatedMBInfo = 0;
-    me_matrix_size = 0;
     *sts = MFX_ERR_NONE;
   }
   virtual ~MFXVideoENCMPEG2() { Close(); }
@@ -302,6 +355,10 @@ private:
   mfxMemId mid_me_matrix;
 
 };
+
+#if defined (WIN32)
+#pragma warning (pop)
+#endif
 
 #endif // MFX_ENABLE_MPEG2_VIDEO_ENC
 #endif //_MFX_MPEG2_ENC_H_
