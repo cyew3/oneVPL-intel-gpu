@@ -89,6 +89,7 @@ MFXCamera_Plugin::MFXCamera_Plugin(bool CreateByDispatcher)
 
     Zero(m_session);
     Zero(m_GammaParams);
+    Zero(m_VignetteParams);
     Zero(m_BlackLevelParams);
     Zero(m_3DLUTParams);
     Zero(m_CCMParams);
