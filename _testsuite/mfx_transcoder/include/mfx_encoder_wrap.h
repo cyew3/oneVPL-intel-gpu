@@ -24,7 +24,7 @@ public:
                     , mfxStatus *status
                     , std::auto_ptr<IVideoEncode> &pTargetEncode);
     ~MFXEncodeWRAPPER();
-    virtual MFXEncodeWRAPPER* Clone();
+
     virtual mfxStatus Init(mfxVideoParam *par, const vm_char *pFilename);
     virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request);
     virtual mfxStatus GetVideoParam(mfxVideoParam *par); 

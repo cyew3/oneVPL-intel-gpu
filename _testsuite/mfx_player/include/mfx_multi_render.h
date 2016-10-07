@@ -58,7 +58,6 @@ public:
 
     virtual mfxStatus RenderFrame( mfxFrameSurface1 *surface
                                  , mfxEncodeCtrl * pCtrl = NULL);
-    virtual mfxStatus Close();
 protected:
 };
 

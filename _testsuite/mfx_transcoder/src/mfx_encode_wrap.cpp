@@ -37,8 +37,6 @@ MFXEncodeWRAPPER::MFXEncodeWRAPPER(ComponentParams & refParams, mfxStatus *statu
     {
         m_InSession = refParams.m_pSession->GetMFXSession();
     }
-
-    MFXVideoRender::Init(&refParams.m_params);
 }
 
 MFXEncodeWRAPPER::~MFXEncodeWRAPPER()
@@ -62,22 +60,6 @@ MFXEncodeWRAPPER::~MFXEncodeWRAPPER()
     PrintInfoForce(VM_STRING("Encode : bitrate accuracy"), VM_STRING("%.2lf"), (double)m_EncodedSize/expected_size);
     //_ftprintf(stdout, VM_STRING("Bitrate accuracy = %.2f\n"), (double)m_EncodedSize/expected_size);
     PrintInfoForce(VM_STRING("Encode : fps"), VM_STRING("%.2lf"), 1 == m_refParams.m_nMaxAsync ?(double)m_nFrames/m_encTime.OverallTiming():0.0);
-}
-
-MFXEncodeWRAPPER * MFXEncodeWRAPPER::Clone()
-{
-    mfxStatus sts = MFX_ERR_NONE;
-    std::auto_ptr<IVideoEncode> tmp_encoder = std::auto_ptr<IVideoEncode>(m_encoder.get());
-    std::auto_ptr<MFXEncodeWRAPPER> pNew(new MFXEncodeWRAPPER(m_refParams, &sts, tmp_encoder));
-    MFX_CHECK_WITH_ERR(sts == MFX_ERR_NONE, NULL);
-    MFX_CHECK_WITH_ERR(MFX_ERR_NONE == pNew->SetAutoView(m_bAutoView), NULL);
-    if (m_pFile.get())
-    {
-        IFile *tmp = m_pFile.get();
-        MFX_CHECK_WITH_ERR(MFX_ERR_NONE == pNew->SetDownStream(tmp), NULL);
-    }
-    
-    return pNew.release();
 }
 
 mfxStatus MFXEncodeWRAPPER::SetOutBitstreamsNum(mfxU16 nBitstreamsOut)

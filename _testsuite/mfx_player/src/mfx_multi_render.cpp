@@ -22,20 +22,9 @@ MFXMultiRender :: ~MFXMultiRender ()
 {
     //input render will be deleted as part of view array 
     if (!m_Renders.empty())
-    {
-        m_Renders.clear();
         m_pTarget.release();
-    }
-
-}
-
-mfxStatus MFXMultiRender::Close()
-{
-    for (_CollectionType::iterator it = m_Renders.begin(); it != m_Renders.end(); it++)
-    {
-        MFX_CHECK_STS((*it)->Close());
-    }
-    return MFX_ERR_NONE;
+    
+    for_each(m_Renders.begin(), m_Renders.end(), deleter<MFXViewRender<_TView>*>());
 }
 
 mfxStatus MFXMultiRender::RenderFrame( mfxFrameSurface1 *surface
@@ -61,10 +50,11 @@ mfxStatus MFXMultiRender::RenderFrame( mfxFrameSurface1 *surface
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    _CollectionType::iterator it = 
-        std::find_if( m_Renders.begin()
+    _CollectionType::iterator it = m_Renders.begin();
+    // need implement valid clone for EncodeWrapper with use share_pointers
+        /*std::find_if( m_Renders.begin()
                     , m_Renders.end()
-                    , bind1st(MFXViewRenderCompare<_TView>(), surface->Info.FrameId.ViewId));
+                    , bind1st(MFXViewRenderCompare<_TView>(), surface->Info.FrameId.ViewId));*/
 
 
     if (it == m_Renders.end())
