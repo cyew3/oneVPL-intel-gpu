@@ -110,9 +110,10 @@ public:
         return MFXIHWCAPS_GUID;
     }
     EncodeHWCaps()
+        : m_encode_guid()
+        , m_caps()
+        , m_size()
     {
-        m_caps = NULL;
-        m_size = 0;
     };
     virtual ~EncodeHWCaps()
     {
@@ -209,7 +210,7 @@ T* m_pComPtr;
 struct IDirectXVideoDecoderService;
 struct IDirect3DDeviceManager9;
 
-// to obtaion D3D services from the Core
+// to obtain D3D services from the Core
 struct D3D9Interface
 {
     static const MFX_GUID & getGuid()
