@@ -501,7 +501,10 @@ private:
 class CMCameraProcessor: public CameraProcessor
 {
 public:
-    CMCameraProcessor()
+    CMCameraProcessor():
+        m_Params()
+        , m_platform(MFX_HW_UNKNOWN)
+        , m_FramesTillHardReset(CAMERA_FRAMES_TILL_HARD_RESET)
     {
         m_cmSurfIn         = 0;
         m_gammaPointSurf   = 0;
@@ -521,6 +524,7 @@ public:
         m_vignette_4x4     = 0;
 
         m_activeThreadCount = 0;
+        m_isInitialized = false;
     };
     ~CMCameraProcessor() {};
 
