@@ -601,9 +601,12 @@ m_RBufID((UMC::MemID)-1),
 m_BufSize(1024*1024),
 m_pStCodes(0),
 m_stCodesID((UMC::MemID)-1),
+m_par(),
+m_Initpar(),
 m_FrameSize(0),
 m_bIsInit(false),
 m_bIsWMVMS(false),
+m_FCInfo(),
 m_pCore(core),
 m_bIsNeedToProcFrame(true),
 m_bIsDecInit(false),
@@ -612,6 +615,7 @@ m_bIsSamePolar(true),
 m_bIsDecodeOrder(false),
 m_SHSize(0),
 m_SaveBytesSize(0),
+m_sbs(),
 m_CurrentBufFrame(0),
 m_bIsBuffering(false),
 m_isSWPlatform(false),
@@ -640,6 +644,11 @@ m_bPTSTaken(false)
     m_pInternMediaDataIn = new UMC::MediaData;
     memset(m_pStatusReport, 0, sizeof(DXVA_Status_VC1)*MAX_NUM_STATUS_REPORTS);
     *mfxSts = MFX_ERR_NONE;
+
+
+    m_bTakeBufferedFrame = 0;
+    m_pReadBuffer = NULL;
+    m_bNeedToRunAsyncPart = false;
 }
 MFXVideoDECODEVC1::~MFXVideoDECODEVC1(void)
 {
