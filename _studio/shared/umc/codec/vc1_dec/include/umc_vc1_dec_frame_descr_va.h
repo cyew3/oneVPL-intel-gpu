@@ -580,7 +580,8 @@ namespace UMC
                                                        m_pBitstream(NULL),
                                                        m_iSliceBufIndex(0),
                                                        m_iPicBufIndex(0),
-                                                       m_bIsItarativeMode(false)
+                                                       m_bIsItarativeMode(false),
+                                                       m_pBufferStart(NULL)
         {
 //#ifdef UMC_VA_LINUX
             //m_bIsItarativeMode = true;
