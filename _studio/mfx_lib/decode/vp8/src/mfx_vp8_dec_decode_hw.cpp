@@ -42,7 +42,15 @@ VideoDECODEVP8_HW::VideoDECODEVP8_HW(VideoCORE *p_core, mfxStatus *sts)
     , m_is_opaque_memory(false)
     , m_p_core(p_core)
     , m_platform(MFX_PLATFORM_HARDWARE)
+    , m_init_w(0)
+    , m_init_h(0)
+    , m_in_framerate(0)
+    , m_frameOrder((mfxU16)MFX_FRAMEORDER_UNKNOWN)
+    , m_CodedCoeffTokenPartition(0)
     , m_firstFrame(true)
+    , m_response()
+    , m_stat()
+    , m_request()
     , m_p_video_accelerator(NULL)
 {
     UMC_SET_ZERO(m_bs);
@@ -54,6 +62,7 @@ VideoDECODEVP8_HW::VideoDECODEVP8_HW(VideoCORE *p_core, mfxStatus *sts)
 
     gold_indx = 0;
     altref_indx = 0;
+    lastrefIndex = 0;
 
     if (sts)
         *sts = MFX_ERR_NONE;
