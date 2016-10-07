@@ -122,6 +122,14 @@ class D3D11CameraProcessor: public CameraProcessor
 {
 public:
     D3D11CameraProcessor()
+        : m_CameraParams()
+        , m_AsyncDepth(MFX_CAMERA_DEFAULT_ASYNCDEPTH)
+        , m_width(0)
+        , m_height(0)
+        , m_counter(0)
+        , m_systemMemOut(false)
+        , m_systemMemIn(false)
+        , m_paddedInput(false)
     {
         m_ddi.reset(0);
         m_executeParams = 0;
