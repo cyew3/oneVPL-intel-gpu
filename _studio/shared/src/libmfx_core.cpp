@@ -713,6 +713,7 @@ CommonCORE::CommonCORE(const mfxU32 numThreadsAvailable, const mfxSession sessio
     m_bUseExtManager(false),
     m_bIsOpaqMode(false),
     m_CoreId(0),
+    m_pWrp(NULL),
     m_API_1_19(this)
 {
     m_bufferAllocator.bufferAllocator.pthis = &m_bufferAllocator;
