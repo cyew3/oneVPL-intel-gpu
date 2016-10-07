@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG-2 encoder
@@ -59,7 +59,7 @@ class MFXVideoRcMpeg2 : public VideoBRC
 public:
     static mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out);
 
-    MFXVideoRcMpeg2(VideoCORE *core, mfxStatus *status): VideoBRC()
+    MFXVideoRcMpeg2(VideoCORE *core, mfxStatus *status) : VideoBRC(), mHRD()
     {
         m_pMFXCore = core;
 //        m_pBitRateControl = NULL;
@@ -67,6 +67,32 @@ public:
         m_BRCID      = 0;
         *status = MFX_ERR_NONE;
         m_totalBitsEncoded = 0;
+        rc_ip_delay = 0;
+        mPrevQScaleValue = 0;
+        mBitrate = 0;
+        IPDistance = 0;
+        mRCMode = 0;
+        q_scale_type = 0;
+        VBV_BufferSize = 0;
+        mIsField = 0;
+        rc_vbv_fullness = 0;
+        mPrevDataLength = 0;
+        mPrevQScaleType = 0;
+        rc_dev = 0;
+        mQuantUpdated = 0;
+        gopSize = 0;
+        rc_delay = 0;
+        quantiser_scale_code = 0;
+        mPrevQScaleCode = 0;
+        rc_ave_frame_bits = 0;
+        intra_dc_precision = 0;
+        m_FirstFrame = 0;
+        block_count = 0;
+        mFramerate = 0;
+        FieldPicture = 0;
+        mBitsEncoded = 0;
+        quantiser_scale_value = 0;
+        mIndx = 0;
     }
     virtual ~MFXVideoRcMpeg2(void);
     virtual mfxStatus Init(mfxVideoParam *par);
