@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          MPEG2 encoder
@@ -36,15 +36,21 @@ using namespace MfxHwMpeg2Encode;
 //  D3D9Encoder
 //-------------------------------------------------------------
 
-D3D9Encoder::D3D9Encoder(VideoCORE* core) : m_core(core)
+D3D9Encoder::D3D9Encoder(VideoCORE* core)
+    : m_core(core)
+    , m_pDevice()
+    , m_layout()
+    , m_feedback()  
+    , m_allocResponseMB()
+    , m_allocResponseBS()
+    , m_recFrames()
+    , m_rawFrames()
+    , m_bENC_PAK()
 {
-    memset (&m_allocResponseMB,0,sizeof(mfxFrameAllocResponse));
-    memset (&m_allocResponseBS,0,sizeof(mfxFrameAllocResponse));
-    memset (&m_recFrames,0,sizeof(mfxRecFrames));
-    m_pDevice = 0;
-    memset (&m_rawFrames,0,sizeof(mfxRawFrames));
-    m_bENC_PAK = false;
-
+#ifdef MPEG2_ENC_HW_PERF
+    memset (lock_MB_data_time, 0, sizeof(lock_MB_data_time));
+    memset (copy_MB_data_time, 0, sizeof(copy_MB_data_time));
+#endif
 } // D3D9Encoder::D3D9Encoder(VideoCORE* core) : m_core(core)
 
 
