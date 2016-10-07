@@ -41,7 +41,8 @@ MFXD3D11Accelerator::MFXD3D11Accelerator(ID3D11VideoDevice  *pVideoDevice,
                                          ID3D11VideoContext *pVideoContext):m_pVideoDevice(pVideoDevice),
                                                                                m_pVideoContext(pVideoContext),
                                                                                m_pVDOView(0),
-                                                                               m_pDecoder(0)
+                                                                               m_pDecoder(0),
+                                                                               m_DecoderGuid(GUID_NULL)
 {
 } //MFXD3D11Accelerator::MFXD3D11Accelerator
 
