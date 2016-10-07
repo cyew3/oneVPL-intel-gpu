@@ -13,7 +13,7 @@
 namespace UMC
 {
 
-Thread::Thread(void)
+Thread::Thread(void) :m_Thread()
 {
     vm_thread_set_invalid(&m_Thread);
 
