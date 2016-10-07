@@ -21,6 +21,34 @@ namespace UMC
 SVCBRC::SVCBRC()
 {
   mIsInit = 0;
+
+  mNumTemporalLayers = 0;
+  mRCfa = 0;
+  mQuant = 0;
+  mQuantP = 0;
+  mQuantI = 0;
+  mQuantB = 0;
+  mPictureFlagsPrev = 0;
+  mQuantUnderflow = 0;
+  mQuantOverflow = 0;
+  mMaxFrameSize = 0;
+  mOversize = 0;
+  mUndersize = 0;
+  mQuantMax = 0;
+  mPictureFlags = 0;
+  mRCfap = 0;
+  mRCMode = 0;
+  mFrameType = NONE_PICTURE;
+  mRCqa = 0;
+  mRCq = 0;
+  mRCqa0 = 0;
+  mMinFrameSize = 0;
+  mTid = 0;
+  mQuantUpdated = 0;
+  mRCqap = 0;
+  mBitsEncoded = 0;
+  mRCbap = 0;
+  mRecodeInternal = 0;
 }
 
 SVCBRC::~SVCBRC()
