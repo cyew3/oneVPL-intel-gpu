@@ -43,13 +43,14 @@ namespace MPEG2EncoderHW
 
 
     public:
-        MFXVideoENCODEMPEG2_HW_DDI(VideoCORE *core, mfxStatus *sts): 
-          m_pExecuteBuffers(0),
-              m_pDdiEncoder(0),
-              m_bStage2Ready(0)
+        MFXVideoENCODEMPEG2_HW_DDI(VideoCORE *core, mfxStatus *sts)
+            : m_core(core)
+            , m_pExecuteBuffers()
+            , m_pDdiEncoder()
+            , m_bStage2Ready()
+            , m_bHWInput()
           {
               *sts = MFX_ERR_NONE;
-              m_core = core;
           }
           virtual ~MFXVideoENCODEMPEG2_HW_DDI ()
           {
