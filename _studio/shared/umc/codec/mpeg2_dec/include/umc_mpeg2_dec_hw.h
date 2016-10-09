@@ -51,22 +51,38 @@ class PackVA
 {
 public:
     PackVA()
+        : va_mode(VA_NO)
+        , m_va(NULL)
+        , totalNumCoef(0)
+        , pBitsreamData(NULL)
+        , va_index(0)
+        , field_buffer_index(0)
+        , pSliceStart(NULL)
+        , bs_size(0)
+        , bs_size_getting(0)
+        , slice_size_getting(0)
+        , m_SliceNum(0)
+    //Ipp8u  add_bytes[16]()
+        , IsProtectedBS(false)
+    //init_count[4]()
+        , bs(NULL)
+        , add_to_slice_start(0)
+        , is_bs_aligned_16(false)
+        , curr_encryptedData(NULL)
+        , curr_bs_encryptedData(NULL)
+        , overlap(0)
+        , vpPictureParam(NULL)
+        , pMBControl0(NULL)
+    #ifdef UMC_VA_DXVA
+        , pResidual(NULL)
+    #endif
+        , pSliceInfo(NULL)
+        , pSliceInfoBuffer(NULL)
+        , pQmatrixData(NULL)
+        , QmatrixData()
     {
-        m_va = NULL;
-        va_mode = VA_NO;
-        IsProtectedBS = false;
         memset(init_count, 0, sizeof(init_count));
-        bs = 0;
-        curr_encryptedData = 0;
-        curr_bs_encryptedData = 0;
-        add_to_slice_start = 0;
         memset(add_bytes,0,16);
-        overlap = 0;
-        vpPictureParam = NULL;
-        pMBControl0 = NULL;
-        pSliceInfo = NULL;
-        pSliceInfoBuffer = NULL;
-        pQmatrixData = NULL;
     };
     virtual ~PackVA();
     bool SetVideoAccelerator(VideoAccelerator * va);
