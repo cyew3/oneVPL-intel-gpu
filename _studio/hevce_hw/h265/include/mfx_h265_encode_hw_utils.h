@@ -709,7 +709,20 @@ private:
 class HRD
 {
 public:
-    HRD() { /*Zero(*this);*/ m_bIsHrdRequired = false; }
+    HRD():
+        m_bIsHrdRequired(false)
+        , m_cbrFlag(false)
+        , m_bitrate(0)
+        , m_maxCpbRemovalDelay(0)
+        , m_clockTick(0)
+        , m_cpbSize90k(0)
+        , m_initCpbRemovalDelay(0)
+        , m_prevAuCpbRemovalDelayMinus1(0)
+        , m_prevAuCpbRemovalDelayMsb(0)
+        , m_prevAuFinalArrivalTime(0)
+        , m_prevBpAuNominalRemovalTime(0)
+        , m_prevBpEncOrder(0)
+    {}
     void Init(const SPS &sps, mfxU32 InitialDelayInKB);
     void Reset(SPS const & sps);
     void Update(mfxU32 sizeInbits, const Task &pic);
