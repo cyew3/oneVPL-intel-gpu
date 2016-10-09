@@ -397,10 +397,18 @@ mfxStatus CachedFeedback::Remove(mfxU32 feedbackNumber)
 D3D9Encoder::D3D9Encoder()
     : m_core(0)
     , m_auxDevice(0)
+    , m_guid()
+    , m_width(0)
+    , m_height(0)
+    , m_caps()
+    , m_capsQuery()
+    , m_capsGet()
     , m_infoQueried(false)
     , m_widi(false)
+    , m_maxSlices(0)
+    , m_sps()
+    , m_pps()
 {
-    Zero(m_caps);
 }
 
 D3D9Encoder::~D3D9Encoder()
