@@ -55,6 +55,7 @@ namespace UMC
 }
 
 VC1VideoDecoder::VC1VideoDecoder():m_pContext(NULL),
+                                   m_pInitContext(),
                                    m_pdecoder(NULL),
                                    m_iThreadDecoderNum(0),
                                    m_dataBuffer(NULL),
@@ -81,6 +82,7 @@ VC1VideoDecoder::VC1VideoDecoder():m_pContext(NULL),
                                    m_pStore(NULL),
                                    m_va(NULL),
                                    m_CurrentMode(Routine),
+                                   m_pCutBytes(NULL),
                                    m_pHeap(NULL),
                                    m_bIsReorder(true),
                                    m_pCurrentIn(NULL),
@@ -97,7 +99,10 @@ VC1VideoDecoder::VC1VideoDecoder():m_pContext(NULL),
 #ifdef CREATE_ES
                                    ,m_fPureVideo(NULL)
 #endif
-
+#ifdef  VC1_THREAD_STATISTIC
+                                   ,m_parallelStat(NULL)
+                                   ,m_eEntryArray(NULL)
+#endif
 {
 #ifdef  VC1_THREAD_STATISTIC
     m_parallelStat = NULL;
