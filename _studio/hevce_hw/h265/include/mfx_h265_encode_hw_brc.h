@@ -401,6 +401,7 @@ public:
         maxbps(0),
         frameRate(0),    
         inputBitsPerFrame(0),
+        maxInputBitsPerFrame(0),
         maxFrameSizeInBytes(0),
         width(0),
         height(0),
@@ -416,7 +417,6 @@ public:
         quantOffset(0),
         quantMax(0),
         quantMin(0)
-
     {}
 
     mfxStatus Init(mfxVideoParam* par);
