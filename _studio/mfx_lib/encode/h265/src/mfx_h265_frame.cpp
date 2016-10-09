@@ -128,11 +128,15 @@ namespace H265Enc {
             memset(m_cs[log2BlkSize-2], 0, sizeof(Ipp32s) * m_rcscSize[log2BlkSize-2]);
         }
 
-        rscs_ctb.resize(numBlk, 0);
-        sc_mask.resize(numBlk, 0);
-        qp_mask.resize(numBlk, 0);
-        coloc_futr.resize(numBlk, 0);
-        coloc_past.resize(numBlk, 0);
+        Ipp32s numCtbs = ((width + 63) >> 6) * ((height + 63) >> 6);
+        qp_mask[0].resize(numCtbs, 0);
+        qp_mask[1].resize(numCtbs<<2, 0);
+        qp_mask[2].resize(numCtbs<<4, 0);
+        qp_mask[3].resize(numCtbs<<6, 0);
+        coloc_futr[0].resize(numCtbs, 0);
+        coloc_futr[1].resize(numCtbs<<2, 0);
+        coloc_futr[2].resize(numCtbs<<4, 0);
+        coloc_futr[3].resize(numCtbs<<6, 0);
 
         ResetAvgMetrics();
     }
@@ -153,11 +157,14 @@ namespace H265Enc {
 			if (m_rs[log2BlkSize-2]) { H265_Free(m_rs[log2BlkSize-2]); m_rs[log2BlkSize-2] = NULL; }
 			if (m_cs[log2BlkSize-2]) { H265_Free(m_cs[log2BlkSize-2]); m_cs[log2BlkSize-2] = NULL; }
         }
-        rscs_ctb.resize(numBlk);
-        sc_mask.resize(numBlk);
-        qp_mask.resize(numBlk);
-        coloc_futr.resize(numBlk);
-        coloc_past.resize(numBlk);
+        qp_mask[0].resize(numBlk);
+        qp_mask[1].resize(numBlk);
+        qp_mask[2].resize(numBlk);
+        qp_mask[3].resize(numBlk);
+        coloc_futr[0].resize(numBlk);
+        coloc_futr[1].resize(numBlk);
+        coloc_futr[2].resize(numBlk);
+        coloc_futr[3].resize(numBlk);
     }
 
 

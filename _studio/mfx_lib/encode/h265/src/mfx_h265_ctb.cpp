@@ -10951,7 +10951,7 @@ void H265CU<PixType>::LoadBestInterPredAndResid(Ipp32s absPartIdx, Ipp32s depth)
 template <typename PixType>
 void H265CU<PixType>::SetCuLambda(Frame* frame)
 {
-    int deltaQP = frame->m_stats[0]->qp_mask[m_ctbAddr];//use "0" (original) only here
+    int deltaQP = frame->m_stats[0]->qp_mask[0][m_ctbAddr];//use "0" (original) only here
     deltaQP = Saturate(-MAX_DQP, MAX_DQP, deltaQP);
     int idxDqp = 2*abs(deltaQP)-((deltaQP<0)?1:0);
 

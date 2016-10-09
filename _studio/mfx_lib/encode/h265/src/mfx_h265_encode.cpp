@@ -3035,7 +3035,10 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
     // attach statistics to frame
     Statistics* stats = out->m_stats[0] = m_statsPool.Allocate();
     stats->ResetAvgMetrics();
-    std::fill(stats->qp_mask.begin(), stats->qp_mask.end(), 0);
+    std::fill(stats->qp_mask[0].begin(), stats->qp_mask[0].end(), 0);
+    std::fill(stats->qp_mask[1].begin(), stats->qp_mask[1].end(), 0);
+    std::fill(stats->qp_mask[2].begin(), stats->qp_mask[2].end(), 0);
+    std::fill(stats->qp_mask[3].begin(), stats->qp_mask[3].end(), 0);
     if (m_la.get()) {
         if (m_videoParam.LowresFactor) {
             out->m_stats[1] = m_statsLowresPool.Allocate();

@@ -1315,126 +1315,112 @@ struct isEqualRefFrame
 
 void H265Enc::DetermineQpMap_IFrame(FrameIter curr, FrameIter end, H265VideoParam& videoParam)
 {  
-    Frame* inFrame    = *curr;
+    static const Ipp32f lmt_sc2[10] = { // lower limit of SFM(Rs,Cs) range for spatial classification
+        4.0, 9.0, 15.0, 23.0, 32.0, 42.0, 53.0, 65.0, 78, INT_MAX};
+    const Ipp32s futr_qp = MAX_DQP;
 
-    int wBlock = inFrame->m_origin->width/8;
-    int w4 = inFrame->m_stats[0]->m_pitchRsCs4;
-
-    const int CU_SIZE = videoParam.MaxCUSize;
-    int heightInTiles = videoParam.PicHeightInCtbs;
-    int widthInTiles  = videoParam.PicWidthInCtbs;
-
-    const int MAX_TILE_SIZE = CU_SIZE;//64;
-    int rbw = MAX_TILE_SIZE/8;
-    int rbh = MAX_TILE_SIZE/8;
-    int r4w = MAX_TILE_SIZE/4;
-    int r4h = MAX_TILE_SIZE/4;
-
-    Ipp32f tdiv;
-    int M,N, mbT,nbT, m4T, n4T;
-    static const Ipp32f lmt_sc2[10] = {4.0, 9.0, 15.0, 23.0, 32.0, 42.0, 53.0, 65.0, 78, INT_MAX}; // lower limit of SFM(Rs,Cs) range for spatial classification
+    Frame* inFrame = *curr;
     H265MV candMVs[(64/8)*(64/8)];
+    Ipp32s widthIn8x8 = videoParam.Width>>3;
+    Ipp32s heightInCtbs = (Ipp32s)videoParam.PicHeightInCtbs;
+    Ipp32s widthInCtbs = (Ipp32s)videoParam.PicWidthInCtbs;
 
-    Ipp32f futr_qp = MAX_DQP;
+    for (Ipp32s row=0; row<heightInCtbs; row++) {
+        for (Ipp32s col=0; col<widthInCtbs; col++) {
+            Ipp32s pelX = col * videoParam.MaxCUSize;
+            Ipp32s pelY = row * videoParam.MaxCUSize;
+            for (Ipp32s depth = 0; depth < 4; depth++) { // 64x64 -> 8x8
+                Ipp32s log2BlkSize = videoParam.Log2MaxCUSize - depth;
+                Ipp32s pitchRsCs = inFrame->m_stats[0]->m_pitchRsCs4 >> (log2BlkSize-2);
+                Ipp32s blkSize = 1<<log2BlkSize;
+                Ipp32s width = IPP_MIN(64, videoParam.Width - pelX);
+                Ipp32s height = IPP_MIN(64, videoParam.Height - pelY);
+                for (Ipp32s y = 0; y < height; y += blkSize) {
+                    for (Ipp32s x = 0; x < width; x += blkSize) {
+                        Ipp32s idx = ((pelY+y)>>log2BlkSize)*pitchRsCs + ((pelX+x)>>log2BlkSize);
+                        Ipp32f Rs2 = inFrame->m_stats[0]->m_rs[log2BlkSize-2][idx];
+                        Ipp32f Cs2 = inFrame->m_stats[0]->m_cs[log2BlkSize-2][idx];
+                        Ipp32s blkW = IPP_MIN(blkSize, width-x) >> 2;
+                        Ipp32s blkH = IPP_MIN(blkSize, height-y) >> 2;
+                        Rs2/=(blkW*blkH);
+                        Cs2/=(blkW*blkH);
+                        Ipp32f SC = sqrt(Rs2 + Cs2);
+                        Ipp32f tsc_RTML = 0.6f*sqrt(SC);
+                        Ipp32f tsc_RTMG= IPP_MIN(2*tsc_RTML, SC/1.414f);
+                        Ipp32f tsc_RTS = IPP_MIN(3*tsc_RTML, SC/1.414f);
+                        int scVal = 0;
+                        for (Ipp32s i = 0; i < 10; i++) {
+                            if (SC < lmt_sc2[i]*(Ipp32f)(1<<(inFrame->m_bitDepthLuma-8))) {
+                                scVal = i;
+                                break;
+                            }
+                        }
 
-    Ipp32s c8_height = (inFrame->m_origin->height);
-    Ipp32s c8_width  = (inFrame->m_origin->width);
+                        Ipp32s num8x8w = blkW>>1;
+                        Ipp32s num8x8h = blkH>>1;
+                        FrameIter itStart = ++FrameIter(curr);
+                        int coloc=0;
+                        Ipp32f pdsad_futr=0.0f;
+                        for (FrameIter it = itStart; it != end; it++) {
+                            Statistics* stat = (*it)->m_stats[0];
+                            int uMVnum = 0;
+                            Ipp32f psad_futr = 0.0f;
+                            for (Ipp32s i=0;i<num8x8h;i++) {
+                                for (Ipp32s j=0;j<num8x8w;j++) {
+                                    Ipp32s off = (((pelY+y)>>3)+i) * widthIn8x8 + ((pelX+x)>>3)+j;
+                                    psad_futr += stat->m_interSad[off];
+                                    AddCandidate(&stat->m_mv[off], &uMVnum, candMVs);
+                                }
+                            }
+                            psad_futr/=(blkW*blkH)<<4;
 
-    const Ipp32s statIdx = 0;// we use original stats here
+                            if (psad_futr < tsc_RTML && uMVnum<(num8x8h*num8x8w)/2) 
+                                coloc++;
+                            else 
+                                break;
+                        } 
 
-    for (Ipp32s row=0;row<heightInTiles;row++) {
-        for (Ipp32s col=0;col<widthInTiles;col++) {
-            int i,j;
+                        pdsad_futr=0.0f;
+                        for (Ipp32s i=0; i<num8x8h; i++) {
+                            for (Ipp32s j=0; j<num8x8w; j++) {
+                                Ipp32s off = (((pelY+y)>>3)+i) * widthIn8x8 + ((pelX+x)>>3)+j;
+                                pdsad_futr += inFrame->m_stats[0]->m_interSad_pdist_future[off];
+                            }
+                        }
+                        pdsad_futr/=(blkW*blkH)<<4;
 
-            N = (col==widthInTiles-1)?(c8_width-(widthInTiles-1)*MAX_TILE_SIZE):MAX_TILE_SIZE;
-            M = (row==heightInTiles-1)?(c8_height-(heightInTiles-1)*MAX_TILE_SIZE):MAX_TILE_SIZE;
+                        if (itStart == end) {
+                            pdsad_futr = tsc_RTS;
+                            coloc = 0;
+                        }
             
-            mbT = M/8;
-            nbT = N/8;
-            m4T = M/4;
-            n4T = N/4;
-            tdiv = M*N;
+                        Ipp32s widthInTiles = videoParam.PicWidthInCtbs << depth;
+                        Ipp32s off = ((pelY+y)*widthInTiles+(pelX+x)) >> log2BlkSize;
+                        inFrame->m_stats[0]->coloc_futr[depth][off] = coloc;
 
-            Ipp32f Rs=0.0, Cs=0.0;
-            for(i=0;i<m4T;i++) {
-                for(j=0;j<n4T;j++) {
-                    Rs += inFrame->m_stats[statIdx]->m_rs[0][(row*r4h+i)*w4+(col*r4w+j)];
-                    Cs += inFrame->m_stats[statIdx]->m_cs[0][(row*r4h+i)*w4+(col*r4w+j)];
-                }
-            }
-            Rs/=(m4T*n4T);
-            Cs/=(m4T*n4T);
-
-            Ipp32f SC = sqrt(Rs + Cs);
-            Ipp32f tsc_RTML = 0.6f*sqrt(SC);
-            Ipp32f tsc_RTMG= IPP_MIN(2*tsc_RTML, SC/1.414f);
-            Ipp32f tsc_RTS = IPP_MIN(3*tsc_RTML, SC/1.414f);
-
-            int scVal = 0;
-            inFrame->m_stats[statIdx]->rscs_ctb[row*widthInTiles+col] = SC;
-            for (i = 0; i < 10; i++) {
-                if (SC < lmt_sc2[i]*(Ipp32f)(1<<(inFrame->m_bitDepthLuma-8))) {
-                    scVal   =   i;
-                    break;
-                }
-            }
-            inFrame->m_stats[statIdx]->sc_mask[row*widthInTiles+col] = scVal;
-            
-
-            FrameIter itStart = ++FrameIter(curr);
-            int coloc=0;
-            Ipp32f pdsad_futr=0.0;
-            for (FrameIter it = itStart; it != end; it++) {
-                Statistics* stat = (*it)->m_stats[statIdx];
-
-                int uMVnum = 0;
-                Ipp32f psad_futr = 0;
-                for(i=0;i<mbT;i++) {
-                    for(j=0;j<nbT;j++) {
-                        psad_futr += stat->m_interSad[(row*rbh+i)*(wBlock)+(col*rbw+j)];
-                        AddCandidate(&stat->m_mv[(row*rbh+i)*(wBlock)+(col*rbw+j)], &uMVnum, candMVs);
+                        Ipp32s &qp_mask = inFrame->m_stats[0]->qp_mask[depth][off];
+                        if(scVal<1 && pdsad_futr<tsc_RTML) {
+                            // Visual Quality (Flat area first, because coloc count doesn't work in flat areas)
+                            coloc = 1;
+                            qp_mask = -1*coloc;
+                        } else if(coloc>=8 && pdsad_futr<tsc_RTML) {
+                            // Stable Motion, Propagation & Motion reuse (long term stable hypothesis, 8+=>inf)
+                            qp_mask = -1*IPP_MIN(futr_qp, (Ipp32s)(((Ipp32f)coloc/8.f)*futr_qp));
+                        } else if(coloc>=8 && pdsad_futr<tsc_RTMG) {
+                            // Stable Motion, Propagation possible & Motion reuse 
+                            qp_mask = -1*IPP_MIN(futr_qp, (Ipp32s)(((Ipp32f)coloc/8.f)*4.f));
+                        } else if(coloc>1 && pdsad_futr<tsc_RTMG) {
+                            // Stable Motion & Motion reuse 
+                            qp_mask = -1*IPP_MIN(4, (Ipp32s)(((Ipp32f)coloc/8.f)*4.f));
+                        } else if(scVal>=6 && pdsad_futr>tsc_RTS) {
+                            // Reduce disproportional cost on high texture and bad motion
+                            qp_mask = 1;
+                        } else {
+                            // Default
+                            qp_mask = 0;
+                        }
                     }
                 }
-                psad_futr/=tdiv;
-
-                if (psad_futr < tsc_RTML && uMVnum<(mbT*nbT)/2) 
-                    coloc++;
-                else 
-                    break;
-            } 
-
-            pdsad_futr=0.0;
-            for(i=0;i<mbT;i++)
-                for(j=0;j<nbT;j++)
-                    pdsad_futr += inFrame->m_stats[statIdx]->m_interSad_pdist_future[(row*rbh+i)*(wBlock)+(col*rbw+j)];
-            pdsad_futr/=tdiv;
-
-            if (itStart == end) {
-                pdsad_futr = tsc_RTS;
-                coloc = 0;
-            }
-            
-            inFrame->m_stats[statIdx]->coloc_futr[row*widthInTiles+col] = coloc;
-
-            if(scVal<1 && pdsad_futr<tsc_RTML) {
-                // Visual Quality (Flat area first, because coloc count doesn't work in flat areas)
-                coloc = 1;
-                inFrame->m_stats[statIdx]->qp_mask[row*widthInTiles+col] = -1*coloc;
-            } else if(coloc>=8 && pdsad_futr<tsc_RTML) {
-                // Stable Motion, Propagation & Motion reuse (long term stable hypothesis, 8+=>inf)
-                inFrame->m_stats[statIdx]->qp_mask[row*widthInTiles+col] = -1*IPP_MIN((Ipp32s)futr_qp, (Ipp32s)(((Ipp32f)coloc/8.f)*futr_qp));
-            } else if(coloc>=8 && pdsad_futr<tsc_RTMG) {
-                // Stable Motion, Propagation possible & Motion reuse 
-                inFrame->m_stats[statIdx]->qp_mask[row*widthInTiles+col] = -1*IPP_MIN((Ipp32s)futr_qp, (Ipp32s)(((Ipp32f)coloc/8.f)*4.f));
-            } else if(coloc>1 && pdsad_futr<tsc_RTMG) {
-                // Stable Motion & Motion reuse 
-                inFrame->m_stats[statIdx]->qp_mask[row*widthInTiles+col] = -1*IPP_MIN(4, (Ipp32s)(((Ipp32f)coloc/8.f)*4.f));
-            } else if(scVal>=6 && pdsad_futr>tsc_RTS) {
-                // Reduce disproportional cost on high texture and bad motion
-                inFrame->m_stats[statIdx]->qp_mask[row*widthInTiles+col] = 1;
-            } else {
-                // Default
-                inFrame->m_stats[statIdx]->qp_mask[row*widthInTiles+col] = 0;
             }
         }
     }
@@ -1443,165 +1429,142 @@ void H265Enc::DetermineQpMap_IFrame(FrameIter curr, FrameIter end, H265VideoPara
 
 void H265Enc::DetermineQpMap_PFrame(FrameIter begin, FrameIter curr, FrameIter end, H265VideoParam & videoParam)
 {
+    static const Ipp32f lmt_sc2[10] = { // lower limit of SFM(Rs,Cs) range for spatial classification
+        4.0, 9.0, 15.0, 23.0, 32.0, 42.0, 53.0, 65.0, 78, INT_MAX};
     FrameIter itCurr = curr;
-    Frame* inFrame    = *curr;
+    Frame* inFrame = *curr;
     Frame* past_frame = *begin;
-
-    int row, col;
-    int c8_width, c8_height;
-    //int widthInRegionGrid = inFrame->m_origin->width / 16;
-    int wBlock = inFrame->m_origin->width/8;
-    int w4 = inFrame->m_stats[0]->m_pitchRsCs4;
-
-    const int CU_SIZE = videoParam.MaxCUSize;
-    int heightInTiles = videoParam.PicHeightInCtbs;
-    int widthInTiles  = videoParam.PicWidthInCtbs;
-
-    const int MAX_TILE_SIZE = CU_SIZE;//64;
-    int rbw = MAX_TILE_SIZE/8;
-    int rbh = MAX_TILE_SIZE/8;
-    int r4w = MAX_TILE_SIZE/4;
-    int r4h = MAX_TILE_SIZE/4;
-
-    Ipp32f tdiv;
-    int M,N, mbT,nbT, m4T, n4T;
-    static Ipp32f lmt_sc2[10]   =   {4.0, 9.0, 15.0, 23.0, 32.0, 42.0, 53.0, 65.0, 78, INT_MAX}; // lower limit of SFM(Rs,Cs) range for spatial classification
-    H265MV candMVs[(64/8)*(64/8)];
-
-    Ipp32f tsc_RTF, tsc_RTML, tsc_RTMG, tsc_RTS;
     const Ipp32f futr_qp = MAX_DQP;
     const Ipp32s REF_DIST = IPP_MIN(8, (inFrame->m_frameOrder - past_frame->m_frameOrder));
-
-    const Ipp32s statIdx = 0;// we use original stats here
-
-    c8_height = (inFrame->m_origin->height);
-    c8_width  = (inFrame->m_origin->width);
+    H265MV candMVs[(64/8)*(64/8)];
+    Ipp32s widthIn8x8 = videoParam.Width>>3;
+    Ipp32s heightInCtbs = (Ipp32s)videoParam.PicHeightInCtbs;
+    Ipp32s widthInCtbs = (Ipp32s)videoParam.PicWidthInCtbs;
 
     bool futr_key = false;
-    for(row=0;row<heightInTiles;row++) {
-        for(col=0;col<widthInTiles;col++) {
-            int i, j;
-            
-            N = (col==widthInTiles-1)?(c8_width-(widthInTiles-1)*MAX_TILE_SIZE):MAX_TILE_SIZE;
-            M = (row==heightInTiles-1)?(c8_height-(heightInTiles-1)*MAX_TILE_SIZE):MAX_TILE_SIZE;
-            
-            mbT = M/8;
-            nbT = N/8;
-            m4T = M/4;
-            n4T = N/4;
-            tdiv = M*N;
+    for (Ipp32s row=0; row<heightInCtbs; row++) {
+        for (Ipp32s col=0; col<widthInCtbs; col++) {
+            Ipp32s pelX = col * videoParam.MaxCUSize;
+            Ipp32s pelY = row * videoParam.MaxCUSize;
+            for (Ipp32s depth = 0; depth < 4; depth++) { // 64x64 -> 8x8
+                Ipp32s log2BlkSize = videoParam.Log2MaxCUSize - depth;
+                Ipp32s pitchRsCs = inFrame->m_stats[0]->m_pitchRsCs4 >> (log2BlkSize-2);
+                Ipp32s blkSize = 1<<log2BlkSize;
+                Ipp32s width = IPP_MIN(64, videoParam.Width - pelX);
+                Ipp32s height = IPP_MIN(64, videoParam.Height - pelY);
+                for (Ipp32s y = 0; y < height; y += blkSize) {
+                    for (Ipp32s x = 0; x < width; x += blkSize) {
+                        Ipp32s idx = ((pelY+y)>>log2BlkSize)*pitchRsCs + ((pelX+x)>>log2BlkSize);
+                        Ipp32f Rs2 = inFrame->m_stats[0]->m_rs[log2BlkSize-2][idx];
+                        Ipp32f Cs2 = inFrame->m_stats[0]->m_cs[log2BlkSize-2][idx];
+                        Ipp32s blkW = IPP_MIN(blkSize, width-x) >> 2;
+                        Ipp32s blkH = IPP_MIN(blkSize, height-y) >> 2;
+                        Rs2/=(blkW*blkH);
+                        Cs2/=(blkW*blkH);
+                        Ipp32f SC = sqrt(Rs2 + Cs2);
+                        Ipp32f tsc_RTML = 0.6f*sqrt(SC);
+                        Ipp32f tsc_RTMG= IPP_MIN(2*tsc_RTML, SC/1.414f);
+                        Ipp32f tsc_RTS = IPP_MIN(3*tsc_RTML, SC/1.414f);
+                        int scVal = 0;
+                        for (Ipp32s i = 0; i < 10; i++) {
+                            if (SC < lmt_sc2[i]*(Ipp32f)(1<<(inFrame->m_bitDepthLuma-8))) {
+                                scVal = i;
+                                break;
+                            }
+                        }
 
-            Ipp32f Rs=0.0, Cs=0.0;
-            for(i=0;i<m4T;i++) {
-                for(j=0;j<n4T;j++) {
-                    Rs += inFrame->m_stats[statIdx]->m_rs[0][(row*r4h+i)*w4+(col*r4w+j)];
-                    Cs += inFrame->m_stats[statIdx]->m_cs[0][(row*r4h+i)*w4+(col*r4w+j)];
-                }
-            }
-            Rs/=(m4T*n4T);
-            Cs/=(m4T*n4T);
-            Ipp32f SC = sqrt(Rs + Cs);
-            inFrame->m_stats[statIdx]->rscs_ctb[row*widthInTiles+col] = SC;
+                        // RTF RTS logic for P Frame is based on MC Error
+                        Ipp32s num8x8w = blkW>>1;
+                        Ipp32s num8x8h = blkH>>1;
+                        Ipp32f pdsad_past=0.0f;
+                        Ipp32f pdsad_futr=0.0f;
+                        for(Ipp32s i=0; i<num8x8h; i++) {
+                            for(Ipp32s j=0; j<num8x8w; j++) {
+                                Ipp32s off = (((pelY+y)>>3)+i) * widthIn8x8 + ((pelX+x)>>3)+j;
+                                pdsad_past += inFrame->m_stats[0]->m_interSad_pdist_past[off];
+                                pdsad_futr += inFrame->m_stats[0]->m_interSad_pdist_future[off];
+                            }
+                        }
+                        pdsad_past/=(blkW*blkH)<<4;
+                        pdsad_futr/=(blkW*blkH)<<4;
 
-            int scVal = 0;
-            for(i = 0;i<10;i++) {
-                if(SC < lmt_sc2[i]*(Ipp32f)(1<<(inFrame->m_bitDepthLuma-8))) {
-                    scVal   =   i;
-                    break;
-                }
-            }
-            inFrame->m_stats[statIdx]->sc_mask[row*widthInTiles+col] = scVal;
-            tsc_RTML = 0.6*sqrt(SC);
-
-            tsc_RTF = tsc_RTML/2;
-            tsc_RTMG= IPP_MIN(2*tsc_RTML, SC/1.414);
-            tsc_RTS = IPP_MIN(3*tsc_RTML, SC/1.414);
-
-
-            // RTF RTS logic for P Frame is based on MC Error
-            Ipp32f pdsad_past=0.0;
-            Ipp32f pdsad_futr=0.0;
-            for(i=0;i<mbT;i++) {
-                for(j=0;j<nbT;j++) {
-                    pdsad_past += inFrame->m_stats[statIdx]->m_interSad_pdist_past[(row*rbh+i)*(wBlock)+(col*rbw+j)];
-                    pdsad_futr += inFrame->m_stats[statIdx]->m_interSad_pdist_future[(row*rbh+i)*(wBlock)+(col*rbw+j)];
-                }
-            }
-            pdsad_past/=tdiv;
-            pdsad_futr/=tdiv;
+                        // future (forward propagate)
+                        Ipp32s coloc_futr=0;
+                        FrameIter itStart = ++FrameIter(itCurr);
+                        for (FrameIter it = itStart; it != end; it++) {
+                            Statistics* stat = (*it)->m_stats[0];
+                            Ipp32s uMVnum = 0;
+                            Ipp32f psad_futr = 0.0f;
+                            for (Ipp32s i=0; i<num8x8h; i++) {
+                                for (Ipp32s j=0; j<num8x8w; j++) {
+                                    Ipp32s off = (((pelY+y)>>3)+i) * widthIn8x8 + ((pelX+x)>>3)+j;
+                                    psad_futr += stat->m_interSad[off];
+                                    AddCandidate(&stat->m_mv[off], &uMVnum, candMVs);
+                                }
+                            }
+                            psad_futr/=(blkW*blkH)<<4;
+                            if (psad_futr < tsc_RTML && uMVnum < (blkW*blkH)/2) 
+                                coloc_futr++;
+                            else break;
+                        }
 
 
-            // future (forward propagate)
-            int coloc_futr=0;
-            FrameIter itStart = ++FrameIter(itCurr);
-            for (FrameIter it = itStart; it != end; it++) {
-                int uMVnum = 0;
-                Statistics* stat = (*it)->m_stats[statIdx];
-                Ipp32f psad_futr=0.0;
-                for(i=0;i<mbT;i++) {
-                    for(j=0;j<nbT;j++) {
-                        psad_futr += stat->m_interSad[(row*rbh+i)*(wBlock)+(col*rbw+j)];
-                        AddCandidate(&stat->m_mv[(row*rbh+i)*(wBlock)+(col*rbw+j)], &uMVnum, candMVs);
+                        // past (backward propagate)
+                        Ipp32s coloc_past=0;
+                        for (FrameIter it = itCurr; it != begin; it--) {
+                            Statistics* stat = (*it)->m_stats[0];
+                            int uMVnum = 0; 
+                            Ipp32f psad_past=0.0;
+                            for (Ipp32s i=0; i<num8x8h; i++) {
+                                for (Ipp32s j=0; j<num8x8w; j++) {
+                                    Ipp32s off = (((pelY+y)>>3)+i) * widthIn8x8 + ((pelX+x)>>3)+j;
+                                    psad_past += stat->m_interSad[off];
+                                    AddCandidate(&stat->m_mv[off], &uMVnum, candMVs);
+                                }
+                            }
+                            psad_past/=(blkW*blkH)<<4;
+                            if (psad_past<tsc_RTML && uMVnum<(blkW*blkH)/2) 
+                                coloc_past++;
+                            else
+                                break;
+                        }
+
+                        Ipp32s widthInTiles = widthInCtbs << depth;
+                        Ipp32s off = ((pelY+y)*widthInTiles+(pelX+x)) >> log2BlkSize;
+                        inFrame->m_stats[0]->coloc_futr[depth][off] = coloc_futr;
+                        Ipp32s coloc = IPP_MAX(coloc_past, coloc_futr);
+                        if (futr_key) coloc = coloc_past;
+
+                        Ipp32s &qp_mask = inFrame->m_stats[0]->qp_mask[depth][off];
+                        if (coloc_past >= REF_DIST && past_frame->m_stats[0]->coloc_futr[depth][off] >= REF_DIST) {
+                            // Stable Motion & P Skip (when GOP is small repeated P QP lowering can change RD Point)
+                            // Avoid quantization noise recoding
+                            //inFrame->qp_mask[off] = IPP_MIN(0, past_frame->qp_mask[off]+1);
+                            qp_mask = 0; // Propagate
+                        } else if(coloc>=8 && coloc==coloc_futr && pdsad_futr<tsc_RTML && !futr_key) {
+                            // Stable Motion & Motion reuse 
+                            qp_mask = -1*IPP_MIN((int)futr_qp, (int)(((Ipp32f)coloc/8.0)*futr_qp));
+                        } else if(coloc>=8 && coloc==coloc_futr && pdsad_futr<tsc_RTMG && !futr_key) {
+                            // Stable Motion & Motion reuse 
+                            qp_mask = -1*IPP_MIN((int)futr_qp, (int)(((Ipp32f)coloc/8.0)*4.0));
+                        } else if(coloc>1 && coloc==coloc_futr && pdsad_futr<tsc_RTMG && !futr_key) {
+                            // Stable Motion & Motion Reuse
+                            qp_mask = -1*IPP_MIN(4, (int)(((Ipp32f)coloc/8.0)*4.0));
+                            // Possibly propagation
+                        } else if(coloc>1 && coloc==coloc_past && pdsad_past<tsc_RTMG) {
+                            // Stable Motion & Motion Reuse
+                            qp_mask = -1*IPP_MIN(4, (int)(((Ipp32f)coloc/8.0)*4.0));
+                            // Past Boost probably no propagation since coloc_futr is less than coloc_past
+                        }  else if(scVal>=6 && pdsad_past>tsc_RTS && coloc==0) {
+                            // reduce disproportional cost on high texture and bad motion
+                            // use pdsad_past since its coded a in order p frame
+                            qp_mask = 1;
+                        } else {
+                            // Default
+                            qp_mask = 0;
+                        }
                     }
                 }
-                psad_futr/=tdiv;
-                if (psad_futr < tsc_RTML && uMVnum < (mbT*nbT)/2) 
-                    coloc_futr++;
-                else break;
-            }
-
-
-            // past (backward propagate)
-            Ipp32s coloc_past=0;
-            for (FrameIter it = itCurr; it != begin; it--) {
-                Statistics* stat = (*it)->m_stats[statIdx];
-                int uMVnum = 0; 
-                Ipp32f psad_past=0.0;
-                for(i=0;i<mbT;i++) {
-                    for(j=0;j<nbT;j++) {
-                        psad_past += stat->m_interSad[(row*rbh+i)*(wBlock)+(col*rbw+j)];
-                        AddCandidate(&stat->m_mv[(row*rbh+i)*(wBlock)+(col*rbw+j)], &uMVnum, candMVs);
-                    }
-                }
-                psad_past/=tdiv;
-                if(psad_past<tsc_RTML && uMVnum<(mbT*nbT)/2) 
-                    coloc_past++;
-                else break;
-            };
-
-
-            inFrame->m_stats[statIdx]->coloc_past[row*widthInTiles+col] = coloc_past;
-            inFrame->m_stats[statIdx]->coloc_futr[row*widthInTiles+col] = coloc_futr;
-            Ipp32s coloc = IPP_MAX(coloc_past, coloc_futr);
-
-            if(futr_key) coloc = coloc_past;
-
-            if (coloc_past >= REF_DIST && past_frame->m_stats[statIdx]->coloc_futr[row*widthInTiles+col] >= REF_DIST) {
-                // Stable Motion & P Skip (when GOP is small repeated P QP lowering can change RD Point)
-                // Avoid quantization noise recoding
-                //inFrame->qp_mask[row*widthInTiles+col] = IPP_MIN(0, past_frame->qp_mask[row*widthInTiles+col]+1);
-                inFrame->m_stats[statIdx]->qp_mask[row*widthInTiles+col] = 0; // Propagate
-            } else if(coloc>=8 && coloc==coloc_futr && pdsad_futr<tsc_RTML && !futr_key) {
-                // Stable Motion & Motion reuse 
-                inFrame->m_stats[statIdx]->qp_mask[row*widthInTiles+col] = -1*IPP_MIN((int)futr_qp, (int)(((Ipp32f)coloc/8.0)*futr_qp));
-            } else if(coloc>=8 && coloc==coloc_futr && pdsad_futr<tsc_RTMG && !futr_key) {
-                // Stable Motion & Motion reuse 
-                inFrame->m_stats[statIdx]->qp_mask[row*widthInTiles+col] = -1*IPP_MIN((int)futr_qp, (int)(((Ipp32f)coloc/8.0)*4.0));
-            } else if(coloc>1 && coloc==coloc_futr && pdsad_futr<tsc_RTMG && !futr_key) {
-                // Stable Motion & Motion Reuse
-                inFrame->m_stats[statIdx]->qp_mask[row*widthInTiles+col] = -1*IPP_MIN(4, (int)(((Ipp32f)coloc/8.0)*4.0));
-                // Possibly propagation
-            } else if(coloc>1 && coloc==coloc_past && pdsad_past<tsc_RTMG) {
-                // Stable Motion & Motion Reuse
-                inFrame->m_stats[statIdx]->qp_mask[row*widthInTiles+col] = -1*IPP_MIN(4, (int)(((Ipp32f)coloc/8.0)*4.0));
-                // Past Boost probably no propagation since coloc_futr is less than coloc_past
-            }  else if(scVal>=6 && pdsad_past>tsc_RTS && coloc==0) {
-                // reduce disproportional cost on high texture and bad motion
-                // use pdsad_past since its coded a in order p frame
-                inFrame->m_stats[statIdx]->qp_mask[row*widthInTiles+col] = 1;
-            } else {
-                // Default
-                inFrame->m_stats[statIdx]->qp_mask[row*widthInTiles+col] = 0;
             }
         }
     }
@@ -2357,10 +2320,10 @@ void GetCalqDeltaQp(Frame* frame, const H265VideoParam & par, Ipp32s ctb_addr, I
                 Ipp32s calq = (QP>=0.0)?int(QP+0.5):int(QP-0.5);
                 Ipp32s totalDQP = calq;
 
-                if (par.DeltaQpMode&AMT_DQP_PAQ)
-                    totalDQP += frame->m_stats[0]->qp_mask[ctb_addr];
-
                 Ipp32s qpBlkIdx = ((pelY+y)>>log2BlkSize)*(par.PicWidthInCtbs<<(6-log2BlkSize)) + ((pelX+x)>>log2BlkSize);
+                if (par.DeltaQpMode&AMT_DQP_PAQ)
+                    totalDQP += frame->m_stats[0]->qp_mask[depth][qpBlkIdx];
+
                 Ipp32s lcuQp = frame->m_sliceQpY + totalDQP;
                 lcuQp = Saturate(0, 51, lcuQp);
                 frame->m_lcuQps[depth][qpBlkIdx] = (Ipp8s)lcuQp;
@@ -2420,13 +2383,13 @@ void H265Enc::ApplyDeltaQp(Frame* frame, const H265VideoParam & par, Ipp8u useBr
 
     // assign PAQ deltaQp
     if (par.DeltaQpMode&AMT_DQP_PAQ) {// no pure CALQ 
-        for (Ipp32s ctb = 0; ctb < numCtb; ctb++) {
-            Ipp32s deltaQp = frame->m_stats[0]->qp_mask[ctb];
-            //deltaQp = Saturate(-MAX_DQP, MAX_DQP, deltaQp);
-
-            Ipp32s lcuQp = frame->m_lcuQps[0][ctb] + deltaQp;
-            lcuQp = Saturate(0, 51, lcuQp);
-            frame->m_lcuQps[0][ctb] = (Ipp8s)lcuQp;
+        for (Ipp32s depth = 0; depth < 4; depth++) {
+            for (size_t blk = 0; blk < frame->m_stats[0]->qp_mask[depth].size(); blk++) {
+                Ipp32s deltaQp = frame->m_stats[0]->qp_mask[depth][blk];
+                Ipp32s lcuQp = frame->m_lcuQps[depth][blk] + deltaQp;
+                lcuQp = Saturate(0, 51, lcuQp);
+                frame->m_lcuQps[depth][blk] = (Ipp8s)lcuQp;
+            }
         }
     }
     // recalc (align) CTB lambdas with CTB Qp

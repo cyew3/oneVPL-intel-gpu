@@ -78,11 +78,8 @@ namespace H265Enc {
 		Ipp32s m_rcscSize[5];
         Ipp32s* m_rs[5];
         Ipp32s* m_cs[5];
-        std::vector<Ipp64f> rscs_ctb;
-        std::vector<Ipp32s> sc_mask;
-        std::vector<Ipp32s> qp_mask;
-        std::vector<Ipp32s> coloc_past;
-        std::vector<Ipp32s> coloc_futr;
+        std::vector<Ipp32s> qp_mask[4];
+        std::vector<Ipp32s> coloc_futr[4];
 
         std::vector<Ipp32s> m_intraSatd;
         std::vector<Ipp32s> m_interSatd;
