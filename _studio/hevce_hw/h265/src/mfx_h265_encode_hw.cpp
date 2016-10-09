@@ -23,10 +23,14 @@ void      InheritDefaultValues(MfxVideoParam const & parInit, MfxVideoParam &  p
 Plugin::Plugin(bool CreateByDispatcher)
     : m_createdByDispatcher(CreateByDispatcher)
     , m_adapter(this)
+    , m_caps()
+    , m_lastTask()
+    , m_prevBPEO(0)
     , m_NumberOfSlicesForOpt(0)
     , m_bInit(false)
-    , m_brc(0)
-    
+    , m_runtimeErr(MFX_ERR_NONE)
+    , m_brc(NULL)
+    , m_aesCounter()
 {
     ZeroParams();
 }
