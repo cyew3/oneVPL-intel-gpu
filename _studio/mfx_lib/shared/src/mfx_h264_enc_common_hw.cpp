@@ -6264,41 +6264,38 @@ void SliceDividerSnb::Test()
 // D3D9Encoder
 
 MfxVideoParam::MfxVideoParam()
+    : mfxVideoParam()
+    , m_extOpt()
+    , m_extOpt2()
+    , m_extOpt3()
+    , m_extOptSpsPps()
+    , m_extOptPavp()
+    , m_extVideoSignal()
+    , m_extOpaque()
+    , m_extMvcSeqDescr()
+    , m_extPicTiming()
+    , m_extTempLayers()
+    , m_extSvcSeqDescr()
+    , m_extSvcRateCtrl()
+    , m_extEncResetOpt()
+    , m_extEncRoi()
+    , m_extFeiParam()
+    , m_extChromaLoc()
+    , m_extPwt()
+    , m_extDirtyRect()
+    , m_extMoveRect()
+    , m_extOptDdi()
+    #ifdef MFX_UNDOCUMENTED_DUMP_FILES
+    , m_extDumpFiles()
+    #endif
+    , m_extSps()
+    , m_extPps()
+    , m_extSpecModes()
+    , m_extFeiOpt()
+    , calcParam()
 {
-    // mfxVideoParam
-    AllocId = 0;
-    AsyncDepth = 0;
-    memset(&mfx, 0, sizeof(mfxInfoMFX));
-    memset(&vpp, 0, sizeof(mfxInfoVPP));
-    Protected = 0;
-    IOPattern = 0;
-    NumExtParam = 0;
-
     memset(m_extParam, 0, sizeof(m_extParam));
-    // external, documented
-    memset(&m_extOpt, 0, sizeof(m_extOpt));
-    memset(&m_extOpt2, 0, sizeof(m_extOpt2));
-    memset(&m_extOptSpsPps, 0, sizeof(m_extOptSpsPps));
-    memset(&m_extOptPavp, 0, sizeof(m_extOptPavp));
-    memset(&m_extVideoSignal, 0, sizeof(m_extVideoSignal));
-    memset(&m_extOpaque, 0, sizeof(m_extOpaque));
-    memset(&m_extMvcSeqDescr, 0, sizeof(m_extMvcSeqDescr));
-    memset(&m_extPicTiming, 0, sizeof(m_extPicTiming));
-    memset(&m_extTempLayers, 0, sizeof(m_extTempLayers));
-    memset(&m_extSvcSeqDescr, 0, sizeof(m_extSvcSeqDescr));
-    memset(&m_extSvcRateCtrl, 0, sizeof(m_extSvcRateCtrl));
-    memset(&m_extEncResetOpt, 0, sizeof(m_extEncResetOpt));
-
-    memset(&m_extOptDdi, 0, sizeof(m_extOptDdi));
-#ifdef MFX_UNDOCUMENTED_DUMP_FILES
-    // internal, not documented
-    memset(&m_extDumpFiles, 0, sizeof(m_extDumpFiles));
-#endif
-
-    memset(&m_extSps, 0, sizeof(m_extSps));
-    memset(&m_extPps, 0, sizeof(m_extPps));
-
-    memset(&calcParam, 0, sizeof(calcParam));
+    memset(m_extFeiSlice, 0, sizeof(m_extFeiSlice));
 }
 
 MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)

@@ -685,14 +685,44 @@ mfxStatus ImplementationAvc::QueryIOSurf(
 ImplementationAvc::ImplementationAvc(VideoCORE * core)
 : m_core(core)
 , m_video()
+, m_stat()
+, m_stagesToGo(0)
+, m_fieldCounter(0)
+, m_1stFieldStatus(MFX_ERR_NONE)
+, m_frameOrder(0)
+, m_baseLayerOrder(0)
+, m_frameOrderIdrInDisplayOrder(0)
+, m_frameOrderStartLyncStructure(0)
+, m_baseLayerOrderStartIntraRefresh(0)
+, m_intraStripeWidthInMBs(0)
 , m_enabledSwBrc(false)
 , m_maxBsSize(0)
+, m_caps()
+, m_failedStatus(MFX_ERR_NONE)
+, m_inputFrameType(0)
 , m_NumSlices(0)
 , m_useMBQPSurf(false)
+, m_currentPlatform(MFX_HW_UNKNOWN)
+, m_currentVaType(MFX_HW_NO)
+, m_useWAForHighBitrates(false)
 , m_isENCPAK(false)
 , m_isWiDi(false)
 , m_resetBRC(false)
+, m_sofiaMode(false)
+#if USE_AGOP
+, m_agopBestIdx(0)
+, m_agopCurrentLen(0)
+, m_agopFinishedLen(0)
+, m_agopDeps(0)
+#endif
 {
+    // Use 'memset' inicialization for array members to prevent MSVC C4351 warning
+    //https://msdn.microsoft.com/en-us/library/1ywe7hcy.aspx
+    memset(&m_recNonRef, 0, sizeof(m_recNonRef));
+#if USE_AGOP
+    memset(m_bestGOPSequence, 0, sizeof(m_bestGOPSequence));
+    memset(m_bestGOPCost, 0, sizeof(m_bestGOPCost));
+#endif
 /*
     FEncLog = fopen("EncLog.txt", "wb");
 */
