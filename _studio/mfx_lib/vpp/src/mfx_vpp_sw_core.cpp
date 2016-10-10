@@ -259,6 +259,11 @@ mfxStatus VideoVPPBase::Init(mfxVideoParam *par)
     }
 
     sts = InternalInit(par);
+    if (MFX_WRN_FILTER_SKIPPED == sts)
+    {
+        sts_wrn = MFX_WRN_FILTER_SKIPPED;
+        sts     = MFX_ERR_NONE;
+    }
     MFX_CHECK_STS( sts );
    
     /* save init params to prevent core crash */
@@ -274,22 +279,11 @@ mfxStatus VideoVPPBase::Init(mfxVideoParam *par)
         m_errPrtctState.isCompositionModeEnabled = false;
 
     m_InitState = m_errPrtctState; // Save params on init
-    /* to reset status */
-    sts = MFX_ERR_NONE;
-
 
     m_stat.NumCachedFrame = 0;
     m_stat.NumFrame       = 0;
 
     VPP_INIT_SUCCESSFUL;
-
-    /* here, Reset == SetParam */
-    mfxStatus stsReset = sts = Reset( par );
-    if(MFX_WRN_FILTER_SKIPPED == sts || MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts)
-    {
-        sts = MFX_ERR_NONE;
-    }
-    MFX_CHECK_STS( sts );
 
     if( MFX_ERR_NONE != sts_wrn )
     {
@@ -304,7 +298,7 @@ mfxStatus VideoVPPBase::Init(mfxVideoParam *par)
         sts = MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    return (MFX_ERR_NONE == sts) ? stsReset : sts;
+    return sts;
 
 } // mfxStatus VideoVPPBase::Init(mfxVideoParam *par)
 
@@ -1372,8 +1366,9 @@ mfxStatus VideoVPP_HW::InternalInit(mfxVideoParam *par)
     mfxStatus sts = MFX_ERR_UNDEFINED_BEHAVIOR;
     CommonCORE* pCommonCore = NULL;
 
+    bool bIsFilterSkipped  = false;
     bool isFieldProcessing = IsFilterFound(&m_pipelineList[0], (mfxU32)m_pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_PROCESSING);
-        
+
     pCommonCore = QueryCoreInterface<CommonCORE>(m_core, isFieldProcessing ? MFXICORECM_GUID : MFXIVideoCORE_GUID);
     MFX_CHECK(pCommonCore, MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -1387,7 +1382,7 @@ mfxStatus VideoVPP_HW::InternalInit(mfxVideoParam *par)
     sts = m_pHWVPP.get()->Init(par); // OK or ERR only
     if (MFX_WRN_FILTER_SKIPPED == sts)
     {
-        // do not break execution, skip filter later
+        bIsFilterSkipped = true;
         sts = MFX_ERR_NONE;
     }
     if (MFX_ERR_NONE != sts)
@@ -1401,7 +1396,7 @@ mfxStatus VideoVPP_HW::InternalInit(mfxVideoParam *par)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    return sts;
+    return (bIsFilterSkipped) ? MFX_WRN_FILTER_SKIPPED : MFX_ERR_NONE;
 }
 
 mfxStatus VideoVPP_HW::Reset(mfxVideoParam *par)

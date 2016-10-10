@@ -1626,7 +1626,6 @@ mfxStatus  VideoVPPHW::Init(
     }
     else if( par->AsyncDepth > MFX_AUTO_ASYNC_DEPTH_VALUE )
     {
-        // warning???
         m_asyncDepth = MFX_AUTO_ASYNC_DEPTH_VALUE;
     }
     else
@@ -1638,7 +1637,7 @@ mfxStatus  VideoVPPHW::Init(
     //-----------------------------------------------------
     // [2] device creation
     //-----------------------------------------------------
-    m_params = *par;// PARAMS!!!
+    m_params = *par;
 
     mfxExtBuffer* pHint = NULL;
     GetFilterParam(par, MFX_EXTBUFF_MVC_SEQ_DESC, &pHint);
@@ -1719,14 +1718,10 @@ mfxStatus  VideoVPPHW::Init(
     m_config.m_surfCount[VPP_IN]  = (mfxU16)(m_config.m_surfCount[VPP_IN]  * m_asyncDepth + 1);
 
     //-----------------------------------------------------
-    // [3] Opaque pre-work:: moved to high level
+    // [3] internal frames allocation (make sense fo SYSTEM_MEMORY only)
     //-----------------------------------------------------
-
     mfxFrameAllocRequest request;
 
-    //-----------------------------------------------------
-    // [4] internal frames allocation (make sense fo SYSTEM_MEMORY only)
-    //-----------------------------------------------------
     if (D3D_TO_SYS == m_ioMode || SYS_TO_SYS == m_ioMode) // [OUT == SYSTEM_MEMORY]
     {
         //m_config.m_surfCount[VPP_OUT] = (mfxU16)(m_config.m_surfCount[VPP_OUT] + m_asyncDepth);
@@ -1738,11 +1733,8 @@ mfxStatus  VideoVPPHW::Init(
 #endif
         request.NumFrameMin = request.NumFrameSuggested = m_config.m_surfCount[VPP_OUT] ;
 
-        if (m_config.m_surfCount[VPP_OUT] != m_internalVidSurf[VPP_OUT].NumFrameActual)
-        {
-            sts = m_internalVidSurf[VPP_OUT].Alloc(m_pCore, request, par->vpp.Out.FourCC != MFX_FOURCC_YV12);
-            MFX_CHECK(MFX_ERR_NONE == sts, MFX_WRN_PARTIAL_ACCELERATION);
-        }
+        sts = m_internalVidSurf[VPP_OUT].Alloc(m_pCore, request, par->vpp.Out.FourCC != MFX_FOURCC_YV12);
+        MFX_CHECK(MFX_ERR_NONE == sts, MFX_WRN_PARTIAL_ACCELERATION);
 
         m_config.m_IOPattern |= MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
 
@@ -1760,11 +1752,8 @@ mfxStatus  VideoVPPHW::Init(
 #endif
         request.NumFrameMin = request.NumFrameSuggested = m_config.m_surfCount[VPP_IN] ;
 
-        if (m_config.m_surfCount[VPP_IN] != m_internalVidSurf[VPP_IN].NumFrameActual)
-        {
-            sts = m_internalVidSurf[VPP_IN].Alloc(m_pCore, request, par->vpp.In.FourCC != MFX_FOURCC_YV12);
-            MFX_CHECK(MFX_ERR_NONE == sts, MFX_WRN_PARTIAL_ACCELERATION);
-        }
+        sts = m_internalVidSurf[VPP_IN].Alloc(m_pCore, request, par->vpp.In.FourCC != MFX_FOURCC_YV12);
+        MFX_CHECK(MFX_ERR_NONE == sts, MFX_WRN_PARTIAL_ACCELERATION);
 
         m_config.m_IOPattern |= MFX_IOPATTERN_IN_SYSTEM_MEMORY;
 
@@ -1775,13 +1764,13 @@ mfxStatus  VideoVPPHW::Init(
     m_workloadMode = VPP_ASYNC_WORKLOAD;
 
     //-----------------------------------------------------
-    // [5] resource and task manager
+    // [4] resource and task manager
     //-----------------------------------------------------
     sts = m_taskMngr.Init(m_pCore, m_config);
     MFX_CHECK_STS(sts);
 
     //-----------------------------------------------------
-    // [6]  cm device
+    // [5]  cm device
     //-----------------------------------------------------
 #if defined(MFX_VA)
     if(m_pCmDevice) {
@@ -1950,8 +1939,139 @@ mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
         m_params.vpp.Out.FourCC != par->vpp.Out.FourCC)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
-    return this->Init(par);
+    mfxStatus sts = MFX_ERR_NONE;
+    bool bIsFilterSkipped = false;
 
+    m_frame_num = 0;
+    //-----------------------------------------------------
+    // [1] high level check
+    //-----------------------------------------------------
+    MFX_CHECK_NULL_PTR1(par);
+
+    sts = CheckIOMode(par, m_ioMode);
+    MFX_CHECK_STS(sts);
+
+    m_IOPattern = par->IOPattern;
+
+    if(0 == par->AsyncDepth)
+    {
+        m_asyncDepth = MFX_AUTO_ASYNC_DEPTH_VALUE;
+    }
+    else if( par->AsyncDepth > MFX_AUTO_ASYNC_DEPTH_VALUE )
+    {
+        m_asyncDepth = MFX_AUTO_ASYNC_DEPTH_VALUE;
+    }
+    else
+    {
+        m_asyncDepth = par->AsyncDepth;
+    }
+
+    //-----------------------------------------------------
+    // [2] device check
+    //-----------------------------------------------------
+    m_params = *par;
+
+    mfxVppCaps caps;
+    caps = m_ddi->GetCaps();
+
+    sts = ValidateParams(&m_params, &caps, m_pCore);
+    if( MFX_WRN_FILTER_SKIPPED == sts )
+    {
+        bIsFilterSkipped = true;
+        sts = MFX_ERR_NONE;
+    }
+    MFX_CHECK_STS(sts);
+
+    m_config.m_IOPattern = 0;
+    sts = ConfigureExecuteParams(
+        m_params,
+        caps,
+        m_executeParams,
+        m_config);
+
+    if( MFX_WRN_FILTER_SKIPPED == sts )
+    {
+        bIsFilterSkipped = true;
+        sts = MFX_ERR_NONE;
+    }
+    MFX_CHECK_STS(sts);
+
+    if( m_executeParams.bFRCEnable &&
+       (MFX_HW_D3D11 == m_pCore->GetVAType()) &&
+       m_executeParams.customRateData.indexRateConversion != 0 )
+    {
+        sts = (*m_ddi)->ReconfigDevice(m_executeParams.customRateData.indexRateConversion);
+        MFX_CHECK_STS(sts);
+    }
+
+    // allocate special structure for ::ExecuteBlt()
+    {
+        m_executeSurf.resize( m_config.m_surfCount[VPP_IN] );
+    }
+
+    // count of internal resources based on async_depth
+    m_config.m_surfCount[VPP_OUT] = (mfxU16)(m_config.m_surfCount[VPP_OUT] * m_asyncDepth + 1);
+    m_config.m_surfCount[VPP_IN]  = (mfxU16)(m_config.m_surfCount[VPP_IN]  * m_asyncDepth + 1);
+
+    //-----------------------------------------------------
+    // [3] internal frames allocation (make sense fo SYSTEM_MEMORY only)
+    //-----------------------------------------------------
+    mfxFrameAllocRequest request;
+
+    if (D3D_TO_SYS == m_ioMode || SYS_TO_SYS == m_ioMode) // [OUT == SYSTEM_MEMORY]
+    {
+        //m_config.m_surfCount[VPP_OUT] = (mfxU16)(m_config.m_surfCount[VPP_OUT] + m_asyncDepth);
+
+        request.Info        = par->vpp.Out;
+        request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_INTERNAL_FRAME;
+#ifdef MFX_VA_WIN
+        request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
+#endif
+        request.NumFrameMin = request.NumFrameSuggested = m_config.m_surfCount[VPP_OUT] ;
+
+        if (m_config.m_surfCount[VPP_OUT] != m_internalVidSurf[VPP_OUT].NumFrameActual || m_executeParams.bComposite)
+        {
+            sts = m_internalVidSurf[VPP_OUT].Alloc(m_pCore, request, par->vpp.Out.FourCC != MFX_FOURCC_YV12);
+            MFX_CHECK(MFX_ERR_NONE == sts, MFX_WRN_PARTIAL_ACCELERATION);
+        }
+
+        m_config.m_IOPattern |= MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+
+        m_config.m_surfCount[VPP_OUT] = request.NumFrameMin;
+    }
+
+    if (SYS_TO_SYS == m_ioMode || SYS_TO_D3D == m_ioMode ) // [IN == SYSTEM_MEMORY]
+    {
+        //m_config.m_surfCount[VPP_IN] = (mfxU16)(m_config.m_surfCount[VPP_IN] + m_asyncDepth);
+
+        request.Info        = par->vpp.In;
+        request.Type        = MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET | MFX_MEMTYPE_FROM_VPPIN | MFX_MEMTYPE_INTERNAL_FRAME;
+#ifdef MFX_VA_WIN
+        request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
+#endif
+        request.NumFrameMin = request.NumFrameSuggested = m_config.m_surfCount[VPP_IN] ;
+
+        if (m_config.m_surfCount[VPP_IN] != m_internalVidSurf[VPP_IN].NumFrameActual || m_executeParams.bComposite)
+        {
+            sts = m_internalVidSurf[VPP_IN].Alloc(m_pCore, request, par->vpp.In.FourCC != MFX_FOURCC_YV12);
+            MFX_CHECK(MFX_ERR_NONE == sts, MFX_WRN_PARTIAL_ACCELERATION);
+        }
+
+        m_config.m_IOPattern |= MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+
+        m_config.m_surfCount[VPP_IN] = request.NumFrameMin;
+    }
+
+    // sync workload mode by default
+    m_workloadMode = VPP_ASYNC_WORKLOAD;
+
+    //-----------------------------------------------------
+    // [5] resource and task manager
+    //-----------------------------------------------------
+    sts = m_taskMngr.Init(m_pCore, m_config);
+    MFX_CHECK_STS(sts);
+
+    return (bIsFilterSkipped) ? MFX_WRN_FILTER_SKIPPED : MFX_ERR_NONE;
 } // mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
 
 
