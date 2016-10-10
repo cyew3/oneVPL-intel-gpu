@@ -2206,16 +2206,15 @@ mfxStatus VideoDECODEMPEG2InternalBase::ConstructFrame(mfxBitstream *bs, mfxFram
             return MFX_ERR_MORE_DATA;
     }
 
-    if (false == SetCurr_m_frame() && bs)
-    {
-        return MFX_WRN_DEVICE_BUSY;
-    }
-
     mfxStatus sts = m_FrameAllocator->SetCurrentMFXSurface(surface_work, m_isOpaqueMemory);
     MFX_CHECK_STS(sts);
     if (m_FrameAllocator->FindFreeSurface() == -1)
         return MFX_WRN_DEVICE_BUSY;
 
+    if (false == SetCurr_m_frame() && bs)
+    {
+        return MFX_WRN_DEVICE_BUSY;
+    }
 
     return sts;
 }
