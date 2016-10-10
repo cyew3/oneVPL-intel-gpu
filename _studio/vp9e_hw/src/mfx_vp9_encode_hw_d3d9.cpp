@@ -230,10 +230,17 @@ void CachedFeedback::Remove(mfxU32 feedbackNumber)
 }
 
 D3D9Encoder::D3D9Encoder()
-: m_pmfxCore(NULL)
+    : m_guid()
+    , m_pmfxCore(NULL)
+    , m_caps()
+    , m_sps()
+    , m_pps()
+    , m_descForFrameHeader()
+    , m_seqParam()
+    , m_width(0)
+    , m_height(0)
 {
 } // D3D9Encoder::D3D9Encoder(VideoCORE* core)
-
 
 D3D9Encoder::~D3D9Encoder()
 {
