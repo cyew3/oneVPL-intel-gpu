@@ -388,18 +388,17 @@ bool PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastS
     pSlice->m_BitStream.GetOrg((Ipp32u**)&rawDataPtr, &rawDataSize);
 
     sliceParams->slice_data_size = rawDataSize + sizeof(start_code_prefix);
-    sliceParams->slice_data_offset = compBuf->GetDataSize();
     sliceParams->slice_data_flag = VA_SLICE_DATA_FLAG_ALL;//chopping == CHOPPING_NONE ? VA_SLICE_DATA_FLAG_ALL : VA_SLICE_DATA_FLAG_END;;
-
-    compBuf->SetDataSize(sliceParams->slice_data_offset + sliceParams->slice_data_size);
 
     Ipp8u *sliceDataBuf = (Ipp8u*)m_va->GetCompBuffer(VASliceDataBufferType, &compBuf);
     if (!sliceDataBuf)
         throw h265_exception(UMC_ERR_FAILED);
 
+    sliceParams->slice_data_offset = compBuf->GetDataSize();
     sliceDataBuf += sliceParams->slice_data_offset;
     MFX_INTERNAL_CPY(sliceDataBuf, start_code_prefix, sizeof(start_code_prefix));
     MFX_INTERNAL_CPY(sliceDataBuf + sizeof(start_code_prefix), rawDataPtr, rawDataSize);
+    compBuf->SetDataSize(sliceParams->slice_data_offset + sliceParams->slice_data_size);
 
     if (!m_va->IsLongSliceControl())
         return true;
