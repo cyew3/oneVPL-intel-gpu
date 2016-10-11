@@ -32,6 +32,7 @@ H264DecoderFrameInfo::FakeFrameInitializer::FakeFrameInitializer()
 H264DecoderFrame::H264DecoderFrame(MemoryAllocator *pMemoryAllocator, H264_Heap_Objects * pObjHeap)
     : H264DecYUVBufferPadded()
     , m_TopSliceCount(0)
+    , m_frameOrder(0)
     , m_ErrorType(0)
     , m_pSlicesInfo(0)
     , m_pSlicesInfoBottom(0)
@@ -39,11 +40,25 @@ H264DecoderFrame::H264DecoderFrame(MemoryAllocator *pMemoryAllocator, H264_Heap_
     , m_pFutureFrame(0)
     , m_dFrameTime(-1.0)
     , m_isOriginalPTS(false)
+    , m_IsFrameExist(0)
     , m_dpb_output_delay(INVALID_DPB_OUTPUT_DELAY)
+    , m_PictureStructureForDec(0)
+    , m_displayPictureStruct(DPS_UNKNOWN)
+    , totalMBs(0)
     , post_procces_complete(false)
+    , m_iNumberOfSlices(0)
     , m_auIndex(-1)
     , m_index(-1)
     , m_UID(-1)
+    , m_FrameType(NONE_PICTURE)
+    , m_MemID(0)
+    , m_crop_left(0)
+    , m_crop_right(0)
+    , m_crop_top(0)
+    , m_crop_bottom(0)
+    , m_crop_flag(0)
+    , m_aspect_width(0)
+    , m_aspect_height(0)
     , m_pObjHeap(pObjHeap)
 {
     m_isShortTermRef[0] = m_isShortTermRef[1] = false;
@@ -83,7 +98,6 @@ H264DecoderFrame::H264DecoderFrame(MemoryAllocator *pMemoryAllocator, H264_Heap_
     m_Flags.isActive = 0;
     m_wasOutputted = 0;
     m_wasDisplayed = 0;
-
     prepared[0] = false;
     prepared[1] = false;
 
