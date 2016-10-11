@@ -135,7 +135,10 @@ MFXVideoVPPDetailEnhancement::MFXVideoVPPDetailEnhancement(VideoCORE *core, mfxS
     m_isFilterActive = true;
 
     *sts = MFX_ERR_NONE;
-
+    m_internalGainFactor = 0;
+    m_sobelPitch = 0;
+    m_extPitch = 0;
+    m_diffPitch = 0;
     return;
 
 } // MFXVideoVPPDetailEnhancement::MFXVideoVPPDetailEnhancement(...)
