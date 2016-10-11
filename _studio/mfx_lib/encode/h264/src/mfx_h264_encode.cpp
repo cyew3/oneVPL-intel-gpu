@@ -1691,6 +1691,7 @@ inline Ipp32u h264enc_ConvertBitrate(mfxU16 TargetKbps)
 
 MFXVideoENCODEH264::MFXVideoENCODEH264(VideoCORE *core, mfxStatus *stat)
 : VideoENCODE(),
+  m_taskParams(),
   m_core(core),
   m_allocator_id(NULL),
   m_allocator(NULL),
@@ -1700,6 +1701,7 @@ MFXVideoENCODEH264::MFXVideoENCODEH264(VideoCORE *core, mfxStatus *stat)
   m_fieldOutput(false),
   m_fieldOutputState(0),
   m_fieldOutputStatus(MFX_ERR_NONE),
+  m_initValues(),
   //m_Initialized(false),
   //m_putEOSeq(false),
   //m_putEOStream(false),
@@ -1743,6 +1745,11 @@ MFXVideoENCODEH264::MFXVideoENCODEH264(VideoCORE *core, mfxStatus *stat)
     H264ENC_CALL_NEW(res, H264CoreEncoder, m_base.enc);
 #undef H264ENC_MAKE_NAME
     if (res != UMC_OK) *stat = MFX_ERR_NOT_INITIALIZED;
+    m_tmpBuf0 = 0;
+    m_tmpBuf1 = 0;
+    m_tmpBuf2 = 0;
+    m_layerSync = 0;
+    m_internalFrameOrders = 0;
 }
 
 MFXVideoENCODEH264::~MFXVideoENCODEH264()
