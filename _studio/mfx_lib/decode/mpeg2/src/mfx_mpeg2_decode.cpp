@@ -2629,11 +2629,10 @@ mfxStatus VideoDECODEMPEG2Internal_HW::ConstructFrame(mfxBitstream *bs, mfxFrame
     return VideoDECODEMPEG2InternalBase::ConstructFrame(bs, surface_work);
 }
 
-VideoDECODEMPEG2Internal_HW::VideoDECODEMPEG2Internal_HW()
+VideoDECODEMPEG2Internal_HW::VideoDECODEMPEG2Internal_HW() : m_pavpOpt()
 {
     m_FrameAllocator_d3d = new mfx_UMC_FrameAllocator_D3D;
     m_FrameAllocator = m_FrameAllocator_d3d;
-
     m_isSWDecoder = false;
 
 #ifdef UMC_VA_DXVA
