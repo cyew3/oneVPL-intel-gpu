@@ -467,6 +467,7 @@ public:
     H265DwordPointer_(void)
     {
         m_pDest = NULL;
+        m_iCur = 0;
         m_nByteNum = 0;
     }
 
@@ -515,7 +516,9 @@ public:
     // Default constructor
     H265SourcePointer_(void)
     {
+        m_nZeros = 0;
         m_pSource = NULL;
+        m_nRemovedBytes = 0;
     }
 
     H265SourcePointer_ &operator = (void *pSource)
