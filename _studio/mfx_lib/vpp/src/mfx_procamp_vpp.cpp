@@ -178,6 +178,10 @@ MFXVideoVPPProcAmp::MFXVideoVPPProcAmp(VideoCORE *core, mfxStatus* sts) : Filter
     *sts = MFX_ERR_NONE;
 
     m_isFilterActive = true;
+    m_internalContrast = 0;
+    m_internalBrightness = 0;
+    m_internalCosCS = 0;
+    m_internalSinCS = 0;
 
     return;
 
