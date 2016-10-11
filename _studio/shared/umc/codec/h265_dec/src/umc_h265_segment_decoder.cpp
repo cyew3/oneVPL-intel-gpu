@@ -33,6 +33,17 @@ DecodingContext::DecodingContext()
     m_LastValidQP = 0;
 
     m_needToSplitDecAndRec = true;
+    m_RecTpIntraFlags = 0;
+    m_RecLfIntraFlags = 0;
+    m_RecTLIntraFlags = 0;
+    m_mvsDistortion = 0;
+    m_sh = 0;
+    m_coeffsRead = 0;
+    m_mvsDistortionTemp = 0;
+    m_RecTpIntraRowFlags = 0;
+    m_weighted_prediction = 0;
+    m_dequantCoef = 0;
+    m_coeffsWrite = 0;
 }
 
 // Clear all flags in left and top buffers
@@ -368,8 +379,13 @@ H265SegmentDecoder::H265SegmentDecoder(TaskBroker_H265 * pTaskBroker)
     m_TrQuant = 0;
 
     m_MaxDepth = 0;
-
+    m_bakAbsPartIdxQp = 0;
     m_context = 0;
+    m_IsCuChromaQpOffsetCoded = 0;
+    m_BakAbsPartIdxChroma = 0;
+    m_minCUDQPSize = 0;
+    m_DecodeDQPFlag = 0;
+    m_pSliceHeader = 0;
     m_context_single_thread.reset(new DecodingContext());
 } // H265SegmentDecoder::H265SegmentDecoder(TaskBroker_H265 * pTaskBroker)
 
