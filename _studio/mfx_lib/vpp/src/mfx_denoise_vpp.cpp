@@ -146,7 +146,7 @@ printf("\n");                                       \
 #define DENOISE_FACTOR_CONVERSION(x, low, high) \
     (low + ((x * (high - low)) / (float)(PAR_NRF_STRENGTH_MAX)) + 0.5)
 
-MFXVideoVPPDenoise::MFXVideoVPPDenoise(VideoCORE *core, mfxStatus* sts ) : FilterVPP()
+MFXVideoVPPDenoise::MFXVideoVPPDenoise(VideoCORE *core, mfxStatus* sts) : FilterVPP(), m_stateY()
 {
   //MFX_CHECK_NULL_PTR1(core);
 
@@ -183,6 +183,12 @@ MFXVideoVPPDenoise::MFXVideoVPPDenoise(VideoCORE *core, mfxStatus* sts ) : Filte
 
   *sts = MFX_ERR_NONE;
 
+  m_numberOfMotionPixelsThreshold = 0;
+  m_md_diff_th = 0;
+  m_temporal_diff_th = 0;
+  m_blockSCMThreshold = 0;
+  m_blockASDThreshold = 0;
+  m_temp_diff_low = 0;
   return;
 }
 
