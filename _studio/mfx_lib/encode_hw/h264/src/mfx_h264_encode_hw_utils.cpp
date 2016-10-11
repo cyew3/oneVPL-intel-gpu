@@ -961,11 +961,14 @@ bool TaskManager::IsSubmitted(DdiTask const & task) const
 }
 
 TaskManager::TaskManager()
-: m_frameNum(0)
+: m_core(NULL)
+, m_stat()
+, m_frameNum(0)
 , m_frameNumMax(0)
 , m_frameOrder(0)
 , m_frameOrderIdr(0)
 , m_frameOrderI(0)
+, m_idrPicId(0)
 , m_viewIdx(0)
 , m_cpbRemoval(0)
 , m_cpbRemovalBufferingPeriod(0)
