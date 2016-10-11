@@ -220,14 +220,16 @@ VideoDECODEH264::VideoDECODEH264(VideoCORE *core, mfxStatus * sts)
     , m_isInit(false)
     , m_isOpaq(false)
     , m_frameOrder((mfxU16)MFX_FRAMEORDER_UNKNOWN)
+    , m_response()
+    , m_response_alien()
     , m_platform(MFX_PLATFORM_SOFTWARE)
     , m_useDelayedDisplay(false)
     , m_va(0)
     , m_globalTask(false)
     , m_isFirstRun(true)
+    , m_usePostProcessing(false)
 {
     memset(&m_stat, 0, sizeof(m_stat));
-
     if (sts)
     {
         *sts = MFX_ERR_NONE;
