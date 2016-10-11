@@ -21,7 +21,7 @@
 namespace UMC
 {
 
-MJPEGVideoDecoderBaseMFX::MJPEGVideoDecoderBaseMFX(void)
+MJPEGVideoDecoderBaseMFX::MJPEGVideoDecoderBaseMFX(void) : m_frameDims()
 {
     m_IsInit      = false;
     m_interleaved = false;
@@ -30,6 +30,7 @@ MJPEGVideoDecoderBaseMFX::MJPEGVideoDecoderBaseMFX(void)
     m_frameSampling = 0;
     m_frameAllocator = 0;
     m_decBase = 0;
+    m_color = JC_UNKNOWN;
 }
 
 MJPEGVideoDecoderBaseMFX::~MJPEGVideoDecoderBaseMFX(void)
