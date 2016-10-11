@@ -43,6 +43,10 @@ MJPEGVideoDecoderMFX::MJPEGVideoDecoderMFX(void)
     m_numDec = 0;
     memset(m_pLastPicBuffer, 0, sizeof(m_pLastPicBuffer));
 
+    m_framePrecision = 0;
+    m_frameChannels = 0;
+    m_local_frame_time = 0;
+    m_local_delta_frame_time = 0;
 } // ctor
 
 MJPEGVideoDecoderMFX::~MJPEGVideoDecoderMFX(void)
