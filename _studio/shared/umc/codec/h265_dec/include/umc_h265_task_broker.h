@@ -144,6 +144,7 @@ public:
         m_taskPreparingGuard = 0;
         m_context = 0;
         m_threadingInfo = 0;
+        m_pSlicesInfo = 0;
     }
 
     CoeffsPtr m_pBuffer;                                  // (Ipp16s *) pointer to working buffer
