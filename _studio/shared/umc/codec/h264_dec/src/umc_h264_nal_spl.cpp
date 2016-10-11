@@ -476,6 +476,7 @@ public:
     {
         m_pDest = NULL;
         m_nByteNum = 0;
+        m_iCur = 0;
     }
 
     H264DwordPointer_ operator = (void *pDest)
@@ -523,6 +524,8 @@ public:
     H264SourcePointer_(void)
     {
         m_pSource = NULL;
+        m_nZeros = 0;
+        m_nRemovedBytes = 0;
     }
 
     H264SourcePointer_ &operator = (void *pSource)
