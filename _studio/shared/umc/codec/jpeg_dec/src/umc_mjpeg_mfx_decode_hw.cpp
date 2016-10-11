@@ -25,8 +25,11 @@
 namespace UMC
 {
 
-MJPEGVideoDecoderMFX_HW::MJPEGVideoDecoderMFX_HW(void)
+MJPEGVideoDecoderMFX_HW::MJPEGVideoDecoderMFX_HW(void) : m_convertInfo()
 {
+    m_fourCC = 0;
+    m_statusReportFeedbackCounter = 0;
+    m_va = 0;
 } // ctor
 
 MJPEGVideoDecoderMFX_HW::~MJPEGVideoDecoderMFX_HW(void)
