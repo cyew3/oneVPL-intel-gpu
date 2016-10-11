@@ -77,6 +77,8 @@ VideoDECODEMJPEG::VideoDECODEMJPEG(VideoCORE *core, mfxStatus * sts)
     , m_isInit(false)
     , m_isOpaq(false)
     , m_frameOrder((mfxU16)MFX_FRAMEORDER_UNKNOWN)
+    , m_response()
+    , m_response_alien()
     , m_platform(MFX_PLATFORM_SOFTWARE)
 {
     if (sts)
@@ -1499,6 +1501,7 @@ mfxFrameSurface1 *VideoDECODEMJPEG::GetOriginalSurface(mfxFrameSurface1 *surface
 VideoDECODEMJPEGBase::VideoDECODEMJPEGBase()
 {
      memset(&m_stat, 0, sizeof(m_stat));
+     m_isOpaq = 0;
 }
 
 mfxStatus VideoDECODEMJPEGBase::GetVideoParam(mfxVideoParam *par, UMC::MJPEGVideoDecoderBaseMFX * mjpegDecoder)
