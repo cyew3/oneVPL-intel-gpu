@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -67,6 +67,18 @@ H265SampleAdaptiveOffsetTemplate<PlaneType>::H265SampleAdaptiveOffsetTemplate()
     m_tempPCMBuffer = 0;
 
     m_isInitialized = false;
+    m_UseNIF = false;
+    m_Frame = 0;
+    m_ClipTableChroma = 0;
+    m_SaoBitIncreaseC = 0;
+    m_SaoBitIncreaseY = 0;
+    m_sps = 0;
+    m_needPCMRestoration = 0;
+    m_PicHeight = 0;
+    m_slice_sao_chroma_flag = 0;
+    m_MaxCUSize = 0;
+    m_PicWidth = 0;
+    m_slice_sao_luma_flag = 0;
 }
 
 // SAO context data structure deallocator
