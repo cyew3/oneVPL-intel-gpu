@@ -36,6 +36,8 @@ public:
 
     H264DecoderLayer()
     {
+        m_IsBottomField = false;
+        m_IsSliceGroups = 0;
     }
 
     virtual ~H264DecoderLayer()
@@ -67,6 +69,7 @@ public:
         , m_prepared(0)
         , m_SliceCount(0)
         , m_pObjHeap(pObjHeap)
+        , decRefPicMarking()
     {
         Reset();
     }
