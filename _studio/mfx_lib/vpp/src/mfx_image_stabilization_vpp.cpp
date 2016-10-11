@@ -106,7 +106,7 @@ MFXVideoVPPImgStab::Config::Config(void)
 }
 
 
-MFXVideoVPPImgStab::MFXVideoVPPImgStab(VideoCORE *core, mfxStatus* sts ) : FilterVPP()
+MFXVideoVPPImgStab::MFXVideoVPPImgStab(VideoCORE *core, mfxStatus* sts) : FilterVPP(), mGMV(), mCMV(), mblk()
 {
     //MFX_CHECK_NULL_PTR1(core);
 
@@ -119,6 +119,20 @@ MFXVideoVPPImgStab::MFXVideoVPPImgStab(VideoCORE *core, mfxStatus* sts ) : Filte
     VPP_CLEAN;
 
     *sts = MFX_ERR_NONE;
+    m_scale_h = 0;
+    m_scale_v = 0;
+    m_destWidth = 0;
+    m_downWidth = 0;
+    m_destHeight = 0;
+    m_heightScale = 0;
+    m_downHeight = 0;
+    m_frameCount = 0;
+    m_height = 0;
+    m_width = 0;
+    m_nCrpX = 0;
+    m_nCrpY = 0;
+    m_firstFrame = 0;
+    m_widthScale = 0;
 
 } // MFXVideoVPPImgStab::MFXVideoVPPImgStab(VideoCORE *core, mfxStatus* sts ) : FilterVPP()
 
