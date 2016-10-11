@@ -51,10 +51,10 @@ VideoProcessing::VideoProcessing()
   pFilter[iDeinterlacing] = new Deinterlacing;
   pFilter[iColorConv0] = new ColorSpaceConversion; // first color conversion
   pFilter[iColorConv] = pFilter[iColorConv0]; // second color conversion
-
 #if defined (UMC_ENABLE_VPP_RESIZE)
   pFilter[iResizing] = new VideoResizing;
 #endif
+  iD3DProcessing = 0;
 }
 
 Status VideoProcessing::Close()
