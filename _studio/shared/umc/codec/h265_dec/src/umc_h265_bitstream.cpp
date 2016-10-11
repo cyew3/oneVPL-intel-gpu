@@ -28,6 +28,10 @@ namespace UMC_HEVC_DECODER
 H265Bitstream::H265Bitstream(Ipp8u * const pb, const Ipp32u maxsize)
      : H265HeadersBitstream(pb, maxsize)
 {
+    m_bitsNeeded = 0;
+    m_lcodIOffset = 0;
+    m_lcodIRange = 0;
+    m_LastByte = 0;
 } // H265Bitstream::H265Bitstream(Ipp8u * const pb,
 
 H265Bitstream::H265Bitstream()
