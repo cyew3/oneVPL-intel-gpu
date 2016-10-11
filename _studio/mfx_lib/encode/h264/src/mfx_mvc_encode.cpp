@@ -1280,8 +1280,14 @@ inline Ipp32u h264enc_ConvertBitrate(mfxU16 TargetKbps)
 
 MFXVideoENCODEMVC::MFXVideoENCODEMVC(VideoCORE *core, mfxStatus *stat)
 : VideoENCODE(),
+  m_taskParams(),
   m_core(core),
   m_allocator(NULL),
+  m_initValues(),
+  m_au_count(0),
+  m_au_view_count(0),
+  m_vo_current_view(0),
+  m_bf_data(0),
   m_ConstQP(0)
 {
     ippStaticInit();
@@ -1299,7 +1305,6 @@ MFXVideoENCODEMVC::MFXVideoENCODEMVC(VideoCORE *core, mfxStatus *stat)
 
     m_sps_views = 0; m_num_sps = 0; m_pps_views = 0; m_num_pps = 0;
     memset(&m_mvcdesc, 0, sizeof(m_mvcdesc));
-
     *stat = MFX_ERR_NONE;
 }
 
