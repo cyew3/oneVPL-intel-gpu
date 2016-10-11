@@ -107,6 +107,7 @@ enum
 /****************************************************************************************************/
 PackerDXVA2::PackerDXVA2(VideoAccelerator * va, TaskSupplier * supplier)
     : Packer(va, supplier)
+    , m_pBuf(NULL)
     , m_statusReportFeedbackCounter(1)
     , m_picParams(0)
 {
