@@ -33,6 +33,8 @@ VideoBrcParams::VideoBrcParams()
   accuracy = 10;
   convergence = 500;
   frameRateExtN_1 = 0; // svc specific
+  frameRateExtD = 0;
+  frameRateExtN = 0;
 }
 
 VideoBrc::VideoBrc()
