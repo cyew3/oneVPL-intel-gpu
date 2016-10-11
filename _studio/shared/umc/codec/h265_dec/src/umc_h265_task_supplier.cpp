@@ -357,6 +357,7 @@ void SEI_Storer_H265::Close()
 // Reset SEI storage
 void SEI_Storer_H265::Reset()
 {
+    m_offset = 0;
     m_lastUsed = 2;
     for (Ipp32u i = 0; i < m_payloads.size(); i++)
     {
@@ -561,6 +562,7 @@ void ViewItem_H265::Reset(void)
     localFrameTime = 0;
     sps_max_dec_pic_buffering = 1;
     sps_max_num_reorder_pics = 0;
+    dpbSize = 0;
 
 } // void ViewItem_H265::Reset(void)
 
@@ -598,6 +600,8 @@ TaskSupplier_H265::TaskSupplier_H265()
     : m_SliceIdxInTaskSupplier(0)
     , m_pSegmentDecoder(0)
     , m_iThreadNum(0)
+    , m_maxUIDWhenWasDisplayed(0)
+    , m_local_delta_frame_time(0)
     , m_use_external_framerate(false)
     , m_decodedOrder(false)
     , m_checkCRAInsideResetProcess(false)
@@ -605,6 +609,10 @@ TaskSupplier_H265::TaskSupplier_H265()
     , m_pLastDisplayed(0)
     , m_pMemoryAllocator(0)
     , m_pFrameAllocator(0)
+    , m_WaitForIDR(0)
+    , m_RA_POC(0)
+    , NoRaslOutputFlag(0)
+    , m_IRAPType(NAL_UT_INVALID)
     , m_DPBSizeEx(0)
     , m_frameOrder(0)
     , m_pTaskBroker(0)
