@@ -64,7 +64,19 @@ H265DecoderFrame::H265DecoderFrame(UMC::MemoryAllocator *pMemoryAllocator, Heap_
     m_wasOutputted = 0;
     m_wasDisplayed = 0;
     m_maxUIDWhenWasDisplayed = 0;
-
+    m_crop_flag = 0;
+    m_crop_left = 0;
+    m_crop_top = 0;
+    m_crop_bottom = 0;
+    m_pic_output = 0;
+    m_FrameType = UMC::NONE_PICTURE;
+    m_aspect_width = 0;
+    m_MemID = 0;
+    m_aspect_height = 0;
+    m_isUsedAsReference = 0;
+    m_crop_right = 0;
+    m_DisplayPictureStruct_H265 = DPS_FRAME_H265;
+    m_frameOrder = 0;
     prepared = false;
 }
 
