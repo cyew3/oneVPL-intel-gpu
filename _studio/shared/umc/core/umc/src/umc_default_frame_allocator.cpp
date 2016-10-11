@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//       Copyright (c) 2006-2010 Intel Corporation. All Rights Reserved.
+//       Copyright (c) 2006-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -55,6 +55,7 @@ FrameInformation::FrameInformation()
     , m_referenceCounter(0)    
     , m_ptr(0)
     , m_type(0)
+    , m_flags(0)
 {
 }
 
