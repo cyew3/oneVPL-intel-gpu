@@ -1903,6 +1903,7 @@ void POCDecoder::DecodePictureOrderCountInitFrame(H264DecoderFrame *pFrame,
 /****************************************************************************************************/
 SEI_Storer::SEI_Storer()
 {
+    m_offset = 0;
     Reset();
 }
 
@@ -2068,6 +2069,8 @@ SEI_Storer::SEI_Message* SEI_Storer::AddMessage(UMC::MediaDataEx *nalUnit, SEI_T
 
 ViewItem::ViewItem()
 {
+    viewId = 0;
+    maxDecFrameBuffering = 0;
     Reset();
 
 } // ViewItem::ViewItem(void)
@@ -2192,13 +2195,14 @@ TaskSupplier::TaskSupplier()
 
     , m_pSegmentDecoder(0)
     , m_iThreadNum(0)
+    , m_local_delta_frame_time(0)
     , m_use_external_framerate(false)
 
     , m_pLastSlice(0)
     , m_pLastDisplayed(0)
     , m_pMemoryAllocator(0)
     , m_pFrameAllocator(0)
-
+    , m_WaitForIDR(false)
     , m_DPBSizeEx(0)
     , m_frameOrder(0)
     , m_pTaskBroker(0)
