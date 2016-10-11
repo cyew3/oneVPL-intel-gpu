@@ -4,7 +4,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2014 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -37,6 +37,16 @@ H265CodingUnit::H265CodingUnit()
     m_cbf[2] = 0;
     m_cbf[3] = 0;
     m_cbf[4] = 0;
+    m_NumPartition = 0;
+    m_zscanToRaster = NULL;
+    m_CUPelY = 0;
+    m_CUPelX = 0;
+    CUAddr = 0;
+    m_rasterToZscan = NULL;
+    m_rasterToPelX = NULL;
+    m_CodedQP = 0;
+    m_cuData = NULL;
+   m_rasterToPelY = NULL;
 }
 
 // CTB data structure destructor
