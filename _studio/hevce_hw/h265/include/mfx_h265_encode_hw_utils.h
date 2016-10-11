@@ -332,7 +332,8 @@ namespace ExtBuffer
          MFX_EXTBUFF_LOOKAHEAD_STAT,
          MFX_EXTBUFF_PAVP_OPTION,
          MFX_EXTBUFF_ENCODER_WIDI_USAGE,
-         MFX_EXTBUFF_BRC
+         MFX_EXTBUFF_BRC,
+         MFX_EXTBUFF_ENCODED_SLICES_INFO
     };
 
     template<class T> struct ExtBufferMap {};
@@ -663,7 +664,8 @@ public:
         mfxExtVideoSignalInfo       VSI;
         mfxExtPAVPOption            PAVP;
         mfxExtBRC                   extBRC;
-        mfxExtBuffer *              m_extParam[12];
+        mfxExtEncodedSlicesInfo     SliceInfo;
+        mfxExtBuffer *              m_extParam[13];
     } m_ext;
 
     mfxU32 BufferSizeInKB;

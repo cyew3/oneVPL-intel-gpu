@@ -18,40 +18,45 @@ namespace slice_size_reporting
 class BitstreamChecker : public tsBitstreamProcessor
 {
     private:
-        mfxU32 slice_size[2];
+        mfxU32 max_slice_size;
+        mfxU32 max_nslices;
 
     public:
-        BitstreamChecker(mfxU32 _slice_size_w, mfxU32 _slice_size_h)
+        BitstreamChecker(mfxU32 size, mfxU32 num)
         {
-            slice_size[0] = _slice_size_w;
-            slice_size[1] = _slice_size_h;
+            max_slice_size = size;
+            max_nslices = num;
         }
 
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
-
-
 };
 
 mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 {
     mfxExtEncodedSlicesInfo *buff = NULL;
+
     for(mfxU16 i = 0; i < bs.NumExtParam; i++)
     {
         if (bs.ExtParam[i]->BufferId == MFX_EXTBUFF_ENCODED_SLICES_INFO)
             buff = (mfxExtEncodedSlicesInfo*)bs.ExtParam[i];
     }
-    if (buff)
-    {
-        if ( (buff->SliceSize) &&
-            ((buff->SliceSize[0] == slice_size[0]) || (buff->SliceSize[1] == slice_size[1])))//expect slice size  equal reported
-        {
-            return MFX_ERR_NONE;
-        }
-        else
-        {
-            g_tsLog << "ERROR: Reported slice size is wrong!\nExpected: w = " << slice_size[0] << ", h = " << slice_size[1] << ";  Real: w = " << buff->SliceSize[0] << ", h = " << buff->SliceSize[1] << "\n";
+    if (buff && buff->SliceSize) {
+        if (buff->SliceSize[0] == 0) {
+            g_tsLog << "ERROR: Reported slice size is wrong!\nExpected max slice_size = " << max_slice_size << "\nReal: slice_size[0] = " << buff->SliceSize[0] << "\n";
             return MFX_ERR_ABORTED;
         }
+        mfxU32 i;
+        for (i = 0; i < max_nslices; i++) {
+            if ((buff->SliceSize[i] == 0) && (i > 0))
+                break;  // real num slices can be less
+            if (buff->SliceSize[i] > max_slice_size) {
+                g_tsLog << "ERROR: Reported slice size is wrong!\nExpected max slice_size = " << max_slice_size << "\nReal: slice_size[" << i << "] = " << buff->SliceSize[i] << "\n";
+                return MFX_ERR_ABORTED;
+            }
+        }
+        g_tsLog << "PASSED: " << i << " slices of size from 0 to " << max_slice_size << " were generated\n";
+
+        return MFX_ERR_NONE;
     }
     else
     {
@@ -61,46 +66,126 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     return MFX_ERR_NONE;
 }
 
-int test(mfxU32 codecId)
+    enum
+    {
+        MFXINIT = 1,
+        MFXQUERY = 2,
+        MFXENCODE = 3
+    };
+
+    enum
+    {
+        NOCO2 = 1,
+        NOCO2MAXSLICESIZE = 2
+    };
+
+    struct tc_struct
+    {
+        mfxStatus exp_sts;
+        mfxU32 func;
+        mfxU32 mode;
+    };
+
+static const tc_struct test_case[] =
+{
+    {/* 0*/ MFX_ERR_NONE, MFXQUERY, 0},
+    {/* 1*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFXQUERY, NOCO2},
+    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFXQUERY, NOCO2MAXSLICESIZE},
+    {/* 3*/ MFX_ERR_NONE, MFXINIT, 0},
+    {/* 4*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFXINIT, NOCO2},
+    {/* 5*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFXINIT, NOCO2MAXSLICESIZE},
+    {/* 6*/ MFX_ERR_NONE, MFXENCODE, 0}
+};
+
+const unsigned int n_cases = sizeof(test_case)/sizeof(tc_struct);
+const unsigned int lcu_size = 64;
+
+int RunTest (mfxU32 codecId, unsigned int id)
 {
     TS_START;
 
     //int encoder
     tsVideoEncoder enc(codecId);
 
+    enc.Init();
+    enc.GetVideoParam();
+    enc.Close();
+    // now mfxSession exists but Encoder is closed
+
+    mfxU32 nslices = ((enc.m_par.mfx.FrameInfo.Width + (lcu_size - 1)) / lcu_size) * ((enc.m_par.mfx.FrameInfo.Height + (lcu_size - 1)) / lcu_size);
+
     //set input stream
     const char* stream = g_tsStreamPool.Get("forBehaviorTest/foreman_cif.nv12");
     g_tsStreamPool.Reg();
     tsRawReader reader = tsRawReader(stream, enc.m_par.mfx.FrameInfo);
     enc.m_filler = (tsSurfaceProcessor*)(&reader);
-    int exp_slice_size[2] = {720, 480};
 
-    //set ext buff in bs
-    mfxExtEncodedSlicesInfo buff;
-    buff.Header.BufferId = MFX_EXTBUFF_ENCODED_SLICES_INFO;
-    buff.Header.BufferSz = sizeof(mfxExtEncodedSlicesInfo);
-    mfxExtBuffer *tmp = ((mfxExtBuffer*)(&buff));
-    enc.m_bitstream.NumExtParam = 1;
-    enc.m_bitstream.ExtParam = &tmp;
+    int exp_slice_size[2] = {1000, 1000};
 
-    //set bs checker
-    BitstreamChecker bs_check(exp_slice_size[0], exp_slice_size[1]);
-    enc.m_bs_processor = &bs_check;
+    mfxExtEncodedSlicesInfo SlicesInfo = {0};
+    mfxU16 SSize[16] = {0};
+    SlicesInfo.Header.BufferId = MFX_EXTBUFF_ENCODED_SLICES_INFO;
+    SlicesInfo.Header.BufferSz = sizeof(mfxExtEncodedSlicesInfo);
+    SlicesInfo.SliceSize = SSize;
+    SlicesInfo.NumSliceSizeAlloc = sizeof(SlicesInfo.SliceSize);
 
+    mfxExtCodingOption2 CO2 = {0};
+    CO2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
+    CO2.Header.BufferSz = sizeof(mfxExtCodingOption2);
+    CO2.MaxSliceSize = 1000;
 
-    //defoult pipeline
-    enc.EncodeFrames(1);
+    mfxExtBuffer *pBuf[2];
+    pBuf[0] = (mfxExtBuffer*)&SlicesInfo;
+    pBuf[1] = (mfxExtBuffer*)&CO2;
+    enc.m_par.ExtParam = pBuf;
+    enc.m_par.NumExtParam = 2;
+    
+    const tc_struct& tc = test_case[id];
+    g_tsStatus.expect(tc.exp_sts);
+
+    if (tc.func == MFXQUERY) {
+        if (tc.mode == NOCO2) {
+            pBuf[1] = 0;
+            enc.m_par.NumExtParam--;
+        }
+        if (tc.mode == NOCO2MAXSLICESIZE) {
+            CO2.MaxSliceSize = 0;
+        }
+        enc.Query();
+    } else  if (tc.func == MFXINIT) {
+        if (tc.mode == NOCO2) {
+            pBuf[1] = 0;
+            enc.m_par.NumExtParam--;
+        }
+        if (tc.mode == NOCO2MAXSLICESIZE) {
+            CO2.MaxSliceSize = 0;
+        }
+        enc.Init();
+    } else {
+
+        //set bs checker
+        BitstreamChecker bs_check(CO2.MaxSliceSize, nslices);
+        enc.m_bs_processor = &bs_check;
+
+        //default pipeline
+        enc.Init();
+
+        enc.m_bitstream.ExtParam = pBuf;    //set ext buff in bs
+        enc.m_bitstream.NumExtParam = 2;
+
+        enc.EncodeFrames(1);
+    }
 
     TS_END;
+
     return 0;
 }
 
-int AVCTest     (unsigned int) { return test(MFX_CODEC_AVC); }
-int MPEG2Test   (unsigned int) { return test(MFX_CODEC_MPEG2); }
-int HEVCTest    (unsigned int) { return test(MFX_CODEC_HEVC); }
+int AVCTest     (unsigned int id) { return RunTest(MFX_CODEC_AVC, id); }
+int MPEG2Test   (unsigned int id) { return RunTest(MFX_CODEC_MPEG2, id); }
+int HEVCTest    (unsigned int id) { return RunTest(MFX_CODEC_HEVC, id); }
 
-
-TS_REG_TEST_SUITE(hevce_slice_size_report, HEVCTest, 1);
-TS_REG_TEST_SUITE(avce_slice_size_report, AVCTest, 1);
-TS_REG_TEST_SUITE(mpeg2e_slice_size_report, MPEG2Test, 1);
+TS_REG_TEST_SUITE(hevce_slice_size_report, HEVCTest, n_cases);
+TS_REG_TEST_SUITE(avce_slice_size_report, AVCTest, n_cases);
+TS_REG_TEST_SUITE(mpeg2e_slice_size_report, MPEG2Test, n_cases);
 }

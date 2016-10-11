@@ -627,6 +627,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     ExtBuffer::Construct(par, m_ext.VSI, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.PAVP, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.extBRC, m_ext.m_extParam, base.NumExtParam);
+    ExtBuffer::Construct(par, m_ext.SliceInfo, m_ext.m_extParam, base.NumExtParam);
 
     WiDi = !!((mfxExtAVCEncoderWiDiUsage*)ExtBuffer::Get(par));
 }

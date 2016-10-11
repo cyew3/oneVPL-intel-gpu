@@ -273,6 +273,8 @@ void FillPpsBuffer(
     pps.NumSlices                  = par.mfx.NumSlice;
 
     pps.bEnableSliceLevelReport    = !!par.m_ext.CO2.MaxSliceSize;
+    if (par.m_ext.CO2.MaxSliceSize)
+        pps.MaxSliceSizeInBytes = par.m_ext.CO2.MaxSliceSize;
 
         // Max/Min QP settings for BRC
 

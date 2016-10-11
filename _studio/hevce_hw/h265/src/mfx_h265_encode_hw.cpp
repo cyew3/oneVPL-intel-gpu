@@ -187,6 +187,22 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
 
     sts = LoadSPSPPS(m_vpar, pSPSPPS);
     MFX_CHECK_STS(sts);
+    
+    mfxExtEncodedSlicesInfo* pSliceInfo = ExtBuffer::Get(*par);
+    if (pSliceInfo && pSliceInfo->SliceSize)
+    {
+        if (!m_caps.SliceLevelReportSupport)
+        {
+            return MFX_ERR_UNSUPPORTED;        
+        }
+
+        // MaxSliceSize must be set for SliceSizeReport
+        mfxExtCodingOption2* pCO2 = ExtBuffer::Get(*par);
+        if (!pCO2 || !pCO2->MaxSliceSize)
+        {
+            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;        
+        }
+    }
 
     qsts = CheckVideoParam(m_vpar, m_caps, true);
     MFX_CHECK(qsts >= MFX_ERR_NONE, qsts);
@@ -444,6 +460,22 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
              sts = CheckHeaders(tmp, caps);
              MFX_CHECK_STS(sts);
+        }
+
+        mfxExtEncodedSlicesInfo* pSliceInfo = ExtBuffer::Get(*in);
+        if (pSliceInfo && pSliceInfo->SliceSize)
+        {
+            if (!caps.SliceLevelReportSupport)
+            {
+                return MFX_ERR_UNSUPPORTED;        
+            }
+
+            // MaxSliceSize must be set for SliceSizeReport
+            mfxExtCodingOption2* pCO2 = ExtBuffer::Get(*in);
+            if (!pCO2 || !pCO2->MaxSliceSize)
+            {
+                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;        
+            }
         }
 
         sts = m_core.QueryPlatform(&tmp.m_platform);
