@@ -692,9 +692,12 @@ PosibleMVC::PosibleMVC(UMC::TaskSupplier * supplier)
     , m_isSubSPSFound(false)
     , m_isFrameLooked(false)
     , m_isSVC_SEIFound(false)
+    , m_isMVCBuffer(false)
+    , m_isSVCBuffer(false)
     , m_supplier(supplier)
     , m_lastSlice(0)
 {
+    m_svcSeqDesc.RefBaseDist = 0;
 }
 
 PosibleMVC::~PosibleMVC()
