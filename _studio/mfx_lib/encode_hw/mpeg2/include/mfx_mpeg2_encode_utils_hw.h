@@ -599,6 +599,8 @@ namespace MPEG2EncoderHW
             m_bCopyReference = false;
             m_refEncType = 0;
             m_refPakType = 0;
+            m_initNumMb = 0;
+            m_initNumSlice = 0;
             memset(&m_sEncodeInternalParams,0,sizeof(mfxEncodeInternalParams));
 
         }
