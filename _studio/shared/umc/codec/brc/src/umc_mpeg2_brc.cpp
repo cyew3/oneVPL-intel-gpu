@@ -175,6 +175,21 @@ MPEG2BRC::MPEG2BRC()
   prqscale[0] = prqscale[1] = prqscale[2] = 0;
   prsize[0]   = prsize[1]   = prsize[2]   = 0;
   quantiser_scale_value = -1;
+  mQuantMin = 0;
+  q_scale_type = 0;
+  full_hw = false;
+  prev_frame_type = 0;
+  mQuantMax = 0;
+  mIsFallBack = 0;
+  rc_dev = 0;
+  quantiser_scale_code = 0;
+  gopw = 0;
+  picture_flags_IP = 0;
+  block_count = 0;
+  rc_dev_saved = 0;
+  mQualityLevel = 0;
+  picture_flags = 0;
+  picture_flags_prev = 0;
 }
 
 MPEG2BRC::~MPEG2BRC()
