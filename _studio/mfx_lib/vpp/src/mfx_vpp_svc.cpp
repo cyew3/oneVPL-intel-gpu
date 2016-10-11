@@ -50,9 +50,9 @@ mfxStatus ImplementationSvc::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mf
 ImplementationSvc::ImplementationSvc(VideoCORE *core)
 : m_bInit( false )
 , m_core( core )
+, m_svcDesc()
 , m_inputSurface(0)
 {
-
 } // ImplementationSvc::ImplementationSvc(VideoCORE *core)
 
 
