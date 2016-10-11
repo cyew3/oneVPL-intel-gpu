@@ -190,7 +190,11 @@ static mfxStatus CheckExtendedBuffers (mfxVideoParam* par)
 #undef NUM_SUPPORTED_BUFFERS
 }
 
-MFXVideoENCODEMPEG2::MFXVideoENCODEMPEG2(VideoCORE *core, mfxStatus *sts) : VideoENCODE(),m_InputSurfaces(core)
+MFXVideoENCODEMPEG2::MFXVideoENCODEMPEG2(VideoCORE *core, mfxStatus *sts)
+: VideoENCODE(),
+  m_InputSurfaces(core),
+  m_request(),
+  m_response()
 {
   m_core = core;
 
@@ -200,14 +204,8 @@ MFXVideoENCODEMPEG2::MFXVideoENCODEMPEG2(VideoCORE *core, mfxStatus *sts) : Vide
   m_brc = 0;
   m_pGOP = 0;
   m_pWaitingList = 0;
-  
 
   memset(&frames, 0, sizeof(frames));
-
-  m_request.NumFrameMin         = 0;
-  m_request.NumFrameSuggested   = 0;
-  m_request.Type                = 0;
-  m_response.NumFrameActual     = 0;
   m_bInitialized                = false;
   m_GopOptFlag                  = 0;
   m_InputFrameOrder             = -1;
@@ -227,7 +225,8 @@ MFXVideoENCODEMPEG2::MFXVideoENCODEMPEG2(VideoCORE *core, mfxStatus *sts) : Vide
   m_TargetUsage                 = 0;
   m_bConstantQuant              = 0;
   pSHEx                         = 0;
-
+  m_nThreads = 0;
+  m_bAddDisplayExt = 0;
 #ifdef _NEW_THREADING
 
   m_pExtTasks              = 0;
