@@ -349,6 +349,7 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request,
     default: return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
+    m_core.QueryPlatform(&tmp.m_platform);
     sts = QueryHwCaps(&m_core, GetGUID(tmp), caps);
     MFX_CHECK_STS(sts);
 

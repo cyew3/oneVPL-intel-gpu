@@ -62,6 +62,8 @@ GUID GetGUID(MfxVideoParam const & par)
          || par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010);
     mfxU16 cfId = Clip3<mfxU16>(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, par.mfx.FrameInfo.ChromaFormat) - MFX_CHROMAFORMAT_YUV420;
 
+    if (par.m_platform.CodeName < MFX_PLATFORM_ICELAKE) cfId = 0; // platforms below ICL do not support Main422/Main444 profile, using Main instead.
+
     return GuidTable[IsOn(par.mfx.LowPower)][is10bit] [cfId];
 }
 
