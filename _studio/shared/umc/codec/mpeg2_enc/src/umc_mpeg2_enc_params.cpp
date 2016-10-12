@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2002-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2002-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -144,13 +144,15 @@ MPEG2EncoderParams::MPEG2EncoderParams()
   altscan_tab[1] = 0;
   altscan_tab[2] = 0;
   mpeg1 = 0;               // 1 - mpeg1 (unsupported), 0 - mpeg2
-  *idStr = 0;              // user data to put to each sequence
+  idStr[0] = 0;            // user data to put to each sequence
   UserData = (Ipp8u*)idStr;
   UserDataLen = 0;
   numThreads = 1;
   performance = 0;
   encode_time = 0;
   motion_estimation_perf = 0;
+  inputtype = 0;   // unused
+  constrparms = 0; // unused
   me_alg_num = 3;
   me_auto_range = 1;
   allow_prediction16x8 = 0;
@@ -169,6 +171,11 @@ MPEG2EncoderParams::MPEG2EncoderParams()
   color_primaries = 0;
   transfer_characteristics = 0;
   matrix_coefficients = 0;
+  display_horizontal_size = 0;
+  display_vertical_size = 0;
+  conceal_tab[0] = 0;
+  conceal_tab[1] = 0;
+  conceal_tab[2] = 0;
 
 #ifdef MPEG2_USE_DUAL_PRIME
   enable_Dual_prime=0;
