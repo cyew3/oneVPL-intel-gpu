@@ -22,10 +22,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "encoding_task_pool.h"
 #include "predictors_repacking.h"
-#include "FEI_ENCODE.h"
-#include "FEI_PREENC.h"
-#include "FEI_ENCPAK.h"
-#include "legacy_interfaces.h"
+#include "fei_encode.h"
+#include "fei_preenc.h"
+#include "fei_encpak.h"
+#include "auxiliary_interfaces.h"
 
 #include "sysmem_allocator.h"
 #include "vaapi_allocator.h"
@@ -109,12 +109,12 @@ protected:
     MFXVideoSession  m_preenc_mfxSession;
     MFXVideoSession* m_pPreencSession;
 
-    FEI_PREENC_Interface*    m_pFEI_PreENC;
-    FEI_ENCODE_Interface*    m_pFEI_ENCODE;
-    FEI_ENCPAK_Interface*    m_pFEI_ENCPAK;
-    Legacy_VPP_Interface*    m_pVPP;
-    Legacy_Decode_Interface* m_pDECODE;
-    YUVreader*               m_pYUVReader;
+    FEI_PreencInterface* m_pFEI_PreENC;
+    FEI_EncodeInterface* m_pFEI_ENCODE;
+    FEI_EncPakInterface* m_pFEI_ENCPAK;
+    MFX_VppInterface*    m_pVPP;
+    MFX_DecodeInterface* m_pDECODE;
+    YUVreader*           m_pYUVReader;
 
     MFXFrameAllocator*  m_pMFXAllocator;
     mfxAllocatorParams* m_pmfxAllocatorParams;

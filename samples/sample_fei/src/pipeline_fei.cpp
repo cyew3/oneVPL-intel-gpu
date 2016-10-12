@@ -135,7 +135,7 @@ mfxStatus CEncodingPipeline::Init()
 
     if (m_appCfg.bDECODE)
     {
-        m_pDECODE = new Legacy_Decode_Interface(&m_mfxSession, m_BaseAllocID, &m_appCfg, &m_DecSurfaces);
+        m_pDECODE = new MFX_DecodeInterface(&m_mfxSession, m_BaseAllocID, &m_appCfg, &m_DecSurfaces);
         sts = m_pDECODE->FillParameters();
         MSDK_CHECK_STATUS(sts, "DECODE: Parameters initialization failed");
         m_commonFrameInfo = m_pDECODE->GetCommonVideoParams()->mfx.FrameInfo;
@@ -148,14 +148,14 @@ mfxStatus CEncodingPipeline::Init()
     // create preprocessor if resizing was requested from command line
     if (m_bVPPneeded)
     {
-        m_pVPP = new Legacy_VPP_Interface(&m_mfxSession, m_BaseAllocID, &m_appCfg);
+        m_pVPP = new MFX_VppInterface(&m_mfxSession, m_BaseAllocID, &m_appCfg);
         sts = m_pVPP->FillParameters();
         MSDK_CHECK_STATUS(sts, "VPP: Parameters initialization failed");
     }
 
     if (m_appCfg.bPREENC)
     {
-        m_pFEI_PreENC = new FEI_PREENC_Interface(m_pPreencSession, &m_inputTasks, m_BaseAllocID, &m_preencBufs, &m_encodeBufs, &m_appCfg);
+        m_pFEI_PreENC = new FEI_PreencInterface(m_pPreencSession, &m_inputTasks, m_BaseAllocID, &m_preencBufs, &m_encodeBufs, &m_appCfg);
         sts = m_pFEI_PreENC->FillParameters();
         MSDK_CHECK_STATUS(sts, "PreENC: Parameters initialization failed");
         m_commonFrameInfo = m_pFEI_PreENC->GetCommonVideoParams()->mfx.FrameInfo;
@@ -163,7 +163,7 @@ mfxStatus CEncodingPipeline::Init()
 
     if (m_appCfg.bENCODE)
     {
-        m_pFEI_ENCODE = new FEI_ENCODE_Interface(&m_mfxSession, m_BaseAllocID, &m_encodeBufs, &m_appCfg);
+        m_pFEI_ENCODE = new FEI_EncodeInterface(&m_mfxSession, m_BaseAllocID, &m_encodeBufs, &m_appCfg);
         sts = m_pFEI_ENCODE->FillParameters();
         MSDK_CHECK_STATUS(sts, "ENCODE: Parameters initialization failed");
         m_commonFrameInfo = m_pFEI_ENCODE->GetCommonVideoParams()->mfx.FrameInfo;
@@ -171,7 +171,7 @@ mfxStatus CEncodingPipeline::Init()
 
     if (m_appCfg.bENCPAK || m_appCfg.bOnlyENC || m_appCfg.bOnlyPAK)
     {
-        m_pFEI_ENCPAK = new FEI_ENCPAK_Interface(&m_mfxSession, &m_inputTasks, m_EncPakReconAllocID, &m_encodeBufs, &m_appCfg);
+        m_pFEI_ENCPAK = new FEI_EncPakInterface(&m_mfxSession, &m_inputTasks, m_EncPakReconAllocID, &m_encodeBufs, &m_appCfg);
         sts = m_pFEI_ENCPAK->FillParameters();
         MSDK_CHECK_STATUS(sts, "ENCPAK: Parameters initialization failed");
         m_commonFrameInfo = m_pFEI_ENCPAK->GetCommonVideoParams()->mfx.FrameInfo;

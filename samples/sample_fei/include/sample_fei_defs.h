@@ -71,6 +71,22 @@ enum
     FEI_SLICETYPE_B = 1,
 };
 
+inline mfxU16 FrameTypeToSliceType(mfxU8 frameType)
+{
+    switch (frameType & MFX_FRAMETYPE_IPB)
+    {
+    case MFX_FRAMETYPE_P:
+        return FEI_SLICETYPE_P;
+
+    case MFX_FRAMETYPE_B:
+        return FEI_SLICETYPE_B;
+
+    case MFX_FRAMETYPE_I:
+    default:
+        return FEI_SLICETYPE_I;
+    }
+}
+
 /*
 enum
 {
