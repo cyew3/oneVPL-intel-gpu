@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2015 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2008 - 2016 Intel Corporation. All Rights Reserved.
 //
 //
 //          Analysis of Video Content
@@ -45,6 +45,9 @@ VPPSceneAnalyzerParams::~VPPSceneAnalyzerParams(void)
 
 VPPSceneAnalyzer::VPPSceneAnalyzer( void )
 {
+  m_spatialComplexity  = 0;
+  m_temporalComplexity = 0;
+  memset(m_pSliceMV, 0, sizeof(m_pSliceMV));
   return;
 }
 
