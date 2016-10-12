@@ -556,8 +556,11 @@ namespace HEVCExtBRC
     }
     inline mfxStatus Destroy(mfxExtBRC & m_BRC)
     {
-        MFX_CHECK(m_BRC.pthis == NULL, MFX_ERR_NONE);
+
+        MFX_CHECK(m_BRC.pthis != NULL, MFX_ERR_NONE);
         delete (MfxHwH265EncodeBRC::ExtBRC*)m_BRC.pthis;
+
+        m_BRC.pthis = 0;
         m_BRC.Init = 0;
         m_BRC.Reset = 0;
         m_BRC.Close = 0;

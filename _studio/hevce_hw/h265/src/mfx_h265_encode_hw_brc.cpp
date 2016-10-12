@@ -1697,7 +1697,7 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
     {
         mfxF64 targetFrameSize = IPP_MAX((mfxF64)m_par.inputBitsPerFrame, fAbLong);
         mfxF64 frameFactor = (picType == MFX_FRAMETYPE_I) ? 1.5 : 1.0;
-        mfxF64 maxFrameSize = BRC_SCENE_CHANGE_RATIO2 * targetFrameSize * frameFactor;
+        mfxF64 maxFrameSize = (m_ctx.encOrder == 0 ? BRC_SCENE_CHANGE_RATIO2 : BRC_SCENE_CHANGE_RATIO1) * targetFrameSize * frameFactor;
         mfxI32 quantMax = m_ctx.QuantMax;
         mfxI32 quantMin = m_ctx.QuantMin;
         mfxI32 quant = qpY;
