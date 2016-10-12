@@ -880,6 +880,8 @@ mfxStatus MFXVideoVPPFrameRateConversion::ResetNativeState( NativeFRCState* pSta
 {
     pState->deltaTime = 0.0;
     pState->bReadyOutput = false;
+    pState->refPicStruct = MFX_PICSTRUCT_UNKNOWN;
+    memset(&(pState->defferedFrameInfo), 0, sizeof(mfxFrameInfo));
 
     return MFX_ERR_NONE;
 
