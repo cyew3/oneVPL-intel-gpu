@@ -546,7 +546,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                     pMFXParams->mfx.CodecId = MFX_CODEC_H263;
                     break;
                 }
-				case 8:
+                case 8:
                 {
                     pMFXParams->mfx.CodecId = MFX_CODEC_VP9;
                     break;
@@ -978,6 +978,70 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 return MFX_ERR_UNKNOWN;
 
             pExt->MaxSliceSize = val;
+            m_ExtBuffers.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-IntRefCycleSize "), VM_STRING("")))
+        {
+            mfxU32 val;
+            //file name that will be used for input after reseting encoder
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            mfxExtCodingOption2 *pExt = NULL;
+
+            if (0 != val)
+            {
+                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION2);
+                if (!ppExt)
+                {
+                    pExt = new mfxExtCodingOption2();
+
+                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
+                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption2);
+                }
+                else
+                {
+                    pExt = reinterpret_cast<mfxExtCodingOption2 *>(ppExt->get());
+                }
+            }
+            else
+                return MFX_ERR_UNKNOWN;
+
+            pExt->IntRefCycleSize = val;
+            m_ExtBuffers.get()->push_back(pExt);
+
+            argv++;
+        }
+        else if (m_bResetParamsStart && m_OptProc.Check(argv[0], VM_STRING("-IntRefType"), VM_STRING("")))
+        {
+            mfxU32 val;
+            //file name that will be used for input after reseting encoder
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(val, argv[1]);
+
+            mfxExtCodingOption2 *pExt = NULL;
+
+            if (0 != val)
+            {
+                MFXExtBufferPtrBase *ppExt = m_ExtBuffers.get()->get_by_id(MFX_EXTBUFF_CODING_OPTION2);
+                if (!ppExt)
+                {
+                    pExt = new mfxExtCodingOption2();
+
+                    pExt->Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
+                    pExt->Header.BufferSz = sizeof(mfxExtCodingOption2);
+                }
+                else
+                {
+                    pExt = reinterpret_cast<mfxExtCodingOption2 *>(ppExt->get());
+                }
+            }
+            else
+                return MFX_ERR_UNKNOWN;
+
+            pExt->IntRefType = val;
             m_ExtBuffers.get()->push_back(pExt);
 
             argv++;
