@@ -412,9 +412,10 @@ mfxStatus FEI_EncodeInterface::InitFrameParams(mfxFrameSurface1* encodeSurface, 
     mfxU8 ffid = !(encodeSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) && (encodeSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF);
 
     mfxU32 feiEncCtrlId = ffid, pMvPredId = ffid, encMBID = 0, mbQPID = 0, fieldId = 0;
-    for (mfxU32 i = 0; i < freeSet->PB_bufs.in.NumExtParam; i++)
+    for (std::vector<mfxExtBuffer*>::iterator it = freeSet->PB_bufs.in.buffers.begin();
+        it != freeSet->PB_bufs.in.buffers.end(); ++it)
     {
-        switch (freeSet->PB_bufs.in.ExtParam[i]->BufferId)
+        switch ((*it)->BufferId)
         {
         case MFX_EXTBUFF_FEI_ENC_MV_PRED:
             if (!m_pAppConfig->bPREENC && m_pMvPred_in)
@@ -424,7 +425,7 @@ mfxStatus FEI_EncodeInterface::InitFrameParams(mfxFrameSurface1* encodeSurface, 
                     continue;
                 }
 
-                mfxExtFeiEncMVPredictors* pMvPredBuf = reinterpret_cast<mfxExtFeiEncMVPredictors*>(freeSet->PB_bufs.in.ExtParam[i]);
+                mfxExtFeiEncMVPredictors* pMvPredBuf = reinterpret_cast<mfxExtFeiEncMVPredictors*>(*it);
 
                 if (!(frameType[pMvPredId] & MFX_FRAMETYPE_I))
                 {
@@ -449,7 +450,7 @@ mfxStatus FEI_EncodeInterface::InitFrameParams(mfxFrameSurface1* encodeSurface, 
             if (m_pENC_MBCtrl_in){
                 if (m_pAppConfig->PipelineCfg.mixedPicstructs && (encodeSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) && !!encMBID)
                     continue;
-                mfxExtFeiEncMBCtrl* pMbEncCtrl = reinterpret_cast<mfxExtFeiEncMBCtrl*>(freeSet->PB_bufs.in.ExtParam[i]);
+                mfxExtFeiEncMBCtrl* pMbEncCtrl = reinterpret_cast<mfxExtFeiEncMBCtrl*>(*it);
                 SAFE_FREAD(pMbEncCtrl->MB, sizeof(pMbEncCtrl->MB[0])*pMbEncCtrl->NumMBAlloc, 1, m_pENC_MBCtrl_in, MFX_ERR_MORE_DATA);
                 encMBID++;
             }
@@ -459,7 +460,7 @@ mfxStatus FEI_EncodeInterface::InitFrameParams(mfxFrameSurface1* encodeSurface, 
             if (m_pMbQP_in){
                 if (m_pAppConfig->PipelineCfg.mixedPicstructs && (encodeSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) && !!mbQPID)
                     continue;
-                mfxExtFeiEncQP* pMbQP = reinterpret_cast<mfxExtFeiEncQP*>(freeSet->PB_bufs.in.ExtParam[i]);
+                mfxExtFeiEncQP* pMbQP = reinterpret_cast<mfxExtFeiEncQP*>(*it);
                 SAFE_FREAD(pMbQP->QP, sizeof(pMbQP->QP[0])*pMbQP->NumQPAlloc, 1, m_pMbQP_in, MFX_ERR_MORE_DATA);
                 mbQPID++;
             }
@@ -467,7 +468,7 @@ mfxStatus FEI_EncodeInterface::InitFrameParams(mfxFrameSurface1* encodeSurface, 
 
         case MFX_EXTBUFF_FEI_ENC_CTRL:
         {
-            mfxExtFeiEncFrameCtrl* feiEncCtrl = reinterpret_cast<mfxExtFeiEncFrameCtrl*>(freeSet->PB_bufs.in.ExtParam[i]);
+            mfxExtFeiEncFrameCtrl* feiEncCtrl = reinterpret_cast<mfxExtFeiEncFrameCtrl*>(*it);
 
             if (m_pAppConfig->PipelineCfg.mixedPicstructs && (encodeSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) && feiEncCtrlId != ffid)
                 continue;
@@ -498,7 +499,7 @@ mfxStatus FEI_EncodeInterface::InitFrameParams(mfxFrameSurface1* encodeSurface, 
         case MFX_EXTBUFF_FEI_REPACK_CTRL:
             if (m_pRepackCtrl_in)
             {
-                mfxExtFeiRepackCtrl* feiRepackCtrl = reinterpret_cast<mfxExtFeiRepackCtrl*>(freeSet->PB_bufs.in.ExtParam[i]);
+                mfxExtFeiRepackCtrl* feiRepackCtrl = reinterpret_cast<mfxExtFeiRepackCtrl*>(*it);
                 SAFE_FREAD(&(feiRepackCtrl->MaxFrameSize), sizeof(mfxU32),    1, m_pRepackCtrl_in, MFX_ERR_MORE_DATA);
                 SAFE_FREAD(&(feiRepackCtrl->NumPasses),    sizeof(mfxU32),    1, m_pRepackCtrl_in, MFX_ERR_MORE_DATA);
                 SAFE_FREAD(feiRepackCtrl->DeltaQP,         sizeof(mfxU8) * 8, 1, m_pRepackCtrl_in, MFX_ERR_MORE_DATA);
@@ -513,12 +514,12 @@ mfxStatus FEI_EncodeInterface::InitFrameParams(mfxFrameSurface1* encodeSurface, 
     // Add input buffers
     bool is_I_frame = (encodeSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) && (frameType[ffid] & MFX_FRAMETYPE_I);
 
-    m_encodeControl.NumExtParam = is_I_frame ? freeSet->I_bufs.in.NumExtParam : freeSet->PB_bufs.in.NumExtParam;
-    m_encodeControl.ExtParam    = is_I_frame ? freeSet->I_bufs.in.ExtParam    : freeSet->PB_bufs.in.ExtParam;
+    m_encodeControl.NumExtParam = is_I_frame ? freeSet->I_bufs.in.NumExtParam() : freeSet->PB_bufs.in.NumExtParam();
+    m_encodeControl.ExtParam    = is_I_frame ? freeSet->I_bufs.in.ExtParam()    : freeSet->PB_bufs.in.ExtParam();
 
     // Add output buffers
-    m_mfxBS.NumExtParam = freeSet->PB_bufs.out.NumExtParam;
-    m_mfxBS.ExtParam    = freeSet->PB_bufs.out.ExtParam;
+    m_mfxBS.NumExtParam = freeSet->PB_bufs.out.NumExtParam();
+    m_mfxBS.ExtParam    = freeSet->PB_bufs.out.ExtParam();
 
     return sts;
 }

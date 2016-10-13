@@ -546,10 +546,10 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
         eTask->in.NumFrameL1 = 0;
         eTask->in.L0Surface = &m_RefInfo.reference_frames[0];
         eTask->in.L1Surface = NULL;
-        eTask->in.NumExtParam  = is_I_frame ? eTask->bufs->I_bufs.in.NumExtParam  : eTask->bufs->PB_bufs.in.NumExtParam;
-        eTask->in.ExtParam     = is_I_frame ? eTask->bufs->I_bufs.in.ExtParam     : eTask->bufs->PB_bufs.in.ExtParam;
-        eTask->out.NumExtParam = is_I_frame ? eTask->bufs->I_bufs.out.NumExtParam : eTask->bufs->PB_bufs.out.NumExtParam;
-        eTask->out.ExtParam    = is_I_frame ? eTask->bufs->I_bufs.out.ExtParam    : eTask->bufs->PB_bufs.out.ExtParam;
+        eTask->in.NumExtParam  = is_I_frame ? eTask->bufs->I_bufs.in.NumExtParam()  : eTask->bufs->PB_bufs.in.NumExtParam();
+        eTask->in.ExtParam     = is_I_frame ? eTask->bufs->I_bufs.in.ExtParam()     : eTask->bufs->PB_bufs.in.ExtParam();
+        eTask->out.NumExtParam = is_I_frame ? eTask->bufs->I_bufs.out.NumExtParam() : eTask->bufs->PB_bufs.out.NumExtParam();
+        eTask->out.ExtParam    = is_I_frame ? eTask->bufs->I_bufs.out.ExtParam()    : eTask->bufs->PB_bufs.out.ExtParam();
     }
 
     if (m_pmfxPAK)
@@ -558,10 +558,10 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
         eTask->inPAK.NumFrameL1 = 0;
         eTask->inPAK.L0Surface = &m_RefInfo.reference_frames[0];
         eTask->inPAK.L1Surface = NULL;
-        eTask->inPAK.NumExtParam  = is_I_frame ? eTask->bufs->I_bufs.out.NumExtParam : eTask->bufs->PB_bufs.out.NumExtParam;
-        eTask->inPAK.ExtParam     = is_I_frame ? eTask->bufs->I_bufs.out.ExtParam    : eTask->bufs->PB_bufs.out.ExtParam;
-        eTask->outPAK.NumExtParam = is_I_frame ? eTask->bufs->I_bufs.in.NumExtParam  : eTask->bufs->PB_bufs.in.NumExtParam;
-        eTask->outPAK.ExtParam    = is_I_frame ? eTask->bufs->I_bufs.in.ExtParam     : eTask->bufs->PB_bufs.in.ExtParam;
+        eTask->inPAK.NumExtParam  = is_I_frame ? eTask->bufs->I_bufs.out.NumExtParam() : eTask->bufs->PB_bufs.out.NumExtParam();
+        eTask->inPAK.ExtParam     = is_I_frame ? eTask->bufs->I_bufs.out.ExtParam()    : eTask->bufs->PB_bufs.out.ExtParam();
+        eTask->outPAK.NumExtParam = is_I_frame ? eTask->bufs->I_bufs.in.NumExtParam()  : eTask->bufs->PB_bufs.in.NumExtParam();
+        eTask->outPAK.ExtParam    = is_I_frame ? eTask->bufs->I_bufs.in.ExtParam()     : eTask->bufs->PB_bufs.in.ExtParam();
     }
 
     /* SPS, PPS, SliceHeader processing */
@@ -570,26 +570,27 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
     mfxExtFeiSliceHeader* feiSliceHeader = NULL;
 
     int pMvPredId = 0;
-    for (int i = 0; i < eTask->bufs->PB_bufs.in.NumExtParam; i++)
+    for (std::vector<mfxExtBuffer*>::iterator it = eTask->bufs->PB_bufs.in.buffers.begin();
+         it != eTask->bufs->PB_bufs.in.buffers.end(); ++it)
     {
-        switch (eTask->bufs->PB_bufs.in.ExtParam[i]->BufferId)
+        switch ((*it)->BufferId)
         {
         case MFX_EXTBUFF_FEI_PPS:
-            if (!feiPPS){ feiPPS = reinterpret_cast<mfxExtFeiPPS*>(eTask->bufs->PB_bufs.in.ExtParam[i]); }
+            if (!feiPPS){ feiPPS = reinterpret_cast<mfxExtFeiPPS*>(*it); }
             break;
 
         case MFX_EXTBUFF_FEI_SPS:
-            feiSPS = reinterpret_cast<mfxExtFeiSPS*>(eTask->bufs->PB_bufs.in.ExtParam[i]);
+            feiSPS = reinterpret_cast<mfxExtFeiSPS*>(*it);
             break;
 
         case MFX_EXTBUFF_FEI_SLICE:
-            if (!feiSliceHeader){ feiSliceHeader = reinterpret_cast<mfxExtFeiSliceHeader*>(eTask->bufs->PB_bufs.in.ExtParam[i]); }
+            if (!feiSliceHeader){ feiSliceHeader = reinterpret_cast<mfxExtFeiSliceHeader*>(*it); }
             break;
 
         case MFX_EXTBUFF_FEI_ENC_MV_PRED:
             if (m_pMvPred_in)
             {
-                mfxExtFeiEncMVPredictors* pMvPredBuf = reinterpret_cast<mfxExtFeiEncMVPredictors*>(eTask->bufs->PB_bufs.in.ExtParam[i]);
+                mfxExtFeiEncMVPredictors* pMvPredBuf = reinterpret_cast<mfxExtFeiEncMVPredictors*>(*it);
 
                 if (!(ExtractFrameType(*eTask, pMvPredId) & MFX_FRAMETYPE_I))
                 {

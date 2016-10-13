@@ -26,20 +26,15 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 // for ext buffers management
 struct setElem
 {
-    setElem()
-        : NumExtParam(0)
-        , ExtParam(NULL)
-    {}
-
     mfxExtBuffer * getBufById(mfxU32 id, mfxU32 fieldId)
     {
-        if (ExtParam)
+        if (!buffers.empty())
         {
-            for (mfxU16 i = 0; i < NumExtParam - fieldId; i++)
+            for (mfxU16 i = 0; i < buffers.size() - fieldId; i++)
             {
-                if (ExtParam[i]->BufferId == id)
+                if (buffers[i]->BufferId == id)
                 {
-                    return (ExtParam[i + fieldId] && ExtParam[i + fieldId]->BufferId == id) ? ExtParam[i + fieldId] : NULL;
+                    return (buffers[i + fieldId] && buffers[i + fieldId]->BufferId == id) ? buffers[i + fieldId] : NULL;
                 }
             }
         }
@@ -47,14 +42,290 @@ struct setElem
         return NULL;
     }
 
-    mfxU16      NumExtParam;
-    mfxExtBuffer **ExtParam;
+    void ResetMBnum(mfxU32 new_numMB, mfxU16 increment)
+    {
+        for (mfxU16 i = 0; i < buffers.size(); i += increment)
+        {
+            switch (buffers[i]->BufferId)
+            {
+                /* Input buffers */
+                case MFX_EXTBUFF_FEI_PREENC_MV_PRED:
+                {
+                    mfxExtFeiPreEncMVPredictors* mvPreds = reinterpret_cast<mfxExtFeiPreEncMVPredictors*>(buffers[i]);
+                    mvPreds->NumMBAlloc = new_numMB;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_ENC_MV_PRED:
+                {
+                    mfxExtFeiEncMVPredictors* pMvPredBuf = reinterpret_cast<mfxExtFeiEncMVPredictors*>(buffers[i]);
+                    pMvPredBuf->NumMBAlloc = new_numMB;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_ENC_MB:
+                {
+                    mfxExtFeiEncMBCtrl* pMbEncCtrl = reinterpret_cast<mfxExtFeiEncMBCtrl*>(buffers[i]);
+                    pMbEncCtrl->NumMBAlloc = new_numMB;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_ENC_QP:
+                {
+                    mfxExtFeiEncQP* pMbQP = reinterpret_cast<mfxExtFeiEncQP*>(buffers[i]);
+                    pMbQP->NumQPAlloc = new_numMB;
+                }
+                break;
+
+                /* Output buffers */
+                case MFX_EXTBUFF_FEI_PREENC_MV:
+                {
+                    mfxExtFeiPreEncMV* mvs = reinterpret_cast<mfxExtFeiPreEncMV*>(buffers[i]);
+                    mvs->NumMBAlloc = new_numMB;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_PREENC_MB:
+                {
+                    mfxExtFeiPreEncMBStat* mbdata = reinterpret_cast<mfxExtFeiPreEncMBStat*>(buffers[i]);
+                    mbdata->NumMBAlloc = new_numMB;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_ENC_MV:
+                {
+                    mfxExtFeiEncMV* mvBuf = reinterpret_cast<mfxExtFeiEncMV*>(buffers[i]);
+                    mvBuf->NumMBAlloc = new_numMB;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_ENC_MB_STAT:
+                {
+                    mfxExtFeiEncMBStat* mbstatBuf = reinterpret_cast<mfxExtFeiEncMBStat*>(buffers[i]);
+                    mbstatBuf->NumMBAlloc = new_numMB;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_PAK_CTRL:
+                {
+                    mfxExtFeiPakMBCtrl* mbcodeBuf = reinterpret_cast<mfxExtFeiPakMBCtrl*>(buffers[i]);
+                    mbcodeBuf->NumMBAlloc = new_numMB;
+                }
+                break;
+            } // switch (ExtParam[i]->BufferId)
+        } // for (mfxU16 i = 0; i < NumExtParam; i += increment)
+    }
+
+    void Destroy(mfxU16 num_of_fields)
+    {
+        for (mfxU16 i = 0; i < buffers.size(); /*i++*/)
+        {
+            switch (buffers[i]->BufferId)
+            {
+                case MFX_EXTBUFF_FEI_PREENC_CTRL:
+                {
+                    mfxExtFeiPreEncCtrl* preENCCtr = reinterpret_cast<mfxExtFeiPreEncCtrl*>(buffers[i]);
+                    MSDK_SAFE_DELETE_ARRAY(preENCCtr);
+                    i += num_of_fields;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_REPACK_CTRL:
+                {
+                    mfxExtFeiRepackCtrl* feiRepack = reinterpret_cast<mfxExtFeiRepackCtrl*>(buffers[i]);
+                    MSDK_SAFE_DELETE_ARRAY(feiRepack);
+                    i += num_of_fields;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_PREENC_MV_PRED:
+                {
+                    mfxExtFeiPreEncMVPredictors* mvPreds = reinterpret_cast<mfxExtFeiPreEncMVPredictors*>(buffers[i]);
+                    for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                        MSDK_SAFE_DELETE_ARRAY(mvPreds[fieldId].MB);
+                    }
+                    MSDK_SAFE_DELETE_ARRAY(mvPreds);
+                    i += num_of_fields;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_ENC_QP:
+                {
+                    mfxExtFeiEncQP* qps = reinterpret_cast<mfxExtFeiEncQP*>(buffers[i]);
+                    for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                        MSDK_SAFE_DELETE_ARRAY(qps[fieldId].QP);
+                    }
+                    MSDK_SAFE_DELETE_ARRAY(qps);
+                    i += num_of_fields;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_ENC_CTRL:
+                {
+                    mfxExtFeiEncFrameCtrl* feiEncCtrl = reinterpret_cast<mfxExtFeiEncFrameCtrl*>(buffers[i]);
+                    MSDK_SAFE_DELETE_ARRAY(feiEncCtrl);
+                    i += num_of_fields;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_SPS:
+                {
+                    mfxExtFeiSPS* feiSPS = reinterpret_cast<mfxExtFeiSPS*>(buffers[i]);
+                    MSDK_SAFE_DELETE(feiSPS);
+                    i++;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_PPS:
+                {
+                    mfxExtFeiPPS* feiPPS = reinterpret_cast<mfxExtFeiPPS*>(buffers[i]);
+                    MSDK_SAFE_DELETE_ARRAY(feiPPS);
+                    i += num_of_fields;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_SLICE:
+                {
+                    mfxExtFeiSliceHeader* feiSliceHeader = reinterpret_cast<mfxExtFeiSliceHeader*>(buffers[i]);
+                    for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                        MSDK_SAFE_DELETE_ARRAY(feiSliceHeader[fieldId].Slice);
+                    }
+                    MSDK_SAFE_DELETE_ARRAY(feiSliceHeader);
+                    i += num_of_fields;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_ENC_MV_PRED:
+                {
+                    mfxExtFeiEncMVPredictors* feiEncMVPredictors = reinterpret_cast<mfxExtFeiEncMVPredictors*>(buffers[i]);
+                    for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                        MSDK_SAFE_DELETE_ARRAY(feiEncMVPredictors[fieldId].MB);
+                    }
+                    MSDK_SAFE_DELETE_ARRAY(feiEncMVPredictors);
+                    i += num_of_fields;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_ENC_MB:
+                {
+                    mfxExtFeiEncMBCtrl* feiEncMBCtrl = reinterpret_cast<mfxExtFeiEncMBCtrl*>(buffers[i]);
+                    for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                        MSDK_SAFE_DELETE_ARRAY(feiEncMBCtrl[fieldId].MB);
+                    }
+                    MSDK_SAFE_DELETE_ARRAY(feiEncMBCtrl);
+                    i += num_of_fields;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_PREENC_MV:
+                {
+                    mfxExtFeiPreEncMV* mvs = reinterpret_cast<mfxExtFeiPreEncMV*>(buffers[i]);
+                    for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                        MSDK_SAFE_DELETE_ARRAY(mvs[fieldId].MB);
+                    }
+                    MSDK_SAFE_DELETE_ARRAY(mvs);
+                    i += num_of_fields;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_PREENC_MB:
+                {
+                    mfxExtFeiPreEncMBStat* mbdata = reinterpret_cast<mfxExtFeiPreEncMBStat*>(buffers[i]);
+                    for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                        MSDK_SAFE_DELETE_ARRAY(mbdata[fieldId].MB);
+                    }
+                    MSDK_SAFE_DELETE_ARRAY(mbdata);
+                    i += num_of_fields;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_ENC_MB_STAT:
+                {
+                    mfxExtFeiEncMBStat* feiEncMbStat = reinterpret_cast<mfxExtFeiEncMBStat*>(buffers[i]);
+                    for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                        MSDK_SAFE_DELETE_ARRAY(feiEncMbStat[fieldId].MB);
+                    }
+                    MSDK_SAFE_DELETE_ARRAY(feiEncMbStat);
+                    i += num_of_fields;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_ENC_MV:
+                {
+                    mfxExtFeiEncMV* feiEncMV = reinterpret_cast<mfxExtFeiEncMV*>(buffers[i]);
+                    for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                        MSDK_SAFE_DELETE_ARRAY(feiEncMV[fieldId].MB);
+                    }
+                    MSDK_SAFE_DELETE_ARRAY(feiEncMV);
+                    i += num_of_fields;
+                }
+                break;
+
+                case MFX_EXTBUFF_FEI_PAK_CTRL:
+                {
+                    mfxExtFeiPakMBCtrl* feiEncMBCode = reinterpret_cast<mfxExtFeiPakMBCtrl*>(buffers[i]);
+                    for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
+                        MSDK_SAFE_DELETE_ARRAY(feiEncMBCode[fieldId].MB);
+                    }
+                    MSDK_SAFE_DELETE_ARRAY(feiEncMBCode);
+                    i += num_of_fields;
+                }
+                break;
+
+                default:
+                    ++i;
+                    break;
+            } // switch ((*it)->PB_bufs.in.ExtParam[i]->BufferId)
+        } // for (int i = 0; i < (*it)->PB_bufs.in.NumExtParam; )
+
+        buffers.clear();
+    }
+
+    void Release()
+    {
+        buffers.clear();
+    }
+
+    mfxU16 NumExtParam()
+    {
+        return mfxU16(buffers.size());
+    }
+
+    mfxExtBuffer **ExtParam()
+    {
+        return buffers.empty()? NULL : &buffers[0];
+    }
+
+    void Add(mfxExtBuffer* buf)
+    {
+        buffers.push_back(buf);
+    }
+
+    std::vector<mfxExtBuffer *> buffers;
 };
 
 struct IObuffs
 {
     setElem in;
     setElem out;
+
+    void Destroy(mfxU16 n_fields)
+    {
+        in.Destroy(n_fields);
+        out.Destroy(n_fields);
+    }
+
+    void Release()
+    {
+        in.Release();
+        out.Release();
+    }
+
+    void ResetMBnum(mfxU32 new_numMB, mfxU16 increment)
+    {
+        in.ResetMBnum(new_numMB, increment);
+        out.ResetMBnum(new_numMB, increment);
+    }
 };
 
 /* This structure holds sets of input and output extended buffers
@@ -72,84 +343,18 @@ struct bufSet
         , num_fields(n_fields)
     {}
 
+    ~bufSet() { Destroy(); }
+
+    void Destroy()
+    {
+        vacant = false;
+        PB_bufs.Destroy(num_fields);
+        I_bufs.Release();
+    }
+
     void ResetMBnum(mfxU32 new_numMB, bool both_fields)
     {
-        mfxU16 increment = both_fields ? 1 : num_fields;
-
-        for (mfxU16 i = 0; i < PB_bufs.in.NumExtParam; i += increment)
-        {
-            switch (PB_bufs.in.ExtParam[i]->BufferId)
-            {
-                case MFX_EXTBUFF_FEI_PREENC_MV_PRED:
-                {
-                    mfxExtFeiPreEncMVPredictors* mvPreds = reinterpret_cast<mfxExtFeiPreEncMVPredictors*>(PB_bufs.in.ExtParam[i]);
-                    mvPreds->NumMBAlloc = new_numMB;
-                }
-                break;
-
-                case MFX_EXTBUFF_FEI_ENC_MV_PRED:
-                {
-                    mfxExtFeiEncMVPredictors* pMvPredBuf = reinterpret_cast<mfxExtFeiEncMVPredictors*>(PB_bufs.in.ExtParam[i]);
-                    pMvPredBuf->NumMBAlloc = new_numMB;
-                }
-                break;
-
-                case MFX_EXTBUFF_FEI_ENC_MB:
-                {
-                    mfxExtFeiEncMBCtrl* pMbEncCtrl = reinterpret_cast<mfxExtFeiEncMBCtrl*>(PB_bufs.in.ExtParam[i]);
-                    pMbEncCtrl->NumMBAlloc = new_numMB;
-                }
-                break;
-
-                case MFX_EXTBUFF_FEI_ENC_QP:
-                {
-                    mfxExtFeiEncQP* pMbQP = reinterpret_cast<mfxExtFeiEncQP*>(PB_bufs.in.ExtParam[i]);
-                    pMbQP->NumQPAlloc = new_numMB;
-                }
-                break;
-            }
-        }
-
-        for (mfxU16 i = 0; i < PB_bufs.out.NumExtParam; i += increment)
-        {
-            switch (PB_bufs.out.ExtParam[i]->BufferId)
-            {
-                case MFX_EXTBUFF_FEI_PREENC_MV:
-                {
-                    mfxExtFeiPreEncMV* mvs = reinterpret_cast<mfxExtFeiPreEncMV*>(PB_bufs.out.ExtParam[i]);
-                    mvs->NumMBAlloc = new_numMB;
-                }
-                break;
-
-                case MFX_EXTBUFF_FEI_PREENC_MB:
-                {
-                    mfxExtFeiPreEncMBStat* mbdata = reinterpret_cast<mfxExtFeiPreEncMBStat*>(PB_bufs.out.ExtParam[i]);
-                    mbdata->NumMBAlloc = new_numMB;
-                }
-                break;
-
-                case MFX_EXTBUFF_FEI_ENC_MV:
-                {
-                    mfxExtFeiEncMV* mvBuf = reinterpret_cast<mfxExtFeiEncMV*>(PB_bufs.out.ExtParam[i]);
-                    mvBuf->NumMBAlloc = new_numMB;
-                }
-                break;
-
-                case MFX_EXTBUFF_FEI_ENC_MB_STAT:
-                {
-                    mfxExtFeiEncMBStat* mbstatBuf = reinterpret_cast<mfxExtFeiEncMBStat*>(PB_bufs.out.ExtParam[i]);
-                    mbstatBuf->NumMBAlloc = new_numMB;
-                }
-                break;
-
-                case MFX_EXTBUFF_FEI_PAK_CTRL:
-                {
-                    mfxExtFeiPakMBCtrl* mbcodeBuf = reinterpret_cast<mfxExtFeiPakMBCtrl*>(PB_bufs.out.ExtParam[i]);
-                    mbcodeBuf->NumMBAlloc = new_numMB;
-                }
-                break;
-            }
-        }
+        PB_bufs.ResetMBnum(new_numMB, both_fields ? 1 : num_fields);
     }
 };
 
@@ -171,188 +376,8 @@ struct bufList
     {
         for (std::list<bufSet*>::iterator it = buf_list.begin(); it != buf_list.end(); ++it)
         {
-            if (*it)
-            {
-                (*it)->vacant = false;
-
-                for (int i = 0; i < (*it)->PB_bufs.in.NumExtParam; /*i++*/)
-                {
-                    switch ((*it)->PB_bufs.in.ExtParam[i]->BufferId)
-                    {
-                    case MFX_EXTBUFF_FEI_PREENC_CTRL:
-                    {
-                        mfxExtFeiPreEncCtrl* preENCCtr = reinterpret_cast<mfxExtFeiPreEncCtrl*>((*it)->PB_bufs.in.ExtParam[i]);
-                        MSDK_SAFE_DELETE_ARRAY(preENCCtr);
-                        i += num_of_fields;
-                    }
-                    break;
-
-                    case MFX_EXTBUFF_FEI_REPACK_CTRL:
-                    {
-                        mfxExtFeiRepackCtrl* feiRepack = reinterpret_cast<mfxExtFeiRepackCtrl*>((*it)->PB_bufs.in.ExtParam[i]);
-                        MSDK_SAFE_DELETE_ARRAY(feiRepack);
-                        i += num_of_fields;
-                    }
-                    break;
-
-                    case MFX_EXTBUFF_FEI_PREENC_MV_PRED:
-                    {
-                        mfxExtFeiPreEncMVPredictors* mvPreds = reinterpret_cast<mfxExtFeiPreEncMVPredictors*>((*it)->PB_bufs.in.ExtParam[i]);
-                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
-                            MSDK_SAFE_DELETE_ARRAY(mvPreds[fieldId].MB);
-                        }
-                        MSDK_SAFE_DELETE_ARRAY(mvPreds);
-                        i += num_of_fields;
-                    }
-                    break;
-
-                    case MFX_EXTBUFF_FEI_ENC_QP:
-                    {
-                        mfxExtFeiEncQP* qps = reinterpret_cast<mfxExtFeiEncQP*>((*it)->PB_bufs.in.ExtParam[i]);
-                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
-                            MSDK_SAFE_DELETE_ARRAY(qps[fieldId].QP);
-                        }
-                        MSDK_SAFE_DELETE_ARRAY(qps);
-                        i += num_of_fields;
-                    }
-                    break;
-
-                    case MFX_EXTBUFF_FEI_ENC_CTRL:
-                    {
-                        mfxExtFeiEncFrameCtrl* feiEncCtrl = reinterpret_cast<mfxExtFeiEncFrameCtrl*>((*it)->PB_bufs.in.ExtParam[i]);
-                        MSDK_SAFE_DELETE_ARRAY(feiEncCtrl);
-                        i += num_of_fields;
-                    }
-                    break;
-
-                    case MFX_EXTBUFF_FEI_SPS:
-                    {
-                        mfxExtFeiSPS* feiSPS = reinterpret_cast<mfxExtFeiSPS*>((*it)->PB_bufs.in.ExtParam[i]);
-                        MSDK_SAFE_DELETE(feiSPS);
-                        i++;
-                    }
-                    break;
-
-                    case MFX_EXTBUFF_FEI_PPS:
-                    {
-                        mfxExtFeiPPS* feiPPS = reinterpret_cast<mfxExtFeiPPS*>((*it)->PB_bufs.in.ExtParam[i]);
-                        MSDK_SAFE_DELETE_ARRAY(feiPPS);
-                        i += num_of_fields;
-                    }
-                    break;
-
-                    case MFX_EXTBUFF_FEI_SLICE:
-                    {
-                        mfxExtFeiSliceHeader* feiSliceHeader = reinterpret_cast<mfxExtFeiSliceHeader*>((*it)->PB_bufs.in.ExtParam[i]);
-                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
-                            MSDK_SAFE_DELETE_ARRAY(feiSliceHeader[fieldId].Slice);
-                        }
-                        MSDK_SAFE_DELETE_ARRAY(feiSliceHeader);
-                        i += num_of_fields;
-                    }
-                    break;
-
-                    case MFX_EXTBUFF_FEI_ENC_MV_PRED:
-                    {
-                        mfxExtFeiEncMVPredictors* feiEncMVPredictors = reinterpret_cast<mfxExtFeiEncMVPredictors*>((*it)->PB_bufs.in.ExtParam[i]);
-                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
-                            MSDK_SAFE_DELETE_ARRAY(feiEncMVPredictors[fieldId].MB);
-                        }
-                        MSDK_SAFE_DELETE_ARRAY(feiEncMVPredictors);
-                        i += num_of_fields;
-                    }
-                    break;
-
-                    case MFX_EXTBUFF_FEI_ENC_MB:
-                    {
-                        mfxExtFeiEncMBCtrl* feiEncMBCtrl = reinterpret_cast<mfxExtFeiEncMBCtrl*>((*it)->PB_bufs.in.ExtParam[i]);
-                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
-                            MSDK_SAFE_DELETE_ARRAY(feiEncMBCtrl[fieldId].MB);
-                        }
-                        MSDK_SAFE_DELETE_ARRAY(feiEncMBCtrl);
-                        i += num_of_fields;
-                    }
-                    break;
-
-                    default:
-                        ++i;
-                        break;
-                    } // switch ((*it)->PB_bufs.in.ExtParam[i]->BufferId)
-                } // for (int i = 0; i < (*it)->PB_bufs.in.NumExtParam; )
-
-                MSDK_SAFE_DELETE_ARRAY((*it)->PB_bufs.in.ExtParam);
-                MSDK_SAFE_DELETE_ARRAY((*it)->I_bufs.in.ExtParam);
-
-                for (int i = 0; i < (*it)->PB_bufs.out.NumExtParam; /*i++*/)
-                {
-                    switch ((*it)->PB_bufs.out.ExtParam[i]->BufferId)
-                    {
-                    case MFX_EXTBUFF_FEI_PREENC_MV:
-                    {
-                        mfxExtFeiPreEncMV* mvs = reinterpret_cast<mfxExtFeiPreEncMV*>((*it)->PB_bufs.out.ExtParam[i]);
-                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
-                            MSDK_SAFE_DELETE_ARRAY(mvs[fieldId].MB);
-                        }
-                        MSDK_SAFE_DELETE_ARRAY(mvs);
-                        i += num_of_fields;
-                    }
-                    break;
-
-                    case MFX_EXTBUFF_FEI_PREENC_MB:
-                    {
-                        mfxExtFeiPreEncMBStat* mbdata = reinterpret_cast<mfxExtFeiPreEncMBStat*>((*it)->PB_bufs.out.ExtParam[i]);
-                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
-                            MSDK_SAFE_DELETE_ARRAY(mbdata[fieldId].MB);
-                        }
-                        MSDK_SAFE_DELETE_ARRAY(mbdata);
-                        i += num_of_fields;
-                    }
-                    break;
-
-                    case MFX_EXTBUFF_FEI_ENC_MB_STAT:
-                    {
-                        mfxExtFeiEncMBStat* feiEncMbStat = reinterpret_cast<mfxExtFeiEncMBStat*>((*it)->PB_bufs.out.ExtParam[i]);
-                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
-                            MSDK_SAFE_DELETE_ARRAY(feiEncMbStat[fieldId].MB);
-                        }
-                        MSDK_SAFE_DELETE_ARRAY(feiEncMbStat);
-                        i += num_of_fields;
-                    }
-                    break;
-
-                    case MFX_EXTBUFF_FEI_ENC_MV:
-                    {
-                        mfxExtFeiEncMV* feiEncMV = reinterpret_cast<mfxExtFeiEncMV*>((*it)->PB_bufs.out.ExtParam[i]);
-                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
-                            MSDK_SAFE_DELETE_ARRAY(feiEncMV[fieldId].MB);
-                        }
-                        MSDK_SAFE_DELETE_ARRAY(feiEncMV);
-                        i += num_of_fields;
-                    }
-                    break;
-
-                    case MFX_EXTBUFF_FEI_PAK_CTRL:
-                    {
-                        mfxExtFeiPakMBCtrl* feiEncMBCode = reinterpret_cast<mfxExtFeiPakMBCtrl*>((*it)->PB_bufs.out.ExtParam[i]);
-                        for (mfxU32 fieldId = 0; fieldId < num_of_fields; fieldId++){
-                            MSDK_SAFE_DELETE_ARRAY(feiEncMBCode[fieldId].MB);
-                        }
-                        MSDK_SAFE_DELETE_ARRAY(feiEncMBCode);
-                        i += num_of_fields;
-                    }
-                    break;
-
-                    default:
-                        i++;
-                        break;
-                    } // switch ((*it)->PB_bufs.out.ExtParam[i]->BufferId)
-                } // for (int i = 0; i < (*it)->PB_bufs.out.NumExtParam; )
-
-                MSDK_SAFE_DELETE_ARRAY((*it)->PB_bufs.out.ExtParam);
-                MSDK_SAFE_DELETE_ARRAY((*it)->I_bufs.out.ExtParam);
-                MSDK_SAFE_DELETE(*it);
-            } // if (*it)
-        } // for (std::list<bufSet*>::iterator it = buf_list.begin(); it != buf_list.end(); ++it)
+            MSDK_SAFE_DELETE(*it);
+        }
 
         buf_list.clear();
     }

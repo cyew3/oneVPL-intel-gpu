@@ -215,7 +215,6 @@ struct DRCblock
 /* Following structure used to store parameters for current application launch */
 struct AppConfig
 {
-
     AppConfig()
         : DecodeId(0)            // Default (invalid) value
         , CodecId(MFX_CODEC_AVC) // Only AVC is supported
@@ -238,11 +237,6 @@ struct AppConfig
         , nIdrInterval(0xffff)        // Infinite IDR interval
         , preencDSstrength(0)         // No Downsampling
         , bDynamicRC(false)
-        //, nResetStart(0)
-        //, nDRCdefautW(0)
-        //, nDRCdefautH(0)
-        //, MaxDrcWidth(0)
-        //, MaxDrcHeight(0)
 
         , SearchWindow(5)             // 48x40 (48 SUs)
         , LenSP(57)

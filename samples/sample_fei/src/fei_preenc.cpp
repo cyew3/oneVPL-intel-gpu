@@ -578,11 +578,11 @@ mfxStatus FEI_PreencInterface::InitFrameParams(iTask* eTask, iTask* refTask[2][2
         eTask->in.NumFrameL1 = !!refSurf1[fieldId];
 
         //in data
-        eTask->in.NumExtParam = is_I_frame ? eTask->preenc_bufs->I_bufs.in.NumExtParam : eTask->preenc_bufs->PB_bufs.in.NumExtParam;
-        eTask->in.ExtParam    = is_I_frame ? eTask->preenc_bufs->I_bufs.in.ExtParam: eTask->preenc_bufs->PB_bufs.in.ExtParam;
+        eTask->in.NumExtParam = is_I_frame ? eTask->preenc_bufs->I_bufs.in.NumExtParam() : eTask->preenc_bufs->PB_bufs.in.NumExtParam();
+        eTask->in.ExtParam    = is_I_frame ? eTask->preenc_bufs->I_bufs.in.ExtParam()    : eTask->preenc_bufs->PB_bufs.in.ExtParam();
         //out data
-        eTask->out.NumExtParam = is_I_frame ? eTask->preenc_bufs->I_bufs.out.NumExtParam : eTask->preenc_bufs->PB_bufs.out.NumExtParam;
-        eTask->out.ExtParam    = is_I_frame ? eTask->preenc_bufs->I_bufs.out.ExtParam: eTask->preenc_bufs->PB_bufs.out.ExtParam;
+        eTask->out.NumExtParam = is_I_frame ? eTask->preenc_bufs->I_bufs.out.NumExtParam() : eTask->preenc_bufs->PB_bufs.out.NumExtParam();
+        eTask->out.ExtParam    = is_I_frame ? eTask->preenc_bufs->I_bufs.out.ExtParam()    : eTask->preenc_bufs->PB_bufs.out.ExtParam();
     }
 
     mfxU32 preENCCtrId = 0, pMvPredId = 0;

@@ -901,7 +901,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
     }
 
     mfxU32 fieldId = 0;
-    int numExtInParams = 0, numExtInParamsI = 0, numExtOutParams = 0, numExtOutParamsI = 0;
 
     if (m_appCfg.bPREENC)
     {
@@ -923,11 +922,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
 
         for (int k = 0; k < num_buffers; k++)
         {
-            numExtInParams   = 0;
-            numExtInParamsI  = 0;
-            numExtOutParams  = 0;
-            numExtOutParamsI = 0;
-
             tmpForInit = new bufSet(m_numOfFields);
 
             for (fieldId = 0; fieldId < m_numOfFields; fieldId++)
@@ -939,8 +933,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                     preENCCtr = new mfxExtFeiPreEncCtrl[m_numOfFields];
                     MSDK_ZERO_ARRAY(preENCCtr, m_numOfFields);
                 }
-                numExtInParams++;
-                numExtInParamsI++;
 
                 preENCCtr[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_CTRL;
                 preENCCtr[fieldId].Header.BufferSz = sizeof(mfxExtFeiPreEncCtrl);
@@ -975,8 +967,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                         mvPreds = new mfxExtFeiPreEncMVPredictors[m_numOfFields];
                         MSDK_ZERO_ARRAY(mvPreds, m_numOfFields);
                     }
-                    numExtInParams++;
-                    numExtInParamsI++;
 
                     mvPreds[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV_PRED;
                     mvPreds[fieldId].Header.BufferSz = sizeof(mfxExtFeiPreEncMVPredictors);
@@ -991,8 +981,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                         qps = new mfxExtFeiEncQP[m_numOfFields];
                         MSDK_ZERO_ARRAY(qps, m_numOfFields);
                     }
-                    numExtInParams++;
-                    numExtInParamsI++;
 
                     qps[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_QP;
                     qps[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncQP);
@@ -1007,7 +995,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                         mvs = new mfxExtFeiPreEncMV[m_numOfFields];
                         MSDK_ZERO_ARRAY(mvs, m_numOfFields);
                     }
-                    numExtOutParams++;
 
                     mvs[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV;
                     mvs[fieldId].Header.BufferSz = sizeof(mfxExtFeiPreEncMV);
@@ -1022,8 +1009,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                         mbdata = new mfxExtFeiPreEncMBStat[m_numOfFields];
                         MSDK_ZERO_ARRAY(mbdata, m_numOfFields);
                     }
-                    numExtOutParams++;
-                    numExtOutParamsI++;
 
                     mbdata[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MB;
                     mbdata[fieldId].Header.BufferSz = sizeof(mfxExtFeiPreEncMBStat);
@@ -1034,41 +1019,31 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
 
             } // for (fieldId = 0; fieldId < m_numOfFields; fieldId++)
 
-            tmpForInit-> I_bufs.in.ExtParam  = new mfxExtBuffer*[numExtInParamsI];
-            tmpForInit->PB_bufs.in.ExtParam  = new mfxExtBuffer*[numExtInParams];
-            tmpForInit-> I_bufs.out.ExtParam = new mfxExtBuffer*[numExtOutParamsI];
-            tmpForInit->PB_bufs.out.ExtParam = new mfxExtBuffer*[numExtOutParams];
-
-            MSDK_ZERO_ARRAY(tmpForInit-> I_bufs.in.ExtParam,  numExtInParamsI);
-            MSDK_ZERO_ARRAY(tmpForInit->PB_bufs.in.ExtParam,  numExtInParams);
-            MSDK_ZERO_ARRAY(tmpForInit-> I_bufs.out.ExtParam, numExtOutParamsI);
-            MSDK_ZERO_ARRAY(tmpForInit->PB_bufs.out.ExtParam, numExtOutParams);
-
             for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
-                tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)(preENCCtr + fieldId);
-                tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)(preENCCtr + fieldId);
+                tmpForInit-> I_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(preENCCtr + fieldId));
+                tmpForInit->PB_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(preENCCtr + fieldId));
             }
             if (mvPreds){
                 for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
-                    tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)(mvPreds + fieldId);
-                    tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)(mvPreds + fieldId);
+                    tmpForInit-> I_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(mvPreds + fieldId));
+                    tmpForInit->PB_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(mvPreds + fieldId));
                 }
             }
             if (qps){
                 for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
-                    tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)(qps + fieldId);
-                    tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)(qps + fieldId);
+                    tmpForInit-> I_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(qps + fieldId));
+                    tmpForInit->PB_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(qps + fieldId));
                 }
             }
             if (mvs){
                 for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
-                    tmpForInit->PB_bufs.out.ExtParam[tmpForInit->PB_bufs.out.NumExtParam++] = (mfxExtBuffer*)(mvs + fieldId);
+                    tmpForInit->PB_bufs.out.Add(reinterpret_cast<mfxExtBuffer*>(mvs + fieldId));
                 }
             }
             if (mbdata){
                 for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
-                    tmpForInit-> I_bufs.out.ExtParam[tmpForInit-> I_bufs.out.NumExtParam++] = (mfxExtBuffer*)(mbdata + fieldId);
-                    tmpForInit->PB_bufs.out.ExtParam[tmpForInit->PB_bufs.out.NumExtParam++] = (mfxExtBuffer*)(mbdata + fieldId);
+                    tmpForInit-> I_bufs.out.Add(reinterpret_cast<mfxExtBuffer*>(mbdata + fieldId));
+                    tmpForInit->PB_bufs.out.Add(reinterpret_cast<mfxExtBuffer*>(mbdata + fieldId));
                 }
             }
 
@@ -1130,11 +1105,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
         {
             tmpForInit = new bufSet(m_numOfFields);
 
-            numExtInParams   = (m_appCfg.bENCPAK || m_appCfg.bOnlyENC || m_appCfg.bOnlyPAK) ? 1 : 0; // count SPS header
-            numExtInParamsI  = (m_appCfg.bENCPAK || m_appCfg.bOnlyENC || m_appCfg.bOnlyPAK) ? 1 : 0; // count SPS header
-            numExtOutParams  = 0;
-            numExtOutParamsI = 0;
-
             for (fieldId = 0; fieldId < m_numOfFields; fieldId++)
             {
                 /* We allocate buffer of progressive frame size for the first field if mixed pixstructs are used */
@@ -1143,8 +1113,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                     feiEncCtrl = new mfxExtFeiEncFrameCtrl[m_numOfFields];
                     MSDK_ZERO_ARRAY(feiEncCtrl, m_numOfFields);
                 }
-                numExtInParams++;
-                numExtInParamsI++;
 
                 feiEncCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
                 feiEncCtrl[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncFrameCtrl);
@@ -1187,8 +1155,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                         feiPPS = new mfxExtFeiPPS[m_numOfFields];
                         MSDK_ZERO_ARRAY(feiPPS, m_numOfFields);
                     }
-                    numExtInParams++;
-                    numExtInParamsI++;
 
                     feiPPS[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PPS;
                     feiPPS[fieldId].Header.BufferSz = sizeof(mfxExtFeiPPS);
@@ -1238,8 +1204,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                         feiSliceHeader = new mfxExtFeiSliceHeader[m_numOfFields];
                         MSDK_ZERO_ARRAY(feiSliceHeader, m_numOfFields);
                     }
-                    numExtInParams++;
-                    numExtInParamsI++;
 
                     feiSliceHeader[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_SLICE;
                     feiSliceHeader[fieldId].Header.BufferSz = sizeof(mfxExtFeiSliceHeader);
@@ -1277,7 +1241,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                         feiEncMVPredictors = new mfxExtFeiEncMVPredictors[m_numOfFields];
                         MSDK_ZERO_ARRAY(feiEncMVPredictors, m_numOfFields);
                     }
-                    numExtInParams++;
 
                     feiEncMVPredictors[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV_PRED;
                     feiEncMVPredictors[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMVPredictors);
@@ -1292,8 +1255,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                         feiRepack = new mfxExtFeiRepackCtrl[m_numOfFields];
                         MSDK_ZERO_ARRAY(feiRepack, m_numOfFields);
                     }
-                    numExtInParams++;
-                    numExtInParamsI++;
 
                     feiRepack[fieldId].Header.BufferId =  MFX_EXTBUFF_FEI_REPACK_CTRL;
                     feiRepack[fieldId].Header.BufferSz = sizeof(mfxExtFeiRepackCtrl);
@@ -1308,8 +1269,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                         feiEncMBCtrl = new mfxExtFeiEncMBCtrl[m_numOfFields];
                         MSDK_ZERO_ARRAY(feiEncMBCtrl, m_numOfFields);
                     }
-                    numExtInParams++;
-                    numExtInParamsI++;
 
                     feiEncMBCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB;
                     feiEncMBCtrl[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMBCtrl);
@@ -1324,8 +1283,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                         feiEncMbQp = new mfxExtFeiEncQP[m_numOfFields];
                         MSDK_ZERO_ARRAY(feiEncMbQp, m_numOfFields);
                     }
-                    numExtInParams++;
-                    numExtInParamsI++;
 
                     feiEncMbQp[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_QP;
                     feiEncMbQp[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncQP);
@@ -1342,8 +1299,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                         feiEncMbStat = new mfxExtFeiEncMBStat[m_numOfFields];
                         MSDK_ZERO_ARRAY(feiEncMbStat, m_numOfFields);
                     }
-                    numExtOutParams++;
-                    numExtOutParamsI++;
 
                     feiEncMbStat[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MB_STAT;
                     feiEncMbStat[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMBStat);
@@ -1359,8 +1314,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                         feiEncMV = new mfxExtFeiEncMV[m_numOfFields];
                         MSDK_ZERO_ARRAY(feiEncMV, m_numOfFields);
                     }
-                    numExtOutParams++;
-                    numExtOutParamsI++;
 
                     feiEncMV[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_MV;
                     feiEncMV[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncMV);
@@ -1377,8 +1330,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                         feiEncMBCode = new mfxExtFeiPakMBCtrl[m_numOfFields];
                         MSDK_ZERO_ARRAY(feiEncMBCode, m_numOfFields);
                     }
-                    numExtOutParams++;
-                    numExtOutParamsI++;
 
                     feiEncMBCode[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PAK_CTRL;
                     feiEncMBCode[fieldId].Header.BufferSz = sizeof(mfxExtFeiPakMBCtrl);
@@ -1389,77 +1340,67 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
 
             } // for (fieldId = 0; fieldId < m_numOfFields; fieldId++)
 
-            tmpForInit-> I_bufs.in.ExtParam  = new mfxExtBuffer*[numExtInParamsI];
-            tmpForInit->PB_bufs.in.ExtParam  = new mfxExtBuffer*[numExtInParams];
-            tmpForInit-> I_bufs.out.ExtParam = new mfxExtBuffer*[numExtOutParamsI];
-            tmpForInit->PB_bufs.out.ExtParam = new mfxExtBuffer*[numExtOutParams];
-
-            MSDK_ZERO_ARRAY(tmpForInit-> I_bufs.in.ExtParam, numExtInParamsI);
-            MSDK_ZERO_ARRAY(tmpForInit->PB_bufs.in.ExtParam, numExtInParams);
-            MSDK_ZERO_ARRAY(tmpForInit-> I_bufs.out.ExtParam, numExtOutParamsI);
-            MSDK_ZERO_ARRAY(tmpForInit->PB_bufs.out.ExtParam, numExtOutParams);
-
             for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
-                tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)(&feiEncCtrl[fieldId]);
-                tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)(&feiEncCtrl[fieldId]);
+                tmpForInit-> I_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiEncCtrl[fieldId]));
+                tmpForInit->PB_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiEncCtrl[fieldId]));
             }
 
             if (feiSPS){
-                tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)feiSPS;
-                tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)feiSPS;
+                tmpForInit-> I_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(feiSPS));
+                tmpForInit->PB_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(feiSPS));
             }
             if (feiPPS){
                 for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
-                    tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)(&feiPPS[fieldId]);
-                    tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)(&feiPPS[fieldId]);
+                    tmpForInit-> I_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiPPS[fieldId]));
+                    tmpForInit->PB_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiPPS[fieldId]));
                 }
             }
             if (feiSliceHeader){
                 for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
-                    tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)(&feiSliceHeader[fieldId]);
-                    tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)(&feiSliceHeader[fieldId]);
+                    tmpForInit-> I_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiSliceHeader[fieldId]));
+                    tmpForInit->PB_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiSliceHeader[fieldId]));
                 }
             }
             if (MVPredictors){
                 for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
-                    //tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)feiEncMVPredictors;
-                    tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)(&feiEncMVPredictors[fieldId]);
+                    //tmpForInit-> I_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(feiEncMVPredictors[fieldId]);
+                    tmpForInit->PB_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiEncMVPredictors[fieldId]));
                 }
             }
             if (MBCtrl){
                 for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
-                    tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)(&feiEncMBCtrl[fieldId]);
-                    tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)(&feiEncMBCtrl[fieldId]);
+                    tmpForInit-> I_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiEncMBCtrl[fieldId]));
+                    tmpForInit->PB_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiEncMBCtrl[fieldId]));
                 }
             }
             if (MBQP){
                 for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
-                    tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)(&feiEncMbQp[fieldId]);
-                    tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)(&feiEncMbQp[fieldId]);
-                }
-            }
-            if (MBStatOut){
-                for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
-                    tmpForInit-> I_bufs.out.ExtParam[tmpForInit-> I_bufs.out.NumExtParam++] = (mfxExtBuffer*)(&feiEncMbStat[fieldId]);
-                    tmpForInit->PB_bufs.out.ExtParam[tmpForInit->PB_bufs.out.NumExtParam++] = (mfxExtBuffer*)(&feiEncMbStat[fieldId]);
-                }
-            }
-            if (MVOut){
-                for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
-                    tmpForInit-> I_bufs.out.ExtParam[tmpForInit-> I_bufs.out.NumExtParam++] = (mfxExtBuffer*)(&feiEncMV[fieldId]);
-                    tmpForInit->PB_bufs.out.ExtParam[tmpForInit->PB_bufs.out.NumExtParam++] = (mfxExtBuffer*)(&feiEncMV[fieldId]);
-                }
-            }
-            if (MBCodeOut){
-                for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
-                    tmpForInit-> I_bufs.out.ExtParam[tmpForInit-> I_bufs.out.NumExtParam++] = (mfxExtBuffer*)(&feiEncMBCode[fieldId]);
-                    tmpForInit->PB_bufs.out.ExtParam[tmpForInit->PB_bufs.out.NumExtParam++] = (mfxExtBuffer*)(&feiEncMBCode[fieldId]);
+                    tmpForInit-> I_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiEncMbQp[fieldId]));
+                    tmpForInit->PB_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiEncMbQp[fieldId]));
                 }
             }
             if (RepackCtrl){
                 for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
-                    tmpForInit-> I_bufs.in.ExtParam[tmpForInit-> I_bufs.in.NumExtParam++] = (mfxExtBuffer*)(&feiRepack[fieldId]);
-                    tmpForInit->PB_bufs.in.ExtParam[tmpForInit->PB_bufs.in.NumExtParam++] = (mfxExtBuffer*)(&feiRepack[fieldId]);
+                    tmpForInit-> I_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiRepack[fieldId]));
+                    tmpForInit->PB_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiRepack[fieldId]));
+                }
+            }
+            if (MBStatOut){
+                for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
+                    tmpForInit-> I_bufs.out.Add(reinterpret_cast<mfxExtBuffer*>(&feiEncMbStat[fieldId]));
+                    tmpForInit->PB_bufs.out.Add(reinterpret_cast<mfxExtBuffer*>(&feiEncMbStat[fieldId]));
+                }
+            }
+            if (MVOut){
+                for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
+                    tmpForInit-> I_bufs.out.Add(reinterpret_cast<mfxExtBuffer*>(&feiEncMV[fieldId]));
+                    tmpForInit->PB_bufs.out.Add(reinterpret_cast<mfxExtBuffer*>(&feiEncMV[fieldId]));
+                }
+            }
+            if (MBCodeOut){
+                for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
+                    tmpForInit-> I_bufs.out.Add(reinterpret_cast<mfxExtBuffer*>(&feiEncMBCode[fieldId]));
+                    tmpForInit->PB_bufs.out.Add(reinterpret_cast<mfxExtBuffer*>(&feiEncMBCode[fieldId]));
                 }
             }
 
