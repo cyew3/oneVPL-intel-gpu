@@ -341,7 +341,10 @@
     <ClCompile Include="src\gmock\test_suites\trans_opaque.cpp" />
     <ClCompile Include="src\gmock\test_suites\vc1d_bs_dataflag.cpp" />
     <ClCompile Include="src\gmock\test_suites\vc1d_res_change.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vp9d_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9d_decode_frame_async.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vp9d_init.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vp9d_query.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9d_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9e_cqp.cpp" />
@@ -379,7 +382,6 @@
     <ClCompile Include="src\gmock\test_suites\vpp_rotate.cpp" />
     <ClCompile Include="src\gmock\test_suites\ptir_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8d_init.cpp" />
-    <ClCompile Include="src\gmock\test_suites\vp9d.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8e_encode_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp8e_get_video_param.cpp" />

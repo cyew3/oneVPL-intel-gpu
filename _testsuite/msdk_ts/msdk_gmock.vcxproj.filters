@@ -634,9 +634,6 @@
     <ClCompile Include="src\gmock\test_suites\query_platform.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\vp9d.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\slice_size_reporting.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
@@ -705,6 +702,15 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vp9e_goppattern.cpp">
       <Filter>Source Files\test_suites\vp9e</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp9d_init.cpp">
+      <Filter>Source Files\test_suites\vp9d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp9d_query.cpp">
+      <Filter>Source Files\test_suites\vp9d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp9d_close.cpp">
+      <Filter>Source Files\test_suites\vp9d</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\avce_dynamic_intra_refresh.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
