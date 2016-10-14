@@ -19,6 +19,26 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "refListsManagement_fei.h"
 
+mfxU8 GetNumReorderFrames(mfxU16 GopRefDist, mfxU16 BRefType)
+{
+    mfxU8 numReorderFrames = GopRefDist > 1 ? 1 : 0;
+
+    if (GopRefDist > 2 && BRefType == MFX_B_REF_PYRAMID)
+    {
+        numReorderFrames = mfxU8((std::max)(CeilLog2(GopRefDist - 1), mfxU32(1)));
+    }
+
+    return numReorderFrames;
+}
+
+mfxU8 GetDefaultLog2MaxPicOrdCnt(mfxU16 GopRefDist, mfxU16 BRefType)
+{
+    mfxU32 maxPocDiff = (GetNumReorderFrames(GopRefDist, BRefType) * GopRefDist + 1) * 2;
+
+    mfxU32 log2MaxPoc = CeilLog2(2 * maxPocDiff - 1);
+    return mfxU8((std::max)(log2MaxPoc, mfxU32(4)));
+}
+
 void UpdateDpbFrames(
     iTask&    task,
     mfxU32    field,

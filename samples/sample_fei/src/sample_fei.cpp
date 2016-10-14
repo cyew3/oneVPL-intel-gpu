@@ -767,7 +767,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
 
     if ((pConfig->nWidth || pConfig->nHeight) && pConfig->bDECODE)
     {
-        msdk_printf(MSDK_STRING("\nWARNING: input width, height and picstruct will be taken from input stream (-w -h settings ignored)\n"));
+        msdk_printf(MSDK_STRING("\nWARNING: input width and height will be taken from input stream (-w -h settings ignored)\n"));
     }
 
     if (pConfig->dFrameRate <= 0)

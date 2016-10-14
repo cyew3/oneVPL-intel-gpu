@@ -109,6 +109,18 @@ enum
     MMCO_CURR_TO_LT     = 6,
 };
 
+inline mfxU32 CeilLog2(mfxU32 val)
+{
+    mfxU32 res = 0;
+
+    while (val)
+    {
+        val >>= 1;
+        ++res;
+    }
+
+    return res;
+}
 
 enum SurfStrategy
 {

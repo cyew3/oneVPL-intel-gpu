@@ -21,7 +21,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 CEncodingPipeline::CEncodingPipeline(AppConfig* pAppConfig)
     : m_appCfg(*pAppConfig)
-
     , m_nAsyncDepth(1)
     , m_picStruct(pAppConfig->nPicStruct)
     , m_refDist((std::max)(pAppConfig->refDist, mfxU16(1)))
@@ -1094,7 +1093,7 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
             feiSPS->Direct8x8InferenceFlag      = 1;
             feiSPS->Log2MaxFrameNum             = 8;
             feiSPS->PicOrderCntType             = (m_numOfFields == 2 || m_refDist > 1) ? 0 : 2;
-            feiSPS->Log2MaxPicOrderCntLsb       = 4;
+            feiSPS->Log2MaxPicOrderCntLsb       = GetDefaultLog2MaxPicOrdCnt(m_refDist, m_bRefType);
             feiSPS->DeltaPicOrderAlwaysZeroFlag = 1;
         }
 

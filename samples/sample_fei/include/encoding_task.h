@@ -508,8 +508,8 @@ struct iTask
         m_nalRefIdc[m_fid[0]] = m_reference[m_fid[0]] = !!(m_type[m_fid[0]] & MFX_FRAMETYPE_REF);
         m_nalRefIdc[m_fid[1]] = m_reference[m_fid[1]] = !!(m_type[m_fid[1]] & MFX_FRAMETYPE_REF);
 
-        m_poc[0] = 2 * ((m_frameOrder - m_frameOrderIdr) & 0x7fffffff) + (TFIELD != m_type[m_fid[0]]);
-        m_poc[1] = 2 * ((m_frameOrder - m_frameOrderIdr) & 0x7fffffff) + (BFIELD != m_type[m_fid[0]]);
+        m_poc[0] = 2 * ((m_frameOrder - m_frameOrderIdr) & 0x7fffffff) + (TFIELD != m_fid[0]);
+        m_poc[1] = 2 * ((m_frameOrder - m_frameOrderIdr) & 0x7fffffff) + (BFIELD != m_fid[0]);
 
 
         /* Fill information required for encoding */

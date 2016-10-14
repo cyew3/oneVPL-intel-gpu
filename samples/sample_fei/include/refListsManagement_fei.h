@@ -27,4 +27,7 @@ void InitRefPicList(iTask& task, mfxU32 field);
 void ModifyRefPicLists(mfxU16 GopOptFlag, iTask& task, mfxU32 field);
 void MarkDecodedRefPictures(mfxU16 NumRefFrame, iTask & task, mfxU32 field);
 
+mfxU8 GetNumReorderFrames(mfxU16 GopRefDist, mfxU16 BRefType);
+mfxU8 GetDefaultLog2MaxPicOrdCnt(mfxU16 GopRefDist, mfxU16 BRefType);
+
 #endif // __REF_LISTS_MANAGEMENT_FEI_H__
