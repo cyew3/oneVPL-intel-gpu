@@ -957,7 +957,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         }
     }
     mfxExtCodingOption3 & extOpt3 = GetExtBufferRef(m_video);
-    bool bPanicModeSupport = ((extOpt3.WinBRCSize > 0) || (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD));
+    bool bPanicModeSupport = ((extOpt3.WinBRCSize > 0 && (m_video.mfx.RateControlMethod != MFX_RATECONTROL_VBR && m_video.mfx.RateControlMethod != MFX_RATECONTROL_QVBR)) || (m_video.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD));
     if (m_raw.NumFrameActual == 0 && bPanicModeSupport )
     {
         request.Type        = MFX_MEMTYPE_D3D_INT;
@@ -1051,7 +1051,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         request.Info.Height = IPP_MAX(request.Info.Height, m_video.mfx.FrameInfo.Height * 3);
     else
         request.Info.Height = IPP_MAX(request.Info.Height, m_video.mfx.FrameInfo.Height * 3 / 2);
-    
+
     // workaround for high bitrates on small resolutions,
     // as driver do not respect coded buffer size we have to provide buffer large enough
     if(MFX_RATECONTROL_CQP != m_video.mfx.RateControlMethod)
@@ -1223,7 +1223,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     // initialization of parameters for Intra refresh
     if (extOpt2->IntRefType)
-    {        
+    {
         mfxU16 refreshDimension = extOpt2->IntRefType == HORIZ_REFRESH ? m_video.mfx.FrameInfo.Height >> 4 : m_video.mfx.FrameInfo.Width >> 4;
         m_intraStripeWidthInMBs = (refreshDimension + extOpt2->IntRefCycleSize - 1) / extOpt2->IntRefCycleSize;
         m_baseLayerOrderStartIntraRefresh = 0;
@@ -1337,7 +1337,7 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
     mfxExtCodingOption2 const * extOpt2Old = GetExtBuffer(m_video);
     mfxExtCodingOption3 const * extOpt3New = GetExtBuffer(newPar);
 
-    if(!IsOn(m_video.mfx.LowPower)) 
+    if(!IsOn(m_video.mfx.LowPower))
     {
         MFX_CHECK((extOpt2New->MaxSliceSize != 0) ==
                   (extOpt2Old->MaxSliceSize != 0),
@@ -2559,7 +2559,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "Avc::WAIT_LA");
         if (bIntRateControlLA(m_video.mfx.RateControlMethod))
             sts = QueryLookahead(m_lookaheadStarted.front());
-        
+
         if(sts != MFX_ERR_NONE)
             return sts;
 
@@ -2589,7 +2589,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         mfxStatus sts = MFX_ERR_NONE;
         if (IsOn(extOpt3.FadeDetection) && m_cmCtx.get() && m_cmCtx->isHistogramSupported())
             sts = m_cmCtx->QueryHistogram(task.m_event);
-        
+
         if(sts != MFX_ERR_NONE)
             return sts;
         CalcPredWeightTable(task, m_caps.MaxNum_WeightedPredL0, m_caps.MaxNum_WeightedPredL1);

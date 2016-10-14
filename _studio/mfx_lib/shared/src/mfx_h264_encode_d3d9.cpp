@@ -76,6 +76,9 @@ void MfxHwH264Encode::FillSpsBuffer(
     sps.offset_for_non_ref_pic                  = extSps->offsetForNonRefPic;
     sps.offset_for_top_to_bottom_field          = extSps->offsetForTopToBottomField;
 
+    if ((par.mfx.RateControlMethod == MFX_RATECONTROL_VBR || par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR) && extOpt3.WinBRCSize)
+        sps.FrameSizeTolerance = eFrameSizeTolerance_Low;
+
     Copy(sps.offset_for_ref_frame,                extSps->offsetForRefFrame);
 
     sps.frame_crop_left_offset                  = mfxU16(extSps->frameCropLeftOffset);
@@ -468,11 +471,11 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
         {
             slice[i] = slice[0];
             slice[i].slice_id = (mfxU32)i;
-        } 
+        }
     }
 
     for (size_t i = 0; i < slice.size(); ++i, divider.Next())
-    { 
+    {
         slice[i].NumMbsForSlice                     = divider.GetNumMbInSlice();
         slice[i].first_mb_in_slice                  = divider.GetFirstMbInSlice();
 
@@ -500,7 +503,7 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
         slice[i].pic_order_cnt_lsb                  = mfxU16(task.GetPoc(fieldId) % (1 << (sps.log2_max_pic_order_cnt_lsb_minus4 + 4)));
         slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.QpY);
         slice[i].disable_deblocking_filter_idc      = task.m_disableDeblockingIdc[fieldId][i];
-        
+
         FillPWT(hwCaps, pps, *pPWT, slice[i]);
     }
 }
@@ -517,7 +520,7 @@ mfxStatus MfxHwH264Encode::FillVaringPartOfSliceBufferSizeLimited(
     if (!pPWT)
         pPWT = &task.m_pwt[fieldId];
 
-    size_t numSlices = task.m_SliceInfo.size();   
+    size_t numSlices = task.m_SliceInfo.size();
     if (numSlices != slice.size())
     {
         size_t old_size = slice.size();
@@ -526,12 +529,12 @@ mfxStatus MfxHwH264Encode::FillVaringPartOfSliceBufferSizeLimited(
         {
             slice[i] = slice[0];
             slice[i].slice_id = (mfxU32)i;
-        } 
+        }
     }
-    
+
     for (size_t i = 0; i < slice.size(); ++i)
-    { 
-        slice[i].first_mb_in_slice  = task.m_SliceInfo[i].startMB;        
+    {
+        slice[i].first_mb_in_slice  = task.m_SliceInfo[i].startMB;
         slice[i].NumMbsForSlice  = task.m_SliceInfo[i].numMB;
 
         mfxU32 ref = 0;
@@ -911,8 +914,8 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
         slice[i].num_ref_idx_l1_active_minus1       = mfxU8(max(1, task.m_list1[fieldId].Size()) - 1);
 
         slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.QpY);
-         
-        
+
+
 
         slice[i].no_inter_layer_pred_flag           = (qid == 0) ? (did==0 ? 1 : simulcast ): 0;
         slice[i].scan_idx_start                     = extSvc.DependencyLayer[did].QualityLayer[qid].ScanIdxStart;
@@ -938,7 +941,7 @@ mfxU32 MfxHwH264Encode::AddEmulationPreventionAndCopy(
         bsDataStart += len;
         sbegin      += len;
     }
-                
+
     mfxU8 * bsDataEnd = AddEmulationPreventionAndCopy(sbegin, send, bsDataStart, bsEnd);
 
     len += mfxU32(bsDataEnd - bsDataStart);
@@ -1464,18 +1467,18 @@ mfxStatus D3D9Encoder::Execute(
         bufCnt++;
     }
 
-    
+
     m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_PPSDATA;
     m_compBufDesc[bufCnt].DataSize = mfxU32(sizeof(m_pps));
     m_compBufDesc[bufCnt].pCompBuffer = &m_pps;
     bufCnt++;
 
-   
+
     m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_SLICEDATA;
     m_compBufDesc[bufCnt].DataSize = mfxU32(sizeof(m_slice[0]) * m_slice.size());
     m_compBufDesc[bufCnt].pCompBuffer = &m_slice[0];
     bufCnt++;
-    
+
     mfxU32 bitstream = task.m_idxBs[fieldId];
     m_compBufDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_BITSTREAMDATA;
     m_compBufDesc[bufCnt].DataSize = mfxU32(sizeof(bitstream));
@@ -1613,7 +1616,7 @@ mfxStatus D3D9Encoder::Execute(
                     }
                 }
             }
-        } 
+        }
         else
         {
             std::vector<ENCODE_PACKEDHEADER_DATA> const & packedSlices = m_headerPacker.PackSlices(task, fieldId);
@@ -1649,7 +1652,7 @@ mfxStatus D3D9Encoder::Execute(
                 hr = m_auxDevice->Execute(ENCODE_ENC_PAK_ID, encodeExecuteParams, (void *)0);
             }
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-    
+
             HANDLE handle;
             m_auxDevice->EndFrame(&handle);
         }
@@ -1657,8 +1660,8 @@ mfxStatus D3D9Encoder::Execute(
         {
             return MFX_ERR_DEVICE_FAILED;
         }
-    } 
-    else 
+    }
+    else
     {
         ENCODE_QUERY_STATUS_PARAMS feedback = {task.m_statusReportNumber[fieldId], 0,};
 
@@ -2952,7 +2955,7 @@ mfxStatus D3D9SvcEncoder::Execute(
             compBufferDesc[bufCnt].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
             compBufferDesc[bufCnt].pCompBuffer          = RemoveConst(&m_headerPacker.PackAud(task, fieldId));
             bufCnt++;
-        }   
+        }
         if (task.m_insertSps[fieldId])
         {
             compBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA);
@@ -2999,7 +3002,7 @@ mfxStatus D3D9SvcEncoder::Execute(
         packedSlice.DataLength             -= packedPrefix.DataLength*8;
         packedSlice.BufferSize             -= packedPrefix.BufferSize;
         packedSlice.SkipEmulationByteCount  = 3;
-        
+
         compBufferDesc[bufCnt].CompressedBufferType = D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA;
         compBufferDesc[bufCnt].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
         compBufferDesc[bufCnt].pCompBuffer          = &packedPrefix;
@@ -3017,7 +3020,7 @@ mfxStatus D3D9SvcEncoder::Execute(
         compBufferDesc[bufCnt].DataSize             = mfxU32(sizeof(ENCODE_PACKEDHEADER_DATA));
         compBufferDesc[bufCnt].pCompBuffer          = RemoveConst(&packedSlices[i]);
         bufCnt++;
-    
+
     }
     //printf("slice header attached\n");
 

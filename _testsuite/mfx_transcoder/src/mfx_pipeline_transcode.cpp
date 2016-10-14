@@ -1763,7 +1763,7 @@ mfxStatus MFXTranscodingPipeline::ApplyBitrateParams()
         pMFXParams->mfx.Accuracy = m_Accuracy;
         pMFXParams->mfx.Convergence = m_Convergence;
     }
-    if ((m_WinBRCMaxAvgBps || m_WinBRCSize) && (pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_LA || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD))
+    if ((m_WinBRCMaxAvgBps || m_WinBRCSize) && (pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_LA || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_VBR || pMFXParams->mfx.RateControlMethod == MFX_RATECONTROL_QVBR))
     {
         m_extCodingOptions3->WinBRCSize  = m_WinBRCSize;
         m_extCodingOptions3->WinBRCMaxAvgKbps = (mfxU16)IPP_MIN(65535, m_WinBRCMaxAvgBps/1000);    
