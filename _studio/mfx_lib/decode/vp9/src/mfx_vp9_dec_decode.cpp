@@ -1142,19 +1142,23 @@ mfxStatus MFX_VP9_Utility::Query(VideoCORE *core, mfxVideoParam *p_in, mfxVideoP
                 p_out->IOPattern = p_in->IOPattern;
         }
 
-        if (p_in->mfx.FrameInfo.FourCC)
+        switch(p_in->mfx.FrameInfo.FourCC)
         {
-            // mfxFrameInfo
-            if (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 ||
-                p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+            case MFX_FOURCC_NV12:
+            case MFX_FOURCC_AYUV:
+            case MFX_FOURCC_P010:
+            case MFX_FOURCC_Y410:
                 p_out->mfx.FrameInfo.FourCC = p_in->mfx.FrameInfo.FourCC;
-            else
+                break;
+            default:
                 sts = MFX_ERR_UNSUPPORTED;
+                break;
         }
 
         switch(p_in->mfx.FrameInfo.ChromaFormat)
         {
             case MFX_CHROMAFORMAT_YUV420:
+            case MFX_CHROMAFORMAT_YUV444:
                 p_out->mfx.FrameInfo.ChromaFormat = p_in->mfx.FrameInfo.ChromaFormat;
                 break;
             default:
@@ -1162,6 +1166,41 @@ mfxStatus MFX_VP9_Utility::Query(VideoCORE *core, mfxVideoParam *p_in, mfxVideoP
                     sts = MFX_ERR_UNSUPPORTED;
 
                 break;
+        }
+
+        if (p_in->mfx.FrameInfo.FourCC && p_in->mfx.FrameInfo.ChromaFormat)
+        {
+            if((p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420) ||
+               (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444) ||
+               (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420) ||
+             //(p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422) ||
+               (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444))
+            {
+                p_out->mfx.FrameInfo.FourCC = 0;
+                p_out->mfx.FrameInfo.ChromaFormat = 0;
+                p_out->mfx.FrameInfo.BitDepthLuma = 0;
+                p_out->mfx.FrameInfo.BitDepthChroma = 0;
+                sts = MFX_ERR_UNSUPPORTED;
+            }
+        }
+
+        if((p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 || p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV) &&
+           ((p_in->mfx.FrameInfo.BitDepthLuma != 0 && p_in->mfx.FrameInfo.BitDepthLuma != 8) ||
+            (p_in->mfx.FrameInfo.BitDepthChroma != 0 && p_in->mfx.FrameInfo.BitDepthChroma != 8) ||
+            p_in->mfx.FrameInfo.Shift))
+        {
+            p_out->mfx.FrameInfo.BitDepthLuma = 0;
+            p_out->mfx.FrameInfo.BitDepthChroma = 0;
+            p_out->mfx.FrameInfo.Shift = 0;
+            sts = MFX_ERR_UNSUPPORTED;
+        }
+        if((p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410) &&
+           (p_in->mfx.FrameInfo.BitDepthLuma != 10 || p_in->mfx.FrameInfo.BitDepthChroma != 10))
+        {
+            p_out->mfx.FrameInfo.BitDepthLuma = 0;
+            p_out->mfx.FrameInfo.BitDepthChroma = 0;
+            p_out->mfx.FrameInfo.Shift = 0;
+            sts = MFX_ERR_UNSUPPORTED;
         }
 
         if (!p_in->mfx.FrameInfo.ChromaFormat && !(!p_in->mfx.FrameInfo.FourCC && !p_in->mfx.FrameInfo.ChromaFormat))
@@ -1189,11 +1228,26 @@ mfxStatus MFX_VP9_Utility::Query(VideoCORE *core, mfxVideoParam *p_in, mfxVideoP
         if (p_out->mfx.FrameInfo.CropY + p_in->mfx.FrameInfo.CropH <= p_out->mfx.FrameInfo.Height)
             p_out->mfx.FrameInfo.CropH = p_in->mfx.FrameInfo.CropH;
 
-        p_out->mfx.FrameInfo.FrameRateExtN = p_in->mfx.FrameInfo.FrameRateExtN;
-        p_out->mfx.FrameInfo.FrameRateExtD = p_in->mfx.FrameInfo.FrameRateExtD;
+        if (p_in->mfx.FrameInfo.FrameRateExtN != 0 && p_in->mfx.FrameInfo.FrameRateExtD == 0)
+        {
+            sts = MFX_ERR_UNSUPPORTED;
+        }
+        else
+        {
+            p_out->mfx.FrameInfo.FrameRateExtN = p_in->mfx.FrameInfo.FrameRateExtN;
+            p_out->mfx.FrameInfo.FrameRateExtD = p_in->mfx.FrameInfo.FrameRateExtD;
+        }
 
-        p_out->mfx.FrameInfo.AspectRatioW = p_in->mfx.FrameInfo.AspectRatioW;
-        p_out->mfx.FrameInfo.AspectRatioH = p_in->mfx.FrameInfo.AspectRatioH;
+        if (( p_in->mfx.FrameInfo.AspectRatioW ||  p_in->mfx.FrameInfo.AspectRatioH) &&
+            (!p_in->mfx.FrameInfo.AspectRatioW || !p_in->mfx.FrameInfo.AspectRatioH))
+        {
+            sts = MFX_ERR_UNSUPPORTED;
+        }
+        else
+        {
+            p_out->mfx.FrameInfo.AspectRatioW = p_in->mfx.FrameInfo.AspectRatioW;
+            p_out->mfx.FrameInfo.AspectRatioH = p_in->mfx.FrameInfo.AspectRatioH;
+        }
 
         mfxStatus stsExt = CheckDecodersExtendedBuffers(p_in);
         if (stsExt < MFX_ERR_NONE)
@@ -1313,6 +1367,16 @@ bool MFX_VP9_Utility::CheckVideoParam(mfxVideoParam *p_in, eMFXPlatform platform
         break;
 
     default:
+        return false;
+    }
+
+    if (p_in->mfx.FrameInfo.ChromaFormat)
+    {
+        if((p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420) ||
+           (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444) ||
+           (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420) ||
+         //(p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422) ||
+           (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444))
         return false;
     }
 

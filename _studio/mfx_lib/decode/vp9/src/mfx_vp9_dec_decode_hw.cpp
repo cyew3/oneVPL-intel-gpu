@@ -105,6 +105,9 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
 
+    if (m_isInit)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
     mfxStatus sts   = MFX_ERR_NONE;
     UMC::Status umcSts   = UMC::UMC_OK;
     eMFXHWType type = m_core->GetHWType();
