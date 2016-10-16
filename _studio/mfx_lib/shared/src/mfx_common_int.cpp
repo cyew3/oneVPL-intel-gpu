@@ -100,6 +100,13 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
     if (info->ChromaFormat > MFX_CHROMAFORMAT_YUV444)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
+    if (info->FrameRateExtN != 0 && info->FrameRateExtD == 0)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if ((info->AspectRatioW || info->AspectRatioH) &&
+        (!info->AspectRatioW || !info->AspectRatioH))
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
     return MFX_ERR_NONE;
 }
 
