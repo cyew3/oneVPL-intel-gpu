@@ -351,7 +351,7 @@ public:
         mPicType = MFX_FRAMETYPE_I;
         mPoc = 0;
         mNumLayers = 1;
-
+        mRCMode = 0;
         Zero(mHRD);
         Zero(mParams);
     }
