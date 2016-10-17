@@ -26,12 +26,14 @@ Copyright(c) 2009-2016 Intel Corporation. All Rights Reserved.
 #include <stdio.h>
 #endif // defined(MFX_SCHEDULER_LOG)
 
-mfxSchedulerCore::mfxSchedulerCore(void) :
+mfxSchedulerCore::mfxSchedulerCore(void)
+    :  m_currentTimeStamp(0)
 #if defined(_MSC_VER)
-    m_timeWaitPeriod(1000000)
+    , m_timeWaitPeriod(1000000)
 #else // !defined(_MSC_VER)
-    m_timeWaitPeriod(vm_time_get_frequency() / 1000)
+    , m_timeWaitPeriod(vm_time_get_frequency() / 1000)
 #endif // defined(_MSC_VER)
+    , m_hwWakeUpThread()
 {
     memset(&m_param, 0, sizeof(m_param));
     m_refCounter = 1;
