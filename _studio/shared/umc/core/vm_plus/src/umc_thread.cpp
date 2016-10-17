@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//       Copyright(c) 2003-2012 Intel Corporation. All Rights Reserved.
+//       Copyright(c) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -45,8 +45,6 @@ Status Thread::SetPriority(vm_thread_priority priority)
 #if defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE)
 Status Thread::SetExceptionReaction(vm_thread_callback /*func*/)
 {
-    // NOBODY, I SAY, NOBODY HAS PERMISSIONS TO
-    // ADD ANYTHING HERE. FIRST OF ALL ASK ME!!! vcherepa
     return UMC_OK;
 }
 #endif

@@ -180,13 +180,6 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
                 {
                     return MFX_ERR_UNKNOWN;
                 }
-
-                // 02.2012 vcherepa: DON'T use high priority for internal thread #0.
-                // It is useless when CPU affinity mask is not set.
-                    //if ((0 == i) && (1 < m_param.numberOfThreads))
-                    //{
-                    //    vm_thread_set_priority(&(m_pThreadCtx[i].threadHandle), VM_THREAD_PRIORITY_HIGH);
-                    //}
             }
 
         }
@@ -231,12 +224,6 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
                 if (!SetScheduling(m_pThreadCtx[i].threadHandle)) {
                     return MFX_ERR_UNKNOWN;
                 }
-                // 02.2012 vcherepa: DON'T use high priority for internal thread #0.
-                // It is useless when CPU affinity mask is not set.
-                //if ((0 == i) && (1 < m_param.numberOfThreads))
-                //{
-                //    vm_thread_set_priority(&(m_pThreadCtx[i].threadHandle), VM_THREAD_PRIORITY_HIGH);
-                //}
             }
         }
         catch (...)
@@ -246,14 +233,6 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
 
 #endif // MFX_EXTERNAL_THREADING
 
-        // 02.2012 vcherepa: DON'T set CPU affinity for particular internal
-        // threads. it leads to unpredictable stops and hangings up to 60ms.
-        // set CPU mask for every thread
-        // need to care about internal threading another way
-        //#if !defined(MFX_VA)
-        //        SetThreadsAffinityMask();
-        //#endif // !defined(MFX_VA)
-        //
         SetThreadsAffinityToSockets();
     }
     else
