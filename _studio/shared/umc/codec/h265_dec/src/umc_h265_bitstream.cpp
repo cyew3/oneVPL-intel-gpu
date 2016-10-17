@@ -36,6 +36,10 @@ H265Bitstream::H265Bitstream(Ipp8u * const pb, const Ipp32u maxsize)
 
 H265Bitstream::H265Bitstream()
     : H265HeadersBitstream()
+    , m_lcodIRange(0)
+    , m_lcodIOffset(0)
+    , m_bitsNeeded(0)
+    , m_LastByte(0)
 {
 #if INSTRUMENTED_CABAC
     if (!cabac_bits)
