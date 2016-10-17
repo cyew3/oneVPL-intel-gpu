@@ -86,15 +86,18 @@ T* GetExtendedBuffer(const mfxU32& BufferId, const mfxFrameSurface1* surf)
 }
 
 CmDirtyRectFilter::CmDirtyRectFilter(const mfxCoreInterface* _core)
-    :m_pmfxCore(_core)
+    : m_pmfxCore(_core)
+    , m_mfxDeviceType(MFX_HANDLE_D3D11_DEVICE)
+    , m_mfxDeviceHdl(NULL)
+    , m_pCMDevice(NULL)
+    , m_pQueue(NULL)
+    , m_width(0)
+    , m_height(0)
+    , m_bSysMem(false)
+    , m_bOpaqMem(false)
+    , m_mode(TMP_MFXSC_DIRTY_RECT_DEFAULT)
 {
     Mode = CM_DR;
-
-    m_pCMDevice   = 0;
-    m_pQueue      = 0;
-
-    m_width = 0;
-    m_height = 0;
 }
 
 CmDirtyRectFilter::~CmDirtyRectFilter()
