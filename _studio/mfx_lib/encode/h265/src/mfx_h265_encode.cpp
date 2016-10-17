@@ -811,6 +811,7 @@ H265Encoder::H265Encoder(MFXCoreInterface1 &core)
     vm_mutex_set_invalid(&m_feiCritSect);
     Zero(m_stat);
     Zero(m_profile_level);
+    Zero(m_vps);
     Zero(m_sps);
     Zero(m_pps);
     Zero(m_videoParam);
@@ -827,6 +828,7 @@ H265Encoder::H265Encoder(MFXCoreInterface1 &core)
     data_temp = NULL;
     m_bsf = NULL;
 
+    m_frameOrderOfLastIntraInEncOrder = 0;
     m_frameOrderOfLastAnchor = 0;
     m_frameOrderOfLastAnchorB = 0;
     m_frameOrderOfLastIdr = 0;
@@ -841,6 +843,7 @@ H265Encoder::H265Encoder(MFXCoreInterface1 &core)
     m_frameCountSync = 0;
     m_LastbiFramesInMiniGop = 0;
     m_lastTimeStamp = 0;
+    m_vpsBufSize = 0;
     m_spsBufSize = 0;
     m_ppsBufSize = 0;
     m_useSysOpaq = false;
