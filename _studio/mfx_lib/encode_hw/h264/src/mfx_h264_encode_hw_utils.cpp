@@ -3665,6 +3665,16 @@ mfxU32 LookAheadCrfBrc::Report(mfxU32 /*frameType*/, mfxU32 /*dataLength*/, mfxU
     return 0;
 }
 
+Hrd::Hrd()
+    :m_bitrate(0)
+    , m_rcMethod(0)
+    , m_hrdIn90k(0)
+    , m_tick(0)
+    , m_trn_cur(0)
+    , m_taf_prv(0)
+    , m_bIsHrdRequired(false)
+{
+}
 
 void Hrd::Setup(MfxVideoParam const & par)
 {

@@ -1600,6 +1600,8 @@ namespace MfxHwH264Encode
     class Hrd
     {
     public:
+        Hrd();
+
         void Setup(MfxVideoParam const & par);
 
         void Reset(MfxVideoParam const & par);
