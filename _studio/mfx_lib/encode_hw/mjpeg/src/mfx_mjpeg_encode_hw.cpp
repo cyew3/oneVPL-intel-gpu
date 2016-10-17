@@ -104,6 +104,8 @@ mfxStatus MfxFrameAllocResponse::Alloc(
 }
 
 MFXVideoENCODEMJPEG_HW::MFXVideoENCODEMJPEG_HW(VideoCORE *core, mfxStatus *sts)
+    : m_checkedJpegQT()
+    , m_checkedJpegHT()
 {
     m_pCore        = core;
     m_bInitialized = false;
