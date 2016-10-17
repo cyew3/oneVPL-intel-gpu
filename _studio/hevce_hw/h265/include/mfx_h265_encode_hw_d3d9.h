@@ -78,6 +78,11 @@ inline mfxU32 FeedbackSize(ENCODE_QUERY_STATUS_PARAM_TYPE func, mfxU32 maxSlices
 class FeedbackStorage
 {
 public:
+    FeedbackStorage()
+        :m_size(0)
+    {
+    }
+
     void Reset(size_t cacheSize, mfxU32 feedbackSize)
     {
         m_size = feedbackSize;
