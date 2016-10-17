@@ -116,7 +116,7 @@ void DXDevice::LoadDLLModule(const wchar_t *pModuleName)
     prevErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
 #endif
     // load specified library
-	m_hModule = LoadLibraryExW(pModuleName, NULL, 0);
+    m_hModule = LoadLibraryExW(pModuleName, NULL, 0);
 
     // set the previous error mode
 #if (_WIN32_WINNT >= 0x0600) && !(__GNUC__) && !defined(WIN_TRESHOLD_MOBILE)
@@ -414,6 +414,7 @@ DXVA2Device::DXVA2Device(void)
     m_vendorID = 0;
     m_deviceID = 0;
 
+    m_driverVersion = 0;
 } // DXVA2Device::DXVA2Device(void)
 
 DXVA2Device::~DXVA2Device(void)
@@ -429,6 +430,7 @@ void DXVA2Device::Close(void)
     m_vendorID = 0;
     m_deviceID = 0;
 
+    m_driverVersion = 0;
 } // void DXVA2Device::Close(void)
 
 #ifdef MFX_D3D9_ENABLED
@@ -469,8 +471,8 @@ bool DXVA2Device::InitD3D9(const mfxU32 adapterNum)
 #else // MFX_D3D9_ENABLED
 bool DXVA2Device::InitD3D9(const mfxU32 adapterNum)
 {
-	(void)adapterNum;
-	return false;
+    (void)adapterNum;
+    return false;
 }
 #endif // MFX_D3D9_ENABLED
 
