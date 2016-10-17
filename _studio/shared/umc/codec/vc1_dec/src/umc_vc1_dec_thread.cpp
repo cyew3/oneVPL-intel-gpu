@@ -24,7 +24,7 @@
 namespace UMC
 {
 
-VC1ThreadDecoder::VC1ThreadDecoder()
+VC1ThreadDecoder::VC1ThreadDecoder() : m_hThread()
 {
     m_pMemoryAllocator = NULL;
     m_pStore = NULL;
