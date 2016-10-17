@@ -367,7 +367,9 @@
     <ClCompile Include="src\gmock\test_suites\vpp_deinterlac_inv_telec.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_donotuse.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_hw_wrn_filter_skipped.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vpp_multi_view.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_res_change.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vpp_sw_wrn_filter_skipped.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_video_signal_info.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_deinterlacing.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_douse.cpp" />

@@ -26,4 +26,19 @@
         g_tsLog << "You can do it in the msdk_gmock project properties: Configuration Properties - Debbuging tab - Environment field\n";        \
     }                                                                                                                                           \
 }
-
+#define SKIP_IF_LINUX                                                                                                                           \
+{                                                                                                                                               \
+    if(g_tsOSFamily != MFX_OS_FAMILY_WINDOWS)                                                                                                   \
+    {                                                                                                                                           \
+        g_tsLog << "[ SKIPPED ] This test is not supported for linux platform\n";                                                               \
+        return 0;                                                                                                                               \
+    }                                                                                                                                           \
+}
+#define SKIP_IF_WINDOWS                                                                                                                         \
+{                                                                                                                                               \
+    if(g_tsOSFamily == MFX_OS_FAMILY_WINDOWS)                                                                                                   \
+    {                                                                                                                                           \
+        g_tsLog << "[ SKIPPED ] This test is not supported for windows platform\n";                                                             \
+        return 0;                                                                                                                               \
+    }                                                                                                                                           \
+}
