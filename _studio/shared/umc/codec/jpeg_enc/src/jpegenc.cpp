@@ -25,21 +25,8 @@
 #endif
 
 
-CJPEGEncoder::CJPEGEncoder(void)
+CJPEGEncoder::CJPEGEncoder(void) : m_src()
 {
-  m_src.p.Data8u[0] = 0;
-  m_src.p.Data8u[1] = 0;
-  m_src.p.Data8u[2] = 0;
-  m_src.p.Data8u[3] = 0;
-  m_src.width       = 0;
-  m_src.height      = 0;
-  m_src.lineStep[0] = 0;
-  m_src.lineStep[1] = 0;
-  m_src.lineStep[2] = 0;
-  m_src.lineStep[3] = 0;
-  m_src.precision   = 0;
-  m_src.nChannels   = 0;
-  m_src.color       = JC_UNKNOWN;
   m_src.sampling    = JS_OTHER;
 
   m_jpeg_ncomp            = 0;
@@ -111,6 +98,9 @@ CJPEGEncoder::CJPEGEncoder(void)
 
   m_externalQuantTable = false;
   m_externalHuffmanTable = false;
+  m_state_t = NULL;
+  m_BitStreamOutT = NULL;
+  m_lastDC = NULL;
 
 #ifdef __TIMING__
   m_clk_dct  = 0;
