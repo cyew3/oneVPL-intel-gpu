@@ -436,6 +436,7 @@ H264EncoderParams::H264EncoderParams() : rate_controls(), m_SeqParamSet(), m_Pic
 #endif
     m_is_mvc_profile = false;
     m_is_base_view = false;
+    m_viewOutput = false;
 }
 
 } // end namespace UMC
