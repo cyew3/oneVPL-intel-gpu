@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -22,10 +22,11 @@ DriverEncoder * MfxHwH264Encode::CreateMultipleAvcEncode(VideoCORE *)
 }
 
 MultipleAvcEncoder::MultipleAvcEncoder()
+    : m_core(NULL)
+    , m_reconRegCnt(0)
+    , m_bitsrRegCnt(0)
+    , m_forcedCodingFunction(0)
 {
-    m_reconRegCnt = 0;
-    m_bitsrRegCnt = 0;
-    m_forcedCodingFunction = 0;
 }
 
 MultipleAvcEncoder::~MultipleAvcEncoder()
