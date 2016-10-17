@@ -78,8 +78,11 @@ IDXGIAdapter - a display device (GPU);
 */
 
 SW_D3D11_Capturer::SW_D3D11_Capturer(mfxCoreInterface* _core)
-    :Capturer(SW_D3D11),
-     m_pmfxCore(_core)
+    :Capturer(SW_D3D11)
+    , m_DisplayIndex(0)
+    , m_pmfxCore(_core)
+    , m_core_par()
+    , m_bOwnDevice(false)
 {
     m_DisplayIndex = 0;
 }
