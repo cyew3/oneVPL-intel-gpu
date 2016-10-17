@@ -2085,6 +2085,11 @@ mfxU32 HRD::GetInitCpbRemovalDelay(const Task &pic)
     return (mfxU32)m_initCpbRemovalDelay;
 }
 
+TaskManager::TaskManager()
+    :m_resetHeaders(0)
+{
+}
+
 void TaskManager::Reset(mfxU32 numTask, mfxU16 resetHeaders)
 {
     if (numTask)

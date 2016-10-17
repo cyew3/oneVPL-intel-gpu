@@ -766,7 +766,7 @@ protected:
 class TaskManager
 {
 public:
-
+    TaskManager();
     void  Reset     (mfxU32 numTask = 0, mfxU16 resetHeaders = 0);
     Task* New       ();
     Task* Reorder   (MfxVideoParam const & par, DpbArray const & dpb, bool flush);
