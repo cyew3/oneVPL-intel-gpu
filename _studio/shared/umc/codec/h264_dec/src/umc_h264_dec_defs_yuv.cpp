@@ -17,16 +17,18 @@ namespace UMC
 {
 
 H264DecYUVBufferPadded::H264DecYUVBufferPadded()
-    : m_pYPlane(0)
+    : m_bpp(0)
+    , m_chroma_format(0)
+    , m_pYPlane(0)
     , m_pUVPlane(0)
     , m_pUPlane(0)
     , m_pVPlane(0)
+    , m_lumaSize()
+    , m_chromaSize()
     , m_pitch_luma(0)
     , m_pitch_chroma(0)
     , m_color_format(NV12)
 {
-    m_lumaSize.width = 0;
-    m_lumaSize.height = 0;
 }
 
 H264DecYUVBufferPadded::~H264DecYUVBufferPadded()
