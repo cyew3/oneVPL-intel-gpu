@@ -24,6 +24,7 @@ struct MFX_SCHEDULER_THREAD_CONTEXT
     MFX_SCHEDULER_THREAD_CONTEXT()
       : pSchedulerCore(NULL)
       , threadNum(0)
+      , threadHandle()
       , workTime(0)
       , sleepTime(0)
     {
