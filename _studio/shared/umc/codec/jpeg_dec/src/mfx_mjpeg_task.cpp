@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2004-2013 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2004-2016 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -23,7 +23,10 @@ CJpegTaskBuffer::CJpegTaskBuffer(void)
     dataSize = 0;
     numPieces = 0;
     pBuf = NULL;
-
+    imageHeaderSize = 0;
+    fieldPos = 0;
+    numScans = 0;
+    timeStamp = 0;
 } // CJpegTaskBuffer::CJpegTaskBuffer(void)
 
 CJpegTaskBuffer::~CJpegTaskBuffer(void)
@@ -76,7 +79,9 @@ CJpegTask::CJpegTask(void)
 {
     m_numPic = 0;
     m_numPieces = 0;
-
+    surface_work = NULL;
+    surface_out = NULL;
+    dst = NULL;
 } // CJpegTask::CJpegTask(void)
 
 CJpegTask::~CJpegTask(void)
