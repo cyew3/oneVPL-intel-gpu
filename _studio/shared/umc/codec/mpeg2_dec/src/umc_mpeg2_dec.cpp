@@ -614,7 +614,29 @@ Status MPEG2VideoDecoderBase::Close()
 
 
 MPEG2VideoDecoderBase::MPEG2VideoDecoderBase()
-    : m_InitClipInfo()
+    : m_pMemoryAllocator(NULL)
+    , m_dTimeCalc(0)
+    , m_picture_coding_type_save(MPEG2_I_PICTURE)
+    , bNeedNewFrame(false)
+    , m_SkipLevel(SKIP_NONE)
+    , sequenceHeader()
+    , sHSaved()
+    , shMask()
+    , m_signalInfo()
+    , b_curr_number_backup(0)
+    , first_i_occure_backup(0)
+    , frame_count_backup(0)
+    , m_lFlags(0)
+    , m_nNumberOfThreads(1)
+    , m_nNumberOfAllocatedThreads(1)
+    , m_IsFrameSkipped(false)
+    , m_IsSHDecoded(false)
+    , m_FirstHeaderAfterSequenceHeaderParsed(false)
+    , m_IsDataFirst(true)
+    , m_IsLastFrameProcessed(false)
+    , m_isFrameRateFromInit(false)
+    , m_isAspectRatioFromInit(false)
+    , m_InitClipInfo()
 {
     for (int i = 0; i < 2*DPB_SIZE; i++)
     {
@@ -622,37 +644,20 @@ MPEG2VideoDecoderBase::MPEG2VideoDecoderBase()
         memset(&PictureHeader[i], 0, sizeof(sPictureHeader));
     }
 
-    m_lFlags                   = 0;
-    m_ClipInfo.framerate       = 0;
+    memset(task_locked, 0, sizeof(task_locked));
+    memset(m_nNumberOfThreadsTask, 0, sizeof(m_nNumberOfThreadsTask));
+
     m_ClipInfo.clip_info.width = m_ClipInfo.clip_info.height= 100;
-
-    memset(&sequenceHeader, 0, sizeof(sequenceHeader));
-
     m_ClipInfo.stream_type = UNDEF_VIDEO;
     sequenceHeader.profile = MPEG2_PROFILE_MAIN;
     sequenceHeader.level = MPEG2_LEVEL_MAIN;
-    frame_buffer.allocated_mb_width = 0;
-    frame_buffer.allocated_mb_height = 0;
+
     frame_buffer.allocated_cformat = NONE;
     frame_buffer.mid_context_data = MID_INVALID;
-    frame_buffer.ptr_context_data = NULL; // internal buffer not allocated
 
-    m_nNumberOfThreads  = 1;
-    m_nNumberOfAllocatedThreads  = 1;
 
     m_user_data.clear();
     m_user_ts_data.clear();
-
-    m_IsDataFirst       = true;
-
-    m_IsLastFrameProcessed = false;
-    m_isFrameRateFromInit = false;
-    m_isAspectRatioFromInit = false;
-
-    shMask.memMask = NULL;
-    shMask.memSize = 0;
-
-    bNeedNewFrame = false;
 }
 
 MPEG2VideoDecoderBase::~MPEG2VideoDecoderBase()
