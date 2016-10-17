@@ -794,13 +794,23 @@ class D3D9CameraProcessor: public CameraProcessor
 {
 public:
     D3D9CameraProcessor()
+        : m_systemMemOut(false)
+        , m_systemMemIn(false)
+        , m_paddedInput(false)
+        , m_CameraParams()
+        , m_AsyncDepth(0)
+        , m_executeParams(NULL)
+        , m_executeSurf(NULL)
+        , m_counter(0)
+        , m_width(0)
+        , m_height(0)
+        , m_inFormat(D3DFMT_UNKNOWN)
+        , m_outFormat(D3DFMT_UNKNOWN)
+
+        , m_pD3Dmanager(NULL)
     {
         m_ddi.reset(0);
         m_pCmCopy.reset(0);
-        m_executeParams = 0;
-        m_executeSurf   = 0;
-        m_counter       = 0;
-        m_paddedInput   = false;
     };
 
     ~D3D9CameraProcessor() {
