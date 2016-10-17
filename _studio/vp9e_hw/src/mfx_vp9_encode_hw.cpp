@@ -22,12 +22,15 @@ namespace MfxHwVP9Encode
 {
 
 Plugin::Plugin(bool CreateByDispatcher)
-    :m_createdByDispatcher(CreateByDispatcher)
-    ,m_adapter(this)
+    : m_pTaskManager(NULL)
+    , m_bStartIVFSequence(false)
+    , m_maxBsSize(0)
+    , m_pmfxCore(NULL)
+    , m_PluginParam()
+    , m_createdByDispatcher(CreateByDispatcher)
+    , m_adapter(this)
+    , m_initialized(false)
 {
-    m_pmfxCore = 0;
-    memset(&m_PluginParam, 0, sizeof(mfxPluginParam));
-
     m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_PARALLEL;
     m_PluginParam.MaxThreadNum = 1;
     m_PluginParam.APIVersion.Major = MFX_VERSION_MAJOR;

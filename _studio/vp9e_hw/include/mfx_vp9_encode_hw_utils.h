@@ -779,11 +779,15 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
     public:
         typedef TaskManager<Task>  BaseClass;
 
-        TaskManagerVmePlusPak(): BaseClass()
-        {
+        TaskManagerVmePlusPak()
+            : BaseClass()
 #if 0 // segmentation support is disabled
-            m_bUseSegMap = false;
+            , m_bUseSegMap(false)
 #endif // segmentation support is disabled
+            , m_frameNumOfLastArrivedFrame(0)
+            , m_frameNumOfLastFrameSubmittedToDriver(0)
+            , m_frameNumOfLastEncodedFrame(0)
+        {
         }
         virtual ~TaskManagerVmePlusPak() {/*printf("~TaskManagerVmePlusPak)\n");*/}
 
