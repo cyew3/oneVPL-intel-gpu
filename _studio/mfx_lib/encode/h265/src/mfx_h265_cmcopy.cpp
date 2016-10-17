@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008 - 2015 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008 - 2016 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -387,7 +387,18 @@ const unsigned char genx_hevce_copy_video_to_system_bdw[1454] = {
 #else // MFX_VA
 #include "mfx_h265_cmcopy.h"
 using namespace H265Enc;
-CmCopy::CmCopy() {}
+CmCopy::CmCopy()
+    : m_device(NULL)
+    , m_program(NULL)
+    , m_kernel(NULL)
+    , m_queue(NULL)
+    , m_task(NULL)
+    , m_threadSpace(NULL)
+    , m_width(0)
+    , m_height(0)
+    , m_paddingLuW(0)
+    , m_paddingChW(0)
+{}
 mfxStatus CmCopy::Init(mfxHDL handle, mfxHandleType handleType) {return MFX_ERR_NONE;}
 void CmCopy::Close() {}
 mfxStatus CmCopy::SetParam(Ipp32s width, Ipp32s height, Ipp32s fourcc, Ipp32s pitchLuma, Ipp32s pitchChroma, Ipp32s paddingLuW, Ipp32s paddingChW) {return MFX_ERR_NONE;}
