@@ -4707,14 +4707,19 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 float value;
                 MFX_PARSE_DOUBLE(value, argv[1]);
 
+                unsigned short max_input_level = 1<<m_inParams.nInputBitdepth;
+                mfxU32 gp_max = pow(2.0, (double) m_inParams.nInputBitdepth) - 1;
                 for (int i = 0; i < 64; i++)
                 {
-                    unsigned short max_input_level = 1<<m_inParams.nInputBitdepth;
-                    gamma_point[i] = (i*2)*(i*2);
+                    if (i == 0) {
+                        gamma_point[i] = 0;
+                    } else {
+                        gamma_point[i] = gp_max - gp_max/i;
+                    }
                     gamma_correct[i] = (int)(pow((double)gamma_point[i] / (double)max_input_level, (double)1/value) * (double)max_input_level);
                     if ( i==63 ) {
-                        gamma_point[i] = 16384-1;
-                        gamma_correct[i] = 16384-1;
+                        gamma_point[i] = gp_max;
+                        gamma_correct[i] = gp_max;
                     }
                 }
                 m_extExtCamGammaCorrection->Mode       = MFX_CAM_GAMMA_LUT;
