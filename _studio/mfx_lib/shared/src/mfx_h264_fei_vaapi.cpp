@@ -1979,9 +1979,12 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
                                 i, ref_counter_l0, m_slice[i].RefPicList0[ref_counter_l0].flags & 0x0f);
                     }
 #endif
+                    mfxU32 idx;
+                    for (idx = 0; idx < m_reconQueue.size() && m_reconQueue[idx].surface != s; ++idx) {}
 
                     m_slice[i].RefPicList0[ref_counter_l0].picture_id = s;
-                    m_slice[i].RefPicList0[ref_counter_l0].flags = pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].PictureType;
+                    m_slice[i].RefPicList0[ref_counter_l0].flags      = pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].PictureType;
+                    m_slice[i].RefPicList0[ref_counter_l0].frame_idx  = idx;
                 }
             } /*for (ref_counter_l0 = 0; ref_counter_l0 < in->NumFrameL0; ref_counter_l0++)*/
             for ( ; ref_counter_l0 < 32; ref_counter_l0++)
@@ -2010,23 +2013,24 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 #if defined(_DEBUG)
                     if (m_slice[i].RefPicList1[ref_counter_l1].picture_id != s)
                     {
-                        //m_slice[i].RefPicList1[ref_counter_l1].picture_id = s;
                         mdprintf(stderr, "!!!Warning picture_id from pDataSliceHeader->Slice[%u].RefL1[%u] = %u\n", i, ref_counter_l1, s);
                         mdprintf(stderr, "   But library's is m_slice[%u].RefPicList0[%u].picture_id = %u\n",
                                 i, ref_counter_l1, m_slice[i].RefPicList1[ref_counter_l1].picture_id);
                     }
                     if (m_slice[i].RefPicList1[ref_counter_l1].flags != pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType)
                     {
-                        //m_slice[i].RefPicList1[ref_counter_l1].flags = pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType;
                         mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].RefL1[%u].PictureType = %u\n",
                                 i, ref_counter_l0, pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType);
                         mdprintf(stderr, "   But library's is m_slice[%u].RefPicList1[%u].flag = %u\n",
                                 i, ref_counter_l1, m_slice[i].RefPicList1[ref_counter_l1].flags);
                     }
 #endif
+                    mfxU32 idx;
+                    for (idx = 0; idx < m_reconQueue.size() && m_reconQueue[idx].surface != s; ++idx) {}
 
                     m_slice[i].RefPicList1[ref_counter_l1].picture_id = s;
-                    m_slice[i].RefPicList1[ref_counter_l1].flags = pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType;
+                    m_slice[i].RefPicList1[ref_counter_l1].flags      = pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType;
+                    m_slice[i].RefPicList1[ref_counter_l1].frame_idx  = idx;
                 }
             } /* for (ref_counter_l1 = 0; ref_counter_l1 < in->NumFrameL1; ref_counter_l1++) */
             for ( ; ref_counter_l1 < 32; ref_counter_l1++)
@@ -3433,8 +3437,12 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
                                 i, ref_counter_l0, m_slice[i].RefPicList0[ref_counter_l0].flags & 0x0f);
                     }
 #endif
+                    mfxU32 idx;
+                    for (idx = 0; idx < m_reconQueue.size() && m_reconQueue[idx].surface != s; ++idx) {}
+
                     m_slice[i].RefPicList0[ref_counter_l0].picture_id = s;
-                    m_slice[i].RefPicList0[ref_counter_l0].flags = pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].PictureType;
+                    m_slice[i].RefPicList0[ref_counter_l0].flags      = pDataSliceHeader->Slice[i].RefL0[ref_counter_l0].PictureType;
+                    m_slice[i].RefPicList0[ref_counter_l0].frame_idx  = idx;
                 }
             } /*for (ref_counter_l0 = 0; ref_counter_l0 < in->NumFrameL0; ref_counter_l0++)*/
             for ( ; ref_counter_l0 < 32; ref_counter_l0++)
@@ -3457,28 +3465,29 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
                     indexFromSliceHeader = pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].Index;
                     mfxSts = m_core->GetExternalFrameHDL(in->L0Surface[indexFromSliceHeader]->Data.MemId, &handle);
                     MFX_CHECK(MFX_ERR_NONE == mfxSts, MFX_ERR_INVALID_HANDLE);
-                    //m_slice[i].RefPicList1[ref_counter_l1].picture_id = *(VASurfaceID*) handle;
                     s = *(VASurfaceID*) handle; //id in the memory by ptr
 
 #if defined(_DEBUG)
                     if (m_slice[i].RefPicList1[ref_counter_l1].picture_id != s)
                     {
-                        //m_slice[i].RefPicList1[ref_counter_l1].picture_id = s;
                         mdprintf(stderr, "!!!Warning picture_id from pDataSliceHeader->Slice[%u].RefL1[%u] = %u\n", i, ref_counter_l1, s);
                         mdprintf(stderr, "   But library's is m_slice[%u].RefPicList0[%u].picture_id = %u\n",
                                 i, ref_counter_l1, m_slice[i].RefPicList1[ref_counter_l1].picture_id);
                     }
                     if (m_slice[i].RefPicList1[ref_counter_l1].flags != pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType)
                     {
-                        //m_slice[i].RefPicList1[ref_counter_l1].flags = pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType;
                         mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].RefL1[%u].PictureType = %u\n",
                                 i, ref_counter_l0, pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType);
                         mdprintf(stderr, "   But library's is m_slice[%u].RefPicList1[%u].flag = %u\n",
                                 i, ref_counter_l1, m_slice[i].RefPicList1[ref_counter_l1].flags);
                     }
 #endif
+                    mfxU32 idx;
+                    for (idx = 0; idx < m_reconQueue.size() && m_reconQueue[idx].surface != s; ++idx) {}
+
                     m_slice[i].RefPicList1[ref_counter_l1].picture_id = s;
-                    m_slice[i].RefPicList1[ref_counter_l1].flags = pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType;
+                    m_slice[i].RefPicList1[ref_counter_l1].flags      = pDataSliceHeader->Slice[i].RefL1[ref_counter_l1].PictureType;
+                    m_slice[i].RefPicList1[ref_counter_l1].frame_idx  = idx;
                 }
             } /* for (ref_counter_l1 = 0; ref_counter_l1 < in->NumFrameL1; ref_counter_l1++) */
 
