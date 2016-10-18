@@ -53,7 +53,8 @@ MSDK_PLUGIN_API(MFXPlugin*) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
 const mfxPluginUID MFX_PTIR_Plugin::g_VPP_PluginGuid = MFX_PLUGINID_ITELECINE_HW;
 
 MFX_PTIR_Plugin::MFX_PTIR_Plugin(bool CreateByDispatcher)
-    :m_adapter(0)
+    : m_extVPPDeint()
+    , m_adapter(0)
 {
     m_session = 0;
     m_pmfxCore = 0;
@@ -79,6 +80,8 @@ MFX_PTIR_Plugin::MFX_PTIR_Plugin(bool CreateByDispatcher)
     par_accel = false;
     frmSupply = 0;
     prevSurf = 0;
+    b_work = false;
+    in_expected = false;
 }
 
 MFX_PTIR_Plugin::~MFX_PTIR_Plugin()
