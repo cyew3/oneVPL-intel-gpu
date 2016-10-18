@@ -35,8 +35,8 @@ namespace vpp_composition
 
     enum
     {
-        EXT_BUFF = 1,
-        EXT_BUFF_COMPOSITE = 2,
+        MFX_PAR  = 1,
+        COMP_PAR = 2,
     };
 
     //! The number of max algs in mfxExtVPPDoUse structure
@@ -102,7 +102,7 @@ namespace vpp_composition
             ext_composite->InputStream = new mfxVPPCompInputStream[ext_composite->NumInputStream];
             for(int i = 0; i < ext_composite->NumInputStream; i++) {
                 mfxVPPCompInputStream* str = ext_composite->InputStream;
-                SETPARS(str, EXT_BUFF_COMPOSITE);
+                SETPARS(str, COMP_PAR);
                 str = nullptr;
                 return MFX_EXTBUFF_VPP_COMPOSITE;
             }
@@ -131,54 +131,105 @@ namespace vpp_composition
   const tc_struct TestSuite::test_case[] =
     {
         {/*00*/MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM,
-            {{EXT_BUFF, &tsStruct::mfxExtVPPDoUse.NumAlg, 1}},
+            {{MFX_PAR, &tsStruct::mfxExtVPPDoUse.NumAlg, 1}},
             { MFX_EXTBUFF_VPP_COMPOSITE }
         },
 
-        {/*01*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
-        { { EXT_BUFF, &tsStruct::mfxExtVPPComposite.NumInputStream, 1 },
-          { EXT_BUFF, &tsStruct::mfxExtVPPComposite.Y, 50},
-          { EXT_BUFF, &tsStruct::mfxExtVPPComposite.U, 50 },
-          { EXT_BUFF, &tsStruct::mfxExtVPPComposite.V, 50 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.DstX, 0 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.DstY, 0 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.DstW, 721 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.DstH, 481 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.GlobalAlphaEnable, 0 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.LumaKeyEnable, 0 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.PixelAlphaEnable, 0 },
+        {/*01*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM,
+        { { MFX_PAR,  &tsStruct::mfxExtVPPComposite.NumInputStream, 1 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.Y, 50},
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.U, 50 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.V, 50 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstX, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstY, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstW, 721 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstH, 481 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.GlobalAlphaEnable, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.LumaKeyEnable, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.PixelAlphaEnable, 0 },
         }
         },
 
-        {/*02*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
-        { { EXT_BUFF, &tsStruct::mfxExtVPPComposite.NumInputStream, 1 },
-          { EXT_BUFF, &tsStruct::mfxExtVPPComposite.Y, 50 },
-          { EXT_BUFF, &tsStruct::mfxExtVPPComposite.U, 50 },
-          { EXT_BUFF, &tsStruct::mfxExtVPPComposite.V, 50 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.DstX, 2 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.DstY, 2 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.DstW, 719 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.DstH, 479 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.GlobalAlphaEnable, 0 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.LumaKeyEnable, 0 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.PixelAlphaEnable, 0 },
+        {/*02*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM,
+        { { MFX_PAR,  &tsStruct::mfxExtVPPComposite.NumInputStream, 1 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.Y, 50 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.U, 50 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.V, 50 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstX, 2 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstY, 2 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstW, 719 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstH, 479 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.GlobalAlphaEnable, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.LumaKeyEnable, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.PixelAlphaEnable, 0 },
         }
         },
 
         {/*03*/ MFX_ERR_NONE, MFX_ERR_NONE,
-        { { EXT_BUFF, &tsStruct::mfxExtVPPComposite.NumInputStream, 1 },
-          { EXT_BUFF, &tsStruct::mfxExtVPPComposite.Y, 50 },
-          { EXT_BUFF, &tsStruct::mfxExtVPPComposite.U, 50 },
-          { EXT_BUFF, &tsStruct::mfxExtVPPComposite.V, 50 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.DstX, 5 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.DstY, 5 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.DstW, 50 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.DstH, 50 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.GlobalAlphaEnable, 0 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.LumaKeyEnable, 0 },
-          { EXT_BUFF_COMPOSITE, &tsStruct::mfxVPPCompInputStream.PixelAlphaEnable, 0 },
+        { { MFX_PAR,  &tsStruct::mfxExtVPPComposite.NumInputStream, 1 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.Y, 50 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.U, 50 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.V, 50 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstX, 5 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstY, 5 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstW, 50 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstH, 50 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.GlobalAlphaEnable, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.LumaKeyEnable, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.PixelAlphaEnable, 0 },
         }
+        },
+
+        {/*04*/ MFX_ERR_NONE, MFX_ERR_NONE,
+        { { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_AYUV },
+          { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_AYUV },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.NumInputStream, 1 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.Y, 50 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.U, 50 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.V, 50 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstX, 5 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstY, 5 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstW, 50 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstH, 50 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.GlobalAlphaEnable, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.LumaKeyEnable, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.PixelAlphaEnable, 0 },
         }
+        },
+
+        {/*05*/ MFX_ERR_NONE, MFX_ERR_NONE,
+        { { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_Y210 },
+          { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y210 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.NumInputStream, 1 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.Y, 50 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.U, 50 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.V, 50 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstX, 5 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstY, 5 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstW, 50 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstH, 50 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.GlobalAlphaEnable, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.LumaKeyEnable, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.PixelAlphaEnable, 0 },
+        }
+        },
+
+        {/*06*/ MFX_ERR_NONE, MFX_ERR_NONE,
+        { { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_Y410 },
+          { MFX_PAR,  &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y410 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.NumInputStream, 1 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.Y, 50 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.U, 50 },
+          { MFX_PAR,  &tsStruct::mfxExtVPPComposite.V, 50 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstX, 5 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstY, 5 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstW, 50 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.DstH, 50 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.GlobalAlphaEnable, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.LumaKeyEnable, 0 },
+          { COMP_PAR, &tsStruct::mfxVPPCompInputStream.PixelAlphaEnable, 0 },
+        }
+        },
     };
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::test_case[0]);
 
@@ -188,14 +239,28 @@ namespace vpp_composition
         auto& tc = test_case[id];
         MFXInit();
 
-        SETPARS(&m_par, EXT_BUFF);
-        mfxU32 ext_buff_type = setExtBuff(tc);
-        g_tsStatus.expect(tc.q_sts);
+        SETPARS(&m_par, MFX_PAR);
+        mfxU32 MFX_PAR_type = setExtBuff(tc);
+
+        mfxStatus sts_query = tc.q_sts,
+                  sts_init  = tc.i_sts;
+
+        if (g_tsHWtype < MFX_HW_CNL
+            && (m_par.vpp.In.FourCC == MFX_FOURCC_AYUV || m_par.vpp.Out.FourCC == MFX_FOURCC_AYUV
+            ||  m_par.vpp.In.FourCC == MFX_FOURCC_Y210 || m_par.vpp.Out.FourCC == MFX_FOURCC_Y210
+            ||  m_par.vpp.In.FourCC == MFX_FOURCC_Y410 || m_par.vpp.Out.FourCC == MFX_FOURCC_Y410))
+        {
+            sts_query = MFX_ERR_UNSUPPORTED;
+            sts_init  = MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+
+        g_tsStatus.expect(sts_query);
         Query();
 
-        g_tsStatus.expect(tc.i_sts);
+        g_tsStatus.expect(sts_init);
         Init();
-        cleanExtBuff(ext_buff_type);
+
+        cleanExtBuff(MFX_PAR_type);
         Close();
 
         TS_END;
