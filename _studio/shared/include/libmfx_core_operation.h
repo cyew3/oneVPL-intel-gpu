@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
 
 File Name: libmfx_core_operation.h
 
@@ -60,6 +60,7 @@ public:
     // functor to run fuction from child cores
     bool  IsOpaqSurfacesAlreadyMapped(mfxFrameSurface1 **pOpaqueSurface, mfxU32 NumOpaqueSurface, mfxFrameAllocResponse *response)
     {
+        UMC::AutomaticUMCMutex guard(m_guard);
         bool sts;
         std::vector<VideoCORE*>::iterator it = m_Cores.begin();
 
@@ -75,6 +76,7 @@ public:
     // functor to run fuction from child cores
     bool CheckOpaqRequest(mfxFrameAllocRequest *request, mfxFrameSurface1 **pOpaqueSurface, mfxU32 NumOpaqueSurface)
     {
+        UMC::AutomaticUMCMutex guard(m_guard);
         bool sts;
         std::vector<VideoCORE*>::iterator it = m_Cores.begin();
 
@@ -91,6 +93,7 @@ public:
     template <typename func, typename arg, typename arg2>
     mfxStatus DoFrameOperation(func functor, arg par, arg2 out)
     {
+        UMC::AutomaticUMCMutex guard(m_guard);
         mfxStatus sts;
         std::vector<VideoCORE*>::iterator it = m_Cores.begin();
 
@@ -108,6 +111,7 @@ public:
     template <typename func, typename arg>
     mfxStatus DoCoreOperation(func functor, arg par)
     {
+        UMC::AutomaticUMCMutex guard(m_guard);
         mfxStatus sts;
         std::vector<VideoCORE*>::iterator it = m_Cores.begin();
 
@@ -125,6 +129,7 @@ public:
     template <typename func, typename arg>
     mfxFrameSurface1* GetSurface(func functor, arg par)
     {
+        UMC::AutomaticUMCMutex guard(m_guard);
         mfxFrameSurface1* pSurf;
         std::vector<VideoCORE*>::iterator it = m_Cores.begin();
         for (;it != m_Cores.end();it++)
