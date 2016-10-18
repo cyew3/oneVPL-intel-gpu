@@ -446,7 +446,7 @@ mfxStatus Task::CopyInput()
         mfxU8 * dstLine = dst.Data.Y;
         for (mfxU32 line = 0; line < roiHeight; line ++)
         {
-            memcpy(dstLine, srcLine, roiWidth);
+            memcpy_s(dstLine, roiWidth, srcLine, roiWidth);
             srcLine += srcPitch;
             dstLine += dstPitch;
         }
@@ -460,7 +460,7 @@ mfxStatus Task::CopyInput()
             srcLine = src.Data.UV;
             for (mfxU32 line = 0; line < roiHeight; line ++)
             {
-                memcpy(dstLine, srcLine, roiWidth);
+                memcpy_s(dstLine, roiWidth, srcLine, roiWidth);
                 srcLine += srcPitch;
                 dstLine += dstPitch;
             }
