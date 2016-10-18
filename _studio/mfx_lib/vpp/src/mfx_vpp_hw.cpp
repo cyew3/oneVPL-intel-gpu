@@ -3913,7 +3913,7 @@ mfxStatus ConfigureExecuteParams(
                             rec.DstW = extComp->InputStream[cnt].DstW;
                             rec.DstH = extComp->InputStream[cnt].DstH;
                             if ((videoParam.vpp.Out.Width < (rec.DstX + rec.DstW)) || (videoParam.vpp.Out.Height < (rec.DstY + rec.DstH)))
-                                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM; // sub-stream is out of range
+                                return MFX_ERR_INVALID_VIDEO_PARAM; // sub-stream is out of range
                             if (extComp->InputStream[cnt].GlobalAlphaEnable != 0)
                             {
                                 rec.GlobalAlphaEnable = extComp->InputStream[cnt].GlobalAlphaEnable;
