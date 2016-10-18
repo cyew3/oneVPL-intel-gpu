@@ -1734,8 +1734,6 @@ mfxStatus VideoVPP_SW::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out
     mfxStatus sts = VideoVPPBase::VppFrameCheck(in, out, aux, pEntryPoints, numEntryPoints);
     MFX_CHECK_STS( sts );
 
-    mfxU16  realOutPicStruct = out->Info.PicStruct;
-
     /* *************************************** */
     /* scan filters to find Ready Output       */
     /* if the out found VPP IGNORES input frame*/
@@ -1765,7 +1763,7 @@ mfxStatus VideoVPP_SW::VppFrameCheck(mfxFrameSurface1 *in, mfxFrameSurface1 *out
         sts = m_core->IncreaseReference( &(out->Data) );
         MFX_CHECK_STS( sts );
 
-        stsPicStruct = PassThrough( (NULL != in) ? &(in->Info) : NULL, &(out->Info), realOutPicStruct);
+        stsPicStruct = PassThrough( (NULL != in) ? &(in->Info) : NULL, &(out->Info), out->Info.PicStruct);
         //MFX_CHECK_STS( sts );
     }
 
