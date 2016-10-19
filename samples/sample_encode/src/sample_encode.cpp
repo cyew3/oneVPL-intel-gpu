@@ -104,6 +104,16 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("                              If num_slice equals zero, the encoder may choose any slice partitioning allowed by the codec standard.\n"));
     msdk_printf(MSDK_STRING("   [-mss]                   - maximum slice size in bytes. Supported only with -hw and h264 codec. This option is not compatible with -num_slice option.\n"));
     msdk_printf(MSDK_STRING("   [-re]                    - enable region encode mode. Works only with h265 encoder\n"));
+    msdk_printf(MSDK_STRING("   [-CodecProfile]          - specifies codec profile\n"));
+    msdk_printf(MSDK_STRING("   [-CodecLevel]            - specifies codec level\n"));
+    msdk_printf(MSDK_STRING("   [-GopOptFlag:closed]     - closed gop\n"));
+    msdk_printf(MSDK_STRING("   [-GopOptFlag:strict]     - strict gop\n"));
+    msdk_printf(MSDK_STRING("   [-InitialDelayInKB]      - the decoder starts decoding after the buffer reaches the initial size InitialDelayInKB, \
+                            which is equivalent to reaching an initial delay of InitialDelayInKB*8000/TargetKbps ms\n"));
+    msdk_printf(MSDK_STRING("   [-BufferSizeInKB ]       - represents the maximum possible size of any compressed frames\n"));
+    msdk_printf(MSDK_STRING("   [-MaxKbps ]              - for variable bitrate control, specifies the maximum bitrate at which \
+                            the encoded data enters the Video Buffering Verifier buffer\n"));
+
     msdk_printf(MSDK_STRING("Example: %s h265 -i InputYUVFile -o OutputEncodedFile -w width -h height -hw -p 2fca99749fdb49aeb121a5b63ef568f7\n"), strAppName);
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d] - work with d3d surfaces\n"));
@@ -333,6 +343,59 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nAsyncDepth))
             {
                 PrintHelp(strInput[0], MSDK_STRING("Async Depth is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-CodecLevel")))
+        {
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->CodecLevel))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("CodecLevel is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-CodecProfile")))
+        {
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->CodecProfile))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("CodecProfile is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-GopOptFlag:closed")))
+        {
+            pParams->GopOptFlag = MFX_GOP_CLOSED;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-GopOptFlag:strict")))
+        {
+            pParams->GopOptFlag = MFX_GOP_STRICT;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-InitialDelayInKB")))
+        {
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->InitialDelayInKB))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("InitialDelayInKB is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-MaxKbps")))
+        {
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->MaxKbps))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("MaxKbps is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-BufferSizeInKB")))
+        {
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->BufferSizeInKB))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("BufferSizeInKB is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
         }

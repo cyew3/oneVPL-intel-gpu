@@ -122,6 +122,13 @@ struct sInputParams
 
     bool isV4L2InputEnabled;
 
+    mfxU16 CodecLevel;
+    mfxU16 CodecProfile;
+    mfxU16 MaxKbps;
+    mfxU16 BufferSizeInKB;
+    mfxU16 InitialDelayInKB;
+    mfxU16 GopOptFlag;
+
 #if defined (ENABLE_V4L2_SUPPORT)
     msdk_char DeviceName[MSDK_MAX_FILENAME_LEN];
     msdk_char MipiModeName[MSDK_MAX_FILENAME_LEN];
