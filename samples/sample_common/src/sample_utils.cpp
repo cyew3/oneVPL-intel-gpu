@@ -224,7 +224,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
                 {
                     return MFX_ERR_UNSUPPORTED;
                 }
-                if (pitch != nBytesRead)
+                if ((mfxU32)4*w != nBytesRead)
                 {
                     return MFX_ERR_MORE_DATA;
                 }
