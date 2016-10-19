@@ -1806,11 +1806,13 @@ namespace
 
 D3D9SvcEncoder::D3D9SvcEncoder()
 : m_core(0)
-, m_infoQueried(false)
-, m_forcedCodingFunction(0)
+, m_video(NULL)
+, m_guid()
 , m_caps()
 , m_capsQuery()
 , m_capsGet()
+, m_infoQueried(false)
+, m_forcedCodingFunction(0)
 {
 }
 
