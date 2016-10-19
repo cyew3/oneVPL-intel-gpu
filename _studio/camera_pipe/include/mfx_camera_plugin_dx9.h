@@ -989,7 +989,10 @@ private:
     struct s_InternalSurf {
         IDirect3DSurface9 *surf;
         bool               locked;
-        s_InternalSurf() {locked=false;};
+        s_InternalSurf()
+            :surf(NULL)
+            ,locked(false)
+        {};
         void Release(void) { surf->Release(); };
     };
     s_ptr<CmCopyWrapper, true>    m_pCmCopy;
