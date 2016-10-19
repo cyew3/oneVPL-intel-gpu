@@ -2670,8 +2670,6 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         outInfo->FourCC == MFX_FOURCC_YV12 ||
         outInfo->FourCC == MFX_FOURCC_NV16 ||
         outInfo->FourCC == MFX_FOURCC_YUY2 ||
-        outInfo->FourCC == MFX_FOURCC_P010 ||
-        outInfo->FourCC == MFX_FOURCC_P210 ||
         outInfo->FourCC == MFX_FOURCC_AYUV )
     {
         bYCbCr = TRUE;
@@ -2682,14 +2680,16 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         Color.YCbCr.Cr = ((pParams->iBackgroundColor      ) & 0xff) / 255.0f;
     }
     if (outInfo->FourCC == MFX_FOURCC_Y210 ||
-        outInfo->FourCC == MFX_FOURCC_Y410 )
+        outInfo->FourCC == MFX_FOURCC_Y410 ||
+        outInfo->FourCC == MFX_FOURCC_P010 ||
+        outInfo->FourCC == MFX_FOURCC_P210 )
     {
         bYCbCr = TRUE;
 
-        Color.YCbCr.A  = ((pParams->iBackgroundColor >> 48) & 0xffff) / 1023.0f;
-        Color.YCbCr.Y  = ((pParams->iBackgroundColor >> 32) & 0xffff) / 1023.0f;
-        Color.YCbCr.Cb = ((pParams->iBackgroundColor >> 16) & 0xffff) / 1023.0f;
-        Color.YCbCr.Cr = ((pParams->iBackgroundColor      ) & 0xffff) / 1023.0f;
+        Color.YCbCr.A  = ((pParams->iBackgroundColor >> 48) & 0x03ff) / 1023.0f;
+        Color.YCbCr.Y  = ((pParams->iBackgroundColor >> 32) & 0x03ff) / 1023.0f;
+        Color.YCbCr.Cb = ((pParams->iBackgroundColor >> 16) & 0x03ff) / 1023.0f;
+        Color.YCbCr.Cr = ((pParams->iBackgroundColor)       & 0x03ff) / 1023.0f;
     }
     if (outInfo->FourCC == MFX_FOURCC_RGB3    ||
         outInfo->FourCC == MFX_FOURCC_RGB4    ||

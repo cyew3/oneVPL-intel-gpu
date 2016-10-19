@@ -3386,16 +3386,19 @@ mfxStatus ConfigureExecuteParams(
         videoParam.vpp.Out.FourCC == MFX_FOURCC_YV12 ||
         videoParam.vpp.Out.FourCC == MFX_FOURCC_NV16 ||
         videoParam.vpp.Out.FourCC == MFX_FOURCC_YUY2 ||
-        videoParam.vpp.Out.FourCC == MFX_FOURCC_P010 ||
-        videoParam.vpp.Out.FourCC == MFX_FOURCC_P210 ||
         videoParam.vpp.Out.FourCC == MFX_FOURCC_AYUV )
     {
-        executeParams.iBackgroundColor = 0xff00100080008000; // black in 8-bit YUV interpretation
+        executeParams.iBackgroundColor = 0x00ff001000800080; // black in 8-bit YUV interpretation
     }
-    else if(videoParam.vpp.Out.FourCC == MFX_FOURCC_Y210 ||
+    else if(videoParam.vpp.Out.FourCC == MFX_FOURCC_P010 ||
+            videoParam.vpp.Out.FourCC == MFX_FOURCC_P210 ||
+            videoParam.vpp.Out.FourCC == MFX_FOURCC_Y210 ||
             videoParam.vpp.Out.FourCC == MFX_FOURCC_Y410)
     {
-        executeParams.iBackgroundColor = 0xff03400000020002; // black in 10-bit YUV interpretation
+        // black in 10-bit YUV interpretation
+        // 0x(2^10-1)(64)(512)(512)
+        // 0x03FF004002000200
+        executeParams.iBackgroundColor = 0x03FF004002000200;
     }
     else
     {
@@ -3942,12 +3945,14 @@ mfxStatus ConfigureExecuteParams(
                                ((mfxU64)VPP_RANGE_CLIP(extComp->V, 16, 240) <<  0);
                         }
                         if (targetFourCC == MFX_FOURCC_Y210 ||
-                            targetFourCC == MFX_FOURCC_Y410)
+                            targetFourCC == MFX_FOURCC_Y410 ||
+                            targetFourCC == MFX_FOURCC_P010 ||
+                            targetFourCC == MFX_FOURCC_P210)
                         {
-                            executeParams.iBackgroundColor  =         ((mfxU64)0xffff << 48)|
-                               ((mfxU64)VPP_RANGE_CLIP(extComp->Y, 64 << 6, 940 << 6) << 32)|
-                               ((mfxU64)VPP_RANGE_CLIP(extComp->U, 64 << 6, 960 << 6) << 16)|
-                               ((mfxU64)VPP_RANGE_CLIP(extComp->V, 64 << 6, 960 << 6) <<  0);
+                            executeParams.iBackgroundColor  =         ((mfxU64)0x03ff << 48)|
+                               ((mfxU64)VPP_RANGE_CLIP(extComp->Y, 64 , 940 ) << 32)|
+                               ((mfxU64)VPP_RANGE_CLIP(extComp->U, 64 , 960 ) << 16)|
+                               ((mfxU64)VPP_RANGE_CLIP(extComp->V, 64 , 960 ) <<  0);
                         }
                         if (targetFourCC == MFX_FOURCC_RGB4 ||
                             targetFourCC == MFX_FOURCC_BGR4)
@@ -4133,16 +4138,19 @@ mfxStatus ConfigureExecuteParams(
                         videoParam.vpp.Out.FourCC == MFX_FOURCC_YV12 ||
                         videoParam.vpp.Out.FourCC == MFX_FOURCC_NV16 ||
                         videoParam.vpp.Out.FourCC == MFX_FOURCC_YUY2 ||
-                        videoParam.vpp.Out.FourCC == MFX_FOURCC_P010 ||
-                        videoParam.vpp.Out.FourCC == MFX_FOURCC_P210 ||
                         videoParam.vpp.Out.FourCC == MFX_FOURCC_AYUV )
                     {
-                        executeParams.iBackgroundColor = 0xff00100080008000; // black in 8-bit YUV interpretation
+                        executeParams.iBackgroundColor = 0x00ff001000800080; // black in 8-bit YUV interpretation 0x(2^8-1)(16)(128)(128)
                     }
-                    else if (videoParam.vpp.Out.FourCC == MFX_FOURCC_Y210 ||
+                    else if (videoParam.vpp.Out.FourCC == MFX_FOURCC_P010 ||
+                             videoParam.vpp.Out.FourCC == MFX_FOURCC_P210 ||
+                             videoParam.vpp.Out.FourCC == MFX_FOURCC_Y210 ||
                              videoParam.vpp.Out.FourCC == MFX_FOURCC_Y410)
                     {
-                        executeParams.iBackgroundColor = 0xff03400000020002; // black in 10-bit YUV interpretation
+                        // black in 10-bit YUV interpretation
+                        // 0x(2^10-1)(64)(512)(512)
+                        // 0x03FF004002000200
+                        executeParams.iBackgroundColor = 0x03FF004002000200;
                     }
                     else
                     {
