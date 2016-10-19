@@ -430,6 +430,12 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                 return MFX_ERR_MEMORY_ALLOC;
         }
 
+        if(request->Type&MFX_MEMTYPE_SHARED_RESOURCE)
+        {
+            desc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+            desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
+        }
+
         if( DXGI_FORMAT_P8 == desc.Format )
         {
             desc.BindFlags = 0;
