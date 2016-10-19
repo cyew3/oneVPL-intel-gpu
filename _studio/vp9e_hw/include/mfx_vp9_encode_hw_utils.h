@@ -513,15 +513,16 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
     public:
 
         Task ():
-          m_status(TASK_FREE),
-              m_pRawFrame(0),
-              m_pRawLocalFrame(0),
+              m_status(TASK_FREE),
+              m_pRawFrame(NULL),
+              m_pRawLocalFrame(NULL),
               m_pBitsteam(0),
-              m_pCore(0),
-              m_pRecFrame(0),
-              m_pOutBs(0),
+              m_pCore(NULL),
+              m_pRecFrame(NULL),
+              m_pOutBs(NULL),
               m_bOpaqInput(false),
-              m_frameOrder (0),
+              m_frameOrder(0),
+              m_timeStamp(0),
               m_frameOrderOfPreviousFrame(0),
               m_bsDataLength(0)
           {
