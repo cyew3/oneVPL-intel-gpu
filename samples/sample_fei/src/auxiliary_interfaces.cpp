@@ -174,7 +174,12 @@ mfxStatus MFX_VppInterface::VPPoneFrame(mfxFrameSurface1* pSurf_in, mfxFrameSurf
             else
                 return sts;
         }
-        break;
+        else if (MFX_ERR_NONE <= sts) {
+            sts = MFX_ERR_NONE; // ignore warnings if output is available
+            break;
+        }
+        else
+            MSDK_BREAK_ON_ERROR(sts);
     }
 
     /* We need to sync before any FEI interface */
@@ -200,8 +205,8 @@ mfxStatus MFX_VppInterface::VPPoneFrame(mfxFrameSurface1* pSurf_in, mfxFrameSurf
                 sts = MFX_ERR_NONE; // ignore warnings if output is available
                 break;
             }
-
-            MSDK_BREAK_ON_ERROR(sts);
+            else
+                MSDK_BREAK_ON_ERROR(sts);
         }
     }
 
@@ -460,12 +465,12 @@ mfxStatus MFX_DecodeInterface::DecodeOneFrame(mfxFrameSurface1 * & pSurf_out)
         switch (sts)
         {
         case MFX_WRN_DEVICE_BUSY:
-            WaitForDeviceToBecomeFree(*m_pmfxSession, m_SyncPoint/*m_LastDecSyncPoint*/, sts);
+            WaitForDeviceToBecomeFree(*m_pmfxSession, m_SyncPoint, sts);
             break;
 
         case MFX_ERR_MORE_DATA:
             sts = m_BSReader.ReadNextFrame(&m_mfxBS); // read more data to input bit stream
-            MSDK_BREAK_ON_ERROR(sts);
+            if (sts == MFX_ERR_MORE_DATA) { return sts; } // Reached end of bitstream
             break;
 
         case MFX_ERR_MORE_SURFACE:
@@ -507,7 +512,7 @@ mfxStatus MFX_DecodeInterface::DecodeLastFrame(mfxFrameSurface1 * & pSurf_out)
     {
         if (MFX_WRN_DEVICE_BUSY == sts)
         {
-            WaitForDeviceToBecomeFree(*m_pmfxSession, m_SyncPoint/*m_LastDecSyncPoint*/, sts);
+            WaitForDeviceToBecomeFree(*m_pmfxSession, m_SyncPoint, sts);
         }
         // find free surface for decoder input
         pDecSurf = m_pSurfPool->GetFreeSurface_FEI();

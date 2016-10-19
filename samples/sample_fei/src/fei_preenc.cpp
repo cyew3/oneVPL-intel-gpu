@@ -512,9 +512,14 @@ mfxStatus FEI_PreencInterface::DownSampleInput(iTask* eTask)
                 WaitForDeviceToBecomeFree(*m_pmfxSession, m_SyncPoint, sts);
             }
             else
-                break;
+                return sts;
         }
-        break;
+        else if (MFX_ERR_NONE <= sts) {
+            sts = MFX_ERR_NONE; // ignore warnings if output is available
+            break;
+        }
+        else
+            MSDK_BREAK_ON_ERROR(sts);
     }
     MSDK_CHECK_STATUS(sts, "PreENC DownsampleInput failed");
 
@@ -538,8 +543,8 @@ mfxStatus FEI_PreencInterface::DownSampleInput(iTask* eTask)
             sts = MFX_ERR_NONE; // ignore warnings if output is available
             break;
         }
-
-        MSDK_BREAK_ON_ERROR(sts);
+        else
+            MSDK_BREAK_ON_ERROR(sts);
     }
 
     // restore locker

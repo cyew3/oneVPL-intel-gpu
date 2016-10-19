@@ -216,7 +216,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         {
             pConfig->bPREENC = true;
 
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pConfig->preencDSstrength))
+            if (!strInput[++i] || MFX_ERR_NONE != msdk_opt_read(strInput[i], pConfig->preencDSstrength))
             {
                 pConfig->preencDSstrength = 0;
                 i--;
@@ -321,7 +321,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-idr_interval")))
         {
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pConfig->nIdrInterval))
+            if (!strInput[++i] || MFX_ERR_NONE != msdk_opt_read(strInput[i], pConfig->nIdrInterval))
             {
                 PrintHelp(strInput[0], MSDK_STRING("ERROR: IdrInterval is invalid"));
                 return MFX_ERR_UNSUPPORTED;
@@ -515,7 +515,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dstw")))
         {
             mfxU16 wdt;
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], wdt))
+            if (!strInput[++i] || MFX_ERR_NONE != msdk_opt_read(strInput[i], wdt))
             {
                 PrintHelp(strInput[0], MSDK_STRING("ERROR: Destination picture Width is invalid"));
                 return MFX_ERR_UNSUPPORTED;
@@ -533,7 +533,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-dsth")))
         {
             mfxU16 hgt;
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], hgt))
+            if (!strInput[++i] || MFX_ERR_NONE != msdk_opt_read(strInput[i], hgt))
             {
                 PrintHelp(strInput[0], MSDK_STRING("ERROR: Destination picture Width is invalid"));
                 return MFX_ERR_UNSUPPORTED;
@@ -550,7 +550,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-timeout")))
         {
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pConfig->nTimeout))
+            if (!strInput[++i] || MFX_ERR_NONE != msdk_opt_read(strInput[i], pConfig->nTimeout))
             {
                 PrintHelp(strInput[0], MSDK_STRING("Timeout is invalid"));
                 return MFX_ERR_UNSUPPORTED;
@@ -571,7 +571,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
             bParseDRC = true;
             mfxU32 resetFrame;
 
-            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], resetFrame))
+            if (!strInput[++i] || MFX_ERR_NONE != msdk_opt_read(strInput[i], resetFrame))
             {
                 PrintHelp(strInput[0], MSDK_STRING("ERROR: Reset start frame is invalid"));
                 return MFX_ERR_UNSUPPORTED;
