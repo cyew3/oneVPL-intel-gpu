@@ -382,7 +382,10 @@ mfxStatus D3D9VideoCORE::SetHandle(mfxHandleType type, mfxHDL hdl)
         bool isRequeredEarlySetHandle = (m_session->m_version.Major > 1 ||
             (m_session->m_version.Major == 1 && m_session->m_version.Minor >= 6));
 
-        if ((type == MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 || type == MFX_HANDLE_D3D11_DEVICE) && isRequeredEarlySetHandle && m_pDirect3DDeviceManager)
+        if (type != MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9)
+            return MFX_ERR_INVALID_HANDLE;
+
+        if (isRequeredEarlySetHandle && m_pDirect3DDeviceManager)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
         mfxStatus sts = CommonCORE::SetHandle(type, hdl);
