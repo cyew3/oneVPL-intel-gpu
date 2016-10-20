@@ -146,12 +146,22 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -la           Use the look ahead bitrate control algorithm (LA BRC) for H.264 encoder. Supported only with -hw option on 4th Generation Intel Core processors. \n"));
     msdk_printf(MSDK_STRING("  -lad depth    Depth parameter for the LA BRC, the number of frames to be analyzed before encoding. In range [10,100]. \n"));
     msdk_printf(MSDK_STRING("                May be 1 in the case when -mss option is specified \n"));
+    msdk_printf(MSDK_STRING("  -vbr          Variable bitrate control\n"));
     msdk_printf(MSDK_STRING("  -hrd <KB>     Maximum possible size of any compressed frames \n"));
     msdk_printf(MSDK_STRING("  -wb <KBps>    Maximum bitrate for sliding window \n"));
     msdk_printf(MSDK_STRING("  -ws           Sliding window size in frames\n"));
     msdk_printf(MSDK_STRING("  -gop_size     Size of GOP structure in frames \n"));
     msdk_printf(MSDK_STRING("  -dist         Distance between I- or P- key frames \n"));
     msdk_printf(MSDK_STRING("  -num_ref      Number of reference frames\n"));
+    msdk_printf(MSDK_STRING("  -CodecProfile          - Specifies codec profile\n"));
+    msdk_printf(MSDK_STRING("  -CodecLevel            - Specifies codec level\n"));
+    msdk_printf(MSDK_STRING("  -GopOptFlag:closed     - Closed gop\n"));
+    msdk_printf(MSDK_STRING("  -GopOptFlag:strict     - Strict gop\n"));
+    msdk_printf(MSDK_STRING("  -InitialDelayInKB      - The decoder starts decoding after the buffer reaches the initial size InitialDelayInKB, \
+                            which is equivalent to reaching an initial delay of InitialDelayInKB*8000/TargetKbps ms\n"));
+    msdk_printf(MSDK_STRING("  -MaxKbps              - For variable bitrate control, specifies the maximum bitrate at which \
+                            the encoded data enters the Video Buffering Verifier buffer\n"));
+
     msdk_printf(MSDK_STRING("  -gpucopy::<on,off> Enable or disable GPU copy mode\n"));
     msdk_printf(MSDK_STRING("  -cqp          Constant quantization parameter (CQP BRC) bitrate control method\n"));
     msdk_printf(MSDK_STRING("                              (by default constant bitrate control method is used), should be used along with -qpi, -qpp, -qpb.\n"));
@@ -776,6 +786,54 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 return MFX_ERR_UNSUPPORTED;
             }
         }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-CodecLevel")))
+        {
+            VAL_CHECK(i + 1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.CodecLevel))
+            {
+                PrintError(MSDK_STRING("CodecLevel \"%s\" is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-CodecProfile")))
+        {
+            VAL_CHECK(i + 1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.CodecProfile))
+            {
+                PrintError(MSDK_STRING("CodecProfile \"%s\" is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-MaxKbps")))
+        {
+            VAL_CHECK(i + 1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.MaxKbps))
+            {
+                PrintError(MSDK_STRING("MaxKbps \"%s\" is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-InitialDelayInKB")))
+        {
+            VAL_CHECK(i + 1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.InitialDelayInKB))
+            {
+                PrintError(MSDK_STRING("InitialDelayInKB \"%s\" is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-GopOptFlag:closed")))
+        {
+            InputParams.GopOptFlag = MFX_GOP_CLOSED;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-GopOptFlag:strict")))
+        {
+            InputParams.GopOptFlag = MFX_GOP_STRICT;
+        }
         else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-u")))
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
@@ -1074,6 +1132,10 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             InputParams.bLABRC = true;
             InputParams.nRateControlMethod = MFX_RATECONTROL_LA;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vbr")))
+        {
+            InputParams.nRateControlMethod = MFX_RATECONTROL_VBR;
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-bpyr")))
         {

@@ -154,6 +154,12 @@ namespace TranscodingSample
         mfxU16 GopRefDist;
         mfxU16 NumRefFrame;
 
+        mfxU16 CodecLevel;
+        mfxU16 CodecProfile;
+        mfxU16 MaxKbps;
+        mfxU16 InitialDelayInKB;
+        mfxU16 GopOptFlag;
+
         // MVC Specific Options
         bool   bIsMVC; // true if Multi-View-Codec is in use
         mfxU32 numViews; // number of views for Multi-View-Codec
