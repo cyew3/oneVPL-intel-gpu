@@ -14,15 +14,19 @@ Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
 namespace hevcd_decode_frame_async
 {
 
-class TestSuite : tsVideoDecoder
+class DecodeSuite : tsVideoDecoder
 {
 public:
-    TestSuite() : tsVideoDecoder(MFX_CODEC_HEVC){}
-    ~TestSuite() { }
-    int RunTest(unsigned int id);
+
+    DecodeSuite() : tsVideoDecoder(MFX_CODEC_HEVC){}
+    ~DecodeSuite() { }
+
     static const unsigned int n_cases;
 
+    int run(unsigned int id, const char* sname);
+
 private:
+
     static const mfxU32 max_num_ctrl     = 3;
     static const mfxU32 max_num_ctrl_par = 4;
     mfxSession m_session;
@@ -101,7 +105,7 @@ private:
     }
 };
 
-const TestSuite::tc_struct TestSuite::test_case[] =
+const DecodeSuite::tc_struct DecodeSuite::test_case[] =
 {
     {/* 0*/ MFX_ERR_NONE, },
     {/* 1*/ MFX_ERR_INVALID_HANDLE, {SESSION}},
@@ -171,13 +175,13 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
 };
 
-const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
+const unsigned int DecodeSuite::n_cases = sizeof(DecodeSuite::test_case)/sizeof(DecodeSuite::tc_struct);
+const unsigned int MAX_FRAMES = 30;
 
-int TestSuite::RunTest(unsigned int id)
+int DecodeSuite::run(unsigned int id, const char* sname)
 {
     TS_START;
-    const char* sname = g_tsStreamPool.Get("conformance/hevc/itu/RPS_B_qualcomm_5.bit");
-    g_tsStreamPool.Reg();
+
     tsBitstreamReader reader(sname, 100000);
     m_bs_processor = &reader;
     auto tc = test_case[id];
@@ -209,7 +213,7 @@ int TestSuite::RunTest(unsigned int id)
 
     if(expected == MFX_ERR_NONE)
     {
-        DecodeFrames(30);
+        DecodeFrames(MAX_FRAMES);
     }
     else
     {
@@ -236,5 +240,46 @@ int TestSuite::RunTest(unsigned int id)
     return 0;
 }
 
-TS_REG_TEST_SUITE_CLASS(hevcd_decode_frame_async);
+template <unsigned fourcc>
+char const* query_stream(unsigned int, std::integral_constant<unsigned, fourcc>);
+
+/* 8 bit */
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_NV12>)
+{ return "conformance/hevc/itu/RPS_B_qualcomm_5.bit"; }
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_YUY2>)
+{ return "conformance/hevc/422format/inter_422_8.bin"; }
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_AYUV>)
+{ return "<TODO>"; }
+
+/* 10 bit */
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>)
+{ return "conformance/hevc/10bit/WP_A_MAIN10_Toshiba_3.bit"; }
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y216>)
+{ return "conformance/hevc/10bit/inter_422_10.bin"; }
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y410>)
+{ return "conformance/hevc/StressBitstreamEncode/rext444_10b/Stress_HEVC_Rext444_10bHT62_432x240_30fps_302_inter_stress_2.2.hevc"; }
+
+template <unsigned fourcc>
+struct TestSuite
+    : public DecodeSuite
+{
+    static
+    int RunTest(unsigned int id)
+    {
+        const char* sname =
+            g_tsStreamPool.Get(query_stream(id, std::integral_constant<unsigned, fourcc>()));
+        g_tsStreamPool.Reg();
+
+        DecodeSuite suite;
+        return suite.run(id, sname);
+    }
+};
+
+TS_REG_TEST_SUITE(hevcd_decode_frame_async,     TestSuite<MFX_FOURCC_NV12>::RunTest, TestSuite<MFX_FOURCC_NV12>::n_cases);
+TS_REG_TEST_SUITE(hevcd_422_decode_frame_async, TestSuite<MFX_FOURCC_YUY2>::RunTest, TestSuite<MFX_FOURCC_YUY2>::n_cases);
+//TS_REG_TEST_SUITE(hevcd_444_decode_frame_async, TestSuite<MFX_FOURCC_AYUV>::RunTest, TestSuite<MFX_FOURCC_AYUV>::n_cases);
+
+TS_REG_TEST_SUITE(hevc10d_decode_frame_async,     TestSuite<MFX_FOURCC_P010>::RunTest, TestSuite<MFX_FOURCC_P010>::n_cases);
+TS_REG_TEST_SUITE(hevc10d_422_decode_frame_async, TestSuite<MFX_FOURCC_Y216>::RunTest, TestSuite<MFX_FOURCC_Y216>::n_cases);
+TS_REG_TEST_SUITE(hevc10d_444_decode_frame_async, TestSuite<MFX_FOURCC_Y410>::RunTest, TestSuite<MFX_FOURCC_Y410>::n_cases);
 }
