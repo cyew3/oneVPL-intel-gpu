@@ -573,10 +573,13 @@ bool CheckFourcc(mfxU32 fourcc, mfxU16 codecProfile, mfxFrameInfo const* frameIn
         {
             case MFX_FOURCC_NV12:
             case MFX_FOURCC_NV16:
+            case MFX_FOURCC_YUY2:
+            case MFX_FOURCC_AYUV:
                 fi.BitDepthLuma = 8;
                 break;
 
             case MFX_FOURCC_P010:
+            case MFX_FOURCC_P210:
             case MFX_FOURCC_Y210:
             case MFX_FOURCC_Y410:
                 fi.BitDepthLuma = 10;
