@@ -594,6 +594,33 @@ bool CheckFourcc(mfxU32 fourcc, mfxU16 codecProfile, mfxFrameInfo const* frameIn
     if (!fi.BitDepthChroma)
         fi.BitDepthChroma = fi.BitDepthLuma;
 
+    if (!fi.ChromaFormat)
+    {
+        //no chroma defined, derive it from FOURCC
+        switch (fourcc)
+        {
+            case MFX_FOURCC_NV12:
+            case MFX_FOURCC_P010:
+                fi.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+                break;
+
+            case MFX_FOURCC_NV16:
+            case MFX_FOURCC_YUY2:
+            case MFX_FOURCC_Y210:
+            case MFX_FOURCC_Y216:
+                fi.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+                break;
+
+            case MFX_FOURCC_AYUV:
+            case MFX_FOURCC_Y410:
+                fi.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+                break;
+
+            default:
+                return false;
+        }
+    }
+
     return
         CalculateFourcc(codecProfile, &fi) == fourcc;
 }
