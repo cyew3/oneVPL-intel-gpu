@@ -78,8 +78,11 @@ struct mfxTraceAlgorithm
 };
 
 /*------------------------------------------------------------------------------*/
-
+#ifdef MFX_TRACE_ENABLE_TEXTLOG
+static mfxTraceU32      g_OutputMode = MFX_TRACE_OUTPUT_TEXTLOG;
+#else
 static mfxTraceU32      g_OutputMode = MFX_TRACE_OUTPUT_TRASH;
+#endif
 static mfxTraceU32      g_Level      = MFX_TRACE_LEVEL_DEFAULT;
 static volatile Ipp32u  g_refCounter = 0;
 

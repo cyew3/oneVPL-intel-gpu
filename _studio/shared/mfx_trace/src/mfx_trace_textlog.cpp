@@ -27,6 +27,12 @@ Mapping of mfxTraceTaskHandle:
 extern "C"
 {
 
+#if defined(_WIN32) || defined(_WIN64)
+#define MFT_TRACE_PATH_TO_TEMP_LIBLOG MFX_TRACE_STRING("C:\\temp\\mfxlib.log")
+#else
+#define MFT_TRACE_PATH_TO_TEMP_LIBLOG MFX_TRACE_STRING("/tmp/mfxlib.log")
+#endif
+
 #include <stdio.h>
 #include "mfx_trace_utils.h"
 #include "mfx_trace_textlog.h"
@@ -37,7 +43,7 @@ mfxTraceU32 g_PrintfSuppress = MFX_TRACE_TEXTLOG_SUPPRESS_FILE_NAME |
                           MFX_TRACE_TEXTLOG_SUPPRESS_LINE_NUM |
                           MFX_TRACE_TEXTLOG_SUPPRESS_LEVEL;
 FILE* g_mfxTracePrintfFile = NULL;
-mfxTraceChar g_mfxTracePrintfFileName[MAX_PATH] = {0};
+mfxTraceChar g_mfxTracePrintfFileName[MAX_PATH] = MFT_TRACE_PATH_TO_TEMP_LIBLOG;
 
 /*------------------------------------------------------------------------------*/
 
@@ -48,13 +54,13 @@ mfxTraceU32 MFXTraceTextLog_GetRegistryParams(void)
     HRESULT hr = S_OK;
     UINT32 value = 0;
 
-    if (SUCCEEDED(hr) && FAILED(mfx_trace_get_reg_string(MFX_TRACE_REG_ROOT,
-                                                   MFX_TRACE_REG_PARAMS_PATH,
-                                                   MFX_TRACE_TEXTLOG_REG_FILE_NAME,
-                                                   g_mfxTracePrintfFileName,
-                                                   sizeof(g_mfxTracePrintfFileName))))
+    if (SUCCEEDED(hr))
     {
-        g_mfxTracePrintfFileName[0] = '\0';
+        mfx_trace_get_reg_string(MFX_TRACE_REG_ROOT,
+                                 MFX_TRACE_REG_PARAMS_PATH,
+                                 MFX_TRACE_TEXTLOG_REG_FILE_NAME,
+                                 g_mfxTracePrintfFileName,
+                                 sizeof(g_mfxTracePrintfFileName));
     }
     if (SUCCEEDED(hr) && SUCCEEDED(mfx_trace_get_reg_dword(MFX_TRACE_REG_ROOT,
                                                            MFX_TRACE_REG_PARAMS_PATH,
@@ -81,13 +87,11 @@ mfxTraceU32 MFXTraceTextLog_GetRegistryParams(void)
     mfxTraceU32 value = 0;
 
     if (!conf_file) return 1;
-    if (mfx_trace_get_conf_string(conf_file,
-                                  MFX_TRACE_TEXTLOG_REG_FILE_NAME,
-                                  g_mfxTracePrintfFileName,
-                                  sizeof(g_mfxTracePrintfFileName)))
-    {
-        g_mfxTracePrintfFileName[0] = '\0';
-    }
+    mfx_trace_get_conf_string(conf_file,
+                              MFX_TRACE_TEXTLOG_REG_FILE_NAME,
+                              g_mfxTracePrintfFileName,
+                              sizeof(g_mfxTracePrintfFileName));
+
     if (!mfx_trace_get_conf_dword(conf_file,
                                   MFX_TRACE_TEXTLOG_REG_SUPPRESS,
                                   &value))
@@ -137,7 +141,6 @@ mfxTraceU32 MFXTraceTextLog_Close(void)
     g_PrintfSuppress = //MFX_TRACE_TEXTLOG_SUPPRESS_FILE_NAME |
                        //MFX_TRACE_TEXTLOG_SUPPRESS_LINE_NUM |
                        MFX_TRACE_TEXTLOG_SUPPRESS_LEVEL;
-    g_mfxTracePrintfFileName[0] = '\0';
     if (g_mfxTracePrintfFile)
     {
         fclose(g_mfxTracePrintfFile);
