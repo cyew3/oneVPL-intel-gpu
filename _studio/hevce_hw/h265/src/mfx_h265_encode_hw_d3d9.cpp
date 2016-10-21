@@ -217,6 +217,18 @@ void FillSpsBuffer(
     sps.bit_depth_chroma_minus8                 = (mfxU8)par.m_sps.bit_depth_chroma_minus8;
     sps.pcm_sample_bit_depth_luma_minus1        = (mfxU8)par.m_sps.pcm_sample_bit_depth_luma_minus1;
     sps.pcm_sample_bit_depth_chroma_minus1      = (mfxU8)par.m_sps.pcm_sample_bit_depth_chroma_minus1;
+
+    // ROI
+    if (par.m_ext.ROI.NumROI) {
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+            sps.ROIValueInDeltaQP = 1;
+        else
+            sps.ROIValueInDeltaQP = 0;  // 0 means Priorities (if supported in caps)
+    }
+
+    // if ENCODE_BLOCKQPDATA surface is provided
+    //sps.BlockQPInDeltaQPIndex = 1;    // surface contains data for non-rect ROI
+    //sps.BlockQPInDeltaQPIndex = 0;    // surface contains data for block level absolute QP value
 }
 
 void FillPpsBuffer(
@@ -286,10 +298,37 @@ void FillPpsBuffer(
         pps.bScreenContent = 1;
     }*/
 
+    // ROI
+    pps.NumROI = (mfxU8)par.m_ext.ROI.NumROI;
+    if (pps.NumROI)
+    {
+        mfxU32 blkshift = par.m_sps.log2_min_luma_coding_block_size_minus3 + 3 +
+            par.m_sps.log2_diff_max_min_luma_coding_block_size;
+
+        for (mfxU16 i = 0; i < pps.NumROI; i ++)
+        {
+            pps.ROI[i].Roi.Left = (mfxU16)((par.m_ext.ROI.ROI[i].Left) >> blkshift);
+            pps.ROI[i].Roi.Top = (mfxU16)((par.m_ext.ROI.ROI[i].Top) >> blkshift);
+            pps.ROI[i].Roi.Right = (mfxU16)((par.m_ext.ROI.ROI[i].Right) >> blkshift);
+            pps.ROI[i].Roi.Bottom = (mfxU16)((par.m_ext.ROI.ROI[i].Bottom) >> blkshift);
+            pps.ROI[i].PriorityLevelOrDQp = (mfxU8)par.m_ext.ROI.ROI[i].Priority;
+        }
+        pps.MaxDeltaQp = 51;    // is used for BRC only
+        pps.MinDeltaQp = -51;
+    }
+
+#if (HEVCE_DDI_VERSION >= 960)
+    // if ENCODE_BLOCKQPDATA surface is provided
+    pps.NumDeltaQpForNonRectROI = 0;    // if no non-rect ROI
+    // pps.NumDeltaQpForNonRectROI    // total number of different delta QPs for non-rect ROI ( + the same for rect ROI should not exceed MaxNumDeltaQP in caps
+    // pps.NonRectROIDeltaQpList[0..pps.NumDeltaQpForNonRectROI-1] // delta QPs for non-rect ROI
+#endif
+
 }
 
 void FillPpsBuffer(
     Task const & task,
+    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC & sps,
     ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps)
 {
     pps.CurrOriginalPic.Index7Bits      = task.m_idxRec;
@@ -309,6 +348,31 @@ void FillPpsBuffer(
         pps.RefFrameList[i].AssociatedFlag = !!task.m_dpb[0][i].m_ltr;
         pps.RefFramePOCList[i] = task.m_dpb[0][i].m_poc;
     }
+
+    // ROI
+    pps.NumROI = (mfxU8)task.m_numRoi;
+    if (pps.NumROI)
+    {
+        mfxU32 blkshift = sps.log2_max_coding_block_size_minus3 + 3;
+
+        for (mfxU16 i = 0; i < task.m_numRoi; i ++)
+        {
+            pps.ROI[i].Roi.Left = (mfxU16)((task.m_roi[i].Left) >> blkshift);
+            pps.ROI[i].Roi.Top = (mfxU16)((task.m_roi[i].Top) >> blkshift);
+            pps.ROI[i].Roi.Right = (mfxU16)((task.m_roi[i].Right) >> blkshift);
+            pps.ROI[i].Roi.Bottom = (mfxU16)((task.m_roi[i].Bottom) >> blkshift);
+            pps.ROI[i].PriorityLevelOrDQp = (mfxU8)task.m_roi[i].Priority;
+        }
+        pps.MaxDeltaQp = 51;    // is used for BRC only
+        pps.MinDeltaQp = -51;
+    }
+
+#if (HEVCE_DDI_VERSION >= 960)
+    // if ENCODE_BLOCKQPDATA surface is provided
+    pps.NumDeltaQpForNonRectROI = 0;    // if no non-rect ROI
+    // pps.NumDeltaQpForNonRectROI    // total number of different delta QPs for non-rect ROI ( + the same for rect ROI should not exceed MaxNumDeltaQP in caps
+    // pps.NonRectROIDeltaQpList[0..pps.NumDeltaQpForNonRectROI-1] // delta QPs for non-rect ROI
+#endif
 
     pps.CodingType      = task.m_codingType;
     pps.CurrPicOrderCnt = task.m_poc;
@@ -700,7 +764,7 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
     if (!m_sps.bResetBRC)
         m_sps.bResetBRC = task.m_resetBRC;
 
-    FillPpsBuffer(task, m_pps);
+    FillPpsBuffer(task, m_sps, m_pps);
     FillSliceBuffer(task, m_sps, m_pps, m_slice);
     m_pps.NumSlices = (USHORT)(m_slice.size());
 

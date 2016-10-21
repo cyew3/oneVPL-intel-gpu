@@ -628,6 +628,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     ExtBuffer::Construct(par, m_ext.PAVP, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.extBRC, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.SliceInfo, m_ext.m_extParam, base.NumExtParam);
+    ExtBuffer::Construct(par, m_ext.ROI, m_ext.m_extParam, base.NumExtParam);
 
     WiDi = !!((mfxExtAVCEncoderWiDiUsage*)ExtBuffer::Get(par));
 }
@@ -2851,6 +2852,32 @@ void ConfigureTask(
 
     mfxU16 IntRefType = par.m_ext.CO2.IntRefType;
 
+    // process roi
+    mfxExtEncoderROI const * pRoi = &par.m_ext.ROI;
+    mfxExtEncoderROI* extRoiRuntime = ExtBuffer::Get(task.m_ctrl);
+    if (extRoiRuntime)
+    {
+        pRoi = extRoiRuntime;
+    }
+
+    task.m_numRoi = 0;
+
+    if (pRoi && pRoi->NumROI)
+    {
+        for (mfxU16 i = 0; i < pRoi->NumROI; i ++)
+        {
+            memcpy_s(&task.m_roi[task.m_numRoi], sizeof(RoiData), &pRoi->ROI[i], sizeof(RoiData));
+            if (extRoiRuntime)
+            {
+                // check runtime ROI
+                mfxStatus sts = CheckAndFixRoi(par, (RoiData *)&(task.m_roi[task.m_numRoi]));
+                if (sts != MFX_ERR_INVALID_VIDEO_PARAM)
+                    task.m_numRoi ++;
+            } else
+                task.m_numRoi ++;
+        }
+    }
+
     if (task.m_tid == 0 && IntRefType)
     {
        if (isI)
@@ -2882,8 +2909,8 @@ void ConfigureTask(
 
     const bool isRef = !!(task.m_frameType & MFX_FRAMETYPE_REF);
 
-     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
-     {
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    {
         // set coding type and QP
         if (isB)
         {
@@ -2911,8 +2938,8 @@ void ConfigureTask(
 
         if ((IsOn(par.mfx.LowPower) || par.m_platform.CodeName == MFX_PLATFORM_KABYLAKE) && task.m_qpY < 0)
             task.m_qpY = 0;
-     }
-     else if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT)
+    }
+    else if (par.mfx.RateControlMethod != MFX_RATECONTROL_LA_EXT)
         task.m_qpY = 0;
 
     if (isP)

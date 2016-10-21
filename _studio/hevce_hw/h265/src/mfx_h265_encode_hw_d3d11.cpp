@@ -421,7 +421,7 @@ mfxStatus D3D11Encoder::Execute(Task const & task, mfxHDL surface)
     if (!m_sps.bResetBRC)
         m_sps.bResetBRC = task.m_resetBRC;
     
-    FillPpsBuffer(task, m_pps);
+    FillPpsBuffer(task, m_sps, m_pps);
     FillSliceBuffer(task, m_sps, m_pps, m_slice);
 
     mfxU32 RES_ID_BS  = 0;

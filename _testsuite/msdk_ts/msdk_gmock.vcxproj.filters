@@ -754,6 +754,9 @@
     <ClCompile Include="src\gmock\test_suites\avce_nummbperslice.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevce_roi.cpp">
+      <Filter>Source Files\test_suites\hevce</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vpp_sw_wrn_filter_skipped.cpp">
       <Filter>Source Files\test_suites\vpp</Filter>
     </ClCompile>

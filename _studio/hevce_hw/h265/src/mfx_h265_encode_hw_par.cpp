@@ -545,24 +545,6 @@ bool CheckMax(T & opt, U0 max)
     return false;
 }
 
-template <class T, class U0, class U1>
-bool CheckRange(T & opt, U0 min, U1 max)
-{
-    if (opt < min)
-    {
-        opt = T(min);
-        return true;
-    }
-
-    if (opt > max)
-    {
-        opt = T(max);
-        return true;
-    }
-
-    return false;
-}
-
 template <class T, class U0, class U1, class U2>
 bool CheckRangeDflt(T & opt, U0 min, U1 max, U2 deflt)
 {
@@ -734,12 +716,54 @@ bool CheckLCUSize(mfxU32 LCUSizeSupported, mfxU32& LCUSize)
     return true;
 }
 
+void CheckAndFixRect(MfxVideoParam const & par,
+                     RectData *rect,
+                     mfxU32 &changed,
+                     mfxU32 &invalid)
+{
+    changed += CheckRange(rect->Left,   mfxU32(0), mfxU32(par.mfx.FrameInfo.Width));
+    changed += CheckRange(rect->Right,  mfxU32(0), mfxU32(par.mfx.FrameInfo.Width));
+    changed += CheckRange(rect->Top,    mfxU32(0), mfxU32(par.mfx.FrameInfo.Height));
+    changed += CheckRange(rect->Bottom, mfxU32(0), mfxU32(par.mfx.FrameInfo.Height));
 
- const mfxU16 AVBR_ACCURACY_MIN = 1;
- const mfxU16 AVBR_ACCURACY_MAX = 65535;
+    // align to LCU siz; Does driver trim itself???
+    /*changed += */Trim(rect->Left, par.LCUSize);
+    /*changed += */Trim(rect->Right, par.LCUSize);
+    /*changed += */Trim(rect->Top, par.LCUSize);
+    /*changed += */Trim(rect->Bottom, par.LCUSize);
 
- const mfxU16 AVBR_CONVERGENCE_MIN = 1;
- const mfxU16 AVBR_CONVERGENCE_MAX = 65535;
+    invalid += (rect->Left > rect->Right);
+    invalid += (rect->Top > rect->Bottom);
+}
+
+mfxStatus CheckAndFixRoi(MfxVideoParam const & par, RoiData *roi)
+{
+    mfxStatus checkSts = MFX_ERR_NONE;
+    mfxU32 changed = 0, invalid = 0;
+    
+    CheckAndFixRect(par, (RectData *)roi, changed, invalid);
+            
+    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+    {
+        invalid += CheckRange(roi->Priority, -51, 51);
+    } else if (par.mfx.RateControlMethod)
+    {
+        invalid += CheckRange(roi->Priority, -3, 3);
+    }
+
+    if (changed)
+        checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+    if (invalid)
+        checkSts = MFX_ERR_INVALID_VIDEO_PARAM;
+
+    return checkSts;
+}
+
+const mfxU16 AVBR_ACCURACY_MIN = 1;
+const mfxU16 AVBR_ACCURACY_MAX = 65535;
+
+const mfxU16 AVBR_CONVERGENCE_MIN = 1;
+const mfxU16 AVBR_CONVERGENCE_MAX = 65535;
 
 template <class T>
 void InheritOption(T optInit, T & optReset)
@@ -896,7 +920,7 @@ inline bool isInVideoMem(MfxVideoParam const & par)
 
 mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, bool bInit = false)
 {
-    mfxU32 unsupported = 0, changed = 0, incompatible = 0;
+    mfxU32 unsupported = 0, changed = 0, incompatible = 0, invalid = 0;
     mfxStatus sts = MFX_ERR_NONE;
 
     mfxF64 maxFR   = 300.;
@@ -910,6 +934,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     mfxExtCodingOption2& CO2 = par.m_ext.CO2;
     mfxExtCodingOption3& CO3 = par.m_ext.CO3;
+    mfxExtEncoderROI& ROI = par.m_ext.ROI;
 
     changed += CheckTriStateOption(par.mfx.LowPower);
 
@@ -929,7 +954,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         surfAlignH = HW_SURF_ALIGN_VDENC_H;
     }
 
-    changed +=  par.CheckExtBufferParam();
+    changed +=  par.CheckExtBufferParam();  // todo: check ROI?? check SliceInfo??
 
     if (par.mfx.CodecLevel)
     {
@@ -1393,6 +1418,39 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         changed++;
     }
 
+    //ROI
+    if (ROI.NumROI) {
+
+        unsupported += (caps.MaxNumOfROI == 0);
+
+        //{  // if block QP Data surface is not provided
+        //    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+        //        unsupported += (caps.ROIDeltaQPSupport == 0);
+        //    else
+        //        unsupported += (caps.ROIBRCPriorityLevelSupport == 0);
+        //}
+
+        if (bInit)
+            invalid += CheckMax(ROI.NumROI, caps.MaxNumOfROI);
+        else
+            changed += CheckMax(ROI.NumROI, caps.MaxNumOfROI);
+
+        if (par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
+            unsupported += CheckMax(ROI.NumROI, 4);     /* Gen10-12 limitation */
+
+        for (mfxU16 i = 0; i < ROI.NumROI; i++)
+        {
+            // check that rectangle dimensions don't conflict with each other and don't exceed frame size
+            sts = CheckAndFixRoi(par, (RoiData *)&(ROI.ROI[i]));
+            if (sts == MFX_ERR_INVALID_VIDEO_PARAM) {
+                invalid++;
+            } else if (sts != MFX_ERR_NONE) {
+                if (bInit) invalid++;
+                else changed++;
+            }
+        }
+    }
+
     sts = CheckProfile(par);
 
     if (sts >= MFX_ERR_NONE && par.mfx.CodecLevel > 0)
@@ -1404,11 +1462,14 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if (sts == MFX_ERR_NONE && changed)
         sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
-    if (sts >= MFX_ERR_NONE && unsupported)
-        sts = MFX_ERR_UNSUPPORTED;
-
     if (sts >= MFX_ERR_NONE && incompatible)
         sts = MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
+    if (sts >= MFX_ERR_NONE && invalid)
+        sts = MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if (sts >= MFX_ERR_NONE && unsupported)
+        sts = MFX_ERR_UNSUPPORTED;
 
     return sts;
 }

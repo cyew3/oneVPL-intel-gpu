@@ -1366,7 +1366,7 @@ void HeaderPacker::PackSSH(
     mfxU32*          qpd_offset)
 {
     const mfxU8 B = 0, P = 1/*, I = 2*/;
-    mfxU32 MaxCU = (1<<(sps.log2_min_luma_coding_block_size_minus3+3 + sps.log2_diff_max_min_luma_coding_block_size));
+    mfxU32 MaxCU = (1<<(sps.log2_min_luma_coding_block_size_minus3 + 3 + sps.log2_diff_max_min_luma_coding_block_size));
     mfxU32 PicSizeInCtbsY = CeilDiv(sps.pic_width_in_luma_samples, MaxCU) * CeilDiv(sps.pic_height_in_luma_samples, MaxCU);
 
     PackNALU(bs, nalu);

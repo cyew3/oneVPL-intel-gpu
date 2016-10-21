@@ -293,6 +293,7 @@
     <ClCompile Include="src\gmock\test_suites\hevce_qp_offset.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_query_io_surf.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_reset.cpp" />
+    <ClCompile Include="src\gmock\test_suites\hevce_roi.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_spspps_get.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_query.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_co2_disable_deblocking.cpp" />

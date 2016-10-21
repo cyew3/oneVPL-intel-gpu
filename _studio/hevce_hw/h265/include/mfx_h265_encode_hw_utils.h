@@ -64,6 +64,15 @@ template<class T> inline T Align(T value, mfxU32 alignment)
     assert((alignment & (alignment - 1)) == 0); // should be 2^n
     return T((value + alignment - 1) & ~(alignment - 1));
 }
+template<class T> bool Trim(T& value, mfxU32 alignment)
+{
+    assert((alignment & (alignment - 1)) == 0); // should be 2^n
+    if (value & (alignment - 1)) {
+        value = T(value & ~(alignment - 1));
+        return true;
+    }
+    return false;
+}
 template<class T> bool IsAligned(T value, mfxU32 alignment)
 {
     assert((alignment & (alignment - 1)) == 0); // should be 2^n
@@ -75,6 +84,24 @@ template<class T> inline T Lsb(T val, mfxU32 maxLSB)
         return val % maxLSB;
     return (maxLSB - ((-val) % maxLSB)) % maxLSB;
 }
+template <class T, class U0, class U1>
+bool CheckRange(T & opt, U0 min, U1 max)
+{
+    if (opt < min)
+    {
+        opt = T(min);
+        return true;
+    }
+
+    if (opt > max)
+    {
+        opt = T(max);
+        return true;
+    }
+
+    return false;
+}
+
 
 inline mfxU32 CeilLog2  (mfxU32 x)           { mfxU32 l = 0; while(x > (1U<<l)) l++; return l; }
 inline mfxU32 CeilDiv   (mfxU32 x, mfxU32 y) { return (x + y - 1) / y; }
@@ -100,20 +127,22 @@ enum
 
 enum
 {
-    MAX_DPB_SIZE        = 15,
-    IDX_INVALID         = 0xFF,
+    MAX_DPB_SIZE            = 15,
+    IDX_INVALID             = 0xFF,
 
-    HW_SURF_ALIGN_W     = 16,
-    HW_SURF_ALIGN_H     = 16,
+    HW_SURF_ALIGN_W         = 16,
+    HW_SURF_ALIGN_H         = 16,
     
-    HW_SURF_ALIGN_VDENC_W = 32,
-    HW_SURF_ALIGN_VDENC_H = HW_SURF_ALIGN_H,
+    HW_SURF_ALIGN_VDENC_W   = 32,
+    HW_SURF_ALIGN_VDENC_H   = HW_SURF_ALIGN_H,
 
-    CODED_PIC_ALIGN_W   = 16,
-    CODED_PIC_ALIGN_H   = 16,
-    DEFAULT_LCU_SIZE    = 32,
-    MAX_SLICES          = 200,
-    DEFAULT_LTR_INTERVAL= 16
+    CODED_PIC_ALIGN_W       = 16,
+    CODED_PIC_ALIGN_H       = 16,
+    DEFAULT_LCU_SIZE        = 32,
+    MAX_SLICES              = 200,
+    DEFAULT_LTR_INTERVAL    = 16,
+
+    MAX_NUM_ROI             = 4 // for Gen10 - Gen12
 };
 
 enum
@@ -238,6 +267,23 @@ struct IntraRefreshState
     mfxI16  IntRefQPDelta;
     bool    firstFrameInCycle;
 };
+
+struct RectData{
+    mfxU32  Left;
+    mfxU32  Top;
+    mfxU32  Right;
+    mfxU32  Bottom;
+};
+
+struct RoiData{
+    mfxU32  Left;
+    mfxU32  Top;
+    mfxU32  Right;
+    mfxU32  Bottom;
+
+    mfxI16  Priority;
+};
+
 typedef struct _Task : DpbFrame
 {
     mfxBitstream*       m_bs;
@@ -276,6 +322,10 @@ typedef struct _Task : DpbFrame
     mfxU32 m_recode;
     IntraRefreshState m_IRState;
     bool m_bSkipped;
+
+    RoiData         m_roi[MAX_NUM_ROI];
+    mfxU16          m_numRoi;
+
 }Task;
 
 enum
@@ -333,7 +383,8 @@ namespace ExtBuffer
          MFX_EXTBUFF_PAVP_OPTION,
          MFX_EXTBUFF_ENCODER_WIDI_USAGE,
          MFX_EXTBUFF_BRC,
-         MFX_EXTBUFF_ENCODED_SLICES_INFO
+         MFX_EXTBUFF_ENCODED_SLICES_INFO,
+         MFX_EXTBUFF_ENCODER_ROI
     };
 
     template<class T> struct ExtBufferMap {};
@@ -364,8 +415,9 @@ namespace ExtBuffer
 #endif
         EXTBUF(mfxExtPAVPOption,            MFX_EXTBUFF_PAVP_OPTION);
         EXTBUF(mfxExtAVCEncoderWiDiUsage,   MFX_EXTBUFF_ENCODER_WIDI_USAGE);
-        EXTBUF(mfxExtEncodedSlicesInfo,     MFX_EXTBUFF_ENCODED_SLICES_INFO);
         EXTBUF(mfxExtBRC,                   MFX_EXTBUFF_BRC);
+        EXTBUF(mfxExtEncodedSlicesInfo,     MFX_EXTBUFF_ENCODED_SLICES_INFO);
+        EXTBUF(mfxExtEncoderROI,            MFX_EXTBUFF_ENCODER_ROI);
 
     #undef EXTBUF
 
@@ -665,7 +717,8 @@ public:
         mfxExtPAVPOption            PAVP;
         mfxExtBRC                   extBRC;
         mfxExtEncodedSlicesInfo     SliceInfo;
-        mfxExtBuffer *              m_extParam[13];
+        mfxExtEncoderROI            ROI;
+        mfxExtBuffer *              m_extParam[14];
     } m_ext;
 
     mfxU32 BufferSizeInKB;
@@ -921,6 +974,10 @@ mfxStatus CodeAsSkipFrame(
     Task&       task,
     MfxFrameAllocResponse & poolSkip,
     MfxFrameAllocResponse & poolRec);
+
+mfxStatus CheckAndFixRoi(
+    MfxVideoParam const & par,
+    RoiData *roi);
 
 #if DEBUG_REC_FRAMES_INFO
     inline vm_file * OpenFile(vm_char const * name, vm_char const * mode)

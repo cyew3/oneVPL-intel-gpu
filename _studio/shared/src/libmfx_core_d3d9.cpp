@@ -299,9 +299,26 @@ mfxStatus D3D9VideoCORE::InternalInit()
     mfxU32 platformFromDriver = 0;
 
     DXVA2_ConfigPictureDecode config;
+
     mfxStatus sts = GetIntelDataPrivateReport(sDXVA2_ModeH264_VLD_NoFGT, config);
     if (sts == MFX_ERR_NONE)
         platformFromDriver = config.ConfigBitstreamRaw;
+
+#if 0
+    // added temporarily to monitor driver DDI version if needed
+    sts = GetIntelDataPrivateReport(DXVA2_Intel_Encode_HEVC_Main, config);
+    int DriverDDIMain = config.ConfigSpatialResid8;
+    printf("DriverDDIMain = %d\n", DriverDDIMain);
+    sts = GetIntelDataPrivateReport(DXVA2_Intel_Encode_HEVC_Main10, config);
+    int DriverDDIMain10 = config.ConfigSpatialResid8;
+    printf("DriverDDIMain10 = %d\n", DriverDDIMain10);
+    sts = GetIntelDataPrivateReport(DXVA2_Intel_LowpowerEncode_HEVC_Main, config);
+    int DriverDDIMainLP = config.ConfigSpatialResid8;
+    printf("DriverDDIMainLP = %d\n", DriverDDIMainLP);
+    sts = GetIntelDataPrivateReport(DXVA2_Intel_LowpowerEncode_HEVC_Main10, config);
+    int DriverDDIMain10LP = config.ConfigSpatialResid8;
+    printf("DriverDDIMain10LP = %d\n", DriverDDIMain10LP);
+#endif
 
     m_HWType = MFX::GetHardwareType(m_adapterNum, platformFromDriver);
 

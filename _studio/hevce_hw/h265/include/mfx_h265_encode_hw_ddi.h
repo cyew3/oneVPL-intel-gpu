@@ -122,7 +122,8 @@ typedef struct tagENCODE_CAPS_HEVC
             UINT    MoveRectSupport                 : 1;
             UINT    FrameSizeToleranceSupport       : 1;
             UINT    HWCounterAutoIncrementSupport   : 2;
-            UINT                                    : 13; // For future expansion
+            UINT    ROIDeltaQPSupport               : 1;
+            UINT                                    : 12; // For future expansion
         };
         UINT    CodingLimits2;
     };
@@ -157,16 +158,19 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
     {
         struct
         {
-            UINT    bResetBRC           : 1;
-            UINT    GlobalSearch        : 2;
-            UINT    LocalSearch         : 4;
-            UINT    EarlySkip           : 2;
-            UINT    MBBRC               : 4;
-            UINT    ParallelBRC         : 1;
-            UINT    SliceSizeControl    : 1;
-            UINT    SourceFormat        : 2;
-            UINT    SourceBitDepth      : 2;
-            UINT    ReservedBits        : 13;
+            UINT    bResetBRC               : 1;
+            UINT    GlobalSearch            : 2;
+            UINT    LocalSearch             : 4;
+            UINT    EarlySkip               : 2;
+            UINT    MBBRC                   : 4;
+            UINT    ParallelBRC             : 1;
+            UINT    SliceSizeControl        : 1;
+            UINT    SourceFormat            : 2;
+            UINT    SourceBitDepth          : 2;
+            UINT    QpAdjustment            : 1;
+            UINT    ROIValueInDeltaQP       : 1;
+            UINT    BlockQPInDeltaQPIndex   : 1;
+            UINT    ReservedBits            : 10;
         }/*fields*/;
         UINT    EncodeFlags;
     }/*EncodeFlags*/;
