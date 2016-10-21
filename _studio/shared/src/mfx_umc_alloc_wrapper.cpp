@@ -186,6 +186,9 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
     case MFX_FOURCC_Y210:
         color_format = UMC::Y210;
         break;
+    case MFX_FOURCC_Y216:
+        color_format = UMC::Y216;
+        break;
     case MFX_FOURCC_Y410:
         color_format = UMC::Y410;
         break;

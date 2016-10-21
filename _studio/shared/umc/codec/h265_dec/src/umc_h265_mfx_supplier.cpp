@@ -447,6 +447,7 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
 
             case MFX_FOURCC_YUY2:
             case MFX_FOURCC_Y210:
+            case MFX_FOURCC_Y216:
                 guids[0] = DXVA_Intel_ModeHEVC_VLD_Main422_10Profile;
                 break;
 
@@ -1391,6 +1392,7 @@ bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType t
         in->mfx.FrameInfo.FourCC != MFX_FOURCC_P010 &&
         in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV16 &&
         in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y210 &&
+        in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y216 &&
         in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y410)
         return false;
 
