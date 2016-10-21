@@ -15,24 +15,11 @@ File Name: hevcd_init.cpp
 namespace hevcd_init
 {
 
-class TestSuite : tsVideoDecoder
+class TestSuite : public tsVideoDecoder
 {
-public:
-    TestSuite() : tsVideoDecoder(MFX_CODEC_HEVC) {}
-    ~TestSuite() {}
-    int RunTest(unsigned int id);
-    static const unsigned int n_cases;
-
-private:
     static const mfxU32 n_par = 5;
 
-    enum
-    {
-          NONE = 0
-        , MFXVP
-        , SESSION
-        , UID
-    };
+public:
 
     struct tc_struct
     {
@@ -46,6 +33,23 @@ private:
             const  tsStruct::Field* f;
             mfxU32 v;
         } set_par[n_par];
+    };
+
+public:
+
+    TestSuite() : tsVideoDecoder(MFX_CODEC_HEVC) {}
+    ~TestSuite() {}
+    int RunTest(tc_struct const&);
+    static const unsigned int n_cases;
+
+protected:
+
+    enum
+    {
+          NONE = 0
+        , MFXVP
+        , SESSION
+        , UID
     };
 
     static const tc_struct test_case[];
@@ -92,10 +96,10 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
-int TestSuite::RunTest(unsigned int id)
+int TestSuite::RunTest(tc_struct const& tc)
 {
     TS_START;
-    const tc_struct& tc = test_case[id];
+
     m_par_set = true; //don't use DecodeHeader
     m_par.AsyncDepth = 5;
 
@@ -114,7 +118,8 @@ int TestSuite::RunTest(unsigned int id)
         }
 
         // set default param
-        m_pPar->mfx.CodecProfile = 1;
+        m_pPar->mfx.FrameInfo.ChromaFormat = 0;
+
         for (mfxU32 i = 0; i < n_par; i++)
         {
             if (tc.set_par[i].f)
@@ -193,6 +198,136 @@ int TestSuite::RunTest(unsigned int id)
     return 0;
 }
 
-TS_REG_TEST_SUITE_CLASS(hevcd_init);
+struct bits;
+struct chromas;
+template <unsigned v>
+struct int_ : std::integral_constant<unsigned, v> {};
 
+static const tsStruct::Field* const FourCC        (&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC);
+static const tsStruct::Field* const ChromaFormat  (&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat);
+static const tsStruct::Field* const BitDepthLuma  (&tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma);
+
+template <unsigned profile, unsigned fourcc, typename, typename>
+struct TestSuiteExt;
+
+//should be cpp11's variadics ...
+template <
+    unsigned profile,
+    unsigned fourcc,
+    typename b1, typename b2, typename b3,
+    typename c1, typename c2, typename c3
+>
+struct TestSuiteExt<profile, fourcc, bits(b1, b2, b3), chromas(c1, c2, c3)>
+    : public TestSuite
+{
+    static
+    int RunTest(unsigned int id);
+    static
+    unsigned int GetCount();
+
+    static tc_struct const test_cases[];
+};
+
+template <
+    unsigned profile,
+    unsigned fourcc,
+    typename b1, typename b2, typename b3, //default correct wrong
+    typename c1, typename c2, typename c3  //correct wrong...
+>
+TestSuite::tc_struct const TestSuiteExt<profile, fourcc, bits(b1, b2, b3), chromas(c1, c2, c3)>::test_cases[] =
+{
+    {/*23*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {BitDepthLuma, b1::value}}},
+    {/*24*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {BitDepthLuma, b2::value}}},
+    {/*25*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {ChromaFormat, c1::value}}},
+
+    {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {BitDepthLuma, b3::value}}},
+
+    {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {ChromaFormat, c2::value}}},
+    {/*28*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {ChromaFormat, c3::value}}},
+};
+
+template <
+    unsigned profile,
+    unsigned fourcc,
+    typename b1, typename b2, typename b3,
+    typename c1, typename c2, typename c3
+>
+int TestSuiteExt<profile, fourcc, bits(b1, b2, b3), chromas(c1, c2, c3)>::RunTest(unsigned int id)
+{
+    auto tc =
+        id >= TestSuite::n_cases ?
+        test_cases[id - TestSuite::n_cases] : TestSuite::test_case[id];
+
+    TestSuite suite;
+    suite.m_par.mfx.CodecProfile = profile;
+
+    return suite.RunTest(tc);
+}
+
+template <
+    unsigned profile,
+    unsigned fourcc,
+    typename b1, typename b2, typename b3,
+    typename c1, typename c2, typename c3
+>
+unsigned int TestSuiteExt<profile, fourcc, bits(b1, b2, b3), chromas(c1, c2, c3)>::GetCount()
+{ return TestSuite::n_cases + 6; }
+
+#define TS_SEQ(type, a, b, c)  type(int_<a>, int_<b>, int_<c>)
+#define TS_BITS(b1, b2, b3)    TS_SEQ(bits,    b1, b2, b3)
+#define TS_CHROMAS(c1, c2, c3) TS_SEQ(chromas, c1, c2, c3)
+
+#define TS_REG_TEST_SUITE_TMPL(name, profile, fourcc, bits, chromas) \
+    TS_REG_TEST_SUITE(name,                                          \
+        (TestSuiteExt<profile, fourcc, bits, chromas>::RunTest),     \
+        (TestSuiteExt<profile, fourcc, bits, chromas>::GetCount())   \
+    )
+
+TS_REG_TEST_SUITE_TMPL(
+    hevcd_init,
+    MFX_PROFILE_HEVC_MAIN,
+    MFX_FOURCC_NV12,
+    TS_BITS(0, 8, 10), TS_CHROMAS(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV422)
+);
+
+TS_REG_TEST_SUITE_TMPL(
+    hevcd_422_init,
+    MFX_PROFILE_HEVC_REXT,
+    MFX_FOURCC_YUY2,
+    TS_BITS(0, 8, 10), TS_CHROMAS(MFX_CHROMAFORMAT_YUV422, MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV420)
+);
+
+TS_REG_TEST_SUITE_TMPL(
+    hevcd_444_init,
+    MFX_PROFILE_HEVC_REXT,
+    MFX_FOURCC_AYUV,
+    TS_BITS(0, 8, 10), TS_CHROMAS(MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV422)
+);
+
+TS_REG_TEST_SUITE_TMPL(
+    hevc10d_init,
+    MFX_PROFILE_HEVC_MAIN10,
+    MFX_FOURCC_P010,
+    TS_BITS(0, 10, 8), TS_CHROMAS(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV422)
+);
+
+TS_REG_TEST_SUITE_TMPL(
+    hevc10d_422_init,
+    MFX_PROFILE_HEVC_REXT,
+    MFX_FOURCC_Y216,
+    TS_BITS(0, 10, 8), TS_CHROMAS(MFX_CHROMAFORMAT_YUV422, MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV420)
+);
+
+TS_REG_TEST_SUITE_TMPL(
+    hevc10d_444_init,
+    MFX_PROFILE_HEVC_REXT,
+    MFX_FOURCC_Y410,
+    TS_BITS(0, 10, 8), TS_CHROMAS(MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV422, MFX_CHROMAFORMAT_YUV420)
+);
+
+#undef SEQ
+#undef BITS
+#undef CHROMAS
+
+#undef TS_REG_TEST_SUITE_TMPL
 }
