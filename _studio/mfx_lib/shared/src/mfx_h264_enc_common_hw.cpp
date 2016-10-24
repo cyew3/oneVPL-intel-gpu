@@ -6502,11 +6502,14 @@ void MfxVideoParam::AlignCalcWithBRCParamMultiplier()
     if(!mfx.BRCParamMultiplier)
         return;
 
-    calcParam.bufferSizeInKB   = mfx.BufferSizeInKB   * mfx.BRCParamMultiplier;
-    calcParam.initialDelayInKB = mfx.InitialDelayInKB * mfx.BRCParamMultiplier;
-    calcParam.targetKbps       = mfx.TargetKbps       * mfx.BRCParamMultiplier;
-    calcParam.maxKbps          = mfx.MaxKbps          * mfx.BRCParamMultiplier;
-    calcParam.WinBRCMaxAvgKbps = m_extOpt3.WinBRCMaxAvgKbps * mfx.BRCParamMultiplier;
+    if (mfx.RateControlMethod != MFX_RATECONTROL_CQP)
+    {
+        calcParam.bufferSizeInKB   = mfx.BufferSizeInKB   * mfx.BRCParamMultiplier;
+        calcParam.initialDelayInKB = mfx.InitialDelayInKB * mfx.BRCParamMultiplier;
+        calcParam.targetKbps       = mfx.TargetKbps       * mfx.BRCParamMultiplier;
+        calcParam.maxKbps          = mfx.MaxKbps          * mfx.BRCParamMultiplier;
+        calcParam.WinBRCMaxAvgKbps = m_extOpt3.WinBRCMaxAvgKbps * mfx.BRCParamMultiplier;
+    }
 }
 
 void MfxVideoParam::Construct(mfxVideoParam const & par)
