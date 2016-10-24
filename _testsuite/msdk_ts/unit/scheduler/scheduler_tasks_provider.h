@@ -22,6 +22,32 @@ Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 namespace utils {
 
+class Semaphore
+{
+public:
+    Semaphore(int count = 0):
+        m_cnt(count)
+    {}
+
+    void post() {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        m_cnt++;
+        m_cond_var.notify_one();
+    }
+
+    void wait() {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        while(0 == m_cnt)
+            m_cond_var.wait(lock);
+        m_cnt--;
+    }
+
+protected:
+    int m_cnt;
+    std::mutex m_mutex;
+    std::condition_variable m_cond_var;
+};
+
 struct ISyncObject
 {
     virtual ~ISyncObject() {}

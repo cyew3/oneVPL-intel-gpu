@@ -10,6 +10,7 @@ Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #include <thread>
 #include <vector>
+#include <limits>
 
 #include "gtest/gtest.h"
 
@@ -127,6 +128,47 @@ TEST_P(TasksTest, MultipleWaiters) {
     EXPECT_EQ(MFX_ERR_NONE, sts);
 }
 
+TEST_P(TasksTest, SingleThread) {
+    ::TaskConfig task_cfg = GetParam();
+    SCOPED_TRACE(task_cfg.scope_);
+
+    mfxStatus sts;
+    mfxSyncPoint syncp;
+    utils::Semaphore sem;
+    utils::Task task(new utils::TaskParam(task_cfg.sts_));
+    MFX_SCHEDULER_PARAM sched_params = { MFX_SINGLE_THREAD, 0, NULL, };
+
+    task.param_->sync_obj_ = std::make_shared<utils::SleepSyncObject>(task_cfg.dur_);
+
+    // Start waiter thread
+    auto syncf = [&] {
+        sem.wait();
+        mfxStatus sts = core_->Synchronize(syncp, std::numeric_limits<mfxU32>::max());
+        EXPECT_EQ(MFX_ERR_NONE, sts);
+    };
+    std::thread sync_th(syncf);
+
+    sts = core_->Initialize(&sched_params);
+    EXPECT_EQ(MFX_ERR_NONE, sts);
+
+    sts = core_->AddTask(task, &syncp);
+    EXPECT_EQ(MFX_ERR_NONE, sts);
+
+    sts = core_->Synchronize(syncp, 0);
+    EXPECT_EQ(task_cfg.sts_, sts);
+
+    auto start = std::chrono::high_resolution_clock::now();
+    sem.post();
+    sync_th.join();
+    utils::compare(
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::high_resolution_clock::now() - start),
+            task_cfg.dur_ + std::chrono::milliseconds(task.get_tolerance()));
+
+    sts = core_->Reset();
+    EXPECT_EQ(MFX_ERR_NONE, sts);
+}
+
 TEST_F(TasksTest, MultiframeHerd) {
     mfxStatus sts;
     utils::MultiframeTaskProvider task_provider(MFX_ERR_NONE, 4);
@@ -202,3 +244,4 @@ static std::vector<::TaskConfig> configs({
 
 INSTANTIATE_TEST_CASE_P(SingleTask, TasksTest, ::testing::ValuesIn(configs));
 INSTANTIATE_TEST_CASE_P(MultipleWaiters, TasksTest, ::testing::ValuesIn(configs));
+INSTANTIATE_TEST_CASE_P(SingleThread, TasksTest, ::testing::ValuesIn(configs));
