@@ -768,6 +768,15 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
     m_video = *par;
+
+    mfxExtCodingOption3 * extCodingOpt3 = GetExtBuffer(m_video);
+
+    if (m_isENCPAK && IsOn(extCodingOpt3->EnableMBQP))
+    {
+        extCodingOpt3->EnableMBQP = MFX_CODINGOPTION_OFF;
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    }
+
     /* FEI works with CQP only */
     if ((m_isENCPAK) && (MFX_RATECONTROL_CQP != par->mfx.RateControlMethod)){
         m_video.mfx.RateControlMethod =  MFX_RATECONTROL_CQP;
@@ -1288,6 +1297,14 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
 {
     mfxStatus sts = MFX_ERR_NONE;
 
+    /* feiParam buffer attached by application */
+    mfxExtFeiParam* feiParam = (mfxExtFeiParam*)GetExtBuffer(newPar.ExtParam,
+                                                             newPar.NumExtParam,
+                                                             MFX_EXTBUFF_FEI_PARAM);
+    m_isENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
+    if ((NULL != feiParam) && (feiParam->Func != MFX_FEI_FUNCTION_ENCODE))
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+
     mfxExtPAVPOption * extPavpNew = GetExtBuffer(newPar);
     mfxExtPAVPOption * extPavpOld = GetExtBuffer(m_video);
     *extPavpNew = *extPavpOld; // ignore any change in mfxExtPAVPOption
@@ -1335,7 +1352,13 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
     mfxExtSpsHeader const * extSpsOld = GetExtBuffer(m_video);
     mfxExtCodingOption2 const * extOpt2New = GetExtBuffer(newPar);
     mfxExtCodingOption2 const * extOpt2Old = GetExtBuffer(m_video);
-    mfxExtCodingOption3 const * extOpt3New = GetExtBuffer(newPar);
+    mfxExtCodingOption3 * extOpt3New = GetExtBuffer(newPar);
+
+    if (m_isENCPAK && IsOn(extOpt3New->EnableMBQP))
+    {
+        extOpt3New->EnableMBQP = MFX_CODINGOPTION_OFF;
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    }
 
     if(!IsOn(m_video.mfx.LowPower))
     {
@@ -2747,17 +2770,28 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             }
         }
 
-        if (IsOn(extOpt3.EnableMBQP))
+        if (m_isENCPAK)
         {
             const mfxExtMBQP *mbqp = GetExtBuffer(task->m_ctrl);
-            mfxU32 wMB = (m_video.mfx.FrameInfo.CropW + 15) / 16;
-            mfxU32 hMB = (m_video.mfx.FrameInfo.CropH + 15) / 16;
-            task->m_isMBQP = mbqp && mbqp->QP && mbqp->NumQPAlloc >= wMB * hMB;
-
-            if (m_useMBQPSurf && task->m_isMBQP)
+            if (mbqp)
             {
-                task->m_idxMBQP = FindFreeResourceIndex(m_mbqp);
-                task->m_midMBQP = AcquireResource(m_mbqp, task->m_idxMBQP);
+                return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+            }
+        }
+        else
+        {
+            if (IsOn(extOpt3.EnableMBQP))
+            {
+                const mfxExtMBQP *mbqp = GetExtBuffer(task->m_ctrl);
+                mfxU32 wMB = (m_video.mfx.FrameInfo.CropW + 15) / 16;
+                mfxU32 hMB = (m_video.mfx.FrameInfo.CropH + 15) / 16;
+                task->m_isMBQP = mbqp && mbqp->QP && mbqp->NumQPAlloc >= wMB * hMB;
+
+                if (m_useMBQPSurf && task->m_isMBQP)
+                {
+                    task->m_idxMBQP = FindFreeResourceIndex(m_mbqp);
+                    task->m_midMBQP = AcquireResource(m_mbqp, task->m_idxMBQP);
+                }
             }
         }
 
