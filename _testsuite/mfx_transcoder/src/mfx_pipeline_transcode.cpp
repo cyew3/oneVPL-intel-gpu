@@ -417,6 +417,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_DDI_OPTION(WeightedBiPredIdc,       OPT_UINT_16,    "0 - off, 1 - explicit (unsupported), 2 - implicit"),
         HANDLE_DDI_OPTION(DirectSpatialMvPredFlag, OPT_TRI_STATE,  "on=spatial, off=temporal"),
         HANDLE_DDI_OPTION(CabacInitIdcPlus1,       OPT_UINT_16,    "0-to use default value (depends on Target Usaeg), 1-cabacinitidc=0, 2-cabacinitidc=1,  etc"),
+        HANDLE_DDI_OPTION(LCUSize,                 OPT_UINT_16,    "32 or 64 - overrides default value of Largest Coding Unit"),
 
         //mfxExtEncoderCapability
         HANDLE_CAP_OPTION(MBPerSec,                OPT_BOOL,       "Query Encoder for Max MB Per Second"),

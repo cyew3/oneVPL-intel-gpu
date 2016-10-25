@@ -85,6 +85,8 @@ typedef struct {
     mfxU16 LookAheadDependency;     // LookAheadDependency < LookAhead
     mfxU16 Hme;                     // tri-state
 
+    mfxU16 LCUSize;                 // 32 or 64 - overrides default value of Largest Coding Unit
+
 } mfxExtCodingOptionDDI;
 
 #ifdef MFX_UNDOCUMENTED_QUANT_MATRIX

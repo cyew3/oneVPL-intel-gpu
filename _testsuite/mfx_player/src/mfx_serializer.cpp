@@ -251,6 +251,8 @@ void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
     SERIALIZE_INT(DirectSpatialMvPredFlag);
     SERIALIZE_INT(CabacInitIdcPlus1);
 
+    SERIALIZE_INT(LCUSize);
+
 }
 
 void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const

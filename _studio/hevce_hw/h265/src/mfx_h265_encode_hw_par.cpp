@@ -939,6 +939,8 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     changed += CheckTriStateOption(par.mfx.LowPower);
 
     CheckLCUSize(caps.LCUSizeSupported ? caps.LCUSizeSupported : IsOn(par.mfx.LowPower) ? (64 >> 4) : (32 >> 4), par.LCUSize);
+    if ((par.m_ext.DDI.LCUSize == 32) || (par.m_ext.DDI.LCUSize == 64))
+        par.LCUSize = par.m_ext.DDI.LCUSize;
 
     if (par.mfx.FrameInfo.BitDepthLuma > 8)
     {

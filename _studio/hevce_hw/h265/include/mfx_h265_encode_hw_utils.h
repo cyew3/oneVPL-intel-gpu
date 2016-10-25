@@ -484,6 +484,7 @@ namespace ExtBuffer
     {
         _CopyPar1(NumActiveRefBL0);
         _CopyPar1(NumActiveRefBL1);
+        _CopyPar1(LCUSize);
     }
     inline void  CopySupportedParams(mfxExtEncoderCapability& buf_dst, mfxExtEncoderCapability& buf_src)
     {
