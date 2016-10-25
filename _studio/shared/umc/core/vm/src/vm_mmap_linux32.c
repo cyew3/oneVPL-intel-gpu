@@ -5,10 +5,14 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(LINUX32) || defined(__APPLE__)
+
+#if defined(__ANDROID__)
+#define _FILE_OFFSET_BITS 64
+#endif
 
 #include <sys/types.h>
 #include <sys/mman.h>
@@ -44,7 +48,7 @@ Ipp32s vm_mmap_is_valid(vm_mmap *handle)
 /* Map a file into system meory, return size of the mapped file */
 Ipp64u vm_mmap_create(vm_mmap *handle, vm_char *file, Ipp32s fileAccessAttr)
 {
-    size_t sizet;
+    Ipp64u sizet;
 
     /* check error(s) */
     if (NULL == handle)
