@@ -154,7 +154,7 @@ public:
         m_bs_processor = &m_stream;
     }
     ~TestSuite() {}
-    int RunTest(unsigned int id);
+    int RunTest(unsigned int id, const char* sname);
     static const unsigned int n_cases;
 
 private:
@@ -182,7 +182,6 @@ private:
     struct tc_struct
     {
         mfxStatus sts;
-        std::string stream;
         mfxU32 n_frames;
         struct tctrl{
             mfxU32 type;
@@ -296,23 +295,23 @@ const char TestSuite::path[] = "conformance/hevc/itu/";
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
-    {/* 0*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 0},
-    {/* 1*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 1},
-    {/* 2*/ MFX_ERR_NULL_PTR, "", 0, {ZERO_PAR}},
-    {/* 3*/ MFX_ERR_INVALID_HANDLE, "", 0, {CLOSE_SES}},
-    {/* 4*/ MFX_ERR_NOT_INITIALIZED, "", 0, {CLOSE_DEC}},
-    {/* 5*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 1, {ATTACH_EXT_BUF, {2, EXT_BUF(mfxExtCodingOptionSPSPPS), EXT_BUF(mfxExtVideoSignalInfo)}}},
-    {/* 6*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 10, {ATTACH_EXT_BUF, {2, EXT_BUF(mfxExtCodingOptionSPSPPS), EXT_BUF(mfxExtVideoSignalInfo)}}},
-    {/* 7*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_CROPS_CW, {2, 4, 5, 3}}},
-    {/* 8*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_CROPS_DW, {5, 2, 7, 16}}},
-    {/* 9*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_CROPS_DW, {0, 0, 16, 16}}},
-    {/*10*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_CROPS_DW, {48, 48, 0, 0}}},
-    {/*11*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {{REPACK_CROPS_CW, {2, 4, 5, 3}}, {REPACK_CROPS_DW, {5, 2, 7, 16}} }},
-    {/*12*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_AR, {13}}},
-    {/*13*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_AR, {255, 4, 3}}},
-    {/*14*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_AR, {255, 16, 9}}},
-    {/*15*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {{REPACK_VSI, {4,1,1,3,3,3}}, {ATTACH_EXT_BUF, {1, EXT_BUF(mfxExtVideoSignalInfo)}}}},
-    {/*16*/ MFX_ERR_NONE, "DBLK_A_SONY_3.bit", 3, {REPACK_FS, {1}}},
+    {/* 0*/ MFX_ERR_NONE, 0},
+    {/* 1*/ MFX_ERR_NONE, 1},
+    {/* 2*/ MFX_ERR_NULL_PTR, 0, {ZERO_PAR}},
+    {/* 3*/ MFX_ERR_INVALID_HANDLE, 0, {CLOSE_SES}},
+    {/* 4*/ MFX_ERR_NOT_INITIALIZED, 0, {CLOSE_DEC}},
+    {/* 5*/ MFX_ERR_NONE, 1, {ATTACH_EXT_BUF, {2, EXT_BUF(mfxExtCodingOptionSPSPPS), EXT_BUF(mfxExtVideoSignalInfo)}}},
+    {/* 6*/ MFX_ERR_NONE, 10, {ATTACH_EXT_BUF, {2, EXT_BUF(mfxExtCodingOptionSPSPPS), EXT_BUF(mfxExtVideoSignalInfo)}}},
+    {/* 7*/ MFX_ERR_NONE, 3, {REPACK_CROPS_CW, {2, 4, 5, 3}}},
+    {/* 8*/ MFX_ERR_NONE, 3, {REPACK_CROPS_DW, {5, 2, 7, 16}}},
+    {/* 9*/ MFX_ERR_NONE, 3, {REPACK_CROPS_DW, {0, 0, 16, 16}}},
+    {/*10*/ MFX_ERR_NONE, 3, {REPACK_CROPS_DW, {48, 48, 0, 0}}},
+    {/*11*/ MFX_ERR_NONE, 3, {{REPACK_CROPS_CW, {2, 4, 5, 3}}, {REPACK_CROPS_DW, {5, 2, 7, 16}} }},
+    {/*12*/ MFX_ERR_NONE, 3, {REPACK_AR, {13}}},
+    {/*13*/ MFX_ERR_NONE, 3, {REPACK_AR, {255, 4, 3}}},
+    {/*14*/ MFX_ERR_NONE, 3, {REPACK_AR, {255, 16, 9}}},
+    {/*15*/ MFX_ERR_NONE, 3, {{REPACK_VSI, {4,1,1,3,3,3}}, {ATTACH_EXT_BUF, {1, EXT_BUF(mfxExtVideoSignalInfo)}}}},
+    {/*16*/ MFX_ERR_NONE, 3, {REPACK_FS, {1}}},
 };
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
@@ -325,24 +324,14 @@ const mfxU16 ARbyIdc[][2] = {
 inline mfxU16 GetARW(BS_HEVC::VUI& vui){return vui.aspect_ratio_idc == 255 ? vui.sar_width  : ARbyIdc[vui.aspect_ratio_idc][0];}
 inline mfxU16 GetARH(BS_HEVC::VUI& vui){return vui.aspect_ratio_idc == 255 ? vui.sar_height : ARbyIdc[vui.aspect_ratio_idc][1];}
 
-int TestSuite::RunTest(unsigned int id)
+int TestSuite::RunTest(unsigned int id, const char* sname)
 {
     TS_START;
     tc_struct tc = test_case[id];
-    g_tsStreamPool.Get(tc.stream, path);
-    g_tsStreamPool.Reg();
-
-    if(tc.stream == "")
-    {
-        m_par_set = true;
-        m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
-    }
-    else
-    {
-        m_stream.Init(g_tsStreamPool.Get(tc.stream), TS_MAX(1, tc.n_frames));
-        apply_par(tc, true);
-        m_stream.Repack();
-    }
+    
+    m_stream.Init(sname, TS_MAX(1, tc.n_frames));
+    apply_par(tc, true);
+    m_stream.Repack();
 
     Init();
     DecodeFrames(tc.n_frames);
@@ -374,8 +363,15 @@ int TestSuite::RunTest(unsigned int id)
         EXPECT_EQ((mfxU16)sps.ptl.general.profile_idc,  m_par.mfx.CodecProfile);
         EXPECT_EQ((mfxU16)sps.ptl.general.level_idc/3,  m_par.mfx.CodecLevel);
         EXPECT_EQ(expectedFrameRate, FrameRate);
-        EXPECT_EQ((mfxU16)sps.pic_width_in_luma_samples, m_par.mfx.FrameInfo.Width);
-        EXPECT_EQ((mfxU16)sps.pic_height_in_luma_samples, m_par.mfx.FrameInfo.Height);
+
+        mfxU16 const expected_width =
+            ((sps.pic_width_in_luma_samples + 16 - 1) & ~(16 - 1));
+        EXPECT_EQ(expected_width, m_par.mfx.FrameInfo.Width);
+
+        mfxU16 const expected_height =
+            ((sps.pic_height_in_luma_samples + 16 - 1) & ~(16 - 1));
+        EXPECT_EQ(expected_height, m_par.mfx.FrameInfo.Height);
+
         EXPECT_EQ((mfxU16)sps.chroma_format_idc, m_par.mfx.FrameInfo.ChromaFormat);
         EXPECT_EQ(GetARW(sps.vui), m_par.mfx.FrameInfo.AspectRatioW);
         EXPECT_EQ(GetARH(sps.vui), m_par.mfx.FrameInfo.AspectRatioH);
@@ -392,7 +388,54 @@ int TestSuite::RunTest(unsigned int id)
             , m_par.mfx.FrameInfo.CropH);
 
         EXPECT_EQ((mfxU16)!sps.vui.field_seq_flag, m_par.mfx.FrameInfo.PicStruct);
-        EXPECT_EQ(MFX_FOURCC_NV12, m_par.mfx.FrameInfo.FourCC);
+        if (m_par.mfx.FrameInfo.ChromaFormat == 1)
+        {
+            if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
+            {
+                EXPECT_EQ(MFX_FOURCC_NV12, m_par.mfx.FrameInfo.FourCC);
+            }
+            else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
+            {
+                EXPECT_EQ(MFX_FOURCC_P010, m_par.mfx.FrameInfo.FourCC);
+            }
+            else
+            {
+                ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = "
+                    << m_par.mfx.FrameInfo.ChromaFormat;
+            }
+        }
+        else if (m_par.mfx.FrameInfo.ChromaFormat == 2)
+        {
+            if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
+            {
+                EXPECT_EQ(MFX_FOURCC_YUY2, m_par.mfx.FrameInfo.FourCC);
+            }
+            else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
+            {
+                EXPECT_EQ(MFX_FOURCC_Y216, m_par.mfx.FrameInfo.FourCC);
+            }
+            else
+            {
+                ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = "
+                    << m_par.mfx.FrameInfo.ChromaFormat;
+            }
+        }
+        else if (m_par.mfx.FrameInfo.ChromaFormat == 3)
+        {
+            if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
+            {
+                EXPECT_EQ(MFX_FOURCC_AYUV, m_par.mfx.FrameInfo.FourCC);
+            }
+            else if (m_par.mfx.FrameInfo.BitDepthLuma == 10)
+            {
+                EXPECT_EQ(MFX_FOURCC_Y410, m_par.mfx.FrameInfo.FourCC);
+            }
+            else
+            {
+                ADD_FAILURE() << "FAILED: Non supported bitdepth = " << m_par.mfx.FrameInfo.BitDepthLuma << " for chroma_format = "
+                    << m_par.mfx.FrameInfo.ChromaFormat;
+            }
+        }
 
         if((mfxExtCodingOptionSPSPPS*)m_par)
         {
@@ -445,5 +488,47 @@ int TestSuite::RunTest(unsigned int id)
     return 0;
 }
 
-TS_REG_TEST_SUITE_CLASS(hevcd_get_video_param);
+template <unsigned fourcc>
+char const* query_stream(unsigned int, std::integral_constant<unsigned, fourcc>);
+
+/* 8 bit */
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_NV12>)
+{ return "conformance/hevc/itu/DBLK_A_SONY_3.bit"; }
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_YUY2>)
+{ return "conformance/hevc/422format/inter_422_8.bin"; }
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_AYUV>)
+{ return "<TODO>"; }
+
+/* 10 bit */
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>)
+{ return "conformance/hevc/10bit/WP_A_MAIN10_Toshiba_3.bit"; }
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y216>)
+{ return "conformance/hevc/10bit/inter_422_10.bin"; }
+char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y410>)
+{ return "conformance/hevc/StressBitstreamEncode/rext444_10b/Stress_HEVC_Rext444_10bHT62_432x240_30fps_302_inter_stress_2.2.hevc"; }
+
+template <unsigned fourcc>
+struct TestSuiteEx
+    : public TestSuite
+{
+    static
+    int RunTest(unsigned int id)
+    {
+        const char* sname =
+            g_tsStreamPool.Get(query_stream(id, std::integral_constant<unsigned, fourcc>()));
+        g_tsStreamPool.Reg();
+
+        TestSuite suite;
+        return suite.RunTest(id, sname);
+    }
+};
+
+TS_REG_TEST_SUITE(hevcd_get_video_param,     TestSuiteEx<MFX_FOURCC_NV12>::RunTest, TestSuiteEx<MFX_FOURCC_NV12>::n_cases);
+TS_REG_TEST_SUITE(hevcd_422_get_video_param, TestSuiteEx<MFX_FOURCC_YUY2>::RunTest, TestSuiteEx<MFX_FOURCC_YUY2>::n_cases);
+//TS_REG_TEST_SUITE(hevcd_444_get_video_param, TestSuiteEx<MFX_FOURCC_AYUV>::RunTest, TestSuiteEx<MFX_FOURCC_AYUV>::n_cases);
+
+TS_REG_TEST_SUITE(hevc10d_get_video_param,     TestSuiteEx<MFX_FOURCC_P010>::RunTest, TestSuiteEx<MFX_FOURCC_P010>::n_cases);
+TS_REG_TEST_SUITE(hevc10d_422_get_video_param, TestSuiteEx<MFX_FOURCC_Y216>::RunTest, TestSuiteEx<MFX_FOURCC_Y216>::n_cases);
+TS_REG_TEST_SUITE(hevc10d_444_get_video_param, TestSuiteEx<MFX_FOURCC_Y410>::RunTest, TestSuiteEx<MFX_FOURCC_Y410>::n_cases);
+
 }
