@@ -65,10 +65,12 @@ protected:
 
     void UpdateVideoParam(mfxVideoParam *par, UMC_VP9_DECODER::VP9DecoderFrame const & frameInfo);
 
-    mfxStatus GetOutputSurface(mfxFrameSurface1 **surface_out, mfxFrameSurface1 *surface_work, UMC::FrameMemID index);
+    mfxFrameSurface1 * GetOriginalSurface(mfxFrameSurface1 *);
+    mfxStatus GetOutputSurface(mfxFrameSurface1 **, mfxFrameSurface1 *, UMC::FrameMemID);
 
 private:
     bool                    m_isInit;
+    bool                    m_is_opaque_memory;
     VideoCORE*              m_core;
     eMFXPlatform            m_platform;
 
@@ -88,8 +90,10 @@ private:
 
     std::auto_ptr<UMC_VP9_DECODER::Packer>  m_Packer;
 
-    mfxFrameAllocResponse   m_response;
-    mfxDecodeStat           m_stat;
+    mfxFrameAllocRequest     m_request;
+    mfxFrameAllocResponse    m_response;
+    mfxExtOpaqueSurfaceAlloc m_OpaqAlloc;
+    mfxDecodeStat            m_stat;
 
     friend mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void *pp_param, mfxU32 thread_number, mfxU32);
     friend mfxStatus VP9CompleteProc(void *p_state, void *pp_param, mfxStatus);

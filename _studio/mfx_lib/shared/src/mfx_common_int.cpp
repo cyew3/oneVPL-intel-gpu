@@ -545,7 +545,8 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam* par)
     static const mfxU32 g_decoderSupportedExtBuffersVP8[]   = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
                                                                MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK};
 
-    static const mfxU32 g_decoderSupportedExtBuffersVP9[]   = {MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK};
+    static const mfxU32 g_decoderSupportedExtBuffersVP9[]   = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
+                                                               MFX_EXTBUFF_DEC_ADAPTIVE_PLAYBACK};
 
     static const mfxU32 g_decoderSupportedExtBuffersMJPEG[] = {MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
                                                                MFX_EXTBUFF_JPEG_HUFFMAN,
