@@ -1053,8 +1053,12 @@ mfxStatus MFX_CDECL MFX_Utility::Query_H265(VideoCORE *core, mfxVideoParam *in, 
         {
             // mfxFrameInfo
             if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 ||
+                in->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2 ||
+                in->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV ||
                 in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 ||
+                in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210 ||
                 in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 ||
+                in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216 ||
                 in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410)
                 out->mfx.FrameInfo.FourCC = in->mfx.FrameInfo.FourCC;
             else
