@@ -402,6 +402,25 @@ bool MFX_Utility::IsNeedPartialAcceleration_H265(mfxVideoParam* par, eMFXHWType 
     return false;
 }
 
+inline
+int MatchProfile(mfxU32 fourcc)
+{
+    switch (fourcc)
+    {
+        case MFX_FOURCC_NV12: return MFX_PROFILE_HEVC_MAIN;
+
+        case MFX_FOURCC_P010: return MFX_PROFILE_HEVC_MAIN10;
+
+        case MFX_FOURCC_NV16:
+        case MFX_FOURCC_YUY2:
+        case MFX_FOURCC_AYUV:
+        case MFX_FOURCC_Y210:
+        case MFX_FOURCC_Y410: return MFX_PROFILE_HEVC_REXT;
+    }
+
+    return MFX_PROFILE_UNKNOWN;
+}
+
 // Returns implementation platform
 eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par)
 {
@@ -428,33 +447,30 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
     if (platform != MFX_PLATFORM_SOFTWARE)
     {
         GUID guids[2] = {};
-        switch (par->mfx.FrameInfo.FourCC)
+        if (IS_PROTECTION_WIDEVINE(par->Protected))
+            guids[0] = DXVA_Intel_Decode_Elementary_Stream_HEVC;
+        else
         {
-            case MFX_FOURCC_NV12:
-                if (IS_PROTECTION_WIDEVINE(par->Protected))
-                    guids[0] = DXVA_Intel_Decode_Elementary_Stream_HEVC;
-                else
-                {
+            int const profile =
+                par->mfx.CodecProfile != MFX_PROFILE_UNKNOWN ? par->mfx.CodecProfile : MatchProfile(par->mfx.FrameInfo.FourCC);
+
+            switch (profile)
+            {
+                case MFX_PROFILE_HEVC_MAIN:
                     guids[0] = DXVA_ModeHEVC_VLD_Main;
                     guids[1] = DXVA_Intel_ModeHEVC_VLD_MainProfile;
-                }
-                break;
+                    break;
 
-            case MFX_FOURCC_P010:
-                guids[0] = DXVA_ModeHEVC_VLD_Main10;
-                guids[1] = DXVA_Intel_ModeHEVC_VLD_Main10Profile;
-                break;
+                case MFX_PROFILE_HEVC_MAIN10:
+                    guids[0] = DXVA_ModeHEVC_VLD_Main10;
+                    guids[1] = DXVA_Intel_ModeHEVC_VLD_Main10Profile;
+                    break;
 
-            case MFX_FOURCC_YUY2:
-            case MFX_FOURCC_Y210:
-            case MFX_FOURCC_Y216:
-                guids[0] = DXVA_Intel_ModeHEVC_VLD_Main422_10Profile;
-                break;
-
-            case MFX_FOURCC_AYUV:
-            case MFX_FOURCC_Y410:
-                guids[0] = DXVA_Intel_ModeHEVC_VLD_Main444_10Profile;
-                break;
+                case MFX_PROFILE_HEVC_REXT:
+                    guids[0] = DXVA_Intel_ModeHEVC_VLD_Main422_10Profile;
+                    guids[1] = DXVA_Intel_ModeHEVC_VLD_Main444_10Profile;
+                    break;
+            }
         }
 
         size_t i = 0;
@@ -543,31 +559,8 @@ bool CheckFourcc(mfxU32 fourcc, mfxU16 codecProfile, mfxFrameInfo const* frameIn
     mfxFrameInfo fi = *frameInfo;
 
     if (codecProfile == MFX_PROFILE_UNKNOWN)
-    {
         //no profile defined, derive it from FOURCC
-        switch (fourcc)
-        {
-            case MFX_FOURCC_NV12:
-                codecProfile = MFX_PROFILE_HEVC_MAIN;
-                break;
-
-            case MFX_FOURCC_P010:
-                codecProfile = MFX_PROFILE_HEVC_MAIN10;
-                break;
-
-            case MFX_FOURCC_NV16:
-            case MFX_FOURCC_YUY2:
-            case MFX_FOURCC_AYUV:
-            case MFX_FOURCC_Y210:
-            case MFX_FOURCC_Y216:
-            case MFX_FOURCC_Y410:
-                codecProfile = MFX_PROFILE_HEVC_REXT;
-                break;
-
-            default:
-                return false;
-        }
-    }
+        codecProfile = MatchProfile(fourcc);
 
     if (!fi.BitDepthLuma)
     {
