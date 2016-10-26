@@ -1,22 +1,12 @@
-/********************************************************************************
-
-INTEL CORPORATION PROPRIETARY INFORMATION
-This software is supplied under the terms of a license agreement or nondisclosure
-agreement with Intel Corporation and may not be copied or disclosed except in
-accordance with the terms of that agreement
-Copyright(c) 2012-2013 Intel Corporation. All Rights Reserved.
-
-*********************************************************************************
-
-File: mfx_trace_itt.cpp
-
-Mapping of mfxTraceStaticHandle:
-    itt1 - void* - string handle for the task
-
-Mapping of mfxTraceTaskHandle:
-    itt1 - UINT32 - task is traced
-
-*********************************************************************************/
+//
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2012-2013 Intel Corporation. All Rights Reserved.
+//
 
 #include "mfx_trace.h"
 

@@ -1,14 +1,12 @@
-/* ****************************************************************************** *\
-
-INTEL CORPORATION PROPRIETARY INFORMATION
-This software is supplied under the terms of a license agreement or nondisclosure
-agreement with Intel Corporation and may not be copied or disclosed except in
-accordance with the terms of that agreement
-Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
-
-File Name: d3d11_decode_accelerator.cpp
-
-\* ****************************************************************************** */
+//
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+//
 
 #if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)

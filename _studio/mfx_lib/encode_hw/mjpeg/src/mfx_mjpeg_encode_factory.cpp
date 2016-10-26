@@ -1,16 +1,13 @@
-/* /////////////////////////////////////////////////////////////////////////////
 //
-//                  INTEL CORPORATION PROPRIETARY INFORMATION
-//     This software is supplied under the terms of a license agreement or
-//     nondisclosure agreement with Intel Corporation and may not be copied
-//     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2013-2014 Intel Corporation. All Rights Reserved.
+// INTEL CORPORATION PROPRIETARY INFORMATION
 //
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
 //
-//          Platform switcher of Device Driver Interface for MJPEG Encoder
-//          Platform specific driver implementation encapsulated by corresponding class
-//          HW MPEG Encoder component work with driver through abstract (DriverEncoder) interface 
-*/
+// Copyright(C) 2013-2014 Intel Corporation. All Rights Reserved.
+//
+
 /* ****************************************************************************** */
 
 #include "mfx_common.h"

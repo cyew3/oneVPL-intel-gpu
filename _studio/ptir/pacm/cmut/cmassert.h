@@ -1,14 +1,13 @@
-/**             
-***
-*** Copyright  (C) 1985-2016 Intel Corporation. All rights reserved.
-***
-*** The information and source code contained herein is the exclusive
-*** property of Intel Corporation. and may not be disclosed, examined
-*** or reproduced in whole or in part without explicit written authorization
-*** from the company.
-***
-*** ----------------------------------------------------------------------------
-**/ 
+//
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 1985-2016 Intel Corporation. All Rights Reserved.
+//
+
 #pragma once
 
 #include "infrastructure.h"

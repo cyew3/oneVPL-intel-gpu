@@ -1,14 +1,13 @@
-/* ****************************************************************************** *\
+//
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+//
 
-INTEL CORPORATION PROPRIETARY INFORMATION
-This software is supplied under the terms of a license agreement or nondisclosure
-agreement with Intel Corporation and may not be copied or disclosed except in
-accordance with the terms of that agreement
-Copyright(c) 2012-2016 Intel Corporation. All Rights Reserved.
-
-File Name: libmfx_allocator_d3d11.h
-
-\* ****************************************************************************** */
 #if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
 #ifndef _LIBMFX_ALLOCATOR_D3D11_H_

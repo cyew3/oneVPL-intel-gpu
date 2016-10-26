@@ -1,28 +1,12 @@
-/********************************************************************************
-
-INTEL CORPORATION PROPRIETARY INFORMATION
-This software is supplied under the terms of a license agreement or nondisclosure
-agreement with Intel Corporation and may not be copied or disclosed except in
-accordance with the terms of that agreement
-Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
-
-*********************************************************************************
-
-File: mfx_stat.cpp
-
-Mapping of mfxTraceStaticHandle:
-    sd1 - char* - file name
-    sd2 - UINT32 - line number
-    sd3 - char* - function name
-    sd4 - char* - task name
-    sd5 - UINT32 - call number
-    sd6 - mfxTraceTick - for average value calculation
-    sd7 - mfxTraceTick - for standard deviation calculation
-
-Mapping of mfxTraceTaskHandle:
-    sd1 - mfxTraceTick - task start tick
-
-*********************************************************************************/
+//
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2010-2013 Intel Corporation. All Rights Reserved.
+//
 
 #include "mfx_trace.h"
 

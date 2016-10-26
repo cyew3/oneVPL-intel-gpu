@@ -1,15 +1,12 @@
-/* /////////////////////////////////////////////////////////////////////////////
 //
-//                  INTEL CORPORATION PROPRIETARY INFORMATION
-//     This software is supplied under the terms of a license agreement or
-//     nondisclosure agreement with Intel Corporation and may not be copied
-//     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 Intel Corporation. All Rights Reserved.
+// INTEL CORPORATION PROPRIETARY INFORMATION
 //
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
 //
-//          VC-1 (VC1) encoder, functions for AC, DC predictions
+// Copyright(C) 2008 Intel Corporation. All Rights Reserved.
 //
-*/
 
 #include "umc_vc1_enc_mb.h"
 #include "ippi.h"

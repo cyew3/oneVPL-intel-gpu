@@ -1,14 +1,12 @@
-/* ****************************************************************************** *\
-
-INTEL CORPORATION PROPRIETARY INFORMATION
-This software is supplied under the terms of a license agreement or nondisclosure
-agreement with Intel Corporation and may not be copied or disclosed except in
-accordance with the terms of that agreement
-Copyright(c) 2014 Intel Corporation. All Rights Reserved.
-
-File Name: ptir_vpp_plugin.h
-
-\* ****************************************************************************** */
+//
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2014 Intel Corporation. All Rights Reserved.
+//
 
 #ifndef _BUILD_LOW_EDGE_MASK_BLOCK_GENX_H_
 #define _BUILD_LOW_EDGE_MASK_BLOCK_GENX_H_

@@ -1,25 +1,12 @@
-/********************************************************************************
-
-INTEL CORPORATION PROPRIETARY INFORMATION
-This software is supplied under the terms of a license agreement or nondisclosure
-agreement with Intel Corporation and may not be copied or disclosed except in
-accordance with the terms of that agreement
-Copyright(c) 2010-2011 Intel Corporation. All Rights Reserved.
-
-*********************************************************************************
-
-File: mfx_trace_printf.cpp
-
-Mapping of mfxTraceStaticHandle:
-    fd1 - char* - file name
-    fd2 - UINT32 - line number
-    fd3 - char* - function name
-    fd4 - char* - task name
-
-Mapping of mfxTraceTaskHandle:
-    n/a
-
-*********************************************************************************/
+//
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2010-2011 Intel Corporation. All Rights Reserved.
+//
 
 #include "mfx_trace.h"
 

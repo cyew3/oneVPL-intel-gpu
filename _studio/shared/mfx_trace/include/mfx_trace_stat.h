@@ -1,18 +1,12 @@
-/********************************************************************************
-
-INTEL CORPORATION PROPRIETARY INFORMATION
-This software is supplied under the terms of a license agreement or nondisclosure
-agreement with Intel Corporation and may not be copied or disclosed except in
-accordance with the terms of that agreement
-Copyright(c) 2010-2011 Intel Corporation. All Rights Reserved.
-
-*********************************************************************************
-
-File: mfx_stat.h
-
-Purpose: contains definition data for statistics MFX tracing.
-
-*********************************************************************************/
+//
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2010-2011 Intel Corporation. All Rights Reserved.
+//
 
 #ifndef __MFX_TRACE_STAT_H__
 #define __MFX_TRACE_STAT_H__

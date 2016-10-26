@@ -1,11 +1,12 @@
-/*//////////////////////////////////////////////////////////////////////////////
-////                  INTEL CORPORATION PROPRIETARY INFORMATION
-//     This software is supplied under the terms of a license agreement or
-//     nondisclosure agreement with Intel Corporation and may not be copied
-//     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012-2016 Intel Corporation. All Rights Reserved.
 //
-*/
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+//
 
 const unsigned char asc_genx_skl[417603] = { 
 0x43,0x49,0x53,0x41,0x03,0x02,0x0f,0x00,0x0e,0x53,0x75,0x62,0x53,0x61,0x6d,0x70,

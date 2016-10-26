@@ -1,14 +1,12 @@
-/* ****************************************************************************** *\
-
-INTEL CORPORATION PROPRIETARY INFORMATION
-This software is supplied under the terms of a license agreement or nondisclosure
-agreement with Intel Corporation and may not be copied or disclosed except in
-accordance with the terms of that agreement
-Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
-
-File Name: mfx_dxva2_device.h
-
-\* ****************************************************************************** */
+//
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2007-2013 Intel Corporation. All Rights Reserved.
+//
 
 #if !defined(__MFX_DXVA2_DEVICE_H)
 #define __MFX_DXVA2_DEVICE_H

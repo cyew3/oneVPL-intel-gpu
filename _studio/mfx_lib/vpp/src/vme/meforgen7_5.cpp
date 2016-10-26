@@ -1,13 +1,12 @@
-/*********************************************************************************\
-**
-** Copyright(c) 2007-2016 Intel Corporation. All Rights Reserved.
-**
-** Project:                Hardware Motion Estimation C Model
-** File:                MEforGen75.cpp
-** Original Created:    01/11/2007 Ning Lu 
-** Last Modified:        01/12/2008 Ning Lu
-** 
-\*********************************************************************************/
+//
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+//
 
 #include "umc_defs.h"
 #include "ipps.h"

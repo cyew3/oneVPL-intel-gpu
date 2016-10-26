@@ -1,13 +1,13 @@
-/*********************************************************************************\
-**
-** Copyright(c) 2007-2013 Intel Corporation. All Rights Reserved.
-**
-** Project:                Hardware Motion Estimation C Model
-** File:                MEforGen75.H
-** Original Created:    01/11/2007 Ning Lu 
-** Last Modified:        02/11/2007 Ning Lu
-** 
-\*********************************************************************************/
+//
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2007-2013 Intel Corporation. All Rights Reserved.
+//
+
 #ifndef ME4G75_H
 #define ME4G75_H
 

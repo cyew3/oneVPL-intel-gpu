@@ -1,14 +1,12 @@
-/* ****************************************************************************** *\
-
-INTEL CORPORATION PROPRIETARY INFORMATION
-This software is supplied under the terms of a license agreement or nondisclosure
-agreement with Intel Corporation and may not be copied or disclosed except in
-accordance with the terms of that agreement
-Copyright(c) 2010-2013 Intel Corporation. All Rights Reserved.
-
-File Name: mfx_mpeg2_enc_common.h
-
-\* ****************************************************************************** */
+//
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2010-2013 Intel Corporation. All Rights Reserved.
+//
 
 #ifndef __MFX_MPEG2_ENC_COMMON_H__
 #define __MFX_MPEG2_ENC_COMMON_H__

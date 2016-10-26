@@ -1,14 +1,12 @@
-/* ****************************************************************************** *\
-
-INTEL CORPORATION PROPRIETARY INFORMATION
-This software is supplied under the terms of a license agreement or nondisclosure
-agreement with Intel Corporation and may not be copied or disclosed except in
-accordance with the terms of that agreement
-Copyright(c) 2014 Intel Corporation. All Rights Reserved.
-
-File Name: hw_utils.cpp
-
-\* ****************************************************************************** */
+//
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2014 Intel Corporation. All Rights Reserved.
+//
 
 #include "hw_utils.h"
 #include "mfx_utils.h"

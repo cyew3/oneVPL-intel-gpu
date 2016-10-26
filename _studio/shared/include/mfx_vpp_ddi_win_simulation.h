@@ -1,12 +1,12 @@
-/*//////////////////////////////////////////////////////////////////////////////
 //
-//                  INTEL CORPORATION PROPRIETARY INFORMATION
-//     This software is supplied under the terms of a license agreement or
-//     nondisclosure agreement with Intel Corporation and may not be copied
-//     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+// INTEL CORPORATION PROPRIETARY INFORMATION
 //
-*/
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2011 Intel Corporation. All Rights Reserved.
+//
 
 #ifndef __MFX_VPP_DDI_WIN_SIMULATION_H
 #define __MFX_VPP_DDI_WIN_SIMULATION_H

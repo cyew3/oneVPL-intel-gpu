@@ -1,15 +1,12 @@
-/* /////////////////////////////////////////////////////////////////////////////
 //
-//                  INTEL CORPORATION PROPRIETARY INFORMATION
-//     This software is supplied under the terms of a license agreement or
-//     nondisclosure agreement with Intel Corporation and may not be copied
-//     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2008 - 2010 Intel Corporation. All Rights Reserved.
+// INTEL CORPORATION PROPRIETARY INFORMATION
 //
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
 //
-//          DDI structures dumping
+// Copyright(C) 2008-2010 Intel Corporation. All Rights Reserved.
 //
-*/
 
 typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_H264 ENCODE_SET_SEQUENCE_PARAMETERS_H264;
 typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264  ENCODE_SET_PICTURE_PARAMETERS_H264;
