@@ -390,6 +390,49 @@ H264Slice * VATaskSupplier::DecodeSliceHeader(MediaDataEx *nalUnit)
     return slice;
 }
 
+// walk over all view's  DPB and find an index free index.
+// i.e. index not used by any frame in any view
+// returns free index or -1 if no free index found
+Ipp32s VATaskSupplier::GetFreeFrameIndex()
+{
+    for (Ipp32s i = 0; i < 127; i++)
+    {
+        ViewList::iterator iter = m_views.begin();
+        ViewList::iterator iter_end = m_views.end();
+        H264DecoderFrame *pFrm = NULL;
+
+        // run over the list and try to find the corresponding view
+        for (; iter != iter_end; ++iter)
+        {
+            ViewItem & item = *iter;
+            H264DBPList *pDPBList = item.GetDPBList();
+            pFrm = pDPBList->head();
+
+            // walk over the list
+            while(pFrm != NULL && pFrm->m_index != i)
+            {
+                pFrm = pFrm->future();
+            }
+
+            if (pFrm != NULL)
+            {
+                // go next index
+                // no need to check next View
+                break;
+            }
+        }
+
+        if (pFrm == NULL)
+        {
+            // we wall over each frame in all Views
+            // this index is free
+            return i;
+        }
+    }
+
+    VM_ASSERT(false);
+    return -1;
+}
 
 } // namespace UMC
 

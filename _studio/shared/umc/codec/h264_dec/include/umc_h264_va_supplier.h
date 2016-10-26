@@ -70,6 +70,8 @@ protected:
 
 protected:
 
+    virtual Ipp32s GetFreeFrameIndex();
+
     Ipp32u m_bufferedFrameNumber;
 
 private:
@@ -79,6 +81,32 @@ private:
     }
 };
 
+// this template class added to apply big surface pool workaround depends on platform
+// because platform check can't be added inside VATaskSupplier
+// for WidevineTaskSupplier the also can be applied
+template <class BaseClass>
+class VATaskSupplierBigSurfacePool :
+    public BaseClass
+{
+public:
+    VATaskSupplierBigSurfacePool()
+    {};
+    virtual ~VATaskSupplierBigSurfacePool()
+    {};
+
+protected:
+
+    virtual Status AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, ColorFormat chroma_format_idc)
+    {
+        Status ret = BaseClass::AllocateFrameData(pFrame, dimensions, bit_depth, chroma_format_idc);
+        if (ret == UMC_OK)
+        {
+            pFrame->m_index = BaseClass::GetFreeFrameIndex();
+        }
+
+        return ret;
+    }
+};
 } // namespace UMC
 
 #endif // UMC_RESTRICTED_CODE_VA

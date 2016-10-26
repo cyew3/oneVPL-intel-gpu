@@ -71,6 +71,17 @@ inline bool IsNeedToUseHWBuffering(eMFXHWType type)
     //return (type != MFX_HW_LAKE); // eagle lake has own workaround!
 }
 
+inline bool IsBigSurfacePoolApplicable(eMFXHWType type)
+{
+    bool ret = false;
+
+#if defined(MFX_VA_WIN)
+    ret = ( type >= MFX_HW_SCL );
+#else
+    (void)(type); //UNREFERENCED_PARAMETER
+#endif
+    return ret;
+}
 inline
 mfxExtBuffer* GetExtBuffer(mfxExtBuffer** ebuffers, mfxU32 nbuffers, mfxU32 BufferId, mfxU32 field)
 {
@@ -313,10 +324,12 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
         m_useDelayedDisplay = ENABLE_DELAYED_DISPLAY_MODE != 0 && IsNeedToUseHWBuffering(m_core->GetHWType()) && (asyncDepth != 1);
 
 #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+        bool bUseBigSurfaceWA = IsBigSurfacePoolApplicable(type);
+
         if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
             m_pH264VideoDecoder.reset(new UMC::WidevineTaskSupplier()); // HW, Widevine version
         else
-            m_pH264VideoDecoder.reset(new UMC::VATaskSupplier()); // HW
+            m_pH264VideoDecoder.reset(bUseBigSurfaceWA ? new UMC::VATaskSupplierBigSurfacePool<UMC::VATaskSupplier>() : new UMC::VATaskSupplier()); // HW
         m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D());
 #elif defined(MFX_VA_OSX)
         m_pH264VideoDecoder.reset(new UMC::VDATaskSupplier()); // HW, OS X VDA version

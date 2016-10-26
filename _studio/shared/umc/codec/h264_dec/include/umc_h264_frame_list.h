@@ -40,6 +40,25 @@ public:
 
     void append(H264DecoderFrame *pFrame);
 
+    Ipp32s GetFreeIndex()
+    {
+        for (Ipp32s i = 0; i < 127; i++)
+        {
+            H264DecoderFrame *pFrm;
+
+            for (pFrm = head(); pFrm && pFrm->m_index != i; pFrm = pFrm->future())
+            {
+            }
+
+            if (pFrm == NULL)
+            {
+                return i;
+            }
+        }
+
+        VM_ASSERT(false);
+        return -1;
+    };
 protected:
 
     // Release object
