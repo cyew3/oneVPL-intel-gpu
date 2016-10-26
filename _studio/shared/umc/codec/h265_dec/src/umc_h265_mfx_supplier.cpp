@@ -366,7 +366,7 @@ UMC::Status MFXTaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
                 nalUnit1.SetTime(start, stop);
 
                 nalUnit->MoveDataPointer((Ipp32s)nal_u_size);
-            
+
                 m_sei_messages->AddMessage(&nalUnit1, m_SEIPayLoads.payLoadType);
             }
 
@@ -410,7 +410,7 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
 
 #if !defined (MFX_VA) && defined (AS_HEVCD_PLUGIN)
     core;
-    //we sure that plug-in implementation is SW 
+    //we sure that plug-in implementation is SW
     return MFX_PLATFORM_SOFTWARE;
 #else
     eMFXPlatform platform = core->GetPlatformType();
@@ -467,7 +467,7 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
     }
 #endif
     return platform;
-#endif 
+#endif
 }
 
 inline
@@ -556,7 +556,10 @@ bool CheckFourcc(mfxU32 fourcc, mfxU16 codecProfile, mfxFrameInfo const* frameIn
                 break;
 
             case MFX_FOURCC_NV16:
+            case MFX_FOURCC_YUY2:
+            case MFX_FOURCC_AYUV:
             case MFX_FOURCC_Y210:
+            case MFX_FOURCC_Y216:
             case MFX_FOURCC_Y410:
                 codecProfile = MFX_PROFILE_HEVC_REXT;
                 break;
