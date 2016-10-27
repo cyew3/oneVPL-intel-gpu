@@ -152,11 +152,11 @@ public:
                         prev_offset = offset;
                         continue;
                     }
-                    //else if(0x06 == hdr->nal_unit_type) //SEI
-                    //{
-                    //    prev_offset = offset;
-                    //    continue;
-                    //}
+                    else if(0x06 == hdr->nal_unit_type) //SEI
+                    {
+                        prev_offset = offset;
+                        continue;
+                    }
                     else if(0x12 == hdr->nal_unit_type ||0x20 == hdr->nal_unit_type) //Filler data || Coded slice extension goes after slice it belongs to
                     {
                         prev_offset = offset;
@@ -204,7 +204,6 @@ public:
                 else
                     return MFX_ERR_MORE_DATA;
             }
-            toRead += 6;
 
             assert(curr_pos <= bs_offset);
             mfxU32 remaining = bs.MaxLength - bs.DataLength;
@@ -219,8 +218,8 @@ public:
 
             if(m_eos)
                 bs.DataFlag = MFX_BITSTREAM_EOS;
-            else if(frame_found)
-                bs.DataFlag = MFX_BITSTREAM_COMPLETE_FRAME;
+            else 
+                bs.DataFlag = 0;
 
             curr_pos += read;
 
@@ -322,24 +321,26 @@ public:
 class Verifier : public tsSurfaceProcessor
 {
 public:
+    mfxU16 frame;
+    mfxU32 StreamFrameCount;
+    mfxU32 TotalFrameCount;
     const tsExtBufType<mfxVideoParam>& init_par;
     const mfxU64 startTimeStamp;
     const mfxU64 stepTimeStamp;
-    const mfxSession m_session;
-    mfxU32 count;
+    const mfxSession m_session;    
     std::list <mfxU8> expected_flag;
-    mfxU16 frame;
 
     Verifier(const mfxU8* flags, const mfxU16 N, const tsExtBufType<mfxVideoParam>& par, mfxU64 start = 0, mfxU64 step = 0, const mfxSession _session = 0)
         : tsSurfaceProcessor()
+        , frame(0)
+        , StreamFrameCount(0)
+        , TotalFrameCount(0)
         , init_par(par)
         , startTimeStamp(start)
         , stepTimeStamp(step)
-        , m_session(_session)
-        , count(0)
-        , expected_flag(flags, flags + N)
-        , frame(0)
-    { }
+        , m_session(_session)        
+        , expected_flag(flags, flags + N)        
+    {}
 
     ~Verifier() {}
 
@@ -355,10 +356,11 @@ public:
         EXPECT_EQ(Expected, Corrupted) << "ERROR: Frame#" << frame << " reported Corrupted value = " << Corrupted  << " is not equal to expected = " << Expected << "\n";
         if(startTimeStamp && stepTimeStamp)
         {
-            const mfxU64 ExpTS = startTimeStamp + stepTimeStamp*count;
+            const mfxU64 ExpTS = startTimeStamp + stepTimeStamp*StreamFrameCount;
             EXPECT_EQ(ExpTS,    TimeStamp) << "ERROR: Frame#" << frame << " reported TimeStamp value = " << TimeStamp  << " is not equal to expected = " << ExpTS << "\n";
         }
-        count++;
+        StreamFrameCount++;
+        TotalFrameCount++;
 
 #define CHECK_FIELD_EXP_ACT(EXPECTED, ACTUAL, FIELD) \
 do {                                                 \
@@ -434,7 +436,7 @@ do {                                                 \
             g_tsStatus.expect(MFX_ERR_NONE);
             g_tsStatus.check( MFXVideoDECODE_GetDecodeStat(m_session, &stat) );
 
-            EXPECT_EQ(count, stat.NumFrame);
+            EXPECT_EQ(TotalFrameCount, stat.NumFrame);
         }
 
         frame++;
@@ -536,8 +538,8 @@ int TestSuite::RunTestDecodeFrameAsync_new(const tc_struct& tc)
                 SetPar4_DecodeFrameAsync();
             }
 
-            Verifier v(tc.streams[i].flags, tc.streams[i].n, m_par, 20, ts_step, m_session);
-            v.count = count;
+            Verifier v(tc.streams[i].flags, tc.streams[i].n, m_par, ts_start, ts_step, m_session);
+            v.TotalFrameCount = count;
             m_surf_processor = &v;
 
             reader.count = 0;
@@ -549,7 +551,7 @@ int TestSuite::RunTestDecodeFrameAsync_new(const tc_struct& tc)
             m_surf_processor = 0;
 
             ts_start = ts_start + ts_step * reader.count;
-            count = v.count;
+            count = v.TotalFrameCount;
         }
         else
         {
