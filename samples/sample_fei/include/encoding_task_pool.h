@@ -189,7 +189,7 @@ public:
         task->prevTask = last_encoded_task;
 
         task->m_frameOrderIdr = (ExtractFrameType(*task) & MFX_FRAMETYPE_IDR) ? task->m_frameOrder : (task->prevTask ? task->prevTask->m_frameOrderIdr : 0);
-        task->m_frameOrderI = (ExtractFrameType(*task) & MFX_FRAMETYPE_I) ? task->m_frameOrder : (task->prevTask ? task->prevTask->m_frameOrderI : 0);
+        task->m_frameOrderI   = (ExtractFrameType(*task) & MFX_FRAMETYPE_I)   ? task->m_frameOrder : (task->prevTask ? task->prevTask->m_frameOrderI   : 0);
         mfxU8  frameNumIncrement = (task->prevTask && (ExtractFrameType(*(task->prevTask)) & MFX_FRAMETYPE_REF || task->prevTask->m_nalRefIdc[0])) ? 1 : 0;
         task->m_frameNum = (task->prevTask && !(ExtractFrameType(*task) & MFX_FRAMETYPE_IDR)) ? mfxU16((task->prevTask->m_frameNum + frameNumIncrement) % (1 << log2frameNumMax)) : 0;
 

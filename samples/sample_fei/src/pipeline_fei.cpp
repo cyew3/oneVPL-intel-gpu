@@ -1738,11 +1738,14 @@ mfxStatus CEncodingPipeline::ResizeFrame(mfxU32 m_frameCount, mfxU16 picstruct)
 
     m_appCfg.PipelineCfg.numMB_drc_curr = ((wdt * hgt) >> 8) / n_fields;
 
-    m_pVPP->Reset(wdt, hgt, m_DRCqueue[m_nDRC_idx].target_w, m_DRCqueue[m_nDRC_idx].target_h);
+    sts = m_pVPP->Reset(wdt, hgt, m_DRCqueue[m_nDRC_idx].target_w, m_DRCqueue[m_nDRC_idx].target_h);
+    MSDK_CHECK_STATUS(sts, "VPP: Reset failed");
 
-    if (m_pFEI_PreENC) { m_pFEI_PreENC->Reset(wdt, hgt, m_DRCqueue[m_nDRC_idx].target_w, m_DRCqueue[m_nDRC_idx].target_h); }
-    if (m_pFEI_ENCODE) { m_pFEI_ENCODE->Reset(wdt, hgt, m_DRCqueue[m_nDRC_idx].target_w, m_DRCqueue[m_nDRC_idx].target_h); }
-    if (m_pFEI_ENCPAK) { m_pFEI_ENCPAK->Reset(wdt, hgt, m_DRCqueue[m_nDRC_idx].target_w, m_DRCqueue[m_nDRC_idx].target_h); }
+    m_commonFrameInfo = m_pVPP->GetCommonVideoParams()->vpp.Out;
+
+    if (m_pFEI_PreENC) { sts = m_pFEI_PreENC->Reset(wdt, hgt, m_DRCqueue[m_nDRC_idx].target_w, m_DRCqueue[m_nDRC_idx].target_h); MSDK_CHECK_STATUS(sts, "PreENC: Reset failed"); }
+    if (m_pFEI_ENCODE) { sts = m_pFEI_ENCODE->Reset(wdt, hgt, m_DRCqueue[m_nDRC_idx].target_w, m_DRCqueue[m_nDRC_idx].target_h); MSDK_CHECK_STATUS(sts, "ENCODE: Reset failed"); }
+    if (m_pFEI_ENCPAK) { sts = m_pFEI_ENCPAK->Reset(wdt, hgt, m_DRCqueue[m_nDRC_idx].target_w, m_DRCqueue[m_nDRC_idx].target_h); MSDK_CHECK_STATUS(sts, "ENCPAK: Reset failed"); }
 
     ++m_nDRC_idx;
     return sts;

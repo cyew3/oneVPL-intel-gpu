@@ -40,6 +40,7 @@ public:
     mfxStatus Init();
     mfxStatus Close();
     mfxStatus Reset(mfxU16 width = 0, mfxU16 height = 0, mfxU16 crop_w = 0, mfxU16 crop_h = 0);
+    mfxVideoParam* GetCommonVideoParams();
     mfxStatus QueryIOSurf(mfxFrameAllocRequest* request);
     mfxStatus FillParameters();
     mfxStatus VPPoneFrame(mfxFrameSurface1* pSurf_in, mfxFrameSurface1* pSurf_out);

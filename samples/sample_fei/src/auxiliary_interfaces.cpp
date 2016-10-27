@@ -61,6 +61,11 @@ mfxStatus MFX_VppInterface::Close()
     return m_pmfxVPP->Close();
 }
 
+mfxVideoParam* MFX_VppInterface::GetCommonVideoParams()
+{
+    return &m_videoParams;
+}
+
 mfxStatus MFX_VppInterface::Reset(mfxU16 width, mfxU16 height, mfxU16 crop_w, mfxU16 crop_h)
 {
     if (width && height && crop_w && crop_h)
