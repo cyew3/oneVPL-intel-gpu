@@ -1334,7 +1334,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         changed +=1;
     }
  #ifdef MAX_FRAME_SIZE_SUPPORT  
-    if (((caps.UserMaxFrameSizeSupport == 0) || (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR)) && par.m_ext.CO2.MaxFrameSize)
+    if (((caps.UserMaxFrameSizeSupport == 0 && !par.isSWBRC()) || (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR)) && par.m_ext.CO2.MaxFrameSize)
 #else  
     if (par.m_ext.CO2.MaxFrameSize)
 #endif    

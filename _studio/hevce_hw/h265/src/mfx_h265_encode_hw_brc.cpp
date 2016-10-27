@@ -1261,11 +1261,17 @@ mfxStatus cBRCParams::Init(mfxVideoParam* par)
 
     mfxExtCodingOption2 * pExtCO2 = (mfxExtCodingOption2*)Hevc_GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION2);
     bPyr = (pExtCO2 && pExtCO2->BRefType == MFX_B_REF_PYRAMID);
+    maxFrameSizeInBits  = pExtCO2 ? pExtCO2->MaxFrameSize*8 : 0;
     fAbPeriodLong  = 100;
     fAbPeriodShort = 5;
     dqAbPeriod = 100;
     bAbPeriod = 100;
 
+    if (maxFrameSizeInBits)
+    {
+        bRec = 1;
+        bPanic = 1;
+    }
 
     quantMax = 51 + quantOffset;
     quantMin = 1;
@@ -1640,6 +1646,7 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
     mfxF64 eRate    = bitsEncoded * sqrt(qstep);
     mfxF64 e2pe     = (m_ctx.eRate == 0) ? (BRC_SCENE_CHANGE_RATIO2 + 1) : eRate / m_ctx.eRate;
 
+    bool   bMaxFrameSizeErr =  m_par.maxFrameSizeInBits && bitsEncoded > (mfxI32)m_par.maxFrameSizeInBits;
     brcSts = MFX_BRC_OK;
     
     if (m_par.bRec && m_ctx.bToRecode &&  (m_ctx.encOrder != frame_par->EncodedOrder || frame_par->NumRecode == 0))
@@ -1696,12 +1703,13 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
     // Check other condions for recoding (update qp is it is needed)
     {
         mfxF64 targetFrameSize = IPP_MAX((mfxF64)m_par.inputBitsPerFrame, fAbLong);
-        mfxF64 frameFactor = (picType == MFX_FRAMETYPE_I) ? 1.5 : 1.0;
-        mfxF64 maxFrameSize = (m_ctx.encOrder == 0 ? BRC_SCENE_CHANGE_RATIO2 : BRC_SCENE_CHANGE_RATIO1) * targetFrameSize * frameFactor;
+        mfxF64 maxFrameSize = (m_ctx.encOrder == 0 ? 5.0 : (m_ctx.SceneChange > 16 || picType == MFX_FRAMETYPE_I) ? 8.0 : 4.0) * targetFrameSize ;
         mfxI32 quantMax = m_ctx.QuantMax;
         mfxI32 quantMin = m_ctx.QuantMin;
         mfxI32 quant = qpY;
 
+        if (m_par.maxFrameSizeInBits)
+            maxFrameSize = IPP_MIN(maxFrameSize,m_par.maxFrameSizeInBits);
 
         if (m_par.bHRDConformance)
         {
@@ -1720,6 +1728,9 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
                 //printf("    recode 1-0: %d:  k %5f bitsEncoded %d maxFrameSize %d, targetSize %d, fAbLong %f, inputBitsPerFrame %d, qp %d new %d\n",frame_par->EncodedOrder, bitsEncoded/maxFrameSize, (int)bitsEncoded, (int)maxFrameSize,(int)targetFrameSize, fAbLong, m_par.inputBitsPerFrame, quant, quant_new);
 
                 UpdateQPParams(quant_new ,picType, m_ctx, 0, quantMin , quantMax, layer);
+                m_ctx.fAbLong  = m_par.inputBitsPerFrame;
+                m_ctx.fAbShort = m_par.inputBitsPerFrame;
+                m_ctx.dQuantAb = 1./quant_new;
 
                 if (m_par.bRec) 
                 {
@@ -1761,11 +1772,16 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
             }
         }//m_par.bHRDConformance
     }
-    if (m_par.bHRDConformance && brcSts != MFX_BRC_OK && m_par.bRec)
+    if (((m_par.bHRDConformance && brcSts != MFX_BRC_OK) || bMaxFrameSizeErr) && m_par.bRec)
     {
         mfxI32 quant = m_ctx.Quant;
         mfxI32 quant_new = quant;
-        if (brcSts == MFX_BRC_BIG_FRAME || brcSts == MFX_BRC_SMALL_FRAME)
+        if (bMaxFrameSizeErr)
+        {
+            brcSts = MFX_BRC_BIG_FRAME;
+            quant_new = GetNewQP(bitsEncoded, m_par.maxFrameSizeInBits, m_ctx.QuantMin , m_ctx.QuantMax,quant,m_par.quantOffset, 1, true);        
+        }
+        else if (brcSts == MFX_BRC_BIG_FRAME || brcSts == MFX_BRC_SMALL_FRAME)
         {
             quant_new = GetNewQP(bitsEncoded, m_hrd.GetTargetSize(brcSts), m_ctx.QuantMin , m_ctx.QuantMax,quant,m_par.quantOffset, 1, true);
         }

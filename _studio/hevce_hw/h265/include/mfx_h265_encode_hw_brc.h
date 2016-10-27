@@ -362,7 +362,7 @@ public:
     mfxF64 frameRate;    
     mfxU32 inputBitsPerFrame;
     mfxU32 maxInputBitsPerFrame;
-    mfxU32 maxFrameSizeInBytes;
+    mfxU32 maxFrameSizeInBits;
 
     // Frame size params
     mfxU16 width;
@@ -399,7 +399,7 @@ public:
         frameRate(0),    
         inputBitsPerFrame(0),
         maxInputBitsPerFrame(0),
-        maxFrameSizeInBytes(0),
+        maxFrameSizeInBits(0),
         width(0),
         height(0),
         chromaFormat(0),
