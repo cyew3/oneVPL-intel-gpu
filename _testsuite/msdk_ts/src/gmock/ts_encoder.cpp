@@ -222,8 +222,7 @@ mfxStatus tsVideoEncoder::Init(mfxSession session, mfxVideoParam *par)
 
 mfxStatus tsVideoEncoder::Close()
 {
-    if (m_initialized)
-        Close(m_session);
+    Close(m_session);
 
     //free the surfaces in pool
     tsSurfacePool::FreeSurfaces();
