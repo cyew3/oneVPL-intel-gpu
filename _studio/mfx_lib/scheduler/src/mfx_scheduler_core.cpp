@@ -671,15 +671,16 @@ void mfxSchedulerCore::RegisterTaskDependencies(MFX_SCHEDULER_TASK  *pTask)
                     if (MFX_WRN_IN_EXECUTION != m_pDependencyTable[tableIdx].mfxRes)
                     {
                         // waiting task inherits status from the parent task
-                        if (MFX_TASK_WAIT & pTask->param.task.threadingPolicy)
+						// need to propogate error status to all dependent tasks.
+                        //if (MFX_TASK_WAIT & pTask->param.task.threadingPolicy)
                         {
                             taskRes = m_pDependencyTable[tableIdx].mfxRes;
                         }
-                        // all other tasks are aborted
-                        else
-                        {
-                            taskRes = MFX_ERR_ABORTED;
-                        }
+                        //// all other tasks are aborted
+                        //else
+                        //{
+                        //    taskRes = MFX_ERR_ABORTED;
+                        //}
                     }
                     // link dependency
                     else
