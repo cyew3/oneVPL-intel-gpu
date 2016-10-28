@@ -40,7 +40,10 @@ int TestSuite::RunTest(unsigned int id)
 {
     TS_START;
     const tc_struct& tc = test_case[id];
-
+    if (g_tsWinVersion >= MFX_WIN_VER_W10)
+    {
+        m_sw_fallback = true;
+    }
     MFXInit();
     Load();
 
