@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 
 #include <stdio.h>
@@ -16,16 +16,17 @@
 
 void make_copyright(FILE* f)
 {
-    fprintf(f,"/*//////////////////////////////////////////////////////////////////////////////\n"
-"//"
-"//                  INTEL CORPORATION PROPRIETARY INFORMATION\n"
-"//     This software is supplied under the terms of a license agreement or\n"
-"//     nondisclosure agreement with Intel Corporation and may not be copied\n"
-"//     or disclosed except in accordance with the terms of that agreement.\n"
-"//          Copyright(c) 2014 Intel Corporation. All Rights Reserved.\n"
+    fprintf(f,
 "//\n"
-"*/\n"
-"\n");
+"// INTEL CORPORATION PROPRIETARY INFORMATION\n"
+"//\n"
+"// This software is supplied under the terms of a license agreement or\n"
+"// nondisclosure agreement with Intel Corporation and may not be copied\n"
+"// or disclosed except in accordance with the terms of that agreement.\n"
+"//\n"
+"// Copyright(c) 2016 Intel Corporation. All Rights Reserved.\n"
+"//\n"
+);
 }
 
 /* first argument is file.isa to incorporate in C code */
@@ -53,7 +54,7 @@ int main(int argc, char** argv)
         rewind(f);
         buf = (unsigned char*)malloc(size);
         fread(buf,1,size,f);
-        fclose(f);   
+        fclose(f);
     }
 
     if( buf )
@@ -92,7 +93,7 @@ int main(int argc, char** argv)
             fprintf(f,"#pragma warning(disable: 4309)\n\n");
             fprintf(f,"const char unsigned %s[%d] = { \n",bufname, size);
             for(i=0; i<size; i++)
-            {                
+            {
                 fprintf(f,"0x%02x", buf[i]);
                 if(i != size-1) fprintf(f,",");
                 if(i == (width-1)){
