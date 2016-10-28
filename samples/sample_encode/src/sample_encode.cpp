@@ -114,6 +114,8 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-BufferSizeInKB ]       - represents the maximum possible size of any compressed frames\n"));
     msdk_printf(MSDK_STRING("   [-MaxKbps ]              - for variable bitrate control, specifies the maximum bitrate at which \
                             the encoded data enters the Video Buffering Verifier buffer\n"));
+    msdk_printf(MSDK_STRING("   [-timeout]               - encoding in cycle not less than specific time in seconds\n"));
+    msdk_printf(MSDK_STRING("   [-membuf]                - size of memory buffer in frames\n"));
 
     msdk_printf(MSDK_STRING("Example: %s h265 -i InputYUVFile -o OutputEncodedFile -w width -h height -hw -p 2fca99749fdb49aeb121a5b63ef568f7\n"), strAppName);
 #if D3D_SURFACES_SUPPORT
@@ -404,6 +406,26 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-timeout")))
+        {
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nTimeout))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Timeout is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-membuf")))
+        {
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nMemBuf))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("membuf is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gpucopy::on")))
         {
             pParams->gpuCopy = MFX_GPUCOPY_ON;
@@ -642,11 +664,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 break;
             case MSDK_CHAR('i'):
                 if (++i < nArgNum) {
-                    msdk_opt_read(strInput[i], pParams->strSrcFile);
-                    if (MVC_ENABLED & pParams->MVC_flags)
-                    {
-                        pParams->srcFileBuff.push_back(strInput[i]);
-                    }
+                    pParams->InputFiles.push_back(msdk_string(strInput[i]));
                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-i' expects an argument\n"));
@@ -724,7 +742,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 #endif
 
     // check if all mandatory parameters were set
-    if (0 == msdk_strlen(pParams->strSrcFile) && !pParams->isV4L2InputEnabled)
+    if (!pParams->InputFiles.size() && !pParams->isV4L2InputEnabled)
     {
         PrintHelp(strInput[0], MSDK_STRING("Source file name not found"));
         return MFX_ERR_UNSUPPORTED;
@@ -791,7 +809,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     }
 
     // set default values for optional parameters that were not set or were set incorrectly
-    mfxU32 nviews = (mfxU32)pParams->srcFileBuff.size();
+    mfxU32 nviews = (mfxU32)pParams->InputFiles.size();
     if ((nviews <= 1) || (nviews > 2))
     {
         if (!(MVC_ENABLED & pParams->MVC_flags))
@@ -975,7 +993,6 @@ int main(int argc, char *argv[])
 
     if (MVC_ENABLED & Params.MVC_flags)
     {
-        pPipeline->SetMultiView();
         pPipeline->SetNumView(Params.numViews);
     }
 

@@ -108,10 +108,10 @@ public:
 
     mfxStatus Init()
     {
-        return m_FileReader.Init(m_pAppConfig->strSrcFile,
-                                m_pAppConfig->ColorFormat,
-                                0,
-                                m_pAppConfig->srcFileBuff);
+        std::list<msdk_string> tmpl;
+        tmpl.push_back(msdk_string(m_pAppConfig->strSrcFile));
+        return m_FileReader.Init(tmpl,
+                                m_pAppConfig->ColorFormat);
     }
 
     mfxStatus ResetState()

@@ -92,11 +92,10 @@ struct sInputParams
     MemType memType;
     bool bUseHWLib; // true if application wants to use HW MSDK library
 
-    msdk_char strSrcFile[MSDK_MAX_FILENAME_LEN];
+    std::list<msdk_string> InputFiles;
 
     sPluginParams pluginParams;
 
-    std::vector<msdk_char*> srcFileBuff;
     std::vector<msdk_char*> dstFileBuff;
 
     mfxU32  HEVCPluginVersion;
@@ -116,6 +115,9 @@ struct sInputParams
     mfxU16 nGPB;
 
     bool enableQSVFF;
+
+    mfxU32 nTimeout;
+    mfxU16 nMemBuf;
 
     mfxU16 nNumSlice;
     bool UseRegionEncode;
@@ -191,13 +193,14 @@ public:
     virtual mfxStatus ResetMFXComponents(sInputParams* pParams);
     virtual mfxStatus ResetDevice();
 
-    void SetMultiView();
     void SetNumView(mfxU32 numViews) { m_nNumView = numViews; }
     virtual void  PrintInfo();
 
     void InitV4L2Pipeline(sInputParams *pParams);
     mfxStatus CaptureStartV4L2Pipeline();
     void CaptureStopV4L2Pipeline();
+
+    void InsertIDR(bool bIsNextFrameIDR);
 
 #if defined (ENABLE_V4L2_SUPPORT)
     v4l2Device v4l2Pipeline;
@@ -226,6 +229,7 @@ protected:
     MFXFrameAllocator* m_pMFXAllocator;
     mfxAllocatorParams* m_pmfxAllocatorParams;
     MemType m_memType;
+    mfxU16 m_nMemBuf;
     bool m_bExternalAlloc; // use memory allocator as external for Media SDK
 
     mfxFrameSurface1* m_pEncSurfaces; // frames array for encoder input (vpp output)
@@ -255,8 +259,15 @@ protected:
 
     bool isV4L2InputEnabled;
 
-    CTimeStatistics m_statOverall;
-    CTimeStatistics m_statFile;
+    mfxU32 m_nTimeout;
+
+    bool   m_bFileWriterReset;
+    mfxU32 m_nFramesRead;
+
+    mfxEncodeCtrl m_encCtrl;
+
+    CTimeStatisticsReal m_statOverall;
+    CTimeStatisticsReal m_statFile;
     virtual mfxStatus InitMfxEncParams(sInputParams *pParams);
     virtual mfxStatus InitMfxVppParams(sInputParams *pParams);
 
@@ -280,6 +291,7 @@ protected:
     virtual void DeleteFrames();
 
     virtual mfxStatus AllocateSufficientBuffer(mfxBitstream* pBS);
+    virtual mfxStatus FillBuffers();
 
     virtual mfxStatus GetFreeTask(sTask **ppTask);
     virtual MFXVideoSession& GetFirstSession(){return m_mfxSession;}

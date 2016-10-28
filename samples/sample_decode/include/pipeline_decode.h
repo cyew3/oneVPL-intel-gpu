@@ -78,10 +78,11 @@ struct sInputParams
     mfxU32  nWallH; //number of windows located in each column
     mfxU32  nWallMonitor; //monitor id, 0,1,.. etc
     bool    bWallNoTitle; //whether to show title for each window with fps value
-    mfxU32  nWallTimeout; //timeout for -wall option
+
     mfxU32  numViews; // number of views for Multi-View Codec
     mfxU32  nRotation; // rotation for Motion JPEG Codec
     mfxU16  nAsyncDepth; // asyncronous queue
+    mfxU16  nTimeout; // timeout in seconds
     mfxU16  gpuCopy; // GPU Copy mode (three-state option)
     mfxU16  nThreadsNum;
     mfxI32  SchedulingType;
@@ -290,6 +291,8 @@ protected: // variables
     bool                    m_bPerfMode;
 #endif // defined(MFX_LIBVA_SUPPORT)
 
+    bool                    m_bResetFileWriter;
+    bool                    m_bResetFileReader;
 private:
     CDecodingPipeline(const CDecodingPipeline&);
     void operator=(const CDecodingPipeline&);

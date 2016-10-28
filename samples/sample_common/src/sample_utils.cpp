@@ -35,7 +35,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #pragma warning( disable : 4748 )
 
 msdk_tick CTimer::frequency = 0;
-msdk_tick CTimeStatistics::frequency = 0;
+msdk_tick CTimeStatisticsReal::frequency = 0;
 
 mfxStatus CopyBitstream2(mfxBitstream *dest, mfxBitstream *src)
 {
@@ -70,75 +70,40 @@ mfxStatus CopyBitstream2(mfxBitstream *dest, mfxBitstream *src)
 CSmplYUVReader::CSmplYUVReader()
 {
     m_bInited = false;
-    m_bIsMultiView = false;
-    m_fSource = NULL;
-    m_fSourceMVC = NULL;
-    m_numLoadedFiles = 0;
     m_ColorFormat = MFX_FOURCC_YV12;
 }
 
-mfxStatus CSmplYUVReader::Init(const msdk_char *strFileName, const mfxU32 ColorFormat, const mfxU32 numViews, std::vector<msdk_char*> srcFileBuff)
+mfxStatus CSmplYUVReader::Init(std::list<msdk_string> inputs, mfxU32 ColorFormat)
 {
-    MSDK_CHECK_POINTER(strFileName, MFX_ERR_NULL_PTR);
-    MSDK_CHECK_ERROR(msdk_strlen(strFileName), 0, MFX_ERR_NULL_PTR);
 
     Close();
 
-    //open source YUV file
-    if (!m_bIsMultiView)
-    {
-        MSDK_FOPEN(m_fSource, strFileName, MSDK_STRING("rb"));
-        MSDK_CHECK_POINTER(m_fSource, MFX_ERR_NULL_PTR);
-        ++m_numLoadedFiles;
-    }
-    else if (m_bIsMultiView)
-    {
-        if (srcFileBuff.size() > 1)
-        {
-            if (srcFileBuff.size() != numViews)
-                return MFX_ERR_UNSUPPORTED;
-
-            mfxU32 i;
-            m_fSourceMVC = new FILE*[numViews];
-            for (i = 0; i < numViews; ++i)
-            {
-                MSDK_FOPEN(m_fSourceMVC[i], srcFileBuff.at(i), MSDK_STRING("rb"));
-                MSDK_CHECK_POINTER(m_fSourceMVC[i], MFX_ERR_NULL_PTR);
-                ++m_numLoadedFiles;
-            }
-        }
-        else
-        {
-            /*mfxU32 i;
-            m_fSourceMVC = new FILE*[numViews];
-            for (i = 0; i < numViews; ++i)
-            {
-                MSDK_FOPEN(m_fSourceMVC[i], FormMVCFileName(strFileName, i).c_str(), MSDK_STRING("rb"));
-                MSDK_CHECK_POINTER(m_fSourceMVC[i], MFX_ERR_NULL_PTR);
-                ++m_numLoadedFiles;
-            }*/
-            return MFX_ERR_UNSUPPORTED;
-        }
-    }
-
-    mfxU32 fcc[] = {
-        MFX_FOURCC_NV12,
-        MFX_FOURCC_YV12,
-        MFX_FOURCC_YUY2,
-        MFX_FOURCC_RGB4,
-        MFX_FOURCC_BGR4,
-        MFX_FOURCC_P010
-    };
-
-    std::vector<mfxU32> vfcc(fcc, fcc+sizeof(fcc)/sizeof(fcc[0]));
-
-    if (std::find(vfcc.begin(), vfcc.end(), ColorFormat) == vfcc.end())
+    if( MFX_FOURCC_NV12 != ColorFormat &&
+        MFX_FOURCC_YV12 != ColorFormat &&
+        MFX_FOURCC_YUY2 != ColorFormat &&
+        MFX_FOURCC_RGB4 != ColorFormat &&
+        MFX_FOURCC_BGR4 != ColorFormat &&
+        MFX_FOURCC_P010 != ColorFormat )
     {
         return MFX_ERR_UNSUPPORTED;
     }
+
+    if (!inputs.size())
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+
+    for (ls_iterator it = inputs.begin(); it != inputs.end(); it++)
+    {
+        FILE *f = 0;
+        MSDK_FOPEN(f, (*it).c_str(), MSDK_STRING("rb"));
+        MSDK_CHECK_POINTER(f, MFX_ERR_NULL_PTR);
+
+        m_files.push_back(f);
+    }
+
     m_ColorFormat = ColorFormat;
 
-    //set init state to true in case of success
     m_bInited = true;
 
     return MFX_ERR_NONE;
@@ -151,28 +116,20 @@ CSmplYUVReader::~CSmplYUVReader()
 
 void CSmplYUVReader::Close()
 {
-    if (m_fSource)
+    for (mfxU32 i = 0; i < m_files.size(); i++)
     {
-        fclose(m_fSource);
-        m_fSource = NULL;
-
+        fclose(m_files[i]);
     }
-
-    if (m_fSourceMVC)
-    {
-        mfxU32 i = 0;
-        for (i = 0; i < m_numLoadedFiles; ++i)
-        {
-            if  (m_fSourceMVC[i] != NULL)
-            {
-                fclose(m_fSourceMVC[i]);
-                m_fSourceMVC[i] = NULL;
-            }
-        }
-    }
-
-    m_numLoadedFiles = 0;
+    m_files.clear();
     m_bInited = false;
+}
+
+void CSmplYUVReader::Reset()
+{
+    for (mfxU32 i = 0; i < m_files.size(); i++)
+    {
+        fseek(m_files[i], 0, SEEK_SET);
+    }
 }
 
 mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
@@ -188,6 +145,11 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
     mfxFrameData& pData = pSurface->Data;
 
     mfxU32 vid = pInfo.FrameId.ViewId;
+
+    if (vid > m_files.size())
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
 
     if (pInfo.CropH > 0 && pInfo.CropW > 0)
     {
@@ -216,14 +178,8 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
 
             for(i = 0; i < h; i++)
             {
-                if (!m_bIsMultiView)
-                {
-                    nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, 4*w, m_fSource);
-                }
-                else
-                {
-                    return MFX_ERR_UNSUPPORTED;
-                }
+                nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, 4*w, m_files[vid]);
+
                 if ((mfxU32)4*w != nBytesRead)
                 {
                     return MFX_ERR_MORE_DATA;
@@ -236,14 +192,8 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
 
             for(i = 0; i < h; i++)
             {
-                if (!m_bIsMultiView)
-                {
-                    nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, 2*w, m_fSource);
-                }
-                else
-                {
-                    return MFX_ERR_UNSUPPORTED;
-                }
+                nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, 2*w, m_files[vid]);
+
                 if ((mfxU32)2*w != nBytesRead)
                 {
                     return MFX_ERR_MORE_DATA;
@@ -262,14 +212,8 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
         // read luminance plane
         for(i = 0; i < h; i++)
         {
-            if (!m_bIsMultiView)
-            {
-                nBytesRead = (mfxU32)fread(ptr + i * pitch, nBytesPerPixel, w, m_fSource);
-            }
-            else
-            {
-                nBytesRead = (mfxU32)fread(ptr + i * pitch, nBytesPerPixel, w, m_fSourceMVC[vid]);
-            }
+            nBytesRead = (mfxU32)fread(ptr + i * pitch, nBytesPerPixel, w, m_files[vid]);
+
             if (w != nBytesRead)
             {
                 return MFX_ERR_MORE_DATA;
@@ -296,14 +240,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
                 // load U
                 for (i = 0; i < h; i++)
                 {
-                    if (!m_bIsMultiView)
-                    {
-                        nBytesRead = (mfxU32)fread(buf, 1, w, m_fSource);
-                    }
-                    else
-                    {
-                        nBytesRead = (mfxU32)fread(buf, 1, w, m_fSourceMVC[vid]);
-                    }
+                    nBytesRead = (mfxU32)fread(buf, 1, w, m_files[vid]);
                     if (w != nBytesRead)
                     {
                         return MFX_ERR_MORE_DATA;
@@ -312,18 +249,13 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
                     {
                         ptr[i * pitch + j * 2] = buf[j];
                     }
-        }
+                }
                 // load V
                 for (i = 0; i < h; i++)
                 {
-                    if (!m_bIsMultiView)
-                    {
-                        nBytesRead = (mfxU32)fread(buf, 1, w, m_fSource);
-                    }
-                    else
-                    {
-                        nBytesRead = (mfxU32)fread(buf, 1, w, m_fSourceMVC[vid]);
-                    }
+
+                    nBytesRead = (mfxU32)fread(buf, 1, w, m_files[vid]);
+
                     if (w != nBytesRead)
                     {
                         return MFX_ERR_MORE_DATA;
@@ -345,14 +277,9 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
 
                 for(i = 0; i < h; i++)
                 {
-                    if (!m_bIsMultiView)
-                    {
-                        nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, w, m_fSource);
-                    }
-                    else
-                    {
-                        nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, w, m_fSourceMVC[vid]);
-                    }
+
+                    nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, w, m_files[vid]);
+
                     if (w != nBytesRead)
                     {
                         return MFX_ERR_MORE_DATA;
@@ -360,20 +287,13 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
                 }
                 for(i = 0; i < h; i++)
                 {
-                    if (!m_bIsMultiView)
-                    {
-                        nBytesRead = (mfxU32)fread(ptr2 + i * pitch, 1, w, m_fSource);
-                    }
-                    else
-                    {
-                        nBytesRead = (mfxU32)fread(ptr2 + i * pitch, 1, w, m_fSourceMVC[vid]);
-                    }
+                    nBytesRead = (mfxU32)fread(ptr2 + i * pitch, 1, w, m_files[vid]);
+
                     if (w != nBytesRead)
                     {
                         return MFX_ERR_MORE_DATA;
                     }
                 }
-
                 break;
             default:
                 return MFX_ERR_UNSUPPORTED;
@@ -385,14 +305,8 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
             ptr  = pData.UV + pInfo.CropX + (pInfo.CropY / 2) * pitch;
             for(i = 0; i < h; i++)
             {
-                if (!m_bIsMultiView)
-                {
-                    nBytesRead = (mfxU32)fread(ptr + i * pitch, nBytesPerPixel, w, m_fSource);
-                }
-                else
-                {
-                    nBytesRead = (mfxU32)fread(ptr + i * pitch, nBytesPerPixel, w, m_fSourceMVC[vid]);
-                }
+                nBytesRead = (mfxU32)fread(ptr + i * pitch, nBytesPerPixel, w, m_files[vid]);
+
                 if (w != nBytesRead)
                 {
                     return MFX_ERR_MORE_DATA;
@@ -429,7 +343,6 @@ void CSmplBitstreamWriter::Close()
     }
 
     m_bInited = false;
-    m_nProcessedFramesNum = 0;
 }
 
 mfxStatus CSmplBitstreamWriter::Init(const msdk_char *strFileName)
@@ -443,9 +356,15 @@ mfxStatus CSmplBitstreamWriter::Init(const msdk_char *strFileName)
     MSDK_FOPEN(m_fSource, strFileName, MSDK_STRING("wb+"));
     MSDK_CHECK_POINTER(m_fSource, MFX_ERR_NULL_PTR);
 
+    m_sFile = msdk_string(strFileName);
     //set init state to true in case of success
     m_bInited = true;
     return MFX_ERR_NONE;
+}
+
+mfxStatus CSmplBitstreamWriter::Reset()
+{
+    return Init(m_sFile.c_str());
 }
 
 mfxStatus CSmplBitstreamWriter::WriteNextFrame(mfxBitstream *pMfxBitstream, bool isPrint)
@@ -724,13 +643,16 @@ mfxStatus CSmplYUVWriter::Init(const msdk_char *strFileName, const mfxU32 numVie
     MSDK_CHECK_POINTER(strFileName, MFX_ERR_NULL_PTR);
     MSDK_CHECK_ERROR(msdk_strlen(strFileName), 0, MFX_ERR_NOT_INITIALIZED);
 
+    m_sFile = msdk_string(strFileName);
+    m_nViews = numViews;
+
     Close();
 
     //open file to write decoded data
 
     if (!m_bIsMultiView)
     {
-        MSDK_FOPEN(m_fDest, strFileName, MSDK_STRING("wb"));
+        MSDK_FOPEN(m_fDest, m_sFile.c_str(), MSDK_STRING("wb"));
         MSDK_CHECK_POINTER(m_fDest, MFX_ERR_NULL_PTR);
         ++m_numCreatedFiles;
     }
@@ -743,7 +665,7 @@ mfxStatus CSmplYUVWriter::Init(const msdk_char *strFileName, const mfxU32 numVie
         m_fDestMVC = new FILE*[numViews];
         for (i = 0; i < numViews; ++i)
         {
-            MSDK_FOPEN(m_fDestMVC[i], FormMVCFileName(strFileName, i).c_str(), MSDK_STRING("wb"));
+            MSDK_FOPEN(m_fDestMVC[i], FormMVCFileName(m_sFile.c_str(), i).c_str(), MSDK_STRING("wb"));
             MSDK_CHECK_POINTER(m_fDestMVC[i], MFX_ERR_NULL_PTR);
             ++m_numCreatedFiles;
         }
@@ -752,6 +674,11 @@ mfxStatus CSmplYUVWriter::Init(const msdk_char *strFileName, const mfxU32 numVie
     m_bInited = true;
 
     return MFX_ERR_NONE;
+}
+
+mfxStatus CSmplYUVWriter::Reset()
+{
+    return Init(m_sFile.c_str(), m_nViews);
 }
 
 CSmplYUVWriter::~CSmplYUVWriter()

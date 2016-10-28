@@ -633,6 +633,11 @@ mfxStatus CEncodingPipeline::AllocFrames()
     sts = GetFirstEncoder()->QueryIOSurf(&m_mfxEncParams, &EncRequest);
     MSDK_CHECK_STATUS(sts, "GetFirstEncoder failed");
 
+    if (!m_pmfxVPP)
+    {
+        EncRequest.NumFrameMin = EncRequest.NumFrameSuggested = MSDK_MAX(EncRequest.NumFrameSuggested, m_nMemBuf);
+    }
+
     if (EncRequest.NumFrameSuggested < m_mfxEncParams.AsyncDepth)
         return MFX_ERR_MEMORY_ALLOC;
 
@@ -645,6 +650,7 @@ mfxStatus CEncodingPipeline::AllocFrames()
         sts = m_pmfxVPP->QueryIOSurf(&m_mfxVppParams, VppRequest);
         MSDK_CHECK_STATUS(sts, "m_pmfxVPP->QueryIOSurf failed");
 
+        VppRequest[0].NumFrameMin = VppRequest[0].NumFrameSuggested = MSDK_MAX(VppRequest[0].NumFrameSuggested, m_nMemBuf);
         // The number of surfaces for vpp input - so that vpp can work at async depth = m_nAsyncDepth
         nVppSurfNum = VppRequest[0].NumFrameSuggested;
         // If surfaces are shared by 2 components, c1 and c2. NumSurf = c1_out + c2_in - AsyncDepth + 1
@@ -897,6 +903,12 @@ CEncodingPipeline::CEncodingPipeline()
     m_pVppSurfaces = NULL;
     m_InputFourCC = NULL;
 
+    m_nMemBuf = 0;
+    m_nTimeout = 0;
+
+    m_nFramesRead = 0;
+    m_bFileWriterReset = false;
+
     m_MVCflags = MVC_DISABLED;
     m_nNumView = 0;
 
@@ -936,6 +948,8 @@ CEncodingPipeline::CEncodingPipeline()
     MSDK_ZERO_MEMORY(m_EncResponse);
     MSDK_ZERO_MEMORY(m_VppResponse);
 
+    MSDK_ZERO_MEMORY(m_encCtrl);
+
     isV4L2InputEnabled = false;
 
     m_nFramesToProcess = 0;
@@ -944,11 +958,6 @@ CEncodingPipeline::CEncodingPipeline()
 CEncodingPipeline::~CEncodingPipeline()
 {
     Close();
-}
-
-void CEncodingPipeline::SetMultiView()
-{
-    m_FileReader.SetMultiView();
 }
 
 mfxStatus CEncodingPipeline::InitFileWriter(CSmplBitstreamWriter **ppWriter, const msdk_char *filename)
@@ -1035,10 +1044,8 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     if (!isV4L2InputEnabled)
     {
         // prepare input file reader
-        sts = m_FileReader.Init(pParams->strSrcFile,
-            pParams->FileInputFourCC,
-            pParams->numViews,
-            pParams->srcFileBuff);
+        sts = m_FileReader.Init(pParams->InputFiles,
+            pParams->FileInputFourCC );
         MSDK_CHECK_STATUS(sts, "m_FileReader.Init failed");
     }
 
@@ -1047,6 +1054,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     // FileReader can convert yv12->nv12 without vpp
     m_InputFourCC = (pParams->FileInputFourCC == MFX_FOURCC_YV12) ? MFX_FOURCC_NV12 : pParams->FileInputFourCC;
 
+    m_nTimeout = pParams->nTimeout;
     sts = InitFileWriters(pParams);
     MSDK_CHECK_STATUS(sts, "InitFileWriters failed");
 
@@ -1146,6 +1154,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 
     // set memory type
     m_memType = pParams->memType;
+    m_nMemBuf = pParams->nMemBuf;
 
     // create and init frame allocator
     sts = CreateAllocator();
@@ -1247,6 +1256,18 @@ void CEncodingPipeline::CaptureStopV4L2Pipeline()
 #endif
 }
 
+void CEncodingPipeline::InsertIDR(bool bIsNextFrameIDR)
+{
+    if (bIsNextFrameIDR)
+    {
+        m_encCtrl.FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
+    }
+    else
+    {
+        m_encCtrl.FrameType = MFX_FRAMETYPE_UNKNOWN;
+    }
+}
+
 void CEncodingPipeline::Close()
 {
     if (m_FileWriters.first)
@@ -1292,6 +1313,25 @@ void CEncodingPipeline::FreeFileWriters()
     if (m_FileWriters.second)
         m_FileWriters.second->Close();
     MSDK_SAFE_DELETE(m_FileWriters.second);
+}
+
+mfxStatus CEncodingPipeline::FillBuffers()
+{
+    if (m_nMemBuf)
+    {
+        for (mfxU32 i = 0; i < m_nMemBuf; i++)
+        {
+            mfxFrameSurface1* surface = m_pmfxVPP ? &m_pVppSurfaces[i] : &m_pEncSurfaces[i];
+
+            mfxStatus sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, surface->Data.MemId, &surface->Data);
+            MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Lock failed");
+            sts = m_FileReader.LoadNextFrame(surface);
+            MSDK_CHECK_STATUS(sts, "m_FileReader.LoadNextFrame failed");
+            sts = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis, surface->Data.MemId, &surface->Data);
+            MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Unlock failed");
+        }
+    }
+    return MFX_ERR_NONE;
 }
 
 mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
@@ -1347,6 +1387,9 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(sInputParams* pParams)
     sts = m_TaskPool.Init(&m_mfxSession, m_FileWriters.first, m_mfxEncParams.AsyncDepth, nEncodedDataBufferSize, m_FileWriters.second);
     MSDK_CHECK_STATUS(sts, "m_TaskPool.Init failed");
 
+    sts = FillBuffers();
+    MSDK_CHECK_STATUS(sts, "FillBuffers failed");
+
     return MFX_ERR_NONE;
 }
 
@@ -1372,6 +1415,18 @@ mfxStatus CEncodingPipeline::AllocateSufficientBuffer(mfxBitstream* pBS)
 mfxStatus CEncodingPipeline::GetFreeTask(sTask **ppTask)
 {
     mfxStatus sts = MFX_ERR_NONE;
+
+    if (m_bFileWriterReset)
+    {
+        sts = m_FileWriters.first->Reset();
+        MSDK_CHECK_STATUS(sts, "m_FileWriters.first->Reset failed");
+        if (m_FileWriters.second)
+        {
+            sts = m_FileWriters.second->Reset();
+            MSDK_CHECK_STATUS(sts, "m_FileWriters.second->Reset failed");
+        }
+        m_bFileWriterReset = false;
+    }
 
     sts = m_TaskPool.GetFreeTask(ppTask);
     if (MFX_ERR_NOT_FOUND == sts)
@@ -1410,6 +1465,8 @@ mfxStatus CEncodingPipeline::Run()
 
     mfxU32 nFramesProcessed = 0;
 
+    bool bInsertIDR = false;
+
     sts = MFX_ERR_NONE;
 
 #if defined (ENABLE_V4L2_SUPPORT)
@@ -1438,7 +1495,7 @@ mfxStatus CEncodingPipeline::Run()
         MSDK_BREAK_ON_ERROR(sts);
 
         // find free surface for encoder input
-        nEncSurfIdx = GetFreeSurface(m_pEncSurfaces, m_EncResponse.NumFrameActual);
+        nEncSurfIdx = m_nMemBuf && !m_pmfxVPP ? ++nEncSurfIdx % m_nMemBuf : GetFreeSurface(m_pEncSurfaces, m_EncResponse.NumFrameActual);
         MSDK_CHECK_ERROR(nEncSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
 
         // point pSurf to encoder surface
@@ -1454,7 +1511,7 @@ mfxStatus CEncodingPipeline::Run()
                     nVppSurfIdx = v4l2Pipeline.GetOffQ();
                 }
 #else
-                nVppSurfIdx = GetFreeSurface(m_pVppSurfaces, m_VppResponse.NumFrameActual);
+                nVppSurfIdx = m_nMemBuf ? ++nVppSurfIdx % m_nMemBuf : GetFreeSurface(m_pVppSurfaces, m_VppResponse.NumFrameActual);
                 MSDK_CHECK_ERROR(nVppSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
 #endif
 
@@ -1473,11 +1530,39 @@ mfxStatus CEncodingPipeline::Run()
             pSurf->Info.FrameId.ViewId = currViewNum;
             m_statFile.StartTimeMeasurement();
 
+            bool bTimeOutExceed = (m_nTimeout < m_statOverall.GetDeltaTime()) ? true : false;
+
             if (!isV4L2InputEnabled)
             {
-                sts = m_FileReader.LoadNextFrame(pSurf);
-                MSDK_BREAK_ON_ERROR(sts);
+                if (m_nMemBuf)
+                {
+                    bool bMemBufExceed = !(m_nFramesRead % m_nMemBuf);
+                    if (bTimeOutExceed && bMemBufExceed )
+                    {
+                        sts = MFX_ERR_MORE_DATA;
+                    }
+                    else if (!bMemBufExceed)
+                    {
+                        m_bFileWriterReset = true;
+                        bInsertIDR = true;
+                    }
+                }
+                else
+                {
+                    sts = m_FileReader.LoadNextFrame(pSurf);
+                    if ( (MFX_ERR_MORE_DATA == sts) && !bTimeOutExceed )
+                    {
+                        m_FileReader.Reset();
+                        m_bFileWriterReset = true;
+                        bInsertIDR = true;
+                        continue;
+                    }
+                }
             }
+
+            MSDK_BREAK_ON_ERROR(sts);
+
+            m_nFramesRead++;
 
             m_statFile.StopTimeMeasurement();
             if (MVC_ENABLED & m_MVCflags) currViewNum ^= 1; // Flip between 0 and 1 for ViewId
@@ -1537,8 +1622,10 @@ mfxStatus CEncodingPipeline::Run()
 
         for (;;)
         {
+            InsertIDR(bInsertIDR);
             // at this point surface for encoder contains either a frame from file or a frame processed by vpp
-            sts = m_pmfxENC->EncodeFrameAsync(NULL, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+            sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+            bInsertIDR = false;
 
             if (MFX_ERR_NONE < sts && !pCurrentTask->EncSyncP) // repeat the call if warning and no output
             {
@@ -1622,7 +1709,9 @@ mfxStatus CEncodingPipeline::Run()
 
             for (;;)
             {
-                sts = m_pmfxENC->EncodeFrameAsync(NULL, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+                InsertIDR(bInsertIDR);
+                sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+                bInsertIDR = false;
 
                 if (MFX_ERR_NONE < sts && !pCurrentTask->EncSyncP) // repeat the call if warning and no output
                 {
@@ -1664,7 +1753,9 @@ mfxStatus CEncodingPipeline::Run()
 
         for (;;)
         {
-            sts = m_pmfxENC->EncodeFrameAsync(NULL, NULL, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+            InsertIDR(bInsertIDR);
+            sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, NULL, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+            bInsertIDR = false;
 
             if (MFX_ERR_NONE < sts && !pCurrentTask->EncSyncP) // repeat the call if warning and no output
             {

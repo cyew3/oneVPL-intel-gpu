@@ -174,10 +174,8 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
     MSDK_CHECK_POINTER(m_pusrPlugin, MFX_ERR_NOT_FOUND);
 
     // prepare input file reader
-    sts = m_FileReader.Init(pParams->strSrcFile,
-                            pParams->FileInputFourCC,
-                            pParams->numViews,
-                            pParams->srcFileBuff);
+    sts = m_FileReader.Init(pParams->InputFiles,
+                            pParams->FileInputFourCC );
     MSDK_CHECK_STATUS(sts, "m_FileReader.Init failed");
 
     // set memory type

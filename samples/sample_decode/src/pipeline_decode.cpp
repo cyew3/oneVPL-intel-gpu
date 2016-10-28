@@ -52,6 +52,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #define __SYNC_WA // avoid sync issue on Media SDK side
 
+
 CDecodingPipeline::CDecodingPipeline()
 {
     m_bVppIsUsed = false;
@@ -100,6 +101,9 @@ CDecodingPipeline::CDecodingPipeline()
 
     m_nRenderWinX = 0;
     m_nRenderWinY = 0;
+
+    m_bResetFileWriter = false;
+    m_bResetFileReader = false;
 
     m_vLatency.reserve(1000); // reserve some space to reduce dynamic reallocation impact on pipeline execution
 
@@ -200,6 +204,8 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     m_nFrames = pParams->nFrames ? pParams->nFrames : MFX_INFINITE;
 
     m_bOutI420 = pParams->outI420;
+
+    m_nTimeout = pParams->nTimeout;
 
     if (MFX_CODEC_CAPTURE != pParams->videoType)
     {
@@ -585,8 +591,7 @@ mfxStatus CDecodingPipeline::CreateRenderingWindow(sInputParams *pParams, bool t
 
     //setting videowall flag
     m_bIsVideoWall = 0 != windowParams.nx;
-    //setting timeout value
-    if (m_bIsVideoWall && (pParams->nWallTimeout>0)) m_nTimeout = pParams->nWallTimeout;
+
 #endif
     return sts;
 }
@@ -1388,6 +1393,14 @@ mfxStatus CDecodingPipeline::DeliverOutput(mfxFrameSurface1* frame)
         return MFX_ERR_NULL_PTR;
     }
 
+
+    if (m_bResetFileWriter)
+    {
+        sts = m_FileWriter.Reset();
+        MSDK_CHECK_STATUS(sts, "");
+        m_bResetFileWriter = false;
+    }
+
     if (m_bExternalAlloc) {
         if (m_eWorkMode == MODE_FILE_DUMP) {
             res = m_pGeneralAllocator->Lock(m_pGeneralAllocator->pthis, frame->Data.MemId, &(frame->Data));
@@ -1572,23 +1585,23 @@ mfxStatus CDecodingPipeline::RunDecoding()
             msdk_printf(MSDK_STRING("DeliverOutput return error = %d\n"),m_error);
             break;
         }
+
         if (pBitstream && ((MFX_ERR_MORE_DATA == sts) || (m_bIsCompleteFrame && !pBitstream->DataLength))) {
             CAutoTimer timer_fread(m_tick_fread);
             sts = m_FileReader->ReadNextFrame(pBitstream); // read more data to input bit stream
 
             if (MFX_ERR_MORE_DATA == sts) {
-                if (!m_bIsVideoWall) {
-                    // we almost reached end of stream, need to pull buffered data now
-                    pBitstream = NULL;
-                    sts = MFX_ERR_NONE;
-                } else {
-                    // videowall mode: decoding in a loop
+                sts = MFX_ERR_NONE;
+                // Timeout has expired or videowall mode
+                if ( ((CTimer::ConvertToSeconds(m_tick_overall) < m_nTimeout) && m_nTimeout ) || m_bIsVideoWall)
+                {
                     m_FileReader->Reset();
-                    sts = MFX_ERR_NONE;
+                    m_bResetFileWriter = true;
                     continue;
                 }
-            } else if (MFX_ERR_NONE != sts) {
-                break;
+
+                // we almost reached end of stream, need to pull buffered data now
+                pBitstream = NULL;
             }
         }
         if ((MFX_ERR_NONE == sts) || (MFX_ERR_MORE_DATA == sts) || (MFX_ERR_MORE_SURFACE == sts)) {

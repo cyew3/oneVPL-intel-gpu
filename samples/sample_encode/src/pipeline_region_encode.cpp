@@ -314,10 +314,8 @@ mfxStatus CRegionEncodingPipeline::Init(sInputParams *pParams)
     mfxStatus sts = MFX_ERR_NONE;
 
     // prepare input file reader
-    sts = m_FileReader.Init(pParams->strSrcFile,
-                            pParams->FileInputFourCC,
-                            pParams->numViews,
-                            pParams->srcFileBuff);
+    sts = m_FileReader.Init(pParams->InputFiles,
+                            pParams->FileInputFourCC );
     MSDK_CHECK_STATUS(sts, "m_FileReader.Init failed");
 
     m_MVCflags = pParams->MVC_flags;
