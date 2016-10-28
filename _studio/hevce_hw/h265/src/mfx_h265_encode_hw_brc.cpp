@@ -1254,8 +1254,8 @@ mfxStatus cBRCParams::Init(mfxVideoParam* par)
     bitDepthLuma = par->mfx.FrameInfo.BitDepthLuma;
     quantOffset   = 6 * (bitDepthLuma - 8);
 
-    inputBitsPerFrame    = (mfxU32)(targetbps / frameRate);
-    maxInputBitsPerFrame = (mfxU32)(maxbps / frameRate);
+    inputBitsPerFrame    = targetbps / frameRate;
+    maxInputBitsPerFrame = maxbps / frameRate;
     gopPicSize = par->mfx.GopPicSize;
     gopRefDist = par->mfx.GopRefDist;
 
@@ -1429,7 +1429,7 @@ mfxI32 GetNewQP(mfxF64 totalFrameBits, mfxF64 targetFrameSizeInBits, mfxI32 minQ
 
 
 
-void cHRD::Init(mfxU32 buffSizeInBytes, mfxU32 delayInBytes, mfxU32 inputBitsPerFrame, bool bCBR)
+void cHRD::Init(mfxU32 buffSizeInBytes, mfxU32 delayInBytes, mfxF64 inputBitsPerFrame, bool bCBR)
 {
     m_bufFullness = m_prevBufFullness= delayInBytes << 3;
     m_delayInBits = delayInBytes << 3;
@@ -1819,7 +1819,7 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
         if (!m_ctx.bPanic&& !oldScene) 
         {
             //Update QP
-            m_ctx.totalDiviation += (bitsEncoded - m_par.inputBitsPerFrame);
+            m_ctx.totalDiviation += (bitsEncoded - (mfxI32)m_par.inputBitsPerFrame);
 
             mfxF64 totDiv = m_ctx.totalDiviation;
             mfxF64 dequant_new = m_ctx.dQuantAb*pow(m_par.inputBitsPerFrame/m_ctx.fAbLong, 1.2);

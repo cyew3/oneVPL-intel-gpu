@@ -360,8 +360,8 @@ public:
     mfxU32 targetbps;
     mfxU32 maxbps;
     mfxF64 frameRate;    
-    mfxU32 inputBitsPerFrame;
-    mfxU32 maxInputBitsPerFrame;
+    mfxF64 inputBitsPerFrame;
+    mfxF64 maxInputBitsPerFrame;
     mfxU32 maxFrameSizeInBits;
 
     // Frame size params
@@ -435,7 +435,7 @@ public:
         m_bCBR (false)
     {}
 
-    void      Init(mfxU32 buffSizeInBytes, mfxU32 delayInBytes, mfxU32 inputBitsPerFrame, bool cbr);
+    void      Init(mfxU32 buffSizeInBytes, mfxU32 delayInBytes, mfxF64 inputBitsPerFrame, bool cbr);
     mfxU16    UpdateAndCheckHRD(mfxI32 frameBits, mfxI32 recode, mfxI32 minQuant, mfxI32 maxQuant);
     mfxStatus UpdateMinMaxQPForRec(mfxU32 brcSts, mfxI32 qp);
     mfxI32    GetTargetSize(mfxU32 brcSts);
@@ -459,7 +459,7 @@ private:
 private:
     mfxI32 m_buffSizeInBits;
     mfxI32 m_delayInBits;
-    mfxU32 m_inputBitsPerFrame;    
+    mfxF64 m_inputBitsPerFrame;    
     bool   m_bCBR;
 
 };
