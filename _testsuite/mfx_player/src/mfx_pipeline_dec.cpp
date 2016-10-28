@@ -274,6 +274,10 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
 
     MFX_CHECK_STS_SKIP(InitRenderParams(), MFX_ERR_UNSUPPORTED);
 
+    m_components[eDEC].m_params.IOPattern = m_components[eDEC].GetIoPatternOut();
+    m_components[eREN].m_params.IOPattern = m_components[eREN].GetIoPatternIn();
+    m_components[eVPP].m_params.IOPattern = m_components[eDEC].GetIoPatternIn() | m_components[eREN].GetIoPatternOut();
+
     if (NULL != m_pRender)
     {
         mfxVideoParam params;
@@ -282,10 +286,6 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
             PipelineTrace((VM_STRING("%s"), MFXStructuresPair<mfxVideoParam>(params, m_components[eREN].m_params).Serialize().c_str()));
         });
     }
-
-    m_components[eDEC].m_params.IOPattern = m_components[eDEC].GetIoPatternOut();
-    m_components[eREN].m_params.IOPattern = m_components[eREN].GetIoPatternIn();
-    m_components[eVPP].m_params.IOPattern = m_components[eDEC].GetIoPatternIn() | m_components[eREN].GetIoPatternOut();
 
     //numthread could be modified by decode header
     m_components[eDEC].m_params.mfx.NumThread =  m_components[eDEC].m_NumThread;
