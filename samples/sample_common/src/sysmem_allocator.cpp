@@ -82,6 +82,10 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
     if (!ptr)
         return MFX_ERR_NULL_PTR;
 
+    // If allocator uses pointers instead of mids, no further action is required
+    if (!mid && ptr->Y)
+        return MFX_ERR_NONE;
+
     sFrame *fs = 0;
     mfxStatus sts = m_pBufferAllocator->Lock(m_pBufferAllocator->pthis, mid,(mfxU8 **)&fs);
 
@@ -180,6 +184,10 @@ mfxStatus SysMemFrameAllocator::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
 {
     if (!m_pBufferAllocator)
         return MFX_ERR_NOT_INITIALIZED;
+
+    // If allocator uses pointers instead of mids, no further action is required
+    if (!mid && ptr->Y)
+        return MFX_ERR_NONE;
 
     mfxStatus sts = m_pBufferAllocator->Unlock(m_pBufferAllocator->pthis, mid);
 
