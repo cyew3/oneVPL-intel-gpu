@@ -331,9 +331,6 @@
     <ClCompile Include="src\gmock\test_suites\avce_co2_use_rawref.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\mjpegd_init.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\avce_chromaloc.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
@@ -345,9 +342,6 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevce_gaa_close.cpp">
       <Filter>Source Files\test_suites\hevce_gaa</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\mpeg2e_mbqp.cpp">
-      <Filter>Source Files\test_suites</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevce_gaa_processframeasync.cpp">
       <Filter>Source Files\test_suites\hevce_gaa</Filter>
@@ -370,25 +364,7 @@
     <ClCompile Include="src\gmock\test_suites\avcd_res_change.cpp">
       <Filter>Source Files\test_suites\avcd</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\mpeg2d_timecode.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\mjpegd_tables.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\mjpegd_payload.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\threading_mfxinitex.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\mpeg2e_skipframes.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\mpeg2e_headers_order.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\mpeg2e_aspectratio_reset.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\avce_b_pyramid.cpp">
@@ -472,9 +448,6 @@
     <ClCompile Include="src\gmock\test_suites\fei_encode_default_ref_lists.cpp">
       <Filter>Source Files\test_suites\FEI</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\mpeg2e_level_profile.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\mpeg2e_aspectratio_reset.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
@@ -497,15 +470,6 @@
       <Filter>Source Files\test_suites\FEI</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\mpeg2e_level_profile.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\mjpegd_corruption.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\vc1d_res_change.cpp">
-      <Filter>Source Files\test_suites</Filter>
-    </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\jpegd_res_change.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\mpeg2d_picturetype.cpp">
@@ -733,6 +697,9 @@
     <ClCompile Include="src\gmock\test_suites\vc1d_bs_dataflag.cpp">
       <Filter>Source Files\test_suites\vc1d</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vc1d_res_change.cpp">
+      <Filter>Source Files\test_suites\vc1d</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\avcd_bs_dataflag.cpp">
       <Filter>Source Files\test_suites\avcd</Filter>
     </ClCompile>
@@ -765,8 +732,45 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vpp_multi_view.cpp">
       <Filter>Source Files\test_suites\vpp</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\mvce_view_output.cpp">
       <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vc1d_res_change.cpp">
+      <Filter>Source Files\test_suites\vc1d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mjpegd_corruption.cpp">
+      <Filter>Source Files\test_suites\mjpegd</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mjpegd_init.cpp">
+      <Filter>Source Files\test_suites\mjpegd</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mjpegd_payload.cpp">
+      <Filter>Source Files\test_suites\mjpegd</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mjpegd_tables.cpp">
+      <Filter>Source Files\test_suites\mjpegd</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mpeg2d_timecode.cpp">
+      <Filter>Source Files\test_suites\mpeg2d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mpeg2e_aspectratio_reset.cpp">
+      <Filter>Source Files\test_suites\mpeg2e</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mpeg2e_headers_order.cpp">
+      <Filter>Source Files\test_suites\mpeg2e</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mpeg2e_level_profile.cpp">
+      <Filter>Source Files\test_suites\mpeg2e</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mpeg2e_mbqp.cpp">
+      <Filter>Source Files\test_suites\mpeg2e</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\mpeg2e_skipframes.cpp">
+      <Filter>Source Files\test_suites\mpeg2e</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\jpegd_res_change.cpp">
+      <Filter>Source Files\test_suites\mjpegd</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
