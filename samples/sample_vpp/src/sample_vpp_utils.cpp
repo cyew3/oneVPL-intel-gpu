@@ -96,10 +96,12 @@ static
         return MSDK_STRING("UYVY");
     case MFX_FOURCC_AYUV:
         return MSDK_STRING("AYUV");
+#ifdef FUTURE_API
     case MFX_FOURCC_Y210:
         return MSDK_STRING("Y210");
     case MFX_FOURCC_Y410:
         return MSDK_STRING("Y410");
+#endif
     default:
         return MSDK_STRING("Unknown");
     }
@@ -1178,6 +1180,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_MSDK_CHECK_NOT_EQUAL(nBytesRead, 4*w, MFX_ERR_MORE_DATA);
         }
     }
+#ifdef FUTURE_API
     else if (pInfo->FourCC == MFX_FOURCC_Y210)
     {
         ptr = (mfxU8*)pData->Y16 + pInfo->CropX + pInfo->CropY * pitch;
@@ -1198,6 +1201,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_MSDK_CHECK_NOT_EQUAL(nBytesRead, 4*w, MFX_ERR_MORE_DATA);
         }
     }
+#endif
     else
     {
         return MFX_ERR_UNSUPPORTED;
@@ -1725,6 +1729,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
             MSDK_CHECK_NOT_EQUAL( fwrite(ptr + i * pitch, 1, 4*w, m_fDst), 4u*w, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
     }
+#ifdef FUTURE_API
     else if( pInfo->FourCC == MFX_FOURCC_Y210)
     {
         ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;
@@ -1743,6 +1748,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
             MSDK_CHECK_NOT_EQUAL( fwrite(ptr + i * pitch, 1, 4*w, m_fDst), 4u*w, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
     }
+#endif
     else
     {
         return MFX_ERR_UNSUPPORTED;
