@@ -528,9 +528,16 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
 {
     MSDK_CHECK_POINTER(eTask, MFX_ERR_NULL_PTR);
 
-    eTask->outPAK.Bs = &m_mfxBS;
-
     mfxStatus sts = MFX_ERR_NONE;
+
+    /* Alloc temporal buffers */
+    if (m_pAppConfig->bRepackPreencMV && !m_tmpForReading.size())
+    {
+        mfxU32 n_MB = m_pAppConfig->bDynamicRC ? m_pAppConfig->PipelineCfg.numMB_drc_max : m_pAppConfig->PipelineCfg.numMB_frame;
+        m_tmpForReading.resize(n_MB);
+    }
+
+    eTask->outPAK.Bs = &m_mfxBS;
 
     eTask->bufs = m_pExtBuffers->GetFreeSet();
     MSDK_CHECK_POINTER(eTask->bufs, MFX_ERR_NULL_PTR);

@@ -299,11 +299,9 @@ mfxStatus FEI_EncodeInterface::FillParameters()
         if (m_pAppConfig->bRepackPreencMV)
         {
             m_tmpForMedian.resize(16);
-            //std::fill(m_tmpForMedian.begin(), m_tmpForMedian.end(), 0);
 
             mfxU32 n_MB = m_pAppConfig->bDynamicRC ? m_pAppConfig->PipelineCfg.numMB_drc_max : m_pAppConfig->PipelineCfg.numMB_frame;
             m_tmpForReading.resize(n_MB);
-            //std::fill(m_tmpForReading.begin(), m_tmpForReading.end(), 0);
         }
     }
 
@@ -382,6 +380,13 @@ mfxStatus FEI_EncodeInterface::FillParameters()
 mfxStatus FEI_EncodeInterface::InitFrameParams(mfxFrameSurface1* encodeSurface, PairU8 frameType, iTask* eTask)
 {
     mfxStatus sts = MFX_ERR_NONE;
+
+    /* Alloc temporal buffers */
+    if (m_pAppConfig->bRepackPreencMV && !m_tmpForReading.size())
+    {
+        mfxU32 n_MB = m_pAppConfig->bDynamicRC ? m_pAppConfig->PipelineCfg.numMB_drc_max : m_pAppConfig->PipelineCfg.numMB_frame;
+        m_tmpForReading.resize(n_MB);
+    }
 
     bufSet * freeSet = m_pExtBuffers->GetFreeSet();
     MSDK_CHECK_POINTER(freeSet, MFX_ERR_NULL_PTR);
@@ -586,10 +591,6 @@ mfxStatus FEI_EncodeInterface::EncodeOneFrame(iTask* eTask, mfxFrameSurface1* pS
             }
             else
             {
-                if (encodeSurface)
-                {
-                    MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA); // correct status to finish encoding of buffered frames
-                }                                                // so don't ignore it
                 if (m_SyncPoint)
                 {
                     sts = m_pmfxSession->SyncOperation(m_SyncPoint, MSDK_WAIT_INTERVAL);
@@ -605,7 +606,13 @@ mfxStatus FEI_EncodeInterface::EncodeOneFrame(iTask* eTask, mfxFrameSurface1* pS
     } // for (int i = 0; i < 1 + m_bSingleFieldMode; ++i)
 
     if (sts == MFX_ERR_MORE_DATA)
+    {
+        if (encodeSurface)
+        {
+            sts = MFX_ERR_NONE; // MFX_ERR_MORE_DATA is correct status to finish encoding of buffered frames.
+        }                       // Otherwise, ignore it
         return sts;
+    }
 
     sts = m_FileWriter.WriteNextFrame(&m_mfxBS);
     MSDK_CHECK_STATUS(sts, "FEI ENCODE: WriteNextFrame failed");
