@@ -2426,7 +2426,7 @@ void H265SegmentDecoder::UpdatePUInfo(Ipp32u PartX, Ipp32u PartY, Ipp32u PartWid
         if (m_pSliceHeader->m_numRefIdx[RefListIdx] > 0 && MVi.m_refIdx[RefListIdx] >= 0)
         {
             H265DecoderRefPicList::ReferenceInformation &refInfo = m_pRefPicList[RefListIdx][MVi.m_refIdx[RefListIdx]];
-            MVi.m_index[RefListIdx] = (Ipp8s)refInfo.refFrame->m_index;
+            MVi.m_index[RefListIdx] = (Ipp8s)refInfo.refFrame->GetFrameMID();
 
             if (MVi.m_mv[RefListIdx].Vertical > m_context->m_mvsDistortionTemp)
                 m_context->m_mvsDistortionTemp = MVi.m_mv[RefListIdx].Vertical;
@@ -3002,8 +3002,8 @@ void H265SegmentDecoder::getInterMergeCandidates(Ipp32u AbsPartIdx, Ipp32u PartI
             Ipp32s j = PriorityList1[idx];
             if (CandIsInter[i] && CandIsInter[j] && (InterDirNeighbours[i] & 0x1) && (InterDirNeighbours[j] & 0x2))
             {
-                Ipp32s RefPOCL0 = m_pRefPicList[REF_PIC_LIST_0][MVBufferNeighbours[i].m_refIdx[REF_PIC_LIST_0]].refFrame->m_index;
-                Ipp32s RefPOCL1 = m_pRefPicList[REF_PIC_LIST_1][MVBufferNeighbours[j].m_refIdx[REF_PIC_LIST_1]].refFrame->m_index;
+                Ipp32s RefPOCL0 = m_pRefPicList[REF_PIC_LIST_0][MVBufferNeighbours[i].m_refIdx[REF_PIC_LIST_0]].refFrame->GetFrameMID();
+                Ipp32s RefPOCL1 = m_pRefPicList[REF_PIC_LIST_1][MVBufferNeighbours[j].m_refIdx[REF_PIC_LIST_1]].refFrame->GetFrameMID();
 
                 if (RefPOCL0 == RefPOCL1 && MVBufferNeighbours[i].m_mv[REF_PIC_LIST_0] == MVBufferNeighbours[j].m_mv[REF_PIC_LIST_1])
                 {

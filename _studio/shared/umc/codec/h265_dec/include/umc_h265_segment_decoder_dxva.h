@@ -116,7 +116,7 @@ public:
         if (!m_va)
             return;
 
-        UMC::Status sts = m_va->BeginFrame(pFrame->m_index);
+        UMC::Status sts = m_va->BeginFrame(pFrame->GetFrameMID());
         if (sts != UMC::UMC_OK)
             throw h265_exception(sts);
 

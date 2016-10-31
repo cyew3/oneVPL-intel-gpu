@@ -160,7 +160,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
 
     for (H265DecoderFrameInfo * au = m_FirstAU; au; au = au->GetNextAU())
     {
-        index = au->m_pFrame->m_index;
+        index = au->m_pFrame->GetFrameMID();
 
         m_mGuard.Unlock();
         {

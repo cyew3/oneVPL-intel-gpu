@@ -165,7 +165,10 @@ UMC::Status VATaskSupplier::AllocateFrameData(H265DecoderFrame * pFrame, IppiSiz
 
     pFrame->allocate(&frmData, &info);
 
-    pFrame->m_index = frmMID;
+    ViewItem_H265 *pView = GetView();
+    H265DBPList *pDPB = pView->pDPB.get();
+
+    pFrame->m_index = pDPB->GetFreeIndex();
 
     return UMC::UMC_OK;
 }

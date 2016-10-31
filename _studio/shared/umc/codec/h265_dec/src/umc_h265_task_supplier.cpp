@@ -968,8 +968,6 @@ H265DecoderFrame *TaskSupplier_H265::GetFreeFrame()
             return 0;
 
         pDPB->append(pFrame);
-
-        pFrame->m_index = pDPB->GetFreeIndex();
     }
 
     pFrame->Reset();
@@ -2253,20 +2251,20 @@ void SetDeltaPocs(const H265DecoderFrameList * dpb, const H265DecoderFrame * fra
     Ipp32s max_index = 0;
     for (const H265DecoderFrame *curr = dpb->head(); curr; curr = curr->future())
     {
-        if (curr->m_index > max_index)
-            max_index = curr->m_index;
+        if (curr->GetFrameMID() > max_index)
+            max_index = curr->GetFrameMID();
     }
 
     frame->getCD()->m_refFrameInfo.resize(max_index + 1);
 
     for (const H265DecoderFrame *curr = dpb->head(); curr; curr = curr->future())
     {
-        if (curr->m_index < 0)
+        if (curr->GetFrameMID() < 0)
             continue;
 
         Ipp32s POCDelta = frame->m_PicOrderCnt - curr->m_PicOrderCnt;
-        frame->getCD()->m_refFrameInfo[curr->m_index].pocDelta = POCDelta;
-        frame->getCD()->m_refFrameInfo[curr->m_index].flags = curr->isLongTermRef() ? COL_TU_LT_INTER : COL_TU_ST_INTER;
+        frame->getCD()->m_refFrameInfo[curr->GetFrameMID()].pocDelta = POCDelta;
+        frame->getCD()->m_refFrameInfo[curr->GetFrameMID()].flags = curr->isLongTermRef() ? COL_TU_LT_INTER : COL_TU_ST_INTER;
     }
 }
 #endif

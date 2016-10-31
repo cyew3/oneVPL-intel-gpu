@@ -161,6 +161,11 @@ public:
     // Clean up data after decoding is done
     void FreeResources();
 
+    // Accelerator for getting 'surface Index' FrameMID
+    inline Ipp32s GetFrameMID() const
+    {
+        return m_frameData.GetFrameMID();
+    }
 public:
     // Delete unneeded references and set flags after decoding is done
     void OnDecodingCompleted();

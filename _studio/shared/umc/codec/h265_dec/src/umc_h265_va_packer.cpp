@@ -141,7 +141,7 @@ void PackerVA::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderF
     picParamBuf->SetDataSize(sizeof(VAPictureParameterBufferHEVC));
     memset(picParam, 0, sizeof(VAPictureParameterBufferHEVC));
 
-    picParam->CurrPic.picture_id = m_va->GetSurfaceID(pCurrentFrame->m_index);
+    picParam->CurrPic.picture_id = m_va->GetSurfaceID(pCurrentFrame->GetFrameMID());
     picParam->CurrPic.pic_order_cnt = pCurrentFrame->m_PicOrderCnt;
     picParam->CurrPic.flags = 0;
 
@@ -157,7 +157,7 @@ void PackerVA::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderF
         if (refType != NO_REFERENCE)
         {
             picParam->ReferenceFrames[count].pic_order_cnt = frame->m_PicOrderCnt;
-            picParam->ReferenceFrames[count].picture_id = m_va->GetSurfaceID(frame->m_index);;
+            picParam->ReferenceFrames[count].picture_id = m_va->GetSurfaceID(frame->GetFrameMID());;
             picParam->ReferenceFrames[count].flags = refType == LONG_TERM_REFERENCE ? VA_PICTURE_HEVC_LONG_TERM_REFERENCE : 0;
             count++;
         }
@@ -426,7 +426,7 @@ bool PackerVA::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastS
                 for (uint8_t j = 0; j < max_num_ref; j++)
                 {
                     //VASurfaceID
-                    if (picParams->ReferenceFrames[j].picture_id == (VASurfaceID)m_va->GetSurfaceID(frameInfo.refFrame->m_index))
+                    if (picParams->ReferenceFrames[j].picture_id == (VASurfaceID)m_va->GetSurfaceID(frameInfo.refFrame->GetFrameMID()))
                     {
                         sliceParams->RefPicList[iDir][index] = j;
                         index++;
@@ -681,7 +681,7 @@ void PackerVA_Widevine::PackPicParams(const H265DecoderFrame *pCurrentFrame, H26
     picParamBuf->SetDataSize(sizeof(VAPictureParameterBufferHEVC));
     memset(picParam, 0, sizeof(VAPictureParameterBufferHEVC));
 
-    picParam->CurrPic.picture_id = m_va->GetSurfaceID(pCurrentFrame->m_index);
+    picParam->CurrPic.picture_id = m_va->GetSurfaceID(pCurrentFrame->GetFrameMID());
     picParam->CurrPic.pic_order_cnt = pCurrentFrame->m_PicOrderCnt;
     picParam->CurrPic.flags = 0;
 
@@ -697,7 +697,7 @@ void PackerVA_Widevine::PackPicParams(const H265DecoderFrame *pCurrentFrame, H26
         if (refType != NO_REFERENCE)
         {
             picParam->ReferenceFrames[count].pic_order_cnt = frame->m_PicOrderCnt;
-            picParam->ReferenceFrames[count].picture_id = m_va->GetSurfaceID(frame->m_index);;
+            picParam->ReferenceFrames[count].picture_id = m_va->GetSurfaceID(frame->GetFrameMID());;
             picParam->ReferenceFrames[count].flags = refType == LONG_TERM_REFERENCE ? VA_PICTURE_HEVC_LONG_TERM_REFERENCE : 0;
             count++;
         }
