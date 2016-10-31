@@ -14,7 +14,10 @@ File Name: hevce_roi.cpp
 #include "ts_parser.h"
 #include "ts_struct.h"
 
-#define HEVCE_MAXIMUM_SUPPORTED_REGIONS (256)
+#define MEDIASDK_API_MAXIMUM_SUPPORTED_REGIONS (256)
+#define HEVCE_ROI_MAXIMUM_SUPPORTED_REGIONS (3)
+#define HEVCE_ROI_MAXIMUM_ABS_QP_VALUE (51)
+#define HEVCE_ROI_MAXIMUM_ABS_QP_PRIORITY (3)
 
 namespace hevce_roi
 {
@@ -96,8 +99,8 @@ namespace hevce_roi
             }
         },
 
-        //incorrect quantity of regions [quantity, top, left, right, bottom, qp]
-        {/*03*/ MFX_ERR_INVALID_VIDEO_PARAM, CORRECT_ROI, NONE,5 /*256 + 1*/, 10, 10, 100, 100, 11,
+        //too many regions [quantity, top, left, right, bottom, qp]
+        {/*03*/ MFX_ERR_INVALID_VIDEO_PARAM, CORRECT_ROI, NONE, HEVCE_ROI_MAXIMUM_SUPPORTED_REGIONS + 1, 10, 10, 100, 100, 11,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
             }
@@ -117,8 +120,8 @@ namespace hevce_roi
             }
         },
 
-        //256 correct regions [quantity, top, left, right, bottom, qp-alter]
-        {/*06*/ MFX_ERR_NONE, CORRECT_ROI, NONE, 3/*256*/, 1, 1, 10, 10, 11,
+        //3 correct regions [quantity, top, left, right, bottom, qp-alter]
+        {/*06*/ MFX_ERR_NONE, CORRECT_ROI, NONE, 3, 1, 1, 10, 10, 11,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
             }
@@ -132,14 +135,14 @@ namespace hevce_roi
         },
 
         //one correct region with incorrect qp-alter [quantity, top, left, right, bottom, qp-alter]
-        {/*08*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CORRECT_ROI, NONE, 1, 10, 10, 100, 100, 52,
+        {/*08*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CORRECT_ROI, NONE, 1, 10, 10, 100, 100, HEVCE_ROI_MAXIMUM_ABS_QP_VALUE + 1,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
             }
         },
 
         //one correct region with incorrect negative qp-alter [quantity, top, left, right, bottom, qp-alter]
-        {/*09*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CORRECT_ROI, NONE, 1, 10, 10, 100, 100, -52,
+        {/*09*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CORRECT_ROI, NONE, 1, 10, 10, 100, 100, (-1)*HEVCE_ROI_MAXIMUM_ABS_QP_VALUE - 1,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
             }
@@ -153,7 +156,7 @@ namespace hevce_roi
         },
 
         //one correct region with CBR, incorrect qp-alter [quantity, top, left, right, bottom, qp-alter]
-        {/*11*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CORRECT_ROI, NONE, 1, 10, 10, 100, 100, 4,
+        {/*11*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CORRECT_ROI, NONE, 1, 10, 10, 100, 100, HEVCE_ROI_MAXIMUM_ABS_QP_PRIORITY + 1,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
             }
@@ -188,7 +191,7 @@ namespace hevce_roi
         },
 
         //request Query for maximum supported regions/ See man for NumROI desc [quantity, top, left, right, bottom, qp-alter]
-        {/*16*/ MFX_ERR_NONE, CHECK_QUERY, MAX_SUPPORTED_REGIONS, 256, 10, 10, 100, 100, 1,
+        {/*16*/ MFX_ERR_NONE, CHECK_QUERY, MAX_SUPPORTED_REGIONS, MEDIASDK_API_MAXIMUM_SUPPORTED_REGIONS, 10, 10, 100, 100, 1,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
             }
@@ -293,9 +296,9 @@ namespace hevce_roi
 
         mfxExtEncoderROI& roi = m_par;
         roi.NumROI            = tc.roi_cnt;
-        const mfxU32 multiplier = tc.type == WRONG_ROI_OUT_OF_IMAGE ? /*50*/200 : 1;
-        const mfxU32 end_count = tc.roi_cnt > 255 ? 255 : tc.roi_cnt;
-        for(mfxU32 i = 0; i <= end_count; ++i)
+        const mfxU32 multiplier = tc.type == WRONG_ROI_OUT_OF_IMAGE ? m_par.mfx.FrameInfo.Width : 1;
+        const mfxU32 end_count = tc.roi_cnt > MEDIASDK_API_MAXIMUM_SUPPORTED_REGIONS ? MEDIASDK_API_MAXIMUM_SUPPORTED_REGIONS : tc.roi_cnt;
+        for(mfxU32 i = 0; i < end_count; ++i)
         {
             roi.ROI[i].Top        = tc.top + i*multiplier;
             roi.ROI[i].Left       = tc.left + i*multiplier;
@@ -318,11 +321,11 @@ namespace hevce_roi
 
             if(tc.sub_type == MAX_SUPPORTED_REGIONS)
             {
-                EXPECT_EQ(HEVCE_MAXIMUM_SUPPORTED_REGIONS, roi.NumROI);
+                EXPECT_EQ(HEVCE_ROI_MAXIMUM_SUPPORTED_REGIONS, roi.NumROI);
             }
             else if(MFX_ERR_NONE == tc.sts) //Check that buffer was copied
             {
-                EXPECT_EQ(0,(memcmp(*m_pPar->ExtParam, &roi, sizeof(mfxExtEncoderROI))) );
+                EXPECT_EQ(0,(memcmp(*m_pPar->ExtParam, &roi, sizeof(mfxExtEncoderROI))));
             }
         }
         else
@@ -351,6 +354,7 @@ namespace hevce_roi
                     SyncOperation(); TS_CHECK_MFX;
                     encoded++;
                 }
+
                 /*
                 const int encoded_size = m_pBitstream->DataLength;
                 FILE *fp = fopen("c:/TEMP/hevc_roi.hevc", "wb");
@@ -358,10 +362,16 @@ namespace hevce_roi
                 fclose(fp);
                 */
                 sts = tc.sts;
-            }
 
-            g_tsStatus.expect(MFX_ERR_NONE);
-            Close();
+                g_tsStatus.expect(MFX_ERR_NONE);
+                Close();
+            }
+            else
+            {
+                // Initialization has failed - set appropriate status for close()
+                g_tsStatus.expect(MFX_ERR_NOT_INITIALIZED);
+                Close();
+            }
         }
         TS_END;
         return 0;
