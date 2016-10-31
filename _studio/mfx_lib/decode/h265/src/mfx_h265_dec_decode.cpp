@@ -1115,7 +1115,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
             if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_DATA || umcRes == UMC::UMC_ERR_SYNC)
             {
-                if (!bs)
+                if ((!bs) || (bs->DataFlag == MFX_BITSTREAM_EOS))
                     force = true;
                 sts = MFX_ERR_MORE_DATA;
             }
