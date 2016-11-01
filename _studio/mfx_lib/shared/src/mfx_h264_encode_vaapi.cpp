@@ -1038,6 +1038,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     attrs.push_back( createVAConfigAttrib(VAConfigAttribEncInterlaced, 0));
     attrs.push_back( createVAConfigAttrib(VAConfigAttribEncMaxRefFrames, 0));
     attrs.push_back( createVAConfigAttrib(VAConfigAttribEncSliceStructure, 0));
+    attrs.push_back( createVAConfigAttrib(VAConfigAttribEncROI, 0));
 #ifdef SKIP_FRAME_SUPPORT
     attrs.push_back( createVAConfigAttrib(VAConfigAttribEncSkipFrame, 0));
 #endif
@@ -1060,7 +1061,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     m_caps.RollingIntraRefresh = (attrs[3].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
     m_caps.vaRollingIntraRefresh = attrs[3].value;
 #ifdef SKIP_FRAME_SUPPORT
-    m_caps.SkipFrame = (attrs[9].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
+    m_caps.SkipFrame = (attrs[10].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0 ;
 #endif
 
     m_caps.UserMaxFrameSizeSupport = 1; // no request on support for libVA
@@ -1127,6 +1128,18 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
             m_caps.MaxNum_Reference1 = 1;
         }
     } /* if (pfnVaExtQueryCaps) */
+
+    if (attrs[9].value != VA_ATTRIB_NOT_SUPPORTED)
+    {
+        VAConfigAttribValEncROI *VaEncROIValPtr = reinterpret_cast<VAConfigAttribValEncROI *>(&attrs[9].value);
+        assert(VaEncROIValPtr->bits.num_roi_regions < 32);
+        m_caps.MaxNumOfROI = VaEncROIValPtr->bits.num_roi_regions;
+        m_caps.ROIBRCPriorityLevelSupport = VaEncROIValPtr->bits.roi_rc_priority_support;
+    }
+    else
+    {
+        m_caps.MaxNumOfROI = 0;
+    }
 
     return MFX_ERR_NONE;
 } // mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(VideoCORE* core, GUID guid, mfxU32 width, mfxU32 height)
