@@ -45,8 +45,8 @@ mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, mfxU16 width, 
     w = width;
     h = height;
 
-    /* IF we have RGB4/AYUV input*/
-    if (pInfo->FourCC == MFX_FOURCC_RGB4 || pInfo->FourCC == MFX_FOURCC_AYUV)
+    /* IF we have RGB4/AYUV/Y210/Y410 input*/
+    if (pInfo->FourCC == MFX_FOURCC_RGB4 || pInfo->FourCC == MFX_FOURCC_AYUV || pInfo->FourCC == MFX_FOURCC_Y210 || pInfo->FourCC == MFX_FOURCC_Y410)
     {
         ptr = TESTCOMP_MIN( TESTCOMP_MIN(pSurface->Data.R, pSurface->Data.G), pSurface->Data.B );
         //ptr = ptr + pInfo->CropX + pInfo->CropY * pData->Pitch;
@@ -179,8 +179,8 @@ mfxStatus WriteRawFrame(mfxFrameSurface1 *pSurface, FILE* fSink)
     mfxU32 i, j, h, w;
     mfxStatus sts = MFX_ERR_NONE;
 
-    /* IF we have RGB4/AYUV output*/
-    if (pInfo->FourCC == MFX_FOURCC_RGB4 || pInfo->FourCC == MFX_FOURCC_AYUV)
+    /* IF we have RGB4/AYUV/Y210/Y410 output*/
+    if (pInfo->FourCC == MFX_FOURCC_RGB4 || pInfo->FourCC == MFX_FOURCC_AYUV || pInfo->FourCC == MFX_FOURCC_Y210 || pInfo->FourCC == MFX_FOURCC_Y410)
     {
         h = pInfo->CropH;
         w = pInfo->CropW;

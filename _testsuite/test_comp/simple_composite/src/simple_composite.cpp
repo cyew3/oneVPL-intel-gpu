@@ -225,7 +225,9 @@ enum ColorFormat
     kYV12 = 0,
     kNV12 = 1,
     kRGB4 = 2,
-    kAYUV = 3
+    kAYUV = 3,
+    kY210 = 4,
+    kY410 = 5
 };
 
 class ColorMap
@@ -239,6 +241,8 @@ public:
         map_.insert(make_pair("NV12", kNV12));
         map_.insert(make_pair("RGB4", kRGB4));
         map_.insert(make_pair("AYUV", kAYUV));
+        map_.insert(make_pair("Y210", kY210));
+        map_.insert(make_pair("Y410", kY410));
     }
 public:
     ColorFormat Get(const string &str) const
@@ -383,8 +387,8 @@ void PrintHelp(ostream &out)
     out << "Mandatory args: " << endl;
     out << "-par <filename> path to the parameters file" << endl;
     out << "-o <filename>" << endl;
-    out << "-scc <NV12 | YV12 | RGB4 | AYUV> (default: NV12 - source color format)" << endl;
-    out << "-dcc <NV12 | YV12 | RGB4 | AYUV> (default: NV12 - dest color format)" << endl;
+    out << "-scc <NV12 | YV12 | RGB4 | AYUV | Y210 | Y410> (default: NV12 - source color format)" << endl;
+    out << "-dcc <NV12 | YV12 | RGB4 | AYUV | Y210 | Y410> (default: NV12 - dest color format)" << endl;
     out << "-reset_par <filename> path to the parameters file" << endl;
     out << "-reset_start index if the start frame for reset" << endl;
     out << "-d3d11 flag enables MFX_IMPL_VIA_D3D11 implementation"<< endl;
@@ -456,6 +460,12 @@ public:
             m_Color.U = 128;
             m_Color.V = 128;
         }
+        else if (m_Arguments->dcc == kY210 || m_Arguments->dcc == kY410)
+        {
+            m_Color.Y = 64;
+            m_Color.U = 512;
+            m_Color.V = 512;
+        }
         else
         {
             m_Color.Y = 0;
@@ -463,11 +473,8 @@ public:
             m_Color.V = 0;
         }
 
-        for (int i = 0; i < MAX_INPUT_STREAMS; i++)
-        {
-            m_RealWidths[i] = 0;
-            m_RealHeights[i] = 0;
-        }
+        memset(m_RealWidths,  0, sizeof(m_RealWidths));
+        memset(m_RealHeights, 0, sizeof(m_RealHeights));
     }
     ~Composition()
     {
@@ -582,8 +589,8 @@ public:
         mfxU8* surfaceBuffersIn[MAX_INPUT_STREAMS] = {0}; // 1 primary stream + max 63 substreams
         mfxU8  bitsPerPixel = 12;  // NV12 format is a 12 bits per pixel format
 
-        /* IF RGB4/AYUV case */
-        if (m_Arguments->scc == kRGB4 || m_Arguments->dcc == kRGB4 || m_Arguments->scc == kAYUV || m_Arguments->dcc == kAYUV)
+        /* IF RGB4/AYUV/Y210/Y410 case */
+        if (m_Arguments->dcc == kRGB4 || m_Arguments->dcc == kAYUV || m_Arguments->dcc == kY210 || m_Arguments->dcc == kY410)
             bitsPerPixel = 32;
 
         for (int i = 0; i < m_nVPPSurfNumIn; i++)
@@ -610,6 +617,19 @@ public:
                 m_pVPPSurfacesIn[i]->Data.V = m_pVPPSurfacesIn[i]->Data.U + 1;
                 m_pVPPSurfacesIn[i]->Data.Pitch = width;
             }
+            else if (m_Arguments->scc == kY210)
+            {
+                m_pVPPSurfacesIn[i]->Data.U = m_pVPPSurfacesIn[i]->Data.Y + 2;
+                m_pVPPSurfacesIn[i]->Data.V = m_pVPPSurfacesIn[i]->Data.Y + 6;
+                m_pVPPSurfacesIn[i]->Data.Pitch = 4*width;
+            }
+            else if (m_Arguments->scc == kY410)
+            {
+                m_pVPPSurfacesIn[i]->Data.U = m_pVPPSurfacesIn[i]->Data.Y;
+                m_pVPPSurfacesIn[i]->Data.V = m_pVPPSurfacesIn[i]->Data.Y;
+                m_pVPPSurfacesIn[i]->Data.A = m_pVPPSurfacesIn[i]->Data.Y;
+                m_pVPPSurfacesIn[i]->Data.Pitch = 4*width;
+            }
             else /* IF RGB4/AYUV case */
             {
                 m_pVPPSurfacesIn[i]->Data.B = m_pVPPSurfacesIn[i]->Data.Y;
@@ -635,13 +655,26 @@ public:
             memset(m_pVPPSurfacesOut[i], 0, sizeof(mfxFrameSurface1));
             memcpy(&(m_pVPPSurfacesOut[i]->Info), &(m_VPPParams.vpp.Out), sizeof(mfxFrameInfo));
             m_pVPPSurfacesOut[i]->Data.Y = &m_surfaceBuffersOut[surfaceSize * i];
-            if (m_Arguments->scc == kNV12)
+            if (m_Arguments->dcc == kNV12)
             {
                 m_pVPPSurfacesOut[i]->Data.U = m_pVPPSurfacesOut[i]->Data.Y + width * height;
                 m_pVPPSurfacesOut[i]->Data.V = m_pVPPSurfacesOut[i]->Data.U + 1;
                 m_pVPPSurfacesOut[i]->Data.Pitch = width;
             }
-            else /* IF RGB4 case */
+            else if (m_Arguments->dcc == kY210)
+            {
+                m_pVPPSurfacesOut[i]->Data.U = m_pVPPSurfacesOut[i]->Data.Y + 2;
+                m_pVPPSurfacesOut[i]->Data.V = m_pVPPSurfacesOut[i]->Data.Y + 6;
+                m_pVPPSurfacesOut[i]->Data.Pitch = 4*width;
+            }
+            else if (m_Arguments->dcc == kY410)
+            {
+                m_pVPPSurfacesOut[i]->Data.U = m_pVPPSurfacesOut[i]->Data.Y;
+                m_pVPPSurfacesOut[i]->Data.V = m_pVPPSurfacesOut[i]->Data.Y;
+                m_pVPPSurfacesOut[i]->Data.A = m_pVPPSurfacesOut[i]->Data.Y;
+                m_pVPPSurfacesOut[i]->Data.Pitch = 4*width;
+            }
+            else /* IF RGB4/AYUV case */
             {
                 m_pVPPSurfacesOut[i]->Data.B = m_pVPPSurfacesOut[i]->Data.Y;
                 m_pVPPSurfacesOut[i]->Data.G = m_pVPPSurfacesOut[i]->Data.B + 1;
@@ -661,7 +694,10 @@ protected:
         {
             for (int i = 0; i < m_nVPPSurfNumIn; i++)
             {
-                if (m_pVPPSurfacesIn[i]->Info.FourCC == MFX_FOURCC_NV12)
+                if (m_pVPPSurfacesIn[i]->Info.FourCC == MFX_FOURCC_NV12
+                 || m_pVPPSurfacesIn[i]->Info.FourCC == MFX_FOURCC_YV12
+                 || m_pVPPSurfacesIn[i]->Info.FourCC == MFX_FOURCC_Y210
+                 || m_pVPPSurfacesIn[i]->Info.FourCC == MFX_FOURCC_Y410)
                 {
                     MSDK_SAFE_DELETE_ARRAY(m_pVPPSurfacesIn[i]->Data.Y);
                 }
@@ -750,6 +786,20 @@ protected:
             m_VPPParams.vpp.In.FourCC         = MFX_FOURCC_AYUV;
             m_VPPParams.vpp.In.ChromaFormat   = MFX_CHROMAFORMAT_YUV444;
         }
+        else if (m_Arguments->scc == kY210)
+        {
+            m_VPPParams.vpp.In.FourCC         = MFX_FOURCC_Y210;
+            m_VPPParams.vpp.In.ChromaFormat   = MFX_CHROMAFORMAT_YUV422;
+            m_VPPParams.vpp.In.BitDepthLuma   = 10;
+            m_VPPParams.vpp.In.BitDepthChroma = 10;
+        }
+        else if (m_Arguments->scc == kY410)
+        {
+            m_VPPParams.vpp.In.FourCC         = MFX_FOURCC_Y410;
+            m_VPPParams.vpp.In.ChromaFormat   = MFX_CHROMAFORMAT_YUV444;
+            m_VPPParams.vpp.In.BitDepthLuma   = 10;
+            m_VPPParams.vpp.In.BitDepthChroma = 10;
+        }
         else
         {
             m_VPPParams.vpp.In.FourCC         = MFX_FOURCC_RGB4;
@@ -779,6 +829,20 @@ protected:
         {
             m_VPPParams.vpp.Out.FourCC         = MFX_FOURCC_AYUV;
             m_VPPParams.vpp.Out.ChromaFormat   = MFX_CHROMAFORMAT_YUV444;
+        }
+        else if (m_Arguments->scc == kY210)
+        {
+            m_VPPParams.vpp.Out.FourCC         = MFX_FOURCC_Y210;
+            m_VPPParams.vpp.Out.ChromaFormat   = MFX_CHROMAFORMAT_YUV422;
+            m_VPPParams.vpp.Out.BitDepthLuma   = 10;
+            m_VPPParams.vpp.Out.BitDepthChroma = 10;
+        }
+        else if (m_Arguments->scc == kY410)
+        {
+            m_VPPParams.vpp.Out.FourCC         = MFX_FOURCC_Y410;
+            m_VPPParams.vpp.Out.ChromaFormat   = MFX_CHROMAFORMAT_YUV444;
+            m_VPPParams.vpp.Out.BitDepthLuma   = 10;
+            m_VPPParams.vpp.Out.BitDepthChroma = 10;
         }
         else /*RGB case*/
         {
@@ -868,6 +932,20 @@ protected:
                     {
                         m_Streams[m_nStreams].FourCC         = MFX_FOURCC_AYUV;
                         m_Streams[m_nStreams].ChromaFormat   = MFX_CHROMAFORMAT_YUV444;
+                    }
+                    else if (m_Arguments->scc == kY210)
+                    {
+                        m_Streams[m_nStreams].FourCC         = MFX_FOURCC_Y210;
+                        m_Streams[m_nStreams].ChromaFormat   = MFX_CHROMAFORMAT_YUV422;
+                        m_Streams[m_nStreams].BitDepthLuma   = 10;
+                        m_Streams[m_nStreams].BitDepthChroma = 10;
+                    }
+                    else if (m_Arguments->scc == kY410)
+                    {
+                        m_Streams[m_nStreams].FourCC         = MFX_FOURCC_Y410;
+                        m_Streams[m_nStreams].ChromaFormat   = MFX_CHROMAFORMAT_YUV444;
+                        m_Streams[m_nStreams].BitDepthLuma   = 10;
+                        m_Streams[m_nStreams].BitDepthChroma = 10;
                     }
                     else
                     {
