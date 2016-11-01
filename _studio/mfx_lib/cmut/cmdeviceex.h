@@ -34,38 +34,45 @@ namespace mdfut {
 
   public:
 
-  CmDeviceEx(const unsigned char * programm, int size, CmDevice  *pCmDevice,  mfxHandleType _mfxDeviceType, mfxHDL _mfxDeviceHdl, bool jit = false)
-  {
+    CmDeviceEx(const unsigned char * programm, int size, CmDevice  *pCmDevice,  mfxHandleType _mfxDeviceType, mfxHDL _mfxDeviceHdl, bool jit = false)
+    {
       pCmDevice;
-    mfxDeviceType = _mfxDeviceType;
-    mfxDeviceHdl = _mfxDeviceHdl;
-    MDFUT_ASSERT(programm != NULL && size > 0);
+      mfxDeviceType = _mfxDeviceType;
+      mfxDeviceHdl = _mfxDeviceHdl;
+      MDFUT_ASSERT(programm != NULL && size > 0);
 
-    UINT version = 0;
-    int result = CM_FAILURE;//CreateCmDevice(pDevice, version);
+      UINT version = 0;
+      int result = CM_FAILURE;//CreateCmDevice(pDevice, version);
+
 #if defined(_WIN32) || defined(_WIN64)
-    if(MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 == mfxDeviceType)
+      if(MFX_HANDLE_DIRECT3D_DEVICE_MANAGER9 == mfxDeviceType)
         result = CreateCmDevice(pDevice,version,(IDirect3DDeviceManager9*) mfxDeviceHdl);
-    else if(MFX_HANDLE_D3D11_DEVICE == mfxDeviceType)
+      else if(MFX_HANDLE_D3D11_DEVICE == mfxDeviceType)
         result = CreateCmDevice(pDevice,version,(ID3D11Device*) mfxDeviceHdl);
 #elif defined(LINUX32) || defined (LINUX64)
-    if(MFX_HANDLE_VA_DISPLAY == mfxDeviceType)
+      if(MFX_HANDLE_VA_DISPLAY == mfxDeviceType)
         result = CreateCmDevice(pDevice,version, (VADisplay) mfxDeviceHdl);
 #endif
-    else
-    {
-        throw MDFUT_EXCEPTION("Cannot create CM device for unknown device type\n");
-    }
 
-    CmProgram * pProgram = NULL;
-    if(jit)
+      if ((CM_SUCCESS != result) || !pDevice)
+      {
+        throw MDFUT_EXCEPTION("Cannot create CM device\n");
+      }
+
+      CmProgram * pProgram = NULL;
+      if(jit)
         result = ::ReadProgramJit(pDevice, pProgram, programm, size);
-    else
+      else
         result = ::ReadProgram(pDevice, pProgram, programm, size);
 
-    this->programs.push_back(pProgram);
+      if ((CM_SUCCESS != result) || !pProgram)
+      {
+        throw MDFUT_EXCEPTION("Cannot read CM program\n");
+      }
 
-  }
+      this->programs.push_back(pProgram);
+    }
+
     CmDeviceEx(const char * pIsaFileName, mfxHandleType _mfxDeviceType, mfxHDL _mfxDeviceHdl)
     {
         mfxDeviceType = _mfxDeviceType;
