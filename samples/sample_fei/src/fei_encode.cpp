@@ -101,6 +101,7 @@ FEI_EncodeInterface::~FEI_EncodeInterface()
 }
 
 void FEI_EncodeInterface::GetRefInfo(
+    mfxU16 & picStruct,
     mfxU16 & refDist,
     mfxU16 & numRefFrame,
     mfxU16 & gopSize,
@@ -115,23 +116,25 @@ void FEI_EncodeInterface::GetRefInfo(
     {
         switch (m_InitExtParams[i]->BufferId)
         {
-        case MFX_EXTBUFF_CODING_OPTION2:
-        {
-            mfxExtCodingOption2* ptr = reinterpret_cast<mfxExtCodingOption2*>(m_InitExtParams[i]);
-            bRefType = ptr->BRefType;
-        }
-        break;
-        case MFX_EXTBUFF_CODING_OPTION3:
-        {
-            mfxExtCodingOption3* ptr = reinterpret_cast<mfxExtCodingOption3*>(m_InitExtParams[i]);
-            numRefActiveP   = ptr->NumRefActiveP[0];
-            numRefActiveBL0 = ptr->NumRefActiveBL0[0];
-            numRefActiveBL1 = ptr->NumRefActiveBL1[0];
-        }
-        break;
+            case MFX_EXTBUFF_CODING_OPTION2:
+            {
+                mfxExtCodingOption2* ptr = reinterpret_cast<mfxExtCodingOption2*>(m_InitExtParams[i]);
+                bRefType = ptr->BRefType;
+            }
+            break;
+
+            case MFX_EXTBUFF_CODING_OPTION3:
+            {
+                mfxExtCodingOption3* ptr = reinterpret_cast<mfxExtCodingOption3*>(m_InitExtParams[i]);
+                numRefActiveP   = ptr->NumRefActiveP[0];
+                numRefActiveBL0 = ptr->NumRefActiveBL0[0];
+                numRefActiveBL1 = ptr->NumRefActiveBL1[0];
+            }
+            break;
         }
     }
 
+    picStruct   = m_videoParams.mfx.FrameInfo.PicStruct;
     refDist     = m_videoParams.mfx.GopRefDist;
     numRefFrame = m_videoParams.mfx.NumRefFrame;
     gopSize     = m_videoParams.mfx.GopPicSize;
@@ -228,7 +231,7 @@ mfxStatus FEI_EncodeInterface::FillParameters()
     MSDK_ZERO_MEMORY(*pCodingOption3);
     pCodingOption3->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
     pCodingOption3->Header.BufferSz = sizeof(mfxExtCodingOption3);
-    pCodingOption3->NumRefActiveP[0]   = m_pAppConfig->bNRefPSpecified ? m_pAppConfig->NumRefActiveP : MaxNumActiveRefP;
+    pCodingOption3->NumRefActiveP[0]   = m_pAppConfig->bNRefPSpecified  ? m_pAppConfig->NumRefActiveP    : MaxNumActiveRefP;
     pCodingOption3->NumRefActiveBL0[0] = m_pAppConfig->bNRefBL0Specified ? m_pAppConfig->NumRefActiveBL0 : MaxNumActiveRefBL0;
     pCodingOption3->NumRefActiveBL1[0] = m_pAppConfig->bNRefBL1Specified ? m_pAppConfig->NumRefActiveBL1 :
                             (m_pAppConfig->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE ? MaxNumActiveRefBL1 : MaxNumActiveRefBL1_i);

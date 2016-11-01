@@ -68,7 +68,8 @@ public:
     mfxVideoParam* GetCommonVideoParams();
     mfxStatus UpdateVideoParam();
 
-    void GetRefInfo(mfxU16 & refDist,
+    void GetRefInfo(mfxU16 & picStruct,
+                    mfxU16 & refDist,
                     mfxU16 & numRefFrame,
                     mfxU16 & gopSize,
                     mfxU16 & gopOptFlag,

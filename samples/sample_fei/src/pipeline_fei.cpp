@@ -68,6 +68,7 @@ CEncodingPipeline::CEncodingPipeline(AppConfig* pAppConfig)
     , m_pmfxAllocatorParams(NULL)
     , m_bUseHWmemory(pAppConfig->bUseHWmemory) //only HW memory is supported (ENCODE supports SW memory)
     , m_bExternalAlloc(pAppConfig->bUseHWmemory)
+    , m_bParametersAdjusted(false)
     , m_hwdev(NULL)
 
     , m_surfPoolStrategy((pAppConfig->nReconSurf || pAppConfig->nInputSurf) ? PREFER_NEW : PREFER_FIRST_FREE)
@@ -274,6 +275,7 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(bool realloc_frames)
             msdk_printf(MSDK_STRING("WARNING: FEI PreENC partial acceleration\n"));
             MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
         }
+        m_bParametersAdjusted |= sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         MSDK_CHECK_STATUS(sts, "FEI PreENC: Init failed");
     }
 
@@ -285,6 +287,7 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(bool realloc_frames)
             msdk_printf(MSDK_STRING("WARNING: FEI ENCODE partial acceleration\n"));
             MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
         }
+        m_bParametersAdjusted |= sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         MSDK_CHECK_STATUS(sts, "FEI ENCODE: Init failed");
     }
 
@@ -296,6 +299,7 @@ mfxStatus CEncodingPipeline::ResetMFXComponents(bool realloc_frames)
             msdk_printf(MSDK_STRING("WARNING: FEI ENCPAK partial acceleration\n"));
             MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
         }
+        m_bParametersAdjusted |= sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         MSDK_CHECK_STATUS(sts, "FEI ENCPAK: Init failed");
     }
 
@@ -707,6 +711,44 @@ mfxStatus CEncodingPipeline::SetSequenceParameters()
 {
     mfxStatus sts = MFX_ERR_NONE;
 
+    if (m_bParametersAdjusted)
+    {
+        sts = UpdateVideoParam(); // update settings according to those that exposed by MSDK library
+        MSDK_CHECK_STATUS(sts, "UpdateVideoParam failed");
+
+        /* Get BRef type and active P/B refs */
+        if (m_pFEI_ENCODE)
+        {
+            m_pFEI_ENCODE->GetRefInfo(m_picStruct, m_refDist, m_numRefFrame, m_gopSize, m_gopOptFlag, m_idrInterval, m_numRefActiveP, m_numRefActiveBL0, m_numRefActiveBL1, m_bRefType);
+        }
+        else if (m_pFEI_ENCPAK)
+        {
+            m_pFEI_ENCPAK->GetRefInfo(m_picStruct, m_refDist, m_numRefFrame, m_gopSize, m_gopOptFlag, m_idrInterval, m_numRefActiveP, m_numRefActiveBL0, m_numRefActiveBL1, m_bRefType);
+        }
+        else if (m_pFEI_PreENC)
+        {
+            m_pFEI_PreENC->GetRefInfo(m_picStruct, m_refDist, m_numRefFrame, m_gopSize, m_gopOptFlag, m_idrInterval, m_numRefActiveP, m_numRefActiveBL0, m_numRefActiveBL1, m_bRefType);
+        }
+
+        m_numOfFields = m_preencBufs.num_of_fields = m_encodeBufs.num_of_fields = (m_picStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
+
+        msdk_printf(MSDK_STRING("\nWARNING: Incompatible video parameters adjusted by MSDK library!\n"));
+    }
+
+    /* Initialize task pool */
+    m_inputTasks.Init(m_refDist, m_gopOptFlag, m_numRefFrame, m_numRefFrame + 1, m_log2frameNumMax);
+
+    m_taskInitializationParams.PicStruct       = m_picStruct;
+    m_taskInitializationParams.GopPicSize      = m_gopSize;
+    m_taskInitializationParams.GopRefDist      = m_refDist;
+    m_taskInitializationParams.NumRefActiveP   = m_numRefActiveP;
+    m_taskInitializationParams.NumRefActiveBL0 = m_numRefActiveBL0;
+    m_taskInitializationParams.NumRefActiveBL1 = m_numRefActiveBL1;
+    m_taskInitializationParams.BRefType        = m_bRefType;
+
+
+    /* Section below calculates number of macroblocks for Extended Buffers allocation */
+
     // Copy source frame size from decoder
     if (m_pDECODE)
     {
@@ -723,7 +765,7 @@ mfxStatus CEncodingPipeline::SetSequenceParameters()
     m_appCfg.PipelineCfg.numMB_refPic  = m_appCfg.PipelineCfg.numMB_frame = (m_widthMB * m_heightMB) >> 8;
     m_appCfg.PipelineCfg.numMB_refPic /= m_numOfFields;
 
-    /* num of MBs in reference frame/field */
+    // num of MBs in reference frame/field
     m_widthMB  >>= 4;
     m_heightMB >>= m_numOfFields == 2 ? 5 : 4;
 
@@ -750,33 +792,6 @@ mfxStatus CEncodingPipeline::SetSequenceParameters()
             m_appCfg.PipelineCfg.numMB_preenc_refPic = m_appCfg.PipelineCfg.numMB_refPic;
         }
     }
-
-    sts = UpdateVideoParam(); // update settings according to those that exposed by MSDK library
-    MSDK_CHECK_STATUS(sts, "UpdateVideoParam failed");
-
-    /* Get BRef type and active P/B refs */
-    if (m_pFEI_ENCODE)
-    {
-        m_pFEI_ENCODE->GetRefInfo(m_refDist, m_numRefFrame, m_gopSize, m_gopOptFlag, m_idrInterval, m_numRefActiveP, m_numRefActiveBL0, m_numRefActiveBL1, m_bRefType);
-    }
-    else if (m_pFEI_ENCPAK)
-    {
-        m_pFEI_ENCPAK->GetRefInfo(m_refDist, m_numRefFrame, m_gopSize, m_gopOptFlag, m_idrInterval, m_numRefActiveP, m_numRefActiveBL0, m_numRefActiveBL1, m_bRefType);
-    }
-    else if (m_pFEI_PreENC)
-    {
-        m_pFEI_PreENC->GetRefInfo(m_refDist, m_numRefFrame, m_gopSize, m_gopOptFlag, m_idrInterval, m_numRefActiveP, m_numRefActiveBL0, m_numRefActiveBL1, m_bRefType);
-    }
-
-    /* Initialize task pool */
-    m_inputTasks.Init(m_refDist, m_gopOptFlag, m_numRefFrame, m_numRefFrame + 1, m_log2frameNumMax);
-
-    m_taskInitializationParams.GopPicSize      = m_gopSize;
-    m_taskInitializationParams.GopRefDist      = m_refDist;
-    m_taskInitializationParams.NumRefActiveP   = m_numRefActiveP;
-    m_taskInitializationParams.NumRefActiveBL0 = m_numRefActiveBL0;
-    m_taskInitializationParams.NumRefActiveBL1 = m_numRefActiveBL1;
-    m_taskInitializationParams.BRefType        = m_bRefType;
 
     return sts;
 }
@@ -1510,6 +1525,8 @@ mfxStatus CEncodingPipeline::Run()
                 /* FEI PAK requires separate pool for reconstruct surfaces */
                 m_taskInitializationParams.ReconSurf = m_ReconSurfaces.GetFreeSurface_FEI();
                 MSDK_CHECK_POINTER(m_taskInitializationParams.ReconSurf, MFX_ERR_MEMORY_ALLOC);
+
+                m_taskInitializationParams.ReconSurf->Data.FrameOrder = pSurf->Data.FrameOrder;
             }
 
             /* PreENC on downsampled surface */

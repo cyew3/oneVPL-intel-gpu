@@ -180,6 +180,7 @@ mfxStatus FEI_PreencInterface::UpdateVideoParam()
 }
 
 void FEI_PreencInterface::GetRefInfo(
+                mfxU16 & picStruct,
                 mfxU16 & refDist,
                 mfxU16 & numRefFrame,
                 mfxU16 & gopSize,
@@ -197,6 +198,7 @@ void FEI_PreencInterface::GetRefInfo(
 
     bRefType = m_pAppConfig->bRefType == MFX_B_REF_UNKNOWN ? MFX_B_REF_OFF : m_pAppConfig->bRefType;
 
+    picStruct   = m_videoParams.mfx.FrameInfo.PicStruct;
     refDist     = m_videoParams.mfx.GopRefDist;
     numRefFrame = m_videoParams.mfx.NumRefFrame;
     gopSize     = m_videoParams.mfx.GopPicSize;
@@ -212,7 +214,7 @@ mfxStatus FEI_PreencInterface::FillDSVideoParams()
 
     m_DSParams.AllocId      = m_allocId;
     // specify memory type
-    m_DSParams.IOPattern    = mfxU16(m_pAppConfig->bUseHWmemory ? (MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY)
+    m_DSParams.IOPattern    = mfxU16(m_pAppConfig->bUseHWmemory ? (MFX_IOPATTERN_IN_VIDEO_MEMORY  | MFX_IOPATTERN_OUT_VIDEO_MEMORY)
                                                                 : (MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY));
     m_DSParams.AsyncDepth   = 1;
 

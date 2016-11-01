@@ -194,6 +194,7 @@ mfxStatus FEI_EncPakInterface::UpdateVideoParam()
 }
 
 void FEI_EncPakInterface::GetRefInfo(
+            mfxU16 & picStruct,
             mfxU16 & refDist,
             mfxU16 & numRefFrame,
             mfxU16 & gopSize,
@@ -204,18 +205,19 @@ void FEI_EncPakInterface::GetRefInfo(
             mfxU16 & numRefActiveBL1,
             mfxU16 & bRefType)
 {
-    numRefActiveP   = m_pAppConfig->bNRefPSpecified  ? m_pAppConfig->NumRefActiveP    : MaxNumActiveRefP;
+    numRefActiveP   = m_pAppConfig->bNRefPSpecified   ? m_pAppConfig->NumRefActiveP   : MaxNumActiveRefP;
     numRefActiveBL0 = m_pAppConfig->bNRefBL0Specified ? m_pAppConfig->NumRefActiveBL0 : MaxNumActiveRefBL0;
     numRefActiveBL1 = m_pAppConfig->bNRefBL1Specified ? m_pAppConfig->NumRefActiveBL1 :
-                      (m_pAppConfig->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE ? MaxNumActiveRefBL1 : MaxNumActiveRefBL1_i);
+        (m_pAppConfig->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE ? MaxNumActiveRefBL1 : MaxNumActiveRefBL1_i);
 
     bRefType = m_pAppConfig->bRefType == MFX_B_REF_UNKNOWN ? MFX_B_REF_OFF : m_pAppConfig->bRefType;
 
-    refDist     = m_pmfxENC ? m_videoParams_ENC.mfx.GopRefDist  : m_videoParams_PAK.mfx.GopRefDist;
-    numRefFrame = m_pmfxENC ? m_videoParams_ENC.mfx.NumRefFrame : m_videoParams_PAK.mfx.NumRefFrame;
-    gopSize     = m_pmfxENC ? m_videoParams_ENC.mfx.GopPicSize  : m_videoParams_PAK.mfx.GopPicSize;
-    gopOptFlag  = m_pmfxENC ? m_videoParams_ENC.mfx.GopOptFlag  : m_videoParams_PAK.mfx.GopOptFlag;
-    idrInterval = m_pmfxENC ? m_videoParams_ENC.mfx.IdrInterval : m_videoParams_PAK.mfx.IdrInterval;
+    picStruct   = m_pmfxENC ? m_videoParams_ENC.mfx.FrameInfo.PicStruct : m_videoParams_PAK.mfx.FrameInfo.PicStruct;
+    refDist     = m_pmfxENC ? m_videoParams_ENC.mfx.GopRefDist          : m_videoParams_PAK.mfx.GopRefDist;
+    numRefFrame = m_pmfxENC ? m_videoParams_ENC.mfx.NumRefFrame         : m_videoParams_PAK.mfx.NumRefFrame;
+    gopSize     = m_pmfxENC ? m_videoParams_ENC.mfx.GopPicSize          : m_videoParams_PAK.mfx.GopPicSize;
+    gopOptFlag  = m_pmfxENC ? m_videoParams_ENC.mfx.GopOptFlag          : m_videoParams_PAK.mfx.GopOptFlag;
+    idrInterval = m_pmfxENC ? m_videoParams_ENC.mfx.IdrInterval         : m_videoParams_PAK.mfx.IdrInterval;
 }
 
 mfxStatus FEI_EncPakInterface::FillParameters()

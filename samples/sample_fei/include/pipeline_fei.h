@@ -121,6 +121,8 @@ protected:
     bool m_bUseHWmemory;   // indicates whether hardware or software memory used
     bool m_bExternalAlloc; // use memory allocator as external for Media SDK
 
+    bool m_bParametersAdjusted;
+
     CHWDevice *m_hwdev;
 
     SurfStrategy m_surfPoolStrategy; // strategy to pick surfaces from pool
