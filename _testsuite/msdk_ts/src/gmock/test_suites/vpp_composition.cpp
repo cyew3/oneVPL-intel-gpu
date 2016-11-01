@@ -250,8 +250,16 @@ namespace vpp_composition
             ||  m_par.vpp.In.FourCC == MFX_FOURCC_Y210 || m_par.vpp.Out.FourCC == MFX_FOURCC_Y210
             ||  m_par.vpp.In.FourCC == MFX_FOURCC_Y410 || m_par.vpp.Out.FourCC == MFX_FOURCC_Y410))
         {
-            sts_query = MFX_ERR_UNSUPPORTED;
-            sts_init  = MFX_ERR_INVALID_VIDEO_PARAM;
+            if ((m_par.vpp.In.FourCC == MFX_FOURCC_AYUV || m_par.vpp.Out.FourCC == MFX_FOURCC_AYUV)
+                && g_tsOSFamily == MFX_OS_FAMILY_WINDOWS && g_tsImpl & MFX_IMPL_VIA_D3D11)
+            {
+                // AYUV is supported on windows with DX11
+            }
+            else
+            {
+                sts_query = MFX_ERR_UNSUPPORTED;
+                sts_init  = MFX_ERR_INVALID_VIDEO_PARAM;
+            }
         }
 
         g_tsStatus.expect(sts_query);
