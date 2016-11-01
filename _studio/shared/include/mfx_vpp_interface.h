@@ -381,6 +381,7 @@ namespace MfxHwVideoProcessing
                ,mirroring(0)
                ,mirroringPosition(0)
                ,scene(VPP_SCENE_NO_CHANGE)
+               ,gpuHangTrigger(false)
             {
                    memset(&targetSurface, 0, sizeof(mfxDrvSurface));
                    dstRects.clear();
@@ -482,6 +483,8 @@ namespace MfxHwVideoProcessing
         int        mirroringPosition;
 
         vppScene    scene;     // Keep information about scene change
+
+         bool       gpuHangTrigger;
     };
 
     class DriverVideoProcessing

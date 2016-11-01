@@ -467,6 +467,47 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         return mfxSts;
     }
 
+    struct gpu_hang_trigger
+    {
+        VADisplay   disp;
+        VABufferID  id;
+        VAStatus    sts;
+
+        gpu_hang_trigger(VADisplay disp, VAContextID ctx, bool on)
+            : disp(disp), id(VA_INVALID_ID)
+            , sts(VA_STATUS_SUCCESS)
+        {
+            if (!on)
+                return;
+
+            sts =  vaCreateBuffer(disp, ctx, VATriggerCodecHangBufferType,
+                                             sizeof(unsigned int), 1, 0, &id);
+            if (sts == VA_STATUS_SUCCESS)
+            {
+                unsigned int* trigger = NULL;
+                sts = vaMapBuffer(disp, id, (void**)&trigger);
+                if (sts != VA_STATUS_SUCCESS)
+                    return;
+                
+                if (trigger)
+                    *trigger = 1;
+                else
+                    sts = VA_STATUS_ERROR_UNKNOWN;
+
+                vaUnmapBuffer(disp, id);
+            }
+        }
+
+        ~gpu_hang_trigger()
+        {
+            if (id != VA_INVALID_ID)
+                sts = vaDestroyBuffer(disp, id);
+        }
+    } trigger(m_vaDisplay, m_vaContextVPP, pParams->gpuHangTrigger);
+
+    if (trigger.sts != VA_STATUS_SUCCESS)
+        return MFX_ERR_DEVICE_FAILED;
+
     /* Now msdk needs intermediate surface for ADI with ref 30i->30p mode*/
     if ((m_primarySurface4Composition == NULL) && (pParams->iDeinterlacingAlgorithm !=0) )
     {
@@ -1071,6 +1112,13 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         vaSts = vaBeginPicture(m_vaDisplay,
                             m_vaContextVPP,
                             *outputSurface);
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    }
+
+    if (trigger.id != VA_INVALID_ID)
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaRenderPicture");
+        vaSts = vaRenderPicture(m_vaDisplay, m_vaContextVPP, &trigger.id, 1);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
 
@@ -2361,7 +2409,10 @@ mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaSyncSurface");
         vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+        if (vaSts == VA_STATUS_ERROR_HW_BUSY)
+            return MFX_ERR_GPU_HANG;
+        else
+            MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
 #endif
 

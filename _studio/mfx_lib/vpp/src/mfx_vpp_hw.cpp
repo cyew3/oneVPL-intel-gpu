@@ -1398,6 +1398,7 @@ VideoVPPHW::VideoVPPHW(IOMode mode, VideoCORE *core)
 ,m_taskMngr()
 ,m_scene_change(0)
 ,m_frame_num(0)
+,m_critical_error(MFX_ERR_NONE)
 ,m_ddi(NULL)
 ,m_bMultiView(false)
 #if defined(MFX_VA)
@@ -1610,6 +1611,8 @@ mfxStatus  VideoVPPHW::Init(
     isTemporal;
 
     m_frame_num = 0;
+    m_critical_error = MFX_ERR_NONE;
+
     //-----------------------------------------------------
     // [1] high level check
     //-----------------------------------------------------
@@ -2167,6 +2170,10 @@ mfxStatus VideoVPPHW::VppFrameCheck(
     }
 #endif
 
+    if (input &&
+        m_critical_error != MFX_ERR_NONE)
+        return m_critical_error;
+
     sts = m_taskMngr.AssignTask(input, output, aux, pTask, intSts);
     MFX_CHECK_STS(sts);
 
@@ -2661,6 +2668,7 @@ mfxStatus VideoVPPHW::MergeRuntimeParams(const DdiTask *pTask, MfxHwVideoProcess
         inputSurfs[indx] = pTask->m_refList[pTask->bkwdRefCount + i];
     }
 
+    mfxExtIntGPUHang* ht = 0;
     mfxExtVPPVideoSignalInfo *vsi;
     for (i = 0; i < numSamples; i++) 
     {
@@ -2688,7 +2696,12 @@ mfxStatus VideoVPPHW::MergeRuntimeParams(const DdiTask *pTask, MfxHwVideoProcess
             execParams->VideoSignalInfo[i].NominalRange   = vsi->NominalRange;
             execParams->VideoSignalInfo[i].TransferMatrix = vsi->TransferMatrix;
         }
+
+        if (!ht)
+            ht = reinterpret_cast<mfxExtIntGPUHang*>( GetExtendedBuffer(inputSurfs[i].pSurf->Data.ExtParam, inputSurfs[i].pSurf->Data.NumExtParam, MFX_EXTBUFF_GPU_HANG));
     }
+
+    execParams->gpuHangTrigger = !!ht;
 
     ExtSurface outputSurf = pTask->output;
     // Update Video Signal info params for output
@@ -3030,6 +3043,13 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
 
     if (! pTask->skipQueryStatus && ! pHwVpp->m_executeParams.mirroring) {
         sts = (*pHwVpp->m_ddi)->QueryTaskStatus(currentTaskIdx);
+        if (sts == MFX_ERR_DEVICE_FAILED ||
+            sts == MFX_ERR_GPU_HANG)
+        {
+            pHwVpp->m_critical_error = sts;
+            pHwVpp->m_taskMngr.CompleteTask(pTask);
+        }
+
         MFX_CHECK_STS(sts);
     }
 

@@ -823,8 +823,9 @@ namespace MfxHwVideoProcessing
         mfxVideoParam m_params;
         TaskManager   m_taskMngr;
 
-        mfxU32 m_scene_change;
-        mfxU32 m_frame_num;
+        mfxU32        m_scene_change;
+        mfxU32        m_frame_num;
+        mfxStatus     m_critical_error;
 
         // Not an auto_ptr anymore since core owns create/delete semantic now.
         VPPHWResMng * m_ddi;
