@@ -64,25 +64,9 @@ static mfxU16 GetAsyncDeph(mfxVideoParam *par)
 static bool IsVideoParamExtBufferIdSupported(mfxU32 id)
 {
     return
-        id == MFX_EXTBUFF_CODING_OPTION             ||
-        id == MFX_EXTBUFF_CODING_OPTION_SPSPPS      ||
-        id == MFX_EXTBUFF_DDI                       ||
-#ifdef MFX_UNDOCUMENTED_DUMP_FILES
-        id == MFX_EXTBUFF_DUMP                      ||
-#endif
-        id == MFX_EXTBUFF_PAVP_OPTION               ||
-        id == MFX_EXTBUFF_MVC_SEQ_DESC              ||
-        id == MFX_EXTBUFF_VIDEO_SIGNAL_INFO         ||
-        id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION ||
-        id == MFX_EXTBUFF_PICTURE_TIMING_SEI        ||
-        id == MFX_EXTBUFF_AVC_TEMPORAL_LAYERS       ||
-        id == MFX_EXTBUFF_CODING_OPTION2            ||
-        id == MFX_EXTBUFF_SVC_SEQ_DESC              ||
-        id == MFX_EXTBUFF_SVC_RATE_CONTROL          ||
-        id == MFX_EXTBUFF_ENCODER_RESET_OPTION      ||
-        id == MFX_EXTBUFF_ENCODER_CAPABILITY        ||
-        id == MFX_EXTBUFF_ENCODER_WIDI_USAGE        ||
-        id == MFX_EXTBUFF_ENCODER_ROI               ||
+        id == MFX_EXTBUFF_CODING_OPTION  ||
+        id == MFX_EXTBUFF_CODING_OPTION2 ||
+        id == MFX_EXTBUFF_CODING_OPTION3 ||
         id == MFX_EXTBUFF_FEI_PARAM;
 }
 
@@ -555,13 +539,11 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
     const mfxExtFeiParam* params = GetExtBuffer(m_video);
     if (NULL == params)
         return MFX_ERR_INVALID_VIDEO_PARAM;
-    else
-    {
-        if ((MFX_CODINGOPTION_ON == params->SingleFieldProcessing) &&
-             ((MFX_PICSTRUCT_FIELD_TFF == m_video.mfx.FrameInfo.PicStruct) ||
-              (MFX_PICSTRUCT_FIELD_BFF == m_video.mfx.FrameInfo.PicStruct)) )
-            m_singleFieldProcessingMode = MFX_CODINGOPTION_ON;
-    }
+
+    if ((MFX_CODINGOPTION_ON == params->SingleFieldProcessing) &&
+         ((MFX_PICSTRUCT_FIELD_TFF == m_video.mfx.FrameInfo.PicStruct) ||
+          (MFX_PICSTRUCT_FIELD_BFF == m_video.mfx.FrameInfo.PicStruct)) )
+        m_singleFieldProcessingMode = MFX_CODINGOPTION_ON;
 
     sts = m_ddi->QueryEncodeCaps(m_caps);
     if (sts != MFX_ERR_NONE)
@@ -592,10 +574,10 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
      * But all surfaces allocated internally!
      * The same behavior has all decoder's in Media SDK, so it was used same approach to solve issue:
      * to remember allocated reconstructed surfaces in allocator using MFX_MEMTYPE_FROM_DECODE type */
-    request.Type = MFX_MEMTYPE_FROM_PAK | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
-    request.NumFrameMin = m_video.mfx.GopRefDist * 2 + (m_video.AsyncDepth-1) + 1 +m_video.mfx.NumRefFrame + 1;
+    request.Type              = MFX_MEMTYPE_FROM_PAK | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
+    request.NumFrameMin       = m_video.mfx.GopRefDist * 2 + (m_video.AsyncDepth-1) + 1 +m_video.mfx.NumRefFrame + 1;
     request.NumFrameSuggested = request.NumFrameMin;
-    request.AllocId = par->AllocId;
+    request.AllocId           = par->AllocId;
 
     //sts = m_core->AllocFrames(&request, &m_rec);
     sts = m_rec.Alloc(m_core,request, false);
@@ -620,7 +602,7 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
     m_incoming.clear();
 
     m_bInit = true;
-    return sts;
+    return checkStatus;
 }
 
 mfxStatus VideoPAK_PAK::Reset(mfxVideoParam *par)

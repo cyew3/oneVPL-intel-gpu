@@ -64,25 +64,9 @@ static mfxU16 GetAsyncDeph(mfxVideoParam *par)
 static bool IsVideoParamExtBufferIdSupported(mfxU32 id)
 {
     return
-        id == MFX_EXTBUFF_CODING_OPTION             ||
-        id == MFX_EXTBUFF_CODING_OPTION_SPSPPS      ||
-        id == MFX_EXTBUFF_DDI                       ||
-#ifdef MFX_UNDOCUMENTED_DUMP_FILES
-        id == MFX_EXTBUFF_DUMP                      ||
-#endif
-        id == MFX_EXTBUFF_PAVP_OPTION               ||
-        id == MFX_EXTBUFF_MVC_SEQ_DESC              ||
-        id == MFX_EXTBUFF_VIDEO_SIGNAL_INFO         ||
-        id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION ||
-        id == MFX_EXTBUFF_PICTURE_TIMING_SEI        ||
-        id == MFX_EXTBUFF_AVC_TEMPORAL_LAYERS       ||
-        id == MFX_EXTBUFF_CODING_OPTION2            ||
-        id == MFX_EXTBUFF_SVC_SEQ_DESC              ||
-        id == MFX_EXTBUFF_SVC_RATE_CONTROL          ||
-        id == MFX_EXTBUFF_ENCODER_RESET_OPTION      ||
-        id == MFX_EXTBUFF_ENCODER_CAPABILITY        ||
-        id == MFX_EXTBUFF_ENCODER_WIDI_USAGE        ||
-        id == MFX_EXTBUFF_ENCODER_ROI               ||
+        id == MFX_EXTBUFF_CODING_OPTION  ||
+        id == MFX_EXTBUFF_CODING_OPTION2 ||
+        id == MFX_EXTBUFF_CODING_OPTION3 ||
         id == MFX_EXTBUFF_FEI_PARAM;
 }
 
@@ -516,11 +500,6 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
 
     MfxVideoParam tmp(*par);
 
-    if (par->mfx.NumRefFrame > 4)
-    {
-        m_video.mfx.NumRefFrame = tmp.mfx.NumRefFrame = 4;
-    }
-
     sts = ReadSpsPpsHeaders(tmp);
     MFX_CHECK_STS(sts);
 
@@ -546,13 +525,11 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
     const mfxExtFeiParam* params = GetExtBuffer(m_video);
     if (NULL == params)
         return MFX_ERR_INVALID_VIDEO_PARAM;
-    else
-    {
-        if ((MFX_CODINGOPTION_ON == params->SingleFieldProcessing) &&
-             ((MFX_PICSTRUCT_FIELD_TFF == m_video.mfx.FrameInfo.PicStruct) ||
-              (MFX_PICSTRUCT_FIELD_BFF == m_video.mfx.FrameInfo.PicStruct)) )
-            m_singleFieldProcessingMode = MFX_CODINGOPTION_ON;
-    }
+
+    if ((MFX_CODINGOPTION_ON == params->SingleFieldProcessing) &&
+         ((MFX_PICSTRUCT_FIELD_TFF == m_video.mfx.FrameInfo.PicStruct) ||
+          (MFX_PICSTRUCT_FIELD_BFF == m_video.mfx.FrameInfo.PicStruct)) )
+        m_singleFieldProcessingMode = MFX_CODINGOPTION_ON;
 
     sts = m_ddi->QueryEncodeCaps(m_caps);
     if (sts != MFX_ERR_NONE)
@@ -584,10 +561,10 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
      * (3): And main rule: ENC (N number call) and PAK (N number call) should have same exactly
      * same reference /reconstruct list !
      * */
-    request.Type = MFX_MEMTYPE_FROM_ENC | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
-    request.NumFrameMin = m_video.mfx.GopRefDist * 2 + (m_video.AsyncDepth-1) + 1 + m_video.mfx.NumRefFrame + 1;
+    request.Type              = MFX_MEMTYPE_FROM_ENC | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
+    request.NumFrameMin       = m_video.mfx.GopRefDist * 2 + (m_video.AsyncDepth-1) + 1 + m_video.mfx.NumRefFrame + 1;
     request.NumFrameSuggested = request.NumFrameMin;
-    request.AllocId = par->AllocId;
+    request.AllocId           = par->AllocId;
 
     //sts = m_core->AllocFrames(&request, &m_rec);
     sts = m_rec.Alloc(m_core,request, false);
@@ -612,7 +589,7 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
     m_incoming.clear();
 
     m_bInit = true;
-    return sts;
+    return checkStatus;
 }
 mfxStatus VideoENC_ENC::Reset(mfxVideoParam *par)
 {

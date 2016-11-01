@@ -64,25 +64,9 @@ static mfxU16 GetAsyncDeph(mfxVideoParam *par)
 static bool IsVideoParamExtBufferIdSupported(mfxU32 id)
 {
     return
-        id == MFX_EXTBUFF_CODING_OPTION             ||
-        id == MFX_EXTBUFF_CODING_OPTION_SPSPPS      ||
-        id == MFX_EXTBUFF_DDI                       ||
-#ifdef MFX_UNDOCUMENTED_DUMP_FILES
-        id == MFX_EXTBUFF_DUMP                      ||
-#endif
-        id == MFX_EXTBUFF_PAVP_OPTION               ||
-        id == MFX_EXTBUFF_MVC_SEQ_DESC              ||
-        id == MFX_EXTBUFF_VIDEO_SIGNAL_INFO         ||
-        id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION ||
-        id == MFX_EXTBUFF_PICTURE_TIMING_SEI        ||
-        id == MFX_EXTBUFF_AVC_TEMPORAL_LAYERS       ||
-        id == MFX_EXTBUFF_CODING_OPTION2            ||
-        id == MFX_EXTBUFF_SVC_SEQ_DESC              ||
-        id == MFX_EXTBUFF_SVC_RATE_CONTROL          ||
-        id == MFX_EXTBUFF_ENCODER_RESET_OPTION      ||
-        id == MFX_EXTBUFF_ENCODER_CAPABILITY        ||
-        id == MFX_EXTBUFF_ENCODER_WIDI_USAGE        ||
-        id == MFX_EXTBUFF_ENCODER_ROI               ||
+        id == MFX_EXTBUFF_CODING_OPTION  ||
+        id == MFX_EXTBUFF_CODING_OPTION2 ||
+        id == MFX_EXTBUFF_CODING_OPTION3 ||
         id == MFX_EXTBUFF_FEI_PARAM;
 }
 
@@ -917,10 +901,7 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
     case MFX_ERR_INVALID_VIDEO_PARAM:
     case MFX_WRN_PARTIAL_ACCELERATION:
     case MFX_ERR_INCOMPATIBLE_VIDEO_PARAM:
-        return sts;
-    case MFX_WRN_INCOMPATIBLE_VIDEO_PARAM:
-        sts = checkStatus;
-        break;
+        return checkStatus;
     default:
         break;
     }
@@ -928,13 +909,11 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
     const mfxExtFeiParam* params = GetExtBuffer(m_video);
     if (NULL == params)
         return MFX_ERR_INVALID_VIDEO_PARAM;
-    else
-    {
-        if ((MFX_CODINGOPTION_ON == params->SingleFieldProcessing) &&
-             ((MFX_PICSTRUCT_FIELD_TFF == m_video.mfx.FrameInfo.PicStruct) ||
-              (MFX_PICSTRUCT_FIELD_BFF == m_video.mfx.FrameInfo.PicStruct)) )
-            m_singleFieldProcessingMode = MFX_CODINGOPTION_ON;
-    }
+
+    if ((MFX_CODINGOPTION_ON == params->SingleFieldProcessing) &&
+         ((MFX_PICSTRUCT_FIELD_TFF == m_video.mfx.FrameInfo.PicStruct) ||
+          (MFX_PICSTRUCT_FIELD_BFF == m_video.mfx.FrameInfo.PicStruct)) )
+        m_singleFieldProcessingMode = MFX_CODINGOPTION_ON;
 
     m_currentPlatform = m_core->GetHWType();
     m_currentVaType   = m_core->GetVAType();
