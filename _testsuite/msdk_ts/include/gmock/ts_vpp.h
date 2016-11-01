@@ -73,13 +73,13 @@ public:
     mfxStatus SetFrameAllocator(mfxSession session, mfxFrameAllocator *allocator);
 
     mfxStatus RunFrameVPPAsync();
-    mfxStatus RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp);
+    virtual mfxStatus RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp);
 
     mfxStatus RunFrameVPPAsyncEx();
-    mfxStatus RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp);
+    virtual mfxStatus RunFrameVPPAsyncEx(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out, mfxSyncPoint *syncp);
     
     mfxStatus SyncOperation();
-    mfxStatus SyncOperation(mfxSyncPoint syncp);
+    virtual mfxStatus SyncOperation(mfxSyncPoint syncp);
     mfxStatus SyncOperation(mfxSession session, mfxSyncPoint syncp, mfxU32 wait);
     
     mfxStatus ProcessFrames(mfxU32 n);
