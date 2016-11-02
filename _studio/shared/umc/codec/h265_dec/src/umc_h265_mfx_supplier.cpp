@@ -386,7 +386,7 @@ void MFXTaskSupplier_H265::AddFakeReferenceFrame(H265Slice * )
 }
 
 // Check HW capabilities
-bool MFX_Utility::IsNeedPartialAcceleration_H265(mfxVideoParam* par, eMFXHWType type)
+bool MFX_Utility::IsNeedPartialAcceleration_H265(mfxVideoParam* par, eMFXHWType /*type*/)
 {
     if (!par)
         return false;
@@ -487,7 +487,7 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
 }
 
 inline
-mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
+mfxU32 CalculateFourcc(int codecProfile, mfxFrameInfo const* frameInfo)
 {
     //map profile + chroma fmt + bit depth => fcc
     //Main   - [4:2:0], [8] bit
@@ -551,7 +551,7 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
 }
 
 inline
-bool CheckFourcc(mfxU32 fourcc, mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
+bool CheckFourcc(mfxU32 fourcc, int codecProfile, mfxFrameInfo const* frameInfo)
 {
     VM_ASSERT(frameInfo);
     mfxFrameInfo fi = *frameInfo;
