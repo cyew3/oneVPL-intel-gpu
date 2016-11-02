@@ -616,6 +616,8 @@ namespace TranscodingSample
         mfxU32          m_NumFramesForReset;
         MSDKMutex       m_mReset;
 
+        bool isHEVCSW;
+
         std::auto_ptr<ExtendedBSStore>        m_pBSStore;
 
         mfxU32                                m_FrameNumberPreference;

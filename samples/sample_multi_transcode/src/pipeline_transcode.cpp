@@ -124,7 +124,8 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_pBSProcessor(NULL),
     m_nReqFrameTime(0),
     m_nOutputFramesNum(0),
-    shouldUseGreedyFormula(false)
+    shouldUseGreedyFormula(false),
+    isHEVCSW(false)
 {
     MSDK_ZERO_MEMORY(m_mfxDecParams);
     MSDK_ZERO_MEMORY(m_mfxVppParams);
@@ -537,6 +538,12 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
 
     } //while processing
 
+    // HEVC SW requires additional sychronization
+    if( MFX_ERR_NONE == sts && isHEVCSW)
+    {
+        m_pmfxSession->SyncOperation(pExtSurface->Syncp,MSDK_WAIT_INTERVAL);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
     return sts;
 
 } // mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
@@ -576,6 +583,14 @@ mfxStatus CTranscodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
             return MFX_ERR_DEVICE_FAILED;
         }
     }
+
+    // HEVC SW requires additional sychronization
+    if( MFX_ERR_NONE == sts && isHEVCSW)
+    {
+        m_pmfxSession->SyncOperation(pExtSurface->Syncp,MSDK_WAIT_INTERVAL);
+        MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    }
+
     return sts;
 }
 
@@ -2984,6 +2999,9 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
             MSDK_CHECK_STATUS(sts, "AllocFrames failed");
         }
     }
+
+    isHEVCSW = AreGuidsEqual(pParams->decoderPluginParams.pluginGuid, MFX_PLUGINID_HEVCD_SW);
+
     // if sink - suspended allocation
 
     // common session settings
@@ -3031,7 +3049,6 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
         sts = m_pmfxENC->Init(&m_mfxEncParams);
         MSDK_CHECK_STATUS(sts, "m_pmfxENC->Init failed");
     }
-
     m_bIsInit = true;
     return sts;
 
