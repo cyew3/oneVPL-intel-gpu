@@ -5,8 +5,6 @@
 
 namespace hevcd_close
 {
-
-
     class TestSuite : tsVideoDecoder
     {
     public:
@@ -17,9 +15,10 @@ namespace hevcd_close
 
         }
         ~TestSuite() {}
-        int RunTest(unsigned int id);
+        int RunTest(unsigned int id, const char* sname);
 
     private:
+
         enum
         {
             MFX_PAR,
@@ -59,7 +58,7 @@ namespace hevcd_close
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
 
-    int TestSuite::RunTest(unsigned int id)
+    int TestSuite::RunTest(unsigned int id, const char* sname)
     {
         TS_START;
 
@@ -69,7 +68,6 @@ namespace hevcd_close
         Load();
 
         //set default param
-        const char* sname = g_tsStreamPool.Get("conformance/hevc/itu/RPS_B_qualcomm_5.bit");
         g_tsStreamPool.Reg();
         tsBitstreamReader reader(sname, 100000);
         m_bs_processor = &reader;
@@ -111,5 +109,46 @@ namespace hevcd_close
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS(hevcd_close);
+    template <unsigned fourcc>
+    char const* query_stream(unsigned int, std::integral_constant<unsigned, fourcc>);
+
+    /* 8 bit */
+    char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_NV12>)
+    { return "conformance/hevc/itu/RPS_B_qualcomm_5.bit"; }
+    char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_YUY2>)
+    { return "conformance/hevc/422format/inter_422_8.bin"; }
+    char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_AYUV>)
+    { return "<TODO>"; }
+
+    /* 10 bit */
+    char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>)
+    { return "conformance/hevc/10bit/WP_A_MAIN10_Toshiba_3.bit"; }
+    char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y216>)
+    { return "conformance/hevc/10bit/inter_422_10.bin"; }
+    char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y410>)
+    { return "conformance/hevc/StressBitstreamEncode/rext444_10b/Stress_HEVC_Rext444_10bHT62_432x240_30fps_302_inter_stress_2.2.hevc"; }
+
+    template <unsigned fourcc>
+    struct TestSuiteEx
+        : public TestSuite
+    {
+        static
+        int RunTest(unsigned int id)
+        {
+            const char* sname =
+                g_tsStreamPool.Get(query_stream(id, std::integral_constant<unsigned, fourcc>()));
+            g_tsStreamPool.Reg();
+
+            TestSuite suite;
+            return suite.RunTest(id, sname);
+        }
+    };
+
+    TS_REG_TEST_SUITE(hevcd_close,     TestSuiteEx<MFX_FOURCC_NV12>::RunTest, TestSuiteEx<MFX_FOURCC_NV12>::n_cases);
+    TS_REG_TEST_SUITE(hevcd_422_close, TestSuiteEx<MFX_FOURCC_YUY2>::RunTest, TestSuiteEx<MFX_FOURCC_YUY2>::n_cases);
+    //TS_REG_TEST_SUITE(hevcd_444_close, TestSuiteEx<MFX_FOURCC_AYUV>::RunTest, TestSuiteEx<MFX_FOURCC_AYUV>::n_cases);
+
+    TS_REG_TEST_SUITE(hevc10d_close,     TestSuiteEx<MFX_FOURCC_P010>::RunTest, TestSuiteEx<MFX_FOURCC_P010>::n_cases);
+    TS_REG_TEST_SUITE(hevc10d_422_close, TestSuiteEx<MFX_FOURCC_Y216>::RunTest, TestSuiteEx<MFX_FOURCC_Y216>::n_cases);
+    TS_REG_TEST_SUITE(hevc10d_444_close, TestSuiteEx<MFX_FOURCC_Y410>::RunTest, TestSuiteEx<MFX_FOURCC_Y410>::n_cases);
 };
