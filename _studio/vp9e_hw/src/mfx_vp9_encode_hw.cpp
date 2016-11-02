@@ -22,14 +22,14 @@ namespace MfxHwVP9Encode
 {
 
 Plugin::Plugin(bool CreateByDispatcher)
-    : m_pTaskManager(NULL)
-    , m_bStartIVFSequence(false)
+    : m_bStartIVFSequence(false)
     , m_maxBsSize(0)
     , m_pmfxCore(NULL)
     , m_PluginParam()
     , m_createdByDispatcher(CreateByDispatcher)
     , m_adapter(this)
     , m_initialized(false)
+    , m_frameArrivalOrder(0)
 {
     m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_PARALLEL;
     m_PluginParam.MaxThreadNum = 1;
@@ -169,7 +169,7 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxF
     // fill mfxFrameAllocRequest
     in->Type = mfxU16((par->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)? MFX_MEMTYPE_SYS_EXT:MFX_MEMTYPE_D3D_EXT) ;
 
-    in->NumFrameMin = toValidate.AsyncDepth;
+    in->NumFrameMin = (mfxU16)CalcNumSurfRaw(toValidate);
     in->NumFrameSuggested = in->NumFrameMin;
 
     in->Info = par->mfx.FrameInfo;
@@ -194,8 +194,6 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
 
     m_video = *par;
 
-    m_pTaskManager = new TaskManagerVmePlusPak;
-
     m_ddi.reset(CreatePlatformVp9Encoder(m_pmfxCore));
     MFX_CHECK(m_ddi.get() != 0, MFX_ERR_UNSUPPORTED);
 
@@ -208,57 +206,51 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     if (sts != MFX_ERR_NONE)
         return MFX_ERR_UNSUPPORTED;
 
+    // get validated and properly initialized set of parameters for encoding
     checkSts = CheckParametersAndSetDefaults(m_video, caps);
     MFX_CHECK(checkSts >= 0, checkSts);
 
     sts = m_ddi->CreateAccelerationService(m_video);
     MFX_CHECK_STS(sts);
 
-    mfxFrameAllocRequest reqOutBs     = {};
-#if 0 // segmentation support is disabled
-    mfxFrameAllocRequest reqSegMap = {};
-#endif // segmentation support is disabled
+    m_rawFrames.Init(CalcNumSurfRaw(m_video));
 
-    // initialize task manager, including allocation of recon surfaces chain
-    sts = m_pTaskManager->Init(m_pmfxCore, &m_video, m_ddi->GetReconSurfFourCC());
+    mfxFrameAllocRequest request = {};
+    request.Info = m_video.mfx.FrameInfo;
+
+    // allocate and register surfaces for reconstructed frames
+    request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumSurfRecon(m_video);
+    request.Info.FourCC = MFX_FOURCC_NV12;
+
+    sts = m_reconFrames.Init(m_pmfxCore, &request, true);
+    MFX_CHECK_STS(sts);
+    sts = m_ddi->Register(m_reconFrames.GetFrameAllocReponse(), D3DDDIFMT_NV12);
     MFX_CHECK_STS(sts);
 
-    sts = m_ddi->Register(m_pTaskManager->GetRecFramesForReg(), D3DDDIFMT_NV12);
+    // allocate and register surfaces for output bitstreams
+    sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_BITSTREAMDATA, request, m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
+    MFX_CHECK_STS(sts);
+    request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumTasks(m_video);
+
+    sts = m_outBitstreams.Init(m_pmfxCore, &request, true);
+    MFX_CHECK_STS(sts);
+    sts = m_ddi->Register(m_outBitstreams.GetFrameAllocReponse(), D3DDDIFMT_INTELENCODE_BITSTREAMDATA);
     MFX_CHECK_STS(sts);
 
-    sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_BITSTREAMDATA, reqOutBs, m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
-    MFX_CHECK_STS(sts);
+    m_maxBsSize = request.Info.Width * request.Info.Height;
 
-    reqOutBs.NumFrameMin = reqOutBs.NumFrameSuggested = (mfxU16)CalcNumTasks(m_video);
-#if 0 // segmentation support is disabled
-    sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_SEGMENTMAP, reqSegMap, m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
-    if (sts == MFX_ERR_NONE && pExtOpt->EnableMultipleSegments == MFX_CODINGOPTION_ON)
-        reqSegMap.NumFrameMin = reqSegMap.NumFrameSuggested = (mfxU16)CalcNumSurfRecon(m_video);
-#endif // segmentation support is disabled
+    // prepare enough space for tasks
+    m_tasks.resize(CalcNumTasks(m_video));
+    Zero(m_tasks);
 
-    sts = m_pTaskManager->AllocInternalResources(
-          m_pmfxCore
-        , reqOutBs
-#if 0 // segmentation support is disabled
-        , reqSegMap
-#endif // segmentation support is disabled
-        );
-    MFX_CHECK_STS(sts);
-    m_maxBsSize = reqOutBs.Info.Width * reqOutBs.Info.Height;
-
-    sts = m_ddi->Register(m_pTaskManager->GetMBDataFramesForReg(), D3DDDIFMT_INTELENCODE_BITSTREAMDATA);
-    MFX_CHECK_STS(sts);
-#if 0 // segmentation support is disabled
-    if (reqSegMap.NumFrameMin)
-    {
-        sts = m_ddi->Register(m_pTaskManager->GetSegMapFramesForReg(), D3DDDIFMT_INTELENCODE_SEGMENTMAP);
-        MFX_CHECK_STS(sts);
-    }
-#endif // segmentation support is disabled
+    // prepare enough space for DPB management
+    m_dpb.resize(request.NumFrameMin - (par->AsyncDepth - 1));
 
     m_bStartIVFSequence = true;
 
     m_initialized = true;
+
+    m_frameArrivalOrder = 0;
 
     VP9_LOG("\n (VP9_LOG) Plugin::Init -");
     return checkSts;
@@ -327,7 +319,6 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     }
 
     Task* pTask = 0;
-    mfxStatus sts  = MFX_ERR_NONE;
 
     mfxStatus checkSts = CheckEncodeFrameParam(
         m_video,
@@ -339,12 +330,30 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
 
     {
+        // take Task from the pool and initialize with arrived frame
         UMC::AutomaticUMCMutex guard(m_taskMutex);
-        sts = m_pTaskManager->InitTask(surface,bs,pTask);
-        MFX_CHECK_STS(sts);
-        if (ctrl)
-            pTask->m_ctrl = *ctrl;
+        pTask = GetFreeTask(m_tasks);
+        if (pTask == 0)
+        {
+            return MFX_WRN_DEVICE_BUSY;
+        }
 
+        MFX_CHECK_STS(m_rawFrames.GetFrame(surface, pTask->m_pRawFrame));
+        MFX_CHECK_STS(LockSurface(pTask->m_pRawFrame, m_pmfxCore));
+
+        if (ctrl)
+        {
+            pTask->m_ctrl = *ctrl;
+        }
+
+        pTask->m_timeStamp = surface->Data.TimeStamp;
+        pTask->m_status = TASK_INITIALIZED;
+        pTask->m_frameOrder = m_frameArrivalOrder;
+
+        m_frameArrivalOrder++;
+
+        // place mfxBitstream to the queue
+        m_outs.push(bs);
     }
 
     *task = (mfxThreadTask*)pTask;
@@ -352,6 +361,56 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
     VP9_LOG("\n (VP9_LOG) Frame %d Plugin::EncodeFrameSubmit -", pTask->m_frameOrder);
 
     return checkSts;
+}
+
+mfxStatus Plugin::ConfigTask(Task &task)
+{
+    MFX_CHECK(task.m_status == TASK_INITIALIZED, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    VP9FrameLevelParam frameParam = { };
+    mfxStatus sts = SetFramesParams(m_video, task.m_ctrl.FrameType, task.m_frameOrder, frameParam);
+
+    task.m_pRecFrame = 0;
+    task.m_pOutBs = 0;
+    task.m_pRawLocalFrame = 0;
+
+    task.m_pRecFrame = m_reconFrames.GetFreeFrame();
+    MFX_CHECK(task.m_pRecFrame != 0, MFX_WRN_DEVICE_BUSY);
+
+    task.m_pOutBs = m_outBitstreams.GetFreeFrame();
+    MFX_CHECK(task.m_pOutBs != 0, MFX_WRN_DEVICE_BUSY);
+
+    sts = DecideOnRefListAndDPBRefresh(&m_video, &task, m_dpb, frameParam);
+
+    task.m_frameParam = frameParam;
+
+    MFX_CHECK_STS(task.CopyInput());
+
+    task.m_pRecFrame->pSurface->Data.FrameOrder = task.m_frameOrder;
+
+    if (task.m_frameParam.frameType == KEY_FRAME)
+    {
+        task.m_pRecRefFrames[REF_LAST] = task.m_pRecRefFrames[REF_GOLD] = task.m_pRecRefFrames[REF_ALT] = 0;
+    }
+    else
+    {
+        mfxU8 idxLast = task.m_frameParam.refList[REF_LAST];
+        mfxU8 idxGold = task.m_frameParam.refList[REF_GOLD];
+        mfxU8 idxAlt = task.m_frameParam.refList[REF_ALT];
+        task.m_pRecRefFrames[REF_LAST] = m_dpb[idxLast];
+        task.m_pRecRefFrames[REF_GOLD] = m_dpb[idxGold] != m_dpb[idxLast] ? m_dpb[idxGold] : 0;
+        task.m_pRecRefFrames[REF_ALT] = m_dpb[idxAlt] != m_dpb[idxLast] && m_dpb[idxAlt] != m_dpb[idxGold] ? m_dpb[idxAlt] : 0;
+    }
+
+    MFX_CHECK_STS(LockSurface(task.m_pRecFrame, m_pmfxCore));
+    MFX_CHECK_STS(LockSurface(task.m_pRawLocalFrame, m_pmfxCore));
+    MFX_CHECK_STS(LockSurface(task.m_pOutBs, m_pmfxCore));
+
+    task.m_status = TASK_SUBMITTED;
+
+    UpdateDpb(frameParam, task.m_pRecFrame, m_dpb, m_pmfxCore);
+
+    return sts;
 }
 
 mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
@@ -368,24 +427,16 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
     {
         VP9_LOG("\n (VP9_LOG) Frame %d Plugin::SubmitFrame +", pTask->m_frameOrder);
         mfxStatus sts = MFX_ERR_NONE;
+
         {
             UMC::AutomaticUMCMutex guard(m_taskMutex);
-            if (MFX_ERR_NONE != m_pTaskManager->CheckHybridDependencies(*pTask))
-              return MFX_TASK_BUSY;
+            MFX_CHECK_STS(ConfigTask(*pTask));
         }
-        VP9FrameLevelParam   frameParams={0};
-        mfxFrameSurface1    *pSurface=0;
+
+        mfxFrameSurface1    *pSurface = 0;
         bool                bExternalSurface = true;
 
         mfxHDLPair surfaceHDL = {};
-
-        {
-            UMC::AutomaticUMCMutex guard(m_taskMutex);
-            sts = SetFramesParams(m_video, pTask->m_ctrl.FrameType, pTask->m_frameOrder, frameParams);
-            MFX_CHECK_STS(sts);
-            sts = m_pTaskManager->SubmitTask(&m_video, pTask, frameParams);
-            MFX_CHECK_STS(sts);
-        }
 
         sts = pTask->GetInputSurface(pSurface, bExternalSurface);
         MFX_CHECK_STS(sts);
@@ -397,24 +448,14 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         sts = m_ddi->Execute(*pTask, surfaceHDL.first);
         MFX_CHECK_STS(sts);
 
-        {
-            UMC::AutomaticUMCMutex guard(m_taskMutex);
-            m_pTaskManager->RememberSubmittedTask(*pTask);
-        }
-
         VP9_LOG("\n (VP9_LOG) Frame %d Plugin::SubmitFrame -", pTask->m_frameOrder);
         return MFX_TASK_WORKING;
     }
     else
     {
         VP9_LOG("\n (VP9_LOG) Frame %d Plugin::QueryFrame +", pTask->m_frameOrder);
-        mfxStatus sts = MFX_ERR_NONE;
 
-        {
-            UMC::AutomaticUMCMutex guard(m_taskMutex);
-            if (MFX_ERR_NONE != m_pTaskManager->CheckHybridDependencies(*pTask))
-              return MFX_TASK_BUSY;
-        }
+        mfxStatus sts = MFX_ERR_NONE;
 
         sts = m_ddi->QueryStatus(*pTask);
         if (sts == MFX_WRN_DEVICE_BUSY)
@@ -423,20 +464,14 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         }
         MFX_CHECK_STS(sts);
 
-        {
-            UMC::AutomaticUMCMutex guard(m_taskMutex);
-            m_pTaskManager->RememberEncodedTask(*pTask);
-        }
-
+        pTask->m_pBitsteam = m_outs.front();
         sts = UpdateBitstream(*pTask);
         MFX_CHECK_STS(sts);
 
-        sts = pTask->CompleteTask();
-        MFX_CHECK_STS(sts);
-
         {
             UMC::AutomaticUMCMutex guard(m_taskMutex);
-            pTask->FreeTask();
+            m_outs.pop();
+            FreeTask(m_pmfxCore, *pTask);
         }
 
         VP9_LOG("\n (VP9_LOG) Frame %d Plugin::QueryFrame -", pTask->m_frameOrder);
@@ -454,12 +489,6 @@ mfxStatus Plugin::Close()
     if (m_initialized == false)
     {
         return MFX_ERR_NOT_INITIALIZED;
-    }
-
-    if (m_pTaskManager)
-    {
-        delete m_pTaskManager;
-        m_pTaskManager = 0;
     }
 
     m_initialized = false;

@@ -69,10 +69,9 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK =
 
     enum eTaskStatus
     {
-        TASK_FREE =0,
+        TASK_FREE = 0,
         TASK_INITIALIZED,
-        TASK_SUBMITTED,
-        READY
+        TASK_SUBMITTED
     };
     enum
     {
@@ -178,18 +177,13 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK =
 
     inline mfxStatus LockSurface(sFrameEx*  pFrame, mfxCoreInterface* pCore)
     {
-        //printf("LockSurface: ");
-        //if (pFrame) printf("%d\n",pFrame->idInPool); else printf("\n");
         return (pFrame) ? pCore->IncreaseReference(pCore->pthis, &pFrame->pSurface->Data) : MFX_ERR_NONE;
     }
     inline mfxStatus FreeSurface(sFrameEx* &pFrame, mfxCoreInterface* pCore)
     {
         mfxStatus sts = MFX_ERR_NONE;
-        //printf("FreeSurface\n");
-        //if (pFrame) printf("%d\n",pFrame->idInPool); else printf("\n");
         if (pFrame && pFrame->pSurface)
         {
-            //printf("DecreaseReference\n");
             sts = pCore->DecreaseReference(pCore->pthis, &pFrame->pSurface->Data);
             pFrame = 0;
         }
@@ -197,7 +191,6 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK =
     }
     inline bool isFreeSurface (sFrameEx* pFrame)
     {
-        //printf("isFreeSurface %d (%d)\n", pFrame->pSurface->Data.Locked, pFrame->idInPool);
         return (pFrame->pSurface->Data.Locked == 0);
     }
 
@@ -420,13 +413,18 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
                                            std::vector<sFrameEx*>&dpb,
                                            VP9FrameLevelParam &frameParam);
 
+    mfxStatus UpdateDpb(VP9FrameLevelParam &frameParam,
+                        sFrameEx *pRecFrame,
+                        std::vector<sFrameEx*>&dpb,
+                        mfxCoreInterface *pCore);
+
     class ExternalFrames
     {
     protected:
         std::vector<sFrameEx>  m_frames;
     public:
         ExternalFrames() {}
-        void Init();
+        void Init(mfxU32 numFrames);
         mfxStatus GetFrame(mfxFrameSurface1 *pInFrame, sFrameEx *&pOutFrame);
      };
 
@@ -478,6 +476,12 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
     {
         return video.mfx.NumRefFrame + CalcNumTasks(video);
     }
+
+    inline mfxU32 CalcNumSurfRaw(mfxVideoParam const & video)
+    {
+        return video.AsyncDepth;
+    }
+
     inline mfxU32 CalcNumMB(mfxVideoParam const & video)
     {
         return (video.mfx.FrameInfo.Width>>4)*(video.mfx.FrameInfo.Height>>4);
@@ -491,107 +495,78 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         sFrameEx*         m_pRawFrame;
         sFrameEx*         m_pRawLocalFrame;
         mfxBitstream*     m_pBitsteam;
-        mfxCoreInterface* m_pCore;
 
         VP9FrameLevelParam m_frameParam;
         sFrameEx*         m_pRecFrame;
         sFrameEx*         m_pRecRefFrames[3];
         sFrameEx*         m_pOutBs;
-        bool              m_bOpaqInput;
         mfxU32            m_frameOrder;
         mfxU64            m_timeStamp;
 
         mfxEncodeCtrl     m_ctrl;
 
-        mfxU64 m_frameOrderOfPreviousFrame;
         mfxU32 m_bsDataLength;
 
-    protected:
-
         mfxStatus CopyInput();
-
-    public:
 
         Task ():
               m_status(TASK_FREE),
               m_pRawFrame(NULL),
               m_pRawLocalFrame(NULL),
               m_pBitsteam(0),
-              m_pCore(NULL),
               m_pRecFrame(NULL),
               m_pOutBs(NULL),
-              m_bOpaqInput(false),
               m_frameOrder(0),
               m_timeStamp(0),
-              m_frameOrderOfPreviousFrame(0),
               m_bsDataLength(0)
           {
               Zero(m_pRecRefFrames);
               Zero(m_frameParam);
               Zero(m_ctrl);
           }
-          virtual
-          ~Task ()
-          {
-              FreeTask();
-          }
+
+          ~Task() {};
+
           mfxStatus GetOriginalSurface(mfxFrameSurface1 *& pSurface, bool &bExternal);
           mfxStatus GetInputSurface(mfxFrameSurface1 *& pSurface, bool &bExternal);
-
-          virtual
-          mfxStatus Init(mfxCoreInterface * pCore, mfxVideoParam *par);
-
-          virtual
-          mfxStatus InitTask( sFrameEx     *pRawFrame,
-                              mfxBitstream *pBitsteam,
-                              mfxU32        frameOrder);
-          virtual
-          mfxStatus SubmitTask(sFrameEx*  pRecFrame, std::vector<sFrameEx*> &dpb, VP9FrameLevelParam &frameParam, sFrameEx* pRawLocalFrame, sFrameEx* pOutBs);
-
-          inline mfxStatus CompleteTask ()
-          {
-              m_status = READY;
-              return MFX_ERR_NONE;
-          }
-          inline bool isReady()
-          {
-            return m_status == READY;
-          }
-
-          virtual
-          mfxStatus FreeTask();
-          mfxStatus FreeDPBSurfaces();
-
-          inline bool isFreeTask()
-          {
-              return (m_status == TASK_FREE);
-          }
     };
 
-    template <class TTask>
-    inline TTask* GetFreeTask(std::vector<TTask> & tasks)
+
+    inline mfxStatus FreeTask(mfxCoreInterface *pCore, Task &task)
     {
-        typename std::vector<TTask>::iterator task = tasks.begin();
-        for (;task != tasks.end(); task ++)
+        MFX_CHECK_STS(FreeSurface(task.m_pRawFrame, pCore));
+        MFX_CHECK_STS(FreeSurface(task.m_pRawLocalFrame, pCore));
+        MFX_CHECK_STS(FreeSurface(task.m_pOutBs, pCore));
+
+        task.m_pBitsteam = 0;
+        Zero(task.m_frameParam);
+        Zero(task.m_ctrl);
+        task.m_status = TASK_FREE;
+
+        return MFX_ERR_NONE;
+    }
+
+    inline Task *GetFreeTask(std::vector<Task> & tasks)
+    {
+        for (std::vector<Task>::iterator task = tasks.begin(); task != tasks.end(); task++)
         {
-            if (task->isFreeTask())
+            if (task->m_status == TASK_FREE)
             {
                 return &task[0];
             }
         }
+
         return 0;
     }
 
-    template <class TTask>
-    inline mfxStatus FreeTasks(std::vector<TTask> & tasks)
+    inline mfxStatus FreeTasks(mfxCoreInterface *pCore, std::vector<Task> & tasks)
     {
         mfxStatus sts = MFX_ERR_NONE;
-        typename std::vector<TTask>::iterator task = tasks.begin();
-        for (;task != tasks.end(); task ++)
+        for (std::vector<Task>::iterator task = tasks.begin(); task != tasks.end(); task++)
         {
-            if (!task->isFreeTask())
+            if (task->m_status != TASK_FREE)
             {
-                sts = task->FreeTask();
+                sts = FreeTask(pCore, *task);
                 MFX_CHECK_STS(sts);
             }
         }
@@ -605,385 +580,45 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
               ||  oldPar.mfx.GopPicSize != newPar.mfx.GopPicSize;
     }
 
-    /*for Full Encode (SW or HW)*/
-    template <class TTask>
-    class TaskManager
+#if 0 // these two functions are left for reference for future refactiring
+mfxStatus ReleaseDpbFrames()
+{
+    for (mfxU8 refIdx = 0; refIdx < m_dpb.size(); refIdx ++)
     {
-    protected:
-
-        mfxCoreInterface*       m_pCore;
-        VP9MfxVideoParam      m_video;
-
-        bool    m_bHWFrames;
-        bool    m_bHWInput;
-
-        ExternalFrames  m_RawFrames;
-        InternalFrames  m_LocalRawFrames;
-        InternalFrames  m_ReconFrames;
-
-        std::vector<TTask>  m_Tasks;
-        std::vector<sFrameEx*> m_dpb;
-
-        mfxU32              m_frameNum;
-
-
-    public:
-        TaskManager ():
-          m_pCore(0),
-          m_bHWFrames(false),
-          m_bHWInput(false),
-          m_frameNum(0)
+        if (m_dpb[refIdx])
         {
-            memset(&m_dpb, 0, sizeof(m_dpb));
+            m_dpb[refIdx]->refCount = 0;
+            MFX_CHECK_STS(FreeSurface(m_dpb[refIdx],m_pCore));
         }
+    }
 
-          ~TaskManager()
-          {
-              FreeTasks(m_Tasks);
-          }
+    return MFX_ERR_NONE;
+}
 
-          mfxStatus Init(mfxCoreInterface* pCore, mfxVideoParam *par, bool bHWImpl, mfxU32 reconFourCC)
-          {
-              mfxStatus sts = MFX_ERR_NONE;
+mfxStatus Reset(mfxVideoParam *par)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    MFX_CHECK(m_pCore!=0, MFX_ERR_NOT_INITIALIZED);
 
-              MFX_CHECK(!m_pCore, MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(m_ReconFrames.Height() >= par->mfx.FrameInfo.Height,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    MFX_CHECK(m_ReconFrames.Width()  >= par->mfx.FrameInfo.Width,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-              m_pCore   = pCore;
-              m_video   = *par;
-              m_bHWFrames = bHWImpl;
-              m_bHWInput = isVideoSurfInput(m_video);
+    MFX_CHECK(mfxU16(CalcNumSurfRawLocal(*par,m_bHWFrames,isVideoSurfInput(*par))) <= m_LocalRawFrames.Num(),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+    MFX_CHECK(mfxU16(CalcNumSurfRecon(*par)) <= m_ReconFrames.Num(),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
 
-              m_frameNum = 0;
+    m_video = *par;
 
-              m_RawFrames.Init();
-
-              mfxFrameAllocRequest request     = {};
-              request.Info = m_video.mfx.FrameInfo;
-              request.Info.FourCC = MFX_FOURCC_NV12; // only NV12 is supported as driver input
-              request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumSurfRawLocal(m_video, bHWImpl, m_bHWInput);
-
-              sts = m_LocalRawFrames.Init(pCore, &request, m_bHWFrames);
-              MFX_CHECK_STS(sts);
-
-              request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumSurfRecon(m_video);
-              request.Info.FourCC = reconFourCC;
-
-              sts = m_ReconFrames.Init(pCore, &request, m_bHWFrames);
-              MFX_CHECK_STS(sts);
-
-              m_dpb.resize(request.NumFrameMin - par->AsyncDepth);
-
-              {
-                  mfxU32 numTasks = CalcNumTasks(m_video);
-                  m_Tasks.resize(numTasks);
-
-                  for (mfxU32 i = 0; i < numTasks; i++)
-                  {
-                      sts = m_Tasks[i].Init(m_pCore,&m_video);
-                      MFX_CHECK_STS(sts);
-                  }
-              }
-
-              return sts;
-          }
-
-          mfxStatus ReleaseDpbFrames()
-          {
-              for (mfxU8 refIdx = 0; refIdx < m_dpb.size(); refIdx ++)
-              {
-                  if (m_dpb[refIdx])
-                  {
-                      m_dpb[refIdx]->refCount = 0;
-                      MFX_CHECK_STS(FreeSurface(m_dpb[refIdx],m_pCore));
-                  }
-              }
-
-              return MFX_ERR_NONE;
-          }
-
-          mfxStatus Reset(mfxVideoParam *par)
-          {
-              mfxStatus sts = MFX_ERR_NONE;
-              MFX_CHECK(m_pCore!=0, MFX_ERR_NOT_INITIALIZED);
-
-              MFX_CHECK(m_ReconFrames.Height() >= par->mfx.FrameInfo.Height,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-              MFX_CHECK(m_ReconFrames.Width()  >= par->mfx.FrameInfo.Width,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-
-              MFX_CHECK(mfxU16(CalcNumSurfRawLocal(*par,m_bHWFrames,isVideoSurfInput(*par))) <= m_LocalRawFrames.Num(),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-              MFX_CHECK(mfxU16(CalcNumSurfRecon(*par)) <= m_ReconFrames.Num(),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-
-              m_video = *par;
-
-              if (IsResetOfPipelineRequired(m_video, *par))
-              {
-                  m_frameNum = 0;
-                  ReleaseDpbFrames();
-                  memset(&m_dpb, 0, sizeof(m_dpb));
-                  sts = FreeTasks(m_Tasks);
-                  MFX_CHECK_STS(sts);
-              }
-              return MFX_ERR_NONE;
-          }
-
-          mfxStatus InitTask(mfxFrameSurface1* pSurface, mfxBitstream* pBitstream, Task* & pOutTask)
-          {
-              mfxStatus sts = MFX_ERR_NONE;
-              Task*     pTask = GetFreeTask(m_Tasks);
-              sFrameEx* pRawFrame = 0;
-
-              //printf("Init frame\n");
-
-              MFX_CHECK(m_pCore!=0, MFX_ERR_NOT_INITIALIZED);
-              MFX_CHECK(pTask!=0,MFX_WRN_DEVICE_BUSY);
-
-              sts = m_RawFrames.GetFrame(pSurface, pRawFrame);
-              MFX_CHECK_STS(sts);
-
-              //printf("Init frame - 1\n");
-
-              sts = pTask->InitTask(pRawFrame,pBitstream, m_frameNum);
-              pTask->m_timeStamp =pSurface->Data.TimeStamp;
-              MFX_CHECK_STS(sts);
-
-              //printf("Init frame - End\n");
-
-              pOutTask = pTask;
-
-              m_frameNum++;
-
-              return sts;
-          }
-
-          inline
-          mfxStatus UpdateDpb(VP9FrameLevelParam &frameParam, sFrameEx *pRecFrame)
-          {
-              for (mfxU8 i = 0; i < m_dpb.size(); i ++)
-              {
-                  if (frameParam.refreshRefFrames[i])
-                  {
-                      if (m_dpb[i])
-                      {
-                          m_dpb[i]->refCount--;
-                          if (m_dpb[i]->refCount == 0)
-                              MFX_CHECK_STS(FreeSurface(m_dpb[i], m_pCore));
-                      }
-                      m_dpb[i] = pRecFrame;
-                      m_dpb[i]->refCount ++;
-                  }
-              }
-              return MFX_ERR_NONE;
-          }
-    };
-
-    class TaskManagerVmePlusPak : public TaskManager<Task>
+    if (IsResetOfPipelineRequired(m_video, *par))
     {
-    public:
-        typedef TaskManager<Task>  BaseClass;
-
-        TaskManagerVmePlusPak()
-            : BaseClass()
-#if 0 // segmentation support is disabled
-            , m_bUseSegMap(false)
-#endif // segmentation support is disabled
-            , m_frameNumOfLastArrivedFrame(0)
-            , m_frameNumOfLastFrameSubmittedToDriver(0)
-            , m_frameNumOfLastEncodedFrame(0)
-        {
-        }
-        virtual ~TaskManagerVmePlusPak() {/*printf("~TaskManagerVmePlusPak)\n");*/}
-
-    // [SE] WA for Windows hybrid VP9 HSW driver (remove 'protected' here)
-#if defined (MFX_VA_LINUX)
-    protected:
+        m_frameNum = 0;
+        ReleaseDpbFrames();
+        memset(&m_dpb, 0, sizeof(m_dpb));
+        sts = FreeTasks(m_Tasks);
+        MFX_CHECK_STS(sts);
+    }
+    return MFX_ERR_NONE;
+}
 #endif
-
-        InternalFrames  m_OutputBitstreams;
-
-#if 0 // segmentation support is disabled
-        bool            m_bUseSegMap;
-        InternalFrames  m_SegMapDDI_hw;
-#endif // segmentation support is disabled
-
-        mfxU64           m_frameNumOfLastArrivedFrame;
-        mfxU64           m_frameNumOfLastFrameSubmittedToDriver;
-        mfxU64           m_frameNumOfLastEncodedFrame;
-
-    public:
-
-        inline
-        mfxStatus Init( mfxCoreInterface* pCore, mfxVideoParam *par, mfxU32 reconFourCC)
-        {
-            mfxStatus sts = BaseClass::Init(pCore,par,true,reconFourCC);
-            MFX_CHECK_STS(sts);
-            m_frameNumOfLastArrivedFrame = 0;
-            m_frameNumOfLastFrameSubmittedToDriver = 0;
-            m_frameNumOfLastEncodedFrame = 0;
-            return MFX_ERR_NONE;
-        }
-
-        inline
-        mfxStatus AllocInternalResources(mfxCoreInterface *pCore,
-                        mfxFrameAllocRequest reqOutBs
-#if 0 // segmentation support is disabled
-                        mfxFrameAllocRequest reqSegMap
-#endif // segmentation support is disabled
-                        )
-        {
-            MFX_CHECK_STS(m_OutputBitstreams.Init(pCore, &reqOutBs,true));
-
-#if 0 // segmentation support is disabled
-            if (reqSegMap.NumFrameMin)
-            {
-                m_bUseSegMap = true;
-                MFX_CHECK_STS(m_SegMapDDI_hw.Init(pCore, &reqSegMap,true));
-            }
-#endif // segmentation support is disabled
-
-            return MFX_ERR_NONE;
-        }
-
-        inline
-        mfxStatus Reset(mfxVideoParam *par)
-        {
-            if (IsResetOfPipelineRequired(m_video, *par))
-            {
-                m_frameNumOfLastArrivedFrame = 0;
-                m_frameNumOfLastFrameSubmittedToDriver = 0;
-                m_frameNumOfLastEncodedFrame = 0;
-            }
-            return BaseClass::Reset(par);
-        }
-        inline
-        mfxStatus InitTask(mfxFrameSurface1* pSurface, mfxBitstream* pBitstream, Task* & pOutTask)
-        {
-            /*if (m_frameNum >= m_maxBrcUpdateDelay && m_cachedFrameInfoFromPak.size() == 0)
-            {
-                // MSDK should send frame update to driver but required previous frame isn't encoded yet
-                // let's wait for encoding of this frame
-                return MFX_WRN_DEVICE_BUSY;
-            }*/
-
-            mfxStatus sts = BaseClass::InitTask(pSurface,pBitstream,pOutTask);
-
-            /*Task *pHybridTask = (TaskHybridDDI*)pOutTask;
-            Zero(pHybridTask->m_probs);
-
-            if (pOutTask->m_frameOrder < m_maxBrcUpdateDelay && m_cachedFrameInfoFromPak.size() == 0)
-            {
-                pHybridTask->m_frameOrderOfPreviousFrame = m_frameNumOfLastArrivedFrame;
-                m_frameNumOfLastArrivedFrame = m_frameNum - 1;
-                // MSDK can't send frame update to driver but it's OK for initial encoding stage
-                return MFX_ERR_NONE;
-            }
-
-            mfxU64 minFrameOrderToUpdateBrc = 0;
-            if (pOutTask->m_frameOrder > m_maxBrcUpdateDelay)
-            {
-                minFrameOrderToUpdateBrc = pOutTask->m_frameOrder - m_maxBrcUpdateDelay;
-            }
-
-            FrameInfoFromPak newestFrame = m_cachedFrameInfoFromPak.back();
-            if (newestFrame.m_frameOrder < minFrameOrderToUpdateBrc)
-            {
-                return MFX_ERR_UNDEFINED_BEHAVIOR;
-            }*/
-
-            pOutTask->m_frameOrderOfPreviousFrame = m_frameNumOfLastArrivedFrame;
-            m_frameNumOfLastArrivedFrame = m_frameNum - 1;
-
-            return sts;
-        }
-
-        inline
-        mfxStatus SubmitTask(mfxVideoParam * par, Task*  pTask, VP9FrameLevelParam &frameParam)
-        {
-            sFrameEx* pRecFrame = 0;
-            sFrameEx* pRawLocalFrame = 0;
-            sFrameEx* pOutBs = 0;
-
-            mfxStatus sts = MFX_ERR_NONE;
-
-            MFX_CHECK(m_pCore!=0, MFX_ERR_NOT_INITIALIZED);
-
-            pRecFrame = m_ReconFrames.GetFreeFrame();
-            MFX_CHECK(pRecFrame!=0,MFX_WRN_DEVICE_BUSY);
-
-            if (m_bHWFrames != m_bHWInput)
-            {
-                pRawLocalFrame = m_LocalRawFrames.GetFreeFrame();
-                MFX_CHECK(pRawLocalFrame!= 0,MFX_WRN_DEVICE_BUSY);
-            }
-            pOutBs = m_OutputBitstreams.GetFreeFrame();
-            MFX_CHECK(pOutBs != 0, MFX_WRN_DEVICE_BUSY);
-            /*MFX_CHECK_STS(m_OutputBitstreams.GetFrame(pRecFrame->idInPool, pOutBs));*/
-
-#if 0 // segmentation support is disabled
-            if (m_bUseSegMap)
-            {
-                MFX_CHECK_STS(m_SegMapDDI_hw.GetFrame(pRecFrame->idInPool,ddi_frames.m_pSegMap_hw));
-            }
-            else
-                ddi_frames.m_pSegMap_hw = 0;
-#endif // segmentation support is disabled
-
-            sts = DecideOnRefListAndDPBRefresh(par, pTask, m_dpb, frameParam);
-
-            sts = pTask->SubmitTask(pRecFrame,m_dpb,
-                                    frameParam, pRawLocalFrame,
-                                    pOutBs);
-            MFX_CHECK_STS(sts);
-
-            UpdateDpb(frameParam, pRecFrame);
-
-            return sts;
-        }
-
-        inline
-        void RememberSubmittedTask(Task &task)
-        {
-            m_frameNumOfLastFrameSubmittedToDriver = task.m_frameOrder;
-        }
-
-        inline
-        void RememberEncodedTask(Task &task)
-        {
-            m_frameNumOfLastEncodedFrame = task.m_frameOrder;
-        }
-
-        inline
-        mfxStatus CheckHybridDependencies(Task &task)
-        {
-            if (task.m_frameOrder == 0)
-                return MFX_ERR_NONE;
-
-            if (task.m_status == TASK_INITIALIZED &&
-                m_frameNumOfLastFrameSubmittedToDriver >= task.m_frameOrderOfPreviousFrame)
-                return MFX_ERR_NONE;
-
-            if (task.m_status == TASK_SUBMITTED &&
-                m_frameNumOfLastEncodedFrame >= task.m_frameOrderOfPreviousFrame)
-                return MFX_ERR_NONE;
-
-            return MFX_WRN_IN_EXECUTION;
-        }
-
-        inline MfxFrameAllocResponse& GetRecFramesForReg()
-        {
-            return m_ReconFrames.GetFrameAllocReponse();
-        }
-
-        inline MfxFrameAllocResponse& GetMBDataFramesForReg()
-        {
-            return m_OutputBitstreams.GetFrameAllocReponse();
-        }
-
-#if 0 // segmentation support is disabled
-        inline MfxFrameAllocResponse& GetSegMapFramesForReg()
-        {
-            return m_SegMapDDI_hw.GetFrameAllocReponse();
-        }
-#endif // segmentation support is disabled
-    };
 
 inline bool InsertSeqHeader(Task const &task)
 {

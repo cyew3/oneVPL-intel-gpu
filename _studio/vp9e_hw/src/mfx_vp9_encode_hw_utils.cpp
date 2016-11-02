@@ -225,6 +225,25 @@ mfxStatus DecideOnRefListAndDPBRefresh(mfxVideoParam * par, Task *pTask, std::ve
     return MFX_ERR_NONE;
 }
 
+mfxStatus UpdateDpb(VP9FrameLevelParam &frameParam, sFrameEx *pRecFrame, std::vector<sFrameEx*>&dpb, mfxCoreInterface* pCore)
+{
+    for (mfxU8 i = 0; i < dpb.size(); i++)
+    {
+        if (frameParam.refreshRefFrames[i])
+        {
+            if (dpb[i])
+            {
+                dpb[i]->refCount--;
+                if (dpb[i]->refCount == 0)
+                    MFX_CHECK_STS(FreeSurface(dpb[i], pCore));
+            }
+            dpb[i] = pRecFrame;
+            dpb[i]->refCount++;
+        }
+    }
+    return MFX_ERR_NONE;
+}
+
 //---------------------------------------------------------
 // service class: MfxFrameAllocResponse
 //---------------------------------------------------------
@@ -270,9 +289,9 @@ mfxStatus MfxFrameAllocResponse::Alloc(
 // service class: ExternalFrames
 //---------------------------------------------------------
 
-void ExternalFrames::Init()
+void ExternalFrames::Init(mfxU32 numFrames)
 {
-    m_frames.resize(1000);
+    m_frames.resize(numFrames);
     Zero(m_frames);
     {
         mfxU32 i = 0;
@@ -400,6 +419,7 @@ mfxStatus Task::CopyInput()
 {
     mfxStatus sts = MFX_ERR_NONE;
 
+#if 0 // no support of system memory as input
     if (m_pRawLocalFrame)
     {
         mfxFrameSurface1 src={};
@@ -486,91 +506,8 @@ mfxStatus Task::CopyInput()
             }
         }
     }
+#endif
     return sts;
-}
-
-mfxStatus Task::Init(mfxCoreInterface * pCore, mfxVideoParam *par)
-{
-    MFX_CHECK(m_status == TASK_FREE, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-    m_pCore       = pCore;
-    m_bOpaqInput  = isOpaq(*par);
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus Task::InitTask(   sFrameEx     *pRawFrame,
-                            mfxBitstream *pBitsteam,
-                            mfxU32        frameOrder)
-{
-    MFX_CHECK_NULL_PTR1(m_pCore);
-
-    m_status        = TASK_FREE;
-    m_pRawFrame     = pRawFrame;
-    m_pBitsteam     = pBitsteam;
-    m_frameOrder    = frameOrder;
-
-    MFX_CHECK_STS(LockSurface(m_pRawFrame,m_pCore));
-
-    m_status = TASK_INITIALIZED;
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus Task::SubmitTask(sFrameEx*  pRecFrame, std::vector<sFrameEx*> &dpb, VP9FrameLevelParam &frameParam, sFrameEx* pRawLocalFrame, sFrameEx* pOutBs)
-{
-    MFX_CHECK(m_status == TASK_INITIALIZED, MFX_ERR_UNDEFINED_BEHAVIOR);
-    MFX_CHECK_NULL_PTR1(pRecFrame);
-    MFX_CHECK(isFreeSurface(pRecFrame),MFX_ERR_UNDEFINED_BEHAVIOR);
-
-    //printf("Task::SubmitTask\n");
-
-    m_frameParam     = frameParam;
-    m_pRecFrame      = pRecFrame;
-    m_pRawLocalFrame = pRawLocalFrame;
-    m_pOutBs         = pOutBs;
-
-    MFX_CHECK_STS (CopyInput());
-
-    m_pRecFrame->pSurface->Data.FrameOrder = m_frameOrder;
-
-    if (m_frameParam.frameType == KEY_FRAME)
-    {
-        m_pRecRefFrames[REF_LAST] = m_pRecRefFrames[REF_GOLD] = m_pRecRefFrames[REF_ALT] = 0;
-    }
-    else
-    {
-        mfxU8 idxLast = frameParam.refList[REF_LAST];
-        mfxU8 idxGold = frameParam.refList[REF_GOLD];
-        mfxU8 idxAlt  = frameParam.refList[REF_ALT];
-        m_pRecRefFrames[REF_LAST] = dpb[idxLast];
-        m_pRecRefFrames[REF_GOLD] = dpb[idxGold] != dpb[idxLast] ? dpb[idxGold] : 0;
-        m_pRecRefFrames[REF_ALT]  = dpb[idxAlt]  != dpb[idxLast] && dpb[idxAlt]  != dpb[idxGold] ? dpb[idxAlt] : 0;
-    }
-
-    MFX_CHECK_STS(LockSurface(m_pRecFrame, m_pCore));
-    MFX_CHECK_STS(LockSurface(m_pRawLocalFrame, m_pCore));
-    MFX_CHECK_STS(LockSurface(m_pOutBs, m_pCore));
-
-    m_status = TASK_SUBMITTED;
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus Task::FreeTask()
-{
-    //printf("Task::FreeTask\n");
-
-    MFX_CHECK_STS(FreeSurface(m_pRawFrame,m_pCore));
-    MFX_CHECK_STS(FreeSurface(m_pRawLocalFrame,m_pCore));
-    MFX_CHECK_STS(FreeSurface(m_pOutBs, m_pCore));
-
-    m_pBitsteam     = 0;
-    Zero(m_frameParam);
-    Zero(m_ctrl);
-    m_status = TASK_FREE;
-
-    return MFX_ERR_NONE;
 }
 
 } // MfxHwVP9Encode

@@ -12,7 +12,7 @@
 
 #include <stdio.h>
 #include <memory>
-#include <vector>
+#include <queue>
 #include "mfxvideo.h"
 #include "mfxvideo++int.h"
 #include "mfxplugin++.h"
@@ -32,6 +32,7 @@ public:
     virtual mfxStatus PluginClose();
     virtual mfxStatus GetPluginParam(mfxPluginParam *par);
     virtual mfxStatus EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxThreadTask *task);
+    virtual mfxStatus ConfigTask(Task &task);
     virtual mfxStatus Execute(mfxThreadTask task, mfxU32 , mfxU32 );
     virtual mfxStatus FreeResources(mfxThreadTask , mfxStatus );
     virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out);
@@ -94,19 +95,29 @@ protected:
     virtual ~Plugin(){};
 
     VP9MfxVideoParam              m_video;
-    TaskManagerVmePlusPak        *m_pTaskManager;
     std::auto_ptr <DriverEncoder> m_ddi;
     UMC::Mutex m_taskMutex;
     bool       m_bStartIVFSequence;
     mfxU64     m_maxBsSize;
 
-    mfxCoreInterface*    m_pmfxCore;
+    std::vector<Task> m_tasks;
+    std::queue<mfxBitstream*> m_outs;
+
+    ExternalFrames  m_rawFrames;
+    InternalFrames  m_reconFrames;
+    InternalFrames  m_outBitstreams;
+
+    std::vector<sFrameEx*> m_dpb;
+
+    mfxCoreInterface    *m_pmfxCore;
 
     mfxPluginParam      m_PluginParam;
     bool                m_createdByDispatcher;
     MFXPluginAdapter<MFXEncoderPlugin> m_adapter;
 
     bool m_initialized;
+
+    mfxU32 m_frameArrivalOrder;
 };
 
 } // MfxHwVP9Encode
