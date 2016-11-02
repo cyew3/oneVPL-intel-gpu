@@ -215,8 +215,11 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
 #if defined (MFX_VA)
         if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
             m_pH265VideoDecoder.reset(new WidevineTaskSupplier()); // HW, Widevine version
+        else if (type >= MFX_HW_KBL)
+            m_pH265VideoDecoder.reset(new VATaskSupplierBigSurfacePool()); // HW, with big surface pool workaround
         else
             m_pH265VideoDecoder.reset(new VATaskSupplier()); // HW
+
         m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D());
 #else
         return MFX_ERR_UNSUPPORTED;
@@ -1364,7 +1367,7 @@ mfxStatus VideoDECODEH265::DecodeFrame(mfxFrameSurface1 *surface_out, H265Decode
     else
     {
         if (error & UMC::ERROR_FRAME_MINOR)
-	    surface_out->Data.Corrupted |= MFX_CORRUPTION_MINOR;
+            surface_out->Data.Corrupted |= MFX_CORRUPTION_MINOR;
 
         if (error & UMC::ERROR_FRAME_MAJOR)
             surface_out->Data.Corrupted |= MFX_CORRUPTION_MAJOR;

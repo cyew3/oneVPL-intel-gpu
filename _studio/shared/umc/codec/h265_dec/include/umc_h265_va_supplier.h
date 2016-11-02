@@ -68,7 +68,25 @@ private:
     }
 };
 
-} // namespace UMC_HEVC_DECODER
+// this class added to apply big surface pool workaround depends on platform
+// because platform check can't be added inside VATaskSupplier
+class VATaskSupplierBigSurfacePool:
+    public VATaskSupplier
+{
+public:
+    VATaskSupplierBigSurfacePool()
+    {};
+    virtual ~VATaskSupplierBigSurfacePool()
+    {};
+
+protected:
+
+    virtual UMC::Status AllocateFrameData(H265DecoderFrame * pFrame, IppiSize dimensions, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet);
+
+};
+
+}// namespace UMC_HEVC_DECODER
+
 
 #endif // UMC_RESTRICTED_CODE_VA
 
