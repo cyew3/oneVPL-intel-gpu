@@ -1221,7 +1221,7 @@ mfxStatus VideoVPPBase::Reset(mfxVideoParam *par)
     /* IOPattern check */
     if( m_InitState.IOPattern != par->IOPattern )
     {
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     }
 
     /* Protected Check */
