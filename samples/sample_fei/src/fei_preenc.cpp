@@ -191,10 +191,9 @@ void FEI_PreencInterface::GetRefInfo(
                 mfxU16 & numRefActiveBL1,
                 mfxU16 & bRefType)
 {
-    numRefActiveP   = m_pAppConfig->bNRefPSpecified   ? m_pAppConfig->NumRefActiveP   : MaxNumActiveRefP;
-    numRefActiveBL0 = m_pAppConfig->bNRefBL0Specified ? m_pAppConfig->NumRefActiveBL0 : MaxNumActiveRefBL0;
-    numRefActiveBL1 = m_pAppConfig->bNRefBL1Specified ? m_pAppConfig->NumRefActiveBL1 :
-                        (m_pAppConfig->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE ? MaxNumActiveRefBL1 : MaxNumActiveRefBL1_i);
+    numRefActiveP   = m_pAppConfig->NumRefActiveP;
+    numRefActiveBL0 = m_pAppConfig->NumRefActiveBL0;
+    numRefActiveBL1 = m_pAppConfig->NumRefActiveBL1;
 
     bRefType = m_pAppConfig->bRefType == MFX_B_REF_UNKNOWN ? MFX_B_REF_OFF : m_pAppConfig->bRefType;
 

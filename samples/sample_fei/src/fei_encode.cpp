@@ -231,13 +231,11 @@ mfxStatus FEI_EncodeInterface::FillParameters()
     MSDK_ZERO_MEMORY(*pCodingOption3);
     pCodingOption3->Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
     pCodingOption3->Header.BufferSz = sizeof(mfxExtCodingOption3);
-    pCodingOption3->NumRefActiveP[0]   = m_pAppConfig->bNRefPSpecified  ? m_pAppConfig->NumRefActiveP    : MaxNumActiveRefP;
-    pCodingOption3->NumRefActiveBL0[0] = m_pAppConfig->bNRefBL0Specified ? m_pAppConfig->NumRefActiveBL0 : MaxNumActiveRefBL0;
-    pCodingOption3->NumRefActiveBL1[0] = m_pAppConfig->bNRefBL1Specified ? m_pAppConfig->NumRefActiveBL1 :
-                            (m_pAppConfig->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE ? MaxNumActiveRefBL1 : MaxNumActiveRefBL1_i);
+    pCodingOption3->NumRefActiveP[0]   = m_pAppConfig->NumRefActiveP;
+    pCodingOption3->NumRefActiveBL0[0] = m_pAppConfig->NumRefActiveBL0;
+    pCodingOption3->NumRefActiveBL1[0] = m_pAppConfig->NumRefActiveBL1;
 
     /* values stored in m_CodingOption3 required to fill encoding task for PREENC/ENC/PAK*/
-    //if (m_pAppConfig->bNRefPSpecified || m_pAppConfig->bNRefBL0Specified || m_pAppConfig->bNRefBL1Specified)
     m_InitExtParams.push_back(reinterpret_cast<mfxExtBuffer *>(pCodingOption3));
 
 
