@@ -451,8 +451,15 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
             guids[0] = DXVA_Intel_Decode_Elementary_Stream_HEVC;
         else
         {
-            int const profile =
-                par->mfx.CodecProfile != MFX_PROFILE_UNKNOWN ? par->mfx.CodecProfile : MatchProfile(par->mfx.FrameInfo.FourCC);
+            int profile = par->mfx.CodecProfile;
+            if (profile == MFX_PROFILE_UNKNOWN ||
+                profile == MFX_PROFILE_HEVC_MAINSP)
+                //MFX_PROFILE_HEVC_MAINSP conforms either MAIN or MAIN10 profile,
+                //select appropriate GUID basing on FOURCC
+                //see A.3.4: "When general_profile_compatibility_flag[ 3 ] is equal to 1,
+                //            general_profile_compatibility_flag[ 1 ] and
+                //            general_profile_compatibility_flag[ 2 ] should also be equal to 1"
+                profile = MatchProfile(par->mfx.FrameInfo.FourCC);
 
             switch (profile)
             {
