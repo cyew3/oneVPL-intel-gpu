@@ -518,10 +518,8 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
         return 0;
     else if (codecProfile == MFX_PROFILE_HEVC_MAIN10 &&
             (frameInfo->ChromaFormat   != MFX_CHROMAFORMAT_YUV420 ||
-            (frameInfo->BitDepthLuma   !=  8 &&
-             frameInfo->BitDepthChroma !=  8 &&
-             frameInfo->BitDepthLuma   != 10 &&
-             frameInfo->BitDepthChroma != 10)))
+            (frameInfo->BitDepthLuma   > 10 &&
+             frameInfo->BitDepthChroma > 10)))
         return 0;
 
     VM_ASSERT(
