@@ -24,6 +24,8 @@ public:
         : tsVideoVPP()
     {
         m_surf_in_processor = this;
+        m_par.IOPattern     = MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+        m_par.AsyncDepth    = 1;
     }
     ~TestSuite() {}
     int RunTest(unsigned int id);
@@ -159,30 +161,134 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
     {/*10*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
         {
-            {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,    MFX_FOURCC_AYUV},
-            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Height,    464},
-            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Width,     704},
+            {INIT, &tsStruct::mfxVideoParam.IOPattern,                  MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+            {INIT, &tsStruct::mfxExtOpaqueSurfaceAlloc.In.Type,         MFX_MEMTYPE_FROM_VPPIN|MFX_MEMTYPE_OPAQUE_FRAME|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET},
+            {INIT, &tsStruct::mfxExtOpaqueSurfaceAlloc.In.NumSurface,   5},
+            {INIT, &tsStruct::mfxExtOpaqueSurfaceAlloc.Out.Type,        MFX_MEMTYPE_FROM_VPPIN|MFX_MEMTYPE_OPAQUE_FRAME|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET},
+            {INIT, &tsStruct::mfxExtOpaqueSurfaceAlloc.Out.NumSurface,  5},
+
+            {RESET, &tsStruct::mfxExtOpaqueSurfaceAlloc.Out.NumSurface, 6},
         },
         {}
     },
     {/*11*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
         {
-            {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,    MFX_FOURCC_Y210},
-            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Height,    464},
-            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Width,     704},
+            {INIT, &tsStruct::mfxVideoParam.IOPattern,                  MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+            {INIT, &tsStruct::mfxExtOpaqueSurfaceAlloc.In.Type,         MFX_MEMTYPE_FROM_VPPIN|MFX_MEMTYPE_OPAQUE_FRAME|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET},
+            {INIT, &tsStruct::mfxExtOpaqueSurfaceAlloc.In.NumSurface,   5},
+            {INIT, &tsStruct::mfxExtOpaqueSurfaceAlloc.Out.Type,        MFX_MEMTYPE_FROM_VPPIN|MFX_MEMTYPE_OPAQUE_FRAME|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET},
+            {INIT, &tsStruct::mfxExtOpaqueSurfaceAlloc.Out.NumSurface,  5},
+
+            {RESET, &tsStruct::mfxExtOpaqueSurfaceAlloc.In.NumSurface,  6},
         },
         {}
     },
     {/*12*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
         {
+            {INIT, &tsStruct::mfxVideoParam.IOPattern,                  MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+            {INIT, &tsStruct::mfxExtOpaqueSurfaceAlloc.In.Type,         MFX_MEMTYPE_FROM_VPPIN|MFX_MEMTYPE_OPAQUE_FRAME|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET},
+            {INIT, &tsStruct::mfxExtOpaqueSurfaceAlloc.In.NumSurface,   5},
+            {INIT, &tsStruct::mfxExtOpaqueSurfaceAlloc.Out.Type,        MFX_MEMTYPE_FROM_VPPIN|MFX_MEMTYPE_OPAQUE_FRAME|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET},
+            {INIT, &tsStruct::mfxExtOpaqueSurfaceAlloc.Out.NumSurface,  5},
+
+            {RESET, &tsStruct::mfxExtOpaqueSurfaceAlloc.Out.NumSurface, 4},
+        },
+        {}
+    },
+    {/*13*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {INIT, &tsStruct::mfxVideoParam.IOPattern,                  MFX_IOPATTERN_IN_OPAQUE_MEMORY|MFX_IOPATTERN_OUT_OPAQUE_MEMORY},
+            {INIT, &tsStruct::mfxExtOpaqueSurfaceAlloc.In.Type,         MFX_MEMTYPE_FROM_VPPIN|MFX_MEMTYPE_OPAQUE_FRAME|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET},
+            {INIT, &tsStruct::mfxExtOpaqueSurfaceAlloc.In.NumSurface,   5},
+            {INIT, &tsStruct::mfxExtOpaqueSurfaceAlloc.Out.Type,        MFX_MEMTYPE_FROM_VPPIN|MFX_MEMTYPE_OPAQUE_FRAME|MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET},
+            {INIT, &tsStruct::mfxExtOpaqueSurfaceAlloc.Out.NumSurface,  5},
+
+            {RESET, &tsStruct::mfxExtOpaqueSurfaceAlloc.In.NumSurface,  4},
+        },
+        {}
+    },
+    {/*14*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.IOPattern,         MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY},
+        },
+        {}
+    },
+    {/*15*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.IOPattern,         MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY},
+        },
+        {}
+    },
+    {/*16*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.IOPattern,         MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY},
+        },
+        {}
+    },
+    {/*17*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.IOPattern,         MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY},
+        },
+        {}
+    },
+    {/*18*/ MFX_ERR_NONE,
+        {
+            {INIT,  &tsStruct::mfxVideoParam.AsyncDepth,        5},
+            {RESET, &tsStruct::mfxVideoParam.AsyncDepth,        1},
+        },
+        {}
+    },
+    {/*19*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {INIT,  &tsStruct::mfxVideoParam.AsyncDepth,        1},
+            {RESET, &tsStruct::mfxVideoParam.AsyncDepth,        5},
+        },
+        {}
+    },
+    {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,    MFX_FOURCC_YV12},
+        },
+        {}
+    },
+    {/*21*/ MFX_ERR_INVALID_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,     MFX_FOURCC_RGB3},
+        },
+        {}
+    },
+    {/*22*/ MFX_ERR_INVALID_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,    MFX_FOURCC_RGB3},
+        },
+        {}
+    },
+    {/*23*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,     MFX_FOURCC_RGB4},
+        },
+        {}
+    },
+    {/*24*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,     MFX_FOURCC_AYUV},
+        },
+        {}
+    },
+    {/*25*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,    MFX_FOURCC_Y210},
+        },
+        {}
+    },
+    {/*26*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
             {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,    MFX_FOURCC_Y410},
-            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Height,    464},
-            {RESET, &tsStruct::mfxVideoParam.vpp.Out.Width,     704},
         },
         {}
     },
 #if !defined(_WIN32)
-    {/*13*/ MFX_ERR_NONE,
+    {/*27*/ MFX_ERR_NONE,
         {
             {INIT,  &tsStruct::mfxExtVPPFieldProcessing.Mode,     MFX_VPP_COPY_FRAME},
 
@@ -229,12 +335,17 @@ int TestSuite::RunTest(unsigned int id)
 
     MFXInit();
 
-    m_par.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
-    m_par.AsyncDepth = 1;
-
     tsExtBufType<mfxVideoParam> def (m_par);
 
     SETPARS(&m_par, INIT);
+
+    mfxExtOpaqueSurfaceAlloc* pOSA = (mfxExtOpaqueSurfaceAlloc*)m_par.GetExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+
+    if (m_par.IOPattern&MFX_IOPATTERN_IN_OPAQUE_MEMORY && pOSA && !pOSA->In.Surfaces)
+        pOSA->In.Surfaces = new mfxFrameSurface1*[pOSA->In.NumSurface+1];
+
+    if (m_par.IOPattern&MFX_IOPATTERN_OUT_OPAQUE_MEMORY && pOSA && !pOSA->Out.Surfaces)
+        pOSA->Out.Surfaces = new mfxFrameSurface1*[pOSA->Out.NumSurface+1];
 
     CreateAllocators();
     SetFrameAllocator();
@@ -250,8 +361,6 @@ int TestSuite::RunTest(unsigned int id)
     g_tsStatus.expect(MFX_ERR_NONE);
     GetVideoParam(m_session, &par_init);
 
-    EXPECT_EQ(m_par, par_init) << "ERROR: Init parameters and parameters from GetVideoParams are not equal\n";
-
     tsExtBufType<mfxVideoParam> par_reset (def);
     SETPARS(&par_reset, RESET);
     SetParamsDoNotUse(*&par_reset, tc.dnu_struct);
@@ -259,69 +368,72 @@ int TestSuite::RunTest(unsigned int id)
     g_tsStatus.expect(tc.sts);
     Reset(m_session, &par_reset);
 
-    tsExtBufType<mfxVideoParam> par_after_reset (def);
-    CreateEmptyBuffers(*&par_after_reset, *&par_init);
-    CreateEmptyBuffers(*&par_after_reset, *&par_reset);
-
-    g_tsStatus.expect(MFX_ERR_NONE);
-    GetVideoParam(m_session, &par_after_reset);
-
-    mfxExtVPPDoNotUse* dnu = (mfxExtVPPDoNotUse*)par_reset.GetExtBuffer(MFX_EXTBUFF_VPP_DONOTUSE);
-
-    for (mfxU32 i = 0; i< par_init.NumExtParam; i++)
+    if (MFX_ERR_NONE == tc.sts) // GetVideoParam checks are valid only in case of succesfull reset
     {
-        mfxExtBuffer* reset = 0;
-        mfxExtBuffer* after_reset = 0;
+        EXPECT_EQ(m_par, par_init) << "ERROR: Init parameters and parameters from GetVideoParams are not equal\n";
 
-        reset       = par_reset.GetExtBuffer(      par_init.ExtParam[i]->BufferId);
-        after_reset = par_after_reset.GetExtBuffer(par_init.ExtParam[i]->BufferId);
+        tsExtBufType<mfxVideoParam> par_after_reset (def);
+        CreateEmptyBuffers(*&par_after_reset, *&par_init);
+        CreateEmptyBuffers(*&par_after_reset, *&par_reset);
 
-        // Creating empty buffer
-        def.AddExtBuffer(par_init.ExtParam[i]->BufferId, par_init.ExtParam[i]->BufferSz);
-        mfxExtBuffer* empty = def.GetExtBuffer(par_init.ExtParam[i]->BufferId);
+        g_tsStatus.expect(MFX_ERR_NONE);
+        GetVideoParam(m_session, &par_after_reset);
 
-        bool in_dnu = false;
-        if (dnu != 0)
+        mfxExtVPPDoNotUse* dnu = (mfxExtVPPDoNotUse*)par_reset.GetExtBuffer(MFX_EXTBUFF_VPP_DONOTUSE);
+
+        for (mfxU32 i = 0; i< par_init.NumExtParam; i++)
         {
-            for (mfxU32 j = 0; j < dnu->NumAlg; j++)
+            mfxExtBuffer* reset = 0;
+            mfxExtBuffer* after_reset = 0;
+
+            reset       = par_reset.GetExtBuffer(      par_init.ExtParam[i]->BufferId);
+            after_reset = par_after_reset.GetExtBuffer(par_init.ExtParam[i]->BufferId);
+
+            // Creating empty buffer
+            def.AddExtBuffer(par_init.ExtParam[i]->BufferId, par_init.ExtParam[i]->BufferSz);
+            mfxExtBuffer* empty = def.GetExtBuffer(par_init.ExtParam[i]->BufferId);
+
+            bool in_dnu = false;
+            if (dnu != 0)
             {
-                if (par_init.ExtParam[i]->BufferId == dnu->AlgList[j])
+                for (mfxU32 j = 0; j < dnu->NumAlg; j++)
                 {
-                    in_dnu = true;
-                    break;
+                    if (par_init.ExtParam[i]->BufferId == dnu->AlgList[j])
+                    {
+                        in_dnu = true;
+                        break;
+                    }
                 }
             }
+
+            EXPECT_FALSE(in_dnu && (0 != memcmp(empty, after_reset, std::max(empty->BufferSz, after_reset->BufferSz))))
+                << "ERROR: Filter from Init was disabled in Reset but exists after Reset \n";
+
+            EXPECT_FALSE(reset != 0 && (0 != memcmp(reset, after_reset, std::max(reset->BufferSz, after_reset->BufferSz))) )
+                << "ERROR: Filter from Init was changed in Reset but parameters from Reset and after Reset are not equal \n";
+
+            EXPECT_FALSE(!in_dnu && reset == 0 && (0 != memcmp(par_init.ExtParam[i], after_reset, std::max(par_init.ExtParam[i]->BufferSz, after_reset->BufferSz))))
+                << "ERROR: Filter's parameters from Init and after Reset are not equal \n";
         }
 
-        EXPECT_FALSE(in_dnu && (0 != memcmp(empty, after_reset, std::max(empty->BufferSz, after_reset->BufferSz))))
-            << "ERROR: Filter from Init was disabled in Reset but exists after Reset \n";
+        for (mfxU32 i = 0; i< par_reset.NumExtParam; i++)
+        {
+            if (par_reset.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DONOTUSE) continue; // VPP should not configure mfxExtVPPDoNotUse buffer!
 
-        EXPECT_FALSE(reset != 0 && (0 != memcmp(reset, after_reset, std::max(reset->BufferSz, after_reset->BufferSz))) )
-            << "ERROR: Filter from Init was changed in Reset but parameters from Reset and after Reset are not equal \n";
-
-        EXPECT_FALSE(!in_dnu && reset == 0 && (0 != memcmp(par_init.ExtParam[i], after_reset, std::max(par_init.ExtParam[i]->BufferSz, after_reset->BufferSz))))
-            << "ERROR: Filter's parameters from Init and after Reset are not equal \n";
-    }
-
-    for (mfxU32 i = 0; i< par_reset.NumExtParam; i++)
-    {
-        if (par_reset.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_DONOTUSE) continue; // VPP should not configure mfxExtVPPDoNotUse buffer!
-
-        mfxExtBuffer* after_reset = 0;
-        after_reset = par_after_reset.GetExtBuffer(par_reset.ExtParam[i]->BufferId);
+            mfxExtBuffer* after_reset = 0;
+            after_reset = par_after_reset.GetExtBuffer(par_reset.ExtParam[i]->BufferId);
  
-        EXPECT_FALSE (after_reset == 0) << "ERROR: Filter specified in Reset does not exists after Reset \n";
+            EXPECT_FALSE (after_reset == 0) << "ERROR: Filter specified in Reset does not exists after Reset \n";
 
-        EXPECT_FALSE(0 != memcmp(par_reset.ExtParam[i], after_reset, std::max(par_reset.ExtParam[i]->BufferSz, after_reset->BufferSz)))
-            << "ERROR: Filter's parameters from Reset and after Reset are not equal \n";
+            EXPECT_FALSE(0 != memcmp(par_reset.ExtParam[i], after_reset, std::max(par_reset.ExtParam[i]->BufferSz, after_reset->BufferSz)))
+                << "ERROR: Filter's parameters from Reset and after Reset are not equal \n";
+        }
+
+        if (dnu && dnu->AlgList) delete[] dnu->AlgList;
     }
 
-    if (dnu != 0)
-    {
-        delete[] dnu->AlgList;
-        dnu->AlgList = 0;
-
-    }
+    if (pOSA && pOSA->In.Surfaces)  delete[] pOSA->In.Surfaces;
+    if (pOSA && pOSA->Out.Surfaces) delete[] pOSA->Out.Surfaces;
 
     TS_END;
     return 0;
