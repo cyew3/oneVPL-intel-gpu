@@ -670,6 +670,12 @@
     <ClCompile Include="src\gmock\test_suites\vp9d_query.cpp">
       <Filter>Source Files\test_suites\vp9d</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp9d_get_video_param.cpp">
+      <Filter>Source Files\test_suites\vp9d</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vp9d_reset.cpp">
+      <Filter>Source Files\test_suites\vp9d</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vp9d_close.cpp">
       <Filter>Source Files\test_suites\vp9d</Filter>
     </ClCompile>
