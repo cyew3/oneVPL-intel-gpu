@@ -493,6 +493,24 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
 #endif
 }
 
+bool MFX_CDECL MFX_Utility::IsBugSurfacePoolApplicable(eMFXHWType hwtype, mfxVideoParam * par)
+{
+    if (par == NULL)
+        return false;
+
+#ifdef MFX_VA_WIN
+    //On KBL both 10 bit and 8 bit supported by FF decoder that tested to works well
+    if (hwtype >= MFX_HW_KBL)
+        return true;
+
+    //On SKL 10 bit is hybrid (not work) and 8 bit supported by FF decoder that tested to works well
+    if (hwtype == MFX_HW_SCL && par->mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN)
+        return true;
+#endif
+
+    return false;
+}
+
 inline
 mfxU32 CalculateFourcc(int codecProfile, mfxFrameInfo const* frameInfo)
 {

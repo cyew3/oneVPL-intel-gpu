@@ -213,12 +213,13 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
         m_useDelayedDisplay = ENABLE_DELAYED_DISPLAY_MODE != 0 && IsNeedToUseHWBuffering(m_core->GetHWType()) && (asyncDepth != 1);
 
 #if defined (MFX_VA)
+        bool useBigSurfacePoolWA = MFX_Utility::IsBugSurfacePoolApplicable(type, par);
+
         if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
-            m_pH265VideoDecoder.reset(new WidevineTaskSupplier()); // HW, Widevine version
-        else if (type >= MFX_HW_KBL)
-            m_pH265VideoDecoder.reset(new VATaskSupplierBigSurfacePool()); // HW, with big surface pool workaround
+            //m_pH265VideoDecoder.reset(useBigSurfacePoolWA ? new VATaskSupplierBigSurfacePool<WidevineTaskSupplier>() : new (WidevineTaskSupplier)); // HW, Widevine version // Not tested yet
+            m_pH265VideoDecoder.reset( new (WidevineTaskSupplier)); // HW, Widevine version
         else
-            m_pH265VideoDecoder.reset(new VATaskSupplier()); // HW
+            m_pH265VideoDecoder.reset(useBigSurfacePoolWA ? new VATaskSupplierBigSurfacePool<VATaskSupplier>() : new VATaskSupplier()); // HW
 
         m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D());
 #else

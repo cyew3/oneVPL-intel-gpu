@@ -209,21 +209,6 @@ H265Slice * VATaskSupplier::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
     return slice;
 }
 
-UMC::Status VATaskSupplierBigSurfacePool::AllocateFrameData(H265DecoderFrame * pFrame, IppiSize dimensions, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet * pps)
-{
-    UMC::Status ret = VATaskSupplier::AllocateFrameData(pFrame, dimensions, pSeqParamSet, pps);
-
-    if (ret == UMC::UMC_OK)
-    {
-        ViewItem_H265 *pView = GetView();
-        H265DBPList *pDPB = pView->pDPB.get();
-
-        pFrame->m_index = pDPB->GetFreeIndex();
-    }
-
-    return ret;
-}
-
 } // namespace UMC_HEVC_DECODER
 
 #endif // UMC_RESTRICTED_CODE_VA

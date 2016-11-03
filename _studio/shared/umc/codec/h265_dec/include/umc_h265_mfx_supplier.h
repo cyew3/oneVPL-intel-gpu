@@ -142,6 +142,7 @@ public:
     // Validate input parameters
     static bool MFX_CDECL CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type);
 
+    static bool MFX_CDECL IsBugSurfacePoolApplicable(eMFXHWType hwtype, mfxVideoParam * par);
 private:
 
     // Check HW capabilities

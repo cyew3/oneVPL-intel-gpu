@@ -68,10 +68,12 @@ private:
     }
 };
 
-// this class added to apply big surface pool workaround depends on platform
+// this template class added to apply big surface pool workaround depends on platform
 // because platform check can't be added inside VATaskSupplier
+// for WidevineTaskSupplier the also can be applied
+template <class BaseClass>
 class VATaskSupplierBigSurfacePool:
-    public VATaskSupplier
+    public BaseClass
 {
 public:
     VATaskSupplierBigSurfacePool()
@@ -81,8 +83,20 @@ public:
 
 protected:
 
-    virtual UMC::Status AllocateFrameData(H265DecoderFrame * pFrame, IppiSize dimensions, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet);
+    virtual UMC::Status AllocateFrameData(H265DecoderFrame * pFrame, IppiSize dimensions, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet * pps)
+    {
+        UMC::Status ret = BaseClass::AllocateFrameData(pFrame, dimensions, pSeqParamSet, pps);
 
+        if (ret == UMC::UMC_OK)
+        {
+            ViewItem_H265 *pView = BaseClass::GetView();
+            H265DBPList *pDPB = pView->pDPB.get();
+
+            pFrame->m_index = pDPB->GetFreeIndex();
+        }
+
+        return ret;
+    }
 };
 
 }// namespace UMC_HEVC_DECODER
