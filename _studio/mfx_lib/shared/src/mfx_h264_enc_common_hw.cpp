@@ -3883,7 +3883,51 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
          {
              warning = true;
          }
-         else if (par.calcParam.targetKbps && ((par.mfx.RateControlMethod != MFX_RATECONTROL_VBR && par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR) &&  par.calcParam.WinBRCMaxAvgKbps < par.calcParam.targetKbps))
+         else if (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR || par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
+         {
+             if (par.mfx.FrameInfo.FrameRateExtN != 0 && par.mfx.FrameInfo.FrameRateExtD != 0)
+             {
+                 mfxU16 iframerate = (mfxU16)ceil((mfxF64)par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD);
+                 if (extOpt3->WinBRCSize != iframerate)
+                 {
+                     extOpt3->WinBRCSize = iframerate;
+                     changed = true;
+                 }
+             }
+             else
+             {
+                 CalculateMFXFramerate((mfxF64)extOpt3->WinBRCSize, &par.mfx.FrameInfo.FrameRateExtN, &par.mfx.FrameInfo.FrameRateExtD);
+                 changed = true;
+             }
+             if (par.calcParam.maxKbps)
+             {
+                 if (par.calcParam.WinBRCMaxAvgKbps != par.calcParam.maxKbps)
+                 {
+                     par.calcParam.WinBRCMaxAvgKbps = (mfxU16)par.calcParam.maxKbps;
+                     changed = true;
+                 }
+             }
+             else if (par.calcParam.WinBRCMaxAvgKbps)
+             {
+                 if (par.calcParam.targetKbps && par.calcParam.WinBRCMaxAvgKbps < par.calcParam.targetKbps)
+                 {
+                     extOpt3->WinBRCMaxAvgKbps = 0;
+                     par.calcParam.WinBRCMaxAvgKbps = 0;
+                     extOpt3->WinBRCSize = 0;
+                     unsupported = true;
+                 }
+                 else
+                 {
+                     par.calcParam.maxKbps = par.calcParam.WinBRCMaxAvgKbps;
+                     changed = true;
+                 }
+             }
+             else
+             {
+                 warning = true;
+             }
+         }
+         else if (par.calcParam.targetKbps && par.calcParam.WinBRCMaxAvgKbps < par.calcParam.targetKbps)
          {
              extOpt3->WinBRCMaxAvgKbps = 0;
              par.calcParam.WinBRCMaxAvgKbps = 0;
@@ -3903,17 +3947,19 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         if (!CheckRangeDflt(extOpt2->MinQPP, 0, (extOpt2->MaxQPP ? extOpt2->MaxQPP : 51), 0)) changed = true;
         if (!CheckRangeDflt(extOpt2->MinQPB, 0, (extOpt2->MaxQPB ? extOpt2->MaxQPB : 51), 0)) changed = true;
     }
-    if (((extOpt3->WinBRCSize > 0 && (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR && par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR)) || (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD)) && extOpt2->SkipFrame!=0 && extOpt2->SkipFrame != MFX_SKIPFRAME_INSERT_DUMMY )
+    if ((extOpt3->WinBRCSize > 0 && (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR && par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR)) || (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD))
     {
-        extOpt2->SkipFrame = MFX_SKIPFRAME_INSERT_DUMMY;
-        changed = true;
+        if (extOpt2->SkipFrame!=0 && extOpt2->SkipFrame != MFX_SKIPFRAME_INSERT_DUMMY)
+        {
+            extOpt2->SkipFrame = MFX_SKIPFRAME_INSERT_DUMMY;
+            changed = true;
+        }
+        if (extOpt2->BRefType != MFX_B_REF_OFF && extOpt2->BRefType != 0)
+        {
+            extOpt2->BRefType  = MFX_B_REF_OFF;
+            changed = true;
+        }
     }
-    if (((extOpt3->WinBRCSize > 0 && (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR && par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR)) || (par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD)) && extOpt2->BRefType != MFX_B_REF_OFF && extOpt2->BRefType != 0 )
-    {
-        extOpt2->BRefType  = MFX_B_REF_OFF;
-        changed = true;
-    }
-
 
     if (!CheckTriStateOption(extOpt3->EnableMBQP)) changed = true;
 
