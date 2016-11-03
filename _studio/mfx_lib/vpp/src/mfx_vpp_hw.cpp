@@ -1782,15 +1782,27 @@ mfxStatus  VideoVPPHW::Init(
     // [5]  cm device
     //-----------------------------------------------------
 #if defined(MFX_VA)
-    if(m_pCmDevice) {
-        int res = m_pCmDevice->LoadProgram((void *)genx_fcopy_cmcode, sizeof(genx_fcopy_cmcode), m_pCmProgram);
-        if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
+    if(m_pCmDevice)
+    {
+        int res = 0;
+        if (NULL == m_pCmProgram)
+        {
+            res = m_pCmDevice->LoadProgram((void *)genx_fcopy_cmcode, sizeof(genx_fcopy_cmcode), m_pCmProgram);
+            if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
+        }
 
-        res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(MbCopyFieLd), m_pCmKernel);  // MbCopyFieLd copies TOP or BOTTOM field from inSurf to OutSurf
-        if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
+        if (NULL == m_pCmKernel)
+        {
+            // MbCopyFieLd copies TOP or BOTTOM field from inSurf to OutSurf
+            res = m_pCmDevice->CreateKernel(m_pCmProgram, CM_KERNEL_FUNCTION(MbCopyFieLd), m_pCmKernel);
+            if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
+        }
 
-        res = m_pCmDevice->CreateQueue(m_pCmQueue);
-        if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
+        if (NULL == m_pCmQueue)
+        {
+            res = m_pCmDevice->CreateQueue(m_pCmQueue);
+            if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
+        }
     }
 
 #if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
