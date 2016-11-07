@@ -408,15 +408,25 @@ mfxStatus FEI_EncodeInterface::InitFrameParams(mfxFrameSurface1* encodeSurface, 
     else
         sync_list.Add(std::pair<bufSet*, mfxFrameSurface1*>(freeSet, encodeSurface));
 
-    /* We have to force frame type through control in case of ENCODE in EncodedOrder mode */
+
+    mfxU8 ffid = !(encodeSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) && (encodeSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF);
     if (eTask)
     {
+        // We have to force frame type through control in case of ENCODE in EncodedOrder mode
         m_encodeControl.FrameType = eTask->m_fieldPicFlag ? createType(*eTask) : ExtractFrameType(*eTask);
+    }
+    else if (frameType[ffid] & MFX_FRAMETYPE_IDR)
+    {
+        // As well as IDR frame in case of loop mode
+        m_encodeControl.FrameType = (encodeSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? frameType[ffid] : (((mfxU16(frameType[1 - ffid])) << 8) | frameType[ffid]);
+    }
+    else
+    {
+        // No forced frametype otherwise
+        m_encodeControl.FrameType = 0;
     }
 
     /* Load input Buffer for FEI ENCODE */
-    mfxU8 ffid = !(encodeSurface->Info.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) && (encodeSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF);
-
     mfxU32 feiEncCtrlId = ffid, pMvPredId = ffid, encMBID = 0, mbQPID = 0, fieldId = 0;
     for (std::vector<mfxExtBuffer*>::iterator it = freeSet->PB_bufs.in.buffers.begin();
         it != freeSet->PB_bufs.in.buffers.end(); ++it)
@@ -677,9 +687,9 @@ mfxStatus FEI_EncodeInterface::ResetState()
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    while (MFX_ERR_NONE == sts) {
-        sts = m_pmfxSession->SyncOperation(m_SyncPoint, MSDK_WAIT_INTERVAL);
-    }
+    //while (MFX_ERR_NONE == sts) {
+    //    sts = EncodeOneFrame(NULL, NULL, PairU8(NULL,NULL));
+    //}
 
     // mark sync point as free
     m_SyncPoint = NULL;
@@ -687,6 +697,10 @@ mfxStatus FEI_EncodeInterface::ResetState()
     // prepare bit stream
     m_mfxBS.DataOffset = 0;
     m_mfxBS.DataLength = 0;
+
+    // reset FileWriter
+    sts = m_FileWriter.Init(m_pAppConfig->dstFileBuff[0]);
+    MSDK_CHECK_STATUS(sts, "FEI ENCODE: FileWriter.Init failed");
 
     SAFE_FSEEK(m_pMvPred_in,     0, SEEK_SET, MFX_ERR_MORE_DATA);
     SAFE_FSEEK(m_pENC_MBCtrl_in, 0, SEEK_SET, MFX_ERR_MORE_DATA);

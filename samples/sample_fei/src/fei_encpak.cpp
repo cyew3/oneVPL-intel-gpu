@@ -918,6 +918,13 @@ mfxStatus FEI_EncPakInterface::ResetState()
     m_mfxBS.DataOffset = 0;
     m_mfxBS.DataLength = 0;
 
+    if (m_pmfxPAK)
+    {
+        // reset FileWriter
+        sts = m_FileWriter.Init(m_pAppConfig->dstFileBuff[0]);
+        MSDK_CHECK_STATUS(sts, "FEI ENCPAK: FileWriter.Init failed");
+    }
+
     SAFE_FSEEK(m_pMvPred_in,     0, SEEK_SET, MFX_ERR_MORE_DATA);
     SAFE_FSEEK(m_pENC_MBCtrl_in, 0, SEEK_SET, MFX_ERR_MORE_DATA);
     SAFE_FSEEK(m_pMbQP_in,       0, SEEK_SET, MFX_ERR_MORE_DATA);

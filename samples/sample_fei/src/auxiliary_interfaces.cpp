@@ -408,7 +408,7 @@ mfxStatus MFX_DecodeInterface::GetOneFrame(mfxFrameSurface1* & pSurf)
         return sts;
     }
 
-    if (sts == MFX_ERR_MORE_DATA)
+    if (sts == MFX_ERR_MORE_DATA || m_bEndOfFile)
     {
         if (m_pAppConfig->nTimeout)
         {
@@ -566,8 +566,6 @@ mfxStatus MFX_DecodeInterface::ResetState()
 
     sts = m_BSReader.Init(m_pAppConfig->strSrcFile);
     MSDK_CHECK_STATUS(sts, "m_BSReader.Init failed");
-
-    MSDK_ZERO_MEMORY(m_mfxBS);
 
     m_bEndOfFile = false;
 

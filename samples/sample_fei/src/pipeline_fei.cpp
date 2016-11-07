@@ -1608,14 +1608,12 @@ mfxStatus CEncodingPipeline::Run()
 
             if (m_appCfg.bPREENC)
             {
-                //sts = PreencOneFrame(eTask);
                 sts = m_pFEI_PreENC->PreencOneFrame(eTask);
                 MSDK_BREAK_ON_ERROR(sts);
             }
 
             if ((m_appCfg.bENCPAK) || (m_appCfg.bOnlyPAK) || (m_appCfg.bOnlyENC))
             {
-                //sts = EncPakOneFrame(eTask);
                 sts = m_pFEI_ENCPAK->EncPakOneFrame(eTask);
                 MSDK_BREAK_ON_ERROR(sts);
             }
@@ -1623,7 +1621,6 @@ mfxStatus CEncodingPipeline::Run()
             if (m_appCfg.bENCODE)
             {
                 sts = m_pFEI_ENCODE->EncodeOneFrame(eTask, pSurf, m_frameType);
-                //sts = EncodeOneFrame(eTask, pSurf);
                 MSDK_BREAK_ON_ERROR(sts);
             }
 
@@ -1638,7 +1635,7 @@ mfxStatus CEncodingPipeline::Run()
         {
             while (MFX_ERR_NONE <= sts)
             {
-                sts = m_pFEI_ENCODE->EncodeOneFrame(NULL, NULL, m_frameType);
+                sts = m_pFEI_ENCODE->EncodeOneFrame(NULL, NULL, PairU8(NULL,NULL));
             }
 
             // MFX_ERR_MORE_DATA is the correct status to exit buffering loop with
