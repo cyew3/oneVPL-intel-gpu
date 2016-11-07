@@ -100,7 +100,7 @@ typedef struct _ownFrameInfo
     mfxU16  CropW;
     mfxU16  CropH;
     mfxU32 FourCC;
-    mfxI8  PicStruct;
+    mfxU16  PicStruct;
     mfxF64 dFrameRate;
 
 } sOwnFrameInfo;
