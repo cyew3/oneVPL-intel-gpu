@@ -184,6 +184,9 @@ mfxStatus CEncodingPipeline::Init()
     sts = SetSequenceParameters();
     MSDK_CHECK_STATUS(sts, "SetSequenceParameters failed");
 
+    sts = AllocExtBuffers();
+    MSDK_CHECK_STATUS(sts, "InitInterfaces failed");
+
     return sts;
 }
 
@@ -1435,10 +1438,9 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
 
 mfxStatus CEncodingPipeline::Run()
 {
-    mfxFrameSurface1* pSurf = NULL; // points to frame being processed
+    mfxStatus sts = MFX_ERR_NONE;
 
-    mfxStatus sts = AllocExtBuffers();
-    MSDK_CHECK_STATUS(sts, "InitInterfaces failed");
+    mfxFrameSurface1* pSurf = NULL; // points to frame being processed
 
     bool create_task = m_appCfg.bPREENC  || m_appCfg.bENCPAK  ||
                        m_appCfg.bOnlyENC || m_appCfg.bOnlyPAK ||
