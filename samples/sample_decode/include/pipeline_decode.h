@@ -72,7 +72,7 @@ struct sInputParams
     bool    bLowLat; // low latency mode
     bool    bCalLat; // latency calculation
     bool    bUseFullColorRange; //whether to use full color range
-    mfxU32  nMaxFPS; //rendering limited by certain fps
+    mfxU16  nMaxFPS; //rendering limited by certain fps
     mfxU32  nWallCell;
     mfxU32  nWallW; //number of windows located in each row
     mfxU32  nWallH; //number of windows located in each column
@@ -256,13 +256,16 @@ protected: // variables
     mfxU16                  m_vppOutHeight;
 
     mfxU32                  m_nTimeout; // enables timeout for video playback, measured in seconds
-    mfxU32                  m_nMaxFps; // limit of fps, if isn't specified equal 0.
+    mfxU16                  m_nMaxFps; // limit of fps, if isn't specified equal 0.
     mfxU32                  m_nFrames; //limit number of output frames
 
     mfxU16                  m_diMode;
     bool                    m_bVppIsUsed;
     bool                    m_bVppFullColorRange;
     std::vector<msdk_tick>  m_vLatency;
+
+    msdk_tick               m_startTick;
+    msdk_tick               m_delayTicks;
 
     mfxExtVPPDoNotUse       m_VppDoNotUse;      // for disabling VPP algorithms
     mfxExtVPPDeinterlacing  m_VppDeinterlacing;

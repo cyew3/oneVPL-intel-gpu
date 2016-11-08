@@ -678,6 +678,9 @@ mfxStatus CSmplYUVWriter::Init(const msdk_char *strFileName, const mfxU32 numVie
 
 mfxStatus CSmplYUVWriter::Reset()
 {
+    if (!m_bInited)
+        return MFX_ERR_NONE;
+
     return Init(m_sFile.c_str(), m_nViews);
 }
 

@@ -105,6 +105,9 @@ CDecodingPipeline::CDecodingPipeline()
     m_bResetFileWriter = false;
     m_bResetFileReader = false;
 
+    m_startTick = 0;
+    m_delayTicks = 0;
+
     m_vLatency.reserve(1000); // reserve some space to reduce dynamic reallocation impact on pipeline execution
 
     MSDK_ZERO_MEMORY(m_VppDoNotUse);
@@ -323,6 +326,8 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
         m_nRenderWinY = pParams->nRenderWinY;
 #endif
     }
+
+    m_delayTicks = pParams->nMaxFPS ? msdk_time_get_frequency() / pParams->nMaxFPS : 0;
 
     // create decoder
     m_pmfxDEC = new MFXVideoDECODE(m_mfxSession);
@@ -965,6 +970,12 @@ mfxStatus CDecodingPipeline::AllocFrames()
     }
     MSDK_CHECK_STATUS(sts, "m_pmfxDEC->QueryIOSurf failed");
 
+    if (m_nMaxFps)
+    {
+        // Add surfaces for rendering smoothness
+        Request.NumFrameSuggested += m_nMaxFps / 3;
+    }
+
     if (m_bVppIsUsed)
     {
         // respecify memory type between Decoder and VPP
@@ -1418,16 +1429,12 @@ mfxStatus CDecodingPipeline::DeliverOutput(mfxFrameSurface1* frame)
 #elif LIBVA_SUPPORT
             res = m_hwdev->RenderFrame(frame, m_pGeneralAllocator);
 #endif
-            if (m_nMaxFps)
+
+            while( m_delayTicks && (m_startTick + m_delayTicks > msdk_time_get_tick()) )
             {
-                //calculation of a time to sleep in order not to exceed a given fps
-                mfxF64 currentTime = (m_output_count) ? CTimer::ConvertToSeconds(m_tick_overall) : 0.0;
-                int time_to_sleep = (int)(1000 * ((double)m_output_count / m_nMaxFps - currentTime));
-                if (time_to_sleep > 0)
-                {
-                    MSDK_SLEEP(time_to_sleep);
-                }
-            }
+                MSDK_SLEEP(0);
+            };
+            m_startTick=msdk_time_get_tick();
         }
     }
     else {
