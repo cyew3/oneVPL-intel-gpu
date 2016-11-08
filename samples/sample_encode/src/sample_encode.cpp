@@ -116,6 +116,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
                             the encoded data enters the Video Buffering Verifier buffer\n"));
     msdk_printf(MSDK_STRING("   [-timeout]               - encoding in cycle not less than specific time in seconds\n"));
     msdk_printf(MSDK_STRING("   [-membuf]                - size of memory buffer in frames\n"));
+    msdk_printf(MSDK_STRING("   [-uncut]                 - do not insert idr after file writer reset\n"));
     msdk_printf(MSDK_STRING("   [-extbrc:<on,off>]       - External BRC for HEVC encoder"));
 
     msdk_printf(MSDK_STRING("Example: %s h265 -i InputYUVFile -o OutputEncodedFile -w width -h height -hw -p 2fca99749fdb49aeb121a5b63ef568f7\n"), strAppName);
@@ -426,6 +427,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 PrintHelp(strInput[0], MSDK_STRING("membuf is invalid"));
                 return MFX_ERR_UNSUPPORTED;
             }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-uncut")))
+        {
+            pParams->bUncut = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gpucopy::on")))
         {
@@ -757,11 +762,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     };
 
-    if (pParams->dstFileBuff.empty())
-    {
-        PrintHelp(strInput[0], MSDK_STRING("Destination file name not found"));
-        return MFX_ERR_UNSUPPORTED;
-    };
 
     if (0 == pParams->nWidth || 0 == pParams->nHeight)
     {
@@ -957,6 +957,11 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             msdk_printf(MSDK_STRING("Region encode option is not compatible with VPP processing.\nRegion encoding is disabled\n"));
             pParams->UseRegionEncode=false;
         }
+    }
+
+    if (pParams->dstFileBuff.size() == 0)
+    {
+        msdk_printf(MSDK_STRING("File output is disabled as -o option isn't specified\n"));
     }
 
     return MFX_ERR_NONE;

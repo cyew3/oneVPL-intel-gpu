@@ -133,6 +133,8 @@ struct sInputParams
     mfxU16 InitialDelayInKB;
     mfxU16 GopOptFlag;
 
+    bool   bUncut;
+
 #if defined (ENABLE_V4L2_SUPPORT)
     msdk_char DeviceName[MSDK_MAX_FILENAME_LEN];
     msdk_char MipiModeName[MSDK_MAX_FILENAME_LEN];
@@ -231,7 +233,7 @@ protected:
     MFXFrameAllocator* m_pMFXAllocator;
     mfxAllocatorParams* m_pmfxAllocatorParams;
     MemType m_memType;
-    mfxU16 m_nMemBuf;
+    mfxU16 m_nMemBuffer;
     bool m_bExternalAlloc; // use memory allocator as external for Media SDK
 
     mfxFrameSurface1* m_pEncSurfaces; // frames array for encoder input (vpp output)
@@ -267,6 +269,8 @@ protected:
 
     bool   m_bFileWriterReset;
     mfxU32 m_nFramesRead;
+    bool   m_bCutOutput;
+    bool   m_bInsertIDR;
 
     mfxEncodeCtrl m_encCtrl;
 
