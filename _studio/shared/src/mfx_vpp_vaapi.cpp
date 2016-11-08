@@ -562,19 +562,14 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             }
 
             mfxDrvSurface* pRefSurf_frameInfo = &(pParams->pRefSurfaces[0]);
-            switch (pRefSurf_frameInfo->frameInfo.PicStruct)
-            {
-                case MFX_PICSTRUCT_PROGRESSIVE:
-                    deint.flags = VA_DEINTERLACING_ONE_FIELD;
-                    break;
 
-                case MFX_PICSTRUCT_FIELD_TFF:
-                    break; // don't set anything, see comment in va_vpp.h
+            // PicStruc = MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_REPEATED=0x10
+            // default deint.flags = 0 is for top field in TFF frame.
+            if (pRefSurf_frameInfo->frameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE)
+                deint.flags = VA_DEINTERLACING_ONE_FIELD;
+            else if (pRefSurf_frameInfo->frameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF)
+                deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST | VA_DEINTERLACING_BOTTOM_FIELD;
 
-                case MFX_PICSTRUCT_FIELD_BFF:
-                    deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST | VA_DEINTERLACING_BOTTOM_FIELD;
-                    break;
-            }
             /* For ADI 30i->60p case with reference frames we have to indicate
              * to driver which field Top or Bottom
              * we a going to send now. Or which filed will be used by driver from source
@@ -588,14 +583,14 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             {
                 if (0 == (m_refCountForADI%2) )
                 {
-                    if (MFX_PICSTRUCT_FIELD_TFF == pRefSurf_frameInfo->frameInfo.PicStruct)
+                    if (MFX_PICSTRUCT_FIELD_TFF & pRefSurf_frameInfo->frameInfo.PicStruct)
                         deint.flags = 0;
                     else /**/
                         deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST | VA_DEINTERLACING_BOTTOM_FIELD;
                 }
                 else
                 {
-                    if (MFX_PICSTRUCT_FIELD_TFF == pRefSurf_frameInfo->frameInfo.PicStruct)
+                    if (MFX_PICSTRUCT_FIELD_TFF & pRefSurf_frameInfo->frameInfo.PicStruct)
                         deint.flags = VA_DEINTERLACING_BOTTOM_FIELD;
                     else /**/
                         deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST;
@@ -607,6 +602,12 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             {
                 // This frame is a beginning of the new scene. Need to pass this info
                 // to the driver
+                // Use first field only as reference
+                if (MFX_PICSTRUCT_FIELD_TFF & pRefSurf_frameInfo->frameInfo.PicStruct)
+                    deint.flags = 0;
+                else /* Frame is BFF */
+                    deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST | VA_DEINTERLACING_BOTTOM_FIELD;
+
                 deint.flags |= 0x0010; // There will be a special define in va_vpp.h
             }
 

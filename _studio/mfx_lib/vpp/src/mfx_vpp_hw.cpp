@@ -2899,6 +2899,14 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         MFX_CHECK_NULL_PTR1(inFrame);
 
         mfxU32 scene_change = 0;
+        BOOL repeat_frame = 0;
+        mfxU32 sc_in_first_field = 0;
+        mfxU32 sc_in_second_field = 0;
+        mfxU32  sc_detected = 0;
+
+        // WA to mark consecutive frames after scene change with SCENE_NEW flag
+        if(m_scene_change >= 2)
+            scene_change = m_scene_change/2;
 
         if (m_executeParams.bFMDEnable && m_frame_num % 2 != 0 && m_frame_num > 1)
         {
@@ -2933,11 +2941,38 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
             sts = m_SCD.MapFrame(&frameSurface);
             MFX_CHECK_STS(sts);
 
+            // Set input frame parity in SCD
+            if(frameSurface.Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF)
+            {
+                m_SCD.SetParityTFF();
+            }
+            else if (frameSurface.Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF)
+            {
+                m_SCD.SetParityBFF();
+            }
+
+            // Check for scene change
             analysisReady = m_SCD.ProcessField(); // First field
-            scene_change += m_SCD.Get_frame_shot_Decision() + m_SCD.Get_frame_last_in_scene();
+            sc_in_first_field = m_SCD.Get_frame_shot_Decision() + m_SCD.Get_frame_last_in_scene();
+
             analysisReady = m_SCD.ProcessField(); // Second field
-            scene_change += m_SCD.Get_frame_shot_Decision() + m_SCD.Get_frame_last_in_scene();
-            m_scene_change = scene_change;
+            sc_in_second_field += m_SCD.Get_frame_shot_Decision() + m_SCD.Get_frame_last_in_scene();
+
+            sc_detected = sc_in_first_field + sc_in_second_field;
+            scene_change += sc_detected;
+
+            // Check for repeat frame
+            repeat_frame = m_SCD.Query_is_frame_repeated();
+
+            // WA: if scene change is detected, force next 2 frames to be processed with BOB.
+            // Same for repeat frame after scene change.
+            // This may be removed after frame counts get synchronized with BOB and m_refCountForADI
+            // in mfx_vpp_vaapi.cpp
+            if (sc_detected || (repeat_frame && scene_change)){
+                m_scene_change = 4;
+            } else {
+                m_scene_change /= 2;
+            }
         }
 
         m_executeParams.scene = scene_change ? VPP_SCENE_NEW : VPP_SCENE_NO_CHANGE;
