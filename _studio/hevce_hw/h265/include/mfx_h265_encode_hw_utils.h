@@ -19,6 +19,7 @@
 #include "mfxwidi.h"
 #include "mfxbrc.h"
 
+#define MFX_EXTBUFF_CU_QP_ENABLE 0
 #define DEBUG_REC_FRAMES_INFO 0   // dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
 #ifdef DEBUG_REC_FRAMES_INFO
 #include "vm_file.h"
@@ -295,6 +296,7 @@ typedef struct _Task : DpbFrame
     mfxAES128CipherCounter m_aes_counter;
 
     mfxU32 m_idxBs;
+    mfxU8  m_idxCUQp;
 
     mfxU8 m_refPicList[2][MAX_DPB_SIZE];
     mfxU8 m_numRefActive[2];
@@ -312,6 +314,7 @@ typedef struct _Task : DpbFrame
     DpbArray m_dpb[TASK_DPB_NUM];
 
     mfxMemId m_midBs;
+    mfxMemId m_midCUQp;
 
     bool m_resetBRC;
 
@@ -386,6 +389,7 @@ namespace ExtBuffer
          MFX_EXTBUFF_ENCODER_WIDI_USAGE,
          MFX_EXTBUFF_BRC,
          MFX_EXTBUFF_ENCODED_SLICES_INFO,
+         MFX_EXTBUFF_MBQP,
          MFX_EXTBUFF_ENCODER_ROI
     };
 
@@ -420,6 +424,7 @@ namespace ExtBuffer
         EXTBUF(mfxExtBRC,                   MFX_EXTBUFF_BRC);
         EXTBUF(mfxExtEncodedSlicesInfo,     MFX_EXTBUFF_ENCODED_SLICES_INFO);
         EXTBUF(mfxExtEncoderROI,            MFX_EXTBUFF_ENCODER_ROI);
+        EXTBUF(mfxExtMBQP,                  MFX_EXTBUFF_MBQP);
 
     #undef EXTBUF
 
@@ -480,6 +485,7 @@ namespace ExtBuffer
         _CopyStruct1(NumRefActiveBL1);
         _CopyStruct1(QVBRQuality);
         _CopyPar1(TransformSkip);
+        _CopyPar1(EnableMBQP);
     }
 
     inline void  CopySupportedParams(mfxExtCodingOptionDDI& buf_dst, mfxExtCodingOptionDDI& buf_src)
@@ -721,7 +727,7 @@ public:
         mfxExtBRC                   extBRC;
         mfxExtEncodedSlicesInfo     SliceInfo;
         mfxExtEncoderROI            ROI;
-        mfxExtBuffer *              m_extParam[14];
+        mfxExtBuffer *              m_extParam[SIZE_OF_ARRAY(ExtBuffer::allowed_buffers)];
     } m_ext;
 
     mfxU32 BufferSizeInKB;

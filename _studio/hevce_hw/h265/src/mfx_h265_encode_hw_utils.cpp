@@ -1533,7 +1533,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_pps.init_qp_minus26                       = 0;
     m_pps.constrained_intra_pred_flag           = 0;
     m_pps.transform_skip_enabled_flag           = IsOn(m_ext.CO3.TransformSkip);
-    m_pps.cu_qp_delta_enabled_flag              = (mfx.RateControlMethod == MFX_RATECONTROL_CQP || isSWBRC()) ? 0 : 1;
+    m_pps.cu_qp_delta_enabled_flag              = ((mfx.RateControlMethod == MFX_RATECONTROL_CQP && !IsOn(m_ext.CO3.EnableMBQP)) || isSWBRC()) ? 0 : 1;
 
     if (m_ext.CO2.MaxSliceSize)
         m_pps.cu_qp_delta_enabled_flag = 1;

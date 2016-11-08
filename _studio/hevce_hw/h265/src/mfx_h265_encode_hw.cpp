@@ -158,10 +158,16 @@ mfxStatus LoadSPSPPS(MfxVideoParam& par, mfxExtCodingOptionSPSPPS* pSPSPPS)
     }
     return sts;
 }
+#define printCaps(arg) printf("Caps: %s %d\n", #arg, m_caps.arg);
 mfxStatus Plugin::InitImpl(mfxVideoParam *par)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Plugin::InitImpl");
     mfxStatus sts = MFX_ERR_NONE, qsts = MFX_ERR_NONE;
+    mfxCoreParam coreParams = {};
+
+    if (m_core.GetCoreParam(&coreParams))
+       return  MFX_ERR_UNSUPPORTED;
+
 
     sts = m_core.QueryPlatform(&m_vpar.m_platform);
     MFX_CHECK_STS(sts);
@@ -184,6 +190,54 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     sts = m_ddi->QueryEncodeCaps(m_caps);
     MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_DEVICE_FAILED);
 
+#if 0
+    printCaps(CodingLimitSet);
+    printCaps(BitDepth8Only);
+    printCaps(Color420Only);
+    printCaps(SliceStructure);
+    printCaps(SliceIPOnly);
+    printCaps(SliceIPBOnly);
+    printCaps(NoWeightedPred);
+    printCaps(NoMinorMVs);
+    printCaps(RawReconRefToggle);
+    printCaps(NoInterlacedField);
+    printCaps(BRCReset);
+    printCaps(RollingIntraRefresh);
+    printCaps(UserMaxFrameSizeSupport);
+    printCaps(FrameLevelRateCtrl);
+    printCaps(SliceByteSizeCtrl);
+    printCaps(VCMBitRateControl);
+    printCaps(ParallelBRC);
+    printCaps(TileSupport);
+    printCaps(SkipFrame);
+    printCaps(MbQpDataSupport);
+    printCaps(SliceLevelWeightedPred);
+    printCaps(LumaWeightedPred);
+    printCaps(ChromaWeightedPred);
+    printCaps(QVBRBRCSupport); 
+    printCaps(HMEOffsetSupport);
+    printCaps(YUV422ReconSupport);
+    printCaps(YUV444ReconSupport);
+    printCaps(RGBReconSupport);
+    printCaps(MaxEncodedBitDepth);
+    printCaps(MaxPicWidth);
+    printCaps(MaxPicHeight);
+    printCaps(MaxNum_Reference0);
+    printCaps(MaxNum_Reference1);
+    printCaps(MBBRCSupport);
+    printCaps(TUSupport);
+    printCaps(SliceLevelReportSupport);      
+    printCaps(MaxNumOfTileColumnsMinus1);    
+    printCaps(IntraRefreshBlockUnitSize );   
+    printCaps(LCUSizeSupported);             
+    printCaps(MaxNumDeltaQP  );              
+    printCaps(DirtyRectSupport);             
+    printCaps(MoveRectSupport);              
+    printCaps(FrameSizeToleranceSupport);    
+    printCaps(HWCounterAutoIncrementSupport);
+    printCaps(MaxNum_WeightedPredL0);
+    printCaps(MaxNum_WeightedPredL1);
+#endif
     mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(*par);
 
     sts = LoadSPSPPS(m_vpar, pSPSPPS);
@@ -292,6 +346,34 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     sts = m_ddi->Register(m_bs, D3DDDIFMT_INTELENCODE_BITSTREAMDATA);
     MFX_CHECK_STS(sts);
 
+ #if MFX_EXTBUFF_CU_QP_ENABLE
+ #if defined(MFX_VA_WIN)
+    if (IsOn(m_vpar.m_ext.CO3.EnableMBQP) && m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_CQP && ((coreParams.Impl & 0xF00) != MFX_HW_VAAPI))
+    {
+          sts = m_ddi->QueryCompBufferInfo(D3DDDIFMT_INTELENCODE_MBQPDATA, request);
+          MFX_CHECK_STS(sts);
+
+          request.Type        = MFX_MEMTYPE_D3D_INT;
+          request.NumFrameMin = MaxBs(m_vpar);
+
+          /*if (MFX_HW_D3D11 == (coreParams.Impl & 0xF00))
+            request.Info.FourCC = MFX_FOURCC_P8_TEXTURE;
+          else
+            request.Info.FourCC = MFX_FOURCC_P8;
+
+          request.Info.Width  = IPP_MAX(request.Info.Width,  (m_vpar.m_ext.HEVCParam.PicWidthInLumaSamples   + par.LCUSize  - 1) / par.LCUSize);
+          request.Info.Height = IPP_MAX(request.Info.Height, (m_vpar.m_ext.HEVCParam.PicHeightInLumaSamples   + par.LCUSize  - 1) / par.LCUSize);*/
+
+          //printf("init MB data for driver: size %d, %d,  forCC %x, num %d\n", request.Info.Width, request.Info.Height, request.Info.FourCC,request.NumFrameMin);
+
+          sts = m_CuQp.Alloc(&m_core, request, true);
+          MFX_CHECK_STS(sts);
+
+          sts = m_ddi->Register(m_CuQp, D3DDDIFMT_INTELENCODE_MBQPDATA);
+          MFX_CHECK_STS(sts);
+    }
+#endif
+#endif
     m_task.Reset(MaxTask(m_vpar));
 
     Fill(m_lastTask, IDX_INVALID);
@@ -558,6 +640,7 @@ mfxStatus   Plugin::WaitingForAsyncTasks(bool bResetTasks)
     m_rawSkip.Unlock();
     m_rec.Unlock();
     m_bs.Unlock();
+    m_CuQp.Unlock();
 
     Fill(m_lastTask, 0xFF);
     ZeroParams();
@@ -904,12 +987,14 @@ mfxStatus Plugin::PrepareTask(Task& input_task)
         task->m_idxRaw = (mfxU8)FindFreeResourceIndex(m_raw);
         task->m_idxRec = (mfxU8)FindFreeResourceIndex(m_rec);
         task->m_idxBs  = (mfxU8)FindFreeResourceIndex(m_bs);
+        task->m_idxCUQp = (mfxU8)FindFreeResourceIndex(m_CuQp);
         MFX_CHECK(task->m_idxBs  != IDX_INVALID, MFX_ERR_NONE);
         MFX_CHECK(task->m_idxRec != IDX_INVALID, MFX_ERR_NONE);
 
         task->m_midRaw = AcquireResource(m_raw, task->m_idxRaw);
         task->m_midRec = AcquireResource(m_rec, task->m_idxRec);
         task->m_midBs  = AcquireResource(m_bs,  task->m_idxBs);
+        task->m_midCUQp  = AcquireResource(m_bs,  task->m_idxCUQp);
         MFX_CHECK(task->m_midRec && task->m_midBs, MFX_ERR_UNDEFINED_BEHAVIOR);  
 
 
@@ -985,6 +1070,12 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
                 sts = CopyRawSurfaceToVideoMemory(m_core, m_vpar, *taskForExecute);
                 MFX_CHECK_STS(sts);
             }
+#endif
+#if MFX_EXTBUFF_CU_QP_ENABLE
+#if defined(MFX_VA_WIN)
+            sts = FillCUQPDataDDI(*taskForExecute, m_vpar, m_core, m_CuQp.m_info);
+            MFX_CHECK_STS(sts);
+#endif
 #endif
             sts = m_ddi->Execute(*taskForExecute, surfaceHDL.first);
             MFX_CHECK_STS(sts);
@@ -1208,6 +1299,11 @@ mfxStatus Plugin::FreeTask(Task &task)
     {
         ReleaseResource(m_bs,  task.m_midBs);
         task.m_midBs = 0;
+    }
+    if (task.m_midCUQp)
+    {
+        ReleaseResource(m_bs,  task.m_midCUQp);
+        task.m_midCUQp = 0;
     }
 
     if (!m_vpar.RawRef)

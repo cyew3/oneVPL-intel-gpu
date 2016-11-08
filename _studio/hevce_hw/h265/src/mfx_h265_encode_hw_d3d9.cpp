@@ -775,6 +775,14 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
     ADD_CBD(D3DDDIFMT_INTELENCODE_SLICEDATA,        m_slice[0], m_slice.size());
     ADD_CBD(D3DDDIFMT_INTELENCODE_BITSTREAMDATA,    bitstream,  1);
 
+#if MFX_EXTBUFF_CU_QP_ENABLE
+    if (m_pps.cu_qp_delta_enabled_flag && m_sps.RateControlMethod == MFX_RATECONTROL_CQP )
+    {
+        mfxU32 idxCUQp  = task.m_idxCUQp;
+        ADD_CBD(D3DDDIFMT_INTELENCODE_MBQPDATA, idxCUQp,  1);
+    }
+#endif
+
     if (task.m_insertHeaders & INSERT_AUD)
     {
         pPH = PackHeader(task, AUD_NUT); assert(pPH);

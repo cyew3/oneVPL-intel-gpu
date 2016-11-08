@@ -120,6 +120,7 @@ protected:
     MfxFrameAllocResponse           m_rawSkip;
     MfxFrameAllocResponse           m_rec;
     MfxFrameAllocResponse           m_bs;
+    MfxFrameAllocResponse           m_CuQp; // for DDI only (not used in VA)
 
     TaskManager                     m_task;
     Task                            m_lastTask;

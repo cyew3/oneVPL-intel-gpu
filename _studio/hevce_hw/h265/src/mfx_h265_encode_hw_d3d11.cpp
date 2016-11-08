@@ -453,6 +453,14 @@ mfxStatus D3D11Encoder::Execute(Task const & task, mfxHDL surface)
     ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_SLICEDATA,        m_slice[0], m_slice.size());
     ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA,    RES_ID_BS,  1);
 
+#if MFX_EXTBUFF_CU_QP_ENABLE
+    if (m_pps.cu_qp_delta_enabled_flag && m_sps.RateControlMethod == MFX_RATECONTROL_CQP )
+    {
+        mfxU32 idxCUQp  = task.m_idxCUQp;
+        ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA, idxCUQp,  1);
+    }
+#endif
+
     if (task.m_insertHeaders & INSERT_AUD)
     {
         pPH = PackHeader(task, AUD_NUT); assert(pPH);

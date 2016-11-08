@@ -634,6 +634,13 @@ VAAPIEncoder::VAAPIEncoder()
 : m_core(NULL)
 , m_vaContextEncode(VA_INVALID_ID)
 , m_vaConfig(VA_INVALID_ID)
+
+#if MFX_EXTBUFF_CU_QP_ENABLE
+, m_cuqp_width(0) 
+, m_cuqp_height(0)
+, m_cuqp_pitch(0)
+, m_cuqp_h_aligned(0)
+#endif
 {
 }
 
@@ -944,6 +951,18 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
 
     DDIHeaderPacker::Reset(par);
 
+#if MFX_EXTBUFF_CU_QP_ENABLE
+   if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP && IsOn(par.m_ext.CO3.EnableMBQP))
+   {
+        m_cuqp_width  = (par.m_ext.HEVCParam.PicWidthInLumaSamples   + par.LCUSize  - 1) / par.LCUSize*2; //32x16 only: driver limitation
+        m_cuqp_height = (par.m_ext.HEVCParam.PicHeightInLumaSamples  + par.LCUSize  - 1) / par.LCUSize; 
+        m_cuqp_pitch  =    (((((((par.m_ext.HEVCParam.PicWidthInLumaSamples/4 + 15)/16)*4*16) + 31)/32)*2 + 63)/64)*64;
+        m_cuqp_h_aligned = (((((((par.m_ext.HEVCParam.PicHeightInLumaSamples/4 + 15)/16)*4*16) + 31)/32) + 3)/4)*4;
+        m_cuqp_buffer.resize(m_cuqp_pitch * m_cuqp_h_aligned);
+   }
+#endif
+
+
     return MFX_ERR_NONE;
 }
 
@@ -1050,6 +1069,66 @@ bool operator!=(const ENCODE_ENC_CTRL_CAPS& l, const ENCODE_ENC_CTRL_CAPS& r)
 {
     return !(l == r);
 }
+#if MFX_EXTBUFF_CU_QP_ENABLE
+mfxStatus FillCUQPDataVA(Task const & task, MfxVideoParam &par, std::vector<mfxI8>  &m_cuqp_buffer, mfxU32  Width, mfxU32  Height, mfxU32 Pitch)
+{
+    
+   if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP || !IsOn(par.m_ext.CO3.EnableMBQP) )
+        return MFX_ERR_NONE;
+
+    Zero(m_cuqp_buffer);
+
+    mfxU32 minWidthQPData = (par.m_ext.HEVCParam.PicWidthInLumaSamples   + par.LCUSize  - 1) / par.LCUSize;
+    mfxU32 minHeightQPData = (par.m_ext.HEVCParam.PicHeightInLumaSamples  + par.LCUSize  - 1) / par.LCUSize;
+    mfxU32 minQPSize = minWidthQPData*minHeightQPData;
+    mfxU32 driverQPsize = Width * Height;
+
+    MFX_CHECK(driverQPsize >= minQPSize && minQPSize > 0, MFX_ERR_UNDEFINED_BEHAVIOR);
+    mfxU32 k_dr_w  = 1;
+    mfxU32 k_dr_h  = 1;
+    mfxU32 k_input = 1;
+    
+    if (driverQPsize > minQPSize)
+    {
+        k_dr_w = Width/minWidthQPData;
+        k_dr_h = Height/minHeightQPData;
+
+        MFX_CHECK(minWidthQPData*k_dr_w == Width && minHeightQPData*k_dr_h == Height, MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(k_dr_w == 1 || k_dr_w == 2 || k_dr_w == 4 || k_dr_w == 8 , MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(k_dr_h == 1 || k_dr_h == 2 || k_dr_h == 4 || k_dr_h == 8 , MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    }
+
+
+    mfxExtMBQP *mbqp = ExtBuffer::Get(task.m_ctrl);
+    if (mbqp)
+    {
+        mfxU32 inputQPsize = mbqp->NumQPAlloc;
+        MFX_CHECK (mbqp->NumQPAlloc >= minQPSize, MFX_ERR_UNDEFINED_BEHAVIOR); 
+        
+        if (inputQPsize > minQPSize)
+        {
+            k_input = inputQPsize /minQPSize/2;
+            MFX_CHECK(minQPSize*k_input*2 == mbqp->NumQPAlloc, MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(k_input == 2 || k_input == 4 || k_input == 8 , MFX_ERR_UNDEFINED_BEHAVIOR);
+        }            
+    }
+    
+    {
+
+        if (mbqp)
+             for (mfxU32 i = 0; i < Height; i++)
+                 for (mfxU32 j = 0; j < Width; j++)
+                    m_cuqp_buffer[i * Pitch +j] = mbqp->QP[i*k_input/k_dr_h * Width + j*k_input/k_dr_w];
+        else
+            for (mfxU32 i = 0; i < Height; i++)
+                for (mfxU32 j = 0; j < Width; j++)
+                    m_cuqp_buffer[i * Pitch +j] = (mfxU8)task.m_qpY;         
+
+    }
+    return MFX_ERR_NONE;
+}
+#endif
 
 mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
 {
@@ -1069,6 +1148,10 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
     // update params
     UpdatePPS(task, m_pps, m_reconQueue);
     UpdateSlice(task, m_sps, m_pps, m_slice);
+
+#if MFX_EXTBUFF_CU_QP_ENABLE
+    FillCUQPDataVA(task, m_videoParam, m_cuqp_buffer, m_cuqp_width, m_cuqp_height, m_cuqp_pitch);
+#endif
 
     //------------------------------------------------------------------
     // find bitstream
@@ -1140,6 +1223,22 @@ mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     }
 #endif
+
+#if MFX_EXTBUFF_CU_QP_ENABLE
+    if (m_cuqp_buffer.size() > 0)
+    {
+        vaSts = vaCreateBuffer(m_vaDisplay,
+            m_vaContextEncode,
+            (VABufferType)VAEncQpBufferType,
+            m_cuqp_pitch ,
+            m_cuqp_h_aligned,
+            &m_cuqp_buffer[0],
+            &VABufferNew(VABID_QpBuffer, 0));
+
+        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+    }
+#endif
+
 
     {
         // AUD

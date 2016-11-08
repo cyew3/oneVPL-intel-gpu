@@ -1454,6 +1454,33 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
             }
         }
     }
+    if (CO3.EnableMBQP !=0)
+    {
+        if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP && !par.isSWBRC())
+            changed += CheckOption(CO3.EnableMBQP, (mfxU16)MFX_CODINGOPTION_UNKNOWN, (mfxU16)MFX_CODINGOPTION_ON);
+#if MFX_EXTBUFF_CU_QP_ENABLE
+        if (par.isSWBRC())
+            changed += CheckOption(CO3.EnableMBQP, (mfxU16)MFX_CODINGOPTION_UNKNOWN, (mfxU16)MFX_CODINGOPTION_OFF);
+        if (caps.MbQpDataSupport == 0 && par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+            changed += CheckOption(CO3.EnableMBQP, (mfxU16)MFX_CODINGOPTION_UNKNOWN, (mfxU16)MFX_CODINGOPTION_OFF);
+#else
+        else
+             changed += CheckOption(CO3.EnableMBQP, (mfxU16)MFX_CODINGOPTION_UNKNOWN, (mfxU16)MFX_CODINGOPTION_OFF);
+#endif
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+
 
     sts = CheckProfile(par);
 
@@ -1805,6 +1832,13 @@ void SetDefaults(
 
     if (!CO3.TransformSkip)
         CO3.TransformSkip = MFX_CODINGOPTION_OFF;
+    if (CO3.EnableMBQP == 0)
+    {
+        if (par.isSWBRC() || par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+            CO3.EnableMBQP = MFX_CODINGOPTION_OFF;
+        else
+            CO3.EnableMBQP = MFX_CODINGOPTION_ON;
+    }
 }
 
 } //namespace MfxHwH265Encode

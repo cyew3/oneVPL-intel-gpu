@@ -454,6 +454,10 @@ DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core);
 mfxStatus QueryHwCaps(MFXCoreInterface* core, GUID guid, ENCODE_CAPS_HEVC & caps);
 mfxStatus CheckHeaders(MfxVideoParam const & par, ENCODE_CAPS_HEVC const & caps);
 
+#if MFX_EXTBUFF_CU_QP_ENABLE
+mfxStatus FillCUQPDataDDI(Task& task, MfxVideoParam &par, MFXCoreInterface& core, mfxFrameInfo &CUQPFrameInfo);
+#endif
+
 enum
 {
     MAX_DDI_BUFFERS = 4, //sps, pps, slice, bs
