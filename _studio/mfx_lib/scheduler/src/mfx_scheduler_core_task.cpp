@@ -47,10 +47,9 @@ void MFX_SCHEDULER_TASK::OnDependencyResolved(mfxStatus result)
 {
     if (isFailed(result))
     {
-        // need to update dependency table for all tasks dependent from failed 
-        m_pSchedulerCore->ResolveDependencyTable(this);
+
         // waiting task inherits status from the parent task
-		// need to propogate error status to all dependent tasks.
+        // need to propogate error status to all dependent tasks.
         //if (MFX_TASK_WAIT & param.task.threadingPolicy)
         {
             opRes = result;
@@ -62,6 +61,9 @@ void MFX_SCHEDULER_TASK::OnDependencyResolved(mfxStatus result)
         //    opRes = MFX_ERR_ABORTED;
         //    curStatus = MFX_ERR_ABORTED;
         //}
+
+        // need to update dependency table for all tasks dependent from failed 
+        m_pSchedulerCore->ResolveDependencyTable(this);
         vm_cond_broadcast(&done);
 
         // release the current task resources
