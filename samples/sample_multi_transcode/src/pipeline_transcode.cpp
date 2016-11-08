@@ -2636,7 +2636,7 @@ void CTranscodingPipeline::CorrectNumberOfAllocatedFrames(mfxFrameAllocRequest  
     }
 
     m_Request.NumFrameMin = m_Request.NumFrameSuggested;
-    m_Request.Type = m_Request.Type | pNewReq-> Type;
+    m_Request.Type = m_Request.Type | pNewReq->Type;
 
     if ((m_Request.Type & MFX_MEMTYPE_SYSTEM_MEMORY) && ((m_Request.Type & 0xf0) != MFX_MEMTYPE_SYSTEM_MEMORY))
         m_Request.Type = (mfxU16)(m_Request.Type & (~ MFX_MEMTYPE_SYSTEM_MEMORY));
