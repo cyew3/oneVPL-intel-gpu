@@ -277,6 +277,7 @@ struct AppConfig
         , bUseHWmemory(true)          // only HW memory is supported (ENCODE supports SW memory)
 
         , bDECODE(false)
+        , bVPP(false)
         , bENCODE(false)
         , bENCPAK(false)
         , bOnlyENC(false)
@@ -345,11 +346,6 @@ struct AppConfig
     mfxU16 nIdrInterval;     // distance between IDR frames in GOPs
     mfxU8  preencDSstrength; // downsample input before passing to preenc (2/4/8x are supported)
     bool   bDynamicRC;
-    //mfxU32 nResetStart;
-    //mfxU16 nDRCdefautW;
-    //mfxU16 nDRCdefautH;
-    //mfxU16 MaxDrcWidth;
-    //mfxU16 MaxDrcHeight;
 
     mfxU16 SearchWindow; // search window size and search path from predifined presets
     mfxU16 LenSP;        // search path length
@@ -391,6 +387,7 @@ struct AppConfig
     //std::vector<mfxU32> nDrcStart; //Start Frame No. of Dynamic Resolution Change,specified if DRC required
 
     bool bDECODE;
+    bool bVPP;
     bool bENCODE;
     bool bENCPAK;
     bool bOnlyENC;

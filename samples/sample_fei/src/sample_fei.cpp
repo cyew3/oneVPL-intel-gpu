@@ -786,6 +786,9 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         pConfig->nDstHeight = pConfig->nHeight;
     }
 
+    // set VPP flag after determination of all parameters
+    pConfig->bVPP = pConfig->nWidth != pConfig->nDstWidth || pConfig->nHeight != pConfig->nDstHeight || pConfig->bDynamicRC;
+
     // if nv12 option wasn't specified we expect input YUV file in YUV420 color format
     if (!pConfig->ColorFormat)
     {
@@ -1140,15 +1143,15 @@ bool CompareFrameOrder(const DRCblock& left, const DRCblock& right)
 
 mfxStatus CheckDRCParams(AppConfig* pConfig)
 {
-    mfxStatus sts = MFX_ERR_NONE;
     if (!pConfig->bDynamicRC)
     {
         return MFX_ERR_NONE;
     }
+
     if (pConfig->bENCPAK || pConfig->bOnlyENC || pConfig->bOnlyPAK || pConfig->bPREENC)
     {
         fprintf(stderr, "ERROR: Only ENCODE supports Dynamic Resolution Change\n");
-        sts = MFX_ERR_UNSUPPORTED;
+        return MFX_ERR_UNSUPPORTED;
     }
 
     for (mfxU32 i = 0; i < pConfig->DRCqueue.size(); ++i)
@@ -1160,7 +1163,7 @@ mfxStatus CheckDRCParams(AppConfig* pConfig)
         }
     }
 
-    std::sort(pConfig->DRCqueue.begin(), pConfig->DRCqueue.end(), CompareFrameOrder/*[](DRCblock& left, DRCblock& right){ return left.start_frame > right.start_frame; }*/);
+    std::sort(pConfig->DRCqueue.begin(), pConfig->DRCqueue.end(), CompareFrameOrder);
 
     for (mfxU32 i = 0; i < pConfig->DRCqueue.size() - 1; ++i)
     {
@@ -1184,5 +1187,5 @@ mfxStatus CheckDRCParams(AppConfig* pConfig)
 
     pConfig->PipelineCfg.numMB_drc_max = max_num_mb;
 
-    return sts;
+    return MFX_ERR_NONE;
 }

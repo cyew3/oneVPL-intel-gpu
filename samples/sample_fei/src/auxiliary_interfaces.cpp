@@ -187,32 +187,28 @@ mfxStatus MFX_VppInterface::VPPoneFrame(mfxFrameSurface1* pSurf_in, mfxFrameSurf
             MSDK_BREAK_ON_ERROR(sts);
     }
 
-    /* We need to sync before any FEI interface */
-    if (!m_pAppConfig->preencDSstrength)
+    for (;;)
     {
-        for (;;)
+        sts = m_pmfxSession->SyncOperation(m_SyncPoint, MSDK_WAIT_INTERVAL);
+        if (sts == MFX_ERR_GPU_HANG)
         {
-            sts = m_pmfxSession->SyncOperation(m_SyncPoint, MSDK_WAIT_INTERVAL);
-            if (sts == MFX_ERR_GPU_HANG)
-            {
-                return MFX_ERR_GPU_HANG;
-            }
+            return MFX_ERR_GPU_HANG;
+        }
 
-            if (!m_SyncPoint)
-            {
-                if (MFX_WRN_DEVICE_BUSY == sts){
-                    WaitForDeviceToBecomeFree(*m_pmfxSession, m_SyncPoint, sts);
-                }
-                else
-                    return sts;
-            }
-            else if (MFX_ERR_NONE <= sts) {
-                sts = MFX_ERR_NONE; // ignore warnings if output is available
-                break;
+        if (!m_SyncPoint)
+        {
+            if (MFX_WRN_DEVICE_BUSY == sts){
+                WaitForDeviceToBecomeFree(*m_pmfxSession, m_SyncPoint, sts);
             }
             else
-                MSDK_BREAK_ON_ERROR(sts);
+                return sts;
         }
+        else if (MFX_ERR_NONE <= sts) {
+            sts = MFX_ERR_NONE; // ignore warnings if output is available
+            break;
+        }
+        else
+            MSDK_BREAK_ON_ERROR(sts);
     }
 
     return sts;
@@ -420,7 +416,7 @@ mfxStatus MFX_DecodeInterface::GetOneFrame(mfxFrameSurface1* & pSurf)
     }
     MSDK_CHECK_STATUS(sts, "Decode<One|Last>Frame failed");
 
-    if (m_pAppConfig->bDECODESTREAMOUT || m_pAppConfig->PipelineCfg.mixedPicstructs)
+    if (m_pAppConfig->bDECODESTREAMOUT || m_pAppConfig->PipelineCfg.mixedPicstructs || !m_pAppConfig->bVPP)
     {
         for (;;)
         {

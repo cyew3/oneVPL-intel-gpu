@@ -167,8 +167,7 @@ mfxStatus FEI_EncodeInterface::FillParameters()
     /* Specify memory type */
     m_videoParams.IOPattern = mfxU16(m_pAppConfig->bUseHWmemory ? MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
 
-    bool VPPrequired = m_pAppConfig->nWidth != m_pAppConfig->nDstWidth || m_pAppConfig->nHeight != m_pAppConfig->nDstHeight || m_pAppConfig->bDynamicRC;
-    if (m_pAppConfig->bDECODE && !VPPrequired)
+    if (m_pAppConfig->bDECODE && !m_pAppConfig->bVPP)
     {
         MSDK_CHECK_POINTER(m_pAppConfig->PipelineCfg.pDecodeVideoParam, MFX_ERR_NULL_PTR);
         /* in case of decoder without VPP copy FrameInfo from decoder */
@@ -178,7 +177,7 @@ mfxStatus FEI_EncodeInterface::FillParameters()
         m_pAppConfig->nWidth  = m_pAppConfig->nDstWidth  = m_videoParams.mfx.FrameInfo.CropW;
         m_pAppConfig->nHeight = m_pAppConfig->nDstHeight = m_videoParams.mfx.FrameInfo.CropH;
     }
-    else if (VPPrequired)
+    else if (m_pAppConfig->bVPP)
     {
         MSDK_CHECK_POINTER(m_pAppConfig->PipelineCfg.pVppVideoParam, MFX_ERR_NULL_PTR);
         /* in case of VPP copy FrameInfo from VPP output */

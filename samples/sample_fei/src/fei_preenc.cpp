@@ -217,15 +217,13 @@ mfxStatus FEI_PreencInterface::FillDSVideoParams()
                                                                 : (MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY));
     m_DSParams.AsyncDepth   = 1;
 
-    bool VPPrequired = m_pAppConfig->nWidth != m_pAppConfig->nDstWidth || m_pAppConfig->nHeight != m_pAppConfig->nDstHeight || m_pAppConfig->bDynamicRC;
-
-    if (m_pAppConfig->bDECODE && !VPPrequired)
+    if (m_pAppConfig->bDECODE && !m_pAppConfig->bVPP)
     {
         /* Decoder present in pipeline */
         MSDK_MEMCPY_VAR(m_DSParams.vpp.In, &m_pAppConfig->PipelineCfg.pDecodeVideoParam->mfx.FrameInfo, sizeof(mfxFrameInfo));
         m_DSParams.vpp.In.PicStruct = m_pAppConfig->nPicStruct;
     }
-    else if (VPPrequired)
+    else if (m_pAppConfig->bVPP)
     {
         /* There is VPP stage before PreENC DownSampling in pipeline */
         MSDK_CHECK_POINTER(m_pAppConfig->PipelineCfg.pVppVideoParam, MFX_ERR_NULL_PTR);
@@ -317,8 +315,7 @@ mfxStatus FEI_PreencInterface::FillParameters()
         MSDK_CHECK_STATUS(sts, "FEI PreENC: FillDSVideoParams failed");
     }
 
-    bool VPPstagePresent = m_pAppConfig->preencDSstrength || m_pAppConfig->nWidth != m_pAppConfig->nDstWidth || m_pAppConfig->nHeight != m_pAppConfig->nDstHeight || m_pAppConfig->bDynamicRC;
-    if (m_pAppConfig->bDECODE && !VPPstagePresent)
+    if (m_pAppConfig->bDECODE && !(m_pAppConfig->preencDSstrength || m_pAppConfig->bVPP))
     {
         /* Decoder present in pipeline */
         MSDK_CHECK_POINTER(m_pAppConfig->PipelineCfg.pDecodeVideoParam, MFX_ERR_NULL_PTR);
@@ -334,7 +331,7 @@ mfxStatus FEI_PreencInterface::FillParameters()
         /* PreEnc uses downsampled input surface */
         MSDK_MEMCPY_VAR(m_videoParams.mfx.FrameInfo, &m_DSParams.vpp.Out, sizeof(mfxFrameInfo));
     }
-    else if (VPPstagePresent)
+    else if (m_pAppConfig->bVPP)
     {
         /* There is VPP stage before PreENC in pipeline (and no DownSampling stage) */
         MSDK_CHECK_POINTER(m_pAppConfig->PipelineCfg.pVppVideoParam, MFX_ERR_NULL_PTR);
