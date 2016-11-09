@@ -1706,6 +1706,34 @@ mfxStatus D3D11VideoProcessor::CameraPipeSetLensParams(CameraLensCorrectionParam
     return MFX_ERR_NONE;
 }
 
+mfxStatus D3D11VideoProcessor::CameraPipeSetTotalColorControlParams(CameraTCCParams * params)
+{
+    HRESULT hRes;
+    CAMPIPE_MODE          camMode;
+    VPE_IE_TCC_PARAMS  tccParams;
+    tccParams.bActive = 1;
+    tccParams.Red = params->Red;
+    tccParams.Green = params->Green;
+    tccParams.Blue = params->Blue;
+    tccParams.Cyan = params->Cyan;
+    tccParams.Magenta = params->Magenta;
+    tccParams.Yellow = params->Yellow;
+    memset((PVOID)&camMode, 0, sizeof(camMode));
+    camMode.Function = VPE_FN_IE_TOTAL_COLOR_CONTROL;
+    camMode.pTcc = &tccParams;
+
+    hRes = SetOutputExtension(
+        &(m_iface.guid),
+        sizeof(camMode),
+        &camMode);
+    if (FAILED(hRes))
+    {
+        return MFX_ERR_DEVICE_FAILED;
+    }
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus D3D11VideoProcessor::CameraPipeSet3DLUTParams(Camera3DLUTParams * params)
 {
 
@@ -1983,7 +2011,11 @@ mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
 
         sts = CameraPipeActivate();
         MFX_CHECK_STS(sts);
-
+        if (pParams->bCameraTCC)
+        {
+            sts = CameraPipeSetTotalColorControlParams(&pParams->CameraTCC);
+            MFX_CHECK_STS(sts);
+        }
         if ( pParams->bCamera3DLUT )
         {
             sts = CameraPipeSet3DLUTParams(&pParams->Camera3DLUT);

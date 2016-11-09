@@ -790,6 +790,11 @@ mfxStatus MFXCamera_Plugin::GetVideoParam(mfxVideoParam *par)
                 pVPPHint->AlgList[i++] = MFX_EXTBUF_CAM_PADDING;
             }
 
+            if (m_Caps.bTotalColorControl)
+            {
+                pVPPHint->AlgList[i++] = MFX_EXTBUF_CAM_TOTAL_COLOR_CONTROL;
+            }
+
             if ( m_Caps.b3DLUT)
             {
                 pVPPHint->AlgList[i++] = MFX_EXTBUF_CAM_3DLUT;
@@ -869,6 +874,7 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
     bool paddingset      = false;
     bool blacklevelset   = false;
     bool whitebalanceset = false;
+    bool tccset          = false;
     bool ccmset          = false;
     bool vignetteset     = false;
     bool hotpixelset     = false;
@@ -969,6 +975,22 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
                     m_WBparams.GreenTopCorrection    = whiteBalanceExtBufParams->G0;
                     m_WBparams.GreenBottomCorrection = whiteBalanceExtBufParams->G1;
                     m_WBparams.RedCorrection         = whiteBalanceExtBufParams->R;
+                }
+            }
+            else if (MFX_EXTBUF_CAM_TOTAL_COLOR_CONTROL == par->ExtParam[i]->BufferId)
+            {
+                m_Caps.bTotalColorControl = 1;
+                mfxExtCamTotalColorControl* tccExtBufParams = (mfxExtCamTotalColorControl*)par->ExtParam[i];
+                if (tccExtBufParams)
+                {
+                    tccset = true;
+                    m_TCCParams.bActive = true;
+                    m_TCCParams.R = tccExtBufParams->R;
+                    m_TCCParams.G = tccExtBufParams->G;
+                    m_TCCParams.B = tccExtBufParams->B;
+                    m_TCCParams.C = tccExtBufParams->C;
+                    m_TCCParams.M = tccExtBufParams->M;
+                    m_TCCParams.Y = tccExtBufParams->Y;
                 }
             }
             else if (MFX_EXTBUF_CAM_HOT_PIXEL_REMOVAL == par->ExtParam[i]->BufferId)
@@ -1105,7 +1127,9 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
     if (m_Caps.bColorConversionMatrix)
         if (!ccmset)
             sts = MFX_ERR_UNDEFINED_BEHAVIOR;
-
+    if (m_Caps.bTotalColorControl)
+        if (!tccset)
+            sts = MFX_ERR_UNDEFINED_BEHAVIOR;
     if (m_Caps.bWhiteBalance)
         if (!whitebalanceset)
             sts = MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -1605,7 +1629,7 @@ mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFram
     pParams->WBparams         = m_WBparams;
     pParams->LensParams       = m_LensParams;
     pParams->LUTParams        = m_3DLUTParams;
-
+    pParams->TCCParams        = m_TCCParams;
     *mfxthreadtask = (mfxThreadTask*) pParams;
 #ifdef CAMP_PIPE_ITT
     __itt_task_end(CamPipe);

@@ -161,6 +161,17 @@ namespace MfxHwVideoProcessing
         mfxF32 CCM[3][3];
     } CameraCCMParams;
 
+
+    typedef struct _CameraTCCParams
+    {
+        mfxU8 Red;
+        mfxU8 Green;
+        mfxU8 Blue;
+        mfxU8 Cyan;
+        mfxU8 Magenta;
+        mfxU8 Yellow;
+    } CameraTCCParams;
+
     typedef struct _CameraLensCorrectionParams
     {
         mfxF32 a[3];
@@ -370,6 +381,8 @@ namespace MfxHwVideoProcessing
                ,CameraHotPixel()
                ,bCCM(false)
                ,CCMParams()
+               ,bCameraTCC(false)
+               ,CameraTCC()
                ,bCameraGammaCorrection(false)
                ,CameraForwardGammaCorrection()
                ,bCameraVignetteCorrection(false)
@@ -461,6 +474,8 @@ namespace MfxHwVideoProcessing
         CameraHotPixelRemovalParams CameraHotPixel;
         bool                     bCCM;
         CameraCCMParams          CCMParams;
+        bool bCameraTCC;
+        CameraTCCParams CameraTCC;
         bool                     bCameraGammaCorrection;
         CameraForwardGammaCorrectionParams CameraForwardGammaCorrection;
 

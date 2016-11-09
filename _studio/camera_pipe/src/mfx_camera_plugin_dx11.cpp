@@ -200,6 +200,16 @@ mfxStatus D3D11CameraProcessor::AsyncRoutine(AsyncParams *pParam)
         m_executeParams[surfInIndex].CameraBlackLevel.uR  = (mfxU32)pParam->BlackLevelParams.RedLevel         << shift;
     }
 
+    if (pParam->Caps.bTotalColorControl)
+    {
+        m_executeParams[surfInIndex].bCameraTCC = true;
+        m_executeParams[surfInIndex].CameraTCC.Red = static_cast<mfxU8>(pParam->TCCParams.R);
+        m_executeParams[surfInIndex].CameraTCC.Green = static_cast<mfxU8>(pParam->TCCParams.G);
+        m_executeParams[surfInIndex].CameraTCC.Blue = static_cast<mfxU8>(pParam->TCCParams.B);
+        m_executeParams[surfInIndex].CameraTCC.Cyan = static_cast<mfxU8>(pParam->TCCParams.C);
+        m_executeParams[surfInIndex].CameraTCC.Magenta = static_cast<mfxU8>(pParam->TCCParams.M);
+        m_executeParams[surfInIndex].CameraTCC.Yellow = static_cast<mfxU8>(pParam->TCCParams.Y);
+    }
     if ( pParam->Caps.bWhiteBalance )
     {
         m_executeParams[surfInIndex].bCameraWhiteBalaceCorrection = true;

@@ -165,6 +165,7 @@ protected:
     CameraPipeDenoiseParams            m_DenoiseParams;
     CameraPipeHotPixelParams           m_HPParams;
     CameraPipeWhiteBalanceParams       m_WBparams;
+    CameraPipeTotalColorControlParams  m_TCCParams;
     CameraPipeForwardGammaParams       m_GammaParams;
     CameraPipeVignetteParams           m_VignetteParams;
     CameraPipePaddingParams            m_PaddingParams;

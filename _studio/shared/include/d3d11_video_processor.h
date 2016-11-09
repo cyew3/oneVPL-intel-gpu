@@ -746,6 +746,7 @@ namespace MfxHwVideoProcessing
         mfxStatus CameraPipeSetCCMParams(CameraCCMParams *params);
         mfxStatus CameraPipeSetForwardGammaParams(CameraForwardGammaCorrectionParams *params);
         mfxStatus CameraPipeSet3DLUTParams(Camera3DLUTParams *params);
+        mfxStatus CameraPipeSetTotalColorControlParams(CameraTCCParams *params);
         mfxStatus CameraPipeSetHotPixelParams(CameraHotPixelRemovalParams *params);
         mfxStatus CameraPipeSetVignetteParams(CameraVignetteCorrectionParams *params);
         mfxStatus CameraPipeSetLensParams(CameraLensCorrectionParams *params);

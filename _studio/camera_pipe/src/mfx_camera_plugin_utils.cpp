@@ -311,6 +311,7 @@ void QueryCaps(mfxCameraCaps &caps)
     caps.bVignetteCorrection     = 1;
     caps.bOutToARGB16  = 1;
     caps.bHotPixel     = 1;
+    caps.bTotalColorControl      = 1;
     caps.bBayerDenoise = 1;
     caps.bLensCorrection = 1;
     caps.b3DLUT          = 1;
@@ -334,7 +335,8 @@ const mfxU32 g_TABLE_CAMERA_EXTBUFS [] =
     MFX_EXTBUF_CAM_LENS_GEOM_DIST_CORRECTION,
     MFX_EXTBUF_CAM_PADDING,
     MFX_EXTBUF_CAM_PIPECONTROL,
-    MFX_EXTBUF_CAM_3DLUT
+    MFX_EXTBUF_CAM_3DLUT,
+    MFX_EXTBUF_CAM_TOTAL_COLOR_CONTROL
 };
 
 bool IsCameraFilterFound(const mfxU32* pList, mfxU32 len, mfxU32 filterName)
@@ -428,6 +430,10 @@ void ConvertCaps2ListDoUse(mfxCameraCaps& caps, std::vector<mfxU32>& list)
     {
         list.push_back(MFX_EXTBUF_CAM_BLACK_LEVEL_CORRECTION);
     }
+    if (caps.bTotalColorControl)
+    {
+        list.push_back(MFX_EXTBUF_CAM_TOTAL_COLOR_CONTROL);
+    }
     if (caps.bLensCorrection)
     {
         list.push_back(MFX_EXTBUF_CAM_LENS_GEOM_DIST_CORRECTION);
@@ -496,6 +502,23 @@ mfxStatus GammaCorrectionCheckParam(mfxExtCamGammaCorrection * pGammaBuf, mfxU32
         if (!(pGammaBuf->GammaPoint && pGammaBuf->GammaCorrected))
             return MFX_ERR_NULL_PTR;
     }
+    return sts;
+}
+
+#define MAX_CAM_DEFAULT_TCC_CHANEL_VALUE 255
+#define MIN_CAM_DEFAULT_TCC_CHANEL_VALUE 0
+
+mfxStatus TotalColorControlCheckParam(mfxExtCamTotalColorControl* pTCCBuf)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    if (pTCCBuf->R > MAX_CAM_DEFAULT_TCC_CHANEL_VALUE || pTCCBuf->R < MIN_CAM_DEFAULT_TCC_CHANEL_VALUE ||
+        pTCCBuf->G > MAX_CAM_DEFAULT_TCC_CHANEL_VALUE || pTCCBuf->G < MIN_CAM_DEFAULT_TCC_CHANEL_VALUE ||
+        pTCCBuf->B > MAX_CAM_DEFAULT_TCC_CHANEL_VALUE || pTCCBuf->B < MIN_CAM_DEFAULT_TCC_CHANEL_VALUE ||
+        pTCCBuf->C > MAX_CAM_DEFAULT_TCC_CHANEL_VALUE || pTCCBuf->C < MIN_CAM_DEFAULT_TCC_CHANEL_VALUE ||
+        pTCCBuf->M > MAX_CAM_DEFAULT_TCC_CHANEL_VALUE || pTCCBuf->M < MIN_CAM_DEFAULT_TCC_CHANEL_VALUE ||
+        pTCCBuf->Y > MAX_CAM_DEFAULT_TCC_CHANEL_VALUE || pTCCBuf->Y < MIN_CAM_DEFAULT_TCC_CHANEL_VALUE)
+        sts = MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+
     return sts;
 }
 
@@ -650,6 +673,19 @@ mfxStatus QueryExtBuf(mfxExtBuffer *extBuf, mfxU32 bitdepth, mfxU32 action)
             }
         }
         break;
+     case MFX_EXTBUF_CAM_TOTAL_COLOR_CONTROL:
+         {
+             mfxExtCamTotalColorControl *tccBuf = (mfxExtCamTotalColorControl *)extBuf;
+             if (action >= MFX_CAM_QUERY_CHECK_RANGE)
+             {
+                 sts = TotalColorControlCheckParam(tccBuf);
+             }
+             else
+             {
+                 tccBuf->R = tccBuf->G = tccBuf->B = tccBuf->C = tccBuf->M = tccBuf->Y = (mfxU16)action;
+             }
+         }
+         break;
     default:
         sts = MFX_ERR_UNSUPPORTED;
         break;
