@@ -240,6 +240,8 @@ struct AppConfig
         , refDist(1)             // Only I frames
         , gopSize(1)             // Only I frames
         , QP(26)
+        , RateControlMethod(MFX_RATECONTROL_CQP)
+        , TargetKbps(0)
         , numSlices(1)
         , numRef(1)              // One ref by default
         , NumRefActiveP(0)
@@ -334,6 +336,8 @@ struct AppConfig
     mfxU16 refDist; //number of frames to next I,P
     mfxU16 gopSize; //number of frames to next I
     mfxU8  QP;
+    mfxU16 RateControlMethod;
+    mfxU16 TargetKbps;
     mfxU16 numSlices;
     mfxU16 numRef;           // number of reference frames (DPB size)
     mfxU16 NumRefActiveP;    // maximal number of references for P frames
