@@ -165,10 +165,12 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         break;
 #ifdef FUTURE_API
     case MFX_FOURCC_Y210:
+    case MFX_FOURCC_Y216:
         ptr->Y16 = (mfxU16 *)ptr->B;
         ptr->U16 = ptr->Y16 + 1;
         ptr->V16 = ptr->Y16 + 3;
-        ptr->Pitch = 2 * Width2;
+        //4 words per macropixel -> 2 words per pixel -> 4 bytes per pixel
+        ptr->Pitch = 4 * Width2;
         break;
     case MFX_FOURCC_Y410:
         ptr->U = ptr->V = ptr->A = ptr->Y;
@@ -272,6 +274,7 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
     case MFX_FOURCC_P210:
 #ifdef FUTURE_API
     case MFX_FOURCC_Y210:
+    case MFX_FOURCC_Y216:
 #endif
         nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
         nbytes *= 2; // 16bits
