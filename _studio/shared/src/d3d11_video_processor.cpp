@@ -1706,6 +1706,36 @@ mfxStatus D3D11VideoProcessor::CameraPipeSetLensParams(CameraLensCorrectionParam
     return MFX_ERR_NONE;
 }
 
+mfxStatus D3D11VideoProcessor::CameraPipeSetRGBtoYUV(CameraRGBToYUVParams* params)
+{
+    HRESULT hRes;
+    CAMPIPE_MODE          camMode;
+    VPE_CSC_PARAMS  RGBToYUV;
+    RGBToYUV.bActive = 1;
+    for (int i = 0; i < 3; i++) {
+        RGBToYUV.PreOffset[i] = params->PreOffset[i];
+        RGBToYUV.PostOffset[i] = params->PostOffset[i];
+    }
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+            RGBToYUV.Matrix[i][j] = params->Matrix[i][j];
+
+    memset((PVOID)&camMode, 0, sizeof(camMode));
+    camMode.Function = VPE_FN_RGB_TO_YUV_CSC_PARAM;
+    camMode.pRgbToYuvCSC = &RGBToYUV;
+
+    hRes = SetOutputExtension(
+        &(m_iface.guid),
+        sizeof(camMode),
+        &camMode);
+    if (FAILED(hRes))
+    {
+        return MFX_ERR_DEVICE_FAILED;
+    }
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus D3D11VideoProcessor::CameraPipeSetTotalColorControlParams(CameraTCCParams * params)
 {
     HRESULT hRes;
@@ -2016,6 +2046,10 @@ mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
             sts = CameraPipeSetTotalColorControlParams(&pParams->CameraTCC);
             MFX_CHECK_STS(sts);
         }
+        if (pParams->bCameraRGBtoYUV) {
+            sts = CameraPipeSetRGBtoYUV(&pParams->CameraRGBToYUV);
+            MFX_CHECK_STS(sts);
+        }        
         if ( pParams->bCamera3DLUT )
         {
             sts = CameraPipeSet3DLUTParams(&pParams->Camera3DLUT);

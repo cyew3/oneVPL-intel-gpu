@@ -210,6 +210,23 @@ mfxStatus D3D11CameraProcessor::AsyncRoutine(AsyncParams *pParam)
         m_executeParams[surfInIndex].CameraTCC.Magenta = static_cast<mfxU8>(pParam->TCCParams.M);
         m_executeParams[surfInIndex].CameraTCC.Yellow = static_cast<mfxU8>(pParam->TCCParams.Y);
     }
+
+    if (pParam->Caps.bRGBToYUV)
+    {
+        m_executeParams[surfInIndex].bCameraRGBtoYUV = true;
+        for (int i = 0; i < 3; i++)
+        {
+            m_executeParams[surfInIndex].CameraRGBToYUV.PreOffset[i] = pParam->RGBToYUVParams.PreOffset[i];
+            m_executeParams[surfInIndex].CameraRGBToYUV.PostOffset[i] = pParam->RGBToYUVParams.PostOffset[i];
+        }
+        for (int i = 0; i < 3; i++)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                m_executeParams[surfInIndex].CameraRGBToYUV.Matrix[i][j] = pParam->RGBToYUVParams.Matrix[i][j];
+            }
+        }
+    }
     if ( pParam->Caps.bWhiteBalance )
     {
         m_executeParams[surfInIndex].bCameraWhiteBalaceCorrection = true;

@@ -303,19 +303,19 @@ void MfxCameraPlugin::ReleaseResource(
 void QueryCaps(mfxCameraCaps &caps)
 {
     caps.ModuleConfiguration = 0; // zero all filters
-    caps.bDemosaic = 1;
+    caps.bDemosaic               = 1;
     caps.bForwardGammaCorrection = 1;
     caps.bBlackLevelCorrection   = 1;
     caps.bWhiteBalance           = 1;
     caps.bColorConversionMatrix  = 1;
     caps.bVignetteCorrection     = 1;
-    caps.bOutToARGB16  = 1;
-    caps.bHotPixel     = 1;
+    caps.bOutToARGB16            = 1;
+    caps.bHotPixel               = 1;
     caps.bTotalColorControl      = 1;
-    caps.bBayerDenoise = 1;
-    caps.bLensCorrection = 1;
-    caps.b3DLUT          = 1;
-
+    caps.bBayerDenoise           = 1;
+    caps.bLensCorrection         = 1;
+    caps.b3DLUT                  = 1;
+    caps.bRGBToYUV               = 1;
     caps.InputMemoryOperationMode = MEM_GPUSHARED; //MEM_GPU;
     caps.OutputMemoryOperationMode = MEM_GPUSHARED; //MEM_GPU;
 
@@ -336,7 +336,8 @@ const mfxU32 g_TABLE_CAMERA_EXTBUFS [] =
     MFX_EXTBUF_CAM_PADDING,
     MFX_EXTBUF_CAM_PIPECONTROL,
     MFX_EXTBUF_CAM_3DLUT,
-    MFX_EXTBUF_CAM_TOTAL_COLOR_CONTROL
+    MFX_EXTBUF_CAM_TOTAL_COLOR_CONTROL,
+    MFX_EXTBUF_CAM_CSC_YUV_RGB
 };
 
 bool IsCameraFilterFound(const mfxU32* pList, mfxU32 len, mfxU32 filterName)
@@ -433,6 +434,10 @@ void ConvertCaps2ListDoUse(mfxCameraCaps& caps, std::vector<mfxU32>& list)
     if (caps.bTotalColorControl)
     {
         list.push_back(MFX_EXTBUF_CAM_TOTAL_COLOR_CONTROL);
+    }
+    if (caps.bRGBToYUV)
+    {
+        list.push_back(MFX_EXTBUF_CAM_CSC_YUV_RGB);
     }
     if (caps.bLensCorrection)
     {
@@ -686,6 +691,21 @@ mfxStatus QueryExtBuf(mfxExtBuffer *extBuf, mfxU32 bitdepth, mfxU32 action)
              }
          }
          break;
+     case MFX_EXTBUF_CAM_CSC_YUV_RGB:
+     {
+         mfxExtCamCscYuvRgb *cscBuf = (mfxExtCamCscYuvRgb *)extBuf;
+         if (action < MFX_CAM_QUERY_CHECK_RANGE)
+         {
+             for (int i = 0; i < 3; i++) {
+                 cscBuf->PreOffset[i] = (mfxF32)action;
+                 cscBuf->PostOffset[i] = (mfxF32)action;
+             }
+             for (int i = 0; i < 3; i++)
+                 for (int j = 0; j < 3; j++)
+                     cscBuf->Matrix[i][j] = (mfxF32)action;
+         }
+     }
+        break;
     default:
         sts = MFX_ERR_UNSUPPORTED;
         break;

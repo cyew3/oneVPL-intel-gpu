@@ -208,7 +208,8 @@ typedef struct _mfxCameraCaps
             mfxU32    bNoPadding                        : 1; // must be ON now, zero meaning that padding needs to be done
             mfxU32    bLensCorrection                   : 1;
             mfxU32    b3DLUT                            : 1;
-            mfxU32    Reserved                          : 19;
+            mfxU32    bRGBToYUV                         : 1;
+            mfxU32    Reserved                          : 18;
         };
         mfxU32      ModuleConfiguration;
     };
@@ -250,6 +251,7 @@ typedef struct _mfxCameraCaps
         if (b3DLUT)                  num++;
         if (bGamma3DLUT)             num++;
         if (bTotalColorControl)      num++;
+        if (bRGBToYUV)               num++;
 
         return num;
     }
@@ -390,6 +392,15 @@ typedef struct _CameraPipeTotalColorControl
     mfxU16       Y;
 } CameraPipeTotalColorControlParams;
 
+
+typedef struct _CameraPipeRGBToYUV
+{
+    bool         bActive;
+    mfxF32       PreOffset[3];
+    mfxF32       Matrix[3][3];
+    mfxF32       PostOffset[3];
+} CameraPipeRGBToYUVParams;
+
 typedef struct _CameraPipeLensCorrectionParams
 {
     bool        bActive;
@@ -451,6 +462,7 @@ struct AsyncParams
     CameraPipePaddingParams            PaddingParams;
     CameraPipeBlackLevelParams         BlackLevelParams;
     CameraPipeTotalColorControlParams  TCCParams;
+    CameraPipeRGBToYUVParams           RGBToYUVParams;
     CameraPipe3x3ColorConversionParams CCMParams;
     CameraPipeLensCorrectionParams     LensParams;
     CameraPipe3DLUTParams              LUTParams;

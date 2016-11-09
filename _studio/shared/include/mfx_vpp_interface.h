@@ -172,6 +172,13 @@ namespace MfxHwVideoProcessing
         mfxU8 Yellow;
     } CameraTCCParams;
 
+    typedef struct _CameraRGBToYUVParams
+    {
+        mfxU8 Red;
+        mfxF32 PreOffset[3];
+        mfxF32 Matrix[3][3];
+        mfxF32 PostOffset[3];
+    } CameraRGBToYUVParams;
     typedef struct _CameraLensCorrectionParams
     {
         mfxF32 a[3];
@@ -383,6 +390,8 @@ namespace MfxHwVideoProcessing
                ,CCMParams()
                ,bCameraTCC(false)
                ,CameraTCC()
+               ,bCameraRGBtoYUV(false)
+               ,CameraRGBToYUV()               
                ,bCameraGammaCorrection(false)
                ,CameraForwardGammaCorrection()
                ,bCameraVignetteCorrection(false)
@@ -476,6 +485,8 @@ namespace MfxHwVideoProcessing
         CameraCCMParams          CCMParams;
         bool bCameraTCC;
         CameraTCCParams CameraTCC;
+        bool bCameraRGBtoYUV;
+        CameraRGBToYUVParams CameraRGBToYUV;
         bool                     bCameraGammaCorrection;
         CameraForwardGammaCorrectionParams CameraForwardGammaCorrection;
 
@@ -484,7 +495,6 @@ namespace MfxHwVideoProcessing
 
         bool                     bCameraLensCorrection;
         CameraLensCorrectionParams         CameraLensCorrection;
-
         bool                     bCamera3DLUT;
         Camera3DLUTParams        Camera3DLUT;
         int         rotation;

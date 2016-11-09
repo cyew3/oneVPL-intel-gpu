@@ -621,6 +621,13 @@ typedef struct _CP_LENS_GEOMETRY_DISTORTION_CORRECTION
     float d[3];
 } VPE_CP_LENS_GEOMENTRY_DISTORTION_CORRECTION;
 
+typedef struct _CP_RGB_TO_YUV_CSC_PARAMS
+{
+    UINT bActive;
+    float preOffset[3];
+    float Matrix[3][3];
+    float PostOffset[3];
+} CP_RGB_TO_YUV_SCS_PARAMS;
 
 typedef struct _CP_LUT_PARAMS
 {
@@ -747,6 +754,7 @@ namespace MfxHwVideoProcessing
         mfxStatus CameraPipeSetForwardGammaParams(CameraForwardGammaCorrectionParams *params);
         mfxStatus CameraPipeSet3DLUTParams(Camera3DLUTParams *params);
         mfxStatus CameraPipeSetTotalColorControlParams(CameraTCCParams *params);
+        mfxStatus CameraPipeSetRGBtoYUV(CameraRGBToYUVParams *params);
         mfxStatus CameraPipeSetHotPixelParams(CameraHotPixelRemovalParams *params);
         mfxStatus CameraPipeSetVignetteParams(CameraVignetteCorrectionParams *params);
         mfxStatus CameraPipeSetLensParams(CameraLensCorrectionParams *params);

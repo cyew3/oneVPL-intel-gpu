@@ -432,7 +432,8 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
         if (out->vpp.Out.FourCC != MFX_FOURCC_RGB4 &&
             out->vpp.Out.FourCC != MFX_FOURCC_ARGB16 &&
-            out->vpp.Out.FourCC != MFX_FOURCC_ABGR16)
+            out->vpp.Out.FourCC != MFX_FOURCC_ABGR16 &&
+            out->vpp.Out.FourCC != MFX_FOURCC_NV12)
         {
             {
                 out->vpp.Out.FourCC = 0;
@@ -441,7 +442,8 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             }
         }
 
-        if(out->vpp.Out.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
+        if(out->vpp.Out.ChromaFormat != MFX_CHROMAFORMAT_YUV444 &&
+            out->vpp.Out.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
         {
             {
                 out->vpp.Out.ChromaFormat = 0;
@@ -785,6 +787,11 @@ mfxStatus MFXCamera_Plugin::GetVideoParam(mfxVideoParam *par)
                 pVPPHint->AlgList[i++] = MFX_EXTBUF_CAM_PIPECONTROL;
             }
 
+            if (m_Caps.bRGBToYUV)
+            {
+                pVPPHint->AlgList[i++] = MFX_EXTBUF_CAM_CSC_YUV_RGB;
+            }
+
             if ( m_Caps.bNoPadding)
             {
                 pVPPHint->AlgList[i++] = MFX_EXTBUF_CAM_PADDING;
@@ -881,6 +888,7 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
     bool denoiseset      = false;
     bool lensset         = false;
     bool threeDlutset    = false;
+    bool rgbtoyuvset     = false;
 
     for (i = 0; i < par->NumExtParam; i++)
     {
@@ -991,6 +999,27 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
                     m_TCCParams.C = tccExtBufParams->C;
                     m_TCCParams.M = tccExtBufParams->M;
                     m_TCCParams.Y = tccExtBufParams->Y;
+                }
+            }
+            else if (MFX_EXTBUF_CAM_CSC_YUV_RGB == par->ExtParam[i]->BufferId)
+            {
+                m_Caps.bRGBToYUV = 1;
+                mfxExtCamCscYuvRgb* rgbToYuvExtBufParams = (mfxExtCamCscYuvRgb*)par->ExtParam[i];
+                if (rgbToYuvExtBufParams)
+                {
+                    rgbtoyuvset = true;
+                    m_RGBToYUVParams.bActive = true;
+                    for (int i = 0; i < 3; i++) {
+                        m_RGBToYUVParams.PreOffset[i] = rgbToYuvExtBufParams->PreOffset[i];
+                        m_RGBToYUVParams.PostOffset[i] = rgbToYuvExtBufParams->PostOffset[i];
+                    }
+                    for (int i = 0; i < 3; i++)
+                    {
+                        for (int j = 0; j < 3; j++)
+                        {
+                            m_RGBToYUVParams.Matrix[i][j] = rgbToYuvExtBufParams->Matrix[i][j];
+                        }
+                    }
                 }
             }
             else if (MFX_EXTBUF_CAM_HOT_PIXEL_REMOVAL == par->ExtParam[i]->BufferId)
@@ -1130,6 +1159,11 @@ mfxStatus MFXCamera_Plugin::ProcessExtendedBuffers(mfxVideoParam *par)
     if (m_Caps.bTotalColorControl)
         if (!tccset)
             sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+    
+    if (m_Caps.bRGBToYUV)
+        if (!rgbtoyuvset)
+            sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+
     if (m_Caps.bWhiteBalance)
         if (!whitebalanceset)
             sts = MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -1190,11 +1224,11 @@ mfxStatus MFXCamera_Plugin::Init(mfxVideoParam *par)
     m_Caps.bDemosaic = 1;           // demosaic is always on
     ProcessExtendedBuffers(&m_mfxVideoParam);
 
-    if (m_mfxVideoParam.vpp.Out.FourCC == MFX_FOURCC_RGB4)
+    if (m_mfxVideoParam.vpp.Out.FourCC == MFX_FOURCC_RGB4 || m_mfxVideoParam.vpp.Out.FourCC == MFX_FOURCC_NV12)
     {
         m_Caps.bOutToARGB16 = 0;
     }
-    else
+    else if (m_mfxVideoParam.vpp.Out.FourCC == MFX_FOURCC_ARGB16)
     {
         m_Caps.bOutToARGB16 = 1;
     }
@@ -1610,7 +1644,8 @@ mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFram
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     if(surface_out->Info.FourCC != MFX_FOURCC_RGB4 &&
        surface_out->Info.FourCC != MFX_FOURCC_ARGB16 &&
-       surface_out->Info.FourCC != MFX_FOURCC_ABGR16)
+       surface_out->Info.FourCC != MFX_FOURCC_ABGR16 &&
+       surface_out->Info.FourCC != MFX_FOURCC_NV12)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
     AsyncParams *pParams = new AsyncParams;
@@ -1630,6 +1665,7 @@ mfxStatus MFXCamera_Plugin::VPPFrameSubmit(mfxFrameSurface1 *surface_in, mfxFram
     pParams->LensParams       = m_LensParams;
     pParams->LUTParams        = m_3DLUTParams;
     pParams->TCCParams        = m_TCCParams;
+    pParams->RGBToYUVParams   = m_RGBToYUVParams;
     *mfxthreadtask = (mfxThreadTask*) pParams;
 #ifdef CAMP_PIPE_ITT
     __itt_task_end(CamPipe);
