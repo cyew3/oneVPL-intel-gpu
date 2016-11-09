@@ -123,6 +123,9 @@
     <ClInclude Include="include\plugin_loader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\pipeline_brc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\base_allocator.cpp">
@@ -183,6 +186,9 @@
       <Filter>Source Files\low_latency</Filter>
     </ClCompile>
     <ClCompile Include="src\decode_render.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pipeline_brc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

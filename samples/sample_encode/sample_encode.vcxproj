@@ -282,14 +282,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\pipeline_brc.cpp" />
     <ClCompile Include="src\pipeline_encode.cpp" />
     <ClCompile Include="src\pipeline_region_encode.cpp" />
     <ClCompile Include="src\pipeline_user.cpp" />
     <ClCompile Include="src\sample_encode.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\pipeline_brc.h" />
     <ClInclude Include="include\pipeline_encode.h" />
     <ClInclude Include="include\pipeline_region_encode.h" />
     <ClInclude Include="include\pipeline_user.h" />
