@@ -512,7 +512,8 @@ typedef struct tagFASTCOMP_CAPS2
     UINT            bISControl              : 1;
     UINT            bFRCControl             : 1;
     UINT            bScalingModeControl     : 1;
-    UINT            Reserved2               : 12;
+    UINT            bChromaSitingControl    : 1;
+    UINT            Reserved2 : 11;
 } FASTCOMP_CAPS2;
 
 // Fast Compositing Sample Formats (User output)
@@ -567,7 +568,8 @@ typedef enum tagFASTCOMP_PARAMS_TYPE
     FASTCOMP_QUERY_STATUS_V1_0,
     FASTCOMP_FEATURES_IS_V1_0,
     FASTCOMP_FEATURES_FRC_V1_0,
-    FASTCOMP_FEATURES_SCALINGMODE_V1_0
+    FASTCOMP_FEATURES_SCALINGMODE_V1_0,
+    FASTCOMP_FEATURES_CHROMASITING_V1_0
 } FASTCOMP_PARAMS_TYPE;
 
 typedef struct  tagFASTCOMP_BLT_PARAMS_OBJECT
@@ -634,6 +636,9 @@ typedef struct _FASTCOMP_BLT_PARAMS
 
     // Rev 1.5.2 parameters
     FASTCOMP_BLT_PARAMS_OBJECT    ScalingModeObject;
+
+    // Rev 1.5.4 parameters
+    FASTCOMP_BLT_PARAMS_OBJECT    ChromaSitingObject;
 } FASTCOMP_BLT_PARAMS;
 
 
@@ -749,6 +754,28 @@ typedef struct tagFASTCOMP_SCALINGMODE_PARAMS_V1_0
 {
     BOOL    FastMode;
 } FASTCOMP_SCALINGMODE_PARAMS_V1_0;
+
+
+/*
+3.4.11 [PreP] Support for ChromaSiting Setting
+0: (option A),
+1 : (option B),
+2 : (option AC)
+3 : (option BD)
+4 : (option AB)
+5 : (option ABCD)
+
+Option A : Chroma samples are aligned horizontally and vertically with multiples of the luma samples
+Option B : Chroma samples are horizontally aligned and vertically 1 pixel offset to the bottom.
+Option AC : Chroma samples are vertically aligned with, and horizontally centered between luma samples.
+Option BD : Chroma samples are horizontally 0.5 pixel offset to the right and vertically 1 pixel offset to the bottom.
+Option AB : Chroma samples are vertically centered between, but horizontally aligned with luma samples.
+Option ABCD : Chroma samples are centered between luma samples both horizontally and vertically.
+*/
+typedef struct tagFASTCOMP_CHROMASUBSAMPLING_PARAMS_V1_0
+{
+    UINT Chroma_siting;
+} FASTCOMP_CHROMASUBSAMPLING_PARAMS_V1_0;
 
 
 typedef struct tagFASTCOMP_FRAMERATE

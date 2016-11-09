@@ -35,6 +35,7 @@ const mfxU32 g_TABLE_DO_NOT_USE [] =
     MFX_EXTBUFF_VPP_COMPOSITE,
     MFX_EXTBUFF_VPP_ROTATION,
     MFX_EXTBUFF_VPP_SCALING,
+    MFX_EXTBUFF_VPP_COLOR_CONVERSION,
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
     MFX_EXTBUFF_VPP_FIELD_PROCESSING,
     MFX_EXTBUFF_VPP_MIRRORING
@@ -52,6 +53,7 @@ const mfxU32 g_TABLE_DO_USE [] =
     MFX_EXTBUFF_VPP_COMPOSITE,
     MFX_EXTBUFF_VPP_ROTATION,
     MFX_EXTBUFF_VPP_SCALING,
+    MFX_EXTBUFF_VPP_COLOR_CONVERSION,
 #ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
     MFX_EXTBUFF_VPP_VARIANCE_REPORT,
 #endif
@@ -77,6 +79,7 @@ const mfxU32 g_TABLE_CONFIG [] =
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
     MFX_EXTBUFF_VPP_FIELD_PROCESSING,
     MFX_EXTBUFF_VPP_SCALING,
+    MFX_EXTBUFF_VPP_COLOR_CONVERSION,
     MFX_EXTBUFF_VPP_MIRRORING
 };
 
@@ -103,6 +106,7 @@ const mfxU32 g_TABLE_EXT_PARAM [] =
     MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO,
     MFX_EXTBUFF_VPP_FIELD_PROCESSING,
     MFX_EXTBUFF_VPP_SCALING,
+    MFX_EXTBUFF_VPP_COLOR_CONVERSION,
     MFX_EXTBUFF_VPP_MIRRORING
 };
 
@@ -1011,6 +1015,12 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 break;
             }
 
+            case (mfxU32)MFX_EXTBUFF_VPP_COLOR_CONVERSION:
+            {
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "MFX_EXTBUFF_VPP_COLOR_CONVERSION");
+                OutputDebugStringA(cStr);
+                break;
+            }
              case (mfxU32)MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
             {
                 sprintf_s(cStr, sizeof(cStr), "%s \n", "MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO");
@@ -1188,6 +1198,11 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 fprintf(stderr,"MFX_EXTBUFF_VPP_SCALING\n");
                 break;
             }
+            case (mfxU32)MFX_EXTBUFF_VPP_COLOR_CONVERSION:
+            {
+                fprintf(stderr,"MFX_EXTBUFF_VPP_COLOR_CONVERSION\n");
+                break;
+            }
              case (mfxU32)MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
             {
                 fprintf(stderr,"MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO\n");
@@ -1356,8 +1371,8 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
         newList[index] = MFX_EXTBUFF_VPP_COMPOSITE;
         index++;
     }
-	
-	if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_PROCESSING ) )
+
+    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_PROCESSING ) )
     {
         newList[index] = MFX_EXTBUFF_VPP_FIELD_PROCESSING;
         index++;
@@ -1378,6 +1393,12 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
     if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_SCALING ) )
     {
         newList[index] = MFX_EXTBUFF_VPP_SCALING;
+        index++;
+    }
+
+    if (IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_COLOR_CONVERSION))
+    {
+        newList[index] = MFX_EXTBUFF_VPP_COLOR_CONVERSION;
         index++;
     }
 
@@ -1751,6 +1772,14 @@ mfxStatus GetPipelineList(
         if( !IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_SCALING ) )
         {
             pipelineList.push_back( MFX_EXTBUFF_VPP_SCALING );
+        }
+    }
+
+    if (IsFilterFound(&configList[0], configCount, MFX_EXTBUFF_VPP_COLOR_CONVERSION) && !IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_COLOR_CONVERSION))
+    {
+        if (!IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_COLOR_CONVERSION))
+        {
+            pipelineList.push_back(MFX_EXTBUFF_VPP_COLOR_CONVERSION);
         }
     }
 
@@ -2881,6 +2910,10 @@ void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<m
         list.push_back(MFX_EXTBUFF_VPP_SCALING);
     }
 
+    if (caps.uChromaSiting)
+    {
+        list.push_back(MFX_EXTBUFF_VPP_COLOR_CONVERSION);
+    }
     /* FIELD Copy is always present*/
     list.push_back(MFX_EXTBUFF_VPP_FIELD_PROCESSING);
     /* Composition is always present*/

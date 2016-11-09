@@ -598,6 +598,11 @@ mfxStatus FastCompositingDDI::QueryCapabilities(mfxVppCaps& caps)
         caps.uScaling = 1;
     }
 
+    if (TRUE == m_caps2.bChromaSitingControl)
+    {
+        caps.uChromaSiting = 1;
+    }
+
     caps.iNumBackwardSamples = m_caps.sPrimaryVideoCaps.iNumBackwardSamples;
     caps.iNumForwardSamples  = m_caps.sPrimaryVideoCaps.iNumForwardSamples;
 
@@ -1195,6 +1200,77 @@ mfxStatus FastCompositingDDI::Execute(mfxExecuteParams *pParams)
         bltParams.ScalingModeObject = scalingObject;
     //}
 
+    //{
+        FASTCOMP_CHROMASUBSAMPLING_PARAMS_V1_0 chromaSitingParams = { 0 };
+        FASTCOMP_BLT_PARAMS_OBJECT chromaSitingObject;
+        bool  bExternalChromeSiting = true;
+
+        if (m_caps2.bChromaSitingControl)
+        {
+            switch (pParams->chromaSiting)
+            {
+                /*
+                MFX_CHROMA_SITING_UNKNOWN = 0x0000,
+                MFX_CHROMA_SITING_VERTICAL_TOP = 0x0001, // Chroma samples are co-sited vertically on the top with the luma samples.
+                MFX_CHROMA_SITING_VERTICAL_CENTER = 0x0002, // Chroma samples are not co-sited vertically with the luma samples.
+                MFX_CHROMA_SITING_VERTICAL_BOTTOM = 0x0004, // Chroma samples are co-sited vertically on the bottom with the luma samples.
+                MFX_CHROMA_SITING_HORIZONTAL_LEFT = 0x0010, // Chroma samples are co-sited horizontally on the left with the luma samples.
+                MFX_CHROMA_SITING_HORIZONTAL_CENTER = 0x0020  // Chroma samples are not co-sited horizontally with the luma samples.
+                */
+
+                /*
+                3.4.11 [PreP] Support for ChromaSiting Setting
+                0: (option A),
+                1 : (option B),
+                2 : (option AC)
+                3 : (option BD)
+                4 : (option AB)
+                5 : (option ABCD)
+                */
+            case MFX_CHROMA_SITING_HORIZONTAL_LEFT | MFX_CHROMA_SITING_VERTICAL_TOP:
+                //Option A : Chroma samples are aligned horizontally and vertically with multiples of the luma samples
+                chromaSitingParams.Chroma_siting = 0;
+                break;
+            case MFX_CHROMA_SITING_HORIZONTAL_LEFT | MFX_CHROMA_SITING_VERTICAL_CENTER:
+                //Option AB : Chroma samples are vertically centered between, but horizontally aligned with luma samples.
+                chromaSitingParams.Chroma_siting = 4;
+                break;
+            case MFX_CHROMA_SITING_HORIZONTAL_LEFT | MFX_CHROMA_SITING_VERTICAL_BOTTOM:
+                //Option B : Chroma samples are horizontally aligned and vertically 1 pixel offset to the bottom.
+                chromaSitingParams.Chroma_siting = 1;
+                break;
+            case MFX_CHROMA_SITING_HORIZONTAL_CENTER | MFX_CHROMA_SITING_VERTICAL_CENTER:
+                //Option ABCD : Chroma samples are centered between luma samples both horizontally and vertically.
+                chromaSitingParams.Chroma_siting = 5;
+                break;
+            case MFX_CHROMA_SITING_HORIZONTAL_CENTER | MFX_CHROMA_SITING_VERTICAL_TOP:
+                //Option AC : Chroma samples are vertically aligned with, and horizontally centered between luma
+                chromaSitingParams.Chroma_siting = 2;
+                break;
+            case MFX_CHROMA_SITING_HORIZONTAL_CENTER | MFX_CHROMA_SITING_VERTICAL_BOTTOM:
+                //Option BD : Chroma samples are horizontally 0.5 pixel offset to the right and vertically 1 pixel offset to the bottom.
+                chromaSitingParams.Chroma_siting = 3;
+                break;
+            case MFX_CHROMA_SITING_UNKNOWN:
+            default:
+                bExternalChromeSiting = false;
+            }
+        }
+        if (m_caps2.bChromaSitingControl && bExternalChromeSiting)
+        {
+            chromaSitingObject.type = FASTCOMP_FEATURES_CHROMASITING_V1_0;
+            chromaSitingObject.pParams = (void *)&chromaSitingParams;
+            chromaSitingObject.iSizeofParams = sizeof(chromaSitingParams);
+        }
+        else
+        {
+            chromaSitingObject.type = FASTCOMP_FEATURES_CHROMASITING_V1_0;
+            chromaSitingObject.pParams = NULL;
+            chromaSitingObject.iSizeofParams = 0;
+        }
+
+        bltParams.ChromaSitingObject = chromaSitingObject;
+    //}
     sts = ExecuteBlt( &bltParams );
     MFX_CHECK_STS(sts);
 

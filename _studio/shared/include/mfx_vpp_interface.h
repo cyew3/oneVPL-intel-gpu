@@ -265,6 +265,8 @@ namespace MfxHwVideoProcessing
 
         mfxU32 uScaling;
 
+        mfxU32 uChromaSiting;
+
         std::map <mfxU32, mfxU32> mFormatSupport;
 
         mfxU32 uMirroring;
@@ -290,6 +292,7 @@ namespace MfxHwVideoProcessing
             , uFieldWeavingControl(0)
             , uRotation(0)
             , uScaling(0)
+            , uChromaSiting(0)
             , mFormatSupport()
             , uMirroring(0)
         {
@@ -377,6 +380,7 @@ namespace MfxHwVideoProcessing
                ,Camera3DLUT()
                ,rotation(0)
                ,scalingMode(MFX_SCALING_MODE_DEFAULT)
+               ,chromaSiting(MFX_CHROMA_SITING_UNKNOWN)
                ,bEOS(false)
                ,mirroring(0)
                ,mirroringPosition(0)
@@ -471,6 +475,8 @@ namespace MfxHwVideoProcessing
         int         rotation;
 
         mfxU16      scalingMode;
+
+        mfxU16      chromaSiting;
 
         bool        bEOS;
 

@@ -111,7 +111,8 @@ typedef struct tagPREPROC_QUERYCAPS
     UINT bVariance           : 1;
     UINT bFieldWeavingControl: 1;
     UINT bScalingMode        : 1;
-    UINT Reserved            : 25;
+    UINT bChromaSitingControl: 1;
+    UINT Reserved            : 24;
 
 } PREPROC_QUERYCAPS;
 
@@ -218,6 +219,7 @@ enum
     VPE_FN_VPREP_GET_VARIANCE_PARAM  = 0x35,
     VPE_FN_VPREP_YUV_RANGE_PARAM     = 0x36,
     VPE_FN_VPREP_SCALING_MODE_PARAM  = 0x37,
+    VPE_FN_VPREP_CHROMA_SITING_MODE_PARAM = 0x38,
 
     VPE_FN_CP_QUERY_CAPS                     = 0x100,
     VPE_FN_CP_ACTIVATE_CAMERA_PIPE           = 0x101,
@@ -378,7 +380,8 @@ typedef struct _VPE_VPREP_CAPS
     UINT    bFieldWeavingControl    :  1;
     UINT    bVariances              :  1;
     UINT    bScalingMode            :  1;
-    UINT    Reserved                : 27;
+    UINT    bChromaSitingControl    :  1;
+    UINT    Reserved                : 26;
 } VPE_VPREP_CAPS;
 
 
@@ -455,6 +458,11 @@ typedef struct _VPE_VPREP_SCALING_MODE_PARAM
 {
     BOOL               FastMode;   // [in]
 } VPE_VPREP_SCALING_MODE_PARAM;
+
+typedef struct _VPE_VPREP_CHROMASITING_PARAM
+{
+    UINT    Chroma_siting; // [in]
+} VPE_VPREP_CHROMASITING_PARAM;
 
 // CameraPipe Interface
 
@@ -651,7 +659,7 @@ typedef struct _VPE_FUNCTION
         VPE_VPREP_GET_VARIANCE_PARAMS           *pGetVarianceParam;
         VPE_VPREP_YUV_RANGE_PARAM               *pYUVRangeParam;
         VPE_VPREP_SCALING_MODE_PARAM            *pScalingModeParam;
-
+        VPE_VPREP_CHROMASITING_PARAM            *pChromaSitingParam;
     };
 } VPE_FUNCTION;
 
@@ -742,6 +750,8 @@ namespace MfxHwVideoProcessing
         mfxStatus CameraPipeSetVignetteParams(CameraVignetteCorrectionParams *params);
         mfxStatus CameraPipeSetLensParams(CameraLensCorrectionParams *params);
         mfxStatus SetStreamScalingMode(UINT StreamIndex, VPE_VPREP_SCALING_MODE_PARAM param);
+        mfxStatus SetStreamChromaSiting(UINT StreamIndex, VPE_VPREP_CHROMASITING_PARAM param);
+
         mfxStatus GetEventHandle(HANDLE * pHandle);
 
         void SetOutputTargetRect(BOOL Enable, RECT *pRect);

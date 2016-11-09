@@ -1551,6 +1551,12 @@ mfxStatus VideoVPPHW::GetVideoParams(mfxVideoParam *par) const
             MFX_CHECK_NULL_PTR1(bufSc);
             bufSc->ScalingMode = m_executeParams.scalingMode;
         }
+        else if (MFX_EXTBUFF_VPP_COLOR_CONVERSION == bufferId)
+        {
+            mfxExtColorConversion *bufSc = reinterpret_cast<mfxExtColorConversion *>(par->ExtParam[i]);
+            MFX_CHECK_NULL_PTR1(bufSc);
+            bufSc->ChromaSiting = m_executeParams.chromaSiting;
+        }
         else if (MFX_EXTBUFF_VPP_MIRRORING == bufferId)
         {
             mfxExtVPPMirroring *bufMir = reinterpret_cast<mfxExtVPPMirroring *>(par->ExtParam[i]);
@@ -3676,6 +3682,43 @@ mfxStatus ConfigureExecuteParams(
 
                 break;
             }
+            case MFX_EXTBUFF_VPP_COLOR_CONVERSION:
+            {
+                if (caps.uChromaSiting )
+                {
+                    for (mfxU32 i = 0; i < videoParam.NumExtParam; i++)
+                    {
+                        if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_COLOR_CONVERSION)
+                        {
+                            mfxExtColorConversion *extCC = (mfxExtColorConversion*)videoParam.ExtParam[i];
+
+                            switch (extCC->ChromaSiting)
+                            {
+                            case MFX_CHROMA_SITING_HORIZONTAL_LEFT | MFX_CHROMA_SITING_VERTICAL_TOP:
+                            case MFX_CHROMA_SITING_HORIZONTAL_LEFT | MFX_CHROMA_SITING_VERTICAL_CENTER:
+                            case MFX_CHROMA_SITING_HORIZONTAL_LEFT | MFX_CHROMA_SITING_VERTICAL_BOTTOM:
+                            case MFX_CHROMA_SITING_HORIZONTAL_CENTER | MFX_CHROMA_SITING_VERTICAL_CENTER:
+                            case MFX_CHROMA_SITING_HORIZONTAL_CENTER | MFX_CHROMA_SITING_VERTICAL_TOP:
+                            case MFX_CHROMA_SITING_HORIZONTAL_CENTER | MFX_CHROMA_SITING_VERTICAL_BOTTOM:
+                            case MFX_CHROMA_SITING_UNKNOWN:
+                                // valid values
+                                break;
+                            default:
+                                //bad combination of flags
+                                return MFX_ERR_INVALID_VIDEO_PARAM;
+                            }
+
+                            executeParams.chromaSiting = extCC->ChromaSiting;
+                        }
+                    }
+                }
+                else
+                {
+                    bIsFilterSkipped = true;
+                }
+
+                break;
+            }
             case MFX_EXTBUFF_VPP_MIRRORING:
             {
                 if (caps.uMirroring)
@@ -4223,6 +4266,10 @@ mfxStatus ConfigureExecuteParams(
                 else if (MFX_EXTBUFF_VPP_SCALING == bufferId)
                 {
                     executeParams.scalingMode = MFX_SCALING_MODE_DEFAULT;
+                }
+                else if (MFX_EXTBUFF_VPP_COLOR_CONVERSION == bufferId)
+                {
+                    executeParams.chromaSiting = MFX_CHROMA_SITING_UNKNOWN;
                 }
                 else if (MFX_EXTBUFF_VPP_MIRRORING == bufferId)
                 {

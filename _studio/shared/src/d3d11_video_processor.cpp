@@ -608,6 +608,8 @@ mfxStatus D3D11VideoProcessor::QueryVPE_AndExtCaps(void)
         m_vpreCaps.bFieldWeavingControl = vpeCaps.bFieldWeavingControl;
         m_vpreCaps.bVariance            = vpeCaps.bVariances;
         m_vpreCaps.bScalingMode         = vpeCaps.bScalingMode;
+        m_vpreCaps.bChromaSitingControl         = vpeCaps.bChromaSitingControl;
+
 #ifdef DEBUG_DETAIL_INFO
         printf("Success: VPE VPREP CAPS\n");
 
@@ -1948,6 +1950,24 @@ mfxStatus D3D11VideoProcessor::SetStreamScalingMode(UINT streamIndex, VPE_VPREP_
     return MFX_ERR_NONE;
 }
 
+mfxStatus D3D11VideoProcessor::SetStreamChromaSiting(UINT streamIndex, VPE_VPREP_CHROMASITING_PARAM param)
+{
+    HRESULT hRes;
+    VPE_FUNCTION iFunc;
+
+    iFunc.Function = VPE_FN_VPREP_CHROMA_SITING_MODE_PARAM;
+    iFunc.pChromaSitingParam = &param;
+
+    streamIndex = 0;
+    hRes = SetStreamExtension(
+        streamIndex,
+        &(m_iface.guid),
+        sizeof(VPE_FUNCTION),
+        &iFunc);
+    CHECK_HRES(hRes);
+
+    return MFX_ERR_NONE;
+}
 mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
 {
     MFX_CHECK_NULL_PTR1(pParams);
@@ -2186,6 +2206,66 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         MFX_CHECK_STS(sts);
     }
 
+    if (m_vpreCaps.bChromaSitingControl)
+    {
+        VPE_VPREP_CHROMASITING_PARAM chromaSitingParams = { 0 };
+        bool  bExternalChromeSiting = true;
+
+        switch (pParams->chromaSiting)
+        {
+            /*
+            MFX_CHROMA_SITING_UNKNOWN = 0x0000,
+            MFX_CHROMA_SITING_VERTICAL_TOP = 0x0001, // Chroma samples are co-sited vertically on the top with the luma samples.
+            MFX_CHROMA_SITING_VERTICAL_CENTER = 0x0002, // Chroma samples are not co-sited vertically with the luma samples.
+            MFX_CHROMA_SITING_VERTICAL_BOTTOM = 0x0004, // Chroma samples are co-sited vertically on the bottom with the luma samples.
+            MFX_CHROMA_SITING_HORIZONTAL_LEFT = 0x0010, // Chroma samples are co-sited horizontally on the left with the luma samples.
+            MFX_CHROMA_SITING_HORIZONTAL_CENTER = 0x0020  // Chroma samples are not co-sited horizontally with the luma samples.
+            */
+
+            /*
+            3.4.11 [PreP] Support for ChromaSiting Setting
+            0: (option A),
+            1 : (option B),
+            2 : (option AC)
+            3 : (option BD)
+            4 : (option AB)
+            5 : (option ABCD)
+            */
+        case MFX_CHROMA_SITING_HORIZONTAL_LEFT | MFX_CHROMA_SITING_VERTICAL_TOP:
+            //Option A : Chroma samples are aligned horizontally and vertically with multiples of the luma samples
+            chromaSitingParams.Chroma_siting = 0;
+            break;
+        case MFX_CHROMA_SITING_HORIZONTAL_LEFT | MFX_CHROMA_SITING_VERTICAL_CENTER:
+            //Option AB : Chroma samples are vertically centered between, but horizontally aligned with luma samples.
+            chromaSitingParams.Chroma_siting = 4;
+            break;
+        case MFX_CHROMA_SITING_HORIZONTAL_LEFT | MFX_CHROMA_SITING_VERTICAL_BOTTOM:
+            //Option B : Chroma samples are horizontally aligned and vertically 1 pixel offset to the bottom.
+            chromaSitingParams.Chroma_siting = 1;
+            break;
+        case MFX_CHROMA_SITING_HORIZONTAL_CENTER | MFX_CHROMA_SITING_VERTICAL_CENTER:
+            //Option ABCD : Chroma samples are centered between luma samples both horizontally and vertically.
+            chromaSitingParams.Chroma_siting = 5;
+            break;
+        case MFX_CHROMA_SITING_HORIZONTAL_CENTER | MFX_CHROMA_SITING_VERTICAL_TOP:
+            //Option AC : Chroma samples are vertically aligned with, and horizontally centered between luma
+            chromaSitingParams.Chroma_siting = 2;
+            break;
+        case MFX_CHROMA_SITING_HORIZONTAL_CENTER | MFX_CHROMA_SITING_VERTICAL_BOTTOM:
+            //Option BD : Chroma samples are horizontally 0.5 pixel offset to the right and vertically 1 pixel offset to the bottom.
+            chromaSitingParams.Chroma_siting = 3;
+            break;
+        case MFX_CHROMA_SITING_UNKNOWN:
+        default:
+            bExternalChromeSiting = false;
+        }
+
+        if (bExternalChromeSiting)
+        {
+            sts = SetStreamChromaSiting(0, chromaSitingParams);
+            MFX_CHECK_STS(sts);
+        }
+    }
     // [4] ProcAmp
     if(pParams->bEnableProcAmp)
     {
@@ -2921,6 +3001,7 @@ mfxStatus D3D11VideoProcessor::QueryCapabilities(mfxVppCaps& caps)
     caps.uIStabFilter   = m_vpreCaps.bIS;
     caps.uVariance      = m_vpreCaps.bVariance;
     caps.uScaling       = m_vpreCaps.bScalingMode;
+    caps.uChromaSiting  = m_vpreCaps.bChromaSitingControl;
     if(caps.uVariance)
     {
         caps.iNumBackwardSamples = 1; // from the spec 1.8

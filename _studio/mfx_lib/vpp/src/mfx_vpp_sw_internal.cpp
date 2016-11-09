@@ -833,6 +833,11 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
                 break;
             }
 
+            case (mfxU32)MFX_EXTBUFF_VPP_COLOR_CONVERSION:
+            {
+                break;
+            }
+
             case (mfxU32)MFX_EXTBUFF_VPP_MIRRORING:
             {
                 break;
