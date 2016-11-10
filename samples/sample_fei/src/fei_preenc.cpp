@@ -964,7 +964,7 @@ void FEI_PreencInterface::UpsampleMVP(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB * p
 {
     static mfxI16 MVZigzagOrder[16] = { 0, 1, 4, 5, 2, 3, 6, 7, 8, 9, 12, 13, 10, 11, 14, 15 };
 
-    static mfxU16 widthMB_ds = MSDK_ALIGN16(m_DSParams.vpp.Out.Width), widthMB_full = MSDK_ALIGN16(m_DSParams.vpp.In.Width);
+    static mfxU16 widthMB_ds = (m_DSParams.vpp.Out.Width + 15) >> 4, widthMB_full = (m_DSParams.vpp.In.Width + 15) >> 4;
 
     mfxU16 mv_idx;
     mfxU32 encMBidx;
