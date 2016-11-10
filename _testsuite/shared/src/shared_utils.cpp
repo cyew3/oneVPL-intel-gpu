@@ -483,7 +483,7 @@ mfxStatus ExtendMFXBitstream(mfxBitstream* pBS)
     return MFX_ERR_NONE;
 }
 
-mfxStatus InitMfxFrameSurface(mfxFrameSurface1* pSurface, mfxFrameInfo* pFrameInfo, mfxU32* pFrameSize, bool bPadding)
+mfxStatus InitMfxFrameSurface(mfxFrameSurface1* pSurface, const mfxFrameInfo* pFrameInfo, mfxU32* pFrameSize, bool bPadding)
 {
     mfxU8  nBitsPerPixel = 0;
     mfxU8  padding = (bPadding)? 32 : 0;

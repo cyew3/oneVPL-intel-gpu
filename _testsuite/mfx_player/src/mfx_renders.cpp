@@ -23,6 +23,8 @@ File Name: .h
 #include "lucas.h"
 #include "shared_utils.h"
 
+#include "mfx_sysmem_allocator.h"
+
 //////////////////////////////////////////////////////////////////////////
 
 MFXVideoRender::MFXVideoRender( IVideoSession * core
@@ -198,7 +200,216 @@ mfxStatus MFXVideoRender::GetDevice(IHWDevice **ppDevice)
 
 
 //////////////////////////////////////////////////////////////////////////
+#include <mfxplugin++.h>
 
+class HWtoSYSCopier : public MFXGenericPlugin
+{
+public:
+    HWtoSYSCopier(mfxSession session);
+    virtual ~HWtoSYSCopier();
+
+    // methods to be called by Media SDK
+    virtual mfxStatus PluginInit(mfxCoreInterface *core);
+    virtual mfxStatus Init(mfxVideoParam *mfxParam);
+    virtual mfxStatus SetAuxParams(void* auxParam, int auxParamSize);
+    virtual mfxStatus PluginClose();
+    virtual mfxStatus GetPluginParam(mfxPluginParam *par);
+    virtual mfxStatus Submit(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxThreadTask *task);
+    virtual mfxStatus Execute(mfxThreadTask task, mfxU32 uid_p, mfxU32 uid_a);
+    virtual mfxStatus FreeResources(mfxThreadTask task, mfxStatus sts);
+    virtual void Release(){}
+    // methods to be called by application
+    virtual mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out);
+    static HWtoSYSCopier* CreateGenericPlugin(mfxSession session) {
+        HWtoSYSCopier *copier = new HWtoSYSCopier(session);
+        mfxPlugin plg = make_mfx_plugin_adapter((MFXGenericPlugin*)copier);
+        mfxStatus sts = MFXVideoUSER_Register(session, MFX_PLUGINTYPE_VIDEO_GENERAL, &plg);
+        if (MFX_ERR_NONE != sts)
+            return 0;
+
+        return copier;
+    }
+
+    virtual mfxStatus Close();
+
+    mfxStatus Copy(mfxFrameSurface1 * in, mfxFrameSurface1 **out);
+
+protected:
+    bool m_bInited;
+    MFXCoreInterface m_mfxCore;
+    mfxSession m_session;
+
+    SysMemFrameAllocator m_alloc;
+    mfxFrameSurface1 m_surfaceForCopy;
+    mfxFrameAllocResponse m_response;
+    mfxMemId mid;
+};
+
+HWtoSYSCopier::HWtoSYSCopier(mfxSession session)
+    : m_bInited(false)
+    , m_session(session)
+    , mid(0)
+{
+}
+
+HWtoSYSCopier::~HWtoSYSCopier()
+{
+    PluginClose();
+    Close();
+}
+
+/* Methods required for integration with Media SDK */
+mfxStatus HWtoSYSCopier::PluginInit(mfxCoreInterface *core)
+{
+    if (!core)
+        return MFX_ERR_NULL_PTR;
+    m_mfxCore = MFXCoreInterface(*core);
+    mfxStatus sts = m_alloc.Init(0);
+    MFX_CHECK_STS(sts);
+    MFX_ZERO_MEM(m_surfaceForCopy);
+    MFX_ZERO_MEM(m_response);
+    m_bInited = true;
+    return MFX_ERR_NONE;
+}
+
+mfxStatus HWtoSYSCopier::PluginClose()
+{
+    if (m_response.NumFrameActual)
+        m_alloc.FreeFrames(&m_response);
+
+    m_alloc.Close();
+    m_bInited = false;
+    return MFX_ERR_NONE;
+}
+
+mfxStatus HWtoSYSCopier::GetPluginParam(mfxPluginParam *)
+{
+    return MFX_ERR_NONE;
+}
+
+mfxStatus HWtoSYSCopier::Copy(mfxFrameSurface1 * in, mfxFrameSurface1 **out)
+{
+    if (!out)
+        return MFX_ERR_NULL_PTR;
+
+    *out = 0;
+
+    if (in->Data.Y || in->Data.U || in->Data.V || !in->Data.MemId)
+    {
+        return MFX_ERR_NONE;
+    }
+
+    mfxStatus sts = MFX_ERR_NONE;
+    if (m_surfaceForCopy.Info.Width != in->Info.Width ||
+        m_surfaceForCopy.Info.Height != in->Info.Height ||
+        m_surfaceForCopy.Info.BitDepthChroma != in->Info.BitDepthChroma ||
+        m_surfaceForCopy.Info.BitDepthLuma != in->Info.BitDepthLuma ||
+        m_surfaceForCopy.Info.Shift != in->Info.Shift ||
+        m_surfaceForCopy.Info.ChromaFormat != in->Info.ChromaFormat)
+    {
+        mfxFrameAllocRequest request;
+        MFX_ZERO_MEM(request);
+        MFX_ZERO_MEM(m_response);
+        MFX_ZERO_MEM(m_surfaceForCopy);
+
+        request.AllocId = 0;
+        request.Info = in->Info;
+        request.NumFrameMin = request.NumFrameSuggested = 1;
+        request.Type = MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_VPPIN;
+        sts = m_alloc.AllocFrames(&request, &m_response);
+        MFX_CHECK_STS(sts);
+        if (m_response.NumFrameActual < 1)
+        {
+            return MFX_ERR_MEMORY_ALLOC;
+        }
+
+        mid = m_response.mids[0];
+        sts = m_alloc.LockFrame(mid, &m_surfaceForCopy.Data);
+        MFX_CHECK_STS(sts);
+        m_surfaceForCopy.Info = in->Info;
+    }
+        
+    m_surfaceForCopy.Data.FrameOrder = in->Data.FrameOrder;
+    m_surfaceForCopy.Data.TimeStamp  = in->Data.TimeStamp;
+    m_surfaceForCopy.Data.Corrupted  = in->Data.Corrupted;
+
+    mfxSyncPoint syncp;
+    mfxHDL h1;
+    h1 = in;
+
+    mfxHDL h2;
+    h2 = &m_surfaceForCopy;
+
+    sts = MFXVideoUSER_ProcessFrameAsync(m_session, &h1, 1, &h2, 1, &syncp);
+    if (sts == MFX_ERR_NONE)
+    {
+        *out = &m_surfaceForCopy;
+    }
+
+    return sts;
+}
+
+mfxStatus HWtoSYSCopier::Submit(const mfxHDL *in, mfxU32 in_num, const mfxHDL *out, mfxU32 out_num, mfxThreadTask *task)
+{
+    if (!in || !out || out_num != 1 || in_num != 1)
+        return MFX_ERR_NULL_PTR;
+
+    mfxFrameSurface1 *surface_in = (mfxFrameSurface1 *)in[0];
+    mfxFrameSurface1 *surface_out = (mfxFrameSurface1 *)out[0];
+
+    *task = 0;
+
+    surface_out->Data.Corrupted = surface_in->Data.Corrupted;
+    return m_mfxCore.CopyFrame(surface_out, surface_in);
+}
+
+mfxStatus HWtoSYSCopier::Execute(mfxThreadTask , mfxU32 , mfxU32 )
+{
+    if (!m_bInited)
+        return MFX_ERR_NOT_INITIALIZED;
+
+    return MFX_TASK_DONE;
+}
+
+mfxStatus HWtoSYSCopier::FreeResources(mfxThreadTask , mfxStatus )
+{
+    return MFX_ERR_NONE;
+}
+
+mfxStatus HWtoSYSCopier::Init(mfxVideoParam *)
+{
+    m_bInited = true;
+    return MFX_ERR_NONE;
+}
+
+mfxStatus HWtoSYSCopier::SetAuxParams(void* , int )
+{
+    return MFX_ERR_NONE;
+}
+
+mfxStatus HWtoSYSCopier::Close()
+{
+    if (!m_bInited)
+        return MFX_ERR_NONE;
+
+    m_bInited = false;
+    return MFX_ERR_NONE;
+}
+
+mfxStatus HWtoSYSCopier::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out)
+{
+    if (!par || !in || !out)
+        return MFX_ERR_NULL_PTR;
+
+    in->Info = par->vpp.In;
+    in->NumFrameSuggested = in->NumFrameMin = par->AsyncDepth + 1;
+
+    out->Info = par->vpp.Out;
+    out->NumFrameSuggested = out->NumFrameMin = par->AsyncDepth + 1;
+    return MFX_ERR_NONE;
+}
+
+//////////////////////////////////////////////////////////////////////////
 MFXFileWriteRender::MFXFileWriteRender(const FileWriterRenderInputParams &params, IVideoSession * core, mfxStatus *status)
     : MFXVideoRender(core, status)
     , m_params(params)
@@ -209,7 +420,16 @@ MFXFileWriteRender::MFXFileWriteRender(const FileWriterRenderInputParams &params
     //m_fDest = NULL;
     m_nTimesClosed = 0;
     m_bCreateNewFileOnClose = false;
-  
+
+    MFX_ZERO_MEM(m_surfaceForCopy);
+    m_copier = HWtoSYSCopier::CreateGenericPlugin(core->GetMFXSession());
+    if (!m_copier)
+    {
+        if (status)
+            *status = MFX_ERR_MEMORY_ALLOC;
+        else
+            throw 1;
+    }
 }
 
 MFXFileWriteRender::~MFXFileWriteRender()
@@ -326,12 +546,16 @@ mfxStatus MFXFileWriteRender::Close()
     if (ptr)
         delete [] ptr;
     MFX_ZERO_MEM(m_yv12Surface);
+
+    ptr = MFX_MIN_POINTER(MFX_MIN_POINTER(m_surfaceForCopy.Data.Y, m_surfaceForCopy.Data.U), MFX_MIN_POINTER(m_surfaceForCopy.Data.V, m_surfaceForCopy.Data.A));
+    if (ptr)
+        delete [] ptr;
+    MFX_ZERO_MEM(m_surfaceForCopy);
+
     m_nTimesClosed++;
     
     return MFX_ERR_NONE;
 }
-
-
 
 mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncodeCtrl * pCtrl)
 {
@@ -350,15 +574,25 @@ mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncode
 
     mfxFrameSurface1 * pConvertedSurface = pSurface;
     
-    MFX_CHECK_STS(LockFrame(pSurface));
-    
+#if 1
+    mfxFrameSurface1 *surf;
+    mfxStatus sts = m_copier->Copy(pSurface, &surf);
+    if (sts == MFX_ERR_NONE && surf)
+    {
+        pSurface = surf;
+    } else
+#endif
+        MFX_CHECK_STS(LockFrame(pSurface));
+
     //so target fourcc is different than input
     if (m_nFourCC != pSurface->Info.FourCC)
     {
         if (pSurface->Info.Width != m_yv12Surface.Info.Width || pSurface->Info.Height != m_yv12Surface.Info.Height)
         {
             // reallocate
-            delete [] m_yv12Surface.Data.Y;
+            mfxU8* ptr = MFX_MIN_POINTER(MFX_MIN_POINTER(m_yv12Surface.Data.Y, m_yv12Surface.Data.U), MFX_MIN_POINTER(m_yv12Surface.Data.V, m_yv12Surface.Data.A));
+            if (ptr)
+                delete [] ptr;
             mfxU32 nOldCC = m_VideoParams.mfx.FrameInfo.FourCC;
             if (!m_params.useHMstyle)
             {
@@ -1818,7 +2052,7 @@ mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1*
     return pSurfaceOut;
 }
 
-mfxStatus       AllocSurface(mfxFrameInfo *pTargetInfo, mfxFrameSurface1* pSurfaceOut)
+mfxStatus       AllocSurface(const mfxFrameInfo *pTargetInfo, mfxFrameSurface1* pSurfaceOut)
 {
     if (!pTargetInfo->FourCC)
         return MFX_ERR_NONE;

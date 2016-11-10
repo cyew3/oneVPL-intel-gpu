@@ -93,6 +93,7 @@ protected:
     virtual mfxStatus UnlockFrame(mfxFrameSurface1 *surface);
 };
 
+class HWtoSYSCopier;
 class MFXFileWriteRender : public MFXVideoRender
 {
 public :
@@ -122,6 +123,9 @@ protected:
     int                m_nTimesClosed;
     std::map<int, char*>m_lucas_buffer; //per view buffer
 
+    HWtoSYSCopier * m_copier;
+    mfxFrameSurface1 m_surfaceForCopy;
+
     struct FramePosition
     {
         mfxU32 m_pixX;
@@ -130,7 +134,6 @@ protected:
         mfxF64 m_valTst;
         vm_char  m_comp;//plane
     } m_Current;
-    
 };
 
 class MFXBMPRender : public MFXFileWriteRender
@@ -245,6 +248,6 @@ protected:
 };
 
 mfxFrameSurface1* ConvertSurface(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1* pSurfaceOut, FileWriterRenderInputParams * params);
-mfxStatus       AllocSurface(mfxFrameInfo *pTargetInfo, mfxFrameSurface1* pSurfaceOut);
+mfxStatus       AllocSurface(const mfxFrameInfo *pTargetInfo, mfxFrameSurface1* pSurfaceOut);
 
 #endif //__MFX_RENDERS_H

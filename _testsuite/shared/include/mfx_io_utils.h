@@ -22,7 +22,7 @@ mfxStatus FrameRate2Code(mfxF64 framerate, mfxFrameInfo* info);
 mfxF64    GetFrameRate(mfxFrameInfo* info);
 
 mfxStatus InitMfxBitstream(mfxBitstream *pBitstream, mfxVideoParam* pParams);
-mfxStatus InitMfxFrameSurface(mfxFrameSurface1* pSurface, mfxFrameInfo* pFrameInfo, mfxU32* pFrameSize, bool bPadding = false);
+mfxStatus InitMfxFrameSurface(mfxFrameSurface1* pSurface, const mfxFrameInfo* pFrameInfo, mfxU32* pFrameSize, bool bPadding = false);
 
 class CYUVReader
 {
