@@ -1169,11 +1169,12 @@ mfxStatus CheckDRCParams(AppConfig* pConfig)
         return MFX_ERR_NONE;
     }
 
+    /*
     if (pConfig->bENCPAK || pConfig->bOnlyENC || pConfig->bOnlyPAK || pConfig->bPREENC)
     {
         fprintf(stderr, "ERROR: Only ENCODE supports Dynamic Resolution Change\n");
         return MFX_ERR_UNSUPPORTED;
-    }
+    } */
 
     for (mfxU32 i = 0; i < pConfig->DRCqueue.size(); ++i)
     {
