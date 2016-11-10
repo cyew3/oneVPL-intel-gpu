@@ -305,9 +305,6 @@ struct AppConfig
         , bFieldProcessingMode(false)
         , bPerfMode(false)
         , bRawRef(false)
-        , bNRefPSpecified(false)
-        , bNRefBL0Specified(false)
-        , bNRefBL1Specified(false)
         , mvinFile(NULL)
         , mbctrinFile(NULL)
         , mvoutFile(NULL)
@@ -415,9 +412,6 @@ struct AppConfig
     bool bFieldProcessingMode;
     bool bPerfMode;
     bool bRawRef;
-    bool bNRefPSpecified;
-    bool bNRefBL0Specified;
-    bool bNRefBL1Specified;
     msdk_char* mvinFile;
     msdk_char* mbctrinFile;
     msdk_char* mvoutFile;

@@ -148,8 +148,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
     const msdk_char* strArgument = MSDK_STRING("");
     msdk_char* stopCharacter;
 
-    bool bRefWSizeSpecified = false, bAlrShownHelp = false,
-         bBRefSet = false, bParseDRC = false;
+    bool bRefWSizeSpecified = false, bAlrShownHelp = false, bBRefSet = false, bParseDRC = false;
 
     if (1 == nArgNum)
     {
@@ -334,19 +333,16 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-num_active_P")))
         {
-            pConfig->bNRefPSpecified = true;
             i++;
             pConfig->NumRefActiveP = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-num_active_BL0")))
         {
-            pConfig->bNRefBL0Specified = true;
             i++;
             pConfig->NumRefActiveBL0 = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-num_active_BL1")))
         {
-            pConfig->bNRefBL1Specified = true;
             i++;
             pConfig->NumRefActiveBL1 = (mfxU16)msdk_strtol(strInput[i], &stopCharacter, 10);
         }
@@ -795,6 +791,37 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         pConfig->ColorFormat = MFX_FOURCC_YV12;
     }
 
+    // Check references lists limits
+    if (pConfig->NumRefActiveP == 0)
+    {
+        pConfig->NumRefActiveP = MaxNumActiveRefP;
+    }
+    else if (pConfig->NumRefActiveP > MaxNumActiveRefP)
+    {
+        pConfig->NumRefActiveP = MaxNumActiveRefP;
+        msdk_printf(MSDK_STRING("\nWARNING: Unsupported number of P frame references, adjusted to maximum (%d)\n"), MaxNumActiveRefP);
+    }
+
+    if (pConfig->NumRefActiveBL0 == 0)
+    {
+        pConfig->NumRefActiveBL0 = MaxNumActiveRefBL0;
+    }
+    else if (pConfig->NumRefActiveBL0 > MaxNumActiveRefBL0)
+    {
+        pConfig->NumRefActiveBL0 = MaxNumActiveRefBL0;
+        msdk_printf(MSDK_STRING("\nWARNING: Unsupported number of B frame backward references, adjusted to maximum (%d)\n"), MaxNumActiveRefBL0);
+    }
+
+    if (pConfig->NumRefActiveBL1 == 0)
+    {
+        pConfig->NumRefActiveBL1 = (pConfig->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? MaxNumActiveRefBL1 : MaxNumActiveRefBL1_i;
+    }
+    else if (pConfig->NumRefActiveBL1 > ((pConfig->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? MaxNumActiveRefBL1 : MaxNumActiveRefBL1_i))
+    {
+        pConfig->NumRefActiveBL1 = (pConfig->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE) ? MaxNumActiveRefBL1 : MaxNumActiveRefBL1_i;
+        msdk_printf(MSDK_STRING("\nWARNING: Unsupported number of B frame forward references, adjusted to maximum (%d (%d for interlaced))\n"), MaxNumActiveRefBL1, MaxNumActiveRefBL1_i);
+    }
+
     if (pConfig->nPicStruct == MFX_PICSTRUCT_UNKNOWN
         && (!pConfig->bDECODE || pConfig->bENCPAK || pConfig->bOnlyPAK || pConfig->bOnlyENC || pConfig->bDynamicRC))
     {
@@ -836,35 +863,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         default:
             break;
         }
-    }
-
-    if (pConfig->NumRefActiveP > MaxNumActiveRefP)
-    {
-        if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nERROR: Unsupported number of P frame references (4 is maximum)\n"));
-        else
-            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported number of P frame references (4 is maximum)"));
-        return MFX_ERR_UNSUPPORTED;
-    }
-
-    if (pConfig->NumRefActiveBL0 > MaxNumActiveRefBL0)
-    {
-        if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nERROR: Unsupported number of B frame backward references (4 is maximum)\n"));
-        else
-            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported number of B frame backward  references (4 is maximum)"));
-        return MFX_ERR_UNSUPPORTED;
-    }
-
-    if ((pConfig->NumRefActiveBL1 > MaxNumActiveRefBL1   && pConfig->nPicStruct == MFX_PICSTRUCT_PROGRESSIVE) ||
-        (pConfig->NumRefActiveBL1 > MaxNumActiveRefBL1_i && pConfig->nPicStruct == MFX_PICSTRUCT_FIELD_TFF)   ||
-        (pConfig->NumRefActiveBL1 > MaxNumActiveRefBL1_i && pConfig->nPicStruct == MFX_PICSTRUCT_FIELD_BFF))
-    {
-        if (bAlrShownHelp)
-            msdk_printf(MSDK_STRING("\nERROR: Unsupported number of B frame forward references (1 is maximum (2 for interlaced))\n"));
-        else
-            PrintHelp(strInput[0], MSDK_STRING("ERROR: Unsupported number of B frame forward  references (1 is maximum (2 for interlaced))"));
-        return MFX_ERR_UNSUPPORTED;
     }
 
     if ((pConfig->SearchWindow != 0) && (pConfig->RefHeight == 0 || pConfig->RefWidth == 0 || pConfig->RefHeight % 4 != 0 || pConfig->RefWidth % 4 != 0 ||
