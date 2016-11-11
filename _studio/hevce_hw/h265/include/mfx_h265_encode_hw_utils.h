@@ -38,7 +38,9 @@
 #define MFX_SORT(_AR, _SZ, _OP) MFX_SORT_COMMON(_AR, _SZ, _AR[_i] _OP _AR[_j])
 #define MFX_SORT_STRUCT(_AR, _SZ, _M, _OP) MFX_SORT_COMMON(_AR, _SZ, _AR[_i]._M _OP _AR[_j]._M)
 
+#ifdef MFX_VA_WIN
 #define MAX_FRAME_SIZE_SUPPORT
+#endif
 
 namespace MfxHwH265Encode
 {
