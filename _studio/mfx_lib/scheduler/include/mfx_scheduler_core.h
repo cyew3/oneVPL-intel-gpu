@@ -449,7 +449,6 @@ protected:
     mfxU32 m_jobCounter;
 
     mfxU32 m_timer_hw_event;
-    mfxU32 m_zero_thread_wait;
 
 #if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)

@@ -74,8 +74,6 @@ mfxSchedulerCore::mfxSchedulerCore(void)
 
     m_timer_hw_event = MFX_THREAD_TIME_TO_WAIT;
 
-    m_zero_thread_wait = 1;
-
 #if defined  (MFX_VA)
 #if defined  (MFX_D3D11_ENABLED)
     m_pdx11event = 0;
@@ -391,17 +389,17 @@ void mfxSchedulerCore::Wait(const mfxU32 curThreadNum)
     MFX_SCHEDULER_THREAD_CONTEXT* thctx = GetThreadCtx(curThreadNum);
 
     if (thctx) {
-        // to avoid thread #0 to sleep too much
-        if (0 == curThreadNum)
-        {
-            //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Wait(1)");
-            thctx->taskAdded.Wait(m_zero_thread_wait);
+        mfxU32 timeout = (curThreadNum)? MFX_THREAD_TIME_TO_WAIT: 1;
+
+#if defined(_WIN32) || defined(_WIN64)
+        // Dedicated thread will poll driver for GPU tasks completion, but
+        // if HW thread exists we can relax this polling
+        if ((0 == curThreadNum) && m_hwTaskDone.handle) {
+            timeout = 15;
         }
-        else
-        {
-            //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Wait(1000)");
-            thctx->taskAdded.Wait(MFX_THREAD_TIME_TO_WAIT);
-        }
+#endif
+
+        thctx->taskAdded.Wait(timeout);
     }
 }
 

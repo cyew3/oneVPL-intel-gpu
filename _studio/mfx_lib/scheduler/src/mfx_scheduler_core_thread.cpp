@@ -26,10 +26,8 @@ mfxStatus mfxSchedulerCore::StartWakeUpThread(void)
     // don't try to check thread status, it might lead to interesting effects.
     if (m_hwWakeUpThread.handle)
         StopWakeUpThread();
-    
-    m_timer_hw_event = MFX_THREAD_TIME_TO_WAIT; //!!!!!! 
-    // wa for case if it will be outside of coming 15.31 Beta
-    //m_timer_hw_event = 10; 
+
+    m_timer_hw_event = MFX_THREAD_TIME_TO_WAIT;
 
 #ifdef MFX_VLV_PLATFORM    
     m_timer_hw_event = 10; //temporary fix for VLV
@@ -51,12 +49,7 @@ mfxStatus mfxSchedulerCore::StartWakeUpThread(void)
         {
             return MFX_ERR_UNKNOWN;
         }
-        m_zero_thread_wait = 15; //let wait 15 ms instead of 1 sec (we might miss event in case of GlobalEvents, it affects latency in multi-instance)
     }
-    else
-        m_zero_thread_wait = 1; // w/o events main thread should poll driver to get status 
-#else
-    m_zero_thread_wait = 1;
 #endif // defined(_WIN32) || defined(_WIN64)
 
     return MFX_ERR_NONE;

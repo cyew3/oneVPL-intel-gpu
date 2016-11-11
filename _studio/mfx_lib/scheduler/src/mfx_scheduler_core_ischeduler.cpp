@@ -242,13 +242,8 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
 #if defined(_WIN32) || defined(_WIN64)
         m_hwTaskDone.handle = CreateEventExW(NULL, 
             _T("Global\\IGFXKMDNotifyBatchBuffersComplete"), 
-                                        CREATE_EVENT_MANUAL_RESET, 
-                                        STANDARD_RIGHTS_ALL | EVENT_MODIFY_STATE);
-    if (m_hwTaskDone.handle)
-        m_zero_thread_wait = 15; // 15 ms will be if we have event notification
-    else 
-        m_zero_thread_wait  = 1;
-    
+            CREATE_EVENT_MANUAL_RESET, 
+            STANDARD_RIGHTS_ALL | EVENT_MODIFY_STATE);
 #endif
 #else
         MFX_CHECK_STS(StartWakeUpThread());
@@ -365,8 +360,8 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
             
             if (MFX_TASK_DONE!= call.res)
             {
-                vm_status vmRes;                    
-                vmRes = vm_event_timed_wait(&m_hwTaskDone, m_zero_thread_wait);
+                vm_status vmRes;
+                vmRes = vm_event_timed_wait(&m_hwTaskDone, 15 /*ms*/);
                 if (VM_OK == vmRes|| VM_TIMEOUT == vmRes)
                 {
                     vmRes = vm_event_reset(&m_hwTaskDone);
@@ -789,9 +784,7 @@ mfxStatus mfxSchedulerCore::AddTask(const MFX_TASK &task, mfxSyncPoint *pSyncPoi
             m_hwTaskDone.handle = m_pdx11event->CreateBatchBufferEvent();
 
             //back original sleep
-            if (m_hwTaskDone.handle)
-                m_zero_thread_wait = 15;
-            else
+            if (!m_hwTaskDone.handle)
             {
                 delete m_pdx11event;
                 m_pdx11event = 0;
