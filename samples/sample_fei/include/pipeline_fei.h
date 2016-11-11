@@ -34,7 +34,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "mfx_itt_trace.h"
 
-#include "pipeline_brc.h"
+#include "brc_routines.h"
 
 // Extensions for internal use, normally these macros are blank
 #ifdef MOD_FEI

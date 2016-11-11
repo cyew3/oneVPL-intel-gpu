@@ -123,7 +123,7 @@
     <ClInclude Include="include\plugin_loader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\pipeline_brc.h">
+    <ClInclude Include="include\brc_routines.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -188,7 +188,7 @@
     <ClCompile Include="src\decode_render.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\pipeline_brc.cpp">
+    <ClCompile Include="src\brc_routines.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
