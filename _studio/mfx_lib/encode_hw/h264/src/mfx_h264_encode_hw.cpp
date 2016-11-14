@@ -1298,9 +1298,13 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
     mfxStatus sts = MFX_ERR_NONE;
 
     /* feiParam buffer attached by application */
-    mfxExtFeiParam* feiParam = (mfxExtFeiParam*)GetExtBuffer(newPar.ExtParam,
-                                                             newPar.NumExtParam,
-                                                             MFX_EXTBUFF_FEI_PARAM);
+    mfxExtFeiParam* feiParam = NULL;
+    if (newParIn)
+    {
+        feiParam = (mfxExtFeiParam*)GetExtBuffer(newParIn->ExtParam,
+                                                 newParIn->NumExtParam,
+                                                 MFX_EXTBUFF_FEI_PARAM);
+    }
     m_isENCPAK = feiParam && (feiParam->Func == MFX_FEI_FUNCTION_ENCODE);
     if ((NULL != feiParam) && (feiParam->Func != MFX_FEI_FUNCTION_ENCODE))
             return MFX_ERR_INVALID_VIDEO_PARAM;
