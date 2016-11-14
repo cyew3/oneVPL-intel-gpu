@@ -93,9 +93,9 @@ else()
   endif()
 
   set(no_warnings "-Wno-deprecated-declarations -Wno-unknown-pragmas -Wno-unused")
-
   set(CMAKE_C_FLAGS "-pipe -fPIC")
   set(CMAKE_CXX_FLAGS "-pipe -fPIC")
+  # CACHE + FORCE should be used only here to make sure that this parameters applied globally
   set(CMAKE_C_FLAGS_DEBUG     "-O0 -Wall ${no_warnings}  -Wformat -Wformat-security -g -D_DEBUG" CACHE STRING "" FORCE)
   set(CMAKE_C_FLAGS_RELEASE   "-O2 -D_FORTIFY_SOURCE=2 -fstack-protector -Wall ${no_warnings} -Wformat -Wformat-security -DNDEBUG"    CACHE STRING "" FORCE)
   set(CMAKE_CXX_FLAGS_DEBUG   "-O0 -Wall ${no_warnings}  -Wformat -Wformat-security -g -D_DEBUG" CACHE STRING "" FORCE)
