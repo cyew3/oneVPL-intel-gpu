@@ -109,6 +109,9 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {MFX_PAR,  &tsStruct::mfxExtVPPDetail.DetailFactor, 50},
         },
         {1, {MFX_EXTBUFF_VPP_DENOISE}}
+    },
+    {/*15*/ MFX_ERR_NONE, INIT, {},
+        { 1, { MFX_EXTBUFF_VPP_COLOR_CONVERSION} }
     }
 };
 

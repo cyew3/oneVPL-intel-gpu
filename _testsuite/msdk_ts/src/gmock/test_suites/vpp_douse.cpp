@@ -78,6 +78,9 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*11*/ MFX_ERR_NONE, 1,
             {MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO}
     },
+    {/*12*/ MFX_ERR_NONE, 1,
+            { MFX_EXTBUFF_VPP_COLOR_CONVERSION }
+    },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
