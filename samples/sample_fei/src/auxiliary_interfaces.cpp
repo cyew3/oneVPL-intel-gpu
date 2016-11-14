@@ -404,7 +404,7 @@ mfxStatus MFX_DecodeInterface::GetOneFrame(mfxFrameSurface1* & pSurf)
         return sts;
     }
 
-    if (sts == MFX_ERR_MORE_DATA || m_bEndOfFile)
+    if (sts == MFX_ERR_MORE_DATA)
     {
         if (m_pAppConfig->nTimeout)
         {

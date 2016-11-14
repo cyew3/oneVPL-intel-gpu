@@ -527,12 +527,10 @@ struct iTask
             inPAK.InSurface->Data.Locked++;
 
             /* ENC & PAK share same reconstructed/reference surface */
-           out.OutSurface = task_params.ReconSurf;
-           out.OutSurface->Data.Locked++;
-           outPAK.OutSurface = task_params.ReconSurf;
-           outPAK.OutSurface->Data.Locked++;
-
-           //outPAK.Bs = task_params.BitStream;
+            out.OutSurface = task_params.ReconSurf;
+            out.OutSurface->Data.Locked++;
+            outPAK.OutSurface = task_params.ReconSurf;
+            outPAK.OutSurface->Data.Locked++;
         }
 
         /* PreENC on downsampled surface */
