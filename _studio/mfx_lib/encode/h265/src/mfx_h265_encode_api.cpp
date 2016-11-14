@@ -1566,6 +1566,9 @@ mfxStatus MFXVideoENCODEH265::Init(mfxVideoParam * par)
         m_extBuffers.extOptHevc.EnableCm = DEFAULT_ENABLE_CM;
 
     mfxStatus paramCheckStatus = CheckParam(m_mfxParam);
+    if (paramCheckStatus == MFX_ERR_UNSUPPORTED)
+        paramCheckStatus = MFX_ERR_INVALID_VIDEO_PARAM;
+
     if (paramCheckStatus < MFX_ERR_NONE)
         return paramCheckStatus;
 

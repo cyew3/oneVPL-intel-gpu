@@ -510,7 +510,7 @@ namespace ExtBuffer
                 }
             }
             if (j >= size)
-                return MFX_ERR_UNSUPPORTED;
+                return MFX_ERR_INVALID_VIDEO_PARAM;
         }
         return bDublicated ? MFX_ERR_UNDEFINED_BEHAVIOR : MFX_ERR_NONE;
     }

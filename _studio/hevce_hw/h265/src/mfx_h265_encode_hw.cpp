@@ -523,6 +523,8 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
         // matching ExtBuffers
         sts = ExtBuffer::CheckBuffers(*in, *out);
+        if (sts == MFX_ERR_INVALID_VIDEO_PARAM)
+            sts = MFX_ERR_UNSUPPORTED;
         MFX_CHECK_STS(sts);
 
         if (m_ddi.get())
@@ -565,6 +567,9 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         MFX_CHECK_STS(sts);
 
         sts = CheckVideoParam(tmp, caps);
+        if (sts == MFX_ERR_INVALID_VIDEO_PARAM)
+            sts = MFX_ERR_UNSUPPORTED;
+
 
         tmp.FillPar(*out, true);
     }

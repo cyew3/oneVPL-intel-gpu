@@ -922,7 +922,7 @@ inline bool isInVideoMem(MfxVideoParam const & par)
 
 mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, bool bInit = false)
 {
-    mfxU32 unsupported = 0, changed = 0, incompatible = 0, invalid = 0;
+    mfxU32 invalid = 0, changed = 0;
     mfxStatus sts = MFX_ERR_NONE;
 
     mfxF64 maxFR   = 300.;
@@ -971,13 +971,13 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if ((!par.mfx.FrameInfo.Width) ||
         (!par.mfx.FrameInfo.Height))
     {
-        return MFX_ERR_UNSUPPORTED;
+        return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
     if (bInit)
     {
-        unsupported += CheckMin(par.mfx.FrameInfo.Width,  Align(par.mfx.FrameInfo.Width,  surfAlignW));
-        unsupported += CheckMin(par.mfx.FrameInfo.Height, Align(par.mfx.FrameInfo.Height, surfAlignH));
+        invalid += CheckMin(par.mfx.FrameInfo.Width,  Align(par.mfx.FrameInfo.Width,  surfAlignW));
+        invalid += CheckMin(par.mfx.FrameInfo.Height, Align(par.mfx.FrameInfo.Height, surfAlignH));
     }
     else
     {
@@ -985,24 +985,24 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         changed += CheckMin(par.mfx.FrameInfo.Height, Align(par.mfx.FrameInfo.Height, surfAlignH));
     }
 
-    unsupported += CheckMax(par.mfx.FrameInfo.Width, caps.MaxPicWidth);
-    unsupported += CheckMax(par.mfx.FrameInfo.Height, caps.MaxPicHeight);
+    invalid += CheckMax(par.mfx.FrameInfo.Width, caps.MaxPicWidth);
+    invalid += CheckMax(par.mfx.FrameInfo.Height, caps.MaxPicHeight);
 
-    incompatible += CheckMax(par.m_ext.HEVCParam.PicWidthInLumaSamples, par.mfx.FrameInfo.Width);
-    incompatible += CheckMax(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.mfx.FrameInfo.Height);
-    changed      += CheckMin(par.m_ext.HEVCParam.PicWidthInLumaSamples, Align(par.m_ext.HEVCParam.PicWidthInLumaSamples, CODED_PIC_ALIGN_W));
-    changed      += CheckMin(par.m_ext.HEVCParam.PicHeightInLumaSamples, Align(par.m_ext.HEVCParam.PicHeightInLumaSamples, CODED_PIC_ALIGN_H));
+    invalid += CheckMax(par.m_ext.HEVCParam.PicWidthInLumaSamples, par.mfx.FrameInfo.Width);
+    invalid += CheckMax(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.mfx.FrameInfo.Height);
+    changed += CheckMin(par.m_ext.HEVCParam.PicWidthInLumaSamples, Align(par.m_ext.HEVCParam.PicWidthInLumaSamples, CODED_PIC_ALIGN_W));
+    changed += CheckMin(par.m_ext.HEVCParam.PicHeightInLumaSamples, Align(par.m_ext.HEVCParam.PicHeightInLumaSamples, CODED_PIC_ALIGN_H));
 
     if(par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN || par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP)
     {
-        unsupported += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 8, 0);
-        unsupported += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 8, 0);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 8, 0);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 8, 0);
     }
 
     if(par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10)
     {
-        unsupported += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 10, 0);
-        unsupported += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 10, 0);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 10, 0);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 10, 0);
         par.mfx.FrameInfo.Shift = 1;
     }
 
@@ -1011,11 +1011,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     {
         par.m_ext.HEVCTiles.NumTileColumns = 1;
         par.m_ext.HEVCTiles.NumTileRows    = 1;
-        unsupported ++;
+        invalid ++;
     }
 
-    unsupported += CheckMax(par.m_ext.HEVCTiles.NumTileColumns, (mfxU32)MAX_NUM_TILE_COLUMNS);
-    unsupported += CheckMax(par.m_ext.HEVCTiles.NumTileRows, (mfxU32)MAX_NUM_TILE_ROWS);
+    invalid += CheckMax(par.m_ext.HEVCTiles.NumTileColumns, (mfxU32)MAX_NUM_TILE_COLUMNS);
+    invalid += CheckMax(par.m_ext.HEVCTiles.NumTileRows, (mfxU32)MAX_NUM_TILE_ROWS);
 
     changed += CheckMax(par.mfx.TargetUsage, (mfxU32)MFX_TARGETUSAGE_BEST_SPEED);
 
@@ -1024,7 +1024,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     changed += CheckMax(par.mfx.GopRefDist, (caps.SliceIPOnly || IsOn(par.mfx.LowPower)) ? 1 : (par.mfx.GopPicSize ? par.mfx.GopPicSize - 1 : 0xFFFF));
 
-    unsupported += CheckOption(par.Protected
+    invalid += CheckOption(par.Protected
 #ifndef MFX_VA_LINUX
         , (mfxU16)MFX_PROTECTION_PAVP
         , (mfxU16)MFX_PROTECTION_GPUCP_PAVP
@@ -1035,12 +1035,12 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     {
         mfxExtPAVPOption& PAVP = par.m_ext.PAVP;
 
-        unsupported += CheckOption(PAVP.EncryptionType
+        invalid += CheckOption(PAVP.EncryptionType
             , (mfxU16)MFX_PAVP_AES128_CTR
             , (mfxU16)MFX_PAVP_AES128_CBC
             , 0);
 
-        unsupported += CheckOption(PAVP.CounterType
+        invalid += CheckOption(PAVP.CounterType
             , (mfxU16)MFX_PAVP_CTR_TYPE_A
             , (mfxU16)MFX_PAVP_CTR_TYPE_B
             , (mfxU16)MFX_PAVP_CTR_TYPE_C
@@ -1078,7 +1078,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     }
 
 
-    unsupported += CheckOption(par.mfx.RateControlMethod
+    invalid += CheckOption(par.mfx.RateControlMethod
         , 0
         , (mfxU32)MFX_RATECONTROL_CBR
         , (mfxU32)MFX_RATECONTROL_VBR
@@ -1093,10 +1093,10 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         );
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
-        unsupported += CheckMax(par.mfx.ICQQuality, 51);
+        invalid += CheckMax(par.mfx.ICQQuality, 51);
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
-        unsupported += CheckMax(CO3.QVBRQuality, 51);
+        invalid += CheckMax(CO3.QVBRQuality, 51);
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_AVBR)
     {
@@ -1139,31 +1139,31 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     //if(!caps.Color420Only)
     {
         if(par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
-            unsupported += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV444, 0);
+            invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV444, 0);
         else
-            unsupported += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV420, 0);
+            invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV420, 0);
 
         if(par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN || par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP)
-            unsupported += CheckOption(par.mfx.FrameInfo.FourCC, (mfxU32)MFX_FOURCC_NV12,  (mfxU32)MFX_FOURCC_RGB4);
+            invalid += CheckOption(par.mfx.FrameInfo.FourCC, (mfxU32)MFX_FOURCC_NV12,  (mfxU32)MFX_FOURCC_RGB4);
         else if(par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10)
-            unsupported += CheckOption(par.mfx.FrameInfo.FourCC, (mfxU32)MFX_FOURCC_P010, 0);
+            invalid += CheckOption(par.mfx.FrameInfo.FourCC, (mfxU32)MFX_FOURCC_P010, 0);
         else if (par.mfx.FrameInfo.FourCC && par.mfx.FrameInfo.FourCC != (mfxU32)MFX_FOURCC_NV12 && par.mfx.FrameInfo.FourCC != (mfxU32)MFX_FOURCC_P010 && par.mfx.FrameInfo.FourCC != (mfxU32)MFX_FOURCC_RGB4) 
         {
-            unsupported ++;
+            invalid ++;
             par.mfx.FrameInfo.FourCC = 0;
         }
     }
     //else
 #else
     {
-        unsupported += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV420, 0);
+        invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV420, 0);
         if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN || par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP)
-            unsupported += CheckOption(par.mfx.FrameInfo.FourCC, (mfxU32)MFX_FOURCC_NV12, 0);
+            invalid += CheckOption(par.mfx.FrameInfo.FourCC, (mfxU32)MFX_FOURCC_NV12, 0);
         else if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10)
-            unsupported += CheckOption(par.mfx.FrameInfo.FourCC, (mfxU32)MFX_FOURCC_P010, 0);
+            invalid += CheckOption(par.mfx.FrameInfo.FourCC, (mfxU32)MFX_FOURCC_P010, 0);
         else if (par.mfx.FrameInfo.FourCC && par.mfx.FrameInfo.FourCC != (mfxU32)MFX_FOURCC_NV12 && par.mfx.FrameInfo.FourCC != (mfxU32)MFX_FOURCC_P010) 
         {
-            unsupported ++;
+            invalid ++;
             par.mfx.FrameInfo.FourCC = 0;
         }
     }
@@ -1177,7 +1177,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         if (par.mfx.FrameInfo.FrameRateExtN > (mfxU32)300 * par.mfx.FrameInfo.FrameRateExtD)
         {
             par.mfx.FrameInfo.FrameRateExtN = par.mfx.FrameInfo.FrameRateExtD = 0;
-            unsupported++;
+            invalid++;
         }
     }
 
@@ -1186,7 +1186,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     {
         par.mfx.FrameInfo.FrameRateExtN = 0;
         par.mfx.FrameInfo.FrameRateExtD = 0;
-        incompatible ++;
+        invalid ++;
     }
 
     changed += CheckMax(par.mfx.NumRefFrame, maxDPB);
@@ -1295,8 +1295,8 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     {
         mfxU16 prev = 0;
 
-        unsupported += CheckOption(par.m_ext.AVCTL.Layer[0].Scale, 0, 1);
-        unsupported += CheckOption(par.m_ext.AVCTL.Layer[7].Scale, 0);
+        invalid += CheckOption(par.m_ext.AVCTL.Layer[0].Scale, 0, 1);
+        invalid += CheckOption(par.m_ext.AVCTL.Layer[7].Scale, 0);
 
         for (mfxU16 i = 1; i < 7; i++)
         {
@@ -1307,7 +1307,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
                 || par.m_ext.AVCTL.Layer[i].Scale %  par.m_ext.AVCTL.Layer[prev].Scale)
             {
                 par.m_ext.AVCTL.Layer[i].Scale = 0;
-                unsupported++;
+                invalid++;
                 break;
             }
             prev = i;
@@ -1319,9 +1319,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     if (caps.RollingIntraRefresh == 0)
     {
-        unsupported += CheckOption(par.m_ext.CO2.IntRefType, 0);
-        unsupported += CheckOption(par.m_ext.CO2.IntRefCycleSize, 0);
-        unsupported += CheckOption(par.m_ext.CO3.IntRefCycleDist, 0);    
+        invalid += CheckOption(par.m_ext.CO2.IntRefType, 0);
+        invalid += CheckOption(par.m_ext.CO2.IntRefCycleSize, 0);
+        invalid += CheckOption(par.m_ext.CO3.IntRefCycleDist, 0);    
     }
 
     if (par.m_ext.CO2.IntRefCycleSize != 0 &&
@@ -1397,7 +1397,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     }
 
     if (caps.SliceByteSizeCtrl == 0)
-        unsupported += CheckOption(CO2.MaxSliceSize, 0);
+        invalid += CheckOption(CO2.MaxSliceSize, 0);
 
     if (IsOn(CO3.EnableQPOffset))
     {
@@ -1425,13 +1425,13 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     //ROI
     if (ROI.NumROI) {
 
-        unsupported += (caps.MaxNumOfROI == 0);
+        invalid += (caps.MaxNumOfROI == 0);
 
         //{  // if block QP Data surface is not provided
         //    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
-        //        unsupported += (caps.ROIDeltaQPSupport == 0);
+        //        invalid += (caps.ROIDeltaQPSupport == 0);
         //    else
-        //        unsupported += (caps.ROIBRCPriorityLevelSupport == 0);
+        //        invalid += (caps.ROIBRCPriorityLevelSupport == 0);
         //}
 
         if (bInit)
@@ -1440,7 +1440,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
             changed += CheckMax(ROI.NumROI, caps.MaxNumOfROI);
 
         if (par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
-            unsupported += CheckMax(ROI.NumROI, 4);     /* Gen10-12 limitation */
+            invalid += CheckMax(ROI.NumROI, 4);     /* Gen10-12 limitation */
 
         for (mfxU16 i = 0; i < ROI.NumROI; i++)
         {
@@ -1467,24 +1467,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         else
              changed += CheckOption(CO3.EnableMBQP, (mfxU16)MFX_CODINGOPTION_UNKNOWN, (mfxU16)MFX_CODINGOPTION_OFF);
 #endif
-
-
     }
-
-
-
-
-
-
-
-
-
-
-
 
     sts = CheckProfile(par);
 
-    if (sts >= MFX_ERR_NONE && par.mfx.CodecLevel > 0)
+    if (sts >= MFX_ERR_NONE && par.mfx.CodecLevel > 0)  // QueryIOSurf, Init or Reset
     {
         if (sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM) changed +=1;
         sts = CorrectLevel(par, false);
@@ -1493,14 +1480,8 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if (sts == MFX_ERR_NONE && changed)
         sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
-    if (sts >= MFX_ERR_NONE && incompatible)
-        sts = MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-
     if (sts >= MFX_ERR_NONE && invalid)
-        sts = MFX_ERR_INVALID_VIDEO_PARAM;
-
-    if (sts >= MFX_ERR_NONE && unsupported)
-        sts = MFX_ERR_UNSUPPORTED;
+        sts = MFX_ERR_INVALID_VIDEO_PARAM;  // for Query will be replaced by MFX_ERR_UNSUPPORTED
 
     return sts;
 }

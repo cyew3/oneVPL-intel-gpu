@@ -251,7 +251,7 @@ namespace hevce_init
         {/*12*/ MFX_ERR_INVALID_VIDEO_PARAM, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 255 } },
         {/*13*/ MFX_ERR_INVALID_VIDEO_PARAM, PIC_STRUCT, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 0x11111111 } },
         //Resolution
-        {/*14*/ MFX_ERR_UNSUPPORTED, RESOLUTION, NONE,
+        {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 8192 + 32 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4320 + 32 }
@@ -265,8 +265,8 @@ namespace hevce_init
         },
         {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, NOT_ALLIGNED, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736 + 1 } },
         {/*17*/ MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, NOT_ALLIGNED, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 736 + 1 } },
-        {/*18*/ MFX_ERR_UNSUPPORTED, RESOLUTION, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 16384 + 16 } },
-        {/*19*/ MFX_ERR_UNSUPPORTED, RESOLUTION, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 16384 + 16 } },
+        {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 16384 + 16 } },
+        {/*19*/ MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 16384 + 16 } },
         //Crops
         {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, XY, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 20 } },
         {/*21*/ MFX_ERR_INVALID_VIDEO_PARAM, CROP, XY, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 20 } },
@@ -315,7 +315,7 @@ namespace hevce_init
             }
         },
         //chroma format
-        {/*29*/ MFX_ERR_UNSUPPORTED, CHROMA_FORMAT, INVALID, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_RESERVED1 } },
+        {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, CHROMA_FORMAT, INVALID, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_RESERVED1 } },
         //num slice
         {/*30*/ MFX_ERR_INVALID_VIDEO_PARAM, SLICE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 65535 } },
         //frame rate
@@ -387,7 +387,7 @@ namespace hevce_init
                 { MFX_EXT_HEVCPARAM, &tsStruct::mfxExtHEVCParam.PicHeightInLumaSamples, 0 },
             }
         },
-        {/*63*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
+        {/*63*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_PARAM,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088 },
@@ -428,7 +428,7 @@ namespace hevce_init
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionEncoding, MFX_HEVC_REGION_ENCODING_ON}
             },
         },
-        {/*69*/ MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
+        {/*69*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_HEVC_REGION,
             {
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionId, 0},
                 {MFX_EXT_HEVCREGION, &tsStruct::mfxExtHEVCRegion.RegionType, 1}, //unsupported type
@@ -541,7 +541,7 @@ namespace hevce_init
             }
             if (m_pPar->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12)
             {
-                sts = MFX_ERR_UNSUPPORTED;
+                sts = MFX_ERR_INVALID_VIDEO_PARAM;
             }
             if (tc.type == PIC_STRUCT)
             {
@@ -551,13 +551,13 @@ namespace hevce_init
             {
                 sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
             }
-            if ((tc.type == FRAME_RATE) && (tc.sts < MFX_ERR_NONE))
-            {
-                if ((m_pPar->mfx.FrameInfo.FrameRateExtD == 0) || (m_pPar->mfx.FrameInfo.FrameRateExtN == 0))
-                    sts = MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-                else
-                    sts = MFX_ERR_UNSUPPORTED;
-            }
+            //if ((tc.type == FRAME_RATE) && (tc.sts < MFX_ERR_NONE))
+            //{
+            //    if ((m_pPar->mfx.FrameInfo.FrameRateExtD == 0) || (m_pPar->mfx.FrameInfo.FrameRateExtN == 0))
+            //        sts = MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+            //    else
+            //        sts = MFX_ERR_INVALID_VIDEO_PARAM;
+            //}
 
             if (tc.type == EXT_BUFF)
             {
@@ -568,12 +568,12 @@ namespace hevce_init
                 else if (tc.sub_type == MFX_EXTBUFF_HEVC_PARAM)
                     sts = tc.sts;
                 else if (tc.sub_type == MFX_EXTBUFF_HEVC_REGION)
-                    sts = MFX_ERR_UNSUPPORTED;
+                    sts = MFX_ERR_INVALID_VIDEO_PARAM;
                 else if (tc.sub_type == NONE)
                     sts = MFX_ERR_NULL_PTR;
                 else
                     if (tc.sts != MFX_ERR_NONE)
-                        sts = MFX_ERR_UNSUPPORTED;
+                        sts = MFX_ERR_INVALID_VIDEO_PARAM;
             }
 
             if (tc.type == RATE_CONTROL)
@@ -581,7 +581,7 @@ namespace hevce_init
                 if ((m_pPar->mfx.RateControlMethod == MFX_RATECONTROL_AVBR) && (tc.sts == MFX_ERR_NONE))
                     sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
                 if (tc.sts < MFX_ERR_NONE)
-                    sts = MFX_ERR_UNSUPPORTED;
+                    sts = MFX_ERR_INVALID_VIDEO_PARAM;
             }
 
             if (tc.type == CROP)
@@ -591,7 +591,7 @@ namespace hevce_init
                     sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
                     if ((tc.sub_type == XY) || (tc.sub_type == WH) || (tc.sub_type == W) || (tc.sub_type == H))
                     {
-                        sts = MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+                        sts = MFX_ERR_INVALID_VIDEO_PARAM;
                     }
                 }
                 else
@@ -601,11 +601,11 @@ namespace hevce_init
             }
             if ((tc.type == RESOLUTION) && (tc.sub_type == NOT_ALLIGNED)) //HEVCE_HW need aligned width and height for 32
             {
-                sts = MFX_ERR_UNSUPPORTED;
+                sts = MFX_ERR_INVALID_VIDEO_PARAM;
             }
             else if ((tc.type == RESOLUTION) && (tc.sub_type == ZEROED))
             {
-                sts = MFX_ERR_UNSUPPORTED;
+                sts = MFX_ERR_INVALID_VIDEO_PARAM;
             }
             else
             {

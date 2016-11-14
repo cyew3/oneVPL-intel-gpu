@@ -456,10 +456,10 @@ int TestSuite::RunTest(unsigned int id)
         {
             g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
         }
-        if ((tc.type == FRAME_RATE) && (tc.sts == MFX_ERR_UNSUPPORTED))
-        {
-            g_tsStatus.expect(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-        }
+        //if ((tc.type == FRAME_RATE) && (tc.sts == MFX_ERR_UNSUPPORTED))
+        //{
+        //    g_tsStatus.expect(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+        //}
         if ((tc.type == IO_PATTERN) && (tc.sts == MFX_ERR_UNSUPPORTED))
         {
             g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
@@ -481,7 +481,7 @@ int TestSuite::RunTest(unsigned int id)
                 g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
                 if ((tc.sub_type == XY) || (tc.sub_type == WH) || (tc.sub_type == W) || (tc.sub_type == H))
                 {
-                    g_tsStatus.expect(MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
+                    g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
                 }
             }
             else if (tc.sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)

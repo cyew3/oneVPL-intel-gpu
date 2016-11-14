@@ -176,7 +176,7 @@ namespace hevce_reset
 
         },
         //Chroma Format
-        {/* 15*/ MFX_ERR_UNSUPPORTED, MFX_ERR_UNSUPPORTED, NONE, NONE, 1,
+        {/* 15*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_RESERVED1 }
@@ -194,14 +194,14 @@ namespace hevce_reset
             }
 
         },
-        {/* 17*/ MFX_ERR_UNSUPPORTED, MFX_ERR_UNSUPPORTED, NONE, NONE, 1,
+        {/* 17*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 8192 + 32 },
             }
 
         },
-        {/* 18*/ MFX_ERR_UNSUPPORTED, MFX_ERR_UNSUPPORTED, NONE, NONE, 1,
+        {/* 18*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4320 + 32 },
@@ -223,35 +223,35 @@ namespace hevce_reset
 
         },
         //Crops
-        {/* 21*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, CROP, XY, 1,
+        {/* 21*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, XY, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 10 },
             }
 
         },
-        {/* 22*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, CROP, XY, 1,
+        {/* 22*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, XY, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 10 },
             }
 
         },
-        {/* 23*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, CROP, CHANGE, 1,
+        {/* 23*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, CHANGE, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 736 + 10 },
             }
 
         },
-        {/* 24*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, CROP, CHANGE, 1,
+        {/* 24*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, CHANGE, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 576 + 10 },
             }
 
         },
-        {/* 25*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, CROP, CHANGE, 1,
+        {/* 25*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, CHANGE, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 736 + 10 },
@@ -308,9 +308,9 @@ namespace hevce_reset
 
         },
         //Protected
-        {/* 31*/ MFX_ERR_UNSUPPORTED,
+        {/* 31*/ MFX_ERR_INVALID_VIDEO_PARAM,
 #if (defined(LINUX32) || defined(LINUX64))
-                                      MFX_ERR_UNSUPPORTED
+                                      MFX_ERR_INVALID_VIDEO_PARAM
 #else
                                       MFX_ERR_NONE
 #endif
@@ -321,9 +321,9 @@ namespace hevce_reset
             }
 
         },
-        {/* 32*/ MFX_ERR_UNSUPPORTED,
+        {/* 32*/ MFX_ERR_INVALID_VIDEO_PARAM,
 #if (defined(LINUX32) || defined(LINUX64))
-                                      MFX_ERR_UNSUPPORTED
+                                      MFX_ERR_INVALID_VIDEO_PARAM
 #else
                                       MFX_ERR_NONE
 #endif
@@ -334,7 +334,7 @@ namespace hevce_reset
             }
 
         },
-        {/* 33*/ MFX_ERR_UNSUPPORTED, MFX_ERR_UNSUPPORTED, PROTECTED, INVALID, 1,
+        {/* 33*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, PROTECTED, INVALID, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.Protected, 0xfff }
@@ -350,7 +350,7 @@ namespace hevce_reset
             }
 
         },
-        {/* 35*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, FRAMERATE, WRONG, 1,
+        {/* 35*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, FRAMERATE, WRONG, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN,350 },
@@ -359,7 +359,7 @@ namespace hevce_reset
 
         },
         //FourCC
-        {/* 36*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, FOURCC, WRONG, 1,
+        {/* 36*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, FOURCC, WRONG, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12 },
@@ -391,11 +391,11 @@ namespace hevce_reset
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
-        {/* 42*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_VPP_DOUSE, 1,
+        {/* 42*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_VPP_DOUSE, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
-        {/* 43*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_VPP_AUXDATA, 1,
+        {/* 43*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_VPP_AUXDATA, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
@@ -403,15 +403,15 @@ namespace hevce_reset
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
-        {/* 45*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION, 1,
+        {/* 45*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
-        {/* 46*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_PICTURE_TIMING_SEI, 1,
+        {/* 46*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_PICTURE_TIMING_SEI, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
-        {/* 47*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_ENCODER_CAPABILITY, 1,
+        {/* 47*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_ENCODER_CAPABILITY, 1,
             { "forBehaviorTest/foster_720x576.yuv", "" },
 
         },
@@ -501,7 +501,7 @@ namespace hevce_reset
             sts = tc.sts_hw;
             m_par.mfx.FrameInfo.Width = ((m_par.mfx.FrameInfo.Width + 32 - 1) & ~(32 - 1));
             m_par.mfx.FrameInfo.Height = ((m_par.mfx.FrameInfo.Height + 32 - 1) & ~(32 - 1));
-            init_fail = MFX_ERR_UNSUPPORTED;
+            init_fail = MFX_ERR_INVALID_VIDEO_PARAM;
         }
 
         if (tc.stream[0] != "")
