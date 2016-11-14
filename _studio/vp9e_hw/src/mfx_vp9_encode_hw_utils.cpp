@@ -255,14 +255,7 @@ MfxFrameAllocResponse::MfxFrameAllocResponse()
 
 MfxFrameAllocResponse::~MfxFrameAllocResponse()
 {
-    if (m_pCore == 0)
-        return;
-
-    if (mids)
-    {
-        NumFrameActual = m_numFrameActualReturnedByAllocFrames;
-        m_pCore->FrameAllocator.Free(m_pCore->FrameAllocator.pthis, this);
-    }
+    Release();
 }
 
 
@@ -281,6 +274,24 @@ mfxStatus MfxFrameAllocResponse::Alloc(
     m_numFrameActualReturnedByAllocFrames = NumFrameActual;
     NumFrameActual = req.NumFrameMin;
     m_info = req.Info;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MfxFrameAllocResponse::Release()
+{
+    if (m_pCore == 0)
+    {
+        return MFX_ERR_NULL_PTR;
+    }
+
+    if (mids && m_numFrameActualReturnedByAllocFrames)
+    {
+        NumFrameActual = m_numFrameActualReturnedByAllocFrames;
+        MFX_CHECK_STS(m_pCore->FrameAllocator.Free(m_pCore->FrameAllocator.pthis, this));
+
+        m_numFrameActualReturnedByAllocFrames = 0;
+    }
 
     return MFX_ERR_NONE;
 }
@@ -388,6 +399,13 @@ mfxStatus  InternalFrames::GetFrame(mfxU32 numFrame, sFrameEx * &Frame)
         return MFX_ERR_NONE;
     }
     return MFX_WRN_DEVICE_BUSY;
+}
+
+mfxStatus InternalFrames::Release()
+{
+    MFX_CHECK_STS(m_response.Release());
+
+    return MFX_ERR_NONE;
 }
 
 //---------------------------------------------------------

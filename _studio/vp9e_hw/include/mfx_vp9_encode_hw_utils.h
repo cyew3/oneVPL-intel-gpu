@@ -311,6 +311,8 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
             mfxCoreInterface * pCore,
             mfxFrameAllocRequest & req);
 
+        mfxStatus Release();
+
         mfxFrameInfo               m_info;
 
     private:
@@ -439,6 +441,7 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         mfxStatus Init(mfxCoreInterface *pCore, mfxFrameAllocRequest *pAllocReq, bool bHW);
         sFrameEx * GetFreeFrame();
         mfxStatus  GetFrame(mfxU32 numFrame, sFrameEx * &Frame);
+        mfxStatus Release();
 
         inline mfxU16 Height()
         {

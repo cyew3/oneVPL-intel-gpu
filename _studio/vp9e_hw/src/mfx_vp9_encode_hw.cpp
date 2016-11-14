@@ -491,6 +491,9 @@ mfxStatus Plugin::Close()
         return MFX_ERR_NOT_INITIALIZED;
     }
 
+    MFX_CHECK_STS(m_reconFrames.Release());
+    MFX_CHECK_STS(m_outBitstreams.Release());
+
     m_initialized = false;
 
     return MFX_ERR_NONE;
