@@ -2117,7 +2117,7 @@ void ImplementationAvc::OnEncodingQueried(DdiTaskIter task)
 
             if (IsOn(extOpt2.UseRawRef))
             {
-                if (m_video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
+                if (m_inputFrameType == MFX_IOPATTERN_IN_VIDEO_MEMORY)
                     m_core->DecreaseReference(&iniDpb[i].m_yuvRaw->Data);
 
                 ReleaseResource(m_raw, iniDpb[i].m_midRaw);
