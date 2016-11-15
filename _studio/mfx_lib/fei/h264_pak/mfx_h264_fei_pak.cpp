@@ -407,7 +407,6 @@ mfxStatus VideoPAK_PAK::Query(DdiTask& task)
     mfxU32 fieldCount = task.m_fieldPicFlag;
 
     mfxENCInput* in = (mfxENCInput*)task.m_userData[0];
-    mfxExtFeiEncFrameCtrl* feiCtrl = GetExtBufferFEI(in, 0);
 
     if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
     {

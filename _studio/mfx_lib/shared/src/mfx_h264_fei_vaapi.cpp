@@ -2701,13 +2701,10 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
     VABufferID vaFeiFrameControlId = VA_INVALID_ID;
     VABufferID vaFeiMVPredId       = VA_INVALID_ID;
-    VABufferID vaFeiMBControlId    = VA_INVALID_ID;
-    VABufferID vaFeiMBQPId         = VA_INVALID_ID;
 
     //find ext buffers
     const mfxEncodeCtrl& ctrl = task.m_ctrl;
     /* input buffers */
-    mfxExtFeiEncFrameCtrl* frameCtrl       = GetExtBufferFEI(out,feiFieldId);
     mfxExtFeiSPS *pDataSPS                 = GetExtBufferFEI(out,0);
     mfxExtFeiPPS *pDataPPS                 = GetExtBufferFEI(out,feiFieldId);
     mfxExtFeiSliceHeader *pDataSliceHeader = GetExtBufferFEI(out,feiFieldId);
@@ -2969,7 +2966,6 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         }
     }
 
-    if (frameCtrl != NULL)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "FrameCtrl");
         VAEncMiscParameterBuffer *miscParam;
@@ -2995,49 +2991,9 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         memset(vaFeiFrameControl, 0, sizeof (VAEncMiscParameterFEIFrameControlH264Intel)); //check if we need this
 
         vaFeiFrameControl->function        = VA_ENC_FUNCTION_PAK_INTEL;
-        vaFeiFrameControl->adaptive_search = frameCtrl->AdaptiveSearch;
-        vaFeiFrameControl->distortion_type = frameCtrl->DistortionType;
-        vaFeiFrameControl->inter_sad       = frameCtrl->InterSAD;
-        vaFeiFrameControl->intra_part_mask = frameCtrl->IntraPartMask;
-        /*Correction for Main and Baseline profiles: prohibited 8x8 transform */
-        if ((MFX_PROFILE_AVC_BASELINE == m_videoParam.mfx.CodecProfile) ||
-            (MFX_PROFILE_AVC_MAIN     == m_videoParam.mfx.CodecProfile) )
-        {
-            vaFeiFrameControl->intra_part_mask = 0x02;
-        }
-        vaFeiFrameControl->intra_sad     = frameCtrl->AdaptiveSearch;
-        vaFeiFrameControl->intra_sad     = frameCtrl->IntraSAD;
-        vaFeiFrameControl->len_sp        = frameCtrl->LenSP;
-        vaFeiFrameControl->search_path   = frameCtrl->SearchPath;
 
-        vaFeiFrameControl->distortion    = VA_INVALID_ID;//m_vaFeiMBStatId[feiFieldId];
         vaFeiFrameControl->mv_data       = m_vaFeiMVOutId[feiFieldId];
         vaFeiFrameControl->mb_code_data  = m_vaFeiMCODEOutId[feiFieldId];
-        vaFeiFrameControl->qp            = vaFeiMBQPId;
-        vaFeiFrameControl->mb_ctrl       = vaFeiMBControlId;
-        /* MB Ctrl is only for ENC */
-        vaFeiFrameControl->mb_input      = 0;
-        /* MBQP is only for ENC */
-        vaFeiFrameControl->mb_qp         = 0;
-        vaFeiFrameControl->mb_size_ctrl  = frameCtrl->MBSizeCtrl;
-        vaFeiFrameControl->multi_pred_l0 = frameCtrl->MultiPredL0;
-        vaFeiFrameControl->multi_pred_l1 = frameCtrl->MultiPredL1;
-        /* MV Predictors are only for ENC */
-        vaFeiFrameControl->mv_predictor             = VA_INVALID_ID;
-        vaFeiFrameControl->mv_predictor_enable      = 0;
-        vaFeiFrameControl->num_mv_predictors_l0     = 0;
-        vaFeiFrameControl->num_mv_predictors_l1     = 0;
-        vaFeiFrameControl->ref_height               = frameCtrl->RefHeight;
-        vaFeiFrameControl->ref_width                = frameCtrl->RefWidth;
-        vaFeiFrameControl->repartition_check_enable = frameCtrl->RepartitionCheckEnable;
-        vaFeiFrameControl->search_window            = frameCtrl->SearchWindow;
-        vaFeiFrameControl->sub_mb_part_mask         = frameCtrl->SubMBPartMask;
-        vaFeiFrameControl->sub_pel_mode             = frameCtrl->SubPelMode;
-
-        if (0 == frameCtrl->SearchWindow)
-        {
-            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-        }
 
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
@@ -3205,13 +3161,6 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         mdprintf(stderr, "m_codedBufferId=%d\n", m_codedBufferId[feiFieldId]);
     }
     m_pps.coded_buf = m_codedBufferId[feiFieldId];
-
-    if ((MFX_PROFILE_AVC_BASELINE == m_videoParam.mfx.CodecProfile) ||
-        (MFX_PROFILE_AVC_MAIN     == m_videoParam.mfx.CodecProfile) ||
-        ((frameCtrl != NULL) && (0x2 == frameCtrl->IntraPartMask)) )
-    {
-        m_pps.pic_fields.bits.transform_8x8_mode_flag = 0;
-    }
 
     vaSts = vaCreateBuffer(m_vaDisplay,
                             m_vaContextEncode,
@@ -3716,8 +3665,6 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
     MFX_DESTROY_VABUFFER(vaFeiFrameControlId,       m_vaDisplay);
     MFX_DESTROY_VABUFFER(vaFeiMVPredId,             m_vaDisplay);
-    MFX_DESTROY_VABUFFER(vaFeiMBControlId,          m_vaDisplay);
-    MFX_DESTROY_VABUFFER(vaFeiMBQPId,               m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_packedSpsHeaderBufferId, m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_packedSpsBufferId,       m_vaDisplay);
     MFX_DESTROY_VABUFFER(m_spsBufferId,             m_vaDisplay);
