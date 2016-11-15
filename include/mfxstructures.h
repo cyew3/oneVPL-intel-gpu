@@ -702,7 +702,11 @@ typedef struct {
     mfxU16      ConstrainedIntraPredFlag;  /* tri-state option */
     mfxU16      TransformSkip;             /* tri-state option; HEVC transform_skip_enabled_flag */
 
-    mfxU16      reserved[177];
+    mfxU16      TargetChromaFormatPlus1;   /* Minus 1 specifies target encoding chroma format (see ColorFormat enum). May differ from input one. */
+    mfxU16      TargetBitDepthLuma;        /* Target encoding bit depth for luma samples. May differ from input one. */
+    mfxU16      TargetBitDepthChroma;      /* Target encoding bit depth for chroma samples. May differ from input one. */
+
+    mfxU16      reserved[174];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
