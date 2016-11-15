@@ -1045,6 +1045,16 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
 
                 break;
 
+            case MFX_FOURCC_Y216:
+
+                //FastCopy::Copy uses 8u copy, so we need to increase ROI to handle 16 bit samples
+                roi.width *= 4;
+
+                sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)sLockRect.pData, srcPitch, roi);
+                MFX_CHECK_STS(sts);
+
+                break;
+
             case MFX_FOURCC_RGB3:
                 {
                     MFX_CHECK_NULL_PTR1(pDst->Data.R);
