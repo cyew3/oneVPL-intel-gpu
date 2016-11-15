@@ -1367,13 +1367,22 @@ typedef struct {
     mfxU16       reserved[9];
 } mfxExtChromaLocInfo;
 
+/* MBQPMode */
+enum {
+    MFX_MBQP_MODE_QP_VALUE = 0, // supported in CQP mode only
+    MFX_MBQP_MODE_QP_DELTA = 1
+};
+
 typedef struct {
     mfxExtBuffer    Header;
 
-    mfxU32 reserved[11];
-    mfxU32 NumQPAlloc;
+    mfxU32 reserved[10];
+    mfxU16 Mode;        // see MBQPMode enum
+    mfxU16 BlockSize;   // QP block size, valid for HEVC only during Init and Runtime
+    mfxU32 NumQPAlloc;  // Size of allocated by application QP or DeltaQP array
     union {
-        mfxU8  *QP;
+        mfxU8  *QP;         // Block QP value. Valid when Mode = MFX_MBQP_MODE_QP_VALUE
+        mfxI8  *DeltaQP;    // For block i: QP[i] = BrcQP[i] + DeltaQP[i]. Valid when Mode = MFX_MBQP_MODE_QP_DELTA
         mfxU64 reserved2;
     };
 } mfxExtMBQP;
