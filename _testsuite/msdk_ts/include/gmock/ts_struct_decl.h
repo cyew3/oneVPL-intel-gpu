@@ -595,6 +595,24 @@ STRUCT(mfxExtCamBlackLevelCorrection,
     FIELD_T(mfxU16,       G1       )
     FIELD_T(mfxU32,       reserved ) /* Fixed size array */
 )
+ STRUCT(mfxExtCamTotalColorControl,
+	FIELD_S(mfxExtBuffer, Header)
+	FIELD_T(mfxU8, R)
+	FIELD_T(mfxU8, G)
+	FIELD_T(mfxU8, B)
+	FIELD_T(mfxU8, C)
+	FIELD_T(mfxU8, M)
+	FIELD_T(mfxU8, Y)
+)
+
+STRUCT(mfxExtCamCscYuvRgb,
+	FIELD_S(mfxExtBuffer, Header)
+	FIELD_T(mfxF32, PreOffset)
+	FIELD_T(mfxF32, Matrix)
+	FIELD_T(mfxF32, PostOffset)
+	FIELD_T(mfxU16, reserved)
+)
+
 STRUCT(mfxCamVignetteCorrectionParam,
     FIELD_S(mfxCamVignetteCorrectionElement, R )
     FIELD_S(mfxCamVignetteCorrectionElement, G0)

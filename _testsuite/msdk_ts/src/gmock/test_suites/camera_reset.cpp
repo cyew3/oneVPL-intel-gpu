@@ -223,26 +223,28 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
     {/*33*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamGammaCorrection      )}}},
     {/*34*/ MFX_ERR_NONE               , 0, {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamWhiteBalance         )}}},
-    {/*35*/ MFX_ERR_NONE,                0, {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}}},
-    {/*36*/ MFX_ERR_NONE               , 0, {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}}},
-    {/*37*/ MFX_ERR_NONE               , 0, {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}}},
-    {/*38*/ MFX_ERR_NONE, 0, {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamPadding              )}}},
+    {/*35*/ MFX_ERR_NONE               , 0, {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamCscYuvRgb            )}}},
+    {/*36*/ MFX_ERR_NONE               , 0, {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamTotalColorControl    )}}},
+    {/*37*/ MFX_ERR_NONE               , 0, {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}}},
+    {/*38*/ MFX_ERR_NONE               , 0, {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}}},
+    {/*39*/ MFX_ERR_NONE               , 0, {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}}},
+    {/*40*/ MFX_ERR_NONE               , 0, {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamPadding              )}}},
 
-    {/*39*/ MFX_ERR_NONE, 0, 
+    {/*41*/ MFX_ERR_NONE, 0,
         {  {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamWhiteBalance      )}},
            {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval   )}}  }
     },
-    {/*40*/ MFX_ERR_NONE, 0, 
+    {/*42*/ MFX_ERR_NONE, 0,
         {  {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
 //           {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
 //           {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBayerDenoise         )}}
     }
     },
-    {/*41*/ MFX_ERR_NONE, 0, 
+    {/*43*/ MFX_ERR_NONE, 0,
         {  {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}},
            {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}}  }
     },
-    {/*42*/ MFX_ERR_NONE, 0, 
+    {/*44*/ MFX_ERR_NONE, 0,
         {  {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamWhiteBalance         )}},
            {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
            {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
@@ -250,21 +252,25 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 //           {INIT|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBayerDenoise         )}}  
     }
     },
-    {/*46*/ MFX_ERR_NONE, 0, 
+    {/*45*/ MFX_ERR_NONE, 0,
         {  {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamWhiteBalance      )}},
            {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval   )}}  }
     },
-    {/*47*/ MFX_ERR_NONE, 0, 
+    {/*46*/ MFX_ERR_NONE, 0,
+        {  {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamTotalColorControl )}},
+           {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamCscYuvRgb         )}}}
+    },
+    {/*47*/ MFX_ERR_NONE, 0,
         {  {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
 //           {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamVignetteCorrection   )}},
 //           {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBayerDenoise         )}}  
     }
     },
-    {/*48*/ MFX_ERR_NONE, 0, 
+    {/*48*/ MFX_ERR_NONE, 0,
         {  {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamColorCorrection3x3   )}},
            {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}}  }
     },
-    {/*49*/ MFX_ERR_NONE, 0, 
+    {/*49*/ MFX_ERR_NONE, 0,
         {  {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamWhiteBalance         )}},
            {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval      )}},
            {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
@@ -272,7 +278,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 //           {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBayerDenoise         )}}  
     }
     },
-    {/*50*/ MFX_ERR_NONE, 0, 
+    {/*50*/ MFX_ERR_NONE, 0,
         {  {INIT|EXT_BUF,  0, {EXT_BUF_PAR(mfxExtCamWhiteBalance          )}},
            {INIT|EXT_BUF,  0, {EXT_BUF_PAR(mfxExtCamHotPixelRemoval       )}},
            {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBlackLevelCorrection )}},
@@ -280,7 +286,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 //           {RESET|EXT_BUF, 0, {EXT_BUF_PAR(mfxExtCamBayerDenoise         )}}  
     }
     },
-    {/*51*/ MFX_ERR_NONE, 0, 
+    {/*51*/ MFX_ERR_NONE, 0,
         {  {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Width,   {4096}},
            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Height,  {4096}},
            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {4096}},
@@ -290,7 +296,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
            {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Width,   {2048}},
            {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Height,  {2048}}  }
     },
-    {/*52*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 
+    {/*52*/ MFX_ERR_INVALID_VIDEO_PARAM, 0,
         {  {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Width,   {4096}},
            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Height,  {4096}},
            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {4096}},
@@ -300,7 +306,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
            {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Width,   {2048 + 5}},
            {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Height,  {2048 + 5}}  }
     },
-    {/*53*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 
+    {/*53*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0,
         {  {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Width,   {2048}},
            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Height,  {2048}},
            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,  {2048}},
@@ -310,7 +316,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
            {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Width,   {4096}},
            {RESET|MFXVPAR, &tsStruct::mfxVideoParam.vpp.In.Height,  {4096}}  }
     },
-    {/*54*/ MFX_ERR_NONE, 0, 
+    {/*54*/ MFX_ERR_NONE, 0,
         {  {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Width,   {4096}},
            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.In.Height,  {4096}},
            {INIT|MFXVPAR,  &tsStruct::mfxVideoParam.vpp.Out.Width,   {4096}},

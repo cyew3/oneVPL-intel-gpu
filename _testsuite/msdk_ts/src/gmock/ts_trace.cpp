@@ -445,6 +445,35 @@ tsTrace& tsTrace::operator<<(const mfxExtCamVignetteCorrection& p)
     return *this;
 }
 
+tsTrace& tsTrace::operator<<(const mfxExtCamTotalColorControl& p)
+{
+	STRUCT_BODY(mfxExtCamTotalColorControl,
+		FIELD_T(mfxU32, Header)
+		FIELD_S(mfxU8, R)
+		FIELD_S(mfxU8, G)
+		FIELD_S(mfxU8, B)
+		FIELD_S(mfxU8, Y)
+		FIELD_S(mfxU8, C)
+		FIELD_S(mfxU8, M)
+		)
+
+		return *this;
+}
+
+tsTrace& tsTrace::operator<<(const mfxExtCamCscYuvRgb& p)
+{
+	STRUCT_BODY(mfxExtCamCscYuvRgb,
+		FIELD_T(mfxU32, Header)
+		FIELD_S(mfxF32, PreOffset)
+		FIELD_S(mfxF32, Matrix)
+		FIELD_S(mfxF32, PostOffset)
+		FIELD_S(mfxU16, reserved)
+	)
+
+	return *this;
+}
+
+
 tsTrace& tsTrace::operator<<(const mfxEncodeCtrl& p)
 {
     STRUCT_BODY(mfxEncodeCtrl,

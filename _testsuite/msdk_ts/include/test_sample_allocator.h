@@ -99,7 +99,7 @@ public:
     {
         if(!this->hdl) {
             hdl = 0;
-            type = static_cast<mfxHandleType>(0);
+            type = static_cast<mfxHandleType>(1);
             return false;
         }
         type = hdl_t;

@@ -126,6 +126,8 @@ public:
     tsTrace& operator << (const mfxExtDirtyRect_Entry& p);
     tsTrace& operator << (const mfxExtMoveRect_Entry& p);
     tsTrace& operator << (const mfxExtCamGammaCorrection& p);
+	tsTrace& operator << (const mfxExtCamTotalColorControl& p);
+	tsTrace& operator << (const mfxExtCamCscYuvRgb& p);
     tsTrace& operator << (const mfxExtCamVignetteCorrection& p);
     tsTrace& operator << (const mfxInfoMFX& p);
     tsTrace& operator << (const mfxPluginUID& p);
