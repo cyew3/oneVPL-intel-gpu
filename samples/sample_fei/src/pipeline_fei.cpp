@@ -820,6 +820,16 @@ mfxStatus CEncodingPipeline::SetSequenceParameters()
         }
     }
 
+    mfxU16 nmvp_l0 = m_appCfg.bNPredSpecified_l0 ?
+        m_appCfg.NumMVPredictors[0] : (std::min)(mfxU16(m_numRefFrame*m_numOfFields), MaxFeiEncMVPNum);
+    mfxU16 nmvp_l1 = m_appCfg.bNPredSpecified_l1 ?
+        m_appCfg.NumMVPredictors[1] : (std::min)(mfxU16(m_numRefFrame*m_numOfFields), MaxFeiEncMVPNum);
+
+    m_appCfg.PipelineCfg.numOfPredictors[0][0] = nmvp_l0;
+    m_appCfg.PipelineCfg.numOfPredictors[1][0] = nmvp_l0;
+    m_appCfg.PipelineCfg.numOfPredictors[0][1] = nmvp_l1;
+    m_appCfg.PipelineCfg.numOfPredictors[1][1] = nmvp_l1;
+
     return sts;
 }
 
@@ -1148,46 +1158,45 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
 
             for (fieldId = 0; fieldId < m_numOfFields; fieldId++)
             {
-                /* We allocate buffer of progressive frame size for the first field if mixed pixstructs are used */
+                /* We allocate buffer of progressive frame size for the first field if mixed picstructs are used */
                 mfxU32 numMB = (m_appCfg.PipelineCfg.mixedPicstructs && !fieldId) ? m_appCfg.PipelineCfg.numMB_frame : m_appCfg.PipelineCfg.numMB_refPic;
-                if (fieldId == 0){
-                    feiEncCtrl = new mfxExtFeiEncFrameCtrl[m_numOfFields];
-                    MSDK_ZERO_ARRAY(feiEncCtrl, m_numOfFields);
+
+                if (!m_appCfg.bOnlyPAK)
+                {
+                    if (fieldId == 0){
+                        feiEncCtrl = new mfxExtFeiEncFrameCtrl[m_numOfFields];
+                        MSDK_ZERO_ARRAY(feiEncCtrl, m_numOfFields);
+                    }
+
+                    feiEncCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
+                    feiEncCtrl[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncFrameCtrl);
+
+                    feiEncCtrl[fieldId].SearchPath             = m_appCfg.SearchPath;
+                    feiEncCtrl[fieldId].LenSP                  = m_appCfg.LenSP;
+                    feiEncCtrl[fieldId].SubMBPartMask          = m_appCfg.SubMBPartMask;
+                    feiEncCtrl[fieldId].MultiPredL0            = m_appCfg.MultiPredL0;
+                    feiEncCtrl[fieldId].MultiPredL1            = m_appCfg.MultiPredL1;
+                    feiEncCtrl[fieldId].SubPelMode             = m_appCfg.SubPelMode;
+                    feiEncCtrl[fieldId].InterSAD               = m_appCfg.InterSAD;
+                    feiEncCtrl[fieldId].IntraSAD               = m_appCfg.IntraSAD;
+                    feiEncCtrl[fieldId].IntraPartMask          = m_appCfg.IntraPartMask;
+                    feiEncCtrl[fieldId].DistortionType         = m_appCfg.DistortionType;
+                    feiEncCtrl[fieldId].RepartitionCheckEnable = m_appCfg.RepartitionCheckEnable;
+                    feiEncCtrl[fieldId].AdaptiveSearch         = m_appCfg.AdaptiveSearch;
+                    feiEncCtrl[fieldId].MVPredictor            = MVPredictors;
+                    feiEncCtrl[fieldId].NumMVPredictors[0]     = m_appCfg.PipelineCfg.numOfPredictors[fieldId][0];
+                    feiEncCtrl[fieldId].NumMVPredictors[1]     = m_appCfg.PipelineCfg.numOfPredictors[fieldId][1];
+                    feiEncCtrl[fieldId].PerMBQp                = MBQP;
+                    feiEncCtrl[fieldId].PerMBInput             = MBCtrl;
+                    feiEncCtrl[fieldId].MBSizeCtrl             = m_appCfg.bMBSize;
+                    feiEncCtrl[fieldId].ColocatedMbDistortion  = m_appCfg.ColocatedMbDistortion;
+
+                    //Note:
+                    //(RefHeight x RefWidth) should not exceed 2048 for P frames and 1024 for B frames
+                    feiEncCtrl[fieldId].RefHeight    = m_appCfg.RefHeight;
+                    feiEncCtrl[fieldId].RefWidth     = m_appCfg.RefWidth;
+                    feiEncCtrl[fieldId].SearchWindow = m_appCfg.SearchWindow;
                 }
-
-                feiEncCtrl[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_ENC_CTRL;
-                feiEncCtrl[fieldId].Header.BufferSz = sizeof(mfxExtFeiEncFrameCtrl);
-
-                feiEncCtrl[fieldId].SearchPath             = m_appCfg.SearchPath;
-                feiEncCtrl[fieldId].LenSP                  = m_appCfg.LenSP;
-                feiEncCtrl[fieldId].SubMBPartMask          = m_appCfg.SubMBPartMask;
-                feiEncCtrl[fieldId].MultiPredL0            = m_appCfg.MultiPredL0;
-                feiEncCtrl[fieldId].MultiPredL1            = m_appCfg.MultiPredL1;
-                feiEncCtrl[fieldId].SubPelMode             = m_appCfg.SubPelMode;
-                feiEncCtrl[fieldId].InterSAD               = m_appCfg.InterSAD;
-                feiEncCtrl[fieldId].IntraSAD               = m_appCfg.IntraSAD;
-                feiEncCtrl[fieldId].IntraPartMask          = m_appCfg.IntraPartMask;
-                feiEncCtrl[fieldId].DistortionType         = m_appCfg.DistortionType;
-                feiEncCtrl[fieldId].RepartitionCheckEnable = m_appCfg.RepartitionCheckEnable;
-                feiEncCtrl[fieldId].AdaptiveSearch         = m_appCfg.AdaptiveSearch;
-                feiEncCtrl[fieldId].MVPredictor            = MVPredictors;
-
-                mfxU16 nmvp_l0 = m_appCfg.bNPredSpecified_l0 ?
-                    m_appCfg.NumMVPredictors[0] : (std::min)(mfxU16(m_numRefFrame*m_numOfFields), MaxFeiEncMVPNum);
-                mfxU16 nmvp_l1 = m_appCfg.bNPredSpecified_l1 ?
-                    m_appCfg.NumMVPredictors[1] : (std::min)(mfxU16(m_numRefFrame*m_numOfFields), MaxFeiEncMVPNum);
-
-                feiEncCtrl[fieldId].NumMVPredictors[0] = m_appCfg.PipelineCfg.numOfPredictors[fieldId][0] = nmvp_l0;
-                feiEncCtrl[fieldId].NumMVPredictors[1] = m_appCfg.PipelineCfg.numOfPredictors[fieldId][1] = nmvp_l1;
-                feiEncCtrl[fieldId].PerMBQp                = MBQP;
-                feiEncCtrl[fieldId].PerMBInput             = MBCtrl;
-                feiEncCtrl[fieldId].MBSizeCtrl             = m_appCfg.bMBSize;
-                feiEncCtrl[fieldId].ColocatedMbDistortion  = m_appCfg.ColocatedMbDistortion;
-                //Note:
-                //(RefHeight x RefWidth) should not exceed 2048 for P frames and 1024 for B frames
-                feiEncCtrl[fieldId].RefHeight    = m_appCfg.RefHeight;
-                feiEncCtrl[fieldId].RefWidth     = m_appCfg.RefWidth;
-                feiEncCtrl[fieldId].SearchWindow = m_appCfg.SearchWindow;
 
                 /* PPS Header */
                 if (m_appCfg.bENCPAK || m_appCfg.bOnlyENC || m_appCfg.bOnlyPAK)
@@ -1231,7 +1240,7 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                     So on, there is additional condition for Transform8x8ModeFlag:
                     If partitions below 16x16 present Transform8x8ModeFlag flag should be ON
                      * */
-                    if (!(feiEncCtrl[fieldId].IntraPartMask &0x02) || !(feiEncCtrl[fieldId].IntraPartMask &0x04) )
+                    if (!(m_appCfg.IntraPartMask & 0x02) || !(m_appCfg.IntraPartMask & 0x04))
                     {
                         feiPPS[fieldId].Transform8x8ModeFlag = 1;
                         is_8x8tranform_forced = true;
@@ -1381,9 +1390,12 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
 
             } // for (fieldId = 0; fieldId < m_numOfFields; fieldId++)
 
-            for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
-                tmpForInit-> I_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiEncCtrl[fieldId]));
-                tmpForInit->PB_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiEncCtrl[fieldId]));
+            if (feiEncCtrl)
+            {
+                for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
+                    tmpForInit-> I_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiEncCtrl[fieldId]));
+                    tmpForInit->PB_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiEncCtrl[fieldId]));
+                }
             }
 
             if (feiSPS){
