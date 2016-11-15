@@ -95,8 +95,6 @@ mfxStatus mfxSchedulerCore::StopWakeUpThread(void)
 Ipp32u mfxSchedulerCore::scheduler_thread_proc(void *pParam)
 {
     MFX_SCHEDULER_THREAD_CONTEXT *pContext = (MFX_SCHEDULER_THREAD_CONTEXT *) pParam;
-    mfxTaskHandle previousTaskHandle = {};
-    const Ipp32u threadNum = pContext->threadNum;
 
     {
         char thread_name[30] = {};
@@ -108,13 +106,22 @@ Ipp32u mfxSchedulerCore::scheduler_thread_proc(void *pParam)
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, thread_name);
     }
 
+    pContext->pSchedulerCore->ThreadProc(pContext);
+    return (0x0cced00 + pContext->threadNum);
+}
+
+void mfxSchedulerCore::ThreadProc(MFX_SCHEDULER_THREAD_CONTEXT *pContext)
+{
+    mfxTaskHandle previousTaskHandle = {};
+    const Ipp32u threadNum = pContext->threadNum;
+
     // main working cycle for threads
-    while (false == pContext->pSchedulerCore->m_bQuit)
+    while (false == m_bQuit)
     {
         MFX_CALL_INFO call = {};
         mfxStatus mfxRes;
 
-        mfxRes = pContext->pSchedulerCore->GetTask(call, previousTaskHandle, threadNum);
+        mfxRes = GetTask(call, previousTaskHandle, threadNum);
         if (MFX_ERR_NONE == mfxRes)
         {
             mfxU64 start, stop;
@@ -128,7 +135,7 @@ Ipp32u mfxSchedulerCore::scheduler_thread_proc(void *pParam)
                 MFX_LTRACE_1(MFX_TRACE_LEVEL_SCHED, "^Child^of", "%d", call.pTask->nParentId);
 
                 // mark beginning of working period
-                start =  pContext->pSchedulerCore->GetHighPerformanceCounter();
+                start = GetHighPerformanceCounter();
 
                 // NOTE: it is legacy task call,
                 // it should be eliminated soon
@@ -150,7 +157,7 @@ Ipp32u mfxSchedulerCore::scheduler_thread_proc(void *pParam)
                 }
 
                 // mark end of working period
-                stop = pContext->pSchedulerCore->GetHighPerformanceCounter();
+                stop = GetHighPerformanceCounter();
 
                 // update thread statistic
                 call.timeSpend = (stop - start);
@@ -166,7 +173,7 @@ Ipp32u mfxSchedulerCore::scheduler_thread_proc(void *pParam)
 
             // mark the task completed,
             // set the sync point into the high state if any.
-            pContext->pSchedulerCore->MarkTaskCompleted(&call, threadNum);
+            MarkTaskCompleted(&call, threadNum);
             //timer1.Stop(0);
         }
         else
@@ -174,33 +181,30 @@ Ipp32u mfxSchedulerCore::scheduler_thread_proc(void *pParam)
             mfxU64 start, stop;
 
 #if defined(MFX_SCHEDULER_LOG)
-            mfxLogWriteA(pContext->pSchedulerCore->m_hLog,
+            mfxLogWriteA(m_hLog,
                          "[% 4u] thread's sleeping\n", threadNum);
 #endif // defined(MFX_SCHEDULER_LOG)
 
             // mark beginning of sleep period
-            start = pContext->pSchedulerCore->GetHighPerformanceCounter();
+            start = GetHighPerformanceCounter();
 
             // there is no any task.
             // sleep for a while until the event is signaled.
-            pContext->pSchedulerCore->Wait(threadNum);
+            Wait(threadNum);
 
             // mark end of sleep period
-            stop = pContext->pSchedulerCore->GetHighPerformanceCounter();
+            stop = GetHighPerformanceCounter();
 
             // update thread statistic
             pContext->sleepTime += (stop - start);
 
 #if defined(MFX_SCHEDULER_LOG)
-            mfxLogWriteA(pContext->pSchedulerCore->m_hLog,
+            mfxLogWriteA(m_hLog,
                          "[% 4u] thread woke up\n", threadNum);
 #endif // defined(MFX_SCHEDULER_LOG)
         }
     }
-
-    return (0x0cced00 + pContext->threadNum);
-
-} // Ipp32u mfxSchedulerCore::scheduler_thread_proc(void *pParam)
+}
 
 Ipp32u mfxSchedulerCore::scheduler_wakeup_thread_proc(void *pParam)
 {
@@ -211,26 +215,28 @@ Ipp32u mfxSchedulerCore::scheduler_wakeup_thread_proc(void *pParam)
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, thread_name);
     }
 
+    pSchedulerCore->WakeupThreadProc();
+    return 0x0ccedff;
+}
+
+void mfxSchedulerCore::WakeupThreadProc()
+{
     // main working cycle for threads
-    while (false == pSchedulerCore->m_bQuitWakeUpThread)
+    while (false == m_bQuitWakeUpThread)
     {
         vm_status vmRes;
 
-        vmRes = vm_event_timed_wait(&pSchedulerCore->m_hwTaskDone, pSchedulerCore->m_timer_hw_event);
+        vmRes = vm_event_timed_wait(&m_hwTaskDone, m_timer_hw_event);
 
         // HW event is signaled. Reset all HW waiting tasks.
         if (VM_OK == vmRes||
             VM_TIMEOUT == vmRes)
         {
-            vmRes = vm_event_reset(&pSchedulerCore->m_hwTaskDone);
+            vmRes = vm_event_reset(&m_hwTaskDone);
 
             //MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "HW Event");
-            pSchedulerCore->IncrementHWEventCounter();
-            pSchedulerCore->WakeUpThreads((mfxU32) MFX_INVALID_THREAD_ID,
-                                          MFX_SCHEDULER_HW_BUFFER_COMPLETED);
+            IncrementHWEventCounter();
+            WakeUpThreads((mfxU32) MFX_INVALID_THREAD_ID, MFX_SCHEDULER_HW_BUFFER_COMPLETED);
         }
     }
-
-    return 0x0ccedff;
-
-} // Ipp32u mfxSchedulerCore::scheduler_wakeup_thread_proc(void *pParam)
+}

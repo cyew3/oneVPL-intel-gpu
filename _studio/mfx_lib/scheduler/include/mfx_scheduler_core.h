@@ -401,6 +401,9 @@ protected:
     static
     Ipp32u VM_THREAD_CALLCONVENTION scheduler_wakeup_thread_proc(void *pParam);
 
+    void ThreadProc(MFX_SCHEDULER_THREAD_CONTEXT *pContext);
+    void WakeupThreadProc();
+
     //
     // TASKING STUFF
     //
