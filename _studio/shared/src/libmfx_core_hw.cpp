@@ -160,6 +160,7 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
                 profile |= VA_PROFILE_444;
                 break;
             case MFX_FOURCC_Y210:
+            case MFX_FOURCC_Y216:
                 profile |= VA_PROFILE_10 | VA_PROFILE_422;
                 break;
             case MFX_FOURCC_Y410:
