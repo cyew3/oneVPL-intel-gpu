@@ -1979,7 +1979,7 @@ void SceneChangeDetector::VidRead_Init() {
     support->pendingSch = 0;
     support->lastSCdetectionDistance = 0;
     support->detectedSch = 0;
-    support->logic = new TSCstat *[2];
+    support->logic = new TSCstat *[TSCSTATBUFFER];
     TSCstat_Init(support->logic);
     support->PDistanceTable = PDISTTbl2;
     support->size = Small_Size;
