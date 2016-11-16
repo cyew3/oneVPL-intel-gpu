@@ -271,6 +271,7 @@ protected:
     mfxU32 m_nFramesRead;
     bool   m_bCutOutput;
     bool   m_bInsertIDR;
+    bool   m_bTimeOutExceed;
 
     mfxEncodeCtrl m_encCtrl;
 
@@ -300,6 +301,7 @@ protected:
 
     virtual mfxStatus AllocateSufficientBuffer(mfxBitstream* pBS);
     virtual mfxStatus FillBuffers();
+    virtual mfxStatus LoadNextFrame(mfxFrameSurface1* pSurf);
 
     virtual mfxStatus GetFreeTask(sTask **ppTask);
     virtual MFXVideoSession& GetFirstSession(){return m_mfxSession;}

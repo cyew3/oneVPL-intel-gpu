@@ -65,7 +65,7 @@ mfxStatus CUserPipeline::AllocFrames()
     nEncSurfNum = EncRequest.NumFrameSuggested;
 
     // The number of surfaces for plugin input - so that plugin can work at async depth = m_nAsyncDepth
-    nRotateSurfNum = m_mfxEncParams.AsyncDepth;
+    nRotateSurfNum = MSDK_MAX(m_mfxEncParams.AsyncDepth, m_nMemBuffer);
 
     // If surfaces are shared by 2 components, c1 and c2. NumSurf = c1_out + c2_in - AsyncDepth + 1
     nEncSurfNum += nRotateSurfNum - m_mfxEncParams.AsyncDepth + 1;
@@ -180,6 +180,9 @@ mfxStatus CUserPipeline::Init(sInputParams *pParams)
 
     // set memory type
     m_memType = pParams->memType;
+    m_nMemBuffer = pParams->nMemBuf;
+    m_nTimeout = pParams->nTimeout;
+    m_bCutOutput = !pParams->bUncut;
 
     // prepare output file writer
     sts = InitFileWriters(pParams);
@@ -298,6 +301,9 @@ mfxStatus CUserPipeline::ResetMFXComponents(sInputParams* pParams)
     sts = m_TaskPool.Init(&m_mfxSession, m_FileWriters.first, m_mfxEncParams.AsyncDepth, nEncodedDataBufferSize, m_FileWriters.second);
     MSDK_CHECK_STATUS(sts, "m_TaskPool.Init failed");
 
+    sts = FillBuffers();
+    MSDK_CHECK_STATUS(sts, "FillBuffers failed");
+
     return MFX_ERR_NONE;
 }
 
@@ -323,26 +329,23 @@ mfxStatus CUserPipeline::Run()
         sts = GetFreeTask(&pCurrentTask);
         MSDK_BREAK_ON_ERROR(sts);
 
-        nRotateSurfIdx = GetFreeSurface(m_pPluginSurfaces, m_PluginResponse.NumFrameActual);
+        if (m_nMemBuffer)
+        {
+            nRotateSurfIdx = m_nFramesRead % m_nMemBuffer;
+        }
+        else
+        {
+            nRotateSurfIdx = GetFreeSurface(m_pPluginSurfaces, m_PluginResponse.NumFrameActual);
+        }
         MSDK_CHECK_ERROR(nRotateSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
 
-        mfxFrameSurface1 *rot_surf = &m_pPluginSurfaces[nRotateSurfIdx];
-        if (SYSTEM_MEMORY != m_memType)
-        {
-            sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, rot_surf->Data.MemId, &(rot_surf->Data));
-            MSDK_BREAK_ON_ERROR(sts);
-        }
-
         m_statFile.StartTimeMeasurement();
-        sts = m_FileReader.LoadNextFrame(&m_pPluginSurfaces[nRotateSurfIdx]);
+        sts = LoadNextFrame(&m_pPluginSurfaces[nRotateSurfIdx]);
         m_statFile.StopTimeMeasurement();
-        MSDK_BREAK_ON_ERROR(sts);
+        if ( (MFX_ERR_MORE_DATA == sts) && !m_bTimeOutExceed)
+            continue;
 
-        if (SYSTEM_MEMORY != m_memType)
-        {
-            sts = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis, rot_surf->Data.MemId, &(rot_surf->Data));
-            MSDK_BREAK_ON_ERROR(sts);
-        }
+        MSDK_BREAK_ON_ERROR(sts);
 
         nEncSurfIdx = GetFreeSurface(m_pEncSurfaces, m_EncResponse.NumFrameActual);
         MSDK_CHECK_ERROR(nEncSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
@@ -364,7 +367,6 @@ mfxStatus CUserPipeline::Run()
                 break;
             }
         }
-
         MSDK_BREAK_ON_ERROR(sts);
 
         // save the id of preceding rotate task which will produce input data for the encode task
@@ -376,7 +378,9 @@ mfxStatus CUserPipeline::Run()
 
         for (;;)
         {
-            sts = m_pmfxENC->EncodeFrameAsync(NULL, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+            InsertIDR(m_bInsertIDR);
+            sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+            m_bInsertIDR = false;
 
             if (MFX_ERR_NONE < sts && !pCurrentTask->EncSyncP) // repeat the call if warning and no output
             {
@@ -415,7 +419,9 @@ mfxStatus CUserPipeline::Run()
 
         for (;;)
         {
-            sts = m_pmfxENC->EncodeFrameAsync(NULL, NULL, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+            InsertIDR(m_bInsertIDR);
+            sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, NULL, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
+            m_bInsertIDR = false;
 
             if (MFX_ERR_NONE < sts && !pCurrentTask->EncSyncP) // repeat the call if warning and no output
             {
@@ -459,6 +465,25 @@ mfxStatus CUserPipeline::Run()
     MSDK_CHECK_STATUS(sts, "m_TaskPool.SynchronizeFirstTask failed");
     m_statOverall.StopTimeMeasurement();
     return sts;
+}
+
+mfxStatus CUserPipeline::FillBuffers()
+{
+    if (m_nMemBuffer)
+    {
+        for (mfxU32 i = 0; i < m_nMemBuffer; i++)
+        {
+            mfxFrameSurface1* surface = &m_pPluginSurfaces[i];
+
+            mfxStatus sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, surface->Data.MemId, &surface->Data);
+            MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Lock failed");
+            sts = m_FileReader.LoadNextFrame(surface);
+            MSDK_CHECK_STATUS(sts, "m_FileReader.LoadNextFrame failed");
+            sts = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis, surface->Data.MemId, &surface->Data);
+            MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Unlock failed");
+        }
+    }
+    return MFX_ERR_NONE;
 }
 
 void CUserPipeline::PrintInfo()

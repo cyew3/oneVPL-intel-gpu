@@ -951,7 +951,6 @@ CEncodingPipeline::CEncodingPipeline()
     m_ExtBRC.Header.BufferId = MFX_EXTBUFF_BRC;
     m_ExtBRC.Header.BufferSz = sizeof(m_ExtBRC);
 
-
 #if D3D_SURFACES_SUPPORT
     m_hwdev = NULL;
 #endif
@@ -968,6 +967,7 @@ CEncodingPipeline::CEncodingPipeline()
 
     m_nFramesToProcess = 0;
     m_bCutOutput = false;
+    m_bTimeOutExceed = false;
 }
 
 CEncodingPipeline::~CEncodingPipeline()
@@ -1488,8 +1488,6 @@ mfxStatus CEncodingPipeline::Run()
 
     mfxU32 nFramesProcessed = 0;
 
-    bool bInsertIDR = false;
-
     sts = MFX_ERR_NONE;
 
 #if defined (ENABLE_V4L2_SUPPORT)
@@ -1555,51 +1553,14 @@ mfxStatus CEncodingPipeline::Run()
                 pSurf = &m_pVppSurfaces[nVppSurfIdx];
             }
 
-            // load frame from file to surface data
-            // if we share allocator with Media SDK we need to call Lock to access surface data and...
-            if (m_bExternalAlloc)
-            {
-                // get YUV pointers
-                sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, pSurf->Data.MemId, &(pSurf->Data));
-                MSDK_BREAK_ON_ERROR(sts);
-            }
-
             pSurf->Info.FrameId.ViewId = currViewNum;
+
             m_statFile.StartTimeMeasurement();
+            sts = LoadNextFrame(pSurf);
+            m_statFile.StopTimeMeasurement();
 
-            bool bTimeOutExceed = (m_nTimeout < m_statOverall.GetDeltaTime()) ? true : false;
-
-            if (!isV4L2InputEnabled)
-            {
-                if (m_nMemBuffer)
-                {
-                    // memoty buffer mode. No file reading required
-                    bool bMemBufExceed = !(m_nFramesRead % m_nMemBuffer);
-                    if (bTimeOutExceed && bMemBufExceed )
-                    {
-                        sts = MFX_ERR_MORE_DATA;
-                    }
-                    else if (bMemBufExceed)
-                    {
-                        // Rewrite outupt file and insert idr frame
-                        m_bFileWriterReset = m_bCutOutput;
-                        bInsertIDR = m_bCutOutput;
-                    }
-                }
-                else
-                {
-                    // read frame from file
-                    sts = m_FileReader.LoadNextFrame(pSurf);
-                    if ( (MFX_ERR_MORE_DATA == sts) && !bTimeOutExceed )
-                    {
-                        m_FileReader.Reset();
-                        m_bFileWriterReset = m_bCutOutput;
-                        // forcedly insert idr frame to make output file readable
-                        bInsertIDR = m_bCutOutput;
-                        continue;
-                    }
-                }
-            }
+            if ( (MFX_ERR_MORE_DATA == sts) && !m_bTimeOutExceed)
+                continue;
 
             MSDK_BREAK_ON_ERROR(sts);
 
@@ -1608,12 +1569,6 @@ mfxStatus CEncodingPipeline::Run()
             m_statFile.StopTimeMeasurement();
             if (MVC_ENABLED & m_MVCflags) currViewNum ^= 1; // Flip between 0 and 1 for ViewId
 
-            // ... after we're done call Unlock
-            if (m_bExternalAlloc)
-            {
-                sts = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis, pSurf->Data.MemId, &(pSurf->Data));
-                MSDK_BREAK_ON_ERROR(sts);
-            }
         }
 
         // perform preprocessing if required
@@ -1667,10 +1622,10 @@ mfxStatus CEncodingPipeline::Run()
 
         for (;;)
         {
-            InsertIDR(bInsertIDR);
+            InsertIDR(m_bInsertIDR);
             // at this point surface for encoder contains either a frame from file or a frame processed by vpp
             sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
-            bInsertIDR = false;
+            m_bInsertIDR = false;
 
             if (m_nMemBuffer && pCurrentTask->EncSyncP)
             {
@@ -1759,9 +1714,9 @@ mfxStatus CEncodingPipeline::Run()
 
             for (;;)
             {
-                InsertIDR(bInsertIDR);
+                InsertIDR(m_bInsertIDR);
                 sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
-                bInsertIDR = false;
+                m_bInsertIDR = false;
 
                 if (MFX_ERR_NONE < sts && !pCurrentTask->EncSyncP) // repeat the call if warning and no output
                 {
@@ -1803,9 +1758,9 @@ mfxStatus CEncodingPipeline::Run()
 
         for (;;)
         {
-            InsertIDR(bInsertIDR);
+            InsertIDR(m_bInsertIDR);
             sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, NULL, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
-            bInsertIDR = false;
+            m_bInsertIDR = false;
 
             if (MFX_ERR_NONE < sts && !pCurrentTask->EncSyncP) // repeat the call if warning and no output
             {
@@ -1850,6 +1805,63 @@ mfxStatus CEncodingPipeline::Run()
     // report any errors that occurred in asynchronous part
     MSDK_CHECK_STATUS(sts, "m_TaskPool.SynchronizeFirstTask failed");
     m_statOverall.StopTimeMeasurement();
+    return sts;
+}
+
+mfxStatus CEncodingPipeline::LoadNextFrame(mfxFrameSurface1* pSurf)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    if (isV4L2InputEnabled)
+        return MFX_ERR_NONE;
+
+    m_bTimeOutExceed = (m_nTimeout < m_statOverall.GetDeltaTime()) ? true : false;
+
+    if (m_nMemBuffer)
+    {
+        // memoty buffer mode. No file reading required
+        bool bMemBufExceed = !(m_nFramesRead % m_nMemBuffer);
+        if (m_bTimeOutExceed && bMemBufExceed )
+        {
+            sts = MFX_ERR_MORE_DATA;
+        }
+        else if (bMemBufExceed)
+        {
+            // Rewrite outupt file and insert idr frame
+            m_bFileWriterReset = m_bCutOutput;
+            m_bInsertIDR = m_bCutOutput;
+        }
+    }
+    else
+    {
+        // read frame from file
+        if (m_bExternalAlloc)
+        {
+            mfxStatus sts1 = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, pSurf->Data.MemId, &(pSurf->Data));
+            MSDK_CHECK_STATUS(sts1, "m_pMFXAllocator->Lock failed");
+
+            sts = m_FileReader.LoadNextFrame(pSurf);
+
+            sts1 = m_pMFXAllocator->Unlock(m_pMFXAllocator->pthis, pSurf->Data.MemId, &(pSurf->Data));
+            MSDK_CHECK_STATUS(sts1, "m_pMFXAllocator->Unlock failed");
+        }
+        else
+        {
+            sts = m_FileReader.LoadNextFrame(pSurf);
+        }
+
+        if ( (MFX_ERR_MORE_DATA == sts) && !m_bTimeOutExceed )
+        {
+            m_FileReader.Reset();
+            m_bFileWriterReset = m_bCutOutput;
+            // forcedly insert idr frame to make output file readable
+            m_bInsertIDR = m_bCutOutput;
+            return sts;
+        }
+    }
+
+    m_nFramesRead++;
+
     return sts;
 }
 
