@@ -19,7 +19,7 @@
 #include "mfx_common_int.h"
 #include "mfx_ext_buffers.h"
 
-#if defined (AS_VP9E_PLUGIN)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
 
 namespace MfxHwVP9Encode
 {
@@ -605,4 +605,4 @@ mfxStatus CheckEncodeFrameParam(
 }
 } //namespace MfxHwVP9Encode
 
-#endif // AS_VP9E_PLUGIN
+#endif // PRE_SI_TARGET_PLATFORM_GEN10

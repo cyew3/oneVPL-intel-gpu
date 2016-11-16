@@ -8,11 +8,11 @@
 // Copyright(C) 2016 Intel Corporation. All Rights Reserved.
 //
 
-#if defined (AS_VP9E_PLUGIN)
+#include "mfx_vp9_encode_hw_d3d9.h"
+
+#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
 
 #if defined (_WIN32) || defined (_WIN64)
-
-#include "mfx_vp9_encode_hw_d3d9.h"
 
 namespace MfxHwVP9Encode
 {
@@ -574,4 +574,4 @@ mfxStatus D3D9Encoder::Destroy()
 
 #endif // (_WIN32) || (_WIN64)
 
-#endif // AS_VP9E_PLUGIN
+#endif // PRE_SI_TARGET_PLATFORM_GEN10

@@ -20,7 +20,7 @@
 #include "mfx_enc_common.h"
 #include "assert.h"
 
-#if defined (AS_VP9E_PLUGIN)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
 
 //#define VP9_LOGGING
 #ifdef VP9_LOGGING
@@ -630,4 +630,4 @@ inline bool InsertSeqHeader(Task const &task)
 
 } // MfxHwVP9Encode
 
-#endif // AS_VP9E_PLUGIN
+#endif // PRE_SI_TARGET_PLATFORM_GEN10

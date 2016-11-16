@@ -17,7 +17,7 @@
 #include "ippi.h"
 #include "ipps.h"
 
-#if defined (AS_VP9E_PLUGIN)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
 namespace MfxHwVP9Encode
 {
 
@@ -599,4 +599,4 @@ mfxStatus Plugin::UpdateBitstream(
 
 } // MfxHwVP9Encode
 
-#endif // AS_VP9E_PLUGIN
+#endif // PRE_SI_TARGET_PLATFORM_GEN10

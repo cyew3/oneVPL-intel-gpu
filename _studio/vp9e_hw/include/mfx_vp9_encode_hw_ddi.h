@@ -14,7 +14,7 @@
 #include "encoding_ddi.h"
 #include "mfx_vp9_encode_hw_utils.h"
 
-#if defined (AS_VP9E_PLUGIN)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
 
 namespace MfxHwVP9Encode
 {
@@ -272,4 +272,4 @@ typedef struct tagENCODE_CAPS_VP9
                               BitOffsets &offsets);
 } // MfxHwVP9Encode
 
-#endif // AS_VP9E_PLUGIN
+#endif // PRE_SI_TARGET_PLATFORM_GEN10

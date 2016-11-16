@@ -15,7 +15,7 @@
 #include "mfx_vp9_encode_hw_ddi.h"
 #include "mfxvp9.h"
 
-#if defined (AS_VP9E_PLUGIN)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
 
 namespace MfxHwVP9Encode
 {
@@ -38,4 +38,4 @@ mfxStatus CheckEncodeFrameParam(mfxVideoParam const & video,
 
 } // MfxHwVP9Encode
 
-#endif // AS_VP9E_PLUGIN
+#endif // PRE_SI_TARGET_PLATFORM_GEN10

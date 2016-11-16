@@ -8,13 +8,13 @@
 //
 */
 
-#if defined (AS_VP9E_PLUGIN)
-
 #if defined (_WIN32) || defined (_WIN64)
 
 #include "mfx_vp9_encode_hw_utils.h"
 #include "mfx_vp9_encode_hw_d3d9.h"
 #include "mfx_vp9_encode_hw_d3d11.h"
+
+#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
 
 namespace MfxHwVP9Encode
 {
@@ -554,4 +554,4 @@ mfxStatus D3D11Encoder::Destroy()
 
 #endif // (_WIN32) || (_WIN64)
 
-#endif // AS_VP9E_PLUGIN
+#endif // PRE_SI_TARGET_PLATFORM_GEN10
