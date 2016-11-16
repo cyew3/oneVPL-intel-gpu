@@ -69,6 +69,20 @@
     #endif // #if defined(LINUX32) || defined(LINUX64)
 #endif // MFX_VA
 
+#define ENABLE_PRE_SI_FEATURES
+
+#if defined (ENABLE_PRE_SI_FEATURES)
+
+    #define PRE_SI_TARGET_PLATFORM_GEN11 // target generation is Gen11 (ICL, CNL-H, CNX-G)
+
+    #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+        #define PRE_SI_TARGET_PLATFORM_GEN10 // assume that all Gen10 features are supported on Gen11
+    #endif // PRE_SI_TARGET_PLATFORM_GEN11
+
+    //#define PRE_SI_TARGET_PLATFORM_GEN10 // target generation is Gen10 (CNL)
+
+#endif // ENABLE_PRE_SI_FEATURES
+
 #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
     #if defined(HEVCE_EVALUATION)
         //#define MFX_ENABLE_WATERMARK
