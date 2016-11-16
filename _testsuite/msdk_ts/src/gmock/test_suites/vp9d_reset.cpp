@@ -271,7 +271,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                                                   {IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY, RESET}}, 5},
     {/*12*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {{IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY, INIT},
                                                   {IOPattern, MFX_IOPATTERN_OUT_SYSTEM_MEMORY, RESET}}, 5},
-    {/*13*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, {{IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY, INIT},
+    {/*13*/ MFX_ERR_INVALID_VIDEO_PARAM, 0,      {{IOPattern, MFX_IOPATTERN_OUT_OPAQUE_MEMORY, INIT},
                                                   {IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY, RESET}}, 5},
     {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{ChromaFormat, MFX_CHROMAFORMAT_YUV411, RESET}}, 0},
     {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_YV12, RESET}}, 0},
@@ -389,7 +389,7 @@ int TestSuite::RunTest(const tc_struct& tc)
 
     //test section
     {
-        tsStruct::SetPars(m_par, tc, INIT);
+        tsStruct::SetPars(m_par, tc, RESET);
 
         mfxSession ses     = (NULL_SESSION  == tc.mode) ? nullptr : m_session;
         mfxVideoParam* par = (NULL_PAR      == tc.mode) ? nullptr : &m_par;
