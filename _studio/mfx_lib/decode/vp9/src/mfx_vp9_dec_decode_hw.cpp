@@ -47,9 +47,11 @@ bool CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p_video_param)
 #ifdef MFX_VA_WIN
 
     if (p_core->IsGuidSupported(DXVA_Intel_ModeVP9_Profile0_VLD, p_video_param) != MFX_ERR_NONE &&
-        p_core->IsGuidSupported(DXVA_Intel_ModeVP9_Profile1_YUV444_VLD, p_video_param) != MFX_ERR_NONE &&
         p_core->IsGuidSupported(DXVA_Intel_ModeVP9_Profile2_10bit_VLD, p_video_param) != MFX_ERR_NONE &&
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        p_core->IsGuidSupported(DXVA_Intel_ModeVP9_Profile1_YUV444_VLD, p_video_param) != MFX_ERR_NONE &&
         p_core->IsGuidSupported(DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD, p_video_param) != MFX_ERR_NONE &&
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
 #if defined(NTDDI_WIN10_TH2)
         p_core->IsGuidSupported(DXVA_ModeVP9_VLD_Profile0, p_video_param) != MFX_ERR_NONE &&
         p_core->IsGuidSupported(DXVA_ModeVP9_VLD_10bit_Profile2_private_copy, p_video_param) != MFX_ERR_NONE)
@@ -410,8 +412,10 @@ mfxStatus VideoDECODEVP9_HW::QueryIOSurfInternal(eMFXPlatform /* platform */, mf
     {
         p_request->Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE;
 #ifdef MFX_VA_WIN
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
         if (MFX_FOURCC_AYUV != p_request->Info.FourCC)
             p_request->Type |= MFX_MEMTYPE_SHARED_RESOURCE;
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
 #endif
     }
     else if (p_params->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)

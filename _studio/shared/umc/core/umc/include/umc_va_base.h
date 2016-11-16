@@ -17,6 +17,7 @@
 #include "vm_debug.h"
 #include "vm_time.h"
 #include "ipps.h"
+#include "mfx_common.h"
 
 #if defined (UMC_VA) || defined (MFX_VA)
 
@@ -171,11 +172,13 @@ enum VideoAccelerationProfile
     H265_10_VLD_422    = VA_H265 | VA_VLD | VA_PROFILE_10 | VA_PROFILE_422,
     H265_10_VLD_444    = VA_H265 | VA_VLD | VA_PROFILE_10 | VA_PROFILE_444,
 
+    VP9_10_VLD     = VA_VP9 | VA_VLD | VA_PROFILE_10,
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     VP9_VLD_422    = VA_VP9 | VA_VLD | VA_PROFILE_422,
     VP9_VLD_444    = VA_VP9 | VA_VLD | VA_PROFILE_444,
-    VP9_10_VLD     = VA_VP9 | VA_VLD | VA_PROFILE_10,
     VP9_10_VLD_422 = VA_VP9 | VA_VLD | VA_PROFILE_10 | VA_PROFILE_422,
     VP9_10_VLD_444 = VA_VP9 | VA_VLD | VA_PROFILE_10 | VA_PROFILE_444,
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
 };
 
 #define MAX_BUFFER_TYPES    32

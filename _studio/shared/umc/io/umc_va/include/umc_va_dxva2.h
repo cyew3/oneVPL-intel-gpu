@@ -211,10 +211,12 @@ bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
     case VP8_VLD:
     case VP9_VLD:
     case VP9_10_VLD:
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     case VP9_VLD_422:
     case VP9_VLD_444:
     case VP9_10_VLD_422:
     case VP9_10_VLD_444:
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
         res = true;
         break;
     case MPEG2_VLD:
