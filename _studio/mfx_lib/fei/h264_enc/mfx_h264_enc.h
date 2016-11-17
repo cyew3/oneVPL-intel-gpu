@@ -22,6 +22,7 @@
 #include <memory>
 #include <list>
 #include <vector>
+#include <map>
 
 using namespace MfxHwH264Encode;
 
@@ -33,7 +34,7 @@ namespace MfxEncENC
 class mfxFeiEncEncodeInternalParams : public mfxEncodeInternalParams
 {
 public:
-     mfxENCInput *in;
+     mfxENCInput  *in;
      mfxENCOutput *out;
 };
 
@@ -46,30 +47,25 @@ public:
      VideoENC_ENC(VideoCORE *core, mfxStatus *sts);
 
     // Destructor
-    virtual
-    ~VideoENC_ENC(void);
+    virtual ~VideoENC_ENC(void);
 
-    virtual
-    mfxStatus Init(mfxVideoParam *par) ;
-    virtual
-    mfxStatus Reset(mfxVideoParam *par);
-    virtual
-    mfxStatus Close(void);
-    virtual
-    mfxTaskThreadingPolicy GetThreadingPolicy(void) {return MFX_TASK_THREADING_DEDICATED_WAIT;}
+    virtual mfxStatus Init(mfxVideoParam *par) ;
+    virtual mfxStatus Reset(mfxVideoParam *par);
+    virtual mfxStatus Close(void);
+    virtual mfxTaskThreadingPolicy GetThreadingPolicy(void) {return MFX_TASK_THREADING_DEDICATED_WAIT;}
 
-    mfxStatus Submit(mfxEncodeInternalParams * iParams);    
-    
+    mfxStatus Submit(mfxEncodeInternalParams * iParams);
+
     mfxStatus Query(DdiTask& task);
 
-    static 
+    static
     mfxStatus QueryIOSurf(VideoCORE*, mfxVideoParam *par, mfxFrameAllocRequest *request);
 
     virtual
     mfxStatus GetVideoParam(mfxVideoParam *par);
     
     virtual
-    mfxStatus RunFrameVmeENCCheck(  mfxENCInput *in, 
+    mfxStatus RunFrameVmeENCCheck(  mfxENCInput *in,
                                     mfxENCOutput *out,
                                     MFX_ENTRY_POINT pEntryPoints[],
                                     mfxU32 &numEntryPoints);
@@ -78,35 +74,33 @@ public:
 
 private:
 
-    bool                    m_bInit;
-    VideoCORE*              m_core;
+    bool                                      m_bInit;
+    VideoCORE*                                m_core;
 
-private:
-    std::list <mfxFrameSurface1*>               m_SurfacesForOutput;
+    std::list <mfxFrameSurface1*>             m_SurfacesForOutput;
 
+    std::auto_ptr<DriverEncoder>              m_ddi;
+    std::vector<mfxU32>                       m_recFrameOrder; // !!! HACK !!!
+    std::map<mfxU32, mfxU32>                  m_frameOrder_frameNum;
+    ENCODE_CAPS                               m_caps;
 
-private:
-    std::auto_ptr<DriverEncoder> m_ddi;
-    std::vector<mfxU32>     m_recFrameOrder; // !!! HACK !!!
-    ENCODE_CAPS m_caps;
-
-    MfxHwH264Encode::MfxVideoParam                  m_video;
+    MfxHwH264Encode::MfxVideoParam            m_video;
     PreAllocatedVector m_sei;
-        
-    MfxHwH264Encode::MfxFrameAllocResponse          m_rec;
-    MfxHwH264Encode::MfxFrameAllocResponse          m_opaqHren;
-    
-    std::list<DdiTask> m_free;
-    std::list<DdiTask> m_incoming;
-    std::list<DdiTask> m_encoding;
-    DdiTask m_prevTask;
-    UMC::Mutex m_listMutex; 
-    
-    mfxU32 m_inputFrameType;
-    eMFXHWType m_currentPlatform;
-    eMFXVAType m_currentVaType;
-    mfxU32 m_singleFieldProcessingMode;
-    mfxU32 m_firstFieldDone;
+
+    MfxHwH264Encode::MfxFrameAllocResponse    m_rec;
+    MfxHwH264Encode::MfxFrameAllocResponse    m_opaqHren;
+
+    std::list<DdiTask>                        m_free;
+    std::list<DdiTask>                        m_incoming;
+    std::list<DdiTask>                        m_encoding;
+    DdiTask                                   m_prevTask;
+    UMC::Mutex                                m_listMutex;
+
+    mfxU32                                    m_inputFrameType;
+    eMFXHWType                                m_currentPlatform;
+    eMFXVAType                                m_currentVaType;
+    mfxU32                                    m_singleFieldProcessingMode;
+    mfxU32                                    m_firstFieldDone;
 };
 
 #endif

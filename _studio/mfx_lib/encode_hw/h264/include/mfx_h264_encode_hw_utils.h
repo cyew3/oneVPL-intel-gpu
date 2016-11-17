@@ -3214,6 +3214,34 @@ namespace MfxHwH264Encode
         MfxVideoParam const & video,
         mfxU32                frameOrder);
 
+    void UpdateDpbFrames(
+        DdiTask & task,
+        mfxU32    field,
+        mfxU32    frameNumMax);
+
+    void InitRefPicList(
+        DdiTask & task,
+        mfxU32    field);
+
+    void ModifyRefPicLists(
+        MfxVideoParam const & video,
+        DdiTask &             task,
+        mfxU32                fieldId);
+
+    void MarkDecodedRefPictures(
+        MfxVideoParam const & video,
+        DdiTask &             task,
+        mfxU32                fid,
+        bool                  isSofiaMode = false);
+
+    ArrayRefListMod CreateRefListMod(
+        ArrayDpbFrame const & dpb,
+        ArrayU8x33            initList,
+        ArrayU8x33 const &    modList,
+        mfxU32                curViewIdx,
+        mfxI32                curPicNum,
+        bool                  optimize);
+
     void ConfigureTask(
         DdiTask &             task,
         DdiTask const &       prevTask,

@@ -216,8 +216,9 @@ namespace
                 count++;
         return count;
     }
+};
 
-    void UpdateDpbFrames(
+    void MfxHwH264Encode::UpdateDpbFrames(
         DdiTask & task,
         mfxU32    field,
         mfxU32    frameNumMax)
@@ -262,7 +263,8 @@ namespace
         }
     }
 
-
+namespace
+{
     void ProcessFields(
         mfxU32                bottomPicFlag,
         ArrayDpbFrame const & dpb,
@@ -298,9 +300,9 @@ namespace
             }
         }
     }
+};
 
-
-    void InitRefPicList(
+    void MfxHwH264Encode::InitRefPicList(
         DdiTask & task,
         mfxU32    field)
     {
@@ -423,7 +425,8 @@ namespace
         task.m_initSizeList1[field] = list1.Size();
     }
 
-
+namespace
+{
     mfxU8 * FindByExtFrameTag(
         mfxU8 *               begin,
         mfxU8 *               end,
@@ -511,8 +514,9 @@ namespace
         if (numActiveRef > 0 && refPicList.Size() > numActiveRef)
             refPicList.Resize(numActiveRef);
     }
+};
 
-    ArrayRefListMod CreateRefListMod(
+    ArrayRefListMod MfxHwH264Encode::CreateRefListMod(
         ArrayDpbFrame const & dpb,
         ArrayU8x33            initList,
         ArrayU8x33 const &    modList,
@@ -614,6 +618,8 @@ namespace
         return refListMod;
     }
 
+namespace
+{
     bool CheckMfxExtAVCRefListsForField(mfxExtAVCRefLists const & ctrl)
     {
         bool isCorrect = true;
@@ -660,8 +666,9 @@ namespace
             return 1;
         }
     }
+};
 
-    void ModifyRefPicLists(
+void MfxHwH264Encode::ModifyRefPicLists(
         MfxVideoParam const & video,
         DdiTask &             task,
         mfxU32                fieldId)
@@ -904,7 +911,8 @@ namespace
         mod1 = CreateRefListMod(dpb, initList1, list1, task.m_viewIdx, curPicNum, !bNoRefListModOpt1);
     }
 
-
+namespace
+{
     void DecideOnRefPicFlag(
         MfxVideoParam const & video,
         DdiTask &             task)
@@ -1113,12 +1121,13 @@ namespace
 
         return isValid;
     }
+};
 
-    void MarkDecodedRefPictures(
+    void MfxHwH264Encode::MarkDecodedRefPictures(
         MfxVideoParam const & video,
         DdiTask &             task,
         mfxU32                fid,
-        bool                  isSofiaMode = false)
+        bool                  isSofiaMode)
     {
         // declare shorter names
         ArrayDpbFrame const &  initDpb  = task.m_dpb[fid];
@@ -1411,7 +1420,8 @@ namespace
         }
     }
 
-
+namespace
+{
     void CreateAdditionalDpbCommands(
         MfxVideoParam const & video,
         DdiTask &             task)
