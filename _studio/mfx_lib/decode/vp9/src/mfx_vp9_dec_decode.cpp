@@ -1511,7 +1511,13 @@ mfxStatus MFX_VP9_Utility::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVi
             if (profile >= 2)
                 bit_depth = bsReader.GetBit() ? 12 : 10;
 
-            if (profile > 0)
+            if (profile == 0)
+            {
+                // There is no color format info in intra-only frame for profile 0
+                subsampling_x = 1;
+                subsampling_y = 1;
+            }
+            else // profile > 0
             {
                 if (SRGB != (COLOR_SPACE)bsReader.GetBits(3)) // color_space
                 {
