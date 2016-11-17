@@ -58,7 +58,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPreEn
         str += structName + ".MB[]={\n";
         for (unsigned int i = 0; i < _struct.NumMBAlloc; i++)
         {
-            str += "{ L0: {" + ToString(_struct.MB[i].MV[0].x) + "," + ToString(_struct.MB[i].MV[0].y) 
+            str += "{ L0: {" + ToString(_struct.MB[i].MV[0].x) + "," + ToString(_struct.MB[i].MV[0].y)
                 + "}, L1: {" + ToString(_struct.MB[i].MV[1].x) + "," + ToString(_struct.MB[i].MV[1].y)
                 + "}}\n";
         }
@@ -198,7 +198,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiEncMV
     DUMP_FIELD(reserved);
 
     // mfxI16Pair MV[4][2]; /* first index is predictor number, second is 0 for L0 and 1 for L1 */
-    
+
     str += structName + ".MV[]={\n";
     for (unsigned int i = 0; i < GET_ARRAY_SIZE(_struct.MV); i++)
     {
@@ -345,7 +345,9 @@ std::string DumpContext::dump(const std::string structName, const mfxFeiPakMBCtr
     DUMP_FIELD(DcBlockCodedCrFlag);
     DUMP_FIELD(DcBlockCodedCbFlag);
     DUMP_FIELD(DcBlockCodedYFlag);
+    DUMP_FIELD(MVFormat);
     DUMP_FIELD(Reserved03);
+    DUMP_FIELD(ExtendedFormat);
     DUMP_FIELD(HorzOrigin);
     DUMP_FIELD(VertOrigin);
     DUMP_FIELD(CbpY);
@@ -624,17 +626,8 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiSPS &
 
     str += dump(structName + ".Header", _struct.Header) + "\n";
     DUMP_FIELD(SPSId);
-    DUMP_FIELD(Profile);
-    DUMP_FIELD(Level);
-    DUMP_FIELD(NumRefFrame);
-    DUMP_FIELD(ChromaFormatIdc);
-    DUMP_FIELD(FrameMBsOnlyFlag);
-    DUMP_FIELD(MBAdaptiveFrameFieldFlag);
-    DUMP_FIELD(Direct8x8InferenceFlag);
-    DUMP_FIELD(Log2MaxFrameNum);
     DUMP_FIELD(PicOrderCntType);
     DUMP_FIELD(Log2MaxPicOrderCntLsb);
-    DUMP_FIELD(DeltaPicOrderAlwaysZeroFlag);
 
     return str;
 }
@@ -647,7 +640,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPPS &
     str += dump(structName + ".Header", _struct.Header) + "\n";
     DUMP_FIELD(SPSId);
     DUMP_FIELD(PPSId);
-    DUMP_FIELD(FrameNum);
+    DUMP_FIELD(FrameType);
     DUMP_FIELD(PicInitQP);
     DUMP_FIELD(NumRefIdxL0Active);
     DUMP_FIELD(NumRefIdxL1Active);
@@ -655,10 +648,6 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiPPS &
         str += structName + ".ReferenceFrames[" + ToString(i) + "]=" + ToString(_struct.ReferenceFrames[i]) + "\n";
     DUMP_FIELD(ChromaQPIndexOffset);
     DUMP_FIELD(SecondChromaQPIndexOffset);
-    DUMP_FIELD(IDRPicFlag);
-    DUMP_FIELD(ReferencePicFlag);
-    DUMP_FIELD(EntropyCodingModeFlag);
-    DUMP_FIELD(ConstrainedIntraPredFlag);
     DUMP_FIELD(Transform8x8ModeFlag);
 
     return str;
@@ -671,7 +660,6 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiSlice
 
     str += dump(structName + ".Header", _struct.Header) + "\n";
 
-    DUMP_FIELD(NumSliceAlloc);
     DUMP_FIELD(NumSlice);
 
     if (_struct.Slice)
@@ -691,7 +679,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiSlice
 {
     std::string str;
 
-    DUMP_FIELD(MBAaddress);
+    DUMP_FIELD(MBAddress);
     DUMP_FIELD(NumMBs);
     DUMP_FIELD(SliceType);
     DUMP_FIELD(PPSId);
