@@ -51,6 +51,8 @@ FEI_EncodeInterface::~FEI_EncodeInterface()
 {
     MSDK_SAFE_DELETE(m_pmfxENCODE);
 
+    mfxExtFeiSliceHeader* pSlices = NULL;
+
     for (mfxU32 i = 0; i < m_InitExtParams.size(); ++i)
     {
         switch (m_InitExtParams[i]->BufferId)
@@ -80,11 +82,12 @@ FEI_EncodeInterface::~FEI_EncodeInterface()
         {
             mfxExtFeiSliceHeader* ptr = reinterpret_cast<mfxExtFeiSliceHeader*>(m_InitExtParams[i]);
             MSDK_SAFE_DELETE_ARRAY(ptr->Slice);
-            MSDK_SAFE_DELETE(ptr);
+            if (!pSlices) { pSlices = ptr; }
         }
         break;
         }
     }
+    MSDK_SAFE_DELETE_ARRAY(pSlices);
     m_InitExtParams.clear();
 
     WipeMfxBitstream(&m_mfxBS);
