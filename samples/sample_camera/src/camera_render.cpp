@@ -59,6 +59,7 @@ CCameraD3DRender::CCameraD3DRender()
     m_Hwnd = 0;
     MSDK_ZERO_MEMORY(m_rect);
     m_style = 0;
+    MSDK_ZERO_MEMORY(m_RectWindow);
 }
 
 BOOL CALLBACK CCameraD3DRender::MonitorEnumProc(HMONITOR /*hMonitor*/,

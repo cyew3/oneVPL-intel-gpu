@@ -210,6 +210,32 @@ struct sInputParams
 
     sInputParams()
     {
+        IOPattern=0;
+        ImpLib=0;
+        asyncNum=0;
+        vaType=0;
+        bScaling=false;
+        scalingMode=0;
+        GPUCopyValue=0;
+        bPartialAccel=0;
+        numFrames=0;
+        numRepeat=0;
+        isOutput=false;
+        ptsCheck=false;
+        ptsJump=false;
+        ptsAdvanced=false;
+        ptsFR=0;
+        roiCheckParam;
+        isOutYV12=false;
+        numStreams=0;
+
+        MSDK_ZERO_MEMORY(strPlgGuid);
+        MSDK_ZERO_MEMORY(strSrcFile);
+        MSDK_ZERO_MEMORY(strPerfFile);
+        MSDK_ZERO_MEMORY(inFrameInfo);
+        MSDK_ZERO_MEMORY(outFrameInfo);
+        MSDK_ZERO_MEMORY(compositionParam);
+
         bInitEx             = false;
         bPerf               = false;
         need_plugin         = false;

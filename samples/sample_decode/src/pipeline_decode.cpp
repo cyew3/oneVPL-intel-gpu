@@ -55,6 +55,9 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 CDecodingPipeline::CDecodingPipeline()
 {
+    m_nFrames=0;
+    m_export_mode=0;
+    m_bVppFullColorRange=false;
     m_bVppIsUsed = false;
     MSDK_ZERO_MEMORY(m_mfxBS);
 
@@ -101,6 +104,8 @@ CDecodingPipeline::CDecodingPipeline()
 
     m_nRenderWinX = 0;
     m_nRenderWinY = 0;
+    m_nRenderWinH = 0;
+    m_nRenderWinW = 0;
 
     m_bResetFileWriter = false;
     m_bResetFileReader = false;
@@ -114,6 +119,7 @@ CDecodingPipeline::CDecodingPipeline()
     m_VppDoNotUse.Header.BufferId = MFX_EXTBUFF_VPP_DONOTUSE;
     m_VppDoNotUse.Header.BufferSz = sizeof(m_VppDoNotUse);
 
+    MSDK_ZERO_MEMORY(m_VppDeinterlacing)
     m_VppDeinterlacing.Header.BufferId = MFX_EXTBUFF_VPP_DEINTERLACING;
     m_VppDeinterlacing.Header.BufferSz = sizeof(m_VppDeinterlacing);
 
@@ -133,6 +139,9 @@ CDecodingPipeline::CDecodingPipeline()
 #if D3D_SURFACES_SUPPORT
     m_pS3DControl = NULL;
 #endif
+
+    m_monitorType = 0;
+
 }
 
 CDecodingPipeline::~CDecodingPipeline()
@@ -1753,52 +1762,57 @@ mfxStatus CDecodingPipeline::RunDecoding()
                 m_pCurrentFreeSurface = NULL;
             }
         }
-        if (MFX_ERR_NONE == sts) {
+        if (MFX_ERR_NONE == sts)
+        {
             if (m_bVppIsUsed)
             {
-                do {
-                    if ((m_pCurrentFreeVppSurface->frame.Info.CropW == 0) ||
-                        (m_pCurrentFreeVppSurface->frame.Info.CropH == 0)) {
-                            m_pCurrentFreeVppSurface->frame.Info.CropW = pOutSurface->Info.CropW;
-                            m_pCurrentFreeVppSurface->frame.Info.CropH = pOutSurface->Info.CropH;
-                            m_pCurrentFreeVppSurface->frame.Info.CropX = pOutSurface->Info.CropX;
-                            m_pCurrentFreeVppSurface->frame.Info.CropY = pOutSurface->Info.CropY;
+                if(m_pCurrentFreeVppSurface)
+                {
+                    do
+                    {
+                        if ((m_pCurrentFreeVppSurface->frame.Info.CropW == 0) ||
+                            (m_pCurrentFreeVppSurface->frame.Info.CropH == 0)) {
+                                m_pCurrentFreeVppSurface->frame.Info.CropW = pOutSurface->Info.CropW;
+                                m_pCurrentFreeVppSurface->frame.Info.CropH = pOutSurface->Info.CropH;
+                                m_pCurrentFreeVppSurface->frame.Info.CropX = pOutSurface->Info.CropX;
+                                m_pCurrentFreeVppSurface->frame.Info.CropY = pOutSurface->Info.CropY;
+                        }
+                        if (pOutSurface->Info.PicStruct != m_pCurrentFreeVppSurface->frame.Info.PicStruct) {
+                            m_pCurrentFreeVppSurface->frame.Info.PicStruct = pOutSurface->Info.PicStruct;
+                        }
+                        if ((pOutSurface->Info.PicStruct == 0) && (m_pCurrentFreeVppSurface->frame.Info.PicStruct == 0)) {
+                            m_pCurrentFreeVppSurface->frame.Info.PicStruct = pOutSurface->Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+                        }
+
+                        if (m_diMode && m_pCurrentFreeVppSurface)
+                            m_pCurrentFreeVppSurface->frame.Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+
+                        // WA: RunFrameVPPAsync doesn't copy ViewId from input to output
+                        m_pCurrentFreeVppSurface->frame.Info.FrameId.ViewId = pOutSurface->Info.FrameId.ViewId;
+                        sts = m_pmfxVPP->RunFrameVPPAsync(pOutSurface, &(m_pCurrentFreeVppSurface->frame), NULL, &(m_pCurrentFreeOutputSurface->syncp));
+
+                        if (MFX_WRN_DEVICE_BUSY == sts) {
+                            MSDK_SLEEP(1); // just wait and then repeat the same call to RunFrameVPPAsync
+                        }
+                    } while (MFX_WRN_DEVICE_BUSY == sts);
+
+                    // process errors
+                    if (MFX_ERR_MORE_DATA == sts) { // will never happen actually
+                        continue;
                     }
-                    if (pOutSurface->Info.PicStruct != m_pCurrentFreeVppSurface->frame.Info.PicStruct) {
-                        m_pCurrentFreeVppSurface->frame.Info.PicStruct = pOutSurface->Info.PicStruct;
-                    }
-                    if ((pOutSurface->Info.PicStruct == 0) && (m_pCurrentFreeVppSurface->frame.Info.PicStruct == 0)) {
-                        m_pCurrentFreeVppSurface->frame.Info.PicStruct = pOutSurface->Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+                    else if (MFX_ERR_NONE != sts) {
+                        break;
                     }
 
-                    if (m_diMode && m_pCurrentFreeVppSurface)
-                        m_pCurrentFreeVppSurface->frame.Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+                    m_UsedVppSurfacesPool.AddSurface(m_pCurrentFreeVppSurface);
+                    msdk_atomic_inc16(&(m_pCurrentFreeVppSurface->render_lock));
 
-                    // WA: RunFrameVPPAsync doesn't copy ViewId from input to output
-                    m_pCurrentFreeVppSurface->frame.Info.FrameId.ViewId = pOutSurface->Info.FrameId.ViewId;
-                    sts = m_pmfxVPP->RunFrameVPPAsync(pOutSurface, &(m_pCurrentFreeVppSurface->frame), NULL, &(m_pCurrentFreeOutputSurface->syncp));
+                    m_pCurrentFreeOutputSurface->surface = m_pCurrentFreeVppSurface;
+                    m_OutputSurfacesPool.AddSurface(m_pCurrentFreeOutputSurface);
 
-                    if (MFX_WRN_DEVICE_BUSY == sts) {
-                        MSDK_SLEEP(1); // just wait and then repeat the same call to RunFrameVPPAsync
-                    }
-                } while (MFX_WRN_DEVICE_BUSY == sts);
-
-                // process errors
-                if (MFX_ERR_MORE_DATA == sts) { // will never happen actually
-                    continue;
+                    m_pCurrentFreeOutputSurface = NULL;
+                    m_pCurrentFreeVppSurface = NULL;
                 }
-                else if (MFX_ERR_NONE != sts) {
-                    break;
-                }
-
-                m_UsedVppSurfacesPool.AddSurface(m_pCurrentFreeVppSurface);
-                msdk_atomic_inc16(&(m_pCurrentFreeVppSurface->render_lock));
-
-                m_pCurrentFreeOutputSurface->surface = m_pCurrentFreeVppSurface;
-                m_OutputSurfacesPool.AddSurface(m_pCurrentFreeOutputSurface);
-
-                m_pCurrentFreeOutputSurface = NULL;
-                m_pCurrentFreeVppSurface = NULL;
             }
             else
             {

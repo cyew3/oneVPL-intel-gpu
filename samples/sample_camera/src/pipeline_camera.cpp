@@ -678,6 +678,14 @@ void CCameraPipeline::DeleteAllocator()
 
 CCameraPipeline::CCameraPipeline()
 {
+    m_resetInterval = 0;
+    MSDK_ZERO_MEMORY(m_Padding);
+    MSDK_ZERO_MEMORY(m_PipeControl);
+    b_3DLUT_Gamma=false;
+    m_numberOfResets=0;
+    m_nFrameLimit=0;
+    m_BayerType=0;
+
     m_nFrameIndex = 0;
     m_nInputFileIndex = 0;
     m_pmfxVPP = NULL;

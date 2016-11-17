@@ -292,9 +292,66 @@ struct sInputParams
 
     sInputParams()
     {
-        MSDK_ZERO_MEMORY(*this);
+        bOutput=0;
+        CameraPluginVersion=0;
+        bRendering=0;
+
+        nWallCell=0;
+        nWallW=0;
+        nWallH=0;
+        nWallMonitor=0;
+        nWallFPS=0;
+        bWallNoTitle=0;
+        nWallTimeout=0;
+
+        hp_diff=0;
+        hp_num=0;
+
+        MSDK_ZERO_MEMORY(gamma_point[64]);
+        MSDK_ZERO_MEMORY(gamma_corrected);;
+        gamma_value=0;
+        gamma_mode=0;
+
+        black_level_B=0;
+        black_level_G0=0;
+        black_level_G1=0;
+        black_level_R=0;
+
+        white_balance_B=0;
+        white_balance_G0=0;
+        white_balance_G1=0;
+        white_balance_R=0;
+
+        lens_aR=0;
+        lens_bR=0;
+        lens_cR=0;
+        lens_dR=0;
+        lens_aG=0;
+        lens_bG=0;
+        lens_cG=0;
+        lens_dG=0;
+        lens_aB=0;
+        lens_bB=0;
+        lens_cB=0;
+        lens_dB=0;
+
+        MSDK_ZERO_MEMORY(CCM);
+
+        MSDK_ZERO_MEMORY(strVignetteMaskFile);
+        denoiseThreshold=0;
+
+        nFramesToProceed=0;
+
+        MSDK_ZERO_MEMORY(strSrcFile);
+        MSDK_ZERO_MEMORY(strDstFile);
+        MSDK_ZERO_MEMORY(strPluginPath);
+
+        bDoPadding=false;
+
         CameraPluginVersion = 1;
         inputType     = MFX_CAM_BAYER_RGGB;
+        MSDK_ZERO_MEMORY(frameInfo[2]);
+
         frameInfo[VPP_IN].nWidth = 4096;
         frameInfo[VPP_IN].nHeight = 2160;
         frameInfo[VPP_IN].CropH = frameInfo[VPP_IN].CropW = frameInfo[VPP_OUT].CropH = frameInfo[VPP_OUT].CropW = NOT_INIT_VALUE;
