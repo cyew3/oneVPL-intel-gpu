@@ -454,8 +454,7 @@ struct iTaskParams
 struct iTask
 {
     explicit iTask(const iTaskParams & task_params)
-        : EncodedFrameSize(0)
-        , encoded(false)
+        : encoded(false)
         , bufs(NULL)
         , preenc_bufs(NULL)
         , fullResSurface(NULL)
@@ -684,7 +683,6 @@ struct iTask
     mfxENCOutput out;
     mfxPAKInput  inPAK;
     mfxPAKOutput outPAK;
-    mfxU32 EncodedFrameSize; //for BRC
     BiFrameLocation m_loc;
     bool encoded;
     bufSet* bufs;

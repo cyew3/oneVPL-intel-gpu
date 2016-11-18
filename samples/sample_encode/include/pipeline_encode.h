@@ -37,7 +37,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxvideo++.h"
 #include "mfxplugin.h"
 #include "mfxplugin++.h"
-#include "brc_routines.h"
 
 #include <vector>
 #include <memory>
@@ -114,7 +113,6 @@ struct sInputParams
     mfxU16 nQPB;
 
     mfxU16 nGPB;
-    mfxU16 nExtBRC;
 
     bool enableQSVFF;
 
@@ -254,8 +252,6 @@ protected:
     // HEVC
     mfxExtHEVCParam m_ExtHEVCParam;
     mfxExtCodingOption3 m_CodingOption3;
-    mfxExtBRC           m_ExtBRC;
-
 
     // external parameters for each component are stored in a vector
     std::vector<mfxExtBuffer*> m_VppExtParams;

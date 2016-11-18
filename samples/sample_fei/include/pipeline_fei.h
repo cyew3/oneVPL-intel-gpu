@@ -34,8 +34,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "mfx_itt_trace.h"
 
-#include "brc_routines.h"
-
 // Extensions for internal use, normally these macros are blank
 #ifdef MOD_FEI
 #include "extension_macros.h"
@@ -86,7 +84,7 @@ protected:
 
     mfxU16 m_maxQueueLength;
     mfxU16 m_log2frameNumMax;
-    mfxU32 m_frameCount, m_frameOrderIdrInDisplayOrder, m_frameCountInEncodedOrder;
+    mfxU32 m_frameCount, m_frameOrderIdrInDisplayOrder;
     PairU8 m_frameType;
 
     mfxFrameInfo m_commonFrameInfo; // setting for ENCODE (VPP / PreENC with DS may have own FrameInfo settings)
@@ -117,8 +115,6 @@ protected:
     MFX_VppInterface*    m_pVPP;
     MFX_DecodeInterface* m_pDECODE;
     YUVreader*           m_pYUVReader;
-
-    ExtBRC               m_BRC;
 
     MFXFrameAllocator*  m_pMFXAllocator;
     mfxAllocatorParams* m_pmfxAllocatorParams;

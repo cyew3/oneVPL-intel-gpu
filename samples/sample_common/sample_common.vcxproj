@@ -243,7 +243,6 @@
     <ClInclude Include="include\avc_spl.h" />
     <ClInclude Include="include\avc_structures.h" />
     <ClInclude Include="include\base_allocator.h" />
-    <ClInclude Include="include\brc_routines.h" />
     <ClInclude Include="include\d3d11_allocator.h" />
     <ClInclude Include="include\d3d11_device.h" />
     <ClInclude Include="include\d3d_allocator.h" />
@@ -275,7 +274,6 @@
     <ClCompile Include="src\avc_nal_spl.cpp" />
     <ClCompile Include="src\avc_spl.cpp" />
     <ClCompile Include="src\base_allocator.cpp" />
-    <ClCompile Include="src\brc_routines.cpp" />
     <ClCompile Include="src\d3d11_allocator.cpp" />
     <ClCompile Include="src\d3d11_device.cpp" />
     <ClCompile Include="src\d3d_allocator.cpp" />
