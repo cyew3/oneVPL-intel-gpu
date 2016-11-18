@@ -128,7 +128,7 @@ mfxI32 Qstep2QP(mfxF64 qstep, mfxI32 qpoffset = 0) // return 0<=qp<=51+mQuantOff
     mfxI32 qp = QStep2QpFloor(qstep, qpoffset);
 
     // prevent going QSTEP index out of bounds
-    if (qp > (mfxI32)sizeof(QSTEP) - 2)
+    if (qp >= (mfxI32)(sizeof(QSTEP)/sizeof(mfxF64)) - 1)
         return 0;
     return (qp == 51 + qpoffset || qstep < (QSTEP[qp] + QSTEP[qp + 1]) / 2) ? qp : qp + 1;
 }
