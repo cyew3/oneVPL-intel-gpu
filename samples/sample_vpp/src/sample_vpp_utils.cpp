@@ -1311,7 +1311,7 @@ CRawVideoWriter::CRawVideoWriter()
 {
     m_fDst = 0;
     m_pPTSMaker = 0;
-
+    m_outYV12 = false;
     return;
 }
 
@@ -1759,7 +1759,8 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
 /* ******************************************************************* */
 
-GeneralWriter::GeneralWriter()
+GeneralWriter::GeneralWriter() :
+    m_svcMode(false)
 {
 };
 

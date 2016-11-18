@@ -91,6 +91,7 @@ public:
         maxbps(0),
         frameRate(0),
         inputBitsPerFrame(0),
+        maxInputBitsPerFrame(0),
         maxFrameSizeInBytes(0),
         width(0),
         height(0),

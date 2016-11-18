@@ -968,6 +968,7 @@ CEncodingPipeline::CEncodingPipeline()
     m_nFramesToProcess = 0;
     m_bCutOutput = false;
     m_bTimeOutExceed = false;
+    m_bInsertIDR = false;
 }
 
 CEncodingPipeline::~CEncodingPipeline()

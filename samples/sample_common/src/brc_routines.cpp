@@ -126,6 +126,10 @@ mfxI32 QStep2QpFloor(mfxF64 qstep, mfxI32 qpoffset = 0) // QSTEP[qp] <= qstep, r
 mfxI32 Qstep2QP(mfxF64 qstep, mfxI32 qpoffset = 0) // return 0<=qp<=51+mQuantOffset
 {
     mfxI32 qp = QStep2QpFloor(qstep, qpoffset);
+
+    // prevent going QSTEP index out of bounds
+    if (qp > (mfxI32)sizeof(QSTEP) - 2)
+        return 0;
     return (qp == 51 + qpoffset || qstep < (QSTEP[qp] + QSTEP[qp + 1]) / 2) ? qp : qp + 1;
 }
 mfxF64 QP2Qstep(mfxI32 qp, mfxI32 qpoffset = 0)
@@ -327,6 +331,7 @@ mfxStatus ExtBRC::Init (mfxVideoParam* par)
 
     mfxI32 rawSize = GetRawFrameSize(m_par.width * m_par.height ,m_par.chromaFormat, m_par.bitDepthLuma);
     mfxI32 qp = GetNewQP(rawSize, m_par.inputBitsPerFrame, m_par.quantMin, m_par.quantMax, 1 , m_par.quantOffset, 0.5);
+    MSDK_CHECK_ERROR(qp, 0, MFX_ERR_NULL_PTR);
 
     UpdateQPParams(qp,MFX_FRAMETYPE_I , m_ctx, 0, m_par.quantMin, m_par.quantMax, 0);
 
@@ -547,6 +552,8 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
             if (fAbShort > FAMax)
             {
                 mfxI32 quant_new = GetNewQP(fAbShort, FAMax, quantMin , quantMax, quant ,m_par.quantOffset, 0.5);
+                MSDK_CHECK_ERROR(quant_new, 0, MFX_ERR_NULL_PTR);
+
                 //printf("    recode 2-0: %d:  FAMax %f, fAbShort %f, quant_new %d\n",frame_par->EncodedOrder, FAMax, fAbShort, quant_new);
 
                 if (quant_new > quant)

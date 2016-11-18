@@ -58,6 +58,7 @@ CCameraD3DRender::CCameraD3DRender()
     MSDK_ZERO_MEMORY(m_sWindowParams);
     m_Hwnd = 0;
     MSDK_ZERO_MEMORY(m_rect);
+    MSDK_ZERO_MEMORY(m_RectWindow);
     m_style = 0;
     MSDK_ZERO_MEMORY(m_RectWindow);
 }

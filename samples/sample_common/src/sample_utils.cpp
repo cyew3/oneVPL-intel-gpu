@@ -636,6 +636,7 @@ CSmplYUVWriter::CSmplYUVWriter()
     m_fDest = NULL;
     m_fDestMVC = NULL;
     m_numCreatedFiles = 0;
+    m_nViews = 0;
 };
 
 mfxStatus CSmplYUVWriter::Init(const msdk_char *strFileName, const mfxU32 numViews)

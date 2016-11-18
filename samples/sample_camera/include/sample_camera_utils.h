@@ -194,7 +194,19 @@ typedef struct _resetParams
 
     bool   bVignette;
     msdk_char  strVignetteMaskFile[MSDK_MAX_FILENAME_LEN];
-    _resetParams()
+    _resetParams() :
+        inputType(0)
+        , denoiseThreshold(0)
+        , hp_diff(0)
+        , hp_num(0)
+        , black_level_B(0)
+        , black_level_G0(0)
+        , black_level_G1(0)
+        , black_level_R(0)
+        , white_balance_B(0)
+        , white_balance_G0(0)
+        , white_balance_G1(0)
+        , white_balance_R(0)
     {
         bHP           = false;
         bBlackLevel   = false;
@@ -202,7 +214,12 @@ typedef struct _resetParams
         bCCM          = false;
         bDenoise      = false;
         bVignette     = false;
-        cropX = cropY = cropW = cropH = 0;
+        width = height = cropX = cropY = cropW = cropH = 0;
+
+        MSDK_ZERO_MEMORY(strSrcFile);
+        MSDK_ZERO_MEMORY(strDstFile);
+        MSDK_ZERO_MEMORY(strVignetteMaskFile);
+        MSDK_ZERO_MEMORY(CCM);
     }
 } sResetParams;
 
@@ -477,7 +494,7 @@ class CRawVideoWriter
 {
 public :
 
-    CRawVideoWriter() {m_FileNum = 0;}; //m_pShiftBuffer = 0;};
+    CRawVideoWriter();
   //~CRawVideoWriter();
 
   mfxStatus  Init(sInputParams *pParams);

@@ -319,6 +319,9 @@ CRawVideoReader::CRawVideoReader()
 {
     m_fSrc = 0;
     m_bSingleFileMode = false;
+    m_Height = m_Width = 0;
+    m_FileNum = 0;
+    m_DoPadding = false;
 #ifdef CONVERT_TO_LSB
     m_pPaddingBuffer = 0;
 #endif
@@ -707,6 +710,12 @@ mfxStatus CBmpWriter::WriteFrame(mfxFrameData* pData, const msdk_char *fileId, m
 
 
 /* ******************************************************************* */
+CRawVideoWriter::CRawVideoWriter() :
+    m_FileNum(0)
+    , m_maxNumFilesToCreate(0)
+{
+    MSDK_ZERO_MEMORY(m_FileNameBase);
+}
 
 mfxStatus CRawVideoWriter::Init(sInputParams* pParams)
 {

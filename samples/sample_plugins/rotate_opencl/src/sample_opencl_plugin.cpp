@@ -45,7 +45,8 @@ Rotate::Rotate() :
     m_MaxNumTasks(0),
     m_pAlloc(NULL),
     m_pChunks(NULL),
-    m_NumChunks(0)
+    m_NumChunks(0),
+    m_impl(0)
 {
     memset(&m_VideoParam, 0, sizeof(m_VideoParam));
     memset(&m_Param, 0, sizeof(m_Param));

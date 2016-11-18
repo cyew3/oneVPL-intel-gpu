@@ -45,6 +45,8 @@ Rotate::Rotate() :
     m_bIsOutOpaque(false)
 {
     m_MaxNumTasks = 0;
+    m_pChunks = 0;
+    m_NumChunks = 0;
 
     memset(&m_VideoParam, 0, sizeof(m_VideoParam));
     memset(&m_Param, 0, sizeof(m_Param));
