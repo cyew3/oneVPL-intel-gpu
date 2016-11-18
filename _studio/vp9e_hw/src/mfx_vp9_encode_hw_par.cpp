@@ -241,8 +241,9 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         unsupported = true;
     }
 
-    if (par.IOPattern && ((par.IOPattern & (~MFX_IOPATTERN_IN_MASK)) != 0 ||
-        (par.IOPattern & MFX_IOPATTERN_IN_MASK) != MFX_IOPATTERN_IN_VIDEO_MEMORY))
+    if (par.IOPattern &&
+        par.IOPattern != MFX_IOPATTERN_IN_VIDEO_MEMORY &&
+        par.IOPattern != MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
         par.IOPattern = 0;
         unsupported = true;

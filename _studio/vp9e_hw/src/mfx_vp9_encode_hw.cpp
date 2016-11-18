@@ -153,7 +153,8 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxF
     MFX_CHECK_STS(CheckExtBufferHeaders(*par));
 
     mfxU32 inPattern = par->IOPattern & MFX_IOPATTERN_IN_MASK;
-    MFX_CHECK(inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY, MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY ||
+        inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY, MFX_ERR_INVALID_VIDEO_PARAM);
 
     VP9MfxVideoParam toValidate = *par;
 
@@ -167,7 +168,17 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxF
     SetDefaults(toValidate, caps);
 
     // fill mfxFrameAllocRequest
-    in->Type = mfxU16((par->IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)? MFX_MEMTYPE_SYS_EXT:MFX_MEMTYPE_D3D_EXT) ;
+    switch (par->IOPattern)
+    {
+    case MFX_IOPATTERN_IN_SYSTEM_MEMORY:
+        in->Type = MFX_MEMTYPE_SYS_EXT;
+        break;
+    case MFX_IOPATTERN_IN_VIDEO_MEMORY:
+        in->Type = MFX_MEMTYPE_D3D_EXT;
+        break;
+    default:
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
 
     in->NumFrameMin = (mfxU16)CalcNumSurfRaw(toValidate);
     in->NumFrameSuggested = in->NumFrameMin;
@@ -217,12 +228,21 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
 
     mfxFrameAllocRequest request = {};
     request.Info = m_video.mfx.FrameInfo;
+    request.Type = MFX_MEMTYPE_D3D_INT;
+
+    // allocate internal surfaces for input raw frames in case of SYSTEM input memory
+    if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+    {
+        request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumSurfRaw(m_video);
+        sts = m_rawLocalFrames.Init(m_pmfxCore, &request);
+        MFX_CHECK_STS(sts);
+    }
 
     // allocate and register surfaces for reconstructed frames
     request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumSurfRecon(m_video);
     request.Info.FourCC = MFX_FOURCC_NV12;
 
-    sts = m_reconFrames.Init(m_pmfxCore, &request, true);
+    sts = m_reconFrames.Init(m_pmfxCore, &request);
     MFX_CHECK_STS(sts);
     sts = m_ddi->Register(m_reconFrames.GetFrameAllocReponse(), D3DDDIFMT_NV12);
     MFX_CHECK_STS(sts);
@@ -232,7 +252,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     MFX_CHECK_STS(sts);
     request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumTasks(m_video);
 
-    sts = m_outBitstreams.Init(m_pmfxCore, &request, true);
+    sts = m_outBitstreams.Init(m_pmfxCore, &request);
     MFX_CHECK_STS(sts);
     sts = m_ddi->Register(m_outBitstreams.GetFrameAllocReponse(), D3DDDIFMT_INTELENCODE_BITSTREAMDATA);
     MFX_CHECK_STS(sts);
@@ -374,6 +394,11 @@ mfxStatus Plugin::ConfigTask(Task &task)
     task.m_pOutBs = 0;
     task.m_pRawLocalFrame = 0;
 
+    if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+    {
+        task.m_pRawLocalFrame = m_rawLocalFrames.GetFreeFrame();
+        MFX_CHECK(task.m_pRawLocalFrame != 0, MFX_WRN_DEVICE_BUSY);
+    }
     task.m_pRecFrame = m_reconFrames.GetFreeFrame();
     MFX_CHECK(task.m_pRecFrame != 0, MFX_WRN_DEVICE_BUSY);
 
@@ -383,8 +408,6 @@ mfxStatus Plugin::ConfigTask(Task &task)
     sts = DecideOnRefListAndDPBRefresh(&m_video, &task, m_dpb, frameParam);
 
     task.m_frameParam = frameParam;
-
-    MFX_CHECK_STS(task.CopyInput());
 
     task.m_pRecFrame->pSurface->Data.FrameOrder = task.m_frameOrder;
 
@@ -438,13 +461,19 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
 
         mfxHDLPair surfaceHDL = {};
 
+        // copy input frame from SYSTEM to VIDEO memory (if required)
+        sts = CopyRawSurfaceToVideoMemory(m_pmfxCore, m_video, *pTask);
+        MFX_CHECK_STS(sts);
+
         sts = pTask->GetInputSurface(pSurface, bExternalSurface);
         MFX_CHECK_STS(sts);
 
+        // get handle to input frame in VIDEO memory (either external or local)
         sts = m_pmfxCore->FrameAllocator.GetHDL(m_pmfxCore->FrameAllocator.pthis, pSurface->Data.MemId, &surfaceHDL.first);
         MFX_CHECK_STS(sts);
         MFX_CHECK(surfaceHDL.first != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
 
+        // submit the frame to the driver
         sts = m_ddi->Execute(*pTask, surfaceHDL.first);
         MFX_CHECK_STS(sts);
 
@@ -491,6 +520,7 @@ mfxStatus Plugin::Close()
         return MFX_ERR_NOT_INITIALIZED;
     }
 
+    MFX_CHECK_STS(m_rawLocalFrames.Release());
     MFX_CHECK_STS(m_reconFrames.Release());
     MFX_CHECK_STS(m_outBitstreams.Release());
 

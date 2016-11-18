@@ -280,12 +280,18 @@ mfxStatus MfxFrameAllocResponse::Alloc(
 
 mfxStatus MfxFrameAllocResponse::Release()
 {
+    if (m_numFrameActualReturnedByAllocFrames == 0)
+    {
+        // nothing was allocated, nothig to do
+        return MFX_ERR_NONE;
+    }
+
     if (m_pCore == 0)
     {
         return MFX_ERR_NULL_PTR;
     }
 
-    if (mids && m_numFrameActualReturnedByAllocFrames)
+    if (mids)
     {
         NumFrameActual = m_numFrameActualReturnedByAllocFrames;
         MFX_CHECK_STS(m_pCore->FrameAllocator.Free(m_pCore->FrameAllocator.pthis, this));
@@ -339,17 +345,19 @@ mfxStatus ExternalFrames::GetFrame(mfxFrameSurface1 *pInFrame, sFrameEx *&pOutFr
 // service class: InternalFrames
 //---------------------------------------------------------
 
-mfxStatus InternalFrames::Init(mfxCoreInterface *pCore, mfxFrameAllocRequest *pAllocReq, bool bHW)
+mfxStatus InternalFrames::Init(mfxCoreInterface *pCore, mfxFrameAllocRequest *pAllocReq)
 {
-    mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR2 (pCore, pAllocReq);
     mfxU32 nFrames = pAllocReq->NumFrameMin;
 
-    if (nFrames == 0) return sts;
-    pAllocReq->Type = (mfxU16)(bHW ? MFX_MEMTYPE_D3D_INT: MFX_MEMTYPE_SYS_INT);
+    if (nFrames == 0)
+    {
+        return MFX_ERR_NONE;
+    }
 
     //printf("internal frames init %d (request)\n", req.NumFrameSuggested);
 
+    mfxStatus sts = MFX_ERR_NONE;
     sts = m_response.Alloc(pCore,*pAllocReq);
     MFX_CHECK_STS(sts);
 
@@ -433,99 +441,23 @@ mfxStatus Task::GetInputSurface(mfxFrameSurface1 *& pSurface, bool &bExternal)
     return MFX_ERR_NONE;
 }
 
-mfxStatus Task::CopyInput()
+mfxStatus CopyRawSurfaceToVideoMemory(mfxCoreInterface * pCore,
+    VP9MfxVideoParam const &par,
+    Task const &task)
 {
-    mfxStatus sts = MFX_ERR_NONE;
-
-#if 0 // no support of system memory as input
-    if (m_pRawLocalFrame)
+    if (par.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
-        mfxFrameSurface1 src={};
-        mfxFrameSurface1 dst = *(m_pRawLocalFrame->pSurface);
+        MFX_CHECK_NULL_PTR1(task.m_pRawLocalFrame);
+        mfxFrameSurface1 d3dSurf = *task.m_pRawLocalFrame->pSurface;
+        mfxFrameSurface1 sysSurf = *task.m_pRawFrame->pSurface;
 
-        mfxFrameSurface1 * pInput = 0;
-        bool bExternal = true;
+        mfxStatus sts = MFX_ERR_NONE;
 
-        sts = GetOriginalSurface(pInput,  bExternal);
+        sts = pCore->CopyFrame(pCore->pthis, &d3dSurf, &sysSurf);
         MFX_CHECK_STS(sts);
-
-        src.Data = pInput->Data;
-        src.Info = pInput->Info;
-
-        FrameLocker lockSrc(m_pCore, src.Data);
-        FrameLocker lockDst(m_pCore, dst.Data);
-
-        MFX_CHECK(src.Info.FourCC == MFX_FOURCC_YV12 || src.Info.FourCC == MFX_FOURCC_NV12, MFX_ERR_UNDEFINED_BEHAVIOR);
-        MFX_CHECK(dst.Info.FourCC == MFX_FOURCC_NV12, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-        MFX_CHECK_NULL_PTR1(src.Data.Y);
-        if (src.Info.FourCC == MFX_FOURCC_NV12)
-        {
-            MFX_CHECK_NULL_PTR1(src.Data.UV);
-        }
-        else
-        {
-            MFX_CHECK_NULL_PTR2(src.Data.U, src.Data.V);
-        }
-
-        MFX_CHECK_NULL_PTR2(dst.Data.Y, dst.Data.UV);
-
-        MFX_CHECK(dst.Info.Width >= src.Info.Width, MFX_ERR_UNDEFINED_BEHAVIOR);
-        MFX_CHECK(dst.Info.Height >= src.Info.Height, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-        mfxU32 srcPitch = src.Data.PitchLow + ((mfxU32)src.Data.PitchHigh << 16);
-        mfxU32 dstPitch = dst.Data.PitchLow + ((mfxU32)dst.Data.PitchHigh << 16);
-
-        mfxU32 roiWidth = src.Info.Width;
-        mfxU32 roiHeight = src.Info.Height;
-
-        // copy luma
-        mfxU8 * srcLine = src.Data.Y;
-        mfxU8 * dstLine = dst.Data.Y;
-        for (mfxU32 line = 0; line < roiHeight; line ++)
-        {
-            memcpy_s(dstLine, roiWidth, srcLine, roiWidth);
-            srcLine += srcPitch;
-            dstLine += dstPitch;
-        }
-
-        // copy chroma (with color conversion if required)
-        dstLine = dst.Data.UV;
-        roiHeight >>= 1;
-        if (src.Info.FourCC == MFX_FOURCC_NV12)
-        {
-            // for input NV12 just copy chroma
-            srcLine = src.Data.UV;
-            for (mfxU32 line = 0; line < roiHeight; line ++)
-            {
-                memcpy_s(dstLine, roiWidth, srcLine, roiWidth);
-                srcLine += srcPitch;
-                dstLine += dstPitch;
-            }
-        }
-        else
-        {
-            // for YV12 color conversion is required
-            mfxU8 * srcU = src.Data.U;
-            mfxU8 * srcV = src.Data.V;
-            roiWidth >>= 1;
-            srcPitch >>= 1;
-            for (mfxU32 line = 0; line < roiHeight; line ++)
-            {
-                for (mfxU32 pixel = 0; pixel < roiWidth; pixel ++)
-                {
-                    mfxU32 dstUVPosition = pixel << 1;
-                    dstLine[dstUVPosition] = srcU[pixel];
-                    dstLine[dstUVPosition + 1] = srcV[pixel];
-                }
-                srcU += srcPitch;
-                srcV += srcPitch;
-                dstLine += dstPitch;
-            }
-        }
     }
-#endif
-    return sts;
+
+    return MFX_ERR_NONE;
 }
 
 } // MfxHwVP9Encode

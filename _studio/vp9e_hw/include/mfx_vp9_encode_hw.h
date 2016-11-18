@@ -104,6 +104,7 @@ protected:
     std::queue<mfxBitstream*> m_outs;
 
     ExternalFrames  m_rawFrames;
+    InternalFrames  m_rawLocalFrames;
     InternalFrames  m_reconFrames;
     InternalFrames  m_outBitstreams;
 

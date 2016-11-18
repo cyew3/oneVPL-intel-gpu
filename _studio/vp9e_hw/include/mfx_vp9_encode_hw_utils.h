@@ -438,7 +438,7 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         std::vector<mfxFrameSurface1>   m_surfaces;
     public:
         InternalFrames() {}
-        mfxStatus Init(mfxCoreInterface *pCore, mfxFrameAllocRequest *pAllocReq, bool bHW);
+        mfxStatus Init(mfxCoreInterface *pCore, mfxFrameAllocRequest *pAllocReq);
         sFrameEx * GetFreeFrame();
         mfxStatus  GetFrame(mfxU32 numFrame, sFrameEx * &Frame);
         mfxStatus Release();
@@ -482,6 +482,8 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
 
     inline mfxU32 CalcNumSurfRaw(mfxVideoParam const & video)
     {
+        // number of input surfaces is same for VIDEO and SYSTEM memory
+        // because so far encoder doesn't support LookAhead and B-frames
         return video.AsyncDepth;
     }
 
@@ -509,8 +511,6 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         mfxEncodeCtrl     m_ctrl;
 
         mfxU32 m_bsDataLength;
-
-        mfxStatus CopyInput();
 
         Task ():
               m_status(TASK_FREE),
@@ -582,6 +582,10 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
               || oldPar.mfx.FrameInfo.Height != newPar.mfx.FrameInfo.Height
               ||  oldPar.mfx.GopPicSize != newPar.mfx.GopPicSize;
     }
+
+    mfxStatus CopyRawSurfaceToVideoMemory(mfxCoreInterface * pCore,
+        VP9MfxVideoParam const &par,
+        Task const &task);
 
 #if 0 // these two functions are left for reference for future refactiring
 mfxStatus ReleaseDpbFrames()
