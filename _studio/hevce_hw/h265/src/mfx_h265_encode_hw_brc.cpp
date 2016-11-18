@@ -1276,7 +1276,12 @@ mfxStatus cBRCParams::Init(mfxVideoParam* par)
     quantMax = 51 + quantOffset;
     quantMin = 1;
 
- 
+    mfxExtCodingOption3 * pExtCO3 = (mfxExtCodingOption3*)Hevc_GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION3);
+    if (pExtCO3)
+    {
+        WinBRCMaxAvgKbps = pExtCO3->WinBRCMaxAvgKbps*par->mfx.BRCParamMultiplier;
+        WinBRCSize = pExtCO3->WinBRCSize;
+    } 
     return MFX_ERR_NONE;
 }
 
@@ -1423,7 +1428,7 @@ mfxI32 GetNewQP(mfxF64 totalFrameBits, mfxF64 targetFrameSizeInBits, mfxI32 minQ
         if (bStrict)
             qp_new  = IPP_MAX (qp_new, qp + 1);
     }
-    return qp_new;
+    return BRC_CLIP(qp_new, minQP, maxQP); 
 }
 
 
@@ -1516,7 +1521,13 @@ mfxStatus ExtBRC::Init (mfxVideoParam* par)
 
     UpdateQPParams(qp,MFX_FRAMETYPE_I , m_ctx, 0, m_par.quantMin, m_par.quantMax, 0);
 
-    m_ctx.dQuantAb = 1./qp;
+    m_ctx.dQuantAb = qp > 0 ? 1./qp : 1.0; //kw
+
+    if (m_par.WinBRCSize)
+    {
+        m_avg.reset(new AVGBitrate(m_par.WinBRCSize, (mfxU32)(m_par.WinBRCMaxAvgKbps*1000.0/m_par.frameRate) ));
+        MFX_CHECK_NULL_PTR1(m_avg.get());    
+    }
 
     m_bInit = true;
     return sts;
@@ -1596,6 +1607,7 @@ mfxI32 GetNewQPTotal(mfxF64 bo, mfxF64 dQP, mfxI32 minQP , mfxI32 maxQP, mfxI32 
     BRC_CLIP(dQP, 1./maxQP, 1./minQP);
     mfxI32 quant_new = (mfxI32) (1. / dQP + 0.5);
 
+   // printf("GetNewQPTotal: bo %f, quant_new %d\n", bo, quant_new);
     if (bPyr)
     {
         if (quant_new >= qp + 5)
@@ -1622,6 +1634,35 @@ mfxI32 GetNewQPTotal(mfxF64 bo, mfxF64 dQP, mfxI32 minQP , mfxI32 maxQP, mfxI32 
 
     return quant_new;
 }
+// Reduce AB period before intra and increase it after intra (to avoid intra frame affect on the bottom of hrd)
+mfxF64 GetAbPeriodCoeff (mfxU32 numInGop, mfxU32 gopPicSize)
+{
+    const mfxU32 maxForCorrection = 30;
+    const mfxF64 maxValue = 1.5;
+    const mfxF64 minValue = 1.0;
+
+    mfxU32 numForCorrection = IPP_MIN (gopPicSize /2, maxForCorrection);
+    mfxF64 k[maxForCorrection] = {0};
+
+    if (numInGop >= gopPicSize || gopPicSize < 2)
+        return 1.0; 
+
+    for (mfxU32 i = 0; i < numForCorrection; i ++)
+    {
+        k[i] = maxValue - (maxValue - minValue)*i/numForCorrection;
+    }
+    if (numInGop < gopPicSize/2)
+    {        
+        return k [numInGop < numForCorrection ? numInGop : numForCorrection - 1];    
+    }
+    else
+    {
+        mfxU32 n = gopPicSize - 1 - numInGop;
+        return 1.0/ k[n < numForCorrection ? n : numForCorrection - 1];
+    }
+
+}
+
 
 
 mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctrl, mfxBRCFrameStatus* status)
@@ -1646,7 +1687,8 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
     mfxF64 eRate    = bitsEncoded * sqrt(qstep);
     mfxF64 e2pe     = (m_ctx.eRate == 0) ? (BRC_SCENE_CHANGE_RATIO2 + 1) : eRate / m_ctx.eRate;
 
-    bool   bMaxFrameSizeErr =  m_par.maxFrameSizeInBits && bitsEncoded > (mfxI32)m_par.maxFrameSizeInBits;
+    mfxU32 frameSizeLim    = 0xfffffff ; // sliding window limitation or external frame size limitation
+
     brcSts = MFX_BRC_OK;
     
     if (m_par.bRec && m_ctx.bToRecode &&  (m_ctx.encOrder != frame_par->EncodedOrder || frame_par->NumRecode == 0))
@@ -1698,22 +1740,34 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
         status->MinFrameSize = m_hrd.GetMinFrameSize() + 7;
         //printf("%d: poc %d, size %d QP %d (%d %d), HRD sts %d, maxFrameSize %d, type %d \n",frame_par->EncodedOrder, frame_par->DisplayOrder, bitsEncoded, m_ctx.Quant, m_ctx.QuantMin, m_ctx.QuantMax, brcSts,  m_hrd.GetMaxFrameSize(), frame_par->FrameType);
     }
+    if (m_avg.get())
+    {
+       frameSizeLim = IPP_MIN (frameSizeLim, m_avg->GetMaxFrameSize(!m_ctx.bPanic));
+    }
+    if (m_par.maxFrameSizeInBits)
+    {
+        frameSizeLim = IPP_MIN (frameSizeLim, m_par.maxFrameSizeInBits);
+    }
+    //printf("frameSizeLim %d (%d)\n", frameSizeLim, bitsEncoded);
 
     if (frame_par->NumRecode < 2) 
     // Check other condions for recoding (update qp is it is needed)
     {
         mfxF64 targetFrameSize = IPP_MAX((mfxF64)m_par.inputBitsPerFrame, fAbLong);
-        mfxF64 maxFrameSize = (m_ctx.encOrder == 0 ? 5.0 : (m_ctx.SceneChange > 16 || picType == MFX_FRAMETYPE_I) ? 8.0 : 4.0) * targetFrameSize ;
+        mfxF64 maxFrameSize = (m_ctx.encOrder == 0 ? 6.0 : (m_ctx.SceneChange > 16 || picType == MFX_FRAMETYPE_I) ? 10.0 : 4.0) * targetFrameSize*(m_par.gopRefDist > 3 ? 1.5 : 1.0) ;
         mfxI32 quantMax = m_ctx.QuantMax;
         mfxI32 quantMin = m_ctx.QuantMin;
         mfxI32 quant = qpY;
 
-        if (m_par.maxFrameSizeInBits)
-            maxFrameSize = IPP_MIN(maxFrameSize,m_par.maxFrameSizeInBits);
+        maxFrameSize = IPP_MIN(maxFrameSize,frameSizeLim);
 
         if (m_par.bHRDConformance)
         {
-            maxFrameSize = IPP_MIN(maxFrameSize, 2.5/9. * m_hrd.GetMaxFrameSize() + 6.5/9. * targetFrameSize); 
+            if (m_ctx.SceneChange > 16 || picType == MFX_FRAMETYPE_I)
+                maxFrameSize = IPP_MIN(maxFrameSize, 0.5 * m_hrd.GetMaxFrameSize() + 0.5*targetFrameSize);
+            else
+                maxFrameSize = IPP_MIN(maxFrameSize, 2.5/9. * m_hrd.GetMaxFrameSize() + 6.5/9. * targetFrameSize); 
+
             quantMax     = IPP_MIN(m_hrd.GetMaxQuant(), quantMax);
             quantMin     = IPP_MAX(m_hrd.GetMinQuant(), quantMin);
         }
@@ -1772,16 +1826,16 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
             }
         }//m_par.bHRDConformance
     }
-    if (((m_par.bHRDConformance && brcSts != MFX_BRC_OK) || bMaxFrameSizeErr) && m_par.bRec)
+    if (((m_par.bHRDConformance && brcSts != MFX_BRC_OK) || (bitsEncoded > (mfxI32)frameSizeLim)) && m_par.bRec)
     {
         mfxI32 quant = m_ctx.Quant;
         mfxI32 quant_new = quant;
-        if (bMaxFrameSizeErr)
+        if (bitsEncoded > (mfxI32)frameSizeLim)
         {
             brcSts = MFX_BRC_BIG_FRAME;
-            quant_new = GetNewQP(bitsEncoded, m_par.maxFrameSizeInBits, m_ctx.QuantMin , m_ctx.QuantMax,quant,m_par.quantOffset, 1, true);        
+            quant_new = GetNewQP(bitsEncoded, frameSizeLim, m_ctx.QuantMin , m_ctx.QuantMax,quant,m_par.quantOffset, 1, true);        
         }
-        else if (brcSts == MFX_BRC_BIG_FRAME || brcSts == MFX_BRC_SMALL_FRAME)
+        else if (brcSts == MFX_BRC_BIG_FRAME )
         {
             quant_new = GetNewQP(bitsEncoded, m_hrd.GetTargetSize(brcSts), m_ctx.QuantMin , m_ctx.QuantMax,quant,m_par.quantOffset, 1, true);
         }
@@ -1816,6 +1870,11 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
         if (picType != MFX_FRAMETYPE_B)
             m_ctx.LastNonBFrameSize = bitsEncoded;
 
+        if (m_avg.get())
+        {
+            m_avg->UpdateSlidingWindow(bitsEncoded, m_ctx.encOrder);
+        }
+
         if (!m_ctx.bPanic&& !oldScene) 
         {
             //Update QP
@@ -1831,16 +1890,16 @@ mfxStatus ExtBRC::Update(mfxBRCFrameParam* frame_par, mfxBRCFrameCtrl* frame_ctr
                 {
                     totDiv = IPP_MAX(totDiv, m_hrd.GetBufferDiviation(m_par.targetbps));
                 }                    
-                bAbPreriod = (mfxF64)m_hrd.GetMaxFrameSize() / m_par.inputBitsPerFrame*3;
+                bAbPreriod = (mfxF64)(m_par.gopRefDist> 3 ? 4 : 3)*(mfxF64)m_hrd.GetMaxFrameSize() / m_par.inputBitsPerFrame*GetAbPeriodCoeff(m_ctx.encOrder - m_ctx.LastIEncOrder, m_par.gopPicSize) ;
                 BRC_CLIP(bAbPreriod , m_par.bAbPeriod/10, m_par.bAbPeriod);                
             }
             mfxI32 quant_new = GetNewQPTotal(totDiv /bAbPreriod /(mfxF64)m_par.inputBitsPerFrame, dequant_new, m_ctx.QuantMin , m_ctx.QuantMax, m_ctx.Quant, m_par.bPyr);
-            //printf("   Update QP %d: totalDiviation %f, bAbPreriod %f, QP %d (%d %d), qp_new %d\n",frame_par->EncodedOrder,totDiv , bAbPreriod, m_ctx.Quant, m_ctx.QuantMin, m_ctx.QuantMax,quant_new);
-            if (quant_new != m_ctx.Quant && !m_ctx.bToRecode)
+            //printf("   Update QP %d: totalDiviation %f, bAbPreriod %f (%f), QP %d (%d %d), qp_new %d (qpY %d), type %d, dequant_new %f\n",frame_par->EncodedOrder,totDiv , bAbPreriod, GetAbPeriodCoeff(m_ctx.encOrder - m_ctx.LastIEncOrder, m_par.gopPicSize), m_ctx.Quant, m_ctx.QuantMin, m_ctx.QuantMax,quant_new, qpY, picType, 1.0/dequant_new);
+            if ( !m_ctx.bToRecode)
             {
                 UpdateQPParams(quant_new ,picType, m_ctx, 0, m_ctx.QuantMin , m_ctx.QuantMax, layer);
             }
-            //printf("QP: I %d, P %d, B %d layer %d\n", m_ctx.QuantI, m_ctx.QuantP, m_ctx.QuantB, layer);
+            //printf("QP: I %d, P %d, B %d layer %d, type %d\n", m_ctx.QuantI, m_ctx.QuantP, m_ctx.QuantB, layer, picType);
         } 
         m_ctx.bToRecode = 0;
     }

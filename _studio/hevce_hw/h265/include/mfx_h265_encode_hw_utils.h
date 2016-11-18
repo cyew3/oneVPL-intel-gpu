@@ -488,6 +488,8 @@ namespace ExtBuffer
         _CopyStruct1(QVBRQuality);
         _CopyPar1(TransformSkip);
         _CopyPar1(EnableMBQP);
+        _CopyPar1(WinBRCMaxAvgKbps);
+        _CopyPar1(WinBRCSize);
     }
 
     inline void  CopySupportedParams(mfxExtCodingOptionDDI& buf_dst, mfxExtCodingOptionDDI& buf_src)

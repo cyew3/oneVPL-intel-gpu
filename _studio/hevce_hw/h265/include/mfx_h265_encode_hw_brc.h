@@ -15,6 +15,7 @@
 #include "mfxla.h"
 #include <vector>
 #include "mfx_h265_encode_hw_utils.h"
+#include <memory>
 
 #define NEW_BRC
 #ifdef NEW_BRC
@@ -356,6 +357,10 @@ public:
     mfxU32 bufferSizeInBytes;
     mfxU32 initialDelayInBytes;
 
+    // Sliding window parameters
+    mfxU16  WinBRCMaxAvgKbps;
+    mfxU16  WinBRCSize;
+
     // RC params
     mfxU32 targetbps;
     mfxU32 maxbps;
@@ -394,6 +399,8 @@ public:
         bPanic(0),
         bufferSizeInBytes(0),
         initialDelayInBytes(0),
+        WinBRCMaxAvgKbps(0),
+        WinBRCSize(0),
         targetbps(0),
         maxbps(0),
         frameRate(0),    
@@ -489,6 +496,70 @@ struct BRC_Ctx
 
     mfxF64 eRate;               // eRate of last encoded frame, this parameter is used for scene change calculation
 };
+class AVGBitrate
+{
+public:
+    AVGBitrate(mfxU32 windowSize, mfxU32 maxBitLimitPerFrame):
+        m_maxWinBits(maxBitLimitPerFrame*windowSize),
+        m_maxWinBitsStrong(0),
+        m_currPosInWindow(0),
+        m_lastFrameOrder(0)
+    {
+        mfxU32 minFrameSize = maxBitLimitPerFrame / 10;
+        windowSize = windowSize > 0 ? windowSize: 1; // kw
+        m_slidingWindow.resize(windowSize);
+        for (mfxU32 i = 0; i < windowSize; i++)
+        {
+            m_slidingWindow[i] = minFrameSize;
+        }
+        m_maxWinBitsStrong = m_maxWinBits - minFrameSize;
+        //printf("AVGBitrat: %d, %d, %d, %d\n", m_maxWinBits,m_maxWinBitsStrong, minFrameSize, windowSize);
+    }
+    virtual ~AVGBitrate() 
+    {
+        //printf("------------ AVG Bitrate: %d ( %d), NumberOfErrors %d\n", m_MaxBitReal, m_MaxBitReal_temp, m_NumberOfErrors);        
+    }
+    void UpdateSlidingWindow(mfxU32  sizeInBits, mfxU32  FrameOrder)
+    {
+        if (FrameOrder != m_lastFrameOrder)
+        {
+            m_lastFrameOrder = FrameOrder;
+            m_currPosInWindow = (m_currPosInWindow + 1) % m_slidingWindow.size();            
+        }
+        m_slidingWindow[m_currPosInWindow] = sizeInBits;
+    }
+    mfxU32 GetMaxFrameSize(bool bStrong)
+    {
+        mfxU32 maxWindowSize = bStrong ? m_maxWinBitsStrong : m_maxWinBits;
+        return maxWindowSize - GetLastFrameBits((mfxU32)m_slidingWindow.size() - 1);    
+    }
+    mfxU32 GetWindowSize()
+    {
+        return (mfxU32)m_slidingWindow.size();
+    }
+
+protected:        
+        
+    mfxU32                      m_maxWinBits;
+    mfxU32                      m_maxWinBitsStrong;
+
+    mfxU32                      m_currPosInWindow;
+    mfxU32                      m_lastFrameOrder;
+    std::vector<mfxU32>         m_slidingWindow;
+        
+
+    mfxU32 GetLastFrameBits(mfxU32 numFrames)
+    {
+        mfxU32 size = 0;
+        numFrames = numFrames < m_slidingWindow.size() ? numFrames : (mfxU32)m_slidingWindow.size() ;
+        for(mfxU32 i = 0; i < numFrames; i ++)
+        {
+            size += m_slidingWindow[(m_currPosInWindow + m_slidingWindow.size() - i) % m_slidingWindow.size() ];
+            //printf("GetLastFrames: %d) %d sum %d\n",i,m_slidingWindow[(m_currPosInWindow + m_slidingWindow.size() - i) % m_slidingWindow.size() ], size);
+        }
+        return size;
+    }
+};
 class ExtBRC
 {
 private:
@@ -496,6 +567,7 @@ private:
     cHRD       m_hrd;
     bool       m_bInit;
     BRC_Ctx    m_ctx;
+    std::auto_ptr<AVGBitrate> m_avg;
 
 public:
     ExtBRC():

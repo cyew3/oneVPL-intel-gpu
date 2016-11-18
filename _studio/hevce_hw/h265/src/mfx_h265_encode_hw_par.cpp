@@ -1467,9 +1467,23 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         else
              changed += CheckOption(CO3.EnableMBQP, (mfxU16)MFX_CODINGOPTION_UNKNOWN, (mfxU16)MFX_CODINGOPTION_OFF);
 #endif
+
+
     }
 
-    sts = CheckProfile(par);
+    if (CO3.WinBRCSize > 0 || CO3.WinBRCMaxAvgKbps > 0)
+    {
+        if (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR || !par.isSWBRC())
+        {
+            changed += CheckOption(CO3.WinBRCSize, 0, 0);
+            changed += CheckOption(CO3.WinBRCMaxAvgKbps, 0, 0);  
+        }
+        else
+        {
+            changed += CheckMin(CO3.WinBRCMaxAvgKbps, par.mfx.TargetKbps);
+        }
+    }
+     sts = CheckProfile(par);
 
     if (sts >= MFX_ERR_NONE && par.mfx.CodecLevel > 0)  // QueryIOSurf, Init or Reset
     {
@@ -1694,7 +1708,7 @@ void SetDefaults(
 
     if (par.m_ext.CO3.PRefType == MFX_P_REF_DEFAULT)
     {
-        if (par.mfx.GopRefDist == 1 && par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+        if (par.mfx.GopRefDist == 1 && (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP || par.isSWBRC()))
             par.m_ext.CO3.PRefType = MFX_P_REF_PYRAMID;
         else if (par.mfx.GopRefDist == 1)
             par.m_ext.CO3.PRefType = MFX_P_REF_SIMPLE;
@@ -1819,6 +1833,13 @@ void SetDefaults(
             CO3.EnableMBQP = MFX_CODINGOPTION_OFF;
         else
             CO3.EnableMBQP = MFX_CODINGOPTION_ON;
+    }
+    if (CO3.WinBRCSize > 0 || CO3.WinBRCMaxAvgKbps > 0)
+    {
+        if (!CO3.WinBRCSize)
+            CO3.WinBRCSize = mfxU16((par.mfx.FrameInfo.FrameRateExtN + par.mfx.FrameInfo.FrameRateExtD - 1)/par.mfx.FrameInfo.FrameRateExtD);        
+        if (!CO3.WinBRCMaxAvgKbps)
+            CO3.WinBRCMaxAvgKbps = (mfxU16)(par.MaxKbps/par.mfx.BRCParamMultiplier);
     }
 }
 
