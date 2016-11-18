@@ -2091,13 +2091,9 @@ void MfxHwH264Encode::ConfigureTask(
     mfxU32 fieldMaxCount = video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
     for (mfxU32 field = 0; field < fieldMaxCount; field++)
     {
-        mfxU32 fieldParity = field;
-        if (video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF)
-            fieldParity = 1 - fieldParity;
-
-        mfxExtFeiSliceHeader * extFeiSlice = GetExtBuffer(video, fieldParity);
+        mfxExtFeiSliceHeader * extFeiSlice = GetExtBuffer(video, field);
         /* To change de-blocking params in runtime we need to take params from runtime control */
-        mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBuffer(task.m_ctrl, fieldParity);
+        mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBuffer(task.m_ctrl, field);
         /*And runtime params has priority before iInit() params */
         if (NULL != extFeiSliceInRintime)
             extFeiSlice = extFeiSliceInRintime;
@@ -2123,9 +2119,9 @@ void MfxHwH264Encode::ConfigureTask(
                 }
             } // if (NULL != extFeiSlice)
             /* Now put values */
-            task.m_disableDeblockingIdc[field].push_back(disableDeblockingIdc);
-            task.m_sliceAlphaC0OffsetDiv2[field].push_back(sliceAlphaC0OffsetDiv2);
-            task.m_sliceBetaOffsetDiv2[field].push_back(sliceBetaOffsetDiv2);
+            task.m_disableDeblockingIdc[task.m_fid[field]].push_back(disableDeblockingIdc);
+            task.m_sliceAlphaC0OffsetDiv2[task.m_fid[field]].push_back(sliceAlphaC0OffsetDiv2);
+            task.m_sliceBetaOffsetDiv2[task.m_fid[field]].push_back(sliceBetaOffsetDiv2);
         } // for (size_t i = 0; i < GetMaxNumSlices(video); i++)
     } // for (mfxU32 field = 0; field < fieldMaxCount; field++)
 }
