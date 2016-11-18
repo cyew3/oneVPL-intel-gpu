@@ -2749,7 +2749,13 @@ mfxStatus CheckLimitationsSW(
             SetSignalInfo(param, MFX_TRANSFERMATRIX_UNKNOWN, MFX_NOMINALRANGE_UNKNOWN);
         }
     }
-    if (param.vpp.In.FourCC == MFX_FOURCC_AYUV || param.vpp.In.FourCC == MFX_FOURCC_Y210 || param.vpp.In.FourCC == MFX_FOURCC_Y410)
+
+    if (param.vpp.In.FourCC == MFX_FOURCC_AYUV
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+        || param.vpp.In.FourCC == MFX_FOURCC_Y210
+        || param.vpp.In.FourCC == MFX_FOURCC_Y410
+#endif // PRE_SI_TARGET_PLATFORM_GEN11
+        )
     {
         // [5] Unsupported input fourcc
         sts = MFX_ERR_UNSUPPORTED;

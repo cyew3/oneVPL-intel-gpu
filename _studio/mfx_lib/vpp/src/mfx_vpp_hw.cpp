@@ -3464,9 +3464,11 @@ mfxStatus ConfigureExecuteParams(
         executeParams.iBackgroundColor = 0x00ff001000800080; // black in 8-bit YUV interpretation
     }
     else if(videoParam.vpp.Out.FourCC == MFX_FOURCC_P010 ||
-            videoParam.vpp.Out.FourCC == MFX_FOURCC_P210 ||
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
             videoParam.vpp.Out.FourCC == MFX_FOURCC_Y210 ||
-            videoParam.vpp.Out.FourCC == MFX_FOURCC_Y410)
+            videoParam.vpp.Out.FourCC == MFX_FOURCC_Y410 ||
+#endif // PRE_SI_TARGET_PLATFORM_GEN11
+            videoParam.vpp.Out.FourCC == MFX_FOURCC_P210)
     {
         // black in 10-bit YUV interpretation
         // 0x(2^10-1)(64)(512)(512)
@@ -4054,9 +4056,11 @@ mfxStatus ConfigureExecuteParams(
                                ((mfxU64)VPP_RANGE_CLIP(extComp->U, 16, 240) << 16)|
                                ((mfxU64)VPP_RANGE_CLIP(extComp->V, 16, 240) <<  0);
                         }
-                        if (targetFourCC == MFX_FOURCC_Y210 ||
+                        if (targetFourCC == MFX_FOURCC_P010 ||
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+                            targetFourCC == MFX_FOURCC_Y210 ||
                             targetFourCC == MFX_FOURCC_Y410 ||
-                            targetFourCC == MFX_FOURCC_P010 ||
+#endif // PRE_SI_TARGET_PLATFORM_GEN11
                             targetFourCC == MFX_FOURCC_P210)
                         {
                             executeParams.iBackgroundColor  =         ((mfxU64)0x03ff << 48)|
@@ -4253,9 +4257,11 @@ mfxStatus ConfigureExecuteParams(
                         executeParams.iBackgroundColor = 0x00ff001000800080; // black in 8-bit YUV interpretation 0x(2^8-1)(16)(128)(128)
                     }
                     else if (videoParam.vpp.Out.FourCC == MFX_FOURCC_P010 ||
-                             videoParam.vpp.Out.FourCC == MFX_FOURCC_P210 ||
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
                              videoParam.vpp.Out.FourCC == MFX_FOURCC_Y210 ||
-                             videoParam.vpp.Out.FourCC == MFX_FOURCC_Y410)
+                             videoParam.vpp.Out.FourCC == MFX_FOURCC_Y410 ||
+#endif // PRE_SI_TARGET_PLATFORM_GEN11
+                             videoParam.vpp.Out.FourCC == MFX_FOURCC_P210)
                     {
                         // black in 10-bit YUV interpretation
                         // 0x(2^10-1)(64)(512)(512)

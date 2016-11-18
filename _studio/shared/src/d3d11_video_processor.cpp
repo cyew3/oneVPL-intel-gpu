@@ -2822,9 +2822,11 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         Color.YCbCr.Cb = ((pParams->iBackgroundColor >> 16) & 0xff) / 255.0f;
         Color.YCbCr.Cr = ((pParams->iBackgroundColor      ) & 0xff) / 255.0f;
     }
-    if (outInfo->FourCC == MFX_FOURCC_Y210 ||
+    if (outInfo->FourCC == MFX_FOURCC_P010 ||
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+        outInfo->FourCC == MFX_FOURCC_Y210 ||
         outInfo->FourCC == MFX_FOURCC_Y410 ||
-        outInfo->FourCC == MFX_FOURCC_P010 ||
+#endif // PRE_SI_TARGET_PLATFORM_GEN11
         outInfo->FourCC == MFX_FOURCC_P210 )
     {
         bYCbCr = TRUE;

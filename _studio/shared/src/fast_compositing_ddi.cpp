@@ -1047,6 +1047,7 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
         pBltParams->BackgroundColor.Cb    = ((pExecuteParams->iBackgroundColor >> 16) & 0xff) << 8;
         pBltParams->BackgroundColor.Cr    = ((pExecuteParams->iBackgroundColor      ) & 0xff) << 8;
     }
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     if (outInfo->FourCC == MFX_FOURCC_Y210 ||
         outInfo->FourCC == MFX_FOURCC_Y410 )
     {
@@ -1055,6 +1056,7 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
         pBltParams->BackgroundColor.Cb    = (pExecuteParams->iBackgroundColor >> 16) & 0xffff;
         pBltParams->BackgroundColor.Cr    = (pExecuteParams->iBackgroundColor      ) & 0xffff;
     }
+#endif // PRE_SI_TARGET_PLATFORM_GEN11
     if (outInfo->FourCC == MFX_FOURCC_RGB3    ||
         outInfo->FourCC == MFX_FOURCC_RGB4    ||
         outInfo->FourCC == MFX_FOURCC_BGR4    ||
