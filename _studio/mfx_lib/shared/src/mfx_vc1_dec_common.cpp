@@ -726,7 +726,7 @@ mfxStatus MFXVC1DecCommon::ParseSeqHeader(mfxBitstream *bs,
 
         mfxU32 tDWord = GetDWord_s(bs->Data + size);
         pbs = &tDWord;
-        UMC::VC1Common::SwapData((mfxU8*)pbs,4);
+        UMC::VC1Common::SwapData((mfxU8*)pbs,0);
 
         //PROFILE
         VC1GetNBits(pbs, bitOffset, 2, tempData);
