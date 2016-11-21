@@ -148,7 +148,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
     const msdk_char* strArgument = MSDK_STRING("");
     msdk_char* stopCharacter;
 
-    bool bRefWSizeSpecified = false, bAlrShownHelp = false, bBRefSet = false, bParseDRC = false;
+    bool bRefWSizeSpecified = false, bAlrShownHelp = false, bParseDRC = false;
 
     if (1 == nArgNum)
     {
@@ -310,12 +310,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-bref")))
         {
-            bBRefSet = true;
             pConfig->bRefType = MFX_B_REF_PYRAMID;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-nobref")))
         {
-            bBRefSet = true;
             pConfig->bRefType = MFX_B_REF_OFF;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-idr_interval")))
@@ -981,12 +979,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, AppConfig* pCon
         else
             PrintHelp(strInput[0], MSDK_STRING("ERROR: DecodedOrder turned on, all FEI interfaces in sample_fei expects frame in DisplayOrder!"));
         return MFX_ERR_UNSUPPORTED;
-    }
-
-    /* temporary adjustment */
-    if ((pConfig->bENCPAK || pConfig->bOnlyENC || pConfig->bOnlyPAK) && pConfig->bRefType != MFX_B_REF_OFF)
-    {
-        if (!bBRefSet)   pConfig->bRefType = MFX_B_REF_OFF;
     }
 
     if (pConfig->ChromaQPIndexOffset > 12 || pConfig->ChromaQPIndexOffset < -12){
