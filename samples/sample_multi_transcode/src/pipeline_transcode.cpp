@@ -3041,7 +3041,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     // LA initialization
     if (m_pmfxPreENC.get())
     {
-        sts = m_pmfxPreENC->Init(&m_mfxEncParams);
+        sts = m_pmfxPreENC->Init(&m_mfxPreEncParams);
         MSDK_CHECK_STATUS(sts, "m_pmfxPreENC->Init failed");
     }
     // Init encode

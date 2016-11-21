@@ -146,6 +146,7 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -la           Use the look ahead bitrate control algorithm (LA BRC) for H.264 encoder. Supported only with -hw option on 4th Generation Intel Core processors. \n"));
     msdk_printf(MSDK_STRING("  -lad depth    Depth parameter for the LA BRC, the number of frames to be analyzed before encoding. In range [10,100]. \n"));
     msdk_printf(MSDK_STRING("                May be 1 in the case when -mss option is specified \n"));
+    msdk_printf(MSDK_STRING("  -la_ext       Use external LA plugin (compatible with h264 & hevc encoders)\n"));
     msdk_printf(MSDK_STRING("  -vbr          Variable bitrate control\n"));
     msdk_printf(MSDK_STRING("  -hrd <KB>     Maximum possible size of any compressed frames \n"));
     msdk_printf(MSDK_STRING("  -wb <KBps>    Maximum bitrate for sliding window \n"));
