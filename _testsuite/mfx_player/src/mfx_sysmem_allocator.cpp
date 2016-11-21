@@ -168,11 +168,12 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->Pitch = 8 * Width2;
         break;
     case MFX_FOURCC_Y210:
-    //case MFX_FOURCC_Y216:
+    case MFX_FOURCC_Y216:
         ptr->Y16 = (mfxU16*)ptr->B;
         ptr->U16 = ptr->U16 + 1;
         ptr->V16 = ptr->U16 + 3;
-        ptr->Pitch = 2 * 2 * Width2;
+        ptr->PitchHigh = (mfxU16)((4 * (mfxU32)Width2) / (1 << 16));
+        ptr->PitchLow  = (mfxU16)((4 * (mfxU32)Width2) % (1 << 16));
         break;
     case MFX_FOURCC_Y410:
         ptr->Y410 = (mfxY410 *) ptr->B;
@@ -325,7 +326,7 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
         break;
     case MFX_FOURCC_P210:
     case MFX_FOURCC_Y210:
-    //case MFX_FOURCC_Y216:
+    case MFX_FOURCC_Y216:
         nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
         nbytes *= 2; // 16bits
         break;
