@@ -33,9 +33,7 @@
 #include "mfx_h264_preenc.h"
 #include "mfx_ext_buffers.h"
 
-//#if defined (MFX_VA_LINUX)
-    #include "mfx_h264_encode_vaapi.h"
-//#endif
+#include "mfx_h264_encode_vaapi.h"
 
 #if defined(_DEBUG)
 #define mdprintf fprintf
@@ -45,21 +43,8 @@
 
 using namespace MfxEncPREENC;
 
-namespace MfxEncPREENC{
-static mfxU16 GetGopSize(mfxVideoParam *par)
+namespace MfxEncPREENC
 {
-    return  par->mfx.GopPicSize == 0 ? 500 : par->mfx.GopPicSize;
-}
-static mfxU16 GetRefDist(mfxVideoParam *par)
-{
-    mfxU16 GopSize = GetGopSize(par);
-    mfxU16 refDist = par->mfx.GopRefDist == 0 ?  2 : par->mfx.GopRefDist;
-    return refDist <= GopSize ? refDist: GopSize;
-}
-static mfxU16 GetAsyncDeph(mfxVideoParam *par)
-{
-    return par->AsyncDepth == 0 ? 3 : par->AsyncDepth;
-}
 
 static bool IsVideoParamExtBufferIdSupported(mfxU32 id)
 {
@@ -72,117 +57,29 @@ static bool IsVideoParamExtBufferIdSupported(mfxU32 id)
 
 mfxExtBuffer* GetExtBuffer(mfxExtBuffer** ebuffers, mfxU32 nbuffers, mfxU32 BufferId)
 {
-    if (!ebuffers) return 0;
-    for(mfxU32 i=0; i<nbuffers; i++) {
+    if (!ebuffers) return NULL;
+    for (mfxU32 i = 0; i<nbuffers; ++i) {
         if (!ebuffers[i]) continue;
         if (ebuffers[i]->BufferId == BufferId) {
             return ebuffers[i];
         }
     }
-    return 0;
+    return NULL;
 }
 
 static mfxStatus CheckExtBufferId(mfxVideoParam const & par)
 {
-    for (mfxU32 i = 0; i < par.NumExtParam; i++)
+    for (mfxU32 i = 0; i < par.NumExtParam; ++i)
     {
-        if (par.ExtParam[i] == 0)
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-
-        if (!MfxEncPREENC::IsVideoParamExtBufferIdSupported(par.ExtParam[i]->BufferId))
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-
-        // check if buffer presents twice in video param
-        if (MfxEncPREENC::GetExtBuffer(
+        MFX_CHECK(par.ExtParam[i], MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(MfxEncPREENC::IsVideoParamExtBufferIdSupported(par.ExtParam[i]->BufferId), MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(!MfxEncPREENC::GetExtBuffer(
             par.ExtParam + i + 1,
             par.NumExtParam - i - 1,
-            par.ExtParam[i]->BufferId) != 0)
-        {
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-        }
+            par.ExtParam[i]->BufferId), MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
     return MFX_ERR_NONE;
-}
-
-static mfxU16  GetFrameType(mfxU32 frameOrder, int gopSize, int gopRefDist)
-{
-
-    if (frameOrder % gopSize == 0)
-    {
-        return MFX_FRAMETYPE_I|MFX_FRAMETYPE_REF|((frameOrder == 0) ? MFX_FRAMETYPE_IDR : 0);
-    }
-    else if ((frameOrder % gopSize) % gopRefDist == 0)
-    {
-        return MFX_FRAMETYPE_P|MFX_FRAMETYPE_REF;
-    }
-    return MFX_FRAMETYPE_B;
-}
-
-static bool CheckExtenedBuffer(mfxVideoParam *par)
-{
-    mfxU32  BufferId[2] = {MFX_EXTBUFF_LOOKAHEAD_CTRL, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION};
-    mfxU32  num = sizeof(BufferId)/sizeof(BufferId[0]);
-    if (!par->ExtParam) return true;
-
-    for (mfxU32 i = 0; i < par->NumExtParam; i++)
-    {
-        mfxU32 j = 0;
-        for (; j < num; j++)
-        {
-            if (par->ExtParam[i] != 0 && par->ExtParam[i]->BufferId == BufferId[j]) break;
-        }
-        if (j == num) return false;
-    }
-    return true;
-}
-static
-mfxStatus GetNativeSurface(
-    VideoCORE & core,
-    MfxHwH264Encode::MfxVideoParam const & video,
-    mfxFrameSurface1 *  opaq_surface,
-    mfxFrameSurface1 ** native_surface)
-{
-    mfxStatus sts = MFX_ERR_NONE;
-   *native_surface = opaq_surface;
-
-    if (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-    {
-        *native_surface = core.GetNativeSurface(opaq_surface);
-        MFX_CHECK_NULL_PTR1(*native_surface);
-
-        (*native_surface)->Info            = opaq_surface->Info;
-        (*native_surface)->Data.TimeStamp  = opaq_surface->Data.TimeStamp;
-        (*native_surface)->Data.FrameOrder = opaq_surface->Data.FrameOrder;
-        (*native_surface)->Data.Corrupted  = opaq_surface->Data.Corrupted;
-        (*native_surface)->Data.DataFlag   = opaq_surface->Data.DataFlag;
-    }
-    return sts;
-}
-
-static
-mfxStatus GetOpaqSurface(
-    VideoCORE & core,
-    MfxHwH264Encode::MfxVideoParam const & video,
-    mfxFrameSurface1 *native_surface,
-    mfxFrameSurface1 ** opaq_surface)
-{
-    mfxStatus sts = MFX_ERR_NONE;
-
-   *opaq_surface = native_surface;
-
-    if (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-    {
-        *opaq_surface = core.GetOpaqSurface(native_surface->Data.MemId);
-        MFX_CHECK_NULL_PTR1(*opaq_surface);
-
-        (*opaq_surface)->Info            = native_surface->Info;
-        (*opaq_surface)->Data.TimeStamp  = native_surface->Data.TimeStamp;
-        (*opaq_surface)->Data.FrameOrder = native_surface->Data.FrameOrder;
-        (*opaq_surface)->Data.Corrupted  = native_surface->Data.Corrupted;
-        (*opaq_surface)->Data.DataFlag   = native_surface->Data.DataFlag;
-    }
-    return sts;
 }
 
 bool CheckTriStateOptionPreEnc(mfxU16 & opt)
@@ -398,8 +295,8 @@ mfxStatus CheckVideoParamQueryLikePreEnc(
 
     if ((isPREENC) && !(
             (MFX_CODINGOPTION_UNKNOWN == feiParam->SingleFieldProcessing) ||
-            (MFX_CODINGOPTION_ON == feiParam->SingleFieldProcessing) ||
-            (MFX_CODINGOPTION_OFF == feiParam->SingleFieldProcessing)) )
+            (MFX_CODINGOPTION_ON      == feiParam->SingleFieldProcessing) ||
+            (MFX_CODINGOPTION_OFF     == feiParam->SingleFieldProcessing)) )
         unsupported = true;
 
     return unsupported
@@ -618,8 +515,8 @@ mfxStatus CheckVideoParamPreEncInit(
 
     if ((isPREENC) && !(
             (MFX_CODINGOPTION_UNKNOWN == feiParam->SingleFieldProcessing) ||
-            (MFX_CODINGOPTION_ON == feiParam->SingleFieldProcessing) ||
-            (MFX_CODINGOPTION_OFF == feiParam->SingleFieldProcessing)) )
+            (MFX_CODINGOPTION_ON      == feiParam->SingleFieldProcessing) ||
+            (MFX_CODINGOPTION_OFF     == feiParam->SingleFieldProcessing)) )
         unsupported = true;
 
     return unsupported
@@ -629,34 +526,32 @@ mfxStatus CheckVideoParamPreEncInit(
             : MFX_ERR_NONE;
 }
 
-} ////
+} // namespace MfxEncPREENC
 
 bool bEnc_PREENC(mfxVideoParam *par)
 {
+    MFX_CHECK(par, false);
+
     mfxExtFeiParam *pControl = NULL;
-//    mfxExtFeiParam *pControl = (mfxExtFeiParam *) GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_FEI_PARAM);
-    for (mfxU16 i = 0; i < par->NumExtParam; i++)
+
+    for (mfxU16 i = 0; i < par->NumExtParam; ++i)
         if (par->ExtParam[i] != 0 && par->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PARAM){ // assuming aligned buffers
-            pControl = (mfxExtFeiParam *)par->ExtParam[i];
+            pControl = reinterpret_cast<mfxExtFeiParam *>(par->ExtParam[i]);
             break;
         }
 
-    bool res = pControl ? (pControl->Func == MFX_FEI_FUNCTION_PREENC) : false;
-    return res;
+    return pControl ? (pControl->Func == MFX_FEI_FUNCTION_PREENC) : false;
 }
 
 static mfxStatus AsyncRoutine(void * state, void * param, mfxU32, mfxU32)
 {
     VideoENC_PREENC & impl = *(VideoENC_PREENC *)state;
-    return  impl.RunFrameVmeENC(0,0);
+    return  impl.RunFrameVmeENC(NULL, NULL);
 }
 
 mfxStatus VideoENC_PREENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoENC_PREENC::RunFrameVmeENC");
-
-    //mfxExtCodingOption    const * extOpt = GetExtBuffer(m_video);
-    //mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
 
     mfxStatus sts = MFX_ERR_NONE;
     DdiTask & task = m_incoming.front();
@@ -669,12 +564,10 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
     task.m_midRaw = AcquireResource(m_raw, task.m_idx);
 
     sts = GetNativeHandleToRawSurface(*m_core, m_video, task, task.m_handleRaw);
-    if (sts != MFX_ERR_NONE)
-         return Error(sts);
+    MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
 
     sts = CopyRawSurfaceToVideoMemory(*m_core, m_video, task);
-    if (sts != MFX_ERR_NONE)
-          return Error(sts);
+    MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
 
     if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
     {
@@ -685,8 +578,7 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
     {
         //mprintf(stderr,"handle=0x%x mid=0x%x\n", task.m_handleRaw, task.m_midRaw );
         sts = m_ddi->Execute(task.m_handleRaw.first, task, task.m_fid[f], m_sei);
-        if (sts != MFX_ERR_NONE)
-                 return Error(sts);
+        MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
     }
 
     if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
@@ -719,10 +611,8 @@ mfxStatus VideoENC_PREENC::QueryStatus(DdiTask& task)
     for (f = f_start; f <= fieldCount; f++)
     {
         sts = m_ddi->QueryStatus(task, task.m_fid[f]);
-        if (sts == MFX_WRN_DEVICE_BUSY)
-            return MFX_TASK_BUSY;
-        if (sts != MFX_ERR_NONE)
-            return Error(sts);
+        MFX_CHECK(sts != MFX_WRN_DEVICE_BUSY, MFX_TASK_BUSY);
+        MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
     }
 
     m_core->DecreaseReference(&task.m_yuv->Data);
@@ -731,24 +621,18 @@ mfxStatus VideoENC_PREENC::QueryStatus(DdiTask& task)
     //move that task to free tasks from m_incoming
     //m_incoming
     std::list<DdiTask>::iterator it = std::find(m_incoming.begin(), m_incoming.end(), task);
-    if(it != m_incoming.end())
-        m_free.splice(m_free.end(), m_incoming, it);
-    else
-        return MFX_ERR_NOT_FOUND;
+    MFX_CHECK(it != m_incoming.end(), MFX_ERR_NOT_FOUND);
 
-//    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
-//        m_firstFieldDone = MFX_CODINGOPTION_UNKNOWN;
+    m_free.splice(m_free.end(), m_incoming, it);
 
     return MFX_ERR_NONE;
-
 }
 
 
 mfxStatus VideoENC_PREENC::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoParam *out)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoENC_PREENC::Query");
-    MFX_CHECK_NULL_PTR1(core);
-    MFX_CHECK_NULL_PTR1(out);
+    MFX_CHECK_NULL_PTR2(core, out);
     mfxStatus sts = MFX_ERR_NONE;
     ENCODE_CAPS hwCaps = { };
 
@@ -756,11 +640,11 @@ mfxStatus VideoENC_PREENC::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoPar
     {
         Zero(out->mfx);
 
-        out->IOPattern             = MFX_IOPATTERN_IN_VIDEO_MEMORY;
-        out->AsyncDepth            = 1;
-        out->mfx.NumRefFrame       = 1;
-        out->mfx.NumThread         = 1;
-        out->mfx.EncodedOrder      = 1;
+        out->IOPattern                   = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+        out->AsyncDepth                  = 1;
+        out->mfx.NumRefFrame             = 1;
+        out->mfx.NumThread               = 1;
+        out->mfx.EncodedOrder            = 1;
         out->mfx.FrameInfo.FourCC        = 1;
         out->mfx.FrameInfo.Width         = 1;
         out->mfx.FrameInfo.Height        = 1;
@@ -782,33 +666,28 @@ mfxStatus VideoENC_PREENC::Query(VideoCORE* core, mfxVideoParam *in, mfxVideoPar
 
     std::auto_ptr<DriverEncoder> ddi;
     ddi.reset( new MfxHwH264Encode::VAAPIFEIPREENCEncoder );
-    if (ddi.get() == 0)
-        return MFX_WRN_PARTIAL_ACCELERATION;
 
     sts = ddi->CreateAuxilliaryDevice(
         core,
         DXVA2_Intel_Encode_AVC,
         GetFrameWidth(tmp),
         GetFrameHeight(tmp));
-    if (sts != MFX_ERR_NONE)
-        return MFX_WRN_PARTIAL_ACCELERATION;
+
+    MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
 
     sts = ddi->QueryEncodeCaps(hwCaps);
-    if (sts != MFX_ERR_NONE)
-        return MFX_WRN_PARTIAL_ACCELERATION;
+    MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
 
     mfxStatus checkSts = CheckVideoParamQueryLikePreEnc(tmp, hwCaps, core->GetHWType(), core->GetVAType());
-
-    if (checkSts == MFX_WRN_PARTIAL_ACCELERATION)
-        return MFX_WRN_PARTIAL_ACCELERATION;
-    else if (checkSts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
+    MFX_CHECK(checkSts != MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION);
+    
+    if (checkSts == MFX_ERR_INCOMPATIBLE_VIDEO_PARAM)
         checkSts = MFX_ERR_UNSUPPORTED;
 
     out->IOPattern  = tmp.IOPattern;
     out->AsyncDepth = tmp.AsyncDepth;
-    out->mfx = tmp.mfx;
+    out->mfx        = tmp.mfx;
 
-    /**/
     return checkSts;
 } // mfxStatus VideoENC_PREENC::Query(VideoCORE*, mfxVideoParam *in, mfxVideoParam *out)
 
@@ -818,8 +697,8 @@ mfxStatus VideoENC_PREENC::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrame
 #if 0
     mfxExtLAControl *pControl = (mfxExtLAControl *) GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_LOOKAHEAD_CTRL);
 
-    MFX_CHECK(pControl,MFX_ERR_UNDEFINED_BEHAVIOR);
-    MFX_CHECK(pControl->LookAheadDepth,MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(pControl,                 MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(pControl->LookAheadDepth, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     mfxU32 inPattern = par->IOPattern & MfxHwH264Encode::MFX_IOPATTERN_IN_MASK;
     MFX_CHECK(
@@ -832,7 +711,7 @@ mfxStatus VideoENC_PREENC::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrame
     {
         request->Type =
             MFX_MEMTYPE_EXTERNAL_FRAME |
-            MFX_MEMTYPE_FROM_ENCODE |
+            MFX_MEMTYPE_FROM_ENCODE    |
             MFX_MEMTYPE_SYSTEM_MEMORY;
     }
     else // MFX_IOPATTERN_IN_VIDEO_MEMORY || MFX_IOPATTERN_IN_OPAQUE_MEMORY
@@ -878,20 +757,17 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
     MFX_CHECK((par->mfx.FrameInfo.Width > 0 && par->mfx.FrameInfo.Height > 0), MFX_ERR_INVALID_VIDEO_PARAM);
 
     m_ddi.reset( new MfxHwH264Encode::VAAPIFEIPREENCEncoder );
-    if (m_ddi.get() == 0)
-        return MFX_WRN_PARTIAL_ACCELERATION;
 
     sts = m_ddi->CreateAuxilliaryDevice(
         m_core,
         DXVA2_Intel_Encode_AVC,
         GetFrameWidth(m_video),
         GetFrameHeight(m_video));
-    if (sts != MFX_ERR_NONE)
-        return MFX_WRN_PARTIAL_ACCELERATION;
+
+    MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
 
     sts = m_ddi->QueryEncodeCaps(m_caps);
-    if (sts != MFX_ERR_NONE)
-        return MFX_WRN_PARTIAL_ACCELERATION;
+    MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
 
     mfxStatus checkStatus = CheckVideoParamPreEncInit(m_video, m_caps, m_currentPlatform, m_currentVaType);
     switch (checkStatus)
@@ -907,8 +783,7 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
     }
 
     const mfxExtFeiParam* params = GetExtBuffer(m_video);
-    if (NULL == params)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    MFX_CHECK(params, MFX_ERR_INVALID_VIDEO_PARAM);
 
     if ((MFX_CODINGOPTION_ON == params->SingleFieldProcessing) &&
          ((MFX_PICSTRUCT_FIELD_TFF == m_video.mfx.FrameInfo.PicStruct) ||
@@ -918,35 +793,11 @@ mfxStatus VideoENC_PREENC::Init(mfxVideoParam *par)
     m_currentPlatform = m_core->GetHWType();
     m_currentVaType   = m_core->GetVAType();
 
-    /*
-    // PRE-ENC works with surfaces which was passed in vaCreateContext() stage
-    mfxFrameAllocRequest request = { };
-    request.Info = m_video.mfx.FrameInfo;
-    request.Type = MFX_MEMTYPE_FROM_ENC | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
-    // WA for Beh test
-    // But code will be re-worked in future
-    request.NumFrameMin = 1;
-    if ((m_video.mfx.GopRefDist > 0) && (m_video.mfx.GopRefDist < 16))
-        request.NumFrameMin = m_video.mfx.GopRefDist*2;
-
-    request.NumFrameSuggested = request.NumFrameMin + m_video.AsyncDepth;
-    request.AllocId = par->AllocId;
-    // TODO:
-    // Actually MSDK since drv build 54073 does not need to Alloc surface here
-    sts = m_core->AllocFrames(&request, &m_raw);
-    //sts = m_raw.Alloc(m_core, request);
-    MFX_CHECK_STS(sts);
-
-    sts = m_ddi->Register(m_raw, D3DDDIFMT_NV12);
-    MFX_CHECK_STS(sts);
-    */
-
     sts = m_ddi->CreateAccelerationService(m_video);
-    if (sts != MFX_ERR_NONE)
-        return MFX_WRN_PARTIAL_ACCELERATION;
+    MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
 
     m_inputFrameType =
-        m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY
+        (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
             ? MFX_IOPATTERN_IN_SYSTEM_MEMORY
             : MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
@@ -980,7 +831,7 @@ mfxStatus VideoENC_PREENC::GetVideoParam(mfxVideoParam *par)
     }
 
     mfxExtBuffer ** ExtParam = par->ExtParam;
-    mfxU16    NumExtParam = par->NumExtParam;
+    mfxU16       NumExtParam = par->NumExtParam;
 
     MFX_INTERNAL_CPY(par, &(static_cast<mfxVideoParam &>(m_video)), sizeof(mfxVideoParam));
 
@@ -996,36 +847,29 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
                     MFX_ENTRY_POINT pEntryPoints[],
                     mfxU32 &numEntryPoints)
 {
-    MFX_CHECK( m_bInit, MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(m_bInit, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    if ((NULL == input) || (NULL == output))
-        return MFX_ERR_NULL_PTR;
+    MFX_CHECK_NULL_PTR2(input, output);
 
     //set frame type
-    mfxU8 mtype_first_field = 0;
-    mfxU8 mtype_second_field = 0;
+    mfxU8 mtype_first_field = 0, mtype_second_field = 0;
+
     mfxExtFeiPreEncCtrl* feiCtrl = GetExtBufferFEI(input, 0);
-    if (NULL == feiCtrl)
-        return MFX_ERR_NULL_PTR; /* this is fatal error */
-    if ((NULL == feiCtrl->RefFrame[0])  && (NULL == feiCtrl->RefFrame[1]))
-        mtype_first_field = MFX_FRAMETYPE_I;
-    else if ((NULL != feiCtrl->RefFrame[0])  && (NULL == feiCtrl->RefFrame[1]))
-        mtype_first_field = MFX_FRAMETYPE_P;
-    else if ((NULL != feiCtrl->RefFrame[0])  || (NULL != feiCtrl->RefFrame[1]))
-        mtype_first_field = MFX_FRAMETYPE_B;
+    MFX_CHECK_NULL_PTR1(feiCtrl); // this is fatal error
+
+    if      (!feiCtrl->RefFrame[0] && !feiCtrl->RefFrame[1]) mtype_first_field = MFX_FRAMETYPE_I;
+    else if ( feiCtrl->RefFrame[0] && !feiCtrl->RefFrame[1]) mtype_first_field = MFX_FRAMETYPE_P;
+    else if (                         !feiCtrl->RefFrame[1]) mtype_first_field = MFX_FRAMETYPE_B;
 
     if (MFX_PICSTRUCT_PROGRESSIVE != m_video.mfx.FrameInfo.PicStruct)
     {
         /* same for second field */
         feiCtrl = GetExtBufferFEI(input, 1);
-        if (NULL == feiCtrl)
-            return MFX_ERR_NULL_PTR; /* this is fatal error */
-        if ((NULL == feiCtrl->RefFrame[0])  && (NULL == feiCtrl->RefFrame[1]))
-            mtype_second_field = MFX_FRAMETYPE_I;
-        else if ((NULL != feiCtrl->RefFrame[0])  && (NULL == feiCtrl->RefFrame[1]))
-            mtype_second_field = MFX_FRAMETYPE_P;
-        else if ((NULL != feiCtrl->RefFrame[0])  || (NULL != feiCtrl->RefFrame[1]))
-            mtype_second_field = MFX_FRAMETYPE_B;
+        MFX_CHECK_NULL_PTR1(feiCtrl); // this is fatal error
+
+        if      (!feiCtrl->RefFrame[0] && !feiCtrl->RefFrame[1]) mtype_second_field = MFX_FRAMETYPE_I;
+        else if ( feiCtrl->RefFrame[0] && !feiCtrl->RefFrame[1]) mtype_second_field = MFX_FRAMETYPE_P;
+        else if (                          feiCtrl->RefFrame[1]) mtype_second_field = MFX_FRAMETYPE_B;
     }
 
     UMC::AutomaticUMCMutex guard(m_listMutex);
@@ -1059,8 +903,7 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
      * (1): If Init() was for "MFX_PICSTRUCT_UNKNOWN", all Picture types is allowed
      * (2): Else allowed only picture type which was on Init() stage
      *  */
-    mfxU16 picStructTask = task.GetPicStructForEncode();
-    mfxU16 picStructInit = m_video.mfx.FrameInfo.PicStruct;
+    mfxU16 picStructTask = task.GetPicStructForEncode(), picStructInit = m_video.mfx.FrameInfo.PicStruct;
     if (! ((MFX_PICSTRUCT_UNKNOWN == picStructInit) || (picStructInit == picStructTask)) )
     {
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
@@ -1080,16 +923,16 @@ mfxStatus VideoENC_PREENC::RunFrameVmeENCCheck(
     pEntryPoints[0].pRoutineName         = "AsyncRoutine";
     pEntryPoints[0].pRoutine             = AsyncRoutine;
     pEntryPoints[1] = pEntryPoints[0];
-    pEntryPoints[1].pRoutineName = "Async Query";
-    pEntryPoints[1].pRoutine     = AsyncQuery;
-    pEntryPoints[1].pParam       = &m_incoming.front();
+    pEntryPoints[1].pRoutineName         = "Async Query";
+    pEntryPoints[1].pRoutine             = AsyncQuery;
+    pEntryPoints[1].pParam               = &m_incoming.front();
 
     numEntryPoints = 2;
 
     return MFX_ERR_NONE;
-} 
+}
 
-static mfxStatus CopyRawSurfaceToVideoMemory(  VideoCORE &  core,
+static mfxStatus CopyRawSurfaceToVideoMemory(VideoCORE &  core,
                                         MfxHwH264Encode::MfxVideoParam const & video,
                                         mfxFrameSurface1 *  src_sys, 
                                         mfxMemId            dst_d3d,
@@ -1131,7 +974,7 @@ static mfxStatus CopyRawSurfaceToVideoMemory(  VideoCORE &  core,
 
 mfxStatus VideoENC_PREENC::Close(void)
 {
-    if (!m_bInit) return MFX_ERR_NONE;
+    MFX_CHECK(m_bInit, MFX_ERR_NONE);
     m_bInit = false;
     m_ddi->Destroy();
 
@@ -1141,8 +984,7 @@ mfxStatus VideoENC_PREENC::Close(void)
     return MFX_ERR_NONE;
 } 
 
-#endif  
+#endif
 #endif  // MFX_VA
 
 /* EOF */
-

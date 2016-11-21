@@ -33,9 +33,7 @@
 #include "mfx_h264_preenc.h"
 #include "mfx_ext_buffers.h"
 
-//#if defined (MFX_VA_LINUX)
-    #include "mfx_h264_encode_vaapi.h"
-//#endif
+#include "mfx_h264_encode_vaapi.h"
 
 #if defined(_DEBUG)
 #define mdprintf fprintf
@@ -45,21 +43,8 @@
 
 using namespace MfxEncPAK;
 
-namespace MfxEncPAK{
-static mfxU16 GetGopSize(mfxVideoParam *par)
+namespace MfxEncPAK
 {
-    return  par->mfx.GopPicSize == 0 ?  500 : par->mfx.GopPicSize ;
-}
-static mfxU16 GetRefDist(mfxVideoParam *par)
-{
-    mfxU16 GopSize = GetGopSize(par);
-    mfxU16 refDist = par->mfx.GopRefDist == 0 ?  2 : par->mfx.GopRefDist;
-    return refDist <= GopSize ? refDist: GopSize;
-}
-static mfxU16 GetAsyncDeph(mfxVideoParam *par)
-{
-    return par->AsyncDepth == 0 ? 3 : par->AsyncDepth;
-}
 
 static bool IsVideoParamExtBufferIdSupported(mfxU32 id)
 {
@@ -72,139 +57,53 @@ static bool IsVideoParamExtBufferIdSupported(mfxU32 id)
 
 mfxExtBuffer* GetExtBuffer(mfxExtBuffer** ebuffers, mfxU32 nbuffers, mfxU32 BufferId)
 {
-    if (!ebuffers) return 0;
-    for(mfxU32 i=0; i<nbuffers; i++) {
+    if (!ebuffers) return NULL;
+    for(mfxU32 i=0; i<nbuffers; ++i) {
         if (!ebuffers[i]) continue;
         if (ebuffers[i]->BufferId == BufferId) {
             return ebuffers[i];
         }
     }
-    return 0;
+    return NULL;
 }
 
 static mfxStatus CheckExtBufferId(mfxVideoParam const & par)
 {
-    for (mfxU32 i = 0; i < par.NumExtParam; i++)
+    for (mfxU32 i = 0; i < par.NumExtParam; ++i)
     {
-        if (par.ExtParam[i] == 0)
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-
-        if (!MfxEncPAK::IsVideoParamExtBufferIdSupported(par.ExtParam[i]->BufferId))
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-
-        // check if buffer presents twice in video param
-        if (MfxEncPAK::GetExtBuffer(
+        MFX_CHECK(par.ExtParam[i], MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(MfxEncPAK::IsVideoParamExtBufferIdSupported(par.ExtParam[i]->BufferId), MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(!MfxEncPAK::GetExtBuffer(
             par.ExtParam + i + 1,
             par.NumExtParam - i - 1,
-            par.ExtParam[i]->BufferId) != 0)
-        {
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-        }
+            par.ExtParam[i]->BufferId), MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
     return MFX_ERR_NONE;
 }
 
-static mfxU16  GetFrameType(mfxU32 frameOrder, int gopSize, int gopRefDist)
-{
-
-    if (frameOrder % gopSize == 0)
-    {
-        return MFX_FRAMETYPE_I|MFX_FRAMETYPE_REF|((frameOrder == 0) ? MFX_FRAMETYPE_IDR : 0);
-    }
-    else if ((frameOrder % gopSize) % gopRefDist == 0)
-    {
-        return MFX_FRAMETYPE_P|MFX_FRAMETYPE_REF;
-    }
-    return MFX_FRAMETYPE_B;
-}
-
-static bool CheckExtenedBuffer(mfxVideoParam *par)
-{
-    mfxU32  BufferId[2] = {MFX_EXTBUFF_LOOKAHEAD_CTRL, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION};
-    mfxU32  num = sizeof(BufferId)/sizeof(BufferId[0]);
-    if (!par->ExtParam) return true;
-
-    for (mfxU32 i = 0; i < par->NumExtParam; i++)
-    {
-        mfxU32 j = 0;
-        for (; j < num; j++)
-        {
-            if (par->ExtParam[i] != 0 && par->ExtParam[i]->BufferId == BufferId[j]) break;
-        }
-        if (j == num) return false;
-    }
-    return true;
-}
-
-static
-mfxStatus GetNativeSurface(
-    VideoCORE & core,
-    MfxHwH264Encode::MfxVideoParam const & video,
-    mfxFrameSurface1 *  opaq_surface,
-    mfxFrameSurface1 ** native_surface)
-{
-    mfxStatus sts = MFX_ERR_NONE;
-   *native_surface = opaq_surface;
-
-    if (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-    {
-        *native_surface = core.GetNativeSurface(opaq_surface);
-        MFX_CHECK_NULL_PTR1(*native_surface);
-
-        (*native_surface)->Info            = opaq_surface->Info;
-        (*native_surface)->Data.TimeStamp  = opaq_surface->Data.TimeStamp;
-        (*native_surface)->Data.FrameOrder = opaq_surface->Data.FrameOrder;
-        (*native_surface)->Data.Corrupted  = opaq_surface->Data.Corrupted;
-        (*native_surface)->Data.DataFlag   = opaq_surface->Data.DataFlag;
-    }
-    return sts;
-}
-
-static
-mfxStatus GetOpaqSurface(
-    VideoCORE & core,
-    MfxHwH264Encode::MfxVideoParam const & video,
-    mfxFrameSurface1 *native_surface,
-    mfxFrameSurface1 ** opaq_surface)
-{
-    mfxStatus sts = MFX_ERR_NONE;
-
-   *opaq_surface = native_surface;
-
-    if (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-    {
-        *opaq_surface = core.GetOpaqSurface(native_surface->Data.MemId);
-        MFX_CHECK_NULL_PTR1(*opaq_surface);
-
-        (*opaq_surface)->Info            = native_surface->Info;
-        (*opaq_surface)->Data.TimeStamp  = native_surface->Data.TimeStamp;
-        (*opaq_surface)->Data.FrameOrder = native_surface->Data.FrameOrder;
-        (*opaq_surface)->Data.Corrupted  = native_surface->Data.Corrupted;
-        (*opaq_surface)->Data.DataFlag   = native_surface->Data.DataFlag;
-    }
-    return sts;
-}
-}
+} // namespace MfxEncPAK
 
 bool bEnc_PAK(mfxVideoParam *par)
 {
+    MFX_CHECK(par, false);
+
     mfxExtFeiParam *pControl = NULL;
-//    mfxExtFeiParam *pControl = (mfxExtFeiParam *) GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_FEI_PARAM);
+
     for (mfxU16 i = 0; i < par->NumExtParam; i++)
         if (par->ExtParam[i] != 0 && par->ExtParam[i]->BufferId == MFX_EXTBUFF_FEI_PARAM){ // assuming aligned buffers
-            pControl = (mfxExtFeiParam *)par->ExtParam[i];
+            pControl = reinterpret_cast<mfxExtFeiParam *>(par->ExtParam[i]);
             break;
         }
 
-    bool res = pControl ? (pControl->Func == MFX_FEI_FUNCTION_PAK) : false;
-    return res;
+    return pControl ? (pControl->Func == MFX_FEI_FUNCTION_PAK) : false;
 }
+
 
 static mfxStatus AsyncRoutine(void * state, void * param, mfxU32, mfxU32)
 {
     VideoPAK_PAK & impl = *(VideoPAK_PAK *)state;
-    return  impl.RunFramePAK(0,0);
+    return  impl.RunFramePAK(NULL, NULL);
 }
 
 void TEMPORAL_HACK_WITH_DPB(
@@ -288,14 +187,13 @@ void ConfigureTask_FEI_PAK(
     {
         mfxU32 fieldParity = (video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF)? (1 - field) : field;
 
-        mfxExtFeiSliceHeader * extFeiSlice = GetExtBuffer(video, fieldParity);
         /* To change de-blocking params in runtime we need to take params from runtime control */
-        mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBufferFEI(outParams, field);
-        /*And runtime params has priority before iInit() params */
-        if (NULL != extFeiSliceInRintime)
-            extFeiSlice = extFeiSliceInRintime;
+        /* And runtime params has priority before iInit() params */
+        mfxExtFeiSliceHeader * extFeiSlice = GetExtBufferFEI(outParams, field);
+        if (!extFeiSlice)
+            extFeiSlice = GetExtBuffer(video, fieldParity);
 
-        for (size_t i = 0; i < GetMaxNumSlices(video); i++)
+        for (size_t i = 0; i < GetMaxNumSlices(video); ++i)
         {
             /* default parameters */
             mfxU8 disableDeblockingIdc   = 0;
@@ -369,7 +267,7 @@ void ConfigureTask_FEI_PAK(
         ArrayU8x33 initList1 = task.m_list1[fieldParity];
 
         // Fill reflists
-        mfxExtFeiSliceHeader * pDataSliceHeader = extFeiSliceInRintime;
+        mfxExtFeiSliceHeader * pDataSliceHeader = extFeiSlice;
         /* Number of reference handling */
         mfxU32 maxNumRefL0 = 1, maxNumRefL1 = 1;
         if (pDataSliceHeader && pDataSliceHeader->Slice)
@@ -429,12 +327,10 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
     mfxU32 fieldCount = task.m_fieldPicFlag;
 
     sts = GetNativeHandleToRawSurface(*m_core, m_video, task, task.m_handleRaw);
-    if (sts != MFX_ERR_NONE)
-         return Error(sts);
+    MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
 
     sts = CopyRawSurfaceToVideoMemory(*m_core, m_video, task);
-    if (sts != MFX_ERR_NONE)
-          return Error(sts);
+    MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
 
     mfxPAKOutput* outParams = (mfxPAKOutput*)task.m_userData[1];
 
@@ -477,8 +373,7 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
     {
         //fprintf(stderr,"handle=0x%x mid=0x%x\n", task.m_handleRaw, task.m_midRaw );
         sts = m_ddi->Execute(task.m_handleRaw.first, task, task.m_fid[f], m_sei);
-        if (sts != MFX_ERR_NONE)
-                 return Error(sts);
+        MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
     }
 
     if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
@@ -519,10 +414,8 @@ mfxStatus VideoPAK_PAK::Query(DdiTask& task)
     for (f = f_start; f <= fieldCount; f++)
     {
         sts = m_ddi->QueryStatus(task, task.m_fid[f]);
-        if (sts == MFX_WRN_DEVICE_BUSY)
-            return MFX_TASK_BUSY;
-        if (sts != MFX_ERR_NONE)
-            return Error(sts);
+        MFX_CHECK(sts != MFX_WRN_DEVICE_BUSY, MFX_TASK_BUSY);
+        MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
     }
 
     mfxPAKInput *input = (mfxPAKInput *)task.m_userData[0];
@@ -532,13 +425,9 @@ mfxStatus VideoPAK_PAK::Query(DdiTask& task)
     //move that task to free tasks from m_incoming
     //m_incoming
     std::list<DdiTask>::iterator it = std::find(m_incoming.begin(), m_incoming.end(), task);
-    if(it != m_incoming.end())
-        m_free.splice(m_free.end(), m_incoming, it);
-    else
-        return MFX_ERR_NOT_FOUND;
+    MFX_CHECK(it != m_incoming.end(), MFX_ERR_NOT_FOUND);
 
-//    if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
-//        m_firstFieldDone = MFX_CODINGOPTION_UNKNOWN;
+    m_free.splice(m_free.end(), m_incoming, it);
 
     ReleaseResource(m_rec, task.m_midRec);
 
@@ -551,8 +440,8 @@ mfxStatus VideoPAK_PAK::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrameAll
 #if 0
     mfxExtLAControl *pControl = (mfxExtLAControl *) GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_LOOKAHEAD_CTRL);
 
-    MFX_CHECK(pControl,MFX_ERR_UNDEFINED_BEHAVIOR);
-    MFX_CHECK(pControl->LookAheadDepth,MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(pControl,                 MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(pControl->LookAheadDepth, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     mfxU32 inPattern = par->IOPattern & MfxHwH264Encode::MFX_IOPATTERN_IN_MASK;
     MFX_CHECK(
@@ -620,27 +509,20 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
     MFX_CHECK_STS(sts);
 
     sts = CopySpsPpsToVideoParam(tmp);
-    if (sts < MFX_ERR_NONE)
-        return sts;
-
-    //sts = SetDefaults(tmp, hwCaps, true, core->GetHWType(), core->GetVAType());
-    //MFX_CHECK_STS(sts);
+    MFX_CHECK(sts >= MFX_ERR_NONE, sts);
 
     m_ddi.reset( new MfxHwH264Encode::VAAPIFEIPAKEncoder );
-    if (m_ddi.get() == 0)
-        return MFX_WRN_PARTIAL_ACCELERATION;
 
     sts = m_ddi->CreateAuxilliaryDevice(
         m_core,
         DXVA2_Intel_Encode_AVC,
         GetFrameWidth(m_video),
         GetFrameHeight(m_video));
-    if (sts != MFX_ERR_NONE)
-        return MFX_WRN_PARTIAL_ACCELERATION;
+
+    MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
 
     const mfxExtFeiParam* params = GetExtBuffer(m_video);
-    if (NULL == params)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
+    MFX_CHECK(params, MFX_ERR_INVALID_VIDEO_PARAM);
 
     if ((MFX_CODINGOPTION_ON == params->SingleFieldProcessing) &&
          ((MFX_PICSTRUCT_FIELD_TFF == m_video.mfx.FrameInfo.PicStruct) ||
@@ -648,8 +530,7 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
         m_singleFieldProcessingMode = MFX_CODINGOPTION_ON;
 
     sts = m_ddi->QueryEncodeCaps(m_caps);
-    if (sts != MFX_ERR_NONE)
-        return MFX_WRN_PARTIAL_ACCELERATION;
+    MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
 
     m_currentPlatform = m_core->GetHWType();
     m_currentVaType   = m_core->GetVAType();
@@ -657,11 +538,10 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
     mfxStatus spsppsSts = MfxHwH264Encode::CopySpsPpsToVideoParam(m_video);
 
     mfxStatus checkStatus = MfxHwH264Encode::CheckVideoParam(m_video, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType);
-    if (checkStatus == MFX_WRN_PARTIAL_ACCELERATION)
-        return MFX_WRN_PARTIAL_ACCELERATION;
-    else if (checkStatus < MFX_ERR_NONE)
-        return checkStatus;
-    else if (checkStatus == MFX_ERR_NONE)
+    MFX_CHECK(checkStatus != MFX_WRN_PARTIAL_ACCELERATION, MFX_WRN_PARTIAL_ACCELERATION);
+    MFX_CHECK(checkStatus >= MFX_ERR_NONE, checkStatus);
+
+    if (checkStatus == MFX_ERR_NONE)
         checkStatus = spsppsSts;
 
     //raw surfaces should be created before accel service
@@ -691,11 +571,10 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
     m_recFrameOrder.resize(request.NumFrameMin, 0xffffffff);
 
     sts = m_ddi->CreateAccelerationService(m_video);
-    if (sts != MFX_ERR_NONE)
-        return MFX_WRN_PARTIAL_ACCELERATION;
+    MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
 
     m_inputFrameType =
-        m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY
+        (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
             ? MFX_IOPATTERN_IN_SYSTEM_MEMORY
             : MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
@@ -730,7 +609,7 @@ mfxStatus VideoPAK_PAK::GetVideoParam(mfxVideoParam *par)
     }
 
     mfxExtBuffer ** ExtParam = par->ExtParam;
-    mfxU16    NumExtParam = par->NumExtParam;
+    mfxU16       NumExtParam = par->NumExtParam;
 
     MFX_INTERNAL_CPY(par, &(static_cast<mfxVideoParam &>(m_video)), sizeof(mfxVideoParam));
 
@@ -751,14 +630,13 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
                     MFX_ENTRY_POINT pEntryPoints[],
                     mfxU32 &numEntryPoints)
 {
-    MFX_CHECK( m_bInit, MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(m_bInit, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    if ((NULL == input) || (NULL == output))
-        return MFX_ERR_NULL_PTR;
+    MFX_CHECK_NULL_PTR2(input, output);
 
     //set frame type
-    mfxU8 mtype_first_field = 0;
-    mfxU8 mtype_second_field = 0;
+    mfxU8 mtype_first_field = 0, mtype_second_field = 0;
+
     if ( ((0 == input->NumFrameL0)  && (0 == input->NumFrameL1)) ||
         (0 == input->InSurface->Data.FrameOrder))
         mtype_first_field = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR;
@@ -820,12 +698,9 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
         mfxU16 numL0Active = extFeiSliceInRintime->Slice[0].NumRefIdxL0Active,
                numL1Active = extFeiSliceInRintime->Slice[0].NumRefIdxL1Active;
 
-        if ((numL0Active == 0) && (numL1Active == 0))
-            type = MFX_FRAMETYPE_I | reference_IP_flag | IDR_flag;
-        else if ((0 != numL0Active) && (0 == numL1Active))
-            type = MFX_FRAMETYPE_P | reference_IP_flag;
-        else if ((0 != numL0Active) || (0 != numL1Active))
-            type = MFX_FRAMETYPE_B | reference_B_flag;
+        if      ((numL0Active == 0) && (numL1Active == 0)) type = MFX_FRAMETYPE_I | reference_IP_flag | IDR_flag;
+        else if ((numL0Active != 0) && (numL1Active != 0)) type = MFX_FRAMETYPE_P | reference_IP_flag;
+        else if                        (numL1Active != 0)  type = MFX_FRAMETYPE_B | reference_B_flag;
 
         if (fieldParity == 0)
         {
@@ -914,8 +789,7 @@ static mfxStatus CopyRawSurfaceToVideoMemory(  VideoCORE &  core,
                                         mfxHDL&             handle)
 {
     mfxExtOpaqueSurfaceAlloc const * extOpaq = GetExtBuffer(video);
-    if (NULL == extOpaq)
-        return MFX_ERR_NOT_FOUND;
+    MFX_CHECK(extOpaq, MFX_ERR_NOT_FOUND);
 
     mfxFrameData d3dSurf = {0};
     if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
@@ -950,7 +824,7 @@ static mfxStatus CopyRawSurfaceToVideoMemory(  VideoCORE &  core,
 
 mfxStatus VideoPAK_PAK::Close(void)
 {
-    if (!m_bInit) return MFX_ERR_NONE;
+    MFX_CHECK(m_bInit, MFX_ERR_NONE);
     m_bInit = false;
     m_ddi->Destroy();
 
@@ -964,4 +838,3 @@ mfxStatus VideoPAK_PAK::Close(void)
 #endif  // MFX_VA
 
 /* EOF */
-
