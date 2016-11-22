@@ -1068,8 +1068,8 @@ mfxStatus FEI_PreencInterface::RepackPredictorsPerf(iTask* eTask)
                 {
                     static mfxI16 MVZigzagOrder[16] = { 0, 1, 4, 5, 2, 3, 6, 7, 8, 9, 12, 13, 10, 11, 14, 15 };
 
-                    static mfxU16 widthMB_ds = MSDK_ALIGN16(m_pmfxDS? m_DSParams.vpp.Out.Width : m_videoParams.mfx.FrameInfo.Width),
-                                widthMB_full = MSDK_ALIGN16(m_pmfxDS? m_DSParams.vpp.In.Width  : m_videoParams.mfx.FrameInfo.Width);
+                    static mfxU16 widthMB_ds = ((m_pmfxDS? m_DSParams.vpp.Out.Width : m_videoParams.mfx.FrameInfo.Width) + 15) >> 4,
+                                widthMB_full = ((m_pmfxDS? m_DSParams.vpp.In.Width  : m_videoParams.mfx.FrameInfo.Width) + 15) >> 4;
 
                     preencMBidx = i / widthMB_full / m_pAppConfig->preencDSstrength * widthMB_ds + i % widthMB_full / m_pAppConfig->preencDSstrength;
 
