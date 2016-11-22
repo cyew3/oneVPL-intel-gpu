@@ -235,7 +235,10 @@ mfxStatus UpdateDpb(VP9FrameLevelParam &frameParam, sFrameEx *pRecFrame, std::ve
             {
                 dpb[i]->refCount--;
                 if (dpb[i]->refCount == 0)
-                    MFX_CHECK_STS(FreeSurface(dpb[i], pCore));
+                {
+                    mfxStatus sts = FreeSurface(dpb[i], pCore);
+                    MFX_CHECK_STS(sts);
+                }
             }
             dpb[i] = pRecFrame;
             dpb[i]->refCount++;
@@ -294,7 +297,8 @@ mfxStatus MfxFrameAllocResponse::Release()
     if (mids)
     {
         NumFrameActual = m_numFrameActualReturnedByAllocFrames;
-        MFX_CHECK_STS(m_pCore->FrameAllocator.Free(m_pCore->FrameAllocator.pthis, this));
+        mfxStatus sts = m_pCore->FrameAllocator.Free(m_pCore->FrameAllocator.pthis, this);
+        MFX_CHECK_STS(sts);
 
         m_numFrameActualReturnedByAllocFrames = 0;
     }
@@ -411,7 +415,8 @@ mfxStatus  InternalFrames::GetFrame(mfxU32 numFrame, sFrameEx * &Frame)
 
 mfxStatus InternalFrames::Release()
 {
-    MFX_CHECK_STS(m_response.Release());
+    mfxStatus sts = m_response.Release();
+    MFX_CHECK_STS(sts);
 
     return MFX_ERR_NONE;
 }
@@ -436,7 +441,8 @@ mfxStatus Task::GetInputSurface(mfxFrameSurface1 *& pSurface, bool &bExternal)
     }
     else
     {
-            MFX_CHECK_STS(GetOriginalSurface(pSurface, bExternal)) ;
+        mfxStatus sts = GetOriginalSurface(pSurface, bExternal);
+        MFX_CHECK_STS(sts);
     }
     return MFX_ERR_NONE;
 }

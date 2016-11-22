@@ -125,9 +125,6 @@ inline mfxStatus SetOrCopySupportedParams(mfxExtCodingOptionVP9 *pDst, mfxExtCod
     _SetOrCopyPar(QIndexDeltaLumaDC);
     _SetOrCopyPar(QIndexDeltaChromaAC);
     _SetOrCopyPar(QIndexDeltaChromaDC);
-    _SetOrCopyPar(WriteIVFHeaders);
-    _SetOrCopyPar(WriteIVFHeaders);
-    _SetOrCopyPar(WriteIVFHeaders);
 
     for (mfxU8 i = 0; i < MAX_REF_LF_DELTAS; i++)
     {
@@ -154,7 +151,8 @@ mfxStatus SetSupportedParameters(mfxVideoParam & par)
     SetOrCopySupportedParams(&par.mfx);
 
     // extended buffers
-    MFX_CHECK_STS(CheckExtBufferHeaders(par));
+    mfxStatus sts = CheckExtBufferHeaders(par);
+    MFX_CHECK_STS(sts);
 
     mfxExtCodingOptionVP9 *pOpt = GetExtBuffer(par);
     if (pOpt != 0)
@@ -209,10 +207,9 @@ bool CheckRangeDflt(T & opt, U min, U max, U deflt)
 
 mfxStatus CleanOutUnsupportedParameters(VP9MfxVideoParam &par)
 {
-    mfxStatus sts = MFX_ERR_NONE;
-
     VP9MfxVideoParam tmp = par;
-    MFX_CHECK_STS(SetOrCopySupportedParams(&par.mfx, &tmp.mfx));
+    mfxStatus sts = SetOrCopySupportedParams(&par.mfx, &tmp.mfx);
+    MFX_CHECK_STS(sts);
     if (memcmp(&par.mfx, &tmp.mfx, sizeof(mfxInfoMFX)))
     {
         sts = MFX_ERR_UNSUPPORTED;
@@ -515,10 +512,10 @@ mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     // ext buffers
     mfxExtCodingOptionVP9 &opt = GetExtBufferRef(par);
     SetDefault(opt.WriteIVFHeaders, MFX_CODINGOPTION_ON);
-    SetDefault(opt.EnableMultipleSegments, MFX_CODINGOPTION_OFF);
 
     // check final set of parameters
-    MFX_CHECK_STS(CheckParameters(par, caps));
+    mfxStatus sts = CheckParameters(par, caps);
+    MFX_CHECK_STS(sts);
 
     return MFX_ERR_NONE;
 }

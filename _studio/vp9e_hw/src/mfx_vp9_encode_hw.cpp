@@ -96,8 +96,10 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         }
 
         // check attached buffers (all are supported by encoder, no duplications, etc.)
-        MFX_CHECK_STS(CheckExtBufferHeaders(*in));
-        MFX_CHECK_STS(CheckExtBufferHeaders(*out));
+        mfxStatus sts = CheckExtBufferHeaders(*in);
+        MFX_CHECK_STS(sts);
+        sts = CheckExtBufferHeaders(*out);
+        MFX_CHECK_STS(sts);
 
         VP9MfxVideoParam toValidate = *in;
 
@@ -107,7 +109,6 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         MFX_CHECK(MFX_ERR_NONE == QueryHwCaps(m_pmfxCore, caps, GetGuid(toValidate)), MFX_ERR_UNSUPPORTED);
 
         // validate input parameters
-        mfxStatus sts = MFX_ERR_NONE;
         sts = CheckParameters(toValidate, caps);
 
         // copy validated parameters to [out]
@@ -150,7 +151,8 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxF
 {
     out;
     MFX_CHECK_NULL_PTR2(par,in);
-    MFX_CHECK_STS(CheckExtBufferHeaders(*par));
+    mfxStatus sts = CheckExtBufferHeaders(*par);
+    MFX_CHECK_STS(sts);
 
     mfxU32 inPattern = par->IOPattern & MFX_IOPATTERN_IN_MASK;
     MFX_CHECK(inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY ||
@@ -198,9 +200,9 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     }
 
     MFX_CHECK_NULL_PTR1(par);
-    MFX_CHECK_STS(CheckExtBufferHeaders(*par));
+    mfxStatus sts = CheckExtBufferHeaders(*par);
+    MFX_CHECK_STS(sts);
 
-    mfxStatus sts  = MFX_ERR_NONE;
     mfxStatus checkSts = MFX_ERR_NONE; // to save warnings ater parameters checking
 
     m_video = *par;
@@ -358,8 +360,10 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
             return MFX_WRN_DEVICE_BUSY;
         }
 
-        MFX_CHECK_STS(m_rawFrames.GetFrame(surface, pTask->m_pRawFrame));
-        MFX_CHECK_STS(LockSurface(pTask->m_pRawFrame, m_pmfxCore));
+        mfxStatus sts = m_rawFrames.GetFrame(surface, pTask->m_pRawFrame);
+        MFX_CHECK_STS(sts);
+        sts = LockSurface(pTask->m_pRawFrame, m_pmfxCore);
+        MFX_CHECK_STS(sts);
 
         if (ctrl)
         {
@@ -425,9 +429,12 @@ mfxStatus Plugin::ConfigTask(Task &task)
         task.m_pRecRefFrames[REF_ALT] = m_dpb[idxAlt] != m_dpb[idxLast] && m_dpb[idxAlt] != m_dpb[idxGold] ? m_dpb[idxAlt] : 0;
     }
 
-    MFX_CHECK_STS(LockSurface(task.m_pRecFrame, m_pmfxCore));
-    MFX_CHECK_STS(LockSurface(task.m_pRawLocalFrame, m_pmfxCore));
-    MFX_CHECK_STS(LockSurface(task.m_pOutBs, m_pmfxCore));
+    sts = LockSurface(task.m_pRecFrame, m_pmfxCore);
+    MFX_CHECK_STS(sts);
+    sts = LockSurface(task.m_pRawLocalFrame, m_pmfxCore);
+    MFX_CHECK_STS(sts);
+    sts = LockSurface(task.m_pOutBs, m_pmfxCore);
+    MFX_CHECK_STS(sts);
 
     task.m_status = TASK_SUBMITTED;
 
@@ -453,7 +460,8 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
 
         {
             UMC::AutomaticUMCMutex guard(m_taskMutex);
-            MFX_CHECK_STS(ConfigTask(*pTask));
+            sts = ConfigTask(*pTask);
+            MFX_CHECK_STS(sts);
         }
 
         mfxFrameSurface1    *pSurface = 0;
@@ -520,9 +528,12 @@ mfxStatus Plugin::Close()
         return MFX_ERR_NOT_INITIALIZED;
     }
 
-    MFX_CHECK_STS(m_rawLocalFrames.Release());
-    MFX_CHECK_STS(m_reconFrames.Release());
-    MFX_CHECK_STS(m_outBitstreams.Release());
+    mfxStatus sts = m_rawLocalFrames.Release();
+    MFX_CHECK_STS(sts);
+    sts = m_reconFrames.Release();
+    MFX_CHECK_STS(sts);
+    sts = m_outBitstreams.Release();
+    MFX_CHECK_STS(sts);
 
     m_initialized = false;
 
@@ -537,7 +548,8 @@ mfxStatus Plugin::GetVideoParam(mfxVideoParam *par)
     }
 
     MFX_CHECK_NULL_PTR1(par);
-    MFX_CHECK_STS(CheckExtBufferHeaders(*par));
+    mfxStatus sts = CheckExtBufferHeaders(*par);
+    MFX_CHECK_STS(sts);
 
     par->AsyncDepth = m_video.AsyncDepth;
     par->IOPattern = m_video.IOPattern;

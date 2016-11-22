@@ -537,9 +537,12 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
 
     inline mfxStatus FreeTask(mfxCoreInterface *pCore, Task &task)
     {
-        MFX_CHECK_STS(FreeSurface(task.m_pRawFrame, pCore));
-        MFX_CHECK_STS(FreeSurface(task.m_pRawLocalFrame, pCore));
-        MFX_CHECK_STS(FreeSurface(task.m_pOutBs, pCore));
+        mfxStatus sts = FreeSurface(task.m_pRawFrame, pCore);
+        MFX_CHECK_STS(sts);
+        sts = FreeSurface(task.m_pRawLocalFrame, pCore);
+        MFX_CHECK_STS(sts);
+        sts = FreeSurface(task.m_pOutBs, pCore);
+        MFX_CHECK_STS(sts);
 
         task.m_pBitsteam = 0;
         Zero(task.m_frameParam);
