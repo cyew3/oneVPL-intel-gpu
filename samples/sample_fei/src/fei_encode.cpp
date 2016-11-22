@@ -497,7 +497,7 @@ mfxStatus FEI_EncodeInterface::InitFrameParams(mfxFrameSurface1* encodeSurface, 
                 bool adjust_window = (frameType[feiEncCtrlId] & MFX_FRAMETYPE_B) && m_pAppConfig->RefHeight * m_pAppConfig->RefWidth > 1024;
 
                 feiEncCtrl->RefHeight = adjust_window ? 32 : m_pAppConfig->RefHeight;
-                feiEncCtrl->RefWidth = adjust_window ? 32 : m_pAppConfig->RefWidth;
+                feiEncCtrl->RefWidth  = adjust_window ? 32 : m_pAppConfig->RefWidth;
             }
 
             feiEncCtrl->MVPredictor = (!(frameType[feiEncCtrlId] & MFX_FRAMETYPE_I) && (m_pAppConfig->mvinFile != NULL || m_pAppConfig->bPREENC)) ? 1 : 0;
@@ -565,7 +565,7 @@ mfxStatus FEI_EncodeInterface::EncodeOneFrame(iTask* eTask, mfxFrameSurface1* pS
     mfxStatus sts = MFX_ERR_NONE;
 
     mfxFrameSurface1* encodeSurface = eTask ? (eTask->fullResSurface ? eTask->fullResSurface : eTask->in.InSurface) : pSurf;
-    if (m_videoParams.mfx.EncodedOrder || (!m_videoParams.mfx.EncodedOrder && encodeSurface)) // no need to do this for buffered frames in display order
+    if (encodeSurface) // no need to do this for buffered frames
     {
         PairU8 frameType = eTask ? eTask->m_type : runtime_frameType;
         sts = InitFrameParams(encodeSurface, frameType, eTask);
