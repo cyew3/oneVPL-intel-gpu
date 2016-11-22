@@ -18,6 +18,7 @@
 #include "libmfx_core_vaapi.h"
 #include "mfx_h264_encode_vaapi.h"
 #include "mfx_h264_encode_hw_utils.h"
+#include "ippi.h"
 
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
 //#include <va/vendor/va_intel_statistics.h>
@@ -43,7 +44,6 @@ mfxU32 GetSurfaceIndexFromList(std::vector<ExtVASurface> &m_reconQueue, mfxU32 s
 
     return VA_INVALID_SURFACE;
 }
-
 
 VAAPIFEIPREENCEncoder::VAAPIFEIPREENCEncoder()
 : VAAPIEncoder()
@@ -771,9 +771,10 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
                             (void **) (&mvs));
                 }
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
                 //copy to output in task here MVs
-                memcpy_s(mvsOut->MB, sizeof (mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB) * mvsOut->NumMBAlloc,
-                                mvs, 16 * sizeof (VAMotionVectorIntel) * mvsOut->NumMBAlloc);
+                FastCopyBufferVid2Sys(mvsOut->MB, mvs, 16 * sizeof (VAMotionVectorIntel) * mvsOut->NumMBAlloc);
+
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
                     vaUnmapBuffer(m_vaDisplay, statMVid);
@@ -794,8 +795,7 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
                 /* MSDK copy data back only if application requested statistic */
                 if (feiCtrl && !feiCtrl->DisableStatisticsOutput && mbstatOut)
                 {
-                    memcpy_s(mbstatOut->MB, sizeof (mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB) * mbstatOut->NumMBAlloc,
-                        mbstat, sizeof (VAStatsStatistics16x16Intel) * mbstatOut->NumMBAlloc);
+                    FastCopyBufferVid2Sys(mbstatOut->MB, mbstat, sizeof (VAStatsStatistics16x16Intel) * mbstatOut->NumMBAlloc);
                 }
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
@@ -1682,8 +1682,8 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
                 }
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 //copy to output in task here MVs
-                memcpy_s(mbstat->MB, sizeof (VAEncFEIDistortionBufferH264Intel) * mbstat->NumMBAlloc,
-                               mbs, sizeof (VAEncFEIDistortionBufferH264Intel) * mbstat->NumMBAlloc);
+                FastCopyBufferVid2Sys(mbstat->MB, mbs, sizeof (VAEncFEIDistortionBufferH264Intel) * mbstat->NumMBAlloc);
+
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
                      vaSts = vaUnmapBuffer(m_vaDisplay, vaFeiMBStatId);
@@ -1706,9 +1706,10 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
                 }
 
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
                 //copy to output in task here MVs
-                memcpy_s(mvout->MB, sizeof (VAMotionVectorIntel) * 16 * mvout->NumMBAlloc,
-                    mvs, sizeof (VAMotionVectorIntel) * 16 * mvout->NumMBAlloc);
+                FastCopyBufferVid2Sys(mvout->MB, mvs, sizeof (VAMotionVectorIntel) * 16 * mvout->NumMBAlloc);
+
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
                     vaSts = vaUnmapBuffer(m_vaDisplay, vaFeiMVOutId);
@@ -1730,9 +1731,10 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
                             (void **) (&mbcs));
                 }
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
                 //copy to output in task here MVs
-                memcpy_s(mbcodeout->MB, sizeof (VAEncFEIModeBufferH264Intel) * mbcodeout->NumMBAlloc,
-                                  mbcs, sizeof (VAEncFEIModeBufferH264Intel) * mbcodeout->NumMBAlloc);
+                FastCopyBufferVid2Sys(mbcodeout->MB, mbcs, sizeof (VAEncFEIModeBufferH264Intel) * mbcodeout->NumMBAlloc);
+
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
                     vaSts = vaUnmapBuffer(m_vaDisplay, vaFeiMBCODEOutId);
@@ -2116,8 +2118,8 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         }
 
         //copy input MV data to buffer
-        memcpy_s(mvs, sizeof (VAMotionVectorIntel) * 16 * mvout->NumMBAlloc,
-                mvout->MB, sizeof (VAMotionVectorIntel) * 16 * mvout->NumMBAlloc);
+        FastCopyBufferSys2Vid(mvs, mvout->MB, sizeof (VAMotionVectorIntel) * 16 * mvout->NumMBAlloc);
+
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
             vaSts = vaUnmapBuffer(m_vaDisplay, m_vaFeiMVOutId[feiFieldId]);
@@ -2150,9 +2152,10 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
                     (void **) (&mbcs));
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
         }
+
         //copy to output in task here MVs
-        memcpy_s(mbcs, sizeof (VAEncFEIModeBufferH264Intel) * mbcodeout->NumMBAlloc,
-                mbcodeout->MB, sizeof (VAEncFEIModeBufferH264Intel) * mbcodeout->NumMBAlloc);
+        FastCopyBufferSys2Vid(mbcs, mbcodeout->MB, sizeof (VAEncFEIModeBufferH264Intel) * mbcodeout->NumMBAlloc);
+
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
             vaUnmapBuffer(m_vaDisplay, m_vaFeiMCODEOutId[feiFieldId]);
@@ -2541,8 +2544,9 @@ mfxStatus VAAPIFEIPAKEncoder::QueryStatus(
             }
 
             task.m_bsDataLength[feiFieldId] = codedBufferSegment->size;
-            memcpy_s(task.m_bs->Data + task.m_bs->DataLength, codedBufferSegment->size,
-                                     codedBufferSegment->buf, codedBufferSegment->size);
+
+            FastCopyBufferVid2Sys(task.m_bs->Data + task.m_bs->DataLength, codedBufferSegment->buf, codedBufferSegment->size);
+
             task.m_bs->DataLength += codedBufferSegment->size;
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");

@@ -260,6 +260,11 @@ namespace MfxHwH264Encode
         void const * srcVid,
         mfxI32       bytes);
 
+    void FastCopyBufferSys2Vid(
+        void *       dstSys,
+        void const * srcVid,
+        mfxI32       bytes);
+
     PairU8 ExtendFrameType(
         mfxU32 type);
 

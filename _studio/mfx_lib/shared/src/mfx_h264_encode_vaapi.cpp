@@ -1301,7 +1301,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
         flag |= VA_HDCP_ENABLED;
 
     // Encoder create
-    
+
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaCreateContext");
         vaSts = vaCreateContext(
@@ -2843,9 +2843,10 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
                     (void **) (&mbs));
         }
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
         //copy to output in task here MVs
-        memcpy_s(mbstat->MB, sizeof (VAEncFEIDistortionBufferH264Intel) * mbstat->NumMBAlloc,
-                        mbs, sizeof (VAEncFEIDistortionBufferH264Intel) * mbstat->NumMBAlloc);
+        FastCopyBufferVid2Sys(mbstat->MB, mbs, sizeof (VAEncFEIDistortionBufferH264Intel) * mbstat->NumMBAlloc);
+
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
             vaSts = vaUnmapBuffer(m_vaDisplay, vaFeiMBStatId);
@@ -2867,9 +2868,10 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
         }
 
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
         //copy to output in task here MVs
-        memcpy_s(mvout->MB, sizeof (VAMotionVectorIntel) * 16 * mvout->NumMBAlloc,
-                       mvs, sizeof (VAMotionVectorIntel) * 16 * mvout->NumMBAlloc);
+        FastCopyBufferVid2Sys(mvout->MB, mvs, sizeof (VAMotionVectorIntel) * 16 * mvout->NumMBAlloc);
+
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
             vaSts = vaUnmapBuffer(m_vaDisplay, vaFeiMVOutId);
@@ -2890,9 +2892,10 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
                 (void **) (&mbcs));
         }
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
         //copy to output in task here MVs
-        memcpy_s(mbcodeout->MB, sizeof (VAEncFEIModeBufferH264Intel) * mbcodeout->NumMBAlloc,
-                         mbcs, sizeof (VAEncFEIModeBufferH264Intel) * mbcodeout->NumMBAlloc);
+        FastCopyBufferVid2Sys(mbcodeout->MB, mbcs, sizeof (VAEncFEIModeBufferH264Intel) * mbcodeout->NumMBAlloc);
+
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
             vaSts = vaUnmapBuffer(m_vaDisplay, vaFeiMBCODEOutId);

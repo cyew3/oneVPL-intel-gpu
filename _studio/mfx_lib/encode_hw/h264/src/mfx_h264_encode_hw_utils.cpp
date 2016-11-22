@@ -4914,6 +4914,16 @@ void MfxHwH264Encode::FastCopyBufferVid2Sys(void * dstSys, void const * srcVid, 
     assert(sts == ippStsNoErr); sts;
 }
 
+void MfxHwH264Encode::FastCopyBufferSys2Vid(void * dstSys, void const * srcVid, mfxI32 bytes)
+{
+    assert(dstSys != 0);
+    assert(srcVid != 0);
+
+    IppiSize roi = { bytes, 1 };
+    IppStatus sts = ippiCopyManaged_8u_C1R((Ipp8u *)srcVid, bytes, (Ipp8u *)dstSys, bytes, roi, IPP_NONTEMPORAL_STORE);
+    assert(sts == ippStsNoErr); sts;
+}
+
 void CyclicTaskPool::Init(mfxU32 size)
 {
     m_pool.resize(size);
