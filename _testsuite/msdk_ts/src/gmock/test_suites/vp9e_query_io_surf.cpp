@@ -61,7 +61,11 @@ namespace vp9e_query_io_surf
 
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
-        {/* 0*/ MFX_ERR_NONE, NONE  },
+        {/* 5*/ MFX_ERR_NONE, NONE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY },
+            }
+        },
         {/* 1*/ MFX_ERR_NONE, NONE,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.AsyncDepth, 5 },

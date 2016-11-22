@@ -277,10 +277,9 @@ namespace vp9e_cqp
         m_par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
         m_par.mfx.QPI = VP9E_CQP_DEFAULT_QPI;
         m_par.mfx.QPP = VP9E_CQP_DEFAULT_QPP;
+        m_par.mfx.TargetUsage = 1;
         m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 176;
         m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
-        //only Video memory currently supported
-        m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
         SETPARS(m_pPar, MFX_PAR);
 

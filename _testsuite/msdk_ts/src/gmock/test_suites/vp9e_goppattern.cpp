@@ -134,8 +134,7 @@ namespace vp9e_goppattern
         m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 176;
         m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
         m_par.mfx.QPI = m_par.mfx.QPP = 100;
-        //only Video memory currently supported
-        m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+        m_par.mfx.TargetUsage = 1;
 
         InitAndSetAllocator();
 

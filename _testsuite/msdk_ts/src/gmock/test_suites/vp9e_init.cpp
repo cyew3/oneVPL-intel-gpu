@@ -211,8 +211,6 @@ namespace vp9e_init
 
         const tc_struct& tc = test_case[id];
 
-        mfxHDL hdl;
-        mfxHandleType type;
         mfxStatus sts;
 
         MFXInit();
@@ -222,35 +220,12 @@ namespace vp9e_init
         else
             m_loaded = true;
 
-        // Currently only VIDEO_MEMORY is supported
-        if(tc.type != MEMORY_TYPE)
-        {
-            m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
-        }
         m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 720;
         m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 480;
 
         SETPARS(m_pPar, MFX_PAR);
 
-        if (!GetAllocator())
-        {
-            UseDefaultAllocator(
-                (m_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-                || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
-                );
-        }
-
-        if (!((m_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-            || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
-            && (!m_pVAHandle))
-        {
-            m_pFrameAllocator = GetAllocator();
-            SetFrameAllocator();
-            m_pVAHandle = m_pFrameAllocator;
-            m_pVAHandle->get_hdl(type, hdl);
-            SetHandle(m_session, type, hdl);
-            m_is_handle_set = (g_tsStatus.get() >= 0);
-        }
+        InitAndSetAllocator();
 
         if (tc.type == EXT_BUFF)
         {

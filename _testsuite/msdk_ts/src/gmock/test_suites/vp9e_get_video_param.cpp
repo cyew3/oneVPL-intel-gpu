@@ -59,6 +59,9 @@ namespace vp9e_get_video_param
         {/*02*/ MFX_ERR_NOT_INITIALIZED, NOT_INIT },
         {/*03*/ MFX_ERR_NOT_INITIALIZED, FAILED_INIT },
         {/*04*/ MFX_ERR_NULL_PTR, NULL_PAR },
+        {/*05*/ MFX_ERR_NONE, NONE,
+            { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY },
+        },
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
@@ -68,8 +71,6 @@ namespace vp9e_get_video_param
         TS_START;
 
         const tc_struct& tc = test_case[id];
-        mfxHDL hdl;
-        mfxHandleType type;
         mfxVideoParam new_par = {};
 
         MFXInit();
@@ -79,17 +80,10 @@ namespace vp9e_get_video_param
         m_par.mfx.FrameInfo.PicStruct = 1;
         m_par.mfx.GopPicSize = 15;
         m_par.mfx.GopRefDist = 1;
-        m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
         SETPARS(m_pPar, MFX_PAR);
 
-        if (!GetAllocator())
-        {
-            UseDefaultAllocator(
-                (m_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-                || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
-                );
-        }
+        InitAndSetAllocator();
 
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_VP9E_HW.Data, sizeof(MFX_PLUGINID_VP9E_HW.Data)))
         {
@@ -104,18 +98,6 @@ namespace vp9e_get_video_param
             g_tsLog << "WARNING: loading encoder from plugin failed!\n";
             return 0;
         }
-
-        //set handle
-        if (!((m_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-                || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
-            {
-                m_pFrameAllocator = GetAllocator();
-                SetFrameAllocator();
-                m_pVAHandle = m_pFrameAllocator;
-                m_pVAHandle->get_hdl(type, hdl);
-                SetHandle(m_session, type, hdl);
-                m_is_handle_set = (g_tsStatus.get() >= 0);
-            }
 
         //init
         if (tc.type == FAILED_INIT)

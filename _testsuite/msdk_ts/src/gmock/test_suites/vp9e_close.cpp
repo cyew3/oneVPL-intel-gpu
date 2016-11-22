@@ -62,6 +62,9 @@ namespace vp9e_close
         {/*03*/ MFX_ERR_NOT_INITIALIZED, FAILED_INIT },
         {/*04*/ MFX_ERR_NOT_INITIALIZED, CLOSED },
         {/*05*/ MFX_ERR_NONE, NOT_SYNC },
+        {/*06*/ MFX_ERR_NONE, NONE,
+            { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY },
+        },
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
@@ -72,36 +75,12 @@ namespace vp9e_close
 
         const tc_struct& tc = test_case[id];
 
-        mfxHDL hdl;
-        mfxHandleType type;
-
         MFXInit();
         Load();
 
         SETPARS(m_pPar, MFX_PAR);
 
-        // Currently only VIDEO_MEMORY is supported
-        m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
-
-        if (!GetAllocator())
-        {
-            UseDefaultAllocator(
-                (m_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-                || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
-                );
-        }
-
-        if (!((m_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-            || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
-            && (!m_pVAHandle))
-        {
-            m_pFrameAllocator = GetAllocator();
-            SetFrameAllocator();
-            m_pVAHandle = m_pFrameAllocator;
-            m_pVAHandle->get_hdl(type, hdl);
-            SetHandle(m_session, type, hdl);
-            m_is_handle_set = (g_tsStatus.get() >= 0);
-        }
+        InitAndSetAllocator();
 
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_VP9E_HW.Data, sizeof(MFX_PLUGINID_VP9E_HW.Data)))
         {
