@@ -1607,10 +1607,32 @@ mfxStatus CEncodingPipeline::Run()
     // exit in case of other errors
     MSDK_CHECK_STATUS(sts, "Unexpected error!!");
 
+    sts = ProcessBufferedFrames();
+    // MFX_ERR_NOT_FOUND is the correct status to exit the loop with
+    // EncodeFrameAsync and SyncOperation, so don't return this status
+    MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_FOUND);
+    // report any errors that occurred in asynchronous part
+    MSDK_CHECK_STATUS(sts, "Buffered frames processing failed");
+
+    // release runtime resources
+    sts = ReleaseResources();
+    MSDK_CHECK_STATUS(sts, "ReleaseResources failed");
+
+    return sts;
+}
+
+mfxStatus CEncodingPipeline::ProcessBufferedFrames()
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    bool create_task = m_appCfg.bPREENC  || m_appCfg.bENCPAK  ||
+                       m_appCfg.bOnlyENC || m_appCfg.bOnlyPAK ||
+                      (m_appCfg.bENCODE && m_appCfg.EncodedOrder);
 
     // loop to get buffered frames from encoder
     if (create_task)
     {
+        iTask* eTask = NULL;
         mfxU32 numUnencoded = m_inputTasks.CountUnencodedFrames();
 
         if (numUnencoded) { m_inputTasks.ProcessLastB(); }
@@ -1633,7 +1655,7 @@ mfxStatus CEncodingPipeline::Run()
 
             if (m_appCfg.bENCODE)
             {
-                sts = m_pFEI_ENCODE->EncodeOneFrame(eTask, pSurf, m_frameType);
+                sts = m_pFEI_ENCODE->EncodeOneFrame(eTask, NULL, m_frameType);
                 MSDK_BREAK_ON_ERROR(sts);
             }
 
@@ -1648,7 +1670,7 @@ mfxStatus CEncodingPipeline::Run()
         {
             while (MFX_ERR_NONE <= sts)
             {
-                sts = m_pFEI_ENCODE->EncodeOneFrame(NULL, NULL, PairU8(NULL,NULL));
+                sts = m_pFEI_ENCODE->EncodeOneFrame(NULL, NULL, PairU8(NULL, NULL));
             }
 
             // MFX_ERR_MORE_DATA is the correct status to exit buffering loop with
@@ -1658,15 +1680,6 @@ mfxStatus CEncodingPipeline::Run()
             MSDK_CHECK_STATUS(sts, "EncodeOneFrame failed");
         }
     }
-    // MFX_ERR_NOT_FOUND is the correct status to exit the loop with
-    // EncodeFrameAsync and SyncOperation, so don't return this status
-    MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_FOUND);
-    // report any errors that occurred in asynchronous part
-    MSDK_CHECK_STATUS(sts, "Buffered frames processing failed");
-
-    // release runtime resources
-    sts = ReleaseResources();
-    MSDK_CHECK_STATUS(sts, "ReleaseResources failed");
 
     return sts;
 }
@@ -1737,26 +1750,16 @@ mfxStatus CEncodingPipeline::ResizeFrame(mfxU32 m_frameCount, mfxU16 picstruct)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    m_appCfg.PipelineCfg.DRCresetPoint = m_DRCqueue.size() && m_DRCqueue[m_nDRC_idx].start_frame == m_frameCount;
+    bool reset_point = m_DRCqueue.size() && m_DRCqueue[m_nDRC_idx].start_frame == m_frameCount;
 
-    if (!m_appCfg.PipelineCfg.DRCresetPoint)
+    if (!reset_point)
         return sts;
 
-    if (m_pFEI_ENCODE)
-    {
-        while (MFX_ERR_NONE <= sts)
-        {
-            sts = m_pFEI_ENCODE->EncodeOneFrame(NULL, NULL, m_frameType);
-            if (sts == MFX_ERR_GPU_HANG)
-            {
-                return MFX_ERR_GPU_HANG;
-            }
-        }
-        // MFX_ERR_MORE_DATA is the correct status to exit buffering loop with
-        // indicates that there are no more buffered frames
-        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
-        MSDK_CHECK_STATUS(sts, "FEI ENCODE: EncodeOneFrame failed");
-    }
+    sts = ProcessBufferedFrames();
+    MSDK_IGNORE_MFX_STS(sts, MFX_ERR_NOT_FOUND);
+    MSDK_CHECK_STATUS(sts, "Buffered frames processing failed");
+
+    m_appCfg.PipelineCfg.DRCresetPoint = true;
 
     m_insertIDR = true;
 

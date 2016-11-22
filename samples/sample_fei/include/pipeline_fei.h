@@ -50,6 +50,7 @@ public:
 
     virtual mfxStatus Init();
     virtual mfxStatus Run();
+    virtual mfxStatus ProcessBufferedFrames();
     virtual void Close();
     virtual mfxStatus ResetMFXComponents(bool realloc_frames);
     virtual mfxStatus InitSessions();

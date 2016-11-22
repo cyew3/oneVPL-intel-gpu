@@ -118,10 +118,17 @@ mfxStatus FEI_PreencInterface::Reset(mfxU16 width, mfxU16 height, mfxU16 crop_w,
 {
     if (width && height && crop_w && crop_h)
     {
-        m_DSParams.vpp.In.Width  = width;
-        m_DSParams.vpp.In.Height = height;
-        m_DSParams.vpp.In.CropW  = crop_w;
-        m_DSParams.vpp.In.CropH  = crop_h;
+        if (m_pmfxDS)
+        {
+            m_DSParams.vpp.In.Width  = width;
+            m_DSParams.vpp.In.Height = height;
+            m_DSParams.vpp.In.CropW  = crop_w;
+            m_DSParams.vpp.In.CropH  = crop_h;
+
+            width  = crop_w = m_DSParams.vpp.Out.CropW = m_DSParams.vpp.Out.Width  = MSDK_ALIGN16(width / m_pAppConfig->preencDSstrength);
+            height = crop_h = m_DSParams.vpp.Out.CropH = m_DSParams.vpp.Out.Height = (MFX_PICSTRUCT_PROGRESSIVE & m_DSParams.vpp.Out.PicStruct) ?
+                MSDK_ALIGN16(height / m_pAppConfig->preencDSstrength) : MSDK_ALIGN32(height / m_pAppConfig->preencDSstrength);
+        }
 
         m_videoParams.mfx.FrameInfo.Width  = width;
         m_videoParams.mfx.FrameInfo.Height = height;
@@ -562,10 +569,12 @@ mfxStatus FEI_PreencInterface::InitFrameParams(iTask* eTask, iTask* refTask[2][2
     MSDK_CHECK_POINTER(eTask->preenc_bufs, MFX_ERR_NULL_PTR);
 
     /* Adjust number of MBs in extended buffers */
-    if (m_pAppConfig->PipelineCfg.mixedPicstructs)
+    if (m_pAppConfig->PipelineCfg.DRCresetPoint || m_pAppConfig->PipelineCfg.mixedPicstructs)
     {
-        mfxU32 n_MB = !eTask->m_fieldPicFlag ? m_pAppConfig->PipelineCfg.numMB_preenc_frame   // Mixed Picstructs : progressive
-                                             : m_pAppConfig->PipelineCfg.numMB_preenc_refPic; // Mixed Picstructs : interlaced
+        mfxU32 n_MB = m_pAppConfig->PipelineCfg.DRCresetPoint ?
+                      ((m_videoParams.mfx.FrameInfo.Width*m_videoParams.mfx.FrameInfo.Height)>>8) : // DRC
+                      (!eTask->m_fieldPicFlag ? m_pAppConfig->PipelineCfg.numMB_preenc_frame        // Mixed Picstructs : progressive
+                                              : m_pAppConfig->PipelineCfg.numMB_preenc_refPic);     // Mixed Picstructs : interlaced
 
         eTask->preenc_bufs->ResetMBnum(n_MB, m_pAppConfig->PipelineCfg.DRCresetPoint);
     }
