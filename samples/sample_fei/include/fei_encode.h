@@ -57,6 +57,10 @@ struct SyncList
 
 class FEI_EncodeInterface
 {
+private:
+    FEI_EncodeInterface(const FEI_EncodeInterface& other_encode);             // forbidden
+    FEI_EncodeInterface& operator= (const FEI_EncodeInterface& other_encode); // forbidden
+
 public:
     MFXVideoSession*  m_pmfxSession;
     MFXVideoENCODE*   m_pmfxENCODE;

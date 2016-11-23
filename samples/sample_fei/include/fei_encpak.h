@@ -32,6 +32,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 class FEI_EncPakInterface
 {
+private:
+    FEI_EncPakInterface(const FEI_EncPakInterface& other_encpak);             // forbidden
+    FEI_EncPakInterface& operator= (const FEI_EncPakInterface& other_encpak); // forbidden
+
 public:
     MFXVideoSession*  m_pmfxSession;
     MFXVideoENC*      m_pmfxENC;
