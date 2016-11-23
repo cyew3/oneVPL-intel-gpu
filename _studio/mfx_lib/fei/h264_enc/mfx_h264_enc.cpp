@@ -318,45 +318,48 @@ mfxStatus VideoENC_ENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
     mfxU32 f = 0, f_start = 0;
     mfxU32 fieldCount = task.m_fieldPicFlag;
 
-    sts = GetNativeHandleToRawSurface(*m_core, m_video, task, task.m_handleRaw);
-    MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
-
-    mfxENCOutput* outParams = (mfxENCOutput*)task.m_userData[1];
-
-    mfxHDL handle_src, handle_rec;
-    sts = m_core->GetExternalFrameHDL(outParams->OutSurface->Data.MemId, &handle_src);
-    MFX_CHECK(MFX_ERR_NONE == sts, MFX_ERR_INVALID_HANDLE);
-
-    mfxU32* src_surf_id = (mfxU32 *)handle_src, *rec_surf_id;
-
-    for (mfxU32 i = 0; i < m_rec.NumFrameActual; ++i)
-    {
-        task.m_midRec = AcquireResource(m_rec, i);
-
-        sts = m_core->GetFrameHDL(m_rec.mids[i], &handle_rec);
-        MFX_CHECK(MFX_ERR_NONE == sts, MFX_ERR_INVALID_HANDLE);
-
-        rec_surf_id = (mfxU32 *)handle_rec;
-        if ((*src_surf_id) == (*rec_surf_id))
-        {
-            task.m_idxRecon = i;
-            break;
-        }
-        else
-            ReleaseResource(m_rec, task.m_midRec);
-    }
-
-    ConfigureTask_FEI_ENC(task, m_prevTask, m_video, m_frameOrder_frameNum);
-
-    //!!! HACK !!!
-    m_recFrameOrder[task.m_idxRecon] = task.m_frameOrder;
-    TEMPORAL_HACK_WITH_DPB(task.m_dpb[0],          m_rec.mids, m_recFrameOrder);
-    TEMPORAL_HACK_WITH_DPB(task.m_dpb[1],          m_rec.mids, m_recFrameOrder);
-    TEMPORAL_HACK_WITH_DPB(task.m_dpbPostEncoding, m_rec.mids, m_recFrameOrder);
-
     if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
     {
         fieldCount = f_start = m_firstFieldDone; // 0 or 1
+    }
+
+    if (!task.m_fieldPicFlag || (task.m_fieldPicFlag && f_start != fieldCount))
+    {
+        sts = GetNativeHandleToRawSurface(*m_core, m_video, task, task.m_handleRaw);
+        MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
+
+        mfxENCOutput* outParams = reinterpret_cast<mfxENCOutput*>(task.m_userData[1]);
+
+        mfxHDL handle_src, handle_rec;
+        sts = m_core->GetExternalFrameHDL(outParams->OutSurface->Data.MemId, &handle_src);
+        MFX_CHECK(MFX_ERR_NONE == sts, MFX_ERR_INVALID_HANDLE);
+
+        mfxU32* src_surf_id = (mfxU32 *)handle_src, *rec_surf_id;
+
+        for (mfxU32 i = 0; i < m_rec.NumFrameActual; ++i)
+        {
+            task.m_midRec = AcquireResource(m_rec, i);
+
+            sts = m_core->GetFrameHDL(m_rec.mids[i], &handle_rec);
+            MFX_CHECK(MFX_ERR_NONE == sts, MFX_ERR_INVALID_HANDLE);
+
+            rec_surf_id = (mfxU32 *)handle_rec;
+            if ((*src_surf_id) == (*rec_surf_id))
+            {
+                task.m_idxRecon = i;
+                break;
+            }
+            else
+                ReleaseResource(m_rec, task.m_midRec);
+        }
+
+        ConfigureTask_FEI_ENC(task, m_prevTask, m_video, m_frameOrder_frameNum);
+
+        //!!! HACK !!!
+        m_recFrameOrder[task.m_idxRecon] = task.m_frameOrder;
+        TEMPORAL_HACK_WITH_DPB(task.m_dpb[0],          m_rec.mids, m_recFrameOrder);
+        TEMPORAL_HACK_WITH_DPB(task.m_dpb[1],          m_rec.mids, m_recFrameOrder);
+        TEMPORAL_HACK_WITH_DPB(task.m_dpbPostEncoding, m_rec.mids, m_recFrameOrder);
     }
 
     for (f = f_start; f <= fieldCount; f++)
