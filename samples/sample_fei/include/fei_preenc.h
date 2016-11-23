@@ -25,6 +25,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 class FEI_PreencInterface
 {
+private:
+    FEI_PreencInterface(const FEI_PreencInterface& other_preenc);             // forbidden
+    FEI_PreencInterface& operator= (const FEI_PreencInterface& other_preenc); // forbidden
+
 public:
     MFXVideoSession* m_pmfxSession;
     MFXVideoENC*     m_pmfxPREENC;

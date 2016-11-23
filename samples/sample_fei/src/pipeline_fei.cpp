@@ -64,6 +64,7 @@ CEncodingPipeline::CEncodingPipeline(AppConfig* pAppConfig)
     , m_pFEI_ENCPAK(NULL)
     , m_pVPP(NULL)
     , m_pDECODE(NULL)
+    , m_pYUVReader(NULL)
 
     , m_pMFXAllocator(NULL)
     , m_pmfxAllocatorParams(NULL)

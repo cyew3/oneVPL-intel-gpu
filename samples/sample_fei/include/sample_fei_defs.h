@@ -610,6 +610,8 @@ template <typename T> struct Pair
     T bot;
 
     Pair()
+        : top()
+        , bot()
     {
     }
 

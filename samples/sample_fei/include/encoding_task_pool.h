@@ -26,6 +26,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 /* This class implements pool of iTasks and manage reordering and reference lists construction for income frame */
 class iTaskPool
 {
+private:
+    iTaskPool(const iTaskPool & other_pool);            // forbidden
+    iTaskPool& operator= (const iTaskPool& other_pool); // forbidden
+
 public:
     std::list<iTask*> task_pool;
     iTask* last_encoded_task;

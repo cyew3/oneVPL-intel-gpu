@@ -843,7 +843,7 @@ mfxStatus FEI_PreencInterface::GetRefTaskEx(iTask *eTask, mfxU8 l0_idx, mfxU8 l1
 
             refIdx[fieldId][0]     = l0_idx;
             outRefTask[fieldId][0] = L0_ref_task;
-            ref_fid[fieldId][0]    = (*l0_instance > 127) ? 1 : 0; // for bff ? 0 : 1; (but now preenc supports only tff)
+            ref_fid[fieldId][0]    = (*l0_instance > 127) ? 1 : 0; // 1 - bottom field, 0 - top field
 
             stsL0 = MFX_ERR_NONE;
         }
@@ -1015,7 +1015,7 @@ void FEI_PreencInterface::UpsampleMVP(mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB * p
         mvp_mb->x *= m_pAppConfig->preencDSstrength;
         mvp_mb->y *= m_pAppConfig->preencDSstrength;
 
-    } // for (k = 0; k < m_encpakParams.preencDSstrength*m_encpakParams.preencDSstrength; ++k)
+    } // for (mfxU16 k = 0; k < m_pAppConfig->preencDSstrength*m_pAppConfig->preencDSstrength; ++k)
 }
 
 /* Simplified conversion - no sorting by distortion, no median on MV */

@@ -24,6 +24,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 class MFX_VppInterface
 {
+private:
+    MFX_VppInterface(const MFX_VppInterface& other_vpp);             // forbidden
+    MFX_VppInterface& operator= (const MFX_VppInterface& other_vpp); // forbidden
+
 public:
     MFXVideoSession* m_pmfxSession;
     MFXVideoVPP*     m_pmfxVPP;
@@ -48,6 +52,10 @@ public:
 
 class MFX_DecodeInterface
 {
+private:
+    MFX_DecodeInterface(const MFX_DecodeInterface& other_decode);             // forbidden
+    MFX_DecodeInterface& operator= (const MFX_DecodeInterface& other_decode); // forbidden
+
 public:
     MFXVideoSession*     m_pmfxSession;
     MFXVideoDECODE*      m_pmfxDECODE;

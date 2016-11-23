@@ -471,10 +471,10 @@ struct iTask
         , m_frameOrderIdr(task_params.FrameOrderIdrInDisplayOrder)
         , m_frameOrderI(0)
         , m_frameOrder(task_params.FrameCount)
+        , m_frameIdrCounter(0)
         , GopPicSize(task_params.GopPicSize)
         , GopRefDist(task_params.GopRefDist)
         , m_viewIdx(0)
-        //, m_nalRefIdc(PairU8(0,0))
         , m_picNum(PairI32(0, 0))
         , m_frameNum(0)
         , m_frameNumWrap(0)
@@ -521,7 +521,7 @@ struct iTask
         }
 
         /* ENC and/or PAK */
-        if (task_params.ReconSurf)
+        if (task_params.ReconSurf && in.InSurface)
         {
             inPAK.InSurface = in.InSurface;
             inPAK.InSurface->Data.Locked++;
@@ -534,7 +534,7 @@ struct iTask
         }
 
         /* PreENC on downsampled surface */
-        if (task_params.DSsurface)
+        if (task_params.DSsurface && in.InSurface)
         {
             // PREENC needs to be performed on downscaled surface
             // For simplicity, let's just replace the original surface
