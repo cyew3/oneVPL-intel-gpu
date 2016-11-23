@@ -185,6 +185,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD_RESERVED(NumRefActiveP);
     DUMP_FIELD_RESERVED(NumRefActiveBL0);
     DUMP_FIELD_RESERVED(NumRefActiveBL1);
+    DUMP_FIELD(BRCPanicMode);
     DUMP_FIELD(ConstrainedIntraPredFlag);
     DUMP_FIELD(TransformSkip);
     DUMP_FIELD_RESERVED(reserved);

@@ -706,7 +706,9 @@ typedef struct {
     mfxU16      TargetBitDepthLuma;        /* Target encoding bit depth for luma samples. May differ from input one. */
     mfxU16      TargetBitDepthChroma;      /* Target encoding bit depth for chroma samples. May differ from input one. */
 
-    mfxU16      reserved[174];
+    mfxU16      BRCPanicMode;              /* tri-state option */
+
+    mfxU16      reserved[173];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
