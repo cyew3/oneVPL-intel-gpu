@@ -269,19 +269,34 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         },
         {}
     },
-    {/*24*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+    {/*24*/
+#if defined(LINUX32)
+        MFX_ERR_INVALID_VIDEO_PARAM,
+#else
+        MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+#endif
         {
             {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,     MFX_FOURCC_AYUV},
         },
         {}
     },
-    {/*25*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+    {/*25*/
+#if defined(LINUX32)
+        MFX_ERR_INVALID_VIDEO_PARAM,
+#else
+        MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+#endif
         {
             {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,    MFX_FOURCC_Y210},
         },
         {}
     },
-    {/*26*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+    {/*26*/
+#if defined(LINUX32)
+        MFX_ERR_INVALID_VIDEO_PARAM,
+#else
+        MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+#endif
         {
             {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,    MFX_FOURCC_Y410},
         },
@@ -422,7 +437,7 @@ int TestSuite::RunTest(unsigned int id)
 
             mfxExtBuffer* after_reset = 0;
             after_reset = par_after_reset.GetExtBuffer(par_reset.ExtParam[i]->BufferId);
- 
+
             EXPECT_FALSE (after_reset == 0) << "ERROR: Filter specified in Reset does not exists after Reset \n";
 
             EXPECT_FALSE(0 != memcmp(par_reset.ExtParam[i], after_reset, std::max(par_reset.ExtParam[i]->BufferSz, after_reset->BufferSz)))
