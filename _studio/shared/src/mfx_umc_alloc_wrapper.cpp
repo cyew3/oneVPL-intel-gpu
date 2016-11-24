@@ -161,8 +161,13 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
 
     Ipp32s bit_depth;
     if (params->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 ||
-        params->mfx.FrameInfo.FourCC == MFX_FOURCC_P210 ||
-        params->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410)
+        params->mfx.FrameInfo.FourCC == MFX_FOURCC_P210
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+        || params->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
+        || params->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216 //NOTE: Y216 is used for 10 bit 422 due to lack of Y210
+        || params->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
+        )
         bit_depth = 10;
     else
         bit_depth = 8;
@@ -183,15 +188,6 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
     case MFX_FOURCC_P210:
         color_format = UMC::NV16;
         break;
-    case MFX_FOURCC_Y210:
-        color_format = UMC::Y210;
-        break;
-    case MFX_FOURCC_Y216:
-        color_format = UMC::Y216;
-        break;
-    case MFX_FOURCC_Y410:
-        color_format = UMC::Y410;
-        break;
     case MFX_FOURCC_RGB4:
         color_format = UMC::RGB32;
         break;
@@ -204,6 +200,17 @@ UMC::Status mfx_UMC_FrameAllocator::InitMfx(UMC::FrameAllocatorParams *,
     case MFX_FOURCC_AYUV:
         color_format = UMC::AYUV;
         break;
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+    case MFX_FOURCC_Y210:
+        color_format = UMC::Y210;
+        break;
+    case MFX_FOURCC_Y216:
+        color_format = UMC::Y216;
+        break;
+    case MFX_FOURCC_Y410:
+        color_format = UMC::Y410;
+        break;
+#endif
 #if defined (MFX_VA_WIN)
     case DXGI_FORMAT_AYUV:
         color_format = UMC::RGB32;
@@ -747,7 +754,11 @@ mfxI32 mfx_UMC_FrameAllocator::AddSurface(mfxFrameSurface1 *surface)
     case MFX_FOURCC_AYUV:
     case MFX_FOURCC_P010:
     case MFX_FOURCC_P210:
+    #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+    case MFX_FOURCC_Y210:
+    case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y410:
+#endif
 #if defined (MFX_VA_WIN)
     case DXGI_FORMAT_AYUV:
 #endif

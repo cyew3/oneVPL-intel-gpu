@@ -16,6 +16,7 @@
 #include "ipps.h"
 
 #include "mfx_utils.h"
+#include "mfx_common.h"
 
 #define ALIGN32(X) (((mfxU32)((X)+31)) & (~ (mfxU32)31))
 #define ID_BUFFER MFX_MAKEFOURCC('B','U','F','F')
@@ -175,10 +176,6 @@ mfxStatus mfxDefaultAllocator::AllocFrames(mfxHDL pthis, mfxFrameAllocRequest *r
         Pitch=ALIGN32(request->Info.Width*2);
         nbytes=Pitch*Height2 + (Pitch>>1)*(Height2) + (Pitch>>1)*(Height2);
         break;
-    case MFX_FOURCC_Y210:
-        Pitch=ALIGN32(request->Info.Width*8);
-        nbytes=Pitch*Height2;
-        break;
     case MFX_FOURCC_YUY2:
         nbytes=Pitch*Height2 + (Pitch>>1)*(Height2) + (Pitch>>1)*(Height2);
         break;
@@ -218,10 +215,21 @@ mfxStatus mfxDefaultAllocator::AllocFrames(mfxHDL pthis, mfxFrameAllocRequest *r
         else
             return MFX_ERR_UNSUPPORTED;
 
+    case MFX_FOURCC_AYUV:
+        nbytes = Pitch*Height2 + Pitch*Height2 + Pitch*Height2 + Pitch*Height2;
+        break;
+
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+    case MFX_FOURCC_Y210:
+    case MFX_FOURCC_Y216:
+        Pitch=ALIGN32(request->Info.Width*2);
+        nbytes=Pitch*Height2 + (Pitch>>1)*(Height2) + (Pitch>>1)*(Height2);
+        break;
     case MFX_FOURCC_Y410:
         Pitch=ALIGN32(request->Info.Width*4);
         nbytes=Pitch*Height2;
         break;
+#endif // PRE_SI_TARGET_PLATFORM_GEN11
 
     default:
         return MFX_ERR_UNSUPPORTED;
@@ -347,21 +355,32 @@ mfxStatus mfxDefaultAllocator::LockFrame(mfxHDL pthis, mfxHDL mid, mfxFrameData 
         ptr->U = 0;
         ptr->V = 0;
         break;
+    case MFX_FOURCC_AYUV:
+        ptr->PitchHigh = (mfxU16)((4 * ALIGN32(fs->info.Width)) / (1 << 16));
+        ptr->PitchLow  = (mfxU16)((4 * ALIGN32(fs->info.Width)) % (1 << 16));
+        ptr->V = sptr;
+        ptr->U = ptr->V + 1;
+        ptr->Y = ptr->V + 2;
+        ptr->A = ptr->V + 3;
+        break;
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     case MFX_FOURCC_Y210:
-        ptr->PitchHigh = (mfxU16)((4*ALIGN32(fs->info.Width)) / (1 << 16));
-        ptr->PitchLow  = (mfxU16)((4*ALIGN32(fs->info.Width)) % (1 << 16));
-        ptr->Y = sptr;
-        ptr->U = ptr->Y + 1;
-        ptr->V = ptr->Y + 3;
+    case MFX_FOURCC_Y216:
+        ptr->PitchHigh = (mfxU16)((4 * ALIGN32(fs->info.Width)) / (1 << 16));
+        ptr->PitchLow  = (mfxU16)((4 * ALIGN32(fs->info.Width)) % (1 << 16));
+        ptr->Y16 = (mfxU16*)sptr;
+        ptr->U16 = ptr->Y16 + 1;
+        ptr->V16 = ptr->Y16 + 3;
         break;
     case MFX_FOURCC_Y410:
-        ptr->PitchHigh = (mfxU16)((4*ALIGN32(fs->info.Width)) / (1 << 16));
-        ptr->PitchLow  = (mfxU16)((4*ALIGN32(fs->info.Width)) % (1 << 16));
+        ptr->PitchHigh = (mfxU16)((4 * ALIGN32(fs->info.Width)) / (1 << 16));
+        ptr->PitchLow  = (mfxU16)((4 * ALIGN32(fs->info.Width)) % (1 << 16));
         ptr->U = sptr;
         ptr->Y = 0;
         ptr->V = 0;
         ptr->A = 0;
         break;
+#endif // PRE_SI_TARGET_PLATFORM_GEN11
     default:
         return MFX_ERR_UNSUPPORTED;
     }

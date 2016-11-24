@@ -18,6 +18,7 @@
 #include "ipps.h"
 
 #include "mfx_utils.h"
+#include "mfx_common.h"
 
 #define D3DFMT_NV12 (D3DFORMAT)MAKEFOURCC('N','V','1','2')
 #define D3DFMT_P010 (D3DFORMAT)MAKEFOURCC('P','0','1','0')
@@ -90,12 +91,15 @@ DXGI_FORMAT mfxDefaultAllocatorD3D11::MFXtoDXGI(mfxU32 format)
         return DXGI_FORMAT_R16G16B16A16_UNORM;
     case MFX_FOURCC_A2RGB10:
         return DXGI_FORMAT_R10G10B10A2_UNORM;
+
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     case MFX_FOURCC_Y210:
         return DXGI_FORMAT_Y210;
     case MFX_FOURCC_Y216:
         return DXGI_FORMAT_Y216;
     case MFX_FOURCC_Y410:
         return DXGI_FORMAT_Y410;
+#endif // PRE_SI_TARGET_PLATFORM_GEN11
     }
     return DXGI_FORMAT_UNKNOWN;
 
@@ -133,9 +137,11 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
     case MFX_FOURCC_ARGB16:
     case MFX_FOURCC_ABGR16:
     case MFX_FOURCC_A2RGB10:
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     case MFX_FOURCC_Y210:
     case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y410:
+#endif
         break;
     default:
         return MFX_ERR_UNSUPPORTED;
@@ -426,6 +432,7 @@ mfxStatus mfxDefaultAllocatorD3D11::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxF
         ptr->U = 0;
         ptr->V = 0;
         break;
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     case DXGI_FORMAT_Y410:
         ptr->PitchHigh = (mfxU16)(LockedRect.RowPitch / (1 << 16));
         ptr->PitchLow  = (mfxU16)(LockedRect.RowPitch % (1 << 16));
@@ -440,7 +447,8 @@ mfxStatus mfxDefaultAllocatorD3D11::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxF
         ptr->PitchLow = (mfxU16)(LockedRect.RowPitch % (1 << 16));
         ptr->Y16 = (mfxU16*)LockedRect.pData;
         ptr->U16 = ptr->Y16 + 1;
-        ptr->V16 = ptr->U16 + 3;
+        ptr->V16 = ptr->Y16 + 3;
+#endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     default:
         return MFX_ERR_LOCK_MEMORY;
     }

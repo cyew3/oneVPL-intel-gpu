@@ -19,20 +19,22 @@
 
 #include "mfx_utils.h"
 
-#define D3DFMT_NV12 (D3DFORMAT)MAKEFOURCC('N','V','1','2')
-#define D3DFMT_P010 (D3DFORMAT)MAKEFOURCC('P','0','1','0')
-#define D3DFMT_YV12 (D3DFORMAT)MAKEFOURCC('Y','V','1','2')
-#define D3DFMT_IMC3 (D3DFORMAT)MAKEFOURCC('I','M','C','3')
-
+#define D3DFMT_NV12     (D3DFORMAT)MAKEFOURCC('N','V','1','2')
+#define D3DFMT_P010     (D3DFORMAT)MAKEFOURCC('P','0','1','0')
+#define D3DFMT_YV12     (D3DFORMAT)MAKEFOURCC('Y','V','1','2')
+#define D3DFMT_IMC3     (D3DFORMAT)MAKEFOURCC('I','M','C','3')
 #define D3DFMT_YUV400   (D3DFORMAT)MAKEFOURCC('4','0','0','P')
 #define D3DFMT_YUV411   (D3DFORMAT)MAKEFOURCC('4','1','1','P')
 #define D3DFMT_YUV422H  (D3DFORMAT)MAKEFOURCC('4','2','2','H')
 #define D3DFMT_YUV422V  (D3DFORMAT)MAKEFOURCC('4','2','2','V')
 #define D3DFMT_YUV444   (D3DFORMAT)MAKEFOURCC('4','4','4','P')
+#define D3DFMT_AYUV     (D3DFORMAT)MFX_FOURCC_AYUV
 
-#define D3DFMT_Y410 (D3DFORMAT)MFX_FOURCC_Y410
-#define D3DFMT_Y210 (D3DFORMAT)MFX_FOURCC_Y210
-#define D3DFMT_Y216 (D3DFORMAT)MFX_FOURCC_Y216
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#define D3DFMT_Y410     (D3DFORMAT)MFX_FOURCC_Y410
+#define D3DFMT_Y210     (D3DFORMAT)MFX_FOURCC_Y210
+#define D3DFMT_Y216     (D3DFORMAT)MFX_FOURCC_Y216
+#endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
 
 template<class T> inline
 T align_value(size_t nValue, size_t lAlignValue = DEFAULT_ALIGN_VALUE)
@@ -46,30 +48,33 @@ mfxStatus mfxDefaultAllocatorD3D9::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequ
 {
     if (!pthis)
         return MFX_ERR_INVALID_HANDLE;
-    
+
     // only NV12 and D3DFMT_P8 buffers are supported by HW
     switch(request->Info.FourCC)
     {
-    case MFX_FOURCC_NV12:
-    case D3DFMT_P8:
-    case MFX_FOURCC_YUY2:
-    case MFX_FOURCC_YV12:
-    case MFX_FOURCC_IMC3:
-    case MFX_FOURCC_RGB4:
-    case MFX_FOURCC_BGR4:
-    case MFX_FOURCC_YUV400:
-    case MFX_FOURCC_YUV411:
-    case MFX_FOURCC_YUV422H:
-    case MFX_FOURCC_YUV422V:
-    case MFX_FOURCC_YUV444:
-    case MFX_FOURCC_RGBP:
-    case MFX_FOURCC_P010:
-    case MFX_FOURCC_A2RGB10:
-    case MFX_FOURCC_Y210:
-    case MFX_FOURCC_Y216:
-    case MFX_FOURCC_Y410:
-    case MFX_FOURCC_AYUV:
+        case MFX_FOURCC_NV12:
+        case D3DFMT_P8:
+        case MFX_FOURCC_YUY2:
+        case MFX_FOURCC_YV12:
+        case MFX_FOURCC_IMC3:
+        case MFX_FOURCC_RGB4:
+        case MFX_FOURCC_BGR4:
+        case MFX_FOURCC_YUV400:
+        case MFX_FOURCC_YUV411:
+        case MFX_FOURCC_YUV422H:
+        case MFX_FOURCC_YUV422V:
+        case MFX_FOURCC_YUV444:
+        case MFX_FOURCC_RGBP:
+        case MFX_FOURCC_P010:
+        case MFX_FOURCC_A2RGB10:
+        case MFX_FOURCC_AYUV:
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+        case MFX_FOURCC_Y210:
+        case MFX_FOURCC_Y216:
+        case MFX_FOURCC_Y410:
+#endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
         break;
+
     default:
         return MFX_ERR_UNSUPPORTED;
     }
@@ -290,6 +295,23 @@ mfxStatus mfxDefaultAllocatorD3D9::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxFr
         ptr->U = ptr->Y + desc.Height * LockedRect.Pitch;
         ptr->V = ptr->U + desc.Height * LockedRect.Pitch;
         break;
+    case D3DFMT_AYUV:
+        ptr->PitchHigh = (mfxU16)(LockedRect.Pitch / (1 << 16));
+        ptr->PitchLow  = (mfxU16)(LockedRect.Pitch % (1 << 16));
+        ptr->B = (mfxU8 *)LockedRect.pBits;
+        ptr->G = ptr->B + 1;
+        ptr->R = ptr->B + 2;
+        ptr->A = ptr->B + 3;
+        break;
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+    case D3DFMT_Y210:
+    case D3DFMT_Y216:
+        ptr->PitchHigh = (mfxU16)(LockedRect.Pitch / (1 << 16));
+        ptr->PitchLow = (mfxU16)(LockedRect.Pitch % (1 << 16));
+        ptr->Y16 = (mfxU16*)LockedRect.pBits;
+        ptr->U16 = ptr->Y16 + 1;
+        ptr->V16 = ptr->Y16 + 3;
+        break;
     case D3DFMT_Y410:
         ptr->PitchHigh = (mfxU16)(LockedRect.Pitch / (1 << 16));
         ptr->PitchLow  = (mfxU16)(LockedRect.Pitch % (1 << 16));
@@ -297,13 +319,8 @@ mfxStatus mfxDefaultAllocatorD3D9::LockFrameHW(mfxHDL pthis, mfxMemId mid, mfxFr
         ptr->U = 0;
         ptr->V = 0;
         ptr->A = 0;
-    case D3DFMT_Y210:
-    case D3DFMT_Y216:
-        ptr->PitchHigh = (mfxU16)(LockedRect.Pitch / (1 << 16));
-        ptr->PitchLow = (mfxU16)(LockedRect.Pitch % (1 << 16));
-        ptr->Y16 = (mfxU16*)LockedRect.pBits;
-        ptr->U16 = ptr->Y16 + 1;
-        ptr->V16 = ptr->U16 + 3;
+        break;
+#endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     }
 
     return MFX_ERR_NONE;
@@ -312,7 +329,7 @@ mfxStatus mfxDefaultAllocatorD3D9::GetHDLHW(mfxHDL pthis, mfxMemId mid, mfxHDL *
 {
     if (!pthis)
         return MFX_ERR_INVALID_HANDLE;
-    
+
     mfxWideHWFrameAllocator *pSelf = (mfxWideHWFrameAllocator*)pthis;
     if (0 == mid)
         return MFX_ERR_INVALID_HANDLE;
@@ -331,7 +348,7 @@ mfxStatus mfxDefaultAllocatorD3D9::UnlockFrameHW(mfxHDL pthis, mfxMemId mid, mfx
     // TBD
     if (!pthis)
         return MFX_ERR_INVALID_HANDLE;
-    
+
     mfxWideHWFrameAllocator *pSelf = (mfxWideHWFrameAllocator*)pthis;
     size_t index =  (size_t)mid - 1;
     IDirect3DSurface9    *RenderTarget = pSelf->m_SrfQueue[index];
