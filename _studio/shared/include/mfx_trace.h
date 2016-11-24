@@ -209,9 +209,11 @@ typedef struct
 } mfxTraceTaskHandle;
 
 /*------------------------------------------------------------------------------*/
+
+
 // basic trace functions (macroses are recommended to use instead)
 
-mfxTraceU32 MFXTrace_Init(const mfxTraceChar *filename, mfxTraceU32 output_mode);
+mfxTraceU32 MFXTrace_Init();
 
 mfxTraceU32 MFXTrace_Close(void);
 
@@ -248,16 +250,17 @@ mfxTraceU32 MFXTrace_EndTask(mfxTraceStaticHandle *static_handle,
 #define MFX_TRACE_PARAMS \
     &_trace_static_handle, __FILE__, __LINE__, __FUNCTION__, MFX_TRACE_CATEGORY
 
-#define MFX_TRACE_INIT(_filename, _output_mode) \
-    MFXTrace_Init(_filename, _output_mode);
 
-#define MFX_TRACE_INIT_RES(_res, _filename, _output_mode) \
-    _res = MFXTrace_Init(_filename, _output_mode);
+#define MFX_TRACE_INIT() \
+    MFXTrace_Init();
+
+#define MFX_TRACE_INIT_RES(_res) \
+    _res = MFXTrace_Init();
 
 #define MFX_TRACE_CLOSE() \
     MFXTrace_Close();
 
-#define MFX_TRACE_CLOSE_RES(_res, _filename, _output_mode) \
+#define MFX_TRACE_CLOSE_RES(_res) \
     _res = MFXTrace_Close();
 
 #define MFX_LTRACE(_trace_all_params)                       \
@@ -266,10 +269,10 @@ mfxTraceU32 MFXTrace_EndTask(mfxTraceStaticHandle *static_handle,
     MFXTrace_DebugMessage _trace_all_params;                \
 }
 #else
-#define MFX_TRACE_INIT(_filename, _output_mode)
-#define MFX_TRACE_INIT_RES(res, _filename, _output_mode)
+#define MFX_TRACE_INIT()
+#define MFX_TRACE_INIT_RES(res)
 #define MFX_TRACE_CLOSE()
-#define MFX_TRACE_CLOSE_RES(res, _filename, _output_mode)
+#define MFX_TRACE_CLOSE_RES(res)
 #define MFX_LTRACE(_trace_all_params)
 #endif
 

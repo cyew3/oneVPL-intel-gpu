@@ -30,7 +30,7 @@ extern "C"
 
 /*------------------------------------------------------------------------------*/
 
-typedef mfxTraceU32 (*MFXTrace_InitFn)(const mfxTraceChar *filename, mfxTraceU32 output_mode);
+typedef mfxTraceU32 (*MFXTrace_InitFn)();
 
 typedef mfxTraceU32 (*MFXTrace_SetLevelFn)(mfxTraceChar* category,
                                       mfxTraceLevel level);
@@ -74,11 +74,8 @@ struct mfxTraceAlgorithm
 };
 
 /*------------------------------------------------------------------------------*/
-#ifdef MFX_TRACE_ENABLE_TEXTLOG
-static mfxTraceU32      g_OutputMode = MFX_TRACE_OUTPUT_TEXTLOG;
-#else
+
 static mfxTraceU32      g_OutputMode = MFX_TRACE_OUTPUT_TRASH;
-#endif
 static mfxTraceU32      g_Level      = MFX_TRACE_LEVEL_DEFAULT;
 static volatile Ipp32u  g_refCounter = 0;
 
@@ -292,10 +289,36 @@ inline bool MFXTrace_IsPrintableCategoryAndLevel(mfxTraceChar* category, mfxTrac
 
 /*------------------------------------------------------------------------------*/
 
-mfxTraceU32 MFXTrace_Init(const mfxTraceChar *filename, mfxTraceU32 output_mode)
+mfxTraceU32 MFXTrace_Init()
 {
     mfxTraceU32 sts = 0;
     mfxTraceU32 i = 0;
+    mfxTraceU32 output_mode = 0;
+
+#if defined(MFX_TRACE_ENABLE_TRASH)
+    g_OutputMode |= MFX_TRACE_OUTPUT_TRASH;
+#endif
+#if defined(MFX_TRACE_ENABLE_TEXTLOG)
+    g_OutputMode |= MFX_TRACE_OUTPUT_TEXTLOG;
+#endif
+#if defined(MFX_TRACE_ENABLE_STAT)
+    g_OutputMode |= MFX_TRACE_OUTPUT_STAT;
+#endif
+#if defined(MFX_TRACE_ENABLE_STAT)
+    g_OutputMode |= MFX_TRACE_OUTPUT_STAT;
+#endif
+#if defined(MFX_TRACE_ENABLE_ETW)
+    g_OutputMode |= MFX_TRACE_OUTPUT_ETW;
+#endif
+#if defined(MFX_TRACE_ENABLE_TAL)
+    g_OutputMode |= MFX_TRACE_OUTPUT_TAL;
+#endif
+#if defined(MFX_TRACE_ENABLE_ITT)
+    g_OutputMode |= MFX_TRACE_OUTPUT_ITT;
+#endif
+#if defined(MFX_TRACE_ENABLE_FTRACE)
+    g_OutputMode |= MFX_TRACE_OUTPUT_FTRACE;
+#endif
 
     if (vm_interlocked_inc32(&g_refCounter) != 1)
     {
@@ -305,18 +328,13 @@ mfxTraceU32 MFXTrace_Init(const mfxTraceChar *filename, mfxTraceU32 output_mode)
     sts = MFXTrace_GetRegistryParams();
     if (!sts)
     {
-#if !defined(_WIN32) && !defined(_WIN64)
-        if (g_OutputMode != MFX_TRACE_OUTPUT_TRASH)
-        {
-            output_mode = g_OutputMode;
-            g_OutputMode = 0;
-        }
-#endif
+        output_mode = g_OutputMode;
+        g_OutputMode = 0;
         for (i = 0; i < sizeof(g_TraceAlgorithms)/sizeof(mfxTraceAlgorithm); ++i)
         {
             if (output_mode & g_TraceAlgorithms[i].m_OutputMask)
             {
-                sts = g_TraceAlgorithms[i].m_InitFn(filename, output_mode);
+                sts = g_TraceAlgorithms[i].m_InitFn();
                 if (sts == 0)
                 {
                     g_OutputMode |= output_mode;

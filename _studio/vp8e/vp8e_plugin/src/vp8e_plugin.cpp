@@ -62,7 +62,7 @@ mfxStatus MFX_VP8E_Plugin::PluginInit(mfxCoreInterface * pCore)
     if (!pCore)
         return MFX_ERR_NULL_PTR;
 
-    MFX_TRACE_INIT(NULL, MFX_TRACE_OUTPUT_TRASH);
+    MFX_TRACE_INIT();
 
     m_pmfxCore = pCore;
     return MFX_ERR_NONE;

@@ -17,7 +17,7 @@
 
 /*------------------------------------------------------------------------------*/
 
-mfxTraceU32 MFXTraceTAL_Init(const mfxTraceChar *filename, mfxTraceU32 output_mode);
+mfxTraceU32 MFXTraceTAL_Init();
 
 mfxTraceU32 MFXTraceTAL_SetLevel(mfxTraceChar* category,
                             mfxTraceLevel level);

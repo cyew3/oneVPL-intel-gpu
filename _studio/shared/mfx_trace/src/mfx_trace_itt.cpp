@@ -37,10 +37,9 @@ static __itt_domain* GetDomain(){
 
 /*------------------------------------------------------------------------------*/
 
-mfxTraceU32 MFXTraceITT_Init(const mfxTraceChar * /*filename*/ , mfxTraceU32 output_mode)
+mfxTraceU32 MFXTraceITT_Init()
 {
-    if (!(output_mode & MFX_TRACE_OUTPUT_ITT)) return 1;
-    else return 0;
+    return 0;
 }
 
 /*------------------------------------------------------------------------------*/

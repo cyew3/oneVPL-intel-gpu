@@ -43,7 +43,7 @@ Plugin::~Plugin()
 
 mfxStatus Plugin::PluginInit(mfxCoreInterface *core)
 {
-    MFX_TRACE_INIT(NULL, MFX_TRACE_OUTPUT_TRASH);
+    MFX_TRACE_INIT();
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Plugin::PluginInit");
 
     MFX_CHECK_NULL_PTR1(core);

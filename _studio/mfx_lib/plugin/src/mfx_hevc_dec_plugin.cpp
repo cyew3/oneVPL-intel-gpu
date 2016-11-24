@@ -69,7 +69,7 @@ mfxStatus MFXHEVCDecoderPlugin::PluginInit(mfxCoreInterface *core)
     mfxCoreParam par;
     mfxStatus mfxRes = MFX_ERR_NONE;
 
-    MFX_TRACE_INIT(NULL, MFX_TRACE_OUTPUT_TRASH);
+    MFX_TRACE_INIT();
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXHEVCDecoderPlugin::PluginInit");
 
     m_pmfxCore = core;

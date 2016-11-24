@@ -34,7 +34,7 @@ enum
 
 /*------------------------------------------------------------------------------*/
 
-mfxTraceU32 MFXTraceTextLog_Init(const mfxTraceChar *filename, mfxTraceU32 output_mode);
+mfxTraceU32 MFXTraceTextLog_Init();
 
 mfxTraceU32 MFXTraceTextLog_SetLevel(mfxTraceChar* category,
                                mfxTraceLevel level);

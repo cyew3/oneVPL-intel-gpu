@@ -96,20 +96,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     mfxIMPL impl = par.Implementation & (MFX_IMPL_VIA_ANY - 1);
     mfxIMPL implInterface = par.Implementation & -MFX_IMPL_VIA_ANY;
 
-#if defined(MFX_TRACE_ENABLE)
-#if defined(_WIN32) || defined(_WIN64)
-
-    #if 1//defined(MFX_VA)
-    MFX_TRACE_INIT(NULL, (mfxU8)MFX_TRACE_OUTPUT_REG);
-    #endif // #if defined(MFX_VA)
-
-#else
-
-    MFX_TRACE_INIT(NULL, MFX_TRACE_OUTPUT_TRASH);
-
-#endif // #if defined(_WIN32) || defined(_WIN64)
-#endif // defined(MFX_TRACE_ENABLE) && defined(MFX_VA)
-
+    MFX_TRACE_INIT();
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "ThreadName=MSDK app");
     }

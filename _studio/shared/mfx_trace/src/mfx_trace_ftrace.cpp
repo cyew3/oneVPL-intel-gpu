@@ -76,10 +76,8 @@ namespace
 }
 /*------------------------------------------------------------------------------*/
 
-mfxTraceU32 MFXTraceFtrace_Init(const mfxTraceChar * /*filename*/, mfxTraceU32 output_mode)
+mfxTraceU32 MFXTraceFtrace_Init()
 {
-    if (!(output_mode & MFX_TRACE_OUTPUT_FTRACE)) return 1;
-
     MFXTraceFtrace_Close();
 
     const char* file_name = get_tracing_file("tracing/trace_marker");

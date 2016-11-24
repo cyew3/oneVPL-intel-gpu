@@ -16,7 +16,7 @@
 #if defined(MFX_TRACE_ENABLE_FTRACE) && defined(LINUX32)
 
 
-mfxTraceU32 MFXTraceFtrace_Init(const mfxTraceChar *filename, mfxTraceU32 output_mode);
+mfxTraceU32 MFXTraceFtrace_Init();
 
 mfxTraceU32 MFXTraceFtrace_SetLevel(mfxTraceChar* category,
     mfxTraceLevel level);

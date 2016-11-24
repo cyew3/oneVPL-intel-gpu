@@ -99,12 +99,9 @@ mfxTraceU32 MFXTraceTextLog_GetRegistryParams(void)
 
 /*------------------------------------------------------------------------------*/
 
-mfxTraceU32 MFXTraceTextLog_Init(const mfxTraceChar *filename, mfxTraceU32 output_mode)
+mfxTraceU32 MFXTraceTextLog_Init()
 {
     mfxTraceU32 sts = 0;
-
-    if (!(output_mode & MFX_TRACE_OUTPUT_TEXTLOG)) return 1;
-
 
     sts = MFXTraceTextLog_Close();
     if (!sts) sts = MFXTraceTextLog_GetRegistryParams();
@@ -112,9 +109,8 @@ mfxTraceU32 MFXTraceTextLog_Init(const mfxTraceChar *filename, mfxTraceU32 outpu
     {
         if (!g_mfxTracePrintfFile)
         {
-            if (!filename) filename = g_mfxTracePrintfFileName;
-            if (!mfx_trace_tcmp(filename, MFX_TRACE_STRING("stdout"))) g_mfxTracePrintfFile = stdout;
-            else g_mfxTracePrintfFile = mfx_trace_tfopen(filename, MFX_TRACE_STRING("a"));
+            if (!mfx_trace_tcmp(g_mfxTracePrintfFileName, MFX_TRACE_STRING("stdout"))) g_mfxTracePrintfFile = stdout;
+            else g_mfxTracePrintfFile = mfx_trace_tfopen(g_mfxTracePrintfFileName, MFX_TRACE_STRING("a"));
         }
         if (!g_mfxTracePrintfFile) return 1;
     }

@@ -46,22 +46,17 @@ static int (*pMFXTiming_Close)();
 #define LOAD_FUNC(FUNC)                                         \
     *(FARPROC*)&p##FUNC = GetProcAddress(pDLL, #FUNC);          \
 
-mfxTraceU32 MFXTraceTAL_Init(const mfxTraceChar* filename, mfxTraceU32 output_mode)
+mfxTraceU32 MFXTraceTAL_Init()
 {
     TCHAR reg_filename[MAX_PATH];
     mfxTraceU32 sts = 0;
 
-    if (!(output_mode & MFX_TRACE_OUTPUT_TAL)) return 1;
-    if (!filename)
-    {
-        reg_filename[0] = 0;
-        mfx_trace_get_reg_string(MFX_TRACE_REG_ROOT, MFX_TRACE_REG_PARAMS_PATH, _T("TAL"), reg_filename, sizeof(reg_filename));
-        filename = reg_filename;
-        if (!*filename) return 1;
-    }
+    reg_filename[0] = 0;
+    mfx_trace_get_reg_string(MFX_TRACE_REG_ROOT, MFX_TRACE_REG_PARAMS_PATH, _T("TAL"), reg_filename, sizeof(reg_filename));
+    if (!reg_filename[0]) return 1;
+
 
     if (pDLL && pMFXTiming_Init) return 0;
-    if (!(output_mode & MFX_TRACE_OUTPUT_TAL)) return 1;
 
     //sts = MFXTraceTAL_Close();
 
@@ -84,7 +79,7 @@ mfxTraceU32 MFXTraceTAL_Init(const mfxTraceChar* filename, mfxTraceU32 output_mo
         {
             return 1;
         }
-        sts = pMFXTiming_Init(filename, 0);
+        sts = pMFXTiming_Init(reg_filename, 0);
     }
     return sts;
 }

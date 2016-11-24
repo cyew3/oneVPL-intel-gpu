@@ -19,7 +19,7 @@ extern "C"
 
 #ifndef MFX_VA
 
-mfxTraceU32 MFXTraceETW_Init(const mfxTraceChar*, mfxTraceU32)
+mfxTraceU32 MFXTraceETW_Init()
 {
     return 0;
 }
@@ -143,27 +143,22 @@ UINT32 MFXTraceETW_GetRegistryParams(void)
 
 /*------------------------------------------------------------------------------*/
 
-mfxTraceU32 MFXTraceETW_Init(const mfxTraceChar* filename, mfxTraceU32 output_mode)
+mfxTraceU32 MFXTraceETW_Init()
 {
     TCHAR reg_filename[MAX_PATH];
     mfxTraceU32 sts = 0;
 
     if (g_EventRegistered) return 0; // initilized already
 
-    if (!(output_mode & MFX_TRACE_OUTPUT_ETW)) return 1;
-    if (!filename)
+    reg_filename[0] = 0;
+    mfx_trace_get_reg_string(HKEY_CURRENT_USER, MFX_TRACE_REG_PARAMS_PATH, _T("ETW"), reg_filename, sizeof(reg_filename));
+    if (!reg_filename[0])
     {
-        reg_filename[0] = 0;
-        mfx_trace_get_reg_string(HKEY_CURRENT_USER, MFX_TRACE_REG_PARAMS_PATH, _T("ETW"), reg_filename, sizeof(reg_filename));
-        if (!reg_filename[0])
-        {
-            mfx_trace_get_reg_string(HKEY_LOCAL_MACHINE, MFX_TRACE_REG_PARAMS_PATH, _T("ETW"), reg_filename, sizeof(reg_filename));
-        }
-        if (!reg_filename[0])
-        {
-            return 1;
-        }
-        filename = reg_filename;
+        mfx_trace_get_reg_string(HKEY_LOCAL_MACHINE, MFX_TRACE_REG_PARAMS_PATH, _T("ETW"), reg_filename, sizeof(reg_filename));
+    }
+    if (!reg_filename[0])
+    {
+        return 1;
     }
 
     //sts = MFXTraceETW_Close();

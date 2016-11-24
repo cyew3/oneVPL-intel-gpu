@@ -17,7 +17,7 @@
 
 /*------------------------------------------------------------------------------*/
 
-mfxTraceU32 MFXTraceETW_Init(const mfxTraceChar *filename, mfxTraceU32 output_mode);
+mfxTraceU32 MFXTraceETW_Init();
 
 mfxTraceU32 MFXTraceETW_SetLevel(mfxTraceChar* category,
                             mfxTraceLevel level);

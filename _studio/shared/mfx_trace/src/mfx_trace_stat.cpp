@@ -245,22 +245,16 @@ mfxTraceU32 MFXTraceStat_GetRegistryParams(void)
 
 /*------------------------------------------------------------------------------*/
 
-mfxTraceU32 MFXTraceStat_Init(const mfxTraceChar *filename, mfxTraceU32 output_mode)
+mfxTraceU32 MFXTraceStat_Init()
 {
     mfxTraceU32 sts = 0;
-
-    if (!(output_mode & MFX_TRACE_OUTPUT_STAT)) return 1;
 
     sts = MFXTraceStat_Close();
     if (!sts) sts = MFXTraceStat_GetRegistryParams();
     if (!sts)
     {
-        if (!g_mfxTraceStatFile)
-        {
-            if (!filename) filename = g_mfxTraceStatFileName;
-            if (!mfx_trace_tcmp(filename, MFX_TRACE_STRING("stdout"))) g_mfxTraceStatFile = stdout;
-            else g_mfxTraceStatFile = mfx_trace_tfopen(filename, MFX_TRACE_STRING("a"));
-        }
+        if (!mfx_trace_tcmp(g_mfxTraceStatFileName, MFX_TRACE_STRING("stdout"))) g_mfxTraceStatFile = stdout;
+        else g_mfxTraceStatFile = mfx_trace_tfopen(g_mfxTraceStatFileName, MFX_TRACE_STRING("a"));
         if (!g_mfxTraceStatFile) return 1;
     }
     return sts;
