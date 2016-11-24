@@ -422,10 +422,12 @@ static const GuidProfile guidProfiles[] =
     { VA_H265 | VA_VLD | VA_PROFILE_10, DXVA_ModeHEVC_VLD_Main10  }, // MS
     { VA_H265 | VA_VLD | VA_PROFILE_10 | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_Main10Profile },
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     { H265_VLD_422 | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },
     { H265_VLD_444 | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_Main444_10Profile },
     { H265_10_VLD_422 | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },
     { H265_10_VLD_444 | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_Main444_10Profile },
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
 
     { VA_H265 | VA_VLD | VA_PROFILE_WIDEVINE,   DXVA_Intel_Decode_Elementary_Stream_HEVC },
 
@@ -475,9 +477,9 @@ bool GuidProfile::IsIntelCustomGUID(const GUID & guid)
         guid == sDXVA2_Intel_ModeVC1_D_Super || 
         guid == sDXVA2_Intel_EagleLake_ModeH264_VLD_NoFGT || guid == sDXVA_Intel_ModeH264_VLD_MVC || 
         guid == DXVA_Intel_ModeHEVC_VLD_MainProfile       || guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile ||
-        guid == DXVA_Intel_ModeHEVC_VLD_Main422_10Profile || guid == DXVA_Intel_ModeHEVC_VLD_Main444_10Profile ||
         guid == DXVA_Intel_ModeVP9_Profile0_VLD           || guid == DXVA_Intel_ModeVP9_Profile2_10bit_VLD
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        || guid == DXVA_Intel_ModeHEVC_VLD_Main422_10Profile || guid == DXVA_Intel_ModeHEVC_VLD_Main444_10Profile
         || guid == DXVA_Intel_ModeVP9_Profile1_YUV444_VLD    || guid == DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
         ;
