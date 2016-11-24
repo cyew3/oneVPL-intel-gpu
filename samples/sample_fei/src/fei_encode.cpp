@@ -265,12 +265,13 @@ mfxStatus FEI_EncodeInterface::FillParameters()
             pSliceHeader[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_SLICE;
             pSliceHeader[fieldId].Header.BufferSz = sizeof(mfxExtFeiSliceHeader);
 
-            pSliceHeader[fieldId].NumSlice = m_videoParams.mfx.NumSlice;
+            pSliceHeader[fieldId].NumSlice =
+                pSliceHeader[fieldId].NumSliceAlloc = m_videoParams.mfx.NumSlice;
 
-            pSliceHeader[fieldId].Slice = new mfxExtFeiSliceHeader::mfxSlice[pSliceHeader[fieldId].NumSlice];
-            MSDK_ZERO_ARRAY(pSliceHeader[fieldId].Slice, pSliceHeader[fieldId].NumSlice);
+            pSliceHeader[fieldId].Slice = new mfxExtFeiSliceHeader::mfxSlice[pSliceHeader[fieldId].NumSliceAlloc];
+            MSDK_ZERO_ARRAY(pSliceHeader[fieldId].Slice, pSliceHeader[fieldId].NumSliceAlloc);
 
-            for (mfxU16 sliceNum = 0; sliceNum < pSliceHeader[fieldId].NumSlice; ++sliceNum)
+            for (mfxU16 sliceNum = 0; sliceNum < pSliceHeader[fieldId].NumSliceAlloc; ++sliceNum)
             {
                 pSliceHeader[fieldId].Slice[sliceNum].DisableDeblockingFilterIdc = m_pAppConfig->DisableDeblockingIdc;
                 pSliceHeader[fieldId].Slice[sliceNum].SliceAlphaC0OffsetDiv2     = m_pAppConfig->SliceAlphaC0OffsetDiv2;

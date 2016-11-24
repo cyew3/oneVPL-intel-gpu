@@ -369,7 +369,7 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
     for (mfxI32 uMB = 0, uMBy = 0, slice = -1, nextSliceMB = 0; uMBy < hmb; uMBy++) for (mfxI32 uMBx = 0; uMBx < wmb; uMBx++, uMB++) {
         while (nextSliceMB <= uMB && slice+1 < sliceHeader->NumSlice) {
             slice++; // next or first slice
-            nextSliceMB = sliceHeader->Slice[slice].MBAddress + sliceHeader->Slice[slice].NumMBs;
+            nextSliceMB = sliceHeader->Slice[slice].MBAaddress + sliceHeader->Slice[slice].NumMBs;
 
             if (!B_SLICE(sliceHeader->Slice[slice].SliceType)) break;
 
@@ -435,7 +435,7 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
                     for (mfxI32 ypos=0; ypos < 2; ypos++) for (mfxI32 xpos=0; xpos < 2; xpos++) { // 4 4x4 blocks
                         mfxI32 zeroPred[2] = {0, 0};
                         mfxI32 bl = (ypos + (sb&2))*4 + (sb&1)*2 + xpos; // raster 4x4 block
-                        mfxI32 sbColz = rasterToZ[sbDirect[1/*sps->Direct8x8InferenceFlag*/][bl]];
+                        mfxI32 sbColz = rasterToZ[sbDirect[sps->Direct8x8InferenceFlag][bl]];
 
                         if (!noRefs && refmbCode && !refmbCode->MB[uMB].IntraMbFlag && refmvs /*&& is_l1_pic_short_term*/) // no long term
                         {
@@ -549,7 +549,7 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
     for (mfxI32 uMB = 0, uMBy = 0, slice = -1, nextSliceMB = 0; uMBy < hmb; uMBy++) for (mfxI32 uMBx = 0; uMBx < wmb; uMBx++, uMB++) {
         while (nextSliceMB <= uMB && slice+1 < sliceHeader->NumSlice) {
             slice++;
-            nextSliceMB = sliceHeader->Slice[slice].MBAddress + sliceHeader->Slice[slice].NumMBs;
+            nextSliceMB = sliceHeader->Slice[slice].MBAaddress + sliceHeader->Slice[slice].NumMBs;
         }
         if (B_SLICE(sliceHeader->Slice[slice].SliceType))
         if (!mbCode->MB[uMB].IntraMbFlag) {
