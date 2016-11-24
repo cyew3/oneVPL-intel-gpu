@@ -66,6 +66,15 @@ static const mfxU16 MFX_IOPATTERN_IN_MASK_SYS_OR_D3D =
 static const mfxU16 MFX_IOPATTERN_IN_MASK =
     MFX_IOPATTERN_IN_MASK_SYS_OR_D3D | MFX_IOPATTERN_IN_OPAQUE_MEMORY;
 
+static const mfxU16 MFX_MEMTYPE_SYS_OR_D3D =
+MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_SYSTEM_MEMORY;
+
+enum // identifies memory type at encoder input w/o any details
+{
+    INPUT_SYSTEM_MEMORY,
+    INPUT_VIDEO_MEMORY
+};
+
 
     enum eTaskStatus
     {
@@ -390,6 +399,8 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         VP9MfxVideoParam & operator = (VP9MfxVideoParam const &);
         VP9MfxVideoParam & operator = (mfxVideoParam const &);
 
+        mfxU16 m_inMemType;
+        void CalculateInternalParams();
 
     protected:
         void Construct(mfxVideoParam const & par);
@@ -529,9 +540,6 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
           }
 
           ~Task() {};
-
-          mfxStatus GetOriginalSurface(mfxFrameSurface1 *& pSurface, bool &bExternal);
-          mfxStatus GetInputSurface(mfxFrameSurface1 *& pSurface, bool &bExternal);
     };
 
 
@@ -586,7 +594,20 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
               ||  oldPar.mfx.GopPicSize != newPar.mfx.GopPicSize;
     }
 
-    mfxStatus CopyRawSurfaceToVideoMemory(mfxCoreInterface * pCore,
+    mfxStatus GetRealSurface(
+        mfxCoreInterface const *pCore,
+        VP9MfxVideoParam const &par,
+        Task const &task,
+        mfxFrameSurface1 *& pSurface);
+
+    mfxStatus GetInputSurface(
+        mfxCoreInterface const *pCore,
+        VP9MfxVideoParam const &par,
+        Task const &task,
+        mfxFrameSurface1 *& pSurface);
+
+    mfxStatus CopyRawSurfaceToVideoMemory(
+        mfxCoreInterface *pCore,
         VP9MfxVideoParam const &par,
         Task const &task);
 

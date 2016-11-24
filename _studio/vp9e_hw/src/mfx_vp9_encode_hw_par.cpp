@@ -26,7 +26,8 @@ namespace MfxHwVP9Encode
 
 bool IsExtBufferSupportedInInit(mfxU32 id)
 {
-    return id == MFX_EXTBUFF_CODING_OPTION_VP9;
+    return id == MFX_EXTBUFF_CODING_OPTION_VP9
+        || id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION;
 }
 
 bool IsExtBufferSupportedInRuntime(mfxU32 id)
@@ -82,6 +83,8 @@ inline mfxStatus SetOrCopySupportedParams(mfxInfoMFX *pDst, mfxInfoMFX *pSrc = 0
 
     MFX_CHECK_NULL_PTR1(pDst);
 
+    _SetOrCopyPar(FrameInfo.BitDepthLuma);
+    _SetOrCopyPar(FrameInfo.BitDepthChroma);
     _SetOrCopyPar(FrameInfo.Width);
     _SetOrCopyPar(FrameInfo.Height);
     _SetOrCopyPar(FrameInfo.CropW);
@@ -240,7 +243,8 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 
     if (par.IOPattern &&
         par.IOPattern != MFX_IOPATTERN_IN_VIDEO_MEMORY &&
-        par.IOPattern != MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+        par.IOPattern != MFX_IOPATTERN_IN_SYSTEM_MEMORY &&
+        par.IOPattern != MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
         par.IOPattern = 0;
         unsupported = true;
@@ -544,6 +548,18 @@ mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 c
     if (fi.CropW || fi.CropH || fi.CropX || fi.CropY)
     {
         if (fi.CropW == 0 || fi.CropH == 0)
+        {
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+    }
+
+    // (4) opaque memory allocation
+    if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+    {
+        mfxExtOpaqueSurfaceAlloc &opaq = GetExtBufferRef(par);
+        if (opaq.In.NumSurface == 0 ||
+            opaq.In.Surfaces == 0 ||
+            (opaq.In.Type & MFX_MEMTYPE_SYS_OR_D3D) == 0)
         {
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }

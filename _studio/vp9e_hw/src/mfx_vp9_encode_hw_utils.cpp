@@ -45,6 +45,21 @@ VP9MfxVideoParam& VP9MfxVideoParam::operator=(mfxVideoParam const & par)
     return *this;
 }
 
+void VP9MfxVideoParam::CalculateInternalParams()
+{
+    mfxVideoParam & base = *this;
+
+    if (base.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
+        (base.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (m_extOpaque.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
+    {
+        m_inMemType = INPUT_SYSTEM_MEMORY;
+    }
+    else
+    {
+        m_inMemType = INPUT_VIDEO_MEMORY;
+    }
+}
+
 void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
 {
     mfxVideoParam & base = *this;
@@ -67,6 +82,8 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
     ExtParam = m_extParam;
     NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);
     assert(NumExtParam == NUM_OF_SUPPORTED_EXT_BUFFERS);
+
+    CalculateInternalParams();
 }
 
 bool isVideoSurfInput(mfxVideoParam const & video)
@@ -326,14 +343,12 @@ void ExternalFrames::Init(mfxU32 numFrames)
 
 mfxStatus ExternalFrames::GetFrame(mfxFrameSurface1 *pInFrame, sFrameEx *&pOutFrame )
 {
-    mfxStatus sts = MFX_ERR_UNDEFINED_BEHAVIOR;
-
     std::vector<sFrameEx>::iterator frame = m_frames.begin();
     for ( ;frame!= m_frames.end(); frame++)
     {
         if (frame->pSurface == 0)
         {
-            frame->pSurface = pInFrame; /*add frame to pool*/
+            frame->pSurface = pInFrame;
             pOutFrame = &frame[0];
             return MFX_ERR_NONE;
         }
@@ -343,7 +358,15 @@ mfxStatus ExternalFrames::GetFrame(mfxFrameSurface1 *pInFrame, sFrameEx *&pOutFr
             return MFX_ERR_NONE;
         }
     }
-    return sts;
+
+    sFrameEx newFrame = {};
+    newFrame.idInPool = (mfxU32)m_frames.size();
+    newFrame.pSurface = pInFrame;
+
+    m_frames.push_back(newFrame);
+    pOutFrame = &m_frames.back();
+
+    return MFX_ERR_NONE;
 }
 //---------------------------------------------------------
 // service class: InternalFrames
@@ -425,42 +448,72 @@ mfxStatus InternalFrames::Release()
 // service class: Task
 //---------------------------------------------------------
 
-mfxStatus Task::GetOriginalSurface(mfxFrameSurface1 *& pSurface, bool &bExternal)
+mfxStatus GetRealSurface(
+    mfxCoreInterface const *pCore,
+    VP9MfxVideoParam const &par,
+    Task const &task,
+    mfxFrameSurface1 *& pSurface)
 {
-    pSurface = m_pRawFrame->pSurface;
-    bExternal = true;
-    return MFX_ERR_NONE;
-}
-
-mfxStatus Task::GetInputSurface(mfxFrameSurface1 *& pSurface, bool &bExternal)
-{
-    if (m_pRawLocalFrame)
+    if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
-        pSurface = m_pRawLocalFrame->pSurface;
-        bExternal = false;
+        mfxStatus sts = pCore->GetRealSurface(pCore->pthis, task.m_pRawFrame->pSurface, &pSurface);
+        MFX_CHECK_STS(sts);
     }
     else
     {
-        mfxStatus sts = GetOriginalSurface(pSurface, bExternal);
-        MFX_CHECK_STS(sts);
+        pSurface = task.m_pRawFrame->pSurface;
     }
+
     return MFX_ERR_NONE;
 }
 
-mfxStatus CopyRawSurfaceToVideoMemory(mfxCoreInterface * pCore,
+mfxStatus GetInputSurface(
+    mfxCoreInterface const *pCore,
+    VP9MfxVideoParam const &par,
+    Task const &task,
+    mfxFrameSurface1 *& pSurface)
+{
+    if (task.m_pRawLocalFrame)
+    {
+        pSurface = task.m_pRawLocalFrame->pSurface;
+    }
+    else
+    {
+        mfxStatus sts = GetRealSurface(pCore, par, task, pSurface);
+        MFX_CHECK_STS(sts);
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus CopyRawSurfaceToVideoMemory(
+    mfxCoreInterface *pCore,
     VP9MfxVideoParam const &par,
     Task const &task)
 {
-    if (par.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+    if (par.m_inMemType == INPUT_SYSTEM_MEMORY)
     {
         MFX_CHECK_NULL_PTR1(task.m_pRawLocalFrame);
-        mfxFrameSurface1 d3dSurf = *task.m_pRawLocalFrame->pSurface;
-        mfxFrameSurface1 sysSurf = *task.m_pRawFrame->pSurface;
+        mfxFrameSurface1 *pDd3dSurf = task.m_pRawLocalFrame->pSurface;
+        mfxFrameSurface1 *pSysSurface = 0;
+        mfxStatus sts = GetRealSurface(pCore, par, task, pSysSurface);
 
-        mfxStatus sts = MFX_ERR_NONE;
+        mfxFrameSurface1 lockedSurf = {};
+        lockedSurf.Info = par.mfx.FrameInfo;
 
-        sts = pCore->CopyFrame(pCore->pthis, &d3dSurf, &sysSurf);
+        if (pSysSurface->Data.Y == 0)
+        {
+            pCore->FrameAllocator.Lock(pCore->FrameAllocator.pthis, pSysSurface->Data.MemId, &lockedSurf.Data);
+            pSysSurface = &lockedSurf;
+        }
+
+        sts = pCore->CopyFrame(pCore->pthis, pDd3dSurf, pSysSurface);
         MFX_CHECK_STS(sts);
+
+        if (pSysSurface == &lockedSurf)
+        {
+            pCore->FrameAllocator.Unlock(pCore->FrameAllocator.pthis, pSysSurface->Data.MemId, &lockedSurf.Data);
+        }
     }
 
     return MFX_ERR_NONE;

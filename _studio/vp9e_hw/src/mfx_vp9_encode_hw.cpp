@@ -156,7 +156,8 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxF
 
     mfxU32 inPattern = par->IOPattern & MFX_IOPATTERN_IN_MASK;
     MFX_CHECK(inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY ||
-        inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY, MFX_ERR_INVALID_VIDEO_PARAM);
+        inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
+        inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY, MFX_ERR_INVALID_VIDEO_PARAM);
 
     VP9MfxVideoParam toValidate = *par;
 
@@ -177,6 +178,9 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxF
         break;
     case MFX_IOPATTERN_IN_VIDEO_MEMORY:
         in->Type = MFX_MEMTYPE_D3D_EXT;
+        break;
+    case MFX_IOPATTERN_IN_OPAQUE_MEMORY:
+        in->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_OPAQUE_FRAME;
         break;
     default:
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -238,6 +242,20 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
         request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumSurfRaw(m_video);
         sts = m_rawLocalFrames.Init(m_pmfxCore, &request);
         MFX_CHECK_STS(sts);
+    }
+    else if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+    {
+        mfxExtOpaqueSurfaceAlloc &opaq = GetExtBufferRef(m_video);
+
+        sts = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, opaq.In.NumSurface, opaq.In.Type, opaq.In.Surfaces);
+        MFX_CHECK_STS(sts);
+
+        if (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
+        {
+            request.NumFrameMin = request.NumFrameSuggested = opaq.In.NumSurface;
+            sts = m_rawLocalFrames.Init(m_pmfxCore, &request);
+            MFX_CHECK_STS(sts);
+        }
     }
 
     // allocate and register surfaces for reconstructed frames
@@ -398,7 +416,7 @@ mfxStatus Plugin::ConfigTask(Task &task)
     task.m_pOutBs = 0;
     task.m_pRawLocalFrame = 0;
 
-    if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+    if (m_video.m_inMemType == INPUT_SYSTEM_MEMORY)
     {
         task.m_pRawLocalFrame = m_rawLocalFrames.GetFreeFrame();
         MFX_CHECK(task.m_pRawLocalFrame != 0, MFX_WRN_DEVICE_BUSY);
@@ -465,7 +483,6 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         }
 
         mfxFrameSurface1    *pSurface = 0;
-        bool                bExternalSurface = true;
 
         mfxHDLPair surfaceHDL = {};
 
@@ -473,11 +490,12 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         sts = CopyRawSurfaceToVideoMemory(m_pmfxCore, m_video, *pTask);
         MFX_CHECK_STS(sts);
 
-        sts = pTask->GetInputSurface(pSurface, bExternalSurface);
+        sts = GetInputSurface(m_pmfxCore, m_video, *pTask, pSurface);
         MFX_CHECK_STS(sts);
 
         // get handle to input frame in VIDEO memory (either external or local)
-        sts = m_pmfxCore->FrameAllocator.GetHDL(m_pmfxCore->FrameAllocator.pthis, pSurface->Data.MemId, &surfaceHDL.first);
+        //sts = m_pmfxCore->FrameAllocator.GetHDL(m_pmfxCore->FrameAllocator.pthis, pSurface->Data.MemId, &surfaceHDL.first);
+        sts = m_pmfxCore->GetFrameHandle(m_pmfxCore->pthis, &pSurface->Data, &surfaceHDL.first);
         MFX_CHECK_STS(sts);
         MFX_CHECK(surfaceHDL.first != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -534,6 +552,14 @@ mfxStatus Plugin::Close()
     MFX_CHECK_STS(sts);
     sts = m_outBitstreams.Release();
     MFX_CHECK_STS(sts);
+
+    mfxExtOpaqueSurfaceAlloc &opaq = GetExtBufferRef(m_video);
+
+    if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && opaq.In.Surfaces)
+    {
+        sts = m_pmfxCore->UnmapOpaqueSurface(m_pmfxCore->pthis, opaq.In.NumSurface, opaq.In.Type, opaq.In.Surfaces);
+        Zero(opaq);
+    }
 
     m_initialized = false;
 
