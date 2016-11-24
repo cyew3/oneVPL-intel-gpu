@@ -135,6 +135,7 @@ void ConvertMFXParamsToUMC(mfxVideoParam *par, UMC::VideoStreamInfo *umcVideoPar
     case MFX_FOURCC_P210:
         umcVideoParams->color_format = UMC::P210;
         break;
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
     case MFX_FOURCC_Y210:
         umcVideoParams->color_format = UMC::Y210;
         break;
@@ -144,6 +145,7 @@ void ConvertMFXParamsToUMC(mfxVideoParam *par, UMC::VideoStreamInfo *umcVideoPar
     case MFX_FOURCC_Y410:
         umcVideoParams->color_format = UMC::Y410;
         break;
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
     case MFX_FOURCC_AYUV:
         umcVideoParams->color_format = UMC::YUV444A;
         break;

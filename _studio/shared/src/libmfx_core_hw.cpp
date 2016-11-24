@@ -61,17 +61,21 @@ VideoAccelerationHW ConvertMFXToUMCType(eMFXHWType type)
     case MFX_HW_KBL:
         umcType = VA_HW_KBL;
         break;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     case MFX_HW_CNL:
         umcType = VA_HW_CNL;
         break;
+#endif //PRE_SI_TARGET_PLATFORM_GEN10
     case MFX_HW_SOFIA:
         umcType = VA_HW_SOFIA;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     case MFX_HW_ICL:
         umcType = VA_HW_ICL;
         break;
     case MFX_HW_ICL_LP:
         umcType = VA_HW_ICL_LP;
         break;
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
     }
 
     return umcType;
@@ -161,6 +165,7 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
             case MFX_FOURCC_AYUV:
                 profile |= VA_PROFILE_444;
                 break;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             case MFX_FOURCC_Y210:
             case MFX_FOURCC_Y216:
                 profile |= VA_PROFILE_10 | VA_PROFILE_422;
@@ -168,6 +173,7 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
             case MFX_FOURCC_Y410:
                 profile |= VA_PROFILE_10 | VA_PROFILE_444;
                 break;
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
         }
         if (IS_PROTECTION_WIDEVINE(param->Protected))
         {

@@ -1211,16 +1211,6 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
 
                     break;
 
-                case MFX_FOURCC_Y216:
-
-                    //FastCopy::Copy uses 8u copy, so we need to increase ROI to handle 16 bit samples
-                    roi.width *= 4;
-
-                    sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)sLockRect.pBits, srcPitch, roi);
-                    MFX_CHECK_STS(sts);
-
-                    break;
-
                 case MFX_FOURCC_RGB3:
                 {
                     MFX_CHECK_NULL_PTR1(pDst->Data.R);
@@ -1236,6 +1226,18 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
                 }
                     break;
 
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+                case MFX_FOURCC_Y210:
+                case MFX_FOURCC_Y216:
+
+                    //FastCopy::Copy uses 8u copy, so we need to increase ROI to handle 16 bit samples
+                    roi.width *= 4;
+
+                    sts = pFastCopy->Copy(pDst->Data.Y, dstPitch, (mfxU8 *)sLockRect.pBits, srcPitch, roi);
+                    MFX_CHECK_STS(sts);
+
+                    break;
+
                 case MFX_FOURCC_Y410:
                 {
                     MFX_CHECK_NULL_PTR1(pDst->Data.Y410);
@@ -1248,6 +1250,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
                     MFX_CHECK_STS(sts);
                 }
                     break;
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
 
                 case MFX_FOURCC_A2RGB10:
                 {

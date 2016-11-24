@@ -65,9 +65,11 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
     case MFX_FOURCC_NV16:
     case MFX_FOURCC_P210:
     case MFX_FOURCC_AYUV:
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     case MFX_FOURCC_Y210:
     case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y410:
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
 #if defined(_WIN32) || defined(_WIN64)
     case DXGI_FORMAT_AYUV:
 #endif
@@ -82,9 +84,11 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
         {
         case MFX_FOURCC_P010:
         case MFX_FOURCC_P210:
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
         case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y216:
         case MFX_FOURCC_Y410:
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
             break;
         default:
             return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -190,12 +194,15 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
     case MFX_CODEC_HEVC:
         if (info->FourCC != MFX_FOURCC_NV12 &&
             info->FourCC != MFX_FOURCC_YUY2 &&
-            info->FourCC != MFX_FOURCC_AYUV &&
             info->FourCC != MFX_FOURCC_P010 &&
-            info->FourCC != MFX_FOURCC_NV16 &&
-            info->FourCC != MFX_FOURCC_Y216 &&
-            info->FourCC != MFX_FOURCC_Y210 &&
-            info->FourCC != MFX_FOURCC_Y410)
+            info->FourCC != MFX_FOURCC_NV16
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+            && info->FourCC != MFX_FOURCC_AYUV
+            && info->FourCC != MFX_FOURCC_Y216
+            && info->FourCC != MFX_FOURCC_Y210
+            && info->FourCC != MFX_FOURCC_Y410
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
+            )
             return MFX_ERR_INVALID_VIDEO_PARAM;
         break;
     default:
@@ -531,6 +538,12 @@ mfxStatus CheckFrameData(const mfxFrameSurface1 *surface)
             if (pitch > 0x3FFFF)
                 return MFX_ERR_UNDEFINED_BEHAVIOR;
             break;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        case MFX_FOURCC_Y410:
+            if (!surface->Data.Y || !surface->Data.Y410)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            break;
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
 #if defined(_WIN32) || defined(_WIN64)
         case DXGI_FORMAT_AYUV:
             if (!surface->Data.A || !surface->Data.R || !surface->Data.G || !surface->Data.B)
