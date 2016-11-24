@@ -249,7 +249,7 @@ char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOUR
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_YUY2>)
 { return "conformance/hevc/422format/inter_422_8.bin"; }
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_AYUV>)
-{ return "<TODO>"; }
+{ return "conformance/hevc/10bit/GENERAL_8b_444_RExt_Sony_1.bit"; }
 
 /* 10 bit */
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>)
@@ -277,7 +277,7 @@ struct TestSuite
 
 TS_REG_TEST_SUITE(hevcd_decode_frame_async,     TestSuite<MFX_FOURCC_NV12>::RunTest, TestSuite<MFX_FOURCC_NV12>::n_cases);
 TS_REG_TEST_SUITE(hevcd_422_decode_frame_async, TestSuite<MFX_FOURCC_YUY2>::RunTest, TestSuite<MFX_FOURCC_YUY2>::n_cases);
-//TS_REG_TEST_SUITE(hevcd_444_decode_frame_async, TestSuite<MFX_FOURCC_AYUV>::RunTest, TestSuite<MFX_FOURCC_AYUV>::n_cases);
+TS_REG_TEST_SUITE(hevcd_444_decode_frame_async, TestSuite<MFX_FOURCC_AYUV>::RunTest, TestSuite<MFX_FOURCC_AYUV>::n_cases);
 
 TS_REG_TEST_SUITE(hevc10d_decode_frame_async,     TestSuite<MFX_FOURCC_P010>::RunTest, TestSuite<MFX_FOURCC_P010>::n_cases);
 TS_REG_TEST_SUITE(hevc10d_422_decode_frame_async, TestSuite<MFX_FOURCC_Y216>::RunTest, TestSuite<MFX_FOURCC_Y216>::n_cases);

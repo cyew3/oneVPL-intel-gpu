@@ -302,7 +302,7 @@ unsigned int const TestSuiteExt<MFX_FOURCC_YUY2>::n_cases = TestSuite::n_cases +
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_AYUV>::test_cases[] =
 {
-    { MFX_ERR_NONE, { "TODO"} }
+    { MFX_ERR_NONE, { "conformance/hevc/10bit/GENERAL_8b_444_RExt_Sony_1.bit"} }
 };
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_AYUV>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_AYUV>::test_cases) / sizeof(TestSuite::tc_struct);
@@ -374,7 +374,7 @@ int TestSuiteExt<fourcc>::RunTest(unsigned int id)
 
 TS_REG_TEST_SUITE(hevcd_reset,     TestSuiteExt<MFX_FOURCC_NV12>::RunTest, TestSuiteExt<MFX_FOURCC_NV12>::n_cases);
 TS_REG_TEST_SUITE(hevcd_422_reset, TestSuiteExt<MFX_FOURCC_YUY2>::RunTest, TestSuiteExt<MFX_FOURCC_YUY2>::n_cases);
-//TS_REG_TEST_SUITE(hevcd_444_reset, TestSuiteExt<MFX_FOURCC_AYUV>::RunTest, TestSuiteExt<MFX_FOURCC_AYUV>::n_cases);
+TS_REG_TEST_SUITE(hevcd_444_reset, TestSuiteExt<MFX_FOURCC_AYUV>::RunTest, TestSuiteExt<MFX_FOURCC_AYUV>::n_cases);
 
 TS_REG_TEST_SUITE(hevc10d_reset,     TestSuiteExt<MFX_FOURCC_P010>::RunTest, TestSuiteExt<MFX_FOURCC_P010>::n_cases);
 TS_REG_TEST_SUITE(hevc10d_422_reset, TestSuiteExt<MFX_FOURCC_Y216>::RunTest, TestSuiteExt<MFX_FOURCC_Y216>::n_cases);
