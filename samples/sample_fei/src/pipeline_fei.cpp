@@ -99,6 +99,7 @@ void CEncodingPipeline::Close()
 {
     msdk_printf(MSDK_STRING("Frames processed: %u\r"), m_frameCount);
 
+    ReleaseResources();
     DeleteFrames();
 
     m_mfxSession.Close();
@@ -645,20 +646,15 @@ void CEncodingPipeline::DeleteFrames()
     }
 }
 
-mfxStatus CEncodingPipeline::ReleaseResources()
+void CEncodingPipeline::ReleaseResources()
 {
-    mfxStatus sts = MFX_ERR_NONE;
-
     //unlock last frames
     m_inputTasks.Clear();
 
     m_preencBufs.Clear();
     m_encodeBufs.Clear();
 
-    sts = ClearDecoderBuffers();
-    MSDK_CHECK_STATUS(sts, "ClearDecoderBuffers failed");
-
-    return sts;
+    ClearDecoderBuffers();
 }
 
 void CEncodingPipeline::DeleteHWDevice()
@@ -1616,8 +1612,7 @@ mfxStatus CEncodingPipeline::Run()
     MSDK_CHECK_STATUS(sts, "Buffered frames processing failed");
 
     // release runtime resources
-    sts = ReleaseResources();
-    MSDK_CHECK_STATUS(sts, "ReleaseResources failed");
+    ReleaseResources();
 
     return sts;
 }
@@ -1667,19 +1662,16 @@ mfxStatus CEncodingPipeline::ProcessBufferedFrames()
     }
     else // ENCODE in display order
     {
-        if (m_appCfg.bENCODE)
+        while (MFX_ERR_NONE <= sts)
         {
-            while (MFX_ERR_NONE <= sts)
-            {
-                sts = m_pFEI_ENCODE->EncodeOneFrame(NULL, NULL, PairU8(NULL, NULL));
-            }
-
-            // MFX_ERR_MORE_DATA is the correct status to exit buffering loop with
-            // indicates that there are no more buffered frames
-            MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
-            // exit in case of other errors
-            MSDK_CHECK_STATUS(sts, "EncodeOneFrame failed");
+            sts = m_pFEI_ENCODE->EncodeOneFrame(NULL, NULL, PairU8(NULL, NULL));
         }
+
+        // MFX_ERR_MORE_DATA is the correct status to exit buffering loop with
+        // indicates that there are no more buffered frames
+        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
+        // exit in case of other errors
+        MSDK_CHECK_STATUS(sts, "EncodeOneFrame failed");
     }
 
     return sts;
@@ -1811,7 +1803,7 @@ mfxStatus CEncodingPipeline::doGPUHangRecovery()
 
 /* free decode streamout buffers*/
 
-mfxStatus CEncodingPipeline::ClearDecoderBuffers()
+void CEncodingPipeline::ClearDecoderBuffers()
 {
     if (m_appCfg.bDECODESTREAMOUT)
     {
@@ -1825,7 +1817,6 @@ mfxStatus CEncodingPipeline::ClearDecoderBuffers()
 
         m_StreamoutBufs.clear();
     }
-    return MFX_ERR_NONE;
 }
 
 
