@@ -253,9 +253,7 @@ typedef struct {
     mfxU32    DcBlockCodedCrFlag  : 1;
     mfxU32    DcBlockCodedCbFlag  : 1;
     mfxU32    DcBlockCodedYFlag   : 1;
-    mfxU32    MVFormat            : 3; /* layout and number of MVs, 0 - no MVs, 6 - 32 MVs, the rest are reserved */
-    mfxU32    Reserved03          : 8;
-    mfxU32    ExtendedFormat      : 1; /* should be 1, specifies that LumaIntraPredModes and RefIdx are replicated for 8x8 and 4x4 block/subblock */
+    mfxU32    Reserved03          :12;
 
     /* dword 4 */
     mfxU8     HorzOrigin;
@@ -397,14 +395,24 @@ typedef struct {
     mfxFeiDecStreamOutMBCtrl *MB;
 } mfxExtFeiDecStreamOut;
 
-/* SPS, PPS, Slice Header */
+/* 1 SPS, PPS, Slice Header */
 typedef struct {
     mfxExtBuffer    Header;
 
     mfxU16    SPSId;
+    mfxU16    Profile;
+    mfxU16    Level;
 
+    mfxU16    NumRefFrame;
+
+    mfxU16    ChromaFormatIdc;
+    mfxU16    FrameMBsOnlyFlag;
+    mfxU16    MBAdaptiveFrameFieldFlag;
+    mfxU16    Direct8x8InferenceFlag;
+    mfxU16    Log2MaxFrameNum;
     mfxU16    PicOrderCntType;
     mfxU16    Log2MaxPicOrderCntLsb;
+    mfxU16    DeltaPicOrderAlwaysZeroFlag;
 } mfxExtFeiSPS;
 
 typedef struct {
@@ -413,23 +421,31 @@ typedef struct {
     mfxU16    SPSId;
     mfxU16    PPSId;
 
-    mfxU16    FrameType;
+    mfxU16    FrameNum;
+
     mfxU16    PicInitQP;
     mfxU16    NumRefIdxL0Active;
     mfxU16    NumRefIdxL1Active;
-    mfxU16    ReferenceFrames[16]; /* index in mfxPAKInput::L0Surface array */
+    mfxU16    ReferenceFrames[16];
+
     mfxI16    ChromaQPIndexOffset;
     mfxI16    SecondChromaQPIndexOffset;
+
+    mfxU16    IDRPicFlag;
+    mfxU16    ReferencePicFlag;
+    mfxU16    EntropyCodingModeFlag;
+    mfxU16    ConstrainedIntraPredFlag;
     mfxU16    Transform8x8ModeFlag;
 } mfxExtFeiPPS;
 
 typedef struct {
     mfxExtBuffer    Header;
 
-    mfxU16    NumSlice; /* actual number of slices in the picture */
+    mfxU16    NumSliceAlloc;
+    mfxU16    NumSlice;
 
     struct mfxSlice{
-        mfxU16    MBAddress;
+        mfxU16    MBAaddress;
         mfxU16    NumMBs;
         mfxU16    SliceType;
         mfxU16    PPSId;
@@ -448,7 +464,7 @@ typedef struct {
         struct {
             mfxU16   PictureType;
             mfxU16   Index;
-        } RefL0[32], RefL1[32]; /* index in mfxPAKInput::L0Surface array */
+        } RefL0[32], RefL1[32]; /* index in  mfxPAKInput::L0Surface array */
 
     } *Slice;
 }mfxExtFeiSliceHeader;
