@@ -57,12 +57,10 @@ static bool IsVideoParamExtBufferIdSupported(mfxU32 id)
 
 mfxExtBuffer* GetExtBuffer(mfxExtBuffer** ebuffers, mfxU32 nbuffers, mfxU32 BufferId)
 {
-    MFX_CHECK(ebuffers, NULL);
-
-    for(mfxU32 i=0; i<nbuffers; ++i)
-    {
-        if (ebuffers[i] && ebuffers[i]->BufferId == BufferId)
-        {
+    if (!ebuffers) return NULL;
+    for(mfxU32 i=0; i<nbuffers; ++i) {
+        if (!ebuffers[i]) continue;
+        if (ebuffers[i]->BufferId == BufferId) {
             return ebuffers[i];
         }
     }
@@ -642,38 +640,70 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     //set frame type
     mfxU8 mtype_first_field = 0, mtype_second_field = 0;
 
+    if ( ((0 == input->NumFrameL0)  && (0 == input->NumFrameL1)) ||
+        (0 == input->InSurface->Data.FrameOrder))
+        mtype_first_field = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR;
+    else if ((0 != input->NumFrameL0)  && (0 == input->NumFrameL1))
+        mtype_first_field = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
+    else if ((0 != input->NumFrameL0)  || (0 != input->NumFrameL1))
+        mtype_first_field = MFX_FRAMETYPE_B;
+
+    mtype_second_field = mtype_first_field;
+
+    if (MFX_PICSTRUCT_PROGRESSIVE != m_video.mfx.FrameInfo.PicStruct)
+    {
+        /* !!!
+         * Actually here is an issue
+         * Ref list for second field is different from ref list from first field
+         * BUT in (mfxENCInput *input) described only one list, which is same for
+         * first and second field.
+         * */
+        if ( ((0 == input->NumFrameL0)  && (0 == input->NumFrameL1)) ||
+            (0 == input->InSurface->Data.FrameOrder))
+            mtype_second_field = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR;
+        else if ((0 != input->NumFrameL0)  && (0 == input->NumFrameL1))
+            mtype_second_field = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
+        else if ((0 != input->NumFrameL0)  || (0 != input->NumFrameL1))
+            mtype_second_field = MFX_FRAMETYPE_B;
+
+        /* WA for IP pair */
+        if (0 == input->InSurface->Data.FrameOrder)
+        {
+                mtype_second_field = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
+                //mtype_second_field = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR;
+        }
+    }
+
+    /* New way for Frame type definition */
+    /* WA !!! */
     mfxU32 fieldMaxCount = m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
     for (mfxU32 field = 0; field < fieldMaxCount; field++)
     {
         mfxU32 fieldParity = (m_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF) ? (1 - field) : field;
 
         mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBufferFEI(output, fieldParity);
-        MFX_CHECK(extFeiSliceInRintime,        MFX_ERR_UNDEFINED_BEHAVIOR);
-        MFX_CHECK(extFeiSliceInRintime->Slice, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+        if (!extFeiSliceInRintime) continue; /* cannot extract type for this field in runtime without SliceHeader */
 
         mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(output, fieldParity);
-        MFX_CHECK(extFeiPPSinRuntime,                    MFX_ERR_UNDEFINED_BEHAVIOR);
-        MFX_CHECK(extFeiPPSinRuntime->FrameType <= 0xff, MFX_ERR_UNDEFINED_BEHAVIOR);
+        /*And runtime params has priority before iInit() params */
 
-        mfxU8 type = extFeiPPSinRuntime->FrameType;
+        bool is_reference_B_field  = extFeiPPSinRuntime && extFeiPPSinRuntime->ReferencePicFlag;
+        bool is_reference_IP_field = !extFeiPPSinRuntime || is_reference_B_field;
+        /* each I without PPS is IDR */
+        /* TODO: take this information from GOP structure, if no PPS provided */
+        bool is_IDR_field = !extFeiPPSinRuntime || extFeiPPSinRuntime->IDRPicFlag;
 
-        switch (type & 0xf)
-        {
-        case MFX_FRAMETYPE_UNKNOWN:
-        case MFX_FRAMETYPE_I:
-        case MFX_FRAMETYPE_P:
-        case MFX_FRAMETYPE_B:
-            break;
-        default:
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-            break;
-        }
+        mfxU8 type = 0, reference_IP_flag = is_reference_IP_field ? MFX_FRAMETYPE_REF : 0,
+            reference_B_flag = is_reference_B_field ? MFX_FRAMETYPE_REF : 0,
+            IDR_flag = is_IDR_field ? MFX_FRAMETYPE_IDR : 0;
 
         mfxU16 numL0Active = extFeiSliceInRintime->Slice[0].NumRefIdxL0Active,
                numL1Active = extFeiSliceInRintime->Slice[0].NumRefIdxL1Active;
 
-        if (type & MFX_FRAMETYPE_I) MFX_CHECK(!numL0Active && !numL1Active, MFX_ERR_UNDEFINED_BEHAVIOR);
-        if (type & MFX_FRAMETYPE_P) MFX_CHECK(                !numL1Active, MFX_ERR_UNDEFINED_BEHAVIOR);
+        if      ((numL0Active == 0) && (numL1Active == 0)) type = MFX_FRAMETYPE_I | reference_IP_flag | IDR_flag;
+        else if ((numL0Active != 0) && (numL1Active != 0)) type = MFX_FRAMETYPE_P | reference_IP_flag;
+        else if                        (numL1Active != 0)  type = MFX_FRAMETYPE_B | reference_B_flag;
 
         if (fieldParity == 0)
         {
@@ -684,7 +714,6 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
             mtype_second_field = type;
         }
     }
-    if (!mtype_second_field) { mtype_second_field = mtype_first_field & ~MFX_FRAMETYPE_IDR; }
 
     UMC::AutomaticUMCMutex guard(m_listMutex);
 
@@ -717,9 +746,10 @@ mfxStatus VideoPAK_PAK::RunFramePAKCheck(
     m_free.front().m_userData.resize(2);
     m_free.front().m_userData[0] = input;
     m_free.front().m_userData[1] = output;
-
-    MFX_CHECK_NULL_PTR1(output->Bs);
-    m_free.front().m_bs = output->Bs;
+    if (NULL != output->Bs)
+        m_free.front().m_bs = output->Bs;
+    else
+        return MFX_ERR_NULL_PTR;
 
     m_incoming.splice(m_incoming.end(), m_free, m_free.begin());
     DdiTask& task = m_incoming.front();

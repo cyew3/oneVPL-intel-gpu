@@ -777,7 +777,11 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
             break;
         }
     }
-    MFX_CHECK(indxSurf != m_statFeedbackCache.size(), MFX_ERR_UNKNOWN);
+
+    if (indxSurf == m_statFeedbackCache.size())
+    {
+        return MFX_ERR_UNKNOWN;
+    }
 
     VASurfaceStatus surfSts = VASurfaceSkipped;
 
@@ -809,8 +813,8 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
             VAMotionVectorIntel* mvs;
             VAStatsStatistics16x16Intel* mbstat;
 
-            mfxENCInput*  in  = reinterpret_cast<mfxENCInput* >(task.m_userData[0]);
-            mfxENCOutput* out = reinterpret_cast<mfxENCOutput*>(task.m_userData[1]);
+            mfxENCInput*  in  = (mfxENCInput* )task.m_userData[0];
+            mfxENCOutput* out = (mfxENCOutput*)task.m_userData[1];
 
             //find control buffer
             mfxExtFeiPreEncCtrl*   feiCtrl   = GetExtBufferFEI(in,  feiFieldId);
@@ -1182,8 +1186,16 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
         mdprintf(stderr,"---->extSps->deltaPicOrderAlwaysZeroFlag = %d\n", extSps->deltaPicOrderAlwaysZeroFlag);
 
         extSps->seqParameterSetId           = pDataSPS->SPSId;
+        extSps->levelIdc                    = pDataSPS->Level;
+        extSps->maxNumRefFrames             = pDataSPS->NumRefFrame;
+        extSps->chromaFormatIdc             = pDataSPS->ChromaFormatIdc;
+        extSps->frameMbsOnlyFlag            = pDataSPS->FrameMBsOnlyFlag;
+        extSps->mbAdaptiveFrameFieldFlag    = pDataSPS->MBAdaptiveFrameFieldFlag;
+        extSps->direct8x8InferenceFlag      = pDataSPS->Direct8x8InferenceFlag;
+        extSps->log2MaxFrameNumMinus4       = pDataSPS->Log2MaxFrameNum - 4;
         extSps->picOrderCntType             = pDataSPS->PicOrderCntType;
         extSps->log2MaxPicOrderCntLsbMinus4 = pDataSPS->Log2MaxPicOrderCntLsb - 4 ;
+        extSps->deltaPicOrderAlwaysZeroFlag = pDataSPS->DeltaPicOrderAlwaysZeroFlag;
 
         mdprintf(stderr,"Applications's SPS header\n");
         mdprintf(stderr,"---->extSps->seqParameterSetId = %d\n", extSps->seqParameterSetId);
@@ -1223,13 +1235,18 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 
         //extPps->frame_num = pDataPPS->FrameNum;
 
-        extPps->picInitQpMinus26               = pDataPPS->PicInitQP - 26;
+        extPps->picInitQpMinus26               = pDataPPS->PicInitQP-26;
         extPps->numRefIdxL0DefaultActiveMinus1 = pDataPPS->NumRefIdxL0Active ? (pDataPPS->NumRefIdxL0Active - 1) : 0;
         extPps->numRefIdxL1DefaultActiveMinus1 = pDataPPS->NumRefIdxL1Active ? (pDataPPS->NumRefIdxL1Active - 1) : 0;
 
         extPps->chromaQpIndexOffset       = pDataPPS->ChromaQPIndexOffset;
         extPps->secondChromaQpIndexOffset = pDataPPS->SecondChromaQPIndexOffset;
-        extPps->transform8x8ModeFlag      = pDataPPS->Transform8x8ModeFlag;
+
+        //m_pps.pic_fields.bits.idr_pic_flag = pDataPPS->IDRPicFlag;
+        //m_pps.pic_fields.bits.reference_pic_flag = pDataPPS->ReferencePicFlag;
+        extPps->entropyCodingModeFlag    = pDataPPS->EntropyCodingModeFlag;
+        extPps->constrainedIntraPredFlag = pDataPPS->ConstrainedIntraPredFlag;
+        extPps->transform8x8ModeFlag     = pDataPPS->Transform8x8ModeFlag;
 
         mdprintf(stderr,"Applications's generated PPS header\n");
         mdprintf(stderr,"---->extPps->seqParameterSetId = %d\n", extPps->seqParameterSetId);
@@ -1464,6 +1481,33 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     // Fill PPS
     UpdatePPS(task, fieldId, m_pps, m_reconQueue);
 
+    /* Check application's provided data */
+    if (NULL != pDataPPS)
+    {
+
+#if defined(_DEBUG)
+        if (m_pps.pic_fields.bits.idr_pic_flag != pDataPPS->IDRPicFlag)
+        {
+            mdprintf(stderr, "!!!Warning pDataPPS->IDRPicFlag = %u\n", pDataPPS->IDRPicFlag);
+            mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.idr_pic_flag = %u\n", m_pps.pic_fields.bits.idr_pic_flag);
+        }
+        if (m_pps.pic_fields.bits.reference_pic_flag != pDataPPS->ReferencePicFlag)
+        {
+            mdprintf(stderr, "!!!Warning pDataPPS->ReferencePicFlag = %u\n", pDataPPS->ReferencePicFlag);
+            mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.reference_pic_flag = %u\n", m_pps.pic_fields.bits.reference_pic_flag);
+        }
+        if (m_pps.frame_num != pDataPPS->FrameNum)
+        {
+            mdprintf(stderr, "!!!Warning pDataPPS->FrameNum = %u\n", pDataPPS->FrameNum);
+            mdprintf(stderr, "   But library's is m_pps.frame_num = %u\n", m_pps.frame_num);
+        }
+#endif
+
+        m_pps.pic_fields.bits.idr_pic_flag       = pDataPPS->IDRPicFlag;
+        m_pps.pic_fields.bits.reference_pic_flag = pDataPPS->ReferencePicFlag;
+        m_pps.frame_num                          = pDataPPS->FrameNum;
+    }
+
     /* ENC & PAK has issue with reconstruct surface.
      * How does it work right now?
      * ENC & PAK has same surface pool, both for source and reconstructed surfaces,
@@ -1490,7 +1534,8 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     else
         m_pps.CurrPic.flags = 0;
 
-    /* Need to allocated coded buffer: this is does not used by ENC actually */
+    /* Need to allocated coded buffer: this is does not used by ENC actually
+     */
     if (VA_INVALID_ID == m_codedBufferId)
     {
         int width32  = ((m_videoParam.mfx.FrameInfo.Width  + 31) >> 5) << 5;
@@ -1569,6 +1614,8 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     /* Application defined slice params */
     if (NULL != pDataSliceHeader)
     {
+        MFX_CHECK(pDataSliceHeader->NumSlice == pDataSliceHeader->NumSliceAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
+
         numSlice = (std::max)(pDataSliceHeader->NumSlice, mfxU16(1));
     }
 
@@ -1621,7 +1668,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
             mdprintf(stderr,"---->m_slice[%u].slice_beta_offset_div2 = %d\n", i, m_slice[i].slice_beta_offset_div2);
 
 #if defined(_DEBUG)
-            if (m_slice[i].macroblock_address != pDataSliceHeader->Slice[i].MBAddress)
+            if (m_slice[i].macroblock_address != pDataSliceHeader->Slice[i].MBAaddress)
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].MBAaddress = %u\n", i, pDataSliceHeader->Slice[i].MBAaddress);
                 mdprintf(stderr, "   But library's is m_slice[%u].macroblock_address = %u\n", i, m_slice[i].macroblock_address);
@@ -1675,7 +1722,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
             }
 #endif
 
-            m_slice[i].macroblock_address            = pDataSliceHeader->Slice[i].MBAddress;
+            m_slice[i].macroblock_address            = pDataSliceHeader->Slice[i].MBAaddress;
             m_slice[i].num_macroblocks               = pDataSliceHeader->Slice[i].NumMBs;
             m_slice[i].slice_type                    = pDataSliceHeader->Slice[i].SliceType;
             m_slice[i].idr_pic_id                    = pDataSliceHeader->Slice[i].IdrPicId;
@@ -1979,7 +2026,8 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
         default: //for now driver does not return correct status
         case VASurfaceReady:
         {
-            mfxENCOutput*       out       = reinterpret_cast<mfxENCOutput*>(task.m_userData[1]);
+            //mfxENCInput*        in        = (mfxENCInput*)task.m_userData[0];
+            mfxENCOutput*       out       = (mfxENCOutput*)task.m_userData[1];
             mfxExtFeiEncMBStat* mbstat    = GetExtBufferFEI(out,feiFieldId);
             mfxExtFeiEncMV*     mvout     = GetExtBufferFEI(out,feiFieldId);
             mfxExtFeiPakMBCtrl* mbcodeout = GetExtBufferFEI(out,feiFieldId);
@@ -2001,7 +2049,7 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 //copy to output in task here MVs
                 memcpy_s(mbstat->MB, sizeof (VAEncFEIDistortionBufferH264Intel) * mbstat->NumMBAlloc,
-                                mbs, sizeof (VAEncFEIDistortionBufferH264Intel) * mbstat->NumMBAlloc);
+                               mbs, sizeof (VAEncFEIDistortionBufferH264Intel) * mbstat->NumMBAlloc);
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
                      vaSts = vaUnmapBuffer(m_vaDisplay, vaFeiMBStatId);
@@ -2026,7 +2074,7 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 //copy to output in task here MVs
                 memcpy_s(mvout->MB, sizeof (VAMotionVectorIntel) * 16 * mvout->NumMBAlloc,
-                               mvs, sizeof (VAMotionVectorIntel) * 16 * mvout->NumMBAlloc);
+                    mvs, sizeof (VAMotionVectorIntel) * 16 * mvout->NumMBAlloc);
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
                     vaSts = vaUnmapBuffer(m_vaDisplay, vaFeiMVOutId);
@@ -2378,8 +2426,16 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         mdprintf(stderr,"---->extSps->deltaPicOrderAlwaysZeroFlag = %d\n", extSps->deltaPicOrderAlwaysZeroFlag);
 
         extSps->seqParameterSetId           = pDataSPS->SPSId;
+        extSps->levelIdc                    = pDataSPS->Level;
+        extSps->maxNumRefFrames             = pDataSPS->NumRefFrame;
+        extSps->chromaFormatIdc             = pDataSPS->ChromaFormatIdc;
+        extSps->frameMbsOnlyFlag            = pDataSPS->FrameMBsOnlyFlag;
+        extSps->mbAdaptiveFrameFieldFlag    = pDataSPS->MBAdaptiveFrameFieldFlag;
+        extSps->direct8x8InferenceFlag      = pDataSPS->Direct8x8InferenceFlag;
+        extSps->log2MaxFrameNumMinus4       = pDataSPS->Log2MaxFrameNum - 4;
         extSps->picOrderCntType             = pDataSPS->PicOrderCntType;
         extSps->log2MaxPicOrderCntLsbMinus4 = pDataSPS->Log2MaxPicOrderCntLsb - 4 ;
+        extSps->deltaPicOrderAlwaysZeroFlag = pDataSPS->DeltaPicOrderAlwaysZeroFlag;
 
         mdprintf(stderr,"Applications's SPS header\n");
         mdprintf(stderr,"---->extSps->seqParameterSetId = %d\n", extSps->seqParameterSetId);
@@ -2425,6 +2481,11 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
         extPps->chromaQpIndexOffset            = pDataPPS->ChromaQPIndexOffset;
         extPps->secondChromaQpIndexOffset      = pDataPPS->SecondChromaQPIndexOffset;
+
+       //m_pps.pic_fields.bits.idr_pic_flag = pDataPPS->IDRPicFlag;
+       //m_pps.pic_fields.bits.reference_pic_flag = pDataPPS->ReferencePicFlag;
+        extPps->entropyCodingModeFlag          = pDataPPS->EntropyCodingModeFlag;
+        extPps->constrainedIntraPredFlag       = pDataPPS->ConstrainedIntraPredFlag;
         extPps->transform8x8ModeFlag           = pDataPPS->Transform8x8ModeFlag;
 
         mdprintf(stderr,"Applications's generated PPS header\n");
@@ -2609,6 +2670,33 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     // Fill PPS
     UpdatePPS(task, fieldId, m_pps, m_reconQueue);
 
+    /* Check application's provided data */
+    if (NULL != pDataPPS)
+    {
+
+#if defined(_DEBUG)
+        if (m_pps.pic_fields.bits.idr_pic_flag != pDataPPS->IDRPicFlag)
+        {
+            mdprintf(stderr, "!!!Warning pDataPPS->IDRPicFlag = %u\n", pDataPPS->IDRPicFlag);
+            mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.idr_pic_flag = %u\n", m_pps.pic_fields.bits.idr_pic_flag);
+        }
+        if (m_pps.pic_fields.bits.reference_pic_flag != pDataPPS->ReferencePicFlag)
+        {
+            mdprintf(stderr, "!!!Warning pDataPPS->ReferencePicFlag = %u\n", pDataPPS->ReferencePicFlag);
+            mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.reference_pic_flag = %u\n", m_pps.pic_fields.bits.reference_pic_flag);
+        }
+        if (m_pps.frame_num != pDataPPS->FrameNum)
+        {
+            mdprintf(stderr, "!!!Warning pDataPPS->FrameNum = %u\n", pDataPPS->FrameNum);
+            mdprintf(stderr, "   But library's is m_pps.frame_num = %u\n", m_pps.frame_num);
+        }
+#endif
+
+        m_pps.pic_fields.bits.idr_pic_flag       = pDataPPS->IDRPicFlag;
+        m_pps.pic_fields.bits.reference_pic_flag = pDataPPS->ReferencePicFlag;
+        m_pps.frame_num                          = pDataPPS->FrameNum;
+    }
+
     /* ENC & PAK has issue with reconstruct surface.
      * How does it work right now?
      * ENC & PAK has same surface pool, both for source and reconstructed surfaces,
@@ -2709,6 +2797,8 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     /* Application defined slice params */
     if (NULL != pDataSliceHeader)
     {
+        MFX_CHECK(pDataSliceHeader->NumSlice == pDataSliceHeader->NumSliceAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
+
         numSlice = (std::max)(pDataSliceHeader->NumSlice, mfxU16(1));
     }
 
@@ -2761,7 +2851,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
             mdprintf(stderr,"---->m_slice[%u].slice_beta_offset_div2 = %d\n", i, m_slice[i].slice_beta_offset_div2);
 
 #if defined(_DEBUG)
-            if (m_slice[i].macroblock_address != pDataSliceHeader->Slice[i].MBAddress)
+            if (m_slice[i].macroblock_address != pDataSliceHeader->Slice[i].MBAaddress)
             {
                 mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].MBAaddress = %u\n", i, pDataSliceHeader->Slice[i].MBAaddress);
                 mdprintf(stderr, "   But library's is m_slice[%u].macroblock_address = %u\n", i, m_slice[i].macroblock_address);
@@ -2813,7 +2903,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
                 mdprintf(stderr, "   But library's is m_slice[%u].slice_beta_offset_div2 = %u\n", i, m_slice[i].slice_beta_offset_div2);
             }
 #endif
-            m_slice[i].macroblock_address            = pDataSliceHeader->Slice[i].MBAddress;
+            m_slice[i].macroblock_address            = pDataSliceHeader->Slice[i].MBAaddress;
             m_slice[i].num_macroblocks               = pDataSliceHeader->Slice[i].NumMBs;
             m_slice[i].slice_type                    = pDataSliceHeader->Slice[i].SliceType;
             m_slice[i].idr_pic_id                    = pDataSliceHeader->Slice[i].IdrPicId;
