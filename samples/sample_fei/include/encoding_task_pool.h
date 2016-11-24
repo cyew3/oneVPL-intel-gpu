@@ -67,15 +67,11 @@ public:
     {
         task_in_process = NULL;
 
-        if (last_encoded_task)
-        {
-            delete last_encoded_task;
-            last_encoded_task = NULL;
-        }
+        MSDK_SAFE_DELETE(last_encoded_task);
 
         for (std::list<iTask*>::iterator it = task_pool.begin(); it != task_pool.end(); ++it)
         {
-            delete *it;
+            MSDK_SAFE_DELETE(*it);
         }
 
         task_pool.clear();
@@ -119,7 +115,7 @@ public:
             {
                 if (std::find(FramesInDPB.begin(), FramesInDPB.end(), (*it)->m_frameOrder) == FramesInDPB.end() && (*it)->encoded) // delete task
                 {
-                    delete (*it);
+                    MSDK_SAFE_DELETE(*it);
                     task_pool.erase(it);
                     return;
                 }
@@ -289,11 +285,14 @@ public:
     }
 
     /* Counts encoded future references of frame with given display order */
-    mfxU32 CountFutureRefs(mfxU32 frameOrder){
+    mfxU32 CountFutureRefs(mfxU32 frameOrder)
+    {
         mfxU32 count = 0;
+
         for (std::list<iTask*>::iterator it = task_pool.begin(); it != task_pool.end(); ++it)
             if (frameOrder < (*it)->m_frameOrder && (*it)->encoded)
                 ++count;
+
         return count;
     }
 

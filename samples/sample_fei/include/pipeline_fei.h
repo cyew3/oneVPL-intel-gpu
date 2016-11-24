@@ -158,7 +158,7 @@ protected:
     virtual mfxStatus AllocFrames();
     virtual mfxStatus FillSurfacePool(mfxFrameSurface1* & surfacesPool, mfxFrameAllocResponse* allocResponse, mfxFrameInfo* FrameInfo);
     virtual void DeleteFrames();
-    virtual mfxStatus ReleaseResources();
+    virtual void ReleaseResources();
 
     virtual mfxStatus UpdateVideoParam();
 
@@ -171,7 +171,7 @@ protected:
 
     virtual mfxStatus doGPUHangRecovery();
 
-    mfxStatus ClearDecoderBuffers();
+    void ClearDecoderBuffers();
     mfxStatus ResetBuffers();
     mfxU16 GetCurPicType(mfxU32 fieldId);
 };
