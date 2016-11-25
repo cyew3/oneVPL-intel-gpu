@@ -674,8 +674,8 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
                numL1Active = extFeiSliceInRintime->Slice[0].NumRefIdxL1Active;
 
         if      ((numL0Active == 0) && (numL1Active == 0)) type = MFX_FRAMETYPE_I | reference_IP_flag | IDR_flag;
-        else if ((numL0Active != 0) && (numL1Active != 0)) type = MFX_FRAMETYPE_P | reference_IP_flag;
-        else if                        (numL1Active != 0)  type = MFX_FRAMETYPE_B | reference_B_flag;
+        else if ((numL0Active != 0) && (numL1Active == 0)) type = MFX_FRAMETYPE_P | reference_IP_flag;
+        else                                               type = MFX_FRAMETYPE_B | reference_B_flag;
 
         if (fieldParity == 0)
         {
