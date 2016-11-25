@@ -937,9 +937,7 @@ CEncodingPipeline::CEncodingPipeline()
     m_ExtHEVCParam.Header.BufferId = MFX_EXTBUFF_HEVC_PARAM;
     m_ExtHEVCParam.Header.BufferSz = sizeof(m_ExtHEVCParam);
 
-#if D3D_SURFACES_SUPPORT
     m_hwdev = NULL;
-#endif
 
     MSDK_ZERO_MEMORY(m_mfxEncParams);
     MSDK_ZERO_MEMORY(m_mfxVppParams);

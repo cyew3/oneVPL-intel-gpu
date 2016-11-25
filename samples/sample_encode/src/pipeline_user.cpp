@@ -27,7 +27,6 @@ mfxStatus CUserPipeline::InitRotateParam(sInputParams *pInParams)
     MSDK_CHECK_POINTER(pInParams, MFX_ERR_NULL_PTR);
 
     MSDK_ZERO_MEMORY(m_pluginVideoParams);
-
     m_pluginVideoParams.AsyncDepth = pInParams->nAsyncDepth; // the maximum number of tasks that can be submitted before any task execution finishes
     m_pluginVideoParams.vpp.In.FourCC = MFX_FOURCC_NV12;
     m_pluginVideoParams.vpp.In.Width = m_pluginVideoParams.vpp.In.CropW = pInParams->nWidth;
@@ -149,6 +148,8 @@ CUserPipeline::CUserPipeline() : CEncodingPipeline()
     m_PluginModule = NULL;
     m_pusrPlugin = NULL;
     MSDK_ZERO_MEMORY(m_PluginResponse);
+    MSDK_ZERO_MEMORY(m_pluginVideoParams);
+    MSDK_ZERO_MEMORY(m_RotateParams);
     m_MVCflags = MVC_DISABLED;
 }
 

@@ -225,7 +225,6 @@ struct sInputParams
         ptsJump=false;
         ptsAdvanced=false;
         ptsFR=0;
-        roiCheckParam;
         isOutYV12=false;
         numStreams=0;
 
@@ -235,6 +234,7 @@ struct sInputParams
         MSDK_ZERO_MEMORY(inFrameInfo);
         MSDK_ZERO_MEMORY(outFrameInfo);
         MSDK_ZERO_MEMORY(compositionParam);
+        MSDK_ZERO_MEMORY(roiCheckParam);
 
         bInitEx             = false;
         bPerf               = false;

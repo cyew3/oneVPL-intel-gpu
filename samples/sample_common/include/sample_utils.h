@@ -287,6 +287,7 @@ public:
     CTimeInterval(double &dRef , bool bEnable = true)
         : m_start(dRef)
         , m_bEnable(bEnable)
+        , m_StartTick(0)
     {
         if (!m_bEnable)
             return;
@@ -296,6 +297,7 @@ public:
         : m_start(m_own)
         , m_own()
         , m_bEnable(bEnable)
+        , m_StartTick(0)
     {
         if (!m_bEnable)
             return;

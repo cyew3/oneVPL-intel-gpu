@@ -133,6 +133,7 @@ CDecodingPipeline::CDecodingPipeline()
 
 #ifdef LIBVA_SUPPORT
     m_export_mode = vaapiAllocatorParams::DONOT_EXPORT;
+    m_libvaBackend = 0;
     m_bPerfMode = false;
 #endif
 
