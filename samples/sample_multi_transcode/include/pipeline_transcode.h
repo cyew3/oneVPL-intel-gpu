@@ -557,6 +557,8 @@ namespace TranscodingSample
         mfxVideoParam                  m_mfxVppParams;
         mfxVideoParam                  m_mfxPluginParams;
         bool                           m_bIsVpp; // true if there's VPP in the pipeline
+        bool                           m_bIsFieldWeaving;
+        bool                           m_bIsFieldSplitting;
         bool                           m_bIsPlugin; //true if there's Plugin in the pipeline
         RotateParam                    m_RotateParam;
         mfxVideoParam                  m_mfxPreEncParams;
