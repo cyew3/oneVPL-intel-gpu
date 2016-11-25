@@ -1909,10 +1909,10 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request)
         case MFX_FOURCC_NV16:
         case MFX_FOURCC_YUY2:
         case MFX_FOURCC_AYUV:
-#ifdef MFX_VA
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
         case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y410:
-#endif
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
             break;
         case MFX_FOURCC_IMC3:
         case MFX_FOURCC_YV12:
@@ -2764,7 +2764,12 @@ mfxStatus CheckLimitationsSW(
             param.vpp.In.FourCC = 0;
         }
     }
-    if (param.vpp.Out.FourCC == MFX_FOURCC_AYUV || param.vpp.Out.FourCC == MFX_FOURCC_Y210 || param.vpp.Out.FourCC == MFX_FOURCC_Y410)
+    if (param.vpp.Out.FourCC == MFX_FOURCC_AYUV
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+        || param.vpp.Out.FourCC == MFX_FOURCC_Y210
+        || param.vpp.Out.FourCC == MFX_FOURCC_Y410
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
+        )
     {
         // [6] Unsupported output fourcc
         sts = MFX_ERR_UNSUPPORTED;
