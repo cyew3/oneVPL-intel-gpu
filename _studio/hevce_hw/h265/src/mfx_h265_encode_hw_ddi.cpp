@@ -23,49 +23,70 @@
 namespace MfxHwH265Encode
 {
 
-const GUID GuidTable[2][2][3] = 
+const GUID GuidTable[2][2][3] =
 {
     // LowPower = OFF
     {
         // BitDepthLuma = 8
         {
             /*420*/ DXVA2_Intel_Encode_HEVC_Main,
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             /*422*/ DXVA2_Intel_Encode_HEVC_Main422,
             /*444*/ DXVA2_Intel_Encode_HEVC_Main444
+#endif
         },
         // BitDepthLuma = 10
         {
             /*420*/ DXVA2_Intel_Encode_HEVC_Main10,
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             /*422*/ DXVA2_Intel_Encode_HEVC_Main422_10,
             /*444*/ DXVA2_Intel_Encode_HEVC_Main444_10
+#endif
         }
     },
     // LowPower = ON
+    
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     {
         // BitDepthLuma = 8
         {
             /*420*/ DXVA2_Intel_LowpowerEncode_HEVC_Main,
+    #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             /*422*/ DXVA2_Intel_LowpowerEncode_HEVC_Main422,
             /*444*/ DXVA2_Intel_LowpowerEncode_HEVC_Main444
+    #endif
         },
         // BitDepthLuma = 10
         {
             /*420*/ DXVA2_Intel_LowpowerEncode_HEVC_Main10,
+    #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             /*422*/ DXVA2_Intel_LowpowerEncode_HEVC_Main422_10,
             /*444*/ DXVA2_Intel_LowpowerEncode_HEVC_Main444_10
+    #endif
         }
     }
+#endif
 };
 
 GUID GetGUID(MfxVideoParam const & par)
 {
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    bool is10bit =
+        (   par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10
+         || par.m_ext.CO3.TargetBitDepthLuma == 10);
+    mfxU16 cfId = Clip3<mfxU16>(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, par.m_ext.CO3.TargetChromaFormatPlus1 - 1) - MFX_CHROMAFORMAT_YUV420;
+
+    if (par.m_platform.CodeName < MFX_PLATFORM_ICELAKE)
+        cfId = 0; // platforms below ICL do not support Main422/Main444 profile, using Main instead.
+#else
     bool is10bit =
         (   par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10
          || par.mfx.FrameInfo.BitDepthLuma == 10
          || par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010);
-    mfxU16 cfId = Clip3<mfxU16>(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, par.mfx.FrameInfo.ChromaFormat) - MFX_CHROMAFORMAT_YUV420;
-
-    if (par.m_platform.CodeName < MFX_PLATFORM_ICELAKE) cfId = 0; // platforms below ICL do not support Main422/Main444 profile, using Main instead.
+    mfxU16 cfId = 0;
+#endif
+    if (par.m_platform.CodeName < MFX_PLATFORM_KABYLAKE)
+        is10bit = false;
 
     return GuidTable[IsOn(par.mfx.LowPower)][is10bit] [cfId];
 }
@@ -111,9 +132,6 @@ mfxStatus QueryHwCaps(MFXCoreInterface* core, GUID guid, ENCODE_CAPS_HEVC & caps
     sts = ddi.get()->QueryEncodeCaps(caps);
     MFX_CHECK_STS(sts);
 
-    DDITracer tracer;
-    tracer.Trace(caps, 0);
-
     return sts;
 }
 
@@ -121,50 +139,67 @@ mfxStatus CheckHeaders(
     MfxVideoParam const & par,
     ENCODE_CAPS_HEVC const & caps)
 {
-    if (!( par.m_sps.sample_adaptive_offset_enabled_flag == 0
-        && par.m_sps.pcm_enabled_flag == 0
-        //&& par.m_sps.pcm_loop_filter_disabled_flag == 1
-        && par.m_sps.log2_min_luma_coding_block_size_minus3 == 0
-        && par.m_sps.chroma_format_idc == 1
+    MFX_CHECK_COND(
+           par.m_sps.log2_min_luma_coding_block_size_minus3 == 0
         && par.m_sps.separate_colour_plane_flag == 0
-        /* && par.m_pps.cu_qp_delta_enabled_flag == 1*/))
-        return MFX_ERR_UNSUPPORTED;
+        && par.m_sps.sample_adaptive_offset_enabled_flag == 0
+        && par.m_sps.pcm_enabled_flag == 0);
 
-    if (par.m_platform.CodeName < MFX_PLATFORM_CANNONLAKE)    // required for SKL and KBL
-        if (par.m_sps.log2_diff_max_min_luma_coding_block_size != 2)
-            return MFX_ERR_UNSUPPORTED;
-
-    if (   par.m_sps.pic_width_in_luma_samples > caps.MaxPicWidth
-        || par.m_sps.pic_height_in_luma_samples > caps.MaxPicHeight
-        || (UINT)(((par.m_pps.num_tile_columns_minus1 + 1) * (par.m_pps.num_tile_rows_minus1 + 1)) > 1) > caps.TileSupport)
-        return MFX_ERR_UNSUPPORTED;
-
-#if 1
-    if (    caps.BitDepth8Only
-        && (par.m_sps.bit_depth_luma_minus8 != 0 || par.m_sps.bit_depth_chroma_minus8 != 0))
-        return MFX_ERR_UNSUPPORTED;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+    MFX_CHECK_COND(par.m_sps.amp_enabled_flag == 1);
 #else
-    if (    caps.MaxEncodedBitDepth == 0
-        && (par.m_sps.bit_depth_luma_minus8 != 0 || par.m_sps.bit_depth_chroma_minus8 != 0))
-        return MFX_ERR_UNSUPPORTED;
+    MFX_CHECK_COND(par.m_sps.amp_enabled_flag == 0);
+#endif
 
-    if (    caps.MaxEncodedBitDepth == 1
-        && (par.m_sps.bit_depth_luma_minus8 != 0 || par.m_sps.bit_depth_chroma_minus8 != 0
-        ||  par.m_sps.bit_depth_luma_minus8 != 2 || par.m_sps.bit_depth_chroma_minus8 != 2))
-        return MFX_ERR_UNSUPPORTED;
+#if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    MFX_CHECK_COND(par.m_pps.tiles_enabled_flag == 0);
+#endif
 
-    if (    caps.MaxEncodedBitDepth == 2
-        && (par.m_sps.bit_depth_luma_minus8 != 0 || par.m_sps.bit_depth_chroma_minus8 != 0
-        ||  par.m_sps.bit_depth_luma_minus8 != 2 || par.m_sps.bit_depth_chroma_minus8 != 2
-        ||  par.m_sps.bit_depth_luma_minus8 != 4 || par.m_sps.bit_depth_chroma_minus8 != 4))
-        return MFX_ERR_UNSUPPORTED;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    MFX_CHECK_COND(
+      !(   (!caps.YUV444ReconSupport && (par.m_sps.chroma_format_idc == 3))
+        || (!caps.YUV422ReconSupport && (par.m_sps.chroma_format_idc == 2))
+        || (caps.Color420Only && (par.m_sps.chroma_format_idc != 1))));
+#else
+    MFX_CHECK_COND(par.m_sps.chroma_format_idc == 1);
+#endif
 
-    if (    caps.MaxEncodedBitDepth == 3
-        && (par.m_sps.bit_depth_luma_minus8 != 0 || par.m_sps.bit_depth_chroma_minus8 != 0
-        ||  par.m_sps.bit_depth_luma_minus8 != 2 || par.m_sps.bit_depth_chroma_minus8 != 2
-        ||  par.m_sps.bit_depth_luma_minus8 != 4 || par.m_sps.bit_depth_chroma_minus8 != 4
-        ||  par.m_sps.bit_depth_luma_minus8 != 8 || par.m_sps.bit_depth_chroma_minus8 != 8))
-        return MFX_ERR_UNSUPPORTED;
+    MFX_CHECK_COND(
+      !(   par.m_sps.pic_width_in_luma_samples > caps.MaxPicWidth
+        || par.m_sps.pic_height_in_luma_samples > caps.MaxPicHeight
+        || (UINT)(((par.m_pps.num_tile_columns_minus1 + 1) * (par.m_pps.num_tile_rows_minus1 + 1)) > 1) > caps.TileSupport));
+
+    MFX_CHECK_COND(
+      !(   (caps.MaxEncodedBitDepth == 0 || caps.BitDepth8Only)
+        && (par.m_sps.bit_depth_luma_minus8 != 0 || par.m_sps.bit_depth_chroma_minus8 != 0)));
+
+    MFX_CHECK_COND(
+      !(   (caps.MaxEncodedBitDepth == 1 || !caps.BitDepth8Only)
+        && ( !(par.m_sps.bit_depth_luma_minus8 == 0
+            || par.m_sps.bit_depth_luma_minus8 == 2)
+          || !(par.m_sps.bit_depth_chroma_minus8 == 0
+            || par.m_sps.bit_depth_chroma_minus8 == 2))));
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    MFX_CHECK_COND(
+      !(   caps.MaxEncodedBitDepth == 2
+        && ( !(par.m_sps.bit_depth_luma_minus8 == 0
+            || par.m_sps.bit_depth_luma_minus8 == 2
+            || par.m_sps.bit_depth_luma_minus8 == 4)
+          || !(par.m_sps.bit_depth_chroma_minus8 == 0
+            || par.m_sps.bit_depth_chroma_minus8 == 2
+            || par.m_sps.bit_depth_chroma_minus8 == 4))));
+
+    MFX_CHECK_COND(
+      !(   caps.MaxEncodedBitDepth == 3
+        && ( !(par.m_sps.bit_depth_luma_minus8 == 0
+            || par.m_sps.bit_depth_luma_minus8 == 2
+            || par.m_sps.bit_depth_luma_minus8 == 4
+            || par.m_sps.bit_depth_luma_minus8 == 8)
+          || !(par.m_sps.bit_depth_chroma_minus8 == 0
+            || par.m_sps.bit_depth_chroma_minus8 == 2
+            || par.m_sps.bit_depth_chroma_minus8 == 4
+            || par.m_sps.bit_depth_chroma_minus8 == 8))));
 #endif
 
     return MFX_ERR_NONE;

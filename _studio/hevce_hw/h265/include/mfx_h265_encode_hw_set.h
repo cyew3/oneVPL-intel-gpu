@@ -99,15 +99,40 @@ struct PTL
     mfxU8  tier_flag     : 1;
     mfxU8  profile_idc   : 5;
 
-    mfxU32 profile_compatibility_flags;
-
     mfxU8  progressive_source_flag    : 1;
     mfxU8  interlaced_source_flag     : 1;
     mfxU8  non_packed_constraint_flag : 1;
     mfxU8  frame_only_constraint_flag : 1;
     mfxU8  profile_present_flag       : 1;
     mfxU8  level_present_flag         : 1;
+    mfxU8                             : 2;
     mfxU8  level_idc;
+
+    mfxU32 profile_compatibility_flags;
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    union
+    {
+        mfxU32 rext_constraint_flags_0_31;
+
+        struct
+        {
+            mfxU32 max_12bit        : 1;
+            mfxU32 max_10bit        : 1;
+            mfxU32 max_8bit         : 1;
+            mfxU32 max_422chroma    : 1;
+            mfxU32 max_420chroma    : 1;
+            mfxU32 max_monochrome   : 1;
+            mfxU32 intra            : 1;
+            mfxU32 one_picture_only : 1;
+            mfxU32 lower_bit_rate   : 1;
+            mfxU32                  : 23;
+        } constraint;
+    };
+    mfxU32 rext_constraint_flags_32_42  : 11;
+    mfxU32 inbld_flag                   :  1;
+    mfxU32                              : 20;
+#endif
 };
 
 struct SubLayerOrdering

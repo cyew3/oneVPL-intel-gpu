@@ -367,11 +367,51 @@ mfxStatus HeaderReader::ReadSPS(BitstreamReader& bs, SPS & sps)
         sps.general.non_packed_constraint_flag = bs.GetBit();
         sps.general.frame_only_constraint_flag = bs.GetBit();
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        if (   ((sps.general.profile_idc >= 4) && (sps.general.profile_idc <= 7))
+            || (sps.general.profile_compatibility_flags & 0xf0))
+        {
+            sps.general.constraint.max_12bit        = bs.GetBit();
+            sps.general.constraint.max_10bit        = bs.GetBit();
+            sps.general.constraint.max_8bit         = bs.GetBit();
+            sps.general.constraint.max_422chroma    = bs.GetBit();
+            sps.general.constraint.max_420chroma    = bs.GetBit();
+            sps.general.constraint.max_monochrome   = bs.GetBit();
+            sps.general.constraint.intra            = bs.GetBit();
+            sps.general.constraint.one_picture_only = bs.GetBit();
+            sps.general.constraint.lower_bit_rate   = bs.GetBit();
+
+            //general_reserved_zero_34bits
+            if (bs.GetBits(24))
+                return MFX_ERR_UNSUPPORTED;
+            if (bs.GetBits(10))
+                return MFX_ERR_UNSUPPORTED;
+        }
+        else
+        {
+            //general_reserved_zero_43bits
+            if (bs.GetBits(24))
+                return MFX_ERR_UNSUPPORTED;
+            if (bs.GetBits(19))
+                return MFX_ERR_UNSUPPORTED;
+        }
+
+        /*if (   sps.general.profile_idc >= 1 && sps.general.profile_idc <= 5
+            || (sps.general.profile_compatibility_flags & 0x3e))
+        {
+            sps.general.inbld_flag = bs.GetBit();
+        }
+        else*/ if (bs.GetBit()) //general_reserved_zero_bit
+        {
+            return MFX_ERR_UNSUPPORTED;
+        }
+#else
         //general_reserved_zero_44bits
         if (bs.GetBits(24))
             return MFX_ERR_UNSUPPORTED;
         if (bs.GetBits(20))
             return MFX_ERR_UNSUPPORTED;
+#endif
 
         sps.general.level_idc = (mfxU8)bs.GetBits(8);
 
@@ -397,11 +437,51 @@ mfxStatus HeaderReader::ReadSPS(BitstreamReader& bs, SPS & sps)
                 sps.sub_layer[i].non_packed_constraint_flag = bs.GetBit();
                 sps.sub_layer[i].frame_only_constraint_flag = bs.GetBit();
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+                if (   ((sps.sub_layer[i].profile_idc >= 4) && (sps.sub_layer[i].profile_idc <= 7))
+                    || (sps.sub_layer[i].profile_compatibility_flags & 0xf0))
+                {
+                    sps.sub_layer[i].constraint.max_12bit        = bs.GetBit();
+                    sps.sub_layer[i].constraint.max_10bit        = bs.GetBit();
+                    sps.sub_layer[i].constraint.max_8bit         = bs.GetBit();
+                    sps.sub_layer[i].constraint.max_422chroma    = bs.GetBit();
+                    sps.sub_layer[i].constraint.max_420chroma    = bs.GetBit();
+                    sps.sub_layer[i].constraint.max_monochrome   = bs.GetBit();
+                    sps.sub_layer[i].constraint.intra            = bs.GetBit();
+                    sps.sub_layer[i].constraint.one_picture_only = bs.GetBit();
+                    sps.sub_layer[i].constraint.lower_bit_rate   = bs.GetBit();
+
+                    //sub_layer_reserved_zero_34bits
+                    if (bs.GetBits(24))
+                        return MFX_ERR_UNSUPPORTED;
+                    if (bs.GetBits(10))
+                        return MFX_ERR_UNSUPPORTED;
+                }
+                else
+                {
+                    //sub_layer_reserved_zero_43bits
+                    if (bs.GetBits(24))
+                        return MFX_ERR_UNSUPPORTED;
+                    if (bs.GetBits(19))
+                        return MFX_ERR_UNSUPPORTED;
+                }
+
+                /*if (   sps.sub_layer[i].profile_idc >= 1 && sps.sub_layer[i].profile_idc <= 5
+                    || (sps.sub_layer[i].profile_compatibility_flags & 0x3e))
+                {
+                    sps.sub_layer[i].inbld_flag = bs.GetBit();
+                }
+                else*/ if (bs.GetBit()) //sub_layer_reserved_zero_bit
+                {
+                    return MFX_ERR_UNSUPPORTED;
+                }
+#else
                 //general_reserved_zero_44bits
                 if (bs.GetBits(24))
                     return MFX_ERR_UNSUPPORTED;
                 if (bs.GetBits(20))
                     return MFX_ERR_UNSUPPORTED;
+#endif
             }
 
             if (sps.sub_layer[i].level_present_flag)
@@ -934,8 +1014,14 @@ void HeaderPacker::PackPTL(BitstreamWriter& bs, LayersInfo const & ptl, mfxU16 m
     bs.PutBit(ptl.general.interlaced_source_flag);
     bs.PutBit(ptl.general.non_packed_constraint_flag);
     bs.PutBit(ptl.general.frame_only_constraint_flag);
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    bs.PutBits(32, ptl.general.rext_constraint_flags_0_31);
+    bs.PutBits(11, ptl.general.rext_constraint_flags_32_42);
+    bs.PutBit(ptl.general.inbld_flag);
+#else
     bs.PutBits(24, 0); //general_reserved_zero_44bits
     bs.PutBits(20, 0); //general_reserved_zero_44bits
+#endif
     bs.PutBits(8, ptl.general.level_idc);
 
     for (mfxU32 i = 0; i < max_sub_layers_minus1; i++ )
@@ -961,8 +1047,14 @@ void HeaderPacker::PackPTL(BitstreamWriter& bs, LayersInfo const & ptl, mfxU16 m
             bs.PutBit(ptl.sub_layer[i].interlaced_source_flag);
             bs.PutBit(ptl.sub_layer[i].non_packed_constraint_flag);
             bs.PutBit(ptl.sub_layer[i].frame_only_constraint_flag);
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+            bs.PutBits(32, ptl.sub_layer[i].rext_constraint_flags_0_31);
+            bs.PutBits(11, ptl.sub_layer[i].rext_constraint_flags_32_42);
+            bs.PutBit(ptl.sub_layer[i].inbld_flag);
+#else
             bs.PutBits(24, 0); //general_reserved_zero_44bits
             bs.PutBits(20, 0); //general_reserved_zero_44bits
+#endif
         }
 
         if (ptl.sub_layer[i].level_present_flag)

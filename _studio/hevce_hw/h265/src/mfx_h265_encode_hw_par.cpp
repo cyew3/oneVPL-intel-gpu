@@ -121,6 +121,59 @@ mfxStatus CheckProfile(mfxVideoParam& par)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    mfxExtHEVCParam* pHevcPar = ExtBuffer::Get(par);
+    mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par);
+
+    mfxU16 ChromaFormat = pCO3 ? pCO3->TargetChromaFormatPlus1 - 1 : par.mfx.FrameInfo.ChromaFormat;
+    mfxU16 BitDepth = pCO3 ? pCO3->TargetBitDepthLuma : par.mfx.FrameInfo.BitDepthLuma;
+
+    if (pCO3)
+    {
+        ChromaFormat = pCO3->TargetChromaFormatPlus1 - 1;
+        BitDepth = pCO3->TargetBitDepthLuma;
+    }
+
+    switch (par.mfx.CodecProfile)
+    {
+    case 0:
+        break;
+
+    case MFX_PROFILE_HEVC_REXT:
+        if (pHevcPar)
+        {
+            mfxU64 REXTConstr = pHevcPar->GeneralConstraintFlags;
+
+            if (   ((REXTConstr & MFX_HEVC_CONSTR_REXT_MAX_8BIT)  && BitDepth > 8)
+                || ((REXTConstr & MFX_HEVC_CONSTR_REXT_MAX_10BIT) && BitDepth > 10)
+                || ((REXTConstr & MFX_HEVC_CONSTR_REXT_MAX_12BIT) && BitDepth > 12)
+                || ((REXTConstr & MFX_HEVC_CONSTR_REXT_MAX_420CHROMA) && ChromaFormat > MFX_CHROMAFORMAT_YUV420)
+                || ((REXTConstr & MFX_HEVC_CONSTR_REXT_MAX_422CHROMA) && ChromaFormat > MFX_CHROMAFORMAT_YUV422))
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+        }
+        break;
+    case MFX_PROFILE_HEVC_MAIN10:
+        if (BitDepth != 10 && BitDepth !=0)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        break;
+
+    case MFX_PROFILE_HEVC_MAINSP:
+        if (par.mfx.GopPicSize > 1)
+        {
+            par.mfx.GopPicSize = 1;
+            sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        }
+        break;
+
+    case MFX_PROFILE_HEVC_MAIN:
+        if (BitDepth != 8 && BitDepth !=0)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+        break;
+
+    default:
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+#else
     switch (par.mfx.CodecProfile)
     {
     case 0:
@@ -128,7 +181,7 @@ mfxStatus CheckProfile(mfxVideoParam& par)
 
     case MFX_PROFILE_HEVC_MAIN10:
         if (par.mfx.FrameInfo.BitDepthLuma != 10 && par.mfx.FrameInfo.BitDepthLuma !=0)
-            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+            return MFX_ERR_INVALID_VIDEO_PARAM;
         break;
 
     case MFX_PROFILE_HEVC_MAINSP:
@@ -141,12 +194,12 @@ mfxStatus CheckProfile(mfxVideoParam& par)
 
     case MFX_PROFILE_HEVC_MAIN:
         if (par.mfx.FrameInfo.BitDepthLuma != 8 && par.mfx.FrameInfo.BitDepthLuma !=0)
-            return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+            return MFX_ERR_INVALID_VIDEO_PARAM;
         break;
 
     default:
-        return MFX_ERR_UNSUPPORTED;
-    }
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+#endif
 
     return sts;
 }
@@ -887,7 +940,15 @@ void InheritDefaultValues(
 
     InheritOption(extOpt3Init->IntRefCycleDist, extOpt3Reset->IntRefCycleDist);
     InheritOption(extOpt3Init->PRefType, extOpt3Reset->PRefType);
+    
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     InheritOption(extOpt3Init->TransformSkip, extOpt3Reset->TransformSkip);
+#endif
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    InheritOption(extOpt3Init->TargetChromaFormatPlus1, extOpt3Reset->TargetChromaFormatPlus1);
+    InheritOption(extOpt3Init->TargetBitDepthLuma,      extOpt3Reset->TargetBitDepthLuma);
+    InheritOption(extOpt3Init->TargetBitDepthChroma,    extOpt3Reset->TargetBitDepthChroma);
+#endif
 
     if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_QVBR && parReset.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
     {
@@ -920,10 +981,140 @@ inline bool isInVideoMem(MfxVideoParam const & par)
         || ((par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY) && (par.m_ext.Opaque.In.Type == MFX_IOPATTERN_IN_VIDEO_MEMORY));
 }
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+
+mfxU16 GetMaxChroma(MfxVideoParam const & par)
+{
+    mfxU16 c = MFX_CHROMAFORMAT_YUV444;
+
+    if (   par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN
+        || par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP
+        || par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10
+        )
+    {
+        return MFX_CHROMAFORMAT_YUV420;
+    }
+
+    if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_REXT)
+    {
+        mfxU64 REXTConstr = par.m_ext.HEVCParam.GeneralConstraintFlags;
+
+        if (REXTConstr & MFX_HEVC_CONSTR_REXT_MAX_420CHROMA)
+            c = Min<mfxU16>(c, MFX_CHROMAFORMAT_YUV420);
+        else if (REXTConstr & MFX_HEVC_CONSTR_REXT_MAX_422CHROMA)
+            c = Min<mfxU16>(c, MFX_CHROMAFORMAT_YUV422);
+    }
+
+    switch (par.mfx.FrameInfo.FourCC)
+    {
+    case MFX_FOURCC_NV12:
+    case MFX_FOURCC_P010:
+        c = Min<mfxU16>(c, MFX_CHROMAFORMAT_YUV420);
+        break;
+
+    case MFX_FOURCC_YUY2:
+    case MFX_FOURCC_P210:
+        c = Min<mfxU16>(c, MFX_CHROMAFORMAT_YUV422);
+        break;
+    case MFX_FOURCC_RGB4:
+    case MFX_FOURCC_AYUV:
+    case MFX_FOURCC_Y410:
+    default:
+        break;
+    }
+
+    return c;
+}
+
+mfxU16 GetMaxBitDepth(mfxU32 FourCC)
+{
+    switch (FourCC)
+    {
+    case MFX_FOURCC_RGB4:
+    case MFX_FOURCC_NV12:
+    case MFX_FOURCC_YUY2:
+    case MFX_FOURCC_AYUV:
+        return 8;
+    case MFX_FOURCC_P010:
+    case MFX_FOURCC_P210:
+    case MFX_FOURCC_Y410:
+        return 10;
+    default:
+        break;
+    }
+
+    return 8;
+}
+
+mfxU16 GetMaxBitDepth(MfxVideoParam const & par, mfxU32 MaxEncodedBitDepth = 3)
+{
+    const mfxU16 undefined = 999;
+    mfxU16 d = undefined;
+
+    d = Min<mfxU16>(d, 8 + (1 << MaxEncodedBitDepth));
+
+    if (   par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN
+        || par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP
+        )
+    {
+        return 8;
+    }
+
+    if (par.mfx.FrameInfo.BitDepthLuma)
+        d = Min(d, par.mfx.FrameInfo.BitDepthLuma);
+
+    if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10)
+        d = Min<mfxU16>(d, 10);
+
+    if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_REXT)
+    {
+        mfxU64 REXTConstr = par.m_ext.HEVCParam.GeneralConstraintFlags;
+
+        if (REXTConstr & MFX_HEVC_CONSTR_REXT_MAX_8BIT)
+            d = Min<mfxU16>(d, 8);
+        else if (REXTConstr & MFX_HEVC_CONSTR_REXT_MAX_10BIT)
+            d = Min<mfxU16>(d, 10);
+        else if (REXTConstr & MFX_HEVC_CONSTR_REXT_MAX_12BIT)
+            d = Min<mfxU16>(d, 12);
+    }
+
+    d = Min<mfxU16>(d, GetMaxBitDepth(par.mfx.FrameInfo.FourCC));
+
+    return (d == undefined ? 8 : d);
+}
+
+mfxU32 GetRawBytes(mfxU16 w, mfxU16 h, mfxU16 ChromaFormat, mfxU16 BitDepth)
+{
+    mfxU32 s = w * h;
+
+    if (ChromaFormat == MFX_CHROMAFORMAT_YUV420)
+        s = s * 3 / 2;
+    else if (ChromaFormat == MFX_CHROMAFORMAT_YUV422)
+        s *= 2;
+    else if (ChromaFormat == MFX_CHROMAFORMAT_YUV444)
+        s *= 3;
+
+    assert(BitDepth >= 8);
+    if (BitDepth != 8)
+        s = (s * BitDepth + 7) / 8;
+
+    return s;
+}
+
+#endif
+
 mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, bool bInit = false)
 {
-    mfxU32 invalid = 0, changed = 0;
+#if 0
+    mfxStatus _sts = MFX_ERR_NONE;
+    mfxU32 _invalid = 0, _changed = 0;
+    #define changed !printf("chg:%04d:%d\n", __LINE__, _changed) ? 0 : _changed
+    #define invalid !printf("inv:%04d:%d\n", __LINE__, _invalid) ? 0 : _invalid
+    #define sts !printf("sts:%04d:%d\n", __LINE__, _sts) ? MFX_ERR_NONE : _sts
+#else
     mfxStatus sts = MFX_ERR_NONE;
+    mfxU32 invalid = 0, changed = 0;
+#endif
 
     mfxF64 maxFR   = 300.;
     mfxU32 maxBR   = 0xFFFFFFFF;
@@ -936,7 +1127,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     mfxExtCodingOption2& CO2 = par.m_ext.CO2;
     mfxExtCodingOption3& CO3 = par.m_ext.CO3;
+#ifdef PRE_SI_TARGET_PLATFORM_GEN10
     mfxExtEncoderROI& ROI = par.m_ext.ROI;
+#endif //PRE_SI_TARGET_PLATFORM_GEN10
 
     changed += CheckTriStateOption(par.mfx.LowPower);
 
@@ -944,6 +1137,180 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if ((par.m_ext.DDI.LCUSize == 32) || (par.m_ext.DDI.LCUSize == 64))
         par.LCUSize = par.m_ext.DDI.LCUSize;
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    mfxU16 maxBitDepth = GetMaxBitDepth(par, caps.MaxEncodedBitDepth);
+    mfxU16 maxChroma = GetMaxChroma(par);
+
+    invalid += CheckOption(par.mfx.FrameInfo.FourCC
+        , (mfxU32)MFX_FOURCC_NV12
+        , (mfxU32)MFX_FOURCC_RGB4
+        , (mfxU32)MFX_FOURCC_Y410
+        , (mfxU32)MFX_FOURCC_AYUV
+        , (mfxU32)MFX_FOURCC_P210
+        , (mfxU32)MFX_FOURCC_YUY2
+        , (mfxU32)MFX_FOURCC_P010);
+
+    switch(par.mfx.FrameInfo.FourCC)
+    {
+    case MFX_FOURCC_Y410:
+        invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV444, (mfxU16)MFX_CHROMAFORMAT_YUV422, (mfxU16)MFX_CHROMAFORMAT_YUV420);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 10, 8, 0);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 10, 8, 0);
+        break;
+    case MFX_FOURCC_AYUV:
+        invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV444, (mfxU16)MFX_CHROMAFORMAT_YUV422, (mfxU16)MFX_CHROMAFORMAT_YUV420);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 8, 0);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 8, 0);
+        break;
+    case MFX_FOURCC_P210:
+        invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV422, (mfxU16)MFX_CHROMAFORMAT_YUV420);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 10, 8, 0);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 10, 8, 0);
+        break;
+    case MFX_FOURCC_YUY2:
+        invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV422, (mfxU16)MFX_CHROMAFORMAT_YUV420);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 8, 0);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 8, 0);
+        break;
+    case MFX_FOURCC_P010:
+        invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV420);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 10, 8, 0);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 10, 8, 0);
+        break;
+    case MFX_FOURCC_NV12:
+    case MFX_FOURCC_RGB4:
+        invalid += CheckOption(par.mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV420);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 8, 0);
+        invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 8, 0);
+        break;
+    default:
+        par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+        invalid++;
+        //no break
+    }
+
+    changed += CheckMax(par.mfx.FrameInfo.BitDepthChroma, par.mfx.FrameInfo.BitDepthLuma);
+
+    switch (maxBitDepth)
+    {
+    case 10:
+        invalid += CheckOption(CO3.TargetBitDepthLuma, 10, 8, 0);
+        invalid += CheckOption(CO3.TargetBitDepthChroma, 10, 8, 0);
+        break;
+    case 8:
+    default:
+        invalid += CheckOption(CO3.TargetBitDepthLuma, 8, 0);
+        invalid += CheckOption(CO3.TargetBitDepthChroma, 8, 0);
+        break;
+    }
+
+    switch (CO3.TargetBitDepthLuma)
+    {
+    case 10:
+        invalid += CheckOption(CO3.TargetBitDepthChroma, 10, 8, 0);
+        invalid += CheckOption(par.mfx.CodecProfile
+            , (mfxU16)MFX_PROFILE_HEVC_MAIN10
+            , (mfxU16)MFX_PROFILE_HEVC_REXT
+            , 0
+            );
+        break;
+    case 8:
+    default:
+        invalid += CheckOption(CO3.TargetBitDepthChroma, 8, 0);
+        invalid += CheckOption(par.mfx.CodecProfile
+            , (mfxU16)MFX_PROFILE_HEVC_MAIN
+            , (mfxU16)MFX_PROFILE_HEVC_MAINSP
+            , (mfxU16)MFX_PROFILE_HEVC_MAIN10
+            , (mfxU16)MFX_PROFILE_HEVC_REXT
+            , (mfxU16)0
+            );
+        break;
+    }
+
+    if (CO3.TargetBitDepthLuma > 8)
+    {
+        maxQP += 6 * (CO3.TargetBitDepthLuma - 8);
+
+        if (IsOn(par.mfx.LowPower) || par.m_platform.CodeName < MFX_PLATFORM_ICELAKE)
+            minQP = 6 * (CO3.TargetBitDepthLuma - 8);
+    }
+
+    switch (maxChroma)
+    {
+    case MFX_CHROMAFORMAT_YUV444:
+        invalid += CheckOption(CO3.TargetChromaFormatPlus1
+            , mfxU16(1 + MFX_CHROMAFORMAT_YUV420)
+            , mfxU16(1 + MFX_CHROMAFORMAT_YUV422)
+            , mfxU16(1 + MFX_CHROMAFORMAT_YUV444));
+        break;
+    case MFX_CHROMAFORMAT_YUV422:
+        invalid += CheckOption(CO3.TargetChromaFormatPlus1
+            , mfxU16(1 + MFX_CHROMAFORMAT_YUV420)
+            , mfxU16(1 + MFX_CHROMAFORMAT_YUV422));
+        break;
+    case MFX_CHROMAFORMAT_YUV420:
+    default:
+        invalid += CheckOption(CO3.TargetChromaFormatPlus1
+            , mfxU16(1 + MFX_CHROMAFORMAT_YUV420));
+        break;
+    }
+
+    if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV444) && !caps.YUV444ReconSupport)
+    {
+        CO3.TargetChromaFormatPlus1 = 1 + MFX_CHROMAFORMAT_YUV420;
+        invalid++;
+    }
+
+    if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422) && !caps.YUV422ReconSupport)
+    {
+        CO3.TargetChromaFormatPlus1 = 1 + MFX_CHROMAFORMAT_YUV420;
+        invalid++;
+    }
+
+    // In surf >= target format
+    if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV444) && CO3.TargetBitDepthLuma == 10)
+    {   //In: 444x10 only
+        invalid += CheckOption(par.mfx.FrameInfo.FourCC
+            , (mfxU32)MFX_FOURCC_Y410);
+    }
+    else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV444) && CO3.TargetBitDepthLuma == 8)
+    {   //In: 444x8, 444x10
+        invalid += CheckOption(par.mfx.FrameInfo.FourCC
+            , (mfxU32)MFX_FOURCC_AYUV
+            , (mfxU32)MFX_FOURCC_Y410);
+    }
+    else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422) && CO3.TargetBitDepthLuma == 10)
+    {   //In: 422x10, 444x10
+        invalid += CheckOption(par.mfx.FrameInfo.FourCC
+            , (mfxU32)MFX_FOURCC_P210
+            , (mfxU32)MFX_FOURCC_Y410);
+    }
+    else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422) && CO3.TargetBitDepthLuma == 8)
+    {   //In: 422x8, 422x10, 444x8, 444x10
+        invalid += CheckOption(par.mfx.FrameInfo.FourCC
+            , (mfxU32)MFX_FOURCC_YUY2, (mfxU32)MFX_FOURCC_P210
+            , (mfxU32)MFX_FOURCC_AYUV, (mfxU32)MFX_FOURCC_Y410);
+    }
+    else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV420) && CO3.TargetBitDepthLuma == 10)
+    {   //In: 420x10, 422x10, 444x10
+        invalid += CheckOption(par.mfx.FrameInfo.FourCC
+            , (mfxU32)MFX_FOURCC_P010
+            , (mfxU32)MFX_FOURCC_P210
+            , (mfxU32)MFX_FOURCC_Y410);
+    }
+    else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV420) && CO3.TargetBitDepthLuma == 8)
+    {   //In: 420x8, 420x10, 422x8, 422x10, 444x8, 444x10
+        invalid += CheckOption(par.mfx.FrameInfo.FourCC
+            , (mfxU32)MFX_FOURCC_NV12, (mfxU32)MFX_FOURCC_P010, (mfxU32)MFX_FOURCC_RGB4
+            , (mfxU32)MFX_FOURCC_YUY2, (mfxU32)MFX_FOURCC_P210
+            , (mfxU32)MFX_FOURCC_AYUV, (mfxU32)MFX_FOURCC_Y410);
+    }
+    else
+    {
+        assert(!"undefined target format");
+        invalid++;
+    }
+#else
     if (par.mfx.FrameInfo.BitDepthLuma > 8)
     {
         maxQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
@@ -951,6 +1318,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         if (IsOn(par.mfx.LowPower) || par.m_platform.CodeName == MFX_PLATFORM_KABYLAKE)
             minQP = 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
     }
+#endif
 
     if (IsOn(par.mfx.LowPower))
     {
@@ -993,18 +1361,20 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     changed += CheckMin(par.m_ext.HEVCParam.PicWidthInLumaSamples, Align(par.m_ext.HEVCParam.PicWidthInLumaSamples, CODED_PIC_ALIGN_W));
     changed += CheckMin(par.m_ext.HEVCParam.PicHeightInLumaSamples, Align(par.m_ext.HEVCParam.PicHeightInLumaSamples, CODED_PIC_ALIGN_H));
 
-    if(par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN || par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP)
+#if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN || par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP)
     {
         invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 8, 0);
         invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 8, 0);
     }
 
-    if(par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10)
+    if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10)
     {
         invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 10, 0);
         invalid += CheckOption(par.mfx.FrameInfo.BitDepthChroma, 10, 0);
         par.mfx.FrameInfo.Shift = 1;
     }
+#endif
 
     if (   (caps.TileSupport == 0 || IsOn(par.mfx.LowPower))
         && (par.m_ext.HEVCTiles.NumTileColumns > 1 || par.m_ext.HEVCTiles.NumTileRows > 1))
@@ -1134,6 +1504,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         changed += CheckRange(par.mfx.FrameInfo.CropH, 0, par.m_ext.HEVCParam.PicHeightInLumaSamples - par.mfx.FrameInfo.CropY);
     }
 
+#if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
 #if defined (MFX_VA_WIN)
     //now driver doesn't support proper reporting of supported input formats, currently hardcoded to accept ARGB format.
     //if(!caps.Color420Only)
@@ -1167,6 +1538,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
             par.mfx.FrameInfo.FourCC = 0;
         }
     }
+#endif
 #endif
 
     if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 && isInVideoMem(par))
@@ -1226,7 +1598,15 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     if (par.BufferSizeInKB != 0)
     {
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        mfxU32 rawBytes = GetRawBytes(
+              par.m_ext.HEVCParam.PicWidthInLumaSamples
+            , par.m_ext.HEVCParam.PicHeightInLumaSamples
+            , CO3.TargetChromaFormatPlus1 - 1
+            , CO3.TargetBitDepthLuma ? CO3.TargetBitDepthLuma : maxBitDepth) / 1000;
+#else
         mfxU32 rawBytes = par.m_ext.HEVCParam.PicWidthInLumaSamples * par.m_ext.HEVCParam.PicHeightInLumaSamples * 3 / 2 / 1000;
+#endif
 
         if (  (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP
             || par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
@@ -1414,6 +1794,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         changed += CheckMax(CO3.NumRefActiveBL1[i], Min<mfxU16>(maxDPB, caps.MaxNum_Reference1));
     }
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     changed += CheckTriStateOption(CO3.TransformSkip);
 
     if (IsOn(CO3.TransformSkip) && par.m_platform.CodeName < MFX_PLATFORM_CANNONLAKE)
@@ -1421,6 +1802,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         CO3.TransformSkip = 0;
         changed++;
     }
+#endif
 
     //ROI
     if (ROI.NumROI) {
@@ -1454,6 +1836,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
             }
         }
     }
+
     if (CO3.EnableMBQP !=0)
     {
         if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP && !par.isSWBRC())
@@ -1528,16 +1911,61 @@ void SetDefaults(
         maxDPB = (mfxU16)GetMaxDpbSizeByLevel(par);
     }
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    if (!par.mfx.FrameInfo.FourCC)
+        par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+
+    if (!par.mfx.FrameInfo.BitDepthLuma)
+        par.mfx.FrameInfo.BitDepthLuma = GetMaxBitDepth(par.mfx.FrameInfo.FourCC);
+
+    if (!par.mfx.FrameInfo.BitDepthChroma)
+        par.mfx.FrameInfo.BitDepthChroma = par.mfx.FrameInfo.BitDepthLuma;
+
+    if (!CO3.TargetChromaFormatPlus1)
+        CO3.TargetChromaFormatPlus1 = GetMaxChroma(par);
+
+    if (!CO3.TargetBitDepthLuma)
+        CO3.TargetBitDepthLuma = GetMaxBitDepth(par, hwCaps.MaxEncodedBitDepth);
+
+    rawBits = (mfxU64)GetRawBytes(
+          par.m_ext.HEVCParam.PicWidthInLumaSamples
+        , par.m_ext.HEVCParam.PicHeightInLumaSamples
+        , CO3.TargetChromaFormatPlus1 - 1
+        , CO3.TargetBitDepthLuma) * 8;
+
+    if (CO3.TargetBitDepthLuma > 8)
+    {
+        maxQP += 6 * (CO3.TargetBitDepthLuma - 8);
+
+        if (IsOn(par.mfx.LowPower) || par.m_platform.CodeName < MFX_PLATFORM_ICELAKE)
+            minQP = 6 * (CO3.TargetBitDepthLuma - 8);
+    }
+
     if (!par.mfx.CodecProfile)
     {
-        par.mfx.CodecProfile = (par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010) ? (mfxU16)MFX_PROFILE_HEVC_MAIN10 : (mfxU16)MFX_PROFILE_HEVC_MAIN;
+        if (   CO3.TargetChromaFormatPlus1 - 1 != MFX_CHROMAFORMAT_YUV420
+            || CO3.TargetBitDepthLuma > 10)
+        {
+            par.mfx.CodecProfile = MFX_PROFILE_HEVC_REXT;
+        }
+        else if (CO3.TargetBitDepthLuma == 10)
+        {
+            par.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN10;
+        }
+        else
+        {
+            par.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
+        }
     }
+#else
+    if (!par.mfx.CodecProfile)
+    {
+        par.mfx.CodecProfile = mfxU16((par.mfx.FrameInfo.BitDepthLuma > 8 || par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010) ? MFX_PROFILE_HEVC_MAIN10 : MFX_PROFILE_HEVC_MAIN);
+    }
+#endif
 
     if (!par.AsyncDepth)
         par.AsyncDepth = 5;
-
-    if (!par.mfx.CodecProfile)
-        par.mfx.CodecProfile = mfxU16(par.mfx.FrameInfo.BitDepthLuma > 8 ? MFX_PROFILE_HEVC_MAIN10 : MFX_PROFILE_HEVC_MAIN);
 
     if (!par.mfx.TargetUsage)
         par.mfx.TargetUsage = 4;
@@ -1556,9 +1984,11 @@ void SetDefaults(
         MakeSlices(par, hwCaps.SliceStructure);
         par.mfx.NumSlice = (mfxU16)par.m_slice.size();
     }
-
+    
+#if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
     if (!par.mfx.FrameInfo.FourCC)
         par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+#endif
 
     if (!par.mfx.FrameInfo.CropW)
         par.mfx.FrameInfo.CropW = par.m_ext.HEVCParam.PicWidthInLumaSamples - par.mfx.FrameInfo.CropX;
@@ -1581,6 +2011,7 @@ void SetDefaults(
     if (!par.mfx.FrameInfo.PicStruct)
         par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
+#if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
     if (!par.mfx.FrameInfo.ChromaFormat)
         par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 
@@ -1598,6 +2029,7 @@ void SetDefaults(
         if (IsOn(par.mfx.LowPower) || par.m_platform.CodeName == MFX_PLATFORM_KABYLAKE)
             minQP = 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
     }
+#endif
 
     if (!par.mfx.RateControlMethod)
         par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
@@ -1825,8 +2257,11 @@ void SetDefaults(
             PAVP.CounterIncrement = 0xC000;
     }
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     if (!CO3.TransformSkip)
         CO3.TransformSkip = MFX_CODINGOPTION_OFF;
+#endif
+
     if (CO3.EnableMBQP == 0)
     {
         if (par.isSWBRC() || par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
@@ -1841,6 +2276,26 @@ void SetDefaults(
         if (!CO3.WinBRCMaxAvgKbps)
             CO3.WinBRCMaxAvgKbps = (mfxU16)(par.MaxKbps/par.mfx.BRCParamMultiplier);
     }
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    if (    par.mfx.CodecProfile == MFX_PROFILE_HEVC_REXT
+        && !par.m_ext.HEVCParam.GeneralConstraintFlags)
+    {
+        mfxU64& constr = par.m_ext.HEVCParam.GeneralConstraintFlags;
+
+        if (CO3.TargetChromaFormatPlus1 - 1 == MFX_CHROMAFORMAT_YUV420)
+            constr |= MFX_HEVC_CONSTR_REXT_MAX_420CHROMA;
+        else if (CO3.TargetChromaFormatPlus1 - 1 == MFX_CHROMAFORMAT_YUV422)
+            constr |= MFX_HEVC_CONSTR_REXT_MAX_422CHROMA;
+
+        if (CO3.TargetBitDepthLuma == 8)
+            constr |= MFX_HEVC_CONSTR_REXT_MAX_8BIT;
+        else if (CO3.TargetBitDepthLuma == 10)
+            constr |= MFX_HEVC_CONSTR_REXT_MAX_10BIT;
+        else if (CO3.TargetBitDepthLuma == 12)
+            constr |= MFX_HEVC_CONSTR_REXT_MAX_12BIT;
+    }
+#endif
 }
 
 } //namespace MfxHwH265Encode

@@ -20,7 +20,7 @@
 namespace MfxHwH265Encode
 {
 
-class D3D11Encoder : public DriverEncoder, DDIHeaderPacker
+class D3D11Encoder : public DriverEncoder, DDIHeaderPacker, DDITracer
 {
 public:
     D3D11Encoder();

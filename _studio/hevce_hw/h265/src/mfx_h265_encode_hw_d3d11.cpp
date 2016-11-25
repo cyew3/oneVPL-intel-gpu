@@ -157,6 +157,15 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
     }
 
+    Trace(m_caps, 0);
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    if (!m_caps.BitDepth8Only && !m_caps.MaxEncodedBitDepth)
+        m_caps.MaxEncodedBitDepth = 1;
+    if (!m_caps.Color420Only && !(m_caps.YUV444ReconSupport || m_caps.YUV422ReconSupport))
+        m_caps.YUV444ReconSupport = 1;
+#endif
+
     return MFX_ERR_NONE;
 }
 
@@ -423,7 +432,7 @@ mfxStatus D3D11Encoder::Execute(Task const & task, mfxHDL surface)
     if (!m_sps.bResetBRC)
         m_sps.bResetBRC = task.m_resetBRC;
     
-    FillPpsBuffer(task, m_sps, m_pps);
+    FillPpsBuffer(task, m_pps);
     FillSliceBuffer(task, m_sps, m_pps, m_slice);
 
     mfxU32 RES_ID_BS  = 0;
@@ -510,6 +519,8 @@ mfxStatus D3D11Encoder::Execute(Task const & task, mfxHDL surface)
             ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA, *pPH, 1);
         }
     }*/
+
+    Trace(executeParams, 0);
 
     try
     {
@@ -636,6 +647,7 @@ mfxStatus D3D11Encoder::QueryStatus(Task & task)
     switch (feedback->bStatus)
     {
     case ENCODE_OK:
+        Trace(*feedback, 0);
         task.m_bsDataLength = feedback->bitstreamSize;
 
         if (m_widi && m_caps.HWCounterAutoIncrementSupport)
@@ -670,6 +682,7 @@ mfxStatus D3D11Encoder::QueryStatus(Task & task)
     case ENCODE_NOTAVAILABLE:
     case ENCODE_ERROR:
     default:
+        Trace(*feedback, 0);
         assert(!"bad feedback status");
         return MFX_ERR_DEVICE_FAILED;
     }

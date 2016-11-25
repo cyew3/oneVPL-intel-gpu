@@ -486,8 +486,15 @@ namespace ExtBuffer
         _CopyStruct1(NumRefActiveBL0);
         _CopyStruct1(NumRefActiveBL1);
         _CopyStruct1(QVBRQuality);
-        _CopyPar1(TransformSkip);
         _CopyPar1(EnableMBQP);
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+        _CopyPar1(TransformSkip);
+#endif
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        _CopyPar1(TargetChromaFormatPlus1);
+        _CopyPar1(TargetBitDepthLuma);
+        _CopyPar1(TargetBitDepthChroma);
+#endif
         _CopyPar1(WinBRCMaxAvgKbps);
         _CopyPar1(WinBRCSize);
     }
@@ -882,6 +889,9 @@ inline bool isDpbEnd(DpbArray const & dpb, mfxU32 idx) { return idx >= MAX_DPB_S
 
 mfxU8 GetFrameType(MfxVideoParam const & video, mfxU32 frameOrder);
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+mfxU16 GetMaxBitDepth(mfxU32 FourCC);
+#endif
 
 void ConstructSTRPS(
     DpbArray const & DPB,

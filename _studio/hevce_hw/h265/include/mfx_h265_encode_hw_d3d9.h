@@ -54,7 +54,6 @@ void FillPpsBuffer(
 
 void FillPpsBuffer(
     Task const & task,
-    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC & sps,
     ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps);
 
 void FillSliceBuffer(

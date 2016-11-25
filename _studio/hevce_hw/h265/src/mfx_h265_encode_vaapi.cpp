@@ -702,7 +702,7 @@ void VAAPIEncoder::FillSps(
     sps.vui_fields.bits.field_seq_flag = par.m_sps.vui.field_seq_flag;
     sps.vui_fields.bits.vui_timing_info_present_flag= par.m_sps.vui.timing_info_present_flag;
     sps.vui_fields.bits.bitstream_restriction_flag = par.m_sps.vui.bitstream_restriction_flag;
-    sps.vui_fields.bits.tiles_fixed_structure_flag = par.m_sps.vui.tiles_fixed_structure_flag ;
+    sps.vui_fields.bits.tiles_fixed_structure_flag = par.m_sps.vui.tiles_fixed_structure_flag;
     sps.vui_fields.bits.motion_vectors_over_pic_boundaries_flag = par.m_sps.vui.motion_vectors_over_pic_boundaries_flag;
     sps.vui_fields.bits.restricted_ref_pic_lists_flag = par.m_sps.vui.restricted_ref_pic_lists_flag;
     sps.vui_fields.bits.log2_max_mv_length_horizontal = par.m_sps.vui.log2_max_mv_length_horizontal;

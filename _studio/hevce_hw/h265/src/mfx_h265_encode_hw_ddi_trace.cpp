@@ -67,18 +67,24 @@ DECL(ENCODE_COMPBUFFERDESC,
     switch((mfxU32)b.CompressedBufferType)
     {
     case D3DDDIFMT_INTELENCODE_SPSDATA:
+    case D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA:
         TraceArray((ENCODE_SET_SEQUENCE_PARAMETERS_HEVC*)pBuf, (b.DataSize / sizeof(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC)));
         break;
     case D3DDDIFMT_INTELENCODE_PPSDATA:
+    case D3D11_DDI_VIDEO_ENCODER_BUFFER_PPSDATA:
         TraceArray((ENCODE_SET_PICTURE_PARAMETERS_HEVC*)pBuf, (b.DataSize / sizeof(ENCODE_SET_PICTURE_PARAMETERS_HEVC)));
         break;
     case D3DDDIFMT_INTELENCODE_SLICEDATA:
+    case D3D11_DDI_VIDEO_ENCODER_BUFFER_SLICEDATA:
         TraceArray((ENCODE_SET_SLICE_HEADER_HEVC*)pBuf, (b.DataSize / sizeof(ENCODE_SET_SLICE_HEADER_HEVC)));
         break;
     case D3DDDIFMT_INTELENCODE_BITSTREAMDATA:
+    case D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA:
         break;
     case D3DDDIFMT_INTELENCODE_PACKEDHEADERDATA:
     case D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA:
+    case D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA:
+    case D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA:
         TraceArray((ENCODE_PACKEDHEADER_DATA*)pBuf, (b.DataSize / sizeof(ENCODE_PACKEDHEADER_DATA)));
         break;
     default:
@@ -172,7 +178,11 @@ DECL(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC,
     TRACE("%d", MBBRC            );
     TRACE("%d", ParallelBRC      );
     TRACE("%d", SliceSizeControl );
-    TRACE("%d", ReservedBits     );
+    TRACE("%d", SourceFormat         );
+    TRACE("%d", SourceBitDepth       );
+    TRACE("%d", QpAdjustment         );
+    TRACE("%d", ROIValueInDeltaQP    );
+    TRACE("%d", BlockQPInDeltaQPIndex);
     TRACE("%d", UserMaxFrameSize );
     //TRACE("%d", AVBRAccuracy     );
     //TRACE("%d", AVBRConvergence  );

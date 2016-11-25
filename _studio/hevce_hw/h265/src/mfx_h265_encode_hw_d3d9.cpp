@@ -190,18 +190,39 @@ void FillSpsBuffer(
         }
     }
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    switch (par.mfx.FrameInfo.BitDepthLuma)
+    {
+    case 16: sps.SourceBitDepth = 3; break;
+    case 12: sps.SourceBitDepth = 2; break;
+    case 10: sps.SourceBitDepth = 1; break;
+    default: assert(!"undefined SourceBitDepth");
+    case  8: sps.SourceBitDepth = 0; break;
+    }
+
+    if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
+    {
+        sps.SourceFormat = 3;
+    }
+    else
+    {
+        assert(par.mfx.FrameInfo.ChromaFormat > MFX_CHROMAFORMAT_YUV400 && par.mfx.FrameInfo.ChromaFormat <= MFX_CHROMAFORMAT_YUV444);
+        sps.SourceFormat = par.mfx.FrameInfo.ChromaFormat - 1;
+    }
+#else
     if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
         sps.SourceBitDepth = 1; //10b
+#endif
 
     sps.scaling_list_enable_flag           = par.m_sps.scaling_list_enabled_flag;
     sps.sps_temporal_mvp_enable_flag       = par.m_sps.temporal_mvp_enabled_flag;
     sps.strong_intra_smoothing_enable_flag = par.m_sps.strong_intra_smoothing_enabled_flag;
-    sps.amp_enabled_flag                   = par.m_sps.amp_enabled_flag;
-    sps.SAO_enabled_flag                   = par.m_sps.sample_adaptive_offset_enabled_flag;
+    sps.amp_enabled_flag                   = par.m_sps.amp_enabled_flag;    // SKL: 0, CNL+: 1
+    sps.SAO_enabled_flag                   = par.m_sps.sample_adaptive_offset_enabled_flag; // 0, 1
     sps.pcm_enabled_flag                   = par.m_sps.pcm_enabled_flag;
     sps.pcm_loop_filter_disable_flag       = 1;//par.m_sps.pcm_loop_filter_disabled_flag;
-    sps.tiles_fixed_structure_flag         = 0;
     sps.chroma_format_idc                  = par.m_sps.chroma_format_idc;
+    sps.tiles_fixed_structure_flag         = par.m_sps.vui.tiles_fixed_structure_flag;
     sps.separate_colour_plane_flag         = par.m_sps.separate_colour_plane_flag;
 
     sps.log2_max_coding_block_size_minus3       = (mfxU8)(par.m_sps.log2_min_luma_coding_block_size_minus3
@@ -290,7 +311,7 @@ void FillPpsBuffer(
     if (par.m_ext.CO2.MaxSliceSize)
         pps.MaxSliceSizeInBytes = par.m_ext.CO2.MaxSliceSize;
 
-        // Max/Min QP settings for BRC
+    // Max/Min QP settings for BRC
 
     /*if (par.mfx.FrameInfo.Height <= 576 &&
         par.mfx.FrameInfo.Width <= 736 &&
@@ -330,7 +351,6 @@ void FillPpsBuffer(
 
 void FillPpsBuffer(
     Task const & task,
-    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC & sps,
     ENCODE_SET_PICTURE_PARAMETERS_HEVC & pps)
 {
     pps.CurrOriginalPic.Index7Bits      = task.m_idxRec;
@@ -355,7 +375,7 @@ void FillPpsBuffer(
     pps.NumROI = (mfxU8)task.m_numRoi;
     if (pps.NumROI)
     {
-        mfxU32 blkshift = sps.log2_max_coding_block_size_minus3 + 3;
+        mfxU32 blkshift = 5;    // should be taken from ROICaps.ROIBlockSize
 
         for (mfxU16 i = 0; i < task.m_numRoi; i ++)
         {
@@ -550,6 +570,15 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     m_height    = height;
     m_auxDevice = auxDevice;
 #endif
+    
+    Trace(m_caps, 0);
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    if (!m_caps.BitDepth8Only && !m_caps.MaxEncodedBitDepth)
+        m_caps.MaxEncodedBitDepth = 1;
+    if (!m_caps.Color420Only && !(m_caps.YUV444ReconSupport || m_caps.YUV422ReconSupport))
+        m_caps.YUV444ReconSupport = 1;
+#endif
 
     return MFX_ERR_NONE;
 }
@@ -612,8 +641,6 @@ mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
     FillSpsBuffer(par, m_caps, m_sps);
     FillPpsBuffer(par, m_pps);
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
-
-    Trace(m_caps, 0);
 
     DDIHeaderPacker::Reset(par);
     m_cbd.resize(MAX_DDI_BUFFERS + MaxPackedHeaders());
@@ -766,7 +793,7 @@ mfxStatus D3D9Encoder::Execute(Task const & task, mfxHDL surface)
     if (!m_sps.bResetBRC)
         m_sps.bResetBRC = task.m_resetBRC;
 
-    FillPpsBuffer(task, m_sps, m_pps);
+    FillPpsBuffer(task, m_pps);
     FillSliceBuffer(task, m_sps, m_pps, m_slice);
     m_pps.NumSlices = (USHORT)(m_slice.size());
 

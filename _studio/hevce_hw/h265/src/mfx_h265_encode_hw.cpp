@@ -105,12 +105,21 @@ mfxU32 GetMinBsSize(MfxVideoParam const & par)
     mfxU32 size = par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height;
 
     mfxF64 k = 2.0;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    if (par.m_ext.CO3.TargetBitDepthLuma == 10)
+        k = k + 0.3;
+    if (par.m_ext.CO3.TargetChromaFormatPlus1 - 1 == MFX_CHROMAFORMAT_YUV422)
+        k = k + 0.5;
+    else if (par.m_ext.CO3.TargetChromaFormatPlus1 - 1 == MFX_CHROMAFORMAT_YUV444)
+        k = k + 1.5;
+#else
     if (par.mfx.FrameInfo.BitDepthLuma == 10)
         k = k + 0.3;
     if (par.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422)
         k = k + 0.5;
     else if (par.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV444)
         k = k + 1.5;
+#endif
 
     size = (mfxU32)(k*size);
 
@@ -316,12 +325,39 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     request.Type        = m_vpar.Protected ? (MFX_MEMTYPE_D3D_INT | MFX_MEMTYPE_PROTECTED) : MFX_MEMTYPE_D3D_INT;
     request.NumFrameMin = MaxRec(m_vpar);
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    {
+        const mfxExtCodingOption3& CO3 = m_vpar.m_ext.CO3;
+
+        if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV444) && CO3.TargetBitDepthLuma == 10)
+            request.Info.FourCC = MFX_FOURCC_Y410;
+        else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV444) && CO3.TargetBitDepthLuma == 8)
+            request.Info.FourCC = MFX_FOURCC_AYUV;
+        else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422) && CO3.TargetBitDepthLuma == 10)
+            request.Info.FourCC =  MFX_FOURCC_P210;
+        else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422) && CO3.TargetBitDepthLuma == 8)
+            request.Info.FourCC =  MFX_FOURCC_YUY2;
+        else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV420) && CO3.TargetBitDepthLuma == 10)
+            request.Info.FourCC =  MFX_FOURCC_P010;
+        else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV420) && CO3.TargetBitDepthLuma == 8)
+            request.Info.FourCC =  MFX_FOURCC_NV12;
+        else
+        {
+            assert(!"undefined target format");
+        }
+
+        request.Info.ChromaFormat = CO3.TargetChromaFormatPlus1 - 1;
+        request.Info.BitDepthLuma = CO3.TargetBitDepthLuma;
+        request.Info.BitDepthChroma = CO3.TargetBitDepthChroma;
+    }
+#else
     if(request.Info.FourCC == MFX_FOURCC_RGB4)
     {
         //in case of ARGB input we need NV12 reconstruct allocation
         request.Info.FourCC = (m_vpar.mfx.FrameInfo.BitDepthLuma == 10) ? MFX_FOURCC_P010 : MFX_FOURCC_NV12;
         request.Info.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
     }
+#endif
     sts = m_rec.Alloc(&m_core, request, false);
     MFX_CHECK_STS(sts);
 
@@ -456,7 +492,11 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request,
     SetDefaults(tmp, caps);
 
     request->Info = tmp.mfx.FrameInfo;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    request->Info.Shift = tmp.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 ? 1: 0;
+#else
     request->Info.Shift = tmp.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10? 1: 0;
+#endif
     request->NumFrameMin = MaxRaw(tmp);
 
     request->NumFrameSuggested = request->NumFrameMin;
