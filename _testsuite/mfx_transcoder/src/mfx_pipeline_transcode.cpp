@@ -380,6 +380,9 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION3(MaxFrameSizeI,              OPT_UINT_32,   ""),
         HANDLE_EXT_OPTION3(MaxFrameSizeP,              OPT_UINT_32,   ""),
         HANDLE_EXT_OPTION3(TransformSkip,              OPT_TRI_STATE, "HEVC transform_skip_enabled_flag"),
+        HANDLE_EXT_OPTION3(TargetChromaFormatPlus1,    OPT_UINT_32,   "Encoding target chroma format + 1 (by default is source chroma format + 1)"),
+        HANDLE_EXT_OPTION3(TargetBitDepthLuma,         OPT_UINT_32,   "Encoding target bit depth for luma samples (by default same as source one)"),
+        HANDLE_EXT_OPTION3(TargetBitDepthChroma,       OPT_UINT_32,   "Encoding target bit depth for chroma samples (by default same as source one)"),
 
         // mfxExtCodingOptionDDI
         HANDLE_DDI_OPTION(IntraPredCostType,       OPT_UINT_16,    "1=SAD, 2=SSD, 4=SATD_HADAMARD, 8=SATD_HARR"),

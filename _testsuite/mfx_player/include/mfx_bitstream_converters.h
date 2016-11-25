@@ -663,3 +663,26 @@ protected:
         return data.Y + info.CropX * m_sample_size + info.CropY * pitch;
     }
 };
+
+template <>
+class BSConvert<MFX_FOURCC_Y410, MFX_FOURCC_Y410>
+    : public BSConverterPacketedCopy<MFX_FOURCC_Y410, MFX_FOURCC_Y410>
+{
+    IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_Y410 MFX_PP_COMMA() MFX_FOURCC_Y410>);
+public:
+    BSConvert()
+    {
+        m_sample_size = 4;
+    }
+
+protected:
+    virtual mfxU8* start_pointer(mfxFrameSurface1 *surface)
+    {
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
+
+        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+
+        return (mfxU8*)surface->Data.Y410 + info.CropX * m_sample_size + info.CropY * pitch;
+    }
+};
