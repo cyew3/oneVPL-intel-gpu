@@ -686,9 +686,9 @@ void UpdatePPS(
         mfxU32 numSlice = slice.size();
         mfxU32 idx = 0, ref = 0;
 
-        mfxExtCodingOptionDDI * extDdi = GetExtBuffer(par);
-        mfxExtCodingOption2 *  extOpt2 = GetExtBuffer(par);
-        mfxExtFeiSliceHeader * extFeiSlice = GetExtBuffer(par, fieldId);
+        mfxExtCodingOptionDDI * extDdi      = GetExtBuffer(par);
+        mfxExtCodingOption2   * extOpt2     = GetExtBuffer(par);
+        mfxExtFeiSliceHeader  * extFeiSlice = GetExtBuffer(par, fieldId);
         assert(extDdi != 0);
         assert(extOpt2 != 0);
 
@@ -759,8 +759,8 @@ void UpdatePPS(
             slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.pic_init_qp);
 
             slice[i].disable_deblocking_filter_idc = (extFeiSlice->Slice ? extFeiSlice->Slice[i].DisableDeblockingFilterIdc : extOpt2->DisableDeblockingIdc);
-            slice[i].slice_alpha_c0_offset_div2 = (extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2 : 0);
-            slice[i].slice_beta_offset_div2 = (extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceBetaOffsetDiv2 : 0);
+            slice[i].slice_alpha_c0_offset_div2    = (extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2     : 0);
+            slice[i].slice_beta_offset_div2        = (extFeiSlice->Slice ? extFeiSlice->Slice[i].SliceBetaOffsetDiv2        : 0);
         }
 
     } // void UpdateSlice(...)
@@ -930,10 +930,10 @@ void VAAPIEncoder::FillSps(
         if (!extSps)
             return;
 
-        sps.picture_width_in_mbs  = par.mfx.FrameInfo.Width >> 4;
+        sps.picture_width_in_mbs  = par.mfx.FrameInfo.Width  >> 4;
         sps.picture_height_in_mbs = par.mfx.FrameInfo.Height >> 4;
 
-        sps.level_idc   = par.mfx.CodecLevel;
+        sps.level_idc    = par.mfx.CodecLevel;
 
         sps.intra_period = par.mfx.GopPicSize;
         sps.ip_period    = par.mfx.GopRefDist;
@@ -945,13 +945,14 @@ void VAAPIEncoder::FillSps(
 
         sps.max_num_ref_frames   =  mfxU8((extSps->maxNumRefFrames + 1) / 2);
         sps.seq_parameter_set_id = 0; // extSps->seqParameterSetId; - driver doesn't support non-zero sps_id
-        sps.seq_fields.bits.chroma_format_idc    = extSps->chromaFormatIdc;
+
         sps.bit_depth_luma_minus8    = extSps->bitDepthLumaMinus8;
         sps.bit_depth_chroma_minus8  = extSps->bitDepthChromaMinus8;
 
-        sps.seq_fields.bits.log2_max_frame_num_minus4               = extSps->log2MaxFrameNumMinus4;
-        sps.seq_fields.bits.pic_order_cnt_type                      = extSps->picOrderCntType;
-        sps.seq_fields.bits.log2_max_pic_order_cnt_lsb_minus4       = extSps->log2MaxPicOrderCntLsbMinus4;
+        sps.seq_fields.bits.chroma_format_idc                 = extSps->chromaFormatIdc;
+        sps.seq_fields.bits.log2_max_frame_num_minus4         = extSps->log2MaxFrameNumMinus4;
+        sps.seq_fields.bits.pic_order_cnt_type                = extSps->picOrderCntType;
+        sps.seq_fields.bits.log2_max_pic_order_cnt_lsb_minus4 = extSps->log2MaxPicOrderCntLsbMinus4;
 
         sps.num_ref_frames_in_pic_order_cnt_cycle   = extSps->numRefFramesInPicOrderCntCycle;
         sps.offset_for_non_ref_pic                  = extSps->offsetForNonRefPic;
@@ -963,21 +964,20 @@ void VAAPIEncoder::FillSps(
         sps.frame_crop_right_offset                 = mfxU16(extSps->frameCropRightOffset);
         sps.frame_crop_top_offset                   = mfxU16(extSps->frameCropTopOffset);
         sps.frame_crop_bottom_offset                = mfxU16(extSps->frameCropBottomOffset);
+
         sps.seq_fields.bits.seq_scaling_matrix_present_flag         = extSps->seqScalingMatrixPresentFlag;
-
         sps.seq_fields.bits.delta_pic_order_always_zero_flag        = extSps->deltaPicOrderAlwaysZeroFlag;
-
         sps.seq_fields.bits.frame_mbs_only_flag                     = extSps->frameMbsOnlyFlag;
         sps.seq_fields.bits.mb_adaptive_frame_field_flag            = extSps->mbAdaptiveFrameFieldFlag;
         sps.seq_fields.bits.direct_8x8_inference_flag               = extSps->direct8x8InferenceFlag;
 
-        sps.vui_parameters_present_flag                 = extSps->vuiParametersPresentFlag;
-        sps.vui_fields.bits.timing_info_present_flag    = extSps->vui.flags.timingInfoPresent;
-        sps.vui_fields.bits.bitstream_restriction_flag  = extSps->vui.flags.bitstreamRestriction;
+        sps.vui_parameters_present_flag                    = extSps->vuiParametersPresentFlag;
+        sps.vui_fields.bits.timing_info_present_flag       = extSps->vui.flags.timingInfoPresent;
+        sps.vui_fields.bits.bitstream_restriction_flag     = extSps->vui.flags.bitstreamRestriction;
         sps.vui_fields.bits.log2_max_mv_length_horizontal  = extSps->vui.log2MaxMvLengthHorizontal;
-        sps.vui_fields.bits.log2_max_mv_length_vertical  = extSps->vui.log2MaxMvLengthVertical;
+        sps.vui_fields.bits.log2_max_mv_length_vertical    = extSps->vui.log2MaxMvLengthVertical;
 
-        sps.frame_cropping_flag                     = extSps->frameCroppingFlag;
+        sps.frame_cropping_flag                            = extSps->frameCroppingFlag;
 
 //#if VA_CHECK_VERSION(0, 34, 0)
 //after backport of va to OTC staging 0.33 also has the same fields. TODO: fully remove after validation

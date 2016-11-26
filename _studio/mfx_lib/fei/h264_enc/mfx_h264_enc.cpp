@@ -47,6 +47,8 @@ namespace MfxEncENC
 static bool IsVideoParamExtBufferIdSupported(mfxU32 id)
 {
     return
+        id == MFX_EXTBUFF_FEI_PPS        ||
+        id == MFX_EXTBUFF_FEI_SPS        ||
         id == MFX_EXTBUFF_CODING_OPTION  ||
         id == MFX_EXTBUFF_CODING_OPTION2 ||
         id == MFX_EXTBUFF_CODING_OPTION3 ||
@@ -55,10 +57,12 @@ static bool IsVideoParamExtBufferIdSupported(mfxU32 id)
 
 mfxExtBuffer* GetExtBuffer(mfxExtBuffer** ebuffers, mfxU32 nbuffers, mfxU32 BufferId)
 {
-    if (!ebuffers) return NULL;
-    for (mfxU32 i = 0; i<nbuffers; ++i) {
-        if (!ebuffers[i]) continue;
-        if (ebuffers[i]->BufferId == BufferId) {
+    MFX_CHECK(ebuffers, NULL);
+
+    for (mfxU32 i = 0; i < nbuffers; ++i)
+    {
+        if (ebuffers[i] && ebuffers[i]->BufferId == BufferId)
+        {
             return ebuffers[i];
         }
     }
@@ -114,14 +118,14 @@ void ConfigureTask_FEI_ENC(
     MfxVideoParam const &           video,
     std::map<mfxU32, mfxU32> &      frameOrder_frameNum)
 {
-    mfxExtCodingOption2 const &        extOpt2             = GetExtBufferRef(video);
-    mfxExtCodingOption2 const *        extOpt2Runtime      = GetExtBuffer(task.m_ctrl);
-    mfxExtSpsHeader     const &        extSps              = GetExtBufferRef(video);
-
+    mfxExtCodingOption  const &    extOpt         = GetExtBufferRef(video);
+    mfxExtCodingOption2 const &    extOpt2        = GetExtBufferRef(video);
+    mfxExtCodingOption2 const *    extOpt2Runtime = GetExtBuffer(task.m_ctrl);
+    mfxExtSpsHeader     const &    extSps         = GetExtBufferRef(video);
 
     mfxU32 const FRAME_NUM_MAX = 1 << (extSps.log2MaxFrameNumMinus4 + 4);
 
-    mfxU32 numReorderFrames = GetNumReorderFrames(video);
+    //mfxU32 numReorderFrames = GetNumReorderFrames(video);
     mfxU32 prevsfid         = prevTask.m_fid[1];
     mfxU8  idrPicFlag       = !!(task.GetFrameType() & MFX_FRAMETYPE_IDR);
     mfxU8  intraPicFlag     = !!(task.GetFrameType() & MFX_FRAMETYPE_I);
@@ -141,7 +145,6 @@ void ConfigureTask_FEI_ENC(
 
     task.m_frameNum = idrPicFlag ? 0 : mfxU16((prevTask.m_frameNum + frameNumIncrement) % FRAME_NUM_MAX);
 
-
     task.m_picNum[1] = task.m_picNum[0] = task.m_frameNum * (task.m_fieldPicFlag + 1) + task.m_fieldPicFlag;
 
     task.m_idrPicId = prevTask.m_idrPicId + idrPicFlag;
@@ -150,6 +153,13 @@ void ConfigureTask_FEI_ENC(
     mfxU32 sfid = !ffid;
 
     task.m_pid = 0;
+
+    //task.m_insertAud[ffid] = IsOn(extOpt.AUDelimiter);
+    //task.m_insertAud[sfid] = IsOn(extOpt.AUDelimiter);
+    task.m_insertSps[ffid] = intraPicFlag;
+    task.m_insertSps[sfid] = 0;
+    task.m_insertPps[ffid] = task.m_insertSps[ffid] || IsOn(extOpt2.RepeatPPS);
+    task.m_insertPps[sfid] = task.m_insertSps[sfid] || IsOn(extOpt2.RepeatPPS);
 
     task.m_reference[ffid] = task.m_nalRefIdc[ffid] = !!(task.m_type[ffid] & MFX_FRAMETYPE_REF);
     task.m_reference[sfid] = task.m_nalRefIdc[sfid] = !!(task.m_type[sfid] & MFX_FRAMETYPE_REF);
@@ -167,7 +177,7 @@ void ConfigureTask_FEI_ENC(
 
     const mfxExtCodingOption2* extOpt2Cur = (extOpt2Runtime ? extOpt2Runtime : &extOpt2);
 
-    mfxENCInput* inParams = (mfxENCInput*)task.m_userData[0];
+    mfxENCInput* inParams = reinterpret_cast<mfxENCInput*>(task.m_userData[0]);
 
     frameOrder_frameNum[task.m_frameOrder] = task.m_frameNum;
 
@@ -177,11 +187,7 @@ void ConfigureTask_FEI_ENC(
     {
         mfxU32 fieldParity = (video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF)? (1 - field) : field;
 
-        /* To change de-blocking params in runtime we need to take params from runtime control */
-        /* And runtime params has priority before iInit() params */
         mfxExtFeiSliceHeader * extFeiSlice = GetExtBufferFEI(inParams, field);
-        if (!extFeiSlice)
-            extFeiSlice = GetExtBuffer(video, fieldParity);
 
         for (size_t i = 0; i < GetMaxNumSlices(video); ++i)
         {
@@ -190,21 +196,11 @@ void ConfigureTask_FEI_ENC(
             mfxI8 sliceAlphaC0OffsetDiv2 = 0;
             mfxI8 sliceBetaOffsetDiv2    = 0;
 
-            if (NULL != extOpt2Cur)
-            {
-                disableDeblockingIdc = (mfxU8)extOpt2Cur->DisableDeblockingIdc;
-                if (disableDeblockingIdc > 2)
-                    disableDeblockingIdc = 0;
-            }
-
-            if (NULL != extFeiSlice && NULL != extFeiSlice->Slice)
-            {
-                disableDeblockingIdc   = (mfxU8) extFeiSlice->Slice[i].DisableDeblockingFilterIdc;
-                if (disableDeblockingIdc > 2)
-                    disableDeblockingIdc = 0;
-                sliceAlphaC0OffsetDiv2 = (mfxI8) extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2;
-                sliceBetaOffsetDiv2    = (mfxI8) extFeiSlice->Slice[i].SliceBetaOffsetDiv2;
-            }
+            disableDeblockingIdc   = (mfxU8) extFeiSlice->Slice[i].DisableDeblockingFilterIdc;
+            if (disableDeblockingIdc > 2)
+                disableDeblockingIdc = 0;
+            sliceAlphaC0OffsetDiv2 = (mfxI8) extFeiSlice->Slice[i].SliceAlphaC0OffsetDiv2;
+            sliceBetaOffsetDiv2    = (mfxI8) extFeiSlice->Slice[i].SliceBetaOffsetDiv2;
 
             /* Now put values */
             task.m_disableDeblockingIdc[fieldParity].push_back(disableDeblockingIdc);
@@ -246,8 +242,7 @@ void ConfigureTask_FEI_ENC(
             frame.m_refPicFlag[task.m_fid[0]] = 1;
             frame.m_refPicFlag[task.m_fid[1]] = task.m_fieldPicFlag ? 0 : 1;
 
-            //frame.m_frameIdx   = idx;
-            frame.m_longterm   = 0;
+            frame.m_longterm  = 0;
 
             task.m_dpb[fieldParity].PushBack(frame);
         }
@@ -260,7 +255,6 @@ void ConfigureTask_FEI_ENC(
         // Fill reflists
         mfxExtFeiSliceHeader * pDataSliceHeader = extFeiSlice;
         /* Number of reference handling */
-        //mfxU32 ref_counter_l0 = 0, ref_counter_l1 = 0;
         mfxU32 maxNumRefL0 = 1, maxNumRefL1 = 1;
         if (pDataSliceHeader && pDataSliceHeader->Slice)
         {
@@ -315,56 +309,16 @@ mfxStatus VideoENC_ENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
 
     mfxStatus sts = MFX_ERR_NONE;
     DdiTask & task = m_incoming.front();
-    mfxU32 f = 0, f_start = 0;
-    mfxU32 fieldCount = task.m_fieldPicFlag;
+
+    mfxU32 f_start = 0, fieldCount = task.m_fieldPicFlag;
 
     if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
     {
         fieldCount = f_start = m_firstFieldDone; // 0 or 1
     }
 
-    //if (!task.m_fieldPicFlag || (task.m_fieldPicFlag && !m_firstFieldDone))
+    for (mfxU32 f = f_start; f <= fieldCount; ++f)
     {
-        sts = GetNativeHandleToRawSurface(*m_core, m_video, task, task.m_handleRaw);
-        MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
-
-        mfxENCOutput* outParams = reinterpret_cast<mfxENCOutput*>(task.m_userData[1]);
-
-        mfxHDL handle_src, handle_rec;
-        sts = m_core->GetExternalFrameHDL(outParams->OutSurface->Data.MemId, &handle_src);
-        MFX_CHECK(MFX_ERR_NONE == sts, MFX_ERR_INVALID_HANDLE);
-
-        mfxU32* src_surf_id = (mfxU32 *)handle_src, *rec_surf_id;
-
-        for (mfxU32 i = 0; i < m_rec.NumFrameActual; ++i)
-        {
-            task.m_midRec = AcquireResource(m_rec, i);
-
-            sts = m_core->GetFrameHDL(m_rec.mids[i], &handle_rec);
-            MFX_CHECK(MFX_ERR_NONE == sts, MFX_ERR_INVALID_HANDLE);
-
-            rec_surf_id = (mfxU32 *)handle_rec;
-            if ((*src_surf_id) == (*rec_surf_id))
-            {
-                task.m_idxRecon = i;
-                break;
-            }
-            else
-                ReleaseResource(m_rec, task.m_midRec);
-        }
-
-        ConfigureTask_FEI_ENC(task, m_prevTask, m_video, m_frameOrder_frameNum);
-
-        //!!! HACK !!!
-        m_recFrameOrder[task.m_idxRecon] = task.m_frameOrder;
-        TEMPORAL_HACK_WITH_DPB(task.m_dpb[0],          m_rec.mids, m_recFrameOrder);
-        TEMPORAL_HACK_WITH_DPB(task.m_dpb[1],          m_rec.mids, m_recFrameOrder);
-        TEMPORAL_HACK_WITH_DPB(task.m_dpbPostEncoding, m_rec.mids, m_recFrameOrder);
-    }
-
-    for (f = f_start; f <= fieldCount; f++)
-    {
-        //fprintf(stderr,"handle=0x%x mid=0x%x\n", task.m_handleRaw, task.m_midRaw );
         sts = m_ddi->Execute(task.m_handleRaw.first, task, task.m_fid[f], m_sei);
         MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
     }
@@ -393,22 +347,22 @@ mfxStatus VideoENC_ENC::Query(DdiTask& task)
 {
     mdprintf(stderr,"query\n");
     mfxStatus sts = MFX_ERR_NONE;
-    mfxU32 f = 0, f_start = 0;
-    mfxU32 fieldCount = task.m_fieldPicFlag;
+
+    mfxU32 f_start = 0, fieldCount = task.m_fieldPicFlag;
 
     if (MFX_CODINGOPTION_ON == m_singleFieldProcessingMode)
     {
         f_start = fieldCount = 1 - m_firstFieldDone;
     }
 
-    for (f = f_start; f <= fieldCount; f++)
+    for (mfxU32 f = f_start; f <= fieldCount; f++)
     {
         sts = m_ddi->QueryStatus(task, task.m_fid[f]);
         MFX_CHECK(sts != MFX_WRN_DEVICE_BUSY, MFX_TASK_BUSY);
         MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
     }
 
-    mfxENCInput *input = (mfxENCInput *)task.m_userData[0];
+    mfxENCInput *input = reinterpret_cast<mfxENCInput *>(task.m_userData[0]);
     m_core->DecreaseReference(&(input->InSurface->Data));
 
     UMC::AutomaticUMCMutex guard(m_listMutex);
@@ -431,7 +385,7 @@ mfxStatus VideoENC_ENC::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrameAll
     mfxU32 inPattern = par->IOPattern & MfxHwH264Encode::MFX_IOPATTERN_IN_MASK;
     MFX_CHECK(
         inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
-        inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY ||
+        inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY  ||
         inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY,
         MFX_ERR_INVALID_VIDEO_PARAM);
 
@@ -439,12 +393,12 @@ mfxStatus VideoENC_ENC::QueryIOSurf(VideoCORE* , mfxVideoParam *par, mfxFrameAll
     {
         request->Type =
             MFX_MEMTYPE_EXTERNAL_FRAME |
-            MFX_MEMTYPE_FROM_ENCODE |
+            MFX_MEMTYPE_FROM_ENCODE    |
             MFX_MEMTYPE_SYSTEM_MEMORY;
     }
     else // MFX_IOPATTERN_IN_VIDEO_MEMORY || MFX_IOPATTERN_IN_OPAQUE_MEMORY
     {
-        request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET;
+        request->Type  = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET;
         request->Type |= (inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
             ? MFX_MEMTYPE_OPAQUE_FRAME
             : MFX_MEMTYPE_EXTERNAL_FRAME;
@@ -553,6 +507,47 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
 
     m_recFrameOrder.resize(m_rec.NumFrameActual, 0xffffffff);
 
+    // Controlls for slice number through CO3 is not allowed
+    mfxExtCodingOption3 const * extOpt3 = GetExtBuffer(m_video);
+    if (extOpt3)
+    {
+        MFX_CHECK(extOpt3->NumSliceI == m_video.mfx.NumSlice, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(extOpt3->NumSliceP == m_video.mfx.NumSlice, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(extOpt3->NumSliceB == m_video.mfx.NumSlice, MFX_ERR_INVALID_VIDEO_PARAM);
+    }
+
+    // Internal headers should be updated before CreateAccelerationService call
+    const mfxExtFeiSPS* pDataSPS = GetExtBuffer(m_video);
+    if (pDataSPS)
+    {
+        // Update internal SPS if FEI SPS buffer attached
+        mfxExtSpsHeader * extSps = GetExtBuffer(m_video);
+        MFX_CHECK(extSps, MFX_ERR_INVALID_VIDEO_PARAM);
+
+        extSps->seqParameterSetId           = pDataSPS->SPSId;
+        extSps->picOrderCntType             = pDataSPS->PicOrderCntType;
+        extSps->log2MaxPicOrderCntLsbMinus4 = pDataSPS->Log2MaxPicOrderCntLsb - 4 ;
+    }
+
+    const mfxExtFeiPPS* pDataPPS = GetExtBuffer(m_video);
+    if (pDataPPS)
+    {
+        // Update internal PPS if FEI PPS buffer attached
+        mfxExtPpsHeader* extPps = GetExtBuffer(m_video);
+        MFX_CHECK(extPps, MFX_ERR_INVALID_VIDEO_PARAM);
+
+        extPps->seqParameterSetId = pDataPPS->SPSId;
+        extPps->picParameterSetId = pDataPPS->PPSId;
+
+        extPps->picInitQpMinus26               = pDataPPS->PicInitQP - 26;
+        extPps->numRefIdxL0DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL0Active, mfxU16(1)) - 1;;
+        extPps->numRefIdxL1DefaultActiveMinus1 = (std::max)(pDataPPS->NumRefIdxL1Active, mfxU16(1)) - 1;;
+
+        extPps->chromaQpIndexOffset            = pDataPPS->ChromaQPIndexOffset;
+        extPps->secondChromaQpIndexOffset      = pDataPPS->SecondChromaQPIndexOffset;
+        extPps->transform8x8ModeFlag           = pDataPPS->Transform8x8ModeFlag;
+    }
+
     sts = m_ddi->CreateAccelerationService(m_video);
     MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
 
@@ -591,7 +586,7 @@ mfxStatus VideoENC_ENC::GetVideoParam(mfxVideoParam *par)
     }
 
     mfxExtBuffer ** ExtParam = par->ExtParam;
-    mfxU16    NumExtParam = par->NumExtParam;
+    mfxU16       NumExtParam = par->NumExtParam;
 
     MFX_INTERNAL_CPY(par, &(static_cast<mfxVideoParam &>(m_video)), sizeof(mfxVideoParam));
 
@@ -602,13 +597,20 @@ mfxStatus VideoENC_ENC::GetVideoParam(mfxVideoParam *par)
 }
 
 mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
-                    mfxENCInput *input,
+                    mfxENCInput  *input,
                     mfxENCOutput *output,
                     MFX_ENTRY_POINT pEntryPoints[],
                     mfxU32 &numEntryPoints)
 {
+    // Check that all appropriate parameters passed
+
     MFX_CHECK(m_bInit, MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK_NULL_PTR2(input, output);
+    MFX_CHECK_NULL_PTR2(input->InSurface, output->OutSurface);
+
+    // SPS at runtime is not allowed
+    mfxExtFeiSPS* extFeiSPSinRuntime = GetExtBufferFEI(input, 0);
+    MFX_CHECK(!extFeiSPSinRuntime, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     //set frame type
     mfxU8 mtype_first_field = 0, mtype_second_field = 0;
@@ -618,13 +620,42 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
     {
         mfxU32 fieldParity = (m_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_FIELD_BFF)? (1 - field) : field;
 
-        mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBufferFEI(input, fieldParity);
+        // Driver need both buffer to generate bitstream
+        mfxExtFeiEncMV     * mvout     = GetExtBufferFEI(output, fieldParity);
+        mfxExtFeiPakMBCtrl * mbcodeout = GetExtBufferFEI(output, fieldParity);
+        MFX_CHECK(mvout && mbcodeout, MFX_ERR_INVALID_VIDEO_PARAM);
 
-        if (!extFeiSliceInRintime) continue; /* cannot extract type for this field in runtime without SliceHeader */
+        mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBufferFEI(input, fieldParity);
+        MFX_CHECK(extFeiSliceInRintime,           MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(extFeiSliceInRintime->NumSlice, MFX_ERR_UNDEFINED_BEHAVIOR);
+        /*
+        if (task.m_numSlice[feiFieldId]){
+            MFX_CHECK(extFeiSliceInRintime->NumSlice == task.m_numSlice[feiFieldId], MFX_ERR_UNDEFINED_BEHAVIOR);
+        }
+        else*/
+        {
+            MFX_CHECK(extFeiSliceInRintime->NumSlice == m_video.mfx.NumSlice, MFX_ERR_UNDEFINED_BEHAVIOR);
+        }
 
         mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, fieldParity);
-        /*And runtime params has priority before iInit() params */
+        MFX_CHECK(extFeiPPSinRuntime, MFX_ERR_UNDEFINED_BEHAVIOR);
 
+        // Check that parameters from previos init kept unchanged
+        {
+            mfxExtPpsHeader* extPps = GetExtBuffer(m_video);
+            MFX_CHECK(extPps, MFX_ERR_INVALID_VIDEO_PARAM);
+
+            MFX_CHECK(extPps->seqParameterSetId              == extFeiPPSinRuntime->SPSId,                                        MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(extPps->picParameterSetId              == extFeiPPSinRuntime->PPSId,                                        MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(extPps->picInitQpMinus26               == extFeiPPSinRuntime->PicInitQP - 26,                               MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(extPps->numRefIdxL0DefaultActiveMinus1 == (std::max)(extFeiPPSinRuntime->NumRefIdxL0Active, mfxU16(1)) - 1, MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(extPps->numRefIdxL1DefaultActiveMinus1 == (std::max)(extFeiPPSinRuntime->NumRefIdxL1Active, mfxU16(1)) - 1, MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(extPps->chromaQpIndexOffset            == extFeiPPSinRuntime->ChromaQPIndexOffset,                          MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(extPps->secondChromaQpIndexOffset      == extFeiPPSinRuntime->SecondChromaQPIndexOffset,                    MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(extPps->transform8x8ModeFlag           == extFeiPPSinRuntime->Transform8x8ModeFlag,                         MFX_ERR_UNDEFINED_BEHAVIOR);
+        }
+
+        // Frame type detection
         mfxU8 type = extFeiPPSinRuntime->PictureType;
 
         switch (type & 0xf)
@@ -648,15 +679,11 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
             mtype_second_field = type;
         }
     }
-    if (!mtype_second_field) { mtype_second_field = mtype_first_field & ~MFX_FRAMETYPE_IDR;}
+    if (!mtype_second_field){ mtype_second_field = mtype_first_field & ~MFX_FRAMETYPE_IDR; }
 
-    bool first_field_is_IDR = mtype_first_field  & MFX_FRAMETYPE_IDR,
-        second_field_is_IDR = mtype_second_field & MFX_FRAMETYPE_IDR;
+    UMC::AutomaticUMCMutex guard(m_listMutex);
 
-    m_free.front().m_insertSps[0] = first_field_is_IDR;
-    m_free.front().m_insertSps[1] = second_field_is_IDR;
-
-    if (first_field_is_IDR || second_field_is_IDR)
+    if ((mtype_first_field & MFX_FRAMETYPE_IDR) || (mtype_second_field & MFX_FRAMETYPE_IDR))
     {
         m_free.front().m_frameOrderIdr = input->InSurface->Data.FrameOrder;
     }
@@ -666,15 +693,9 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
         m_free.front().m_frameOrderI = input->InSurface->Data.FrameOrder;
     }
 
-    /* By default insert PSS for each frame */
-    m_free.front().m_insertPps[0] = 1;
-    m_free.front().m_insertPps[1] = 1;
-
-    UMC::AutomaticUMCMutex guard(m_listMutex);
-
-    m_free.front().m_yuv = input->InSurface;
-    //m_free.front().m_ctrl = 0;
-    m_free.front().m_type = Pair<mfxU8>(mtype_first_field, mtype_second_field);
+    m_free.front().m_yuv         = input->InSurface;
+    //m_free.front().m_ctrl      = 0;
+    m_free.front().m_type        = Pair<mfxU8>(mtype_first_field, mtype_second_field);
 
     m_free.front().m_extFrameTag = input->InSurface->Data.FrameOrder;
     m_free.front().m_frameOrder  = input->InSurface->Data.FrameOrder;
@@ -685,6 +706,7 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
 
     m_incoming.splice(m_incoming.end(), m_free, m_free.begin());
     DdiTask& task = m_incoming.front();
+
     task.m_picStruct    = GetPicStruct(m_video, task);
     task.m_fieldPicFlag = task.m_picStruct[ENC] != MFX_PICSTRUCT_PROGRESSIVE;
     task.m_fid[0]       = task.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF;
@@ -693,10 +715,47 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
     if (task.m_picStruct[ENC] == MFX_PICSTRUCT_FIELD_BFF)
     {
         std::swap(task.m_type.top, task.m_type.bot);
-        std::swap(task.m_insertSps[0],task.m_insertSps[1]);
     }
 
     m_core->IncreaseReference(&input->InSurface->Data);
+
+    // Configure current task
+    //if (m_firstFieldDone == 0)
+    {
+        mfxStatus sts = GetNativeHandleToRawSurface(*m_core, m_video, task, task.m_handleRaw);
+        MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
+
+        mfxHDL handle_src, handle_rec;
+        sts = m_core->GetExternalFrameHDL(output->OutSurface->Data.MemId, &handle_src);
+        MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_INVALID_HANDLE);
+
+        mfxU32* src_surf_id = (mfxU32 *)handle_src, *rec_surf_id;
+
+        for (mfxU32 i = 0; i < m_rec.NumFrameActual; ++i)
+        {
+            task.m_midRec = AcquireResource(m_rec, i);
+
+            sts = m_core->GetFrameHDL(m_rec.mids[i], &handle_rec);
+            MFX_CHECK(MFX_ERR_NONE == sts, MFX_ERR_INVALID_HANDLE);
+
+            rec_surf_id = (mfxU32 *)handle_rec;
+            if ((*src_surf_id) == (*rec_surf_id))
+            {
+                task.m_idxRecon = i;
+                break;
+            }
+            else
+                ReleaseResource(m_rec, task.m_midRec);
+        }
+
+        ConfigureTask_FEI_ENC(task, m_prevTask, m_video, m_frameOrder_frameNum);
+
+        //!!! HACK !!!
+        m_recFrameOrder[task.m_idxRecon] = task.m_frameOrder;
+        TEMPORAL_HACK_WITH_DPB(task.m_dpb[0],          m_rec.mids, m_recFrameOrder);
+        TEMPORAL_HACK_WITH_DPB(task.m_dpb[1],          m_rec.mids, m_recFrameOrder);
+        TEMPORAL_HACK_WITH_DPB(task.m_dpbPostEncoding, m_rec.mids, m_recFrameOrder);
+    }
 
     pEntryPoints[0].pState               = this;
     pEntryPoints[0].pParam               = &m_incoming.front();
@@ -714,7 +773,7 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
     numEntryPoints = 2;
 
     return MFX_ERR_NONE;
-} 
+}
 
 static mfxStatus CopyRawSurfaceToVideoMemory(VideoCORE &    core,
                                         MfxHwH264Encode::MfxVideoParam const & video,
@@ -723,7 +782,6 @@ static mfxStatus CopyRawSurfaceToVideoMemory(VideoCORE &    core,
                                         mfxHDL&             handle)
 {
     mfxExtOpaqueSurfaceAlloc const * extOpaq = GetExtBuffer(video);
-    /* KW fix */
     MFX_CHECK(extOpaq, MFX_ERR_NOT_FOUND);
 
     mfxFrameData d3dSurf = {0};
@@ -753,7 +811,7 @@ static mfxStatus CopyRawSurfaceToVideoMemory(VideoCORE &    core,
        MFX_CHECK_STS(core.GetExternalFrameHDL(d3dSurf.MemId, &handle))
     else
        MFX_CHECK_STS(core.GetFrameHDL(d3dSurf.MemId, &handle));
-    
+
     return MFX_ERR_NONE;
 }
 

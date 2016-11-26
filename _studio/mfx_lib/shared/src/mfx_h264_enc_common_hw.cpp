@@ -1473,6 +1473,8 @@ bool MfxHwH264Encode::IsVideoParamExtBufferIdSupported(mfxU32 id)
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
         || id == MFX_EXTBUFF_FEI_PARAM
         || id == MFX_EXTBUFF_FEI_SLICE
+        || id == MFX_EXTBUFF_FEI_SPS
+        || id == MFX_EXTBUFF_FEI_PPS
 #endif
         );
 }
@@ -1501,6 +1503,17 @@ mfxStatus MfxHwH264Encode::CheckExtBufferId(mfxVideoParam const & par)
             }
         }
     }
+
+#if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
+    // FEI SPS / PPS buffers on Init stage supported only by FEI ENC / PAK
+    if (MfxHwH264Encode::GetExtBuffer(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_FEI_SPS) ||
+        MfxHwH264Encode::GetExtBuffer(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_FEI_PPS))
+    {
+        mfxExtFeiParam* fei_func = reinterpret_cast<mfxExtFeiParam*>(MfxHwH264Encode::GetExtBuffer(par.ExtParam, par.NumExtParam, MFX_EXTBUFF_FEI_PARAM));
+        if (!fei_func || (fei_func->Func != MFX_FEI_FUNCTION_ENC && fei_func->Func != MFX_FEI_FUNCTION_PAK))
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+#endif
 
     return MFX_ERR_NONE;
 }
@@ -6574,9 +6587,9 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
         name = *opts;                           \
     m_extParam[NumExtParam++] = &name.Header;
 #define CONSTRUCT_EXT_BUFFER_EX(type, name, field)        \
-    InitExtBufHeader(name[field]);                     \
-    if (type * opts = GetExtBuffer(par, field))        \
-    name[field] = *opts;                           \
+    InitExtBufHeader(name[field]);                        \
+    if (type * opts = GetExtBuffer(par, field))           \
+    name[field] = *opts;                                  \
     m_extParam[NumExtParam++] = &name[field].Header;
 
     CONSTRUCT_EXT_BUFFER(mfxExtCodingOption,         m_extOpt);
@@ -6606,8 +6619,10 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     CONSTRUCT_EXT_BUFFER(mfxExtDirtyRect,            m_extDirtyRect);
     CONSTRUCT_EXT_BUFFER(mfxExtMoveRect,             m_extMoveRect);
     CONSTRUCT_EXT_BUFFER(mfxExtFeiCodingOption,      m_extFeiOpt);
-    CONSTRUCT_EXT_BUFFER_EX(mfxExtFeiSliceHeader,   m_extFeiSlice, 0);
-    CONSTRUCT_EXT_BUFFER_EX(mfxExtFeiSliceHeader,   m_extFeiSlice, 1);
+    CONSTRUCT_EXT_BUFFER_EX(mfxExtFeiSliceHeader,    m_extFeiSlice, 0);
+    CONSTRUCT_EXT_BUFFER_EX(mfxExtFeiSliceHeader,    m_extFeiSlice, 1);
+    CONSTRUCT_EXT_BUFFER(mfxExtFeiSPS,               m_extFeiSPS);
+    CONSTRUCT_EXT_BUFFER(mfxExtFeiPPS,               m_extFeiPPS);
 #undef CONSTRUCT_EXT_BUFFER
 #undef CONSTRUCT_EXT_BUFFER_EX
 

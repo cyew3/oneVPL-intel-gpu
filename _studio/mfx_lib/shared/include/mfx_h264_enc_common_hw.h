@@ -570,7 +570,7 @@ namespace MfxHwH264Encode
         void ConstructMvcSeqDesc(mfxExtMVCSeqDesc const & desc);
 
     private:
-        mfxExtBuffer *              m_extParam[27];
+        mfxExtBuffer *              m_extParam[29];
         // external, documented
         mfxExtCodingOption          m_extOpt;
         mfxExtCodingOption2         m_extOpt2;
@@ -602,6 +602,8 @@ namespace MfxHwH264Encode
         mfxExtSpecialEncodingModes  m_extSpecModes;
         mfxExtFeiCodingOption       m_extFeiOpt;
         mfxExtFeiSliceHeader        m_extFeiSlice[2];
+        mfxExtFeiSPS                m_extFeiSPS;
+        mfxExtFeiPPS                m_extFeiPPS;
 
         std::vector<mfxMVCViewDependency> m_storageView;
         std::vector<mfxMVCOperationPoint> m_storageOp;
