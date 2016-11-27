@@ -405,8 +405,8 @@ bool AccessUnit::AddSlice(H264Slice * slice)
     {
         if (GetLayersCount())
         {
-            SetOfSlices * setOfSlices = GetLastLayer();
-            if (setOfSlices->GetSlice(0)->GetSliceHeader()->nal_ext.svc.dependency_id > slice->GetSliceHeader()->nal_ext.svc.dependency_id)
+            SetOfSlices * lastSetOfSlices = GetLastLayer();
+            if (lastSetOfSlices->GetSlice(0)->GetSliceHeader()->nal_ext.svc.dependency_id > slice->GetSliceHeader()->nal_ext.svc.dependency_id)
             {
                 m_isFullAU = true;
                 return false;

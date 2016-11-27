@@ -484,12 +484,12 @@ void DecReferencePictureMarking::CheckSEIRepetition(ViewItem &view, H264DecoderF
     }
 
     {
-    DPBCommandsList::reverse_iterator iter = m_commandsList.rbegin();
-    DPBCommandsList::reverse_iterator end_iter = m_commandsList.rend();
+    DPBCommandsList::reverse_iterator rev_iter = m_commandsList.rbegin();
+    DPBCommandsList::reverse_iterator rev_end_iter = m_commandsList.rend();
 
-    for (; iter != end_iter; ++iter)
+    for (; rev_iter != rev_end_iter; ++rev_iter)
     {
-        DPBChangeItem& item = *iter;
+        DPBChangeItem& item = *rev_iter;
 
         if (item.m_pCurrentFrame == frame)
         {
@@ -636,22 +636,22 @@ void DecReferencePictureMarking::Remove(H264DecoderFrame * frame)
     if (start != m_commandsList.end())
         m_commandsList.erase(m_commandsList.begin(), end);
 
+
+    iter = m_commandsList.begin();
+
+    for (; iter != m_commandsList.end(); ++iter)
     {
-        DPBCommandsList::iterator iter = m_commandsList.begin();
+        DPBChangeItem& item = *iter;
 
-        for (; iter != m_commandsList.end(); ++iter)
+        if (item.m_pRefFrame == frame)
         {
-            DPBChangeItem& item = *iter;
-
-            if (item.m_pRefFrame == frame)
-            {
-                m_commandsList.erase(iter);
-                iter = m_commandsList.begin();
-                if (iter == m_commandsList.end()) // avoid ++iter operation
-                    break;
-            }
+            m_commandsList.erase(iter);
+            iter = m_commandsList.begin();
+            if (iter == m_commandsList.end()) // avoid ++iter operation
+                break;
         }
     }
+
 
     //DebugPrintItems();
 }
@@ -1327,8 +1327,6 @@ ViewItem & MVC_Extension::AllocateAndInitializeView(H264Slice * slice)
 
 Status MVC_Extension::AllocateView(Ipp32s view_id)
 {
-    ViewItem view;
-
     // check error(s)
     if (((Ipp32s)H264_MAX_NUM_VIEW <= view_id) && (view_id != (Ipp32s)INVALID_VIEW_ID) )
     {
@@ -1348,6 +1346,7 @@ Status MVC_Extension::AllocateView(Ipp32s view_id)
         return UMC_OK;
     }
 
+    ViewItem view;
     try
     {
         // allocate DPB and POC counter
@@ -2732,14 +2731,14 @@ Status TaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                 }
                 if (view)
                 {
-                    Ipp8u newDPBsize = (Ipp8u)CalculateDPBSize(m_level_idc ? m_level_idc : temp->level_idc,
+                    Ipp8u newDPBsizeL = (Ipp8u)CalculateDPBSize(m_level_idc ? m_level_idc : temp->level_idc,
                                                                 sps.frame_width_in_mbs * 16,
                                                                 sps.frame_height_in_mbs * 16,
                                                                 sps.num_ref_frames);
 
-                    temp->vui.max_dec_frame_buffering = temp->vui.max_dec_frame_buffering ? temp->vui.max_dec_frame_buffering : newDPBsize;
-                    if (temp->vui.max_dec_frame_buffering > newDPBsize)
-                        temp->vui.max_dec_frame_buffering = newDPBsize;
+                    temp->vui.max_dec_frame_buffering = temp->vui.max_dec_frame_buffering ? temp->vui.max_dec_frame_buffering : newDPBsizeL;
+                    if (temp->vui.max_dec_frame_buffering > newDPBsizeL)
+                        temp->vui.max_dec_frame_buffering = newDPBsizeL;
                 }
 
                 m_pNALSplitter->SetSuggestedSize(CalculateSuggestedSize(&sps));

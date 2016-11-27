@@ -367,7 +367,7 @@ Status MFXTaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
     MediaDataEx::_MediaDataEx* pMediaDataEx = nalUnit->GetExData();
     if ((NAL_Unit_Type)pMediaDataEx->values[0] == NAL_UT_SPS && m_firstVideoParams.mfx.FrameInfo.Width)
     {
-        H264SeqParamSet * currSPS = m_Headers.m_SeqParams.GetCurrentHeader();
+        currSPS = m_Headers.m_SeqParams.GetCurrentHeader();
 
         if (currSPS)
         {

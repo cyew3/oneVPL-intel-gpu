@@ -274,19 +274,19 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
             {
                 for (;;)
                 {
-                    for (H264DecoderFrame *pFrm = pDecoderFrameList->head(); pFrm; pFrm = pFrm->future())
+                    for (H264DecoderFrame *pFrame = pDecoderFrameList->head(); pFrame; pFrame = pFrame->future())
                     {
-                        if (pFrm->isShortTermRef()==3)
-                            pLastInList[0] = pFrm;
+                        if (pFrame->isShortTermRef()==3)
+                            pLastInList[0] = pFrame;
                     }
 
                     if (pLastInList[0])
                         break;
 
-                    for (H264DecoderFrame *pFrm = pDecoderFrameList->head(); pFrm; pFrm = pFrm->future())
+                    for (H264DecoderFrame *pFrame = pDecoderFrameList->head(); pFrame; pFrame = pFrame->future())
                     {
-                        if (pFrm->isLongTermRef()==3)
-                            pLastInList[0] = pFrm;
+                        if (pFrame->isLongTermRef()==3)
+                            pLastInList[0] = pFrame;
                     }
                     break;
                 }
