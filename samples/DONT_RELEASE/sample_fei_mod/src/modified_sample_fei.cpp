@@ -352,7 +352,7 @@ mfxStatus ResetDirect(iTask * task, iTaskPool *pTaskList)
     mfxI32 wmb = (fi->Width +15)>>4;
     mfxI32 hmb = (fi->Height+15)>>4;
 
-    const mfxExtFeiSPS* sps = (mfxExtFeiSPS*)GetExtBuffer(task->outPAK.ExtParam, task->outPAK.NumExtParam, MFX_EXTBUFF_FEI_SPS);
+    //const mfxExtFeiSPS* sps = (mfxExtFeiSPS*)GetExtBuffer(task->outPAK.ExtParam, task->outPAK.NumExtParam, MFX_EXTBUFF_FEI_SPS);
     const mfxExtFeiPPS* pps = (mfxExtFeiPPS*)GetExtBuffer(task->outPAK.ExtParam, task->outPAK.NumExtParam, MFX_EXTBUFF_FEI_PPS);
     const mfxExtFeiSliceHeader* sliceHeader = (mfxExtFeiSliceHeader*)GetExtBuffer(task->outPAK.ExtParam, task->outPAK.NumExtParam, MFX_EXTBUFF_FEI_SLICE);
 

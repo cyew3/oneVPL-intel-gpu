@@ -1104,7 +1104,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
     {
         bufSet*                   tmpForInit         = NULL;
         //FEI buffers
-        mfxExtFeiSPS*             feiSPS             = NULL;
         mfxExtFeiPPS*             feiPPS             = NULL;
         mfxExtFeiSliceHeader*     feiSliceHeader     = NULL;
         mfxExtFeiEncFrameCtrl*    feiEncCtrl         = NULL;
@@ -1125,17 +1124,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
         bool MBCodeOut    = m_appCfg.mbcodeoutFile  != NULL;
         bool RepackCtrl   = m_appCfg.repackctrlFile != NULL;
 
-        /* SPS Header */
-        if (m_appCfg.bENCPAK || m_appCfg.bOnlyENC || m_appCfg.bOnlyPAK)
-        {
-            feiSPS = new mfxExtFeiSPS;
-            MSDK_ZERO_MEMORY(*feiSPS);
-            feiSPS->Header.BufferId = MFX_EXTBUFF_FEI_SPS;
-            feiSPS->Header.BufferSz = sizeof(mfxExtFeiSPS);
-            feiSPS->SPSId                 = 0;
-            feiSPS->PicOrderCntType       = (m_numOfFields == 2 || m_refDist > 1) ? 0 : 2;
-            feiSPS->Log2MaxPicOrderCntLsb = GetDefaultLog2MaxPicOrdCnt(m_refDist, m_bRefType);
-        }
 
         int num_buffers = m_maxQueueLength + (m_appCfg.bDECODE ? m_decodePoolSize : 0) + (m_pVPP ? 2 : 0);
 
@@ -1197,7 +1185,7 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                     feiPPS[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_PPS;
                     feiPPS[fieldId].Header.BufferSz = sizeof(mfxExtFeiPPS);
 
-                    feiPPS[fieldId].SPSId = feiSPS ? feiSPS->SPSId : 0;
+                    feiPPS[fieldId].SPSId = 0;
                     feiPPS[fieldId].PPSId = 0;
 
                     /* PicInitQP should be always 26 !!!
@@ -1244,14 +1232,14 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
 
                     // TODO: Improve slice divider
                     mfxU16 nMBrows = (m_heightMB + feiSliceHeader[fieldId].NumSlice - 1) / feiSliceHeader[fieldId].NumSlice,
-                         nMBremain = m_heightMB;
+                        nMBremain = m_heightMB;
                     for (mfxU16 numSlice = 0; numSlice < feiSliceHeader[fieldId].NumSlice; numSlice++)
                     {
                         feiSliceHeader[fieldId].Slice[numSlice].MBAddress = numSlice*(nMBrows*m_widthMB);
-                        feiSliceHeader[fieldId].Slice[numSlice].NumMBs    = (std::min)(nMBrows, nMBremain)*m_widthMB;
-                        feiSliceHeader[fieldId].Slice[numSlice].SliceType = 0;
-                        feiSliceHeader[fieldId].Slice[numSlice].PPSId     = feiPPS ? feiPPS[fieldId].PPSId : 0;
-                        feiSliceHeader[fieldId].Slice[numSlice].IdrPicId  = 0;
+                        feiSliceHeader[fieldId].Slice[numSlice].NumMBs     = (std::min)(nMBrows, nMBremain)*m_widthMB;
+                        feiSliceHeader[fieldId].Slice[numSlice].SliceType  = 0;
+                        feiSliceHeader[fieldId].Slice[numSlice].PPSId      = feiPPS ? feiPPS[fieldId].PPSId : 0;
+                        feiSliceHeader[fieldId].Slice[numSlice].IdrPicId   = 0;
 
                         feiSliceHeader[fieldId].Slice[numSlice].CabacInitIdc = 0;
                         mfxU32 initQP = (m_appCfg.QP != 0) ? m_appCfg.QP : 26;
@@ -1377,10 +1365,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                 }
             }
 
-            if (feiSPS){
-                tmpForInit-> I_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(feiSPS));
-                tmpForInit->PB_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(feiSPS));
-            }
             if (feiPPS){
                 for (fieldId = 0; fieldId < m_numOfFields; fieldId++){
                     tmpForInit-> I_bufs.in.Add(reinterpret_cast<mfxExtBuffer*>(&feiPPS[fieldId]));
@@ -1562,6 +1546,7 @@ mfxStatus CEncodingPipeline::Run()
             m_inputTasks.AddTask(new iTask(m_taskInitializationParams));
             eTask = m_inputTasks.GetTaskToEncode(false);
 
+            // No frame to process right now (bufferizing B-frames, need more input frames)
             if (!eTask) continue;
         }
 

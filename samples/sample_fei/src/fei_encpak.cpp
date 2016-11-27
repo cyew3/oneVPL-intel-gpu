@@ -19,6 +19,90 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "fei_encpak.h"
 
+mfxU16 GetMaxNumRefFrame(mfxU16 level, mfxU16 width, mfxU16 height)
+{
+    mfxU32 maxDpbSize = 0;
+    if (level == MFX_LEVEL_UNKNOWN)
+        level = MFX_LEVEL_AVC_52;
+
+    switch (level)
+    {
+    case MFX_LEVEL_AVC_1:  maxDpbSize = 152064;   break;
+    case MFX_LEVEL_AVC_1b: maxDpbSize = 152064;   break;
+    case MFX_LEVEL_AVC_11: maxDpbSize = 345600;   break;
+    case MFX_LEVEL_AVC_12: maxDpbSize = 912384;   break;
+    case MFX_LEVEL_AVC_13: maxDpbSize = 912384;   break;
+    case MFX_LEVEL_AVC_2:  maxDpbSize = 912384;   break;
+    case MFX_LEVEL_AVC_21: maxDpbSize = 1824768;  break;
+    case MFX_LEVEL_AVC_22: maxDpbSize = 3110400;  break;
+    case MFX_LEVEL_AVC_3:  maxDpbSize = 3110400;  break;
+    case MFX_LEVEL_AVC_31: maxDpbSize = 6912000;  break;
+    case MFX_LEVEL_AVC_32: maxDpbSize = 7864320;  break;
+    case MFX_LEVEL_AVC_4:  maxDpbSize = 12582912; break;
+    case MFX_LEVEL_AVC_41: maxDpbSize = 12582912; break;
+    case MFX_LEVEL_AVC_42: maxDpbSize = 13369344; break;
+    case MFX_LEVEL_AVC_5:  maxDpbSize = 42393600; break;
+    case MFX_LEVEL_AVC_51: maxDpbSize = 70778880; break;
+    case MFX_LEVEL_AVC_52: maxDpbSize = 70778880; break;
+    }
+
+    mfxU32 frameSize = width * height * 3 / 2;
+    return mfxU16((std::max)(mfxU32(1), (std::min)(maxDpbSize / frameSize, mfxU32(16))));
+}
+
+mfxU16 GetMinNumRefFrameForPyramid(mfxU16 GopRefDist)
+{
+    mfxU16 refIP = (GopRefDist > 1 ? 2 : 1);
+    mfxU16 refB = GopRefDist ? (GopRefDist - 1) / 2 : 0;
+
+    for (mfxU16 x = refB; x > 2;)
+    {
+        x = (x - 1) / 2;
+        refB -= x;
+    }
+
+    return refIP + refB;
+}
+
+bool IsPowerOf2(mfxU32 n)
+{
+    return (n & (n - 1)) == 0;
+}
+
+mfxU16 AdjustBrefType(mfxU16 init_bref, mfxVideoParam const & par)
+{
+    const mfxU16 nfxMaxByLevel    = GetMaxNumRefFrame(par.mfx.CodecLevel, par.mfx.FrameInfo.Width, par.mfx.FrameInfo.Height);
+    const mfxU16 nfxMinForPyramid = GetMinNumRefFrameForPyramid(par.mfx.GopRefDist);
+
+    if (nfxMinForPyramid > nfxMaxByLevel)
+    {
+        // max dpb size is not enougn for pyramid
+        return MFX_B_REF_OFF;
+    }
+
+    if (init_bref == MFX_B_REF_PYRAMID && par.mfx.GopRefDist < 3)
+    {
+        return MFX_B_REF_OFF;
+    }
+
+    if (init_bref == MFX_B_REF_UNKNOWN)
+    {
+        if (par.mfx.GopRefDist >= 4 &&
+            IsPowerOf2(par.mfx.GopRefDist) &&
+            par.mfx.GopPicSize % par.mfx.GopRefDist == 0 &&
+            par.mfx.NumRefFrame >= nfxMinForPyramid)
+        {
+            return par.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE ? MFX_B_REF_PYRAMID : MFX_B_REF_OFF;
+        }
+        else
+        {
+            return MFX_B_REF_OFF;
+        }
+    }
+
+    return init_bref;
+}
+
 FEI_EncPakInterface::FEI_EncPakInterface(MFXVideoSession* session, iTaskPool* task_pool, mfxU32 allocId, bufList* ext_bufs, AppConfig* config)
     : m_pmfxSession(session)
     , m_pmfxENC((config->bOnlyENC || config->bENCPAK) ? new MFXVideoENC(*session) : NULL)
@@ -50,16 +134,33 @@ FEI_EncPakInterface::FEI_EncPakInterface(MFXVideoSession* session, iTaskPool* ta
 
 FEI_EncPakInterface::~FEI_EncPakInterface()
 {
-    MSDK_SAFE_DELETE(m_pmfxENC);
-    MSDK_SAFE_DELETE(m_pmfxPAK);
-
     for (mfxU32 i = 0; i < m_InitExtParams_ENC.size(); ++i)
     {
         switch (m_InitExtParams_ENC[i]->BufferId)
         {
-        case MFX_EXTBUFF_FEI_PARAM:
-            mfxExtFeiParam* ptr = reinterpret_cast<mfxExtFeiParam*>(m_InitExtParams_ENC[i]);
-            MSDK_SAFE_DELETE(ptr);
+            case MFX_EXTBUFF_FEI_PARAM:
+            {
+                mfxExtFeiParam* ptr = reinterpret_cast<mfxExtFeiParam*>(m_InitExtParams_ENC[i]);
+                MSDK_SAFE_DELETE(ptr);
+            }
+            break;
+            case MFX_EXTBUFF_FEI_PPS:
+            {
+                mfxExtFeiPPS* ptr = reinterpret_cast<mfxExtFeiPPS*>(m_InitExtParams_ENC[i]);
+                MSDK_SAFE_DELETE(ptr);
+            }
+            break;
+            case MFX_EXTBUFF_FEI_SPS:
+            {
+                mfxExtFeiSPS* ptr = reinterpret_cast<mfxExtFeiSPS*>(m_InitExtParams_ENC[i]);
+                MSDK_SAFE_DELETE(ptr);
+            }
+            break;
+            case MFX_EXTBUFF_CODING_OPTION2:
+            {
+                mfxExtCodingOption2* ptr = reinterpret_cast<mfxExtCodingOption2*>(m_InitExtParams_ENC[i]);
+                MSDK_SAFE_DELETE(ptr);
+            }
             break;
         }
     }
@@ -69,10 +170,36 @@ FEI_EncPakInterface::~FEI_EncPakInterface()
     {
         switch (m_InitExtParams_PAK[i]->BufferId)
         {
-        case MFX_EXTBUFF_FEI_PARAM:
-            mfxExtFeiParam* ptr = reinterpret_cast<mfxExtFeiParam*>(m_InitExtParams_PAK[i]);
-            MSDK_SAFE_DELETE(ptr);
+            case MFX_EXTBUFF_FEI_PARAM:
+            {
+                mfxExtFeiParam* ptr = reinterpret_cast<mfxExtFeiParam*>(m_InitExtParams_PAK[i]);
+                MSDK_SAFE_DELETE(ptr);
+            }
             break;
+            case MFX_EXTBUFF_FEI_PPS:
+                if (!m_pmfxENC)
+                {
+                    // Shared buffer for ENC and PAK
+                    mfxExtFeiPPS* ptr = reinterpret_cast<mfxExtFeiPPS*>(m_InitExtParams_PAK[i]);
+                    MSDK_SAFE_DELETE(ptr);
+                }
+                break;
+            case MFX_EXTBUFF_FEI_SPS:
+                if (!m_pmfxENC)
+                {
+                    // Shared buffer for ENC and PAK
+                    mfxExtFeiSPS* ptr = reinterpret_cast<mfxExtFeiSPS*>(m_InitExtParams_PAK[i]);
+                    MSDK_SAFE_DELETE(ptr);
+                }
+                break;
+            case MFX_EXTBUFF_CODING_OPTION2:
+                if (!m_pmfxENC)
+                {
+                    // Shared buffer for ENC and PAK
+                    mfxExtCodingOption2* ptr = reinterpret_cast<mfxExtCodingOption2*>(m_InitExtParams_PAK[i]);
+                    MSDK_SAFE_DELETE(ptr);
+                }
+                break;
         }
     }
     m_InitExtParams_PAK.clear();
@@ -86,6 +213,9 @@ FEI_EncPakInterface::~FEI_EncPakInterface()
     SAFE_FCLOSE(m_pMBstat_out);
     SAFE_FCLOSE(m_pMV_out);
     SAFE_FCLOSE(m_pMBcode_out);
+
+    MSDK_SAFE_DELETE(m_pmfxENC);
+    MSDK_SAFE_DELETE(m_pmfxPAK);
 
     m_pAppConfig->PipelineCfg.pEncVideoParam = NULL;
     m_pAppConfig->PipelineCfg.pPakVideoParam = NULL;
@@ -209,7 +339,29 @@ void FEI_EncPakInterface::GetRefInfo(
     numRefActiveBL0 = m_pAppConfig->NumRefActiveBL0;
     numRefActiveBL1 = m_pAppConfig->NumRefActiveBL1;
 
-    bRefType = m_pAppConfig->bRefType == MFX_B_REF_UNKNOWN ? MFX_B_REF_OFF : m_pAppConfig->bRefType;
+    std::vector<mfxExtBuffer*> & InitExtParams = m_pmfxENC ? m_InitExtParams_ENC : m_InitExtParams_PAK;
+
+    for (mfxU32 i = 0; i < InitExtParams.size(); ++i)
+    {
+        switch (InitExtParams[i]->BufferId)
+        {
+        case MFX_EXTBUFF_CODING_OPTION2:
+        {
+            mfxExtCodingOption2* ptr = reinterpret_cast<mfxExtCodingOption2*>(InitExtParams[i]);
+            bRefType = ptr->BRefType;
+        }
+        break;
+
+        case MFX_EXTBUFF_CODING_OPTION3:
+        {
+            mfxExtCodingOption3* ptr = reinterpret_cast<mfxExtCodingOption3*>(InitExtParams[i]);
+            numRefActiveP   = ptr->NumRefActiveP[0];
+            numRefActiveBL0 = ptr->NumRefActiveBL0[0];
+            numRefActiveBL1 = ptr->NumRefActiveBL1[0];
+        }
+        break;
+        }
+    }
 
     picStruct   = m_pmfxENC ? m_videoParams_ENC.mfx.FrameInfo.PicStruct : m_videoParams_PAK.mfx.FrameInfo.PicStruct;
     refDist     = m_pmfxENC ? m_videoParams_ENC.mfx.GopRefDist          : m_videoParams_PAK.mfx.GopRefDist;
@@ -290,8 +442,52 @@ mfxStatus FEI_EncPakInterface::FillParameters()
     m_videoParams_ENC.mfx.CodecLevel   = m_pAppConfig->CodecLevel;
 
     /* Multi references and multi slices*/
-    m_videoParams_ENC.mfx.NumRefFrame = (std::max)(m_pAppConfig->numRef, mfxU16(1));
+    m_videoParams_ENC.mfx.NumRefFrame = (std::max)(m_pAppConfig->numRef,    mfxU16(1));
     m_videoParams_ENC.mfx.NumSlice    = (std::max)(m_pAppConfig->numSlices, mfxU16(1));
+
+    mfxExtCodingOption2* pCodingOption2 = new mfxExtCodingOption2;
+    MSDK_ZERO_MEMORY(*pCodingOption2);
+    pCodingOption2->Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
+    pCodingOption2->Header.BufferSz = sizeof(mfxExtCodingOption2);
+    pCodingOption2->BRefType = m_pAppConfig->bRefType;
+
+    mfxU16 num_fields = (m_pAppConfig->nPicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
+
+    /* Create SPS Ext Buffer for Init */
+    mfxExtFeiSPS* feiSPS = new mfxExtFeiSPS;
+    MSDK_ZERO_MEMORY(*feiSPS);
+    feiSPS->Header.BufferId = MFX_EXTBUFF_FEI_SPS;
+    feiSPS->Header.BufferSz = sizeof(mfxExtFeiSPS);
+    feiSPS->SPSId                 = 0;
+    feiSPS->PicOrderCntType       = (num_fields == 2 || m_videoParams_ENC.mfx.GopRefDist > 1) ? 0 : 2;
+    feiSPS->Log2MaxPicOrderCntLsb = GetDefaultLog2MaxPicOrdCnt(m_videoParams_ENC.mfx.GopRefDist, AdjustBrefType(m_pAppConfig->bRefType, m_videoParams_ENC));
+
+    /* Create PPS Ext Buffer for Init */
+    mfxExtFeiPPS* feiPPS = new mfxExtFeiPPS;
+    feiPPS->Header.BufferId = MFX_EXTBUFF_FEI_PPS;
+    feiPPS->Header.BufferSz = sizeof(mfxExtFeiPPS);
+
+    feiPPS->SPSId                     = 0;
+    feiPPS->PPSId                     = 0;
+
+    /* PicInitQP should be always 26 !!!
+    * Adjusting of QP parameter should be done via Slice header */
+    feiPPS->PicInitQP                 = 26;
+    feiPPS->NumRefIdxL0Active         = 1;
+    feiPPS->NumRefIdxL1Active         = 1;
+    feiPPS->ChromaQPIndexOffset       = m_pAppConfig->ChromaQPIndexOffset;
+    feiPPS->SecondChromaQPIndexOffset = m_pAppConfig->SecondChromaQPIndexOffset;
+    /*
+    IntraPartMask description from manual
+    This value specifies what block and sub-block partitions are enabled for intra MBs.
+    0x01 - 16x16 is disabled
+    0x02 - 8x8 is disabled
+    0x04 - 4x4 is disabled
+
+    So on, there is additional condition for Transform8x8ModeFlag:
+    If partitions below 16x16 present Transform8x8ModeFlag flag should be ON
+    * */
+    feiPPS->Transform8x8ModeFlag      = ((m_pAppConfig->IntraPartMask & 0x06) != 0x06) ? 1 : m_pAppConfig->Transform8x8ModeFlag;
 
     /* Create extended buffer to Init FEI ENCPAK */
     if (m_pmfxENC)
@@ -305,6 +501,9 @@ mfxStatus FEI_EncPakInterface::FillParameters()
 
         pExtBufInit->SingleFieldProcessing = mfxU16(m_bSingleFieldMode ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
         m_InitExtParams_ENC.push_back(reinterpret_cast<mfxExtBuffer *>(pExtBufInit));
+        m_InitExtParams_ENC.push_back(reinterpret_cast<mfxExtBuffer *>(pCodingOption2));
+        m_InitExtParams_ENC.push_back(reinterpret_cast<mfxExtBuffer *>(feiSPS));
+        m_InitExtParams_ENC.push_back(reinterpret_cast<mfxExtBuffer *>(feiPPS));
 
         m_videoParams_ENC.ExtParam    = &m_InitExtParams_ENC[0]; // vector is stored linearly in memory
         m_videoParams_ENC.NumExtParam = (mfxU16)m_InitExtParams_ENC.size();
@@ -323,6 +522,9 @@ mfxStatus FEI_EncPakInterface::FillParameters()
 
         pExtBufInit->SingleFieldProcessing = mfxU16(m_bSingleFieldMode ? MFX_CODINGOPTION_ON : MFX_CODINGOPTION_OFF);
         m_InitExtParams_PAK.push_back(reinterpret_cast<mfxExtBuffer *>(pExtBufInit));
+        m_InitExtParams_PAK.push_back(reinterpret_cast<mfxExtBuffer *>(pCodingOption2));
+        m_InitExtParams_PAK.push_back(reinterpret_cast<mfxExtBuffer *>(feiSPS));
+        m_InitExtParams_PAK.push_back(reinterpret_cast<mfxExtBuffer *>(feiPPS));
 
         m_videoParams_PAK.ExtParam    = &m_InitExtParams_PAK[0]; // vector is stored linearly in memory
         m_videoParams_PAK.NumExtParam = (mfxU16)m_InitExtParams_PAK.size();
@@ -625,9 +827,7 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
     {
         if (feiPPS)
         {
-            feiPPS[fieldId].NumRefIdxL0Active = (mfxU16)m_RefInfo.state[fieldId].l0_idx.size();
-            feiPPS[fieldId].NumRefIdxL1Active = (mfxU16)m_RefInfo.state[fieldId].l1_idx.size();
-            feiPPS[fieldId].PictureType       = ExtractFrameType(*eTask, fieldId);
+            feiPPS[fieldId].PictureType = ExtractFrameType(*eTask, fieldId);
 
             memset(feiPPS[fieldId].ReferenceFrames, -1, 16 * sizeof(mfxU16));
             memcpy(feiPPS[fieldId].ReferenceFrames, &m_RefInfo.state[fieldId].dpb_idx[0], sizeof(mfxU16)*m_RefInfo.state[fieldId].dpb_idx.size());
