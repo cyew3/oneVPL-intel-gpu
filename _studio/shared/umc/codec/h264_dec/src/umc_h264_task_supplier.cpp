@@ -3070,10 +3070,12 @@ Status TaskSupplier::ProcessFrameNumGap(H264Slice *pSlice, Ipp32s field, Ipp32s 
         }
 
         // sliding window ref pic marking
-        ViewItem &view = GetView(pSlice->GetSliceHeader()->nal_ext.mvc.view_id);
+        // view2 below inicialized exacly as view above.
+        // why we need view2 & may it be defferent from view?
+        ViewItem &view2 = GetView(pSlice->GetSliceHeader()->nal_ext.mvc.view_id);
         H264DecoderFrame * saveFrame = pFrame;
         std::swap(pSlice->m_pCurrentFrame, saveFrame);
-        DecReferencePictureMarking::SlideWindow(view, pSlice, 0);
+        DecReferencePictureMarking::SlideWindow(view2, pSlice, 0);
         std::swap(pSlice->m_pCurrentFrame, saveFrame);
 
         pFrame->SetisShortTermRef(true, 0);
