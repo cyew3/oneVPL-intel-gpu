@@ -242,7 +242,9 @@ Status D3DVideoProcessing::GetFrame(MediaData *in, MediaData *out)
     SrcRect.bottom = pInputSurface->offset_y + pInput->GetHeight();
 
     pOutputSurface->pSurface->GetDesc(&SurfaceDescription);
-    ::RECT TrgtRect = {0, 0, SurfaceDescription.Width, SurfaceDescription.Height};
+    // next line we do explicit  UINT -> LONG conversion i.e. sing -> unsign.
+    // it is ok while surface W and H less than 2147483648
+    ::RECT TrgtRect = {0, 0, static_cast<LONG>(SurfaceDescription.Width), static_cast<LONG>(SurfaceDescription.Height)};
 
     //GetClientRect(m_hFocusWindow, &TrgtRect);
     msBlitParams.TargetRect = TrgtRect;
