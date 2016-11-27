@@ -3842,8 +3842,8 @@ H264Slice * TaskSupplier::DecodeSliceHeader(MediaDataEx *nalUnit)
 
         if ((pSlice->GetSliceHeader()->slice_type != INTRASLICE))
         {
-            H264SEIPayLoad * spl = m_Headers.m_SEIParams.GetHeader(SEI_RECOVERY_POINT_TYPE);
-            m_Headers.m_SEIParams.RemoveHeader(spl);
+            H264SEIPayLoad * splToRemove = m_Headers.m_SEIParams.GetHeader(SEI_RECOVERY_POINT_TYPE);
+            m_Headers.m_SEIParams.RemoveHeader(splToRemove);
         }
     }
 
