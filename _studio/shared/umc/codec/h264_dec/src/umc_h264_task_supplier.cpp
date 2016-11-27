@@ -3941,13 +3941,13 @@ Status TaskSupplier::AddSlice(H264Slice * pSlice, bool force)
             if (setOfSlices->m_isCompleted)
                 continue;
 
-            H264Slice * slice = setOfSlices->GetSlice(setOfSlices->GetSliceCount() - 1);
+            H264Slice * lastSlice = setOfSlices->GetSlice(setOfSlices->GetSliceCount() - 1);
 
-            m_currentView = slice->GetSliceHeader()->nal_ext.mvc.view_id;
+            m_currentView = lastSlice->GetSliceHeader()->nal_ext.mvc.view_id;
             ViewItem &view = GetView(m_currentView);
             view.pCurFrame = setOfSlices->m_frame;
 
-            const H264SliceHeader *sliceHeader = slice->GetSliceHeader();
+            const H264SliceHeader *sliceHeader = lastSlice->GetSliceHeader();
             Ipp32u field_index = setOfSlices->m_frame->GetNumberByParity(sliceHeader->bottom_field_flag);
             if (!setOfSlices->m_frame->GetAU(field_index)->GetSliceCount())
             {

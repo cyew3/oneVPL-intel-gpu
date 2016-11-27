@@ -525,36 +525,37 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
         return UMC_ERR_INVALID_STREAM;
     }
 
-    H264SeqParamSet * currSPS = m_Headers.m_SeqParams.GetCurrentHeader();
-
-    if (currSPS)
     {
-        if (currSPS->chroma_format_idc > 2)
-            throw h264_exception(UMC_ERR_UNSUPPORTED);
+        H264SeqParamSet * currSPS = m_Headers.m_SeqParams.GetCurrentHeader();
 
-        switch (currSPS->profile_idc)
+        if (currSPS)
         {
-        case H264VideoDecoderParams::H264_PROFILE_UNKNOWN:
-        case H264VideoDecoderParams::H264_PROFILE_BASELINE:
-        case H264VideoDecoderParams::H264_PROFILE_MAIN:
-        case H264VideoDecoderParams::H264_PROFILE_EXTENDED:
-        case H264VideoDecoderParams::H264_PROFILE_HIGH:
-        case H264VideoDecoderParams::H264_PROFILE_HIGH10:
-        case H264VideoDecoderParams::H264_PROFILE_HIGH422:
+            if (currSPS->chroma_format_idc > 2)
+                throw h264_exception(UMC_ERR_UNSUPPORTED);
 
-        case H264VideoDecoderParams::H264_PROFILE_MULTIVIEW_HIGH:
-        case H264VideoDecoderParams::H264_PROFILE_STEREO_HIGH:
+            switch (currSPS->profile_idc)
+            {
+            case H264VideoDecoderParams::H264_PROFILE_UNKNOWN:
+            case H264VideoDecoderParams::H264_PROFILE_BASELINE:
+            case H264VideoDecoderParams::H264_PROFILE_MAIN:
+            case H264VideoDecoderParams::H264_PROFILE_EXTENDED:
+            case H264VideoDecoderParams::H264_PROFILE_HIGH:
+            case H264VideoDecoderParams::H264_PROFILE_HIGH10:
+            case H264VideoDecoderParams::H264_PROFILE_HIGH422:
 
-        case H264VideoDecoderParams::H264_PROFILE_SCALABLE_BASELINE:
-        case H264VideoDecoderParams::H264_PROFILE_SCALABLE_HIGH:
-            break;
-        default:
-            throw h264_exception(UMC_ERR_UNSUPPORTED);
+            case H264VideoDecoderParams::H264_PROFILE_MULTIVIEW_HIGH:
+            case H264VideoDecoderParams::H264_PROFILE_STEREO_HIGH:
+
+            case H264VideoDecoderParams::H264_PROFILE_SCALABLE_BASELINE:
+            case H264VideoDecoderParams::H264_PROFILE_SCALABLE_HIGH:
+                break;
+            default:
+                throw h264_exception(UMC_ERR_UNSUPPORTED);
+            }
+
+            DPBOutput::OnNewSps(currSPS);
         }
-
-        DPBOutput::OnNewSps(currSPS);
     }
-
 //    {
 //        // save sps/pps
 //        Ipp32u nal_unit_type = nalUnit->GetExData()->values[0];
@@ -941,8 +942,8 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
 
         if ((pSlice->GetSliceHeader()->slice_type != INTRASLICE))
         {
-            H264SEIPayLoad * spl = m_Headers.m_SEIParams.GetHeader(SEI_RECOVERY_POINT_TYPE);
-            m_Headers.m_SEIParams.RemoveHeader(spl);
+            H264SEIPayLoad * splToRemove = m_Headers.m_SEIParams.GetHeader(SEI_RECOVERY_POINT_TYPE);
+            m_Headers.m_SEIParams.RemoveHeader(splToRemove);
         }
     }
 
