@@ -331,7 +331,7 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
         fieldCount = f_start = m_firstFieldDone; // 0 or 1
     }
 
-    if (!task.m_fieldPicFlag || (task.m_fieldPicFlag && f_start != fieldCount))
+    //if (!task.m_fieldPicFlag || (task.m_fieldPicFlag && !m_firstFieldDone))
     {
         sts = GetNativeHandleToRawSurface(*m_core, m_video, task, task.m_handleRaw);
         MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
