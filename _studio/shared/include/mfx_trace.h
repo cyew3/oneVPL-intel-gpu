@@ -42,6 +42,12 @@
     typedef TCHAR mfxTraceChar;
 
     #define MFX_TRACE_STRING(x) _T(x)
+    #define DISABLE_WARN_HIDE_PREV_LOCAL_DECLARATION \
+        __pragma( warning( push )) \
+        __pragma( warning( disable : 4456 ))
+
+    #define ROLLBACK_WARN_HIDE_PREV_LOCAL_DECLARATION \
+        __pragma( warning( pop ) )
 #else
     #define MAX_PATH 260
 
@@ -51,6 +57,9 @@
     typedef char mfxTraceChar;
 
     #define MFX_TRACE_STRING(x) x
+
+    #define DISABLE_WARN_HIDE_PREV_LOCAL_DECLARATION
+    #define ROLLBACK_WARN_HIDE_PREV_LOCAL_DECLARATION
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
 typedef unsigned int mfxTraceU32;
@@ -265,8 +274,10 @@ mfxTraceU32 MFXTrace_EndTask(mfxTraceStaticHandle *static_handle,
 
 #define MFX_LTRACE(_trace_all_params)                       \
 {                                                           \
+    DISABLE_WARN_HIDE_PREV_LOCAL_DECLARATION                \
     static mfxTraceStaticHandle _trace_static_handle = {};  \
     MFXTrace_DebugMessage _trace_all_params;                \
+    ROLLBACK_WARN_HIDE_PREV_LOCAL_DECLARATION               \
 }
 #else
 #define MFX_TRACE_INIT()
@@ -414,8 +425,11 @@ private:
 
 #ifdef MFX_TRACE_ENABLE
     #define _MFX_AUTO_LTRACE_(_level, _task_name, _bCreateID)       \
+        DISABLE_WARN_HIDE_PREV_LOCAL_DECLARATION                    \
         static mfxTraceStaticHandle _trace_static_handle;           \
-        MFXTraceTask                _mfx_trace_task(MFX_TRACE_PARAMS, _level, _task_name, _bCreateID);
+        MFXTraceTask                _mfx_trace_task(MFX_TRACE_PARAMS, _level, _task_name, _bCreateID); \
+        ROLLBACK_WARN_HIDE_PREV_LOCAL_DECLARATION
+
     #define MFX_AUTO_TRACE_STOP()   _mfx_trace_task.Stop()
     #define MFX_AUTO_TRACE_GETID()  _mfx_trace_task.GetID()
 #else
