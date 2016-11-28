@@ -416,11 +416,9 @@ static const GuidProfile guidProfiles[] =
 
     { VA_H264 | VA_VLD | VA_PROFILE_WIDEVINE,   DXVA_Intel_Decode_Elementary_Stream_AVC },
 
-#if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
     { VA_H265 | VA_VLD, DXVA_ModeHEVC_VLD_Main }, // MS
-    { VA_H265 | VA_VLD | VA_PROFILE_10, DXVA_ModeHEVC_VLD_Main10  }, // MS
-#endif
     { VA_H265 | VA_VLD | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_MainProfile },
+    { VA_H265 | VA_VLD | VA_PROFILE_10, DXVA_ModeHEVC_VLD_Main10  }, // MS
     { VA_H265 | VA_VLD | VA_PROFILE_10 | VA_LONG_SLICE_MODE, DXVA_Intel_ModeHEVC_VLD_Main10Profile },
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)

@@ -485,6 +485,13 @@ eMFXPlatform MFX_Utility::GetPlatform_H265(VideoCORE * core, mfxVideoParam * par
                     break;
 #endif
             }
+
+#ifdef PRE_SI_TARGET_PLATFORM_GEN11
+            //WA for MDP-31636
+            if (typeHW >= MFX_HW_ICL && profile < MFX_PROFILE_HEVC_REXT)
+                //clear MS public guid
+                guids[0] = GUID();
+#endif
         }
 
         size_t i = 0;
