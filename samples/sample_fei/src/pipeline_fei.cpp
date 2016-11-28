@@ -1713,16 +1713,19 @@ mfxStatus CEncodingPipeline::ProcessBufferedFrames()
     }
     else // ENCODE in display order
     {
-        while (MFX_ERR_NONE <= sts)
+        if (m_appCfg.bENCODE)
         {
-            sts = m_pFEI_ENCODE->EncodeOneFrame(NULL, NULL, PairU8(NULL, NULL));
-        }
+            while (MFX_ERR_NONE <= sts)
+            {
+                sts = m_pFEI_ENCODE->EncodeOneFrame(NULL, NULL, PairU8(NULL, NULL));
+            }
 
-        // MFX_ERR_MORE_DATA is the correct status to exit buffering loop with
-        // indicates that there are no more buffered frames
-        MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
-        // exit in case of other errors
-        MSDK_CHECK_STATUS(sts, "EncodeOneFrame failed");
+            // MFX_ERR_MORE_DATA is the correct status to exit buffering loop with
+            // indicates that there are no more buffered frames
+            MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
+            // exit in case of other errors
+            MSDK_CHECK_STATUS(sts, "EncodeOneFrame failed");
+        }
     }
 
     return sts;
