@@ -861,9 +861,9 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                mfxI8 tmp;
+                mfxI16 tmp;
                 msdk_sscanf(strInput[i], MSDK_STRING("%hd"), reinterpret_cast<short int *>(&tmp));
-                pParams->frameInfoIn[0].PicStruct = GetPicStruct(tmp);
+                pParams->frameInfoIn[0].PicStruct = GetPicStruct(static_cast<mfxI8>(tmp));
             }
             else if(0 == msdk_strcmp(strInput[i], MSDK_STRING("-sf")))
             {
@@ -911,9 +911,9 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                mfxI8 tmp;
+                mfxI16 tmp;
                 msdk_sscanf(strInput[i], MSDK_STRING("%hd"), reinterpret_cast<short int *>(&tmp));
-                pParams->frameInfoOut[0].PicStruct = GetPicStruct(tmp);
+                pParams->frameInfoOut[0].PicStruct = GetPicStruct(static_cast<mfxI8>(tmp));
             }
             else if(0 == msdk_strcmp(strInput[i], MSDK_STRING("-df")))
             {
