@@ -777,11 +777,7 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
             break;
         }
     }
-
-    if (indxSurf == m_statFeedbackCache.size())
-    {
-        return MFX_ERR_UNKNOWN;
-    }
+    MFX_CHECK(indxSurf != m_statFeedbackCache.size(), MFX_ERR_UNKNOWN);
 
     VASurfaceStatus surfSts = VASurfaceSkipped;
 
@@ -813,8 +809,8 @@ mfxStatus VAAPIFEIPREENCEncoder::QueryStatus(
             VAMotionVectorIntel* mvs;
             VAStatsStatistics16x16Intel* mbstat;
 
-            mfxENCInput*  in  = (mfxENCInput* )task.m_userData[0];
-            mfxENCOutput* out = (mfxENCOutput*)task.m_userData[1];
+            mfxENCInput*  in  = reinterpret_cast<mfxENCInput* >(task.m_userData[0]);
+            mfxENCOutput* out = reinterpret_cast<mfxENCOutput*>(task.m_userData[1]);
 
             //find control buffer
             mfxExtFeiPreEncCtrl*   feiCtrl   = GetExtBufferFEI(in,  feiFieldId);
@@ -1169,96 +1165,25 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     {
         mfxExtSpsHeader* extSps = GetExtBuffer(m_videoParam);
 
-        /* SPS portion */
-        mdprintf(stderr,"Library's generated SPS header (it will be changed now on external one) \n");
-        mdprintf(stderr,"---->extSps->seqParameterSetId = %d\n", extSps->seqParameterSetId);
-        mdprintf(stderr,"---->extSps->levelIdc = %d\n", extSps->levelIdc);
-        mdprintf(stderr,"---->extSps->maxNumRefFrames = %d\n", extSps->maxNumRefFrames);
-        mdprintf(stderr,"---->extSps->picWidthInMbsMinus1 = %d\n", extSps->picWidthInMbsMinus1);
-        mdprintf(stderr,"---->extSps->picHeightInMapUnitsMinus1 = %d\n", extSps->picHeightInMapUnitsMinus1);
-        mdprintf(stderr,"---->extSps->chromaFormatIdc = %d\n", extSps->chromaFormatIdc);
-        mdprintf(stderr,"---->extSps->frameMbsOnlyFlag = %d\n", extSps->frameMbsOnlyFlag);
-        mdprintf(stderr,"---->extSps->mbAdaptiveFrameFieldFlag = %d\n", extSps->mbAdaptiveFrameFieldFlag);
-        mdprintf(stderr,"---->extSps->direct8x8InferenceFlag = %d\n", extSps->direct8x8InferenceFlag);
-        mdprintf(stderr,"---->extSps->log2MaxFrameNumMinus4 = %d\n", extSps->log2MaxFrameNumMinus4);
-        mdprintf(stderr,"---->extSps->picOrderCntType = %d\n", extSps->picOrderCntType);
-        mdprintf(stderr,"---->extSps->log2MaxPicOrderCntLsbMinus4 = %d\n", extSps->log2MaxPicOrderCntLsbMinus4);
-        mdprintf(stderr,"---->extSps->deltaPicOrderAlwaysZeroFlag = %d\n", extSps->deltaPicOrderAlwaysZeroFlag);
-
         extSps->seqParameterSetId           = pDataSPS->SPSId;
-        extSps->levelIdc                    = pDataSPS->Level;
-        extSps->maxNumRefFrames             = pDataSPS->NumRefFrame;
-        extSps->chromaFormatIdc             = pDataSPS->ChromaFormatIdc;
-        extSps->frameMbsOnlyFlag            = pDataSPS->FrameMBsOnlyFlag;
-        extSps->mbAdaptiveFrameFieldFlag    = pDataSPS->MBAdaptiveFrameFieldFlag;
-        extSps->direct8x8InferenceFlag      = pDataSPS->Direct8x8InferenceFlag;
-        extSps->log2MaxFrameNumMinus4       = pDataSPS->Log2MaxFrameNum - 4;
         extSps->picOrderCntType             = pDataSPS->PicOrderCntType;
         extSps->log2MaxPicOrderCntLsbMinus4 = pDataSPS->Log2MaxPicOrderCntLsb - 4 ;
-        extSps->deltaPicOrderAlwaysZeroFlag = pDataSPS->DeltaPicOrderAlwaysZeroFlag;
-
-        mdprintf(stderr,"Applications's SPS header\n");
-        mdprintf(stderr,"---->extSps->seqParameterSetId = %d\n", extSps->seqParameterSetId);
-        mdprintf(stderr,"---->extSps->levelIdc = %d\n", extSps->levelIdc);
-        mdprintf(stderr,"---->extSps->maxNumRefFrames = %d\n", extSps->maxNumRefFrames);
-        mdprintf(stderr,"---->extSps->picWidthInMbsMinus1 = %d\n", extSps->picWidthInMbsMinus1);
-        mdprintf(stderr,"---->extSps->picHeightInMapUnitsMinus1 = %d\n", extSps->picHeightInMapUnitsMinus1);
-        mdprintf(stderr,"---->extSps->chromaFormatIdc = %d\n", extSps->chromaFormatIdc);
-        mdprintf(stderr,"---->extSps->frameMbsOnlyFlag = %d\n", extSps->frameMbsOnlyFlag);
-        mdprintf(stderr,"---->extSps->mbAdaptiveFrameFieldFlag = %d\n", extSps->mbAdaptiveFrameFieldFlag);
-        mdprintf(stderr,"---->extSps->direct8x8InferenceFlag = %d\n", extSps->direct8x8InferenceFlag);
-        mdprintf(stderr,"---->extSps->log2MaxFrameNumMinus4 = %d\n", extSps->log2MaxFrameNumMinus4);
-        mdprintf(stderr,"---->extSps->picOrderCntType = %d\n", extSps->picOrderCntType);
-        mdprintf(stderr,"---->extSps->log2MaxPicOrderCntLsbMinus4 = %d\n", extSps->log2MaxPicOrderCntLsbMinus4);
-        mdprintf(stderr,"---->extSps->deltaPicOrderAlwaysZeroFlag = %d\n", extSps->deltaPicOrderAlwaysZeroFlag);
     }
     /* PPS */
     if ((NULL != pDataPPS) && (task.m_insertPps[fieldId]) )
     {
         mfxExtPpsHeader* extPps = GetExtBuffer(m_videoParam);
 
-        /* PPS */
-        mdprintf(stderr,"Library's generated PPS header (it will be changed now on external one) \n");
-        mdprintf(stderr,"---->extPps->seqParameterSetId = %d\n", extPps->seqParameterSetId);
-        mdprintf(stderr,"---->extPps->picParameterSetId = %d\n", extPps->picParameterSetId);
-        mdprintf(stderr,"---->extPps->picInitQpMinus26 = %d\n", extPps->picInitQpMinus26);
-        mdprintf(stderr,"---->extPps->numRefIdxL0DefaultActiveMinus1 = %d\n", extPps->numRefIdxL0DefaultActiveMinus1);
-        mdprintf(stderr,"---->extPps->numRefIdxL1DefaultActiveMinus1 = %d\n", extPps->numRefIdxL1DefaultActiveMinus1);
-        mdprintf(stderr,"---->extPps->chromaQpIndexOffset = %d\n", extPps->chromaQpIndexOffset);
-        mdprintf(stderr,"---->extPps->secondChromaQpIndexOffset = %d\n", extPps->secondChromaQpIndexOffset);
-        mdprintf(stderr,"---->extPps->entropyCodingModeFlag = %d\n", extPps->entropyCodingModeFlag);
-        mdprintf(stderr,"---->extPps->constrainedIntraPredFlag = %d\n", extPps->constrainedIntraPredFlag);
-        mdprintf(stderr,"---->extPps->transform8x8ModeFlag = %d\n", extPps->transform8x8ModeFlag);
-
         extPps->seqParameterSetId = pDataPPS->SPSId;
         extPps->picParameterSetId = pDataPPS->PPSId;
 
-        //extPps->frame_num = pDataPPS->FrameNum;
-
-        extPps->picInitQpMinus26               = pDataPPS->PicInitQP-26;
+        extPps->picInitQpMinus26               = pDataPPS->PicInitQP - 26;
         extPps->numRefIdxL0DefaultActiveMinus1 = pDataPPS->NumRefIdxL0Active ? (pDataPPS->NumRefIdxL0Active - 1) : 0;
         extPps->numRefIdxL1DefaultActiveMinus1 = pDataPPS->NumRefIdxL1Active ? (pDataPPS->NumRefIdxL1Active - 1) : 0;
 
         extPps->chromaQpIndexOffset       = pDataPPS->ChromaQPIndexOffset;
         extPps->secondChromaQpIndexOffset = pDataPPS->SecondChromaQPIndexOffset;
-
-        //m_pps.pic_fields.bits.idr_pic_flag = pDataPPS->IDRPicFlag;
-        //m_pps.pic_fields.bits.reference_pic_flag = pDataPPS->ReferencePicFlag;
-        extPps->entropyCodingModeFlag    = pDataPPS->EntropyCodingModeFlag;
-        extPps->constrainedIntraPredFlag = pDataPPS->ConstrainedIntraPredFlag;
-        extPps->transform8x8ModeFlag     = pDataPPS->Transform8x8ModeFlag;
-
-        mdprintf(stderr,"Applications's generated PPS header\n");
-        mdprintf(stderr,"---->extPps->seqParameterSetId = %d\n", extPps->seqParameterSetId);
-        mdprintf(stderr,"---->extPps->picParameterSetId = %d\n", extPps->picParameterSetId);
-        mdprintf(stderr,"---->extPps->picInitQpMinus26 = %d\n", extPps->picInitQpMinus26);
-        mdprintf(stderr,"---->extPps->numRefIdxL0DefaultActiveMinus1 = %d\n", extPps->numRefIdxL0DefaultActiveMinus1);
-        mdprintf(stderr,"---->extPps->numRefIdxL1DefaultActiveMinus1 = %d\n", extPps->numRefIdxL1DefaultActiveMinus1);
-        mdprintf(stderr,"---->extPps->chromaQpIndexOffset = %d\n", extPps->chromaQpIndexOffset);
-        mdprintf(stderr,"---->extPps->secondChromaQpIndexOffset = %d\n", extPps->secondChromaQpIndexOffset);
-        mdprintf(stderr,"---->extPps->entropyCodingModeFlag = %d\n", extPps->entropyCodingModeFlag);
-        mdprintf(stderr,"---->extPps->constrainedIntraPredFlag = %d\n", extPps->constrainedIntraPredFlag);
-        mdprintf(stderr,"---->extPps->transform8x8ModeFlag = %d\n", extPps->transform8x8ModeFlag);
+        extPps->transform8x8ModeFlag      = pDataPPS->Transform8x8ModeFlag;
     }
     /* repack headers by itself */
     if ( ((NULL != pDataSPS) && (task.m_insertSps[fieldId])) ||
@@ -1481,33 +1406,6 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     // Fill PPS
     UpdatePPS(task, fieldId, m_pps, m_reconQueue);
 
-    /* Check application's provided data */
-    if (NULL != pDataPPS)
-    {
-
-#if defined(_DEBUG)
-        if (m_pps.pic_fields.bits.idr_pic_flag != pDataPPS->IDRPicFlag)
-        {
-            mdprintf(stderr, "!!!Warning pDataPPS->IDRPicFlag = %u\n", pDataPPS->IDRPicFlag);
-            mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.idr_pic_flag = %u\n", m_pps.pic_fields.bits.idr_pic_flag);
-        }
-        if (m_pps.pic_fields.bits.reference_pic_flag != pDataPPS->ReferencePicFlag)
-        {
-            mdprintf(stderr, "!!!Warning pDataPPS->ReferencePicFlag = %u\n", pDataPPS->ReferencePicFlag);
-            mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.reference_pic_flag = %u\n", m_pps.pic_fields.bits.reference_pic_flag);
-        }
-        if (m_pps.frame_num != pDataPPS->FrameNum)
-        {
-            mdprintf(stderr, "!!!Warning pDataPPS->FrameNum = %u\n", pDataPPS->FrameNum);
-            mdprintf(stderr, "   But library's is m_pps.frame_num = %u\n", m_pps.frame_num);
-        }
-#endif
-
-        m_pps.pic_fields.bits.idr_pic_flag       = pDataPPS->IDRPicFlag;
-        m_pps.pic_fields.bits.reference_pic_flag = pDataPPS->ReferencePicFlag;
-        m_pps.frame_num                          = pDataPPS->FrameNum;
-    }
-
     /* ENC & PAK has issue with reconstruct surface.
      * How does it work right now?
      * ENC & PAK has same surface pool, both for source and reconstructed surfaces,
@@ -1534,8 +1432,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     else
         m_pps.CurrPic.flags = 0;
 
-    /* Need to allocated coded buffer: this is does not used by ENC actually
-     */
+    /* Need to allocated coded buffer: this is does not used by ENC actually */
     if (VA_INVALID_ID == m_codedBufferId)
     {
         int width32  = ((m_videoParam.mfx.FrameInfo.Width  + 31) >> 5) << 5;
@@ -1614,40 +1511,10 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     /* Application defined slice params */
     if (NULL != pDataSliceHeader)
     {
-        MFX_CHECK(pDataSliceHeader->NumSlice == pDataSliceHeader->NumSliceAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
-
         numSlice = (std::max)(pDataSliceHeader->NumSlice, mfxU16(1));
     }
 
     UpdateSlice(m_caps, task, fieldId, m_sps, m_pps, m_slice, m_videoParam, m_reconQueue);
-
-#if defined(_DEBUG)
-    mdprintf(stderr, "LIBRRAY's ref list-----\n");
-    for ( mfxU32 i = 0; i < 32; i++)
-    {
-        if (VA_INVALID_ID != m_slice[0].RefPicList0[i].picture_id)
-        {
-            mdprintf(stderr, " ------%d-----\n", i);
-            mdprintf(stderr, "m_slice[0].RefPicList0[%d].picture_id=%d\n", i, m_slice[0].RefPicList0[i].picture_id);
-            mdprintf(stderr, "m_slice[0].RefPicList0[%d].frame_idx=%d\n", i, m_slice[0].RefPicList0[i].frame_idx);
-            mdprintf(stderr, "m_slice[0].RefPicList0[%d].flags=%d\n", i, m_slice[0].RefPicList0[i].flags);
-            mdprintf(stderr, "m_slice[0].RefPicList0[%d].TopFieldOrderCnt=%d\n", i, m_slice[0].RefPicList0[i].TopFieldOrderCnt);
-            mdprintf(stderr, "m_slice[0].RefPicList0[%d].BottomFieldOrderCnt=%d\n", i, m_slice[0].RefPicList0[i].BottomFieldOrderCnt);
-        }
-    }
-    for (mfxU32 i = 0; i < 32; i++)
-    {
-        if (VA_INVALID_ID != m_slice[0].RefPicList1[i].picture_id)
-        {
-            mdprintf(stderr, " ------%d-----\n", i);
-            mdprintf(stderr, "m_slice[0].RefPicList1[%d].picture_id=%d\n", i, m_slice[0].RefPicList1[i].picture_id);
-            mdprintf(stderr, "m_slice[0].RefPicList1[%d].frame_idx=%d\n", i, m_slice[0].RefPicList1[i].frame_idx);
-            mdprintf(stderr, "m_slice[0].RefPicList1[%d].flags=%d\n", i, m_slice[0].RefPicList1[i].flags);
-            mdprintf(stderr, "m_slice[0].RefPicList1[%d].TopFieldOrderCnt=%d\n", i, m_slice[0].RefPicList1[i].TopFieldOrderCnt);
-            mdprintf(stderr, "m_slice[0].RefPicList1[%d].BottomFieldOrderCnt=%d\n", i, m_slice[0].RefPicList1[i].BottomFieldOrderCnt);
-        }
-    }
-#endif // defined(_DEBUG)
 
     for (mfxU32 i = 0; i < numSlice; i++)
     {
@@ -1656,73 +1523,7 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
 
         if (NULL != pDataSliceHeader )
         {
-            mdprintf(stderr,"Library's generated Slice header (it will be changed now on external one) \n");
-            mdprintf(stderr,"---->m_slice[%u].macroblock_address = %d\n", i, m_slice[i].macroblock_address);
-            mdprintf(stderr,"---->m_slice[%u].num_macroblocks = %d\n", i, m_slice[i].num_macroblocks);
-            mdprintf(stderr,"---->m_slice[%u].slice_type = %d\n", i, m_slice[i].slice_type);
-            mdprintf(stderr,"---->m_slice[%u].idr_pic_id = %d\n", i, m_slice[i].idr_pic_id);
-            mdprintf(stderr,"---->m_slice[%u].cabac_init_idc = %d\n", i, m_slice[i].cabac_init_idc);
-            mdprintf(stderr,"---->m_slice[%u].slice_qp_delta = %d\n", i, m_slice[i].slice_qp_delta);
-            mdprintf(stderr,"---->m_slice[%u].disable_deblocking_filter_idc = %d\n", i, m_slice[i].disable_deblocking_filter_idc);
-            mdprintf(stderr,"---->m_slice[%u].slice_alpha_c0_offset_div2 = %d\n", i, m_slice[i].slice_alpha_c0_offset_div2);
-            mdprintf(stderr,"---->m_slice[%u].slice_beta_offset_div2 = %d\n", i, m_slice[i].slice_beta_offset_div2);
-
-#if defined(_DEBUG)
-            if (m_slice[i].macroblock_address != pDataSliceHeader->Slice[i].MBAaddress)
-            {
-                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].MBAaddress = %u\n", i, pDataSliceHeader->Slice[i].MBAaddress);
-                mdprintf(stderr, "   But library's is m_slice[%u].macroblock_address = %u\n", i, m_slice[i].macroblock_address);
-            }
-            if (m_slice[i].num_macroblocks != pDataSliceHeader->Slice[i].NumMBs)
-            {
-                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].NumMBs = %u\n", i, pDataSliceHeader->Slice[i].NumMBs);
-                mdprintf(stderr, "   But library's is m_slice[%u].num_macroblocks = %u\n", i, m_slice[i].num_macroblocks);
-            }
-            if (m_slice[i].slice_type != pDataSliceHeader->Slice[i].SliceType)
-            {
-                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceType = %u\n", i, pDataSliceHeader->Slice[i].SliceType);
-                mdprintf(stderr, "   But library's is m_slice[%u].slice_type = %u\n", i, m_slice[i].slice_type);
-            }
-            if (pDataSliceHeader->Slice[i].PPSId != m_pps.pic_parameter_set_id)
-            {
-                mdprintf(stderr,"pDataSliceHeader->Slice[%u].PPSId = %u\n", i, pDataSliceHeader->Slice[i].PPSId);
-                mdprintf(stderr,"m_pps.pic_parameter_set_id = %u\n", m_pps.pic_parameter_set_id);
-            }
-            if (m_slice[i].idr_pic_id != pDataSliceHeader->Slice[i].IdrPicId)
-            {
-                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].IdrPicId = %u\n", i, pDataSliceHeader->Slice[i].IdrPicId);
-                mdprintf(stderr, "   But library's is m_slice[%u].idr_pic_id = %u\n", i, m_slice[i].idr_pic_id);
-            }
-            if (m_slice[i].cabac_init_idc != pDataSliceHeader->Slice[i].CabacInitIdc)
-            {
-                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].CabacInitIdc = %u\n", i, pDataSliceHeader->Slice[i].CabacInitIdc);
-                mdprintf(stderr, "   But library's is m_slice[%u].cabac_init_idc = %u\n", i, m_slice[i].cabac_init_idc);
-            }
-            if (m_slice[i].slice_qp_delta != pDataSliceHeader->Slice[i].SliceQPDelta)
-            {
-                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceQPDelta = %u\n", i, pDataSliceHeader->Slice[i].SliceQPDelta);
-                mdprintf(stderr, "   But library's is m_slice[%u].slice_qp_delta = %u\n", i, m_slice[i].slice_qp_delta);
-            }
-
-            if (m_slice[i].disable_deblocking_filter_idc != pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc)
-            {
-                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].DisableDeblockingFilterIdc = %u\n", i, pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc);
-                mdprintf(stderr, "   But library's is m_slice[%u].disable_deblocking_filter_idc = %u\n", i, m_slice[i].disable_deblocking_filter_idc);
-            }
-            if (m_slice[i].slice_alpha_c0_offset_div2 != pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2)
-            {
-                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceAlphaC0OffsetDiv2 = %u\n", i, pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2);
-                mdprintf(stderr, "   But library's is m_slice[%u].slice_alpha_c0_offset_div2 = %u\n", i, m_slice[i].slice_alpha_c0_offset_div2);
-            }
-
-            if (m_slice[i].slice_beta_offset_div2 != pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2)
-            {
-                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceBetaOffsetDiv2 = %u\n", i, pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2);
-                mdprintf(stderr, "   But library's is m_slice[%u].slice_beta_offset_div2 = %u\n", i, m_slice[i].slice_beta_offset_div2);
-            }
-#endif
-
-            m_slice[i].macroblock_address            = pDataSliceHeader->Slice[i].MBAaddress;
+            m_slice[i].macroblock_address            = pDataSliceHeader->Slice[i].MBAddress;
             m_slice[i].num_macroblocks               = pDataSliceHeader->Slice[i].NumMBs;
             m_slice[i].slice_type                    = pDataSliceHeader->Slice[i].SliceType;
             m_slice[i].idr_pic_id                    = pDataSliceHeader->Slice[i].IdrPicId;
@@ -1731,17 +1532,6 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
             m_slice[i].disable_deblocking_filter_idc = pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc;
             m_slice[i].slice_alpha_c0_offset_div2    = pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2;
             m_slice[i].slice_beta_offset_div2        = pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2;
-
-            mdprintf(stderr,"Application's generated Slice header \n");
-            mdprintf(stderr,"---->m_slice[%u].macroblock_address = %d\n", i, m_slice[i].macroblock_address);
-            mdprintf(stderr,"---->m_slice[%u].num_macroblocks = %d\n", i, m_slice[i].num_macroblocks);
-            mdprintf(stderr,"---->m_slice[%u].slice_type = %d\n", i, m_slice[i].slice_type);
-            mdprintf(stderr,"---->m_slice[%u].idr_pic_id = %d\n", i, m_slice[i].idr_pic_id);
-            mdprintf(stderr,"---->m_slice[%u].cabac_init_idc = %d\n", i, m_slice[i].cabac_init_idc);
-            mdprintf(stderr,"---->m_slice[%u].slice_qp_delta = %d\n", i, m_slice[i].slice_qp_delta);
-            mdprintf(stderr,"---->m_slice[%u].disable_deblocking_filter_idc = %d\n", i, m_slice[i].disable_deblocking_filter_idc);
-            mdprintf(stderr,"---->m_slice[%u].slice_alpha_c0_offset_div2 = %d\n", i, m_slice[i].slice_alpha_c0_offset_div2);
-            mdprintf(stderr,"---->m_slice[%u].slice_beta_offset_div2 = %d\n", i, m_slice[i].slice_beta_offset_div2);
         }
 
     } // for( size_t i = 0; i < m_slice.size(); i++ )
@@ -1829,58 +1619,6 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     // Rendering
     //------------------------------------------------------------------
 
-#if defined(_DEBUG)
-
-    mdprintf(stderr, "task.m_frameNum=%d\n", task.m_frameNum);
-    mdprintf(stderr, "inputSurface=%d\n", *inputSurface);
-    mdprintf(stderr, "m_pps.CurrPic.picture_id=%d\n", m_pps.CurrPic.picture_id);
-    mdprintf(stderr, "m_pps.CurrPic.frame_idx=%d\n", m_pps.CurrPic.frame_idx);
-    mdprintf(stderr, "m_pps.CurrPic.flags=%d\n",m_pps.CurrPic.flags);
-    mdprintf(stderr, "m_pps.CurrPic.TopFieldOrderCnt=%d\n", m_pps.CurrPic.TopFieldOrderCnt);
-    mdprintf(stderr, "m_pps.CurrPic.BottomFieldOrderCnt=%d\n", m_pps.CurrPic.BottomFieldOrderCnt);
-
-    mdprintf(stderr, "-------------------------------------------\n");
-
-    mfxU32 i = 0;
-
-    for ( i = 0; i < 16; i++)
-    {
-        if (VA_INVALID_ID != m_pps.ReferenceFrames[i].picture_id)
-        {
-            mdprintf(stderr, " ------%d-----\n", i);
-            mdprintf(stderr, "m_pps.ReferenceFrames[%d].picture_id=%d\n", i, m_pps.ReferenceFrames[i].picture_id);
-            mdprintf(stderr, "m_pps.ReferenceFrames[%d].frame_idx=%d\n", i, m_pps.ReferenceFrames[i].frame_idx);
-            mdprintf(stderr, "m_pps.ReferenceFrames[%d].flags=%d\n", i, m_pps.ReferenceFrames[i].flags);
-            mdprintf(stderr, "m_pps.ReferenceFrames[%d].TopFieldOrderCnt=%d\n", i, m_pps.ReferenceFrames[i].TopFieldOrderCnt);
-            mdprintf(stderr, "m_pps.ReferenceFrames[%d].BottomFieldOrderCnt=%d\n", i, m_pps.ReferenceFrames[i].BottomFieldOrderCnt);
-        }
-    }
-
-    for ( i = 0; i < 32; i++)
-    {
-        if (VA_INVALID_ID != m_slice[0].RefPicList0[i].picture_id)
-        {
-            mdprintf(stderr, " ------%d-----\n", i);
-            mdprintf(stderr, "m_slice[0].RefPicList0[%d].picture_id=%d\n", i, m_slice[0].RefPicList0[i].picture_id);
-            mdprintf(stderr, "m_slice[0].RefPicList0[%d].frame_idx=%d\n", i, m_slice[0].RefPicList0[i].frame_idx);
-            mdprintf(stderr, "m_slice[0].RefPicList0[%d].flags=%d\n", i, m_slice[0].RefPicList0[i].flags);
-            mdprintf(stderr, "m_slice[0].RefPicList0[%d].TopFieldOrderCnt=%d\n", i, m_slice[0].RefPicList0[i].TopFieldOrderCnt);
-            mdprintf(stderr, "m_slice[0].RefPicList0[%d].BottomFieldOrderCnt=%d\n", i, m_slice[0].RefPicList0[i].BottomFieldOrderCnt);
-        }
-    }
-    for ( i = 0; i < 32; i++)
-    {
-        if (VA_INVALID_ID != m_slice[0].RefPicList1[i].picture_id)
-        {
-            mdprintf(stderr, " ------%d-----\n", i);
-            mdprintf(stderr, "m_slice[0].RefPicList1[%d].picture_id=%d\n", i, m_slice[0].RefPicList1[i].picture_id);
-            mdprintf(stderr, "m_slice[0].RefPicList1[%d].frame_idx=%d\n", i, m_slice[0].RefPicList1[i].frame_idx);
-            mdprintf(stderr, "m_slice[0].RefPicList1[%d].flags=%d\n", i, m_slice[0].RefPicList1[i].flags);
-            mdprintf(stderr, "m_slice[0].RefPicList1[%d].TopFieldOrderCnt=%d\n", i, m_slice[0].RefPicList1[i].TopFieldOrderCnt);
-            mdprintf(stderr, "m_slice[0].RefPicList1[%d].BottomFieldOrderCnt=%d\n", i, m_slice[0].RefPicList1[i].BottomFieldOrderCnt);
-        }
-    }
-#endif // defined(_DEBUG)
 
     MFX_LTRACE_2(MFX_TRACE_LEVEL_HOTSPOTS, "A|ENC|AVC|PACKET_START|", "%d|%d", m_vaContextEncode, task.m_frameNum);
     {
@@ -1894,12 +1632,6 @@ mfxStatus VAAPIFEIENCEncoder::Execute(
     }
     {
 
-#if defined(_DEBUG)
-        mdprintf(stderr, "va_buffers to render: [");
-        for (mfxU32 i = 0; i < buffersCount; i++)
-            mdprintf(stderr, " %d", configBuffers[i]);
-        mdprintf(stderr, "]\n");
-#endif
 
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaRenderPicture");
@@ -2026,8 +1758,7 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
         default: //for now driver does not return correct status
         case VASurfaceReady:
         {
-            //mfxENCInput*        in        = (mfxENCInput*)task.m_userData[0];
-            mfxENCOutput*       out       = (mfxENCOutput*)task.m_userData[1];
+            mfxENCOutput*       out       = reinterpret_cast<mfxENCOutput*>(task.m_userData[1]);
             mfxExtFeiEncMBStat* mbstat    = GetExtBufferFEI(out,feiFieldId);
             mfxExtFeiEncMV*     mvout     = GetExtBufferFEI(out,feiFieldId);
             mfxExtFeiPakMBCtrl* mbcodeout = GetExtBufferFEI(out,feiFieldId);
@@ -2049,7 +1780,7 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 //copy to output in task here MVs
                 memcpy_s(mbstat->MB, sizeof (VAEncFEIDistortionBufferH264Intel) * mbstat->NumMBAlloc,
-                               mbs, sizeof (VAEncFEIDistortionBufferH264Intel) * mbstat->NumMBAlloc);
+                                mbs, sizeof (VAEncFEIDistortionBufferH264Intel) * mbstat->NumMBAlloc);
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
                      vaSts = vaUnmapBuffer(m_vaDisplay, vaFeiMBStatId);
@@ -2074,7 +1805,7 @@ mfxStatus VAAPIFEIENCEncoder::QueryStatus(
                 MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
                 //copy to output in task here MVs
                 memcpy_s(mvout->MB, sizeof (VAMotionVectorIntel) * 16 * mvout->NumMBAlloc,
-                    mvs, sizeof (VAMotionVectorIntel) * 16 * mvout->NumMBAlloc);
+                               mvs, sizeof (VAMotionVectorIntel) * 16 * mvout->NumMBAlloc);
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaUnmapBuffer");
                     vaSts = vaUnmapBuffer(m_vaDisplay, vaFeiMVOutId);
@@ -2409,71 +2140,17 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     {
         mfxExtSpsHeader* extSps = GetExtBuffer(m_videoParam);
 
-        /* SPS portion */
-        mdprintf(stderr,"Library's generated SPS header (it will be changed now on external one) \n");
-        mdprintf(stderr,"---->extSps->seqParameterSetId = %d\n", extSps->seqParameterSetId);
-        mdprintf(stderr,"---->extSps->levelIdc = %d\n", extSps->levelIdc);
-        mdprintf(stderr,"---->extSps->maxNumRefFrames = %d\n", extSps->maxNumRefFrames);
-        mdprintf(stderr,"---->extSps->picWidthInMbsMinus1 = %d\n", extSps->picWidthInMbsMinus1);
-        mdprintf(stderr,"---->extSps->picHeightInMapUnitsMinus1 = %d\n", extSps->picHeightInMapUnitsMinus1);
-        mdprintf(stderr,"---->extSps->chromaFormatIdc = %d\n", extSps->chromaFormatIdc);
-        mdprintf(stderr,"---->extSps->frameMbsOnlyFlag = %d\n", extSps->frameMbsOnlyFlag);
-        mdprintf(stderr,"---->extSps->mbAdaptiveFrameFieldFlag = %d\n", extSps->mbAdaptiveFrameFieldFlag);
-        mdprintf(stderr,"---->extSps->direct8x8InferenceFlag = %d\n", extSps->direct8x8InferenceFlag);
-        mdprintf(stderr,"---->extSps->log2MaxFrameNumMinus4 = %d\n", extSps->log2MaxFrameNumMinus4);
-        mdprintf(stderr,"---->extSps->picOrderCntType = %d\n", extSps->picOrderCntType);
-        mdprintf(stderr,"---->extSps->log2MaxPicOrderCntLsbMinus4 = %d\n", extSps->log2MaxPicOrderCntLsbMinus4);
-        mdprintf(stderr,"---->extSps->deltaPicOrderAlwaysZeroFlag = %d\n", extSps->deltaPicOrderAlwaysZeroFlag);
-
-        extSps->seqParameterSetId           = pDataSPS->SPSId;
-        extSps->levelIdc                    = pDataSPS->Level;
-        extSps->maxNumRefFrames             = pDataSPS->NumRefFrame;
-        extSps->chromaFormatIdc             = pDataSPS->ChromaFormatIdc;
-        extSps->frameMbsOnlyFlag            = pDataSPS->FrameMBsOnlyFlag;
-        extSps->mbAdaptiveFrameFieldFlag    = pDataSPS->MBAdaptiveFrameFieldFlag;
-        extSps->direct8x8InferenceFlag      = pDataSPS->Direct8x8InferenceFlag;
-        extSps->log2MaxFrameNumMinus4       = pDataSPS->Log2MaxFrameNum - 4;
         extSps->picOrderCntType             = pDataSPS->PicOrderCntType;
         extSps->log2MaxPicOrderCntLsbMinus4 = pDataSPS->Log2MaxPicOrderCntLsb - 4 ;
-        extSps->deltaPicOrderAlwaysZeroFlag = pDataSPS->DeltaPicOrderAlwaysZeroFlag;
 
-        mdprintf(stderr,"Applications's SPS header\n");
-        mdprintf(stderr,"---->extSps->seqParameterSetId = %d\n", extSps->seqParameterSetId);
-        mdprintf(stderr,"---->extSps->levelIdc = %d\n", extSps->levelIdc);
-        mdprintf(stderr,"---->extSps->maxNumRefFrames = %d\n", extSps->maxNumRefFrames);
-        mdprintf(stderr,"---->extSps->picWidthInMbsMinus1 = %d\n", extSps->picWidthInMbsMinus1);
-        mdprintf(stderr,"---->extSps->picHeightInMapUnitsMinus1 = %d\n", extSps->picHeightInMapUnitsMinus1);
-        mdprintf(stderr,"---->extSps->chromaFormatIdc = %d\n", extSps->chromaFormatIdc);
-        mdprintf(stderr,"---->extSps->frameMbsOnlyFlag = %d\n", extSps->frameMbsOnlyFlag);
-        mdprintf(stderr,"---->extSps->mbAdaptiveFrameFieldFlag = %d\n", extSps->mbAdaptiveFrameFieldFlag);
-        mdprintf(stderr,"---->extSps->direct8x8InferenceFlag = %d\n", extSps->direct8x8InferenceFlag);
-        mdprintf(stderr,"---->extSps->log2MaxFrameNumMinus4 = %d\n", extSps->log2MaxFrameNumMinus4);
-        mdprintf(stderr,"---->extSps->picOrderCntType = %d\n", extSps->picOrderCntType);
-        mdprintf(stderr,"---->extSps->log2MaxPicOrderCntLsbMinus4 = %d\n", extSps->log2MaxPicOrderCntLsbMinus4);
-        mdprintf(stderr,"---->extSps->deltaPicOrderAlwaysZeroFlag = %d\n", extSps->deltaPicOrderAlwaysZeroFlag);
     }
     /* PPS */
     if ((NULL != pDataPPS) && (task.m_insertPps[fieldId]))
     {
         mfxExtPpsHeader* extPps = GetExtBuffer(m_videoParam);
 
-        /* PPS */
-        mdprintf(stderr,"Library's generated PPS header (it will be changed now on external one) \n");
-        mdprintf(stderr,"---->extPps->seqParameterSetId = %d\n", extPps->seqParameterSetId);
-        mdprintf(stderr,"---->extPps->picParameterSetId = %d\n", extPps->picParameterSetId);
-        mdprintf(stderr,"---->extPps->picInitQpMinus26 = %d\n", extPps->picInitQpMinus26);
-        mdprintf(stderr,"---->extPps->numRefIdxL0DefaultActiveMinus1 = %d\n", extPps->numRefIdxL0DefaultActiveMinus1);
-        mdprintf(stderr,"---->extPps->numRefIdxL1DefaultActiveMinus1 = %d\n", extPps->numRefIdxL1DefaultActiveMinus1);
-        mdprintf(stderr,"---->extPps->chromaQpIndexOffset = %d\n", extPps->chromaQpIndexOffset);
-        mdprintf(stderr,"---->extPps->secondChromaQpIndexOffset = %d\n", extPps->secondChromaQpIndexOffset);
-        mdprintf(stderr,"---->extPps->entropyCodingModeFlag = %d\n", extPps->entropyCodingModeFlag);
-        mdprintf(stderr,"---->extPps->constrainedIntraPredFlag = %d\n", extPps->constrainedIntraPredFlag);
-        mdprintf(stderr,"---->extPps->transform8x8ModeFlag = %d\n", extPps->transform8x8ModeFlag);
-
         extPps->seqParameterSetId              = pDataPPS->SPSId;
         extPps->picParameterSetId              = pDataPPS->PPSId;
-
-        //extPps->frame_num = pDataPPS->FrameNum;
 
         extPps->picInitQpMinus26               = pDataPPS->PicInitQP - 26;
         extPps->numRefIdxL0DefaultActiveMinus1 = pDataPPS->NumRefIdxL0Active ? (pDataPPS->NumRefIdxL0Active - 1) : 0;
@@ -2482,23 +2159,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
         extPps->chromaQpIndexOffset            = pDataPPS->ChromaQPIndexOffset;
         extPps->secondChromaQpIndexOffset      = pDataPPS->SecondChromaQPIndexOffset;
 
-       //m_pps.pic_fields.bits.idr_pic_flag = pDataPPS->IDRPicFlag;
-       //m_pps.pic_fields.bits.reference_pic_flag = pDataPPS->ReferencePicFlag;
-        extPps->entropyCodingModeFlag          = pDataPPS->EntropyCodingModeFlag;
-        extPps->constrainedIntraPredFlag       = pDataPPS->ConstrainedIntraPredFlag;
         extPps->transform8x8ModeFlag           = pDataPPS->Transform8x8ModeFlag;
-
-        mdprintf(stderr,"Applications's generated PPS header\n");
-        mdprintf(stderr,"---->extPps->seqParameterSetId = %d\n", extPps->seqParameterSetId);
-        mdprintf(stderr,"---->extPps->picParameterSetId = %d\n", extPps->picParameterSetId);
-        mdprintf(stderr,"---->extPps->picInitQpMinus26 = %d\n", extPps->picInitQpMinus26);
-        mdprintf(stderr,"---->extPps->numRefIdxL0DefaultActiveMinus1 = %d\n", extPps->numRefIdxL0DefaultActiveMinus1);
-        mdprintf(stderr,"---->extPps->numRefIdxL1DefaultActiveMinus1 = %d\n", extPps->numRefIdxL1DefaultActiveMinus1);
-        mdprintf(stderr,"---->extPps->chromaQpIndexOffset = %d\n", extPps->chromaQpIndexOffset);
-        mdprintf(stderr,"---->extPps->secondChromaQpIndexOffset = %d\n", extPps->secondChromaQpIndexOffset);
-        mdprintf(stderr,"---->extPps->entropyCodingModeFlag = %d\n", extPps->entropyCodingModeFlag);
-        mdprintf(stderr,"---->extPps->constrainedIntraPredFlag = %d\n", extPps->constrainedIntraPredFlag);
-        mdprintf(stderr,"---->extPps->transform8x8ModeFlag = %d\n", extPps->transform8x8ModeFlag);
     }
     /* repack headers by itself */
     if ( ((NULL != pDataSPS) && (task.m_insertSps[fieldId])) ||
@@ -2670,32 +2331,6 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     // Fill PPS
     UpdatePPS(task, fieldId, m_pps, m_reconQueue);
 
-    /* Check application's provided data */
-    if (NULL != pDataPPS)
-    {
-
-#if defined(_DEBUG)
-        if (m_pps.pic_fields.bits.idr_pic_flag != pDataPPS->IDRPicFlag)
-        {
-            mdprintf(stderr, "!!!Warning pDataPPS->IDRPicFlag = %u\n", pDataPPS->IDRPicFlag);
-            mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.idr_pic_flag = %u\n", m_pps.pic_fields.bits.idr_pic_flag);
-        }
-        if (m_pps.pic_fields.bits.reference_pic_flag != pDataPPS->ReferencePicFlag)
-        {
-            mdprintf(stderr, "!!!Warning pDataPPS->ReferencePicFlag = %u\n", pDataPPS->ReferencePicFlag);
-            mdprintf(stderr, "   But library's is m_pps.pic_fields.bits.reference_pic_flag = %u\n", m_pps.pic_fields.bits.reference_pic_flag);
-        }
-        if (m_pps.frame_num != pDataPPS->FrameNum)
-        {
-            mdprintf(stderr, "!!!Warning pDataPPS->FrameNum = %u\n", pDataPPS->FrameNum);
-            mdprintf(stderr, "   But library's is m_pps.frame_num = %u\n", m_pps.frame_num);
-        }
-#endif
-
-        m_pps.pic_fields.bits.idr_pic_flag       = pDataPPS->IDRPicFlag;
-        m_pps.pic_fields.bits.reference_pic_flag = pDataPPS->ReferencePicFlag;
-        m_pps.frame_num                          = pDataPPS->FrameNum;
-    }
 
     /* ENC & PAK has issue with reconstruct surface.
      * How does it work right now?
@@ -2797,40 +2432,10 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
     /* Application defined slice params */
     if (NULL != pDataSliceHeader)
     {
-        MFX_CHECK(pDataSliceHeader->NumSlice == pDataSliceHeader->NumSliceAlloc, MFX_ERR_INVALID_VIDEO_PARAM);
-
         numSlice = (std::max)(pDataSliceHeader->NumSlice, mfxU16(1));
     }
 
     UpdateSlice(m_caps, task, fieldId, m_sps, m_pps, m_slice, m_videoParam, m_reconQueue);
-
-#if defined (_DEBUG)
-    mdprintf(stderr, "LIBRRAY's ref list-----\n");
-    for ( mfxU32 i = 0; i < 32; i++)
-    {
-        if (VA_INVALID_ID != m_slice[0].RefPicList0[i].picture_id)
-        {
-            mdprintf(stderr, " ------%d-----\n", i);
-            mdprintf(stderr, "m_slice[0].RefPicList0[%d].picture_id=%d\n", i, m_slice[0].RefPicList0[i].picture_id);
-            mdprintf(stderr, "m_slice[0].RefPicList0[%d].frame_idx=%d\n", i, m_slice[0].RefPicList0[i].frame_idx);
-            mdprintf(stderr, "m_slice[0].RefPicList0[%d].flags=%d\n", i, m_slice[0].RefPicList0[i].flags);
-            mdprintf(stderr, "m_slice[0].RefPicList0[%d].TopFieldOrderCnt=%d\n", i, m_slice[0].RefPicList0[i].TopFieldOrderCnt);
-            mdprintf(stderr, "m_slice[0].RefPicList0[%d].BottomFieldOrderCnt=%d\n", i, m_slice[0].RefPicList0[i].BottomFieldOrderCnt);
-        }
-    }
-    for ( mfxU32 i = 0; i < 32; i++)
-    {
-        if (VA_INVALID_ID != m_slice[0].RefPicList1[i].picture_id)
-        {
-            mdprintf(stderr, " ------%d-----\n", i);
-            mdprintf(stderr, "m_slice[0].RefPicList1[%d].picture_id=%d\n", i, m_slice[0].RefPicList1[i].picture_id);
-            mdprintf(stderr, "m_slice[0].RefPicList1[%d].frame_idx=%d\n", i, m_slice[0].RefPicList1[i].frame_idx);
-            mdprintf(stderr, "m_slice[0].RefPicList1[%d].flags=%d\n", i, m_slice[0].RefPicList1[i].flags);
-            mdprintf(stderr, "m_slice[0].RefPicList1[%d].TopFieldOrderCnt=%d\n", i, m_slice[0].RefPicList1[i].TopFieldOrderCnt);
-            mdprintf(stderr, "m_slice[0].RefPicList1[%d].BottomFieldOrderCnt=%d\n", i, m_slice[0].RefPicList1[i].BottomFieldOrderCnt);
-        }
-    }
-#endif // defined (_DEBUG)
 
     for( mfxU32 i = 0; i < numSlice; i++)
     {
@@ -2839,71 +2444,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
 
         if (NULL != pDataSliceHeader)
         {
-            mdprintf(stderr,"Library's generated Slice header (it will be changed now on external one) \n");
-            mdprintf(stderr,"---->m_slice[%u].macroblock_address = %d\n", i, m_slice[i].macroblock_address);
-            mdprintf(stderr,"---->m_slice[%u].num_macroblocks = %d\n", i, m_slice[i].num_macroblocks);
-            mdprintf(stderr,"---->m_slice[%u].slice_type = %d\n", i, m_slice[i].slice_type);
-            mdprintf(stderr,"---->m_slice[%u].idr_pic_id = %d\n", i, m_slice[i].idr_pic_id);
-            mdprintf(stderr,"---->m_slice[%u].cabac_init_idc = %d\n", i, m_slice[i].cabac_init_idc);
-            mdprintf(stderr,"---->m_slice[%u].slice_qp_delta = %d\n", i, m_slice[i].slice_qp_delta);
-            mdprintf(stderr,"---->m_slice[%u].disable_deblocking_filter_idc = %d\n", i, m_slice[i].disable_deblocking_filter_idc);
-            mdprintf(stderr,"---->m_slice[%u].slice_alpha_c0_offset_div2 = %d\n", i, m_slice[i].slice_alpha_c0_offset_div2);
-            mdprintf(stderr,"---->m_slice[%u].slice_beta_offset_div2 = %d\n", i, m_slice[i].slice_beta_offset_div2);
-
-#if defined(_DEBUG)
-            if (m_slice[i].macroblock_address != pDataSliceHeader->Slice[i].MBAaddress)
-            {
-                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].MBAaddress = %u\n", i, pDataSliceHeader->Slice[i].MBAaddress);
-                mdprintf(stderr, "   But library's is m_slice[%u].macroblock_address = %u\n", i, m_slice[i].macroblock_address);
-            }
-            if (m_slice[i].num_macroblocks != pDataSliceHeader->Slice[i].NumMBs)
-            {
-                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].NumMBs = %u\n", i, pDataSliceHeader->Slice[i].NumMBs);
-                mdprintf(stderr, "   But library's is m_slice[%u].num_macroblocks = %u\n", i, m_slice[i].num_macroblocks);
-            }
-            if (m_slice[i].slice_type != pDataSliceHeader->Slice[i].SliceType)
-            {
-                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceType = %u\n", i, pDataSliceHeader->Slice[i].SliceType);
-                mdprintf(stderr, "   But library's is m_slice[%u].slice_type = %u\n", i, m_slice[i].slice_type);
-            }
-            if (pDataSliceHeader->Slice[i].PPSId != m_pps.pic_parameter_set_id)
-            {
-                mdprintf(stderr,"pDataSliceHeader->Slice[%u].PPSId = %u\n", i, pDataSliceHeader->Slice[i].PPSId);
-                mdprintf(stderr,"m_pps.pic_parameter_set_id = %u\n", m_pps.pic_parameter_set_id);
-            }
-            if (m_slice[i].idr_pic_id != pDataSliceHeader->Slice[i].IdrPicId)
-            {
-                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].IdrPicId = %u\n", i, pDataSliceHeader->Slice[i].IdrPicId);
-                mdprintf(stderr, "   But library's is m_slice[%u].idr_pic_id = %u\n", i, m_slice[i].idr_pic_id);
-            }
-            if (m_slice[i].cabac_init_idc != pDataSliceHeader->Slice[i].CabacInitIdc)
-            {
-                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].CabacInitIdc = %u\n", i, pDataSliceHeader->Slice[i].CabacInitIdc);
-                mdprintf(stderr, "   But library's is m_slice[%u].cabac_init_idc = %u\n", i, m_slice[i].cabac_init_idc);
-            }
-            if (m_slice[i].slice_qp_delta != pDataSliceHeader->Slice[i].SliceQPDelta)
-            {
-                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceQPDelta = %u\n", i, pDataSliceHeader->Slice[i].SliceQPDelta);
-                mdprintf(stderr, "   But library's is m_slice[%u].slice_qp_delta = %u\n", i, m_slice[i].slice_qp_delta);
-            }
-
-            if (m_slice[i].disable_deblocking_filter_idc != pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc)
-            {
-                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].DisableDeblockingFilterIdc = %u\n", i, pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc);
-                mdprintf(stderr, "   But library's is m_slice[%u].disable_deblocking_filter_idc = %u\n", i, m_slice[i].disable_deblocking_filter_idc);
-            }
-            if (m_slice[i].slice_alpha_c0_offset_div2 != pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2)
-            {
-                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceAlphaC0OffsetDiv2 = %u\n", i, pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2);
-                mdprintf(stderr, "   But library's is m_slice[%u].slice_alpha_c0_offset_div2 = %u\n", i, m_slice[i].slice_alpha_c0_offset_div2);
-            }
-            if (m_slice[i].slice_beta_offset_div2 != pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2)
-            {
-                mdprintf(stderr, "!!!Warning pDataSliceHeader->Slice[%u].SliceBetaOffsetDiv2 = %u\n", i, pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2);
-                mdprintf(stderr, "   But library's is m_slice[%u].slice_beta_offset_div2 = %u\n", i, m_slice[i].slice_beta_offset_div2);
-            }
-#endif
-            m_slice[i].macroblock_address            = pDataSliceHeader->Slice[i].MBAaddress;
+            m_slice[i].macroblock_address            = pDataSliceHeader->Slice[i].MBAddress;
             m_slice[i].num_macroblocks               = pDataSliceHeader->Slice[i].NumMBs;
             m_slice[i].slice_type                    = pDataSliceHeader->Slice[i].SliceType;
             m_slice[i].idr_pic_id                    = pDataSliceHeader->Slice[i].IdrPicId;
@@ -2912,19 +2453,7 @@ mfxStatus VAAPIFEIPAKEncoder::Execute(
             m_slice[i].disable_deblocking_filter_idc = pDataSliceHeader->Slice[i].DisableDeblockingFilterIdc;
             m_slice[i].slice_alpha_c0_offset_div2    = pDataSliceHeader->Slice[i].SliceAlphaC0OffsetDiv2;
             m_slice[i].slice_beta_offset_div2        = pDataSliceHeader->Slice[i].SliceBetaOffsetDiv2;
-
-            mdprintf(stderr,"Application's generated Slice header \n");
-            mdprintf(stderr,"---->m_slice[%u].macroblock_address = %d\n", i, m_slice[i].macroblock_address);
-            mdprintf(stderr,"---->m_slice[%u].num_macroblocks = %d\n", i, m_slice[i].num_macroblocks);
-            mdprintf(stderr,"---->m_slice[%u].slice_type = %d\n", i, m_slice[i].slice_type);
-            mdprintf(stderr,"---->m_slice[%u].idr_pic_id = %d\n", i, m_slice[i].idr_pic_id);
-            mdprintf(stderr,"---->m_slice[%u].cabac_init_idc = %d\n", i, m_slice[i].cabac_init_idc);
-            mdprintf(stderr,"---->m_slice[%u].slice_qp_delta = %d\n", i, m_slice[i].slice_qp_delta);
-            mdprintf(stderr,"---->m_slice[%u].disable_deblocking_filter_idc = %d\n", i, m_slice[i].disable_deblocking_filter_idc);
-            mdprintf(stderr,"---->m_slice[%u].slice_alpha_c0_offset_div2 = %d\n", i, m_slice[i].slice_alpha_c0_offset_div2);
-            mdprintf(stderr,"---->m_slice[%u].slice_beta_offset_div2 = %d\n", i, m_slice[i].slice_beta_offset_div2);
         }
-
     } // for( size_t i = 0; i < m_slice.size(); ++i, divider.Next() )
 
     mfxU32 prefix_bytes = (task.m_AUStartsFromSlice[fieldId] + 8) * m_headerPacker.isSvcPrefixUsed();

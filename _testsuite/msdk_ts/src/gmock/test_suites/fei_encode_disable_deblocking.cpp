@@ -249,7 +249,7 @@ public:
                 fsh[f].Header.BufferId = MFX_EXTBUFF_FEI_SLICE;
                 fsh[f].Header.BufferSz = sizeof(mfxExtFeiSliceHeader);
 
-                fsh[f].NumSlice = fsh[f].NumSliceAlloc = m_par.mfx.NumSlice;
+                fsh[f].NumSlice = m_par.mfx.NumSlice;
                 fsh[f].Slice = new mfxExtFeiSliceHeader::mfxSlice[m_par.mfx.NumSlice];
                 memset(fsh[f].Slice, 0, m_par.mfx.NumSlice*sizeof(mfxExtFeiSliceHeader::mfxSlice));
 
@@ -433,7 +433,7 @@ int TestSuite::RunTest(unsigned int id)
             fsh[f].Header.BufferId = MFX_EXTBUFF_FEI_SLICE;
             fsh[f].Header.BufferSz = sizeof(mfxExtFeiSliceHeader);
 
-            fsh[f].NumSlice = fsh[f].NumSliceAlloc = m_pPar->mfx.NumSlice;
+            fsh[f].NumSlice = m_pPar->mfx.NumSlice;
             fsh[f].Slice = new mfxExtFeiSliceHeader::mfxSlice[m_pPar->mfx.NumSlice];
             memset(fsh[f].Slice, 0, m_pPar->mfx.NumSlice * sizeof(mfxExtFeiSliceHeader::mfxSlice));
 

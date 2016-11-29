@@ -613,41 +613,6 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
     //set frame type
     mfxU8 mtype_first_field = 0, mtype_second_field = 0;
 
-    if ( ((0 == input->NumFrameL0)  && (0 == input->NumFrameL1)) ||
-        (0 == input->InSurface->Data.FrameOrder))
-        mtype_first_field = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR;
-    else if ((0 != input->NumFrameL0)  && (0 == input->NumFrameL1))
-        mtype_first_field = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
-    else if ((0 != input->NumFrameL0)  || (0 != input->NumFrameL1))
-        mtype_first_field = MFX_FRAMETYPE_B;
-
-    mtype_second_field = mtype_first_field;
-
-    if (MFX_PICSTRUCT_PROGRESSIVE != m_video.mfx.FrameInfo.PicStruct)
-    {
-        /* !!!
-         * Actually here is an issue
-         * Ref list for second field is different from ref list from first field
-         * BUT in (mfxENCInput *input) described only one list, which is same for
-         * first and second field.
-         * */
-        if ( ((0 == input->NumFrameL0)  && (0 == input->NumFrameL1)) ||
-            (0 == input->InSurface->Data.FrameOrder))
-            mtype_second_field = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR;
-        else if ((0 != input->NumFrameL0)  && (0 == input->NumFrameL1))
-            mtype_second_field = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
-        else if ((0 != input->NumFrameL0)  || (0 != input->NumFrameL1))
-            mtype_second_field = MFX_FRAMETYPE_B;
-        /* WA for IP pair */
-        if (0 == input->InSurface->Data.FrameOrder)
-        {
-                mtype_second_field = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
-                //mtype_second_field = MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR;
-        }
-    }
-
-    /* New way for Frame type definition */
-    /* WA !!! */
     mfxU32 fieldMaxCount = (m_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) ? 1 : 2;
     for (mfxU32 field = 0; field < fieldMaxCount; field++)
     {
@@ -660,22 +625,19 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
         mfxExtFeiPPS* extFeiPPSinRuntime = GetExtBufferFEI(input, fieldParity);
         /*And runtime params has priority before iInit() params */
 
-        bool is_reference_B_field  = extFeiPPSinRuntime && extFeiPPSinRuntime->ReferencePicFlag;
-        bool is_reference_IP_field = !extFeiPPSinRuntime || is_reference_B_field;
-        /* each I without PPS is IDR */
-        /* TODO: take this information from GOP structure, if no PPS provided */
-        bool is_IDR_field = !extFeiPPSinRuntime || extFeiPPSinRuntime->IDRPicFlag;
+        mfxU8 type = extFeiPPSinRuntime->PictureType;
 
-        mfxU8 type = 0, reference_IP_flag = is_reference_IP_field ? MFX_FRAMETYPE_REF : 0,
-                        reference_B_flag  = is_reference_B_field  ? MFX_FRAMETYPE_REF : 0,
-                        IDR_flag = is_IDR_field ? MFX_FRAMETYPE_IDR : 0;
-
-        mfxU16 numL0Active = extFeiSliceInRintime->Slice[0].NumRefIdxL0Active,
-               numL1Active = extFeiSliceInRintime->Slice[0].NumRefIdxL1Active;
-
-        if      ((numL0Active == 0) && (numL1Active == 0)) type = MFX_FRAMETYPE_I | reference_IP_flag | IDR_flag;
-        else if ((numL0Active != 0) && (numL1Active == 0)) type = MFX_FRAMETYPE_P | reference_IP_flag;
-        else                                               type = MFX_FRAMETYPE_B | reference_B_flag;
+        switch (type & 0xf)
+        {
+        case MFX_FRAMETYPE_UNKNOWN:
+        case MFX_FRAMETYPE_I:
+        case MFX_FRAMETYPE_P:
+        case MFX_FRAMETYPE_B:
+            break;
+        default:
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+            break;
+        }
 
         if (fieldParity == 0)
         {
@@ -686,6 +648,7 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
             mtype_second_field = type;
         }
     }
+    if (!mtype_second_field) { mtype_second_field = mtype_first_field & ~MFX_FRAMETYPE_IDR;}
 
     bool first_field_is_IDR = mtype_first_field  & MFX_FRAMETYPE_IDR,
         second_field_is_IDR = mtype_second_field & MFX_FRAMETYPE_IDR;

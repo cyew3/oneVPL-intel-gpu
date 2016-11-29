@@ -1276,11 +1276,9 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         for (mfxU32 i = 0; i < fieldCount; i++)
         {
             mfxExtFeiSliceHeader *pDataSliceHeader = GetExtBuffer(m_video, i);
-            if (NULL != pDataSliceHeader->Slice)
+            if (pDataSliceHeader && pDataSliceHeader->Slice)
             {
-                if ((pDataSliceHeader->NumSlice != pDataSliceHeader->NumSliceAlloc)
-                    || (GetMaxNumSlices(m_video) != pDataSliceHeader->NumSlice))
-                    return MFX_ERR_INVALID_VIDEO_PARAM;
+                MFX_CHECK(GetMaxNumSlices(m_video) == pDataSliceHeader->NumSlice, MFX_ERR_INVALID_VIDEO_PARAM);
             }
         }
     }
