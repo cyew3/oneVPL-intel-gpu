@@ -284,11 +284,39 @@ mfxStatus MfxFrameAllocResponse::Alloc(
     mfxFrameAllocRequest & req)
 {
     req.NumFrameSuggested = req.NumFrameMin; // no need in 2 different NumFrames
-    mfxStatus sts = pCore->FrameAllocator.Alloc(pCore->FrameAllocator.pthis, &req, this);
-    MFX_CHECK_STS(sts);
+
+    mfxCoreParam corePar = {};
+    pCore->GetCoreParam(pCore->pthis, &corePar);
+
+    if ((corePar.Impl & 0xF00) == MFX_IMPL_VIA_D3D11)
+    {
+        mfxFrameAllocRequest tmp = req;
+        tmp.NumFrameMin = tmp.NumFrameSuggested = 1;
+
+        m_responseQueue.resize(req.NumFrameMin);
+        m_mids.resize(req.NumFrameMin);
+
+        for (int i = 0; i < req.NumFrameMin; i++)
+        {
+            mfxStatus sts = pCore->FrameAllocator.Alloc(pCore->FrameAllocator.pthis, &tmp, &m_responseQueue[i]);
+            MFX_CHECK_STS(sts);
+
+            m_mids[i] = m_responseQueue[i].mids[0];
+        }
+
+        mids = &m_mids[0];
+        NumFrameActual = req.NumFrameMin;
+    }
+    else
+    {
+        mfxStatus sts = pCore->FrameAllocator.Alloc(pCore->FrameAllocator.pthis, &req, this);
+        MFX_CHECK_STS(sts);
+    }
 
     if (NumFrameActual < req.NumFrameMin)
+    {
         return MFX_ERR_MEMORY_ALLOC;
+    }
 
     m_pCore = pCore;
     m_numFrameActualReturnedByAllocFrames = NumFrameActual;
@@ -311,13 +339,30 @@ mfxStatus MfxFrameAllocResponse::Release()
         return MFX_ERR_NULL_PTR;
     }
 
-    if (mids)
-    {
-        NumFrameActual = m_numFrameActualReturnedByAllocFrames;
-        mfxStatus sts = m_pCore->FrameAllocator.Free(m_pCore->FrameAllocator.pthis, this);
-        MFX_CHECK_STS(sts);
+    mfxCoreParam corePar = {};
+    m_pCore->GetCoreParam(m_pCore->pthis, &corePar);
 
+    if ((corePar.Impl & 0xF00) == MFX_IMPL_VIA_D3D11)
+    {
+        for (size_t i = 0; i < m_responseQueue.size(); i++)
+        {
+            mfxStatus sts = m_pCore->FrameAllocator.Free(m_pCore->FrameAllocator.pthis, &m_responseQueue[i]);
+            MFX_CHECK_STS(sts);
+        }
+
+        m_responseQueue.resize(0);
         m_numFrameActualReturnedByAllocFrames = 0;
+    }
+    else
+    {
+        if (mids)
+        {
+            NumFrameActual = m_numFrameActualReturnedByAllocFrames;
+            mfxStatus sts = m_pCore->FrameAllocator.Free(m_pCore->FrameAllocator.pthis, this);
+            MFX_CHECK_STS(sts);
+
+            m_numFrameActualReturnedByAllocFrames = 0;
+        }
     }
 
     return MFX_ERR_NONE;
@@ -330,12 +375,12 @@ mfxStatus MfxFrameAllocResponse::Release()
 void ExternalFrames::Init(mfxU32 numFrames)
 {
     m_frames.resize(numFrames);
-    Zero(m_frames);
     {
         mfxU32 i = 0;
-        std::vector<sFrameEx>::iterator frame = m_frames.begin();
+        std::list<sFrameEx>::iterator frame = m_frames.begin();
         for ( ;frame!= m_frames.end(); frame++)
         {
+            Zero(*frame);
             frame->idInPool = i++;
         }
     }
@@ -343,18 +388,18 @@ void ExternalFrames::Init(mfxU32 numFrames)
 
 mfxStatus ExternalFrames::GetFrame(mfxFrameSurface1 *pInFrame, sFrameEx *&pOutFrame )
 {
-    std::vector<sFrameEx>::iterator frame = m_frames.begin();
+    std::list<sFrameEx>::iterator frame = m_frames.begin();
     for ( ;frame!= m_frames.end(); frame++)
     {
         if (frame->pSurface == 0)
         {
             frame->pSurface = pInFrame;
-            pOutFrame = &frame[0];
+            pOutFrame = &*frame;
             return MFX_ERR_NONE;
         }
         if (frame->pSurface == pInFrame)
         {
-            pOutFrame = &frame[0];
+            pOutFrame = &*frame;
             return MFX_ERR_NONE;
         }
     }

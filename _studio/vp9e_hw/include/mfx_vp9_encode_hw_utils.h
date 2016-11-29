@@ -15,6 +15,7 @@
 #include "mfx_trace.h"
 #include "umc_mutex.h"
 #include <vector>
+#include <list>
 #include <memory>
 #include "mfxstructures.h"
 #include "mfx_enc_common.h"
@@ -326,7 +327,6 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
 
     private:
         MfxFrameAllocResponse(MfxFrameAllocResponse const &);
-        MfxFrameAllocResponse & operator =(MfxFrameAllocResponse const &);
 
         mfxCoreInterface * m_pCore;
         mfxU16      m_numFrameActualReturnedByAllocFrames;
@@ -434,7 +434,7 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
     class ExternalFrames
     {
     protected:
-        std::vector<sFrameEx>  m_frames;
+        std::list<sFrameEx>  m_frames;
     public:
         ExternalFrames() {}
         void Init(mfxU32 numFrames);
@@ -507,7 +507,6 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
     {
     public:
 
-        eTaskStatus       m_status;
         sFrameEx*         m_pRawFrame;
         sFrameEx*         m_pRawLocalFrame;
         mfxBitstream*     m_pBitsteam;
@@ -524,7 +523,6 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         mfxU32 m_bsDataLength;
 
         Task ():
-              m_status(TASK_FREE),
               m_pRawFrame(NULL),
               m_pRawLocalFrame(NULL),
               m_pBitsteam(0),
@@ -555,36 +553,8 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         task.m_pBitsteam = 0;
         Zero(task.m_frameParam);
         Zero(task.m_ctrl);
-        task.m_status = TASK_FREE;
 
         return MFX_ERR_NONE;
-    }
-
-    inline Task *GetFreeTask(std::vector<Task> & tasks)
-    {
-        for (std::vector<Task>::iterator task = tasks.begin(); task != tasks.end(); task++)
-        {
-            if (task->m_status == TASK_FREE)
-            {
-                return &task[0];
-            }
-        }
-
-        return 0;
-    }
-
-    inline mfxStatus FreeTasks(mfxCoreInterface *pCore, std::vector<Task> & tasks)
-    {
-        mfxStatus sts = MFX_ERR_NONE;
-        for (std::vector<Task>::iterator task = tasks.begin(); task != tasks.end(); task++)
-        {
-            if (task->m_status != TASK_FREE)
-            {
-                sts = FreeTask(pCore, *task);
-                MFX_CHECK_STS(sts);
-            }
-        }
-        return sts;
     }
 
     inline bool IsResetOfPipelineRequired(const mfxVideoParam& oldPar, const mfxVideoParam& newPar)
@@ -655,6 +625,18 @@ inline bool InsertSeqHeader(Task const &task)
 {
     return (task.m_frameOrder == 0); // TODO: fix condition for SH insertion
 }
+
+struct FindTaskByRawSurface
+{
+    FindTaskByRawSurface(mfxFrameSurface1 * pSurf) : m_pSurface(pSurf) {}
+
+    bool operator ()(Task const & task)
+    {
+        return task.m_pRawFrame->pSurface == m_pSurface;
+    }
+
+    mfxFrameSurface1* m_pSurface;;
+};
 
 } // MfxHwVP9Encode
 

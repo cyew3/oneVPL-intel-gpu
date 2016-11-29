@@ -30,8 +30,9 @@ Plugin::Plugin(bool CreateByDispatcher)
     , m_adapter(this)
     , m_initialized(false)
     , m_frameArrivalOrder(0)
+    , m_drainState(false)
 {
-    m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_PARALLEL;
+    m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
     m_PluginParam.MaxThreadNum = 1;
     m_PluginParam.APIVersion.Major = MFX_VERSION_MAJOR;
     m_PluginParam.APIVersion.Minor = MFX_VERSION_MINOR;
@@ -280,8 +281,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     m_maxBsSize = request.Info.Width * request.Info.Height;
 
     // prepare enough space for tasks
-    m_tasks.resize(CalcNumTasks(m_video));
-    Zero(m_tasks);
+    m_free.resize(CalcNumTasks(m_video));
 
     // prepare enough space for DPB management
     m_dpb.resize(request.NumFrameMin - (par->AsyncDepth - 1));
@@ -358,8 +358,6 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
         return MFX_ERR_NOT_INITIALIZED;
     }
 
-    Task* pTask = 0;
-
     mfxStatus checkSts = CheckEncodeFrameParam(
         m_video,
         ctrl,
@@ -369,46 +367,83 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
 
     MFX_CHECK(checkSts >= MFX_ERR_NONE, checkSts);
 
+    mfxStatus bufferingSts = MFX_ERR_NONE;
+
     {
-        // take Task from the pool and initialize with arrived frame
         UMC::AutomaticUMCMutex guard(m_taskMutex);
-        pTask = GetFreeTask(m_tasks);
-        if (pTask == 0)
+
+        if (m_drainState == true && surface)
         {
-            return MFX_WRN_DEVICE_BUSY;
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
 
-        mfxStatus sts = m_rawFrames.GetFrame(surface, pTask->m_pRawFrame);
-        MFX_CHECK_STS(sts);
-        sts = LockSurface(pTask->m_pRawFrame, m_pmfxCore);
-        MFX_CHECK_STS(sts);
-
-        if (ctrl)
+        if (surface == 0)
         {
-            pTask->m_ctrl = *ctrl;
+            m_drainState = true; // entering "drain state". In this state new frames aren't accepted.
+
+            if (m_free.size() == CalcNumTasks(m_video))
+            {
+                // all the buffered frames are drained. Exit "drain state" and notify application
+                m_drainState = false;
+                return MFX_ERR_MORE_DATA;
+            }
         }
+        else
+        {
+            // take Task from the pool and initialize with arrived frame
+            if (m_free.size() == 0)
+            {
+                return MFX_WRN_DEVICE_BUSY;
+            }
+            // check that this input surface isn't used for encoding
+            MFX_CHECK(m_accepted.end() == std::find_if(m_accepted.begin(), m_accepted.end(), FindTaskByRawSurface(surface)),
+                MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(m_submitted.end() == std::find_if(m_submitted.begin(), m_submitted.end(), FindTaskByRawSurface(surface)),
+                MFX_ERR_UNDEFINED_BEHAVIOR);
 
-        pTask->m_timeStamp = surface->Data.TimeStamp;
-        pTask->m_status = TASK_INITIALIZED;
-        pTask->m_frameOrder = m_frameArrivalOrder;
+            Task& newFrame = m_free.front();
+            Zero(newFrame);
+            mfxStatus sts = m_rawFrames.GetFrame(surface, newFrame.m_pRawFrame);
+            MFX_CHECK_STS(sts);
+            sts = LockSurface(newFrame.m_pRawFrame, m_pmfxCore);
+            MFX_CHECK_STS(sts);
 
-        m_frameArrivalOrder++;
+            if (ctrl)
+            {
+                newFrame.m_ctrl = *ctrl;
+            }
+
+            newFrame.m_timeStamp = surface->Data.TimeStamp;
+            newFrame.m_frameOrder = m_frameArrivalOrder;
+
+            m_accepted.splice(m_accepted.end(), m_free, m_free.begin());
+
+            if (m_free.size() > 0)
+            {
+                bufferingSts = MFX_ERR_MORE_DATA_SUBMIT_TASK;
+            }
+        }
 
         // place mfxBitstream to the queue
-        m_outs.push(bs);
+        if (bufferingSts == MFX_ERR_NONE)
+        {
+            m_outs.push(bs);
+        }
+
+        m_frameArrivalOrder++;
     }
 
-    *task = (mfxThreadTask*)pTask;
+    *task = (mfxThreadTask)surface;
 
     VP9_LOG("\n (VP9_LOG) Frame %d Plugin::EncodeFrameSubmit -", pTask->m_frameOrder);
+
+    MFX_CHECK_STS(bufferingSts);
 
     return checkSts;
 }
 
 mfxStatus Plugin::ConfigTask(Task &task)
 {
-    MFX_CHECK(task.m_status == TASK_INITIALIZED, MFX_ERR_UNDEFINED_BEHAVIOR);
-
     VP9FrameLevelParam frameParam = { };
     mfxStatus sts = SetFramesParams(m_video, task.m_ctrl.FrameType, task.m_frameOrder, frameParam);
 
@@ -454,8 +489,6 @@ mfxStatus Plugin::ConfigTask(Task &task)
     sts = LockSurface(task.m_pOutBs, m_pmfxCore);
     MFX_CHECK_STS(sts);
 
-    task.m_status = TASK_SUBMITTED;
-
     UpdateDpb(frameParam, task.m_pRecFrame, m_dpb, m_pmfxCore);
 
     return sts;
@@ -468,70 +501,82 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         return MFX_ERR_NOT_INITIALIZED;
     }
 
-    Task* pTask = (Task*)task;
-    MFX_CHECK(pTask->m_status == TASK_INITIALIZED || pTask->m_status == TASK_SUBMITTED, MFX_ERR_UNDEFINED_BEHAVIOR);
+    mfxFrameSurface1* pSurf = (mfxFrameSurface1*)task;
 
-    if (pTask->m_status == TASK_INITIALIZED)
+    // submit frame to the driver (if any)
+    if (m_accepted.size()) // we have something to submit to driver
     {
-        VP9_LOG("\n (VP9_LOG) Frame %d Plugin::SubmitFrame +", pTask->m_frameOrder);
-        mfxStatus sts = MFX_ERR_NONE;
-
+        Task& newFrame = m_accepted.front(); // no mutex required here since splice() method doesn't cause race conditions for getting and modification of existing elements
+        if (newFrame.m_pRawFrame->pSurface == pSurf) // frame pointed by pSurf isn't submitted yet - let's proceed with submission
         {
-            UMC::AutomaticUMCMutex guard(m_taskMutex);
-            sts = ConfigTask(*pTask);
+            VP9_LOG("\n (VP9_LOG) Frame %d Plugin::SubmitFrame +", newFrame.m_frameOrder);
+            mfxStatus sts = MFX_ERR_NONE;
+
+            sts = ConfigTask(newFrame);
             MFX_CHECK_STS(sts);
+
+            mfxFrameSurface1    *pSurface = 0;
+            mfxHDLPair surfaceHDL = {};
+
+            // copy input frame from SYSTEM to VIDEO memory (if required)
+            sts = CopyRawSurfaceToVideoMemory(m_pmfxCore, m_video, newFrame);
+            MFX_CHECK_STS(sts);
+
+            sts = GetInputSurface(m_pmfxCore, m_video, newFrame, pSurface);
+            MFX_CHECK_STS(sts);
+
+            // get handle to input frame in VIDEO memory (either external or local)
+            //sts = m_pmfxCore->FrameAllocator.GetHDL(m_pmfxCore->FrameAllocator.pthis, pSurface->Data.MemId, &surfaceHDL.first);
+            sts = m_pmfxCore->GetFrameHandle(m_pmfxCore->pthis, &pSurface->Data, &surfaceHDL.first);
+            MFX_CHECK_STS(sts);
+            MFX_CHECK(surfaceHDL.first != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+            // submit the frame to the driver
+            sts = m_ddi->Execute(newFrame, surfaceHDL.first);
+            MFX_CHECK_STS(sts);
+
+            {
+                UMC::AutomaticUMCMutex guard(m_taskMutex);
+                m_submitted.splice(m_submitted.end(), m_accepted, m_accepted.begin());
+            }
+
+            VP9_LOG("\n (VP9_LOG) Frame %d Plugin::SubmitFrame -", newFrame.m_frameOrder);
         }
-
-        mfxFrameSurface1    *pSurface = 0;
-
-        mfxHDLPair surfaceHDL = {};
-
-        // copy input frame from SYSTEM to VIDEO memory (if required)
-        sts = CopyRawSurfaceToVideoMemory(m_pmfxCore, m_video, *pTask);
-        MFX_CHECK_STS(sts);
-
-        sts = GetInputSurface(m_pmfxCore, m_video, *pTask, pSurface);
-        MFX_CHECK_STS(sts);
-
-        // get handle to input frame in VIDEO memory (either external or local)
-        //sts = m_pmfxCore->FrameAllocator.GetHDL(m_pmfxCore->FrameAllocator.pthis, pSurface->Data.MemId, &surfaceHDL.first);
-        sts = m_pmfxCore->GetFrameHandle(m_pmfxCore->pthis, &pSurface->Data, &surfaceHDL.first);
-        MFX_CHECK_STS(sts);
-        MFX_CHECK(surfaceHDL.first != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-        // submit the frame to the driver
-        sts = m_ddi->Execute(*pTask, surfaceHDL.first);
-        MFX_CHECK_STS(sts);
-
-        VP9_LOG("\n (VP9_LOG) Frame %d Plugin::SubmitFrame -", pTask->m_frameOrder);
-        return MFX_TASK_WORKING;
     }
-    else
+
+    // get frame from the driver (if any)
+    if (m_submitted.size() == m_video.AsyncDepth || // [AsyncDepth] asynchronous tasks are submitted to driver. It's time to make synchronization.
+        pSurf == 0 && m_submitted.size()) // or we are in "drain state" - need to synchronize all submitted to driver w/o any conditions
     {
-        VP9_LOG("\n (VP9_LOG) Frame %d Plugin::QueryFrame +", pTask->m_frameOrder);
+        Task& frameToGet = m_submitted.front();
+
+        VP9_LOG("\n (VP9_LOG) Frame %d Plugin::QueryFrame +", frameToGet.m_frameOrder);
+        assert(m_outs.size() > 0);
 
         mfxStatus sts = MFX_ERR_NONE;
 
-        sts = m_ddi->QueryStatus(*pTask);
+        sts = m_ddi->QueryStatus(frameToGet);
         if (sts == MFX_WRN_DEVICE_BUSY)
         {
-            return MFX_TASK_WORKING;
+            return MFX_TASK_BUSY;
         }
         MFX_CHECK_STS(sts);
 
-        pTask->m_pBitsteam = m_outs.front();
-        sts = UpdateBitstream(*pTask);
+        frameToGet.m_pBitsteam = m_outs.front();
+        sts = UpdateBitstream(frameToGet);
         MFX_CHECK_STS(sts);
 
         {
             UMC::AutomaticUMCMutex guard(m_taskMutex);
             m_outs.pop();
-            FreeTask(m_pmfxCore, *pTask);
+            FreeTask(m_pmfxCore, frameToGet);
+            m_free.splice(m_free.end(), m_submitted, m_submitted.begin());
         }
 
         VP9_LOG("\n (VP9_LOG) Frame %d Plugin::QueryFrame -", pTask->m_frameOrder);
-        return MFX_TASK_DONE;
     }
+
+    return MFX_TASK_DONE;
 }
 
 mfxStatus Plugin::FreeResources(mfxThreadTask task, mfxStatus )

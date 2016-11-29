@@ -101,6 +101,9 @@ protected:
     mfxU64     m_maxBsSize;
 
     std::vector<Task> m_tasks;
+    std::list<Task> m_free;
+    std::list<Task> m_accepted;
+    std::list<Task> m_submitted;
     std::queue<mfxBitstream*> m_outs;
 
     ExternalFrames  m_rawFrames;
@@ -119,6 +122,8 @@ protected:
     bool m_initialized;
 
     mfxU32 m_frameArrivalOrder;
+
+    bool m_drainState;
 };
 
 } // MfxHwVP9Encode

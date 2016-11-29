@@ -472,7 +472,7 @@ inline mfxU16 GetDefaultBufferSize(VP9MfxVideoParam const &par)
 inline mfxU16 GetDefaultAsyncDepth(VP9MfxVideoParam const &par)
 {
     par;
-    return 1; // TODO: fix to appropriate value when async mode operation will be enabled.
+    return 2;
 }
 
 #define DEFAULT_GOP_SIZE 0xffff
@@ -600,10 +600,6 @@ mfxStatus CheckEncodeFrameParam(
 
         if (surface->Info.Width != video.mfx.FrameInfo.Width || surface->Info.Height != video.mfx.FrameInfo.Height)
             checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
-    }
-    else
-    {
-        checkSts = MFX_ERR_MORE_DATA;
     }
 
     MFX_CHECK((mfxU64)bs->MaxLength > ((mfxU64)bs->DataOffset + (mfxU64)bs->DataLength), MFX_ERR_UNDEFINED_BEHAVIOR);
