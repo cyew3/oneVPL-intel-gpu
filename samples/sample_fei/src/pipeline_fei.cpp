@@ -1132,18 +1132,9 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
             MSDK_ZERO_MEMORY(*feiSPS);
             feiSPS->Header.BufferId = MFX_EXTBUFF_FEI_SPS;
             feiSPS->Header.BufferSz = sizeof(mfxExtFeiSPS);
-            feiSPS->SPSId                       = 0;
-            feiSPS->Profile                     = m_appCfg.CodecProfile;
-            feiSPS->Level                       = m_appCfg.CodecLevel;
-            feiSPS->NumRefFrame                 = m_numRefFrame;
-            feiSPS->ChromaFormatIdc             = MFX_CHROMAFORMAT_YUV420;
-            feiSPS->FrameMBsOnlyFlag            = (m_numOfFields == 1) ? 1 : 0;
-            feiSPS->MBAdaptiveFrameFieldFlag    = 0;
-            feiSPS->Direct8x8InferenceFlag      = 1;
-            feiSPS->Log2MaxFrameNum             = 8;
-            feiSPS->PicOrderCntType             = (m_numOfFields == 2 || m_refDist > 1) ? 0 : 2;
-            feiSPS->Log2MaxPicOrderCntLsb       = GetDefaultLog2MaxPicOrdCnt(m_refDist, m_bRefType);
-            feiSPS->DeltaPicOrderAlwaysZeroFlag = 1;
+            feiSPS->SPSId                 = 0;
+            feiSPS->PicOrderCntType       = (m_numOfFields == 2 || m_refDist > 1) ? 0 : 2;
+            feiSPS->Log2MaxPicOrderCntLsb = GetDefaultLog2MaxPicOrdCnt(m_refDist, m_bRefType);
         }
 
         int num_buffers = m_maxQueueLength + (m_appCfg.bDECODE ? m_decodePoolSize : 0) + (m_pVPP ? 2 : 0);
@@ -1209,9 +1200,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                     feiPPS[fieldId].SPSId = feiSPS ? feiSPS->SPSId : 0;
                     feiPPS[fieldId].PPSId = 0;
 
-                    feiPPS[fieldId].FrameNum = mfxU16(2*m_frameCount + fieldId);
-
-                    //feiPPS[fieldId].PicInitQP = (m_appCfg.QP != 0) ? m_appCfg.QP : 26;
                     /* PicInitQP should be always 26 !!!
                      * Adjusting of QP parameter should be done via Slice header */
                     feiPPS[fieldId].PicInitQP = 26;
@@ -1221,11 +1209,6 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
 
                     feiPPS[fieldId].ChromaQPIndexOffset       = m_appCfg.ChromaQPIndexOffset;
                     feiPPS[fieldId].SecondChromaQPIndexOffset = m_appCfg.SecondChromaQPIndexOffset;
-
-                    feiPPS[fieldId].IDRPicFlag                = 0;
-                    feiPPS[fieldId].ReferencePicFlag          = 0;
-                    feiPPS[fieldId].EntropyCodingModeFlag     = 1;
-                    feiPPS[fieldId].ConstrainedIntraPredFlag  = m_appCfg.ConstrainedIntraPredFlag;
                     feiPPS[fieldId].Transform8x8ModeFlag      = m_appCfg.Transform8x8ModeFlag;
                     /*
                     IntraPartMask description from manual
@@ -1255,25 +1238,24 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                     feiSliceHeader[fieldId].Header.BufferId = MFX_EXTBUFF_FEI_SLICE;
                     feiSliceHeader[fieldId].Header.BufferSz = sizeof(mfxExtFeiSliceHeader);
 
-                    feiSliceHeader[fieldId].NumSlice =
-                        feiSliceHeader[fieldId].NumSliceAlloc = m_appCfg.numSlices;
-                    feiSliceHeader[fieldId].Slice = new mfxExtFeiSliceHeader::mfxSlice[feiSliceHeader[fieldId].NumSliceAlloc];
-                    MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice, feiSliceHeader[fieldId].NumSliceAlloc);
+                    feiSliceHeader[fieldId].NumSlice = m_appCfg.numSlices;
+                    feiSliceHeader[fieldId].Slice = new mfxExtFeiSliceHeader::mfxSlice[feiSliceHeader[fieldId].NumSlice];
+                    MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice, feiSliceHeader[fieldId].NumSlice);
 
                     // TODO: Improve slice divider
                     mfxU16 nMBrows = (m_heightMB + feiSliceHeader[fieldId].NumSlice - 1) / feiSliceHeader[fieldId].NumSlice,
-                        nMBremain = m_heightMB;
-                    for (mfxU16 numSlice = 0; numSlice < feiSliceHeader[fieldId].NumSliceAlloc; numSlice++)
+                         nMBremain = m_heightMB;
+                    for (mfxU16 numSlice = 0; numSlice < feiSliceHeader[fieldId].NumSlice; numSlice++)
                     {
-                        feiSliceHeader[fieldId].Slice[numSlice].MBAaddress = numSlice*(nMBrows*m_widthMB);
-                        feiSliceHeader[fieldId].Slice[numSlice].NumMBs     = (std::min)(nMBrows, nMBremain)*m_widthMB;
-                        feiSliceHeader[fieldId].Slice[numSlice].SliceType  = 0;
-                        feiSliceHeader[fieldId].Slice[numSlice].PPSId      = feiPPS ? feiPPS[fieldId].PPSId : 0;
-                        feiSliceHeader[fieldId].Slice[numSlice].IdrPicId   = 0;
+                        feiSliceHeader[fieldId].Slice[numSlice].MBAddress = numSlice*(nMBrows*m_widthMB);
+                        feiSliceHeader[fieldId].Slice[numSlice].NumMBs    = (std::min)(nMBrows, nMBremain)*m_widthMB;
+                        feiSliceHeader[fieldId].Slice[numSlice].SliceType = 0;
+                        feiSliceHeader[fieldId].Slice[numSlice].PPSId     = feiPPS ? feiPPS[fieldId].PPSId : 0;
+                        feiSliceHeader[fieldId].Slice[numSlice].IdrPicId  = 0;
 
                         feiSliceHeader[fieldId].Slice[numSlice].CabacInitIdc = 0;
                         mfxU32 initQP = (m_appCfg.QP != 0) ? m_appCfg.QP : 26;
-                        feiSliceHeader[fieldId].Slice[numSlice].SliceQPDelta               = (mfxI16)(initQP - feiPPS[fieldId].PicInitQP);
+                        feiSliceHeader[fieldId].Slice[numSlice].SliceQPDelta               = mfxI16(initQP - feiPPS[fieldId].PicInitQP);
                         feiSliceHeader[fieldId].Slice[numSlice].DisableDeblockingFilterIdc = m_appCfg.DisableDeblockingIdc;
                         feiSliceHeader[fieldId].Slice[numSlice].SliceAlphaC0OffsetDiv2     = m_appCfg.SliceAlphaC0OffsetDiv2;
                         feiSliceHeader[fieldId].Slice[numSlice].SliceBetaOffsetDiv2        = m_appCfg.SliceBetaOffsetDiv2;
