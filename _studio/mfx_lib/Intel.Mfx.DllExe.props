@@ -3,6 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <Import Project=".\Intel.Mfx.Trace.Itt.props" />
+  <Import Project=".\Intel.Mfx.Shared.props" Condition=" '$(SharedPropsImported)' != 'true' "/>
   <PropertyGroup>
     <OutDir>$(MfxBuildDir)win_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>

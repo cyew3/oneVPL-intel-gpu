@@ -2,6 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
+  <Import Project=".\Intel.Mfx.Shared.props" Condition=" '$(SharedPropsImported)' != 'true' "/>
   <PropertyGroup>
     <MfxBuildDir>$(MSBuildThisFileDirectory)..\..\..\build\</MfxBuildDir>
     <PlatformToolset>v110</PlatformToolset>

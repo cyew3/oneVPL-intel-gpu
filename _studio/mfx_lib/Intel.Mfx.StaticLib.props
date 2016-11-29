@@ -3,6 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <Import Project=".\Intel.Mfx.Trace.Itt.props" />
+  <Import Project=".\Intel.Mfx.Shared.props" Condition=" '$(SharedPropsImported)' != 'true' "/>
   <PropertyGroup>
     <WindowsSdk8Path Condition="Exists('$(MINIDDK_ROOT)')">$(MINIDDK_ROOT)</WindowsSdk8Path>
     <WindowsSdk8Path Condition="!Exists('$(MINIDDK_ROOT)')">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v8.1@InstallationFolder)</WindowsSdk8Path>
