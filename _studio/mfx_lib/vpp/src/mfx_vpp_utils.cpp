@@ -2075,6 +2075,16 @@ mfxStatus CheckCropParam( mfxFrameInfo* info )
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
+    if (info->CropW > info->Width)
+    {
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
+    if (info->CropH > info->Height)
+    {
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
     if (info->CropX + info->CropW > info->Width)
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
