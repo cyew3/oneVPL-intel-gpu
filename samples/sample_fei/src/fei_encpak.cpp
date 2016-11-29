@@ -624,11 +624,9 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
     {
         if (feiPPS)
         {
-            feiPPS[fieldId].IDRPicFlag        = (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_IDR) ? 1 : 0;
             feiPPS[fieldId].NumRefIdxL0Active = (mfxU16)m_RefInfo.state[fieldId].l0_idx.size();
             feiPPS[fieldId].NumRefIdxL1Active = (mfxU16)m_RefInfo.state[fieldId].l1_idx.size();
-            feiPPS[fieldId].ReferencePicFlag  = (ExtractFrameType(*eTask, fieldId) & MFX_FRAMETYPE_REF) ? 1 : 0;
-            feiPPS[fieldId].FrameNum          = eTask->m_frameNum;
+            feiPPS[fieldId].PictureType       = ExtractFrameType(*eTask, fieldId);
 
             memset(feiPPS[fieldId].ReferenceFrames, -1, 16 * sizeof(mfxU16));
             memcpy(feiPPS[fieldId].ReferenceFrames, &m_RefInfo.state[fieldId].dpb_idx[0], sizeof(mfxU16)*m_RefInfo.state[fieldId].dpb_idx.size());
@@ -638,7 +636,7 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
         {
             MSDK_CHECK_POINTER(feiSliceHeader[fieldId].Slice, MFX_ERR_NULL_PTR);
 
-            for (mfxU32 i = 0; i < feiSliceHeader[fieldId].NumSliceAlloc; i++)
+            for (mfxU32 i = 0; i < feiSliceHeader[fieldId].NumSlice; i++)
             {
                 MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL0, 32);
                 MSDK_ZERO_ARRAY(feiSliceHeader[fieldId].Slice[i].RefL1, 32);
