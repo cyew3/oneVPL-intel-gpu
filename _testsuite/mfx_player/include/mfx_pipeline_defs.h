@@ -44,6 +44,7 @@ File Name: .h
 #include "mfx_pipeline_features.h"
 //TODO: need to link dependencies without recompiling core
 #include "mfx_conditional_linking.h"
+#include "mfx_trace.h"
 
 
 

@@ -254,6 +254,7 @@ mfxStatus MFXDecPipeline::CheckParams()
 
 mfxStatus MFXDecPipeline::BuildMFXPart()
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     TIME_START();
 
     MFX_CHECK_STS_SET_ERR(CreateDeviceManager(), PE_CREATE_RND);
@@ -409,6 +410,7 @@ mfxStatus MFXDecPipeline::ReleaseMFXPart()
 
 mfxStatus MFXDecPipeline::BuildPipeline()
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     TIME_START();
 
 #ifdef MFX_TIMING
@@ -883,6 +885,7 @@ public:
 
 mfxStatus MFXDecPipeline::CreateCore()
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     //shared access prevention section
     {
         AutoPipelineSynhro d3dAcess(m_externalsync);
@@ -1014,6 +1017,7 @@ mfxStatus MFXDecPipeline::CreateCore()
 
 mfxStatus MFXDecPipeline::CreateVPP()
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     mfxFrameInfo &dec_info = m_components[eDEC].m_params.mfx.FrameInfo;
     mfxFrameInfo &enc_info = m_components[eREN].m_params.mfx.FrameInfo;
     // check VPP enabling
@@ -1389,6 +1393,7 @@ mfxStatus MFXDecPipeline::InitPluginParams()
 
 mfxStatus MFXDecPipeline::InitVPP()
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     mfxStatus sts;
 
     if (NULL == m_pVPP) return MFX_ERR_NONE;
@@ -1408,6 +1413,7 @@ mfxStatus MFXDecPipeline::InitVPP()
 
 mfxStatus MFXDecPipeline::DecodeHeader()
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     mfxStatus sts;
     //decode header might overrite some values, fourcc for example
     mfxFrameInfo dec_info = m_components[eDEC].m_params.mfx.FrameInfo;
@@ -2276,6 +2282,7 @@ mfxStatus MFXDecPipeline::InitRenderParams()
 
 mfxStatus MFXDecPipeline::InitRender()
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     mfxStatus sts;
 
     if (NULL == m_pRender) return MFX_ERR_NONE;
@@ -3041,6 +3048,7 @@ mfxStatus MFXDecPipeline::Play()
     }
     m_inBSFrame.isNull = false;
 
+
     MFX_CHECK_STS_SKIP(sts, MFX_ERR_MORE_DATA, PIPELINE_ERR_STOPPED);
 
     //to get empty render's buffers
@@ -3074,6 +3082,7 @@ struct dispMapPusher : public std::binary_function<MFXDecodeOrderedRender*, SrfE
 
 mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     MPA_TRACE("rundecode");
 
     mfxFrameSurface1 *pDecodedSurface = NULL;
@@ -3251,6 +3260,7 @@ mfxStatus MFXDecPipeline::CheckExitingCondition()
 
 mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     bool bInSupplied = false;
 
     if ( m_inParams.bExtendedFpsStat )
@@ -3574,6 +3584,7 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
 
 mfxStatus MFXDecPipeline::RunRender(mfxFrameSurface1* pSurface, mfxEncodeCtrl *pControl)
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
 #if defined(_WIN32) || defined(_WIN64)
     vm_char title[1024];
     if ( m_inParams.bUpdateWindowTitle )
@@ -3671,6 +3682,7 @@ vm_char * MFXDecPipeline::GetLastErrString()
 
 mfxStatus MFXDecPipeline::ProcessCommand(vm_char ** &argv, mfxI32 argc, bool bReportError)
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     MFX_CHECK_SET_ERR(NULL != argv, PE_OPTION, MFX_ERR_NULL_PTR);
     MFX_CHECK_SET_ERR(0 != argc, PE_OPTION, MFX_ERR_UNKNOWN);
 

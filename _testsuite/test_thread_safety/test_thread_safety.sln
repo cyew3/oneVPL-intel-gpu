@@ -46,6 +46,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "color_space_converter", "..
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux_dispatcher_v11", "..\..\..\mdp_msdk-samples\samples\deprecated\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher_v11.vcxproj", "{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_trace", "..\..\_studio\shared\mfx_trace\mfx_trace.vcxproj", "{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0C9E80B5-1E5D-4764-B6A3-462891319477}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\_studio\mfx_lib\Intel.Mfx.Trace.Itt.props = ..\..\_studio\mfx_lib\Intel.Mfx.Trace.Itt.props
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug_THM|Win32 = Debug_THM|Win32
@@ -394,6 +401,22 @@ Global
 		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release|Win32.Build.0 = Release|Win32
 		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release|x64.ActiveCfg = Release|x64
 		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release|x64.Build.0 = Release|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug_THM|Win32.ActiveCfg = Debug_THM|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug_THM|Win32.Build.0 = Debug_THM|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug_THM|x64.ActiveCfg = Debug_THM|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug_THM|x64.Build.0 = Debug_THM|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug|Win32.Build.0 = Debug|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug|x64.ActiveCfg = Debug|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug|x64.Build.0 = Debug|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release_THM|Win32.ActiveCfg = Release_THM|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release_THM|Win32.Build.0 = Release_THM|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release_THM|x64.ActiveCfg = Release_THM|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release_THM|x64.Build.0 = Release_THM|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release|Win32.ActiveCfg = Release|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release|Win32.Build.0 = Release|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release|x64.ActiveCfg = Release|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

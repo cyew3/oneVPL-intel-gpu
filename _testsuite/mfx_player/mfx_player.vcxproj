@@ -166,6 +166,7 @@
     <Import Project="props\win32.props" />
     <Import Project="props\lucas.props" />
     <Import Project="props\PE_binary.props" />
+    <Import Project="..\..\_studio\mfx_lib\Intel.Mfx.Trace.Itt.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release (Lucas DLL)|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -174,6 +175,7 @@
     <Import Project="props\win32.props" />
     <Import Project="props\lucas.props" />
     <Import Project="props\PE_binary.props" />
+    <Import Project="..\..\_studio\mfx_lib\Intel.Mfx.Trace.Itt.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -181,6 +183,7 @@
     <Import Project="props\debug.props" />
     <Import Project="props\win32.props" />
     <Import Project="props\PE_binary.props" />
+    <Import Project="..\..\_studio\mfx_lib\Intel.Mfx.Trace.Itt.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -188,6 +191,7 @@
     <Import Project="props\debug.props" />
     <Import Project="props\win32.props" />
     <Import Project="props\PE_binary.props" />
+    <Import Project="..\..\_studio\mfx_lib\Intel.Mfx.Trace.Itt.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -195,6 +199,7 @@
     <Import Project="props\release.props" />
     <Import Project="props\win32.props" />
     <Import Project="props\PE_binary.props" />
+    <Import Project="..\..\_studio\mfx_lib\Intel.Mfx.Trace.Itt.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -202,6 +207,7 @@
     <Import Project="props\release.props" />
     <Import Project="props\win32.props" />
     <Import Project="props\PE_binary.props" />
+    <Import Project="..\..\_studio\mfx_lib\Intel.Mfx.Trace.Itt.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM(Lucas_DLL)|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -209,6 +215,7 @@
     <Import Project="props\release.props" />
     <Import Project="props\win32.props" />
     <Import Project="props\PE_binary.props" />
+    <Import Project="..\..\_studio\mfx_lib\Intel.Mfx.Trace.Itt.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug (Lucas DLL)|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -217,6 +224,7 @@
     <Import Project="props\win64.props" />
     <Import Project="props\lucas.props" />
     <Import Project="props\PE_binary.props" />
+    <Import Project="..\..\_studio\mfx_lib\Intel.Mfx.Trace.Itt.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release (Lucas DLL)|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -225,6 +233,7 @@
     <Import Project="props\win64.props" />
     <Import Project="props\lucas.props" />
     <Import Project="props\PE_binary.props" />
+    <Import Project="..\..\_studio\mfx_lib\Intel.Mfx.Trace.Itt.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -232,6 +241,7 @@
     <Import Project="props\debug.props" />
     <Import Project="props\win64.props" />
     <Import Project="props\PE_binary.props" />
+    <Import Project="..\..\_studio\mfx_lib\Intel.Mfx.Trace.Itt.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -239,6 +249,7 @@
     <Import Project="props\debug.props" />
     <Import Project="props\win64.props" />
     <Import Project="props\PE_binary.props" />
+    <Import Project="..\..\_studio\mfx_lib\Intel.Mfx.Trace.Itt.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -246,6 +257,7 @@
     <Import Project="props\release.props" />
     <Import Project="props\win64.props" />
     <Import Project="props\PE_binary.props" />
+    <Import Project="..\..\_studio\mfx_lib\Intel.Mfx.Trace.Itt.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -253,6 +265,7 @@
     <Import Project="props\release.props" />
     <Import Project="props\win64.props" />
     <Import Project="props\PE_binary.props" />
+    <Import Project="..\..\_studio\mfx_lib\Intel.Mfx.Trace.Itt.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM(Lucas_DLL)|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -260,6 +273,7 @@
     <Import Project="props\release.props" />
     <Import Project="props\win64.props" />
     <Import Project="props\PE_binary.props" />
+    <Import Project="..\..\_studio\mfx_lib\Intel.Mfx.Trace.Itt.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -515,7 +529,7 @@
       <TargetMachine>MachineX64</TargetMachine>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>winmm.lib; psapi.lib; ippcoremt.lib; ippccmt.lib; ippimt.lib; ippsmt.lib; ippvcmt.lib; ippjmt.lib;  ippcvmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|x64'">
@@ -617,9 +631,11 @@
     <ProjectReference Include="..\..\..\mdp_msdk-samples\samples\deprecated\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher_v11.vcxproj">
       <Project>{bf10bfcb-5080-4e85-93b7-13299dd6c5c2}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\_studio\shared\mfx_trace\mfx_trace.vcxproj">
+      <Project>{ff93e15e-6a4a-4cc5-8d13-892fbba5cc5f}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\_studio\shared\umc\codec\asf_spl\asf_spl.vcxproj">
       <Project>{7662c9c6-5ce0-42e6-aca7-92fe6b7797a6}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\_studio\shared\umc\codec\avi_spl\avi_sp.vcxproj">
       <Project>{10a6c28a-72a4-4a75-9ea4-16f22e4791fb}</Project>

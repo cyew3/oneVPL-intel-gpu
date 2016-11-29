@@ -1,6 +1,9 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared_utils", "..\shared\shared_utils.vcxproj", "{0D02568B-3117-47C3-AC2E-D83781259C1D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F} = {FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spl_common", "..\..\_studio\shared\umc\codec\spl_common\spl_common.vcxproj", "{18D5AD19-B7CE-4158-8500-842216503D6D}"
 EndProject
@@ -33,14 +36,27 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_pipeline", "..\mfx_player\mfx_pipeline.vcxproj", "{BF72A446-8425-40A2-856B-33B5742C60CE}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_transcoder", "mfx_transcoder.vcxproj", "{D706986E-D483-47A4-A696-0F8F0F5D1887}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F} = {FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dxva2_dump", "..\dxva2_dump\dxva2_dump_lib.vcxproj", "{5AD3D93A-18BF-4F7F-AEE7-52448C5B4AB3}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_trans_pipeline", "mfx_transcoder_lib.vcxproj", "{B9C19E53-8A34-418F-B96E-E551225E93C9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F} = {FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace", "..\..\..\mdp_msdk-api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj", "{430E22BA-BDF6-497C-BFC5-EC6907F90018}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_spl_mux_dispatcher_v11", "..\..\..\mdp_msdk-samples\samples\deprecated\sample_spl_mux\dispatcher\sample_spl_mux_dispatcher_v11.vcxproj", "{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_trace", "..\..\_studio\shared\mfx_trace\mfx_trace.vcxproj", "{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{61622E70-88D8-4D5A-BB35-80C4E6D16EA7}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\_studio\mfx_lib\Intel.Mfx.Trace.Itt.props = ..\..\_studio\mfx_lib\Intel.Mfx.Trace.Itt.props
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -520,6 +536,7 @@ Global
 		{D706986E-D483-47A4-A696-0F8F0F5D1887}.Debug|Win32.Build.0 = Debug|Win32
 		{D706986E-D483-47A4-A696-0F8F0F5D1887}.Debug|x64.ActiveCfg = Debug|x64
 		{D706986E-D483-47A4-A696-0F8F0F5D1887}.Debug|x64.Build.0 = Debug|x64
+		{D706986E-D483-47A4-A696-0F8F0F5D1887}.Debug|x64.Deploy.0 = Debug|x64
 		{D706986E-D483-47A4-A696-0F8F0F5D1887}.Release (Lucas DLL)|Win32.ActiveCfg = Release (Lucas DLL)|Win32
 		{D706986E-D483-47A4-A696-0F8F0F5D1887}.Release (Lucas DLL)|Win32.Build.0 = Release (Lucas DLL)|Win32
 		{D706986E-D483-47A4-A696-0F8F0F5D1887}.Release (Lucas DLL)|x64.ActiveCfg = Release (Lucas DLL)|x64
@@ -648,6 +665,34 @@ Global
 		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release|Win32.Build.0 = Release|Win32
 		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release|x64.ActiveCfg = Release|x64
 		{BF10BFCB-5080-4E85-93B7-13299DD6C5C2}.Release|x64.Build.0 = Release|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug (Lucas DLL)|Win32.ActiveCfg = Debug|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug (Lucas DLL)|Win32.Build.0 = Debug|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug (Lucas DLL)|x64.ActiveCfg = Debug|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug (Lucas DLL)|x64.Build.0 = Debug|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug_THM|Win32.ActiveCfg = Debug_THM|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug_THM|Win32.Build.0 = Debug_THM|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug_THM|x64.ActiveCfg = Debug_THM|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug_THM|x64.Build.0 = Debug_THM|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug|Win32.Build.0 = Debug|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug|x64.ActiveCfg = Debug|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Debug|x64.Build.0 = Debug|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release (Lucas DLL)|Win32.ActiveCfg = Release|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release (Lucas DLL)|Win32.Build.0 = Release|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release (Lucas DLL)|x64.ActiveCfg = Release|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release (Lucas DLL)|x64.Build.0 = Release|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release_THM(Lucas)|Win32.ActiveCfg = Release_THM|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release_THM(Lucas)|Win32.Build.0 = Release_THM|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release_THM(Lucas)|x64.ActiveCfg = Release_THM|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release_THM(Lucas)|x64.Build.0 = Release_THM|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release_THM|Win32.ActiveCfg = Release_THM|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release_THM|Win32.Build.0 = Release_THM|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release_THM|x64.ActiveCfg = Release_THM|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release_THM|x64.Build.0 = Release_THM|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release|Win32.ActiveCfg = Release|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release|Win32.Build.0 = Release|Win32
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release|x64.ActiveCfg = Release|x64
+		{FF93E15E-6A4A-4CC5-8D13-892FBBA5CC5F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

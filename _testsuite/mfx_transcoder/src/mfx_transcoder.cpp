@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -37,9 +37,17 @@ int main(int argc, char *argv[])
 { 
 
 #endif // LUCAS_DLL
+  int ret = 0;
 
-  std::auto_ptr<IMFXPipelineConfig> cfg(new MFXPipelineConfigEncode(argc, argv));
-  MFXPipelineManager defMgr;
+  MFX_TRACE_INIT();
+  {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
 
-  return defMgr.Execute(cfg.get());
+    std::auto_ptr<IMFXPipelineConfig> cfg(new MFXPipelineConfigEncode(argc, argv));
+    MFXPipelineManager defMgr;
+
+    ret = defMgr.Execute(cfg.get());
+  }
+  MFX_TRACE_CLOSE();
+  return ret;
 }

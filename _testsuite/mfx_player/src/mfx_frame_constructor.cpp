@@ -79,6 +79,7 @@ MFXFrameConstructor::~MFXFrameConstructor()
 
 mfxStatus MFXFrameConstructor::ConstructFrame(mfxBitstream *pBSIn, mfxBitstream *pBSOut)
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
 //    mfxU8*          pDataBuffer = NULL;
 //    mfxU32          nDataSize   = 0;
 

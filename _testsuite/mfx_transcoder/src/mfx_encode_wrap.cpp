@@ -102,6 +102,7 @@ mfxStatus MFXEncodeWRAPPER::SetOutBitstreamsNum(mfxU16 nBitstreamsOut)
 
 mfxStatus MFXEncodeWRAPPER::Init(mfxVideoParam *pInit, const vm_char *pFilename)
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     mfxStatus ret = MFX_ERR_NONE;
 
     MFX_CHECK_POINTER(pInit);
@@ -135,6 +136,7 @@ mfxStatus MFXEncodeWRAPPER::Init(mfxVideoParam *pInit, const vm_char *pFilename)
 
 mfxStatus MFXEncodeWRAPPER::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     mfxStatus sts;
     MFX_CHECK_STS(sts = m_encoder->QueryIOSurf(par, request));
     if (MFX_ERR_NONE != sts && MFX_WRN_PARTIAL_ACCELERATION != sts)
@@ -150,6 +152,7 @@ mfxStatus MFXEncodeWRAPPER::Query(mfxVideoParam *in, mfxVideoParam *out)
     //ATTENTION:
     //default behavior of query function is to set 0 to fields 
     //validity of that is cannot be defined by this function
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     mfxStatus sts = m_encoder->Query(in, out);
     if (MFX_ERR_NONE <= sts) 
     {
@@ -218,6 +221,7 @@ mfxStatus  MFXEncodeWRAPPER::Close()
 
 mfxStatus MFXEncodeWRAPPER::WaitTasks(mfxU32 nMilisecconds)
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     //check whether some sync points already done
     int k;
     for ( k = 0; k < m_nSyncPoints; k++)
@@ -250,6 +254,7 @@ mfxStatus MFXEncodeWRAPPER::InitBitstream(mfxBitstream *bs)
 
 mfxStatus MFXEncodeWRAPPER::RenderFrame(mfxFrameSurface1 *pSurf, mfxEncodeCtrl * pCtrl)
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     mfxStatus sts  = MFX_ERR_NONE;
     mfxStatus sts2 = MFX_ERR_NONE;
     bool      bForceWait = false; //flag is used in case of EOS to reduce number of cyclings
