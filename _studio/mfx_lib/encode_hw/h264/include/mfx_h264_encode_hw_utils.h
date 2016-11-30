@@ -302,7 +302,8 @@ namespace MfxHwH264Encode
         mfxStatus Alloc(
             VideoCORE *            core,
             mfxFrameAllocRequest & req,
-            bool isCopyRequired = true);
+            bool isCopyRequired = true,
+            bool isAllFramesRequired = false);
 
         mfxStatus Alloc(
             VideoCORE *            core,

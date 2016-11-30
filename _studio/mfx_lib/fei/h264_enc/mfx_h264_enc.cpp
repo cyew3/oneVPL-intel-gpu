@@ -545,13 +545,13 @@ mfxStatus VideoENC_ENC::Init(mfxVideoParam *par)
     request.AllocId           = par->AllocId;
 
     //sts = m_core->AllocFrames(&request, &m_rec);
-    sts = m_rec.Alloc(m_core,request, false);
+    sts = m_rec.Alloc(m_core,request, false, true);
     MFX_CHECK_STS(sts);
 
     sts = m_ddi->Register(m_rec, D3DDDIFMT_NV12);
     MFX_CHECK_STS(sts);
 
-    m_recFrameOrder.resize(request.NumFrameMin, 0xffffffff);
+    m_recFrameOrder.resize(m_rec.NumFrameActual, 0xffffffff);
 
     sts = m_ddi->CreateAccelerationService(m_video);
     MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);

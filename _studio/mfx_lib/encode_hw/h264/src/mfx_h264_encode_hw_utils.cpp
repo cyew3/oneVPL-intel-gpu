@@ -4430,7 +4430,8 @@ void MfxFrameAllocResponse::DestroyBufferUp(CmDevice * device, void * p)
 mfxStatus MfxFrameAllocResponse::Alloc(
     VideoCORE *            core,
     mfxFrameAllocRequest & req,
-    bool isCopyRequired)
+    bool isCopyRequired,
+    bool isAllFramesRequired)
 {
     if (m_core || m_cmDevice)
         return Error(MFX_ERR_MEMORY_ALLOC);
@@ -4470,7 +4471,8 @@ mfxStatus MfxFrameAllocResponse::Alloc(
     m_cmDevice = 0;
     m_cmDestroy = 0;
     m_numFrameActualReturnedByAllocFrames = NumFrameActual;
-    NumFrameActual = req.NumFrameMin; // no need in redundant frames
+    if (!isAllFramesRequired)
+        NumFrameActual = req.NumFrameMin; // no need in redundant frames
     return MFX_ERR_NONE;
 }
 

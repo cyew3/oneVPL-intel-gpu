@@ -553,27 +553,22 @@ mfxStatus VideoPAK_PAK::Init(mfxVideoParam *par)
     mfxFrameAllocRequest request = { };
     request.Info = m_video.mfx.FrameInfo;
 
-    /*FIXME*/
-    /*WA*/
-    /* Issue with reconstruct surfaces for PAK...
-     * Recon surface should be passed to vaContexCreat() finction on Init() stage.
-     * And this one recon surface should be passed to driver within Execute() call.
-     * But all surfaces allocated internally!
-     * The same behavior has all decoder's in Media SDK, so it was used same approach to solve issue:
-     * to remember allocated reconstructed surfaces in allocator using MFX_MEMTYPE_FROM_DECODE type */
+    /* The entire recon surface pool should be passed to vaContexCreat() finction on Init() stage.
+     * And only these surfaces should be passed to driver within Execute() call.
+     * The size of recon pool is limited to 127 surfaces. */
     request.Type              = MFX_MEMTYPE_FROM_PAK | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_EXTERNAL_FRAME;
     request.NumFrameMin       = m_video.mfx.GopRefDist * 2 + (m_video.AsyncDepth-1) + 1 +m_video.mfx.NumRefFrame + 1;
     request.NumFrameSuggested = request.NumFrameMin;
     request.AllocId           = par->AllocId;
 
     //sts = m_core->AllocFrames(&request, &m_rec);
-    sts = m_rec.Alloc(m_core,request, false);
+    sts = m_rec.Alloc(m_core,request, false, true);
     //sts = m_raw.Alloc(m_core, request);
     MFX_CHECK_STS(sts);
     sts = m_ddi->Register(m_rec, D3DDDIFMT_NV12);
     MFX_CHECK_STS(sts);
 
-    m_recFrameOrder.resize(request.NumFrameMin, 0xffffffff);
+    m_recFrameOrder.resize(m_rec.NumFrameActual, 0xffffffff);
 
     sts = m_ddi->CreateAccelerationService(m_video);
     MFX_CHECK(sts == MFX_ERR_NONE, MFX_WRN_PARTIAL_ACCELERATION);
