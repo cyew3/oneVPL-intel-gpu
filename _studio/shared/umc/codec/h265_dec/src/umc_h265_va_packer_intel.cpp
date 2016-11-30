@@ -36,9 +36,9 @@ namespace UMC_HEVC_DECODER
 
     private:
 
-        void PackerDXVA2intel::PackQmatrix(const H265Slice *pSlice);
+        void PackQmatrix(const H265Slice *pSlice);
         void PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier);
-        bool PackerDXVA2intel::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLastSlice);
+        bool PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLastSlice);
     };
 
     Packer * CreatePackerIntel(UMC::VideoAccelerator* va)
@@ -556,56 +556,7 @@ namespace UMC_HEVC_DECODER
         compBuf->SetDataSize(sizeof(DXVA_Intel_Qmatrix_HEVC));
         memset(pQmatrix, 0, sizeof(DXVA_Intel_Qmatrix_HEVC));
 
-        const H265ScalingList *scalingList = 0;
-
-        if (pSlice->GetPicParam()->pps_scaling_list_data_present_flag)
-        {
-            scalingList = pSlice->GetPicParam()->getScalingList();
-        }
-        else if (pSlice->GetSeqParam()->sps_scaling_list_data_present_flag)
-        {
-            scalingList = pSlice->GetSeqParam()->getScalingList();
-        }
-        else
-        {
-            // TODO: build default scaling list in target buffer location
-            static bool doInit = true;
-            static H265ScalingList sl;
-
-            if (doInit)
-            {
-                for (Ipp32u sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
-                {
-                    for (Ipp32u listId = 0; listId < g_scalingListNum[sizeId]; listId++)
-                    {
-                        const int *src = getDefaultScalingList(sizeId, listId);
-                        int *dst = sl.getScalingListAddress(sizeId, listId);
-                        int count = min(MAX_MATRIX_COEF_NUM, (Ipp32s)g_scalingListSize[sizeId]);
-                        ::MFX_INTERNAL_CPY(dst, src, sizeof(Ipp32s) * count);
-                        sl.setScalingListDC(sizeId, listId, SCALING_LIST_DC);
-                    }
-                }
-                doInit = false;
-            }
-
-            scalingList = &sl;
-        }
-
-        initQMatrix<16>(scalingList, SCALING_LIST_4x4, pQmatrix->ucScalingLists0);    // 4x4
-        initQMatrix<64>(scalingList, SCALING_LIST_8x8, pQmatrix->ucScalingLists1);    // 8x8
-        initQMatrix<64>(scalingList, SCALING_LIST_16x16, pQmatrix->ucScalingLists2);    // 16x16
-        initQMatrix(scalingList, SCALING_LIST_32x32, pQmatrix->ucScalingLists3);    // 32x32
-
-        for (int sizeId = SCALING_LIST_16x16; sizeId <= SCALING_LIST_32x32; sizeId++)
-        {
-            for (unsigned listId = 0; listId < g_scalingListNum[sizeId]; listId++)
-            {
-                if (sizeId == SCALING_LIST_16x16)
-                    pQmatrix->ucScalingListDCCoefSizeID2[listId] = (UCHAR)scalingList->getScalingListDC(sizeId, listId);
-                else if (sizeId == SCALING_LIST_32x32)
-                    pQmatrix->ucScalingListDCCoefSizeID3[listId] = (UCHAR)scalingList->getScalingListDC(sizeId, listId);
-            }
-        }
+        PackerDXVA2::PackQmatrix(pSlice, pQmatrix);
     }
 }
 

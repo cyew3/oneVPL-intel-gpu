@@ -46,6 +46,13 @@ namespace UMC_HEVC_DECODER
 
         void PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplier);
 
+        using Packer::PackQmatrix;
+
+    protected:
+
+        template <typename T>
+        void PackQmatrix(H265Slice const*, T* pQmatrix);
+
     protected:
 
         Ipp32u              m_statusReportFeedbackCounter;
