@@ -28,6 +28,9 @@ set( NOT_CONFIGURED "" CACHE INTERNAL "" )
 set( SKIPPING "" CACHE INTERNAL "" )
 set( BUILDING "" CACHE INTERNAL "" )
 
+add_definitions(-DENABLE_PRE_SI_FEATURES)
+add_definitions(-DENABLE_FUTURE_FEATURES)
+
 create_build( )
 
 report_targets("The following targets were NOT configured:" "${NOT_CONFIGURED}")

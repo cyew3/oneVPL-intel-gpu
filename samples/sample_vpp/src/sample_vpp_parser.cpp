@@ -61,7 +61,7 @@ msdk_printf(MSDK_STRING("   [-scrY  y]                  - cropY  of src video (d
 msdk_printf(MSDK_STRING("   [-scrW  w]                  - cropW  of src video (def: width)\n"));
 msdk_printf(MSDK_STRING("   [-scrH  h]                  - cropH  of src video (def: height)\n"));
 msdk_printf(MSDK_STRING("   [-sf   frameRate]           - frame rate of src video (def: 30.0)\n"));
-#ifdef FUTURE_API
+#ifdef ENABLE_PRE_SI_FEATURES
 msdk_printf(MSDK_STRING("   [-scc  format]              - format (FourCC) of src video (def: nv12. support nv12|yv12|yuy2|rgb3|rgb4|imc3|yuv400|yuv411|yuv422h|yuv422v|yuv444|uyvy|ayuv|y210|y410)\n"));
 #else
 msdk_printf(MSDK_STRING("   [-scc  format]              - format (FourCC) of src video (def: nv12. support nv12|yv12|yuy2|rgb3|rgb4|imc3|yuv400|yuv411|yuv422h|yuv422v|yuv444|uyvy|ayuv)\n"));
@@ -84,7 +84,7 @@ msdk_printf(MSDK_STRING("   [-dcrY  y]                  - cropY  of dst video (d
 msdk_printf(MSDK_STRING("   [-dcrW  w]                  - cropW  of dst video (def: width)\n"));
 msdk_printf(MSDK_STRING("   [-dcrH  h]                  - cropH  of dst video (def: height)\n"));
 msdk_printf(MSDK_STRING("   [-df  frameRate]            - frame rate of dst video (def: 30.0)\n"));
-#ifdef FUTURE_API
+#ifdef ENABLE_PRE_SI_FEATURES
 msdk_printf(MSDK_STRING("   [-dcc format]               - format (FourCC) of dst video (def: nv12. support nv12|yuy2|rgb4|yv12|ayuv|y210|y410)\n"));
 #else
 msdk_printf(MSDK_STRING("   [-dcc format]               - format (FourCC) of dst video (def: nv12. support nv12|yuy2|rgb4|yv12|ayuv)\n"));

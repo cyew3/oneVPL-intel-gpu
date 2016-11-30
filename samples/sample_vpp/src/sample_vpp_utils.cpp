@@ -96,7 +96,7 @@ static
         return MSDK_STRING("UYVY");
     case MFX_FOURCC_AYUV:
         return MSDK_STRING("AYUV");
-#ifdef FUTURE_API
+#ifdef ENABLE_PRE_SI_FEATURES
     case MFX_FOURCC_Y210:
         return MSDK_STRING("Y210");
     case MFX_FOURCC_Y410:
@@ -1180,7 +1180,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_MSDK_CHECK_NOT_EQUAL(nBytesRead, 4*w, MFX_ERR_MORE_DATA);
         }
     }
-#ifdef FUTURE_API
+#ifdef ENABLE_PRE_SI_FEATURES
     else if (pInfo->FourCC == MFX_FOURCC_Y210)
     {
         ptr = (mfxU8*)pData->Y16 + pInfo->CropX + pInfo->CropY * pitch;
@@ -1729,7 +1729,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
             MSDK_CHECK_NOT_EQUAL( fwrite(ptr + i * pitch, 1, 4*w, m_fDst), 4u*w, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
     }
-#ifdef FUTURE_API
+#ifdef ENABLE_PRE_SI_FEATURES
     else if( pInfo->FourCC == MFX_FOURCC_Y210)
     {
         ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;

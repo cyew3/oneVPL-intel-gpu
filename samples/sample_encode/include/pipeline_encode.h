@@ -254,7 +254,10 @@ protected:
     // HEVC
     mfxExtHEVCParam m_ExtHEVCParam;
     mfxExtCodingOption3 m_CodingOption3;
+
+#ifdef ENABLE_FUTURE_FEATURES
     mfxExtBRC           m_ExtBRC;
+#endif
 
 
     // external parameters for each component are stored in a vector

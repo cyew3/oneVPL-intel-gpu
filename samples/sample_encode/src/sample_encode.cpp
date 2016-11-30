@@ -117,7 +117,10 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-timeout]               - encoding in cycle not less than specific time in seconds\n"));
     msdk_printf(MSDK_STRING("   [-membuf]                - size of memory buffer in frames\n"));
     msdk_printf(MSDK_STRING("   [-uncut]                 - do not insert idr after file writer reset\n"));
+
+#ifdef ENABLE_FUTURE_FEATURES
     msdk_printf(MSDK_STRING("   [-extbrc:<on,off>]       - External BRC for HEVC encoder"));
+#endif
 
     msdk_printf(MSDK_STRING("Example: %s h265 -i InputYUVFile -o OutputEncodedFile -w width -h height -hw -p 2fca99749fdb49aeb121a5b63ef568f7\n"), strAppName);
 #if D3D_SURFACES_SUPPORT
@@ -479,6 +482,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->nGPB = MFX_CODINGOPTION_OFF;
         }
+#ifdef ENABLE_FUTURE_FEATURES
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-extbrc:on")))
         {
             pParams->nExtBRC= MFX_CODINGOPTION_ON;
@@ -487,6 +491,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         {
             pParams->nExtBRC = MFX_CODINGOPTION_OFF;
         }
+#endif
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-qsv-ff")))
         {
             pParams->enableQSVFF=true;

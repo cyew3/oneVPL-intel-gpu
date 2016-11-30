@@ -2227,7 +2227,7 @@ mfxU16 FourCCToChroma(mfxU32 fourCC)
         return MFX_CHROMAFORMAT_YUV420;
     case MFX_FOURCC_NV16:
     case MFX_FOURCC_P210:
-#ifdef FUTURE_API
+#ifdef ENABLE_PRE_SI_FEATURES
     case MFX_FOURCC_Y210:
 #endif
     case MFX_FOURCC_YUY2:

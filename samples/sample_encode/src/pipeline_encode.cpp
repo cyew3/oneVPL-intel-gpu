@@ -463,6 +463,8 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_CodingOption2.ExtBRC = pInParams->CodecId == MFX_CODEC_HEVC ? pInParams->nExtBRC : 0;
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption2);
     }
+
+#ifdef ENABLE_FUTURE_FEATURES
     if (pInParams->nExtBRC == MFX_CODINGOPTION_ON && pInParams->CodecId == MFX_CODEC_HEVC)
     {
         m_ExtBRC.Init = HEVCExtBRC::Init;
@@ -472,6 +474,7 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_ExtBRC.Update= HEVCExtBRC::Update;
        m_EncExtParams.push_back((mfxExtBuffer *)&m_ExtBRC);
     }
+#endif
 
     // configure GBP for HEVC
     if ((pInParams->CodecId == MFX_CODEC_HEVC) && pInParams->nGPB)
@@ -947,9 +950,11 @@ CEncodingPipeline::CEncodingPipeline()
     m_ExtHEVCParam.Header.BufferId = MFX_EXTBUFF_HEVC_PARAM;
     m_ExtHEVCParam.Header.BufferSz = sizeof(m_ExtHEVCParam);
 
+#ifdef ENABLE_FUTURE_FEATURES
     MSDK_ZERO_MEMORY(m_ExtBRC);
     m_ExtBRC.Header.BufferId = MFX_EXTBUFF_BRC;
     m_ExtBRC.Header.BufferSz = sizeof(m_ExtBRC);
+#endif
 
 #if D3D_SURFACES_SUPPORT
     m_hwdev = NULL;
