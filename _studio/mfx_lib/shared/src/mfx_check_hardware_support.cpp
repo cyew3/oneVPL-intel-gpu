@@ -21,6 +21,7 @@
 
 #include <mfxdefs.h>
 #include <mfx_dxva2_device.h>
+#include <mfx_common.h>
 
 #pragma warning(disable : 4702)
 
@@ -129,7 +130,12 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
     case IGFX_SOFIA_LTE1:
     case IGFX_SOFIA_LTE2:
       return MFX_HW_SOFIA;
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+    default:
+      return MFX_HW_ICL;  // temporarily for pre-si
+#endif  //PRE_SI_TARGET_PLATFORM_GEN11
     }
+
 
     // if we were not able to find right device via PrivateGUID let base on defines and check HW capabilities
     DXGI1Device dxgiDevice;
