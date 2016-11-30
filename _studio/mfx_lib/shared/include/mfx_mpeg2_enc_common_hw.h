@@ -82,6 +82,7 @@
         mfxExtVideoSignalInfo   videoSignalInfo;
         bool                    bAddDisplayExt;
         bool                    bMbqpMode;
+        bool                    bDisablePanicMode;
     };
 
 namespace MfxHwMpeg2Encode

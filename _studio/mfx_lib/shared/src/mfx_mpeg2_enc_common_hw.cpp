@@ -388,7 +388,9 @@ mfxStatus ExecuteBuffers::Init(const mfxVideoParamEx_MPEG2* par, mfxU32 funcId, 
         mfxU32 wMB = (par->mfxVideoParams.mfx.FrameInfo.CropW + 15) / 16;
         mfxU32 hMB = (par->mfxVideoParams.mfx.FrameInfo.CropH + 15) / 16;
         m_mbqp_data = new mfxU8[wMB*hMB];
-    }    
+    }
+
+    m_bDisablePanicMode = par->bDisablePanicMode;
 
     // m_caps parameters
 

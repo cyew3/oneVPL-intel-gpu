@@ -137,6 +137,7 @@ namespace MfxHwMpeg2Encode
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
             , m_bTriggerGpuHang()
 #endif
+            , m_bDisablePanicMode()
             , m_GOPPictureSize()
             , m_GOPRefDist()
             , m_GOPOptFlag()
@@ -192,6 +193,7 @@ namespace MfxHwMpeg2Encode
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         bool                                    m_bTriggerGpuHang;
 #endif
+        bool                                    m_bDisablePanicMode;
         USHORT                                  m_GOPPictureSize;
         UCHAR                                   m_GOPRefDist;
         UCHAR                                   m_GOPOptFlag;

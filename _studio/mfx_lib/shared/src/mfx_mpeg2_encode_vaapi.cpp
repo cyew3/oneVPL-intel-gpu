@@ -1132,6 +1132,8 @@ mfxStatus VAAPIEncoder::FillMiscParameterBuffer(ExecuteBuffers* pExecuteBuffers)
         tu = 3;
 
     miscPrivate.target_usage     = tu;
+
+    miscPrivate.PanicModeDisable = pExecuteBuffers->m_bDisablePanicMode ? 1 : 0;
     
     MFX_DESTROY_VABUFFER(m_miscParamFpsId, m_vaDisplay);
     vaSts = vaCreateBuffer(m_vaDisplay,

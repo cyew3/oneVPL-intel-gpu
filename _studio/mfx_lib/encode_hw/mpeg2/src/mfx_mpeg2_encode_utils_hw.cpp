@@ -1062,6 +1062,23 @@ namespace MPEG2EncoderHW
                 bWarning = true;
             }
 
+            if (extOpt3 && extOpt3->BRCPanicMode == MFX_CODINGOPTION_OFF)
+            {
+                if (out->mfx.RateControlMethod != MFX_RATECONTROL_CBR
+                 && out->mfx.RateControlMethod != MFX_RATECONTROL_VBR
+                 && out->mfx.RateControlMethod != MFX_RATECONTROL_AVBR)
+                {
+                    extOpt3->BRCPanicMode = MFX_CODINGOPTION_UNKNOWN;
+                    bWarning = true;
+                }
+                // MPEG2 BRC panic mode disabling currently only supported on Linux
+                if (core->GetVAType() != MFX_HW_VAAPI)
+                {
+                    extOpt3->BRCPanicMode = MFX_CODINGOPTION_UNKNOWN;
+                    bUnsupported = true;
+                }
+            }
+
             if (bUnsupported)
             {
                 return MFX_ERR_UNSUPPORTED;
@@ -1493,6 +1510,26 @@ namespace MPEG2EncoderHW
             {
                 m_VideoParamsEx.bMbqpMode = true;
             }
+        }
+
+        if (extOpt3 && extOpt3->BRCPanicMode == MFX_CODINGOPTION_OFF)
+        {
+            // MPEG2 BRC panic mode disabling currently only supported on Linux and only valid for non-CQP modes
+            const mfxU16 selectedRateControl = m_VideoParamsEx.mfxVideoParams.mfx.RateControlMethod;
+            if (selectedRateControl != MFX_RATECONTROL_CBR
+             && selectedRateControl != MFX_RATECONTROL_VBR
+             && selectedRateControl != MFX_RATECONTROL_AVBR)
+            {
+                extOpt3->BRCPanicMode = MFX_CODINGOPTION_UNKNOWN;
+                bCorrected = true;
+            }
+            if (m_pCore->GetVAType() != MFX_HW_VAAPI)
+            {
+                extOpt3->BRCPanicMode = MFX_CODINGOPTION_UNKNOWN;
+                return MFX_ERR_UNSUPPORTED;
+            }
+
+            m_VideoParamsEx.bDisablePanicMode = true;
         }
 
         Ipp64f fr = CalculateUMCFramerate(m_VideoParamsEx.mfxVideoParams.mfx.FrameInfo.FrameRateExtN,

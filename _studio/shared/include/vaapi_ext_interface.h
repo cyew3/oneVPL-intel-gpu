@@ -69,7 +69,8 @@ typedef struct _VAEncMiscParameterPrivate
             unsigned int SuperHMEDisable                    : 1;
             //disable Ultra HME
             unsigned int UltraHMEDisable                    : 1;
-
+            //disable panic mode
+            unsigned int PanicModeDisable                   : 1;
         };
         unsigned int encControls;
     };
