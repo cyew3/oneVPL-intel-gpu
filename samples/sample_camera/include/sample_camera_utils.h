@@ -324,7 +324,7 @@ struct sInputParams
         hp_diff=0;
         hp_num=0;
 
-        MSDK_ZERO_MEMORY(gamma_point[64]);
+        MSDK_ZERO_MEMORY(gamma_point);
         MSDK_ZERO_MEMORY(gamma_corrected);;
         gamma_value=0;
         gamma_mode=0;
@@ -367,7 +367,7 @@ struct sInputParams
 
         CameraPluginVersion = 1;
         inputType     = MFX_CAM_BAYER_RGGB;
-        MSDK_ZERO_MEMORY(frameInfo[2]);
+        MSDK_ZERO_MEMORY(frameInfo);
 
         frameInfo[VPP_IN].nWidth = 4096;
         frameInfo[VPP_IN].nHeight = 2160;

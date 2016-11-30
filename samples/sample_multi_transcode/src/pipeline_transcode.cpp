@@ -185,6 +185,8 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_numEncoders = 0;
     m_libvaBackend = 0;
     statisticsWindowSize=0;
+    m_bIsFieldWeaving = false;
+    m_bIsFieldSplitting = false;
 } //CTranscodingPipeline::CTranscodingPipeline()
 
 CTranscodingPipeline::~CTranscodingPipeline()
