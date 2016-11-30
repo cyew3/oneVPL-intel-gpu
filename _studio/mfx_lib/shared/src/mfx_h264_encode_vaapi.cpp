@@ -384,6 +384,8 @@ mfxStatus SetPrivateParams(
 
         if (private_param->globalMotionBiasAdjustmentEnable && extOpt3->MVCostScalingFactor < 4)
             private_param->HMEMVCostScalingFactor = extOpt3->MVCostScalingFactor;
+
+        private_param->PanicModeDisable = IsOff(extOpt3->BRCPanicMode);
     }
 
     if (extOptFEI)
