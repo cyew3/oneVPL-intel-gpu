@@ -284,7 +284,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     m_free.resize(CalcNumTasks(m_video));
 
     // prepare enough space for DPB management
-    m_dpb.resize(request.NumFrameMin - (par->AsyncDepth - 1));
+    m_dpb.resize(m_video.mfx.NumRefFrame);
 
     m_bStartIVFSequence = true;
 
