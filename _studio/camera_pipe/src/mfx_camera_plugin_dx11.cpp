@@ -516,9 +516,12 @@ mfxStatus D3D11CameraProcessor::PreWorkInSurface(mfxFrameSurface1 *surf, mfxU32 
             // Special case: input is marked as padded, but crops do not reflect that
             mfxU32 shift = (8*appInputSurface.Data.Pitch + 8*2);
             appInputSurface.Data.Y += shift;
+            appInputSurface.Info.Height -= 8;
         }
 
         appInputSurface.Data.Y += appInputSurface.Data.Pitch*appInputSurface.Info.CropY + (appInputSurface.Info.CropX<<1);
+        appInputSurface.Info.Height -= appInputSurface.Info.CropY;
+
         #ifdef CAMP_PIPE_ITT
             __itt_task_begin(CamPipeDX11, __itt_null, __itt_null, GPUCOPY);
         #endif
