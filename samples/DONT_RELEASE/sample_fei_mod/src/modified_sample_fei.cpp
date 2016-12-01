@@ -91,7 +91,8 @@ inline mfxStatus RepackStremoutMB2PakMB(mfxFeiDecStreamOutMBCtrl* dsoMB, mfxFeiP
     pakMB->MVDataOffset        = dsoMB->IntraMbFlag? 0 : mv_data_length_offset;
     mv_data_length_offset     += 128;
 
-    pakMB->Reserved03 = dsoMB->IntraMbFlag? 0x800: 0x806;
+    pakMB->ExtendedFormat      = 1;
+    pakMB->MVFormat            = dsoMB->IntraMbFlag ? 0 : 6;
 
     pakMB->InterMbMode         = dsoMB->InterMbMode;
     pakMB->MBSkipFlag          = 0;//dsoMB->MBSkipFlag;
