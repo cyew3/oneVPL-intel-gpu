@@ -473,6 +473,13 @@ namespace ExtBuffer
         _CopyPar1(RepeatPPS);
         _CopyPar1(MaxSliceSize);
         _CopyPar1(ExtBRC);
+
+        _CopyPar1(MinQPI);
+        _CopyPar1(MaxQPI);
+        _CopyPar1(MinQPP);
+        _CopyPar1(MaxQPP);
+        _CopyPar1(MinQPB);
+        _CopyPar1(MaxQPB);
     }
 
     inline void  CopySupportedParams(mfxExtCodingOption3& buf_dst, mfxExtCodingOption3& buf_src)

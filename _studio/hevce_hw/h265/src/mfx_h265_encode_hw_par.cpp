@@ -931,6 +931,12 @@ void InheritDefaultValues(
     InheritOption(extOpt2Init->BRefType,   extOpt2Reset->BRefType);
     InheritOption(extOpt2Init->NumMbPerSlice,   extOpt2Reset->NumMbPerSlice);
     InheritOption(extOpt2Init->MaxFrameSize,   extOpt2Reset->MaxFrameSize);
+    InheritOption(extOpt2Init->MinQPI, extOpt2Reset->MinQPI);
+    InheritOption(extOpt2Init->MaxQPI, extOpt2Reset->MaxQPI);
+    InheritOption(extOpt2Init->MinQPP, extOpt2Reset->MinQPP);
+    InheritOption(extOpt2Init->MaxQPP, extOpt2Reset->MaxQPP);
+    InheritOption(extOpt2Init->MinQPB, extOpt2Reset->MinQPB);
+    InheritOption(extOpt2Init->MaxQPB, extOpt2Reset->MaxQPB);
 
     //DisableDeblockingIdc=0 is valid value, reset 1 -> 0 possible
     //InheritOption(extOpt2Init->DisableDeblockingIdc,  extOpt2Reset->DisableDeblockingIdc);
@@ -949,6 +955,9 @@ void InheritDefaultValues(
     InheritOption(extOpt3Init->TargetBitDepthLuma,      extOpt3Reset->TargetBitDepthLuma);
     InheritOption(extOpt3Init->TargetBitDepthChroma,    extOpt3Reset->TargetBitDepthChroma);
 #endif
+    InheritOption(extOpt3Init->WinBRCMaxAvgKbps, extOpt3Reset->WinBRCMaxAvgKbps);
+    InheritOption(extOpt3Init->WinBRCSize, extOpt3Reset->WinBRCSize);    
+    InheritOption(extOpt3Init->EnableMBQP, extOpt3Reset->EnableMBQP);
 
     if (parInit.mfx.RateControlMethod == MFX_RATECONTROL_QVBR && parReset.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
     {
@@ -1866,6 +1875,25 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
             changed += CheckMin(CO3.WinBRCMaxAvgKbps, par.mfx.TargetKbps);
         }
     }
+    if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP && par.isSWBRC())
+    {
+        changed += CheckRangeDflt(CO2.MinQPI, minQP, maxQP, 0);
+        changed += CheckRangeDflt(CO2.MaxQPI, CO2.MinQPI, maxQP, 0);
+        changed += CheckRangeDflt(CO2.MinQPP, minQP, maxQP, 0);
+        changed += CheckRangeDflt(CO2.MaxQPP, CO2.MinQPP, maxQP, 0);
+        changed += CheckRangeDflt(CO2.MinQPB, minQP, maxQP, 0);
+        changed += CheckRangeDflt(CO2.MaxQPB, CO2.MinQPB, maxQP, 0);
+    }
+    else
+    {
+        changed += CheckRangeDflt(CO2.MinQPI, 0, 0, 0);
+        changed += CheckRangeDflt(CO2.MaxQPI, 0, 0, 0);
+        changed += CheckRangeDflt(CO2.MinQPP, 0, 0, 0);
+        changed += CheckRangeDflt(CO2.MaxQPP, 0, 0, 0);
+        changed += CheckRangeDflt(CO2.MinQPB, 0, 0, 0);
+        changed += CheckRangeDflt(CO2.MaxQPB, 0, 0, 0);    
+    }
+
      sts = CheckProfile(par);
 
     if (sts >= MFX_ERR_NONE && par.mfx.CodecLevel > 0)  // QueryIOSurf, Init or Reset

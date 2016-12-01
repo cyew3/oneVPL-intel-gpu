@@ -388,8 +388,12 @@ public:
 
     //QP parameters
     mfxI32   quantOffset;
-    mfxI32   quantMax;
-    mfxI32   quantMin;
+    mfxI32   quantMaxI;
+    mfxI32   quantMinI;
+    mfxI32   quantMaxP;
+    mfxI32   quantMinP;
+    mfxI32   quantMaxB;
+    mfxI32   quantMinB;
 
 public:
     cBRCParams():
@@ -419,8 +423,12 @@ public:
         dqAbPeriod(0),
         bAbPeriod(0),
         quantOffset(0),
-        quantMax(0),
-        quantMin(0)
+        quantMaxI(0),
+        quantMinI(0),
+        quantMaxP(0),
+        quantMinP(0),
+        quantMaxB(0),
+        quantMinB(0)
     {}
 
     mfxStatus Init(mfxVideoParam* par);
