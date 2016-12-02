@@ -2841,6 +2841,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         } // if ((pInputSurface->Data.NumExtParam == 0) || (pInputSurface->Data.ExtParam == NULL))
     }
 
+    pTask->skipQueryStatus = false;
     if ((m_executeParams.iFieldProcessingMode != 0) && /* If Mode is enabled*/
         ((imfxFPMode - 1) != (mfxU32)FRAME2FRAME)) /* And we don't do copy frame to frame lets call our FieldCopy*/
     /* And remember our previous line imfxFPMode++;*/
