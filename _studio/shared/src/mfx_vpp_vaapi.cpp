@@ -50,6 +50,8 @@ static float convertValue(const float OldMin,const float OldMax,const float NewM
 #define VA_TOP_FIELD_WEAVE        0x00000004
 #define VA_BOTTOM_FIELD_WEAVE     0x00000008
 
+#define VPP_COMP_BACKGROUND_SURFACE_WIDTH  320
+#define VPP_COMP_BACKGROUND_SURFACE_HEIGHT 256
 
 VAAPIVideoProcessing::VAAPIVideoProcessing():
   m_bRunning(false)
@@ -1904,7 +1906,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         }
         attrib.flags = VA_SURFACE_ATTRIB_SETTABLE;
 
-        vaSts = vaCreateSurfaces(m_vaDisplay, attrib.value.value.i, inInfo->Width, inInfo->Height,
+        vaSts = vaCreateSurfaces(m_vaDisplay, attrib.value.value.i, VPP_COMP_BACKGROUND_SURFACE_WIDTH, VPP_COMP_BACKGROUND_SURFACE_HEIGHT,
                 m_primarySurface4Composition, 1, &attrib, 1);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
