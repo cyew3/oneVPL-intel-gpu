@@ -354,14 +354,8 @@ mfxStatus MFXVideoENC_Close(mfxSession session)
         session->m_pScheduler->WaitForTaskCompletion(session->m_pENC.get());
 
         mfxRes = session->m_pENC->Close();
-        // delete the codec's instance if not plugin
-        _mfxSession_1_10 * versionedSession = (_mfxSession_1_10 *)(session);
-        MFXIPtr<MFXISession_1_10> newSession(versionedSession->QueryInterface(MFXISession_1_10_GUID));
-
-        if (!newSession || newSession->GetPreEncPlugin().get())
-        {
-            session->m_pENC.reset((VideoENC *) 0);
-        }
+        // delete the codec's instance
+        session->m_pENC.reset((VideoENC *) 0);
     }
     // handle error(s)
     catch(MFX_CORE_CATCH_TYPE)
