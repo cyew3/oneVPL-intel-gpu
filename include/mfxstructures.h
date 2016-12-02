@@ -1440,6 +1440,14 @@ enum {
     MFX_HEVC_CONSTR_REXT_LOWER_BIT_RATE     = (1 << 8)
 };
 
+/* SampleAdaptiveOffset */
+enum {
+    MFX_SAO_UNKNOWN       = 0x00,
+    MFX_SAO_DISABLE       = 0x01,
+    MFX_SAO_ENABLE_LUMA   = 0x02,
+    MFX_SAO_ENABLE_CHROMA = 0x04
+};
+
 #pragma pack(push, 4)
 typedef struct {
     mfxExtBuffer    Header;
@@ -1447,7 +1455,8 @@ typedef struct {
     mfxU16          PicWidthInLumaSamples;
     mfxU16          PicHeightInLumaSamples;
     mfxU64          GeneralConstraintFlags;
-    mfxU16          reserved[118];
+    mfxU16          SampleAdaptiveOffset;   /* see enum SampleAdaptiveOffset, valid during Init and Runtime */
+    mfxU16          reserved[117];
 } mfxExtHEVCParam;
 #pragma pack(pop)
 
