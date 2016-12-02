@@ -1105,8 +1105,9 @@ mfxStatus FillCUQPDataVA(Task const & task, MfxVideoParam &par, std::vector<mfxI
     mfxExtMBQP *mbqp = ExtBuffer::Get(task.m_ctrl);
     if (mbqp)
     {
-        k_input = par.LCUSize/mbqp->BlockSize;
-        MFX_CHECK(par.LCUSize == mbqp->BlockSize*k_input, MFX_ERR_UNDEFINED_BEHAVIOR);
+        mfxU16 blockSize= mbqp->BlockSize ? mbqp->BlockSize : 16; 
+        k_input = par.LCUSize/blockSize;
+        MFX_CHECK(par.LCUSize == blockSize*k_input, MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK (mbqp->NumQPAlloc >= minQPSize*k_input*k_input, MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(k_input == 1 ||k_input == 2 || k_input == 4 || k_input == 8 , MFX_ERR_UNDEFINED_BEHAVIOR);
         }            
