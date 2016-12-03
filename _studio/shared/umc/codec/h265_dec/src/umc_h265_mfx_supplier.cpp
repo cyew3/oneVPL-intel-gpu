@@ -719,7 +719,7 @@ UMC::Status MFX_Utility::FillVideoParam(const H265SeqParamSet * seq, mfxVideoPar
         par->mfx.FrameInfo.CropW -= (mfxU16)(par->mfx.FrameInfo.Width - seq->pic_width_in_luma_samples);
     }
 
-    par->mfx.FrameInfo.PicStruct = (mfxU8) (seq->field_seq_flag  ? MFX_PICSTRUCT_FIELD_SINGLE : MFX_PICSTRUCT_PROGRESSIVE);
+    par->mfx.FrameInfo.PicStruct = (seq->field_seq_flag  ? MFX_PICSTRUCT_FIELD_SINGLE : MFX_PICSTRUCT_PROGRESSIVE);
     par->mfx.FrameInfo.ChromaFormat = seq->chroma_format_idc;
 
     if (seq->aspect_ratio_info_present_flag || full)
@@ -1555,6 +1555,7 @@ bool MFX_CDECL MFX_Utility::CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType t
     case MFX_PICSTRUCT_FIELD_REPEATED:
     case MFX_PICSTRUCT_FRAME_DOUBLING:
     case MFX_PICSTRUCT_FRAME_TRIPLING:
+    case MFX_PICSTRUCT_FIELD_SINGLE:
         break;
     default:
         return false;
