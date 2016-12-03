@@ -1021,6 +1021,8 @@ mfxStatus MFXDecPipeline::CreateVPP()
     ENABLE_VPP(m_components[eDEC].m_bufType != m_components[eREN].m_bufType)
     ENABLE_VPP(m_components[eDEC].m_params.mfx.FrameInfo.Shift != m_components[eREN].m_params.mfx.FrameInfo.Shift);
     ENABLE_VPP(m_inParams.nDenoiseFactorPlus1);
+    ENABLE_VPP(m_inParams.bFieldWeaving);
+    ENABLE_VPP(m_inParams.bFieldSplitting);
     ENABLE_VPP(m_inParams.bFieldProcessing);
     ENABLE_VPP(m_inParams.nDetailFactorPlus1);
     ENABLE_VPP(m_inParams.bUseProcAmp);
@@ -1218,6 +1220,24 @@ if (m_inParams.bFieldProcessing)
     {
         m_inParams.FrameInfo.Height = m_components[eVPP].m_params.vpp.Out.CropH + m_inParams.FrameInfo.CropY;
         m_inParams.FrameInfo.CropH = m_components[eVPP].m_params.vpp.Out.CropH;
+    }
+
+    //turn on field weaving
+    if (m_inParams.bFieldWeaving)
+    {
+        m_components[eVPP].m_params.vpp.Out.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+        m_inParams.FrameInfo.PicStruct = MFX_PICSTRUCT_UNKNOWN;
+        m_inParams.FrameInfo.Height = m_inParams.FrameInfo.Height << 1;
+        m_inParams.FrameInfo.CropH = m_inParams.FrameInfo.CropH << 1;
+    }
+
+    //turn on field splitting
+    if (m_inParams.bFieldSplitting)
+    {
+        m_components[eVPP].m_params.vpp.Out.PicStruct = MFX_PICSTRUCT_FIELD_SINGLE;
+        m_inParams.FrameInfo.PicStruct = MFX_PICSTRUCT_FIELD_SINGLE;
+        m_inParams.FrameInfo.Height = m_inParams.FrameInfo.Height >> 1;
+        m_inParams.FrameInfo.CropH = m_inParams.FrameInfo.CropH >> 1;
     }
 
     if (m_components[eVPP].m_zoomx != 0)
@@ -3410,7 +3430,36 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
         }
         else
         {
-            // Usual VPP processing
+            if (m_inParams.bFieldWeaving)
+            {
+                if (!(m_nDecFrames % 2))
+                {
+                    if (pSurface)
+                    {
+                        if (pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF)
+                        {
+                            vppOut.pSurface->Info.PicStruct = MFX_PICSTRUCT_FIELD_TFF;
+                        }
+                        if (pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF)
+                        {
+                            vppOut.pSurface->Info.PicStruct = MFX_PICSTRUCT_FIELD_BFF;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (m_inParams.bFieldSplitting)
+                {
+                    if (pSurface)
+                    {
+                        if (pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF || pSurface->Info.PicStruct & MFX_PICSTRUCT_FIELD_BFF)
+                        {
+                            vppOut.pSurface->Info.PicStruct = MFX_PICSTRUCT_FIELD_SINGLE;
+                        }
+                    }
+                }
+            }
             sts = m_pVPP->RunFrameVPPAsync(pSurface, vppOut.pSurface, (mfxExtVppAuxData*)vppOut.pCtrl->ExtParam[0], &syncp);
         }
 
@@ -5012,7 +5061,14 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
               argv++;
               MFX_PARSE_INT(m_inParams.nFramesAfterRecovery,argv[0]);
           }
-          else HANDLE_INT_OPTION(m_inParams.nDecoderSurfs, VM_STRING("-dec:surfs"), VM_STRING("specifies number of surfaces in decoder's pool"))
+          else if(m_OptProc.Check(argv[0], VM_STRING("-field_weaving"), VM_STRING("Turn on field weaving. Need to use specific streams"), OPT_UINT_32))
+          {
+              m_inParams.bFieldWeaving = true;
+          }
+          else if(m_OptProc.Check(argv[0], VM_STRING("-field_splitting"), VM_STRING("Turn on field splitting. Need to use specific streams"), OPT_UINT_32))
+          {
+              m_inParams.bFieldSplitting = true;
+          }
           else
           {
                MFX_TRACE_AT_EXIT_IF( MFX_ERR_UNSUPPORTED

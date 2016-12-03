@@ -183,6 +183,8 @@ struct sCommandlineParams
   mfxU16         nFieldProcessing;
   bool           bFieldProcessing;
   bool           bSwapFieldProcessing;
+  bool           bFieldWeaving;
+  bool           bFieldSplitting;
 
   bool bUseProcAmp;
   mfxExtVPPProcAmp m_ProcAmp;
@@ -288,6 +290,8 @@ struct sCommandlineParams
       m_FieldProcessing.Header.BufferSz = sizeof(mfxExtVPPFieldProcessing);
       bSwapFieldProcessing = false;
       bFieldProcessing = false;
+      bFieldWeaving = false;
+      bFieldSplitting = false;
 
       // ProcAmp default values
       m_ProcAmp.Brightness = 0.0f;
