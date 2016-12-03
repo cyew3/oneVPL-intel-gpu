@@ -375,6 +375,7 @@ int TestSuite::RunTest(unsigned int id)
 
         mfxU16 expected_width = (mfxU16)sps.pic_width_in_luma_samples;
         mfxU16 expected_height = (mfxU16)sps.pic_height_in_luma_samples;
+        mfxU16 expectedPicStruct = sps.vui.field_seq_flag ? MFX_PICSTRUCT_FIELD_SINGLE : MFX_PICSTRUCT_PROGRESSIVE;
 
         expected_width = ( ( expected_width / 16 ) + ( (expected_width % 16) != 0 ) )* 16 ;
         expected_height = ( ( expected_height / 16 ) + ( (expected_height % 16) != 0 ) )* 16;
@@ -399,7 +400,7 @@ int TestSuite::RunTest(unsigned int id)
              + (sps.conf_win_bottom_offset + sps.vui.def_disp_win_bottom_offset))
             , m_par.mfx.FrameInfo.CropH);
 
-        EXPECT_EQ((mfxU16)!sps.vui.field_seq_flag, m_par.mfx.FrameInfo.PicStruct);
+        EXPECT_EQ(expectedPicStruct, m_par.mfx.FrameInfo.PicStruct);
 
         EXPECT_EQ(sps.bit_depth_luma_minus8 + 8, m_par.mfx.FrameInfo.BitDepthLuma);
         EXPECT_EQ(sps.bit_depth_chroma_minus8 + 8, m_par.mfx.FrameInfo.BitDepthChroma);

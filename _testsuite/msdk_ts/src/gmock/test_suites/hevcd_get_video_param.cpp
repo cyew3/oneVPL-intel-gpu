@@ -359,6 +359,7 @@ int TestSuite::RunTest(unsigned int id, const char* sname)
 
         double FrameRate = fi.FrameRateExtD ? (fi.FrameRateExtN / fi.FrameRateExtD) : .0;
         double expectedFrameRate = sps.vui.num_units_in_tick ? (sps.vui.time_scale / sps.vui.num_units_in_tick) : 30.;
+        mfxU16 expectedPicStruct = sps.vui.field_seq_flag ? MFX_PICSTRUCT_FIELD_SINGLE : MFX_PICSTRUCT_PROGRESSIVE;
 
         EXPECT_EQ((mfxU16)sps.ptl.general.profile_idc,  m_par.mfx.CodecProfile);
         EXPECT_EQ((mfxU16)sps.ptl.general.level_idc/3,  m_par.mfx.CodecLevel);
@@ -387,7 +388,7 @@ int TestSuite::RunTest(unsigned int id, const char* sname)
              + (sps.conf_win_bottom_offset + sps.vui.def_disp_win_bottom_offset))
             , m_par.mfx.FrameInfo.CropH);
 
-        EXPECT_EQ((mfxU16)!sps.vui.field_seq_flag, m_par.mfx.FrameInfo.PicStruct);
+        EXPECT_EQ(expectedPicStruct, m_par.mfx.FrameInfo.PicStruct);
         if (m_par.mfx.FrameInfo.ChromaFormat == 1)
         {
             if (m_par.mfx.FrameInfo.BitDepthLuma == 8)
