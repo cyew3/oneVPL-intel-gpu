@@ -1010,7 +1010,9 @@ void ReconstructorT<bitDepth, H265PlaneType>::ReconstructPCMBlock(PlanePtrY luma
 {
     H265PlaneType * plane = (H265PlaneType *)luma;
     H265PlaneType * coeffs = (H265PlaneType *)*pcm;
-    *pcm += size*size*sizeof(H265PlaneType);
+    size_t const offset_luma =
+        size * size * sizeof(H265PlaneType) / sizeof(Coeffs);
+    *pcm += offset_luma;
 
     for (Ipp32u Y = 0; Y < size; Y++)
     {
@@ -1026,10 +1028,13 @@ void ReconstructorT<bitDepth, H265PlaneType>::ReconstructPCMBlock(PlanePtrY luma
     Ipp32u isChroma422 = GetChromaFormat() == CHROMA_FORMAT_422 ? 1 : 0;
 
     size >>= 1;
+    size_t const offset_chroma =
+        size * size * sizeof(H265PlaneType) / sizeof(Coeffs) << isChroma422;
+
     H265PlaneType * coeffsU = (H265PlaneType *)*pcm;
-    *pcm += (size*size*sizeof(H265PlaneType)) << isChroma422;
+    *pcm += offset_chroma;
     H265PlaneType * coeffsV = (H265PlaneType *)*pcm;
-    *pcm += (size*size*sizeof(H265PlaneType)) << isChroma422;
+    *pcm += offset_chroma;
 
     plane = (H265PlaneType *)chroma;
 
@@ -1051,7 +1056,10 @@ template<bool bitDepth, typename H265PlaneType>
 void ReconstructorT<bitDepth, H265PlaneType>::DecodePCMBlock(H265Bitstream *bitStream, CoeffsPtr *pcm, Ipp32u size, Ipp32u sampleBits)
 {
     H265PlaneType *pcmSamples = (H265PlaneType*)*pcm;
-    *pcm += size*size*sizeof(H265PlaneType);
+
+    size_t const offset =
+        size * size * sizeof(H265PlaneType) / sizeof(Coeffs);
+    *pcm += offset;
 
     for (Ipp32u Y = 0; Y < size; Y++)
     {
