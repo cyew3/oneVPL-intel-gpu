@@ -2160,6 +2160,8 @@ UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
         if (pSlice->GetSliceHeader()->dependent_slice_segment_flag)
         {
             H265Slice *pLastFrameSlice = pFrame->GetAU()->GetSlice(pFrame->GetAU()->GetSliceCount() - 1);
+            VM_ASSERT(pLastFrameSlice);
+
             pSlice->CopyFromBaseSlice(pLastFrameSlice);
         }
 
@@ -2657,7 +2659,7 @@ Ipp32s __CDECL CalculateDPBSize(Ipp32u &level_idc, Ipp32s width, Ipp32s height, 
         if (num_ref_frames <= MaxDpbSize)
             break;
 
-        
+
         if (index >= sizeof(levelIndexArray)/sizeof(levelIndexArray[0]) - 1)
             break;
 
