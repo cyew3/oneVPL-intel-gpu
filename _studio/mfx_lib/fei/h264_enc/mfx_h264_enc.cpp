@@ -627,6 +627,7 @@ mfxStatus VideoENC_ENC::RunFrameVmeENCCheck(
 
         mfxExtFeiSliceHeader * extFeiSliceInRintime = GetExtBufferFEI(input, fieldParity);
         MFX_CHECK(extFeiSliceInRintime,           MFX_ERR_UNDEFINED_BEHAVIOR);
+        MFX_CHECK(extFeiSliceInRintime->Slice,    MFX_ERR_UNDEFINED_BEHAVIOR);
         MFX_CHECK(extFeiSliceInRintime->NumSlice, MFX_ERR_UNDEFINED_BEHAVIOR);
         /*
         if (task.m_numSlice[feiFieldId]){
@@ -807,7 +808,7 @@ static mfxStatus CopyRawSurfaceToVideoMemory(VideoCORE &    core,
         d3dSurf.MemId =  src_sys->Data.MemId;
     }
 
-    if (video.IOPattern != MFX_IOPATTERN_IN_OPAQUE_MEMORY) 
+    if (video.IOPattern != MFX_IOPATTERN_IN_OPAQUE_MEMORY)
        MFX_CHECK_STS(core.GetExternalFrameHDL(d3dSurf.MemId, &handle))
     else
        MFX_CHECK_STS(core.GetFrameHDL(d3dSurf.MemId, &handle));
@@ -826,7 +827,7 @@ mfxStatus VideoENC_ENC::Close(void)
     //m_core->FreeFrames(&m_opaqHren);
 
     return MFX_ERR_NONE;
-} 
+}
 
 #endif  // if defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined(MFX_ENABLE_H264_VIDEO_FEI_ENC)
 #endif  // MFX_VA
