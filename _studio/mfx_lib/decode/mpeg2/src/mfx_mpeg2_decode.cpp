@@ -1449,6 +1449,7 @@ mfxStatus VideoDECODEMPEG2::DecodeFrameCheck(mfxBitstream *bs,
     mfxStatus sts = MFX_ERR_NONE;
 
     MFX_CHECK_NULL_PTR1(surface_disp);
+    MFX_CHECK_NULL_PTR1(surface_work);
 
     if (false == m_isInitialized)
     {
@@ -3511,8 +3512,14 @@ mfxStatus VideoDECODEMPEG2Internal_HW::PerformStatusCheck(void *pParam)
     MFX_CHECK_NULL_PTR1(pParam);
     MParam *parameters = (MParam *)pParam;
     Ipp32s display_index = parameters->display_index;
+    Ipp32s curr_index    = parameters->curr_index;
+
     if (display_index < 0)
+    {
+        GetStatusReport(parameters->surface_work, parameters->mid[curr_index]);
         return MFX_ERR_NONE;
+    }
+
 
     if (!IsStatusReportEnable(m_pCore))
         return MFX_ERR_NONE;

@@ -567,16 +567,6 @@ Status PackVA::InitBuffers(int size_bs, int size_sl)
 
             if (NULL == (pBitsreamData = (Ipp8u*)m_va->GetCompBuffer(VASliceDataBufferType, &CompBuf, size_bs)))
                 return UMC_ERR_ALLOC;
-            if (bTriggerGPUHang)
-            {
-                bTriggerGPUHang = false;
-                typedef unsigned int VATriggerCodecHangBuffer;
-                VATriggerCodecHangBuffer* trigger = NULL;
-                trigger = (VATriggerCodecHangBuffer*)m_va->GetCompBuffer(VATriggerCodecHangBufferType, &CompBuf, sizeof(VATriggerCodecHangBuffer));
-                if (trigger == NULL)
-                    return UMC_ERR_ALLOC;
-                *trigger = 1;
-            }
 
             if (NULL != m_va->GetProtectedVA())
             {
@@ -589,6 +579,19 @@ Status PackVA::InitBuffers(int size_bs, int size_sl)
 
             bs_size_getting = CompBuf->GetBufferSize();
             pSliceInfo = pSliceInfoBuffer;
+
+            if (bTriggerGPUHang)
+            {
+                bTriggerGPUHang = false;
+                typedef unsigned int VATriggerCodecHangBuffer;
+                VATriggerCodecHangBuffer* trigger = NULL;
+                trigger = (VATriggerCodecHangBuffer*)m_va->GetCompBuffer(VATriggerCodecHangBufferType, &CompBuf, sizeof(VATriggerCodecHangBuffer));
+                if (trigger == NULL)
+                    return UMC_ERR_ALLOC;
+
+                *trigger = 1;
+            }
+
         }
     }
 #if !defined(MFX_NO_EXCEPTIONS)
