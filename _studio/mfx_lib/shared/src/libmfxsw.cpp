@@ -54,6 +54,7 @@ const char* g_MfxProductName = "mediasdk_product_name: Intel(R) Media SDK 2017 f
 #else
 const char* g_MfxProductName = "mediasdk_product_name: Intel(R) Media Server Studio - SDK for Linux*";
 #endif
+
 const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2007-2016 Intel Corporation";
 const char* g_MfxFileVersion = "mediasdk_file_version: " MFX_FILE_VERSION;
 const char* g_MfxProductVersion = "mediasdk_product_version: " MFX_PRODUCT_VERSION;
@@ -67,6 +68,7 @@ const char* g_MfxProductName = "mediasdk_product_name: Intel(R) Media SDK 2017 f
 #else
 const char* g_MfxProductName = "mediasdk_product_name: Intel(R) Media Server Studio - Audio for Linux*";
 #endif
+
 const char* g_MfxCopyright = "mediasdk_copyright: Copyright(c) 2014-2016 Intel Corporation";
 const char* g_MfxFileVersion = "mediasdk_file_version: " MFX_FILE_VERSION;
 const char* g_MfxProductVersion = "mediasdk_product_version: " MFX_PRODUCT_VERSION;
