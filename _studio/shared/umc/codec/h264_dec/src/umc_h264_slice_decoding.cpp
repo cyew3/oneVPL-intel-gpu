@@ -279,6 +279,12 @@ bool H264Slice::DecodeSliceHeader(H264NalExtension *pNalExt)
         if (UMC_OK != umcRes)
             return false;
 
+        //7.4.3 Slice header semantics
+        //If the current picture is an IDR picture, frame_num shall be equal to 0
+        //If this restrictions is violated, clear LT flag to avoid ref. pic. marking process corruption
+        if (m_SliceHeader.IdrPicFlag && m_SliceHeader.frame_num != 0)
+            m_SliceHeader.long_term_reference_flag = 0;
+
         // decode 4 part of slice header
         umcRes = m_BitStream.GetSliceHeaderPart4(&m_SliceHeader, m_pSeqParamSetSvcEx);
         if (UMC_OK != umcRes)

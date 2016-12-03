@@ -1750,10 +1750,6 @@ Status H264HeadersBitstream::GetSliceHeaderPart2(H264SliceHeader *hdr,
                                                  const H264SeqParamSet *sps)
 {
     hdr->frame_num = GetBits(sps->log2_max_frame_num);
-    if (hdr->IdrPicFlag && hdr->frame_num != 0)
-        //7.4.3 Slice header semantics
-        //If the current picture is an IDR picture, frame_num shall be equal to 0
-        return UMC_ERR_INVALID_STREAM;
 
     hdr->bottom_field_flag = 0;
     if (sps->frame_mbs_only_flag == 0)
