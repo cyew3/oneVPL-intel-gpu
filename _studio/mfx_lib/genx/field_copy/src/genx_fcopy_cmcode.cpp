@@ -33,7 +33,7 @@ MbCopyFieLd(SurfaceIndex InSurfIndex, SurfaceIndex OutSurfIndex, int fieldMask)
 
         read_plane(InSurfIndex, GENX_SURFACE_Y_PLANE, ix, iy * 2, inMbY0);
         read_plane(InSurfIndex, GENX_SURFACE_Y_PLANE, ix, iy * 2 + 16, inMbY1);
-        read_plane(InSurfIndex, GENX_SURFACE_UV_PLANE, ix, iy * 2, inMbUV);
+        read_plane(InSurfIndex, GENX_SURFACE_UV_PLANE, ix, iy, inMbUV);
 
         switch (fieldMask)
         {
