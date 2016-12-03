@@ -29,6 +29,7 @@
 
 
 using namespace MfxHwVideoProcessing;
+class CmDevice;
 
 VideoVPPBase* CreateAndInitVPPImpl(mfxVideoParam *par, VideoCORE *core, mfxStatus *mfxSts)
 {
@@ -1369,15 +1370,19 @@ mfxStatus VideoVPP_HW::InternalInit(mfxVideoParam *par)
                           || IsFilterFound(&m_pipelineList[0], (mfxU32)m_pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_SPLITTING);
 
 
-    pCommonCore = QueryCoreInterface<CommonCORE>(m_core, isFieldProcessing ? MFXICORECM_GUID : MFXIVideoCORE_GUID);
+    pCommonCore = QueryCoreInterface<CommonCORE>(m_core, MFXIVideoCORE_GUID);
     MFX_CHECK(pCommonCore, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     VideoVPPHW::IOMode mode = VideoVPPHW::GetIOMode(par, m_requestOpaq);
 
     m_pHWVPP.reset(new VideoVPPHW(mode, m_core));
 
-    if(isFieldProcessing) {
-        m_pHWVPP.get()->SetCmDevice(pCommonCore);
+    if (isFieldProcessing)
+    {
+        CmDevice * device = QueryCoreInterface<CmDevice>(m_core, MFXICORECM_GUID);
+        MFX_CHECK(device, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+        m_pHWVPP.get()->SetCmDevice(device);
     }
     sts = m_pHWVPP.get()->Init(par); // OK or ERR only
     if (MFX_WRN_FILTER_SKIPPED == sts)

@@ -32,6 +32,8 @@
 #include "genx_fcopy_cmcode_isa.cpp" // Field copy kernel
 #endif
 
+class CmDevice;
+
 namespace MfxHwVideoProcessing
 {
     enum WorkloadMode
@@ -844,10 +846,10 @@ namespace MfxHwVideoProcessing
         CmQueue   *m_pCmQueue;
 
         public:
-            void SetCmDevice(void* device) { m_pCmDevice = (CmDevice*)device; }
+            void SetCmDevice(CmDevice * device) { m_pCmDevice = device; }
 #else
         public:
-            void SetCmDevice(void* device) { device; }
+            void SetCmDevice(CmDevice * device) { device; }
 #endif
     };
 }; // namespace MfxHwVideoProcessing
