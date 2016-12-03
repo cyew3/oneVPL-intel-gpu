@@ -13,6 +13,11 @@
 #if defined (UMC_ENABLE_MPEG2_VIDEO_DECODER)
 
 #include "umc_mpeg2_dec_hw.h"
+
+#ifdef UMC_VA_LINUX
+#include "vaapi_ext_interface.h"
+#endif
+
 //#define OTLAD
 #ifdef OTLAD
 #include <stdio.h>
@@ -562,6 +567,16 @@ Status PackVA::InitBuffers(int size_bs, int size_sl)
 
             if (NULL == (pBitsreamData = (Ipp8u*)m_va->GetCompBuffer(VASliceDataBufferType, &CompBuf, size_bs)))
                 return UMC_ERR_ALLOC;
+            if (bTriggerGPUHang)
+            {
+                bTriggerGPUHang = false;
+                typedef unsigned int VATriggerCodecHangBuffer;
+                VATriggerCodecHangBuffer* trigger = NULL;
+                trigger = (VATriggerCodecHangBuffer*)m_va->GetCompBuffer(VATriggerCodecHangBufferType, &CompBuf, sizeof(VATriggerCodecHangBuffer));
+                if (trigger == NULL)
+                    return UMC_ERR_ALLOC;
+                *trigger = 1;
+            }
 
             if (NULL != m_va->GetProtectedVA())
             {

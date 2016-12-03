@@ -15,6 +15,7 @@
 #include "mfx_mpeg2_decode.h"
 #include "mfx_mpeg2_dec_common.h"
 #include "mfx_enc_common.h"
+#include "mfx_ext_buffers.h"
 
 #include "vm_sys_info.h"
 
@@ -2970,7 +2971,15 @@ mfxStatus VideoDECODEMPEG2Internal_HW::DecodeFrameCheck(mfxBitstream *bs,
         mfxStatus s = UpdateWorkSurfaceParams(curr_index);
         MFX_CHECK_STS(s);
 
+        mfxExtIntGPUHang* extBuffer = (mfxExtIntGPUHang*) GetExtendedBuffer(surface_work->Data.ExtParam, surface_work->Data.NumExtParam, MFX_EXTBUFF_GPU_HANG);
+        bool triggerGPUHang = extBuffer != NULL;
+
+#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
+        m_implUmcHW->pack_w.bTriggerGPUHang = triggerGPUHang;
+#endif
         umcRes = m_implUmc->ProcessRestFrame(m_task_num);
+        triggerGPUHang = false;
+
         if (UMC::UMC_OK != umcRes)
         {
             MFX_CHECK_STS(RestoreDecoder(m_frame_curr, mid[curr_index], NO_TASK_TO_UNLOCK, END_FRAME, REMOVE_LAST_FRAME, 0))

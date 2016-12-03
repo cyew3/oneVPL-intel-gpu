@@ -54,6 +54,7 @@ public:
     PackVA()
         : va_mode(VA_NO)
         , m_va(NULL)
+        , bTriggerGPUHang(false)
         , totalNumCoef(0)
         , pBitsreamData(NULL)
         , va_index(0)
@@ -107,6 +108,7 @@ public:
     VideoAccelerationProfile va_mode;
     VideoAccelerator         *m_va;
 
+    bool   bTriggerGPUHang;
     Ipp32s totalNumCoef;
     Ipp8u  *pBitsreamData;
     Ipp32s va_index;
@@ -150,7 +152,7 @@ public:
     class MPEG2VideoDecoderHW : public MPEG2VideoDecoderBase
     {
     public:
-         PackVA pack_w;
+        PackVA pack_w;
 
         virtual Status Init(BaseCodecParams *init);
 
