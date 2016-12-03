@@ -11,13 +11,14 @@
 #include "ts_vpp.h"
 #include "ts_ext_buffers.h"
 
-//#include "mfx_ext_buffers.h"
+#include "mfx_ext_buffers.h"
 
+/*
 #define MFX_EXTBUFF_GPU_HANG MFX_MAKEFOURCC('H','A','N','G')
 typedef struct {
     mfxExtBuffer Header;
 } mfxExtIntGPUHang;
-
+*/
 namespace vpp_gpu_hang
 {
 
@@ -31,16 +32,16 @@ class TestSuite
 
 public:
 
-    TestSuite(mfxU32 frame_to_hang = 1)
+    TestSuite()
         : tsVideoVPP()
         , m_frames_submitted(0) 
         , m_frames_synced(0)
-        , m_frame_to_hang(frame_to_hang)
+        , m_frame_to_hang(-1)
     {
         m_trigger.AddExtBuffer(MFX_EXTBUFF_GPU_HANG, sizeof(mfxExtIntGPUHang));
     }
 
-    int RunTest(unsigned int)
+    int RunTest(unsigned int id)
     {
         TS_START;
 
@@ -58,6 +59,8 @@ public:
         AllocSurfaces();
 
         Init(m_session, m_pPar);
+
+        m_frame_to_hang = id;
 
         ProcessFrames(3);
 
@@ -117,18 +120,18 @@ private:
 
     mfxStatus SyncOperation(mfxSyncPoint syncp)
     {
-        mfxStatus sts =
-            tsVideoVPP::SyncOperation(syncp);
-
-        ++m_frames_synced;
         if (m_frames_synced == m_frame_to_hang)
             g_tsStatus.expect(MFX_ERR_GPU_HANG);
+
+        mfxStatus sts =
+            tsVideoVPP::SyncOperation(syncp);
+        ++m_frames_synced;
 
         return sts;
     }
 };
 
-const unsigned int TestSuite::n_cases = 1;
+const unsigned int TestSuite::n_cases = 2;
 
 TS_REG_TEST_SUITE_CLASS(vpp_gpu_hang);
 
