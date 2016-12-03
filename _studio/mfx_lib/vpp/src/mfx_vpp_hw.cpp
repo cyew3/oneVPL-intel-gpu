@@ -1653,7 +1653,7 @@ mfxStatus  VideoVPPHW::Init(
 
     if( pHint )
     {
-        /* Multi-view processing needs separate devices for each view. Using one device is not possible since 
+        /* Multi-view processing needs separate devices for each view. Using one device is not possible since
          * bakward/forward references from different views will be messed up. Thus each VPPHW instance needs to
          * create its own device. Core is not able to handle this like it does for single view case.
          */
@@ -2413,6 +2413,7 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
             }
             in = hdl;
 
+            
             memId     = surfQueue[i].pSurf->Data.MemId;
         }
 
@@ -2688,7 +2689,7 @@ mfxStatus VideoVPPHW::MergeRuntimeParams(const DdiTask *pTask, MfxHwVideoProcess
 
     mfxExtIntGPUHang* ht = 0;
     mfxExtVPPVideoSignalInfo *vsi;
-    for (i = 0; i < numSamples; i++) 
+    for (i = 0; i < numSamples; i++)
     {
         // Update Video Signal info params for output
         vsi = reinterpret_cast<mfxExtVPPVideoSignalInfo *>( GetExtendedBuffer(inputSurfs[i].pSurf->Data.ExtParam, inputSurfs[i].pSurf->Data.NumExtParam, MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO));
@@ -2900,6 +2901,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     }
 #endif
 
+    pTask->skipQueryStatus = false;
     sts = PreWorkOutSurface(pTask->output);
     MFX_CHECK_STS(sts);
 
