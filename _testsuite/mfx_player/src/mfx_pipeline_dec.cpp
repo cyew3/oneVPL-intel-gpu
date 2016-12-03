@@ -1021,6 +1021,7 @@ mfxStatus MFXDecPipeline::CreateVPP()
     ENABLE_VPP(m_components[eDEC].m_bufType != m_components[eREN].m_bufType)
     ENABLE_VPP(m_components[eDEC].m_params.mfx.FrameInfo.Shift != m_components[eREN].m_params.mfx.FrameInfo.Shift);
     ENABLE_VPP(m_inParams.nDenoiseFactorPlus1);
+    ENABLE_VPP(m_inParams.bFieldProcessing);
     ENABLE_VPP(m_inParams.nDetailFactorPlus1);
     ENABLE_VPP(m_inParams.bUseProcAmp);
     ENABLE_VPP(m_inParams.bUseCameraPipe);
@@ -1132,6 +1133,34 @@ mfxStatus MFXDecPipeline::CreateVPP()
         m_components[eVPP].m_extParams.push_back(new mfxExtVPPDetail());
         MFXExtBufferPtr<mfxExtVPPDetail> pDetail(m_components[eVPP].m_extParams);
         pDetail->DetailFactor = m_inParams.nDetailFactorPlus1 - 1;
+    }
+if (m_inParams.bFieldProcessing)
+    {
+        if (0 == m_inParams.nFieldProcessing || 1 == m_inParams.nFieldProcessing || 2 == m_inParams.nFieldProcessing)
+        {
+            m_components[eVPP].m_extParams.push_back(new mfxExtVPPFieldProcessing());
+            MFXExtBufferPtr<mfxExtVPPFieldProcessing> pFieldProc(m_components[eVPP].m_extParams);
+            if (m_inParams.nFieldProcessing == 0)
+            {
+                pFieldProc->Mode     = MFX_VPP_COPY_FIELD;
+                pFieldProc->InField  = MFX_PICTYPE_TOPFIELD;
+                pFieldProc->OutField = MFX_PICTYPE_TOPFIELD;
+            }
+            if (m_inParams.nFieldProcessing == 1)
+            {
+                pFieldProc->Mode     = MFX_VPP_COPY_FIELD;
+                pFieldProc->InField  = MFX_PICTYPE_BOTTOMFIELD;
+                pFieldProc->OutField = MFX_PICTYPE_BOTTOMFIELD;
+            }
+            if (m_inParams.nFieldProcessing == 2)
+            {
+                pFieldProc->Mode     = MFX_PICTYPE_FRAME;
+                pFieldProc->InField  = MFX_PICTYPE_FRAME;
+                pFieldProc->OutField = MFX_PICTYPE_FRAME; 
+            }
+        }
+        else
+            return MFX_ERR_UNKNOWN;
     }
 
     // turn on ProcAmp filter
@@ -3154,6 +3183,11 @@ mfxStatus MFXDecPipeline::RunDecode(mfxBitstream2 & bs)
                     //always decreasing lock to prevent timeout event happened
                     DecreaseReference(&pDecodedSurface->Data);
                     MFX_CHECK_STS_TRACE_EXPR(sts, RunVPP(pDecodedSurface));
+                    if (pDecodedSurface->Data.ExtParam != NULL && m_inParams.bSwapFieldProcessing)
+                    {
+                        delete [] pDecodedSurface->Data.ExtParam;
+                        pDecodedSurface->Data.ExtParam = NULL;
+                    }
                     //check exiting status
                     if (MFX_ERR_NONE != (sts = CheckExitingCondition()))
                     {
@@ -3233,6 +3267,51 @@ mfxStatus  MFXDecPipeline::RunVPP(mfxFrameSurface1 *pSurface)
         mfxSyncPoint  syncp            = NULL;
         mfxStatus     sts              = MFX_ERR_MORE_SURFACE;
         bool          bOneMoreRunFrame = false;
+
+        if (m_inParams.bFieldProcessing && m_inParams.bSwapFieldProcessing)
+        {
+            if (m_inParams.nFieldProcessing == 0)
+            {
+                m_inParams.m_FieldProcessing.Mode = MFX_VPP_COPY_FIELD;
+                m_inParams.m_FieldProcessing.InField  = MFX_PICTYPE_TOPFIELD;
+                m_inParams.m_FieldProcessing.OutField = MFX_PICTYPE_TOPFIELD;
+                m_inParams.nFieldProcessing += 2;
+            }
+            else
+            {
+                if (m_inParams.nFieldProcessing == 1)
+                {
+                    m_inParams.m_FieldProcessing.Mode = MFX_VPP_COPY_FIELD;
+                    m_inParams.m_FieldProcessing.InField  = MFX_PICTYPE_BOTTOMFIELD;
+                    m_inParams.m_FieldProcessing.OutField = MFX_PICTYPE_BOTTOMFIELD;
+                    m_inParams.nFieldProcessing += 1;
+                }
+                else 
+                {
+                    if (m_inParams.nFieldProcessing == 2)
+                    {
+                        if (m_inParams.m_FieldProcessing.InField == MFX_PICTYPE_TOPFIELD)
+                        {
+                            m_inParams.nFieldProcessing -= 2;
+                        }
+                        else
+                        {
+                            m_inParams.nFieldProcessing -= 1;
+                        }
+                        m_inParams.m_FieldProcessing.Mode = MFX_PICTYPE_FRAME;
+                        m_inParams.m_FieldProcessing.InField  = MFX_PICTYPE_FRAME;
+                        m_inParams.m_FieldProcessing.OutField = MFX_PICTYPE_FRAME;
+                    }
+                }
+            }
+            if (NULL != pSurface)
+            {
+                pSurface->Data.ExtParam = new mfxExtBuffer*[1];
+                pSurface->Data.NumExtParam = 1;
+                pSurface->Data.ExtParam[0] = (mfxExtBuffer*) &m_inParams.m_FieldProcessing;
+                pSurface->Data.NumExtParam = 1;
+            }
+        }
 
         if( m_inParams.bExtVppApi )
         {
@@ -4156,6 +4235,17 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 argv++;
                 MFX_CHECK(0 == vm_string_strcpy_s(m_inParams.crcFile, MFX_ARRAY_SIZE(m_inParams.crcFile), argv[0]));
             }
+        }
+        else if(m_OptProc.Check(argv[0], VM_STRING("-field_processing"), VM_STRING("enable vpp field processing: 0 - copy top; 1 - copy bottom; 2 - pictype"), OPT_UINT_32))
+        {
+            MFX_CHECK(1 + argv != argvEnd);
+            MFX_PARSE_INT(m_inParams.nFieldProcessing, argv[1]);
+            argv++;
+            m_inParams.bFieldProcessing = true;
+        }
+        else if(m_OptProc.Check(argv[0], VM_STRING("-swap_field_processing"), VM_STRING("swap fields to frame: works with -field_processing knob"), OPT_UINT_32))
+        {
+            m_inParams.bSwapFieldProcessing = true;
         }
         else if (!vm_string_stricmp(argv[0], VM_STRING("-fw"))) // deprecated
         {

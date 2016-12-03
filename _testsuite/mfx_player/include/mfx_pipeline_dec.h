@@ -180,9 +180,13 @@ struct sCommandlineParams
   mfxExtCamPipeControl m_CameraPipeControl;
   bool bUseCameraPipePadding;
   mfxExtCamPadding     m_CameraPipePadding;
+  mfxU16         nFieldProcessing;
+  bool           bFieldProcessing;
+  bool           bSwapFieldProcessing;
 
   bool bUseProcAmp;
   mfxExtVPPProcAmp m_ProcAmp;
+  mfxExtVPPFieldProcessing m_FieldProcessing;
 
   mfxI32         m_ExtOptions;
 
@@ -278,6 +282,12 @@ struct sCommandlineParams
       nSeed             = -1;
       nRepeat           =  1;
       targetViewsTemporalId = 7;
+
+      //Field processing init
+      m_FieldProcessing.Header.BufferId = MFX_EXTBUFF_VPP_FIELD_PROCESSING;
+      m_FieldProcessing.Header.BufferSz = sizeof(mfxExtVPPFieldProcessing);
+      bSwapFieldProcessing = false;
+      bFieldProcessing = false;
 
       // ProcAmp default values
       m_ProcAmp.Brightness = 0.0f;
