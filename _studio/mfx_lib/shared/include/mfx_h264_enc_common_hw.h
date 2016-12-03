@@ -671,9 +671,11 @@ namespace MfxHwH264Encode
         mfxU16               dpbOutputDelay,
         mfxU64               timeStamp);
 
+#define SCALE_FROM_DRIVER 4 // driver hardcodes scale 4. Need to use this value in MSDK. Otherwise BRC and MSDK HRD calculations will diverge.
+
     mfxU32 GetMaxBitrateValue(
         mfxU32 kbps,
-        mfxU32 scale = 0);
+        mfxU32 scale = SCALE_FROM_DRIVER);
 
     mfxU8 GetCabacInitIdc(mfxU32 targetUsage);
 

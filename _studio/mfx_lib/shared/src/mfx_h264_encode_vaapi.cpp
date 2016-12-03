@@ -130,7 +130,7 @@ void FillBrcStructures(
 {
     Zero(vaBrcPar);
     Zero(vaFrameRate);
-    vaBrcPar.bits_per_second = par.calcParam.maxKbps * 1000;
+    vaBrcPar.bits_per_second = GetMaxBitrateValue(par.calcParam.maxKbps) << (6 + SCALE_FROM_DRIVER);
     if(par.calcParam.maxKbps)
         vaBrcPar.target_percentage = (unsigned int)(100.0 * (mfxF64)par.calcParam.targetKbps / (mfxF64)par.calcParam.maxKbps);
     vaFrameRate.framerate = (unsigned int)(100.0 * (mfxF64)par.mfx.FrameInfo.FrameRateExtN / (mfxF64)par.mfx.FrameInfo.FrameRateExtD);
@@ -172,7 +172,7 @@ mfxStatus SetRateControl(
     misc_param->type = VAEncMiscParameterTypeRateControl;
     rate_param = (VAEncMiscParameterRateControl *)misc_param->data;
 
-    rate_param->bits_per_second = par.calcParam.maxKbps * 1000;
+    rate_param->bits_per_second = GetMaxBitrateValue(par.calcParam.maxKbps) << (6 + SCALE_FROM_DRIVER);
     rate_param->window_size     = par.mfx.Convergence * 100;
 
     rate_param->min_qp = minQP;
@@ -938,7 +938,7 @@ void VAAPIEncoder::FillSps(
         sps.intra_period = par.mfx.GopPicSize;
         sps.ip_period    = par.mfx.GopRefDist;
 
-        sps.bits_per_second     = par.calcParam.targetKbps * 1000;
+        sps.bits_per_second     = GetMaxBitrateValue(par.calcParam.maxKbps) << (6 + SCALE_FROM_DRIVER);
 
         sps.time_scale      = extSps->vui.timeScale;
         sps.num_units_in_tick = extSps->vui.numUnitsInTick;

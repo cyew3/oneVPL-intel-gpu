@@ -3700,12 +3700,12 @@ void Hrd::Setup(MfxVideoParam const & par)
     mfxExtCodingOption * opts = GetExtBuffer(par);
     if (IsMvcProfile(par.mfx.CodecProfile) && opts->ViewOutput == MFX_CODINGOPTION_ON)
     {
-        m_bitrate  = GetMaxBitrateValue(par.calcParam.mvcPerViewPar.maxKbps) << 6;
+        m_bitrate  = GetMaxBitrateValue(par.calcParam.mvcPerViewPar.maxKbps) << (6 + SCALE_FROM_DRIVER);
         m_hrdIn90k = mfxU32(8000.0 * par.calcParam.mvcPerViewPar.bufferSizeInKB / m_bitrate * 90000.0);
     }
     else
     {
-        m_bitrate  = GetMaxBitrateValue(par.calcParam.maxKbps) << 6;
+        m_bitrate  = GetMaxBitrateValue(par.calcParam.maxKbps) << (6 + SCALE_FROM_DRIVER);
         m_hrdIn90k = mfxU32(8000.0 * par.calcParam.bufferSizeInKB / m_bitrate * 90000.0);
     }
 // MVC BD }
@@ -3727,7 +3727,7 @@ void Hrd::Reset(MfxVideoParam const & par)
     if (m_bIsHrdRequired == false)
         return;
 
-    m_bitrate  = GetMaxBitrateValue(par.calcParam.maxKbps) << 6;
+    m_bitrate  = GetMaxBitrateValue(par.calcParam.maxKbps) << (6 + SCALE_FROM_DRIVER);
     m_hrdIn90k = mfxU32(8000.0 * par.calcParam.bufferSizeInKB / m_bitrate * 90000.0);
 }
 

@@ -64,7 +64,7 @@ namespace MfxHwH264EncodeHW
         hrd.RemoveAccessUnit(0, fieldPicFlag, false);
 
         mfxU32 bufsize  = 8000 * video.calcParam.bufferSizeInKB;
-        mfxU32 bitrate  = GetMaxBitrateValue(video.calcParam.maxKbps) << 6;
+        mfxU32 bitrate  = GetMaxBitrateValue(video.calcParam.maxKbps) << (6 + SCALE_FROM_DRIVER);
         mfxU32 delay    = hrd.GetInitCpbRemovalDelay();
         mfxU32 fullness = mfxU32(mfxU64(delay) * bitrate / 90000.0);
 
@@ -105,7 +105,7 @@ namespace MfxHwH264EncodeHW
             false);
 
         mfxU32 bufsize  = 8000 * video.calcParam.bufferSizeInKB;
-        mfxU32 bitrate  = GetMaxBitrateValue(video.calcParam.maxKbps) << 6;
+        mfxU32 bitrate  = GetMaxBitrateValue(video.calcParam.maxKbps) << (6 + SCALE_FROM_DRIVER);
         mfxU32 delay    = hrd.GetInitCpbRemovalDelay();
         mfxU32 fullness = mfxU32(mfxU64(delay) * bitrate / 90000.0);
 

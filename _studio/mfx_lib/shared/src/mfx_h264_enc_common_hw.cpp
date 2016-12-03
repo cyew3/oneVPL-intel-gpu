@@ -5386,7 +5386,7 @@ void MfxHwH264Encode::SetDefaults(
             extSps->vui.flags.vclHrdParametersPresent = IsOn(extOpt->VuiVclHrdParameters);
 
             extSps->vui.nalHrdParameters.cpbCntMinus1 = 0;
-            extSps->vui.nalHrdParameters.bitRateScale = 0;
+            extSps->vui.nalHrdParameters.bitRateScale = SCALE_FROM_DRIVER;
             extSps->vui.nalHrdParameters.cpbSizeScale = 2;
 
             if (par.calcParam.cqpHrdMode)
@@ -5416,7 +5416,7 @@ void MfxHwH264Encode::SetDefaults(
             extSps->vui.nalHrdParameters.timeOffsetLength                   = 24;
 
             extSps->vui.vclHrdParameters.cpbCntMinus1                       = 0;
-            extSps->vui.vclHrdParameters.bitRateScale                       = 0;
+            extSps->vui.vclHrdParameters.bitRateScale                       = SCALE_FROM_DRIVER;
             extSps->vui.vclHrdParameters.cpbSizeScale                       = 2;
             if (IsMvcProfile(par.mfx.CodecProfile))
             {
