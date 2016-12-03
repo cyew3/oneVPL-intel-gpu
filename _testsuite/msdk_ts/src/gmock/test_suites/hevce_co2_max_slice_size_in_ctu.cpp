@@ -47,9 +47,10 @@ public:
         : tsVideoEncoder(MFX_CODEC_HEVC)
         , tsParserHEVCAU(BS_HEVC::INIT_MODE_CABAC)
         , m_mode(0)
+        , m_expected(0)
         , m_nFrame(0)
     {
-        srand(0);
+        srand(time(NULL));
         m_bs_processor = this;
         m_filler = this;
     }
@@ -121,11 +122,14 @@ private:
                 }
 
                 auto& s = *au.nalu[i]->slice;
-                if (s.NumCU > m_expected) {
-                    g_tsLog << "ERROR: Slice's LCU num is bigger than expected.\n"
-                        << "frame#" << m_nFrame <<": Slice's LCU num = " << (mfxU32)s.NumCU
-                        << " > " << (mfxU32)m_expected << " (expected maxium value).\n";
-                    return MFX_ERR_UNKNOWN;
+                if (s.NumCU != m_expected) {
+                    if (i != (au.NumUnits - 1) || s.NumCU > m_expected)
+                    {
+                        g_tsLog << "ERROR: Slice's LCU num is bigger than expected.\n"
+                            << "frame#" << m_nFrame <<": Slice's LCU num = " << (mfxU32)s.NumCU
+                            << " > " << (mfxU32)m_expected << " (expected maxium value).\n";
+                        return MFX_ERR_ABORTED;
+                    }
                 }
             }
             m_nFrame++;
@@ -221,7 +225,6 @@ int TestSuite::RunTest(unsigned int id)
             mfxExtCodingOption2& cod2 = m_par;
             cod2.NumMbPerSlice = rand() % m_numLCU;
             m_expected = cod2.NumMbPerSlice;
-
             Reset();
             m_max = frameNumber;
             m_cur = 0;
