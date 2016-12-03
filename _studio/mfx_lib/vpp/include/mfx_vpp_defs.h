@@ -91,12 +91,14 @@
 
 // names of VPP smart filters. internal using only
 enum {
-    MFX_EXTBUFF_VPP_CSC          =   MFX_MAKEFOURCC('C','S','C','F'),//COLOR SPACE CONVERSION FILTER
-    MFX_EXTBUFF_VPP_RESIZE       =   MFX_MAKEFOURCC('R','S','Z','F'),
-    MFX_EXTBUFF_VPP_DI           =   MFX_MAKEFOURCC('S','D','I','F'),//STANDARD DEINTERLACE FILTER (60i->30p)
-    MFX_EXTBUFF_VPP_DI_30i60p    =   MFX_MAKEFOURCC('F','D','I','F'),//FULL PTS DEINTERLACE FILTER (60i->60p)
-    MFX_EXTBUFF_VPP_DI_WEAVE     =   MFX_MAKEFOURCC('F','D','I','W'),//WEAVE DEINTERLACE FILTER (60i->30p)
-    MFX_EXTBUFF_VPP_ITC          =   MFX_MAKEFOURCC('I','T','C','F'), //INV TELECINE FILTER
+    MFX_EXTBUFF_VPP_CSC               =   MFX_MAKEFOURCC('C','S','C','F'),//COLOR SPACE CONVERSION FILTER
+    MFX_EXTBUFF_VPP_RESIZE            =   MFX_MAKEFOURCC('R','S','Z','F'),
+    MFX_EXTBUFF_VPP_DI                =   MFX_MAKEFOURCC('S','D','I','F'),//STANDARD DEINTERLACE FILTER (60i->30p)
+    MFX_EXTBUFF_VPP_DI_30i60p         =   MFX_MAKEFOURCC('F','D','I','F'),//FULL PTS DEINTERLACE FILTER (60i->60p)
+    MFX_EXTBUFF_VPP_DI_WEAVE          =   MFX_MAKEFOURCC('F','D','I','W'),//WEAVE DEINTERLACE FILTER (60i->30p)
+    MFX_EXTBUFF_VPP_ITC               =   MFX_MAKEFOURCC('I','T','C','F'), //INV TELECINE FILTER
+    MFX_EXTBUFF_VPP_FIELD_WEAVING     =   MFX_MAKEFOURCC('F','I','W','F'),
+    MFX_EXTBUFF_VPP_FIELD_SPLITTING   =   MFX_MAKEFOURCC('F','I','S','F'),
 
     // MSDK 2013 requires [NV12, RGB4] as output.SW algorithm designed for NV12 only.
     // the best solution is (XXX->NV12) + VPP + (NV12->RGB4)
@@ -106,8 +108,6 @@ enum {
     MFX_EXTBUFF_VPP_LSHIFT_IN       =   MFX_MAKEFOURCC('L','S','F','I'),
     MFX_EXTBUFF_VPP_RSHIFT_OUT      =   MFX_MAKEFOURCC('R','S','F','O'),
     MFX_EXTBUFF_VPP_LSHIFT_OUT      =   MFX_MAKEFOURCC('L','S','F','O'),
-    MFX_EXTBUFF_VPP_FIELD_WEAVING   =   MFX_MAKEFOURCC('F','W','E','F'),
-    MFX_EXTBUFF_VPP_FIELD_DEWEAVING =   MFX_MAKEFOURCC('F','D','W','F'),
 };
 
 typedef enum {

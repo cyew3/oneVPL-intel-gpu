@@ -58,15 +58,21 @@ enum
     DEINTERLACE_DISABLE = 1
 };
 
-const int TFF2TFF = 0x0;
-const int TFF2BFF = 0x1;
-const int BFF2TFF = 0x2;
-const int BFF2BFF = 0x3;
-const int FIELD2TFF = 0x4;  // FIELD means half-sized frame w/ one field only
-const int FIELD2BFF = 0x5;
-const int TFF2FIELD = 0x6;
-const int BFF2FIELD = 0x7;
-const int FRAME2FRAME = 0x16;
+
+enum
+{
+    TFF2TFF = 0x0,
+    TFF2BFF = 0x1,
+    BFF2TFF = 0x2,
+    BFF2BFF = 0x3,
+    FIELD2TFF = 0x4,  // FIELD means half-sized frame w/ one field only
+    FIELD2BFF = 0x5,
+    TFF2FIELD = 0x6,
+    BFF2FIELD = 0x7,
+    FRAME2FRAME = 0x16,
+    FROM_RUNTIME_EXTBUFF_FIELD_PROC = 0x100,
+    FROM_RUNTIME_PICSTRUCT = 0x200,
+};
 ////////////////////////////////////////////////////////////////////////////////////
 // Utils
 ////////////////////////////////////////////////////////////////////////////////////
@@ -2802,25 +2808,67 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 
     /* in VPP Field Copy mode we just copy field only and ignore driver call!!! */
     mfxU32 imfxFPMode = 0xffffffff;
-    mfxExtVPPFieldProcessing *vppFieldProcessingParams = NULL;
     if (m_executeParams.iFieldProcessingMode != 0)
     {
         mfxFrameSurface1 * pInputSurface = surfQueue[0].pSurf;
         /* Mean filter was configured as DOUSE, but no ExtBuf in VPP Init()
          * And ... no any parameters in runtime. This is an error! */
-
-        if ((m_executeParams.iFieldProcessingMode == 0xffffffff) && (pInputSurface->Data.NumExtParam == 0))
+        if (((m_executeParams.iFieldProcessingMode -1) == FROM_RUNTIME_EXTBUFF_FIELD_PROC) && (pInputSurface->Data.NumExtParam == 0))
         {
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }
 
-        /* And one more check... If there is no ExtBuffer in RunTime we can use value from Init()*/
-        if ((pInputSurface->Data.NumExtParam == 0) || (pInputSurface->Data.ExtParam == NULL))
+        if ((m_executeParams.iFieldProcessingMode -1 ) == FROM_RUNTIME_PICSTRUCT)
+        {
+            mfxU16 srcPicStruct = m_params.vpp.In.PicStruct == MFX_PICSTRUCT_UNKNOWN ?
+                                    pInputSurface->Info.PicStruct :
+                                    m_params.vpp.In.PicStruct;
+
+            mfxU16 dstPicStruct = m_params.vpp.Out.PicStruct == MFX_PICSTRUCT_UNKNOWN ?
+                                    pTask->output.pSurf->Info.PicStruct :
+                                    m_params.vpp.Out.PicStruct;
+
+            if (srcPicStruct == MFX_PICSTRUCT_UNKNOWN || dstPicStruct == MFX_PICSTRUCT_UNKNOWN)
+            {
+                return MFX_ERR_INVALID_VIDEO_PARAM;
+            }
+
+            if (srcPicStruct & MFX_PICSTRUCT_FIELD_SINGLE)
+            {
+                if (dstPicStruct & MFX_PICSTRUCT_FIELD_TFF)
+                {
+                    imfxFPMode = FIELD2TFF;
+                }
+                else if (dstPicStruct & MFX_PICSTRUCT_FIELD_BFF)
+                {
+                    imfxFPMode = FIELD2BFF;
+                }
+                else
+                    return MFX_ERR_INVALID_VIDEO_PARAM;
+            }
+            else if (dstPicStruct & MFX_PICSTRUCT_FIELD_SINGLE)
+            {
+                if (srcPicStruct & MFX_PICSTRUCT_FIELD_TFF)
+                {
+                    imfxFPMode = TFF2FIELD;
+                }
+                else if (srcPicStruct & MFX_PICSTRUCT_FIELD_BFF)
+                {
+                    imfxFPMode = BFF2FIELD;
+                }
+                else
+                    return MFX_ERR_INVALID_VIDEO_PARAM;
+            }
+            imfxFPMode++;
+        }
+        /* If there is no ExtBuffer in RunTime we can use value from Init() */
+        else if ((pInputSurface->Data.NumExtParam == 0) || (pInputSurface->Data.ExtParam == NULL))
         {
             imfxFPMode = m_executeParams.iFieldProcessingMode;
         }
-        else /* Search runtime MFX_EXTBUFF_VPP_FIELD_PROCESSING */
+        else /* So on looks like ExtBuf is present in runtime */
         {
+            mfxExtVPPFieldProcessing * vppFieldProcessingParams = NULL;
             /* So on, we skip m_executeParams.iFieldProcessingMode from Init() */
             for ( mfxU32 jj = 0; jj < pInputSurface->Data.NumExtParam; jj++ )
             {
@@ -2856,10 +2904,10 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 
     if ((m_executeParams.iFieldProcessingMode != 0) && /* If Mode is enabled*/
         ((imfxFPMode - 1) != (mfxU32)FRAME2FRAME)) /* And we don't do copy frame to frame lets call our FieldCopy*/
-    /* And remember our previous line imfxFPMode++ */
+    /* And remember our previous line imfxFPMode++;*/
     {
         imfxFPMode--;
-        pTask->skipQueryStatus = true; // we do not submit any tasks to driver in this mode
+        pTask->skipQueryStatus = true; // do not submit any tasks to driver in this mode
 
         sts = PreWorkOutSurface(pTask->output);
         MFX_CHECK_STS(sts);
@@ -2892,6 +2940,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         }
 
         m_executeParams.pRefSurfaces = &m_executeSurf[0];
+
         sts = PostWorkOutSurface(pTask->output);
         MFX_CHECK_STS(sts);
 
@@ -3328,20 +3377,56 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
         (MFX_FOURCC_P010 == par->vpp.Out.FourCC && 0 == par->vpp.Out.Shift && par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
         sts = GetWorstSts(sts, MFX_ERR_INVALID_VIDEO_PARAM);
 
-    /* 3. Check size */
+
+    /* 3. Check single field cases */
+    if ( (par->vpp.In.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE) && !(par->vpp.Out.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE) )
+    {
+        std::vector<mfxU32> pipelineList;
+        mfxStatus internalSts = GetPipelineList( par, pipelineList, true );
+        MFX_CHECK_STS(internalSts);
+
+        mfxU32  len   = (mfxU32)pipelineList.size();
+        mfxU32* pList = (len > 0) ? (mfxU32*)&pipelineList[0] : NULL;
+
+        if (!IsFilterFound(pList, len, MFX_EXTBUFF_VPP_FIELD_WEAVING) || // FIELD_WEAVING filter must be there
+            (IsFilterFound(pList, len, MFX_EXTBUFF_VPP_RESIZE) &&
+             len > 2) ) // there is another filter except implicit RESIZE
+        {
+            sts = (MFX_ERR_INVALID_VIDEO_PARAM < sts) ? MFX_ERR_INVALID_VIDEO_PARAM : sts;
+        }
+    }
+
+    if( !(par->vpp.In.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE) && (par->vpp.Out.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE) )
+    {
+        std::vector<mfxU32> pipelineList;
+        mfxStatus internalSts = GetPipelineList( par, pipelineList, true );
+        MFX_CHECK_STS(internalSts);
+
+        mfxU32  len   = (mfxU32)pipelineList.size();
+        mfxU32* pList = (len > 0) ? (mfxU32*)&pipelineList[0] : NULL;
+
+        if (!IsFilterFound(pList, len, MFX_EXTBUFF_VPP_FIELD_SPLITTING) || // FIELD_SPLITTING filter must be there
+            (IsFilterFound(pList, len, MFX_EXTBUFF_VPP_RESIZE)                &&
+             len > 2) ) // there are other filters except implicit RESIZE
+        {
+            sts = (MFX_ERR_INVALID_VIDEO_PARAM < sts) ? MFX_ERR_INVALID_VIDEO_PARAM : sts;
+        }
+    }
+
+    /* 4. Check size */
     if (par->vpp.In.Width > caps->uMaxWidth  || par->vpp.In.Height  > caps->uMaxHeight ||
         par->vpp.Out.Width > caps->uMaxWidth || par->vpp.Out.Height > caps->uMaxHeight)
         sts = GetWorstSts(sts, MFX_WRN_PARTIAL_ACCELERATION);
 
-    /* 4. Check fourcc */
+    /* 5. Check fourcc */
     if ( !(caps->mFormatSupport[par->vpp.In.FourCC] & MFX_FORMAT_SUPPORT_INPUT) || !(caps->mFormatSupport[par->vpp.Out.FourCC] & MFX_FORMAT_SUPPORT_OUTPUT) )
         sts = GetWorstSts(sts, MFX_WRN_PARTIAL_ACCELERATION);
 
-    /* 5. HSD 8159506 */
+    /* 6. HSD 8159506 */
     if (MFX_FOURCC_YV12 == par->vpp.In.FourCC && MFX_HW_BDW < core->GetHWType() && (par->vpp.In.Width > 6144 || par->vpp.In.Height > 6144))
         sts = GetWorstSts(sts, MFX_WRN_PARTIAL_ACCELERATION);
 
-    /* 6. BitDepthLuma and BitDepthChroma should be configured for p010 format */
+    /* 7. BitDepthLuma and BitDepthChroma should be configured for p010 format */
     if (MFX_FOURCC_P010 == par->vpp.In.FourCC)
     {
         if (0 == par->vpp.In.BitDepthLuma)
@@ -3370,7 +3455,7 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
         }
     }
 
-    /* 7. Check unsupported filters on RGB */
+    /* 8. Check unsupported filters on RGB */
     if( par->vpp.In.FourCC == MFX_FOURCC_RGB4)
     {
         std::vector<mfxU32> pipelineList;
@@ -4132,7 +4217,7 @@ mfxStatus ConfigureExecuteParams(
             {
                 /* As this filter for now can be configured via DOUSE way */
                 {
-                    executeParams.iFieldProcessingMode = 0xffffffff;
+                    executeParams.iFieldProcessingMode = FROM_RUNTIME_EXTBUFF_FIELD_PROC;
                 }
                 for (mfxU32 jj = 0; jj < videoParam.NumExtParam; jj++)
                 {
@@ -4235,7 +4320,7 @@ mfxStatus ConfigureExecuteParams(
                     }
                     else
                     {
-                        return MFX_ERR_INVALID_VIDEO_PARAM;
+                        executeParams.iFieldProcessingMode = FROM_RUNTIME_PICSTRUCT;
                     }
                 }
 
@@ -4252,9 +4337,9 @@ mfxStatus ConfigureExecuteParams(
                 executeParams.iFieldProcessingMode++;
 
                 break;
-            } //case MFX_EXTBUFF_VPP_FIELD_WEAVING:
+            }
 
-            case MFX_EXTBUFF_VPP_FIELD_DEWEAVING:
+            case MFX_EXTBUFF_VPP_FIELD_SPLITTING:
             {
                 if (videoParam.vpp.Out.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE)
                 {
@@ -4268,7 +4353,7 @@ mfxStatus ConfigureExecuteParams(
                     }
                     else
                     {
-                        return MFX_ERR_INVALID_VIDEO_PARAM;
+                        executeParams.iFieldProcessingMode = FROM_RUNTIME_PICSTRUCT;
                     }
                 }
 
@@ -4285,7 +4370,7 @@ mfxStatus ConfigureExecuteParams(
                 executeParams.iFieldProcessingMode++;
 
                 break;
-            } //case MFX_EXTBUFF_VPP_FIELD_DEWEAVING:
+            }
 
             default:
             {

@@ -138,16 +138,22 @@ mfxStatus CheckInputPicStruct( mfxU16 inPicStruct )
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     }*/
 
-    const mfxU16 case1 = MFX_PICSTRUCT_PROGRESSIVE;
-    const mfxU16 case2 = MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FRAME_DOUBLING;
-    const mfxU16 case3 = MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FRAME_TRIPLING;
-    const mfxU16 case4 = MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_BFF;
-    const mfxU16 case5 = MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF;
-    const mfxU16 case6 = MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_BFF | MFX_PICSTRUCT_FIELD_REPEATED;
-    const mfxU16 case7 = MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_REPEATED;
-    const mfxU16 case8 = MFX_PICSTRUCT_FIELD_BFF;
-    const mfxU16 case9 = MFX_PICSTRUCT_FIELD_TFF;
+    const mfxU16 case1  = MFX_PICSTRUCT_PROGRESSIVE;
+    const mfxU16 case2  = MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FRAME_DOUBLING;
+    const mfxU16 case3  = MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FRAME_TRIPLING;
+    const mfxU16 case4  = MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_BFF;
+    const mfxU16 case5  = MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF;
+    const mfxU16 case6  = MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_BFF | MFX_PICSTRUCT_FIELD_REPEATED;
+    const mfxU16 case7  = MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_REPEATED;
+    const mfxU16 case8  = MFX_PICSTRUCT_FIELD_BFF;
+    const mfxU16 case9  = MFX_PICSTRUCT_FIELD_TFF;
     const mfxU16 case10 = MFX_PICSTRUCT_FIELD_SINGLE;
+    const mfxU16 case11 = MFX_PICSTRUCT_FIELD_TOP;
+    const mfxU16 case12 = MFX_PICSTRUCT_FIELD_TOP | MFX_PICSTRUCT_FIELD_PAIRED_NEXT;
+    const mfxU16 case13 = MFX_PICSTRUCT_FIELD_TOP | MFX_PICSTRUCT_FIELD_PAIRED_PREV;
+    const mfxU16 case14 = MFX_PICSTRUCT_FIELD_BOTTOM;
+    const mfxU16 case15 = MFX_PICSTRUCT_FIELD_BOTTOM | MFX_PICSTRUCT_FIELD_PAIRED_NEXT;
+    const mfxU16 case16 = MFX_PICSTRUCT_FIELD_BOTTOM | MFX_PICSTRUCT_FIELD_PAIRED_PREV;
 
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -163,6 +169,12 @@ mfxStatus CheckInputPicStruct( mfxU16 inPicStruct )
         case case8:
         case case9:
         case case10:
+        case case11:
+        case case12:
+        case case13:
+        case case14:
+        case case15:
+        case case16:
         {
             sts = MFX_ERR_NONE;
             break;
@@ -173,7 +185,7 @@ mfxStatus CheckInputPicStruct( mfxU16 inPicStruct )
             sts = MFX_ERR_UNDEFINED_BEHAVIOR;
             break;
         }
-    } // switch
+    }
 
     return sts;
 
@@ -1232,21 +1244,16 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 fprintf(stderr,"MFX_EXTBUFF_VPP_MIRRORING\n");
                 break;
             }
-
             case (mfxU32)MFX_EXTBUFF_VPP_FIELD_WEAVING:
             {
-                fprintf(stderr, "MFX_EXTBUFF_VPP_FIELD_WEAVING\n");
-                break;
+                fprintf(stderr, "VPP_FIELD_WEAVING\n");
                 break;
             }
-
-            case (mfxU32)MFX_EXTBUFF_VPP_FIELD_DEWEAVING:
+            case (mfxU32)MFX_EXTBUFF_VPP_FIELD_SPLITTING:
             {
-                fprintf(stderr, "MFX_EXTBUFF_VPP_FIELD_DEWEAVING\n");
-                break;
+                fprintf(stderr, "VPP_FIELD_SPLITTING\n");
                 break;
             }
-
             default:
             {
                 fprintf(stderr, "UNKNOUW Filter ID!!! \n");
@@ -1417,9 +1424,9 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
         index++;
     }
 
-    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_DEWEAVING ) )
+    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_SPLITTING ) )
     {
-        newList[index] = MFX_EXTBUFF_VPP_FIELD_DEWEAVING;
+        newList[index] = MFX_EXTBUFF_VPP_FIELD_SPLITTING;
         index++;
     }
 
@@ -2973,10 +2980,10 @@ void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<m
     }
     /* FIELD Copy is always present*/
     list.push_back(MFX_EXTBUFF_VPP_FIELD_PROCESSING);
-    /* FW*/
+    /* Field weaving is always present*/
     list.push_back(MFX_EXTBUFF_VPP_FIELD_WEAVING);
-    /* FDW*/
-    list.push_back(MFX_EXTBUFF_VPP_FIELD_DEWEAVING);
+    /* Field splitting is always present*/
+    list.push_back(MFX_EXTBUFF_VPP_FIELD_SPLITTING);
     /* Composition is always present*/
     list.push_back(MFX_EXTBUFF_VPP_COMPOSITE);
 

@@ -997,7 +997,7 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
                 break;
             }
 
-            case (mfxU32)MFX_EXTBUFF_VPP_FIELD_DEWEAVING:
+            case (mfxU32)MFX_EXTBUFF_VPP_FIELD_SPLITTING:
             {
                 inputFramesCount[filterIndex]  = 1;
                 outputFramesCount[filterIndex] = 2;
@@ -1123,9 +1123,7 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
             sts = MFX_ERR_NONE;
         }
     }
-    else if( (MFX_EXTBUFF_VPP_FIELD_PROCESSING == filterName) ||
-             (MFX_EXTBUFF_VPP_FIELD_WEAVING == filterName) ||
-             (MFX_EXTBUFF_VPP_FIELD_DEWEAVING == filterName) )
+    else if( MFX_EXTBUFF_VPP_FIELD_PROCESSING == filterName )
     {
 #if defined(_WIN32) || defined(_WIN64)
         sts = MFX_ERR_UNSUPPORTED;
