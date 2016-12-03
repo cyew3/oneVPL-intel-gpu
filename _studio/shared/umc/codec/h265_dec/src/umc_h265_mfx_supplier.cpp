@@ -156,7 +156,7 @@ UMC::Status MFXTaskSupplier_H265::Init(UMC::VideoDecoderParams *init)
     }
 
     GetView()->dpbSize = 16;
-    m_DPBSizeEx = m_iThreadNum + init->info.bitrate; 
+    m_DPBSizeEx = m_iThreadNum + init->info.bitrate;
 
 #ifndef MFX_VA
     MFX_HEVC_PP::InitDispatcher();
@@ -719,7 +719,7 @@ UMC::Status MFX_Utility::FillVideoParam(const H265SeqParamSet * seq, mfxVideoPar
         par->mfx.FrameInfo.CropW -= (mfxU16)(par->mfx.FrameInfo.Width - seq->pic_width_in_luma_samples);
     }
 
-    par->mfx.FrameInfo.PicStruct = (mfxU8) (seq->field_seq_flag  ? MFX_PICSTRUCT_UNKNOWN : MFX_PICSTRUCT_PROGRESSIVE);
+    par->mfx.FrameInfo.PicStruct = (mfxU8) (seq->field_seq_flag  ? MFX_PICSTRUCT_FIELD_SINGLE : MFX_PICSTRUCT_PROGRESSIVE);
     par->mfx.FrameInfo.ChromaFormat = seq->chroma_format_idc;
 
     if (seq->aspect_ratio_info_present_flag || full)
