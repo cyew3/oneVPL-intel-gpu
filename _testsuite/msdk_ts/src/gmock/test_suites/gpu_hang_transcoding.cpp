@@ -24,7 +24,7 @@ class tsTranscoder: public tsVideoDecoder, public tsVideoEncoder
 public:
     tsTranscoder(mfxU32 decoderCodecId, mfxU32 encoderCodecId, mfxU32 frame_to_hang):
         tsSession(MFX_IMPL_HARDWARE), tsVideoDecoder(decoderCodecId), tsVideoEncoder(encoderCodecId),
-        m_frames_submitted(0), m_frame_to_hang(frame_to_hang), m_expect_gpu_hang_from_dec_frame_async(false),
+        m_frames_submitted(0), m_frames_synced(0), m_frame_to_hang(frame_to_hang), m_expect_gpu_hang_from_dec_frame_async(false),
         m_expect_gpu_hang_from_dec_syncop(false), m_hang_triggered(false)
     {
         m_trigger.AddExtBuffer(MFX_EXTBUFF_GPU_HANG, sizeof(mfxExtIntGPUHang));
@@ -58,14 +58,12 @@ public:
             surface_work->Data.ExtParam    = NULL;
         }
 
-        if (m_hang_triggered)
-            m_expect_gpu_hang_from_dec_syncop = true;
-
         return sts;
     }
 
     tsExtBufType<mfxFrameData> m_trigger;
     mfxU32 m_frames_submitted;
+    mfxU32 m_frames_synced;
     mfxU32 m_frame_to_hang;
     bool   m_expect_gpu_hang_from_dec_frame_async;
     bool   m_expect_gpu_hang_from_dec_syncop;
@@ -91,10 +89,11 @@ mfxFrameSurface1* GetSurface(tsVideoDecoder *dec, bool syncSurfaceFromDecoder)
     mfxFrameSurface1* pS = dec->m_surf_out[syncp];
     if (syncSurfaceFromDecoder)
     {
-        if (tr->m_expect_gpu_hang_from_dec_syncop)
+        if (tr->m_frames_synced >= tr->m_frame_to_hang)
             g_tsStatus.expect(MFX_ERR_GPU_HANG);
 
         dec->SyncOperation(dec->m_session, syncp, MFX_INFINITE);
+        tr->m_frames_synced++;
     }
     else
         dec->m_surf_out.erase(syncp);
@@ -171,9 +170,22 @@ int gpu_hang_transcoding_test(mfxU32 decoderCodecId, mfxU32 encoderCodecId, cons
 
         if (transcoder.m_expect_gpu_hang_from_dec_frame_async)
         {
-            g_tsStatus.expect(MFX_ERR_GPU_HANG);
-            g_tsStatus.check();
-            throw tsOK;
+            if (transcoder.m_frames_synced > transcoder.m_frame_to_hang)
+            {
+                // Fail if hang is not reported on synchronization of triggered surface
+                g_tsStatus.expect(MFX_ERR_GPU_HANG);
+                g_tsStatus.check();
+                g_tsStatus.expect(MFX_ERR_NONE); // overwrite expected status MFX_ERR_GPU_HANG for components closing statuses
+                throw tsOK;
+            }
+            else if (decFrameAsyncStatus == MFX_ERR_GPU_HANG)
+            {
+                // Treat test passed if hang reported before synchronization of triggered surface (and after triggering of course)
+                // Don't treat test failed if no reporting at this stage
+
+                g_tsStatus.expect(MFX_ERR_NONE); // overwrite expected status MFX_ERR_GPU_HANG for components closing statuses
+                throw tsOK;
+            }
         }
 
         if(MFX_ERR_MORE_DATA == decFrameAsyncStatus)

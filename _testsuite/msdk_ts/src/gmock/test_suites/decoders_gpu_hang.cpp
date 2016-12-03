@@ -87,14 +87,18 @@ public:
             mfxStatus sts = DecodeFrameAsync();
             if (m_frames_submitted > m_frame_to_hang && sts == MFX_ERR_GPU_HANG)
             {
-                g_tsStatus.expect(MFX_ERR_NONE);
+                // Treat test passed if hang reported before synchronization of triggered surface (and after triggering of course)
+                // Don't treat test failed if no reporting at this stage
+
+                g_tsStatus.expect(MFX_ERR_NONE); // overwrite expected status MFX_ERR_GPU_HANG for components closing statuses
                 throw tsOK;
             }
             else if(m_frames_synced > m_frame_to_hang)
             {
+                // Fail if hang is not reported on synchronization of triggered surface
                 g_tsStatus.expect(MFX_ERR_GPU_HANG);
                 g_tsStatus.check();
-                g_tsStatus.expect(MFX_ERR_NONE);
+                g_tsStatus.expect(MFX_ERR_NONE); // overwrite expected status MFX_ERR_GPU_HANG for components closing statuses
                 throw tsOK;
             }
 
