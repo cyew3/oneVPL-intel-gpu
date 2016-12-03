@@ -106,8 +106,13 @@ void MFXExtBufferVector::push_back(MFXExtBufferPtrBase & pBuffer)
     //dont need to populate buffer
     if (it != end())
         return;
-    
+
     std::auto_ptr<MFXExtBufferPtrBase> ptr (pBuffer.Clone());
+
+    if (ptr->get() != pBuffer.get())
+    {
+        pBuffer.reset(0);
+    }
 
     std::vector<mfxExtBuffer*>::push_back(ptr->get());
     m_buffers.push_back(ptr.release());

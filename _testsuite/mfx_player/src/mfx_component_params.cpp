@@ -196,7 +196,8 @@ mfxStatus ComponentParams::DestroySurfaces()
         i->surfacesLinear.clear();
     }
     m_Surfaces1.clear();
-    m_sufacesByIDx.clear(); 
+    m_sufacesByIDx.clear();
+    std::vector<SurfacesContainer::iterator>(m_sufacesByIDx).swap(m_sufacesByIDx);
     return MFX_ERR_NONE;
 }
 
