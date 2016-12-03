@@ -502,6 +502,7 @@ mfxStatus ResMngr::DoAdvGfx(
         if (m_fieldWeaving)
             m_bkwdRefCount = m_bkwdRefCountRequired;
 
+
         if(input)
         {
             m_inputIndex++;
@@ -4324,8 +4325,8 @@ mfxStatus ConfigureExecuteParams(
                     }
                 }
 
-                config.m_extConfig.customRateData.bkwdRefCount = 0;
-                config.m_extConfig.customRateData.fwdRefCount  = 1;
+                config.m_extConfig.customRateData.bkwdRefCount = 1;
+                config.m_extConfig.customRateData.fwdRefCount  = 0;
                 config.m_extConfig.customRateData.inputFramesOrFieldPerCycle = 2;
                 config.m_extConfig.customRateData.outputIndexCountPerCycle   = 1;
 
