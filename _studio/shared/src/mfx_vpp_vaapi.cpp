@@ -1882,6 +1882,20 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
     MFX_CHECK_NULL_PTR1( pParams->pRefSurfaces );
     MFX_CHECK_NULL_PTR1( pParams->pRefSurfaces[0].hdl.first );
 
+    mfxU32 refCount = (mfxU32) pParams->fwdRefCount;
+    bool hasResize = false;
+
+    for(mfxU32 i = 0; i < refCount; i++)
+    {
+        // Check if there is a resize for input streams
+        mfxFrameInfo *surf_info = &(pParams->pRefSurfaces[i].frameInfo);
+        if (surf_info->CropW != pParams->dstRects[i].DstW ||
+            surf_info->CropH != pParams->dstRects[i].DstH){
+            hasResize = true;
+            break;
+        }
+    }
+
     if (m_primarySurface4Composition == NULL)
     {
         mfxDrvSurface* pRefSurf = &(pParams->targetSurface);
@@ -1906,7 +1920,14 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         }
         attrib.flags = VA_SURFACE_ATTRIB_SETTABLE;
 
-        vaSts = vaCreateSurfaces(m_vaDisplay, attrib.value.value.i, VPP_COMP_BACKGROUND_SURFACE_WIDTH, VPP_COMP_BACKGROUND_SURFACE_HEIGHT,
+        // Check what resolution is better. If input surfaces are going to be resized, then
+        // it's better to allocate small surface for background. If there is no resize for
+        // input streams, then it's better to allocate surface with the resolution equal to
+        // the output stream to eliminate resize for background surface.
+        mfxU32 width  = hasResize ? VPP_COMP_BACKGROUND_SURFACE_WIDTH  : inInfo->Width;
+        mfxU32 height = hasResize ? VPP_COMP_BACKGROUND_SURFACE_HEIGHT : inInfo->Height;
+
+        vaSts = vaCreateSurfaces(m_vaDisplay, attrib.value.value.i, width, height,
                 m_primarySurface4Composition, 1, &attrib, 1);
         MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
@@ -1971,7 +1992,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
     // WA:
     mfxU32 SampleCount = 1;
     mfxU32 refIdx = 0;
-    mfxU32 refCount = (mfxU32) pParams->fwdRefCount;
 
     //m_pipelineParam.resize(SampleCount);
     //m_pipelineParam.clear();
