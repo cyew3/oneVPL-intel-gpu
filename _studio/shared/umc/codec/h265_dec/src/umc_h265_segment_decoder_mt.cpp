@@ -1119,14 +1119,29 @@ void ReconstructorT<bitDepth, H265PlaneType>::FilterEdgeLuma(H265EdgeData *edge,
     }
 }
 
-#define   QpUV(iQpY)  ( ((iQpY) < 0) ? (iQpY) : (((iQpY) > 57) ? ((iQpY)-6) : g_ChromaScale[chromaScaleIndex][(iQpY)]) )
+inline
+Ipp32s CalcQpUV(Ipp32s iQpY, Ipp32s chroma_fmt)
+{
+    if (iQpY < 0)
+        return iQpY;
+    else if (iQpY > 57)
+        //if ChromaArrayType is greater than 1, the variable QpC is set equal to Min( qPi, 51 )
+        return chroma_fmt != CHROMA_FORMAT_422 ? iQpY - 6 : 51;
+    else
+    {
+        Ipp32s const chromaScaleIndex =
+            chroma_fmt != CHROMA_FORMAT_420 ? 1 : 0;
+        return g_ChromaScale[chromaScaleIndex][(iQpY)];
+    }
+}
 
 // Chroma deblocking edge filter
 template<bool bitDepth, typename H265PlaneType>
 void ReconstructorT<bitDepth, H265PlaneType>::FilterEdgeChroma(H265EdgeData *edge, PlaneY *srcDst, size_t srcDstStride, Ipp32s x, Ipp32s y, Ipp32s dir,
                                                                Ipp32s chromaCbQpOffset, Ipp32s chromaCrQpOffset, Ipp32u bit_depth)
 {
-    Ipp32s chromaScaleIndex = GetChromaFormat() != CHROMA_FORMAT_420 ? 1 : 0;
+    Ipp32s const chroma_fmt = GetChromaFormat();
+
     if (bitDepth)
     {
         Ipp16u* srcDst_ = (Ipp16u*)srcDst;
@@ -1135,8 +1150,8 @@ void ReconstructorT<bitDepth, H265PlaneType>::FilterEdgeChroma(H265EdgeData *edg
             srcDst_ + 2*x + y*srcDstStride,
             (Ipp32s)srcDstStride,
             dir,
-            QpUV(edge->qp + chromaCbQpOffset),
-            QpUV(edge->qp + chromaCrQpOffset), bit_depth);
+            CalcQpUV(edge->qp + chromaCbQpOffset, chroma_fmt),
+            CalcQpUV(edge->qp + chromaCrQpOffset, chroma_fmt), bit_depth);
     }
     else
     {
@@ -1145,8 +1160,8 @@ void ReconstructorT<bitDepth, H265PlaneType>::FilterEdgeChroma(H265EdgeData *edg
             srcDst + 2*x + y*srcDstStride,
             (Ipp32s)srcDstStride,
             dir,
-            QpUV(edge->qp + chromaCbQpOffset),
-            QpUV(edge->qp + chromaCrQpOffset));
+            CalcQpUV(edge->qp + chromaCbQpOffset, chroma_fmt),
+            CalcQpUV(edge->qp + chromaCrQpOffset, chroma_fmt));
     }
 }
 
