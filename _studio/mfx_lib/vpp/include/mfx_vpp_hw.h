@@ -87,8 +87,8 @@ namespace MfxHwVideoProcessing
     };
 
     static const mfxU32 NO_INDEX    = 0xffffffff;
-    
-    // Helper which checks number of allocated frames and auto-free     
+
+    // Helper which checks number of allocated frames and auto-free
     class MfxFrameAllocResponse : public mfxFrameAllocResponse
     {
     public:
@@ -132,10 +132,10 @@ namespace MfxHwVideoProcessing
         }
         mfxFrameSurface1 *pSurf;
 
-        mfxU64 timeStamp;    // startTimeStamp or targetTimeStamp in DX9 
+        mfxU64 timeStamp;    // startTimeStamp or targetTimeStamp in DX9
         mfxU64 endTimeStamp; // endTimeStamp in DX9. need to ask driver team. probably can be removed
-        mfxU32 resIdx;        // index corresponds _real_ video resource 
-        bool   bUpdate;       // should be updated in case of vid<->sys? 
+        mfxU32 resIdx;        // index corresponds _real_ video resource
+        bool   bUpdate;       // should be updated in case of vid<->sys?
     };
     // auto-lock for frames
     struct FrameLocker
@@ -242,7 +242,7 @@ namespace MfxHwVideoProcessing
 
         ReleaseResource* pSubResource;
 
-        std::vector<ExtSurface> m_refList; //m_refList.size() == bkwdRefCount +fwdRefCount 
+        std::vector<ExtSurface> m_refList; //m_refList.size() == bkwdRefCount +fwdRefCount
     };
 
     struct ExtendedConfig
@@ -264,7 +264,7 @@ namespace MfxHwVideoProcessing
         mfxU16 m_IOPattern;
         mfxU16 m_surfCount[2];
     };
-   
+
 
     class ResMngr
     {
@@ -285,7 +285,7 @@ namespace MfxHwVideoProcessing
             m_fieldWeaving = false;
 
             m_pSubResource = NULL;
-            
+
             m_inputFramesOrFieldPerCycle = 0;
             m_inputIndexCount   = 0;
             m_outputIndexCountPerCycle  = 0;
@@ -299,19 +299,19 @@ namespace MfxHwVideoProcessing
          ~ResMngr(void){}
 
          mfxStatus Init(
-             Config & config, 
+             Config & config,
              VideoCORE* core);
 
          mfxStatus Close(void);
 
         mfxStatus DoAdvGfx(
-            mfxFrameSurface1 *input, 
-            mfxFrameSurface1 *output, 
+            mfxFrameSurface1 *input,
+            mfxFrameSurface1 *output,
             mfxStatus *intSts);
 
         mfxStatus DoMode30i60p(
-            mfxFrameSurface1 *input, 
-            mfxFrameSurface1 *output, 
+            mfxFrameSurface1 *input,
+            mfxFrameSurface1 *output,
             mfxStatus *intSts);
 
         mfxStatus FillTask(
@@ -350,7 +350,7 @@ namespace MfxHwVideoProcessing
             {
                 return m_bkwdRefCount;
             }
-            
+
             mfxU32 numBkwdRef = m_bkwdRefCount + (m_inputFramesOrFieldPerCycle - GetNumToRemove());
             numBkwdRef = IPP_MIN(numBkwdRef,  m_bkwdRefCountRequired);
 
@@ -377,7 +377,7 @@ namespace MfxHwVideoProcessing
         std::vector<ExtSurface> m_surfQueue;//container for multi-input in case of advanced processing
 
         // init params
-        mfxU32 m_inputFramesOrFieldPerCycle;//it is number of input frames which will be processed during 1 FRC task slot 
+        mfxU32 m_inputFramesOrFieldPerCycle;//it is number of input frames which will be processed during 1 FRC task slot
         mfxU32 m_inputIndexCount;
         mfxU32 m_outputIndexCountPerCycle; // how many output during 1 task slot
 
@@ -398,28 +398,28 @@ namespace MfxHwVideoProcessing
 
          void Reset(
              mfxU16 frcMode,
-             RateRational frcRational[2]) 
-         { 
-             m_stdFrc.Reset(frcRational);  
+             RateRational frcRational[2])
+         {
+             m_stdFrc.Reset(frcRational);
              m_ptsFrc.Reset(frcRational);
              m_frcMode = frcMode;
          }
 
          mfxStatus DoCpuFRC_AndUpdatePTS(
-             mfxFrameSurface1 *input, 
-             mfxFrameSurface1 *output, 
+             mfxFrameSurface1 *input,
+             mfxFrameSurface1 *output,
              mfxStatus *intSts);
 
     private:
 
         struct StdFrc
-        {            
+        {
             StdFrc(void)
-            {   
+            {
                 Clear();
             }
             void Reset(RateRational frcRational[2])
-            { 
+            {
                 Clear();
 
                 mfxF64 inRate;
@@ -477,7 +477,7 @@ namespace MfxHwVideoProcessing
                 }
                 else
                 {
-                    // Ratio between framerates is fractional, need to find 
+                    // Ratio between framerates is fractional, need to find
                     // common factors
                     mfxU32 tmp = high;
                     while(multiplier<100000)
@@ -512,8 +512,8 @@ namespace MfxHwVideoProcessing
             }
 
             mfxStatus DoCpuFRC_AndUpdatePTS(
-                mfxFrameSurface1 *input, 
-                mfxFrameSurface1 *output, 
+                mfxFrameSurface1 *input,
+                mfxFrameSurface1 *output,
                 mfxStatus *intSts);
 
         private:
@@ -552,24 +552,24 @@ namespace MfxHwVideoProcessing
         struct PtsFrc
         {
             PtsFrc(void)
-            {   
+            {
                 Clear();
             }
 
             void Reset(RateRational frcRational[2])
-            { 
+            {
                 Clear();
 
                 m_frcRational[VPP_IN]  = frcRational[VPP_IN];
                 m_frcRational[VPP_OUT] = frcRational[VPP_OUT];
 
-                m_minDeltaTime = IPP_MIN((__UINT64) (m_frcRational[VPP_IN].FrameRateExtD * MFX_TIME_STAMP_FREQUENCY) / (2 * m_frcRational[VPP_IN].FrameRateExtN), 
+                m_minDeltaTime = IPP_MIN((__UINT64) (m_frcRational[VPP_IN].FrameRateExtD * MFX_TIME_STAMP_FREQUENCY) / (2 * m_frcRational[VPP_IN].FrameRateExtN),
                     (__UINT64) (m_frcRational[VPP_OUT].FrameRateExtD * MFX_TIME_STAMP_FREQUENCY) / (2 * m_frcRational[VPP_OUT].FrameRateExtN));
             }
 
             mfxStatus DoCpuFRC_AndUpdatePTS(
-                mfxFrameSurface1 *input, 
-                mfxFrameSurface1 *output, 
+                mfxFrameSurface1 *input,
+                mfxFrameSurface1 *output,
                 mfxStatus *intSts);
 
         private:
@@ -582,7 +582,7 @@ namespace MfxHwVideoProcessing
                 m_timeStampDifference = 0;
                 m_expectedTimeStamp = 0;
                 m_timeStampJump = 0;
-                m_prevInputTimeStamp = 0; 
+                m_prevInputTimeStamp = 0;
                 m_timeOffset = 0;
                 m_upCoeff = 0;
                 m_numOutputFrames = 0;
@@ -595,28 +595,28 @@ namespace MfxHwVideoProcessing
 
             bool   m_bIsSetTimeOffset;
             bool   m_bDownFrameRate;
-            bool   m_bUpFrameRate;        
+            bool   m_bUpFrameRate;
             mfxU64 m_timeStampDifference;
             mfxU64 m_expectedTimeStamp;
             mfxU64 m_timeStampJump;
-            mfxU64 m_prevInputTimeStamp; 
+            mfxU64 m_prevInputTimeStamp;
             mfxU64 m_timeOffset;
             mfxU32 m_upCoeff;
-            mfxU32 m_numOutputFrames;    
+            mfxU32 m_numOutputFrames;
             mfxU64 m_minDeltaTime;
 
             RateRational m_frcRational[2];
-            
-        } m_ptsFrc;        
 
-        mfxU16 m_frcMode;       
+        } m_ptsFrc;
+
+        mfxU16 m_frcMode;
     };
 
 
     class TaskManager
     {
     public:
-   
+
         TaskManager(void);
         ~TaskManager(void);
 
@@ -638,13 +638,13 @@ namespace MfxHwVideoProcessing
     private:
 
         mfxStatus DoCpuFRC_AndUpdatePTS(
-            mfxFrameSurface1 *input, 
-            mfxFrameSurface1 *output, 
+            mfxFrameSurface1 *input,
+            mfxFrameSurface1 *output,
             mfxStatus *intSts);
 
         mfxStatus DoAdvGfx(
-            mfxFrameSurface1 *input, 
-            mfxFrameSurface1 *output, 
+            mfxFrameSurface1 *input,
+            mfxFrameSurface1 *output,
             mfxStatus *intSts);
 
         DdiTask* GetTask(void);
@@ -655,7 +655,7 @@ namespace MfxHwVideoProcessing
             pTask->SetFree(true);
         }
 
-        // fill task param 
+        // fill task param
         mfxStatus FillTask(
             DdiTask* pTask,
             mfxFrameSurface1 *pInSurface,
@@ -673,13 +673,13 @@ namespace MfxHwVideoProcessing
             mfxFrameSurface1 *pOutSurface);
 
         void UpdatePTS_Mode30i60p(
-            mfxFrameSurface1 *input, 
-            mfxFrameSurface1 *ouput, 
-            mfxU32 taskIndex,            
+            mfxFrameSurface1 *input,
+            mfxFrameSurface1 *ouput,
+            mfxU32 taskIndex,
             mfxStatus *intSts);
 
         void UpdatePTS_SimpleMode(
-            mfxFrameSurface1 *input, 
+            mfxFrameSurface1 *input,
             mfxFrameSurface1 *ouput);
 
         std::vector<DdiTask> m_tasks;
@@ -690,7 +690,7 @@ namespace MfxHwVideoProcessing
 
         struct Mode30i60p
         {
-             mfxU64 m_prevInputTimeStamp; 
+             mfxU64 m_prevInputTimeStamp;
              mfxU32 m_numOutputFrames;
 
              void SetEnable(bool mode)
@@ -716,7 +716,7 @@ namespace MfxHwVideoProcessing
 
         UMC::Mutex m_mutex;
 
-    }; // class TaskManager  
+    }; // class TaskManager
 
 
     class VideoVPPHW
@@ -774,10 +774,10 @@ namespace MfxHwVideoProcessing
             MFX_ENTRY_POINT pEntryPoint[],
             mfxU32 &numEntryPoints);
 
-        mfxStatus RunFrameVPP(mfxFrameSurface1 * /*in*/, mfxFrameSurface1 * /*out*/, mfxExtVppAuxData * /*aux*/) 
-        { 
+        mfxStatus RunFrameVPP(mfxFrameSurface1 * /*in*/, mfxFrameSurface1 * /*out*/, mfxExtVppAuxData * /*aux*/)
+        {
             //in = in; out = out; aux = aux;
-            return MFX_ERR_UNSUPPORTED; 
+            return MFX_ERR_UNSUPPORTED;
         };
 
         static
@@ -789,11 +789,11 @@ namespace MfxHwVideoProcessing
         mfxStatus MergeRuntimeParams(const DdiTask* pTask,  MfxHwVideoProcessing::mfxExecuteParams *execParams);
 
         mfxStatus QuerySceneChangeResults(
-            mfxExtVppAuxData *pAuxData, 
+            mfxExtVppAuxData *pAuxData,
             mfxU32 frameIndex);
 
         mfxStatus CopyPassThrough(
-            mfxFrameSurface1 *pInputSurface, 
+            mfxFrameSurface1 *pInputSurface,
             mfxFrameSurface1 *pOutputSurface);
 
         mfxStatus PreWorkOutSurface(ExtSurface & output);
@@ -802,7 +802,7 @@ namespace MfxHwVideoProcessing
         mfxStatus PostWorkOutSurface(ExtSurface & output);
         mfxStatus PostWorkInputSurface(mfxU32 numSamples);
 
-        mfxStatus ProcessFieldCopy(int mask);
+        mfxStatus ProcessFieldCopy(mfxHDL in, mfxHDL out, mfxU32 fieldMask);
 
         mfxU16 m_asyncDepth;
 
@@ -813,7 +813,7 @@ namespace MfxHwVideoProcessing
 
         VideoCORE *m_pCore;
         UMC::Mutex m_guard;
-        
+
         WorkloadMode m_workloadMode;
 
         mfxU16 m_IOPattern;

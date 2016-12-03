@@ -973,7 +973,7 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
             } //  for (i = 0; i < out->NumExtParam; i++)
 
         } // if (in->ExtParam && out->ExtParam && (in->NumExtParam == out->NumExtParam) )
-        
+
         if ( out->vpp.In.FourCC  != MFX_FOURCC_P010 &&
              out->vpp.In.FourCC  != MFX_FOURCC_P210 &&
              out->vpp.Out.FourCC == MFX_FOURCC_A2RGB10 ){
@@ -1000,7 +1000,7 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
         if( out->vpp.In.FourCC != MFX_FOURCC_YV12 &&
             out->vpp.In.FourCC != MFX_FOURCC_NV12 &&
             out->vpp.In.FourCC != MFX_FOURCC_YUY2 &&
-            out->vpp.In.FourCC != MFX_FOURCC_RGB4 && 
+            out->vpp.In.FourCC != MFX_FOURCC_RGB4 &&
             out->vpp.In.FourCC != MFX_FOURCC_P010 &&
             out->vpp.In.FourCC != MFX_FOURCC_UYVY &&
             out->vpp.In.FourCC != MFX_FOURCC_P210 &&
@@ -1364,7 +1364,10 @@ mfxStatus VideoVPP_HW::InternalInit(mfxVideoParam *par)
     CommonCORE* pCommonCore = NULL;
 
     bool bIsFilterSkipped  = false;
-    bool isFieldProcessing = IsFilterFound(&m_pipelineList[0], (mfxU32)m_pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_PROCESSING);
+    bool isFieldProcessing = IsFilterFound(&m_pipelineList[0], (mfxU32)m_pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_PROCESSING)
+                          || IsFilterFound(&m_pipelineList[0], (mfxU32)m_pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_WEAVING)
+                          || IsFilterFound(&m_pipelineList[0], (mfxU32)m_pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_DEWEAVING);
+
 
     pCommonCore = QueryCoreInterface<CommonCORE>(m_core, isFieldProcessing ? MFXICORECM_GUID : MFXIVideoCORE_GUID);
     MFX_CHECK(pCommonCore, MFX_ERR_UNDEFINED_BEHAVIOR);

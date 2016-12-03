@@ -58,11 +58,14 @@ enum
     DEINTERLACE_DISABLE = 1
 };
 
-// aya: quick fix for CM
 const int TFF2TFF = 0x0;
 const int TFF2BFF = 0x1;
 const int BFF2TFF = 0x2;
 const int BFF2BFF = 0x3;
+const int FIELD2TFF = 0x4;  // FIELD means half-sized frame w/ one field only
+const int FIELD2BFF = 0x5;
+const int TFF2FIELD = 0x6;
+const int BFF2FIELD = 0x7;
 const int FRAME2FRAME = 0x16;
 ////////////////////////////////////////////////////////////////////////////////////
 // Utils
@@ -1277,6 +1280,8 @@ mfxStatus TaskManager::FillTask(
     MFX_CHECK_STS(sts);
 
     pTask->SetFree(false);
+
+    pTask->skipQueryStatus = false;
 
     return MFX_ERR_NONE;
 
@@ -2634,22 +2639,29 @@ int RunGpu(
     return CM_SUCCESS;
 }
 
-// aya: quick fix!!! it is expected video->video, external memory only!!!
-mfxStatus VideoVPPHW::ProcessFieldCopy(int mask)
+// aya: it is expected video->video, external memory only!!!
+mfxStatus VideoVPPHW::ProcessFieldCopy(mfxHDL in, mfxHDL out, mfxU32 fieldMask)
 {
-    //int fieldMask = mask-1; // to get valid Sergey Osipov's kernel mask [0, 1, 2, 3]
+    MFX_CHECK_NULL_PTR1(in);
+    MFX_CHECK_NULL_PTR1(out);
+
+    if (fieldMask > BFF2FIELD) //valid Sergey Osipov's kernel mask [0, 1, 2, 3, 4, 5, 6, 7]
+    {
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
 
     int sts = RunGpu(
-        (m_executeSurf[0].hdl.first), (m_executeParams.targetSurface.hdl.first),
-        mask-1, m_pCmDevice, m_pCmQueue, m_pCmKernel, m_executeSurf[0].frameInfo.Width, m_executeSurf[0].frameInfo.Height);
+        in, out, fieldMask,
+        m_pCmDevice, m_pCmQueue, m_pCmKernel, m_executeSurf[0].frameInfo.Width, m_executeSurf[0].frameInfo.Height);
 
     CHECK_CM_ERR(sts);
 
     return MFX_ERR_NONE;
 
-} // mfxStatus VideoVPPHW::ProcessFieldCopy(std::vector<ExtSurface> & surfQueue /* IN */, ExtSurface & output /* OUT */)
+}
+
 #else
-    mfxStatus VideoVPPHW::ProcessFieldCopy(int)
+    mfxStatus VideoVPPHW::ProcessFieldCopy(mfxHDL, mfxHDL, mfxU32)
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
@@ -2807,7 +2819,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         {
             imfxFPMode = m_executeParams.iFieldProcessingMode;
         }
-        else /* So on looks like ExtBuf is present in runtime */
+        else /* Search runtime MFX_EXTBUFF_VPP_FIELD_PROCESSING */
         {
             /* So on, we skip m_executeParams.iFieldProcessingMode from Init() */
             for ( mfxU32 jj = 0; jj < pInputSurface->Data.NumExtParam; jj++ )
@@ -2832,22 +2844,22 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 
                     if (vppFieldProcessingParams->Mode == MFX_VPP_COPY_FRAME)
                         imfxFPMode = FRAME2FRAME;
-                } // if ( (pInputSurface->Data.ExtParam[jj]->BufferId == MFX_EXTBUFF_VPP_FIELD_PROCESSING) &&
-            } // for ( mfxU32 jj = 0; jj < pInputSurface->Data.NumExtParam; jj++ )
+                }
+            }
 
             // "-1" to get valid kernel values is done internally
             // !!! kernel uses "0"  as a "valid" data, but HW_VPP doesn't
             // to prevent issue we increment here and decrement before kernel call
             imfxFPMode++;
-        } // if ((pInputSurface->Data.NumExtParam == 0) || (pInputSurface->Data.ExtParam == NULL))
+        }
     }
 
-    pTask->skipQueryStatus = false;
     if ((m_executeParams.iFieldProcessingMode != 0) && /* If Mode is enabled*/
         ((imfxFPMode - 1) != (mfxU32)FRAME2FRAME)) /* And we don't do copy frame to frame lets call our FieldCopy*/
-    /* And remember our previous line imfxFPMode++;*/
+    /* And remember our previous line imfxFPMode++ */
     {
-        pTask->skipQueryStatus = true; // skip query status since we do not submit any tasks to driver in this mode
+        imfxFPMode--;
+        pTask->skipQueryStatus = true; // we do not submit any tasks to driver in this mode
 
         sts = PreWorkOutSurface(pTask->output);
         MFX_CHECK_STS(sts);
@@ -2855,10 +2867,31 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         sts = PreWorkInputSurface(surfQueue);
         MFX_CHECK_STS(sts);
 
-        sts = ProcessFieldCopy(imfxFPMode);
+        if ((imfxFPMode == TFF2FIELD) || (imfxFPMode == BFF2FIELD))
+        {
+            if (pTask->taskIndex % 2)
+            {
+                // switch between TFF2FIELD<->BFF2FIELD for each second iteration
+                imfxFPMode = (imfxFPMode == TFF2FIELD) ? BFF2FIELD : TFF2FIELD;
+            }
+        }
+        sts = ProcessFieldCopy(m_executeSurf[0].hdl.first, m_executeParams.targetSurface.hdl.first, imfxFPMode);
+        MFX_CHECK_STS(sts);
+
+        if ((imfxFPMode == FIELD2TFF) || (imfxFPMode == FIELD2BFF))
+        {
+            if (numSamples != 2)
+            {
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
+
+            // copy the second field to frame
+            imfxFPMode = (imfxFPMode == FIELD2TFF) ? FIELD2BFF : FIELD2TFF;
+            sts = ProcessFieldCopy(m_executeSurf[1].hdl.first, m_executeParams.targetSurface.hdl.first, imfxFPMode);
+            MFX_CHECK_STS(sts);
+        }
+
         m_executeParams.pRefSurfaces = &m_executeSurf[0];
-
-
         sts = PostWorkOutSurface(pTask->output);
         MFX_CHECK_STS(sts);
 
@@ -4187,6 +4220,72 @@ mfxStatus ConfigureExecuteParams(
                 }
 
                 break;
+
+            case MFX_EXTBUFF_VPP_FIELD_WEAVING:
+            {
+                if (videoParam.vpp.In.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE)
+                {
+                    if (videoParam.vpp.Out.PicStruct & MFX_PICSTRUCT_FIELD_TFF)
+                    {
+                        executeParams.iFieldProcessingMode = FIELD2TFF;
+                    }
+                    else if (videoParam.vpp.Out.PicStruct & MFX_PICSTRUCT_FIELD_BFF)
+                    {
+                        executeParams.iFieldProcessingMode = FIELD2BFF;
+                    }
+                    else
+                    {
+                        return MFX_ERR_INVALID_VIDEO_PARAM;
+                    }
+                }
+
+                config.m_extConfig.customRateData.bkwdRefCount = 0;
+                config.m_extConfig.customRateData.fwdRefCount  = 1;
+                config.m_extConfig.customRateData.inputFramesOrFieldPerCycle = 2;
+                config.m_extConfig.customRateData.outputIndexCountPerCycle   = 1;
+
+                config.m_surfCount[VPP_IN]   = IPP_MAX(2, config.m_surfCount[VPP_IN]);
+                config.m_surfCount[VPP_OUT]  = IPP_MAX(1, config.m_surfCount[VPP_OUT]);
+                config.m_extConfig.mode = IS_REFERENCES;
+                // Sergey Osipov's kernel uses "0"  as a "valid" data, but HW_VPP doesn't.
+                // To prevent an issue we increment here and decrement before kernel call.
+                executeParams.iFieldProcessingMode++;
+
+                break;
+            } //case MFX_EXTBUFF_VPP_FIELD_WEAVING:
+
+            case MFX_EXTBUFF_VPP_FIELD_DEWEAVING:
+            {
+                if (videoParam.vpp.Out.PicStruct & MFX_PICSTRUCT_FIELD_SINGLE)
+                {
+                    if (videoParam.vpp.In.PicStruct & MFX_PICSTRUCT_FIELD_TFF)
+                    {
+                        executeParams.iFieldProcessingMode = TFF2FIELD;
+                    }
+                    else if (videoParam.vpp.In.PicStruct & MFX_PICSTRUCT_FIELD_BFF)
+                    {
+                        executeParams.iFieldProcessingMode = BFF2FIELD;
+                    }
+                    else
+                    {
+                        return MFX_ERR_INVALID_VIDEO_PARAM;
+                    }
+                }
+
+                config.m_extConfig.customRateData.bkwdRefCount = 0;
+                config.m_extConfig.customRateData.fwdRefCount  = 0;
+                config.m_extConfig.customRateData.inputFramesOrFieldPerCycle = 1;
+                config.m_extConfig.customRateData.outputIndexCountPerCycle   = 2;
+
+                config.m_surfCount[VPP_IN]   = IPP_MAX(1, config.m_surfCount[VPP_IN]);
+                config.m_surfCount[VPP_OUT]  = IPP_MAX(2, config.m_surfCount[VPP_OUT]);
+                config.m_extConfig.mode = IS_REFERENCES;
+                // Sergey Osipov's kernel uses "0"  as a "valid" data, but HW_VPP doesn't.
+                // To prevent an issue we increment here and decrement before kernel call.
+                executeParams.iFieldProcessingMode++;
+
+                break;
+            } //case MFX_EXTBUFF_VPP_FIELD_DEWEAVING:
 
             default:
             {

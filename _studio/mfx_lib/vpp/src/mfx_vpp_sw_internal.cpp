@@ -249,7 +249,7 @@ mfxStatus VideoVPP_SW::SetCrop(mfxFrameSurface1 *in, mfxFrameSurface1 *out)
 mfxStatus VideoVPP_SW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
 {
     In; Out;
-#if !defined(MFX_ENABLE_HW_ONLY_VPP)    
+#if !defined(MFX_ENABLE_HW_ONLY_VPP)
     mfxFrameInfo inFrameInfo;
     mfxFrameInfo outFrameInfo;
     mfxU32       filterIndex;
@@ -385,7 +385,7 @@ mfxStatus VideoVPP_SW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
 
             case (mfxU32)MFX_EXTBUFF_VPP_VIDEO_SIGNAL_INFO:
             {
-                sts = MFX_ERR_NONE; 
+                sts = MFX_ERR_NONE;
                 /* VIDEO SIGNAL CONVERSION specific */
 
                 VPP_INIT_FILTER( filterIndex, MFXVideoVPPVideoSignalConversion ); /* RunFrameVPP in not implemented yet. Init for behavior tests only */
@@ -989,6 +989,21 @@ mfxStatus GetExternalFramesCount(mfxVideoParam* pParam,
                 outputFramesCount[filterIndex] = 1;
                 break;
             }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_FIELD_WEAVING:
+            {
+                inputFramesCount[filterIndex]  = 2;
+                outputFramesCount[filterIndex] = 1;
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_FIELD_DEWEAVING:
+            {
+                inputFramesCount[filterIndex]  = 1;
+                outputFramesCount[filterIndex] = 2;
+                break;
+            }
+
             default:
             {
                 return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -1108,7 +1123,9 @@ mfxStatus ExtendedQuery(VideoCORE * core, mfxU32 filterName, mfxExtBuffer* pHint
             sts = MFX_ERR_NONE;
         }
     }
-    else if( MFX_EXTBUFF_VPP_FIELD_PROCESSING == filterName )
+    else if( (MFX_EXTBUFF_VPP_FIELD_PROCESSING == filterName) ||
+             (MFX_EXTBUFF_VPP_FIELD_WEAVING == filterName) ||
+             (MFX_EXTBUFF_VPP_FIELD_DEWEAVING == filterName) )
     {
 #if defined(_WIN32) || defined(_WIN64)
         sts = MFX_ERR_UNSUPPORTED;

@@ -147,6 +147,7 @@ mfxStatus CheckInputPicStruct( mfxU16 inPicStruct )
     const mfxU16 case7 = MFX_PICSTRUCT_PROGRESSIVE | MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_REPEATED;
     const mfxU16 case8 = MFX_PICSTRUCT_FIELD_BFF;
     const mfxU16 case9 = MFX_PICSTRUCT_FIELD_TFF;
+    const mfxU16 case10 = MFX_PICSTRUCT_FIELD_SINGLE;
 
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -161,6 +162,7 @@ mfxStatus CheckInputPicStruct( mfxU16 inPicStruct )
         case case7:
         case case8:
         case case9:
+        case case10:
         {
             sts = MFX_ERR_NONE;
             break;
@@ -252,6 +254,22 @@ mfxU16 UpdatePicStruct( mfxU16 inPicStruct, mfxU16 outPicStruct, bool bDynamicDe
         resultPicStruct = outPicStruct;
 
         sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        return resultPicStruct;
+    }
+
+    // FIELDS->INTERLACE
+    if( (inPicStruct & MFX_PICSTRUCT_FIELD_SINGLE) && (outPicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF)) )
+    {
+        resultPicStruct = outPicStruct;
+        sts = MFX_ERR_NONE;
+        return resultPicStruct;
+    }
+
+    // INTERLACE->FIELDS
+    if( (inPicStruct & (MFX_PICSTRUCT_FIELD_TFF | MFX_PICSTRUCT_FIELD_BFF)) && (outPicStruct & MFX_PICSTRUCT_FIELD_SINGLE) )
+    {
+        resultPicStruct = outPicStruct;
+        sts = MFX_ERR_NONE;
         return resultPicStruct;
     }
 
@@ -1214,6 +1232,21 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 fprintf(stderr,"MFX_EXTBUFF_VPP_MIRRORING\n");
                 break;
             }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_FIELD_WEAVING:
+            {
+                fprintf(stderr, "MFX_EXTBUFF_VPP_FIELD_WEAVING\n");
+                break;
+                break;
+            }
+
+            case (mfxU32)MFX_EXTBUFF_VPP_FIELD_DEWEAVING:
+            {
+                fprintf(stderr, "MFX_EXTBUFF_VPP_FIELD_DEWEAVING\n");
+                break;
+                break;
+            }
+
             default:
             {
                 fprintf(stderr, "UNKNOUW Filter ID!!! \n");
@@ -1378,12 +1411,24 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
         index++;
     }
 
+    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_WEAVING ) )
+    {
+        newList[index] = MFX_EXTBUFF_VPP_FIELD_WEAVING;
+        index++;
+    }
+
+    if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_FIELD_DEWEAVING ) )
+    {
+        newList[index] = MFX_EXTBUFF_VPP_FIELD_DEWEAVING;
+        index++;
+    }
+
     if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_LSHIFT_OUT ) )
     {
         newList[index] = MFX_EXTBUFF_VPP_LSHIFT_OUT;
         index++;
     }
-    
+
     if( IsFilterFound( &pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_ROTATION ) )
     {
         newList[index] = MFX_EXTBUFF_VPP_ROTATION;
@@ -1807,7 +1852,7 @@ mfxStatus GetPipelineList(
                 !IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), configList[fIdx]) )
         {
             /* Add filter to the list.
-             * Don't care about duplicates, they will be eliminated by Reorder... calls below 
+             * Don't care about duplicates, they will be eliminated by Reorder... calls below
              */
             pipelineList.push_back(configList[fIdx]);
         } /* if( IsFilterFound( g_TABLE_CONFIG */
@@ -1932,7 +1977,7 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request)
             // 10bit RGB supported as output format only
             if (VPP_IN == request)
                 return MFX_ERR_INVALID_VIDEO_PARAM;
-            
+
             break;
         default:
             return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -1962,7 +2007,8 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request)
     }
 
     /* checking Height based on PicStruct filed */
-    if (MFX_PICSTRUCT_PROGRESSIVE & info->PicStruct)
+    if (MFX_PICSTRUCT_PROGRESSIVE & info->PicStruct ||
+        MFX_PICSTRUCT_FIELD_SINGLE & info->PicStruct)
     {
         if ((info->Height  & 15) !=0)
         {
@@ -2927,6 +2973,10 @@ void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<m
     }
     /* FIELD Copy is always present*/
     list.push_back(MFX_EXTBUFF_VPP_FIELD_PROCESSING);
+    /* FW*/
+    list.push_back(MFX_EXTBUFF_VPP_FIELD_WEAVING);
+    /* FDW*/
+    list.push_back(MFX_EXTBUFF_VPP_FIELD_DEWEAVING);
     /* Composition is always present*/
     list.push_back(MFX_EXTBUFF_VPP_COMPOSITE);
 
