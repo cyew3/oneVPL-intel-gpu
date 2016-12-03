@@ -1344,9 +1344,11 @@ void TaskManager::UpdatePTS_SimpleMode(
     mfxFrameSurface1 *input,
     mfxFrameSurface1 *output)
 {
-    output->Data.TimeStamp = input->Data.TimeStamp;
-    output->Data.FrameOrder = input->Data.FrameOrder;
-
+    if (input && output)
+    {
+        output->Data.TimeStamp = input->Data.TimeStamp;
+        output->Data.FrameOrder = input->Data.FrameOrder;
+    }
 } // void UpdatePTS_SimpleMode(...)
 
 
@@ -4325,6 +4327,7 @@ mfxStatus ConfigureExecuteParams(
                     }
                 }
 
+                config.m_bWeave = true;
                 config.m_extConfig.customRateData.bkwdRefCount = 1;
                 config.m_extConfig.customRateData.fwdRefCount  = 0;
                 config.m_extConfig.customRateData.inputFramesOrFieldPerCycle = 2;
