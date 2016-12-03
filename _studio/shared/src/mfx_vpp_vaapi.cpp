@@ -490,7 +490,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
                 sts = vaMapBuffer(disp, id, (void**)&trigger);
                 if (sts != VA_STATUS_SUCCESS)
                     return;
-                
+
                 if (trigger)
                     *trigger = 1;
                 else
@@ -969,8 +969,8 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
             break;
         }
 
-        /* 16.5 driver needs interlaced flag passed only for 
-         * deinterlacing and scaling. All other filters must 
+        /* 16.5 driver needs interlaced flag passed only for
+         * deinterlacing and scaling. All other filters must
          * use progressive even for interlaced content.
          */
         bool forceProgressive = true;
@@ -1011,7 +1011,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
         m_pipelineParam[refIdx].filters      = m_filterBufs;
         m_pipelineParam[refIdx].num_filters  = m_numFilterBufs;
 
-        size_t index = refIdx < pParams->VideoSignalInfo.size() ? refIdx : (pParams->VideoSignalInfo.size() - 1); 
+        size_t index = refIdx < pParams->VideoSignalInfo.size() ? refIdx : (pParams->VideoSignalInfo.size() - 1);
         if(pParams->VideoSignalInfo[index].enabled)
         {
             if(pParams->VideoSignalInfo[index].TransferMatrix != MFX_TRANSFERMATRIX_UNKNOWN)
@@ -1748,6 +1748,8 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition_VideoWall(mfxExecuteParams *
             m_pipelineParam[i].blend_state = &blend_state[i];
         }
 
+        m_pipelineParam[i].pipeline_flags |= VA_PROC_PIPELINE_SUBPICTURES;
+
 #if defined(LINUX_TARGET_PLATFORM_BSW) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_BXTMIN)
         m_pipelineParam[i].pipeline_flags |= VA_PROC_PIPELINE_SUBPICTURES;
         m_pipelineParam[i].filter_flags   |= VA_FILTER_SCALING_HQ;
@@ -1756,7 +1758,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition_VideoWall(mfxExecuteParams *
 #endif
         m_pipelineParam[i].filters      = 0;
         m_pipelineParam[i].num_filters  = 0;
-
 
         vaSts = vaCreateBuffer(m_vaDisplay,
                             m_vaContextVPP,
