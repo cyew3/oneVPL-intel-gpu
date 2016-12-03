@@ -782,7 +782,7 @@ void PartialButterflyInverse32x32(PredPixType *pred, int predStride, Ipp32s shif
         if (inplace && bitDepth == 8)
         {
             if (inplace == 2)
-                FastInverseDst<Ipp8u, Ipp16u, true>((Ipp8u *)pred, predStride, shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth); // Inverse DST by FAST Algorithm, tmp input, coeff output
+                FastInverseDst<Ipp16u, Ipp16u, true>((Ipp16u *)pred, predStride, shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth); // Inverse DST by FAST Algorithm, tmp input, coeff output
             else
                 FastInverseDst<Ipp8u, Ipp8u, true>((Ipp8u *)pred, predStride, shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth); // Inverse DST by FAST Algorithm, tmp input, coeff output
         }
@@ -807,7 +807,7 @@ void PartialButterflyInverse32x32(PredPixType *pred, int predStride, Ipp32s shif
         if (inplace && bitDepth == 8)
         {
             if (inplace == 2)
-                PartialButterflyInverse4x4<Ipp8u, Ipp16u, true>((Ipp8u *)pred, predStride, shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth);
+                PartialButterflyInverse4x4<Ipp16u, Ipp16u, true>((Ipp16u *)pred, predStride, shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth);
             else
                 PartialButterflyInverse4x4<Ipp8u, Ipp8u, true>((Ipp8u *)pred, predStride, shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth);
         }
@@ -832,7 +832,7 @@ void PartialButterflyInverse32x32(PredPixType *pred, int predStride, Ipp32s shif
         if (inplace && bitDepth == 8)
         {
             if (inplace == 2)
-                PartialButterflyInverse8x8<Ipp8u, Ipp16u, true>((Ipp8u *)pred, predStride, shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth);
+                PartialButterflyInverse8x8<Ipp16u, Ipp16u, true>((Ipp16u *)pred, predStride, shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth);
             else
                 PartialButterflyInverse8x8<Ipp8u, Ipp8u, true>((Ipp8u *)pred, predStride, shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth);
         }
@@ -857,7 +857,7 @@ void PartialButterflyInverse32x32(PredPixType *pred, int predStride, Ipp32s shif
         if (inplace && bitDepth == 8)
         {
             if (inplace == 2)
-                PartialButterflyInverse16x16<Ipp8u, Ipp16u, true>((Ipp8u *)pred, predStride, shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth);
+                PartialButterflyInverse16x16<Ipp16u, Ipp16u, true>((Ipp16u *)pred, predStride, shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth);
             else
                 PartialButterflyInverse16x16<Ipp8u, Ipp8u, true>((Ipp8u *)pred, predStride, shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth);
         }
@@ -881,7 +881,7 @@ void PartialButterflyInverse32x32(PredPixType *pred, int predStride, Ipp32s shif
         if (inplace && bitDepth == 8)
         {
             if (inplace == 2)
-                PartialButterflyInverse32x32<Ipp8u, Ipp16u, true>((Ipp8u *)pred, predStride, shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth);
+                PartialButterflyInverse32x32<Ipp16u, Ipp16u, true>((Ipp16u *)pred, predStride, shift_2nd, tmp, (Ipp16u*)destPtr, destStride, bitDepth);
             else
                 PartialButterflyInverse32x32<Ipp8u, Ipp8u, true>((Ipp8u *)pred, predStride, shift_2nd, tmp, (Ipp8u*)destPtr, destStride, bitDepth);
         }

@@ -727,7 +727,7 @@ void MAKE_NAME(h265_DCT32x32Inv_16sT)(void *pred, int predStride, void *destPtr,
         switch (bitDepth) {
         case  8:
             if (inplace == 2)
-                h265_DCT32x32Inv_16sT_Kernel< 8, Ipp8u, Ipp16u,  true >((Ipp8u *)pred, predStride, (Ipp16u *) destPtr, coeff, destStride);
+                h265_DCT32x32Inv_16sT_Kernel< 8, Ipp16u, Ipp16u,  true >((Ipp16u *)pred, predStride, (Ipp16u *) destPtr, coeff, destStride);
             else
                 h265_DCT32x32Inv_16sT_Kernel< 8, Ipp8u, Ipp8u,  true >((Ipp8u *)pred, predStride, (Ipp8u *) destPtr, coeff, destStride);
             break;
