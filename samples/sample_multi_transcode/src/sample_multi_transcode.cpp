@@ -624,11 +624,16 @@ void Launcher::Close()
     {
         delete m_pSessionArray[m_pSessionArray.size()-1];
         m_pSessionArray[m_pSessionArray.size() - 1] = NULL;
-        delete m_pAllocArray[m_pSessionArray.size()-1];
-        m_pAllocArray[m_pSessionArray.size() - 1] = NULL;
-        m_pAllocArray.pop_back();
         m_pSessionArray.pop_back();
     }
+
+    while(m_pAllocArray.size())
+    {
+        delete m_pAllocArray[m_pAllocArray.size()-1];
+        m_pAllocArray[m_pAllocArray.size() - 1] = NULL;
+        m_pAllocArray.pop_back();
+    }
+
     while(m_pBufferArray.size())
     {
         delete m_pBufferArray[m_pBufferArray.size()-1];
@@ -661,6 +666,7 @@ int main(int argc, char *argv[])
     sts = transcode.Init(argc, argv);
     fflush(stdout);
     fflush(stderr);
+
     MSDK_CHECK_STATUS(sts, "transcode.Init failed");
 
     transcode.Run();
