@@ -323,7 +323,6 @@ namespace UMC
                 }
                 return UMC_WRN_INFO_NOT_READY;
             }
-            return sts;
         }
 #endif
         template <class Descriptor>
