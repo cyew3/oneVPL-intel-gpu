@@ -835,5 +835,8 @@
     <ClCompile Include="src\gmock\test_suites\vp9e_trans_opaque.cpp">
       <Filter>Source Files\test_suites\vp9e</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevcd_frametype.cpp">
+      <Filter>Source Files\test_suites\hevcd</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
