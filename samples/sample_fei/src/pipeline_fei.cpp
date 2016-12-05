@@ -73,11 +73,11 @@ CEncodingPipeline::CEncodingPipeline(AppConfig* pAppConfig)
     , m_hwdev(NULL)
 
     , m_surfPoolStrategy((pAppConfig->nReconSurf || pAppConfig->nInputSurf) ? PREFER_NEW : PREFER_FIRST_FREE)
-    , m_DecSurfaces(ExtSurfPool(m_surfPoolStrategy))
-    , m_DSSurfaces(ExtSurfPool(m_surfPoolStrategy))
-    , m_VppSurfaces(ExtSurfPool(m_surfPoolStrategy))
-    , m_EncSurfaces(ExtSurfPool(m_surfPoolStrategy))
-    , m_ReconSurfaces(ExtSurfPool(m_surfPoolStrategy))
+    , m_DecSurfaces(m_surfPoolStrategy)
+    , m_DSSurfaces(m_surfPoolStrategy)
+    , m_VppSurfaces(m_surfPoolStrategy)
+    , m_EncSurfaces(m_surfPoolStrategy)
+    , m_ReconSurfaces(m_surfPoolStrategy)
 
     , m_BaseAllocID(0)
     , m_EncPakReconAllocID(0)
@@ -1189,6 +1189,8 @@ mfxStatus CEncodingPipeline::AllocExtBuffers()
                         feiPPS[fieldId].Transform8x8ModeFlag = 1;
                         is_8x8tranform_forced = true;
                     }
+
+                    memset(feiPPS[fieldId].ReferenceFrames, 0xffff, 16 * sizeof(mfxU16));
                 }
 
                 /* Slice Header */

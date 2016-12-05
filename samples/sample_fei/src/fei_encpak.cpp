@@ -784,7 +784,6 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
     }
 
     /* SPS, PPS, SliceHeader processing */
-    mfxExtFeiSPS*         feiSPS         = NULL;
     mfxExtFeiPPS*         feiPPS         = NULL;
     mfxExtFeiSliceHeader* feiSliceHeader = NULL;
 
@@ -796,10 +795,6 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
         {
         case MFX_EXTBUFF_FEI_PPS:
             if (!feiPPS){ feiPPS = reinterpret_cast<mfxExtFeiPPS*>(*it); }
-            break;
-
-        case MFX_EXTBUFF_FEI_SPS:
-            feiSPS = reinterpret_cast<mfxExtFeiSPS*>(*it);
             break;
 
         case MFX_EXTBUFF_FEI_SLICE:
@@ -838,7 +833,7 @@ mfxStatus FEI_EncPakInterface::InitFrameParams(iTask* eTask)
         {
             feiPPS[fieldId].PictureType = ExtractFrameType(*eTask, fieldId);
 
-            memset(feiPPS[fieldId].ReferenceFrames, -1, 16 * sizeof(mfxU16));
+            memset(feiPPS[fieldId].ReferenceFrames, 0xffff, 16 * sizeof(mfxU16));
             memcpy(feiPPS[fieldId].ReferenceFrames, &m_RefInfo.state[fieldId].dpb_idx[0], sizeof(mfxU16)*m_RefInfo.state[fieldId].dpb_idx.size());
         }
 
