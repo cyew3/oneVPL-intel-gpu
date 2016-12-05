@@ -238,11 +238,11 @@ namespace hevcd_get_payload
 
     /* 10 bit */
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>)
-    { return "conformance/hevc/10bit/INITQP_B_Main10_Sony_1.bit"; }
+    { return "conformance/hevc/StressBitstreamEncode/main10/Syntax_HEVC_Main10HT62_432x240_30fps_203_inter_sei_1.7.2.hevc"; }
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y216>)
-    { return "TODO"; }
+    { return "conformance/hevc/StressBitstreamEncode/SBE_HEVC_Rext422-10b-HT62_2.2.0/Syntax_HEVC_Rext422_10bHT62_432x240_30fps_203_inter_sei_2.2.hevc"; }
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y410>)
-    { return "TODO"; }
+    { return "conformance/hevc/StressBitstreamEncode/SBE_HEVC_Rext444-10b-HT62_2.2.0/Syntax_HEVC_Rext444_10bHT62_432x240_30fps_203_inter_sei_2.2.hevc"; }
 
     template <unsigned fourcc>
     struct TestSuiteEx
@@ -265,6 +265,6 @@ namespace hevcd_get_payload
     //TS_REG_TEST_SUITE(hevcd_444_get_payload, TestSuiteEx<MFX_FOURCC_AYUV>::RunTest, 1);
 
     TS_REG_TEST_SUITE(hevc10d_get_payload,     TestSuiteEx<MFX_FOURCC_P010>::RunTest, 1);
-    //TS_REG_TEST_SUITE(hevc10d_422_get_payload, TestSuiteEx<MFX_FOURCC_Y216>::RunTest, 1);
-    //TS_REG_TEST_SUITE(hevc10d_444_get_payload, TestSuiteEx<MFX_FOURCC_Y410>::RunTest, 1);
+    TS_REG_TEST_SUITE(hevc10d_422_get_payload, TestSuiteEx<MFX_FOURCC_Y216>::RunTest, 1);
+    TS_REG_TEST_SUITE(hevc10d_444_get_payload, TestSuiteEx<MFX_FOURCC_Y410>::RunTest, 1);
 }
