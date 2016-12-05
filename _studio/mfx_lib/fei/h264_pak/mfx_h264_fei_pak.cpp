@@ -252,7 +252,7 @@ void ConfigureTask_FEI_PAK(
             frame.m_picNum[1] = task.m_fieldPicFlag ? 2 * frame.m_frameNumWrap + (!!fieldParity) : frame.m_frameNumWrap;
 
             frame.m_refPicFlag[task.m_fid[0]] = 1;
-            frame.m_refPicFlag[task.m_fid[1]] = task.m_fieldPicFlag ? 0 : 1;
+            frame.m_refPicFlag[task.m_fid[1]] = task.m_fieldPicFlag ? (frame.m_frameOrder != task.m_frameOrder) : 1;
 
             frame.m_longterm  = 0;
 
