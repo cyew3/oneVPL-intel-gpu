@@ -21,6 +21,10 @@
 #include "mfx_h265_defs.h"
 #include "mfx_h265_frame.h"
 
+#ifdef AMT_HROI_PSY_AQ
+#include "FSapi.h"
+#endif
+
 namespace H265Enc {
 
     class H265Encoder;

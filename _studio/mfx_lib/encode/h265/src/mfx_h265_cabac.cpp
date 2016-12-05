@@ -1128,8 +1128,10 @@ void H265CU<PixType>::PutLumaTu(H265BsFake *bs, Ipp32u offset_luma, Ipp32s abs_p
         bs->EncodeSingleBin_CABAC(CTX(bs,QT_CBF_HEVC) + GetCtxQtCbfLuma(m_data[abs_part_idx].trIdx), 1);
     }
 
+#ifndef AMT_DQP_FIX
     if (m_par->UseDQP) // dQP: only for LCU once
         h265_code_delta_qp(bs, this, abs_part_idx, m_par->bitDepthLuma);
+#endif
 
     CodeCoeffNxN(bs, this, m_coeffWorkY + offset_luma, abs_part_idx, width, TEXT_LUMA);
 }
@@ -1541,14 +1543,22 @@ void H265CU<PixType>::EncodeCU(H265Bs *bs, Ipp32s abs_part_idx, Ipp32s depth, Ip
         boundary = true;
     }
 
+#ifdef AMT_DQP_FIX
+    if (rd_mode == RD_CU_SPLITFLAG) return;
+
+    if (rd_mode != RD_CU_MODES) 
+#endif
     {
         if ((m_par->MaxCUSize>>depth) >= m_par->MinCuDQPSize && m_par->UseDQP)
         {
             setdQPFlag(true);
         }
     }
-    if (rd_mode == RD_CU_SPLITFLAG) return;
 
+#ifndef AMT_DQP_FIX
+    if (rd_mode == RD_CU_SPLITFLAG) return;
+#endif
+    
     if (((depth < m_data[abs_part_idx].depth) && (depth < (m_par->MaxCUDepth-m_par->AddCUDepth))) || boundary)
     {
         Ipp32u num_parts = ( m_par->NumPartInCU >> (depth<<1) )>>2;

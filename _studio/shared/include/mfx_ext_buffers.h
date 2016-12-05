@@ -210,7 +210,7 @@ typedef struct {
     mfxU16      MaxCUDepthAdapt;    // tri-state, adaptive max CU depth
     mfxU16      NumBiRefineIter;    // 1-check best L0+L1; N-check best L0+L1 then N-1 refinement iterations
     mfxU16      CUSplitThreshold;   // skip CU split check: threshold = CUSplitThreshold / 256.0
-    mfxU16      DeltaQpMode;        // DeltaQP modes: 0-default 1-disabled; 2-paq; 3-calq; 4-paq+calq
+    mfxU16      DeltaQpMode;        // DeltaQP modes: 0-default 1-disabled; 1+(0x1 = CAQ, 0x2 = CAL, 0x4 = PAQ, 0x8 = PSY, 0x10 = HROI)
     mfxU16      Enable10bit;        // tri-state
     mfxU16      IntraAngModesP;     // P slice Intra Angular modes: 0-default 1-all; 2-all even + few odd; 3-gradient analysis + few modes, 99 -DC&Planar only, 100- disable
     mfxU16      IntraAngModesBRef;  // B Ref slice Intra Angular modes: 0-default 1-all; 2-all even + few odd; 3-gradient analysis + few modes, 99 -DC&Planar only, 100- disable

@@ -726,6 +726,7 @@ namespace {
         }
 
         if (optHevc) {
+
             wrnIncompatible = !CheckRange(optHevc->Log2MaxCUSize, 5, 6);
             wrnIncompatible = !CheckRange(optHevc->QuadtreeTULog2MaxSize, 2, 5);
             wrnIncompatible = !CheckRange(optHevc->QuadtreeTULog2MinSize, 2, 5);
@@ -766,7 +767,11 @@ namespace {
             wrnIncompatible = !CheckMax(optHevc->FastAMPRD, 2);
             wrnIncompatible = !CheckMax(optHevc->SkipMotionPartition, 2);
             wrnIncompatible = !CheckMax(optHevc->PatternSubPel, 6);
+#ifdef AMT_HROI_PSY_AQ
+            wrnIncompatible = !CheckMax(optHevc->DeltaQpMode, 32);
+#else
             wrnIncompatible = !CheckMax(optHevc->DeltaQpMode, 8);
+#endif
             wrnIncompatible = !CheckMax(optHevc->NumRefFrameB, 16);
             wrnIncompatible = !CheckMax(optHevc->NumRefLayers, 4);
             wrnIncompatible = !CheckMax(optHevc->AnalyzeCmplx, 2);
@@ -1175,8 +1180,10 @@ namespace {
             hevcParam.GeneralConstraintFlags = MAIN_422_10;
         if (mfx.TargetUsage == 0)
             mfx.TargetUsage = 4;
+
         if (mfx.RateControlMethod == 0)
             mfx.RateControlMethod = AVBR;
+
         if (mfx.NumSlice == 0)
             mfx.NumSlice = 1;
         if (fi.CropW == 0)

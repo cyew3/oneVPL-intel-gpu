@@ -36,6 +36,10 @@
 #include "mfx_h265_fei.h"
 #include "mfx_h265_cmcopy.h"
 
+#ifdef AMT_HROI_PSY_AQ
+#include "FSapi.h"
+#endif
+
 #ifndef MFX_VA
 #define H265FEI_Close(...) (MFX_ERR_NONE)
 #define H265FEI_GetSurfaceDimensions(...) (MFX_ERR_NONE)
@@ -403,13 +407,25 @@ static void TaskLogDump()
         if (mfx.EncodedOrder) {
             intParam.DeltaQpMode = intParam.DeltaQpMode&AMT_DQP_CAQ;
         }
-
+#ifdef AMT_HROI_PSY_AQ
+        //if(intParam.DeltaQpMode&AMT_DQP_HROI) {
+        //    intParam.DeltaQpMode |= AMT_DQP_PSY;    // Now triggers EROI
+        //}
+        if(intParam.chromaFormatIdc != MFX_CHROMAFORMAT_YUV420) {
+            intParam.DeltaQpMode = intParam.DeltaQpMode&~AMT_DQP_HROI;
+        }
+        if(intParam.bitDepthLuma != 8 || fi.PicStruct != PROGR) {
+            intParam.DeltaQpMode = intParam.DeltaQpMode&~AMT_DQP_PSY_HROI;
+        }
+#endif
         intParam.LambdaCorrection = tab_defaultLambdaCorrIP[(intParam.DeltaQpMode&AMT_DQP_CAQ)?mfx.TargetUsage:0];
 
         intParam.SceneCut = mfx.EncodedOrder ? 0 : (opt2.AdaptiveI == ON);
         intParam.AnalyzeCmplx = /*mfx.EncodedOrder ? 0 : */optHevc.AnalyzeCmplx - 1;
+
         if(intParam.AnalyzeCmplx && intParam.BiPyramidLayers > 1 && intParam.LowresFactor && mfx.RateControlMethod != CQP)
             intParam.FullresMetrics = 1;
+
         intParam.RateControlDepth = optHevc.RateControlDepth;
         intParam.TryIntra = optHevc.TryIntra;
         intParam.FastAMPSkipME = optHevc.FastAMPSkipME;
@@ -529,12 +545,22 @@ static void TaskLogDump()
                 if (maxAbsDeltaQp > 0)
                     intParam.roi[i].priority = Saturate(-maxAbsDeltaQp, maxAbsDeltaQp, intParam.roi[i].priority);
             }
+#ifndef AMT_HROI_PSY_AQ
             intParam.DeltaQpMode = 0;
+#else
+            intParam.DeltaQpMode &= (AMT_DQP_CAQ);
+#endif
         }
 
         if (intParam.DeltaQpMode) {
             intParam.m_maxDeltaQP = 0;
             intParam.UseDQP = 1;
+#ifdef AMT_HROI_PSY_AQ
+            if(intParam.DeltaQpMode & AMT_DQP_PSY_HROI) {
+                intParam.AnalyzeCmplx  = 1;
+                intParam.FullresMetrics = 1;
+            }
+#endif
         }
         if (intParam.MaxCuDQPDepth > 0 || intParam.m_maxDeltaQP > 0 || intParam.numRoi > 0)
             intParam.UseDQP = 1;
@@ -912,6 +938,9 @@ H265Encoder::~H265Encoder()
         H265FEI_Close(m_fei);
 
     m_la.reset(0);
+#ifdef AMT_HROI_PSY_AQ
+    FS_Free(&m_faceSkinDet);
+#endif
 
     vm_cond_destroy(&m_condVar);
     vm_mutex_destroy(&m_critSect);
@@ -962,6 +991,9 @@ namespace {
         return device;
     }
 };
+
+
+
 
 mfxStatus H265Encoder::Init(const mfxVideoParam &par)
 {
@@ -1079,6 +1111,23 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
     data_temp = UMC::align_pointer<H265CUData *>(ptr, DATA_ALIGN);
     ptr += sizeof(H265CUData) * data_temp_size * m_videoParam.num_thread_structs + DATA_ALIGN;
 
+#ifdef AMT_HROI_PSY_AQ
+   Ipp16u fs_cpu_feature = 0;
+   if (m_videoParam.cpuFeature == CPU_FEAT_AUTO) {
+       Ipp32u cpuIdInfoRegs[4];
+       Ipp64u featuresMask;
+       IppStatus err = ippGetCpuFeatures(&featuresMask, cpuIdInfoRegs);
+       if (ippStsNoErr != err)                             fs_cpu_feature = 0;
+       else if (featuresMask & (Ipp64u)(ippCPUID_AVX2))    fs_cpu_feature = 2;
+       else if (featuresMask & (Ipp64u)(ippCPUID_SSE41))   fs_cpu_feature = 1;
+   } else if (m_videoParam.cpuFeature == CPU_FEAT_AVX2) {
+       fs_cpu_feature = 2;
+   } else if (m_videoParam.cpuFeature == CPU_FEAT_SSE4) {
+       fs_cpu_feature = 1;
+   }
+   if (FS_Init(&m_faceSkinDet, m_videoParam.Width, m_videoParam.Height, 1, 1, fs_cpu_feature) != 0) sts = MFX_ERR_MEMORY_ALLOC;
+   MFX_CHECK_STS(sts);
+#endif
 
     // ConfigureTileFragmentation()
     m_videoParam.m_tile_ids = m_tile_ids;
@@ -1243,7 +1292,12 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
             statsAllocInfo.height = m_videoParam.Height >> m_videoParam.LowresFactor;
             m_statsLowresPool.Init(statsAllocInfo, 0);
         }
-        if (m_videoParam.SceneCut) {
+#ifndef AMT_HROI_PSY_AQ
+        if (m_videoParam.SceneCut) 
+#else
+        if (m_videoParam.SceneCut || (m_videoParam.DeltaQpMode & AMT_DQP_HROI)) 
+#endif
+        {
             SceneStats::AllocInfo statsAllocInfo;
             // it doesn't make width/height here
             m_sceneStatsPool.Init(statsAllocInfo, 0);
@@ -1760,7 +1814,11 @@ Frame *H265Encoder::AcceptFrame(mfxFrameSurface1 *surface, mfxEncodeCtrl *ctrl, 
         m_dpb.splice(m_dpb.end(), m_reorderedQueue, m_reorderedQueue.begin());
         m_encodeQueue.push_back(m_dpb.back());
 
+#ifdef AMT_HROI_PSY_AQ
+        if (((m_videoParam.DeltaQpMode & AMT_DQP_PSY_HROI) || m_brc) && m_videoParam.AnalyzeCmplx > 0) {
+#else
         if (m_brc && m_videoParam.AnalyzeCmplx > 0) {
+#endif
             Ipp32s laDepth = m_videoParam.RateControlDepth - 1;
             if (m_videoParam.picStruct == TFF || m_videoParam.picStruct == BFF)
                 laDepth = m_videoParam.RateControlDepth * 2 - 1;
@@ -1944,6 +2002,11 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
     memset(frame->m_lcuQps[1].data(), frame->m_sliceQpY, sizeof(frame->m_sliceQpY)*(numCtb<<2));
     memset(frame->m_lcuQps[2].data(), frame->m_sliceQpY, sizeof(frame->m_sliceQpY)*(numCtb<<4));
     memset(frame->m_lcuQps[3].data(), frame->m_sliceQpY, sizeof(frame->m_sliceQpY)*(numCtb<<6));
+    memset(&frame->m_lcuQpOffs[0][0], 0, sizeof(frame->m_sliceQpY)*numCtb);
+    memset(&frame->m_lcuQpOffs[1][0], 0, sizeof(frame->m_sliceQpY)*(numCtb<<2));
+    memset(&frame->m_lcuQpOffs[2][0], 0, sizeof(frame->m_sliceQpY)*(numCtb<<4));
+    memset(&frame->m_lcuQpOffs[3][0], 0, sizeof(frame->m_sliceQpY)*(numCtb<<6));
+
     if (m_videoParam.RegionIdP1 > 0)
         for (Ipp32s i = 0; i < numCtb << m_videoParam.Log2NumPartInCU; i++)
             frame->cu_data[i].predMode = MODE_INTRA;
@@ -1957,11 +2020,15 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
         bool extraMult = SliceLambdaMultiplier(rd_lamba_multiplier, m_videoParam,  (currSlices + i)->slice_type, frame, 0, 0);
         SetSliceLambda(m_videoParam, currSlices + i, frame->m_sliceQpY, frame, rd_lamba_multiplier, extraMult);
     }
-    
+
+#ifdef AMT_HROI_PSY_AQ
+    if ((m_videoParam.DeltaQpMode & AMT_DQP_PSY_HROI) && m_videoParam.UseDQP)
+        ApplyHRoiDeltaQp(frame, m_videoParam);
+    else 
+#endif
     if (m_videoParam.numRoi && m_videoParam.UseDQP)
         ApplyRoiDeltaQp(frame, m_videoParam);
-
-    if (m_videoParam.DeltaQpMode && m_videoParam.UseDQP)
+    else if (m_videoParam.DeltaQpMode && m_videoParam.UseDQP)
         ApplyDeltaQp(frame, m_videoParam, m_brc ? 1 : 0);
 
     frame->m_ttEncComplete.numDownstreamDependencies = 0;
@@ -2861,7 +2928,7 @@ template <int widthInBytesMul, class PixType> void CopyAndPadPlane(
     Ipp8u *dstB = (Ipp8u *)dst;
     Ipp8u *srcB = (Ipp8u *)src;
     // top left corner
-    FillCorner(dst - padL - pitchDst * padV, pitchDstB, padL, padV + 1, src[0]);
+    if(padL) FillCorner(dst - padL - pitchDst * padV, pitchDstB, padL, padV + 1, src[0]);
     dstB = (Ipp8u *)dst;
     srcB = (Ipp8u *)src;
     if (widthInBytesMul == 16) {
@@ -2869,7 +2936,7 @@ template <int widthInBytesMul, class PixType> void CopyAndPadPlane(
         for (Ipp32s x = 0; x < widthB; x += 16)
             FillVer(dstB + x - pitchDstB * padV, pitchDstB, padV + 1, _mm_load_si128((__m128i*)(srcB+x)));
         // top right corner
-        FillCorner(dst + width - pitchDst * padV, pitchDstB, padR, padV + 1, src[width - 1]);
+        if(padR) FillCorner(dst + width - pitchDst * padV, pitchDstB, padR, padV + 1, src[width - 1]);
     } else {
         // top border
         Ipp32s x = 0;
@@ -2877,7 +2944,7 @@ template <int widthInBytesMul, class PixType> void CopyAndPadPlane(
             FillVer(dstB + x - pitchDstB * padV, pitchDstB, padV + 1, _mm_load_si128((__m128i*)(srcB+x)));
         FillVer8(dstB + x - pitchDstB * padV, pitchDstB, padV + 1, *(Ipp64u*)(srcB+x));
         // top right corner
-        FillCorner8(dst + width - pitchDst * padV, pitchDstB, padR, padV + 1, src[width - 1]);
+        if(padR) FillCorner8(dst + width - pitchDst * padV, pitchDstB, padR, padV + 1, src[width - 1]);
     }
 
     srcB += pitchSrcB;
@@ -2904,13 +2971,13 @@ template <int widthInBytesMul, class PixType> void CopyAndPadPlane(
 
     
     // bottom left corner
-    FillCorner((PixType*)dstB - padL, pitchDstB, padL, padV + 1, ((PixType*)srcB)[0]);
+    if(padL) FillCorner((PixType*)dstB - padL, pitchDstB, padL, padV + 1, ((PixType*)srcB)[0]);
     if (widthInBytesMul == 16) {
         // bottom border
         for (Ipp32s x = 0; x < widthB; x += 16)
             FillVer(dstB + x, pitchDstB, padV + 1, _mm_load_si128((__m128i*)(srcB + x)));
         // bottom right corner
-        FillCorner((PixType*)dstB + width, pitchDstB, padR, padV + 1, ((PixType*)srcB)[width-1]);
+        if(padR) FillCorner((PixType*)dstB + width, pitchDstB, padR, padV + 1, ((PixType*)srcB)[width-1]);
     } else {
         // bottom border
         Ipp32s x = 0;
@@ -2918,7 +2985,7 @@ template <int widthInBytesMul, class PixType> void CopyAndPadPlane(
             FillVer(dstB + x, pitchDstB, padV + 1, _mm_load_si128((__m128i*)(srcB + x)));
         FillVer8(dstB + x, pitchDstB, padV + 1, *(Ipp64u*)(srcB + x));
         // bottom right corner
-        FillCorner8((PixType*)dstB + width, pitchDstB, padR, padV + 1, ((PixType*)srcB)[width-1]);
+        if(padR) FillCorner8((PixType*)dstB + width, pitchDstB, padR, padV + 1, ((PixType*)srcB)[width-1]);
     }
 }
 
@@ -2946,8 +3013,17 @@ template <class PixType> void H265Enc::CopyAndPad(const mfxFrameSurface1 &src, F
             : CopyAndPadPlane<16,Ipp8u>)(
                 (Ipp8u*)src.Data.Y, srcPitch, (Ipp8u*)dst.y, dst.pitch_luma_pix,
                 dst.width, dst.height, paddingL, paddingR, paddingH);
+#ifdef AMT_HROI_PSY_AQ
+        if(dst.height & 0xf) {
+            CopyAndPadPlane<16>((Ipp16u*)src.Data.UV, srcPitch>>1, (Ipp16u*)dst.uv, dst.pitch_chroma_pix>>1,
+                   dst.width>>1, heightC, 0, 0, 8 - (heightC&0x7));
+        } else 
+#endif
+        {
         CopyPlane((Ipp16u*)src.Data.UV, srcPitch>>1, (Ipp16u*)dst.uv, dst.pitch_chroma_pix>>1,
                     dst.width>>1, heightC);
+        }
+
     } else {
         srcPitch >>= 1;
         CopyAndPadPlane<16>((Ipp16u*)src.Data.Y, srcPitch, (Ipp16u*)dst.y, dst.pitch_luma_pix,
@@ -2956,6 +3032,7 @@ template <class PixType> void H265Enc::CopyAndPad(const mfxFrameSurface1 &src, F
                     dst.width>>1, heightC);
     }
 }
+
 template void H265Enc::CopyAndPad<Ipp8u>(const mfxFrameSurface1 &src, FrameData &dst, Ipp32u fourcc);
 template void H265Enc::CopyAndPad<Ipp16u>(const mfxFrameSurface1 &src, FrameData &dst, Ipp32u fourcc);
 
@@ -2991,7 +3068,14 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
         roi.height >>= m_videoParam.chromaShiftH;
         ippiCopyManaged_8u_C1R(in.Data.UV, in.Data.Pitch, out->m_origin->uv, out->m_origin->pitch_chroma_bytes, roi, 2);
         fa.Unlock(fa.pthis, in.Data.MemId, &in.Data);
+#ifdef AMT_HROI_PSY_AQ
+        if((m_videoParam.DeltaQpMode & AMT_DQP_HROI) && (out->m_origin->height & 0xf)) {
+            PadRectLumaAndChroma(*out->m_origin, m_videoParam.fourcc, 0, 0, out->m_origin->width, out->m_origin->height);
+        } else
+#endif
+        {
         PadRectLuma(*out->m_origin, m_videoParam.fourcc, 0, 0, out->m_origin->width, out->m_origin->height);
+        }
     } else {
         bool locked = false;
         if (in.Data.Y == 0) {
@@ -3049,13 +3133,19 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
             out->m_stats[1] = m_statsLowresPool.Allocate();
             out->m_stats[1]->ResetAvgMetrics();
         }
-        if (m_videoParam.SceneCut) {
+#ifndef AMT_HROI_PSY_AQ
+        if (m_videoParam.SceneCut) 
+#else
+        if (m_videoParam.SceneCut || (m_videoParam.DeltaQpMode & AMT_DQP_HROI)) 
+#endif
+        {
             out->m_sceneStats = m_sceneStatsPool.Allocate();
         }
     }
 
     // each new frame should be analysed by lookahead algorithms family.
-    Ipp32u ownerCount = (m_videoParam.DeltaQpMode ? 1 : 0) + (m_videoParam.SceneCut ? 1 : 0) + (m_videoParam.AnalyzeCmplx ? 1 : 0);
+    // PSY_HROI tightly coupled with AnalyzeCmplx with optional CAQ/PAQ/CAL, PSY_HROI not independent owner.
+    Ipp32u ownerCount = ((m_videoParam.DeltaQpMode & ~AMT_DQP_PSY_HROI) ? 1 : 0) + (m_videoParam.SceneCut ? 1 : 0) + (m_videoParam.AnalyzeCmplx ? 1 : 0);
     out->m_lookaheadRefCounter = ownerCount;
 }
 

@@ -43,6 +43,8 @@
 #include "mfxla.h"
 #include "mfx_ext_buffers.h"
 
+#define AMT_DQP_FIX
+#define AMT_HROI_PSY_AQ
 
 #define MEMOIZE_SUBPEL_EXT_W (8+8)
 #define MEMOIZE_SUBPEL_EXT_H (8+2)
@@ -441,9 +443,12 @@ enum {
 enum {
     AMT_DQP_CAQ = 0x1,
     AMT_DQP_CAL = 0x2,
-    AMT_DQP_PAQ = 0x4
+    AMT_DQP_PAQ = 0x4,
+    AMT_DQP_PSY = 0x8,
+    AMT_DQP_HROI = 0x10
 };
 
+#define AMT_DQP_PSY_HROI (AMT_DQP_PSY|AMT_DQP_HROI)
 
 class Frame;
 

@@ -103,7 +103,8 @@ namespace H265Enc {
         Ipp32s PicWidthInBlk  = (width  + blkSize - 1) / blkSize;
         Ipp32s PicHeightInBlk = (height + blkSize - 1) / blkSize;
         Ipp32s numBlk = PicWidthInBlk * PicHeightInBlk;
-
+        m_PicWidthInBlks = PicWidthInBlk;
+        m_PicHeightInBlks = PicHeightInBlk;
         // for BRC
         m_intraSatd.resize(numBlk);
         m_interSatd.resize(numBlk);
@@ -123,9 +124,9 @@ namespace H265Enc {
         Ipp32s alignedFrameSize = alignedWidth * ((height+63)&~63);
         m_pitchRsCs4 = alignedWidth>>2;
         for (Ipp32s log2BlkSize = 2; log2BlkSize <= 6; log2BlkSize ++) {
-			m_rcscSize[log2BlkSize-2] = alignedFrameSize>>(log2BlkSize<<1);
-			m_rs[log2BlkSize-2] = (Ipp32s *)H265_Malloc(sizeof(Ipp32s) * m_rcscSize[log2BlkSize-2]); // ippMalloc is 64-bytes aligned
-			m_cs[log2BlkSize-2] = (Ipp32s *)H265_Malloc(sizeof(Ipp32s) * m_rcscSize[log2BlkSize-2]);
+            m_rcscSize[log2BlkSize-2] = alignedFrameSize>>(log2BlkSize<<1);
+            m_rs[log2BlkSize-2] = (Ipp32s *)H265_Malloc(sizeof(Ipp32s) * m_rcscSize[log2BlkSize-2]); // ippMalloc is 64-bytes aligned
+            m_cs[log2BlkSize-2] = (Ipp32s *)H265_Malloc(sizeof(Ipp32s) * m_rcscSize[log2BlkSize-2]);
             memset(m_rs[log2BlkSize-2], 0, sizeof(Ipp32s) * m_rcscSize[log2BlkSize-2]);
             memset(m_cs[log2BlkSize-2], 0, sizeof(Ipp32s) * m_rcscSize[log2BlkSize-2]);
         }
@@ -139,6 +140,19 @@ namespace H265Enc {
         coloc_futr[1].resize(numCtbs<<2, 0);
         coloc_futr[2].resize(numCtbs<<4, 0);
         coloc_futr[3].resize(numCtbs<<6, 0);
+
+#ifdef AMT_HROI_PSY_AQ
+        // Inside HROI aligned by 16
+        Ipp32s roiPitch = (width + 15)&~15;
+        Ipp32s roiHeight = (height + 15)&~15;
+        m_RoiPitch = roiPitch >> 3;
+        Ipp32s numBlkRoi = m_RoiPitch * (roiHeight >> 3);
+        roi_map_8x8.resize(3*numBlkRoi, 0);
+        lum_avg_8x8.resize(numBlkRoi, 0);
+        ctbStats = (CtbRoiStats *)H265_Malloc(sizeof(CtbRoiStats) * numBlkRoi);
+        if (ctbStats == NULL) throw std::exception();
+        memset(ctbStats, 0, sizeof(CtbRoiStats) * numBlkRoi);
+#endif
 
         ResetAvgMetrics();
     }
@@ -156,8 +170,8 @@ namespace H265Enc {
         m_mv_pdist_past.resize(numBlk);
         m_mv_pdist_future.resize(numBlk);
         for (Ipp32s log2BlkSize = 2; log2BlkSize <= 6; log2BlkSize++) {
-			if (m_rs[log2BlkSize-2]) { H265_Free(m_rs[log2BlkSize-2]); m_rs[log2BlkSize-2] = NULL; }
-			if (m_cs[log2BlkSize-2]) { H265_Free(m_cs[log2BlkSize-2]); m_cs[log2BlkSize-2] = NULL; }
+            if (m_rs[log2BlkSize-2]) { H265_Free(m_rs[log2BlkSize-2]); m_rs[log2BlkSize-2] = NULL; }
+            if (m_cs[log2BlkSize-2]) { H265_Free(m_cs[log2BlkSize-2]); m_cs[log2BlkSize-2] = NULL; }
         }
         qp_mask[0].resize(numBlk);
         qp_mask[1].resize(numBlk);
@@ -167,6 +181,12 @@ namespace H265Enc {
         coloc_futr[1].resize(numBlk);
         coloc_futr[2].resize(numBlk);
         coloc_futr[3].resize(numBlk);
+
+#ifdef AMT_HROI_PSY_AQ
+        roi_map_8x8.resize(0);
+        lum_avg_8x8.resize(0);
+        if (ctbStats) H265_Free(ctbStats);   ctbStats = NULL;
+#endif
     }
 
 
@@ -301,6 +321,10 @@ namespace H265Enc {
         m_lcuQps[2].resize(numCtbs<<4);
         m_lcuQps[3].resize(numCtbs<<6);
         m_lastCodedQp.resize(numCtbs);
+        m_lcuQpOffs[0].resize(numCtbs, 0);
+        m_lcuQpOffs[1].resize(numCtbs<<2, 0);
+        m_lcuQpOffs[2].resize(numCtbs<<4, 0);
+        m_lcuQpOffs[3].resize(numCtbs<<6, 0);
         m_bitDepthLuma =  par->bitDepthLuma;
         m_bitDepthChroma = par->bitDepthChroma;
         m_bdLumaFlag = par->bitDepthLuma > 8;

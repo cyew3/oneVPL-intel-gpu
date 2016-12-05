@@ -67,6 +67,45 @@
     <ClCompile Include="h265\src\mfx_h265_cmcopy.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\fs_det\src\Cleanup.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\Dim.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\FaceDet.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\FaceDetTmpl.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\FrameBuff.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\FSapi.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\Morphology.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\Params.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\SkinDetBuff.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\SkinHisto.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\SkinSegm.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\Video.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fs_det\src\SkinDetAlg.cpp">
+      <Filter>HROI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h265\include\mfx_h265_brc.h">
@@ -129,6 +168,9 @@
     <Filter Include="src">
       <UniqueIdentifier>{78c71654-8342-40d9-8a1f-b5b1785db8f4}</UniqueIdentifier>
       <Extensions>*.cpp</Extensions>
+    </Filter>
+    <Filter Include="HROI">
+      <UniqueIdentifier>{74f8a3e3-9b8b-422e-beb0-fc8587580149}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

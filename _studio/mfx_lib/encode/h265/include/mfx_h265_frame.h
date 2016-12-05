@@ -34,6 +34,29 @@ namespace H265Enc {
         Ipp16s  mvy;
     };
 
+#ifdef AMT_HROI_PSY_AQ
+#define NUM_HROI_CLASS  3
+    typedef struct Struct_RoiDataPic {
+        Ipp32f luminanceAvg;
+        Ipp32f spatAvgCmplx;
+        Ipp32f spatAvgMinQCmplx;
+        Ipp32s numCtbRoi[NUM_HROI_CLASS];
+        Ipp64f cmplx[NUM_HROI_CLASS];
+    } RoiDataPic;
+
+    typedef struct Struct_CtbRoiStats {
+        Ipp32s segCount;
+        Ipp32s roiLevel;
+        Ipp32s luminance;
+        Ipp32f spatCmplx;
+        Ipp32f spatMinQCmplx;
+        Ipp32f complexity;
+        Ipp32s sensitivity;
+        Ipp32s sedge;
+        Ipp32s dqp;
+    } CtbRoiStats;
+#endif
+
     class State
     {
     public:
@@ -68,6 +91,9 @@ namespace H265Enc {
 
     struct Statistics : public RefCounter
     {
+        Ipp32s m_PicWidthInBlks;
+        Ipp32s m_PicHeightInBlks;
+        Ipp32s m_RoiPitch;
         std::vector<Ipp32s> m_interSad;
         std::vector<Ipp32s> m_interSad_pdist_past;
         std::vector<Ipp32s> m_interSad_pdist_future;
@@ -77,7 +103,7 @@ namespace H265Enc {
         std::vector<H265MV> m_mv_pdist_past;
 
         Ipp32s m_pitchRsCs4;
-		Ipp32s m_rcscSize[5];
+        Ipp32s m_rcscSize[5];
         Ipp32s* m_rs[5];
         Ipp32s* m_cs[5];
         std::vector<Ipp32s> qp_mask[4];
@@ -85,6 +111,13 @@ namespace H265Enc {
 
         std::vector<Ipp32s> m_intraSatd;
         std::vector<Ipp32s> m_interSatd;
+
+#ifdef AMT_HROI_PSY_AQ
+        std::vector<Ipp8u>  roi_map_8x8;
+        std::vector<Ipp8u>  lum_avg_8x8;
+        RoiDataPic roi_pic;
+        CtbRoiStats *ctbStats;
+#endif
 
         Ipp64f m_frameRs;
         Ipp64f m_frameCs;
@@ -98,6 +131,7 @@ namespace H265Enc {
         Ipp32f m_intraRatio;
 
         // SceneCut info
+        Ipp32s m_sceneChange;
         Ipp32s m_sceneCut;
         Ipp64s m_metric;// special metric per frame for sceneCut based on +10 frames lookahead 
         
@@ -338,6 +372,7 @@ namespace H265Enc {
 
         Ipp8s     m_sliceQpY;
         std::vector<Ipp8s> m_lcuQps[4]; // array for LCU QPs
+        std::vector<Ipp8s> m_lcuQpOffs[4]; // array for LCU QPs
         std::vector<Ipp8s> m_lastCodedQp;
         H265Slice m_dqpSlice[2*MAX_DQP+1];
 

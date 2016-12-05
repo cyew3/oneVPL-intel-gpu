@@ -280,7 +280,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(MaxCUDepthAdapt,          OPT_TRI_STATE,  "on/off adaptive max CU depth"),
         HANDLE_HEVC_OPTION(NumBiRefineIter,          OPT_UINT_16,    "1-check best L0+L1; N-check best L0+L1 then N-1 refinement iterations"),
         HANDLE_HEVC_OPTION(CUSplitThreshold,         OPT_UINT_16,    "skip CU split check: threshold = CUSplitThreshold / 256.0"),
-        HANDLE_HEVC_OPTION(DeltaQpMode,              OPT_UINT_16,    "DeltaQP modes: 0-default 1-disabled;  1+(0x1 = CAQ, 0x2 = CAL, 0x4 = PAQ)"),
+        HANDLE_HEVC_OPTION(DeltaQpMode,              OPT_UINT_16,    "DeltaQP modes: 0-default; 1-disabled;  1+(0x1 = CAQ, 0x2 = CAL, 0x4 = PAQ, 0x8 = PSY, 0x10=HROI)"),
         HANDLE_HEVC_OPTION(Enable10bit,              OPT_TRI_STATE,  "on/off 10 bit coding"),
         HANDLE_HEVC_OPTION(CpuFeature,               OPT_UINT_16,    "0-auto, 1-px, 2-sse4, 3-sse4atom, 4-ssse3, 5-avx2"),
         HANDLE_HEVC_OPTION(TryIntra,                 OPT_UINT_16,    "Try Intra in Inter; 0-default, 1-Always, 2-Based on Content Analysis"),

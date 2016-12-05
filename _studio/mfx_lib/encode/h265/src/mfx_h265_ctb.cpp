@@ -1038,6 +1038,7 @@ void H265CU<PixType>::InitCu(
 
     m_currFrame = (Frame*)frame;
 
+
     FrameData* recon = m_currFrame->m_recon;
     m_pitchRecLuma = recon->pitch_luma_pix;
     m_pitchRecChroma = recon->pitch_chroma_pix;
@@ -1586,7 +1587,11 @@ template <typename PixType>
 Ipp8u H265CU<PixType>::GetAdaptiveIntraMinDepth(Ipp32s absPartIdx, Ipp32s depth, Ipp32s& maxSC)
 {
     Ipp8u intraMinDepth = 0;
+#ifdef AMT_HROI_PSY_AQ
+    Ipp32f delta_sc[10]   =   {10.0, 39.0, 81.0, 168.0, 268.0, 395.0, 553.0, 744.0, 962.0, 962.0};
+#else
     Ipp32f delta_sc[10]   =   {12.0, 39.0, 81.0, 168.0, 268.0, 395.0, 553.0, 744.0, 962.0, 962.0};
+#endif
     Ipp32s subSC[4];
     Ipp32f subSCpp[4];
     intraMinDepth = 0;
@@ -1603,14 +1608,30 @@ Ipp8u H265CU<PixType>::GetAdaptiveIntraMinDepth(Ipp32s absPartIdx, Ipp32s depth,
             }
         }
     }
-    // absolutes & overrides
-    if(IsTuSplitIntra() && ((m_par->Log2MaxCUSize-depth) <= 5 || m_par->QuadtreeTUMaxDepthIntra>2)) {
-        if(maxSC<5) intraMinDepth = 0;
-    } else 
+
+#if defined(AMT_HROI_PSY_AQ)
+    if((m_par->DeltaQpMode&AMT_DQP_HROI) && m_currFrame->m_stats[0]->ctbStats[m_ctbAddr].roiLevel == 1) 
     {
-        if(maxSC>=m_par->IntraMinDepthSC)  intraMinDepth = 1;
-        if(maxSC<2)                        intraMinDepth = 0;
+        // absolutes & overrides for Partial HROI
+        // Allow more depth even if TuSplitIntra bcos SC can be low and SplitStrength is high in HROI edge region
+        if(IsTuSplitIntra() && ((Ipp32s)(m_par->Log2MaxCUSize-depth) <= (Ipp32s)(5 - ((m_par->SplitThresholdStrengthTUIntra<2)?0:1)) || m_par->QuadtreeTUMaxDepthIntra>2)) {
+            if(maxSC<5) intraMinDepth = 0;
+        } else {
+            if(maxSC>=m_par->IntraMinDepthSC)  intraMinDepth = 1;
+            // Partial HROI SC is usually low but chroma has known edge (skin tone)
+        }
+    } else
+#endif
+    {
+        // absolutes & overrides
+        if(IsTuSplitIntra() && ((m_par->Log2MaxCUSize-depth) <= 5 || m_par->QuadtreeTUMaxDepthIntra>2)) {
+            if(maxSC<5) intraMinDepth = 0;
+        } else {
+            if(maxSC>=m_par->IntraMinDepthSC)  intraMinDepth = 1;
+            if(maxSC<2)                        intraMinDepth = 0;
+        }
     }
+
     return intraMinDepth+=depth;
 }
 
@@ -1647,6 +1668,11 @@ void H265CU<PixType>::GetAdaptiveMinDepth(Ipp32s absPartIdx, Ipp32s depth)
         FrameData *ref0 = m_currFrame->m_refPicList[0].m_refFrames[0]->m_recon;
         STC = GetSpatioTemporalComplexityColocated(absPartIdx, depth, 0, depth, ref0);
         if(STC>=m_par->InterMinDepthSTC && m_intraMinDepth>depth) interMinDepthColSTC=1;
+#if defined(AMT_HROI_PSY_AQ)
+        // Partial HROI with Motion
+        if((m_par->DeltaQpMode&AMT_DQP_HROI) && m_currFrame->m_stats[0]->ctbStats[m_ctbAddr].roiLevel == 1 && !interMinDepthColSTC && STC)
+            interMinDepthColSTC=1;
+#endif
     }
 
     Ipp8u interMinDepthColCu = 0;
@@ -1690,6 +1716,7 @@ void H265CU<PixType>::GetAdaptiveMinDepth(Ipp32s absPartIdx, Ipp32s depth)
         Ipp32f depthAvg = (Ipp32f)depthSum / numParts;
 
         Ipp8u depthDelta = 1;
+
         if (qpCur - qpPrev < 0 || (qpCur - qpPrev >= 0 && depthAvg - depthMin > 0.5f))
             depthDelta = 0;
 
@@ -1764,7 +1791,11 @@ void H265CU<PixType>::GetProjectedDepth(Ipp32s absPartIdx, Ipp32s depth, Ipp8u s
             }
         }
         if(minDepth0==MAX_TOTAL_DEPTH || foundDepth0<numParts/5) minDepth0 = 0;
+#ifndef AMT_HROI_PSY_AQ
         if(layer==0 && qp0<qpCur) minDepth0 = 0;
+#else
+        if(layer==0 && qp0<(qpCur-1)) minDepth0 = 0;
+#endif
 
         if(m_cslice->slice_type == B_SLICE) {
             for(Ipp32s i=0;i<numParts;i+=4) {
@@ -1786,7 +1817,11 @@ void H265CU<PixType>::GetProjectedDepth(Ipp32s absPartIdx, Ipp32s depth, Ipp8u s
             }
         }
         if(minDepth1==MAX_TOTAL_DEPTH || foundDepth1<numParts/5) minDepth1 = 0;
-        if(layer==0 && qp1<qpCur) minDepth0 = 0;
+#ifndef AMT_HROI_PSY_AQ
+        if(layer==0 && qp1<qpCur) minDepth1 = 0;
+#else
+        if(layer==0 && qp1<(qpCur-1)) minDepth1 = 0;
+#endif
 
         if(foundDepth0 && foundDepth1) {
             m_projMinDepth = (Ipp8u)(IPP_MIN(minDepth0, minDepth1));
@@ -1824,9 +1859,13 @@ void H265CU<PixType>::GetProjectedDepth(Ipp32s absPartIdx, Ipp32s depth, Ipp8u s
                 }
             }
         }
+#ifdef AMT_HROI_PSY_AQ
+        if(maxDepth0==0 || foundDepth0<numParts/5 || qp0>(qpCur+1)) maxDepth0 = MAX_TOTAL_DEPTH;
+        if(layer==0) maxDepth0++;
+#else
         if(maxDepth0==0 || foundDepth0<numParts/5 || qp0>qpCur) maxDepth0 = MAX_TOTAL_DEPTH;
         if(qp0==qpCur) maxDepth0++;
-
+#endif
         if(m_cslice->slice_type == B_SLICE) {
             for(Ipp32s i=0;i<numParts;i+=4) {
                 Ipp32s posx = (Ipp8u)((h265_scan_z2r4[absPartIdx+i] & 15) << LOG2_MIN_TU_SIZE);
@@ -1844,8 +1883,13 @@ void H265CU<PixType>::GetProjectedDepth(Ipp32s absPartIdx, Ipp32s depth, Ipp8u s
                 }
             }
         }
+#ifdef AMT_HROI_PSY_AQ
+        if(maxDepth1==0 || foundDepth1<numParts/5 || qp1>(qpCur+1)) maxDepth1 = MAX_TOTAL_DEPTH;
+        if(layer==0) maxDepth1++;
+#else
         if(maxDepth1==0 || foundDepth1<numParts/5 || qp1>qpCur) maxDepth1 = MAX_TOTAL_DEPTH;
         if(qp1==qpCur) maxDepth1++;
+#endif
 
         m_adaptMaxDepth = IPP_MIN(m_adaptMaxDepth, IPP_MIN(maxDepth0, maxDepth1));
     }
@@ -2472,11 +2516,11 @@ CostType H265CU<PixType>::ModeDecision(Ipp32s absPartIdx, Ipp8u depth)
         return CostType(0); // CU is out of picture
     }
 
+    Ipp32u right = left + (m_par->MaxCUSize >> depth) - 1;
+    Ipp32u bottom = top + (m_par->MaxCUSize >> depth) - 1;
     // get split mode
     Ipp8u splitMode = SPLIT_NONE;
     if (depth < m_par->MaxCUDepth - m_par->AddCUDepth) {
-        Ipp32u right = left + (m_par->MaxCUSize >> depth) - 1;
-        Ipp32u bottom = top + (m_par->MaxCUSize >> depth) - 1;
         if (right >= m_par->Width || bottom >= m_par->Height ||
             m_par->Log2MaxCUSize - depth - (m_par->QuadtreeTUMaxDepthIntra - 1) > m_par->QuadtreeTULog2MaxSize) {
             splitMode = SPLIT_MUST;
@@ -2578,9 +2622,14 @@ CostType H265CU<PixType>::ModeDecision(Ipp32s absPartIdx, Ipp8u depth)
             const H265CUData *dataBestNonSplit = GetBestCuDecision(absPartIdx, depth);
             Ipp32s qp_best = dataBestNonSplit->qp;
 
+#ifdef AMT_HROI_PSY_AQ
+            if(m_par->DeltaQpMode & AMT_DQP_CAQ) qp_best -= m_currFrame->m_lcuQpOffs[dqpDepth][m_ctbAddr];
+            qp_best = IPP_MIN(qp_best, m_currFrame->m_sliceQpY);
+#else 
             if(m_par->DeltaQpMode) {
                 qp_best = m_currFrame->m_sliceQpY;
             }
+#endif
 
             CostType cuSplitThresholdCu = m_par->cu_split_threshold_cu[Saturate(0,51,qp_best)][m_cslice->slice_type != I_SLICE][depth];
             CostType costBestNonSplit = IPP_MIN(m_costStored[depth], m_costCurr) - costInitial;
@@ -2630,18 +2679,33 @@ CostType H265CU<PixType>::ModeDecision(Ipp32s absPartIdx, Ipp8u depth)
         skippedFlag = dataBestNonSplit->flags.skippedFlag;
         Ipp32s qp_best = dataBestNonSplit->qp;
 
+        
+#ifdef AMT_HROI_PSY_AQ
+        if(m_par->DeltaQpMode & AMT_DQP_CAQ) qp_best -= m_currFrame->m_lcuQpOffs[dqpDepth][m_ctbAddr];
+        qp_best = IPP_MIN(qp_best, m_currFrame->m_sliceQpY);
+#else
         if(m_par->DeltaQpMode) {
             qp_best = m_currFrame->m_sliceQpY;
         }
+#endif
 
-
-        if(m_cslice->slice_type == I_SLICE && m_par->SplitThresholdStrengthCUIntra > m_par->SplitThresholdStrengthTUIntra) {
+#if defined(AMT_HROI_PSY_AQ)
+        if(m_cslice->slice_type == I_SLICE && (m_par->SplitThresholdStrengthCUIntra > m_par->SplitThresholdStrengthTUIntra || 
+            ( (m_par->DeltaQpMode&AMT_DQP_PSY_HROI) && (m_currFrame->m_stats[0]->ctbStats[m_ctbAddr].roiLevel == 1 || m_currFrame->m_stats[0]->ctbStats[m_ctbAddr].segCount) ) )) {
+#else
+        if(m_cslice->slice_type == I_SLICE && m_par->SplitThresholdStrengthCUIntra > m_par->SplitThresholdStrengthTUIntra ) {
+#endif
             if(m_SCid[depth][absPartIdx]<5) {
                 cuSplitThresholdCu = m_par->cu_split_threshold_cu[Saturate(0,51,qp_best-2)][m_cslice->slice_type != I_SLICE][depth];
             } else {
                 cuSplitThresholdCu = m_par->cu_split_threshold_cu[Saturate(0,51,qp_best)][m_cslice->slice_type != I_SLICE][depth];
             }
-        } else if(m_cslice->slice_type != I_SLICE && m_par->SplitThresholdStrengthCUInter > m_par->SplitThresholdStrengthTUIntra) {
+#if defined(AMT_HROI_PSY_AQ)
+        } else if(m_cslice->slice_type != I_SLICE && (m_par->SplitThresholdStrengthCUInter > m_par->SplitThresholdStrengthTUIntra || 
+            ((m_par->DeltaQpMode&AMT_DQP_PSY_HROI) && (m_currFrame->m_stats[0]->ctbStats[m_ctbAddr].roiLevel == 1 || m_currFrame->m_stats[0]->ctbStats[m_ctbAddr].segCount) ) )) {
+#else
+        } else if(m_cslice->slice_type != I_SLICE && m_par->SplitThresholdStrengthCUInter > m_par->SplitThresholdStrengthTUIntra ) {
+#endif
             if(m_SCid[depth][absPartIdx]<5 && tryIntra) {
                 cuSplitThresholdCu = m_par->cu_split_threshold_cu[Saturate(0,51,qp_best-2)][m_cslice->slice_type != I_SLICE][depth];
             } else if(m_STC[depth][absPartIdx]<1 || m_SCid[depth][absPartIdx]<5) {
@@ -2651,10 +2715,8 @@ CostType H265CU<PixType>::ModeDecision(Ipp32s absPartIdx, Ipp8u depth)
             } else      {
                 cuSplitThresholdCu = m_par->cu_split_threshold_cu[Saturate(0,51,qp_best)][m_cslice->slice_type != I_SLICE][depth];
             }
-        } else
-
-        {
-        cuSplitThresholdCu = m_par->cu_split_threshold_cu[Saturate(0,51,qp_best)][m_cslice->slice_type != I_SLICE][depth];
+        } else {
+            cuSplitThresholdCu = m_par->cu_split_threshold_cu[Saturate(0,51,qp_best)][m_cslice->slice_type != I_SLICE][depth];
         }
 
         if (m_par->cuSplitThreshold > 0) {
@@ -2724,7 +2786,7 @@ CostType H265CU<PixType>::ModeDecision(Ipp32s absPartIdx, Ipp8u depth)
 
         }
 
-        if(splitMode==SPLIT_MUST && splitModeOrig==SPLIT_TRY) {
+        if(m_cslice->slice_type != I_SLICE && splitMode==SPLIT_MUST && splitModeOrig==SPLIT_TRY) {
             if(JoinCU(absPartIdx, depth)) {
                 return m_costCurr - costInitial;
             }
@@ -2746,13 +2808,10 @@ CostType H265CU<PixType>::ModeDecision(Ipp32s absPartIdx, Ipp8u depth)
             cur->num[depth]++;
             cur->cost[depth] = (costTotal + costBestNonSplit) / cur->num[depth];
         }
-
     }
-
 
     // keep best decision
     LoadFinalCuDecision(absPartIdx, depth, true);
-
     return m_costCurr - costInitial;
 }
 
@@ -2797,13 +2856,18 @@ void H265CU<PixType>::CalcCostLuma(Ipp32s absPartIdx, Ipp8u depth, Ipp8u trDepth
     }
 
     CostType cuSplitThresholdTu = 0;
-
     if (splitMode == SPLIT_TRY) {
-        cuSplitThresholdTu = m_par->cu_split_threshold_tu[m_data[absPartIdx].qp][0][depth + trDepth];
+#if defined(AMT_HROI_PSY_AQ)
+        if((m_par->DeltaQpMode & AMT_DQP_PSY_HROI) && (m_currFrame->m_stats[0]->ctbStats[m_ctbAddr].roiLevel == 1 || m_currFrame->m_stats[0]->ctbStats[m_ctbAddr].segCount)) {
+            cuSplitThresholdTu = m_par->cu_split_threshold_tu[m_data[absPartIdx].qp-2][0][depth + trDepth];
+        } else
+#endif
+        {
+            cuSplitThresholdTu = m_par->cu_split_threshold_tu[m_data[absPartIdx].qp][0][depth + trDepth];
+        }
 
         // 8x8 thresholds set too high, in dc planar mode split is prefferable than NXN pu
         if (m_cuIntraAngMode==INTRA_ANG_MODE_DC_PLANAR_ONLY && width==8) cuSplitThresholdTu = 0;
-
     }
 
     if (costNoSplit >= cuSplitThresholdTu && splitMode != SPLIT_NONE) {
@@ -4772,7 +4836,9 @@ void H265CU<PixType>::MeCu(Ipp32s absPartIdx, Ipp8u depth)
     // check skip/merge 2Nx2N
     GetMergeCand(absPartIdx, PART_SIZE_2Nx2N, 0, cuWidthInMinTU, m_mergeCand);
     m_skipCandBest = -1;
+
     bool bestIsSkip = CheckMerge2Nx2N(absPartIdx, depth);
+
     if (m_par->fastSkip && bestIsSkip)
         return;
 
@@ -7526,6 +7592,7 @@ bool H265CU<PixType>::CheckMerge2Nx2N(Ipp32s absPartIdx, Ipp8u depth)
             if(STC<layer+depth+1) fastSkip = true;
         }
     }
+    //////////////////////////////////////////////// 
     if(fastSkip) {
         Ipp8u trDepthMin, trDepthMax;
         GetTrDepthMinMax(m_par, depth, PART_SIZE_2Nx2N, &trDepthMin, &trDepthMax);
@@ -10980,12 +11047,24 @@ void H265CU<PixType>::SetCuLambda(Frame* frame)
 template <typename PixType>
 void H265CU<PixType>::SetCuLambdaRoi(Frame* frame)
 {
-    Ipp32s indx = frame->m_lcuQps[0][m_ctbAddr] + (frame->m_bitDepthLuma - 8)*6;
+    Ipp32s qpAdj = (m_par->DeltaQpMode&AMT_DQP_CAQ)?frame->m_lcuQpOffs[0][m_ctbAddr]:0;
+    Ipp32s indx = frame->m_lcuQps[0][m_ctbAddr] - qpAdj + (frame->m_bitDepthLuma - 8)*6;
     H265Slice* curSlice = &(frame->m_roiSlice[indx]);
     m_rdLambda = curSlice->rd_lambda_slice;
     m_rdLambdaSqrt = curSlice->rd_lambda_sqrt_slice;
     m_ChromaDistWeight = curSlice->ChromaDistWeight_slice;
-    m_rdLambdaChroma = m_rdLambda*(3.0+1.0/m_ChromaDistWeight)/4.0;
+    if( (m_par->DeltaQpMode&AMT_DQP_CAQ) &&
+        ((curSlice->slice_type==I_SLICE) ||
+        (curSlice->slice_type==P_SLICE && m_par->BiPyramidLayers > 1) ||
+        (curSlice->slice_type==B_SLICE && m_par->BiPyramidLayers > 1 && frame->m_pyramidLayer==0))
+      )
+    {
+        m_rdLambdaChroma = m_rdLambda*(2.0+2.0/(m_ChromaDistWeight*m_par->LambdaCorrection))/4.0;
+        // to match previous results
+    } else 
+    {
+        m_rdLambdaChroma = m_rdLambda*(3.0+1.0/m_ChromaDistWeight)/4.0;
+    }
     m_rdLambdaInter = curSlice->rd_lambda_inter_slice;
     m_rdLambdaInterMv = curSlice->rd_lambda_inter_mv_slice;
 }

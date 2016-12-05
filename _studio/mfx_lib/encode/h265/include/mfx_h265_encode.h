@@ -31,6 +31,10 @@
 #include "mfx_h265_enc.h"
 #include "mfx_h265_encode_api.h"
 
+#ifdef AMT_HROI_PSY_AQ
+#include "FSapi.h"
+#endif
+
 class CmDevice;
 
 namespace H265Enc {
@@ -193,6 +197,9 @@ namespace H265Enc {
         BrcIface *m_brc;
         std::auto_ptr<Lookahead> m_la;
 
+#ifdef AMT_HROI_PSY_AQ
+        FSP m_faceSkinDet;
+#endif
 
         static Ipp32u VM_THREAD_CALLCONVENTION FeiThreadRoutineStarter(void *p);
         void FeiThreadRoutine();
@@ -258,6 +265,7 @@ namespace H265Enc {
     };
 
     template <class PixType> void CopyAndPad(const mfxFrameSurface1 &src, FrameData &dst, Ipp32u fourcc);
+
 };
 
 

@@ -25,6 +25,11 @@
 #include "mfx_h265_enc.h"
 #include "mfx_h265_optimization.h"
 
+#ifdef AMT_HROI_PSY_AQ
+#include "FSapi.h"
+#include <vector>
+#endif
+
 
 using namespace H265Enc;
 
@@ -1895,11 +1900,13 @@ void Lookahead::AnalyzeSceneCut_AndUpdateState_Atul(Frame* in)
     
     if (sceneCut) {
         m_enc.m_sceneOrder++;
-        if (in->m_stats[1])
+        if (in->m_stats[1]) 
             in->m_stats[1]->m_sceneCut = -1;
-        if (in->m_stats[0])
+        if (in->m_stats[0]) 
             in->m_stats[0]->m_sceneCut = -1;
     }
+    if (in->m_stats[1]) in->m_stats[1]->m_sceneChange = sceneCut;
+    if (in->m_stats[0]) in->m_stats[0]->m_sceneChange = sceneCut;
 
     in->m_sceneOrder = m_enc.m_sceneOrder;
 
@@ -2253,6 +2260,78 @@ const Ipp32f LQ_K16[5][8] = {
     {13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122, 13.7122}    // B3
 };
 
+int GetCalqDeltaQpLCU(Frame* frame, const H265VideoParam & par, Ipp32s ctb_addr, Ipp32f sliceLambda, Ipp32f sliceQpY)
+{
+    Ipp32s picClass = 0;
+    if(frame->m_picCodeType == MFX_FRAMETYPE_I) {
+        picClass = 0;   // I
+    } else {
+        picClass = frame->m_pyramidLayer+1;
+    }
+
+    static int pQPi[5][4] = {{22,27,32,37}, {23,28,33,38}, {24,29,34,39}, {25,30,35,40}, {26,31,36,41}};
+    Ipp32s qpClass = 0;
+    if(sliceQpY < pQPi[picClass][0])
+        qpClass = 0;
+    else if(sliceQpY > pQPi[picClass][3])
+        qpClass = 3;
+    else
+        qpClass = (Ipp32s)((sliceQpY - 22 - picClass) / 5);
+
+    Ipp32s col =  (ctb_addr % par.PicWidthInCtbs);
+    Ipp32s row =  (ctb_addr / par.PicWidthInCtbs);
+    Ipp32s pelX = col * par.MaxCUSize;
+    Ipp32s pelY = row * par.MaxCUSize;
+
+    //TODO: replace by template call here
+    // complex ops in Enqueue frame can cause severe threading eff loss -NG
+    Ipp32f rscs = 0;
+    if (picClass < 2) {
+        // calulate from 4x4 Rs/Cs
+        Ipp32s N = (col==par.PicWidthInCtbs-1)?(frame->m_origin->width-(par.PicWidthInCtbs-1)*par.MaxCUSize):par.MaxCUSize;
+        Ipp32s M = (row==par.PicHeightInCtbs-1)?(frame->m_origin->height-(par.PicHeightInCtbs-1)*par.MaxCUSize):par.MaxCUSize;
+        Ipp32s m4T = M/4;
+        Ipp32s n4T = N/4;
+        Ipp32s X4 = pelX/4;
+        Ipp32s Y4 = pelY/4;
+        Ipp32s w4 = frame->m_origin->width/4;
+        Ipp32s Rs=0,Cs=0;
+        for(Ipp32s i=0;i<m4T;i++) {
+            for(Ipp32s j=0;j<n4T;j++) {
+                Rs += frame->m_stats[0]->m_rs[0][(Y4+i)*w4+(X4+j)];
+                Cs += frame->m_stats[0]->m_cs[0][(Y4+i)*w4+(X4+j)];
+            }
+        }
+        Rs/=(m4T*n4T);
+        Cs/=(m4T*n4T);
+        rscs = sqrt(Rs + Cs);
+    }
+
+    Ipp32s rscsClass = 0;
+    {
+        Ipp32s k = 7;
+        for (Ipp32s i = 0; i < 8; i++) {
+            if (rscs < CU_RSCS_TH[picClass][qpClass][i]*(Ipp32f)(1<<(par.bitDepthLumaShift))) {
+                k = i;
+                break;
+            }
+        }
+        rscsClass = k;
+    }
+
+    Ipp32f dLambda = sliceLambda * 256.f;
+    Ipp32s gopSize = frame->m_biFramesInMiniGop + 1;
+    Ipp32f QP = 0.f;
+    if(16 == gopSize) {
+        QP = LQ_M16[picClass][rscsClass]*log( dLambda ) + LQ_K16[picClass][rscsClass];
+    } else if(8 == gopSize){
+        QP = LQ_M[picClass][rscsClass]*log( dLambda ) + LQ_K[picClass][rscsClass];
+    } else { // default case could be modified !!!
+        QP = LQ_M[picClass][rscsClass]*log( dLambda ) + LQ_K[picClass][rscsClass];
+    }
+    QP -= sliceQpY;
+    return (QP>=0.0)?int(QP+0.5):int(QP-0.5);
+}
 
 void GetCalqDeltaQp(Frame* frame, const H265VideoParam & par, Ipp32s ctb_addr, Ipp32f sliceLambda, Ipp32f sliceQpY)
 {
@@ -2329,6 +2408,7 @@ void GetCalqDeltaQp(Frame* frame, const H265VideoParam & par, Ipp32s ctb_addr, I
                 Ipp32s lcuQp = frame->m_sliceQpY + totalDQP;
                 lcuQp = Saturate(0, 51, lcuQp);
                 frame->m_lcuQps[depth][qpBlkIdx] = (Ipp8s)lcuQp;
+                frame->m_lcuQpOffs[depth][qpBlkIdx] = calq;
             }
         }
     }
@@ -2429,6 +2509,49 @@ void H265Enc::ApplyDeltaQp(Frame* frame, const H265VideoParam & par, Ipp8u useBr
     //WriteDQpMap(frame, par);
 }
 
+
+void H265Enc::ApplyDeltaQpOnRoi(Frame* frame, const H265VideoParam & par, Ipp8u useBrc)
+{
+    Ipp32s numCtb = par.PicHeightInCtbs * par.PicWidthInCtbs;
+
+    // assign CALQ deltaQp
+    if (par.DeltaQpMode&AMT_DQP_CAQ) {
+        Ipp32f baseQP = frame->m_sliceQpY;
+        Ipp32f sliceLambda =  frame->m_roiSlice[baseQP].rd_lambda_slice;
+        for (Ipp32s ctb_addr = 0; ctb_addr < numCtb; ctb_addr++) {
+
+            int calq = GetCalqDeltaQpLCU(frame, par, ctb_addr, sliceLambda, baseQP);
+            
+            // Save CAQ dQp for ModeDecision Thresholds
+            frame->m_lcuQpOffs[0][ctb_addr] =  calq;
+            
+            Ipp32s lcuQp = frame->m_lcuQps[0][ctb_addr] + calq;
+            lcuQp = Saturate(0, 51, lcuQp);
+
+            frame->m_lcuQps[0][ctb_addr] = (Ipp8s)lcuQp;
+
+            Ipp32s col =  (ctb_addr % par.PicWidthInCtbs);
+            Ipp32s row =  (ctb_addr / par.PicWidthInCtbs);
+            Ipp32s pelX = col * par.MaxCUSize;
+            Ipp32s pelY = row * par.MaxCUSize;
+
+            for (Ipp32s depth = 1; depth < 4; depth++) {
+                Ipp32s log2BlkSize = par.Log2MaxCUSize - depth;
+                Ipp32s width = IPP_MIN(64, frame->m_origin->width-pelX);
+                Ipp32s height = IPP_MIN(64, frame->m_origin->height-pelY);
+                for (Ipp32s y = 0; y < height; y += (1<<log2BlkSize)) {
+                    for (Ipp32s x = 0; x < width; x += (1<<log2BlkSize)) {
+                        Ipp32s qpBlkIdx = ((pelY+y)>>log2BlkSize)*(par.PicWidthInCtbs<<(6-log2BlkSize)) + ((pelX+x)>>log2BlkSize);
+                        frame->m_lcuQpOffs[depth][qpBlkIdx] = calq;
+                        frame->m_lcuQps[depth][qpBlkIdx] = lcuQp;
+                    }
+                }
+            }
+        }
+    }
+
+}
+
 #if 0
 Ipp32s rowsInRegion = useLowres ? m_lowresRowsInRegion : m_originRowsInRegion;
                     Ipp32s numRows = rowsInRegion;
@@ -2444,6 +2567,149 @@ namespace {
         }
     }
 };
+
+#ifdef AMT_HROI_PSY_AQ
+
+static void setCtb_SegMap_Cmplx(Frame *frame, H265VideoParam *par)
+{
+    Ipp32s lumaSize = par->Width * par->Height;
+
+    Ipp32s QP = par->QPI + frame->m_pyramidLayer + 1;  // frame->m_sliceQpY;
+
+    Ipp32s numCtb = par->PicWidthInCtbs * par->PicHeightInCtbs;
+    Ipp32s maxCuSize = (par->MaxCUSize * par->MaxCUSize);
+
+    Statistics *stats = frame->m_stats[0];
+    CtbRoiStats *ctbStats = stats->ctbStats;
+
+    Ipp32s ctbWidthBnd = frame->m_origin->width - (par->PicWidthInCtbs-1) * par->MaxCUSize;
+    Ipp32s ctbHeightBnd = frame->m_origin->height - (par->PicHeightInCtbs-1) * par->MaxCUSize;
+
+    // seg info=====================================================================================
+    Ipp8u  *segMap = &(stats->roi_map_8x8[0]);
+    Ipp32s segBlkPitch = stats->m_RoiPitch;
+    Ipp8u  *lum8x8 = &(stats->lum_avg_8x8[0]);
+    Ipp32s lcuDimInSegBlks = par->MaxCUSize >> 3;
+    Ipp32s lcuWBndDimInSegBlks = ctbWidthBnd >> 3;
+    Ipp32s lcuHBndDimInSegBlks = ctbHeightBnd >> 3;
+
+    // complexity info==============================================================================
+    Statistics *statsCmplx = frame->m_stats[par->LowresFactor ? 1 : 0];
+    Ipp32s cmplxBlkPitch = (frame->m_origin->width  + (SIZE_BLK_LA - 1)) / SIZE_BLK_LA; 
+    Ipp32s cmplxBlkW = SIZE_BLK_LA;
+    Ipp32s cmplxBlkH = SIZE_BLK_LA;
+    if(par->LowresFactor) {
+        cmplxBlkPitch = (frame->m_lowres->width + (SIZE_BLK_LA-1)) / SIZE_BLK_LA;
+        cmplxBlkW = SIZE_BLK_LA<<par->LowresFactor;
+        cmplxBlkH = SIZE_BLK_LA<<par->LowresFactor;
+    }
+    Ipp32s lcuDimInCmplxBlks = par->MaxCUSize/cmplxBlkW;
+    Ipp32s lcuWBndDimInCmplxBlks = (ctbWidthBnd + (cmplxBlkW-1))/cmplxBlkW;
+    Ipp32s lcuHBndDimInCmplxBlks = (ctbHeightBnd + (cmplxBlkW-1))/cmplxBlkW;
+
+    Ipp64f picCmplx = 0.0;
+
+    // initialize picture stats
+    for(Ipp32s i = 0; i < NUM_HROI_CLASS; i++)
+    {
+        stats->roi_pic.numCtbRoi[i] = 0;
+        stats->roi_pic.cmplx[i] = 0.0;
+    }
+
+    Ipp32s luminanceAvg = 0;
+    Ipp32s numAct = 0;
+    for(Ipp32s ctb = 0; ctb < numCtb; ctb++)
+    {
+        Ipp32s ctbCol =  (ctb % par->PicWidthInCtbs);
+        Ipp32s ctbRow =  (ctb / par->PicWidthInCtbs);
+
+        Ipp32s luminance = 0;
+
+        // seg info==================================================================================
+        Ipp32s hS = (ctbRow == par->PicHeightInCtbs-1) ? lcuHBndDimInSegBlks : lcuDimInSegBlks;
+        Ipp32s wS = (ctbCol == par->PicWidthInCtbs-1) ? lcuWBndDimInSegBlks : lcuDimInSegBlks;
+        Ipp32s segSum = 0;
+
+        for(Ipp32s i = 0; i < hS; i++)
+        {
+            for(Ipp32s j = 0; j < wS; j++)
+            {
+                Ipp32s offset = (ctbRow * lcuDimInSegBlks + i) * segBlkPitch + ctbCol * lcuDimInSegBlks + j;
+                if(segMap[offset])
+                    segSum++;
+
+                luminance += lum8x8[offset];
+            }
+        }
+
+        ctbStats[ctb].segCount = segSum;
+        Ipp32s isFullFlag = (segSum > 31) ? 1 : 0;
+
+        // complexity================================================================================
+        Ipp32s hC = (ctbRow == par->PicHeightInCtbs-1) ? lcuHBndDimInCmplxBlks : lcuDimInCmplxBlks;
+        Ipp32s wC = (ctbCol == par->PicWidthInCtbs-1) ? lcuWBndDimInCmplxBlks : lcuDimInCmplxBlks;
+        Ipp32f stc = 0.0;
+
+        for(Ipp32s i = 0; i < hC; i++)
+        {
+            for(Ipp32s j = 0; j < wC; j++)
+            {
+                Ipp32s offset = (ctbRow * lcuDimInCmplxBlks + i) * cmplxBlkPitch + ctbCol * lcuDimInCmplxBlks + j;
+                Ipp64f cmplx = (Ipp64f)IPP_MIN(statsCmplx->m_interSatd[offset], statsCmplx->m_intraSatd[offset]);
+                stc += cmplx;
+            }
+        }
+
+        //stc /= ctbSizeCmplx;
+        stc /= (hC*wC);  // ?? not needed
+
+        ctbStats[ctb].complexity = stc;
+
+        ctbStats[ctb].luminance = 1 + luminance/(wS*hS);
+
+        if(ctbStats[ctb].luminance>=32) {
+            luminanceAvg += ctbStats[ctb].luminance;
+            numAct++;
+        }
+
+        picCmplx += stc;
+        Ipp32s ctbClass = 0;
+
+        if(ctbStats[ctb].segCount) {
+            ctbClass++;
+            if(isFullFlag) {
+                ctbClass++;
+            }
+        }
+
+        ctbStats[ctb].roiLevel = ctbClass;
+
+        stats->roi_pic.numCtbRoi[ctbClass]++;
+
+        stats->roi_pic.cmplx[ctbClass] += stc;
+
+    }
+
+    if(numAct) luminanceAvg /= numAct;
+    stats->roi_pic.luminanceAvg = luminanceAvg;
+
+}
+
+void CopyFramePtrInfoToFrameBuffElement(FrameBuffElement &tmp, Frame *frm)
+{
+    tmp.poc     = frm->m_frameOrder;
+    tmp.frameY  = frm->m_origin->y;
+    tmp.frameU  = frm->m_origin->uv;
+    tmp.frameV  = frm->m_origin->uv+1;
+    tmp.h       = (frm->m_origin->height+15)&~15;    // 16
+    tmp.w       = (frm->m_origin->width+15)&~15;    // 16
+    tmp.p       = frm->m_origin->pitch_luma_pix;
+    tmp.pc      = frm->m_origin->pitch_chroma_pix;
+    tmp.nv12    = 1;
+}
+
+#endif
+
 
 mfxStatus Lookahead::Execute(ThreadingTask& task)
 {
@@ -2496,16 +2762,56 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
                     //Ipp32s updateState = 1;
                     //DetectSceneCut(begin, end, in[fieldNum], updateGop, updateState);
                     AnalyzeSceneCut_AndUpdateState_Atul(in[fieldNum]);
-                }
-                m_lastAcceptedFrame[fieldNum] = in[fieldNum];
+                } 
             }
 
+#ifdef AMT_HROI_PSY_AQ
+            if(m_videoParam.DeltaQpMode & AMT_DQP_PSY_HROI) {
+                FrameBuffElement tmp;
+                CopyFramePtrInfoToFrameBuffElement(tmp, in[0]);
+                // Init slicing
+                if(frameOrder == 0) FS_set_Slice(m_enc.m_faceSkinDet, tmp.w, tmp.h, tmp.p, tmp.pc, IPP_MIN(8, m_regionCount));
+                
+                if(m_videoParam.DeltaQpMode & AMT_DQP_HROI) {
+                    Frame *frm = in[0];
+                    if(!m_videoParam.SceneCut) {
+                        Ipp32s sceneCut = DetectSceneCut_AMT(in[0], (in[0]->m_frameOrder > 0) ? m_lastAcceptedFrame[0] : NULL);
+                        if (frm->m_stats[1]) frm->m_stats[1]->m_sceneChange = sceneCut;
+                        if (frm->m_stats[0]) frm->m_stats[0]->m_sceneChange = sceneCut;
+                    }
+                    
+                    if(in[0]->m_frameOrder == 0) FS_set_SChg(m_enc.m_faceSkinDet, 1); 
+                    else if (frm->m_stats[1])    FS_set_SChg(m_enc.m_faceSkinDet, frm->m_stats[1]->m_sceneChange);
+                    else if (frm->m_stats[0])    FS_set_SChg(m_enc.m_faceSkinDet, frm->m_stats[0]->m_sceneChange);
+
+                    FS_ProcessMode1_Slice_start(m_enc.m_faceSkinDet, &tmp, &(in[0]->m_stats[0]->roi_map_8x8[0]));
+                } else {
+                    FS_Luma_Slice_start(m_enc.m_faceSkinDet, &tmp);
+                }
+            }
+#endif
+
+            for (Ipp32s fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
+                m_lastAcceptedFrame[fieldNum] = in[fieldNum];
+            }
             break;
         }
 
 
     case TT_PREENC_ROUTINE:
         {
+
+#ifdef AMT_HROI_PSY_AQ
+            if(m_videoParam.DeltaQpMode & AMT_DQP_PSY_HROI) {
+                if(m_videoParam.DeltaQpMode & AMT_DQP_HROI) {
+                    if(region_row < (Ipp32u) FS_get_NumSlice(m_enc.m_faceSkinDet))
+                        FS_ProcessMode1_Slice_main (m_enc.m_faceSkinDet, region_row);
+                } else if(m_videoParam.DeltaQpMode & AMT_DQP_PSY) {
+                    if(region_row <  (Ipp32u) FS_get_NumSlice(m_enc.m_faceSkinDet))
+                        FS_Luma_Slice_main (m_enc.m_faceSkinDet, region_row);
+                }
+            }
+#endif
 
             if (in[0] && in[0]->m_frameOrder > 0 && 
                 (m_videoParam.AnalyzeCmplx || (m_videoParam.DeltaQpMode & (AMT_DQP_PAQ|AMT_DQP_CAL)) )) // PAQ/CAL disable in encOrder
@@ -2661,19 +2967,33 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
                         it--;
                     }
                     if (it != end) (*it)->m_lookaheadRefCounter--;
-                    
                 }
-                if (m_videoParam.DeltaQpMode) {
+                // PSY HROI tightly coupled to AnalyzeCmplx, not independent owner
+                if (m_videoParam.DeltaQpMode & ~AMT_DQP_PSY_HROI) {
                     AverageRsCs(in[fieldNum]);
-                    if (m_videoParam.DeltaQpMode == AMT_DQP_CAQ) {
+                    if ((m_videoParam.DeltaQpMode & ~AMT_DQP_PSY_HROI) == AMT_DQP_CAQ) {
+                        // CAQ only Mode 
                         if (in[fieldNum]) in[fieldNum]->m_lookaheadRefCounter--;
-                    } else { // & (PAQ | CAL)
+                    } else { 
+                        // & (PAQ | CAL) (and/or CAQ): PAQ, CAL have higher buffering requirement.
                         Ipp32s frameOrderCentral = in[fieldNum]->m_frameOrder - m_bufferingPaq;
                         Ipp32s updateState = 1;
                         BuildQpMap(begin, end, frameOrderCentral, m_videoParam, updateState);
                     }
                 }
             }
+#ifdef AMT_HROI_PSY_AQ
+            if(m_videoParam.DeltaQpMode & AMT_DQP_PSY_HROI) {
+                if((m_videoParam.DeltaQpMode & AMT_DQP_HROI) == 0) {
+                    FS_Luma_Slice_end (m_enc.m_faceSkinDet, &(in[0]->m_stats[0]->lum_avg_8x8[0]));
+                } else {
+                    FS_ProcessMode1_Slice_end (m_enc.m_faceSkinDet, &(in[0]->m_stats[0]->roi_map_8x8[0]), &(in[0]->m_stats[0]->lum_avg_8x8[0]));
+                }
+                // set seg map and complexity of ctb
+                setCtb_SegMap_Cmplx(in[0], &m_videoParam);
+            }
+#endif
+
             break;
         }
     case TT_HUB:

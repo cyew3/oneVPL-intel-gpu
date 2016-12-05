@@ -15,6 +15,7 @@ if ( ENABLE_HEVC )
 # Includes
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/encode/h265/include )
+include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/fs_det/include  )
 include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/fei/h265/include )
 include_directories( ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/cmrt_cross_platform/include )
 # gtest/gmock
@@ -27,6 +28,10 @@ foreach( dir ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/encode/h265/sr
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
   list( APPEND sources ${srcs})
 endforeach()
+
+file( GLOB_RECURSE srcs "${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/fs_det/src/*.cpp" )
+list( APPEND sources ${srcs} )
+
 list( APPEND sources ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/shared/src/mfx_enc_common.cpp )
 list( APPEND sources ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/_studio/mfx_lib/shared/src/mfx_common_int.cpp )
 

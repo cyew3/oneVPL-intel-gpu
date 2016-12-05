@@ -29,6 +29,10 @@
 #include "mfx_h265_enc.h"
 #include "mfx_h265_brc.h"
 
+#ifdef AMT_HROI_PSY_AQ
+#include "FSapi.h"
+#endif
+
 using namespace H265Enc;
 using namespace MfxEnumShortAliases;
 
@@ -383,6 +387,7 @@ void H265Encoder::SetPPS()
     }
 
     m_pps.init_qp = m_brc ? (Ipp8s)m_brc->GetQP(&m_videoParam, NULL, NULL) : m_videoParam.QPI;
+
     if (m_videoParam.UseDQP) {
         m_pps.cu_qp_delta_enabled_flag = 1;
         m_pps.diff_cu_qp_delta_depth   = m_videoParam.MaxCuDQPDepth;
@@ -620,6 +625,398 @@ namespace H265Enc {
         }
     }
 
+#ifdef AMT_HROI_PSY_AQ
+
+    void setRoiDeltaQP(const H265VideoParam *par, Frame *frame) 
+    {
+        const Ipp32f l2f = log(2.0f);
+        const Ipp32f dB[9]= {1.0f, 0.891f, 0.794f, 0.707f, 0.623f, 0.561f, 0.5f, 0.445f, 0.39f};
+        const Ipp32f dF[9]= {1.0f, 1.123f, 1.260f, 1.414f, 1.587f, 1.782f, 2.0f, 2.245f, 2.52f};
+        Ipp32s numCtb = par->PicWidthInCtbs * par->PicHeightInCtbs;
+        Statistics *stats = frame->m_stats[0];
+        CtbRoiStats *ctbStats = stats->ctbStats;
+        Ipp32s idxRsCs = par->Log2MaxCUSize-3;
+        Ipp32s pitchRsCsQ = stats->m_pitchRsCs4>>(par->Log2MaxCUSize-3);
+        Ipp32s nRsCs = (1<<(par->Log2MaxCUSize-3))*(1<<(par->Log2MaxCUSize-3));
+        Ipp64f avgMinblkRsCs = 0.0, avgRsCs = 0.0;
+        Ipp32s luminanceAvg = stats->roi_pic.luminanceAvg;
+        if(luminanceAvg < 32) luminanceAvg = 32;
+        Ipp32s noRb = 0, noBb = 0;
+        if(par->PicHeightInCtbs*(1<<par->Log2MaxCUSize) > par->Height) noBb = 1;
+        if(par->PicWidthInCtbs*(1<<par->Log2MaxCUSize)  > par->Width)  noRb = 1;
+
+        Ipp32s bn = stats->roi_pic.numCtbRoi[0];
+        Ipp32s fn = stats->roi_pic.numCtbRoi[1] + stats->roi_pic.numCtbRoi[2];
+
+        Ipp32s fni = 0;
+        Ipp32s numAct = 0;
+
+        if (frame->m_picCodeType == MFX_FRAMETYPE_I && !(par->DeltaQpMode&AMT_DQP_PSY)) {
+            // reset
+            for(Ipp32s i = 0; i < (int) par->PicHeightInCtbs; i++) {
+                for(Ipp32s j = 0; j < (int) par->PicWidthInCtbs; j++) {
+                    ctbStats[i*par->PicWidthInCtbs+j].dqp = 0;
+                    ctbStats[i*par->PicWidthInCtbs+j].roiLevel =0;
+                }
+            }
+            return;
+        }
+
+        // Contrast
+        for(Ipp32s i = 0; i < (int) par->PicHeightInCtbs; i++)
+        {
+            for(Ipp32s j = 0; j < (int) par->PicWidthInCtbs; j++)
+            {
+                // Border and Black Mask
+                if(!((j == par->PicWidthInCtbs-1 && noRb) || (i == par->PicHeightInCtbs -1 && noBb)) && ctbStats[i*par->PicWidthInCtbs+j].luminance>=32) {
+                    Ipp32f minblkRsCs = INT_MAX;
+                    Ipp32f ctbRsCs = 0.0;
+                    for(Ipp32s k = 0; k < 2; k++) {
+                        for(Ipp32s l = 0; l < 2; l++) {
+                            Ipp32f blkRsCs = stats->m_rs[idxRsCs][(i*2+k)*pitchRsCsQ+j*2+l] + stats->m_cs[idxRsCs][(i*2+k)*pitchRsCsQ+2*j+l];
+                            minblkRsCs = IPP_MIN(blkRsCs, minblkRsCs);
+                            ctbRsCs += blkRsCs;
+                        }
+                    }
+                    minblkRsCs /= (nRsCs*2.0); 
+                    minblkRsCs += 1.0;
+                    ctbStats[i*par->PicWidthInCtbs+j].spatMinQCmplx = minblkRsCs;
+                    ctbStats[i*par->PicWidthInCtbs+j].spatCmplx = ctbRsCs / (nRsCs*4.0);
+                    avgMinblkRsCs += minblkRsCs;
+                    avgRsCs += ctbRsCs;
+                    numAct++;
+                }
+            }
+        }
+
+        if(numAct) avgMinblkRsCs /= numAct;
+        else       avgMinblkRsCs = 1.0;
+        stats->roi_pic.spatAvgMinQCmplx = avgMinblkRsCs;
+        stats->roi_pic.spatAvgCmplx = ((numAct)? avgRsCs / (numAct*nRsCs*4.0f) : 1.0f);
+
+        // Control
+        Ipp32s maxFq = -1, minBq = 0;
+        Ipp32s qpa =  frame->m_sliceQpY - frame->m_pyramidLayer - ((frame->m_picCodeType == MFX_FRAMETYPE_I)?1:0);
+        Ipp32s          qrange = 7;
+        if     (qpa<16) qrange = 2;
+        else if(qpa<23) qrange = 3;
+        else if(qpa<28) qrange = 4;
+        else if(qpa<34) qrange = 5;
+        else if(qpa<40) qrange = 6;
+        else if(qpa<44) qrange = 4;
+        else            qrange = 2;
+        
+        if(par->BiPyramidLayers >1 && frame->m_pyramidLayer) qrange -= frame->m_pyramidLayer;
+        if((par->DeltaQpMode&AMT_DQP_PAQ) && par->BiPyramidLayers >1 && frame->m_pyramidLayer==0) qrange--;
+        if(par->BiPyramidLayers >1 && frame->m_pyramidLayer<=par->refLayerLimit[0]) qrange--;
+        
+        if(qrange<1) qrange = 1;
+
+        if(frame->m_picCodeType == MFX_FRAMETYPE_I) {
+            qrange=(qrange+1)/2;
+        }
+
+        // VSM (Visual Sensitivity Map)
+        Ipp32f mult = pow(2.0f, (Ipp32f)qrange/6.0f);
+
+        for(Ipp32s i = 0; i < (int) par->PicHeightInCtbs; i++)
+        {
+            for(Ipp32s j = 0; j < (int) par->PicWidthInCtbs; j++)
+            {
+                Ipp32s val=0;
+                Ipp32s edge = 0;
+                // Border and Black Mask
+                if(!((j == par->PicWidthInCtbs-1 && noRb) || (i == par->PicHeightInCtbs -1 && noBb)) && ctbStats[i*par->PicWidthInCtbs+j].luminance>=32) {
+                    Ipp32f minblkRsCs = ctbStats[i*par->PicWidthInCtbs+j].spatMinQCmplx;
+                    Ipp32f RsCsRatio = (mult * minblkRsCs + avgMinblkRsCs) / (minblkRsCs + mult * avgMinblkRsCs);
+                    edge = (ctbStats[i*par->PicWidthInCtbs+j].spatCmplx / minblkRsCs > 8.0) ? 1 : 0;
+                    Ipp32f dDQp = (log(RsCsRatio) / l2f) * 6.0;
+
+                    Ipp32f luminance = ctbStats[i*par->PicWidthInCtbs+j].luminance;
+                    Ipp32f lRatio = luminance  / (Ipp32f) luminanceAvg;
+                    Ipp32f dDQl = (0.3f * log(lRatio) / l2f) * (Ipp32f)qrange; 
+
+                    val = int(floor( dDQp + dDQl + 0.5 ));
+                }
+                ctbStats[i*par->PicWidthInCtbs+j].sedge = edge;
+                ctbStats[i*par->PicWidthInCtbs+j].sensitivity = val;
+            }
+        }
+        
+        if(fn == 0) 
+        {
+            // VROI (Visual sensitivity ROI)
+            for(Ipp32s i = 0; i < (Ipp32s) par->PicHeightInCtbs; i++) {
+                for(Ipp32s j = 0; j < (Ipp32s) par->PicWidthInCtbs; j++) {
+                    Ipp32s val = ctbStats[i*par->PicWidthInCtbs+j].sensitivity;
+                    Ipp32s edge = ctbStats[i*par->PicWidthInCtbs+j].sedge;
+                    
+                    ctbStats[i*par->PicWidthInCtbs+j].dqp = (val<-qrange)?-qrange:((val>qrange)?qrange:val);
+                    ctbStats[i*par->PicWidthInCtbs+j].roiLevel = (val<0)?2:0;
+                    
+                    if(ctbStats[i*par->PicWidthInCtbs+j].roiLevel > 0) {
+                        if(edge) {
+                            if(ctbStats[i*par->PicWidthInCtbs+j].dqp<-1) ctbStats[i*par->PicWidthInCtbs+j].dqp+=1;
+                            ctbStats[i*par->PicWidthInCtbs+j].roiLevel = 1;
+                        }
+                        fni++;
+                    }
+                }
+            }
+            // EROI = VROI
+            fn = fni;
+            bn = numCtb - fn;
+        } 
+        else 
+        {
+            // HROI
+            for(Ipp32s i = 0; i < (Ipp32s) par->PicHeightInCtbs; i++) {
+                for(Ipp32s j = 0; j < (Ipp32s) par->PicWidthInCtbs; j++) {
+                    Ipp32s val = ctbStats[i*par->PicWidthInCtbs+j].sensitivity;
+
+                    if(ctbStats[i*par->PicWidthInCtbs+j].roiLevel < 1) {
+                        ctbStats[i*par->PicWidthInCtbs+j].dqp = (val<minBq)?minBq:((val>qrange)?qrange:val);
+                    } else {
+                        ctbStats[i*par->PicWidthInCtbs+j].dqp = (val>maxFq)?maxFq:((val<-qrange)?-qrange:val);
+                    }
+                }
+            }
+
+            // EROI (Enhanced) = HROI + VROI'
+            const Ipp32s minEroi = 4;
+            if((par->DeltaQpMode&AMT_DQP_PSY) && fn < numAct/minEroi) 
+            {
+
+                Ipp32s thresh = -5;
+                // Add full
+                while(fn < numAct/minEroi && thresh < maxFq) 
+                {
+                    for(Ipp32s i = 0; i < (int) par->PicHeightInCtbs; i++) {
+                        for(Ipp32s j = 0; j < (int) par->PicWidthInCtbs; j++) {
+                            if(ctbStats[i*par->PicWidthInCtbs+j].roiLevel == 0) {
+                                Ipp32s val = ctbStats[i*par->PicWidthInCtbs+j].sensitivity;
+                                if(val < thresh && fn < numAct/minEroi && !ctbStats[i*par->PicWidthInCtbs+j].sedge) {
+                                    ctbStats[i*par->PicWidthInCtbs+j].roiLevel = 2;
+                                    ctbStats[i*par->PicWidthInCtbs+j].dqp = ((val<-qrange)?-qrange:val);
+                                    ctbStats[i*par->PicWidthInCtbs+j].dqp -= maxFq;   // rebase to maxfq
+                                    fn++;
+                                    fni++;
+                                }
+                            }
+                        }
+                    }
+                    if(fn < numAct/minEroi && thresh < (maxFq-1))
+                    {
+                        for(Ipp32s i = 0; i < (int) par->PicHeightInCtbs; i++) {
+                            for(Ipp32s j = 0; j < (int) par->PicWidthInCtbs; j++) {
+                                if(ctbStats[i*par->PicWidthInCtbs+j].roiLevel == 0) {
+                                    Ipp32s val  = ctbStats[i*par->PicWidthInCtbs+j].sensitivity;
+                                    if(val < thresh && fn < numAct/minEroi && ctbStats[i*par->PicWidthInCtbs+j].sedge) {
+                                        ctbStats[i*par->PicWidthInCtbs+j].roiLevel = 1;
+                                        ctbStats[i*par->PicWidthInCtbs+j].dqp = ((val<-qrange)?-qrange:val);
+                                        ctbStats[i*par->PicWidthInCtbs+j].dqp -= (maxFq-1); // rebase to maxfq
+                                        fn++;
+                                        fni++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    thresh++;
+                }
+
+                bn  = numCtb - fn;
+            }
+        }
+
+        // Qp & Complexity
+        Ipp32f sumQpb = 0.0;
+        Ipp32f sumQpf = 0.0;
+        Ipp32f bcmplx = 1.0;
+        Ipp32f fcmplx = 1.0;
+        Ipp32f tcmplx = 1.0;
+        Ipp32f bcmplxd = 1.0;
+        for(Ipp32s i = 0; i < (int) par->PicHeightInCtbs; i++) {
+            for(Ipp32s j = 0; j < (int) par->PicWidthInCtbs; j++) {
+                if(ctbStats[i*par->PicWidthInCtbs+j].roiLevel < 1) {
+                    sumQpb += ctbStats[i*par->PicWidthInCtbs+j].dqp;
+                    bcmplx += ctbStats[i*par->PicWidthInCtbs+j].complexity;
+                    bcmplxd += (ctbStats[i*par->PicWidthInCtbs+j].complexity*dB[ctbStats[i*par->PicWidthInCtbs+j].dqp]);
+                } else {
+                    sumQpf += ctbStats[i*par->PicWidthInCtbs+j].dqp;
+                    fcmplx += ctbStats[i*par->PicWidthInCtbs+j].complexity;
+                }
+                tcmplx += ctbStats[i*par->PicWidthInCtbs+j].complexity;
+            }
+        }
+        
+        // Balance
+        if(fn != 0) {
+            Ipp32f dqpb_act = sumQpb/bn;
+            Ipp32f dqpf_act = sumQpf/fn;
+            // compute
+            Ipp32f fcmplxd = tcmplx - bcmplxd;
+            Ipp32f dqf = fcmplxd/fcmplx;
+            Ipp32f dqpf = (log(dqf) / l2f) * -6.0f;
+
+            Ipp32s iter = 0;
+            Ipp32s num_changed = 1;
+
+            if(abs(dqpf_act - dqpf) > 0.1) {
+                // ROI
+                Ipp32s fOff = ((dqpf<dqpf_act)?1:-1);
+                Ipp32s fOff1 = fOff;
+                while(abs(dqpf_act - dqpf) > 0.01 && num_changed != 0 && iter < 14) {
+                    Ipp32f sumQpfLast = sumQpf;
+                    sumQpf = 0.0;
+                    num_changed = 0;
+                    fcmplxd = 1.0;
+
+                    for(Ipp32s i = (int) par->PicHeightInCtbs -1; i >= 0 ; i--) {
+                        for(Ipp32s j = (int) par->PicWidthInCtbs -1; j >= 0 ; j--) {
+                            if(ctbStats[i*par->PicWidthInCtbs+j].roiLevel > 0) {
+                                Ipp32s dqpo = ctbStats[i*par->PicWidthInCtbs+j].dqp;
+                                Ipp32s dqp =  dqpo - fOff;
+                                dqp = IPP_MAX(-1*qrange, dqp);
+                                dqp = IPP_MIN(ctbStats[i*par->PicWidthInCtbs+j].segCount?-1:maxFq, dqp);
+
+                                Ipp32f dqpd = dqp - dqpo;
+                                ctbStats[i*par->PicWidthInCtbs+j].dqp = dqp;
+                                sumQpf += dqp;
+                                if(dqp != dqpo) num_changed++;
+                                fcmplxd += (ctbStats[i*par->PicWidthInCtbs+j].complexity*dF[-1*ctbStats[i*par->PicWidthInCtbs+j].dqp]);
+                                // Run Time Exit
+                                sumQpfLast += dqpd;
+                                Ipp32f dqpf_run = sumQpfLast/fn;
+                                if(abs(dqpf_run - dqpf) <= 0.01) 
+                                    fOff = 0;
+                            }
+                        }
+                    }
+                    if(fni && dqpf>-1.0 && num_changed==0 && maxFq!=0) {
+                        // non HROI aq does not need -1 ROI guarantee
+                        maxFq = 0;
+                        num_changed = 1;
+                    }
+                    iter++;
+                    dqpf_act = sumQpf/fn;
+                    fOff = ((dqpf<dqpf_act)?1:-1);
+                    if(fOff!=fOff1) iter=14;
+                }
+                // BG
+                if((dqpf_act - dqpf) > 0.01 && (num_changed == 0 || iter==14)) {
+                    // compute
+                    bcmplxd = tcmplx - fcmplxd;
+                    Ipp32f dqb = bcmplxd/bcmplx;
+                    Ipp32f dqpb = (log(dqb) / l2f) * -6.0f;
+
+                    iter = 0;
+                    num_changed= 1;
+
+                    while((dqpb_act - dqpb) > 0 && num_changed != 0 & iter<14) {
+                        sumQpb = 0.0;
+                        num_changed = 0;
+                        for(Ipp32s i = 0; i < (int) par->PicHeightInCtbs; i++) {
+                            for(Ipp32s j = 0; j < (int) par->PicWidthInCtbs; j++) {
+                                if(ctbStats[i*par->PicWidthInCtbs+j].roiLevel < 1) {
+                                    Ipp32s dqpo = ctbStats[i*par->PicWidthInCtbs+j].dqp;
+                                    Ipp32s dqp =  dqpo - 1;
+                                    dqp = IPP_MAX(minBq, dqp);
+                                    ctbStats[i*par->PicWidthInCtbs+j].dqp = dqp;
+                                    sumQpb += dqp;
+                                    if(dqp != dqpo) num_changed++;
+                                }
+                            }
+                        }
+                        iter++;
+                        dqpb_act = sumQpb/bn;
+                    }
+
+                }
+
+            }
+        }
+    }
+
+    void ApplyHRoiDeltaQp(Frame* frame, const H265VideoParam &par)
+    {
+        Ipp32s numCtb = par.PicHeightInCtbs * par.PicWidthInCtbs; 
+        Statistics* stats = frame->m_stats[0];
+
+        setRoiDeltaQP(&par, frame); 
+
+        Ipp32s hasRoi = 0;
+        if(par.DeltaQpMode & AMT_DQP_HROI) {
+            if(stats->roi_pic.numCtbRoi[1]|+stats->roi_pic.numCtbRoi[2])
+                hasRoi = 1;
+        }
+
+        Ipp32s minqp = (8 - par.bitDepthLuma) * 6;
+        Ipp8s *pLcuQP = &(frame->m_lcuQps[0][0]);
+
+        for (Ipp32s ctb = 0; ctb < numCtb; ctb++) 
+        {
+            Ipp32s dqp = stats->ctbStats[ctb].dqp;
+            // assign PAQ deltaQp
+            if (par.DeltaQpMode&AMT_DQP_PAQ) {
+                Ipp32s padqp = stats->qp_mask[0][ctb];
+
+                if(hasRoi) {
+                    if(stats->ctbStats[ctb].roiLevel) {
+                        dqp = IPP_MIN(0, dqp+padqp);
+                    } else {
+                        dqp += padqp;
+                    }
+                } else {
+                    dqp += padqp;
+                }
+            }
+            Ipp32s qp;
+            qp = frame->m_sliceQpY + dqp;
+            qp = Saturate(minqp, 51, qp);
+
+            pLcuQP[ctb] = (Ipp8s)qp;
+        }
+
+        bool IsHiCplxGOP = false;
+        bool IsMedCplxGOP = false;
+        if (par.DeltaQpMode&AMT_DQP_CAL) {
+            Ipp32f SADpp = stats->avgTSC; 
+            Ipp32f SCpp  = stats->avgsqrSCpp;
+            if (SCpp > 2.0) {
+                Ipp32f minSADpp = 0;
+                if (par.GopRefDist > 8) {
+                    minSADpp = 1.3f*SCpp - 2.6f;
+                    if (minSADpp>0 && minSADpp<SADpp) IsHiCplxGOP = true;
+                    if (!IsHiCplxGOP) {
+                        Ipp32f minSADpp = 1.1f*SCpp - 2.2f;
+                        if(minSADpp>0 && minSADpp<SADpp) IsMedCplxGOP = true;
+                    }
+                } 
+                else {
+                    minSADpp = 1.1f*SCpp - 1.5f;
+                    if (minSADpp>0 && minSADpp<SADpp) IsHiCplxGOP = true;
+                    if (!IsHiCplxGOP) {
+                        Ipp32f minSADpp = 1.0f*SCpp - 2.0f;
+                        if (minSADpp>0 && minSADpp<SADpp) IsMedCplxGOP = true;
+                    }
+                }
+            }
+        }
+
+        CostType rd_lamba_multiplier;
+        bool extraMult = SliceLambdaMultiplier(rd_lamba_multiplier, par, frame->m_slices[0].slice_type, frame, IsHiCplxGOP, IsMedCplxGOP);
+
+        Ipp32s numQpValues = 52 + (par.bitDepthLuma - 8)*6;
+        frame->m_roiSlice.resize(numQpValues);
+        for (Ipp32s i = 0; i < numQpValues; i++)
+            SetSliceLambda(par, &frame->m_roiSlice[i], i -  (par.bitDepthLuma - 8)*6, frame, rd_lamba_multiplier, extraMult);
+
+        ApplyDeltaQpOnRoi(frame, par);
+    }
+
+#endif
+
     void ApplyRoiDeltaQp(Frame* frame, const H265VideoParam & par)
     {
         Ipp32s numCtb = par.PicHeightInCtbs * par.PicWidthInCtbs;
@@ -652,8 +1049,11 @@ namespace H265Enc {
         frame->m_roiSlice.resize(numQpValues);
         for (Ipp32s i = 0; i < numQpValues; i++)
             SetSliceLambda(par, &frame->m_roiSlice[i], i -  (par.bitDepthLuma - 8)*6, frame, rd_lamba_multiplier, extraMult);
+
+        ApplyDeltaQpOnRoi(frame, par);
     }
-}
+
+}  // namespace H265Enc
 
 static Ipp8u dpoc_neg[][16][6] = {
     //GopRefDist 4
@@ -2020,8 +2420,11 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
 
         m_bsf[bsf_id].Reset();
 
-
+#ifdef AMT_HROI_PSY_AQ
+        if (m_videoParam.UseDQP && (m_videoParam.numRoi > 0 || (m_videoParam.DeltaQpMode&AMT_DQP_PSY_HROI))) {
+#else
         if (m_videoParam.UseDQP && m_videoParam.numRoi > 0) {
+#endif
             cu_ithread->SetCuLambdaRoi(m_frame);
         } 
         else if(m_videoParam.UseDQP && m_videoParam.DeltaQpMode) {
@@ -2136,9 +2539,21 @@ mfxStatus H265FrameEncoder::PerformThreadingTask(ThreadingTaskSpecifier action, 
 
         if (doSao) {
             m_bsf[bsf_id].CtxRestore(m_bs[bs_id].m_base.context_array);
-            // here should be slice lambda always
+            // here should be slice lambda always ?? Why?
+#ifndef AMT_DQP_FIX
             cu_ithread->m_rdLambda = m_frame->m_slices[curr_slice_id].rd_lambda_slice;
-
+#else
+#ifdef AMT_HROI_PSY_AQ
+            if (m_videoParam.UseDQP && (m_videoParam.numRoi > 0 || (m_videoParam.DeltaQpMode & AMT_DQP_PSY_HROI))) {
+#else
+            if (m_videoParam.UseDQP && m_videoParam.numRoi > 0) {
+#endif
+                cu_ithread->SetCuLambdaRoi(m_frame);
+            } 
+            else if(m_videoParam.UseDQP && m_videoParam.DeltaQpMode) {
+                cu_ithread->SetCuLambda(m_frame);
+            }
+#endif
             if (m_videoParam.enableCmPostProc) {
                 Ipp32s numCtbs = m_videoParam.PicWidthInCtbs * m_videoParam.PicHeightInCtbs;
                 Ipp32s compCount = m_videoParam.SAOChromaFlag ? 3 : 1;

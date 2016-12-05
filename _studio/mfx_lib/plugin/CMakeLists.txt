@@ -23,6 +23,7 @@ include_directories( ${MSDK_LIB_ROOT}/encode/h265/include )
 include_directories( ${MSDK_LIB_ROOT}/fei/h264_preenc )
 include_directories( ${MSDK_LIB_ROOT}/fei/include )
 include_directories( ${MSDK_LIB_ROOT}/fei/h265/include )
+include_directories( ${MSDK_LIB_ROOT}/fs_det/include )
 
 list( APPEND umc_dirs
   common
@@ -285,6 +286,9 @@ foreach( dir ${MSDK_LIB_ROOT}/encode/h265/src )
   file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
   list( APPEND sources ${srcs})
 endforeach()
+
+file( GLOB_RECURSE srcs "${MSDK_LIB_ROOT}/fs_det/src/*.cpp" )
+list( APPEND sources ${srcs} )
 
 foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
   list( APPEND sources
