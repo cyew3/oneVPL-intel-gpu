@@ -304,6 +304,9 @@
     <ClCompile Include="src\gmock\test_suites\fei_encode_gpu_hang.cpp">
       <Filter>Source Files\test_suites\FEI</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\fei_encode_num_active_ref.cpp">
+      <Filter>Source Files\test_suites\FEI</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\lookahead_1N.cpp">
       <Filter>Source Files\test_suites</Filter>
     </ClCompile>
