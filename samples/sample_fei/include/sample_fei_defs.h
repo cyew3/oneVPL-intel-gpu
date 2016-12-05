@@ -128,8 +128,13 @@ enum SurfStrategy
     PREFER_NEW
 };
 
-struct ExtSurfPool
+class ExtSurfPool
 {
+private:
+    ExtSurfPool(const ExtSurfPool& other_encode);             // forbidden
+    ExtSurfPool& operator= (const ExtSurfPool& other_encode); // forbidden
+
+public:
     mfxFrameSurface1* SurfacesPool;
     mfxU16            LastPicked;
     mfxU16            PoolSize;
