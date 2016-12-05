@@ -326,9 +326,9 @@ mfxStatus HWtoSYSCopier::Copy(mfxFrameSurface1 * in, mfxFrameSurface1 **out)
         mid = m_response.mids[0];
         sts = m_alloc.LockFrame(mid, &m_surfaceForCopy.Data);
         MFX_CHECK_STS(sts);
-        m_surfaceForCopy.Info = in->Info;
     }
         
+    m_surfaceForCopy.Info = in->Info;
     m_surfaceForCopy.Data.FrameOrder = in->Data.FrameOrder;
     m_surfaceForCopy.Data.TimeStamp  = in->Data.TimeStamp;
     m_surfaceForCopy.Data.Corrupted  = in->Data.Corrupted;
@@ -572,8 +572,7 @@ mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncode
     }
 #endif
 
-    mfxFrameSurface1 * pConvertedSurface = pSurface;
-    
+   
 #if 1
     mfxFrameSurface1 *surf;
     mfxStatus sts = m_copier->Copy(pSurface, &surf);
@@ -583,6 +582,8 @@ mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncode
     } else
 #endif
         MFX_CHECK_STS(LockFrame(pSurface));
+
+    mfxFrameSurface1 * pConvertedSurface = pSurface;
 
     //so target fourcc is different than input
     if (m_nFourCC != pSurface->Info.FourCC)
