@@ -36,6 +36,7 @@ mfxStatus CheckEncodeFrameParam(mfxVideoParam const & video,
                                 mfxBitstream        * bs,
                                 bool                  isExternalFrameAllocator);
 
+void SetDefailtsForProfileAndFrameInfo(VP9MfxVideoParam& par);
 } // MfxHwVP9Encode
 
 #endif // PRE_SI_TARGET_PLATFORM_GEN10

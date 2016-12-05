@@ -236,6 +236,7 @@ enum // identifies memory type at encoder input w/o any details
 #define BIND_EXTBUF_TYPE_TO_ID(TYPE, ID) template<> struct ExtBufTypeToId<TYPE> { enum { id = ID }; }
     BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOptionVP9,  MFX_EXTBUFF_CODING_OPTION_VP9 );
     BIND_EXTBUF_TYPE_TO_ID (mfxExtOpaqueSurfaceAlloc,MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
+    BIND_EXTBUF_TYPE_TO_ID (mfxExtCodingOption3, MFX_EXTBUFF_CODING_OPTION3);
 #undef BIND_EXTBUF_TYPE_TO_ID
 
     template <class T> inline void InitExtBufHeader(T & extBuf)
@@ -387,7 +388,7 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         mfxU32             m_status;
     };
 
-#define NUM_OF_SUPPORTED_EXT_BUFFERS 2
+#define NUM_OF_SUPPORTED_EXT_BUFFERS 3 // mfxExtCodingOptionVP9, mfxExtOpaqueSurfaceAlloc, mfxExtCodingOption3
 
     class VP9MfxVideoParam : public mfxVideoParam
     {
@@ -409,6 +410,7 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         mfxExtBuffer *              m_extParam[NUM_OF_SUPPORTED_EXT_BUFFERS];
         mfxExtCodingOptionVP9       m_extOpt;
         mfxExtOpaqueSurfaceAlloc    m_extOpaque;
+        mfxExtCodingOption3         m_extOpt3;
     };
 
     mfxStatus GetVideoParam(mfxVideoParam * parDst, mfxVideoParam *videoSrc);

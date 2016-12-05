@@ -19,6 +19,36 @@ namespace MfxHwVP9Encode
 
 #if defined (MFX_VA_WIN)
 
+mfxU16 MapBitDepthToDDI(mfxU16 depth)
+{
+    switch (depth)
+    {
+    case BITDEPTH_8:
+        return 0;
+    case BITDEPTH_10:
+        return 1;
+    case BITDEPTH_12:
+        return 2;
+    default:
+        return 0;
+    }
+}
+
+mfxU16 MapChromaFormatToDDI(mfxU16 format)
+{
+    switch (format)
+    {
+    case MFX_CHROMAFORMAT_YUV420:
+        return 0;
+    case MFX_CHROMAFORMAT_YUV422:
+        return 1;
+    case MFX_CHROMAFORMAT_YUV444:
+        return 2;
+    default:
+        return 0;
+    }
+}
+
 void FillSpsBuffer(
     VP9MfxVideoParam const & par,
     ENCODE_CAPS_VP9 const & /*caps*/,
@@ -31,6 +61,13 @@ void FillSpsBuffer(
     sps.GopPicSize        = par.mfx.GopPicSize;
     sps.TargetUsage       = (UCHAR)par.mfx.TargetUsage;
     sps.RateControlMethod = (UCHAR)par.mfx.RateControlMethod; // TODO: make correct mapping for mfx->DDI
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    mfxExtCodingOption3 opt3 = GetExtBufferRef(par);
+    sps.SeqFlags.fields.SourceBitDepth = MapBitDepthToDDI(par.mfx.FrameInfo.BitDepthLuma);
+    sps.SeqFlags.fields.EncodedBitDepth = MapBitDepthToDDI(opt3.TargetBitDepthLuma);
+    sps.SeqFlags.fields.SourceFormat = MapChromaFormatToDDI(par.mfx.FrameInfo.ChromaFormat);
+    sps.SeqFlags.fields.EncodedFormat = MapChromaFormatToDDI(opt3.TargetChromaFormatPlus1 - 1);
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
 
     if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {
@@ -274,7 +311,14 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
 
     HRESULT hr = auxDevice->Execute(AUXDEV_QUERY_ACCEL_CAPS, &guid, sizeof(guid),& m_caps, sizeof(m_caps));
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-    // MFX_CHECK(m_caps.EncodeFunc, MFX_ERR_DEVICE_FAILED); TODO: need to uncomment for machine with support of VP9 HW Encode
+    MFX_CHECK(m_caps.EncodeFunc, MFX_ERR_DEVICE_FAILED);
+
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+    if (m_caps.MaxEncodedBitDepth != 1)
+    {
+        m_caps.MaxEncodedBitDepth = 1; // WA: drivers from MAINLINE don't return correct MaxEncodedBitDepth for Gen11
+    }
+#endif // PRE_SI_TARGET_PLATFORM_GEN11
 
     m_width  = width;
     m_height = height;

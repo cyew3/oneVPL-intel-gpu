@@ -76,10 +76,41 @@ mfxStatus Plugin::GetPluginParam(mfxPluginParam *par)
     return MFX_ERR_NONE;
 }
 
-inline GUID GetGuid(VP9MfxVideoParam const &par)
+inline GUID GetGuid(VP9MfxVideoParam  par)
 {
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    if (par.mfx.CodecProfile == 0)
+    {
+        SetDefailtsForProfileAndFrameInfo(par);
+    }
+
+    switch (par.mfx.CodecProfile)
+    {
+    case MFX_PROFILE_VP9_0:
+        return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
+        DXVA2_Intel_LowpowerEncode_VP9_Profile0 : DXVA2_Intel_Encode_VP9_Profile0;
+        break;
+    case MFX_PROFILE_VP9_1:
+        return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
+        DXVA2_Intel_LowpowerEncode_VP9_Profile1 : DXVA2_Intel_Encode_VP9_Profile1;
+        break;
+    case MFX_PROFILE_VP9_2:
+        return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
+        DXVA2_Intel_LowpowerEncode_VP9_10bit_Profile2 : DXVA2_Intel_Encode_VP9_10bit_Profile2;
+        break;
+    case MFX_PROFILE_VP9_3:
+        return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
+        DXVA2_Intel_LowpowerEncode_VP9_10bit_Profile3 : DXVA2_Intel_Encode_VP9_10bit_Profile3;
+        break;
+    default:
+        // profile cannot be identified. Use Profile0 so far
+        return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
+        DXVA2_Intel_LowpowerEncode_VP9_Profile0 : DXVA2_Intel_Encode_VP9_Profile0;
+    }
+#else //PRE_SI_TARGET_PLATFORM_GEN11
     return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
     DXVA2_Intel_LowpowerEncode_VP9_Profile0 : DXVA2_Intel_Encode_VP9_Profile0;
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
 }
 
 mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
@@ -198,6 +229,47 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxF
     return MFX_ERR_NONE;
 }
 
+#define ALIGN64(X) (((mfxU32)((X)+63)) & (~ (mfxU32)63))
+
+void SetReconInfo(VP9MfxVideoParam const & par, mfxFrameInfo& fi)
+{
+    mfxExtCodingOption3 opt3 = GetExtBufferRef(par);
+    mfxU16 format = opt3.TargetChromaFormatPlus1 - 1;
+    mfxU16 depth = opt3.TargetBitDepthLuma;
+
+    fi.Width = ALIGN64(fi.Width);
+    fi.Height = ALIGN64(fi.Height);
+
+    if (format == MFX_CHROMAFORMAT_YUV444 && depth == BITDEPTH_10)
+    {
+        fi.FourCC = MFX_FOURCC_Y410;
+        fi.Width = fi.Width / 2;
+        fi.Height = fi.Height * 3;
+    }
+    else if (format == MFX_CHROMAFORMAT_YUV444 && depth == BITDEPTH_8)
+    {
+        fi.FourCC = MFX_FOURCC_AYUV;
+        fi.Width = fi.Width / 4;
+        fi.Height = fi.Height * 3;
+    }
+    else if (format == MFX_CHROMAFORMAT_YUV420 && depth == BITDEPTH_10)
+    {
+        fi.FourCC = MFX_FOURCC_P010;
+    }
+    else if (format == MFX_CHROMAFORMAT_YUV420 && depth == BITDEPTH_8)
+    {
+        fi.FourCC = MFX_FOURCC_NV12;
+    }
+    else
+    {
+        assert(!"undefined target format");
+    }
+
+    fi.ChromaFormat = format;
+    fi.BitDepthLuma = depth;
+    fi.BitDepthChroma = depth;
+}
+
 mfxStatus Plugin::Init(mfxVideoParam *par)
 {
     VP9_LOG("\n (VP9_LOG) Plugin::Init +");
@@ -264,7 +336,11 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
 
     // allocate and register surfaces for reconstructed frames
     request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumSurfRecon(m_video);
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+    SetReconInfo(m_video, request.Info);
+#else //PRE_SI_TARGET_PLATFORM_GEN11
     request.Info.FourCC = MFX_FOURCC_NV12;
+#endif // PRE_SI_TARGET_PLATFORM_GEN11
 
     sts = m_reconFrames.Init(m_pmfxCore, &request);
     MFX_CHECK_STS(sts);

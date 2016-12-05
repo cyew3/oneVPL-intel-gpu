@@ -69,6 +69,7 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
 
     InitExtBufHeader(m_extOpt);
     InitExtBufHeader(m_extOpaque);
+    InitExtBufHeader(m_extOpt3);
 
     if (mfxExtCodingOptionVP9 * opts = GetExtBuffer(par))
         m_extOpt = *opts;
@@ -76,8 +77,12 @@ void VP9MfxVideoParam::Construct(mfxVideoParam const & par)
     if (mfxExtOpaqueSurfaceAlloc * opts = GetExtBuffer(par))
         m_extOpaque = *opts;
 
-    m_extParam[0]  = &m_extOpt.Header;
-    m_extParam[1]  = &m_extOpaque.Header;
+    if (mfxExtCodingOption3 * opts = GetExtBuffer(par))
+        m_extOpt3 = *opts;
+
+    m_extParam[0] = &m_extOpt.Header;
+    m_extParam[1] = &m_extOpaque.Header;
+    m_extParam[2] = &m_extOpt3.Header;
 
     ExtParam = m_extParam;
     NumExtParam = mfxU16(sizeof m_extParam / sizeof m_extParam[0]);
@@ -119,12 +124,22 @@ mfxStatus InitVp9SeqLevelParam(VP9MfxVideoParam const &video, VP9SeqLevelParam &
     video;
     Zero(param);
 
-    param.profile = PROFILE_0;
+    param.profile = (mfxU8)(video.mfx.CodecProfile - 1);
     param.bitDepth = BITDEPTH_8;
-    param.colorSpace = UNKNOWN_COLOR_SPACE;
-    param.colorRange = 0; // BT.709-6
     param.subsamplingX = 1;
     param.subsamplingY = 1;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    mfxExtCodingOption3 opt3 = GetExtBufferRef(video);
+    if (MFX_CHROMAFORMAT_YUV444 == (opt3.TargetChromaFormatPlus1 - 1))
+    {
+        param.subsamplingX = 0;
+        param.subsamplingY = 0;
+    }
+    param.bitDepth = (mfxU8)opt3.TargetBitDepthLuma;
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
+
+    param.colorSpace = UNKNOWN_COLOR_SPACE;
+    param.colorRange = 0; // BT.709-6
 
     return MFX_ERR_NONE;
 };

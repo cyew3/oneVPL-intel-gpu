@@ -32,7 +32,7 @@ namespace MfxHwVP9Encode
         return MFX_ERR_NONE;
     }
 
-// uncompressed header packing
+// uncompressed headencompressedr packing
 
 #define VP9_FRAME_MARKER 0x2
 

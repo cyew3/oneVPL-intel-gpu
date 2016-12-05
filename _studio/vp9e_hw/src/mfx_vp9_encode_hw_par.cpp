@@ -8,6 +8,7 @@
 // Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
 //
 
+#include <limits>
 #include "mfx_common.h"
 
 #include "mfxvp9.h"
@@ -27,7 +28,8 @@ namespace MfxHwVP9Encode
 bool IsExtBufferSupportedInInit(mfxU32 id)
 {
     return id == MFX_EXTBUFF_CODING_OPTION_VP9
-        || id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION;
+        || id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION
+        || id == MFX_EXTBUFF_CODING_OPTION3;
 }
 
 bool IsExtBufferSupportedInRuntime(mfxU32 id)
@@ -83,8 +85,6 @@ inline mfxStatus SetOrCopySupportedParams(mfxInfoMFX *pDst, mfxInfoMFX *pSrc = 0
 
     MFX_CHECK_NULL_PTR1(pDst);
 
-    _SetOrCopyPar(FrameInfo.BitDepthLuma);
-    _SetOrCopyPar(FrameInfo.BitDepthChroma);
     _SetOrCopyPar(FrameInfo.Width);
     _SetOrCopyPar(FrameInfo.Height);
     _SetOrCopyPar(FrameInfo.CropW);
@@ -96,6 +96,9 @@ inline mfxStatus SetOrCopySupportedParams(mfxInfoMFX *pDst, mfxInfoMFX *pSrc = 0
     _SetOrCopyPar(FrameInfo.AspectRatioW);
     _SetOrCopyPar(FrameInfo.AspectRatioH);
     _SetOrCopyPar(FrameInfo.ChromaFormat);
+    _SetOrCopyPar(FrameInfo.BitDepthLuma);
+    _SetOrCopyPar(FrameInfo.BitDepthChroma);
+    _SetOrCopyPar(FrameInfo.Shift);
     _SetOrCopyPar(FrameInfo.PicStruct);
     _SetOrCopyPar(FrameInfo.FourCC);
 
@@ -141,6 +144,22 @@ inline mfxStatus SetOrCopySupportedParams(mfxExtCodingOptionVP9 *pDst, mfxExtCod
     return MFX_ERR_NONE;
 }
 
+inline mfxStatus SetOrCopySupportedParams(mfxExtCodingOption3 *pDst, mfxExtCodingOption3 *pSrc = 0)
+{
+    pSrc;
+    MFX_CHECK_NULL_PTR1(pDst);
+
+    ZeroExtBuffer(*pDst);
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    _SetOrCopyPar(TargetChromaFormatPlus1);
+    _SetOrCopyPar(TargetBitDepthLuma);
+    _SetOrCopyPar(TargetBitDepthChroma);
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
+
+    return MFX_ERR_NONE;
+}
+
 mfxStatus SetSupportedParameters(mfxVideoParam & par)
 {
     par.AsyncDepth = 1;
@@ -161,6 +180,12 @@ mfxStatus SetSupportedParameters(mfxVideoParam & par)
     if (pOpt != 0)
     {
         SetOrCopySupportedParams(pOpt);
+    }
+
+    mfxExtCodingOption3 *pOpt3 = GetExtBuffer(par);
+    if (pOpt3 != 0)
+    {
+        SetOrCopySupportedParams(pOpt3);
     }
 
     return MFX_ERR_NONE;
@@ -228,6 +253,96 @@ mfxStatus CleanOutUnsupportedParameters(VP9MfxVideoParam &par)
 
     return sts;
 }
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+bool IsChromaFormatSupported(mfxU16 profile, mfxU16 chromaFormat)
+{
+    switch (profile)
+    {
+    case MFX_PROFILE_VP9_0:
+    case MFX_PROFILE_VP9_2:
+        return chromaFormat == MFX_CHROMAFORMAT_YUV420;
+    case MFX_PROFILE_VP9_1:
+    case MFX_PROFILE_VP9_3:
+        return chromaFormat == MFX_CHROMAFORMAT_YUV420 ||
+            chromaFormat == MFX_CHROMAFORMAT_YUV444;
+    }
+
+    return false;
+}
+
+bool IsBitDepthSupported(mfxU16 profile, mfxU16 bitDepth)
+{
+    switch (profile)
+    {
+    case MFX_PROFILE_VP9_0:
+    case MFX_PROFILE_VP9_1:
+        return bitDepth == BITDEPTH_8;
+    case MFX_PROFILE_VP9_2:
+    case MFX_PROFILE_VP9_3:
+        return bitDepth == 8 ||
+            bitDepth == BITDEPTH_10;
+    }
+
+    return false;
+}
+
+mfxU16 GetChromaFormat(mfxU32 fourcc)
+{
+    switch (fourcc)
+    {
+    case MFX_FOURCC_NV12:
+    case MFX_FOURCC_P010:
+        return MFX_CHROMAFORMAT_YUV420;
+    case MFX_FOURCC_AYUV:
+    case MFX_FOURCC_Y410:
+        return MFX_CHROMAFORMAT_YUV444;
+    default:
+        return 0;
+    }
+}
+
+mfxU16 GetBitDepth(mfxU32 fourcc)
+{
+    switch (fourcc)
+    {
+    case MFX_FOURCC_NV12:
+    case MFX_FOURCC_AYUV:
+        return BITDEPTH_8;
+    case MFX_FOURCC_Y410:
+    case MFX_FOURCC_P010:
+        return BITDEPTH_10;
+    default:
+        return 0;
+    }
+}
+
+// check bit depth itself and it's compliance with fourcc
+bool CheckBitDepth(mfxU16 depth, mfxU32 fourcc)
+{
+    if (depth != 0 &&
+        (depth != BITDEPTH_8 && depth != BITDEPTH_10
+        || fourcc != 0 && depth != GetBitDepth(fourcc)))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+// check chroma format itself and it's compliance with fourcc
+bool CheckChromaFormat(mfxU16 format, mfxU32 fourcc)
+{
+    if (format != MFX_CHROMAFORMAT_YUV420 && format != MFX_CHROMAFORMAT_YUV444
+        || fourcc != 0 && format != GetChromaFormat(fourcc))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+#endif // PRE_SI_TARGET_PLATFORM_GEN11
 
 mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 {
@@ -299,17 +414,141 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         unsupported = true;
     }
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    {
+        mfxExtCodingOption3& opt3 = GetExtBufferRef(par);
+        mfxU32& fourcc         = par.mfx.FrameInfo.FourCC;
+        mfxU16& inFormat       = par.mfx.FrameInfo.ChromaFormat;
+        mfxU16& inDepthLuma    = par.mfx.FrameInfo.BitDepthLuma;
+        mfxU16& inDepthChroma  = par.mfx.FrameInfo.BitDepthLuma;
+        mfxU16& profile        = par.mfx.CodecProfile;
+        mfxU16& outFormatP1    = opt3.TargetChromaFormatPlus1;
+        mfxU16& outDepthLuma   = opt3.TargetBitDepthLuma;
+        mfxU16& outDepthChroma = opt3.TargetBitDepthLuma;
+
+        if (fourcc != 0
+            && fourcc != MFX_FOURCC_NV12 && fourcc != MFX_FOURCC_AYUV  // 8 bit
+            && fourcc != MFX_FOURCC_P010 && fourcc != MFX_FOURCC_Y410) // 10 bit
+        {
+            fourcc = 0;
+            unsupported = true;
+        }
+
+        if (false == CheckChromaFormat(inFormat, fourcc))
+        {
+            inFormat = 0;
+            unsupported = true;
+        }
+
+        if (false == CheckBitDepth(inDepthLuma, fourcc))
+        {
+            inDepthLuma = 0;
+            unsupported = true;
+        }
+
+        if (false == CheckBitDepth(inDepthChroma, fourcc))
+        {
+            inDepthChroma = 0;
+            unsupported = true;
+        }
+
+        if (inDepthLuma != 0 && inDepthChroma != 0 &&
+            inDepthLuma != inDepthChroma)
+        {
+            inDepthChroma = 0;
+            unsupported = true;
+        }
+
+        if (par.mfx.FrameInfo.Shift != 0 && fourcc != MFX_FOURCC_P010)
+        {
+            par.mfx.FrameInfo.Shift = 0;
+            unsupported = true;
+        }
+
+        if (outFormatP1 != 0 && false == CheckChromaFormat(outFormatP1 - 1, fourcc))
+        {
+            outFormatP1 = 0;
+            unsupported = true;
+        }
+
+        if (false == CheckBitDepth(outDepthLuma, fourcc))
+        {
+            outDepthLuma = 0;
+            unsupported = true;
+        }
+
+        if (false == CheckBitDepth(outDepthChroma, fourcc))
+        {
+            outDepthChroma = 0;
+            unsupported = true;
+        }
+
+        if (outDepthLuma != 0 && outDepthChroma != 0 &&
+            outDepthLuma != outDepthChroma)
+        {
+            outDepthChroma = 0;
+            unsupported = true;
+        }
+
+        // check compliance of profile and chroma format, bit depth
+        if (profile != 0)
+        {
+            if (outFormatP1 != 0 && false == IsChromaFormatSupported(profile, outFormatP1 - 1))
+            {
+                outFormatP1 = 0;
+                unsupported = true;
+            }
+
+            if (outDepthLuma != 0 && false == IsBitDepthSupported(profile, outDepthLuma))
+            {
+                outDepthLuma = 0;
+                unsupported = true;
+            }
+
+            if (outDepthChroma != 0 && false == IsBitDepthSupported(profile, outDepthChroma))
+            {
+                outDepthChroma = 0;
+                unsupported = true;
+            }
+        }
+    }
+#else //PRE_SI_TARGET_PLATFORM_GEN11
+    if (par.mfx.CodecProfile > MFX_PROFILE_VP9_0)
+    {
+        par.mfx.CodecProfile = MFX_PROFILE_UNKNOWN;
+        unsupported = true;
+    }
+
     if (par.mfx.FrameInfo.ChromaFormat > MFX_CHROMAFORMAT_YUV420)
     {
         par.mfx.FrameInfo.ChromaFormat = 0;
         unsupported = true;
     }
 
-    if (par.mfx.CodecProfile > MFX_PROFILE_VP9_0)
+    if (par.mfx.FrameInfo.FourCC != 0 && par.mfx.FrameInfo.FourCC != MFX_FOURCC_NV12)
     {
-        par.mfx.CodecProfile = MFX_PROFILE_UNKNOWN;
+        par.mfx.FrameInfo.FourCC = 0;
         unsupported = true;
     }
+
+    if (par.mfx.FrameInfo.BitDepthLuma != 0 && par.mfx.FrameInfo.BitDepthLuma != 8)
+    {
+        par.mfx.FrameInfo.BitDepthLuma = 0;
+        unsupported = true;
+    }
+
+    if (par.mfx.FrameInfo.BitDepthChroma != 0 && par.mfx.FrameInfo.BitDepthChroma != 8)
+    {
+        par.mfx.FrameInfo.BitDepthChroma = 0;
+        unsupported = true;
+    }
+
+    if (par.mfx.FrameInfo.Shift != 0)
+    {
+        par.mfx.FrameInfo.Shift = 0;
+        unsupported = true;
+    }
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
 
     if (par.mfx.NumThread > 1)
     {
@@ -465,7 +704,17 @@ inline mfxU16 GetDefaultBufferSize(VP9MfxVideoParam const &par)
     else
     {
         mfxFrameInfo const &fi = par.mfx.FrameInfo;
-        return (fi.Width * fi.Height * 3) / 2; // uncompressed frame size for 420 8 bit
+
+        const mfxU16 result_max_value = (mfxU16)-1;
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        if(par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || par.mfx.FrameInfo.FourCC == MFX_FOURCC_Y410) {
+            mfxU32 result = (fi.Width * fi.Height * 3);
+            return (result < result_max_value ? (mfxU16)result : result_max_value);
+        }
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
+        mfxU32 result = (fi.Width * fi.Height * 3) / 2;
+        return (result < result_max_value ? (mfxU16)result : result_max_value); // uncompressed frame size for 420 8 bit
     }
 }
 
@@ -475,6 +724,31 @@ inline mfxU16 GetDefaultAsyncDepth(VP9MfxVideoParam const &par)
     return 2;
 }
 
+inline mfxU16 GetMinProfile(mfxU16 depth, mfxU16 format)
+{
+    return MFX_PROFILE_VP9_0 +
+        (depth > 8) * 2 +
+        (format > MFX_CHROMAFORMAT_YUV420);
+}
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+void SetDefailtsForProfileAndFrameInfo(VP9MfxVideoParam& par)
+{
+    mfxFrameInfo& fi = par.mfx.FrameInfo;
+
+    SetDefault(fi.ChromaFormat, GetChromaFormat(fi.FourCC));
+    SetDefault(fi.BitDepthLuma, GetBitDepth(fi.FourCC));
+    SetDefault(fi.BitDepthChroma, GetBitDepth(fi.FourCC));
+
+    mfxExtCodingOption3 &opt3 = GetExtBufferRef(par);
+    SetDefault(opt3.TargetChromaFormatPlus1, fi.ChromaFormat + 1);
+    SetDefault(opt3.TargetBitDepthLuma, fi.BitDepthLuma);
+    SetDefault(opt3.TargetBitDepthChroma, fi.BitDepthChroma);
+
+    SetDefault(par.mfx.CodecProfile, GetMinProfile(opt3.TargetBitDepthLuma, opt3.TargetChromaFormatPlus1 - 1));
+}
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
+
 #define DEFAULT_GOP_SIZE 0xffff
 #define DEFAULT_FRAME_RATE 30
 
@@ -483,7 +757,6 @@ mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     SetDefault(par.AsyncDepth, GetDefaultAsyncDepth(par));
 
     // mfxInfoMfx
-    SetDefault(par.mfx.CodecProfile, MFX_PROFILE_VP9_0);
     SetDefault(par.mfx.GopPicSize, DEFAULT_GOP_SIZE);
     SetDefault(par.mfx.GopRefDist, 1);
     SetDefault(par.mfx.NumRefFrame, 1);
@@ -511,7 +784,16 @@ mfxStatus SetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     }
     SetTwoDefaults(fi.AspectRatioW, fi.AspectRatioH, 1, 1);
     SetDefault(fi.PicStruct, MFX_PICSTRUCT_PROGRESSIVE);
+
+    // profile, chroma format, bit depth
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    SetDefailtsForProfileAndFrameInfo(par);
+#else //PRE_SI_TARGET_PLATFORM_GEN11
+    SetDefault(par.mfx.CodecProfile, MFX_PROFILE_VP9_0);
     SetDefault(fi.ChromaFormat, MFX_CHROMAFORMAT_YUV420);
+    SetDefault(fi.BitDepthLuma, 8);
+    SetDefault(fi.BitDepthChroma, 8);
+#endif //PRE_SI_TARGET_PLATFORM_GEN11
 
     // ext buffers
     mfxExtCodingOptionVP9 &opt = GetExtBufferRef(par);
@@ -533,7 +815,14 @@ mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 c
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
-    // (2) target and max bitrates
+
+    // (2) fourcc
+    if (fi.FourCC == 0)
+    {
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
+    // (3) target and max bitrates
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR && par.mfx.TargetKbps == 0)
     {
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -544,7 +833,7 @@ mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 c
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    // (3) crops
+    // (4) crops
     if (fi.CropW || fi.CropH || fi.CropX || fi.CropY)
     {
         if (fi.CropW == 0 || fi.CropH == 0)
@@ -553,7 +842,7 @@ mfxStatus CheckParametersAndSetDefaults(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 c
         }
     }
 
-    // (4) opaque memory allocation
+    // (5) opaque memory allocation
     if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
         mfxExtOpaqueSurfaceAlloc &opaq = GetExtBufferRef(par);

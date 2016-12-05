@@ -159,6 +159,13 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
 
         hr = m_pVContext->DecoderExtension(m_pVDecoder, &ext);
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+        if (m_caps.MaxEncodedBitDepth != 1)
+        {
+            m_caps.MaxEncodedBitDepth = 1; // WA: drivers from MAINLINE don't return correct MaxEncodedBitDepth for Gen11
+        }
+#endif // PRE_SI_TARGET_PLATFORM_GEN11
     }
 
     VP9_LOG("\n (VP9_LOG) D3D11Encoder::CreateAuxilliaryDevice -");
@@ -245,6 +252,7 @@ mfxU32 ConvertDXGIFormatToMFXFourCC(DXGI_FORMAT format)
     case DXGI_FORMAT_P010: return MFX_FOURCC_P010;
     case DXGI_FORMAT_YUY2: return MFX_FOURCC_YUY2;
     case DXGI_FORMAT_Y210: return MFX_FOURCC_P210;
+    case DXGI_FORMAT_Y410: return MFX_FOURCC_Y410;
     case DXGI_FORMAT_P8: return MFX_FOURCC_P8;
     default:
         return 0;
