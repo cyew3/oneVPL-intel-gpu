@@ -1431,7 +1431,6 @@ VideoVPPHW::VideoVPPHW(IOMode mode, VideoCORE *core)
 #endif
 {
     MemSetZero4mfxExecuteParams(&m_executeParams);
-    memset(m_internalVidSurf, 0, sizeof(MfxFrameAllocResponse) * 2);
     memset(&m_config, 0, sizeof(Config));
     m_config.m_surfCount[VPP_IN] = m_config.m_surfCount[VPP_OUT] = 1;
     memset(&m_params, 0, sizeof(mfxVideoParam));
@@ -4817,7 +4816,7 @@ mfxStatus MfxFrameAllocResponse::Free( void )
             m_core->FreeFrames(&m_responseQueue[i]);
         }
 
-        m_responseQueue.resize(0);
+        m_responseQueue.clear();
     }
     else
     {
