@@ -438,7 +438,7 @@ int main(int argc, vm_char *argv[])
     CHECK_RESULT(sts, MFX_ERR_NONE, 1);
 
     //prepare file writers (YUV file)
-    Resources.dstFileWritersN = Params.strDstFiles.size();
+    Resources.dstFileWritersN = (mfxU32)Params.strDstFiles.size();
     Resources.pDstFileWriters = new GeneralWriter[Resources.dstFileWritersN];
     vm_char* istream;
     for (mfxU32 i = 0; i < Resources.dstFileWritersN; i++)
