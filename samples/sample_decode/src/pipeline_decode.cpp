@@ -153,6 +153,7 @@ CDecodingPipeline::CDecodingPipeline()
 
 CDecodingPipeline::~CDecodingPipeline()
 {
+    m_d3dRender.Close();
     Close();
 }
 
@@ -1502,6 +1503,12 @@ mfxStatus CDecodingPipeline::DeliverLoop(void)
             continue;
         }
         mfxFrameSurface1* frame = &(pCurrentDeliveredSurface->surface->frame);
+
+//        res = m_pGeneralAllocator->Lock(m_pGeneralAllocator->pthis,frame->Data.MemId,&frame->Data);
+//        FILE* fp = fopen("out_t.yuv","wb");
+//        fwrite(frame->Data.Y16,(size_t)(frame->Info.Height*frame->Data.Pitch*1.5),1,fp);
+//        fclose(fp);
+//        res = m_pGeneralAllocator->Unlock(m_pGeneralAllocator->pthis,frame->Data.MemId,&frame->Data);
 
         m_error = DeliverOutput(frame);
         ReturnSurfaceToBuffers(pCurrentDeliveredSurface);

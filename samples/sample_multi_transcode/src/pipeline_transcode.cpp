@@ -3443,6 +3443,15 @@ void CTranscodingPipeline::Close()
         m_bIsJoinSession = false;
     }
 
+    //Destroy renderer
+#if defined(_WIN32) || defined(_WIN64)
+    if(m_hwdev4Rendering)
+    {
+        delete m_hwdev4Rendering;
+        m_hwdev4Rendering=NULL;
+    }
+#endif
+
     // free allocated surfaces AFTER closing components
     FreeFrames();
 
