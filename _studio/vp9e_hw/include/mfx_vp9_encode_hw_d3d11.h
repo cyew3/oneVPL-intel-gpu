@@ -92,7 +92,6 @@ private:
 
 
     mfxCoreInterface*  m_pmfxCore;
-    VP9MfxVideoParam   m_video;
     ENCODE_CAPS_VP9    m_caps;
 
     ENCODE_SET_SEQUENCE_PARAMETERS_VP9 m_sps;

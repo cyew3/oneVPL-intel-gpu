@@ -53,6 +53,8 @@ namespace MfxHwVP9Encode
 #define MAX_Q_INDEX 255
 #define MAX_LF_LEVEL 63
 
+#define MAX_TASK_ID 0xffff
+
 enum
 {
     MFX_MEMTYPE_D3D_INT = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME,
@@ -122,6 +124,7 @@ enum // identifies memory type at encoder input w/o any details
         MAX_PROFILES
     };
 
+    // Sequence level parameters should contain only parameters that will not change during encoding
     struct VP9SeqLevelParam
     {
         mfxU8  profile;
@@ -130,9 +133,6 @@ enum // identifies memory type at encoder input w/o any details
         mfxU8  colorRange;
         mfxU8  subsamplingX;
         mfxU8  subsamplingY;
-
-        mfxU32 initialWidth;
-        mfxU32 initialHeight;
 
         mfxU8  frameParallelDecoding;
     };
@@ -421,7 +421,7 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
     mfxStatus InitVp9SeqLevelParam(VP9MfxVideoParam const &video, VP9SeqLevelParam &param);
 
     class Task;
-    mfxStatus DecideOnRefListAndDPBRefresh(mfxVideoParam * par,
+    mfxStatus DecideOnRefListAndDPBRefresh(mfxVideoParam const & par,
                                            Task *pTask,
                                            std::vector<sFrameEx*>&dpb,
                                            VP9FrameLevelParam &frameParam);
@@ -481,11 +481,6 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         return video.AsyncDepth;
     }
 
-    inline mfxU32 CalcNumSurfRawLocal(mfxVideoParam const & video, bool bHWImpl, bool bHWInput,bool bRawReference = false)
-    {
-        return (bHWInput !=  bHWImpl) ? CalcNumTasks(video) + ( bRawReference ? 3 : 0 ):0;
-    }
-
     inline mfxU32 CalcNumSurfRecon(mfxVideoParam const & video)
     {
         return video.mfx.NumRefFrame + CalcNumTasks(video);
@@ -517,10 +512,15 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         sFrameEx*         m_pOutBs;
         mfxU32            m_frameOrder;
         mfxU64            m_timeStamp;
+        mfxU32            m_taskIdForDriver;
 
         mfxEncodeCtrl     m_ctrl;
 
         mfxU32 m_bsDataLength;
+
+        VP9MfxVideoParam* m_pParam;
+
+        bool m_insertIVFSeqHeader;
 
         Task ():
               m_pRawFrame(NULL),
@@ -530,7 +530,10 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
               m_pOutBs(NULL),
               m_frameOrder(0),
               m_timeStamp(0),
-              m_bsDataLength(0)
+              m_taskIdForDriver(0),
+              m_bsDataLength(0),
+              m_pParam(NULL),
+              m_insertIVFSeqHeader(false)
           {
               Zero(m_pRecRefFrames);
               Zero(m_frameParam);
@@ -559,9 +562,7 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
 
     inline bool IsResetOfPipelineRequired(const mfxVideoParam& oldPar, const mfxVideoParam& newPar)
     {
-        return oldPar.mfx.FrameInfo.Width != newPar.mfx.FrameInfo.Width
-              || oldPar.mfx.FrameInfo.Height != newPar.mfx.FrameInfo.Height
-              ||  oldPar.mfx.GopPicSize != newPar.mfx.GopPicSize;
+        return oldPar.mfx.GopPicSize != newPar.mfx.GopPicSize;
     }
 
     mfxStatus GetRealSurface(
@@ -581,50 +582,19 @@ template <typename T> mfxExtBufferRefProxy GetExtBufferRef(T const & par)
         VP9MfxVideoParam const &par,
         Task const &task);
 
-#if 0 // these two functions are left for reference for future refactiring
-mfxStatus ReleaseDpbFrames()
+/*mfxStatus ReleaseDpbFrames(mfxCoreInterface* pCore, std::vector<sFrameEx*> & dpb)
 {
-    for (mfxU8 refIdx = 0; refIdx < m_dpb.size(); refIdx ++)
+    for (mfxU8 refIdx = 0; refIdx < dpb.size(); refIdx ++)
     {
-        if (m_dpb[refIdx])
+        if (dpb[refIdx])
         {
-            m_dpb[refIdx]->refCount = 0;
-            MFX_CHECK_STS(FreeSurface(m_dpb[refIdx],m_pCore));
+            dpb[refIdx]->refCount = 0;
+            MFX_CHECK_STS(FreeSurface(dpb[refIdx], pCore));
         }
     }
 
     return MFX_ERR_NONE;
-}
-
-mfxStatus Reset(mfxVideoParam *par)
-{
-    mfxStatus sts = MFX_ERR_NONE;
-    MFX_CHECK(m_pCore!=0, MFX_ERR_NOT_INITIALIZED);
-
-    MFX_CHECK(m_ReconFrames.Height() >= par->mfx.FrameInfo.Height,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-    MFX_CHECK(m_ReconFrames.Width()  >= par->mfx.FrameInfo.Width,MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-
-    MFX_CHECK(mfxU16(CalcNumSurfRawLocal(*par,m_bHWFrames,isVideoSurfInput(*par))) <= m_LocalRawFrames.Num(),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-    MFX_CHECK(mfxU16(CalcNumSurfRecon(*par)) <= m_ReconFrames.Num(),MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-
-    m_video = *par;
-
-    if (IsResetOfPipelineRequired(m_video, *par))
-    {
-        m_frameNum = 0;
-        ReleaseDpbFrames();
-        memset(&m_dpb, 0, sizeof(m_dpb));
-        sts = FreeTasks(m_Tasks);
-        MFX_CHECK_STS(sts);
-    }
-    return MFX_ERR_NONE;
-}
-#endif
-
-inline bool InsertSeqHeader(Task const &task)
-{
-    return (task.m_frameOrder == 0); // TODO: fix condition for SH insertion
-}
+}*/
 
 struct FindTaskByRawSurface
 {
@@ -635,7 +605,19 @@ struct FindTaskByRawSurface
         return task.m_pRawFrame->pSurface == m_pSurface;
     }
 
-    mfxFrameSurface1* m_pSurface;;
+    mfxFrameSurface1* m_pSurface;
+};
+
+struct FindTaskByMfxVideoParam
+{
+    FindTaskByMfxVideoParam(mfxVideoParam* pPar) : m_pPar(pPar) {}
+
+    bool operator ()(Task const & task)
+    {
+        return task.m_pParam == m_pPar;
+    }
+
+    mfxVideoParam* m_pPar;
 };
 
 } // MfxHwVP9Encode

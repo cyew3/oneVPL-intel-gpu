@@ -33,6 +33,7 @@ public:
     virtual mfxStatus GetPluginParam(mfxPluginParam *par);
     virtual mfxStatus EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxThreadTask *task);
     virtual mfxStatus ConfigTask(Task &task);
+    virtual mfxStatus RemoveObsoleteParameters();
     virtual mfxStatus Execute(mfxThreadTask task, mfxU32 , mfxU32 );
     virtual mfxStatus FreeResources(mfxThreadTask , mfxStatus );
     virtual mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out);
@@ -95,6 +96,9 @@ protected:
     virtual ~Plugin(){};
 
     VP9MfxVideoParam              m_video;
+    std::list<VP9MfxVideoParam>   m_videoForParamChange; // encoder keeps several versions of encoding parameters
+                                                         // to allow dynamic parameter change w/o drain of all buffered tasks.
+                                                         // Tasks submitted before the change reference to previous parameters version.
     std::auto_ptr <DriverEncoder> m_ddi;
     UMC::Mutex m_taskMutex;
     bool       m_bStartIVFSequence;
@@ -124,6 +128,10 @@ protected:
     mfxU32 m_frameArrivalOrder;
 
     bool m_drainState;
+
+    mfxU32 m_taskIdForDriver; // should be unique among all the frames submitted to driver
+
+    mfxI32 m_numBufferedFrames;
 };
 
 } // MfxHwVP9Encode

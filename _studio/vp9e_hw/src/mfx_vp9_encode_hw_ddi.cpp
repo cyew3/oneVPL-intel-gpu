@@ -380,7 +380,7 @@ namespace MfxHwVP9Encode
 
         if (opt.WriteIVFHeaders != MFX_CODINGOPTION_OFF)
         {
-            if (InsertSeqHeader(task))
+            if (task.m_insertIVFSeqHeader)
             {
                 AddSeqHeader(par.mfx.FrameInfo.Width,
                     par.mfx.FrameInfo.Height,

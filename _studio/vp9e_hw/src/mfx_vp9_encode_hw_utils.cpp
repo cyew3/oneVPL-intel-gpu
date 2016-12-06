@@ -182,10 +182,10 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
     return MFX_ERR_NONE;
 }
 
-mfxStatus DecideOnRefListAndDPBRefresh(mfxVideoParam * par, Task *pTask, std::vector<sFrameEx*>&dpb, VP9FrameLevelParam &frameParam)
+mfxStatus DecideOnRefListAndDPBRefresh(mfxVideoParam const & par, Task *pTask, std::vector<sFrameEx*>&dpb, VP9FrameLevelParam &frameParam)
 {
     dpb; par;
-    bool multiref = (par->mfx.NumRefFrame == 3);
+    bool multiref = (par.mfx.NumRefFrame == 3);
     if (multiref == true)
     {
 #if 0

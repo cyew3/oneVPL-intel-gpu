@@ -171,13 +171,12 @@ mfxStatus D3D11Encoder::CreateAccelerationService(VP9MfxVideoParam const & par)
 {
     VP9_LOG("\n (VP9_LOG) D3D11Encoder::CreateAccelerationService +");
 
-    m_video = par;
     m_infoQueried = false;
 
     FillSpsBuffer(par, m_caps, m_sps);
 
     m_frameHeaderBuf.resize(VP9_MAX_UNCOMPRESSED_HEADER_SIZE + MAX_IVF_HEADER_SIZE);
-    InitVp9SeqLevelParam(m_video, m_seqParam);
+    InitVp9SeqLevelParam(par, m_seqParam);
 
     VP9_LOG("\n (VP9_LOG) D3D11Encoder::CreateAccelerationService -");
     return MFX_ERR_NONE;
@@ -186,8 +185,7 @@ mfxStatus D3D11Encoder::CreateAccelerationService(VP9MfxVideoParam const & par)
 
 mfxStatus D3D11Encoder::Reset(VP9MfxVideoParam const & par)
 {
-    m_video = par;
-
+    par;
     return MFX_ERR_NONE;
 
 } // mfxStatus D3D11Encoder::Reset(MfxVideoParam const & par)
@@ -398,6 +396,10 @@ mfxStatus D3D11Encoder::Execute(
 
     UINT & bufCnt = encodeExecuteParams.NumCompBuffers;
 
+    const VP9MfxVideoParam& curMfxPar = *task.m_pParam;
+
+    FillSpsBuffer(curMfxPar, m_caps, m_sps);
+
     compBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA);
     compBufferDesc[bufCnt].DataSize = mfxU32(sizeof(m_sps));
     compBufferDesc[bufCnt].pCompBuffer = &m_sps;
@@ -408,10 +410,10 @@ mfxStatus D3D11Encoder::Execute(
     mfxU8 * pBuf = &m_frameHeaderBuf[0];
     Zero(m_frameHeaderBuf);
 
-    mfxU16 bytesWritten = PrepareFrameHeader(m_video, pBuf, (mfxU32)m_frameHeaderBuf.size(), task, m_seqParam, offsets);
+    mfxU16 bytesWritten = PrepareFrameHeader(curMfxPar, pBuf, (mfxU32)m_frameHeaderBuf.size(), task, m_seqParam, offsets);
 
     // fill PPS DDI structure for current frame
-    FillPpsBuffer(m_video, task, m_pps, offsets);
+    FillPpsBuffer(curMfxPar, task, m_pps, offsets);
 
     compBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_PPSDATA);
     compBufferDesc[bufCnt].DataSize = mfxU32(sizeof(m_pps));
@@ -478,7 +480,7 @@ mfxStatus D3D11Encoder::QueryStatus(
     VP9_LOG("\n (VP9_LOG) D3D11Encoder::QueryStatus +");
 
     // first check cache.
-    const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_frameOrder); // TODO: fix to unique status report number
+    const ENCODE_QUERY_STATUS_PARAMS* feedback = m_feedbackCached.Hit(task.m_taskIdForDriver); // TODO: fix to unique status report number
 
     // if task is not in cache then query its status
     if (feedback == 0 || feedback->bStatus != ENCODE_OK)
@@ -510,7 +512,7 @@ mfxStatus D3D11Encoder::QueryStatus(
         // Put all with ENCODE_OK into cache.
         m_feedbackCached.Update(m_feedbackUpdate);
 
-        feedback = m_feedbackCached.Hit(task.m_frameOrder);
+        feedback = m_feedbackCached.Hit(task.m_taskIdForDriver);
         MFX_CHECK(feedback != 0, MFX_ERR_DEVICE_FAILED);
     }
 
@@ -519,7 +521,7 @@ mfxStatus D3D11Encoder::QueryStatus(
     {
     case ENCODE_OK:
         task.m_bsDataLength = feedback->bitstreamSize; // TODO: save bitstream size here
-        m_feedbackCached.Remove(task.m_frameOrder);
+        m_feedbackCached.Remove(task.m_taskIdForDriver);
         sts = MFX_ERR_NONE;
         break;
     case ENCODE_NOTREADY:
