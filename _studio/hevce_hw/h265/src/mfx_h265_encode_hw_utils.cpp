@@ -2927,6 +2927,7 @@ void ConfigureTask(
 
     mfxU16 IntRefType = par.m_ext.CO2.IntRefType;
 
+#ifdef PRE_SI_TARGET_PLATFORM_GEN10
     // process roi
     mfxExtEncoderROI const * pRoi = &par.m_ext.ROI;
     mfxExtEncoderROI* extRoiRuntime = ExtBuffer::Get(task.m_ctrl);
@@ -2952,6 +2953,7 @@ void ConfigureTask(
                 task.m_numRoi ++;
         }
     }
+#endif // PRE_SI_TARGET_PLATFORM_GEN10
 
     if (task.m_tid == 0 && IntRefType)
     {

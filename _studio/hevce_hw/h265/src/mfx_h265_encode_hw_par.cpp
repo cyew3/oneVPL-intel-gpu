@@ -199,6 +199,7 @@ mfxStatus CheckProfile(mfxVideoParam& par)
 
     default:
         return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
 #endif
 
     return sts;
@@ -771,6 +772,8 @@ bool CheckLCUSize(mfxU32 LCUSizeSupported, mfxU32& LCUSize)
     return true;
 }
 
+#ifdef PRE_SI_TARGET_PLATFORM_GEN10
+
 void CheckAndFixRect(MfxVideoParam const & par,
                      RectData *rect,
                      mfxU32 &changed,
@@ -813,6 +816,7 @@ mfxStatus CheckAndFixRoi(MfxVideoParam const & par, RoiData *roi)
 
     return checkSts;
 }
+#endif // PRE_SI_TARGET_PLATFORM_GEN10
 
 const mfxU16 AVBR_ACCURACY_MIN = 1;
 const mfxU16 AVBR_ACCURACY_MAX = 65535;
@@ -1813,6 +1817,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     }
 #endif
 
+#ifdef PRE_SI_TARGET_PLATFORM_GEN10
     //ROI
     if (ROI.NumROI) {
 
@@ -1845,6 +1850,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
             }
         }
     }
+#endif // PRE_SI_TARGET_PLATFORM_GEN10
 
     if (CO3.EnableMBQP !=0)
     {
