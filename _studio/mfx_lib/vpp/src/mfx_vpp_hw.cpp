@@ -73,6 +73,18 @@ enum
     FROM_RUNTIME_EXTBUFF_FIELD_PROC = 0x100,
     FROM_RUNTIME_PICSTRUCT = 0x200,
 };
+
+// enum for m_scene_change
+enum
+{
+    NO_SCENE_CHANGE = 0x0,
+    SCENE_CHANGE = 0x1,
+    SCENE_CHANGE_PLUS_1 = 2,
+    SCENE_CHANGE_PLUS_2 = 3,
+    REPEAT = 4,
+    REPEAT1 = 5, // Max according to Sebastian
+    REPEAT2 = 6,
+};
 ////////////////////////////////////////////////////////////////////////////////////
 // Utils
 ////////////////////////////////////////////////////////////////////////////////////
@@ -3010,16 +3022,6 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         mfxU32 sc_in_second_field = 0;
         mfxU32  sc_detected = 0;
 
-        // WA to mark consecutive frames after scene change with SCENE_NEW flag
-        if(m_scene_change >= 2)
-            scene_change = m_scene_change/2;
-
-        if (m_executeParams.bFMDEnable && m_frame_num % 2 != 0 && m_frame_num > 1)
-        {
-            // This frame was analyzed already, so just re-use data.
-            scene_change = m_scene_change;
-        }
-        else
         {
             mfxHDL frameHandle;
             mfxFrameSurface1 frameSurface;
@@ -3058,11 +3060,14 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
             }
 
             // Check for scene change
+            // In ADI, current field uses information from previous field and next field (if it is present in current frame).
+            // Use BOB for scene change when previous or next field can not be used
+            // WA: we check both last frame in scene and scene change as parity information may not be accurate.
             analysisReady = m_SCD.ProcessField(); // First field
-            sc_in_first_field = m_SCD.Get_frame_shot_Decision() + m_SCD.Get_frame_last_in_scene();
+            sc_in_first_field = m_SCD.Get_frame_shot_Decision() + m_SCD.Get_frame_last_in_scene(); //takes care of bad parity info
 
             analysisReady = m_SCD.ProcessField(); // Second field
-            sc_in_second_field += m_SCD.Get_frame_shot_Decision() + m_SCD.Get_frame_last_in_scene();
+            sc_in_second_field = m_SCD.Get_frame_shot_Decision() + m_SCD.Get_frame_last_in_scene(); //Dima
 
             sc_detected = sc_in_first_field + sc_in_second_field;
             scene_change += sc_detected;
@@ -3070,15 +3075,45 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
             // Check for repeat frame
             repeat_frame = m_SCD.Query_is_frame_repeated();
 
-            // WA: if scene change is detected, force next 2 frames to be processed with BOB.
-            // Same for repeat frame after scene change.
-            // This may be removed after frame counts get synchronized with BOB and m_refCountForADI
-            // in mfx_vpp_vaapi.cpp
-            if (sc_detected || (repeat_frame && scene_change)){
-                m_scene_change = 4;
-            } else {
-                m_scene_change /= 2;
+
+            /*
+            Default is NO_SCENE_CHANGE (value 0)
+            Use BOB when scene change occurs (i.e. m_scene_change > NO_SCENE_CHANGE).
+            Use BOB for repeat frame after scene change.  Allow maximum of 2 repeat frames
+            WA: use BOB for 2 frames after scene change (or scene change followed by repeat frame)
+            This is needed when there is discrepancy in frame parity (e.g. BFF marked as TFF)
+            */
+            switch (m_scene_change)
+            {
+                case SCENE_CHANGE:
+                    if (repeat_frame)
+                        m_scene_change = REPEAT;
+                    else
+                        m_scene_change = SCENE_CHANGE_PLUS_1;
+                    break;
+                case REPEAT:
+                    if (repeat_frame)
+                        m_scene_change = REPEAT1;
+                    else
+                        m_scene_change = SCENE_CHANGE_PLUS_1;
+                    break;
+                case REPEAT1:
+                    m_scene_change = SCENE_CHANGE_PLUS_1;
+                    break;
+                case SCENE_CHANGE_PLUS_1:
+                    m_scene_change = SCENE_CHANGE_PLUS_2;
+                    break;
+                case SCENE_CHANGE_PLUS_2:
+                    m_scene_change = NO_SCENE_CHANGE;
+                    break;
+                default:
+                    break;
             }
+
+            if (sc_detected)
+                m_scene_change = SCENE_CHANGE;
+
+            scene_change = m_scene_change;
         }
 
         m_executeParams.scene = scene_change ? VPP_SCENE_NEW : VPP_SCENE_NO_CHANGE;

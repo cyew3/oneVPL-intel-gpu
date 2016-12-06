@@ -118,9 +118,9 @@ enum FrameTypeScan
 
 enum BufferPosition
 {
-    current_frame_data,
+    previous_previous_frame_data,
     previous_frame_data,
-    previous_previous_frame_data
+    current_frame_data
 };
 
 enum Layers

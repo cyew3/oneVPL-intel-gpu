@@ -1714,28 +1714,28 @@ BOOL SceneChangeDetector::ProcessField()
 
 mfxU32 SceneChangeDetector::Get_frame_number() {
     if(dataReady)
-        return support->logic[current_frame_data]->frameNum;
+        return support->logic[previous_previous_frame_data]->frameNum;
     else
         return 0;
 }
 
 mfxU32 SceneChangeDetector::Get_frame_shot_Decision() {
     if(dataReady)
-        return support->logic[current_frame_data]->Schg;
+        return support->logic[previous_previous_frame_data]->Schg;
     else
         return 0;
 }
 
 mfxU32 SceneChangeDetector::Get_frame_last_in_scene() {
     if(dataReady)
-        return support->logic[current_frame_data]->lastFrameInShot;
+        return support->logic[previous_previous_frame_data]->lastFrameInShot;
     else
         return 0;
 }
 
 BOOL SceneChangeDetector::Query_is_frame_repeated() {
     if(dataReady)
-        return support->logic[current_frame_data]->repeatedFrame;
+        return support->logic[previous_previous_frame_data]->repeatedFrame;
     else
         return 0;
 }
