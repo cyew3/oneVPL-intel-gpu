@@ -98,6 +98,9 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-num_slice]             - number of slices in each video frame. 0 by default.\n"));
     msdk_printf(MSDK_STRING("                              If num_slice equals zero, the encoder may choose any slice partitioning allowed by the codec standard.\n"));
     msdk_printf(MSDK_STRING("   [-mss]                   - maximum slice size in bytes. Supported only with -hw and h264 codec. This option is not compatible with -num_slice option.\n"));
+    msdk_printf(MSDK_STRING("   [-timeout]               - encoding in cycle not less than specific time in seconds\n"));
+    msdk_printf(MSDK_STRING("   [-membuf]                - size of memory buffer in frames\n"));
+    msdk_printf(MSDK_STRING("   [-uncut]                 - do not insert idr after file writer reset\n"));
     msdk_printf(MSDK_STRING("Example: %s h265 -i InputYUVFile -o OutputEncodedFile -w width -h height -hw -p 2fca99749fdb49aeb121a5b63ef568f7\n"), strAppName);
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d] - work with d3d surfaces\n"));
@@ -115,7 +118,9 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-i::mondello]     - To enable Mondello option\n"));
     msdk_printf(MSDK_STRING("   [-dcc format]      - Format (FourCC) of dst video (support nv12|rgb4)\n"));
     msdk_printf(MSDK_STRING("   [-rwld]            - Render to Wayland\n"));
-    msdk_printf(MSDK_STRING("   [-I]               - To enable Interlace option\n"));
+    msdk_printf(MSDK_STRING("   [-I::gpu_weaving]  - MSDK does GPU weaving (only applicable for interlace stream)\n"));
+    msdk_printf(MSDK_STRING("   [-I::ipu_weaving]  - Weaving done by IPU (only applicable for interlace stream)\n"));
+    msdk_printf(MSDK_STRING("   [-di adi/BOB]      - Enable deinterlacing for ADI/BOB\n"));
     msdk_printf(MSDK_STRING("   [-fps]             - Print out fps\n"));
     msdk_printf(MSDK_STRING("Example: %s h264 -uyvy|yuy2|rgb4 -i::mondello -w width -h height -rwld -dcc rgb4|nv12\n"), strAppName);
     msdk_printf(MSDK_STRING("Example: %s h264 -uyvy|yuy2|rgb4 -i::mondello -w width -h height -o OutputEncodedFile\n"), strAppName);
@@ -151,9 +156,8 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     pParams->isMondelloRender = false;
     pParams->MondelloFormat = NO_FORMAT;
     pParams->Printfps= false;
-    pParams->isInterlaced = false;
-    pParams->MondelloRenderFormat = MFX_FOURCC_NV12;
-    pParams->MondelloRenderChroma = MFX_CHROMAFORMAT_YUV420;
+    pParams->MondelloPicStruct = PROGRESSIVE;
+    pParams->FileInputFourCC = pParams->MondelloRenderFormat = MFX_FOURCC_NV12;
 #if defined(LIBVA_SUPPORT)
     pParams->libvaBackend = MFX_LIBVA_DRM;
 #endif
@@ -213,7 +217,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-nv12")))
         {
-            pParams->ColorFormat = MFX_FOURCC_NV12;
+            pParams->FileInputFourCC = MFX_FOURCC_NV12;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-tff")))
         {
@@ -311,6 +315,30 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-timeout")))
+        {
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nTimeout))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Timeout is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-membuf")))
+        {
+            VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
+
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nMemBuf))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("membuf is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-uncut")))
+        {
+            pParams->bUncut = true;
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-gpucopy::on")))
         {
             pParams->gpuCopy = MFX_GPUCOPY_ON;
@@ -403,16 +431,49 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             if(strcasecmp(pParams->RenderFormatName,"RGB4") == 0)
             {
                 pParams->MondelloRenderFormat = MFX_FOURCC_RGB4;
-                pParams->MondelloRenderChroma = MFX_CHROMAFORMAT_YUV444;
+            }
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-di")))
+        {
+            if (i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -di key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            msdk_char diMode[4] = {};
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], diMode))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("deinterlace value is not set"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+
+            if (0 == msdk_strcmp(diMode, MSDK_CHAR("bob")))
+            {
+                pParams->eDeinterlace = MFX_DEINTERLACING_BOB;
+            }
+            else if (0 == msdk_strcmp(diMode, MSDK_CHAR("adi")))
+            {
+                pParams->eDeinterlace = MFX_DEINTERLACING_ADVANCED;
+            }
+            else
+            {
+                PrintHelp(strInput[0], MSDK_STRING("deinterlace value is invalid"));
+                return MFX_ERR_UNSUPPORTED;
             }
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-fps")))
         {
             pParams->Printfps = true;
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-I")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-I::gpu_weaving")))
         {
-            pParams->isInterlaced = true;
+            pParams->MondelloPicStruct = GPU_WEAVED;
+            pParams->nPicStruct = MFX_PICSTRUCT_FIELD_TFF;
+            pParams->eDeinterlace = MFX_DEINTERLACING_FIELD_WEAVING;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-I::ipu_weaving")))
+        {
+            pParams->MondelloPicStruct = IPU_WEAVED;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-rwld")))
         {
@@ -522,11 +583,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 break;
             case MSDK_CHAR('i'):
                 if (++i < nArgNum) {
-                    msdk_opt_read(strInput[i], pParams->strSrcFile);
-                    if (MVC_ENABLED & pParams->MVC_flags)
-                    {
-                        pParams->srcFileBuff.push_back(strInput[i]);
-                    }
+                    pParams->InputFiles.push_back(msdk_string(strInput[i]));
                 }
                 else {
                     msdk_printf(MSDK_STRING("error: option '-i' expects an argument\n"));
@@ -603,8 +660,14 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
+    if (pParams->MondelloPicStruct == GPU_WEAVED && pParams->eDeinterlace != MFX_DEINTERLACING_FIELD_WEAVING)
+    {
+        PrintHelp(strInput[0], MSDK_STRING("-I::gpu_weaving option can not pair ADI/BOB\n"));
+        return MFX_ERR_UNSUPPORTED;
+    }
+
     // check if all mandatory parameters were set
-    if (0 == msdk_strlen(pParams->strSrcFile) &&
+    if (!pParams->InputFiles.size() &&
         !pParams->isMondelloInputEnabled)
     {
         PrintHelp(strInput[0], MSDK_STRING("Source file name not found"));
@@ -616,12 +679,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         PrintHelp(strInput[0], MSDK_STRING("Only one mode is supported - Encoding or Rendering"));
         return MFX_ERR_UNSUPPORTED;
     }
-
-    if (pParams->dstFileBuff.empty() && !pParams->isMondelloRender)
-    {
-        PrintHelp(strInput[0], MSDK_STRING("Destination file name not found"));
-        return MFX_ERR_UNSUPPORTED;
-    };
 
     if (0 == pParams->nWidth || 0 == pParams->nHeight)
     {
@@ -659,7 +716,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     }
 
     // set default values for optional parameters that were not set or were set incorrectly
-    mfxU32 nviews = (mfxU32)pParams->srcFileBuff.size();
+    mfxU32 nviews = (mfxU32)pParams->InputFiles.size();
     if ((nviews <= 1) || (nviews > 2))
     {
         if (!(MVC_ENABLED & pParams->MVC_flags))
@@ -698,8 +755,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         pParams->nDstHeight = pParams->nHeight;
     }
 
-    // for the case of mondello interlaced input
-    if (pParams->isInterlaced)
+    if (pParams->MondelloPicStruct == GPU_WEAVED)
     {
         pParams->nHeight = pParams->nHeight / 2;
     }
@@ -709,12 +765,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     {
         pParams->nBitRate = CalculateDefaultBitrate(pParams->CodecId, pParams->nTargetUsage, pParams->nDstWidth,
             pParams->nDstHeight, pParams->dFrameRate);
-    }
-
-    // if nv12 option wasn't specified we expect input YUV file in YUV420 color format
-    if (!pParams->ColorFormat)
-    {
-        pParams->ColorFormat = MFX_FOURCC_YV12;
     }
 
     if (!pParams->nPicStruct)
@@ -789,6 +839,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         pParams->nRateControlMethod = MFX_RATECONTROL_CBR;
     }
 
+    if (pParams->dstFileBuff.size() == 0)
+    {
+        msdk_printf(MSDK_STRING("File output is disabled as -o option isn't specified\n"));
+    }
     return MFX_ERR_NONE;
 }
 
@@ -828,7 +882,6 @@ int main(int argc, char *argv[])
 
     if (MVC_ENABLED & Params.MVC_flags)
     {
-        pPipeline->SetMultiView();
         pPipeline->SetNumView(Params.numViews);
     }
 

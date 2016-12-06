@@ -20,7 +20,6 @@
 #include <fcntl.h>
 #include "sample_defs.h"
 #include "libcamhal/api/ICamera.h"
-#include "vaapi_utils.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 #define ERRSTR strerror(errno)
@@ -37,9 +36,16 @@
     } \
     } while(0)
 
+using namespace icamera;
+
 enum MondelloPixelFormat
 {
     NO_FORMAT = 0, YUY2, UYVY, RGB4
+};
+
+enum MondelloPicStructType
+{
+    PROGRESSIVE = 0, GPU_WEAVED, IPU_WEAVED
 };
 
 extern camera_buffer_t *buffers;
@@ -49,13 +55,11 @@ void *PollingThread(void *data);
 class MondelloDevice
 {
 public:
-    MfxLoader::LibCamhalProxy libcamhal;
-
     MondelloDevice(const char *devname = "mondello",
         uint32_t width = 1920,
         uint32_t height = 1080,
         enum MondelloPixelFormat mondelloFormat = NO_FORMAT,
-        bool interlaced = false,
+        enum MondelloPicStructType mondelloPicStruct = PROGRESSIVE,
         uint32_t num_buffers = 4,
         int device_id = -1);
 
@@ -65,7 +69,7 @@ public:
         uint32_t height,
         enum MondelloPixelFormat mondelloFormat,
         uint32_t num_buffers,
-        bool isInterlacedEnabled,
+        enum MondelloPicStructType mondelloPicStruct,
         bool isMondelloRender,
         bool printfps);
 
@@ -83,6 +87,7 @@ public:
     int GetStreamId() { return m_stream_id; }
     int GetDeviceId() { return m_device_id; }
     bool GetPrintFPSMode() { return m_printfps; }
+    enum MondelloPicStructType GetMondelloPicStructType() { return m_mondelloPicStruct; }
 
 protected:
     const char *m_device_name;
@@ -90,13 +95,14 @@ protected:
     uint32_t m_height;
     uint32_t m_width;
     uint32_t m_num_buffers;
-    bool m_interlaced;
     stream_t m_streams[1];
     stream_config_t m_StreamList;
     int m_stream_id;
     enum MondelloPixelFormat m_mondelloFormat;
+    enum MondelloPicStructType m_mondelloPicStruct;
     bool m_isMondelloRender;
     bool m_printfps;
+    Parameters m_param;
 };
 
 #endif // ifdef __MONDELLO_UTIL_H__

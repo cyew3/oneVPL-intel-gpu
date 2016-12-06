@@ -10,17 +10,15 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <poll.h>
 #include <signal.h>
-#include <assert.h>
+#include <time.h>
 #include "mondello_util.h"
 #include "libcamhal/api/ICamera.h"
-#include "vaapi_utils.h"
-#include <time.h>
+#include "libcamhal/api/Parameters.h"
 #define MAX_BUFFER_COUNT 10
 #define FPS_TIME_INTERVAL 2
 #define FPS_BUF_COUNT_START 10
@@ -47,7 +45,7 @@ int MondelloDevice::GetOffQ()
 {
     int thing;
 
-    /* wait if the queue is empty. */
+    // wait if the queue is empty.
     while (m_numInQ == 0)
     pthread_mutex_lock(&empty);
 
@@ -72,14 +70,14 @@ MondelloDevice::MondelloDevice(const char *devname,
     uint32_t width,
     uint32_t height,
     enum MondelloPixelFormat mondelloFormat,
-    bool interlaced,
+    enum MondelloPicStructType mondelloPicStruct,
     uint32_t num_buffers,
     int device_id):
     m_device_name(devname),
     m_height(height),
     m_width(width),
     m_mondelloFormat(mondelloFormat),
-    m_interlaced(interlaced),
+    m_mondelloPicStruct(mondelloPicStruct),
     m_num_buffers(num_buffers),
     m_device_id(device_id)
 {}
@@ -90,12 +88,10 @@ MondelloDevice::~MondelloDevice()
     {
         free(buffers);
 
-        /* camera_device_close() */
-        libcamhal._ZN7icamera19camera_device_closeEi(m_device_id);
+        camera_device_close(m_device_id);
     }
 
-    /* camera_hal_deinit() */
-    libcamhal._ZN7icamera17camera_hal_deinitEv();
+    camera_hal_deinit();
 }
 
 const char* MondelloDevice::GetCurrentCameraName()
@@ -112,16 +108,14 @@ int MondelloDevice::GetCurrentCameraId()
 {
     int cameraId = 0, id = 0;
     const char* input = GetCurrentCameraName();
-    /* get_number_of_cameras() */
-    int count = libcamhal._ZN7icamera21get_number_of_camerasEv();
+    int count = get_number_of_cameras();
 
     for (; id < count; id++)
     {
         camera_info_t info;
         CLEAR(info);
 
-        /* get_camera_info() */
-        libcamhal._ZN7icamera15get_camera_infoEiRNS_13camera_info_tE(id, info);
+        get_camera_info(id, info);
 
         if (strcmp(info.name, input) == 0)
         {
@@ -144,7 +138,7 @@ int MondelloDevice::ConvertToV4L2FourCC()
 
         case NO_FORMAT:
         default:
-            assert( !"Unsupported v4l2 fourcc");
+            BYE_ON(1, "Unsupported v4l2 fourcc!\n");
             return 0;
     }
 }
@@ -153,7 +147,7 @@ void MondelloDevice::Init(uint32_t width,
     uint32_t height,
     enum MondelloPixelFormat mondelloFormat,
     uint32_t num_buffers,
-    bool isInterlacedEnabled,
+    enum MondelloPicStructType mondelloPicStruct,
     bool isMondelloRender,
     bool printfps)
 {
@@ -161,19 +155,19 @@ void MondelloDevice::Init(uint32_t width,
     (m_height != height)? m_height = height : m_height;
     (m_mondelloFormat != mondelloFormat )? m_mondelloFormat = mondelloFormat : m_mondelloFormat;
     (m_num_buffers != num_buffers)? m_num_buffers = num_buffers : m_num_buffers;
-    (m_interlaced != isInterlacedEnabled)? m_interlaced = isInterlacedEnabled : m_interlaced;
+    (m_mondelloPicStruct != mondelloPicStruct )? m_mondelloPicStruct = mondelloPicStruct : m_mondelloPicStruct;
     (m_isMondelloRender != isMondelloRender)? m_isMondelloRender = isMondelloRender : m_isMondelloRender;
     (m_printfps != printfps)? m_printfps = printfps : m_printfps;
 
-    /* Setup the streams information */
+    // Setup the streams information
     m_streams[0].format = ConvertToV4L2FourCC();
     m_streams[0].width = m_width;
     m_streams[0].height = m_height;
     m_streams[0].memType = V4L2_MEMORY_DMABUF;
 
-    (m_interlaced == true)?
-        m_streams[0].field = V4L2_FIELD_ALTERNATE :
-        m_streams[0].field = V4L2_FIELD_ANY;
+    (m_mondelloPicStruct == PROGRESSIVE)?
+        m_streams[0].field = V4L2_FIELD_ANY :
+        m_streams[0].field = V4L2_FIELD_ALTERNATE;
 
     m_StreamList.num_streams = 1;
     m_StreamList.streams = m_streams;
@@ -186,23 +180,29 @@ void MondelloDevice::MondelloInit()
     int ret, count = 0;
     camera_info_t info;
 
-    /* camera_hal_init() */
-    ret = libcamhal._ZN7icamera15camera_hal_initEv();
+    ret = camera_hal_init();
     BYE_ON(ret < 0, "failed to init libcamhal device: %s\n", ERRSTR);
 
     m_device_id = GetCurrentCameraId();
 
-    /* camera_device_open() */
-    ret = libcamhal._ZN7icamera18camera_device_openEii(m_device_id, 0);
+    ret = camera_device_open(m_device_id, 0);
     if (ret < 0)
     {
-        /* camera_hal_deinit() */
-        libcamhal._ZN7icamera17camera_hal_deinitEv();
+        camera_hal_deinit();
         BYE_ON(ret < 0, "inCorrect device id: %s\n", ERRSTR);
     }
 
-    /* camera_device_config_streams() */
-    ret = libcamhal._ZN7icamera28camera_device_config_streamsEiPNS_15stream_config_tE(m_device_id, &m_StreamList);
+    if (m_mondelloPicStruct == IPU_WEAVED)
+    {
+        // This operation is to do weaving on the IPU end.
+        ret = m_param.setDeinterlaceMode(DEINTERLACE_WEAVING);
+        BYE_ON(ret < 0, "failed to setDeinterlaceMode: %s\n", ERRSTR);
+
+        ret = camera_set_parameters(m_device_id, m_param);
+        BYE_ON(ret < 0, "failed to set parameters: %s\n", ERRSTR);
+    }
+
+    ret = camera_device_config_streams(m_device_id, &m_StreamList, m_streams[0].format);
     BYE_ON(ret < 0, "failed to add stream: %s\n", ERRSTR);
     m_stream_id = m_streams[0].id;
 }
@@ -216,9 +216,8 @@ void MondelloDevice::MondelloSetup()
 {
     int i, ret;
 
-    /* libcamhal only request for 10 buffers, QBUF operation will fail if
-     * we acceed more than that buffer size
-     */
+    // libcamhal only request for 10 buffers, QBUF operation will fail if
+    // we acceed more than that buffer size
     if (m_num_buffers > MAX_BUFFER_COUNT)
        m_num_buffers = MAX_BUFFER_COUNT;
 
@@ -226,8 +225,7 @@ void MondelloDevice::MondelloSetup()
     {
         CurBuffers->s = m_streams[0];
 
-        /* camera_device_stream_qbuf() */
-        ret = libcamhal._ZN7icamera18camera_stream_qbufEiiPNS_15camera_buffer_tEiPKNS_10ParametersE(m_device_id, m_stream_id, CurBuffers, m_num_buffers, NULL);
+        ret = camera_stream_qbuf(m_device_id, m_stream_id, CurBuffers, m_num_buffers, NULL);
         BYE_ON(ret < 0, "qbuf failed: %s\n", ERRSTR);
     }
 }
@@ -236,8 +234,7 @@ void MondelloDevice::MondelloStartCapture()
 {
     int ret;
 
-    /* camera_device_start() */
-    ret = libcamhal._ZN7icamera19camera_device_startEi(m_device_id);
+    ret = camera_device_start(m_device_id);
     BYE_ON(ret < 0, "mondello STREAMON failed: %s\n", ERRSTR);
 }
 
@@ -245,8 +242,7 @@ void MondelloDevice::MondelloStopCapture()
 {
     int ret;
 
-    /* camera_device_stop() */
-    ret = libcamhal._ZN7icamera18camera_device_stopEi(m_device_id);
+    ret = camera_device_stop(m_device_id);
     BYE_ON(ret < 0, "mondello STREAMOFF failed: %s\n", ERRSTR);
 }
 
@@ -262,7 +258,7 @@ int ConvertToMFXFourCC(enum MondelloPixelFormat MondelloFormat)
         case NO_FORMAT:
 
         default:
-            assert( !"Unsupported mfx fourcc");
+            BYE_ON(1, "Unsupported mfx fourcc!\n");
             return 0;
     }
 }
@@ -279,6 +275,8 @@ void *PollingThread(void *data)
     sigaction(SIGINT, &sigIntHandler, NULL);
 
     int ret;
+    int prev_field = V4L2_FIELD_ALTERNATE, field_cnt = 0;
+    bool flags = true;
     int m_device_id, m_stream_id;
     struct timeval dqbuf_start_tm_count, dqbuf_tm_start,qbuf_tm_end;
     double buf_count = 0, last_buf_count = 0;
@@ -288,6 +286,7 @@ void *PollingThread(void *data)
     m_device_id = Mondello->GetDeviceId();
     m_stream_id = Mondello->GetStreamId();
     bool m_printfps = Mondello->GetPrintFPSMode();
+    enum MondelloPicStructType m_mondelloPicStruct = Mondello->GetMondelloPicStructType();
 
     while(1)
     {
@@ -336,25 +335,44 @@ void *PollingThread(void *data)
             }
         }
 
-        /* camera_stream_dqbuf() */
-        ret = Mondello->libcamhal.
-            _ZN7icamera19camera_stream_dqbufEiiPPNS_15camera_buffer_tEPNS_10ParametersE(
-            m_device_id, m_stream_id, &CurBuffers, NULL);
-
+        ret = camera_stream_dqbuf(m_device_id, m_stream_id, &CurBuffers, NULL);
         BYE_ON(ret < 0, "Mondello DQBUF failed: %s\n", ERRSTR);
 
-        Mondello->PutOnQ(CurBuffers->index);
+        // IPU does not guarantee if there is a frame drop. An exception handling
+        // mechanism is needed to be done on the app level to fix the odd/even
+        // misalignment issue when it undergo GPU weave operation (this is the case
+        // where we submit V4L2_FIELD_ALTERNATE to the IPU).
+
+        if (m_mondelloPicStruct == GPU_WEAVED)
+        {
+            if (flags)
+            {
+                if (CurBuffers->s.field == V4L2_FIELD_TOP)
+                    prev_field = V4L2_FIELD_TOP;
+
+                flags = false;
+            }
+
+            if (prev_field != CurBuffers->s.field)
+            {
+                prev_field = CurBuffers->s.field;
+                Mondello->PutOnQ(CurBuffers->index);
+                field_cnt = 0;
+            }
+            else
+                field_cnt++;
+
+            BYE_ON(field_cnt > MAX_BUFFER_COUNT, "Overloading similar fields!\n");
+        }
+        else
+            Mondello->PutOnQ(CurBuffers->index);
 
         if (CtrlFlag)
             break;
 
         if (CurBuffers)
         {
-            /* camera_stream_qbuf() */
-            ret = Mondello->
-                libcamhal._ZN7icamera18camera_stream_qbufEiiPNS_15camera_buffer_tEiPKNS_10ParametersE(
-                m_device_id, m_stream_id, CurBuffers, MAX_BUFFER_COUNT, NULL);
-
+            ret = camera_stream_qbuf(m_device_id, m_stream_id, CurBuffers, MAX_BUFFER_COUNT, NULL);
             BYE_ON(ret < 0, "Mondello QBUF failed: %s\n", ERRSTR);
         }
     }

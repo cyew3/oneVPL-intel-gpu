@@ -7,7 +7,7 @@ include_directories (
   ${CMAKE_SOURCE_DIR}/sample_plugins/rotate_cpu/include
 )
 
-list( APPEND LIBS_VARIANT sample_common )
+list( APPEND LIBS_VARIANT sample_common gcss ia_camera ia_cipf camhal )
 
 set(DEPENDENCIES libmfx dl pthread)
 make_executable( shortname universal )
