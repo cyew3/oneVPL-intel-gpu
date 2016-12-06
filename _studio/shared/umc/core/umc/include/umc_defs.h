@@ -151,6 +151,24 @@ typedef struct {
   #define ALIGN_DECL(X) __attribute__ ((aligned(X)))
 #endif
 
+#if (defined(_MSC_VER) && _MSC_VER >= 1900)
+/*
+this is a hot fix for C++11 compiler
+By default, the compiler generates implicit noexcept(true) specifiers for user-defined destructors and deallocator functions
+https://msdn.microsoft.com/en-us/library/84e2zwhh.aspx
+Exception Specifications (throw) is deprecated in C++11.
+https://msdn.microsoft.com/en-us/library/wfa0edys.aspx
+So must use noexcept(true)
+http://en.cppreference.com/w/cpp/language/noexcept_spec
+http://en.cppreference.com/w/cpp/language/destructor
+Non-throwing function are permitted to call potentially-throwing functions.
+Whenever an exception is thrown and the search for a handler encounters the outermost block of a non-throwing function, the function std::terminate is called
+So we MUST fix this warning
+*/
+#define THROWSEXCEPTION noexcept(false)
+#else
+#define THROWSEXCEPTION
+#endif
 /******************************************************************************/
 
 #endif // __UMC_DEFS_H__

@@ -37,7 +37,7 @@ public:
     // Destructor
     virtual ~VC1ThreadDecoder();
 
-    void* operator new(size_t size, void* p)
+    void* operator new(size_t size, void* p) THROWSEXCEPTION
     {
         if (!p)
             throw VC1Exceptions::vc1_exception(VC1Exceptions::mem_allocation_er);
@@ -45,14 +45,14 @@ public:
     };
 
     // external memory management. No need to delete memory
-    void operator delete(void *p)
+    void operator delete(void *p) THROWSEXCEPTION
     {
         //Anyway its incorrect when we trying free null pointer
         if (!p)
             throw VC1Exceptions::vc1_exception(VC1Exceptions::mem_allocation_er);
     };
 
-    void operator delete(void *, void *) 
+    void operator delete(void *, void *) THROWSEXCEPTION
     {
         // delete for system exceptions case
         throw VC1Exceptions::vc1_exception(VC1Exceptions::mem_allocation_er);
