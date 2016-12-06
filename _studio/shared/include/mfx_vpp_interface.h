@@ -75,6 +75,11 @@ namespace MfxHwVideoProcessing
         MFX_FOURCC_AYUV      ,
         MFX_FOURCC_AYUV_RGB4 ,
         MFX_FOURCC_UYVY
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+        , MFX_FOURCC_Y210
+        , MFX_FOURCC_Y216
+        , MFX_FOURCC_Y410
+#endif
     };
 
     typedef enum mfxFormatSupport {
