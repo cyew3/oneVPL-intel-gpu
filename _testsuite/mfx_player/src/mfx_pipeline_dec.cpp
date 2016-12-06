@@ -5087,7 +5087,8 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
           {
               m_inParams.bFieldSplitting = true;
           }
-          else
+          else HANDLE_INT_OPTION(m_inParams.nDecoderSurfs, VM_STRING("-dec:surfs"), VM_STRING("specifies number of surfaces in decoder's pool"))
+   		  else
           {
                MFX_TRACE_AT_EXIT_IF( MFX_ERR_UNSUPPORTED
                     , !bReportError
