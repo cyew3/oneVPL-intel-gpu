@@ -1,0 +1,222 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{2669C8F8-D025-44A8-86B2-983BC75DD590}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>scheduler_tests</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <InterproceduralOptimization>false</InterproceduralOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <InterproceduralOptimization>false</InterproceduralOptimization>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <InterproceduralOptimization>false</InterproceduralOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <InterproceduralOptimization>false</InterproceduralOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>..\..\..\..\..\build\win_$(Platform)\bin\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(ProjectName)_d\</IntDir>
+    <TargetName>$(ProjectName)_d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>..\..\..\..\..\build\win_$(Platform)\bin\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(ProjectName)_d\</IntDir>
+    <TargetName>$(ProjectName)_d</TargetName>
+    <IncludePath>$(WindowsSdk8Path)\Include\$(MINIDDK_VERSION)\um;$(WindowsSdk8Path)\Include\$(MINIDDK_VERSION)\shared;$(IncludePath)</IncludePath>
+    <LibraryPath>$(WindowsSdk8Path)\Lib\$(Library_Miniddk_Version)\um\x64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>..\..\..\..\..\build\win_$(Platform)\bin\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>..\..\..\..\..\build\win_$(Platform)\bin\</OutDir>
+    <IntDir>$(OutDir)..\objs\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>..\..\..\..\_studio\mfx_lib\fs_det\include\;..\..\..\..\..\mdp_msdk-contrib\gmock\include;..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\..\_studio\mfx_lib\fei\h265\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <Cpp0xSupport>true</Cpp0xSupport>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib;$(ICPP_COMPILER13)\compiler\lib\ia32</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippcoremt.lib;ippvcmt.lib;ippsmt.lib;ippimt.lib;ippdcmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>
+      </SDLCheck>
+      <AdditionalIncludeDirectories>..\..\..\..\_studio\mfx_lib\scheduler\include;..\..\..\..\_studio\mfx_lib\fs_det\include\;..\..\..\..\..\mdp_msdk-contrib\gmock\include;..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\..\_studio\mfx_lib\fei\h265\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <Cpp0xSupport>true</Cpp0xSupport>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib;$(ICPP_COMPILER13)\compiler\lib\intel64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippcoremt.lib;ippvcmt.lib;ippsmt.lib;ippimt.lib;ippdcmt.lib;ippimt.lib;ippdcmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <LinkStatus>false</LinkStatus>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>..\..\..\..\_studio\mfx_lib\scheduler\include;..\..\..\..\_studio\mfx_lib\fs_det\include\;..\..\..\..\..\mdp_msdk-contrib\gmock\include;..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\..\_studio\mfx_lib\fei\h265\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <Cpp0xSupport>true</Cpp0xSupport>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib;$(ICPP_COMPILER13)\compiler\lib\ia32</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippcoremt.lib;ippvcmt.lib;ippsmt.lib;ippimt.lib;ippdcmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>Disabled</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>_VARIADIC_MAX=10;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>..\..\..\..\_studio\mfx_lib\scheduler\include;..\..\..\..\_studio\mfx_lib\fs_det\include\;..\..\..\..\..\mdp_msdk-contrib\gmock\include;..\..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\_studio\mfx_lib\encode\h265\include;..\..\..\..\_studio\mfx_lib\optimization\h265\include;..\..\..\..\_studio\shared\include;..\..\..\..\_studio\mfx_lib\shared\include;..\..\..\..\_studio\shared\umc\core\umc\include;..\..\..\..\_studio\shared\umc\core\vm\include;..\..\..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\..\_studio\mfx_lib\fei\h265\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <Cpp0xSupport>true</Cpp0xSupport>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib;$(ICPP_COMPILER13)\compiler\lib\intel64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippcoremt.lib;ippvcmt.lib;ippsmt.lib;ippimt.lib;ippdcmt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <InterproceduralOptimization>false</InterproceduralOptimization>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\_studio\mfx_lib\scheduler\src\mfx_scheduler_core.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\mfx_lib\scheduler\src\mfx_scheduler_core_ischeduler.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\mfx_lib\scheduler\src\mfx_scheduler_core_iunknown.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\mfx_lib\scheduler\src\mfx_scheduler_core_task.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\mfx_lib\scheduler\src\mfx_scheduler_core_task_management.cpp" />
+    <ClCompile Include="..\..\..\..\_studio\mfx_lib\scheduler\src\mfx_scheduler_core_thread.cpp" />
+    <ClCompile Include="scheduler_api.cpp" />
+    <ClCompile Include="scheduler_tasks.cpp" />
+    <ClCompile Include="scheduler_tasks.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2012\gmock.vcxproj">
+      <Project>{34681f0d-ce45-415d-b5f2-5c662dfe3bd5}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\..\mdp_msdk-contrib\gmock\msvc\2012\gmock_main.vcxproj">
+      <Project>{e4ef614b-30df-4954-8c53-580a0bf6b589}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\mfx_lib\shared\mfx_common.vcxproj">
+      <Project>{7929e69f-b47f-4a1e-a038-6be3343ce855}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\shared\mfx_trace\mfx_trace.vcxproj">
+      <Project>{ff93e15e-6a4a-4cc5-8d13-892fbba5cc5f}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\shared\umc\core\vm\vm.vcxproj">
+      <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\_studio\shared\umc\core\vm_plus\vm_plus.vcxproj">
+      <Project>{04854e7f-2a17-4b40-a14f-4e1d9b1d4785}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

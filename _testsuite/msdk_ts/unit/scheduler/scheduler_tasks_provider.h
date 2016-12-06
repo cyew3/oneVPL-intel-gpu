@@ -12,6 +12,7 @@ Copyright(c) 2016 Intel Corporation. All Rights Reserved.
 
 #include <chrono>
 #include <condition_variable>
+#include <memory>
 #include <mutex>
 #include <thread>
 
