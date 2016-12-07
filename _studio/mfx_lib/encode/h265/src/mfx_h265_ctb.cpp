@@ -7698,7 +7698,12 @@ void UpdateCuDataWithMeInfo(const H265MEInfo *meInfo, const MergePredInfo &merge
                         data[absPartIdx].mvd[listIdx] = otherMvd;
                     }
                 }
-                (listIdx ? data[absPartIdx].flags.mvpIdx1 : data[absPartIdx].flags.mvpIdx0) = mvpIdx;
+                if (listIdx) {
+                    data[absPartIdx].flags.mvpIdx1 = mvpIdx;
+                }
+                else {
+                    data[absPartIdx].flags.mvpIdx0 = mvpIdx;
+                }
             }
         }
     }
@@ -8431,13 +8436,13 @@ Ipp32s H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
         //ClipMV_NR(mvc);
         //Ipp32s metric0 = MatchingMetricPu(src, meInfo, &mvc, m_currFrame->m_refPicList[0].m_refFrames[idx0]->m_recon, useHadamard);
         costList[0] = metric[0] + mvCostRefBest[0][idx0] + (Ipp32s)(bitsRefBest[0][idx0] * m_rdLambdaSqrt + 0.5f);
-	}
+    }
     if (costRefBest[1][idx1] != INT_MAX) {
         //H265MV mvc = mvRefBest[1][idx1];
         //ClipMV_NR(mvc);
         //Ipp32s metric1 = MatchingMetricPu(src, meInfo, &mvc, m_currFrame->m_refPicList[1].m_refFrames[idx1]->m_recon, useHadamard);
         costList[1] = metric[1] + mvCostRefBest[1][idx1] + (Ipp32s)(bitsRefBest[1][idx1] * m_rdLambdaSqrt + 0.5f);
-	}
+    }
     Ipp32s costBiBest = INT_MAX;
     H265MV mvBiBest[2] = { mvRefBest[0][refIdxBestB[0]], mvRefBest[1][refIdxBestB[1]] };
     Ipp32s costBiL0 = costRefBest[0][refIdxBestB[0]];
