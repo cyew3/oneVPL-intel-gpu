@@ -784,5 +784,29 @@
     <ClCompile Include="src\gmock\test_suites\vpp_init.cpp">
       <Filter>Source Files\test_suites\vpp</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_intra_refresh.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_max_frame_size.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_mb_per_sec.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_adaptivegop.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_b_pyr_control.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_look_ahead.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avcd_hw_slice_groups_present.cpp">
+      <Filter>Source Files\test_suites\avcd</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\multisession.cpp">
+      <Filter>Source Files\test_suites</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
